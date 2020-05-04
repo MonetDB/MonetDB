@@ -89,36 +89,50 @@ MOSselect_SIGNATURE(METHOD, TPE) {
 
 #else
 
-#define _TEST_ALWAYS_TRUE	true
-#define _TEST_IS_NIL		IS_NIL(TPE,v)
-#define _TEST_IS_NOT_NIL	!IS_NIL(TPE,v)
-#define _TEST_UPPER_BOUND	!(has_nil && IS_NIL(TPE, v)) && (((hi && v <= th ) || (!hi && v < th )) == !anti)
-#define _TEST_LOWER_BOUND	!(has_nil && IS_NIL(TPE, v)) && (((li && v >= tl ) || (!li && v > tl )) == !anti)
-#define _TEST_EQUAL			!(has_nil && IS_NIL(TPE, v)) && ((hi && v == th)  == !anti)
-#define _TEST_RANGE			!(has_nil && IS_NIL(TPE, v)) && ((((hi && v <= th ) || (!hi && v < th )) && ((li && v >= tl ) || (!li && v > tl )))  == !anti)
-
 #define SCAN_LOOP_DEFINITION
+
 #define TEST TEST_ALWAYS_TRUE
+#define _TEST_ALWAYS_TRUE	true
 #include METHOD_TEMPLATES_INCLUDE
+#undef _TEST_ALWAYS_TRUE
 #undef TEST
+
 #define TEST TEST_IS_NIL
+#define _TEST_IS_NIL	IS_NIL(TPE,v)
 #include METHOD_TEMPLATES_INCLUDE
+#undef _TEST_IS_NIL
 #undef TEST
+
 #define TEST TEST_IS_NOT_NIL
+#define _TEST_IS_NOT_NIL	!IS_NIL(TPE,v)
 #include METHOD_TEMPLATES_INCLUDE
+#undef _TEST_IS_NOT_NIL
 #undef TEST
+
 #define TEST TEST_UPPER_BOUND
+#define _TEST_UPPER_BOUND	!(has_nil && IS_NIL(TPE, v)) && (((hi && v <= th ) || (!hi && v < th )) == !anti)
 #include METHOD_TEMPLATES_INCLUDE
+#undef _TEST_UPPER_BOUND
 #undef TEST
+
 #define TEST TEST_LOWER_BOUND
+#define _TEST_LOWER_BOUND	!(has_nil && IS_NIL(TPE, v)) && (((li && v >= tl ) || (!li && v > tl )) == !anti)
 #include METHOD_TEMPLATES_INCLUDE
+#undef _TEST_LOWER_BOUND
 #undef TEST
+
 #define TEST TEST_EQUAL
+#define _TEST_EQUAL	!(has_nil && IS_NIL(TPE, v)) && ((hi && v == th)  == !anti)
 #include METHOD_TEMPLATES_INCLUDE
+#undef _TEST_EQUAL
 #undef TEST
+
 #define TEST TEST_RANGE
+#define _TEST_RANGE	!(has_nil && IS_NIL(TPE, v)) && ((((hi && v <= th ) || (!hi && v < th )) && ((li && v >= tl ) || (!li && v > tl )))  == !anti)
 #include METHOD_TEMPLATES_INCLUDE
+#undef _TEST_RANGE
 #undef TEST
+
 #undef SCAN_LOOP_DEFINITION
 
 #define SCAN_LOOP(TEST) MOSscanLoop_ID(METHOD, TPE, CAND_ITER, TEST)(has_nil, anti, task, first, last, tl, th, li, hi)

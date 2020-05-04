@@ -491,6 +491,110 @@ MOSlayout_SIGNATURE(METHOD, TPE)
 #endif /*def COMPRESSION_DEFINITION*/
 
 #ifdef SCAN_LOOP_DEFINITION
+
+#ifdef _TEST_ALWAYS_TRUE
+#define NORMALIZE_TEST_ALWAYS_TRUE(METHOD) {}
+#endif
+
+#ifdef _TEST_IS_NIL
+#define NORMALIZE_TEST_IS_NIL(METHOD) {}
+#undef _TEST_IS_NIL
+#define _TEST_IS_NIL		(j == 0 && IS_NIL(TPE, dict[0]))
+#endif
+
+#ifdef _TEST_IS_NOT_NIL
+#define NORMALIZE_TEST_IS_NOT_NIL(METHOD) {}
+#undef _TEST_IS_NOT_NIL
+#define _TEST_IS_NOT_NIL	(j != 0 || !IS_NIL(TPE, dict[0]))
+#endif
+
+#ifdef _TEST_UPPER_BOUND
+#define NORMALIZE_TEST_UPPER_BOUND(METHOD) \
+{\
+	thk = CONCAT2(find_value_, TPE) (dict, dict_size, th);\
+	if ( thk == dict_size ) { \
+		/*thk is bigger then max(dict) set thk to biggest value*/\
+		hi = true;\
+		thk = dict_size - 1;\
+	}\
+	else if ( th < dict[thk]) {\
+		hi = false;\
+		/* can now be shortcutted if anti */\
+	}\
+	else {\
+		assert(th == dict[thk]);\
+	}\
+}
+#undef _TEST_UPPER_BOUND
+#define _TEST_UPPER_BOUND	(!(has_nil && j == 0 && IS_NIL(TPE, dict[0])) && (((hi && j <= thk ) || (!hi && j < thk )) == !anti))
+#endif
+
+#ifdef _TEST_LOWER_BOUND
+#define NORMALIZE_TEST_LOWER_BOUND(METHOD) \
+{\
+	tlk = CONCAT2(find_value_, TPE) (dict, dict_size, tl);\
+	if (tlk == dict_size ) { \
+		/*tlk is bigger then max(dict) set tlk to biggest value*/\
+		li = false;\
+		tlk = dict_size - 1;\
+	}\
+	else if (tl < dict[tlk]) {\
+		li = true;\
+		/* can now be shortcutted if anti */\
+	}\
+	else {\
+		assert(tl == dict[tlk]);\
+	}\
+}
+#undef	_TEST_LOWER_BOUND
+#define _TEST_LOWER_BOUND	!(has_nil && j == 0 && IS_NIL(TPE, dict[0])) && (((li && j >= tlk ) || (!li && j > tlk )) == !anti)
+#endif
+
+#ifdef _TEST_EQUAL
+#define NORMALIZE_TEST_EQUAL(METHOD) \
+{\
+	thk = CONCAT2(find_value_, TPE) (dict, dict_size, th);\
+	nomatch = (thk == dict_size || dict[thk] != th);\
+}
+#undef	_TEST_EQUAL
+#define _TEST_EQUAL			!(has_nil && j == 0 && IS_NIL(TPE, dict[0])) && ((!nomatch && hi && j == thk)  == !anti)
+#endif
+
+#ifdef _TEST_RANGE
+#define NORMALIZE_TEST_RANGE(METHOD) \
+{\
+	tlk = CONCAT2(find_value_, TPE) (dict, dict_size, tl);\
+	if (tlk == dict_size ) { \
+		/*tlk is bigger then max(dict) set tlk to biggest value*/\
+		li = false;\
+		tlk = dict_size - 1;\
+	}\
+	else if (tl < dict[tlk]) {\
+		li = true;\
+		/* can now be shortcutted if anti */\
+	}\
+	else {\
+		assert(tl == dict[tlk]);\
+	}\
+	thk = CONCAT2(find_value_, TPE) (dict, dict_size, th);\
+	if ( thk == dict_size ) { \
+		/*thk is bigger then max(dict) set thk to biggest value*/\
+		hi = true;\
+		thk = dict_size - 1;\
+	}\
+	else if ( th < dict[thk]) {\
+		hi = false;\
+		/* can now be shortcutted if anti */\
+	}\
+	else {\
+		assert(th == dict[thk]);\
+	}\
+}
+
+#undef	_TEST_RANGE
+#define _TEST_RANGE		!(has_nil && j == 0 && IS_NIL(TPE, dict[0])) && (((li && j >= tlk ) || (!li && j > tlk )) && ((hi && j <= thk ) || (!hi && j < thk )))  == !anti
+#endif
+
 MOSscanLoop_SIGNATURE(METHOD, TPE, CAND_ITER, TEST)
 {
     (void) has_nil;
@@ -501,9 +605,20 @@ MOSscanLoop_SIGNATURE(METHOD, TPE, CAND_ITER, TEST)
     (void) li;
     (void) hi;
 
+	BUN tlk;
+	BUN thk;
+	bool nomatch;
+
+	(void) tlk;
+	(void) thk;
+	(void) nomatch;
+
     oid* o = task->lb;
     TPE* dict = GET_FINAL_DICT(task, METHOD, TPE);
+	BUN dict_size = GET_FINAL_DICT_COUNT(task, METHOD);
+	(void) dict_size;
 	BitVector base = MOScodevectorDict(task, METHOD, TPE);
+	CONCAT2(NORMALIZE_, TEST)(METHOD);
     bte bits = GET_FINAL_BITS(task, METHOD);
     for (oid c = canditer_peekprev(task->ci); !is_oid_nil(c) && c < last; c = CAND_ITER(task->ci)) {
         BUN i = (BUN) (c - first);
