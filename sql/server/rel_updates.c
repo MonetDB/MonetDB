@@ -2049,7 +2049,7 @@ rel_parse_val(mvc *m, char *query, char emode, sql_rel *from)
 		*m = o;
 		m->session->status = status;
 	} else {
-		int label = m->label;
+		unsigned int label = m->label;
 
 		while (m->topvars > o.topvars) {
 			if (m->vars[--m->topvars].name)
