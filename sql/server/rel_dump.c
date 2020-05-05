@@ -340,9 +340,8 @@ op2string(operator_type op)
 	case op_delete:
 	case op_truncate:
 		return "modify op";
-	default:
-		return "unknown";
 	}
+	return "unknown";
 }
 
 static int
@@ -838,7 +837,7 @@ read_exps(mvc *sql, sql_rel *lrel, sql_rel *rrel, list *pexps, char *r, int *pos
 static sql_exp*
 exp_read(mvc *sql, sql_rel *lrel, sql_rel *rrel, list *pexps, char *r, int *pos, int grp)
 {
-	int f = -1, not = 1, old, d=0, s=0, unique = 0, no_nils = 0, quote = 0;
+	int f = -1, not = 1, old, d=0, s=0, unique = 0, no_nils = 0, quote = 0, zero_if_empty = 0;
 	char *tname = NULL, *cname = NULL, *var_cname = NULL, *e, *b = r + *pos, *st;
 	sql_exp *exp = NULL;
 	list *exps = NULL;
@@ -894,7 +893,7 @@ exp_read(mvc *sql, sql_rel *lrel, sql_rel *rrel, list *pexps, char *r, int *pos,
 			}
 			if (strncmp(r+*pos, "or",  strlen("or")) == 0) {
 				(*pos)+= (int) strlen("or");
-			} else if (strncmp(r+*pos, "FILTER",  strlen("FILTER")) == 0) {
+			} else if (strncasecmp(r+*pos, "FILTER",  strlen("FILTER")) == 0) {
 				(*pos)+= (int) strlen("FILTER");
 				filter = 1;
 			} else {
@@ -998,6 +997,11 @@ exp_read(mvc *sql, sql_rel *lrel, sql_rel *rrel, list *pexps, char *r, int *pos,
 			(*pos)+= (int) strlen("no nil");
 			skipWS(r, pos);
 		}
+		if (r[*pos] == 'z') {
+			zero_if_empty = 1;
+			(*pos)+= (int) strlen("zero if empty");
+			skipWS(r, pos);
+		}
 	}
 	if (r[*pos] == '(') {
 		sql_schema *s;
@@ -1016,10 +1020,12 @@ exp_read(mvc *sql, sql_rel *lrel, sql_rel *rrel, list *pexps, char *r, int *pos,
 			if (exps && exps->h)
 				a = sql_bind_func(sql->sa, s, cname, exp_subtype(exps->h->data), NULL, F_AGGR);
 			else
-				a = sql_bind_func(sql->sa, s, cname, sql_bind_localtype("void"), NULL, F_AGGR);
+				a = sql_bind_func(sql->sa, s, cname, sql_bind_localtype("void"), NULL, F_AGGR); /* count(*) */
 			if (!a)
 				return sql_error(sql, -1, SQLSTATE(42000) "Aggregate %s%s%s not found\n", tname ? tname : "", tname ? "." : "", cname);
 			exp = exp_aggr( sql->sa, exps, a, unique, no_nils, CARD_ATOM, 1);
+			if (zero_if_empty)
+				set_zero_if_empty(exp);
 		} else {
 			list *ops = sa_list(sql->sa);
 			for( n = exps->h; n; n = n->next)
@@ -1040,17 +1046,17 @@ exp_read(mvc *sql, sql_rel *lrel, sql_rel *rrel, list *pexps, char *r, int *pos,
 				}
 			}
 			/* fix scale of div function */
-                        if (f && f->func->fix_scale == SCALE_DIV && list_length(exps) == 2) {
-                                sql_arg *ares = f->func->res->h->data;
+			if (f && f->func->fix_scale == SCALE_DIV && list_length(exps) == 2) {
+				sql_arg *ares = f->func->res->h->data;
 
-                                if (strcmp(f->func->imp, "/") == 0 && ares->type.type->scale == SCALE_FIX) {
-                                        sql_subtype *res = f->res->h->data;
-                                        sql_subtype *lt = ops->h->data;
-                                        sql_subtype *rt = ops->h->next->data;
+				if (strcmp(f->func->imp, "/") == 0 && ares->type.type->scale == SCALE_FIX) {
+					sql_subtype *res = f->res->h->data;
+					sql_subtype *lt = ops->h->data;
+					sql_subtype *rt = ops->h->next->data;
 
-                                        res->scale = lt->scale - rt->scale;
-                                }
-                        }
+					res->scale = lt->scale - rt->scale;
+				}
+			}
 
 			if (f)
 				exp = exp_op( sql->sa, exps, f);
@@ -1235,6 +1241,7 @@ exp_read(mvc *sql, sql_rel *lrel, sql_rel *rrel, list *pexps, char *r, int *pos,
 			f = cmp_notin;
 		}
 		break;
+	case 'f':
 	case 'F':
 		if (strncasecmp(r+*pos, "FILTER",  strlen("FILTER")) == 0) {
 			(*pos)+= (int) strlen("FILTER");
@@ -1293,8 +1300,7 @@ exp_read(mvc *sql, sql_rel *lrel, sql_rel *rrel, list *pexps, char *r, int *pos,
 			list *exps = read_exps(sql, lrel, rrel, pexps, r, pos, '(', 0);
 			if (!exps)
 				return NULL;
-			if (f == cmp_in || f == cmp_notin)
-				return exp_in(sql->sa, exp, exps, f);
+			return exp_in(sql->sa, exp, exps, f);
 		} else {
 			int sym = 0, between = 0;
 			sql_exp *e = exp_read(sql, lrel, rrel, pexps, r, pos, 0);
@@ -1609,9 +1615,6 @@ rel_read(mvc *sql, char *r, int *pos, list *refs)
 		if (r[*pos] == '[')
 			if (!(rel->r = read_exps(sql, nrel, rel, NULL, r, pos, '[', 0)))
 				return NULL;
-		if (distinct)
-			set_distinct(rel);
-		distinct = 0;
 		break;
 	case 'g':
 		*pos += (int) strlen("group by");
@@ -1827,9 +1830,11 @@ rel_read(mvc *sql, char *r, int *pos, list *refs)
 	case 'd':
 		/* 'ddl' not supported */
 	default:
-		return NULL;
+		return sql_error(sql, -1, SQLSTATE(42000) "Could not determine the input relation\n");
 	}
 
+	if (!rel)
+		return sql_error(sql, -1, SQLSTATE(42000) "Could not determine the input relation\n");
 	if (distinct)
 		set_distinct(rel);
 	if (single)
