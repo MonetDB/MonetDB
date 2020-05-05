@@ -7468,11 +7468,12 @@ rel_simplify_predicates(mvc *sql, sql_rel *rel, sql_exp *e, int depth, int *chan
 				sql_subfunc *f = l->f;
 
 				/* rewrite isnull(x) = TRUE/FALSE => x =/<> NULL */
-				if (is_select(rel->op) && !f->func->s && !strcmp(f->func->base.name, "isnull")) {
+				if (!f->func->s && !strcmp(f->func->base.name, "isnull")) {
 					list *args = l->l;
 					sql_exp *ie = args->h->data;
 
-					if (!has_nil(ie) || exp_is_not_null(sql, ie)) { /* is null on something that is never null, is always false */
+					/* TODO, we have to fix the NOT NULL flag propagation on columns after an outer join, so we can remove the is_outerjoin check */
+					if (!is_outerjoin(rel->op) && (!has_nil(ie) || exp_is_not_null(sql, ie))) { /* is null on something that is never null, is always false */
 						ie = exp_atom_bool(sql->sa, 0);
 						(*changes)++;
 						e->l = ie;
@@ -9009,7 +9010,7 @@ optimize_rel(mvc *sql, sql_rel *rel, int *g_changes, int level, int value_based_
 	}
 
 	if ((gp.cnt[op_select] || gp.cnt[op_left] || gp.cnt[op_right] || gp.cnt[op_full] || 
-		 gp.cnt[op_join] || gp.cnt[op_semi] || gp.cnt[op_anti]) && level <= 0)
+		 gp.cnt[op_join] || gp.cnt[op_semi] || gp.cnt[op_anti]) && level <= 1)
 		if (value_based_opt)
 			rel = rel_exp_visitor_bottomup(sql, rel, &rel_simplify_predicates, &changes);
 
