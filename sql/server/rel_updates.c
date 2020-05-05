@@ -1300,7 +1300,7 @@ merge_into_table(sql_query *query, dlist *qname, str alias, symbol *tref, symbol
 	if (isMergeTable(t))
 		return sql_error(sql, 02, SQLSTATE(42000) "MERGE: merge statements not available for merge tables yet");
 
-	bt = rel_basetable(sql, t, alias ? alias : t->base.name);
+	bt = rel_basetable(sql, t, alias ? alias : tname);
 	joined = table_ref(query, NULL, tref, 0);
 	if (!bt || !joined)
 		return NULL;
@@ -1335,7 +1335,7 @@ merge_into_table(sql_query *query, dlist *qname, str alias, symbol *tref, symbol
 					join_rel = rel_dup(join_rel);
 				} else {
 					join_rel = rel_crossproduct(sql->sa, joined, bt, op_left);
-					if (!(join_rel = rel_logical_exp(query, join_rel, search_cond, sql_where | sql_join)))
+					if (!(join_rel = rel_logical_exp(query, join_rel, search_cond, sql_where | sql_join | sql_merge)))
 						return NULL;
 					set_processed(join_rel);
 				}
@@ -1372,7 +1372,7 @@ merge_into_table(sql_query *query, dlist *qname, str alias, symbol *tref, symbol
 					join_rel = rel_dup(join_rel);
 				} else {
 					join_rel = rel_crossproduct(sql->sa, joined, bt, op_left);
-					if (!(join_rel = rel_logical_exp(query, join_rel, search_cond, sql_where | sql_join)))
+					if (!(join_rel = rel_logical_exp(query, join_rel, search_cond, sql_where | sql_join | sql_merge)))
 						return NULL;
 					set_processed(join_rel);
 				}
@@ -1413,7 +1413,7 @@ merge_into_table(sql_query *query, dlist *qname, str alias, symbol *tref, symbol
 				join_rel = rel_dup(join_rel);
 			} else {
 				join_rel = rel_crossproduct(sql->sa, joined, bt, op_left);
-				if (!(join_rel = rel_logical_exp(query, join_rel, search_cond, sql_where | sql_join)))
+				if (!(join_rel = rel_logical_exp(query, join_rel, search_cond, sql_where | sql_join | sql_merge)))
 					return NULL;
 				set_processed(join_rel);
 			}

@@ -11,6 +11,15 @@ DELETE FROM another_t WHERE (SELECT 1 UNION SELECT 2) > 1;
 DELETE FROM another_t WHERE (SELECT 1 UNION SELECT 2) > 1; 
 	--error, more than one row returned by a subquery used as an expression
 
+UPDATE another_T SET col1 = 1 WHERE (SELECT 1 UNION SELECT 2) > 1;
+	--error, more than one row returned by a subquery used as an expression
+
+MERGE INTO another_t USING (SELECT col1 FROM another_t) sub ON (SELECT 1 UNION SELECT 2) > 1 WHEN MATCHED THEN DELETE WHEN NOT MATCHED THEN INSERT;
+	--error, more than one row returned by a subquery used as an expression
+
+MERGE INTO another_t USING (SELECT (SELECT 1 UNION SELECT 2) FROM another_t) sub ON TRUE WHEN MATCHED THEN DELETE WHEN NOT MATCHED THEN INSERT;
+	--error, more than one row returned by a subquery used as an expression
+
 DROP TABLE tbl_ProductSales;
 DROP TABLE another_T;
 DROP TABLE integers;
