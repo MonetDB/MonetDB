@@ -1506,14 +1506,15 @@ insert_args(sql_trans *tr, sql_table *sysarg, list *args, sqlid funcid, const ch
 		sql_arg *a = n->data;
 		sqlid id = next_oid();
 		int next_number = (*number)++;
+		char buf[32], *next_name;
 
 		if (a->name) {
-			table_funcs.table_insert(tr, sysarg, &id, &funcid, a->name, a->type.type->sqlname, &a->type.digits, &a->type.scale, &a->inout, &next_number);
+			next_name = a->name;
 		} else {
-			char buf[32];
 			snprintf(buf, sizeof(buf), arg_def, next_number);
-			table_funcs.table_insert(tr, sysarg, &id, &funcid, buf, a->type.type->sqlname, &a->type.digits, &a->type.scale, &a->inout, &next_number);
+			next_name = buf;
 		}
+		table_funcs.table_insert(tr, sysarg, &id, &funcid, next_name, a->type.type->sqlname, &a->type.digits, &a->type.scale, &a->inout, &next_number);
 	}
 }
 
