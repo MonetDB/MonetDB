@@ -1881,7 +1881,7 @@ stmt_tdiff2(backend *be, stmt *op1, stmt *op2, stmt *lcand)
 }
 
 stmt *
-stmt_tinter(backend *be, stmt *op1, stmt *op2)
+stmt_tinter(backend *be, stmt *op1, stmt *op2, bool single)
 {
 	InstrPtr q = NULL;
 	MalBlkPtr mb = be->mb;
@@ -1894,7 +1894,7 @@ stmt_tinter(backend *be, stmt *op1, stmt *op2)
 	q = pushNil(mb, q, TYPE_bat); /* left candidate */
 	q = pushNil(mb, q, TYPE_bat); /* right candidate */
 	q = pushBit(mb, q, FALSE);    /* nil matches */
-	q = pushBit(mb, q, FALSE);    /* max_one */
+	q = pushBit(mb, q, single?TRUE:FALSE);    /* max_one */
 	q = pushNil(mb, q, TYPE_lng); /* estimate */
 
 	if (q) {
@@ -1913,7 +1913,7 @@ stmt_tinter(backend *be, stmt *op1, stmt *op2)
 }
 
 stmt *
-stmt_join_cand(backend *be, stmt *op1, stmt *op2, stmt *lcand, stmt *rcand, int anti, comp_type cmptype, int is_semantics)
+stmt_join_cand(backend *be, stmt *op1, stmt *op2, stmt *lcand, stmt *rcand, int anti, comp_type cmptype, int is_semantics, bool single)
 {
 	MalBlkPtr mb = be->mb;
 	InstrPtr q = NULL;
@@ -1928,6 +1928,8 @@ stmt_join_cand(backend *be, stmt *op1, stmt *op2, stmt *lcand, stmt *rcand, int 
 	}
 	if (op1->nr < 0 || op2->nr < 0)
 		return NULL;
+
+	assert (!single || cmptype == cmp_all);
 
 	switch (cmptype) {
 	case mark_in:
@@ -2002,6 +2004,7 @@ stmt_join_cand(backend *be, stmt *op1, stmt *op2, stmt *lcand, stmt *rcand, int 
 		q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
 		q = pushArgument(mb, q, op1->nr);
 		q = pushArgument(mb, q, op2->nr);
+		q = pushBit(mb, q, single?TRUE:FALSE); /* max_one */
 		assert(!lcand && !rcand);
 		if (q == NULL)
 			return NULL;
@@ -2028,13 +2031,13 @@ stmt_join_cand(backend *be, stmt *op1, stmt *op2, stmt *lcand, stmt *rcand, int 
 }
 
 stmt *
-stmt_join(backend *be, stmt *l, stmt *r, int anti, comp_type cmptype, int is_semantics)
+stmt_join(backend *be, stmt *l, stmt *r, int anti, comp_type cmptype, int is_semantics, bool single)
 {
-	return stmt_join_cand(be, l, r, NULL, NULL, anti, cmptype, is_semantics); 
+	return stmt_join_cand(be, l, r, NULL, NULL, anti, cmptype, is_semantics, single); 
 }
 
 stmt *
-stmt_semijoin(backend *be, stmt *op1, stmt *op2, stmt *lcand, stmt *rcand, int is_semantics)
+stmt_semijoin(backend *be, stmt *op1, stmt *op2, stmt *lcand, stmt *rcand, int is_semantics, bool single)
 {
 	MalBlkPtr mb = be->mb;
 	InstrPtr q = NULL;
@@ -2055,7 +2058,7 @@ stmt_semijoin(backend *be, stmt *op1, stmt *op2, stmt *lcand, stmt *rcand, int i
 	else
 		q = pushNil(mb, q, TYPE_bat);
 	q = pushBit(mb, q, is_semantics?TRUE:FALSE);
-	q = pushBit(mb, q, FALSE); /* max_one */
+	q = pushBit(mb, q, single?TRUE:FALSE); /* max_one */
 	q = pushNil(mb, q, TYPE_lng);
 	if (q == NULL)
 		return NULL;

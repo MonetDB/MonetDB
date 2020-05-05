@@ -53,8 +53,7 @@ QUERY = select
                 ((select i from integers) is NULL)
                   or (cast(coalesce((select col7 from another_T) ,
                       sample_65.col1) as boolean) is not NULL);
-ERROR = !Cardinality violation, scalar value expected
-CODE  = 21000
+ERROR = !GDK reported error: BATsubcross: more than one match
 
 # 12:52:03 >  
 # 12:52:03 >  "Done."

@@ -94,7 +94,7 @@ psm_set_exp(sql_query *query, dnode *n)
 
 		if (!resolve_variable_on_scope(sql, s, sname, vname, &var, &a, &tpe, &level, "SET"))
 			return NULL;
-		if (!(e = rel_value_exp2(query, &rel, val, sql_sel | sql_update_set, ek)))
+		if (!(e = rel_value_exp2(query, &rel, val, sql_sel | sql_psm_set, ek)))
 			return NULL;
 		if (e->card > CARD_AGGR) {
 			sql_subfunc *zero_or_one = sql_bind_func(sql->sa, sql->session->schema, "zero_or_one", exp_subtype(e), NULL, F_AGGR);
@@ -119,7 +119,7 @@ psm_set_exp(sql_query *query, dnode *n)
 			return sql_error(sql, 02, SQLSTATE(42000) "SET: The subquery is not a projection");
 		if (dlist_length(vars) != list_length(rel_val->exps))
 			return sql_error(sql, 02, SQLSTATE(42000) "SET: Number of variables not equal to number of supplied values");
-		rel_val = rel_zero_or_one(sql, rel_val, ek);
+		rel_val = rel_return_zero_or_one(sql, rel_val, ek);
 
 		b = sa_list(sql->sa);
 		append(b, exp_rel(sql, rel_val));
@@ -482,7 +482,7 @@ rel_psm_return( sql_query *query, sql_subtype *restype, list *restypelist, symbo
 			rel = exp_rel_get_rel(sql->sa, res);
 			if (rel && !restypelist && !is_groupby(rel->op)) { /* On regular functions return zero or 1 rows for every row */
 				rel->card = CARD_MULTI;
-				rel = rel_zero_or_one(sql, rel, ek);
+				rel = rel_return_zero_or_one(sql, rel, ek);
 				if (list_length(rel->exps) != 1)
 					return sql_error(sql, 02, SQLSTATE(42000) "RETURN: must return a single column");
 				res = exp_ref(sql, (sql_exp*) rel->exps->t->data);
@@ -582,7 +582,7 @@ rel_select_into( sql_query *query, symbol *sq, exp_kind ek)
 		return sql_error(sql, 02, SQLSTATE(42000) "SELECT INTO: The subquery is not a projection");
 	if (list_length(r->exps) != dlist_length(into))
 		return sql_error(sql, 02, SQLSTATE(21S01) "SELECT INTO: number of values doesn't match number of variables to set");
-	r = rel_zero_or_one(sql, r, ek);
+	r = rel_return_zero_or_one(sql, r, ek);
 	nl = sa_list(sql->sa);
 	append(nl, exp_rel(sql, r));
 	for (m = r->exps->h, n = into->h; m && n; m = m->next, n = n->next) {

@@ -783,7 +783,7 @@ exp_rel(mvc *sql, sql_rel *rel)
 	*/
 	e->l = rel;
 	e->flag = PSM_REL;
-	e->card = rel->card;
+	e->card = rel->single?CARD_ATOM:rel->card;
 	assert(rel);
 	if (is_project(rel->op)) {
 		sql_exp *last = rel->exps->t->data;

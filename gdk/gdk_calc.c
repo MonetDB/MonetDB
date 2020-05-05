@@ -325,8 +325,8 @@ BATcalcnot(BAT *b, BAT *s, BAT *r)
 		b->batDirtydesc = true;
 	}
 
-	TRC_DEBUG(ALGO, "b=" ALGOBATFMT " s=" ALGOOPTBATFMT
-		  " r=" ALGOOPTBATFMT " -> " ALGOOPTBATFMT " " LLFMT "usec\n",
+	TRC_DEBUG(ALGO, "b=" ALGOBATFMT ",s=" ALGOOPTBATFMT
+		  ",r=" ALGOOPTBATFMT " -> " ALGOOPTBATFMT " " LLFMT "usec\n",
 		  ALGOBATPAR(b), ALGOOPTBATPAR(s),
 		  ALGOOPTBATPAR(r), ALGOOPTBATPAR(bn), GDKusec() - t0);
 
@@ -455,8 +455,8 @@ BATcalcnegate(BAT *b, BAT *s, BAT *r)
 		b->batDirtydesc = true;
 	}
 
-	TRC_DEBUG(ALGO, "b=" ALGOBATFMT " s=" ALGOOPTBATFMT
-		  " r=" ALGOOPTBATFMT " -> " ALGOOPTBATFMT " " LLFMT "usec\n",
+	TRC_DEBUG(ALGO, "b=" ALGOBATFMT ",s=" ALGOOPTBATFMT
+		  ",r=" ALGOOPTBATFMT " -> " ALGOOPTBATFMT " " LLFMT "usec\n",
 		  ALGOBATPAR(b), ALGOOPTBATPAR(s),
 		  ALGOOPTBATPAR(r), ALGOOPTBATPAR(bn), GDKusec() - t0);
 
@@ -595,8 +595,8 @@ BATcalcabsolute(BAT *b, BAT *s, BAT *r)
 		b->batDirtydesc = true;
 	}
 
-	TRC_DEBUG(ALGO, "b=" ALGOBATFMT " s=" ALGOOPTBATFMT
-		  " r=" ALGOOPTBATFMT " -> " ALGOOPTBATFMT " " LLFMT "usec\n",
+	TRC_DEBUG(ALGO, "b=" ALGOBATFMT ",s=" ALGOOPTBATFMT
+		  ",r=" ALGOOPTBATFMT " -> " ALGOOPTBATFMT " " LLFMT "usec\n",
 		  ALGOBATPAR(b), ALGOOPTBATPAR(s),
 		  ALGOOPTBATPAR(r), ALGOOPTBATPAR(bn), GDKusec() - t0);
 
@@ -734,8 +734,8 @@ BATcalciszero(BAT *b, BAT *s, BAT *r)
 		b->batDirtydesc = true;
 	}
 
-	TRC_DEBUG(ALGO, "b=" ALGOBATFMT " s=" ALGOOPTBATFMT
-		  " r=" ALGOOPTBATFMT " -> " ALGOOPTBATFMT " " LLFMT "usec\n",
+	TRC_DEBUG(ALGO, "b=" ALGOBATFMT ",s=" ALGOOPTBATFMT
+		  ",r=" ALGOOPTBATFMT " -> " ALGOOPTBATFMT " " LLFMT "usec\n",
 		  ALGOBATPAR(b), ALGOOPTBATPAR(s),
 		  ALGOOPTBATPAR(r), ALGOOPTBATPAR(bn), GDKusec() - t0);
 
@@ -877,8 +877,8 @@ BATcalcsign(BAT *b, BAT *s, BAT *r)
 		b->batDirtydesc = true;
 	}
 
-	TRC_DEBUG(ALGO, "b=" ALGOBATFMT " s=" ALGOOPTBATFMT
-		  " r=" ALGOOPTBATFMT " -> " ALGOOPTBATFMT " " LLFMT "usec\n",
+	TRC_DEBUG(ALGO, "b=" ALGOBATFMT ",s=" ALGOOPTBATFMT
+		  ",r=" ALGOOPTBATFMT " -> " ALGOOPTBATFMT " " LLFMT "usec\n",
 		  ALGOBATPAR(b), ALGOOPTBATPAR(s),
 		  ALGOOPTBATPAR(r), ALGOOPTBATPAR(bn), GDKusec() - t0);
 
@@ -1046,8 +1046,8 @@ BATcalcisnil_implementation(BAT *b, BAT *s, BAT *r, bool notnil)
 	bn->tnonil = nils == 0;
 	bn->tkey = ncand <= 1;
 
-	TRC_DEBUG(ALGO, "b=" ALGOBATFMT " s=" ALGOOPTBATFMT
-		  " r=" ALGOOPTBATFMT " notnil=%s -> " ALGOOPTBATFMT " " LLFMT "usec\n",
+	TRC_DEBUG(ALGO, "b=" ALGOBATFMT ",s=" ALGOOPTBATFMT
+		  ",r=" ALGOOPTBATFMT ",notnil=%s -> " ALGOOPTBATFMT " " LLFMT "usec\n",
 		  ALGOBATPAR(b), ALGOOPTBATPAR(s), ALGOOPTBATPAR(r),
 		  notnil ? "true" : "false", ALGOOPTBATPAR(bn), GDKusec() - t0);
 
@@ -1154,9 +1154,9 @@ BATcalcmin(BAT *b1, BAT *b2, BAT *s1, BAT *s2, BAT *r)
 		bn->tseqbase = oid_nil;
 	}
 
-	TRC_DEBUG(ALGO, "b1=" ALGOBATFMT "b2=" ALGOBATFMT
-		  " s1=" ALGOOPTBATFMT " s2=" ALGOOPTBATFMT
-		  " r=" ALGOOPTBATFMT " -> " ALGOOPTBATFMT " " LLFMT "usec\n",
+	TRC_DEBUG(ALGO, "b1=" ALGOBATFMT ",b2=" ALGOBATFMT
+		  ",s1=" ALGOOPTBATFMT ",s2=" ALGOOPTBATFMT
+		  ",r=" ALGOOPTBATFMT " -> " ALGOOPTBATFMT " " LLFMT "usec\n",
 		  ALGOBATPAR(b1), ALGOBATPAR(b2),
 		  ALGOOPTBATPAR(s1), ALGOOPTBATPAR(s2),
 		  ALGOOPTBATPAR(r), ALGOOPTBATPAR(bn), GDKusec() - t0);
@@ -1243,9 +1243,9 @@ BATcalcmin_no_nil(BAT *b1, BAT *b2, BAT *s1, BAT *s2, BAT *r)
 		bn->tseqbase = oid_nil;
 	}
 
-	TRC_DEBUG(ALGO, "b1=" ALGOBATFMT "b2=" ALGOBATFMT
-		  " s1=" ALGOOPTBATFMT " s2=" ALGOOPTBATFMT
-		  " r=" ALGOOPTBATFMT " -> " ALGOOPTBATFMT " " LLFMT "usec\n",
+	TRC_DEBUG(ALGO, "b1=" ALGOBATFMT ",b2=" ALGOBATFMT
+		  ",s1=" ALGOOPTBATFMT ",s2=" ALGOOPTBATFMT
+		  ",r=" ALGOOPTBATFMT " -> " ALGOOPTBATFMT " " LLFMT "usec\n",
 		  ALGOBATPAR(b1), ALGOBATPAR(b2),
 		  ALGOOPTBATPAR(s1), ALGOOPTBATPAR(s2),
 		  ALGOOPTBATPAR(r), ALGOOPTBATPAR(bn), GDKusec() - t0);
@@ -1328,8 +1328,8 @@ BATcalcmincst(BAT *b, const ValRecord *v, BAT *s, BAT *r)
 		bn->tseqbase = oid_nil;
 	}
 
-	TRC_DEBUG(ALGO, "b=" ALGOBATFMT " s=" ALGOOPTBATFMT
-		  " r=" ALGOOPTBATFMT " -> " ALGOOPTBATFMT " " LLFMT "usec\n",
+	TRC_DEBUG(ALGO, "b=" ALGOBATFMT ",s=" ALGOOPTBATFMT
+		  ",r=" ALGOOPTBATFMT " -> " ALGOOPTBATFMT " " LLFMT "usec\n",
 		  ALGOBATPAR(b), ALGOOPTBATPAR(s),
 		  ALGOOPTBATPAR(r), ALGOOPTBATPAR(bn), GDKusec() - t0);
 
@@ -1430,8 +1430,8 @@ BATcalcmincst_no_nil(BAT *b, const ValRecord *v, BAT *s, BAT *r)
 		bn->tseqbase = oid_nil;
 	}
 
-	TRC_DEBUG(ALGO, "b=" ALGOBATFMT " s=" ALGOOPTBATFMT
-		  " r=" ALGOOPTBATFMT " -> " ALGOOPTBATFMT " " LLFMT "usec\n",
+	TRC_DEBUG(ALGO, "b=" ALGOBATFMT ",s=" ALGOOPTBATFMT
+		  ",r=" ALGOOPTBATFMT " -> " ALGOOPTBATFMT " " LLFMT "usec\n",
 		  ALGOBATPAR(b), ALGOOPTBATPAR(s),
 		  ALGOOPTBATPAR(r), ALGOOPTBATPAR(bn), GDKusec() - t0);
 
@@ -1519,9 +1519,9 @@ BATcalcmax(BAT *b1, BAT *b2, BAT *s1, BAT *s2, BAT *r)
 		bn->tseqbase = oid_nil;
 	}
 
-	TRC_DEBUG(ALGO, "b1=" ALGOBATFMT "b2=" ALGOBATFMT
-		  " s1=" ALGOOPTBATFMT " s2=" ALGOOPTBATFMT
-		  " r=" ALGOOPTBATFMT " -> " ALGOOPTBATFMT " " LLFMT "usec\n",
+	TRC_DEBUG(ALGO, "b1=" ALGOBATFMT ",b2=" ALGOBATFMT
+		  ",s1=" ALGOOPTBATFMT ",s2=" ALGOOPTBATFMT
+		  ",r=" ALGOOPTBATFMT " -> " ALGOOPTBATFMT " " LLFMT "usec\n",
 		  ALGOBATPAR(b1), ALGOBATPAR(b2),
 		  ALGOOPTBATPAR(s1), ALGOOPTBATPAR(s2),
 		  ALGOOPTBATPAR(r), ALGOOPTBATPAR(bn), GDKusec() - t0);
@@ -1613,9 +1613,9 @@ BATcalcmax_no_nil(BAT *b1, BAT *b2, BAT *s1, BAT *s2, BAT *r)
 		bn->tseqbase = oid_nil;
 	}
 
-	TRC_DEBUG(ALGO, "b1=" ALGOBATFMT "b2=" ALGOBATFMT
-		  " s1=" ALGOOPTBATFMT " s2=" ALGOOPTBATFMT
-		  " r=" ALGOOPTBATFMT " -> " ALGOOPTBATFMT " " LLFMT "usec\n",
+	TRC_DEBUG(ALGO, "b1=" ALGOBATFMT ",b2=" ALGOBATFMT
+		  ",s1=" ALGOOPTBATFMT ",s2=" ALGOOPTBATFMT
+		  ",r=" ALGOOPTBATFMT " -> " ALGOOPTBATFMT " " LLFMT "usec\n",
 		  ALGOBATPAR(b1), ALGOBATPAR(b2),
 		  ALGOOPTBATPAR(s1), ALGOOPTBATPAR(s2),
 		  ALGOOPTBATPAR(r), ALGOOPTBATPAR(bn), GDKusec() - t0);
@@ -1698,8 +1698,8 @@ BATcalcmaxcst(BAT *b, const ValRecord *v, BAT *s, BAT *r)
 		bn->tseqbase = oid_nil;
 	}
 
-	TRC_DEBUG(ALGO, "b=" ALGOBATFMT " s=" ALGOOPTBATFMT
-		  " r=" ALGOOPTBATFMT " -> " ALGOOPTBATFMT " " LLFMT "usec\n",
+	TRC_DEBUG(ALGO, "b=" ALGOBATFMT ",s=" ALGOOPTBATFMT
+		  ",r=" ALGOOPTBATFMT " -> " ALGOOPTBATFMT " " LLFMT "usec\n",
 		  ALGOBATPAR(b), ALGOOPTBATPAR(s),
 		  ALGOOPTBATPAR(r), ALGOOPTBATPAR(bn), GDKusec() - t0);
 
@@ -1800,8 +1800,8 @@ BATcalcmaxcst_no_nil(BAT *b, const ValRecord *v, BAT *s, BAT *r)
 		bn->tseqbase = oid_nil;
 	}
 
-	TRC_DEBUG(ALGO, "b=" ALGOBATFMT " s=" ALGOOPTBATFMT
-		  " r=" ALGOOPTBATFMT " -> " ALGOOPTBATFMT " " LLFMT "usec\n",
+	TRC_DEBUG(ALGO, "b=" ALGOBATFMT ",s=" ALGOOPTBATFMT
+		  ",r=" ALGOOPTBATFMT " -> " ALGOOPTBATFMT " " LLFMT "usec\n",
 		  ALGOBATPAR(b), ALGOOPTBATPAR(s),
 		  ALGOOPTBATPAR(r), ALGOOPTBATPAR(bn), GDKusec() - t0);
 
@@ -3589,9 +3589,9 @@ BATcalcadd(BAT *b1, BAT *b2, BAT *s1, BAT *s2, BAT *r, int tp, bool abort_on_err
 	bn->tnil = nils != 0;
 	bn->tnonil = nils == 0;
 
-	TRC_DEBUG(ALGO, "b1=" ALGOBATFMT "b2=" ALGOBATFMT
-		  " s1=" ALGOOPTBATFMT " s2=" ALGOOPTBATFMT
-		  " r=" ALGOOPTBATFMT " -> " ALGOOPTBATFMT " " LLFMT "usec\n",
+	TRC_DEBUG(ALGO, "b1=" ALGOBATFMT ",b2=" ALGOBATFMT
+		  ",s1=" ALGOOPTBATFMT ",s2=" ALGOOPTBATFMT
+		  ",r=" ALGOOPTBATFMT " -> " ALGOOPTBATFMT " " LLFMT "usec\n",
 		  ALGOBATPAR(b1), ALGOBATPAR(b2),
 		  ALGOOPTBATPAR(s1), ALGOOPTBATPAR(s2),
 		  ALGOOPTBATPAR(r), ALGOOPTBATPAR(bn), GDKusec() - t0);
@@ -3656,8 +3656,8 @@ BATcalcaddcst(BAT *b, const ValRecord *v, BAT *s, BAT *r, int tp, bool abort_on_
 	bn->tnil = nils != 0;
 	bn->tnonil = nils == 0;
 
-	TRC_DEBUG(ALGO, "b=" ALGOBATFMT " s=" ALGOOPTBATFMT
-		  " r=" ALGOOPTBATFMT " -> " ALGOOPTBATFMT " " LLFMT "usec\n",
+	TRC_DEBUG(ALGO, "b=" ALGOBATFMT ",s=" ALGOOPTBATFMT
+		  ",r=" ALGOOPTBATFMT " -> " ALGOOPTBATFMT " " LLFMT "usec\n",
 		  ALGOBATPAR(b), ALGOOPTBATPAR(s),
 		  ALGOOPTBATPAR(r), ALGOOPTBATPAR(bn), GDKusec() - t0);
 
@@ -3721,8 +3721,8 @@ BATcalccstadd(const ValRecord *v, BAT *b, BAT *s, BAT *r, int tp, bool abort_on_
 	bn->tnil = nils != 0;
 	bn->tnonil = nils == 0;
 
-	TRC_DEBUG(ALGO, "b=" ALGOBATFMT " s=" ALGOOPTBATFMT
-		  " r=" ALGOOPTBATFMT " -> " ALGOOPTBATFMT " " LLFMT "usec\n",
+	TRC_DEBUG(ALGO, "b=" ALGOBATFMT ",s=" ALGOOPTBATFMT
+		  ",r=" ALGOOPTBATFMT " -> " ALGOOPTBATFMT " " LLFMT "usec\n",
 		  ALGOBATPAR(b), ALGOOPTBATPAR(s),
 		  ALGOOPTBATPAR(r), ALGOOPTBATPAR(bn), GDKusec() - t0);
 
@@ -3814,8 +3814,8 @@ BATcalcincrdecr(BAT *b, BAT *s, BAT *r, bool abort_on_error,
 		b->batDirtydesc = true;
 	}
 
-	TRC_DEBUG(ALGO, "%s: b=" ALGOBATFMT " s=" ALGOOPTBATFMT
-		  " r=" ALGOOPTBATFMT " -> " ALGOOPTBATFMT " " LLFMT "usec\n",
+	TRC_DEBUG(ALGO, "%s: b=" ALGOBATFMT ",s=" ALGOOPTBATFMT
+		  ",r=" ALGOOPTBATFMT " -> " ALGOOPTBATFMT " " LLFMT "usec\n",
 		  func, ALGOBATPAR(b), ALGOOPTBATPAR(s),
 		  ALGOOPTBATPAR(r), ALGOOPTBATPAR(bn), GDKusec() - t0);
 
@@ -5541,9 +5541,9 @@ BATcalcsub(BAT *b1, BAT *b2, BAT *s1, BAT *s2, BAT *r, int tp, bool abort_on_err
 	bn->tnil = nils != 0;
 	bn->tnonil = nils == 0;
 
-	TRC_DEBUG(ALGO, "b1=" ALGOBATFMT "b2=" ALGOBATFMT
-		  " s1=" ALGOOPTBATFMT " s2=" ALGOOPTBATFMT
-		  " r=" ALGOOPTBATFMT " -> " ALGOOPTBATFMT " " LLFMT "usec\n",
+	TRC_DEBUG(ALGO, "b1=" ALGOBATFMT ",b2=" ALGOBATFMT
+		  ",s1=" ALGOOPTBATFMT ",s2=" ALGOOPTBATFMT
+		  ",r=" ALGOOPTBATFMT " -> " ALGOOPTBATFMT " " LLFMT "usec\n",
 		  ALGOBATPAR(b1), ALGOBATPAR(b2),
 		  ALGOOPTBATPAR(s1), ALGOOPTBATPAR(s2),
 		  ALGOOPTBATPAR(r), ALGOOPTBATPAR(bn), GDKusec() - t0);
@@ -5604,8 +5604,8 @@ BATcalcsubcst(BAT *b, const ValRecord *v, BAT *s, BAT *r, int tp, bool abort_on_
 	bn->tnil = nils != 0;
 	bn->tnonil = nils == 0;
 
-	TRC_DEBUG(ALGO, "b=" ALGOBATFMT " s=" ALGOOPTBATFMT
-		  " r=" ALGOOPTBATFMT " -> " ALGOOPTBATFMT " " LLFMT "usec\n",
+	TRC_DEBUG(ALGO, "b=" ALGOBATFMT ",s=" ALGOOPTBATFMT
+		  ",r=" ALGOOPTBATFMT " -> " ALGOOPTBATFMT " " LLFMT "usec\n",
 		  ALGOBATPAR(b), ALGOOPTBATPAR(s),
 		  ALGOOPTBATPAR(r), ALGOOPTBATPAR(bn), GDKusec() - t0);
 
@@ -5666,8 +5666,8 @@ BATcalccstsub(const ValRecord *v, BAT *b, BAT *s, BAT *r, int tp, bool abort_on_
 	bn->tnil = nils != 0;
 	bn->tnonil = nils == 0;
 
-	TRC_DEBUG(ALGO, "b=" ALGOBATFMT " s=" ALGOOPTBATFMT
-		  " r=" ALGOOPTBATFMT " -> " ALGOOPTBATFMT " " LLFMT "usec\n",
+	TRC_DEBUG(ALGO, "b=" ALGOBATFMT ",s=" ALGOOPTBATFMT
+		  ",r=" ALGOOPTBATFMT " -> " ALGOOPTBATFMT " " LLFMT "usec\n",
 		  ALGOBATPAR(b), ALGOOPTBATPAR(s),
 		  ALGOOPTBATPAR(r), ALGOOPTBATPAR(bn), GDKusec() - t0);
 
@@ -7594,9 +7594,9 @@ BATcalcmuldivmod(BAT *b1, BAT *b2, BAT *s1, BAT *s2, BAT *r, int tp,
 	bn->tnil = nils != 0;
 	bn->tnonil = nils == 0;
 
-	TRC_DEBUG(ALGO, "%s: b1=" ALGOBATFMT "b2=" ALGOBATFMT
-		  " s1=" ALGOOPTBATFMT " s2=" ALGOOPTBATFMT
-		  " r=" ALGOOPTBATFMT " -> " ALGOOPTBATFMT " " LLFMT "usec\n",
+	TRC_DEBUG(ALGO, "%s: b1=" ALGOBATFMT ",b2=" ALGOBATFMT
+		  ",s1=" ALGOOPTBATFMT ",s2=" ALGOOPTBATFMT
+		  ",r=" ALGOOPTBATFMT " -> " ALGOOPTBATFMT " " LLFMT "usec\n",
 		  func, ALGOBATPAR(b1), ALGOBATPAR(b2),
 		  ALGOOPTBATPAR(s1), ALGOOPTBATPAR(s2),
 		  ALGOOPTBATPAR(r), ALGOOPTBATPAR(bn), GDKusec() - t0);
@@ -7674,8 +7674,8 @@ BATcalcmulcst(BAT *b, const ValRecord *v, BAT *s, BAT *r, int tp, bool abort_on_
 	bn->tnil = nils != 0;
 	bn->tnonil = nils == 0;
 
-	TRC_DEBUG(ALGO, "b=" ALGOBATFMT " s=" ALGOOPTBATFMT
-		  " r=" ALGOOPTBATFMT " -> " ALGOOPTBATFMT " " LLFMT "usec\n",
+	TRC_DEBUG(ALGO, "b=" ALGOBATFMT ",s=" ALGOOPTBATFMT
+		  ",r=" ALGOOPTBATFMT " -> " ALGOOPTBATFMT " " LLFMT "usec\n",
 		  ALGOBATPAR(b), ALGOOPTBATPAR(s),
 		  ALGOOPTBATPAR(r), ALGOOPTBATPAR(bn), GDKusec() - t0);
 
@@ -7745,8 +7745,8 @@ BATcalccstmul(const ValRecord *v, BAT *b, BAT *s, BAT *r, int tp, bool abort_on_
 	bn->tnil = nils != 0;
 	bn->tnonil = nils == 0;
 
-	TRC_DEBUG(ALGO, "b=" ALGOBATFMT " s=" ALGOOPTBATFMT
-		  " r=" ALGOOPTBATFMT " -> " ALGOOPTBATFMT " " LLFMT "usec\n",
+	TRC_DEBUG(ALGO, "b=" ALGOBATFMT ",s=" ALGOOPTBATFMT
+		  ",r=" ALGOOPTBATFMT " -> " ALGOOPTBATFMT " " LLFMT "usec\n",
 		  ALGOBATPAR(b), ALGOOPTBATPAR(s),
 		  ALGOOPTBATPAR(r), ALGOOPTBATPAR(bn), GDKusec() - t0);
 
@@ -9649,8 +9649,8 @@ BATcalcdivcst(BAT *b, const ValRecord *v, BAT *s, BAT *r, int tp, bool abort_on_
 	bn->tnil = nils != 0;
 	bn->tnonil = nils == 0;
 
-	TRC_DEBUG(ALGO, "b=" ALGOBATFMT " s=" ALGOOPTBATFMT
-		  " r=" ALGOOPTBATFMT " -> " ALGOOPTBATFMT " " LLFMT "usec\n",
+	TRC_DEBUG(ALGO, "b=" ALGOBATFMT ",s=" ALGOOPTBATFMT
+		  ",r=" ALGOOPTBATFMT " -> " ALGOOPTBATFMT " " LLFMT "usec\n",
 		  ALGOBATPAR(b), ALGOOPTBATPAR(s),
 		  ALGOOPTBATPAR(r), ALGOOPTBATPAR(bn), GDKusec() - t0);
 
@@ -9708,8 +9708,8 @@ BATcalccstdiv(const ValRecord *v, BAT *b, BAT *s, BAT *r, int tp, bool abort_on_
 	bn->tnil = nils != 0;
 	bn->tnonil = nils == 0;
 
-	TRC_DEBUG(ALGO, "b=" ALGOBATFMT " s=" ALGOOPTBATFMT
-		  " r=" ALGOOPTBATFMT " -> " ALGOOPTBATFMT " " LLFMT "usec\n",
+	TRC_DEBUG(ALGO, "b=" ALGOBATFMT ",s=" ALGOOPTBATFMT
+		  ",r=" ALGOOPTBATFMT " -> " ALGOOPTBATFMT " " LLFMT "usec\n",
 		  ALGOBATPAR(b), ALGOOPTBATPAR(s),
 		  ALGOOPTBATPAR(r), ALGOOPTBATPAR(bn), GDKusec() - t0);
 
@@ -11175,8 +11175,8 @@ BATcalcmodcst(BAT *b, const ValRecord *v, BAT *s, BAT *r, int tp, bool abort_on_
 	bn->tnil = nils != 0;
 	bn->tnonil = nils == 0;
 
-	TRC_DEBUG(ALGO, "b=" ALGOBATFMT " s=" ALGOOPTBATFMT
-		  " r=" ALGOOPTBATFMT " -> " ALGOOPTBATFMT " " LLFMT "usec\n",
+	TRC_DEBUG(ALGO, "b=" ALGOBATFMT ",s=" ALGOOPTBATFMT
+		  ",r=" ALGOOPTBATFMT " -> " ALGOOPTBATFMT " " LLFMT "usec\n",
 		  ALGOBATPAR(b), ALGOOPTBATPAR(s),
 		  ALGOOPTBATPAR(r), ALGOOPTBATPAR(bn), GDKusec() - t0);
 
@@ -11230,8 +11230,8 @@ BATcalccstmod(const ValRecord *v, BAT *b, BAT *s, BAT *r, int tp, bool abort_on_
 	bn->tnil = nils != 0;
 	bn->tnonil = nils == 0;
 
-	TRC_DEBUG(ALGO, "b=" ALGOBATFMT " s=" ALGOOPTBATFMT
-		  " r=" ALGOOPTBATFMT " -> " ALGOOPTBATFMT " " LLFMT "usec\n",
+	TRC_DEBUG(ALGO, "b=" ALGOBATFMT ",s=" ALGOOPTBATFMT
+		  ",r=" ALGOOPTBATFMT " -> " ALGOOPTBATFMT " " LLFMT "usec\n",
 		  ALGOBATPAR(b), ALGOOPTBATPAR(s),
 		  ALGOOPTBATPAR(r), ALGOOPTBATPAR(bn), GDKusec() - t0);
 
@@ -11381,9 +11381,9 @@ BATcalcxor(BAT *b1, BAT *b2, BAT *s1, BAT *s2, BAT *r)
 	bn->tnil = nils != 0;
 	bn->tnonil = nils == 0;
 
-	TRC_DEBUG(ALGO, "b1=" ALGOBATFMT "b2=" ALGOBATFMT
-		  " s1=" ALGOOPTBATFMT " s2=" ALGOOPTBATFMT
-		  " r=" ALGOOPTBATFMT " -> " ALGOOPTBATFMT " " LLFMT "usec\n",
+	TRC_DEBUG(ALGO, "b1=" ALGOBATFMT ",b2=" ALGOBATFMT
+		  ",s1=" ALGOOPTBATFMT ",s2=" ALGOOPTBATFMT
+		  ",r=" ALGOOPTBATFMT " -> " ALGOOPTBATFMT " " LLFMT "usec\n",
 		  ALGOBATPAR(b1), ALGOBATPAR(b2),
 		  ALGOOPTBATPAR(s1), ALGOOPTBATPAR(s2),
 		  ALGOOPTBATPAR(r), ALGOOPTBATPAR(bn), GDKusec() - t0);
@@ -11445,8 +11445,8 @@ BATcalcxorcst(BAT *b, const ValRecord *v, BAT *s, BAT *r)
 	bn->tnil = nils != 0;
 	bn->tnonil = nils == 0;
 
-	TRC_DEBUG(ALGO, "b=" ALGOBATFMT " s=" ALGOOPTBATFMT
-		  " r=" ALGOOPTBATFMT " -> " ALGOOPTBATFMT " " LLFMT "usec\n",
+	TRC_DEBUG(ALGO, "b=" ALGOBATFMT ",s=" ALGOOPTBATFMT
+		  ",r=" ALGOOPTBATFMT " -> " ALGOOPTBATFMT " " LLFMT "usec\n",
 		  ALGOBATPAR(b), ALGOOPTBATPAR(s),
 		  ALGOOPTBATPAR(r), ALGOOPTBATPAR(bn), GDKusec() - t0);
 
@@ -11612,9 +11612,9 @@ BATcalcor(BAT *b1, BAT *b2, BAT *s1, BAT *s2, BAT *r)
 	bn->tnil = nils != 0;
 	bn->tnonil = nils == 0;
 
-	TRC_DEBUG(ALGO, "b1=" ALGOBATFMT "b2=" ALGOBATFMT
-		  " s1=" ALGOOPTBATFMT " s2=" ALGOOPTBATFMT
-		  " r=" ALGOOPTBATFMT " -> " ALGOOPTBATFMT " " LLFMT "usec\n",
+	TRC_DEBUG(ALGO, "b1=" ALGOBATFMT ",b2=" ALGOBATFMT
+		  ",s1=" ALGOOPTBATFMT ",s2=" ALGOOPTBATFMT
+		  ",r=" ALGOOPTBATFMT " -> " ALGOOPTBATFMT " " LLFMT "usec\n",
 		  ALGOBATPAR(b1), ALGOBATPAR(b2),
 		  ALGOOPTBATPAR(s1), ALGOOPTBATPAR(s2),
 		  ALGOOPTBATPAR(r), ALGOOPTBATPAR(bn), GDKusec() - t0);
@@ -11682,8 +11682,8 @@ BATcalcorcst(BAT *b, const ValRecord *v, BAT *s, BAT *r)
 	bn->tnil = nils != 0;
 	bn->tnonil = nils == 0;
 
-	TRC_DEBUG(ALGO, "b=" ALGOBATFMT " s=" ALGOOPTBATFMT
-		  " r=" ALGOOPTBATFMT " -> " ALGOOPTBATFMT " " LLFMT "usec\n",
+	TRC_DEBUG(ALGO, "b=" ALGOBATFMT ",s=" ALGOOPTBATFMT
+		  ",r=" ALGOOPTBATFMT " -> " ALGOOPTBATFMT " " LLFMT "usec\n",
 		  ALGOBATPAR(b), ALGOOPTBATPAR(s),
 		  ALGOOPTBATPAR(r), ALGOOPTBATPAR(bn), GDKusec() - t0);
 
@@ -11849,9 +11849,9 @@ BATcalcand(BAT *b1, BAT *b2, BAT *s1, BAT *s2, BAT *r)
 	bn->tnil = nils != 0;
 	bn->tnonil = nils == 0;
 
-	TRC_DEBUG(ALGO, "b1=" ALGOBATFMT "b2=" ALGOBATFMT
-		  " s1=" ALGOOPTBATFMT " s2=" ALGOOPTBATFMT
-		  " r=" ALGOOPTBATFMT " -> " ALGOOPTBATFMT " " LLFMT "usec\n",
+	TRC_DEBUG(ALGO, "b1=" ALGOBATFMT ",b2=" ALGOBATFMT
+		  ",s1=" ALGOOPTBATFMT ",s2=" ALGOOPTBATFMT
+		  ",r=" ALGOOPTBATFMT " -> " ALGOOPTBATFMT " " LLFMT "usec\n",
 		  ALGOBATPAR(b1), ALGOBATPAR(b2),
 		  ALGOOPTBATPAR(s1), ALGOOPTBATPAR(s2),
 		  ALGOOPTBATPAR(r), ALGOOPTBATPAR(bn), GDKusec() - t0);
@@ -11919,8 +11919,8 @@ BATcalcandcst(BAT *b, const ValRecord *v, BAT *s, BAT *r)
 	bn->tnil = nils != 0;
 	bn->tnonil = nils == 0;
 
-	TRC_DEBUG(ALGO, "b=" ALGOBATFMT " s=" ALGOOPTBATFMT
-		  " r=" ALGOOPTBATFMT " -> " ALGOOPTBATFMT " " LLFMT "usec\n",
+	TRC_DEBUG(ALGO, "b=" ALGOBATFMT ",s=" ALGOOPTBATFMT
+		  ",r=" ALGOOPTBATFMT " -> " ALGOOPTBATFMT " " LLFMT "usec\n",
 		  ALGOBATPAR(b), ALGOOPTBATPAR(s),
 		  ALGOOPTBATPAR(r), ALGOOPTBATPAR(bn), GDKusec() - t0);
 
@@ -12194,9 +12194,9 @@ BATcalclsh(BAT *b1, BAT *b2, BAT *s1, BAT *s2, BAT *r, bool abort_on_error)
 	bn->tnil = nils != 0;
 	bn->tnonil = nils == 0;
 
-	TRC_DEBUG(ALGO, "b1=" ALGOBATFMT "b2=" ALGOBATFMT
-		  " s1=" ALGOOPTBATFMT " s2=" ALGOOPTBATFMT
-		  " r=" ALGOOPTBATFMT " -> " ALGOOPTBATFMT " " LLFMT "usec\n",
+	TRC_DEBUG(ALGO, "b1=" ALGOBATFMT ",b2=" ALGOBATFMT
+		  ",s1=" ALGOOPTBATFMT ",s2=" ALGOOPTBATFMT
+		  ",r=" ALGOOPTBATFMT " -> " ALGOOPTBATFMT " " LLFMT "usec\n",
 		  ALGOBATPAR(b1), ALGOBATPAR(b2),
 		  ALGOOPTBATPAR(s1), ALGOOPTBATPAR(s2),
 		  ALGOOPTBATPAR(r), ALGOOPTBATPAR(bn), GDKusec() - t0);
@@ -12252,8 +12252,8 @@ BATcalclshcst(BAT *b, const ValRecord *v, BAT *s, BAT *r, bool abort_on_error)
 	bn->tnil = nils != 0;
 	bn->tnonil = nils == 0;
 
-	TRC_DEBUG(ALGO, "b=" ALGOBATFMT " s=" ALGOOPTBATFMT
-		  " r=" ALGOOPTBATFMT " -> " ALGOOPTBATFMT " " LLFMT "usec\n",
+	TRC_DEBUG(ALGO, "b=" ALGOBATFMT ",s=" ALGOOPTBATFMT
+		  ",r=" ALGOOPTBATFMT " -> " ALGOOPTBATFMT " " LLFMT "usec\n",
 		  ALGOBATPAR(b), ALGOOPTBATPAR(s),
 		  ALGOOPTBATPAR(r), ALGOOPTBATPAR(bn), GDKusec() - t0);
 
@@ -12308,8 +12308,8 @@ BATcalccstlsh(const ValRecord *v, BAT *b, BAT *s, BAT *r, bool abort_on_error)
 	bn->tnil = nils != 0;
 	bn->tnonil = nils == 0;
 
-	TRC_DEBUG(ALGO, "b=" ALGOBATFMT " s=" ALGOOPTBATFMT
-		  " r=" ALGOOPTBATFMT " -> " ALGOOPTBATFMT " " LLFMT "usec\n",
+	TRC_DEBUG(ALGO, "b=" ALGOBATFMT ",s=" ALGOOPTBATFMT
+		  ",r=" ALGOOPTBATFMT " -> " ALGOOPTBATFMT " " LLFMT "usec\n",
 		  ALGOBATPAR(b), ALGOOPTBATPAR(s),
 		  ALGOOPTBATPAR(r), ALGOOPTBATPAR(bn), GDKusec() - t0);
 
@@ -12558,9 +12558,9 @@ BATcalcrsh(BAT *b1, BAT *b2, BAT *s1, BAT *s2, BAT *r, bool abort_on_error)
 	bn->tnil = nils != 0;
 	bn->tnonil = nils == 0;
 
-	TRC_DEBUG(ALGO, "b1=" ALGOBATFMT "b2=" ALGOBATFMT
-		  " s1=" ALGOOPTBATFMT " s2=" ALGOOPTBATFMT
-		  " r=" ALGOOPTBATFMT " -> " ALGOOPTBATFMT " " LLFMT "usec\n",
+	TRC_DEBUG(ALGO, "b1=" ALGOBATFMT ",b2=" ALGOBATFMT
+		  ",s1=" ALGOOPTBATFMT ",s2=" ALGOOPTBATFMT
+		  ",r=" ALGOOPTBATFMT " -> " ALGOOPTBATFMT " " LLFMT "usec\n",
 		  ALGOBATPAR(b1), ALGOBATPAR(b2),
 		  ALGOOPTBATPAR(s1), ALGOOPTBATPAR(s2),
 		  ALGOOPTBATPAR(r), ALGOOPTBATPAR(bn), GDKusec() - t0);
@@ -12616,8 +12616,8 @@ BATcalcrshcst(BAT *b, const ValRecord *v, BAT *s, BAT *r, bool abort_on_error)
 	bn->tnil = nils != 0;
 	bn->tnonil = nils == 0;
 
-	TRC_DEBUG(ALGO, "b=" ALGOBATFMT " s=" ALGOOPTBATFMT
-		  " r=" ALGOOPTBATFMT " -> " ALGOOPTBATFMT " " LLFMT "usec\n",
+	TRC_DEBUG(ALGO, "b=" ALGOBATFMT ",s=" ALGOOPTBATFMT
+		  ",r=" ALGOOPTBATFMT " -> " ALGOOPTBATFMT " " LLFMT "usec\n",
 		  ALGOBATPAR(b), ALGOOPTBATPAR(s),
 		  ALGOOPTBATPAR(r), ALGOOPTBATPAR(bn), GDKusec() - t0);
 
@@ -12672,8 +12672,8 @@ BATcalccstrsh(const ValRecord *v, BAT *b, BAT *s, BAT *r, bool abort_on_error)
 	bn->tnil = nils != 0;
 	bn->tnonil = nils == 0;
 
-	TRC_DEBUG(ALGO, "b=" ALGOBATFMT " s=" ALGOOPTBATFMT
-		  " r=" ALGOOPTBATFMT " -> " ALGOOPTBATFMT " " LLFMT "usec\n",
+	TRC_DEBUG(ALGO, "b=" ALGOBATFMT ",s=" ALGOOPTBATFMT
+		  ",r=" ALGOOPTBATFMT " -> " ALGOOPTBATFMT " " LLFMT "usec\n",
 		  ALGOBATPAR(b), ALGOOPTBATPAR(s),
 		  ALGOOPTBATPAR(r), ALGOOPTBATPAR(bn), GDKusec() - t0);
 
@@ -13127,9 +13127,9 @@ BATcalcbetween(BAT *b, BAT *lo, BAT *hi, BAT *s, BAT *slo, BAT *shi, BAT *r,
 				   symmetric, anti, linc, hinc,
 				   nils_false, __func__);
 
-	TRC_DEBUG(ALGO, "b=" ALGOBATFMT "lo=" ALGOBATFMT "hi=" ALGOBATFMT
-		  " s=" ALGOOPTBATFMT "slo=" ALGOOPTBATFMT "shi=" ALGOOPTBATFMT
-		  " r=" ALGOOPTBATFMT " -> " ALGOOPTBATFMT " " LLFMT "usec\n",
+	TRC_DEBUG(ALGO, "b=" ALGOBATFMT ",lo=" ALGOBATFMT ",hi=" ALGOBATFMT
+		  ",s=" ALGOOPTBATFMT ",slo=" ALGOOPTBATFMT ",shi=" ALGOOPTBATFMT
+		  ",r=" ALGOOPTBATFMT " -> " ALGOOPTBATFMT " " LLFMT "usec\n",
 		  ALGOBATPAR(b), ALGOBATPAR(lo), ALGOBATPAR(hi),
 		  ALGOOPTBATPAR(s), ALGOOPTBATPAR(slo), ALGOOPTBATPAR(shi),
 		  ALGOOPTBATPAR(r), ALGOOPTBATPAR(bn), GDKusec() - t0);
@@ -13178,8 +13178,8 @@ BATcalcbetweencstcst(BAT *b, const ValRecord *lo, const ValRecord *hi,
 				   linc, hinc, nils_false,
 				   __func__);
 
-	TRC_DEBUG(ALGO, "b=" ALGOBATFMT " s=" ALGOOPTBATFMT
-		  " r=" ALGOOPTBATFMT " -> " ALGOOPTBATFMT " " LLFMT "usec\n",
+	TRC_DEBUG(ALGO, "b=" ALGOBATFMT ",s=" ALGOOPTBATFMT
+		  ",r=" ALGOOPTBATFMT " -> " ALGOOPTBATFMT " " LLFMT "usec\n",
 		  ALGOBATPAR(b), ALGOOPTBATPAR(s),
 		  ALGOOPTBATPAR(r), ALGOOPTBATPAR(bn), GDKusec() - t0);
 
@@ -13238,9 +13238,9 @@ BATcalcbetweenbatcst(BAT *b, BAT *lo, const ValRecord *hi, BAT *s, BAT *slo, BAT
 				   linc, hinc, nils_false,
 				   __func__);
 
-	TRC_DEBUG(ALGO, "b=" ALGOBATFMT "lo=" ALGOBATFMT
-		  " s=" ALGOOPTBATFMT "slo=" ALGOOPTBATFMT
-		  " r=" ALGOOPTBATFMT " -> " ALGOOPTBATFMT " " LLFMT "usec\n",
+	TRC_DEBUG(ALGO, "b=" ALGOBATFMT ",lo=" ALGOBATFMT
+		  ",s=" ALGOOPTBATFMT ",slo=" ALGOOPTBATFMT
+		  ",r=" ALGOOPTBATFMT " -> " ALGOOPTBATFMT " " LLFMT "usec\n",
 		  ALGOBATPAR(b), ALGOBATPAR(lo),
 		  ALGOOPTBATPAR(s), ALGOOPTBATPAR(slo),
 		  ALGOOPTBATPAR(r), ALGOOPTBATPAR(bn), GDKusec() - t0);
@@ -13297,9 +13297,9 @@ BATcalcbetweencstbat(BAT *b, const ValRecord *lo, BAT *hi, BAT *s, BAT *shi, BAT
 				   linc, hinc, nils_false,
 				   __func__);
 
-	TRC_DEBUG(ALGO, "b=" ALGOBATFMT "hi=" ALGOBATFMT
-		  " s=" ALGOOPTBATFMT "shi=" ALGOOPTBATFMT
-		  " r=" ALGOOPTBATFMT " -> " ALGOOPTBATFMT " " LLFMT "usec\n",
+	TRC_DEBUG(ALGO, "b=" ALGOBATFMT ",hi=" ALGOBATFMT
+		  ",s=" ALGOOPTBATFMT ",shi=" ALGOOPTBATFMT
+		  ",r=" ALGOOPTBATFMT " -> " ALGOOPTBATFMT " " LLFMT "usec\n",
 		  ALGOBATPAR(b), ALGOBATPAR(hi),
 		  ALGOOPTBATPAR(s), ALGOOPTBATPAR(shi),
 		  ALGOOPTBATPAR(r), ALGOOPTBATPAR(bn), GDKusec() - t0);
@@ -13539,7 +13539,7 @@ BATcalcifthenelse(BAT *b, BAT *b1, BAT *b2)
 				      Tloc(b2, 0), 1, b2->tvheap ? b2->tvheap->base : NULL, b2->twidth, b2->tnonil, b2->tseqbase,
 				      b1->ttype);
 
-	TRC_DEBUG(ALGO, "b=" ALGOBATFMT " b1=" ALGOBATFMT " b2=" ALGOBATFMT
+	TRC_DEBUG(ALGO, "b=" ALGOBATFMT ",b1=" ALGOBATFMT ",b2=" ALGOBATFMT
 		  " -> " ALGOOPTBATFMT " " LLFMT "usec\n",
 		  ALGOBATPAR(b), ALGOBATPAR(b1), ALGOBATPAR(b2),
 		  ALGOOPTBATPAR(bn), GDKusec() - t0);
@@ -13570,7 +13570,7 @@ BATcalcifthenelsecst(BAT *b, BAT *b1, const ValRecord *c2)
 				      VALptr(c2), 0, NULL, 0, !VALisnil(c2), 0,
 				      b1->ttype);
 
-	TRC_DEBUG(ALGO, "b=" ALGOBATFMT " b1=" ALGOBATFMT
+	TRC_DEBUG(ALGO, "b=" ALGOBATFMT ",b1=" ALGOBATFMT
 		  " -> " ALGOOPTBATFMT " " LLFMT "usec\n",
 		  ALGOBATPAR(b), ALGOBATPAR(b1),
 		  ALGOOPTBATPAR(bn), GDKusec() - t0);
@@ -13601,7 +13601,7 @@ BATcalcifthencstelse(BAT *b, const ValRecord *c1, BAT *b2)
 				      Tloc(b2, 0), 1, b2->tvheap ? b2->tvheap->base : NULL, b2->twidth, b2->tnonil, b2->tseqbase,
 				      c1->vtype);
 
-	TRC_DEBUG(ALGO, "b=" ALGOBATFMT " b2=" ALGOBATFMT
+	TRC_DEBUG(ALGO, "b=" ALGOBATFMT ",b2=" ALGOBATFMT
 		  " -> " ALGOOPTBATFMT " " LLFMT "usec\n",
 		  ALGOBATPAR(b), ALGOBATPAR(b2),
 		  ALGOOPTBATPAR(bn), GDKusec() - t0);
@@ -14757,8 +14757,8 @@ BATconvert(BAT *b, BAT *s, BAT *r, int tp, bool abort_on_error)
 	else
 		bn->tkey = false;
 
-	TRC_DEBUG(ALGO, "b=" ALGOBATFMT " s=" ALGOOPTBATFMT
-		  " r=" ALGOOPTBATFMT " -> " ALGOOPTBATFMT " " LLFMT "usec\n",
+	TRC_DEBUG(ALGO, "b=" ALGOBATFMT ",s=" ALGOOPTBATFMT
+		  ",r=" ALGOOPTBATFMT " -> " ALGOOPTBATFMT " " LLFMT "usec\n",
 		  ALGOBATPAR(b), ALGOOPTBATPAR(s),
 		  ALGOOPTBATPAR(r), ALGOOPTBATPAR(bn), GDKusec() - t0);
 

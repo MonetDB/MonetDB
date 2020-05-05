@@ -542,9 +542,9 @@ monet5_user_set_def_schema(mvc *m, oid user)
 	rid = table_funcs.column_find_row(m->session->tr, auths_name, username, NULL);
 	if (!is_oid_nil(rid)) {
 		sql_column *auths_id = find_sql_column(auths, "id");
-		int id;
+		sqlid id;
 		p = table_funcs.column_find_value(m->session->tr, auths_id, rid);
-		id = *(int *) p;
+		id = *(sqlid *) p;
 		_DELETE(p);
 
 		m->user_id = m->role_id = id;

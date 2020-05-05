@@ -464,10 +464,7 @@ insert_generate_inserts(sql_query *query, sql_table *t, dlist *columns, symbol *
 
 	if (val_or_q->token == SQL_VALUES) {
 		dlist *rowlist = val_or_q->data.lval;
-		dlist *values;
-		dnode *o;
 		list *exps = new_exp_list(sql->sa);
-		sql_rel *inner = NULL;
 
 		if (!rowlist->h) {
 			r = rel_project(sql->sa, NULL, NULL);
@@ -475,8 +472,8 @@ insert_generate_inserts(sql_query *query, sql_table *t, dlist *columns, symbol *
 				collist = NULL;
 		}
 
-		for (o = rowlist->h; o; o = o->next, rowcount++) {
-			values = o->data.lval;
+		for (dnode *o = rowlist->h; o; o = o->next, rowcount++) {
+			dlist *values = o->data.lval;
 
 			if (dlist_length(values) != list_length(collist)) {
 				return sql_error(sql, 02, SQLSTATE(21S01) "%s: number of values doesn't match number of columns of table '%s'", action, t->base.name);
@@ -499,8 +496,8 @@ insert_generate_inserts(sql_query *query, sql_table *t, dlist *columns, symbol *
 						sql_exp *vals = v->data;
 						list *vals_list = vals->f;
 						sql_column *c = m->data;
-						sql_rel *r = NULL;
 						sql_exp *ins = insert_value(query, c, &r, n->data.sym, action);
+
 						if (!ins)
 							return NULL;
 						if (!exp_name(ins))
@@ -511,14 +508,10 @@ insert_generate_inserts(sql_query *query, sql_table *t, dlist *columns, symbol *
 					/* only allow correlation in a single row of values */
 					for (n = values->h, m = collist->h; n && m; n = n->next, m = m->next) {
 						sql_column *c = m->data;
-						sql_rel *r = NULL;
 						sql_exp *ins = insert_value(query, c, &r, n->data.sym, action);
+
 						if (!ins)
 							return NULL;
-						if (r && inner)
-							inner = rel_crossproduct(sql->sa, inner, r, op_join);
-						else if (r)
-							inner = r;
 						if (!exp_name(ins))
 							exp_label(sql->sa, ins, ++sql->label);
 						list_append(exps, ins);
@@ -527,7 +520,7 @@ insert_generate_inserts(sql_query *query, sql_table *t, dlist *columns, symbol *
 			}
 		}
 		if (collist)
-			r = rel_project(sql->sa, inner, exps);
+			r = rel_project(sql->sa, r, exps);
 	} else {
 		exp_kind ek = {type_value, card_relation, TRUE};
 
@@ -1083,7 +1076,7 @@ update_table(sql_query *query, dlist *qname, str alias, dlist *assignmentlist, s
 		return sql_error(sql, 02, SQLSTATE(3F000) "UPDATE: no such schema '%s'", sname);
 	t = find_table_on_scope(sql, &s, sname, tname);
 	if (update_allowed(sql, t, tname, "UPDATE", "update", 0) != NULL) {
-		sql_rel *r = NULL, *bt = rel_basetable(sql, t, alias ? alias : t->base.name), *res = bt;
+		sql_rel *r = NULL, *bt = rel_basetable(sql, t, alias ? alias : tname), *res = bt;
 
 		if (opt_from) {
 			dlist *fl = opt_from->data.lval;
@@ -1168,7 +1161,7 @@ delete_table(sql_query *query, dlist *qname, str alias, symbol *opt_where)
 		return sql_error(sql, 02, SQLSTATE(3F000) "DELETE FROM: no such schema '%s'", sname);
 	t = find_table_on_scope(sql, &s, sname, tname);
 	if (update_allowed(sql, t, tname, "DELETE FROM", "delete from", 1) != NULL) {
-		sql_rel *r = rel_basetable(sql, t, alias ? alias : t->base.name);
+		sql_rel *r = rel_basetable(sql, t, alias ? alias : tname);
 
 		if (opt_where) {
 			sql_exp *e;
@@ -1179,7 +1172,7 @@ delete_table(sql_query *query, dlist *qname, str alias, symbol *opt_where)
 				return NULL;
 			e = exp_column(sql->sa, rel_name(r), TID, sql_bind_localtype("oid"), CARD_MULTI, 0, 1);
 			r = rel_project(sql->sa, r, list_append(new_exp_list(sql->sa), e));
-			r = rel_delete(sql->sa, rel_basetable(sql, t, tname), r);
+			r = rel_delete(sql->sa, rel_basetable(sql, t, alias ? alias : tname), r);
 		} else {	/* delete all */
 			r = rel_delete(sql->sa, r, NULL);
 		}
@@ -1276,7 +1269,7 @@ merge_into_table(sql_query *query, dlist *qname, str alias, symbol *tref, symbol
 	if (isMergeTable(t))
 		return sql_error(sql, 02, SQLSTATE(42000) "MERGE: merge statements not available for merge tables yet");
 
-	bt = rel_basetable(sql, t, alias ? alias : t->base.name);
+	bt = rel_basetable(sql, t, alias ? alias : tname);
 	joined = table_ref(query, NULL, tref, 0);
 	if (!bt || !joined)
 		return NULL;
@@ -1311,7 +1304,7 @@ merge_into_table(sql_query *query, dlist *qname, str alias, symbol *tref, symbol
 					join_rel = rel_dup(join_rel);
 				} else {
 					join_rel = rel_crossproduct(sql->sa, joined, bt, op_left);
-					if (!(join_rel = rel_logical_exp(query, join_rel, search_cond, sql_where | sql_join)))
+					if (!(join_rel = rel_logical_exp(query, join_rel, search_cond, sql_where | sql_join | sql_merge)))
 						return NULL;
 					set_processed(join_rel);
 				}
@@ -1348,7 +1341,7 @@ merge_into_table(sql_query *query, dlist *qname, str alias, symbol *tref, symbol
 					join_rel = rel_dup(join_rel);
 				} else {
 					join_rel = rel_crossproduct(sql->sa, joined, bt, op_left);
-					if (!(join_rel = rel_logical_exp(query, join_rel, search_cond, sql_where | sql_join)))
+					if (!(join_rel = rel_logical_exp(query, join_rel, search_cond, sql_where | sql_join | sql_merge)))
 						return NULL;
 					set_processed(join_rel);
 				}
@@ -1389,7 +1382,7 @@ merge_into_table(sql_query *query, dlist *qname, str alias, symbol *tref, symbol
 				join_rel = rel_dup(join_rel);
 			} else {
 				join_rel = rel_crossproduct(sql->sa, joined, bt, op_left);
-				if (!(join_rel = rel_logical_exp(query, join_rel, search_cond, sql_where | sql_join)))
+				if (!(join_rel = rel_logical_exp(query, join_rel, search_cond, sql_where | sql_join | sql_merge)))
 					return NULL;
 				set_processed(join_rel);
 			}
@@ -1984,7 +1977,7 @@ rel_parse_val(mvc *m, char *query, char emode, sql_rel *from)
 		*m = o;
 		m->session->status = status;
 	} else {
-		int label = m->label;
+		unsigned int label = m->label;
 
 		while (m->topframes > o.topframes)
 			clear_frame(m, m->frames[--m->topframes]);

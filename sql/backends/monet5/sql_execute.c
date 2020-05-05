@@ -448,7 +448,8 @@ SQLescapeString(str s)
 str
 SQLstatementIntern(Client c, str *expr, str nme, bit execute, bit output, res_table **result)
 {
-	int status = 0, err = 0, oldvtop, oldstop = 1, inited = 0, label, ac, sizeframes, topframes;
+	int status = 0, err = 0, oldvtop, oldstop = 1, inited = 0, ac, sizeframes, topframes;
+	unsigned int label;
 	mvc *o, *m;
 	sql_frame **frames;
 	list *global_vars;
