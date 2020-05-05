@@ -90,7 +90,7 @@ stdout of test 'subquery` in directory 'sql/test/subquery` itself:
 % 1 # length
 [ 3	]
 #SELECT *, (SELECT MAX(i) FROM integers) FROM integers ORDER BY i;
-% .integers,	. # table_name
+% .integers,	.%2 # table_name
 % i,	%2 # name
 % int,	int # type
 % 1,	1 # length
@@ -114,8 +114,8 @@ stdout of test 'subquery` in directory 'sql/test/subquery` itself:
 [ 2,	42	]
 [ 3,	42	]
 #SELECT (SELECT * FROM integers WHERE i>10) FROM integers;
-% .%3 # table_name
-% %3 # name
+% .%2 # table_name
+% %2 # name
 % int # type
 % 1 # length
 [ NULL	]
@@ -141,8 +141,8 @@ stdout of test 'subquery` in directory 'sql/test/subquery` itself:
 [ 3	]
 [ NULL	]
 #SELECT (SELECT i FROM integers WHERE i=1); --1
-% .%2 # table_name
-% %2 # name
+% .%1 # table_name
+% %1 # name
 % int # type
 % 1 # length
 [ 1	]
@@ -239,8 +239,8 @@ stdout of test 'subquery` in directory 'sql/test/subquery` itself:
 % int # type
 % 1 # length
 #SELECT 1 IN (SELECT NULL) FROM integers; 
-% .%12 # table_name
-% %12 # name
+% .%15 # table_name
+% %15 # name
 % boolean # type
 % 5 # length
 [ NULL	]
@@ -248,8 +248,8 @@ stdout of test 'subquery` in directory 'sql/test/subquery` itself:
 [ NULL	]
 [ NULL	]
 #SELECT NULL IN (SELECT * FROM integers) FROM integers;
-% .%13 # table_name
-% %13 # name
+% .%14 # table_name
+% %14 # name
 % boolean # type
 % 5 # length
 [ NULL	]
@@ -257,8 +257,8 @@ stdout of test 'subquery` in directory 'sql/test/subquery` itself:
 [ NULL	]
 [ NULL	]
 #SELECT CAST(SUM(i) AS BIGINT) FROM integers WHERE 1 IN (SELECT * FROM integers); -- 6
-% sys.%4 # table_name
-% %4 # name
+% sys.%5 # table_name
+% %5 # name
 % bigint # type
 % 1 # length
 [ 6	]
@@ -321,26 +321,26 @@ stdout of test 'subquery` in directory 'sql/test/subquery` itself:
 #INSERT INTO strings VALUES ('hello'), ('world'), (NULL);
 [ 3	]
 #SELECT NULL IN (SELECT * FROM strings); -- NULL
-% .%14 # table_name
-% %14 # name
+% .%17 # table_name
+% %17 # name
 % boolean # type
 % 5 # length
 [ NULL	]
 #SELECT 'hello' IN (SELECT * FROM strings); -- true
-% .%14 # table_name
-% %14 # name
+% .%15 # table_name
+% %15 # name
 % boolean # type
 % 5 # length
 [ true	]
 #SELECT 'bla' IN (SELECT * FROM strings); -- NULL
-% .%14 # table_name
-% %14 # name
+% .%15 # table_name
+% %15 # name
 % boolean # type
 % 5 # length
 [ NULL	]
 #SELECT 'bla' IN (SELECT * FROM strings WHERE v IS NOT NULL); -- false
-% .%14 # table_name
-% %14 # name
+% .%15 # table_name
+% %15 # name
 % boolean # type
 % 5 # length
 [ false	]
@@ -358,16 +358,16 @@ stdout of test 'subquery` in directory 'sql/test/subquery` itself:
 % varchar # type
 % 0 # length
 #SELECT (SELECT v FROM strings WHERE v='hello') FROM strings;
-% .%2 # table_name
-% %2 # name
+% .%1 # table_name
+% %1 # name
 % varchar # type
 % 5 # length
 [ "hello"	]
 [ "hello"	]
 [ "hello"	]
 #SELECT (SELECT v FROM strings WHERE v='bla') FROM strings;
-% .%2 # table_name
-% %2 # name
+% .%1 # table_name
+% %1 # name
 % varchar # type
 % 0 # length
 [ NULL	]

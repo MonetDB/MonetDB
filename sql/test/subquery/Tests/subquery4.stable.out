@@ -43,7 +43,7 @@ stdout of test 'subquery4` in directory 'sql/test/subquery` itself:
 % type,	digits,	scale,	schema,	table,	column # name
 % varchar,	int,	int,	str,	str,	str # type
 % 7,	2,	1,	0,	2,	2 # length
-[ "tinyint",	8,	0,	"",	"%4",	"%4"	]
+[ "tinyint",	1,	0,	"",	"%3",	"%3"	]
 [ "int",	32,	0,	NULL,	NULL,	NULL	]
 #PREPARE SELECT
 #	(SELECT 1 FROM evilfunction((SELECT ?, ?))) 
@@ -55,22 +55,22 @@ stdout of test 'subquery4` in directory 'sql/test/subquery` itself:
 % type,	digits,	scale,	schema,	table,	column # name
 % varchar,	int,	int,	str,	str,	str # type
 % 7,	2,	1,	0,	2,	2 # length
-[ "tinyint",	8,	0,	"",	"%5",	"%5"	]
+[ "tinyint",	1,	0,	"",	"%4",	"%4"	]
 [ "int",	32,	0,	NULL,	NULL,	NULL	]
 [ "int",	32,	0,	NULL,	NULL,	NULL	]
 #SELECT
 #	(SELECT i2.i FROM evilfunction(MIN(i1.i)) as i2(i))
 #FROM integers i1;
-% .%4 # table_name
-% %4 # name
+% .%3 # table_name
+% %3 # name
 % int # type
 % 1 # length
 [ 1	]
 #SELECT
 #	(SELECT i2.i FROM evilfunction((SELECT MIN(1))) as i2(i))
 #FROM integers i1;
-% .%4 # table_name
-% %4 # name
+% .%3 # table_name
+% %3 # name
 % int # type
 % 1 # length
 [ 1	]
@@ -80,8 +80,8 @@ stdout of test 'subquery4` in directory 'sql/test/subquery` itself:
 #SELECT
 #	(SELECT i2.i FROM evilfunction((SELECT MIN(i1.i + i3.i) FROM integers i3)) as i2(i))
 #FROM integers i1;
-% .%4 # table_name
-% %4 # name
+% .%3 # table_name
+% %3 # name
 % int # type
 % 1 # length
 [ 2	]
@@ -110,8 +110,8 @@ stdout of test 'subquery4` in directory 'sql/test/subquery` itself:
 #SELECT
 #	(SELECT i2.i FROM evilfunction((SELECT MAX(i1.i) OVER ())) as i2(i))
 #FROM integers i1;
-% .%12 # table_name
-% %12 # name
+% .%11 # table_name
+% %11 # name
 % int # type
 % 1 # length
 [ 1	]

@@ -175,7 +175,7 @@ comment "Select all unique values from the tail of the input.
 # @+ Join operations
 # The core of every relational engine.
 # The join collection provided by the GDK kernel.
-command crossproduct( left:bat[:any_1], right:bat[:any_2])
+command crossproduct( left:bat[:any_1], right:bat[:any_2], max_one:bit)
 		(l:bat[:oid],r:bat[:oid])
 address ALGcrossproduct2
 comment "Returns 2 columns with all BUNs, consisting of the head-oids

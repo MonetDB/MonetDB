@@ -2,9 +2,9 @@
 # This file is updated with Maddlog
 
 * Tue Apr 28 2020 Sjoerd Mullender <sjoerd@acm.org>
-- The functions BATintersect and BATsemijoin have an extra argument,
-  bool max_one, which indicates that there must be no more than one
-  match in the join.
+- The functions BATintersect BATsemijoin, and BATsubcross have an
+  extra argument, bool max_one, which indicates that there must be no
+  more than one match in the join.
 
 * Mon Apr 20 2020 Sjoerd Mullender <sjoerd@acm.org>
 - The "unique" property on BATs was removed.  The property indicated
