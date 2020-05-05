@@ -1441,7 +1441,7 @@ rel_parse_value(backend *be, char *query, char emode)
 		*m = o;
 		m->session->status = status;
 	} else {
-		int label = m->label;
+		unsigned int label = m->label;
 
 		while (m->topvars > o.topvars) {
 			if (m->vars[--m->topvars].name)
@@ -3632,7 +3632,7 @@ sql_parse(backend *be, sql_allocator *sa, const char *query, char mode)
 		sa_destroy(m->sa);
 	m->sym = NULL;
 	{
-		int label = m->label;
+		unsigned int label = m->label;
 		int status = m->session->status;
 		int sizevars = m->sizevars, topvars = m->topvars;
 		sql_var *vars = m->vars;
@@ -4738,7 +4738,7 @@ cascade_updates(backend *be, sql_table *t, stmt *rows, stmt **updates)
 		if (i->key) {
 			if (!(sql->cascade_action && list_find_id(sql->cascade_action, i->key->base.id))) {
 				sql_key *k = i->key;
-				int *local_id = SA_NEW(sql->sa, int);
+				sqlid *local_id = SA_NEW(sql->sa, sqlid);
 				if (!sql->cascade_action) 
 					sql->cascade_action = sa_list(sql->sa);
 				*local_id = i->key->base.id;
@@ -5216,7 +5216,7 @@ sql_delete_keys(backend *be, sql_table *t, stmt *rows, list *l, char* which, int
 
 		if (k->type == pkey || k->type == ukey) {
 			if (!(sql->cascade_action && list_find_id(sql->cascade_action, k->base.id))) {
-				int *local_id = SA_NEW(sql->sa, int);
+				sqlid *local_id = SA_NEW(sql->sa, sqlid);
 				if (!sql->cascade_action) 
 					sql->cascade_action = sa_list(sql->sa);
 
