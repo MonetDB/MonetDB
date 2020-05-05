@@ -1211,11 +1211,11 @@ rel_column_ref(sql_query *query, sql_rel **rel, symbol *column_r, int f)
 		/* some views are just in the stack, like before and after updates views */
 		if (rel && sql->use_views) {
 			sql_rel *v = NULL;
-			int proj = stack_find_rel_view_projection_columns(sql, name, &v); /* trigger views are basetables relations, so those might conflict */
+			int dup = stack_find_rel_view_projection_columns(sql, name, &v); /* trigger views are basetables relations, so those may conflict */
 
-			if (proj < 0 || (v && exp))
+			if (dup < 0 || (v && exp && *rel && is_base(v->op) && v != *rel)) /* comparing pointers, ugh */
 				return sql_error(sql, ERR_AMBIGUOUS, SQLSTATE(42000) "SELECT: identifier '%s' ambiguous", name);
-			if (v) {
+			if (v && !exp) {
 				if (*rel)
 					*rel = rel_crossproduct(sql->sa, *rel, v, op_join);
 				else
@@ -1284,7 +1284,7 @@ rel_column_ref(sql_query *query, sql_rel **rel, symbol *column_r, int f)
 		if (rel && sql->use_views) {
 			sql_rel *v = stack_find_rel_view(sql, tname);
 
-			if (v && exp && is_base(v->op)) /* trigger views are basetables relations, so those might conflict */
+			if (v && exp && *rel && is_base(v->op) && v != *rel) /* trigger views are basetables relations, so those may conflict */
 				return sql_error(sql, ERR_AMBIGUOUS, SQLSTATE(42000) "SELECT: identifier '%s.%s' ambiguous", tname, cname);
 			if (v && !exp) {
 				if (*rel)

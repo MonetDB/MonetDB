@@ -23,7 +23,7 @@ create or replace trigger mytrigger2
 
 create or replace trigger mytrigger2
 	after delete on fun referencing old row as "fun3"
-	for each statement update fun2 fun3 set b = (select a from fun3); --error, identifier "a" is ambiguous, it could be either for old row or table to update
+	for each statement update fun2 fun3 set c = (select a from fun3); --error, identifier "a" is ambiguous, it could be either for old row or table to update
 
 create or replace trigger mytrigger2
 	after delete on fun referencing old row as "del"
@@ -35,7 +35,7 @@ select c, d from fun2;
 delete from fun;
 	-- 1 row deleted
 select c, d from fun2;
-	--empty	
+	--empty
 
 create or replace trigger mytrigger3
 	after insert on fun referencing new row as "fun2"
