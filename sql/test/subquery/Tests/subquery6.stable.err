@@ -1,0 +1,18 @@
+stderr of test 'subquery6` in directory 'sql/test/subquery` itself:
+
+
+# 11:45:43 >  
+# 11:45:43 >  "mclient" "-lsql" "-ftest" "-tnone" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-297142" "--port=31114"
+# 11:45:43 >  
+
+MAPI  = (monetdb) /var/tmp/mtest-297142/.s.monetdb.31114
+QUERY = DELETE FROM another_t WHERE (SELECT 1 UNION SELECT 2) > 1; 
+ERROR = !GDK reported error: BATsubcross: more than one match
+MAPI  = (monetdb) /var/tmp/mtest-297142/.s.monetdb.31114
+QUERY = DELETE FROM another_t WHERE (SELECT 1 UNION SELECT 2) > 1; 
+ERROR = !GDK reported error: BATsubcross: more than one match
+
+# 11:45:43 >  
+# 11:45:43 >  "Done."
+# 11:45:43 >  
+

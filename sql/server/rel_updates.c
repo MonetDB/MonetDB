@@ -1088,7 +1088,7 @@ update_table(sql_query *query, dlist *qname, str alias, dlist *assignmentlist, s
 			t = mvc_bind_table(sql, NULL, tname);
 	}
 	if (update_allowed(sql, t, tname, "UPDATE", "update", 0) != NULL) {
-		sql_rel *r = NULL, *bt = rel_basetable(sql, t, alias ? alias : t->base.name), *res = bt;
+		sql_rel *r = NULL, *bt = rel_basetable(sql, t, alias ? alias : tname), *res = bt;
 
 		if (opt_from) {
 			dlist *fl = opt_from->data.lval;
@@ -1113,25 +1113,15 @@ update_table(sql_query *query, dlist *qname, str alias, dlist *assignmentlist, s
 				return NULL;
 		}
 		if (opt_where) {
-			int status = sql->session->status;
-
 			if (!table_privs(sql, t, PRIV_SELECT)) 
 				return sql_error(sql, 02, SQLSTATE(42000) "UPDATE: insufficient privileges for user '%s' to update table '%s'", stack_get_string(sql, "current_user"), tname);
-			r = rel_logical_exp(query, NULL, opt_where, sql_where);
-			if (!r) { 
-				sql->errstr[0] = 0;
-				sql->session->status = status;
-				r = rel_logical_exp(query, res, opt_where, sql_where);
-				if (!r)
-					return NULL;
-				/* handle join */
-				if (!opt_from && r && is_join(r->op))
-					r->op = op_semi;
-				else if (r && res && r->nrcols != res->nrcols) {
-					list *exps = rel_projections(sql, res, NULL, 1, 1);
-					r = rel_project(sql->sa, r, exps);
-				}
-			}
+			if (!(r = rel_logical_exp(query, res, opt_where, sql_where)))
+				return NULL;
+			/* handle join */
+			if (!opt_from && r && is_join(r->op))
+				r->op = op_semi;
+			else if (r && res && r->nrcols != res->nrcols)
+				r = rel_project(sql->sa, r, rel_projections(sql, res, NULL, 1, 1));
 			if (!r) 
 				return NULL;
 		} else {	/* update all */
@@ -1189,33 +1179,20 @@ delete_table(sql_query *query, dlist *qname, str alias, symbol *opt_where)
 			t = mvc_bind_table(sql, NULL, tname);
 	}
 	if (update_allowed(sql, t, tname, "DELETE FROM", "delete from", 1) != NULL) {
-		sql_rel *r = NULL;
-		sql_exp *e;
+		sql_rel *r = rel_basetable(sql, t, alias ? alias : tname);
 
 		if (opt_where) {
-			int status = sql->session->status;
+			sql_exp *e;
 
 			if (!table_privs(sql, t, PRIV_SELECT)) 
 				return sql_error(sql, 02, SQLSTATE(42000) "DELETE FROM: insufficient privileges for user '%s' to delete from table '%s'", stack_get_string(sql, "current_user"), tname);
-
-			r = rel_logical_exp(query, NULL, opt_where, sql_where);
-			if (r) { /* simple predicate which is not using the to 
-					    be updated table. We add a select all */
-				sql_rel *l = rel_basetable(sql, t, alias ? alias : t->base.name);
-				r = rel_crossproduct(sql->sa, l, r, op_join);
-			} else {
-				sql->errstr[0] = 0;
-				sql->session->status = status;
-				r = rel_basetable(sql, t, alias ? alias : t->base.name);
-				r = rel_logical_exp(query, r, opt_where, sql_where);
-			}
-			if (!r)
+			if (!(r = rel_logical_exp(query, r, opt_where, sql_where)))
 				return NULL;
 			e = exp_column(sql->sa, rel_name(r), TID, sql_bind_localtype("oid"), CARD_MULTI, 0, 1);
-			r = rel_project(sql->sa, r, append(new_exp_list(sql->sa), e));
-			r = rel_delete(sql->sa, rel_basetable(sql, t, tname), r);
+			r = rel_project(sql->sa, r, list_append(new_exp_list(sql->sa), e));
+			r = rel_delete(sql->sa, rel_basetable(sql, t, alias ? alias : tname), r);
 		} else {	/* delete all */
-			r = rel_delete(sql->sa, rel_basetable(sql, t, tname), NULL);
+			r = rel_delete(sql->sa, r, NULL);
 		}
 		return r;
 	}
