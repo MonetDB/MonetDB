@@ -1220,6 +1220,15 @@ exp_read(mvc *sql, sql_rel *lrel, sql_rel *rrel, list *pexps, char *r, int *pos,
 			f = mark_notin;
 		}
 		break;
+	case 'e':
+		if (strncmp(r+*pos, "exists",  strlen("exists")) == 0) {
+			(*pos)+= (int) strlen("exists");
+			f = mark_exists;
+		} else if (strncmp(r+*pos, "!exists",  strlen("!exists")) == 0) {
+			(*pos)+= (int) strlen("!exists");
+			f = mark_notexists;
+		}
+		break;
 	case 'n':
 		if (strncmp(r+*pos, "notin",  strlen("notin")) == 0) {
 			(*pos)+= (int) strlen("notin");
@@ -1227,7 +1236,7 @@ exp_read(mvc *sql, sql_rel *lrel, sql_rel *rrel, list *pexps, char *r, int *pos,
 		}
 		break;
 	case 'F':
-		if (strncmp(r+*pos, "FILTER",  strlen("FILTER")) == 0) {
+		if (strncasecmp(r+*pos, "FILTER",  strlen("FILTER")) == 0) {
 			(*pos)+= (int) strlen("FILTER");
 			f = cmp_filter;
 		}
@@ -1349,7 +1358,7 @@ rel_read(mvc *sql, char *r, int *pos, list *refs)
 {
 	sql_rel *rel = NULL, *nrel, *lrel, *rrel;
 	list *exps, *gexps;
-	int distinct = 0;
+	int distinct = 0, dependent = 0, single = 0;
 	operator_type j = op_basetable;
 
 	skipWS(r,pos);
@@ -1489,11 +1498,22 @@ rel_read(mvc *sql, char *r, int *pos, list *refs)
 		return rel_update(sql, lrel, rrel, NULL, nexps);
 	}
 
-	if (r[*pos] == 'd') {
+	if (r[*pos] == 'd' && r[*pos+1] == 'i') {
 		*pos += (int) strlen("distinct");
 		skipWS(r, pos);
 		distinct = 1;
 	}
+	if (r[*pos] == 's' && r[*pos+1] == 'i') {
+		*pos += (int) strlen("single");
+		skipWS(r, pos);
+		single = 1;
+	}
+	if (r[*pos] == 'd' && r[*pos+1] == 'e') {
+		*pos += (int) strlen("dependent");
+		skipWS(r, pos);
+		dependent = 1;
+	}
+
 	switch(r[*pos]) {
 	case 't':
 		if (r[*pos+1] == 'a') {
@@ -1656,15 +1676,17 @@ rel_read(mvc *sql, char *r, int *pos, list *refs)
 			rel = rel_select_copy(sql->sa, nrel, exps);
 			/* semijoin or antijoin */
 		} else if (r[*pos+1] == 'e' || r[*pos+1] == 'n') {
-			j = op_semi;
-
-			if (r[*pos+1] == 'n')
+			if (r[*pos+1] == 'n') {
 				j = op_anti;
+				*pos += (int) strlen("antijoin");
+			} else {
+				j = op_semi;
+				*pos += (int) strlen("semijoin");
+			}
 
-			*pos += (int) strlen("semijoin");
 			skipWS(r, pos);
 			if (r[*pos] != '(')
-				return sql_error(sql, -1, SQLSTATE(42000) "Semijoin: missing '('\n");
+				return sql_error(sql, -1, SQLSTATE(42000) "%s: missing '('\n", (j == op_semi)?"Semijoin":"Antijoin");
 			(*pos)++;
 			skipWS(r, pos);
 			if (!(lrel = rel_read(sql, r, pos, refs)))
@@ -1672,7 +1694,7 @@ rel_read(mvc *sql, char *r, int *pos, list *refs)
 			skipWS(r, pos);
 
 			if (r[*pos] != ',')
-				return sql_error(sql, -1, SQLSTATE(42000) "Semijoin: missing ','\n");
+				return sql_error(sql, -1, SQLSTATE(42000) "%s: missing ','\n", (j == op_semi)?"Semijoin":"Antijoin");
 			(*pos)++;
 			skipWS(r, pos);
 			if (!(rrel = rel_read(sql, r, pos, refs)))
@@ -1680,7 +1702,7 @@ rel_read(mvc *sql, char *r, int *pos, list *refs)
 
 			skipWS(r, pos);
 			if (r[*pos] != ')')
-				return sql_error(sql, -1, SQLSTATE(42000) "Semijoin: missing ')'\n");
+				return sql_error(sql, -1, SQLSTATE(42000) "%s: missing ')'\n", (j == op_semi)?"Semijoin":"Antijoin");
 			(*pos)++;
 			skipWS(r, pos);
 
@@ -1801,17 +1823,22 @@ rel_read(mvc *sql, char *r, int *pos, list *refs)
 		if (r[*pos] == '[')
 			if (!(rel->r = read_exps(sql, NULL, rel, NULL, r, pos, '[', 0)))
 				return NULL;
-		if (distinct)
-			set_distinct(rel);
-		distinct = 0;
 		break;
 	case 'd':
 		/* 'ddl' not supported */
 	default:
 		return NULL;
 	}
+
+	if (distinct)
+		set_distinct(rel);
+	if (single)
+		set_single(rel);
+	if (dependent)
+		set_dependent(rel);
+
 	/* sometimes the properties are send */
-	while (strncmp(r+*pos, "REMOTE",  strlen("REMOTE")) == 0) { /* Remote tables under remote tables not supported, so remove REMOTE property */
+	while (strncmp(r+*pos, "REMOTE", strlen("REMOTE")) == 0) { /* Remote tables under remote tables not supported, so remove REMOTE property */
 		(*pos)+= (int) strlen("REMOTE");
 		skipWS(r, pos);
 		skipUntilWS(r, pos);
