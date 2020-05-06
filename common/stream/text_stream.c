@@ -45,22 +45,34 @@ text_read(stream *restrict s, void *restrict buf, size_t elmsize, size_t cnt)
 }
 
 static ssize_t
-text_read_putback(stream *restrict s, void *restrict buf, size_t elmsize, size_t cnt)
+text_read_putback(stream *restrict s, void *restrict buf_, size_t elmsize, size_t cnt)
 {
 	state *st = (state*) s->stream_data.p;
+	char *buf = buf_; // more convenient type
 	char *p = buf;
-	size_t size = elmsize * cnt;
-	size_t i;
+	char *end = buf + elmsize * cnt;
 
-	for (i = 0; i < size; i++) {
-		if (st->putback_start == st->putback_end) {
-			s->read = text_read;
-			break;
-		}
-		*p++ = st->putback_buf[st->putback_start++];
+	while (st->putback_start < st->putback_end) {
+		if (p < end)
+			*p++ = st->putback_buf[st->putback_start++];
+		else
+			return p - buf;
 	}
 
-	return i;
+	// If we get here, the putback buffer is empty but we may still have
+	// some output buffer left.
+	// First, arrange for subsequent read calls to go straight to text_read
+	// instead of text_read_putback.
+	s->read = text_read;
+
+	if (p == end)
+		return p - buf;
+
+	ssize_t nread = text_read(s, p, 1, end - p);
+	if (nread < 0)
+		return nread;
+	p += nread;
+	return p - buf;
 }
 
 

@@ -279,10 +279,13 @@ static void copy_stream_to_file(stream *in, FILE *out, size_t bufsize)
 	ssize_t nread;
 	size_t nwritten;
 	unsigned long total = 0;
+	long iterations = -1;
+	ssize_t short_read = 0;
 
 	buffer = malloc(bufsize);
 
 	while (1) {
+		iterations += 1;
 		nread = mnstr_read(in, buffer, 1, bufsize);
 		if (nread < 0)
 			croak(2, "Error reading from stream after %lu bytes: %s", total, mnstr_error(in));
@@ -290,6 +293,12 @@ static void copy_stream_to_file(stream *in, FILE *out, size_t bufsize)
 			// eof
 			break;
 		}
+
+		if (short_read != 0)
+			// A short read MUST be followed by either error or eof.
+			croak(2, "Short read (%zd/%zu) after %ld iterations not followed by EOF or error", short_read, bufsize, iterations - 1);
+		short_read = (size_t)nread < bufsize ? nread : 0;
+
 		errno = 0;
 		nwritten = fwrite(buffer, 1, nread, out);
 		if (nwritten != (size_t)nread)
