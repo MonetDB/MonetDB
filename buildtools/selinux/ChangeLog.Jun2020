@@ -1,0 +1,10 @@
+# ChangeLog file for selinux
+# This file is updated with Maddlog
+
+* Wed May  6 2020 Sjoerd Mullender <sjoerd@acm.org>
+- There was a problem with the MonetDB SELinux support on Fedora 32.
+  That is fixed in this release.  In order to do a proper upgrade of
+  the package if you have already installed MonetDB-selinux on Fedora
+  32, you may need to uninstall (dnf remove) the old package and then
+  install the new.
+
