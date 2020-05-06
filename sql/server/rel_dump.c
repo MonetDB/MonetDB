@@ -771,7 +771,8 @@ read_prop( mvc *sql, sql_exp *exp, char *r, int *pos)
 			return sql_error(sql, -1, SQLSTATE(42000) "Schema %s missing\n", sname);
 		if (!find_prop(exp->p, PROP_JOINIDX)) {
 			p = exp->p = prop_create(sql->sa, PROP_JOINIDX, exp->p);
-			p->value = mvc_bind_idx(sql, s, iname);
+			if (!(p->value = mvc_bind_idx(sql, s, iname)))
+				return sql_error(sql, -1, SQLSTATE(42000) "Index %s missing\n", iname);
 		}
 		r[*pos] = old;
 		skipWS(r,pos);
@@ -873,7 +874,7 @@ exp_read(mvc *sql, sql_rel *lrel, sql_rel *rrel, list *pexps, char *r, int *pos,
 			if (!exp && rrel)
 				exp = rel_bind_column2(sql, rrel, tname, cname, 0);
 		} else if (!exp) {
-			exp = exp_column(sql->sa, tname, cname, NULL, CARD_ATOM, 1, (strchr(cname,'%') != NULL));
+			exp = exp_column(sql->sa, tname, cname, NULL, CARD_ATOM, 1, cname[0] == '%');
 		}
 		break;
 	/* atom */
