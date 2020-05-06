@@ -1,6 +1,10 @@
 # ChangeLog file for sql
 # This file is updated with Maddlog
 
+* Thu Apr 23 2020 Pedro Ferreira <pedro.ferreira@monetdbsolutions.com>
+- Updating the value of a sequence now requires privilege on its own
+  schema.
+
 * Thu Apr 16 2020 Sjoerd Mullender <sjoerd@acm.org>
 - The sys.querylog_enable(threshold integer) now actually enables the
   querylog and uses a threshold in milliseconds.
@@ -21,8 +25,11 @@
   by range (before they weren't).
 
 * Wed Jan 29 2020 Sjoerd Mullender <sjoerd@acm.org>
-- Removed support for Python 2.  Python 2 itself is no longer supported.
-  Use Python 3 instead.
+- Removed support for Python 2.  Python 2 itself is no longer
+  supported.  Use Python 3 instead.  Functions that were declared as
+  LANGUAGE PYTHON2 or LANGUAGE PYTHON2_MAP are changed to LANGUAGE
+  PYTHON and LANGUAGE PYTHON_MAP respectively (without changing the
+  Python code).
 
 * Wed Jan 29 2020 Pedro Ferreira <pedro.ferreira@monetdbsolutions.com>
 - Implemented 'covar_pop' and 'covar_samp' aggregate functions, as well
@@ -35,11 +42,6 @@
   implementation, the backend code generation, creates two additional
   columns of lng type with the start and end offsets for each row.
 
-* Thu Jan 23 2020 Pedro Ferreira <pedro.ferreira@monetdbsolutions.com>
-- Added sys.sleep(int n) procedure, which makes the client's thread to
-  sleep for n milliseconds. Also added the function version, where it
-  returns the input value as result.
-
 * Tue Dec 17 2019 Pedro Ferreira <pedro.ferreira@monetdbsolutions.com>
 - Added prepared_statements_args view, which details the arguments for
   the prepared statements created in the current session.
@@ -51,6 +53,12 @@
   { number | ALL }', to close an existing prepared statement or all,
   through the SQL layer. Previously this feature was available via MAPI
   exclusively with the "release" command.
+
+* Fri Nov 29 2019 Panagiotis Koutsourakis <kutsurak@monetdbsolutions.com>
+- Added support for raw strings using the syntax r'' or R''. This means
+  that C-like escapes will remain uninterpreted within those strings. For
+  instance SELECT r'\"' returns a string of length two. The user needs
+  to escape single quotes by doubling them: SELECT r''''.
 
 * Wed Nov 27 2019 Pedro Ferreira <pedro.ferreira@monetdbsolutions.com>
 - Implemented ROLLUP, CUBE and GROUPING SETS from SQL:1999. They define
@@ -73,7 +81,17 @@
   The versions of the mentioned procedures with just the second argument were
   added as well, where the changes are reflected in the current user session,
   and therefore every user can call them.
-- The procedures sys.settimeout(bigint), sys.settimeout(bigint,bigint) 
+- The procedures sys.settimeout(bigint), sys.settimeout(bigint,bigint)
   and sys.session(bigint) are now deprecated. Instead use sys.setquerytimeout
   and sys.setsessiontimeout mentioned above.
+
+* Fri Oct 25 2019 Joeri van Ruth <joeri.van.ruth@monetdbsolutions.com>
+- Added SQL function sys.hot_snapshot() which can be used to write
+  a snapshot of the database to a tar file. For example,
+  sys.hot_snapshot('/tmp/snapshot.tar'). If compression support is
+  compiled in, snapshots can also be compressed ('/tmp/snapshot.tar.gz').
+  The tar file expands to a single directory with the same name as the
+  database that was snapshotted. This directory can be passed directly
+  as the --dbpath argument of mserver5 or it can be copied into an
+  existing dbfarm and started from monetdbd.
 

@@ -211,7 +211,7 @@ COLnew(oid hseq, int tt, BUN cap, role_t role)
 		GDKfree(bn->tvheap);
 		goto bailout;
 	}
-	TRC_DEBUG(ALGO, "COLnew()=" ALGOBATFMT "\n", ALGOBATPAR(bn));
+	TRC_DEBUG(ALGO, "-> " ALGOBATFMT "\n", ALGOBATPAR(bn));
 	return bn;
   bailout:
 	BBPclear(bn->batCacheid);
@@ -230,7 +230,9 @@ BATdense(oid hseq, oid tseq, BUN cnt)
 	if (bn != NULL) {
 		BATtseqbase(bn, tseq);
 		BATsetcount(bn, cnt);
-		TRC_DEBUG(ALGO, "BATdense()=" ALGOBATFMT "\n", ALGOBATPAR(bn));
+		TRC_DEBUG(ALGO, OIDFMT "," OIDFMT "," BUNFMT
+			  "-> " ALGOBATFMT "\n", hseq, tseq, cnt,
+			  ALGOBATPAR(bn));
 	}
 	return bn;
 }
@@ -748,11 +750,6 @@ COLcopy(BAT *b, int tt, bool writable, role_t role)
 
 			/* make sure we use the correct capacity */
 			bn->batCapacity = (BUN) (bn->ttype ? bn->theap.size >> bn->tshift : 0);
-
-
-			/* first/inserted must point equally far into
-			 * the heap as in the source */
-			bn->batInserted = b->batInserted;
 		} else if (BATatoms[tt].atomFix || tt != TYPE_void || ATOMextern(tt)) {
 			/* case (4): one-by-one BUN insert (really slow) */
 			BUN p, q, r = 0;

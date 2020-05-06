@@ -510,6 +510,9 @@ Suggests: %{name}-client%{?_isa} = %{version}-%{release}
 %endif
 # versions up to 1.0.5 don't accept the queryid field in the result set
 Conflicts: python-pymonetdb < 1.0.6
+%if %{?rhel:0}%{!?rhel:1} || 0%{?rhel} >= 7
+Requires(pre): systemd
+%endif
 
 %description -n MonetDB5-server
 MonetDB is a database management system that is developed from a
@@ -522,12 +525,14 @@ package if you want to use the MonetDB database system.  If you want
 to use the SQL front end, you also need %{name}-SQL-server5.
 
 %pre -n MonetDB5-server
+%{?sysusers_create_package:echo 'u monetdb - "MonetDB Server" /var/lib/monetdb' | systemd-sysusers --replace=%_sysusersdir/monetdb.conf -}
+
 getent group monetdb >/dev/null || groupadd --system monetdb
 if getent passwd monetdb >/dev/null; then
     case $(getent passwd monetdb | cut -d: -f6) in
     %{_localstatedir}/MonetDB) # old value
 	# change home directory, but not using usermod
-	# usermod requires there not to be any running processes owned by the user
+	# usermod requires there to not be any running processes owned by the user
 	EDITOR='sed -i "/^monetdb:/s|:%{_localstatedir}/MonetDB:|:%{_localstatedir}/lib/monetdb:|"'
 	unset VISUAL
 	export EDITOR
@@ -542,6 +547,9 @@ exit 0
 
 %files -n MonetDB5-server
 %defattr(-,root,root)
+%if %{?rhel:0}%{!?rhel:1} || 0%{?rhel} >= 7
+%{_sysusersdir}/monetdb.conf
+%endif
 %attr(2750,monetdb,monetdb) %dir %{_localstatedir}/lib/monetdb
 %attr(2770,monetdb,monetdb) %dir %{_localstatedir}/monetdb5
 %attr(2770,monetdb,monetdb) %dir %{_localstatedir}/monetdb5/dbfarm
@@ -649,7 +657,7 @@ Recommends: %{name}-SQL-server5-hugeint%{?_isa} = %{version}-%{release}
 Suggests: %{name}-client%{?_isa} = %{version}-%{release}
 %endif
 %if %{?rhel:0}%{!?rhel:1} || 0%{?rhel} >= 7
-%systemd_requires
+%{?systemd_requires}
 %endif
 
 %description SQL-server5
@@ -935,8 +943,11 @@ cd -
 
 # move file to correct location
 %if %{?rhel:0}%{!?rhel:1} || 0%{?rhel} >= 7
-mkdir -p %{buildroot}%{_tmpfilesdir}
+mkdir -p %{buildroot}%{_tmpfilesdir} %{buildroot}%{_sysusersdir}
 mv %{buildroot}%{_sysconfdir}/tmpfiles.d/monetdbd.conf %{buildroot}%{_tmpfilesdir}
+cat > %{buildroot}%{_sysusersdir}/monetdb.conf << EOF
+u monetdb - "MonetDB Server" /var/lib/monetdb
+EOF
 rmdir %{buildroot}%{_sysconfdir}/tmpfiles.d
 %endif
 

@@ -892,7 +892,9 @@ BATgroupsum(BAT *b, BAT *g, BAT *e, BAT *s, int tp, bool skip_nils, bool abort_o
 	BUN ncand;
 	const char *err;
 	const char *algo = NULL;
-	lng t0 = GDKusec();
+	lng t0 = 0;
+
+	TRC_DEBUG_IF(ALGO) t0 = GDKusec();
 
 	if ((err = BATgroupaggrinit(b, g, e, s, &min, &max, &ngrp, &ci, &ncand)) != NULL) {
 		GDKerror("%s\n", err);
@@ -943,14 +945,12 @@ BATgroupsum(BAT *b, BAT *g, BAT *e, BAT *s, int tp, bool skip_nils, bool abort_o
 		bn = NULL;
 	}
 
-	TRC_DEBUG(ALGO, "%s(b=" ALGOBATFMT ",g=" ALGOOPTBATFMT ","
-		  "e=" ALGOOPTBATFMT ",s=" ALGOOPTBATFMT ")=" ALGOOPTBATFMT ":"
-		  " %s; start " OIDFMT ", count " BUNFMT " (" LLFMT " usec)\n",
-		  __func__,
+	TRC_DEBUG(ALGO, "b=" ALGOBATFMT ",g=" ALGOOPTBATFMT ","
+		  "e=" ALGOOPTBATFMT ",s=" ALGOOPTBATFMT " -> " ALGOOPTBATFMT
+		  "; start " OIDFMT ", count " BUNFMT " (%s -- " LLFMT " usec)\n",
 		  ALGOBATPAR(b), ALGOOPTBATPAR(g), ALGOOPTBATPAR(e),
 		  ALGOOPTBATPAR(s), ALGOOPTBATPAR(bn),
-		  algo ? algo : "",
-		  ci.seq, ncand, GDKusec() - t0);
+		  ci.seq, ncand, algo ? algo : "", GDKusec() - t0);
 	return bn;
 }
 
@@ -964,7 +964,9 @@ BATsum(void *res, int tp, BAT *b, BAT *s, bool skip_nils, bool abort_on_error, b
 	BUN ncand;
 	const char *err;
 	const char *algo = NULL;
-	lng t0 = GDKusec();
+	lng t0 = 0;
+
+	TRC_DEBUG_IF(ALGO) t0 = GDKusec();
 
 	if ((err = BATgroupaggrinit(b, NULL, NULL, s, &min, &max, &ngrp, &ci, &ncand)) != NULL) {
 		GDKerror("%s\n", err);
@@ -1066,12 +1068,10 @@ BATsum(void *res, int tp, BAT *b, BAT *s, bool skip_nils, bool abort_on_error, b
 	nils = dosum(Tloc(b, 0), b->tnonil, b->hseqbase, &ci, ncand,
 		     res, true, b->ttype, tp, &min, min, max,
 		     skip_nils, abort_on_error, nil_if_empty, __func__, &algo);
-	TRC_DEBUG(ALGO, "%s(b="ALGOBATFMT",s="ALGOOPTBATFMT"): %s; "
-		  "start " OIDFMT ", count " BUNFMT " (" LLFMT " usec)\n",
-		  __func__,
+	TRC_DEBUG(ALGO, "b=" ALGOBATFMT ",s=" ALGOOPTBATFMT "; "
+		  "start " OIDFMT ", count " BUNFMT " (%s -- " LLFMT " usec)\n",
 		  ALGOBATPAR(b), ALGOOPTBATPAR(s),
-		  algo ? algo : "",
-		  ci.seq, ncand, GDKusec() - t0);
+		  ci.seq, ncand, algo ? algo : "", GDKusec() - t0);
 	return nils < BUN_NONE ? GDK_SUCCEED : GDK_FAIL;
 }
 
@@ -1468,6 +1468,9 @@ BATgroupprod(BAT *b, BAT *g, BAT *e, BAT *s, int tp, bool skip_nils, bool abort_
 	struct canditer ci;
 	BUN ncand;
 	const char *err;
+	lng t0 = 0;
+
+	TRC_DEBUG_IF(ALGO) t0 = GDKusec();
 
 	if ((err = BATgroupaggrinit(b, g, e, s, &min, &max, &ngrp, &ci, &ncand)) != NULL) {
 		GDKerror("%s\n", err);
@@ -1518,6 +1521,13 @@ BATgroupprod(BAT *b, BAT *g, BAT *e, BAT *s, int tp, bool skip_nils, bool abort_
 		bn = NULL;
 	}
 
+	TRC_DEBUG(ALGO, "b=" ALGOBATFMT ",g=" ALGOOPTBATFMT ","
+		  "e=" ALGOOPTBATFMT ",s=" ALGOOPTBATFMT " -> " ALGOOPTBATFMT
+		  "; start " OIDFMT ", count " BUNFMT " (" LLFMT " usec)\n",
+		  ALGOBATPAR(b), ALGOOPTBATPAR(g), ALGOOPTBATPAR(e),
+		  ALGOOPTBATPAR(s), ALGOOPTBATPAR(bn),
+		  ci.seq, ncand, GDKusec() - t0);
+
 	return bn;
 }
 
@@ -1530,6 +1540,9 @@ BATprod(void *res, int tp, BAT *b, BAT *s, bool skip_nils, bool abort_on_error, 
 	struct canditer ci;
 	BUN ncand;
 	const char *err;
+	lng t0 = 0;
+
+	TRC_DEBUG_IF(ALGO) t0 = GDKusec();
 
 	if ((err = BATgroupaggrinit(b, NULL, NULL, s, &min, &max, &ngrp, &ci, &ncand)) != NULL) {
 		GDKerror("%s\n", err);
@@ -1569,6 +1582,10 @@ BATprod(void *res, int tp, BAT *b, BAT *s, bool skip_nils, bool abort_on_error, 
 	nils = doprod(Tloc(b, 0), b->hseqbase, &ci, ncand, res, true,
 		      b->ttype, tp, &min, false, min, max,
 		      skip_nils, abort_on_error, nil_if_empty, __func__);
+	TRC_DEBUG(ALGO, "b=" ALGOBATFMT ",s=" ALGOOPTBATFMT "; "
+		  "start " OIDFMT ", count " BUNFMT " (" LLFMT " usec)\n",
+		  ALGOBATPAR(b), ALGOOPTBATPAR(s),
+		  ci.seq, ncand, GDKusec() - t0);
 	return nils < BUN_NONE ? GDK_SUCCEED : GDK_FAIL;
 }
 
@@ -1662,6 +1679,9 @@ BATgroupavg(BAT **bnp, BAT **cntsp, BAT *b, BAT *g, BAT *e, BAT *s, int tp, bool
 	struct canditer ci;
 	BUN ncand;
 	const char *err;
+	lng t0 = 0;
+
+	TRC_DEBUG_IF(ALGO) t0 = GDKusec();
 
 	assert(tp == TYPE_dbl);
 	(void) tp;		/* compatibility (with other BATgroup*
@@ -1812,6 +1832,12 @@ BATgroupavg(BAT **bnp, BAT **cntsp, BAT *b, BAT *g, BAT *e, BAT *s, int tp, bool
 	bn->tnil = nils != 0;
 	bn->tnonil = nils == 0;
 	*bnp = bn;
+	TRC_DEBUG(ALGO, "b=" ALGOBATFMT ",g=" ALGOOPTBATFMT ","
+		  "e=" ALGOOPTBATFMT ",s=" ALGOOPTBATFMT " -> " ALGOOPTBATFMT
+		  "; start " OIDFMT ", count " BUNFMT " (" LLFMT " usec)\n",
+		  ALGOBATPAR(b), ALGOOPTBATPAR(g), ALGOOPTBATPAR(e),
+		  ALGOOPTBATPAR(s), ALGOOPTBATPAR(bn),
+		  ci.seq, ncand, GDKusec() - t0);
 	return GDK_SUCCEED;
 
   alloc_fail:
@@ -2002,6 +2028,9 @@ BATgroupcount(BAT *b, BAT *g, BAT *e, BAT *s, int tp, bool skip_nils, bool abort
 	struct canditer ci;
 	BUN ncand;
 	const char *err;
+	lng t0 = 0;
+
+	TRC_DEBUG_IF(ALGO) t0 = GDKusec();
 
 	assert(tp == TYPE_lng);
 	(void) tp;		/* compatibility (with other BATgroup* */
@@ -2107,6 +2136,12 @@ BATgroupcount(BAT *b, BAT *g, BAT *e, BAT *s, int tp, bool skip_nils, bool abort
 	bn->trevsorted = BATcount(bn) <= 1;
 	bn->tnil = false;
 	bn->tnonil = true;
+	TRC_DEBUG(ALGO, "b=" ALGOBATFMT ",g=" ALGOOPTBATFMT ","
+		  "e=" ALGOOPTBATFMT ",s=" ALGOOPTBATFMT " -> " ALGOOPTBATFMT
+		  "; start " OIDFMT ", count " BUNFMT " (" LLFMT " usec)\n",
+		  ALGOBATPAR(b), ALGOOPTBATPAR(g), ALGOOPTBATPAR(e),
+		  ALGOOPTBATPAR(s), ALGOOPTBATPAR(bn),
+		  ci.seq, ncand, GDKusec() - t0);
 	return bn;
 }
 
@@ -2124,6 +2159,9 @@ BATgroupsize(BAT *b, BAT *g, BAT *e, BAT *s, int tp, bool skip_nils, bool abort_
 	struct canditer ci;
 	BUN ncand;
 	const char *err;
+	lng t0 = 0;
+
+	TRC_DEBUG_IF(ALGO) t0 = GDKusec();
 
 	assert(tp == TYPE_lng);
 	assert(b->ttype == TYPE_bit);
@@ -2175,6 +2213,12 @@ BATgroupsize(BAT *b, BAT *g, BAT *e, BAT *s, int tp, bool skip_nils, bool abort_
 	bn->trevsorted = BATcount(bn) <= 1;
 	bn->tnil = false;
 	bn->tnonil = true;
+	TRC_DEBUG(ALGO, "b=" ALGOBATFMT ",g=" ALGOOPTBATFMT ","
+		  "e=" ALGOOPTBATFMT ",s=" ALGOOPTBATFMT " -> " ALGOOPTBATFMT
+		  "; start " OIDFMT ", count " BUNFMT " (" LLFMT " usec)\n",
+		  ALGOBATPAR(b), ALGOOPTBATPAR(g), ALGOOPTBATPAR(e),
+		  ALGOOPTBATPAR(s), ALGOOPTBATPAR(bn),
+		  ci.seq, ncand, GDKusec() - t0);
 	return bn;
 }
 
@@ -2444,6 +2488,9 @@ BATgroupminmax(BAT *b, BAT *g, BAT *e, BAT *s, int tp, bool skip_nils,
 	struct canditer ci;
 	BUN ncand;
 	const char *err;
+	lng t0 = 0;
+
+	TRC_DEBUG_IF(ALGO) t0 = GDKusec();
 
 	assert(tp == TYPE_oid);
 	(void) tp;		/* compatibility (with other BATgroup* */
@@ -2486,6 +2533,12 @@ BATgroupminmax(BAT *b, BAT *g, BAT *e, BAT *s, int tp, bool skip_nils,
 	bn->trevsorted = BATcount(bn) <= 1;
 	bn->tnil = nils != 0;
 	bn->tnonil = nils == 0;
+	TRC_DEBUG(ALGO, "b=" ALGOBATFMT ",g=" ALGOOPTBATFMT ","
+		  "e=" ALGOOPTBATFMT ",s=" ALGOOPTBATFMT " -> " ALGOOPTBATFMT
+		  "; start " OIDFMT ", count " BUNFMT " (%s -- " LLFMT " usec)\n",
+		  ALGOBATPAR(b), ALGOOPTBATPAR(g), ALGOOPTBATPAR(e),
+		  ALGOOPTBATPAR(s), ALGOOPTBATPAR(bn),
+		  ci.seq, ncand, name, GDKusec() - t0);
 	return bn;
 }
 
@@ -2497,12 +2550,6 @@ BATgroupmin(BAT *b, BAT *g, BAT *e, BAT *s, int tp,
 			      do_groupmin, __func__);
 }
 
-void *
-BATmin(BAT *b, void *aggr)
-{
-	return BATmin_skipnil(b, aggr, 1);
-}
-
 /* return pointer to smallest non-nil value in b, or pointer to nil if
  * there is no such value (no values at all, or only nil) */
 void *
@@ -2512,6 +2559,9 @@ BATmin_skipnil(BAT *b, void *aggr, bit skipnil)
 	const void *res;
 	size_t s;
 	BATiter bi;
+	lng t0 = 0;
+
+	TRC_DEBUG_IF(ALGO) t0 = GDKusec();
 
 	if (!ATOMlinear(b->ttype)) {
 		/* there is no such thing as a smallest value if you
@@ -2590,7 +2640,15 @@ BATmin_skipnil(BAT *b, void *aggr, bit skipnil)
 	}
 	if (aggr != NULL)	/* else: malloc error */
 		memcpy(aggr, res, s);
+	TRC_DEBUG(ALGO, "b=" ALGOBATFMT ",skipnil=%d; (" LLFMT " usec)\n",
+		  ALGOBATPAR(b), skipnil, GDKusec() - t0);
 	return aggr;
+}
+
+void *
+BATmin(BAT *b, void *aggr)
+{
+	return BATmin_skipnil(b, aggr, 1);
 }
 
 BAT *
@@ -2602,18 +2660,15 @@ BATgroupmax(BAT *b, BAT *g, BAT *e, BAT *s, int tp,
 }
 
 void *
-BATmax(BAT *b, void *aggr)
-{
-	return BATmax_skipnil(b, aggr, 1);
-}
-
-void *
 BATmax_skipnil(BAT *b, void *aggr, bit skipnil)
 {
 	PROPrec *prop;
 	const void *res;
 	size_t s;
 	BATiter bi;
+	lng t0 = 0;
+
+	TRC_DEBUG_IF(ALGO) t0 = GDKusec();
 
 	if (!ATOMlinear(b->ttype)) {
 		GDKerror("non-linear type");
@@ -2684,7 +2739,15 @@ BATmax_skipnil(BAT *b, void *aggr, bit skipnil)
 	}
 	if (aggr != NULL)	/* else: malloc error */
 		memcpy(aggr, res, s);
+	TRC_DEBUG(ALGO, "b=" ALGOBATFMT ",skipnil=%d; (" LLFMT " usec)\n",
+		  ALGOBATPAR(b), skipnil, GDKusec() - t0);
 	return aggr;
+}
+
+void *
+BATmax(BAT *b, void *aggr)
+{
+	return BATmax_skipnil(b, aggr, 1);
 }
 
 
@@ -2730,6 +2793,9 @@ doBATgroupquantile(BAT *b, BAT *g, BAT *e, BAT *s, int tp, double quantile,
 	int (*atomcmp)(const void *, const void *) = ATOMcompare(tp);
 	const char *err;
 	(void) abort_on_error;
+	lng t0 = 0;
+
+	TRC_DEBUG_IF(ALGO) t0 = GDKusec();
 
 	if (average) {
 		switch (ATOMbasetype(b->ttype)) {
@@ -3004,6 +3070,13 @@ doBATgroupquantile(BAT *b, BAT *g, BAT *e, BAT *s, int tp, double quantile,
 	bn->trevsorted = BATcount(bn) <= 1;
 	bn->tnil = nils != 0;
 	bn->tnonil = nils == 0;
+	TRC_DEBUG(ALGO, "b=" ALGOBATFMT ",g=" ALGOOPTBATFMT ","
+		  "e=" ALGOOPTBATFMT ",s=" ALGOOPTBATFMT
+		  ",quantile=%g,average=%s -> " ALGOOPTBATFMT
+		  "; start " OIDFMT ", count " BUNFMT " (" LLFMT " usec)\n",
+		  ALGOBATPAR(b), ALGOOPTBATPAR(g), ALGOOPTBATPAR(e),
+		  ALGOOPTBATPAR(s), quantile, average ? "true" : "false",
+		  ALGOOPTBATPAR(bn), ci.seq, ncand, GDKusec() - t0);
 	return bn;
 
   bunins_failed:
@@ -3062,11 +3135,13 @@ BATgroupquantile_avg(BAT *b, BAT *g, BAT *e, BAT *s, int tp, double quantile,
 			delta = (dbl) x - mean;		\
 			mean += delta / n;		\
 			m2 += delta * ((dbl) x - mean);	\
+			if (isinf(m2))			\
+				goto overflow;		\
 		}					\
 	} while (0)
 
 static dbl
-calcvariance(dbl *restrict avgp, const void *restrict values, BUN cnt, int tp, bool issample, const char *func)
+calcvariance(dbl *restrict avgp, const void *restrict values, BUN cnt, int tp, bool issample)
 {
 	BUN n = 0, i;
 	dbl mean = 0;
@@ -3098,8 +3173,7 @@ calcvariance(dbl *restrict avgp, const void *restrict values, BUN cnt, int tp, b
 		AGGR_STDEV_SINGLE(dbl);
 		break;
 	default:
-		GDKerror("%s: type (%s) not supported.\n",
-			 func, ATOMname(tp));
+		GDKerror("type (%s) not supported.\n", ATOMname(tp));
 		return dbl_nil;
 	}
 	if (n <= (BUN) issample) {
@@ -3110,36 +3184,61 @@ calcvariance(dbl *restrict avgp, const void *restrict values, BUN cnt, int tp, b
 	if (avgp)
 		*avgp = mean;
 	return m2 / (n - issample);
+  overflow:
+	GDKerror("22003!overflow in calculation.\n");
+	return dbl_nil;
 }
 
 dbl
 BATcalcstdev_population(dbl *avgp, BAT *b)
 {
+	lng t0 = 0;
+
+	TRC_DEBUG_IF(ALGO) t0 = GDKusec();
 	dbl v = calcvariance(avgp, (const void *) Tloc(b, 0),
-			     BATcount(b), b->ttype, false, __func__);
+			     BATcount(b), b->ttype, false);
+	TRC_DEBUG(ALGO, "b=" ALGOBATFMT " (" LLFMT " usec)\n",
+		  ALGOBATPAR(b), GDKusec() - t0);
 	return is_dbl_nil(v) ? dbl_nil : sqrt(v);
 }
 
 dbl
 BATcalcstdev_sample(dbl *avgp, BAT *b)
 {
+	lng t0 = 0;
+
+	TRC_DEBUG_IF(ALGO) t0 = GDKusec();
 	dbl v = calcvariance(avgp, (const void *) Tloc(b, 0),
-			     BATcount(b), b->ttype, true, __func__);
+			     BATcount(b), b->ttype, true);
+	TRC_DEBUG(ALGO, "b=" ALGOBATFMT " (" LLFMT " usec)\n",
+		  ALGOBATPAR(b), GDKusec() - t0);
 	return is_dbl_nil(v) ? dbl_nil : sqrt(v);
 }
 
 dbl
 BATcalcvariance_population(dbl *avgp, BAT *b)
 {
-	return calcvariance(avgp, (const void *) Tloc(b, 0),
-			    BATcount(b), b->ttype, false, __func__);
+	lng t0 = 0;
+
+	TRC_DEBUG_IF(ALGO) t0 = GDKusec();
+	dbl v = calcvariance(avgp, (const void *) Tloc(b, 0),
+			     BATcount(b), b->ttype, false);
+	TRC_DEBUG(ALGO, "b=" ALGOBATFMT " (" LLFMT " usec)\n",
+		  ALGOBATPAR(b), GDKusec() - t0);
+	return v;
 }
 
 dbl
 BATcalcvariance_sample(dbl *avgp, BAT *b)
 {
-	return calcvariance(avgp, (const void *) Tloc(b, 0),
-			    BATcount(b), b->ttype, true, __func__);
+	lng t0 = 0;
+
+	TRC_DEBUG_IF(ALGO) t0 = GDKusec();
+	dbl v = calcvariance(avgp, (const void *) Tloc(b, 0),
+			     BATcount(b), b->ttype, true);
+	TRC_DEBUG(ALGO, "b=" ALGOBATFMT " (" LLFMT " usec)\n",
+		  ALGOBATPAR(b), GDKusec() - t0);
+	return v;
 }
 
 #define AGGR_COVARIANCE_SINGLE(TYPE)					\
@@ -3156,11 +3255,13 @@ BATcalcvariance_sample(dbl *avgp, BAT *b)
 			delta2 = (dbl) y - mean2;			\
 			mean2 += delta2 / n;				\
 			m2 += delta1 * ((dbl) y - mean2);		\
+			if (isinf(m2))			\
+				goto overflow;		\
 		}							\
 	} while (0)
 
 static dbl
-calccovariance(const void *v1, const void *v2, BUN cnt, int tp, bool issample, const char *func)
+calccovariance(const void *v1, const void *v2, BUN cnt, int tp, bool issample)
 {
 	BUN n = 0, i;
 	dbl mean1 = 0, mean2 = 0, m2 = 0, delta1, delta2;
@@ -3190,26 +3291,41 @@ calccovariance(const void *v1, const void *v2, BUN cnt, int tp, bool issample, c
 		AGGR_COVARIANCE_SINGLE(dbl);
 		break;
 	default:
-		GDKerror("%s: type (%s) not supported.\n", func, ATOMname(tp));
+		GDKerror("type (%s) not supported.\n", ATOMname(tp));
 		return dbl_nil;
 	}
 	if (n <= (BUN) issample)
 		return dbl_nil;
 	return m2 / (n - issample);
+  overflow:
+	GDKerror("22003!overflow in calculation.\n");
+	return dbl_nil;
 }
 
 dbl
 BATcalccovariance_population(BAT *b1, BAT *b2)
 {
-	return calccovariance((const void *) Tloc(b1, 0), (const void *) Tloc(b2, 0),
-			      BATcount(b1), b1->ttype, false, __func__);
+	lng t0 = 0;
+
+	TRC_DEBUG_IF(ALGO) t0 = GDKusec();
+	dbl v = calccovariance(Tloc(b1, 0), Tloc(b2, 0),
+			       BATcount(b1), b1->ttype, false);
+	TRC_DEBUG(ALGO, "b1=" ALGOBATFMT ",b2=" ALGOBATFMT " (" LLFMT " usec)\n",
+		  ALGOBATPAR(b1), ALGOBATPAR(b2), GDKusec() - t0);
+	return v;
 }
 
 dbl
 BATcalccovariance_sample(BAT *b1, BAT *b2)
 {
-	return calccovariance((const void *) Tloc(b1, 0), (const void *) Tloc(b2, 0),
-			      BATcount(b1), b1->ttype, true, __func__);
+	lng t0 = 0;
+
+	TRC_DEBUG_IF(ALGO) t0 = GDKusec();
+	dbl v = calccovariance(Tloc(b1, 0), Tloc(b2, 0),
+			      BATcount(b1), b1->ttype, true);
+	TRC_DEBUG(ALGO, "b1=" ALGOBATFMT ",b2=" ALGOBATFMT " (" LLFMT " usec)\n",
+		  ALGOBATPAR(b1), ALGOBATPAR(b2), GDKusec() - t0);
+	return v;
 }
 
 #define AGGR_CORRELATION_SINGLE(TYPE)					\
@@ -3229,6 +3345,8 @@ BATcalccovariance_sample(BAT *b1, BAT *b2)
 			up += delta1 * aux;				\
 			down1 += delta1 * ((dbl) x - mean1);		\
 			down2 += delta2 * aux;				\
+			if (isinf(up) || isinf(down1) || isinf(down2))		\
+				goto overflow;		\
 		}							\
 	} while (0)
 
@@ -3239,6 +3357,9 @@ BATcalccorrelation(BAT *b1, BAT *b2)
 	dbl mean1 = 0, mean2 = 0, up = 0, down1 = 0, down2 = 0, delta1, delta2, aux;
 	const void *v1 = (const void *) Tloc(b1, 0), *v2 = (const void *) Tloc(b2, 0);
 	int tp = b1->ttype;
+	lng t0 = 0;
+
+	TRC_DEBUG_IF(ALGO) t0 = GDKusec();
 
 	switch (tp) {
 	case TYPE_bte:
@@ -3270,9 +3391,15 @@ BATcalccorrelation(BAT *b1, BAT *b2)
 		return dbl_nil;
 	}
 	if (n != 0 && down1 != 0 && down2 != 0)
-		return (up / n) / (sqrt(down1 / n) * sqrt(down2 / n));
+		aux = (up / n) / (sqrt(down1 / n) * sqrt(down2 / n));
 	else 
-		return dbl_nil;
+		aux = dbl_nil;
+	TRC_DEBUG(ALGO, "b1=" ALGOBATFMT ",b2=" ALGOBATFMT " (" LLFMT " usec)\n",
+		  ALGOBATPAR(b1), ALGOBATPAR(b2), GDKusec() - t0);
+	return aux;
+  overflow:
+	GDKerror("22003!overflow in calculation.\n");
+	return dbl_nil;
 }
 
 #define AGGR_STDEV(TYPE)						\
@@ -3306,6 +3433,8 @@ BATcalccorrelation(BAT *b1, BAT *b2)
 			} else if (cnts[i] == 1) {			\
 				dbls[i] = issample ? dbl_nil : 0;	\
 				nils2++;				\
+			} else if (isinf(m2[i])) {			\
+				goto overflow;		\
 			} else if (variance) {				\
 				dbls[i] = m2[i] / (cnts[i] - issample);	\
 			} else {					\
@@ -3333,10 +3462,13 @@ dogroupstdev(BAT **avgb, BAT *b, BAT *g, BAT *e, BAT *s, int tp,
 	BUN nils = 0, nils2 = 0;
 	BUN *restrict cnts = NULL;
 	dbl *restrict dbls, *restrict mean, *restrict delta, *restrict m2;
-	BAT *bn = NULL;
+	BAT *bn = NULL, *an = NULL;
 	struct canditer ci;
 	BUN ncand;
 	const char *err;
+	lng t0 = 0;
+
+	TRC_DEBUG_IF(ALGO) t0 = GDKusec();
 
 	assert(tp == TYPE_dbl);
 	(void) tp;		/* compatibility (with other BATgroup*
@@ -3354,7 +3486,8 @@ dogroupstdev(BAT **avgb, BAT *b, BAT *g, BAT *e, BAT *s, int tp,
 	if (BATcount(b) == 0 || ngrp == 0) {
 		/* trivial: no products, so return bat aligned with g
 		 * with nil in the tail */
-		return BATconstant(ngrp == 0 ? 0 : min, TYPE_dbl, &dbl_nil, ngrp, TRANSIENT);
+		bn = BATconstant(ngrp == 0 ? 0 : min, TYPE_dbl, &dbl_nil, ngrp, TRANSIENT);
+		goto doreturn;
 	}
 
 	if ((e == NULL ||
@@ -3364,18 +3497,21 @@ dogroupstdev(BAT **avgb, BAT *b, BAT *g, BAT *e, BAT *s, int tp,
 		/* trivial: singleton groups, so all results are equal
 		 * to zero (population) or nil (sample) */
 		dbl v = issample ? dbl_nil : 0;
-		return BATconstant(ngrp == 0 ? 0 : min, TYPE_dbl, &v, ngrp, TRANSIENT);
+		bn = BATconstant(ngrp == 0 ? 0 : min, TYPE_dbl, &v, ngrp, TRANSIENT);
+		goto doreturn;
 	}
 
 	delta = GDKmalloc(ngrp * sizeof(dbl));
 	m2 = GDKmalloc(ngrp * sizeof(dbl));
 	cnts = GDKzalloc(ngrp * sizeof(BUN));
 	if (avgb) {
-		if ((*avgb = COLnew(0, TYPE_dbl, ngrp, TRANSIENT)) == NULL) {
+		an = COLnew(0, TYPE_dbl, ngrp, TRANSIENT);
+		*avgb = an;
+		if (an == NULL) {
 			mean = NULL;
 			goto alloc_fail;
 		}
-		mean = (dbl *) Tloc(*avgb, 0);
+		mean = (dbl *) Tloc(an, 0);
 	} else {
 		mean = GDKmalloc(ngrp * sizeof(dbl));
 	}
@@ -3423,8 +3559,8 @@ dogroupstdev(BAT **avgb, BAT *b, BAT *g, BAT *e, BAT *s, int tp,
 		AGGR_STDEV(dbl);
 		break;
 	default:
-		if (avgb)
-			BBPreclaim(*avgb);
+		if (an)
+			BBPreclaim(an);
 		else
 			GDKfree(mean);
 		GDKfree(delta);
@@ -3435,13 +3571,13 @@ dogroupstdev(BAT **avgb, BAT *b, BAT *g, BAT *e, BAT *s, int tp,
 			 func, ATOMname(b->ttype));
 		return NULL;
 	}
-	if (avgb) {
-		BATsetcount(*avgb, ngrp);
-		(*avgb)->tkey = ngrp <= 1;
-		(*avgb)->tsorted = ngrp <= 1;
-		(*avgb)->trevsorted = ngrp <= 1;
-		(*avgb)->tnil = nils != 0;
-		(*avgb)->tnonil = nils == 0;
+	if (an) {
+		BATsetcount(an, ngrp);
+		an->tkey = ngrp <= 1;
+		an->tsorted = ngrp <= 1;
+		an->trevsorted = ngrp <= 1;
+		an->tnil = nils != 0;
+		an->tnonil = nils == 0;
 	} else {
 		GDKfree(mean);
 	}
@@ -3456,11 +3592,24 @@ dogroupstdev(BAT **avgb, BAT *b, BAT *g, BAT *e, BAT *s, int tp,
 	bn->trevsorted = ngrp <= 1;
 	bn->tnil = nils != 0;
 	bn->tnonil = nils == 0;
+  doreturn:
+	TRC_DEBUG(ALGO, "b=" ALGOBATFMT ",g=" ALGOBATFMT ",e=" ALGOOPTBATFMT
+		  ",s=" ALGOOPTBATFMT
+		  ",skip_nils=%s,issample=%s,variance=%s -> " ALGOOPTBATFMT
+		  ",avgb=" ALGOOPTBATFMT " (%s -- " LLFMT " usec)\n",
+		  ALGOBATPAR(b), ALGOBATPAR(g), ALGOOPTBATPAR(e),
+		  ALGOOPTBATPAR(s),
+		  skip_nils ? "true" : "false",
+		  issample ? "true" : "false",
+		  variance ? "true" : "false",
+		  ALGOOPTBATPAR(bn), ALGOOPTBATPAR(an),
+		  func, GDKusec() - t0);
 	return bn;
-
+  overflow:
+	GDKerror("22003!overflow in calculation.\n");
   alloc_fail:
-	if (avgb)
-		BBPreclaim(*avgb);
+	if (an)
+		BBPreclaim(an);
 	else
 		GDKfree(mean);
 	BBPreclaim(bn);
@@ -3539,6 +3688,8 @@ BATgroupvariance_population(BAT *b, BAT *g, BAT *e, BAT *s, int tp,
 			} else if (cnts[i] == 1) {			\
 				dbls[i] = issample ? dbl_nil : 0;	\
 				nils2++;				\
+			} else if (isinf(m2[i])) {		\
+				goto overflow;		\
 			} else {					\
 				dbls[i] = m2[i] / (cnts[i] - issample);	\
 			}						\
@@ -3557,6 +3708,9 @@ dogroupcovariance(BAT *b1, BAT *b2, BAT *g, BAT *e, BAT *s, int tp,
 	BAT *bn = NULL;
 	struct canditer ci;
 	const char *err;
+	lng t0 = 0;
+
+	TRC_DEBUG_IF(ALGO) t0 = GDKusec();
 
 	assert(tp == TYPE_dbl && BATcount(b1) == BATcount(b2) && b1->ttype == b2->ttype && BATtdense(b1) == BATtdense(b2));
 	(void) tp;
@@ -3570,8 +3724,10 @@ dogroupcovariance(BAT *b1, BAT *b2, BAT *g, BAT *e, BAT *s, int tp,
 		return NULL;
 	}
 
-	if (BATcount(b1) == 0 || ngrp == 0)
-		return BATconstant(ngrp == 0 ? 0 : min, TYPE_dbl, &dbl_nil, ngrp, TRANSIENT);
+	if (BATcount(b1) == 0 || ngrp == 0) {
+		bn = BATconstant(ngrp == 0 ? 0 : min, TYPE_dbl, &dbl_nil, ngrp, TRANSIENT);
+		goto doreturn;
+	}
 
 	if ((e == NULL ||
 	     (BATcount(e) == BATcount(b1) && (e->hseqbase == b1->hseqbase || e->hseqbase == b2->hseqbase))) &&
@@ -3580,7 +3736,8 @@ dogroupcovariance(BAT *b1, BAT *b2, BAT *g, BAT *e, BAT *s, int tp,
 		/* trivial: singleton groups, so all results are equal
 		 * to zero (population) or nil (sample) */
 		dbl v = issample ? dbl_nil : 0;
-		return BATconstant(ngrp == 0 ? 0 : min, TYPE_dbl, &v, ngrp, TRANSIENT);
+		bn = BATconstant(ngrp == 0 ? 0 : min, TYPE_dbl, &v, ngrp, TRANSIENT);
+		goto doreturn;
 	}
 
 	delta1 = GDKmalloc(ngrp * sizeof(dbl));
@@ -3659,7 +3816,20 @@ dogroupcovariance(BAT *b1, BAT *b2, BAT *g, BAT *e, BAT *s, int tp,
 	bn->trevsorted = ngrp <= 1;
 	bn->tnil = nils != 0;
 	bn->tnonil = nils == 0;
+  doreturn:
+	TRC_DEBUG(ALGO, "b1=" ALGOBATFMT ",b2=" ALGOBATFMT ",g=" ALGOBATFMT
+		  ",e=" ALGOOPTBATFMT ",s=" ALGOOPTBATFMT
+		  ",skip_nils=%s,issample=%s -> " ALGOOPTBATFMT
+		  " (%s -- " LLFMT " usec)\n",
+		  ALGOBATPAR(b1), ALGOBATPAR(b2), ALGOBATPAR(g),
+		  ALGOOPTBATPAR(e), ALGOOPTBATPAR(s),
+		  skip_nils ? "true" : "false",
+		  issample ? "true" : "false",
+		  ALGOOPTBATPAR(bn),
+		  func, GDKusec() - t0);
 	return bn;
+  overflow:
+	GDKerror("22003!overflow in calculation.\n");
   alloc_fail:
 	BBPreclaim(bn);
 	GDKfree(mean1);
@@ -3720,6 +3890,8 @@ BATgroupcovariance_population(BAT *b1, BAT *b2, BAT *g, BAT *e, BAT *s, int tp, 
 			if (cnts[i] <= 1 || cnts[i] == BUN_NONE || down1[i] == 0 || down2[i] == 0) { \
 				dbls[i] = dbl_nil;			\
 				nils++;					\
+			} else if (isinf(up[i]) || isinf(down1[i]) || isinf(down2[i])) {	\
+				goto overflow;		\
 			} else {					\
 				dbls[i] = (up[i] / cnts[i]) / (sqrt(down1[i] / cnts[i]) * sqrt(down2[i] / cnts[i])); \
 				assert(!is_dbl_nil(dbls[i]));		\
@@ -3738,6 +3910,9 @@ BATgroupcorrelation(BAT *b1, BAT *b2, BAT *g, BAT *e, BAT *s, int tp, bool skip_
 	BAT *bn = NULL;
 	struct canditer ci;
 	const char *err;
+	lng t0 = 0;
+
+	TRC_DEBUG_IF(ALGO) t0 = GDKusec();
 
 	assert(tp == TYPE_dbl && BATcount(b1) == BATcount(b2) && b1->ttype == b2->ttype && BATtdense(b1) == BATtdense(b2));
 	(void) tp;
@@ -3752,14 +3927,17 @@ BATgroupcorrelation(BAT *b1, BAT *b2, BAT *g, BAT *e, BAT *s, int tp, bool skip_
 		return NULL;
 	}
 
-	if (BATcount(b1) == 0 || ngrp == 0)
-		return BATconstant(ngrp == 0 ? 0 : min, TYPE_dbl, &dbl_nil, ngrp, TRANSIENT);
+	if (BATcount(b1) == 0 || ngrp == 0) {
+		bn = BATconstant(ngrp == 0 ? 0 : min, TYPE_dbl, &dbl_nil, ngrp, TRANSIENT);
+		goto doreturn;
+	}
 
 	if ((e == NULL ||
 	     (BATcount(e) == BATcount(b1) && (e->hseqbase == b1->hseqbase || e->hseqbase == b2->hseqbase))) &&
 	    (BATtdense(g) || (g->tkey && g->tnonil))) {
 		dbl v = dbl_nil;
-		return BATconstant(min, TYPE_dbl, &v, ngrp, TRANSIENT);
+		bn = BATconstant(min, TYPE_dbl, &v, ngrp, TRANSIENT);
+		goto doreturn;
 	}
 
 	delta1 = GDKmalloc(ngrp * sizeof(dbl));
@@ -3843,7 +4021,19 @@ BATgroupcorrelation(BAT *b1, BAT *b2, BAT *g, BAT *e, BAT *s, int tp, bool skip_
 	bn->trevsorted = ngrp <= 1;
 	bn->tnil = nils != 0;
 	bn->tnonil = nils == 0;
+  doreturn:
+	TRC_DEBUG(ALGO, "b1=" ALGOBATFMT ",b2=" ALGOBATFMT ",g=" ALGOBATFMT
+		  ",e=" ALGOOPTBATFMT ",s=" ALGOOPTBATFMT
+		  ",skip_nils=%s -> " ALGOOPTBATFMT
+		  " (" LLFMT " usec)\n",
+		  ALGOBATPAR(b1), ALGOBATPAR(b2), ALGOBATPAR(g),
+		  ALGOOPTBATPAR(e), ALGOOPTBATPAR(s),
+		  skip_nils ? "true" : "false",
+		  ALGOOPTBATPAR(bn),
+		  GDKusec() - t0);
 	return bn;
+  overflow:
+	GDKerror("22003!overflow in calculation.\n");
   alloc_fail:
 	BBPreclaim(bn);
 	GDKfree(mean1);

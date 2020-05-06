@@ -75,9 +75,8 @@ MAPI  = (monetdb) /var/tmp/mtest-3400/.s.monetdb.37634
 QUERY = SELECT
             (SELECT GROUPING(t1.col1) FROM tbl_ProductSales)
         FROM another_T t1; --error, PostgreSQL gives: arguments to GROUPING must be grouping expressions of the associated query level
-ERROR = !zero_or_one: cardinality violation, scalar expression expected
-CODE  = M0M29
-MAPI  = (monetdb) /var/tmp/mtest-3400/.s.monetdb.37634
+ERROR = !GDK reported error: mergejoin: more than one match
+MAPI  = (monetdb) /var/tmp/mtest-1456258/.s.monetdb.39356
 QUERY = SELECT
             GROUPING(ColID, ColID)
         FROM tbl_ProductSales

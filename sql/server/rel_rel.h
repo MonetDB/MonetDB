@@ -26,8 +26,10 @@
 #define sql_outer        (1 << 10) //ORed
 #define sql_group_totals (1 << 11) //ORed
 #define sql_update_set   (1 << 12) //ORed
-#define sql_values       (1 << 13) //ORed
-#define psm_call         (1 << 14) //ORed
+#define sql_psm_set      (1 << 13) //ORed
+#define sql_values       (1 << 14) //ORed
+#define psm_call         (1 << 15) //ORed
+#define sql_merge        (1 << 16) //ORed
 
 #define is_sql_from(X)         ((X & sql_from) == sql_from)
 #define is_sql_where(X)        ((X & sql_where) == sql_where)
@@ -42,8 +44,10 @@
 #define is_sql_outer(X)        ((X & sql_outer) == sql_outer)
 #define is_sql_group_totals(X) ((X & sql_group_totals) == sql_group_totals)
 #define is_sql_update_set(X)   ((X & sql_update_set) == sql_update_set)
+#define is_sql_psm_set(X)      ((X & sql_psm_set) == sql_psm_set)
 #define is_sql_values(X)       ((X & sql_values) == sql_values)
 #define is_psm_call(X)         ((X & psm_call) == psm_call)
+#define is_sql_merge(X)        ((X & sql_merge) == sql_merge)
 
 #define is_updateble(rel) \
 	(rel->op == op_basetable || \
@@ -112,14 +116,15 @@ extern sql_exp * rel_find_column( sql_allocator *sa, sql_rel *rel, const char *t
 extern int rel_in_rel(sql_rel *super, sql_rel *sub);
 extern sql_rel *rel_parent(sql_rel *rel);
 extern sql_exp *lastexp(sql_rel *rel);
+extern sql_rel *rel_return_zero_or_one(mvc *sql, sql_rel *rel, exp_kind ek);
 extern sql_rel *rel_zero_or_one(mvc *sql, sql_rel *rel, exp_kind ek);
 
 extern list *rel_dependencies(mvc *sql, sql_rel *r);
 extern sql_exp * exps_find_match_exp(list *l, sql_exp *e);
 
-typedef sql_exp *(*exp_rewrite_fptr)(mvc *sql, sql_rel *rel, sql_exp *e, int depth /* depth of the nested expression */ );
-extern sql_rel *rel_exp_visitor_topdown(mvc *sql, sql_rel *rel, exp_rewrite_fptr exp_rewriter);
-extern sql_rel *rel_exp_visitor_bottomup(mvc *sql, sql_rel *rel, exp_rewrite_fptr exp_rewriter);
+typedef sql_exp *(*exp_rewrite_fptr)(mvc *sql, sql_rel *rel, sql_exp *e, int depth /* depth of the nested expression */, int *changes);
+extern sql_rel *rel_exp_visitor_topdown(mvc *sql, sql_rel *rel, exp_rewrite_fptr exp_rewriter, int *changes);
+extern sql_rel *rel_exp_visitor_bottomup(mvc *sql, sql_rel *rel, exp_rewrite_fptr exp_rewriter, int *changes);
 
 typedef sql_rel *(*rel_rewrite_fptr)(mvc *sql, sql_rel *rel, int *changes);
 extern sql_rel *rel_visitor_topdown(mvc *sql, sql_rel *rel, rel_rewrite_fptr rel_rewriter, int *changes);

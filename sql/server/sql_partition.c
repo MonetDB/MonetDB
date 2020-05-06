@@ -101,9 +101,14 @@ rel_find_table_columns(mvc* sql, sql_rel* rel, sql_table *t, list *cols)
 			exp_find_table_columns(sql, (sql_exp*) n->data, t, cols);
 
 	switch (rel->op) {
-		case op_table:
 		case op_basetable:
-		case op_ddl:
+		case op_truncate:
+			break;
+		case op_table:
+			if (IS_TABLE_PROD_FUNC(rel->flag) || rel->flag == TABLE_FROM_RELATION) {
+				if (rel->l)
+					rel_find_table_columns(sql, rel->l, t, cols);
+			}
 			break;
 		case op_join:
 		case op_left:
@@ -130,9 +135,19 @@ rel_find_table_columns(mvc* sql, sql_rel* rel, sql_table *t, list *cols)
 		case op_insert:
 		case op_update:
 		case op_delete:
-		case op_truncate:
 			if (rel->r)
 				rel_find_table_columns(sql, rel->r, t, cols);
+			break;
+		case op_ddl: 
+			if (rel->flag == ddl_output || rel->flag == ddl_create_seq || rel->flag == ddl_alter_seq || rel->flag == ddl_alter_table || rel->flag == ddl_create_table || rel->flag == ddl_create_view) {
+				if (rel->l)
+					rel_find_table_columns(sql, rel->l, t, cols);
+			} else if (rel->flag == ddl_list || rel->flag == ddl_exception) {
+				if (rel->l)
+					rel_find_table_columns(sql, rel->l, t, cols);
+				if (rel->r)
+					rel_find_table_columns(sql, rel->r, t, cols);
+			}
 			break;
 	}
 }

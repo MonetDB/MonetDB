@@ -48,8 +48,7 @@ QUERY = select
         			  inner join partsupp as ref_10
         			  on (sample_8.col1 = ref_10.ps_partkey )
         			on (ref_4.col0 = ref_10.ps_suppkey )
-ERROR = !Cardinality violation, scalar value expected
-CODE  = 21000
+ERROR = !GDK reported error: BATsubcross: more than one match
 
 # 16:49:27 >  
 # 16:49:27 >  "Done."

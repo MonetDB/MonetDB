@@ -418,6 +418,7 @@ GDKtracer_log(const char *file, const char *func, int lineno,
 	static size_t prefix_length = (size_t) -1;
 
 	if (prefix_length == (size_t) -1) {
+		/* first time, calculate prefix of file name */
 		msg = strstr(file_prefix, "gdk" DIR_SEP_STR "gdk_tracer.c");
 		if (msg == NULL)
 			prefix_length = 0;
@@ -429,20 +430,21 @@ GDKtracer_log(const char *file, const char *func, int lineno,
 		file += prefix_length;
 
 	va_start(va, fmt);
+	int pad = (int) strlen(file);
+	pad = (pad > 40) ? 0 : 40 - pad;
 	bytes_written = snprintf(buffer, sizeof(buffer),
-				 "%s "
-				 "%-"MXW"s:%d "
-				 "%"MXW"s "
-				 "%"MXW"s "
-				 "%-"MXW"s "
-				 "%-"MXW"s # ",
+				 "%s "		/* timestamp */
+				 "%10s "	/* level */
+				 "%-8s "	/* component */
+				 "%-20s "	/* thread name */
+				 "%s:%-5d %*s"	/* file, lineno, pad */
+				 "%-20s ",	/* function */
 				 get_timestamp(ts, sizeof(ts)),
-				 file,
-				 lineno,
-				 func,
 				 level_str[level],
 				 component_str[comp],
-				 MT_thread_getname());
+				 MT_thread_getname(),
+				 file, lineno, pad, "",
+				 func);
 	if (bytes_written > 0 && bytes_written < (int) sizeof(buffer)) {
 		msg = buffer + bytes_written;
 		bytes_written += vsnprintf(msg,

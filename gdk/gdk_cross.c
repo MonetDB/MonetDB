@@ -13,9 +13,10 @@
 /* Calculate a cross product between bats l and r with optional
  * candidate lists sl for l and sr for r.
  * The result is two bats r1 and r2 which contain the OID (head
- * values) of the input bats l and r. */
+ * values) of the input bats l and r.
+ * If max_one is set, r can have at most one row. */
 gdk_return
-BATsubcross(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr)
+BATsubcross(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr, bool max_one)
 {
 	BAT *bn1, *bn2;
 	struct canditer ci1, ci2;
@@ -25,6 +26,11 @@ BATsubcross(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr)
 
 	cnt1 = canditer_init(&ci1, l, sl);
 	cnt2 = canditer_init(&ci2, r, sr);
+
+	if (max_one && cnt2 > 1) {
+		GDKerror("more than one match");
+		return GDK_FAIL;
+	}
 
 	bn1 = COLnew(0, TYPE_oid, cnt1 * cnt2, TRANSIENT);
 	bn2 = COLnew(0, TYPE_oid, cnt1 * cnt2, TRANSIENT);

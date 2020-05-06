@@ -20,7 +20,6 @@ log_base2(unsigned int n)
 	return l ;
 }
 
-
 sql_hash *
 hash_new(sql_allocator *sa, int size, fkeyvalue key)
 {

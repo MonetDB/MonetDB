@@ -12,6 +12,9 @@
   purposes.  It was never actively used but was there as an option.
   Now the option has been removed.
 
+* Thu Feb  6 2020 Panagiotis Koutsourakis <kutsurak@monetdbsolutions.com>
+- Add port and host as fields in the .monetdb file.
+
 * Fri Oct 25 2019 Pedro Ferreira <pedro.ferreira@monetdbsolutions.com>
 - Added 'sessionid' column to system function sys.queue(), so each query
   gets tagged with the current session identifier

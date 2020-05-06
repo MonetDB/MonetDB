@@ -246,8 +246,11 @@ sql_update_hugeint(Client c, mvc *sql, const char *prev_schema, bool *systabfixe
 			"GRANT EXECUTE ON FUNCTION json.filter(json, hugeint) TO PUBLIC;\n");
 
 	pos += snprintf(buf + pos, bufsize - pos,
-			"update sys.functions set system = true where name in ('fuse', 'generate_series', 'stddev_samp', 'stddev_pop', 'var_samp', 'var_pop', 'median', 'median_avg', 'quantile', 'quantile_avg', 'corr') and schema_id = (select id from sys.schemas where name = 'sys');\n"
-			"update sys.functions set system = true where name = 'filter' and schema_id = (select id from sys.schemas where name = 'json');\n");
+			"update sys.functions set system = true where system <> true and name in ('fuse') and schema_id = (select id from sys.schemas where name = 'sys') and type = %d;\n"
+			"update sys.functions set system = true where system <> true and name in ('generate_series') and schema_id = (select id from sys.schemas where name = 'sys') and type = %d;\n"
+			"update sys.functions set system = true where system <> true and name in ('stddev_samp', 'stddev_pop', 'var_samp', 'var_pop', 'median', 'median_avg', 'quantile', 'quantile_avg', 'corr') and schema_id = (select id from sys.schemas where name = 'sys') and type = %d;\n"
+			"update sys.functions set system = true where system <> true and name = 'filter' and schema_id = (select id from sys.schemas where name = 'json') and type = %d;\n",
+			(int) F_FUNC, (int) F_UNION, (int) F_AGGR, (int) F_FUNC);
 
 	pos += snprintf(buf + pos, bufsize - pos, "set schema \"%s\";\n", prev_schema);
 	assert(pos < bufsize);
@@ -657,7 +660,7 @@ sql_update_mar2018(Client c, mvc *sql, const char *prev_schema, bool *systabfixe
 			"grant execute on aggregate sys.corr(hugeint, hugeint) to public;\n");
 #endif
 	pos += snprintf(buf + pos, bufsize - pos,
-			"update sys.functions set system = true where name = 'corr' and schema_id = (select id from sys.schemas where name = 'sys');\n");
+			"update sys.functions set system = true where system <> true and name = 'corr' and schema_id = (select id from sys.schemas where name = 'sys');\n");
 
 	/* 51_sys_schema_extensions.sql */
 	t = mvc_bind_table(sql, s, "privilege_codes");
@@ -790,7 +793,7 @@ sql_update_mar2018(Client c, mvc *sql, const char *prev_schema, bool *systabfixe
 			"external name wlr.\"getreplicaclock\";\n"
 			"create function replicaTick() returns bigint\n"
 			"external name wlr.\"getreplicatick\";\n"
-			"update sys.functions set system = true where name in ('master', 'stopmaster', 'masterbeat', 'masterclock', 'mastertick', 'replicate', 'replicabeat', 'replicaclock', 'replicatick') and schema_id = (select id from sys.schemas where name = 'sys');\n"
+			"update sys.functions set system = true where system <> true and name in ('master', 'stopmaster', 'masterbeat', 'masterclock', 'mastertick', 'replicate', 'replicabeat', 'replicaclock', 'replicatick') and schema_id = (select id from sys.schemas where name = 'sys');\n"
 		);
 
 	/* comments */
@@ -866,7 +869,7 @@ sql_update_mar2018_sp1(Client c, const char *prev_schema)
 			"CREATE FUNCTION dependencies_functions_on_triggers()\n"
 			"RETURNS TABLE (sch varchar(100), usr varchar(100), dep_type varchar(32))\n"
 			"RETURN TABLE (SELECT f.name, tri.name, 'DEP_TRIGGER' from functions as f, triggers as tri, dependencies as dep where dep.id = f.id AND dep.depend_id =tri.id AND dep.depend_type = 8);\n"
-			"update sys.functions set system = true where name in ('dependencies_functions_on_triggers') and schema_id = (select id from sys.schemas where name = 'sys');\n");
+			"update sys.functions set system = true where system <> true and name in ('dependencies_functions_on_triggers') and schema_id = (select id from sys.schemas where name = 'sys');\n");
 
 	pos += snprintf(buf + pos, bufsize - pos, "set schema \"%s\";\n", prev_schema);
 	assert(pos < bufsize);
@@ -894,7 +897,8 @@ sql_update_remote_tables(Client c, mvc *sql, const char *prev_schema)
 			"create function sys.remote_table_credentials (tablename string)"
 			" returns table (\"uri\" string, \"username\" string, \"hash\" string)"
 			" external name sql.rt_credentials;\n"
-			"update sys.functions set system = true where name = 'remote_table_credentials' and schema_id = (select id from sys.schemas where name = 'sys');\n");
+			"update sys.functions set system = true where system <> true and name = 'remote_table_credentials' and schema_id = (select id from sys.schemas where name = 'sys') and type = %d;\n",
+			(int) F_FUNC);
 
 	pos += snprintf(buf + pos, bufsize - pos, "set schema \"%s\";\n", prev_schema);
 
@@ -1063,7 +1067,8 @@ sql_update_aug2018(Client c, mvc *sql, const char *prev_schema)
 			"grant execute on aggregate sys.group_concat(string) to public;\n"
 			"create aggregate sys.group_concat(str string, sep string) returns string external name \"aggr\".\"str_group_concat\";\n"
 			"grant execute on aggregate sys.group_concat(string, string) to public;\n"
-			"update sys.functions set system = true where name in ('group_concat') and schema_id = (select id from sys.schemas where name = 'sys');\n");
+			"update sys.functions set system = true where system <> true and name in ('group_concat') and schema_id = (select id from sys.schemas where name = 'sys') and type = %d;\n",
+			(int) F_AGGR);
 
 	pos += snprintf(buf + pos, bufsize - pos, "set schema \"%s\";\n", prev_schema);
 
@@ -1175,7 +1180,8 @@ sql_update_apr2019(Client c, mvc *sql, const char *prev_schema)
 	pos += snprintf(buf + pos, bufsize - pos,
 			"drop procedure sys.querylog_enable(smallint);\n"
 			"create procedure sys.querylog_enable(threshold integer) external name sql.querylog_enable;\n"
-			"update sys.functions set system = true where name = 'querylog_enable' and schema_id = (select id from sys.schemas where name = 'sys');\n");
+			"update sys.functions set system = true where system <> true and name = 'querylog_enable' and schema_id = (select id from sys.schemas where name = 'sys') and type = %d;\n",
+			(int) F_PROC);
 
 	/* 17_temporal.sql */
 	pos += snprintf(buf + pos, bufsize - pos,
@@ -1183,13 +1189,13 @@ sql_update_apr2019(Client c, mvc *sql, const char *prev_schema)
 			"returns timestamp\n"
 			"external name sql.date_trunc;\n"
 			"grant execute on function sys.date_trunc(string, timestamp) to public;\n"
-			"update sys.functions set system = true where schema_id = (select id from sys.schemas where name = 'sys') and name = 'date_trunc' and type = %d;\n", (int) F_FUNC);
+			"update sys.functions set system = true where system <> true and schema_id = (select id from sys.schemas where name = 'sys') and name = 'date_trunc' and type = %d;\n", (int) F_FUNC);
 
 	/* 22_clients.sql */
 	pos += snprintf(buf + pos, bufsize - pos,
 			"create procedure sys.setprinttimeout(\"timeout\" integer)\n"
 			"external name clients.setprinttimeout;\n"
-			"update sys.functions set system = true where schema_id = (select id from sys.schemas where name = 'sys') and name = 'setprinttimeout' and type = %d;\n", (int) F_PROC);
+			"update sys.functions set system = true where system <> true and schema_id = (select id from sys.schemas where name = 'sys') and name = 'setprinttimeout' and type = %d;\n", (int) F_PROC);
 
 	/* 26_sysmon.sql */
 	pos += snprintf(buf + pos, bufsize - pos,
@@ -1550,13 +1556,13 @@ sql_update_storagemodel(Client c, mvc *sql, const char *prev_schema)
 		"update sys._tables set system = true where schema_id = (select id from sys.schemas where name = 'sys')"
 		" and name in ('storage', 'tablestorage', 'schemastorage', 'storagemodelinput', 'storagemodel', 'tablestoragemodel');\n");
 	pos += snprintf(buf + pos, bufsize - pos,
-		"update sys.functions set system = true where schema_id = (select id from sys.schemas where name = 'sys')"
+		"update sys.functions set system = true where system <> true and schema_id = (select id from sys.schemas where name = 'sys')"
 		" and name in ('storage') and type = %d;\n", (int) F_UNION);
 	pos += snprintf(buf + pos, bufsize - pos,
-		"update sys.functions set system = true where schema_id = (select id from sys.schemas where name = 'sys')"
+		"update sys.functions set system = true where system <> true and schema_id = (select id from sys.schemas where name = 'sys')"
 		" and name in ('storagemodelinit') and type = %d;\n", (int) F_PROC);
 	pos += snprintf(buf + pos, bufsize - pos,
-		"update sys.functions set system = true where schema_id = (select id from sys.schemas where name = 'sys')"
+		"update sys.functions set system = true where system <> true and schema_id = (select id from sys.schemas where name = 'sys')"
 		" and name in ('columnsize', 'heapsize', 'hashsize', 'imprintsize') and type = %d;\n", (int) F_FUNC);
 
 	pos += snprintf(buf + pos, bufsize - pos, "set schema \"%s\";\n", prev_schema);
@@ -1937,24 +1943,24 @@ sql_update_nov2019(Client c, mvc *sql, const char *prev_schema, bool *systabfixe
 		);
 
 	pos += snprintf(buf + pos, bufsize - pos,
-			"update sys.functions set system = true where schema_id = (select id from sys.schemas where name = 'sys')"
+			"update sys.functions set system = true where system <> true and schema_id = (select id from sys.schemas where name = 'sys')"
 			" and name in ('deltas') and type = %d;\n", (int) F_UNION);
 	pos += snprintf(buf + pos, bufsize - pos,
-			"update sys.functions set system = true where schema_id = (select id from sys.schemas where name = 'sys')"
+			"update sys.functions set system = true where system <> true and schema_id = (select id from sys.schemas where name = 'sys')"
 			" and name in ('median_avg', 'quantile_avg') and type = %d;\n", (int) F_AGGR);
 	pos += snprintf(buf + pos, bufsize - pos,
 			"update sys.schemas set system = true where name in ('wlc', 'wlr');\n");
 	pos += snprintf(buf + pos, bufsize - pos,
-			"update sys.functions set system = true where schema_id = (select id from sys.schemas where name = 'wlc')"
+			"update sys.functions set system = true where system <> true and schema_id = (select id from sys.schemas where name = 'wlc')"
 			" and name in ('clock', 'tick') and type = %d;\n", (int) F_FUNC);
 	pos += snprintf(buf + pos, bufsize - pos,
-			"update sys.functions set system = true where schema_id = (select id from sys.schemas where name = 'wlc')"
+			"update sys.functions set system = true where system <> true and schema_id = (select id from sys.schemas where name = 'wlc')"
 			" and name in ('master', 'stop', 'flush', 'beat') and type = %d;\n", (int) F_PROC);
 	pos += snprintf(buf + pos, bufsize - pos,
-			"update sys.functions set system = true where schema_id = (select id from sys.schemas where name = 'wlr')"
+			"update sys.functions set system = true where system <> true and schema_id = (select id from sys.schemas where name = 'wlr')"
 			" and name in ('clock', 'tick') and type = %d;\n", (int) F_FUNC);
 	pos += snprintf(buf + pos, bufsize - pos,
-			"update sys.functions set system = true where schema_id = (select id from sys.schemas where name = 'wlr')"
+			"update sys.functions set system = true where system <> true and schema_id = (select id from sys.schemas where name = 'wlr')"
 			" and name in ('master', 'stop', 'accept', 'replicate', 'beat') and type = %d;\n", (int) F_PROC);
 
 	/* 39_analytics.sql */
@@ -2003,7 +2009,7 @@ sql_update_nov2019(Client c, mvc *sql, const char *prev_schema, bool *systabfixe
 		);
 
 	pos += snprintf(buf + pos, bufsize - pos,
-			"update sys.functions set system = true where schema_id = (select id from sys.schemas where name = 'sys')"
+			"update sys.functions set system = true where system <> true and schema_id = (select id from sys.schemas where name = 'sys')"
 			" and name in ('stddev_samp', 'stddev_pop', 'var_samp', 'var_pop', 'median', 'quantile') and type = %d;\n", (int) F_AGGR);
 
 	/* The MAL implementation of functions json.text(string) and json.text(int) do not exist */
@@ -2013,8 +2019,8 @@ sql_update_nov2019(Client c, mvc *sql, const char *prev_schema, bool *systabfixe
 
 	/* The first argument to copyfrom is a PTR type */
 	pos += snprintf(buf + pos, bufsize - pos,
-			"update \"sys\".\"args\" set \"type\" = 'ptr' where"
-			" \"func_id\" = (select \"id\" from \"sys\".\"functions\" where \"name\" = 'copyfrom' and \"func\" = 'copy_from' and \"mod\" = 'sql') and \"name\" = 'arg_1';\n");
+			"update sys.args set type = 'ptr' where"
+			" func_id = (select id from sys.functions where name = 'copyfrom' and func = 'copy_from' and mod = 'sql' and type = %d) and name = 'arg_1';\n", (int) F_UNION);
 
 	pos += snprintf(buf + pos, bufsize - pos, "set schema \"%s\";\n", prev_schema);
 	assert(pos < bufsize);
@@ -2052,7 +2058,7 @@ sql_update_nov2019_sp1_hugeint(Client c, mvc *sql, const char *prev_schema, bool
 			"GRANT EXECUTE ON AGGREGATE quantile_avg(HUGEINT, DOUBLE) TO PUBLIC;\n");
 
 	pos += snprintf(buf + pos, bufsize - pos,
-			"update sys.functions set system = true where name in ('median_avg', 'quantile_avg') and schema_id = (select id from sys.schemas where name = 'sys');\n");
+			"update sys.functions set system = true where system <> true and name in ('median_avg', 'quantile_avg') and schema_id = (select id from sys.schemas where name = 'sys') and type = %d;\n", (int) F_AGGR);
 
 	pos += snprintf(buf + pos, bufsize - pos, "set schema \"%s\";\n", prev_schema);
 	assert(pos < bufsize);
@@ -2083,13 +2089,18 @@ sql_update_jun2020(Client c, mvc *sql, const char *prev_schema, bool *systabfixe
 	pos += snprintf(buf + pos, bufsize - pos,
 			"set schema \"sys\";\n");
 
+	/* convert old PYTHON2 and PYTHON2_MAP to PYTHON and PYTHON_MAP
+	 * see also function load_func() in store.c */
+	pos += snprintf(buf + pos, bufsize - pos,
+			"update sys.functions set language = language - 2 where language in (8, 9);\n");
+
 	/* 12_url */
 	pos += snprintf(buf + pos, bufsize - pos,
 			"drop function isaURL(url);\n"
 			"CREATE function isaURL(theUrl string) RETURNS BOOL\n"
 			" EXTERNAL NAME url.\"isaURL\";\n"
 			"GRANT EXECUTE ON FUNCTION isaURL(string) TO PUBLIC;\n"
-			"update sys.functions set system = true where schema_id = (select id from sys.schemas where name = 'sys')"
+			"update sys.functions set system = true where system <> true and schema_id = (select id from sys.schemas where name = 'sys')"
 			" and name = 'isaurl' and type = %d;\n", (int) F_FUNC);
 
 	/* 13_date.sql */
@@ -2110,9 +2121,9 @@ sql_update_jun2020(Client c, mvc *sql, const char *prev_schema, bool *systabfixe
 			"grant execute on function time_to_str to public;\n"
 			"grant execute on function str_to_timestamp to public;\n"
 			"grant execute on function timestamp_to_str to public;\n"
-			"update sys.functions set system = true where name in"
+			"update sys.functions set system = true where system <> true and name in"
 			" ('str_to_time', 'str_to_timestamp', 'time_to_str', 'timestamp_to_str')"
-			" and schema_id = (select id from sys.schemas where name = 'sys');\n");
+			" and schema_id = (select id from sys.schemas where name = 'sys') and type = %d;\n", (int) F_FUNC);
 
 	/* 16_tracelog */
 	t = mvc_bind_table(sql, sys, "tracelog");
@@ -2127,7 +2138,7 @@ sql_update_jun2020(Client c, mvc *sql, const char *prev_schema, bool *systabfixe
 			" )\n"
 			" external name sql.dump_trace;\n"
 			"create view sys.tracelog as select * from sys.tracelog();\n"
-			"update sys.functions set system = true where schema_id = (select id from sys.schemas where name = 'sys')"
+			"update sys.functions set system = true where system <> true and schema_id = (select id from sys.schemas where name = 'sys')"
 			" and name = 'tracelog' and type = %d;\n", (int) F_UNION);
 	pos += snprintf(buf + pos, bufsize - pos,
 			"update sys._tables set system = true where schema_id = (select id from sys.schemas where name = 'sys')"
@@ -2152,9 +2163,9 @@ sql_update_jun2020(Client c, mvc *sql, const char *prev_schema, bool *systabfixe
 			"grant execute on function sys.epoch (BIGINT) to public;\n"
 			"grant execute on function sys.epoch (INT) to public;\n"
 			"grant execute on function sys.epoch (TIMESTAMP WITH TIME ZONE) to public;\n"
-			"update sys.functions set system = true where name in"
+			"update sys.functions set system = true where system <> true and name in"
 			" ('epoch', 'date_trunc')"
-			" and schema_id = (select id from sys.schemas where name = 'sys');\n");
+			" and schema_id = (select id from sys.schemas where name = 'sys') and type = %d;\n", (int) F_FUNC);
 
 	/* 22_clients */
 	t = mvc_bind_table(sql, sys, "sessions");
@@ -2240,13 +2251,13 @@ sql_update_jun2020(Client c, mvc *sql, const char *prev_schema, bool *systabfixe
 			"grant select on sys.prepared_statements_args to public;\n");
 
 	pos += snprintf(buf + pos, bufsize - pos,
-			"update sys.functions set system = true where schema_id = (select id from sys.schemas where name = 'sys')"
+			"update sys.functions set system = true where system <> true and schema_id = (select id from sys.schemas where name = 'sys')"
 			" and name in ('sessions', 'prepared_statements', 'prepared_statements_args') and type = %d;\n", (int) F_UNION);
 	pos += snprintf(buf + pos, bufsize - pos,
 			"update sys._tables set system = true where schema_id = (select id from sys.schemas where name = 'sys')"
 			" and name in ('sessions', 'prepared_statements', 'prepared_statements_args');\n");
 	pos += snprintf(buf + pos, bufsize - pos,
-			"update sys.functions set system = true where schema_id = (select id from sys.schemas where name = 'sys')"
+			"update sys.functions set system = true where system <> true and schema_id = (select id from sys.schemas where name = 'sys')"
 			" and name in ('setoptimizer', 'setquerytimeout', 'setsessiontimeout', 'setworkerlimit', 'setmemorylimit', 'setoptimizer', 'stopsession') and type = %d;\n", (int) F_PROC);
 
 	/* 25_debug */
@@ -2255,7 +2266,7 @@ sql_update_jun2020(Client c, mvc *sql, const char *prev_schema, bool *systabfixe
 			" external name sql.suspend_log_flushing;\n"
 			"create procedure sys.resume_log_flushing()\n"
 			" external name sql.resume_log_flushing;\n"
-			"update sys.functions set system = true where schema_id = (select id from sys.schemas where name = 'sys')"
+			"update sys.functions set system = true where system <> true and schema_id = (select id from sys.schemas where name = 'sys')"
 			" and name in ('suspend_log_flushing', 'resume_log_flushing') and type = %d;\n", (int) F_PROC);
 
 	pos += snprintf(buf + pos, bufsize - pos,
@@ -2263,28 +2274,13 @@ sql_update_jun2020(Client c, mvc *sql, const char *prev_schema, bool *systabfixe
 			" external name mdb.\"setDebug\";\n"
 			"create function sys.debugflags()\n"
 			" returns table(flag string, val bool)\n"
-			" external name mdb.\"getDebugFlags\";\n"
-			"create procedure sys.\"sleep\"(msecs tinyint)\n"
-			" external name \"alarm\".\"sleep\";\n"
-			"grant execute on procedure sys.\"sleep\"(tinyint) to public;\n"
-			"create procedure sys.\"sleep\"(msecs smallint)\n"
-			" external name \"alarm\".\"sleep\";\n"
-			"grant execute on procedure sys.\"sleep\"(smallint) to public;\n"
-			"create procedure sys.\"sleep\"(msecs int)\n"
-			" external name \"alarm\".\"sleep\";\n"
-			" grant execute on procedure sys.\"sleep\"(int) to public;\n"
-			"create function sys.\"sleep\"(msecs tinyint) returns tinyint\n"
-			" external name \"alarm\".\"sleep\";\n"
-			"grant execute on function sys.\"sleep\"(tinyint) to public;\n"
-			"create function sys.\"sleep\"(msecs smallint) returns smallint\n"
-			" external name \"alarm\".\"sleep\";\n"
-			"grant execute on function sys.\"sleep\"(smallint) to public;\n"
-			"create function sys.\"sleep\"(msecs int) returns int\n"
-			" external name \"alarm\".\"sleep\";\n"
-			" grant execute on function sys.\"sleep\"(int) to public;\n");
+			" external name mdb.\"getDebugFlags\";\n");
 	pos += snprintf(buf + pos, bufsize - pos,
-			"update sys.functions set system = true where schema_id = (select id from sys.schemas where name = 'sys')"
-			" and name in ('debug', 'debugflags', 'sleep');\n");
+			"update sys.functions set system = true where system <> true and schema_id = (select id from sys.schemas where name = 'sys')"
+			" and name in ('debug') and type = %d;\n"
+			"update sys.functions set system = true where system <> true and schema_id = (select id from sys.schemas where name = 'sys')"
+			" and name in ('debugflags') and type = %d;\n",
+			(int) F_FUNC, (int) F_UNION);
 
 	/* 26_sysmon */
 	t = mvc_bind_table(sql, sys, "queue");
@@ -2318,7 +2314,7 @@ sql_update_jun2020(Client c, mvc *sql, const char *prev_schema, bool *systabfixe
 			"grant execute on procedure sys.stop(bigint) to public;\n");
 
 	pos += snprintf(buf + pos, bufsize - pos,
-			"update sys.functions set system = true where schema_id = (select id from sys.schemas where name = 'sys')"
+			"update sys.functions set system = true where system <> true and schema_id = (select id from sys.schemas where name = 'sys')"
 			" and name = 'queue' and type = %d;\n", (int) F_UNION);
 	pos += snprintf(buf + pos, bufsize - pos,
 			"update sys._tables set system = true where schema_id = (select id from sys.schemas where name = 'sys')"
@@ -2592,9 +2588,9 @@ sql_update_jun2020(Client c, mvc *sql, const char *prev_schema, bool *systabfixe
 		"GRANT EXECUTE ON WINDOW sys.group_concat(STRING, STRING) TO PUBLIC;\n");
 
 	pos += snprintf(buf + pos, bufsize - pos,
-			"update sys.functions set system = true where name in"
+			"update sys.functions set system = true where system <> true and name in"
 			" ('stddev_samp', 'stddev_pop', 'var_samp', 'var_pop', 'covar_samp', 'covar_pop', 'corr', 'group_concat')"
-			" and schema_id = (select id from sys.schemas where name = 'sys');\n");
+			" and schema_id = (select id from sys.schemas where name = 'sys') and type in (%d, %d);\n", (int) F_ANALYTIC, (int) F_AGGR);
 
 	pos += snprintf(buf + pos, bufsize - pos,
 			"DROP AGGREGATE stddev_samp(date);\n"
@@ -2622,12 +2618,15 @@ sql_update_jun2020(Client c, mvc *sql, const char *prev_schema, bool *systabfixe
 			"('QUARTER'),('RELEASE'),('REPLACE'),('ROLLUP'),('SCHEMA'),('SEED'),('SERVER'),('SESSION'),('SETS'),('SIZE'),"
 			"('STATEMENT'),('TABLE'),('TEMP'),('TEMPORARY'),('TEXT'),('TIME'),('TIMESTAMP'),('TRACE'),('TYPE'),"
 			"('WEEK'),('YEAR'),('ZONE');\n");
+	pos += snprintf(buf + pos, bufsize - pos,
+			"ALTER TABLE sys.function_languages SET READ WRITE;\n"
+			"DELETE FROM sys.function_languages where language_keyword IN ('PYTHON2','PYTHON2_MAP');\n");
 
 	/* 58_hot_snapshot */
 	pos += snprintf(buf + pos, bufsize - pos,
 			"create procedure sys.hot_snapshot(tarfile string)\n"
 			" external name sql.hot_snapshot;\n"
-			"update sys.functions set system = true where schema_id = (select id from sys.schemas where name = 'sys')"
+			"update sys.functions set system = true where system <> true and schema_id = (select id from sys.schemas where name = 'sys')"
 			" and name in ('hot_snapshot') and type = %d;\n", (int) F_PROC);
 
 	/* 81_tracer.sql */
@@ -2663,11 +2662,15 @@ sql_update_jun2020(Client c, mvc *sql, const char *prev_schema, bool *systabfixe
 			"GRANT SELECT ON logging.compinfo TO public;\n");
 	pos += snprintf(buf + pos, bufsize - pos,
 			"update sys.schemas set system = true where name = 'logging';\n"
-			"update sys.functions set system = true where name in"
-			" ('flush', 'setcomplevel', 'resetcomplevel', 'setlayerlevel', 'resetlayerlevel', 'setflushlevel', 'resetflushlevel', 'setadapter', 'resetadapter', 'compinfo')"
-			" and schema_id = (select id from sys.schemas where name = 'logging');\n"
+			"update sys.functions set system = true where system <> true and name in"
+			" ('flush', 'setcomplevel', 'resetcomplevel', 'setlayerlevel', 'resetlayerlevel', 'setflushlevel', 'resetflushlevel', 'setadapter', 'resetadapter')"
+			" and schema_id = (select id from sys.schemas where name = 'logging') and type = %d;\n"
+			"update sys.functions set system = true where system <> true and name in"
+			" ('compinfo')"
+			" and schema_id = (select id from sys.schemas where name = 'logging') and type = %d;\n"
 			"update sys._tables set system = true where schema_id = (select id from sys.schemas where name = 'logging')"
-			" and name = 'compinfo';\n");
+			" and name = 'compinfo';\n",
+			(int) F_PROC, (int) F_UNION);
 
 	pos += snprintf(buf + pos, bufsize - pos, "commit;\n");
 	pos += snprintf(buf + pos, bufsize - pos, "set schema \"%s\";\n", prev_schema);
@@ -2677,7 +2680,8 @@ sql_update_jun2020(Client c, mvc *sql, const char *prev_schema, bool *systabfixe
 	err = SQLstatementIntern(c, &buf, "update", true, false, NULL);
 	if (err == MAL_SUCCEED) {
 		pos = snprintf(buf, bufsize, "set schema \"sys\";\n"
-			       "ALTER TABLE sys.keywords SET READ ONLY;\n");
+			       "ALTER TABLE sys.keywords SET READ ONLY;\n"
+			       "ALTER TABLE sys.function_languages SET READ ONLY;\n");
 		pos += snprintf(buf + pos, bufsize - pos, "set schema \"%s\";\n", prev_schema);
 		assert(pos < bufsize);
 		printf("Running database upgrade commands:\n%s\n", buf);

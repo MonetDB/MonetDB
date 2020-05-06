@@ -7,8 +7,7 @@ stderr of test 'is_distinct_broken.SF-2430201` in directory 'sql/test/BugTracker
 
 MAPI  = (monetdb) /var/tmp/mtest-238470/.s.monetdb.34482
 QUERY = select distinct (select 10 union all select 10); --error. more than one row returned
-ERROR = !Cardinality violation, scalar value expected
-CODE  = 21000
+ERROR = !GDK reported error: BATsubcross: more than one match
 
 # 12:32:45 >  
 # 12:32:45 >  mclient -lsql -umonetdb -Pmonetdb --host=alf --port=35778 
