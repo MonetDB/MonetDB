@@ -11,19 +11,26 @@ import sys
 
 BOM = b'\xEF\xBB\xBF'
 
+COMPRESSIONS = [None, "gz", "bz2", "xz", "lz4"]
+def compr_name(name, compression):
+    if compression:
+        return name + '.' + compression
+    else:
+        return name
 
 def gen_compr_variants(name, content, limit):
-    yield testdata.Doc(name, content, limit, None)
-    yield testdata.Doc(name + ".gz", content, limit, "gz")
-    yield testdata.Doc(name + ".bz2", content, limit, "bz2")
-    yield testdata.Doc(name + ".xz", content, limit, "xz")
-    yield testdata.Doc(name + ".lz4", content, limit, "lz4")
-
+    for compr in COMPRESSIONS:
+        yield testdata.Doc(compr_name(name, compr), content, limit, compr)
 
 def gen_bom_compr_variants(name, content, limit):
     yield from gen_compr_variants(name + ".txt", content, limit)
     yield from gen_compr_variants(name + "_bom.txt", BOM + content, limit)
 
+def broken_boms():
+    limit = 2000
+    for compr in COMPRESSIONS:
+        yield testdata.Doc(compr_name('brokenbom1.txt', compr), BOM[:1] + testdata.SHERLOCK, limit, compr)
+        yield testdata.Doc(compr_name('brokenbom2.txt', compr), BOM[:2] + testdata.SHERLOCK, limit, compr)
 
 def gen_docs():
     input = testdata.SHERLOCK
@@ -50,6 +57,8 @@ def gen_docs():
     assert head[:1024].endswith(b'\r')
     assert head[1024:].startswith(b'\n')
     yield from gen_compr_variants('crlf1024.txt', head, None)
+
+    yield from broken_boms()
 
 def test_read(opener, text_mode, doc):
     filename = doc.write_tmp()

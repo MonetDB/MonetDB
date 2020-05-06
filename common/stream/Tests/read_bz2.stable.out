@@ -228,6 +228,18 @@ Test: read rstream crlf1024.txt.bz2
 Test: read rastream crlf1024.txt.bz2
 	OK
 
+Test: read rstream brokenbom1.txt.bz2
+	OK
+
+Test: read rastream brokenbom1.txt.bz2
+	OK
+
+Test: read rstream brokenbom2.txt.bz2
+	OK
+
+Test: read rastream brokenbom2.txt.bz2
+	OK
+
 Test: read ['rstream', 'blocksize:2'] sherlock.txt.bz2
 	OK
 
