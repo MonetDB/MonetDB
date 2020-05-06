@@ -1231,6 +1231,7 @@ stdout of test 'systemfunctions` in directory 'sql/test/sys-schema` itself:
 [ "sys",	"listagg",	1,	"varchar",	""	]
 [ "sys",	"listagg",	0,	"varchar",	"str_group_concat"	]
 [ "sys",	"listagg",	1,	"varchar",	""	]
+[ "sys",	"listagg",	2,	"varchar",	""	]
 [ "sys",	"listagg",	0,	"varchar",	"str_group_concat"	]
 [ "sys",	"listagg",	1,	"varchar",	""	]
 [ "sys",	"listagg",	0,	"varchar",	"str_group_concat"	]
