@@ -566,58 +566,41 @@ create_wrapper_stream(const char *name, stream *inner)
 stream *
 open_rstream(const char *filename)
 {
-	stream *s;
-	const char *ext;
-
 	if (filename == NULL)
 		return NULL;
 #ifdef STREAM_DEBUG
 	fprintf(stderr, "open_rstream %s\n", filename);
 #endif
-	ext = get_extension(filename);
 
-	if (strcmp(ext, "gz") == 0)
-		return open_gzrstream(filename);
-	if (strcmp(ext, "bz2") == 0)
-		return open_bzrstream(filename);
-	if (strcmp(ext, "xz") == 0)
-		return open_xzrstream(filename);
-	if (strcmp(ext, "lz4") == 0)
-		return open_lz4rstream(filename);
-
-	if ((s = open_stream(filename, "rb")) == NULL)
+	stream *s = open_stream(filename, "rb");
+	if (s == NULL)
 		return NULL;
-	s->binary = true;
-	return s;
+
+	stream *c = compressed_stream(s, 0);
+	if (c == NULL)
+		mnstr_close(s);
+
+	return c;
 }
 
 stream *
 open_wstream(const char *filename)
 {
-	stream *s;
-	const char *ext;
-
 	if (filename == NULL)
 		return NULL;
 #ifdef STREAM_DEBUG
 	fprintf(stderr, "open_wstream %s\n", filename);
 #endif
-	ext = get_extension(filename);
 
-	if (strcmp(ext, "gz") == 0)
-		return open_gzwstream(filename, "wb");
-	if (strcmp(ext, "bz2") == 0)
-		return open_bzwstream(filename, "wb");
-	if (strcmp(ext, "xz") == 0)
-		return open_xzwstream(filename, "wb");
-	if (strcmp(ext, "lz4") == 0)
-		return open_lz4wstream(filename, "wb");
-
-	if ((s = open_stream(filename, "wb")) == NULL)
+	stream *s = open_stream(filename, "wb");
+	if (s == NULL)
 		return NULL;
-	s->readonly = false;
-	s->binary = true;
-	return s;
+
+	stream *c = compressed_stream(s, 0);
+	if (c == NULL)
+		mnstr_close(s);
+
+	return c;
 }
 
 stream *
