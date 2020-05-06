@@ -362,6 +362,24 @@ stdout of test 'simple_selects` in directory 'sql/test/miscellaneous` itself:
 % 1 # length
 [ 0	]
 #drop table x;
+#declare table x (a int);
+#drop table if exists x;
+#create table myx (a boolean);
+#create table myy (a interval second);
+#drop table myx;
+#drop table myy;
+#select greatest(null, null);
+% . # table_name
+% %1 # name
+% char # type
+% 0 # length
+[ NULL	]
+#select sql_min(null, null);
+% . # table_name
+% %1 # name
+% char # type
+% 0 # length
+[ NULL	]
 
 # 17:31:38 >  
 # 17:31:38 >  "Done."
