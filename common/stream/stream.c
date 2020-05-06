@@ -606,58 +606,39 @@ open_wstream(const char *filename)
 stream *
 open_rastream(const char *filename)
 {
-	stream *s;
-	const char *ext;
-
 	if (filename == NULL)
 		return NULL;
 #ifdef STREAM_DEBUG
 	fprintf(stderr, "open_rastream %s\n", filename);
 #endif
-	ext = get_extension(filename);
-
-	if (strcmp(ext, "gz") == 0)
-		return open_gzrastream(filename);
-	if (strcmp(ext, "bz2") == 0)
-		return open_bzrastream(filename);
-	if (strcmp(ext, "xz") == 0)
-		return open_xzrastream(filename);
-	if (strcmp(ext, "lz4") == 0)
-		return open_lz4rastream(filename);
-
-	if ((s = open_stream(filename, "r")) == NULL)
+	stream *s = open_rstream(filename);
+	if (s == NULL)
 		return NULL;
-	s->binary = false;
-	return s;
+
+	stream *t = create_text_stream(s);
+	if (t == NULL)
+		mnstr_close(s);
+
+	return t;
 }
 
 stream *
 open_wastream(const char *filename)
 {
-	stream *s;
-	const char *ext;
-
 	if (filename == NULL)
 		return NULL;
 #ifdef STREAM_DEBUG
 	fprintf(stderr, "open_wastream %s\n", filename);
 #endif
-	ext = get_extension(filename);
-
-	if (strcmp(ext, "gz") == 0)
-		return open_gzwastream(filename, "w");
-	if (strcmp(ext, "bz2") == 0)
-		return open_bzwastream(filename, "w");
-	if (strcmp(ext, "xz") == 0)
-		return open_xzwastream(filename, "w");
-	if (strcmp(ext, "lz4") == 0)
-		return open_lz4wastream(filename, "w");
-
-	if ((s = open_stream(filename, "w")) == NULL)
+	stream *s = open_wstream(filename);
+	if (s == NULL)
 		return NULL;
-	s->readonly = false;
-	s->binary = false;
-	return s;
+
+	stream *t = create_text_stream(s);
+	if (t == NULL)
+		mnstr_close(s);
+
+	return t;
 }
 
 

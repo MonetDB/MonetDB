@@ -710,15 +710,18 @@ file_wastream(FILE *restrict fp, const char *restrict name)
 FILE *
 getFile(stream *s)
 {
+	for (; s != NULL; s = s->inner) {
 #ifdef _MSC_VER
-	if (s->read == console_read)
-		return stdin;
-	if (s->write == console_write)
-		return stdout;
+		if (s->read == console_read)
+			return stdin;
+		if (s->write == console_write)
+			return stdout;
 #endif
-	if (s->read != file_read)
-		return NULL;
-	return (FILE *) s->stream_data.p;
+		if (s->read == file_read)
+			return (FILE *) s->stream_data.p;
+	}
+
+	return NULL;
 }
 
 int
