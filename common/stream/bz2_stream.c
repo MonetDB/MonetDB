@@ -149,6 +149,8 @@ bz2_stream(stream *inner, int level)
 	} else {
 		bz->work = BZ2_bzCompress;
 		bz->end = BZ2_bzCompressEnd;
+		if (level == 0)
+			level = 6;
 		ret = BZ2_bzCompressInit(&bz->strm, level, 0, 0);
 	}
 
