@@ -20,7 +20,7 @@ lib_stream  =  {
 	SOURCES = stream.c rw.c bstream.c \
 		bs.c bs2.c \
 		stdio_stream.c \
-		gz_stream.c bz2_stream.c xz_stream.c lz4_stream.c \
+		compressed.c gz_stream.c bz2_stream.c xz_stream.c lz4_stream.c \
 		url_stream.c socket_stream.c \
 		memio.c callback.c blackhole.c fwf.c \
 		iconv_stream.c \

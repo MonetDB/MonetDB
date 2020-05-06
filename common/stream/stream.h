@@ -168,6 +168,7 @@ stream_export stream *xz_stream(stream *inner, int preset);
 stream_export stream *gz_stream(stream *inner, int preset);
 stream_export stream *bz2_stream(stream *inner, int preset);
 stream_export stream *lz4_stream(stream *inner, int preset);
+stream_export stream *compressed_stream(stream *inner, int preset);
 
 stream_export FILE *getFile(stream *s); // gdk_logger.c progress messages
 stream_export int getFileNo(stream *s);	/* fileno(getFile(s)) */ // mclient.c, gdk_logger.c progress messages
