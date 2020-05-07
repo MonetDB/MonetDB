@@ -79,7 +79,7 @@ static char*
 validate_connection(monetdb_connection conn, const char* call) // Call this function always inside the embedded_lock
 {
 	if (!monetdb_embedded_initialized)
-		return createException(MAL, call, "MonetDBLite has not yet started");
+		return createException(MAL, call, "MonetDBe has not yet started");
 	if (!MCvalid((Client) conn))
 		return createException(MAL, call, "Invalid connection");
 	return MAL_SUCCEED;
@@ -395,7 +395,7 @@ monetdb_startup(char* dbdir, bool sequential)
 	}
 
 	if (monetdb_embedded_initialized) {
-		msg = createException(MAL, "embedded.monetdb_startup", "MonetDBLite is already initialized");
+		msg = createException(MAL, "embedded.monetdb_startup", "MonetDBe is already initialized");
 		goto done;
 	}
 
@@ -788,7 +788,7 @@ monetdb_shutdown(void)
 	if (monetdb_embedded_initialized)
 		monetdb_shutdown_internal();
 	else
-		msg = createException(MAL, "embedded.monetdb_shutdown", "MonetDBLite has not yet started");
+		msg = createException(MAL, "embedded.monetdb_shutdown", "MonetDBe has not yet started");
 	MT_rwlock_write_unset(&embedded_lock);
 	return msg;
 }

@@ -32,7 +32,8 @@ static struct PIPELINES {
 	char *name;
 	char *def;
 	char *status;
-	char *prerequisite;
+	//char *prerequisite;
+	char *OLD_prerequisite;
 	MalBlkPtr mb;
 	char builtin;
 } pipes[MAXOPTPIPES] = {
@@ -370,12 +371,14 @@ getPipeCatalog(bat *nme, bat *def, bat *stat)
 	}
 
 	for (i = 0; i < MAXOPTPIPES && pipes[i].name; i++) {
+		/*
 		if (pipes[i].prerequisite && getAddress(pipes[i].prerequisite) == NULL){
 			BBPreclaim(b);
 			BBPreclaim(bn);
 			BBPreclaim(bs);
 			throw(MAL,"getPipeCatalog", SQLSTATE(HY002) "#MAL.getAddress address of '%s' not found",pipes[i].name);
 		}
+		*/
 		if (BUNappend(b, pipes[i].name, false) != GDK_SUCCEED ||
 			BUNappend(bn, pipes[i].def, false) != GDK_SUCCEED ||
 			BUNappend(bs, pipes[i].status, false) != GDK_SUCCEED) {
@@ -477,8 +480,10 @@ compileOptimizer(Client cntxt, const char *name)
 			/* precompile a pipeline as MAL string */
 			for (j = 0; j < MAXOPTPIPES && pipes[j].def; j++) {
 				if (pipes[j].mb == NULL) {
+					/*
 					if (pipes[j].prerequisite && getAddress(pipes[j].prerequisite) == NULL)
 						continue;
+						*/
 					snprintf(buf,2048,"function optimizer.%s(); %s;end %s;", pipes[j].name,pipes[j].def,pipes[j].name);
 					msg = compileString(&fcn,cntxt, buf);
 					if( msg == MAL_SUCCEED){

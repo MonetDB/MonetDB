@@ -134,7 +134,7 @@ typedef volatile atomic_flag ATOMIC_FLAG;
  * documentation.
  */
 
-#if SIZEOF_SSIZE_T == 8
+#if SIZEOF_SIZE_T == 8
 
 typedef volatile int64_t ATOMIC_TYPE;
 typedef int64_t ATOMIC_BASE_TYPE;

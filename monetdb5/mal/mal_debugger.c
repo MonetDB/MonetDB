@@ -219,7 +219,7 @@ printBatDetails(stream *f, bat bid)
 
 	/* at this level we don't know bat kernel primitives */
 	mnstr_printf(f, "#Show info for %d\n", bid);
-	fcn = getAddress("BKCinfo");
+	fcn = getAddress(getName("bat"), "BKCinfo");
 	if (fcn) {
 		(*fcn)(&ret,&ret2, &bid);
 		b[0] = BATdescriptor(ret);
@@ -573,7 +573,7 @@ printBatProperties(stream *f, VarPtr n, ValPtr v, str props)
 		BUN p;
 
 		/* at this level we don't know bat kernel primitives */
-		fcn = getAddress("BKCinfo");
+		fcn = getAddress(getName("bat"), "BKCinfo");
 		if (fcn) {
 			BAT *b[2];
 			str res;

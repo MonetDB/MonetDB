@@ -133,6 +133,7 @@ embedded_export bool  monetdb_is_initialized(void);
 
 embedded_export char* monetdb_get_autocommit(monetdb_connection conn, int* result);
 embedded_export char* monetdb_set_autocommit(monetdb_connection conn, int value);
+/* TODO split query in prepare/bind/execute */
 embedded_export char* monetdb_query(monetdb_connection conn, char* query, monetdb_result** result, lng* affected_rows, int* prepare_id);
 
 embedded_export char* monetdb_result_fetch(monetdb_connection conn, monetdb_column** res, monetdb_result* mres, size_t column_index);

@@ -165,15 +165,18 @@ getFreeScenario(void)
 static str
 initScenario(Client c, Scenario s)
 {
-	str l = s->language;
+	//str l = s->language;
 	str msg = MAL_SUCCEED;
 
-	if (s->initSystemCmd)
+	if (s->initSystemCmd || !s->initSystem)
 		return(fillScenario(c, s));
 	/* prepare for conclicts */
+	assert(0);
+	return msg;
+/*
 	MT_lock_set(&mal_contextLock);
 	if (s->initSystem && s->initSystemCmd == 0) {
-		s->initSystemCmd = (MALfcn) getAddress(s->initSystem);
+		s->initSystemCmd = (MALfcn) getAddress(NULL, s->initSystem);
 		if (s->initSystemCmd) {
 			msg = (*s->initSystemCmd) (c);
 		} else {
@@ -188,25 +191,26 @@ initScenario(Client c, Scenario s)
 	}
 
 	if (s->exitSystem && s->exitSystemCmd == 0)
-		s->exitSystemCmd = (MALfcn) getAddress(s->exitSystem);
+		s->exitSystemCmd = (MALfcn) getAddress(NULL, s->exitSystem);
 	if (s->initClient && s->initClientCmd == 0)
-		s->initClientCmd = (MALfcn) getAddress(s->initClient);
+		s->initClientCmd = (MALfcn) getAddress(NULL, s->initClient);
 	if (s->exitClient && s->exitClientCmd == 0)
-		s->exitClientCmd = (MALfcn) getAddress(s->exitClient);
+		s->exitClientCmd = (MALfcn) getAddress(NULL, s->exitClient);
 	if (s->reader && s->readerCmd == 0)
-		s->readerCmd = (MALfcn) getAddress(s->reader);
+		s->readerCmd = (MALfcn) getAddress(NULL, s->reader);
 	if (s->parser && s->parserCmd == 0)
-		s->parserCmd = (MALfcn) getAddress(s->parser);
+		s->parserCmd = (MALfcn) getAddress(NULL, s->parser);
 	if (s->optimizer && s->optimizerCmd == 0)
-		s->optimizerCmd = (MALfcn) getAddress(s->optimizer);
+		s->optimizerCmd = (MALfcn) getAddress(NULL, s->optimizer);
 	if (s->tactics && s->tacticsCmd == 0)
-		s->tacticsCmd = (MALfcn) getAddress(s->tactics);
+		s->tacticsCmd = (MALfcn) getAddress(NULL, s->tactics);
 	if (s->callback && s->callbackCmd == 0)
-		s->callbackCmd = (MALfcn) getAddress(s->callback);
+		s->callbackCmd = (MALfcn) getAddress(NULL, s->callback);
 	if (s->engine && s->engineCmd == 0)
-		s->engineCmd = (MALfcn) getAddress(s->engine);
+		s->engineCmd = (MALfcn) getAddress(NULL, s->engine);
 	MT_lock_unset(&mal_contextLock);
 	return(fillScenario(c, s));
+*/
 }
 
 str

@@ -78,7 +78,7 @@ malEmbeddedBoot(void)
 		MCcloseClient(c);
 		return msg;
 	}
-	char *modules[2] = { "sql" };
+	char *modules[3] = { "embedded", "sql" };
 	if ((msg = malIncludeModules(c, modules, 0, 1)) != MAL_SUCCEED) {
 		MCcloseClient(c);
 		return msg;

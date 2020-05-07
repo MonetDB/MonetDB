@@ -1333,7 +1333,7 @@ parseCommandPattern(Client cntxt, int kind)
 		curBlk->binding[(i< IDLENGTH? i:IDLENGTH-1)] = 0;
 		/* avoid a clash with old temporaries */
 		advance(cntxt, i);
-		curInstr->fcn = getAddress(curBlk->binding);
+		curInstr->fcn = getAddress(getModuleId(curInstr), curBlk->binding);
 
 		if (cntxt->usermodule->isAtomModule) {
 			if (curInstr->fcn == NULL) {
@@ -1377,7 +1377,7 @@ parseFunction(Client cntxt, int kind)
 			parseError(cntxt, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			return 0;
 		}
-		curInstr->fcn = getAddress(nme);
+		curInstr->fcn = getAddress(getModuleId(curInstr), nme);
 		GDKfree(nme);
 		if (curInstr->fcn == NULL) {
 			parseError(cntxt, "<address> not found\n");

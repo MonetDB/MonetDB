@@ -29,7 +29,7 @@ static char* dbdir = NULL;
    fcnname##_ptr_tpe fcnname##_ptr = NULL;
 
 #define LOAD_SQL_FUNCTION_PTR(fcnname)                                             \
-    fcnname##_ptr = (fcnname##_ptr_tpe) getAddress( #fcnname); \
+    fcnname##_ptr = (fcnname##_ptr_tpe) getAddress(getName("sql"), #fcnname); \
     if (fcnname##_ptr == NULL) {                                                           \
         retval = #fcnname;  \
     }
