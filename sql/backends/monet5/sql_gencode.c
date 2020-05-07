@@ -1174,7 +1174,6 @@ mal_function_find_implementation_address(mvc *m, sql_func *f)
 	stream *buf = NULL;
 	char *n = NULL;
 	int len = _strlen(f->query);
-	sql_schema *s = cur_schema(m);
 	dlist *l, *ext_name;
 
 	if (!(m = ZNEW(mvc))) {
@@ -1191,9 +1190,6 @@ mal_function_find_implementation_address(mvc *m, sql_func *f)
 		(void) sql_error(o, 02, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		goto bailout;
 	}
-	if (s)
-		m->session->schema = s;
-
 	if (!(m->sa = sa_create())) {
 		(void) sql_error(o, 02, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		goto bailout;

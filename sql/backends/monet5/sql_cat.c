@@ -1632,7 +1632,7 @@ str
 SQLrename_schema(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	mvc *sql = NULL;
-	str msg = MAL_SUCCEED;
+	str msg = MAL_SUCCEED, onn;
 	str old_name = *getArgReference_str(stk, pci, 1);
 	str new_name = *getArgReference_str(stk, pci, 2);
 	sql_schema *s;
@@ -1653,9 +1653,15 @@ SQLrename_schema(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	if (!sql_trans_rename_schema(sql->session->tr, s->base.id, new_name))
 		throw(SQL, "sql.rename_schema",SQLSTATE(HY013) MAL_MALLOC_FAIL);
-	if (s == cur_schema(sql))
-		if (!mvc_set_schema(sql, new_name))
+	if (s == cur_schema(sql)) /* change current session schema name */
+		if (!mvc_set_schema_name(sql, new_name))
 			throw(SQL, "sql.rename_schema",SQLSTATE(HY013) MAL_MALLOC_FAIL);
+	if (strcmp(sql->session->old_schema_name, old_name) == 0) { /* change old schema name for the session */
+		if (!(onn = _STRDUP(new_name)))
+			throw(SQL, "sql.rename_schema",SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		_DELETE(sql->session->old_schema_name);
+		sql->session->old_schema_name = onn;
+	}
 	return msg;
 }
 

@@ -1,0 +1,41 @@
+stdout of test 'scoping04` in directory 'sql/test/scoping` itself:
+
+
+# 09:24:07 >  
+# 09:24:07 >  "mclient" "-lsql" "-ftest" "-tnone" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-21778" "--port=35877"
+# 09:24:07 >  
+
+#create schema foo;
+#select current_schema; --sys
+% . # table_name
+% single_value # name
+% varchar # type
+% 3 # length
+[ "sys"	]
+#start transaction;
+#select current_schema; --sys
+% . # table_name
+% single_value # name
+% varchar # type
+% 3 # length
+[ "sys"	]
+#set schema foo;
+#select current_schema; --foo
+% . # table_name
+% single_value # name
+% varchar # type
+% 3 # length
+[ "foo"	]
+#rollback;
+#select current_schema; --sys
+% . # table_name
+% single_value # name
+% varchar # type
+% 3 # length
+[ "sys"	]
+#drop schema foo;
+
+# 09:24:07 >  
+# 09:24:07 >  "Done."
+# 09:24:07 >  
+

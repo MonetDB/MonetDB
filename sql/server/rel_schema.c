@@ -1367,8 +1367,8 @@ rel_create_schema(sql_query *query, dlist *auth_name, dlist *schema_elements, in
 			return sql_error(sql, 02, SQLSTATE(3F000) "CREATE SCHEMA: name '%s' already in use", name);
 		return rel_psm_block(sql->sa, new_exp_list(sql->sa));
 	} else {
-		sql_schema *os = sql->session->schema;
-		dnode *n;
+		sql_schema *os = cur_schema(sql);
+		dnode *n = schema_elements->h;
 		sql_schema *ss = SA_ZNEW(sql->sa, sql_schema);
 		sql_rel *ret = rel_create_schema_dll(sql->sa, name, auth, 0);
 
@@ -1376,19 +1376,20 @@ rel_create_schema(sql_query *query, dlist *auth_name, dlist *schema_elements, in
 		ss->auth_id = auth_id;
 		ss->owner = sql->user_id;
 
-		sql->session->schema = ss;
-		n = schema_elements->h;
+		if (!mvc_set_schema(query->sql, ss))
+			return sql_error(sql, 02, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		while (n) {
 			sql_rel *res = rel_semantic(query, n->data.sym);
 			if (!res) {
 				rel_destroy(ret);
-				sql->session->schema = os;
+				(void) mvc_set_schema(query->sql, os);
 				return NULL;
 			}
 			ret = rel_list(sql->sa, ret, res);
 			n = n->next;
 		}
-		sql->session->schema = os;
+		if (!mvc_set_schema(query->sql, os))
+			return sql_error(sql, 02, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		return ret;
 	}
 }

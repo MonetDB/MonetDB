@@ -69,7 +69,7 @@ sql_update_var(mvc *m, sql_schema *s, const char *name, ValPtr ptr)
 		} else if (strcmp(name, "current_schema") == 0 || strcmp(name, "current_role") == 0) {
 			if (VALisnil(ptr))
 				throw(SQL,"sql.update_var", SQLSTATE(42000) "Variable '%s.%s' cannot be NULL\n", s->base.name, name);
-			if (strcmp(name, "current_schema") == 0 && !mvc_set_schema(m, ptr->val.sval))
+			if (strcmp(name, "current_schema") == 0 && !mvc_set_schema_name(m, ptr->val.sval))
 				throw(SQL,"sql.update_var", SQLSTATE(3F000) "Schema (%s) missing\n", ptr->val.sval);
 			else if (strcmp(name, "current_role") == 0 && !mvc_set_role(m, ptr->val.sval))
 				throw(SQL,"sql.update_var", SQLSTATE(42000) "Role (%s) missing\n", ptr->val.sval);

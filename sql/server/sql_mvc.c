@@ -276,9 +276,13 @@ mvc_init(int debug, store_type store, int ro, int su, backend_stack stk)
 			TRC_CRITICAL(SQL_TRANS, "Failed to start transaction\n");
 			return -1;
 		}
-
-		s = m->session->schema = mvc_bind_schema(m, "sys");
-		assert(m->session->schema != NULL);
+		if (!mvc_set_schema_name(m, "sys")) {
+			mvc_destroy(m);
+			TRC_CRITICAL(SQL_TRANS, "Failed to set to schema 'sys'\n");
+			return -1;
+		}
+		s = m->session->schema;
+		assert(s);
 
 		if (!first) {
 			MVC_INIT_DROP_TABLE(tid,  "tables", tview, 9);
@@ -357,9 +361,6 @@ mvc_init(int debug, store_type store, int ro, int su, backend_stack stk)
 			sql_create_comments(m, s);
 			sql_create_privileges(m, s);
 		}
-
-		s = m->session->schema = mvc_bind_schema(m, "tmp");
-		assert(m->session->schema != NULL);
 
 		if ((msg = mvc_commit(m, 0, NULL, false)) != MAL_SUCCEED) {
 			TRC_CRITICAL(SQL_TRANS, "Unable to commit system tables: %s\n", (msg + 6));
@@ -561,11 +562,34 @@ sql_trans_deref( sql_trans *tr )
 	return tr->parent;
 }
 
+static str
+reset_session_schema(mvc *m, int chain, const char *name) 
+{
+	str new_old_schema_name, msg = MAL_SUCCEED, other;
+
+	/* Reset session schema's variables */
+	if (!(new_old_schema_name =_STRDUP(m->session->schema_name))) {
+		msg = createException(SQL, "sql.commit",SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		if ((other = mvc_rollback(m, chain, name, false)) != MAL_SUCCEED)
+			freeException(other);
+		return msg;
+	}
+	_DELETE(m->session->old_schema_name);
+	m->session->old_schema_name = new_old_schema_name;
+	if (!mvc_set_schema_name(m, m->session->schema_name)) { /* set schema structure of the current transaction */
+		msg = createException(SQL, "sql.commit",SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		if ((other = mvc_rollback(m, chain, name, false)) != MAL_SUCCEED)
+			freeException(other);
+		return msg;
+	}
+	return msg;
+}
+
 str
 mvc_commit(mvc *m, int chain, const char *name, bool enabling_auto_commit)
 {
 	sql_trans *cur, *tr = m->session->tr, *ctr;
-	int ok = SQL_OK;//, wait = 0;
+	int ok = SQL_OK;
 	str msg, other;
 	char operation[BUFSIZ];
 
@@ -581,7 +605,7 @@ mvc_commit(mvc *m, int chain, const char *name, bool enabling_auto_commit)
 
 	if (m->session->status < 0) {
 		msg = createException(SQL, "sql.commit", SQLSTATE(40000) "%s transaction is aborted, will ROLLBACK instead", operation);
-		if((other = mvc_rollback(m, chain, name, false)) != MAL_SUCCEED)
+		if ((other = mvc_rollback(m, chain, name, false)) != MAL_SUCCEED)
 			freeException(other);
 		return msg;
 	}
@@ -592,17 +616,17 @@ mvc_commit(mvc *m, int chain, const char *name, bool enabling_auto_commit)
 		TRC_DEBUG(SQL_TRANS, "Savepoint\n");
 		store_lock();
 		m->session->tr = sql_trans_create(m->session->stk, tr, name, true);
-		if(!m->session->tr) {
+		if (!m->session->tr) {
 			store_unlock();
 			msg = createException(SQL, "sql.commit", SQLSTATE(HY013) "%s allocation failure while committing the transaction, will ROLLBACK instead", operation);
-			if((other = mvc_rollback(m, chain, name, false)) != MAL_SUCCEED)
+			if ((other = mvc_rollback(m, chain, name, false)) != MAL_SUCCEED)
 				freeException(other);
 			return msg;
 		}
 		msg = WLCcommit(m->clientid);
 		store_unlock();
-		if(msg != MAL_SUCCEED) {
-			if((other = mvc_rollback(m, chain, name, false)) != MAL_SUCCEED)
+		if (msg != MAL_SUCCEED) {
+			if ((other = mvc_rollback(m, chain, name, false)) != MAL_SUCCEED)
 				freeException(other);
 			return msg;
 		}
@@ -610,7 +634,12 @@ mvc_commit(mvc *m, int chain, const char *name, bool enabling_auto_commit)
 		if (m->qc) /* clean query cache, protect against concurrent access on the hash tables (when functions already exists, concurrent mal will
 build up the hash (not copied in the trans dup)) */
 			qc_clean(m->qc, false);
-		m->session->schema = find_sql_schema(m->session->tr, m->session->schema_name);
+		if (!mvc_set_schema_name(m, m->session->schema_name)) { /* set schema structure of the current transaction */
+			msg = createException(SQL, "sql.commit",SQLSTATE(HY013) MAL_MALLOC_FAIL);
+			if ((other = mvc_rollback(m, chain, name, false)) != MAL_SUCCEED)
+				freeException(other);
+			return msg;
+		}
 		TRC_INFO(SQL_TRANS, "Savepoint commit '%s' done\n", name);
 		return msg;
 	}
@@ -641,8 +670,8 @@ build up the hash (not copied in the trans dup)) */
 		m->type = Q_TRANS;
 		msg = WLCcommit(m->clientid);
 		store_unlock();
-		if(msg != MAL_SUCCEED) {
-			if((other = mvc_rollback(m, chain, name, false)) != MAL_SUCCEED)
+		if (msg != MAL_SUCCEED) {
+			if ((other = mvc_rollback(m, chain, name, false)) != MAL_SUCCEED)
 				freeException(other);
 			return msg;
 		}
@@ -650,7 +679,7 @@ build up the hash (not copied in the trans dup)) */
 			"Commit done (no changes)%s%.200s\n", 
 			m->query ? ", query: " : "",
 			m->query ? m->query : "");
-		return msg;
+		return reset_session_schema(m, chain, name);
 	}
 
 	/* validation phase */
@@ -670,14 +699,14 @@ build up the hash (not copied in the trans dup)) */
 	} else {
 		store_unlock();
 		msg = createException(SQL, "sql.commit", SQLSTATE(40000) "%s transaction is aborted because of concurrency conflicts, will ROLLBACK instead", operation);
-		if((other = mvc_rollback(m, chain, name, false)) != MAL_SUCCEED)
+		if ((other = mvc_rollback(m, chain, name, false)) != MAL_SUCCEED)
 			freeException(other);
 		return msg;
 	}
 	msg = WLCcommit(m->clientid);
-	if(msg != MAL_SUCCEED) {
+	if (msg != MAL_SUCCEED) {
 		store_unlock();
-		if((other = mvc_rollback(m, chain, name, false)) != MAL_SUCCEED)
+		if ((other = mvc_rollback(m, chain, name, false)) != MAL_SUCCEED)
 			freeException(other);
 		return msg;
 	}
@@ -690,7 +719,7 @@ build up the hash (not copied in the trans dup)) */
 		"Commit done%s%.200s\n",
 		m->query ? ", query: " : "",
 		m->query ? m->query : "");
-	return msg;
+	return reset_session_schema(m, chain, name);
 }
 
 str
@@ -726,7 +755,12 @@ mvc_rollback(mvc *m, int chain, const char *name, bool disabling_auto_commit)
 		m->session->status = tr->status;
 		if (tr->name) 
 			tr->name = NULL;
-		m->session->schema = find_sql_schema(m->session->tr, m->session->schema_name);
+		if (!mvc_set_schema_name(m, m->session->schema_name)) { /* set schema structure of the transaction we rollbacked to */
+			msg = createException(SQL, "sql.rollback", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+			m->session->status = -1;
+			store_unlock();
+			return msg;
+		}
 	} else if (tr->parent) {
 		/* first release all intermediate savepoints */
 		while (tr->parent->parent != NULL) {
@@ -743,6 +777,11 @@ mvc_rollback(mvc *m, int chain, const char *name, bool disabling_auto_commit)
 	msg = WLCrollback(m->clientid);
 	store_unlock();
 	if (msg != MAL_SUCCEED) {
+		m->session->status = -1;
+		return msg;
+	}
+	if (!mvc_set_schema_name(m, m->session->old_schema_name)) { /* set schema structure of the transaction we rollbacked to */
+		msg = createException(SQL, "sql.rollback", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		m->session->status = -1;
 		return msg;
 	}
@@ -794,8 +833,11 @@ mvc_release(mvc *m, const char *name)
 	tr->name = NULL;
 	store_unlock();
 	m->session->tr = tr;
-	m->session->schema = find_sql_schema(m->session->tr, m->session->schema_name);
-
+	if (!mvc_set_schema_name(m, m->session->schema_name)) { /* set schema structure of the current transaction */
+		msg = createException(SQL, "sql.release", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		m->session->status = -1;
+		return msg;
+	}
 	m->type = Q_TRANS;
 	return msg;
 }

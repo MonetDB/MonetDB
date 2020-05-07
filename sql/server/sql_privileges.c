@@ -743,25 +743,31 @@ mvc_set_role(mvc *m, char *role)
 	return res;
 }
 
+/* Use this function only if the schema to set is not added to the schemas changeset on the current transaction */
 int
-mvc_set_schema(mvc *m, char *schema)
+mvc_set_schema(mvc *m, sql_schema *s)
 {
-	int ret = 0;
-	sql_schema *s = find_sql_schema(m->session->tr, schema);
-	char* new_schema_name = _STRDUP(schema);
+	char *new_schema = _STRDUP(s->base.name);
+	if (!new_schema)
+		return 0;
 
-	if (s && new_schema_name) {
-		if (m->session->schema_name)
-			_DELETE(m->session->schema_name);
-		m->session->schema_name = new_schema_name;
-		m->type = Q_SCHEMA;
-		if (m->session->tr->active)
-			m->session->schema = s;
-		ret = 1;
-	} else if (new_schema_name) {
-		_DELETE(new_schema_name);
-	}
-	return ret;
+	if (!sqlvar_set_string(find_global_var(m, mvc_bind_schema(m, "sys"), "current_schema"), new_schema))
+		return 0;
+	_DELETE(m->session->schema_name);
+	m->session->schema_name = new_schema;
+	m->session->schema = s;
+	return 1;
+}
+
+/* Use this one for the general case */
+int
+mvc_set_schema_name(mvc *m, char *schema)
+{
+	sql_schema *s = find_sql_schema(m->session->tr, schema);
+
+	if (s)
+		return mvc_set_schema(m, s);
+	return 0;
 }
 
 char *

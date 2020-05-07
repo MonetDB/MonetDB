@@ -17,11 +17,11 @@
 #include "rel_psm.h"
 #include "rel_sequence.h"
 #include "rel_exp.h"
+#include "sql_privileges.h"
 
 #include <unistd.h>
 #include <string.h>
 #include <ctype.h>
-
 
 sql_rel *
 rel_parse(mvc *m, sql_schema *s, char *query, char emode)
@@ -40,13 +40,11 @@ rel_parse(mvc *m, sql_schema *s, char *query, char emode)
 
 	m->caching = 0;
 	m->emode = emode;
-	if (s)
-		m->session->schema = s;
-
-	b = (buffer*)GDKmalloc(sizeof(buffer));
-	if (!b) {
+	if (s && !mvc_set_schema_name(m, s->base.name))
 		return NULL;
-	}
+
+	if (!(b = (buffer*)GDKmalloc(sizeof(buffer))))
+		return NULL;
 	n = GDKmalloc(len + 1 + 1);
 	if (!n) {
 		GDKfree(b);
@@ -105,7 +103,8 @@ rel_parse(mvc *m, sql_schema *s, char *query, char emode)
 		*m = o;
 		m->label = label;
 	}
-	m->session->schema = c;
+	if (!mvc_set_schema_name(m, c->base.name))
+		return NULL;
 	return rel;
 }
 

@@ -6071,12 +6071,15 @@ rel_selects(sql_query *query, symbol *s)
 sql_rel *
 schema_selects(sql_query *query, sql_schema *schema, symbol *s)
 {
+	mvc *sql = query->sql;
 	sql_rel *res;
-	sql_schema *os = query->sql->session->schema;
+	sql_schema *os = cur_schema(sql);
 
-	query->sql->session->schema = schema;
+	if (!mvc_set_schema(sql, schema))
+		return sql_error(sql, 02, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	res = rel_selects(query, s);
-	query->sql->session->schema = os;
+	if (!mvc_set_schema(sql, os))
+		return sql_error(sql, 02, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	return res;
 }
 

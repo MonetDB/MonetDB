@@ -476,8 +476,6 @@ monet5_user_get_def_schema(mvc *m, int user)
 	rid = table_funcs.column_find_row(m->session->tr, schemas_id, &schema_id, NULL);
 	if (!is_oid_nil(rid))
 		schema = table_funcs.column_find_value(m->session->tr, schemas_name, rid);
-	if (!sqlvar_set_string(find_global_var(m, mvc_bind_schema(m, "sys"), "current_schema"), schema))
-		return NULL;
 	return schema;
 }
 
@@ -510,7 +508,7 @@ monet5_user_set_def_schema(mvc *m, oid user)
 		return (NULL);	/* don't reveal that the user doesn't exist */
 	}
 
-	if(mvc_trans(m) < 0) {
+	if (mvc_trans(m) < 0) {
 		GDKfree(username);
 		return NULL;
 	}
@@ -552,9 +550,9 @@ monet5_user_set_def_schema(mvc *m, oid user)
 		schema = NULL;
 	}
 
-	if (!schema || !mvc_set_schema(m, schema)) {
+	if (!schema || !mvc_set_schema_name(m, schema)) {
 		if (m->session->tr->active) {
-			if((other = mvc_rollback(m, 0, NULL, false)) != MAL_SUCCEED)
+			if ((other = mvc_rollback(m, 0, NULL, false)) != MAL_SUCCEED)
 				freeException(other);
 		}
 		GDKfree(username);
@@ -567,7 +565,7 @@ monet5_user_set_def_schema(mvc *m, oid user)
 		schema = NULL;
 	}
 	GDKfree(username);
-	if((other = mvc_rollback(m, 0, NULL, false)) != MAL_SUCCEED) {
+	if ((other = mvc_commit(m, 0, NULL, false)) != MAL_SUCCEED) { /* has to commit the new session schema value */
 		freeException(other);
 		return NULL;
 	}
