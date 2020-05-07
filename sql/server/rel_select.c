@@ -1929,9 +1929,7 @@ _rel_nop(mvc *sql, sql_schema *s, char *fname, list *tl, sql_rel *rel, list *exp
 	int table_func = (ek.card == card_relation);
 	sql_ftype type = (ek.card == card_loader)?F_LOADER:((ek.card == card_none)?F_PROC:
 		   ((ek.card == card_relation)?F_UNION:F_FUNC));
-	sql_ftype filt = (type == F_FUNC)?F_FILT:type;
 
-	(void)filt;
 	(void)nr_args;
 	(void)obj_type;
 	f = bind_func_(sql, s, fname, tl, type);

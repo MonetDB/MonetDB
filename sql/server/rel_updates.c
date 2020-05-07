@@ -317,7 +317,8 @@ rel_inserts(mvc *sql, sql_table *t, sql_rel *r, list *collist, size_t rowcount, 
 
 				if (inserts[c->colnr])
 					return sql_error(sql, 02, SQLSTATE(42000) "%s: column '%s' specified more than once", action, c->base.name);
-				inserts[c->colnr] = rel_check_type(sql, &c->type, r, e, type_equal);
+				if (!(inserts[c->colnr] = rel_check_type(sql, &c->type, r, e, type_equal)))
+					return NULL;
 			}
 		} else {
 			for (m = collist->h; m; m = m->next) {

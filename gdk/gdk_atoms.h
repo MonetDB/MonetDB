@@ -68,7 +68,8 @@ gdk_export int ATOMindex(const char *nme);
 
 gdk_export str ATOMname(int id);
 gdk_export size_t ATOMlen(int id, const void *v);
-gdk_export void *ATOMnil(int id);
+gdk_export void *ATOMnil(int id)
+	__attribute__((__malloc__));
 gdk_export int ATOMprint(int id, const void *val, stream *fd);
 gdk_export char *ATOMformat(int id, const void *val);
 
