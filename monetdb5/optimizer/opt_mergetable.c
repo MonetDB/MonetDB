@@ -1958,6 +1958,11 @@ OPTmergetableImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 			TRC_INFO(MAL_OPTIMIZER, "Mergetable bailout semijoin ref\n");
 			bailout = 1;
 		}
+		if (getModuleId(p) == algebraRef &&
+		    getFunctionId(p) == thetajoinRef ) {
+			TRC_INFO(MAL_OPTIMIZER, "Mergetable bailout thetajoin ref\n");
+			bailout = 1;
+		}
 		if (isSample(p)) {
 			bailout = 1;
 		}
