@@ -483,7 +483,7 @@ MKEYconstbulk_rotate_xor_hash(bat *res, const lng *h, const int *nbits, const ba
 			BATiter bi = bat_iterator(b);
 			for (BUN i = 0; i < n; i++) {
 				const char *restrict s = BUNtvar(bi, i);
-				r[i] = GDK_ROTATE((ulng) *h, lbit, rbit) ^ (lng) ((const BUN *) s)[-1];
+				r[i] = GDK_ROTATE((ulng) *h, lbit, rbit) ^ (ulng) ((const BUN *) s)[-1];
 			}
 			break;
 		}
@@ -493,7 +493,7 @@ MKEYconstbulk_rotate_xor_hash(bat *res, const lng *h, const int *nbits, const ba
 		BUN (*hash)(const void *) = BATatoms[b->ttype].atomHash;
 
 		for (BUN i = 0; i < n; i++)
-			r[i] = GDK_ROTATE((ulng) *h, lbit, rbit) ^ (lng) (*hash)(BUNtail(bi, i));
+			r[i] = GDK_ROTATE((ulng) *h, lbit, rbit) ^ (ulng) (*hash)(BUNtail(bi, i));
 		break;
 	}
 	}
