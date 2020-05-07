@@ -41,18 +41,17 @@ MOSselect_SIGNATURE(METHOD, TPE) {
 	/* Advance the candidate iterator to the first element within
 	 * the oid range of the current block.
 	 */
-	oid c = canditer_next(task->ci);
-	while (!is_oid_nil(c) && c < first ) {
-		c = canditer_next(task->ci);
-	}
-
-	if 		(is_oid_nil(c)) {
+	oid c = canditer_search(task->ci, first, true);
+	canditer_setidx(task->ci, c);
+	c = canditer_next(task->ci);
+	if (is_oid_nil(c)) {
 		/* Nothing left to scan.
 		 * So we can signal the generic select function to stop now.
 		 */
 		return MAL_SUCCEED;
 	}
-	else if	( nil && anti){
+
+	if	( nil && anti){
 		if (task->ci->tpe == cand_dense)
             select_general(true, true, canditer_next_dense);
 		else
