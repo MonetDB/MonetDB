@@ -1943,7 +1943,7 @@ stmt_join_cand(backend *be, stmt *op1, stmt *op2, stmt *lcand, stmt *rcand, int 
 			return NULL;
 		break;
 	case cmp_notequal:
-		q = newStmt(mb, algebraRef, antijoinRef);
+		q = newStmt(mb, algebraRef, thetajoinRef);
 		q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
 		q = pushArgument(mb, q, op1->nr);
 		q = pushArgument(mb, q, op2->nr);
@@ -1955,6 +1955,7 @@ stmt_join_cand(backend *be, stmt *op1, stmt *op2, stmt *lcand, stmt *rcand, int 
 			q = pushNil(mb, q, TYPE_bat);
 		else
 			q = pushArgument(mb, q, rcand->nr);
+		q = pushInt(mb, q, JOIN_NE);
 		q = pushBit(mb, q, FALSE);
 		q = pushNil(mb, q, TYPE_lng);
 		if (q == NULL)
