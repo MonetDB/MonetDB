@@ -6,15 +6,15 @@ except ImportError:
 
 with process.client('sql', stdin=process.PIPE, stdout=process.PIPE, stderr=process.PIPE) as c:
     out, err = c.communicate('''
+        CREATE TABLE sys.myvar (c BIGINT);
+        INSERT INTO sys.myvar VALUES ((SELECT COUNT(*) FROM sys.users));
+
         START TRANSACTION;
-
         CREATE USER "1" WITH PASSWORD '1' NAME '1' SCHEMA "sys";
-        CREATE SCHEMA "ups" AUTHORIZATION "1";
-        ALTER USER "1" SET SCHEMA "ups";
+        ROLLBACK;
 
-        select * from sys.db_users; --error, doesn't exist
-
-        COMMIT; --it will rollback
+        SELECT CAST(COUNT(*) - (SELECT c FROM sys.myvar) AS BIGINT) FROM sys.users; --the total count, cannot change
+        DROP TABLE sys.myvar;
     ''')
     sys.stdout.write(out)
     sys.stderr.write(err)
