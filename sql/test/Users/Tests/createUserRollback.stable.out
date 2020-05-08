@@ -16,7 +16,7 @@ stdout of test 'createUserRollback` in directory 'sql/test/Users` itself:
 % %7 # name
 % bigint # type
 % 1 # length
-[ 0	]
+[ 1	]
 #DROP TABLE sys.myvar;
 
 # 12:24:01 >  
