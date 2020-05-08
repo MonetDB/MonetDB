@@ -58,6 +58,7 @@ mal_export const uuid *UUIDnull(void);
 mal_export uuid *UUIDread(uuid *u, stream *s, size_t cnt);
 mal_export ssize_t UUIDtoString(str *retval, size_t *len, const uuid *value, bool external);
 mal_export gdk_return UUIDwrite(const uuid *u, stream *s, size_t cnt);
+mal_export str UUIDuuid2uuid(uuid *retval, uuid *s);
 
 #ifdef HAVE_HGE
 mal_export str UUIDgenerateUuid(uuid *retval);
@@ -268,6 +269,13 @@ UUIDisaUUID(bit *retval, str *s)
 		*retval = bit_nil;
 	else
 		*retval = false;
+	return MAL_SUCCEED;
+}
+
+str
+UUIDuuid2uuid(uuid *retval, uuid *i)
+{
+	*retval = *i;
 	return MAL_SUCCEED;
 }
 

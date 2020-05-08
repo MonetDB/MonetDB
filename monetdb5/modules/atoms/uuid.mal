@@ -45,9 +45,8 @@ command uuid(s:str):uuid
 address UUIDstr2uuid
 comment "Coerce a string to a uuid, validating its format";
 
-function uuid(u:uuid):uuid;
- return u;
-end uuid;
+command uuid(u:uuid):uuid
+address UUIDuuid2uuid;
 
 command str(s:uuid):str
 address UUIDuuid2str
@@ -118,7 +117,3 @@ comment "Return B1 > B2";
 pattern >=(b1:bat[:uuid],b2:bat[:uuid]) :bat[:bit]
 address CMDbatGE
 comment "Return B1 >= B2";
-
-function uuid(u:bat[:uuid]):bat[:uuid];
- return u;
-end uuid;
