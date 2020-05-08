@@ -378,6 +378,7 @@ mel_atom blob_init_atoms[] = {
   .length=(fptr)&BLOBlength, 
   .heap=(fptr)&BLOBheap, 
  },
+ { .name=NULL }
 };
 mel_func blob_init_funcs[] = {
  { .command=true, .mod="blob", .fcn="blob", .imp=(fptr)&BLOBblob_blob, .unsafe=false, 
@@ -434,4 +435,13 @@ mel_func blob_init_funcs[] = {
    { .type="blob", .isbat=false, .vargs=false },
   }
  },
+ { .imp=NULL }
 };
+
+#include "mal_import.h"
+#ifdef _MSC_VER
+#undef read
+#pragma section(".CRT$XCU",read)
+#endif
+LIB_STARTUP_FUNC(init_blob_mal)
+{ mal_module("blob", blob_init_atoms, blob_init_funcs); }
