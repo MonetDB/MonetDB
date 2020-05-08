@@ -72,10 +72,8 @@ comment "Creates a wkb using the HEX representation";
 #comment "Returns the text representation of the geometry including the srid";
 
 command ToText(w:wkb, withSRID:int) :str address wkbAsText;
-function AsText(w:wkb) :str;
-	x := ToText(w,0);
-	return x;
-end AsText;
+command AsText(w:wkb) :str address wkbAsText0;
+
 function AsEWKT(w:wkb) :str;
 	x := ToText(w,1);
 	return x;

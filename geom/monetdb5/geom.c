@@ -2580,6 +2580,12 @@ wkbAsText(char **txt, wkb **geomWKB, int *withSRID)
 }
 
 str
+wkbAsText0(char **txt, wkb **geomWKB)
+{
+	return wkbAsText(txt, geomWKB, NULL);
+}
+
+str
 wkbMLineStringToPolygon(wkb **geomWKB, str *geomWKT, int *srid, int *flag)
 {
 	int itemsNum = 0, i, type = wkbMultiLineString_mdb;

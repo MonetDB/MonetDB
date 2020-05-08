@@ -117,6 +117,7 @@ geom_export str wkbGeometryType_bat(bat *inBAT_id, bat *outBAT_id, int *flag);
 geom_export str wkbGetSRID(int*, wkb**);
 //Envelope
 geom_export str wkbAsText(char **outTXT, wkb **inWKB, int *withSRID);
+geom_export str wkbAsText0(char **txt, wkb **geomWKB);
 geom_export str wkbAsText_bat(bat *inBAT_id, bat *outBAT_id, int *withSRID);
 
 geom_export str wkbAsBinary(char**, wkb**);
