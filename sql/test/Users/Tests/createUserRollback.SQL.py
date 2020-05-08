@@ -13,7 +13,7 @@ with process.client('sql', stdin=process.PIPE, stdout=process.PIPE, stderr=proce
         CREATE USER "1" WITH PASSWORD '1' NAME '1' SCHEMA "sys";
         ROLLBACK;
 
-        SELECT CAST(COUNT(*) - (SELECT c FROM sys.myvar) AS BIGINT) FROM sys.users; --the total count, cannot change
+        SELECT CAST(COUNT(*) - (SELECT c FROM sys.myvar) AS BIGINT) FROM sys.users; -- The MAL authorization is not transaction aware, so the count changes :/
         DROP TABLE sys.myvar;
     ''')
     sys.stdout.write(out)

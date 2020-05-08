@@ -52,4 +52,6 @@ $SQL1 < trigger_owner.sql
 $SQL < trigger_owner_drop.sql
 echo done
 
-
+echo trigger projection
+$SQL < trigger_projection.sql
+echo done
