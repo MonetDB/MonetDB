@@ -856,7 +856,7 @@ AS_CASE([$enable_optimize], [yes], [
 			# -finline-functions, -funswitch-loops,
 			# -fpredictive-commoning, -fgcse-after-reload,
 			# -ftree-vectorize and -fipa-cp-clone
-			CFLAGS="-O3 -fomit-frame-pointer -pipe ${CFLAGS}"
+			CFLAGS="-O2 -fomit-frame-pointer -pipe ${CFLAGS}"
 			# because we explicitly disable debugging, we can explicitly
 			# enable -fomit-frame-pointer here
 			# notes on -funroll-all-loops:

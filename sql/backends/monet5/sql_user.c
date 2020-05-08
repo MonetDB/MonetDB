@@ -454,8 +454,9 @@ monet5_user_get_def_schema(mvc *m, int user)
 	auths_id = find_sql_column(auths, "id");
 	auths_name = find_sql_column(auths, "name");
 	rid = table_funcs.column_find_row(m->session->tr, auths_id, &user, NULL);
-	if (!is_oid_nil(rid))
-		username = table_funcs.column_find_value(m->session->tr, auths_name, rid);
+	if (is_oid_nil(rid))
+		return NULL;
+	username = table_funcs.column_find_value(m->session->tr, auths_name, rid);
 
 	user_info = find_sql_table(sys, "db_user_info");
 	users_name = find_sql_column(user_info, "name");
@@ -519,8 +520,9 @@ monet5_user_set_def_schema(mvc *m, oid user)
 	users_schema = find_sql_column(user_info, "default_schema");
 
 	rid = table_funcs.column_find_row(m->session->tr, users_name, username, NULL);
-	if (!is_oid_nil(rid))
-		p = table_funcs.column_find_value(m->session->tr, users_schema, rid);
+	if (is_oid_nil(rid))
+		return NULL;
+	p = table_funcs.column_find_value(m->session->tr, users_schema, rid);
 
 	assert(p);
 	schema_id = *(sqlid *) p;
