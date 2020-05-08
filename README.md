@@ -8,8 +8,6 @@ to the location you want the binaries to be stored.
 Make sure you have these environment variables set and you have write permissions to the ${PREFIX} location
 
 Assuming the monetdb source code is checked out in  directory "${SOURCE}". 
-And if you have all the required packages(*) to build MonetDB, these are the set of commands to build and *install* it from source.
-(*) what packages are required?
 
 ```
 mkdir build
@@ -21,12 +19,12 @@ cmake --build . --target install
 
 ## Testing
 For testing, you likely don't want to install in the default location, so you need to add a parameter to the cmake command.
-??explain what install does? is it a directory name? is it --target modifier?
+The install directory is passed via the CMAKE\_INSTALL\_PREFIX.
 
 ##Configuration options
 Evidently there are several options to control as illustrated in $SOURCE/cmake/monetdb-options.cmake
 
-The important once to choose from are -DCMAKE-BUILD_TYPE, which takes the value Release or Debug.
+The important once to choose from are -DCMAKE\_BUILD\_TYPE, which takes the value Release or Debug.
 The former creates the binary ready for shipping, including all compiler optimizations that come with it.
 The Debug mode is necessary if you plan to debug the binary and needs access to the symbol tables.
 This build type also typically leads to a slower execution time, because also all kinds of assertions
