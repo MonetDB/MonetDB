@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-from testdata import Doc, pick_tmp_name
+from testdata import Doc, TestFile
 
 import os
 import subprocess
@@ -9,18 +9,21 @@ import tempfile
 
 
 def run_streamcat(text, enc):
-    input = bytes(text, 'utf-8')
-    filename = pick_tmp_name('_streamtest_write_iconv', '.txt')
+    content = bytes(text, 'utf-8')
+    name = f'write_iconv_{enc}.txt'
+
+    tf = TestFile(name, None)
+    filename = tf.path()
 
     cmd = ['streamcat', 'write', filename, 'wstream', f'iconv:{enc}']
 
-    print(f"Input UTF-8 encoded is {repr(input)}")
+    print(f"Input UTF-8 encoded is {repr(content)}")
     # print(cmd)
-    proc = subprocess.run(cmd, input=input)
+    proc = subprocess.run(cmd, input=content)
     if proc.returncode != 0:
         print(f"{cmd} exited with status {proc.returncode}", file=sys.stderr)
         sys.exit(1)
-    output = open(filename, 'rb').read()
+    output = tf.read()
     os.remove(filename)
     print(f"Output is {repr(output)}")
     print()

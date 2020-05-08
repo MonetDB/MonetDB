@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 import testdata
+from testdata import Doc, TestFile
 
 import hashlib
 import json
@@ -12,116 +13,107 @@ import sys
 BOM = b'\xEF\xBB\xBF'
 
 
-def gen_compr_variants(name, content, limit):
-    yield testdata.Doc(name + ".txt", content, limit, None)
-    yield testdata.Doc(name + ".txt.gz", content, limit, "gz")
-    yield testdata.Doc(name + ".txt.bz2", content, limit, "bz2")
-    yield testdata.Doc(name + ".txt.xz", content, limit, "xz")
-    yield testdata.Doc(name + ".txt.lz4", content, limit, "lz4")
+class TestCase:
+    def __init__(self, name, doc, compression, openers, expected):
+        self.tf = TestFile(name, compression)
+        self.name = self.tf.name
+        self.doc = doc
+        self.compression = compression
+        self.openers = openers
+        self.expected = expected
+
+    def run(self):
+        doc = self.doc
+        openers = self.openers
+        filename = self.tf.path()
+
+        test = f"write {openers} {self.name}"
+
+        if not isinstance(openers, list):
+            openers = [openers]
+
+        print()
+        print(f"Test: {test}")
+
+        if os.path.exists(filename):
+            os.remove(filename)
+
+        cmd = ['streamcat', 'write', filename, *openers]
+        results = subprocess.run(cmd, input=doc.content, stderr=subprocess.PIPE)
+        if results.returncode != 0 or results.stderr:
+            print(
+                f"\tFAIL: streamcat returned with exit code {results.returncode}:\n{results.stderr or ''}")
+            return False
+
+        if not os.path.exists(filename):
+            print(f"\tFAIL: test failed to create file '{filename}'")
+            return False
+
+        # Trial run to rule out i/o errors
+        open(filename, 'rb').read()
+
+        try:
+            output = self.tf.read()  # should decompress it
+        except Exception as e:
+            print(f"Test {test} failed on file {filename}: {e}")
+            return False
+
+        complaint = self.expected.verify(output)
+
+        if complaint:
+            print(f"\tFAIL: {complaint}")
+            return False
+        else:
+            print(f"\tOK")
+            os.remove(filename)
+            return True
+
 
 
 def gen_docs():
-    input = testdata.SHERLOCK
+    text = testdata.SHERLOCK
+    assert Doc(text).is_unix()
 
     # Whole file
-    yield from gen_compr_variants('sherlock', input, None)
+    yield 'sherlock.txt', Doc(text)
 
     # Empty file
-    yield from gen_compr_variants('empty', b'', None)
+    yield 'empty.txt', Doc(b'')
 
     # First 16 lines
-    head = b'\n'.join(input.split(b'\n')[:16]) + b'\n'
-    yield from gen_compr_variants('small', head, None)
+    head = b'\n'.join(text.split(b'\n')[:16]) + b'\n'
+    yield 'small.txt', Doc(head)
 
     # Buffer size boundary cases
     for base_size in [1024, 2048, 4096, 8192, 16384]:
         for delta in [-1, 0, 1]:
             size = base_size + delta
-            yield from gen_compr_variants(f'block{size}', input, size)
+            yield f'block{size}.txt', Doc(text, truncate=size)
 
 
-def test_write(opener, text_mode, doc):
-    # determine a file name to write to
-    filename = doc.pick_tmp_name()
-
-    test = f"write {opener} {doc.name}"
-
-    if not isinstance(opener, list):
-        opener = [opener]
-
-    print()
-    print(f"Test: {test}")
-
-    if os.path.exists(filename):
-        os.remove(filename)
-
-    cmd = ['streamcat', 'write', filename, *opener]
-    results = subprocess.run(cmd, input=doc.content, stderr=subprocess.PIPE)
-    if results.returncode != 0 or results.stderr:
-        print(
-            f"\tFAIL: streamcat returned with exit code {results.returncode}:\n{results.stderr or ''}")
-        return False
-
-    if not os.path.exists(filename):
-        print(f"\tFAIL: test failed to create file '{filename}'")
-        return False
-
-    # Trial run to rule out i/o errors
-    open(filename, 'rb').read()
-
-    try:
-        output = doc.read(filename)  # should decompress it
-    except Exception as e:
-        print(f"Test {test} failed on file {filename}: {e}")
-        return False
-
-    complaint = doc.verify(output, text_mode)
-
-    if complaint:
-        print(f"\tFAIL: {complaint}")
-        return False
-    else:
-        print(f"\tOK")
-        os.remove(filename)
-        return True
-
-
-def test_writes(doc):
-    failures = 0
-
-    failures += not test_write('wstream', False, doc)
-    failures += not test_write('wastream', True, doc)
-
-    return failures
-
-
-def test_nonstd_writes(doc):
-    failures = 0
-
-    failures += not test_write(['wstream', 'blocksize:2'], False, doc)
-    failures += not test_write(['wastream', 'blocksize:2'], True, doc)
-
-    failures += not test_write(['wstream', 'blocksize:1000000'], False, doc)
-    failures += not test_write(['wastream', 'blocksize:1000000'], True, doc)
-
-    return failures
+def gen_tests():
+    for compr in testdata.COMPRESSIONS:
+        for name, doc in gen_docs():
+            yield TestCase(name, doc, compr, "wstream", doc)
+            yield TestCase(name, doc, compr, "wastream", doc.to_platform())
+        for name, doc in gen_docs():
+            if not name.startswith('sherlock') or name.startswith('empty'):
+                continue
+            yield TestCase(name, doc, compr, ["wstream", "blocksize:2"], doc)
+            yield TestCase(name, doc, compr, ["wastream", "blocksize:2"], doc.to_platform())
+            yield TestCase(name, doc, compr, ["wstream", "blocksize:1000000"], doc)
+            yield TestCase(name, doc, compr, ["wastream", "blocksize:1000000"], doc.to_platform())
 
 
 def all_tests(filename_filter):
     failures = 0
-    for d in gen_docs():
-        if not filename_filter(d.name):
+    for t in gen_tests():
+        if not filename_filter(t.name):
             continue
-        failures += test_writes(d)
-
-    for d in gen_docs():
-        if not d.name.startswith('sherlock') or d.name.startswith('empty'):
-            continue
-        if not filename_filter(d.name):
-            continue
-        failures += test_nonstd_writes(d)
+        failures += t.run()
 
     return failures
+
 
 
 if __name__ == "__main__":

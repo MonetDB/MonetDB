@@ -12,52 +12,197 @@ import sys
 import tempfile
 
 
+LF = b'\n'
+CRLF = b'\r\n'
 BOM = b'\xEF\xBB\xBF'
 
 SRCDIR = os.environ.get(
     'TSTSRCDIR',
     os.path.dirname(os.path.abspath(sys.argv[0]))
 )
+# The functions we pass this to will pick their own default if None:
 TMPDIR = os.environ.get('TSTTRGDIR')
 
-# Often used for testfile contents. Uses DOS line endings, which is
-# important because we can check whether they are transformed or left alone.
-TESTDATA = os.path.join(SRCDIR, '1661-0.txt.gz')
-SHERLOCK = gzip.open(TESTDATA, 'rb').read()
-assert SHERLOCK.find(b'\x0d\x0a') >= 0
+SHERLOCK = gzip.open(os.path.join(SRCDIR, '1661-0.txt.gz'), 'rb').read().replace(CRLF, LF)
 
+COMPRESSIONS = [None, "gz", "bz2", "xz", "lz4"]
 
 class Doc:
-    def __init__(self, name, content, length_limit=None, compression=None):
-        if length_limit:
-            content = content[:length_limit]
+    """Contents to be read or written. The constructor has several options
+    to make it easy to construct certain variants. The verify method tries
+    to give a human friendly description of the differences found.
+    """
 
-        has_bom = content.startswith(BOM)
-        if has_bom:
-            normalized = content[3:]
+    def __init__(self, content, prepend_bom=False, dos_line_endings=False, truncate=None):
+        assert isinstance(content, bytes)
+        if prepend_bom:
+            content = BOM + content
+        if dos_line_endings:
+            content = content.replace(LF, CRLF)
+        if truncate != None:
+            assert truncate >= 0
+            content = content[:truncate]
+        self.content = content
+
+    def with_bom(self):
+        assert not self.content.startswith(BOM)
+        new_content = BOM + self.content
+        return Doc(new_content)
+
+    def without_bom(self):
+        if self.content.startswith(BOM):
+            new_content = self.content[3:] 
         else:
-            normalized = content
+            new_content = self.content
+        return Doc(new_content)
 
-        # TEMPORARY: UNTIL WE GET OUR LINE ENDING STORY STRAIGHT.
-        # (Method .verify has a corresponding hack)
-        normalized = normalized.replace(b'\r\n', b'\n')
+    def is_unix(self):
+        return self.content.count(CRLF) == 0
 
+    def is_dos(self):
+        # every LF is part of a CRLF
+        return self.content.count(LF) == self.content.count(CRLF)
+
+    def to_unix(self):
+        if self.is_dos():
+            new_content = self.content.replace(CRLF, LF)
+        else:
+            new_content = self.content
+        return Doc(new_content)
+
+    def to_dos(self):
+        if self.is_unix():
+            new_content = self.content.replace(LF, CRLF)
+        else:
+            new_content = self.content
+        return Doc(new_content)
+
+    if os.linesep == CRLF:
+        to_platform = to_dos
+    else:
+        to_platform = to_unix
+
+    def verify(self, text):
+        """Return a textual description of the difference between our content
+        and the given text, or None if identical"""
+
+        content = self.content
+
+        self_bom = content.startswith(BOM)
+        text_bom = text.startswith(BOM)
+        if text_bom and not self_bom:
+            return "Unexpected BOM found!"
+        elif self_bom and not text_bom:
+            return "Expected BOM not found"
+
+        if self_bom:
+            text = text[3:]
+            content = content[3:]
+            skipped = 3
+        else:
+            skipped = 0
+
+        n = 8
+
+        self_start = content[:n]
+        text_start = text[:n]
+        if text_start != self_start:
+            return f"Expected text to start with {repr(self_start)}, found {repr(text_start)}"
+
+        for idx, (c1, c2) in enumerate(zip(content, text)):
+            if c1 != c2:
+                lines = content[:idx].split(LF)
+                line = len(lines)
+                col = len(lines[-1]) + 1
+                ours = content[idx:][:n]
+                theirs = text[idx:][:n]
+                return f"Difference at byte={idx+skipped} line={line} col={col}: expected {repr(ours)}, found {repr(theirs)}"
+
+        len_content = len(content)
+        len_text = len(text)
+        pos = min(len_content, len_text)
+        if len_content < len_text:
+            data = text[pos:][:n]
+            return f"Size mismatch: unexpected {data} after {pos + skipped} bytes"
+        elif len_content > len_text:
+            data = content[pos:][:n]
+            return f"Size mismatch: missing {data} after {pos + skipped} bytes"
+
+        return None
+
+
+# assert Doc(b"monetdb").content == b"monetdb"
+# assert Doc(b"monetdb", prepend_bom=True).content == BOM + b"monetdb"
+# assert Doc(b"monet\ndb", dos_line_endings=True).content == b"monet\r\ndb"
+# assert Doc(b"monet\ndb", prepend_bom=True, dos_line_endings=True, truncate=9).content == BOM + b"monet\r"
+
+# assert Doc(b"monetdb").with_bom().content == BOM + b"monetdb"
+# assert Doc(b"monet\ndb").to_dos().content == b"monet\r\ndb"
+# assert Doc(b"monet\r\ndb").to_unix().content == b"monet\ndb"
+# assert Doc(b"").to_dos().content == b""
+# assert Doc(b"").to_unix().content == b""
+
+# def _expect_assert(fn):
+#     try:
+#         fn()
+#     except AssertionError:
+#         return
+#     assert False and "expected assertion to fail"
+# _expect_assert(lambda: Doc(b"monetdb", prepend_bom=True).with_bom())
+# _expect_assert(lambda: Doc(b"monet\r\ndb").to_dos())
+# _expect_assert(lambda: Doc(b"monet\ndb").to_unix())
+
+# def _verify_verify(content, text, message_part):
+#     if isinstance(content, Doc):
+#         d = content
+#     else:
+#         d = Doc(content)
+#     result = d.verify(text)
+#     if message_part == None:
+#         assert result == None, result
+#     else:
+#         assert result != None and message_part in result, result
+
+# _verify_verify(b"monet", b"monet", None)
+# _verify_verify(b"monet", BOM + b"db", "inserted")
+# _verify_verify(BOM + b"monet", b"db", "disappeared")
+
+# _verify_verify(BOM + b"monet", BOM + b"db", "to start with b'mo")
+
+# _verify_verify(b"aap\nnoot\nmies", b"aap\nnootmies", "Difference at byte=8 line=2 col=5")
+# _verify_verify(BOM + b"aap\nnoot\nmies", BOM + b"aap\nnootmies", "Difference at byte=11 line=2 col=5")
+
+# _verify_verify(b"sherlock holmes", b"sherlock holmes2", "Size mismatch: unexpected b'2' after 15 bytes")
+# _verify_verify(b"sherlock holmes2", b"sherlock holmes", "Size mismatch: missing b'2' after 15 bytes")
+
+
+
+class TestFile:
+    """A file on the file system to read/write test data
+    """
+
+    def __init__(self, name, compression):
+        if compression and not name.endswith('.' + compression):
+            name += '.' + compression
         self.name = name
-        self.has_bom = has_bom
         self.compression = compression
-        self.content = content  # for output
-        self.normalized = normalized  # for checking
+        self._path = None
 
-        if length_limit != None:
-            self.content = self.content[:length_limit]
+    def path(self):
+        if not self._path:
+            prefix = "_streamtest_"
+            suffix = "_" + self.name
+            dir = TMPDIR or None
+            h, p = tempfile.mkstemp(suffix, prefix, dir)
+            os.close(h)
+            os.remove(p)
+            self._path = p
+        return self._path
 
-    def write(self, filename_or_fileobj):
-        if hasattr(filename_or_fileobj, "write"):
-            filename = None
-            fileobj = filename_or_fileobj
-        else:
-            filename = filename_or_fileobj
-            fileobj = open(filename, 'wb')
+    def write(self, content):
+        filename = self.path()
+        fileobj = open(filename, 'wb')
+
         if not self.compression:
             f = fileobj
         elif self.compression == 'gz':
@@ -70,11 +215,11 @@ class Doc:
             f = lz4.frame.LZ4FrameFile(fileobj, 'wb', compression_level=1)
         else:
             raise Exception("Unknown compression scheme: " + self.compression)
-        f.write(self.content)
+        f.write(content)
         return filename
 
-    # Read contents of the given file, decompressing appropriately
-    def read(self, filename):
+    def read(self):
+        filename = self.path()
         if not self.compression:
             f = open(filename, 'rb')
         elif self.compression == 'gz':
@@ -90,82 +235,14 @@ class Doc:
 
         return f.read()
 
-    def pick_tmp_name(self, dir=None):
-        prefix = "_streamtest_"
-        suffix = "_" + self.name
-        return pick_tmp_name(suffix, prefix, dir)
 
-    def write_tmp(self, dir=None):
-        p = self.pick_tmp_name(dir)
-        return self.write(p)
-
-    def verify(self, text, text_mode):
-        # TEMPORARY: UNTIL WE GET OUR LINE ENDING STORY STRAIGHT.
-        # See also the corresponding line in .__init__()
-        text = text.replace(b'\r\n', b'\n')
-
-        bom_found = text.startswith(BOM)
-
-        # | HAS_BOM | TEXT_MODE | BOM_FOUND | RESULT                               |
-        # |---------+-----------+-----------+--------------------------------------|
-        # | False   | *         | False     | OK                                   |
-        # | False   | *         | True      | Somehow, a BOM was inserted!         |
-        # | True    | False     | False     | The BOM should not have been removed |
-        # | True    | False     | True      | OK                                   |
-        # | True    | True      | False     | OK                                   |
-        # | True    | True      | True      | The BOM should have been removed     |
-        if not self.has_bom:
-            if bom_found:
-                return "Somehow, a BOM was inserted!"
-        if self.has_bom:
-            if text_mode and bom_found:
-                return "In text mode, the BOM should have been removed"
-            if not text_mode and not bom_found:
-                return "In binary mode, the BOM should not have been removed"
-
-        if bom_found:
-            text = text[len(BOM):]
-
-        n = 8
-        text_start = text[:n]
-        text_end = text[-n:]
-        ref_start = self.normalized[:n]
-        ref_end = self.normalized[-n:]
-
-        if text_start != ref_start:
-            return f"Expected text to start with {repr(ref_start)}, found {repr(text_start)}"
-        if text_end != ref_end:
-            return f"Expected text to end with {repr(ref_end)}, found {repr(text_end)}"
-
-        if len(text) != len(self.normalized):
-            return f"Size mismatch: found {len(text)} bytes, expected {len(self.normalized)}"
-
-        if text != self.normalized:
-            idx = 0
-            line = 1
-            col = 1
-            for (actual, ref) in zip(text, self.normalized):
-                if actual != ref:
-                    n = 8
-                    expected = self.normalized[idx:][:8]
-                    got = text[idx:][:8]
-                    return f"Difference at byte {idx} line {line} col {col}: expected {repr(expected)}, got {repr(got)}"
-                assert False and "unreachable"
-
-        return None
-
-
-def pick_tmp_name(suffix, prefix, dir=None):
-    dir = dir or TMPDIR or None
-    h, p = tempfile.mkstemp(suffix, prefix, dir)
-    os.close(h)
-    os.remove(p)
-    return p
 
 
 
 # test code
 if __name__ == "__main__":
-    d = Doc("banana", "banana")
-    p = d.write_tmp()
+    d = TestFile("banana", "gz")
+    p = d.path()
+    print(f"path to doc {d.name} is {p}")
+    p = d.path()
     print(f"path to doc {d.name} is {p}")

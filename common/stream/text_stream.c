@@ -9,132 +9,248 @@
 #include "monetdb_config.h"
 #include "stream.h"
 #include "stream_internal.h"
-
+#include "pump.h"
 /* When reading, text streams convert \r\n to \n regardless of operating system,
  * and they drop the leading UTF-8 BOM marker if found.
  * When writing on Windows, \n is translated back to \r\n.
  *
- * Currently, skipping the BOM happens when opening
+ * Currently, skipping the BOM happens when opening, not on the first read action.
  */
 
 #define UTF8BOM		"\xEF\xBB\xBF"	/* UTF-8 encoding of Unicode BOM */
 #define UTF8BOMLENGTH	3	/* length of above */
 
-
-typedef struct text_stream_state {
+#define BUFFER_SIZE (65536)
+struct inner_state {
+	pump_buffer src_win;
+	pump_buffer dst_win;
+	pump_buffer putback_win;
 	char putback_buf[UTF8BOMLENGTH];
-	int putback_start;
-	int putback_end;
-} state;
+	bool crlf_pending;
+	char buffer[BUFFER_SIZE];
+};
+
+
+static pump_buffer
+get_src_win(inner_state_t *inner_state)
+{
+	return inner_state->src_win;
+}
 
 
 static void
-text_destroy(stream *s)
+set_src_win(inner_state_t *inner_state, pump_buffer buf)
 {
-	if (s == NULL)
-		return;
-
-	free(s->stream_data.p);
-	destroy_stream(s);
+	inner_state->src_win = buf;
 }
 
-static ssize_t
-text_read(stream *restrict s, void *restrict buf, size_t elmsize, size_t cnt)
+
+static pump_buffer
+get_dst_win(inner_state_t *inner_state)
 {
-	return s->inner->read(s->inner, buf, elmsize, cnt);
+	return inner_state->dst_win;
 }
 
-static ssize_t
-text_read_putback(stream *restrict s, void *restrict buf_, size_t elmsize, size_t cnt)
-{
-	state *st = (state*) s->stream_data.p;
-	char *buf = buf_; // more convenient type
-	char *p = buf;
-	char *end = buf + elmsize * cnt;
 
-	while (st->putback_start < st->putback_end) {
-		if (p < end)
-			*p++ = st->putback_buf[st->putback_start++];
-		else
-			return p - buf;
+static void
+set_dst_win(inner_state_t *inner_state, pump_buffer buf)
+{
+	inner_state->dst_win = buf;
+}
+
+
+static pump_buffer
+get_buffer(inner_state_t *inner_state)
+{
+	return (pump_buffer) { .start = inner_state->buffer, .count = BUFFER_SIZE };
+}
+
+static void
+put_byte(inner_state_t *ist, char byte)
+{
+	*ist->dst_win.start++ = byte;
+	ist->dst_win.count--;
+}
+
+static char
+take_byte(inner_state_t *ist)
+{
+	ist->src_win.count--;
+	return *ist->src_win.start++;
+}
+
+static pump_result
+text_pump_in(inner_state_t *ist, pump_action action)
+{
+	bool crlf_pending = ist->crlf_pending;
+
+	// not the most efficient loop but easy to verify
+	while (ist->src_win.count > 0 && ist->dst_win.count > 0) {
+		char c = take_byte(ist);
+		switch (c) {
+			case '\r':
+				crlf_pending = true;
+				continue;
+			case '\n':
+				put_byte(ist, c);
+				crlf_pending = false;
+				continue;
+			default:
+				if (crlf_pending)
+					put_byte(ist, '\r');
+				put_byte(ist, c);
+				crlf_pending = false;
+				continue;
+		}
 	}
 
-	// If we get here, the putback buffer is empty but we may still have
-	// some output buffer left.
-	// First, arrange for subsequent read calls to go straight to text_read
-	// instead of text_read_putback.
-	s->read = text_read;
+	ist->crlf_pending = crlf_pending;
 
-	if (p == end)
-		return p - buf;
+	if (action == PUMP_FINISH) {
+		if (ist->src_win.count > 0)
+			// More work to do
+			return PUMP_OK;
+		if (!ist->crlf_pending)
+			// Completely done
+			return PUMP_END;
+		if (ist->dst_win.count > 0) {
+			put_byte(ist, '\r');
+			ist->crlf_pending = false; // not strictly necessary
+			// Now we're completely done
+			return PUMP_END;
+		} else
+			// Come back another time to flush the pending CR
+			return PUMP_OK;
+	} else
+		// There is no error and we are not finishing so clearly we
+		// must return PUMP_OK
+		return PUMP_OK;
+}
 
-	ssize_t nread = text_read(s, p, 1, end - p);
-	if (nread < 0)
-		return nread;
-	p += nread;
-	return p - buf;
+
+static pump_result
+text_pump_in_with_putback(inner_state_t *ist, pump_action action)
+{
+	if (ist->putback_win.count > 0) {
+		pump_buffer tmp = ist->src_win;
+		ist->src_win = ist->putback_win;
+		pump_result ret = text_pump_in(ist, PUMP_NO_FLUSH);
+		ist->putback_win = ist->src_win;
+		ist->src_win = tmp;
+		if (ret == PUMP_ERROR)
+			return PUMP_ERROR;
+	}
+	return text_pump_in(ist, action);
+}
+
+
+static pump_result
+text_pump_out(inner_state_t *ist, pump_action action)
+{
+	size_t src_count = ist->src_win.count;
+	size_t dst_count = ist->dst_win.count;
+	size_t ncopy = src_count < dst_count ? src_count : dst_count;
+
+	memcpy(ist->dst_win.start, ist->src_win.start, ncopy);
+	ist->dst_win.start += ncopy;
+	ist->dst_win.count -= ncopy;
+	ist->src_win.start += ncopy;
+	ist->src_win.count -= ncopy;
+
+	if (ist->src_win.count > 0)
+		// definitely not done
+		return PUMP_OK;
+	if (action == PUMP_NO_FLUSH)
+		// never return PUMP_END
+		return PUMP_OK;
+	if (ist->crlf_pending)
+		// src win empty but cr still pending so not done
+		return PUMP_OK;
+	// src win empty and no cr pending and flush or finish requested
+	return PUMP_END;
+}
+
+
+static void
+text_end(inner_state_t *s)
+{
+	free(s);
 }
 
 
 static ssize_t
 skip_bom(stream *s)
 {
-	state *st = (state*) s->stream_data.p;
+	pump_state *state = (pump_state*) s->stream_data.p;
 	stream *inner = s->inner;
+	inner_state_t *ist = state->inner_state;
 
-	ssize_t nread = mnstr_read(inner, st->putback_buf, 1, UTF8BOMLENGTH);
+	ssize_t nread = mnstr_read(inner, ist->putback_buf, 1, UTF8BOMLENGTH);
 	if (nread < 0)
 		return nread;
 
-	if (nread == UTF8BOMLENGTH &&  memcmp(st->putback_buf, UTF8BOM, nread) == 0) {
+	if (nread == UTF8BOMLENGTH &&  memcmp(ist->putback_buf, UTF8BOM, nread) == 0) {
 		// Bingo! Skip it!
 		s->isutf8 = true;
 		return 3;
 	}
 
-
-	// We have consumed some bytes that have to be returned.
+	// We have consumed some bytes that have to be unconsumed.
 	// skip_bom left them in the putback_buf.
-	// Switch to a read function that returns them.
-	s->read = text_read_putback;
-	st->putback_start = 0;
-	st->putback_end = nread;
+	ist->putback_win.start = ist->putback_buf;
+	ist->putback_win.count = nread;
 
-	return nread;
+	return 0;
 }
 
 
 stream *
 create_text_stream(stream *inner)
 {
-	state *st = malloc(sizeof(state));
-	struct stream *s = create_wrapper_stream(NULL, inner);
-	if (st == NULL)
-		goto bail;
-	if (s == NULL)
-		goto bail;
+	inner_state_t *inner_state = calloc(1, sizeof(inner_state_t));
+	pump_state *state = calloc(1, sizeof(pump_state));
+	if (inner_state == NULL || state == NULL) {
+		free(inner_state);
+		free(state);
+		return NULL;
+	}
 
-	*st = (state) { .putback_start = 0, .putback_end = 0, };
-	s->stream_data.p = st;
+	state->inner_state = inner_state;
+	state->get_src_win = get_src_win;
+	state->set_src_win = set_src_win;
+	state->get_dst_win = get_dst_win;
+	state->set_dst_win = set_dst_win;
+	state->get_buffer = get_buffer;
+	state->finalizer = text_end;
+
+	inner_state->putback_win.start = inner_state->putback_buf;
+	inner_state->putback_win.count = 0;
+	if (inner->readonly) {
+		inner_state->src_win.start = inner_state->buffer;
+		inner_state->src_win.count = 0;
+		state->worker = text_pump_in_with_putback;
+	} else {
+		inner_state->dst_win.start = inner_state->buffer;
+		inner_state->dst_win.count = BUFFER_SIZE;
+		state->worker = text_pump_out;
+	}
+
+	stream *s = pump_stream(inner, state);
+	if (s == NULL) {
+		free(inner_state);
+		free(state);
+		return NULL;
+	}
 
 	s->binary = false;
-	s->destroy = text_destroy;
-
-	// We're still a no-op so we can just fall back to
-	// whatever our inner is doing:
-	//     bool isutf8;    /* known to be UTF-8 due to BOM */
-	//     ssize_t (*read)(stream *restrict s, void *restrict buf, size_t elmsize, size_t cnt);
-	//     ssize_t (*write)(stream *restrict s, const void *restrict buf, size_t elmsize, size_t cnt);
-	//     void (*close)(stream *s);
-	//     void (*destroy)(stream *s);
-	//     int (*flush)(stream *s);
 
 	if (s->readonly)
-		if (skip_bom(s) < 0)
-			goto bail;
+		if (skip_bom(s) < 0) {
+			free(inner_state);
+			free(state);
+			destroy_stream(s);
+			return NULL;
+		}
+
 	return s;
-bail:
-	free(st);
-	destroy_stream(s);
-	return NULL;
 }

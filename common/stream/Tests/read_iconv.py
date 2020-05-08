@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-from testdata import Doc
+from testdata import Doc, TestFile
 
 import os
 import subprocess
@@ -9,8 +9,11 @@ import sys
 
 def run_streamcat(text, enc):
     content = bytes(text, enc)
-    d = Doc(f'read_iconv_{enc}.txt', content)
-    filename = d.write_tmp()
+    name = f'read_iconv_{enc}.txt'
+
+    tf = TestFile(name, None)
+    filename = tf.write(content)
+
     cmd = ['streamcat', 'read', filename, 'rstream', f'iconv:{enc}']
     print(f"Input with encoding '{enc}' is {repr(content)}")
     # print(cmd)

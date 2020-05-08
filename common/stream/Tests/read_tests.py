@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 import testdata
+from testdata import Doc, TestFile
 
 import hashlib
 import json
@@ -11,135 +12,119 @@ import sys
 
 BOM = b'\xEF\xBB\xBF'
 
-COMPRESSIONS = [None, "gz", "bz2", "xz", "lz4"]
-def compr_name(name, compression):
-    if compression:
-        return name + '.' + compression
-    else:
-        return name
 
-def gen_compr_variants(name, content, limit):
-    for compr in COMPRESSIONS:
-        yield testdata.Doc(compr_name(name, compr), content, limit, compr)
+class TestCase:
+    def __init__(self, name, doc, compression, openers, expected):
+        self.tf = TestFile(name, compression)
+        self.name = self.tf.name
+        self.doc = doc
+        self.compression = compression
+        self.openers = openers
+        self.expected = expected
 
-def gen_bom_compr_variants(name, content, limit):
-    yield from gen_compr_variants(name + ".txt", content, limit)
-    yield from gen_compr_variants(name + "_bom.txt", BOM + content, limit)
+    def run(self):
+        doc = self.doc
+        openers = self.openers
+        filename = self.tf.write(doc.content)
 
-def broken_boms():
-    limit = 2000
-    for compr in COMPRESSIONS:
-        yield testdata.Doc(compr_name('brokenbom1.txt', compr), BOM[:1] + testdata.SHERLOCK, limit, compr)
-        yield testdata.Doc(compr_name('brokenbom2.txt', compr), BOM[:2] + testdata.SHERLOCK, limit, compr)
+        test = f"read {openers} {self.name}"
+
+        if not isinstance(openers, list):
+            openers = [openers]
+
+        print()
+        print(f"Test: {test}")
+
+        cmd = ['streamcat', 'read', filename, *openers]
+        results = subprocess.run(
+            cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        if results.returncode != 0 or results.stderr:
+            print(
+                f"\tFAIL: streamcat returned with exit code {results.returncode}:\n{results.stderr or ''}")
+            return False
+
+        output = results.stdout or b""
+        complaint = self.expected.verify(output)
+
+        if complaint:
+            print(f"\tFAIL: {complaint}")
+            return False
+        else:
+            print(f"\tOK")
+            os.remove(filename)
+            return True
+
 
 def gen_docs():
-    input = testdata.SHERLOCK
+    # We use a document with DOS line endings.
+    # This way we can verify that rastream replaces them with \n
+    # and rstream leaves them alone.
+    text = Doc(testdata.SHERLOCK).to_dos().content
 
     # Whole file
-    yield from gen_bom_compr_variants('sherlock', input, None)
+    yield 'sherlock.txt', Doc(text)
+    yield 'sherlock_bom.txt', Doc(text, prepend_bom=True)
 
     # Empty file
-    yield from gen_bom_compr_variants('empty', b'', None)
+    yield 'empty.txt', Doc(b'')
+    yield 'empty_bom.txt', Doc(b'', prepend_bom=True)
 
-    # First 16 lines
-    head = b'\n'.join(input.split(b'\n')[:16]) + b'\n'
-    yield from gen_bom_compr_variants('small', head, None)
+    # First few lines
+    small = b'\n'.join(text.split(b'\n')[:16]) + b'\n'
+    yield 'small.txt', Doc(small)
+    yield 'small_bom.txt', Doc(small, prepend_bom=True)
 
     # Buffer size boundary cases
     for base_size in [1024, 2048, 4096, 8192, 16384]:
         for delta in [-1, 0, 1]:
             size = base_size + delta
-            yield from gen_bom_compr_variants(f'block{size}', input, size)
+            yield f'block{size}.txt', Doc(text, truncate=size)
+            yield f'block{size}_bom.txt', Doc(text, prepend_bom=True, truncate=size)
 
     # \r at end of first block, \n at start of next
-    head = (1023 * b'a') + b'\r\n' + (20 * b'b') + b'\r\n' + (20 * b'c')
+    abc = (1023 * b'a') + b'\r\n' + (20 * b'b') + b'\r\n' + (20 * b'c')
     # word of wisdom: you have to test your tests
-    assert head[:1024].endswith(b'\r')
-    assert head[1024:].startswith(b'\n')
-    yield from gen_compr_variants('crlf1024.txt', head, None)
+    assert abc[:1024].endswith(b'\r')
+    assert abc[1024:].startswith(b'\n')
+    yield 'crlf1024.txt', Doc(abc)
 
-    yield from broken_boms()
-
-def test_read(opener, text_mode, doc):
-    filename = doc.write_tmp()
-
-    test = f"read {opener} {doc.name}"
-
-    if not isinstance(opener, list):
-        opener = [opener]
-
-    print()
-    print(f"Test: {test}")
-
-    cmd = ['streamcat', 'read', filename, *opener]
-    results = subprocess.run(
-        cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-    if results.returncode != 0 or results.stderr:
-        print(
-            f"\tFAIL: streamcat returned with exit code {results.returncode}:\n{results.stderr or ''}")
-        return False
-
-    output = results.stdout or b""
-    complaint = doc.verify(output, text_mode)
-
-    if complaint:
-        print(f"\tFAIL: {complaint}")
-        return False
-    else:
-        print(f"\tOK")
-        os.remove(filename)
-        return True
+    yield 'brokenbom1.txt', Doc(BOM[:1] + small)
+    yield 'brokenbom2.txt', Doc(BOM[:2] + small)
 
 
-def test_reads(doc):
-    failures = 0
-
-    # rstream does not strip BOM
-    failures += not test_read('rstream', False, doc)
-
-    # rastream does strip the BOM
-    failures += not test_read('rastream', True, doc)
-
-    return failures
-
-
-def test_nonstd_reads(doc):
-    failures = 0
-
-    failures += not test_read(['rstream', 'blocksize:2'], False, doc)
-    failures += not test_read(['rastream', 'blocksize:2'], True, doc)
-
-    failures += not test_read(['rstream', 'blocksize:1000000'], False, doc)
-    failures += not test_read(['rastream', 'blocksize:1000000'], True, doc)
-
-    return failures
+def gen_tests():
+    for compr in testdata.COMPRESSIONS:
+        for name, doc in gen_docs():
+            yield TestCase(name, doc, compr, "rstream", doc)
+            yield TestCase(name, doc, compr, "rastream", doc.without_bom().to_unix())
+        for name, doc in gen_docs():
+            if not name.startswith('sherlock') or name.startswith('empty'):
+                continue
+            yield TestCase(name, doc, compr, ["rstream", "blocksize:2"], doc)
+            yield TestCase(name, doc, compr, ["rastream", "blocksize:2"], doc.without_bom().to_unix())
+            yield TestCase(name, doc, compr, ["rstream", "blocksize:1000000"], doc)
+            yield TestCase(name, doc, compr, ["rastream", "blocksize:1000000"], doc.without_bom().to_unix())
 
 
 def all_tests(filename_filter):
     failures = 0
-    for d in gen_docs():
-        if not filename_filter(d.name):
+    for t in gen_tests():
+        if not filename_filter(t.name):
             continue
-        failures += test_reads(d)
+        failures += t.run()
 
-    for d in gen_docs():
-        if not d.name.startswith('sherlock') or d.name.startswith('empty'):
-            continue
-        if not filename_filter(d.name):
-            continue
-        failures += test_nonstd_reads(d)
     return failures
 
 
 if __name__ == "__main__":
     # generate test data for manual testing
     if len(sys.argv) == 1:
-        for d in gen_docs():
-            print(d.name)
+        for name, d in gen_docs():
+            print(name)
     elif len(sys.argv) == 2:
-        for d in gen_docs():
-            if d.name == sys.argv[1]:
-                d.write(sys.stdout.buffer)
+        for name, d in gen_docs():
+            if name == sys.argv[1]:
+                sys.stdout.buffer.write(d.content)
     else:
         print("Usage: python3 read_tests.py [TESTDATANAME]", file=sys.stderr)
         sys.exit(1)
