@@ -274,6 +274,7 @@ SQLprepareClient(Client c, int login)
 			goto bailout;
 		}
 		if (global_variables(m, "monetdb", "sys") < 0) {
+			mvc_destroy(m);
 			msg = createException(SQL,"sql.initClient", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			goto bailout;
 		}
