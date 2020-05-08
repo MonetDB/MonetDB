@@ -33,6 +33,21 @@
 #include "mal_authorize.h"
 #include "mal_private.h"
 
+#define MAX_MAL_MODULES 128
+static int mel_modules = 0;
+static str mel_module_name[MAX_MAL_MODULES] = {0};
+static mel_atom *mel_module_atoms[MAX_MAL_MODULES] = {0};
+static mel_func *mel_module_funcs[MAX_MAL_MODULES] = {0};
+
+void
+mal_module(str name, mel_atom *atoms, mel_func *funcs)
+{
+	assert (mel_modules < MAX_MAL_MODULES);
+	mel_module_name[mel_modules] = name;
+	mel_module_atoms[mel_modules] = atoms;
+	mel_module_funcs[mel_modules] = funcs;
+	mel_modules++;
+}
 
 #define MAX_MAL_MODULES 128
 static int mal_modules = 0;

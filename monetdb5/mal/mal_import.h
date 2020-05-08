@@ -14,6 +14,9 @@
 #include "mal_session.h"
 #include "mal_utils.h"
 
+#include "mel.h"
+mal_export void mal_module(str name, mel_atom *atoms, mel_func *funcs);
+
 mal_export void mal_register(str name, unsigned char *code);
 mal_export str malIncludeModules(Client c, char *modules[], int listing, int embedded);
 mal_export str malIncludeString(Client c, const str name, const str mal, int listing);
