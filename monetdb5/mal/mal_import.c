@@ -90,10 +90,80 @@ mal_register(str name, unsigned char *code)
 }
 
 static str
+addAtom( mel_atom *atoms)
+{
+	for(; atoms && atoms->name; atoms++) {
+		int i = ATOMallocate(atoms->name);
+		if (is_int_nil(i))
+			throw(TYPE,"addAtom", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		if (atoms->basetype) {
+			int tpe = ATOMindex(atoms->basetype);
+			if (tpe < 0)
+				throw(TYPE,"addAtom", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+			BATatoms[i] = BATatoms[tpe];
+			strcpy_len(BATatoms[i].name, atoms->name, sizeof(BATatoms[i].name));
+			BATatoms[i].storage = ATOMstorage(tpe);
+		} else 	{ /* cannot overload void atoms */
+			BATatoms[i].storage = i;
+			BATatoms[i].linear = false;
+		}
+		if (atoms->del)
+			BATatoms[i].atomDel = (void (*)(Heap *, var_t *))atoms->del;
+		if (atoms->cmp) {
+			BATatoms[i].atomCmp = (int (*)(const void *, const void *))atoms->del;
+			BATatoms[i].linear = true;
+		}
+		if (atoms->fromstr)
+			BATatoms[i].atomFromStr = (ssize_t (*)(const char *, size_t *, ptr *, bool))atoms->fromstr;
+		if (atoms->tostr)
+			BATatoms[i].atomToStr = (ssize_t (*)(str *, size_t *, const void *, bool))atoms->tostr;
+		if (atoms->fix)
+			BATatoms[i].atomFix = (gdk_return (*)(const void *))atoms->fix;
+		if (atoms->unfix)
+			BATatoms[i].atomUnfix = (gdk_return (*)(const void *))atoms->unfix;
+		if (atoms->heap) {
+			BATatoms[i].size = sizeof(var_t);
+			assert_shift_width(ATOMelmshift(ATOMsize(i)), ATOMsize(i));
+			BATatoms[i].atomHeap = (void (*)(Heap *, size_t))atoms->heap;
+		}
+		if (atoms->hash)
+			BATatoms[i].atomHash = (BUN (*)(const void *))atoms->hash;
+		if (atoms->length)
+			BATatoms[i].atomLen = (size_t (*)(const void *))atoms->length;
+		if (atoms->null) {
+			const void *atmnull = ((const void *(*)(void))atoms->null)();
+
+			BATatoms[i].atomNull = atmnull;
+		}
+		if (atoms->nequal)
+			BATatoms[i].atomCmp = (int (*)(const void *, const void *))atoms->nequal;
+		if (atoms->put)
+			BATatoms[i].atomPut = (var_t (*)(Heap *, var_t *, const void *))atoms->put;
+		if (atoms->storage)
+			BATatoms[i].storage = (*(int (*)(void))atoms->storage)();
+		if (atoms->read)
+			BATatoms[i].atomRead = (void *(*)(void *, stream *, size_t))atoms->read;
+		if (atoms->write)
+			BATatoms[i].atomWrite = (gdk_return (*)(const void *, stream *, size_t))atoms->write;
+	}
+	return MAL_SUCCEED;
+}
+
+static str
 malIncludeDefault(Client c, int listing, int embedded)
 {
 	int i;
 
+	for(i = 0; i<mel_modules; i++) {
+		if (embedded && strcmp(mel_module_name[i], "mal_mapi") == 0) /* skip mapi in the embedded version */
+			continue;
+		if (mel_module_atoms[i]) {
+			str msg = addAtom(mel_module_atoms[i]);
+			if (msg)
+				return msg;
+		}
+		/* HERE we need to register the command/pattern's */
+	}
 	for(i = 0; i<mal_modules; i++) {
 		if (embedded && strcmp(mal_module_name[i], "mal_mapi") == 0) /* skip mapi in the embedded version */
 			continue;
