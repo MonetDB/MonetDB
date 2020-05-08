@@ -431,13 +431,7 @@ rel_inplace_project(sql_allocator *sa, sql_rel *rel, sql_rel *l, list *e)
 		if(!l)
 			return NULL;
 
-		l->op = rel->op;
-		l->l = rel->l;
-		l->r = rel->r;
-		l->exps = rel->exps;
-		l->nrcols = rel->nrcols;
-		l->flag = rel->flag;
-		l->card = rel->card;
+		*l = *rel;
 	} else {
 		rel_destroy_(rel);
 	}
@@ -533,6 +527,7 @@ rel_crossproduct(sql_allocator *sa, sql_rel *l, sql_rel *r, operator_type join)
 	rel->exps = NULL;
 	rel->card = CARD_MULTI;
 	rel->nrcols = l->nrcols + r->nrcols;
+	rel->single = r->single;
 	return rel;
 }
 
@@ -801,6 +796,8 @@ rel_select(sql_allocator *sa, sql_rel *l, sql_exp *e)
 	if (l) {
 		rel->card = l->card;
 		rel->nrcols = l->nrcols;
+		if (is_single(l))
+			set_single(rel);
 	}
 	return rel;
 }
@@ -948,9 +945,12 @@ rel_project(sql_allocator *sa, sql_rel *l, list *e)
 			rel->nrcols = list_length(e);
 		else
 			rel->nrcols = l->nrcols;
+		rel->single = l->single;
 	}
-	if (e && !list_empty(e))
+	if (e && !list_empty(e)) {
 		set_processed(rel);
+		rel->nrcols = list_length(e);
+	}
 	return rel;
 }
 
@@ -1612,13 +1612,12 @@ lastexp(sql_rel *rel)
 }
 
 sql_rel *
-rel_zero_or_one(mvc *sql, sql_rel *rel, exp_kind ek)
+rel_return_zero_or_one(mvc *sql, sql_rel *rel, exp_kind ek)
 {
-	if (is_topn(rel->op) || is_sample(rel->op))
-		rel = rel_project(sql->sa, rel, rel_projections(sql, rel, NULL, 1, 0));
 	if (ek.card < card_set && rel->card > CARD_ATOM) {
-		assert (is_simple_project(rel->op) || is_set(rel->op));
 		list *exps = rel->exps;
+		
+		assert (is_simple_project(rel->op) || is_set(rel->op));
 		rel = rel_groupby(sql, rel, NULL);
 		for(node *n = exps->h; n; n=n->next) {
 			sql_exp *e = n->data;
@@ -1631,6 +1630,25 @@ rel_zero_or_one(mvc *sql, sql_rel *rel, exp_kind ek)
 			e = exp_aggr1(sql->sa, e, zero_or_one, 0, 0, CARD_ATOM, has_nil(e));
 			(void)rel_groupby_add_aggr(sql, rel, e);
 		}
+	}
+	return rel;
+}
+
+sql_rel *
+rel_zero_or_one(mvc *sql, sql_rel *rel, exp_kind ek)
+{
+	if (is_topn(rel->op) || is_sample(rel->op))
+		rel = rel_project(sql->sa, rel, rel_projections(sql, rel, NULL, 1, 0));
+	if (ek.card < card_set && rel->card > CARD_ATOM) {
+		assert (is_simple_project(rel->op) || is_set(rel->op));
+
+		list *exps = rel->exps;
+		for(node *n = exps->h; n; n=n->next) {
+			sql_exp *e = n->data;
+			if (!has_label(e))
+				exp_label(sql->sa, e, ++sql->label);
+		}
+		set_single(rel);
 	} else {
 		sql_exp *e = lastexp(rel);
 		if (!has_label(e))

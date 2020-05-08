@@ -998,6 +998,11 @@ push_up_select(mvc *sql, sql_rel *rel, list *ad)
 			/* remove select */
 			rel->r = rel_dup(r->l);
 			rel_destroy(r);
+			r = rel->r;
+			if (is_single(r)) {
+				set_single(rel);
+				rel->op = op_left;
+			}
 			if (!inner)
 				reset_dependent(rel);
 		}
@@ -1461,7 +1466,7 @@ rel_unnest_dependent(mvc *sql, sql_rel *rel)
 		if (rel_has_freevar(sql, r)) {
 			list *ad = rel_dependent_var(sql, rel->l, rel->r);
 
-			if (r && is_simple_project(r->op) && (!exps_have_freevar(sql, r->exps) || is_distinct_set(sql, l, ad))) {
+			if (r && is_simple_project(r->op) && ((!exps_have_freevar(sql, r->exps) && !rel->single) || is_distinct_set(sql, l, ad))) {
 				rel = push_up_project(sql, rel, ad);
 				return rel_unnest_dependent(sql, rel);
 			}
@@ -1539,21 +1544,34 @@ rel_reset_subquery(mvc *sql, sql_rel *rel, int *changes)
 static sql_exp *
 rewrite_inner(mvc *sql, sql_rel *rel, sql_rel *inner, operator_type op)
 {
+	int single = is_single(inner);
 	sql_rel *d = NULL;
+
+	reset_single(inner);
+	if (single && is_project(rel->op))
+		op = op_left;
 
 	if (!is_project(inner->op)) 
 		inner = rel_project(sql->sa, inner, rel_projections(sql, inner, NULL, 1, 1));
 
 	if (is_join(rel->op)){ /* TODO handle set operators etc */ 
 		d = rel->r = rel_crossproduct(sql->sa, rel->r, inner, op);
+		if (single)
+			set_single(d);
 	} else if (is_project(rel->op)){ /* projection -> op_left */
-		if (rel->l) {
+		if (rel->l || single) {
+			if (single && !rel->l)
+				rel->l = rel_project(sql->sa, rel->l, append(sa_list(sql->sa), exp_atom_bool(sql->sa, 1)));
 			d = rel->l = rel_crossproduct(sql->sa, rel->l, inner, op_left);
+			if (single)
+				set_single(d);
 		} else {
 			d = rel->l = inner;
 		}
 	} else {
 		d = rel->l = rel_crossproduct(sql->sa, rel->l, inner, op);
+		if (single)
+			set_single(d);
 	}
 	if (d && rel_has_freevar(sql, inner)) {
 		list *dv = rel_dependent_var(sql, d, inner);
@@ -1866,13 +1884,12 @@ rewrite_rank(mvc *sql, sql_rel *rel, sql_exp *e, int depth, int *changes)
 	sql_rel *rell = NULL;
 	int needed = 0;
 
-	if (e->type != e_func || !e->r /* e->r means window function */)
+	if (!is_simple_project(rel->op) || e->type != e_func || !e->r /* e->r means window function */)
 		return e;
 
 	(void)depth;
 	(void)changes;
 	/* ranks/window functions only exist in the projection */
-	assert(is_simple_project(rel->op));
 	list *l = e->l, *r = e->r, *gbe = r->h->data, *obe = r->h->next->data;
 	e->card = (rel->card == CARD_AGGR) ? CARD_AGGR : CARD_MULTI; /* After the unnesting, the cardinality of the window function becomes larger */
 
@@ -1999,6 +2016,7 @@ rel_union_exps(mvc *sql, sql_exp **l, list *vals, int is_tuple)
 					ve = exp_rel_update_exp(sql, ve);
 					sq = rel_project(sql->sa, sq, append(sa_list(sql->sa), ve));
 				}
+				exp_set_freevar(sql, ve, sq);
 			}
 		}
 		if (!u) {
@@ -2090,7 +2108,7 @@ rewrite_anyequal(mvc *sql, sql_rel *rel, sql_exp *e, int depth)
 				is_tuple = 1;
 
 			/* re should be a values list */
-			if (!is_tuple && is_values(re) && !exps_have_rel_exp(re->f)) { /* exp_values */
+			if (!lsq && !is_tuple && is_values(re) && !exps_have_rel_exp(re->f)) { /* exp_values */
 				list *vals = re->f;
 
 				if (is_select(rel->op))
@@ -2106,6 +2124,8 @@ rewrite_anyequal(mvc *sql, sql_rel *rel, sql_exp *e, int depth)
 					return NULL;
 				re = rsq->exps->t->data;
 
+				if (rsq && lsq)
+					exp_set_freevar(sql, re, rsq);
 				if (!is_tuple && !is_freevar(re)) {
 					re = exp_label(sql->sa, re, ++sql->label); /* unique name */
 					list_hash_clear(rsq->exps);
@@ -2616,7 +2636,52 @@ rewrite_ifthenelse(mvc *sql, sql_rel *rel, sql_exp *e, int depth, int *changes)
 		sql_exp *cond = l->h->data; 
 		sql_subfunc *nf = cond->f;
 		sql_rel *inner = rel->l;
+		sql_exp *then_exp = l->h->next->data;
+		sql_exp *else_exp = l->h->next->next->data;
 
+		if (exp_has_rel(then_exp) || exp_has_rel(else_exp)) {
+			bool single = false;
+			//return sql_error(sql, 10, SQLSTATE(42000) "time to rewrite into union\n");
+			// union( 
+			// 	select( 
+			// 		project [then]
+			//	)[cond] 
+			// 	select( 
+			// 		project [else]
+			//	)[not(cond)] 
+			//) [ cols ]
+			sql_rel *lsq = NULL, *rsq = NULL, *usq = NULL;
+
+			if (exp_has_rel(then_exp)) {
+				exp_set_freevar(sql, then_exp, lsq);
+				lsq = exp_rel_get_rel(sql->sa, then_exp);			
+				then_exp = exp_rel_update_exp(sql, then_exp);
+				if (is_single(lsq))
+					single = true;
+				reset_single(lsq);
+			}
+			lsq = rel_project(sql->sa, lsq, append(sa_list(sql->sa), then_exp));
+			exp_set_freevar(sql, cond, lsq);
+			lsq = rel_select(sql->sa, lsq, cond);
+			if (exp_has_rel(else_exp)) {
+				exp_set_freevar(sql, else_exp, rsq);
+				rsq = exp_rel_get_rel(sql->sa, else_exp);			
+				else_exp = exp_rel_update_exp(sql, else_exp);
+				if (is_single(rsq))
+					single = true;
+				reset_single(rsq);
+			}
+			rsq = rel_project(sql->sa, rsq, append(sa_list(sql->sa), else_exp));
+			cond = exp_copy(sql, cond);
+			exp_set_freevar(sql, cond, rsq);
+			cond = rel_unop_(sql, rsq, cond, NULL, "not", card_value);
+			rsq = rel_select(sql->sa, rsq, cond);
+			usq = rel_setop(sql->sa, lsq, rsq, op_union);
+			rel_set_exps(usq, append(sa_list(sql->sa), exp_ref(sql, e)));
+			if (single)
+				set_single(usq);
+			e = exp_rel(sql, usq);
+		} else
 		if ((has_nil(cond) || (inner && is_outerjoin(inner->op))) && (cond->type != e_func || !is_isnull_func(nf))) {
 			/* add is null */
 			sql_exp *condnil = rel_unop_(sql, rel, cond, NULL, "isnull", card_value);
@@ -2707,7 +2772,7 @@ rewrite_remove_xp(mvc *sql, sql_rel *rel, int *changes)
 static sql_rel *
 rewrite_fix_count(mvc *sql, sql_rel *rel, int *changes)
 {
-	if (rel->op == op_left) {
+	if (rel->op == op_left && !is_single(rel)) {
 		int rel_changes = 0;
 		sql_rel *r = rel->r;
 		/* TODO create an exp iterator */
@@ -2988,6 +3053,7 @@ rewrite_values(mvc *sql, sql_rel *rel, int *changes)
 		cur = nrel;
 	}
 	rel = cur;
+	set_single(rel);
 	return rel;
 }
 
