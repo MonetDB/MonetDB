@@ -51,7 +51,7 @@ class Doc:
 
     def without_bom(self):
         if self.content.startswith(BOM):
-            new_content = self.content[3:] 
+            new_content = self.content[3:]
         else:
             new_content = self.content
         return Doc(new_content)

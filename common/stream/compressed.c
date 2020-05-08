@@ -32,5 +32,6 @@ compressed_stream(stream *inner, int level)
 		return lz4_stream(inner, level);
 
 	return inner;
-
 }
+
+
