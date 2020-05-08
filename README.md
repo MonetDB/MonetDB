@@ -7,7 +7,9 @@ The results of the build are stored in a location designated by ${PREFIX}, a ful
 to the location you want the binaries to be stored. 
 Make sure you have these environment variables set and you have write permissions to the ${PREFIX} location
 
-Assuming the monetdb source code is checked out in  directory "${SOURCE}". 
+Assuming the monetdb source code is checked out in  directory ${SOURCE}.
+And if you have all the required packages(See below) to build MonetDB, these are the set of commands 
+to build and *install* it from source. Install is one of the predefined commands [install, test, mtest]
 
 ```
 mkdir build
@@ -33,9 +35,13 @@ are being checked.
 The relevant properties are also -DASSERT=ON and DSTRICT=ON
 
 ## Platform specifics
-### Debian
+The packages required to built MonetDB from source depends mostly on the operating system environment. 
+They are specified in the corresponding README files,
 
-## Fedora
+README-Debian .... which version
+
+README-Fedora .... Which version
+
 
 ## Windows
 
