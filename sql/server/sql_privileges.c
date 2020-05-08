@@ -751,11 +751,14 @@ mvc_set_schema(mvc *m, sql_schema *s)
 	if (!new_schema)
 		return 0;
 
-	if (!sqlvar_set_string(find_global_var(m, mvc_bind_schema(m, "sys"), "current_schema"), new_schema))
+	if (!sqlvar_set_string(find_global_var(m, mvc_bind_schema(m, "sys"), "current_schema"), new_schema)) {
+		_DELETE(new_schema);
 		return 0;
+	}
 	_DELETE(m->session->schema_name);
 	m->session->schema_name = new_schema;
-	m->session->schema = s;
+	if (m->session->tr->active)
+		m->session->schema = s;
 	return 1;
 }
 
