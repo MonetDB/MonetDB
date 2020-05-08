@@ -11,9 +11,11 @@ typedef void* (*fptr)(void*);
 typedef struct mel_atom {
 	char *name;
 	char *basetype;
+	int size;
 	fptr tostr;
 	fptr fromstr;
 	fptr cmp;
+	fptr nequal;
 	fptr hash;
 	fptr null;
 	fptr read;
@@ -22,6 +24,9 @@ typedef struct mel_atom {
 	fptr del;
 	fptr length;
 	fptr heap;
+	fptr fix;
+	fptr unfix;
+	fptr storage;
 } mel_atom;
 
 typedef struct mel_arg {
