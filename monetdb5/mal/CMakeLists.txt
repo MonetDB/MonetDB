@@ -50,6 +50,7 @@ target_sources(mal
   mal_utils.c mal_utils.h
   mal_embedded.c mal_embedded.h
   mal_private.h
+  mel.h
   PUBLIC
   ${CMAKE_CURRENT_SOURCE_DIR}/mal_client.h
   ${CMAKE_CURRENT_SOURCE_DIR}/mal_authorize.h
