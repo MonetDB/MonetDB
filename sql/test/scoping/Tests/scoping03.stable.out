@@ -21,13 +21,6 @@ stdout of test 'scoping03` in directory 'sql/test/scoping` itself:
 % int,	varchar # type
 % 1,	1 # length
 [ 1,	"a"	]
-#delete from fun;
-[ 1	]
-#select c, d from fun2;
-% sys.fun2,	sys.fun2 # table_name
-% c,	d # name
-% int,	varchar # type
-% 1,	1 # length
 #create or replace trigger mytrigger3
 #	after insert on fun referencing new row as "fun2"
 #	for each statement insert into fun2 values( 1, 'values' ); --ok, no name conflict

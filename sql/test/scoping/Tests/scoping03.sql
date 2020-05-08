@@ -32,10 +32,6 @@ create or replace trigger mytrigger2
 insert into fun values (1, 'a');
 select c, d from fun2;
 	-- 1 a
-delete from fun;
-	-- 1 row deleted
-select c, d from fun2;
-	--empty
 
 create or replace trigger mytrigger3
 	after insert on fun referencing new row as "fun2"
