@@ -261,8 +261,9 @@ value.
    be filtered out using an expression (e.g. "mapi:monetdb:*") if
    desired. The control entries come in handy when one wants to get an
    overview of available monetdbds in e.g. a local cluster. Note that
-   for monetdbd to announce its control port, the *mero_controlport*
-   setting for that monetdbd must be enabled in the configuration file.
+   for *monetdbd* to announce its control port, the *mero_controlport*
+   setting for that *monetdbd* must be enabled in the configuration
+   file.
 
 **-h**
 

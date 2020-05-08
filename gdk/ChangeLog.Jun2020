@@ -2,7 +2,7 @@
 # This file is updated with Maddlog
 
 * Tue Apr 28 2020 Sjoerd Mullender <sjoerd@acm.org>
-- The functions BATintersect BATsemijoin, and BATsubcross have an
+- The functions BATintersect, BATsemijoin, and BATsubcross have an
   extra argument, bool max_one, which indicates that there must be no
   more than one match in the join.
 
@@ -34,7 +34,7 @@
 
 * Fri Mar 20 2020 Sjoerd Mullender <sjoerd@acm.org>
 - Changed the interface of the atom "fix" and "unfix" functions.
-  They now return a value of type gdk_return to indicater success/failure.
+  They now return a value of type gdk_return to indicate success/failure.
 
 * Tue Dec  3 2019 Sjoerd Mullender <sjoerd@acm.org>
 - Removed the tunique property.  The tunique property indicated that
