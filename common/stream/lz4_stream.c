@@ -147,6 +147,9 @@ compr(inner_state_t *inner_state, pump_action action)
 			consumed = 0;
 			inner_state->finished = true;
 			break;
+
+		default:
+			assert(0); // shut up, compiler!
 	}
 
 	if (LZ4F_isError(produced))
