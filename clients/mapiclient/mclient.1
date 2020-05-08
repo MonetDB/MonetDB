@@ -75,6 +75,8 @@ This file can contain defaults for the flags
 .BR database ,
 .BR save_history ,
 .BR format ,
+.BR host ,
+.BR port ,
 and
 .BR width .
 For example, an entry in a
@@ -182,7 +184,11 @@ measured and reported per query.
 \fB\-\-user\fP\fB=\fP\fIuser\fP (\fB\-u\fP \fIuser\fP)
 Specify the user to connect as.
 If this flag is absent, the client will ask for a user name, unless a
-default was found in .monetdb file.
+default was found in the
+.I .monetdb
+or
+.B $DOTMONETDBFILE
+file.
 .TP
 \fB\-\-format=\fP\fIformat\fP (\fB\-f\fP \fIformat\fP)
 Specify the output format.
@@ -194,29 +200,34 @@ The possible values are
 .BR tab ,
 .BR raw ,
 .BR xml ,
+.BR trash ,
 and
-.BR trash .
+.BR rowcount .
 .B csv
-is comma-separated values,
+is comma-separated values;
 .B tab
-is tab-separated values,
+is tab-separated values;
 .B raw
 is no special formatting (data is dumped the way the server sends it
-to the client),
+to the client);
 .B sql
 is a pretty format which is meant for human consumption where columns
-are clearly shown,
+are clearly shown;
 .B expanded
 and
 .B x
 are synonyms and are another pretty format meant for human consumption
-where column values are printed in full and below each other,
+where column values are printed in full and below each other;
 .B xml
-is a valid (in the XML sense) document,
-and
+is a valid (in the XML sense) document;
 .B trash
 does not render any output, enabling performance measurements free of any
-output rendering/serialization costs.
+output rendering/serialization costs;
+and
+.B rowcount
+is a variation on
+.B trash
+where only the number of affected rows is printed.
 In addition to plain \fBcsv\fP, two other forms are possible.
 \fBcsv=\fP\fIc\fP uses \fIc\fP as column separator; \fBcsv+\fP\fIc\fP
 uses \fIc\fP as column separator and produces a single header line in
@@ -227,7 +238,10 @@ Echo the query.
 Note that using this option slows down processing.
 .TP
 \fB\-\-history\fP (\fB\-H\fP)
-Load and save the command line history (default off).
+If compiled with the
+.IR readline (3)
+library,
+load and save the command line history (default off).
 .TP
 \fB\-\-log=\fP\fIlogfile\fP (\fB\-L\fP \fIlogfile\fP)
 Save client/server interaction in the specified file.

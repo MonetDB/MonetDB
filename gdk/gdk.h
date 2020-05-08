@@ -375,7 +375,6 @@
 #define LOADMASK	(1<<14)
 #define ACCELMASK	(1<<20)
 #define ALGOMASK	(1<<21)
-#define ESTIMASK	(1<<22)
 
 #define NOSYNCMASK	(1<<24)
 
