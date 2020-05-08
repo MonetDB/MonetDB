@@ -111,7 +111,13 @@ static char *RAPIinitialize(void) {
 	// set some command line arguments
 	{
 		structRstart rp;
-		char *rargv[] = { "R", "--slave", "--vanilla" };
+		char *rargv[] = { "R",
+#if R_VERSION >= R_Version(4,0,0)
+						  "--no-echo",
+#else
+						  "--slave",
+#endif
+						  "--vanilla" };
 		int stat = 0;
 
 		R_DefParams(&rp);
