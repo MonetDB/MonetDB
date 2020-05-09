@@ -202,10 +202,8 @@ runtimeProfileFinish(Client cntxt, MalBlkPtr mb, MalStkPtr stk)
 	(void) mb;
 
 	MT_lock_set(&mal_delayLock);
-	for( i=qtail; i != qhead; i++){
-		if ( i >= qsize){
-			i = 0;
-		}
+	i=qtail;
+	while (i != qhead){
 		if ( QRYqueue[i].stk == stk){
 			if( stk->up){
 				// recursive call
@@ -222,8 +220,10 @@ runtimeProfileFinish(Client cntxt, MalBlkPtr mb, MalStkPtr stk)
 			cntxt->idle = time(0);
 			break;
 		}
+		i++;
+		if ( i >= qsize)
+			i = 0;
 	}
-
 	MT_lock_unset(&mal_delayLock);
 }
 
