@@ -14,7 +14,7 @@ to build and *install* it from source. Install is one of the predefined commands
 ```
 mkdir build
 cd build
-cmake -DCMAKE_INSTALL_PREFIX=/tmp/monetdb ${SOURCE}
+cmake -DCMAKE_INSTALL_PREFIX=$PREFIX ${SOURCE}
 cmake --build .
 cmake --build . --target install
 ```

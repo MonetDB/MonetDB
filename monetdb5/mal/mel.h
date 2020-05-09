@@ -42,6 +42,8 @@ typedef struct mel_func {
 	char *fcn;
 	fptr imp;
 	bool unsafe;
+	bool inlined;
+	bool sealed;
 	char *comment;
 	mel_arg args[MAX_ARG];
 	mel_arg res[MAX_ARG];
