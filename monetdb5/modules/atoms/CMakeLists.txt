@@ -11,7 +11,7 @@ add_library(atoms OBJECT)
 set(include_mal_files
   #streams
   #blob
-  color
+  #color
   str
   url
   uuid
@@ -34,20 +34,20 @@ create_include_object(
 
 target_sources(atoms
   PRIVATE
-  batxml.c
+  streams.c streams.h
   blob.c blob.h
   color.c color.h
-  identifier.c
-  inet.c
-  json.c json.h
-  mtime.c
-  mtime_analytic.c
   str.c str.h
-  streams.c streams.h
-  strptime.c
   url.c url.h
   uuid.c
+  json.c json.h
+  mtime.c
+  batxml.c
+  inet.c
+  identifier.c
   xml.c xml.h
+  mtime_analytic.c
+  strptime.c
   ${MONETDB_CURRENT_MAL_SOURCES}
   PUBLIC
   ${CMAKE_CURRENT_SOURCE_DIR}/mtime.h)

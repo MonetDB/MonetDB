@@ -395,3 +395,36 @@ CLRcolor(color *c, const char **val)
 		throw(MAL, "color.color", GDK_EXCEPTION);
 	return MAL_SUCCEED;
 }
+
+#include "mel.h"
+mel_atom color_init_atoms[] = {
+ { .name="color", .basetype="int", .size=sizeof(color), .tostr=(fptr)&color_tostr, .fromstr=(fptr)&color_fromstr, },
+ { .name=NULL } 
+};
+mel_func color_init_funcs[] = {
+ { .command=true, .mod="color", .fcn="str", .imp=(fptr)&CLRstr, .unsafe=false, .comment="Converts color to string ", .args={{ .name="s", .type="color", .isbat=false, .vargs=false }, }, .res={{ .type="str", .isbat=false, .vargs=false }, } },
+ { .command=true, .mod="color", .fcn="color", .imp=(fptr)&CLRcolor, .unsafe=false, .comment="Converts string to color", .args={{ .name="s", .type="str", .isbat=false, .vargs=false }, }, .res={{ .type="color", .isbat=false, .vargs=false }, } },
+ { .command=true, .mod="color", .fcn="rgb", .imp=(fptr)&CLRrgb, .unsafe=false, .comment="Converts an RGB triplets to a color atom", .args={{ .name="r", .type="int", .isbat=false, .vargs=false }, { .name="g", .type="int", .isbat=false, .vargs=false }, { .name="b", .type="int", .isbat=false, .vargs=false }, }, .res={{ .type="color", .isbat=false, .vargs=false }, } },
+ { .command=true, .mod="color", .fcn="red", .imp=(fptr)&CLRred, .unsafe=false, .comment="Extracts red component from a color atom", .args={{ .name="c", .type="color", .isbat=false, .vargs=false }, }, .res={{ .type="int", .isbat=false, .vargs=false }, } },
+ { .command=true, .mod="color", .fcn="green", .imp=(fptr)&CLRgreen, .unsafe=false, .comment="Extracts green component from a color atom", .args={{ .name="c", .type="color", .isbat=false, .vargs=false }, }, .res={{ .type="int", .isbat=false, .vargs=false }, } },
+ { .command=true, .mod="color", .fcn="blue", .imp=(fptr)&CLRblue, .unsafe=false, .comment="Extracts blue component from a color atom", .args={{ .name="c", .type="color", .isbat=false, .vargs=false }, }, .res={{ .type="int", .isbat=false, .vargs=false }, } },
+ { .command=true, .mod="color", .fcn="hue", .imp=(fptr)&CLRhueInt, .unsafe=false, .comment="Extracts hue component from a color atom", .args={{ .name="c", .type="color", .isbat=false, .vargs=false }, }, .res={{ .type="int", .isbat=false, .vargs=false }, } },
+ { .command=true, .mod="color", .fcn="saturation", .imp=(fptr)&CLRsaturationInt, .unsafe=false, .comment="Extracts saturation component from a color atom", .args={{ .name="c", .type="color", .isbat=false, .vargs=false }, }, .res={{ .type="int", .isbat=false, .vargs=false }, } },
+ { .command=true, .mod="color", .fcn="value", .imp=(fptr)&CLRvalueInt, .unsafe=false, .comment="Extracts value component from a color atom", .args={{ .name="c", .type="color", .isbat=false, .vargs=false }, }, .res={{ .type="int", .isbat=false, .vargs=false }, } },
+ { .command=true, .mod="color", .fcn="hsv", .imp=(fptr)&CLRhsv, .unsafe=false, .comment="Converts an HSV triplets to a color atom", .args={{ .name="h", .type="flt", .isbat=false, .vargs=false }, { .name="s", .type="flt", .isbat=false, .vargs=false }, { .name="v", .type="flt", .isbat=false, .vargs=false }, }, .res={{ .type="color", .isbat=false, .vargs=false }, } },
+ { .command=true, .mod="color", .fcn="hue", .imp=(fptr)&CLRhue, .unsafe=false, .comment="Extracts hue component from a color atom", .args={{ .name="c", .type="color", .isbat=false, .vargs=false }, }, .res={{ .type="flt", .isbat=false, .vargs=false }, } },
+ { .command=true, .mod="color", .fcn="saturation", .imp=(fptr)&CLRsaturation, .unsafe=false, .comment="Extracts saturation component from a color atom", .args={{ .name="c", .type="color", .isbat=false, .vargs=false }, }, .res={{ .type="flt", .isbat=false, .vargs=false }, } },
+ { .command=true, .mod="color", .fcn="value", .imp=(fptr)&CLRvalue, .unsafe=false, .comment="Extracts value component from a color atom", .args={{ .name="c", .type="color", .isbat=false, .vargs=false }, }, .res={{ .type="flt", .isbat=false, .vargs=false }, } },
+ { .command=true, .mod="color", .fcn="ycc", .imp=(fptr)&CLRycc, .unsafe=false, .comment="Converts an YCC triplets to a color atom", .args={{ .name="y", .type="int", .isbat=false, .vargs=false }, { .name="cr", .type="int", .isbat=false, .vargs=false }, { .name="cb", .type="int", .isbat=false, .vargs=false }, }, .res={{ .type="color", .isbat=false, .vargs=false }, } },
+ { .command=true, .mod="color", .fcn="luminance", .imp=(fptr)&CLRluminance, .unsafe=false, .comment="Extracts Y(luminance) component from a color atom", .args={{ .name="c", .type="color", .isbat=false, .vargs=false }, }, .res={{ .type="int", .isbat=false, .vargs=false }, } },
+ { .command=true, .mod="color", .fcn="cr", .imp=(fptr)&CLRcr, .unsafe=false, .comment="Extracts Cr(red color) component from a color atom", .args={{ .name="c", .type="color", .isbat=false, .vargs=false }, }, .res={{ .type="int", .isbat=false, .vargs=false }, } },
+ { .command=true, .mod="color", .fcn="cb", .imp=(fptr)&CLRcb, .unsafe=false, .comment="Extracts Cb(blue color) component from a color atom", .args={{ .name="c", .type="color", .isbat=false, .vargs=false }, }, .res={{ .type="int", .isbat=false, .vargs=false }, } },
+ { .imp=NULL }
+};
+#include "mal_import.h"
+#ifdef _MSC_VER
+#undef read
+#pragma section(".CRT$XCU",read)
+#endif
+LIB_STARTUP_FUNC(init_color_mal)
+{ mal_module("color", color_init_atoms, color_init_funcs); }
