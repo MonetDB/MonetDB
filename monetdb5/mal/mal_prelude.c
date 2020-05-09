@@ -167,10 +167,12 @@ addFunctions(mel_func *fcn){
 	InstrPtr sig;
 
 	for(; fcn && fcn->mod; fcn++) {
+		assert(fcn->mod);
 		mod = getName(fcn->mod);
-		if( mod == NULL)
+		if(mod == NULL && globalModule(fcn->mod) == NULL)
 			throw(LOADER, "addFunctions", "Module %s missing", fcn->mod);
-		c= getModule(mod);
+		mod = getName(fcn->mod);
+		c = getModule(mod);
 		if( c == NULL)
 			throw(LOADER, "addFunctions", "Module %s missing", fcn->mod);
 		s = newSymbol(fcn->fcn, fcn->command ? COMMANDsymbol: PATTERNsymbol );
@@ -198,12 +200,6 @@ malPrelude(Client c, int listing, int embedded)
 {
 	int i;
 	str msg = MAL_SUCCEED;
-
-	/* Define all modules first, because the MAL blocks are not necessarily organized by module */
-	for(i = 0; i<mel_modules; i++) {
-		if(getModule(mel_module_name[i]) == NULL && globalModule(mel_module_name[i]) == NULL)
-                        throw(LOADER,"includeMal", "Module %s could not be created", mel_module_name[i]);
-	}
 
 	/* Add all atom definitions */
 	for(i = 0; i<mel_modules; i++) {

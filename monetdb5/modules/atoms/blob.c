@@ -364,80 +364,19 @@ BLOBblob_fromstr(blob **b, const char **s)
 
 #include "mel.h"
 mel_atom blob_init_atoms[] = {
- {
-  .name="blob", 
-  .tostr=(fptr)&BLOBtostr, 
-  .fromstr=(fptr)&BLOBfromstr, 
-  .cmp=(fptr)&BLOBcmp, 
-  .hash=(fptr)&BLOBhash, 
-  .null=(fptr)&BLOBnull, 
-  .read=(fptr)&BLOBread, 
-  .write=(fptr)&BLOBwrite, 
-  .put=(fptr)&BLOBput, 
-  .del=(fptr)&BLOBdel, 
-  .length=(fptr)&BLOBlength, 
-  .heap=(fptr)&BLOBheap, 
- },
- { .name=NULL }
+ { .name="blob", .tostr=(fptr)&BLOBtostr, .fromstr=(fptr)&BLOBfromstr, .cmp=(fptr)&BLOBcmp, .hash=(fptr)&BLOBhash, .null=(fptr)&BLOBnull, .read=(fptr)&BLOBread, .write=(fptr)&BLOBwrite, .put=(fptr)&BLOBput, .del=(fptr)&BLOBdel, .length=(fptr)&BLOBlength, .heap=(fptr)&BLOBheap, },
+ { .name=NULL } 
 };
 mel_func blob_init_funcs[] = {
- { .command=true, .mod="blob", .fcn="blob", .imp=(fptr)&BLOBblob_blob, .unsafe=false, 
-    .comment="Noop routine."
-    ,
-  .args={
-   { .name="s", .type="blob", .isbat=false, .vargs=false },
-  }, .res={
-   { .type="blob", .isbat=false, .vargs=false },
-  }
- },
- { .command=true, .mod="blob", .fcn="blob", .imp=(fptr)&BLOBblob_fromstr, .unsafe=false, 
-  .args={
-   { .name="s", .type="str", .isbat=false, .vargs=false },
-  }, .res={
-   { .type="blob", .isbat=false, .vargs=false },
-  }
- },
- { .command=true, .mod="blob", .fcn="toblob", .imp=(fptr)&BLOBtoblob, .unsafe=false, 
-    .comment="store a string as a blob."
-    ,
-  .args={
-   { .name="v", .type="str", .isbat=false, .vargs=false },
-  }, .res={
-   { .type="blob", .isbat=false, .vargs=false },
-  }
- },
- { .command=true, .mod="blob", .fcn="nitems", .imp=(fptr)&BLOBnitems, .unsafe=false, 
-    .comment="get the number of bytes in this blob."
-    ,
-  .args={
-   { .name="b", .type="blob", .isbat=false, .vargs=false },
-  }, .res={
-   { .type="int", .isbat=false, .vargs=false },
-  }
- },
- { .command=true, .mod="blob", .fcn="prelude", .imp=(fptr)&BLOBprelude, .unsafe=false, 
-  .args={
-  }, .res={
-   { .type="void", .isbat=false, .vargs=false },
-  }
- },
- { .command=true, .mod="calc", .fcn="blob", .imp=(fptr)&BLOBblob_blob, .unsafe=false, 
-  .args={
-   { .name="b", .type="blob", .isbat=false, .vargs=false },
-  }, .res={
-   { .type="blob", .isbat=false, .vargs=false },
-  }
- },
- { .command=true, .mod="calc", .fcn="blob", .imp=(fptr)&BLOBblob_fromstr, .unsafe=false, 
-  .args={
-   { .name="s", .type="str", .isbat=false, .vargs=false },
-  }, .res={
-   { .type="blob", .isbat=false, .vargs=false },
-  }
- },
+ { .command=true, .mod="blob", .fcn="blob", .imp=(fptr)&BLOBblob_blob, .unsafe=false, .comment="Noop routine.", .args={{ .name="s", .type="blob", .isbat=false, .vargs=false }, }, .res={{ .type="blob", .isbat=false, .vargs=false }, } },
+ { .command=true, .mod="blob", .fcn="blob", .imp=(fptr)&BLOBblob_fromstr, .unsafe=false, .args={{ .name="s", .type="str", .isbat=false, .vargs=false }, }, .res={{ .type="blob", .isbat=false, .vargs=false }, } },
+ { .command=true, .mod="blob", .fcn="toblob", .imp=(fptr)&BLOBtoblob, .unsafe=false, .comment="store a string as a blob.", .args={{ .name="v", .type="str", .isbat=false, .vargs=false }, }, .res={{ .type="blob", .isbat=false, .vargs=false }, } },
+ { .command=true, .mod="blob", .fcn="nitems", .imp=(fptr)&BLOBnitems, .unsafe=false, .comment="get the number of bytes in this blob.", .args={{ .name="b", .type="blob", .isbat=false, .vargs=false }, }, .res={{ .type="int", .isbat=false, .vargs=false }, } },
+ { .command=true, .mod="blob", .fcn="prelude", .imp=(fptr)&BLOBprelude, .unsafe=false, .args={}, .res={{ .type="void", .isbat=false, .vargs=false }, } },
+ { .command=true, .mod="calc", .fcn="blob", .imp=(fptr)&BLOBblob_blob, .unsafe=false, .args={{ .name="b", .type="blob", .isbat=false, .vargs=false }, }, .res={{ .type="blob", .isbat=false, .vargs=false }, } },
+ { .command=true, .mod="calc", .fcn="blob", .imp=(fptr)&BLOBblob_fromstr, .unsafe=false, .args={{ .name="s", .type="str", .isbat=false, .vargs=false }, }, .res={{ .type="blob", .isbat=false, .vargs=false }, } },
  { .imp=NULL }
 };
-
 #include "mal_import.h"
 #ifdef _MSC_VER
 #undef read
