@@ -192,9 +192,8 @@ addFunctions(mel_func *fcn){
 	for(; fcn && fcn->mod; fcn++) {
 		assert(fcn->mod);
 		mod = getName(fcn->mod);
-		if(mod == NULL && globalModule(fcn->mod) == NULL)
+		if(mod == NULL && globalModule(mod=putName(fcn->mod)) == NULL)
 			throw(LOADER, "addFunctions", "Module %s missing", fcn->mod);
-		mod = getName(fcn->mod);
 		c = getModule(mod);
 		if( c == NULL)
 			throw(LOADER, "addFunctions", "Module %s missing", fcn->mod);
@@ -207,6 +206,8 @@ addFunctions(mel_func *fcn){
 		sig= newInstruction(mb, fcn->mod, fcn->fcn);
 		sig->retc = 0;
 		sig->argc = 0;
+		sig->token = fcn->command?COMMANDsymbol:PATTERNsymbol;
+		sig->fcn = (MALfcn)fcn->imp;
 		if( fcn->unsafe)
 			mb->unsafeProp = 0; 
 		/* add the return variables */
@@ -263,6 +264,7 @@ malPrelude(Client c, int listing, int embedded)
 			msg = addFunctions(mel_module_funcs[i]);
 			if (msg)
 				return msg;
+			initModule(c, mel_module_name[i]);
 		}
 	}
 
