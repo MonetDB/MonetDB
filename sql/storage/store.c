@@ -26,6 +26,7 @@ static sqlid store_oid = 0;
 static sqlid prev_oid = 0;
 static sqlid *store_oids = NULL;
 static int nstore_oids = 0;
+static size_t new_trans_size = 0;
 sql_trans *gtrans = NULL;
 list *active_sessions = NULL;
 sql_allocator *store_sa = NULL;
@@ -306,7 +307,7 @@ sql_trans_destroy(sql_trans *t, bool try_spare)
 
 	TRC_DEBUG(SQL_STORE, "Destroy transaction: %p\n", t);
 
-	if (t->sa->nr > 2*gtrans->sa->nr)
+	if (t->sa->nr > 2*new_trans_size)
 		try_spare = 0;
 	if (res == gtrans && spares < ((GDKdebug & FORCEMITOMASK) ? 2 : MAX_SPARES) && !t->name && try_spare) {
 		TRC_DEBUG(SQL_STORE, "Spared '%d' transactions '%p'\n", spares, t);
@@ -2281,7 +2282,7 @@ store_apply_deltas(bool not_locked)
 			MT_lock_set(&bs_lock);
 	}
 
-	if (/*gtrans->sa->nr > 40 &&*/ !(ATOMIC_GET(&nr_sessions)) /* only save when there are no dependencies on the gtrans */) { /* TODO need better estimate */
+	if (gtrans->sa->nr > 2*new_trans_size && !(ATOMIC_GET(&nr_sessions)) /* only save when there are no dependencies on the gtrans */) {
 		sql_trans *ntrans = sql_trans_create(gtrans->stk, gtrans, NULL, false);
 
 		trans_init(ntrans, ntrans->stk, gtrans);
@@ -3844,6 +3845,7 @@ trans_dup(backend_stack stk, sql_trans *ot, const char *newname)
 		if (ot == gtrans)
 			ot->schemas.nelm = NULL;
 	}
+	new_trans_size = t->sa->nr;
 	return t;
 }
 
