@@ -235,6 +235,7 @@ malPrelude(Client c, int listing, int embedded)
 	int i;
 	str msg = MAL_SUCCEED;
 
+	(void) listing;
 	/* Add all atom definitions */
 	for(i = 0; i<mel_modules; i++) {
 		if (embedded && strcmp(mel_module_name[i], "mal_mapi") == 0) /* skip mapi in the embedded version */
@@ -257,8 +258,10 @@ malPrelude(Client c, int listing, int embedded)
 	}
 
 	/* Once we have all modules loaded, we should execute their prelude function for further initialization*/
+/* Unclear why we need it beyond running the MAL instructions */
+/*
 	for(i = 0; i<mal_modules; i++) {
-		if (embedded && strcmp(mal_module_name[i], "mal_mapi") == 0) /* skip mapi in the embedded version */
+		if (embedded && strcmp(mal_module_name[i], "mal_mapi") == 0) 
 			continue;
 		if ( mal_module_code[i]){
 			msg = malIncludeString(c, mal_module_name[i], (str)mal_module_code[i], listing);
@@ -266,6 +269,7 @@ malPrelude(Client c, int listing, int embedded)
 				return msg;
 		}
 	}
+*/
 	/* execute preludes */
 	for(i = 0; i<mal_modules; i++) {
 		if (strcmp(mal_module_name[i], "sql") == 0) /* skip sql should be last to startup */
