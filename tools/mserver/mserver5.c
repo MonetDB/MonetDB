@@ -711,9 +711,7 @@ main(int argc, char **av)
 
 	modules[mods++] = "sql";
 	modules[mods++] = "generator";
-#ifdef NDEBUG
 	modules[mods++] = "opt_sql_append";
-#endif
 #ifdef HAVE_GEOM
 	modules[mods++] = "geom";
 #endif
