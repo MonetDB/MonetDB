@@ -186,8 +186,6 @@ addFunctions(mel_func *fcn){
 		pushInstruction(prg, sig);
 		if( fcn->unsafe)
 			prg->unsafeProp = 0; // unsafeProp;
-		// if( fcn->sealed)
-			// prg->sealedProp = sealedProp;
 		// if( fcn->inline)
 			// prg->inlineProp = inlineProp;
 		insertSymbol(c, s);
