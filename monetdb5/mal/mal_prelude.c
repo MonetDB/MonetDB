@@ -158,12 +158,32 @@ addAtom( mel_atom *atoms)
 }
 
 static str
+makeArgument(MalBlkPtr mb, mel_arg *a, int *idx)
+{
+	int tpe, l;
+	str aname;
+	aname = putName(a->name);
+	if ( aname == 0)
+		throw(LOADER, "addFunctions", "Can not store argument name %s", a->name);
+	tpe = getAtomIndex(a->type, strlen(a->type),-1);
+	if (a->isbat)
+		tpe = newBatType(tpe);
+	*idx = findVariableLength(mb, aname, l = strlen(aname));
+	if( *idx != -1)
+		throw(LOADER, "addFunctions", "Duplicate argument name %s", aname);
+	*idx = newVariable(mb, aname, l, tpe);
+	return MAL_SUCCEED;
+}
+
+static str
 addFunctions(mel_func *fcn){
 	str msg = MAL_SUCCEED;
+	mel_arg *a;
 	str mod;
+	int idx;
 	Module c;
 	Symbol s;
-	MalBlkPtr prg;
+	MalBlkPtr mb;
 	InstrPtr sig;
 
 	for(; fcn && fcn->mod; fcn++) {
@@ -178,18 +198,32 @@ addFunctions(mel_func *fcn){
 		s = newSymbol(fcn->fcn, fcn->command ? COMMANDsymbol: PATTERNsymbol );
 		if ( s == NULL)
 			throw(LOADER, "addFunctions", "Can not create symbol for %s.%s missing", fcn->mod, fcn->fcn);
-		prg = s->def;
-		if( prg == NULL)
+		mb = s->def;
+		if( mb == NULL)
 			throw(LOADER, "addFunctions", "Can not create program block for %s.%s missing", fcn->mod, fcn->fcn);
-		sig= newInstruction(prg, fcn->mod, fcn->fcn);
+		sig= newInstruction(mb, fcn->mod, fcn->fcn);
 		sig->retc = 0;
-		pushInstruction(prg, sig);
 		if( fcn->unsafe)
-			prg->unsafeProp = 0; // unsafeProp;
-		// if( fcn->sealed)
-			// prg->sealedProp = sealedProp;
-		// if( fcn->inline)
-			// prg->inlineProp = inlineProp;
+			mb->unsafeProp = 0; 
+		/* add the return variables */
+		for ( a = fcn->res; a->name && a; a++){
+			msg = makeArgument(mb, a, &idx);
+			if( msg)
+				return msg;
+			sig = pushReturn(mb, sig, idx);
+			if (sig == NULL)
+				throw(LOADER, "addFunctions", "Failed to keep argument name %s", a->name);
+		}
+		/* add the arguments */
+		for ( a = fcn->args; a->name && a; a++){
+			msg = makeArgument(mb, a, &idx);
+			if( msg)
+				return msg;
+			sig = pushArgument(mb, sig, idx);
+			if (sig == NULL)
+				throw(LOADER, "addFunctions", "Failed to keep argument name %s", a->name);
+		}
+		pushInstruction(mb, sig);
 		insertSymbol(c, s);
 	}
 	return msg;
@@ -201,6 +235,7 @@ malPrelude(Client c, int listing, int embedded)
 	int i;
 	str msg = MAL_SUCCEED;
 
+	(void) listing;
 	/* Add all atom definitions */
 	for(i = 0; i<mel_modules; i++) {
 		if (embedded && strcmp(mel_module_name[i], "mal_mapi") == 0) /* skip mapi in the embedded version */
@@ -223,13 +258,18 @@ malPrelude(Client c, int listing, int embedded)
 	}
 
 	/* Once we have all modules loaded, we should execute their prelude function for further initialization*/
+/* Unclear why we need it beyond running the MAL instructions */
+/*
 	for(i = 0; i<mal_modules; i++) {
-		if (embedded && strcmp(mal_module_name[i], "mal_mapi") == 0) /* skip mapi in the embedded version */
+		if (embedded && strcmp(mal_module_name[i], "mal_mapi") == 0) 
 			continue;
-		str msg = malIncludeString(c, mal_module_name[i], (str)mal_module_code[i], listing);
-		if (msg)
-			return msg;
+		if ( mal_module_code[i]){
+			msg = malIncludeString(c, mal_module_name[i], (str)mal_module_code[i], listing);
+			if (msg)
+				return msg;
+		}
 	}
+*/
 	/* execute preludes */
 	for(i = 0; i<mal_modules; i++) {
 		if (strcmp(mal_module_name[i], "sql") == 0) /* skip sql should be last to startup */

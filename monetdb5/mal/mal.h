@@ -185,8 +185,7 @@ typedef struct MALBLK {
 	InstrPtr *stmt;				/* Instruction location */
 
 	bool inlineProp:1,		/* inline property */
-		     unsafeProp:1,		/* unsafe property */
-		     sealedProp:1;		/* sealed property (opertions for sealed object should be on the full object once) */
+	     unsafeProp:1;		/* unsafe property */
 
 	str errors;				/* left over errors */
 	struct MALBLK *history;	/* of optimizer actions */
