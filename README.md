@@ -19,6 +19,10 @@ cmake --build .
 cmake --build . --target install
 ```
 
+## Prerequisites
+PATH settings ???
+ROle of clients?? How to install
+
 ## Testing
 For testing, you likely don't want to install in the default location, so you need to add a parameter to the cmake command.
 
@@ -34,7 +38,21 @@ The Debug mode is necessary if you plan to debug the binary and needs access to 
 This build type also typically leads to a slower execution time, because also all kinds of assertions
 are being checked.
 
-The relevant properties are also -DASSERT=ON and DSTRICT=ON
+Other  relevant properties are also -DASSERT=ON and DSTRICT=ON, used in combination with a Debug build, e.g.
+
+
+```
+CONFIGURE_OPTIONS="-DCMAKE_BUILD_TYPE=Debug -DASSERT=ON -DSTRICT=ON"
+mkdir build
+cd build
+cmake $CONFIGURE_OPTIONS -DCMAKE_INSTALL_PREFIX=$PREFIX ${SOURCE}
+cmake --build .
+cmake --build . --target install
+```
+
+
+Explain the role of cmake --build . --target mtest
+In particular how to call it from anywhere in the tree
 
 ## Platform specifics
 The packages required to built MonetDB from source depends mostly on the operating system environment. 
