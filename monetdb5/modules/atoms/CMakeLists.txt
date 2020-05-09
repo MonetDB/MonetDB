@@ -9,7 +9,7 @@
 add_library(atoms OBJECT)
 
 set(include_mal_files
-  streams
+  #streams
   #blob
   color
   str
