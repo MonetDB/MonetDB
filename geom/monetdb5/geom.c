@@ -2508,20 +2508,24 @@ wkbFromWKB(wkb **w, wkb **src)
 /* int* tpe is needed to verify that the type of the FromText function used is the
  * same with the type of the geometry created from the wkt representation */
 str
-wkbFromText(wkb **geomWKB, str *geomWKT, int *srid, int *tpe)
+wkbFromText(wkb **geomWKB, str *geomWKT, int *Srid, int *tpe)
 {
 	size_t len = 0;
 	int te = 0;
 	str err;
 	size_t parsedBytes;
+	int srid = 0;
+
+	if (Srid)
+		srid = *Srid;
 
 	*geomWKB = NULL;
-	if (strNil(*geomWKT) || is_int_nil(*srid) || is_int_nil(*tpe)) {
+	if (strNil(*geomWKT) || is_int_nil(srid) || is_int_nil(*tpe)) {
 		if ((*geomWKB = wkbNULLcopy()) == NULL)
 			throw(MAL, "wkb.FromText", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		return MAL_SUCCEED;
 	}
-	err = wkbFROMSTR_withSRID(*geomWKT, &len, geomWKB, *srid, &parsedBytes);
+	err = wkbFROMSTR_withSRID(*geomWKT, &len, geomWKB, srid, &parsedBytes);
 	if (err != MAL_SUCCEED)
 		return err;
 
@@ -2539,6 +2543,71 @@ wkbFromText(wkb **geomWKB, str *geomWKT, int *srid, int *tpe)
 		throw(SQL, "wkb.FromText", SQLSTATE(38000) "Geometry not type '%d: %s' but '%d: %s' instead", *tpe, geom_type2str(*tpe, 0), te, geom_type2str(te, 0));
 	throw(MAL, "wkb.FromText", SQLSTATE(38000) "%s", "cannot parse string");
 }
+
+str
+geomFromText(wkb **geomWKB, str *geomWKT, int *srid)
+{
+	int tpe = 0;
+	return wkbFromText(geomWKB, geomWKT, srid, &tpe);
+}
+
+str
+pointFromText(wkb **geomWKB, str *geomWKT, int *srid)
+{
+	int tpe = 1;
+	return wkbFromText(geomWKB, geomWKT, srid, &tpe);
+}
+
+str
+lineFromText(wkb **geomWKB, str *geomWKT, int *srid)
+{
+	int tpe = 2;
+	return wkbFromText(geomWKB, geomWKT, srid, &tpe);
+}
+
+str
+polygonFromText(wkb **geomWKB, str *geomWKT, int *srid)
+{
+	int tpe = 4;
+	return wkbFromText(geomWKB, geomWKT, srid, &tpe);
+}
+
+str
+mpointFromText(wkb **geomWKB, str *geomWKT, int *srid)
+{
+	int tpe = 5;
+	return wkbFromText(geomWKB, geomWKT, srid, &tpe);
+}
+
+str
+mlineFromText(wkb **geomWKB, str *geomWKT, int *srid)
+{
+	int tpe = 6;
+	return wkbFromText(geomWKB, geomWKT, srid, &tpe);
+}
+
+str
+mpolyFromText(wkb **geomWKB, str *geomWKT, int *srid)
+{
+	int tpe = 7;
+	return wkbFromText(geomWKB, geomWKT, srid, &tpe);
+}
+
+str
+geomcollFromText(wkb **geomWKB, str *geomWKT, int *srid)
+{
+	int tpe = 8;
+	return wkbFromText(geomWKB, geomWKT, srid, &tpe);
+}
+
+str geomFromText0(wkb **geomWKB, str *geomWKT) { return geomFromText(geomWKB, geomWKT, NULL); }
+str pointFromText0(wkb **geomWKB, str *geomWKT) { return pointFromText(geomWKB, geomWKT, NULL); }
+str lineFromText0(wkb **geomWKB, str *geomWKT) { return lineFromText(geomWKB, geomWKT, NULL); }
+str polygonFromText0(wkb **geomWKB, str *geomWKT) { return polygonFromText(geomWKB, geomWKT, NULL); }
+str mpointFromText0(wkb **geomWKB, str *geomWKT) { return mpointFromText(geomWKB, geomWKT, NULL); }
+str mlineFromText0(wkb **geomWKB, str *geomWKT) { return mlineFromText(geomWKB, geomWKT, NULL); }
+str mpolyFromText0(wkb **geomWKB, str *geomWKT) { return mpolyFromText(geomWKB, geomWKT, NULL); }
+str geomcollFromText0(wkb **geomWKB, str *geomWKT) { return geomcollFromText(geomWKB, geomWKT, NULL); }
 
 /* create textual representation of the wkb */
 str
@@ -2583,6 +2652,13 @@ str
 wkbAsText0(char **txt, wkb **geomWKB)
 {
 	return wkbAsText(txt, geomWKB, NULL);
+}
+
+str
+wkbAsText1(char **txt, wkb **geomWKB)
+{
+	int one = 1;
+	return wkbAsText(txt, geomWKB, &one);
 }
 
 str

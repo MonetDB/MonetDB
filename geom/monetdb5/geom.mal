@@ -66,85 +66,31 @@ comment "Returns the wkb representation into HEX format";
 command FromBinary(w:str) :wkb address wkbFromBinary
 comment "Creates a wkb using the HEX representation";
 
-#command AsText(w:wkb) :str address wkbAsText
-#comment "Creates the text representation of the Geometry.";
-#command AsEWKT(w:wkb) :str address wkbAsEWKT
-#comment "Returns the text representation of the geometry including the srid";
-
 command ToText(w:wkb, withSRID:int) :str address wkbAsText;
-command AsText(w:wkb) :str address wkbAsText0;
+command AsText(w:wkb) :str address wkbAsText0
+comment "Creates the text representation of the Geometry.";
 
-function AsEWKT(w:wkb) :str;
-	x := ToText(w,1);
-	return x;
-end AsEWKT;
+command AsEWKT(w:wkb) :str address wkbAsText1
+comment "Returns the text representation of the geometry including the srid";
 
 command FromText(wkt:str, srid:int, type:int) :wkb	address wkbFromText;
-function GeomFromText(wkt:str, srid:int) :wkb; 
-	x := FromText(wkt,srid,0);
-	return x;
-end GeomFromText;
-function PointFromText(wkt:str, srid:int) :wkb; 
-	x := FromText(wkt,srid,1);
-	return x;
-end PointFromText;
-function LineFromText(wkt:str, srid:int) :wkb;
-	x := FromText(wkt,srid,2);
-	return x;
-end LineFromText;
-function PolygonFromText(wkt:str, srid:int) :wkb;
-	x := FromText(wkt,srid,4);
-	return x;
-end PolygonFromText;
-function MPointFromText(wkt:str, srid:int) :wkb;
-	x := FromText(wkt,srid,5);
-	return x;
-end MPointFromText;
-function MLineFromText(wkt:str, srid:int) :wkb;
-	x := FromText(wkt,srid,6);
-	return x;
-end MLineFromText;
-function MPolyFromText(wkt:str, srid:int) :wkb;
-	x := FromText(wkt,srid,7);
-	return x;
-end MPolyFromText;
-function GeomCollFromText(wkt:str, srid:int) :wkb;
-	x := FromText(wkt,srid,8);
-	return x;
-end GeomCollFromText;
+command GeomFromText(wkt:str, srid:int) :wkb	address geomFromText;
+command PointFromText(wkt:str, srid:int) :wkb	address pointFromText;
+command LineFromText(wkt:str, srid:int) :wkb	address lineFromText;
+command PolygonFromText(wkt:str, srid:int) :wkb	address polygonFromText;
+command MPointFromText(wkt:str, srid:int) :wkb	address mpointFromText;
+command MLineFromText(wkt:str, srid:int) :wkb	address mlineFromText;
+command MPolyFromText(wkt:str, srid:int) :wkb	address mpolyFromText;
+command GeomCollFromText(wkt:str, srid:int) :wkb	address geomcollFromText;
 
-function GeomFromText(wkt:str) :wkb; 
-	x := FromText(wkt,0,0);
-	return x;
-end GeomFromText;
-function PointFromText(wkt:str) :wkb; 
-	x := FromText(wkt,0,1);
-	return x;
-end PointFromText;
-function LineFromText(wkt:str) :wkb;
-	x := FromText(wkt,0,2);
-	return x;
-end LineFromText;
-function PolygonFromText(wkt:str) :wkb;
-	x := FromText(wkt,0,4);
-	return x;
-end PolygonFromText;
-function MPointFromText(wkt:str) :wkb;
-	x := FromText(wkt,0,5);
-	return x;
-end MPointFromText;
-function MLineFromText(wkt:str) :wkb;
-	x := FromText(wkt,0,6);
-	return x;
-end MLineFromText;
-function MPolyFromText(wkt:str) :wkb;
-	x := FromText(wkt,0,7);
-	return x;
-end MPolyFromText;
-function GeomCollFromText(wkt:str) :wkb;
-	x := FromText(wkt,0,8);
-	return x;
-end GeomCollFromText;
+command GeomFromText(wkt:str) :wkb	address geomFromText0;
+command PointFromText(wkt:str) :wkb	address pointFromText0;
+command LineFromText(wkt:str) :wkb	address lineFromText0;
+command PolygonFromText(wkt:str) :wkb	address polygonFromText0;
+command MPointFromText(wkt:str) :wkb	address mpointFromText0;
+command MLineFromText(wkt:str) :wkb	address mlineFromText0;
+command MPolyFromText(wkt:str) :wkb	address mpolyFromText0;
+command GeomCollFromText(wkt:str) :wkb	address geomcollFromText0;
 
 #function GeomFromWKB(wkb_raw:????, srid:int) : wkb;
 #	x := wkb.FromWKB(wkb_raw, srid, 0);
