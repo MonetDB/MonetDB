@@ -118,7 +118,7 @@ addAtom( mel_atom *atoms)
 		if (atoms->del)
 			BATatoms[i].atomDel = (void (*)(Heap *, var_t *))atoms->del;
 		if (atoms->cmp) {
-			BATatoms[i].atomCmp = (int (*)(const void *, const void *))atoms->del;
+			BATatoms[i].atomCmp = (int (*)(const void *, const void *))atoms->cmp;
 			BATatoms[i].linear = true;
 		}
 		if (atoms->fromstr)
@@ -259,7 +259,7 @@ malPrelude(Client c, int listing, int embedded)
 
 	/* Add the signatures, where we now have access to all atoms */
 	for(i = 0; i<mel_modules; i++) {
-		if (mel_module_atoms[i]) {
+		if (mel_module_funcs[i]) {
 			msg = addFunctions(mel_module_funcs[i]);
 			if (msg)
 				return msg;
