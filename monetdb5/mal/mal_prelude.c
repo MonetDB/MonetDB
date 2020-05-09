@@ -258,8 +258,6 @@ malPrelude(Client c, int listing, int embedded)
 	}
 
 	/* Once we have all modules loaded, we should execute their prelude function for further initialization*/
-/* Unclear why we need it beyond running the MAL instructions */
-/*
 	for(i = 0; i<mal_modules; i++) {
 		if (embedded && strcmp(mal_module_name[i], "mal_mapi") == 0) 
 			continue;
@@ -269,7 +267,6 @@ malPrelude(Client c, int listing, int embedded)
 				return msg;
 		}
 	}
-*/
 	/* execute preludes */
 	for(i = 0; i<mal_modules; i++) {
 		if (strcmp(mal_module_name[i], "sql") == 0) /* skip sql should be last to startup */

@@ -728,85 +728,10 @@ MDBdummy(int *ret)
 	throw(MAL, "mdb.dummy", OPERATION_FAILED);
 }
 
-/*
- * CMDmodules
- * Obtains a list of modules by looking at what files are present in the
- * module directory.
- */
-#if 0
-static BAT *
-TBL_getdir(void)
-{
-	BAT *b = COLnew(0, TYPE_str, 100, TRANSIENT);
-	int i = 0;
-
-	const char *mod_path;
-	size_t extlen = strlen(MAL_EXT);
-	size_t len;
-	struct dirent *dent;
-	DIR *dirp = NULL;
-
-	if ( b == 0)
-		return NULL;
-	mod_path = GDKgetenv("monet_mod_path");
-	if (mod_path == NULL)
-		return b;
-	while (*mod_path == PATH_SEP)
-		mod_path++;
-	if (*mod_path == 0)
-		return b;
-
-	while (mod_path || dirp) {
-		if (dirp == NULL) {
-			char *cur_dir;
-			const char *p;
-			size_t l;
-
-			if ((p = strchr(mod_path, PATH_SEP)) != NULL) {
-				l = p - mod_path;
-			} else {
-				l = strlen(mod_path);
-			}
-			cur_dir = GDKmalloc(l + 1);
-			if ( cur_dir == NULL){
-				BBPreclaim(b);
-				return NULL;
-			}
-			strncpy(cur_dir, mod_path, l + 1); /* including NULL byte */
-			if ((mod_path = p) != NULL) {
-				while (*mod_path == PATH_SEP)
-					mod_path++;
-			}
-			dirp = opendir(cur_dir);
-			GDKfree(cur_dir);
-			if (dirp == NULL)
-				continue;
-		}
-		if ((dent = readdir(dirp)) == NULL) {
-			closedir(dirp);
-			dirp = NULL;
-			continue;
-		}
-		len = strlen(dent->d_name);
-		if (len < extlen || strcmp(dent->d_name + len - extlen, MAL_EXT) != 0)
-			continue;
-		dent->d_name[len - extlen] = 0;
-		if (BUNappend(b, dent->d_name, false) != GDK_SUCCEED) {
-			BBPreclaim(b);
-			if (dirp)
-				closedir(dirp);
-			return NULL;
-		}
-		i++;
-	}
-	return b;
-}
-#endif
 
 str
 CMDmodules(bat *bid)
 {
-//	BAT *b = TBL_getdir();
 	BAT *b = getModules();
 
 	if (b == NULL)

@@ -56,15 +56,6 @@ getModules(void)
 	return b;
 }
 
-void
-listModules(stream *out, Module s)
-{
-	while(s){
-		mnstr_printf(out,"Unexpected module %s\n",  s->name);
-		s= s->link;
-	}
-}
-
 // perform sanity check on duplicate occurrences as well
 void
 dumpModules(stream *out)
