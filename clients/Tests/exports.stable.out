@@ -2336,6 +2336,7 @@ str mal_quote(const char *msg, size_t size);
 void mal_register(str name, unsigned char *code);
 MT_Lock mal_remoteLock;
 void mal_reset(void);
+int mal_startup(void);
 void mal_unquote(char *msg);
 stream *maleventstream;
 str manifoldRef;
