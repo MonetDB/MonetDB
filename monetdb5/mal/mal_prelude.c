@@ -162,16 +162,19 @@ makeArgument(MalBlkPtr mb, mel_arg *a, int *idx)
 {
 	int tpe, l;
 	str aname;
-	aname = putName(a->name);
-	if ( aname == 0)
-		throw(LOADER, "addFunctions", "Can not store argument name %s", a->name);
+
 	tpe = getAtomIndex(a->type, strlen(a->type),-1);
 	if (a->isbat)
 		tpe = newBatType(tpe);
-	*idx = findVariableLength(mb, aname, l = strlen(aname));
-	if( *idx != -1)
-		throw(LOADER, "addFunctions", "Duplicate argument name %s", aname);
-	*idx = newVariable(mb, aname, l, tpe);
+
+	if( a->name){
+		aname = putName(a->name);
+		*idx = findVariableLength(mb, aname, l = strlen(aname));
+		if( *idx != -1)
+			throw(LOADER, "addFunctions", "Duplicate argument name %s", aname);
+		*idx = newVariable(mb, aname, l, tpe);
+	} else
+		*idx = newTmpVariable(mb, tpe);
 	return MAL_SUCCEED;
 }
 
@@ -203,10 +206,11 @@ addFunctions(mel_func *fcn){
 			throw(LOADER, "addFunctions", "Can not create program block for %s.%s missing", fcn->mod, fcn->fcn);
 		sig= newInstruction(mb, fcn->mod, fcn->fcn);
 		sig->retc = 0;
+		sig->argc = 0;
 		if( fcn->unsafe)
 			mb->unsafeProp = 0; 
 		/* add the return variables */
-		for ( a = fcn->res; a->name && a; a++){
+		for ( a = fcn->res; a->type && a; a++){
 			msg = makeArgument(mb, a, &idx);
 			if( msg)
 				return msg;
