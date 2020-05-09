@@ -355,60 +355,6 @@ INSPECTgetSignature(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 }
 
 str
-INSPECTgetAddress(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
-{
-	bat *ret = getArgReference_bat(stk,pci,0);
-	str *mod = getArgReference_str(stk,pci,1);
-	str *fcn = getArgReference_str(stk,pci,2);
-	Symbol s;
-	str ps, tail;
-	BAT *b;
-	(void) mb;
-
-	s = findSymbol(cntxt->usermodule, getName(*mod), putName(*fcn));
-	if (s == 0)
-		throw(MAL, "inspect.getAddress", RUNTIME_SIGNATURE_MISSING);
-	b = COLnew(0, TYPE_str, 12, TRANSIENT);
-	if (b == 0)
-		throw(MAL, "inspect.getAddress", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-
-	while (s != NULL) {
-		if (idcmp(s->name, *fcn) == 0) {
-			InstrPtr p = getSignature(s);
-			char *c,*w;
-
-			ps = instruction2str(s->def, 0, p, 0);
-			if(ps == NULL)
-				continue;
-			c = strchr(ps, '(');
-			if (c == 0) {
-				GDKfree(ps);
-				continue;
-			}
-			tail= strstr(c,"address");
-			if( tail){
-				*tail = 0;
-				for( tail=tail+7; isspace((unsigned char) *tail); tail++)  ;
-			}
-			if (tail && (w=strchr(tail, ';')) )
-				*w = 0;
-			if (BUNappend(b, (tail? tail: "nil"), false) != GDK_SUCCEED) {
-				GDKfree(ps);
-				goto bailout;
-			}
-			GDKfree(ps);
-		}
-		s = s->peer;
-	}
-
-	if (pseudo(ret,b,"view","input","result"))
-		goto bailout;
-	return MAL_SUCCEED;
-  bailout:
-	BBPreclaim(b);
-	throw(MAL, "inspect.getAddress", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-}
-str
 INSPECTgetComment(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	bat *ret = getArgReference_bat(stk,pci,0);

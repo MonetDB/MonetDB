@@ -179,7 +179,6 @@ Module globalModule(str nme)
 		return NULL;
 	cur->name = nme;
 	cur->link = NULL;
-	cur->isAtomModule = FALSE;
 	cur->space = (Symbol *) GDKzalloc(MAXSCOPE * sizeof(Symbol));
 	if (cur->space == NULL) {
 		GDKfree(cur);
@@ -200,7 +199,6 @@ Module userModule(void){
 	cur->name = putName("user");
 	cur->link = NULL;
 	cur->space = NULL;
-	cur->isAtomModule = FALSE;
 	cur->space = (Symbol *) GDKzalloc(MAXSCOPE * sizeof(Symbol));
 	if (cur->space == NULL) {
 		GDKfree(cur);

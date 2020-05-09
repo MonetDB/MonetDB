@@ -161,18 +161,16 @@ static str
 makeArgument(MalBlkPtr mb, mel_arg *a, int *idx)
 {
 	int tpe, l;
-	str aname;
 
 	tpe = getAtomIndex(a->type, strlen(a->type),-1);
 	if (a->isbat)
 		tpe = newBatType(tpe);
 
 	if( a->name){
-		aname = putName(a->name);
-		*idx = findVariableLength(mb, aname, l = strlen(aname));
+		*idx = findVariableLength(mb, a->name, l = strlen(a->name));
 		if( *idx != -1)
-			throw(LOADER, "addFunctions", "Duplicate argument name %s", aname);
-		*idx = newVariable(mb, aname, l, tpe);
+			throw(LOADER, "addFunctions", "Duplicate argument name %s", a->name);
+		*idx = newVariable(mb, a->name, l, tpe);
 	} else
 		*idx = newTmpVariable(mb, tpe);
 	return MAL_SUCCEED;
