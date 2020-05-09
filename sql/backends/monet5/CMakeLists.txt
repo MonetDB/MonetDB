@@ -17,7 +17,6 @@ set(include_mal_files
   sql
   sql_decimal
   sql_rank
-  sql_inspect
   sql_subquery
   wlr
   sqlcatalog
