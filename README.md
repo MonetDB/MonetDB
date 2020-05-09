@@ -21,7 +21,9 @@ cmake --build . --target install
 
 ## Testing
 For testing, you likely don't want to install in the default location, so you need to add a parameter to the cmake command.
-The install directory is passed via the CMAKE\_INSTALL\_PREFIX.
+
+The MonetDB Mtest.py program is installed in $PREFIX/lib/python3.7/site-packages/.
+You have to set or extend the environment variable $PYTHON3PATH to include this location for Mtest.
 
 ##Configuration options
 Evidently there are several options to control as illustrated in $SOURCE/cmake/monetdb-options.cmake
