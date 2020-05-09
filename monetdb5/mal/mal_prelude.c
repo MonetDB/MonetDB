@@ -260,9 +260,11 @@ malPrelude(Client c, int listing, int embedded)
 	for(i = 0; i<mal_modules; i++) {
 		if (embedded && strcmp(mal_module_name[i], "mal_mapi") == 0) /* skip mapi in the embedded version */
 			continue;
-		str msg = malIncludeString(c, mal_module_name[i], (str)mal_module_code[i], listing);
-		if (msg)
-			return msg;
+		if ( mal_module_code[i]){
+			msg = malIncludeString(c, mal_module_name[i], (str)mal_module_code[i], listing);
+			if (msg)
+				return msg;
+		}
 	}
 	/* execute preludes */
 	for(i = 0; i<mal_modules; i++) {
