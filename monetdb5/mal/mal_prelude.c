@@ -158,12 +158,32 @@ addAtom( mel_atom *atoms)
 }
 
 static str
+makeArgument(MalBlkPtr mb, mel_arg *a, int *idx)
+{
+	int tpe, l;
+	str aname;
+	aname = putName(a->name);
+	if ( aname == 0)
+		throw(LOADER, "addFunctions", "Can not store argument name %s", a->name);
+	tpe = getAtomIndex(a->type, strlen(a->type),-1);
+	if (a->isbat)
+		tpe = newBatType(tpe);
+	*idx = findVariableLength(mb, aname, l = strlen(aname));
+	if( *idx != -1)
+		throw(LOADER, "addFunctions", "Duplicate argument name %s", aname);
+	*idx = newVariable(mb, aname, l, tpe);
+	return MAL_SUCCEED;
+}
+
+static str
 addFunctions(mel_func *fcn){
 	str msg = MAL_SUCCEED;
+	mel_arg *a;
 	str mod;
+	int idx;
 	Module c;
 	Symbol s;
-	MalBlkPtr prg;
+	MalBlkPtr mb;
 	InstrPtr sig;
 
 	for(; fcn && fcn->mod; fcn++) {
@@ -178,16 +198,32 @@ addFunctions(mel_func *fcn){
 		s = newSymbol(fcn->fcn, fcn->command ? COMMANDsymbol: PATTERNsymbol );
 		if ( s == NULL)
 			throw(LOADER, "addFunctions", "Can not create symbol for %s.%s missing", fcn->mod, fcn->fcn);
-		prg = s->def;
-		if( prg == NULL)
+		mb = s->def;
+		if( mb == NULL)
 			throw(LOADER, "addFunctions", "Can not create program block for %s.%s missing", fcn->mod, fcn->fcn);
-		sig= newInstruction(prg, fcn->mod, fcn->fcn);
+		sig= newInstruction(mb, fcn->mod, fcn->fcn);
 		sig->retc = 0;
-		pushInstruction(prg, sig);
 		if( fcn->unsafe)
-			prg->unsafeProp = 0; // unsafeProp;
-		// if( fcn->inline)
-			// prg->inlineProp = inlineProp;
+			mb->unsafeProp = 0; 
+		/* add the return variables */
+		for ( a = fcn->res; a->name && a; a++){
+			msg = makeArgument(mb, a, &idx);
+			if( msg)
+				return msg;
+			sig = pushReturn(mb, sig, idx);
+			if (sig == NULL)
+				throw(LOADER, "addFunctions", "Failed to keep argument name %s", a->name);
+		}
+		/* add the arguments */
+		for ( a = fcn->args; a->name && a; a++){
+			msg = makeArgument(mb, a, &idx);
+			if( msg)
+				return msg;
+			sig = pushArgument(mb, sig, idx);
+			if (sig == NULL)
+				throw(LOADER, "addFunctions", "Failed to keep argument name %s", a->name);
+		}
+		pushInstruction(mb, sig);
 		insertSymbol(c, s);
 	}
 	return msg;
