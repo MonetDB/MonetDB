@@ -223,6 +223,11 @@ addFunctions(mel_func *fcn){
 			if (sig == NULL)
 				throw(LOADER, "addFunctions", "Failed to keep argument name %s", a->name);
 		}
+		if(sig->retc == 0 || getArg(sig,0) < 0){
+			sig = pushReturn(mb, sig, TYPE_void);
+			if (sig == NULL)
+				throw(LOADER, "addFunctions", "Failed to keep argument name %s", a->name);
+		}
 		pushInstruction(mb, sig);
 		insertSymbol(c, s);
 	}
