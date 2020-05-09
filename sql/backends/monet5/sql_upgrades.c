@@ -2782,6 +2782,8 @@ sql_update_default(Client c, mvc *sql, const char *prev_schema)
 	if (buf == NULL)
 		throw(SQL, __func__, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 
+	/* TODO drop/recreate env(), ie mal function changed */
+
 	/* if column 6 of sys.queue is named "progress" we need to update */
 	pos += snprintf(buf + pos, bufsize - pos,
 			"select name from sys._columns where table_id = (select id from sys._tables where name = 'queue' and schema_id = (select id from sys.schemas where name = 'sys')) and number = 6;\n");
