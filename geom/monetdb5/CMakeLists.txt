@@ -10,7 +10,8 @@ if(GEOS_FOUND)
   add_library(geomodule MODULE)
 
   set(include_mal_files
-    geom)
+    geom
+		geom_funcs)
 
   set(include_sql_files
     40_geom)

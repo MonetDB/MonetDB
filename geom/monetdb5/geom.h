@@ -102,22 +102,6 @@ geom_export mbr* mbrFromGeos(const GEOSGeom geosGeometry);
 
 
 geom_export str wkbFromText(wkb **geomWKB, str *geomWKT, int* srid, int *tpe);
-geom_export str geomFromText(wkb **geomWKB, str *geomWKT, int *srid);
-geom_export str pointFromText(wkb **geomWKB, str *geomWKT, int *srid);
-geom_export str lineFromText(wkb **geomWKB, str *geomWKT, int *srid);
-geom_export str polygonFromText(wkb **geomWKB, str *geomWKT, int *srid);
-geom_export str mpointFromText(wkb **geomWKB, str *geomWKT, int *srid);
-geom_export str mlineFromText(wkb **geomWKB, str *geomWKT, int *srid);
-geom_export str mpolyFromText(wkb **geomWKB, str *geomWKT, int *srid);
-geom_export str geomcollFromText(wkb **geomWKB, str *geomWKT, int *srid);
-geom_export str geomFromText0(wkb **geomWKB, str *geomWKT);
-geom_export str pointFromText0(wkb **geomWKB, str *geomWKT);
-geom_export str lineFromText0(wkb **geomWKB, str *geomWKT);
-geom_export str polygonFromText0(wkb **geomWKB, str *geomWKT);
-geom_export str mpointFromText0(wkb **geomWKB, str *geomWKT);
-geom_export str mlineFromText0(wkb **geomWKB, str *geomWKT);
-geom_export str mpolyFromText0(wkb **geomWKB, str *geomWKT);
-geom_export str geomcollFromText0(wkb **geomWKB, str *geomWKT);
 geom_export str wkbFromText_bat(bat *outBAT_id, bat *inBAT_id, int *srid, int *tpe);
 
 geom_export str wkbMLineStringToPolygon(wkb** geomWKB, str *geomWKT, int* srid, int* flag);
@@ -133,8 +117,6 @@ geom_export str wkbGeometryType_bat(bat *inBAT_id, bat *outBAT_id, int *flag);
 geom_export str wkbGetSRID(int*, wkb**);
 //Envelope
 geom_export str wkbAsText(char **outTXT, wkb **inWKB, int *withSRID);
-geom_export str wkbAsText0(char **txt, wkb **geomWKB);
-geom_export str wkbAsText1(char **txt, wkb **geomWKB);
 geom_export str wkbAsText_bat(bat *inBAT_id, bat *outBAT_id, int *withSRID);
 
 geom_export str wkbAsBinary(char**, wkb**);
