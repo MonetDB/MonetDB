@@ -72,9 +72,9 @@ initModule(Client c, char *name)
 {
 	if (!getName(name))
 		return;
-	Module m = getModule(getName(name));
+	Module m = getModule(putName(name));
 	if (m) { /* run prelude */
-		Symbol s = findSymbolInModule(m, getName("prelude"));
+		Symbol s = findSymbolInModule(m, putName("prelude"));
 
 		if (s) {
 			InstrPtr pci = getInstrPtr(s->def, 0);
@@ -189,12 +189,14 @@ addFunctions(mel_func *fcn){
 
 	for(; fcn && fcn->mod; fcn++) {
 		assert(fcn->mod);
-		mod = getName(fcn->mod);
-		if(mod == NULL && globalModule(mod=putName(fcn->mod)) == NULL)
-			throw(LOADER, "addFunctions", "Module %s missing", fcn->mod);
+		mod = putName(fcn->mod);
 		c = getModule(mod);
-		if( c == NULL)
-			throw(LOADER, "addFunctions", "Module %s missing", fcn->mod);
+		if( c == NULL){
+			if (globalModule(mod=putName(fcn->mod)) == NULL)
+				throw(LOADER, "addFunctions", "Module %s can not be created", fcn->mod);
+			c = getModule(mod);
+		}
+
 		s = newSymbol(fcn->fcn, fcn->command ? COMMANDsymbol: PATTERNsymbol );
 		if ( s == NULL)
 			throw(LOADER, "addFunctions", "Can not create symbol for %s.%s missing", fcn->mod, fcn->fcn);
