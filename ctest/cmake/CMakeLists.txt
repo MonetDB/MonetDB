@@ -16,50 +16,6 @@ if(${CMAKE_SYSTEM_NAME} STREQUAL "Linux")
   get_os_release_info(LINUX_DISTRO LINUX_DISTRO_VERSION)
 endif()
 
-if (${LINUX_DISTRO} STREQUAL "debian")
-  if(${LINUX_DISTRO_VERSION} STREQUAL "9")
-    set(DETECT "1")
-    set(UNDETECT "0")
-  endif()
-  if(${LINUX_DISTRO_VERSION} STREQUAL "10")
-    set(DETECT "1")
-    set(UNDETECT "0")
-  endif()
-elseif (${LINUX_DISTRO} STREQUAL "ubuntu")
-  if(${LINUX_DISTRO_VERSION} STREQUAL "18")
-    set(DETECT "1")
-    set(UNDETECT "0")
-  endif()
-  if(${LINUX_DISTRO_VERSION} STREQUAL "19")
-    set(DETECT "1")
-    set(UNDETECT "0")
-  endif()
-  if(${LINUX_DISTRO_VERSION} STREQUAL "20")
-    set(DETECT "1")
-    set(UNDETECT "0")
-  endif()
-elseif(${LINUX_DISTRO} STREQUAL "fedora")
-  if(${LINUX_DISTRO_VERSION} STREQUAL "30")
-    set(DETECT "0")
-    set(UNDETECT "1")
-  endif()
-  if(${LINUX_DISTRO_VERSION} STREQUAL "31")
-    set(DETECT "0")
-    set(UNDETECT "1")
-  endif()
-  if(${LINUX_DISTRO_VERSION} STREQUAL "32")
-    set(DETECT "0")
-    set(UNDETECT "1")
-  endif()
-else()
-  message(ERROR "Linux distro: ${LINUX_DISTRO} not known")
-  message(ERROR "Linux distro version: ${LINUX_DISTRO_VERSION} not known")
-endif()
-
-configure_file(test_detect_lzma.c.in
-  ${CMAKE_CURRENT_BINARY_DIR}/test_detect_lzma.c
-  @ONLY)
-
 add_executable(test_detect test_detect.c)
 target_link_libraries(test_detect
   PRIVATE
@@ -84,15 +40,6 @@ target_link_libraries(test_detect_curl
   monetdb_config_header)
 add_test(testDetectCurl test_detect_curl)
 
-add_executable(test_detect_lzma)
-target_sources(test_detect_lzma
-  PRIVATE
-  ${CMAKE_CURRENT_BINARY_DIR}/test_detect_lzma.c)
-target_link_libraries(test_detect_lzma
-  PRIVATE
-  monetdb_config_header)
-add_test(testDetectLzma test_detect_lzma)
-
 add_executable(test_detect_libz test_detect_libz.c)
 target_link_libraries(test_detect_libz
   PRIVATE
@@ -112,3 +59,5 @@ target_link_libraries(test_detect_proj
 add_test(testDetectProj test_detect_proj)
 
 include(${CMAKE_CURRENT_SOURCE_DIR}/detect-netcdf.cmake)
+include(${CMAKE_CURRENT_SOURCE_DIR}/detect-lzma.cmake)
+include(${CMAKE_CURRENT_SOURCE_DIR}/detect-readline.cmake)
