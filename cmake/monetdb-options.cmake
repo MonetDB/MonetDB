@@ -87,8 +87,9 @@ cmake_dependent_option(ASSERT
   "DEVELOPMENT"
   OFF)
 
-set(ENABLE_STATIC_ANALYSIS "NO" CACHE STRING "Configure for static code analysis (use only if you know what you are doing)") # Check with STATIC_CODE_ANALYSIS
+# Check with STATIC_CODE_ANALYSIS
 # compiler options, profiling (google perf tools), valgrind
+set(ENABLE_STATIC_ANALYSIS "NO" CACHE STRING "Configure for static code analysis (use only if you know what you are doing)")
 
 option(WITH_BZ2
   "Include bz2 support"

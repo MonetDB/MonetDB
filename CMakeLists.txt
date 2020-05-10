@@ -28,7 +28,9 @@ if(${CMAKE_VERSION} VERSION_GREATER_EQUAL "3.13.0")
   cmake_policy(SET CMP0076 OLD)
 endif()
 
-set(CMAKE_FIND_FRAMEWORK LAST) # We give precedence to UNIX include directories over OS X Frameworks directories
+# We give precedence to UNIX include directories over
+# OS X Frameworks directories
+set(CMAKE_FIND_FRAMEWORK LAST)
 set(CMAKE_FIND_APPBUNDLE LAST)
 
 include(CheckCSourceCompiles REQUIRED)
@@ -143,8 +145,8 @@ check_symbol_exists("sysconf" "unistd.h" HAVE_SYSCONF)
 check_function_exists("task_info" HAVE_TASK_INFO) 
 check_function_exists("times" HAVE_TIMES) 
 check_function_exists("uname" HAVE_UNAME) 
-
-check_symbol_exists("semtimedop" "sys/types.h;sys/ipc.h;sys/sem.h" HAVE_SEMTIMEDOP) # Some libc versions on Linux distributions don't have it
+# Some libc versions on Linux distributions don't have it
+check_symbol_exists("semtimedop" "sys/types.h;sys/ipc.h;sys/sem.h" HAVE_SEMTIMEDOP)
 
 # Likely unused, because it contained typo's
 if(HAVE_PTHREAD_H)
@@ -266,11 +268,13 @@ set(DATADIR "${CMAKE_INSTALL_FULL_DATADIR}")
 set(DATA_DIR "${CMAKE_INSTALL_FULL_DATADIR}")
 set(LOCALSTATEDIR "${CMAKE_INSTALL_FULL_LOCALSTATEDIR}")
 if(WIN32)
-  string(REPLACE "/" "\\\\" QXLOCALSTATEDIR "${LOCALSTATEDIR}") # Fix cmake conversions
+  # Fix cmake conversions
+  string(REPLACE "/" "\\\\" QXLOCALSTATEDIR "${LOCALSTATEDIR}")
 endif()
 set(MONETDB_PREFIX "${CMAKE_INSTALL_PREFIX}")
 if(WIN32)
-  string(REPLACE "/" "\\\\" MONETDB_PREFIX "${CMAKE_INSTALL_PREFIX}") # Fix cmake conversions
+  # Fix cmake conversions
+  string(REPLACE "/" "\\\\" MONETDB_PREFIX "${CMAKE_INSTALL_PREFIX}")
 endif()
 
 set(DATAROOTDIR "${CMAKE_INSTALL_FULL_DATAROOTDIR}")

@@ -2,34 +2,32 @@
 
 ## Summary
 
-For cmake, you should always build the code in a separate directory, say ${SOURCE}. 
-The results of the build are stored in a location designated by ${PREFIX}, a full path
-to the location you want the binaries to be stored. 
-Make sure you have these environment variables set and you have write permissions to the ${PREFIX} location
+For cmake, you should always build the code in a separate directory, say "build". This directory should be OUTSIDE of the source code tree. The results of the build are stored in this directory. The location on the filesystem is not important, as long as you have permissions to write in that location.
 
-Assuming the monetdb source code is checked out in  directory ${SOURCE}.
-And if you have all the required packages(See below) to build MonetDB, these are the set of commands 
-to build and *install* it from source. Install is one of the predefined commands [install, test, mtest]
+Assuming the monetdb source code is checked out in  directory "/path/to/monetdb/source". And if you have all the required packages (See below) to build MonetDB, these are the set of commands  to build and *install* it from source. Install is one of the predefined targets [install, test, mtest]. When you test monetdb, you will likely not want to install it in the default location, the standard GNU directory structure. So you want to set the install prefix variable when generating the build system, using -DCMAKE_INSTALL_PREFIX
 
 ```
 mkdir build
 cd build
-cmake -DCMAKE_INSTALL_PREFIX=$PREFIX ${SOURCE}
+cmake -DCMAKE_INSTALL_PREFIX=/path/to/install/monetdb /path/to/monetdb/source
 cmake --build .
 cmake --build . --target install
 ```
 
 ## Prerequisites
-PATH settings ???
+PATH settings: None
 ROle of clients?? How to install
 
 ## Testing
-For testing, you likely don't want to install in the default location, so you need to add a parameter to the cmake command.
+For testing, you likely don't want to install in the default location, so you need to add the installation prefix  parameter to the cmake command.
 
-The MonetDB Mtest.py program is installed in $PREFIX/lib/python3.7/site-packages/.
-You have to set or extend the environment variable $PYTHON3PATH to include this location for Mtest.
+But you do not need any configuration to run mtest (on Linux). Just run the command:
 
-##Configuration options
+```
+cmake --build . --target mtest
+```
+
+## Configuration options
 Evidently there are several options to control as illustrated in $SOURCE/cmake/monetdb-options.cmake
 
 The important once to choose from are -DCMAKE\_BUILD\_TYPE, which takes the value Release or Debug.
@@ -45,7 +43,7 @@ Other  relevant properties are also -DASSERT=ON and DSTRICT=ON, used in combinat
 CONFIGURE_OPTIONS="-DCMAKE_BUILD_TYPE=Debug -DASSERT=ON -DSTRICT=ON"
 mkdir build
 cd build
-cmake $CONFIGURE_OPTIONS -DCMAKE_INSTALL_PREFIX=$PREFIX ${SOURCE}
+cmake $CONFIGURE_OPTIONS -DCMAKE_INSTALL_PREFIX=/path/to/install/monetdb /path/to/monetdb/source
 cmake --build .
 cmake --build . --target install
 ```
