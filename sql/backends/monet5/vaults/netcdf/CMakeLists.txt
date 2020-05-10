@@ -6,7 +6,7 @@
 # Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
 #]]
 
-if(HAVE_NETCDF)
+if(NETCDF_FOUND)
   # the netcdf library is also called netcdf, so cmake gets confused.
   # Give it another name
   add_library(netcdff MODULE)

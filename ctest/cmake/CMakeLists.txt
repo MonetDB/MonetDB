@@ -111,3 +111,4 @@ target_link_libraries(test_detect_proj
   monetdb_config_header)
 add_test(testDetectProj test_detect_proj)
 
+include(${CMAKE_CURRENT_SOURCE_DIR}/detect-netcdf.cmake)

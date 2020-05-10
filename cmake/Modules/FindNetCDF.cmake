@@ -12,7 +12,8 @@ find_path(NETCDF_INCLUDE_DIR NAMES netcdf.h)
 # Look for the library.
 find_library(NETCDF_LIBRARIES NAMES netcdf)
 
-# Handle the QUIETLY and REQUIRED arguments and set NETCDF_FOUND to TRUE if all listed variables are TRUE.
+# Handle the QUIETLY and REQUIRED arguments and set NETCDF_FOUND
+# to TRUE if all listed variables are TRUE.
 include(FindPackageHandleStandardArgs)
 find_package_handle_standard_args(NetCDF DEFAULT_MSG NETCDF_LIBRARIES NETCDF_INCLUDE_DIR)
 
@@ -28,6 +29,14 @@ endif()
 mark_as_advanced(NETCDF_INCLUDE_DIR NETCDF_LIBRARIES NETCDF_VERSION)
 
 if(NETCDF_FOUND)
+  set(NETCDF_MINIMUM_VERSION "4.2")
+  if(NETCDF_VERSION VERSION_LESS "${NETCDF_MINIMUM_VERSION}")
+    message(STATUS "netcdf library found, but the version is too old: ${NETCDF_VERSION} < ${NETCDF_MINIMUM_VERSION}")
+    set(NETCDF_FOUND FALSE)
+    endif()
+  endif()
+
+if(NETCDF_FOUND)
   add_library(NetCDF::NetCDF UNKNOWN IMPORTED)
   set_target_properties(NetCDF::NetCDF
     PROPERTIES
@@ -37,4 +46,3 @@ if(NETCDF_FOUND)
     IMPORTED_LINK_INTERFACE_LANGUAGES "C"
     IMPORTED_LOCATION "${NETCDF_LIBRARIES}")
 endif()
-

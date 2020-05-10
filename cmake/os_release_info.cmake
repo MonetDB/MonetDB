@@ -155,11 +155,11 @@ function(get_os_release_info _vn_id _vn_version_id)
     string(REGEX REPLACE "^\"(.*)\"$" "\\1" _var_id "${_var_id}")
     string(REGEX REPLACE "^\"(.*)\"$" "\\1" _var_version_id "${_var_version_id}")
 
-    if(NOT "${_vn_id}" STREQUAL "")
+    if(NOT ${_vn_id} STREQUAL "")
         set(${_vn_id} "${_var_id}" PARENT_SCOPE)
     endif()
 
-    if(NOT "${_vn_version_id}" STREQUAL "")
+    if(NOT ${_vn_version_id} STREQUAL "")
         set(${_vn_version_id} "${_var_version_id}" PARENT_SCOPE)
     endif()
 
