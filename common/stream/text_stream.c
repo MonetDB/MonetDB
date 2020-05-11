@@ -171,6 +171,43 @@ text_pump_out(inner_state_t *ist, pump_action action)
 }
 
 
+static pump_result
+text_pump_out_crlf(inner_state_t *ist, pump_action action)
+{
+	if (ist->crlf_pending && ist->dst_win.count > 0) {
+		put_byte(ist, '\n');
+		ist->crlf_pending = false;
+	}
+
+	while (ist->src_win.count > 0 && ist->dst_win.count > 0) {
+		char c = take_byte(ist);
+		if (c != '\n') {
+			put_byte(ist, c);
+			continue;
+		}
+		put_byte(ist, '\r');
+		if (ist->dst_win.count > 0)
+			put_byte(ist, '\n');
+		else {
+			ist->crlf_pending = true;
+			break;
+		}
+	}
+
+	if (ist->src_win.count > 0)
+		// definitely not done
+		return PUMP_OK;
+	if (action == PUMP_NO_FLUSH)
+		// never return PUMP_END
+		return PUMP_OK;
+	if (ist->crlf_pending)
+		// src win empty but cr still pending so not done
+		return PUMP_OK;
+	// src win empty and no cr pending and flush or finish requested
+	return PUMP_END;
+}
+
+
 static void
 text_end(inner_state_t *s)
 {
@@ -232,7 +269,13 @@ create_text_stream(stream *inner)
 	} else {
 		inner_state->dst_win.start = inner_state->buffer;
 		inner_state->dst_win.count = BUFFER_SIZE;
+#ifdef _MSC_VER
+		state->worker = text_pump_out_crlf;
+		(void) text_pump_out;
+#else
 		state->worker = text_pump_out;
+		(void) text_pump_out_crlf;
+#endif
 	}
 
 	stream *s = pump_stream(inner, state);
