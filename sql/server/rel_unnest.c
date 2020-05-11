@@ -2616,7 +2616,7 @@ rewrite_ifthenelse(mvc *sql, sql_rel *rel, sql_exp *e, int depth, int *changes)
 				set_single(usq);
 			e = exp_rel(sql, usq);
 		} else
-		if ((has_nil(cond) || (inner && is_outerjoin(inner->op))) && (cond->type != e_func || !is_isnull_func(nf))) {
+		if (!e->used && (has_nil(cond) || (inner && is_outerjoin(inner->op))) && (cond->type != e_func || !is_isnull_func(nf))) {
 			/* add is null */
 			sql_exp *condnil = rel_unop_(sql, rel, cond, NULL, "isnull", card_value);
 
@@ -2624,6 +2624,7 @@ rewrite_ifthenelse(mvc *sql, sql_rel *rel, sql_exp *e, int depth, int *changes)
 			cond = exp_copy(sql, cond);
 			cond = rel_nop_(sql, rel, condnil, exp_atom_bool(sql->sa, 0), cond, NULL, NULL, "ifthenelse", card_value);
 			l->h->data = cond;
+			e->used = 1;
 		}
 	}
 	return e;
@@ -2995,6 +2996,18 @@ rewrite_values(mvc *sql, sql_rel *rel, int *changes)
 	return rel;
 }
 
+static sql_exp *
+reset_exp_used(mvc *sql, sql_rel *rel, sql_exp *e, int depth, int *changes)
+{
+	(void) sql;
+	(void) rel;
+	(void) depth;
+	(void) changes;
+
+	e->used = 0;
+	return e;
+}
+
 sql_rel *
 rel_unnest(mvc *sql, sql_rel *rel)
 {
@@ -3016,6 +3029,8 @@ rel_unnest(mvc *sql, sql_rel *rel)
 	rel = rel_exp_visitor_bottomup(sql, rel, &rewrite_complex, &changes);
 
 	rel = rel_exp_visitor_bottomup(sql, rel, &rewrite_ifthenelse, &changes);	/* add isnull handling */
+	rel = rel_exp_visitor_bottomup(sql, rel, &reset_exp_used, &changes);	/* reset used flag from ifthenelse re-writer, so it can be used again by the rel_dce optimizer */
+
 	rel = rel_visitor_bottomup(sql, rel, &rewrite_values, &changes);
 	rel = rel_exp_visitor_bottomup(sql, rel, &rewrite_exp_rel, &changes);
 	rel = rel_visitor_bottomup(sql, rel, &rewrite_join2semi, &changes);	/* where possible convert anyequal functions into marks */
