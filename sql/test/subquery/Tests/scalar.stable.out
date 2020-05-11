@@ -23,31 +23,31 @@ stdout of test 'scalar` in directory 'sql/test/subquery` itself:
 # 22:16:07 >  
 
 #SELECT 1+(SELECT 1); -- 2
-% .%3 # table_name
+% . # table_name
 % %3 # name
 % tinyint # type
 % 1 # length
 [ 2	]
 #SELECT 1=(SELECT 1); -- true
-% .%3 # table_name
+% . # table_name
 % %3 # name
 % boolean # type
 % 5 # length
 [ true	]
 #SELECT 1<>(SELECT 1); -- false
-% .%3 # table_name
+% . # table_name
 % %3 # name
 % boolean # type
 % 5 # length
 [ false	]
 #SELECT 1=(SELECT NULL); -- NULL
-% .%3 # table_name
+% . # table_name
 % %3 # name
 % boolean # type
 % 5 # length
 [ NULL	]
 #SELECT NULL=(SELECT 1); -- NULL
-% .%3 # table_name
+% . # table_name
 % %3 # name
 % boolean # type
 % 5 # length
@@ -85,26 +85,26 @@ stdout of test 'scalar` in directory 'sql/test/subquery` itself:
 [ true	]
 #DROP TABLE integers;
 #SELECT 1 IN (SELECT 1); -- true
-% .%12 # table_name
-% %12 # name
+% .%14 # table_name
+% %14 # name
 % boolean # type
 % 5 # length
 [ true	]
 #SELECT NULL IN (SELECT 1); -- NULL
-% .%12 # table_name
-% %12 # name
+% .%14 # table_name
+% %14 # name
 % boolean # type
 % 5 # length
 [ NULL	]
 #SELECT 1 IN (SELECT NULL); -- NULL
-% .%12 # table_name
-% %12 # name
+% .%16 # table_name
+% %16 # name
 % boolean # type
 % 5 # length
 [ NULL	]
 #SELECT 1 IN (SELECT 2); -- false
-% .%12 # table_name
-% %12 # name
+% .%14 # table_name
+% %14 # name
 % boolean # type
 % 5 # length
 [ false	]
@@ -112,20 +112,20 @@ stdout of test 'scalar` in directory 'sql/test/subquery` itself:
 #INSERT INTO integers VALUES (1), (2), (3);
 [ 3	]
 #SELECT 4 IN (SELECT * FROM integers); -- false
-% .%13 # table_name
-% %13 # name
+% .%15 # table_name
+% %15 # name
 % boolean # type
 % 5 # length
 [ false	]
 #SELECT 1 IN (SELECT * FROM integers); -- true
-% .%13 # table_name
-% %13 # name
+% .%15 # table_name
+% %15 # name
 % boolean # type
 % 5 # length
 [ true	]
 #SELECT 1 IN (SELECT * FROM integers) FROM integers; -- true, true, true
-% .%12 # table_name
-% %12 # name
+% .%14 # table_name
+% %14 # name
 % boolean # type
 % 5 # length
 [ true	]
@@ -134,14 +134,14 @@ stdout of test 'scalar` in directory 'sql/test/subquery` itself:
 #INSERT INTO integers VALUES (NULL); 
 [ 1	]
 #SELECT 4 IN (SELECT * FROM integers); -- NULL
-% .%13 # table_name
-% %13 # name
+% .%15 # table_name
+% %15 # name
 % boolean # type
 % 5 # length
 [ NULL	]
 #SELECT 1 IN (SELECT * FROM integers); -- true
-% .%13 # table_name
-% %13 # name
+% .%15 # table_name
+% %15 # name
 % boolean # type
 % 5 # length
 [ true	]

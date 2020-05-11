@@ -166,7 +166,7 @@ rel_copy(mvc *sql, sql_rel *i, int deep)
 		}
 		break;
 	case op_ddl:
-		if (rel->flag == ddl_output || rel->flag == ddl_create_seq || rel->flag == ddl_alter_seq) {
+		if (rel->flag == ddl_output || rel->flag == ddl_create_seq || rel->flag == ddl_alter_seq || rel->flag == ddl_alter_table || rel->flag == ddl_create_table || rel->flag == ddl_create_view) {
 			if (i->l)
 				rel->l = rel_copy(sql, i->l, deep);
 		} else if (rel->flag == ddl_list || rel->flag == ddl_exception) {
@@ -431,13 +431,7 @@ rel_inplace_project(sql_allocator *sa, sql_rel *rel, sql_rel *l, list *e)
 		if(!l)
 			return NULL;
 
-		l->op = rel->op;
-		l->l = rel->l;
-		l->r = rel->r;
-		l->exps = rel->exps;
-		l->nrcols = rel->nrcols;
-		l->flag = rel->flag;
-		l->card = rel->card;
+		*l = *rel;
 	} else {
 		rel_destroy_(rel);
 	}
@@ -533,6 +527,7 @@ rel_crossproduct(sql_allocator *sa, sql_rel *l, sql_rel *r, operator_type join)
 	rel->exps = NULL;
 	rel->card = CARD_MULTI;
 	rel->nrcols = l->nrcols + r->nrcols;
+	rel->single = r->single;
 	return rel;
 }
 
@@ -801,6 +796,8 @@ rel_select(sql_allocator *sa, sql_rel *l, sql_exp *e)
 	if (l) {
 		rel->card = l->card;
 		rel->nrcols = l->nrcols;
+		if (is_single(l))
+			set_single(rel);
 	}
 	return rel;
 }
@@ -948,9 +945,12 @@ rel_project(sql_allocator *sa, sql_rel *l, list *e)
 			rel->nrcols = list_length(e);
 		else
 			rel->nrcols = l->nrcols;
+		rel->single = l->single;
 	}
-	if (e && !list_empty(e))
+	if (e && !list_empty(e)) {
 		set_processed(rel);
+		rel->nrcols = list_length(e);
+	}
 	return rel;
 }
 
@@ -1612,13 +1612,12 @@ lastexp(sql_rel *rel)
 }
 
 sql_rel *
-rel_zero_or_one(mvc *sql, sql_rel *rel, exp_kind ek)
+rel_return_zero_or_one(mvc *sql, sql_rel *rel, exp_kind ek)
 {
-	if (is_topn(rel->op) || is_sample(rel->op))
-		rel = rel_project(sql->sa, rel, rel_projections(sql, rel, NULL, 1, 0));
 	if (ek.card < card_set && rel->card > CARD_ATOM) {
-		assert (is_simple_project(rel->op) || is_set(rel->op));
 		list *exps = rel->exps;
+		
+		assert (is_simple_project(rel->op) || is_set(rel->op));
 		rel = rel_groupby(sql, rel, NULL);
 		for(node *n = exps->h; n; n=n->next) {
 			sql_exp *e = n->data;
@@ -1631,6 +1630,25 @@ rel_zero_or_one(mvc *sql, sql_rel *rel, exp_kind ek)
 			e = exp_aggr1(sql->sa, e, zero_or_one, 0, 0, CARD_ATOM, has_nil(e));
 			(void)rel_groupby_add_aggr(sql, rel, e);
 		}
+	}
+	return rel;
+}
+
+sql_rel *
+rel_zero_or_one(mvc *sql, sql_rel *rel, exp_kind ek)
+{
+	if (is_topn(rel->op) || is_sample(rel->op))
+		rel = rel_project(sql->sa, rel, rel_projections(sql, rel, NULL, 1, 0));
+	if (ek.card < card_set && rel->card > CARD_ATOM) {
+		assert (is_simple_project(rel->op) || is_set(rel->op));
+
+		list *exps = rel->exps;
+		for(node *n = exps->h; n; n=n->next) {
+			sql_exp *e = n->data;
+			if (!has_label(e))
+				exp_label(sql->sa, e, ++sql->label);
+		}
+		set_single(rel);
 	} else {
 		sql_exp *e = lastexp(rel);
 		if (!has_label(e))
@@ -1696,7 +1714,7 @@ exp_deps(mvc *sql, sql_exp *e, list *refs, list *l)
 
 	switch(e->type) {
 	case e_psm:
-		if (e->flag & PSM_SET || e->flag & PSM_RETURN) {
+		if (e->flag & PSM_SET || e->flag & PSM_RETURN || e->flag & PSM_EXCEPTION) {
 			return exp_deps(sql, e->l, refs, l);
 		} else if (e->flag & PSM_VAR) {
 			return 0;
@@ -1705,12 +1723,10 @@ exp_deps(mvc *sql, sql_exp *e, list *refs, list *l)
 		            exps_deps(sql, e->r, refs, l) != 0)
 				return -1;
 			if (e->flag & PSM_IF && e->f)
-				return exps_deps(sql, e->r, refs, l);
+				return exps_deps(sql, e->f, refs, l);
 		} else if (e->flag & PSM_REL) {
 			sql_rel *rel = e->l;
 			return rel_deps(sql, rel, refs, l);
-		} else if (e->flag & PSM_EXCEPTION) {
-			return exps_deps(sql, e->l, refs, l);
 		}
 	case e_atom: 
 	case e_column: 
@@ -1842,7 +1858,7 @@ rel_deps(mvc *sql, sql_rel *r, list *refs, list *l)
 			return -1;
 		break;
 	case op_ddl:
-		if (r->flag == ddl_output || r->flag == ddl_create_seq || r->flag == ddl_alter_seq) {
+		if (r->flag == ddl_output || r->flag == ddl_create_seq || r->flag == ddl_alter_seq || r->flag == ddl_alter_table || r->flag == ddl_create_table || r->flag == ddl_create_view) {
 			if (rel_deps(sql, r->l, refs, l) != 0)
 				return -1;
 		} else if (r->flag == ddl_list || r->flag == ddl_exception) {
@@ -2009,7 +2025,7 @@ rel_exp_visitor(mvc *sql, sql_rel *rel, exp_rewrite_fptr exp_rewriter, int *chan
 		}
 		break;
 	case op_ddl:
-		if (rel->flag == ddl_output || rel->flag == ddl_create_seq || rel->flag == ddl_alter_seq) {
+		if (rel->flag == ddl_output || rel->flag == ddl_create_seq || rel->flag == ddl_alter_seq || rel->flag == ddl_alter_table || rel->flag == ddl_create_table || rel->flag == ddl_create_view) {
 			if (rel->l)
 				if ((rel->l = rel_exp_visitor(sql, rel->l, exp_rewriter, changes, topdown)) == NULL)
 					return NULL;
@@ -2194,7 +2210,7 @@ rel_visitor(mvc *sql, sql_rel *rel, rel_rewrite_fptr rel_rewriter, int *changes,
 		}
 		break;
 	case op_ddl:
-		if (rel->flag == ddl_output || rel->flag == ddl_create_seq || rel->flag == ddl_alter_seq) {
+		if (rel->flag == ddl_output || rel->flag == ddl_create_seq || rel->flag == ddl_alter_seq || rel->flag == ddl_alter_table || rel->flag == ddl_create_table || rel->flag == ddl_create_view) {
 			if (rel->l)
 				if ((rel->l = func(sql, rel->l, rel_rewriter, changes)) == NULL)
 					return NULL;

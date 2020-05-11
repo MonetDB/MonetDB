@@ -147,3 +147,10 @@ drop table myx;
 drop table myy;
 
 create view iambad as select * from _tables sample 10; --error, sample inside views not supported
+
+set current_timezone = null; --error, default global variables cannot be null
+set current_timezone = 11111111111111; --error, value too big
+set current_schema = null; --error, default global variables cannot be null
+
+select greatest(null, null);
+select sql_min(null, null);

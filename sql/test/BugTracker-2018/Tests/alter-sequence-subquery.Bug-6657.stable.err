@@ -32,8 +32,8 @@ stderr of test 'alter-sequence-subquery.Bug-6657` in directory 'sql/test/BugTrac
 
 MAPI  = (monetdb) /var/tmp/mtest-31265/.s.monetdb.36995
 QUERY = alter sequence "testme" restart with (select 1 union select 2); --error, should not be possible
-ERROR = !Cardinality violation, scalar value expected
-CODE  = 21000
+ERROR = !Only one value allowed to alter a sequence value
+CODE  = 42000
 
 # 14:42:30 >  
 # 14:42:30 >  "Done."

@@ -5,20 +5,39 @@ stderr of test 'analytics16` in directory 'sql/test/analytics` itself:
 # 18:06:21 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=34861" "--set" "mapi_usock=/var/tmp/mtest-290531/.s.monetdb.34861" "--forcemito" "--dbpath=/home/ferreira/repositories/MonetDB-statistics-analytics/BUILD/var/MonetDB/mTests_sql_test_analytics" "--set" "embedded_c=true"
 # 18:06:21 >  
 
-# builtin opt 	gdk_dbpath = /home/ferreira/repositories/MonetDB-statistics-analytics/BUILD/var/monetdb5/dbfarm/demo
-# builtin opt 	mapi_port = 50000
-# builtin opt 	mapi_open = false
-# builtin opt 	mapi_ipv6 = false
-# builtin opt 	mapi_autosense = false
-# builtin opt 	sql_optimizer = default_pipe
-# builtin opt 	sql_debug = 0
-# builtin opt 	raw_strings = false
-# cmdline opt 	gdk_nr_threads = 0
-# cmdline opt 	mapi_open = true
-# cmdline opt 	mapi_port = 34861
-# cmdline opt 	mapi_usock = /var/tmp/mtest-290531/.s.monetdb.34861
-# cmdline opt 	gdk_dbpath = /home/ferreira/repositories/MonetDB-statistics-analytics/BUILD/var/MonetDB/mTests_sql_test_analytics
-# cmdline opt 	embedded_c = true
+MAPI  = (monetdb) /var/tmp/mtest-10191/.s.monetdb.31213
+QUERY = SELECT VAR_POP(c0) FROM t0; --error, overflow
+ERROR = !GDK reported error: calcvariance: 22003!overflow in calculation.
+MAPI  = (monetdb) /var/tmp/mtest-10668/.s.monetdb.32784
+QUERY = SELECT STDDEV_POP(c0) FROM t0; --error, overflow
+ERROR = !GDK reported error: calcvariance: 22003!overflow in calculation.
+MAPI  = (monetdb) /var/tmp/mtest-10668/.s.monetdb.32784
+QUERY = SELECT COVAR_POP(c0,c0) FROM t0; --error, overflow
+ERROR = !GDK reported error: calccovariance: 22003!overflow in calculation.
+MAPI  = (monetdb) /var/tmp/mtest-10668/.s.monetdb.32784
+QUERY = SELECT CORR(c0,c0) FROM t0; --error, overflow
+ERROR = !GDK reported error: BATcalccorrelation: 22003!overflow in calculation.
+MAPI  = (monetdb) /var/tmp/mtest-11411/.s.monetdb.37842
+QUERY = SELECT VAR_POP(c0) FROM t0 GROUP BY c1;--error, overflow
+ERROR = !GDK reported error: dogroupstdev: 22003!overflow in calculation.
+MAPI  = (monetdb) /var/tmp/mtest-11411/.s.monetdb.37842
+QUERY = SELECT STDDEV_POP(c0) FROM t0 GROUP BY c1; --error, overflow
+ERROR = !GDK reported error: dogroupstdev: 22003!overflow in calculation.
+MAPI  = (monetdb) /var/tmp/mtest-11411/.s.monetdb.37842
+QUERY = SELECT CORR(c0,c0) FROM t0 GROUP BY c1; --error, overflow
+ERROR = !GDK reported error: BATgroupcorrelation: 22003!overflow in calculation.
+MAPI  = (monetdb) /var/tmp/mtest-11411/.s.monetdb.37842
+QUERY = SELECT VAR_SAMP(c0) OVER () FROM t0; --error, overflow
+ERROR = !GDK reported error: GDKanalytical_variance_samp: 22003!overflow in calculation.
+MAPI  = (monetdb) /var/tmp/mtest-10668/.s.monetdb.32784
+QUERY = SELECT STDDEV_SAMP(c0) OVER () FROM t0; --error, overflow
+ERROR = !GDK reported error: GDKanalytical_stddev_samp: 22003!overflow in calculation.
+MAPI  = (monetdb) /var/tmp/mtest-10668/.s.monetdb.32784
+QUERY = SELECT COVAR_SAMP(c0,c0) OVER () FROM t0; --error, overflow
+ERROR = !GDK reported error: GDKanalytical_covariance_samp: 22003!overflow in calculation.
+MAPI  = (monetdb) /var/tmp/mtest-10434/.s.monetdb.38486
+QUERY = SELECT CORR(c0,c0) OVER () FROM t0; --error, overflow
+ERROR = !GDK reported error: GDKanalytical_correlation: 22003!overflow in calculation.
 
 # 18:06:22 >  
 # 18:06:22 >  "mclient" "-lsql" "-ftest" "-tnone" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-290531" "--port=34861"
