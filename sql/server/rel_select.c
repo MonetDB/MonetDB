@@ -2506,11 +2506,17 @@ rel_logical_exp(sql_query *query, sql_rel *rel, symbol *sc, int f)
 
 			lr = rel_select_copy(sql->sa, lr, sa_list(sql->sa));
 			lr = rel_logical_exp(query, lr, lo, f);
-			if (!lr)
+			if (!lr) {
+				sql->pushdown = pushdown;
 				return NULL;
+			}
 			rr = rel_select_copy(sql->sa, rr, sa_list(sql->sa));
 			rr = rel_logical_exp(query, rr, ro, f);
-			if (lr && rr && lr->l == rr->l) {
+			if (!rr) {
+				sql->pushdown = pushdown;
+				return NULL;
+			}
+			if (lr->l == rr->l) {
 				lexps = lr->exps;
 				lr = lr->l;
 				rexps = rr->exps;
