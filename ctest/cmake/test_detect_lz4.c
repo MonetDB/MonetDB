@@ -11,7 +11,7 @@
 int
 main(void)
 {
-#ifdef HAVE_LZ4
+#ifdef HAVE_LIBLZ4
     return 1;
 #else
     return 0;
