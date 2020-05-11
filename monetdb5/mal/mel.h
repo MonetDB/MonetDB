@@ -49,4 +49,11 @@ typedef struct mel_func {
 	mel_arg res[MAX_ARG];
 } mel_func;
 
+#ifdef SPECS
+typedef struct mal_spec{
+	fptr imp;
+	char *mal;
+} mal_spec;
+#endif
+
 #endif /* _MEL_H_ */

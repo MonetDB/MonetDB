@@ -584,7 +584,7 @@ MALparser(Client c)
 
 	if( prepareMalBlk(c->curprg->def, CURRENT(c)) < 0)
 		throw(MAL, "mal.parser", "Failed to prepare");
-	parseMAL(c, c->curprg, 0, INT_MAX);
+	parseMAL(c, c->curprg, 0, INT_MAX, 0);
 
 	/* now the parsing is done we should advance the stream */
 	c->fdin->pos += c->yycur;

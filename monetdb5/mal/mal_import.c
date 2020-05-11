@@ -142,7 +142,7 @@ malLoadScript(str name, bstream **fdin)
 	restoreClient2
 
 str
-malIncludeString(Client c, const str name, const str mal, int listing) 
+malIncludeString(Client c, const str name, const str mal, int listing, MALfcn address) 
 {
 	str msg = MAL_SUCCEED;
 
@@ -185,7 +185,7 @@ malIncludeString(Client c, const str name, const str mal, int listing)
 		throw(MAL, "malIncludeString", MAL_MALLOC_FAIL);
 	}
 	bstream_next(c->fdin);
-	parseMAL(c, c->curprg, 1, INT_MAX);
+	parseMAL(c, c->curprg, 1, INT_MAX, address);
 	bstream_destroy(c->fdin);
 	c->fdin = NULL;
 	GDKfree(mal_buf);
@@ -234,7 +234,7 @@ malInclude(Client c, str name, int listing)
 			c->yycur = 0;
 			c->bak = NULL;
 			if ((msg = malLoadScript(filename, &c->fdin)) == MAL_SUCCEED) {
-				parseMAL(c, c->curprg, 1, INT_MAX);
+				parseMAL(c, c->curprg, 1, INT_MAX, 0);
 				bstream_destroy(c->fdin);
 			} else {
 				/* TODO output msg ? */

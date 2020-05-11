@@ -785,17 +785,29 @@ static void
 helpInfo(Client cntxt, str *help)
 {
 	int l;
+	char c, *e, *s;
 
 	if (MALkeyword(cntxt, "comment", 7)) {
 		skipSpace(cntxt);
-		if ((l = stringLength(cntxt))) {
-			GDKfree(*help);
+		// The comment is either a quoted string or all characters up to the next semicolon
+		c = currChar(cntxt);
+		if (c != '"'){
+			e = s = CURRENT(cntxt);
+			for (;*e; l++, e++) 
+				if (*e == ';')
+					break;
 			*help = strCopy(cntxt, l);
-			if (*help)
-				advance(cntxt, l - 1);
 			skipToEnd(cntxt);
 		} else {
-			parseError(cntxt, "<string> expected\n");
+			if ((l = stringLength(cntxt))) {
+				GDKfree(*help);
+				*help = strCopy(cntxt, l);
+				if (*help)
+					advance(cntxt, l - 1);
+				skipToEnd(cntxt);
+			} else {
+				parseError(cntxt, "<string> expected\n");
+			}
 		}
 	} else if (currChar(cntxt) != ';')
 		parseError(cntxt, "';' expected\n");
@@ -964,9 +976,7 @@ parseAtom(Client cntxt)
 		tpe = TYPE_void;  /* no type qualifier */
 	else
 		tpe = parseTypeId(cntxt, TYPE_int);
-	if( ATOMindex(modnme) >= 0)
-		parseError(cntxt, "Atom redefinition\n");
-	else {
+	if( ATOMindex(modnme) < 0) {
 		if(cntxt->curprg->def->errors)
 			GDKfree(cntxt->curprg->def->errors);
 		cntxt->curprg->def->errors = malAtomDefinition(modnme, tpe);
@@ -1105,8 +1115,10 @@ fcnHeader(Client cntxt, int kind)
 		nextChar(cntxt); /* skip '.' */
 		modnme = fnme;
 		if( strcmp(modnme,"user") && getModule(modnme) == NULL){
-			parseError(cntxt, "<module> name not defined\n");
-			return 0;
+			if( globalModule(modnme) == NULL){
+				parseError(cntxt, "<module> name not defined\n");
+				return 0;
+			}
 		}
 		l = operatorLength(cntxt);
 		if (l == 0)
@@ -1255,7 +1267,7 @@ fcnHeader(Client cntxt, int kind)
 }
 
 static MalBlkPtr
-parseCommandPattern(Client cntxt, int kind)
+parseCommandPattern(Client cntxt, int kind, MALfcn address)
 {
 	MalBlkPtr curBlk = 0;
 	Symbol curPrg = 0;
@@ -1276,9 +1288,11 @@ parseCommandPattern(Client cntxt, int kind)
 
 	modnme = getModuleId(getInstrPtr(curBlk, 0));
 	if (modnme && (getModule(modnme) == FALSE && strcmp(modnme,"user"))){
-		parseError(cntxt, "<module> not defined\n");
-		cntxt->blkmode = 0;
-		return curBlk;
+		// introduce the module
+		if( globalModule(modnme) == NULL){
+			parseError(cntxt, "<module> could not be defined\n");
+			return 0;
+		}
 	}
 	modnme = modnme ? modnme : cntxt->usermodule->name;
 
@@ -1317,6 +1331,7 @@ parseCommandPattern(Client cntxt, int kind)
  * [note, command and patterns do not have a MAL block]
  */
 	if (MALkeyword(cntxt, "address", 7)) {
+		/* TO BE DEPRECATED */
 		int i;
 		i = idLength(cntxt);
 		if (i == 0) {
@@ -1343,10 +1358,12 @@ parseCommandPattern(Client cntxt, int kind)
 			malAtomProperty(curBlk, curInstr);
 		}
 		skipSpace(cntxt);
-	} else {
-		parseError(cntxt, "'address' expected\n");
-		return 0;
-	}
+	} else
+       if(address){
+		setModuleScope(curInstr, findModule(cntxt->usermodule, modnme));
+		setModuleId(curInstr, modnme);
+		curInstr->fcn = address;
+       }
 	helpInfo(cntxt, &curBlk->help);
 #ifdef HAVE_HGE
 	if (!have_hge)
@@ -1364,6 +1381,7 @@ parseFunction(Client cntxt, int kind)
 	if (curBlk == NULL)
 		return curBlk;
 	if (MALkeyword(cntxt, "address", 7)) {
+		/* TO BE DEPRECATED */
 		str nme;
 		int i;
 		InstrPtr curInstr = getInstrPtr(curBlk, 0);
@@ -1384,7 +1402,7 @@ parseFunction(Client cntxt, int kind)
 			return 0;
 		}
 		skipSpace(cntxt);
-	}
+	} 
 	/* block is terminated at the END statement */
 	helpInfo(cntxt, &curBlk->help);
 	return curBlk;
@@ -1758,7 +1776,7 @@ part3:
 }
 
 void
-parseMAL(Client cntxt, Symbol curPrg, int skipcomments, int lines)
+parseMAL(Client cntxt, Symbol curPrg, int skipcomments, int lines, MALfcn address)
 {
 	int cntrl = 0;
 	/*Symbol curPrg= cntxt->curprg;*/
@@ -1842,7 +1860,7 @@ parseMAL(Client cntxt, Symbol curPrg, int skipcomments, int lines)
 			goto allLeft;
 		case 'C': case 'c':
 			if (MALkeyword(cntxt, "command", 7)) {
-				MalBlkPtr p = parseCommandPattern(cntxt, COMMANDsymbol);
+				MalBlkPtr p = parseCommandPattern(cntxt, COMMANDsymbol, address);
 				if (p) {
 					p->unsafeProp = unsafeProp;
 				}
@@ -1917,7 +1935,7 @@ parseMAL(Client cntxt, Symbol curPrg, int skipcomments, int lines)
 				MalBlkPtr p;
 				if( inlineProp )
 					parseError(cntxt, "parseError:INLINE ignored\n");
-				p = parseCommandPattern(cntxt, PATTERNsymbol);
+				p = parseCommandPattern(cntxt, PATTERNsymbol, address);
 				if (p) {
 					p->unsafeProp = unsafeProp;
 				}

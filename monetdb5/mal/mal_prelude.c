@@ -6,7 +6,7 @@
  * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
  */
 
-/* Author(s) M.L. Kersten
+/* Author(s) M.L. Kersten, N. Nes
  * This module takes the statically defined modules, atoms, commands and patterns
  * and populate the internal structures.
  *
@@ -34,6 +34,11 @@ static int mal_modules = 0;
 static str mal_module_name[MAX_MAL_MODULES] = {0};
 static unsigned char *mal_module_code[MAX_MAL_MODULES] = {0};
 
+#ifdef SPECS
+static int mal_limit = 0;
+static mal_spec *mal_specs[MAX_MAL_MODULES] = {0};
+#endif
+
 int
 mal_startup(void)
 {
@@ -48,13 +53,23 @@ mal_startup(void)
 */
 
 void
+#ifdef SPECS
+mal_module(str name, mel_atom *atoms, mel_func *funcs, mal_spec *specs)
+#else
 mal_module(str name, mel_atom *atoms, mel_func *funcs)
+#endif
 {
 	assert (mel_modules < MAX_MAL_MODULES);
 	mel_module_name[mel_modules] = name;
 	mel_module_atoms[mel_modules] = atoms;
 	mel_module_funcs[mel_modules] = funcs;
 	mel_modules++;
+#ifdef SPECS
+	if( specs){
+		assert (mal_limit < MAX_MAL_MODULES);
+		mal_specs[mal_limit++] = specs;
+	}
+#endif
 }
 
 void
@@ -239,6 +254,21 @@ addFunctions(mel_func *fcn){
 	return msg;
 }
 
+#ifdef SPECS
+static str
+addSpecs(Client c, mal_spec *mal, int listing){
+	str msg = MAL_SUCCEED;
+	
+	for(; mal && mal->mal; mal++){
+		msg = malIncludeString(c, "tmp", mal->mal, listing, (MALfcn) mal->imp);
+		if (msg)
+			return msg;
+	}
+	return msg;
+}
+#endif
+
+
 static str
 malPrelude(Client c, int listing, int embedded)
 {
@@ -268,18 +298,29 @@ malPrelude(Client c, int listing, int embedded)
 		}
 	}
 
+#ifdef SPECS
+	/* The more compact and readible specs approach */
+	for(i = 0; i < mal_limit; i++) {
+		msg = addSpecs(c, mal_specs[i], listing);
+		if (msg)
+			return msg;
+	}
+#endif
+
 	/* Once we have all modules loaded, we should execute their prelude function for further initialization*/
 	for(i = 0; i<mal_modules; i++) {
 		if (embedded && strcmp(mal_module_name[i], "mal_mapi") == 0) 
 			continue;
 		if ( mal_module_code[i]){
-			msg = malIncludeString(c, mal_module_name[i], (str)mal_module_code[i], listing);
+			msg = malIncludeString(c, mal_module_name[i], (str)mal_module_code[i], listing, NULL);
 			if (msg)
 				return msg;
 		}
 	}
+
 	/* execute preludes */
-	for(i = 0; i<mal_modules; i++) {
+	for(i = 0; i<mal_modules; i++) 
+	if( mal_module_name[i]) {
 		if (strcmp(mal_module_name[i], "sql") == 0) /* skip sql should be last to startup */
 			continue;
 		initModule(c, mal_module_name[i]);
