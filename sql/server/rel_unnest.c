@@ -2709,39 +2709,43 @@ rewrite_fix_count(mvc *sql, sql_rel *rel, int *changes)
 	if (rel->op == op_left && !is_single(rel)) {
 		int rel_changes = 0;
 		sql_rel *r = rel->r;
-		/* TODO create an exp iterator */
-		list *rexps = rel_projections(sql, r, NULL, 1, 1), *exps;
 
-		for(node *n = rexps->h; n; n=n->next) {
-			sql_exp *e = n->data, *ne;
+		if (!r->used) {
+			/* TODO create an exp iterator */
+			list *rexps = rel_projections(sql, r, NULL, 1, 1), *exps;
 
-			if (exp_is_count(e, r)) {
-				const char *rname = exp_relname(e), *name = exp_name(e);
-				/* rewrite count in subquery */
-				list *args, *targs;
-				sql_subfunc *isnil = sql_bind_func(sql->sa, NULL, "isnull", exp_subtype(e), NULL, F_FUNC), *ifthen;
+			for(node *n = rexps->h; n; n=n->next) {
+				sql_exp *e = n->data, *ne;
 
-				rel_changes = 1;
-				ne = exp_unop(sql->sa, e, isnil);
-				set_has_no_nil(ne);
-				targs = sa_list(sql->sa);
-				append(targs, sql_bind_localtype("bit"));
-				append(targs, exp_subtype(e));
-				append(targs, exp_subtype(e));
-				ifthen = sql_bind_func_(sql->sa, NULL, "ifthenelse", targs, F_FUNC);
-				args = sa_list(sql->sa);
-				append(args, ne);
-				append(args, exp_atom(sql->sa, atom_zero_value(sql->sa, exp_subtype(e))));
-				append(args, e);
-				e = exp_op(sql->sa, args, ifthen);
-				exp_setname(sql->sa, e, rname, name);
-				n->data = e;
+				if (exp_is_count(e, r)) {
+					const char *rname = exp_relname(e), *name = exp_name(e);
+					/* rewrite count in subquery */
+					list *args, *targs;
+					sql_subfunc *isnil = sql_bind_func(sql->sa, NULL, "isnull", exp_subtype(e), NULL, F_FUNC), *ifthen;
+
+					rel_changes = 1;
+					ne = exp_unop(sql->sa, e, isnil);
+					set_has_no_nil(ne);
+					targs = sa_list(sql->sa);
+					append(targs, sql_bind_localtype("bit"));
+					append(targs, exp_subtype(e));
+					append(targs, exp_subtype(e));
+					ifthen = sql_bind_func_(sql->sa, NULL, "ifthenelse", targs, F_FUNC);
+					args = sa_list(sql->sa);
+					append(args, ne);
+					append(args, exp_atom(sql->sa, atom_zero_value(sql->sa, exp_subtype(e))));
+					append(args, e);
+					e = exp_op(sql->sa, args, ifthen);
+					exp_setname(sql->sa, e, rname, name);
+					n->data = e;
+				}
 			}
-		}
-		if (rel_changes) { /* add project */
-			exps = list_merge(rel_projections(sql, rel->l, NULL, 1, 1), rexps, (fdup)NULL);
-			rel = rel_project(sql->sa, rel, exps);
-			(*changes)++;
+			if (rel_changes) { /* add project */
+				exps = list_merge(rel_projections(sql, rel->l, NULL, 1, 1), rexps, (fdup)NULL);
+				rel = rel_project(sql->sa, rel, exps);
+				r->used = 1;
+				(*changes)++;
+			}
 		}
 	}
 	return rel;
