@@ -95,6 +95,11 @@ endif()
 
 check_include_file("stdatomic.h" HAVE_STDATOMIC_H)
 
+if(${CMAKE_SYSTEM_NAME} STREQUAL "Linux")
+  add_definitions(-D_XOPEN_SOURCE -D_GNU_SOURCE)
+  set(CMAKE_REQUIRED_DEFINITIONS "${CMAKE_REQUIRED_DEFINITIONS} -D_GNU_SOURCE") # required for symbol existance tests
+endif()
+
 # Linux specific, in the future, it might be ported to other platforms
 check_symbol_exists("S_ISREG" "sys/stat.h" HAVE_SYS_STAT_H)
 check_symbol_exists("getaddrinfo" "netdb.h" HAVE_GETADDRINFO)
@@ -300,11 +305,6 @@ set(RUNDIR
 # Define custom target after the install directories variables.
 # Some custom target will need these setting.
 include(monetdb-custom-targets)
-
-if(${CMAKE_SYSTEM_NAME} STREQUAL "Linux")
-  add_definitions(-D_XOPEN_SOURCE -D_GNU_SOURCE)
-  set(CMAKE_REQUIRED_DEFINITIONS "${CMAKE_REQUIRED_DEFINITIONS} -D_GNU_SOURCE") # required for tests
-endif()
 
 # Used for installing testing python module
 execute_process(COMMAND "${Python3_EXECUTABLE}" "-c" "import distutils.sysconfig; print(distutils.sysconfig.get_python_lib(0,0,'${MONETDB_PREFIX}'))"
