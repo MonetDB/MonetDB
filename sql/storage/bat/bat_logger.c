@@ -195,7 +195,7 @@ bl_postversion(void *lg)
 
 		/* first figure out whether there are any columns in
 		 * the catalog called "readonly" (if there are fewer
-		 * then 2, then we don't have to do anything) */
+		 * than 2, then we don't have to do anything) */
 		BAT *cn = temp_descriptor(logger_find_bat(lg, N("sys", "_columns", "name"), 0, 0));
 		if (cn == NULL)
 			return GDK_FAIL;
