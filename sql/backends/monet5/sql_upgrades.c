@@ -2886,7 +2886,7 @@ SQLupgrades(Client c, mvc *m)
 	sql_column *col;
 	bool systabfixed = false;
 
-	if (!prev_schema) {
+	if (prev_schema == NULL) {
 		TRC_CRITICAL(SQL_PARSER, "Allocation failure while running SQL upgrades\n");
 		return -1;
 	}
@@ -2898,6 +2898,7 @@ SQLupgrades(Client c, mvc *m)
 			if ((err = sql_update_hugeint(c, m, prev_schema, &systabfixed)) != NULL) {
 				TRC_CRITICAL(SQL_PARSER, "%s\n", err);
 				freeException(err);
+				GDKfree(prev_schema);
 				return -1;
 			}
 		}
@@ -2922,6 +2923,7 @@ SQLupgrades(Client c, mvc *m)
 		if ((err = sql_update_geom(c, m, 1, prev_schema)) != NULL) {
 			TRC_CRITICAL(SQL_PARSER, "%s\n", err);
 			freeException(err);
+			GDKfree(prev_schema);
 			return -1;
 		}
 	} else if (geomsqlfix_get() != NULL) {
@@ -2933,6 +2935,7 @@ SQLupgrades(Client c, mvc *m)
 			if ((err = sql_update_geom(c, m, 0, prev_schema)) != NULL) {
 				TRC_CRITICAL(SQL_PARSER, "%s\n", err);
 				freeException(err);
+				GDKfree(prev_schema);
 				return -1;
 			}
 		}
@@ -2944,6 +2947,7 @@ SQLupgrades(Client c, mvc *m)
 		if ((err = sql_update_mar2018_geom(c, t, prev_schema)) != NULL) {
 			TRC_CRITICAL(SQL_PARSER, "%s\n", err);
 			freeException(err);
+			GDKfree(prev_schema);
 			return -1;
 		}
 	}
@@ -2953,6 +2957,7 @@ SQLupgrades(Client c, mvc *m)
 		if ((err = sql_update_mar2018(c, m, prev_schema, &systabfixed)) != NULL) {
 			TRC_CRITICAL(SQL_PARSER, "%s\n", err);
 			freeException(err);
+			GDKfree(prev_schema);
 			return -1;
 		}
 #ifdef HAVE_NETCDF
@@ -2960,6 +2965,7 @@ SQLupgrades(Client c, mvc *m)
 		    (err = sql_update_mar2018_netcdf(c, prev_schema)) != NULL) {
 			TRC_CRITICAL(SQL_PARSER, "%s\n", err);
 			freeException(err);
+			GDKfree(prev_schema);
 			return -1;
 		}
 #endif
@@ -2969,6 +2975,7 @@ SQLupgrades(Client c, mvc *m)
 		if ((err = sql_update_mar2018_sp1(c, prev_schema)) != NULL) {
 			TRC_CRITICAL(SQL_PARSER, "%s\n", err);
 			freeException(err);
+			GDKfree(prev_schema);
 			return -1;
 		}
 	}
@@ -2981,6 +2988,7 @@ SQLupgrades(Client c, mvc *m)
 		if (err) {
 			TRC_CRITICAL(SQL_PARSER, "%s\n", err);
 			freeException(err);
+			GDKfree(prev_schema);
 			return -1;
 		} else {
 			BAT *b = BATdescriptor(output->cols[0].b);
@@ -2991,6 +2999,7 @@ SQLupgrades(Client c, mvc *m)
 						TRC_CRITICAL(SQL_PARSER, "%s\n", err);
 						freeException(err);
 						BBPunfix(b->batCacheid);
+						GDKfree(prev_schema);
 						return -1;
 					}
 				}
@@ -3012,6 +3021,7 @@ SQLupgrades(Client c, mvc *m)
 			if ((err = sql_update_gsl(c, prev_schema)) != NULL) {
 				TRC_CRITICAL(SQL_PARSER, "%s\n", err);
 				freeException(err);
+				GDKfree(prev_schema);
 				return -1;
 			}
 		}
@@ -3022,6 +3032,7 @@ SQLupgrades(Client c, mvc *m)
 		if ((err = sql_update_aug2018(c, m, prev_schema)) != NULL) {
 			TRC_CRITICAL(SQL_PARSER, "%s\n", err);
 			freeException(err);
+			GDKfree(prev_schema);
 			return -1;
 		}
 	}
@@ -3046,6 +3057,7 @@ SQLupgrades(Client c, mvc *m)
 		if ((err = sql_drop_functions_dependencies_Xs_on_Ys(c, prev_schema)) != NULL) {
 			TRC_CRITICAL(SQL_PARSER, "%s\n", err);
 			freeException(err);
+			GDKfree(prev_schema);
 			return -1;
 		}
 	}
@@ -3053,6 +3065,7 @@ SQLupgrades(Client c, mvc *m)
 	if ((err = sql_update_aug2018_sp2(c, prev_schema)) != NULL) {
 		TRC_CRITICAL(SQL_PARSER, "%s\n", err);
 		freeException(err);
+		GDKfree(prev_schema);
 		return -1;
 	}
 
@@ -3062,12 +3075,14 @@ SQLupgrades(Client c, mvc *m)
 		    (err = sql_fix_system_tables(c, m, prev_schema)) != NULL) {
 			TRC_CRITICAL(SQL_PARSER, "%s\n", err);
 			freeException(err);
+			GDKfree(prev_schema);
 			return -1;
 		}
 		systabfixed = true;
 		if ((err = sql_update_apr2019(c, m, prev_schema)) != NULL) {
 			TRC_CRITICAL(SQL_PARSER, "%s\n", err);
 			freeException(err);
+			GDKfree(prev_schema);
 			return -1;
 		}
 	}
@@ -3081,6 +3096,7 @@ SQLupgrades(Client c, mvc *m)
 		if ((err = sql_update_storagemodel(c, m, prev_schema)) != NULL) {
 			TRC_CRITICAL(SQL_PARSER, "%s\n", err);
 			freeException(err);
+			GDKfree(prev_schema);
 			return -1;
 		}
 	}
@@ -3088,6 +3104,7 @@ SQLupgrades(Client c, mvc *m)
 	if ((err = sql_update_apr2019_sp1(c)) != NULL) {
 		TRC_CRITICAL(SQL_PARSER, "%s\n", err);
 		freeException(err);
+		GDKfree(prev_schema);
 		return -1;
 	}
 
@@ -3095,6 +3112,7 @@ SQLupgrades(Client c, mvc *m)
 		if ((err = sql_update_apr2019_sp2(c, m, prev_schema, &systabfixed)) != NULL) {
 			TRC_CRITICAL(SQL_PARSER, "%s\n", err);
 			freeException(err);
+			GDKfree(prev_schema);
 			return -1;
 		}
 	}
@@ -3104,18 +3122,21 @@ SQLupgrades(Client c, mvc *m)
 		if ((err = sql_update_nov2019_missing_dependencies(c, m)) != NULL) {
 			TRC_CRITICAL(SQL_PARSER, "%s\n", err);
 			freeException(err);
+			GDKfree(prev_schema);
 			return -1;
 		}
 		if (!systabfixed &&
 		    (err = sql_fix_system_tables(c, m, prev_schema)) != NULL) {
 			TRC_CRITICAL(SQL_PARSER, "%s\n", err);
 			freeException(err);
+			GDKfree(prev_schema);
 			return -1;
 		}
 		systabfixed = true;
 		if ((err = sql_update_nov2019(c, m, prev_schema, &systabfixed)) != NULL) {
 			TRC_CRITICAL(SQL_PARSER, "%s\n", err);
 			freeException(err);
+			GDKfree(prev_schema);
 			return -1;
 		}
 	}
@@ -3127,6 +3148,7 @@ SQLupgrades(Client c, mvc *m)
 			if ((err = sql_update_nov2019_sp1_hugeint(c, m, prev_schema, &systabfixed)) != NULL) {
 				TRC_CRITICAL(SQL_PARSER, "%s\n", err);
 				freeException(err);
+				GDKfree(prev_schema);
 				return -1;
 			}
 		}
@@ -3137,6 +3159,7 @@ SQLupgrades(Client c, mvc *m)
 		if ((err = sql_update_jun2020(c, m, prev_schema, &systabfixed)) != NULL) {
 			TRC_CRITICAL(SQL_PARSER, "%s\n", err);
 			freeException(err);
+			GDKfree(prev_schema);
 			return -1;
 		}
 	}
@@ -3144,12 +3167,14 @@ SQLupgrades(Client c, mvc *m)
 	if ((err = sql_update_jun2020_bam(c, m, prev_schema)) != NULL) {
 		TRC_CRITICAL(SQL_PARSER, "%s\n", err);
 		freeException(err);
+		GDKfree(prev_schema);
 		return -1;
 	}
 
 	if ((err = sql_update_default(c, m, prev_schema)) != NULL) {
 		TRC_CRITICAL(SQL_PARSER, "%s\n", err);
 		freeException(err);
+		GDKfree(prev_schema);
 		return -1;
 	}
 

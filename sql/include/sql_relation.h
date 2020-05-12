@@ -276,7 +276,8 @@ typedef struct relation {
 	 outer:1,	/* used as outer (ungrouped) */
 	 grouped:1,	/* groupby processed all the group by exps */
 	 single:1,	
-	 subquery:1;	/* is this part a subquery, this is needed for proper name binding */
+	 subquery:1,	/* is this part a subquery, this is needed for proper name binding */
+	 used:1;	/* used by rewrite_fix_count at rel_unnest, so a relation is not modified twice */
 	void *p;	/* properties for the optimizer, distribution */
 } sql_rel;
 
