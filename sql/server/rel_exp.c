@@ -1600,6 +1600,84 @@ exp_is_true(mvc *sql, sql_exp *e)
 	return 0;
 }
 
+static inline bool
+exp_is_cmp_exp_is_false(mvc *sql, sql_exp* e) {
+    assert(e->type == e_cmp);
+    assert(e->semantics && (e->flag == cmp_equal || e->flag == cmp_notequal));
+    assert(e->f == NULL);
+    sql_exp* l = e->l;
+    sql_exp* r = e->r;
+    assert (l && r);
+
+    /* Handle 'v is x' and 'v is not x' expressions.
+     * Other cases in is-semantics are unspecified.
+     */
+    if (e->flag == cmp_equal && !e->anti) {
+        return (exp_is_null(sql, l) && exp_is_null(sql, r));
+    }
+    if (((e->flag == cmp_notequal) && !e->anti) || ((e->flag == cmp_equal) && e->anti) ) {
+        return ((exp_is_null(sql, l) && exp_is_not_null(sql, r))) || ((exp_is_not_null(sql, l) && exp_is_null(sql, r)));
+    }
+
+    return false;
+}
+
+static inline bool
+exp_single_bound_cmp_exp_is_false(mvc *sql, sql_exp* e) {
+    assert(e->type == e_cmp);
+    sql_exp* l = e->l;
+    sql_exp* r = e->r;
+    assert(e->f == NULL);
+    assert (l && r);
+
+    return exp_is_null(sql, l) || exp_is_null(sql, r);
+}
+
+static inline bool
+exp_two_sided_bound_cmp_exp_is_false(mvc *sql, sql_exp* e) {
+    assert(e->type == e_cmp);
+    sql_exp* v = e->l;
+    sql_exp* l = e->r;
+    sql_exp* h = e->r;
+    assert (v && l && h);
+
+    return exp_is_null(sql, l) || exp_is_null(sql, v) || exp_is_null(sql, h);
+}
+
+static inline bool
+exp_regular_cmp_exp_is_false(mvc *sql, sql_exp* e) {
+    assert(e->type == e_cmp);
+
+    if (e->semantics)   return exp_is_cmp_exp_is_false(sql, e);
+    if (e -> f)         return exp_two_sided_bound_cmp_exp_is_false(sql, e);
+    else                return exp_single_bound_cmp_exp_is_false(sql, e);
+}
+
+static inline bool
+exp_or_exp_is_false(mvc *sql, sql_exp* e) {
+    assert(e->type == e_cmp && e->flag == cmp_or);
+    return exp_is_false(sql, e->l) && exp_is_false(sql, e->r);
+}
+
+static inline bool
+exp_cmp_exp_is_false(mvc *sql, sql_exp* e) {
+    assert(e->type == e_cmp);
+
+    switch (e->flag) {
+    case cmp_gt:
+    case cmp_gte:
+    case cmp_lte:
+    case cmp_lt:
+    case cmp_equal:
+    case cmp_notequal:
+        return exp_regular_cmp_exp_is_false(sql, e);
+    case cmp_or:
+        return exp_or_exp_is_false(sql, e);
+    default:
+        return false;
+	}
+}
+
 int
 exp_is_false(mvc *sql, sql_exp *e) 
 {
@@ -1610,6 +1688,10 @@ exp_is_false(mvc *sql, sql_exp *e)
 			return atom_is_false(sql->args[e->flag]);
 		}
 	}
+	else if (e->type == e_cmp) {
+		return exp_cmp_exp_is_false(sql, e);
+	}
+
 	return 0;
 }
 
@@ -1661,7 +1743,8 @@ exp_is_null(mvc *sql, sql_exp *e )
 		node *n;
 		list *l = e->l;
 
-		if (!r && l && list_length(l) == 2) {
+		if (!((sql_subfunc *)e->f)->func->semantics /*exclude isnull() and similar null-semantics-respecting functions*/ &&
+			!r && l) {
 			for (n = l->h; n && !r; n = n->next) 
 				r |= exp_is_null(sql, n->data);
 		}

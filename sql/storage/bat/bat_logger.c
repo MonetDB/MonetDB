@@ -16,6 +16,7 @@
 #define CATALOG_MAR2018 52201
 #define CATALOG_AUG2018 52202
 #define CATALOG_NOV2019 52203
+#define CATALOG_JUN2020 52204
 
 logger *bat_logger = NULL;
 
@@ -50,12 +51,20 @@ bl_preversion(int oldversion, int newversion)
 	}
 #endif
 
+#ifdef CATALOG_JUN2020
+	if (oldversion == CATALOG_JUN2020) {
+		/* upgrade to default releases */
+		catalog_version = oldversion;
+		return GDK_SUCCEED;
+	}
+#endif
+
 	return GDK_FAIL;
 }
 
 #define N(schema, table, column)	schema "_" table "_" column
 
-#ifdef CATALOG_AUG2018
+#if defined CATALOG_AUG2018 || defined CATALOG_JUN2020
 static int
 find_table_id(logger *lg, const char *val, int *sid)
 {
@@ -801,6 +810,58 @@ bl_postversion(void *lg)
 			return GDK_FAIL;
 		}
 		bat_destroy(tne);
+	}
+#endif
+
+#ifdef CATALOG_JUN2020
+	if (catalog_version <= CATALOG_JUN2020) {
+		int id;
+		lng lid;
+		BAT *fid = temp_descriptor(logger_find_bat(lg, N("sys", "functions", "id"), 0, 0));
+		if (logger_sequence(lg, OBJ_SID, &lid) == 0 ||
+		    fid == NULL) {
+			bat_destroy(fid);
+			return GDK_FAIL;
+		}
+		id = (int) lid;
+		BAT *sem = COLnew(fid->hseqbase, TYPE_bit, BATcount(fid), PERSISTENT);
+		if (sem == NULL) {
+			bat_destroy(fid);
+			return GDK_FAIL;
+		}
+		bit *fsys = (bit *) Tloc(sem, 0);
+		for (BUN p = 0, q = BATcount(fid); p < q; p++) {
+			fsys[p] = 1;
+		}
+
+		sem->tkey = false;
+		sem->tsorted = sem->trevsorted = true;
+		sem->tnonil = true;
+		sem->tnil = false;
+		BATsetcount(sem, BATcount(fid));
+		bat_destroy(fid);
+		if (BATsetaccess(sem, BAT_READ) != GDK_SUCCEED ||
+		    logger_add_bat(lg, sem, N("sys", "functions", "semantics"), 0, 0) != GDK_SUCCEED) {
+
+			bat_destroy(sem);
+			return GDK_FAIL;
+		}
+		bat_destroy(sem);
+		int sid;
+		int tid = find_table_id(lg, "functions", &sid);
+		if (tabins(lg, true, -1, NULL, "sys", "_columns",
+			   "id", &id,
+			   "name", "semantics",
+			   "type", "boolean",
+			   "type_digits", &((const int) {1}),
+			   "type_scale", &((const int) {0}),
+			   "table_id", &tid,
+			   "default", str_nil,
+			   "null", &((const bit) {TRUE}),
+			   "number", &((const int) {11}),
+			   "storage", str_nil,
+			   NULL) != GDK_SUCCEED)
+			return GDK_FAIL;
 	}
 #endif
 
