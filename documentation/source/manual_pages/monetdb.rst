@@ -34,6 +34,9 @@ of *monetdb*.
    Connect to *hostname* instead of attempting a connection over the
    local UNIX socket. This allows *monetdb* to connect to a remote
    *monetdbd*\ (1). The use of this option requires **-P** (see below).
+   If *hostname* starts with a forward slash (/), *hostname* is assumed
+   to be the directory where the UNIX sockets are stored. In that case,
+   the **-P** option is not allowed.
 
 **-p** *port*
    Connects to the given portnumber instead of the default (50000).

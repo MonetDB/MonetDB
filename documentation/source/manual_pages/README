@@ -1,0 +1,7 @@
+These files were created using the command
+
+pandoc --columns=72 $INPUTFILE -f man -t rst -o $OUTPUTFILE
+
+with some very minor hand editing, where $INPUTFILE and $OUTPUTFILE
+refer to the manual page source file (*.1 file) and the corresponding
+reStructuredText (*.rst) file.
