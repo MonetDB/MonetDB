@@ -15,7 +15,6 @@ set(CMAKE_MODULE_PATH
   INTERNAL
   "Location of custom CMake modules.")
 
-
 include(CMakeDependentOption REQUIRED)
 
 include(monetdb-options)
@@ -44,114 +43,19 @@ include(CheckTypeSize REQUIRED)
 
 include(TestBigEndian REQUIRED)
 
+# Include MonetDB specific functions
 include(monetdb-functions)
 include(monetdb-findpackages)
+include(monetdb-defines)
 monetdb_hg_revision()
 
-check_symbol_exists("opendir" "dirent.h" HAVE_DIRENT_H)
-find_path(HAVE_DISPATCH_DISPATCH_H "dispatch/dispatch.h")
-find_path(HAVE_DLFCN_H "dlfcn.h")
-find_path(HAVE_FCNTL_H "fcntl.h")
-find_path(HAVE_ICONV_H "iconv.h")
-find_path(HAVE_IO_H "io.h")
-find_path(HAVE_KVM_H "kvm.h")
-find_path(HAVE_LANGINFO_H "langinfo.h")
-find_path(HAVE_LIBGEN_H "libgen.h")
-find_path(HAVE_LIBINTL_H "libintl.h")
-find_path(HAVE_MACH_MACH_INIT_H "mach/mach_init.h")
-find_path(HAVE_MACH_TASK_H "mach/task.h")
-find_path(HAVE_MACH_O_DYLD_H "mach-o/dyld.h")
-check_symbol_exists("gethostbyname" "netdb.h" HAVE_NETDB_H)
-find_path(HAVE_NETINET_IN_H "netinet/in.h")
-find_path(HAVE_POLL_H "poll.h")
-find_path(HAVE_PROCFS_H "procfs.h")
-find_path(HAVE_PWD_H "pwd.h")
-find_path(HAVE_STRINGS_H "strings.h")
-find_path(HAVE_STROPTS_H "stropts.h")
-find_path(HAVE_SYS_FILE_H "sys/file.h")
-find_path(HAVE_SYS_IOCTL_H "sys/ioctl.h")
-find_path(HAVE_SYS_IOCTL_H "sys/sysctl.h")
-find_path(HAVE_SYS_MMAN_H "sys/mman.h")
-find_path(HAVE_SYS_PARAM_H "sys/param.h")
-find_path(HAVE_SYS_RESOURCE_H "sys/resource.h")
-check_symbol_exists("setsockopt" "sys/socket.h" HAVE_SYS_SOCKET_H)
-check_symbol_exists("gettimeofday" "sys/time.h" HAVE_SYS_TIME_H)
-find_path(HAVE_SYS_TIMES_H "sys/times.h")
-find_path(HAVE_SYS_UIO_H "sys/uio.h")
-find_path(HAVE_SYS_UN_H "sys/un.h")
-find_path(HAVE_SYS_UTIME_H "sys/utime.h")
-find_path(HAVE_SYS_WAIT_H "sys/wait.h")
-find_path(HAVE_TERMIOS_H "sys/termios.h")
-find_path(HAVE_UNISTD_H "unistd.h")
-find_path(HAVE_UUID_UUID_H "uuid/uuid.h")
-find_path(HAVE_WINSOCK_H "winsock2.h")
-
-find_path(HAVE_SYS_TYPES_H "sys/types.h")
-find_path(HAVE_SEMAPHORE_H "semaphore.h")
-find_path(HAVE_GETOPT_H "getopt.h")
-if(HAVE_GETOPT_H)
-  set(HAVE_GETOPT 1)
-endif()
-
-check_include_file("stdatomic.h" HAVE_STDATOMIC_H)
-
+# required for symbol existance tests
 if(${CMAKE_SYSTEM_NAME} STREQUAL "Linux")
   add_definitions(-D_XOPEN_SOURCE -D_GNU_SOURCE)
-  set(CMAKE_REQUIRED_DEFINITIONS "${CMAKE_REQUIRED_DEFINITIONS} -D_GNU_SOURCE") # required for symbol existance tests
+  set(CMAKE_REQUIRED_DEFINITIONS "${CMAKE_REQUIRED_DEFINITIONS} -D_GNU_SOURCE")
 endif()
 
-# Linux specific, in the future, it might be ported to other platforms
-check_symbol_exists("S_ISREG" "sys/stat.h" HAVE_SYS_STAT_H)
-check_symbol_exists("getaddrinfo" "netdb.h" HAVE_GETADDRINFO)
-#check_symbol_exists("WSADATA" "winsock2.h" HAVE_WINSOCK_H)
-check_symbol_exists("fdatasync" "unistd.h" HAVE_FDATASYNC)
-
-check_symbol_exists("accept4" "sys/types.h;sys/socket.h" HAVE_ACCEPT4) # Some libc versions on Linux distributions don't have it
-check_symbol_exists("asctime_r" "time.h" HAVE_ASCTIME_R)
-check_symbol_exists("clock_gettime" "time.h" HAVE_CLOCK_GETTIME)
-check_symbol_exists("ctime_r" "time.h" HAVE_CTIME_R)
-check_symbol_exists("dispatch_semaphore_create" "dispatch/dispatch.h" HAVE_DISPATCH_SEMAPHORE_CREATE)
-check_symbol_exists("fallocate" "fcntl.h" HAVE_FALLOCATE) # Linux specific, in the future, it might be ported to other platforms
-check_function_exists("fcntl" HAVE_FCNTL)
-check_symbol_exists("fork" "unistd.h" HAVE_FORK)
-check_symbol_exists("fsync" "unistd.h" HAVE_FSYNC)
-check_symbol_exists("ftime" "sys/timeb.h" HAVE_FTIME)
-check_function_exists("getexecname" HAVE_GETEXECNAME)
-check_function_exists("getlogin" HAVE_GETLOGIN)
-check_symbol_exists("getopt_long" "getopt.h" HAVE_GETOPT_LONG)
-check_function_exists("getrlimit" HAVE_GETRLIMIT)
-check_function_exists("gettimeofday" HAVE_GETTIMEOFDAY)
-check_function_exists("getuid" HAVE_GETUID)
-check_symbol_exists("gmtime_r" "time.h" HAVE_GMTIME_R)
-check_symbol_exists("localtime_r" "time.h" HAVE_LOCALTIME_R)
-check_symbol_exists("strerror_r" "string.h" HAVE_STRERROR_R)
-check_function_exists("lockf" HAVE_LOCKF)
-check_symbol_exists("madvise" "sys/mman.h" HAVE_MADVISE)
-check_symbol_exists("mremap" "sys/mman.h" HAVE_MREMAP)
-check_function_exists("nanosleep" HAVE_NANOSLEEP)
-check_function_exists("nl_langinfo" HAVE_NL_LANGINFO)
-check_function_exists("_NSGetExecutablePath" HAVE__NSGETEXECUTABLEPATH)
-check_symbol_exists("pipe2" "fcntl.h;unistd.h" HAVE_PIPE2) # Some libc versions on Linux distributions don't have it
-check_function_exists("poll" HAVE_POLL) 
-check_symbol_exists("popen" "stdio.h" HAVE_POPEN)
-check_symbol_exists("posix_fadvise" "fcntl.h" HAVE_POSIX_FADVISE) 
-check_symbol_exists("posix_fallocate" "fcntl.h" HAVE_POSIX_FALLOCATE) # Some POSIX systems don't have it (e.g. Macos)
-check_symbol_exists("posix_madvise" "sys/mman.h" HAVE_POSIX_MADVISE)
-check_function_exists("putenv" HAVE_PUTENV) 
-check_function_exists("setsid" HAVE_SETSID) 
-check_function_exists("shutdown" HAVE_SHUTDOWN) 
-check_function_exists("sigaction" HAVE_SIGACTION) 
-check_function_exists("stpcpy" HAVE_STPCPY) 
-check_function_exists("strcasestr" HAVE_STRCASESTR) 
-check_symbol_exists("strncasecmp" "strings.h" HAVE_STRNCASECMP)
-check_function_exists("strptime" HAVE_STRPTIME) 
-check_function_exists("strsignal" HAVE_STRSIGNAL) 
-check_symbol_exists("sysconf" "unistd.h" HAVE_SYSCONF)
-check_function_exists("task_info" HAVE_TASK_INFO) 
-check_function_exists("times" HAVE_TIMES) 
-check_function_exists("uname" HAVE_UNAME) 
-# Some libc versions on Linux distributions don't have it
-check_symbol_exists("semtimedop" "sys/types.h;sys/ipc.h;sys/sem.h" HAVE_SEMTIMEDOP)
+monetdb_configure_defines()
 
 # Likely unused, because it contained typo's
 if(HAVE_PTHREAD_H)
@@ -174,6 +78,8 @@ set(CMAKE_REQUIRED_INCLUDES "/usr/include")
 
 # Set variables to define C macro's
 # These are related to the detected packages
+# These names are legacy. When the code is changed to use the cmake
+# variables, they can be removed.
 set(HAVE_ICONV ${Iconv_FOUND})
 set(HAVE_PTHREAD_H ${CMAKE_USE_PTHREADS_INIT})
 set(HAVE_LIBPCRE ${PCRE_FOUND})
@@ -190,7 +96,7 @@ set(HAVE_SNAPPY ${SNAPPY_FOUND})
 set(HAVE_UUID ${HAVE_UUID_GENERATE})
 set(HAVE_VALGRIND ${VALGRIND_FOUND})
 set(HAVE_NETCDF ${NETCDF_FOUND})
-set(HAVE_READLINE "${READLINE_FOUND}")
+set(HAVE_READLINE ${READLINE_FOUND})
 
 set(SOCKET_LIBRARIES "")
 if (WIN32)
