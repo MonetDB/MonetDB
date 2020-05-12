@@ -80,13 +80,14 @@ sql_fix_system_tables(Client c, mvc *sql, const char *prev_schema)
 			pos += snprintf(buf + pos, bufsize - pos,
 					"insert into sys.functions values"
 					" (%d, '%s', '%s', '%s', %d, %d, false,"
-					" %s, %s, %d, %s);\n",
+					" %s, %s, %d, %s, %s);\n",
 					func->base.id, func->base.name, func->imp,
 					func->mod, (int) FUNC_LANG_INT, (int) func->type,
 					func->varres ? "true" : "false",
 					func->vararg ? "true" : "false",
 					func->s ? func->s->base.id : s->base.id,
-					func->system ? "true" : "false");
+					func->system ? "true" : "false",
+					func->semantics ? "true" : "false");
 			arg = func->res->h->data;
 			pos += snprintf(buf + pos, bufsize - pos,
 					"insert into sys.args values"
@@ -109,7 +110,7 @@ sql_fix_system_tables(Client c, mvc *sql, const char *prev_schema)
 			pos += snprintf(buf + pos, bufsize - pos,
 					"insert into sys.functions values"
 					" (%d, '%s', '%s', '%s',"
-					" %d, %d, %s, %s, %s, %d, %s);\n",
+					" %d, %d, %s, %s, %s, %d, %s, %s);\n",
 					func->base.id, func->base.name,
 					func->imp, func->mod, (int) FUNC_LANG_INT,
 					(int) func->type,
@@ -117,7 +118,8 @@ sql_fix_system_tables(Client c, mvc *sql, const char *prev_schema)
 					func->varres ? "true" : "false",
 					func->vararg ? "true" : "false",
 					func->s ? func->s->base.id : s->base.id,
-					func->system ? "true" : "false");
+					func->system ? "true" : "false",
+					func->semantics ? "true" : "false");
 			if (func->res) {
 				for (m = func->res->h; m; m = m->next, number++) {
 					arg = m->data;

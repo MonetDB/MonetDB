@@ -1047,8 +1047,6 @@ load_func(sql_trans *tr, sql_schema *s, sqlid fid, subrids *rs)
 	v = table_funcs.column_find_value(tr, find_sql_column(funcs, "type"), rid);
 	t->sql = (t->lang==FUNC_LANG_SQL||t->lang==FUNC_LANG_MAL);
 	t->type = (sql_ftype) *(int *)v;			_DELETE(v);
-	v = table_funcs.column_find_value(tr, find_sql_column(funcs, "semantics"), rid);
-	t->semantics = *(bit *)v;		_DELETE(v);
 	v = table_funcs.column_find_value(tr, find_sql_column(funcs, "side_effect"), rid);
 	t->side_effect = *(bit *)v;		_DELETE(v);
 	if (t->type==F_FILT)
@@ -1059,6 +1057,8 @@ load_func(sql_trans *tr, sql_schema *s, sqlid fid, subrids *rs)
 	t->vararg = *(bit *)v;	_DELETE(v);
 	v = table_funcs.column_find_value(tr, find_sql_column(funcs, "system"), rid);
 	t->system = *(bit *)v;	_DELETE(v);
+	v = table_funcs.column_find_value(tr, find_sql_column(funcs, "semantics"), rid);
+	t->semantics = *(bit *)v;		_DELETE(v);
 	t->res = NULL;
 	t->s = s;
 	t->fix_scale = SCALE_EQ;
@@ -1530,7 +1530,7 @@ insert_functions(sql_trans *tr, sql_table *sysfunc, sql_table *sysarg)
 		int number = 0, ftype = (int) f->type, flang = (int) FUNC_LANG_INT;
 		sqlid next_schema = f->s ? f->s->base.id : 0;
 
-		table_funcs.table_insert(tr, sysfunc, &f->base.id, f->base.name, f->imp, f->mod, &flang, &ftype, &f->semantics, &se, &f->varres, &f->vararg, &next_schema, &f->system);
+		table_funcs.table_insert(tr, sysfunc, &f->base.id, f->base.name, f->imp, f->mod, &flang, &ftype, &se, &f->varres, &f->vararg, &next_schema, &f->system, &f->semantics);
 		if (f->res)
 			insert_args(tr, sysarg, f->res, f->base.id, "res_%d", &number);
 		if (f->ops)
@@ -1891,12 +1891,12 @@ store_load(backend_stack stk) {
 
 	/* func, proc, aggr or filter */
 	bootstrap_create_column(tr, t, "type", "int", 32);
-	bootstrap_create_column(tr, t, "semantics", "boolean", 1);
 	bootstrap_create_column(tr, t, "side_effect", "boolean", 1);
 	bootstrap_create_column(tr, t, "varres", "boolean", 1);
 	bootstrap_create_column(tr, t, "vararg", "boolean", 1);
 	bootstrap_create_column(tr, t, "schema_id", "int", 32);
 	bootstrap_create_column(tr, t, "system", "boolean", 1);
+	bootstrap_create_column(tr, t, "semantics", "boolean", 1);
 
 	args = t = bootstrap_create_table(tr, s, "args");
 	bootstrap_create_column(tr, t, "id", "int", 32);
@@ -5645,8 +5645,8 @@ sql_trans_create_func(sql_trans *tr, sql_schema *s, const char *func, list *args
 	t->s = s;
 
 	cs_add(&s->funcs, t, TR_NEW);
-	table_funcs.table_insert(tr, sysfunc, &t->base.id, t->base.name, query?query:t->imp, t->mod, &flang, &ftype, &t->semantics, &se,
-							 &t->varres, &t->vararg, &s->base.id, &t->system);
+	table_funcs.table_insert(tr, sysfunc, &t->base.id, t->base.name, query?query:t->imp, t->mod, &flang, &ftype, &se,
+							 &t->varres, &t->vararg, &s->base.id, &t->system, &t->semantics);
 	if (t->res) for (n = t->res->h; n; n = n->next, number++) {
 		sql_arg *a = n->data;
 		sqlid id = next_oid();
