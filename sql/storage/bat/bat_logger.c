@@ -858,7 +858,7 @@ bl_postversion(void *lg)
 			   "table_id", &tid,
 			   "default", str_nil,
 			   "null", &((const bit) {TRUE}),
-			   "number", &((const int) {10}),
+			   "number", &((const int) {11}),
 			   "storage", str_nil,
 			   NULL) != GDK_SUCCEED)
 			return GDK_FAIL;
