@@ -32,16 +32,6 @@
 #include "monet_options.h"
 #include "msabaoth.h"
 
-// Hack to get code to compile
-#define MT_RWLock MT_Lock
-#define MT_RWLOCK_INITIALIZER MT_LOCK_INITIALIZER
-#define MT_rwlock_read_set MT_lock_unset
-#define MT_rwlock_read_unset MT_lock_unset
-#define MT_rwlock_write_set MT_lock_unset
-// define MT_fprintf_silent 
-//#define SQLisInitialized
-#define MT_rwlock_write_unset MT_rwlock_write_set
-
 #define UNUSED(x) (void)(x)
 
 typedef struct {
@@ -50,15 +40,15 @@ typedef struct {
 	monetdb_column **converted_columns;
 } monetdb_result_internal;
 
-static MT_RWLock embedded_lock = MT_RWLOCK_INITIALIZER("embedded_lock");
+static MT_Lock embedded_lock = MT_LOCK_INITIALIZER("embedded_lock");
 static bool monetdb_embedded_initialized = false;
 
 bool
 monetdb_is_initialized(void)
 {
-	MT_rwlock_read_set(&embedded_lock);
+	MT_lock_set(&embedded_lock);
 	bool res = monetdb_embedded_initialized;
-	MT_rwlock_read_unset(&embedded_lock);
+	MT_lock_unset(&embedded_lock);
 	return res;
 }
 
@@ -349,9 +339,9 @@ monetdb_connect(monetdb_connection *conn)
 	char* msg = MAL_SUCCEED;
 	if (!conn)
 		return createException(MAL, "embedded.monetdb_connect_internal", "monetdb_connection parameter is NULL");
-	MT_rwlock_read_set(&embedded_lock);
+	MT_lock_set(&embedded_lock);
 	msg = monetdb_connect_internal(conn);
-	MT_rwlock_read_unset(&embedded_lock);
+	MT_lock_unset(&embedded_lock);
 	return msg;
 }
 
@@ -359,9 +349,9 @@ char*
 monetdb_disconnect(monetdb_connection conn)
 {
 	char* msg = MAL_SUCCEED;
-	MT_rwlock_read_set(&embedded_lock);
+	MT_lock_set(&embedded_lock);
 	msg = monetdb_disconnect_internal(conn);
-	MT_rwlock_read_unset(&embedded_lock);
+	MT_lock_unset(&embedded_lock);
 	return msg;
 }
 
@@ -384,7 +374,7 @@ monetdb_startup(char* dbdir, bool sequential)
 	int setlen;
 	gdk_return gdk_res;
 
-	MT_rwlock_write_set(&embedded_lock);
+	MT_lock_set(&embedded_lock);
 	GDKfataljumpenable = 1;
 	if(setjmp(GDKfataljump) != 0) {
 		msg = GDKfatalmsg;
@@ -400,6 +390,7 @@ monetdb_startup(char* dbdir, bool sequential)
 	}
 
         //hacked
+	// define MT_fprintf_silent 
 	// MT_fprintf_silent(silent);
 
 	if ((setlen = mo_builtin_settings(&set)) == 0) {
@@ -461,6 +452,7 @@ monetdb_startup(char* dbdir, bool sequential)
 	if ((msg = malEmbeddedBoot()) != MAL_SUCCEED)
 		goto cleanup;
         //[FIX]: still exists in cmake monetdblite branch
+	//#define SQLisInitialized
 	//if (!SQLisInitialized()) {
 	//	msg = createException(MAL, "embedded.monetdb_startup", "SQL initialization failed");
 	//	goto cleanup;
@@ -482,7 +474,7 @@ cleanup:
 	if (msg)
 		monetdb_shutdown_internal();
 done:
-	MT_rwlock_write_unset(&embedded_lock);
+	MT_lock_unset(&embedded_lock);
 	return msg;
 }
 
@@ -492,9 +484,9 @@ monetdb_clear_prepare(monetdb_connection conn, int id)
 	char query[64], *msg;
 
 	sprintf(query, "release %d", id); //no need to validate at this level
-	MT_rwlock_read_set(&embedded_lock);
+	MT_lock_set(&embedded_lock);
 	msg = monetdb_query_internal(conn, query, NULL, NULL, NULL, 'X');
-	MT_rwlock_read_unset(&embedded_lock);
+	MT_lock_unset(&embedded_lock);
 	return msg;
 }
 
@@ -504,9 +496,9 @@ monetdb_send_close(monetdb_connection conn, int id)
 	char query[64], *msg;
 
 	sprintf(query, "close %d", id); //no need to validate at this level
-	MT_rwlock_read_set(&embedded_lock);
+	MT_lock_set(&embedded_lock);
 	msg = monetdb_query_internal(conn, query, NULL, NULL, NULL, 'X');
-	MT_rwlock_read_unset(&embedded_lock);
+	MT_lock_unset(&embedded_lock);
 	return msg;
 }
 
@@ -517,9 +509,9 @@ monetdb_get_autocommit(monetdb_connection conn, int* result)
 	char *msg = MAL_SUCCEED;
 	Client connection = (Client) conn;
 
-	MT_rwlock_read_set(&embedded_lock);
+	MT_lock_set(&embedded_lock);
 	if ((msg = validate_connection(conn, "embedded.monetdb_get_autocommit")) != MAL_SUCCEED) {
-		MT_rwlock_read_unset(&embedded_lock);
+		MT_lock_unset(&embedded_lock);
 		return msg;
 	}
 
@@ -531,7 +523,7 @@ monetdb_get_autocommit(monetdb_connection conn, int* result)
 	m = ((backend *) connection->sqlcontext)->mvc;
 	*result = m->session->auto_commit;
 cleanup:
-	MT_rwlock_read_unset(&embedded_lock);
+	MT_lock_unset(&embedded_lock);
 	return msg;
 }
 
@@ -541,9 +533,9 @@ monetdb_set_autocommit(monetdb_connection conn, int value)
 	char query[64], *msg;
 
 	sprintf(query, "auto_commit %d", value); //no need to validate at this level
-	MT_rwlock_read_set(&embedded_lock);
+	MT_lock_set(&embedded_lock);
 	msg = monetdb_query_internal(conn, query, NULL, NULL, NULL, 'X');
-	MT_rwlock_read_unset(&embedded_lock);
+	MT_lock_unset(&embedded_lock);
 	return msg;
 }
 
@@ -551,9 +543,9 @@ char*
 monetdb_query(monetdb_connection conn, char* query, monetdb_result** result, lng* affected_rows, int* prepare_id)
 {
 	char* msg;
-	MT_rwlock_read_set(&embedded_lock);
+	MT_lock_set(&embedded_lock);
 	msg = monetdb_query_internal(conn, query, result, affected_rows, prepare_id, 'S');
-	MT_rwlock_read_unset(&embedded_lock);
+	MT_lock_unset(&embedded_lock);
 	return msg;
 }
 
@@ -564,9 +556,9 @@ monetdb_append(monetdb_connection conn, const char* schema, const char* table, b
 	mvc *m;
 	char* msg = MAL_SUCCEED;
 
-	MT_rwlock_read_set(&embedded_lock);
+	MT_lock_set(&embedded_lock);
 	if ((msg = validate_connection(conn, "embedded.monetdb_append")) != MAL_SUCCEED) {
-		MT_rwlock_read_unset(&embedded_lock);
+		MT_lock_unset(&embedded_lock);
 		return msg; //The connection is invalid, there is no transaction going
 	}
 
@@ -645,7 +637,7 @@ monetdb_append(monetdb_connection conn, const char* schema, const char* table, b
 	}
 cleanup:
 	msg = commit_action(m, msg);
-	MT_rwlock_read_unset(&embedded_lock);
+	MT_lock_unset(&embedded_lock);
 	return msg;
 }
 
@@ -653,9 +645,9 @@ char*
 monetdb_cleanup_result(monetdb_connection conn, monetdb_result* result)
 {
 	char* msg = MAL_SUCCEED;
-	MT_rwlock_read_set(&embedded_lock);
+	MT_lock_set(&embedded_lock);
 	msg = monetdb_cleanup_result_internal(conn, result);
-	MT_rwlock_read_unset(&embedded_lock);
+	MT_lock_unset(&embedded_lock);
 	return msg;
 }
 
@@ -667,9 +659,9 @@ monetdb_get_table(monetdb_connection conn, sql_table** table, const char* schema
 	char *msg = MAL_SUCCEED;
 	Client connection = (Client) conn;
 
-	MT_rwlock_read_set(&embedded_lock);
+	MT_lock_set(&embedded_lock);
 	if ((msg = validate_connection(conn, "embedded.monetdb_get_table")) != MAL_SUCCEED) {
-		MT_rwlock_read_unset(&embedded_lock);
+		MT_lock_unset(&embedded_lock);
 		return msg;
 	}
 
@@ -696,7 +688,7 @@ monetdb_get_table(monetdb_connection conn, sql_table** table, const char* schema
 
 cleanup:
 	msg = commit_action(m, msg);
-	MT_rwlock_read_unset(&embedded_lock);
+	MT_lock_unset(&embedded_lock);
 	return msg;
 }
 
@@ -712,9 +704,9 @@ monetdb_get_columns(monetdb_connection conn, const char* schema_name, const char
 	node *n;
 	Client c = (Client) conn;
 
-	MT_rwlock_read_set(&embedded_lock);
+	MT_lock_set(&embedded_lock);
 	if ((msg = validate_connection(conn, "embedded.monetdb_get_columns")) != MAL_SUCCEED) {
-		MT_rwlock_read_unset(&embedded_lock);
+		MT_lock_unset(&embedded_lock);
 		return msg;
 	}
 
@@ -776,7 +768,7 @@ monetdb_get_columns(monetdb_connection conn, const char* schema_name, const char
 
 cleanup:
 	msg = commit_action(m, msg);
-	MT_rwlock_read_unset(&embedded_lock);
+	MT_lock_unset(&embedded_lock);
 	return msg;
 }
 
@@ -784,12 +776,12 @@ char*
 monetdb_shutdown(void)
 {
 	char* msg = MAL_SUCCEED;
-	MT_rwlock_write_set(&embedded_lock);
+	MT_lock_set(&embedded_lock);
 	if (monetdb_embedded_initialized)
 		monetdb_shutdown_internal();
 	else
 		msg = createException(MAL, "embedded.monetdb_shutdown", "MonetDBe has not yet started");
-	MT_rwlock_write_unset(&embedded_lock);
+	MT_lock_unset(&embedded_lock);
 	return msg;
 }
 
@@ -861,9 +853,9 @@ monetdb_result_fetch(monetdb_connection conn, monetdb_column** res, monetdb_resu
 	size_t j = 0;
 	Client c = (Client) conn;
 
-	MT_rwlock_read_set(&embedded_lock);
+	MT_lock_set(&embedded_lock);
 	if ((msg = validate_connection(conn, "embedded.monetdb_result_fetch")) != MAL_SUCCEED) {
-		MT_rwlock_read_unset(&embedded_lock);
+		MT_lock_unset(&embedded_lock);
 		return msg;
 	}
 
@@ -882,7 +874,7 @@ monetdb_result_fetch(monetdb_connection conn, monetdb_column** res, monetdb_resu
 	// check if we have the column converted already
 	if (result->converted_columns[column_index]) {
 		*res = result->converted_columns[column_index];
-		MT_rwlock_read_unset(&embedded_lock);
+		MT_lock_unset(&embedded_lock);
 		return MAL_SUCCEED;
 	}
 
@@ -1053,7 +1045,7 @@ cleanup:
 		*res = result->converted_columns[column_index];
 	}
 	msg = commit_action(m, msg);
-	MT_rwlock_read_unset(&embedded_lock);
+	MT_lock_unset(&embedded_lock);
 	return msg;
 }
 
@@ -1065,9 +1057,9 @@ monetdb_result_fetch_rawcol(monetdb_connection conn, res_col** res, monetdb_resu
 	mvc* m;
 	Client c = (Client) conn;
 
-	MT_rwlock_read_set(&embedded_lock);
+	MT_lock_set(&embedded_lock);
 	if ((msg = validate_connection(conn, "embedded.monetdb_result_fetch_rawcol")) != MAL_SUCCEED) {
-		MT_rwlock_read_unset(&embedded_lock);
+		MT_lock_unset(&embedded_lock);
 		return msg;
 	}
 
@@ -1085,7 +1077,7 @@ cleanup:
 	else
 		*res = &(result->monetdb_resultset->cols[column_index]);
 	msg = commit_action(m, msg);
-	MT_rwlock_read_unset(&embedded_lock);
+	MT_lock_unset(&embedded_lock);
 	return msg;
 }
 
