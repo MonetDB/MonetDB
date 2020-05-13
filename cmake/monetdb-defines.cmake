@@ -106,7 +106,6 @@ function(monetdb_configure_defines)
   check_function_exists("uname" HAVE_UNAME) 
   # Some libc versions on Linux distributions don't have it
   check_symbol_exists("semtimedop" "sys/types.h;sys/ipc.h;sys/sem.h" HAVE_SEMTIMEDOP)
-  # Likely unused, because it contained typo's
   if(HAVE_PTHREAD_H)
     check_function_exists("pthread_kill" HAVE_PTHREAD_KILL)
     check_function_exists("pthread_sigmask" HAVE_PTHREAD_SIGMASK)
