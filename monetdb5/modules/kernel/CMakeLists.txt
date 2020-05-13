@@ -8,43 +8,19 @@
 
 add_library(kernel OBJECT)
 
-set(include_mal_files
-  alarm
-  mmath
-  bat5
-  algebra
-  status
-  group
-  aggr
-  batmmath
-  batstr
-  batcolor
-  microbenchmark)
-
-if(HAVE_HGE)
-  list(APPEND include_mal_files
-    00_aggr_hge)
-endif()
-
-create_include_object(
-  MAL_LANGUAGE
-  name_module "kernel"
-  modules_list ${include_mal_files})
-
 target_sources(kernel
   PRIVATE
-  aggr.c
   alarm.c
-  algebra.c algebra.h
+  mmath.c mmath.h mmath_private.h
   bat5.c
-  batcolor.c batcolor.h
+  algebra.c algebra.h
+  status.c status.h
+  group.c group.h
+  aggr.c
   batmmath.c
   batstr.c
-  group.c group.h
+  batcolor.c batcolor.h
   microbenchmark.c microbenchmark.h
-  mmath.c mmath.h mmath_private.h
-  status.c status.h
-  ${MONETDB_CURRENT_MAL_SOURCES}
   PUBLIC
   ${CMAKE_CURRENT_SOURCE_DIR}/bat5.h)
 
@@ -86,3 +62,7 @@ install(TARGETS
   PUBLIC_HEADER
   DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/monetdb
   INCLUDES DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
+
+install(FILES
+  microbenchmark.mal
+  DESTINATION ${CMAKE_INSTALL_LIBDIR}/monetdb5)

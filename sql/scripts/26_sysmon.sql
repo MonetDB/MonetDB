@@ -19,7 +19,7 @@ returns table(
 	"workers" int,
 	"memory" int
 )
-external name sql.sysmon_queue;
+external name sysmon.queue;
 grant execute on function sys.queue to public;
 
 create view sys.queue as select * from sys.queue();
@@ -27,11 +27,11 @@ grant select on sys.queue to public;
 
 -- operations to manipulate the state of havoc queries
 create procedure sys.pause(tag bigint)
-external name sql.sysmon_pause;
+external name sysmon.pause;
 grant execute on procedure sys.pause(bigint) to public;
 create procedure sys.resume(tag bigint)
-external name sql.sysmon_resume;
+external name sysmon.resume;
 grant execute on procedure sys.resume(bigint) to public;
 create procedure sys.stop(tag bigint)
-external name sql.sysmon_stop;
+external name sysmon.stop;
 grant execute on procedure sys.stop(bigint) to public;

@@ -8,14 +8,6 @@
 
 add_library(optimizer OBJECT)
 
-set(include_mal_files
-  optimizer)
-
-create_include_object(
-  MAL_LANGUAGE
-  name_module "optimizer"
-  modules_list ${include_mal_files})
-
 target_sources(optimizer
   PRIVATE
   optimizer.c optimizer.h optimizer_private.h
@@ -55,7 +47,6 @@ target_sources(optimizer
   opt_postfix.c opt_postfix.h
   opt_volcano.c opt_volcano.h
   opt_wrapper.c
-  ${MONETDB_CURRENT_MAL_SOURCES}
   PUBLIC
   ${CMAKE_CURRENT_SOURCE_DIR}/opt_pipes.h)
 

@@ -28,16 +28,8 @@ static int mel_modules = 0;
 static str mel_module_name[MAX_MAL_MODULES] = {0};
 static mel_atom *mel_module_atoms[MAX_MAL_MODULES] = {0};
 static mel_func *mel_module_funcs[MAX_MAL_MODULES] = {0};
-
-/* the MAL modules contains text to be parsed */
-static int mal_modules = 0;
-static str mal_module_name[MAX_MAL_MODULES] = {0};
-static unsigned char *mal_module_code[MAX_MAL_MODULES] = {0};
-
-#ifdef SPECS
-static int mal_limit = 0;
-static mal_spec *mal_specs[MAX_MAL_MODULES] = {0};
-#endif
+static mel_init  mel_module_inits[MAX_MAL_MODULES] = {0};
+static const char*mel_module_code[MAX_MAL_MODULES] = {0};
 
 int
 mal_startup(void)
@@ -53,34 +45,28 @@ mal_startup(void)
 */
 
 void
-#ifdef SPECS
-mal_module(str name, mel_atom *atoms, mel_func *funcs, mal_spec *specs)
-#else
-mal_module(str name, mel_atom *atoms, mel_func *funcs)
-#endif
+mal_module2(str name, mel_atom *atoms, mel_func *funcs, mel_init initfunc, const char *code)
 {
 	assert (mel_modules < MAX_MAL_MODULES);
 	mel_module_name[mel_modules] = name;
 	mel_module_atoms[mel_modules] = atoms;
 	mel_module_funcs[mel_modules] = funcs;
+	mel_module_inits[mel_modules] = initfunc;
+	mel_module_code[mel_modules] = code;
 	mel_modules++;
-#ifdef SPECS
-	if( specs){
-		assert (mal_limit < MAX_MAL_MODULES);
-		mal_specs[mal_limit++] = specs;
-	}
-#endif
 }
 
 void
-mal_register(str name, unsigned char *code)
+mal_module(str name, mel_atom *atoms, mel_func *funcs)
 {
-	assert (mal_modules < MAX_MAL_MODULES);
-	mal_module_name[mal_modules] = name;
-	mal_module_code[mal_modules] = code;
-	mal_modules++;
+	assert (mel_modules < MAX_MAL_MODULES);
+	mel_module_name[mel_modules] = name;
+	mel_module_atoms[mel_modules] = atoms;
+	mel_module_funcs[mel_modules] = funcs;
+	mel_module_inits[mel_modules] = NULL;
+	mel_module_code[mel_modules] = NULL;
+	mel_modules++;
 }
-
 
 static void 
 initModule(Client c, char *name) 
@@ -115,11 +101,11 @@ initModule(Client c, char *name)
 static str
 addAtom( mel_atom *atoms)
 {
-	for(; atoms && atoms->name; atoms++) {
+	for(; atoms && atoms->name[0]; atoms++) {
 		int i = ATOMallocate(atoms->name);
 		if (is_int_nil(i))
 			throw(TYPE,"addAtom", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-		if (atoms->basetype) {
+		if (atoms->basetype[0]) {
 			int tpe = ATOMindex(atoms->basetype);
 			if (tpe < 0)
 				throw(TYPE,"addAtom", SQLSTATE(HY013) MAL_MALLOC_FAIL);
@@ -175,18 +161,34 @@ addAtom( mel_atom *atoms)
 static str
 makeArgument(MalBlkPtr mb, mel_arg *a, int *idx)
 {
-	int tpe, l;
+	int tpe = TYPE_any;//, l;
 
-	tpe = getAtomIndex(a->type, strlen(a->type),-1);
-	if (a->isbat)
-		tpe = newBatType(tpe);
-
-	if( a->name){
+#ifdef MEL_STR
+	if (!a->type[0]) {
+#else
+	if (a->type == TYPE_any) {
+#endif
+		if (a->isbat)
+			tpe = newBatType(tpe);
+		if (a->nr > 0)
+			setTypeIndex(tpe, a->nr);
+	} else {
+#ifdef MEL_STR
+		tpe = getAtomIndex(a->type, strlen(a->type),-1);
+#else
+		tpe = a->type ;
+#endif
+		if (a->isbat)
+			tpe = newBatType(tpe);
+	}
+	/*
+	if (a->name){
 		*idx = findVariableLength(mb, a->name, l = strlen(a->name));
 		if( *idx != -1)
 			throw(LOADER, "addFunctions", "Duplicate argument name %s", a->name);
 		*idx = newVariable(mb, a->name, l, tpe);
 	} else
+	*/
 		*idx = newTmpVariable(mb, tpe);
 	return MAL_SUCCEED;
 }
@@ -194,7 +196,6 @@ makeArgument(MalBlkPtr mb, mel_arg *a, int *idx)
 static str
 addFunctions(mel_func *fcn){
 	str msg = MAL_SUCCEED;
-	mel_arg *a;
 	str mod;
 	int idx;
 	Module c;
@@ -202,7 +203,7 @@ addFunctions(mel_func *fcn){
 	MalBlkPtr mb;
 	InstrPtr sig;
 
-	for(; fcn && fcn->mod; fcn++) {
+	for(; fcn && fcn->mod[0]; fcn++) {
 		assert(fcn->mod);
 		mod = putName(fcn->mod);
 		c = getModule(mod);
@@ -218,56 +219,174 @@ addFunctions(mel_func *fcn){
 		mb = s->def;
 		if( mb == NULL)
 			throw(LOADER, "addFunctions", "Can not create program block for %s.%s missing", fcn->mod, fcn->fcn);
+		if (fcn->cname && fcn->cname[0])
+			strcpy(mb->binding, fcn->cname);
 		sig= newInstruction(mb, fcn->mod, fcn->fcn);
 		sig->retc = 0;
 		sig->argc = 0;
 		sig->token = fcn->command?COMMANDsymbol:PATTERNsymbol;
 		sig->fcn = (MALfcn)fcn->imp;
 		if( fcn->unsafe)
-			mb->unsafeProp = 0; 
+			mb->unsafeProp = 1; 
 		/* add the return variables */
-		for ( a = fcn->res; a->type && a; a++){
+		if(fcn->retc == 0){ 
+			int idx = newTmpVariable(mb, TYPE_void);
+			sig = pushReturn(mb, sig, idx);
+			if (sig == NULL)
+				throw(LOADER, "addFunctions", "Failed to create void return");
+		}
+		int i;
+		for (i = 0; i<fcn->retc; i++ ){
+			mel_arg *a = fcn->args+i;
 			msg = makeArgument(mb, a, &idx);
 			if( msg)
 				return msg;
 			sig = pushReturn(mb, sig, idx);
 			if (sig == NULL)
-				throw(LOADER, "addFunctions", "Failed to keep argument name %s", a->name);
+				//throw(LOADER, "addFunctions", "Failed to keep argument name %s", a->name);
+				throw(LOADER, "addFunctions", "Failed to keep argument %d", i);
+			int tpe = TYPE_any;
+			if (a->nr > 0) {
+				if (a->isbat)
+					tpe = newBatType(tpe);
+                		setPolymorphic(sig, tpe, TRUE);
+			}
+			if (a->vargs) {
+        			sig->varargs |= VARRETS;
+                		setPolymorphic(sig, TYPE_any, TRUE);
+			}
 		}
 		/* add the arguments */
-		for ( a = fcn->args; a->name && a; a++){
+		for (i = fcn->retc; i<fcn->argc; i++ ){
+			mel_arg *a = fcn->args+i;
 			msg = makeArgument(mb, a, &idx);
 			if( msg)
 				return msg;
 			sig = pushArgument(mb, sig, idx);
 			if (sig == NULL)
-				throw(LOADER, "addFunctions", "Failed to keep argument name %s", a->name);
+				//throw(LOADER, "addFunctions", "Failed to keep argument name %s", a->name);
+				throw(LOADER, "addFunctions", "Failed to keep argument %d", i);
+			int tpe = TYPE_any;
+			if (a->nr > 0) {
+				if (a->isbat)
+					tpe = newBatType(tpe);
+                		setPolymorphic(sig, tpe, TRUE);
+			}
+			if (a->vargs) {
+        			sig->varargs |= VARARGS;
+                		setPolymorphic(sig, TYPE_any, TRUE);
+			}
 		}
-		if(sig->retc == 0 || getArg(sig,0) < 0){
-			sig = pushReturn(mb, sig, TYPE_void);
-			if (sig == NULL)
-				throw(LOADER, "addFunctions", "Failed to keep argument name %s", a->name);
-		}
+		assert(sig->retc > 0);
 		pushInstruction(mb, sig);
 		insertSymbol(c, s);
 	}
 	return msg;
 }
 
-#ifdef SPECS
-static str
-addSpecs(Client c, mal_spec *mal, int listing){
-	str msg = MAL_SUCCEED;
-	
-	for(; mal && mal->mal; mal++){
-		msg = malIncludeString(c, "tmp", mal->mal, listing, (MALfcn) mal->imp);
-		if (msg)
-			return msg;
-	}
-	return msg;
-}
-#endif
+static int
+makeFuncArgument(MalBlkPtr mb, mel_func_arg *a)
+{
+	int tpe = TYPE_any;
 
+	if (a->type == TYPE_any) {
+		if (a->isbat)
+			tpe = newBatType(tpe);
+		if (a->nr > 0)
+			setTypeIndex(tpe, a->nr);
+	} else {
+		tpe = a->type;;
+		if (a->isbat)
+			tpe = newBatType(tpe);
+	}
+	return newTmpVariable(mb, tpe);
+}
+
+int 
+melFunction(bool command, char *mod, char *fcn, fptr imp, char *fname, bool unsafe, char *comment, int retc, int argc, ... )
+{
+	int i, idx;
+	Module c;
+	Symbol s;
+	MalBlkPtr mb;
+	InstrPtr sig;
+	va_list va;
+
+	va_start(va, argc);
+	assert(mod);
+	mod = putName(mod);
+	c = getModule(mod);
+	if (c == NULL) {
+		if (globalModule(mod) == NULL)
+			return MEL_ERR;
+		c = getModule(mod);
+	}
+
+	s = newSymbol(fcn, command ? COMMANDsymbol:PATTERNsymbol );
+	if (s == NULL)
+		return MEL_ERR;
+	mb = s->def;
+	(void)comment;
+	if (fname)
+		strcpy(mb->binding, fname);
+	if( mb == NULL)
+		return MEL_ERR;
+	sig = newInstruction(mb, mod, fcn);
+	sig->retc = 0;
+	sig->argc = 0;
+	sig->token = command ? COMMANDsymbol:PATTERNsymbol;
+	sig->fcn = (MALfcn)imp;
+	if (unsafe)
+		mb->unsafeProp = 1; 
+	/* add the return variables */
+	if(retc == 0) { 
+		idx = newTmpVariable(mb, TYPE_void);
+		sig = pushReturn(mb, sig, idx);
+		if (sig == NULL)
+			return MEL_ERR;
+	}
+
+	for (i = 0; i<retc; i++ ){
+		mel_func_arg a = va_arg(va, mel_func_arg);
+		idx = makeFuncArgument(mb, &a);
+		sig = pushReturn(mb, sig, idx);
+		if (sig == NULL)
+			return MEL_ERR;
+		int tpe = TYPE_any;
+		if (a.nr > 0) {
+			if (a.isbat)
+				tpe = newBatType(tpe);
+               		setPolymorphic(sig, tpe, TRUE);
+		}
+		if (a.vargs) {
+        		sig->varargs |= VARRETS;
+               		setPolymorphic(sig, TYPE_any, TRUE);
+		}
+	}
+	/* add the arguments */
+	for (i = retc; i<argc; i++ ){
+		mel_func_arg a = va_arg(va, mel_func_arg);
+		idx = makeFuncArgument(mb, &a);
+		sig = pushArgument(mb, sig, idx);
+		if (sig == NULL)
+			return MEL_ERR;
+		int tpe = TYPE_any;
+		if (a.nr > 0) {
+			if (a.isbat)
+				tpe = newBatType(tpe);
+                	setPolymorphic(sig, tpe, TRUE);
+		}
+		if (a.vargs) {
+        		sig->varargs |= VARARGS;
+                	setPolymorphic(sig, TYPE_any, TRUE);
+		}
+	}
+	assert(sig->retc > 0);
+	pushInstruction(mb, sig);
+	insertSymbol(c, s);
+	va_end(va);
+	return MEL_OK;
+}
 
 static str
 malPrelude(Client c, int listing, int embedded)
@@ -278,9 +397,6 @@ malPrelude(Client c, int listing, int embedded)
 	(void) listing;
 	/* Add all atom definitions */
 	for(i = 0; i<mel_modules; i++) {
-		if (embedded && strcmp(mel_module_name[i], "mal_mapi") == 0) /* skip mapi in the embedded version */
-			continue;
-
 		if (mel_module_atoms[i]) {
 			msg = addAtom(mel_module_atoms[i]);
 			if (msg)
@@ -290,40 +406,30 @@ malPrelude(Client c, int listing, int embedded)
 
 	/* Add the signatures, where we now have access to all atoms */
 	for(i = 0; i<mel_modules; i++) {
+		if (!malLibraryEnabled(mel_module_name[i]))
+			continue;
 		if (mel_module_funcs[i]) {
 			msg = addFunctions(mel_module_funcs[i]);
+			if (!msg && mel_module_code[i]) /* some modules may also have some function definitions */
+				msg = malIncludeString(c, mel_module_name[i], (str)mel_module_code[i], listing, NULL);
+                       	if (msg)
+                               	return msg;
+
+			/* skip sql should be last to startup and mapi in the embedded version */
+			if (strcmp(mel_module_name[i], "sql") == 0 || (embedded && strcmp(mel_module_name[i], "mapi") == 0)) 
+				continue;
+			if (!mel_module_inits[i])
+				initModule(c, mel_module_name[i]);
+		}
+		if (mel_module_inits[i]) {
+			msg = mel_module_inits[i]();
 			if (msg)
 				return msg;
+			/* skip sql should be last to startup and mapi in the embedded version */
+			if (strcmp(mel_module_name[i], "sql") == 0 || (embedded && strcmp(mel_module_name[i], "mapi") == 0)) 
+				continue;
 			initModule(c, mel_module_name[i]);
 		}
-	}
-
-#ifdef SPECS
-	/* The more compact and readible specs approach */
-	for(i = 0; i < mal_limit; i++) {
-		msg = addSpecs(c, mal_specs[i], listing);
-		if (msg)
-			return msg;
-	}
-#endif
-
-	/* Once we have all modules loaded, we should execute their prelude function for further initialization*/
-	for(i = 0; i<mal_modules; i++) {
-		if (embedded && strcmp(mal_module_name[i], "mal_mapi") == 0) 
-			continue;
-		if ( mal_module_code[i]){
-			msg = malIncludeString(c, mal_module_name[i], (str)mal_module_code[i], listing, NULL);
-			if (msg)
-				return msg;
-		}
-	}
-
-	/* execute preludes */
-	for(i = 0; i<mal_modules; i++) 
-	if( mal_module_name[i]) {
-		if (strcmp(mal_module_name[i], "sql") == 0) /* skip sql should be last to startup */
-			continue;
-		initModule(c, mal_module_name[i]);
 	}
 	return MAL_SUCCEED;
 }
@@ -336,13 +442,11 @@ malIncludeModules(Client c, char *modules[], int listing, int embedded)
 	
 	for(i = 0; modules[i]; i++) {
 		/* load library */
+		if (!malLibraryEnabled(modules[i]))
+			continue;
 		if ((msg = loadLibrary(modules[i], listing)) != NULL)
 			return msg;
 	}
-	/* only when the libraries are loaded the code is dynamically added, the second call this
-	 * isn't done. So here the mal_modules counter is reset for this 
-	 */
-
 	/* load the mal code for these modules and execute preludes */
 	if ((msg = malPrelude(c, listing, embedded)) != NULL)
 		return msg;
@@ -354,4 +458,3 @@ malIncludeModules(Client c, char *modules[], int listing, int embedded)
 	}
 	return MAL_SUCCEED;
 }
-

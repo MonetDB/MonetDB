@@ -9,16 +9,8 @@
 if(GDAL_FOUND)
   add_library(shp MODULE)
 
-  set(include_mal_files
-    shp)
-
   set(include_sql_files
     75_shp)
-
-  create_include_object(
-    MAL_LANGUAGE
-    name_module "shp"
-    modules_list ${include_mal_files})
 
   create_include_object(
     SQL_LANGUAGE
@@ -28,7 +20,6 @@ if(GDAL_FOUND)
   target_sources(shp
     PRIVATE
     shp.c shp.h
-    ${MONETDB_CURRENT_MAL_SOURCES}
     ${MONETDB_CURRENT_SQL_SOURCES})
 
   target_include_directories(shp

@@ -13,23 +13,6 @@ set(sql_public_headers
 #add_library(sql MODULE)
 add_library(sql SHARED)
 
-set(include_mal_files
-  sql
-  sql_decimal
-  sql_rank
-  sql_subquery
-  wlr
-  sqlcatalog
-  sql_transaction
-  sql_session)
-
-if(HAVE_HGE)
-  list(APPEND include_mal_files
-    sql_hge
-    sql_decimal_hge
-    sql_rank_hge)
-endif()
-
 set(include_sql_files
   09_like
   10_math
@@ -108,7 +91,6 @@ target_sources(sql
   sql_datetrunc.c
   sql_rank.c sql_rank.h
   sql_subquery.c sql_subquery.h
-  ${MONETDB_CURRENT_MAL_SOURCES}
   ${MONETDB_CURRENT_SQL_SOURCES}
   PUBLIC
   ${sql_public_headers})

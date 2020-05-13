@@ -8,19 +8,10 @@
 
 add_library(opt_sql_append MODULE)
 
-set(include_mal_files
-  opt_sql_append)
-
-create_include_object(
-  MAL_LANGUAGE
-  name_module "opt_sql_append"
-  modules_list ${include_mal_files})
-
 target_sources(opt_sql_append
   PRIVATE
   opt_sql_append.c
-  opt_sql_append.h
-  ${MONETDB_CURRENT_MAL_SOURCES})
+  opt_sql_append.h)
 
 target_include_directories(opt_sql_append
   PRIVATE
@@ -49,8 +40,3 @@ set_target_properties(opt_sql_append
 install(TARGETS
   opt_sql_append
   DESTINATION ${CMAKE_INSTALL_LIBDIR}/monetdb5)
-
-#install(FILES
-#  91_opt_sql_append.mal
-#  DESTINATION
-#  ${CMAKE_INSTALL_LIBDIR}/monetdb5/autoload)

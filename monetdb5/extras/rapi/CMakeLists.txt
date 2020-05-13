@@ -9,20 +9,11 @@
 if(HAVE_LIBR)
   add_library(rapi MODULE)
 
-  set(include_mal_files
-    rapi)
-
-  create_include_object(
-    MAL_LANGUAGE
-    name_module "rapi"
-    modules_list ${include_mal_files})
-
   target_sources(rapi
     PRIVATE
     rapi.c
     rapi.h
-    converters.c.h
-    ${MONETDB_CURRENT_MAL_SOURCES})
+    converters.c.h)
 
   target_include_directories(rapi
     PRIVATE

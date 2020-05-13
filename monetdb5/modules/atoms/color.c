@@ -398,27 +398,26 @@ CLRcolor(color *c, const char **val)
 
 #include "mel.h"
 mel_atom color_init_atoms[] = {
- { .name="color", .basetype="int", .size=sizeof(color), .tostr=(fptr)&color_tostr, .fromstr=(fptr)&color_fromstr, },
- { .name=NULL } 
+ { .name="color", .basetype="int", .size=sizeof(color), .tostr=(fptr)&color_tostr, .fromstr=(fptr)&color_fromstr, },  { .cmp=NULL } 
 };
 mel_func color_init_funcs[] = {
- { .command=true, .mod="color", .fcn="str", .imp=(fptr)&CLRstr, .unsafe=false, .comment="Converts color to string ", .args={{ .name="s", .type="color", .isbat=false, .vargs=false }, }, .res={{ .type="str", .isbat=false, .vargs=false }, } },
- { .command=true, .mod="color", .fcn="color", .imp=(fptr)&CLRcolor, .unsafe=false, .comment="Converts string to color", .args={{ .name="s", .type="str", .isbat=false, .vargs=false }, }, .res={{ .type="color", .isbat=false, .vargs=false }, } },
- { .command=true, .mod="color", .fcn="rgb", .imp=(fptr)&CLRrgb, .unsafe=false, .comment="Converts an RGB triplets to a color atom", .args={{ .name="r", .type="int", .isbat=false, .vargs=false }, { .name="g", .type="int", .isbat=false, .vargs=false }, { .name="b", .type="int", .isbat=false, .vargs=false }, }, .res={{ .type="color", .isbat=false, .vargs=false }, } },
- { .command=true, .mod="color", .fcn="red", .imp=(fptr)&CLRred, .unsafe=false, .comment="Extracts red component from a color atom", .args={{ .name="c", .type="color", .isbat=false, .vargs=false }, }, .res={{ .type="int", .isbat=false, .vargs=false }, } },
- { .command=true, .mod="color", .fcn="green", .imp=(fptr)&CLRgreen, .unsafe=false, .comment="Extracts green component from a color atom", .args={{ .name="c", .type="color", .isbat=false, .vargs=false }, }, .res={{ .type="int", .isbat=false, .vargs=false }, } },
- { .command=true, .mod="color", .fcn="blue", .imp=(fptr)&CLRblue, .unsafe=false, .comment="Extracts blue component from a color atom", .args={{ .name="c", .type="color", .isbat=false, .vargs=false }, }, .res={{ .type="int", .isbat=false, .vargs=false }, } },
- { .command=true, .mod="color", .fcn="hue", .imp=(fptr)&CLRhueInt, .unsafe=false, .comment="Extracts hue component from a color atom", .args={{ .name="c", .type="color", .isbat=false, .vargs=false }, }, .res={{ .type="int", .isbat=false, .vargs=false }, } },
- { .command=true, .mod="color", .fcn="saturation", .imp=(fptr)&CLRsaturationInt, .unsafe=false, .comment="Extracts saturation component from a color atom", .args={{ .name="c", .type="color", .isbat=false, .vargs=false }, }, .res={{ .type="int", .isbat=false, .vargs=false }, } },
- { .command=true, .mod="color", .fcn="value", .imp=(fptr)&CLRvalueInt, .unsafe=false, .comment="Extracts value component from a color atom", .args={{ .name="c", .type="color", .isbat=false, .vargs=false }, }, .res={{ .type="int", .isbat=false, .vargs=false }, } },
- { .command=true, .mod="color", .fcn="hsv", .imp=(fptr)&CLRhsv, .unsafe=false, .comment="Converts an HSV triplets to a color atom", .args={{ .name="h", .type="flt", .isbat=false, .vargs=false }, { .name="s", .type="flt", .isbat=false, .vargs=false }, { .name="v", .type="flt", .isbat=false, .vargs=false }, }, .res={{ .type="color", .isbat=false, .vargs=false }, } },
- { .command=true, .mod="color", .fcn="hue", .imp=(fptr)&CLRhue, .unsafe=false, .comment="Extracts hue component from a color atom", .args={{ .name="c", .type="color", .isbat=false, .vargs=false }, }, .res={{ .type="flt", .isbat=false, .vargs=false }, } },
- { .command=true, .mod="color", .fcn="saturation", .imp=(fptr)&CLRsaturation, .unsafe=false, .comment="Extracts saturation component from a color atom", .args={{ .name="c", .type="color", .isbat=false, .vargs=false }, }, .res={{ .type="flt", .isbat=false, .vargs=false }, } },
- { .command=true, .mod="color", .fcn="value", .imp=(fptr)&CLRvalue, .unsafe=false, .comment="Extracts value component from a color atom", .args={{ .name="c", .type="color", .isbat=false, .vargs=false }, }, .res={{ .type="flt", .isbat=false, .vargs=false }, } },
- { .command=true, .mod="color", .fcn="ycc", .imp=(fptr)&CLRycc, .unsafe=false, .comment="Converts an YCC triplets to a color atom", .args={{ .name="y", .type="int", .isbat=false, .vargs=false }, { .name="cr", .type="int", .isbat=false, .vargs=false }, { .name="cb", .type="int", .isbat=false, .vargs=false }, }, .res={{ .type="color", .isbat=false, .vargs=false }, } },
- { .command=true, .mod="color", .fcn="luminance", .imp=(fptr)&CLRluminance, .unsafe=false, .comment="Extracts Y(luminance) component from a color atom", .args={{ .name="c", .type="color", .isbat=false, .vargs=false }, }, .res={{ .type="int", .isbat=false, .vargs=false }, } },
- { .command=true, .mod="color", .fcn="cr", .imp=(fptr)&CLRcr, .unsafe=false, .comment="Extracts Cr(red color) component from a color atom", .args={{ .name="c", .type="color", .isbat=false, .vargs=false }, }, .res={{ .type="int", .isbat=false, .vargs=false }, } },
- { .command=true, .mod="color", .fcn="cb", .imp=(fptr)&CLRcb, .unsafe=false, .comment="Extracts Cb(blue color) component from a color atom", .args={{ .name="c", .type="color", .isbat=false, .vargs=false }, }, .res={{ .type="int", .isbat=false, .vargs=false }, } },
+ command("color", "str", CLRstr, false, "Converts color to string ", args(1,2, arg("",str),arg("s",color))),
+ command("color", "color", CLRcolor, false, "Converts string to color", args(1,2, arg("",color),arg("s",str))),
+ command("color", "rgb", CLRrgb, false, "Converts an RGB triplets to a color atom", args(1,4, arg("",color),arg("r",int),arg("g",int),arg("b",int))),
+ command("color", "red", CLRred, false, "Extracts red component from a color atom", args(1,2, arg("",int),arg("c",color))),
+ command("color", "green", CLRgreen, false, "Extracts green component from a color atom", args(1,2, arg("",int),arg("c",color))),
+ command("color", "blue", CLRblue, false, "Extracts blue component from a color atom", args(1,2, arg("",int),arg("c",color))),
+ command("color", "hue", CLRhueInt, false, "Extracts hue component from a color atom", args(1,2, arg("",int),arg("c",color))),
+ command("color", "saturation", CLRsaturationInt, false, "Extracts saturation component from a color atom", args(1,2, arg("",int),arg("c",color))),
+ command("color", "value", CLRvalueInt, false, "Extracts value component from a color atom", args(1,2, arg("",int),arg("c",color))),
+ command("color", "hsv", CLRhsv, false, "Converts an HSV triplets to a color atom", args(1,4, arg("",color),arg("h",flt),arg("s",flt),arg("v",flt))),
+ command("color", "hue", CLRhue, false, "Extracts hue component from a color atom", args(1,2, arg("",flt),arg("c",color))),
+ command("color", "saturation", CLRsaturation, false, "Extracts saturation component from a color atom", args(1,2, arg("",flt),arg("c",color))),
+ command("color", "value", CLRvalue, false, "Extracts value component from a color atom", args(1,2, arg("",flt),arg("c",color))),
+ command("color", "ycc", CLRycc, false, "Converts an YCC triplets to a color atom", args(1,4, arg("",color),arg("y",int),arg("cr",int),arg("cb",int))),
+ command("color", "luminance", CLRluminance, false, "Extracts Y(luminance) component from a color atom", args(1,2, arg("",int),arg("c",color))),
+ command("color", "cr", CLRcr, false, "Extracts Cr(red color) component from a color atom", args(1,2, arg("",int),arg("c",color))),
+ command("color", "cb", CLRcb, false, "Extracts Cb(blue color) component from a color atom", args(1,2, arg("",int),arg("c",color))),
  { .imp=NULL }
 };
 #include "mal_import.h"

@@ -784,7 +784,7 @@ typeElm(Client cntxt, int def)
 static void
 helpInfo(Client cntxt, str *help)
 {
-	int l;
+	int l = 0;
 	char c, *e, *s;
 
 	if (MALkeyword(cntxt, "comment", 7)) {

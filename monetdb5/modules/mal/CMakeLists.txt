@@ -8,93 +8,40 @@
 
 add_library(malmodules OBJECT)
 
-set(include_mal_files
-  language
-  bbp
-  profiler
-  batExtensions
-  orderidx
-  inspect
-  manual
-  mal_io
-  mkey
-  manifold
-  iterator
-  clients
-  factories
-  groupby
-  mdb
-  pcre
-  mat
-  transaction
-  oltp
-  wlc
-  mal_mapi
-  remote
-  txtsim
-  tokenizer
-  sample
-  json_util
-  batmtime
-  querylog
-  sysmon
-  tracer)
-
-if(HAVE_HGE)
-  list(APPEND include_mal_files
-    00_batExtensions_hge
-    00_batcalc_hge
-    00_calc_hge
-    00_iterator_hge
-    00_language_hge
-    00_mal_mapi_hge
-    00_mkey_hge)
-endif()
-
-list(APPEND include_mal_files
-  01_batcalc
-  01_calc)
-
-create_include_object(
-  MAL_LANGUAGE
-  name_module "malmodules"
-  modules_list ${include_mal_files})
-
 target_sources(malmodules
   PRIVATE
-  batExtensions.c batExtensions.h
+  language.c language.h
   bbp.c bbp.h
+  profiler.c profiler.h
+  batExtensions.c batExtensions.h
+  orderidx.c orderidx.h
+  inspect.c inspect.h
+  manual.c manual.h
+  mal_io.c mal_io.h
+  mkey.c mkey.h
+  manifold.c manifold.h
+  iterator.c  iterator.h
   clients.c clients.h
   factories.c factories.h
   groupby.c groupby.h
-  inspect.c inspect.h
-  orderidx.c orderidx.h
-  iterator.c  iterator.h
-  projectionpath.c  projectionpath.h
-  language.c language.h
-  mal_io.c mal_io.h
-  mal_mapi.c mal_mapi.h
-  manual.c manual.h
-  mat.c mat.h
   mdb.c mdb.h
-  mkey.c mkey.h
-  manifold.c manifold.h
+  pcre.c
+  mat.c mat.h
+  transaction.c
   oltp.c oltp.h
   wlc.c
-  pcre.c
-  profiler.c profiler.h
-  querylog.c querylog.h
+  mal_mapi.c mal_mapi.h
   remote.c remote.h
-  sysmon.c sysmon.h
-  tablet.c tablet.h
-  tokenizer.c tokenizer.h
-  transaction.c
   txtsim.c txtsim.h
+  tokenizer.c tokenizer.h
   sample.c sample.h
   json_util.c json_util.h
-  calc.c batcalc.c
+  querylog.c querylog.h
+  sysmon.c sysmon.h
   tracer.c tracer.h
-  ${MONETDB_CURRENT_MAL_SOURCES}
+  projectionpath.c  projectionpath.h
+  tablet.c tablet.h
+  batcalc.c calc.c 
   PUBLIC
   ${CMAKE_CURRENT_SOURCE_DIR}/wlc.h)
 

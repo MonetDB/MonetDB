@@ -6012,3 +6012,556 @@ wkbContains_point(bit *out, wkb **a, dbl *point_x, dbl *point_y)
 	*out = TRUE;
 	return MAL_SUCCEED;
 }
+
+static const char geom_functions[] = "				\
+module geom;							\
+								\
+function AsText(w:wkb) :str;					\
+	x := ToText(w,0);					\
+	return x;						\
+end AsText;							\
+function AsEWKT(w:wkb) :str;					\
+	x := ToText(w,1);					\
+	return x;						\
+end AsEWKT;							\
+								\
+function GeomFromText(wkt:str, srid:int) :wkb; 			\
+	x := FromText(wkt,srid,0);				\
+	return x;						\
+end GeomFromText;						\
+function PointFromText(wkt:str, srid:int) :wkb; 		\
+	x := FromText(wkt,srid,1);				\
+	return x;						\
+end PointFromText;						\
+function LineFromText(wkt:str, srid:int) :wkb;			\
+	x := FromText(wkt,srid,2);				\
+	return x;						\
+end LineFromText;						\
+function PolygonFromText(wkt:str, srid:int) :wkb;		\
+	x := FromText(wkt,srid,4);				\
+	return x;						\
+end PolygonFromText;						\
+function MPointFromText(wkt:str, srid:int) :wkb;		\
+	x := FromText(wkt,srid,5);				\
+	return x;						\
+end MPointFromText;						\
+function MLineFromText(wkt:str, srid:int) :wkb;			\
+	x := FromText(wkt,srid,6);				\
+	return x;						\
+end MLineFromText;						\
+function MPolyFromText(wkt:str, srid:int) :wkb;			\
+	x := FromText(wkt,srid,7);				\
+	return x;						\
+end MPolyFromText;						\
+function GeomCollFromText(wkt:str, srid:int) :wkb;		\
+	x := FromText(wkt,srid,8);				\
+	return x;						\
+end GeomCollFromText;						\
+								\
+function GeomFromText(wkt:str) :wkb; 				\
+	x := FromText(wkt,0,0);					\
+	return x;						\
+end GeomFromText;						\
+function PointFromText(wkt:str) :wkb; 				\
+	x := FromText(wkt,0,1);					\
+	return x;						\
+end PointFromText;						\
+function LineFromText(wkt:str) :wkb;				\
+	x := FromText(wkt,0,2);					\
+	return x;						\
+end LineFromText;						\
+function PolygonFromText(wkt:str) :wkb;				\
+	x := FromText(wkt,0,4);					\
+	return x;						\
+end PolygonFromText;						\
+function MPointFromText(wkt:str) :wkb;				\
+	x := FromText(wkt,0,5);					\
+	return x;						\
+end MPointFromText;						\
+function MLineFromText(wkt:str) :wkb;				\
+	x := FromText(wkt,0,6);					\
+	return x;						\
+end MLineFromText;						\
+function MPolyFromText(wkt:str) :wkb;				\
+	x := FromText(wkt,0,7);					\
+	return x;						\
+end MPolyFromText;						\
+function GeomCollFromText(wkt:str) :wkb;			\
+	x := FromText(wkt,0,8);					\
+	return x;						\
+end GeomCollFromText;						\
+								\
+#function GeomFromWKB(wkb_raw:????, srid:int) : wkb;		\
+#	x := wkb.FromWKB(wkb_raw, srid, 0);			\
+#	return x;						\
+#end GeomFromWKB;						\
+								\
+function NumInteriorRings(w:wkb) :int;				\
+	x := geom.NumRings(w, 0);				\
+	return x;						\
+end NumInteriorRings;						\
+function NRings(w:wkb) :int;					\
+	x := geom.NumRings(w, 1);				\
+	return x;						\
+end NRings;							\
+								\
+function BdPolyFromText(wkt:str, srid:int) :wkb;		\
+	x := MLineStringToPolygon(wkt,srid,0);			\
+	return x;						\
+end BdPolyFromText;						\
+function BdMPolyFromText(wkt:str, srid:int) :wkb;		\
+	x := MLineStringToPolygon(wkt,srid,1);			\
+	return x;						\
+end BdMPolyFromText;						\
+								\
+function MakePoint(x:dbl, y:dbl) :wkb;				\
+	p := MakePointXYZM(x, y, 0:dbl, 0:dbl, 0);		\
+	return p;						\
+end MakePoint;							\
+function MakePoint(x:dbl, y:dbl, z:dbl) :wkb;			\
+	p := MakePointXYZM(x, y, z, 0:dbl, 10);			\
+	return p;						\
+end MakePoint;							\
+function MakePointM(x:dbl, y:dbl, m:dbl) :wkb;			\
+	p := MakePointXYZM(x, y, 0:dbl, m, 1);			\
+	return p;						\
+end MakePointM;							\
+function MakePoint(x:dbl, y:dbl, z:dbl, m:dbl) :wkb;		\
+	p := MakePointXYZM(x, y, z, m, 11);			\
+	return p;						\
+end MakePoint;							\
+								\
+function GeometryType1(w:wkb) :str;				\
+	x := GeometryType(w, 0);				\
+	return x;						\
+end GeometryType1;						\
+function GeometryType2(w:wkb) :str;				\
+	x := GeometryType(w, 1);				\
+	return x;						\
+end GeometryType2;						\
+								\
+function X(w:wkb) :dbl;						\
+	c := GetCoordinate(w, 0);				\
+	return c;						\
+end X;								\
+function Y(w:wkb) :dbl;						\
+	c := GetCoordinate(w, 1);				\
+	return c;						\
+end Y;								\
+function Z(w:wkb) :dbl;						\
+	c := GetCoordinate(w, 2);				\
+	return c;						\
+end Z;								\
+								\
+function Force2D(g:wkb) :wkb;					\
+	x := ForceDimensions(g, 2);				\
+	return x;						\
+end Force2D;							\
+								\
+function Force3D(g:wkb) :wkb;					\
+	x := ForceDimensions(g, 3);				\
+	return x;						\
+end Force3D;							\
+								\
+function Translate(g:wkb, dx:dbl, dy:dbl) :wkb;			\
+	x := Translate3D(g,dx,dy,0:dbl);			\
+	return x;						\
+end Translate;							\
+								\
+function Translate(g:wkb, dx:dbl, dy:dbl, dz:dbl) :wkb;		\
+	x := Translate3D(g,dx,dy,dz);				\
+	return x;						\
+end Translate;							\
+								\
+function NumPoints(w:wkb) :int;					\
+	x := PointsNum(w, 1);					\
+	return x;						\
+end NumPoints;							\
+function NPoints(w:wkb) :int;					\
+	x := PointsNum(w, 0);					\
+	return x;						\
+end NPoints;							\
+								\
+function MakeEnvelope(xmin:dbl, ymin:dbl, xmax:dbl, ymax:dbl, srid:int) :wkb;	\
+	x := EnvelopeFromCoordinates(xmin, ymin, xmax, ymax, srid);		\
+	return x;						\
+end MakeEnvelope;						\
+								\
+function MakeEnvelope(xmin:dbl, ymin:dbl, xmax:dbl, ymax:dbl) :wkb;		\
+	x := EnvelopeFromCoordinates(xmin, ymin, xmax, ymax, 0);\
+	return x;						\
+end MakeEnvelope;						\
+								\
+function MakePolygon(external:wkb) :wkb;			\
+	x := Polygon(external, nil:bat[:wkb], 0);		\
+	return x;						\
+end MakePolygon;						\
+function MakePolygon(external:wkb, srid:int) :wkb;		\
+	x := Polygon(external, nil:bat[:wkb], srid);		\
+	return x;						\
+end MakePolygon;						\
+#function MakePolygon(external:wkb, internal:bat[:wkb]) :wkb;	\
+#	x := Polygon(external, internal, 0);			\
+#	return x;						\
+#end MakePolygon;						\
+								\
+function XMinFromWKB(g:wkb) :dbl;				\
+	x := coordinateFromWKB(g, 1);				\
+	return x;						\
+end XMinFromWKB;						\
+function YMinFromWKB(g:wkb) :dbl;				\
+	x := coordinateFromWKB(g, 2);				\
+	return x;						\
+end YMinFromWKB;						\
+function XMaxFromWKB(g:wkb) :dbl;				\
+	x := coordinateFromWKB(g, 3);				\
+	return x;						\
+end XMaxFromWKB;						\
+function YMaxFromWKB(g:wkb) :dbl;				\
+	x := coordinateFromWKB(g, 4);				\
+	return x;						\
+end YMaxFromWKB;						\
+function XMinFromMBR(b:mbr) :dbl;				\
+	x := coordinateFromMBR(b, 1);				\
+	return x;						\
+end XMinFromMBR;						\
+function YMinFromMBR(b:mbr) :dbl;				\
+	x := coordinateFromMBR(b, 2);				\
+	return x;						\
+end YMinFromMBR;						\
+function XMaxFromMBR(b:mbr) :dbl;				\
+	x := coordinateFromMBR(b, 3);				\
+	return x;						\
+end XMaxFromMBR;						\
+function YMaxFromMBR(b:mbr) :dbl;				\
+	x := coordinateFromMBR(b, 4);				\
+	return x;						\
+end YMaxFromMBR;						\
+								\
+module batgeom;							\
+								\
+function GeomFromText(wkt:bat[:str], srid:int) :bat[:wkb];	\
+	x := FromText(wkt,srid,0);				\
+	return x;						\
+end GeomFromText;						\
+function PointFromText(wkt:bat[:str], srid:int) :bat[ :wkb];	\
+	x := FromText(wkt,srid,1);				\
+	return x;						\
+end PointFromText;						\
+function LineFromText(wkt:bat[:str], srid:int) :bat[ :wkb];	\
+	x := FromText(wkt,srid,2);				\
+	return x;						\
+end LineFromText;						\
+function PolygonFromText(wkt:bat[:str], srid:int) :bat[ :wkb];	\
+	x := FromText(wkt,srid,4);				\
+	return x;						\
+end PolygonFromText;						\
+function MPointFromText(wkt:bat[:str], srid:int) :bat[ :wkb];	\
+	x := FromText(wkt,srid,5);				\
+	return x;						\
+end MPointFromText;						\
+function MLineFromText(wkt:bat[:str], srid:int) :bat[ :wkb];	\
+	x := FromText(wkt,srid,6);				\
+	return x;						\
+end MLineFromText;						\
+function MPolyFromText(wkt:bat[:str], srid:int) :bat[ :wkb];	\
+	x := FromText(wkt,srid,7);				\
+	return x;						\
+end MPolyFromText;						\
+function GeomCollFromText(wkt:bat[:str], srid:int) :bat[ :wkb];	\
+	x := FromText(wkt,srid,8);				\
+	return x;						\
+end GeomCollFromText;						\
+								\
+function GeomFromText(wkt:bat[:str]) :bat[:wkb]; 		\
+	x := FromText(wkt,0,0);					\
+	return x;						\
+end GeomFromText;						\
+function PointFromText(wkt:bat[:str]) :bat[ :wkb];		\
+	x := FromText(wkt,0,1);					\
+	return x;						\
+end PointFromText;						\
+function LineFromText(wkt:bat[:str]) :bat[ :wkb];		\
+	x := FromText(wkt,0,2);					\
+	return x;						\
+end LineFromText;						\
+function PolygonFromText(wkt:bat[:str]) :bat[ :wkb];		\
+	x := FromText(wkt,0,4);					\
+	return x;						\
+end PolygonFromText;						\
+function MPointFromText(wkt:bat[:str]) :bat[ :wkb];		\
+	x := FromText(wkt,0,5);					\
+	return x;						\
+end MPointFromText;						\
+function MLineFromText(wkt:bat[:str]) :bat[ :wkb];		\
+	x := FromText(wkt,0,6);					\
+	return x;						\
+end MLineFromText;						\
+function MPolyFromText(wkt:bat[:str]) :bat[ :wkb];		\
+	x := FromText(wkt,0,7);					\
+	return x;						\
+end MPolyFromText;						\
+function GeomCollFromText(wkt:bat[:str]) :bat[ :wkb];		\
+	x := FromText(wkt,0,8);					\
+	return x;						\
+end GeomCollFromText;						\
+								\
+function AsText(w:bat[:wkb]) :bat[:str];			\
+	x := ToText(w,0);					\
+	return x;						\
+end AsText;							\
+function AsEWKT(w:bat[:wkb]) :bat[:str];			\
+	x := ToText(w,1);					\
+	return x;						\
+end AsEWKT;							\
+								\
+function GeometryType1(w:bat[:wkb]) :bat[:str];			\
+	x := GeometryType(w, 0);				\
+	return x;						\
+end GeometryType1;						\
+function GeometryType2(w:bat[:wkb]) :bat[:str];			\
+	x := GeometryType(w, 1);				\
+	return x;						\
+end GeometryType2;						\
+function MakePoint(x:bat[:dbl], y:bat[:dbl]) :bat[:wkb];	\
+	p := MakePointXYZM(x, y, nil:bat[:dbl], nil:bat, 0);	\
+	return p;						\
+end MakePoint;							\
+function MakePoint(x:bat[:dbl], y:bat[:dbl], z:bat[:dbl]) :bat[:wkb];			\
+	p := MakePointXYZM(x, y, z, nil:bat[:dbl], 10);		\
+	return p;						\
+end MakePoint;							\
+function MakePointM(x:bat[:dbl], y:bat[:dbl], m:bat[:dbl]) :bat[:wkb];			\
+	p := MakePointXYZM(x, y, nil:bat[:dbl], m, 1);		\
+	return p;						\
+end MakePointM;							\
+function MakePoint(x:bat[:dbl], y:bat[:dbl], z:bat[:dbl], m:bat[:dbl]) :bat[:wkb];	\
+	p := MakePointXYZM(x, y, z, m, 11);			\
+	return p;						\
+end MakePoint;							\
+								\
+function NumPoints(w:bat[:wkb]) :bat[:int];			\
+	x := PointsNum(w, 1);					\
+	return x;						\
+end NumPoints;							\
+function NPoints(w:bat[:wkb]) :bat[:int];			\
+	x := PointsNum(w, 0);					\
+	return x;						\
+end NPoints;							\
+function X(w:bat[:wkb]) :bat[:dbl];				\
+	c := GetCoordinate(w, 0);				\
+	return c;						\
+end X;								\
+function Y(w:bat[:wkb]) :bat[:dbl];				\
+	c := GetCoordinate(w, 1);				\
+	return c;						\
+end Y;								\
+function Z(w:bat[:wkb]) :bat[:dbl];				\
+	c := GetCoordinate(w, 2);				\
+	return c;						\
+end Z;								\
+								\
+function NumInteriorRings(w:bat[:wkb]) :bat[:int];		\
+	x := batgeom.NumRings(w, 0);				\
+	return x;						\
+end NumInteriorRings;						\
+function NRings(w:bat[:wkb]) :bat[:int];			\
+	x := batgeom.NumRings(w, 1);				\
+	return x;						\
+end NRings;							\
+								\
+function XMinFromWKB(g:bat[:wkb]) :bat[:dbl];			\
+	x := coordinateFromWKB(g, 1);				\
+	return x;						\
+end XMinFromWKB;						\
+function YMinFromWKB(g:bat[:wkb]) :bat[:dbl];			\
+	x := coordinateFromWKB(g, 2);				\
+	return x;						\
+end YMinFromWKB;						\
+function XMaxFromWKB(g:bat[:wkb]) :bat[:dbl];			\
+	x := coordinateFromWKB(g, 3);				\
+	return x;						\
+end XMaxFromWKB;						\
+function YMaxFromWKB(g:bat[:wkb]) :bat[:dbl];			\
+	x := coordinateFromWKB(g, 4);				\
+	return x;						\
+end YMaxFromWKB;						\
+								\
+function XMinFromMBR(b:bat[:mbr]) :bat[:dbl];			\
+	x := coordinateFromMBR(b, 1);				\
+	return x;						\
+end XMinFromMBR;						\
+function YMinFromMBR(b:bat[:mbr]) :bat[:dbl];			\
+	x := coordinateFromMBR(b, 2);				\
+	return x;						\
+end YMinFromMBR;						\
+function XMaxFromMBR(b:bat[:mbr]) :bat[:dbl];			\
+	x := coordinateFromMBR(b, 3);				\
+	return x;						\
+end XMaxFromMBR;						\
+function YMaxFromMBR(b:bat[:mbr]) :bat[:dbl];			\
+	x := coordinateFromMBR(b, 4);				\
+	return x;						\
+end YMaxFromMBR;						\
+								\
+function calc.wkb( wkt:str, srid:int, type:int ) :wkb;		\
+        x := geom.FromText(wkt,0,0);				\
+        return x;						\
+end wkb;							\
+";
+
+#include "mel.h"
+static mel_atom geom_init_atoms[] = {
+ { .name="mbr", .basetype="lng", .size=sizeof(mbr), .tostr=(fptr)&mbrTOSTR, .fromstr=(fptr)&mbrFROMSTR, .hash=(fptr)&mbrHASH, .null=(fptr)&mbrNULL, .cmp=(fptr)&mbrCOMP, .read=(fptr)&mbrREAD, .write=(fptr)&mbrWRITE, },
+ { .name="wkb", .tostr=(fptr)&wkbTOSTR, .fromstr=(fptr)&wkbFROMSTR, .hash=(fptr)&wkbHASH, .null=(fptr)&wkbNULL, .cmp=(fptr)&wkbCOMP, .read=(fptr)&wkbREAD, .write=(fptr)&wkbWRITE, .put=(fptr)&wkbPUT, .del=(fptr)&wkbDEL, .length=(fptr)&wkbLENGTH, .heap=(fptr)&wkbHEAP, },
+ { .name="wkba", .tostr=(fptr)&wkbaTOSTR, .fromstr=(fptr)&wkbaFROMSTR, .null=(fptr)&wkbaNULL, .hash=(fptr)&wkbaHASH, .cmp=(fptr)&wkbaCOMP, .read=(fptr)&wkbaREAD, .write=(fptr)&wkbaWRITE, .put=(fptr)&wkbaPUT, .del=(fptr)&wkbaDEL, .length=(fptr)&wkbaLENGTH, .heap=(fptr)&wkbaHEAP, },  { .cmp=NULL } 
+};
+static mel_func geom_init_funcs[] = {
+ command("geom", "hasZ", geoHasZ, false, "returns 1 if the geometry has z coordinate", args(1,2, arg("",int),arg("flags",int))),
+ command("geom", "hasM", geoHasM, false, "returns 1 if the geometry has m coordinate", args(1,2, arg("",int),arg("flags",int))),
+ command("geom", "getType", geoGetType, false, "returns the str representation of the geometry type", args(1,3, arg("",str),arg("flags",int),arg("format",int))),
+ command("geom", "MLineStringToPolygon", wkbMLineStringToPolygon, false, "Creates polygons using the MultiLineString provided as WKT. Depending on the flag creates one (flag=0) or multiple (flag=1) polygons", args(1,4, arg("",wkb),arg("wkt",str),arg("srid",int),arg("flag",int))),
+ command("geom", "AsBinary", wkbAsBinary, false, "Returns the wkb representation into HEX format", args(1,2, arg("",str),arg("w",wkb))),
+ command("geom", "FromBinary", wkbFromBinary, false, "Creates a wkb using the HEX representation", args(1,2, arg("",wkb),arg("w",str))),
+ command("geom", "ToText", wkbAsText, false, "", args(1,3, arg("",str),arg("w",wkb),arg("withSRID",int))),
+ command("geom", "FromText", wkbFromText, false, "", args(1,4, arg("",wkb),arg("wkt",str),arg("srid",int),arg("type",int))),
+ command("geom", "NumRings", wkbNumRings, false, "Returns the number of interior rings+exterior on the first polygon of the geometry", args(1,3, arg("",int),arg("w",wkb),arg("exterior",int))),
+ command("geom", "MakePointXYZM", wkbMakePoint, false, "creates a point using the coordinates", args(1,6, arg("",wkb),arg("x",dbl),arg("y",dbl),arg("z",dbl),arg("m",dbl),arg("zmFlag",int))),
+ command("geom", "GeometryType", wkbGeometryType, false, "", args(1,3, arg("",str),arg("w",wkb),arg("flag",int))),
+ command("geom", "GetCoordinate", wkbGetCoordinate, false, "Returns the coordinate at position idx of a point, or NULL if not available. idx=0 -> X, idx=1 -> Y, idx=2 -> Z. Input must be point", args(1,3, arg("",dbl),arg("w",wkb),arg("idx",int))),
+ command("geom", "Boundary", wkbBoundary, false, "Returns the closure of the combinatorial boundary of the Geometry.", args(1,2, arg("",wkb),arg("w",wkb))),
+ command("geom", "CoordDim", wkbCoordDim, false, "Return the coordinate dimension of the geometry", args(1,2, arg("",int),arg("w",wkb))),
+ command("geom", "Dimension", wkbDimension, false, "The inherent dimension of this Geometry object, which must be less than or equal to the coordinate dimension.", args(1,2, arg("",int),arg("w",wkb))),
+ command("geom", "getSRID", wkbGetSRID, false, "Returns the Spatial Reference System ID for this Geometry.", args(1,2, arg("",int),arg("w",wkb))),
+ command("geom", "setSRID", wkbSetSRID, false, "Sets the Reference System ID for this Geometry.", args(1,3, arg("",wkb),arg("w",wkb),arg("srid",int))),
+ command("geom", "StartPoint", wkbStartPoint, false, "Returns the first point of a LINESTRING geometry as a POINT or NULL if the input parameter is not a LINESTRING", args(1,2, arg("",wkb),arg("w",wkb))),
+ command("geom", "EndPoint", wkbEndPoint, false, "Returns the last point of a LINESTRING geometry as a POINT or NULL if the input parameter is not a LINESTRING.", args(1,2, arg("",wkb),arg("w",wkb))),
+ command("geom", "PointN", wkbPointN, false, "Returns the n-th point of the Geometry. Argument w should be Linestring.", args(1,3, arg("",wkb),arg("w",wkb),arg("n",int))),
+ command("geom", "Envelope", wkbEnvelope, false, "The minimum bounding box for this Geometry, returned as a Geometry. The polygon is defined by the corner points of the bounding box ((MINX,MINY),(MAXX,MINY),(MAXX,MAXY),(MINX,MAXY)).", args(1,2, arg("",wkb),arg("w",wkb))),
+ command("geom", "EnvelopeFromCoordinates", wkbEnvelopeFromCoordinates, false, "A polygon created by the provided coordinates", args(1,6, arg("",wkb),arg("",dbl),arg("",dbl),arg("",dbl),arg("",dbl),arg("",int))),
+ command("geom", "Polygon", wkbMakePolygon, false, "Returns a Polygon created from the provided LineStrings", args(1,4, arg("",wkb),arg("",wkb),batarg("",wkb),arg("",int))),
+ command("geom", "ExteriorRing", wkbExteriorRing, false, "Returns a line string representing the exterior ring of the POLYGON geometry. Return NULL if the geometry is not a polygon.", args(1,2, arg("",wkb),arg("w",wkb))),
+ command("geom", "InteriorRingN", wkbInteriorRingN, false, "Return the Nth interior linestring ring of the polygon geometry. Return NULL if the geometry is not a polygon or the given N is out of range.", args(1,3, arg("",wkb),arg("w",wkb),arg("n",int))),
+ command("geom", "InteriorRings", wkbInteriorRings, false, "Returns an 'array' with all the interior rings of the polygon", args(1,2, arg("",wkba),arg("w",wkb))),
+ command("geom", "IsClosed", wkbIsClosed, false, "Returns TRUE if the LINESTRING's start and end points are coincident.", args(1,2, arg("",bit),arg("w",wkb))),
+ command("geom", "IsEmpty", wkbIsEmpty, false, "Returns true if this Geometry is an empty geometry.", args(1,2, arg("",bit),arg("w",wkb))),
+ command("geom", "IsRing", wkbIsRing, false, "Returns TRUE if this LINESTRING is both closed and simple.", args(1,2, arg("",bit),arg("w",wkb))),
+ command("geom", "IsSimple", wkbIsSimple, false, "Returns (TRUE) if this Geometry has no anomalous geometric points, such as self intersection or self tangency.", args(1,2, arg("",bit),arg("w",wkb))),
+ command("geom", "IsValid", wkbIsValid, false, "Returns true if the ST_Geometry is well formed.", args(1,2, arg("",bit),arg("w",wkb))),
+ command("geom", "IsValidReason", wkbIsValidReason, false, "Returns text stating if a geometry is valid or not and if not valid, a reason why.", args(1,2, arg("",str),arg("w",wkb))),
+ command("geom", "IsValidDetail", wkbIsValidDetail, false, "Returns a valid_detail (valid,reason,location) row stating if a geometry is valid or not and if not valid, a reason why and a location where.", args(1,2, arg("",str),arg("w",wkb))),
+ command("geom", "Area", wkbArea, false, "Returns the area of the surface if it is a polygon or multi-polygon", args(1,2, arg("",dbl),arg("w",wkb))),
+ command("geom", "Centroid", wkbCentroid, false, "Computes the geometric center of a geometry, or equivalently, the center of mass of the geometry as a POINT.", args(1,2, arg("",wkb),arg("w",wkb))),
+ command("geom", "Distance", wkbDistance, false, "Returns the 2-dimensional minimum cartesian distance between the two geometries in projected units (spatial ref units.", args(1,3, arg("",dbl),arg("a",wkb),arg("b",wkb))),
+ command("geom", "Length", wkbLength, false, "Returns the cartesian 2D length of the geometry if it is a linestrin or multilinestring", args(1,2, arg("",dbl),arg("w",wkb))),
+ command("geom", "ConvexHull", wkbConvexHull, false, "Returns a geometry that represents the convex hull of this geometry. The convex hull of a geometry represents the minimum convex geometry that encloses all geometries within the set.", args(1,2, arg("",wkb),arg("w",wkb))),
+ command("geom", "Intersection", wkbIntersection, false, "Returns a geometry that represents the point set intersection of the Geometries a, b", args(1,3, arg("",wkb),arg("a",wkb),arg("b",wkb))),
+ command("geom", "Union", wkbUnion, false, "Returns a geometry that represents the point set union of the Geometries a, b", args(1,3, arg("",wkb),arg("a",wkb),arg("b",wkb))),
+ command("geom", "Union", wkbUnionAggr, false, "Gets a BAT with geometries and returns their union", args(1,2, arg("",wkb),batarg("a",wkb))),
+ command("geom", "Difference", wkbDifference, false, "Returns a geometry that represents that part of geometry A that does not intersect with geometry B", args(1,3, arg("",wkb),arg("a",wkb),arg("b",wkb))),
+ command("geom", "SymDifference", wkbSymDifference, false, "Returns a geometry that represents the portions of A and B that do not intersect", args(1,3, arg("",wkb),arg("a",wkb),arg("b",wkb))),
+ command("geom", "Buffer", wkbBuffer, false, "Returns a geometry that represents all points whose distance from this geometry is less than or equal to distance. Calculations are in the Spatial Reference System of this Geometry.", args(1,3, arg("",wkb),arg("a",wkb),arg("distance",dbl))),
+ command("geom", "Contains", wkbContains, false, "Returns true if and only if no points of B lie in the exterior of A, and at least one point of the interior of B lies in the interior of A.", args(1,3, arg("",bit),arg("a",wkb),arg("b",wkb))),
+ command("geom", "Crosses", wkbCrosses, false, "Returns TRUE if the supplied geometries have some, but not all, interior points in common.", args(1,3, arg("",bit),arg("a",wkb),arg("b",wkb))),
+ command("geom", "Disjoint", wkbDisjoint, false, "Returns true if these Geometries are 'spatially disjoint'", args(1,3, arg("",bit),arg("a",wkb),arg("b",wkb))),
+ command("geom", "Equals", wkbEquals, false, "Returns true if the given geometries represent the same geometry. Directionality is ignored.", args(1,3, arg("",bit),arg("a",wkb),arg("b",wkb))),
+ command("geom", "Intersects", wkbIntersects, false, "Returns true if these Geometries 'spatially intersect in 2D'", args(1,3, arg("",bit),arg("a",wkb),arg("b",wkb))),
+ command("geom", "Overlaps", wkbOverlaps, false, "Returns TRUE if the Geometries intersect but are not completely contained by each other.", args(1,3, arg("",bit),arg("a",wkb),arg("b",wkb))),
+ command("geom", "Relate", wkbRelate, false, "Returns true if the Geometry a 'spatially related' to Geometry b, by testing for intersection between the Interior, Boundary and Exterior of the two geometries as specified by the values in the intersectionPatternMatrix.", args(1,4, arg("",bit),arg("a",wkb),arg("b",wkb),arg("intersection_matrix_pattern",str))),
+ command("geom", "Touches", wkbTouches, false, "Returns TRUE if the geometries have at least one point in common, but their interiors do not intersect.", args(1,3, arg("",bit),arg("a",wkb),arg("b",wkb))),
+ command("geom", "Within", wkbWithin, false, "Returns TRUE if the geometry A is completely inside geometry B", args(1,3, arg("",bit),arg("a",wkb),arg("b",wkb))),
+ command("geom", "Covers", wkbCovers, false, "Returns TRUE if no point of geometry B is outside geometry A", args(1,3, arg("",bit),arg("a",wkb),arg("b",wkb))),
+ command("geom", "CoveredBy", wkbCoveredBy, false, "Returns TRUE if no point of geometry A is outside geometry B", args(1,3, arg("",bit),arg("a",wkb),arg("b",wkb))),
+ command("geom", "DWithin", wkbDWithin, false, "Returns true if the two geometries are within the specifies distance from each other", args(1,4, arg("",bit),arg("a",wkb),arg("b",wkb),arg("dst",dbl))),
+ command("geom", "GeometryN", wkbGeometryN, false, "Returns the 1-based Nth geometry if the geometry is a GEOMETRYCOLLECTION, (MULTI)POINT, (MULTI)LINESTRING, MULTICURVE or (MULTI)POLYGON. Otherwise, return NULL", args(1,3, arg("",wkb),arg("g",wkb),arg("n",int))),
+ command("geom", "NumGeometries", wkbNumGeometries, false, "Returns the number of geometries", args(1,2, arg("",int),arg("g",wkb))),
+ command("geom", "Transform", wkbTransform, false, "Transforms a geometry from one srid to another", args(1,6, arg("",wkb),arg("g",wkb),arg("srid_src",int),arg("srid_dst",int),arg("proj_src",str),arg("proj_dest",str))),
+ command("geom", "DelaunayTriangles", wkbDelaunayTriangles, false, "Returns a Delaunay triangulation, flag=0 => collection of polygons, flag=1 => multilinestring", args(1,4, arg("",wkb),arg("a",wkb),arg("tolerance",dbl),arg("flag",int))),
+ command("geom", "Dump", wkbDump, false, "Gets a MultiPolygon and returns the Polygons in it", args(2,3, batarg("id",str),batarg("geom",wkb),arg("a",wkb))),
+ command("geom", "DumpPoints", wkbDumpPoints, false, "Gets a Geometry and returns the Points in it", args(2,3, batarg("id",str),batarg("geom",wkb),arg("a",wkb))),
+ command("geom", "Segmentize", wkbSegmentize, false, "It creates a new geometry with all segments on it smaller or equal to sz", args(1,3, arg("",wkb),arg("g",wkb),arg("sz",dbl))),
+ command("geom", "ForceDimensions", wkbForceDim, false, "Removes or Adds additional coordinates in the geometry to make it d dimensions", args(1,3, arg("",wkb),arg("g",wkb),arg("d",int))),
+ command("geom", "Contains", wkbContains_point, false, "Returns true if the Geometry a 'spatially contains' Geometry b", args(1,4, arg("",bit),arg("a",wkb),arg("x",dbl),arg("y",dbl))),
+ command("geom", "Translate3D", wkbTranslate, false, "Moves all points of the geometry by dx, dy, dz", args(1,5, arg("",wkb),arg("g",wkb),arg("dx",dbl),arg("dy",dbl),arg("dz",dbl))),
+ command("geom", "Contains", wkbContains_point_bat, false, "Returns true if the Geometry-BAT a 'spatially contains' Geometry-B b", args(1,4, batarg("",bit),arg("a",wkb),batarg("px",dbl),batarg("py",dbl))),
+ command("geom", "PointsNum", wkbNumPoints, false, "The number of points in the Geometry. If check=1, the geometry should be a linestring", args(1,3, arg("",int),arg("w",wkb),arg("check",int))),
+ command("geom", "MakeLine", wkbMakeLine, false, "Gets two point or linestring geometries and returns a linestring geometry", args(1,3, arg("",wkb),arg("a",wkb),arg("b",wkb))),
+ command("geom", "MakeLine", wkbMakeLineAggr, false, "Gets a BAT with point or linestring geometries and returns a single linestring geometry", args(1,2, arg("",wkb),batarg("a",wkb))),
+ command("geom", "PointOnSurface", wkbPointOnSurface, false, "Returns a point guaranteed to lie on the surface. Similar to postGIS it works for points and lines in addition to surfaces and for 3d geometries.", args(1,2, arg("",wkb),arg("w",wkb))),
+ command("geom", "mbr", wkbMBR, false, "Creates the mbr for the given wkb.", args(1,2, arg("",mbr),arg("",wkb))),
+ command("geom", "MakeBox2D", wkbBox2D, false, "Creates an mbr from the two 2D points", args(1,3, arg("",mbr),arg("",wkb),arg("",wkb))),
+ command("geom", "mbrOverlaps", mbrOverlaps_wkb, false, "Returns true if the mbr of geom1 overlaps the mbr of geom2", args(1,3, arg("",bit),arg("geom1",wkb),arg("geom2",wkb))),
+ command("geom", "mbrOverlaps", mbrOverlaps, false, "Returns true if box1 overlaps box2", args(1,3, arg("",bit),arg("box1",mbr),arg("box2",mbr))),
+ command("geom", "mbrOverlapOrLeft", mbrOverlapOrLeft_wkb, false, "Returns true if the mbr of geom1 overlaps or is to the left of thr mbr of geom2", args(1,3, arg("",bit),arg("geom1",wkb),arg("geom2",wkb))),
+ command("geom", "mbrOverlapOrLeft", mbrOverlapOrLeft, false, "Returns true if box1 overlaps or is to the left of box2", args(1,3, arg("",bit),arg("box1",mbr),arg("box2",mbr))),
+ command("geom", "mbrOverlapOrBelow", mbrOverlapOrBelow_wkb, false, "Returns true if the mbr of geom1 overlaps or is below the mbr of geom2", args(1,3, arg("",bit),arg("geom1",wkb),arg("geom2",wkb))),
+ command("geom", "mbrOverlapOrBelow", mbrOverlapOrBelow, false, "Returns true if box1 overlaps or is below box2", args(1,3, arg("",bit),arg("box1",mbr),arg("box2",mbr))),
+ command("geom", "mbrOverlapOrRight", mbrOverlapOrRight_wkb, false, "Returns true if the mbr of geom1 overlalps or is right of the mbr of geom2", args(1,3, arg("",bit),arg("geom1",wkb),arg("geom2",wkb))),
+ command("geom", "mbrOverlapOrRight", mbrOverlapOrRight, false, "Returns true if box1 overlalps or is right of box2", args(1,3, arg("",bit),arg("box1",mbr),arg("box2",mbr))),
+ command("geom", "mbrLeft", mbrLeft_wkb, false, "Returns true if the mbr of geom1 is left of the mbr of geom2", args(1,3, arg("",bit),arg("geom1",wkb),arg("geom2",wkb))),
+ command("geom", "mbrLeft", mbrLeft, false, "Returns true if box1 is left of box2", args(1,3, arg("",bit),arg("box1",mbr),arg("box2",mbr))),
+ command("geom", "mbrBelow", mbrBelow_wkb, false, "Returns true if the mbr of geom1 is below the mbr of geom2", args(1,3, arg("",bit),arg("geom1",wkb),arg("geom2",wkb))),
+ command("geom", "mbrBelow", mbrBelow, false, "Returns true if box1 is below box2", args(1,3, arg("",bit),arg("box1",mbr),arg("box2",mbr))),
+ command("geom", "mbrEqual", mbrEqual_wkb, false, "Returns true if the mbr of geom1 is the same as the mbr of geom2", args(1,3, arg("",bit),arg("geom1",wkb),arg("geom2",wkb))),
+ command("geom", "mbrEqual", mbrEqual, false, "Returns true if box1 is the same as box2", args(1,3, arg("",bit),arg("box1",mbr),arg("box2",mbr))),
+ command("geom", "mbrRight", mbrRight_wkb, false, "Returns true if the mbr of geom1 is right of the mbr of geom2", args(1,3, arg("",bit),arg("geom1",wkb),arg("geom2",wkb))),
+ command("geom", "mbrRight", mbrRight, false, "Returns true if box1 is right of box2", args(1,3, arg("",bit),arg("box1",mbr),arg("box2",mbr))),
+ command("geom", "mbrContained", mbrContained_wkb, false, "Returns true if the mbr of geom1 is contained by the mbr of geom2", args(1,3, arg("",bit),arg("geom1",wkb),arg("geom2",wkb))),
+ command("geom", "mbrContained", mbrContained, false, "Returns true if box1 is contained by box2", args(1,3, arg("",bit),arg("box1",mbr),arg("box2",mbr))),
+ command("geom", "mbrOverlapOrAbove", mbrOverlapOrAbove_wkb, false, "Returns true if the mbr of geom1 overlaps or is above the mbr of geom2", args(1,3, arg("",bit),arg("geom1",wkb),arg("geom2",wkb))),
+ command("geom", "mbrOverlapOrAbove", mbrOverlapOrAbove, false, "Returns true if box1 overlaps or is above box2", args(1,3, arg("",bit),arg("box1",mbr),arg("box2",mbr))),
+ command("geom", "mbrAbove", mbrAbove_wkb, false, "Returns true if the mbr of geom1 is above the mbr of geom2", args(1,3, arg("",bit),arg("geom1",wkb),arg("geom2",wkb))),
+ command("geom", "mbrAbove", mbrAbove, false, "Returns true if box1 is above box2", args(1,3, arg("",bit),arg("box1",mbr),arg("box2",mbr))),
+ command("geom", "mbrContains", mbrContains_wkb, false, "Returns true if the mbr of geom1 contains the mbr of geom2", args(1,3, arg("",bit),arg("geom1",wkb),arg("geom2",wkb))),
+ command("geom", "mbrContains", mbrContains, false, "Returns true if box1 contains box2", args(1,3, arg("",bit),arg("box1",mbr),arg("box2",mbr))),
+ command("geom", "mbrDistance", mbrDistance_wkb, false, "Returns the distance of the centroids of the mbrs of the two geometries", args(1,3, arg("",dbl),arg("geom1",wkb),arg("geom2",wkb))),
+ command("geom", "mbrDistance", mbrDistance, false, "Returns the distance of the centroids of the two boxes", args(1,3, arg("",dbl),arg("box1",mbr),arg("box2",mbr))),
+ command("geom", "coordinateFromWKB", wkbCoordinateFromWKB, false, "returns xmin (=1), ymin (=2), xmax (=3) or ymax(=4) of the provided geometry", args(1,3, arg("",dbl),arg("",wkb),arg("",int))),
+ command("geom", "coordinateFromMBR", wkbCoordinateFromMBR, false, "returns xmin (=1), ymin (=2), xmax (=3) or ymax(=4) of the provided mbr", args(1,3, arg("",dbl),arg("",mbr),arg("",int))),
+ command("geom", "prelude", geom_prelude, false, "", args(1,1, arg("",void))),
+ command("geom", "epilogue", geom_epilogue, false, "", args(1,1, arg("",void))),
+ command("batgeom", "FromText", wkbFromText_bat, false, "", args(1,4, batarg("",wkb),batarg("wkt",str),arg("srid",int),arg("type",int))),
+ command("batgeom", "ToText", wkbAsText_bat, false, "", args(1,3, batarg("",str),batarg("w",wkb),arg("withSRID",int))),
+ command("batgeom", "GeometryType", wkbGeometryType_bat, false, "", args(1,3, batarg("",str),batarg("w",wkb),arg("flag",int))),
+ command("batgeom", "MakePointXYZM", wkbMakePoint_bat, false, "creates a point using the coordinates", args(1,6, batarg("",wkb),batarg("x",dbl),batarg("y",dbl),batarg("z",dbl),batarg("m",dbl),arg("zmFlag",int))),
+ command("batgeom", "PointsNum", wkbNumPoints_bat, false, "The number of points in the Geometry. If check=1, the geometry should be a linestring", args(1,3, batarg("",int),batarg("w",wkb),arg("check",int))),
+ command("batgeom", "GetCoordinate", wkbGetCoordinate_bat, false, "Returns the coordinate at position idx of a point, or NULL if not available. idx=0 -> X, idx=1 -> Y, idx=2 -> Z. Input must be point", args(1,3, batarg("",dbl),batarg("w",wkb),arg("idx",int))),
+ command("batgeom", "GeometryN", wkbGeometryN_bat, false, "Returns the 1-based Nth geometry if the geometry is a GEOMETRYCOLLECTION, (MULTI)POINT, (MULTI)LINESTRING, MULTICURVE or (MULTI)POLYGON. Otherwise, return NULL", args(1,3, batarg("",wkb),batarg("w",wkb),arg("n",int))),
+ command("batgeom", "NumGeometries", wkbNumGeometries_bat, false, "Returns the number of geometries", args(1,2, batarg("",int),batarg("w",wkb))),
+ command("batgeom", "NumRings", wkbNumRings_bat, false, "Returns the number of interior rings+exterior on the first polygon of the geometry", args(1,3, batarg("",int),batarg("w",wkb),arg("exterior",int))),
+ command("batgeom", "Boundary", wkbBoundary_bat, false, "", args(1,2, batarg("",wkb),batarg("w",wkb))),
+ command("batgeom", "IsClosed", wkbIsClosed_bat, false, "", args(1,2, batarg("",bit),batarg("w",wkb))),
+ command("batgeom", "IsEmpty", wkbIsEmpty_bat, false, "", args(1,2, batarg("",bit),batarg("w",wkb))),
+ command("batgeom", "IsSimple", wkbIsSimple_bat, false, "", args(1,2, batarg("",bit),batarg("w",wkb))),
+ command("batgeom", "IsRing", wkbIsRing_bat, false, "", args(1,2, batarg("",bit),batarg("w",wkb))),
+ command("batgeom", "IsValid", wkbIsValid_bat, false, "", args(1,2, batarg("",bit),batarg("w",wkb))),
+ command("batgeom", "MakeBox2D", wkbBox2D_bat, false, "", args(1,3, batarg("",mbr),batarg("p1",wkb),batarg("p2",wkb))),
+ command("batgeom", "Dimension", wkbDimension_bat, false, "", args(1,2, batarg("",int),batarg("w",wkb))),
+ command("batgeom", "Distance", wkbDistance_bat, false, "", args(1,3, batarg("",dbl),batarg("a",wkb),batarg("b",wkb))),
+ command("batgeom", "Distance", wkbDistance_geom_bat, false, "", args(1,3, batarg("",dbl),arg("a",wkb),batarg("b",wkb))),
+ command("batgeom", "Distance", wkbDistance_bat_geom, false, "", args(1,3, batarg("",dbl),batarg("a",wkb),arg("b",wkb))),
+ command("batgeom", "Contains", wkbContains_bat, false, "", args(1,3, batarg("",bit),batarg("a",wkb),batarg("b",wkb))),
+ command("batgeom", "Contains", wkbContains_geom_bat, false, "", args(1,3, batarg("",bit),arg("a",wkb),batarg("b",wkb))),
+ command("batgeom", "Contains", wkbContains_bat_geom, false, "", args(1,3, batarg("",bit),batarg("a",wkb),arg("b",wkb))),
+ command("batgeom", "Filter", wkbFilter_geom_bat, false, "Filters the points in the bats according to the MBR of the other bat.", args(1,3, batarg("",wkb),arg("a",wkb),batarg("b",wkb))),
+ command("batgeom", "Filter", wkbFilter_bat_geom, false, "", args(1,3, batarg("",wkb),batarg("a",wkb),arg("b",wkb))),
+ command("batgeom", "setSRID", wkbSetSRID_bat, false, "Sets the Reference System ID for this Geometry.", args(1,3, batarg("",wkb),batarg("w",wkb),arg("srid",int))),
+ command("batgeom", "MakeLine", wkbMakeLine_bat, false, "Gets two BATS of point or linestring geometries and returns a bat with linestring geometries", args(1,3, batarg("",wkb),batarg("a",wkb),batarg("b",wkb))),
+ command("batgeom", "Union", wkbUnion_bat, false, "Gets two BATS of geometries and returns the pairwise unions", args(1,3, batarg("",wkb),batarg("a",wkb),batarg("b",wkb))),
+ command("batgeom", "mbr", wkbMBR_bat, false, "Creates the mbr for the given wkb.", args(1,2, batarg("",mbr),batarg("",wkb))),
+ command("batgeom", "coordinateFromWKB", wkbCoordinateFromWKB_bat, false, "returns xmin (=1), ymin (=2), xmax (=3) or ymax(=4) of the provided geometry", args(1,3, batarg("",dbl),batarg("",wkb),arg("",int))),
+ command("batgeom", "coordinateFromMBR", wkbCoordinateFromMBR_bat, false, "returns xmin (=1), ymin (=2), xmax (=3) or ymax(=4) of the provided mbr", args(1,3, batarg("",dbl),batarg("",mbr),arg("",int))),
+ command("calc", "mbr", mbrFromString, false, "", args(1,2, arg("",mbr),arg("v",str))),
+ command("calc", "mbr", mbrFromMBR, false, "", args(1,2, arg("",mbr),arg("v",mbr))),
+ command("calc", "wkb", wkbFromWKB, false, "It is called when adding a new geometry column to an existing table", args(1,2, arg("",wkb),arg("v",wkb))),
+ command("calc", "wkb", geom_2_geom, false, "Called when inserting values to a table in order to check if the inserted geometries are of the same type and srid required by the column definition", args(1,4, arg("",wkb),arg("geo",wkb),arg("columnType",int),arg("columnSRID",int))),
+ command("batcalc", "wkb", geom_2_geom_bat, false, "Called when inserting values to a table in order to check if the inserted geometries are of the same type and srid required by the column definition", args(1,4, batarg("",wkb),batarg("geo",wkb),arg("columnType",int),arg("columnSRID",int))),
+ { .imp=NULL }
+};
+#include "mal_import.h"
+#ifdef _MSC_VER
+#undef read
+#pragma section(".CRT$XCU",read)
+#endif
+LIB_STARTUP_FUNC(init_geom_mal)
+{ mal_module2("geom", geom_init_atoms, geom_init_funcs, NULL, geom_functions); }

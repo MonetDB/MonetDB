@@ -75,6 +75,8 @@ mal_export str UUIDisaUUID(bit *retval, str *u);
 
 static uuid uuid_nil;			/* automatically initialized as zeros */
 
+int TYPE_uuid = 0;
+
 str
 UUIDprelude(void *ret)
 {
@@ -88,6 +90,7 @@ UUIDprelude(void *ret)
 #ifdef HAVE_UUID
 	uuid_clear(uuid_nil.u);
 #endif
+	TYPE_uuid = ATOMindex("uuid");
 	return MAL_SUCCEED;
 }
 
@@ -365,3 +368,27 @@ UUIDwrite(const uuid *u, stream *s, size_t cnt)
 {
 	return mnstr_write(s, u, UUID_SIZE, cnt) ? GDK_SUCCEED : GDK_FAIL;
 }
+ 
+#include "mel.h"
+mel_atom uuid_init_atoms[] = {
+ { .name="uuid", .cmp=(fptr)&UUIDcompare, .fromstr=(fptr)&UUIDfromString, .hash=(fptr)&UUIDhash, .null=(fptr)&UUIDnull, .read=(fptr)&UUIDread, .tostr=(fptr)&UUIDtoString, .write=(fptr)&UUIDwrite, },  { .cmp=NULL } 
+};
+mel_func uuid_init_funcs[] = {
+ command("uuid", "prelude", UUIDprelude, false, "", args(1,1, arg("",void))),
+ command("uuid", "new", UUIDgenerateUuid, true, "Generate a new uuid", args(1,1, arg("",uuid))),
+ command("uuid", "new", UUIDgenerateUuidInt, true, "Generate a new uuid (dummy version for side effect free multiplex loop)", args(1,2, arg("",uuid),arg("d",int))),
+ command("uuid", "uuid", UUIDstr2uuid, false, "Coerce a string to a uuid, validating its format", args(1,2, arg("",uuid),arg("s",str))),
+ command("uuid", "str", UUIDuuid2str, false, "Coerce a uuid to its string type", args(1,2, arg("",str),arg("u",uuid))),
+ command("uuid", "isaUUID", UUIDisaUUID, false, "Test a string for a UUID format", args(1,2, arg("",bit),arg("u",str))),
+ command("calc", "uuid", UUIDstr2uuid, false, "Coerce a string to a uuid, validating its format", args(1,2, arg("",uuid),arg("s",str))),
+ command("calc", "uuid", UUIDuuid2uuid, false, "", args(1,2, arg("",uuid),arg("u",uuid))),
+ command("calc", "str", UUIDuuid2str, false, "Coerce a uuid to a string type", args(1,2, arg("",str),arg("s",uuid))),
+ { .imp=NULL }
+};
+#include "mal_import.h"
+#ifdef _MSC_VER
+#undef read
+#pragma section(".CRT$XCU",read)
+#endif
+LIB_STARTUP_FUNC(init_uuid_mal)
+{ mal_module("uuid", uuid_init_atoms, uuid_init_funcs); }

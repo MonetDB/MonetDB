@@ -11,16 +11,8 @@ if(NETCDF_FOUND)
   # Give it another name
   add_library(netcdff MODULE)
 
-  set(include_mal_files
-    netcdf)
-
   set(include_sql_files
     74_netcdf)
-
-  create_include_object(
-    MAL_LANGUAGE
-    name_module "netcdff"
-    modules_list ${include_mal_files})
 
   create_include_object(
     SQL_LANGUAGE
@@ -31,7 +23,6 @@ if(NETCDF_FOUND)
     PRIVATE
     netcdf.c 
     netcdf_vault.h
-    ${MONETDB_CURRENT_MAL_SOURCES}
     ${MONETDB_CURRENT_SQL_SOURCES})
 
   target_include_directories(netcdff

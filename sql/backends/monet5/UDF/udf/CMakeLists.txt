@@ -8,14 +8,6 @@
 
 add_library(udf MODULE)
 
-set(include_mal_files
-  udf)
-
-if(HAVE_HGE)
-  list(APPEND include_mal_files
-    udf_hge)
-endif()
-
 set(include_sql_files
   80_udf)
 
@@ -23,11 +15,6 @@ if(HAVE_HGE)
   list(APPEND include_sql_files
     80_udf_hge)
 endif()
-
-create_include_object(
-  MAL_LANGUAGE
-  name_module "udf"
-  modules_list ${include_mal_files})
 
 create_include_object(
   SQL_LANGUAGE
@@ -38,7 +25,6 @@ target_sources(udf
   PRIVATE
   udf.c udf.h
   udf_impl.h
-  ${MONETDB_CURRENT_MAL_SOURCES}
   ${MONETDB_CURRENT_SQL_SOURCES})
 
 target_include_directories(udf

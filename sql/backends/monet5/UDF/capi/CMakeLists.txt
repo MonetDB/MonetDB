@@ -8,21 +8,12 @@
 
 if(CINTEGRATION)
   # TODO add code too regenerate the cheader.text.h file
-  add_library(capi MODULE)
-
-  set(include_mal_files
-    capi)
-
-  create_include_object(
-    MAL_LANGUAGE
-    name_module "capi"
-    modules_list ${include_mal_files})
-
+	add_library(capi MODULE)
+	
   target_sources(capi
     PRIVATE
     capi.c capi.h
-    cheader.h cheader.text.h
-    ${MONETDB_CURRENT_MAL_SOURCES})
+    cheader.h cheader.text.h)
 
   target_include_directories(capi
     PRIVATE

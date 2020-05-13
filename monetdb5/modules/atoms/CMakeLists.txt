@@ -8,47 +8,22 @@
 
 add_library(atoms OBJECT)
 
-set(include_mal_files
-  #streams
-  #blob
-  #color
-  str
-  url
-  uuid
-  json
-  mtime
-  inet
-  identifier
-  xml
-  batxml)
-
-if(HAVE_HGE)
-  list(APPEND include_mal_files
-    00_json_hge)
-endif()
-
-create_include_object(
-  MAL_LANGUAGE
-  name_module "atoms"
-  modules_list ${include_mal_files})
-
 target_sources(atoms
   PRIVATE
   streams.c streams.h
   blob.c blob.h
   color.c color.h
   str.c str.h
+  strptime.c
   url.c url.h
-  uuid.c
+  uuid.c uuid.h
   json.c json.h
   mtime.c
-  batxml.c
+  mtime_analytic.c
   inet.c
   identifier.c
   xml.c xml.h
-  mtime_analytic.c
-  strptime.c
-  ${MONETDB_CURRENT_MAL_SOURCES}
+  batxml.c
   PUBLIC
   ${CMAKE_CURRENT_SOURCE_DIR}/mtime.h)
 

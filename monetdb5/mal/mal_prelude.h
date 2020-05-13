@@ -16,12 +16,12 @@
 #include "mal_utils.h"
 
 #include "mel.h"
+
 mal_export int mal_startup(void);
-#ifdef SPECS
-mal_export void mal_module(str name, mel_atom *atoms, mel_func *funcs, mal_spec *spec);
-#else
+
 mal_export void mal_module(str name, mel_atom *atoms, mel_func *funcs);
-#endif
-mal_export void mal_register(str name, unsigned char *code);
+mal_export void mal_module2(str name, mel_atom *atoms, mel_func *funcs, mel_init initfunc, const char *code);
+
 mal_export str malIncludeModules(Client c, char *modules[], int listing, int embedded);
+
 #endif /*  _MAL_PRELUDE_H */

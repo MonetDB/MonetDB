@@ -8,14 +8,6 @@
 
 add_library(generator MODULE)
 
-set(include_mal_files
-  generator)
-
-if(HAVE_HGE)
-  list(APPEND include_mal_files
-    generator_hge)
-endif()
-
 set(include_sql_files
   90_generator)
 
@@ -25,11 +17,6 @@ if(HAVE_HGE)
 endif()
 
 create_include_object(
-  MAL_LANGUAGE
-  name_module "generator"
-  modules_list ${include_mal_files})
-
-create_include_object(
   SQL_LANGUAGE
   name_module "generator"
   modules_list ${include_sql_files})
@@ -37,7 +24,6 @@ create_include_object(
 target_sources(generator
   PRIVATE
   generator.c generator.h
-  ${MONETDB_CURRENT_MAL_SOURCES}
   ${MONETDB_CURRENT_SQL_SOURCES})
 
 target_include_directories(generator

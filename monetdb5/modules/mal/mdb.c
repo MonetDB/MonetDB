@@ -740,3 +740,46 @@ CMDmodules(bat *bid)
 	BBPkeepref(*bid);
 	return MAL_SUCCEED;
 }
+
+#include "mel.h"
+mel_func mdb_init_funcs[] = {
+ pattern("mdb", "start", MDBstart, false, "Start interactive debugger", args(1,1, arg("",void))),
+ pattern("mdb", "start", MDBstart, false, "Start interactive debugger on a client", args(1,2, arg("",void),arg("clientid",int))),
+ pattern("mdb", "start", MDBstartFactory, false, "Start interactive debugger on a running factory", args(1,3, arg("",void),arg("mod",str),arg("fcn",str))),
+ pattern("mdb", "stop", MDBstop, false, "Stop the interactive debugger", args(1,1, arg("",void))),
+ pattern("mdb", "inspect", MDBinspect, false, "Run the debugger on a specific function", args(1,3, arg("",void),arg("mod",str),arg("fcn",str))),
+ command("mdb", "modules", CMDmodules, false, "List available modules", args(1,1, batarg("",str))),
+ pattern("mdb", "getVMsize", MDBgetVMsize, false, "Retrieve the max VM size", args(1,1, arg("",lng))),
+ pattern("mdb", "setVMsize", MDBsetVMsize, false, "Manipulate the VM max size in MBs", args(1,2, arg("",lng),arg("l",lng))),
+ pattern("mdb", "setTrace", MDBsetTrace, false, "Turn on/off tracing of current routine", args(1,2, arg("",void),arg("b",bit))),
+ pattern("mdb", "setTrace", MDBsetVarTrace, false, "Turn on/off tracing of a variable ", args(1,2, arg("",void),arg("b",str))),
+ pattern("mdb", "setCatch", MDBsetCatch, false, "Turn on/off catching exceptions", args(1,2, arg("",void),arg("b",bit))),
+ pattern("mdb", "getDebugFlags", MDBgetDebugFlags, false, "Get the kernel debugging flags bit-set", args(2,2, batarg("flg",str),batarg("val",bit))),
+ pattern("mdb", "getDebug", MDBgetDebug, false, "Get the kernel debugging bit-set.\nSee the MonetDB configuration file for details", args(1,1, arg("",int))),
+ pattern("mdb", "setDebug", MDBsetDebugStr, false, "Set the kernel debugging bit-set and return its previous value.\nThe recognized options are: threads, memory, properties,\nio, transactions, modules, algorithms, estimates.", args(1,2, arg("",int),arg("flg",str))),
+ pattern("mdb", "setDebug", MDBsetDebug, false, "Set the kernel debugging bit-set and return its previous value.", args(1,2, arg("",int),arg("flg",int))),
+ command("mdb", "getException", MDBgetExceptionVariable, false, "Extract the variable name from the exception message", args(1,2, arg("",str),arg("s",str))),
+ command("mdb", "getReason", MDBgetExceptionReason, false, "Extract the reason from the exception message", args(1,2, arg("",str),arg("s",str))),
+ command("mdb", "getContext", MDBgetExceptionContext, false, "Extract the context string from the exception message", args(1,2, arg("",str),arg("s",str))),
+ pattern("mdb", "list", MDBlist, false, "Dump the current routine on standard out.", args(1,1, arg("",void))),
+ pattern("mdb", "listMapi", MDBlistMapi, false, "Dump the current routine on standard out with Mapi prefix.", args(1,1, arg("",void))),
+ pattern("mdb", "list", MDBlist3, false, "Dump the routine M.F on standard out.", args(1,3, arg("",void),arg("M",str),arg("F",str))),
+ pattern("mdb", "List", MDBlistDetail, false, "Dump the current routine on standard out.", args(1,1, arg("",void))),
+ pattern("mdb", "List", MDBlist3Detail, false, "Dump the routine M.F on standard out.", args(1,3, arg("",void),arg("M",str),arg("F",str))),
+ pattern("mdb", "var", MDBvar, false, "Dump the symboltable of current routine on standard out.", args(1,1, arg("",void))),
+ pattern("mdb", "var", MDBvar3, false, "Dump the symboltable of routine M.F on standard out.", args(1,3, arg("",void),arg("M",str),arg("F",str))),
+ pattern("mdb", "getStackDepth", MDBStkDepth, false, "Return the depth of the calling stack.", args(1,1, arg("",int))),
+ pattern("mdb", "getStackFrame", MDBgetStackFrameN, false, "", args(2,3, batarg("",str),batarg("",str),arg("i",int))),
+ pattern("mdb", "getStackFrame", MDBgetStackFrame, false, "Collect variable binding of current (n-th) stack frame.", args(2,2, batarg("",str),batarg("",str))),
+ pattern("mdb", "getStackTrace", MDBStkTrace, false, "", args(2,2, batarg("",int),batarg("",str))),
+ pattern("mdb", "dump", MDBdump, false, "Dump instruction, stacktrace, and stack", noargs),
+ pattern("mdb", "getDefinition", MDBgetDefinition, false, "Returns a string representation of the current function \nwith typing information attached", args(1,1, batarg("",str))),
+ { .imp=NULL }
+};
+#include "mal_import.h"
+#ifdef _MSC_VER
+#undef read
+#pragma section(".CRT$XCU",read)
+#endif
+LIB_STARTUP_FUNC(init_mdb_mal)
+{ mal_module("mdb", NULL, mdb_init_funcs); }

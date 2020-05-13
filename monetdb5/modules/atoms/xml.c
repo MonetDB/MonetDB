@@ -825,4 +825,38 @@ str XMLepilogue(void *ret) {
 	return MAL_SUCCEED;
 }
 
+#endif /* HAVE_LIBXML */
+
+#include "mel.h"
+mel_atom xml_init_atoms[] = {
+ { .name="xml", .basetype="str", .fromstr=(fptr)&XMLfromString, .tostr=(fptr)&XMLtoString, },  { .cmp=NULL } 
+};
+mel_func xml_init_funcs[] = {
+ command("xml", "xml", XMLstr2xml, false, "Cast the string to an xml compliant string", args(1,2, arg("",xml),arg("src",str))),
+ command("xml", "str", XMLxml2str, false, "Cast the string to an xml compliant string", args(1,2, arg("",str),arg("src",xml))),
+ command("xml", "text", XMLxmltext, false, "Extract text from an xml atom", args(1,2, arg("",str),arg("src",xml))),
+ command("xml", "comment", XMLcomment, false, "Construct an comment struction ", args(1,2, arg("",xml),arg("val",str))),
+ command("xml", "parse", XMLparse, false, "Parse the XML document or element string values ", args(1,4, arg("",xml),arg("doccont",str),arg("val",str),arg("option",str))),
+ command("xml", "pi", XMLpi, false, "Construct a processing instruction", args(1,3, arg("",xml),arg("target",str),arg("val",str))),
+ command("xml", "document", XMLdocument, false, "Check the value for compliance as XML document", args(1,2, arg("",xml),arg("val",str))),
+ command("xml", "content", XMLcontent, false, "Check the value for compliance as content, i.e.  it may contain multiple roots and character data.", args(1,2, arg("",xml),arg("val",str))),
+ command("xml", "root", XMLroot, false, "Construct the root nodes", args(1,4, arg("",xml),arg("val",xml),arg("version",str),arg("standalone",str))),
+ command("xml", "attribute", XMLattribute, false, "Construct an attribute value pair", args(1,3, arg("",xml),arg("name",str),arg("val",str))),
+ command("xml", "element", XMLelement, false, "The basic building block for XML elements are namespaces, attributes and a sequence of xml elements. The name space and the attributes may be left unspecified(=nil:bat).", args(1,5, arg("",xml),arg("name",str),arg("ns",xml),arg("attr",xml),arg("s",xml))),
+ command("xml", "element", XMLelementSmall, false, "The basic building block for XML elements are namespaces, attributes and a sequence of xml elements. The name space and the attributes may be left unspecified(=nil:bat).", args(1,3, arg("",xml),arg("name",str),arg("s",xml))),
+ command("xml", "concat", XMLconcat, false, "Concatenate the xml values", args(1,3, arg("",xml),arg("val1",xml),arg("val2",xml))),
+ pattern("xml", "forest", XMLforest, false, "Construct an element list", args(1,2, arg("",xml),vararg("val",xml))),
+ command("xml", "isdocument", XMLisdocument, false, "Validate the string as a document", args(1,2, arg("",bit),arg("val",str))),
+ command("xml", "prelude", XMLprelude, false, "", args(1,1, arg("",void))),
+ command("xml", "epilogue", XMLepilogue, false, "", args(1,1, arg("",void))),
+ command("calc", "xml", XMLstr2xml, false, "", args(1,2, arg("",xml),arg("src",str))),
+ command("calc", "xml", XMLxml2xml, false, "", args(1,2, arg("",xml),arg("src",xml))),
+ { .imp=NULL }
+};
+#include "mal_import.h"
+#ifdef _MSC_VER
+#undef read
+#pragma section(".CRT$XCU",read)
 #endif
+LIB_STARTUP_FUNC(init_xml_mal)
+{ mal_module("xml", xml_init_atoms, xml_init_funcs); }

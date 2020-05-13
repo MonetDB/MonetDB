@@ -18,7 +18,7 @@ stream *maleventstream = 0;
 lng MALdebug;
 
 #ifdef HAVE_HGE
-int have_hge;
+int have_hge = 1;
 #endif
 
 #include "mal_stack.h"

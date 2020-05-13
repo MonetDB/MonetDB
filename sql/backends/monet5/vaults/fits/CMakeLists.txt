@@ -9,16 +9,8 @@
 if(HAVE_FITS)
   add_library(fits MODULE)
 
-  set(include_mal_files
-    fits)
-
   set(include_sql_files
     72_fits)
-
-  create_include_object(
-    MAL_LANGUAGE
-    name_module "fits"
-    modules_list ${include_mal_files})
 
   create_include_object(
     SQL_LANGUAGE
@@ -36,7 +28,6 @@ if(HAVE_FITS)
     PRIVATE
     fits.c
     fits.h
-    ${MONETDB_CURRENT_MAL_SOURCES}
     ${MONETDB_CURRENT_SQL_SOURCES})
 
   set_target_properties(fits 

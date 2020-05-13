@@ -646,3 +646,28 @@ SYSgdkThread(bat *ret, bat *ret2)
 	BBPunfix(bn->batCacheid);
 	throw(MAL, "status.getThreads", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 }
+
+#include "mel.h"
+mel_func status_init_funcs[] = {
+ command("status", "cpuStatistics", SYScpuStatistics, false, "Global cpu usage information", args(2,2, batarg("",str),batarg("",lng))),
+ command("status", "memStatistics", SYSmemStatistics, false, "Global memory usage information", args(2,2, batarg("",str),batarg("",lng))),
+ command("status", "ioStatistics", SYSioStatistics, false, "Global IO activity information", args(2,2, batarg("",str),batarg("",lng))),
+ command("status", "vmStatistics", SYSvm_usage, false, "Get a split-up of how much virtual memory blocks are in use", args(2,3, batarg("",str),batarg("",lng),arg("minsize",lng))),
+ command("status", "memUsage", SYSmem_usage, false, "Get a split-up of how much memory blocks are in use", args(2,3, batarg("",str),batarg("",lng),arg("minsize",lng))),
+ command("status", "batStatistics", SYSgdkEnv, false, "Show distribution of bats by kind", args(2,2, batarg("",str),batarg("",str))),
+ command("status", "getThreads", SYSgdkThread, false, "Produce overview of active threads", args(2,2, batarg("",int),batarg("",str))),
+ command("status", "mem_cursize", SYSgetmem_cursize, false, "The amount of physical swapspace in KB that is currently in use", args(1,1, arg("",lng))),
+ command("status", "mem_maxsize", SYSgetmem_maxsize, false, "The maximum usable amount of physical swapspace in KB (target only)", args(1,1, arg("",lng))),
+ command("status", "mem_maxsize", SYSsetmem_maxsize, false, "Set the maximum usable amount of physical swapspace in KB", args(1,2, arg("",void),arg("v",lng))),
+ command("status", "vm_cursize", SYSgetvm_cursize, false, "The amount of logical VM space in KB that is currently in use", args(1,1, arg("",lng))),
+ command("status", "vm_maxsize", SYSgetvm_maxsize, false, "The maximum usable amount of logical VM space in KB (target only)", args(1,1, arg("",lng))),
+ command("status", "vm_maxsize", SYSsetvm_maxsize, false, "Set the maximum usable amount of physical swapspace in KB", args(1,2, arg("",void),arg("v",lng))),
+ { .imp=NULL }
+};
+#include "mal_import.h"
+#ifdef _MSC_VER
+#undef read
+#pragma section(".CRT$XCU",read)
+#endif
+LIB_STARTUP_FUNC(init_status_mal)
+{ mal_module("status", NULL, status_init_funcs); }

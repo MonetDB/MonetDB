@@ -245,3 +245,35 @@ CMDcallBAT(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	(void) pci;		/* fool compiler */
 	throw(MAL, "mal.call", SQLSTATE(0A000) PROGRAM_NYI);
 }
+
+#include "mel.h"
+mel_func language_init_funcs[] = {
+ pattern("language", "call", CMDcallString, false, "Evaluate a MAL string program.", args(1,2, arg("",void),arg("s",str))),
+ pattern("language", "call", CMDcallFunction, false, "", args(1,3, arg("",void),arg("m",str),arg("f",str))),
+ pattern("language", "call", CMDcallBAT, false, "Evaluate a program stored in a BAT.", args(1,2, arg("",void),batarg("s",str))),
+ pattern("language", "source", CMDevalFile, false, "Merge the instructions stored in the file with the current program.", args(1,2, arg("",void),arg("f",str))),
+ command("language", "raise", CMDraise, true, "Raise an exception labeled \nwith a specific message.", args(1,2, arg("",str),arg("msg",str))),
+ command("language", "assert", MALassertBit, true, "", args(1,3, arg("",void),arg("v",bit),arg("term",str))),
+ command("language", "assert", MALassertSht, true, "", args(1,3, arg("",void),arg("v",sht),arg("term",str))),
+ command("language", "assert", MALassertInt, true, "", args(1,3, arg("",void),arg("v",int),arg("term",str))),
+ command("language", "assert", MALassertLng, true, "", args(1,3, arg("",void),arg("v",lng),arg("term",str))),
+ command("language", "assert", MALassertStr, true, "", args(1,3, arg("",void),arg("v",str),arg("term",str))),
+ command("language", "assert", MALassertOid, true, "", args(1,3, arg("",void),arg("v",oid),arg("term",str))),
+ pattern("language", "assert", MALassertTriple, true, "Assertion test.", args(1,5, arg("",void),argany("v",1),arg("pname",str),arg("oper",str),argany("val",2))),
+ pattern("language", "dataflow", MALstartDataflow, false, "The current guarded block is executed using dataflow control. ", args(1,1, arg("",bit))),
+ pattern("language", "sink", MALgarbagesink, false, "Variables to be considered together when triggering garbage collection.\nUsed in the dataflow blocks to avoid early release of values.", args(1,2, arg("",void),varargany("v",0))),
+ pattern("language", "pass", MALpass, false, "Cheap instruction to disgard storage while retaining the dataflow dependency", args(0,1, argany("v",1))),
+ pattern("language", "block", deblockdataflow, false, "Block on availability of all variables w, and then pass on v", args(1,3, arg("",int),arg("v",int),varargany("w",0))),
+ pattern("language", "register", CMDregisterFunction, false, "Compile the code string to MAL and register it as a function.", args(1,5, arg("",void),arg("m",str),arg("f",str),arg("code",str),arg("help",str))),
+#ifdef HAVE_HGE
+ command("language", "assert", MALassertHge, true, "", args(0,2, arg("v",hge),arg("term",str))),
+#endif
+ { .imp=NULL }
+};
+#include "mal_import.h"
+#ifdef _MSC_VER
+#undef read
+#pragma section(".CRT$XCU",read)
+#endif
+LIB_STARTUP_FUNC(init_language_mal)
+{ mal_module("language", NULL, language_init_funcs); }

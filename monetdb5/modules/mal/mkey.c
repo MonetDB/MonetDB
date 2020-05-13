@@ -527,3 +527,33 @@ MKEYconstbulk_rotate_xor_hash(bat *res, const lng *h, const int *nbits, const ba
 	BBPunfix(b->batCacheid);
 	return MAL_SUCCEED;
 }
+
+#include "mel.h"
+mel_func mkey_init_funcs[] = {
+ command("mkey", "rotate", MKEYrotate, false, "left-rotate an int by nbits", args(1,3, arg("",lng),arg("v",lng),arg("nbits",int))),
+ pattern("mkey", "hash", MKEYhash, false, "calculate a hash value", args(1,2, arg("",lng),argany("v",0))),
+ pattern("mkey", "hash", MKEYhash, false, "calculate a hash value", args(1,2, arg("",lng),arg("v",bit))),
+ pattern("mkey", "hash", MKEYhash, false, "calculate a hash value", args(1,2, arg("",lng),arg("v",bte))),
+ pattern("mkey", "hash", MKEYhash, false, "calculate a hash value", args(1,2, arg("",lng),arg("v",sht))),
+ pattern("mkey", "hash", MKEYhash, false, "calculate a hash value", args(1,2, arg("",lng),arg("v",int))),
+ pattern("mkey", "hash", MKEYhash, false, "calculate a hash value", args(1,2, arg("",lng),arg("v",flt))),
+ pattern("mkey", "hash", MKEYhash, false, "calculate a hash value", args(1,2, arg("",lng),arg("v",dbl))),
+ pattern("mkey", "hash", MKEYhash, false, "calculate a hash value", args(1,2, arg("",lng),arg("v",lng))),
+ pattern("mkey", "hash", MKEYhash, false, "calculate a hash value", args(1,2, arg("",lng),arg("v",str))),
+ pattern("mkey", "bulk_rotate_xor_hash", MKEYrotate_xor_hash, false, "post: [:xor=]([:rotate=](h, nbits), [hash](b))", args(1,4, arg("",lng),arg("h",lng),arg("nbits",int),argany("v",0))),
+ command("mkey", "bulk_rotate_xor_hash", MKEYconstbulk_rotate_xor_hash, false, "pre:  h and b should be synced on head\npost: [:xor=]([:rotate=](h, nbits), [hash](b))", args(1,4, batarg("",lng),arg("h",lng),arg("nbits",int),batargany("b",1))),
+ pattern("mkey", "bulk_rotate_xor_hash", MKEYbulkconst_rotate_xor_hash, false, "pre:  h and b should be synced on head\npost: [:xor=]([:rotate=](h, nbits), [hash](b))", args(1,4, batarg("",lng),batarg("h",lng),arg("nbits",int),argany("v",0))),
+ command("mkey", "bulk_rotate_xor_hash", MKEYbulk_rotate_xor_hash, false, "pre:  h and b should be synced on head\npost: [:xor=]([:rotate=](h, nbits), [hash](b))", args(1,4, batarg("",lng),batarg("h",lng),arg("nbits",int),batargany("b",1))),
+ command("batmkey", "hash", MKEYbathash, false, "calculate a hash value", args(1,2, batarg("",lng),batargany("b",1))),
+#ifdef HAVE_HGE
+ pattern("mkey", "hash", MKEYhash, false, "calculate a hash value", args(1,2, arg("",lng),arg("v",hge))),
+#endif
+ { .imp=NULL }
+};
+#include "mal_import.h"
+#ifdef _MSC_VER
+#undef read
+#pragma section(".CRT$XCU",read)
+#endif
+LIB_STARTUP_FUNC(init_mkey_mal)
+{ mal_module("mkey", NULL, mkey_init_funcs); }

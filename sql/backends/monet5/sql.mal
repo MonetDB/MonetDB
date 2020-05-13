@@ -273,7 +273,7 @@ comment "Return a single bat of selected delta.";
 
 command project( col:bat[:oid], l:bat[:oid], r:bat[:oid]) :bat[:oid]
 address BATleftproject
-comment "Last step of a left outer join, ie project the inner join (l,r) over the left input side (col)"
+comment "Last step of a left outer join, ie project the inner join (l,r) over the left input side (col)";
 
 command getVersion(clientid:int):lng
 address mvc_getVersion

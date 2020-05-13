@@ -9,14 +9,6 @@
 if(PY3INTEGRATION)
   add_library(pyapi3 MODULE)
 
-  set(include_mal_files
-    pyapi3)
-
-  create_include_object(
-    MAL_LANGUAGE
-    name_module "pyapi3"
-    modules_list ${include_mal_files})
-
   target_sources(pyapi3
     PRIVATE
     pyapi3.c
@@ -38,8 +30,7 @@ if(PY3INTEGRATION)
     pytypes.h
     type_conversion.h
     undef.h
-    unicode.h
-    ${MONETDB_CURRENT_MAL_SOURCES})
+    unicode.h)
 
   target_include_directories(pyapi3
     PRIVATE
