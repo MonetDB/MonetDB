@@ -1,3 +1,11 @@
+#[[
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0.  If a copy of the MPL was not distributed with this
+# file, You can obtain one at http://mozilla.org/MPL/2.0/.
+#
+# Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
+#]]
+
 include(os_release_info)
 
 if(${CMAKE_SYSTEM_NAME} STREQUAL "Linux")
@@ -32,16 +40,16 @@ elseif (${LINUX_DISTRO} STREQUAL "ubuntu")
   endif()
 elseif(${LINUX_DISTRO} STREQUAL "fedora")
   if(${LINUX_DISTRO_VERSION} STREQUAL "30")
-    set(DETECT "0")
-    set(UNDETECT "1")
+    set(DETECT "1")
+    set(UNDETECT "0")
   endif()
   if(${LINUX_DISTRO_VERSION} STREQUAL "31")
-    set(DETECT "0")
-    set(UNDETECT "1")
+    set(DETECT "1")
+    set(UNDETECT "0")
   endif()
   if(${LINUX_DISTRO_VERSION} STREQUAL "32")
-    set(DETECT "0")
-    set(UNDETECT "1")
+    set(DETECT "1")
+    set(UNDETECT "0")
   endif()
 else()
   message(ERROR "Linux distro: ${LINUX_DISTRO} not known")

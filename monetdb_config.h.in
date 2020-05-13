@@ -151,6 +151,7 @@
 #cmakedefine HAVE_NETCDF @HAVE_NETCDF@
 #cmakedefine HAVE_SHP @GDAL_FOUND@
 #cmakedefine HAVE_CUDF @HAVE_CUDF@
+#cmakedefine HAVE_READLINE @HAVE_READLINE@
 
 /* Directory separator */
 #cmakedefine DIR_SEP '@DIR_SEP@'

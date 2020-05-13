@@ -106,4 +106,118 @@ function(monetdb_configure_defines)
   check_function_exists("uname" HAVE_UNAME) 
   # Some libc versions on Linux distributions don't have it
   check_symbol_exists("semtimedop" "sys/types.h;sys/ipc.h;sys/sem.h" HAVE_SEMTIMEDOP)
+  # Likely unused, because it contained typo's
+  if(HAVE_PTHREAD_H)
+    check_function_exists("pthread_kill" HAVE_PTHREAD_KILL)
+    check_function_exists("pthread_sigmask" HAVE_PTHREAD_SIGMASK)
+  endif()
 endfunction()
+
+macro(monetdb_macro_variables)
+  # Set variables to define C macro's
+  # These are related to the detected packages
+  # These names are legacy. When the code is changed to use the cmake
+  # variables, they can be removed.
+  set(HAVE_ICONV ${Iconv_FOUND})
+  set(HAVE_PTHREAD_H ${CMAKE_USE_PTHREADS_INIT})
+  set(HAVE_LIBPCRE ${PCRE_FOUND})
+  set(HAVE_OPENSSL ${OPENSSL_FOUND})
+  set(HAVE_COMMONCRYPTO ${COMMONCRYPTO_FOUND})
+  set(HAVE_LIBBZ2 ${BZIP2_FOUND})
+  set(HAVE_CURL ${CURL_FOUND})
+  set(HAVE_LIBLZMA ${LIBLZMA_FOUND})
+  set(HAVE_LIBXML ${LibXml2_FOUND})
+  set(HAVE_LIBZ ${ZLIB_FOUND})
+  set(HAVE_LIBLZ4 ${LZ4_FOUND})
+  set(HAVE_PROJ ${PROJ_FOUND})
+  set(HAVE_SNAPPY ${SNAPPY_FOUND})
+  set(HAVE_UUID ${HAVE_UUID_GENERATE})
+  set(HAVE_VALGRIND ${VALGRIND_FOUND})
+  set(HAVE_NETCDF ${NETCDF_FOUND})
+  set(HAVE_READLINE ${READLINE_FOUND})
+
+  set(SOCKET_LIBRARIES "")
+  if (WIN32)
+    set(SOCKET_LIBRARIES "ws2_32")
+  endif()
+
+  set(DIR_SEP  "/")
+  set(PATH_SEP ":")
+  set(DIR_SEP_STR  "/")
+  set(SO_PREFIX "${CMAKE_SHARED_LIBRARY_PREFIX}")
+  set(SO_EXT "${CMAKE_SHARED_LIBRARY_SUFFIX}")
+
+  set(BINDIR "${CMAKE_INSTALL_FULL_BINDIR}")
+  set(LIBDIR "${CMAKE_INSTALL_FULL_LIBDIR}")
+  set(DATADIR "${CMAKE_INSTALL_FULL_DATADIR}")
+  set(DATA_DIR "${CMAKE_INSTALL_FULL_DATADIR}")
+  set(LOCALSTATEDIR "${CMAKE_INSTALL_FULL_LOCALSTATEDIR}")
+  if(WIN32)
+    # Fix cmake conversions
+    string(REPLACE "/" "\\\\" QXLOCALSTATEDIR "${LOCALSTATEDIR}")
+  endif()
+  set(MONETDB_PREFIX "${CMAKE_INSTALL_PREFIX}")
+  if(WIN32)
+    # Fix cmake conversions
+    string(REPLACE "/" "\\\\" MONETDB_PREFIX "${CMAKE_INSTALL_PREFIX}")
+  endif()
+
+  set(DATAROOTDIR "${CMAKE_INSTALL_FULL_DATAROOTDIR}")
+  set(BIN_DIR "${CMAKE_INSTALL_FULL_BINDIR}")
+  set(INCLUDEDIR "${CMAKE_INSTALL_FULL_INCLUDEDIR}")
+  set(INFODIR "${CMAKE_INSTALL_FULL_INFODIR}")
+  set(LIB_DIR "${CMAKE_INSTALL_FULL_LIBDIR}")
+  set(LIBEXECDIR "${CMAKE_INSTALL_FULL_LIBEXECDIR}")
+  set(LOCALSTATE_DIR "${CMAKE_INSTALL_FULL_LOCALSTATEDIR}")
+  # set(MANDIR "${CMAKE_INSTALL_FULL_MANDIR}")
+  set(SYSCONFDIR "${CMAKE_INSTALL_FULL_SYSCONFDIR}")
+  set(LOGDIR "${CMAKE_INSTALL_FULL_LOCALSTATEDIR}/log/monetdb"
+    CACHE PATH
+    "Where to put log files (default LOCALSTATEDIR/log/monetdb)")
+  set(PKGCONFIGDIR "${LIBDIR}/pkgconfig")
+  set(RUNDIR
+    "${CMAKE_INSTALL_FULL_LOCALSTATEDIR}/run/monetdb"
+    CACHE PATH
+    "Where to put pid files (default LOCALSTATEDIR/run/monetdb)")
+endmacro()
+
+macro(monetdb_configure_crypto)
+  cmake_push_check_state()
+  if(COMMONCRYPTO_FOUND)
+    #set(CMAKE_REQUIRED_INCLUDES "${COMMONCRYPTO_INCUDE_DIR}")
+    set(CMAKE_REQUIRED_LIBRARIES "${COMMONCRYPTO_LIBRARIES}")
+
+    check_symbol_exists("CC_MD5_Update" "CommonCrypto/CommonDigest.h" HAVE_MD5_UPDATE)
+    check_symbol_exists("CC_SHA1_Update" "CommonCrypto/CommonDigest.h" HAVE_SHA1_UPDATE)
+    check_symbol_exists("CC_SHA224_Update" "CommonCrypto/CommonDigest.h" HAVE_SHA224_UPDATE)
+    check_symbol_exists("CC_SHA256_Update" "CommonCrypto/CommonDigest.h" HAVE_SHA256_UPDATE)
+    check_symbol_exists("CC_SHA384_Update" "CommonCrypto/CommonDigest.h" HAVE_SHA384_UPDATE)
+    check_symbol_exists("CC_SHA512_Update" "CommonCrypto/CommonDigest.h" HAVE_SHA512_UPDATE)
+
+    add_library(OpenSSL::Crypto UNKNOWN IMPORTED)
+    set_target_properties(OpenSSL::Crypto PROPERTIES
+      INTERFACE_INCLUDE_DIRECTORIES "${COMMONCRYPTO_INCLUDE_DIR}")
+    set_target_properties(OpenSSL::Crypto PROPERTIES
+      IMPORTED_LINK_INTERFACE_LANGUAGES "C"
+      IMPORTED_LOCATION "${COMMONCRYPTO_LIBRARIES}")
+  endif()
+  if(OPENSSL_FOUND)
+    #set(CMAKE_REQUIRED_INCLUDES "${OPENSSL_INCUDE_DIR}")
+    #set(CMAKE_REQUIRED_LIBRARIES "${OPENSSL_LIBRARIES}")
+
+    set(HAVE_OPENSSL ON CACHE INTERNAL "OpenSSL is available")
+    set(CRYPTO_INCLUDE_DIR "${OPENSSL_INCLUDE_DIR}" CACHE INTERNAL "crypto include directory")
+    set(CRYPTO_LIBRARIES "${OPENSSL_CRYPTO_LIBRARY}" CACHE INTERNAL "crypto libraries to link")
+    set(CMAKE_REQUIRED_INCLUDES "${CMAKE_REQUIRED_INCLUDES};${CRYPTO_INCLUDE_DIR}")
+    set(CMAKE_REQUIRED_LIBRARIES "${CMAKE_REQUIRED_LIBRARIES};${CRYPTO_LIBRARIES}")
+
+    check_symbol_exists("MD5_Update" "openssl/md5.h" HAVE_MD5_UPDATE)
+    check_symbol_exists("RIPEMD160_Update" "openssl/ripemd.h" HAVE_RIPEMD160_UPDATE)
+    check_symbol_exists("SHA1_Update" "openssl/sha.h" HAVE_SHA1_UPDATE)
+    check_symbol_exists("SHA224_Update" "openssl/sha.h" HAVE_SHA224_UPDATE)
+    check_symbol_exists("SHA256_Update" "openssl/sha.h" HAVE_SHA256_UPDATE)
+    check_symbol_exists("SHA384_Update" "openssl/sha.h" HAVE_SHA384_UPDATE)
+    check_symbol_exists("SHA512_Update" "openssl/sha.h" HAVE_SHA512_UPDATE)
+  endif()
+  cmake_pop_check_state()
+endmacro()

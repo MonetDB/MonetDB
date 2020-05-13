@@ -9,14 +9,38 @@
 include_directories(${ODBC_INCLUDE_DIR})
 
 if(TESTING)
-	add_executable(odbcsample1 odbcsample1.c)
-	target_link_libraries(odbcsample1 PRIVATE ODBC::ODBC)
-	add_executable(testgetinfo testgetinfo.c)
-	target_link_libraries(testgetinfo PRIVATE ODBC::ODBC)
-	add_executable(arraytest arraytest.c)
-	target_link_libraries(arraytest PRIVATE ODBC::ODBC)
-	add_executable(testStmtAttr testStmtAttr.c)
-	target_link_libraries(testStmtAttr PRIVATE ODBC::ODBC)
+  add_executable(odbcsample1
+    odbcsample1.c)
 
-	install(TARGETS odbcsample1 testgetinfo arraytest testStmtAttr DESTINATION ${BINDIR})
+  target_link_libraries(odbcsample1
+    PRIVATE
+    ODBC::ODBC)
+
+  add_executable(testgetinfo
+    testgetinfo.c)
+  target_link_libraries(testgetinfo
+    PRIVATE
+    ODBC::ODBC)
+
+  add_executable(arraytest
+    arraytest.c)
+
+  target_link_libraries(arraytest
+    PRIVATE
+    ODBC::ODBC)
+
+  add_executable(testStmtAttr
+    testStmtAttr.c)
+
+  target_link_libraries(testStmtAttr
+    PRIVATE
+    ODBC::ODBC)
+
+  install(TARGETS
+    odbcsample1
+    testgetinfo
+    arraytest
+    testStmtAttr
+    DESTINATION
+    ${BINDIR})
 endif()
