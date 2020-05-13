@@ -1959,9 +1959,12 @@ OPTmergetableImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 			bailout = 1;
 		}
 		if (getModuleId(p) == algebraRef &&
-		    getFunctionId(p) == thetajoinRef ) {
+		    getFunctionId(p) == thetajoinRef) {
+		      assert(p->argc == 9);
+		      if (p->argc == 9 && getVarConstant(mb,getArg(p,6)).val.ival == 6 /* op == '<>' */) {
 			TRC_INFO(MAL_OPTIMIZER, "Mergetable bailout thetajoin ref\n");
 			bailout = 1;
+		      }
 		}
 		if (isSample(p)) {
 			bailout = 1;
