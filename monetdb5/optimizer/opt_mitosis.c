@@ -223,7 +223,7 @@ OPTmitosisImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 		}
 		/* we keep the original bind operation, because it allows for
 		 * easy undo when the mergtable can not do something */
-		pushInstruction(mb, p);
+		// pushInstruction(mb, p);
 
 		qtpe = getVarType(mb, getArg(p, 0));
 
@@ -262,6 +262,7 @@ OPTmitosisImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 		pushInstruction(mb, matq);
 		if (upd)
 			pushInstruction(mb, matr);
+		freeInstruction(p);
 	}
 	for (; i<slimit; i++) 
 		if (old[i])

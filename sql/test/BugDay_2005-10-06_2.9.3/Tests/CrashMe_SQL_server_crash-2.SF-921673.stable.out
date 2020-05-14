@@ -75,6 +75,7 @@ stdout of test 'CrashMe_SQL_server_crash-2.SF-921673` in directory 'sql/test/Bug
 [ NULL,	"sys",	"functions",	"vararg",	"boolean",	1,	0,	0,	10,	NULL,	NULL,	NULL,	0,	0,	0,	9,	NULL,	NULL,	NULL	]
 [ NULL,	"sys",	"functions",	"schema_id",	"int",	32,	0,	0,	10,	NULL,	NULL,	NULL,	0,	0,	0,	10,	NULL,	NULL,	NULL	]
 [ NULL,	"sys",	"functions",	"system",	"boolean",	1,	0,	0,	10,	NULL,	NULL,	NULL,	0,	0,	0,	11,	NULL,	NULL,	NULL	]
+[ NULL,	"sys",	"functions",	"semantics",	"boolean",	1,	0,	0,	10,	NULL,	NULL,	NULL,	0,	0,	0,	12,	NULL,	NULL,	NULL	]
 [ NULL,	"sys",	"keys",	"id",	"int",	32,	0,	0,	10,	NULL,	NULL,	NULL,	0,	0,	0,	1,	NULL,	NULL,	NULL	]
 [ NULL,	"sys",	"keys",	"table_id",	"int",	32,	0,	0,	10,	NULL,	NULL,	NULL,	0,	0,	0,	2,	NULL,	NULL,	NULL	]
 [ NULL,	"sys",	"keys",	"type",	"int",	32,	0,	0,	10,	NULL,	NULL,	NULL,	0,	0,	0,	3,	NULL,	NULL,	NULL	]

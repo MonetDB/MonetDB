@@ -17,8 +17,8 @@
 #include "bat/bat_table.h"
 #include "bat/bat_logger.h"
 
-/* version 05.22.04 of catalog */
-#define CATALOG_VERSION 52204
+/* version 05.22.05 of catalog */
+#define CATALOG_VERSION 52205
 int catalog_version = 0;
 
 static MT_Lock bs_lock = MT_LOCK_INITIALIZER("bs_lock");
@@ -1057,6 +1057,8 @@ load_func(sql_trans *tr, sql_schema *s, sqlid fid, subrids *rs)
 	t->vararg = *(bit *)v;	_DELETE(v);
 	v = table_funcs.column_find_value(tr, find_sql_column(funcs, "system"), rid);
 	t->system = *(bit *)v;	_DELETE(v);
+	v = table_funcs.column_find_value(tr, find_sql_column(funcs, "semantics"), rid);
+	t->semantics = *(bit *)v;		_DELETE(v);
 	t->res = NULL;
 	t->s = s;
 	t->fix_scale = SCALE_EQ;
@@ -1528,7 +1530,7 @@ insert_functions(sql_trans *tr, sql_table *sysfunc, sql_table *sysarg)
 		int number = 0, ftype = (int) f->type, flang = (int) FUNC_LANG_INT;
 		sqlid next_schema = f->s ? f->s->base.id : 0;
 
-		table_funcs.table_insert(tr, sysfunc, &f->base.id, f->base.name, f->imp, f->mod, &flang, &ftype, &se, &f->varres, &f->vararg, &next_schema, &f->system);
+		table_funcs.table_insert(tr, sysfunc, &f->base.id, f->base.name, f->imp, f->mod, &flang, &ftype, &se, &f->varres, &f->vararg, &next_schema, &f->system, &f->semantics);
 		if (f->res)
 			insert_args(tr, sysarg, f->res, f->base.id, "res_%d", &number);
 		if (f->ops)
@@ -1894,6 +1896,7 @@ store_load(backend_stack stk) {
 	bootstrap_create_column(tr, t, "vararg", "boolean", 1);
 	bootstrap_create_column(tr, t, "schema_id", "int", 32);
 	bootstrap_create_column(tr, t, "system", "boolean", 1);
+	bootstrap_create_column(tr, t, "semantics", "boolean", 1);
 
 	args = t = bootstrap_create_table(tr, s, "args");
 	bootstrap_create_column(tr, t, "id", "int", 32);
@@ -3659,6 +3662,9 @@ schema_dup(sql_trans *tr, int flags, sql_schema *os, sql_trans *o)
 		}
 		if (tr->parent == gtrans)
 			os->tables.nelm = NULL;
+
+		// Set the ->p member for each sql_table that is a child of some other merge table.
+		set_members(&s->tables);
 	}
 	if (os->funcs.set) {
 		for (n = os->funcs.set->h; n; n = n->next) {
@@ -5586,6 +5592,7 @@ create_sql_func(sql_allocator *sa, const char *func, list *args, list *res, sql_
 	t->type = type;
 	t->lang = lang;
 	t->sql = (lang==FUNC_LANG_SQL||lang==FUNC_LANG_MAL);
+	t->semantics = TRUE;
 	t->side_effect = (type==F_FILT || (res && (lang==FUNC_LANG_SQL || !list_empty(args))))?FALSE:TRUE;
 	t->varres = varres;
 	t->vararg = vararg;
@@ -5616,6 +5623,7 @@ sql_trans_create_func(sql_trans *tr, sql_schema *s, const char *func, list *args
 	t->type = type;
 	t->lang = lang;
 	t->sql = (lang==FUNC_LANG_SQL||lang==FUNC_LANG_MAL);
+	t->semantics = TRUE;
 	se = t->side_effect = (type==F_FILT || (res && (lang==FUNC_LANG_SQL || !list_empty(args))))?FALSE:TRUE;
 	t->varres = varres;
 	t->vararg = vararg;
@@ -5634,7 +5642,7 @@ sql_trans_create_func(sql_trans *tr, sql_schema *s, const char *func, list *args
 
 	cs_add(&s->funcs, t, TR_NEW);
 	table_funcs.table_insert(tr, sysfunc, &t->base.id, t->base.name, query?query:t->imp, t->mod, &flang, &ftype, &se,
-							 &t->varres, &t->vararg, &s->base.id, &t->system);
+							 &t->varres, &t->vararg, &s->base.id, &t->system, &t->semantics);
 	if (t->res) for (n = t->res->h; n; n = n->next, number++) {
 		sql_arg *a = n->data;
 		sqlid id = next_oid();

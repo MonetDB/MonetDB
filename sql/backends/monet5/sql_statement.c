@@ -2046,8 +2046,11 @@ stmt_semijoin(backend *be, stmt *op1, stmt *op2, stmt *lcand, stmt *rcand, int i
 	if (op1->nr < 0 || op2->nr < 0)
 		return NULL;
 
-	q = newStmt(mb, algebraRef, semijoinRef);
-	q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
+	if (single) {
+		q = newStmt(mb, algebraRef, semijoinRef);
+		q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
+	} else
+		q = newStmt(mb, algebraRef, intersectRef);
 	q = pushArgument(mb, q, op1->nr);
 	q = pushArgument(mb, q, op2->nr);
 	if (lcand)
@@ -2070,7 +2073,9 @@ stmt_semijoin(backend *be, stmt *op1, stmt *op2, stmt *lcand, stmt *rcand, int i
 		s->op2 = op2;
 		s->flag = cmp_equal;
 		s->key = 0;
-		s->nrcols = 2;
+		s->nrcols = 1;
+		if (single)
+			s->nrcols = 2;
 		s->nr = getDestVar(q);
 		s->q = q;
 		return s;

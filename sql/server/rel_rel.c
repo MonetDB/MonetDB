@@ -428,6 +428,7 @@ rel_inplace_project(sql_allocator *sa, sql_rel *rel, sql_rel *l, list *e)
 			return NULL;
 
 		*l = *rel;
+		l->ref.refcnt = 1;
 	} else {
 		rel_destroy_(rel);
 	}

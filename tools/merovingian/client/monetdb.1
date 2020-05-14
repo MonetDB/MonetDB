@@ -41,6 +41,14 @@ to connect to a remote
 The use of this option requires
 .B \-P
 (see below).
+If
+.I hostname
+starts with a forward slash (/),
+.I hostname
+is assumed to be the directory where the UNIX sockets are stored.  In
+that case, the
+.B \-P
+option is not allowed.
 .TP
 \fB\-p\fP \fIport\fP
 Connects to the given portnumber instead of the default (50000).
