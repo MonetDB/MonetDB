@@ -2,10 +2,15 @@
 #include "stream.h"
 
 #include <errno.h>
+#include <fcntl.h>
 #include <stdarg.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+
+#if defined(_MSC_VER) && _MSC_VER >= 1400
+#define fdopen _fdopen
+#endif
 
 
 const char *USAGE =
@@ -168,9 +173,11 @@ int cmd_read(char *argv[])
 	}
 
 	if (out == NULL) {
-		// Try to get binary stdout on Windows
 		fflush(stdout);
-		out = fdopen(fileno(stdout), "wb");
+		out = stdout;
+#ifdef _MSC_VER
+		_setmode(_fileno(out), O_BINARY);
+#endif
 	}
 
 	copy_stream_to_file(s, out, bufsize);
@@ -261,9 +268,10 @@ int cmd_write(char *argv[])
 	}
 
 	if (in == NULL) {
-		// We can't flush stdin but it hasn't been used yet so with any
-		// luck, no input has been buffered yet
-		in = fdopen(fileno(stdin), "rb");
+		in = stdin;
+#ifdef _MSC_VER
+		_setmode(_fileno(in), O_BINARY);
+#endif
 	}
 
 	copy_file_to_stream(in, s, bufsize);
