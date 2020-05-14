@@ -132,14 +132,13 @@ static Client
 MCnewClient(void)
 {
 	Client c;
-	MT_lock_set(&mal_contextLock);
+
 	for (c = mal_clients; c < mal_clients + MAL_MAXCLIENTS; c++) {
 		if (c->mode == FREECLIENT) {
 			c->mode = RUNCLIENT;
 			break;
 		}
 	}
-	MT_lock_unset(&mal_contextLock);
 
 	if (c == mal_clients + MAL_MAXCLIENTS)
 		return NULL;
@@ -297,9 +296,12 @@ MCinitClient(oid user, bstream *fin, stream *fout)
 {
 	Client c = NULL;
 
-	if ((c = MCnewClient()) == NULL)
-		return NULL;
-	return MCinitClientRecord(c, user, fin, fout);
+	MT_lock_set(&mal_contextLock);
+	c = MCnewClient();
+	if (c)
+		MCinitClientRecord(c, user, fin, fout);
+	MT_lock_unset(&mal_contextLock);
+	return c;
 }
 
 
