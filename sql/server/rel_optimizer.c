@@ -5340,44 +5340,56 @@ rel_remove_empty_join(mvc *sql, sql_rel *rel, int *changes)
 	return rel;
 }
 
+/* const or groupby without group by exps */
+#define SIMPLE_PROJECTION_FOR_JOIN2SEMI(X) \
+	((X)->card < CARD_AGGR && is_project((X)->op) && list_length((X)->exps) == 1)
+
 static sql_rel * 
-find_candidate_join2semi(sql_rel *rel) 
+find_candidate_join2semi(sql_rel *rel, bool *swap) 
 {
 	/* generalize possibility : we need the visitor 'step' here */
 	if (rel->op == op_join && rel->exps) {
-		sql_rel *r = rel->r;
+		sql_rel *l = rel->l, *r = rel->r;
 
-		if (r->card < CARD_AGGR && is_project(r->op) && list_length(r->exps) == 1) /* const or groupby without group by exps */
+		if (SIMPLE_PROJECTION_FOR_JOIN2SEMI(r)) {
+			*swap = false;
 			return rel;
+		}
+		if (SIMPLE_PROJECTION_FOR_JOIN2SEMI(l)) {
+			*swap = true;
+			return rel;
+		}
 	}
 	if (is_join(rel->op) || is_semi(rel->op)) {
 		sql_rel *c;
 
-		if ((c=find_candidate_join2semi(rel->l)) != NULL ||
-		    (c=find_candidate_join2semi(rel->r)) != NULL) 
+		if ((c=find_candidate_join2semi(rel->l, swap)) != NULL ||
+		    (c=find_candidate_join2semi(rel->r, swap)) != NULL) 
 			return c;
 	}
 	return NULL;
 }
 
 static int
-subrel_uses_exp_outside_subrel(sql_rel *rel, sql_exp *e, sql_rel *c)
+subrel_uses_exp_outside_subrel(sql_rel *rel, sql_exp *e, sql_rel *c, bool swap)
 {
 	if (rel == c)
 		return 0;
 	/* for subrel only expect joins (later possibly selects) */ 
 	if (is_join(rel->op) || is_semi(rel->op)) {
+		sql_rel *other = swap ? rel->r : rel->l;
+
 		if (exps_uses_exp(rel->exps, e))
 			return 1;
-		if (subrel_uses_exp_outside_subrel(rel->l, e, c) ||
-		    subrel_uses_exp_outside_subrel(rel->l, e, c))
+		if (subrel_uses_exp_outside_subrel(other, e, c, swap) ||
+		    subrel_uses_exp_outside_subrel(other, e, c, swap))
 			return 1;
 	}
 	return 0;
 }
 
 static int
-rel_uses_exp_outside_subrel(sql_rel *rel, sql_exp *e, sql_rel *c)
+rel_uses_exp_outside_subrel(sql_rel *rel, sql_exp *e, sql_rel *c, bool swap)
 {
 	/* for now we only expect sub relations of type project (rel) or join/semi (later possibly selects) */ 
 	if (is_project(rel->op) && !list_empty(rel->exps)) {
@@ -5388,7 +5400,7 @@ rel_uses_exp_outside_subrel(sql_rel *rel, sql_exp *e, sql_rel *c)
 				return 1;
 		}
 		if (rel->l)
-			return subrel_uses_exp_outside_subrel(rel->l, e, c);
+			return subrel_uses_exp_outside_subrel(rel->l, e, c, swap);
 	}
 	return 1;
 }
@@ -5397,19 +5409,24 @@ static sql_rel *
 rel_join2semijoin(mvc *sql, sql_rel *rel, int *changes)
 {
 	(void)sql;
-	(void)changes;
 	if ((is_simple_project(rel->op) || is_groupby(rel->op) || is_select(rel->op)) && rel->l) {
+		bool swap = false;
 		sql_rel *l = rel->l;
-		sql_rel *c = find_candidate_join2semi(l);
+		sql_rel *c = find_candidate_join2semi(l, &swap);
 
 		if (c) {
-			/* c->r is a project and only has one result */
-			sql_rel *r = c->r;
-			sql_exp *re = r->exps->h->data;
+			/* 'p' is a project and only has one result */
+			sql_rel *p = swap ? c->l : c->r;
+			sql_exp *re = p->exps->h->data;
 
 			/* now we need to check if ce is only used at the level of c */
-			if (!rel_uses_exp_outside_subrel(rel, re, c)) {
+			if (!rel_uses_exp_outside_subrel(rel, re, c, swap)) {
 				c->op = op_semi;
+				if (swap) {
+					sql_rel *tmp = c->r;
+					c->r = c->l;
+					c->l = tmp;
+				}
 				(*changes)++;
 			}
 		}
