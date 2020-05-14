@@ -5371,36 +5371,32 @@ find_candidate_join2semi(sql_rel *rel, bool *swap)
 }
 
 static int
-subrel_uses_exp_outside_subrel(sql_rel *rel, sql_exp *e, sql_rel *c, bool swap)
+subrel_uses_exp_outside_subrel(sql_rel *rel, sql_exp *e, sql_rel *c)
 {
 	if (rel == c)
 		return 0;
 	/* for subrel only expect joins (later possibly selects) */ 
 	if (is_join(rel->op) || is_semi(rel->op)) {
-		sql_rel *other = swap ? rel->r : rel->l;
-
 		if (exps_uses_exp(rel->exps, e))
 			return 1;
-		if (subrel_uses_exp_outside_subrel(other, e, c, swap) ||
-		    subrel_uses_exp_outside_subrel(other, e, c, swap))
+		if (subrel_uses_exp_outside_subrel(rel->l, e, c) ||
+		    subrel_uses_exp_outside_subrel(rel->r, e, c))
 			return 1;
 	}
 	return 0;
 }
 
 static int
-rel_uses_exp_outside_subrel(sql_rel *rel, sql_exp *e, sql_rel *c, bool swap)
+rel_uses_exp_outside_subrel(sql_rel *rel, sql_exp *e, sql_rel *c)
 {
-	/* for now we only expect sub relations of type project (rel) or join/semi (later possibly selects) */ 
-	if (is_project(rel->op) && !list_empty(rel->exps)) {
-		if (exps_uses_exp(rel->exps, e))
+	/* for now we only expect sub relations of type project, selects (rel) or join/semi */ 
+	if (is_simple_project(rel->op) || is_groupby(rel->op) || is_select(rel->op)) {
+		if (!list_empty(rel->exps) && exps_uses_exp(rel->exps, e))
 			return 1;
-		if (rel->r && (is_simple_project(rel->op) || is_groupby(rel->op))) {
-			if (exps_uses_exp(rel->r, e))
-				return 1;
-		}
+		if ((is_simple_project(rel->op) || is_groupby(rel->op)) && !list_empty(rel->r) && exps_uses_exp(rel->r, e))
+			return 1;
 		if (rel->l)
-			return subrel_uses_exp_outside_subrel(rel->l, e, c, swap);
+			return subrel_uses_exp_outside_subrel(rel->l, e, c);
 	}
 	return 1;
 }
@@ -5420,7 +5416,7 @@ rel_join2semijoin(mvc *sql, sql_rel *rel, int *changes)
 			sql_exp *re = p->exps->h->data;
 
 			/* now we need to check if ce is only used at the level of c */
-			if (!rel_uses_exp_outside_subrel(rel, re, c, swap)) {
+			if (!rel_uses_exp_outside_subrel(rel, re, c)) {
 				c->op = op_semi;
 				if (swap) {
 					sql_rel *tmp = c->r;
