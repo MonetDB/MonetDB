@@ -20,6 +20,22 @@ MERGE INTO another_t USING (SELECT col1 FROM another_t) sub ON (SELECT 1 UNION S
 MERGE INTO another_t USING (SELECT (SELECT 1 UNION SELECT 2) FROM another_t) sub ON TRUE WHEN MATCHED THEN DELETE WHEN NOT MATCHED THEN INSERT;
 	--error, more than one row returned by a subquery used as an expression
 
+WITH customer_total_return AS
+  (SELECT 1 AS ctr_customer_sk,
+          1 AS ctr_state,
+          1 AS ctr_total_return)
+SELECT 1
+FROM customer_total_return ctr1,
+     another_T,
+     tbl_ProductSales
+WHERE ctr1.ctr_total_return >
+    (SELECT avg(ctr_total_return)*1.2
+     FROM customer_total_return ctr2
+     WHERE ctr1.ctr_state = ctr2.ctr_state)
+  AND col1 = ColID
+  AND ctr1.ctr_customer_sk = TotalSales;
+	--empty
+
 DROP TABLE tbl_ProductSales;
 DROP TABLE another_T;
 DROP TABLE integers;
