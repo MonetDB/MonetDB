@@ -732,6 +732,14 @@ rel_general_unnest(mvc *sql, sql_rel *rel, list *ad)
 		int nr;
 
 		sql_rel *l = rel->l, *r = rel->r, *inner_r;
+
+		/* cleanup empty selects (should be done before any rel_dup(l) */
+		if (l && is_select(l->op) && list_empty(l->exps) && !rel_is_ref(l)) {
+			rel->l = l->l;
+			l->l = NULL;
+			rel_destroy(l);
+			l = rel->l;
+		}
 		/* rewrite T1 dependent join T2 -> T1 join D dependent join T2, where the T1/D join adds (equality) predicates (for the Domain (ad)) and D is are the distinct(projected(ad) from T1)  */
 		sql_rel *D = rel_project(sql->sa, rel_dup(l), exps_copy(sql, ad));
 		set_distinct(D);
@@ -1480,7 +1488,7 @@ rel_unnest_dependent(mvc *sql, sql_rel *rel)
 				return rel_unnest_dependent(sql, rel);
 			}
 
-			if (r && is_groupby(r->op) && need_distinct(l) /*&& is_distinct_set(sql, l, ad)*/) { 
+			if (r && is_groupby(r->op) && !is_left(rel->op) && is_distinct_set(sql, l, ad)) {
 				rel = push_up_groupby(sql, rel, ad);
 				return rel_unnest_dependent(sql, rel);
 			}
@@ -1490,7 +1498,7 @@ rel_unnest_dependent(mvc *sql, sql_rel *rel)
 				return rel_unnest_dependent(sql, rel);
 			}
 
-			if (r && is_set(r->op) && (!is_left(rel->op) && is_distinct_set(sql, l, ad))) {
+			if (r && is_set(r->op) && !is_left(rel->op) && is_distinct_set(sql, l, ad)) {
 				rel = push_up_set(sql, rel, ad);
 				return rel_unnest_dependent(sql, rel);
 			}
@@ -2333,7 +2341,7 @@ rewrite_compare(mvc *sql, sql_rel *rel, sql_exp *e, int depth)
 			} else {
 				if (lsq) 
 					(void)rewrite_inner(sql, rel, lsq, op_join);
-				if (rsq) 
+				if (rsq)
 					(void)rewrite_inner(sql, rel, rsq, !is_tuple?op_join:is_anyequal(sf)?op_semi:op_anti);
 				if (is_tuple) {
 					list *t = le->f;
@@ -3034,6 +3042,8 @@ rel_unnest(mvc *sql, sql_rel *rel)
 	rel = rel_visitor_bottomup(sql, rel, &rewrite_values, &changes);
 	rel = rel_exp_visitor_bottomup(sql, rel, &rewrite_exp_rel, &changes);
 	rel = rel_visitor_bottomup(sql, rel, &rewrite_join2semi, &changes);	/* where possible convert anyequal functions into marks */
+	if (changes > 0)
+		rel = rel_visitor_bottomup(sql, rel, &rel_remove_empty_select, &changes);
 	rel = rel_visitor_bottomup(sql, rel, &rewrite_compare_exp, &changes);	/* only allow for e_cmp in selects and  handling */
 	rel = rel_visitor_bottomup(sql, rel, &rewrite_remove_xp_project, &changes);	/* remove crossproducts with project ( project [ atom ] ) [ etc ] */
 	changes = 0;
