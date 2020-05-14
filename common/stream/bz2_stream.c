@@ -37,8 +37,9 @@ get_src_win(inner_state_t *inner_state)
 static void
 set_src_win(inner_state_t *inner_state, pump_buffer buf)
 {
+	assert(buf.count < UINT_MAX);
 	inner_state->strm.next_in = buf.start;
-	inner_state->strm.avail_in = buf.count;
+	inner_state->strm.avail_in = (unsigned int)buf.count;
 }
 
 static pump_buffer
@@ -53,8 +54,9 @@ get_dst_win(inner_state_t *inner_state)
 static void
 set_dst_win(inner_state_t *inner_state, pump_buffer buf)
 {
+	assert(buf.count < UINT_MAX);
 	inner_state->strm.next_out = buf.start;
-	inner_state->strm.avail_out = buf.count;
+	inner_state->strm.avail_out = (unsigned int)buf.count;
 }
 
 static pump_buffer

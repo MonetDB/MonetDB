@@ -45,7 +45,8 @@ compress_stream_data(bs2 *s)
 	} else if (s->comp == COMPRESSION_LZ4) {
 #ifdef HAVE_LIBLZ4
 		int compressed_length = (int) s->compbufsiz;
-		if ((compressed_length = LZ4_compress_fast(s->buf, s->compbuf, s->nr, compressed_length, 1)) == 0) {
+		assert(s->nr < INT_MAX);
+		if ((compressed_length = LZ4_compress_fast(s->buf, s->compbuf, (int)s->nr, compressed_length, 1)) == 0) {
 			s->s->errnr = -1;
 			return -1;
 		}
@@ -79,7 +80,8 @@ decompress_stream_data(bs2 *s)
 	} else if (s->comp == COMPRESSION_LZ4) {
 #ifdef HAVE_LIBLZ4
 		int uncompressed_length = (int) s->bufsiz;
-		if ((uncompressed_length = LZ4_decompress_safe(s->compbuf, s->buf, s->itotal, uncompressed_length)) <= 0) {
+		assert(s->itotal < INT_MAX);
+		if ((uncompressed_length = LZ4_decompress_safe(s->compbuf, s->buf, (int)s->itotal, uncompressed_length)) <= 0) {
 			s->s->errnr = uncompressed_length;
 			return -1;
 		}
@@ -107,7 +109,8 @@ compression_size_bound(bs2 *s)
 #ifndef HAVE_LIBLZ4
 		return -1;
 #else
-		return LZ4_compressBound(s->bufsiz);
+		assert(s->bufsiz < INT_MAX);
+		return LZ4_compressBound((int)s->bufsiz);
 #endif
 	}
 	return -1;

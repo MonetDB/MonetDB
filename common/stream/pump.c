@@ -116,7 +116,7 @@ static int pump_flush(stream *s)
 	state->set_src_win(inner_state, (pump_buffer){ .start = NULL, .count = 0 });
 	ssize_t nwritten = pump_out(s, PUMP_FLUSH_DATA);
 	if (nwritten < 0)
-		return nwritten;
+		return -1;
 	else
 		return mnstr_flush(s->inner);
 }

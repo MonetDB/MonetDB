@@ -496,14 +496,14 @@ wrapper_fsync(stream *s)
 
 
 static int
-wrapper_fgetpos(stream *s, fpos_t *restrict p)
+wrapper_fgetpos(stream *restrict s, fpos_t *restrict p)
 {
 	return s->inner->fgetpos(s->inner, p);
 }
 
 
 static int
-wrapper_fsetpos(stream *s, fpos_t *restrict p)
+wrapper_fsetpos(stream *restrict s, fpos_t *restrict p)
 {
 	return s->inner->fsetpos(s->inner, p);
 }

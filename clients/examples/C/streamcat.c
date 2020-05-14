@@ -278,7 +278,7 @@ static void copy_stream_to_file(stream *in, FILE *out, size_t bufsize)
 	char *buffer;
 	ssize_t nread;
 	size_t nwritten;
-	unsigned long total = 0;
+	uint64_t total = 0;
 	long iterations = -1;
 	ssize_t short_read = 0;
 
@@ -288,7 +288,7 @@ static void copy_stream_to_file(stream *in, FILE *out, size_t bufsize)
 		iterations += 1;
 		nread = mnstr_read(in, buffer, 1, bufsize);
 		if (nread < 0)
-			croak(2, "Error reading from stream after %lu bytes: %s", total, mnstr_error(in));
+			croak(2, "Error reading from stream after %" PRIu64 " bytes: %s", total, mnstr_error(in));
 		if (nread == 0) {
 			// eof
 			break;
@@ -296,13 +296,13 @@ static void copy_stream_to_file(stream *in, FILE *out, size_t bufsize)
 
 		if (short_read != 0)
 			// A short read MUST be followed by either error or eof.
-			croak(2, "Short read (%zd/%zu) after %ld iterations not followed by EOF or error", short_read, bufsize, iterations - 1);
+			croak(2, "Short read (%zd/%zu) after %" PRIu64 " iterations not followed by EOF or error", short_read, bufsize, iterations - 1);
 		short_read = (size_t)nread < bufsize ? nread : 0;
 
 		errno = 0;
 		nwritten = fwrite(buffer, 1, nread, out);
 		if (nwritten != (size_t)nread)
-			croak(2, "Write error after %lu bytes: %s", total + nwritten, strerror(errno));
+			croak(2, "Write error after %" PRIu64 " bytes: %s", total + (uint64_t)nwritten, strerror(errno));
 		total += nwritten;
 	}
 
@@ -318,7 +318,7 @@ static void copy_file_to_stream(FILE *in, stream *out, size_t bufsize)
 	char *buffer;
 	size_t nread;
 	ssize_t nwritten;
-	unsigned long total = 0;
+	int64_t total = 0;
 
 	buffer = malloc(bufsize);
 
@@ -327,18 +327,18 @@ static void copy_file_to_stream(FILE *in, stream *out, size_t bufsize)
 		nread = fread(buffer, 1, bufsize, in);
 		if (nread == 0) {
 			if (errno != 0)
-				croak(2, "Error reading from stream after %lu bytes: %s", total, strerror(errno));
+				croak(2, "Error reading from stream after %" PRId64 " bytes: %s", total, strerror(errno));
 			else
 				break;
 		}
 		nwritten = mnstr_write(out, buffer, 1, nread);
 		if (nwritten < 0)
-			croak(2, "Write error after %lu bytes: %s", total, mnstr_error(out));
+			croak(2, "Write error after %" PRId64 " bytes: %s", total, mnstr_error(out));
 		if ((size_t)nwritten != nread)
-			croak(2, "Partial write (%lu/%lu bytes) after %lu bytes: %s",
+			croak(2, "Partial write (%lu/%lu bytes) after %" PRId64 " bytes: %s",
 				(unsigned long)nwritten,  (unsigned long)nread,
-				total + nwritten, mnstr_error(out));
-		total += nwritten;
+				total + (int64_t)nwritten, mnstr_error(out));
+		total += (int64_t)nwritten;
 	}
 
 	free(buffer);
