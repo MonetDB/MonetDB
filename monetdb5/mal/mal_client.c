@@ -212,6 +212,7 @@ MCinitClientRecord(Client c, oid user, bstream *fin, stream *fout)
 {
 	const char *prompt;
 
+	/* mal_contextLock is held when this is called */
 	c->user = user;
 	c->username = 0;
 	c->scenario = NULL;
@@ -221,9 +222,7 @@ MCinitClientRecord(Client c, oid user, bstream *fin, stream *fout)
 
 	c->fdin = fin ? fin : bstream_create(GDKstdin, 0);
 	if ( c->fdin == NULL){
-		MT_lock_set(&mal_contextLock);
 		c->mode = FREECLIENT;
-		MT_lock_unset(&mal_contextLock);
 		fprintf(stderr,"!initClientRecord:" MAL_MALLOC_FAIL);
 		return NULL;
 	}
@@ -257,9 +256,7 @@ MCinitClientRecord(Client c, oid user, bstream *fin, stream *fout)
 		if (fin == NULL) {
 			c->fdin->s = NULL;
 			bstream_destroy(c->fdin);
-			MT_lock_set(&mal_contextLock);
 			c->mode = FREECLIENT;
-			MT_lock_unset(&mal_contextLock);
 		}
 		fprintf(stderr, "!initClientRecord:" MAL_MALLOC_FAIL);
 		return NULL;
@@ -299,7 +296,7 @@ MCinitClient(oid user, bstream *fin, stream *fout)
 	MT_lock_set(&mal_contextLock);
 	c = MCnewClient();
 	if (c)
-		MCinitClientRecord(c, user, fin, fout);
+		c = MCinitClientRecord(c, user, fin, fout);
 	MT_lock_unset(&mal_contextLock);
 	return c;
 }
