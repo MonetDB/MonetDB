@@ -57,6 +57,7 @@ function(monetdb_configure_defines)
   # Linux specific, in the future, it might be ported to other platforms
   check_symbol_exists("S_ISREG" "sys/stat.h" HAVE_SYS_STAT_H)
   check_symbol_exists("getaddrinfo" "netdb.h" HAVE_GETADDRINFO)
+  check_symbol_exists("getaddrinfo" "ws2tcpip.h" HAVE_GETADDRINFO)
   #check_symbol_exists("WSADATA" "winsock2.h" HAVE_WINSOCK_H)
   check_symbol_exists("fdatasync" "unistd.h" HAVE_FDATASYNC)
 
