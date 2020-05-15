@@ -3685,8 +3685,29 @@ def main(argv) :
         dft['MALCLIENT']      = "'mclient -lmal -ftest -tnone -Eutf-8'"
         dft['SQLCLIENT']      = "'mclient -lsql -ftest -tnone -Eutf-8'"
         dft['SQLDUMP']        = "'msqldump -q'"
-        dft['RCLIENT']        = "'R --vanilla --slave'"
-        dft['RUBYCLIENT']        = "'ruby'"
+        dft['RUBYCLIENT']     = "'ruby'"
+
+        r_noecho = '--no-echo'
+        if CheckExec('R'):
+            proc = process.Popen(['R', '--version'],
+                                 stdout = process.PIPE, stderr = process.PIPE,
+                                 universal_newlines = True)
+            r_out, r_err = proc.communicate()
+            res = re.search(r'R version (?P<major>\d+)\.', r_out)
+            if res is not None and int(res.group('major')) < 4:
+                r_noecho = '--slave'
+            if CONDITIONALS['HAVE_LIBR']:
+                proc = process.Popen(['R', r_noecho, '--no-save', '--no-restore',
+                                      '-e', 'print(Sys.getenv("R_LIBS_USER"))'],
+                                     stdout = process.PIPE, stderr = process.PIPE,
+                                     universal_newlines = True)
+                r_out, r_err = proc.communicate()
+                res = re.search(r'\[\d+\] "(?P<dir>.*)"', r_out)
+                if res is not None:
+                    rdir = os.path.expanduser(res.group('dir'))
+                    if not os.path.exists(rdir):
+                        os.makedirs(rdir)
+        dft['RCLIENT'] = "'R --vanilla {}'".format(r_noecho)
 
     #par = {}
     # get current environment
@@ -3943,17 +3964,6 @@ def main(argv) :
             CONDITIONALS['HAVE_PERL'] = '#'
         else:
             print('Perl available, but MonetDB driver or DBI module not available')
-    if CONDITIONALS['HAVE_LIBR'] and CheckExec('R'):
-        proc = process.Popen(['R', '--slave', '--no-save', '--no-restore',
-                              '-e', 'print(Sys.getenv("R_LIBS_USER"))'],
-                             stdout = process.PIPE, stderr = process.PIPE,
-                             universal_newlines = True)
-        r_out, r_err = proc.communicate()
-        res = re.search(r'\[\d+\] "(?P<dir>.*)"', r_out)
-        if res is not None:
-            rdir = os.path.expanduser(res.group('dir'))
-            if not os.path.exists(rdir):
-                os.makedirs(rdir)
     if CheckExec('php'):
         phpcmd = ['php']
         if 'PHP_INCPATH' in os.environ:
