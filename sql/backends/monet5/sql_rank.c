@@ -306,8 +306,12 @@ SQLrow_number(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			int icnt = (int) cnt;
 			for(j=1; j<=icnt; j++, rp++)
 				*rp = j;
+			r->tsorted = true;
+			r->tkey = true;
 		}
 		BATsetcount(r, cnt);
+		r->tnonil = true;
+		r->tnil = false;
 		BBPunfix(b->batCacheid);
 		BBPkeepref(*res = r->batCacheid);
 	} else {
@@ -393,9 +397,13 @@ SQLrank(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				int icnt = (int) cnt;
 				for(j=1; j<=icnt; j++, rp++)
 					*rp = j;
+				r->tsorted = true;
+				r->tkey = true;
 			}
 		}
 		BATsetcount(r, cnt);
+		r->tnonil = true;
+		r->tnil = false;
 		BBPunfix(b->batCacheid);
 		BBPkeepref(*res = r->batCacheid);
 	} else {
@@ -481,9 +489,13 @@ SQLdense_rank(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				int icnt = (int) cnt;
 				for(j=1; j<=icnt; j++, rp++)
 					*rp = j;
+				r->tsorted = true;
+				r->tkey = true;
 			}
 		}
 		BATsetcount(r, cnt);
+		r->tnonil = true;
+		r->tnil = false;
 		BBPunfix(b->batCacheid);
 		BBPkeepref(*res = r->batCacheid);
 	} else {
@@ -570,9 +582,13 @@ SQLpercent_rank(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			} else { /* single value, ie no ordering - the outcome will always be 0 */
 				for(; rp<end; rp++)
 					*rp = 0;
+				r->tsorted = true;
+				r->trevsorted = true;
 			}
 		}
 		BATsetcount(r, cnt);
+		r->tnonil = true;
+		r->tnil = false;
 		BBPunfix(b->batCacheid);
 		BBPkeepref(*res = r->batCacheid);
 	} else {
@@ -651,6 +667,8 @@ SQLcume_dist(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				rp = rb + BATcount(b);
 				for (; rb<rp; rb++)
 					*rb = 1;
+				r->tsorted = true;
+				r->trevsorted = true;
 			}
 		} else { /* single value, ie no partitions */
 			if (isaBatType(getArgType(mb, pci, 3))) {
@@ -677,9 +695,13 @@ SQLcume_dist(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				rp = rb + BATcount(b);
 				for (; rb<rp; rb++)
 					*rb = 1;
+				r->tsorted = true;
+				r->trevsorted = true;
 			}
 		}
 		BATsetcount(r, BATcount(b));
+		r->tnonil = true;
+		r->tnil = false;
 		BBPunfix(b->batCacheid);
 		BBPkeepref(*res = r->batCacheid);
 	} else {

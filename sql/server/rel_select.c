@@ -1914,9 +1914,7 @@ _rel_nop(mvc *sql, sql_schema *s, char *fname, list *tl, sql_rel *rel, list *exp
 	int table_func = (ek.card == card_relation);
 	sql_ftype type = (ek.card == card_loader)?F_LOADER:((ek.card == card_none)?F_PROC:
 		   ((ek.card == card_relation)?F_UNION:F_FUNC));
-	sql_ftype filt = (type == F_FUNC)?F_FILT:type;
 
-	(void)filt;
 	(void)nr_args;
 	(void)obj_type;
 	f = bind_func_(sql, s, fname, tl, type);
@@ -2508,11 +2506,17 @@ rel_logical_exp(sql_query *query, sql_rel *rel, symbol *sc, int f)
 
 			lr = rel_select_copy(sql->sa, lr, sa_list(sql->sa));
 			lr = rel_logical_exp(query, lr, lo, f);
-			if (!lr)
+			if (!lr) {
+				sql->pushdown = pushdown;
 				return NULL;
+			}
 			rr = rel_select_copy(sql->sa, rr, sa_list(sql->sa));
 			rr = rel_logical_exp(query, rr, ro, f);
-			if (lr && rr && lr->l == rr->l) {
+			if (!rr) {
+				sql->pushdown = pushdown;
+				return NULL;
+			}
+			if (lr->l == rr->l) {
 				lexps = lr->exps;
 				lr = lr->l;
 				rexps = rr->exps;

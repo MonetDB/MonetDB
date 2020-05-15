@@ -4101,7 +4101,7 @@ rel_merge_rse(mvc *sql, sql_rel *rel, int *changes)
 
 /* find in the list of expression an expression which uses e */ 
 static sql_exp *
-exp_uses_exp( list *exps, sql_exp *e)
+exps_uses_exp( list *exps, sql_exp *e)
 {
 	node *n;
 	const char *rname = exp_relname(e);
@@ -4246,7 +4246,7 @@ rel_push_aggr_down(mvc *sql, sql_rel *rel, int *changes)
 			for (n = ogbe->h; n; n = n->next) { 
 				sql_exp *e = n->data, *ne;
 
-				ne = exp_uses_exp( rel->exps, e);
+				ne = exps_uses_exp( rel->exps, e);
 				if (!ne)
 					continue;
 				ne = list_find_exp( u->exps, ne);
@@ -4780,11 +4780,11 @@ rel_push_join_down(mvc *sql, sql_rel *rel, int *changes)
 
 				/* project in between, ie find alias */
 				/* first find expression in expression list */
-				gbe = exp_uses_exp( gb->exps, gbe);
+				gbe = exps_uses_exp( gb->exps, gbe);
 				if (!gbe)
 					continue;
 				if (ogb != gb) 
-					gbe = exp_uses_exp( ogb->exps, gbe);
+					gbe = exps_uses_exp( ogb->exps, gbe);
 				if (gbe) {
 					rname = exp_find_rel_name(gbe);
 					name = exp_name(gbe);
@@ -5336,6 +5336,96 @@ rel_remove_empty_join(mvc *sql, sql_rel *rel, int *changes)
 			rel->l = rel_remove_empty_join(sql, rel->l, changes);
 		if (rel->r)
 			rel->r = rel_remove_empty_join(sql, rel->r, changes);
+	}
+	return rel;
+}
+
+/* const or groupby without group by exps */
+#define SIMPLE_PROJECTION_FOR_JOIN2SEMI(X) \
+	((X)->card < CARD_AGGR && is_project((X)->op) && list_length((X)->exps) == 1)
+
+static sql_rel * 
+find_candidate_join2semi(sql_rel *rel, bool *swap) 
+{
+	/* generalize possibility : we need the visitor 'step' here */
+	if (rel->op == op_join && rel->exps) {
+		sql_rel *l = rel->l, *r = rel->r;
+
+		if (SIMPLE_PROJECTION_FOR_JOIN2SEMI(r)) {
+			*swap = false;
+			return rel;
+		}
+		if (SIMPLE_PROJECTION_FOR_JOIN2SEMI(l)) {
+			*swap = true;
+			return rel;
+		}
+	}
+	if (is_join(rel->op) || is_semi(rel->op)) {
+		sql_rel *c;
+
+		if ((c=find_candidate_join2semi(rel->l, swap)) != NULL ||
+		    (c=find_candidate_join2semi(rel->r, swap)) != NULL) 
+			return c;
+	}
+	return NULL;
+}
+
+static int
+subrel_uses_exp_outside_subrel(sql_rel *rel, sql_exp *e, sql_rel *c)
+{
+	if (rel == c)
+		return 0;
+	/* for subrel only expect joins (later possibly selects) */ 
+	if (is_join(rel->op) || is_semi(rel->op)) {
+		if (exps_uses_exp(rel->exps, e))
+			return 1;
+		if (subrel_uses_exp_outside_subrel(rel->l, e, c) ||
+		    subrel_uses_exp_outside_subrel(rel->r, e, c))
+			return 1;
+	}
+	return 0;
+}
+
+static int
+rel_uses_exp_outside_subrel(sql_rel *rel, sql_exp *e, sql_rel *c)
+{
+	/* for now we only expect sub relations of type project, selects (rel) or join/semi */ 
+	if (is_simple_project(rel->op) || is_groupby(rel->op) || is_select(rel->op)) {
+		if (!list_empty(rel->exps) && exps_uses_exp(rel->exps, e))
+			return 1;
+		if ((is_simple_project(rel->op) || is_groupby(rel->op)) && !list_empty(rel->r) && exps_uses_exp(rel->r, e))
+			return 1;
+		if (rel->l)
+			return subrel_uses_exp_outside_subrel(rel->l, e, c);
+	}
+	return 1;
+}
+
+static sql_rel *
+rel_join2semijoin(mvc *sql, sql_rel *rel, int *changes)
+{
+	(void)sql;
+	if ((is_simple_project(rel->op) || is_groupby(rel->op) || is_select(rel->op)) && rel->l) {
+		bool swap = false;
+		sql_rel *l = rel->l;
+		sql_rel *c = find_candidate_join2semi(l, &swap);
+
+		if (c) {
+			/* 'p' is a project and only has one result */
+			sql_rel *p = swap ? c->l : c->r;
+			sql_exp *re = p->exps->h->data;
+
+			/* now we need to check if ce is only used at the level of c */
+			if (!rel_uses_exp_outside_subrel(rel, re, c)) {
+				c->op = op_semi;
+				if (swap) {
+					sql_rel *tmp = c->r;
+					c->r = c->l;
+					c->l = tmp;
+				}
+				(*changes)++;
+			}
+		}
 	}
 	return rel;
 }
@@ -9076,6 +9166,8 @@ optimize_rel(mvc *sql, sql_rel *rel, int *g_changes, int level, int value_based_
 
 	if (gp.cnt[op_join] || gp.cnt[op_left] || gp.cnt[op_right] || gp.cnt[op_full] || gp.cnt[op_semi] || gp.cnt[op_anti]) {
 		rel = rel_remove_empty_join(sql, rel, &changes);
+
+		rel = rel_visitor_bottomup(sql, rel, &rel_join2semijoin, &changes); 
 		if (!gp.cnt[op_update])
 			rel = rel_join_order(sql, rel);
 		rel = rel_visitor_bottomup(sql, rel, &rel_push_join_down_union, &changes); 

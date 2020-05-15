@@ -80,13 +80,14 @@ sql_fix_system_tables(Client c, mvc *sql, const char *prev_schema)
 			pos += snprintf(buf + pos, bufsize - pos,
 					"insert into sys.functions values"
 					" (%d, '%s', '%s', '%s', %d, %d, false,"
-					" %s, %s, %d, %s);\n",
+					" %s, %s, %d, %s, %s);\n",
 					func->base.id, func->base.name, func->imp,
 					func->mod, (int) FUNC_LANG_INT, (int) func->type,
 					func->varres ? "true" : "false",
 					func->vararg ? "true" : "false",
 					func->s ? func->s->base.id : s->base.id,
-					func->system ? "true" : "false");
+					func->system ? "true" : "false",
+					func->semantics ? "true" : "false");
 			arg = func->res->h->data;
 			pos += snprintf(buf + pos, bufsize - pos,
 					"insert into sys.args values"
@@ -109,7 +110,7 @@ sql_fix_system_tables(Client c, mvc *sql, const char *prev_schema)
 			pos += snprintf(buf + pos, bufsize - pos,
 					"insert into sys.functions values"
 					" (%d, '%s', '%s', '%s',"
-					" %d, %d, %s, %s, %s, %d, %s);\n",
+					" %d, %d, %s, %s, %s, %d, %s, %s);\n",
 					func->base.id, func->base.name,
 					func->imp, func->mod, (int) FUNC_LANG_INT,
 					(int) func->type,
@@ -117,7 +118,8 @@ sql_fix_system_tables(Client c, mvc *sql, const char *prev_schema)
 					func->varres ? "true" : "false",
 					func->vararg ? "true" : "false",
 					func->s ? func->s->base.id : s->base.id,
-					func->system ? "true" : "false");
+					func->system ? "true" : "false",
+					func->semantics ? "true" : "false");
 			if (func->res) {
 				for (m = func->res->h; m; m = m->next, number++) {
 					arg = m->data;
@@ -2093,6 +2095,18 @@ sql_update_jun2020(Client c, mvc *sql, const char *prev_schema, bool *systabfixe
 	 * see also function load_func() in store.c */
 	pos += snprintf(buf + pos, bufsize - pos,
 			"update sys.functions set language = language - 2 where language in (8, 9);\n");
+	sql_subtype tp;
+	sql_find_subtype(&tp, "varchar", 0, 0);
+	sql_subfunc *f = sql_bind_func(sql->sa, sys, "listagg", &tp, &tp, F_AGGR);
+	pos += snprintf(buf + pos, bufsize - pos,
+			"insert into sys.args values"
+			" (%d, %d, 'arg_2', 'varchar', 0, 0, %d, 2);\n",
+			store_next_oid(), f->func->base.id, ARG_IN);
+
+	pos += snprintf(buf + pos, bufsize - pos,
+			"update sys.args set name = name || '_' || cast(number as string) where name in ('arg', 'res') and func_id in (select id from sys.functions f where f.system);\n");
+	pos += snprintf(buf + pos, bufsize - pos,
+			"insert into sys.dependencies values ((select id from sys.functions where name = 'ms_trunc' and schema_id = (select id from sys.schemas where name = 'sys')), (select id from sys.functions where name = 'ms_round' and schema_id = (select id from sys.schemas where name = 'sys')), (select dependency_type_id from sys.dependency_types where dependency_type_name = 'FUNCTION'));\n");
 
 	/* 12_url */
 	pos += snprintf(buf + pos, bufsize - pos,
@@ -2771,6 +2785,19 @@ sql_update_jun2020_bam(Client c, mvc *m, const char *prev_schema)
 }
 
 static str
+sql_update_semantics(Client c)
+{
+	char* update_query =
+	"update sys.functions set semantics = false where type <> 6 and func not ilike '%CREATE FUNCTION%' and name in ('length','octet_length','>','>=','<','<=','min','max','sql_min','sql_max','least','greatest','sum','prod','mod','and',\n"
+	"'or','xor','not','sql_mul','sql_div','sql_sub','sql_add','bit_and','bit_or','bit_xor','bit_not','left_shift','right_shift','abs','sign','scale_up','scale_down','round','power','floor','ceil','ceiling','sin','cos','tan','asin',\n"
+	"'acos','atan','sinh','cot','cosh','tanh','sqrt','exp','log','ln','log10','log2','pi','curdate','current_date','curtime','current_time','current_timestamp','localtime','localtimestamp','local_timezone','century','decade','year',\n"
+	"'quarter','month','day','dayofyear','weekofyear','dayofweek','dayofmonth','week','hour','minute','second','strings','locate','charindex','splitpart','substring','substr','truncate','concat','ascii','code','right','left','upper',\n"
+	"'ucase','lower','lcase','trim','ltrim','rtrim','lpad','rpad','insert','replace','repeat','space','char_length','character_length','soundex','qgramnormalize');";
+
+	return SQLstatementIntern(c, &update_query, "update", true, false, NULL);
+}
+
+static str
 sql_update_default(Client c, mvc *sql, const char *prev_schema)
 {
 	size_t bufsize = 1024, pos = 0;
@@ -2841,6 +2868,12 @@ sql_update_default(Client c, mvc *sql, const char *prev_schema)
 	}
 	res_table_destroy(output);
 	GDKfree(buf);
+
+	if (err)
+		return err;
+
+	err = sql_update_semantics(c);
+
 	return err;		/* usually MAL_SUCCEED */
 }
 
@@ -2855,7 +2888,7 @@ SQLupgrades(Client c, mvc *m)
 	sql_column *col;
 	bool systabfixed = false;
 
-	if (!prev_schema) {
+	if (prev_schema == NULL) {
 		TRC_CRITICAL(SQL_PARSER, "Allocation failure while running SQL upgrades\n");
 		return -1;
 	}
@@ -2867,6 +2900,7 @@ SQLupgrades(Client c, mvc *m)
 			if ((err = sql_update_hugeint(c, m, prev_schema, &systabfixed)) != NULL) {
 				TRC_CRITICAL(SQL_PARSER, "%s\n", err);
 				freeException(err);
+				GDKfree(prev_schema);
 				return -1;
 			}
 		}
@@ -2891,6 +2925,7 @@ SQLupgrades(Client c, mvc *m)
 		if ((err = sql_update_geom(c, m, 1, prev_schema)) != NULL) {
 			TRC_CRITICAL(SQL_PARSER, "%s\n", err);
 			freeException(err);
+			GDKfree(prev_schema);
 			return -1;
 		}
 	} else if (geomsqlfix_get() != NULL) {
@@ -2902,6 +2937,7 @@ SQLupgrades(Client c, mvc *m)
 			if ((err = sql_update_geom(c, m, 0, prev_schema)) != NULL) {
 				TRC_CRITICAL(SQL_PARSER, "%s\n", err);
 				freeException(err);
+				GDKfree(prev_schema);
 				return -1;
 			}
 		}
@@ -2913,6 +2949,7 @@ SQLupgrades(Client c, mvc *m)
 		if ((err = sql_update_mar2018_geom(c, t, prev_schema)) != NULL) {
 			TRC_CRITICAL(SQL_PARSER, "%s\n", err);
 			freeException(err);
+			GDKfree(prev_schema);
 			return -1;
 		}
 	}
@@ -2922,6 +2959,7 @@ SQLupgrades(Client c, mvc *m)
 		if ((err = sql_update_mar2018(c, m, prev_schema, &systabfixed)) != NULL) {
 			TRC_CRITICAL(SQL_PARSER, "%s\n", err);
 			freeException(err);
+			GDKfree(prev_schema);
 			return -1;
 		}
 #ifdef HAVE_NETCDF
@@ -2929,6 +2967,7 @@ SQLupgrades(Client c, mvc *m)
 		    (err = sql_update_mar2018_netcdf(c, prev_schema)) != NULL) {
 			TRC_CRITICAL(SQL_PARSER, "%s\n", err);
 			freeException(err);
+			GDKfree(prev_schema);
 			return -1;
 		}
 #endif
@@ -2938,6 +2977,7 @@ SQLupgrades(Client c, mvc *m)
 		if ((err = sql_update_mar2018_sp1(c, prev_schema)) != NULL) {
 			TRC_CRITICAL(SQL_PARSER, "%s\n", err);
 			freeException(err);
+			GDKfree(prev_schema);
 			return -1;
 		}
 	}
@@ -2950,6 +2990,7 @@ SQLupgrades(Client c, mvc *m)
 		if (err) {
 			TRC_CRITICAL(SQL_PARSER, "%s\n", err);
 			freeException(err);
+			GDKfree(prev_schema);
 			return -1;
 		} else {
 			BAT *b = BATdescriptor(output->cols[0].b);
@@ -2960,6 +3001,7 @@ SQLupgrades(Client c, mvc *m)
 						TRC_CRITICAL(SQL_PARSER, "%s\n", err);
 						freeException(err);
 						BBPunfix(b->batCacheid);
+						GDKfree(prev_schema);
 						return -1;
 					}
 				}
@@ -2981,6 +3023,7 @@ SQLupgrades(Client c, mvc *m)
 			if ((err = sql_update_gsl(c, prev_schema)) != NULL) {
 				TRC_CRITICAL(SQL_PARSER, "%s\n", err);
 				freeException(err);
+				GDKfree(prev_schema);
 				return -1;
 			}
 		}
@@ -2991,6 +3034,7 @@ SQLupgrades(Client c, mvc *m)
 		if ((err = sql_update_aug2018(c, m, prev_schema)) != NULL) {
 			TRC_CRITICAL(SQL_PARSER, "%s\n", err);
 			freeException(err);
+			GDKfree(prev_schema);
 			return -1;
 		}
 	}
@@ -3015,6 +3059,7 @@ SQLupgrades(Client c, mvc *m)
 		if ((err = sql_drop_functions_dependencies_Xs_on_Ys(c, prev_schema)) != NULL) {
 			TRC_CRITICAL(SQL_PARSER, "%s\n", err);
 			freeException(err);
+			GDKfree(prev_schema);
 			return -1;
 		}
 	}
@@ -3022,6 +3067,7 @@ SQLupgrades(Client c, mvc *m)
 	if ((err = sql_update_aug2018_sp2(c, prev_schema)) != NULL) {
 		TRC_CRITICAL(SQL_PARSER, "%s\n", err);
 		freeException(err);
+		GDKfree(prev_schema);
 		return -1;
 	}
 
@@ -3031,12 +3077,14 @@ SQLupgrades(Client c, mvc *m)
 		    (err = sql_fix_system_tables(c, m, prev_schema)) != NULL) {
 			TRC_CRITICAL(SQL_PARSER, "%s\n", err);
 			freeException(err);
+			GDKfree(prev_schema);
 			return -1;
 		}
 		systabfixed = true;
 		if ((err = sql_update_apr2019(c, m, prev_schema)) != NULL) {
 			TRC_CRITICAL(SQL_PARSER, "%s\n", err);
 			freeException(err);
+			GDKfree(prev_schema);
 			return -1;
 		}
 	}
@@ -3050,6 +3098,7 @@ SQLupgrades(Client c, mvc *m)
 		if ((err = sql_update_storagemodel(c, m, prev_schema)) != NULL) {
 			TRC_CRITICAL(SQL_PARSER, "%s\n", err);
 			freeException(err);
+			GDKfree(prev_schema);
 			return -1;
 		}
 	}
@@ -3057,6 +3106,7 @@ SQLupgrades(Client c, mvc *m)
 	if ((err = sql_update_apr2019_sp1(c)) != NULL) {
 		TRC_CRITICAL(SQL_PARSER, "%s\n", err);
 		freeException(err);
+		GDKfree(prev_schema);
 		return -1;
 	}
 
@@ -3064,6 +3114,7 @@ SQLupgrades(Client c, mvc *m)
 		if ((err = sql_update_apr2019_sp2(c, m, prev_schema, &systabfixed)) != NULL) {
 			TRC_CRITICAL(SQL_PARSER, "%s\n", err);
 			freeException(err);
+			GDKfree(prev_schema);
 			return -1;
 		}
 	}
@@ -3073,18 +3124,21 @@ SQLupgrades(Client c, mvc *m)
 		if ((err = sql_update_nov2019_missing_dependencies(c, m)) != NULL) {
 			TRC_CRITICAL(SQL_PARSER, "%s\n", err);
 			freeException(err);
+			GDKfree(prev_schema);
 			return -1;
 		}
 		if (!systabfixed &&
 		    (err = sql_fix_system_tables(c, m, prev_schema)) != NULL) {
 			TRC_CRITICAL(SQL_PARSER, "%s\n", err);
 			freeException(err);
+			GDKfree(prev_schema);
 			return -1;
 		}
 		systabfixed = true;
 		if ((err = sql_update_nov2019(c, m, prev_schema, &systabfixed)) != NULL) {
 			TRC_CRITICAL(SQL_PARSER, "%s\n", err);
 			freeException(err);
+			GDKfree(prev_schema);
 			return -1;
 		}
 	}
@@ -3096,6 +3150,7 @@ SQLupgrades(Client c, mvc *m)
 			if ((err = sql_update_nov2019_sp1_hugeint(c, m, prev_schema, &systabfixed)) != NULL) {
 				TRC_CRITICAL(SQL_PARSER, "%s\n", err);
 				freeException(err);
+				GDKfree(prev_schema);
 				return -1;
 			}
 		}
@@ -3106,6 +3161,7 @@ SQLupgrades(Client c, mvc *m)
 		if ((err = sql_update_jun2020(c, m, prev_schema, &systabfixed)) != NULL) {
 			TRC_CRITICAL(SQL_PARSER, "%s\n", err);
 			freeException(err);
+			GDKfree(prev_schema);
 			return -1;
 		}
 	}
@@ -3113,12 +3169,14 @@ SQLupgrades(Client c, mvc *m)
 	if ((err = sql_update_jun2020_bam(c, m, prev_schema)) != NULL) {
 		TRC_CRITICAL(SQL_PARSER, "%s\n", err);
 		freeException(err);
+		GDKfree(prev_schema);
 		return -1;
 	}
 
 	if ((err = sql_update_default(c, m, prev_schema)) != NULL) {
 		TRC_CRITICAL(SQL_PARSER, "%s\n", err);
 		freeException(err);
+		GDKfree(prev_schema);
 		return -1;
 	}
 

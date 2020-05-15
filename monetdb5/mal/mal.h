@@ -66,7 +66,7 @@ mal_export int have_hge;
 #define GRPheaps (HEAPMASK)
 #define GRPtransactions (TMMASK | DELTAMASK | TEMMASK)
 #define GRPmodules (LOADMASK)
-#define GRPalgorithms (ALGOMASK | ESTIMASK)
+#define GRPalgorithms (ALGOMASK)
 #define GRPperformance (DEADBEEFMASK)
 #define GRPforcemito (FORCEMITOMASK | NOSYNCMASK)
 

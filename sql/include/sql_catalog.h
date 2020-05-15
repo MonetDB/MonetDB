@@ -434,6 +434,7 @@ typedef struct sql_func {
 			*/
 	sql_flang lang;
 	char *query;	/* sql code */
+	bit semantics; /*When set to true, function incorporates some kind of null semantics.*/
 	bit side_effect;
 	bit varres;	/* variable output result */
 	bit vararg;	/* variable input arguments */

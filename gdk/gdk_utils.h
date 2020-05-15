@@ -93,8 +93,10 @@ gdk_export void *GDKrealloc(void *pold, size_t size)
 	__attribute__((__warn_unused_result__));
 gdk_export void GDKfree(void *blk);
 gdk_export str GDKstrdup(const char *s)
+	__attribute__((__malloc__))
 	__attribute__((__warn_unused_result__));
 gdk_export str GDKstrndup(const char *s, size_t n)
+	__attribute__((__malloc__))
 	__attribute__((__warn_unused_result__));
 
 gdk_export void MT_init(void);	/*  init the package. */
