@@ -316,12 +316,6 @@ typedef __uint128_t uhge;
 #define static_assert(expr, mesg)	((void) 0)
 #endif
 
-#ifndef SOCKET
-#define SOCKET int32_t
-#endif
-#ifndef closesocket
-#define closesocket close
-#endif
 #ifndef _In_z_
 #define _In_z_
 #endif
