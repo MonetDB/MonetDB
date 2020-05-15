@@ -248,7 +248,7 @@
 
 #cmakedefine HAVE_SOCKLEN_T @HAVE_SOCKLEN_T@
 #ifndef SOCKET
-#define SOCKET int32_t
+#define SOCKET int
 #endif
 
 /* The size of `__int128', as computed by sizeof. */
