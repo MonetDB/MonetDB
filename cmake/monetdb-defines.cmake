@@ -49,15 +49,22 @@ function(monetdb_configure_defines)
   find_path(HAVE_SEMAPHORE_H "semaphore.h")
   find_path(HAVE_GETOPT_H "getopt.h")
   if(HAVE_GETOPT_H)
-    set(HAVE_GETOPT 1)
+    set(HAVE_GETOPT 1 PARENT_SCOPE)
   endif()
 
   check_include_file("stdatomic.h" HAVE_STDATOMIC_H)
 
   # Linux specific, in the future, it might be ported to other platforms
   check_symbol_exists("S_ISREG" "sys/stat.h" HAVE_SYS_STAT_H)
-  check_symbol_exists("getaddrinfo" "netdb.h" HAVE_GETADDRINFO)
-  check_symbol_exists("getaddrinfo" "ws2tcpip.h" HAVE_GETADDRINFO)
+  check_symbol_exists("getaddrinfo" "netdb.h" UNIX_GETADDRINFO)
+  check_symbol_exists("getaddrinfo" "ws2tcpip.h" WIN_GETADDRINFO)
+  if(UNIX_GETADDRINF)
+	  set(HAVE_GETADDRINFO 1 PARENT_SCOPE)
+  endif()
+  if(WIN_GETADDRINF)
+	  set(HAVE_GETADDRINFO 1 PARENT_SCOPE)
+  endif()
+
   #check_symbol_exists("WSADATA" "winsock2.h" HAVE_WINSOCK_H)
   check_symbol_exists("fdatasync" "unistd.h" HAVE_FDATASYNC)
 
