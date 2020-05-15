@@ -77,7 +77,7 @@ class Doc:
             new_content = self.content
         return Doc(new_content)
 
-    if os.linesep == CRLF:
+    if os.linesep == '\r\n':
         to_platform = to_dos
     else:
         to_platform = to_unix
