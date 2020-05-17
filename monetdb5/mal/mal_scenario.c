@@ -194,8 +194,8 @@ findScenario(str nme)
 	int i;
 	Scenario scen = scenarioRec;
 
-	for (i = 0; i < MAXSCEN && scen->name; i++, scen++)
-		if (strcmp(scen->name, nme) == 0)
+	for (i = 0; i < MAXSCEN; i++, scen++)
+		if (scen->name && strcmp(scen->name, nme) == 0)
 			return scen;
 	return NULL;
 }

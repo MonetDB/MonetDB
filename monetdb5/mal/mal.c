@@ -90,8 +90,6 @@ int mal_init(char *modules[], int embedded){
  */
 void mal_reset(void)
 {
-	str err = 0;
-
 	GDKprepareExit();
 	MCstopClients(0);
 	dropQRYqueue();
@@ -99,6 +97,8 @@ void mal_reset(void)
 	stopProfiler(0);
 	AUTHreset();
 	if (!GDKinmemory()) {
+		str err = 0;
+
 		if ((err = msab_wildRetreat()) != NULL) {
 			TRC_ERROR(MAL_SERVER, "%s\n", err);
 			free(err);

@@ -222,6 +222,13 @@ SQLepilogue(void *ret)
 			return err;
 		}
 	}
+	/* return scenarios */
+	Scenario sc = findScenario(s);
+	if (sc)
+		sc->name = NULL;
+	sc = findScenario(m);
+	if (sc)
+		sc->name = NULL;
 	return MAL_SUCCEED;
 }
 
@@ -511,76 +518,6 @@ SQLinit(Client c)
 			freeException(other);
 		if (msg)
 			TRC_INFO(SQL_PARSER, "%s\n", msg);
-#if 0 //OLD
-		if (GDKembedded()) {
-		} else {
-			char path[FILENAME_MAX];
-			str fullname;
-	
-			snprintf(path, FILENAME_MAX, "createdb");
-			slash_2_dir_sep(path);
-			fullname = MSP_locate_sqlscript(path, 1);
-			if (fullname) {
-				str filename = fullname, p, n;
-
-				fprintf(stdout, "# SQL catalog created, loading sql scripts once\n");
-				do {
-					stream *fd = NULL;
-	
-					p = strchr(filename, PATH_SEP);
-					if (p)
-						*p = '\0';
-					if ((n = strrchr(filename, DIR_SEP)) == NULL) {
-						n = filename;
-					} else {
-						n++;
-					}
-					fprintf(stdout, "# loading sql script: %s\n", n);
-					fd = open_rastream(filename);
-					if (p)
-						filename = p + 1;
-	
-					if (fd) {
-						size_t sz;
-						sz = getFileSize(fd);
-						if (sz > (size_t) 1 << 29) {
-							close_stream(fd);
-							msg = createException(MAL, "createdb", SQLSTATE(42000) "File %s too large to process", filename);
-						} else {
-							bstream *bfd = NULL;
-	
-							if ((bfd = bstream_create(fd, sz == 0 ? (size_t) (128 * BLOCK) : sz)) == NULL) {
-								close_stream(fd);
-								msg = createException(MAL, "createdb", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-							} else {
-								if (bstream_next(bfd) >= 0)
-									msg = SQLstatementIntern(c, &bfd->buf, "sql.init", TRUE, FALSE, NULL);
-								bstream_destroy(bfd);
-							}
-						}
-					} else
-						msg = createException(MAL, "createdb", SQLSTATE(HY013) "Couldn't open file %s", filename);
-				} while (p && msg == MAL_SUCCEED);
-				GDKfree(fullname);
-			} else
-				msg = createException(MAL, "createdb", SQLSTATE(HY013) "Could not read createdb.sql");
-	
-			/* Commit after all the startup scripts have been processed */
-			assert(m->session->tr->active);
-			if (mvc_status(m) < 0 || msg)
-				other = mvc_rollback(m, 0, NULL, false);
-			else
-				other = mvc_commit(m, 0, NULL, false);
-
-			if (other && !msg) /* 'msg' variable might be set or not, as well as 'other'. Throw the earliest one */
-				msg = other;
-			else if (other)
-				freeException(other);
-
-			if (msg)
-				TRC_INFO(SQL_PARSER, "%s\n", msg);
-		}
-#endif
 	} else {		/* handle upgrades */
 		if (!m->sa)
 			m->sa = sa_create();

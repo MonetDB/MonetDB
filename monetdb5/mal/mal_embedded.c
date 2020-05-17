@@ -120,7 +120,8 @@ malEmbeddedReset(void) //remove extra modules and set to non-initialized again
 	stopProfiler(0);
 	AUTHreset();
 	if (!GDKinmemory()) {
-            str err = 0;
+            	str err = 0;
+
 		if ((err = msab_wildRetreat()) != NULL) {
 			TRC_ERROR(MAL_SERVER, "%s\n", err);
 			free(err);
@@ -129,7 +130,6 @@ malEmbeddedReset(void) //remove extra modules and set to non-initialized again
 			TRC_ERROR(MAL_SERVER, "%s\n", err);
 			free(err);
  		}
-
 	}
 	mal_factory_reset();
 	mal_dataflow_reset();
