@@ -117,21 +117,21 @@ target_compile_definitions(MonetODBC
 target_link_libraries(MonetODBC
   PRIVATE
   monetdb_config_header
-	mutils
-	mapi
-	ODBC::ODBC)
+  mutils
+  mapi
+  ODBC::ODBC)
 
 install(TARGETS
   MonetODBC
   RUNTIME
   DESTINATION ${CMAKE_INSTALL_BINDIR}
-  COMPONENT client
+  COMPONENT odbc
   LIBRARY
   DESTINATION ${CMAKE_INSTALL_LIBDIR}
-  COMPONENT client
+  COMPONENT odbc
   ARCHIVE
   DESTINATION ${CMAKE_INSTALL_LIBDIR}
-  COMPONENT client
+  COMPONENT odbc
   PUBLIC_HEADER
   DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/monetdb
   COMPONENT clientdev

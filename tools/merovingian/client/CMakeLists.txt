@@ -41,4 +41,7 @@ install(TARGETS
 
 install(FILES
   monetdb.1
-  DESTINATION ${CMAKE_INSTALL_MANDIR}/man1)
+  DESTINATION ${CMAKE_INSTALL_MANDIR}/man1
+  COMPONENT sql)
+
+# vim: set ts=2:sw=2:et

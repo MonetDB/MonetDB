@@ -45,5 +45,8 @@ if(TESTING)
     smack01
     RUNTIME
     DESTINATION
-    ${CMAKE_INSTALL_BINDIR})
+    ${CMAKE_INSTALL_BINDIR}
+    COMPONENT clienttest)
 endif()
+
+# vim: set ts=2:sw=2:et

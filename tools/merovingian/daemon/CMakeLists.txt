@@ -61,14 +61,19 @@ configure_file(monetdbd.1.in
 
 install(FILES
   ${CMAKE_CURRENT_BINARY_DIR}/monetdbd.1
-  DESTINATION ${CMAKE_INSTALL_MANDIR}/man1)
+  DESTINATION ${CMAKE_INSTALL_MANDIR}/man1
+  COMPONENT sql)
 
 install(DIRECTORY
   DESTINATION
-  ${CMAKE_INSTALL_SYSCONFDIR}/tmpfiles.d)
+  ${CMAKE_INSTALL_SYSCONFDIR}/tmpfiles.d
+  COMPONENT sql)
 
 install(FILES
   ${CMAKE_SOURCE_DIR}/buildtools/conf/monetdbd.conf
-  DESTINATION ${CMAKE_INSTALL_SYSCONFDIR}/tmpfiles.d)
+  DESTINATION ${CMAKE_INSTALL_SYSCONFDIR}/tmpfiles.d
+  COMPONENT sql)
 
 add_subdirectory(config)
+
+# vim: set ts=2:sw=2:et

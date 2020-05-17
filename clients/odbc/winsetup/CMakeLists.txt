@@ -17,8 +17,8 @@ target_sources(MonetODBCs
   resource.h)
 
 target_include_directories(MonetODBCs
-	PRIVATE
-	$<$<PLATFORM_ID:Windows>:${HAVE_AFXRES_H}>
+  PRIVATE
+  $<$<PLATFORM_ID:Windows>:${HAVE_AFXRES_H}>
   PUBLIC
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
   $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}/monetdb>)
@@ -31,21 +31,21 @@ target_link_libraries(MonetODBCs
   PRIVATE
   monetdb_config_header
   mutils
-	$<$<PLATFORM_ID:Windows>:odbccp32>
-	$<$<PLATFORM_ID:Windows>:user32>
-	$<$<PLATFORM_ID:Windows>:legacy_stdio_definitions>)
+  $<$<PLATFORM_ID:Windows>:odbccp32>
+  $<$<PLATFORM_ID:Windows>:user32>
+  $<$<PLATFORM_ID:Windows>:legacy_stdio_definitions>)
 
 install(TARGETS
   MonetODBCs
   RUNTIME
   DESTINATION ${CMAKE_INSTALL_BINDIR}
-  COMPONENT client
+  COMPONENT odbc
   LIBRARY
   DESTINATION ${CMAKE_INSTALL_LIBDIR}
-  COMPONENT client
+  COMPONENT odbc
   ARCHIVE
   DESTINATION ${CMAKE_INSTALL_LIBDIR}
-  COMPONENT client
+  COMPONENT odbc
   PUBLIC_HEADER
   DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/monetdb
   COMPONENT clientdev
