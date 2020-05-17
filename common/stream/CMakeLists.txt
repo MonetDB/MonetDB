@@ -91,7 +91,8 @@ if (NOT WIN32)
 
   install(FILES
     ${CMAKE_CURRENT_BINARY_DIR}/monetdb-stream.pc
-    DESTINATION ${PKGCONFIGDIR})
+    DESTINATION ${CMAKE_INSTALL_LIBDIR}/pkgconfig
+    COMPONENT streamdev)
 endif()
 
 install(TARGETS

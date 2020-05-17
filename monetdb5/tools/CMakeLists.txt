@@ -14,11 +14,6 @@ add_library(monetdb5 SHARED
   $<TARGET_OBJECTS:optimizer>
   $<TARGET_OBJECTS:scheduler>)
 
-#target_sources(monetdb5
-#  PRIVATE
-#  monetdb.c
-#  libmonetdb5.rc)
-
 target_link_libraries(monetdb5
     PRIVATE
     mutils
@@ -57,7 +52,8 @@ if (NOT WIN32)
 
   install(FILES
     ${CMAKE_CURRENT_BINARY_DIR}/monetdb5.pc
-    DESTINATION ${PKGCONFIGDIR})
+    DESTINATION ${CMAKE_INSTALL_LIBDIR}/pkgconfig
+    COMPONENT server)
 endif()
 
 install(TARGETS
@@ -79,6 +75,3 @@ install(EXPORT monetdb5Targets
   NAMESPACE MonetDB::
   DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/cmake
   COMPONENT server)
-
-#configure_file(monetdb5.pc.in ${CMAKE_CURRENT_BINARY_DIR}/monetdb5.pc @ONLY)
-#install(FILES ${CMAKE_CURRENT_BINARY_DIR}/monetdb5.pc DESTINATION ${PKGCONFIGDIR})

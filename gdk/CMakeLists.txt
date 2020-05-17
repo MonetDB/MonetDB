@@ -115,7 +115,8 @@ if (NOT WIN32)
 
   install(FILES
     ${CMAKE_CURRENT_BINARY_DIR}/monetdb-gdk.pc
-    DESTINATION ${PKGCONFIGDIR})
+    DESTINATION ${CMAKE_INSTALL_LIBDIR}/pkgconfig
+    COMPONENT monetdbdev)
 endif()
 
 install(TARGETS

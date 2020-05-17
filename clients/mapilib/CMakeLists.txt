@@ -56,16 +56,8 @@ if (NOT WIN32)
 
   install(FILES
     ${CMAKE_CURRENT_BINARY_DIR}/monetdb-mapi.pc
-    DESTINATION ${PKGCONFIGDIR})
-endif()
-
-if (NOT WIN32)
-  configure_file(monetdb-mapi.pc.in
-    ${CMAKE_CURRENT_BINARY_DIR}/monetdb-mapi.pc @ONLY)
-
-  install(FILES
-    ${CMAKE_CURRENT_BINARY_DIR}/monetdb-mapi.pc
-    DESTINATION ${PKGCONFIGDIR})
+    DESTINATION ${CMAKE_INSTALL_LIBDIR}/pkgconfig
+    COMPONENT clientdev)
 endif()
 
 install(TARGETS

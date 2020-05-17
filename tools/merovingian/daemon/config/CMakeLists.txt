@@ -18,24 +18,13 @@ configure_file(.merovingian_properties.in
   ${CMAKE_CURRENT_BINARY_DIR}/.merovingian_properties
   @ONLY)
 
-install(DIRECTORY
-  DESTINATION
-  ${CMAKE_INSTALL_SYSCONFDIR}/logrotate.d)
-
 install(FILES
   ${CMAKE_CURRENT_BINARY_DIR}/monetdbd
-  DESTINATION ${SYSCONFDIR}/logrotate.d)
-
-install(DIRECTORY
-  DESTINATION
-  ${CMAKE_INSTALL_PREFIX}/lib/systemd/system)
+  DESTINATION ${CMAKE_INSTALL_SYSCONFDIR}/logrotate.d)
 
 install(FILES
   ${CMAKE_CURRENT_BINARY_DIR}/monetdbd.service
-  DESTINATION ${CMAKE_INSTALL_PREFIX}/lib/systemd/system)
-
-install(DIRECTORY
-  DESTINATION ${CMAKE_INSTALL_LOCALSTATEDIR}/monetdb5/dbfarm)
+  DESTINATION lib/systemd/system)
 
 install(FILES
   ${CMAKE_CURRENT_BINARY_DIR}/.merovingian_properties

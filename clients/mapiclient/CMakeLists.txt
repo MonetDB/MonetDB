@@ -128,4 +128,4 @@ install(TARGETS
 install(FILES
   mclient.1
   msqldump.1
-  DESTINATION ${CMAKE_INSTALL_FULL_MANDIR}/man1)
+  DESTINATION ${CMAKE_INSTALL_MANDIR}/man1)

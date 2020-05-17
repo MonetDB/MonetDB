@@ -61,7 +61,7 @@ configure_file(monetdbd.1.in
 
 install(FILES
   ${CMAKE_CURRENT_BINARY_DIR}/monetdbd.1
-  DESTINATION ${CMAKE_INSTALL_FULL_MANDIR}/man1)
+  DESTINATION ${CMAKE_INSTALL_MANDIR}/man1)
 
 install(DIRECTORY
   DESTINATION

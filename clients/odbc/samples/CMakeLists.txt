@@ -41,6 +41,7 @@ if(TESTING)
     testgetinfo
     arraytest
     testStmtAttr
+    RUNTIME
     DESTINATION
-    ${BINDIR})
+    ${CMAKE_INSTALL_BINDIR})
 endif()
