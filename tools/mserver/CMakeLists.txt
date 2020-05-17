@@ -70,7 +70,8 @@ target_link_libraries(shutdowntest
   Threads::Threads)
 
 install(TARGETS
-  mserver5 shutdowntest
+  mserver5
+  shutdowntest
   RUNTIME
   DESTINATION ${CMAKE_INSTALL_BINDIR}
   COMPONENT server
@@ -87,7 +88,18 @@ configure_file(mserver5.1.in
 
 install(FILES
   ${CMAKE_CURRENT_BINARY_DIR}/mserver5.1
-  DESTINATION ${CMAKE_INSTALL_MANDIR}/man1)
+  DESTINATION ${CMAKE_INSTALL_MANDIR}/man1
+  COMPONENT server)
 
-install(DIRECTORY DESTINATION ${CMAKE_INSTALL_DATADIR})
-install(DIRECTORY DESTINATION ${CMAKE_INSTALL_LOCALSTATEDIR}/monetdb5/dbfarm)
+
+# These definitions should not be necessary. CMake should take care of
+# creating these automatically. But maybe this is not the case when
+# running mtest.
+install(DIRECTORY DESTINATION
+  ${CMAKE_INSTALL_DATADIR}
+  COMPONENT server)
+install(DIRECTORY DESTINATION
+  ${CMAKE_INSTALL_LOCALSTATEDIR}/monetdb5/dbfarm
+  COMPONENT server)
+
+# vim: set ts=2:sw=2:et

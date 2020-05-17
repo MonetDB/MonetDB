@@ -53,7 +53,7 @@ if (NOT WIN32)
   install(FILES
     ${CMAKE_CURRENT_BINARY_DIR}/monetdb5.pc
     DESTINATION ${CMAKE_INSTALL_LIBDIR}/pkgconfig
-    COMPONENT server)
+    COMPONENT serverdev)
 endif()
 
 install(TARGETS
@@ -74,4 +74,6 @@ install(EXPORT monetdb5Targets
   FILE monetdb5Targets.cmake
   NAMESPACE MonetDB::
   DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/cmake
-  COMPONENT server)
+  COMPONENT serverdev)
+
+# vim: set ts=2:sw=2:et

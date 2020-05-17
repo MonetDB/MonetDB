@@ -98,7 +98,8 @@ target_link_libraries(Mdiff
 
 install(TARGETS
   Mdiff
-  DESTINATION ${CMAKE_INSTALL_BINDIR})
+  DESTINATION ${CMAKE_INSTALL_BINDIR}
+  COMPONENT testing)
 
 configure_file(Mtest.py.in
   ${CMAKE_CURRENT_BINARY_DIR}/Mtest.py
@@ -111,7 +112,8 @@ configure_file(listexports.py.in
 install(FILES
   ${CMAKE_CURRENT_BINARY_DIR}/Mtest.py
   PERMISSIONS ${PROGRAM_PERMISSIONS_DEFAULT}
-  DESTINATION ${CMAKE_INSTALL_BINDIR})
+  DESTINATION ${CMAKE_INSTALL_BINDIR}
+  COMPONENT pytesting)
 
 if(PYTHON3_LIBDIR)
   install(FILES
@@ -122,7 +124,8 @@ if(PYTHON3_LIBDIR)
     exportutils.py
     malcheck.py
     sqllogictest.py
-    DESTINATION ${PYTHON3_LIBDIR}/MonetDBtesting)
+    DESTINATION ${PYTHON3_LIBDIR}/MonetDBtesting
+    COMPONENT pytesting)
 endif()
 
 if(WIN32)
@@ -157,16 +160,21 @@ else()
   install(FILES
     ${CMAKE_CURRENT_BINARY_DIR}/Mlog
     PERMISSIONS ${PROGRAM_PERMISSIONS_DEFAULT}
-    DESTINATION ${CMAKE_INSTALL_BINDIR})
+    DESTINATION ${CMAKE_INSTALL_BINDIR}
+    COMPONENT testing)
 
   install(FILES
     ${CMAKE_CURRENT_BINARY_DIR}/monetdb_mtest.sh
     PERMISSIONS ${PROGRAM_PERMISSIONS_DEFAULT}
-    DESTINATION ${CMAKE_INSTALL_BINDIR})
+    DESTINATION ${CMAKE_INSTALL_BINDIR}
+    COMPONENT pytesting)
 
   install(FILES
     ${CMAKE_CURRENT_BINARY_DIR}/Mtest.py
     PERMISSIONS ${PROGRAM_PERMISSIONS_DEFAULT}
     DESTINATION ${CMAKE_INSTALL_BINDIR}
-    RENAME Mapprove.py)
+    RENAME Mapprove.py
+    COMPONENT pytesting)
 endif()
+
+# vim: set ts=2:sw=2:et
