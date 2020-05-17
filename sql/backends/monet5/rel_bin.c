@@ -6063,8 +6063,7 @@ output_rel_bin(backend *be, sql_rel *rel )
 			be->cur_append = 0;
 			be->first_statement_generated = false;
 		}
-		if (!GDKembedded())
-			s = stmt_affected_rows(be, s);
+		s = stmt_affected_rows(be, s);
 	}
 	return s;
 }
