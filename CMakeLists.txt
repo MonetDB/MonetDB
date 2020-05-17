@@ -216,7 +216,8 @@ write_basic_package_version_file(
 
 install(FILES
   ${CMAKE_CURRENT_BINARY_DIR}/MonetDBConfig.cmake
-  DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/cmake)
+  DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/cmake
+  COMPONENT monetdbdev)
 
 include(monetdb-packages)
 
@@ -226,3 +227,5 @@ add_subdirectory(ctest)
 if(CMAKE_SUMMARY)
   monetdb_cmake_summary()
 endif()
+
+# vim: set ts=2:sw=2:et
