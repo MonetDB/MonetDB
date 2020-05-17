@@ -1034,6 +1034,8 @@ monetdb_result_fetch(monetdb_connection conn, monetdb_column** res, monetdb_resu
 			j++;
 		}
 	}
+	if (column_result)
+		column_result->name = result->monetdb_resultset->cols[column_index].name;
 cleanup:
 	if (b)
 		BBPunfix(b->batCacheid);

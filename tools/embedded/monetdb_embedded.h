@@ -99,12 +99,13 @@ typedef struct {
 
 typedef void* monetdb_connection;
 
-#define DEFAULT_STRUCT_DEFINITION(ctype, typename) \
-	typedef struct                                 \
-	{                                              \
+#define DEFAULT_STRUCT_DEFINITION(ctype, typename)         \
+	typedef struct                                     \
+	{                                                  \
 		monetdb_types type;                        \
 		ctype *data;                               \
 		size_t count;                              \
+		char *name;				   \
 		ctype null_value;                          \
 		double scale;                              \
 		int (*is_null)(ctype value);               \
