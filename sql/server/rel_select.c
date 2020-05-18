@@ -2133,13 +2133,13 @@ rel_in_value_exp(sql_query *query, sql_rel **rel, symbol *sc, int f)
 			supertype(&super, exp_subtype(values), exp_subtype(le));
 
 			/* on selection/join cases we can generate cmp expressions instead of anyequal for trivial cases */
-			if (is_sql_where(f) && !is_sql_farg(f) && exps_are_atoms(vals)) { 
-				if (list_length(vals) == 1) { /* use cmp_equal instead of anyequal for 1 constant */
+			if (is_sql_where(f) && !is_sql_farg(f) && !exp_has_rel(le)) {
+				if (list_length(vals) == 1 && !exps_have_rel_exp(vals)) { /* use cmp_equal instead of cmp_in for 1 expression */
 					sql_exp *first = vals->h->data;
 					if (rel_convert_types(sql, rel ? *rel : NULL, rel ? *rel : NULL, &le, &first, 1, type_equal_no_any) < 0)
 						return NULL;
 					e = exp_compare(sql->sa, le, first, (sc->token == SQL_IN) ? cmp_equal : cmp_notequal);
-				} else { /* use cmp_in instead of anyequal for n constants */
+				} else if (exps_are_atoms(vals)) { /* use cmp_in instead of anyequal for n simple expressions */
 					for (node *n = vals->h ; n ; n = n->next)
 						if ((n->data = rel_check_type(sql, &super, rel ? *rel : NULL, n->data, type_equal)) == NULL)
 							return NULL;
@@ -2169,7 +2169,7 @@ rel_in_exp(sql_query *query, sql_rel *rel, symbol *sc, int f)
 	if (!e || !rel)
 		return NULL;
 
-	if (e->type == e_cmp) /* it's a exp_in or cmp_equal of constants, push down early on if possible */
+	if (e->type == e_cmp) /* it's a exp_in or cmp_equal of simple expressions, push down early on if possible */
 		return rel_select_push_exp_down(sql, rel, e, e->l, e->l, e->r, e->r, NULL, f);
 	return rel_select_add_exp(sql->sa, rel, e);
 }
