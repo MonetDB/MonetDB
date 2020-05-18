@@ -30,6 +30,7 @@
 #define sql_values       (1 << 14) //ORed
 #define psm_call         (1 << 15) //ORed
 #define sql_merge        (1 << 16) //ORed
+#define sql_or           (1 << 17) //ORed
 
 #define is_sql_from(X)         ((X & sql_from) == sql_from)
 #define is_sql_where(X)        ((X & sql_where) == sql_where)
@@ -48,6 +49,7 @@
 #define is_sql_values(X)       ((X & sql_values) == sql_values)
 #define is_psm_call(X)         ((X & psm_call) == psm_call)
 #define is_sql_merge(X)        ((X & sql_merge) == sql_merge)
+#define is_sql_or(X)           ((X & sql_or) == sql_or)
 
 #define is_updateble(rel) \
 	(rel->op == op_basetable || \
@@ -103,8 +105,8 @@ extern list *_rel_projections(mvc *sql, sql_rel *rel, const char *tname, int set
 extern list *rel_projections(mvc *sql, sql_rel *rel, const char *tname, int settname , int intern);
 extern sql_rel *rel_safe_project(mvc *sql, sql_rel *rel);
 
-extern sql_rel *rel_push_select(mvc *sql, sql_rel *rel, sql_exp *ls, sql_exp *e);
-extern sql_rel *rel_push_join(mvc *sql, sql_rel *rel, sql_exp *ls, sql_exp *rs, sql_exp *rs2, sql_exp *e);
+extern sql_rel *rel_push_select(mvc *sql, sql_rel *rel, sql_exp *ls, sql_exp *e, int f);
+extern sql_rel *rel_push_join(mvc *sql, sql_rel *rel, sql_exp *ls, sql_exp *rs, sql_exp *rs2, sql_exp *e, int f);
 extern sql_rel *rel_or(mvc *sql, sql_rel *rel, sql_rel *l, sql_rel *r, list *oexps, list *lexps, list *rexps);
 
 extern sql_table *rel_ddl_table_get(sql_rel *r);

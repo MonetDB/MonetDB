@@ -1004,7 +1004,7 @@ order_joins(mvc *sql, list *rels, list *exps)
 			if (exp_is_join_exp(e) == 0) {
 				sql_rel *nr = NULL;
 				if (e->flag == cmp_equal)
-					nr = rel_push_join(sql, top->l, e->l, e->r, NULL, e);
+					nr = rel_push_join(sql, top->l, e->l, e->r, NULL, e, 0);
 				if (!nr)
 					rel_join_add_exp(sql->sa, top->l, e);
 			} else
@@ -1325,142 +1325,6 @@ exp_rename(mvc *sql, sql_exp *e, sql_rel *f, sql_rel *t)
 	if (!ne)
 		return NULL;
 	return exp_propagate(sql->sa, ne, e);
-}
-
-/* push the expression down, ie translate colum references 
-	from relation f into expression of relation t 
-*/ 
-
-static sql_exp * _exp_push_down(mvc *sql, sql_exp *e, sql_rel *f, sql_rel *t);
-
-static list *
-exps_push_down(mvc *sql, list *exps, sql_rel *f, sql_rel *t)
-{
-	node *n;
-	list *nl = new_exp_list(sql->sa);
-
-	for(n = exps->h; n; n = n->next) {
-		sql_exp *arg = n->data, *narg = NULL;
-
-		narg = _exp_push_down(sql, arg, f, t);
-		if (!narg) 
-			return NULL;
-		narg = exp_propagate(sql->sa, narg, arg);
-		append(nl, narg);
-	}
-	return nl;
-}
-
-static sql_exp *
-_exp_push_down(mvc *sql, sql_exp *e, sql_rel *f, sql_rel *t) 
-{
-	sql_exp *oe = e;
-	sql_exp *ne = NULL, *l, *r, *r2;
-
-	switch(e->type) {
-	case e_column:
-		if (is_union(f->op)) {
-			int p = list_position(f->exps, rel_find_exp(f, e));
-
-			return list_fetch(t->exps, p);
-		}
-		if (e->l) { 
-			ne = rel_bind_column2(sql, f, e->l, e->r, 0);
-			/* if relation name matches expressions relation name, find column based on column name alone */
-		}
-		if (!ne && !e->l)
-			ne = rel_bind_column(sql, f, e->r, 0, 1);
-		if (!ne || ne->type != e_column)
-			return NULL;
-		e = NULL;
-		if (ne->l && ne->r)
-			e = rel_bind_column2(sql, t, ne->l, ne->r, 0);
-		if (!e && ne->r && !ne->l)
-			e = rel_bind_column(sql, t, ne->r, 0, 1);
-		sql->session->status = 0;
-		sql->errstr[0] = 0;
-		if (e && oe)
-			e = exp_propagate(sql->sa, e, oe);
-		/* if the upper exp was an alias, keep this */ 
-		if (e && exp_relname(ne)) 
-			exp_setname(sql->sa, e, exp_relname(ne), exp_name(ne));
-		return e;
-	case e_cmp: 
-		if (e->flag == cmp_or || e->flag == cmp_filter) {
-			list *l, *r;
-
-			l = exps_push_down(sql, e->l, f, t);
-			if (!l)
-				return NULL;
-			r = exps_push_down(sql, e->r, f, t);
-			if (!r) 
-				return NULL;
-			if (e->flag == cmp_filter) 
-				return exp_filter(sql->sa, l, r, e->f, is_anti(e));
-			return exp_or(sql->sa, l, r, is_anti(e));
-		} else if (e->flag == cmp_in || e->flag == cmp_notin) {
-			list *r;
-
-			l = _exp_push_down(sql, e->l, f, t);
-			if (!l)
-				return NULL;
-			r = exps_push_down(sql, e->r, f, t);
-			if (!r)
-				return NULL;
-			return exp_in(sql->sa, l, r, e->flag);
-		} else {
-			l = _exp_push_down(sql, e->l, f, t);
-			if (!l)
-				return NULL;
-			r = _exp_push_down(sql, e->r, f, t);
-			if (!r)
-				return NULL;
-			if (e->f) {
-				r2 = _exp_push_down(sql, e->f, f, t);
-				if (l && r && r2)
-					ne = exp_compare2(sql->sa, l, r, r2, e->flag);
-			} else if (l && r) {
-				if (l->card < r->card)
-					ne = exp_compare(sql->sa, r, l, swap_compare((comp_type)e->flag));
-				else
-					ne = exp_compare(sql->sa, l, r, e->flag);
-			}
-		}
-		if (!ne) 
-			return NULL;
-		return exp_propagate(sql->sa, ne, e);
-	case e_convert:
-		l = _exp_push_down(sql, e->l, f, t);
-		if (l)
-			return exp_convert(sql->sa, l, exp_fromtype(e), exp_totype(e));
-		return NULL;
-	case e_aggr:
-	case e_func: {
-		list *l = e->l, *nl = NULL;
-
-		if (!l) {
-			return e;
-		} else {
-			nl = exps_push_down(sql, l, f, t);
-			if (!nl)
-				return NULL;
-		}
-		if (e->type == e_func)
-			return exp_op(sql->sa, nl, e->f);
-		else 
-			return exp_aggr(sql->sa, nl, e->f, need_distinct(e), need_no_nil(e), e->card, has_nil(e));
-	}	
-	case e_atom:
-	case e_psm:
-		return e;
-	}
-	return NULL;
-}
-
-static sql_exp *
-exp_push_down(mvc *sql, sql_exp *e, sql_rel *f, sql_rel *t) 
-{
-	return _exp_push_down(sql, e, f, t);
 }
 
 static int 
@@ -4712,9 +4576,9 @@ rel_push_select_down_join(mvc *sql, sql_rel *rel, int *changes)
 					re->card = ne->card;
 
 				if (re->card >= CARD_AGGR) {
-					nr = rel_push_join(sql, r, e->l, re, NULL, e);
+					nr = rel_push_join(sql, r, e->l, re, NULL, e, 0);
 				} else {
-					nr = rel_push_select(sql, r, e->l, e);
+					nr = rel_push_select(sql, r, e->l, e, 0);
 				}
 				if (nr)
 					rel->l = nr;

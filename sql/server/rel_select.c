@@ -1575,7 +1575,7 @@ rel_convert_types(mvc *sql, sql_rel *ll, sql_rel *rr, sql_exp **L, sql_exp **R, 
 }
 
 static sql_rel *
-rel_filter(mvc *sql, sql_rel *rel, list *l, list *r, char *sname, char *filter_op, int anti )
+rel_filter(mvc *sql, sql_rel *rel, list *l, list *r, char *sname, char *filter_op, int anti, int ff)
 {
 	node *n;
 	sql_exp *L = l->h->data, *R = r->h->data, *e = NULL;
@@ -1662,15 +1662,15 @@ rel_filter(mvc *sql, sql_rel *rel, list *l, list *r, char *sname, char *filter_o
 				return rel;
 			}
 			if (is_left(rel->op) && rel_find_exp(rel->r, l->h->data)) {
-				rel->r = rel_push_select(sql, rel->r, L, e);
+				rel->r = rel_push_select(sql, rel->r, L, e, ff);
 				return rel;
 			} else if (is_right(rel->op) && rel_find_exp(rel->l, l->h->data)) {
-				rel->l = rel_push_select(sql, rel->l, L, e);
+				rel->l = rel_push_select(sql, rel->l, L, e, ff);
 				return rel;
 			}
 		}
 		/* push select into the given relation */
-		return rel_push_select(sql, rel, L, e);
+		return rel_push_select(sql, rel, L, e, ff);
 	} else { /* join */
 		sql_rel *r;
 		if (/*is_semi(rel->op) ||*/ (is_outerjoin(rel->op) && !is_processed((rel)))) {
@@ -1678,7 +1678,7 @@ rel_filter(mvc *sql, sql_rel *rel, list *l, list *r, char *sname, char *filter_o
 			return rel;
 		}
 		/* push join into the given relation */
-		if ((r = rel_push_join(sql, rel, L, R, NULL, e)) != NULL)
+		if ((r = rel_push_join(sql, rel, L, R, NULL, e, ff)) != NULL)
 			return r;
 		rel_join_add_exp(sql->sa, rel, e);
 		return rel;
@@ -1686,7 +1686,7 @@ rel_filter(mvc *sql, sql_rel *rel, list *l, list *r, char *sname, char *filter_o
 }
 
 static sql_rel *
-rel_filter_exp_(mvc *sql, sql_rel *rel, sql_exp *ls, sql_exp *rs, sql_exp *rs2, char *filter_op, int anti )
+rel_filter_exp_(mvc *sql, sql_rel *rel, sql_exp *ls, sql_exp *rs, sql_exp *rs2, char *filter_op, int anti, int f)
 {
 	list *l = sa_list(sql->sa);
 	list *r = sa_list(sql->sa);
@@ -1695,11 +1695,11 @@ rel_filter_exp_(mvc *sql, sql_rel *rel, sql_exp *ls, sql_exp *rs, sql_exp *rs2, 
 	list_append(r, rs);
 	if (rs2)
 		list_append(r, rs2);
-	return rel_filter(sql, rel, l, r, "sys", filter_op, anti);
+	return rel_filter(sql, rel, l, r, "sys", filter_op, anti, f);
 }
 
 static sql_rel *
-rel_compare_push_exp(mvc *sql, sql_rel *rel, sql_exp *e, sql_exp *ls, sql_exp *L, sql_exp *rs, sql_exp *R, sql_exp *rs2)
+rel_compare_push_exp(mvc *sql, sql_rel *rel, sql_exp *e, sql_exp *ls, sql_exp *L, sql_exp *rs, sql_exp *R, sql_exp *rs2, int f)
 {
 	if (rs->card <= CARD_ATOM && (exp_is_atom(rs) || exp_has_freevar(sql, rs) || exp_has_freevar(sql, ls)) &&
 	   (!rs2 || (rs2->card <= CARD_ATOM && (exp_is_atom(rs2) || exp_has_freevar(sql, rs2))))) {
@@ -1715,15 +1715,15 @@ rel_compare_push_exp(mvc *sql, sql_rel *rel, sql_exp *e, sql_exp *ls, sql_exp *L
 				return rel;
 			}
 			if (is_left(rel->op) && rel_find_exp(rel->r, ls)) {
-				rel->r = rel_push_select(sql, rel->r, L, e);
+				rel->r = rel_push_select(sql, rel->r, L, e, f);
 				return rel;
 			} else if (is_right(rel->op) && rel_find_exp(rel->l, ls)) {
-				rel->l = rel_push_select(sql, rel->l, L, e);
+				rel->l = rel_push_select(sql, rel->l, L, e, f);
 				return rel;
 			}
 		}
 		/* push select into the given relation */
-		return rel_push_select(sql, rel, L, e);
+		return rel_push_select(sql, rel, L, e, f);
 	} else { /* join */
 		sql_rel *r;
 		if (/*is_semi(rel->op) ||*/ (is_outerjoin(rel->op) && !is_processed((rel)))) {
@@ -1731,7 +1731,7 @@ rel_compare_push_exp(mvc *sql, sql_rel *rel, sql_exp *e, sql_exp *ls, sql_exp *L
 			return rel;
 		}
 		/* push join into the given relation */
-		if ((r = rel_push_join(sql, rel, L, R, rs2, e)) != NULL)
+		if ((r = rel_push_join(sql, rel, L, R, rs2, e, f)) != NULL)
 			return r;
 		rel_join_add_exp(sql->sa, rel, e);
 		return rel;
@@ -1739,7 +1739,7 @@ rel_compare_push_exp(mvc *sql, sql_rel *rel, sql_exp *e, sql_exp *ls, sql_exp *L
 }
 
 static sql_rel *
-rel_compare_exp_(sql_query *query, sql_rel *rel, sql_exp *ls, sql_exp *rs, sql_exp *rs2, int type, int anti, int quantifier)
+rel_compare_exp_(sql_query *query, sql_rel *rel, sql_exp *ls, sql_exp *rs, sql_exp *rs2, int type, int anti, int quantifier, int f)
 {
 	mvc *sql = query->sql;
 	sql_exp *L = ls, *R = rs, *e = NULL;
@@ -1799,12 +1799,12 @@ rel_compare_exp_(sql_query *query, sql_rel *rel, sql_exp *ls, sql_exp *rs, sql_e
 		else
 			return sql_error(sql, ERR_GROUPBY, SQLSTATE(42000) "SELECT: cannot use non GROUP BY column in query results without an aggregate function");
 	}
-	return rel_compare_push_exp(sql, rel, e, ls, L, rs, R, rs2);
+	return rel_compare_push_exp(sql, rel, e, ls, L, rs, R, rs2, f);
 }
 
 static sql_rel *
 rel_compare_exp(sql_query *query, sql_rel *rel, sql_exp *ls, sql_exp *rs, char *compare_op, sql_exp *esc, int reduce,
-				int quantifier, int need_not)
+				int quantifier, int need_not, int f)
 {
 	mvc *sql = query->sql;
 	comp_type type = cmp_equal;
@@ -1837,8 +1837,8 @@ rel_compare_exp(sql_query *query, sql_rel *rel, sql_exp *ls, sql_exp *rs, char *
 	}
 	type = compare_str2type(compare_op);
 	if (type == cmp_filter) 
-		return rel_filter_exp_(sql, rel, ls, rs, esc, compare_op, 0);
-	return rel_compare_exp_(query, rel, ls, rs, esc, type, need_not, quantifier);
+		return rel_filter_exp_(sql, rel, ls, rs, esc, compare_op, 0, f);
+	return rel_compare_exp_(query, rel, ls, rs, esc, type, need_not, quantifier, f);
 }
 
 static sql_rel *
@@ -1905,7 +1905,7 @@ rel_compare(sql_query *query, sql_rel *rel, symbol *sc, symbol *lo, symbol *ro, 
 		return sql_error(sql, ERR_GROUPBY, SQLSTATE(42000) "SELECT: cannot use non GROUP BY column '%s.%s' in query results without an aggregate function", exp_relname(ls), exp_name(ls));
 	if (rs->card > ls->card && ls->card == CARD_AGGR && is_sql_having(f))
 		return sql_error(sql, ERR_GROUPBY, SQLSTATE(42000) "SELECT: cannot use non GROUP BY column '%s.%s' in query results without an aggregate function", exp_relname(rs), exp_name(rs));
-	return rel_compare_exp(query, rel, ls, rs, compare_op, rs2, k.reduce, quantifier, need_not);
+	return rel_compare_exp(query, rel, ls, rs, compare_op, rs2, k.reduce, quantifier, need_not, f);
 }
 
 static sql_exp*
@@ -2171,7 +2171,7 @@ rel_in_value_exp(sql_query *query, sql_rel **rel, symbol *sc, int f)
 }
 
 static sql_rel *
-push_select_exp(mvc *sql, sql_rel *rel, sql_exp *e, sql_exp *ls) /* 'e' is an expression where the right is a constant(s)! */
+push_select_exp(mvc *sql, sql_rel *rel, sql_exp *e, sql_exp *ls, int f) /* 'e' is an expression where the right is a constant(s)! */
 {
 	if (is_outerjoin(rel->op)) {
 		if ((is_left(rel->op) || is_full(rel->op)) && rel_find_exp(rel->l, ls)) {
@@ -2182,15 +2182,15 @@ push_select_exp(mvc *sql, sql_rel *rel, sql_exp *e, sql_exp *ls) /* 'e' is an ex
 			return rel;
 		}
 		if (is_left(rel->op) && rel_find_exp(rel->r, ls)) {
-			rel->r = rel_push_select(sql, rel->r, ls, e);
+			rel->r = rel_push_select(sql, rel->r, ls, e, f);
 			return rel;
 		} else if (is_right(rel->op) && rel_find_exp(rel->l, ls)) {
-			rel->l = rel_push_select(sql, rel->l, ls, e);
+			rel->l = rel_push_select(sql, rel->l, ls, e, f);
 			return rel;
 		}
 	}
 	/* push select into the given relation */
-	return rel_push_select(sql, rel, ls, e);
+	return rel_push_select(sql, rel, ls, e, f);
 }
 
 static sql_rel *
@@ -2204,8 +2204,8 @@ rel_in_exp(sql_query *query, sql_rel *rel, symbol *sc, int f)
 		return NULL;
 
 	if (e->type == e_cmp) /* it's a exp_in or cmp_equal of constants, push down early on if possible */
-		return push_select_exp(sql, rel, e, e->l);
-	return rel_select_add_exp(sql->sa, rel, e);;
+		return push_select_exp(sql, rel, e, e->l, f);
+	return rel_select_add_exp(sql->sa, rel, e);
 }
 
 sql_exp *
@@ -2550,13 +2550,13 @@ rel_logical_exp(sql_query *query, sql_rel *rel, symbol *sc, int f)
 			sql->pushdown = 0;
 
 			lr = rel_select_copy(sql->sa, lr, sa_list(sql->sa));
-			lr = rel_logical_exp(query, lr, lo, f);
+			lr = rel_logical_exp(query, lr, lo, f | sql_or);
 			if (!lr) {
 				sql->pushdown = pushdown;
 				return NULL;
 			}
 			rr = rel_select_copy(sql->sa, rr, sa_list(sql->sa));
-			rr = rel_logical_exp(query, rr, ro, f);
+			rr = rel_logical_exp(query, rr, ro, f | sql_or);
 			if (!rr) {
 				sql->pushdown = pushdown;
 				return NULL;
@@ -2570,10 +2570,10 @@ rel_logical_exp(sql_query *query, sql_rel *rel, symbol *sc, int f)
 			rel = NULL;
 			sql->pushdown = pushdown;
 		} else {
-			lr = rel_logical_exp(query, lr, lo, f);
+			lr = rel_logical_exp(query, lr, lo, f | sql_or);
 			if (!lr)
 				return NULL;
-			rr = rel_logical_exp(query, rr, ro, f);
+			rr = rel_logical_exp(query, rr, ro, f | sql_or);
 		}
 
 		if (!lr || !rr)
@@ -2619,7 +2619,7 @@ rel_logical_exp(sql_query *query, sql_rel *rel, symbol *sc, int f)
 				return NULL;
 			list_append(r, e);
 		}
-		return rel_filter(sql, rel, l, r, sname, fname, 0);
+		return rel_filter(sql, rel, l, r, sname, fname, 0, f);
 	}
 	case SQL_COMPARE:
 	{
@@ -2673,7 +2673,7 @@ rel_logical_exp(sql_query *query, sql_rel *rel, symbol *sc, int f)
 			return sql_error(sql, 02, SQLSTATE(42000) "LIKE: wrong type, should be string");
 		if ((le = rel_check_type(sql, st, rel, le, type_equal)) == NULL)
 			return sql_error(sql, 02, SQLSTATE(42000) "LIKE: wrong type, should be string");
-		return rel_filter_exp_(sql, rel, le, re, ee, (insensitive ? "ilike" : "like"), anti);
+		return rel_filter_exp_(sql, rel, le, re, ee, (insensitive ? "ilike" : "like"), anti, f);
 	}
 	case SQL_BETWEEN:
 	case SQL_NOT_BETWEEN:
@@ -2753,11 +2753,11 @@ rel_logical_exp(sql_query *query, sql_rel *rel, symbol *sc, int f)
 			if (!e1)
 				return NULL;
 			e2 = exp_compare(sql->sa, e1, exp_atom_bool(sql->sa, 1), cmp_equal);
-			return rel_compare_push_exp(sql, rel, e2, le, le, re1, re1, re2);
+			return rel_compare_push_exp(sql, rel, e2, le, le, re1, re1, re2, f);
 		} else if (sc->token == SQL_NOT_BETWEEN) {
-			rel = rel_compare_exp_(query, rel, le, re1, re2, 3|CMP_BETWEEN|flag, 1, 0);
+			rel = rel_compare_exp_(query, rel, le, re1, re2, 3|CMP_BETWEEN|flag, 1, 0, f);
 		} else {
-			rel = rel_compare_exp_(query, rel, le, re1, re2, 3|CMP_BETWEEN|flag, 0, 0);
+			rel = rel_compare_exp_(query, rel, le, re1, re2, 3|CMP_BETWEEN|flag, 0, 0, f);
 		}
 		return rel;
 	}
@@ -2773,7 +2773,7 @@ rel_logical_exp(sql_query *query, sql_rel *rel, symbol *sc, int f)
 			return NULL;
 		set_has_no_nil(le);
 		le = exp_compare(sql->sa, le, exp_atom_bool(sql->sa, (sc->token == SQL_IS_NULL) ? 1 : 0), cmp_equal);
-		return push_select_exp(sql, rel, le, ls);
+		return push_select_exp(sql, rel, le, ls, f);
 	}
 	case SQL_NOT: {
 		sql_exp *le, *ls;
@@ -2794,13 +2794,13 @@ rel_logical_exp(sql_query *query, sql_rel *rel, symbol *sc, int f)
 		if (!(le = rel_unop_(sql, rel, le, NULL, "not", card_value)))
 			return NULL;
 		le = exp_compare(sql->sa, le, exp_atom_bool(sql->sa, 1), cmp_equal);
-		return push_select_exp(sql, rel, le, ls);
+		return push_select_exp(sql, rel, le, ls, f);
 	}
 	case SQL_ATOM: {
 		/* TRUE or FALSE */
 		AtomNode *an = (AtomNode *) sc;
 		sql_exp *e = exp_atom(sql->sa, atom_dup(sql->sa, an->a));
-		return push_select_exp(sql, rel, e, e);
+		return push_select_exp(sql, rel, e, e, f);
 	}
 	case SQL_IDENT:
 	case SQL_COLUMN: {
@@ -2815,7 +2815,7 @@ rel_logical_exp(sql_query *query, sql_rel *rel, symbol *sc, int f)
 		}
 		if (!e || or != rel)
 			return NULL;
-		return push_select_exp(sql, rel, e, ls);
+		return push_select_exp(sql, rel, e, ls, f);
 	}
 	case SQL_UNION:
 	case SQL_EXCEPT:
@@ -2842,7 +2842,7 @@ rel_logical_exp(sql_query *query, sql_rel *rel, symbol *sc, int f)
 			if (!le)
 				return NULL;
 			le = exp_compare(sql->sa, le, exp_atom_bool(sql->sa, 1), cmp_equal);
-			return push_select_exp(sql, rel, le, ls);
+			return push_select_exp(sql, rel, le, ls, f);
 		} else {
 			sq = rel_crossproduct(sql->sa, rel, sq, (f==sql_sel || sq->single)?op_left:op_join);
 		}
@@ -2860,7 +2860,7 @@ rel_logical_exp(sql_query *query, sql_rel *rel, symbol *sc, int f)
 		if (!(le = rel_check_type(sql, &bt, rel, le, type_equal)))
 			return NULL;
 		le = exp_compare(sql->sa, le, exp_atom_bool(sql->sa, 1), cmp_equal);
-		return push_select_exp(sql, rel, le, ls);
+		return push_select_exp(sql, rel, le, ls, f);
 	}
 	}
 	/* never reached, as all switch cases have a `return` */
@@ -5542,7 +5542,7 @@ join_on_column_name(sql_query *query, sql_rel *rel, sql_rel *t1, sql_rel *t2, in
 
 		if (re) {
 			found = 1;
-			if (!(rel = rel_compare_exp(query, rel, le, re, "=", NULL, TRUE, 0, 0)))
+			if (!(rel = rel_compare_exp(query, rel, le, re, "=", NULL, TRUE, 0, 0, 0)))
 				return NULL;
 			if (full) {
 				sql_exp *cond = rel_unop_(sql, rel, le, NULL, "isnull", card_value);
@@ -5920,7 +5920,7 @@ rel_joinquery_(sql_query *query, sql_rel *rel, symbol *tab1, int natural, jt joi
 
 			if (!ls || !rs)
 				return sql_error(sql, 02, SQLSTATE(42000) "JOIN: tables '%s' and '%s' do not have a matching column '%s'", rel_name(t1)?rel_name(t1):"", rel_name(t2)?rel_name(t2):"", nm);
-			if (!(rel = rel_compare_exp(query, rel, ls, rs, "=", NULL, TRUE, 0, 0)))
+			if (!(rel = rel_compare_exp(query, rel, ls, rs, "=", NULL, TRUE, 0, 0, 0)))
 				return NULL;
 			if (op != op_join) {
 				if (!(cond = rel_unop_(sql, rel, ls, NULL, "isnull", card_value)))
