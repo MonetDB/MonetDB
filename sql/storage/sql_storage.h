@@ -144,11 +144,9 @@ typedef size_t (*claim_tab_fptr) (sql_trans *tr, sql_table *t, size_t cnt);
 -- count number of rows in column (excluding the deletes)
 -- check for sortedness
  */
-typedef size_t (*count_del_fptr) (sql_trans *tr, sql_table *t);
-typedef size_t (*count_upd_fptr) (sql_trans *tr, sql_table *t);
-typedef size_t (*count_col_fptr) (sql_trans *tr, sql_column *c, int all /* all or new only */);
-typedef size_t (*count_col_upd_fptr) (sql_trans *tr, sql_column *c);
-typedef size_t (*count_idx_fptr) (sql_trans *tr, sql_idx *i, int all /* all or new only */);
+typedef size_t (*count_del_fptr) (sql_trans *tr, sql_table *t, int upd);
+typedef size_t (*count_col_fptr) (sql_trans *tr, sql_column *c, int upd);
+typedef size_t (*count_idx_fptr) (sql_trans *tr, sql_idx *i, int upd);
 typedef size_t (*dcount_col_fptr) (sql_trans *tr, sql_column *c);
 typedef int (*prop_col_fptr) (sql_trans *tr, sql_column *c);
 
@@ -191,9 +189,7 @@ typedef int (*destroy_del_fptr) (sql_trans *tr, sql_table *t);
 -- clear any storage resources for columns, indices and tables
 -- returns number of removed tuples
 */
-typedef BUN (*clear_col_fptr) (sql_trans *tr, sql_column *c); 
-typedef BUN (*clear_idx_fptr) (sql_trans *tr, sql_idx *i); 
-typedef BUN (*clear_del_fptr) (sql_trans *tr, sql_table *t); 
+typedef int (*clear_table_fptr) (sql_trans *tr, sql_table *t); 
 
 /*
 -- update_table rollforward the changes made from table ft to table tt 
@@ -208,19 +204,9 @@ typedef int (*update_table_fptr) (sql_trans *tr, sql_table *ft, sql_table *tt);
 typedef int (*gtrans_update_fptr) (sql_trans *tr); 
 
 /*
--- handle inserts and updates of columns and indices
--- returns LOG_OK, LOG_ERR
-*/
-typedef int (*col_ins_fptr) (sql_trans *tr, sql_column *c, void *data);
-typedef int (*col_upd_fptr) (sql_trans *tr, sql_column *c, void *rows, void *data);
-typedef int (*idx_ins_fptr) (sql_trans *tr, sql_idx *c, void *data);
-typedef int (*idx_upd_fptr) (sql_trans *tr, sql_idx *c, void *rows, void *data);
-/*
 -- handle deletes
 -- returns LOG_OK, LOG_ERR
 */
-typedef int (*del_fptr) (sql_trans *tr, sql_table *c, void *rows);
-typedef int (*snapshot_fptr) ( sql_table *t ); 
 typedef int (*cleanup_fptr) (); 
 
 /* backing struct for this interface */
@@ -242,9 +228,7 @@ typedef struct store_functions {
 	claim_tab_fptr claim_tab;
 
 	count_del_fptr count_del;
-	count_upd_fptr count_upd;
 	count_col_fptr count_col;
-	count_col_upd_fptr count_col_upd;
 	count_idx_fptr count_idx;
 	dcount_col_fptr dcount_col;
 	prop_col_fptr sorted_col;
@@ -262,10 +246,6 @@ typedef struct store_functions {
 	destroy_idx_fptr destroy_idx;
 	destroy_del_fptr destroy_del;
 
-	clear_col_fptr clear_col;
-	clear_idx_fptr clear_idx;
-	clear_del_fptr clear_del;
-
 	/* functions for logging */
 	create_col_fptr log_create_col;
 	create_idx_fptr log_create_idx;
@@ -275,21 +255,10 @@ typedef struct store_functions {
 	destroy_idx_fptr log_destroy_idx;
 	destroy_del_fptr log_destroy_del;
 
-	snapshot_fptr save_snapshot;
-
-	/* rollforward the changes, first snapshot, then log and finaly apply */
-	update_table_fptr snapshot_table;
+	clear_table_fptr clear_table;
 	update_table_fptr log_table;
 	update_table_fptr update_table;
 	gtrans_update_fptr gtrans_minmax;
-
-	col_ins_fptr col_ins;
-	col_upd_fptr col_upd;
-
-	idx_ins_fptr idx_ins;
-	idx_upd_fptr idx_upd;
-
-	del_fptr del;
 
 	cleanup_fptr cleanup;
 } store_functions;

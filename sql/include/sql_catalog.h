@@ -89,7 +89,6 @@ typedef enum sql_dependency {
 #define TR_NEW 1
 
 #define RDONLY 0
-#define RD_INS 1
 #define RD_UPD_ID 2
 #define RD_UPD_VAL 3
 #define QUICK  4
@@ -238,6 +237,7 @@ typedef size_t backend_stack;
 
 typedef struct sql_trans {
 	char *name;
+	int id;			/* id of this transaction */
 	int stime;		/* start of transaction */
 	int wstime;		/* first write transaction time stamp */
 	int rtime;		/* timestamp of latest read performed in transaction*/

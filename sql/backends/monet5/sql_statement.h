@@ -192,7 +192,7 @@ extern stmt *stmt_semijoin(backend *be, stmt *l, stmt *r, stmt *lcand, stmt *rca
 extern stmt *stmt_join_cand(backend *be, stmt *l, stmt *r, stmt *lcand, stmt *rcand, int anti, comp_type cmptype, int is_semantics);
 
 extern stmt *stmt_project(backend *be, stmt *op1, stmt *op2);
-extern stmt *stmt_project_delta(backend *be, stmt *col, stmt *upd, stmt *ins);
+extern stmt *stmt_project_delta(backend *be, stmt *col, stmt *upd);
 extern stmt *stmt_left_project(backend *be, stmt *op1, stmt *op2, stmt *op3);
 
 extern stmt *stmt_list(backend *be, list *l);

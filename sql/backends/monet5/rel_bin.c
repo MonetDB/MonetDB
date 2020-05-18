@@ -1126,9 +1126,8 @@ stmt_col( backend *be, sql_column *c, stmt *del, int part)
 	if (isTable(c->t) && c->t->access != TABLE_READONLY &&
 	   (!isNew(c) || !isNew(c->t) /* alter */) &&
 	   (c->t->persistence == SQL_PERSIST || c->t->persistence == SQL_DECLARED_TABLE) && !c->t->commit_action) {
-		stmt *i = stmt_bat(be, c, RD_INS, 0);
 		stmt *u = stmt_bat(be, c, RD_UPD_ID, part);
-		sc = stmt_project_delta(be, sc, u, i);
+		sc = stmt_project_delta(be, sc, u);
 		if (del)
 			sc = stmt_project(be, del, sc);
 	} else if (del) { /* always handle the deletes */
@@ -1145,9 +1144,8 @@ stmt_idx( backend *be, sql_idx *i, stmt *del, int part)
 	if (isTable(i->t) && i->t->access != TABLE_READONLY &&
 	   (!isNew(i) || !isNew(i->t) /* alter */) &&
 	   (i->t->persistence == SQL_PERSIST || i->t->persistence == SQL_DECLARED_TABLE) && !i->t->commit_action) {
-		stmt *ic = stmt_idxbat(be, i, RD_INS, 0);
 		stmt *u = stmt_idxbat(be, i, RD_UPD_ID, part);
-		sc = stmt_project_delta(be, sc, u, ic);
+		sc = stmt_project_delta(be, sc, u);
 		if (del)
 			sc = stmt_project(be, del, sc);
 	} else if (del) { /* always handle the deletes */
@@ -3949,9 +3947,9 @@ rel2bin_insert(backend *be, sql_rel *rel, list *refs)
 {
 	mvc *sql = be->mvc;
 	list *l;
-	stmt *inserts = NULL, *insert = NULL, *ddl = NULL, *pin = NULL, **updates, *ret = NULL, *cnt = NULL, *pos;
+	stmt *inserts = NULL, *insert = NULL, *ddl = NULL, *pin = NULL, **updates, *ret = NULL, *cnt = NULL, *pos = NULL;
 	int idx_ins = 0, constraint = 1, len = 0;
-	node *n, *m;
+	node *n, *m, *idx_m = NULL;
 	sql_rel *tr = rel->l, *prel = rel->r;
 	sql_table *t = NULL;
 
@@ -4013,25 +4011,37 @@ rel2bin_insert(backend *be, sql_rel *rel, list *refs)
 		cnt = stmt_aggr(be, insert, NULL, NULL, sql_bind_func(sql->sa, sql->session->schema, "count", sql_bind_localtype("void"), NULL, F_AGGR), 1, 0, 1);
 	}
 	insert = NULL;
+
+	if (t->idxs.set) {
+		idx_m = m;
+		for (n = t->idxs.set->h; n && m; n = n->next, m = m->next) {
+			stmt *is = m->data;
+			sql_idx *i = n->data;
+	
+			if (non_updatable_index(i->type)) /* Some indexes don't hold delta structures */
+				continue;
+			if (hash_index(i->type) && list_length(i->columns) <= 1)
+				is = NULL;
+			if (i->key && constraint) {
+				stmt *ckeys = sql_insert_key(be, inserts->op4.lval, i->key, is, pin);
+
+				list_append(l, ckeys);
+			}
+			if (!insert)
+				insert = is;
+		}
+	}
+
 	if (t->s) /* only not declared tables, need this */
 		pos = stmt_claim(be, t, cnt);
 
-	if (t->idxs.set)
-	for (n = t->idxs.set->h; n && m; n = n->next, m = m->next) {
+	if (t->idxs.set) 
+	for (n = t->idxs.set->h, m = idx_m; n && m; n = n->next, m = m->next) {
 		stmt *is = m->data;
 		sql_idx *i = n->data;
 
-		if (non_updatable_index(i->type)) /* Some indexes don't hold delta structures */
+		if (non_updatable_index(i->type) || (hash_index(i->type) && list_length(i->columns) <= 1)) /* Some indexes don't hold delta structures */
 			continue;
-		if (hash_index(i->type) && list_length(i->columns) <= 1)
-			is = NULL;
-		if (i->key && constraint) {
-			stmt *ckeys = sql_insert_key(be, inserts->op4.lval, i->key, is, pin);
-
-			list_append(l, ckeys);
-		}
-		if (!insert)
-			insert = is;
 		if (is)
 			is = stmt_append_idx(be, i, pos, is);
 	}
@@ -5346,7 +5356,7 @@ check_for_foreign_key_references(mvc *sql, struct tablelist* list, struct tablel
 							node *n = t->columns.set->h;
 							sql_column *c = n->data;
 							size_t n_rows = store_funcs.count_col(sql->session->tr, c, 1);
-							size_t n_deletes = store_funcs.count_del(sql->session->tr, c->t);
+							size_t n_deletes = store_funcs.count_del(sql->session->tr, c->t, 0);
 							assert (n_rows >= n_deletes);
 							if (n_rows - n_deletes > 0) {
 								sql_error(sql, 02, SQLSTATE(23000) "TRUNCATE: FOREIGN KEY %s.%s depends on %s", k->t->base.name, k->base.name, t->base.name);

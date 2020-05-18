@@ -385,6 +385,8 @@ SQLinit(Client c)
 
 	if (debug_str)
 		SQLdebug = strtol(debug_str, NULL, 10);
+	if (SQLdebug&1)
+		GDKtracer_set_component_level("SQL_ALL","M_DEBUG");
 	if (single_user)
 		SQLdebug |= 64;
 	if (readonly)

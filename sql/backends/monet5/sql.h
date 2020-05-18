@@ -79,12 +79,9 @@ sql5_export str mvc_bind_idxbat_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, 
 sql5_export str mvc_clear_table_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 sql5_export str mvc_delete_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 sql5_export str SQLtid(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-sql5_export str DELTAbat(bat *result, const bat *col, const bat *uid, const bat *uval, const bat *ins);
-sql5_export str DELTAsub(bat *result, const bat *col, const bat *cid, const bat *uid, const bat *uval, const bat *ins);
-sql5_export str DELTAproject(bat *result, const bat *select, const bat *col, const bat *uid, const bat *uval, const bat *ins);
-sql5_export str DELTAbat2(bat *result, const bat *col, const bat *uid, const bat *uval);
-sql5_export str DELTAsub2(bat *result, const bat *col, const bat *cid, const bat *uid, const bat *uval);
-sql5_export str DELTAproject2(bat *result, const bat *select, const bat *col, const bat *uid, const bat *uval);
+sql5_export str DELTAbat(bat *result, const bat *col, const bat *uid, const bat *uval);
+sql5_export str DELTAsub(bat *result, const bat *col, const bat *cid, const bat *uid, const bat *uval);
+sql5_export str DELTAproject(bat *result, const bat *select, const bat *col, const bat *uid, const bat *uval);
 
 sql5_export str BATleftproject(bat *result, const bat *col, const bat *l, const bat *r);
 
@@ -114,9 +111,6 @@ sql5_export str mvc_getVersion(lng *r, const int *clientid);
 sql5_export str mvc_restart_seq(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 sql5_export str mvc_bat_restart_seq(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 sql5_export str not_unique(bit *ret, const bat *bid);
-sql5_export str SQLshrink(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-sql5_export str SQLreuse(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-sql5_export str SQLvacuum(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 sql5_export str SQLdrop_hash(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 sql5_export str SQLargRecord(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 sql5_export str SQLoptimizersUpdate(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);

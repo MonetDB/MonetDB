@@ -220,6 +220,7 @@ la_bat_clear(logger *lg, logaction *la)
 	if (b) {
 		restrict_t access = (restrict_t) b->batRestricted;
 		b->batRestricted = BAT_WRITE;
+		/* during startup this is fine */
 		BATclear(b, true);
 		b->batRestricted = access;
 		logbat_destroy(b);
@@ -1898,7 +1899,7 @@ log_bat_persists(logger *lg, BAT *b, int id)
 		fprintf(stderr, "#persists id (%d) bat (%d)\n", id, b->batCacheid);
 	if (lg->inmemory || LOG_DISABLED(lg))
 		return GDK_SUCCEED;
-	return log_bat(lg, b, id, 0);
+	return log_bat(lg, b, id, 0, BATcount(b));
 }
 
 gdk_return
@@ -1924,6 +1925,71 @@ log_bat_transient(logger *lg, int id)
 	return logger_del_bat(lg, bid);
 }
 
+static gdk_return
+_log_bat(logger *lg, BAT *b, log_id id, lng offset, lng cnt, int sliced)
+{
+	char tpe = find_type(lg, b->ttype);
+	gdk_return ok = GDK_SUCCEED;
+	logformat l;
+	BUN p;
+	lng nr;
+	int is_row = 0;
+
+	if (lg->row_insert_nrcols != 0) {
+		lg->row_insert_nrcols--;
+		is_row = 1;
+	}
+	l.flag = LOG_UPDATE_BULK;
+	l.id = id;
+	nr = cnt;
+	lg->changes += (b->batInserted)?nr:1; /* initial large inserts is counted as 1 change */
+
+	if (LOG_DISABLED(lg) || lg->inmemory || !nr) {
+		/* logging is switched off */
+		return GDK_SUCCEED;
+	}
+
+	BATiter bi = bat_iterator(b);
+	gdk_return (*wt) (const void *, stream *, size_t) = BATatoms[b->ttype].atomWrite;
+
+	if (is_row)
+		l.flag = tpe; 
+	if (log_write_format(lg, &l) != GDK_SUCCEED ||
+	    (!is_row && !mnstr_writeLng(lg->output_log, nr)) ||
+	    (!is_row && mnstr_write(lg->output_log, &tpe, 1, 1) != 1) ||
+	    (!is_row && !mnstr_writeLng(lg->output_log, offset))) 
+		return GDK_FAIL;
+
+	/* if offset is just for the log, but BAT is already sliced, reset offset */
+	if (sliced)
+		offset = 0;
+	if (b->ttype < TYPE_str && !isVIEW(b)) {
+		const void *t = BUNtail(bi, offset);
+
+		ok = wt(t, lg->output_log, (size_t)nr);
+	} else {
+		BUN end = offset+nr;
+		for (p = offset; p < end && ok == GDK_SUCCEED; p++) {
+			const void *t = BUNtail(bi, p);
+
+			ok = wt(t, lg->output_log, 1);
+		}
+	}
+
+	if (lg->debug & 1)
+		fprintf(stderr, "#Logged %d " LLFMT " inserts\n", id, nr);
+
+	if (ok != GDK_SUCCEED)
+		fprintf(stderr, "!ERROR: log_bat: write failed\n");
+	return ok;
+}
+
+gdk_return
+log_bat(logger *lg, BAT *b, log_id id, lng offset, lng cnt)
+{
+	return _log_bat(lg, b, id, offset, cnt, 0);
+}
+
 gdk_return
 log_delta(logger *lg, BAT *uid, BAT *uval, log_id id)
 {
@@ -1934,7 +2000,7 @@ log_delta(logger *lg, BAT *uid, BAT *uval, log_id id)
 	lng nr;
 
 	if (BATtdense(uid)) 
-		return log_bat(lg, uval, id, uid->tseqbase);
+		return _log_bat(lg, uval, id, uid->tseqbase, BATcount(uval), 1);
 
 	assert(uid->ttype == TYPE_oid || uid->ttype == TYPE_void);
 
@@ -1977,60 +2043,6 @@ log_delta(logger *lg, BAT *uid, BAT *uval, log_id id)
 	return ok;
 }
 
-gdk_return
-log_bat(logger *lg, BAT *b, log_id id, lng offset)
-{
-	char tpe = find_type(lg, b->ttype);
-	gdk_return ok = GDK_SUCCEED;
-	logformat l;
-	BUN p;
-	lng nr;
-	int is_row = 0;
-
-	if (lg->row_insert_nrcols != 0) {
-		lg->row_insert_nrcols--;
-		is_row = 1;
-	}
-	l.flag = LOG_UPDATE_BULK;
-	l.id = id;
-	nr = (BUNlast(b) - b->batInserted);
-	lg->changes += (b->batInserted)?nr:1; /* initial large inserts is counted as 1 change */
-
-	if (LOG_DISABLED(lg) || lg->inmemory || !nr) {
-		/* logging is switched off */
-		return GDK_SUCCEED;
-	}
-
-	BATiter bi = bat_iterator(b);
-	gdk_return (*wt) (const void *, stream *, size_t) = BATatoms[b->ttype].atomWrite;
-
-	if (is_row)
-		l.flag = tpe; 
-	if (log_write_format(lg, &l) != GDK_SUCCEED ||
-	    (!is_row && !mnstr_writeLng(lg->output_log, nr)) ||
-	    (!is_row && mnstr_write(lg->output_log, &tpe, 1, 1) != 1) ||
-	    (!is_row && !mnstr_writeLng(lg->output_log, offset))) 
-		return GDK_FAIL;
-
-	if (b->ttype < TYPE_str && !isVIEW(b)) {
-		const void *t = BUNtail(bi, b->batInserted);
-
-		ok = wt(t, lg->output_log, (size_t)nr);
-	} else {
-		for (p = b->batInserted; p < BUNlast(b) && ok == GDK_SUCCEED; p++) {
-			const void *t = BUNtail(bi, p);
-
-			ok = wt(t, lg->output_log, 1);
-		}
-	}
-
-	if (lg->debug & 1)
-		fprintf(stderr, "#Logged %d " LLFMT " inserts\n", id, nr);
-
-	if (ok != GDK_SUCCEED)
-		fprintf(stderr, "!ERROR: log_bat: write failed\n");
-	return ok;
-}
 
 gdk_return
 log_bat_clear(logger *lg, int id)

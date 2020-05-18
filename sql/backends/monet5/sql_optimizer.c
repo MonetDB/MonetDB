@@ -39,11 +39,7 @@ SQLgetColumnSize(sql_trans *tr, sql_column *c, int access)
 		}
 		break;
 	case 1:
-		b = store_funcs.bind_col(tr, c, RD_INS);
-		if (b) {
-			size+= getBatSpace(b);
-			BBPunfix(b->batCacheid);
-		}
+		assert(0);
 		break;
 	case 2:
 		b = store_funcs.bind_col(tr, c, RD_UPD_VAL);

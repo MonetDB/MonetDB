@@ -31,6 +31,7 @@ ATOMIC_TYPE transactions = ATOMIC_VAR_INIT(0);
 ATOMIC_TYPE nr_sessions = ATOMIC_VAR_INIT(0);
 ATOMIC_TYPE store_nr_active = ATOMIC_VAR_INIT(0);
 store_type active_store_type = store_bat;
+int trans_id = 0;
 int store_readonly = 0;
 int store_singleuser = 0;
 int store_initialized = 0;
@@ -2086,9 +2087,10 @@ store_needs_vacuum( sql_trans *tr )
 		if (!t->system)
 			continue;
 		/* no inserts, updates and enough deletes ? */
-		if (store_funcs.count_col(tr, c, 0) == 0 &&
-		    store_funcs.count_upd(tr, t) == 0 &&
-		    store_funcs.count_del(tr, t) >= max_dels)
+		if (store_funcs.count_col(tr, c, 1 /*INS*/) == 0 &&
+			/* todo check all updates */
+		    store_funcs.count_col(tr, c, 2 /*UPD*/) == 0 &&
+		    store_funcs.count_del(tr, t, 0) >= max_dels)
 			return 1;
 	}
 	return 0;
@@ -2108,9 +2110,10 @@ store_vacuum( sql_trans *tr )
 
 		if (!t->system)
 			continue;
-		if (store_funcs.count_col(tr, c, 0) == 0 &&
-		    store_funcs.count_upd(tr, t) == 0 &&
-		    store_funcs.count_del(tr, t) >= max_dels)
+		if (store_funcs.count_col(tr, c, 1 /*INS*/) == 0 &&
+			/* todo check all updates */
+		    store_funcs.count_col(tr, c, 2 /*UPD*/) == 0 &&
+		    store_funcs.count_del(tr, t, 0) >= max_dels)
 			if (table_funcs.table_vacuum(tr, t) != SQL_OK)
 				return -1;
 	}
@@ -3826,6 +3829,12 @@ trans_dup(backend_stack stk, sql_trans *ot, const char *newname)
 		}
 		if (ot == gtrans)
 			ot->schemas.nelm = NULL;
+
+		for (n = t->schemas.set->h; n; n = n->next) { /* Set table members */
+			sql_schema *s = n->data;
+
+			set_members(&s->tables);
+		}
 	}
 	return t;
 }
@@ -6351,33 +6360,7 @@ sql_trans_drop_table(sql_trans *tr, sql_schema *s, sqlid id, int drop_action)
 BUN
 sql_trans_clear_table(sql_trans *tr, sql_table *t)
 {
-	node *n = t->columns.set->h;
-	sql_column *c = n->data;
-	BUN sz = 0;
-
-	t->cleared = 1;
-	t->base.wtime = t->s->base.wtime = tr->wtime = tr->wstime;
-	c->base.wtime = tr->wstime;
-
-	sz += store_funcs.clear_col(tr, c);
-	sz -= store_funcs.clear_del(tr, t);
-
-	for (n = n->next; n; n = n->next) {
-		c = n->data;
-		c->base.wtime = tr->wstime;
-
-		(void)store_funcs.clear_col(tr, c);
-	}
-	if (t->idxs.set) {
-		for (n = t->idxs.set->h; n; n = n->next) {
-			sql_idx *ci = n->data;
-
-			ci->base.wtime = tr->wstime;
-			if (isTable(ci->t) && idx_has_column(ci->type))
-				(void)store_funcs.clear_idx(tr, ci);
-		}
-	}
-	return sz;
+	return store_funcs.clear_table(tr, t);
 }
 
 sql_column *
@@ -7027,7 +7010,7 @@ sql_trans_create_ic(sql_trans *tr, sql_idx * i, sql_column *c)
 	/* should we switch to oph_idx ? */
 #if 0
 	if (i->type == hash_idx && list_length(i->columns) == 1 &&
-	    store_funcs.count_col(tr, ic->c) && store_funcs.sorted_col(tr, ic->c)) {
+	    store_funcs.count_col(tr, ic->c, 0) && store_funcs.sorted_col(tr, ic->c)) {
 		sql_table *sysidx = find_sql_table(syss, "idxs");
 		sql_column *sysidxid = find_sql_column(sysidx, "id");
 		sql_column *sysidxtype = find_sql_column(sysidx, "type");

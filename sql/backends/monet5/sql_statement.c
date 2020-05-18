@@ -529,7 +529,7 @@ stmt_tid(backend *be, sql_table *t, int partition)
 		return NULL;
 	if (t && (!isRemote(t) && !isMergeTable(t)) && partition) {
 		sql_trans *tr = be->mvc->session->tr;
-		BUN rows = (BUN) store_funcs.count_col(tr, t->columns.set->h->data, 1);
+		BUN rows = (BUN) store_funcs.count_col(tr, t->columns.set->h->data, 0);
 		setRowCnt(mb,getArg(q,0),rows);
 	}
 	if (q) {
@@ -594,11 +594,11 @@ stmt_bat(backend *be, sql_column *c, int access, int partition)
 		setVarType(mb, getArg(q, 1), newBatType(tt));
 		setVarUDFtype(mb, getArg(q, 1));
 	}
-	if (access != RD_INS && partition) {
+	if (partition) {
 		sql_trans *tr = be->mvc->session->tr;
 
 		if (c && (!isRemote(c->t) && !isMergeTable(c->t))) {
-			BUN rows = (BUN) store_funcs.count_col(tr, c, 1);
+			BUN rows = (BUN) store_funcs.count_col(tr, c, 0);
 			setRowCnt(mb,getArg(q,0),rows);
 		}
 	}
@@ -651,11 +651,11 @@ stmt_idxbat(backend *be, sql_idx *i, int access, int partition)
 		setVarType(mb, getArg(q, 1), newBatType(tt));
 		setVarUDFtype(mb, getArg(q, 1));
 	}
-	if (access != RD_INS && partition) {
+	if (partition) {
 		sql_trans *tr = be->mvc->session->tr;
 
 		if (i && (!isRemote(i->t) && !isMergeTable(i->t))) {
-			BUN rows = (BUN) store_funcs.count_idx(tr, i, 1);
+			BUN rows = (BUN) store_funcs.count_idx(tr, i, 0);
 			setRowCnt(mb,getArg(q,0),rows);
 		}
 	}
@@ -2069,7 +2069,7 @@ stmt_semijoin(backend *be, stmt *op1, stmt *op2, stmt *lcand, stmt *rcand, int i
 }
 
 static InstrPtr 
-stmt_project_join(backend *be, stmt *op1, stmt *op2, stmt *ins) 
+stmt_project_join(backend *be, stmt *op1, stmt *op2, bool delta) 
 {
 	MalBlkPtr mb = be->mb;
 	InstrPtr q = NULL;
@@ -2077,16 +2077,13 @@ stmt_project_join(backend *be, stmt *op1, stmt *op2, stmt *ins)
 	if (op1->nr < 0 || op2->nr < 0)
 		return NULL;
 	/* delta bat */
-	if (ins) {
+	if (delta) {
 		int uval = getArg(op2->q, 1);
 
-		if (ins->nr < 0)
-			return NULL;
 		q = newStmt(mb, sqlRef, deltaRef);
 		q = pushArgument(mb, q, op1->nr);
 		q = pushArgument(mb, q, op2->nr);
 		q = pushArgument(mb, q, uval);
-		q = pushArgument(mb, q, ins->nr);
 	} else {
 		/* projections, ie left is void headed */
 		q = newStmt(mb, algebraRef, projectionRef);
@@ -2101,7 +2098,7 @@ stmt_project_join(backend *be, stmt *op1, stmt *op2, stmt *ins)
 stmt *
 stmt_project(backend *be, stmt *op1, stmt *op2)
 {
-	InstrPtr q = stmt_project_join(be, op1, op2, NULL);
+	InstrPtr q = stmt_project_join(be, op1, op2, false);
 	if (q) {
 		stmt *s = stmt_create(be->mvc->sa, st_join);
 
@@ -2120,15 +2117,14 @@ stmt_project(backend *be, stmt *op1, stmt *op2)
 }
 
 stmt *
-stmt_project_delta(backend *be, stmt *col, stmt *upd, stmt *ins)
+stmt_project_delta(backend *be, stmt *col, stmt *upd)
 {
-	InstrPtr q = stmt_project_join(be, col, upd, ins);
+	InstrPtr q = stmt_project_join(be, col, upd, true);
 	if (q) {
 		stmt *s = stmt_create(be->mvc->sa, st_join);
 
 		s->op1 = col;
 		s->op2 = upd;
-		s->op3 = ins;
 		s->flag = cmp_project;
 		s->key = 0;
 		s->nrcols = 2;

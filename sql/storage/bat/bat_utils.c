@@ -144,7 +144,7 @@ e_BAT(int type)
 }
 
 log_bid 
-ebat_copy(log_bid b, oid ibase, int temp)
+ebat_copy(log_bid b)
 {
 	/* make a copy of b */
 	BAT *o = temp_descriptor(b);
@@ -159,11 +159,11 @@ ebat_copy(log_bid b, oid ibase, int temp)
 			return BID_NIL;
 	}
 
-	if (!temp && BATcount(o)) {
+	if (BATcount(o)) {
 		c = COLcopy(o, o->ttype, true, PERSISTENT);
 		if (!c)
 			return BID_NIL;
-		BAThseqbase(c, ibase );
+		BAThseqbase(c, 0);
 		BATcommit(c, BUN_NONE);
 		bat_set_access(c, BAT_READ);
 		r = temp_create(c);
@@ -207,6 +207,18 @@ bat_utils_init(void)
 }
 
 sql_table *
+tr_find_base_table( sql_trans *tr, sql_table *t)
+{
+	while (t && t->po && tr)  {
+		t = t->po;
+		tr = tr->parent;
+	}
+	if (t->data)
+		return t;
+	return NULL;
+}
+
+sql_table *
 tr_find_table( sql_trans *tr, sql_table *t)
 {
 	while (t && t->po && !t->base.allocated && tr)  {
@@ -219,6 +231,18 @@ tr_find_table( sql_trans *tr, sql_table *t)
 }
 
 sql_column *
+tr_find_base_column( sql_trans *tr, sql_column *c)
+{
+	while (c && c->po && tr)  {
+		c = c->po;
+		tr = tr->parent;
+	}
+	if (c->data)
+		return c;
+	return NULL;
+}
+
+sql_column *
 tr_find_column( sql_trans *tr, sql_column *c)
 {
 	while (c && c->po && !c->base.allocated && tr)  {
@@ -227,6 +251,18 @@ tr_find_column( sql_trans *tr, sql_column *c)
 	}
 	if (c->data)
 		return c;
+	return NULL;
+}
+
+sql_idx *
+tr_find_base_idx( sql_trans *tr, sql_idx *i)
+{
+	while (i && i->po && tr)  {
+		i = i->po;
+		tr = tr->parent;
+	}
+	if (i->data)
+		return i;
 	return NULL;
 }
 

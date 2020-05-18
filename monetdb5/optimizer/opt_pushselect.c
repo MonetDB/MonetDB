@@ -35,16 +35,6 @@ PushNil(MalBlkPtr mb, InstrPtr p, int pos, int tpe)
 	return p;
 }
 
-static InstrPtr
-ReplaceWithNil(MalBlkPtr mb, InstrPtr p, int pos, int tpe)
-{
-	p = pushNil(mb, p, tpe); /* push at end */
-	getArg(p, pos) = getArg(p, p->argc-1);
-	p->argc--;
-	return p;
-}
-
-
 #define MAX_TABLES 64
 
 typedef struct subselect_t {
@@ -418,12 +408,12 @@ OPTpushselectImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 						freeInstruction(p);
 						continue;
 					}
-					/* c = sql.delta(b,uid,uval,ins);
+					/* c = sql.delta(b,uid,uval);
 		 		 	 * l = projection(x, c); 
 		 		 	 * into
-		 		 	 * l = sql.projectdelta(x,b,uid,uval,ins);
+		 		 	 * l = sql.projectdelta(x,b,uid,uval);
 		 		 	 */
-					else if (getModuleId(q) == sqlRef && getFunctionId(q) == deltaRef && q->argc == 5) {
+					else if (getModuleId(q) == sqlRef && getFunctionId(q) == deltaRef && q->argc == 4) {
 						q = copyInstruction(q);
 						if( q == NULL){
 							for (; i<limit; i++) 
@@ -601,13 +591,12 @@ OPTpushselectImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 			}
 		}
 
-		/* c = delta(b, uid, uvl, ins)
+		/* c = delta(b, uid, uvl)
 		 * s = select(c, C1..)
 		 *
 		 * nc = select(b, C1..)
-		 * ni = select(ins, C1..)
 		 * nu = select(uvl, C1..)
-		 * s = subdelta(nc, uid, nu, ni);
+		 * s = subdelta(nc, uid, nu);
 		 *
 		 * doesn't handle Xselect(x, .. z, C1.. cases) ie multicolumn selects
 		 */
@@ -622,13 +611,11 @@ OPTpushselectImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 			}
 			if (q && getModuleId(q) == sqlRef && getFunctionId(q) == deltaRef) {
 				InstrPtr r = copyInstruction(p);
-				InstrPtr s = copyInstruction(p);
 				InstrPtr t = copyInstruction(p);
 				InstrPtr u = copyInstruction(q);
 		
-				if( r == NULL || s == NULL || t== NULL ||u == NULL){
+				if( r == NULL || t== NULL ||u == NULL){
 					freeInstruction(r);
-					freeInstruction(s);
 					freeInstruction(t);
 					freeInstruction(u);
 					GDKfree(vars);
@@ -644,20 +631,8 @@ OPTpushselectImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 				getArg(r, 1) = getArg(q, 1); /* column */
 				r->typechk = TYPE_UNKNOWN;
 				pushInstruction(mb,r);
-				getArg(s, 0) = newTmpVariable(mb, newBatType(TYPE_oid));
-				setVarCList(mb,getArg(s,0));
-				getArg(s, 1) = getArg(q, 3); /* updates */
-				s = ReplaceWithNil(mb, s, 2, TYPE_bat); /* no candidate list */
-				setArgType(mb, s, 2, newBatType(TYPE_oid));
-				/* make sure to resolve again */
-				s->token = ASSIGNsymbol; 
-				s->typechk = TYPE_UNKNOWN;
-        			s->fcn = NULL;
-        			s->blk = NULL;
-				pushInstruction(mb,s);
 				getArg(t, 0) = newTmpVariable(mb, newBatType(TYPE_oid));
 				setVarCList(mb,getArg(t,0));
-				getArg(t, 1) = getArg(q, 4); /* inserts */
 				pushInstruction(mb,t);
 
 				setFunctionId(u, subdeltaRef);
@@ -665,7 +640,6 @@ OPTpushselectImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 				getArg(u, 1) = getArg(r,0);
 				getArg(u, 2) = getArg(p,2); /* pre-cands */
 				getArg(u, 3) = getArg(q,2); /* update ids */
-				getArg(u, 4) = getArg(s,0);
 				u = pushArgument(mb, u, getArg(t,0));
 				u->typechk = TYPE_UNKNOWN;
 				pushInstruction(mb,u);	
@@ -676,7 +650,7 @@ OPTpushselectImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 			int var = getArg(p, 2);
 			InstrPtr q = old[vars[var]];
 			
-			if (getModuleId(q) == sqlRef && getFunctionId(q) == deltaRef && q->argc == 5) {
+			if (getModuleId(q) == sqlRef && getFunctionId(q) == deltaRef && q->argc == 4) {
 				q = copyInstruction(q);
 				if( q == NULL){
 					GDKfree(vars);

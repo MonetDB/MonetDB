@@ -184,13 +184,13 @@ OPTemptybindImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
 			continue;
 		}
 
-		// delta operations without updates+ insert can be replaced by an assignment
-		if (getModuleId(p)== sqlRef && getFunctionId(p) == deltaRef  && p->argc ==5){
-			if( empty[getArg(p,2)] && empty[getArg(p,3)] && empty[getArg(p,4)] ){
+		// delta operations without updates can be replaced by an assignment
+		if (getModuleId(p)== sqlRef && getFunctionId(p) == deltaRef && p->argc == 4){
+			if (empty[getArg(p,2)] && empty[getArg(p,3)]){
 				actions++;
 				clrFunction(p);
 				p->argc = 2;
-				if ( empty[getArg(p,1)] ){
+				if (empty[getArg(p,1)]){
 					empty[getArg(p,0)] = i;
 				}
 			}
@@ -198,7 +198,7 @@ OPTemptybindImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
 		}
 
 		if (getModuleId(p)== sqlRef && getFunctionId(p) == projectdeltaRef) {
-			if( empty[getArg(p,3)] && empty[getArg(p,4)] ){
+			if (empty[getArg(p,3)] && empty[getArg(p,4)]){
 				actions++;
 				setModuleId(p,algebraRef);
 				setFunctionId(p,projectionRef);

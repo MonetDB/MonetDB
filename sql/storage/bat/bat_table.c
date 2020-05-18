@@ -16,21 +16,61 @@ _delta_cands(sql_trans *tr, sql_table *t)
 {
 	sql_column *c = t->columns.set->h->data;
 	/* create void,void bat with length and oid's set */
-	size_t nr = store_funcs.count_col(tr, c, 1);
+	size_t nr = store_funcs.count_col(tr, c, 0), dcnt = 0;
 	BAT *tids = BATdense(0, 0, (BUN) nr);
 
 	if (!tids)
 		return NULL;
 
-	if (store_funcs.count_del(tr, t)) {
-		BAT *d, *diff = NULL;
+	if ((dcnt=store_funcs.count_del(tr, t, 0)) > 0 || store_funcs.count_del(tr, t, 2) > 0) {
+		BAT *d;
 
-		if ((d = store_funcs.bind_del(tr, t, RD_INS)) != NULL) {
-			diff = BATdiff(tids, d, NULL, NULL, false, false, BUN_NONE);
+		if ((d = store_funcs.bind_del(tr, t, RDONLY)) != NULL) {
+			BAT *del_ids = COLnew(0, TYPE_oid, dcnt, TRANSIENT);
+			/* TODO handle updates on delete */
+			if (!d) 
+				return NULL;
+			if (store_funcs.count_del(tr, t, 2) > 0) {
+				BAT *nd = COLcopy(d, d->ttype, true, TRANSIENT);
+				BAT *ui = store_funcs.bind_del(tr, t, RD_UPD_ID);
+				BAT *uv = store_funcs.bind_del(tr, t, RD_UPD_VAL);
+
+				BBPunfix(d->batCacheid);
+	    			if (!nd || !ui || !uv || BATreplace(nd, ui, uv, true) != GDK_SUCCEED) {
+					if (nd) BBPunfix(nd->batCacheid);
+					if (ui) BBPunfix(ui->batCacheid);
+					if (uv) BBPunfix(uv->batCacheid);
+					BBPreclaim(del_ids);
+					return NULL;
+				}
+				BBPunfix(ui->batCacheid);
+				BBPunfix(uv->batCacheid);
+				d = nd;
+			}
+			bit *deleted = (bit*)Tloc(d, 0); 
+			for(BUN p = 0; p < nr; p++) {
+				if (deleted[p]) {
+					oid id = p;
+					if (BUNappend(del_ids, &id, false) != GDK_SUCCEED) {
+						BBPreclaim(del_ids);
+						bat_destroy(d);
+						bat_destroy(tids);
+						return NULL;
+					}
+				}
+			}
 			bat_destroy(d);
+			gdk_return ret = BATnegcands(tids, del_ids);
+			BBPunfix(del_ids->batCacheid);
+			if (ret != GDK_SUCCEED) {
+				BBPreclaim(del_ids);
+				bat_destroy(tids);
+				return NULL;
+			}
+		} else {
+			bat_destroy(tids);
+			return NULL;
 		}
-		bat_destroy(tids);
-		tids = diff;
 	}
 	return tids;
 }
@@ -38,19 +78,13 @@ _delta_cands(sql_trans *tr, sql_table *t)
 static BAT *
 delta_cands(sql_trans *tr, sql_table *t)
 {
-	sql_dbat *d;
 	BAT *tids;
 
 	if (!t->data) {
 		sql_table *ot = tr_find_table(tr->parent, t);
 		t->data = timestamp_dbat(ot->data, tr->stime);
 	}
-	d = t->data;
-	if (!store_initialized && d->cached) 
-		return temp_descriptor(d->cached->batCacheid);
 	tids = _delta_cands(tr, t);
-	if (!store_initialized && !d->cached) /* only cache during catalog loading */
-		d->cached = temp_descriptor(tids->batCacheid);
 	return tids;
 }
 
@@ -62,53 +96,21 @@ delta_full_bat_( sql_column *c, sql_delta *bat, int temp)
 		b := b.append(i);
 		b := b.replace(u);
 	*/
-	BAT *r, *b, *ui, *uv, *i = temp_descriptor(bat->ibid);
-	int needcopy = 1;
+	BAT *b, *ui, *uv;
 
-	if (!i)
-		return NULL;
-	r = i; 
+	b = temp_descriptor(bat->cs.bid);
 	if (temp) 
-		return r;
-	b = temp_descriptor(bat->bid);
-	if (!b) {
-		b = i;
-	} else {
-		if (BATcount(i)) {
-			r = COLcopy(b, b->ttype, true, TRANSIENT); 
-			bat_destroy(b); 
-			if (r == NULL) {
-				bat_destroy(i);
-				return NULL;
-			}
-			b = r;
-			if (BATappend(b, i, NULL, true) != GDK_SUCCEED) {
-				bat_destroy(b);
-				bat_destroy(i);
-				return NULL;
-			}
-			needcopy = 0;
-		}
-		bat_destroy(i); 
-	}
-	if (bat->uibid && bat->ucnt) {
-		ui = temp_descriptor(bat->uibid);
-		uv = temp_descriptor(bat->uvbid);
+		return b;
+	if (b && bat->cs.uibid && bat->cs.ucnt) {
+		ui = temp_descriptor(bat->cs.uibid);
+		uv = temp_descriptor(bat->cs.uvbid);
 		if (ui && BATcount(ui)) {
-			if (needcopy) {
-				r = COLcopy(b, b->ttype, true, TRANSIENT); 
-				bat_destroy(b); 
-				b = r;
-				if(b == NULL) {
-					bat_destroy(ui);
-					bat_destroy(uv);
-					return NULL;
-				}
-			}
-			if (BATreplace(b, ui, uv, true) != GDK_SUCCEED) {
+			BAT *r = COLcopy(b, b->ttype, true, TRANSIENT); 
+			bat_destroy(b); 
+			b = r;
+			if(b == NULL) {
 				bat_destroy(ui);
 				bat_destroy(uv);
-				bat_destroy(b);
 				return NULL;
 			}
 		}
@@ -116,16 +118,12 @@ delta_full_bat_( sql_column *c, sql_delta *bat, int temp)
 		bat_destroy(uv); 
 	}
 	(void)c;
-	if (!store_initialized && !bat->cached) 
-		bat->cached = b;
 	return b;
 }
 
 static BAT *
 delta_full_bat( sql_column *c, sql_delta *bat, int temp)
 {
-	if (!store_initialized && bat->cached) 
-		return bat->cached;
 	return delta_full_bat_( c, bat, temp);
 }
 
@@ -142,10 +140,8 @@ full_column(sql_trans *tr, sql_column *c)
 static void
 full_destroy(sql_column *c, BAT *b)
 {
-	sql_delta *d = c->data;
-	assert(d);
-	if (d->cached != b)
-		bat_destroy(b);
+	(void)c;
+	bat_destroy(b);
 }
 
 static oid

@@ -319,20 +319,11 @@ mat_delta(matlist_t *ml, MalBlkPtr mb, InstrPtr p, mat_t *mat, int m, int n, int
 			for(j=1; j < mat[m].mi->argc; j++) {
 				if (overlap(ml, getArg(mat[e].mi, k), getArg(mat[m].mi, j), k, j, 0)){
 					InstrPtr q = copyInstruction(p);
+
 					if(!q){
 						freeInstruction(r);
 						return NULL;
 					}
-
-					/* remove last argument (inserts only on last part) */
-					if (k < mat[m].mi->argc-1)
-						q->argc--;
-					/* make sure to resolve again */
-					q->token = ASSIGNsymbol; 
-					q->typechk = TYPE_UNKNOWN;
-					q->fcn = NULL;
-					q->blk = NULL;
-
 					getArg(q, 0) = newTmpVariable(mb, tpe);
 					getArg(q, mvar) = getArg(mat[m].mi, j);
 					getArg(q, nvar) = getArg(mat[n].mi, j);
@@ -353,18 +344,9 @@ mat_delta(matlist_t *ml, MalBlkPtr mb, InstrPtr p, mat_t *mat, int m, int n, int
 	} else {
 		for(k=1; k < mat[m].mi->argc; k++) {
 			InstrPtr q = copyInstruction(p);
+
 			if(!q)
 				return NULL;
-
-			/* remove last argument (inserts only on last part) */
-			if (k < mat[m].mi->argc-1)
-				q->argc--;
-			/* make sure to resolve again */
-			q->token = ASSIGNsymbol; 
-			q->typechk = TYPE_UNKNOWN;
-			q->fcn = NULL;
-			q->blk = NULL;
-
 			getArg(q, 0) = newTmpVariable(mb, tpe);
 			getArg(q, mvar) = getArg(mat[m].mi, k);
 			getArg(q, nvar) = getArg(mat[n].mi, k);
@@ -2250,9 +2232,8 @@ OPTmergetableImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 			if ((e=is_a_mat(getArg(p,fe), &ml)) >= 0)
 				break;
 
-		/* delta* operator have a ins bat as last argument, we move the inserts into the last delta statement, ie
-  		 * all but last need to remove one argument */
-		if (match == 3 && bats == 4 && isDelta(p) && 
+		/* delta* operator */
+		if (match == 3 && bats == 3 && isDelta(p) && 
 		   (m=is_a_mat(getArg(p,fm), &ml)) >= 0 &&
 		   (n=is_a_mat(getArg(p,fn), &ml)) >= 0 &&
 		   (o=is_a_mat(getArg(p,fo), &ml)) >= 0){
@@ -2265,7 +2246,7 @@ OPTmergetableImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 
 			continue;
 		}
-		if (match == 4 && bats == 5 && isDelta(p) && 
+		if (match == 4 && bats == 4 && isDelta(p) && 
 		   (m=is_a_mat(getArg(p,fm), &ml)) >= 0 &&
 		   (n=is_a_mat(getArg(p,fn), &ml)) >= 0 &&
 		   (o=is_a_mat(getArg(p,fo), &ml)) >= 0 &&
