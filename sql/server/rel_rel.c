@@ -14,7 +14,7 @@
 #include "rel_unnest.h"
 #include "sql_semantic.h"
 #include "sql_mvc.h"
-
+#include "rel_rewriter.h"
 
 void
 rel_set_exps(sql_rel *rel, list *exps)
@@ -1218,15 +1218,14 @@ rel_bind_path_(mvc *sql, sql_rel *rel, sql_exp *e, list *path )
 }
 
 static list *
-rel_bind_path(mvc *sql, sql_rel *rel, sql_exp *e)
+rel_bind_path(mvc *sql, sql_rel *rel, sql_exp *e, list *path)
 {
-	list *path = sa_list(sql->sa);
 	if (!path)
 		return NULL;
 
 	if (e->type == e_convert)
-		e = e->l;
-	if (e->type == e_column) {
+		path = rel_bind_path(sql, rel, e->l, path);
+	else if (e->type == e_column) {
 		if (rel) {
 			if (!rel_bind_path_(sql, rel, e, path)) {
 				/* something is wrong */
@@ -1240,21 +1239,49 @@ rel_bind_path(mvc *sql, sql_rel *rel, sql_exp *e)
 	return path;
 }
 
+static sql_rel *
+rel_select_push_exp_down(mvc *sql, sql_rel *rel, sql_exp *e)
+{
+	sql_rel *r = rel->l, *jl = r->l, *jr = r->r;
+	int left = r->op == op_join || r->op == op_left;
+	int right = r->op == op_join || r->op == op_right;
+	int done = 0;
+	sql_exp *ne = NULL;
+
+	assert(is_select(rel->op));
+	if (!is_full(r->op) && !is_single(r)) {
+		if (left)
+			ne = exp_push_down(sql, e, jl, jl);
+		if (ne && ne != e) {
+			done = 1; 
+			r->l = jl = rel_select_add_exp(sql->sa, jl, ne);
+		} else if (right) {
+			ne = exp_push_down(sql, e, jr, jr);
+			if (ne && ne != e) {
+				done = 1; 
+				r->r = jr = rel_select_add_exp(sql->sa, jr, ne);
+			}
+		}
+	}
+	if (!done)
+		rel_select_add_exp(sql->sa, rel, e);
+	return rel;
+}
+
 /* ls is the left expression of the select, rs is a simple atom, e is the
    select expression.
  */
 sql_rel *
-rel_push_select(mvc *sql, sql_rel *rel, sql_exp *ls, sql_exp *e)
+rel_push_select(mvc *sql, sql_rel *rel, sql_exp *ls, sql_exp *e, int f)
 {
-	list *l = rel_bind_path(sql, rel, ls);
+	list *l = rel_bind_path(sql, rel, ls, sa_list(sql->sa));
 	node *n;
 	sql_rel *lrel = NULL, *p = NULL;
 
-	if (!l || !sql->pushdown) {
-		/* expression has no clear parent relation, so filter current
-		   with it */
+	if (!l)
+		return NULL;
+	if (is_sql_or(f)) /* expression has no clear parent relation, so filter current with it */
 		return rel_select(sql->sa, rel, e);
-	}
 
 	for (n = l->h; n; n = n->next ) {
 		lrel = n->data;
@@ -1276,7 +1303,7 @@ rel_push_select(mvc *sql, sql_rel *rel, sql_exp *ls, sql_exp *e)
 	if (!lrel)
 		return NULL;
 	if (p && is_select(p->op) && !rel_is_ref(p)) { /* refine old select */
-		rel_select_add_exp(sql->sa, p, e);
+		p = rel_select_push_exp_down(sql, p, e);
 	} else {
 		sql_rel *n = rel_select(sql->sa, lrel, e);
 
@@ -1300,21 +1327,21 @@ rel_push_select(mvc *sql, sql_rel *rel, sql_exp *ls, sql_exp *e)
    join expression.
  */
 sql_rel *
-rel_push_join(mvc *sql, sql_rel *rel, sql_exp *ls, sql_exp *rs, sql_exp *rs2, sql_exp *e)
+rel_push_join(mvc *sql, sql_rel *rel, sql_exp *ls, sql_exp *rs, sql_exp *rs2, sql_exp *e, int f)
 {
-	list *l = rel_bind_path(sql, rel, ls);
-	list *r = rel_bind_path(sql, rel, rs);
+	list *l = rel_bind_path(sql, rel, ls, sa_list(sql->sa));
+	list *r = rel_bind_path(sql, rel, rs, sa_list(sql->sa));
 	list *r2 = NULL;
 	node *ln, *rn;
 	sql_rel *lrel = NULL, *rrel = NULL, *rrel2 = NULL, *p = NULL;
 
 	if (rs2)
-		r2 = rel_bind_path(sql, rel, rs2);
+		r2 = rel_bind_path(sql, rel, rs2, sa_list(sql->sa));
 	if (!l || !r || (rs2 && !r2))
 		return NULL;
 
-	if (!sql->pushdown)
-		return rel_push_select(sql, rel, ls, e);
+	if (is_sql_or(f))
+		return rel_push_select(sql, rel, ls, e, f);
 
 	p = rel;
 	if (r2) {
@@ -1371,9 +1398,9 @@ rel_push_join(mvc *sql, sql_rel *rel, sql_exp *ls, sql_exp *rs, sql_exp *rs2, sq
 	/* filter on columns of this relation */
 	if ((lrel == rrel && (!r2 || lrel == rrel2) && lrel->op != op_join) || rel_is_ref(p)) {
 		if (is_select(lrel->op) && !rel_is_ref(lrel)) {
-			rel_select_add_exp(sql->sa, lrel, e);
+			lrel = rel_select_push_exp_down(sql, lrel, e);
 		} else if (p && is_select(p->op) && !rel_is_ref(p)) {
-			rel_select_add_exp(sql->sa, p, e);
+			p = rel_select_push_exp_down(sql, p, e);
 		} else {
 			sql_rel *n = rel_select(sql->sa, lrel, e);
 
