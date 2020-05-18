@@ -24,6 +24,7 @@ int catalog_version = 0;
 static MT_Lock bs_lock = MT_LOCK_INITIALIZER("bs_lock");
 static sqlid store_oid = 0;
 static sqlid prev_oid = 0;
+static size_t new_trans_size = 0;
 sql_trans *gtrans = NULL;
 list *active_sessions = NULL;
 sql_allocator *store_sa = NULL;
@@ -293,7 +294,7 @@ sql_trans_destroy(sql_trans *t, bool try_spare)
 
 	TRC_DEBUG(SQL_STORE, "Destroy transaction: %p\n", t);
 
-	if (t->sa->nr > 2*gtrans->sa->nr)
+	if (t->sa->nr > 2*new_trans_size)
 		try_spare = 0;
 	if (res == gtrans && spares < ((GDKdebug & FORCEMITOMASK) ? 2 : MAX_SPARES) && !t->name && try_spare) {
 		TRC_DEBUG(SQL_STORE, "Spared '%d' transactions '%p'\n", spares, t);
@@ -1043,10 +1044,18 @@ load_func(sql_trans *tr, sql_schema *s, sqlid fid, subrids *rs)
 	t->vararg = *(bit *)v;	_DELETE(v);
 	v = table_funcs.column_find_value(tr, find_sql_column(funcs, "system"), rid);
 	t->system = *(bit *)v;	_DELETE(v);
+	v = table_funcs.column_find_value(tr, find_sql_column(funcs, "semantics"), rid);
+	t->semantics = *(bit *)v;		_DELETE(v);
 	t->res = NULL;
 	t->s = s;
 	t->fix_scale = SCALE_EQ;
 	t->sa = tr->sa;
+	/* convert old PYTHON2 and PYTHON2_MAP to PYTHON and PYTHON_MAP
+	 * see also function sql_update_jun2020() in sql_upgrades.c */
+	if ((int) t->lang == 8)		/* old FUNC_LANG_PY2 */
+		t->lang = FUNC_LANG_PY;
+	else if ((int) t->lang == 9)	/* old FUNC_LANG_MAP_PY2 */
+		t->lang = FUNC_LANG_MAP_PY;
 	if (t->lang != FUNC_LANG_INT) {
 		t->query = t->imp;
 		t->imp = NULL;
@@ -1432,95 +1441,48 @@ insert_schemas(sql_trans *tr)
 static void
 insert_types(sql_trans *tr, sql_table *systype)
 {
-	int zero = 0;
-	node *n;
-
-	for (n = types->h; n; n = n->next) {
+	for (node *n = types->h; n; n = n->next) {
 		sql_type *t = n->data;
-		int radix = t->radix;
-		int eclass = (int) t->eclass;
+		int radix = t->radix, eclass = (int) t->eclass;
+		sqlid next_schema = t->s ? t->s->base.id : 0;
 
-		if (t->s)
-			table_funcs.table_insert(tr, systype, &t->base.id, t->base.name, t->sqlname, &t->digits, &t->scale, &radix, &eclass, &t->s->base.id);
-		else
-			table_funcs.table_insert(tr, systype, &t->base.id, t->base.name, t->sqlname, &t->digits, &t->scale, &radix, &eclass, &zero);
+		table_funcs.table_insert(tr, systype, &t->base.id, t->base.name, t->sqlname, &t->digits, &t->scale, &radix, &eclass, &next_schema);
+	}
+}
+
+static void
+insert_args(sql_trans *tr, sql_table *sysarg, list *args, sqlid funcid, const char *arg_def, int *number) 
+{
+	for (node *n = args->h; n; n = n->next) {
+		sql_arg *a = n->data;
+		sqlid id = next_oid();
+		int next_number = (*number)++;
+		char buf[32], *next_name;
+
+		if (a->name) {
+			next_name = a->name;
+		} else {
+			snprintf(buf, sizeof(buf), arg_def, next_number);
+			next_name = buf;
+		}
+		table_funcs.table_insert(tr, sysarg, &id, &funcid, next_name, a->type.type->sqlname, &a->type.digits, &a->type.scale, &a->inout, &next_number);
 	}
 }
 
 static void
 insert_functions(sql_trans *tr, sql_table *sysfunc, sql_table *sysarg)
 {
-	int zero = 0;
-	node *n = NULL, *m = NULL;
-
-	for (n = funcs->h; n; n = n->next) {
+	for (node *n = funcs->h; n; n = n->next) {
 		sql_func *f = n->data;
-		sqlid id;
+		bit se = (f->type == F_AGGR) ? FALSE : f->side_effect;
+		int number = 0, ftype = (int) f->type, flang = (int) FUNC_LANG_INT;
+		sqlid next_schema = f->s ? f->s->base.id : 0;
 
-		if (f->type == F_AGGR) {
-			char *name1 = "res";
-			char *name2 = "arg";
-			sql_arg *res = NULL;
-			sql_func *aggr = n->data;
-			bit F = FALSE;
-			int number = 0, atype = (int) aggr->type, lang = (int) FUNC_LANG_INT;
-
-			if (aggr->s)
-				table_funcs.table_insert(tr, sysfunc, &aggr->base.id, aggr->base.name, aggr->imp, aggr->mod, &lang, &atype, &F, &aggr->varres, &aggr->vararg, &aggr->s->base.id, &aggr->system);
-			else
-				table_funcs.table_insert(tr, sysfunc, &aggr->base.id, aggr->base.name, aggr->imp, aggr->mod, &lang, &atype, &F, &aggr->varres, &aggr->vararg, &zero, &aggr->system);
-			
-			res = aggr->res->h->data;
-			id = next_oid();
-			table_funcs.table_insert(tr, sysarg, &id, &aggr->base.id, name1, res->type.type->sqlname, &res->type.digits, &res->type.scale, &res->inout, &number);
-
-			if (aggr->ops->h) {
-				sql_arg *arg = aggr->ops->h->data;
-
-				number++;
-				id = next_oid();
-				table_funcs.table_insert(tr, sysarg, &id, &aggr->base.id, name2, arg->type.type->sqlname, &arg->type.digits, &arg->type.scale, &arg->inout, &number);
-			}
-		} else {
-			bit se = f->side_effect;
-			int number = 0, ftype = (int) f->type, flang = (int) FUNC_LANG_INT;
-			char arg_nme[7] = "arg_0";
-
-			if (f->s)
-				table_funcs.table_insert(tr, sysfunc, &f->base.id, f->base.name, f->imp, f->mod, &flang, &ftype, &se, &f->varres, &f->vararg, &f->s->base.id, &f->system);
-			else
-				table_funcs.table_insert(tr, sysfunc, &f->base.id, f->base.name, f->imp, f->mod, &flang, &ftype, &se, &f->varres, &f->vararg, &zero, &f->system);
-
-			if (f->res) {
-				char res_nme[] = "res_0";
-
-				for (m = f->res->h; m; m = m->next, number++) {
-					sql_arg *a = m->data;
-					res_nme[4] = '0' + number;
-
-					id = next_oid();
-					table_funcs.table_insert(tr, sysarg, &id, &f->base.id, res_nme, a->type.type->sqlname, &a->type.digits, &a->type.scale, &a->inout, &number);
-				}
-			}
-			for (m = f->ops->h; m; m = m->next, number++) {
-				sql_arg *a = m->data;
-
-				id = next_oid();
-				if (a->name) {
-					table_funcs.table_insert(tr, sysarg, &id, &f->base.id, a->name, a->type.type->sqlname, &a->type.digits, &a->type.scale, &a->inout, &number);
-				} else {
-					if (number < 10) {
-						arg_nme[4] = '0' + number;
-						arg_nme[5] = 0;
-					} else {
-						arg_nme[4] = '0' + number / 10;
-						arg_nme[5] = '0' + number % 10;
-						arg_nme[6] = 0;
-					}
-					table_funcs.table_insert(tr, sysarg, &id, &f->base.id, arg_nme, a->type.type->sqlname, &a->type.digits, &a->type.scale, &a->inout, &number);
-				}
-			}
-		}
+		table_funcs.table_insert(tr, sysfunc, &f->base.id, f->base.name, f->imp, f->mod, &flang, &ftype, &se, &f->varres, &f->vararg, &next_schema, &f->system, &f->semantics);
+		if (f->res)
+			insert_args(tr, sysarg, f->res, f->base.id, "res_%d", &number);
+		if (f->ops)
+			insert_args(tr, sysarg, f->ops, f->base.id, "arg_%d", &number);
 	}
 }
 
@@ -1855,6 +1817,7 @@ store_load(backend_stack stk) {
 	bootstrap_create_column(tr, t, "vararg", 2025, "boolean", 1);
 	bootstrap_create_column(tr, t, "schema_id", 2026, "int", 32);
 	bootstrap_create_column(tr, t, "system", 2027, "boolean", 1);
+	bootstrap_create_column(tr, t, "semantics", 2162, "boolean", 1);
 
 	args = t = bootstrap_create_table(tr, s, "args", 2028);
 	bootstrap_create_column(tr, t, "id", 2029, "int", 32);
@@ -3644,6 +3607,9 @@ schema_dup(sql_trans *tr, int flags, sql_schema *os, sql_trans *o)
 		}
 		if (tr->parent == gtrans)
 			os->tables.nelm = NULL;
+
+		// Set the ->p member for each sql_table that is a child of some other merge table.
+		set_members(&s->tables);
 	}
 	if (os->funcs.set) {
 		for (n = os->funcs.set->h; n; n = n->next) {
@@ -3836,6 +3802,7 @@ trans_dup(backend_stack stk, sql_trans *ot, const char *newname)
 			set_members(&s->tables);
 		}
 	}
+	new_trans_size = t->sa->nr;
 	return t;
 }
 
@@ -5529,6 +5496,7 @@ create_sql_func(sql_allocator *sa, const char *func, list *args, list *res, sql_
 	t->type = type;
 	t->lang = lang;
 	t->sql = (lang==FUNC_LANG_SQL||lang==FUNC_LANG_MAL);
+	t->semantics = TRUE;
 	t->side_effect = (type==F_FILT || (res && (lang==FUNC_LANG_SQL || !list_empty(args))))?FALSE:TRUE;
 	t->varres = varres;
 	t->vararg = vararg;
@@ -5559,6 +5527,7 @@ sql_trans_create_func(sql_trans *tr, sql_schema *s, const char *func, list *args
 	t->type = type;
 	t->lang = lang;
 	t->sql = (lang==FUNC_LANG_SQL||lang==FUNC_LANG_MAL);
+	t->semantics = TRUE;
 	se = t->side_effect = (type==F_FILT || (res && (lang==FUNC_LANG_SQL || !list_empty(args))))?FALSE:TRUE;
 	t->varres = varres;
 	t->vararg = vararg;
@@ -5577,7 +5546,7 @@ sql_trans_create_func(sql_trans *tr, sql_schema *s, const char *func, list *args
 
 	cs_add(&s->funcs, t, TR_NEW);
 	table_funcs.table_insert(tr, sysfunc, &t->base.id, t->base.name, query?query:t->imp, t->mod, &flang, &ftype, &se,
-							 &t->varres, &t->vararg, &s->base.id, &t->system);
+							 &t->varres, &t->vararg, &s->base.id, &t->system, &t->semantics);
 	if (t->res) for (n = t->res->h; n; n = n->next, number++) {
 		sql_arg *a = n->data;
 		sqlid id = next_oid();

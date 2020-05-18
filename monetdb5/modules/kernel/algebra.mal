@@ -175,7 +175,7 @@ comment "Select all unique values from the tail of the input.
 # @+ Join operations
 # The core of every relational engine.
 # The join collection provided by the GDK kernel.
-command crossproduct( left:bat[:any_1], right:bat[:any_2])
+command crossproduct( left:bat[:any_1], right:bat[:any_2], max_one:bit)
 		(l:bat[:oid],r:bat[:oid])
 address ALGcrossproduct2
 comment "Returns 2 columns with all BUNs, consisting of the head-oids
@@ -202,7 +202,7 @@ command outerjoin(l:bat[:any_1],r:bat[:any_1],sl:bat[:oid],sr:bat[:oid],nil_matc
 address ALGouterjoin
 comment "Left outer join with candidate lists";
 
-command semijoin(l:bat[:any_1],r:bat[:any_1],sl:bat[:oid],sr:bat[:oid],nil_matches:bit,estimate:lng) (:bat[:oid],:bat[:oid])
+command semijoin(l:bat[:any_1],r:bat[:any_1],sl:bat[:oid],sr:bat[:oid],nil_matches:bit,max_one:bit,estimate:lng) (:bat[:oid],:bat[:oid])
 address ALGsemijoin
 comment "Semi join with candidate lists";
 
@@ -228,7 +228,7 @@ command difference(l:bat[:any_1],r:bat[:any_1],sl:bat[:oid],sr:bat[:oid],nil_mat
 address ALGdifference
 comment "Difference of l and r with candidate lists";
 
-command intersect(l:bat[:any_1],r:bat[:any_1],sl:bat[:oid],sr:bat[:oid],nil_matches:bit,estimate:lng) :bat[:oid]
+command intersect(l:bat[:any_1],r:bat[:any_1],sl:bat[:oid],sr:bat[:oid],nil_matches:bit,max_one:bit,estimate:lng) :bat[:oid]
 address ALGintersect
 comment "Intersection of l and r with candidate lists (i.e. half of semi-join)";
 

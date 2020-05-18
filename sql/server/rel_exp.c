@@ -281,6 +281,7 @@ exp_convert(sql_allocator *sa, sql_exp *exp, sql_subtype *fromtype, sql_subtype 
 sql_exp * 
 exp_op( sql_allocator *sa, list *l, sql_subfunc *f )
 {
+	sql_subtype *fres;
 	sql_exp *e = exp_create(sa, e_func);
 	if (e == NULL)
 		return NULL;
@@ -288,7 +289,14 @@ exp_op( sql_allocator *sa, list *l, sql_subfunc *f )
 	if (!l || list_length(l) == 0) 
 		e->card = CARD_ATOM; /* unop returns a single atom */
 	e->l = l;
-	e->f = f; 
+	e->f = f;
+
+	fres = exp_subtype(e);
+	 /* corner case if the output of the function is void, set the type to one of the inputs */
+	if (!f->func->varres && list_length(l) > 0 && list_length(f->func->res) == 1 && fres && !subtype_cmp(fres, sql_bind_localtype("void"))) {
+		sql_subtype *t = exp_subtype(l->t->data);
+		f->res->h->data = sql_create_subtype(sa, t->type, t->digits, t->scale);
+	}
 	return e;
 }
 
@@ -769,7 +777,7 @@ exp_rel(mvc *sql, sql_rel *rel)
 	*/
 	e->l = rel;
 	e->flag = PSM_REL;
-	e->card = rel->card;
+	e->card = rel->single?CARD_ATOM:rel->card;
 	assert(rel);
 	if (is_project(rel->op)) {
 		sql_exp *last = rel->exps->t->data;
@@ -910,6 +918,10 @@ exp_subtype( sql_exp *e )
 			return atom_type(a);
 		} else if (e->tpe.type) { /* atom reference */
 			return &e->tpe;
+		} else if (e->f) {
+			list *vals = exp_get_values(e);
+			if (!list_empty(vals))
+				return exp_subtype(vals->h->data);
 		}
 		break;
 	}
@@ -1588,6 +1600,84 @@ exp_is_true(mvc *sql, sql_exp *e)
 	return 0;
 }
 
+static inline bool
+exp_is_cmp_exp_is_false(mvc *sql, sql_exp* e) {
+    assert(e->type == e_cmp);
+    assert(e->semantics && (e->flag == cmp_equal || e->flag == cmp_notequal));
+    assert(e->f == NULL);
+    sql_exp* l = e->l;
+    sql_exp* r = e->r;
+    assert (l && r);
+
+    /* Handle 'v is x' and 'v is not x' expressions.
+     * Other cases in is-semantics are unspecified.
+     */
+    if (e->flag == cmp_equal && !e->anti) {
+        return (exp_is_null(sql, l) && exp_is_null(sql, r));
+    }
+    if (((e->flag == cmp_notequal) && !e->anti) || ((e->flag == cmp_equal) && e->anti) ) {
+        return ((exp_is_null(sql, l) && exp_is_not_null(sql, r))) || ((exp_is_not_null(sql, l) && exp_is_null(sql, r)));
+    }
+
+    return false;
+}
+
+static inline bool
+exp_single_bound_cmp_exp_is_false(mvc *sql, sql_exp* e) {
+    assert(e->type == e_cmp);
+    sql_exp* l = e->l;
+    sql_exp* r = e->r;
+    assert(e->f == NULL);
+    assert (l && r);
+
+    return exp_is_null(sql, l) || exp_is_null(sql, r);
+}
+
+static inline bool
+exp_two_sided_bound_cmp_exp_is_false(mvc *sql, sql_exp* e) {
+    assert(e->type == e_cmp);
+    sql_exp* v = e->l;
+    sql_exp* l = e->r;
+    sql_exp* h = e->r;
+    assert (v && l && h);
+
+    return exp_is_null(sql, l) || exp_is_null(sql, v) || exp_is_null(sql, h);
+}
+
+static inline bool
+exp_regular_cmp_exp_is_false(mvc *sql, sql_exp* e) {
+    assert(e->type == e_cmp);
+
+    if (e->semantics)   return exp_is_cmp_exp_is_false(sql, e);
+    if (e -> f)         return exp_two_sided_bound_cmp_exp_is_false(sql, e);
+    else                return exp_single_bound_cmp_exp_is_false(sql, e);
+}
+
+static inline bool
+exp_or_exp_is_false(mvc *sql, sql_exp* e) {
+    assert(e->type == e_cmp && e->flag == cmp_or);
+    return exp_is_false(sql, e->l) && exp_is_false(sql, e->r);
+}
+
+static inline bool
+exp_cmp_exp_is_false(mvc *sql, sql_exp* e) {
+    assert(e->type == e_cmp);
+
+    switch (e->flag) {
+    case cmp_gt:
+    case cmp_gte:
+    case cmp_lte:
+    case cmp_lt:
+    case cmp_equal:
+    case cmp_notequal:
+        return exp_regular_cmp_exp_is_false(sql, e);
+    case cmp_or:
+        return exp_or_exp_is_false(sql, e);
+    default:
+        return false;
+	}
+}
+
 int
 exp_is_false(mvc *sql, sql_exp *e) 
 {
@@ -1598,6 +1688,10 @@ exp_is_false(mvc *sql, sql_exp *e)
 			return atom_is_false(sql->args[e->flag]);
 		}
 	}
+	else if (e->type == e_cmp) {
+		return exp_cmp_exp_is_false(sql, e);
+	}
+
 	return 0;
 }
 
@@ -1649,7 +1743,8 @@ exp_is_null(mvc *sql, sql_exp *e )
 		node *n;
 		list *l = e->l;
 
-		if (!r && l && list_length(l) == 2) {
+		if (!((sql_subfunc *)e->f)->func->semantics /*exclude isnull() and similar null-semantics-respecting functions*/ &&
+			!r && l) {
 			for (n = l->h; n && !r; n = n->next) 
 				r |= exp_is_null(sql, n->data);
 		}
@@ -2755,7 +2850,7 @@ rel_set_type_recurse(mvc *sql, sql_subtype *type, sql_rel *rel, const char **rel
 				rel_set_type_recurse(sql, type, rel->r, relname, expname);
 			break;
 		case op_ddl:
-			if (rel->flag == ddl_output || rel->flag == ddl_create_seq || rel->flag == ddl_alter_seq) {
+			if (rel->flag == ddl_output || rel->flag == ddl_create_seq || rel->flag == ddl_alter_seq || rel->flag == ddl_alter_table || rel->flag == ddl_create_table || rel->flag == ddl_create_view) {
 				if (rel->l)
 					rel_set_type_recurse(sql, type, rel->l, relname, expname);
 			} else if (rel->flag == ddl_list || rel->flag == ddl_exception) {

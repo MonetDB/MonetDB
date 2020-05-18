@@ -14,16 +14,16 @@ def main():
     with process.client('sql', user='monetdb', passwd='monetdb',
                         stdin=process.PIPE,
                         stdout=process.PIPE, stderr=process.PIPE) as clt:
-        currenttime = time.strftime('%H:%M:%S', time.localtime(time.time()))
+        currenttime = time.strftime('%F %T', time.localtime(time.time()))
         #SQL command for checking the localtime
-        sqlcommand = "select localtime() between (time '%s' - interval '20' second) and (time '%s' + interval '20' second);" % (currenttime, currenttime)
+        sqlcommand = "select localtimestamp() between (timestamp '%s' - interval '20' second) and (timestamp '%s' + interval '20' second);" % (currenttime, currenttime)
         out, err = clt.communicate(sqlcommand)
         sys.stdout.write(out)
         sys.stderr.write(err)
     with process.client('sql', user='monetdb', passwd='monetdb',
                          stdin=process.PIPE,
                          stdout=process.PIPE, stderr=process.PIPE) as clt:
-        out, err = clt.communicate('select localtime();')
+        out, err = clt.communicate('select localtimestamp();')
         sys.stdout.write('#Python says: %s; current time zone %d\n' % (currenttime, zone))
         for line in out.split('\n'):
             if line:

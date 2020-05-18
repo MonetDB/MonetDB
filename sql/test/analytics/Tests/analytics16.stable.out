@@ -553,6 +553,31 @@ stdout of test 'analytics16` in directory 'sql/test/analytics` itself:
 [ NULL	]
 [ NULL	]
 #rollback;
+#CREATE TABLE t0(c0 DOUBLE);
+#INSERT INTO t0(c0) VALUES(1E200), (0);
+[ 2	]
+#SELECT VAR_POP(c0) FROM t0 GROUP BY c0;
+% sys.%1 # table_name
+% %1 # name
+% double # type
+% 24 # length
+[ 0	]
+[ 0	]
+#SELECT STDDEV_POP(c0) FROM t0 GROUP BY c0;
+% sys.%1 # table_name
+% %1 # name
+% double # type
+% 24 # length
+[ 0	]
+[ 0	]
+#SELECT CORR(c0,c0) FROM t0 GROUP BY c0;
+% sys.%1 # table_name
+% %1 # name
+% double # type
+% 24 # length
+[ NULL	]
+[ NULL	]
+#DROP TABLE T0;
 
 # 18:06:22 >  
 # 18:06:22 >  "Done."

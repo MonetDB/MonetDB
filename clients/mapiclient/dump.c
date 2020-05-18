@@ -2018,12 +2018,20 @@ dump_function(Mapi mid, stream *toConsole, const char *fid, bool hashge)
 		sep = "";
 		while (mapi_fetch_row(hdl) != 0) {
 			const char *aname = mapi_fetch_field(hdl, 0);
-			char *atype = strdup(mapi_fetch_field(hdl, 1));
-			char *adigs = strdup(mapi_fetch_field(hdl, 2));
-			char *ascal = strdup(mapi_fetch_field(hdl, 3));
+			char *atype = mapi_fetch_field(hdl, 1);
+			char *adigs = mapi_fetch_field(hdl, 2);
+			char *ascal = mapi_fetch_field(hdl, 3);
 			const char *ainou = mapi_fetch_field(hdl, 4);
 
-			if (!atype || !adigs || !ascal) {
+			if (strcmp(ainou, "0") == 0) {
+				/* end of arguments */
+				break;
+			}
+
+			atype = strdup(atype);
+			adigs = strdup(adigs);
+			ascal = strdup(ascal);
+			if (atype == NULL || adigs == NULL || ascal == NULL) {
 				free(atype);
 				free(adigs);
 				free(ascal);
@@ -2036,13 +2044,6 @@ dump_function(Mapi mid, stream *toConsole, const char *fid, bool hashge)
 					free(ftkey);
 				}
 				goto bailout;
-			}
-			if (strcmp(ainou, "0") == 0) {
-				/* end of arguments */
-				free(atype);
-				free(adigs);
-				free(ascal);
-				break;
 			}
 
 			mnstr_printf(toConsole, "%s", sep);
@@ -2064,7 +2065,7 @@ dump_function(Mapi mid, stream *toConsole, const char *fid, bool hashge)
 				char *adigs = strdup(mapi_fetch_field(hdl, 2));
 				char *ascal = strdup(mapi_fetch_field(hdl, 3));
 
-				if (!atype || !adigs || !ascal) {
+				if (atype == NULL || adigs == NULL || ascal == NULL) {
 					free(atype);
 					free(adigs);
 					free(ascal);
@@ -2091,6 +2092,8 @@ dump_function(Mapi mid, stream *toConsole, const char *fid, bool hashge)
 				free(adigs);
 				free(ascal);
 			} while (mapi_fetch_row(hdl) != 0);
+			if (ftype == 5)
+				mnstr_printf(toConsole, ")");
 		}
 		if (flkey) {
 			mnstr_printf(toConsole, " LANGUAGE %s", flkey);

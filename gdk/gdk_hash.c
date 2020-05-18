@@ -107,7 +107,11 @@ doHASHdestroy(BAT *b, Hash *hs)
 		GDKunlink(BBPselectfarm(b->batRole, b->ttype, hashheap),
 			  BATDIR,
 			  BBP_physical(b->batCacheid),
-			  "thash");
+			  "thashl");
+		GDKunlink(BBPselectfarm(b->batRole, b->ttype, hashheap),
+			  BATDIR,
+			  BBP_physical(b->batCacheid),
+			  "thashb");
 	} else if (hs) {
 		bat p = VIEWtparent(b);
 		BAT *hp = NULL;

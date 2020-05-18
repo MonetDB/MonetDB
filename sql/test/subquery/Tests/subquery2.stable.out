@@ -61,8 +61,8 @@ stdout of test 'subquery2` in directory 'sql/test/subquery` itself:
 #drop table students;
 #drop table exams;
 #SELECT 1 IN (1, (SELECT 2)), 1 NOT IN (1, (SELECT 2));
-% .%15,	.%27 # table_name
-% %15,	%27 # name
+% .%22,	.%33 # table_name
+% %22,	%33 # name
 % boolean,	boolean # type
 % 5,	5 # length
 [ true,	false	]
@@ -73,8 +73,8 @@ stdout of test 'subquery2` in directory 'sql/test/subquery` itself:
 #INSERT INTO another_T VALUES (1,2,3,4,5,6,7,8), (11,22,33,44,55,66,77,88), (111,222,333,444,555,666,777,888), (1111,2222,3333,4444,5555,6666,7777,8888);
 [ 4	]
 #SELECT col1 IN (SELECT ColID + col1 FROM tbl_ProductSales) FROM another_T GROUP BY col1; 
-% .%13 # table_name
-% %13 # name
+% .%15 # table_name
+% %15 # name
 % boolean # type
 % 5 # length
 [ false	]
@@ -82,8 +82,8 @@ stdout of test 'subquery2` in directory 'sql/test/subquery` itself:
 [ false	]
 [ false	]
 #SELECT col1 IN (SELECT SUM(ColID + col1) FROM tbl_ProductSales) FROM another_T GROUP BY col1;
-% .%13 # table_name
-% %13 # name
+% .%16 # table_name
+% %16 # name
 % boolean # type
 % 5 # length
 [ false	]
@@ -91,8 +91,8 @@ stdout of test 'subquery2` in directory 'sql/test/subquery` itself:
 [ false	]
 [ false	]
 #SELECT (SELECT col2 FROM tbl_ProductSales WHERE tbl_ProductSales.ColID = another_T.col1) FROM another_T GROUP BY col1, col2;
-% .%2 # table_name
-% %2 # name
+% .%1 # table_name
+% %1 # name
 % int # type
 % 1 # length
 [ 2	]
@@ -102,7 +102,7 @@ stdout of test 'subquery2` in directory 'sql/test/subquery` itself:
 #SELECT
 #	EXISTS (SELECT col2 FROM tbl_ProductSales WHERE tbl_ProductSales.ColID = another_T.col1)
 #FROM another_T GROUP BY col1, col2, col5, col8;
-% .%17 # table_name
+% . # table_name
 % %17 # name
 % boolean # type
 % 5 # length
@@ -114,8 +114,8 @@ stdout of test 'subquery2` in directory 'sql/test/subquery` itself:
 #	-col1 IN (SELECT ColID FROM tbl_ProductSales),
 #	col5 = ALL (SELECT 1 FROM tbl_ProductSales HAVING MIN(col8) IS NULL)
 #FROM another_T GROUP BY col1, col2, col5, col8;
-% .%13,	.%37 # table_name
-% %13,	%37 # name
+% .%15,	. # table_name
+% %15,	%41 # name
 % boolean,	boolean # type
 % 5,	5 # length
 [ false,	true	]
@@ -128,8 +128,8 @@ stdout of test 'subquery2` in directory 'sql/test/subquery` itself:
 #	(SELECT MAX(ColID + col2) FROM tbl_ProductSales) * DENSE_RANK() OVER (PARTITION BY AVG(DISTINCT col5))
 #FROM another_T
 #GROUP BY col1, col2, col5, col8;
-% .%60,	.%4,	.%10 # table_name
-% %60,	%4,	%10 # name
+% .,	.%3,	. # table_name
+% %60,	%3,	%62 # name
 % boolean,	bigint,	bigint # type
 % 5,	4,	4 # length
 [ false,	1,	6	]
@@ -141,8 +141,8 @@ stdout of test 'subquery2` in directory 'sql/test/subquery` itself:
 #	MIN(col8) OVER (PARTITION BY col5 ORDER BY col1 ROWS UNBOUNDED PRECEDING)
 #FROM another_T
 #GROUP BY col1, col2, col5, col8;
-% .%6,	.%4 # table_name
-% %6,	%4 # name
+% .,	.%10 # table_name
+% %14,	%10 # name
 % boolean,	int # type
 % 5,	4 # length
 [ false,	8	]
@@ -163,7 +163,7 @@ stdout of test 'subquery2` in directory 'sql/test/subquery` itself:
 [ true,	false	]
 [ true,	false	]
 #SELECT NOT col2 <> ANY (SELECT 20 FROM tbl_ProductSales GROUP BY ColID HAVING NOT MAX(col1) <> col1 * AVG(col1 + ColID) * ColID) FROM another_T GROUP BY col1, col2, col5, col8;
-% .%33 # table_name
+% . # table_name
 % %33 # name
 % boolean # type
 % 5 # length
@@ -178,8 +178,8 @@ stdout of test 'subquery2` in directory 'sql/test/subquery` itself:
 #	NOT EXISTS (SELECT ColID - 12 FROM tbl_ProductSales GROUP BY ColID HAVING MAX(col2) IS NULL OR NOT col8 <> 2 / col1)
 #FROM another_T
 #GROUP BY col1, col2, col5, col8;
-% .%26,	.%170,	.%171,	.%172 # table_name
-% %26,	%170,	%171,	%172 # name
+% .%31,	.,	.,	. # table_name
+% %31,	%164,	%165,	%166 # name
 % boolean,	boolean,	boolean,	boolean # type
 % 5,	5,	5,	5 # length
 [ false,	true,	true,	true	]
@@ -192,8 +192,8 @@ stdout of test 'subquery2` in directory 'sql/test/subquery` itself:
 #	NOT AVG(col2) * col1 <> ANY (SELECT 20 FROM tbl_ProductSales HAVING MAX(col1) IS NOT NULL OR MIN(col1) < MIN(col2)),
 #	CAST (NOT col1 IN (SELECT col2 FROM another_T GROUP BY col2) AS INTEGER) | CAST (col2 IN (SELECT col2 FROM another_T GROUP BY col2) AS INTEGER),
 #	CAST (EXISTS (SELECT MAX(col5) * MAX(col4) FROM another_T GROUP BY col5, col4) AS INTEGER) & CAST (AVG(col1) IN (SELECT DISTINCT col2 FROM another_T GROUP BY col2) AS INTEGER)
-% .%137,	.%140,	.%141,	.%142 # table_name
-% %137,	%140,	%141,	%142 # name
+% .,	.,	.,	. # table_name
+% %131,	%132,	%133,	%134 # name
 % boolean,	boolean,	int,	int # type
 % 5,	5,	1,	1 # length
 [ true,	false,	1,	0	]
@@ -202,8 +202,8 @@ stdout of test 'subquery2` in directory 'sql/test/subquery` itself:
 #	SUM(col1) IN (SELECT DISTINCT col2 FROM another_T GROUP BY col2)
 #FROM another_T
 #GROUP BY col4;
-% .%12 # table_name
-% %12 # name
+% .%16 # table_name
+% %16 # name
 % boolean # type
 % 5 # length
 [ false	]
@@ -225,7 +225,7 @@ stdout of test 'subquery2` in directory 'sql/test/subquery` itself:
 #	t1.col1 = ALL (SELECT col4 + SUM(t1.col5) FROM another_T INNER JOIN tbl_ProductSales ON another_T.col1 = tbl_ProductSales.ColID)
 #FROM another_T t1
 #GROUP BY t1.col1;
-% .%22 # table_name
+% . # table_name
 % %22 # name
 % boolean # type
 % 5 # length
@@ -240,8 +240,8 @@ stdout of test 'subquery2` in directory 'sql/test/subquery` itself:
 #	t1.col6 IN (SELECT SUM(t1.col7) FROM tbl_ProductSales)
 #FROM another_T t1
 #GROUP BY t1.col6, t1.col7;
-% .%20,	.%32,	.%44,	.%55 # table_name
-% %20,	%32,	%44,	%55 # name
+% .%30,	.%43,	.%56,	.%70 # table_name
+% %30,	%43,	%56,	%70 # name
 % boolean,	boolean,	boolean,	boolean # type
 % 5,	5,	5,	5 # length
 [ true,	true,	false,	false	]
@@ -253,8 +253,8 @@ stdout of test 'subquery2` in directory 'sql/test/subquery` itself:
 #FROM another_T
 #GROUP BY col1
 #HAVING NOT col1 = ANY (SELECT 0 FROM tbl_ProductSales GROUP BY ColID HAVING NOT MAX(col1) <> AVG(col1));
-% sys.%2 # table_name
-% %2 # name
+% sys.%1 # table_name
+% %1 # name
 % bigint # type
 % 4 # length
 [ 5	]
@@ -266,8 +266,8 @@ stdout of test 'subquery2` in directory 'sql/test/subquery` itself:
 #FROM another_T
 #GROUP BY col1
 #HAVING NOT col1 <> ANY (SELECT 0 FROM tbl_ProductSales GROUP BY ColID HAVING NOT MAX(col1) <> col1 * AVG(col1 + ColID) * ColID);
-% .%2 # table_name
-% %2 # name
+% . # table_name
+% %35 # name
 % bigint # type
 % 7 # length
 [ 3	]
@@ -300,32 +300,32 @@ stdout of test 'subquery2` in directory 'sql/test/subquery` itself:
 #SELECT
 #	CASE WHEN 1 IN (SELECT (SELECT MAX(col7)) UNION ALL (SELECT MIN(ColID) FROM tbl_ProductSales INNER JOIN another_T t2 ON t2.col5 = t2.col1)) THEN 2 ELSE NULL END
 #FROM another_T t1;	
-% .%60 # table_name
-% %60 # name
+% . # table_name
+% %64 # name
 % tinyint # type
 % 1 # length
 [ NULL	]
 #SELECT
 #	CASE WHEN 1 IN (SELECT MAX(col7) UNION ALL (SELECT MIN(ColID) FROM tbl_ProductSales INNER JOIN another_T t2 ON t2.col5 = t2.col1)) THEN 2 ELSE NULL END
 #FROM another_T t1;
-% .%43 # table_name
-% %43 # name
+% . # table_name
+% %47 # name
 % tinyint # type
 % 1 # length
 [ NULL	]
 #SELECT
 #	CASE WHEN 1 IN (SELECT (SELECT MAX(col7))) THEN 2 ELSE NULL END
 #FROM another_T t1;
-% .%41 # table_name
-% %41 # name
+% . # table_name
+% %45 # name
 % tinyint # type
 % 1 # length
 [ NULL	]
 #SELECT
 #	CASE WHEN 1 IN (SELECT (SELECT MIN(ColID) FROM tbl_ProductSales INNER JOIN another_T t2 ON t2.col5 = t2.col1) UNION ALL (SELECT MAX(col7))) THEN 2 ELSE NULL END
 #FROM another_T t1;
-% .%44 # table_name
-% %44 # name
+% . # table_name
+% %50 # name
 % tinyint # type
 % 1 # length
 [ NULL	]
@@ -333,8 +333,8 @@ stdout of test 'subquery2` in directory 'sql/test/subquery` itself:
 #	CASE WHEN NOT col1 NOT IN (SELECT (SELECT MAX(col7)) UNION (SELECT MIN(ColID) FROM tbl_ProductSales LEFT JOIN another_T t2 ON t2.col5 = t1.col1)) THEN 1 ELSE 2 END
 #FROM another_T t1
 #GROUP BY col1;
-% .%103 # table_name
-% %103 # name
+% . # table_name
+% %107 # name
 % tinyint # type
 % 1 # length
 [ 1	]
@@ -345,8 +345,8 @@ stdout of test 'subquery2` in directory 'sql/test/subquery` itself:
 #	t1.col1 IN (SELECT ColID FROM tbl_ProductSales GROUP BY t1.col1, tbl_ProductSales.ColID)
 #FROM another_T t1
 #GROUP BY col1;
-% .%13 # table_name
-% %13 # name
+% .%15 # table_name
+% %15 # name
 % boolean # type
 % 5 # length
 [ true	]
@@ -361,8 +361,8 @@ stdout of test 'subquery2` in directory 'sql/test/subquery` itself:
 #INSERT INTO tbl_ProductSales VALUES (0, 'a', 'b', 0);
 [ 1	]
 #SELECT col1 IN (SELECT ColID + col1 FROM tbl_ProductSales) FROM another_T GROUP BY col1; 
-% .%13 # table_name
-% %13 # name
+% .%15 # table_name
+% %15 # name
 % boolean # type
 % 5 # length
 [ true	]
@@ -370,8 +370,8 @@ stdout of test 'subquery2` in directory 'sql/test/subquery` itself:
 [ true	]
 [ true	]
 #SELECT col1 IN (SELECT col1 * SUM(ColID + col1) FROM tbl_ProductSales) FROM another_T GROUP BY col1;
-% .%14 # table_name
-% %14 # name
+% .%17 # table_name
+% %17 # name
 % boolean # type
 % 5 # length
 [ false	]

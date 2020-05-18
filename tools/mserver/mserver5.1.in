@@ -86,6 +86,12 @@ This file can contain all options as can be set with the --set flag.
 See
 .IR "CONFIG FILE FORMAT" .
 .TP
+.B \-\-single\-user
+Allow only a single user at a time.
+.TP
+.B \-\-readonly
+The database is opened in read-only mode.
+.TP
 \fB\-\-set\fP \fIoption\fP\fB=\fP\fIvalue\fP
 Set individual configuration option.
 For possible options, see
@@ -104,21 +110,6 @@ Run
 in-memory.
 .B No
 data will be persisted.
-.TP
-.B \-\-trace
-Print information about MAL instructions as they are executed.
-.TP
-\fB\-\-verbose\fP[\fB=\fP\fIvalue\fP]
-.PD 0
-.TP
-\fB\-v\fP[\fIvalue\fP]
-Set or increase verbosity level.  If no
-.I value
-is specified, the verbosity level is increased by
-.BR 1 .
-If a
-.I value
-is specified, the verbosity level is set to the given value.
 .TP
 \fB\-\-debug\fP[\fB=\fP\fIvalue\fP]
 .PD 0
@@ -139,9 +130,8 @@ The value is an integer, which can be (a bit-wise OR of):
        \fB4096\fP = PERFMASK     = BBP Performance (?)
        \fB8192\fP = DELTAMASK    = Delta debugging (?)
       \fB16384\fP = LOADMASK     = Module loading
-    \fB2097152\fP = ALGOMASK     = show join/select algorithm chosen
-    \fB4194304\fP = ESTIMASK     = show result size estimations
-                             (for join, select)
+    \fB1048576\fP = ACCELMASK    = Accelerator debugging
+    \fB2097152\fP = ALGOMASK     = show low level algorithm chosen
    \fB16777216\fP = NOSYNCMASK   = disable forcefully synchronizing files
                              to disk.  If this flag is set, there is
                              no guarantee that the database remains
@@ -149,8 +139,10 @@ The value is an integer, which can be (a bit-wise OR of):
                              (unless you really don't care about your
                              data).
    \fB33554432\fP = DEADBEEFMASK = disable "cleaning" of freed memory
-                             in GDKfree() (e.g., for performance
-                             measurements)
+                             in GDKfree() which only happens in a
+                             debug build (i.e. with assertions
+                             enabled) e.g., for performance
+                             measurements
    \fB67108864\fP = ALLOCMASK    = exhaustive GDK malloc & free tracing
                              for debugging (GDK developers, only)
   \fB134217728\fP = OPTMASK      = trace the actions, decisions and
@@ -179,38 +171,35 @@ In the short form \fB\-d\fP, the value, if present, must immediately
 (i.e. without space) follow the option.
 The values of multiple instances of this flag are OR-ed together.
 .TP
-.B \-\-threads
-Equivalent to \fB\-\-debug=\fP\fI(THRDMASK | PARMASK)\fP.
+.B \-\-algorithms
+Equivalent to \fB\-\-debug=\fP\fI(ALGOMASK)\fP.
 .TP
-.B \-\-memory
-Equivalent to \fB\-\-debug=\fP\fI(MEMMASK | ALLOCMASK)\fP.
-.TP
-.B \-\-properties
-Equivalent to \fB\-\-debug=\fP\fI(CHECKMASK | PROPMASK | BATMASK)\fP.
-.TP
-.B \-\-io
-Equivalent to \fB\-\-debug=\fP\fI(IOMASK | PERFMASK)\fP.
+.B \-\-forcemito
+Equivalent to \fB\-\-debug=\fP\fI(FORCEMITOMASK | NOSYNCMASK)\fP.
 .TP
 .B \-\-heaps
 Equivalent to \fB\-\-debug=\fP\fI(HEAPMASK)\fP.
 .TP
-.B \-\-transactions
-Equivalent to \fB\-\-debug=\fP\fI(TMMASK | DELTAMASK | TEMMASK)\fP.
+.B \-\-io
+Equivalent to \fB\-\-debug=\fP\fI(IOMASK | PERFMASK)\fP.
+.TP
+.B \-\-memory
+Equivalent to \fB\-\-debug=\fP\fI(ALLOCMASK)\fP.
 .TP
 .B \-\-modules
 Equivalent to \fB\-\-debug=\fP\fI(LOADMASK)\fP.
 .TP
-.B \-\-algorithms
-Equivalent to \fB\-\-debug=\fP\fI(ALGOMASK | ESTIMASK)\fP.
-.TP
 .B \-\-performance
 Equivalent to \fB\-\-debug=\fP\fI(DEADBEEFMASK)\fP.
 .TP
-.B \-\-optimizers
-Equivalent to \fB\-\-debug=\fP\fI(OPTMASK)\fP.
+.B \-\-properties
+Equivalent to \fB\-\-debug=\fP\fI(CHECKMASK | PROPMASK | BATMASK)\fP.
 .TP
-.B \-\-forcemito
-Equivalent to \fB\-\-debug=\fP\fI(FORCEMITOMASK | NOSYNCMASK)\fP.
+.B \-\-threads
+Equivalent to \fB\-\-debug=\fP\fI(THRDMASK | PARMASK)\fP.
+.TP
+.B \-\-transactions
+Equivalent to \fB\-\-debug=\fP\fI(TMMASK | DELTAMASK | TEMMASK)\fP.
 .SH MSERVER5 PARAMETERS
 .I Mserver5
 instructs the GDK kernel through the MAL (MonetDB Assembler Language)
@@ -229,7 +218,7 @@ The
 setting points to a file that stores a secret key to unlock the
 password vault.
 It can contain anything.
-The file is read up to the first null-byte ('\0'), hence it can be
+The file is read up to the first null-byte ('\e0'), hence it can be
 padded to any length with trailing null-bytes to obfuscate the key
 length.
 Generating a key can be done for example by using a tool such as

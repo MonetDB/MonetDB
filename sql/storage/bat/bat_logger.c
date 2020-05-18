@@ -13,6 +13,9 @@
 #include "wlc.h"
 #include "gdk_logger_internals.h"
 
+#define CATALOG_AUG2018 52202
+#define CATALOG_JUN2020 52204
+
 logger *bat_logger = NULL;
 
 /* return GDK_SUCCEED if we can handle the upgrade from oldversion to
@@ -20,17 +23,203 @@ logger *bat_logger = NULL;
 static gdk_return
 bl_preversion(int oldversion, int newversion)
 {
-	(void)oldversion;
 	(void)newversion;
+
+#ifdef CATALOG_JUN2020
+	if (oldversion == CATALOG_JUN2020) {
+		/* upgrade to default releases */
+		catalog_version = oldversion;
+		return GDK_SUCCEED;
+	}
+#endif
+
 	return GDK_FAIL;
 }
 
 #define N(schema, table, column)	schema "_" table "_" column
 
+#if defined CATALOG_AUG2018 || defined CATALOG_JUN2020
+#if 0
+static int
+find_table_id(logger *lg, const char *val, int *sid)
+{
+	BAT *s = NULL;
+	BAT *b, *t;
+	BATiter bi;
+	oid o;
+	int id;
+
+	b = temp_descriptor(logger_find_bat(lg, 2003)); /* schemas.name */
+	if (b == NULL)
+		return 0;
+	s = BATselect(b, NULL, "sys", NULL, 1, 1, 0);
+	bat_destroy(b);
+	if (s == NULL)
+		return 0;
+	if (BATcount(s) == 0) {
+		bat_destroy(s);
+		return 0;
+	}
+	o = BUNtoid(s, 0);
+	bat_destroy(s);
+	b = temp_descriptor(logger_find_bat(lg, 2002)); /* schemas.id */
+	if (b == NULL)
+		return 0;
+	bi = bat_iterator(b);
+	id = * (const int *) BUNtloc(bi, o - b->hseqbase);
+	bat_destroy(b);
+	/* store id of schema "sys" */
+	*sid = id;
+
+	b = temp_descriptor(logger_find_bat(lg, 2069)); /* _tables.name */
+	if (b == NULL) {
+		bat_destroy(s);
+		return 0;
+	}
+	s = BATselect(b, NULL, val, NULL, 1, 1, 0);
+	bat_destroy(b);
+	if (s == NULL)
+		return 0;
+	if (BATcount(s) == 0) {
+		bat_destroy(s);
+		return 0;
+	}
+	b = temp_descriptor(logger_find_bat(lg, 2070)); /* _tables.schema_id */
+	if (b == NULL) {
+		bat_destroy(s);
+		return 0;
+	}
+	t = BATselect(b, s, &id, NULL, 1, 1, 0);
+	bat_destroy(b);
+	bat_destroy(s);
+	s = t;
+	if (s == NULL)
+		return 0;
+	if (BATcount(s) == 0) {
+		bat_destroy(s);
+		return 0;
+	}
+
+	o = BUNtoid(s, 0);
+	bat_destroy(s);
+
+	b = temp_descriptor(logger_find_bat(lg, 2068)); /* _tables.id */
+	if (b == NULL)
+		return 0;
+	bi = bat_iterator(b);
+	id = * (const int *) BUNtloc(bi, o - b->hseqbase);
+	bat_destroy(b);
+	return id;
+}
+
+static gdk_return
+tabins(void *lg, bool first, int tt, const char *nname, const char *sname, const char *tname, ...)
+{
+	va_list va;
+	char lname[64];
+	const char *cname;
+	const void *cval;
+	gdk_return rc;
+	BAT *b;
+	int len;
+
+	va_start(va, tname);
+	while ((cname = va_arg(va, char *)) != NULL) {
+		cval = va_arg(va, void *);
+		len = snprintf(lname, sizeof(lname), "%s_%s_%s", sname, tname, cname);
+		if (len == -1 || (size_t)len >= sizeof(lname))
+			return GDK_FAIL;
+		if ((b = temp_descriptor(logger_find_bat(lg, lname, 0, 0))) == NULL)
+			return GDK_FAIL;
+		if (first) {
+			BAT *bn;
+			if ((bn = COLcopy(b, b->ttype, true, PERSISTENT)) == NULL) {
+				BBPunfix(b->batCacheid);
+				return GDK_FAIL;
+			}
+			BBPunfix(b->batCacheid);
+			if (BATsetaccess(bn, BAT_READ) != GDK_SUCCEED ||
+			    logger_add_bat(lg, bn, lname, 0, 0) != GDK_SUCCEED) {
+				BBPunfix(bn->batCacheid);
+				return GDK_FAIL;
+			}
+			b = bn;
+		}
+		rc = BUNappend(b, cval, true);
+		BBPunfix(b->batCacheid);
+		if (rc != GDK_SUCCEED)
+			return rc;
+	}
+	if (tt >= 0) {
+		if ((b = COLnew(0, tt, 0, PERSISTENT)) == NULL)
+			return GDK_FAIL;
+		if ((rc = BATsetaccess(b, BAT_READ)) == GDK_SUCCEED)
+			rc = logger_add_bat(lg, b, nname, 0, 0);
+		BBPunfix(b->batCacheid);
+		if (rc != GDK_SUCCEED)
+			return rc;
+	}
+	return GDK_SUCCEED;
+}
+#endif
+#endif
+
 static gdk_return
 bl_postversion(void *lg)
 {
 	(void)lg;
+#ifdef CATALOG_JUN2020
+	if (catalog_version <= CATALOG_JUN2020) {
+		lng lid;
+		BAT *fid = temp_descriptor(logger_find_bat(lg, 2017)); /* functions.id */
+		if (logger_sequence(lg, OBJ_SID, &lid) == 0 ||
+		    fid == NULL) {
+			bat_destroy(fid);
+			return GDK_FAIL;
+		}
+		BAT *sem = COLnew(fid->hseqbase, TYPE_bit, BATcount(fid), PERSISTENT);
+		if (sem == NULL) {
+			bat_destroy(fid);
+			return GDK_FAIL;
+		}
+		bit *fsys = (bit *) Tloc(sem, 0);
+		for (BUN p = 0, q = BATcount(fid); p < q; p++) {
+			fsys[p] = 1;
+		}
+
+		sem->tkey = false;
+		sem->tsorted = sem->trevsorted = true;
+		sem->tnonil = true;
+		sem->tnil = false;
+		BATsetcount(sem, BATcount(fid));
+		bat_destroy(fid);
+		if (BATsetaccess(sem, BAT_READ) != GDK_SUCCEED ||
+		    log_bat_persists(lg, sem, 2162) != GDK_SUCCEED) {
+
+			bat_destroy(sem);
+			return GDK_FAIL;
+		}
+		bat_destroy(sem);
+		/* ToDo 
+		int sid;
+		int tid = find_table_id(lg, "functions", &sid);
+		if (tabins(lg, true, -1, NULL, "sys", "_columns",
+			   "id", &id,
+			   "name", "semantics",
+			   "type", "boolean",
+			   "type_digits", &((const int) {1}),
+			   "type_scale", &((const int) {0}),
+			   "table_id", &tid,
+			   "default", str_nil,
+			   "null", &((const bit) {TRUE}),
+			   "number", &((const int) {11}),
+			   "storage", str_nil,
+			   NULL) != GDK_SUCCEED)
+			return GDK_FAIL;
+			*/
+	}
+#endif
+
 	return GDK_SUCCEED;
 }
 
