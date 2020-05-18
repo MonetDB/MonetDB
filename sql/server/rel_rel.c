@@ -1296,7 +1296,6 @@ rel_push_select(mvc *sql, sql_rel *rel, sql_exp *ls, sql_exp *e)
 	return rel;
 }
 
-
 /* ls and rs are the left and right expression of the join, e is the
    join expression.
  */
