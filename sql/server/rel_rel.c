@@ -1218,15 +1218,14 @@ rel_bind_path_(mvc *sql, sql_rel *rel, sql_exp *e, list *path )
 }
 
 static list *
-rel_bind_path(mvc *sql, sql_rel *rel, sql_exp *e)
+rel_bind_path(mvc *sql, sql_rel *rel, sql_exp *e, list *path)
 {
-	list *path = sa_list(sql->sa);
 	if (!path)
 		return NULL;
 
 	if (e->type == e_convert)
-		e = e->l;
-	if (e->type == e_column) {
+		path = rel_bind_path(sql, rel, e->l, path);
+	else if (e->type == e_column) {
 		if (rel) {
 			if (!rel_bind_path_(sql, rel, e, path)) {
 				/* something is wrong */
@@ -1275,15 +1274,14 @@ rel_select_push_exp_down(mvc *sql, sql_rel *rel, sql_exp *e)
 sql_rel *
 rel_push_select(mvc *sql, sql_rel *rel, sql_exp *ls, sql_exp *e, int f)
 {
-	list *l = rel_bind_path(sql, rel, ls);
+	list *l = rel_bind_path(sql, rel, ls, sa_list(sql->sa));
 	node *n;
 	sql_rel *lrel = NULL, *p = NULL;
 
-	if (!l || !sql->pushdown || is_sql_or(f)) {
-		/* expression has no clear parent relation, so filter current
-		   with it */
+	if (!l)
+		return NULL;
+	if (is_sql_or(f)) /* expression has no clear parent relation, so filter current with it */
 		return rel_select(sql->sa, rel, e);
-	}
 
 	for (n = l->h; n; n = n->next ) {
 		lrel = n->data;
@@ -1331,18 +1329,18 @@ rel_push_select(mvc *sql, sql_rel *rel, sql_exp *ls, sql_exp *e, int f)
 sql_rel *
 rel_push_join(mvc *sql, sql_rel *rel, sql_exp *ls, sql_exp *rs, sql_exp *rs2, sql_exp *e, int f)
 {
-	list *l = rel_bind_path(sql, rel, ls);
-	list *r = rel_bind_path(sql, rel, rs);
+	list *l = rel_bind_path(sql, rel, ls, sa_list(sql->sa));
+	list *r = rel_bind_path(sql, rel, rs, sa_list(sql->sa));
 	list *r2 = NULL;
 	node *ln, *rn;
 	sql_rel *lrel = NULL, *rrel = NULL, *rrel2 = NULL, *p = NULL;
 
 	if (rs2)
-		r2 = rel_bind_path(sql, rel, rs2);
+		r2 = rel_bind_path(sql, rel, rs2, sa_list(sql->sa));
 	if (!l || !r || (rs2 && !r2))
 		return NULL;
 
-	if (!sql->pushdown || is_sql_or(f))
+	if (is_sql_or(f))
 		return rel_push_select(sql, rel, ls, e, f);
 
 	p = rel;

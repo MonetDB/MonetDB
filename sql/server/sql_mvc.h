@@ -131,7 +131,6 @@ typedef struct mvc {
 	sql_session *session;	
 
 	mapi_query_t type;	/* query type */
-	int pushdown;		/* AND or OR query handling */
 	unsigned int label;	/* numbers for relational projection labels */
 	int remote;
 	list *cascade_action;  /* protection against recursive cascade actions */
