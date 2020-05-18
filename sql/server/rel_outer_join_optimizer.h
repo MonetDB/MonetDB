@@ -46,9 +46,9 @@ rel_outer2inner_join(mvc *sql, sql_rel *rel, int *changes)
 					re->card = ne->card;
 
 				if (re->card >= CARD_AGGR) {
-					nr = rel_push_join(sql, r, e->l, re, NULL, e);
+					nr = rel_push_join(sql, r, e->l, re, NULL, e, 0);
 				} else {
-					nr = rel_push_select(sql, r, e->l, e);
+					nr = rel_push_select(sql, r, e->l, e, 0);
 				}
 				if (nr)
 					rel->l = nr;
