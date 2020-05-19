@@ -1265,10 +1265,7 @@ exp_rename(mvc *sql, sql_exp *e, sql_rel *f, sql_rel *t)
 		sql->errstr[0] = 0;
 		if (!e && exp_is_atom(ne))
 			return ne;
-		ne = exp_ref(sql, e);
-		if (is_outerjoin(t->op))  /* TODO if e is found on the left side of the left join or the right of the right join the has_no_nil flag can be kept */
-			set_has_nil(ne);
-		return ne;
+		return exp_ref(sql ,e);
 	case e_cmp: 
 		if (e->flag == cmp_or || e->flag == cmp_filter) {
 			list *l = exps_rename(sql, e->l, f, t);
