@@ -12,8 +12,8 @@ int
 main(void)
 {
 #ifdef HAVE_LIBLZ4
-    return 1;
-#else
     return 0;
+#else
+    return 1;
 #endif
 }
