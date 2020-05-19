@@ -2133,13 +2133,13 @@ rel_in_value_exp(sql_query *query, sql_rel **rel, symbol *sc, int f)
 			supertype(&super, exp_subtype(values), exp_subtype(le));
 
 			/* on selection/join cases we can generate cmp expressions instead of anyequal for trivial cases */
-			if (is_sql_where(f) && !is_sql_farg(f) && !exp_has_rel(le)) {
-				if (list_length(vals) == 1 && !exps_have_rel_exp(vals)) { /* use cmp_equal instead of cmp_in for 1 expression */
+			if (is_sql_where(f) && !is_sql_farg(f) && !exp_has_rel(le) && exps_are_atoms(vals)) {
+				if (list_length(vals) == 1) { /* use cmp_equal instead of cmp_in for 1 expression */
 					sql_exp *first = vals->h->data;
 					if (rel_convert_types(sql, rel ? *rel : NULL, rel ? *rel : NULL, &le, &first, 1, type_equal_no_any) < 0)
 						return NULL;
 					e = exp_compare(sql->sa, le, first, (sc->token == SQL_IN) ? cmp_equal : cmp_notequal);
-				} else if (exps_are_atoms(vals)) { /* use cmp_in instead of anyequal for n simple expressions */
+				} else { /* use cmp_in instead of anyequal for n simple expressions */
 					for (node *n = vals->h ; n ; n = n->next)
 						if ((n->data = rel_check_type(sql, &super, rel ? *rel : NULL, n->data, type_equal)) == NULL)
 							return NULL;
