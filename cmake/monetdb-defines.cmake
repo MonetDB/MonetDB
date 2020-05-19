@@ -112,10 +112,8 @@ function(monetdb_configure_defines)
   check_function_exists("uname" HAVE_UNAME)
   # Some libc versions on Linux distributions don't have it
   check_symbol_exists("semtimedop" "sys/types.h;sys/ipc.h;sys/sem.h" HAVE_SEMTIMEDOP)
-  if(HAVE_PTHREAD_H)
-    check_function_exists("pthread_kill" HAVE_PTHREAD_KILL)
-    check_function_exists("pthread_sigmask" HAVE_PTHREAD_SIGMASK)
-  endif()
+  check_function_exists("pthread_kill" HAVE_PTHREAD_KILL)
+  check_function_exists("pthread_sigmask" HAVE_PTHREAD_SIGMASK)
   if(HAVE_GETOPT_H)
     set(HAVE_GETOPT 1 PARENT_SCOPE)
   endif()
@@ -125,7 +123,7 @@ macro(monetdb_macro_variables)
   # Set variables to define C macro's
   # These are related to the detected packages
   # These names are legacy. When the code is changed to use the cmake
-  # variables, they can be removed.
+  # variables, then they can be removed.
   set(HAVE_ICONV ${Iconv_FOUND})
   set(HAVE_PTHREAD_H ${CMAKE_USE_PTHREADS_INIT})
   set(HAVE_LIBPCRE ${PCRE_FOUND})

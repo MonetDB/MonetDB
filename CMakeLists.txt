@@ -41,10 +41,10 @@ include(CheckFunctionExists REQUIRED)
 include(CheckTypeSize REQUIRED)
 include(TestBigEndian REQUIRED)
 
-# Include MonetDB specific functions
 if(WIN32)
   set(CMAKE_REQUIRED_LIBRARIES  ws2_32.lib shell32.lib advapi32.lib)
 endif()
+# Include MonetDB specific functions
 include(monetdb-functions)
 include(monetdb-findpackages)
 include(monetdb-defines)
@@ -100,6 +100,8 @@ endif()
 
 include(GNUInstallDirs)
 
+# Define the macro variables after configuring the install directories.
+# Some variables define additional installation settings.
 monetdb_macro_variables()
 # Define custom target after the install directories variables.
 # Some custom target will need these setting.
