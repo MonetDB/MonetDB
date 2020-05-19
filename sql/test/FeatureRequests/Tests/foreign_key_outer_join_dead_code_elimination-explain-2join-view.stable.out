@@ -71,19 +71,19 @@ end user.s4_0;
 % clob # type
 % 114 # length
 function user.s6_0():void;
-    X_1:void := querylog.define("explain select id from v2 order by id;":str, "sequential_pipe":str, 32:int);
-    X_44:bat[:str] := bat.pack("sys.v2":str);
-    X_45:bat[:str] := bat.pack("id":str);
-    X_46:bat[:str] := bat.pack("int":str);
-    X_47:bat[:int] := bat.pack(32:int);
-    X_48:bat[:int] := bat.pack(0:int);
+    X_1:void := querylog.define("explain select id from v2 order by id;":str, "sequential_pipe":str, 22:int);
+    X_30:bat[:str] := bat.pack("sys.v2":str);
+    X_31:bat[:str] := bat.pack("id":str);
+    X_32:bat[:str] := bat.pack("int":str);
+    X_33:bat[:int] := bat.pack(32:int);
+    X_34:bat[:int] := bat.pack(0:int);
     X_4:int := sql.mvc();
     C_5:bat[:oid] := sql.tid(X_4:int, "sys":str, "fk":str);
     X_17:bat[:int] := sql.bind(X_4:int, "sys":str, "fk":str, "id":str, 0:int);
-    X_34:bat[:int] := algebra.projection(C_5:bat[:oid], X_17:bat[:int]);
-    (X_37:bat[:int], X_38:bat[:oid]) := algebra.sort(X_34:bat[:int], false:bit, false:bit, false:bit);
-    X_42:bat[:int] := algebra.projection(X_38:bat[:oid], X_34:bat[:int]);
-    sql.resultSet(X_44:bat[:str], X_45:bat[:str], X_46:bat[:str], X_47:bat[:int], X_48:bat[:int], X_42:bat[:int]);
+    X_22:bat[:int] := algebra.projection(C_5:bat[:oid], X_17:bat[:int]);
+    (X_23:bat[:int], X_24:bat[:oid]) := algebra.sort(X_22:bat[:int], false:bit, false:bit, false:bit);
+    X_28:bat[:int] := algebra.projection(X_24:bat[:oid], X_22:bat[:int]);
+    sql.resultSet(X_30:bat[:str], X_31:bat[:str], X_32:bat[:str], X_33:bat[:int], X_34:bat[:int], X_28:bat[:int]);
 end user.s6_0;
 #inline               actions= 0 time=1 usec 
 #remap                actions= 0 time=1 usec 

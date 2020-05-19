@@ -6379,6 +6379,12 @@ rel_remove_join(mvc *sql, sql_rel *rel, int *changes)
 static sql_rel *
 rel_push_project_up(mvc *sql, sql_rel *rel, int *changes)
 {
+	if (is_simple_project(rel->op) && rel->l && !rel_is_ref(rel)) {
+		sql_rel *l = rel->l;
+		if (is_simple_project(l->op))
+			return rel_merge_projects(sql, rel, changes);
+	}
+
 	/* project/project cleanup is done later */
 	if (is_join(rel->op) || is_select(rel->op)) {
 		node *n;
@@ -7553,7 +7559,7 @@ rel_simplify_like_select(mvc *sql, sql_rel *rel, int *changes)
 static sql_exp *
 rel_simplify_predicates(mvc *sql, sql_rel *rel, sql_exp *e, int depth, int *changes)
 {
-	(void) depth;
+	(void)depth;
 	if (is_select(rel->op) || is_join(rel->op) || is_semi(rel->op)) {
 		if (is_atom(e->type) && ((!e->l && !e->r && !e->f) || e->r)) /* prepared statement parameter or argument */
 			return e;
@@ -7587,8 +7593,7 @@ rel_simplify_predicates(mvc *sql, sql_rel *rel, sql_exp *e, int depth, int *chan
 					list *args = l->l;
 					sql_exp *ie = args->h->data;
 
-					/* TODO, we have to fix the NOT NULL flag propagation on columns after an outer join, so we can remove the is_outerjoin check */
-					if (!is_outerjoin(rel->op) && (!has_nil(ie) || exp_is_not_null(sql, ie))) { /* is null on something that is never null, is always false */
+					if (!has_nil(ie) || exp_is_not_null(sql, ie)) { /* is null on something that is never null, is always false */
 						ie = exp_atom_bool(sql->sa, 0);
 						(*changes)++;
 						e->l = ie;
