@@ -131,7 +131,7 @@ AS_CASE([$CC],
 		#  __GNUC_MINOR__, and __GNUC_PATCHLEVEL__ macros.
 		CC="$CC -no-gcc"])
 
-AS_IF([test -f "$srcdir"/vertoo.data],
+AS_IF([test -f "$srcdir"/.bumpversion.cfg],
 	[
 	# Developers compiling from Mercurial:
 	# default is --enable-strict --enable-assert --enable-debug --disable-optimize --enable-developer --enable-profiler=auto
