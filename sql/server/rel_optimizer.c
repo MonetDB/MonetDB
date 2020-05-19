@@ -1946,6 +1946,31 @@ rel_push_topn_and_sample_down(mvc *sql, sql_rel *rel, int *changes)
 		operator_type relation_type = is_topn(rel->op) ? op_topn : op_sample;
 		sql_rel *(*func) (sql_allocator *, sql_rel *, list *) = is_topn(rel->op) ? rel_topn : rel_sample;
 
+		/* nested topN relations without offset */
+		if (r && is_topn(rel->op) && is_topn(r->op) && list_length(rel->exps) == 1 && list_length(r->exps) == 1) {
+			sql_exp *topN1 = rel->exps->h->data, *topN2 = r->exps->h->data;
+
+			if (topN1->l && topN2->l) {
+				atom *a1 = (atom *)topN1->l, *a2 = (atom *)topN2->l;
+
+				if (a1->tpe.type->localtype == a2->tpe.type->localtype && !a1->isnull && !a2->isnull) {
+					if (atom_cmp(a1, a2) < 0) {
+						rel->l = r->l;
+						r->l = NULL;
+						rel_destroy(r);
+						(*changes)++;
+						return rel;
+					} else {
+						rel->l = NULL;
+						rel_destroy(rel);
+						rel = r;
+						(*changes)++;
+						return rel;
+					}
+				}
+			}
+		}
+
 		if (r && is_simple_project(r->op) && need_distinct(r)) 
 			return rel;
 
@@ -6218,6 +6243,12 @@ rel_remove_join(mvc *sql, sql_rel *rel, int *changes)
 static sql_rel *
 rel_push_project_up(mvc *sql, sql_rel *rel, int *changes)
 {
+	if (is_simple_project(rel->op) && rel->l && !rel_is_ref(rel)) {
+		sql_rel *l = rel->l;
+		if (is_simple_project(l->op))
+			return rel_merge_projects(sql, rel, changes);
+	}
+
 	/* project/project cleanup is done later */
 	if (is_join(rel->op) || is_select(rel->op)) {
 		node *n;
@@ -7392,7 +7423,7 @@ rel_simplify_like_select(mvc *sql, sql_rel *rel, int *changes)
 static sql_exp *
 rel_simplify_predicates(mvc *sql, sql_rel *rel, sql_exp *e, int depth, int *changes)
 {
-	(void) depth;
+	(void)depth;
 	if (is_select(rel->op) || is_join(rel->op) || is_semi(rel->op)) {
 		if (is_atom(e->type) && ((!e->l && !e->r && !e->f) || e->r)) /* prepared statement parameter or argument */
 			return e;
@@ -7426,8 +7457,7 @@ rel_simplify_predicates(mvc *sql, sql_rel *rel, sql_exp *e, int depth, int *chan
 					list *args = l->l;
 					sql_exp *ie = args->h->data;
 
-					/* TODO, we have to fix the NOT NULL flag propagation on columns after an outer join, so we can remove the is_outerjoin check */
-					if (!is_outerjoin(rel->op) && (!has_nil(ie) || exp_is_not_null(sql, ie))) { /* is null on something that is never null, is always false */
+					if (!has_nil(ie) || exp_is_not_null(sql, ie)) { /* is null on something that is never null, is always false */
 						ie = exp_atom_bool(sql->sa, 0);
 						(*changes)++;
 						e->l = ie;
