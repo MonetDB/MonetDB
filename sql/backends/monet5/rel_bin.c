@@ -2635,6 +2635,7 @@ rel2bin_semijoin(backend *be, sql_rel *rel, list *refs)
 			join = stmt_join(be, l, r, 0, cmp_all, 0, false); 
 		}
 	} else {
+		right = subrel_project(be, right, refs, rel->r);
 		stmt *l = bin_first_column(be, left);
 		stmt *r = bin_first_column(be, right);
 		join = stmt_join(be, l, r, 0, cmp_all, 0, false); 

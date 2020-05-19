@@ -2082,6 +2082,31 @@ rel_push_topn_and_sample_down(mvc *sql, sql_rel *rel, int *changes)
 		operator_type relation_type = is_topn(rel->op) ? op_topn : op_sample;
 		sql_rel *(*func) (sql_allocator *, sql_rel *, list *) = is_topn(rel->op) ? rel_topn : rel_sample;
 
+		/* nested topN relations without offset */
+		if (r && is_topn(rel->op) && is_topn(r->op) && list_length(rel->exps) == 1 && list_length(r->exps) == 1) {
+			sql_exp *topN1 = rel->exps->h->data, *topN2 = r->exps->h->data;
+
+			if (topN1->l && topN2->l) {
+				atom *a1 = (atom *)topN1->l, *a2 = (atom *)topN2->l;
+
+				if (a1->tpe.type->localtype == a2->tpe.type->localtype && !a1->isnull && !a2->isnull) {
+					if (atom_cmp(a1, a2) < 0) {
+						rel->l = r->l;
+						r->l = NULL;
+						rel_destroy(r);
+						(*changes)++;
+						return rel;
+					} else {
+						rel->l = NULL;
+						rel_destroy(rel);
+						rel = r;
+						(*changes)++;
+						return rel;
+					}
+				}
+			}
+		}
+
 		if (r && is_simple_project(r->op) && need_distinct(r)) 
 			return rel;
 
