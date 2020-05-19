@@ -1819,6 +1819,51 @@ rewrite_or_exp(mvc *sql, sql_rel *rel, int *changes)
 	return rel;
 }
 
+static sql_rel *
+rewrite_split_select_exps(mvc *sql, sql_rel *rel, int *changes)
+{
+	if (is_select(rel->op) && !list_empty(rel->exps)) {
+		int i = 0;
+		bool has_complex_exps = false, has_simple_exps = false, *complex_exps = (bool*) GDKmalloc(list_length(rel->exps) * sizeof(bool));
+
+		if (!complex_exps)
+			return sql_error(sql, 02, SQLSTATE(HY013) MAL_MALLOC_FAIL);
+
+		for (node *n = rel->exps->h ; n ; n = n->next) {
+			sql_exp *e = n->data;
+
+			if (exp_has_rel(e) || exp_has_freevar(sql, e)) {
+				complex_exps[i] = true;
+				has_complex_exps = true;
+			} else {
+				complex_exps[i] = false;
+				has_simple_exps = true;
+			}
+			i++;
+		}
+
+		if (has_complex_exps && has_simple_exps) {
+			sql_rel *nsel = rel_select_copy(sql->sa, rel->l, NULL);
+			rel->l = nsel;
+
+			i = 0;
+			for (node *n = rel->exps->h ; n ; ) {
+				node *nxt = n->next;
+
+				if (!complex_exps[i]) {
+					rel_select_add_exp(sql->sa, nsel, n->data);
+					list_remove_node(rel->exps, n);
+				}
+				n = nxt;
+				i++;
+			}
+			(*changes)++;
+		}
+		GDKfree(complex_exps);
+	}
+	return rel;
+}
+
 /* exp visitor */
 static sql_exp *
 rewrite_rank(mvc *sql, sql_rel *rel, sql_exp *e, int depth, int *changes)
@@ -3028,6 +3073,8 @@ rel_unnest(mvc *sql, sql_rel *rel)
 	rel = rel_visitor_bottomup(sql, rel, &rewrite_or_exp, &changes);
 	if (changes > 0)
 		rel = rel_visitor_bottomup(sql, rel, &rel_remove_empty_select, &changes);
+	rel = rel_visitor_bottomup(sql, rel, &rewrite_split_select_exps, &changes); /* has to run before rewrite_complex */
+
 	rel = rel_visitor_bottomup(sql, rel, &rewrite_aggregates, &changes);
 	rel = rel_exp_visitor_bottomup(sql, rel, &rewrite_rank, &changes);
 	rel = rel_visitor_bottomup(sql, rel, &rewrite_outer2inner_union, &changes);	

@@ -238,7 +238,7 @@ rel_issubquery(sql_rel*r)
 }
 
 static sql_rel *
-rel_bind_column_(mvc *sql, sql_rel **p, sql_rel *rel, const char *cname, int no_tname)
+rel_bind_column_(mvc *sql, int *exp_has_nil, sql_rel *rel, const char *cname, int no_tname)
 {
 	int ambiguous = 0;
 	sql_rel *l = NULL, *r = NULL;
@@ -253,15 +253,12 @@ rel_bind_column_(mvc *sql, sql_rel **p, sql_rel *rel, const char *cname, int no_
 	case op_full: {
 		sql_rel *right = rel->r;
 
-		*p = rel;
-		r = rel_bind_column_(sql, p, rel->r, cname, no_tname);
-
+		r = rel_bind_column_(sql, exp_has_nil, rel->r, cname, no_tname);
 		if (!r || !rel_issubquery(right)) {
 			sql_exp *e = r?exps_bind_column(r->exps, cname, &ambiguous, 0):NULL;
 
 			if (!r || !e || !is_freevar(e)) {
-				*p = rel;
-				l = rel_bind_column_(sql, p, rel->l, cname, no_tname);
+				l = rel_bind_column_(sql, exp_has_nil, rel->l, cname, no_tname);
 				if (l && r && !rel_issubquery(r) && !is_dependent(rel)) {
 					(void) sql_error(sql, ERR_AMBIGUOUS, SQLSTATE(42000) "SELECT: identifier '%s' ambiguous", cname);
 					return NULL;
@@ -270,8 +267,13 @@ rel_bind_column_(mvc *sql, sql_rel **p, sql_rel *rel, const char *cname, int no_
 		}
 		if (sql->session->status == -ERR_AMBIGUOUS)
 			return NULL;
-		if (l && !r)
+		if (l && !r) {
+			if (is_full(rel->op) || is_right(rel->op))
+				*exp_has_nil = 1;
 			return l;
+		}
+		if (r && (is_full(rel->op) || is_left(rel->op)))
+			*exp_has_nil = 1;
 		return r;
 	}
 	case op_union:
@@ -289,11 +291,10 @@ rel_bind_column_(mvc *sql, sql_rel **p, sql_rel *rel, const char *cname, int no_
 			(void) sql_error(sql, ERR_AMBIGUOUS, SQLSTATE(42000) "SELECT: identifier '%s' ambiguous", cname);
 			return NULL;
 		}
-		*p = rel;
 		if (is_processed(rel))
 			return NULL;
 		if (rel->l && !(is_base(rel->op)))
-			return rel_bind_column_(sql, p, rel->l, cname, no_tname);
+			return rel_bind_column_(sql, exp_has_nil, rel->l, cname, no_tname);
 		break;
 	case op_semi:
 	case op_anti:
@@ -301,9 +302,8 @@ rel_bind_column_(mvc *sql, sql_rel **p, sql_rel *rel, const char *cname, int no_
 	case op_select:
 	case op_topn:
 	case op_sample:
-		*p = rel;
 		if (rel->l)
-			return rel_bind_column_(sql, p, rel->l, cname, no_tname);
+			return rel_bind_column_(sql, exp_has_nil, rel->l, cname, no_tname);
 		/* fall through */
 	default:
 		return NULL;
@@ -314,12 +314,12 @@ rel_bind_column_(mvc *sql, sql_rel **p, sql_rel *rel, const char *cname, int no_
 sql_exp *
 rel_bind_column( mvc *sql, sql_rel *rel, const char *cname, int f, int no_tname)
 {
-	sql_rel *p = NULL;
+	int exp_has_nil = 0; /* mark if we passed any outer joins */
 
 	if (is_sql_sel(f) && rel && is_simple_project(rel->op) && !is_processed(rel))
 		rel = rel->l;
 
-	if (!rel || (rel = rel_bind_column_(sql, &p, rel, cname, no_tname)) == NULL)
+	if (!rel || (rel = rel_bind_column_(sql, &exp_has_nil, rel, cname, no_tname)) == NULL)
 		return NULL;
 
 	if ((is_project(rel->op) || is_base(rel->op)) && rel->exps) {
@@ -330,8 +330,9 @@ rel_bind_column( mvc *sql, sql_rel *rel, const char *cname, int f, int no_tname)
 			sql_exp *e = exps_bind_column(rel->r, cname, NULL, no_tname);
 			if (e)
 				e = exp_alias_or_copy(sql, exp_relname(e), cname, rel, e);
-			return e;
 		}
+		if (e && exp_has_nil)
+			set_has_nil(e);
 		return e;
 	}
 	return NULL;
@@ -377,8 +378,14 @@ rel_bind_column2( mvc *sql, sql_rel *rel, const char *tname, const char *cname, 
 			return rel_bind_column2(sql, rel->l, tname, cname, f);
 	} else if (is_join(rel->op)) {
 		sql_exp *e = rel_bind_column2(sql, rel->l, tname, cname, f);
-		if (!e)
+
+		if (e && (is_right(rel->op) || is_full(rel->op)))
+			set_has_nil(e);
+		if (!e) {
 			e = rel_bind_column2(sql, rel->r, tname, cname, f);
+			if (e && (is_left(rel->op) || is_full(rel->op)))
+				set_has_nil(e);
+		}
 		return e;
 	} else if (is_set(rel->op) ||
 		   is_sort(rel) ||
