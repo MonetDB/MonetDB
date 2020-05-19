@@ -6,27 +6,31 @@
 # Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
 #]]
 
+if(${CMAKE_SYSTEM_NAME} STREQUAL "Linux")
+  get_os_release_info(LINUX_DISTRO LINUX_DISTRO_VERSION)
+endif()
+
 if (${LINUX_DISTRO} STREQUAL "debian")
   if(${LINUX_DISTRO_VERSION} STREQUAL "9")
-    set(DETECT "1")
-    set(UNDETECT "0")
+    set(DETECT "0")
+    set(UNDETECT "1")
   endif()
   if(${LINUX_DISTRO_VERSION} STREQUAL "10")
-    set(DETECT "1")
-    set(UNDETECT "0")
+    set(DETECT "0")
+    set(UNDETECT "1")
   endif()
 elseif (${LINUX_DISTRO} STREQUAL "ubuntu")
   if(${LINUX_DISTRO_VERSION} STREQUAL "18")
-    set(DETECT "1")
-    set(UNDETECT "0")
+    set(DETECT "0")
+    set(UNDETECT "1")
   endif()
   if(${LINUX_DISTRO_VERSION} STREQUAL "19")
-    set(DETECT "1")
-    set(UNDETECT "0")
+    set(DETECT "0")
+    set(UNDETECT "1")
   endif()
   if(${LINUX_DISTRO_VERSION} STREQUAL "20")
-    set(DETECT "1")
-    set(UNDETECT "0")
+    set(DETECT "0")
+    set(UNDETECT "1")
   endif()
 elseif(${LINUX_DISTRO} STREQUAL "fedora")
   if(${LINUX_DISTRO_VERSION} STREQUAL "30")
@@ -46,15 +50,15 @@ else()
   message(ERROR "Linux distro version: ${LINUX_DISTRO_VERSION} not known")
 endif()
 
-configure_file(test_detect_lzma.c.in
-  ${CMAKE_CURRENT_BINARY_DIR}/test_detect_lzma.c
+configure_file(test_detect_getaddrinfo.c.in
+  ${CMAKE_CURRENT_BINARY_DIR}/test_detect_getaddrinfo.c
   @ONLY)
 
-add_executable(test_detect_lzma)
-target_sources(test_detect_lzma
+add_executable(test_detect_getaddrinfo)
+target_sources(test_detect_getaddrinfo
   PRIVATE
-  ${CMAKE_CURRENT_BINARY_DIR}/test_detect_lzma.c)
-target_link_libraries(test_detect_lzma
+  ${CMAKE_CURRENT_BINARY_DIR}/test_detect_getaddrinfo.c)
+target_link_libraries(test_detect_getaddrinfo
   PRIVATE
   monetdb_config_header)
-add_test(testDetectLzma test_detect_lzma)
+add_test(testDetectGetaddrinfo test_detect_getaddrinfo)

@@ -6,6 +6,10 @@
 # Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
 #]]
 
+if(${CMAKE_SYSTEM_NAME} STREQUAL "Linux")
+  get_os_release_info(LINUX_DISTRO LINUX_DISTRO_VERSION)
+endif()
+
 if (${LINUX_DISTRO} STREQUAL "debian")
   if(${LINUX_DISTRO_VERSION} STREQUAL "9")
     set(DETECT "1")
@@ -30,31 +34,28 @@ elseif (${LINUX_DISTRO} STREQUAL "ubuntu")
   endif()
 elseif(${LINUX_DISTRO} STREQUAL "fedora")
   if(${LINUX_DISTRO_VERSION} STREQUAL "30")
-    set(DETECT "0")
-    set(UNDETECT "1")
+    set(DETECT "1")
+    set(UNDETECT "0")
   endif()
   if(${LINUX_DISTRO_VERSION} STREQUAL "31")
-    set(DETECT "0")
-    set(UNDETECT "1")
+    set(DETECT "1")
+    set(UNDETECT "0")
   endif()
   if(${LINUX_DISTRO_VERSION} STREQUAL "32")
-    set(DETECT "0")
-    set(UNDETECT "1")
+    set(DETECT "1")
+    set(UNDETECT "0")
   endif()
 else()
   message(ERROR "Linux distro: ${LINUX_DISTRO} not known")
   message(ERROR "Linux distro version: ${LINUX_DISTRO_VERSION} not known")
 endif()
 
-configure_file(test_detect_lzma.c.in
-  ${CMAKE_CURRENT_BINARY_DIR}/test_detect_lzma.c
+configure_file(test_detect_wingetaddrinfo.c.in
+  ${CMAKE_CURRENT_BINARY_DIR}/test_detect_wingetaddrinfo.c
   @ONLY)
 
-add_executable(test_detect_lzma)
-target_sources(test_detect_lzma
+add_executable(test_detect_wingetaddrinfo)
+target_sources(test_detect_wingetaddrinfo
   PRIVATE
-  ${CMAKE_CURRENT_BINARY_DIR}/test_detect_lzma.c)
-target_link_libraries(test_detect_lzma
-  PRIVATE
-  monetdb_config_header)
-add_test(testDetectLzma test_detect_lzma)
+  ${CMAKE_CURRENT_BINARY_DIR}/test_detect_wingetaddrinfo.c)
+add_test(testDetectWingetaddrinfo test_detect_wingetaddrinfo)

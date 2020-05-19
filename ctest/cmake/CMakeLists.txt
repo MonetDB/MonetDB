@@ -61,5 +61,8 @@ add_test(testDetectProj test_detect_proj)
 include(${CMAKE_CURRENT_SOURCE_DIR}/detect-netcdf.cmake)
 include(${CMAKE_CURRENT_SOURCE_DIR}/detect-lzma.cmake)
 include(${CMAKE_CURRENT_SOURCE_DIR}/detect-readline.cmake)
+include(${CMAKE_CURRENT_SOURCE_DIR}/detect-unixgetaddrinfo.cmake)
+include(${CMAKE_CURRENT_SOURCE_DIR}/detect-wingetaddrinfo.cmake)
+include(${CMAKE_CURRENT_SOURCE_DIR}/detect-getaddrinfo.cmake)
 
 include(${CMAKE_CURRENT_SOURCE_DIR}/set-dir-vars.cmake)

@@ -6,6 +6,10 @@
 # Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
 #]]
 
+# This function should only run find functions. The resulting
+# variables will have the correct scope. If you need to set
+# additional variables, for example for legacy defines, do this
+# in the "monetdb_macro_variables" macro.
 function(monetdb_configure_defines)
   find_path(HAVE_DISPATCH_DISPATCH_H "dispatch/dispatch.h")
   find_path(HAVE_DLFCN_H "dlfcn.h")
@@ -54,13 +58,6 @@ function(monetdb_configure_defines)
   check_symbol_exists("S_ISREG" "sys/stat.h" HAVE_SYS_STAT_H)
   check_symbol_exists("getaddrinfo" "netdb.h" UNIX_GETADDRINFO)
   check_symbol_exists("getaddrinfo" "ws2tcpip.h" WIN_GETADDRINFO)
-  if(UNIX_GETADDRINF)
-    set(HAVE_GETADDRINFO 1 PARENT_SCOPE)
-  endif()
-  if(WIN_GETADDRINF)
-    set(HAVE_GETADDRINFO 1 PARENT_SCOPE)
-  endif()
-
   #check_symbol_exists("WSADATA" "winsock2.h" HAVE_WINSOCK_H)
   check_symbol_exists("fdatasync" "unistd.h" HAVE_FDATASYNC)
   # Some libc versions on Linux distributions don't have it
@@ -150,6 +147,13 @@ macro(monetdb_macro_variables)
   set(SOCKET_LIBRARIES "")
   if (WIN32)
     set(SOCKET_LIBRARIES "ws2_32")
+  endif()
+
+  if(UNIX_GETADDRINFO)
+    set(HAVE_GETADDRINFO 1)
+  endif()
+  if(WIN_GETADDRINFO)
+    set(HAVE_GETADDRINFO 1)
   endif()
 
   set(DIR_SEP  "/")
