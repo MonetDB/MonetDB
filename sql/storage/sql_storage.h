@@ -391,7 +391,7 @@ extern void idle_manager(void);
 
 extern void store_lock(void);
 extern void store_unlock(void);
-extern int store_next_oid(void);
+extern sqlid store_next_oid(void);
 
 extern sql_trans *sql_trans_create(backend_stack stk, sql_trans *parent, const char *name, bool try_spare);
 extern sql_trans *sql_trans_destroy(sql_trans *tr, bool try_spare);

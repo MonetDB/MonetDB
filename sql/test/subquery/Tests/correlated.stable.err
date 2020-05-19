@@ -36,9 +36,8 @@ stderr of test 'correlated` in directory 'sql/test/subquery` itself:
 
 MAPI  = (monetdb) /var/tmp/mtest-8372/.s.monetdb.37437
 QUERY = SELECT i, (SELECT 42+i1.i FROM integers) AS j FROM integers i1 ORDER BY i;
-ERROR = !zero_or_one: cardinality violation, scalar expression expected
-CODE  = M0M29
-MAPI  = (monetdb) /var/tmp/mtest-8372/.s.monetdb.37437
+ERROR = !GDK reported error: mergejoin: more than one match
+MAPI  = (monetdb) /var/tmp/mtest-1456258/.s.monetdb.39356
 QUERY = SELECT i, (SELECT 42+i1.i FROM integers LIMIT 1) AS j FROM integers i1 ORDER BY i;
 ERROR = !syntax error, unexpected LIMIT, expecting UNION or EXCEPT or INTERSECT or ')' in: "select i, (select 42+i1.i from integers limit"
 CODE  = 42000
@@ -76,17 +75,15 @@ ERROR = !SELECT: subquery must return only one column
 CODE  = 42000
 MAPI  = (monetdb) /var/tmp/mtest-19820/.s.monetdb.36524
 QUERY = SELECT (SELECT SUM(i1.i) FROM integers) AS k FROM integers i1 GROUP BY i ORDER BY i; --cardinality violation, scalar expression expected
-ERROR = !zero_or_one: cardinality violation, scalar expression expected
-CODE  = M0M29
-MAPI  = (monetdb) /var/tmp/mtest-31859/.s.monetdb.35446
+ERROR = !GDK reported error: mergejoin: more than one match
+MAPI  = (monetdb) /var/tmp/mtest-1456258/.s.monetdb.39356
 QUERY = SELECT CAST((SELECT i+SUM(i1.i) FROM integers WHERE i=1 LIMIT 1) AS BIGINT) FROM integers i1; --error, no LIMIT on subqueries
 ERROR = !syntax error, unexpected LIMIT, expecting UNION or EXCEPT or INTERSECT or ')' in: "select cast((select i+sum(i1.i) from integers where i=1 limit"
 CODE  = 42000
 MAPI  = (monetdb) /var/tmp/mtest-31859/.s.monetdb.35446
 QUERY = SELECT i, CAST(SUM(i1.i) AS BIGINT), CAST((SELECT SUM(i1.i) FROM integers) AS BIGINT) AS k FROM integers i1 GROUP BY i ORDER BY i; --error, cardinality violation, scalar expression expected
-ERROR = !zero_or_one: cardinality violation, scalar expression expected
-CODE  = M0M29
-MAPI  = (monetdb) /var/tmp/mtest-9314/.s.monetdb.30155
+ERROR = !GDK reported error: mergejoin: more than one match
+MAPI  = (monetdb) /var/tmp/mtest-1456258/.s.monetdb.39356
 QUERY = SELECT i, SUM((SELECT SUM(i)*SUM(i1.i) FROM integers)) AS k FROM integers i1 GROUP BY i ORDER BY i; --error
 ERROR = !SELECT: aggregate function calls cannot be nested
 CODE  = 42000
@@ -96,9 +93,8 @@ ERROR = !SELECT: no such unary operator 'first(int)'
 CODE  = 42000
 MAPI  = (monetdb) /var/tmp/mtest-31859/.s.monetdb.35446
 QUERY = SELECT i, SUM(i1.i) FROM integers i1 GROUP BY i ORDER BY (SELECT SUM(i1.i) FROM integers); --error, cardinality violation, scalar expression expected
-ERROR = !zero_or_one: cardinality violation, scalar expression expected
-CODE  = M0M29
-MAPI  = (monetdb) /var/tmp/mtest-31859/.s.monetdb.35446
+ERROR = !GDK reported error: mergejoin: more than one match
+MAPI  = (monetdb) /var/tmp/mtest-1456258/.s.monetdb.39356
 QUERY = SELECT i, SUM((SELECT SUM(i)*i1.i FROM integers LIMIT 0)) AS k FROM integers i1 GROUP BY i ORDER BY i; --error, no LIMIT on subqueries
 ERROR = !syntax error, unexpected LIMIT, expecting UNION or EXCEPT or INTERSECT or ')' in: "select i, sum((select sum(i)*i1.i from integers limit"
 CODE  = 42000

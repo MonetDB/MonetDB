@@ -98,7 +98,7 @@ rel_parse(mvc *m, sql_schema *s, char *query, char emode)
 		*m = o;
 		m->session->status = status;
 	} else {
-		int label = m->label;
+		unsigned int label = m->label;
 
 		while (m->topvars > o.topvars) {
 			if (m->vars[--m->topvars].name)

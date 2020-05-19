@@ -660,12 +660,19 @@ BATappend(BAT *b, BAT *n, BAT *s, bool force)
 	BUN r;
 	PROPrec *prop, *nprop;
 	oid hseq = n->hseqbase;
+	char buf[64];
+	lng t0 = 0;
 
 	if (b == NULL || n == NULL || (cnt = BATcount(n)) == 0) {
 		return GDK_SUCCEED;
 	}
 	assert(b->batCacheid > 0);
 	assert(b->theap.parentid == 0);
+
+	TRC_DEBUG_IF(ALGO) {
+		t0 = GDKusec();
+		snprintf(buf, sizeof(buf), ALGOBATFMT, ALGOBATPAR(b));
+	}
 
 	ALIGNapp(b, force, GDK_FAIL);
 
@@ -682,7 +689,7 @@ BATappend(BAT *b, BAT *n, BAT *s, bool force)
 
 	cnt = canditer_init(&ci, n, s);
 	if (cnt == 0) {
-		return GDK_SUCCEED;
+		goto doreturn;
 	}
 
 	if (BUNlast(b) + cnt > BUN_MAX) {
@@ -749,14 +756,14 @@ BATappend(BAT *b, BAT *n, BAT *s, bool force)
 			if (BATcount(b) == 0)
 				BATtseqbase(b, n->tseqbase + ci.seq - hseq);
 			BATsetcount(b, BATcount(b) + cnt);
-			return GDK_SUCCEED;
+			goto doreturn;
 		}
 		if ((BATcount(b) == 0 || is_oid_nil(b->tseqbase)) &&
 		    n->ttype == TYPE_void && is_oid_nil(n->tseqbase)) {
 			/* both b and n are void/nil */
 			BATtseqbase(b, oid_nil);
 			BATsetcount(b, BATcount(b) + cnt);
-			return GDK_SUCCEED;
+			goto doreturn;
 		}
 		/* we need to materialize b; allocate enough capacity */
 		b->batCapacity = BATcount(b) + cnt;
@@ -875,6 +882,13 @@ BATappend(BAT *b, BAT *n, BAT *s, bool force)
 	}
 	if (b->thash)
 		BATsetprop(b, GDK_NUNIQUE, TYPE_oid, &(oid){b->thash->nunique});
+
+  doreturn:
+	TRC_DEBUG(ALGO, "b=%s,n=" ALGOBATFMT ",s=" ALGOOPTBATFMT
+		  " -> " ALGOBATFMT " (" LLFMT " usec)\n",
+		  buf, ALGOBATPAR(n), ALGOOPTBATPAR(s), ALGOBATPAR(b),
+		  GDKusec() - t0);
+
 	return GDK_SUCCEED;
 }
 
