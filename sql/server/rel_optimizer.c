@@ -4158,28 +4158,73 @@ rel_merge_rse(mvc *sql, sql_rel *rel, int *changes)
 	return rel;
 }
 
-/* find in the list of expression an expression which uses e */ 
-static sql_exp *
-exps_uses_exp( list *exps, sql_exp *e)
+static sql_exp *list_exps_uses_exp(list *exps, const char *rname, const char *name);
+
+static sql_exp*
+exp_uses_exp(sql_exp *e, const char *rname, const char *name)
 {
-	node *n;
-	const char *rname = exp_relname(e);
-	const char *name = exp_name(e);
+	sql_exp *res = NULL;
+
+	switch (e->type) {
+		case e_psm:
+		case e_atom:
+			break;
+		case e_convert:
+			return exp_uses_exp(e->l, rname, name);
+		case e_column: {
+			if (e->l && rname && strcmp(e->l, rname) == 0 &&
+				e->r && name && strcmp(e->r, name) == 0) 
+				return e;
+			if (!e->l && !rname &&
+				e->r && name && strcmp(e->r, name) == 0) 
+				return e;
+		} break;
+		case e_func:
+		case e_aggr: {
+			if (e->l)
+				return list_exps_uses_exp(e->l, rname, name);
+		} 	break;
+		case e_cmp: {
+			if (e->flag == cmp_in || e->flag == cmp_notin) {
+				if ((res = exp_uses_exp(e->l, rname, name)))
+					return res;
+				return list_exps_uses_exp(e->r, rname, name);
+			} else if (e->flag == cmp_or || e->flag == cmp_filter) {
+				if ((res = list_exps_uses_exp(e->l, rname, name)))
+					return res;
+				return list_exps_uses_exp(e->r, rname, name);
+			} else {
+				if ((res = exp_uses_exp(e->l, rname, name)))
+					return res;
+				if ((res = exp_uses_exp(e->r, rname, name)))
+					return res;
+				if (e->f)
+					return exp_uses_exp(e->f, rname, name);
+			}
+		} break;
+	}
+	return NULL;
+}
+
+static sql_exp *
+list_exps_uses_exp(list *exps, const char *rname, const char *name)
+{
+	sql_exp *res = NULL;
 
 	if (!exps)
 		return NULL;
-
-	for ( n = exps->h; n; n = n->next) {
-		sql_exp *u = n->data;
-
-		if (u->l && rname && strcmp(u->l, rname) == 0 &&
-		    u->r && name && strcmp(u->r, name) == 0) 
-			return u;
-		if (!u->l && !rname &&
-		    u->r && name && strcmp(u->r, name) == 0) 
-			return u;
+	for (node *n = exps->h; n && !res; n = n->next) {
+		sql_exp *e = n->data;
+		res = exp_uses_exp(e, rname, name);
 	}
-	return NULL;
+	return res;
+}
+
+/* find in the list of expression an expression which uses e */ 
+static sql_exp *
+exps_uses_exp(list *exps, sql_exp *e)
+{
+	return list_exps_uses_exp(exps, exp_relname(e), exp_name(e));
 }
 
 /*
@@ -5403,10 +5448,14 @@ static inline bool
 find_simple_projection_for_join2semi(sql_rel *rel)
 {
 	if (is_project(rel->op) && list_length(rel->exps) == 1) {
+		sql_exp *e = rel->exps->h->data;
+
 		if (rel->card < CARD_AGGR) /* const or groupby without group by exps */
 			return true;
-		sql_exp *found = rel_find_exp(rel->l, rel->exps->h->data); /* grouping column on inner relation */
-		if (found && found->card <= CARD_AGGR)
+		if (e->card <= CARD_AGGR || find_prop(e->p, PROP_HASHCOL))
+			return true;
+		sql_exp *found = rel_find_exp(rel->l, e); /* grouping column on inner relation */
+		if (found && (found->card <= CARD_AGGR || find_prop(found->p, PROP_HASHCOL)))
 			return true;
 	}
 	return false;
@@ -5416,7 +5465,7 @@ static sql_rel *
 find_candidate_join2semi(sql_rel *rel, bool *swap)
 {
 	/* generalize possibility : we need the visitor 'step' here */
-	if (rel_is_ref(rel))
+	if (rel_is_ref(rel)) /* if the join has multiple references, it's dangerous to convert it into a semijoin */
 		return NULL;
 	if (rel->op == op_join && rel->exps) {
 		sql_rel *l = rel->l, *r = rel->r;
