@@ -1642,6 +1642,20 @@ exp_reset_card(mvc *sql, sql_rel *rel, sql_exp *e, int depth, int *changes)
 
 	if (!e || !rel || !rel->l)
 		return e;
+	if (is_groupby(rel->op)) {
+		switch(e->type) {
+		case e_aggr:
+		case e_column:
+			e->card = CARD_AGGR;
+			break;
+		case e_func:
+		case e_convert:
+		case e_cmp:
+		case e_atom:
+		case e_psm:
+			break;
+		}
+	}
 	if (!is_simple_project(rel->op)) /* only need to fix projections */
 		return e;
 	sql_rel *l;
@@ -1657,7 +1671,7 @@ exp_reset_card(mvc *sql, sql_rel *rel, sql_exp *e, int depth, int *changes)
 	case e_aggr: /* should have been corrected by rewrites already */
 	case e_cmp:  
 	case e_atom:
-	default:
+	case e_psm:
 		break;
 	}
 	return e;
@@ -3071,8 +3085,8 @@ rel_unnest(mvc *sql, sql_rel *rel)
 	rel = rel_exp_visitor_bottomup(sql, rel, &rewrite_simplify_exp, &changes);
 	rel = rel_visitor_bottomup(sql, rel, &rewrite_simplify, &changes);
 	rel = rel_visitor_bottomup(sql, rel, &rewrite_or_exp, &changes);
-	if (changes > 0)
-		rel = rel_visitor_bottomup(sql, rel, &rel_remove_empty_select, &changes);
+	/* at rel_select.c explicit cross-products generate empty selects, if these are not used, they can be removed now */
+	rel = rel_visitor_bottomup(sql, rel, &rel_remove_empty_select, &changes);
 	rel = rel_visitor_bottomup(sql, rel, &rewrite_split_select_exps, &changes); /* has to run before rewrite_complex */
 
 	rel = rel_visitor_bottomup(sql, rel, &rewrite_aggregates, &changes);
