@@ -1522,16 +1522,7 @@ mskfnd(BAT *b, msk v)
 		for (p = 0, q = (BATcount(b) + 31) / 32; p < q; p++) {
 			if (((uint32_t *) b->theap.base)[p] != 0) {
 				/* there's at least one 1 bit */
-				m = ((uint32_t *) b->theap.base)[p];
-				for (q = 0; q < 32; q++) {
-					if (m & (1U << q)) {
-						q += p * 32;
-						if (q < BATcount(b))
-							return q;
-						break;
-					}
-				}
-				break;
+				return p * 32 + candmask_lobit(((uint32_t *) b->theap.base)[p]);
 			}
 		}
 	} else {
@@ -1539,16 +1530,7 @@ mskfnd(BAT *b, msk v)
 		for (p = 0, q = (BATcount(b) + 31) / 32; p < q; p++) {
 			if (((uint32_t *) b->theap.base)[p] != ~0U) {
 				/* there's at least one 0 bit */
-				m = ((uint32_t *) b->theap.base)[p];
-				for (q = 0; q < 32; q++) {
-					if ((m & (1U << q)) == 0) {
-						q += p * 32;
-						if (q < BATcount(b))
-							return q;
-						break;
-					}
-				}
-				break;
+				return p * 32 + candmask_lobit(~((uint32_t *) b->theap.base)[p]);
 			}
 		}
 	}

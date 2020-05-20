@@ -53,10 +53,13 @@ candmask_lobit(uint32_t x)
 		return (int) idx;
 	return -1;
 #else
-	for (int i = 0; i < 32; i++)
-		if (x & (1U << i))
-			return i;
-	return -1;
+	/* use binary search for the lowest set bit */
+	int n = 1;
+	if ((x & 0x0000FFFF) == 0) { n += 16; x >>= 16; }
+	if ((x & 0x000000FF) == 0) { n +=  8; x >>=  8; }
+	if ((x & 0x0000000F) == 0) { n +=  4; x >>=  4; }
+	if ((x & 0x00000003) == 0) { n +=  2; x >>=  2; }
+	return n - (x & 1);
 #endif
 }
 
