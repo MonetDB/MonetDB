@@ -5399,22 +5399,33 @@ rel_remove_empty_join(mvc *sql, sql_rel *rel, int *changes)
 	return rel;
 }
 
-/* const or groupby without group by exps */
-#define SIMPLE_PROJECTION_FOR_JOIN2SEMI(X) \
-	((X)->card < CARD_AGGR && is_project((X)->op) && list_length((X)->exps) == 1)
+static inline bool
+find_simple_projection_for_join2semi(sql_rel *rel)
+{
+	if (is_project(rel->op) && list_length(rel->exps) == 1) {
+		if (rel->card < CARD_AGGR) /* const or groupby without group by exps */
+			return true;
+		sql_exp *found = rel_find_exp(rel->l, rel->exps->h->data); /* grouping column on inner relation */
+		if (found && found->card <= CARD_AGGR)
+			return true;
+	}
+	return false;
+}
 
 static sql_rel * 
-find_candidate_join2semi(sql_rel *rel, bool *swap) 
+find_candidate_join2semi(sql_rel *rel, bool *swap)
 {
 	/* generalize possibility : we need the visitor 'step' here */
+	if (rel_is_ref(rel))
+		return NULL;
 	if (rel->op == op_join && rel->exps) {
 		sql_rel *l = rel->l, *r = rel->r;
 
-		if (SIMPLE_PROJECTION_FOR_JOIN2SEMI(r)) {
+		if (find_simple_projection_for_join2semi(r)) {
 			*swap = false;
 			return rel;
 		}
-		if (SIMPLE_PROJECTION_FOR_JOIN2SEMI(l)) {
+		if (find_simple_projection_for_join2semi(l)) {
 			*swap = true;
 			return rel;
 		}
@@ -5464,7 +5475,7 @@ static sql_rel *
 rel_join2semijoin(mvc *sql, sql_rel *rel, int *changes)
 {
 	(void)sql;
-	if ((is_simple_project(rel->op) || is_groupby(rel->op) || is_select(rel->op)) && rel->l) {
+	if ((is_simple_project(rel->op) || is_groupby(rel->op) || (is_select(rel->op) && !rel_is_ref(rel))) && rel->l) {
 		bool swap = false;
 		sql_rel *l = rel->l;
 		sql_rel *c = find_candidate_join2semi(l, &swap);
