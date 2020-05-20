@@ -304,7 +304,7 @@ static void copy_stream_to_file(stream *in, FILE *out, size_t bufsize)
 
 		if (short_read != 0)
 			// A short read MUST be followed by either error or eof.
-			croak(2, "Short read (%zd/%zu) after %" PRIu64 " iterations not followed by EOF or error", short_read, bufsize, iterations - 1);
+			croak(2, "Short read (%zd/%zu) after %ld iterations not followed by EOF or error", short_read, bufsize, iterations - 1);
 		short_read = (size_t)nread < bufsize ? nread : 0;
 
 		errno = 0;
