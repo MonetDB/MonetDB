@@ -2573,21 +2573,58 @@ rel_distinct_project2groupby(mvc *sql, sql_rel *rel, int *changes)
 	    (l->op == op_select || l->op == op_semi) && exps_unique(sql, rel, rel->exps)) 
 		set_nodistinct(rel);
 
-	/* rewrite distinct project ( join(p,f) [ p.pk = f.fk] ) [ p.pk ] ->
-	 * 	   project(p)[p.pk]
-	 */
+	/* rewrite distinct project ( join(p,f) [ p.pk = f.fk ] ) [ p.pk ] 
+	 * 	into project( (semi)join(p,f) [ p.pk = f.fk ] ) [ p.pk ] */
 	if (rel->op == op_project && rel->l && !rel->r /* no order by */ && need_distinct(rel) &&
-	    l && l->op == op_join && rel_is_join_on_pkey(l) /* [ pk == fk ] */) {
-		sql_rel *j = l;
-		sql_rel *p = j->l;
-		sql_exp *je = l->exps->h->data, *le = je->l;
+	    l && (is_select(l->op) || l->op == op_join) && rel_is_join_on_pkey(l) /* [ pk == fk ] */) {
+		sql_exp *found = NULL, *pk = NULL;
+		bool all_exps_atoms = true;
 
-		if (exps_find_exp(rel->exps, le)) { /* rel must have the same primary key on the projection list */
-			int pside = (rel_find_exp(p, le) != NULL)?1:0;
+		for (node *m = l->exps->h ; m ; m = m->next) { /* find a primary key join */
+			sql_exp *je = (sql_exp *) m->data;
+			sql_exp *le = je->l, *re = je->r;
+		
+			if (find_prop(le->p, PROP_HASHCOL)) { /* le is the primary key */
+				all_exps_atoms = true;
 
-			p = (pside)?j->l:j->r;
-			rel->l = rel_dup(p);
-			rel_destroy(j);
+				for (node *n = rel->exps->h; n && all_exps_atoms; n = n->next) {
+					sql_exp *e = (sql_exp *) n->data;
+
+					if (exp_match(e, le) || exp_refers(e, le))
+						found = e;
+					else if (e->card > CARD_ATOM)
+						all_exps_atoms = false;
+				}
+				pk = le;
+			}
+			if (!found && find_prop(re->p, PROP_HASHCOL)) { /* re is the primary key */
+				all_exps_atoms = true;
+
+				for (node *n = rel->exps->h; n && all_exps_atoms; n = n->next) {
+					sql_exp *e = (sql_exp *) n->data;
+
+					if (exp_match(e, re) || exp_refers(e, re))
+						found = e;
+					else if (e->card > CARD_ATOM)
+						all_exps_atoms = false;
+				}
+				pk = re;
+			}
+		}
+
+		if (all_exps_atoms && found) { /* rel must have the same primary key on the projection list */
+			/* if the join has no multiple references it can be re-written into a semijoin */
+			if (l->op == op_join && !(rel_is_ref(l)) && list_length(rel->exps) == 1) { /* other expressions may come from the other side */
+				if (rel_find_exp(l->r, pk)) {
+					sql_rel *temp = l->l;
+					l->l = l->r;
+					l->r = temp;
+
+					l->op = op_semi;
+				} else if (rel_find_exp(l->l, pk)) {
+					l->op = op_semi;
+				}
+			}
 			*changes = 1;
 			set_nodistinct(rel);
 			return rel;

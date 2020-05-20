@@ -3071,8 +3071,8 @@ rel_unnest(mvc *sql, sql_rel *rel)
 	rel = rel_exp_visitor_bottomup(sql, rel, &rewrite_simplify_exp, &changes);
 	rel = rel_visitor_bottomup(sql, rel, &rewrite_simplify, &changes);
 	rel = rel_visitor_bottomup(sql, rel, &rewrite_or_exp, &changes);
-	if (changes > 0)
-		rel = rel_visitor_bottomup(sql, rel, &rel_remove_empty_select, &changes);
+	/* at rel_select.c explicit cross-products generate empty selects, if these are not used, they can be removed now */
+	rel = rel_visitor_bottomup(sql, rel, &rel_remove_empty_select, &changes);
 	rel = rel_visitor_bottomup(sql, rel, &rewrite_split_select_exps, &changes); /* has to run before rewrite_complex */
 
 	rel = rel_visitor_bottomup(sql, rel, &rewrite_aggregates, &changes);
