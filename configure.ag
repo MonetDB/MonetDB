@@ -1989,15 +1989,15 @@ AM_CONDITIONAL([HAVE_LIDAR], [test "x$have_lidar" = xyes -o "x$have_lidar" = xau
 
 dnl  check for profiler library
 AS_CASE([$enable_profiler],
-	[no], [have_profiler=no],
+	[no], [],
 	[
 		PKG_CHECK_MODULES([PROFILER], [libprofiler],
-			[have_profiler=yes],
-			[have_profiler=no; why_not_profiler="(profiler library not found)"])
-		AS_VAR_IF([have_profiler], [yes], [
+			[enable_profiler=yes],
+			[enable_profiler=no; why_not_profiler="(profiler library not found)"])
+		AS_VAR_IF([enable_profiler], [yes], [
 			AC_DEFINE([HAVE_LIBPROFILER], 1, [Define if you have the profiler library])
 			AC_SUBST([PKG_PROFILER], [libprofiler])])])
-AM_CONDITIONAL([HAVE_LIBPROFILER], [test x$have_profiler != xno])
+AM_CONDITIONAL([HAVE_LIBPROFILER], [test enable_profiler != xno])
 
 
 #    checks for header files
@@ -2605,6 +2605,7 @@ for comp in \
 	'optimize  ' \
 	'developer ' \
 	'sanitizer ' \
+	'profiler  ' \
 ; do
 	AS_VAR_COPY([dft], [dft_$comp])
 	AS_VAR_COPY([enable], [enable_$comp])
