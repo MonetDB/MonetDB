@@ -563,8 +563,8 @@ fixfloatbats(void)
 			}
 			fp = fopen(filename, "w");
 			if (fp == NULL) {
-				TRC_CRITICAL(GDK, "cannot create file %s: %s\n",
-					     filename, GDKstrerror(errno, (char[128]){0}, 128));
+				GDKsyserror("cannot create file %s\n",
+					    filename);
 				return GDK_FAIL;
 			}
 			fclose(fp);
@@ -856,8 +856,8 @@ fixdatebats(void)
 			}
 			fp = fopen(filename, "w");
 			if (fp == NULL) {
-				TRC_CRITICAL(GDK, "cannot create file %s: %s\n",
-					     filename, GDKstrerror(errno, (char[128]){0}, 128));
+				GDKsyserror("cannot create file %s\n",
+					    filename);
 				return GDK_FAIL;
 			}
 			fclose(fp);
@@ -1367,7 +1367,7 @@ BBPaddfarm(const char *dirname, int rolemask)
 				return GDK_FAIL;
 			}
 		} else {
-			GDKerror("%s: cannot create directory\n", dirname);
+			GDKsyserror("%s: cannot create directory\n", dirname);
 			return GDK_FAIL;
 		}
 	}
@@ -1391,7 +1391,6 @@ BBPaddfarm(const char *dirname, int rolemask)
 				 * database */
 				bbpdir = GDKfilepath(i, BATDIR, "BBP", "dir");
 				if (bbpdir == NULL) {
-					GDKerror("malloc failed\n");
 					return GDK_FAIL;
 				}
 				if (stat(bbpdir, &st) != -1 || errno != ENOENT) {
@@ -1402,7 +1401,6 @@ BBPaddfarm(const char *dirname, int rolemask)
 				GDKfree(bbpdir);
 				bbpdir = GDKfilepath(i, BAKDIR, "BBP", "dir");
 				if (bbpdir == NULL) {
-					GDKerror("malloc failed\n");
 					return GDK_FAIL;
 				}
 				if (stat(bbpdir, &st) != -1 || errno != ENOENT) {
@@ -1562,7 +1560,6 @@ BBPinit(void)
 		if (j == i) {
 			char *d = GDKfilepath(i, NULL, BATDIR, NULL);
 			if (d == NULL) {
-				TRC_CRITICAL(GDK, "malloc failed\n");
 				return GDK_FAIL;
 			}
 			BBPdiskscan(d, strlen(d) - strlen(BATDIR));
@@ -3188,7 +3185,7 @@ BBPprepare(bool subcommit)
 		ret = BBPrecover(0);
 		if (ret == GDK_SUCCEED) {
 			if (mkdir(bakdirpath, MONETDB_DIRMODE) < 0 && errno != EEXIST) {
-				GDKsyserror("BBPprepare: cannot create directory %s\n", bakdirpath);
+				GDKsyserror("cannot create directory %s\n", bakdirpath);
 				ret = GDK_FAIL;
 			}
 			/* if BAKDIR already exists, don't signal error */
@@ -3198,7 +3195,7 @@ BBPprepare(bool subcommit)
 	if (ret == GDK_SUCCEED && start_subcommit) {
 		/* make a new SUBDIR (subdir of BAKDIR) */
 		if (mkdir(subdirpath, MONETDB_DIRMODE) < 0) {
-			GDKsyserror("BBPprepare: cannot create directory %s\n", subdirpath);
+			GDKsyserror("cannot create directory %s\n", subdirpath);
 			ret = GDK_FAIL;
 		}
 		TRC_DEBUG(IO_, "mkdir %s = %d\n", subdirpath, (int) ret);
@@ -3497,7 +3494,6 @@ force_move(int farmid, const char *srcdir, const char *dstdir, const char *name)
 		strncpy(srcpath, name, len);
 		srcpath[len] = '\0';
 		if(!(dstpath = GDKfilepath(farmid, dstdir, srcpath, NULL))) {
-			GDKsyserror("force_move: malloc fail\n");
 			return GDK_FAIL;
 		}
 
@@ -3515,7 +3511,6 @@ force_move(int farmid, const char *srcdir, const char *dstdir, const char *name)
 		/* step 2: now remove the .kill file. This one is
 		 * crucial, otherwise we'll never finish recovering */
 		if(!(killfile = GDKfilepath(farmid, srcdir, name, NULL))) {
-			GDKsyserror("force_move: malloc fail\n");
 			return GDK_FAIL;
 		}
 		if (remove(killfile) != 0) {
@@ -3575,6 +3570,8 @@ BBPrecover(int farmid)
 	}
 	dirp = opendir(bakdirpath);
 	if (dirp == NULL) {
+		if (errno != ENOENT)
+			GDKsyserror("cannot open directory %s\n", bakdirpath);
 		GDKfree(bakdirpath);
 		GDKfree(leftdirpath);
 		return GDK_SUCCEED;	/* nothing to do */
@@ -3586,7 +3583,7 @@ BBPrecover(int farmid)
 	TRC_DEBUG(IO_, "start\n");
 
 	if (mkdir(leftdirpath, MONETDB_DIRMODE) < 0 && errno != EEXIST) {
-		GDKsyserror("BBPrecover: cannot create directory %s\n", leftdirpath);
+		GDKsyserror("cannot create directory %s\n", leftdirpath);
 		closedir(dirp);
 		GDKfree(bakdirpath);
 		GDKfree(leftdirpath);
@@ -3685,6 +3682,8 @@ BBPrecover_subdir(void)
 	if (subdirpath == NULL)
 		return GDK_FAIL;
 	dirp = opendir(subdirpath);
+	if (dirp == NULL && errno != ENOENT)
+		GDKsyserror("cannot open directory %s\n", subdirpath);
 	GDKfree(subdirpath);
 	if (dirp == NULL) {
 		return GDK_SUCCEED;	/* nothing to do */
@@ -3763,8 +3762,11 @@ BBPdiskscan(const char *parent, size_t baseoff)
 	size_t dstlen = sizeof(fullname);
 	const char *src = parent;
 
-	if (dirp == NULL)
+	if (dirp == NULL) {
+		if (errno != ENOENT)
+			GDKsyserror("cannot open directory %s\n", parent);
 		return true;	/* nothing to do */
+	}
 
 	while (*src) {
 		*dst++ = *src++;
