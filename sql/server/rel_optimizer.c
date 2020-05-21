@@ -1265,10 +1265,7 @@ exp_rename(mvc *sql, sql_exp *e, sql_rel *f, sql_rel *t)
 		sql->errstr[0] = 0;
 		if (!e && exp_is_atom(ne))
 			return ne;
-		ne = exp_ref(sql, e);
-		if (is_outerjoin(t->op))  /* TODO if e is found on the left side of the left join or the right of the right join the has_no_nil flag can be kept */
-			set_has_nil(ne);
-		return ne;
+		return exp_ref(sql ,e);
 	case e_cmp: 
 		if (e->flag == cmp_or || e->flag == cmp_filter) {
 			list *l = exps_rename(sql, e->l, f, t);
@@ -2440,21 +2437,58 @@ rel_distinct_project2groupby(mvc *sql, sql_rel *rel, int *changes)
 	    (l->op == op_select || l->op == op_semi) && exps_unique(sql, rel, rel->exps)) 
 		set_nodistinct(rel);
 
-	/* rewrite distinct project ( join(p,f) [ p.pk = f.fk] ) [ p.pk ] ->
-	 * 	   project(p)[p.pk]
-	 */
+	/* rewrite distinct project ( join(p,f) [ p.pk = f.fk ] ) [ p.pk ] 
+	 * 	into project( (semi)join(p,f) [ p.pk = f.fk ] ) [ p.pk ] */
 	if (rel->op == op_project && rel->l && !rel->r /* no order by */ && need_distinct(rel) &&
-	    l && l->op == op_join && rel_is_join_on_pkey(l) /* [ pk == fk ] */) {
-		sql_rel *j = l;
-		sql_rel *p = j->l;
-		sql_exp *je = l->exps->h->data, *le = je->l;
+	    l && (is_select(l->op) || l->op == op_join) && rel_is_join_on_pkey(l) /* [ pk == fk ] */) {
+		sql_exp *found = NULL, *pk = NULL;
+		bool all_exps_atoms = true;
 
-		if (exps_find_exp(rel->exps, le)) { /* rel must have the same primary key on the projection list */
-			int pside = (rel_find_exp(p, le) != NULL)?1:0;
+		for (node *m = l->exps->h ; m ; m = m->next) { /* find a primary key join */
+			sql_exp *je = (sql_exp *) m->data;
+			sql_exp *le = je->l, *re = je->r;
+		
+			if (find_prop(le->p, PROP_HASHCOL)) { /* le is the primary key */
+				all_exps_atoms = true;
 
-			p = (pside)?j->l:j->r;
-			rel->l = rel_dup(p);
-			rel_destroy(j);
+				for (node *n = rel->exps->h; n && all_exps_atoms; n = n->next) {
+					sql_exp *e = (sql_exp *) n->data;
+
+					if (exp_match(e, le) || exp_refers(e, le))
+						found = e;
+					else if (e->card > CARD_ATOM)
+						all_exps_atoms = false;
+				}
+				pk = le;
+			}
+			if (!found && find_prop(re->p, PROP_HASHCOL)) { /* re is the primary key */
+				all_exps_atoms = true;
+
+				for (node *n = rel->exps->h; n && all_exps_atoms; n = n->next) {
+					sql_exp *e = (sql_exp *) n->data;
+
+					if (exp_match(e, re) || exp_refers(e, re))
+						found = e;
+					else if (e->card > CARD_ATOM)
+						all_exps_atoms = false;
+				}
+				pk = re;
+			}
+		}
+
+		if (all_exps_atoms && found) { /* rel must have the same primary key on the projection list */
+			/* if the join has no multiple references it can be re-written into a semijoin */
+			if (l->op == op_join && !(rel_is_ref(l)) && list_length(rel->exps) == 1) { /* other expressions may come from the other side */
+				if (rel_find_exp(l->r, pk)) {
+					sql_rel *temp = l->l;
+					l->l = l->r;
+					l->r = temp;
+
+					l->op = op_semi;
+				} else if (rel_find_exp(l->l, pk)) {
+					l->op = op_semi;
+				}
+			}
 			*changes = 1;
 			set_nodistinct(rel);
 			return rel;
@@ -3988,28 +4022,73 @@ rel_merge_rse(mvc *sql, sql_rel *rel, int *changes)
 	return rel;
 }
 
-/* find in the list of expression an expression which uses e */ 
-static sql_exp *
-exps_uses_exp( list *exps, sql_exp *e)
+static sql_exp *list_exps_uses_exp(list *exps, const char *rname, const char *name);
+
+static sql_exp*
+exp_uses_exp(sql_exp *e, const char *rname, const char *name)
 {
-	node *n;
-	const char *rname = exp_relname(e);
-	const char *name = exp_name(e);
+	sql_exp *res = NULL;
+
+	switch (e->type) {
+		case e_psm:
+		case e_atom:
+			break;
+		case e_convert:
+			return exp_uses_exp(e->l, rname, name);
+		case e_column: {
+			if (e->l && rname && strcmp(e->l, rname) == 0 &&
+				e->r && name && strcmp(e->r, name) == 0) 
+				return e;
+			if (!e->l && !rname &&
+				e->r && name && strcmp(e->r, name) == 0) 
+				return e;
+		} break;
+		case e_func:
+		case e_aggr: {
+			if (e->l)
+				return list_exps_uses_exp(e->l, rname, name);
+		} 	break;
+		case e_cmp: {
+			if (e->flag == cmp_in || e->flag == cmp_notin) {
+				if ((res = exp_uses_exp(e->l, rname, name)))
+					return res;
+				return list_exps_uses_exp(e->r, rname, name);
+			} else if (e->flag == cmp_or || e->flag == cmp_filter) {
+				if ((res = list_exps_uses_exp(e->l, rname, name)))
+					return res;
+				return list_exps_uses_exp(e->r, rname, name);
+			} else {
+				if ((res = exp_uses_exp(e->l, rname, name)))
+					return res;
+				if ((res = exp_uses_exp(e->r, rname, name)))
+					return res;
+				if (e->f)
+					return exp_uses_exp(e->f, rname, name);
+			}
+		} break;
+	}
+	return NULL;
+}
+
+static sql_exp *
+list_exps_uses_exp(list *exps, const char *rname, const char *name)
+{
+	sql_exp *res = NULL;
 
 	if (!exps)
 		return NULL;
-
-	for ( n = exps->h; n; n = n->next) {
-		sql_exp *u = n->data;
-
-		if (u->l && rname && strcmp(u->l, rname) == 0 &&
-		    u->r && name && strcmp(u->r, name) == 0) 
-			return u;
-		if (!u->l && !rname &&
-		    u->r && name && strcmp(u->r, name) == 0) 
-			return u;
+	for (node *n = exps->h; n && !res; n = n->next) {
+		sql_exp *e = n->data;
+		res = exp_uses_exp(e, rname, name);
 	}
-	return NULL;
+	return res;
+}
+
+/* find in the list of expression an expression which uses e */ 
+static sql_exp *
+exps_uses_exp(list *exps, sql_exp *e)
+{
+	return list_exps_uses_exp(exps, exp_relname(e), exp_name(e));
 }
 
 /*
@@ -5229,22 +5308,37 @@ rel_remove_empty_join(mvc *sql, sql_rel *rel, int *changes)
 	return rel;
 }
 
-/* const or groupby without group by exps */
-#define SIMPLE_PROJECTION_FOR_JOIN2SEMI(X) \
-	((X)->card < CARD_AGGR && is_project((X)->op) && list_length((X)->exps) == 1)
+static inline bool
+find_simple_projection_for_join2semi(sql_rel *rel)
+{
+	if (is_project(rel->op) && list_length(rel->exps) == 1) {
+		sql_exp *e = rel->exps->h->data;
+
+		if (rel->card < CARD_AGGR) /* const or groupby without group by exps */
+			return true;
+		if (e->card <= CARD_AGGR || find_prop(e->p, PROP_HASHCOL))
+			return true;
+		sql_exp *found = rel_find_exp(rel->l, e); /* grouping column on inner relation */
+		if (found && (found->card <= CARD_AGGR || find_prop(found->p, PROP_HASHCOL)))
+			return true;
+	}
+	return false;
+}
 
 static sql_rel * 
-find_candidate_join2semi(sql_rel *rel, bool *swap) 
+find_candidate_join2semi(sql_rel *rel, bool *swap)
 {
 	/* generalize possibility : we need the visitor 'step' here */
+	if (rel_is_ref(rel)) /* if the join has multiple references, it's dangerous to convert it into a semijoin */
+		return NULL;
 	if (rel->op == op_join && rel->exps) {
 		sql_rel *l = rel->l, *r = rel->r;
 
-		if (SIMPLE_PROJECTION_FOR_JOIN2SEMI(r)) {
+		if (find_simple_projection_for_join2semi(r)) {
 			*swap = false;
 			return rel;
 		}
-		if (SIMPLE_PROJECTION_FOR_JOIN2SEMI(l)) {
+		if (find_simple_projection_for_join2semi(l)) {
 			*swap = true;
 			return rel;
 		}
@@ -5294,7 +5388,7 @@ static sql_rel *
 rel_join2semijoin(mvc *sql, sql_rel *rel, int *changes)
 {
 	(void)sql;
-	if ((is_simple_project(rel->op) || is_groupby(rel->op) || is_select(rel->op)) && rel->l) {
+	if ((is_simple_project(rel->op) || is_groupby(rel->op) || (is_select(rel->op) && !rel_is_ref(rel))) && rel->l) {
 		bool swap = false;
 		sql_rel *l = rel->l;
 		sql_rel *c = find_candidate_join2semi(l, &swap);

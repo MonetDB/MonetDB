@@ -479,7 +479,7 @@ re_create(const char *pat, bool caseignore, uint32_t esc)
 			} else if (*wp == esc) {
 				escaped = true;
 			} else if (*wp == '%') {
-				n->len = (size_t) (wq - r->w);
+				n->len = (size_t) (wq - n->w);
 				while (wp[1] == '%')
 					wp++;
 				if (wp[1]) {
@@ -509,7 +509,7 @@ re_create(const char *pat, bool caseignore, uint32_t esc)
 			} else if ((unsigned char) *p == esc) {
 				escaped = true;
 			} else if (*p == '%') {
-				n->len = (size_t) (q - r->k);
+				n->len = (size_t) (q - n->k);
 				while (p[1] == '%')
 					p++;
 				if (p[1]) {
