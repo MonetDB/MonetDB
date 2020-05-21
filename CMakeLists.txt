@@ -107,8 +107,8 @@ monetdb_macro_variables()
 # Some custom target will need these setting.
 include(monetdb-custom-targets)
 
-# Used for installing testing python module
-execute_process(COMMAND "${Python3_EXECUTABLE}" "-c" "import distutils.sysconfig; print(distutils.sysconfig.get_python_lib(0,0,'${MONETDB_PREFIX}'))"
+# Used for installing testing python module (don't pass a location, else we need to strip this again)
+execute_process(COMMAND "${Python3_EXECUTABLE}" "-c" "import distutils.sysconfig; print(distutils.sysconfig.get_python_lib(0,0,''))"
 		RESULT_VARIABLE PY3_LIBDIR_CODE 
 		OUTPUT_VARIABLE PYTHON3_SITEDIR 
 		OUTPUT_STRIP_TRAILING_WHITESPACE)
