@@ -1598,6 +1598,21 @@ push_select_exp(mvc *sql, sql_rel *rel, sql_exp *e, sql_exp *ls, sql_exp *L, int
 }
 
 static sql_rel *
+push_join_exp(mvc *sql, sql_rel *rel, sql_exp *e, sql_exp *L, sql_exp *R, sql_exp *R2, int f)
+{
+	sql_rel *r;
+	if (/*is_semi(rel->op) ||*/ (is_outerjoin(rel->op) && !is_processed((rel)))) {
+		rel_join_add_exp(sql->sa, rel, e);
+		return rel;
+	}
+	/* push join into the given relation */
+	if ((r = rel_push_join(sql, rel, L, R, R2, e, f)) != NULL)
+		return r;
+	rel_join_add_exp(sql->sa, rel, e);
+	return rel;
+}
+
+static sql_rel *
 rel_filter(mvc *sql, sql_rel *rel, list *l, list *r, char *sname, char *filter_op, int anti, int ff)
 {
 	node *n;
@@ -1678,17 +1693,9 @@ rel_filter(mvc *sql, sql_rel *rel, list *l, list *r, char *sname, char *filter_o
 
 		return push_select_exp(sql, rel, e, l->h->data, L, ff);
 	} else { /* join */
-		sql_rel *r;
-		if (/*is_semi(rel->op) ||*/ (is_outerjoin(rel->op) && !is_processed((rel)))) {
-			rel_join_add_exp(sql->sa, rel, e);
-			return rel;
-		}
-		/* push join into the given relation */
-		if ((r = rel_push_join(sql, rel, L, R, NULL, e, ff)) != NULL)
-			return r;
-		rel_join_add_exp(sql->sa, rel, e);
-		return rel;
+		return push_join_exp(sql, rel, e, L, R, NULL, ff);
 	}
+	return rel;
 }
 
 static sql_rel *
@@ -1714,17 +1721,9 @@ rel_select_push_exp_down(mvc *sql, sql_rel *rel, sql_exp *e, sql_exp *ls, sql_ex
 
 		return push_select_exp(sql, rel, e, ls, L, f);
 	} else { /* join */
-		sql_rel *r;
-		if (/*is_semi(rel->op) ||*/ (is_outerjoin(rel->op) && !is_processed((rel)))) {
-			rel_join_add_exp(sql->sa, rel, e);
-			return rel;
-		}
-		/* push join into the given relation */
-		if ((r = rel_push_join(sql, rel, L, R, rs2, e, f)) != NULL)
-			return r;
-		rel_join_add_exp(sql->sa, rel, e);
-		return rel;
+		return push_join_exp(sql, rel, e, L, R, rs2, f);
 	}
+	return rel;
 }
 
 static sql_rel *
@@ -2169,8 +2168,23 @@ rel_in_exp(sql_query *query, sql_rel *rel, symbol *sc, int f)
 	if (!e || !rel)
 		return NULL;
 
-	if (e->type == e_cmp) /* it's a exp_in or cmp_equal of simple expressions, push down early on if possible */
-		return rel_select_push_exp_down(sql, rel, e, e->l, e->l, e->r, e->r, NULL, f);
+	if (e->type == e_cmp) { /* it's a exp_in or cmp_equal of simple expressions, push down early on if possible */
+		sql_exp *ls = e->l;
+		bool rlist = (e->flag == cmp_in || e->flag == cmp_notin);
+		unsigned int rcard = rlist ? exps_card(e->r) : exp_card(e->r);
+		int r_is_atoms = rlist ? exps_are_atoms(e->r) : exp_is_atom(e->r);
+		int r_has_freevar = rlist ? exps_have_freevar(sql, e->r) : exp_has_freevar(sql, e->r);
+
+		if (rcard <= CARD_ATOM && (r_is_atoms || r_has_freevar || exp_has_freevar(sql, ls))) {
+			if ((exp_card(ls) == rcard) || rel->processed) /* bin compare op */
+				return rel_select(sql->sa, rel, e);
+
+			return push_select_exp(sql, rel, e, ls, ls, f);
+		} else { /* join */
+			sql_exp *rs = rlist ? ((list*)e->r)->h->data : e->r;
+			return push_join_exp(sql, rel, e, ls, rs, NULL, f);
+		}
+	}
 	return rel_select_add_exp(sql->sa, rel, e);
 }
 
