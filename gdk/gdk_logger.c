@@ -1649,6 +1649,8 @@ logger_load(int debug, const char *fn, char filename[FILENAME_MAX], logger *lg)
 		}
 		for( ; log_id <= lg->saved_id; log_id++)
 			(void)logger_cleanup(lg, log_id);  /* ignore error of removing file */
+	} else {
+		lg->id = lg->saved_id+1;
 	}
 	return GDK_SUCCEED;
   error:
@@ -1698,7 +1700,7 @@ logger_new(int debug, const char *fn, const char *logdir, int version, preversio
 		.prefuncp = prefuncp,
 		.postfuncp = postfuncp,
 
-		.id = 1,
+		.id = 0,
 		.saved_id = getBBPlogno(), 		/* get saved log numer from bbp */
 		.saved_tid = (int)getBBPtransid(), 	/* get saved transaction id from bbp */
 	};

@@ -2267,7 +2267,7 @@ SQLtid(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			d = nd;
 		}
 		bit *deleted = (bit*)Tloc(d, 0); 
-		for(BUN p = 0; p < nr; p++) {
+		for(BUN p = sb; p < sb+nr; p++) {
 			if (deleted[p]) {
 				oid id = p;
 				if (BUNappend(del_ids, &id, false) != GDK_SUCCEED) {

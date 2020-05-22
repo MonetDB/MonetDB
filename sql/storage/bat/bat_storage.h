@@ -42,7 +42,6 @@ typedef struct storage {
 /* initialize bat storage call back functions interface */
 extern void bat_storage_init( store_functions *sf );
 
-extern int dup_bat(sql_table *t, sql_delta *obat, sql_delta *bat, int type, int c_isnew);
 extern sql_delta * timestamp_delta( sql_delta *d, int ts);
 extern storage * timestamp_dbat( storage *d, int ts);
 

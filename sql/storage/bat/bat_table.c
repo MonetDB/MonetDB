@@ -27,7 +27,7 @@ _delta_cands(sql_trans *tr, sql_table *t)
 
 		if ((d = store_funcs.bind_del(tr, t, RDONLY)) != NULL) {
 			BAT *del_ids = COLnew(0, TYPE_oid, dcnt, TRANSIENT);
-			/* TODO handle updates on delete */
+
 			if (!d) 
 				return NULL;
 			if (store_funcs.count_del(tr, t, 2) > 0) {
@@ -89,14 +89,21 @@ delta_cands(sql_trans *tr, sql_table *t)
 }
 
 static BAT *
-delta_full_bat_( sql_column *c, sql_delta *bat, int temp)
-{
+full_column(sql_trans *tr, sql_column *c)
+{	
+	/* TODO use bat_storage via callbacks */
+	if (!c->data) {
+		sql_column *oc = tr_find_column(tr->parent, c);
+		c->data = timestamp_delta(oc->data, tr->stime);
+	}
 	/* return full normalized column bat
 	 * 	b := b.copy()
 		b := b.append(i);
 		b := b.replace(u);
 	*/
 	BAT *b, *ui, *uv;
+	int temp = isTemp(c);
+	sql_delta *bat = c->data;
 
 	b = temp_descriptor(bat->cs.bid);
 	if (temp) 
@@ -106,11 +113,13 @@ delta_full_bat_( sql_column *c, sql_delta *bat, int temp)
 		uv = temp_descriptor(bat->cs.uvbid);
 		if (ui && BATcount(ui)) {
 			BAT *r = COLcopy(b, b->ttype, true, TRANSIENT); 
+
 			bat_destroy(b); 
 			b = r;
-			if(b == NULL) {
-				bat_destroy(ui);
-				bat_destroy(uv);
+	    		if (!b || !ui || !uv || BATreplace(b, ui, uv, true) != GDK_SUCCEED) {
+				if (b) BBPunfix(b->batCacheid);
+				if (ui) BBPunfix(ui->batCacheid);
+				if (uv) BBPunfix(uv->batCacheid);
 				return NULL;
 			}
 		}
@@ -119,22 +128,6 @@ delta_full_bat_( sql_column *c, sql_delta *bat, int temp)
 	}
 	(void)c;
 	return b;
-}
-
-static BAT *
-delta_full_bat( sql_column *c, sql_delta *bat, int temp)
-{
-	return delta_full_bat_( c, bat, temp);
-}
-
-static BAT *
-full_column(sql_trans *tr, sql_column *c)
-{
-	if (!c->data) {
-		sql_column *oc = tr_find_column(tr->parent, c);
-		c->data = timestamp_delta(oc->data, tr->stime);
-	}
-	return delta_full_bat(c, c->data, isTemp(c));
 }
 
 static void

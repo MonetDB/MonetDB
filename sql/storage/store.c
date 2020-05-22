@@ -65,7 +65,7 @@ static int timestamp(void) {
 static inline bool
 instore(sqlid id)
 {
-	if (id >= 2000 && id <= 2161)
+	if (id >= 2000 && id <= 2162)
 		return true;
 	return false;
 }
@@ -1506,6 +1506,8 @@ bootstrap_create_column(sql_trans *tr, sql_table *t, char *name, sqlid id, char 
 {
 	sql_column *col = SA_ZNEW(tr->sa, sql_column);
 
+	if (store_oid <= id)
+		store_oid = id+1;
 	TRC_DEBUG(SQL_STORE, "Create column: %s\n", name);
 	base_init(tr->sa, &col->base, id, t->base.flags, name);
 	sql_find_subtype(&col->type, sqltype, digits, 0);
@@ -1686,6 +1688,8 @@ bootstrap_create_table(sql_trans *tr, sql_schema *s, char *name, sqlid id)
 	sht commit_action = istmp?CA_PRESERVE:CA_COMMIT;
 	sql_table *t;
 
+	if (store_oid <= id)
+		store_oid = id+1;
 	t = create_sql_table_with_id(tr->sa, id, name, tt_table, 1, persistence, commit_action, 0);
 	t->bootstrap = 1;
 
@@ -1707,6 +1711,8 @@ bootstrap_create_schema(sql_trans *tr, char *name, sqlid id, sqlid auth_id, int 
 {
 	sql_schema *s = SA_ZNEW(tr->sa, sql_schema);
 
+	if (store_oid <= id)
+		store_oid = id+1;
 	TRC_DEBUG(SQL_STORE, "Create schema: %s %d %d\n", name, auth_id, owner);
 
 	if (strcmp(name, dt_schema) == 0) {
@@ -1748,6 +1754,7 @@ store_load(backend_stack stk) {
 
 	lng lng_store_oid;
 
+	store_oid = 0;
 	store_sa = sa_create();
 	sa = sa_create();
 	if (!sa || !store_sa)
@@ -1758,6 +1765,7 @@ store_load(backend_stack stk) {
 	types_init(store_sa);
 
 	/* we store some spare oids */
+	assert(store_oid < FUNC_OIDS);
 	store_oid = FUNC_OIDS;
 
 	if (!sequences_init())
@@ -2299,6 +2307,8 @@ store_manager(void)
 			//MT_lock_set(&bs_lock);
 			continue;
 		}
+
+		continue;
 
 		MT_thread_setworking("flushing");
 		res = store_apply_deltas();
@@ -3865,7 +3875,7 @@ rollforward_changeset_updates(sql_trans *tr, changeset * fs, changeset * ts, sql
 			list_destroy(fs->dset);
 			fs->dset = NULL;
 		}
-		/*
+		/* already done 
 		if (!apply && ts->dset) {
 			for (n = ts->dset->h; ok == LOG_OK && n; n = n->next) {
 				sql_base *tb = n->data;
@@ -3974,6 +3984,7 @@ rollforward_changeset_deletes(sql_trans *tr, changeset * cs, rfdfunc rf, int mod
 	if (!cs)
 		return ok;
 	if (cs->dset) {
+	/* done allready ?
 		node *n;
 
 		for (n = cs->dset->h; ok == LOG_OK && n; n = n->next) {
@@ -3981,7 +3992,8 @@ rollforward_changeset_deletes(sql_trans *tr, changeset * cs, rfdfunc rf, int mod
 
 			ok = rf(tr, b, mode);
 		}
-		if (apply) {
+	*/
+		if (apply && ATOMIC_GET(&store_nr_active) == 1) {
 			list_destroy(cs->dset);
 			cs->dset = NULL;
 		}
@@ -4148,7 +4160,7 @@ rollforward_drop_idx(sql_trans *tr, sql_idx * i, int mode)
 {
 	int ok = LOG_OK;
 
-	if (isTable(i->t)) {
+	if (isTable(i->t) && idx_has_column(i->type)) {
 		int p = (tr->parent == gtrans && !isTempTable(i->t));
 
 		if (p && mode == R_LOG)

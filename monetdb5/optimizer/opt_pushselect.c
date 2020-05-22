@@ -35,6 +35,16 @@ PushNil(MalBlkPtr mb, InstrPtr p, int pos, int tpe)
 	return p;
 }
 
+static InstrPtr
+ReplaceWithNil(MalBlkPtr mb, InstrPtr p, int pos, int tpe)
+{
+	p = pushNil(mb, p, tpe); /* push at end */
+	getArg(p, pos) = getArg(p, p->argc-1);
+	p->argc--;
+	return p;
+}
+
+
 #define MAX_TABLES 64
 
 typedef struct subselect_t {
@@ -611,12 +621,12 @@ OPTpushselectImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 			}
 			if (q && getModuleId(q) == sqlRef && getFunctionId(q) == deltaRef) {
 				InstrPtr r = copyInstruction(p);
-				InstrPtr t = copyInstruction(p);
+				InstrPtr s = copyInstruction(p);
 				InstrPtr u = copyInstruction(q);
 		
-				if( r == NULL || t== NULL ||u == NULL){
+				if( r == NULL || s == NULL ||u == NULL){
 					freeInstruction(r);
-					freeInstruction(t);
+					freeInstruction(s);
 					freeInstruction(u);
 					GDKfree(vars);
 					GDKfree(nvars);
@@ -631,17 +641,28 @@ OPTpushselectImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 				getArg(r, 1) = getArg(q, 1); /* column */
 				r->typechk = TYPE_UNKNOWN;
 				pushInstruction(mb,r);
-				getArg(t, 0) = newTmpVariable(mb, newBatType(TYPE_oid));
-				setVarCList(mb,getArg(t,0));
-				pushInstruction(mb,t);
+				getArg(s, 0) = newTmpVariable(mb, newBatType(TYPE_oid));
+				setVarCList(mb,getArg(s,0));
+				getArg(s, 1) = getArg(q, 3); /* updates */
+				s = ReplaceWithNil(mb, s, 2, TYPE_bat); /* no candidate list */
+				setArgType(mb, s, 2, newBatType(TYPE_oid));
+				/* make sure to resolve again */
+				s->token = ASSIGNsymbol; 
+				s->typechk = TYPE_UNKNOWN;
+        			s->fcn = NULL;
+        			s->blk = NULL;
+				pushInstruction(mb,s);
 
 				setFunctionId(u, subdeltaRef);
 				getArg(u, 0) = getArg(p,0);
 				getArg(u, 1) = getArg(r,0);
 				getArg(u, 2) = getArg(p,2); /* pre-cands */
 				getArg(u, 3) = getArg(q,2); /* update ids */
-				u = pushArgument(mb, u, getArg(t,0));
+				u = pushArgument(mb, u, getArg(s,0)); /* selected updated values ids */
+				u->token = ASSIGNsymbol; 
 				u->typechk = TYPE_UNKNOWN;
+        			u->fcn = NULL;
+        			u->blk = NULL;
 				pushInstruction(mb,u);	
 				oclean[i] = 1;
 				continue;
