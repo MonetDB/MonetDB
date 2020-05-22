@@ -47,7 +47,8 @@ set_target_properties(mapi
   PROPERTIES
   VERSION ${MAPI_VERSION}
   SOVERSION ${MAPI_VERSION_MAJOR}
-  PUBLIC_HEADER mapi.h mapi_querytype.h)
+  PUBLIC_HEADER mapi.h 
+	PUBLIC_HEADER mapi_querytype.h)
 
 if (NOT WIN32)
   configure_file(monetdb-mapi.pc.in
