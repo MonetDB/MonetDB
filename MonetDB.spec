@@ -984,6 +984,10 @@ fi
 %postun -p /sbin/ldconfig
 
 %changelog
+* Mon May 18 2020 Sjoerd Mullender <sjoerd@acm.org> - 11.37.3-20200518
+- Rebuilt.
+- BZ#6863: thash files not released upon drop table
+
 * Mon May 11 2020 Sjoerd Mullender <sjoerd@acm.org> - 11.37.1-20200511
 - Rebuilt.
 - BZ#6298: unexpectedly slow execution of SELECT length(fieldname)

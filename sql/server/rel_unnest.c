@@ -1242,6 +1242,8 @@ push_up_join(mvc *sql, sql_rel *rel, list *ad)
 				rel->r = rel_dup(jl);
 				rel->exps = sa_list(sql->sa);
 				nj = rel_crossproduct(sql->sa, rel_dup(d), rel_dup(jr), j->op);
+				if (j->single)
+					set_single(nj);
 				rel_destroy(j);
 				j = nj;
 				set_dependent(j);
@@ -1281,6 +1283,8 @@ push_up_join(mvc *sql, sql_rel *rel, list *ad)
 			if (!rd) {
 				rel->r = rel_dup(jl);
 				sql_rel *nj = rel_crossproduct(sql->sa, rel, rel_dup(jr), j->op);
+				if (j->single)
+					set_single(nj);
 				nj->exps = exps_copy(sql, j->exps);
 				rel_destroy(j);
 				j = nj; 
@@ -1294,6 +1298,8 @@ push_up_join(mvc *sql, sql_rel *rel, list *ad)
 			if (!ld) {
 				rel->r = rel_dup(jr);
 				sql_rel *nj = rel_crossproduct(sql->sa, rel_dup(jl), rel, j->op);
+				if (j->single)
+					set_single(nj);
 				nj->exps = exps_copy(sql, j->exps);
 				rel_destroy(j);
 				j = nj; 
@@ -1642,6 +1648,20 @@ exp_reset_card(mvc *sql, sql_rel *rel, sql_exp *e, int depth, int *changes)
 
 	if (!e || !rel || !rel->l)
 		return e;
+	if (is_groupby(rel->op)) {
+		switch(e->type) {
+		case e_aggr:
+		case e_column:
+			e->card = rel->card;
+			break;
+		case e_func:
+		case e_convert:
+		case e_cmp:
+		case e_atom:
+		case e_psm:
+			break;
+		}
+	}
 	if (!is_simple_project(rel->op)) /* only need to fix projections */
 		return e;
 	sql_rel *l;
@@ -1653,11 +1673,13 @@ exp_reset_card(mvc *sql, sql_rel *rel, sql_exp *e, int depth, int *changes)
 		l = rel->l;
 		if (e->card < l->card)
 			e->card = l->card;
+		if (need_distinct(rel)) /* Need distinct, all expressions should have CARD_AGGR at max */
+			e->card = MIN(e->card, CARD_AGGR);
 		break;
 	case e_aggr: /* should have been corrected by rewrites already */
 	case e_cmp:  
 	case e_atom:
-	default:
+	case e_psm:
 		break;
 	}
 	return e;
@@ -1815,6 +1837,51 @@ rewrite_or_exp(mvc *sql, sql_rel *rel, int *changes)
 				}
 			}	
 		}
+	}
+	return rel;
+}
+
+static sql_rel *
+rewrite_split_select_exps(mvc *sql, sql_rel *rel, int *changes)
+{
+	if (is_select(rel->op) && !list_empty(rel->exps)) {
+		int i = 0;
+		bool has_complex_exps = false, has_simple_exps = false, *complex_exps = (bool*) GDKmalloc(list_length(rel->exps) * sizeof(bool));
+
+		if (!complex_exps)
+			return sql_error(sql, 02, SQLSTATE(HY013) MAL_MALLOC_FAIL);
+
+		for (node *n = rel->exps->h ; n ; n = n->next) {
+			sql_exp *e = n->data;
+
+			if (exp_has_rel(e) || exp_has_freevar(sql, e)) {
+				complex_exps[i] = true;
+				has_complex_exps = true;
+			} else {
+				complex_exps[i] = false;
+				has_simple_exps = true;
+			}
+			i++;
+		}
+
+		if (has_complex_exps && has_simple_exps) {
+			sql_rel *nsel = rel_select_copy(sql->sa, rel->l, NULL);
+			rel->l = nsel;
+
+			i = 0;
+			for (node *n = rel->exps->h ; n ; ) {
+				node *nxt = n->next;
+
+				if (!complex_exps[i]) {
+					rel_select_add_exp(sql->sa, nsel, n->data);
+					list_remove_node(rel->exps, n);
+				}
+				n = nxt;
+				i++;
+			}
+			(*changes)++;
+		}
+		GDKfree(complex_exps);
 	}
 	return rel;
 }
@@ -3026,8 +3093,10 @@ rel_unnest(mvc *sql, sql_rel *rel)
 	rel = rel_exp_visitor_bottomup(sql, rel, &rewrite_simplify_exp, &changes);
 	rel = rel_visitor_bottomup(sql, rel, &rewrite_simplify, &changes);
 	rel = rel_visitor_bottomup(sql, rel, &rewrite_or_exp, &changes);
-	if (changes > 0)
-		rel = rel_visitor_bottomup(sql, rel, &rel_remove_empty_select, &changes);
+	/* at rel_select.c explicit cross-products generate empty selects, if these are not used, they can be removed now */
+	rel = rel_visitor_bottomup(sql, rel, &rel_remove_empty_select, &changes);
+	rel = rel_visitor_bottomup(sql, rel, &rewrite_split_select_exps, &changes); /* has to run before rewrite_complex */
+
 	rel = rel_visitor_bottomup(sql, rel, &rewrite_aggregates, &changes);
 	rel = rel_exp_visitor_bottomup(sql, rel, &rewrite_rank, &changes);
 	rel = rel_visitor_bottomup(sql, rel, &rewrite_outer2inner_union, &changes);	
