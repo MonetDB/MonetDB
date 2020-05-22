@@ -6,7 +6,7 @@
 # Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
 #]]
 
-if(PY3INTEGRATION)
+if(HAVE_LIBPY3)
   add_library(pyapi3 MODULE)
 
   target_sources(pyapi3

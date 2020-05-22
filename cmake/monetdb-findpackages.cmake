@@ -28,6 +28,8 @@ else()
 endif()
 if(PY3INTEGRATION)
   set(HAVE_LIBPY3 "${Python3_NumPy_FOUND}")
+else()
+  message(STATUS "Disable Py3integration, because required NumPy is missing")
 endif(PY3INTEGRATION)
 
 if(WIN32)
