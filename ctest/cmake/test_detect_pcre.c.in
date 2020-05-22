@@ -11,9 +11,10 @@
 int
 main(void)
 {
-#ifdef HAVE_LIBXML
-    return 0;
+#ifdef HAVE_LIBPCRE
+    return @DETECT@;
 #else
-    return 1;
+    return @UNDETECT@;
+
 #endif
 }

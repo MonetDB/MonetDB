@@ -138,37 +138,46 @@ stpcpy(char *restrict dst, const char *restrict src)
 #cmakedefine HAVE_STRINGS_H @HAVE_STRINGS_H@
 #cmakedefine HAVE_STRNCASECMP @HAVE_STRNCASECMP@
 #cmakedefine HAVE_FCNTL_H @HAVE_FCNTL_H@
-#cmakedefine HAVE_ICONV @HAVE_ICONV@
 #cmakedefine HAVE_ICONV_H @HAVE_ICONV_H@
 #define ICONV_CONST
-#cmakedefine HAVE_PTHREAD_H @HAVE_PTHREAD_H@
 #cmakedefine HAVE_DLFCN_H @HAVE_DLFCN_H@
 #cmakedefine HAVE_SYS_UN_H @HAVE_SYS_UN_H@
 #cmakedefine HAVE_UNISTD_H @HAVE_UNISTD_H@
-#cmakedefine HAVE_GETOPT_H @HAVE_GETOPT_H@
-#cmakedefine HAVE_GETOPT @HAVE_GETOPT@
 #cmakedefine HAVE_SYS_TIME_H @HAVE_SYS_TIME_H@
 #cmakedefine HAVE_GETTIMEOFDAY @HAVE_SYS_TIME_H@
 #cmakedefine HAVE_FTIME @HAVE_FTIME@
 #cmakedefine HAVE_POPEN @HAVE_POPEN@
 #cmakedefine HAVE_WINSOCK_H @HAVE_WINSOCK_H@
-#cmakedefine HAVE_LIBPCRE @PCRE_FOUND@
+//#cmakedefine HAVE_CTIME_R @HAVE_CTIME_R@
+#cmakedefine GETOPT_LIB @GETOPT_LIB@
+#cmakedefine HAVE_STRERROR_R @HAVE_STRERROR_R@
+
+// Section: monetdb configure defines
+#cmakedefine HAVE_GETOPT_H @HAVE_GETOPT_H@
+#cmakedefine HAVE_GETOPT @HAVE_GETOPT@
+// End Section: monetdb configure defines
+
+// Section: monetdb macro variables
+#cmakedefine HAVE_ICONV @HAVE_ICONV@
+#cmakedefine HAVE_PTHREAD_H @HAVE_PTHREAD_H@
+#cmakedefine HAVE_LIBPCRE @HAVE_LIBPCRE@
 #cmakedefine HAVE_OPENSSL @HAVE_OPENSSL@
 #cmakedefine HAVE_COMMONCRYPTO @HAVE_COMMONCRYPTO@
-#cmakedefine GETOPT_LIB @GETOPT_LIB@
-//#cmakedefine HAVE_CTIME_R @HAVE_CTIME_R@
-#cmakedefine HAVE_STRERROR_R @HAVE_STRERROR_R@
-#cmakedefine HAVE_CURL @CURL_FOUND@
-#cmakedefine HAVE_LIBLZMA @LZMA_FOUND@
-#cmakedefine HAVE_LIBXML @LIBXML2_FOUND@
-#cmakedefine HAVE_LIBBZ2 @BZ2_FOUND@
-#cmakedefine HAVE_LIBZ @ZLIB_FOUND@
-#cmakedefine HAVE_LIBLZ4 @LZ4_FOUND@
-#cmakedefine HAVE_PROJ @PROJ_FOUND@
+#cmakedefine HAVE_LIBBZ2 @HAVE_LIBBZ2@
+#cmakedefine HAVE_CURL @HAVE_CURL@
+#cmakedefine HAVE_LIBLZMA @HAVE_LIBLZMA@
+#cmakedefine HAVE_LIBXML @HAVE_LIBXML@
+#cmakedefine HAVE_LIBZ @HAVE_LIBZ@
+#cmakedefine HAVE_LIBLZ4 @HAVE_LIBLZ4@
+#cmakedefine HAVE_PROJ @HAVE_PROJ@
 #cmakedefine HAVE_SNAPPY @HAVE_SNAPPY@
 #cmakedefine HAVE_UUID @HAVE_UUID@
-#cmakedefine HAVE_UUID_UUID_H @HAVE_UUID_UUID_H@
 #cmakedefine HAVE_VALGRIND @HAVE_VALGRIND@
+#cmakedefine HAVE_NETCDF @HAVE_NETCDF@
+#cmakedefine HAVE_READLINE @HAVE_READLINE@
+// End Section: monetdb macro variables
+
+#cmakedefine HAVE_UUID_UUID_H @HAVE_UUID_UUID_H@
 
 #define HAVE_CBRT 1
 #define HAVE_CTIME_R 1
@@ -184,10 +193,8 @@ stpcpy(char *restrict dst, const char *restrict src)
 #cmakedefine HAVE_LIBPY3 @HAVE_LIBPY3@
 #cmakedefine HAVE_LIBR @HAVE_LIBR@
 #cmakedefine HAVE_FITS @CFITSIO_FOUND@
-#cmakedefine HAVE_NETCDF @HAVE_NETCDF@
 #cmakedefine HAVE_SHP @GDAL_FOUND@
 #cmakedefine HAVE_CUDF @HAVE_CUDF@
-#cmakedefine HAVE_READLINE @HAVE_READLINE@
 
 /* Directory separator */
 #define DIR_SEP '\\'

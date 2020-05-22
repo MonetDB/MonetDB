@@ -11,9 +11,9 @@
 int
 main(void)
 {
-#ifdef HAVE_PROJ
-    return 0;
+#ifdef HAVE_COMMONCRYPTO
+    return @DETECT@;
 #else
-    return 1;
+    return @UNDETECT@;
 #endif
 }

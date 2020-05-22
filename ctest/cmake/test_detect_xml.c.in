@@ -11,9 +11,9 @@
 int
 main(void)
 {
-#ifdef HAVE_CURL
-    return 1;
+#ifdef HAVE_LIBXML
+    return @DETECT@;
 #else
-    return 0;
+    return @UNDETECT@;
 #endif
 }

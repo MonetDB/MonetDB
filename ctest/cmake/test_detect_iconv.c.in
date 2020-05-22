@@ -11,9 +11,10 @@
 int
 main(void)
 {
-#ifdef HAVE_LIBLZ4
-    return 0;
+#ifdef HAVE_ICONV
+    return @DETECT@;
 #else
-    return 1;
+    return @UNDETECT@;
+
 #endif
 }

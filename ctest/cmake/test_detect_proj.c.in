@@ -11,9 +11,10 @@
 int
 main(void)
 {
-#ifdef HAVE_LIBZ
-    return 0;
+#ifdef HAVE_PROJ
+    return @DETECT@;
 #else
-    return 1;
+    return @UNDETECT@;
+
 #endif
 }
