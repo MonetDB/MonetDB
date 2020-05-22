@@ -2243,6 +2243,14 @@ rel_in_exp(sql_query *query, sql_rel *rel, symbol *sc, int f)
 	case SQL_NOT: /* nested NOTs eliminate each other */ \
 		sc->data.sym = sc->data.sym->data.sym; \
 		return NEXT_CALL; \
+	case SQL_COMPARE: { \
+		dnode *cmp_n = sc->data.sym->data.lval->h; \
+		comp_type neg_cmp_type = negate_compare(compare_str2type(cmp_n->next->data.sval)); /* negate the comparator */ \
+		cmp_n->next->data.sval = sa_strdup(sql->sa, compare_func(neg_cmp_type, 0)); \
+		if (cmp_n->next->next->next) /* negating ANY/ALL */ \
+			cmp_n->next->next->next->data.i_val = cmp_n->next->next->next->data.i_val == 0 ? 1 : 0; \
+		return NEXT_CALL; \
+	} \
 	default: \
 		break; \
 	} 

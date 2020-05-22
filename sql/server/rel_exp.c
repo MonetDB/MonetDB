@@ -67,6 +67,42 @@ swap_compare( comp_type t )
 }
 
 comp_type 
+negate_compare( comp_type t )
+{
+	switch(t) {
+	case cmp_equal:
+		return cmp_notequal;
+	case cmp_notequal:
+		return cmp_equal;
+	case cmp_lt:
+		return cmp_gte;
+	case cmp_lte:
+		return cmp_gt;
+	case cmp_gte:
+		return cmp_lt;
+	case cmp_gt:
+		return cmp_lte;
+
+	case cmp_in:
+		return cmp_notin;
+	case cmp_notin:
+		return cmp_in;
+
+	case mark_in:
+		return mark_notin;
+	case mark_notin:
+		return mark_in;
+	case mark_exists:
+		return mark_notexists;
+	case mark_notexists:
+		return mark_exists;
+
+	default:
+		return t;
+	}
+}
+
+comp_type 
 range2lcompare( int r )
 {
 	if (r&1) {

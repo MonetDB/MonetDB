@@ -25,6 +25,7 @@
 
 extern comp_type compare_str2type(const char *compare_op);
 extern comp_type swap_compare( comp_type t );
+extern comp_type negate_compare( comp_type t );
 extern comp_type range2lcompare( int r );
 extern comp_type range2rcompare( int r );
 extern int compare2range( int l, int r );
