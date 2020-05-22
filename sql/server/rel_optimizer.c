@@ -5452,11 +5452,14 @@ find_simple_projection_for_join2semi(sql_rel *rel)
 
 		if (rel->card < CARD_AGGR) /* const or groupby without group by exps */
 			return true;
-		if (e->card <= CARD_AGGR || find_prop(e->p, PROP_HASHCOL))
-			return true;
-		sql_exp *found = rel_find_exp(rel->l, e); /* grouping column on inner relation */
-		if (found && (found->card <= CARD_AGGR || find_prop(found->p, PROP_HASHCOL)))
-			return true;
+		/* a single group by column in the projection list from a group by relation is guaranteed to be unique, but not an aggregate */
+		if (e->type == e_column) {
+			if (is_groupby(rel->op) || find_prop(e->p, PROP_HASHCOL))
+				return true;
+			sql_exp *found = rel_find_exp(rel->l, e); /* grouping column on inner relation */
+			if (found && ((found->type == e_column && found->card <= CARD_AGGR) || find_prop(found->p, PROP_HASHCOL)))
+				return true;
+		}
 	}
 	return false;
 }
@@ -5524,7 +5527,7 @@ static sql_rel *
 rel_join2semijoin(mvc *sql, sql_rel *rel, int *changes)
 {
 	(void)sql;
-	if ((is_simple_project(rel->op) || is_groupby(rel->op) || (is_select(rel->op) && !rel_is_ref(rel))) && rel->l) {
+	if ((is_simple_project(rel->op) || is_groupby(rel->op)) && rel->l) {
 		bool swap = false;
 		sql_rel *l = rel->l;
 		sql_rel *c = find_candidate_join2semi(l, &swap);

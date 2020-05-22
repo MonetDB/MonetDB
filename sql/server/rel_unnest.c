@@ -1652,7 +1652,7 @@ exp_reset_card(mvc *sql, sql_rel *rel, sql_exp *e, int depth, int *changes)
 		switch(e->type) {
 		case e_aggr:
 		case e_column:
-			e->card = CARD_AGGR;
+			e->card = rel->card;
 			break;
 		case e_func:
 		case e_convert:
@@ -1673,6 +1673,8 @@ exp_reset_card(mvc *sql, sql_rel *rel, sql_exp *e, int depth, int *changes)
 		l = rel->l;
 		if (e->card < l->card)
 			e->card = l->card;
+		if (need_distinct(rel)) /* Need distinct, all expressions should have CARD_AGGR at max */
+			e->card = MIN(e->card, CARD_AGGR);
 		break;
 	case e_aggr: /* should have been corrected by rewrites already */
 	case e_cmp:  
