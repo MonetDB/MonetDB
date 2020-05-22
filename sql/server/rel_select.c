@@ -2208,52 +2208,90 @@ rel_in_exp(sql_query *query, sql_rel *rel, symbol *sc, int f)
 	return rel_select_add_exp(sql->sa, rel, e);;
 }
 
-#define SIMPLIFY_NOT(sc, NEXT_CALL) \
-	switch (sc->data.sym->token) { \
-	case SQL_IN: \
-		sc->data.sym->token = SQL_NOT_IN; \
-		return NEXT_CALL; \
-	case SQL_NOT_IN: \
-		sc->data.sym->token = SQL_IN; \
-		return NEXT_CALL; \
-	case SQL_EXISTS: \
-		sc->data.sym->token = SQL_NOT_EXISTS; \
-		return NEXT_CALL; \
-	case SQL_NOT_EXISTS: \
-		sc->data.sym->token = SQL_EXISTS; \
-		return NEXT_CALL; \
-	case SQL_LIKE: \
-		sc->data.sym->token = SQL_NOT_LIKE; \
-		return NEXT_CALL; \
-	case SQL_NOT_LIKE: \
-		sc->data.sym->token = SQL_LIKE; \
-		return NEXT_CALL; \
-	case SQL_BETWEEN: \
-		sc->data.sym->token = SQL_NOT_BETWEEN; \
-		return NEXT_CALL; \
-	case SQL_NOT_BETWEEN: \
-		sc->data.sym->token = SQL_BETWEEN; \
-		return NEXT_CALL; \
-	case SQL_IS_NULL: \
-		sc->data.sym->token = SQL_IS_NOT_NULL; \
-		return NEXT_CALL; \
-	case SQL_IS_NOT_NULL: \
-		sc->data.sym->token = SQL_IS_NULL; \
-		return NEXT_CALL; \
-	case SQL_NOT: /* nested NOTs eliminate each other */ \
-		sc->data.sym = sc->data.sym->data.sym; \
-		return NEXT_CALL; \
-	case SQL_COMPARE: { \
-		dnode *cmp_n = sc->data.sym->data.lval->h; \
-		comp_type neg_cmp_type = negate_compare(compare_str2type(cmp_n->next->data.sval)); /* negate the comparator */ \
-		cmp_n->next->data.sval = sa_strdup(sql->sa, compare_func(neg_cmp_type, 0)); \
-		if (cmp_n->next->next->next) /* negating ANY/ALL */ \
-			cmp_n->next->next->next->data.i_val = cmp_n->next->next->next->data.i_val == 0 ? 1 : 0; \
-		return NEXT_CALL; \
-	} \
-	default: \
-		break; \
+static bool 
+not_symbol_can_be_propagated(mvc *sql, symbol *sc)
+{
+	switch (sc->token) {
+	case SQL_IN:
+	case SQL_NOT_IN:
+	case SQL_EXISTS:
+	case SQL_NOT_EXISTS:
+	case SQL_LIKE:
+	case SQL_NOT_LIKE:
+	case SQL_BETWEEN:
+	case SQL_NOT_BETWEEN:
+	case SQL_IS_NULL:
+	case SQL_IS_NOT_NULL:
+	case SQL_NOT:
+	case SQL_COMPARE:
+		return true;
+	case SQL_AND:
+	case SQL_OR: {
+		symbol *lo = sc->data.lval->h->data.sym;
+		symbol *ro = sc->data.lval->h->next->data.sym;
+		return not_symbol_can_be_propagated(sql, lo) && not_symbol_can_be_propagated(sql, ro);
+	}
+	default:
+		return false;
 	} 
+}
+
+/* Warning, this function assumes the entire bison tree can be negated, so call it after 'not_symbol_can_be_propagated' */
+static void
+negate_symbol_tree(mvc *sql, symbol *sc)
+{
+	switch (sc->token) {
+	case SQL_IN:
+		sc->token = SQL_NOT_IN;
+		break;
+	case SQL_NOT_IN:
+		sc->token = SQL_IN;
+		break;
+	case SQL_EXISTS:
+		sc->token = SQL_NOT_EXISTS;
+		break;
+	case SQL_NOT_EXISTS:
+		sc->token = SQL_EXISTS;
+		break;
+	case SQL_LIKE:
+		sc->token = SQL_NOT_LIKE;
+		break;
+	case SQL_NOT_LIKE:
+		sc->token = SQL_LIKE;
+		break;
+	case SQL_BETWEEN:
+		sc->token = SQL_NOT_BETWEEN;
+		break;
+	case SQL_NOT_BETWEEN:
+		sc->token = SQL_BETWEEN;
+		break;
+	case SQL_IS_NULL:
+		sc->token = SQL_IS_NOT_NULL;
+		break;
+	case SQL_IS_NOT_NULL:
+		sc->token = SQL_IS_NULL;
+		break;
+	case SQL_NOT: /* nested NOTs eliminate each other */
+		memmove(sc, sc->data.sym, sizeof(symbol));
+		break;
+	case SQL_COMPARE: {
+		dnode *cmp_n = sc->data.lval->h;
+		comp_type neg_cmp_type = negate_compare(compare_str2type(cmp_n->next->data.sval)); /* negate the comparator */
+		cmp_n->next->data.sval = sa_strdup(sql->sa, compare_func(neg_cmp_type, 0));
+		if (cmp_n->next->next->next) /* negating ANY/ALL */
+			cmp_n->next->next->next->data.i_val = cmp_n->next->next->next->data.i_val == 0 ? 1 : 0;
+	} break;
+	case SQL_AND:
+	case SQL_OR: {
+		negate_symbol_tree(sql, sc->data.lval->h->data.sym);
+		negate_symbol_tree(sql, sc->data.lval->h->next->data.sym);
+		sc->token = sc->token == SQL_AND ? SQL_OR : SQL_AND;
+		break;
+	}
+	default:
+		break;
+	}
+}
 
 sql_exp *
 rel_logical_value_exp(sql_query *query, sql_rel **rel, symbol *sc, int f, exp_kind ek)
@@ -2511,7 +2549,10 @@ rel_logical_value_exp(sql_query *query, sql_rel **rel, symbol *sc, int f, exp_ki
 		return le;
 	}
 	case SQL_NOT: {
-		SIMPLIFY_NOT(sc, rel_logical_value_exp(query, rel, sc->data.sym, f, ek));
+		if (not_symbol_can_be_propagated(sql, sc->data.sym)) {
+			negate_symbol_tree(sql, sc->data.sym);
+			return rel_logical_value_exp(query, rel, sc->data.sym, f, ek);
+		}
 		sql_exp *le = rel_logical_value_exp(query, rel, sc->data.sym, f, ek);
 
 		if (!le)
@@ -2825,7 +2866,11 @@ rel_logical_exp(sql_query *query, sql_rel *rel, symbol *sc, int f)
 	}
 	case SQL_NOT: {
 		sql_exp *le, *ls;
-		SIMPLIFY_NOT(sc, rel_logical_exp(query, rel, sc->data.sym, f));
+
+		if (not_symbol_can_be_propagated(sql, sc->data.sym)) {
+			negate_symbol_tree(sql, sc->data.sym);
+			return rel_logical_exp(query, rel, sc->data.sym, f);
+		}
 		ls = le = rel_value_exp(query, &rel, sc->data.sym, f|sql_farg, ek);
 
 		if (!le)
