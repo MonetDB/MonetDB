@@ -2208,6 +2208,45 @@ rel_in_exp(sql_query *query, sql_rel *rel, symbol *sc, int f)
 	return rel_select_add_exp(sql->sa, rel, e);;
 }
 
+#define SIMPLIFY_NOT(sc, NEXT_CALL) \
+	switch (sc->data.sym->token) { \
+	case SQL_IN: \
+		sc->data.sym->token = SQL_NOT_IN; \
+		return NEXT_CALL; \
+	case SQL_NOT_IN: \
+		sc->data.sym->token = SQL_IN; \
+		return NEXT_CALL; \
+	case SQL_EXISTS: \
+		sc->data.sym->token = SQL_NOT_EXISTS; \
+		return NEXT_CALL; \
+	case SQL_NOT_EXISTS: \
+		sc->data.sym->token = SQL_EXISTS; \
+		return NEXT_CALL; \
+	case SQL_LIKE: \
+		sc->data.sym->token = SQL_NOT_LIKE; \
+		return NEXT_CALL; \
+	case SQL_NOT_LIKE: \
+		sc->data.sym->token = SQL_LIKE; \
+		return NEXT_CALL; \
+	case SQL_BETWEEN: \
+		sc->data.sym->token = SQL_NOT_BETWEEN; \
+		return NEXT_CALL; \
+	case SQL_NOT_BETWEEN: \
+		sc->data.sym->token = SQL_BETWEEN; \
+		return NEXT_CALL; \
+	case SQL_IS_NULL: \
+		sc->data.sym->token = SQL_IS_NOT_NULL; \
+		return NEXT_CALL; \
+	case SQL_IS_NOT_NULL: \
+		sc->data.sym->token = SQL_IS_NULL; \
+		return NEXT_CALL; \
+	case SQL_NOT: /* nested NOTs eliminate each other */ \
+		sc->data.sym = sc->data.sym->data.sym; \
+		return NEXT_CALL; \
+	default: \
+		break; \
+	} 
+
 sql_exp *
 rel_logical_value_exp(sql_query *query, sql_rel **rel, symbol *sc, int f, exp_kind ek)
 {
@@ -2464,42 +2503,7 @@ rel_logical_value_exp(sql_query *query, sql_rel **rel, symbol *sc, int f, exp_ki
 		return le;
 	}
 	case SQL_NOT: {
-		switch (sc->data.sym->token) {
-		case SQL_IN:
-			sc->data.sym->token = SQL_NOT_IN;
-			return rel_logical_value_exp(query, rel, sc->data.sym, f, ek);
-		case SQL_NOT_IN:
-			sc->data.sym->token = SQL_IN;
-			return rel_logical_value_exp(query, rel, sc->data.sym, f, ek);
-		case SQL_EXISTS:
-			sc->data.sym->token = SQL_NOT_EXISTS;
-			return rel_logical_value_exp(query, rel, sc->data.sym, f, ek);
-		case SQL_NOT_EXISTS:
-			sc->data.sym->token = SQL_EXISTS;
-			return rel_logical_value_exp(query, rel, sc->data.sym, f, ek);
-		case SQL_LIKE:
-			sc->data.sym->token = SQL_NOT_LIKE;
-			return rel_logical_value_exp(query, rel, sc->data.sym, f, ek);
-		case SQL_NOT_LIKE:
-			sc->data.sym->token = SQL_LIKE;
-			return rel_logical_value_exp(query, rel, sc->data.sym, f, ek);
-		case SQL_BETWEEN:
-			sc->data.sym->token = SQL_NOT_BETWEEN;
-			return rel_logical_value_exp(query, rel, sc->data.sym, f, ek);
-		case SQL_NOT_BETWEEN:
-			sc->data.sym->token = SQL_BETWEEN;
-			return rel_logical_value_exp(query, rel, sc->data.sym, f, ek);
-		case SQL_IS_NULL:
-			sc->data.sym->token = SQL_IS_NOT_NULL;
-			return rel_logical_value_exp(query, rel, sc->data.sym, f, ek);
-		case SQL_IS_NOT_NULL:
-			sc->data.sym->token = SQL_IS_NULL;
-			return rel_logical_value_exp(query, rel, sc->data.sym, f, ek);
-		case SQL_NOT: /* nested NOTs eliminate each other */
-			return rel_logical_value_exp(query, rel, sc->data.sym->data.sym, f, ek);
-		default:
-			break;
-		} 
+		SIMPLIFY_NOT(sc, rel_logical_value_exp(query, rel, sc->data.sym, f, ek));
 		sql_exp *le = rel_logical_value_exp(query, rel, sc->data.sym, f, ek);
 
 		if (!le)
@@ -2813,42 +2817,7 @@ rel_logical_exp(sql_query *query, sql_rel *rel, symbol *sc, int f)
 	}
 	case SQL_NOT: {
 		sql_exp *le, *ls;
-		switch (sc->data.sym->token) {
-		case SQL_IN:
-			sc->data.sym->token = SQL_NOT_IN;
-			return rel_logical_exp(query, rel, sc->data.sym, f);
-		case SQL_NOT_IN:
-			sc->data.sym->token = SQL_IN;
-			return rel_logical_exp(query, rel, sc->data.sym, f);
-		case SQL_EXISTS:
-			sc->data.sym->token = SQL_NOT_EXISTS;
-			return rel_logical_exp(query, rel, sc->data.sym, f);
-		case SQL_NOT_EXISTS:
-			sc->data.sym->token = SQL_EXISTS;
-			return rel_logical_exp(query, rel, sc->data.sym, f);
-		case SQL_LIKE:
-			sc->data.sym->token = SQL_NOT_LIKE;
-			return rel_logical_exp(query, rel, sc->data.sym, f);
-		case SQL_NOT_LIKE:
-			sc->data.sym->token = SQL_LIKE;
-			return rel_logical_exp(query, rel, sc->data.sym, f);
-		case SQL_BETWEEN:
-			sc->data.sym->token = SQL_NOT_BETWEEN;
-			return rel_logical_exp(query, rel, sc->data.sym, f);
-		case SQL_NOT_BETWEEN:
-			sc->data.sym->token = SQL_BETWEEN;
-			return rel_logical_exp(query, rel, sc->data.sym, f);
-		case SQL_IS_NULL:
-			sc->data.sym->token = SQL_IS_NOT_NULL;
-			return rel_logical_exp(query, rel, sc->data.sym, f);
-		case SQL_IS_NOT_NULL:
-			sc->data.sym->token = SQL_IS_NULL;
-			return rel_logical_exp(query, rel, sc->data.sym, f);
-		case SQL_NOT: /* nested NOTs eliminate each other */
-			return rel_logical_exp(query, rel, sc->data.sym->data.sym, f);
-		default:
-			break;
-		} 
+		SIMPLIFY_NOT(sc, rel_logical_exp(query, rel, sc->data.sym, f));
 		ls = le = rel_value_exp(query, &rel, sc->data.sym, f|sql_farg, ek);
 
 		if (!le)
