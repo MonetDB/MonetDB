@@ -2079,27 +2079,46 @@ rel_push_topn_and_sample_down(mvc *sql, sql_rel *rel, int *changes)
 		operator_type relation_type = is_topn(rel->op) ? op_topn : op_sample;
 		sql_rel *(*func) (sql_allocator *, sql_rel *, list *) = is_topn(rel->op) ? rel_topn : rel_sample;
 
-		/* nested topN relations without offset */
-		if (r && is_topn(rel->op) && is_topn(r->op) && list_length(rel->exps) == 1 && list_length(r->exps) == 1) {
+		/* nested topN relations */
+		if (r && is_topn(rel->op) && is_topn(r->op) && !rel_is_ref(r)) {
 			sql_exp *topN1 = rel->exps->h->data, *topN2 = r->exps->h->data;
+			sql_exp *offset1 = list_length(rel->exps) > 1 ? rel->exps->h->next->data : NULL;
+			sql_exp *offset2 = list_length(r->exps) > 1 ? r->exps->h->next->data : NULL;
 
-			if (topN1->l && topN2->l) {
-				atom *a1 = (atom *)topN1->l, *a2 = (atom *)topN2->l;
+			if (topN1->l && topN2->l && (!offset1 || offset1->l) && (!offset2 || offset2->l)) { /* no parameters */
+				bool changed = false;
 
-				if (a1->tpe.type->localtype == a2->tpe.type->localtype && !a1->isnull && !a2->isnull) {
-					if (atom_cmp(a1, a2) < 0) {
-						rel->l = r->l;
-						r->l = NULL;
-						rel_destroy(r);
-						(*changes)++;
-						return rel;
-					} else {
-						rel->l = NULL;
-						rel_destroy(rel);
-						rel = r;
-						(*changes)++;
-						return rel;
+				if ((!offset1 || (offset1->type == e_atom && offset1->l)) && (!offset2 || (offset2->type == e_atom && offset2->l))) { /* only atoms */
+					if (!offset1 && offset2) {
+						list_append(rel->exps, exp_copy(sql, offset2));
+						changed = true;
+					} else if (offset1 && offset2) { /* sum offsets */
+						atom *b1 = (atom *)offset1->l, *b2 = (atom *)offset2->l, *c = atom_add(b1, b2);
+						
+						if (!c) /* error, don't apply optimization, WARNING because of this the offset optimization must come before the limit one */
+							return rel;
+						if (atom_cmp(c, b2) < 0) /* overflow */
+							c = atom_int(sql->sa, sql_bind_localtype("lng"), GDK_lng_max);
+						offset1->l = c;
+						changed = true;
 					}
+				}
+
+				if (topN1->type == e_atom && topN1->l && topN2->type == e_atom && topN2->l) { /* only atoms */
+					atom *a1 = (atom *)topN1->l, *a2 = (atom *)topN2->l;
+
+					if (!a2->isnull && (a1->isnull || atom_cmp(a1, a2) >= 0)) { /* topN1 is not set or is larger than topN2 */
+						rel->exps->h->data = exp_copy(sql, topN2);
+						changed = true;
+					}
+				}
+
+				if (changed) {
+					rel->l = r->l;
+					r->l = NULL;
+					rel_destroy(r);
+					(*changes)++;
+					return rel;
 				}
 			}
 		}
@@ -5505,6 +5524,8 @@ find_candidate_join2semi(sql_rel *rel, bool *swap)
 		    (c=find_candidate_join2semi(rel->r, swap)) != NULL) 
 			return c;
 	}
+	if (is_topn(rel->op) || is_sample(rel->op))
+		return find_candidate_join2semi(rel->l, swap);
 	return NULL;
 }
 
@@ -5521,6 +5542,8 @@ subrel_uses_exp_outside_subrel(sql_rel *rel, sql_exp *e, sql_rel *c)
 		    subrel_uses_exp_outside_subrel(rel->r, e, c))
 			return 1;
 	}
+	if (is_topn(rel->op) || is_sample(rel->op))
+		return subrel_uses_exp_outside_subrel(rel->l, e, c);
 	return 0;
 }
 
@@ -5536,6 +5559,8 @@ rel_uses_exp_outside_subrel(sql_rel *rel, sql_exp *e, sql_rel *c)
 		if (rel->l)
 			return subrel_uses_exp_outside_subrel(rel->l, e, c);
 	}
+	if (is_topn(rel->op) || is_sample(rel->op))
+		return subrel_uses_exp_outside_subrel(rel->l, e, c);
 	return 1;
 }
 
