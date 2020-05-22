@@ -687,13 +687,13 @@ rel_op_(mvc *sql, sql_schema *s, char *fname, exp_kind ek)
 }
 
 static sql_exp*
-exp_values_set_supertype(mvc *sql, sql_exp *values)
+exp_values_set_supertype(mvc *sql, sql_exp *values, sql_exp *opt_le)
 {
 	assert(is_values(values));
 	list *vals = exp_get_values(values), *nexps;
-	sql_subtype *tpe = exp_subtype(vals->h->data);
+	sql_subtype *tpe = opt_le?exp_subtype(opt_le):exp_subtype(vals->h->data);
 
-	if (tpe)
+	if (!opt_le && tpe)
 		values->tpe = *tpe;
 
 	for (node *m = vals->h; m; m = m->next) {
@@ -893,7 +893,7 @@ rel_values(sql_query *query, symbol *tableref)
 	}
 	/* loop to check types */
 	for (m = exps->h; m; m = m->next)
-		if (!(m->data = exp_values_set_supertype(sql, (sql_exp*) m->data)))
+		if (!(m->data = exp_values_set_supertype(sql, (sql_exp*) m->data, NULL)))
 			return NULL;
 
 	r = rel_project(sql->sa, NULL, exps);
@@ -2137,7 +2137,7 @@ rel_in_value_exp(sql_query *query, sql_rel **rel, symbol *sc, int f)
 		} else { /* if it's not a tuple, enforce coersion on the type for every element on the list */
 			sql_subtype super;
 			
-			if (!(values = exp_values_set_supertype(sql, values)))
+			if (!(values = exp_values_set_supertype(sql, values, le)))
 				return NULL;
 			if (rel_binop_check_types(sql, rel ? *rel : NULL, le, values, 0) < 0)
 				return NULL;
