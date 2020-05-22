@@ -67,6 +67,42 @@ swap_compare( comp_type t )
 }
 
 comp_type 
+negate_compare( comp_type t )
+{
+	switch(t) {
+	case cmp_equal:
+		return cmp_notequal;
+	case cmp_notequal:
+		return cmp_equal;
+	case cmp_lt:
+		return cmp_gte;
+	case cmp_lte:
+		return cmp_gt;
+	case cmp_gte:
+		return cmp_lt;
+	case cmp_gt:
+		return cmp_lte;
+
+	case cmp_in:
+		return cmp_notin;
+	case cmp_notin:
+		return cmp_in;
+
+	case mark_in:
+		return mark_notin;
+	case mark_notin:
+		return mark_in;
+	case mark_exists:
+		return mark_notexists;
+	case mark_notexists:
+		return mark_exists;
+
+	default:
+		return t;
+	}
+}
+
+comp_type 
 range2lcompare( int r )
 {
 	if (r&1) {
@@ -1489,7 +1525,7 @@ exp_is_eqjoin(sql_exp *e)
 }
 
 static sql_exp *
-rel_find_exp_( sql_rel *rel, sql_exp *e) 
+rel_find_exp_and_corresponding_rel_( sql_rel *rel, sql_exp *e, sql_rel **res) 
 {
 	sql_exp *ne = NULL;
 
@@ -1504,9 +1540,11 @@ rel_find_exp_( sql_rel *rel, sql_exp *e)
 				ne = exps_bind_column(rel->exps, e->r, NULL, 1);
 			}
 		}
+		if (ne && res)
+			*res = rel;
 		return ne;
 	case e_convert:
-		return rel_find_exp_(rel, e->l);
+		return rel_find_exp_and_corresponding_rel_(rel, e->l, res);
 	case e_aggr:
 	case e_func: 
 		if (e->l) {
@@ -1515,7 +1553,7 @@ rel_find_exp_( sql_rel *rel, sql_exp *e)
 	
 			ne = n->data;
 			while (ne != NULL && n != NULL) {
-				ne = rel_find_exp_(rel, n->data);
+				ne = rel_find_exp_and_corresponding_rel_(rel, n->data, res);
 				n = n->next;
 			}
 			return ne;
@@ -1532,7 +1570,7 @@ rel_find_exp_( sql_rel *rel, sql_exp *e)
 	
 			ne = n->data;
 			while (ne != NULL && n != NULL) {
-				ne = rel_find_exp_(rel, n->data);
+				ne = rel_find_exp_and_corresponding_rel_(rel, n->data, res);
 				n = n->next;
 			}
 			return ne;
@@ -1543,9 +1581,9 @@ rel_find_exp_( sql_rel *rel, sql_exp *e)
 }
 
 sql_exp *
-rel_find_exp( sql_rel *rel, sql_exp *e)
+rel_find_exp_and_corresponding_rel(sql_rel *rel, sql_exp *e, sql_rel **res)
 {
-	sql_exp *ne = rel_find_exp_(rel, e);
+	sql_exp *ne = rel_find_exp_and_corresponding_rel_(rel, e, res);
 
 	if (rel && !ne) {
 		switch(rel->op) {
@@ -1553,36 +1591,51 @@ rel_find_exp( sql_rel *rel, sql_exp *e)
 		case op_right:
 		case op_full:
 		case op_join:
-			ne = rel_find_exp(rel->l, e);
+			ne = rel_find_exp_and_corresponding_rel(rel->l, e, res);
 			if (!ne) 
-				ne = rel_find_exp(rel->r, e);
+				ne = rel_find_exp_and_corresponding_rel(rel->r, e, res);
 			break;
 		case op_table:
 			if (rel->exps && e->type == e_column && e->l && exps_bind_column2(rel->exps, e->l, e->r)) 
 				ne = e;
+			if (ne && res)
+				*res = rel;
 			break;
 		case op_union:
 		case op_except:
 		case op_inter:
 		{
 			if (rel->l)
-				ne = rel_find_exp(rel->l, e);
-			else if (rel->exps && e->l)
+				ne = rel_find_exp_and_corresponding_rel(rel->l, e, res);
+			else if (rel->exps && e->l) {
 				ne = exps_bind_column2(rel->exps, e->l, e->r);
-			else if (rel->exps)
+				if (ne && res)
+					*res = rel;
+			} else if (rel->exps) {
 				ne = exps_bind_column(rel->exps, e->r, NULL, 1);
+				if (ne && res)
+					*res = rel;
+			}
 		}
 		break;
 		case op_basetable: 
 			if (rel->exps && e->type == e_column && e->l) 
 				ne = exps_bind_column2(rel->exps, e->l, e->r);
+			if (ne && res)
+				*res = rel;
 			break;
 		default:
 			if (!is_project(rel->op) && rel->l)
-				ne = rel_find_exp(rel->l, e);
+				ne = rel_find_exp_and_corresponding_rel(rel->l, e, res);
 		}
 	}
 	return ne;
+}
+
+sql_exp *
+rel_find_exp( sql_rel *rel, sql_exp *e)
+{
+	return rel_find_exp_and_corresponding_rel(rel, e, NULL);
 }
 
 int

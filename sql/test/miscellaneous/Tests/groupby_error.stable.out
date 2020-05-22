@@ -132,6 +132,32 @@ stdout of test 'groupby_error` in directory 'sql/test/miscellaneous` itself:
 [ 64	]
 [ 75	]
 [ 46	]
+#SELECT 1 FROM tab0 WHERE NOT (NOT NULL IN (1));
+% . # table_name
+% single_value # name
+% tinyint # type
+% 1 # length
+#SELECT NOT (NOT NULL IN (1)) FROM tab0;
+% . # table_name
+% %3 # name
+% boolean # type
+% 5 # length
+[ NULL	]
+[ NULL	]
+[ NULL	]
+#SELECT - col0 + + CAST ( NULL AS INTEGER ) AS col2 FROM tab0 AS cor0 WHERE NOT ( NOT + - CAST ( NULL AS INTEGER ) NOT IN ( col0 / CAST ( col2 AS INTEGER ) - + col1 ) );
+% . # table_name
+% col2 # name
+% bigint # type
+% 1 # length
+#SELECT NOT ( NOT + - CAST ( NULL AS INTEGER ) NOT IN ( col0 / CAST ( col2 AS INTEGER ) - + col1 ) ) FROM tab0 AS cor0;
+% . # table_name
+% %3 # name
+% boolean # type
+% 5 # length
+[ NULL	]
+[ NULL	]
+[ NULL	]
 #PLAN SELECT DISTINCT col0, col1, col2, col0 FROM tab0;
 % .plan # table_name
 % rel # name

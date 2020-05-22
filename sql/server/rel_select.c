@@ -687,13 +687,13 @@ rel_op_(mvc *sql, sql_schema *s, char *fname, exp_kind ek)
 }
 
 static sql_exp*
-exp_values_set_supertype(mvc *sql, sql_exp *values)
+exp_values_set_supertype(mvc *sql, sql_exp *values, sql_exp *opt_le)
 {
 	assert(is_values(values));
 	list *vals = exp_get_values(values), *nexps;
-	sql_subtype *tpe = exp_subtype(vals->h->data);
+	sql_subtype *tpe = opt_le?exp_subtype(opt_le):exp_subtype(vals->h->data);
 
-	if (tpe)
+	if (!opt_le && tpe)
 		values->tpe = *tpe;
 
 	for (node *m = vals->h; m; m = m->next) {
@@ -893,7 +893,7 @@ rel_values(sql_query *query, symbol *tableref)
 	}
 	/* loop to check types */
 	for (m = exps->h; m; m = m->next)
-		if (!(m->data = exp_values_set_supertype(sql, (sql_exp*) m->data)))
+		if (!(m->data = exp_values_set_supertype(sql, (sql_exp*) m->data, NULL)))
 			return NULL;
 
 	r = rel_project(sql->sa, NULL, exps);
@@ -2125,7 +2125,7 @@ rel_in_value_exp(sql_query *query, sql_rel **rel, symbol *sc, int f)
 		} else { /* if it's not a tuple, enforce coersion on the type for every element on the list */
 			sql_subtype super;
 			
-			if (!(values = exp_values_set_supertype(sql, values)))
+			if (!(values = exp_values_set_supertype(sql, values, le)))
 				return NULL;
 			if (rel_binop_check_types(sql, rel ? *rel : NULL, le, values, 0) < 0)
 				return NULL;
@@ -2186,6 +2186,91 @@ rel_in_exp(sql_query *query, sql_rel *rel, symbol *sc, int f)
 		}
 	}
 	return rel_select_add_exp(sql->sa, rel, e);
+}
+
+static bool 
+not_symbol_can_be_propagated(mvc *sql, symbol *sc)
+{
+	switch (sc->token) {
+	case SQL_IN:
+	case SQL_NOT_IN:
+	case SQL_EXISTS:
+	case SQL_NOT_EXISTS:
+	case SQL_LIKE:
+	case SQL_NOT_LIKE:
+	case SQL_BETWEEN:
+	case SQL_NOT_BETWEEN:
+	case SQL_IS_NULL:
+	case SQL_IS_NOT_NULL:
+	case SQL_NOT:
+	case SQL_COMPARE:
+		return true;
+	case SQL_AND:
+	case SQL_OR: {
+		symbol *lo = sc->data.lval->h->data.sym;
+		symbol *ro = sc->data.lval->h->next->data.sym;
+		return not_symbol_can_be_propagated(sql, lo) && not_symbol_can_be_propagated(sql, ro);
+	}
+	default:
+		return false;
+	} 
+}
+
+/* Warning, this function assumes the entire bison tree can be negated, so call it after 'not_symbol_can_be_propagated' */
+static void
+negate_symbol_tree(mvc *sql, symbol *sc)
+{
+	switch (sc->token) {
+	case SQL_IN:
+		sc->token = SQL_NOT_IN;
+		break;
+	case SQL_NOT_IN:
+		sc->token = SQL_IN;
+		break;
+	case SQL_EXISTS:
+		sc->token = SQL_NOT_EXISTS;
+		break;
+	case SQL_NOT_EXISTS:
+		sc->token = SQL_EXISTS;
+		break;
+	case SQL_LIKE:
+		sc->token = SQL_NOT_LIKE;
+		break;
+	case SQL_NOT_LIKE:
+		sc->token = SQL_LIKE;
+		break;
+	case SQL_BETWEEN:
+		sc->token = SQL_NOT_BETWEEN;
+		break;
+	case SQL_NOT_BETWEEN:
+		sc->token = SQL_BETWEEN;
+		break;
+	case SQL_IS_NULL:
+		sc->token = SQL_IS_NOT_NULL;
+		break;
+	case SQL_IS_NOT_NULL:
+		sc->token = SQL_IS_NULL;
+		break;
+	case SQL_NOT: /* nested NOTs eliminate each other */
+		memmove(sc, sc->data.sym, sizeof(symbol));
+		break;
+	case SQL_COMPARE: {
+		dnode *cmp_n = sc->data.lval->h;
+		comp_type neg_cmp_type = negate_compare(compare_str2type(cmp_n->next->data.sval)); /* negate the comparator */
+		cmp_n->next->data.sval = sa_strdup(sql->sa, compare_func(neg_cmp_type, 0));
+		if (cmp_n->next->next->next) /* negating ANY/ALL */
+			cmp_n->next->next->next->data.i_val = cmp_n->next->next->next->data.i_val == 0 ? 1 : 0;
+	} break;
+	case SQL_AND:
+	case SQL_OR: {
+		negate_symbol_tree(sql, sc->data.lval->h->data.sym);
+		negate_symbol_tree(sql, sc->data.lval->h->next->data.sym);
+		sc->token = sc->token == SQL_AND ? SQL_OR : SQL_AND;
+		break;
+	}
+	default:
+		break;
+	}
 }
 
 sql_exp *
@@ -2444,6 +2529,10 @@ rel_logical_value_exp(sql_query *query, sql_rel **rel, symbol *sc, int f, exp_ki
 		return le;
 	}
 	case SQL_NOT: {
+		if (not_symbol_can_be_propagated(sql, sc->data.sym)) {
+			negate_symbol_tree(sql, sc->data.sym);
+			return rel_logical_value_exp(query, rel, sc->data.sym, f, ek);
+		}
 		sql_exp *le = rel_logical_value_exp(query, rel, sc->data.sym, f, ek);
 
 		if (!le)
@@ -2746,18 +2835,11 @@ rel_logical_exp(sql_query *query, sql_rel *rel, symbol *sc, int f)
 		return rel_select_push_exp_down(sql, rel, le, le->l, le->l, le->r, le->r, NULL, f);
 	}
 	case SQL_NOT: {
-		sql_exp *le;
-		switch (sc->data.sym->token) {
-		case SQL_IN:
-			sc->data.sym->token = SQL_NOT_IN;
+		if (not_symbol_can_be_propagated(sql, sc->data.sym)) {
+			negate_symbol_tree(sql, sc->data.sym);
 			return rel_logical_exp(query, rel, sc->data.sym, f);
-		case SQL_NOT_IN:
-			sc->data.sym->token = SQL_IN;
-			return rel_logical_exp(query, rel, sc->data.sym, f);
-		default:
-			break;
-		} 
-		le = rel_value_exp(query, &rel, sc->data.sym, f|sql_farg, ek);
+		}
+		sql_exp *le = rel_value_exp(query, &rel, sc->data.sym, f|sql_farg, ek);
 
 		if (!le)
 			return NULL;

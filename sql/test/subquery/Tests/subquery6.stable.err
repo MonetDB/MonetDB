@@ -20,6 +20,9 @@ ERROR = !GDK reported error: BATsubcross: more than one match
 MAPI  = (monetdb) /var/tmp/mtest-307385/.s.monetdb.36125
 QUERY = MERGE INTO another_t USING (SELECT (SELECT 1 UNION SELECT 2) FROM another_t) sub ON TRUE WHEN MATCHED THEN DELETE WHEN NOT MATCHED THEN INSERT;
 ERROR = !GDK reported error: BATsubcross: more than one match
+MAPI  = (monetdb) /var/tmp/mtest-3499083/.s.monetdb.30277
+QUERY = SELECT i FROM integers i1 WHERE (SELECT CASE WHEN i1.i IS NULL THEN (SELECT FALSE FROM integers i2) ELSE TRUE END);
+ERROR = !GDK reported error: BATsubcross: more than one match
 
 # 11:45:43 >  
 # 11:45:43 >  "Done."

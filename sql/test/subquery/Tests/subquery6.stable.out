@@ -32,6 +32,12 @@ stdout of test 'subquery6` in directory 'sql/test/subquery` itself:
 % single_value # name
 % tinyint # type
 % 1 # length
+#SELECT (SELECT (SELECT SUM(col1)) IN (MAX(col2))) FROM another_t;
+% .%5 # table_name
+% %5 # name
+% boolean # type
+% 5 # length
+[ false	]
 #DROP TABLE tbl_ProductSales;
 #DROP TABLE another_T;
 #DROP TABLE integers;
