@@ -241,4 +241,47 @@ from tab1
   on (true);
  -- 27 rows with 1
 
+select 
+ ref_1.col3 as c0, 
+ ref_1.col4 as c1, 
+ cast(nullif(ref_0.col0,
+ subq_0.c8) as int) as c2 from 
+ tab1 as ref_0
+ right join tbl_productsales as ref_1
+ on (exists (
+ select 
+ ref_1.col1 as c0, 
+ ref_2.col2 as c1, 
+ ref_0.col0 as c2, 
+ ref_2.col0 as c3, 
+ ref_2.col0 as c4, 
+ ref_1.col2 as c5
+ from 
+ tab1 as ref_2
+ where false))
+ inner join (select 
+ ref_4.i as c0, 
+ ref_3.col0 as c1, 
+ ref_4.i as c2, 
+ ref_4.i as c3, 
+ ref_4.i as c4, 
+ ref_4.i as c5, 
+ ref_3.col2 as c6, 
+ ref_4.i as c7, 
+ ref_3.col2 as c8, 
+ ref_4.i as c9
+ from 
+ tab0 as ref_3
+ right join integers as ref_4
+ on (true)
+ where ((((((73 is null) 
+ and (ref_4.i is not null)) 
+ or (true)) 
+ and (ref_4.i is null)) 
+ or (ref_3.col2 is null)) 
+ or (true)) 
+ and (ref_4.i is not null)
+ limit 56) as subq_0
+ on (true) where true limit 85;
+
 ROLLBACK;

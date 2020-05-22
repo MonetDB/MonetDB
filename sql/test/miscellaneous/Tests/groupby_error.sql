@@ -32,6 +32,12 @@ SELECT col0 FROM tab2 WHERE - - col2;
 	-- 75
 	-- 46
 
+SELECT 1 FROM tab0 WHERE NOT (NOT NULL IN (1));
+	--empty
+
+SELECT - col0 + + CAST ( NULL AS INTEGER ) AS col2 FROM tab0 AS cor0 WHERE NOT ( NOT + - CAST ( NULL AS INTEGER ) NOT IN ( col0 / CAST ( col2 AS INTEGER ) - + col1 ) );
+	--empty
+
 PLAN SELECT DISTINCT col0, col1, col2, col0 FROM tab0;
 
 SELECT DISTINCT col0, col1, col2, col0 FROM tab0;
