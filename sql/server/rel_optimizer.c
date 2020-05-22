@@ -5454,11 +5454,27 @@ find_simple_projection_for_join2semi(sql_rel *rel)
 			return true;
 		/* a single group by column in the projection list from a group by relation is guaranteed to be unique, but not an aggregate */
 		if (e->type == e_column) {
+			sql_rel *res = NULL;
+			sql_exp *found = NULL;
+
 			if (is_groupby(rel->op) || find_prop(e->p, PROP_HASHCOL))
 				return true;
-			sql_exp *found = rel_find_exp(rel->l, e); /* grouping column on inner relation */
-			if (found && ((found->type == e_column && found->card <= CARD_AGGR) || find_prop(found->p, PROP_HASHCOL)))
-				return true;
+
+			found = rel_find_exp_and_corresponding_rel(rel->l, e, &res); /* grouping column on inner relation */
+			if (found) {
+				if (find_prop(found->p, PROP_HASHCOL)) /* primary key always unique */
+					return true;
+				if (found->type == e_column && found->card <= CARD_AGGR) {
+					if (!is_groupby(res->op) && list_length(res->exps) != 1)
+						return false;
+					for (node *n = res->exps->h ; n ; n = n->next) { /* must be the single column in the group by expression list */
+						sql_exp *e = n->data;
+						if (e != found && e->type == e_column)
+							return false;
+					}
+					return true;
+				}
+			}
 		}
 	}
 	return false;
