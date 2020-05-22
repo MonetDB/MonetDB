@@ -2109,7 +2109,7 @@ rel_push_topn_and_sample_down(mvc *sql, sql_rel *rel, int *changes)
 
 		/* push topn/sample under projections */
 
-		if (r && is_simple_project(r->op) && !need_distinct(r) && !rel_is_ref(r) && r->l && !r->r) {
+		if (!rel_is_ref(rel) && r && is_simple_project(r->op) && !need_distinct(r) && !rel_is_ref(r) && r->l && !r->r) {
 			sql_rel *x = r, *px = x;
 
 			while (is_simple_project(x->op) && !need_distinct(x) && !rel_is_ref(x) && x->l && !x->r) {
