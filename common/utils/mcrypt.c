@@ -251,7 +251,7 @@ mcrypt_SHA384Sum(const char *string, size_t len)
 }
 #endif
 
-#if defined(HAVE_SHA512_UPDATE)
+#ifdef HAVE_SHA512_UPDATE
 /**
  * Returns a malloced string representing the hex representation of
  * the SHA-512 hash of the given string.
@@ -297,7 +297,7 @@ mcrypt_SHA512Sum(const char *string, size_t len)
 }
 #endif
 
-#if defined(HAVE_RIPEMD160_UPDATE)
+#ifdef HAVE_RIPEMD160_UPDATE
 /**
  * Returns a malloced string representing the hex representation of
  * the RIPEMD-160 hash of the given string.
@@ -343,7 +343,6 @@ mcrypt_BackendSum(const char *string, size_t len)
 #else
 	(void) string;
 	(void) len;
-	fprintf(stderr, "No digest function available.\n");
 	return NULL;
 #endif
 }
