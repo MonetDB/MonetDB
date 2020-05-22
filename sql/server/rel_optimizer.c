@@ -7701,7 +7701,6 @@ rel_simplify_predicates(mvc *sql, sql_rel *rel, sql_exp *e, int depth, int *chan
 					} else if (is_atom(r->type) && r->l) { /* direct literal */
 						atom *a = r->l;
 						int flag = a->data.val.bval;
-						list *args = l->l;
 
 						assert(list_length(args) == 1);
 						l = args->h->data;

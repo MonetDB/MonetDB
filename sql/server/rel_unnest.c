@@ -2966,7 +2966,7 @@ include_tid(sql_rel *r)
 static sql_rel *
 rewrite_outer2inner_union(mvc *sql, sql_rel *rel, int *changes)
 {
-	if (is_outerjoin(rel->op) && !list_empty(rel->exps) && rel_has_freevar(sql,rel)) {
+	if (is_outerjoin(rel->op) && !list_empty(rel->exps) && (rel_has_freevar(sql,rel->l) || rel_has_freevar(sql,rel->r) || exps_have_rel_exp(rel->exps))) {
 		sql_exp *f = exp_atom_bool(sql->sa, 0);
 		int nrcols = rel->nrcols;
 
@@ -2975,37 +2975,57 @@ rewrite_outer2inner_union(mvc *sql, sql_rel *rel, int *changes)
 		nrcols += include_tid(rel->r);
 		rel->nrcols = nrcols;
 		if (is_left(rel->op)) {
-			sql_rel *except = rel_setop(sql->sa, rel_dup(rel->l), rel_project(sql->sa, rel_dup(rel), rel_projections(sql, rel->l, NULL, 1, 1)), op_except);
+			sql_rel *except = rel_setop(sql->sa, 
+					rel_project(sql->sa, rel_dup(rel->l), rel_projections(sql, rel->l, NULL, 1, 1)), 
+					rel_project(sql->sa, rel_dup(rel), rel_projections(sql, rel->l, NULL, 1, 1)), op_except);
 			except->exps = rel_projections(sql, rel->l, NULL, 1, 1);
 			sql_rel *nrel = rel_crossproduct(sql->sa, except, rel_dup(rel->r),  op_left);
 			rel_join_add_exp(sql->sa, nrel, f);
 			rel->op = op_join;
-			nrel = rel_setop(sql->sa, rel, nrel, op_union);
+			nrel = rel_setop(sql->sa, 
+					rel_project(sql->sa, rel,  rel_projections(sql, rel, NULL, 1, 1)),
+					rel_project(sql->sa, nrel, rel_projections(sql, nrel, NULL, 1, 1)),
+					op_union);
 			rel_set_exps(nrel, rel_projections(sql, rel, NULL, 1, 1));
 			return nrel;
 		} else if (is_right(rel->op)) {
-			sql_rel *except = rel_setop(sql->sa, rel_dup(rel->r), rel_project(sql->sa, rel_dup(rel), rel_projections(sql, rel->r, NULL, 1, 1)), op_except);
+			sql_rel *except = rel_setop(sql->sa, 
+					rel_project(sql->sa, rel_dup(rel->r), rel_projections(sql, rel->r, NULL, 1, 1)), 
+					rel_project(sql->sa, rel_dup(rel), rel_projections(sql, rel->r, NULL, 1, 1)), op_except);
 			except->exps = rel_projections(sql, rel->r, NULL, 1, 1);
 			sql_rel *nrel = rel_crossproduct(sql->sa, rel_dup(rel->l), except, op_right);
 			rel_join_add_exp(sql->sa, nrel, f);
 			rel->op = op_join;
-			nrel = rel_setop(sql->sa, rel, nrel, op_union);
+			nrel = rel_setop(sql->sa, 
+					rel_project(sql->sa, rel,  rel_projections(sql, rel, NULL, 1, 1)),
+					rel_project(sql->sa, nrel, rel_projections(sql, nrel, NULL, 1, 1)),
+					op_union);
 			rel_set_exps(nrel, rel_projections(sql, rel, NULL, 1, 1));
 			return nrel;
 		} else if (is_full(rel->op)) {
-			sql_rel *except = rel_setop(sql->sa, rel_dup(rel->l), rel_project(sql->sa, rel_dup(rel), rel_projections(sql, rel->l, NULL, 1, 1)), op_except);
+			sql_rel *except = rel_setop(sql->sa, 
+					rel_project(sql->sa, rel_dup(rel->l), rel_projections(sql, rel->l, NULL, 1, 1)), 
+					rel_project(sql->sa, rel_dup(rel), rel_projections(sql, rel->l, NULL, 1, 1)), op_except);
 			except->exps = rel_projections(sql, rel->l, NULL, 1, 1);
 			sql_rel *lrel = rel_crossproduct(sql->sa, except, rel_dup(rel->r),  op_left);
 			rel_join_add_exp(sql->sa, lrel, f);
 
-			except = rel_setop(sql->sa, rel_dup(rel->r), rel_project(sql->sa, rel_dup(rel), rel_projections(sql, rel->r, NULL, 1, 1)), op_except);
+			except = rel_setop(sql->sa, 
+					rel_project(sql->sa, rel_dup(rel->r), rel_projections(sql, rel->r, NULL, 1, 1)), 
+					rel_project(sql->sa, rel_dup(rel), rel_projections(sql, rel->r, NULL, 1, 1)), op_except);
 			except->exps = rel_projections(sql, rel->r, NULL, 1, 1);
 			sql_rel *rrel = rel_crossproduct(sql->sa, rel_dup(rel->l), except, op_right);
 			rel_join_add_exp(sql->sa, rrel, f);
-			lrel = rel_setop(sql->sa, lrel, rrel, op_union);
+			lrel = rel_setop(sql->sa, 
+					rel_project(sql->sa, lrel,  rel_projections(sql, lrel, NULL, 1, 1)),
+					rel_project(sql->sa, rrel, rel_projections(sql, rrel, NULL, 1, 1)),
+					op_union);
 			rel_set_exps(lrel, rel_projections(sql, rel, NULL, 1, 1));
 			rel->op = op_join;
-			lrel = rel_setop(sql->sa, rel, lrel, op_union);
+			lrel = rel_setop(sql->sa, 
+					rel_project(sql->sa, rel,  rel_projections(sql, rel, NULL, 1, 1)),
+					rel_project(sql->sa, lrel, rel_projections(sql, lrel, NULL, 1, 1)),
+					op_union);
 			rel_set_exps(lrel, rel_projections(sql, rel, NULL, 1, 1));
 			return lrel;
 		}
