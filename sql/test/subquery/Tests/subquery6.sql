@@ -36,6 +36,12 @@ WHERE ctr1.ctr_total_return >
   AND ctr1.ctr_customer_sk = TotalSales;
 	--empty
 
+SELECT i FROM integers i1 WHERE (SELECT CASE WHEN i1.i IS NULL THEN (SELECT FALSE FROM integers i2) ELSE TRUE END);
+	--error, more than one row returned by a subquery used as an expression
+
+SELECT (SELECT (SELECT SUM(col1)) IN (MAX(col2))) FROM another_t;
+	--False
+
 DROP TABLE tbl_ProductSales;
 DROP TABLE another_T;
 DROP TABLE integers;

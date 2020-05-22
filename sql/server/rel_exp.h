@@ -25,6 +25,7 @@
 
 extern comp_type compare_str2type(const char *compare_op);
 extern comp_type swap_compare( comp_type t );
+extern comp_type negate_compare( comp_type t );
 extern comp_type range2lcompare( int r );
 extern comp_type range2rcompare( int r );
 extern int compare2range( int l, int r );
@@ -122,6 +123,7 @@ extern unsigned int exp_card(sql_exp *e);
 extern const char *exp_find_rel_name(sql_exp *e);
 
 extern sql_exp *rel_find_exp( sql_rel *rel, sql_exp *e);
+extern sql_exp *rel_find_exp_and_corresponding_rel(sql_rel *rel, sql_exp *e, sql_rel **res);
 
 extern int exp_cmp( sql_exp *e1, sql_exp *e2);
 extern int exp_equal( sql_exp *e1, sql_exp *e2);

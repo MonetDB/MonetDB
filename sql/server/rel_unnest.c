@@ -1242,6 +1242,8 @@ push_up_join(mvc *sql, sql_rel *rel, list *ad)
 				rel->r = rel_dup(jl);
 				rel->exps = sa_list(sql->sa);
 				nj = rel_crossproduct(sql->sa, rel_dup(d), rel_dup(jr), j->op);
+				if (j->single)
+					set_single(nj);
 				rel_destroy(j);
 				j = nj;
 				set_dependent(j);
@@ -1281,6 +1283,8 @@ push_up_join(mvc *sql, sql_rel *rel, list *ad)
 			if (!rd) {
 				rel->r = rel_dup(jl);
 				sql_rel *nj = rel_crossproduct(sql->sa, rel, rel_dup(jr), j->op);
+				if (j->single)
+					set_single(nj);
 				nj->exps = exps_copy(sql, j->exps);
 				rel_destroy(j);
 				j = nj; 
@@ -1294,6 +1298,8 @@ push_up_join(mvc *sql, sql_rel *rel, list *ad)
 			if (!ld) {
 				rel->r = rel_dup(jr);
 				sql_rel *nj = rel_crossproduct(sql->sa, rel_dup(jl), rel, j->op);
+				if (j->single)
+					set_single(nj);
 				nj->exps = exps_copy(sql, j->exps);
 				rel_destroy(j);
 				j = nj; 
@@ -1646,7 +1652,7 @@ exp_reset_card(mvc *sql, sql_rel *rel, sql_exp *e, int depth, int *changes)
 		switch(e->type) {
 		case e_aggr:
 		case e_column:
-			e->card = CARD_AGGR;
+			e->card = rel->card;
 			break;
 		case e_func:
 		case e_convert:
@@ -1667,6 +1673,8 @@ exp_reset_card(mvc *sql, sql_rel *rel, sql_exp *e, int depth, int *changes)
 		l = rel->l;
 		if (e->card < l->card)
 			e->card = l->card;
+		if (need_distinct(rel)) /* Need distinct, all expressions should have CARD_AGGR at max */
+			e->card = MIN(e->card, CARD_AGGR);
 		break;
 	case e_aggr: /* should have been corrected by rewrites already */
 	case e_cmp:  

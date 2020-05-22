@@ -1293,6 +1293,5 @@ GDKanalytical_str_group_concat(BAT *r, BAT *b, BAT *sep, BAT *s, BAT *e, const c
 	return GDK_SUCCEED;
   allocation_error:
 	GDKfree(single_str);
-	GDKerror("malloc failure\n");
 	return GDK_FAIL;
 }

@@ -403,7 +403,7 @@ MT_create_thread(MT_Id *t, void (*f) (void *), void *arg, enum MT_thr_detach d, 
 
 	w = malloc(sizeof(*w));
 	if (w == NULL) {
-		TRC_ERROR(GDK, "Cannot allocate memory\n");
+		GDKsyserror("Cannot allocate memory\n");
 		return -1;
 	}
 
@@ -761,7 +761,7 @@ MT_create_thread(MT_Id *t, void (*f) (void *), void *arg, enum MT_thr_detach d, 
 	}
 	p = malloc(sizeof(struct posthread));
 	if (p == NULL) {
-		TRC_ERROR(GDK, "Cannot allocate memory\n");
+		GDKsyserror("Cannot allocate memory\n");
 		pthread_attr_destroy(&attr);
 		return -1;
 	}
