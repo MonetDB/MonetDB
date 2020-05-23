@@ -28,7 +28,7 @@ rel_getcount(mvc *sql, sql_rel *rel)
 		sql_table *t = rel->l;
 
 		if (t && isTable(t))
-			return (lng)store_funcs.count_col(sql->session->tr, t->columns.set->h->data, 1);
+			return (lng)store_funcs.count_col(sql->session->tr, t->columns.set->h->data, 0);
 		if (!t && rel->r) /* dict */
 			return (lng)sql_trans_dist_count(sql->session->tr, rel->r);
 		return 0;

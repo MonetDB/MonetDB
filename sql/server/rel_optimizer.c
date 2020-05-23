@@ -8720,7 +8720,7 @@ rel_merge_table_rewrite(mvc *sql, sql_rel *rel, int *changes)
 
 						/* do not include empty partitions */
 						if ((nrel || nt->next) &&
-							pt && isTable(pt) && pt->access == TABLE_READONLY && !store_funcs.count_col(sql->session->tr, pt->columns.set->h->data, 1)){
+							pt && isTable(pt) && pt->access == TABLE_READONLY && !store_funcs.count_col(sql->session->tr, pt->columns.set->h->data, 0)){
 							continue;
 						}
 
