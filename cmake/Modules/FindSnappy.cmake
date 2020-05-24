@@ -9,7 +9,7 @@ find_path(SNAPPY_INCLUDE_DIR NAMES snappy.h)
 find_library(SNAPPY_LIBRARIES NAMES snappy)
 
 include(FindPackageHandleStandardArgs)
-find_package_handle_standard_args(SNAPPY
+find_package_handle_standard_args(Snappy
   DEFAULT_MSG
   SNAPPY_LIBRARIES
   SNAPPY_INCLUDE_DIR)

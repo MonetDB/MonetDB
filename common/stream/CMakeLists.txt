@@ -41,7 +41,7 @@ target_link_libraries(stream
   $<$<BOOL:${CURL_FOUND}>:CURL::libcurl>
   $<$<BOOL:${LIBLZMA_FOUND}>:LibLZMA::LibLZMA>
   $<$<BOOL:${LZ4_FOUND}>:LZ4::LZ4>
-  $<$<BOOL:${SNAPPY_FOUND}>:Snappy::snappy>
+  $<$<BOOL:${SNAPPY_FOUND}>:SNAPPY::SNAPPY>
   $<$<BOOL:${Iconv_FOUND}>:Iconv::Iconv>
   PRIVATE
   matomic

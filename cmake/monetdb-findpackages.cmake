@@ -80,7 +80,7 @@ if(WITH_PROJ)
 endif()
 
 if(WITH_SNAPPY)
-  find_package(Snappy)
+	find_package(Snappy)
 endif()
 
 if(WITH_UUID)
