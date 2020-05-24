@@ -1966,7 +1966,7 @@ _log_bat(logger *lg, BAT *b, log_id id, lng offset, lng cnt, int sliced)
 	if (sliced)
 		offset = 0;
 	if (b->ttype < TYPE_str && !isVIEW(b)) {
-		const void *t = BUNtail(bi, offset);
+		const void *t = BUNtail(bi, (BUN)offset);
 
 		ok = wt(t, lg->output_log, (size_t)nr);
 	} else {
