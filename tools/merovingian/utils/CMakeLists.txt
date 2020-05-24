@@ -25,7 +25,8 @@ target_link_libraries(meroutil
   PRIVATE
   monetdb_config_header
   mutils
-  stream)
+  stream
+  $<$<BOOL:${OPENSSL_FOUND}>:OpenSSL::Crypto>)
 
 install(TARGETS
   meroutil

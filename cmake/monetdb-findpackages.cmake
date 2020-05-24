@@ -53,7 +53,7 @@ if(NOT PCRE_FOUND AND NOT HAVE_POSIX_REGEX)
   message(FATAL_ERROR "PCRE library or GNU regex library not found but required for MonetDB5")
 endif()
 
-if(${CMAKE_SYSTEM_NAME} STREQUAL "Darwin")
+if(${CMAKE_SYSTEM_NAME} STREQUAL "Darwin" AND ${CMAKE_SYSTEM_VERSION} VERSION_LESS "19.0.0")
   find_package(CommonCrypto)
 else()
   find_package(OpenSSL)
