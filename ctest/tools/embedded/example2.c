@@ -80,7 +80,7 @@ main(void)
 					if (col->data[r] == col->null_value) {
 						printf("NULL");
 					} else {
-						printf("%ld", col->data[r]);
+						printf("%" PRId64, col->data[r]);
 					}
 					break;
 				}
