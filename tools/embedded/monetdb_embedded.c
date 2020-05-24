@@ -792,6 +792,7 @@ monetdb_shutdown(void)
 	GENERATE_BASE_HEADERS(tpe, tpename); \
 	static int tpename##_is_null(tpe value) { return value == mname##_nil; }
 
+GENERATE_BASE_FUNCTIONS(int8_t, bool, bit)
 GENERATE_BASE_FUNCTIONS(int8_t, int8_t, bte)
 GENERATE_BASE_FUNCTIONS(int16_t, int16_t, sht)
 GENERATE_BASE_FUNCTIONS(int32_t, int32_t, int)
@@ -887,7 +888,10 @@ monetdb_result_fetch(monetdb_connection conn, monetdb_column** res, monetdb_resu
 	bat_type = b->ttype;
 	sqltpe = &result->monetdb_resultset->cols[column_index].type;
 
-	if (bat_type == TYPE_bit || bat_type == TYPE_bte) {
+	if (bat_type == TYPE_bit) {
+		GENERATE_BAT_INPUT(b, int8_t, bit);
+		column_result->type = monetdb_bool;
+	} else if (bat_type == TYPE_bte) {
 		GENERATE_BAT_INPUT(b, int8_t, bte);
 	} else if (bat_type == TYPE_sht) {
 		GENERATE_BAT_INPUT(b, int16_t, sht);

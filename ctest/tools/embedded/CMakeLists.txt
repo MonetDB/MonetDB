@@ -17,3 +17,15 @@ target_link_libraries(example1
     #sql
     )
 add_test(run_example1 example1)
+
+add_executable(example2 example2.c)
+target_link_libraries(example2
+  PRIVATE
+    monetdb_config_header
+    embedded
+    sqlinclude
+    gdk
+    mapi
+    #sql
+    )
+add_test(run_example2 example2)

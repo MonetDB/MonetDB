@@ -77,7 +77,7 @@ typedef struct {
 } monetdb_data_blob;
 
 typedef enum  {
-	monetdb_int8_t, monetdb_int16_t, monetdb_int32_t, monetdb_int64_t, monetdb_size_t,
+	monetdb_bool, monetdb_int8_t, monetdb_int16_t, monetdb_int32_t, monetdb_int64_t, monetdb_size_t,
 	monetdb_float, monetdb_double,
 	monetdb_str, monetdb_blob,
 	monetdb_date, monetdb_time, monetdb_timestamp
@@ -111,10 +111,12 @@ typedef void* monetdb_connection;
 		int (*is_null)(ctype value);               \
 	} monetdb_column_##typename
 
+DEFAULT_STRUCT_DEFINITION(int8_t, bool);
 DEFAULT_STRUCT_DEFINITION(int8_t, int8_t);
 DEFAULT_STRUCT_DEFINITION(int16_t, int16_t);
 DEFAULT_STRUCT_DEFINITION(int32_t, int32_t);
 DEFAULT_STRUCT_DEFINITION(int64_t, int64_t);
+// HUGE INT ?
 DEFAULT_STRUCT_DEFINITION(size_t, size_t);
 
 DEFAULT_STRUCT_DEFINITION(float, float);
@@ -126,6 +128,7 @@ DEFAULT_STRUCT_DEFINITION(monetdb_data_blob, blob);
 DEFAULT_STRUCT_DEFINITION(monetdb_data_date, date);
 DEFAULT_STRUCT_DEFINITION(monetdb_data_time, time);
 DEFAULT_STRUCT_DEFINITION(monetdb_data_timestamp, timestamp);
+// UUID, INET, XML ?
 
 embedded_export char* monetdb_connect(monetdb_connection *conn);
 embedded_export char* monetdb_disconnect(monetdb_connection conn);
