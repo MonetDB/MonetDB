@@ -123,37 +123,48 @@ stpcpy(char *restrict dst, const char *restrict src)
 
 #endif /* _MSC_VER */
 
-#cmakedefine HAVE_SYS_MMAN_H @HAVE_SYS_MMAN_H@
-#cmakedefine HAVE_MADVISE  @HAVE_MADVISE@
-#cmakedefine HAVE_POSIX_MADVISE @HAVE_POSIX_MADVISE@
-
-#cmakedefine HAVE_LOCKF @HAVE_LOCKF@
-#cmakedefine HAVE_DIRENT_H @HAVE_DIRENT_H@
-#define FLEXIBLE_ARRAY_MEMBER
-#cmakedefine HAVE_SYS_SOCKET_H @HAVE_SYS_SOCKET_H@
-#cmakedefine HAVE_SYS_STAT_H @HAVE_SYS_STAT_H@
-#cmakedefine HAVE_NETDB_H @HAVE_NETDB_H@
-#cmakedefine HAVE_GETADDRINFO @HAVE_GETADDRINFO@
-#cmakedefine HAVE_SYSCONF @HAVE_SYSCONF@
-#cmakedefine HAVE_STRINGS_H @HAVE_STRINGS_H@
-#cmakedefine HAVE_STRNCASECMP @HAVE_STRNCASECMP@
+// Section: monetdb configure defines
+#cmakedefine HAVE_DLFCN_H @HAVE_DLFCN_H@
 #cmakedefine HAVE_FCNTL_H @HAVE_FCNTL_H@
 #cmakedefine HAVE_ICONV_H @HAVE_ICONV_H@
-#define ICONV_CONST
-#cmakedefine HAVE_DLFCN_H @HAVE_DLFCN_H@
+#cmakedefine HAVE_STRINGS_H @HAVE_STRINGS_H@
+#cmakedefine HAVE_SYS_MMAN_H @HAVE_SYS_MMAN_H@
 #cmakedefine HAVE_SYS_UN_H @HAVE_SYS_UN_H@
 #cmakedefine HAVE_UNISTD_H @HAVE_UNISTD_H@
-#cmakedefine HAVE_SYS_TIME_H @HAVE_SYS_TIME_H@
-#cmakedefine HAVE_GETTIMEOFDAY @HAVE_SYS_TIME_H@
-#cmakedefine HAVE_FTIME @HAVE_FTIME@
-#cmakedefine HAVE_POPEN @HAVE_POPEN@
+#cmakedefine HAVE_UUID_UUID_H @HAVE_UUID_UUID_H@
 #cmakedefine HAVE_WINSOCK_H @HAVE_WINSOCK_H@
-//#cmakedefine HAVE_CTIME_R @HAVE_CTIME_R@
-#cmakedefine GETOPT_LIB @GETOPT_LIB@
-#cmakedefine HAVE_STRERROR_R @HAVE_STRERROR_R@
-
-// Section: monetdb configure defines
+#cmakedefine HAVE_SEMAPHORE_H @HAVE_SEMAPHORE_H@
 #cmakedefine HAVE_GETOPT_H @HAVE_GETOPT_H@
+
+#cmakedefine HAVE_DIRENT_H @HAVE_DIRENT_H@
+#cmakedefine HAVE_NETDB_H @HAVE_NETDB_H@
+#cmakedefine HAVE_SYS_SOCKET_H @HAVE_SYS_SOCKET_H@
+#cmakedefine HAVE_SYS_TIME_H @HAVE_SYS_TIME_H@
+#cmakedefine HAVE_SYS_STAT_H @HAVE_SYS_STAT_H@
+#cmakedefine HAVE_FDATASYNC @HAVE_FDATASYNC@
+//#cmakedefine HAVE_CTIME_R @HAVE_CTIME_R@
+#cmakedefine HAVE_FSYNC @HAVE_FSYNC@
+#cmakedefine HAVE_FTIME @HAVE_FTIME@
+#cmakedefine HAVE_GETTIMEOFDAY @HAVE_SYS_TIME_H@
+#cmakedefine HAVE_LOCKF @HAVE_LOCKF@
+#cmakedefine HAVE_STRERROR_R @HAVE_STRERROR_R@
+#cmakedefine HAVE_MADVISE  @HAVE_MADVISE@
+#cmakedefine HAVE_POPEN @HAVE_POPEN@
+#cmakedefine HAVE_POSIX_MADVISE @HAVE_POSIX_MADVISE@
+#cmakedefine HAVE_STRNCASECMP @HAVE_STRNCASECMP@
+#cmakedefine HAVE_SYSCONF @HAVE_SYSCONF@
+
+#cmakedefine GETOPT_LIB @GETOPT_LIB@
+
+#define FLEXIBLE_ARRAY_MEMBER
+#define ICONV_CONST
+#define HAVE_CBRT 1
+#define HAVE_CTIME_R 1
+#define HAVE_GMTIME_R 1
+#define HAVE_LOCALTIME_R 1
+#define ENABLE_MAPI 1
+#define HAVE_MAPI 1
+
 #cmakedefine HAVE_GETOPT @HAVE_GETOPT@
 // End Section: monetdb configure defines
 
@@ -175,19 +186,6 @@ stpcpy(char *restrict dst, const char *restrict src)
 #cmakedefine HAVE_VALGRIND @HAVE_VALGRIND@
 #cmakedefine HAVE_NETCDF @HAVE_NETCDF@
 #cmakedefine HAVE_READLINE @HAVE_READLINE@
-// End Section: monetdb macro variables
-
-#cmakedefine HAVE_UUID_UUID_H @HAVE_UUID_UUID_H@
-
-#define HAVE_CBRT 1
-#define HAVE_CTIME_R 1
-#cmakedefine HAVE_FSYNC @HAVE_FSYNC@
-#define HAVE_GMTIME_R 1
-#define HAVE_LOCALTIME_R 1
-
-#cmakedefine HAVE_FDATASYNC @HAVE_FDATASYNC@
-#define ENABLE_MAPI 1
-#define HAVE_MAPI 1
 
 #cmakedefine HAVE_GEOM @GEOS_FOUND@
 #cmakedefine HAVE_LIBPY3 @HAVE_LIBPY3@
@@ -195,17 +193,46 @@ stpcpy(char *restrict dst, const char *restrict src)
 #cmakedefine HAVE_FITS @CFITSIO_FOUND@
 #cmakedefine HAVE_SHP @GDAL_FOUND@
 #cmakedefine HAVE_CUDF @HAVE_CUDF@
+#cmakedefine RHOME "@RHOME@"
 
-/* Directory separator */
+// #cmakedefine SOCKET_LIBRARIES
+#cmakedefine HAVE_GETADDRINFO @HAVE_GETADDRINFO@
+
 #define DIR_SEP '\\'
-#define DIR_SEP_STR "\\"
 #define PATH_SEP ';'
+#define DIR_SEP_STR "\\"
+#define SO_PREFIX ""
+#cmakedefine SO_EXT "@SO_EXT@"
+
+#cmakedefine BINDIR "@BINDIR@"
+#cmakedefine LIBDIR "@LIBDIR@"
+#cmakedefine DATADIR "@DATADIR@"
+#cmakedefine DATA_DIR "@DATA_DIR@"
+#cmakedefine LOCALSTATEDIR "@QXLOCALSTATEDIR@"
+// #cmakedefine QXLOCALSTATEDIR
+// #cmakedefine MONETDB_PREFIX
+#cmakedefine DATAROOTDIR "@DATAROOTDIR@"
+#cmakedefine BIN_DIR "@BIN_DIR@"
+#cmakedefine INCLUDEDIR "@INCLUDEDIR@"
+#cmakedefine INFODIR "@INFODIR@"
+#cmakedefine LIB_DIR "@LIB_DIR@"
+#cmakedefine LIBEXECDIR "@LIBEXECDIR@"
+#cmakedefine LOCALSTATE_DIR "@LOCALSTATE_DIR@"
+//#cmakedefine MANDIR "@MANDIR@"
+#cmakedefine SYSCONFDIR "@SYSCONFDIR@"
+#cmakedefine LOGDIR "@LOGDIR@"
+#cmakedefine PKGCONFIGDIR "@PKGCONFIGDIR@"
+#cmakedefine RUNDIR "@RUNDIR@"
+
+// End Section: monetdb macro variables
 
 #define VERSION "@MONETDB_VERSION@"
 #define PACKAGE_VERSION "@MONETDB_VERSION@"
 #define PACKAGE_NAME "MonetDB"
 #define PACKAGE_STRING PACKAGE_NAME " " PACKAGE_VERSION
-#cmakedefine HAVE_SEMAPHORE_H @HAVE_SEMAPHORE_H@
+
+/* Host identifier */
+#cmakedefine HOST "@HOST@"
 
 /* The used password hash algorithm */
 #define MONETDB5_PASSWDHASH "@PASSWORD_BACKEND@"
@@ -221,29 +248,6 @@ stpcpy(char *restrict dst, const char *restrict src)
 #cmakedefine HAVE_SHA384_UPDATE @HAVE_SHA384_UPDATE@
 #cmakedefine HAVE_SHA512_UPDATE @HAVE_SHA512_UPDATE@
 
-#cmakedefine BINDIR "@BINDIR@"
-#cmakedefine LIBDIR "@LIBDIR@"
-/* read-only architecture-independent data */
-#cmakedefine DATA_DIR "@DATADIR@"
-#cmakedefine LOCALSTATEDIR "@QXLOCALSTATEDIR@"
-
-#cmakedefine DATADIR "@DATADIR@"
-#cmakedefine DATAROOTDIR "@DATAROOTDIR@"
-#cmakedefine BIN_DIR "@BIN_DIR@"
-#cmakedefine INCLUDEDIR "@INCLUDEDIR@"
-#cmakedefine INFODIR "@INFODIR@"
-#cmakedefine LIB_DIR "@LIB_DIR@"
-#cmakedefine LIBEXECDIR "@LIBEXECDIR@"
-#cmakedefine LOCALSTATE_DIR "@LOCALSTATE_DIR@"
-#cmakedefine MANDIR "@MANDIR@"
-#cmakedefine SYSCONFDIR "@SYSCONFDIR@"
-#cmakedefine LOGDIR "@LOGDIR@"
-#cmakedefine PKGCONFIGDIR "@PKGCONFIGDIR@"
-#cmakedefine RUNDIR "@RUNDIR@"
-
-/* Host identifier */
-#cmakedefine HOST "@HOST@"
-
 #cmakedefine SIZEOF_SIZE_T @SIZEOF_SIZE_T@
 
 /* The size of `void *', as computed by sizeof. */
@@ -257,16 +261,6 @@ stpcpy(char *restrict dst, const char *restrict src)
 
 #cmakedefine LENP_OR_POINTER_T @LENP_OR_POINTER_T@
 #cmakedefine SIZEOF_SQLWCHAR @SIZEOF_SQLWCHAR@
-
-#cmakedefine RHOME "@RHOME@"
-
-/* Shared Object extension */
-#cmakedefine SO_EXT "@SO_EXT@"
-
-/* Shared Object prefix */
-//#cmakedefine SO_PREFIX "@SO_PREFIX@"
-//#define SO_PREFIX "lib"
-#define SO_PREFIX ""
 
 /* Does your compiler support `__attribute__' extension? */
 #if !defined(__GNUC__) && !defined(__clang__) && !defined(__attribute__)
