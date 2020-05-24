@@ -186,6 +186,7 @@
 
 // End Section: monetdb macro variables
 
+// Section: monetdb configure misc
 #define VERSION "@MONETDB_VERSION@"
 #define PACKAGE_VERSION "@MONETDB_VERSION@"
 #define PACKAGE_NAME "MonetDB"
@@ -207,21 +208,6 @@
 #cmakedefine HAVE_SHA384_UPDATE @HAVE_SHA384_UPDATE@
 #cmakedefine HAVE_SHA512_UPDATE @HAVE_SHA512_UPDATE@
 
-#cmakedefine SIZEOF_SIZE_T @SIZEOF_SIZE_T@
-
-/* The size of `void *', as computed by sizeof. */
-#cmakedefine SIZEOF_VOID_P @SIZEOF_VOID_P@
-
-#cmakedefine SIZEOF_CHAR @SIZEOF_CHAR@
-#cmakedefine SIZEOF_SHORT @SIZEOF_SHORT@
-#cmakedefine SIZEOF_INT @SIZEOF_INT@
-#cmakedefine SIZEOF_LONG @SIZEOF_LONG@
-#cmakedefine SIZEOF_WCHAR_T @SIZEOF_WCHAR_T@
-
-#cmakedefine LENP_OR_POINTER_T @LENP_OR_POINTER_T@
-#cmakedefine SIZEOF_SQLWCHAR @SIZEOF_SQLWCHAR@
-
-
 #ifndef _Noreturn
 #cmakedefine _Noreturn @_Noreturn@
 #endif
@@ -236,20 +222,26 @@
 #endif
 #endif
 
+// End Section: monetdb configure misc
+
+// Section: monetdb configure sizes
+#cmakedefine SIZEOF_SIZE_T @SIZEOF_SIZE_T@
+
+/* The size of `void *', as computed by sizeof. */
+#cmakedefine SIZEOF_VOID_P @SIZEOF_VOID_P@
+
+#cmakedefine SIZEOF_CHAR @SIZEOF_CHAR@
+#cmakedefine SIZEOF_SHORT @SIZEOF_SHORT@
+#cmakedefine SIZEOF_INT @SIZEOF_INT@
+#cmakedefine SIZEOF_LONG @SIZEOF_LONG@
+#cmakedefine SIZEOF_WCHAR_T @SIZEOF_WCHAR_T@
+
+#cmakedefine LENP_OR_POINTER_T @LENP_OR_POINTER_T@
+#cmakedefine SIZEOF_SQLWCHAR @SIZEOF_SQLWCHAR@
+
 /* Does your compiler support `ssize_t' type? (Posix type) */
 #ifndef ssize_t
 #cmakedefine ssize_t @ssize_t@
-#endif
-
-#ifndef static_assert
-/* static_assert is a C11 feature, defined in assert.h which also exists
- * in many other compilers we ignore it if the compiler doesn't support it */
-#define static_assert(expr, mesg)	((void) 0)
-#endif
-
-#cmakedefine HAVE_SOCKLEN_T @HAVE_SOCKLEN_T@
-#ifndef SOCKET
-#define SOCKET int
 #endif
 
 /* The size of `__int128', as computed by sizeof. */
@@ -271,6 +263,19 @@ typedef __int128_t hge;
 typedef __uint128_t uhge;
 #define HAVE_HGE 1
 #define SIZEOF_HGE SIZEOF___INT128_T
+#endif
+
+// End Section: monetdb configure sizes
+
+#ifndef static_assert
+/* static_assert is a C11 feature, defined in assert.h which also exists
+ * in many other compilers we ignore it if the compiler doesn't support it */
+#define static_assert(expr, mesg)	((void) 0)
+#endif
+
+#cmakedefine HAVE_SOCKLEN_T @HAVE_SOCKLEN_T@
+#ifndef SOCKET
+#define SOCKET int
 #endif
 
 #ifndef closesocket

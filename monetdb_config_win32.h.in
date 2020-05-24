@@ -226,6 +226,7 @@ stpcpy(char *restrict dst, const char *restrict src)
 
 // End Section: monetdb macro variables
 
+// Section: monetdb configure misc
 #define VERSION "@MONETDB_VERSION@"
 #define PACKAGE_VERSION "@MONETDB_VERSION@"
 #define PACKAGE_NAME "MonetDB"
@@ -248,6 +249,18 @@ stpcpy(char *restrict dst, const char *restrict src)
 #cmakedefine HAVE_SHA384_UPDATE @HAVE_SHA384_UPDATE@
 #cmakedefine HAVE_SHA512_UPDATE @HAVE_SHA512_UPDATE@
 
+#ifndef _Noreturn
+#cmakedefine _Noreturn @_Noreturn@
+#endif
+#ifndef __cplusplus
+/* Does your compiler support `inline' keyword? (C99 feature) */
+#ifndef inline
+#cmakedefine inline @inline@
+#endif
+#endif
+// End Section: monetdb configure misc
+
+// Section: monetdb configure sizes
 #cmakedefine SIZEOF_SIZE_T @SIZEOF_SIZE_T@
 
 /* The size of `void *', as computed by sizeof. */
@@ -258,25 +271,6 @@ stpcpy(char *restrict dst, const char *restrict src)
 #cmakedefine SIZEOF_INT @SIZEOF_INT@
 #cmakedefine SIZEOF_LONG @SIZEOF_LONG@
 #cmakedefine SIZEOF_WCHAR_T @SIZEOF_WCHAR_T@
-
-#cmakedefine LENP_OR_POINTER_T @LENP_OR_POINTER_T@
-#cmakedefine SIZEOF_SQLWCHAR @SIZEOF_SQLWCHAR@
-
-/* Does your compiler support `__attribute__' extension? */
-#if !defined(__GNUC__) && !defined(__clang__) && !defined(__attribute__)
-#define __attribute__(a)
-#endif
-
-#ifndef _Noreturn
-#cmakedefine _Noreturn @_Noreturn@
-#endif
-#ifndef __cplusplus
-/* Does your compiler support `inline' keyword? (C99 feature) */
-#ifndef inline
-#cmakedefine inline @inline@
-#endif
-#endif
-
 /* Does your compiler support `ssize_t' type? (Posix type) */
 //#ifndef ssize_t
 //#cmakedefine ssize_t @ssize_t@
@@ -309,6 +303,16 @@ typedef __uint128_t uhge;
 #  define HAVE_HGE 1
 #  define SIZEOF_HGE SIZEOF___INT128_T
 # endif
+#endif
+
+// End Section: monetdb configure sizes
+
+#cmakedefine LENP_OR_POINTER_T @LENP_OR_POINTER_T@
+#cmakedefine SIZEOF_SQLWCHAR @SIZEOF_SQLWCHAR@
+
+/* Does your compiler support `__attribute__' extension? */
+#if !defined(__GNUC__) && !defined(__clang__) && !defined(__attribute__)
+#define __attribute__(a)
 #endif
 
 #ifndef static_assert

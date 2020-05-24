@@ -44,9 +44,13 @@ include(TestBigEndian REQUIRED)
 if(WIN32)
   set(CMAKE_REQUIRED_LIBRARIES  ws2_32.lib shell32.lib advapi32.lib)
 endif()
+
 # Include MonetDB specific functions
 include(monetdb-functions)
 include(monetdb-findpackages)
+include(monetdb-toolchain)
+monetdb_default_toolchain()
+
 include(monetdb-defines)
 monetdb_hg_revision()
 
@@ -58,65 +62,26 @@ endif()
 
 monetdb_configure_defines()
 
-# On C99, but we have to calculate the size
-check_type_size(size_t SIZEOF_SIZE_T LANGUAGE C)
-set(SIZEOF_VOID_P ${CMAKE_SIZEOF_VOID_P})
 if(HAVE_NETDB_H)
   set(CMAKE_EXTRA_INCLUDE_FILES "netdb.h" "unistd.h")
 endif()
 if(HAVE_WINSOCK_H)
   set(CMAKE_EXTRA_INCLUDE_FILES "winsock.h")
 endif()
-check_type_size(socklen_t HAVE_SOCKLEN_T LANGUAGE C)
-
 set(CMAKE_REQUIRED_INCLUDES "/usr/include")
 
 monetdb_configure_crypto()
-
-check_type_size(ssize_t SIZEOF_SSIZE_T LANGUAGE C)
-if(NOT HAVE_SIZEOF_SSIZE_T)
-  # Set a default value
-  if(CMAKE_SIZEOF_VOID_P EQUAL 8)
-    set(ssize_t "int64_t")
-  else()
-    set(ssize_t "int32_t")
-  endif()
-  set(SIZEOF_SSIZE_T ${CMAKE_SIZEOF_VOID_P})
-endif()
-check_type_size(char SIZEOF_CHAR LANGUAGE C)
-check_type_size(short SIZEOF_SHORT LANGUAGE C)
-check_type_size(int SIZEOF_INT LANGUAGE C)
-check_type_size(long SIZEOF_LONG LANGUAGE C)
-check_type_size(wchar_t SIZEOF_WCHAR_T LANGUAGE C)
-
-if(MSVC)
-  set(_Noreturn "__declspec(noreturn)")
-  # C99 feature not present in MSVC
-  set(restrict "__restrict")
-  # C99 feature only available on C++ compiler in MSVC
-  # https://docs.microsoft.com/en-us/cpp/cpp/inline-functions-cpp?view=vs-2015
-  set(inline "__inline")
-endif()
+monetdb_configure_sizes()
 
 include(GNUInstallDirs)
 
 # Define the macro variables after configuring the install directories.
 # Some variables define additional installation settings.
 monetdb_macro_variables()
+monetdb_configure_misc()
 # Define custom target after the install directories variables.
 # Some custom target will need these setting.
 include(monetdb-custom-targets)
-
-# Used for installing testing python module (don't pass a location, else we need to strip this again)
-execute_process(COMMAND "${Python3_EXECUTABLE}" "-c" "import distutils.sysconfig; print(distutils.sysconfig.get_python_lib(0,0,''))"
-		RESULT_VARIABLE PY3_LIBDIR_CODE 
-		OUTPUT_VARIABLE PYTHON3_SITEDIR 
-		OUTPUT_STRIP_TRAILING_WHITESPACE)
-if (PY3_LIBDIR_CODE) 
-  message(WARNING "Could not determine MonetDB Python3 site-packages instalation directory")
-endif()
-set(PYTHON3_LIBDIR "${PYTHON3_SITEDIR}")
-set(PYTHON "${Python3_EXECUTABLE}")
 
 SET(CMAKE_SKIP_BUILD_RPATH  FALSE)
 SET(CMAKE_BUILD_WITH_INSTALL_RPATH FALSE)
@@ -132,21 +97,6 @@ set(PROGRAM_PERMISSIONS_DEFAULT
   GROUP_EXECUTE
   WORLD_READ
   WORLD_EXECUTE)
-
-# Set host information
-string(TOLOWER "${CMAKE_SYSTEM_PROCESSOR}" CMAKE_SYSTEM_PROCESSOR_LOWER)
-string(TOLOWER "${CMAKE_SYSTEM_NAME}" CMAKE_SYSTEM_NAME_LOWER)
-string(TOLOWER "${CMAKE_C_COMPILER_ID}" CMAKE_C_COMPILER_ID_LOWER)
-set("HOST" "${CMAKE_SYSTEM_PROCESSOR_LOWER}-pc-${CMAKE_SYSTEM_NAME_LOWER}-${CMAKE_C_COMPILER_ID_LOWER}")
-
-# Password hash algorithm
-set(PASSWORD_BACKEND "SHA512"
-  CACHE STRING
-  "Password hash algorithm, one of MD5, SHA1, RIPEMD160, SHA224, SHA256, SHA384, SHA512, defaults to SHA512")
-
-if(NOT ${PASSWORD_BACKEND} MATCHES "^MD5|SHA1|RIPEMD160|SHA224|SHA256|SHA384|SHA512$")
-  message(FATAL_ERROR "PASSWORD_BACKEND invalid, choose one of MD5, SHA1, RIPEMD160, SHA224, SHA256, SHA384, SHA512")
-endif()
 
 find_program(BASH NAMES bash DOC "bash interpreter fullpath")
 

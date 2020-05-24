@@ -154,21 +154,4 @@ if(RINTEGRATION)
   set(RHOME "${LIBR_HOME}")
 endif()
 
-if(INT128)
-  cmake_push_check_state()
-  check_type_size(__int128 SIZEOF___INT128 LANGUAGE C)
-  check_type_size(__int128_t SIZEOF___INT128_T LANGUAGE C)
-  check_type_size(__uint128_t SIZEOF___UINT128_T LANGUAGE C)
-  if(HAVE_SIZEOF___INT128 OR HAVE_SIZEOF___INT128_T OR HAVE_SIZEOF___UINT128_T)
-    set(HAVE_HGE TRUE)
-    message(STATUS "Huge integers are available")
-  else()
-    message(STATUS "128-bit integers not supported by this compiler")
-  endif()
-  cmake_pop_check_state()
-endif()
-
-# Move compiler settings to separate function to cleanup this file
-# This include should move as well
-include(monetdb-toolchain)
-monetdb_default_toolchain()
+# vim: set ts=2:sw=2:et

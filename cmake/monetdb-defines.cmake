@@ -234,3 +234,80 @@ macro(monetdb_configure_crypto)
   endif()
   cmake_pop_check_state()
 endmacro()
+
+macro(monetdb_configure_sizes)
+  # On C99, but we have to calculate the size
+  check_type_size(size_t SIZEOF_SIZE_T LANGUAGE C)
+  set(SIZEOF_VOID_P ${CMAKE_SIZEOF_VOID_P})
+  check_type_size(ssize_t SIZEOF_SSIZE_T LANGUAGE C)
+  if(NOT HAVE_SIZEOF_SSIZE_T)
+    # Set a default value
+    if(CMAKE_SIZEOF_VOID_P EQUAL 8)
+      set(ssize_t "int64_t")
+    else()
+      set(ssize_t "int32_t")
+    endif()
+    set(SIZEOF_SSIZE_T ${CMAKE_SIZEOF_VOID_P})
+  endif()
+  check_type_size(char SIZEOF_CHAR LANGUAGE C)
+  check_type_size(short SIZEOF_SHORT LANGUAGE C)
+  check_type_size(int SIZEOF_INT LANGUAGE C)
+  check_type_size(long SIZEOF_LONG LANGUAGE C)
+  check_type_size(wchar_t SIZEOF_WCHAR_T LANGUAGE C)
+  check_type_size(socklen_t HAVE_SOCKLEN_T LANGUAGE C)
+
+  if(INT128)
+    cmake_push_check_state()
+    check_type_size(__int128 SIZEOF___INT128 LANGUAGE C)
+    check_type_size(__int128_t SIZEOF___INT128_T LANGUAGE C)
+    check_type_size(__uint128_t SIZEOF___UINT128_T LANGUAGE C)
+    if(HAVE_SIZEOF___INT128 OR HAVE_SIZEOF___INT128_T OR HAVE_SIZEOF___UINT128_T)
+      set(HAVE_HGE TRUE)
+      message(STATUS "Huge integers are available")
+    else()
+      message(STATUS "128-bit integers not supported by this compiler")
+    endif()
+    cmake_pop_check_state()
+  endif()
+endmacro()
+
+macro(monetdb_configure_misc)
+  # Set host information
+  string(TOLOWER "${CMAKE_SYSTEM_PROCESSOR}" CMAKE_SYSTEM_PROCESSOR_LOWER)
+  string(TOLOWER "${CMAKE_SYSTEM_NAME}" CMAKE_SYSTEM_NAME_LOWER)
+  string(TOLOWER "${CMAKE_C_COMPILER_ID}" CMAKE_C_COMPILER_ID_LOWER)
+  set("HOST" "${CMAKE_SYSTEM_PROCESSOR_LOWER}-pc-${CMAKE_SYSTEM_NAME_LOWER}-${CMAKE_C_COMPILER_ID_LOWER}")
+
+  # Password hash algorithm
+  set(PASSWORD_BACKEND "SHA512"
+    CACHE STRING
+    "Password hash algorithm, one of MD5, SHA1, RIPEMD160, SHA224, SHA256, SHA384, SHA512, defaults to SHA512")
+
+  if(NOT ${PASSWORD_BACKEND} MATCHES "^MD5|SHA1|RIPEMD160|SHA224|SHA256|SHA384|SHA512$")
+    message(FATAL_ERROR
+      "PASSWORD_BACKEND invalid, choose one of MD5, SHA1, RIPEMD160, SHA224, SHA256, SHA384, SHA512")
+  endif()
+
+  # Used for installing testing python module (don't pass a location, else we need to strip this again)
+  execute_process(COMMAND "${Python3_EXECUTABLE}" "-c" "import distutils.sysconfig; print(distutils.sysconfig.get_python_lib(0,0,''))"
+    RESULT_VARIABLE PY3_LIBDIR_CODE
+    OUTPUT_VARIABLE PYTHON3_SITEDIR
+    OUTPUT_STRIP_TRAILING_WHITESPACE)
+  if (PY3_LIBDIR_CODE)
+    message(WARNING
+      "Could not determine MonetDB Python3 site-packages instalation directory")
+  endif()
+  set(PYTHON3_LIBDIR "${PYTHON3_SITEDIR}")
+  set(PYTHON "${Python3_EXECUTABLE}")
+
+  if(MSVC)
+    set(_Noreturn "__declspec(noreturn)")
+    # C99 feature not present in MSVC
+    set(restrict "__restrict")
+    # C99 feature only available on C++ compiler in MSVC
+    # https://docs.microsoft.com/en-us/cpp/cpp/inline-functions-cpp?view=vs-2015
+    set(inline "__inline")
+  endif()
+endmacro()
+
+# vim: set ts=2:sw=2:et
