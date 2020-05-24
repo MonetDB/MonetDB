@@ -64,7 +64,7 @@ if(WITH_BZ2)
 endif()
 
 if(WITH_CURL)
-  find_package(CURL CONFIG)
+  find_package(CURL)
 endif()
 
 if(WITH_ZLIB)
@@ -80,7 +80,7 @@ if(WITH_PROJ)
 endif()
 
 if(WITH_SNAPPY)
-  find_package(Snappy CONFIG)
+  find_package(Snappy)
 endif()
 
 if(WITH_UUID)
@@ -97,10 +97,6 @@ endif()
 
 if(FITS)
   find_package(CFitsIO)
-endif()
-
-if(CINTEGRATION)
-  set(HAVE_CUDF ON CACHE INTERNAL "C udfs extension is available")
 endif()
 
 if(NETCDF)
@@ -150,8 +146,6 @@ endif(ODBC)
 
 if(RINTEGRATION)
   find_package(LibR)
-  set(HAVE_LIBR "${LIBR_FOUND}")
-  set(RHOME "${LIBR_HOME}")
 endif()
 
 # vim: set ts=2:sw=2:et

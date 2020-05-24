@@ -8,7 +8,7 @@
 
 if(CINTEGRATION)
   # TODO add code too regenerate the cheader.text.h file
-	add_library(capi MODULE)
+  add_library(capi MODULE)
 	
   target_sources(capi
     PRIVATE
@@ -48,4 +48,5 @@ if(CINTEGRATION)
     DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/monetdb
     INCLUDES DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
 endif()
+
 # vim: set ts=2:sw=2:et

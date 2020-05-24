@@ -69,8 +69,6 @@ cmake_dependent_option(SHP
   GEOM
   ON)
 
-set(ENABLE_MAPI "YES" CACHE STRING "Enable MAPI (default=YES)") # Check with HAVE_MAPI
-
 option(SANITIZER 
   "Enable support for the GCC address sanitizer (default=OFF)"
   OFF)

@@ -6,6 +6,10 @@
 # Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
 #]]
 
+if(${CMAKE_SYSTEM_NAME} STREQUAL "Linux")
+  get_os_release_info(LINUX_DISTRO LINUX_DISTRO_VERSION)
+endif()
+
 if (${LINUX_DISTRO} STREQUAL "debian")
   if(${LINUX_DISTRO_VERSION} STREQUAL "9")
     set(DETECT "1")
@@ -46,15 +50,15 @@ else()
   message(ERROR "Linux distro version: ${LINUX_DISTRO_VERSION} not known")
 endif()
 
-configure_file(test_detect_curl.c.in
-  ${CMAKE_CURRENT_BINARY_DIR}/test_detect_curl.c
+configure_file(test_detect_libr.c.in
+  ${CMAKE_CURRENT_BINARY_DIR}/test_detect_libr.c
   @ONLY)
 
-add_executable(test_detect_curl)
-target_sources(test_detect_curl
+add_executable(test_detect_libr)
+target_sources(test_detect_libr
   PRIVATE
-  ${CMAKE_CURRENT_BINARY_DIR}/test_detect_curl.c)
-target_link_libraries(test_detect_curl
+  ${CMAKE_CURRENT_BINARY_DIR}/test_detect_libr.c)
+target_link_libraries(test_detect_libr
   PRIVATE
   monetdb_config_header)
-add_test(testDetectCurl test_detect_curl)
+add_test(testDetectLibr test_detect_libr)

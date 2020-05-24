@@ -182,21 +182,21 @@ stpcpy(char *restrict dst, const char *restrict src)
 #cmakedefine HAVE_LIBLZ4 @HAVE_LIBLZ4@
 #cmakedefine HAVE_PROJ @HAVE_PROJ@
 #cmakedefine HAVE_SNAPPY @HAVE_SNAPPY@
+#cmakedefine HAVE_FITS @HAVE_FITS@
 #cmakedefine HAVE_UUID @HAVE_UUID@
 #cmakedefine HAVE_VALGRIND @HAVE_VALGRIND@
 #cmakedefine HAVE_NETCDF @HAVE_NETCDF@
 #cmakedefine HAVE_READLINE @HAVE_READLINE@
+#cmakedefine HAVE_LIBR @HAVE_LIBR@
+#cmakedefine RHOME "@RHOME@"
 
 #cmakedefine HAVE_GEOM @GEOS_FOUND@
 #cmakedefine HAVE_LIBPY3 @HAVE_LIBPY3@
-#cmakedefine HAVE_LIBR @HAVE_LIBR@
-#cmakedefine HAVE_FITS @CFITSIO_FOUND@
 #cmakedefine HAVE_SHP @GDAL_FOUND@
-#cmakedefine HAVE_CUDF @HAVE_CUDF@
-#cmakedefine RHOME "@RHOME@"
 
 // #cmakedefine SOCKET_LIBRARIES
 #cmakedefine HAVE_GETADDRINFO @HAVE_GETADDRINFO@
+#cmakedefine HAVE_CUDF @HAVE_CUDF@
 
 #define DIR_SEP '\\'
 #define PATH_SEP ';'

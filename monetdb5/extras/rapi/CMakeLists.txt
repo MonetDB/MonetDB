@@ -6,7 +6,7 @@
 # Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
 #]]
 
-if(HAVE_LIBR)
+if(LIBR_FOUND)
   add_library(rapi MODULE)
 
   target_sources(rapi
@@ -45,10 +45,12 @@ if(HAVE_LIBR)
   install(TARGETS 
     rapi 
     DESTINATION 
-    ${CMAKE_INSTALL_LIBDIR}/monetdb5)
+    ${CMAKE_INSTALL_LIBDIR}/monetdb5
+    COMPONENT rapi)
 
   install(FILES 
     rapi.R 
     DESTINATION 
-    ${CMAKE_INSTALL_LIBDIR}/monetdb5)
+    ${CMAKE_INSTALL_LIBDIR}/monetdb5
+    COMPONENT rapi)
 endif()
