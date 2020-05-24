@@ -1625,6 +1625,7 @@ tr_update_cs( sql_trans *tr, column_storage *ocs, column_storage *ccs)
 	int ok = LOG_OK;
 	BAT *cur = NULL;
 
+	(void)tr;
 	assert(ATOMIC_GET(&store_nr_active)==1);
 	assert (ocs->bid != 0 || tr != gtrans);
 

@@ -2308,8 +2308,6 @@ store_manager(void)
 			continue;
 		}
 
-		continue;
-
 		MT_thread_setworking("flushing");
 		res = store_apply_deltas();
 

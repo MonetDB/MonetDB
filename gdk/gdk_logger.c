@@ -1970,8 +1970,8 @@ _log_bat(logger *lg, BAT *b, log_id id, lng offset, lng cnt, int sliced)
 
 		ok = wt(t, lg->output_log, (size_t)nr);
 	} else {
-		BUN end = offset+nr;
-		for (p = offset; p < end && ok == GDK_SUCCEED; p++) {
+		BUN end = (BUN)(offset+nr);
+		for (p = (BUN)offset; p < end && ok == GDK_SUCCEED; p++) {
 			const void *t = BUNtail(bi, p);
 
 			ok = wt(t, lg->output_log, 1);
