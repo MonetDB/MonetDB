@@ -1644,6 +1644,7 @@ tr_update_cs( sql_trans *tr, column_storage *ocs, column_storage *ccs)
 #endif
 
 	int cleared = ccs->cleared;
+	(void)cleared;
 	if (ccs->cleared) {
 		ccs->cleared = 0;
 		assert(ccs->bid != ocs->bid);
