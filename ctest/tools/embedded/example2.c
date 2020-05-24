@@ -25,11 +25,17 @@ main(void)
 		error(err)
 	if ((err = monetdb_connect(&conn)) != NULL)
 		error(err)
-	if ((err = monetdb_query(conn, "CREATE TABLE test (b bool, t tinyint, s smallint, x integer, l bigint, f float, d double, y string)", NULL, NULL, NULL)) != NULL)
+	if ((err = monetdb_query(conn, "CREATE TABLE test (b bool, t tinyint, s smallint, x integer, l bigint, "
+#if HAVE_HGE
+		"h hugeint, "
+#else
+		"h bigint, "
+#endif
+		"f float, d double, y string)", NULL, NULL, NULL)) != NULL)
 		error(err)
-	if ((err = monetdb_query(conn, "INSERT INTO test VALUES (TRUE, 42, 42, 42, 42, 42.42, 42.42, 'Hello'), (NULL, NULL, NULL, NULL, NULL, NULL, NULL, 'World')", NULL, NULL, NULL)) != NULL)
+	if ((err = monetdb_query(conn, "INSERT INTO test VALUES (TRUE, 42, 42, 42, 42, 42, 42.42, 42.42, 'Hello'), (NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 'World')", NULL, NULL, NULL)) != NULL)
 		error(err)
-	if ((err = monetdb_query(conn, "SELECT b, t, s, x, l, f, d, y FROM test; ", &result, NULL, NULL)) != NULL)
+	if ((err = monetdb_query(conn, "SELECT b, t, s, x, l, h, f, d, y FROM test; ", &result, NULL, NULL)) != NULL)
 		error(err)
 
 	fprintf(stdout, "Query result with %zu cols and %"PRId64" rows\n", result->ncols, result->nrows);
@@ -84,6 +90,17 @@ main(void)
 					}
 					break;
 				}
+#if HAVE_HGE
+				case monetdb_int128_t: {
+					monetdb_column_int128_t * col = (monetdb_column_int128_t *) rcol;
+					if (col->data[r] == col->null_value) {
+						printf("NULL");
+					} else {
+						printf("%" PRId64 "%" PRId64, (int64_t)(col->data[r]>>64), (int64_t)(col->data[r]));
+					}
+					break;
+				}
+#endif
 				case monetdb_float: {
 					monetdb_column_float * col = (monetdb_column_float *) rcol;
 					if (col->data[r] == col->null_value) {

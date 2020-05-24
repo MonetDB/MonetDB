@@ -792,11 +792,18 @@ monetdb_shutdown(void)
 	GENERATE_BASE_HEADERS(tpe, tpename); \
 	static int tpename##_is_null(tpe value) { return value == mname##_nil; }
 
+#ifdef bool
+#undef bool
+#endif
+
 GENERATE_BASE_FUNCTIONS(int8_t, bool, bit)
 GENERATE_BASE_FUNCTIONS(int8_t, int8_t, bte)
 GENERATE_BASE_FUNCTIONS(int16_t, int16_t, sht)
 GENERATE_BASE_FUNCTIONS(int32_t, int32_t, int)
 GENERATE_BASE_FUNCTIONS(int64_t, int64_t, lng)
+#if HAVE_HGE
+GENERATE_BASE_FUNCTIONS(__int128, int128_t, hge)
+#endif
 GENERATE_BASE_FUNCTIONS(size_t, size_t, oid)
 
 GENERATE_BASE_FUNCTIONS(float, float, flt)
@@ -809,32 +816,32 @@ GENERATE_BASE_HEADERS(monetdb_data_date, date);
 GENERATE_BASE_HEADERS(monetdb_data_time, time);
 GENERATE_BASE_HEADERS(monetdb_data_timestamp, timestamp);
 
-#define GENERATE_BAT_INPUT_BASE(tpe)                                           \
+#define GENERATE_BAT_INPUT_BASE(tpe)                                               \
 	monetdb_column_##tpe *bat_data = GDKzalloc(sizeof(monetdb_column_##tpe));  \
 	if (!bat_data) {                                                           \
 		msg = createException(MAL, "embedded.monetdb_result_fetch", MAL_MALLOC_FAIL); \
-		goto cleanup;                                                          \
+		goto cleanup;                                                      \
 	}                                                                          \
 	bat_data->type = monetdb_##tpe;                                            \
 	bat_data->is_null = tpe##_is_null;                                         \
 	bat_data->scale = pow(10, sqltpe->scale);                                  \
 	column_result = (monetdb_column*) bat_data;
 
-#define GENERATE_BAT_INPUT(b, tpe, mtype)                                      \
+#define GENERATE_BAT_INPUT(b, tpe, tpe_name, mtype)                                \
 	{                                                                          \
-		GENERATE_BAT_INPUT_BASE(tpe);                                          \
-		bat_data->count = BATcount(b);                                         \
-		bat_data->null_value = mtype##_nil;                                    \
+		GENERATE_BAT_INPUT_BASE(tpe_name);                            	   \
+		bat_data->count = BATcount(b);                                     \
+		bat_data->null_value = mtype##_nil;                                \
 		bat_data->data = GDKzalloc(bat_data->count * sizeof(bat_data->null_value)); \
-		if (!bat_data->data) {                                                 \
+		if (!bat_data->data) {                                             \
 			msg = createException(MAL, "embedded.monetdb_result_fetch", MAL_MALLOC_FAIL); \
-			goto cleanup;                                                      \
-		}                                                                      \
-		size_t it = 0;                                                         \
-		mtype* val = (mtype*)Tloc(b, 0);                                       \
-		/* bat is dense, materialize it */                                     \
-		for (it = 0; it < bat_data->count; it++, val++)                        \
-			bat_data->data[it] = (tpe) *val;                                   \
+			goto cleanup;                                              \
+		}                                                                  \
+		size_t it = 0;                                                     \
+		mtype* val = (mtype*)Tloc(b, 0);                                   \
+		/* bat is dense, materialize it */                                 \
+		for (it = 0; it < bat_data->count; it++, val++)                    \
+			bat_data->data[it] = (tpe) *val;                           \
 	}
 
 static void data_from_date(date d, monetdb_data_date *ptr);
@@ -889,22 +896,25 @@ monetdb_result_fetch(monetdb_connection conn, monetdb_column** res, monetdb_resu
 	sqltpe = &result->monetdb_resultset->cols[column_index].type;
 
 	if (bat_type == TYPE_bit) {
-		GENERATE_BAT_INPUT(b, int8_t, bit);
-		column_result->type = monetdb_bool;
+		GENERATE_BAT_INPUT(b, int8_t, bool, bit);
 	} else if (bat_type == TYPE_bte) {
-		GENERATE_BAT_INPUT(b, int8_t, bte);
+		GENERATE_BAT_INPUT(b, int8_t, int8_t, bte);
 	} else if (bat_type == TYPE_sht) {
-		GENERATE_BAT_INPUT(b, int16_t, sht);
+		GENERATE_BAT_INPUT(b, int16_t, int16_t, sht);
 	} else if (bat_type == TYPE_int) {
-		GENERATE_BAT_INPUT(b, int32_t, int);
+		GENERATE_BAT_INPUT(b, int32_t, int32_t, int);
 	} else if (bat_type == TYPE_oid) {
-		GENERATE_BAT_INPUT(b, size_t, oid);
+		GENERATE_BAT_INPUT(b, size_t, size_t, oid);
 	} else if (bat_type == TYPE_lng) {
-		GENERATE_BAT_INPUT(b, int64_t, lng);
+		GENERATE_BAT_INPUT(b, int64_t, int64_t, lng);
+#if HAVE_HGE
+	} else if (bat_type == TYPE_hge) {
+		GENERATE_BAT_INPUT(b, __int128, int128_t, hge);
+#endif
 	} else if (bat_type == TYPE_flt) {
-		GENERATE_BAT_INPUT(b, float, flt);
+		GENERATE_BAT_INPUT(b, float, float, flt);
 	} else if (bat_type == TYPE_dbl) {
-		GENERATE_BAT_INPUT(b, double, dbl);
+		GENERATE_BAT_INPUT(b, double, double, dbl);
 	} else if (bat_type == TYPE_str) {
 		BATiter li;
 		BUN p = 0, q = 0;
