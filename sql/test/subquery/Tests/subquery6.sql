@@ -42,14 +42,14 @@ SELECT i FROM integers i1 WHERE (SELECT CASE WHEN i1.i IS NULL THEN (SELECT FALS
 SELECT (SELECT (SELECT SUM(col1)) IN (MAX(col2))) FROM another_t;
 	-- False
 
+SELECT 1 IN (col4, MIN(col2)) FROM another_t;
+	--error, column "another_t.col4" must appear in the GROUP BY clause or be used in an aggregate function
+
 SELECT (SELECT col1) IN ('not a number') FROM another_t;
 	-- error, cannot cast string into number
 
 SELECT (SELECT (SELECT SUM(col1)) IN (MAX(col2), '12')) FROM another_t;
 	-- False
-
-SELECT 1 IN (col4, MIN(col2)) FROM another_t;
-	--error, column "another_t.col4" must appear in the GROUP BY clause or be used in an aggregate function
 
 SELECT CASE WHEN ColID IS NULL THEN CAST(Product_Category AS INT) ELSE TotalSales END FROM tbl_ProductSales;
 	-- 200
@@ -57,7 +57,7 @@ SELECT CASE WHEN ColID IS NULL THEN CAST(Product_Category AS INT) ELSE TotalSale
 	-- 500
 	-- 100
 
-SELECT ColID FROM tbl_ProductSales WHERE CASE WHEN ColID IS NULL THEN CAST(Product_Category AS INT) < 0 ELSE TotalSales > 0 END;
+SELECT ColID FROM tbl_ProductSales WHERE CASE WHEN ColID IS NULL THEN CAST(Product_Category AS INT) ELSE TotalSales END;
 	-- 1
 	-- 2
 	-- 3

@@ -2126,6 +2126,18 @@ rel_in_value_exp(sql_query *query, sql_rel **rel, symbol *sc, int f)
 			append(vals, re);
 		}
 
+		if (rel && *rel)
+			for (node *n = vals->h ; n ; n = n->next) {
+				sql_exp *e = n->data;
+
+				if (!exp_is_rel(e) && e->card > (*rel)->card) {
+					if (exp_name(e))
+						return sql_error(sql, ERR_GROUPBY, SQLSTATE(42000) "SELECT: cannot use non GROUP BY column '%s' in query results without an aggregate function", exp_name(e));
+					else
+						return sql_error(sql, ERR_GROUPBY, SQLSTATE(42000) "SELECT: cannot use non GROUP BY column in query results without an aggregate function");
+				}
+			}
+
 		values = exp_values(sql->sa, vals);
 		exp_label(sql->sa, values, ++sql->label);
 		if (is_tuple) {
