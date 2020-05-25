@@ -1776,6 +1776,7 @@ rel_push_count_down(mvc *sql, sql_rel *rel, int *changes)
 			exp_label(sql->sa, e, ++sql->label);
 			cnt = exp_ref(sql, e);
 			gbl = rel_groupby(sql, rel_dup(srel), NULL);
+			set_processed(gbl);
 			rel_groupby_add_aggr(sql, gbl, e);
 			append(args, cnt);
 		}
@@ -1788,6 +1789,7 @@ rel_push_count_down(mvc *sql, sql_rel *rel, int *changes)
 			exp_label(sql->sa, e, ++sql->label);
 			cnt = exp_ref(sql, e);
 			gbr = rel_groupby(sql, rel_dup(srel), NULL);
+			set_processed(gbr);
 			rel_groupby_add_aggr(sql, gbr, e);
 			append(args, cnt);
 		}
@@ -1800,6 +1802,7 @@ rel_push_count_down(mvc *sql, sql_rel *rel, int *changes)
 
 		rel_destroy(rel);
 		rel = rel_project(sql->sa, cp, append(new_exp_list(sql->sa), nce));
+		set_processed(rel);
 
 		(*changes)++;
 	}
@@ -4515,10 +4518,12 @@ gen_push_groupby_down(mvc *sql, sql_rel *rel, int *changes)
 		else 
 			cr = j->l = rel_groupby(sql, cr, gbe);
 		cr->exps = list_merge(cr->exps, aggrs, (fdup)NULL);
+		set_processed(cr);
 		if (!is_project(cl->op)) 
 			cl = rel_project(sql->sa, cl, 
 				rel_projections(sql, cl, NULL, 1, 1));
 		cl->exps = list_merge(cl->exps, aliases, (fdup)NULL);
+		set_processed(cl);
 		if (!left)
 			j->l = cl;
 		else 
@@ -6249,6 +6254,7 @@ rel_groupby_distinct(mvc *sql, sql_rel *rel, int *changes)
 		arg->h->data = darg;
 		l = rel->l = rel_groupby(sql, rel->l, gbe);
 		l->exps = exps;
+		set_processed(l);
 		rel->r = ngbe;
 		rel->exps = nexps;
 		set_nodistinct(distinct);
