@@ -5476,7 +5476,7 @@ find_simple_projection_for_join2semi(sql_rel *rel)
 			sql_rel *res = NULL;
 			sql_exp *found = NULL;
 
-			if (is_groupby(rel->op) || find_prop(e->p, PROP_HASHCOL))
+			if (is_groupby(rel->op) || need_distinct(rel) || find_prop(e->p, PROP_HASHCOL))
 				return true;
 
 			found = rel_find_exp_and_corresponding_rel(rel->l, e, &res); /* grouping column on inner relation */
@@ -5484,7 +5484,7 @@ find_simple_projection_for_join2semi(sql_rel *rel)
 				if (find_prop(found->p, PROP_HASHCOL)) /* primary key always unique */
 					return true;
 				if (found->type == e_column && found->card <= CARD_AGGR) {
-					if (!is_groupby(res->op) && list_length(res->exps) != 1)
+					if (!(is_groupby(res->op) || need_distinct(res)) && list_length(res->exps) != 1)
 						return false;
 					for (node *n = res->exps->h ; n ; n = n->next) { /* must be the single column in the group by expression list */
 						sql_exp *e = n->data;
