@@ -485,4 +485,38 @@ where (((exists (
  or (false));
   -- empty
 
+select 
+ subq_0.c3 as c0, 
+ subq_0.c4 as c1, 
+ subq_0.c2 as c2, 
+ subq_0.c1 as c3, 
+ subq_0.c2 as c4
+from 
+ (select 
+ ref_0.col0 as c0, 
+ ref_0.col0 as c1, 
+ ref_0.col0 as c2, 
+ ref_0.col1 as c3, 
+ ref_0.col2 as c4
+ from 
+ tab1 as ref_0
+ where true
+ limit 48) as subq_0
+where (case when exists (
+ select 
+ subq_0.c1 as c0, 
+ ref_1.col5 as c1, 
+ ref_1.col7 as c2, 
+ ref_1.col5 as c3, 
+ subq_0.c3 as c4, 
+ subq_0.c1 as c5
+ from 
+ longtable as ref_1
+ where (true) 
+ or ((ref_1.col1 is null) 
+ and (true))) then subq_0.c1 else subq_0.c1 end
+ is not null) 
+ and (subq_0.c3 is null);
+  -- empty
+
 ROLLBACK;
