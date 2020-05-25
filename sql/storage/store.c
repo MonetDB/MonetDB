@@ -2654,12 +2654,50 @@ end:
 	return ret;
 }
 
+/* Pick a name for the temporary tar file. Make sure it has the same extension
+ * so as not to confuse the streams library.
+ *
+ * This function is not entirely safe as compared to for example mkstemp.
+ */
+static str pick_tmp_name(str filename)
+{
+	str name = GDKmalloc(strlen(filename) + 10);
+	if (name == NULL) {
+		GDKerror("malloc failed");
+		return NULL;
+	}
+	strcpy(name, filename);
+
+	// Look for an extension.
+	// Make sure it's part of the basename
+
+	char *ext = strrchr(name, '.');
+	char *sep = strrchr(name, DIR_SEP);
+	char *slash = strrchr(name, '/'); // on Windows, / and \ both work
+	if (ext != NULL) {
+		// is ext actually after sep and slash?
+		if ((sep != NULL && sep > ext) || (slash != NULL && slash > ext))
+			ext = NULL;
+	}
+
+	if (ext == NULL) {
+		return strcat(name, "..tmp");
+	} else {
+		char *tmp = "..tmp.";
+		size_t tmplen = strlen(tmp);
+		memmove(ext + tmplen, ext, strlen(ext) + 1);
+		memmove(ext, tmp, tmplen);
+	}
+
+	return name;
+}
+
 extern lng
 store_hot_snapshot(str tarfile)
 {
 	int locked = 0;
 	lng result = 0;
-	char tmppath[FILENAME_MAX];
+	char *tmppath = NULL;
 	char dirpath[FILENAME_MAX];
 	int do_remove = 0;
 	int dir_fd = -1;
@@ -2673,7 +2711,10 @@ store_hot_snapshot(str tarfile)
 		goto end;
 	}
 
-	snprintf(tmppath, sizeof(tmppath), "%s.tmp", tarfile);
+	tmppath = pick_tmp_name(tarfile);
+	if (tmppath == NULL) {
+		goto end;
+	}
 	tar_stream = open_wstream(tmppath);
 	if (!tar_stream) {
 		GDKerror("Failed to open %s for writing", tmppath);
@@ -2779,8 +2820,9 @@ end:
 		close_stream(plan_stream);
 	if (plan_buf)
 		buffer_destroy(plan_buf);
-	if (do_remove) // ERROR no unlink
+	if (do_remove)
 		(void) remove(tmppath);	// Best effort, ignore the result
+	GDKfree(tmppath);
 	return result;
 }
 
