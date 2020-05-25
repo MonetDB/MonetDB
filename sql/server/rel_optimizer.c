@@ -1640,6 +1640,7 @@ rel_push_count_down(mvc *sql, sql_rel *rel, int *changes)
 			exp_label(sql->sa, e, ++sql->label);
 			cnt = exp_ref(sql, e);
 			gbl = rel_groupby(sql, rel_dup(srel), NULL);
+			set_processed(gbl);
 			rel_groupby_add_aggr(sql, gbl, e);
 			append(args, cnt);
 		}
@@ -1652,6 +1653,7 @@ rel_push_count_down(mvc *sql, sql_rel *rel, int *changes)
 			exp_label(sql->sa, e, ++sql->label);
 			cnt = exp_ref(sql, e);
 			gbr = rel_groupby(sql, rel_dup(srel), NULL);
+			set_processed(gbr);
 			rel_groupby_add_aggr(sql, gbr, e);
 			append(args, cnt);
 		}
@@ -1664,6 +1666,7 @@ rel_push_count_down(mvc *sql, sql_rel *rel, int *changes)
 
 		rel_destroy(rel);
 		rel = rel_project(sql->sa, cp, append(new_exp_list(sql->sa), nce));
+		set_processed(rel);
 
 		(*changes)++;
 	}
@@ -4379,10 +4382,12 @@ gen_push_groupby_down(mvc *sql, sql_rel *rel, int *changes)
 		else 
 			cr = j->l = rel_groupby(sql, cr, gbe);
 		cr->exps = list_merge(cr->exps, aggrs, (fdup)NULL);
+		set_processed(cr);
 		if (!is_project(cl->op)) 
 			cl = rel_project(sql->sa, cl, 
 				rel_projections(sql, cl, NULL, 1, 1));
 		cl->exps = list_merge(cl->exps, aliases, (fdup)NULL);
+		set_processed(cl);
 		if (!left)
 			j->l = cl;
 		else 
@@ -5340,7 +5345,7 @@ find_simple_projection_for_join2semi(sql_rel *rel)
 			sql_rel *res = NULL;
 			sql_exp *found = NULL;
 
-			if (is_groupby(rel->op) || find_prop(e->p, PROP_HASHCOL))
+			if (is_groupby(rel->op) || need_distinct(rel) || find_prop(e->p, PROP_HASHCOL))
 				return true;
 
 			found = rel_find_exp_and_corresponding_rel(rel->l, e, &res); /* grouping column on inner relation */
@@ -5348,7 +5353,7 @@ find_simple_projection_for_join2semi(sql_rel *rel)
 				if (find_prop(found->p, PROP_HASHCOL)) /* primary key always unique */
 					return true;
 				if (found->type == e_column && found->card <= CARD_AGGR) {
-					if (!is_groupby(res->op) && list_length(res->exps) != 1)
+					if (!(is_groupby(res->op) || need_distinct(res)) && list_length(res->exps) != 1)
 						return false;
 					for (node *n = res->exps->h ; n ; n = n->next) { /* must be the single column in the group by expression list */
 						sql_exp *e = n->data;
@@ -6113,6 +6118,7 @@ rel_groupby_distinct(mvc *sql, sql_rel *rel, int *changes)
 		arg->h->data = darg;
 		l = rel->l = rel_groupby(sql, rel->l, gbe);
 		l->exps = exps;
+		set_processed(l);
 		rel->r = ngbe;
 		rel->exps = nexps;
 		set_nodistinct(distinct);

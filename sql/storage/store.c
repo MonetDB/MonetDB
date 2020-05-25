@@ -2666,7 +2666,7 @@ end:
 /* Pick a name for the temporary tar file. Make sure it has the same extension
  * so as not to confuse the streams library.
  *
- * This function is not entirely safe as compare to for example mkstemp.
+ * This function is not entirely safe as compared to for example mkstemp.
  */
 static str pick_tmp_name(str filename)
 {
@@ -2683,10 +2683,11 @@ static str pick_tmp_name(str filename)
 	char *ext = strrchr(name, '.');
 	char *sep = strrchr(name, DIR_SEP);
 	char *slash = strrchr(name, '/'); // on Windows, / and \ both work
-	if (ext != NULL && sep != NULL && sep > ext)
-		ext = NULL;
-	else if (ext != NULL && slash != NULL && slash > ext)
-		ext = NULL;
+	if (ext != NULL) {
+		// is ext actually after sep and slash?
+		if ((sep != NULL && sep > ext) || (slash != NULL && slash > ext))
+			ext = NULL;
+	}
 
 	if (ext == NULL) {
 		return strcat(name, "..tmp");
@@ -2835,8 +2836,9 @@ end:
 		close_stream(plan_stream);
 	if (plan_buf)
 		buffer_destroy(plan_buf);
-	if (do_remove) // ERROR no unlink
+	if (do_remove)
 		(void) remove(tmppath);	// Best effort, ignore the result
+	GDKfree(tmppath);
 	return result;
 }
 
