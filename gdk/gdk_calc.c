@@ -102,7 +102,7 @@ checkbats(BAT *b1, BAT *b2, const char *func)
 				j = x2 * incr2;				\
 				TYPE1 v1 = ((const TYPE1 *) lft)[i];	\
 				TYPE2 v2 = ((const TYPE2 *) rgt)[j];	\
-				if ((rv != NULL && !rv[i]) ||		\
+				if ((rv != NULL && !rv[k]) ||		\
 				    is_##TYPE1##_nil(v1) || is_##TYPE2##_nil(v2)) { \
 					nils++;				\
 					((TYPE3 *) dst)[k] = TYPE3##_nil; \
@@ -118,7 +118,7 @@ checkbats(BAT *b1, BAT *b2, const char *func)
 				j = x2 * incr2;				\
 				TYPE1 v1 = ((const TYPE1 *) lft)[i];	\
 				TYPE2 v2 = ((const TYPE2 *) rgt)[j];	\
-				if ((rv != NULL && !rv[i]) ||		\
+				if ((rv != NULL && !rv[k]) ||		\
 				    is_##TYPE1##_nil(v1) || is_##TYPE2##_nil(v2)) { \
 					nils++;				\
 					((TYPE3 *) dst)[k] = TYPE3##_nil; \
@@ -141,7 +141,7 @@ checkbats(BAT *b1, BAT *b2, const char *func)
 				j = x2 * incr2;				\
 				TYPE1 v1 = ((const TYPE1 *) lft)[i];	\
 				TYPE2 v2 = ((const TYPE2 *) rgt)[j];	\
-				if ((rv != NULL && !rv[i]) ||		\
+				if ((rv != NULL && !rv[k]) ||		\
 				    is_##TYPE1##_nil(v1) || is_##TYPE2##_nil(v2)) { \
 					((TYPE3 *) dst)[k] = FUNC(is_##TYPE1##_nil(v1), is_##TYPE2##_nil(v2)); \
 				} else {				\
@@ -156,7 +156,7 @@ checkbats(BAT *b1, BAT *b2, const char *func)
 				j = x2 * incr2;				\
 				TYPE1 v1 = ((const TYPE1 *) lft)[i];	\
 				TYPE2 v2 = ((const TYPE2 *) rgt)[j];	\
-				if ((rv != NULL && !rv[i]) ||		\
+				if ((rv != NULL && !rv[k]) ||		\
 				    is_##TYPE1##_nil(v1) || is_##TYPE2##_nil(v2)) { \
 					((TYPE3 *) dst)[k] = FUNC(is_##TYPE1##_nil(v1), is_##TYPE2##_nil(v2)); \
 				} else {				\
@@ -201,7 +201,7 @@ checkbats(BAT *b1, BAT *b2, const char *func)
 				j = x2 * incr2;				\
 				TYPE1 v1 = ((const TYPE1 *) lft)[i];	\
 				TYPE2 v2 = ((const TYPE2 *) rgt)[j];	\
-				if ((rv != NULL && !rv[i]) ||		\
+				if ((rv != NULL && !rv[k]) ||		\
 				    is_##TYPE1##_nil(v1) || is_##TYPE2##_nil(v2)) { \
 					nils++;				\
 					((TYPE3 *) dst)[k] = TYPE3##_nil; \
@@ -228,7 +228,7 @@ checkbats(BAT *b1, BAT *b2, const char *func)
 				j = x2 * incr2;				\
 				TYPE1 v1 = ((const TYPE1 *) lft)[i];	\
 				TYPE2 v2 = ((const TYPE2 *) rgt)[j];	\
-				if ((rv != NULL && !rv[i]) ||		\
+				if ((rv != NULL && !rv[k]) ||		\
 				    is_##TYPE1##_nil(v1) || is_##TYPE2##_nil(v2)) { \
 					nils++;				\
 					((TYPE3 *) dst)[k] = TYPE3##_nil; \
@@ -1847,7 +1847,7 @@ add_##TYPE1##_##TYPE2##_##TYPE3(const TYPE1 *lft, int incr1,		\
 			oid x2 = canditer_next_dense(ci2) - candoff2;	\
 			BUN i = x1 * incr1;				\
 			BUN j = x2 * incr2;				\
-			if ((rv != NULL && !rv[i]) ||			\
+			if ((rv != NULL && !rv[k]) ||			\
 			    is_##TYPE1##_nil(lft[i]) || is_##TYPE2##_nil(rgt[j])) { \
 				dst[k] = TYPE3##_nil;			\
 				nils++;					\
@@ -1864,7 +1864,7 @@ add_##TYPE1##_##TYPE2##_##TYPE3(const TYPE1 *lft, int incr1,		\
 			oid x2 = canditer_next(ci2) - candoff2;		\
 			BUN i = x1 * incr1;				\
 			BUN j = x2 * incr2;				\
-			if ((rv != NULL && !rv[i]) ||			\
+			if ((rv != NULL && !rv[k]) ||			\
 			    is_##TYPE1##_nil(lft[i]) || is_##TYPE2##_nil(rgt[j])) { \
 				dst[k] = TYPE3##_nil;			\
 				nils++;					\
@@ -1899,7 +1899,7 @@ add_##TYPE1##_##TYPE2##_##TYPE3(const TYPE1 *lft, int incr1,		\
 			oid x2 = canditer_next_dense(ci2) - candoff2;	\
 			BUN i = x1 * incr1;				\
 			BUN j = x2 * incr2;				\
-			if ((rv != NULL && !rv[i]) ||			\
+			if ((rv != NULL && !rv[k]) ||			\
 			    is_##TYPE1##_nil(lft[i]) || is_##TYPE2##_nil(rgt[j])) { \
 				dst[k] = TYPE3##_nil;			\
 				nils++;					\
@@ -1918,7 +1918,7 @@ add_##TYPE1##_##TYPE2##_##TYPE3(const TYPE1 *lft, int incr1,		\
 			oid x2 = canditer_next(ci2) - candoff2;		\
 			BUN i = x1 * incr1;				\
 			BUN j = x2 * incr2;				\
-			if ((rv != NULL && !rv[i]) ||			\
+			if ((rv != NULL && !rv[k]) ||			\
 			    is_##TYPE1##_nil(lft[i]) || is_##TYPE2##_nil(rgt[j])) { \
 				dst[k] = TYPE3##_nil;			\
 				nils++;					\
@@ -3865,7 +3865,7 @@ sub_##TYPE1##_##TYPE2##_##TYPE3(const TYPE1 *lft, int incr1,		\
 			oid x2 = canditer_next_dense(ci2) - candoff2;	\
 			BUN i = x1 * incr1;				\
 			BUN j = x2 * incr2;				\
-			if ((rv != NULL && !rv[i]) ||			\
+			if ((rv != NULL && !rv[k]) ||			\
 			    is_##TYPE1##_nil(lft[i]) || is_##TYPE2##_nil(rgt[j])) { \
 				dst[k] = TYPE3##_nil;			\
 				nils++;					\
@@ -3882,7 +3882,7 @@ sub_##TYPE1##_##TYPE2##_##TYPE3(const TYPE1 *lft, int incr1,		\
 			oid x2 = canditer_next(ci2) - candoff2;		\
 			BUN i = x1 * incr1;				\
 			BUN j = x2 * incr2;				\
-			if ((rv != NULL && !rv[i]) ||			\
+			if ((rv != NULL && !rv[k]) ||			\
 			    is_##TYPE1##_nil(lft[i]) || is_##TYPE2##_nil(rgt[j])) { \
 				dst[k] = TYPE3##_nil;			\
 				nils++;					\
@@ -3917,7 +3917,7 @@ sub_##TYPE1##_##TYPE2##_##TYPE3(const TYPE1 *lft, int incr1,		\
 			oid x2 = canditer_next_dense(ci2) - candoff2;	\
 			BUN i = x1 * incr1;				\
 			BUN j = x2 * incr2;				\
-			if ((rv != NULL && !rv[i]) ||			\
+			if ((rv != NULL && !rv[k]) ||			\
 			    is_##TYPE1##_nil(lft[i]) || is_##TYPE2##_nil(rgt[j])) { \
 				dst[k] = TYPE3##_nil;			\
 				nils++;					\
@@ -3936,7 +3936,7 @@ sub_##TYPE1##_##TYPE2##_##TYPE3(const TYPE1 *lft, int incr1,		\
 			oid x2 = canditer_next(ci2) - candoff2;		\
 			BUN i = x1 * incr1;				\
 			BUN j = x2 * incr2;				\
-			if ((rv != NULL && !rv[i]) ||			\
+			if ((rv != NULL && !rv[k]) ||			\
 			    is_##TYPE1##_nil(lft[i]) || is_##TYPE2##_nil(rgt[j])) { \
 				dst[k] = TYPE3##_nil;			\
 				nils++;					\
@@ -5734,7 +5734,7 @@ mul_##TYPE1##_##TYPE2##_##TYPE3(const TYPE1 *lft, int incr1,		\
 			oid x2 = canditer_next_dense(ci2) - candoff2;	\
 			BUN i = x1 * incr1;				\
 			BUN j = x2 * incr2;				\
-			if ((rv != NULL && !rv[i]) ||			\
+			if ((rv != NULL && !rv[k]) ||			\
 			    is_##TYPE1##_nil(lft[i]) || is_##TYPE2##_nil(rgt[j])) { \
 				dst[k] = TYPE3##_nil;			\
 				nils++;					\
@@ -5752,7 +5752,7 @@ mul_##TYPE1##_##TYPE2##_##TYPE3(const TYPE1 *lft, int incr1,		\
 			oid x2 = canditer_next(ci2) - candoff2;		\
 			BUN i = x1 * incr1;				\
 			BUN j = x2 * incr2;				\
-			if ((rv != NULL && !rv[i]) ||			\
+			if ((rv != NULL && !rv[k]) ||			\
 			    is_##TYPE1##_nil(lft[i]) || is_##TYPE2##_nil(rgt[j])) { \
 				dst[k] = TYPE3##_nil;			\
 				nils++;					\
@@ -5788,7 +5788,7 @@ mul_##TYPE1##_##TYPE2##_##TYPE3(const TYPE1 *lft, int incr1,		\
 			oid x2 = canditer_next_dense(ci2) - candoff2;	\
 			BUN i = x1 * incr1;				\
 			BUN j = x2 * incr2;				\
-			if ((rv != NULL && !rv[i]) ||			\
+			if ((rv != NULL && !rv[k]) ||			\
 			    is_##TYPE1##_nil(lft[i]) || is_##TYPE2##_nil(rgt[j])) { \
 				dst[k] = TYPE3##_nil;			\
 				nils++;					\
@@ -5808,7 +5808,7 @@ mul_##TYPE1##_##TYPE2##_##TYPE3(const TYPE1 *lft, int incr1,		\
 			oid x2 = canditer_next(ci2) - candoff2;		\
 			BUN i = x1 * incr1;				\
 			BUN j = x2 * incr2;				\
-			if ((rv != NULL && !rv[i]) ||			\
+			if ((rv != NULL && !rv[k]) ||			\
 			    is_##TYPE1##_nil(lft[i]) || is_##TYPE2##_nil(rgt[j])) { \
 				dst[k] = TYPE3##_nil;			\
 				nils++;					\
@@ -5849,7 +5849,7 @@ mul_##TYPE1##_##TYPE2##_hge(const TYPE1 *lft, int incr1,		\
 			oid x2 = canditer_next_dense(ci2) - candoff2;	\
 			BUN i = x1 * incr1;				\
 			BUN j = x2 * incr2;				\
-			if ((rv != NULL && !rv[i]) ||			\
+			if ((rv != NULL && !rv[k]) ||			\
 			    is_##TYPE1##_nil(lft[i]) || is_##TYPE2##_nil(rgt[j])) { \
 				dst[k] = hge_nil;			\
 				nils++;					\
@@ -5866,7 +5866,7 @@ mul_##TYPE1##_##TYPE2##_hge(const TYPE1 *lft, int incr1,		\
 			oid x2 = canditer_next(ci2) - candoff2;		\
 			BUN i = x1 * incr1;				\
 			BUN j = x2 * incr2;				\
-			if ((rv != NULL && !rv[i]) ||			\
+			if ((rv != NULL && !rv[k]) ||			\
 			    is_##TYPE1##_nil(lft[i]) || is_##TYPE2##_nil(rgt[j])) { \
 				dst[k] = hge_nil;			\
 				nils++;					\
@@ -5902,7 +5902,7 @@ mul_##TYPE1##_##TYPE2##_lng(const TYPE1 *lft, int incr1,		\
 			oid x2 = canditer_next_dense(ci2) - candoff2;	\
 			BUN i = x1 * incr1;				\
 			BUN j = x2 * incr2;				\
-			if ((rv != NULL && !rv[i]) ||			\
+			if ((rv != NULL && !rv[k]) ||			\
 			    is_##TYPE1##_nil(lft[i]) || is_##TYPE2##_nil(rgt[j])) { \
 				dst[k] = lng_nil;			\
 				nils++;					\
@@ -5919,7 +5919,7 @@ mul_##TYPE1##_##TYPE2##_lng(const TYPE1 *lft, int incr1,		\
 			oid x2 = canditer_next(ci2) - candoff2;		\
 			BUN i = x1 * incr1;				\
 			BUN j = x2 * incr2;				\
-			if ((rv != NULL && !rv[i]) ||			\
+			if ((rv != NULL && !rv[k]) ||			\
 			    is_##TYPE1##_nil(lft[i]) || is_##TYPE2##_nil(rgt[j])) { \
 				dst[k] = lng_nil;			\
 				nils++;					\
@@ -5955,7 +5955,7 @@ mul_##TYPE1##_##TYPE2##_##TYPE3(const TYPE1 *lft, int incr1,		\
 			oid x2 = canditer_next_dense(ci2) - candoff2;	\
 			BUN i = x1 * incr1;				\
 			BUN j = x2 * incr2;				\
-			if ((rv != NULL && !rv[i]) ||			\
+			if ((rv != NULL && !rv[k]) ||			\
 			    is_##TYPE1##_nil(lft[i]) || is_##TYPE2##_nil(rgt[j])) { \
 				dst[k] = TYPE3##_nil;			\
 				nils++;					\
@@ -5976,7 +5976,7 @@ mul_##TYPE1##_##TYPE2##_##TYPE3(const TYPE1 *lft, int incr1,		\
 			oid x2 = canditer_next(ci2) - candoff2;		\
 			BUN i = x1 * incr1;				\
 			BUN j = x2 * incr2;				\
-			if ((rv != NULL && !rv[i]) ||			\
+			if ((rv != NULL && !rv[k]) ||			\
 			    is_##TYPE1##_nil(lft[i]) || is_##TYPE2##_nil(rgt[j])) { \
 				dst[k] = TYPE3##_nil;			\
 				nils++;					\
@@ -7790,7 +7790,7 @@ div_##TYPE1##_##TYPE2##_##TYPE3(const TYPE1 *lft, int incr1,		\
 			oid x2 = canditer_next_dense(ci2) - candoff2;	\
 			BUN i = x1 * incr1;				\
 			BUN j = x2 * incr2;				\
-			if ((rv != NULL && !rv[i]) ||			\
+			if ((rv != NULL && !rv[k]) ||			\
 			    is_##TYPE1##_nil(lft[i]) || is_##TYPE2##_nil(rgt[j])) { \
 				dst[k] = TYPE3##_nil;			\
 				nils++;					\
@@ -7815,7 +7815,7 @@ div_##TYPE1##_##TYPE2##_##TYPE3(const TYPE1 *lft, int incr1,		\
 			oid x2 = canditer_next(ci2) - candoff2;		\
 			BUN i = x1 * incr1;				\
 			BUN j = x2 * incr2;				\
-			if ((rv != NULL && !rv[i]) ||			\
+			if ((rv != NULL && !rv[k]) ||			\
 			    is_##TYPE1##_nil(lft[i]) || is_##TYPE2##_nil(rgt[j])) { \
 				dst[k] = TYPE3##_nil;			\
 				nils++;					\
@@ -7857,7 +7857,7 @@ div_##TYPE1##_##TYPE2##_##TYPE3(const TYPE1 *lft, int incr1,		\
 			oid x2 = canditer_next_dense(ci2) - candoff2;	\
 			BUN i = x1 * incr1;				\
 			BUN j = x2 * incr2;				\
-			if ((rv != NULL && !rv[i]) ||			\
+			if ((rv != NULL && !rv[k]) ||			\
 			    is_##TYPE1##_nil(lft[i]) || is_##TYPE2##_nil(rgt[j])) { \
 				dst[k] = TYPE3##_nil;			\
 				nils++;					\
@@ -7888,7 +7888,7 @@ div_##TYPE1##_##TYPE2##_##TYPE3(const TYPE1 *lft, int incr1,		\
 			oid x2 = canditer_next(ci2) - candoff2;		\
 			BUN i = x1 * incr1;				\
 			BUN j = x2 * incr2;				\
-			if ((rv != NULL && !rv[i]) ||			\
+			if ((rv != NULL && !rv[k]) ||			\
 			    is_##TYPE1##_nil(lft[i]) || is_##TYPE2##_nil(rgt[j])) { \
 				dst[k] = TYPE3##_nil;			\
 				nils++;					\
@@ -9753,7 +9753,7 @@ mod_##TYPE1##_##TYPE2##_##TYPE3(const TYPE1 *lft, int incr1,		\
 			oid x2 = canditer_next_dense(ci2) - candoff2;	\
 			BUN i = x1 * incr1;				\
 			BUN j = x2 * incr2;				\
-			if ((rv != NULL && !rv[i]) ||			\
+			if ((rv != NULL && !rv[k]) ||			\
 			    is_##TYPE1##_nil(lft[i]) || is_##TYPE2##_nil(rgt[j])) { \
 				dst[k] = TYPE3##_nil;			\
 				nils++;					\
@@ -9772,7 +9772,7 @@ mod_##TYPE1##_##TYPE2##_##TYPE3(const TYPE1 *lft, int incr1,		\
 			oid x2 = canditer_next(ci2) - candoff2;		\
 			BUN i = x1 * incr1;				\
 			BUN j = x2 * incr2;				\
-			if ((rv != NULL && !rv[i]) ||			\
+			if ((rv != NULL && !rv[k]) ||			\
 			    is_##TYPE1##_nil(lft[i]) || is_##TYPE2##_nil(rgt[j])) { \
 				dst[k] = TYPE3##_nil;			\
 				nils++;					\
@@ -9808,7 +9808,7 @@ mod_##TYPE1##_##TYPE2##_##TYPE3(const TYPE1 *lft, int incr1,		\
 			oid x2 = canditer_next_dense(ci2) - candoff2;	\
 			BUN i = x1 * incr1;				\
 			BUN j = x2 * incr2;				\
-			if ((rv != NULL && !rv[i]) ||			\
+			if ((rv != NULL && !rv[k]) ||			\
 			    is_##TYPE1##_nil(lft[i]) || is_##TYPE2##_nil(rgt[j])) { \
 				dst[k] = TYPE3##_nil;			\
 				nils++;					\
@@ -9828,7 +9828,7 @@ mod_##TYPE1##_##TYPE2##_##TYPE3(const TYPE1 *lft, int incr1,		\
 			oid x2 = canditer_next(ci2) - candoff2;		\
 			BUN i = x1 * incr1;				\
 			BUN j = x2 * incr2;				\
-			if ((rv != NULL && !rv[i]) ||			\
+			if ((rv != NULL && !rv[k]) ||			\
 			    is_##TYPE1##_nil(lft[i]) || is_##TYPE2##_nil(rgt[j])) { \
 				dst[k] = TYPE3##_nil;			\
 				nils++;					\
