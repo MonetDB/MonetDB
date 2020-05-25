@@ -2983,7 +2983,7 @@ exp_case_fixup( mvc *sql, sql_rel *rel, sql_exp *e, sql_exp *cc )
 		sql_subfunc *f = e->f;
 
 		/* first fixup arguments */
-		if (f->func->s || strcmp(f->func->base.name, "ifthenelse")) { 
+		if (f->func->s || !is_ifthenelse_func(f)) { 
 			for (n=args->h; n; n=n->next) {
 				sql_exp *a = exp_case_fixup(sql, rel, n->data, cc);
 				list_append(l, a);
@@ -7733,7 +7733,7 @@ rel_simplify_predicates(mvc *sql, sql_rel *rel, sql_exp *e, int depth, int *chan
 				sql_subfunc *f = l->f;
 
 				/* rewrite isnull(x) = TRUE/FALSE => x =/<> NULL */
-				if (!f->func->s && !strcmp(f->func->base.name, "isnull")) {
+				if (!f->func->s && is_isnull_func(f)) {
 					list *args = l->l;
 					sql_exp *ie = args->h->data;
 
@@ -7761,7 +7761,7 @@ rel_simplify_predicates(mvc *sql, sql_rel *rel, sql_exp *e, int depth, int *chan
 							(*changes)++;
 						}
 					}
-				} else if (!f->func->s && !strcmp(f->func->base.name, "not")) {
+				} else if (!f->func->s && is_not_func(f)) {
 					if (is_atom(r->type) && r->l) { /* direct literal */
 						atom *a = r->l;
 						list *args = l->l;
@@ -7773,7 +7773,7 @@ rel_simplify_predicates(mvc *sql, sql_rel *rel, sql_exp *e, int depth, int *chan
 						/* not(not(x)) = TRUE/FALSE => x = TRUE/FALSE */
 						if (is_func(inner->type) && 
 							!inf->func->s && 
-							!strcmp(inf->func->base.name, "not")) {
+							is_not_func(inf)) {
 							int anti = is_anti(e);
 
 							args = inner->l;
@@ -7824,6 +7824,17 @@ rel_simplify_predicates(mvc *sql, sql_rel *rel, sql_exp *e, int depth, int *chan
 						e = exp_atom_bool(sql->sa, (e->flag == cmp_lt || e->flag == cmp_lte || e->flag == cmp_notequal) ? 1 : 0);
 					(*changes)++;
 				}
+			}
+		} else if (is_func(e->type) && list_length(e->l) == 3 && is_ifthenelse_func((sql_subfunc*)e->f)) {
+			list *args = e->l;
+			sql_exp *ie = args->h->data; 
+
+			if (exp_is_true(sql, ie)) { /* ifthenelse(true, x, y) -> x */
+				e = args->h->next->data;
+				(*changes)++;
+			} else if (exp_is_false(sql, ie) || exp_is_null(sql, ie)) { /* ifthenelse(false, x, y) -> y */
+				e = args->h->next->next->data;
+				(*changes)++;
 			}
 		}
 	}
@@ -7896,7 +7907,7 @@ split_exp(mvc *sql, sql_exp *e, sql_rel *rel)
 	case e_func: 
 		if (!is_analytic(e) && !exp_has_sideeffect(e)) {
 			sql_subfunc *f = e->f;
-			if (e->type == e_func && !f->func->s && !strcmp(f->func->base.name, "ifthenelse")) { 
+			if (e->type == e_func && !f->func->s && is_ifthenelse_func(f)) { 
 				return e;
 			} else {
 				split_exps(sql, e->l, rel);
@@ -8009,7 +8020,7 @@ select_split_exp(mvc *sql, sql_exp *e, sql_rel *rel)
 	case e_func:
 		if (!is_analytic(e) && !exp_has_sideeffect(e)) {
 			sql_subfunc *f = e->f;
-			if (e->type == e_func && !f->func->s && !strcmp(f->func->base.name, "ifthenelse"))
+			if (e->type == e_func && !f->func->s && is_ifthenelse_func(f))
 				return add_exp_too_project(sql, e, rel);
 		}
 		return e;

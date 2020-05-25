@@ -16,9 +16,7 @@
 /* simplify expressions, such as not(not(x)) */
 /* exp visitor */
 
-#define is_null(sf) (strcmp(sf->func->base.name, "isnull") == 0) 
-#define is_not_func(sf) (strcmp(sf->func->base.name, "not") == 0) 
-#define is_not_anyequal(sf) (strcmp(sf->func->base.name, "sql_not_anyequal") == 0)
+#define is_not_anyequal(sf) (strcmp((sf)->func->base.name, "sql_not_anyequal") == 0)
 
 static list *
 exps_simplify_exp(mvc *sql, list *exps, int *changes)

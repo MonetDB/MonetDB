@@ -1984,8 +1984,8 @@ rewrite_rank(mvc *sql, sql_rel *rel, sql_exp *e, int depth, int *changes)
 	return e;
 }
 
-#define is_anyequal_func(sf) (strcmp(sf->func->base.name, "sql_anyequal") == 0 || strcmp(sf->func->base.name, "sql_not_anyequal") == 0)
-#define is_anyequal(sf) (strcmp(sf->func->base.name, "sql_anyequal") == 0)
+#define is_anyequal_func(sf) (strcmp((sf)->func->base.name, "sql_anyequal") == 0 || strcmp((sf)->func->base.name, "sql_not_anyequal") == 0)
+#define is_anyequal(sf) (strcmp((sf)->func->base.name, "sql_anyequal") == 0)
 
 static sql_rel *
 rel_union_exps(mvc *sql, sql_exp **l, list *vals, int is_tuple)
@@ -2626,9 +2626,6 @@ rewrite_exists(mvc *sql, sql_rel *rel, sql_exp *e, int depth)
 	}
 	return e;
 }
-
-#define is_ifthenelse_func(sf) (strcmp(sf->func->base.name, "ifthenelse") == 0)
-#define is_isnull_func(sf) (strcmp(sf->func->base.name, "isnull") == 0)
 
 /* exp visitor */
 static sql_exp *
