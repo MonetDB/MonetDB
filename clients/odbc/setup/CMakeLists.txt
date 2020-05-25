@@ -26,7 +26,8 @@ target_compile_definitions(MonetODBCs
 target_link_libraries(MonetODBCs
   PRIVATE
   monetdb_config_header
-  mutils)
+  mutils
+  ODBC::ODBC)
 
 install(TARGETS
   MonetODBCs
