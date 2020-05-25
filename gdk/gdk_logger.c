@@ -2196,17 +2196,6 @@ logger_load(int debug, const char *fn, char filename[FILENAME_MAX], logger *lg)
 			FILE *fp1;
 			int len, curid;
 
-			len = snprintf(cvfile, sizeof(cvfile), "%sconvert-nil-nan",
-				 lg->dir);
-			if (len == -1 || len >= FILENAME_MAX) {
-				GDKerror("Convert-nil-nan filename path is too large\n");
-				goto error;
-			}
-			len = snprintf(bak, sizeof(bak), "%s_nil-nan-convert", fn);
-			if (len == -1 || len >= FILENAME_MAX) {
-				GDKerror("Convert-nil-nan filename path is too large\n");
-				goto error;
-			}
 			/* read the current log id without disturbing
 			 * the file pointer */
 #ifdef _MSC_VER
@@ -2232,6 +2221,17 @@ logger_load(int debug, const char *fn, char filename[FILENAME_MAX], logger *lg)
 			if (fsetpos(fp, &off) != 0)
 				goto error; /* should never happen */
 #endif
+			len = snprintf(cvfile, sizeof(cvfile), "%sconvert-nil-nan",
+				 lg->dir);
+			if (len == -1 || len >= FILENAME_MAX) {
+				GDKerror("Convert-nil-nan filename path is too large\n");
+				goto error;
+			}
+			len = snprintf(bak, sizeof(bak), "%s_nil-nan-convert", fn);
+			if (len == -1 || len >= FILENAME_MAX) {
+				GDKerror("Convert-nil-nan filename path is too large\n");
+				goto error;
+			}
 
 			if ((fp1 = GDKfileopen(0, NULL, bak, NULL, "r")) != NULL) {
 				/* file indicating that we need to do
@@ -2253,7 +2253,7 @@ logger_load(int debug, const char *fn, char filename[FILENAME_MAX], logger *lg)
 				    fsync(fileno(fp1)) < 0 ||
 #endif
 				    fclose(fp1) != 0) {
-					GDKerror("failed to write %s\n", cvfile);
+					GDKsyserror("failed to write %s\n", cvfile);
 					goto error;
 				}
 				/* then remove the unversioned file
@@ -2265,6 +2265,9 @@ logger_load(int debug, const char *fn, char filename[FILENAME_MAX], logger *lg)
 				}
 				/* set the flag that we need to convert */
 				lg->convert_nil_nan = true;
+			} else if (errno != ENOENT) {
+				GDKsyserror("opening file %s failed\n", bak);
+				goto error;
 			} else if ((fp1 = GDKfileopen(farmid, NULL, cvfile, NULL, "r")) != NULL) {
 				/* the versioned conversion file
 				 * exists: check version */
@@ -2283,6 +2286,9 @@ logger_load(int debug, const char *fn, char filename[FILENAME_MAX], logger *lg)
 					 * file */
 					GDKunlink(0, NULL, cvfile, NULL);
 				}
+			} else if (errno != ENOENT) {
+				GDKsyserror("opening file %s failed\n", cvfile);
+				goto error;
 			}
 		}
 #endif
@@ -2317,17 +2323,6 @@ logger_load(int debug, const char *fn, char filename[FILENAME_MAX], logger *lg)
 			FILE *fp1;
 			int len, curid;
 
-			len = snprintf(cvfile1, sizeof(cvfile1), "%sconvert-date",
-				 lg->dir);
-			if (len == -1 || len >= FILENAME_MAX) {
-				GDKerror("Convert-date filename path is too large\n");
-				goto error;
-			}
-			len = snprintf(bak, sizeof(bak), "%s_date-convert", fn);
-			if (len == -1 || len >= FILENAME_MAX) {
-				GDKerror("Convert-date filename path is too large\n");
-				goto error;
-			}
 			/* read the current log id without disturbing
 			 * the file pointer */
 #ifdef _MSC_VER
@@ -2353,6 +2348,17 @@ logger_load(int debug, const char *fn, char filename[FILENAME_MAX], logger *lg)
 			if (fsetpos(fp, &off) != 0)
 				goto error; /* should never happen */
 #endif
+			len = snprintf(cvfile1, sizeof(cvfile1), "%sconvert-date",
+				 lg->dir);
+			if (len == -1 || len >= FILENAME_MAX) {
+				GDKerror("Convert-date filename path is too large\n");
+				goto error;
+			}
+			len = snprintf(bak, sizeof(bak), "%s_date-convert", fn);
+			if (len == -1 || len >= FILENAME_MAX) {
+				GDKerror("Convert-date filename path is too large\n");
+				goto error;
+			}
 
 			if ((fp1 = GDKfileopen(0, NULL, bak, NULL, "r")) != NULL) {
 				/* file indicating that we need to do
@@ -2374,7 +2380,7 @@ logger_load(int debug, const char *fn, char filename[FILENAME_MAX], logger *lg)
 				    fsync(fileno(fp1)) < 0 ||
 #endif
 				    fclose(fp1) != 0) {
-					GDKerror("failed to write %s\n", cvfile1);
+					GDKsyserror("failed to write %s\n", cvfile1);
 					goto error;
 				}
 				/* then remove the unversioned file
@@ -2386,6 +2392,9 @@ logger_load(int debug, const char *fn, char filename[FILENAME_MAX], logger *lg)
 				}
 				/* set the flag that we need to convert */
 				lg->convert_date = true;
+			} else if (errno != ENOENT) {
+				GDKsyserror("opening file %s failed\n", bak);
+				goto error;
 			} else if ((fp1 = GDKfileopen(farmid, NULL, cvfile1, NULL, "r")) != NULL) {
 				/* the versioned conversion file
 				 * exists: check version */
@@ -2404,6 +2413,9 @@ logger_load(int debug, const char *fn, char filename[FILENAME_MAX], logger *lg)
 					 * file */
 					GDKunlink(0, NULL, cvfile1, NULL);
 				}
+			} else if (errno != ENOENT) {
+				GDKsyserror("opening file %s failed\n", cvfile1);
+				goto error;
 			}
 		}
 #endif
@@ -2694,7 +2706,7 @@ logger_exit(logger *lg)
 
 		lg->changes = 0;
 	} else {
-		GDKerror("could not create %s\n", filename);
+		GDKsyserror("could not create %s\n", filename);
 		return GDK_FAIL;
 	}
 	return GDK_SUCCEED;
@@ -2737,7 +2749,7 @@ logger_cleanup(logger *lg)
 	// remove the last persisted WAL files as well to reduce the
 	// work for the logger_cleanup_old()
 	if ((fp = GDKfileopen(farmid, NULL, buf, NULL, "r")) == NULL) {
-		TRC_CRITICAL(GDK, "cannot open file %s\n", buf);
+		GDKsyserror("cannot open file %s\n", buf);
 		return GDK_FAIL;
 	}
 
