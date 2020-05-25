@@ -447,6 +447,8 @@ mnstr_write(stream *restrict s, const void *restrict buf, size_t elmsize, size_t
 	assert(!s->readonly);
 	if (s->errnr)
 		return -1;
+	if (cnt == 0)
+		return 0;
 	return s->write(s, buf, elmsize, cnt);
 }
 
@@ -1766,7 +1768,7 @@ stream_lz4write(stream *restrict s, const void *restrict buf, size_t elmsize, si
 			lz4->total_processing += ret;
 		}
 
-		if(lz4->total_processing == lz4->ring_buffer_size) {
+		if (lz4->total_processing > 0) {
 			real_written = fwrite((void *)lz4->ring_buffer, 1, lz4->total_processing, lz4->fp);
 			if (real_written == 0) {
 				s->errnr = MNSTR_WRITE_ERROR;
