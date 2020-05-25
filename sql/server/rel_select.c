@@ -709,7 +709,7 @@ exp_values_set_supertype(mvc *sql, sql_exp *values, sql_exp *opt_le)
 		}
 		ttpe = exp_subtype(e);
 		if (tpe && ttpe) {
-			supertype(&super, tpe, ttpe);
+			supertype(&super, ttpe, tpe);
 			values->tpe = super;
 			tpe = &values->tpe;
 		} else {

@@ -38,6 +38,12 @@ stdout of test 'subquery6` in directory 'sql/test/subquery` itself:
 % boolean # type
 % 5 # length
 [ false	]
+#SELECT (SELECT (SELECT SUM(col1)) IN (MAX(col2), '12')) FROM another_t;
+% .%6 # table_name
+% %6 # name
+% boolean # type
+% 5 # length
+[ false	]
 #DROP TABLE tbl_ProductSales;
 #DROP TABLE another_T;
 #DROP TABLE integers;

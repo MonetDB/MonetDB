@@ -27,6 +27,18 @@ MAPI  = (monetdb) /var/tmp/mtest-18680/.s.monetdb.31144
 QUERY = SELECT 1 IN (col4, MIN(col2)) FROM another_t;
 ERROR = !SELECT: cannot use non GROUP BY column 'col4' in query results without an aggregate function
 CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-25203/.s.monetdb.33709
+QUERY = SELECT (SELECT col1) IN ('not a number') FROM another_t;
+ERROR = !conversion of string 'not a number' to type int failed.
+CODE  = 22018
+MAPI  = (monetdb) /var/tmp/mtest-25203/.s.monetdb.33709
+QUERY = SELECT CASE WHEN ColID IS NULL THEN CAST(Product_Category AS INT) ELSE TotalSales END FROM tbl_ProductSales;
+ERROR = !conversion of string 'Game' to type int failed.
+CODE  = 22018
+MAPI  = (monetdb) /var/tmp/mtest-25203/.s.monetdb.33709
+QUERY = SELECT ColID FROM tbl_ProductSales WHERE CASE WHEN ColID IS NULL THEN CAST(Product_Category AS INT) ELSE TotalSales END;
+ERROR = !conversion of string 'Fashion' to type int failed.
+CODE  = 22018
 
 # 11:45:43 >  
 # 11:45:43 >  "Done."
