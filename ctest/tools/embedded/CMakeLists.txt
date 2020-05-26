@@ -41,3 +41,15 @@ target_link_libraries(example_temporal
     #sql
     )
 add_test(run_example_temporal example_temporal)
+
+add_executable(example_decimals example_decimals.c)
+target_link_libraries(example_decimals
+  PRIVATE
+    monetdb_config_header
+    embedded
+    sqlinclude
+    gdk
+    mapi
+    #sql
+    )
+add_test(run_example_decimals example_decimals)
