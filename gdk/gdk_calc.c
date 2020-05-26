@@ -13368,10 +13368,7 @@ VARcalcbetween(ValPtr ret, const ValRecord *v, const ValRecord *lo,
 #define IFTHENELSELOOP(TYPE)						\
 	do {								\
 		for (i = 0; i < cnt; i++) {				\
-			if (is_bit_nil(src[i])) {			\
-				((TYPE *) dst)[i] = * (TYPE *) nil;	\
-				nils++;					\
-			} else if (src[i]) {				\
+			if (src[i] && !is_bit_nil(src[i])) {		\
 				((TYPE *) dst)[i] = ((TYPE *) col1)[k]; \
 			} else {					\
 				((TYPE *) dst)[i] = ((TYPE *) col2)[l]; \
@@ -13383,10 +13380,7 @@ VARcalcbetween(ValPtr ret, const ValRecord *v, const ValRecord *lo,
 #define IFTHENELSELOOP_oid()						\
 	do {								\
 		for (i = 0; i < cnt; i++) {				\
-			if (is_bit_nil(src[i])) {			\
-				((oid *) dst)[i] = oid_nil;		\
-				nils++;					\
-			} else if (src[i]) {				\
+			if (src[i] && !is_bit_nil(src[i])) {		\
 				((oid *) dst)[i] = col1 ? ((oid *) col1)[k] : seq1; \
 			} else {					\
 				((oid *) dst)[i] = col2 ? ((oid *) col2)[k] : seq2; \
@@ -13409,8 +13403,6 @@ BATcalcifthenelse_intern(BAT *b,
 	BAT *bn;
 	void *restrict dst;
 	BUN i, k, l;
-	BUN nils = 0;
-	const void *nil;
 	const void *p;
 	const bit *src;
 	BUN cnt = b->batCount;
@@ -13431,17 +13423,13 @@ BATcalcifthenelse_intern(BAT *b,
 
 	src = (const bit *) Tloc(b, 0);
 
-	nil = ATOMnilptr(tpe);
 	dst = (void *) Tloc(bn, 0);
 	k = l = 0;
 	if (bn->tvarsized) {
 		assert((heap1 != NULL && width1 > 0) || (width1 == 0 && incr1 == 0));
 		assert((heap2 != NULL && width2 > 0) || (width2 == 0 && incr2 == 0));
 		for (i = 0; i < cnt; i++) {
-			if (is_bit_nil(src[i])) {
-				p = nil;
-				nils++;
-			} else if (src[i]) {
+			if (src[i] && !is_bit_nil(src[i])) {
 				if (heap1)
 					p = heap1 + VarHeapVal(col1, k, width1);
 				else
@@ -13485,10 +13473,7 @@ BATcalcifthenelse_intern(BAT *b,
 #endif
 			default:
 				for (i = 0; i < cnt; i++) {
-					if (is_bit_nil(src[i])) {
-						p = nil;
-						nils++;
-					} else if (src[i]) {
+					if (src[i] && !is_bit_nil(src[i])) {
 						p = ((const char *) col1) + k * width1;
 					} else {
 						p = ((const char *) col2) + l * width2;
@@ -13505,11 +13490,11 @@ BATcalcifthenelse_intern(BAT *b,
 	BATsetcount(bn, cnt);
 	bn->theap.dirty = true;
 
-	bn->tsorted = cnt <= 1 || nils == cnt;
-	bn->trevsorted = cnt <= 1 || nils == cnt;
+	bn->tsorted = cnt <= 1;
+	bn->trevsorted = cnt <= 1;
 	bn->tkey = cnt <= 1;
-	bn->tnil = nils != 0;
-	bn->tnonil = nils == 0 && nonil1 && nonil2;
+	bn->tnil = 0;
+	bn->tnonil = nonil1 && nonil2;
 
 	return bn;
 }

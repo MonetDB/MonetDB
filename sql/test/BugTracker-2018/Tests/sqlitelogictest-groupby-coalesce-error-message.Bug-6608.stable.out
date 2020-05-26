@@ -77,7 +77,7 @@ stdout of test 'sqlitelogictest-groupby-coalesce-error-message.Bug-6608` in dire
 % 2 # length
 [ 86	]
 #SELECT ALL + 33 * - COALESCE ( - 86, tab1.col2 ) + + col1 FROM tab1;
-% . # table_name
+% .%1 # table_name
 % %1 # name
 % bigint # type
 % 4 # length
@@ -93,7 +93,7 @@ stdout of test 'sqlitelogictest-groupby-coalesce-error-message.Bug-6608` in dire
 [ 0	]
 [ 6561	]
 #SELECT CAST(- 38 + - tab1.col1 - tab1.col1 / COALESCE ( + 20, - tab1.col0 ) AS BIGINT) FROM tab1;
-% sys. # table_name
+% sys.%1 # table_name
 % %1 # name
 % bigint # type
 % 3 # length
@@ -101,7 +101,7 @@ stdout of test 'sqlitelogictest-groupby-coalesce-error-message.Bug-6608` in dire
 [ -97	]
 [ -84	]
 #SELECT DISTINCT COALESCE ( - 82, - cor0.col0, - CAST ( NULL AS INTEGER ) ) / - 70 FROM tab0 AS cor0;
-% . # table_name
+% .%3 # table_name
 % %3 # name
 % int # type
 % 1 # length

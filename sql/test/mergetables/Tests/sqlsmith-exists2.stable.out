@@ -159,8 +159,8 @@ stdout of test 'sqlsmith-exists2` in directory 'sql/test/mergetables` itself:
 # 1)
 # and (ref_4.i is not null))))
 # on (ref_1.bb is null);
-% . # table_name
-% single_value # name
+% .%27 # table_name
+% %27 # name
 % tinyint # type
 % 1 # length
 #select
@@ -190,8 +190,8 @@ stdout of test 'sqlsmith-exists2` in directory 'sql/test/mergetables` itself:
 #  on (true)
 #  on (exists (select ref_5.col0, ref_8.col2))
 #  on (true);
-% . # table_name
-% single_value # name
+% .%44 # table_name
+% %44 # name
 % tinyint # type
 % 1 # length
 [ 1	]

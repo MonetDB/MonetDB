@@ -150,6 +150,58 @@ FUN(bat,TP1,_dec2_,TP2) (bat *res, const int *s1, const bat *bid)
 }
 
 str
+FUN(bat,TP1,_ce_dec2_,TP2) (bat *res, const int *s1, const bat *bid, const bat *r)
+{
+	BAT *b, *c, *bn;
+	BUN p, q;
+	char *msg = NULL;
+	int scale = *s1;
+	bit *ce;
+
+	if ((b = BATdescriptor(*bid)) == NULL) {
+		throw(SQL, "batcalc."STRNG(FUN(,TP1,_dec2_,TP2)), SQLSTATE(HY005) "Cannot access descriptor");
+	}
+	if ((c = BATdescriptor(*r)) == NULL) {
+		BBPunfix(b->batCacheid);
+		throw(SQL, "batcalc."STRNG(FUN(,TP1,_dec2_,TP2)), SQLSTATE(HY005) "Cannot access descriptor");
+	}
+	ce = Tloc(c, 0);
+	bn = COLnew(b->hseqbase, TPE(TP2), BATcount(b), TRANSIENT);
+	if (bn == NULL) {
+		BBPunfix(b->batCacheid);
+		BBPunfix(c->batCacheid);
+		throw(SQL, "sql."STRNG(FUN(dec,TP1,_2_,TP2)), SQLSTATE(HY013) MAL_MALLOC_FAIL);
+	}
+	const TP1 *vals = (const TP1 *) Tloc(b, 0);
+	TP2 *o = (TP2 *) Tloc(bn, 0);
+	bn->tnonil = b->tnonil;
+	bn->tnil = b->tnil;
+	BATloop(b, p, q) {
+		if (ce[p])
+			msg = FUN(do_,TP1,_dec2dec_,TP2)(o, scale, vals[p], 0, 0);
+		else {
+			*o = NIL(TP2);
+			bn->tnonil = false;
+		}
+		if (msg) {
+			BBPreclaim(bn);
+			BBPunfix(b->batCacheid);
+			BBPunfix(c->batCacheid);
+			return msg;
+		}
+		o++;
+	}
+	BATsetcount(bn, BATcount(b));
+	bn->tsorted = false;
+	bn->trevsorted = false;
+	BATkey(bn, false);
+
+	BBPkeepref(*res = bn->batCacheid);
+	BBPunfix(b->batCacheid);
+	BBPunfix(c->batCacheid);
+	return MAL_SUCCEED;
+}
+str
 FUN(bat,TP1,_dec2dec_,TP2) (bat *res, const int *S1, const bat *bid, const int *d2, const int *S2)
 {
 	BAT *b, *bn;
@@ -184,6 +236,58 @@ FUN(bat,TP1,_dec2dec_,TP2) (bat *res, const int *S1, const bat *bid, const int *
 
 	BBPkeepref(*res = bn->batCacheid);
 	BBPunfix(b->batCacheid);
+	return msg;
+}
+
+str
+FUN(bat,TP1,_ce_dec2dec_,TP2) (bat *res, const int *S1, const bat *bid, const int *d2, const int *S2, const bat *r)
+{
+	BAT *b, *c, *bn;
+	BUN p, q;
+	char *msg = NULL;
+	bit *ce;
+
+	if ((b = BATdescriptor(*bid)) == NULL) {
+		throw(SQL, "batcalc."STRNG(FUN(,TP1,_dec2dec_,TP2)), SQLSTATE(HY005) "Cannot access descriptor");
+	}
+	if ((c = BATdescriptor(*r)) == NULL) {
+		BBPunfix(b->batCacheid);
+		throw(SQL, "batcalc."STRNG(FUN(,TP1,_dec2dec_,TP2)), SQLSTATE(HY005) "Cannot access descriptor");
+	}
+	ce = Tloc(c, 0);
+	bn = COLnew(b->hseqbase, TPE(TP2), BATcount(b), TRANSIENT);
+	if (bn == NULL) {
+		BBPunfix(b->batCacheid);
+		BBPunfix(c->batCacheid);
+		throw(SQL, "sql."STRNG(FUN(,TP1,_dec2dec_,TP2)), SQLSTATE(HY013) MAL_MALLOC_FAIL);
+	}
+	const TP1 *vals = (const TP1 *) Tloc(b, 0);
+	TP2 *o = (TP2 *) Tloc(bn, 0);
+	bn->tnonil = b->tnonil;
+	bn->tnil = b->tnil;
+	BATloop(b, p, q) {
+		if (ce[p])
+			msg = FUN(do_,TP1,_dec2dec_,TP2)(o, *S1, vals[p], *d2, *S2);
+		else {
+			*o = NIL(TP2);
+			bn->tnonil = false;
+		}
+		if (msg) {
+			BBPunfix(bn->batCacheid);
+			BBPunfix(b->batCacheid);
+			BBPunfix(c->batCacheid);
+			return msg;
+		}
+		o++;
+	}
+	BATsetcount(bn, BATcount(b));
+	bn->tsorted = false;
+	bn->trevsorted = false;
+	BATkey(bn, false);
+
+	BBPkeepref(*res = bn->batCacheid);
+	BBPunfix(b->batCacheid);
+	BBPunfix(c->batCacheid);
 	return msg;
 }
 
@@ -225,6 +329,57 @@ FUN(bat,TP1,_num2dec_,TP2) (bat *res, const bat *bid, const int *d2, const int *
 	return msg;
 }
 
+str
+FUN(bat,TP1,_ce_num2dec_,TP2) (bat *res, const bat *bid, const int *d2, const int *s2, const bat *r)
+{
+	BAT *b, *c, *bn;
+	BUN p, q;
+	char *msg = NULL;
+	bit *ce;
+
+	if ((b = BATdescriptor(*bid)) == NULL) {
+		throw(SQL, "batcalc."STRNG(FUN(,TP1,_num2dec_,TP2)), SQLSTATE(HY005) "Cannot access descriptor");
+	}
+	if ((c = BATdescriptor(*r)) == NULL) {
+		BBPunfix(b->batCacheid);
+		throw(SQL, "batcalc."STRNG(FUN(,TP1,_num2dec_,TP2)), SQLSTATE(HY005) "Cannot access descriptor");
+	}
+	ce = Tloc(c, 0);
+	bn = COLnew(b->hseqbase, TPE(TP2), BATcount(b), TRANSIENT);
+	if (bn == NULL) {
+		BBPunfix(b->batCacheid);
+		BBPunfix(c->batCacheid);
+		throw(SQL, "sql."STRNG(FUN(,TP1,_num2dec_,TP2)), SQLSTATE(HY013) MAL_MALLOC_FAIL);
+	}
+	const TP1 *vals = (const TP1 *) Tloc(b, 0);
+	TP2 *o = (TP2 *) Tloc(bn, 0);
+	bn->tnonil = b->tnonil;
+	bn->tnil = b->tnil;
+	BATloop(b, p, q) {
+		if (ce[p])
+			msg = FUN(do_,TP1,_dec2dec_,TP2)(o, 0, vals[p], *d2, *s2);
+		else {
+			*o = NIL(TP2);
+			bn->tnonil = false;
+		}
+		if (msg) {
+			BBPunfix(bn->batCacheid);
+			BBPunfix(b->batCacheid);
+			BBPunfix(c->batCacheid);
+			return msg;
+		}
+		o++;
+	}
+	BATsetcount(bn, BATcount(b));
+	bn->tsorted = false;
+	bn->trevsorted = false;
+	BATkey(bn, false);
+
+	BBPkeepref(*res = bn->batCacheid);
+	BBPunfix(b->batCacheid);
+	BBPunfix(c->batCacheid);
+	return msg;
+}
 
 /* undo local defines */
 #undef FUN

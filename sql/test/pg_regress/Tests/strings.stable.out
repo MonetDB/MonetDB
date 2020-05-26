@@ -573,7 +573,7 @@ stdout of test 'strings` in directory 'sql/test/pg_regress` itself:
 #insert into toasttest values(repeat('1234567890',10000));
 [ 1 ]
 #SELECT substring(f1, -1, 5) from toasttest;
-% sys. # table_name
+% sys.%1 # table_name
 % %1 # name
 % clob # type
 % 5 # length
@@ -582,7 +582,7 @@ stdout of test 'strings` in directory 'sql/test/pg_regress` itself:
 [ "12345"	]
 [ "12345"	]
 #SELECT substring(f1, 5, -1) from toasttest;
-% sys. # table_name
+% sys.%1 # table_name
 % %1 # name
 % clob # type
 % 0 # length
@@ -591,7 +591,7 @@ stdout of test 'strings` in directory 'sql/test/pg_regress` itself:
 [ ""	]
 [ ""	]
 #SELECT substring(f1, 99995) from toasttest;
-% sys. # table_name
+% sys.%1 # table_name
 % %1 # name
 % varchar # type
 % 6 # length
@@ -600,7 +600,7 @@ stdout of test 'strings` in directory 'sql/test/pg_regress` itself:
 [ "567890"	]
 [ "567890"	]
 #SELECT substring(f1, 99995, 10) from toasttest;
-% sys. # table_name
+% sys.%1 # table_name
 % %1 # name
 % clob # type
 % 6 # length
@@ -615,28 +615,28 @@ stdout of test 'strings` in directory 'sql/test/pg_regress` itself:
 #insert into toasttest values(decode(repeat('1234567890',10000),'escape'));
 [ 1 ]
 #SELECT substring(f1, -1, 5) from toasttest;
-% sys. # table_name
+% sys.%1 # table_name
 % %1 # name
 % clob # type
 % 5 # length
 [ "12345"	]
 [ "12345"	]
 #SELECT substring(f1, 5, -1) from toasttest;
-% sys. # table_name
+% sys.%1 # table_name
 % %1 # name
 % clob # type
 % 0 # length
 [ ""	]
 [ ""	]
 #SELECT substring(f1, 99995) from toasttest;
-% sys. # table_name
+% sys.%1 # table_name
 % %1 # name
 % clob # type
 % 6 # length
 [ "567890"	]
 [ "567890"	]
 #SELECT substring(f1, 99995, 10) from toasttest;
-% sys. # table_name
+% sys.%1 # table_name
 % %1 # name
 % clob # type
 % 6 # length

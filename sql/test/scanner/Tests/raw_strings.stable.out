@@ -61,20 +61,20 @@ stdout of test 'raw_strings` in directory 'sql/test/scanner` itself:
 # 13:58:26 >  
 
 #SELECT r'\"';
-% . # table_name
-% single_value # name
+% .%2 # table_name
+% %2 # name
 % char # type
 % 2 # length
 [ "\\\""	]
 #SELECT r'''';
-% . # table_name
-% single_value # name
+% .%2 # table_name
+% %2 # name
 % char # type
 % 1 # length
 [ "'"	]
 #SELECT r'\u1234';
-% . # table_name
-% single_value # name
+% .%2 # table_name
+% %2 # name
 % char # type
 % 6 # length
 [ "\\u1234"	]

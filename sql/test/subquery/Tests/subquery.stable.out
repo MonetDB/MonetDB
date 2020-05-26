@@ -204,8 +204,8 @@ stdout of test 'subquery` in directory 'sql/test/subquery` itself:
 % 5,	5 # length
 [ true,	true	]
 #SELECT EXISTS(SELECT * FROM integers) AND EXISTS(SELECT * FROM integers); -- true
-% . # table_name
-% %11 # name
+% .%12 # table_name
+% %12 # name
 % boolean # type
 % 5 # length
 [ true	]

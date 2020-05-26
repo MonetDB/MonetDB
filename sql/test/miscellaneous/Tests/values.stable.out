@@ -120,8 +120,8 @@ stdout of test 'values` in directory 'sql/test/miscellaneous` itself:
 [ 2	]
 #create function foo() returns table (aa int, bb int) begin return table(values (1,2)); end;
 #select aa, bb + 1 from foo();
-% .%1,	. # table_name
-% aa,	%3 # name
+% .%1,	.%6 # table_name
+% aa,	%6 # name
 % int,	bigint # type
 % 1,	1 # length
 [ 1,	3	]
