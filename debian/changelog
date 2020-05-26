@@ -1,3 +1,10 @@
+monetdb (11.37.5) unstable; urgency=low
+
+  * Rebuilt.
+  * BZ#6864: (I)LIKE with multiple % doen't find matches
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Tue, 26 May 2020 10:38:30 +0200
+
 monetdb (11.37.3) unstable; urgency=low
 
   * Rebuilt.
