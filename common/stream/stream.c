@@ -203,11 +203,41 @@ mnstr_destroy(stream *s)
 char *
 mnstr_error(const stream *s)
 {
+	char buf[128];
+
 	if (s == NULL)
 		return "Connection terminated";
-	return s->error(s);
-}
 
+	if (s->errnr == MNSTR_NO__ERROR)
+		return strdup("no error");
+
+	if (s->errmsg != NULL)
+		return strdup(s->errmsg);
+
+	switch (s->errnr) {
+	case MNSTR_NO__ERROR:
+		/* unreachable */
+		assert(0);
+		return NULL;
+	case MNSTR_OPEN_ERROR:
+		snprintf(buf, sizeof(buf), "error could not open file %.100s\n",
+			 s->name);
+		return strdup(buf);
+	case MNSTR_READ_ERROR:
+		snprintf(buf, sizeof(buf), "error reading file %.100s\n",
+			 s->name);
+		return strdup(buf);
+	case MNSTR_WRITE_ERROR:
+		snprintf(buf, sizeof(buf), "error writing file %.100s\n",
+			 s->name);
+		return strdup(buf);
+	case MNSTR_TIMEOUT:
+		snprintf(buf, sizeof(buf), "timeout on %.100s\n", s->name);
+		return strdup(buf);
+	}
+	snprintf(buf, sizeof(buf), "Unknown error %d\n", (int)s->errnr);
+	return strdup(buf);
+}
 
 /* flush buffer, return 0 on success, non-zero on failure */
 int
@@ -308,12 +338,31 @@ mnstr_errnr(const stream *s)
 	return s->errnr;
 }
 
+const char *
+mnstr_error_kind_name(mnstr_error_kind k)
+{
+	switch (k) {
+	case MNSTR_NO__ERROR:
+		return "MNSTR_NO__ERROR";
+	case MNSTR_OPEN_ERROR:
+		return "MNSTR_OPEN_ERROR";
+	case MNSTR_READ_ERROR:
+		return "MNSTR_READ_ERROR";
+	case MNSTR_WRITE_ERROR:
+		return "MNSTR_WRITE_ERROR";
+	case MNSTR_TIMEOUT:
+		return "MNSTR_TIMEOUT";
+	default:
+		return "<UNKNOWN_ERROR>";
+	}
 
+}
 void
 mnstr_clearerr(stream *s)
 {
 	if (s != NULL) {
 		s->errnr = MNSTR_NO__ERROR;
+		s->errmsg[0] = '\0';
 		if (s->clrerr)
 			s->clrerr(s);
 	}
@@ -381,34 +430,6 @@ destroy_stream(stream *s)
 }
 
 
-static char *
-error(const stream *s)
-{
-	char buf[128];
-
-	switch (s->errnr) {
-	case MNSTR_NO__ERROR:
-		return strdup("no error");
-	case MNSTR_OPEN_ERROR:
-		snprintf(buf, sizeof(buf), "error could not open file %.100s\n",
-			 s->name);
-		return strdup(buf);
-	case MNSTR_READ_ERROR:
-		snprintf(buf, sizeof(buf), "error reading file %.100s\n",
-			 s->name);
-		return strdup(buf);
-	case MNSTR_WRITE_ERROR:
-		snprintf(buf, sizeof(buf), "error writing file %.100s\n",
-			 s->name);
-		return strdup(buf);
-	case MNSTR_TIMEOUT:
-		snprintf(buf, sizeof(buf), "timeout on %.100s\n", s->name);
-		return strdup(buf);
-	}
-	return strdup("Unknown error");
-}
-
-
 stream *
 create_stream(const char *name)
 {
@@ -425,7 +446,7 @@ create_stream(const char *name)
 		.binary = false,
 		.name = strdup(name),
 		.errnr = MNSTR_NO__ERROR,
-		.error = error,
+		.errmsg = {0},
 		.destroy = destroy_stream,
 	};
 	if(s->name == NULL) {
@@ -465,13 +486,6 @@ static void
 wrapper_clrerr(stream *s)
 {
 	s->inner->clrerr(s->inner);
-}
-
-
-static char *
-wrapper_error(const stream *s)
-{
-	return s->inner->error(s->inner);
 }
 
 
@@ -550,7 +564,6 @@ create_wrapper_stream(const char *name, stream *inner)
 	s->write = inner->write == NULL ? NULL : wrapper_write;
 	s->close = inner->close == NULL ? NULL : wrapper_close;
 	s->clrerr = inner->clrerr == NULL ? NULL : wrapper_clrerr;
-	s->error = inner->error == NULL ? NULL : wrapper_error;
 	s->destroy = inner->destroy == NULL ? NULL : wrapper_destroy;
 	s->flush = inner->flush == NULL ? NULL : wrapper_flush;
 	s->fsync = inner->fsync == NULL ? NULL : wrapper_fsync;

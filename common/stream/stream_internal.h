@@ -158,7 +158,6 @@ struct stream {
 	ssize_t (*write)(stream *restrict s, const void *restrict buf, size_t elmsize, size_t cnt);
 	void (*close)(stream *s);
 	void (*clrerr)(stream *s);
-	char *(*error)(const stream *s);
 	void (*destroy)(stream *s);
 	int (*flush)(stream *s);
 	int (*fsync)(stream *s);
@@ -166,6 +165,7 @@ struct stream {
 	int (*fsetpos)(stream *restrict s, fpos_t *restrict p);
 	void (*update_timeout)(stream *s);
 	int (*isalive)(const stream *s);
+	char errmsg[1024]; // avoid allocation on error. We don't have THAT many streams..
 };
 
 /* This is used in the file opening functions, in a code sequence that is

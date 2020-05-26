@@ -860,7 +860,10 @@ mvc_import_table(Client cntxt, BAT ***bats, mvc *m, bstream *bs, sql_table *t, c
 		return NULL;
 	}
 	if (mnstr_errnr(bs->s)) {
-		sql_error(m, 500, "stream not open %d", mnstr_errnr(bs->s));
+		mnstr_error_kind errnr = mnstr_errnr(bs->s);
+		char *msg = mnstr_error(bs->s);
+		sql_error(m, 500, "stream not open %s: %s", mnstr_error_kind_name(errnr), msg ? msg : "unknown error");
+		free(msg);
 		return NULL;
 	}
 	if (offset < 0 || offset > (lng) BUN_MAX) {
