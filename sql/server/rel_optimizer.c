@@ -2510,25 +2510,29 @@ exps_unique(mvc *sql, sql_rel *rel, list *exps)
 	return 0;
 }
 
-static int
-rel_is_join_on_pkey( sql_rel *rel ) 
+static sql_column *
+exp_is_pkey(sql_rel *rel, sql_exp *e)
 {
-	node *n;
+	if (find_prop(e->p, PROP_HASHCOL)) { /* aligned PKEY JOIN */
+		fcmp cmp = (fcmp)&kc_column_cmp;
+		sql_column *c = exp_find_column(rel, e, -2);
 
+		if (c && c->t->pkey && list_find(c->t->pkey->k.columns, c, cmp) != NULL)
+			return c;
+	}
+	return NULL;
+}
+
+static int
+rel_is_join_on_pkey(sql_rel *rel) 
+{
 	if (!rel || !rel->exps)
 		return 0;
-	for (n = rel->exps->h; n; n = n->next){
+	for (node *n = rel->exps->h; n; n = n->next) {
 		sql_exp *je = n->data;
 
-		if (je->type == e_cmp && je->flag == cmp_equal &&
-		    find_prop(((sql_exp*)je->l)->p, PROP_HASHCOL)) { /* aligned PKEY JOIN */
-			fcmp cmp = (fcmp)&kc_column_cmp;
-			sql_exp *e = je->l;
-			sql_column *c = exp_find_column(rel, e, -2);
-
-			if (c && c->t->pkey && list_find(c->t->pkey->k.columns, c, cmp) != NULL)
-				return 1;
-		}
+		if (je->type == e_cmp && je->flag == cmp_equal && (exp_is_pkey(rel, je->l) || exp_is_pkey(rel, je->r)))
+			return 1;
 	}
 	return 0;
 }
@@ -2577,6 +2581,75 @@ rel_distinct_aggregate_on_unique_values(mvc *sql, sql_rel *rel, int *changes)
 	return rel;
 }
 
+static bool
+has_no_selectivity(mvc *sql, sql_rel *rel)
+{
+	if (!rel)
+		return true;
+
+	switch(rel->op){
+	case op_basetable:
+	case op_truncate:
+	case op_table:
+		return true;
+	case op_topn:
+	case op_sample:
+	case op_project:
+	case op_groupby:
+		return has_no_selectivity(sql, rel->l);
+	case op_ddl:
+	case op_insert:
+	case op_update:
+	case op_delete:
+	case op_join:
+	case op_left:
+	case op_right:
+	case op_full:
+	case op_semi:
+	case op_anti:
+	case op_union:
+	case op_inter:
+	case op_except:
+	case op_select:
+		return false;
+	}
+	return rel;
+}
+
+static sql_column *
+is_fk_column_of_pk(sql_rel *rel, sql_column *pkc, sql_exp *e) /* test if e is a foreing key column for the pk on pkc */
+{
+	sql_column *c = exp_find_column(rel, e, -2);
+
+	if (c) {
+		sql_table *t = c->t;
+
+		for (node *n = t->idxs.set->h; n; n = n->next) {
+			sql_idx *li = n->data;
+
+			if (li->type == join_idx) {
+				for (node *m = li->columns->h ; m ; m = m->next) {
+					sql_kc *fkc = m->data;
+
+					if (strcmp(fkc->c->base.name, c->base.name) == 0) { /* same fkey column */
+						sql_key *fkey = &((sql_fkey*)li->key)->rkey->k;
+
+						if (strcmp(fkey->t->base.name, pkc->t->base.name) == 0) { /* to same pk table */
+							for (node *o = fkey->columns->h ; o ; o = n->next) {
+								sql_kc *kc = m->data;
+
+								if (strcmp(kc->c->base.name, pkc->base.name) == 0) /* to same pk table column */
+									return c;
+							}
+						}
+					}
+				}
+			}
+		}
+	}
+	return NULL;
+}
+
 static sql_rel *
 rel_distinct_project2groupby(mvc *sql, sql_rel *rel, int *changes)
 {
@@ -2599,14 +2672,15 @@ rel_distinct_project2groupby(mvc *sql, sql_rel *rel, int *changes)
 	 * 	into project( (semi)join(p,f) [ p.pk = f.fk ] ) [ p.pk ] */
 	if (rel->op == op_project && rel->l && !rel->r /* no order by */ && need_distinct(rel) &&
 	    l && (is_select(l->op) || l->op == op_join) && rel_is_join_on_pkey(l) /* [ pk == fk ] */) {
-		sql_exp *found = NULL, *pk = NULL;
+		sql_exp *found = NULL, *pk = NULL, *fk = NULL;
 		bool all_exps_atoms = true;
+		sql_column *pkc = NULL;
 
 		for (node *m = l->exps->h ; m ; m = m->next) { /* find a primary key join */
 			sql_exp *je = (sql_exp *) m->data;
 			sql_exp *le = je->l, *re = je->r;
 		
-			if (find_prop(le->p, PROP_HASHCOL)) { /* le is the primary key */
+			if ((pkc = exp_is_pkey(l, le))) { /* le is the primary key */
 				all_exps_atoms = true;
 
 				for (node *n = rel->exps->h; n && all_exps_atoms; n = n->next) {
@@ -2618,8 +2692,9 @@ rel_distinct_project2groupby(mvc *sql, sql_rel *rel, int *changes)
 						all_exps_atoms = false;
 				}
 				pk = le;
+				fk = re;
 			}
-			if (!found && find_prop(re->p, PROP_HASHCOL)) { /* re is the primary key */
+			if (!found && (pkc = exp_is_pkey(l, re))) { /* re is the primary key */
 				all_exps_atoms = true;
 
 				for (node *n = rel->exps->h; n && all_exps_atoms; n = n->next) {
@@ -2631,13 +2706,25 @@ rel_distinct_project2groupby(mvc *sql, sql_rel *rel, int *changes)
 						all_exps_atoms = false;
 				}
 				pk = re;
+				fk = le;
 			}
 		}
 
 		if (all_exps_atoms && found) { /* rel must have the same primary key on the projection list */
+			/* if the foreign key has no selectivity, the join can be removed */
+			if (!(rel_is_ref(l)) && ((rel_find_exp(l->l, fk) && is_fk_column_of_pk(l->l, pkc, fk) && has_no_selectivity(sql, l->l)) || 
+				(l->r && rel_find_exp(l->r, fk) && is_fk_column_of_pk(l->r, pkc, fk) && has_no_selectivity(sql, l->r)))) {
+				sql_rel *side = (rel_find_exp(l->l, pk) != NULL)?l->l:l->r;
+
+				rel->l = rel_dup(side);
+				rel_destroy(l);
+				*changes = 1;
+				set_nodistinct(rel);
+				return rel;
+			}
 			/* if the join has no multiple references it can be re-written into a semijoin */
 			if (l->op == op_join && !(rel_is_ref(l)) && list_length(rel->exps) == 1) { /* other expressions may come from the other side */
-				if (rel_find_exp(l->r, pk)) {
+				if (l->r && rel_find_exp(l->r, pk)) {
 					sql_rel *temp = l->l;
 					l->l = l->r;
 					l->r = temp;
@@ -4729,14 +4816,13 @@ rel_push_join_down(mvc *sql, sql_rel *rel, int *changes)
 static sql_rel *
 rel_push_semijoin_down_or_up(mvc *sql, sql_rel *rel, int *changes)
 {
-	(void)*changes;
-
 	if (rel->op == op_join && rel->exps && rel->l) {
 		sql_rel *l = rel->l, *r = rel->r;
 
 		if (is_semi(l->op) && !rel_is_ref(l) && is_select(r->op) && !rel_is_ref(r)) {
 			rel->l = l->l;
 			l->l = rel;
+			(*changes)++;
 			return l;
 		}
 	}
@@ -4751,6 +4837,7 @@ rel_push_semijoin_down_or_up(mvc *sql, sql_rel *rel, int *changes)
 			if (is_semi(ll->op) && !rel_is_ref(ll)) {
 				l->l = ll->l;
 				ll->l = rel;
+				(*changes)++;
 				return ll;
 			}
 		}
@@ -4771,6 +4858,7 @@ rel_push_semijoin_down_or_up(mvc *sql, sql_rel *rel, int *changes)
 			     rel_has_exp(rel->l, sje->r) >= 0) {
 				rel->l = rel_select(sql->sa, rel->l, NULL);
 				rel_select_add_exp(sql->sa, rel->l, sje);
+				(*changes)++;
 			} else {
 				append(nexps, sje);
 			}
@@ -4833,6 +4921,7 @@ rel_push_semijoin_down_or_up(mvc *sql, sql_rel *rel, int *changes)
 		l->exps = njexps;
 		rel_destroy(rel);
 		rel = l;
+		(*changes)++;
 	}
 	return rel;
 }
@@ -9125,10 +9214,13 @@ optimize_rel(mvc *sql, sql_rel *rel, int *g_changes, int level, int value_based_
 	}
 
 	if (gp.cnt[op_anti] || gp.cnt[op_semi]) {
+		int semijoin_changes = 0;
 		/* rewrite semijoin (A, join(A,B)) into semijoin (A,B) */
 		rel = rel_visitor_bottomup(sql, rel, &rel_rewrite_semijoin, &changes);
 		/* push semijoin through join */
-		rel = rel_visitor_bottomup(sql, rel, &rel_push_semijoin_down_or_up, &changes);
+		rel = rel_visitor_bottomup(sql, rel, &rel_push_semijoin_down_or_up, &semijoin_changes);
+		if (level == 0) /* for now count optimizer changes just for first iteration */
+			changes += semijoin_changes;
 		/* antijoin(a, union(b,c)) -> antijoin(antijoin(a,b), c) */
 		rel = rel_visitor_bottomup(sql, rel, &rel_rewrite_antijoin, &changes);
 		if (level <= 0)

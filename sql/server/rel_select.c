@@ -5842,7 +5842,6 @@ rel_query(sql_query *query, sql_rel *rel, symbol *sq, int toplevel, exp_kind ek)
 				res = rel_crossproduct(sql->sa, res, fnd, op_join);
 				if (lateral)
 					set_dependent(res);
-				res = rel_select(sql->sa, res, NULL);
 			} else {
 				res = fnd;
 			}
