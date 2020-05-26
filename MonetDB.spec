@@ -1,5 +1,5 @@
 %global name MonetDB
-%global version 11.37.5
+%global version 11.37.6
 %{!?buildno: %global buildno %(date +%Y%m%d)}
 
 # Use bcond_with to add a --with option; i.e., "without" is default.
@@ -984,7 +984,7 @@ fi
 %postun -p /sbin/ldconfig
 
 %changelog
-* Tue May 26 2020 Sjoerd Mullender <sjoerd@acm.org> - 11.37.5-20200526
+* Tue May 26 2020 Sjoerd Mullender <sjoerd@acm.org> - 11.37.6-20200526
 - Rebuilt.
 - BZ#6864: (I)LIKE with multiple % doen't find matches
 
