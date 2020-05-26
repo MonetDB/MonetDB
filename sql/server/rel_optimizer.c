@@ -3701,8 +3701,7 @@ are_equality_exps( list *exps, sql_exp **L)
 			return (exp_match(l, le));
 		}
 		if (e->type == e_cmp && e->flag == cmp_or && !is_anti(e) && !is_semantics(e))
-			return (are_equality_exps(e->l, L) && 
-				are_equality_exps(e->r, L));
+			return (are_equality_exps(e->l, L) && are_equality_exps(e->r, L));
 	}
 	return 0;
 }
@@ -3731,25 +3730,22 @@ equality_exps_2_in( mvc *sql, sql_exp *ce, list *l, list *r)
 	return exp_in( sql->sa, ce, nl, cmp_in);
 }
 
-static sql_rel *
-rel_select_cse(mvc *sql, sql_rel *rel, int *changes)
+static list *
+merge_ors(mvc *sql, list *exps, int *changes)
 {
-	if (is_select(rel->op) && rel->exps) { 
-		node *n;
-		list *nexps;
-		int needed = 0;
+	list *nexps = NULL;
+	int needed = 0;
 
-		for (n=rel->exps->h; n && !needed; n = n->next) {
-			sql_exp *e = n->data;
+	for (node *n = exps->h; n && !needed; n = n->next) {
+		sql_exp *e = n->data;
 
-			if (e->type == e_cmp && e->flag == cmp_or && !is_anti(e)) 
-				needed = 1;
-		}
-		if (!needed)
-			return rel;
+		if (e->type == e_cmp && e->flag == cmp_or && !is_anti(e))
+			needed = 1;
+	}
 
+	if (needed) {
 		nexps = new_exp_list(sql->sa);
-		for (n=rel->exps->h; n; n = n->next) {
+		for (node *n = exps->h; n; n = n->next) {
 			sql_exp *e = n->data, *l = NULL;
 
 			if (e->type == e_cmp && e->flag == cmp_or && !is_anti(e) && are_equality_exps(e->l, &l) && are_equality_exps(e->r, &l) && l) {
@@ -3759,8 +3755,28 @@ rel_select_cse(mvc *sql, sql_rel *rel, int *changes)
 				append(nexps, e);
 			}
 		}
-		rel->exps = nexps;
+	} else {
+		nexps = exps;
 	}
+
+	for (node *n = nexps->h; n ; n = n->next) {
+		sql_exp *e = n->data;
+
+		if (e->type == e_cmp && e->flag == cmp_or) {
+			e->l = merge_ors(sql, e->l, changes);
+			e->r = merge_ors(sql, e->r, changes);
+		}
+	}
+
+	return nexps;
+}
+
+static sql_rel *
+rel_select_cse(mvc *sql, sql_rel *rel, int *changes)
+{
+	if (is_select(rel->op) && rel->exps)
+		rel->exps = merge_ors(sql, rel->exps, changes); /* x = 1 or x = 2 => x in (1, 2)*/
+
 	if ((is_select(rel->op) || is_join(rel->op) || is_semi(rel->op)) && rel->exps) { 
 		node *n;
 		list *nexps;
