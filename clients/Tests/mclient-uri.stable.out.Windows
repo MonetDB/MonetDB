@@ -20,8 +20,12 @@ stdout of test 'mclient-uri` in directory 'clients` itself:
 
 
 
-% . # table_name
-% single_value # name
+# 13:05:14 >  
+# 13:05:14 >  mclient -d mapi:monetdb://xps13:35757/mTests_clients?language=sql&user=monetdb -f test -t none -E utf-8 -s select 1
+# 13:05:14 >  
+
+% .%2 # table_name
+% %2 # name
 % tinyint # type
 % 1 # length
 [ 1	]

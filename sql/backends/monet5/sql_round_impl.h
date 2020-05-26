@@ -16,12 +16,10 @@
 #define bat_round_wrap		FUN(TYPE, bat_round_wrap)
 #define nil_2dec		FUN(nil_2dec, TYPE)
 #define str_2dec		FUN(str_2dec, TYPE)
-#define nil_2num		FUN(nil_2num, TYPE)
-#define str_2num		FUN(str_2num, TYPE)
 #define batnil_2dec		FUN(batnil_2dec, TYPE)
+#define batnil_ce_2dec		FUN(batnil_ce_2dec, TYPE)
 #define batstr_2dec		FUN(batstr_2dec, TYPE)
-#define batnil_2num		FUN(batnil_2num, TYPE)
-#define batstr_2num		FUN(batstr_2num, TYPE)
+#define batstr_ce_2dec          FUN(batstr_ce_2dec, TYPE)
 #define dec2second_interval	FUN(TYPE, dec2second_interval)
 
 static inline TYPE
@@ -323,20 +321,6 @@ str_2dec(TYPE *res, const str *val, const int *d, const int *sc)
 }
 
 str
-nil_2num(TYPE *res, const void *v, const int *len)
-{
-	int zero = 0;
-	return nil_2dec(res, v, len, &zero);
-}
-
-str
-str_2num(TYPE *res, const str *v, const int *len)
-{
-	int zero = 0;
-	return str_2dec(res, v, len, &zero);
-}
-
-str
 batnil_2dec(bat *res, const bat *bid, const int *d, const int *sc)
 {
 	BAT *b, *dst;
@@ -363,6 +347,13 @@ batnil_2dec(bat *res, const bat *bid, const int *d, const int *sc)
 	BBPkeepref(*res = dst->batCacheid);
 	BBPunfix(b->batCacheid);
 	return MAL_SUCCEED;
+}
+
+str
+batnil_ce_2dec(bat *res, const bat *bid, const int *d, const int *sc, const bat *r)
+{
+	(void)r;
+	return batnil_2dec(res, bid, d, sc);
 }
 
 str
@@ -403,33 +394,37 @@ batstr_2dec(bat *res, const bat *bid, const int *d, const int *sc)
 }
 
 str
-batnil_2num(bat *res, const bat *bid, const int *len)
+batstr_ce_2dec(bat *res, const bat *bid, const int *d, const int *sc, const bat *cond)
 {
-	int zero = 0;
-	return batnil_2dec(res, bid, len, &zero);
-}
-
-str
-batstr_2num(bat *res, const bat *bid, const int *len)
-{
-	BAT *b, *dst;
+	BAT *b, *dst, *c;
 	BATiter bi;
 	BUN p, q;
 	char *msg = NULL;
+	bit *ce;
 
 	if ((b = BATdescriptor(*bid)) == NULL) {
-		throw(SQL, "batcalc.str_2num_" STRING(TYPE), SQLSTATE(HY005) "Cannot access column descriptor");
+		throw(SQL, "batcalc.str_2dec_" STRING(TYPE), SQLSTATE(HY005) "Cannot access column descriptor");
 	}
+	if ((c = BATdescriptor(*cond)) == NULL) {
+		BBPunfix(b->batCacheid);
+		throw(SQL, "batcalc.str_2dec_" STRING(TYPE), SQLSTATE(HY005) "Cannot access column descriptor");
+	}
+	const TYPE n = NIL(TYPE);
 	bi = bat_iterator(b);
+	ce = Tloc(c, 0);
 	dst = COLnew(b->hseqbase, TPE(TYPE), BATcount(b), TRANSIENT);
 	if (dst == NULL) {
 		BBPunfix(b->batCacheid);
-		throw(SQL, "sql.num_" STRING(TYPE), SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		BBPunfix(c->batCacheid);
+		throw(SQL, "sql.dec_" STRING(TYPE), SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
 	BATloop(b, p, q) {
 		str v = (str) BUNtvar(bi, p);
 		TYPE r;
-		msg = str_2num(&r, &v, len);
+		if (ce[p]) 
+			msg = str_2dec(&r, &v, d, sc);
+		else
+			r = n;
 		if (msg) {
 			BBPunfix(dst->batCacheid);
 			BBPunfix(b->batCacheid);
@@ -438,7 +433,7 @@ batstr_2num(bat *res, const bat *bid, const int *len)
 		if (BUNappend(dst, &r, false) != GDK_SUCCEED) {
 			BBPunfix(b->batCacheid);
 			BBPreclaim(dst);
-			throw(SQL, "sql.num_" STRING(TYPE), SQLSTATE(HY013) MAL_MALLOC_FAIL);
+			throw(SQL, "sql.dec_" STRING(TYPE), SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		}
 	}
 	BBPkeepref(*res = dst->batCacheid);
@@ -477,10 +472,6 @@ dec2second_interval(lng *res, const int *sc, const TYPE *dec, const int *ek, con
 #undef bat_round_wrap
 #undef nil_2dec
 #undef str_2dec
-#undef nil_2num
-#undef str_2num
 #undef batnil_2dec
 #undef batstr_2dec
-#undef batnil_2num
-#undef batstr_2num
 #undef dec2second_interval

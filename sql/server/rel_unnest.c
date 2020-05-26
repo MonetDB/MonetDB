@@ -2651,8 +2651,6 @@ rewrite_ifthenelse(mvc *sql, sql_rel *rel, sql_exp *e, int depth, int *changes)
 	if (is_ifthenelse_func(sf) && !list_empty(e->l)) {
 		list *l = e->l;
 		sql_exp *cond = l->h->data; 
-		sql_subfunc *nf = cond->f;
-		sql_rel *inner = rel->l;
 		sql_exp *then_exp = l->h->next->data;
 		sql_exp *else_exp = l->h->next->next->data;
 
@@ -2701,16 +2699,6 @@ rewrite_ifthenelse(mvc *sql, sql_rel *rel, sql_exp *e, int depth, int *changes)
 				set_single(usq);
 			set_processed(usq);
 			e = exp_rel(sql, usq);
-		} else
-		if (!e->used && (has_nil(cond) || (inner && is_outerjoin(inner->op))) && (cond->type != e_func || !is_isnull_func(nf))) {
-			/* add is null */
-			sql_exp *condnil = rel_unop_(sql, rel, cond, NULL, "isnull", card_value);
-
-			set_has_no_nil(condnil);
-			cond = exp_copy(sql, cond);
-			cond = rel_nop_(sql, rel, condnil, exp_atom_bool(sql->sa, 0), cond, NULL, NULL, "ifthenelse", card_value);
-			l->h->data = cond;
-			e->used = 1;
 		}
 	}
 	return e;
