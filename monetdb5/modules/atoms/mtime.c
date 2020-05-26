@@ -842,7 +842,7 @@ MTIMEstr_to_time(daytime *ret, const char *const *s, const char *const *format)
 	if (strptime(*s, *format, &tm) == NULL)
 		throw(MAL, "mtime.str_to_time", "format '%s', doesn't match time '%s'",
 			  *format, *s);
-	*ret = daytime_create(tm.tm_hour, tm.tm_min, tm.tm_sec == 60 ? 59 : tm.tm_sec, 0);
+	*ret = timestamp_daytime(timestamp_fromtime(mktime(&tm)));
 	if (is_daytime_nil(*ret))
 		throw(MAL, "mtime.str_to_time", "bad time '%s'", *s);
 	return MAL_SUCCEED;
@@ -868,13 +868,7 @@ MTIMEstr_to_timestamp(timestamp *ret, const char *const *s, const char *const *f
 	if (strptime(*s, *format, &tm) == NULL)
 		throw(MAL, "mtime.str_to_timestamp",
 			  "format '%s', doesn't match timestamp '%s'", *format, *s);
-	*ret = timestamp_create(date_create(tm.tm_year + 1900,
-										tm.tm_mon + 1,
-										tm.tm_mday),
-							daytime_create(tm.tm_hour,
-										   tm.tm_min,
-										   tm.tm_sec == 60 ? 59 : tm.tm_sec,
-										   0));
+	*ret = timestamp_fromtime(mktime(&tm));
 	if (is_timestamp_nil(*ret))
 		throw(MAL, "mtime.str_to_timestamp", "bad timestamp '%s'", *s);
 	return MAL_SUCCEED;
