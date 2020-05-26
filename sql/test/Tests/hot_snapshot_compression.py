@@ -19,6 +19,7 @@ def check_compression(extension, expected_first_bytes):
     # destfile = os.path.join(TSTTRGBASE, 'hot-snapshot.tar' + extension)
     h, destfile = tempfile.mkstemp('hot_snapshot.tar' + extension)
     os.close(h)
+    os.remove(destfile)
     with process.client('sql', stdin = process.PIPE, stdout=process.PIPE, stderr=process.PIPE) as c:
         c.stdin.write(f"CALL sys.hot_snapshot(r'{destfile}');")
         out, err = c.communicate()

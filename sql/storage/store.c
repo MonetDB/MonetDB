@@ -2706,6 +2706,7 @@ store_hot_snapshot(str tarfile)
 {
 	int locked = 0;
 	lng result = 0;
+	struct stat st = {0};
 	char *tmppath = NULL;
 	char *dirpath = NULL;
 	int do_remove = 0;
@@ -2717,6 +2718,16 @@ store_hot_snapshot(str tarfile)
 
 	if (!logger_funcs.get_snapshot_files) {
 		GDKerror("backend does not support hot snapshots");
+		goto end;
+	}
+
+	if (!MT_path_absolute(tarfile)) {
+		GDKerror("Hot snapshot requires an absolute path");
+		goto end;
+	}
+
+	if (stat(tarfile, &st) == 0) {
+		GDKerror("File already exists: %s", tarfile);
 		goto end;
 	}
 
