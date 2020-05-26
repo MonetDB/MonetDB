@@ -250,7 +250,7 @@ main(int argc, char **argv)
 
 	mapi_destroy(mid);
 	if (mnstr_errnr(out)) {
-		fprintf(stderr, "%s: %s", argv[0], mnstr_error(out));
+		fprintf(stderr, "%s: %s\n", argv[0], mnstr_error(out));
 		return 1;
 	}
 
