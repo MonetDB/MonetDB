@@ -300,7 +300,7 @@ mnstr_name(const stream *s)
 }
 
 
-int
+mnstr_error_kind
 mnstr_errnr(const stream *s)
 {
 	if (s == NULL)
@@ -387,6 +387,8 @@ error(const stream *s)
 	char buf[128];
 
 	switch (s->errnr) {
+	case MNSTR_NO__ERROR:
+		return strdup("no error");
 	case MNSTR_OPEN_ERROR:
 		snprintf(buf, sizeof(buf), "error could not open file %.100s\n",
 			 s->name);

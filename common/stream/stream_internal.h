@@ -153,7 +153,7 @@ struct stream {
 		int i;
 		SOCKET s;
 	} stream_data;
-	int errnr;
+	mnstr_error_kind errnr;
 	ssize_t (*read)(stream *restrict s, void *restrict buf, size_t elmsize, size_t cnt);
 	ssize_t (*write)(stream *restrict s, const void *restrict buf, size_t elmsize, size_t cnt);
 	void (*close)(stream *s);

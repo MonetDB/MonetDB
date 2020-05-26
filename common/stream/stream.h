@@ -85,6 +85,19 @@ typedef struct stream stream;
 /* some os specific initialization */
 stream_export int mnstr_init(void);
 
+
+typedef enum mnstr_error_kind {
+	MNSTR_NO__ERROR = 0,
+	MNSTR_OPEN_ERROR,
+	MNSTR_READ_ERROR,
+	MNSTR_WRITE_ERROR,
+	MNSTR_TIMEOUT
+} mnstr_error_kind;
+
+stream_export char *mnstr_error(const stream *s);
+stream_export mnstr_error_kind mnstr_errnr(const stream *s);
+stream_export void mnstr_clearerr(stream *s);
+
 /* all mnstr_readX/mnstr_writeX return
  *  0 on error
  * !0 on success
@@ -132,14 +145,11 @@ stream_export ssize_t mnstr_readline(stream *restrict s, void *restrict buf, siz
 stream_export ssize_t mnstr_write(stream *restrict s, const void *restrict buf, size_t elmsize, size_t cnt); // USED all over
 stream_export void mnstr_close(stream *s);
 stream_export void mnstr_destroy(stream *s);
-stream_export char *mnstr_error(const stream *s);
 stream_export int mnstr_flush(stream *s); // used all over
 stream_export int mnstr_fsync(stream *s); // used in gdk_logger.c, wlc.c and store.c
 stream_export int mnstr_fgetpos(stream *restrict s, fpos_t *restrict p); // unused
 stream_export int mnstr_fsetpos(stream *restrict s, fpos_t *restrict p); // unused
 stream_export char *mnstr_name(const stream *s); // used when wrapping in mclient.c
-stream_export int mnstr_errnr(const stream *s);
-stream_export void mnstr_clearerr(stream *s);
 stream_export bool mnstr_isbinary(const stream *s); // unused
 stream_export bool mnstr_get_swapbytes(const stream *s); // sql_result.c/mapi10
 stream_export void mnstr_set_bigendian(stream *s, bool bigendian); // used in mapi.c and mal_session.c
@@ -254,14 +264,6 @@ stream_export bstream *bstream_create(stream *rs, size_t chunk_size); // used al
 stream_export void bstream_destroy(bstream *s); // all over
 stream_export ssize_t bstream_read(bstream *s, size_t size); // tablet.c, tokenizer.c
 stream_export ssize_t bstream_next(bstream *s); // all over
-
-typedef enum mnstr_errors {
-	MNSTR_NO__ERROR = 0,
-	MNSTR_OPEN_ERROR,
-	MNSTR_READ_ERROR,
-	MNSTR_WRITE_ERROR,
-	MNSTR_TIMEOUT
-} mnstr_errors;
 
 /* Callback stream is a read-only stream where the read function is
  * provided by the caller.  close and destroy are also provided.  The
