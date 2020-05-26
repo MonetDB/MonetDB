@@ -3771,11 +3771,95 @@ merge_ors(mvc *sql, list *exps, int *changes)
 	return nexps;
 }
 
+#define TRIVIAL_NOT_EQUAL_CMP(e) \
+	((e)->type == e_cmp && (e)->flag == cmp_notequal && !is_anti((e)) && !is_semantics((e)) && ((sql_exp*)(e)->l)->card != CARD_ATOM && ((sql_exp*)(e)->r)->card == CARD_ATOM)
+
+static list *
+merge_notequal(mvc *sql, list *exps, int *changes)
+{
+	list *inequality_groups = NULL, *nexps = NULL;
+	int needed = 0;
+
+	for (node *n = exps->h; n; n = n->next) {
+		sql_exp *e = n->data;
+
+		if (TRIVIAL_NOT_EQUAL_CMP(e)) {
+			bool appended = false;
+
+			if (inequality_groups) {
+				for (node *m = inequality_groups->h; m && !appended; m = m->next) {
+					list *next = m->data;
+					sql_exp *first = (sql_exp*) next->h->data;
+
+					if (exp_match(first->l, e->l)) {
+						list_append(next, e);
+						appended = true;
+					}
+				}
+			}
+			if (!appended) {
+				if (!inequality_groups)
+					inequality_groups = new_exp_list(sql->sa);
+				list_append(inequality_groups, list_append(new_exp_list(sql->sa), e));
+			}
+		}
+	}
+
+	if (inequality_groups) { /* if one list of inequalities has more than one entry, then the re-write is needed */
+		for (node *n = inequality_groups->h; n; n = n->next) {
+			list *next = n->data;
+
+			if (list_length(next) > 1)
+				needed = 1;
+		}
+	}
+
+	if (needed) {
+		nexps = new_exp_list(sql->sa);
+		for (node *n = inequality_groups->h; n; n = n->next) {
+			list *next = n->data;
+			sql_exp *first = (sql_exp*) next->h->data;
+			list *notin = new_exp_list(sql->sa);
+
+			for (node *m = next->h; m; m = m->next) {
+				sql_exp *e = m->data;
+				list_append(notin, e->r);
+			}
+			list_append(nexps, exp_in(sql->sa, first->l, notin, cmp_notin));
+		}
+
+		for (node *n = exps->h; n; n = n->next) {
+			sql_exp *e = n->data;
+
+			if (!TRIVIAL_NOT_EQUAL_CMP(e))
+				list_append(nexps, e);
+		}
+		(*changes)++;
+	} else {
+		nexps = exps;
+	}
+
+	for (node *n = nexps->h; n ; n = n->next) {
+		sql_exp *e = n->data;
+
+		if (e->type == e_cmp && e->flag == cmp_or) {
+			e->l = merge_notequal(sql, e->l, changes);
+			e->r = merge_notequal(sql, e->r, changes);
+		}
+	}
+
+	return nexps;
+}
+
+
 static sql_rel *
 rel_select_cse(mvc *sql, sql_rel *rel, int *changes)
 {
 	if (is_select(rel->op) && rel->exps)
 		rel->exps = merge_ors(sql, rel->exps, changes); /* x = 1 or x = 2 => x in (1, 2)*/
+
+	if (is_select(rel->op) && rel->exps)
+		rel->exps = merge_notequal(sql, rel->exps, changes); /* x <> 1 and x <> 2 => x not in (1, 2)*/
 
 	if ((is_select(rel->op) || is_join(rel->op) || is_semi(rel->op)) && rel->exps) { 
 		node *n;
