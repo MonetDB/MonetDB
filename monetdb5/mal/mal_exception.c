@@ -89,7 +89,7 @@ str
 createException(enum malexception type, const char *fcn, const char *format, ...)
 {
 	va_list ap;
-	str ret;
+	str ret = NULL;
 
 	if (GDKerrbuf &&
 		(ret = strstr(format, MAL_MALLOC_FAIL)) != NULL &&
