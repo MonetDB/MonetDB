@@ -109,11 +109,15 @@ createException(enum malexception type, const char *fcn, const char *format, ...
 	if (strcmp(format, GDK_EXCEPTION) == 0 && GDKerrbuf[0]) {
 		/* for GDK errors, report the underlying error */
 		char *p = GDKerrbuf;
-		if (strncmp(p, GDKERROR, strlen(GDKERROR)) == 0)
+		if (strncmp(p, GDKERROR, strlen(GDKERROR)) == 0) {
+			/* error is "!ERROR: function_name: STATE!error message"
+			 * we need to skip everything up to the STATE */
 			p += strlen(GDKERROR);
-		if (strlen(p) > 6 && p[5] == '!')
-			ret = createException(type, fcn, "%s", p);
-		else
+			char *q = strchr(p, ':');
+			if (q && q[1] == ' ' && strlen(q) > 8 && q[7] == '!')
+				ret = createException(type, fcn, "%s", q + 2);
+		}
+		if (ret == NULL)
 			ret = createException(type, fcn, "GDK reported error: %s", p);
 		GDKclrerr();
 		return ret;
