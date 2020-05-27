@@ -2,9 +2,10 @@
 
 # Test if the snapshot data is actually compressed.
 
-from hot_snapshot_compression import check_compression
-
 import sys
+import os
+sys.path.append(os.getenv('TSTSRCDIR'))
+from hot_snapshot_compression import check_compression
 
 complaint = check_compression('bz2', b'BZh')
 if complaint:

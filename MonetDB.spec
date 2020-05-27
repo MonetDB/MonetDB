@@ -1244,7 +1244,7 @@ fi
   column version.
 
 * Sat Feb 22 2020 Joeri van Ruth <joeri.van.ruth@monetdbsolutions.com> - 11.37.1-20200511
-- sql: Added SQL function sys.hot_snapshot() which can be used to write
+- sql: Added SQL procedure sys.hot_snapshot() which can be used to write
   a snapshot of the database to a tar file. For example,
   sys.hot_snapshot('/tmp/snapshot.tar'). If compression support is
   compiled in, snapshots can also be compressed ('/tmp/snapshot.tar.gz').

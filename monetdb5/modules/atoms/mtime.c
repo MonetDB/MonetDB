@@ -771,13 +771,16 @@ MTIMElocal_timezone_msec(lng *ret)
 str
 MTIMEstr_to_date(date *ret, const char *const *s, const char *const *format)
 {
-	struct tm tm;
+	struct tm tm = (struct tm) {0};
+	time_t t;
 
 	if (strNil(*s) || strNil(*format)) {
 		*ret = date_nil;
 		return MAL_SUCCEED;
 	}
-	tm = (struct tm) {0};
+	t = time(NULL);
+	localtime_r(&t, &tm);
+	tm.tm_sec = tm.tm_min = tm.tm_hour = 0;
 	if (strptime(*s, *format, &tm) == NULL)
 		throw(MAL, "mtime.str_to_date", "format '%s', doesn't match date '%s'",
 			  *format, *s);
@@ -832,13 +835,16 @@ MTIMEdate_to_str(str *ret, const date *d, const char *const *format)
 str
 MTIMEstr_to_time(daytime *ret, const char *const *s, const char *const *format)
 {
-	struct tm tm;
+	struct tm tm = (struct tm) {0};
+	time_t t;
 
 	if (strNil(*s) || strNil(*format)) {
 		*ret = daytime_nil;
 		return MAL_SUCCEED;
 	}
-	tm = (struct tm) {0};
+	t = time(NULL);
+	localtime_r(&t, &tm);
+	tm.tm_sec = tm.tm_min = tm.tm_hour = 0;
 	if (strptime(*s, *format, &tm) == NULL)
 		throw(MAL, "mtime.str_to_time", "format '%s', doesn't match time '%s'",
 			  *format, *s);
@@ -858,23 +864,20 @@ MTIMEtime_to_str(str *ret, const daytime *d, const char *const *format)
 str
 MTIMEstr_to_timestamp(timestamp *ret, const char *const *s, const char *const *format)
 {
-	struct tm tm;
+	struct tm tm = (struct tm) {0};
+	time_t t;
 
 	if (strNil(*s) || strNil(*format)) {
 		*ret = timestamp_nil;
 		return MAL_SUCCEED;
 	}
-	tm = (struct tm) {0};
+	t = time(NULL);
+	localtime_r(&t, &tm);
+	tm.tm_sec = tm.tm_min = tm.tm_hour = 0;
 	if (strptime(*s, *format, &tm) == NULL)
 		throw(MAL, "mtime.str_to_timestamp",
 			  "format '%s', doesn't match timestamp '%s'", *format, *s);
-	*ret = timestamp_create(date_create(tm.tm_year + 1900,
-										tm.tm_mon + 1,
-										tm.tm_mday),
-							daytime_create(tm.tm_hour,
-										   tm.tm_min,
-										   tm.tm_sec == 60 ? 59 : tm.tm_sec,
-										   0));
+	*ret = timestamp_fromtime(mktime(&tm));
 	if (is_timestamp_nil(*ret))
 		throw(MAL, "mtime.str_to_timestamp", "bad timestamp '%s'", *s);
 	return MAL_SUCCEED;

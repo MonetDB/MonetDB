@@ -769,8 +769,13 @@ exp_bin(backend *be, sql_exp *e, stmt *left, stmt *right, stmt *grp, stmt *ext, 
 				list_append(l, ocond);
 			}
 			/* single value conditional execution done below */
-			if (ocond && !push_cond_exec && !nrcols && strcmp(sql_func_mod(f->func), "calc") == 0)
-				cond_execution = ocond;
+			if (ocond && !push_cond_exec && !nrcols && strcmp(sql_func_mod(f->func), "calc") == 0) {
+				sql_subtype *bt = sql_bind_localtype("bit");
+				sql_subfunc *isnull = sql_bind_func(be->mvc->sa, NULL, "isnull", bt, NULL, F_FUNC);
+				sql_subfunc *or = sql_bind_func(be->mvc->sa, NULL, "or", bt, bt, F_FUNC);
+
+				cond_execution = stmt_binop(be, ocond, stmt_unop(be, ocond, isnull), or);
+			}
 		}
 		if (cond_execution) {
 			/* var_x = nil; */

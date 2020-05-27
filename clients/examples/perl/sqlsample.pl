@@ -37,7 +37,7 @@ my $dbh = DBI->connect( $dsn,
 }
 {
   # deliberately executing a wrong SQL statement:
-  my $sth = $dbh->prepare('( xyz 1);');
+  my $sth = $dbh->prepare('values ();');
   eval { $sth->execute }; print "ERROR REPORTED: $@" if $@;
 }
 $dbh->do('create table perl_table (i smallint,s string);');

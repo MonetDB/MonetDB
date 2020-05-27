@@ -136,3 +136,31 @@ prepare select 1 from tab1 where (col0,col1) in (select ?,? from tab1);
 drop table tab0;
 drop table tab1;
 drop table tab2;
+
+SELECT DISTINCT CAST(+ 77 - - - CASE - CAST ( NULL AS INTEGER ) WHEN - 11 THEN NULL WHEN - 34 THEN 81 ELSE - 15 + 20 * - ( + CAST ( + ( 96 ) AS INTEGER ) ) END AS BIGINT) AS col0, 35 AS col0;
+	-- 2012 35
+
+SELECT CAST(- CASE - ( + 0 ) WHEN 18 + - 60 THEN NULL WHEN - CASE - 67 WHEN + - 79 * + COUNT ( * ) / 30 - + 32 * + 69 THEN MAX ( DISTINCT + 34 ) / + 0 ELSE NULL END * + ( + 45 ) + + 19 * 17 THEN 
+20 WHEN + SUM ( ALL + 78 ) + + 69 THEN 29 * 74 ELSE + NULLIF ( 82, + 72 + 26 ) * 7 END * - 92 + MIN ( 88 + 57 ) AS BIGINT) AS col0;
+	-- 52953
+
+SELECT ALL CAST(19 * - CASE + - COUNT ( * ) WHEN 40 THEN NULL WHEN - - CAST ( NULL AS INTEGER ) * + - 1 THEN + 39 ELSE 27 + - MIN ( DISTINCT 13 ) END + 36 + 70 - - 69 * + COUNT ( * ) * 20 + + 83 AS BIGINT) AS col0;
+	-- 1303
+
+SELECT CAST(- 4 * + COUNT ( * ) + 22 + 69 AS BIGINT) AS col2, CAST(- ( + CASE + 85 WHEN - 77 / - CAST ( + CASE - + 51 WHEN 79 THEN + 95 + 13 * ( 60 * 77 ) END AS INTEGER ) + + 82 - COUNT ( * ) * COUNT ( * ) THEN 
+NULL WHEN SUM ( ALL 99 ) THEN COUNT ( * ) ELSE COUNT ( * ) * - ( COUNT ( * ) ) END ) * 46 - 83 AS BIGINT);
+	--  87 -37
+
+SELECT DISTINCT CAST(- CAST ( CASE 81 WHEN 48 - - 3 / - - 47 - - CAST ( NULL AS INTEGER ) THEN NULL WHEN COUNT ( * ) THEN + - 91 + + 43 ELSE + - 0 END AS INTEGER ) AS BIGINT) AS col0, CAST(- 27 * + 43 AS BIGINT);
+	-- 0 -1161
+
+SELECT DISTINCT CAST(66 * - + CAST ( - - COUNT ( * ) AS INTEGER ) * 54 * + CASE 68 WHEN - 56 * + CAST ( NULL AS INTEGER ) + + + 47 THEN 
+- 83 ELSE + 59 + - COUNT ( * ) - 26 * ( 59 ) * 11 - - + COUNT ( * ) * - 73 END + + COUNT ( * ) / + ( 86 + 19 * 90 ) AS BIGINT);
+	-- 60192396
+
+SELECT DISTINCT CAST(+ - CASE + 66 WHEN - CAST ( NULL AS INTEGER ) THEN NULL ELSE COUNT ( * ) + - CASE + COUNT ( * ) WHEN - 69 - + - 28 THEN - + MIN ( + 92 ) WHEN - COUNT ( 32 ) THEN 
++ ( + 23 ) * + 17 * - 37 WHEN 63 THEN NULL ELSE + 67 * - 34 - 64 END - 31 END * - 94 AS BIGINT) AS col2;
+	-- 217328
+
+SELECT DISTINCT CAST(( + CASE WHEN NOT NULL BETWEEN NULL AND NULL THEN NULL ELSE + COUNT ( * ) END ) AS BIGINT) AS col1;
+	-- 1

@@ -471,7 +471,7 @@ stdout of test 'sqlsmith-exists` in directory 'sql/test/mergetables` itself:
 #                                ref_0.col1 AS c0
 #                                ,89 AS c1
 #                                ,ref_0.col2 AS c2
-% .,	sys. # table_name
+% sys.,	sys. # table_name
 % c0,	c1 # name
 % varchar,	varchar # type
 % 0,	0 # length
