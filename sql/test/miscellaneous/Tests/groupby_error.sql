@@ -95,6 +95,20 @@ SELECT DISTINCT * FROM tab2 WHERE NOT ( - + 50 + ( 70 ) ) = + col2;
 	-- 46 51 23
 	-- 75 67 58
 
+SELECT DISTINCT + 77 - - - CASE - CAST ( NULL AS INTEGER ) WHEN - 11 THEN NULL WHEN - 34 THEN 81 ELSE - 15 + 20 * - ( + CAST ( + ( 96 ) AS INTEGER ) ) END AS col0, 35 AS col0;
+	-- 2012 35
+
+SELECT - CASE - ( + 0 ) WHEN 18 + - 60 THEN NULL WHEN - CASE - 67 WHEN + - 79 * + COUNT ( * ) / 30 - + 32 * + 69 THEN MAX ( DISTINCT + 34 ) / + 0 ELSE NULL END * + ( + 45 ) + + 19 * 17 THEN 
+20 WHEN + SUM ( ALL + 78 ) + + 69 THEN 29 * 74 ELSE + NULLIF ( 82, + 72 + 26 ) * 7 END * - 92 + MIN ( 88 + 57 ) AS col0;
+	-- 52953
+
+SELECT ALL 19 * - CASE + - COUNT ( * ) WHEN 40 THEN NULL WHEN - - CAST ( NULL AS INTEGER ) * + - 1 THEN + 39 ELSE 27 + - MIN ( DISTINCT 13 ) END + 36 + 70 - - 69 * + COUNT ( * ) * 20 + + 83 AS col0;
+	-- 1303
+
+SELECT - 4 * + COUNT ( * ) + 22 + 69 AS col2, - ( + CASE + 85 WHEN - 77 / - CAST ( + CASE - + 51 WHEN 79 THEN + 95 + 13 * ( 60 * 77 ) END AS INTEGER ) + + 82 - COUNT ( * ) * COUNT ( * ) THEN 
+NULL WHEN SUM ( ALL 99 ) THEN COUNT ( * ) ELSE COUNT ( * ) * - ( COUNT ( * ) ) END ) * 46 - 83;
+	--  87 -37
+
 SELECT col0 FROM tab0 ORDER BY sys.tab0.col0; --error, TODO
 
 prepare select col0 from tab0 where (?) in (select col0 from tab0);
