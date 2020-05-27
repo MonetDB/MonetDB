@@ -2835,7 +2835,6 @@ store_hot_snapshot(str tarfile)
 	result = 42;
 
 end:
-	GDKfree(tmppath);
 	GDKfree(dirpath);
 	if (dir_fd >= 0)
 		close(dir_fd);
