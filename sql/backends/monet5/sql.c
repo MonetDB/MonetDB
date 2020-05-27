@@ -3553,7 +3553,7 @@ daytime_2time_daytime(daytime *res, const daytime *v, const int *digits)
 #ifdef TRUNCATE_NUMBERS
 		*res = (daytime) (*res / scales[6 - d]);
 #else
-		*res = (daytime) ((*res + scales[5 - d]*5) / scales[6 - d]);
+		*res = (daytime) ((*res + (scales[6 - d] >> 1)) / scales[6 - d]);
 #endif
 		*res = (daytime) (*res * scales[6 - d]);
 	}
@@ -3622,7 +3622,7 @@ timestamp_2_daytime(daytime *res, const timestamp *v, const int *digits)
 #ifdef TRUNCATE_NUMBERS
 		dt /= scales[6 - d];
 #else
-		dt = (dt + scales[5 - d]*5) / scales[6 - d];
+		dt = (dt + (scales[6 - d] >> 1)) / scales[6 - d];
 #endif
 		dt *= scales[6 - d];
 	}
@@ -3652,7 +3652,7 @@ timestamp_2time_timestamp(timestamp *res, const timestamp *v, const int *digits)
 #ifdef TRUNCATE_NUMBERS
 		tm /= scales[6 - d];
 #else
-		tm = (tm + scales[5 - d]*5) / scales[6 - d];
+		tm = (tm + (scales[6 - d] >> 1)) / scales[6 - d];
 #endif
 		tm *= scales[6 - d];
 	}
@@ -3934,7 +3934,7 @@ second_interval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	}
 	if (scale) {
 #ifndef TRUNCATE_NUMBERS
-		r += 5*scales[scale-1];
+		r += scales[scale] >> 1;
 #endif
 		r /= scales[scale];
 	}

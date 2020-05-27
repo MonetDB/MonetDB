@@ -116,8 +116,8 @@ gdk_export gdk_return VARcalcge(ValPtr ret, const ValRecord *lft, const ValRecor
 gdk_export gdk_return VARcalceq(ValPtr ret, const ValRecord *lft, const ValRecord *rgt, bool nil_matches);
 gdk_export gdk_return VARcalcne(ValPtr ret, const ValRecord *lft, const ValRecord *rgt, bool nil_matches);
 gdk_export gdk_return VARcalccmp(ValPtr ret, const ValRecord *lft, const ValRecord *rgt);
-gdk_export BAT *BATconvert(BAT *b, BAT *s, BAT *r, int tp, bool abort_on_error);
-gdk_export gdk_return VARconvert(ValPtr ret, const ValRecord *v, bool abort_on_error);
+gdk_export BAT *BATconvert(BAT *b, BAT *s, BAT *r, int tp, bool abort_on_error, uint8_t scale1, uint8_t scale2, uint8_t precision);
+gdk_export gdk_return VARconvert(ValPtr ret, const ValRecord *v, bool abort_on_error, uint8_t scale1, uint8_t scale2, uint8_t precision);
 gdk_export gdk_return BATcalcavg(BAT *b, BAT *s, dbl *avg, BUN *vals, int scale);
 
 gdk_export BAT *BATgroupsum(BAT *b, BAT *g, BAT *e, BAT *s, int tp, bool skip_nils, bool abort_on_error);
