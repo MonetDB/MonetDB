@@ -303,6 +303,11 @@ create_winconfig_conds_new_py:
 !ELSE
 	$(ECHO) HAVE_LIBBZ2_FALSE='' >> "$(TOPDIR)\winconfig_conds_new.py"
 !ENDIF
+!IFDEF HAVE_LIBLZ4
+	$(ECHO) HAVE_LIBLZ4_FALSE='#' >> "$(TOPDIR)\winconfig_conds_new.py"
+!ELSE
+	$(ECHO) HAVE_LIBLZ4_FALSE='' >> "$(TOPDIR)\winconfig_conds_new.py"
+!ENDIF
 !IFDEF HAVE_LIBLZMA
 	$(ECHO) HAVE_LIBLZMA_FALSE='#' >> "$(TOPDIR)\winconfig_conds_new.py"
 !ELSE
