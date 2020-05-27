@@ -399,6 +399,33 @@ project (
 [ "clob",	0,	0,	NULL,	NULL,	NULL	]
 #drop table tab0;
 #drop table tab1;
+#drop table tab2;
+#SELECT DISTINCT CAST(+ 77 - - - CASE - CAST ( NULL AS INTEGER ) WHEN - 11 THEN NULL WHEN - 34 THEN 81 ELSE - 15 + 20 * - ( + CAST ( + ( 96 ) AS INTEGER ) ) END AS BIGINT) AS col0, 35 AS col0;
+% .,	. # table_name
+% col0,	col0 # name
+% bigint,	tinyint # type
+% 4,	2 # length
+[ 2012,	35	]
+#SELECT CAST(- CASE - ( + 0 ) WHEN 18 + - 60 THEN NULL WHEN - CASE - 67 WHEN + - 79 * + COUNT ( * ) / 30 - + 32 * + 69 THEN MAX ( DISTINCT + 34 ) / + 0 ELSE NULL END * + ( + 45 ) + + 19 * 17 THEN 
+#20 WHEN + SUM ( ALL + 78 ) + + 69 THEN 29 * 74 ELSE + NULLIF ( 82, + 72 + 26 ) * 7 END * - 92 + MIN ( 88 + 57 ) AS BIGINT) AS col0;
+% . # table_name
+% col0 # name
+% bigint # type
+% 5 # length
+[ 52953	]
+#SELECT ALL CAST(19 * - CASE + - COUNT ( * ) WHEN 40 THEN NULL WHEN - - CAST ( NULL AS INTEGER ) * + - 1 THEN + 39 ELSE 27 + - MIN ( DISTINCT 13 ) END + 36 + 70 - - 69 * + COUNT ( * ) * 20 + + 83 AS BIGINT) AS col0;
+% . # table_name
+% col0 # name
+% bigint # type
+% 4 # length
+[ 1303	]
+#SELECT CAST(- 4 * + COUNT ( * ) + 22 + 69 AS BIGINT) AS col2, CAST(- ( + CASE + 85 WHEN - 77 / - CAST ( + CASE - + 51 WHEN 79 THEN + 95 + 13 * ( 60 * 77 ) END AS INTEGER ) + + 82 - COUNT ( * ) * COUNT ( * ) THEN 
+#NULL WHEN SUM ( ALL 99 ) THEN COUNT ( * ) ELSE COUNT ( * ) * - ( COUNT ( * ) ) END ) * 46 - 83 AS BIGINT);
+% .,	.%16 # table_name
+% col2,	%16 # name
+% bigint,	bigint # type
+% 2,	3 # length
+[ 87,	-37	]
 
 # 10:56:47 >  
 # 10:56:47 >  "Done."
