@@ -1210,7 +1210,7 @@ rel_join_order(mvc *sql, sql_rel *rel)
 	}
 	if (is_join(rel->op) && rel->exps && !rel_is_ref(rel)) {
 		rel = rel_visitor_bottomup(sql, rel, &rel_remove_empty_select, &e_changes); 
-		if (!rel_is_ref(rel))
+		if (rel && !rel_is_ref(rel))
 			rel = reorder_join(sql, rel);
 	} else if (is_join(rel->op)) {
 		rel->l = rel_join_order(sql, rel->l);
@@ -5277,14 +5277,21 @@ rel_is_empty( sql_rel *rel )
 static sql_rel *
 rel_remove_empty_join(mvc *sql, sql_rel *rel, int *changes) 
 {
+	if (THRhighwater())
+		return sql_error(sql, 10, SQLSTATE(42000) "Query too complex: running out of stack space");
+
+	if (!rel)
+		return NULL;
 	/* recurse check rel_is_empty 
 	 * For half empty unions replace by projects
 	 * */
 	if (is_union(rel->op)) {
 		sql_rel *l = rel->l, *r = rel->r;
 
-		rel->l = l = rel_remove_empty_join(sql, l, changes);
-		rel->r = r = rel_remove_empty_join(sql, r, changes);
+		if (!(rel->l = l = rel_remove_empty_join(sql, l, changes)))
+			return NULL;
+		if (!(rel->r = r = rel_remove_empty_join(sql, r, changes)))
+			return NULL;
 		if (rel_is_empty(l)) {
 			(*changes)++;
 			return rel_inplace_project(sql->sa, rel, rel_dup(r), rel->exps);
@@ -5294,13 +5301,13 @@ rel_remove_empty_join(mvc *sql, sql_rel *rel, int *changes)
 		}
 	} else if ((is_simple_project(rel->op) || is_groupby(rel->op) || is_topn(rel->op) || 
 				is_select(rel->op) || is_sample(rel->op))) {
-		if (rel->l)
-			rel->l = rel_remove_empty_join(sql, rel->l, changes);
+		if (rel->l && !(rel->l = rel_remove_empty_join(sql, rel->l, changes)))
+			return NULL;
 	} else if (is_join(rel->op) || is_semi(rel->op) || is_set(rel->op)) {
-		if (rel->l)
-			rel->l = rel_remove_empty_join(sql, rel->l, changes);
-		if (rel->r)
-			rel->r = rel_remove_empty_join(sql, rel->r, changes);
+		if (rel->l && !(rel->l = rel_remove_empty_join(sql, rel->l, changes)))
+			return NULL;
+		if (rel->r && !(rel->r = rel_remove_empty_join(sql, rel->r, changes)))
+			return NULL;
 	}
 	return rel;
 }
@@ -7791,6 +7798,11 @@ split_exps(mvc *sql, list *exps, sql_rel *rel)
 static sql_rel *
 rel_split_project(mvc *sql, sql_rel *rel, int top, int *changes)
 {
+	if (THRhighwater())
+		return sql_error(sql, 10, SQLSTATE(42000) "Query too complex: running out of stack space");
+
+	if (!rel)
+		return NULL;
 	if (is_project(rel->op) && list_length(rel->exps) && (is_groupby(rel->op) || rel->l) && !need_distinct(rel)) {
 		list *exps = rel->exps;
 		node *n;
@@ -7810,8 +7822,8 @@ rel_split_project(mvc *sql, sql_rel *rel, int top, int *changes)
 			rel->l = nrel;
 			/* recursively split all functions and add those to the projection list */
 			split_exps(sql, rel->exps, nrel);
-			if (nrel->l)
-				nrel->l = rel_split_project(sql, nrel->l, is_topn(rel->op)?top:0, changes);
+			if (nrel->l && !(nrel->l = rel_split_project(sql, nrel->l, is_topn(rel->op)?top:0, changes)))
+				return NULL;
 			return rel;
 		} else if (funcs && !top && !rel->r) {
 			/* projects can have columns point back into the expression list, ie
@@ -7833,12 +7845,18 @@ rel_split_project(mvc *sql, sql_rel *rel, int top, int *changes)
 	}
 	if (is_set(rel->op) || is_basetable(rel->op))
 		return rel;
-	if (rel->l)
+	if (rel->l) {
 		rel->l = rel_split_project(sql, rel->l, 
 			(is_topn(rel->op)||is_ddl(rel->op)||is_modify(rel->op))?top:0, changes);
-	if ((is_join(rel->op) || is_semi(rel->op)) && rel->r)
+		if (!rel->l)
+			return NULL;
+	}
+	if ((is_join(rel->op) || is_semi(rel->op)) && rel->r) {
 		rel->r = rel_split_project(sql, rel->r, 
 			(is_topn(rel->op)||is_ddl(rel->op)||is_modify(rel->op))?top:0, changes);
+		if (!rel->r)
+			return NULL;
+	}
 	return rel;
 }
 
@@ -7900,6 +7918,11 @@ select_split_exps(mvc *sql, list *exps, sql_rel *rel)
 static sql_rel *
 rel_split_select(mvc *sql, sql_rel *rel, int top, int *changes)
 {
+	if (THRhighwater())
+		return sql_error(sql, 10, SQLSTATE(42000) "Query too complex: running out of stack space");
+
+	if (!rel)
+		return NULL;
 	if (is_select(rel->op) && list_length(rel->exps) && rel->l) {
 		list *exps = rel->exps;
 		node *n;
@@ -7919,8 +7942,8 @@ rel_split_select(mvc *sql, sql_rel *rel, int top, int *changes)
 			rel->l = nrel;
 			/* recursively split all functions and add those to the projection list */
 			select_split_exps(sql, rel->exps, nrel);
-			if (nrel->l)
-				nrel->l = rel_split_project(sql, nrel->l, is_topn(rel->op)?top:0, changes);
+			if (nrel->l && !(nrel->l = rel_split_project(sql, nrel->l, is_topn(rel->op)?top:0, changes)))
+				return NULL;
 			return rel;
 		} else if (funcs && !top && !rel->r) {
 			/* projects can have columns point back into the expression list, ie
@@ -7942,12 +7965,18 @@ rel_split_select(mvc *sql, sql_rel *rel, int top, int *changes)
 	}
 	if (is_set(rel->op) || is_basetable(rel->op))
 		return rel;
-	if (rel->l)
+	if (rel->l) {
 		rel->l = rel_split_select(sql, rel->l, 
 			(is_topn(rel->op)||is_ddl(rel->op)||is_modify(rel->op))?top:0, changes);
-	if ((is_join(rel->op) || is_semi(rel->op)) && rel->r)
+		if (!rel->l)
+			return NULL;
+	}
+	if ((is_join(rel->op) || is_semi(rel->op)) && rel->r) {
 		rel->r = rel_split_select(sql, rel->r, 
 			(is_topn(rel->op)||is_ddl(rel->op)||is_modify(rel->op))?top:0, changes);
+		if (!rel->r)
+			return NULL;
+	}
 	return rel;
 }
 
@@ -8145,6 +8174,8 @@ reduce_scale(atom *a)
 static sql_rel *
 rel_project_reduce_casts(mvc *sql, sql_rel *rel, int *changes)
 {
+	if (!rel)
+		return NULL;
 	if (is_project(rel->op) && list_length(rel->exps)) {
 		list *exps = rel->exps;
 		node *n;
