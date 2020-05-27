@@ -168,19 +168,6 @@ struct stream {
 	char errmsg[1024]; // avoid allocation on error. We don't have THAT many streams..
 };
 
-/* This is used in the file opening functions, in a code sequence that is
- * duplicated between open_stream and
- *     open_gzstream open_bzstream open_xzstream open_lz4stream
- * Eventually these will all just use open_stream.
- * 
- * Currently in misc.c
- */
-const char *get_extension(const char *file);
-#ifdef HAVE__WFOPEN
-wchar_t *utf8towchar(const char *src);
-#else
-char *cvfilename(const char *filename);
-#endif
 
 /* used to be static: */
 

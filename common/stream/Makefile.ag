@@ -24,7 +24,7 @@ lib_stream  =  {
 		url_stream.c socket_stream.c \
 		memio.c callback.c blackhole.c fwf.c \
 		iconv_stream.c \
-		misc.c text_stream.c \
+		text_stream.c \
 		pump.c \
 		stream.h stream_internal.h stream_socket.h pump.h
 	VERSION = $(STREAM_VERSION)

@@ -36,7 +36,6 @@ target_sources(stream
   blackhole.c
   fwf.c
   iconv_stream.c
-  misc.c
   text_stream.c
   pump.c
   stream.h
