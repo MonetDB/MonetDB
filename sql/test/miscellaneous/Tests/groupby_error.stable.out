@@ -426,6 +426,32 @@ project (
 % bigint,	bigint # type
 % 2,	3 # length
 [ 87,	-37	]
+#SELECT DISTINCT CAST(- CAST ( CASE 81 WHEN 48 - - 3 / - - 47 - - CAST ( NULL AS INTEGER ) THEN NULL WHEN COUNT ( * ) THEN + - 91 + + 43 ELSE + - 0 END AS INTEGER ) AS BIGINT) AS col0, CAST(- 27 * + 43 AS BIGINT);
+% .,	. # table_name
+% col0,	%3 # name
+% bigint,	bigint # type
+% 1,	5 # length
+[ 0,	-1161	]
+#SELECT DISTINCT CAST(66 * - + CAST ( - - COUNT ( * ) AS INTEGER ) * 54 * + CASE 68 WHEN - 56 * + CAST ( NULL AS INTEGER ) + + + 47 THEN 
+#- 83 ELSE + 59 + - COUNT ( * ) - 26 * ( 59 ) * 11 - - + COUNT ( * ) * - 73 END + + COUNT ( * ) / + ( 86 + 19 * 90 ) AS BIGINT);
+% .%16 # table_name
+% %16 # name
+% bigint # type
+% 8 # length
+[ 60192396	]
+#SELECT DISTINCT CAST(+ - CASE + 66 WHEN - CAST ( NULL AS INTEGER ) THEN NULL ELSE COUNT ( * ) + - CASE + COUNT ( * ) WHEN - 69 - + - 28 THEN - + MIN ( + 92 ) WHEN - COUNT ( 32 ) THEN 
+#+ ( + 23 ) * + 17 * - 37 WHEN 63 THEN NULL ELSE + 67 * - 34 - 64 END - 31 END * - 94 AS BIGINT) AS col2;
+% . # table_name
+% col2 # name
+% bigint # type
+% 6 # length
+[ 217328	]
+#SELECT DISTINCT CAST(( + CASE WHEN NOT NULL BETWEEN NULL AND NULL THEN NULL ELSE + COUNT ( * ) END ) AS BIGINT) AS col1;
+% . # table_name
+% col1 # name
+% bigint # type
+% 1 # length
+[ 1	]
 
 # 10:56:47 >  
 # 10:56:47 >  "Done."

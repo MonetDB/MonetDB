@@ -21,6 +21,7 @@
 #include "sql_optimizer.h"
 #include "sql_gencode.h"
 #include "mal_builder.h"
+#include "opt_prelude.h"
 
 #define OUTER_ZERO 64
 
@@ -1873,7 +1874,14 @@ rel2bin_table(backend *be, sql_rel *rel, list *refs)
 					/* use a simple nested loop solution for this case, ie 
 					 * output a table of (input) row-ids, the output of the table producing function 
 					 */
-					InstrPtr q = newStmt(be->mb, "sql", "unionfunc");
+					/* make sure the input for sql.unionfunc are bats */
+					if (ids)
+						ids = column(be, ids);
+					if (ops)
+						for (node *en = ops->h; en; en = en->next)
+							en->data = column(be, (stmt *) en->data);
+
+					InstrPtr q = newStmt(be->mb, sqlRef, "unionfunc");
 					/* Generate output rowid column and output of function f */
 					for(i=0; m; m = m->next, i++) {
 						sql_exp *e = m->data;
