@@ -874,10 +874,35 @@ MTIMEstr_to_timestamp(timestamp *ret, const char *const *s, const char *const *f
 	t = time(NULL);
 	localtime_r(&t, &tm);
 	tm.tm_sec = tm.tm_min = tm.tm_hour = 0;
+	tm.tm_isdst = -1;
 	if (strptime(*s, *format, &tm) == NULL)
 		throw(MAL, "mtime.str_to_timestamp",
 			  "format '%s', doesn't match timestamp '%s'", *format, *s);
-	*ret = timestamp_fromtime(mktime(&tm));
+	*ret = timestamp_create(date_create(tm.tm_year + 1900,
+										tm.tm_mon + 1,
+										tm.tm_mday),
+							daytime_create(tm.tm_hour,
+										   tm.tm_min,
+										   tm.tm_sec == 60 ? 59 : tm.tm_sec,
+										   0));
+	/* if strptime filled in DST information (tm_isdst >= 0), then the
+	 * time is in system local time and we convert to GMT by
+	 * subtracting the time zone offset, else we don't touch the time
+	 * returned because it is assumed to already be in GMT */
+	if (tm.tm_isdst >= 0) {
+		int isdst = 0;
+		int tz = local_timezone(&isdst);
+		/* if strptime's information doesn't square with our own
+		 * information about having or not having DST, we compensate
+		 * an hour */
+		if (tm.tm_isdst > 0 && isdst == 0) {
+			tz += 3600;
+		} else if (tm.tm_isdst == 0 && isdst > 0) {
+			tz -= 3600;
+		}
+
+		*ret = timestamp_add_usec(*ret, -tz * LL_CONSTANT(1000000));
+	}
 	if (is_timestamp_nil(*ret))
 		throw(MAL, "mtime.str_to_timestamp", "bad timestamp '%s'", *s);
 	return MAL_SUCCEED;
