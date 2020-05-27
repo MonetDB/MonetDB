@@ -7669,16 +7669,30 @@ rel_simplify_predicates(mvc *sql, sql_rel *rel, sql_exp *e, int depth, int *chan
 					(*changes)++;
 				}
 			}
-		} else if (is_func(e->type) && list_length(e->l) == 3 && is_ifthenelse_func((sql_subfunc*)e->f)) {
+		}
+	}
+	return e;
+}
+
+static sql_exp *
+rel_simplify_ifthenelse(mvc *sql, sql_rel *rel, sql_exp *e, int depth, int *changes)
+{
+	(void) depth;
+	if (is_project(rel->op)) {
+		if (is_func(e->type) && list_length(e->l) == 3 && is_ifthenelse_func((sql_subfunc*)e->f)) {
 			list *args = e->l;
 			sql_exp *ie = args->h->data; 
 
 			if (exp_is_true(sql, ie)) { /* ifthenelse(true, x, y) -> x */
-				e = args->h->next->data;
+				sql_exp *res = args->h->next->data;
+				exp_setname(sql->sa, res, exp_relname(e), exp_name(e));
 				(*changes)++;
-			} else if (exp_is_false(sql, ie) || exp_is_null(sql, ie)) { /* ifthenelse(false, x, y) -> y */
-				e = args->h->next->next->data;
+				return res;
+			} else if (exp_is_false(sql, ie) || exp_is_null(sql, ie)) { /* ifthenelse(false or null, x, y) -> y */
+				sql_exp *res = args->h->next->next->data;
+				exp_setname(sql->sa, res, exp_relname(e), exp_name(e));
 				(*changes)++;
+				return res;
 			}
 		}
 	}
@@ -9154,6 +9168,11 @@ optimize_rel(mvc *sql, sql_rel *rel, int *g_changes, int level, int value_based_
 		 gp.cnt[op_join] || gp.cnt[op_semi] || gp.cnt[op_anti]) && level <= 1)
 		if (value_based_opt)
 			rel = rel_exp_visitor_bottomup(sql, rel, &rel_simplify_predicates, &changes);
+
+	if ((gp.cnt[op_project] || gp.cnt[op_groupby] || 
+		 gp.cnt[op_union] || gp.cnt[op_inter] || gp.cnt[op_except]) && level <= 1)
+		if (value_based_opt)
+			rel = rel_exp_visitor_bottomup(sql, rel, &rel_simplify_ifthenelse, &changes);
 
 	/* join's/crossproducts between a relation and a constant (row).
 	 * could be rewritten 

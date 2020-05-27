@@ -1709,17 +1709,6 @@ exp_is_null(mvc *sql, sql_exp *e )
 		return exp_is_null(sql, e->l);
 	case e_func:
 	case e_aggr:
-	{	
-		int r = 0;
-		node *n;
-		list *l = e->l;
-
-		if (!r && l && list_length(l) == 2) {
-			for (n = l->h; n && !r; n = n->next) 
-				r |= exp_is_null(sql, n->data);
-		}
-		return r;
-	}
 	case e_column:
 	case e_cmp:
 	case e_psm:
