@@ -463,7 +463,7 @@ convert_and_append(BAT* b, const char* text, bool force) {
 						goto wrapup;                                           \
 					}                                                          \
 				} else {                                                       \
-					if (!string_copy(&data[(index_offset * ret->count + iu) *  \
+					if (!pyapi3_string_copy(&data[(index_offset * ret->count + iu) *  \
 										   ret->memory_size],                  \
 									 utf8_string, ret->memory_size, false)) {  \
 						msg = createException(MAL, "pyapi3.eval",              \
