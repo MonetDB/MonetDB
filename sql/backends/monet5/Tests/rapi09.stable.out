@@ -76,8 +76,8 @@ stdout of test 'rapi09` in directory 'sql/backends/monet5` itself:
 #CREATE FUNCTION suicide3() RETURNS TABLE (i integer) LANGUAGE R {.Internal(quit("no", 0,F))};
 #ROLLBACK;
 #SELECT 1;
-% . # table_name
-% single_value # name
+% .%2 # table_name
+% %2 # name
 % tinyint # type
 % 1 # length
 [ 1	]

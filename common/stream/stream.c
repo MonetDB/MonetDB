@@ -449,6 +449,8 @@ mnstr_write(stream *restrict s, const void *restrict buf, size_t elmsize, size_t
 	assert(!s->readonly);
 	if (s->errnr)
 		return -1;
+	if (cnt == 0)
+		return 0;
 	return s->write(s, buf, elmsize, cnt);
 }
 
@@ -1768,7 +1770,7 @@ stream_lz4write(stream *restrict s, const void *restrict buf, size_t elmsize, si
 			lz4->total_processing += ret;
 		}
 
-		if(lz4->total_processing == lz4->ring_buffer_size) {
+		if (lz4->total_processing > 0) {
 			real_written = fwrite((void *)lz4->ring_buffer, 1, lz4->total_processing, lz4->fp);
 			if (real_written == 0) {
 				s->errnr = MNSTR_WRITE_ERROR;
@@ -1780,52 +1782,6 @@ stream_lz4write(stream *restrict s, const void *restrict buf, size_t elmsize, si
 	}
 
 	return (ssize_t) (total_written / elmsize);
-}
-
-static void
-stream_lz4close(stream *s)
-{
-	lz4_stream *lz4 = s->stream_data.p;
-
-	if (lz4) {
-		if (!s->readonly) {
-			size_t ret, real_written;
-
-			if (lz4->total_processing > 0 && lz4->total_processing < lz4->ring_buffer_size) { /* compress remaining */
-				real_written = fwrite(lz4->ring_buffer, 1, lz4->total_processing, lz4->fp);
-				if (real_written == 0) {
-					s->errnr = MNSTR_WRITE_ERROR;
-					return ;
-				}
-				lz4->total_processing = 0;
-			} /* finish compression */
-			ret = LZ4F_compressEnd(lz4->context.comp_context, lz4->ring_buffer, lz4->ring_buffer_size, NULL);
-			if(LZ4F_isError(ret)) {
-				s->errnr = MNSTR_WRITE_ERROR;
-				return ;
-			}
-			assert(ret < LZ4DECOMPBUFSIZ);
-			lz4->total_processing = ret;
-
-			real_written = fwrite(lz4->ring_buffer, 1, lz4->total_processing, lz4->fp);
-			if (real_written == 0) {
-				s->errnr = MNSTR_WRITE_ERROR;
-				return ;
-			}
-			lz4->total_processing = 0;
-
-			fflush(lz4->fp);
-		}
-		if(!s->readonly) {
-			(void) LZ4F_freeCompressionContext(lz4->context.comp_context);
-		} else {
-			(void) LZ4F_freeDecompressionContext(lz4->context.dec_context);
-		}
-		fclose(lz4->fp);
-		free(lz4->ring_buffer);
-		free(lz4);
-	}
-	s->stream_data.p = NULL;
 }
 
 static int
@@ -1862,6 +1818,25 @@ stream_lz4flush(stream *s)
 			return -1;
 	}
 	return 0;
+}
+
+static void
+stream_lz4close(stream *s)
+{
+	lz4_stream *lz4 = s->stream_data.p;
+
+	if (lz4) {
+		stream_lz4flush(s);
+		if(!s->readonly) {
+			(void) LZ4F_freeCompressionContext(lz4->context.comp_context);
+		} else {
+			(void) LZ4F_freeDecompressionContext(lz4->context.dec_context);
+		}
+		fclose(lz4->fp);
+		free(lz4->ring_buffer);
+		free(lz4);
+	}
+	s->stream_data.p = NULL;
 }
 
 static stream *

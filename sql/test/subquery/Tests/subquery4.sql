@@ -160,7 +160,7 @@ SELECT NOT EXISTS(SELECT i1.i) from integers i1;
 SELECT i1.i, i2.i FROM integers i1 INNER JOIN integers i2 ON EXISTS (SELECT i1.i) = NOT EXISTS (SELECT i2.i);
 	-- empty
 
-SELECT i1.i, i2.i FROM integers i1 INNER JOIN integers i2 ON EXISTS (SELECT i1.i) = EXISTS (SELECT i2.i);
+SELECT i1.i, i2.i FROM integers i1 INNER JOIN integers i2 ON EXISTS (SELECT i1.i) = EXISTS (SELECT i2.i) ORDER BY i1.i NULLS LAST, i2.i NULLS LAST;
 	-- 1    1
 	-- 1    2
 	-- 1    3
@@ -178,7 +178,7 @@ SELECT i1.i, i2.i FROM integers i1 INNER JOIN integers i2 ON EXISTS (SELECT i1.i
 	-- NULL 3
 	-- NULL NULL
 
-SELECT i1.i, i2.i FROM integers i1, integers i2 WHERE (i1.i <= ANY (SELECT i1.i)) = (i1.i) IN (SELECT i1.i);
+SELECT i1.i, i2.i FROM integers i1, integers i2 WHERE (i1.i <= ANY (SELECT i1.i)) = (i1.i) IN (SELECT i1.i) ORDER BY i1.i NULLS LAST, i2.i NULLS LAST;
 	-- 1    1
 	-- 1    2
 	-- 1    3

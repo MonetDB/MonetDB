@@ -60,14 +60,14 @@ stdout of test 'like-escape.Bug-3822` in directory 'sql/test/BugTracker-2015` it
 # loading sql script: 99_system.sql
 
 #select '_' like E'\\_';
-% . # table_name
-% %1 # name
+% .%2 # table_name
+% %2 # name
 % boolean # type
 % 5 # length
 [ false	]
 #select '_' like E'\\_' escape E'\\';
-% . # table_name
-% %1 # name
+% .%2 # table_name
+% %2 # name
 % boolean # type
 % 5 # length
 [ true	]

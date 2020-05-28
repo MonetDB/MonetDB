@@ -2006,7 +2006,7 @@ SERVERput(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 		break;
 	default:
 		if ((w = ATOMformat(tpe,val)) == NULL)
-			throw(MAL, "mapi.put", SQLSTATE(HY013) GDK_EXCEPTION);
+			throw(MAL, "mapi.put", GDK_EXCEPTION);
 		snprintf(buf,BUFSIZ,"%s:=%s;",*nme,w);
 		GDKfree(w);
 		if( SERVERsessions[i].hdl)
@@ -2038,14 +2038,14 @@ SERVERputLocal(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 		break;
 	default:
 		if ((w = ATOMformat(tpe,val)) == NULL)
-			throw(MAL, "mapi.glue", SQLSTATE(HY013) GDK_EXCEPTION);
+			throw(MAL, "mapi.glue", GDK_EXCEPTION);
 		snprintf(buf,BUFSIZ,"%s:=%s;",*nme,w);
 		GDKfree(w);
 		break;
 	}
 	*ret= GDKstrdup(buf);
 	if(*ret == NULL)
-		throw(MAL, "mapi.glue", SQLSTATE(HY013) GDK_EXCEPTION);
+		throw(MAL, "mapi.glue", GDK_EXCEPTION);
 	return MAL_SUCCEED;
 }
 

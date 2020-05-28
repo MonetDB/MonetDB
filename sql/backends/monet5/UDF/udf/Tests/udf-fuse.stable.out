@@ -30,7 +30,7 @@ stdout of test 'udf-fuse` in directory 'sql/backends/monet5/UDF/udf` itself:
 function user.s4_0():void;
     X_3:void := querylog.define("explain select fuse(1,2);":str, "sequential_pipe":str, 9:int);
     X_11:sht := udf.fuse(1:bte, 2:bte);
-    sql.resultSet(".":str, "%1":str, "smallint":str, 16:int, 0:int, 7:int, X_11:sht);
+    sql.resultSet(".%2":str, "%2":str, "smallint":str, 16:int, 0:int, 7:int, X_11:sht);
 end user.s4_0;
 #inline               actions= 0 time=0 usec 
 #remap                actions= 0 time=1 usec 
@@ -58,8 +58,8 @@ end user.s4_0;
 #garbagecollector     actions= 1 time=5 usec 
 #total                actions=27 time=117 usec 
 #select fuse(1,2);
-% . # table_name
-% %1 # name
+% .%2 # table_name
+% %2 # name
 % smallint # type
 % 3 # length
 [ 258	]
@@ -71,7 +71,7 @@ end user.s4_0;
 function user.s6_0():void;
     X_3:void := querylog.define("explain select fuse(1000,2000);":str, "sequential_pipe":str, 9:int);
     X_11:int := udf.fuse(1000:sht, 2000:sht);
-    sql.resultSet(".":str, "%1":str, "int":str, 32:int, 0:int, 7:int, X_11:int);
+    sql.resultSet(".%2":str, "%2":str, "int":str, 32:int, 0:int, 7:int, X_11:int);
 end user.s6_0;
 #inline               actions= 0 time=0 usec 
 #remap                actions= 0 time=1 usec 
@@ -99,8 +99,8 @@ end user.s6_0;
 #garbagecollector     actions= 1 time=4 usec 
 #total                actions=27 time=85 usec 
 #select fuse(1000,2000);
-% . # table_name
-% %1 # name
+% .%2 # table_name
+% %2 # name
 % int # type
 % 8 # length
 [ 65538000	]
@@ -112,7 +112,7 @@ end user.s6_0;
 function user.s8_0():void;
     X_3:void := querylog.define("explain select fuse(1000000,2000000);":str, "sequential_pipe":str, 9:int);
     X_11:lng := udf.fuse(1000000:int, 2000000:int);
-    sql.resultSet(".":str, "%1":str, "bigint":str, 64:int, 0:int, 7:int, X_11:lng);
+    sql.resultSet(".%2":str, "%2":str, "bigint":str, 64:int, 0:int, 7:int, X_11:lng);
 end user.s8_0;
 #inline               actions= 0 time=1 usec 
 #remap                actions= 0 time=0 usec 
@@ -140,8 +140,8 @@ end user.s8_0;
 #garbagecollector     actions= 1 time=4 usec 
 #total                actions=27 time=84 usec 
 #select fuse(1000000,2000000);
-% . # table_name
-% %1 # name
+% .%2 # table_name
+% %2 # name
 % bigint # type
 % 16 # length
 [ 4294967298000000	]
@@ -170,7 +170,7 @@ end user.s8_0;
 % 114 # length
 function user.s16_0():void;
     X_1:void := querylog.define("explain select fuse(a,b) from udf_fuse;":str, "sequential_pipe":str, 26:int);
-    X_34:bat[:str] := bat.pack("sys.":str);
+    X_34:bat[:str] := bat.pack("sys.%1":str);
     X_35:bat[:str] := bat.pack("%1":str);
     X_36:bat[:str] := bat.pack("smallint":str);
     X_37:bat[:int] := bat.pack(16:int);
@@ -216,7 +216,7 @@ end user.s16_0;
 % 114 # length
 function user.s18_0():void;
     X_1:void := querylog.define("explain select fuse(c,d) from udf_fuse;":str, "sequential_pipe":str, 26:int);
-    X_34:bat[:str] := bat.pack("sys.":str);
+    X_34:bat[:str] := bat.pack("sys.%1":str);
     X_35:bat[:str] := bat.pack("%1":str);
     X_36:bat[:str] := bat.pack("int":str);
     X_37:bat[:int] := bat.pack(32:int);
@@ -262,7 +262,7 @@ end user.s18_0;
 % 114 # length
 function user.s20_0():void;
     X_1:void := querylog.define("explain select fuse(e,f) from udf_fuse;":str, "sequential_pipe":str, 26:int);
-    X_34:bat[:str] := bat.pack("sys.":str);
+    X_34:bat[:str] := bat.pack("sys.%1":str);
     X_35:bat[:str] := bat.pack("%1":str);
     X_36:bat[:str] := bat.pack("bigint":str);
     X_37:bat[:int] := bat.pack(64:int);
@@ -302,7 +302,7 @@ end user.s20_0;
 #garbagecollector     actions= 1 time=11 usec 
 #total                actions=27 time=149 usec 
 #select fuse(a,b) from udf_fuse;
-% sys. # table_name
+% sys.%1 # table_name
 % %1 # name
 % smallint # type
 % 4 # length
@@ -311,7 +311,7 @@ end user.s20_0;
 [ 1286	]
 [ 1800	]
 #select fuse(c,d) from udf_fuse;
-% sys. # table_name
+% sys.%1 # table_name
 % %1 # name
 % int # type
 % 9 # length
@@ -320,7 +320,7 @@ end user.s20_0;
 [ 327686000	]
 [ 458760000	]
 #select fuse(e,f) from udf_fuse;
-% sys. # table_name
+% sys.%1 # table_name
 % %1 # name
 % bigint # type
 % 17 # length

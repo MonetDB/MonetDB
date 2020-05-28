@@ -2835,7 +2835,7 @@ stmt_exception(backend *be, stmt *cond, const char *errstr, int errcode)
 }
 
 stmt *
-stmt_convert(backend *be, stmt *v, sql_subtype *f, sql_subtype *t, stmt *sel)
+stmt_convert(backend *be, stmt *v, sql_subtype *f, sql_subtype *t, stmt *cond)
 {
 	MalBlkPtr mb = be->mb;
 	InstrPtr q = NULL;
@@ -2899,8 +2899,6 @@ stmt_convert(backend *be, stmt *v, sql_subtype *f, sql_subtype *t, stmt *sel)
 		q = pushInt(mb, q, 3);
 	}
 	q = pushArgument(mb, q, v->nr);
-	if (sel && v->nrcols && f->type->eclass != EC_DEC && !EC_TEMP_FRAC(t->type->eclass) && !EC_INTERVAL(t->type->eclass))
-		q = pushArgument(mb, q, sel->nr);
 
 	if (t->type->eclass == EC_DEC || EC_TEMP_FRAC(t->type->eclass) || EC_INTERVAL(t->type->eclass)) {
 		/* digits, scale of the result decimal */
@@ -2935,6 +2933,8 @@ stmt_convert(backend *be, stmt *v, sql_subtype *f, sql_subtype *t, stmt *sel)
 			q = pushInt(mb, q, f->scale);
 */			//q = pushInt(mb, q, ((ValRecord)((atom*)(be->mvc)->args[1])->data).val.ival);
 	}
+	if (cond && v->nrcols && f->type->eclass != EC_DEC && !EC_TEMP_FRAC(t->type->eclass) && !EC_INTERVAL(t->type->eclass))
+		q = pushArgument(mb, q, cond->nr);
 	if (q) {
 		stmt *s = stmt_create(be->mvc->sa, st_convert);
 		if(!s) {
@@ -2942,7 +2942,7 @@ stmt_convert(backend *be, stmt *v, sql_subtype *f, sql_subtype *t, stmt *sel)
 			return NULL;
 		}
 		s->op1 = v;
-		s->op2 = sel;
+		s->op2 = cond;
 		s->nrcols = 0;	/* function without arguments returns single value */
 		s->key = v->key;
 		s->nrcols = v->nrcols;
@@ -2950,7 +2950,6 @@ stmt_convert(backend *be, stmt *v, sql_subtype *f, sql_subtype *t, stmt *sel)
 		s->op4.typeval = *t;
 		s->nr = getDestVar(q);
 		s->q = q;
-		s->cand = sel;
 		return s;
 	}
 	return NULL;

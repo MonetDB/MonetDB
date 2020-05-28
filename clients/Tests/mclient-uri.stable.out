@@ -24,8 +24,12 @@ stdout of test 'mclient-uri` in directory 'clients` itself:
 # 10:30:51 >  
 
 
-% . # table_name
-% single_value # name
+# 13:05:14 >  
+# 13:05:14 >  mclient -d mapi:monetdb://xps13:35757/mTests_clients?language=sql&user=monetdb -f test -t none -E utf-8 -s select 1
+# 13:05:14 >  
+
+% .%2 # table_name
+% %2 # name
 % tinyint # type
 % 1 # length
 [ 1	]
@@ -34,8 +38,8 @@ stdout of test 'mclient-uri` in directory 'clients` itself:
 # 10:30:51 >  mclient -d mapi:monetdb:///var/tmp/mtest-2769/.s.monetdb.36840?database=mTests_clients&language=sql&user=monetdb -f test -E utf-8 -s select 1
 # 10:30:51 >  
 
-% . # table_name
-% single_value # name
+% .%2 # table_name
+% %2 # name
 % tinyint # type
 % 1 # length
 [ 1	]

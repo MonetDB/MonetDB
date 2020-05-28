@@ -14,8 +14,8 @@ stdout of test 'table_udf_missing_var` in directory 'sql/test/miscellaneous` its
 % 1 # length
 [ NULL	]
 #select myfunc2();
-% . # table_name
-% %1 # name
+% .%2 # table_name
+% %2 # name
 % int # type
 % 1 # length
 [ NULL	]
