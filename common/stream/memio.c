@@ -109,7 +109,7 @@ buffer_write(stream *restrict s, const void *restrict buf, size_t elmsize, size_
 	b = (buffer *) s->stream_data.p;
 	assert(b);
 	if (b == NULL) {
-		s->errnr = MNSTR_WRITE_ERROR;
+		mnstr_set_error(s, MNSTR_WRITE_ERROR, "buffer already deallocated");
 		return -1;
 	}
 	if (b->pos + size > b->len) {
@@ -117,7 +117,7 @@ buffer_write(stream *restrict s, const void *restrict buf, size_t elmsize, size_
 		size_t ns = b->pos + size + 8192;
 
 		if ((p = realloc(b->buf, ns)) == NULL) {
-			s->errnr = MNSTR_WRITE_ERROR;
+		mnstr_set_error(s, MNSTR_WRITE_ERROR, "buffer reallocation failed");
 			return -1;
 		}
 		b->buf = p;

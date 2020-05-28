@@ -34,7 +34,6 @@ compress_stream_data(bs2 *s)
 		size_t compressed_length = s->compbufsiz;
 		snappy_status ret;
 		if ((ret = snappy_compress(s->buf, s->nr, s->compbuf, &compressed_length)) != SNAPPY_OK) {
-			s->s->errnr = (int) ret;
 			return -1;
 		}
 		return compressed_length;
@@ -47,7 +46,6 @@ compress_stream_data(bs2 *s)
 		int compressed_length = (int) s->compbufsiz;
 		assert(s->nr < INT_MAX);
 		if ((compressed_length = LZ4_compress_fast(s->buf, s->compbuf, (int)s->nr, compressed_length, 1)) == 0) {
-			s->s->errnr = -1;
 			return -1;
 		}
 		return compressed_length;
@@ -69,7 +67,6 @@ decompress_stream_data(bs2 *s)
 		snappy_status ret;
 		size_t uncompressed_length = s->bufsiz;
 		if ((ret = snappy_uncompress(s->compbuf, s->itotal, s->buf, &uncompressed_length)) != SNAPPY_OK) {
-			s->s->errnr = (int) ret;
 			return -1;
 		}
 		return (ssize_t) uncompressed_length;
@@ -82,7 +79,6 @@ decompress_stream_data(bs2 *s)
 		int uncompressed_length = (int) s->bufsiz;
 		assert(s->itotal < INT_MAX);
 		if ((uncompressed_length = LZ4_decompress_safe(s->compbuf, s->buf, (int)s->itotal, uncompressed_length)) <= 0) {
-			s->s->errnr = uncompressed_length;
 			return -1;
 		}
 		return uncompressed_length;
@@ -223,7 +219,7 @@ bs2_write(stream *restrict ss, const void *restrict buf, size_t elmsize, size_t 
 			blksize <<= 1;
 			if (!mnstr_writeLng(s->s, blksize) ||
 			    s->s->write(s->s, writebuf, 1, writelen) != (ssize_t) writelen) {
-				ss->errnr = MNSTR_WRITE_ERROR;
+				mnstr_copy_error(ss, s->s);
 				return -1;
 			}
 			s->nr = 0;
@@ -291,7 +287,7 @@ bs2_flush(stream *ss)
 		if ((!mnstr_writeLng(s->s, blksize) ||
 		     (s->nr > 0 &&
 		      s->s->write(s->s, writebuf, 1, writelen) != (ssize_t) writelen))) {
-			ss->errnr = MNSTR_WRITE_ERROR;
+			mnstr_copy_error(ss, s->s);
 			return -1;
 		}
 		s->nr = 0;
@@ -340,7 +336,7 @@ bs2_read(stream *restrict ss, void *restrict buf, size_t elmsize, size_t cnt)
 		 * so read the count for the next block */
 		switch (mnstr_readLng(s->s, &blksize)) {
 		case -1:
-			ss->errnr = s->s->errnr;
+			mnstr_copy_error(ss, s->s);
 			return -1;
 		case 0:
 			return 0;
@@ -348,7 +344,7 @@ bs2_read(stream *restrict ss, void *restrict buf, size_t elmsize, size_t cnt)
 			break;
 		}
 		if (blksize < 0) {
-			ss->errnr = MNSTR_READ_ERROR;
+			mnstr_set_error(ss, MNSTR_READ_ERROR, "invalid block size %" PRId64 "", blksize);
 			return -1;
 		}
 #ifdef BSTREAM_DEBUG
@@ -372,7 +368,7 @@ bs2_read(stream *restrict ss, void *restrict buf, size_t elmsize, size_t cnt)
 				ssize_t bytes_read = 0;
 				bytes_read = s->s->read(s->s, buf + m, 1, s->itotal - m);
 				if (bytes_read <= 0) {
-					ss->errnr = s->s->errnr;
+					mnstr_copy_error(ss, s->s);
 					return -1;
 				}
 				m += (size_t) bytes_read;
@@ -380,7 +376,10 @@ bs2_read(stream *restrict ss, void *restrict buf, size_t elmsize, size_t cnt)
 			if (s->comp != COMPRESSION_NONE) {
 				uncompressed_length = decompress_stream_data(s);
 				if (uncompressed_length < 0) {
-					ss->errnr = (int) uncompressed_length;
+					if (s->s->errkind != MNSTR_NO__ERROR)
+						mnstr_copy_error(ss, s->s);
+					else
+						mnstr_set_error(ss, MNSTR_READ_ERROR, "uncompress failed with code %d", (int) uncompressed_length);
 					return -1;
 				}
 			} else {
@@ -415,7 +414,7 @@ bs2_read(stream *restrict ss, void *restrict buf, size_t elmsize, size_t cnt)
 				break;
 			switch (mnstr_readLng(s->s, &blksize)) {
 			case -1:
-				ss->errnr = s->s->errnr;
+				mnstr_copy_error(ss, s->s);
 				return -1;
 			case 0:
 				return 0;
@@ -423,7 +422,7 @@ bs2_read(stream *restrict ss, void *restrict buf, size_t elmsize, size_t cnt)
 				break;
 			}
 			if (blksize < 0) {
-				ss->errnr = MNSTR_READ_ERROR;
+				mnstr_set_error(ss, MNSTR_READ_ERROR, "invalid block size %" PRId64 "", blksize);
 				return -1;
 			}
 #ifdef BSTREAM_DEBUG
@@ -449,7 +448,7 @@ bs2_read(stream *restrict ss, void *restrict buf, size_t elmsize, size_t cnt)
 					ssize_t bytes_read = 0;
 					bytes_read = s->s->read(s->s, buf + m, 1, s->itotal - m);
 					if (bytes_read <= 0) {
-						ss->errnr = s->s->errnr;
+						mnstr_copy_error(ss, s->s);
 						return -1;
 					}
 					m += (size_t) bytes_read;
@@ -457,7 +456,10 @@ bs2_read(stream *restrict ss, void *restrict buf, size_t elmsize, size_t cnt)
 				if (s->comp != COMPRESSION_NONE) {
 					uncompressed_length = decompress_stream_data(s);
 					if (uncompressed_length < 0) {
-						ss->errnr = (int) uncompressed_length;
+						if (s->s->errkind != MNSTR_NO__ERROR)
+							mnstr_copy_error(ss, s->s);
+						else
+							mnstr_set_error(ss, MNSTR_READ_ERROR, "uncompress failed with code %d", (int) uncompressed_length);
 						return -1;
 					}
 				} else {

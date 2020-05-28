@@ -153,7 +153,6 @@ struct stream {
 		int i;
 		SOCKET s;
 	} stream_data;
-	mnstr_error_kind errnr;
 	ssize_t (*read)(stream *restrict s, void *restrict buf, size_t elmsize, size_t cnt);
 	ssize_t (*write)(stream *restrict s, const void *restrict buf, size_t elmsize, size_t cnt);
 	void (*close)(stream *s);
@@ -165,9 +164,19 @@ struct stream {
 	int (*fsetpos)(stream *restrict s, fpos_t *restrict p);
 	void (*update_timeout)(stream *s);
 	int (*isalive)(const stream *s);
+	mnstr_error_kind errkind;
 	char errmsg[1024]; // avoid allocation on error. We don't have THAT many streams..
 };
 
+void mnstr_va_set_error(stream *s, mnstr_error_kind kind, const char *fmt, va_list ap);
+
+void mnstr_set_error(stream *s, mnstr_error_kind kind, const char *fmt, ...)
+	__attribute__((__format__(__printf__, 3, 4)));
+
+void mnstr_set_error_errno(stream *s, mnstr_error_kind kind, const char *fmt, ...)
+	__attribute__((__format__(__printf__, 3, 4)));
+
+void mnstr_copy_error(stream *dst, stream *src);
 
 /* used to be static: */
 

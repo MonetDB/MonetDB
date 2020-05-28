@@ -78,7 +78,7 @@ pump_read(stream *restrict s, void *restrict buf, size_t elmsize, size_t cnt)
 	state->set_dst_win(inner_state, (pump_buffer){ .start = buf, .count = size});
 	pump_result ret = pump_in(s);
 	if (ret == PUMP_ERROR) {
-		s->errnr = MNSTR_READ_ERROR;
+		assert(s->errkind != MNSTR_NO__ERROR);
 		return -1;
 	}
 
@@ -101,8 +101,10 @@ pump_write(stream *restrict s, const void *restrict buf, size_t elmsize, size_t 
 
 	state->set_src_win(inner_state, (pump_buffer){ .start = (void*)buf, .count = size });
 	pump_result ret = pump_out(s, PUMP_NO_FLUSH);
-	if (ret == PUMP_ERROR)
+	if (ret == PUMP_ERROR) {
+		assert(s->errkind != MNSTR_NO__ERROR);
 		return -1;
+	}
 	ssize_t nwritten = state->get_src_win(inner_state).start - (char*)buf;
 	return nwritten / (ssize_t) elmsize;
 }

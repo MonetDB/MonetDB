@@ -86,7 +86,7 @@ bs_write(stream *restrict ss, const void *restrict buf, size_t elmsize, size_t c
 			blksize <<= 1;
 			if (!mnstr_writeSht(ss->inner, (int16_t) blksize) ||
 			    ss->inner->write(ss->inner, s->buf, 1, s->nr) != (ssize_t) s->nr) {
-				ss->errnr = MNSTR_WRITE_ERROR;
+				mnstr_copy_error(ss, ss->inner);
 				s->nr = 0; /* data is lost due to error */
 				return -1;
 			}
@@ -139,7 +139,7 @@ bs_flush(stream *ss)
 		if ((!mnstr_writeSht(ss->inner, (int16_t) blksize) ||
 		     (s->nr > 0 &&
 		      ss->inner->write(ss->inner, s->buf, 1, s->nr) != (ssize_t) s->nr))) {
-			ss->errnr = MNSTR_WRITE_ERROR;
+			mnstr_copy_error(ss, ss->inner);
 			s->nr = 0; /* data is lost due to error */
 			return -1;
 		}
@@ -190,7 +190,7 @@ bs_read(stream *restrict ss, void *restrict buf, size_t elmsize, size_t cnt)
 		 * so read the count for the next block */
 		switch (mnstr_readSht(ss->inner, &blksize)) {
 		case -1:
-			ss->errnr = ss->inner->errnr;
+			mnstr_copy_error(ss, ss->inner);
 			return -1;
 		case 0:
 			return 0;
@@ -198,7 +198,7 @@ bs_read(stream *restrict ss, void *restrict buf, size_t elmsize, size_t cnt)
 			break;
 		}
 		if ((uint16_t) blksize > (BLOCK << 1 | 1)) {
-			ss->errnr = MNSTR_READ_ERROR;
+			mnstr_set_error(ss, MNSTR_READ_ERROR, "invalid block size %d", blksize);
 			return -1;
 		}
 #ifdef BSTREAM_DEBUG
@@ -222,7 +222,7 @@ bs_read(stream *restrict ss, void *restrict buf, size_t elmsize, size_t cnt)
 			ssize_t m = ss->inner->read(ss->inner, buf, 1, n);
 
 			if (m <= 0) {
-				ss->errnr = ss->inner->errnr;
+				mnstr_copy_error(ss, ss->inner);
 				return -1;
 			}
 #ifdef BSTREAM_DEBUG
@@ -256,7 +256,7 @@ bs_read(stream *restrict ss, void *restrict buf, size_t elmsize, size_t cnt)
 				break;
 			switch (mnstr_readSht(ss->inner, &blksize)) {
 			case -1:
-				ss->errnr = ss->inner->errnr;
+				mnstr_copy_error(ss, ss->inner);
 				return -1;
 			case 0:
 				return 0;
@@ -264,7 +264,7 @@ bs_read(stream *restrict ss, void *restrict buf, size_t elmsize, size_t cnt)
 				break;
 			}
 			if ((uint16_t) blksize > (BLOCK << 1 | 1)) {
-				ss->errnr = MNSTR_READ_ERROR;
+				mnstr_set_error(ss, MNSTR_READ_ERROR, "invalid block size %d", blksize);
 				return -1;
 			}
 #ifdef BSTREAM_DEBUG

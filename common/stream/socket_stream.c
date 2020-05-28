@@ -26,7 +26,7 @@ socket_write(stream *restrict s, const void *restrict buf, size_t elmsize, size_
 	ssize_t nr = 0;
 #endif
 
-	if (s->errnr)
+	if (s->errkind != MNSTR_NO__ERROR)
 		return -1;
 
 	if (size == 0 || elmsize == 0)
@@ -83,9 +83,9 @@ socket_write(stream *restrict s, const void *restrict buf, size_t elmsize, size_
 			    )
 #endif
 			)
-			s->errnr = MNSTR_TIMEOUT;
+			mnstr_set_error(s, MNSTR_TIMEOUT, NULL);
 		else
-			s->errnr = MNSTR_WRITE_ERROR;
+			mnstr_set_error_errno(s, MNSTR_WRITE_ERROR, "socket write");
 		return -1;
 	}
 	return 0;
@@ -101,7 +101,7 @@ socket_read(stream *restrict s, void *restrict buf, size_t elmsize, size_t cnt)
 #endif
 	size_t size = elmsize * cnt;
 
-	if (s->errnr)
+	if (s->errkind != MNSTR_NO__ERROR)
 		return -1;
 	if (size == 0)
 		return 0;
@@ -125,7 +125,7 @@ socket_read(stream *restrict s, void *restrict buf, size_t elmsize, size_t cnt)
 			if (ret == -1 && errno == EINTR)
 				continue;
 			if (ret == -1 || (pfd.revents & POLLERR)) {
-				s->errnr = MNSTR_READ_ERROR;
+				mnstr_set_error_errno(s, MNSTR_READ_ERROR, "poll error");
 				return -1;
 			}
 #else
@@ -154,7 +154,7 @@ socket_read(stream *restrict s, void *restrict buf, size_t elmsize, size_t cnt)
 #endif
 			if (ret == 0) {
 				if (s->timeout_func == NULL || s->timeout_func()) {
-					s->errnr = MNSTR_TIMEOUT;
+					mnstr_set_error(s, MNSTR_TIMEOUT, NULL);
 					return -1;
 				}
 				continue;
@@ -177,7 +177,7 @@ socket_read(stream *restrict s, void *restrict buf, size_t elmsize, size_t cnt)
 		if (nr == -1 && errno == EINTR)
 			continue;
 		if (nr == -1) {
-			s->errnr = MNSTR_READ_ERROR;
+			mnstr_set_error_errno(s, MNSTR_READ_ERROR, NULL);
 			return -1;
 		}
 #endif
@@ -200,7 +200,8 @@ socket_read(stream *restrict s, void *restrict buf, size_t elmsize, size_t cnt)
 			ssize_t n;
 			n = socket_read(s, (char *) buf + nr, 1, size - (size_t) nr);
 			if (n < 0) {
-				s->errnr = MNSTR_READ_ERROR;
+				if (s->errkind == MNSTR_NO__ERROR)
+					mnstr_set_error(s, MNSTR_READ_ERROR, "socket_read failed");
 				return -1;
 			}
 			if (n == 0)	/* unexpected end of file */
@@ -349,7 +350,7 @@ socket_open(SOCKET sock, const char *name)
 
 		fl &= ~O_NONBLOCK;
 		if (fcntl(sock, F_SETFL, fl) < 0) {
-			s->errnr = MNSTR_OPEN_ERROR;
+			mnstr_set_error_errno(s, MNSTR_OPEN_ERROR, "fcntl unset O_NONBLOCK failed");
 			return s;
 		}
 	}

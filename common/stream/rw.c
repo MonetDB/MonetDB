@@ -23,7 +23,7 @@ mnstr_readChr(stream *restrict s, char *restrict val)
 int
 mnstr_writeChr(stream *s, char val)
 {
-	if (s == NULL || s->errnr)
+	if (s == NULL || s->errkind != MNSTR_NO__ERROR)
 		return 0;
 	return s->write(s, (void *) &val, sizeof(val), 1) == 1;
 }
@@ -39,7 +39,7 @@ mnstr_readBte(stream *restrict s, int8_t *restrict val)
 int
 mnstr_writeBte(stream *s, int8_t val)
 {
-	if (s == NULL || s->errnr)
+	if (s == NULL || s->errkind != MNSTR_NO__ERROR)
 		return 0;
 	return s->write(s, (void *) &val, sizeof(val), 1) == 1;
 }
@@ -65,7 +65,7 @@ mnstr_readSht(stream *restrict s, int16_t *restrict val)
 int
 mnstr_writeSht(stream *s, int16_t val)
 {
-	if (s == NULL || s->errnr)
+	if (s == NULL || s->errkind != MNSTR_NO__ERROR)
 		return 0;
 	assert(s->binary);
 	if (s->swapbytes)
@@ -94,7 +94,7 @@ mnstr_readInt(stream *restrict s, int *restrict val)
 int
 mnstr_writeInt(stream *s, int val)
 {
-	if (s == NULL || s->errnr)
+	if (s == NULL || s->errkind != MNSTR_NO__ERROR)
 		return 0;
 	assert(s->binary);
 	if (s->swapbytes)
@@ -105,7 +105,7 @@ mnstr_writeInt(stream *s, int val)
 int
 mnstr_writeStr(stream *restrict s, const char *restrict val)
 {
-	if (s == NULL || s->errnr)
+	if (s == NULL || s->errkind != MNSTR_NO__ERROR)
 		return 0;
 	return s->write(s, (void *) val, strlen(val), (size_t) 1) == 1;
 }
@@ -113,7 +113,7 @@ mnstr_writeStr(stream *restrict s, const char *restrict val)
 int
 mnstr_readStr(stream *restrict s, char *restrict val)
 {
-	if (s == NULL || s->errnr)
+	if (s == NULL || s->errkind != MNSTR_NO__ERROR)
 		return 0;
 	do {
 		if (mnstr_readChr(s, val) != 1) {
@@ -146,7 +146,7 @@ mnstr_readLng(stream *restrict s, int64_t *restrict val)
 int
 mnstr_writeLng(stream *s, int64_t val)
 {
-	if (s == NULL || s->errnr)
+	if (s == NULL || s->errkind != MNSTR_NO__ERROR)
 		return 0;
 	assert(s->binary);
 	if (s->swapbytes)
@@ -157,7 +157,7 @@ mnstr_writeLng(stream *s, int64_t val)
 int
 mnstr_writeFlt(stream *s, float val)
 {
-	if (s == NULL || s->errnr)
+	if (s == NULL || s->errkind != MNSTR_NO__ERROR)
 		return 0;
 	assert(s->binary);
 	return s->write(s, &val, sizeof(val), 1) == 1;
@@ -166,7 +166,7 @@ mnstr_writeFlt(stream *s, float val)
 int
 mnstr_writeDbl(stream *s, double val)
 {
-	if (s == NULL || s->errnr)
+	if (s == NULL || s->errkind != MNSTR_NO__ERROR)
 		return 0;
 	assert(s->binary);
 	return s->write(s, &val, sizeof(val), 1) == 1;
@@ -195,7 +195,7 @@ mnstr_readHge(stream *restrict s, hge *restrict val)
 int
 mnstr_writeHge(stream *s, hge val)
 {
-	if (s == NULL || s->errnr)
+	if (s == NULL || s->errkind != MNSTR_NO__ERROR)
 		return 0;
 	assert(s->binary);
 	if (s->swapbytes)
@@ -211,8 +211,8 @@ mnstr_readBteArray(stream *restrict s, int8_t *restrict val, size_t cnt)
 		return 0;
 
 	if (s->read(s, (void *) val, sizeof(*val), cnt) < (ssize_t) cnt) {
-		if (s->errnr == MNSTR_NO__ERROR)
-			s->errnr = MNSTR_READ_ERROR;
+		if (s->errkind == MNSTR_NO__ERROR)
+			mnstr_set_error(s, MNSTR_UNEXPECTED_EOF, NULL);
 		return 0;
 	}
 
@@ -222,7 +222,7 @@ mnstr_readBteArray(stream *restrict s, int8_t *restrict val, size_t cnt)
 int
 mnstr_writeBteArray(stream *restrict s, const int8_t *restrict val, size_t cnt)
 {
-	if (s == NULL || s->errnr || val == NULL)
+	if (s == NULL || s->errkind != MNSTR_NO__ERROR || val == NULL)
 		return 0;
 	return s->write(s, val, sizeof(*val), cnt) == (ssize_t) cnt;
 }
@@ -234,8 +234,8 @@ mnstr_readShtArray(stream *restrict s, int16_t *restrict val, size_t cnt)
 		return 0;
 	assert(s->binary);
 	if (s->read(s, val, sizeof(*val), cnt) < (ssize_t) cnt) {
-		if (s->errnr == MNSTR_NO__ERROR)
-			s->errnr = MNSTR_READ_ERROR;
+		if (s->errkind == MNSTR_NO__ERROR)
+			mnstr_set_error(s, MNSTR_UNEXPECTED_EOF, NULL);
 		return 0;
 	}
 	if (s->swapbytes) {
@@ -248,7 +248,7 @@ mnstr_readShtArray(stream *restrict s, int16_t *restrict val, size_t cnt)
 int
 mnstr_writeShtArray(stream *restrict s, const int16_t *restrict val, size_t cnt)
 {
-	if (s == NULL || s->errnr || val == NULL)
+	if (s == NULL || s->errkind != MNSTR_NO__ERROR || val == NULL)
 		return 0;
 	assert(s->binary);
 	if (s->swapbytes) {
@@ -267,8 +267,8 @@ mnstr_readIntArray(stream *restrict s, int *restrict val, size_t cnt)
 		return 0;
 	assert(s->binary);
 	if (s->read(s, val, sizeof(*val), cnt) < (ssize_t) cnt) {
-		if (s->errnr == MNSTR_NO__ERROR)
-			s->errnr = MNSTR_READ_ERROR;
+		if (s->errkind == MNSTR_NO__ERROR)
+			mnstr_set_error(s, MNSTR_UNEXPECTED_EOF, NULL);
 		return 0;
 	}
 	if (s->swapbytes) {
@@ -281,7 +281,7 @@ mnstr_readIntArray(stream *restrict s, int *restrict val, size_t cnt)
 int
 mnstr_writeIntArray(stream *restrict s, const int *restrict val, size_t cnt)
 {
-	if (s == NULL || s->errnr || val == NULL)
+	if (s == NULL || s->errkind != MNSTR_NO__ERROR || val == NULL)
 		return 0;
 	assert(s->binary);
 	if (s->swapbytes) {
@@ -300,8 +300,8 @@ mnstr_readLngArray(stream *restrict s, int64_t *restrict val, size_t cnt)
 		return 0;
 	assert(s->binary);
 	if (s->read(s, val, sizeof(*val), cnt) < (ssize_t) cnt) {
-		if (s->errnr == MNSTR_NO__ERROR)
-			s->errnr = MNSTR_READ_ERROR;
+		if (s->errkind == MNSTR_NO__ERROR)
+			mnstr_set_error(s, MNSTR_UNEXPECTED_EOF, NULL);
 		return 0;
 	}
 	if (s->swapbytes) {
@@ -314,7 +314,7 @@ mnstr_readLngArray(stream *restrict s, int64_t *restrict val, size_t cnt)
 int
 mnstr_writeLngArray(stream *restrict s, const int64_t *restrict val, size_t cnt)
 {
-	if (s == NULL || s->errnr || val == NULL)
+	if (s == NULL || s->errkind != MNSTR_NO__ERROR || val == NULL)
 		return 0;
 	assert(s->binary);
 	if (s->swapbytes) {
@@ -334,8 +334,8 @@ mnstr_readHgeArray(stream *restrict s, hge *restrict val, size_t cnt)
 		return 0;
 	assert(s->binary);
 	if (s->read(s, val, sizeof(*val), cnt) < (ssize_t) cnt) {
-		if (s->errnr == MNSTR_NO__ERROR)
-			s->errnr = MNSTR_READ_ERROR;
+		if (s->errkind == MNSTR_NO__ERROR)
+			mnstr_set_error(s, MNSTR_UNEXPECTED_EOF, NULL);
 		return 0;
 	}
 	if (s->swapbytes) {
@@ -348,7 +348,7 @@ mnstr_readHgeArray(stream *restrict s, hge *restrict val, size_t cnt)
 int
 mnstr_writeHgeArray(stream *restrict s, const hge *restrict val, size_t cnt)
 {
-	if (s == NULL || s->errnr || val == NULL)
+	if (s == NULL || s->errkind != MNSTR_NO__ERROR || val == NULL)
 		return 0;
 	assert(s->binary);
 	if (s->swapbytes) {
@@ -369,7 +369,7 @@ mnstr_printf(stream *restrict s, const char *restrict format, ...)
 	size_t bfsz = sizeof(buf);
 	va_list ap;
 
-	if (s == NULL || s->errnr)
+	if (s == NULL || s->errkind != MNSTR_NO__ERROR)
 		return -1;
 
 	va_start(ap, format);
@@ -384,7 +384,7 @@ mnstr_printf(stream *restrict s, const char *restrict format, ...)
 			free(bf);
 		bf = malloc(bfsz);
 		if (bf == NULL) {
-			s->errnr = MNSTR_WRITE_ERROR;
+			mnstr_set_error(s, MNSTR_WRITE_ERROR, "malloc failed");
 			return -1;
 		}
 		va_start(ap, format);
@@ -394,6 +394,6 @@ mnstr_printf(stream *restrict s, const char *restrict format, ...)
 	s->write(s, (void *) bf, (size_t) i, (size_t) 1);
 	if (bf != buf)
 		free(bf);
-	return s->errnr ? -1 : i;
+	return s->errkind == MNSTR_NO__ERROR ? i : -1;
 }
 

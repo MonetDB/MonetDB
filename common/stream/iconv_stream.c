@@ -33,8 +33,10 @@ ic_write(stream *restrict s, const void *restrict buf, size_t elmsize, size_t cn
 	size_t inbytesleft = elmsize * cnt;
 	char *bf = NULL;
 
-	if (ic == NULL)
+	if (ic == NULL) {
+		mnstr_set_error(s, MNSTR_WRITE_ERROR, "stream already ended");
 		goto bailout;
+	}
 
 	/* if unconverted data from a previous call remains, add it to
 	 * the start of the new data, using temporary space */
@@ -42,6 +44,7 @@ ic_write(stream *restrict s, const void *restrict buf, size_t elmsize, size_t cn
 		bf = malloc(ic->buflen + inbytesleft);
 		if (bf == NULL) {
 			/* cannot allocate memory */
+			mnstr_set_error(s, MNSTR_WRITE_ERROR, "out of memory");
 			goto bailout;
 		}
 		memcpy(bf, ic->buffer, ic->buflen);
@@ -59,6 +62,7 @@ ic_write(stream *restrict s, const void *restrict buf, size_t elmsize, size_t cn
 			switch (errno) {
 			case EILSEQ:
 				/* invalid multibyte sequence encountered */
+				mnstr_set_error(s, MNSTR_WRITE_ERROR, "invalid multibyte sequence");
 				goto bailout;
 			case EINVAL:
 				/* incomplete multibyte sequence
@@ -66,6 +70,7 @@ ic_write(stream *restrict s, const void *restrict buf, size_t elmsize, size_t cn
 				 * converted */
 				if (outbytesleft < sizeof(ic->buffer) &&
 				    mnstr_write(s->inner, ic->buffer, 1, sizeof(ic->buffer) - outbytesleft) < 0) {
+					mnstr_set_error(s, MNSTR_WRITE_ERROR, "incomplete multibyte sequence");
 					goto bailout;
 				}
 				/* remember what hasn't been converted */
@@ -73,6 +78,7 @@ ic_write(stream *restrict s, const void *restrict buf, size_t elmsize, size_t cn
 					/* ridiculously long multibyte
 					 * sequence, so return
 					 * error */
+					mnstr_set_error(s, MNSTR_WRITE_ERROR, "multibyte sequence too long");
 					goto bailout;
 				}
 				memcpy(ic->buffer, inbuf, inbytesleft);
@@ -85,10 +91,12 @@ ic_write(stream *restrict s, const void *restrict buf, size_t elmsize, size_t cn
 				break;
 			default:
 				/* cannot happen (according to manual) */
+				mnstr_set_error(s, MNSTR_WRITE_ERROR, "iconv internal error %d", errno);
 				goto bailout;
 			}
 		}
 		if (mnstr_write(s->inner, ic->buffer, 1, sizeof(ic->buffer) - outbytesleft) < 0) {
+			mnstr_copy_error(s, s->inner);
 			goto bailout;
 		}
 	}
@@ -96,8 +104,8 @@ ic_write(stream *restrict s, const void *restrict buf, size_t elmsize, size_t cn
 		free(bf);
 	return (ssize_t) cnt;
 
-      bailout:
-	s->errnr = MNSTR_WRITE_ERROR;
+	bailout:
+	assert(s->errkind != MNSTR_NO__ERROR);
 	if (bf)
 		free(bf);
 	return -1;
@@ -113,7 +121,7 @@ ic_read(stream *restrict s, void *restrict buf, size_t elmsize, size_t cnt)
 	size_t outbytesleft;
 
 	if (ic == NULL) {
-		s->errnr = MNSTR_READ_ERROR;
+		mnstr_set_error(s, MNSTR_READ_ERROR, "stream already ended");
 		return -1;
 	}
 	inbuf = ic->buffer;
@@ -125,7 +133,7 @@ ic_read(stream *restrict s, void *restrict buf, size_t elmsize, size_t cnt)
 	while (outbytesleft > 0 && !ic->eof) {
 		if (ic->buflen == sizeof(ic->buffer)) {
 			/* ridiculously long multibyte sequence, return error */
-			s->errnr = MNSTR_READ_ERROR;
+			mnstr_set_error(s, MNSTR_READ_ERROR, "multibyte sequence too long");
 			return -1;
 		}
 
@@ -140,25 +148,24 @@ ic_read(stream *restrict s, void *restrict buf, size_t elmsize, size_t cnt)
 			ic->eof = true;
 			if (ic->buflen > 0) {
 				/* incomplete input */
-				s->errnr = MNSTR_READ_ERROR;
+				mnstr_set_error(s, MNSTR_READ_ERROR, "incomplete input");
 				return -1;
 			}
 			if (iconv(ic->cd, NULL, NULL, &outbuf, &outbytesleft) == (size_t) -1) {
 				/* some error occurred */
-				s->errnr = MNSTR_READ_ERROR;
+				mnstr_set_error(s, MNSTR_READ_ERROR, "unspecified iconv error occurred");
 				return -1;
 			}
 			goto exit_func;	/* double break */
 		default:
 			/* error */
-			s->errnr = s->inner->errnr;
+			mnstr_copy_error(s, s->inner);
 			return -1;
 		}
 		if (iconv(ic->cd, &inbuf, &inbytesleft, &outbuf, &outbytesleft) == (size_t) -1) {
 			switch (errno) {
 			case EILSEQ:
-				/* invalid multibyte sequence encountered */
-				s->errnr = MNSTR_READ_ERROR;
+				mnstr_set_error(s, MNSTR_READ_ERROR, "invalid multibyte sequence");
 				return -1;
 			case EINVAL:
 				/* incomplete multibyte sequence encountered */
@@ -170,7 +177,7 @@ ic_read(stream *restrict s, void *restrict buf, size_t elmsize, size_t cnt)
 				goto exit_func;
 			default:
 				/* cannot happen (according to manual) */
-				s->errnr = MNSTR_READ_ERROR;
+				mnstr_set_error(s, MNSTR_READ_ERROR, "inconv stream: internal error");
 				return -1;
 			}
 		}
@@ -211,7 +218,7 @@ ic_flush(stream *s)
 	    iconv(ic->cd, NULL, NULL, &outbuf, &outbytesleft) == (size_t) -1 ||
 	    (outbytesleft < sizeof(ic->buffer) &&
 	     mnstr_write(s->inner, ic->buffer, 1, sizeof(ic->buffer) - outbytesleft) < 0)) {
-		s->errnr = MNSTR_WRITE_ERROR;
+		mnstr_copy_error(s, s->inner);
 		return -1;
 	}
 	return mnstr_flush(s->inner);

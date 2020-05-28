@@ -87,7 +87,7 @@ mnstr_read(stream *restrict s, void *restrict buf, size_t elmsize, size_t cnt)
 		s->name ? s->name : "<unnamed>", elmsize, cnt);
 #endif
 	assert(s->readonly);
-	if (s->errnr)
+	if (s->errkind != MNSTR_NO__ERROR)
 		return -1;
 	return s->read(s, buf, elmsize, cnt);
 }
@@ -106,7 +106,7 @@ mnstr_write(stream *restrict s, const void *restrict buf, size_t elmsize, size_t
 		s->name ? s->name : "<unnamed>", elmsize, cnt);
 #endif
 	assert(!s->readonly);
-	if (s->errnr)
+	if (s->errkind != MNSTR_NO__ERROR)
 		return -1;
 	return s->write(s, buf, elmsize, cnt);
 }
@@ -127,7 +127,7 @@ mnstr_readline(stream *restrict s, void *restrict buf, size_t maxcnt)
 		s->name ? s->name : "<unnamed>", maxcnt);
 #endif
 	assert(s->readonly);
-	if (s->errnr)
+	if (s->errkind != MNSTR_NO__ERROR)
 		return -1;
 	if (maxcnt == 0)
 		return 0;
@@ -199,43 +199,109 @@ mnstr_destroy(stream *s)
 	}
 }
 
+void
+mnstr_va_set_error(stream *s, mnstr_error_kind kind, const char *fmt, va_list ap)
+{
+	if (s == NULL)
+		return;
+
+	s->errkind = kind;
+
+	if (kind == MNSTR_NO__ERROR) {
+		s->errmsg[0] = '\0';
+		return;
+	}
+
+	char *start = &s->errmsg[0];
+	char *end = start + sizeof(s->errmsg);
+	if (s->name != NULL)
+		start += snprintf(start, end - start, "stream %s: ", s->name);
+
+	if (start >= end - 1)
+		return;
+
+	// Complicated pointer dance in order to shut up 'might be a candidate
+	// for gnu_printf format attribute' warning from gcc.
+	// It's really eager to trace where the vsnprintf ends up, we need
+	// the ? : to throw it off its scent.
+	void *f1 = 1 ? (void*)&vsnprintf : (void*)&atoi;
+	int (*f)(char *str, size_t size, const char *format, va_list ap) = f1;
+	f(start, end - start, fmt, ap);
+}
+
+void
+mnstr_set_error(stream *s, mnstr_error_kind kind, const char *fmt, ...)
+{
+	va_list ap;
+	va_start(ap, fmt);
+	mnstr_va_set_error(s, kind, fmt, ap);
+	va_end(ap);
+}
+
+void
+mnstr_set_error_errno(stream *s, mnstr_error_kind kind, const char *fmt, ...)
+{
+	va_list ap;
+	va_start(ap, fmt);
+	mnstr_va_set_error(s, kind, fmt, ap);
+	va_end(ap);
+
+	/* append as much as fits of the system error message */
+	char *start = &s->errmsg[0] + strlen(s->errmsg);
+	char *end = &s->errmsg[0] + sizeof(s->errmsg);
+	if (end - start >= 3) {
+		start = stpcpy(start, ": ");
+		strerror_r(errno, start, end - start);
+	}
+}
+
+
+void mnstr_copy_error(stream *dst, stream *src)
+{
+	dst->errkind = src->errkind;
+	memcpy(dst->errmsg, src->errmsg, sizeof(dst->errmsg));
+}
 
 char *
 mnstr_error(const stream *s)
 {
-	char buf[128];
+	char buf[200];
 
 	if (s == NULL)
 		return "Connection terminated";
 
-	if (s->errnr == MNSTR_NO__ERROR)
+	if (s->errkind == MNSTR_NO__ERROR)
 		return strdup("no error");
 
 	if (s->errmsg != NULL)
 		return strdup(s->errmsg);
 
-	switch (s->errnr) {
+	switch (s->errkind) {
 	case MNSTR_NO__ERROR:
 		/* unreachable */
 		assert(0);
 		return NULL;
 	case MNSTR_OPEN_ERROR:
-		snprintf(buf, sizeof(buf), "error could not open file %.100s\n",
+		snprintf(buf, sizeof(buf), "error could not open",
 			 s->name);
 		return strdup(buf);
 	case MNSTR_READ_ERROR:
-		snprintf(buf, sizeof(buf), "error reading file %.100s\n",
+		snprintf(buf, sizeof(buf), "error reading",
 			 s->name);
 		return strdup(buf);
 	case MNSTR_WRITE_ERROR:
-		snprintf(buf, sizeof(buf), "error writing file %.100s\n",
+		snprintf(buf, sizeof(buf), "error writing",
 			 s->name);
 		return strdup(buf);
 	case MNSTR_TIMEOUT:
-		snprintf(buf, sizeof(buf), "timeout on %.100s\n", s->name);
+		snprintf(buf, sizeof(buf), "timeout", s->name);
+		return strdup(buf);
+	case MNSTR_UNEXPECTED_EOF:
+		snprintf(buf, sizeof(buf), "timeout", s->name);
 		return strdup(buf);
 	}
-	snprintf(buf, sizeof(buf), "Unknown error %d\n", (int)s->errnr);
+
+	snprintf(buf, sizeof(buf), "Unknown error %d", (int)s->errkind, s->name);
 	return strdup(buf);
 }
 
@@ -249,7 +315,7 @@ mnstr_flush(stream *s)
 	fprintf(stderr, "flush %s\n", s->name ? s->name : "<unnamed>");
 #endif
 	assert(!s->readonly);
-	if (s->errnr)
+	if (s->errkind != MNSTR_NO__ERROR)
 		return -1;
 	if (s->flush)
 		return s->flush(s);
@@ -268,7 +334,7 @@ mnstr_fsync(stream *s)
 		s->name ? s->name : "<unnamed>", s->errnr);
 #endif
 	assert(!s->readonly);
-	if (s->errnr)
+	if (s->errkind != MNSTR_NO__ERROR)
 		return -1;
 	if (s->fsync)
 		return s->fsync(s);
@@ -284,7 +350,7 @@ mnstr_fgetpos(stream *restrict s, fpos_t *restrict p)
 #ifdef STREAM_DEBUG
 	fprintf(stderr, "fgetpos %s\n", s->name ? s->name : "<unnamed>");
 #endif
-	if (s->errnr)
+	if (s->errkind != MNSTR_NO__ERROR)
 		return -1;
 	if (s->fgetpos)
 		return s->fgetpos(s, p);
@@ -300,7 +366,7 @@ mnstr_fsetpos(stream *restrict s, fpos_t *restrict p)
 #ifdef STREAM_DEBUG
 	fprintf(stderr, "fsetpos %s\n", s->name ? s->name : "<unnamed>");
 #endif
-	if (s->errnr)
+	if (s->errkind != MNSTR_NO__ERROR)
 		return -1;
 	if (s->fsetpos)
 		return s->fsetpos(s, p);
@@ -313,7 +379,7 @@ mnstr_isalive(const stream *s)
 {
 	if (s == NULL)
 		return 0;
-	if (s->errnr)
+	if (s->errkind != MNSTR_NO__ERROR)
 		return -1;
 	if (s->isalive)
 		return s->isalive(s);
@@ -335,7 +401,7 @@ mnstr_errnr(const stream *s)
 {
 	if (s == NULL)
 		return MNSTR_READ_ERROR;
-	return s->errnr;
+	return s->errkind;
 }
 
 const char *
@@ -361,7 +427,7 @@ void
 mnstr_clearerr(stream *s)
 {
 	if (s != NULL) {
-		s->errnr = MNSTR_NO__ERROR;
+		s->errkind = MNSTR_NO__ERROR;
 		s->errmsg[0] = '\0';
 		if (s->clrerr)
 			s->clrerr(s);
@@ -445,7 +511,7 @@ create_stream(const char *name)
 		.isutf8 = false,	/* not known for sure */
 		.binary = false,
 		.name = strdup(name),
-		.errnr = MNSTR_NO__ERROR,
+		.errkind = MNSTR_NO__ERROR,
 		.errmsg = {0},
 		.destroy = destroy_stream,
 	};

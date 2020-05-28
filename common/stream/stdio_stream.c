@@ -336,14 +336,14 @@ file_read(stream *restrict s, void *restrict buf, size_t elmsize, size_t cnt)
 	size_t rc = 0;
 
 	if (fp == NULL) {
-		s->errnr = MNSTR_READ_ERROR;
+		mnstr_set_error(s, MNSTR_READ_ERROR, "file ended");
 		return -1;
 	}
 
 	if (elmsize && cnt && !feof(fp)) {
 		if (ferror(fp) ||
 		    ((rc = fread(buf, elmsize, cnt, fp)) == 0 && ferror(fp))) {
-			s->errnr = MNSTR_READ_ERROR;
+			mnstr_set_error_errno(s, MNSTR_READ_ERROR, "read error");
 			return -1;
 		}
 	}
@@ -357,7 +357,7 @@ file_write(stream *restrict s, const void *restrict buf, size_t elmsize, size_t 
 	FILE *fp = (FILE *) s->stream_data.p;
 
 	if (fp == NULL) {
-		s->errnr = MNSTR_WRITE_ERROR;
+		mnstr_set_error(s, MNSTR_WRITE_ERROR, "file ended");
 		return -1;
 	}
 
@@ -365,7 +365,7 @@ file_write(stream *restrict s, const void *restrict buf, size_t elmsize, size_t 
 		size_t rc = fwrite(buf, elmsize, cnt, fp);
 
 		if (ferror(fp)) {
-			s->errnr = MNSTR_WRITE_ERROR;
+			mnstr_set_error_errno(s, MNSTR_WRITE_ERROR, "write error");
 			return -1;
 		}
 		return (ssize_t) rc;
@@ -416,7 +416,7 @@ file_flush(stream *s)
 	FILE *fp = (FILE *) s->stream_data.p;
 
 	if (fp == NULL || (!s->readonly && fflush(fp) < 0)) {
-		s->errnr = MNSTR_WRITE_ERROR;
+			mnstr_set_error_errno(s, MNSTR_WRITE_ERROR, "flush error");
 		return -1;
 	}
 	return 0;
@@ -443,7 +443,7 @@ file_fsync(stream *s)
 #endif
 #endif
 		    )) {
-		s->errnr = MNSTR_WRITE_ERROR;
+		mnstr_set_error(s, MNSTR_WRITE_ERROR, "fsync failed");
 		return -1;
 	}
 	return 0;

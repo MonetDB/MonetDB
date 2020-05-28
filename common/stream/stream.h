@@ -91,7 +91,8 @@ typedef enum mnstr_error_kind {
 	MNSTR_OPEN_ERROR,
 	MNSTR_READ_ERROR,
 	MNSTR_WRITE_ERROR,
-	MNSTR_TIMEOUT
+	MNSTR_TIMEOUT,
+	MNSTR_UNEXPECTED_EOF,
 } mnstr_error_kind;
 
 stream_export char *mnstr_error(const stream *s);

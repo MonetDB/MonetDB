@@ -123,7 +123,7 @@ curl_read(stream *restrict s, void *restrict buf, size_t elmsize, size_t cnt)
 	size_t size = cnt * elmsize;
 
 	if (c == NULL) {
-		s->errnr = MNSTR_READ_ERROR;
+		mnstr_set_error(s, MNSTR_READ_ERROR, "stream already ended");
 		return -1;
 	}
 
