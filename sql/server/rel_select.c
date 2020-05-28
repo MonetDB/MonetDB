@@ -709,7 +709,7 @@ exp_values_set_supertype(mvc *sql, sql_exp *values, sql_exp *opt_le)
 		}
 		ttpe = exp_subtype(e);
 		if (tpe && ttpe) {
-			supertype(&super, tpe, ttpe);
+			supertype(&super, ttpe, tpe);
 			values->tpe = super;
 			tpe = &values->tpe;
 		} else {
@@ -2128,6 +2128,18 @@ rel_in_value_exp(sql_query *query, sql_rel **rel, symbol *sc, int f)
 			}
 			append(vals, re);
 		}
+
+		if (rel && *rel)
+			for (node *n = vals->h ; n ; n = n->next) {
+				sql_exp *e = n->data;
+
+				if (!exp_is_rel(e) && e->card > (*rel)->card) {
+					if (exp_name(e))
+						return sql_error(sql, ERR_GROUPBY, SQLSTATE(42000) "SELECT: cannot use non GROUP BY column '%s' in query results without an aggregate function", exp_name(e));
+					else
+						return sql_error(sql, ERR_GROUPBY, SQLSTATE(42000) "SELECT: cannot use non GROUP BY column in query results without an aggregate function");
+				}
+			}
 
 		values = exp_values(sql->sa, vals);
 		exp_label(sql->sa, values, ++sql->label);
@@ -5820,7 +5832,6 @@ rel_query(sql_query *query, sql_rel *rel, symbol *sq, int toplevel, exp_kind ek)
 				res = rel_crossproduct(sql->sa, res, fnd, op_join);
 				if (lateral)
 					set_dependent(res);
-				res = rel_select(sql->sa, res, NULL);
 			} else {
 				res = fnd;
 			}

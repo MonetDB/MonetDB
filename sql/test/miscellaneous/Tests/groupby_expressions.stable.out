@@ -84,7 +84,7 @@ stdout of test 'groupby_expressions` in directory 'sql/test/miscellaneous` itsel
 [ 2	]
 [ 3	]
 #select cast(("aa"+1) + ("bb"+1) as bigint) from "groupings" group by "aa"+1, "bb"+1;
-% sys. # table_name
+% sys.%5 # table_name
 % %5 # name
 % bigint # type
 % 1 # length
@@ -156,7 +156,7 @@ stdout of test 'groupby_expressions` in directory 'sql/test/miscellaneous` itsel
 [ 2	]
 [ 4	]
 #select cast(sumints("aa","bb")*sum("bb") as bigint) from "groupings" group by sumints("aa","bb");
-% sys. # table_name
+% sys.%3 # table_name
 % %3 # name
 % bigint # type
 % 2 # length
@@ -380,8 +380,8 @@ stdout of test 'groupby_expressions` in directory 'sql/test/miscellaneous` itsel
 % 1 # length
 [ 1	]
 #select 1 group by 2;
-% . # table_name
-% single_value # name
+% .%3 # table_name
+% %3 # name
 % tinyint # type
 % 1 # length
 [ 1	]
@@ -404,8 +404,8 @@ stdout of test 'groupby_expressions` in directory 'sql/test/miscellaneous` itsel
 % 1 # length
 [ 3	]
 #select 'world' from "groupings" group by -90;
-% . # table_name
-% single_value # name
+% .%2 # table_name
+% %2 # name
 % char # type
 % 5 # length
 [ "world"	]

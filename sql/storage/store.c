@@ -2662,7 +2662,7 @@ end:
 /* Pick a name for the temporary tar file. Make sure it has the same extension
  * so as not to confuse the streams library.
  *
- * This function is not entirely safe as compare to for example mkstemp.
+ * This function is not entirely safe as compared to for example mkstemp.
  */
 static str pick_tmp_name(str filename)
 {
@@ -2679,10 +2679,11 @@ static str pick_tmp_name(str filename)
 	char *ext = strrchr(name, '.');
 	char *sep = strrchr(name, DIR_SEP);
 	char *slash = strrchr(name, '/'); // on Windows, / and \ both work
-	if (ext != NULL && sep != NULL && sep > ext)
-		ext = NULL;
-	else if (ext != NULL && slash != NULL && slash > ext)
-		ext = NULL;
+	if (ext != NULL) {
+		// is ext actually after sep and slash?
+		if ((sep != NULL && sep > ext) || (slash != NULL && slash > ext))
+			ext = NULL;
+	}
 
 	if (ext == NULL) {
 		return strcat(name, "..tmp");
@@ -2701,6 +2702,7 @@ store_hot_snapshot(str tarfile)
 {
 	int locked = 0;
 	lng result = 0;
+	struct stat st = {0};
 	char *tmppath = NULL;
 	char *dirpath = NULL;
 	int do_remove = 0;
@@ -2712,6 +2714,16 @@ store_hot_snapshot(str tarfile)
 
 	if (!logger_funcs.get_snapshot_files) {
 		GDKerror("backend does not support hot snapshots");
+		goto end;
+	}
+
+	if (!MT_path_absolute(tarfile)) {
+		GDKerror("Hot snapshot requires an absolute path");
+		goto end;
+	}
+
+	if (stat(tarfile, &st) == 0) {
+		GDKerror("File already exists: %s", tarfile);
 		goto end;
 	}
 
@@ -2819,7 +2831,6 @@ store_hot_snapshot(str tarfile)
 	result = 42;
 
 end:
-	GDKfree(tmppath);
 	GDKfree(dirpath);
 	if (dir_fd >= 0)
 		close(dir_fd);
@@ -2831,8 +2842,9 @@ end:
 		close_stream(plan_stream);
 	if (plan_buf)
 		buffer_destroy(plan_buf);
-	if (do_remove) // ERROR no unlink
+	if (do_remove)
 		(void) remove(tmppath);	// Best effort, ignore the result
+	GDKfree(tmppath);
 	return result;
 }
 

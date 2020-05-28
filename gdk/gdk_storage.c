@@ -279,9 +279,9 @@ GDKfileopen(int farmid, const char *dir, const char *name, const char *extension
 		FILE *f;
 		TRC_DEBUG(IO_, "GDKfileopen(%s)\n", path);
 		f = fopen(path, mode);
-		if (f == NULL)
-			GDKsyserror("cannot open %s, mode %s\n", path, mode);
+		int err = errno;
 		GDKfree(path);
+		errno = err;
 		return f;
 	}
 	return NULL;

@@ -23,32 +23,32 @@ stdout of test 'scalar` in directory 'sql/test/subquery` itself:
 # 22:16:07 >  
 
 #SELECT 1+(SELECT 1); -- 2
-% . # table_name
-% %3 # name
+% .%5 # table_name
+% %5 # name
 % tinyint # type
 % 1 # length
 [ 2	]
 #SELECT 1=(SELECT 1); -- true
-% . # table_name
-% %3 # name
+% .%5 # table_name
+% %5 # name
 % boolean # type
 % 5 # length
 [ true	]
 #SELECT 1<>(SELECT 1); -- false
-% . # table_name
-% %3 # name
+% .%5 # table_name
+% %5 # name
 % boolean # type
 % 5 # length
 [ false	]
 #SELECT 1=(SELECT NULL); -- NULL
-% . # table_name
-% %3 # name
+% .%5 # table_name
+% %5 # name
 % boolean # type
 % 5 # length
 [ NULL	]
 #SELECT NULL=(SELECT 1); -- NULL
-% . # table_name
-% %3 # name
+% .%5 # table_name
+% %5 # name
 % boolean # type
 % 5 # length
 [ NULL	]

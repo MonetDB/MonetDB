@@ -52,13 +52,13 @@ stdout of test 'sqlitelogictest-having-not-null-not-in.Bug-6557` in directory 's
 % 3 # length
 [ 126	]
 #SELECT DISTINCT COUNT(*) FROM tab0 WHERE NOT col2 NOT BETWEEN ( 35 ) AND ( NULL );
-% .%1 # table_name
+% sys.%1 # table_name
 % %1 # name
 % bigint # type
 % 1 # length
 [ 0	]
 #SELECT CAST(- COUNT(*) * - - 61 + + + ( + COUNT(*) ) AS BIGINT) FROM tab0 WHERE NOT col0 + + 10 BETWEEN NULL AND NULL;
-% sys. # table_name
+% sys.%4 # table_name
 % %4 # name
 % bigint # type
 % 1 # length

@@ -21,7 +21,7 @@ print(cursor.fetchone())
 
 # deliberately executing a wrong SQL statement:
 try:
-    cursor.execute('( xyz 1);')
+    cursor.execute('select commit_action, access from tables group by access;')
 except pymonetdb.OperationalError as e:
     print(e)
 

@@ -11,31 +11,31 @@ stdout of test 'simple_plans` in directory 'sql/test/miscellaneous` itself:
 % .plan # table_name
 % rel # name
 % clob # type
-% 134 # length
+% 138 # length
 project (
 | select (
 | | table(sys.myx) [ "myx"."x", "myx"."y" ] COUNT 
-| ) [ ("myx"."x" = uuid[char "1aea00e5db6e0810b554fde31d961965"]) or ("myx"."y" = uuid[char(32) "1aea00e5db6e0810b554fde31d961965"]) ]
+| ) [ ("myx"."x" = uuid[char(32) "1aea00e5db6e0810b554fde31d961965"]) or ("myx"."y" = uuid[char(32) "1aea00e5db6e0810b554fde31d961965"]) ]
 ) [ "myx"."x", "myx"."y" ]
 #plan select * from myx where x in ('1aea00e5db6e0810b554fde31d961965') or y is null;
 % .plan # table_name
 % rel # name
 % clob # type
-% 98 # length
+% 102 # length
 project (
 | select (
 | | table(sys.myx) [ "myx"."x", "myx"."y" ] COUNT 
-| ) [ ("myx"."x" = uuid[char "1aea00e5db6e0810b554fde31d961965"]) or ("myx"."y" * = uuid "NULL") ]
+| ) [ ("myx"."x" = uuid[char(32) "1aea00e5db6e0810b554fde31d961965"]) or ("myx"."y" * = uuid "NULL") ]
 ) [ "myx"."x", "myx"."y" ]
 #plan select * from myx where x in ('1aea00e5db6e0810b554fde31d961965', '1aea00e5db6e0810b554fde31d961966') or y = '1aea00e5db6e0810b554fde31d961967';
 % .plan # table_name
 % rel # name
 % clob # type
-% 210 # length
+% 192 # length
 project (
 | select (
 | | table(sys.myx) [ "myx"."x", "myx"."y" ] COUNT 
-| ) [ ("myx"."x" in (uuid[char "1aea00e5db6e0810b554fde31d961965"] as "%2"."%2", uuid[char "1aea00e5db6e0810b554fde31d961966"] as "%3"."%3")) or ("myx"."y" = uuid[char(32) "1aea00e5db6e0810b554fde31d961967"]) ]
+| ) [ ("myx"."x" in (uuid[char(32) "1aea00e5db6e0810b554fde31d961965"], uuid[char(32) "1aea00e5db6e0810b554fde31d961966"])) or ("myx"."y" = uuid[char(32) "1aea00e5db6e0810b554fde31d961967"]) ]
 ) [ "myx"."x", "myx"."y" ]
 #insert into myx values ('1aea00e5db6e0810b554fde31d961965', '1aea00e5db6e0810b554fde31d961967');
 [ 1	]
@@ -50,6 +50,109 @@ project (
 % x,	y # name
 % uuid,	uuid # type
 % 36,	36 # length
+#CREATE TABLE tab0(col0 INTEGER, col1 INTEGER, col2 INTEGER);
+#INSERT INTO tab0 VALUES (97,1,99), (15,81,47),(87,21,10);
+[ 3	]
+#plan select 1 from tab0 where col1 = 1 or col1 = 81;
+% .plan # table_name
+% rel # name
+% clob # type
+% 44 # length
+project (
+| select (
+| | table(sys.tab0) [ "tab0"."col1" ] COUNT 
+| ) [ "tab0"."col1" in (int "1", int "81") ]
+) [ tinyint "1" ]
+#plan select 1 from tab0 where col1 = 1 or col1 = 81 or col1 = 100;
+% .plan # table_name
+% rel # name
+% clob # type
+% 55 # length
+project (
+| select (
+| | table(sys.tab0) [ "tab0"."col1" ] COUNT 
+| ) [ "tab0"."col1" in (int "1", int "81", int "100") ]
+) [ tinyint "1" ]
+#plan select 1 from tab0 where (col1 = 1 or col1 = 81) or (col2 < 0); 
+% .plan # table_name
+% rel # name
+% clob # type
+% 75 # length
+project (
+| select (
+| | table(sys.tab0) [ "tab0"."col1", "tab0"."col2" ] COUNT 
+| ) [ ("tab0"."col1" in (int "1", int "81")) or ("tab0"."col2" < int "0") ]
+) [ tinyint "1" ]
+#plan select 1 from tab0 where ((col1 = 1 or col1 = 81) or col1 = 100) or (col2 > 10);
+% .plan # table_name
+% rel # name
+% clob # type
+% 87 # length
+project (
+| select (
+| | table(sys.tab0) [ "tab0"."col1", "tab0"."col2" ] COUNT 
+| ) [ ("tab0"."col1" in (int "1", int "81", int "100")) or ("tab0"."col2" > int "10") ]
+) [ tinyint "1" ]
+#plan select 1 from tab0 where ((col1 = 1 or col1 = 81) or col2 = 100) or (col1 = 100); --the rightmost comparison to col1 cannot be merged to the other 2
+% .plan # table_name
+% rel # name
+% clob # type
+% 110 # length
+project (
+| select (
+| | table(sys.tab0) [ "tab0"."col1", "tab0"."col2" ] COUNT 
+| ) [ (("tab0"."col1" in (int "1", int "81")) or ("tab0"."col2" = int "100")) or ("tab0"."col1" = int "100") ]
+) [ tinyint "1" ]
+#plan select 1 from tab0 where col1 <> 1 and col1 <> 81;
+% .plan # table_name
+% rel # name
+% clob # type
+% 47 # length
+project (
+| select (
+| | table(sys.tab0) [ "tab0"."col1" ] COUNT 
+| ) [ "tab0"."col1" notin (int "1", int "81") ]
+) [ tinyint "1" ]
+#plan select 1 from tab0 where col1 <> 1 and col1 <> 81 and (col2 < 0); 
+% .plan # table_name
+% rel # name
+% clob # type
+% 72 # length
+project (
+| select (
+| | table(sys.tab0) [ "tab0"."col1", "tab0"."col2" ] COUNT 
+| ) [ "tab0"."col2" < int "0", "tab0"."col1" notin (int "1", int "81") ]
+) [ tinyint "1" ]
+#plan select 1 from tab0 where (col1 <> 1 and col1 <> 81) or (col2 < 0); 
+% .plan # table_name
+% rel # name
+% clob # type
+% 78 # length
+project (
+| select (
+| | table(sys.tab0) [ "tab0"."col1", "tab0"."col2" ] COUNT 
+| ) [ ("tab0"."col1" notin (int "1", int "81")) or ("tab0"."col2" < int "0") ]
+) [ tinyint "1" ]
+#plan select 1 from tab0 where ((col1 <> 1 and col1 <> 81) and col1 <> 100) or (col2 > 10);
+% .plan # table_name
+% rel # name
+% clob # type
+% 90 # length
+project (
+| select (
+| | table(sys.tab0) [ "tab0"."col1", "tab0"."col2" ] COUNT 
+| ) [ ("tab0"."col1" notin (int "1", int "81", int "100")) or ("tab0"."col2" > int "10") ]
+) [ tinyint "1" ]
+#plan select 1 from tab0 where ((col1 <> 1 and col1 <> 81) or col2 = 100) and (col1 <> 100); --the rightmost comparison to col1 cannot be merged to the other 2
+% .plan # table_name
+% rel # name
+% clob # type
+% 108 # length
+project (
+| select (
+| | table(sys.tab0) [ "tab0"."col1", "tab0"."col2" ] COUNT 
+| ) [ "tab0"."col1" != int "100", ("tab0"."col1" notin (int "1", int "81")) or ("tab0"."col2" = int "100") ]
+) [ tinyint "1" ]
 #rollback;
 
 # 11:57:38 >  

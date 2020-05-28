@@ -1,3 +1,10 @@
+monetdb (11.37.5) unstable; urgency=low
+
+  * Rebuilt.
+  * BZ#6864: (I)LIKE with multiple % doen't find matches
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Tue, 26 May 2020 10:38:30 +0200
+
 monetdb (11.37.3) unstable; urgency=low
 
   * Rebuilt.
@@ -372,7 +379,7 @@ monetdb (11.37.1) unstable; urgency=low
 
 monetdb (11.37.1) unstable; urgency=low
 
-  * sql: Added SQL function sys.hot_snapshot() which can be used to write
+  * sql: Added SQL procedure sys.hot_snapshot() which can be used to write
     a snapshot of the database to a tar file. For example,
     sys.hot_snapshot('/tmp/snapshot.tar'). If compression support is
     compiled in, snapshots can also be compressed ('/tmp/snapshot.tar.gz').

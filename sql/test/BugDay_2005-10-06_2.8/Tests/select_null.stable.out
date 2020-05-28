@@ -48,8 +48,8 @@ stdout of test 'select_null` in directory 'sql/test/BugDay_2005-10-06_2.8` itsel
 
 #START TRANSACTION;
 #select null;
-% . # table_name
-% single_value # name
+% .%2 # table_name
+% %2 # name
 % char # type
 % 0 # length
 [ NULL	]

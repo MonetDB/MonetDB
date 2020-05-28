@@ -41,8 +41,8 @@ stdout of test 'disallow_duplicate_column_aliases.Bug-6723` in directory 'sql/te
 % 1,	1 # length
 [ 1,	2	]
 #select 1,2,3 as "L2";
-% .,	.,	. # table_name
-% single_value,	single_value,	L2 # name
+% .%2,	.%3,	. # table_name
+% %2,	%3,	L2 # name
 % tinyint,	tinyint,	tinyint # type
 % 1,	1,	1 # length
 [ 1,	2,	3	]

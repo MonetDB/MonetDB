@@ -1540,7 +1540,7 @@ BBPdir_subcommit(int cnt, bat *subcommit)
 	 * replacing the entries for the subcommitted bats */
 	if ((obbpf = GDKfileopen(0, SUBDIR, "BBP", "dir", "r")) == NULL &&
 	    (obbpf = GDKfileopen(0, BAKDIR, "BBP", "dir", "r")) == NULL) {
-		GDKerror("subcommit attempted without backup BBP.dir.");
+		GDKsyserror("subcommit attempted without backup BBP.dir.");
 		goto bailout;
 	}
 	/* read first three lines */

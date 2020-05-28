@@ -55,8 +55,8 @@ stdout of test 'opt_sql_append` in directory 'monetdb5/extras/mal_optimizer_temp
 #set optimizer = 'sequential_pipe'; -- to get predictable errors
 #create table ttt (a int, b int, c int);
 #select optimizer;
-% . # table_name
-% single_value # name
+% .%2 # table_name
+% %2 # name
 % varchar # type
 % 15 # length
 [ "sequential_pipe"     ]
@@ -152,8 +152,8 @@ end user.s12_0;
 #set optimizer = substring((select def from optimizers() where name = (select opt_pipe_name from "opt_pipe_name")),0,
 #                length((select def from optimizers() where name = (select opt_pipe_name from "opt_pipe_name")))-length('optimizer.garbageCollector();')) || 'optimizer.sql_append();optimizer.garbageCollector();';
 #select optimizer;
-% . # table_name
-% single_value # name
+% .%2 # table_name
+% %2 # name
 % varchar # type
 % 6 # length
 [ "user_0"      ]

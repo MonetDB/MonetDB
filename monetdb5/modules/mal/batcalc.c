@@ -1284,7 +1284,7 @@ CMDconvertbat(MalStkPtr stk, InstrPtr pci, int tp, bool abort_on_error)
 		}
 	}
 
-	bn = BATconvert(b, s, r, tp, abort_on_error);
+	bn = BATconvert(b, s, r, tp, abort_on_error, 0, 0, 0);
 	BBPunfix(b->batCacheid);
 	if (s)
 		BBPunfix(s->batCacheid);

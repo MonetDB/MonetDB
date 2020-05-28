@@ -1805,18 +1805,6 @@ exp_is_null(mvc *sql, sql_exp *e )
 		return exp_is_null(sql, e->l);
 	case e_func:
 	case e_aggr:
-	{	
-		int r = 0;
-		node *n;
-		list *l = e->l;
-
-		if (!((sql_subfunc *)e->f)->func->semantics /*exclude isnull() and similar null-semantics-respecting functions*/ &&
-			!r && l) {
-			for (n = l->h; n && !r; n = n->next) 
-				r |= exp_is_null(sql, n->data);
-		}
-		return r;
-	}
 	case e_column:
 	case e_cmp:
 	case e_psm:

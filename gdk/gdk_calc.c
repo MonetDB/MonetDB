@@ -102,7 +102,7 @@ checkbats(BAT *b1, BAT *b2, const char *func)
 				j = x2 * incr2;				\
 				TYPE1 v1 = ((const TYPE1 *) lft)[i];	\
 				TYPE2 v2 = ((const TYPE2 *) rgt)[j];	\
-				if ((rv != NULL && !rv[i]) ||		\
+				if ((rv != NULL && !rv[k]) ||		\
 				    is_##TYPE1##_nil(v1) || is_##TYPE2##_nil(v2)) { \
 					nils++;				\
 					((TYPE3 *) dst)[k] = TYPE3##_nil; \
@@ -118,7 +118,7 @@ checkbats(BAT *b1, BAT *b2, const char *func)
 				j = x2 * incr2;				\
 				TYPE1 v1 = ((const TYPE1 *) lft)[i];	\
 				TYPE2 v2 = ((const TYPE2 *) rgt)[j];	\
-				if ((rv != NULL && !rv[i]) ||		\
+				if ((rv != NULL && !rv[k]) ||		\
 				    is_##TYPE1##_nil(v1) || is_##TYPE2##_nil(v2)) { \
 					nils++;				\
 					((TYPE3 *) dst)[k] = TYPE3##_nil; \
@@ -141,7 +141,7 @@ checkbats(BAT *b1, BAT *b2, const char *func)
 				j = x2 * incr2;				\
 				TYPE1 v1 = ((const TYPE1 *) lft)[i];	\
 				TYPE2 v2 = ((const TYPE2 *) rgt)[j];	\
-				if ((rv != NULL && !rv[i]) ||		\
+				if ((rv != NULL && !rv[k]) ||		\
 				    is_##TYPE1##_nil(v1) || is_##TYPE2##_nil(v2)) { \
 					((TYPE3 *) dst)[k] = FUNC(is_##TYPE1##_nil(v1), is_##TYPE2##_nil(v2)); \
 				} else {				\
@@ -156,7 +156,7 @@ checkbats(BAT *b1, BAT *b2, const char *func)
 				j = x2 * incr2;				\
 				TYPE1 v1 = ((const TYPE1 *) lft)[i];	\
 				TYPE2 v2 = ((const TYPE2 *) rgt)[j];	\
-				if ((rv != NULL && !rv[i]) ||		\
+				if ((rv != NULL && !rv[k]) ||		\
 				    is_##TYPE1##_nil(v1) || is_##TYPE2##_nil(v2)) { \
 					((TYPE3 *) dst)[k] = FUNC(is_##TYPE1##_nil(v1), is_##TYPE2##_nil(v2)); \
 				} else {				\
@@ -201,7 +201,7 @@ checkbats(BAT *b1, BAT *b2, const char *func)
 				j = x2 * incr2;				\
 				TYPE1 v1 = ((const TYPE1 *) lft)[i];	\
 				TYPE2 v2 = ((const TYPE2 *) rgt)[j];	\
-				if ((rv != NULL && !rv[i]) ||		\
+				if ((rv != NULL && !rv[k]) ||		\
 				    is_##TYPE1##_nil(v1) || is_##TYPE2##_nil(v2)) { \
 					nils++;				\
 					((TYPE3 *) dst)[k] = TYPE3##_nil; \
@@ -228,7 +228,7 @@ checkbats(BAT *b1, BAT *b2, const char *func)
 				j = x2 * incr2;				\
 				TYPE1 v1 = ((const TYPE1 *) lft)[i];	\
 				TYPE2 v2 = ((const TYPE2 *) rgt)[j];	\
-				if ((rv != NULL && !rv[i]) ||		\
+				if ((rv != NULL && !rv[k]) ||		\
 				    is_##TYPE1##_nil(v1) || is_##TYPE2##_nil(v2)) { \
 					nils++;				\
 					((TYPE3 *) dst)[k] = TYPE3##_nil; \
@@ -1847,7 +1847,7 @@ add_##TYPE1##_##TYPE2##_##TYPE3(const TYPE1 *lft, int incr1,		\
 			oid x2 = canditer_next_dense(ci2) - candoff2;	\
 			BUN i = x1 * incr1;				\
 			BUN j = x2 * incr2;				\
-			if ((rv != NULL && !rv[i]) ||			\
+			if ((rv != NULL && !rv[k]) ||			\
 			    is_##TYPE1##_nil(lft[i]) || is_##TYPE2##_nil(rgt[j])) { \
 				dst[k] = TYPE3##_nil;			\
 				nils++;					\
@@ -1864,7 +1864,7 @@ add_##TYPE1##_##TYPE2##_##TYPE3(const TYPE1 *lft, int incr1,		\
 			oid x2 = canditer_next(ci2) - candoff2;		\
 			BUN i = x1 * incr1;				\
 			BUN j = x2 * incr2;				\
-			if ((rv != NULL && !rv[i]) ||			\
+			if ((rv != NULL && !rv[k]) ||			\
 			    is_##TYPE1##_nil(lft[i]) || is_##TYPE2##_nil(rgt[j])) { \
 				dst[k] = TYPE3##_nil;			\
 				nils++;					\
@@ -1899,7 +1899,7 @@ add_##TYPE1##_##TYPE2##_##TYPE3(const TYPE1 *lft, int incr1,		\
 			oid x2 = canditer_next_dense(ci2) - candoff2;	\
 			BUN i = x1 * incr1;				\
 			BUN j = x2 * incr2;				\
-			if ((rv != NULL && !rv[i]) ||			\
+			if ((rv != NULL && !rv[k]) ||			\
 			    is_##TYPE1##_nil(lft[i]) || is_##TYPE2##_nil(rgt[j])) { \
 				dst[k] = TYPE3##_nil;			\
 				nils++;					\
@@ -1918,7 +1918,7 @@ add_##TYPE1##_##TYPE2##_##TYPE3(const TYPE1 *lft, int incr1,		\
 			oid x2 = canditer_next(ci2) - candoff2;		\
 			BUN i = x1 * incr1;				\
 			BUN j = x2 * incr2;				\
-			if ((rv != NULL && !rv[i]) ||			\
+			if ((rv != NULL && !rv[k]) ||			\
 			    is_##TYPE1##_nil(lft[i]) || is_##TYPE2##_nil(rgt[j])) { \
 				dst[k] = TYPE3##_nil;			\
 				nils++;					\
@@ -3865,7 +3865,7 @@ sub_##TYPE1##_##TYPE2##_##TYPE3(const TYPE1 *lft, int incr1,		\
 			oid x2 = canditer_next_dense(ci2) - candoff2;	\
 			BUN i = x1 * incr1;				\
 			BUN j = x2 * incr2;				\
-			if ((rv != NULL && !rv[i]) ||			\
+			if ((rv != NULL && !rv[k]) ||			\
 			    is_##TYPE1##_nil(lft[i]) || is_##TYPE2##_nil(rgt[j])) { \
 				dst[k] = TYPE3##_nil;			\
 				nils++;					\
@@ -3882,7 +3882,7 @@ sub_##TYPE1##_##TYPE2##_##TYPE3(const TYPE1 *lft, int incr1,		\
 			oid x2 = canditer_next(ci2) - candoff2;		\
 			BUN i = x1 * incr1;				\
 			BUN j = x2 * incr2;				\
-			if ((rv != NULL && !rv[i]) ||			\
+			if ((rv != NULL && !rv[k]) ||			\
 			    is_##TYPE1##_nil(lft[i]) || is_##TYPE2##_nil(rgt[j])) { \
 				dst[k] = TYPE3##_nil;			\
 				nils++;					\
@@ -3917,7 +3917,7 @@ sub_##TYPE1##_##TYPE2##_##TYPE3(const TYPE1 *lft, int incr1,		\
 			oid x2 = canditer_next_dense(ci2) - candoff2;	\
 			BUN i = x1 * incr1;				\
 			BUN j = x2 * incr2;				\
-			if ((rv != NULL && !rv[i]) ||			\
+			if ((rv != NULL && !rv[k]) ||			\
 			    is_##TYPE1##_nil(lft[i]) || is_##TYPE2##_nil(rgt[j])) { \
 				dst[k] = TYPE3##_nil;			\
 				nils++;					\
@@ -3936,7 +3936,7 @@ sub_##TYPE1##_##TYPE2##_##TYPE3(const TYPE1 *lft, int incr1,		\
 			oid x2 = canditer_next(ci2) - candoff2;		\
 			BUN i = x1 * incr1;				\
 			BUN j = x2 * incr2;				\
-			if ((rv != NULL && !rv[i]) ||			\
+			if ((rv != NULL && !rv[k]) ||			\
 			    is_##TYPE1##_nil(lft[i]) || is_##TYPE2##_nil(rgt[j])) { \
 				dst[k] = TYPE3##_nil;			\
 				nils++;					\
@@ -5734,7 +5734,7 @@ mul_##TYPE1##_##TYPE2##_##TYPE3(const TYPE1 *lft, int incr1,		\
 			oid x2 = canditer_next_dense(ci2) - candoff2;	\
 			BUN i = x1 * incr1;				\
 			BUN j = x2 * incr2;				\
-			if ((rv != NULL && !rv[i]) ||			\
+			if ((rv != NULL && !rv[k]) ||			\
 			    is_##TYPE1##_nil(lft[i]) || is_##TYPE2##_nil(rgt[j])) { \
 				dst[k] = TYPE3##_nil;			\
 				nils++;					\
@@ -5752,7 +5752,7 @@ mul_##TYPE1##_##TYPE2##_##TYPE3(const TYPE1 *lft, int incr1,		\
 			oid x2 = canditer_next(ci2) - candoff2;		\
 			BUN i = x1 * incr1;				\
 			BUN j = x2 * incr2;				\
-			if ((rv != NULL && !rv[i]) ||			\
+			if ((rv != NULL && !rv[k]) ||			\
 			    is_##TYPE1##_nil(lft[i]) || is_##TYPE2##_nil(rgt[j])) { \
 				dst[k] = TYPE3##_nil;			\
 				nils++;					\
@@ -5788,7 +5788,7 @@ mul_##TYPE1##_##TYPE2##_##TYPE3(const TYPE1 *lft, int incr1,		\
 			oid x2 = canditer_next_dense(ci2) - candoff2;	\
 			BUN i = x1 * incr1;				\
 			BUN j = x2 * incr2;				\
-			if ((rv != NULL && !rv[i]) ||			\
+			if ((rv != NULL && !rv[k]) ||			\
 			    is_##TYPE1##_nil(lft[i]) || is_##TYPE2##_nil(rgt[j])) { \
 				dst[k] = TYPE3##_nil;			\
 				nils++;					\
@@ -5808,7 +5808,7 @@ mul_##TYPE1##_##TYPE2##_##TYPE3(const TYPE1 *lft, int incr1,		\
 			oid x2 = canditer_next(ci2) - candoff2;		\
 			BUN i = x1 * incr1;				\
 			BUN j = x2 * incr2;				\
-			if ((rv != NULL && !rv[i]) ||			\
+			if ((rv != NULL && !rv[k]) ||			\
 			    is_##TYPE1##_nil(lft[i]) || is_##TYPE2##_nil(rgt[j])) { \
 				dst[k] = TYPE3##_nil;			\
 				nils++;					\
@@ -5849,7 +5849,7 @@ mul_##TYPE1##_##TYPE2##_hge(const TYPE1 *lft, int incr1,		\
 			oid x2 = canditer_next_dense(ci2) - candoff2;	\
 			BUN i = x1 * incr1;				\
 			BUN j = x2 * incr2;				\
-			if ((rv != NULL && !rv[i]) ||			\
+			if ((rv != NULL && !rv[k]) ||			\
 			    is_##TYPE1##_nil(lft[i]) || is_##TYPE2##_nil(rgt[j])) { \
 				dst[k] = hge_nil;			\
 				nils++;					\
@@ -5866,7 +5866,7 @@ mul_##TYPE1##_##TYPE2##_hge(const TYPE1 *lft, int incr1,		\
 			oid x2 = canditer_next(ci2) - candoff2;		\
 			BUN i = x1 * incr1;				\
 			BUN j = x2 * incr2;				\
-			if ((rv != NULL && !rv[i]) ||			\
+			if ((rv != NULL && !rv[k]) ||			\
 			    is_##TYPE1##_nil(lft[i]) || is_##TYPE2##_nil(rgt[j])) { \
 				dst[k] = hge_nil;			\
 				nils++;					\
@@ -5902,7 +5902,7 @@ mul_##TYPE1##_##TYPE2##_lng(const TYPE1 *lft, int incr1,		\
 			oid x2 = canditer_next_dense(ci2) - candoff2;	\
 			BUN i = x1 * incr1;				\
 			BUN j = x2 * incr2;				\
-			if ((rv != NULL && !rv[i]) ||			\
+			if ((rv != NULL && !rv[k]) ||			\
 			    is_##TYPE1##_nil(lft[i]) || is_##TYPE2##_nil(rgt[j])) { \
 				dst[k] = lng_nil;			\
 				nils++;					\
@@ -5919,7 +5919,7 @@ mul_##TYPE1##_##TYPE2##_lng(const TYPE1 *lft, int incr1,		\
 			oid x2 = canditer_next(ci2) - candoff2;		\
 			BUN i = x1 * incr1;				\
 			BUN j = x2 * incr2;				\
-			if ((rv != NULL && !rv[i]) ||			\
+			if ((rv != NULL && !rv[k]) ||			\
 			    is_##TYPE1##_nil(lft[i]) || is_##TYPE2##_nil(rgt[j])) { \
 				dst[k] = lng_nil;			\
 				nils++;					\
@@ -5955,7 +5955,7 @@ mul_##TYPE1##_##TYPE2##_##TYPE3(const TYPE1 *lft, int incr1,		\
 			oid x2 = canditer_next_dense(ci2) - candoff2;	\
 			BUN i = x1 * incr1;				\
 			BUN j = x2 * incr2;				\
-			if ((rv != NULL && !rv[i]) ||			\
+			if ((rv != NULL && !rv[k]) ||			\
 			    is_##TYPE1##_nil(lft[i]) || is_##TYPE2##_nil(rgt[j])) { \
 				dst[k] = TYPE3##_nil;			\
 				nils++;					\
@@ -5976,7 +5976,7 @@ mul_##TYPE1##_##TYPE2##_##TYPE3(const TYPE1 *lft, int incr1,		\
 			oid x2 = canditer_next(ci2) - candoff2;		\
 			BUN i = x1 * incr1;				\
 			BUN j = x2 * incr2;				\
-			if ((rv != NULL && !rv[i]) ||			\
+			if ((rv != NULL && !rv[k]) ||			\
 			    is_##TYPE1##_nil(lft[i]) || is_##TYPE2##_nil(rgt[j])) { \
 				dst[k] = TYPE3##_nil;			\
 				nils++;					\
@@ -7790,7 +7790,7 @@ div_##TYPE1##_##TYPE2##_##TYPE3(const TYPE1 *lft, int incr1,		\
 			oid x2 = canditer_next_dense(ci2) - candoff2;	\
 			BUN i = x1 * incr1;				\
 			BUN j = x2 * incr2;				\
-			if ((rv != NULL && !rv[i]) ||			\
+			if ((rv != NULL && !rv[k]) ||			\
 			    is_##TYPE1##_nil(lft[i]) || is_##TYPE2##_nil(rgt[j])) { \
 				dst[k] = TYPE3##_nil;			\
 				nils++;					\
@@ -7815,7 +7815,7 @@ div_##TYPE1##_##TYPE2##_##TYPE3(const TYPE1 *lft, int incr1,		\
 			oid x2 = canditer_next(ci2) - candoff2;		\
 			BUN i = x1 * incr1;				\
 			BUN j = x2 * incr2;				\
-			if ((rv != NULL && !rv[i]) ||			\
+			if ((rv != NULL && !rv[k]) ||			\
 			    is_##TYPE1##_nil(lft[i]) || is_##TYPE2##_nil(rgt[j])) { \
 				dst[k] = TYPE3##_nil;			\
 				nils++;					\
@@ -7857,7 +7857,7 @@ div_##TYPE1##_##TYPE2##_##TYPE3(const TYPE1 *lft, int incr1,		\
 			oid x2 = canditer_next_dense(ci2) - candoff2;	\
 			BUN i = x1 * incr1;				\
 			BUN j = x2 * incr2;				\
-			if ((rv != NULL && !rv[i]) ||			\
+			if ((rv != NULL && !rv[k]) ||			\
 			    is_##TYPE1##_nil(lft[i]) || is_##TYPE2##_nil(rgt[j])) { \
 				dst[k] = TYPE3##_nil;			\
 				nils++;					\
@@ -7888,7 +7888,7 @@ div_##TYPE1##_##TYPE2##_##TYPE3(const TYPE1 *lft, int incr1,		\
 			oid x2 = canditer_next(ci2) - candoff2;		\
 			BUN i = x1 * incr1;				\
 			BUN j = x2 * incr2;				\
-			if ((rv != NULL && !rv[i]) ||			\
+			if ((rv != NULL && !rv[k]) ||			\
 			    is_##TYPE1##_nil(lft[i]) || is_##TYPE2##_nil(rgt[j])) { \
 				dst[k] = TYPE3##_nil;			\
 				nils++;					\
@@ -9753,7 +9753,7 @@ mod_##TYPE1##_##TYPE2##_##TYPE3(const TYPE1 *lft, int incr1,		\
 			oid x2 = canditer_next_dense(ci2) - candoff2;	\
 			BUN i = x1 * incr1;				\
 			BUN j = x2 * incr2;				\
-			if ((rv != NULL && !rv[i]) ||			\
+			if ((rv != NULL && !rv[k]) ||			\
 			    is_##TYPE1##_nil(lft[i]) || is_##TYPE2##_nil(rgt[j])) { \
 				dst[k] = TYPE3##_nil;			\
 				nils++;					\
@@ -9772,7 +9772,7 @@ mod_##TYPE1##_##TYPE2##_##TYPE3(const TYPE1 *lft, int incr1,		\
 			oid x2 = canditer_next(ci2) - candoff2;		\
 			BUN i = x1 * incr1;				\
 			BUN j = x2 * incr2;				\
-			if ((rv != NULL && !rv[i]) ||			\
+			if ((rv != NULL && !rv[k]) ||			\
 			    is_##TYPE1##_nil(lft[i]) || is_##TYPE2##_nil(rgt[j])) { \
 				dst[k] = TYPE3##_nil;			\
 				nils++;					\
@@ -9808,7 +9808,7 @@ mod_##TYPE1##_##TYPE2##_##TYPE3(const TYPE1 *lft, int incr1,		\
 			oid x2 = canditer_next_dense(ci2) - candoff2;	\
 			BUN i = x1 * incr1;				\
 			BUN j = x2 * incr2;				\
-			if ((rv != NULL && !rv[i]) ||			\
+			if ((rv != NULL && !rv[k]) ||			\
 			    is_##TYPE1##_nil(lft[i]) || is_##TYPE2##_nil(rgt[j])) { \
 				dst[k] = TYPE3##_nil;			\
 				nils++;					\
@@ -9828,7 +9828,7 @@ mod_##TYPE1##_##TYPE2##_##TYPE3(const TYPE1 *lft, int incr1,		\
 			oid x2 = canditer_next(ci2) - candoff2;		\
 			BUN i = x1 * incr1;				\
 			BUN j = x2 * incr2;				\
-			if ((rv != NULL && !rv[i]) ||			\
+			if ((rv != NULL && !rv[k]) ||			\
 			    is_##TYPE1##_nil(lft[i]) || is_##TYPE2##_nil(rgt[j])) { \
 				dst[k] = TYPE3##_nil;			\
 				nils++;					\
@@ -13368,10 +13368,7 @@ VARcalcbetween(ValPtr ret, const ValRecord *v, const ValRecord *lo,
 #define IFTHENELSELOOP(TYPE)						\
 	do {								\
 		for (i = 0; i < cnt; i++) {				\
-			if (is_bit_nil(src[i])) {			\
-				((TYPE *) dst)[i] = * (TYPE *) nil;	\
-				nils++;					\
-			} else if (src[i]) {				\
+			if (src[i] && !is_bit_nil(src[i])) {		\
 				((TYPE *) dst)[i] = ((TYPE *) col1)[k]; \
 			} else {					\
 				((TYPE *) dst)[i] = ((TYPE *) col2)[l]; \
@@ -13383,10 +13380,7 @@ VARcalcbetween(ValPtr ret, const ValRecord *v, const ValRecord *lo,
 #define IFTHENELSELOOP_oid()						\
 	do {								\
 		for (i = 0; i < cnt; i++) {				\
-			if (is_bit_nil(src[i])) {			\
-				((oid *) dst)[i] = oid_nil;		\
-				nils++;					\
-			} else if (src[i]) {				\
+			if (src[i] && !is_bit_nil(src[i])) {		\
 				((oid *) dst)[i] = col1 ? ((oid *) col1)[k] : seq1; \
 			} else {					\
 				((oid *) dst)[i] = col2 ? ((oid *) col2)[k] : seq2; \
@@ -13409,8 +13403,6 @@ BATcalcifthenelse_intern(BAT *b,
 	BAT *bn;
 	void *restrict dst;
 	BUN i, k, l;
-	BUN nils = 0;
-	const void *nil;
 	const void *p;
 	const bit *src;
 	BUN cnt = b->batCount;
@@ -13431,17 +13423,13 @@ BATcalcifthenelse_intern(BAT *b,
 
 	src = (const bit *) Tloc(b, 0);
 
-	nil = ATOMnilptr(tpe);
 	dst = (void *) Tloc(bn, 0);
 	k = l = 0;
 	if (bn->tvarsized) {
 		assert((heap1 != NULL && width1 > 0) || (width1 == 0 && incr1 == 0));
 		assert((heap2 != NULL && width2 > 0) || (width2 == 0 && incr2 == 0));
 		for (i = 0; i < cnt; i++) {
-			if (is_bit_nil(src[i])) {
-				p = nil;
-				nils++;
-			} else if (src[i]) {
+			if (src[i] && !is_bit_nil(src[i])) {
 				if (heap1)
 					p = heap1 + VarHeapVal(col1, k, width1);
 				else
@@ -13485,10 +13473,7 @@ BATcalcifthenelse_intern(BAT *b,
 #endif
 			default:
 				for (i = 0; i < cnt; i++) {
-					if (is_bit_nil(src[i])) {
-						p = nil;
-						nils++;
-					} else if (src[i]) {
+					if (src[i] && !is_bit_nil(src[i])) {
 						p = ((const char *) col1) + k * width1;
 					} else {
 						p = ((const char *) col2) + l * width2;
@@ -13505,11 +13490,11 @@ BATcalcifthenelse_intern(BAT *b,
 	BATsetcount(bn, cnt);
 	bn->theap.dirty = true;
 
-	bn->tsorted = cnt <= 1 || nils == cnt;
-	bn->trevsorted = cnt <= 1 || nils == cnt;
+	bn->tsorted = cnt <= 1;
+	bn->trevsorted = cnt <= 1;
 	bn->tkey = cnt <= 1;
-	bn->tnil = nils != 0;
-	bn->tnonil = nils == 0 && nonil1 && nonil2;
+	bn->tnil = 0;
+	bn->tnonil = nonil1 && nonil2;
 
 	return bn;
 }
@@ -13652,98 +13637,119 @@ BATcalcifthencstelsecst(BAT *b, const ValRecord *c1, const ValRecord *c2)
  * failed (only happens for conversion to str).
  */
 
-#define convertimpl_copy(TYPE)						\
-static BUN								\
-convert_##TYPE##_##TYPE(const TYPE *src, TYPE *restrict dst,		\
-			struct canditer *restrict ci,			\
-			const bit *restrict rv,				\
-			oid candoff, bool *reduce)			\
-{									\
-	BUN i, nils = 0;						\
-	oid x;								\
-									\
-	(void) rv;							\
-	*reduce = false;						\
-	if (ci->tpe == cand_dense) {					\
-		for (i = 0; i < ci->ncand; i++) {			\
-			x = canditer_next_dense(ci) - candoff;		\
-			nils += is_##TYPE##_nil(src[x]);		\
-			dst[i] = src[x];				\
-		}							\
-	} else {							\
-		for (i = 0; i < ci->ncand; i++) {			\
-			x = canditer_next(ci) - candoff;		\
-			nils += is_##TYPE##_nil(src[x]);		\
-			dst[i] = src[x];				\
-		}							\
-	}								\
-	return nils;							\
-}
-
-#define convertimpl_enlarge(TYPE1, TYPE2)				\
-static BUN								\
-convert_##TYPE1##_##TYPE2(const TYPE1 *src, TYPE2 *restrict dst,	\
-			  struct canditer *restrict ci,			\
-			  const bit *restrict rv,			\
-			  oid candoff, bool *reduce)			\
-{									\
-	BUN i, nils = 0;						\
-	oid x;								\
-									\
-	(void) rv;							\
-	*reduce = false;						\
-	if (ci->tpe == cand_dense) {					\
-		for (i = 0; i < ci->ncand; i++) {			\
-			x = canditer_next_dense(ci) - candoff;		\
-			if (is_##TYPE1##_nil(src[x])) {			\
-				dst[i] = TYPE2##_nil;			\
-				nils++;					\
-			} else						\
-				dst[i] = (TYPE2) src[x];		\
-		}							\
-	} else {							\
-		for (i = 0; i < ci->ncand; i++) {			\
-			x = canditer_next(ci) - candoff;		\
-			if (is_##TYPE1##_nil(src[x])) {			\
-				dst[i] = TYPE2##_nil;			\
-				nils++;					\
-			} else						\
-				dst[i] = (TYPE2) src[x];		\
-		}							\
-	}								\
-	return nils;							\
-}
+#ifdef HAVE_HGE
+static hge scales[39] = {
+	(hge) LL_CONSTANT(1),
+	(hge) LL_CONSTANT(10),
+	(hge) LL_CONSTANT(100),
+	(hge) LL_CONSTANT(1000),
+	(hge) LL_CONSTANT(10000),
+	(hge) LL_CONSTANT(100000),
+	(hge) LL_CONSTANT(1000000),
+	(hge) LL_CONSTANT(10000000),
+	(hge) LL_CONSTANT(100000000),
+	(hge) LL_CONSTANT(1000000000),
+	(hge) LL_CONSTANT(10000000000),
+	(hge) LL_CONSTANT(100000000000),
+	(hge) LL_CONSTANT(1000000000000),
+	(hge) LL_CONSTANT(10000000000000),
+	(hge) LL_CONSTANT(100000000000000),
+	(hge) LL_CONSTANT(1000000000000000),
+	(hge) LL_CONSTANT(10000000000000000),
+	(hge) LL_CONSTANT(100000000000000000),
+	(hge) LL_CONSTANT(1000000000000000000),
+	(hge) LL_CONSTANT(10000000000000000000U) * LL_CONSTANT(1),
+	(hge) LL_CONSTANT(10000000000000000000U) * LL_CONSTANT(10),
+	(hge) LL_CONSTANT(10000000000000000000U) * LL_CONSTANT(100),
+	(hge) LL_CONSTANT(10000000000000000000U) * LL_CONSTANT(1000),
+	(hge) LL_CONSTANT(10000000000000000000U) * LL_CONSTANT(10000),
+	(hge) LL_CONSTANT(10000000000000000000U) * LL_CONSTANT(100000),
+	(hge) LL_CONSTANT(10000000000000000000U) * LL_CONSTANT(1000000),
+	(hge) LL_CONSTANT(10000000000000000000U) * LL_CONSTANT(10000000),
+	(hge) LL_CONSTANT(10000000000000000000U) * LL_CONSTANT(100000000),
+	(hge) LL_CONSTANT(10000000000000000000U) * LL_CONSTANT(1000000000),
+	(hge) LL_CONSTANT(10000000000000000000U) * LL_CONSTANT(10000000000),
+	(hge) LL_CONSTANT(10000000000000000000U) * LL_CONSTANT(100000000000),
+	(hge) LL_CONSTANT(10000000000000000000U) * LL_CONSTANT(1000000000000),
+	(hge) LL_CONSTANT(10000000000000000000U) * LL_CONSTANT(10000000000000),
+	(hge) LL_CONSTANT(10000000000000000000U) * LL_CONSTANT(100000000000000),
+	(hge) LL_CONSTANT(10000000000000000000U) * LL_CONSTANT(1000000000000000),
+	(hge) LL_CONSTANT(10000000000000000000U) * LL_CONSTANT(10000000000000000),
+	(hge) LL_CONSTANT(10000000000000000000U) * LL_CONSTANT(100000000000000000),
+	(hge) LL_CONSTANT(10000000000000000000U) * LL_CONSTANT(1000000000000000000),
+	(hge) LL_CONSTANT(10000000000000000000U) * LL_CONSTANT(10000000000000000000U)
+};
+#else
+static lng scales[19] = {
+	LL_CONSTANT(1),
+	LL_CONSTANT(10),
+	LL_CONSTANT(100),
+	LL_CONSTANT(1000),
+	LL_CONSTANT(10000),
+	LL_CONSTANT(100000),
+	LL_CONSTANT(1000000),
+	LL_CONSTANT(10000000),
+	LL_CONSTANT(100000000),
+	LL_CONSTANT(1000000000),
+	LL_CONSTANT(10000000000),
+	LL_CONSTANT(100000000000),
+	LL_CONSTANT(1000000000000),
+	LL_CONSTANT(10000000000000),
+	LL_CONSTANT(100000000000000),
+	LL_CONSTANT(1000000000000000),
+	LL_CONSTANT(10000000000000000),
+	LL_CONSTANT(100000000000000000),
+	LL_CONSTANT(1000000000000000000)
+};
+#endif
 
 #define convertimpl_enlarge_float(TYPE1, TYPE2, MANT_DIG)		\
 static BUN								\
 convert_##TYPE1##_##TYPE2(const TYPE1 *src, TYPE2 *restrict dst,	\
 			  struct canditer *restrict ci,			\
 			  const bit *restrict rv,			\
-			  oid candoff, bool *reduce)			\
+			  oid candoff, uint8_t scale1, bool *reduce)	\
 {									\
 	BUN i, nils = 0;						\
+	TYPE1 v;							\
 	oid x;								\
+	const TYPE1 div = (TYPE1) scales[scale1];			\
 									\
 	*reduce = 8 * sizeof(TYPE1) > MANT_DIG;				\
 	if (ci->tpe == cand_dense) {					\
-		for (i = 0; i < ci->ncand; i++) {			\
-			x = canditer_next_dense(ci) - candoff;		\
-			if ((rv != NULL && !rv[i]) ||			\
-			    is_##TYPE1##_nil(src[x])) {			\
-				dst[i] = TYPE2##_nil;			\
-				nils++;					\
-			} else						\
-				dst[i] = (TYPE2) src[x];		\
+		if (div == 1) {						\
+			for (i = 0; i < ci->ncand; i++) {		\
+				x = canditer_next_dense(ci) - candoff;	\
+				v = src[x];				\
+				if ((rv != NULL && !rv[i]) ||		\
+				    is_##TYPE1##_nil(v)) {		\
+					dst[i] = TYPE2##_nil;		\
+					nils++;				\
+				} else					\
+					dst[i] = (TYPE2) v;		\
+			}						\
+		} else {						\
+			for (i = 0; i < ci->ncand; i++) {		\
+				x = canditer_next_dense(ci) - candoff;	\
+				v = src[x];				\
+				if ((rv != NULL && !rv[i]) ||		\
+				    is_##TYPE1##_nil(v)) {		\
+					dst[i] = TYPE2##_nil;		\
+					nils++;				\
+				} else					\
+					dst[i] = (TYPE2) v / div;	\
+			}						\
 		}							\
 	} else {							\
 		for (i = 0; i < ci->ncand; i++) {			\
 			x = canditer_next(ci) - candoff;		\
+			v = src[x];					\
 			if ((rv != NULL && !rv[i]) ||			\
-			    is_##TYPE1##_nil(src[x])) {			\
+			    is_##TYPE1##_nil(v)) {			\
 				dst[i] = TYPE2##_nil;			\
 				nils++;					\
 			} else						\
-				dst[i] = (TYPE2) src[x];		\
+				dst[i] = (TYPE2) v / div;		\
 		}							\
 	}								\
 	return nils;							\
@@ -13752,7 +13758,20 @@ convert_##TYPE1##_##TYPE2(const TYPE1 *src, TYPE2 *restrict dst,	\
 #define CONV_OVERFLOW(TYPE1, TYPE2, value)				\
 	do {								\
 		GDKerror("22003!overflow in conversion of "		\
-			 FMT##TYPE1 " to %s.\n", CST##TYPE1 (value), TYPE2); \
+			 FMT##TYPE1 " to %s.\n", CST##TYPE1 (value),	\
+			 TYPE2);					\
+		return BUN_NONE;					\
+	} while (0)
+
+#define CONV_OVERFLOW_PREC(TYPE1, TYPE2, value, scale, prec)		\
+	do {								\
+		if (prec > 0)						\
+			GDKerror("22003!overflow in conversion to "	\
+				 "DECIMAL(%d,%d).\n", prec, scale);	\
+		else							\
+			GDKerror("22003!overflow in conversion of "	\
+				 FMT##TYPE1 " to %s.\n", CST##TYPE1 (value), \
+				 TYPE2);				\
 		return BUN_NONE;					\
 	} while (0)
 
@@ -13856,50 +13875,130 @@ convert_##TYPE1##_oid(const TYPE1 *src, oid *restrict dst,		\
 	return nils;							\
 }
 
-#define convertimpl_reduce(TYPE1, TYPE2)				\
+#define uint	unsigned int
+#define usht	uint16_t
+#define ubte	uint8_t
+
+#ifdef TRUNCATE_NUMBERS
+#define DIVIDE(v, div, TYPE)	((v) / (div))
+#else
+#define DIVIDE(v, div, TYPE)	((v) < 0 ? -(TYPE) (((u##TYPE) -(v) + ((u##TYPE) (div) >> 1)) / (div)) : (TYPE) (((u##TYPE) (v) + ((u##TYPE) (div) >> 1)) / (div)))
+#endif
+
+#define convertimpl(TYPE1, TYPE2)					\
 static BUN								\
-convert_##TYPE1##_##TYPE2(const TYPE1 *src, TYPE2 *restrict dst,	\
+convert_##TYPE1##_##TYPE2(const TYPE1 *restrict src,			\
+			  TYPE2 *restrict dst,				\
 			  struct canditer *restrict ci,			\
 			  const bit *restrict rv,			\
-			  oid candoff, bool abort_on_error, bool *reduce) \
+			  oid candoff,					\
+			  uint8_t scale1,				\
+			  uint8_t scale2,				\
+			  uint8_t precision,				\
+			  bool abort_on_error,				\
+			  bool *reduce)					\
 {									\
-	BUN i, nils = 0;						\
+	BUN i;								\
+	BUN nils = 0;							\
+	TYPE1 v;							\
 	oid x;								\
+	const TYPE1 div = (TYPE1) scales[scale1 > scale2 ? scale1 - scale2 : 0]; \
+	const TYPE2 mul = (TYPE2) scales[scale2 > scale1 ? scale2 - scale1 : 0]; \
+	const TYPE2 min = GDK_##TYPE2##_min / mul;			\
+	const TYPE2 max = GDK_##TYPE2##_max / mul;			\
+	const TYPE2 prec = (TYPE2) scales[precision] / mul;		\
 									\
-	*reduce = false;						\
+	assert(div == 1 || mul == 1);					\
+	assert(div >= 1 && mul >= 1);					\
+									\
+	*reduce = div > 1;						\
 	if (ci->tpe == cand_dense) {					\
-		for (i = 0; i < ci->ncand; i++) {			\
-			x = canditer_next_dense(ci) - candoff;		\
-			if ((rv != NULL && !rv[i]) ||			\
-			    is_##TYPE1##_nil(src[x])) {			\
-				dst[i] = TYPE2##_nil;			\
-				nils++;					\
-			} else if (src[x] < (TYPE1) GDK_##TYPE2##_min || \
-				   src[x] > (TYPE1) GDK_##TYPE2##_max) { \
-				if (abort_on_error)			\
-					CONV_OVERFLOW(TYPE1, #TYPE2, src[x]); \
-				*reduce = true;				\
-				dst[i] = TYPE2##_nil;			\
-				nils++;					\
-			} else						\
-				dst[i] = (TYPE2) src[x];		\
+		if (div == 1 && mul == 1) {				\
+			for (i = 0; i < ci->ncand; i++) {		\
+				x = canditer_next_dense(ci) - candoff;	\
+				v = src[x];				\
+				if ((rv != NULL && !rv[i]) ||		\
+				    is_##TYPE1##_nil(v)) {		\
+					dst[i] = TYPE2##_nil;		\
+					nils++;				\
+				} else if (v < min || v > max ||	\
+					   (precision &&		\
+					    (v >= prec || v <= -prec))) { \
+					if (abort_on_error)		\
+						CONV_OVERFLOW_PREC(TYPE1, #TYPE2, v, scale2, precision); \
+					dst[i] = TYPE2##_nil;		\
+					nils++;				\
+					*reduce = true;			\
+				} else {				\
+					dst[i] = (TYPE2) v;		\
+				}					\
+			}						\
+		} else if (div == 1) {					\
+			for (i = 0; i < ci->ncand; i++) {		\
+				x = canditer_next_dense(ci) - candoff;	\
+				v = src[x];				\
+				if ((rv != NULL && !rv[i]) ||		\
+				    is_##TYPE1##_nil(v)) {		\
+					dst[i] = TYPE2##_nil;		\
+					nils++;				\
+				} else if (v < min || v > max ||	\
+					   (precision &&		\
+					    (v >= prec || v <= -prec))) { \
+					if (abort_on_error)		\
+						CONV_OVERFLOW_PREC(TYPE1, #TYPE2, src[x], scale2, precision); \
+					dst[i] = TYPE2##_nil;		\
+					nils++;				\
+					*reduce = true;			\
+				} else {				\
+					dst[i] = (TYPE2) v * mul;	\
+				}					\
+			}						\
+		} else {						\
+			/* mul == 1 */					\
+			for (i = 0; i < ci->ncand; i++) {		\
+				x = canditer_next_dense(ci) - candoff;	\
+				v = src[x];				\
+				if ((rv != NULL && !rv[i]) ||		\
+				    is_##TYPE1##_nil(v)) {		\
+					dst[i] = TYPE2##_nil;		\
+					nils++;				\
+				} else {				\
+					v = DIVIDE(v, div, TYPE1);	\
+					if (v < min || v > max ||	\
+					    (precision &&		\
+					     (v >= prec || v <= -prec))) { \
+						if (abort_on_error)	\
+							CONV_OVERFLOW_PREC(TYPE1, #TYPE2, src[x], scale2, precision); \
+						dst[i] = TYPE2##_nil;	\
+						nils++;			\
+						*reduce = true;		\
+					} else {			\
+						dst[i] = (TYPE2) v;	\
+					}				\
+				}					\
+			}						\
 		}							\
 	} else {							\
 		for (i = 0; i < ci->ncand; i++) {			\
 			x = canditer_next(ci) - candoff;		\
-			if ((rv != NULL && !rv[i]) ||			\
-			    is_##TYPE1##_nil(src[x])) {			\
+			v = src[x];					\
+			if ((rv != NULL && !rv[i]) || is_##TYPE1##_nil(v)) { \
 				dst[i] = TYPE2##_nil;			\
 				nils++;					\
-			} else if (src[x] < (TYPE1) GDK_##TYPE2##_min || \
-				   src[x] > (TYPE1) GDK_##TYPE2##_max) { \
-				if (abort_on_error)			\
-					CONV_OVERFLOW(TYPE1, #TYPE2, src[x]); \
-				*reduce = true;				\
-				dst[i] = TYPE2##_nil;			\
-				nils++;					\
-			} else						\
-				dst[i] = (TYPE2) src[x];		\
+			} else {					\
+				v = DIVIDE(v, div, TYPE1);		\
+				if (v < min || v > max ||		\
+				    (precision &&			\
+				     (v >= prec || v <= -prec))) {	\
+					if (abort_on_error)		\
+						CONV_OVERFLOW_PREC(TYPE1, #TYPE2, src[x], scale2, precision); \
+					dst[i] = TYPE2##_nil;		\
+					nils++;				\
+					*reduce = true;			\
+				} else {				\
+					dst[i] = (TYPE2) v * mul;	\
+				}					\
+			}						\
 		}							\
 	}								\
 	return nils;							\
@@ -13921,50 +14020,62 @@ static BUN								\
 convert_##TYPE1##_##TYPE2(const TYPE1 *src, TYPE2 *restrict dst,	\
 			  struct canditer *restrict ci,			\
 			  const bit *restrict rv,			\
-			  oid candoff, bool abort_on_error, bool *reduce) \
+			  oid candoff, uint8_t scale2, uint8_t precision, \
+			  bool abort_on_error, bool *reduce)		\
 {									\
 	BUN i, nils = 0;						\
 	oid x;								\
+	TYPE1 v;							\
+	const TYPE2 mul = (TYPE2) scales[scale2];			\
+	const TYPE2 min = GDK_##TYPE2##_min;				\
+	const TYPE2 max = GDK_##TYPE2##_max;				\
+	const TYPE2 prec = (TYPE2) scales[precision];			\
 									\
 	*reduce = true;							\
 	if (ci->tpe == cand_dense) {					\
 		for (i = 0; i < ci->ncand; i++) {			\
 			x = canditer_next_dense(ci) - candoff;		\
+			v = src[x];					\
 			if ((rv != NULL && !rv[i]) ||			\
-			    is_##TYPE1##_nil(src[x])) {			\
+			    is_##TYPE1##_nil(v)) {			\
 				dst[i] = TYPE2##_nil;			\
 				nils++;					\
-			} else if (src[x] < (TYPE1) GDK_##TYPE2##_min || \
-				   src[x] > (TYPE1) GDK_##TYPE2##_max) { \
+			} else if (v < (TYPE1) min || v > (TYPE1) max) { \
 				if (abort_on_error)			\
-					CONV_OVERFLOW(TYPE1, #TYPE2, src[x]); \
+					CONV_OVERFLOW_PREC(TYPE1, #TYPE2, v, scale2, precision); \
 				dst[i] = TYPE2##_nil;			\
 				nils++;					\
 			} else {					\
-				dst[i] = (TYPE2) round##TYPE1(src[x]);	\
-				if (is_##TYPE2##_nil(dst[i]) &&		\
+				dst[i] = (TYPE2) round##TYPE1(v * mul);	\
+				if ((is_##TYPE2##_nil(dst[i]) ||	\
+				     (precision &&			\
+				      (dst[i] >= prec ||		\
+				       dst[i] <= -prec))) &&		\
 				    abort_on_error)			\
-					CONV_OVERFLOW(TYPE1, #TYPE2, src[x]); \
+					CONV_OVERFLOW_PREC(TYPE1, #TYPE2, v, scale2, precision); \
 			}						\
 		}							\
 	} else {							\
 		for (i = 0; i < ci->ncand; i++) {			\
 			x = canditer_next(ci) - candoff;		\
+			v = src[x];					\
 			if ((rv != NULL && !rv[i]) ||			\
-			    is_##TYPE1##_nil(src[x])) {			\
+			    is_##TYPE1##_nil(v)) {			\
 				dst[i] = TYPE2##_nil;			\
 				nils++;					\
-			} else if (src[x] < (TYPE1) GDK_##TYPE2##_min || \
-				   src[x] > (TYPE1) GDK_##TYPE2##_max) { \
+			} else if (v < (TYPE1) min || v > (TYPE1) max) { \
 				if (abort_on_error)			\
-					CONV_OVERFLOW(TYPE1, #TYPE2, src[x]); \
+					CONV_OVERFLOW_PREC(TYPE1, #TYPE2, v, scale2, precision); \
 				dst[i] = TYPE2##_nil;			\
 				nils++;					\
 			} else {					\
-				dst[i] = (TYPE2) round##TYPE1(src[x]);	\
-				if (is_##TYPE2##_nil(dst[i]) &&		\
+				dst[i] = (TYPE2) round##TYPE1(v * mul);	\
+				if ((is_##TYPE2##_nil(dst[i]) ||	\
+				     (precision &&			\
+				      (dst[i] >= prec ||		\
+				       dst[i] <= -prec))) &&		\
 				    abort_on_error)			\
-					CONV_OVERFLOW(TYPE1, #TYPE2, src[x]); \
+					CONV_OVERFLOW_PREC(TYPE1, #TYPE2, v, scale2, precision); \
 			}						\
 		}							\
 	}								\
@@ -14006,61 +14117,61 @@ convert_##TYPE##_bit(const TYPE *src, bit *restrict dst,		\
 	return nils;							\
 }
 
-convertimpl_copy(bte)
-convertimpl_enlarge(bte, sht)
-convertimpl_enlarge(bte, int)
+convertimpl(bte, bte)
+convertimpl(bte, sht)
+convertimpl(bte, int)
 convertimpl_oid_enlarge(bte)
-convertimpl_enlarge(bte, lng)
+convertimpl(bte, lng)
 #ifdef HAVE_HGE
-convertimpl_enlarge(bte, hge)
+convertimpl(bte, hge)
 #endif
 convertimpl_enlarge_float(bte, flt, FLT_MANT_DIG)
 convertimpl_enlarge_float(bte, dbl, DBL_MANT_DIG)
 
-convertimpl_reduce(sht, bte)
-convertimpl_copy(sht)
-convertimpl_enlarge(sht, int)
+convertimpl(sht, bte)
+convertimpl(sht, sht)
+convertimpl(sht, int)
 convertimpl_oid_enlarge(sht)
-convertimpl_enlarge(sht, lng)
+convertimpl(sht, lng)
 #ifdef HAVE_HGE
-convertimpl_enlarge(sht, hge)
+convertimpl(sht, hge)
 #endif
 convertimpl_enlarge_float(sht, flt, FLT_MANT_DIG)
 convertimpl_enlarge_float(sht, dbl, DBL_MANT_DIG)
 
-convertimpl_reduce(int, bte)
-convertimpl_reduce(int, sht)
-convertimpl_copy(int)
+convertimpl(int, bte)
+convertimpl(int, sht)
+convertimpl(int, int)
 convertimpl_oid_enlarge(int)
-convertimpl_enlarge(int, lng)
+convertimpl(int, lng)
 #ifdef HAVE_HGE
-convertimpl_enlarge(int, hge)
+convertimpl(int, hge)
 #endif
 convertimpl_enlarge_float(int, flt, FLT_MANT_DIG)
 convertimpl_enlarge_float(int, dbl, DBL_MANT_DIG)
 
-convertimpl_reduce(lng, bte)
-convertimpl_reduce(lng, sht)
-convertimpl_reduce(lng, int)
+convertimpl(lng, bte)
+convertimpl(lng, sht)
+convertimpl(lng, int)
 #if SIZEOF_OID == SIZEOF_LNG
 convertimpl_oid_enlarge(lng)
 #else
 convertimpl_oid_reduce(lng)
 #endif
-convertimpl_copy(lng)
+convertimpl(lng, lng)
 #ifdef HAVE_HGE
-convertimpl_enlarge(lng, hge)
+convertimpl(lng, hge)
 #endif
 convertimpl_enlarge_float(lng, flt, FLT_MANT_DIG)
 convertimpl_enlarge_float(lng, dbl, DBL_MANT_DIG)
 
 #ifdef HAVE_HGE
-convertimpl_reduce(hge, bte)
-convertimpl_reduce(hge, sht)
-convertimpl_reduce(hge, int)
+convertimpl(hge, bte)
+convertimpl(hge, sht)
+convertimpl(hge, int)
 convertimpl_oid_reduce(hge)
-convertimpl_reduce(hge, lng)
-convertimpl_copy(hge)
+convertimpl(hge, lng)
+convertimpl(hge, hge)
 convertimpl_enlarge_float(hge, flt, FLT_MANT_DIG)
 convertimpl_enlarge_float(hge, dbl, DBL_MANT_DIG)
 #endif
@@ -14073,7 +14184,7 @@ convertimpl_reduce_float(flt, lng)
 #ifdef HAVE_HGE
 convertimpl_reduce_float(flt, hge)
 #endif
-convertimpl_copy(flt)
+convertimpl_enlarge_float(flt, flt, 128)
 convertimpl_enlarge_float(flt, dbl, DBL_MANT_DIG)
 
 convertimpl_reduce_float(dbl, bte)
@@ -14088,7 +14199,7 @@ convertimpl_reduce_float(dbl, hge)
 /* no rounding here */
 #define rounddbl(x)	(x)
 convertimpl_reduce_float(dbl, flt)
-convertimpl_copy(dbl)
+convertimpl_enlarge_float(dbl, dbl, 128)
 
 convert2bit_impl(bte)
 convert2bit_impl(sht)
@@ -14358,8 +14469,11 @@ convert_void_any(oid seq, BAT *bn,
 static BUN
 convert_typeswitchloop(const void *src, int stp, void *restrict dst, int dtp,
 		       struct canditer *restrict ci, const bit *restrict rv,
-		       oid candoff, bool abort_on_error, bool *reduce)
+		       oid candoff, bool abort_on_error, bool *reduce,
+		       uint8_t scale1, uint8_t scale2, uint8_t precision)
 {
+	assert(scale1 < (uint8_t) (sizeof(scales) / sizeof(scales[0])));
+	assert(scale2 < (uint8_t) (sizeof(scales) / sizeof(scales[0])));
 	switch (ATOMbasetype(stp)) {
 	case TYPE_bte:
 		switch (ATOMbasetype(dtp)) {
@@ -14368,10 +14482,16 @@ convert_typeswitchloop(const void *src, int stp, void *restrict dst, int dtp,
 				return convert_bte_bit(src, dst, ci, rv,
 						       candoff, reduce);
 			return convert_bte_bte(src, dst, ci, rv, candoff,
-					       reduce);
+					       scale1,
+					       scale2,
+					       precision,
+					       abort_on_error, reduce);
 		case TYPE_sht:
 			return convert_bte_sht(src, dst, ci, rv, candoff,
-					       reduce);
+					       scale1,
+					       scale2,
+					       precision,
+					       abort_on_error, reduce);
 		case TYPE_int:
 #if SIZEOF_OID == SIZEOF_INT
 			if (dtp == TYPE_oid)
@@ -14380,7 +14500,10 @@ convert_typeswitchloop(const void *src, int stp, void *restrict dst, int dtp,
 						       reduce);
 #endif
 			return convert_bte_int(src, dst, ci, rv, candoff,
-					       reduce);
+					       scale1,
+					       scale2,
+					       precision,
+					       abort_on_error, reduce);
 		case TYPE_lng:
 #if SIZEOF_OID == SIZEOF_LNG
 			if (dtp == TYPE_oid)
@@ -14389,17 +14512,25 @@ convert_typeswitchloop(const void *src, int stp, void *restrict dst, int dtp,
 						       reduce);
 #endif
 			return convert_bte_lng(src, dst, ci, rv, candoff,
-					       reduce);
+					       scale1,
+					       scale2,
+					       precision,
+					       abort_on_error, reduce);
 #ifdef HAVE_HGE
 		case TYPE_hge:
 			return convert_bte_hge(src, dst, ci, rv, candoff,
-					       reduce);
+					       scale1,
+					       scale2,
+					       precision,
+					       abort_on_error, reduce);
 #endif
 		case TYPE_flt:
 			return convert_bte_flt(src, dst, ci, rv, candoff,
+					       scale1,
 					       reduce);
 		case TYPE_dbl:
 			return convert_bte_dbl(src, dst, ci, rv, candoff,
+					       scale1,
 					       reduce);
 		default:
 			return BUN_NONE + 1;
@@ -14411,10 +14542,16 @@ convert_typeswitchloop(const void *src, int stp, void *restrict dst, int dtp,
 				return convert_sht_bit(src, dst, ci, rv,
 						       candoff, reduce);
 			return convert_sht_bte(src, dst, ci, rv, candoff,
+					       scale1,
+					       scale2,
+					       precision,
 					       abort_on_error, reduce);
 		case TYPE_sht:
 			return convert_sht_sht(src, dst, ci, rv, candoff,
-					       reduce);
+					       scale1,
+					       scale2,
+					       precision,
+					       abort_on_error, reduce);
 		case TYPE_int:
 #if SIZEOF_OID == SIZEOF_INT
 			if (dtp == TYPE_oid)
@@ -14423,7 +14560,10 @@ convert_typeswitchloop(const void *src, int stp, void *restrict dst, int dtp,
 						       reduce);
 #endif
 			return convert_sht_int(src, dst, ci, rv, candoff,
-					       reduce);
+					       scale1,
+					       scale2,
+					       precision,
+					       abort_on_error, reduce);
 		case TYPE_lng:
 #if SIZEOF_OID == SIZEOF_LNG
 			if (dtp == TYPE_oid)
@@ -14432,17 +14572,25 @@ convert_typeswitchloop(const void *src, int stp, void *restrict dst, int dtp,
 						       reduce);
 #endif
 			return convert_sht_lng(src, dst, ci, rv, candoff,
-					       reduce);
+					       scale1,
+					       scale2,
+					       precision,
+					       abort_on_error, reduce);
 #ifdef HAVE_HGE
 		case TYPE_hge:
 			return convert_sht_hge(src, dst, ci, rv, candoff,
-					       reduce);
+					       scale1,
+					       scale2,
+					       precision,
+					       abort_on_error, reduce);
 #endif
 		case TYPE_flt:
 			return convert_sht_flt(src, dst, ci, rv, candoff,
+					       scale1,
 					       reduce);
 		case TYPE_dbl:
 			return convert_sht_dbl(src, dst, ci, rv, candoff,
+					       scale1,
 					       reduce);
 		default:
 			return BUN_NONE + 1;
@@ -14455,9 +14603,15 @@ convert_typeswitchloop(const void *src, int stp, void *restrict dst, int dtp,
 						       candoff, reduce);
 			}
 			return convert_int_bte(src, dst, ci, rv, candoff,
+					       scale1,
+					       scale2,
+					       precision,
 					       abort_on_error, reduce);
 		case TYPE_sht:
 			return convert_int_sht(src, dst, ci, rv, candoff,
+					       scale1,
+					       scale2,
+					       precision,
 					       abort_on_error, reduce);
 		case TYPE_int:
 #if SIZEOF_OID == SIZEOF_INT
@@ -14467,7 +14621,10 @@ convert_typeswitchloop(const void *src, int stp, void *restrict dst, int dtp,
 						       reduce);
 #endif
 			return convert_int_int(src, dst, ci, rv, candoff,
-					       reduce);
+					       scale1,
+					       scale2,
+					       precision,
+					       abort_on_error, reduce);
 		case TYPE_lng:
 #if SIZEOF_OID == SIZEOF_LNG
 			if (dtp == TYPE_oid)
@@ -14476,17 +14633,25 @@ convert_typeswitchloop(const void *src, int stp, void *restrict dst, int dtp,
 						       reduce);
 #endif
 			return convert_int_lng(src, dst, ci, rv, candoff,
-					       reduce);
+					       scale1,
+					       scale2,
+					       precision,
+					       abort_on_error, reduce);
 #ifdef HAVE_HGE
 		case TYPE_hge:
 			return convert_int_hge(src, dst, ci, rv, candoff,
-					       reduce);
+					       scale1,
+					       scale2,
+					       precision,
+					       abort_on_error, reduce);
 #endif
 		case TYPE_flt:
 			return convert_int_flt(src, dst, ci, rv, candoff,
+					       scale1,
 					       reduce);
 		case TYPE_dbl:
 			return convert_int_dbl(src, dst, ci, rv, candoff,
+					       scale1,
 					       reduce);
 		default:
 			return BUN_NONE + 1;
@@ -14499,9 +14664,15 @@ convert_typeswitchloop(const void *src, int stp, void *restrict dst, int dtp,
 						       candoff, reduce);
 			}
 			return convert_lng_bte(src, dst, ci, rv, candoff,
+					       scale1,
+					       scale2,
+					       precision,
 					       abort_on_error, reduce);
 		case TYPE_sht:
 			return convert_lng_sht(src, dst, ci, rv, candoff,
+					       scale1,
+					       scale2,
+					       precision,
 					       abort_on_error, reduce);
 		case TYPE_int:
 #if SIZEOF_OID == SIZEOF_INT
@@ -14511,6 +14682,9 @@ convert_typeswitchloop(const void *src, int stp, void *restrict dst, int dtp,
 						       reduce);
 #endif
 			return convert_lng_int(src, dst, ci, rv, candoff,
+					       scale1,
+					       scale2,
+					       precision,
 					       abort_on_error, reduce);
 		case TYPE_lng:
 #if SIZEOF_OID == SIZEOF_LNG
@@ -14520,17 +14694,25 @@ convert_typeswitchloop(const void *src, int stp, void *restrict dst, int dtp,
 						       reduce);
 #endif
 			return convert_lng_lng(src, dst, ci, rv, candoff,
-					       reduce);
+					       scale1,
+					       scale2,
+					       precision,
+					       abort_on_error, reduce);
 #ifdef HAVE_HGE
 		case TYPE_hge:
 			return convert_lng_hge(src, dst, ci, rv, candoff,
-					       reduce);
+					       scale1,
+					       scale2,
+					       precision,
+					       abort_on_error, reduce);
 #endif
 		case TYPE_flt:
 			return convert_lng_flt(src, dst, ci, rv, candoff,
+					       scale1,
 					       reduce);
 		case TYPE_dbl:
 			return convert_lng_dbl(src, dst, ci, rv, candoff,
+					       scale1,
 					       reduce);
 		default:
 			return BUN_NONE + 1;
@@ -14544,27 +14726,44 @@ convert_typeswitchloop(const void *src, int stp, void *restrict dst, int dtp,
 						       candoff, reduce);
 			}
 			return convert_hge_bte(src, dst, ci, rv, candoff,
+					       scale1,
+					       scale2,
+					       precision,
 					       abort_on_error, reduce);
 		case TYPE_sht:
 			return convert_hge_sht(src, dst, ci, rv, candoff,
+					       scale1,
+					       scale2,
+					       precision,
 					       abort_on_error, reduce);
 		case TYPE_int:
 			return convert_hge_int(src, dst, ci, rv, candoff,
+					       scale1,
+					       scale2,
+					       precision,
 					       abort_on_error, reduce);
 		case TYPE_lng:
 			return convert_hge_lng(src, dst, ci, rv, candoff,
+					       scale1,
+					       scale2,
+					       precision,
 					       abort_on_error, reduce);
 		case TYPE_hge:
 			return convert_hge_hge(src, dst, ci, rv, candoff,
-					       reduce);
+					       scale1,
+					       scale2,
+					       precision,
+					       abort_on_error, reduce);
 		case TYPE_oid:
 			return convert_hge_oid(src, dst, ci, rv, candoff,
 					       abort_on_error, reduce);
 		case TYPE_flt:
 			return convert_hge_flt(src, dst, ci, rv, candoff,
+					       scale1,
 					       reduce);
 		case TYPE_dbl:
 			return convert_hge_dbl(src, dst, ci, rv, candoff,
+					       scale1,
 					       reduce);
 		default:
 			return BUN_NONE + 1;
@@ -14578,9 +14777,13 @@ convert_typeswitchloop(const void *src, int stp, void *restrict dst, int dtp,
 						       candoff, reduce);
 			}
 			return convert_flt_bte(src, dst, ci, rv, candoff,
+					       scale2,
+					       precision,
 					       abort_on_error, reduce);
 		case TYPE_sht:
 			return convert_flt_sht(src, dst, ci, rv, candoff,
+					       scale2,
+					       precision,
 					       abort_on_error, reduce);
 		case TYPE_int:
 #if SIZEOF_OID == SIZEOF_INT
@@ -14590,6 +14793,8 @@ convert_typeswitchloop(const void *src, int stp, void *restrict dst, int dtp,
 						       reduce);
 #endif
 			return convert_flt_int(src, dst, ci, rv, candoff,
+					       scale2,
+					       precision,
 					       abort_on_error, reduce);
 		case TYPE_lng:
 #if SIZEOF_OID == SIZEOF_LNG
@@ -14599,17 +14804,23 @@ convert_typeswitchloop(const void *src, int stp, void *restrict dst, int dtp,
 						       reduce);
 #endif
 			return convert_flt_lng(src, dst, ci, rv, candoff,
+					       scale2,
+					       precision,
 					       abort_on_error, reduce);
 #ifdef HAVE_HGE
 		case TYPE_hge:
 			return convert_flt_hge(src, dst, ci, rv, candoff,
+					       scale2,
+					       precision,
 					       abort_on_error, reduce);
 #endif
 		case TYPE_flt:
 			return convert_flt_flt(src, dst, ci, rv, candoff,
+					       0,
 					       reduce);
 		case TYPE_dbl:
 			return convert_flt_dbl(src, dst, ci, rv, candoff,
+					       0,
 					       reduce);
 		default:
 			return BUN_NONE + 1;
@@ -14622,9 +14833,13 @@ convert_typeswitchloop(const void *src, int stp, void *restrict dst, int dtp,
 						       candoff, reduce);
 			}
 			return convert_dbl_bte(src, dst, ci, rv, candoff,
+					       scale2,
+					       precision,
 					       abort_on_error, reduce);
 		case TYPE_sht:
 			return convert_dbl_sht(src, dst, ci, rv, candoff,
+					       scale2,
+					       precision,
 					       abort_on_error, reduce);
 		case TYPE_int:
 #if SIZEOF_OID == SIZEOF_INT
@@ -14634,6 +14849,8 @@ convert_typeswitchloop(const void *src, int stp, void *restrict dst, int dtp,
 						       reduce);
 #endif
 			return convert_dbl_int(src, dst, ci, rv, candoff,
+					       scale2,
+					       precision,
 					       abort_on_error, reduce);
 		case TYPE_lng:
 #if SIZEOF_OID == SIZEOF_LNG
@@ -14643,17 +14860,23 @@ convert_typeswitchloop(const void *src, int stp, void *restrict dst, int dtp,
 						       reduce);
 #endif
 			return convert_dbl_lng(src, dst, ci, rv, candoff,
+					       scale2,
+					       precision,
 					       abort_on_error, reduce);
 #ifdef HAVE_HGE
 		case TYPE_hge:
 			return convert_dbl_hge(src, dst, ci, rv, candoff,
+					       scale2,
+					       precision,
 					       abort_on_error, reduce);
 #endif
 		case TYPE_flt:
 			return convert_dbl_flt(src, dst, ci, rv, candoff,
+					       0, 0,
 					       abort_on_error, reduce);
 		case TYPE_dbl:
 			return convert_dbl_dbl(src, dst, ci, rv, candoff,
+					       0,
 					       reduce);
 		default:
 			return BUN_NONE + 1;
@@ -14664,7 +14887,8 @@ convert_typeswitchloop(const void *src, int stp, void *restrict dst, int dtp,
 }
 
 BAT *
-BATconvert(BAT *b, BAT *s, BAT *r, int tp, bool abort_on_error)
+BATconvert(BAT *b, BAT *s, BAT *r, int tp, bool abort_on_error,
+	   uint8_t scale1, uint8_t scale2, uint8_t precision)
 {
 	lng t0 = 0;
 	BAT *bn;
@@ -14696,6 +14920,7 @@ BATconvert(BAT *b, BAT *s, BAT *r, int tp, bool abort_on_error)
 	if (cnt == ncand && tp != TYPE_bit &&
 	    ATOMbasetype(b->ttype) == ATOMbasetype(tp) &&
 	    (tp != TYPE_oid || b->ttype == TYPE_oid) &&
+	    scale1 == 0 && scale2 == 0 && precision == 0 &&
 	    (tp != TYPE_str ||
 	     BATatoms[b->ttype].atomToStr == BATatoms[TYPE_str].atomToStr)) {
 		return COLcopy(b, tp, false, TRANSIENT);
@@ -14726,7 +14951,8 @@ BATconvert(BAT *b, BAT *s, BAT *r, int tp, bool abort_on_error)
 		nils = convert_typeswitchloop(Tloc(b, 0), b->ttype,
 					      Tloc(bn, 0), tp,
 					      &ci, rv, b->hseqbase,
-					      abort_on_error, &reduce);
+					      abort_on_error, &reduce,
+					      scale1, scale2, precision);
 
 	if (nils >= BUN_NONE) {
 		BBPunfix(bn->batCacheid);
@@ -14766,7 +14992,8 @@ BATconvert(BAT *b, BAT *s, BAT *r, int tp, bool abort_on_error)
 }
 
 gdk_return
-VARconvert(ValPtr ret, const ValRecord *v, bool abort_on_error)
+VARconvert(ValPtr ret, const ValRecord *v, bool abort_on_error,
+	   uint8_t scale1, uint8_t scale2, uint8_t precision)
 {
 	ptr p;
 	BUN nils = 0;
@@ -14858,7 +15085,8 @@ VARconvert(ValPtr ret, const ValRecord *v, bool abort_on_error)
 					      VALget(ret), ret->vtype,
 					      &(struct canditer){.tpe=cand_dense, .ncand=1},
 					      NULL,
-					      0, abort_on_error, &reduce);
+					      0, abort_on_error, &reduce,
+					      scale1, scale2, precision);
 	}
 	if (nils == BUN_NONE + 1) {
 		GDKerror("conversion from type %s to type %s "

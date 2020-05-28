@@ -8,8 +8,8 @@ stdout of test 'metadataConsistency` in directory 'sql/test/Users` itself:
 #create schema qdv;
 #set schema qdv;
 #select current_schema;
-% . # table_name
-% single_value # name
+% .%2 # table_name
+% %2 # name
 % varchar # type
 % 3 # length
 [ "qdv"	]
@@ -47,8 +47,8 @@ stdout of test 'metadataConsistency` in directory 'sql/test/Users` itself:
 #drop table abem;
 #set schema sys;
 #select current_schema;
-% . # table_name
-% single_value # name
+% .%2 # table_name
+% %2 # name
 % varchar # type
 % 3 # length
 [ "sys"	]

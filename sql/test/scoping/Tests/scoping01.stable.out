@@ -75,9 +75,9 @@ stdout of test 'scoping01` in directory 'sql/test/scoping` itself:
 % 1 # length
 [ 1	]
 [ 2	]
-#select sys.i, i from tmp1; --we declare variables in a schema, so to reference them we add the schema
-% .,	sys.tmp1 # table_name
-% single_value,	optimizer # name
+#select sys."optimizer", "optimizer" from tmp1; --we declare variables in a schema, so to reference them we add the schema
+% .%1,	sys.tmp1 # table_name
+% %1,	optimizer # name
 % varchar,	int # type
 % 12,	1 # length
 [ "default_pipe",	1	]
@@ -107,7 +107,7 @@ stdout of test 'scoping01` in directory 'sql/test/scoping` itself:
 #	RETURN j;
 #END;
 #SELECT tests_scopes2(vals) FROM (VALUES (1),(2),(3)) AS vals(vals);
-% . # table_name
+% .%5 # table_name
 % %5 # name
 % int # type
 % 1 # length
@@ -135,8 +135,8 @@ stdout of test 'scoping01` in directory 'sql/test/scoping` itself:
 #	RETURN SELECT "optimizer";
 #END;
 #SELECT tests_scopes3(0), tests_scopes3(1);
-% .,	. # table_name
-% %1,	%2 # name
+% .%5,	.%6 # table_name
+% %5,	%6 # name
 % clob,	clob # type
 % 12,	12 # length
 [ "default_pipe",	"default_pipe"	]
@@ -170,7 +170,7 @@ stdout of test 'scoping01` in directory 'sql/test/scoping` itself:
 #	RETURN x;
 #END;
 #SELECT scoping(vals) FROM (VALUES (1),(2),(3)) AS vals(vals);
-% . # table_name
+% .%5 # table_name
 % %5 # name
 % int # type
 % 1 # length
@@ -194,8 +194,8 @@ stdout of test 'scoping01` in directory 'sql/test/scoping` itself:
 #	RETURN SELECT a FROM z;
 #END; 
 #SELECT scoping2(vals) FROM (VALUES (1),(2),(3),(4)) AS vals(vals);
-% . # table_name
-% %6 # name
+% .%13 # table_name
+% %13 # name
 % int # type
 % 1 # length
 [ 1	]

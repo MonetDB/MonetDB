@@ -6,20 +6,20 @@ stdout of test 'predefinedvariable` in directory 'sql/test/scoping` itself:
 # 14:57:50 >  
 
 #select optimizer;
-% . # table_name
-% single_value # name
+% .%2 # table_name
+% %2 # name
 % varchar # type
 % 12 # length
 [ "default_pipe"	]
 #select current_schema;
-% . # table_name
-% single_value # name
+% .%2 # table_name
+% %2 # name
 % varchar # type
 % 3 # length
 [ "sys"	]
 #select sys.optimizer;	-- can we find it there?
-% . # table_name
-% single_value # name
+% .%2 # table_name
+% %2 # name
 % varchar # type
 % 12 # length
 [ "default_pipe"	]
@@ -27,15 +27,15 @@ stdout of test 'predefinedvariable` in directory 'sql/test/scoping` itself:
 #set aux = (select sys.optimizer);
 #set optimizer = 'minimal_pipe';
 #select optimizer;
-% . # table_name
-% single_value # name
+% .%2 # table_name
+% %2 # name
 % varchar # type
 % 12 # length
 [ "minimal_pipe"	]
 #set sys.optimizer = 'minimal_pipe';
 #select sys.optimizer;
-% . # table_name
-% single_value # name
+% .%2 # table_name
+% %2 # name
 % varchar # type
 % 12 # length
 [ "minimal_pipe"	]
@@ -49,8 +49,8 @@ stdout of test 'predefinedvariable` in directory 'sql/test/scoping` itself:
 % 1,	1 # length
 [ 1,	2	]
 #select i, sys.optimizer from mynewone;				-- should be recognized
-% sys.mynewone,	. # table_name
-% i,	single_value # name
+% sys.mynewone,	.%1 # table_name
+% i,	%1 # name
 % int,	varchar # type
 % 1,	12 # length
 [ 1,	"minimal_pipe"	]
