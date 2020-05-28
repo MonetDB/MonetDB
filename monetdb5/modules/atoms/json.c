@@ -2546,10 +2546,10 @@ JSONsubjson(bat *retval, bat *bid, bat *gid, bat *eid, bit *skip_nils)
 }
 
 #include "mel.h"
-mel_atom json_init_atoms[] = {
+static mel_atom json_init_atoms[] = {
  { .name="json", .basetype="str", .fromstr=(fptr)&JSONfromString, .tostr=(fptr)&JSONtoString, },  { .cmp=NULL } 
 };
-mel_func json_init_funcs[] = {
+static mel_func json_init_funcs[] = {
  command("json", "new", JSONstr2json, false, "Convert string to its JSON. Dealing with escape characters", args(1,2, arg("",json),arg("j",str))),
  command("calc", "json", JSONstr2json, false, "Convert string to its JSON. Dealing with escape characters", args(1,2, arg("",json),arg("j",str))),
  command("calc", "json", JSONstr2json, false, "Convert JSON to JSON. Dealing with escape characters", args(1,2, arg("",json),arg("j",json))),
