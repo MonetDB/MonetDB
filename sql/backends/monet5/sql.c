@@ -480,7 +480,7 @@ mvc_claim_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	t = mvc_bind_table(m, s, tname);
 	if (t == NULL)
 		throw(SQL, "sql.claim", SQLSTATE(42S02) "Table missing %s.%s", sname, tname);
-	*res = mvc_claim_slots(m->session->tr, t, cnt);
+	*res = mvc_claim_slots(m->session->tr, t, (size_t)cnt);
 	return MAL_SUCCEED;
 }
 
