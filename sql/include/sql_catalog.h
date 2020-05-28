@@ -696,7 +696,6 @@ typedef struct res_table {
 typedef struct sql_session {
 	sql_trans *tr; 		/* active transaction */	
 
-	char *old_schema_name; /* transaction's old schema name (from previous transaction), needed for rollback */
 	char *schema_name; /* transaction's schema name */
 	sql_schema *schema;
 

@@ -998,12 +998,10 @@ rel_create_func(sql_query *query, dlist *qname, dlist *params, symbol *res, dlis
 				sql->forward = f = mvc_create_func(sql, sql->sa, s, fname, l, restype, type, lang, "user", q, q, FALSE, vararg, FALSE);
 				GDKfree(q);
 			}
-			if (!mvc_set_schema(query->sql, s))
-				return sql_error(sql, 02, SQLSTATE(HY013) MAL_MALLOC_FAIL);
+			sql->session->schema = s;
 			b = sequential_block(query, (ra)?&ra->type:NULL, ra?NULL:restype, body, NULL, is_func);
 			sql->forward = NULL;
-			if (!mvc_set_schema(query->sql, os))
-				return sql_error(sql, 02, SQLSTATE(HY013) MAL_MALLOC_FAIL);
+			sql->session->schema = os;
 			sql->params = NULL;
 			if (!b)
 				return NULL;
@@ -1379,11 +1377,9 @@ create_trigger(sql_query *query, dlist *qname, int time, symbol *trigger_event, 
 		if (old_name)
 			stack_update_rel_view(sql, old_name, new_name?rel_dup(rel):rel);
 	}
-	if (!mvc_set_schema(query->sql, ss))
-		return sql_error(sql, 02, SQLSTATE(HY013) MAL_MALLOC_FAIL);
+	sql->session->schema = ss;
 	sq = sequential_block(query, NULL, NULL, stmts, NULL, 1);
-	if (!mvc_set_schema(query->sql, old_schema))
-		return sql_error(sql, 02, SQLSTATE(HY013) MAL_MALLOC_FAIL);
+	sql->session->schema = old_schema;
 	if (!sq) {
 		if (!instantiate)
 			stack_pop_frame(sql);

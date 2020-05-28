@@ -40,8 +40,8 @@ rel_parse(mvc *m, sql_schema *s, char *query, char emode)
 
 	m->caching = 0;
 	m->emode = emode;
-	if (s && !mvc_set_schema_name(m, s->base.name))
-		return NULL;
+	if (s)
+		m->session->schema = s;
 
 	if (!(b = (buffer*)GDKmalloc(sizeof(buffer))))
 		return NULL;
@@ -103,8 +103,7 @@ rel_parse(mvc *m, sql_schema *s, char *query, char emode)
 		*m = o;
 		m->label = label;
 	}
-	if (!mvc_set_schema_name(m, c->base.name))
-		return NULL;
+	m->session->schema = c;
 	return rel;
 }
 

@@ -7425,7 +7425,6 @@ sql_session_create(backend_stack stk, int ac)
 		return NULL;
 	}
 	s->schema_name = NULL;
-	s->old_schema_name = NULL;
 	s->tr->active = 0;
 	s->stk = stk;
 	if (!sql_session_reset(s, ac)) {
@@ -7443,8 +7442,8 @@ sql_session_destroy(sql_session *s)
 	assert(!s->tr || s->tr->active == 0);
 	if (s->tr)
 		sql_trans_destroy(s->tr, true);
-	_DELETE(s->schema_name);
-	_DELETE(s->old_schema_name);
+	if (s->schema_name)
+		_DELETE(s->schema_name);
 	(void) ATOMIC_DEC(&nr_sessions);
 	_DELETE(s);
 }
@@ -7483,11 +7482,11 @@ int
 sql_session_reset(sql_session *s, int ac) 
 {
 	sql_schema *tmp;
-	char *def_schema_name = _STRDUP("sys"), *old_def_schema_name = _STRDUP("sys");
+	char *def_schema_name = _STRDUP("sys");
 
-	if (!s->tr || !def_schema_name || !old_def_schema_name) {
-		_DELETE(def_schema_name);
-		_DELETE(old_def_schema_name);
+	if (!s->tr || !def_schema_name) {
+		if (def_schema_name)
+			_DELETE(def_schema_name);
 		return 0;
 	}
 
@@ -7504,10 +7503,9 @@ sql_session_reset(sql_session *s, int ac)
 	}
 	assert(s->tr && s->tr->active == 0);
 
-	_DELETE(s->schema_name);
-	_DELETE(s->old_schema_name);
+	if (s->schema_name)
+		_DELETE(s->schema_name);
 	s->schema_name = def_schema_name;
-	s->old_schema_name = old_def_schema_name;
 	s->schema = NULL;
 	s->auto_commit = s->ac_on_commit = ac;
 	s->level = ISO_SERIALIZABLE;
@@ -7535,7 +7533,6 @@ sql_trans_begin(sql_session *s)
 		tr = trans_init(tr, tr->stk, tr->parent);
 	tr->active = 1;
 	s->schema = find_sql_schema(tr, s->schema_name);
-	assert(s->schema);
 	s->tr = tr;
 	if (tr->parent == gtrans) {
 		(void) ATOMIC_INC(&store_nr_active);

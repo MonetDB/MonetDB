@@ -628,19 +628,16 @@ SQLtrans(mvc *m)
 			throw(SQL, "sql.trans", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		s = m->session;
 		if (!s->schema) {
-			int sres;
-			str found = monet5_user_get_def_schema(m, m->user_id);
-
-			if (!found) {
+			if (s->schema_name)
+				GDKfree(s->schema_name);
+			s->schema_name = monet5_user_get_def_schema(m, m->user_id);
+			if (!s->schema_name) {
 				mvc_cancel_session(m);
 				throw(SQL, "sql.trans", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			}
-			sres = mvc_set_schema_name(m, found);
-			_DELETE(found);
-			if (!sres) {
-				mvc_cancel_session(m);
-				throw(SQL, "sql.trans", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-			}
+			assert(s->schema_name);
+			s->schema = find_sql_schema(s->tr, s->schema_name);
+			assert(s->schema);
 		}
 	}
 	return MAL_SUCCEED;

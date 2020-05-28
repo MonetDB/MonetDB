@@ -6182,11 +6182,9 @@ schema_selects(sql_query *query, sql_schema *schema, symbol *s)
 	sql_rel *res;
 	sql_schema *os = cur_schema(sql);
 
-	if (!mvc_set_schema(sql, schema))
-		return sql_error(sql, 02, SQLSTATE(HY013) MAL_MALLOC_FAIL);
+	sql->session->schema = schema;
 	res = rel_selects(query, s);
-	if (!mvc_set_schema(sql, os))
-		return sql_error(sql, 02, SQLSTATE(HY013) MAL_MALLOC_FAIL);
+	sql->session->schema = os;
 	return res;
 }
 

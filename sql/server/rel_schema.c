@@ -1376,20 +1376,18 @@ rel_create_schema(sql_query *query, dlist *auth_name, dlist *schema_elements, in
 		ss->auth_id = auth_id;
 		ss->owner = sql->user_id;
 
-		if (!mvc_set_schema(query->sql, ss))
-			return sql_error(sql, 02, SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		sql->session->schema = ss;
 		while (n) {
 			sql_rel *res = rel_semantic(query, n->data.sym);
 			if (!res) {
 				rel_destroy(ret);
-				(void) mvc_set_schema(query->sql, os);
+				sql->session->schema = os;
 				return NULL;
 			}
 			ret = rel_list(sql->sa, ret, res);
 			n = n->next;
 		}
-		if (!mvc_set_schema(query->sql, os))
-			return sql_error(sql, 02, SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		sql->session->schema = os;
 		return ret;
 	}
 }

@@ -552,7 +552,7 @@ monet5_user_set_def_schema(mvc *m, oid user)
 		schema = NULL;
 	}
 
-	if (!schema || !mvc_set_schema_name(m, schema)) {
+	if (!schema || !mvc_set_schema(m, schema)) {
 		if (m->session->tr->active) {
 			if ((other = mvc_rollback(m, 0, NULL, false)) != MAL_SUCCEED)
 				freeException(other);
@@ -567,7 +567,7 @@ monet5_user_set_def_schema(mvc *m, oid user)
 		schema = NULL;
 	}
 	GDKfree(username);
-	if ((other = mvc_commit(m, 0, NULL, false)) != MAL_SUCCEED) { /* has to commit the new session schema value */
+	if ((other = mvc_rollback(m, 0, NULL, false)) != MAL_SUCCEED) {
 		freeException(other);
 		return NULL;
 	}
