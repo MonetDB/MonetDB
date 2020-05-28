@@ -53,3 +53,15 @@ target_link_libraries(example_decimals
     #sql
     )
 add_test(run_example_decimals example_decimals)
+
+add_executable(example_blob example_blob.c)
+target_link_libraries(example_blob
+  PRIVATE
+    monetdb_config_header
+    embedded
+    sqlinclude
+    gdk
+    mapi
+    #sql
+    )
+add_test(run_example_blob example_blob)
