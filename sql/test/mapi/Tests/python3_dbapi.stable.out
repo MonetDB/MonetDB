@@ -30,7 +30,7 @@ stdout of test 'python3_dbapi` in directory 'sql/test/mapi` itself:
 
 [(1,)]
 (2,)
-42000!syntax error, unexpected ')' in: "values ()"
+42000!SELECT: cannot use non GROUP BY column 'commit_action' in query results without an aggregate function
 
 [(3, 'three'), (7, 'seven')]
 2
