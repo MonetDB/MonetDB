@@ -133,6 +133,9 @@ drop table tab1;
 CREATE TABLE tab1(col0 INTEGER, col1 STRING);
 prepare select 1 from tab1 where (col0,col1) in (select ?,? from tab1);
 
+SELECT + col2 + + col0 AS col0 FROM tab0 AS cor0 GROUP BY col1, col2, col0 HAVING NULL IN ( + ( - - ( CASE WHEN 64 IN ( col0 * - col2 + + col1 ) THEN - 98 END ) ) * - 13 );
+	--empty
+
 drop table tab0;
 drop table tab1;
 drop table tab2;
