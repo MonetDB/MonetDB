@@ -397,6 +397,21 @@ project (
 [ "tinyint",	1,	0,	"",	"%11",	"%11"	]
 [ "int",	32,	0,	NULL,	NULL,	NULL	]
 [ "clob",	0,	0,	NULL,	NULL,	NULL	]
+#SELECT 1 FROM tab0 where CASE WHEN 64 IN ( col0 ) THEN true END;
+% .%5 # table_name
+% %5 # name
+% tinyint # type
+% 1 # length
+#SELECT 1 FROM tab0 GROUP BY col0 HAVING CASE WHEN 64 IN ( col0 ) THEN TRUE END;
+% .%5 # table_name
+% %5 # name
+% tinyint # type
+% 1 # length
+#SELECT + col2 + + col0 AS col0 FROM tab0 AS cor0 GROUP BY col1, col2, col0 HAVING NULL IN ( + ( - - ( CASE WHEN 64 IN ( col0 * - col2 + + col1 ) THEN - 98 END ) ) * - 13 );
+% sys. # table_name
+% col0 # name
+% bigint # type
+% 1 # length
 #drop table tab0;
 #drop table tab1;
 #drop table tab2;

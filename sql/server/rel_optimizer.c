@@ -2480,6 +2480,50 @@ has_no_selectivity(mvc *sql, sql_rel *rel)
 	return rel;
 }
 
+/*
+ * Remove a redundant join
+ *
+ * join (L, Distinct Project(join(L,P) [ p.key == l.lkey]) [p.key]) [ p.key == l.lkey]
+ * =>
+ * join(L, P) [p.key==l.lkey]
+ */
+static sql_rel *
+rel_remove_redundant_join(mvc *sql, sql_rel *rel, int *changes)
+{
+	(void)sql;
+	if (is_join(rel->op) || is_semi(rel->op)) {
+		sql_rel *l = rel->l, *r = rel->r, *b, *p = NULL, *j;
+
+		if (is_basetable(l->op) && is_simple_project(r->op) && need_distinct(r)) {
+			b = l; 
+			p = r;
+			j = p->l;
+		} else if (is_basetable(r->op) && is_simple_project(l->op) && need_distinct(l)) {
+			b = r; 
+			p = l;
+			j = p->l;
+		}
+		if (!p || !j || !is_join(j->op))
+			return rel;
+		/* j must have b->l (ie table) */
+		sql_rel *jl = j->l, *jr = j->r;
+		if ((is_basetable(jl->op) && jl->l == b->l) || 
+		    (is_basetable(jr->op) && jr->l == b->l)) {
+			int left = 0;
+			if (is_basetable(jl->op) && jl->l == b->l)
+				left = 1;
+			if (exp_match_list(j->exps, rel->exps)) {
+				p->l = (left)?rel_dup(jr):rel_dup(jl);
+				rel_destroy(j);
+				set_nodistinct(p);
+				(*changes)++;
+				return rel;
+			}
+		}
+	}
+	return rel;
+}
+
 static sql_column *
 is_fk_column_of_pk(sql_rel *rel, sql_column *pkc, sql_exp *e) /* test if e is a foreing key column for the pk on pkc */
 {
@@ -9125,6 +9169,7 @@ optimize_rel(mvc *sql, sql_rel *rel, int *g_changes, int level, int value_based_
 				rel = rel_visitor_bottomup(sql, rel, &rel_simplify_math, &changes);
 			rel = rel_visitor_bottomup(sql, rel, &rel_distinct_aggregate_on_unique_values, &changes);
 			rel = rel_visitor_bottomup(sql, rel, &rel_push_down_bounds, &changes);
+			rel = rel_visitor_bottomup(sql, rel, &rel_remove_redundant_join, &changes);
 			rel = rel_visitor_bottomup(sql, rel, &rel_distinct_project2groupby, &changes);
 		}
 	}

@@ -2650,6 +2650,15 @@ rewrite_ifthenelse(mvc *sql, sql_rel *rel, sql_exp *e, int depth, int *changes)
 	sf = e->f;
 	if (is_ifthenelse_func(sf) && !list_empty(e->l)) {
 		list *l = e->l;
+
+		/* remove unecessary = true expressions under ifthenelse */
+		for (node *n = l->h ; n ; n = n->next) {
+			sql_exp *e = n->data;
+		
+			if (e->type == e_cmp && e->flag == cmp_equal && exp_is_true(sql, e->r))
+				n->data = e->l;
+		}
+
 		sql_exp *cond = l->h->data; 
 		sql_exp *then_exp = l->h->next->data;
 		sql_exp *else_exp = l->h->next->next->data;
