@@ -241,8 +241,10 @@ table_insert(sql_trans *tr, sql_table *t, ...)
 		if (!val)
 			break;
 		ok = store_funcs.append_col(tr, c, offset, val, c->type.type->localtype);
-		if (ok != LOG_OK)
+		if (ok != LOG_OK) {
+			va_end(va);
 			return ok;
+		}
 		cnt++;
 	}
 	va_end(va);

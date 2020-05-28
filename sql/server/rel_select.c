@@ -687,13 +687,13 @@ rel_op_(mvc *sql, sql_schema *s, char *fname, exp_kind ek)
 }
 
 static sql_exp*
-exp_values_set_supertype(mvc *sql, sql_exp *values)
+exp_values_set_supertype(mvc *sql, sql_exp *values, sql_exp *opt_le)
 {
 	assert(is_values(values));
 	list *vals = exp_get_values(values), *nexps;
-	sql_subtype *tpe = exp_subtype(vals->h->data);
+	sql_subtype *tpe = opt_le?exp_subtype(opt_le):exp_subtype(vals->h->data);
 
-	if (tpe)
+	if (!opt_le && tpe)
 		values->tpe = *tpe;
 
 	for (node *m = vals->h; m; m = m->next) {
@@ -709,7 +709,7 @@ exp_values_set_supertype(mvc *sql, sql_exp *values)
 		}
 		ttpe = exp_subtype(e);
 		if (tpe && ttpe) {
-			supertype(&super, tpe, ttpe);
+			supertype(&super, ttpe, tpe);
 			values->tpe = super;
 			tpe = &values->tpe;
 		} else {
@@ -893,7 +893,7 @@ rel_values(sql_query *query, symbol *tableref)
 	}
 	/* loop to check types */
 	for (m = exps->h; m; m = m->next)
-		if (!(m->data = exp_values_set_supertype(sql, (sql_exp*) m->data)))
+		if (!(m->data = exp_values_set_supertype(sql, (sql_exp*) m->data, NULL)))
 			return NULL;
 
 	r = rel_project(sql->sa, NULL, exps);
@@ -1598,6 +1598,21 @@ push_select_exp(mvc *sql, sql_rel *rel, sql_exp *e, sql_exp *ls, sql_exp *L, int
 }
 
 static sql_rel *
+push_join_exp(mvc *sql, sql_rel *rel, sql_exp *e, sql_exp *L, sql_exp *R, sql_exp *R2, int f)
+{
+	sql_rel *r;
+	if (/*is_semi(rel->op) ||*/ (is_outerjoin(rel->op) && !is_processed((rel)))) {
+		rel_join_add_exp(sql->sa, rel, e);
+		return rel;
+	}
+	/* push join into the given relation */
+	if ((r = rel_push_join(sql, rel, L, R, R2, e, f)) != NULL)
+		return r;
+	rel_join_add_exp(sql->sa, rel, e);
+	return rel;
+}
+
+static sql_rel *
 rel_filter(mvc *sql, sql_rel *rel, list *l, list *r, char *sname, char *filter_op, int anti, int ff)
 {
 	node *n;
@@ -1678,17 +1693,9 @@ rel_filter(mvc *sql, sql_rel *rel, list *l, list *r, char *sname, char *filter_o
 
 		return push_select_exp(sql, rel, e, l->h->data, L, ff);
 	} else { /* join */
-		sql_rel *r;
-		if (/*is_semi(rel->op) ||*/ (is_outerjoin(rel->op) && !is_processed((rel)))) {
-			rel_join_add_exp(sql->sa, rel, e);
-			return rel;
-		}
-		/* push join into the given relation */
-		if ((r = rel_push_join(sql, rel, L, R, NULL, e, ff)) != NULL)
-			return r;
-		rel_join_add_exp(sql->sa, rel, e);
-		return rel;
+		return push_join_exp(sql, rel, e, L, R, NULL, ff);
 	}
+	return rel;
 }
 
 static sql_rel *
@@ -1714,17 +1721,9 @@ rel_select_push_exp_down(mvc *sql, sql_rel *rel, sql_exp *e, sql_exp *ls, sql_ex
 
 		return push_select_exp(sql, rel, e, ls, L, f);
 	} else { /* join */
-		sql_rel *r;
-		if (/*is_semi(rel->op) ||*/ (is_outerjoin(rel->op) && !is_processed((rel)))) {
-			rel_join_add_exp(sql->sa, rel, e);
-			return rel;
-		}
-		/* push join into the given relation */
-		if ((r = rel_push_join(sql, rel, L, R, rs2, e, f)) != NULL)
-			return r;
-		rel_join_add_exp(sql->sa, rel, e);
-		return rel;
+		return push_join_exp(sql, rel, e, L, R, rs2, f);
 	}
+	return rel;
 }
 
 static sql_rel *
@@ -2115,6 +2114,18 @@ rel_in_value_exp(sql_query *query, sql_rel **rel, symbol *sc, int f)
 			append(vals, re);
 		}
 
+		if (rel && *rel)
+			for (node *n = vals->h ; n ; n = n->next) {
+				sql_exp *e = n->data;
+
+				if (!exp_is_rel(e) && e->card > (*rel)->card) {
+					if (exp_name(e))
+						return sql_error(sql, ERR_GROUPBY, SQLSTATE(42000) "SELECT: cannot use non GROUP BY column '%s' in query results without an aggregate function", exp_name(e));
+					else
+						return sql_error(sql, ERR_GROUPBY, SQLSTATE(42000) "SELECT: cannot use non GROUP BY column in query results without an aggregate function");
+				}
+			}
+
 		values = exp_values(sql->sa, vals);
 		exp_label(sql->sa, values, ++sql->label);
 		if (is_tuple) {
@@ -2126,20 +2137,20 @@ rel_in_value_exp(sql_query *query, sql_rel **rel, symbol *sc, int f)
 		} else { /* if it's not a tuple, enforce coersion on the type for every element on the list */
 			sql_subtype super;
 			
-			if (!(values = exp_values_set_supertype(sql, values)))
+			if (!(values = exp_values_set_supertype(sql, values, le)))
 				return NULL;
 			if (rel_binop_check_types(sql, rel ? *rel : NULL, le, values, 0) < 0)
 				return NULL;
 			supertype(&super, exp_subtype(values), exp_subtype(le));
 
 			/* on selection/join cases we can generate cmp expressions instead of anyequal for trivial cases */
-			if (is_sql_where(f) && !is_sql_farg(f) && exps_are_atoms(vals)) { 
-				if (list_length(vals) == 1) { /* use cmp_equal instead of anyequal for 1 constant */
+			if (is_sql_where(f) && !is_sql_farg(f) && !exp_has_rel(le) && exps_are_atoms(vals)) {
+				if (list_length(vals) == 1) { /* use cmp_equal instead of cmp_in for 1 expression */
 					sql_exp *first = vals->h->data;
 					if (rel_convert_types(sql, rel ? *rel : NULL, rel ? *rel : NULL, &le, &first, 1, type_equal_no_any) < 0)
 						return NULL;
 					e = exp_compare(sql->sa, le, first, (sc->token == SQL_IN) ? cmp_equal : cmp_notequal);
-				} else { /* use cmp_in instead of anyequal for n constants */
+				} else { /* use cmp_in instead of anyequal for n simple expressions */
 					for (node *n = vals->h ; n ; n = n->next)
 						if ((n->data = rel_check_type(sql, &super, rel ? *rel : NULL, n->data, type_equal)) == NULL)
 							return NULL;
@@ -2169,9 +2180,109 @@ rel_in_exp(sql_query *query, sql_rel *rel, symbol *sc, int f)
 	if (!e || !rel)
 		return NULL;
 
-	if (e->type == e_cmp) /* it's a exp_in or cmp_equal of constants, push down early on if possible */
-		return rel_select_push_exp_down(sql, rel, e, e->l, e->l, e->r, e->r, NULL, f);
+	if (e->type == e_cmp) { /* it's a exp_in or cmp_equal of simple expressions, push down early on if possible */
+		sql_exp *ls = e->l;
+		bool rlist = (e->flag == cmp_in || e->flag == cmp_notin);
+		unsigned int rcard = rlist ? exps_card(e->r) : exp_card(e->r);
+		int r_is_atoms = rlist ? exps_are_atoms(e->r) : exp_is_atom(e->r);
+		int r_has_freevar = rlist ? exps_have_freevar(sql, e->r) : exp_has_freevar(sql, e->r);
+
+		if (rcard <= CARD_ATOM && (r_is_atoms || r_has_freevar || exp_has_freevar(sql, ls))) {
+			if ((exp_card(ls) == rcard) || rel->processed) /* bin compare op */
+				return rel_select(sql->sa, rel, e);
+
+			return push_select_exp(sql, rel, e, ls, ls, f);
+		} else { /* join */
+			sql_exp *rs = rlist ? ((list*)e->r)->h->data : e->r;
+			return push_join_exp(sql, rel, e, ls, rs, NULL, f);
+		}
+	}
 	return rel_select_add_exp(sql->sa, rel, e);
+}
+
+static bool 
+not_symbol_can_be_propagated(mvc *sql, symbol *sc)
+{
+	switch (sc->token) {
+	case SQL_IN:
+	case SQL_NOT_IN:
+	case SQL_EXISTS:
+	case SQL_NOT_EXISTS:
+	case SQL_LIKE:
+	case SQL_NOT_LIKE:
+	case SQL_BETWEEN:
+	case SQL_NOT_BETWEEN:
+	case SQL_IS_NULL:
+	case SQL_IS_NOT_NULL:
+	case SQL_NOT:
+	case SQL_COMPARE:
+		return true;
+	case SQL_AND:
+	case SQL_OR: {
+		symbol *lo = sc->data.lval->h->data.sym;
+		symbol *ro = sc->data.lval->h->next->data.sym;
+		return not_symbol_can_be_propagated(sql, lo) && not_symbol_can_be_propagated(sql, ro);
+	}
+	default:
+		return false;
+	} 
+}
+
+/* Warning, this function assumes the entire bison tree can be negated, so call it after 'not_symbol_can_be_propagated' */
+static void
+negate_symbol_tree(mvc *sql, symbol *sc)
+{
+	switch (sc->token) {
+	case SQL_IN:
+		sc->token = SQL_NOT_IN;
+		break;
+	case SQL_NOT_IN:
+		sc->token = SQL_IN;
+		break;
+	case SQL_EXISTS:
+		sc->token = SQL_NOT_EXISTS;
+		break;
+	case SQL_NOT_EXISTS:
+		sc->token = SQL_EXISTS;
+		break;
+	case SQL_LIKE:
+		sc->token = SQL_NOT_LIKE;
+		break;
+	case SQL_NOT_LIKE:
+		sc->token = SQL_LIKE;
+		break;
+	case SQL_BETWEEN:
+		sc->token = SQL_NOT_BETWEEN;
+		break;
+	case SQL_NOT_BETWEEN:
+		sc->token = SQL_BETWEEN;
+		break;
+	case SQL_IS_NULL:
+		sc->token = SQL_IS_NOT_NULL;
+		break;
+	case SQL_IS_NOT_NULL:
+		sc->token = SQL_IS_NULL;
+		break;
+	case SQL_NOT: /* nested NOTs eliminate each other */
+		memmove(sc, sc->data.sym, sizeof(symbol));
+		break;
+	case SQL_COMPARE: {
+		dnode *cmp_n = sc->data.lval->h;
+		comp_type neg_cmp_type = negate_compare(compare_str2type(cmp_n->next->data.sval)); /* negate the comparator */
+		cmp_n->next->data.sval = sa_strdup(sql->sa, compare_func(neg_cmp_type, 0));
+		if (cmp_n->next->next->next) /* negating ANY/ALL */
+			cmp_n->next->next->next->data.i_val = cmp_n->next->next->next->data.i_val == 0 ? 1 : 0;
+	} break;
+	case SQL_AND:
+	case SQL_OR: {
+		negate_symbol_tree(sql, sc->data.lval->h->data.sym);
+		negate_symbol_tree(sql, sc->data.lval->h->next->data.sym);
+		sc->token = sc->token == SQL_AND ? SQL_OR : SQL_AND;
+		break;
+	}
+	default:
+		break;
+	}
 }
 
 sql_exp *
@@ -2430,6 +2541,10 @@ rel_logical_value_exp(sql_query *query, sql_rel **rel, symbol *sc, int f, exp_ki
 		return le;
 	}
 	case SQL_NOT: {
+		if (not_symbol_can_be_propagated(sql, sc->data.sym)) {
+			negate_symbol_tree(sql, sc->data.sym);
+			return rel_logical_value_exp(query, rel, sc->data.sym, f, ek);
+		}
 		sql_exp *le = rel_logical_value_exp(query, rel, sc->data.sym, f, ek);
 
 		if (!le)
@@ -2732,18 +2847,11 @@ rel_logical_exp(sql_query *query, sql_rel *rel, symbol *sc, int f)
 		return rel_select_push_exp_down(sql, rel, le, le->l, le->l, le->r, le->r, NULL, f);
 	}
 	case SQL_NOT: {
-		sql_exp *le;
-		switch (sc->data.sym->token) {
-		case SQL_IN:
-			sc->data.sym->token = SQL_NOT_IN;
+		if (not_symbol_can_be_propagated(sql, sc->data.sym)) {
+			negate_symbol_tree(sql, sc->data.sym);
 			return rel_logical_exp(query, rel, sc->data.sym, f);
-		case SQL_NOT_IN:
-			sc->data.sym->token = SQL_IN;
-			return rel_logical_exp(query, rel, sc->data.sym, f);
-		default:
-			break;
-		} 
-		le = rel_value_exp(query, &rel, sc->data.sym, f|sql_farg, ek);
+		}
+		sql_exp *le = rel_value_exp(query, &rel, sc->data.sym, f|sql_farg, ek);
 
 		if (!le)
 			return NULL;
@@ -5702,7 +5810,6 @@ rel_query(sql_query *query, sql_rel *rel, symbol *sq, int toplevel, exp_kind ek)
 				res = rel_crossproduct(sql->sa, res, fnd, op_join);
 				if (lateral)
 					set_dependent(res);
-				res = rel_select(sql->sa, res, NULL);
 			} else {
 				res = fnd;
 			}

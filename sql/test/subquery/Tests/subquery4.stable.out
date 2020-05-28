@@ -89,14 +89,14 @@ stdout of test 'subquery4` in directory 'sql/test/subquery` itself:
 [ 4	]
 [ NULL	]
 #SELECT 1 FROM evilfunction((SELECT MAX(1) OVER ()));
-% . # table_name
-% single_value # name
+% .%13 # table_name
+% %13 # name
 % tinyint # type
 % 1 # length
 [ 1	]
 #SELECT 1 FROM evilfunction((SELECT MAX(1) OVER () UNION ALL SELECT 1));
-% . # table_name
-% single_value # name
+% .%23 # table_name
+% %23 # name
 % tinyint # type
 % 1 # length
 [ 1	]
@@ -213,7 +213,7 @@ stdout of test 'subquery4` in directory 'sql/test/subquery` itself:
 % 2 # length
 [ 36	]
 #SELECT NOT EXISTS(SELECT i1.i) from integers i1;
-% . # table_name
+% .%15 # table_name
 % %15 # name
 % boolean # type
 % 5 # length
@@ -271,8 +271,8 @@ stdout of test 'subquery4` in directory 'sql/test/subquery` itself:
 % 5 # length
 [ false	]
 #SELECT 1 FROM another_t WHERE (1,col1) IN ((SELECT MIN(i1.i), SUM(i1.i) FROM integers i1));
-% . # table_name
-% single_value # name
+% .%13 # table_name
+% %13 # name
 % tinyint # type
 % 1 # length
 #DECLARE myvar INT;
@@ -280,8 +280,8 @@ stdout of test 'subquery4` in directory 'sql/test/subquery` itself:
 #DECLARE abc,def INT;
 #SET (abc, def) = (SELECT 1, 2);
 #SELECT abc, def;
-% .,	. # table_name
-% single_value,	single_value # name
+% .%2,	.%3 # table_name
+% %2,	%3 # name
 % int,	int # type
 % 1,	1 # length
 [ 1,	2	]
@@ -373,27 +373,27 @@ stdout of test 'subquery4` in directory 'sql/test/subquery` itself:
 #drop sequence "debugme";
 #CREATE FUNCTION upsme(input INT) RETURNS INT BEGIN RETURN SELECT MIN(input) OVER (); END;
 #SELECT upsme(1);
-% . # table_name
-% %1 # name
+% .%14 # table_name
+% %14 # name
 % int # type
 % 1 # length
 [ 1	]
 #SELECT upsme(1);
-% . # table_name
-% %1 # name
+% .%14 # table_name
+% %14 # name
 % int # type
 % 1 # length
 [ 1	]
 #CREATE OR REPLACE FUNCTION upsme(input INT) RETURNS INT BEGIN RETURN (SELECT input); END;
 #SELECT upsme(1);
-% . # table_name
-% %1 # name
+% .%5 # table_name
+% %5 # name
 % int # type
 % 1 # length
 [ 1	]
 #SELECT upsme(1);
-% . # table_name
-% %1 # name
+% .%5 # table_name
+% %5 # name
 % int # type
 % 1 # length
 [ 1	]

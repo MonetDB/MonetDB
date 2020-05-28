@@ -76,32 +76,32 @@ Operation successful
 |     X_47:lng := aggr.sum(X_46:bat[:lng]);                                                                     |
 |     sql.resultSet(".%6":str, "%6":str, "bigint":str, 64:int, 0:int, 7:int, X_47:lng);                         |
 | end user.s4_0;                                                                                                     |
-| #inline               actions= 0 time=1 usec                                                                  |
-| #remap                actions= 0 time=2 usec                                                                  |
-| #costmodel            actions= 1 time=1 usec                                                                       |
+| #inline               actions= 0 time=0 usec                                                                       |
+| #remap                actions= 0 time=1 usec                                                                       |
+| #costmodel            actions= 1 time=2 usec                                                                       |
 | #coercion             actions= 1 time=5 usec                                                                       |
-| #aliases              actions= 1 time=6 usec                                                                       |
-| #evaluate             actions= 0 time=5 usec                                                                       |
-| #emptybind            actions= 0 time=0 usec                                                                       |
-| #pushselect           actions= 0 time=10 usec                                                                      |
-| #aliases              actions= 0 time=1 usec                                                                  |
-| #mergetable           actions= 0 time=31 usec                                                                 |
-| #deadcode             actions=14 time=10 usec                                                                      |
-| #aliases              actions= 0 time=1 usec                                                                       |
+| #aliases              actions= 1 time=5 usec                                                                       |
+| #evaluate             actions= 0 time=6 usec                                                                       |
+| #emptybind            actions= 0 time=1 usec                                                                       |
+| #pushselect           actions= 2 time=19 usec                                                                      |
+| #aliases              actions= 0 time=0 usec                                                                       |
+| #mergetable           actions= 0 time=30 usec                                                                      |
+| #deadcode             actions=14 time=9 usec                                                                       |
+| #aliases              actions= 0 time=0 usec                                                                       |
 | #constants            actions= 1 time=5 usec                                                                       |
 | #commonTerms          actions= 0 time=6 usec                                                                       |
 | #projectionpath       actions= 0 time=2 usec                                                                           |
 | #deadcode             actions= 0 time=6 usec                                                                       |
 | #reorder              actions= 1 time=15 usec                                                                 |
 | #matpack              actions= 0 time=0 usec                                                                       |
-| #multiplex            actions= 0 time=1 usec                                                                       |
-| #profiler             actions= 1 time=1 usec                                                                       |
+| #multiplex            actions= 0 time=2 usec                                                                       |
+| #profiler             actions= 1 time=2 usec                                                                       |
 | #candidates           actions= 1 time=1 usec                                                                       |
 | #deadcode             actions= 0 time=5 usec                                                                       |
-| #postfix              actions= 0 time=4 usec                                                                       |
-| #wlc                  actions= 0 time=1 usec                                                                       |
-| #garbagecollector     actions= 1 time=24 usec                                                                      |
-| #total                actions=27 time=211 usec                                                                     |
+| #postfix              actions= 0 time=3 usec                                                                       |
+| #wlc                  actions= 0 time=0 usec                                                                       |
+| #garbagecollector     actions= 1 time=23 usec                                                                      |
+| #total                actions=27 time=222 usec                                                                     |
 +--------------------------------------------------------------------------------------------------------------------+
 47 rows
 

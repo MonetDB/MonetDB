@@ -77,8 +77,8 @@ stdout of test 'declared_tables` in directory 'sql/test/miscellaneous` itself:
 #rollback;
 #declare a int;
 #select a;
-% . # table_name
-% single_value # name
+% .%2 # table_name
+% %2 # name
 % int # type
 % 1 # length
 [ NULL	]
@@ -128,8 +128,8 @@ end user.s20_0;
 #garbagecollector     actions= 1 time=11 usec 
 #total                actions=29 time=119 usec 
 #select a;
-% . # table_name
-% single_value # name
+% .%2 # table_name
+% %2 # name
 % int # type
 % 1 # length
 [ NULL	]
@@ -144,14 +144,14 @@ end user.s20_0;
 #    RETURN SELECT a FROM z;
 #END;
 #SELECT testtruncate();
-% . # table_name
-% %1 # name
+% .%6 # table_name
+% %6 # name
 % int # type
 % 1 # length
 [ NULL	]
 #SELECT testtruncate();
-% . # table_name
-% %1 # name
+% .%6 # table_name
+% %6 # name
 % int # type
 % 1 # length
 [ NULL	]

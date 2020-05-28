@@ -24,7 +24,7 @@
 //! Copies the string of size up to max_size from the source to the destination,
 //! returns FALSE if "source" is not a legal ASCII string (i.e. a character is
 //! >= 128)
-bool string_copy(const char *source, char *dest, size_t max_size, bool allow_unicode);
+bool pyapi3_string_copy(const char *source, char *dest, size_t max_size, bool allow_unicode);
 #ifdef HAVE_HGE
 //! Converts a hge to a string and writes it into the string "str"
 int hge_to_string(char *str, hge);

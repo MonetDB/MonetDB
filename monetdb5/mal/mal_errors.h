@@ -130,7 +130,9 @@
 #define XML_ILLEGAL_ATTRIBUTE "Illegal attribute"
 #define XML_ILLEGAL_CONTENT "Illegal content"
 
-#define GDK_EXCEPTION "GDK reported error."
+/* GDK_EXCEPTION should be by itself, i.e. not concatenated with some
+ * other string; to enforce this we have the parentheses */
+#define GDK_EXCEPTION ("GDK reported error.")
 #define MAL_DEPRECATED "Deprecated MAL operation."
 
 #define TYPE_NOT_SUPPORTED "Type is not supported"

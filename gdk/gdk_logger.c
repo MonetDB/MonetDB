@@ -169,7 +169,7 @@ logbat_new(int tt, BUN size, role_t role)
 		if (role == PERSISTENT)
 			BATmode(nb, false);
 	} else {
-		fprintf(stderr, "!ERROR: logbat_new: creating new BAT[void:%s]#" BUNFMT " failed\n", ATOMname(tt), size);
+		TRC_CRITICAL(GDK, "creating new BAT[void:%s]#" BUNFMT " failed\n", ATOMname(tt), size);
 	}
 	return nb;
 }
@@ -190,7 +190,7 @@ log_write_format(logger *lg, logformat *data)
 	if (mnstr_write(lg->output_log, &data->flag, 1, 1) == 1 &&
 	    mnstr_writeInt(lg->output_log, data->id))
 		return GDK_SUCCEED;
-	fprintf(stderr, "!ERROR: log_write_format: write failed\n");
+	TRC_CRITICAL(GDK, "write failed\n");
 	return GDK_FAIL;
 }
 
@@ -237,7 +237,7 @@ log_read_seq(logger *lg, logformat *l)
 
 	assert(!lg->inmemory);
 	if (!mnstr_readLng(lg->input_log, &val)) {
-		fprintf(stderr, "!ERROR: log_read_seq: read failed\n");
+		TRC_CRITICAL(GDK, "read failed\n");
 		return LOG_EOF;
 	}
 
@@ -266,7 +266,7 @@ log_write_id(logger *lg, int id)
 	assert(id >= 0);
 	if (mnstr_writeInt(lg->output_log, id))
 		return GDK_SUCCEED;
-	fprintf(stderr, "!ERROR: log_write_id: write failed\n");
+	TRC_CRITICAL(GDK, "write failed\n");
 	return GDK_FAIL;
 }
 
@@ -275,7 +275,7 @@ log_read_id(logger *lg, log_id *id)
 {
 	assert(!lg->inmemory);
 	if (mnstr_readInt(lg->input_log, id) != 1) {
-		fprintf(stderr, "!ERROR: log_read_id: read failed\n");
+		TRC_CRITICAL(GDK, "read failed\n");
 		return LOG_EOF;
 	}
 	return LOG_OK;
@@ -808,11 +808,11 @@ logger_open_output(logger *lg)
 	}
 	len = snprintf(id, sizeof(id), LLFMT, lg->id);
 	if (len == -1 || len >= BUFSIZ) {
-		fprintf(stderr, "!ERROR: logger_open: filename is too large\n");
+		TRC_CRITICAL(GDK, "filename is too large\n");
 		return GDK_FAIL;
 	}
 	if (!(filename = GDKfilepath(BBPselectfarm(PERSISTENT, 0, offheap), lg->dir, LOGFILE, id))) {
-		fprintf(stderr, "!ERROR: logger_open: allocation failure\n");
+		TRC_CRITICAL(GDK, "allocation failure\n");
 		return GDK_FAIL;
 	}
 
@@ -824,7 +824,7 @@ logger_open_output(logger *lg)
 	lg->end = 0;
 
 	if (lg->output_log == NULL || mnstr_errnr(lg->output_log)) {
-		fprintf(stderr, "!ERROR: logger_open: creating %s failed\n", filename);
+		TRC_CRITICAL(GDK, "creating %s failed\n", filename);
 		GDKfree(filename);
 		return GDK_FAIL;
 	}
@@ -1342,7 +1342,7 @@ bm_subcommit(logger *lg)
 	GDKfree(n);
 	GDKfree(sizes);
 	if (res != GDK_SUCCEED)
-		fprintf(stderr, "!ERROR: bm_subcommit: commit failed\n");
+		TRC_CRITICAL(GDK, "commit failed\n");
 	return res;
 }
 
@@ -1683,13 +1683,13 @@ logger_new(int debug, const char *fn, const char *logdir, int version, preversio
 	char filename[FILENAME_MAX];
 
 	if (!GDKinmemory() && MT_path_absolute(logdir)) {
-		fprintf(stderr, "!ERROR: logger_new: logdir must be relative path\n");
+		TRC_CRITICAL(GDK, "logdir must be relative path\n");
 		return NULL;
 	}
 
 	lg = GDKmalloc(sizeof(struct logger));
 	if (lg == NULL) {
-		fprintf(stderr, "!ERROR: logger_new: allocating logger structure failed\n");
+		TRC_CRITICAL(GDK, "allocating logger structure failed\n");
 		return NULL;
 	}
 
@@ -1708,7 +1708,7 @@ logger_new(int debug, const char *fn, const char *logdir, int version, preversio
 	/* probably open file and check version first, then call call old logger code */
 	len = snprintf(filename, sizeof(filename), "%s%c%s%c", logdir, DIR_SEP, fn, DIR_SEP);
 	if (len == -1 || len >= FILENAME_MAX) {
-		fprintf(stderr, "!ERROR: logger_new: filename is too large\n");
+		TRC_CRITICAL(GDK, "filename is too large\n");
 		GDKfree(lg);
 		return NULL;
 	}
@@ -1717,7 +1717,7 @@ logger_new(int debug, const char *fn, const char *logdir, int version, preversio
 	lg->bufsize = 64*1024;
 	lg->buf = GDKmalloc(lg->bufsize);
 	if (lg->fn == NULL || lg->dir == NULL || lg->buf == NULL) {
-		fprintf(stderr, "!ERROR: logger_new: strdup failed\n");
+		TRC_CRITICAL(GDK, "strdup failed\n");
 		GDKfree(lg->fn);
 		GDKfree(lg->dir);
 		GDKfree(lg->buf);
@@ -1814,7 +1814,7 @@ logger_flush(logger *lg)
 		int len = snprintf(id, sizeof(id), LLFMT, lg->saved_id+1);
 
 		if (len == -1 || len >= BUFSIZ) {
-			fprintf(stderr, "!ERROR: logger_open: filename is too large\n");
+			TRC_CRITICAL(GDK, "log_id filename is too large\n");
 			return GDK_FAIL;
 		}
 		if (!(filename = GDKfilepath(BBPselectfarm(PERSISTENT, 0, offheap), lg->dir, LOGFILE, id)))
@@ -1842,7 +1842,7 @@ logger_flush(logger *lg)
 	if (res != LOG_ERR) {
 		lg->saved_id++;
 		if (logger_commit(lg) != GDK_SUCCEED) {
-			fprintf(stderr, "!ERROR: logger_flush: logger_commit failed\n");
+			TRC_ERROR(GDK, "failed to commit");
 			res = LOG_ERR;
 		}
 
@@ -1918,7 +1918,7 @@ log_bat_transient(logger *lg, int id)
 		return GDK_SUCCEED;
 
 	if (log_write_format(lg, &l) != GDK_SUCCEED) {
-		fprintf(stderr, "!ERROR: log_bat_transient: write failed\n");
+		TRC_CRITICAL(GDK, "write failed\n");
 		return GDK_FAIL;
 	}
 	if (lg->debug & 1)
@@ -1982,7 +1982,7 @@ _log_bat(logger *lg, BAT *b, log_id id, lng offset, lng cnt, int sliced)
 		fprintf(stderr, "#Logged %d " LLFMT " inserts\n", id, nr);
 
 	if (ok != GDK_SUCCEED)
-		fprintf(stderr, "!ERROR: log_bat: write failed\n");
+		TRC_CRITICAL(GDK, "write failed\n");
 	return ok;
 }
 
@@ -2041,7 +2041,7 @@ log_delta(logger *lg, BAT *uid, BAT *uval, log_id id)
 		fprintf(stderr, "#Logged %d " LLFMT " inserts\n", id, nr);
 
 	if (ok != GDK_SUCCEED)
-		fprintf(stderr, "!ERROR: log_delta: write failed\n");
+		TRC_CRITICAL(GDK, "write failed\n");
 	return ok;
 }
 
@@ -2118,7 +2118,7 @@ log_tend(logger *lg)
 	    mnstr_flush(lg->output_log) ||
 	    (!(GDKdebug & NOSYNCMASK) && mnstr_fsync(lg->output_log)) ||
 	    pre_allocate(lg) != GDK_SUCCEED) {
-		fprintf(stderr, "!ERROR: log_tend: write failed\n");
+		TRC_CRITICAL(GDK, "write failed\n");
 		return GDK_FAIL;
 	}
 	return GDK_SUCCEED;
@@ -2141,7 +2141,7 @@ log_sequence_(logger *lg, int seq, lng val, int flush)
 	    !mnstr_writeLng(lg->output_log, val) ||
 	    (flush && mnstr_flush(lg->output_log)) ||
 	    (flush && !(GDKdebug & NOSYNCMASK) && mnstr_fsync(lg->output_log))) {
-		fprintf(stderr, "!ERROR: log_sequence_: write failed\n");
+		TRC_CRITICAL(GDK, "write failed\n");
 		return GDK_FAIL;
 	}
 	return GDK_SUCCEED;

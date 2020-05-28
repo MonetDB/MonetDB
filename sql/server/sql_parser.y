@@ -3614,24 +3614,8 @@ predicate:
  ;
 
 pred_exp:
-    NOT pred_exp 
-		{ $$ = $2;
-
-		  if ($$->token == SQL_EXISTS)
-			$$->token = SQL_NOT_EXISTS;
-		  else if ($$->token == SQL_NOT_EXISTS)
-			$$->token = SQL_EXISTS;
-		  else if ($$->token == SQL_NOT_BETWEEN)
-			$$->token = SQL_BETWEEN;
-		  else if ($$->token == SQL_BETWEEN)
-			$$->token = SQL_NOT_BETWEEN;
-		  else if ($$->token == SQL_NOT_LIKE)
-			$$->token = SQL_LIKE;
-		  else if ($$->token == SQL_LIKE)
-			$$->token = SQL_NOT_LIKE;
-		  else
-			$$ = _symbol_create_symbol(SQL_NOT, $2); }
- |   predicate	{ $$ = $1; }
+    NOT pred_exp { $$ = _symbol_create_symbol(SQL_NOT, $2); }
+ |  predicate	 { $$ = $1; }
  ;
 
 comparison_predicate:

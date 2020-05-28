@@ -38,6 +38,7 @@ mappings = {
     'any_2': 'void',
     'any_3': 'void',
     'any_4': 'void',
+    'any': 'void',
     'blob': 'blob',
 }
 cmappings = {
