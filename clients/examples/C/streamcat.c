@@ -80,6 +80,8 @@ croak(int status, const char *msg, ...)
 int
 main(int argc, char *argv[])
 {
+	mnstr_init();
+
 	if (argc < 2)
 		croak(1, NULL);
 
@@ -136,8 +138,10 @@ int cmd_read(char *argv[])
 		croak(1, "Unknown opener '%s'", opener_name);
 
 	s = opener(filename);
-	if (s == NULL)
-		croak(2, "Opener %s did not return a stream", opener_name);
+	if (s == NULL) {
+		char *msg = mnstr_error(NULL);
+		croak(2, "Opener %s failed: %s", opener_name, msg ? msg : "");
+	}
 
 	for (; *arg != NULL; arg++) {
 		if (arg[0][0] == '-')
@@ -231,8 +235,10 @@ int cmd_write(char *argv[])
 		croak(1, "Unknown opener '%s'", opener_name);
 
 	s = opener(filename);
-	if (s == NULL)
-		croak(2, "Opener %s did not return a stream", opener_name);
+	if (s == NULL) {
+		char *msg = mnstr_error(NULL);
+		croak(2, "Opener %s failed: %s", opener_name, msg ? msg : "");
+	}
 
 	for (; *arg != NULL; arg++) {
 		if (arg[0][0] == '-')
@@ -383,8 +389,6 @@ static stream *
 opener_wstream(char *filename)
 {
 	stream *s = open_wstream(filename);
-	if (s == NULL)
-		croak(2, "Error opening file '%s': %s", filename, strerror(errno));
 	return s;
 }
 
@@ -393,8 +397,6 @@ static stream *
 opener_wastream(char *filename)
 {
 	stream *s = open_wastream(filename);
-	if (s == NULL)
-		croak(2, "Error opening file '%s': %s", filename, strerror(errno));
 	return s;
 }
 

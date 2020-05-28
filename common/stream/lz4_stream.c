@@ -187,6 +187,7 @@ setup_decompression(stream *inner, pump_state *state)
 		&inner_state->ctx.d, LZ4F_VERSION);
 	if (LZ4F_isError(ret)) {
 		free(buf);
+		mnstr_set_open_error(inner->name, 0, "failed to initialize lz4: %s", LZ4F_getErrorName(ret));
 		return NULL;
 	}
 
@@ -245,6 +246,7 @@ setup_compression(stream *inner, pump_state *state, int level)
 	if (LZ4F_isError(nwritten)) {
 		LZ4F_freeCompressionContext(inner_state->ctx.c);
 		free(buffer);
+		mnstr_set_open_error(inner->name, 0, "failed to initialize lz4: %s", LZ4F_getErrorName(ret));
 		return NULL;
 	}
 	inner_state->dst_win.start += nwritten;
@@ -363,11 +365,13 @@ lz4_stream(stream *inner, int preset)
 {
 	(void) inner;
 	(void) preset;
+	mnstr_set_open_error(url, 0, "LZ4 support has been left out of this MonetDB");
 	return NULL;
 }
 stream *open_lz4rstream(const char *filename)
 {
 	(void) filename;
+	mnstr_set_open_error(url, 0, "LZ4 support has been left out of this MonetDB");
 	return NULL;
 }
 
@@ -375,12 +379,14 @@ stream *open_lz4wstream(const char *filename, const char *mode)
 {
 	(void) filename;
 	(void) mode;
+	mnstr_set_open_error(url, 0, "LZ4 support has been left out of this MonetDB");
 	return NULL;
 }
 
 stream *open_lz4rastream(const char *filename)
 {
 	(void) filename;
+	mnstr_set_open_error(url, 0, "LZ4 support has been left out of this MonetDB");
 	return NULL;
 }
 
@@ -388,6 +394,7 @@ stream *open_lz4wastream(const char *filename, const char *mode)
 {
 	(void) filename;
 	(void) mode;
+	mnstr_set_open_error(url, 0, "LZ4 support has been left out of this MonetDB");
 	return NULL;
 }
 

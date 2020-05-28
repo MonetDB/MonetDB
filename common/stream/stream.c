@@ -55,6 +55,44 @@
 #include "stream.h"
 #include "stream_internal.h"
 
+#ifdef HAVE_PTHREAD_H
+#include <pthread.h>
+#endif
+
+struct tl_error_buf {
+	char msg[1024];
+};
+
+static int tl_error_init(void);
+static struct tl_error_buf *get_tl_error_buf(void);
+
+
+static pthread_key_t tl_error_key;
+
+static int
+tl_error_init(void)
+{
+	if (pthread_key_create(&tl_error_key, free) < 0)
+		return -1;
+	return 0;
+}
+
+static struct tl_error_buf*
+get_tl_error_buf(void)
+{
+	struct tl_error_buf *p = pthread_getspecific(tl_error_key);
+	if (p == NULL) {
+		p = malloc(sizeof(*p));
+		if (p == NULL)
+			return NULL;
+		*p = (struct tl_error_buf) { 0 };
+		pthread_setspecific(tl_error_key, p);
+		struct tl_error_buf *second_attempt = pthread_getspecific(tl_error_key);
+		assert(p == second_attempt);
+	}
+	return p;
+}
+
 int
 mnstr_init(void)
 {
@@ -62,6 +100,9 @@ mnstr_init(void)
 
 	if (ATOMIC_TAS(&inited))
 		return 0;
+
+	if (tl_error_init()< 0)
+		return -1;
 
 #ifdef NATIVE_WIN32
 	{
@@ -238,7 +279,7 @@ mnstr_set_error(stream *s, mnstr_error_kind kind, const char *fmt, ...)
 	va_end(ap);
 }
 
-static void my_strerror_r(int error_nr, char *buf, size_t len);
+static size_t my_strerror_r(int error_nr, char *buf, size_t len);
 
 void
 mnstr_set_error_errno(stream *s, mnstr_error_kind kind, const char *fmt, ...)
@@ -253,11 +294,50 @@ mnstr_set_error_errno(stream *s, mnstr_error_kind kind, const char *fmt, ...)
 	char *end = &s->errmsg[0] + sizeof(s->errmsg);
 	if (end - start >= 3) {
 		start = stpcpy(start, ": ");
-		my_strerror_r(errno, start, end - start);
+		start += my_strerror_r(errno, start, end - start);
 	}
 }
 
-static void
+
+void
+mnstr_set_open_error(const char *name, int errnr, const char *fmt, ...)
+{
+	va_list ap;
+
+	struct tl_error_buf *buf = get_tl_error_buf();
+	if (buf == NULL)
+		return; // hopeless
+
+	if (errnr == 0 && fmt == NULL) {
+		buf->msg[0] = '\0';
+		return;
+	}
+
+	char *start = &buf->msg[0];
+	char *end = start + sizeof(buf->msg);
+
+	if (name != NULL)
+		start += snprintf(start, end - start, "when opening %s: ", name);
+	if (start >= end - 1)
+		return;
+
+	if (fmt != NULL) {
+		va_start(ap, fmt);
+		start += vsnprintf(start, end - start, fmt, ap);
+		va_end(ap);
+	}
+	if (start >= end - 1)
+		return;
+
+	if (errnr != 0 && end - start >= 3) {
+		start = stpcpy(start, ": ");
+		start += my_strerror_r(errno, start, end - start);
+	}
+	if (start >= end - 1)
+		return;
+}
+
+static size_t
 my_strerror_r(int error_nr, char *buf, size_t buflen)
 {
 	// Three cases:
@@ -284,6 +364,9 @@ my_strerror_r(int error_nr, char *buf, size_t buflen)
 		assert(size <= buflen);
 		// strerror_r may have return a pointer to/into the buffer
 		memmove(buf, ret, size);
+		return size - 1;
+	} else {
+		return strlen(buf);
 	}
 }
 
@@ -300,8 +383,13 @@ mnstr_error(const stream *s)
 {
 	char buf[200];
 
-	if (s == NULL)
-		return "Connection terminated";
+	if (s == NULL) {
+		struct tl_error_buf *b = get_tl_error_buf();
+		if (b != NULL)
+			return strdup(b->msg);
+		else
+			return strdup("Connection terminated?"); // backward compatible...
+	}
 
 	if (s->errkind == MNSTR_NO__ERROR)
 		return strdup("no error");
@@ -531,10 +619,14 @@ create_stream(const char *name)
 {
 	stream *s;
 
-	if (name == NULL)
+	if (name == NULL) {
+		mnstr_set_open_error(NULL, 0, "internal error: name not set");
 		return NULL;
-	if ((s = (stream *) malloc(sizeof(*s))) == NULL)
+	}
+	if ((s = (stream *) malloc(sizeof(*s))) == NULL) {
+		mnstr_set_open_error(name, errno, "malloc failed");
 		return NULL;
+	}
 	*s = (stream) {
 		.swapbytes = false,
 		.readonly = true,
@@ -547,12 +639,14 @@ create_stream(const char *name)
 	};
 	if(s->name == NULL) {
 		free(s);
+		mnstr_set_open_error(name, errno, "malloc failed");
 		return NULL;
 	}
 #ifdef STREAM_DEBUG
 	fprintf(stderr, "create_stream %s -> %p\n",
 		name ? name : "<unnamed>", s);
 #endif
+	mnstr_set_open_error(NULL, 0, NULL); // clear the error
 	return s;
 }
 

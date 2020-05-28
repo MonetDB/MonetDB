@@ -348,6 +348,7 @@ block_stream(stream *s)
 		return NULL;
 	if ((b = bs_create()) == NULL) {
 		destroy_stream(ns);
+		mnstr_set_open_error(s->name, 0, "bs_create failed");
 		return NULL;
 	}
 	/* blocksizes have a fixed little endian byteorder */

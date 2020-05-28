@@ -175,8 +175,10 @@ open_urlstream(const char *url)
 	CURLMsg *msg;
 #endif
 
-	if ((c = malloc(sizeof(*c))) == NULL)
+	if ((c = malloc(sizeof(*c))) == NULL) {
+		mnstr_set_open_error(url, errno, NULL);
 		return NULL;
+	}
 	*c = (struct curl_data) {
 		.running = 1,
 	};
@@ -197,6 +199,7 @@ open_urlstream(const char *url)
 	if ((c->handle = curl_easy_init()) == NULL) {
 		free(c);
 		destroy_stream(s);
+		mnstr_set_open_error(url, 0, "curl_easy_init failed");
 		return NULL;
 	}
 	s->stream_data.p = (void *) c;
@@ -233,8 +236,10 @@ open_urlstream(const char *url)
 		/* unlock access to curl_handles */
 	}
 #else
-	if (curl_easy_perform(c->handle) != CURLE_OK) {
+	CURLcode ret = curl_easy_perform(c->handle);
+	if (ret != CURLE_OK) {
 		curl_destroy(s);
+		mnstr_set_open_error(url, 0, "curl_easy_perform: %s", curl_easy_strerror(ret));
 		return NULL;
 	}
 	curl_easy_cleanup(c->handle);
@@ -258,6 +263,7 @@ open_urlstream(const char *url)
 #endif
 		return open_rastream(url);
 	}
+	mnstr_set_open_error(url, 0, "Remote URL support has been left out of this MonetDB");
 	return NULL;
 }
 #endif /* HAVE_CURL */

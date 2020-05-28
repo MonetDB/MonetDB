@@ -178,6 +178,10 @@ void mnstr_set_error_errno(stream *s, mnstr_error_kind kind, const char *fmt, ..
 
 void mnstr_copy_error(stream *dst, stream *src);
 
+void mnstr_set_open_error(const char *name, int errnr, const char *fmt, ...)
+	__attribute__((__format__(__printf__, 3, 4)));
+
+
 /* used to be static: */
 
 stream *create_stream(const char *name);

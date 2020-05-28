@@ -152,8 +152,10 @@ buffer_rastream(buffer *restrict b, const char *restrict name)
 {
 	stream *s;
 
-	if (b == NULL || name == NULL)
+	if (b == NULL || name == NULL) {
+		mnstr_set_open_error(name, 0, "no buffer or no name");
 		return NULL;
+	}
 #ifdef STREAM_DEBUG
 	fprintf(stderr, "buffer_rastream %s\n", name);
 #endif
@@ -173,8 +175,10 @@ buffer_wastream(buffer *restrict b, const char *restrict name)
 {
 	stream *s;
 
-	if (b == NULL || name == NULL)
+	if (b == NULL || name == NULL) {
+		mnstr_set_open_error(name, 0, "no buffer or no name");
 		return NULL;
+	}
 #ifdef STREAM_DEBUG
 	fprintf(stderr, "buffer_wastream %s\n", name);
 #endif

@@ -143,9 +143,16 @@ gz_stream(stream *inner, int level)
 		ret = deflateInit2(&gz->strm, level, Z_DEFLATED, 15 | 16, 8, Z_DEFAULT_STRATEGY);
 	}
 
+	if (ret != LZMA_OK) {
+		free(gz);
+		free(state);
+		mnstr_set_open_error(inner->name, 0, "failed to initialize gz stream: code %d", (int)ret);
+		return NULL;
+	}
+
 	stream *s = pump_stream(inner, state);
 
-	if (ret != LZMA_OK || s == NULL) {
+	if (s == NULL) {
 		gz->indeflateEnd(&gz->strm);
 		free(gz);
 		free(state);
@@ -223,25 +230,30 @@ gz_stream(stream *inner, int preset)
 {
 	(void) inner;
 	(void) preset;
+	mnstr_set_open_error(url, 0, "GZ support has been left out of this MonetDB");
 	return NULL;
 }
 stream *open_gzrstream(const char *filename)
 {
+	mnstr_set_open_error(url, 0, "GZ support has been left out of this MonetDB");
 	return NULL;
 }
 
 stream *open_gzwstream(const char *filename, const char *mode)
 {
+	mnstr_set_open_error(url, 0, "GZ support has been left out of this MonetDB");
 	return NULL;
 }
 
 stream *open_gzrastream(const char *filename)
 {
+	mnstr_set_open_error(url, 0, "GZ support has been left out of this MonetDB");
 	return NULL;
 }
 
 stream *open_gzwastream(const char *filename, const char *mode)
 {
+	mnstr_set_open_error(url, 0, "GZ support has been left out of this MonetDB");
 	return NULL;
 }
 

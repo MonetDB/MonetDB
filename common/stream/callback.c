@@ -70,6 +70,7 @@ callback_stream(void *restrict private,
 	cb = malloc(sizeof(struct cbstream));
 	if (cb == NULL) {
 		destroy_stream(s);
+		mnstr_set_open_error(name, errno, NULL);
 		return NULL;
 	}
 	*cb = (struct cbstream) {

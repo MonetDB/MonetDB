@@ -213,25 +213,30 @@ xz_stream(stream *inner, int preset)
 {
 	(void) inner;
 	(void) preset;
+	mnstr_set_open_error(url, 0, "XZ/LZMA support has been left out of this MonetDB");
 	return NULL;
 }
 stream *open_xzrstream(const char *filename)
 {
+	mnstr_set_open_error(url, 0, "XZ/LZMA support has been left out of this MonetDB");
 	return NULL;
 }
 
 stream *open_xzwstream(const char *filename, const char *mode)
 {
+	mnstr_set_open_error(url, 0, "XZ/LZMA support has been left out of this MonetDB");
 	return NULL;
 }
 
 stream *open_xzrastream(const char *filename)
 {
+	mnstr_set_open_error(url, 0, "XZ/LZMA support has been left out of this MonetDB");
 	return NULL;
 }
 
 stream *open_xzwastream(const char *filename, const char *mode)
 {
+	mnstr_set_open_error(url, 0, "XZ/LZMA support has been left out of this MonetDB");
 	return NULL;
 }
 

@@ -633,6 +633,7 @@ block_stream2(stream *s, size_t bufsiz, compression_method comp)
 		return NULL;
 	if ((b = bs2_create(s, bufsiz, comp)) == NULL) {
 		destroy_stream(ns);
+		mnstr_set_open_error(s->name, 0, "bs2_create failed");
 		return NULL;
 	}
 	/* blocksizes have a fixed little endian byteorder */

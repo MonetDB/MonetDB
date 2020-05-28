@@ -223,8 +223,10 @@ skip_bom(stream *s)
 	inner_state_t *ist = state->inner_state;
 
 	ssize_t nread = mnstr_read(inner, ist->putback_buf, 1, UTF8BOMLENGTH);
-	if (nread < 0)
+	if (nread < 0) {
+		mnstr_copy_error(s, inner);
 		return nread;
+	}
 
 	if (nread == UTF8BOMLENGTH &&  memcmp(ist->putback_buf, UTF8BOM, nread) == 0) {
 		// Bingo! Skip it!
@@ -245,10 +247,15 @@ stream *
 create_text_stream(stream *inner)
 {
 	inner_state_t *inner_state = calloc(1, sizeof(inner_state_t));
+	if (inner_state == NULL) {
+		mnstr_set_open_error(inner->name, errno, NULL);
+		return NULL;
+	}
+
 	pump_state *state = calloc(1, sizeof(pump_state));
 	if (inner_state == NULL || state == NULL) {
 		free(inner_state);
-		free(state);
+		mnstr_set_open_error(inner->name, errno, NULL);
 		return NULL;
 	}
 
@@ -291,6 +298,7 @@ create_text_stream(stream *inner)
 		if (skip_bom(s) < 0) {
 			free(inner_state);
 			free(state);
+			mnstr_set_open_error(inner->name, 0, "while looking for a byte order mark: %s", mnstr_error(s));
 			destroy_stream(s);
 			return NULL;
 		}

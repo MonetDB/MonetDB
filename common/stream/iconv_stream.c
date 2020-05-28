@@ -264,6 +264,7 @@ ic_open(iconv_t cd, stream *restrict ss, const char *restrict name)
 	ic = malloc(sizeof(struct icstream));
 	if (ic == NULL) {
 		mnstr_destroy(s);
+		mnstr_set_open_error(s->name, errno, NULL);
 		return NULL;
 	}
 	s->stream_data.p = ic;
@@ -338,6 +339,7 @@ iconv_rstream(stream *restrict ss, const char *restrict charset, const char *res
 	    strcmp(charset, "UTF8") == 0)
 		return ss;
 
+	mnstr_set_open_error(url, 0, "ICONV support has been left out of this MonetDB");
 	return NULL;
 }
 
@@ -352,6 +354,7 @@ iconv_wstream(stream *restrict ss, const char *restrict charset, const char *res
 	    strcmp(charset, "UTF8") == 0)
 		return ss;
 
+	mnstr_set_open_error(url, 0, "ICONV support has been left out of this MonetDB");
 	return NULL;
 }
 #endif /* HAVE_ICONV */

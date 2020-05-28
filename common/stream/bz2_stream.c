@@ -156,9 +156,16 @@ bz2_stream(stream *inner, int level)
 		ret = BZ2_bzCompressInit(&bz->strm, level, 0, 0);
 	}
 
+	if (ret != BZ_OK) {
+		free(bz);
+		free(state);
+		mnstr_set_open_error(inner->name, 0, "failed to initialize bz2: code %d", ret);
+		return NULL;
+	}
+
 	stream *s = pump_stream(inner, state);
 
-	if (ret != BZ_OK || s == NULL) {
+	if (s == NULL) {
 		bz->end(&bz->strm);
 		free(bz);
 		free(state);
@@ -236,25 +243,31 @@ bz2_stream(stream *inner, int preset)
 {
 	(void) inner;
 	(void) preset;
+	mnstr_set_open_error(url, 0, "BZIP2 support has been left out of this MonetDB");
 	return NULL;
 }
+
 stream *open_bzrstream(const char *filename)
 {
+	mnstr_set_open_error(url, 0, "BZIP2 support has been left out of this MonetDB");
 	return NULL;
 }
 
 stream *open_bzwstream(const char *filename, const char *mode)
 {
+	mnstr_set_open_error(url, 0, "BZIP2 support has been left out of this MonetDB");
 	return NULL;
 }
 
 stream *open_bzrastream(const char *filename)
 {
+	mnstr_set_open_error(url, 0, "BZIP2 support has been left out of this MonetDB");
 	return NULL;
 }
 
 stream *open_bzwastream(const char *filename, const char *mode)
 {
+	mnstr_set_open_error(url, 0, "BZIP2 support has been left out of this MonetDB");
 	return NULL;
 }
 

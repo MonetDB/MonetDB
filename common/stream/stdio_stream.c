@@ -640,6 +640,7 @@ open_stream(const char *restrict filename, const char *restrict flags)
 	}
 #endif
 	if (fp == NULL) {
+		mnstr_set_open_error(filename, errno, "open failed");
 		destroy_stream(s);
 		return NULL;
 	}

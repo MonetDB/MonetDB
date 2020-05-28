@@ -302,8 +302,10 @@ socket_open(SOCKET sock, const char *name)
 	stream *s;
 	int domain = 0;
 
-	if (sock == INVALID_SOCKET)
+	if (sock == INVALID_SOCKET) {
+		mnstr_set_open_error(name, 0, "invalid socket");
 		return NULL;
+	}
 	if ((s = create_stream(name)) == NULL)
 		return NULL;
 	s->read = socket_read;
