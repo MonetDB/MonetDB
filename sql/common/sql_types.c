@@ -1347,7 +1347,7 @@ sqltypeinit( sql_allocator *sa)
 	sql_create_aggr(sa, "prod", "aggr", "prod", LargestINT, 1, INT);
 	sql_create_aggr(sa, "prod", "aggr", "prod", LargestINT, 1, LNG);
 #ifdef HAVE_HGE
-	if (HAVE_HGE)
+	if (have_hge)
 		sql_create_aggr(sa, "prod", "aggr", "prod", LargestINT, 1, HGE);
 #endif
 
