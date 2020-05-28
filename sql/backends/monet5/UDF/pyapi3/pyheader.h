@@ -66,9 +66,6 @@
 #define pyapi_export extern
 #endif
 
-// Fixes for Python 2 <> Python 3
-#if PY_MAJOR_VERSION >= 3
-#define IS_PY3K
 #define PyString_FromString PyUnicode_FromString
 #define PyString_Check PyUnicode_Check
 #define PyString_CheckExact PyUnicode_CheckExact
@@ -79,10 +76,6 @@
 #define PyInt_Check PyLong_Check
 #define PythonUnicodeType Py_UNICODE
 #define PYFUNCNAME(name) PYAPI3##name
-#else
-#define PythonUnicodeType Py_UNICODE
-#define PYFUNCNAME(name) PYAPI2##name
-#endif
 
 #if defined(WIN32) && !defined(HAVE_EMBEDDED)
 // On Windows we need to dynamically load any SQL functions we use

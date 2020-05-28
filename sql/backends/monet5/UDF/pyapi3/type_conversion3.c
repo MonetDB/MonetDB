@@ -12,13 +12,10 @@
 
 #include <longintrepr.h>
 
-#if PY_MAJOR_VERSION >= 3
-#define IS_PY3K
 #define PyInt_Check PyLong_Check
 #define PyString_CheckExact PyUnicode_CheckExact
-#endif
 
-bool string_copy(const char *source, char *dest, size_t max_size, bool allow_unicode)
+bool pyapi3_string_copy(const char *source, char *dest, size_t max_size, bool allow_unicode)
 {
 	size_t i;
 	for (i = 0; i < max_size; i++) {
@@ -67,11 +64,7 @@ size_t pyobject_get_size(PyObject *obj)
 {
 	size_t size = 256;
 
-	if (
-#ifndef IS_PY3K
-	    PyString_CheckExact(obj) ||
-#endif
-	    PyByteArray_CheckExact(obj)) {
+	if (PyByteArray_CheckExact(obj)) {
 		size = Py_SIZE(obj); // Normal strings are 1 byte per character
 	} else if (PyUnicode_CheckExact(obj)) {
 		size = Py_SIZE(obj) * 4; // UTF32 is 4 bytes per character
@@ -92,12 +85,6 @@ str pyobject_to_blob(PyObject **ptr, size_t maxsize, blob **value) {
 	obj = *ptr;
 	
 	(void)maxsize;
-#ifndef IS_PY3K
-	if (PyString_CheckExact(obj)) {
-		size = PyString_Size(obj);
-		bytes_data = ((PyStringObject *)obj)->ob_sval;
-	} else
-#endif
 	if (PyByteArray_CheckExact(obj)) {
 		size = PyByteArray_Size(obj);
 		bytes_data = ((PyByteArrayObject *)obj)->ob_bytes;
@@ -145,45 +132,24 @@ str pyobject_to_str(PyObject **ptr, size_t maxsize, str *value)
 		len = maxsize;
 	}
 
-#ifndef IS_PY3K
-	if (PyString_CheckExact(obj)) {
-		char *str = ((PyStringObject *)obj)->ob_sval;
-		if (!string_copy(str, utf8_string, len-1, false)) {
-			msg = createException(MAL, "pyapi3.eval",
-								  SQLSTATE(PY000) "Invalid string encoding used. Please return "
-								  "a regular ASCII string, or a Numpy_Unicode "
-								  "object.\n");
-			goto wrapup;
-		}
-	} else
-#endif
-		if (PyByteArray_CheckExact(obj)) {
+	if (PyByteArray_CheckExact(obj)) {
 		char *str = ((PyByteArrayObject *)obj)->ob_bytes;
-		if (!string_copy(str, utf8_string, len-1, false)) {
+		if (!pyapi3_string_copy(str, utf8_string, len-1, false)) {
 			msg = createException(MAL, "pyapi3.eval",
-								  SQLSTATE(PY000) "Invalid string encoding used. Please return "
-								  "a regular ASCII string, or a Numpy_Unicode "
-								  "object.\n");
+				  SQLSTATE(PY000) "Invalid string encoding used. Please return "
+						  "a regular ASCII string, or a Numpy_Unicode "
+						  "object.\n");
 			goto wrapup;
 		}
 	} else if (PyUnicode_CheckExact(obj)) {
-#ifndef IS_PY3K
-		Py_UNICODE *str = (Py_UNICODE *)((PyUnicodeObject *)obj)->str;
-#if Py_UNICODE_SIZE >= 4
-		utf32_to_utf8(0, ((PyUnicodeObject *)obj)->length, utf8_string, str);
-#else
-		ucs2_to_utf8(0, ((PyUnicodeObject *)obj)->length, utf8_string, str);
-#endif
-#else
 		const char *str = PyUnicode_AsUTF8(obj);
-		if (!string_copy(str, utf8_string, len-1, true)) {
+		if (!pyapi3_string_copy(str, utf8_string, len-1, true)) {
 			msg = createException(MAL, "pyapi3.eval",
-								  SQLSTATE(PY000) "Invalid string encoding used. Please return "
-								  "a regular ASCII string, or a Numpy_Unicode "
-								  "object.\n");
+				  SQLSTATE(PY000) "Invalid string encoding used. Please return "
+						  "a regular ASCII string, or a Numpy_Unicode "
+						  "object.\n");
 			goto wrapup;
 		}
-#endif
 	} else if (PyBool_Check(obj) || PyLong_Check(obj) || PyInt_Check(obj) ||
 			   PyFloat_Check(obj)) {
 #ifdef HAVE_HGE
@@ -224,44 +190,6 @@ wrapup:
 		return MAL_SUCCEED;                                                    \
 	}
 
-#ifndef IS_PY3K
-#define PY_TO_(type, inttpe)						\
-str pyobject_to_##type(PyObject **pyobj, size_t maxsize, type *value)	\
-{									\
-	PyObject *ptr = *pyobj;						\
-	str retval = MAL_SUCCEED;						\
-	(void) maxsize;							\
-	if (PyLong_CheckExact(ptr)) {					\
-		PyLongObject *p = (PyLongObject*) ptr;				\
-		inttpe h = 0;							\
-		inttpe prev = 0;						\
-		ssize_t i = Py_SIZE(p);						\
-		int sign = i < 0 ? -1 : 1;					\
-		i *= sign;							\
-		while (--i >= 0) {						\
-			prev = h; (void)prev;					\
-			h = (h << PyLong_SHIFT) + p->ob_digit[i];			\
-			if ((h >> PyLong_SHIFT) != prev) {				\
-				return GDKstrdup("Overflow when converting value.");	\
-			}								\
-		}								\
-		*value = (type)(h * sign);					\
-	} else if (PyInt_CheckExact(ptr) || PyBool_Check(ptr)) {		\
-		*value = (type)((PyIntObject*)ptr)->ob_ival;			\
-	} else if (PyFloat_CheckExact(ptr)) {				\
-		*value = isnan(((PyFloatObject*)ptr)->ob_fval) ? type##_nil : (type) ((PyFloatObject*)ptr)->ob_fval; \
-	} else if (PyString_CheckExact(ptr)) {				\
-		return str_to_##type(((PyStringObject*)ptr)->ob_sval, 0, value); \
-	}  else if (PyByteArray_CheckExact(ptr)) {				\
-		return str_to_##type(((PyByteArrayObject*)ptr)->ob_bytes, 0, value); \
-	} else if (PyUnicode_CheckExact(ptr)) {				\
-		return unicode_to_##type(((PyUnicodeObject*)ptr)->str, 0, value); \
-	} else if (ptr == Py_None) {					\
-		*value = type##_nil;						\
-	}									\
-	return retval;							\
-}
-#else
 #define PY_TO_(type, inttpe)						\
 str pyobject_to_##type(PyObject **pyobj, size_t maxsize, type *value)	\
 {									\
@@ -296,7 +224,6 @@ str pyobject_to_##type(PyObject **pyobj, size_t maxsize, type *value)	\
 	}									\
 	return retval;							\
 }
-#endif
 
 #define CONVERSION_FUNCTION_FACTORY(tpe, inttpe)            \
 	STRING_TO_NUMBER_FACTORY(tpe)                   \
