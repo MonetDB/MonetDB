@@ -238,6 +238,8 @@ mnstr_set_error(stream *s, mnstr_error_kind kind, const char *fmt, ...)
 	va_end(ap);
 }
 
+static void my_strerror_r(int error_nr, char *buf, size_t len);
+
 void
 mnstr_set_error_errno(stream *s, mnstr_error_kind kind, const char *fmt, ...)
 {
@@ -251,9 +253,40 @@ mnstr_set_error_errno(stream *s, mnstr_error_kind kind, const char *fmt, ...)
 	char *end = &s->errmsg[0] + sizeof(s->errmsg);
 	if (end - start >= 3) {
 		start = stpcpy(start, ": ");
-		strerror_r(errno, start, end - start);
+		my_strerror_r(errno, start, end - start);
 	}
 }
+
+static void
+my_strerror_r(int error_nr, char *buf, size_t buflen)
+{
+	// Three cases:
+	// 1. no strerror_r
+	// 2. gnu strerror_r (returns char* and does not always fill buffer)
+	// 3. xsi strerror_r (returns int and always fills the buffer)
+	char *ret;
+#ifndef HAVE_STRERROR_R
+	// Hope for the best
+	ret = strerror(error_nr);
+#else
+#ifdef STRERROR_R_CHAR_P
+	// gnu strerror_r
+	ret = strerror_r(error_nr, buf, buflen);
+#else
+	// standard strerror_r
+	(void) strerror_r(error_nr, buf, buflen);
+	ret = NULL;
+#endif
+#endif
+	if (ret != NULL) {
+		// move to buffer
+		size_t size = strlen(ret) + 1;
+		assert(size <= buflen);
+		// strerror_r may have return a pointer to/into the buffer
+		memmove(buf, ret, size);
+	}
+}
+
 
 
 void mnstr_copy_error(stream *dst, stream *src)
@@ -282,26 +315,23 @@ mnstr_error(const stream *s)
 		assert(0);
 		return NULL;
 	case MNSTR_OPEN_ERROR:
-		snprintf(buf, sizeof(buf), "error could not open",
-			 s->name);
+		snprintf(buf, sizeof(buf), "error could not open");
 		return strdup(buf);
 	case MNSTR_READ_ERROR:
-		snprintf(buf, sizeof(buf), "error reading",
-			 s->name);
+		snprintf(buf, sizeof(buf), "error reading");
 		return strdup(buf);
 	case MNSTR_WRITE_ERROR:
-		snprintf(buf, sizeof(buf), "error writing",
-			 s->name);
+		snprintf(buf, sizeof(buf), "error writing");
 		return strdup(buf);
 	case MNSTR_TIMEOUT:
-		snprintf(buf, sizeof(buf), "timeout", s->name);
+		snprintf(buf, sizeof(buf), "timeout");
 		return strdup(buf);
 	case MNSTR_UNEXPECTED_EOF:
-		snprintf(buf, sizeof(buf), "timeout", s->name);
+		snprintf(buf, sizeof(buf), "timeout");
 		return strdup(buf);
 	}
 
-	snprintf(buf, sizeof(buf), "Unknown error %d", (int)s->errkind, s->name);
+	snprintf(buf, sizeof(buf), "Unknown error %d", (int)s->errkind);
 	return strdup(buf);
 }
 
