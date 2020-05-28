@@ -49,3 +49,4 @@ run_streamcat(text, 'latin1')
 
 # invalid utf-8, expect an error
 run_streamcat(b"M\xc3\xc3NETDB", 'utf-8', b'multibyte sequence')
+
