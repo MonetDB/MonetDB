@@ -73,7 +73,7 @@ typedef struct {
 
 typedef struct {
 	size_t size;
-	void* data;
+	char* data;
 } monetdb_data_blob;
 
 typedef enum  {
