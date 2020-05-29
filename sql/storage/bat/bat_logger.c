@@ -374,7 +374,6 @@ end:
 static gdk_return
 snapshot_wal(stream *plan, const char *db_dir)
 {
-	stream *log = bat_logger->output_log;
 	char log_file[FILENAME_MAX];
 	int len;
 
@@ -385,15 +384,21 @@ snapshot_wal(stream *plan, const char *db_dir)
 	}
 	snapshot_immediate_copy_file(plan, log_file, log_file + strlen(db_dir) + 1);
 
-	len = snprintf(log_file, sizeof(log_file), "%s%s." LLFMT, bat_logger->dir, LOGFILE, bat_logger->id);
-	if (len == -1 || (size_t)len >= sizeof(log_file)) {
-		GDKerror("Could not open %s, filename is too large", log_file);
-		return GDK_FAIL;
+	for (lng id = bat_logger->saved_id+1; id <= bat_logger->id; id++) {
+		struct stat statbuf;
+
+		len = snprintf(log_file, sizeof(log_file), "%s/%s%s." LLFMT, db_dir, bat_logger->dir, LOGFILE, id);
+		if (len == -1 || (size_t)len >= sizeof(log_file)) {
+			GDKerror("Could not open %s, filename is too large", log_file);
+			return GDK_FAIL;
+		}
+		if (stat(log_file, &statbuf) == 0) {
+			snapshot_lazy_copy_file(plan, log_file + strlen(db_dir) + 1, statbuf.st_size);
+		} else {
+			GDKerror("Could not open %s", log_file);
+			return GDK_FAIL;
+		}
 	}
-	uint64_t extent = getFileSize(log);
-
-	snapshot_lazy_copy_file(plan, log_file, extent);
-
 	return GDK_SUCCEED;
 }
 
