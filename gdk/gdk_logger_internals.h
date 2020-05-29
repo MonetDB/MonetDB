@@ -12,7 +12,6 @@
 struct logger {
 	int debug;
 	int version;
-	lng changes;
 	lng id;			/* current log output id */
 	lng saved_id;		/* id of last fully handled log file */
 	int tid;		/* current transaction id */

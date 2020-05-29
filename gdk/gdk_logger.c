@@ -647,7 +647,6 @@ la_apply(logger *lg, logaction *c)
 	default:
 		assert(0);
 	}
-	lg->changes += (ret == GDK_SUCCEED);
 	return ret;
 }
 
@@ -1801,13 +1800,10 @@ logger_flush(logger *lg)
 	if (lg->inmemory || LOG_DISABLED(lg)) {
 		lg->saved_id = lg->id-1;
 		lg->saved_tid = lg->tid-1;
-		lg->changes = 0;
 		return GDK_SUCCEED;
 	}
-	if (lg->saved_id+1 >= lg->id) { /* logger should first release the file */
-		lg->changes -= 1000;
+	if (lg->saved_id+1 >= lg->id) /* logger should first release the file */
 		return GDK_SUCCEED;
-	}
 	if (!lg->input_log) {
 		char *filename;
 		char id[BUFSIZ];
@@ -1859,7 +1855,7 @@ logger_flush(logger *lg)
 lng
 logger_changes(logger *lg)
 {
-	return lg->changes;
+	return (lg->saved_id - lg->id);
 }
 
 int
@@ -1891,7 +1887,6 @@ log_bat_persists(logger *lg, BAT *b, int id)
 
 	l.flag = LOG_CREATE;
 	l.id = id;
-	lg->changes++;
 	if (!lg->inmemory && !LOG_DISABLED(lg)) {
 		if (log_write_format(lg, &l) != GDK_SUCCEED ||
 		    mnstr_write(lg->output_log, &ta, 1, 1) != 1) 
@@ -1912,7 +1907,6 @@ log_bat_transient(logger *lg, int id)
 
 	l.flag = LOG_DESTROY;
 	l.id = id;
-	lg->changes++;
 
 	if (lg->inmemory || LOG_DISABLED(lg))
 		return GDK_SUCCEED;
@@ -1944,7 +1938,6 @@ _log_bat(logger *lg, BAT *b, log_id id, lng offset, lng cnt, int sliced)
 	l.flag = LOG_UPDATE_BULK;
 	l.id = id;
 	nr = cnt;
-	lg->changes += (b->batInserted)?nr:1; /* initial large inserts is counted as 1 change */
 
 	if (LOG_DISABLED(lg) || lg->inmemory || !nr) {
 		/* logging is switched off */
@@ -2010,7 +2003,6 @@ log_delta(logger *lg, BAT *uid, BAT *uval, log_id id)
 	l.id = id;
 	nr = (BUNlast(uval));
 	assert(nr);
-	lg->changes += nr;
 
 	if (LOG_DISABLED(lg) || lg->inmemory) {
 		/* logging is switched off */
@@ -2056,7 +2048,6 @@ log_bat_clear(logger *lg, int id)
 
 	l.flag = LOG_CLEAR;
 	l.id = id;
-	lg->changes++;
 
 	if (lg->debug & 1)
 		fprintf(stderr, "#Logged clear %d\n", id);
@@ -2111,7 +2102,6 @@ log_tend(logger *lg)
 
 	l.flag = LOG_END;
 	l.id = lg->tid;
-	lg->changes++;
 
 	if (res != GDK_SUCCEED ||
 	    log_write_format(lg, &l) != GDK_SUCCEED ||
@@ -2235,7 +2225,6 @@ logger_add_bat(logger *lg, BAT *b, log_id id)
 	if (lg->debug & 1)
 		fprintf(stderr, "#create %d\n", id);
 	assert(log_find(lg->catalog_bid, lg->dcatalog, bid) == BUN_NONE);
-	lg->changes += BATcount(b) + 1000;
 	if (BUNappend(lg->catalog_bid, &bid, false) != GDK_SUCCEED ||
 	    BUNappend(lg->catalog_id, &id, false) != GDK_SUCCEED ||
 	    BUNappend(lg->catalog_cnt, &cnt, false) != GDK_SUCCEED)
@@ -2261,10 +2250,8 @@ logger_del_bat(logger *lg, log_bid bid)
 	if (p >= lg->catalog_bid->batInserted) {
 		BBPrelease(bid);
 	}
-	if (b) {
-		lg->changes += BATcount(b) + 1;
+	if (b)
 		BBPunfix(b->batCacheid);
-	}
 	pos = (oid) p;
 	return BUNappend(lg->dcatalog, &pos, false);
 /*assert(BBP_lrefs(bid) == 0);*/
@@ -2297,7 +2284,6 @@ log_tstart(logger *lg)
 
 	l.flag = LOG_START;
 	l.id = ++lg->tid;
-	lg->changes++;
 
 	if (lg->debug & 1)
 		fprintf(stderr, "#log_tstart %d\n", lg->tid);

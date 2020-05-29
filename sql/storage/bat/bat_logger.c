@@ -477,7 +477,7 @@ snapshot_bats(stream *plan, const char *db_dir)
 		GDKerror("Invalid first line of %s", bbpdir);
 		goto end;
 	}
-	if (gdk_version != 061042U) {
+	if (gdk_version != 061043U) {
 		// If this version number has changed, the structure of BBP.dir 
 		// may have changed. Update this whole function to take this
 		// into account. 
@@ -493,6 +493,12 @@ snapshot_bats(stream *plan, const char *db_dir)
 	}
 	if (mnstr_readline(cat, line, sizeof(line)) < 0) {
 		GDKerror("Couldn't skip the third line of %s", bbpdir);
+		goto end;
+	}
+
+	/* TODO get transaction id and last processed log file id */
+	if (mnstr_readline(cat, line, sizeof(line)) < 0) {
+		GDKerror("Couldn't skip the 4th line of %s", bbpdir);
 		goto end;
 	}
 

@@ -22,6 +22,7 @@
 int catalog_version = 0;
 
 static MT_Lock bs_lock = MT_LOCK_INITIALIZER("bs_lock");
+static MT_Lock flush_lock = MT_LOCK_INITIALIZER("flush_lock");
 static sqlid store_oid = 0;
 static sqlid prev_oid = 0;
 static size_t new_trans_size = 0;
@@ -2015,6 +2016,7 @@ store_init(int debug, store_type store, int readonly, int singleuser, backend_st
 	store_singleuser = singleuser;
 
 	MT_lock_set(&bs_lock);
+	MT_lock_set(&flush_lock);
 
 	/* initialize empty bats */
 	switch (store) {
@@ -2040,59 +2042,11 @@ store_init(int debug, store_type store, int readonly, int singleuser, backend_st
 
 	/* create the initial store structure or re-load previous data */
 	MT_lock_unset(&bs_lock);
+	MT_lock_unset(&flush_lock);
 	return store_load(stk);
 }
 
-#if 0
-static int
-store_needs_vacuum( sql_trans *tr )
-{
-	size_t max_dels = GDKdebug & FORCEMITOMASK ? 1 : 128;
-	sql_schema *s = find_sql_schema(tr, "sys");
-	node *n;
-
-	for ( n = s->tables.set->h; n; n = n->next) {
-		sql_table *t = n->data;
-		sql_column *c = t->columns.set->h->data;
-
-		if (!t->system)
-			continue;
-		/* no inserts, updates and enough deletes ? */
-		if (store_funcs.count_col(tr, c, 1 /*INS*/) == 0 &&
-			/* todo check all updates */
-		    store_funcs.count_col(tr, c, 2 /*UPD*/) == 0 &&
-		    store_funcs.count_del(tr, t, 0) >= max_dels)
-			return 1;
-	}
-	return 0;
-}
-
-static int
-store_vacuum( sql_trans *tr )
-{
-	/* tables */
-	size_t max_dels = GDKdebug & FORCEMITOMASK ? 1 : 128;
-	sql_schema *s = find_sql_schema(tr, "sys");
-	node *n;
-
-	for ( n = s->tables.set->h; n; n = n->next) {
-		sql_table *t = n->data;
-		sql_column *c = t->columns.set->h->data;
-
-		if (!t->system)
-			continue;
-		if (store_funcs.count_col(tr, c, 1 /*INS*/) == 0 &&
-			/* todo check all updates */
-		    store_funcs.count_col(tr, c, 2 /*UPD*/) == 0 &&
-		    store_funcs.count_del(tr, t, 0) >= max_dels)
-			if (table_funcs.table_vacuum(tr, t) != SQL_OK)
-				return -1;
-	}
-	return 0;
-}
-#endif
-
-// All this must only be accessed while holding the bs_lock.
+// All this must only be accessed while holding the flush_lock.
 // The exception is flush_now, which can be set by anyone at any
 // time and therefore needs some special treatment.
 static struct {
@@ -2130,7 +2084,7 @@ flusher_new_cycle(void)
  * be lost.
  *
  * This is done this way because flush_now can be set at any time
- * without first obtaining bs_lock. To avoid time-of-check-to-time-of-use
+ * without first obtaining flush_lock. To avoid time-of-check-to-time-of-use
  * issues, this function both checks and clears the flag.
  */
 static bool
@@ -2188,21 +2142,21 @@ flusher_should_run(void)
 void
 store_exit(void)
 {
-	MT_lock_set(&bs_lock);
+	MT_lock_set(&flush_lock);
 
 	TRC_DEBUG(SQL_STORE, "Store locked\n");
 
 	/* busy wait till the logmanager is ready */
 	while (flusher.working) {
-		MT_lock_unset(&bs_lock);
+		MT_lock_unset(&flush_lock);
 		MT_sleep_ms(100);
-		MT_lock_set(&bs_lock);
+		MT_lock_set(&flush_lock);
 	}
 
 	if (gtrans) {
-		MT_lock_unset(&bs_lock);
+		MT_lock_unset(&flush_lock);
 		sequences_exit();
-		MT_lock_set(&bs_lock);
+		MT_lock_set(&flush_lock);
 	}
 	if (spares > 0)
 		destroy_spare_transactions();
@@ -2223,7 +2177,7 @@ store_exit(void)
 		sa_destroy(store_sa);
 
 	TRC_DEBUG(SQL_STORE, "Store unlocked\n");
-	MT_lock_unset(&bs_lock);
+	MT_lock_unset(&flush_lock);
 	store_initialized=0;
 }
 
@@ -2260,32 +2214,32 @@ store_apply_deltas(void)
 	return res;
 }
 
-/* Call while holding bs_lock */
+/* Call while holding flush_lock */
 static void
 wait_until_flusher_idle(void)
 {
 	while (flusher.working) {
 		const int sleeptime = 100;
-		MT_lock_unset(&bs_lock);
+		MT_lock_unset(&flush_lock);
 		MT_sleep_ms(sleeptime);
-		MT_lock_set(&bs_lock);
+		MT_lock_set(&flush_lock);
 	}
 }
 void
 store_suspend_log(void)
 {
-	MT_lock_set(&bs_lock);
+	MT_lock_set(&flush_lock);
 	flusher.enabled = false;
 	wait_until_flusher_idle();
-	MT_lock_unset(&bs_lock);
+	MT_lock_unset(&flush_lock);
 }
 
 void
 store_resume_log(void)
 {
-	MT_lock_set(&bs_lock);
+	MT_lock_set(&flush_lock);
 	flusher.enabled = true;
-	MT_lock_unset(&bs_lock);
+	MT_lock_unset(&flush_lock);
 }
 
 void
@@ -2294,17 +2248,17 @@ store_manager(void)
 	MT_thread_setworking("sleeping");
 
 	// In the main loop we always hold the lock except when sleeping
-	//MT_lock_set(&bs_lock);
+	MT_lock_set(&flush_lock);
 
 	while (!GDKexiting()) {
 		int res;
 
 		if (!flusher_should_run()) {
 			const int sleeptime = 100;
-			//MT_lock_unset(&bs_lock);
+			MT_lock_unset(&flush_lock);
 			MT_sleep_ms(sleeptime);
 			flusher.countdown_ms -= sleeptime;
-			//MT_lock_set(&bs_lock);
+			MT_lock_set(&flush_lock);
 			continue;
 		}
 
@@ -2312,7 +2266,7 @@ store_manager(void)
 		res = store_apply_deltas();
 
 		if (res != LOG_OK) {
-			//MT_lock_unset(&bs_lock);
+			MT_lock_unset(&flush_lock);
 			GDKfatal("write-ahead logging failure, disk full?");
 		}
 
@@ -2322,7 +2276,7 @@ store_manager(void)
 	}
 
 	// End of loop, end of lock
-	//MT_lock_unset(&bs_lock);
+	MT_lock_unset(&flush_lock);
 }
 
 void
@@ -2332,38 +2286,25 @@ idle_manager(void)
 	const int timeout = GDKdebug & FORCEMITOMASK ? 50 : 5000;
 
 	MT_thread_setworking("sleeping");
+	MT_lock_set(&flush_lock);
+
 	while (!GDKexiting()) {
 		int t;
 
 		for (t = timeout; t > 0; t -= sleeptime) {
+			MT_lock_unset(&flush_lock);
 			MT_sleep_ms(sleeptime);
-			if (GDKexiting())
+			MT_lock_set(&flush_lock);
+			if (GDKexiting()) {
+				MT_lock_unset(&flush_lock);
 				return;
+			}
 		}
 		/* cleanup any collected intermediate storage */
 		store_funcs.cleanup();
-		MT_lock_set(&bs_lock);
-		if (ATOMIC_GET(&store_nr_active) || GDKexiting() /*|| !store_needs_vacuum(gtrans)*/) {
-			MT_lock_unset(&bs_lock);
-			continue;
-		}
-
-#if 0
-		sql_session *s = sql_session_create(gtrans->stk, 0);
-		if (!s) {
-			MT_lock_unset(&bs_lock);
-			continue;
-		}
-		MT_thread_setworking("vacuuming");
-		sql_trans_begin(s);
-		if (store_vacuum( s->tr ) == 0)
-			sql_trans_commit(s->tr);
-		sql_trans_end(s, 1);
-		sql_session_destroy(s);
-#endif
-		MT_lock_unset(&bs_lock);
 		MT_thread_setworking("sleeping");
 	}
+	MT_lock_unset(&flush_lock);
 }
 
 void
@@ -2742,7 +2683,7 @@ store_hot_snapshot(str tarfile)
 		goto end;
 	}
 
-	MT_lock_set(&bs_lock);
+	MT_lock_set(&flush_lock);
 	locked = 1;
 	wait_until_flusher_idle();
 	if (GDKexiting())
@@ -2788,7 +2729,7 @@ end:
 	if (dir_fd >= 0)
 		close(dir_fd);
 	if (locked)
-		MT_lock_unset(&bs_lock);
+		MT_lock_unset(&flush_lock);
 	if (tar_stream)
 		close_stream(tar_stream);
 	if (plan_stream)
