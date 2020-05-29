@@ -44,8 +44,8 @@ stdout of test 'opt_sql_append` in directory 'monetdb5/extras/mal_optimizer_temp
 
 #create table ttt (a int, b int, c int);
 #select optimizer;
-% . # table_name
-% single_value # name
+% .%2 # table_name
+% %2 # name
 % varchar # type
 % 15 # length
 [ "sequential_pipe"	]
@@ -63,7 +63,7 @@ stdout of test 'opt_sql_append` in directory 'monetdb5/extras/mal_optimizer_temp
 function user.s10_0():void;
     X_1:void := querylog.define("explain copy into ttt from \\'/tmp/xyz\\';":str, "sequential_pipe":str, 22:int);
     X_4:int := sql.mvc();
-    (X_26:bat[:int], X_27:bat[:int], X_28:bat[:int]) := sql.copy_from(0x7f8b081ae5c0:ptr, "|":str, "\n":str, nil:str, "null":str, "/tmp/xyz":str, -1:lng, 0:lng, 0:int, 0:int, nil:str, 0:int);
+    (X_26:bat[:int], X_27:bat[:int], X_28:bat[:int]) := sql.copy_from(0x7fe1c01ac8a0:ptr, "|":str, "\n":str, nil:str, "null":str, "/tmp/xyz":str, -1:lng, 0:lng, 0:int, 0:int, nil:str, 0:int);
     X_30:int := sql.append(X_4:int, "sys":str, "ttt":str, "averylongcolumnnametomakeitlargeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee":str, X_26:bat[:int]);
     X_35:int := sql.append(X_30:int, "sys":str, "ttt":str, "b":str, X_27:bat[:int]);
     X_38:int := sql.append(X_35:int, "sys":str, "ttt":str, "c":str, X_28:bat[:int]);
@@ -104,8 +104,8 @@ end user.s10_0;
 #set optimizer = substring((select def from optimizers() where name = (select opt_pipe_name from "opt_pipe_name")),0,
 #                length((select def from optimizers() where name = (select opt_pipe_name from "opt_pipe_name")))-length('optimizer.garbageCollector();')) || 'optimizer.sql_append();optimizer.garbageCollector();';
 #select optimizer;
-% . # table_name
-% single_value # name
+% .%2 # table_name
+% %2 # name
 % varchar # type
 % 6 # length
 [ "user_0"	]
@@ -123,7 +123,7 @@ end user.s10_0;
 function user.s22_0():void;
     X_1:void := querylog.define("explain copy into ttt from \\'/tmp/xyz\\';":str, "user_0":str, 22:int);
     X_4:int := sql.mvc();
-    (X_26:bat[:int], X_27:bat[:int], X_28:bat[:int]) := sql.copy_from(0x7f8b081ae5c0:ptr, "|":str, "\n":str, nil:str, "null":str, "/tmp/xyz":str, -1:lng, 0:lng, 0:int, 0:int, nil:str, 0:int);
+    (X_26:bat[:int], X_27:bat[:int], X_28:bat[:int]) := sql.copy_from(0x7fe1c01ac8a0:ptr, "|":str, "\n":str, nil:str, "null":str, "/tmp/xyz":str, -1:lng, 0:lng, 0:int, 0:int, nil:str, 0:int);
     X_30:int := sql.append(X_4:int, "sys":str, "ttt":str, "averylongcolumnnametomakeitlargeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee":str, X_26:bat[:int]);
     X_35:int := sql.append(X_30:int, "sys":str, "ttt":str, "b":str, X_27:bat[:int]);
     X_40:lng := aggr.count(X_28:bat[:int]);
