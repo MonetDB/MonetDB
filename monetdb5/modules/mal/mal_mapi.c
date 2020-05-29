@@ -491,7 +491,7 @@ SERVERlistenThread(SOCKET *Sock)
 			goto stream_alloc_fail;
 		}
 		data->out = s;
-		char name[16];
+		char name[MT_NAME_LEN];
 		snprintf(name, sizeof(name), "client%d",
 				 (int) ATOMIC_INC(&threadno));
 
@@ -585,7 +585,7 @@ SERVERlisten(int port, const char *usockfile, int maxusers)
 	if (port > 0) {
 		if (listenaddr && *listenaddr) {
 			int check = 0, e = errno;
-			char sport[16];
+			char sport[MT_NAME_LEN];
 			struct addrinfo *result = NULL, *rp = NULL, hints = (struct addrinfo) {
 				.ai_family = bind_ipv6 ? AF_INET6 : AF_INET,
 				.ai_socktype = SOCK_STREAM,
@@ -1070,7 +1070,7 @@ SERVERclient(void *res, const Stream *In, const Stream *Out)
 		GDKfree(data);
 		throw(MAL, "mapi.SERVERclient", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
-	char name[16];
+	char name[MT_NAME_LEN];
 	snprintf(name, sizeof(name), "client%d",
 			 (int) ATOMIC_INC(&threadno));
 
@@ -2006,7 +2006,7 @@ SERVERput(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 		break;
 	default:
 		if ((w = ATOMformat(tpe,val)) == NULL)
-			throw(MAL, "mapi.put", SQLSTATE(HY013) GDK_EXCEPTION);
+			throw(MAL, "mapi.put", GDK_EXCEPTION);
 		snprintf(buf,BUFSIZ,"%s:=%s;",*nme,w);
 		GDKfree(w);
 		if( SERVERsessions[i].hdl)
@@ -2038,14 +2038,14 @@ SERVERputLocal(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 		break;
 	default:
 		if ((w = ATOMformat(tpe,val)) == NULL)
-			throw(MAL, "mapi.glue", SQLSTATE(HY013) GDK_EXCEPTION);
+			throw(MAL, "mapi.glue", GDK_EXCEPTION);
 		snprintf(buf,BUFSIZ,"%s:=%s;",*nme,w);
 		GDKfree(w);
 		break;
 	}
 	*ret= GDKstrdup(buf);
 	if(*ret == NULL)
-		throw(MAL, "mapi.glue", SQLSTATE(HY013) GDK_EXCEPTION);
+		throw(MAL, "mapi.glue", GDK_EXCEPTION);
 	return MAL_SUCCEED;
 }
 

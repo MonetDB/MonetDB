@@ -915,7 +915,7 @@ EXPANDEDrenderer(MapiHdl hdl)
 				data = nullstring;
 			do {
 				edata = utf8skip(data, ~(size_t)0);
-				mnstr_printf(toConsole, "%-*s | %.*s\n", fieldw, name, (int) (edata - data), data);
+				mnstr_printf(toConsole, "%-*s | %.*s\n", fieldw, name, (int) (edata - data), data ? data : "");
 				name = "";
 				data = edata;
 				if (*data)
@@ -3061,7 +3061,8 @@ getfile(void *data, const char *filename, bool binary,
 		priv->f = NULL;
 		return s < 0 ? "error reading file" : NULL;
 	}
-	*size = (size_t) s;
+	if (size)
+		*size = (size_t) s;
 	return buf;
 }
 

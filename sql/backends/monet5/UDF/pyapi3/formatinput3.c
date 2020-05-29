@@ -107,14 +107,7 @@ char *FormatCode(char *code, char **args, size_t argcount, size_t tabwidth,
 	char base_start[] = "def pyfun(";
 	char base_end[] = "):\n";
 	*msg = NULL;
-#ifndef IS_PY3K
-	if (code[1] == '@') {
-		*code_object = PyCodeObject_ParseString(code, msg);
-		return NULL;
-	}
-#else
 	(void)code_object;
-#endif
 
 	indentation_levels = (size_t *)GDKzalloc(max_indentation * sizeof(size_t));
 	statements_per_level =

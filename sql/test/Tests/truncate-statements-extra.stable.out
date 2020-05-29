@@ -86,9 +86,9 @@ stdout of test 'truncate-statements-extra` in directory 'sql/test` itself:
 % .plan # table_name
 % rel # name
 % clob # type
-% 87 # length
+% 94 # length
 truncate continue identity, restrict(
-| table(sys.testing4) [ "testing4"."a" NOT NULL HASHCOL , "testing4"."%TID%" NOT NULL ]
+| table(sys.testing4) [ "testing4"."a" NOT NULL HASHCOL , "testing4"."%TID%" NOT NULL ] COUNT 
 )
 #SELECT a FROM testing4;
 % sys.testing4 # table_name
@@ -106,9 +106,9 @@ truncate continue identity, restrict(
 % .plan # table_name
 % rel # name
 % clob # type
-% 87 # length
+% 94 # length
 truncate continue identity, cascade(
-| table(sys.testing4) [ "testing4"."a" NOT NULL HASHCOL , "testing4"."%TID%" NOT NULL ]
+| table(sys.testing4) [ "testing4"."a" NOT NULL HASHCOL , "testing4"."%TID%" NOT NULL ] COUNT 
 )
 #TRUNCATE testing4 CASCADE;
 [ 1	]
@@ -138,9 +138,9 @@ truncate continue identity, cascade(
 % .plan # table_name
 % rel # name
 % clob # type
-% 85 # length
+% 92 # length
 truncate continue identity, restrict(
-| table(sys.testing6) [ "testing6"."a", "testing6"."b", "testing6"."%TID%" NOT NULL ]
+| table(sys.testing6) [ "testing6"."a", "testing6"."b", "testing6"."%TID%" NOT NULL ] COUNT 
 )
 #TRUNCATE testing6;
 [ 2	]
@@ -159,9 +159,9 @@ truncate continue identity, restrict(
 % .plan # table_name
 % rel # name
 % clob # type
-% 85 # length
+% 92 # length
 truncate continue identity, restrict(
-| table(sys.testing6) [ "testing6"."a", "testing6"."b", "testing6"."%TID%" NOT NULL ]
+| table(sys.testing6) [ "testing6"."a", "testing6"."b", "testing6"."%TID%" NOT NULL ] COUNT 
 )
 #TRUNCATE testing6 CONTINUE IDENTITY;
 [ 2	]
@@ -180,9 +180,9 @@ truncate continue identity, restrict(
 % .plan # table_name
 % rel # name
 % clob # type
-% 85 # length
+% 92 # length
 truncate restart identity, restrict(
-| table(sys.testing6) [ "testing6"."a", "testing6"."b", "testing6"."%TID%" NOT NULL ]
+| table(sys.testing6) [ "testing6"."a", "testing6"."b", "testing6"."%TID%" NOT NULL ] COUNT 
 )
 #TRUNCATE testing6 RESTART IDENTITY;
 [ 2	]

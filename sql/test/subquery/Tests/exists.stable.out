@@ -98,8 +98,8 @@ stdout of test 'exists` in directory 'sql/test/subquery` itself:
 % 5 # length
 [ true	]
 #SELECT i, CAST(SUM(i) AS BIGINT) FROM integers i1 GROUP BY i HAVING EXISTS(SELECT i FROM integers WHERE i>MIN(i1.i)) ORDER BY i;
-% sys.i1,	sys.%2 # table_name
-% i,	%2 # name
+% sys.i1,	sys.%1 # table_name
+% i,	%1 # name
 % int,	bigint # type
 % 1,	1 # length
 [ 1,	1	]
@@ -124,8 +124,8 @@ stdout of test 'exists` in directory 'sql/test/subquery` itself:
 [ false,	1	]
 [ true,	3	]
 #SELECT CAST(SUM(CASE WHEN EXISTS(SELECT i FROM integers WHERE i=i1.i) THEN 1 ELSE 0 END) AS BIGINT) FROM integers i1;
-% .%3 # table_name
-% %3 # name
+% .%2 # table_name
+% %2 # name
 % bigint # type
 % 1 # length
 [ 3	]

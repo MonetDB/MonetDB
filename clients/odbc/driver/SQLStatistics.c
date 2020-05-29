@@ -73,7 +73,8 @@ MNDBStatistics(ODBCStmt *stmt,
 
 	/* buffer for the constructed query to do meta data retrieval */
 	char *query = NULL;
-	char *query_end = NULL;
+	size_t querylen;
+	size_t pos = 0;
 	char *sch = NULL, *tab = NULL;
 
 	fixODBCstring(TableName, NameLength3, SQLSMALLINT,
@@ -159,11 +160,11 @@ MNDBStatistics(ODBCStmt *stmt,
 	}
 
 	/* construct the query now */
-	query = malloc(1200 + strlen(stmt->Dbc->dbname) +
-			(sch ? strlen(sch) : 0) + (tab ? strlen(tab) : 0));
+	querylen = 1200 + strlen(stmt->Dbc->dbname) +
+		(sch ? strlen(sch) : 0) + (tab ? strlen(tab) : 0);
+	query = malloc(querylen);
 	if (query == NULL)
 		goto nomem;
-	query_end = query;
 
 	/* SQLStatistics returns a table with the following columns:
 	   VARCHAR      table_cat
@@ -181,7 +182,7 @@ MNDBStatistics(ODBCStmt *stmt,
 	   VARCHAR      filter_condition
 	 */
 	/* TODO: finish the SQL query */
-	sprintf(query_end,
+	pos += snprintf(query + pos, querylen - pos,
 		"select '%s' as table_cat, "
 		       "s.name as table_schem, "
 		       "t.name as table_name, "
@@ -211,37 +212,32 @@ MNDBStatistics(ODBCStmt *stmt,
 		      "(k.type is null or k.type = 1)",
 		stmt->Dbc->dbname,
 		SQL_INDEX_HASHED, SQL_INDEX_OTHER);
-	assert(strlen(query) < 1000);
-	query_end += strlen(query_end);
+	assert(pos < 1000);
 
 	/* Construct the selection condition query part */
 	if (NameLength1 > 0 && CatalogName != NULL) {
 		/* filtering requested on catalog name */
 		if (strcmp((char *) CatalogName, stmt->Dbc->dbname) != 0) {
 			/* catalog name does not match the database name, so return no rows */
-			sprintf(query_end, " and 1=2");
-			query_end += strlen(query_end);
+			pos += snprintf(query + pos, querylen - pos, " and 1=2");
 		}
 	}
 	if (sch) {
 		/* filtering requested on schema name */
-		sprintf(query_end, " and %s", sch);
-		query_end += strlen(query_end);
+		pos += snprintf(query + pos, querylen - pos, " and %s", sch);
 		free(sch);
 	}
 	if (tab) {
 		/* filtering requested on table name */
-		sprintf(query_end, " and %s", tab);
-		query_end += strlen(query_end);
+		pos += snprintf(query + pos, querylen - pos, " and %s", tab);
 		free(tab);
 	}
 
 	/* add the ordering */
-	strcpy(query_end, " order by non_unique, type, index_qualifier, index_name, ordinal_position");
-	query_end += strlen(query_end);
+	pos += strcpy_len(query + pos, " order by non_unique, type, index_qualifier, index_name, ordinal_position", querylen - pos);
 
 	/* query the MonetDB data dictionary tables */
-	rc = MNDBExecDirect(stmt, (SQLCHAR *) query, (SQLINTEGER) (query_end - query));
+	rc = MNDBExecDirect(stmt, (SQLCHAR *) query, (SQLINTEGER) pos);
 
 	free(query);
 

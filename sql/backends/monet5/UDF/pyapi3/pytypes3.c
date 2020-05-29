@@ -275,10 +275,7 @@ bool PyType_IsPyScalar(PyObject *object)
 			PyFloat_Check(object) || PyLong_Check(object) ||
 			PyString_Check(object) || PyBool_Check(object) ||
 			PyUnicode_Check(object) || PyByteArray_Check(object)
-#ifdef IS_PY3K
-			|| PyBytes_Check(object)
-#endif
-				);
+			|| PyBytes_Check(object));
 }
 
 void _pytypes_init(void) { _import_array(); }

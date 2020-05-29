@@ -58,7 +58,7 @@ create table querylog.calls(
 
 static bool QLOGtrace = false;
 static bool QLOG_init = false;
-static int QLOGthreshold = 0;
+static lng QLOGthreshold = 0;
 
 static BAT *QLOG_cat_id = 0;
 static BAT *QLOG_cat_user = 0;
@@ -261,6 +261,7 @@ QLOGenable(void *ret)
 {
 	(void) ret;
 	QLOGtrace = true;
+	QLOGthreshold = 0;
 	return MAL_SUCCEED;
 }
 
@@ -268,7 +269,8 @@ str
 QLOGenableThreshold(void *ret, int *threshold)
 {
 	(void) ret;
-	QLOGthreshold = *threshold;
+	QLOGtrace = true;
+	QLOGthreshold = *threshold * LL_CONSTANT(1000);
 	return MAL_SUCCEED;
 }
 
@@ -363,8 +365,8 @@ QLOGappend(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			throw(MAL, "querylog.append", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		}
 	}
-	MT_lock_unset(&QLOGlock);
 	TMsubcommit_list(commitlist, committop);
+	MT_lock_unset(&QLOGlock);
 	return MAL_SUCCEED;
 }
 
@@ -424,7 +426,7 @@ QLOGcall(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		MT_lock_unset(&QLOGlock);
 		throw(MAL, "querylog.call", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
-	MT_lock_unset(&QLOGlock);
 	TMsubcommit_list(commitlist, committop);
+	MT_lock_unset(&QLOGlock);
 	return MAL_SUCCEED;
 }

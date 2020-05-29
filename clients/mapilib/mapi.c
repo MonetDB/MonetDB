@@ -2226,7 +2226,7 @@ mapi_reconnect(Mapi mid)
 			if (*host == '/') {
 				/* don't stat or anything, the
 				 * mapi_reconnect will return the
-				 * error if it doesn't exists, falling
+				 * error if it doesn't exist, falling
 				 * back to TCP with a hostname like
 				 * '/var/sockets' won't work anyway */
 				snprintf(buf, sizeof(buf),
@@ -2611,11 +2611,20 @@ mapi_reconnect(Mapi mid)
 #ifdef HAVE_RIPEMD160_UPDATE
 			"RIPEMD160",
 #endif
+#ifdef HAVE_SHA512_UPDATE
+			"SHA512",
+#endif
+#ifdef HAVE_SHA384_UPDATE
+			"SHA384",
+#endif
+#ifdef HAVE_SHA256_UPDATE
+			"SHA256",
+#endif
+#ifdef HAVE_SHA224_UPDATE
+			"SHA224",
+#endif
 #ifdef HAVE_SHA1_UPDATE
 			"SHA1",
-#endif
-#ifdef HAVE_MD5_UPDATE
-			"MD5",
 #endif
 			NULL
 		};
@@ -2703,12 +2712,6 @@ mapi_reconnect(Mapi mid)
 #ifdef HAVE_SHA1_UPDATE
 			if (strcmp(serverhash, "SHA1") == 0) {
 				pwdhash = mcrypt_SHA1Sum(mid->password,
-						strlen(mid->password));
-			} else
-#endif
-#ifdef HAVE_MD5_UPDATE
-			if (strcmp(serverhash, "MD5") == 0) {
-				pwdhash = mcrypt_MD5Sum(mid->password,
 						strlen(mid->password));
 			} else
 #endif

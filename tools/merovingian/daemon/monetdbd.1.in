@@ -82,7 +82,14 @@ section below.
 The commands for
 .I monetdbd
 are
-.BR create ", " start ", " stop ", " get ", " set ", " version ", and " help .
+.BR create ,
+.BR start ,
+.BR stop ,
+.BR get ,
+.BR set ,
+.BR version ,
+and
+.BR help .
 The commands facilitate initializing a dbfarm, starting and stopping the
 MonetDB Database Server, and retrieving or setting options.
 .TP

@@ -205,7 +205,7 @@
  * that are not all included in the first N.
  */
 static BAT *
-BATfirstn_unique(BAT *b, BAT *s, BUN n, bool asc, bool nilslast, oid *lastp)
+BATfirstn_unique(BAT *b, BAT *s, BUN n, bool asc, bool nilslast, oid *lastp, lng t0)
 {
 	BAT *bn;
 	BATiter bi = bat_iterator(b);
@@ -225,7 +225,13 @@ BATfirstn_unique(BAT *b, BAT *s, BUN n, bool asc, bool nilslast, oid *lastp)
 		/* trivial: return all candidates */
 		if (lastp)
 			*lastp = 0;
-		return canditer_slice(&ci, 0, cnt);
+		bn = canditer_slice(&ci, 0, cnt);
+		TRC_DEBUG(ALGO, "b=" ALGOBATFMT ",s=" ALGOOPTBATFMT
+			  ",n=" BUNFMT " -> " ALGOOPTBATFMT
+			  " (trivial -- " LLFMT " usec)\n",
+			  ALGOBATPAR(b), ALGOOPTBATPAR(s), n,
+			  ALGOOPTBATPAR(bn), GDKusec() - t0);
+		return bn;
 	}
 
 	if (BATtvoid(b)) {
@@ -237,6 +243,11 @@ BATfirstn_unique(BAT *b, BAT *s, BUN n, bool asc, bool nilslast, oid *lastp)
 			bn = canditer_slice(&ci, 0, n);
 			if (bn && lastp)
 				*lastp = BUNtoid(bn, n - 1);
+			TRC_DEBUG(ALGO, "b=" ALGOBATFMT ",s=" ALGOOPTBATFMT
+				  ",n=" BUNFMT " -> " ALGOOPTBATFMT
+				  " (initial slice -- " LLFMT " usec)\n",
+				  ALGOBATPAR(b), ALGOOPTBATPAR(s), n,
+				  ALGOOPTBATPAR(bn), GDKusec() - t0);
 			return bn;
 		}
 		/* return the last part of the candidate list or of
@@ -244,6 +255,11 @@ BATfirstn_unique(BAT *b, BAT *s, BUN n, bool asc, bool nilslast, oid *lastp)
 		bn = canditer_slice(&ci, cnt - n, cnt);
 		if (bn && lastp)
 			*lastp = BUNtoid(bn, 0);
+		TRC_DEBUG(ALGO, "b=" ALGOBATFMT ",s=" ALGOOPTBATFMT
+			  ",n=" BUNFMT " -> " ALGOOPTBATFMT
+			  " (final slice -- " LLFMT " usec)\n",
+			  ALGOBATPAR(b), ALGOOPTBATPAR(s), n,
+			  ALGOOPTBATPAR(bn), GDKusec() - t0);
 		return bn;
 	}
 	/* note, we want to do both calls */
@@ -330,6 +346,11 @@ BATfirstn_unique(BAT *b, BAT *s, BUN n, bool asc, bool nilslast, oid *lastp)
 		}
 		if (bn && lastp)
 			*lastp = BUNtoid(bn, pos);
+		TRC_DEBUG(ALGO, "b=" ALGOBATFMT ",s=" ALGOOPTBATFMT
+			  ",n=" BUNFMT " -> " ALGOOPTBATFMT
+			  " (ordered -- " LLFMT " usec)\n",
+			  ALGOBATPAR(b), ALGOOPTBATPAR(s), n,
+			  ALGOOPTBATPAR(bn), GDKusec() - t0);
 		return bn;
 	}
 
@@ -533,7 +554,13 @@ BATfirstn_unique(BAT *b, BAT *s, BUN n, bool asc, bool nilslast, oid *lastp)
 	bn->tseqbase = n <= 1 ? oids[0] : oid_nil;
 	bn->tnil = false;
 	bn->tnonil = true;
-	return virtualize(bn);
+	bn = virtualize(bn);
+	TRC_DEBUG(ALGO, "b=" ALGOBATFMT ",s=" ALGOOPTBATFMT
+		  ",n=" BUNFMT " -> " ALGOOPTBATFMT
+		  " (" LLFMT " usec)\n",
+		  ALGOBATPAR(b), ALGOOPTBATPAR(s), n,
+		  ALGOOPTBATPAR(bn), GDKusec() - t0);
+	return bn;
 }
 
 #define LTfixgrp(p1, p2)			\
@@ -679,7 +706,7 @@ BATfirstn_unique(BAT *b, BAT *s, BUN n, bool asc, bool nilslast, oid *lastp)
  * that same value.
  */
 static BAT *
-BATfirstn_unique_with_groups(BAT *b, BAT *s, BAT *g, BUN n, bool asc, bool nilslast, oid *lastp, oid *lastgp)
+BATfirstn_unique_with_groups(BAT *b, BAT *s, BAT *g, BUN n, bool asc, bool nilslast, oid *lastp, oid *lastgp, lng t0)
 {
 	BAT *bn;
 	BATiter bi = bat_iterator(b);
@@ -706,7 +733,13 @@ BATfirstn_unique_with_groups(BAT *b, BAT *s, BAT *g, BUN n, bool asc, bool nilsl
 			*lastp = 0;
 		if (lastgp)
 			*lastgp = 0;
-		return BATdense(0, 0, 0);
+		bn = BATdense(0, 0, 0);
+		TRC_DEBUG(ALGO, "b=" ALGOBATFMT ",s=" ALGOOPTBATFMT
+			  ",g=" ALGOBATFMT ",n=" BUNFMT " -> " ALGOOPTBATFMT
+			  " (empty -- " LLFMT " usec)\n",
+			  ALGOBATPAR(b), ALGOOPTBATPAR(s), ALGOBATPAR(g), n,
+			  ALGOOPTBATPAR(bn), GDKusec() - t0);
+		return bn;
 	}
 
 	if (BATtdense(g)) {
@@ -717,6 +750,11 @@ BATfirstn_unique_with_groups(BAT *b, BAT *s, BAT *g, BUN n, bool asc, bool nilsl
 		bn = canditer_slice(&ci, 0, n);
 		if (bn && lastp)
 			*lastp = BUNtoid(bn, n - 1);
+		TRC_DEBUG(ALGO, "b=" ALGOBATFMT ",s=" ALGOOPTBATFMT
+			  ",g=" ALGOBATFMT ",n=" BUNFMT " -> " ALGOOPTBATFMT
+			  " (dense group -- " LLFMT " usec)\n",
+			  ALGOBATPAR(b), ALGOOPTBATPAR(s), ALGOBATPAR(g), n,
+			  ALGOOPTBATPAR(bn), GDKusec() - t0);
 		return bn;
 	}
 
@@ -963,13 +1001,18 @@ BATfirstn_unique_with_groups(BAT *b, BAT *s, BAT *g, BUN n, bool asc, bool nilsl
 	bn->tseqbase = n <= 1 ? oids[0] : oid_nil;
 	bn->tnil = false;
 	bn->tnonil = true;
+	TRC_DEBUG(ALGO, "b=" ALGOBATFMT ",s=" ALGOOPTBATFMT
+		  ",g=" ALGOBATFMT ",n=" BUNFMT " -> " ALGOOPTBATFMT
+		  " (" LLFMT " usec)\n",
+		  ALGOBATPAR(b), ALGOOPTBATPAR(s), ALGOBATPAR(g), n,
+		  ALGOOPTBATPAR(bn), GDKusec() - t0);
 	return bn;
 }
 
 static gdk_return
-BATfirstn_grouped(BAT **topn, BAT **gids, BAT *b, BAT *s, BUN n, bool asc, bool nilslast, bool distinct)
+BATfirstn_grouped(BAT **topn, BAT **gids, BAT *b, BAT *s, BUN n, bool asc, bool nilslast, bool distinct, lng t0)
 {
-	BAT *bn, *gn, *su = NULL;
+	BAT *bn, *gn = NULL, *su = NULL;
 	oid last;
 	gdk_return rc;
 
@@ -979,7 +1022,7 @@ BATfirstn_grouped(BAT **topn, BAT **gids, BAT *b, BAT *s, BUN n, bool asc, bool 
 		if (s == NULL)
 			return GDK_FAIL;
 	}
-	bn = BATfirstn_unique(b, s, n, asc, nilslast, &last);
+	bn = BATfirstn_unique(b, s, n, asc, nilslast, &last, t0);
 	if (bn == NULL)
 		return GDK_FAIL;
 	if (BATcount(bn) == 0) {
@@ -992,6 +1035,11 @@ BATfirstn_grouped(BAT **topn, BAT **gids, BAT *b, BAT *s, BUN n, bool asc, bool 
 			*gids = gn;
 		}
 		*topn = bn;
+		TRC_DEBUG(ALGO, "b=" ALGOBATFMT ",s=" ALGOOPTBATFMT
+			  ",n=" BUNFMT " -> " ALGOOPTBATFMT "," ALGOOPTBATFMT
+			  " (empty -- " LLFMT " usec)\n",
+			  ALGOBATPAR(b), ALGOOPTBATPAR(s), n,
+			  ALGOOPTBATPAR(bn), ALGOOPTBATPAR(gn), GDKusec() - t0);
 		return GDK_SUCCEED;
 	}
 	if (!b->tkey) {
@@ -1000,7 +1048,7 @@ BATfirstn_grouped(BAT **topn, BAT **gids, BAT *b, BAT *s, BUN n, bool asc, bool 
 
 			bn1 = bn;
 			BBPunfix(s->batCacheid);
-			bn = BATintersect(b, b, su, bn1, true, BUN_NONE);
+			bn = BATintersect(b, b, su, bn1, true, false, BUN_NONE);
 			BBPunfix(bn1->batCacheid);
 			if (bn == NULL)
 				return GDK_FAIL;
@@ -1052,13 +1100,18 @@ BATfirstn_grouped(BAT **topn, BAT **gids, BAT *b, BAT *s, BUN n, bool asc, bool 
 		assert(BATcount(gn) == BATcount(bn));
 	}
 	*topn = bn;
+	TRC_DEBUG(ALGO, "b=" ALGOBATFMT ",s=" ALGOOPTBATFMT
+		  ",n=" BUNFMT " -> " ALGOOPTBATFMT "," ALGOOPTBATFMT
+		  " (" LLFMT " usec)\n",
+		  ALGOBATPAR(b), ALGOOPTBATPAR(s), n,
+		  ALGOOPTBATPAR(bn), ALGOOPTBATPAR(gn), GDKusec() - t0);
 	return GDK_SUCCEED;
 }
 
 static gdk_return
-BATfirstn_grouped_with_groups(BAT **topn, BAT **gids, BAT *b, BAT *s, BAT *g, BUN n, bool asc, bool nilslast, bool distinct)
+BATfirstn_grouped_with_groups(BAT **topn, BAT **gids, BAT *b, BAT *s, BAT *g, BUN n, bool asc, bool nilslast, bool distinct, lng t0)
 {
-	BAT *bn, *gn;
+	BAT *bn, *gn = NULL;
 	oid last, lastg;
 	gdk_return rc;
 
@@ -1072,7 +1125,7 @@ BATfirstn_grouped_with_groups(BAT **topn, BAT **gids, BAT *b, BAT *s, BAT *g, BU
 			BBPunfix(bn2->batCacheid);
 			return GDK_FAIL;
 		}
-		bn4 = BATintersect(s, bn2, NULL, NULL, false, BUN_NONE);
+		bn4 = BATintersect(s, bn2, NULL, NULL, false, false, BUN_NONE);
 		BBPunfix(bn2->batCacheid);
 		if (bn4 == NULL) {
 			BBPunfix(bn1->batCacheid);
@@ -1084,7 +1137,7 @@ BATfirstn_grouped_with_groups(BAT **topn, BAT **gids, BAT *b, BAT *s, BAT *g, BU
 			BBPunfix(bn1->batCacheid);
 			return GDK_FAIL;
 		}
-		bn6 = BATfirstn_unique_with_groups(bn3, NULL, bn5, n, asc, nilslast, NULL, NULL);
+		bn6 = BATfirstn_unique_with_groups(bn3, NULL, bn5, n, asc, nilslast, NULL, NULL, t0);
 		BBPunfix(bn3->batCacheid);
 		BBPunfix(bn5->batCacheid);
 		if (bn6 == NULL) {
@@ -1101,7 +1154,7 @@ BATfirstn_grouped_with_groups(BAT **topn, BAT **gids, BAT *b, BAT *s, BAT *g, BU
 		if (bn == NULL)
 			return GDK_FAIL;
 	} else {
-		bn = BATfirstn_unique_with_groups(b, s, g, n, asc, nilslast, &last, &lastg);
+		bn = BATfirstn_unique_with_groups(b, s, g, n, asc, nilslast, &last, &lastg, t0);
 		if (bn == NULL)
 			return GDK_FAIL;
 	}
@@ -1115,6 +1168,12 @@ BATfirstn_grouped_with_groups(BAT **topn, BAT **gids, BAT *b, BAT *s, BAT *g, BU
 			*gids = gn;
 		}
 		*topn = bn;
+		TRC_DEBUG(ALGO, "b=" ALGOBATFMT ",s=" ALGOOPTBATFMT
+			  ",g=" ALGOBATFMT ",n=" BUNFMT
+			  " -> " ALGOOPTBATFMT "," ALGOOPTBATFMT
+			  " (empty -- " LLFMT " usec)\n",
+			  ALGOBATPAR(b), ALGOOPTBATPAR(s), ALGOBATPAR(g), n,
+			  ALGOOPTBATPAR(bn), ALGOOPTBATPAR(gn), GDKusec() - t0);
 		return GDK_SUCCEED;
 	}
 	if (!distinct && !b->tkey) {
@@ -1148,7 +1207,7 @@ BATfirstn_grouped_with_groups(BAT **topn, BAT **gids, BAT *b, BAT *s, BAT *g, BU
 	if (gids) {
 		BAT *bn1, *bn2, *bn3, *bn4, *bn5, *bn6, *bn7, *bn8;
 
-		if ((bn1 = BATintersect(s, bn, NULL, NULL, false, BUN_NONE)) == NULL) {
+		if ((bn1 = BATintersect(s, bn, NULL, NULL, false, false, BUN_NONE)) == NULL) {
 			BBPunfix(bn->batCacheid);
 			return  GDK_FAIL;
 		}
@@ -1196,17 +1255,27 @@ BATfirstn_grouped_with_groups(BAT **topn, BAT **gids, BAT *b, BAT *s, BAT *g, BU
 		assert(BATcount(gn) == BATcount(bn));
 	}
 	*topn = bn;
+	TRC_DEBUG(ALGO, "b=" ALGOBATFMT ",s=" ALGOOPTBATFMT
+		  ",g=" ALGOBATFMT ",n=" BUNFMT
+		  " -> " ALGOOPTBATFMT "," ALGOOPTBATFMT
+		  " (" LLFMT " usec)\n",
+		  ALGOBATPAR(b), ALGOOPTBATPAR(s), ALGOBATPAR(g), n,
+		  ALGOOPTBATPAR(bn), ALGOOPTBATPAR(gn), GDKusec() - t0);
 	return GDK_SUCCEED;
 }
 
 gdk_return
 BATfirstn(BAT **topn, BAT **gids, BAT *b, BAT *s, BAT *g, BUN n, bool asc, bool nilslast, bool distinct)
 {
+	lng t0 = 0;
+
 	assert(topn != NULL);
 	if (b == NULL) {
 		*topn = NULL;
 		return GDK_SUCCEED;
 	}
+
+	TRC_DEBUG_IF(ALGO) t0 = GDKusec();
 
 	/* if g specified, then so must s */
 	assert(g == NULL || s != NULL);
@@ -1231,14 +1300,14 @@ BATfirstn(BAT **topn, BAT **gids, BAT *b, BAT *s, BAT *g, BUN n, bool asc, bool 
 
 	if (g == NULL) {
 		if (gids == NULL && !distinct) {
-			*topn = BATfirstn_unique(b, s, n, asc, nilslast, NULL);
+			*topn = BATfirstn_unique(b, s, n, asc, nilslast, NULL, t0);
 			return *topn ? GDK_SUCCEED : GDK_FAIL;
 		}
-		return BATfirstn_grouped(topn, gids, b, s, n, asc, nilslast, distinct);
+		return BATfirstn_grouped(topn, gids, b, s, n, asc, nilslast, distinct, t0);
 	}
 	if (gids == NULL && !distinct) {
-		*topn = BATfirstn_unique_with_groups(b, s, g, n, asc, nilslast, NULL, NULL);
+		*topn = BATfirstn_unique_with_groups(b, s, g, n, asc, nilslast, NULL, NULL, t0);
 		return *topn ? GDK_SUCCEED : GDK_FAIL;
 	}
-	return BATfirstn_grouped_with_groups(topn, gids, b, s, g, n, asc, nilslast, distinct);
+	return BATfirstn_grouped_with_groups(topn, gids, b, s, g, n, asc, nilslast, distinct, t0);
 }

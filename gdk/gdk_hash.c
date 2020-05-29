@@ -107,7 +107,11 @@ doHASHdestroy(BAT *b, Hash *hs)
 		GDKunlink(BBPselectfarm(b->batRole, b->ttype, hashheap),
 			  BATDIR,
 			  BBP_physical(b->batCacheid),
-			  "thash");
+			  "thashl");
+		GDKunlink(BBPselectfarm(b->batRole, b->ttype, hashheap),
+			  BATDIR,
+			  BBP_physical(b->batCacheid),
+			  "thashb");
 	} else if (hs) {
 		bat p = VIEWtparent(b);
 		BAT *hp = NULL;
@@ -957,7 +961,7 @@ BAThash(BAT *b)
 		if (BBP_status(b->batCacheid) & BBPEXISTING && !b->theap.dirty && !GDKinmemory()) {
 			MT_Id tid;
 			BBPfix(b->batCacheid);
-			char name[16];
+			char name[MT_NAME_LEN];
 			snprintf(name, sizeof(name), "hashsync%d", b->batCacheid);
 			MT_lock_unset(&b->batIdxLock);
 			if (MT_create_thread(&tid, BAThashsync, b,

@@ -41,6 +41,10 @@ BATunique(BAT *b, BAT *s)
 	bat parent;
 	struct canditer ci;
 	PROPrec *prop;
+	const char *algomsg = "";
+	lng t0 = 0;
+
+	TRC_DEBUG_IF(ALGO) t0 = GDKusec();
 
 	BATcheck(b, NULL);
 	cnt = canditer_init(&ci, b, s);
@@ -48,12 +52,12 @@ BATunique(BAT *b, BAT *s)
 	if (b->tkey || cnt <= 1 || BATtdense(b)) {
 		/* trivial: already unique */
 		bn = canditer_slice(&ci, 0, ci.ncand);
-		TRC_DEBUG(ALGO, "BATunique(b=" ALGOBATFMT
-			  ",s=" ALGOOPTBATFMT ")=" ALGOOPTBATFMT
-			  ": trivial case: "
-			  "already unique, slice candidates\n",
+		TRC_DEBUG(ALGO, "b=" ALGOBATFMT
+			  ",s=" ALGOOPTBATFMT " -> " ALGOOPTBATFMT
+			  " (already unique, slice candidates -- "
+			  LLFMT "usec)\n",
 			  ALGOBATPAR(b), ALGOOPTBATPAR(s),
-			  ALGOOPTBATPAR(bn));
+			  ALGOOPTBATPAR(bn), GDKusec() - t0);
 		return bn;
 	}
 
@@ -61,11 +65,12 @@ BATunique(BAT *b, BAT *s)
 	    (b->ttype == TYPE_void && is_oid_nil(b->tseqbase))) {
 		/* trivial: all values are the same */
 		bn = BATdense(0, ci.seq, 1);
-		TRC_DEBUG(ALGO, "BATunique(b=" ALGOBATFMT ",s="
-			  ALGOOPTBATFMT ")=" ALGOOPTBATFMT
-			  ": trivial case: all equal\n",
+		TRC_DEBUG(ALGO, "b=" ALGOBATFMT
+			  ",s=" ALGOOPTBATFMT " -> " ALGOOPTBATFMT
+			  " (all equal -- "
+			  LLFMT "usec)\n",
 			  ALGOBATPAR(b), ALGOOPTBATPAR(s),
-			  ALGOOPTBATPAR(bn));
+			  ALGOOPTBATPAR(bn), GDKusec() - t0);
 		return bn;
 	}
 
@@ -88,9 +93,7 @@ BATunique(BAT *b, BAT *s)
 
 	if (BATordered(b) || BATordered_rev(b)) {
 		const void *prev = NULL;
-		TRC_DEBUG(ALGO, "BATunique(b=" ALGOBATFMT ",s="
-			  ALGOOPTBATFMT "): (reverse) sorted\n",
-			  ALGOBATPAR(b), ALGOOPTBATPAR(s));
+		algomsg = "sorted";
 		for (i = 0; i < ci.ncand; i++) {
 			o = canditer_next(&ci);
 			v = VALUE(o - b->hseqbase);
@@ -103,9 +106,7 @@ BATunique(BAT *b, BAT *s)
 	} else if (ATOMbasetype(b->ttype) == TYPE_bte) {
 		unsigned char val;
 
-		TRC_DEBUG(ALGO, "BATunique(b=" ALGOBATFMT ",s="
-			  ALGOOPTBATFMT "): byte sized atoms\n",
-			  ALGOBATPAR(b), ALGOOPTBATPAR(s));
+		algomsg = "byte-sized atoms";
 		assert(vars == NULL);
 		seen = GDKzalloc((256 / 16) * sizeof(seen[0]));
 		if (seen == NULL)
@@ -129,9 +130,7 @@ BATunique(BAT *b, BAT *s)
 	} else if (ATOMbasetype(b->ttype) == TYPE_sht) {
 		unsigned short val;
 
-		TRC_DEBUG(ALGO, "BATunique(b=" ALGOBATFMT ",s="
-			  ALGOOPTBATFMT "): short sized atoms\n",
-			  ALGOBATPAR(b), ALGOOPTBATPAR(s));
+		algomsg = "short-sized atoms";
 		assert(vars == NULL);
 		seen = GDKzalloc((65536 / 16) * sizeof(seen[0]));
 		if (seen == NULL)
@@ -164,9 +163,7 @@ BATunique(BAT *b, BAT *s)
 		/* we already have a hash table on b, or b is
 		 * persistent and we could create a hash table, or b
 		 * is a view on a bat that already has a hash table */
-		TRC_DEBUG(ALGO, "BATunique(b=" ALGOBATFMT ",s="
-			  ALGOOPTBATFMT "): use existing hash\n",
-			  ALGOBATPAR(b), ALGOOPTBATPAR(s));
+		algomsg = "existing hash";
 		seq = b->hseqbase;
 		if (b->thash == NULL && (parent = VIEWtparent(b)) != 0) {
 			BAT *b2 = BBPdescriptor(parent);
@@ -205,9 +202,7 @@ BATunique(BAT *b, BAT *s)
 		BUN mask;
 
 		GDKclrerr();	/* not interested in BAThash errors */
-		TRC_DEBUG(ALGO, "BATunique(b=" ALGOBATFMT ",s="
-			  ALGOOPTBATFMT "): create partial hash\n",
-			  ALGOBATPAR(b), ALGOOPTBATPAR(s));
+		algomsg = "new partial hash";
 		nme = BBP_physical(b->batCacheid);
 		if (ATOMbasetype(b->ttype) == TYPE_bte) {
 			mask = (BUN) 1 << 8;
@@ -270,11 +265,11 @@ BATunique(BAT *b, BAT *s)
 		b->batDirtydesc = true;
 	}
 	bn = virtualize(bn);
-	TRC_DEBUG(ALGO, "BATunique(b=" ALGOBATFMT ","
-		  "s=" ALGOOPTBATFMT ")="
-		  ALGOBATFMT "\n",
+	TRC_DEBUG(ALGO, "b=" ALGOBATFMT
+		  ",s=" ALGOOPTBATFMT " -> " ALGOOPTBATFMT
+		  " (%s -- " LLFMT "usec)\n",
 		  ALGOBATPAR(b), ALGOOPTBATPAR(s),
-		  ALGOBATPAR(bn));
+		  ALGOOPTBATPAR(bn), algomsg, GDKusec() - t0);
 	return bn;
 
   bunins_failed:

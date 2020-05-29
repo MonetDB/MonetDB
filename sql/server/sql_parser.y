@@ -656,7 +656,7 @@ int yydebug=1;
 %token FILTER
 
 /* operators */
-%left UNION EXCEPT INTERSECT CORRESPONDING UNIONJOIN
+%left UNION EXCEPT INTERSECT CORRESPONDING
 %left JOIN CROSS LEFT FULL RIGHT INNER NATURAL
 %left WITH DATA
 %left <operation> '(' ')'
@@ -3136,14 +3136,6 @@ joined_table:
 	  append_symbol(l, $1);
 	  append_symbol(l, $4);
 	  $$ = _symbol_create_list( SQL_CROSS, l); }
- |  table_ref UNIONJOIN table_ref join_spec
-	{ dlist *l = L();
-	  append_symbol(l, $1);
-	  append_int(l, 0);
-	  append_int(l, 4);
-	  append_symbol(l, $3);
-	  append_symbol(l, $4);
-	  $$ = _symbol_create_list( SQL_UNIONJOIN, l); }
  |  table_ref join_type JOIN table_ref join_spec
 	{ dlist *l = L();
 	  append_symbol(l, $1);
@@ -3630,24 +3622,8 @@ predicate:
  ;
 
 pred_exp:
-    NOT pred_exp 
-		{ $$ = $2;
-
-		  if ($$->token == SQL_EXISTS)
-			$$->token = SQL_NOT_EXISTS;
-		  else if ($$->token == SQL_NOT_EXISTS)
-			$$->token = SQL_EXISTS;
-		  else if ($$->token == SQL_NOT_BETWEEN)
-			$$->token = SQL_BETWEEN;
-		  else if ($$->token == SQL_BETWEEN)
-			$$->token = SQL_NOT_BETWEEN;
-		  else if ($$->token == SQL_NOT_LIKE)
-			$$->token = SQL_LIKE;
-		  else if ($$->token == SQL_LIKE)
-			$$->token = SQL_NOT_LIKE;
-		  else
-			$$ = _symbol_create_symbol(SQL_NOT, $2); }
- |   predicate	{ $$ = $1; }
+    NOT pred_exp { $$ = _symbol_create_symbol(SQL_NOT, $2); }
+ |  predicate	 { $$ = $1; }
  ;
 
 comparison_predicate:
@@ -6579,7 +6555,6 @@ char *token2string(tokens token)
 	SQL(TRUNCATE);
 	SQL(TYPE);
 	SQL(UNION);
-	SQL(UNIONJOIN);
 	SQL(UNIQUE);
 	SQL(UNOP);
 	SQL(UPDATE);

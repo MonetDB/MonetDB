@@ -35,9 +35,8 @@ MAPI  = (monetdb) /var/tmp/mtest-14741/.s.monetdb.33945
 QUERY = SELECT
             (SELECT AVG(col1) OVER (PARTITION BY col5 ORDER BY col1 ROWS UNBOUNDED PRECEDING) FROM tbl_ProductSales)
         FROM another_T t1; --error, more than one row returned by a subquery used as an expression
-ERROR = !zero_or_one: cardinality violation, scalar expression expected
-CODE  = M0M29
-MAPI  = (monetdb) /var/tmp/mtest-14741/.s.monetdb.33945
+ERROR = !GDK reported error: mergejoin: more than one match
+MAPI  = (monetdb) /var/tmp/mtest-1456258/.s.monetdb.39356
 QUERY = SELECT
             (SELECT SUM(col2) OVER (PARTITION BY SUM(col2) ORDER BY MAX(col1 + ColID) ROWS UNBOUNDED PRECEDING) FROM tbl_ProductSales)
         FROM another_T t1
@@ -49,22 +48,19 @@ QUERY = SELECT
             (SELECT SUM(SUM(col2)) OVER (PARTITION BY SUM(col2) ORDER BY MAX(col2) ROWS UNBOUNDED PRECEDING) FROM tbl_ProductSales)
         FROM another_T t1
         GROUP BY col1; --error, more than one row returned by a subquery used as an expression
-ERROR = !zero_or_one: cardinality violation, scalar expression expected
-CODE  = M0M29
-MAPI  = (monetdb) /var/tmp/mtest-14741/.s.monetdb.33945
+ERROR = !GDK reported error: mergejoin: more than one match
+MAPI  = (monetdb) /var/tmp/mtest-1456258/.s.monetdb.39356
 QUERY = SELECT
             (SELECT DENSE_RANK() OVER (PARTITION BY col5 ORDER BY col1) FROM tbl_ProductSales)
         FROM another_T t1; --error, more than one row returned by a subquery used as an expression
-ERROR = !zero_or_one: cardinality violation, scalar expression expected
-CODE  = M0M29
-MAPI  = (monetdb) /var/tmp/mtest-14741/.s.monetdb.33945
+ERROR = !GDK reported error: mergejoin: more than one match
+MAPI  = (monetdb) /var/tmp/mtest-1456258/.s.monetdb.39356
 QUERY = SELECT
             (SELECT DENSE_RANK() OVER (PARTITION BY MIN(col5) ORDER BY MAX(col8)) FROM tbl_ProductSales)
         FROM another_T t1
         GROUP BY col6; --error, more than one row returned by a subquery used as an expression
-ERROR = !zero_or_one: cardinality violation, scalar expression expected
-CODE  = M0M29
-MAPI  = (monetdb) /var/tmp/mtest-14741/.s.monetdb.33945
+ERROR = !GDK reported error: mergejoin: more than one match
+MAPI  = (monetdb) /var/tmp/mtest-1456258/.s.monetdb.39356
 QUERY = SELECT
             (SELECT DENSE_RANK() OVER (PARTITION BY MIN(col5) ORDER BY col8 * ColID) FROM tbl_ProductSales)
         FROM another_T t1
@@ -76,9 +72,8 @@ QUERY = SELECT
             (SELECT t2.col1 * SUM(SUM(t1.col2)) OVER (PARTITION BY SUM(t1.col2) ORDER BY MAX(t1.col1) ROWS UNBOUNDED PRECEDING) FROM another_T t2)
         FROM another_T t1
         GROUP BY col1; --error, more than one row returned by a subquery used as an expression
-ERROR = !zero_or_one: cardinality violation, scalar expression expected
-CODE  = M0M29
-MAPI  = (monetdb) /var/tmp/mtest-14741/.s.monetdb.33945
+ERROR = !GDK reported error: mergejoin: more than one match
+MAPI  = (monetdb) /var/tmp/mtest-1456258/.s.monetdb.39356
 QUERY = SELECT
             (SELECT t2.col1 * SUM(SUM(col2)) OVER (PARTITION BY SUM(col2) ORDER BY MAX(col1) ROWS UNBOUNDED PRECEDING) FROM another_T t2)
         FROM another_T t1
@@ -90,9 +85,8 @@ QUERY = SELECT
         	MIN(i1.i)
         FROM integers i1
         GROUP BY (SELECT i2.i FROM integers i2); --error, more than one row returned by a subquery used as an expression
-ERROR = !Cardinality violation, scalar value expected
-CODE  = 21000
-MAPI  = (monetdb) /var/tmp/mtest-538831/.s.monetdb.31459
+ERROR = !GDK reported error: BATsubcross: more than one match
+MAPI  = (monetdb) /var/tmp/mtest-1456258/.s.monetdb.39356
 QUERY = SELECT
             (SELECT SUM(t1.col1) OVER (PARTITION BY (VALUES(1)) ROWS UNBOUNDED PRECEDING) FROM tbl_ProductSales)
         FROM another_T t1; --error, subqueries not allowed inside PARTITION BY
@@ -102,15 +96,13 @@ MAPI  = (monetdb) /var/tmp/mtest-6419/.s.monetdb.37915
 QUERY = SELECT
             (SELECT SUM(t1.col1) OVER (ORDER BY (VALUES(1)) ROWS UNBOUNDED PRECEDING) FROM tbl_ProductSales)
         FROM another_T t1;
-ERROR = !zero_or_one: cardinality violation, scalar expression expected
-CODE  = M0M29
-MAPI  = (monetdb) /var/tmp/mtest-6419/.s.monetdb.37915
+ERROR = !GDK reported error: mergejoin: more than one match
+MAPI  = (monetdb) /var/tmp/mtest-1456258/.s.monetdb.39356
 QUERY = SELECT
             (SELECT SUM(t1.col1) OVER (ORDER BY (SELECT SUM(t1.col1 + t2.col1) FROM another_T t2) ROWS UNBOUNDED PRECEDING) FROM tbl_ProductSales)
         FROM another_T t1;
-ERROR = !zero_or_one: cardinality violation, scalar expression expected
-CODE  = M0M29
-MAPI  = (monetdb) /var/tmp/mtest-18306/.s.monetdb.35753
+ERROR = !GDK reported error: mergejoin: more than one match
+MAPI  = (monetdb) /var/tmp/mtest-1456258/.s.monetdb.39356
 QUERY = SELECT
             SUM(SUM(t1.col7) * CAST (NOT t1.col1 IN (SELECT 1) AS INTEGER)) OVER ()
         FROM another_T t1
@@ -173,9 +165,8 @@ MAPI  = (monetdb) /var/tmp/mtest-387258/.s.monetdb.34565
 QUERY = SELECT 
             (SELECT SUM(SUM(i1.i) + i2.i) FROM integers i2 GROUP BY i2.i)
         FROM integers i1; --SUM(i1.i) is a correlation from the outer query, so the sum aggregates can be nested at this case
-ERROR = !zero_or_one: cardinality violation, scalar expression expected
-CODE  = M0M29
-MAPI  = (monetdb) /var/tmp/mtest-224250/.s.monetdb.30823
+ERROR = !GDK reported error: mergejoin: more than one match
+MAPI  = (monetdb) /var/tmp/mtest-1456258/.s.monetdb.39356
 QUERY = SELECT 
             (SELECT SUM(SUM(i1.i)) FROM integers i2 GROUP BY i2.i)
         FROM integers i1; --error, aggregation functions cannot be nested
@@ -277,47 +268,40 @@ MAPI  = (monetdb) /var/tmp/mtest-461161/.s.monetdb.32526
 QUERY = SELECT
         	(SELECT outt FROM evilfunction((SELECT col1 FROM tbl_ProductSales))) 
         FROM another_T; --error, more than one row returned by a subquery used as an expression
-ERROR = !zero_or_one: cardinality violation, scalar expression expected
-CODE  = M0M29
-MAPI  = (monetdb) /var/tmp/mtest-139585/.s.monetdb.31629
+ERROR = !GDK reported error: mergejoin: more than one match
+MAPI  = (monetdb) /var/tmp/mtest-1456258/.s.monetdb.39356
 QUERY = SELECT
         	(SELECT outt FROM evilfunction((SELECT t2.col1 FROM another_T t2))) 
         FROM another_T; --error, more than one row returned by a subquery used as an expression
-ERROR = !Cardinality violation, scalar value expected
-CODE  = 21000
-MAPI  = (monetdb) /var/tmp/mtest-516119/.s.monetdb.36929
+ERROR = !GDK reported error: BATsubcross: more than one match
+MAPI  = (monetdb) /var/tmp/mtest-1456258/.s.monetdb.39356
 QUERY = SELECT
         	(SELECT outt FROM evilfunction((SELECT MAX(t1.col1) FROM tbl_ProductSales))) 
         FROM another_T t1; --error, more than one row returned by a subquery used as an expression
-ERROR = !zero_or_one: cardinality violation, scalar expression expected
-CODE  = M0M29
-MAPI  = (monetdb) /var/tmp/mtest-123694/.s.monetdb.33701
+ERROR = !GDK reported error: mergejoin: more than one match
+MAPI  = (monetdb) /var/tmp/mtest-1456258/.s.monetdb.39356
 QUERY = SELECT
         	(SELECT outt FROM evilfunction((SELECT MIN(col1)))) 
         FROM another_T; --error, more than one row returned by a subquery used as an expression
-ERROR = !zero_or_one: cardinality violation, scalar expression expected
-CODE  = M0M29
-MAPI  = (monetdb) /var/tmp/mtest-123694/.s.monetdb.33701
+ERROR = !GDK reported error: mergejoin: more than one match
+MAPI  = (monetdb) /var/tmp/mtest-1456258/.s.monetdb.39356
 QUERY = SELECT
         	(SELECT outt FROM evilfunction((SELECT MAX(ColID) FROM tbl_ProductSales))) 
         FROM another_T; --error, more than one row returned by a subquery used as an expression
-ERROR = !Cardinality violation, scalar value expected
-CODE  = 21000
-MAPI  = (monetdb) /var/tmp/mtest-123694/.s.monetdb.33701
+ERROR = !GDK reported error: BATsubcross: more than one match
+MAPI  = (monetdb) /var/tmp/mtest-1456258/.s.monetdb.39356
 QUERY = SELECT
         	(SELECT outt FROM evilfunction((SELECT MAX(t1.col1) FROM tbl_ProductSales))) 
         FROM another_T t1; --error, more than one row returned by a subquery used as an expression
-ERROR = !zero_or_one: cardinality violation, scalar expression expected
-CODE  = M0M29
-MAPI  = (monetdb) /var/tmp/mtest-123694/.s.monetdb.33701
+ERROR = !GDK reported error: mergejoin: more than one match
+MAPI  = (monetdb) /var/tmp/mtest-1456258/.s.monetdb.39356
 QUERY = SELECT
         	(SELECT outt FROM evilfunction((SELECT MIN(t2.col1) FROM another_T t2))) 
         FROM another_T; --error, more than one row returned by a subquery used as an expression
-ERROR = !Cardinality violation, scalar value expected
-CODE  = 21000
-MAPI  = (monetdb) /var/tmp/mtest-114297/.s.monetdb.33062
+ERROR = !GDK reported error: BATsubcross: more than one match
+MAPI  = (monetdb) /var/tmp/mtest-1456258/.s.monetdb.39356
 QUERY = SELECT
-        	(SELECT i1.i FROM (VALUES (MIN(i1.i), MAX(i1.i))) as i2(i))
+        	(SELECT i1.i FROM (VALUES (MIN(i1.i), MAX(i1.i))) as i2(i,j))
         FROM integers i1; --error, subquery uses ungrouped column "i1.i" from outer query
 ERROR = !SELECT: cannot use non GROUP BY column 'i1.i' in query results without an aggregate function
 CODE  = 42000
@@ -325,14 +309,12 @@ MAPI  = (monetdb) /var/tmp/mtest-596453/.s.monetdb.32132
 QUERY = SELECT
         	(SELECT i2.i FROM (VALUES (i1.i), (i1.i)) as i2(i))
         FROM integers i1; --error, more than one row returned by a subquery used as an expression
-ERROR = !Cardinality violation, scalar value expected
-CODE  = 21000
-MAPI  = (monetdb) /var/tmp/mtest-600940/.s.monetdb.32137
+ERROR = !GDK reported error: hashjoin: more than one match
+MAPI  = (monetdb) /var/tmp/mtest-1456258/.s.monetdb.39356
 QUERY = SELECT
-        	(SELECT i2.i FROM (VALUES (i1.i, i1.i), (i1.i, i1.i)) as i2(i))
+        	(SELECT i2.i FROM (VALUES (i1.i, i1.i), (i1.i, i1.i)) as i2(i,j))
         FROM integers i1; --error, more than one row returned by a subquery used as an expression
-ERROR = !Cardinality violation, scalar value expected
-CODE  = 21000
+ERROR = !GDK reported error: hashjoin: more than one match
 
 # 17:40:41 >  
 # 17:40:41 >  "Done."

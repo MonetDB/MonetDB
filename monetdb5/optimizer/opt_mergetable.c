@@ -1933,7 +1933,7 @@ OPTmergetableImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 			if (getFunctionId(q) == subgroupdoneRef || getFunctionId(q) == groupdoneRef)
 				groupdone = 1;
 		}
-		/* bail out if there is a input for a group, which has been used for a group already (solves problems with qube like groupings) */
+		/* bail out if there is a input for a group, which has been used for a group already (solves problems with cube like groupings) */
 		if (getModuleId(p) == groupRef &&
 		   (getFunctionId(p) == subgroupRef ||
 			getFunctionId(p) == subgroupdoneRef ||
@@ -1942,7 +1942,7 @@ OPTmergetableImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 			int input = getArg(p, p->retc); /* argument one is first input */
 
 			if (group_input[input]) {
-				TRC_ERROR(MAL_OPTIMIZER, "Mergetable bailout on group input reuse in group statement\n");
+				TRC_WARNING(MAL_OPTIMIZER, "Mergetable bailout on group input reuse in group statement\n");
 				bailout = 1;
 			}
 
@@ -1950,8 +1950,21 @@ OPTmergetableImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 		}
 		if (getModuleId(p) == algebraRef && 
 		    getFunctionId(p) == selectNotNilRef ) {
-			TRC_ERROR(MAL_OPTIMIZER, "Mergetable bailout not nil ref\n");
+			TRC_INFO(MAL_OPTIMIZER, "Mergetable bailout not nil ref\n");
 			bailout = 1;
+		}
+		if (getModuleId(p) == algebraRef && 
+		    getFunctionId(p) == semijoinRef ) {
+			TRC_INFO(MAL_OPTIMIZER, "Mergetable bailout semijoin ref\n");
+			bailout = 1;
+		}
+		if (getModuleId(p) == algebraRef &&
+		    getFunctionId(p) == thetajoinRef) {
+		      assert(p->argc == 9);
+		      if (p->argc == 9 && getVarConstant(mb,getArg(p,6)).val.ival == 6 /* op == '<>' */) {
+			TRC_INFO(MAL_OPTIMIZER, "Mergetable bailout thetajoin ref\n");
+			bailout = 1;
+		      }
 		}
 		if (isSample(p)) {
 			bailout = 1;

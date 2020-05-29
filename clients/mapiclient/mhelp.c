@@ -799,9 +799,8 @@ SQLhelp sqlhelp2[] = {
 	 NULL},
 	{"procedure_statement",
 	 NULL,
-	 "{ transaction_statement | update_statement | grant | revoke |\n"
-	 "  declare | set_statement | control_statement | select_single_row } ';'",
-	 "transaction_statement,update_statement,grant,revoke,declare,set_statement,control_statement,select_single_row",
+	 "{ update_statement | declare_statement | set_statement | control_statement | select_single_row } ';'",
+	 "update_statement,declare_statement,set_statement,control_statement,select_single_row",
 	 NULL},
 	{"select_single_row",
 	 NULL,
@@ -941,9 +940,8 @@ SQLhelp sqlhelp2[] = {
 	 NULL},
 	{"trigger_statement",
 	 NULL,
-	 "transaction_statement | update_statement | grant | revoke | declare_statement |\n"
-	 "        set_statement | control_statement | select_single_row",
-	 "transaction_statement,update_statement,grant,revoke,declare_statement,set_statement,control_statement,select_single_row",
+	 "update_statement | declare_statement | set_statement | control_statement | select_single_row",
+	 "update_statement,declare_statement,set_statement,control_statement,select_single_row",
 	 NULL},
 	{"when_statement",
 	 NULL,

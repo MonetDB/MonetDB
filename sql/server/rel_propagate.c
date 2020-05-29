@@ -29,7 +29,7 @@ rel_generate_anti_expression(mvc *sql, sql_rel **anti_rel, sql_table *mt, sql_ta
 	if (isPartitionedByColumnTable(mt)) {
 		int colr = mt->part.pcol->colnr;
 		res = list_fetch((*anti_rel)->exps, colr);
-		res = exp_ref(sql->sa, res);
+		res = exp_ref(sql, res);
 	} else if (isPartitionedByExpressionTable(mt)) {
 		*anti_rel = rel_project(sql->sa, *anti_rel, NULL);
 		if (!(res = rel_parse_val(sql, sa_message(sql->sa, "select %s;", mt->part.pexp->exp), sql->emode, (*anti_rel)->l)))
@@ -38,10 +38,8 @@ rel_generate_anti_expression(mvc *sql, sql_rel **anti_rel, sql_table *mt, sql_ta
 		assert(0);
 	}
 	(*anti_rel)->exps = new_exp_list(sql->sa);
-	if (!exp_name(res))
-		exp_label(sql->sa, res, ++sql->label);
 	append((*anti_rel)->exps, res);
-	res = exp_ref(sql->sa, res);
+	res = exp_ref(sql, res);
 	return res;
 }
 
@@ -61,9 +59,7 @@ rel_create_common_relation(mvc *sql, sql_rel *rel, sql_table *t)
 			sql_column *col = n->data;
 			sql_exp *before = m->data, *help;
 
-			if (!exp_name(before))
-				exp_label(sql->sa, before, ++sql->label);
-			help = exp_ref(sql->sa, before);
+			help = exp_ref(sql, before);
 			exp_setname(sql->sa, help, t->base.name, col->base.name);
 			list_append(l, help);
 		}
@@ -85,15 +81,13 @@ rel_generate_anti_insert_expression(mvc *sql, sql_rel **anti_rel, sql_table *t)
 		*anti_rel = rel_project(sql->sa, *anti_rel, l);
 
 		inserts = (*anti_rel)->l;
-		if (inserts->op != op_project && inserts->op != op_basetable && inserts->op != op_table)
+		if (inserts->op != op_project && inserts->op != op_union && inserts->op != op_basetable && inserts->op != op_table)
 			inserts = inserts->l;
 		for (node *n = t->columns.set->h, *m = inserts->exps->h; n && m; n = n->next, m = m->next) {
 			sql_column *col = n->data;
 			sql_exp *before = m->data, *help;
 
-			if (!exp_name(before))
-				exp_label(sql->sa, before, ++sql->label);
-			help = exp_ref(sql->sa, before);
+			help = exp_ref(sql, before);
 			exp_setname(sql->sa, help, t->base.name, col->base.name);
 			list_append(l, help);
 		}
@@ -111,9 +105,7 @@ rel_generate_anti_insert_expression(mvc *sql, sql_rel **anti_rel, sql_table *t)
 	} else {
 		assert(0);
 	}
-	if (!exp_name(res))
-		exp_label(sql->sa, res, ++sql->label);
-	res = exp_ref(sql->sa, res);
+	res = exp_ref(sql, res);
 	return res;
 }
 
@@ -218,7 +210,7 @@ create_range_partition_anti_rel(sql_query* query, sql_table *mt, sql_table *pt, 
 				anti_exp = anti_nils;
 		}
 	} else {
-		anti_exp = exp_compare(sql->sa, anti_nils, exp_atom_bool(sql->sa, 1), cmp_notequal);
+		anti_exp = exp_compare(sql->sa, anti_nils, exp_atom_bool(sql->sa, 0), cmp_equal);
 	}
 
 	anti_rel = rel_select(sql->sa, anti_rel, anti_exp);
@@ -228,7 +220,7 @@ create_range_partition_anti_rel(sql_query* query, sql_table *mt, sql_table *pt, 
 	exp_label(sql->sa, aggr, ++sql->label);
 
 	//generate the exception
-	aggr = exp_ref(sql->sa, aggr);
+	aggr = exp_ref(sql, aggr);
 	generate_alter_table_error_message(buf, mt);
 	exception = exp_exception(sql->sa, aggr, buf);
 
@@ -260,7 +252,7 @@ create_list_partition_anti_rel(sql_query* query, sql_table *mt, sql_table *pt, b
 		}
 	} else {
 		assert(with_nills);
-		anti_exp = exp_compare(sql->sa, anti_nils, exp_atom_bool(sql->sa, 1), cmp_notequal);
+		anti_exp = exp_compare(sql->sa, anti_nils, exp_atom_bool(sql->sa, 0), cmp_equal);
 	}
 
 	anti_rel = rel_select(sql->sa, anti_rel, anti_exp);
@@ -270,7 +262,7 @@ create_list_partition_anti_rel(sql_query* query, sql_table *mt, sql_table *pt, b
 	exp_label(sql->sa, aggr, ++sql->label);
 
 	//generate the exception
-	aggr = exp_ref(sql->sa, aggr);
+	aggr = exp_ref(sql, aggr);
 	generate_alter_table_error_message(buf, mt);
 	exception = exp_exception(sql->sa, aggr, buf);
 
@@ -523,12 +515,15 @@ rel_change_base_table(mvc* sql, sql_rel* rel, sql_table* oldt, sql_table* newt)
 			n->data = exp_change_column_table(sql, (sql_exp*) n->data, oldt, newt);
 
 	switch (rel->op) {
-		case op_ddl:
-			break;
-		case op_table:
 		case op_basetable:
 			if (rel->l == oldt)
 				rel->l = newt;
+			break;
+		case op_table:
+			if (IS_TABLE_PROD_FUNC(rel->flag) || rel->flag == TABLE_FROM_RELATION) {
+				if (rel->l)
+					rel->l = rel_change_base_table(sql, rel->l, oldt, newt);
+			}
 			break;
 		case op_join:
 		case op_left:
@@ -539,6 +534,9 @@ rel_change_base_table(mvc* sql, sql_rel* rel, sql_table* oldt, sql_table* newt)
 		case op_union:
 		case op_inter:
 		case op_except:
+		case op_insert:
+		case op_update:
+		case op_delete:
 			if (rel->l)
 				rel->l = rel_change_base_table(sql, rel->l, oldt, newt);
 			if (rel->r)
@@ -549,16 +547,21 @@ rel_change_base_table(mvc* sql, sql_rel* rel, sql_table* oldt, sql_table* newt)
 		case op_select:
 		case op_topn:
 		case op_sample:
+		case op_truncate:
 			if (rel->l)
 				rel->l = rel_change_base_table(sql, rel->l, oldt, newt);
 			break;
-		case op_insert:
-		case op_update:
-		case op_delete:
-		case op_truncate:
-			if (rel->r)
-				rel->r = rel_change_base_table(sql, rel->r, oldt, newt);
-			break;
+		case op_ddl:
+			if (rel->flag == ddl_output || rel->flag == ddl_create_seq || rel->flag == ddl_alter_seq || rel->flag == ddl_alter_table || rel->flag == ddl_create_table || rel->flag == ddl_create_view) {
+				if (rel->l)
+					rel->l = rel_change_base_table(sql, rel->l, oldt, newt);
+			} else if (rel->flag == ddl_list || rel->flag == ddl_exception) {
+				if (rel->l)
+					rel->l = rel_change_base_table(sql, rel->l, oldt, newt);
+				if (rel->r)
+					rel->r = rel_change_base_table(sql, rel->r, oldt, newt);
+			}
+		break;
 	}
 	return rel;
 }
@@ -619,20 +622,35 @@ rel_generate_subupdates(mvc *sql, sql_rel *rel, sql_table *t, int *changes)
 		sql_part *pt = (sql_part *) n->data;
 		sql_table *sub = find_sql_table(t->s, pt->base.name);
 		sql_rel *s1, *dup = NULL;
-		list *uexps = exps_copy(sql, rel->exps);
+		list *uexps = exps_copy(sql, rel->exps), *checked_updates = new_exp_list(sql->sa);
 
 		if (!update_allowed(sql, sub, sub->base.name, "UPDATE", "update", 0))
 			return NULL;
+
+		for (node *n = uexps->h ; n ; n = n->next) {
+			sql_exp *e = (sql_exp *) n->data;
+			const char *cname = exp_name(e);
+
+			if (strcmp(cname, TID) != 0) { /* Skip TID column */
+				sql_column *c = mvc_bind_column(sql, sub, cname);
+
+				if (!c)
+					return sql_error(sql, 02, SQLSTATE(42S22) "UPDATE: no such column '%s.%s'\n", sub->base.name, cname);
+				if (!(e = update_check_column(sql, sub, c, e, rel, c->base.name, "UPDATE")))
+					return NULL;
+			}
+			list_append(checked_updates, e);
+		}
 
 		if (rel->r) {
 			dup = rel_copy(sql, rel->r, 1);
 			dup = rel_change_base_table(sql, dup, t, sub);
 		}
 
-		for (node *ne = uexps->h ; ne ; ne = ne->next)
+		for (node *ne = checked_updates->h ; ne ; ne = ne->next)
 			ne->data = exp_change_column_table(sql, (sql_exp*) ne->data, t, sub);
 
-		s1 = rel_update(sql, rel_basetable(sql, sub, sub->base.name), dup, NULL, uexps);
+		s1 = rel_update(sql, rel_basetable(sql, sub, sub->base.name), dup, NULL, checked_updates);
 		if (just_one == 0) {
 			sel = rel_list(sql->sa, sel, s1);
 		} else {
@@ -702,7 +720,9 @@ rel_generate_subinserts(sql_query *query, sql_rel *rel, sql_table *t, int *chang
 				found_nils |= is_bit_nil(pt->with_nills);
 				if (pt->with_nills == false) { /* full range without nils */
 					sql_exp *nils = rel_unop_(sql, dup, le, NULL, "isnull", card_value);
-					nils = exp_compare(sql->sa, nils, exp_atom_bool(sql->sa, 1), cmp_notequal);
+
+					set_has_no_nil(nils);
+					nils = exp_compare(sql->sa, nils, exp_atom_bool(sql->sa, 0), cmp_equal);
 					full_range = range = nils; /* ugh */
 				}
 			}
@@ -803,7 +823,7 @@ rel_generate_subinserts(sql_query *query, sql_rel *rel, sql_table *t, int *chang
 		} else if (!anti_exp) {
 			anti_nils = rel_unop_(sql, NULL, exp_copy(sql, anti_le), NULL, "isnull", card_value);
 			set_has_no_nil(anti_nils);
-			anti_exp = exp_compare(sql->sa, anti_nils, exp_atom_bool(sql->sa, 1), cmp_notequal);
+			anti_exp = exp_compare(sql->sa, anti_nils, exp_atom_bool(sql->sa, 0), cmp_equal);
 		}
 		//generate a count aggregation for the values not present in any of the partitions
 		anti_rel = rel_select(sql->sa, anti_rel, anti_exp);
@@ -812,7 +832,7 @@ rel_generate_subinserts(sql_query *query, sql_rel *rel, sql_table *t, int *chang
 		(void) rel_groupby_add_aggr(sql, anti_rel, aggr);
 		exp_label(sql->sa, aggr, ++sql->label);
 
-		aggr = exp_ref(sql->sa, aggr);
+		aggr = exp_ref(sql, aggr);
 		snprintf(buf, BUFSIZ, "%s: the %s violates the partition %s of values", operation, desc,
 				isRangePartitionTable(t) ? "range (NB higher limit exclusive)" : "list");
 
@@ -919,7 +939,8 @@ rel_subtable_insert(sql_query *query, sql_rel *rel, sql_table *t, int *changes)
 				found_all_range_values = pt->with_nills != 1;
 				if (pt->with_nills == true) {
 					anti_nils = rel_unop_(sql, anti_dup, exp_copy(sql, anti_le), NULL, "isnull", card_value);
-					anti_exp = exp_compare(sql->sa, anti_nils, exp_atom_bool(sql->sa, 1), cmp_notequal);
+					set_has_no_nil(anti_nils);
+					anti_exp = exp_compare(sql->sa, anti_nils, exp_atom_bool(sql->sa, 0), cmp_equal);
 				}
 			} else {
 				sql_exp *e2 = create_table_part_atom_exp(sql, pt->tpe, pt->part.range.maxvalue);
@@ -940,6 +961,7 @@ rel_subtable_insert(sql_query *query, sql_rel *rel, sql_table *t, int *changes)
 		}
 		if (!pt->with_nills) { /* handle the nulls case */
 			anti_nils = rel_unop_(sql, anti_dup, exp_copy(sql, anti_le), NULL, "isnull", card_value);
+			set_has_no_nil(anti_nils);
 			anti_nils = exp_compare(sql->sa, anti_nils, exp_atom_bool(sql->sa, 1), cmp_equal);
 			if (anti_exp)
 				anti_exp = exp_or(sql->sa, list_append(new_exp_list(sql->sa), anti_exp),
@@ -958,6 +980,7 @@ rel_subtable_insert(sql_query *query, sql_rel *rel, sql_table *t, int *changes)
 
 			if (!pt->with_nills) { /* handle the nulls case */
 				anti_nils = rel_unop_(sql, anti_dup, exp_copy(sql, anti_le), NULL, "isnull", card_value);
+				set_has_no_nil(anti_nils);
 				anti_nils = exp_compare(sql->sa, anti_nils, exp_atom_bool(sql->sa, 1), cmp_equal);
 				anti_exp = exp_or(sql->sa, list_append(new_exp_list(sql->sa), anti_exp),
 								  list_append(new_exp_list(sql->sa), anti_nils), 0);
@@ -965,7 +988,8 @@ rel_subtable_insert(sql_query *query, sql_rel *rel, sql_table *t, int *changes)
 		} else {
 			assert(pt->with_nills);
 			anti_nils = rel_unop_(sql, anti_dup, exp_copy(sql, anti_le), NULL, "isnull", card_value);
-			anti_exp = exp_compare(sql->sa, anti_nils, exp_atom_bool(sql->sa, 1), cmp_notequal);
+			set_has_no_nil(anti_nils);
+			anti_exp = exp_compare(sql->sa, anti_nils, exp_atom_bool(sql->sa, 0), cmp_equal);
 		}
 	} else {
 		assert(0);
@@ -980,7 +1004,7 @@ rel_subtable_insert(sql_query *query, sql_rel *rel, sql_table *t, int *changes)
 		exp_label(sql->sa, aggr, ++sql->label);
 
 		//generate the exception
-		aggr = exp_ref(sql->sa, aggr);
+		aggr = exp_ref(sql, aggr);
 		snprintf(buf, BUFSIZ, "INSERT: table %s.%s is part of merge table %s.%s and the insert violates the "
 				"partition %s of values", t->s->base.name, t->base.name, upper->s->base.name,
 				upper->base.name, isRangePartitionTable(upper) ? "range" : "list");

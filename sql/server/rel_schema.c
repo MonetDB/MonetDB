@@ -1179,8 +1179,8 @@ rel_create_view(sql_query *query, sql_schema *ss, dlist *qname, dlist *column_sp
 		if (ast->token == SQL_SELECT) {
 			SelectNode *sn = (SelectNode *) ast;
 
-			if (sn->limit)
-				return sql_error(sql, 01, SQLSTATE(42000) "%s VIEW: LIMIT not supported", base);
+			if (sn->limit || sn->sample)
+				return sql_error(sql, 01, SQLSTATE(42000) "%s VIEW: %s not supported", base, sn->limit ? "LIMIT" : "SAMPLE");
 		}
 
 		sq = schema_selects(query, s, ast);
@@ -1381,9 +1381,7 @@ rel_create_schema(sql_query *query, dlist *auth_name, dlist *schema_elements, in
 		sql_schema *os = sql->session->schema;
 		dnode *n;
 		sql_schema *ss = SA_ZNEW(sql->sa, sql_schema);
-		sql_rel *ret;
-
-		ret = rel_create_schema_dll(sql->sa, name, auth, 0);
+		sql_rel *ret = rel_create_schema_dll(sql->sa, name, auth, 0);
 
 		ss->base.name = name;
 		ss->auth_id = auth_id;
@@ -1395,6 +1393,7 @@ rel_create_schema(sql_query *query, dlist *auth_name, dlist *schema_elements, in
 			sql_rel *res = rel_semantic(query, n->data.sym);
 			if (!res) {
 				rel_destroy(ret);
+				sql->session->schema = os;
 				return NULL;
 			}
 			ret = rel_list(sql->sa, ret, res);
@@ -1436,6 +1435,8 @@ sql_alter_table(sql_query *query, dlist *dl, dlist *qname, symbol *te, int if_ex
 			return rel_psm_block(sql->sa, new_exp_list(sql->sa));
 		return sql_error(sql, 02, SQLSTATE(3F000) "ALTER TABLE: no such schema '%s'", sname);
 	}
+	if (!mvc_schema_privs(sql, s))
+		return sql_error(sql, 02, SQLSTATE(42000) "ALTER TABLE: access denied for %s to schema '%s'", stack_get_string(sql, "current_user"), s->base.name);
 
 	if ((t = mvc_bind_table(sql, s, tname)) == NULL) {
 		if (mvc_bind_table(sql, mvc_bind_schema(sql, "tmp"), tname) != NULL) 
@@ -2114,6 +2115,8 @@ rel_create_index(mvc *sql, char *iname, idx_type itype, dlist *qname, dlist *col
 
 	if (sname && !(s = mvc_bind_schema(sql, sname))) 
 		return sql_error(sql, 02, SQLSTATE(3F000) "CREATE INDEX: no such schema '%s'", sname);
+	if (!mvc_schema_privs(sql, s))
+		return sql_error(sql, 02, SQLSTATE(42000) "CREATE INDEX: access denied for %s to schema '%s'", stack_get_string(sql, "current_user"), s->base.name);
 	i = mvc_bind_idx(sql, s, iname);
 	if (i) 
 		return sql_error(sql, 02, SQLSTATE(42S11) "CREATE INDEX: name '%s' already in use", iname);

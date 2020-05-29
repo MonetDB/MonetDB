@@ -230,4 +230,293 @@ select
       limit 140) as subq_0 where false limit 61;
  -- empty result set
 
+select
+  1
+from tab1
+  left join tab2 as ref_5
+  right join (select 2) as subq_0
+  left join tab1 as ref_8
+  on (true)
+  on (exists (select ref_5.col0, ref_8.col2))
+  on (true);
+ -- 27 rows with 1
+
+select 
+ ref_1.col3 as c0, 
+ ref_1.col4 as c1, 
+ cast(nullif(ref_0.col0,
+ subq_0.c8) as int) as c2 from 
+ tab1 as ref_0
+ right join tbl_productsales as ref_1
+ on (exists (
+ select 
+ ref_1.col1 as c0, 
+ ref_2.col2 as c1, 
+ ref_0.col0 as c2, 
+ ref_2.col0 as c3, 
+ ref_2.col0 as c4, 
+ ref_1.col2 as c5
+ from 
+ tab1 as ref_2
+ where false))
+ inner join (select 
+ ref_4.i as c0, 
+ ref_3.col0 as c1, 
+ ref_4.i as c2, 
+ ref_4.i as c3, 
+ ref_4.i as c4, 
+ ref_4.i as c5, 
+ ref_3.col2 as c6, 
+ ref_4.i as c7, 
+ ref_3.col2 as c8, 
+ ref_4.i as c9
+ from 
+ tab0 as ref_3
+ right join integers as ref_4
+ on (true)
+ where ((((((73 is null) 
+ and (ref_4.i is not null)) 
+ or (true)) 
+ and (ref_4.i is null)) 
+ or (ref_3.col2 is null)) 
+ or (true)) 
+ and (ref_4.i is not null)
+ limit 56) as subq_0
+ on (true) where true limit 85;
+  --long output
+
+select 
+ subq_1.c0 as c0, 
+ subq_1.c0 as c1, 
+ subq_1.c0 as c2, 
+ subq_0.c0 as c3, 
+ subq_0.c1 as c4, 
+ subq_0.c0 as c5, 
+ subq_0.c0 as c6
+from 
+ (select 
+ ref_0.col0 as c0, 
+ ref_1.bb as c1
+ from 
+ tab0 as ref_0
+ right join analytics as ref_1
+ on (exists (
+ select 
+ ref_1.aa as c0
+ from 
+ longtable as ref_2
+ where ref_0.col2 is not null))
+ where ((ref_1.aa is null) 
+ and ((false) 
+ and (ref_0.col2 is not null))) 
+ or (ref_0.col2 is not null)) as subq_0
+ inner join (select 
+ ref_3.col3 as c0
+ from 
+ tbl_productsales as ref_3
+ where (ref_3.col3 is null) 
+ and (exists (
+ select 
+ ref_3.col6 as c0, 
+ ref_3.col2 as c1, 
+ ref_4.col1 as c2, 
+ ref_4.col1 as c3, 
+ ref_4.col2 as c4, 
+ ref_3.col4 as c5, 
+ ref_4.col0 as c6, 
+ ref_4.col0 as c7
+ from 
+ tab0 as ref_4
+ where (true) 
+ and (true)))
+ limit 173) as subq_1
+ on ((subq_1.c0 is not null) 
+ or (subq_0.c0 is null))
+where subq_1.c0 is not null;
+  --empty
+
+select 
+ ref_0.col2 as c0, 
+ cast(nullif(ref_0.col1,
+ ref_0.col0) as int) as c1, 
+ 29 as c2, 
+ ref_0.col1 as c3, 
+ ref_0.col1 as c4, 
+ ref_0.col0 as c5
+from 
+ tab1 as ref_0
+where (((true) 
+ and ((ref_0.col0 is not null) 
+ and (ref_0.col2 is null))) 
+ or (false)) 
+ or (exists (
+ select 
+ ref_1.col2 as c0, 
+ subq_0.c0 as c1, 
+ ref_1.col1 as c2, 
+ subq_0.c6 as c3, 
+ ref_0.col1 as c4, 
+ ref_1.col2 as c5, 
+ ref_1.col1 as c6, 
+ ref_1.col0 as c7, 
+ ref_0.col2 as c8, 
+ ref_1.col1 as c9, 
+ ref_1.col0 as c10, 
+ subq_0.c1 as c11, 
+ ref_0.col2 as c12, 
+ subq_0.c3 as c13, 
+ ref_1.col1 as c14
+ from 
+ tab0 as ref_1
+ right join (select 
+ 17 as c0, 
+ ref_0.col1 as c1, 
+ ref_3.aa as c2, 
+ ref_0.col1 as c3, 
+ ref_3.aa as c4, 
+ ref_3.aa as c5, 
+ ref_0.col0 as c6
+ from 
+ tbl_productsales as ref_2
+ inner join analytics as ref_3
+ on (ref_2.col1 = ref_3.aa )
+ where true) as subq_0
+ on ((false) 
+ or ((ref_1.col1 is null) 
+ and ((true) 
+ and ((true) 
+ and ((((subq_0.c5 is null) 
+ or (false)) 
+ or ((false) 
+ or (true))) 
+ and (exists (
+ select 
+ ref_1.col0 as c0, 
+ subq_0.c0 as c1, 
+ subq_0.c3 as c2, 
+ ref_4.col1 as c3, 
+ subq_0.c0 as c4
+ from 
+ tab0 as ref_4
+ where exists (
+ select 
+ ref_4.col1 as c0, 
+ ref_0.col0 as c1
+ from 
+ tab2 as ref_5
+ where true))))))))
+ where ((exists (
+ select 
+ ref_6.col1 as c0, 
+ ref_0.col2 as c1, 
+ ref_1.col0 as c2, 
+ subq_0.c1 as c3, 
+ ref_1.col1 as c4, 
+ subq_0.c3 as c5, 
+ ref_1.col0 as c6, 
+ ref_1.col2 as c7
+ from 
+ tab1 as ref_6
+ where false)) 
+ or (exists (
+ select 
+ ref_0.col1 as c0, 
+ subq_0.c4 as c1, 
+ ref_0.col2 as c2, 
+ ref_1.col0 as c3, 
+ ref_1.col0 as c4, 
+ ref_0.col1 as c5
+ from 
+ tab1 as ref_7
+ where ref_1.col2 is null))) 
+ and (subq_0.c5 is not null)))
+limit 74;
+ -- 96  14  29  14  14  51
+ -- 59   5  29   5   5  85
+ -- 68  47  29  47  47  91
+
+select 
+ cast(coalesce(subq_1.c0,
+ cast(nullif(subq_0.c0,
+ 93) as int)) as int) as c0, 
+ subq_1.c0 as c1
+from 
+ (select 
+ ref_0.col4 as c0, 
+ ref_0.col7 as c1, 
+ ref_0.col4 as c2
+ from 
+ another_t as ref_0
+ where false
+ limit 139) as subq_0
+ inner join (select 
+ ref_1.col1 as c0
+ from 
+ longtable as ref_1
+ where 7 is not null
+ limit 114) as subq_1
+ on (exists (
+ select 
+ ref_3.col1 as c0, 
+ subq_1.c0 as c1, 
+ ref_3.col0 as c2, 
+ ref_2.bb as c3, 
+ ref_4.col8 as c4
+ from 
+ analytics as ref_2
+ left join tab2 as ref_3
+ left join longtable as ref_4
+ on (subq_0.c0 is null)
+ on (ref_2.bb = ref_4.col1 )
+ where false))
+where (((exists (
+ select 
+ ref_5.col5 as c0
+ from 
+ longtable as ref_5
+ where ((false) 
+ and (subq_0.c1 is not null)) 
+ or (false))) 
+ or ((true) 
+ and ((true) 
+ and (false)))) 
+ or (subq_1.c0 is not null)) 
+ and ((subq_0.c0 is null) 
+ or (false));
+  -- empty
+
+select 
+ subq_0.c3 as c0, 
+ subq_0.c4 as c1, 
+ subq_0.c2 as c2, 
+ subq_0.c1 as c3, 
+ subq_0.c2 as c4
+from 
+ (select 
+ ref_0.col0 as c0, 
+ ref_0.col0 as c1, 
+ ref_0.col0 as c2, 
+ ref_0.col1 as c3, 
+ ref_0.col2 as c4
+ from 
+ tab1 as ref_0
+ where true
+ limit 48) as subq_0
+where (case when exists (
+ select 
+ subq_0.c1 as c0, 
+ ref_1.col5 as c1, 
+ ref_1.col7 as c2, 
+ ref_1.col5 as c3, 
+ subq_0.c3 as c4, 
+ subq_0.c1 as c5
+ from 
+ longtable as ref_1
+ where (true) 
+ or ((ref_1.col1 is null) 
+ and (true))) then subq_0.c1 else subq_0.c1 end
+ is not null) 
+ and (subq_0.c3 is null);
+  -- empty
+
 ROLLBACK;

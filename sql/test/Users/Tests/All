@@ -28,3 +28,4 @@ copyinto
 schemaRights
 metadataConsistency
 sessioncontrol
+createUserRollback

@@ -31,8 +31,8 @@ stdout of test 'set-schema-mclient-msg.Bug-6754` in directory 'sql/test/BugTrack
 #declare a int;
 #set a = 4;
 #select a;
-% . # table_name
-% single_value # name
+% .%2 # table_name
+% %2 # name
 % int # type
 % 1 # length
 [ 4	]

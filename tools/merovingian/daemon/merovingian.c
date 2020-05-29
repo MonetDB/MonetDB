@@ -361,7 +361,7 @@ main(int argc, char *argv[])
 		{"pidfile",       strdup("merovingian.pid"), 0,                STR},
 
 		{"sockdir",       strdup("/tmp"),          0,                  STR},
-		{"listenaddr",    strdup("localhost"),     0,                  STR},
+		{"listenaddr",    strdup("localhost"),     0,                  LADDR},
 		{"port",          strdup(MERO_PORT),       atoi(MERO_PORT),    INT},
 		{"ipv6",          strdup("false"),         0,                  BOOLEAN},
 

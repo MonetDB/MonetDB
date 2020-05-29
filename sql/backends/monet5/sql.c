@@ -73,7 +73,7 @@ rel_no_mitosis(sql_rel *rel)
 
 	if (!rel || is_basetable(rel->op))
 		return 1;
-	if (is_topn(rel->op) || rel->op == op_project)
+	if (is_topn(rel->op) || is_sample(rel->op) || is_simple_project(rel->op))
 		return rel_no_mitosis(rel->l);
 	if (is_modify(rel->op) && rel->card <= CARD_AGGR) {
 		if (is_delete(rel->op))
@@ -95,7 +95,7 @@ rel_need_distinct_query(sql_rel *rel)
 {
 	int need_distinct = 0;
 
-	while (!need_distinct && rel && is_project(rel->op) && !is_groupby(rel->op))
+	while (!need_distinct && rel && is_simple_project(rel->op))
 		rel = rel->l;
 	if (!need_distinct && rel && is_groupby(rel->op) && rel->exps) {
 		node *n, *m;
@@ -487,6 +487,10 @@ create_table_from_emit(Client cntxt, char *sname, char *tname, sql_emit_col *col
 		msg = sql_error(sql, 02, SQLSTATE(3F000) "CREATE TABLE: no such schema '%s'", sname);
 		goto cleanup;
 	}
+	if (!mvc_schema_privs(sql, s)) {
+		msg = sql_error(sql, 02, SQLSTATE(42000) "CREATE TABLE: Access denied for %s to schema '%s'", stack_get_string(sql, "current_user"), s->base.name);
+		goto cleanup;
+	}
 	if (!(t = mvc_create_table(sql, s, tname, tt_table, 0, SQL_DECLARED_TABLE, CA_COMMIT, -1, 0))) {
 		msg = sql_error(sql, 02, SQLSTATE(3F000) "CREATE TABLE: could not create table '%s'", tname);
 		goto cleanup;
@@ -559,18 +563,18 @@ append_to_table_from_emit(Client cntxt, char *sname, char *tname, sql_emit_col *
 
 	/* for some reason we don't have an allocator here, so make one */
 	if (!(sql->sa = sa_create())) {
-		msg = sql_error(sql, 02, SQLSTATE(HY013) "CREATE TABLE: %s", MAL_MALLOC_FAIL);
+		msg = sql_error(sql, 02, SQLSTATE(HY013) "APPEND TABLE: %s", MAL_MALLOC_FAIL);
 		goto cleanup;
 	}
 
 	if (!sname)
 		sname = "sys";
 	if (!(s = mvc_bind_schema(sql, sname))) {
-		msg = sql_error(sql, 02, SQLSTATE(3F000) "CREATE TABLE: no such schema '%s'", sname);
+		msg = sql_error(sql, 02, SQLSTATE(3F000) "APPEND TABLE: no such schema '%s'", sname);
 		goto cleanup;
 	}
 	if (!(t = mvc_bind_table(sql, s, tname))) {
-		msg = sql_error(sql, 02, SQLSTATE(3F000) "CREATE TABLE: could not bind table %s", tname);
+		msg = sql_error(sql, 02, SQLSTATE(3F000) "APPEND TABLE: could not bind table %s", tname);
 		goto cleanup;
 	}
 	for (i = 0; i < ncols; i++) {
@@ -578,7 +582,7 @@ append_to_table_from_emit(Client cntxt, char *sname, char *tname, sql_emit_col *
 		sql_column *col = NULL;
 
 		if (!(col = mvc_bind_column(sql,t, columns[i].name))) {
-			msg = sql_error(sql, 02, SQLSTATE(3F000) "CREATE TABLE: could not bind column %s", columns[i].name);
+			msg = sql_error(sql, 02, SQLSTATE(3F000) "APPEND TABLE: could not bind column %s", columns[i].name);
 			goto cleanup;
 		}
 		if ((msg = mvc_append_column(sql->session->tr, col, b)) != MAL_SUCCEED)
@@ -635,7 +639,7 @@ setVariable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	str msg;
 	const char *varname = *getArgReference_str(stk, pci, 2);
 	int mtype = getArgType(mb, pci, 3);
-	ValRecord *src;
+	ValPtr ptr;
 
 	if ((msg = getSQLContext(cntxt, mb, &m, NULL)) != NULL)
 		return msg;
@@ -649,35 +653,32 @@ setVariable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		const char *newopt = *getArgReference_str(stk, pci, 3);
 		if (newopt) {
 			char buf[BUFSIZ];
-			if (!isOptimizerPipe(newopt) && strchr(newopt, (int) ';') == 0) {
+
+			if (strNil(newopt))
+				throw(SQL, "sql.setVariable", SQLSTATE(42000) "optimizer cannot be NULL");
+			if (!isOptimizerPipe(newopt) && strchr(newopt, (int) ';') == 0)
 				throw(SQL, "sql.setVariable", SQLSTATE(42100) "optimizer '%s' unknown", newopt);
-			}
 			snprintf(buf, BUFSIZ, "user_%d", cntxt->idx);
 			if (!isOptimizerPipe(newopt) || strcmp(buf, newopt) == 0) {
 				msg = addPipeDefinition(cntxt, buf, newopt);
 				if (msg)
 					return msg;
 				if (stack_find_var(m, varname)) {
-					if(!stack_set_string(m, varname, buf))
+					if (!stack_set_string(m, varname, buf))
 						throw(SQL, "sql.setVariable", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 				}
 			} else if (stack_find_var(m, varname)) {
-				if(!stack_set_string(m, varname, newopt))
+				if (!stack_set_string(m, varname, newopt))
 					throw(SQL, "sql.setVariable", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			}
 		}
 		return MAL_SUCCEED;
 	}
-	src = &stk->stk[getArg(pci, 3)];
+	ptr = &stk->stk[getArg(pci, 3)];
 	if (stack_find_var(m, varname)) {
-#ifdef HAVE_HGE
-		hge sgn = val_get_number(src);
-#else
-		lng sgn = val_get_number(src);
-#endif
-		if ((msg = sql_update_var(m, varname, src->val.sval, sgn)) != NULL)
+		if ((msg = sql_update_var(m, varname, ptr)) != NULL)
 			return msg;
-		if(!stack_set_var(m, varname, src))
+		if (!stack_set_var(m, varname, ptr))
 			throw(SQL, "sql.setVariable", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	} else {
 		throw(SQL, "sql.setVariable", SQLSTATE(42100) "variable '%s' unknown", varname);
@@ -781,6 +782,8 @@ mvc_next_value(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		return msg;
 	if (!(s = mvc_bind_schema(m, sname)))
 		throw(SQL, "sql.next_value", SQLSTATE(3F000) "Cannot find the schema %s", sname);
+	if (!mvc_schema_privs(m, s))
+		throw(SQL, "sql.next_value", SQLSTATE(42000) "Access denied for %s to schema '%s'", stack_get_string(m, "current_user"), s->base.name);
 	if (!(seq = find_sql_sequence(s, seqname)))
 		throw(SQL, "sql.next_value", SQLSTATE(HY050) "Failed to fetch sequence %s.%s", sname, seqname);
 
@@ -893,6 +896,10 @@ mvc_bat_next_get_value(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, 
 				msg = createException(SQL, call, SQLSTATE(3F000) "Cannot find the schema %s", nsname);
 				goto bailout;
 			}
+			if (bulk_func == seqbulk_next_value && !mvc_schema_privs(m, s)) {
+				msg = createException(SQL, call, SQLSTATE(42000) "Access denied for %s to schema '%s'", stack_get_string(m, "current_user"), s->base.name);
+				goto bailout;
+			}
 			if (!(seq = find_sql_sequence(s, nseqname)) || !(sb = seqbulk_create(seq, BATcount(it)))) {
 				msg = createException(SQL, call, SQLSTATE(HY050) "Cannot find the sequence %s.%s", nsname, nseqname);
 				goto bailout;
@@ -970,6 +977,8 @@ mvc_restart_seq(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		return msg;
 	if (!(s = mvc_bind_schema(m, sname)))
 		throw(SQL, "sql.restart", SQLSTATE(3F000) "Cannot find the schema %s", sname);
+	if (!mvc_schema_privs(m, s))
+		throw(SQL, "sql.restart", SQLSTATE(42000) "Access denied for %s to schema '%s'", stack_get_string(m, "current_user"), s->base.name);
 	if (!(seq = find_sql_sequence(s, seqname)))
 		throw(SQL, "sql.restart", SQLSTATE(HY050) "Failed to fetch sequence %s.%s", sname, seqname);
 	if (is_lng_nil(start))
@@ -1073,6 +1082,10 @@ mvc_bat_restart_seq(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			seq = NULL;
 			if ((!s || strcmp(s->base.name, nsname) != 0) && !(s = mvc_bind_schema(m, nsname))) {
 				msg = createException(SQL, "sql.restart", SQLSTATE(3F000) "Cannot find the schema %s", nsname);
+				goto bailout;
+			}
+			if (!mvc_schema_privs(m, s)) {
+				msg = createException(SQL, "sql.restart", SQLSTATE(42000) "Access denied for %s to schema '%s'", stack_get_string(m, "current_user"), s->base.name);
 				goto bailout;
 			}
 			if (!(seq = find_sql_sequence(s, nseqname)) || !(sb = seqbulk_create(seq, BATcount(it)))) {
@@ -2035,7 +2048,7 @@ DELTAsub(bat *result, const bat *col, const bat *cid, const bat *uid, const bat 
 				BBPunfix(u->batCacheid);
 				throw(MAL, "sql.delta", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 			}
-			cminu = BATintersect(u, c_ids, NULL, NULL, false, BUN_NONE);
+			cminu = BATintersect(u, c_ids, NULL, NULL, false, false, BUN_NONE);
 			BBPunfix(c_ids->batCacheid);
 			if (cminu == NULL) {
 				BBPunfix(c->batCacheid);
@@ -2192,7 +2205,7 @@ DELTAproject(bat *result, const bat *sub, const bat *col, const bat *uid, const 
 		BAT *os, *ou;
 		/* figure out the positions in res that we have to
 		 * replace with values from u_val */
-		if (BATsemijoin(&ou, &os, u_id, s, NULL, NULL, false, BUN_NONE) != GDK_SUCCEED) {
+		if (BATsemijoin(&ou, &os, u_id, s, NULL, NULL, false, false, BUN_NONE) != GDK_SUCCEED) {
 			BBPunfix(s->batCacheid);
 			BBPunfix(res->batCacheid);
 			BBPunfix(u_id->batCacheid);
@@ -3338,8 +3351,15 @@ mvc_bin_import_table_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 					goto bailout;
 				}
 				bstream *s = bstream_create(ss, 1 << 20);
-
-				c = BATattach_bstream(col->type.type->localtype, s, be->mvc->scanner.ws, cnt);
+				if (!s) {
+					msg = createException(SQL, "sql", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+					goto bailout;
+				}
+				if (!(c = BATattach_bstream(col->type.type->localtype, s, be->mvc->scanner.ws, cnt))) {
+					bstream_destroy(s);
+					msg = createException(SQL, "sql", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+					goto bailout;
+				}
 				mnstr_write(be->mvc->scanner.ws, PROMPT3, sizeof(PROMPT3)-1, 1);
 				mnstr_flush(be->mvc->scanner.ws);
 				be->mvc->scanner.rs->eof = s->eof;
@@ -3533,7 +3553,7 @@ daytime_2time_daytime(daytime *res, const daytime *v, const int *digits)
 #ifdef TRUNCATE_NUMBERS
 		*res = (daytime) (*res / scales[6 - d]);
 #else
-		*res = (daytime) ((*res + scales[5 - d]*5) / scales[6 - d]);
+		*res = (daytime) ((*res + (scales[6 - d] >> 1)) / scales[6 - d]);
 #endif
 		*res = (daytime) (*res * scales[6 - d]);
 	}
@@ -3602,7 +3622,7 @@ timestamp_2_daytime(daytime *res, const timestamp *v, const int *digits)
 #ifdef TRUNCATE_NUMBERS
 		dt /= scales[6 - d];
 #else
-		dt = (dt + scales[5 - d]*5) / scales[6 - d];
+		dt = (dt + (scales[6 - d] >> 1)) / scales[6 - d];
 #endif
 		dt *= scales[6 - d];
 	}
@@ -3632,7 +3652,7 @@ timestamp_2time_timestamp(timestamp *res, const timestamp *v, const int *digits)
 #ifdef TRUNCATE_NUMBERS
 		tm /= scales[6 - d];
 #else
-		tm = (tm + scales[5 - d]*5) / scales[6 - d];
+		tm = (tm + (scales[6 - d] >> 1)) / scales[6 - d];
 #endif
 		tm *= scales[6 - d];
 	}
@@ -3914,7 +3934,7 @@ second_interval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	}
 	if (scale) {
 #ifndef TRUNCATE_NUMBERS
-		r += 5*scales[scale-1];
+		r += scales[scale] >> 1;
 #endif
 		r /= scales[scale];
 	}
@@ -4613,6 +4633,8 @@ SQLdrop_hash(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	s = mvc_bind_schema(m, sch);
 	if (s == NULL)
 		throw(SQL, "sql.drop_hash", SQLSTATE(3F000) "Schema missing %s",sch);
+	if (!mvc_schema_privs(m, s))
+		throw(SQL, "sql.drop_hash", SQLSTATE(42000) "Access denied for %s to schema '%s'", stack_get_string(m, "current_user"), s->base.name);
 	t = mvc_bind_table(m, s, tbl);
 	if (t == NULL)
 		throw(SQL, "sql.drop_hash", SQLSTATE(42S02) "Table missing %s.%s",sch, tbl);
@@ -5433,7 +5455,7 @@ SQLsession_prepared_statements_args(Client cntxt, MalBlkPtr mb, MalStkPtr stk, I
 			int arg_number = 0;
 			bte inout = ARG_OUT;
 
-			if (r && is_topn(r->op))
+			if (r && (is_topn(r->op) || is_sample(r->op)))
 				r = r->l;
 
 			if (r && is_project(r->op) && r->exps) {

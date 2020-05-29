@@ -34,8 +34,8 @@ function user.foo():void;
 #cause an error 
     sql.eval("select 1;", false);
 end user.foo;
-% . # table_name
-% single_value # name
+% .%2 # table_name
+% %2 # name
 % tinyint # type
 % 1 # length
 [ 1	]

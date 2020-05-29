@@ -61,6 +61,31 @@ stdout of test 'lateral.Bug-6310` in directory 'sql/test/BugTracker-2017` itself
 #                             PS_COMMENT     VARCHAR(199) NOT NULL,
 #                             PRIMARY KEY    (PS_PARTKEY,PS_SUPPKEY),
 #                             FOREIGN KEY (PS_PARTKEY) references PART );
+#select
+#  ref_0.i as c0
+#from
+#  integers as ref_0,
+#  lateral (select
+#		(select col1 from tab0)
+#		   as c0
+#	  from
+#		tab1 as sample_1
+#		  right join tab2 as ref_4
+#			  inner join part as ref_6
+#				  inner join tbl_ProductSales as sample_5
+#				  on (ref_6.p_comment = sample_5.col3 )
+#				right join LongTable as ref_7
+#				on (sample_5.col1 = ref_7.col1 )
+#			  on (ref_4.col0 = sample_5.col4 )
+#			right join another_t as sample_8
+#			  inner join partsupp as ref_10
+#			  on (sample_8.col1 = ref_10.ps_partkey )
+#			on (ref_4.col0 = ref_10.ps_suppkey )
+% sys. # table_name
+% c0 # name
+% int # type
+% 1 # length
+#ROLLBACK;
 
 # 16:49:27 >  
 # 16:49:27 >  "Done."

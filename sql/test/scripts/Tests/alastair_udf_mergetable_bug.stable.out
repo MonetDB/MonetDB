@@ -13,8 +13,8 @@ stdout of test 'alastair_udf_mergetable_bug` in directory 'sql/test/scripts` its
 [ 4	]
 #set optimizer='default_pipe';
 #select optimizer;
-% . # table_name
-% single_value # name
+% .%2 # table_name
+% %2 # name
 % varchar # type
 % 12 # length
 [ "default_pipe"	]

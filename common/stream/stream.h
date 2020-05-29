@@ -54,17 +54,10 @@ typedef __int128_t hge;
 /* Defines to help the compiler check printf-style format arguments.
  * These defines are also in our config.h, but we repeat them here so
  * that we don't need that for this file.*/
-#if !defined(__GNUC__) || __GNUC__ < 2 || (__GNUC__ == 2 && __GNUC_MINOR__ < 5)
+#ifndef __GNUC__
 /* This feature is available in gcc versions 2.5 and later.  */
 # ifndef __attribute__
 #  define __attribute__(Spec)	/* empty */
-# endif
-#else
-/* The __-protected variants of `format' and `printf' attributes are
- * accepted by gcc versions 2.6.4 (effectively 2.7) and later.  */
-# if !defined(__format__) && (__GNUC__ < 2 || (__GNUC__ == 2 && __GNUC_MINOR__ < 7))
-#  define __format__ format
-#  define __printf__ printf
 # endif
 #endif
 #if !defined(_MSC_VER) && !defined(_In_z_)

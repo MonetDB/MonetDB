@@ -448,7 +448,8 @@ SQLescapeString(str s)
 str
 SQLstatementIntern(Client c, str *expr, str nme, bit execute, bit output, res_table **result)
 {
-	int status = 0, err = 0, oldvtop, oldstop = 1, inited = 0, label, ac, sizevars, topvars;
+	int status = 0, err = 0, oldvtop, oldstop = 1, inited = 0, ac, sizevars, topvars;
+	unsigned int label;
 	mvc *o, *m;
 	sql_var *vars;
 	buffer *b;
@@ -931,6 +932,7 @@ RAstatement2(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 		sql_find_subtype(&t, tnme, d, s);
 		a = atom_general(m->sa, &t, NULL);
+		a->isnull = 0; // disable NULL value optimizations ugh
 		/* the argument list may have holes and maybe out of order, ie
 		 * don't use sql_add_arg, but special numbered version
 		 * sql_set_arg(m, a, nr);
@@ -966,7 +968,7 @@ RAstatement2(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		list *types_list = sa_list(m->sa);
 		str token, rest;
 
-		for (token = strtok_r(types, "%%", &rest); token; token = strtok_r(NULL, "%%", &rest))
+		for (token = strtok_r(types, "%", &rest); token; token = strtok_r(NULL, "%", &rest))
 			list_append(types_list, token);
 
 		if (list_length(types_list) != list_length(rel->exps))

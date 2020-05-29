@@ -72,7 +72,17 @@ char* control_send(
 		};
 		strcpy_len(server.sun_path, host, sizeof(server.sun_path));
 		if (connect(sock, (SOCKPTR) &server, sizeof(struct sockaddr_un)) == -1) {
-			snprintf(sbuf, sizeof(sbuf), "cannot connect: %s", strerror(errno));
+			switch (errno) {
+			case ENOENT:
+				snprintf(sbuf, sizeof(sbuf), "cannot connect: control socket does not exist");
+				break;
+			case EACCES:
+				snprintf(sbuf, sizeof(sbuf), "cannot connect: no permission to access control socket");
+				break;
+			default:
+				snprintf(sbuf, sizeof(sbuf), "cannot connect: %s", strerror(errno));
+				break;
+			}
 			closesocket(sock);
 			return(strdup(sbuf));
 		}
@@ -186,14 +196,20 @@ char* control_send(
 #ifdef HAVE_RIPEMD160_UPDATE
 					"RIPEMD160",
 #endif
+#ifdef HAVE_SHA512_UPDATE
+					"SHA512",
+#endif
+#ifdef HAVE_SHA384_UPDATE
+					"SHA384",
+#endif
 #ifdef HAVE_SHA256_UPDATE
 					"SHA256",
 #endif
+#ifdef HAVE_SHA224_UPDATE
+					"SHA224",
+#endif
 #ifdef HAVE_SHA1_UPDATE
 					"SHA1",
-#endif
-#ifdef HAVE_MD5_UPDATE
-					"MD5",
 #endif
 					NULL
 				};
@@ -289,11 +305,6 @@ char* control_send(
 #ifdef HAVE_SHA1_UPDATE
 				if (strcmp(shash, "SHA1") == 0) {
 					phash = mcrypt_SHA1Sum(pass, strlen(pass));
-				} else
-#endif
-#ifdef HAVE_MD5_UPDATE
-				if (strcmp(shash, "MD5") == 0) {
-					phash = mcrypt_MD5Sum(pass, strlen(pass));
 				} else
 #endif
 				{
@@ -517,15 +528,13 @@ control_hash(char *pass, char *salt) {
  * pass hold as for control_send regarding the use of a UNIX vs TCP
  * socket.
  */
-char
+char *
 control_ping(char *host, int port, char *pass) {
 	char *res;
 	char *err;
 	if ((err = control_send(&res, host, port, "", "ping", 0, pass)) == NULL) {
 		if (res != NULL)
 			free(res);
-		return(0);
 	}
-	free(err);
-	return(1);
+	return err;
 }

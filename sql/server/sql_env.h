@@ -13,12 +13,8 @@
 #include "sql_symbol.h"
 #include "sql_mvc.h"
 
-#ifdef HAVE_HGE
-extern str sql_update_var(mvc *sql, const char *name, char *sval, hge sgn);
-#else
-extern str sql_update_var(mvc *sql, const char *name, char *sval, lng sgn);
-#endif
+extern str sql_update_var(mvc *m, const char *name, ValPtr ptr);
 
-extern int sql_create_env(mvc *sql, sql_schema *s);
+extern int sql_create_env(mvc *m, sql_schema *s);
 
 #endif /* _SQL_ENV_H_ */

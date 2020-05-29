@@ -375,7 +375,6 @@
 #define LOADMASK	(1<<14)
 #define ACCELMASK	(1<<20)
 #define ALGOMASK	(1<<21)
-#define ESTIMASK	(1<<22)
 
 #define NOSYNCMASK	(1<<24)
 
@@ -914,9 +913,9 @@ gdk_export BUN ORDERfndlast(BAT *b, const void *v);
 gdk_export BUN BUNfnd(BAT *b, const void *right);
 
 #define BUNfndVOID(b, v)						\
-	((is_oid_nil(*(const oid*)(v)) ^ is_oid_nil((b)->tseqbase)) |	\
+	(((is_oid_nil(*(const oid*)(v)) ^ is_oid_nil((b)->tseqbase)) |	\
 		(*(const oid*)(v) < (b)->tseqbase) |			\
-		(*(const oid*)(v) >= (b)->tseqbase + (b)->batCount) ?	\
+		(*(const oid*)(v) >= (b)->tseqbase + (b)->batCount)) ?	\
 	 BUN_NONE :							\
 	 (BUN) (*(const oid*)(v) - (b)->tseqbase))
 
@@ -1709,7 +1708,7 @@ typedef struct threadStruct {
 				 * into this array + 1 (0 is
 				 * invalid) */
 	ATOMIC_TYPE pid;	/* thread id, 0 = unallocated */
-	char name[16];
+	char name[MT_NAME_LEN];
 	void *data[THREADDATA];
 	uintptr_t sp;
 } *Thread;
@@ -2047,7 +2046,7 @@ gdk_export BAT *BATselect(BAT *b, BAT *s, const void *tl, const void *th, bool l
 gdk_export BAT *BATthetaselect(BAT *b, BAT *s, const void *val, const char *op);
 
 gdk_export BAT *BATconstant(oid hseq, int tt, const void *val, BUN cnt, role_t role);
-gdk_export gdk_return BATsubcross(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr)
+gdk_export gdk_return BATsubcross(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr, bool max_one)
 	__attribute__((__warn_unused_result__));
 
 gdk_export gdk_return BATleftjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr, bool nil_matches, BUN estimate)
@@ -2056,9 +2055,9 @@ gdk_export gdk_return BATouterjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl
 	__attribute__((__warn_unused_result__));
 gdk_export gdk_return BATthetajoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr, int op, bool nil_matches, BUN estimate)
 	__attribute__((__warn_unused_result__));
-gdk_export gdk_return BATsemijoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr, bool nil_matches, BUN estimate)
+gdk_export gdk_return BATsemijoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr, bool nil_matches, bool max_one, BUN estimate)
 	__attribute__((__warn_unused_result__));
-gdk_export BAT *BATintersect(BAT *l, BAT *r, BAT *sl, BAT *sr, bool nil_matches, BUN estimate);
+gdk_export BAT *BATintersect(BAT *l, BAT *r, BAT *sl, BAT *sr, bool nil_matches, bool max_one, BUN estimate);
 gdk_export BAT *BATdiff(BAT *l, BAT *r, BAT *sl, BAT *sr, bool nil_matches, bool not_in, BUN estimate);
 gdk_export gdk_return BATjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr, bool nil_matches, BUN estimate)
 	__attribute__((__warn_unused_result__));

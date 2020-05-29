@@ -131,7 +131,7 @@ AS_CASE([$CC],
 		#  __GNUC_MINOR__, and __GNUC_PATCHLEVEL__ macros.
 		CC="$CC -no-gcc"])
 
-AS_IF([test -f "$srcdir"/vertoo.data],
+AS_IF([test -f "$srcdir"/.bumpversion.cfg],
 	[
 	# Developers compiling from Mercurial:
 	# default is --enable-strict --enable-assert --enable-debug --disable-optimize --enable-developer --enable-profiler=auto
@@ -314,14 +314,14 @@ AC_ARG_ENABLE([static-analysis],
 MONETDB5_PASSWDHASH="SHA512"
 AC_ARG_WITH([password-backend],
 	[AS_HELP_STRING([--with-password-backend=HASHALG],
-		[password hash algorithm, one of MD5, SHA1, RIPEMD160, SHA224, SHA256, SHA384, SHA512, defaults to SHA512])],
+		[password hash algorithm, one of SHA1, RIPEMD160, SHA224, SHA256, SHA384, SHA512, defaults to SHA512])],
 	[password_backend="$withval"])
 AS_CASE([$password_backend],
 	[yes|no|auto|""],
 		[],
-	[MD5|SHA1|RIPEMD160|SHA224|SHA256|SHA384|SHA512],
+	[SHA1|RIPEMD160|SHA224|SHA256|SHA384|SHA512],
 		[MONETDB5_PASSWDHASH="$password_backend"],
-	[AC_MSG_ERROR(['$password_backend' invalid, choose one of MD5, SHA1, RIPEMD160, SHA224, SHA256, SHA384, SHA512])])
+	[AC_MSG_ERROR(['$password_backend' invalid, choose one of SHA1, RIPEMD160, SHA224, SHA256, SHA384, SHA512])])
 AC_DEFINE_UNQUOTED([MONETDB5_PASSWDHASH], ["$MONETDB5_PASSWDHASH"],
 	[The used password hash algorithm])
 AC_DEFINE_UNQUOTED([MONETDB5_PASSWDHASH_TOKEN], [$MONETDB5_PASSWDHASH],
@@ -559,6 +559,11 @@ AS_VAR_IF([enable_strict], [yes], [
 		MCHECK_ADD_FLAG([-Wmissing-noreturn])
 		MCHECK_ADD_FLAG([-Wmissing-prototypes])
 		MCHECK_ADD_FLAG([-Wnested-externs])
+		# apparently, we get warnings (hence errors) on some
+		# versions of Darwin:
+		AS_CASE([$CC_ver],
+			[clang-*],
+			[MCHECK_ADD_FLAG([-Wno-nullability-completeness])])
 		MCHECK_ADD_FLAG([-Wold-style-definition])
 		MCHECK_ADD_FLAG([-Wpacked])
 		MCHECK_ADD_FLAG([-Wpacked-bitfield-compat])
@@ -851,7 +856,7 @@ AS_CASE([$enable_optimize], [yes], [
 			# -finline-functions, -funswitch-loops,
 			# -fpredictive-commoning, -fgcse-after-reload,
 			# -ftree-vectorize and -fipa-cp-clone
-			CFLAGS="-O3 -fomit-frame-pointer -pipe ${CFLAGS}"
+			CFLAGS="-O2 -fomit-frame-pointer -pipe ${CFLAGS}"
 			# because we explicitly disable debugging, we can explicitly
 			# enable -fomit-frame-pointer here
 			# notes on -funroll-all-loops:
@@ -1426,7 +1431,10 @@ AM_CONDITIONAL([HAVE_UUID], [test x"$have_uuid" != xno])
 AS_CASE([$host],
 [*-darwin*], [
 	AC_DEFINE([HAVE_COMMONCRYPTO], 1, [Define if you have the CommonCrypto library])
-	AC_CHECK_FUNC([CC_MD5_Update], [AC_DEFINE([HAVE_MD5_UPDATE], 1, [Define to 1 if you have the `MD5_Update' function.])])
+	# MD5 is deprecated and gives a warning message on Darwin 19.0.0
+	AS_CASE([$host],
+	[*-darwin1[[0-8]]*],
+		[AC_CHECK_FUNC([CC_MD5_Update], [AC_DEFINE([HAVE_MD5_UPDATE], 1, [Define to 1 if you have the `MD5_Update' function.])])])
 	AC_CHECK_FUNC([CC_RIPEMD160_Update], [AC_DEFINE([HAVE_RIPEMD160_UPDATE], 1, [Define to 1 if you have the `RIPEMD160_Update' function.])])
 	AC_CHECK_FUNC([CC_SHA1_Update], [AC_DEFINE([HAVE_SHA1_UPDATE], 1, [Define to 1 if you have the `SHA1_Update' function.])])
 	AC_CHECK_FUNC([CC_SHA224_Update], [AC_DEFINE([HAVE_SHA224_UPDATE], 1, [Define to 1 if you have the `SHA224_Update' function.])])
@@ -1553,19 +1561,19 @@ AS_VAR_IF([have_zlib], [yes], [
 	AC_DEFINE([HAVE_LIBZ], 1, [Define if you have the z library])])
 AM_CONDITIONAL([HAVE_LIBZ], [test x"$have_zlib" != xno])
 
-org_have_lzma=yes
-have_lzma=$org_have_lzma
+org_have_liblzma=yes
+have_liblzma=$org_have_liblzma
 AC_ARG_WITH([lzma],
 	[AS_HELP_STRING([--with-lzma],
 		[include lzma support (default=yes)])],
-	[have_lzma=$withval])
-AS_VAR_IF([have_lzma], [no], [], [
-	PKG_CHECK_MODULES([liblzma], [liblzma], [have_lzma=yes], [have_lzma=no; why_not_liblzma="(liblzma not found, install xz-libs and xz-devel)"])
-	AS_VAR_IF([have_lzma], [yes], [
+	[have_liblzma=$withval])
+AS_VAR_IF([have_liblzma], [no], [], [
+	PKG_CHECK_MODULES([liblzma], [liblzma], [have_liblzma=yes], [have_liblzma=no; why_not_liblzma="(liblzma not found, install xz-libs and xz-devel)"])
+	AS_VAR_IF([have_liblzma], [yes], [
 		AC_SUBST([PKG_LIBLZMA], [liblzma])])
-	AS_VAR_IF([have_lzma], [yes], [
+	AS_VAR_IF([have_liblzma], [yes], [
 		AC_DEFINE([HAVE_LIBLZMA], 1, [Define if you have the lzma library])])])
-AM_CONDITIONAL([HAVE_LIBLZMA], [test x"$have_lzma" != xno])
+AM_CONDITIONAL([HAVE_LIBLZMA], [test x"$have_liblzma" != xno])
 
 org_have_valgrind=no
 have_valgrind=$org_have_valgrind
@@ -1981,15 +1989,15 @@ AM_CONDITIONAL([HAVE_LIDAR], [test "x$have_lidar" = xyes -o "x$have_lidar" = xau
 
 dnl  check for profiler library
 AS_CASE([$enable_profiler],
-	[no], [have_profiler=no],
+	[no], [],
 	[
 		PKG_CHECK_MODULES([PROFILER], [libprofiler],
-			[have_profiler=yes],
-			[have_profiler=no; why_not_profiler="(profiler library not found)"])
-		AS_VAR_IF([have_profiler], [yes], [
+			[enable_profiler=yes],
+			[enable_profiler=no; why_not_profiler="(profiler library not found)"])
+		AS_VAR_IF([enable_profiler], [yes], [
 			AC_DEFINE([HAVE_LIBPROFILER], 1, [Define if you have the profiler library])
 			AC_SUBST([PKG_PROFILER], [libprofiler])])])
-AM_CONDITIONAL([HAVE_LIBPROFILER], [test x$have_profiler != xno])
+AM_CONDITIONAL([HAVE_LIBPROFILER], [test enable_profiler != xno])
 
 
 #    checks for header files
@@ -2597,6 +2605,7 @@ for comp in \
 	'optimize  ' \
 	'developer ' \
 	'sanitizer ' \
+	'profiler  ' \
 ; do
 	AS_VAR_COPY([dft], [dft_$comp])
 	AS_VAR_COPY([enable], [enable_$comp])

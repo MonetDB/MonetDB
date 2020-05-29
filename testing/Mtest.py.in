@@ -156,7 +156,6 @@ def _configure(str):
         ('${datarootdir}', '@QXdatarootdir@'),
         ('${datadir}', '@QXdatadir@'),
         ('${sysconfdir}', '@QXsysconfdir@'),
-##        ('${sharedstatedir}', '@QXsharedstatedir@'),
         ('${localstatedir}', '@QXlocalstatedir@'),
         ('${libdir}', '@QXlibdir@'),
         ('${includedir}', '@QXincludedir@'),
@@ -169,7 +168,6 @@ def _configure(str):
         ('${Qdatarootdir}', '@QXdatarootdir@'),
         ('${Qdatadir}', '@QXdatadir@'),
         ('${Qsysconfdir}', '@QXsysconfdir@'),
-##        ('${Qsharedstatedir}', '@QXsharedstatedir@'),
         ('${Qlocalstatedir}', '@QXlocalstatedir@'),
         ('${Qlibdir}', '@QXlibdir@'),
         ('${Qincludedir}', '@QXincludedir@'),
@@ -1150,8 +1148,11 @@ def SkipTest(env, TST, EXT, REASON, length) :
     if testweb:
         return None
 
-    f = openutf8(".%s.SKIPPED" % TST, "w")
-    f.write("\n%s  Warning:  %s\n\n" % (THISFILE, TEXT))
+    f = openutf8(".%s.SKIPPED.html" % TST, "w")
+    Element('html', {},
+            Element('body', {},
+                    Element('p', {},
+                            Text("%s Warning: %s" % (THISFILE, TEXT))))).write(f, newline=True)
     f.close()
     target = '%s_%s_body' % (DISTVER, TSTDIR)
     td = Element('td', {'class': 'header'},
@@ -1160,13 +1161,13 @@ def SkipTest(env, TST, EXT, REASON, length) :
                                'class': 'black'},
                          Text(TST)),
                  Element('br'),
-                 Element('a', {'href': '.%s.SKIPPED' % TST,
+                 Element('a', {'href': '.%s.SKIPPED.html' % TST,
                                'target': target},
                          Text('(skipped)')))
     if '_%s_BODY_' % TSTDIR not in env  or  \
        not env['_%s_BODY_' % TSTDIR][0]  or  \
        not env['_%s_BODY_' % TSTDIR][1]:
-        env['_%s_BODY_' % TSTDIR] = [".%s.SKIPPED" % TST, F_SKIP]
+        env['_%s_BODY_' % TSTDIR] = [".%s.SKIPPED.html" % TST, F_SKIP]
     CreateSrcIndex(env, TST, EXT)
     return td
 ### SkipTest(env, TST, EXT, REASON) #
@@ -1393,7 +1394,7 @@ def PerformDir(env, testdir, testlist, BusyPorts, all_tests = False) :
                         'times.lst', 'times.sql',
                         '.*.nosrc.index.html',
                         '.*.src.index.head.html', '.*.src.index.html',
-                        '*.FILTERED', '.*.SKIPPED',
+                        '*.FILTERED', '.*.SKIPPED.html',
                         '*.client.err', '*.client.out',
                         '*.err.diff.html', '*.err.head.html', '*.err.html',
                         '*.out.diff.html', '*.out.head.html', '*.out.html',
@@ -3656,8 +3657,29 @@ def main(argv) :
         dft['MALCLIENT']      = "'mclient -lmal -ftest -tnone -Eutf-8'"
         dft['SQLCLIENT']      = "'mclient -lsql -ftest -tnone -Eutf-8'"
         dft['SQLDUMP']        = "'msqldump -q'"
-        dft['RCLIENT']        = "'R --vanilla --slave'"
-        dft['RUBYCLIENT']        = "'ruby'"
+        dft['RUBYCLIENT']     = "'ruby'"
+
+        r_noecho = '--no-echo'
+        if CheckExec('R'):
+            proc = process.Popen(['R', '--version'],
+                                 stdout = process.PIPE, stderr = process.PIPE,
+                                 universal_newlines = True)
+            r_out, r_err = proc.communicate()
+            res = re.search(r'R version (?P<major>\d+)\.', r_out)
+            if res is not None and int(res.group('major')) < 4:
+                r_noecho = '--slave'
+            if CONDITIONALS['HAVE_LIBR']:
+                proc = process.Popen(['R', r_noecho, '--no-save', '--no-restore',
+                                      '-e', 'print(Sys.getenv("R_LIBS_USER"))'],
+                                     stdout = process.PIPE, stderr = process.PIPE,
+                                     universal_newlines = True)
+                r_out, r_err = proc.communicate()
+                res = re.search(r'\[\d+\] "(?P<dir>.*)"', r_out)
+                if res is not None:
+                    rdir = os.path.expanduser(res.group('dir'))
+                    if not os.path.exists(rdir):
+                        os.makedirs(rdir)
+        dft['RCLIENT'] = "'R --vanilla {}'".format(r_noecho)
 
     #par = {}
     # get current environment
@@ -3882,17 +3904,6 @@ def main(argv) :
             CONDITIONALS['HAVE_PERL'] = '#'
         else:
             print('Perl available, but MonetDB driver or DBI module not available')
-    if CONDITIONALS['HAVE_LIBR'] and CheckExec('R'):
-        proc = process.Popen(['R', '--slave', '--no-save', '--no-restore',
-                              '-e', 'print(Sys.getenv("R_LIBS_USER"))'],
-                             stdout = process.PIPE, stderr = process.PIPE,
-                             universal_newlines = True)
-        r_out, r_err = proc.communicate()
-        res = re.search(r'\[\d+\] "(?P<dir>.*)"', r_out)
-        if res is not None:
-            rdir = os.path.expanduser(res.group('dir'))
-            if not os.path.exists(rdir):
-                os.makedirs(rdir)
     if CheckExec('php'):
         phpcmd = ['php']
         if 'PHP_INCPATH' in os.environ:
