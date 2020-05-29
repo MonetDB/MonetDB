@@ -381,21 +381,29 @@ void mnstr_copy_error(stream *dst, stream *src)
 char *
 mnstr_error(const stream *s)
 {
-	char buf[200];
+	const char *msg = mnstr_peek_error(s);
+	if (msg != NULL)
+		return strdup(msg);
+	else
+		return NULL;
+}
 
+char*
+mnstr_peek_error(const stream *s)
+{
 	if (s == NULL) {
 		struct tl_error_buf *b = get_tl_error_buf();
 		if (b != NULL)
-			return strdup(b->msg);
+			return b->msg;
 		else
-			return strdup("Connection terminated?"); // backward compatible...
+			return "unknown error";
 	}
 
 	if (s->errkind == MNSTR_NO__ERROR)
-		return strdup("no error");
+		return "no error";
 
-	if (s->errmsg != NULL)
-		return strdup(s->errmsg);
+	if (s->errmsg[0] != '\0')
+		return s->errmsg;
 
 	switch (s->errkind) {
 	case MNSTR_NO__ERROR:
@@ -403,24 +411,18 @@ mnstr_error(const stream *s)
 		assert(0);
 		return NULL;
 	case MNSTR_OPEN_ERROR:
-		snprintf(buf, sizeof(buf), "error could not open");
-		return strdup(buf);
+		return "error could not open";
 	case MNSTR_READ_ERROR:
-		snprintf(buf, sizeof(buf), "error reading");
-		return strdup(buf);
+		return "error reading";
 	case MNSTR_WRITE_ERROR:
-		snprintf(buf, sizeof(buf), "error writing");
-		return strdup(buf);
+		return "error writing";
 	case MNSTR_TIMEOUT:
-		snprintf(buf, sizeof(buf), "timeout");
-		return strdup(buf);
+		return "timeout";
 	case MNSTR_UNEXPECTED_EOF:
-		snprintf(buf, sizeof(buf), "timeout");
-		return strdup(buf);
+		return "timeout";
 	}
 
-	snprintf(buf, sizeof(buf), "Unknown error %d", (int)s->errkind);
-	return strdup(buf);
+	return "Unknown error";
 }
 
 /* flush buffer, return 0 on success, non-zero on failure */

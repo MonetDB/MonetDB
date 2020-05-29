@@ -96,6 +96,7 @@ typedef enum mnstr_error_kind {
 } mnstr_error_kind;
 
 stream_export char *mnstr_error(const stream *s);
+stream_export char* mnstr_peek_error(const stream *s);
 stream_export mnstr_error_kind mnstr_errnr(const stream *s);
 stream_export const char *mnstr_error_kind_name(mnstr_error_kind k);
 stream_export void mnstr_clearerr(stream *s);
