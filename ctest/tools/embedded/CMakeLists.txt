@@ -65,3 +65,15 @@ target_link_libraries(example_blob
     #sql
     )
 add_test(run_example_blob example_blob)
+
+add_executable(example_append example_append.c)
+target_link_libraries(example_append
+  PRIVATE
+    monetdb_config_header
+    embedded
+    sqlinclude
+    gdk
+    mapi
+    #sql
+    )
+add_test(run_example_append example_append)

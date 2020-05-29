@@ -6,36 +6,10 @@
  * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
  */
 
-/*
- * H. Muehleisen, M. Raasveldt
- * Inverse RAPI
- */
 #ifndef _EMBEDDED_LIB_
 #define _EMBEDDED_LIB_
 
 #include "monetdb_config.h"
-// #include "res_table.h"
-#include "sql_catalog.h"
-#include "gdk.h"
-
-/* change api, do not expose internals !
-typedef int64_t lng;
-typedef uint64_t ulng;
-
-typedef struct res_col {
-  char *tn;
-  char *name;
-  //sql_subtype type;
-  //bat b;
-  //int mtype;
-  //ptr *p;
-} res_col;
-
-typedef int bat;
-typedef struct sql_table {
-	char *table_name;
-} sql_table;
-*/
 
 #ifdef __cplusplus
 extern "C" {
@@ -52,6 +26,8 @@ extern "C" {
 #else
 #define embedded_export extern
 #endif
+
+typedef int64_t monetdb_cnt;
 
 typedef struct {
 	unsigned char day;
@@ -93,11 +69,14 @@ typedef struct {
 	char* name;
 } monetdb_column;
 
+struct monetdb_table_t;
+typedef struct monetdb_table_t monetdb_table;
+
 typedef struct {
-	lng nrows;
+	monetdb_cnt nrows;
 	size_t ncols;
 	int type;
-	lng id;
+	monetdb_cnt id;
 } monetdb_result;
 
 typedef void* monetdb_connection;
@@ -142,18 +121,21 @@ embedded_export bool  monetdb_is_initialized(void);
 
 embedded_export char* monetdb_get_autocommit(monetdb_connection conn, int* result);
 embedded_export char* monetdb_set_autocommit(monetdb_connection conn, int value);
+embedded_export int   monetdb_in_transaction(monetdb_connection conn);
+
 /* TODO split query in prepare/bind/execute */
-embedded_export char* monetdb_query(monetdb_connection conn, char* query, monetdb_result** result, lng* affected_rows, int* prepare_id);
+embedded_export char* monetdb_query(monetdb_connection conn, char* query, monetdb_result** result, monetdb_cnt* affected_rows, int* prepare_id);
+embedded_export char* monetdb_result_fetch(monetdb_connection conn, monetdb_result *mres, monetdb_column** res, size_t column_index);
 
-embedded_export char* monetdb_result_fetch(monetdb_connection conn, monetdb_column** res, monetdb_result* mres, size_t column_index);
-embedded_export char* monetdb_result_fetch_rawcol(monetdb_connection conn, res_col** res, monetdb_result* mres, size_t column_index);
-
+/* ?? */
 embedded_export char* monetdb_clear_prepare(monetdb_connection conn, int id);
 embedded_export char* monetdb_send_close(monetdb_connection conn, int id);
 
-embedded_export char* monetdb_append(monetdb_connection conn, const char* schema, const char* table, bat *batids, size_t column_count);
+embedded_export char* monetdb_append(monetdb_connection conn, const char* schema, const char* table, monetdb_column **input, size_t column_count);
+
 embedded_export char* monetdb_cleanup_result(monetdb_connection conn, monetdb_result* result);
-embedded_export char* monetdb_get_table(monetdb_connection conn, sql_table** table, const char* schema_name, const char* table_name);
+embedded_export char* monetdb_get_table(monetdb_connection conn, monetdb_table** table, const char* schema_name, const char* table_name);
+/* TODO add get table info functions */
 embedded_export char* monetdb_get_columns(monetdb_connection conn, const char* schema_name, const char *table_name, size_t *column_count, char ***column_names, int **column_types);
 
 embedded_export char* monetdb_shutdown(void);

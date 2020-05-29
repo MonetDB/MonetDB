@@ -34,6 +34,34 @@
 
 #define UNUSED(x) (void)(x)
 
+static int 
+monetdb_type(monetdb_types t) {
+	switch(t) {
+	case monetdb_bool: return TYPE_bit;
+	case monetdb_int8_t: return TYPE_bte;
+	case monetdb_int16_t: return TYPE_sht;
+	case monetdb_int32_t: return TYPE_int;
+	case monetdb_int64_t: return TYPE_lng;
+#if HAVE_HGE
+	case monetdb_int128_t: return TYPE_hge;
+#endif 
+	case monetdb_size_t: return TYPE_oid;
+	case monetdb_float: return TYPE_flt;
+	case monetdb_double: return TYPE_dbl;
+	case monetdb_str: return TYPE_str;
+	case monetdb_blob: return TYPE_blob;
+	case monetdb_date: return TYPE_date;
+	case monetdb_time: return TYPE_daytime;
+	case monetdb_timestamp: return TYPE_timestamp;
+	default:
+		return -1;
+	}	
+}
+
+typedef struct monetdb_table_t {
+	sql_table t;
+} monetdb_table_t;
+
 typedef struct {
 	monetdb_result res;
 	res_table *monetdb_resultset;
@@ -63,6 +91,14 @@ commit_action(mvc* m, char* msg)
 			freeException(commit_msg);
 	}
 	return msg;
+}
+
+static int
+validate_connection_noerror(monetdb_connection conn)
+{
+	if (!monetdb_embedded_initialized || !MCvalid((Client)conn))
+		return 0;
+	return 1;
 }
 
 static char*
@@ -134,7 +170,7 @@ cleanup:
 }
 
 static char*
-monetdb_query_internal(monetdb_connection conn, char* query, monetdb_result** result, lng* affected_rows,
+monetdb_query_internal(monetdb_connection conn, char* query, monetdb_result** result, monetdb_cnt* affected_rows,
 					   int* prepare_id, char language)
 {
 	char* msg = MAL_SUCCEED, *commit_msg = MAL_SUCCEED, *nq = NULL;
@@ -539,8 +575,27 @@ monetdb_set_autocommit(monetdb_connection conn, int value)
 	return msg;
 }
 
+int
+monetdb_in_transaction(monetdb_connection conn)
+{
+	MT_lock_set(&embedded_lock);
+	if (!validate_connection_noerror(conn)) {
+		MT_lock_unset(&embedded_lock);
+		return 0;
+	}
+
+	Client connection = (Client) conn;
+	mvc *m = ((backend *) connection->sqlcontext)->mvc;
+	int result = 0;
+
+	if (m->session->tr)
+		result = m->session->tr->active;
+	MT_lock_unset(&embedded_lock);
+	return result;
+}
+
 char*
-monetdb_query(monetdb_connection conn, char* query, monetdb_result** result, lng* affected_rows, int* prepare_id)
+monetdb_query(monetdb_connection conn, char* query, monetdb_result** result, monetdb_cnt* affected_rows, int* prepare_id)
 {
 	char* msg;
 	MT_lock_set(&embedded_lock);
@@ -550,7 +605,7 @@ monetdb_query(monetdb_connection conn, char* query, monetdb_result** result, lng
 }
 
 char*
-monetdb_append(monetdb_connection conn, const char* schema, const char* table, bat *batids, size_t column_count)
+monetdb_append(monetdb_connection conn, const char* schema, const char* table, monetdb_column **input /*bat *batids*/, size_t column_count)
 {
 	Client c = (Client) conn;
 	mvc *m;
@@ -566,74 +621,88 @@ monetdb_append(monetdb_connection conn, const char* schema, const char* table, b
 		goto cleanup;
         if ((msg = SQLtrans(m)) != MAL_SUCCEED)
 		goto cleanup;
+
+	if (schema == NULL) {
+		msg = createException(MAL, "embedded.monetdb_append", "schema parameter is NULL");
+		goto cleanup;
+	}
 	if (table == NULL) {
 		msg = createException(MAL, "embedded.monetdb_append", "table parameter is NULL");
 		goto cleanup;
 	}
-	if (batids == NULL) {
-		msg = createException(MAL, "embedded.monetdb_append", "batids parameter is NULL");
+	if (input == NULL) {
+		msg = createException(MAL, "embedded.monetdb_append", "input parameter is NULL");
 		goto cleanup;
 	}
 	if (column_count < 1) {
 		msg = createException(MAL, "embedded.monetdb_append", "column_count must be higher than 0");
 		goto cleanup;
 	}
-	if (!m->sa)
-		m->sa = sa_create();
-	if (!m->sa) {
-		msg = createException(SQL, "embedded.monetdb_append", MAL_MALLOC_FAIL);
+
+	sql_schema *s;
+	sql_table *t;
+
+	if (schema) {
+		if (!(s = mvc_bind_schema(m, schema))) {
+			msg = createException(MAL, "embedded.monetdb_append", "Schema missing %s", schema);
+			goto cleanup;
+		}
+	} else {
+		s = cur_schema(m);
+	}
+	if (!(t = mvc_bind_table(m, s, table))) {
+		msg = createException(SQL, "embedded.monetdb_append", "Table missing %s.%s", schema, table);
 		goto cleanup;
 	}
-	{
-		node *n;
-		size_t i;
-		sql_rel *rel;
-                // [FIX]:
-                UNUSED(rel);
-		list *exps = sa_list(m->sa), *args = sa_list(m->sa), *col_types = sa_list(m->sa);
-		sql_schema *s;
-		sql_table *t;
-		sql_subfunc *f = sql_find_func(m->sa, mvc_bind_schema(m, "sys"), "append", 1, F_UNION, NULL);
+	
+	/* for now no default values, ie user should supply all columns */
 
-		assert(f);
-		if (schema) {
-			if (!(s = mvc_bind_schema(m, schema))) {
-				msg = createException(MAL, "embedded.monetdb_append", "Schema missing %s", schema);
+	if (column_count != (size_t)list_length(t->columns.set)) {
+		msg = createException(SQL, "embedded.monetdb_append", "Incorrect number of columns");
+		goto cleanup;
+	}
+
+	/* small number of rows */
+	if (input[0]->count <= 16) {
+		int i, cnt = (int)input[0]->count;
+		node *n;
+
+		for (i = 0, n = t->columns.set->h; i < column_count && n; i++, n = n->next) {
+			sql_column *c = n->data;
+			int mtype = monetdb_type(input[i]->type);
+			char *v = input[i]->data;
+			int w = 1;
+
+			if (mtype < 0) {
+				msg = createException(SQL, "embedded.monetdb_append", "Cannot find type for column %d", i);
 				goto cleanup;
 			}
-		} else {
-			s = cur_schema(m);
-		}
-		if (!(t = mvc_bind_table(m, s, table))) {
-			msg = createException(SQL, "embedded.monetdb_append", "Table missing %s.%s", schema, table);
-			goto cleanup;
-		}
-		if (column_count != (size_t)list_length(t->columns.set)) {
-			msg = createException(SQL, "embedded.monetdb_append", "Incorrect number of columns");
-			goto cleanup;
-		}
-		for (i = 0, n = t->columns.set->h; i < column_count && n; i++, n = n->next) {
-			sql_column *col = n->data;
-			list_append(args, exp_atom_lng(m->sa, (lng) batids[i]));
-			list_append(exps, exp_column(m->sa, t->base.name, col->base.name, &col->type, CARD_MULTI, col->null, 0));
-			list_append(col_types, &col->type);
-		}
+			if (mtype >= TYPE_bit && mtype <= TYPE_dbl) {
+				w = BATatoms[mtype].size;
+				for (int j=0; j<cnt; j++, v+=w){
+					if (store_funcs.append_col(m->session->tr, c, v, mtype) != 0) {
+						msg = createException(SQL, "embedded.monetdb_append", "Cannot append values");
+						goto cleanup;
+					}
+				}
+			} else if (mtype == TYPE_str) {
+				char **d = (char**)v;
 
-		f->res = col_types;
-		rel = rel_insert(m, rel_basetable(m, t, t->base.name), rel_table_func(m->sa, NULL, exp_op(m->sa,  args, f), exps, 1));
-		assert(rel);
-		m->scanner.rs = NULL;
-		m->errstr[0] = '\0';
-                // [FIX]:
-		//if (backend_dumpstmt((backend *) c->sqlcontext, c->curprg->def, rel, 1, 1, "append") < 0) {
-		//	msg = createException(SQL, "embedded.monetdb_append", "Append plan generation failure");
-		//	goto cleanup;
-		//}
-                //[FIX]:
-		//if ((msg = SQLoptimizeQuery(c, c->curprg->def)) != MAL_SUCCEED)
-		//	goto cleanup;
-		//if ((msg = SQLengine(c)) != MAL_SUCCEED)
-		//	goto cleanup;
+				for (int j=0; j<cnt; j++){
+					char *s = d[j];
+					if (!s)
+						s = (char*)str_nil;
+					if (store_funcs.append_col(m->session->tr, c, s, mtype) != 0) {
+						msg = createException(SQL, "embedded.monetdb_append", "Cannot append values");
+						goto cleanup;
+					}
+				}
+			}
+			/* TODO blob, temperal */
+		}
+	} else { 
+		msg = createException(SQL, "embedded.monetdb_append", "TODO bulk insert");
+		goto cleanup;
 	}
 cleanup:
 	msg = commit_action(m, msg);
@@ -652,7 +721,7 @@ monetdb_cleanup_result(monetdb_connection conn, monetdb_result* result)
 }
 
 char*
-monetdb_get_table(monetdb_connection conn, sql_table** table, const char* schema_name, const char* table_name)
+monetdb_get_table(monetdb_connection conn, monetdb_table** table, const char* schema_name, const char* table_name)
 {
 	mvc *m;
 	sql_schema *s;
@@ -681,7 +750,7 @@ monetdb_get_table(monetdb_connection conn, sql_table** table, const char* schema
 	} else {
 		s = cur_schema(m);
 	}
-	if (!(*table = mvc_bind_table(m, s, table_name))) {
+	if (!(*(sql_table**)table = mvc_bind_table(m, s, table_name))) {
 		msg = createException(MAL, "embedded.monetdb_get_table", "Could not find table %s", table_name);
 		goto cleanup;
 	}
@@ -849,7 +918,7 @@ static void data_from_time(daytime d, monetdb_data_time *ptr);
 static void data_from_timestamp(timestamp d, monetdb_data_timestamp *ptr);
 
 char*
-monetdb_result_fetch(monetdb_connection conn, monetdb_column** res, monetdb_result* mres, size_t column_index)
+monetdb_result_fetch(monetdb_connection conn, monetdb_result* mres, monetdb_column** res, size_t column_index)
 {
 	BAT* b = NULL;
 	int bat_type;
@@ -1065,38 +1134,6 @@ cleanup:
 	return msg;
 }
 
-char*
-monetdb_result_fetch_rawcol(monetdb_connection conn, res_col** res, monetdb_result* mres, size_t column_index)
-{
-	char* msg = MAL_SUCCEED;
-	monetdb_result_internal* result = (monetdb_result_internal*) mres;
-	mvc* m;
-	Client c = (Client) conn;
-
-	MT_lock_set(&embedded_lock);
-	if ((msg = validate_connection(conn, "embedded.monetdb_result_fetch_rawcol")) != MAL_SUCCEED) {
-		MT_lock_unset(&embedded_lock);
-		return msg;
-	}
-
-	if ((msg = getSQLContext(c, NULL, &m, NULL)) != MAL_SUCCEED)
-		goto cleanup;
-	if ((msg = SQLtrans(m)) != MAL_SUCCEED)
-		goto cleanup;
-	if (column_index >= mres->ncols) { // index out of range
-		msg = createException(MAL, "embedded.monetdb_result_fetch_rawcol", "Index out of range");
-		goto cleanup;
-	}
-cleanup:
-	if (msg)
-		*res = NULL;
-	else
-		*res = &(result->monetdb_resultset->cols[column_index]);
-	msg = commit_action(m, msg);
-	MT_lock_unset(&embedded_lock);
-	return msg;
-}
-
 void
 data_from_date(date d, monetdb_data_date *ptr)
 {
@@ -1177,3 +1214,40 @@ blob_is_null(monetdb_data_blob value)
 {
 	return value.data == NULL;
 }
+
+
+#if 0
+//embedded_export char* monetdb_result_fetch_rawcol(monetdb_connection conn, res_col** res, monetdb_result* mres, size_t column_index);
+char*
+monetdb_result_fetch_rawcol(monetdb_connection conn, res_col** res, monetdb_result* mres, size_t column_index)
+{
+	char* msg = MAL_SUCCEED;
+	monetdb_result_internal* result = (monetdb_result_internal*) mres;
+	mvc* m;
+	Client c = (Client) conn;
+
+	MT_lock_set(&embedded_lock);
+	if ((msg = validate_connection(conn, "embedded.monetdb_result_fetch_rawcol")) != MAL_SUCCEED) {
+		MT_lock_unset(&embedded_lock);
+		return msg;
+	}
+
+	if ((msg = getSQLContext(c, NULL, &m, NULL)) != MAL_SUCCEED)
+		goto cleanup;
+	if ((msg = SQLtrans(m)) != MAL_SUCCEED)
+		goto cleanup;
+	if (column_index >= mres->ncols) { // index out of range
+		msg = createException(MAL, "embedded.monetdb_result_fetch_rawcol", "Index out of range");
+		goto cleanup;
+	}
+cleanup:
+	if (msg)
+		*res = NULL;
+	else
+		*res = &(result->monetdb_resultset->cols[column_index]);
+	msg = commit_action(m, msg);
+	MT_lock_unset(&embedded_lock);
+	return msg;
+}
+#endif
+
