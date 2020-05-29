@@ -1516,7 +1516,7 @@ static BUN
 mskfnd(BAT *b, msk v)
 {
 	BUN p, q;
-	uint32_t m;
+
 	if (* (msk *) v) {
 		/* find a 1 value */
 		for (p = 0, q = (BATcount(b) + 31) / 32; p < q; p++) {

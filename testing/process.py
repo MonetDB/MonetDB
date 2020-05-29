@@ -155,7 +155,8 @@ class Popen(subprocess.Popen):
         super().__exit__(exc_type, value, traceback)
 
     def __del__(self):
-        self.terminate()
+        if self._child_created:
+            self.terminate()
         self._clean_dotmonetdbfile()
         super().__del__()
 

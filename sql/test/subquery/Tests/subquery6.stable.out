@@ -28,10 +28,40 @@ stdout of test 'subquery6` in directory 'sql/test/subquery` itself:
 #     WHERE ctr1.ctr_state = ctr2.ctr_state)
 #  AND col1 = ColID
 #  AND ctr1.ctr_customer_sk = TotalSales;
-% . # table_name
-% single_value # name
+% .%45 # table_name
+% %45 # name
 % tinyint # type
 % 1 # length
+#SELECT (SELECT (SELECT SUM(col1)) IN (MAX(col2))) FROM another_t;
+% .%5 # table_name
+% %5 # name
+% boolean # type
+% 5 # length
+[ false	]
+#SELECT (SELECT (SELECT SUM(col1)) IN (MAX(col2), '12')) FROM another_t;
+% .%6 # table_name
+% %6 # name
+% boolean # type
+% 5 # length
+[ false	]
+#SELECT CASE WHEN ColID IS NULL THEN CAST(Product_Category AS INT) ELSE TotalSales END FROM tbl_ProductSales;
+% sys.%1 # table_name
+% %1 # name
+% int # type
+% 3 # length
+[ 200	]
+[ 400	]
+[ 500	]
+[ 100	]
+#SELECT ColID FROM tbl_ProductSales WHERE CASE WHEN ColID IS NULL THEN CAST(Product_Category AS INT) ELSE TotalSales END;
+% sys.tbl_productsales # table_name
+% colid # name
+% int # type
+% 1 # length
+[ 1	]
+[ 2	]
+[ 3	]
+[ 4	]
 #DROP TABLE tbl_ProductSales;
 #DROP TABLE another_T;
 #DROP TABLE integers;

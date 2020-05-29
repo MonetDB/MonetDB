@@ -984,6 +984,13 @@ fi
 %postun -p /sbin/ldconfig
 
 %changelog
+* Fri May 29 2020 Sjoerd Mullender <sjoerd@acm.org> - 11.37.7-20200529
+- Rebuilt.
+
+* Tue May 26 2020 Sjoerd Mullender <sjoerd@acm.org> - 11.37.5-20200526
+- Rebuilt.
+- BZ#6864: (I)LIKE with multiple % doen't find matches
+
 * Mon May 18 2020 Sjoerd Mullender <sjoerd@acm.org> - 11.37.3-20200518
 - Rebuilt.
 - BZ#6863: thash files not released upon drop table
@@ -1240,7 +1247,7 @@ fi
   column version.
 
 * Sat Feb 22 2020 Joeri van Ruth <joeri.van.ruth@monetdbsolutions.com> - 11.37.1-20200511
-- sql: Added SQL function sys.hot_snapshot() which can be used to write
+- sql: Added SQL procedure sys.hot_snapshot() which can be used to write
   a snapshot of the database to a tar file. For example,
   sys.hot_snapshot('/tmp/snapshot.tar'). If compression support is
   compiled in, snapshots can also be compressed ('/tmp/snapshot.tar.gz').

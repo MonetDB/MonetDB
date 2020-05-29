@@ -6,8 +6,8 @@ stdout of test 'connect_crash.SF-1436626` in directory 'sql/test/BugTracker` its
 # 14:42:35 >  
 
 #select 1;
-% . # table_name
-% single_value # name
+% .%2 # table_name
+% %2 # name
 % tinyint # type
 % 1 # length
 [ 1	]

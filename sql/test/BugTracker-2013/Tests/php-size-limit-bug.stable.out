@@ -57,7 +57,7 @@ stdout of test 'php-size-limit-bug` in directory 'sql/test/BugTracker-2013` itse
 20000
 Array
 (
-    [single_value] => 1
+    [2] => 1
 )
 
 # 23:24:10 >  

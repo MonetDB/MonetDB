@@ -47,8 +47,8 @@ stdout of test 'inet` in directory 'sql/test/pg_regress` itself:
 [ "",	192.168.1.2/30,	192.168.1.226	]
 #SELECT '' AS ten, c AS cidr, broadcast(c),
 #  i AS inet, broadcast(i) FROM INET_TBL;
-% .,	sys.,	sys.,	sys.,	sys. # table_name
-% ten,	cidr,	%3,	inet,	%5 # name
+% .,	sys.,	sys.%1,	sys.,	sys.%2 # table_name
+% ten,	cidr,	%1,	inet,	%2 # name
 % char,	inet,	inet,	inet,	inet # type
 % 0,	0,	0,	0,	0 # length
 [ "",	192.168.1.0/26,	192.168.1.63/26,	192.168.1.226,	192.168.1.226	]

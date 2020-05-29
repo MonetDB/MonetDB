@@ -442,7 +442,7 @@ CMDvarCONVERT(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	(void) cntxt;
 	(void) mb;
 
-	if (VARconvert(&stk->stk[getArg(pci, 0)], &stk->stk[getArg(pci, 1)], 1) != GDK_SUCCEED) {
+	if (VARconvert(&stk->stk[getArg(pci, 0)], &stk->stk[getArg(pci, 1)], 1, 0, 0, 0) != GDK_SUCCEED) {
 		snprintf(buf, sizeof(buf), "%s.%s", pci->modname, pci->fcnname);
 		return mythrow(MAL, buf, OPERATION_FAILED);
 	}
@@ -628,12 +628,7 @@ CALCswitchbit(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (t1 != t2)
 		return mythrow(MAL, "ifthenelse", SEMANTIC_TYPE_MISMATCH);
 
-	if (is_bit_nil(b)) {
-		if (VALinit(&stk->stk[pci->argv[0]], t1, ATOMnilptr(t1)) == NULL)
-			return mythrow(MAL, "ifthenelse", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-		return MAL_SUCCEED;
-	}
-	if (b) {
+	if (b && !is_bit_nil(b)) {
 		p = getArgReference(stk, pci, 2);
 	} else {
 		p = getArgReference(stk, pci, 3);

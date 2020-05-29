@@ -36,6 +36,39 @@ WHERE ctr1.ctr_total_return >
   AND ctr1.ctr_customer_sk = TotalSales;
 	--empty
 
+SELECT i FROM integers i1 WHERE (SELECT CASE WHEN i1.i IS NULL THEN (SELECT FALSE FROM integers i2) ELSE TRUE END);
+	--error, more than one row returned by a subquery used as an expression
+
+SELECT (SELECT (SELECT SUM(col1)) IN (MAX(col2))) FROM another_t;
+	-- False
+
+SELECT 1 IN (col4, MIN(col2)) FROM another_t;
+	--error, column "another_t.col4" must appear in the GROUP BY clause or be used in an aggregate function
+
+SELECT (SELECT col1) IN ('not a number') FROM another_t;
+	-- error, cannot cast string into number
+
+SELECT (SELECT (SELECT SUM(col1)) IN (MAX(col2), '12')) FROM another_t;
+	-- False
+
+SELECT CASE WHEN ColID IS NULL THEN CAST(Product_Category AS INT) ELSE TotalSales END FROM tbl_ProductSales;
+	-- 200
+	-- 400
+	-- 500
+	-- 100
+
+SELECT ColID FROM tbl_ProductSales WHERE CASE WHEN ColID IS NULL THEN CAST(Product_Category AS INT) ELSE TotalSales END;
+	-- 1
+	-- 2
+	-- 3
+	-- 4
+
+SELECT SUM((SELECT col1)) FROM another_t;
+	-- 1234
+
+SELECT SUM((SELECT CAST(EXISTS(SELECT col1) AS INT))) FROM another_t;
+	-- 4
+
 DROP TABLE tbl_ProductSales;
 DROP TABLE another_T;
 DROP TABLE integers;

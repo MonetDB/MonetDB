@@ -208,7 +208,7 @@ logbat_new(int tt, BUN size, role_t role)
 		if (role == PERSISTENT)
 			BATmode(nb, false);
 	} else {
-		fprintf(stderr, "!ERROR: logbat_new: creating new BAT[void:%s]#" BUNFMT " failed\n", ATOMname(tt), size);
+		TRC_CRITICAL(GDK, "creating new BAT[void:%s]#" BUNFMT " failed\n", ATOMname(tt), size);
 	}
 	return nb;
 }
@@ -230,7 +230,7 @@ log_write_format(logger *l, logformat *data)
 	    mnstr_writeLng(l->log, data->nr) &&
 	    mnstr_writeInt(l->log, data->tid))
 		return GDK_SUCCEED;
-	fprintf(stderr, "!ERROR: log_write_format: write failed\n");
+	TRC_CRITICAL(GDK, "write failed\n");
 	return GDK_FAIL;
 }
 
@@ -243,7 +243,7 @@ log_read_string(logger *l)
 
 	assert(!l->inmemory);
 	if (mnstr_readInt(l->log, &len) != 1) {
-		fprintf(stderr, "!ERROR: log_read_string: read failed\n");
+		TRC_CRITICAL(GDK, "read failed\n");
 //MK This leads to non-repeatable log structure?
 		return NULL;
 	}
@@ -251,14 +251,14 @@ log_read_string(logger *l)
 		return NULL;
 	buf = GDKmalloc(len);
 	if (buf == NULL) {
-		fprintf(stderr, "!ERROR: log_read_string: malloc failed\n");
+		TRC_CRITICAL(GDK, "malloc failed\n");
 		/* this is bad */
 		return (char *) -1;
 	}
 
 	if ((nr = mnstr_read(l->log, buf, 1, len)) != (ssize_t) len) {
 		buf[len - 1] = 0;
-		fprintf(stderr, "!ERROR: log_read_string: couldn't read name (%s) %zd\n", buf, nr);
+		TRC_CRITICAL(GDK, "couldn't read name (%s) %zd\n", buf, nr);
 		GDKfree(buf);
 		return NULL;
 	}
@@ -276,7 +276,7 @@ log_write_string(logger *l, const char *n)
 	assert(len <= INT_MAX);
 	if (!mnstr_writeInt(l->log, (int) len) ||
 	    mnstr_write(l->log, n, 1, len) != (ssize_t) len) {
-		fprintf(stderr, "!ERROR: log_write_string: write failed\n");
+		TRC_CRITICAL(GDK, "write failed\n");
 		return GDK_FAIL;
 	}
 	return GDK_SUCCEED;
@@ -348,7 +348,7 @@ log_read_seq(logger *lg, logformat *l)
 	assert(!lg->inmemory);
 	assert(l->nr <= (lng) INT_MAX);
 	if (mnstr_readLng(lg->log, &val) != 1) {
-		fprintf(stderr, "!ERROR: log_read_seq: read failed\n");
+		TRC_CRITICAL(GDK, "read failed\n");
 		return LOG_EOF;
 	}
 
@@ -378,7 +378,7 @@ log_write_id(logger *l, char tpe, oid id)
 	if (mnstr_writeChr(l->log, tpe) &&
 	    mnstr_writeLng(l->log, lid))
 		return GDK_SUCCEED;
-	fprintf(stderr, "!ERROR: log_write_id: write failed\n");
+	TRC_CRITICAL(GDK, "write failed\n");
 	return GDK_FAIL;
 }
 
@@ -390,7 +390,7 @@ log_read_id(logger *lg, char *tpe, oid *id)
 	assert(!lg->inmemory);
 	if (mnstr_readChr(lg->log, tpe) != 1 ||
 	    mnstr_readLng(lg->log, &lid) != 1) {
-		fprintf(stderr, "!ERROR: log_read_id: read failed\n");
+		TRC_CRITICAL(GDK, "read failed\n");
 		return LOG_EOF;
 	}
 	*id = (oid)lid;
@@ -801,7 +801,7 @@ log_read_create(logger *lg, trans *tr, char *name, char tpe, oid id)
 	ha = buf;
 	ta = strchr(buf, ',');
 	if (ta == NULL) {
-		fprintf(stderr, "!ERROR: log_read_create: inconsistent data read\n");
+		TRC_CRITICAL(GDK, "inconsistent data read\n");
 		return LOG_ERR;
 	}
 	*ta++ = 0;		/* skip over , */
@@ -1077,11 +1077,11 @@ logger_open(logger *lg)
 	}
 	len = snprintf(id, sizeof(id), LLFMT, lg->id);
 	if (len == -1 || len >= BUFSIZ) {
-		fprintf(stderr, "!ERROR: logger_open: filename is too large\n");
+		TRC_CRITICAL(GDK, "filename is too large\n");
 		return GDK_FAIL;
 	}
 	if (!(filename = GDKfilepath(BBPselectfarm(PERSISTENT, 0, offheap), lg->dir, LOGFILE, id))) {
-		fprintf(stderr, "!ERROR: logger_open: allocation failure\n");
+		TRC_CRITICAL(GDK, "allocation failure\n");
 		return GDK_FAIL;
 	}
 
@@ -1093,7 +1093,7 @@ logger_open(logger *lg)
 	lg->end = 0;
 
 	if (lg->log == NULL || mnstr_errnr(lg->log)) {
-		fprintf(stderr, "!ERROR: logger_open: creating %s failed\n", filename);
+		TRC_CRITICAL(GDK, "creating %s failed\n", filename);
 		GDKfree(filename);
 		return GDK_FAIL;
 	}
@@ -1153,7 +1153,7 @@ logger_readlog(logger *lg, char *filename, bool *filemissing)
 		break;
 	}
 	if ((fd = getFileNo(lg->log)) < 0 || fstat(fd, &sb) < 0) {
-		fprintf(stderr, "!ERROR: logger_readlog: fstat on opened file %s failed\n", filename);
+		TRC_CRITICAL(GDK, "fstat on opened file %s failed\n", filename);
 		logger_close(lg);
 		GDKdebug = dbg;
 		/* If the file could be opened, but fstat fails,
@@ -1670,7 +1670,7 @@ bm_subcommit(logger *lg, BAT *list_bid, BAT *list_nme, BAT *catalog_bid, BAT *ca
 	res = TMsubcommit_list(n, i);
 	GDKfree(n);
 	if (res != GDK_SUCCEED)
-		fprintf(stderr, "!ERROR: bm_subcommit: commit failed\n");
+		TRC_CRITICAL(GDK, "commit failed\n");
 	return res;
 }
 
@@ -1731,8 +1731,15 @@ logger_load(int debug, const char *fn, char filename[FILENAME_MAX], logger *lg)
 			if (GDKunlink(farmid, lg->dir, LOGFILE, NULL) != GDK_SUCCEED ||
 			    GDKmove(farmid, lg->dir, LOGFILE, "bak", lg->dir, LOGFILE, NULL) != GDK_SUCCEED)
 				goto error;
+		} else if (errno != ENOENT) {
+			GDKsyserror("open %s failed", bak);
+			goto error;
 		}
 		fp = fopen(filename, "r");
+		if (fp == NULL && errno != ENOENT) {
+			GDKsyserror("open %s failed", filename);
+			goto error;
+		}
 	}
 
 	strconcat_len(bak, sizeof(bak), fn, "_catalog", NULL);
@@ -1808,8 +1815,8 @@ logger_load(int debug, const char *fn, char filename[FILENAME_MAX], logger *lg)
 				goto error;
 			}
 			if ((fp = fopen(filename, "w")) == NULL) {
-				GDKerror("cannot create log file %s\n",
-					 filename);
+				GDKsyserror("cannot create log file %s\n",
+					    filename);
 				goto error;
 			}
 			lg->id ++;
@@ -2163,24 +2170,15 @@ logger_load(int debug, const char *fn, char filename[FILENAME_MAX], logger *lg)
 			FILE *fp1;
 			int len, curid;
 
-			len = snprintf(cvfile1, sizeof(cvfile1), "%sconvert-date",
-				 lg->dir);
-			if (len == -1 || len >= FILENAME_MAX) {
-				GDKerror("Convert-date filename path is too large\n");
-				goto error;
-			}
-			len = snprintf(bak, sizeof(bak), "%s_date-convert", fn);
-			if (len == -1 || len >= FILENAME_MAX) {
-				GDKerror("Convert-date filename path is too large\n");
-				goto error;
-			}
 			/* read the current log id without disturbing
 			 * the file pointer */
 #ifdef _MSC_VER
 			/* work around bug in Visual Studio runtime:
 			 * fgetpos may return incorrect value */
-			if ((fp1 = fopen(filename, "r")) == NULL)
+			if ((fp1 = fopen(filename, "r")) == NULL) {
+				GDKsyserror("cannot open %s\n", filename);
 				goto error;
+			}
 			if (fgets(bak, sizeof(bak), fp1) == NULL ||
 			    fgets(bak, sizeof(bak), fp1) == NULL ||
 			    fscanf(fp1, "%d", &curid) != 1) {
@@ -2197,6 +2195,17 @@ logger_load(int debug, const char *fn, char filename[FILENAME_MAX], logger *lg)
 			if (fsetpos(fp, &off) != 0)
 				goto error; /* should never happen */
 #endif
+			len = snprintf(cvfile1, sizeof(cvfile1), "%sconvert-date",
+				 lg->dir);
+			if (len == -1 || len >= FILENAME_MAX) {
+				GDKerror("Convert-date filename path is too large\n");
+				goto error;
+			}
+			len = snprintf(bak, sizeof(bak), "%s_date-convert", fn);
+			if (len == -1 || len >= FILENAME_MAX) {
+				GDKerror("Convert-date filename path is too large\n");
+				goto error;
+			}
 
 			if ((fp1 = GDKfileopen(0, NULL, bak, NULL, "r")) != NULL) {
 				/* file indicating that we need to do
@@ -2218,7 +2227,7 @@ logger_load(int debug, const char *fn, char filename[FILENAME_MAX], logger *lg)
 				    fsync(fileno(fp1)) < 0 ||
 #endif
 				    fclose(fp1) != 0) {
-					GDKerror("failed to write %s\n", cvfile1);
+					GDKsyserror("failed to write %s\n", cvfile1);
 					goto error;
 				}
 				/* then remove the unversioned file
@@ -2230,6 +2239,9 @@ logger_load(int debug, const char *fn, char filename[FILENAME_MAX], logger *lg)
 				}
 				/* set the flag that we need to convert */
 				lg->convert_date = true;
+			} else if (errno != ENOENT) {
+				GDKsyserror("opening file %s failed\n", bak);
+				goto error;
 			} else if ((fp1 = GDKfileopen(farmid, NULL, cvfile1, NULL, "r")) != NULL) {
 				/* the versioned conversion file
 				 * exists: check version */
@@ -2248,6 +2260,9 @@ logger_load(int debug, const char *fn, char filename[FILENAME_MAX], logger *lg)
 					 * file */
 					GDKunlink(0, NULL, cvfile1, NULL);
 				}
+			} else if (errno != ENOENT) {
+				GDKsyserror("opening file %s failed\n", cvfile1);
+				goto error;
 			}
 		}
 #endif
@@ -2305,13 +2320,13 @@ logger_new(int debug, const char *fn, const char *logdir, int version, preversio
 	char filename[FILENAME_MAX];
 
 	if (!GDKinmemory() && MT_path_absolute(logdir)) {
-		fprintf(stderr, "!ERROR: logger_new: logdir must be relative path\n");
+		TRC_CRITICAL(GDK, "logdir must be relative path\n");
 		return NULL;
 	}
 
 	lg = GDKmalloc(sizeof(struct logger));
 	if (lg == NULL) {
-		fprintf(stderr, "!ERROR: logger_new: allocating logger structure failed\n");
+		TRC_CRITICAL(GDK, "allocating logger structure failed\n");
 		return NULL;
 	}
 
@@ -2330,7 +2345,7 @@ logger_new(int debug, const char *fn, const char *logdir, int version, preversio
 
 	len = snprintf(filename, sizeof(filename), "%s%c%s%c", logdir, DIR_SEP, fn, DIR_SEP);
 	if (len == -1 || len >= FILENAME_MAX) {
-		fprintf(stderr, "!ERROR: logger_new: filename is too large\n");
+		TRC_CRITICAL(GDK, "filename is too large\n");
 		GDKfree(lg);
 		return NULL;
 	}
@@ -2339,7 +2354,7 @@ logger_new(int debug, const char *fn, const char *logdir, int version, preversio
 	lg->bufsize = 64*1024;
 	lg->buf = GDKmalloc(lg->bufsize);
 	if (lg->fn == NULL || lg->dir == NULL || lg->buf == NULL) {
-		fprintf(stderr, "!ERROR: logger_new: strdup failed\n");
+		TRC_CRITICAL(GDK, "strdup failed\n");
 		GDKfree(lg->fn);
 		GDKfree(lg->dir);
 		GDKfree(lg->buf);
@@ -2414,7 +2429,7 @@ logger_destroy(logger *lg)
 		BAT *b = lg->catalog_bid;
 
 		if (logger_cleanup(lg) != GDK_SUCCEED)
-			fprintf(stderr, "#logger_destroy: logger_cleanup failed\n");
+			TRC_CRITICAL(GDK, "logger_cleanup failed\n");
 
 		/* free resources */
 		const log_bid *bids = (const log_bid *) Tloc(b, 0);
@@ -2460,14 +2475,14 @@ logger_exit(logger *lg)
 	farmid = BBPselectfarm(PERSISTENT, 0, offheap);
 	logger_close(lg);
 	if (GDKmove(farmid, lg->dir, LOGFILE, NULL, lg->dir, LOGFILE, "bak") != GDK_SUCCEED) {
-		fprintf(stderr, "!ERROR: logger_exit: rename %s to %s.bak in %s failed\n",
+		TRC_CRITICAL(GDK, "rename %s to %s.bak in %s failed\n",
 			LOGFILE, LOGFILE, lg->dir);
 		return GDK_FAIL;
 	}
 
 	len = snprintf(filename, sizeof(filename), "%s%s", lg->dir, LOGFILE);
 	if (len == -1 || len >= FILENAME_MAX) {
-		fprintf(stderr, "!ERROR: logger_exit: logger filename path is too large\n");
+		TRC_CRITICAL(GDK, "logger filename path is too large\n");
 		return GDK_FAIL;
 	}
 	if ((fp = GDKfileopen(farmid, NULL, filename, NULL, "w")) != NULL) {
@@ -2475,22 +2490,20 @@ logger_exit(logger *lg)
 
 		if (fprintf(fp, "%06d\n\n", lg->version) < 0) {
 			(void) fclose(fp);
-			fprintf(stderr, "!ERROR: logger_exit: write to %s failed\n",
-				filename);
+			TRC_CRITICAL(GDK, "write to %s failed\n", filename);
 			return GDK_FAIL;
 		}
 		lg->id ++;
 
 		if (logger_commit(lg) != GDK_SUCCEED) {
 			(void) fclose(fp);
-			fprintf(stderr, "!ERROR: logger_exit: logger_commit failed\n");
+			TRC_CRITICAL(GDK, "logger_commit failed\n");
 			return GDK_FAIL;
 		}
 
 		if (fprintf(fp, LLFMT "\n", lg->id) < 0) {
 			(void) fclose(fp);
-			fprintf(stderr, "!ERROR: logger_exit: write to %s failed\n",
-				filename);
+			TRC_CRITICAL(GDK, "write to %s failed\n", filename);
 			return GDK_FAIL;
 		}
 
@@ -2505,13 +2518,11 @@ logger_exit(logger *lg)
 #endif
 			    )) {
 			(void) fclose(fp);
-			fprintf(stderr, "!ERROR: logger_exit: flush of %s failed\n",
-				filename);
+			TRC_CRITICAL(GDK, "flush of %s failed\n", filename);
 			return GDK_FAIL;
 		}
 		if (fclose(fp) < 0) {
-			fprintf(stderr, "!ERROR: logger_exit: flush of %s failed\n",
-				filename);
+			TRC_CRITICAL(GDK, "flush of %s failed\n", filename);
 			return GDK_FAIL;
 		}
 
@@ -2519,21 +2530,19 @@ logger_exit(logger *lg)
 		 * later cleanup actions */
 		len = snprintf(ext, sizeof(ext), "bak-" LLFMT, lg->id);
 		if (len == -1 || len >= FILENAME_MAX) {
-			fprintf(stderr, "!ERROR: logger_exit: new logger filename path is too large\n");
+			TRC_CRITICAL(GDK, "new logger filename path is too large\n");
 			return GDK_FAIL;
 		}
 
 		if (GDKmove(farmid, lg->dir, LOGFILE, "bak", lg->dir, LOGFILE, ext) != GDK_SUCCEED) {
-			fprintf(stderr, "!ERROR: logger_exit: rename %s.bak to %s.%s failed\n",
+			TRC_CRITICAL(GDK, "rename %s.bak to %s.%s failed\n",
 				LOGFILE, LOGFILE, ext);
 			return GDK_FAIL;
 		}
 
 		lg->changes = 0;
 	} else {
-		fprintf(stderr, "!ERROR: logger_exit: could not create %s\n",
-			filename);
-		GDKerror("could not open %s\n", filename);
+		GDKsyserror("could not create %s\n", filename);
 		return GDK_FAIL;
 	}
 	return GDK_SUCCEED;
@@ -2564,7 +2573,7 @@ logger_cleanup(logger *lg)
 	farmid = BBPselectfarm(PERSISTENT, 0, offheap);
 	len = snprintf(buf, sizeof(buf), "%s%s.bak-" LLFMT, lg->dir, LOGFILE, lg->id);
 	if (len == -1 || len >= BUFSIZ) {
-		fprintf(stderr, "#logger_cleanup: filename is too large\n");
+		TRC_CRITICAL(GDK, "filename is too large\n");
 		return GDK_FAIL;
 	}
 
@@ -2576,7 +2585,7 @@ logger_cleanup(logger *lg)
 	// remove the last persisted WAL files as well to reduce the
 	// work for the logger_cleanup_old()
 	if ((fp = GDKfileopen(farmid, NULL, buf, NULL, "r")) == NULL) {
-		fprintf(stderr, "!ERROR: logger_cleanup: cannot open file %s\n", buf);
+		GDKsyserror("cannot open file %s\n", buf);
 		return GDK_FAIL;
 	}
 
@@ -2585,13 +2594,13 @@ logger_cleanup(logger *lg)
 
 		len = snprintf(log_id, sizeof(log_id), LLFMT, lid);
 		if (len == -1 || len >= FILENAME_MAX) {
-			fprintf(stderr, "#logger_cleanup: log_id filename is too large\n");
+			TRC_CRITICAL(GDK, "log_id filename is too large\n");
 			fclose(fp);
 			return GDK_FAIL;
 		}
 		if (GDKunlink(farmid, lg->dir, LOGFILE, log_id) != GDK_SUCCEED) {
 			/* not a disaster (yet?) if unlink fails */
-			fprintf(stderr, "#logger_cleanup: failed to remove old WAL %s.%s\n", LOGFILE, buf);
+			TRC_ERROR(GDK, "failed to remove old WAL %s.%s\n", LOGFILE, buf);
 			GDKclrerr();
 		}
 	}
@@ -2599,13 +2608,13 @@ logger_cleanup(logger *lg)
 
 	len = snprintf(buf, sizeof(buf), "bak-" LLFMT, lg->id);
 	if (len == -1 || len >= BUFSIZ) {
-		fprintf(stderr, "#logger_cleanup: filename is too large\n");
+		TRC_CRITICAL(GDK, "filename is too large\n");
 		GDKclrerr();
 	}
 
 	if (GDKunlink(farmid, lg->dir, LOGFILE, buf) != GDK_SUCCEED) {
 		/* not a disaster (yet?) if unlink fails */
-		fprintf(stderr, "#logger_cleanup: failed to remove old WAL %s.%s\n", LOGFILE, buf);
+		TRC_ERROR(GDK, "failed to remove old WAL %s.%s\n", LOGFILE, buf);
 		GDKclrerr();
 	}
 
@@ -2715,7 +2724,7 @@ log_bat_persists(logger *lg, BAT *b, const char *name, char tpe, oid id)
 	len++;			/* include EOS */
 	if (!mnstr_writeInt(lg->log, len) ||
 	    mnstr_write(lg->log, buf, 1, len) != (ssize_t) len) {
-		fprintf(stderr, "!ERROR: log_bat_persists: write failed\n");
+		TRC_CRITICAL(GDK, "write failed\n");
 		return GDK_FAIL;
 	}
 
@@ -2770,7 +2779,7 @@ log_bat_transient(logger *lg, const char *name, char tpe, oid id)
 
 	if (log_write_format(lg, &l) != GDK_SUCCEED ||
 	    (tpe ? log_write_id(lg, tpe, id) : log_write_string(lg, name)) != GDK_SUCCEED) {
-		fprintf(stderr, "!ERROR: log_bat_transient: write failed\n");
+		TRC_CRITICAL(GDK, "write failed\n");
 		return GDK_FAIL;
 	}
 
@@ -2846,7 +2855,7 @@ log_delta(logger *lg, BAT *uid, BAT *uval, const char *name, char tpe, oid id)
 			fprintf(stderr, "#Logged %s " LLFMT " inserts\n", name, l.nr);
 	}
 	if (ok != GDK_SUCCEED)
-		fprintf(stderr, "!ERROR: log_delta: write failed\n");
+		TRC_CRITICAL(GDK, "write failed\n");
 	return ok;
 }
 
@@ -2894,7 +2903,7 @@ log_bat(logger *lg, BAT *b, const char *name, char tpe, oid id)
 	}
 
 	if (ok != GDK_SUCCEED)
-		fprintf(stderr, "!ERROR: log_bat: write failed\n");
+		TRC_CRITICAL(GDK, "write failed\n");
 	return ok;
 }
 
@@ -2988,20 +2997,20 @@ log_tend(logger *lg)
 
 		tids = bm_tids(lg->snapshots_tid, lg->dsnapshots);
 		if (tids == NULL) {
-			fprintf(stderr, "!ERROR: log_tend: bm_tids failed\n");
+			TRC_CRITICAL(GDK, "bm_tids failed\n");
 			return GDK_FAIL;
 		}
 		cands = BATselect(lg->snapshots_tid, tids, &lg->tid, &lg->tid,
 				     true, true, false);
 		if (cands == NULL) {
-			fprintf(stderr, "!ERROR: log_tend: select failed\n");
+			TRC_CRITICAL(GDK, "select failed\n");
 			return GDK_FAIL;
 		}
 		bids = BATproject(cands, lg->snapshots_bid);
 		BBPunfix(cands->batCacheid);
 		BBPunfix(tids->batCacheid);
 		if (bids == NULL) {
-			fprintf(stderr, "!ERROR: log_tend: project failed\n");
+			TRC_CRITICAL(GDK, "project failed\n");
 			return GDK_FAIL;
 		}
 		res = bm_subcommit(lg, bids, NULL, lg->snapshots_bid,
@@ -3019,7 +3028,7 @@ log_tend(logger *lg)
 	    mnstr_flush(lg->log) ||
 	    (!(GDKdebug & NOSYNCMASK) && mnstr_fsync(lg->log)) ||
 	    pre_allocate(lg) != GDK_SUCCEED) {
-		fprintf(stderr, "!ERROR: log_tend: write failed\n");
+		TRC_CRITICAL(GDK, "write failed\n");
 		return GDK_FAIL;
 	}
 	return GDK_SUCCEED;
@@ -3063,7 +3072,7 @@ log_sequence_(logger *lg, int seq, lng val, int flush)
 	    !mnstr_writeLng(lg->log, val) ||
 	    (flush && mnstr_flush(lg->log)) ||
 	    (flush && !(GDKdebug & NOSYNCMASK) && mnstr_fsync(lg->log))) {
-		fprintf(stderr, "!ERROR: log_sequence_: write failed\n");
+		TRC_CRITICAL(GDK, "write failed\n");
 		return GDK_FAIL;
 	}
 	return GDK_SUCCEED;
