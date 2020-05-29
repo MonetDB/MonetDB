@@ -768,28 +768,6 @@ MTIMElocal_timezone_msec(lng *ret)
 	return MAL_SUCCEED;
 }
 
-str
-MTIMEstr_to_date(date *ret, const char *const *s, const char *const *format)
-{
-	struct tm tm = (struct tm) {0};
-	time_t t;
-
-	if (strNil(*s) || strNil(*format)) {
-		*ret = date_nil;
-		return MAL_SUCCEED;
-	}
-	t = time(NULL);
-	localtime_r(&t, &tm);
-	tm.tm_sec = tm.tm_min = tm.tm_hour = 0;
-	if (strptime(*s, *format, &tm) == NULL)
-		throw(MAL, "mtime.str_to_date", "format '%s', doesn't match date '%s'",
-			  *format, *s);
-	*ret = date_create(tm.tm_year + 1900, tm.tm_mon + 1, tm.tm_mday);
-	if (is_date_nil(*ret))
-		throw(MAL, "mtime.str_to_date", "bad date '%s'", *s);
-	return MAL_SUCCEED;
-}
-
 static str
 timestamp_to_str(str *ret, const timestamp *d, const char *const *format,
 				 const char *type, const char *malfunc)
@@ -825,44 +803,8 @@ timestamp_to_str(str *ret, const timestamp *d, const char *const *format,
 	return MAL_SUCCEED;
 }
 
-str
-MTIMEdate_to_str(str *ret, const date *d, const char *const *format)
-{
-	timestamp ts = timestamp_create(*d, timestamp_daytime(timestamp_current()));
-	return timestamp_to_str(ret, &ts, format, "date", "mtime.date_to_str");
-}
-
-str
-MTIMEstr_to_time(daytime *ret, const char *const *s, const char *const *format)
-{
-	struct tm tm = (struct tm) {0};
-	time_t t;
-
-	if (strNil(*s) || strNil(*format)) {
-		*ret = daytime_nil;
-		return MAL_SUCCEED;
-	}
-	t = time(NULL);
-	localtime_r(&t, &tm);
-	tm.tm_sec = tm.tm_min = tm.tm_hour = 0;
-	if (strptime(*s, *format, &tm) == NULL)
-		throw(MAL, "mtime.str_to_time", "format '%s', doesn't match time '%s'",
-			  *format, *s);
-	*ret = daytime_create(tm.tm_hour, tm.tm_min, tm.tm_sec == 60 ? 59 : tm.tm_sec, 0);
-	if (is_daytime_nil(*ret))
-		throw(MAL, "mtime.str_to_time", "bad time '%s'", *s);
-	return MAL_SUCCEED;
-}
-
-str
-MTIMEtime_to_str(str *ret, const daytime *d, const char *const *format)
-{
-	timestamp ts = timestamp_create(timestamp_date(timestamp_current()), *d);
-	return timestamp_to_str(ret, &ts, format, "time", "mtime.time_to_str");
-}
-
-str
-MTIMEstr_to_timestamp(timestamp *ret, const char *const *s, const char *const *format)
+static str
+str_to_timestamp(timestamp *ret, const char *const *s, const char *const *format, const char *type, const char *malfunc)
 {
 	struct tm tm = (struct tm) {0};
 	time_t t;
@@ -876,8 +818,8 @@ MTIMEstr_to_timestamp(timestamp *ret, const char *const *s, const char *const *f
 	tm.tm_sec = tm.tm_min = tm.tm_hour = 0;
 	tm.tm_isdst = -1;
 	if (strptime(*s, *format, &tm) == NULL)
-		throw(MAL, "mtime.str_to_timestamp",
-			  "format '%s', doesn't match timestamp '%s'", *format, *s);
+		throw(MAL, malfunc,
+			  "format '%s', doesn't match %s '%s'", *format, type, *s);
 	*ret = timestamp_create(date_create(tm.tm_year + 1900,
 										tm.tm_mon + 1,
 										tm.tm_mday),
@@ -904,8 +846,50 @@ MTIMEstr_to_timestamp(timestamp *ret, const char *const *s, const char *const *f
 		*ret = timestamp_add_usec(*ret, -tz * LL_CONSTANT(1000000));
 	}
 	if (is_timestamp_nil(*ret))
-		throw(MAL, "mtime.str_to_timestamp", "bad timestamp '%s'", *s);
+		throw(MAL, malfunc, "bad %s '%s'", type, *s);
 	return MAL_SUCCEED;
+}
+
+str
+MTIMEstr_to_date(date *ret, const char *const *s, const char *const *format)
+{
+	timestamp ts;
+	str msg = str_to_timestamp(&ts, s, format, "date", "mtime.str_to_date");
+	if (msg != MAL_SUCCEED)
+		return msg;
+	*ret = timestamp_date(ts);
+	return MAL_SUCCEED;
+}
+
+str
+MTIMEdate_to_str(str *ret, const date *d, const char *const *format)
+{
+	timestamp ts = timestamp_create(*d, timestamp_daytime(timestamp_current()));
+	return timestamp_to_str(ret, &ts, format, "date", "mtime.date_to_str");
+}
+
+str
+MTIMEstr_to_time(daytime *ret, const char *const *s, const char *const *format)
+{
+	timestamp ts;
+	str msg = str_to_timestamp(&ts, s, format, "time", "mtime.str_to_time");
+	if (msg != MAL_SUCCEED)
+		return msg;
+	*ret = timestamp_daytime(ts);
+	return MAL_SUCCEED;
+}
+
+str
+MTIMEtime_to_str(str *ret, const daytime *d, const char *const *format)
+{
+	timestamp ts = timestamp_create(timestamp_date(timestamp_current()), *d);
+	return timestamp_to_str(ret, &ts, format, "time", "mtime.time_to_str");
+}
+
+str
+MTIMEstr_to_timestamp(timestamp *ret, const char *const *s, const char *const *format)
+{
+	return str_to_timestamp(ret, s, format, "timestamp", "mtime.str_to_timestamp");
 }
 
 str

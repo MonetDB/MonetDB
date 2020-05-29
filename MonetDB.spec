@@ -984,6 +984,9 @@ fi
 %postun -p /sbin/ldconfig
 
 %changelog
+* Fri May 29 2020 Sjoerd Mullender <sjoerd@acm.org> - 11.37.7-20200529
+- Rebuilt.
+
 * Tue May 26 2020 Sjoerd Mullender <sjoerd@acm.org> - 11.37.5-20200526
 - Rebuilt.
 - BZ#6864: (I)LIKE with multiple % doen't find matches
