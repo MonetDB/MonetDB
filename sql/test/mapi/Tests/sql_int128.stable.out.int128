@@ -271,10 +271,11 @@ end user.s12_0;
 % clob # type
 % 147 # length
 function user.s30_0():void;
-    X_2:void := querylog.define("explain insert into sql_int128 values (123456789098765432101234567890987654321);":str, "default_pipe":str, 8:int);
+    X_2:void := querylog.define("explain insert into sql_int128 values (123456789098765432101234567890987654321);":str, "default_pipe":str, 9:int);
     X_5:int := sql.mvc();
-    X_8:int := sql.append(X_5:int, "sys":str, "sql_int128":str, "i":str, 123456789098765432101234567890987654321:hge);
-    sql.affectedRows(X_8:int, 1:lng);
+    X_9:lng := sql.claim(X_5:int, "sys":str, "sql_int128":str, 1:lng);
+    X_13:int := sql.append(X_5:int, "sys":str, "sql_int128":str, "i":str, X_9:lng, 123456789098765432101234567890987654321:hge);
+    sql.affectedRows(X_13:int, 1:lng);
 end user.s30_0;
 # optimizer.mitosis()
 # optimizer.dataflow()

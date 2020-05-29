@@ -158,7 +158,6 @@ stdout of test 'check` in directory 'sql/test/emptydb` itself:
 \dSf sys."evalalgebra"
 \dSf sys."fitsattach"
 \dSf sys."fitsload"
-\dSf sys."flush_log"
 \dSf sys."fuse"
 \dSf sys."generate_series"
 \dSf sys."geometrytype"
@@ -234,7 +233,6 @@ stdout of test 'check` in directory 'sql/test/emptydb` itself:
 \dSf sys."remote_table_credentials"
 \dSf sys."resume"
 \dSf sys."resume_log_flushing"
-\dSf sys."reuse"
 \dSf sys."reverse"
 \dSf sys."right_shift"
 \dSf sys."right_shift_assign"
@@ -250,7 +248,6 @@ stdout of test 'check` in directory 'sql/test/emptydb` itself:
 \dSf sys."setworkerlimit"
 \dSf sys."shpattach"
 \dSf sys."shpload"
-\dSf sys."shrink"
 \dSf sys."shutdown"
 \dSf sys."st_area"
 \dSf sys."st_asbinary"
@@ -360,7 +357,6 @@ stdout of test 'check` in directory 'sql/test/emptydb` itself:
 \dSf sys."timestamp_to_str"
 \dSf sys."tracelog"
 \dSf sys."uuid"
-\dSf sys."vacuum"
 \dSf sys."var"
 \dSf sys."var_pop"
 \dSf sys."var_samp"
@@ -544,7 +540,6 @@ SYSTEM FUNCTION         sys.first_value
 SYSTEM PROCEDURE        sys.fitsattach
 SYSTEM PROCEDURE        sys.fitsload
 SYSTEM FUNCTION         sys.floor
-SYSTEM PROCEDURE        sys.flush_log
 SYSTEM FUNCTION         sys.fuse
 SYSTEM FUNCTION         sys.generate_series
 SYSTEM FUNCTION         sys.geometrytype
@@ -696,7 +691,6 @@ SYSTEM FUNCTION         sys.replace
 SYSTEM FUNCTION         sys.restart
 SYSTEM PROCEDURE        sys.resume
 SYSTEM PROCEDURE        sys.resume_log_flushing
-SYSTEM PROCEDURE        sys.reuse
 SYSTEM FUNCTION         sys.reverse
 SYSTEM FUNCTION         sys.right
 SYSTEM FUNCTION         sys.right_shift
@@ -722,7 +716,6 @@ SYSTEM PROCEDURE        sys.settimeout
 SYSTEM PROCEDURE        sys.setworkerlimit
 SYSTEM PROCEDURE        sys.shpattach
 SYSTEM PROCEDURE        sys.shpload
-SYSTEM PROCEDURE        sys.shrink
 SYSTEM PROCEDURE        sys.shutdown
 SYSTEM FUNCTION         sys.sign
 SYSTEM FUNCTION         sys.similarity
@@ -869,7 +862,6 @@ SYSTEM FUNCTION         sys.truncate
 SYSTEM FUNCTION         sys.ucase
 SYSTEM FUNCTION         sys.upper
 SYSTEM FUNCTION         sys.uuid
-SYSTEM PROCEDURE        sys.vacuum
 SYSTEM FUNCTION         sys.var
 SYSTEM AGGREGATE        sys.var_pop
 SYSTEM FUNCTION         sys.var_pop
@@ -1190,7 +1182,6 @@ create function sys.rejects() returns table(rowid bigint, fldid int, "message" s
 create function sys.remote_table_credentials (tablename string) returns table ("uri" string, "username" string, "hash" string) external name sql.rt_credentials;
 create procedure sys.resume(tag bigint) external name sql.sysmon_resume;
 create procedure sys.resume_log_flushing() external name sql.resume_log_flushing;
-create procedure reuse(sys string, tab string) external name sql.reuse;
 create function reverse(src string) returns string external name udf.reverse;
 create function "right_shift"(i1 inet, i2 inet) returns boolean external name inet.">>";
 create function "right_shift_assign"(i1 inet, i2 inet) returns boolean external name inet.">>=";
@@ -1213,7 +1204,6 @@ create procedure sys.setworkerlimit("sessionid" int, "limit" int) external name 
 create procedure shpattach(fname string) external name shp.attach;
 create procedure shpload(fid integer) external name shp.import;
 create procedure shpload(fid integer, filter geometry) external name shp.import;
-create procedure shrink(sys string, tab string) external name sql.shrink;
 create procedure sys.shutdown(delay tinyint) external name sql.shutdown;
 create procedure sys.shutdown(delay tinyint, force bool) external name sql.shutdown;
 create function st_area(geom geometry) returns double external name geom."Area";
@@ -1381,7 +1371,6 @@ create function time_to_str(d time with time zone, format string) returns string
 create function timestamp_to_str(d timestamp with time zone, format string) returns string external name mtime."timestamp_to_str";
 create function sys.tracelog() returns table (ticks bigint, stmt string) external name sql.dump_trace;
 create function sys.uuid() returns uuid external name uuid."new";
-create procedure vacuum(sys string, tab string) external name sql.vacuum;
 CREATE FUNCTION var() RETURNS TABLE(name varchar(1024)) EXTERNAL NAME sql.sql_variables;
 create aggregate var_pop(val bigint) returns double external name "aggr"."variancep";
 create aggregate var_pop(val double) returns double external name "aggr"."variancep";
@@ -2385,7 +2374,7 @@ drop function pcre_replace(string, string, string, string);
 [ "sys.functions",	"sys",	"concat",	"SYSTEM",	"+",	"calc",	"Internal C",	"Scalar function",	false,	false,	false,	false,	"res_0",	"clob",	0,	0,	"out",	"arg_1",	"clob",	0,	0,	"in",	"arg_2",	"clob",	0,	0,	"in",	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
 [ "sys.functions",	"sys",	"concat",	"SYSTEM",	"+",	"calc",	"Internal C",	"Scalar function",	false,	false,	false,	false,	"res_0",	"varchar",	0,	0,	"out",	"arg_1",	"varchar",	0,	0,	"in",	"arg_2",	"varchar",	0,	0,	"in",	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
 [ "sys.functions",	"sys",	"contains",	"SYSTEM",	"create function contains(a geometry, x double, y double) returns boolean external name geom.\"Contains\";",	"geom",	"MAL",	"Scalar function",	false,	false,	false,	true,	"result",	"boolean",	1,	0,	"out",	"a",	"geometry",	0,	0,	"in",	"x",	"double",	53,	0,	"in",	"y",	"double",	53,	0,	"in",	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
-[ "sys.functions",	"sys",	"copyfrom",	"SYSTEM",	"copy_from",	"sql",	"Internal C",	"Function returning a table",	false,	true,	false,	true,	"res_0",	"table",	0,	0,	"out",	"arg_1",	"ptr",	0,	0,	"in",	"arg_2",	"varchar",	0,	0,	"in",	"arg_3",	"varchar",	0,	0,	"in",	"arg_4",	"varchar",	0,	0,	"in",	"arg_5",	"varchar",	0,	0,	"in",	"arg_6",	"varchar",	0,	0,	"in",	"arg_7",	"varchar",	0,	0,	"in",	"arg_8",	"bigint",	64,	0,	"in",	"arg_9",	"bigint",	64,	0,	"in",	"arg_10",	"int",	32,	0,	"in",	"arg_11",	"int",	32,	0,	"in",	"arg_12",	"varchar",	0,	0,	"in",	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
+[ "sys.functions",	"sys",	"copyfrom",	"SYSTEM",	"copy_from",	"sql",	"Internal C",	"Function returning a table",	false,	true,	false,	true,	"res_0",	"table",	0,	0,	"out",	"arg_1",	"ptr",	0,	0,	"in",	"arg_2",	"varchar",	0,	0,	"in",	"arg_3",	"varchar",	0,	0,	"in",	"arg_4",	"varchar",	0,	0,	"in",	"arg_5",	"varchar",	0,	0,	"in",	"arg_6",	"varchar",	0,	0,	"in",	"arg_7",	"bigint",	64,	0,	"in",	"arg_8",	"bigint",	64,	0,	"in",	"arg_9",	"int",	32,	0,	"in",	"arg_10",	"varchar",	0,	0,	"in",	"arg_11",	"int",	32,	0,	"in",	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
 [ "sys.functions",	"sys",	"copyfrom",	"SYSTEM",	"importTable",	"sql",	"Internal C",	"Function returning a table",	false,	true,	false,	true,	"res_0",	"table",	0,	0,	"out",	"arg_1",	"varchar",	0,	0,	"in",	"arg_2",	"varchar",	0,	0,	"in",	"arg_3",	"int",	32,	0,	"in",	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
 [ "sys.functions",	"sys",	"corr",	"SYSTEM",	"create aggregate corr(e1 bigint, e2 bigint) returns double external name \"aggr\".\"corr\";",	"aggr",	"MAL",	"Aggregate function",	false,	false,	false,	true,	"result",	"double",	53,	0,	"out",	"e1",	"bigint",	64,	0,	"in",	"e2",	"bigint",	64,	0,	"in",	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
 [ "sys.functions",	"sys",	"corr",	"SYSTEM",	"create aggregate corr(e1 double, e2 double) returns double external name \"aggr\".\"corr\";",	"aggr",	"MAL",	"Aggregate function",	false,	false,	false,	true,	"result",	"double",	53,	0,	"out",	"e1",	"double",	53,	0,	"in",	"e2",	"double",	53,	0,	"in",	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
@@ -2856,7 +2845,6 @@ drop function pcre_replace(string, string, string, string);
 [ "sys.functions",	"sys",	"restart",	"SYSTEM",	"restart",	"sql",	"Internal C",	"Scalar function",	false,	false,	false,	true,	"res_0",	"bigint",	64,	0,	"out",	"arg_1",	"varchar",	0,	0,	"in",	"arg_2",	"varchar",	0,	0,	"in",	"arg_3",	"bigint",	64,	0,	"in",	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
 [ "sys.functions",	"sys",	"resume",	"SYSTEM",	"create procedure sys.resume(tag bigint) external name sql.sysmon_resume;",	"sql",	"MAL",	"Procedure",	true,	false,	false,	true,	"tag",	"bigint",	64,	0,	"in",	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
 [ "sys.functions",	"sys",	"resume_log_flushing",	"SYSTEM",	"create procedure sys.resume_log_flushing() external name sql.resume_log_flushing;",	"sql",	"MAL",	"Procedure",	true,	false,	false,	true,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
-[ "sys.functions",	"sys",	"reuse",	"SYSTEM",	"create procedure reuse(sys string, tab string) external name sql.reuse;",	"sql",	"MAL",	"Procedure",	true,	false,	false,	true,	"sys",	"clob",	0,	0,	"in",	"tab",	"clob",	0,	0,	"in",	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
 [ "sys.functions",	"sys",	"reverse",	"SYSTEM",	"create function reverse(src string) returns string external name udf.reverse;",	"udf",	"MAL",	"Scalar function",	false,	false,	false,	true,	"result",	"clob",	0,	0,	"out",	"src",	"clob",	0,	0,	"in",	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
 [ "sys.functions",	"sys",	"right",	"SYSTEM",	"stringright",	"str",	"Internal C",	"Scalar function",	false,	false,	false,	false,	"res_0",	"char",	0,	0,	"out",	"arg_1",	"char",	0,	0,	"in",	"arg_2",	"int",	32,	0,	"in",	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
 [ "sys.functions",	"sys",	"right",	"SYSTEM",	"stringright",	"str",	"Internal C",	"Scalar function",	false,	false,	false,	false,	"res_0",	"clob",	0,	0,	"out",	"arg_1",	"clob",	0,	0,	"in",	"arg_2",	"int",	32,	0,	"in",	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
@@ -3430,7 +3418,6 @@ drop function pcre_replace(string, string, string, string);
 [ "sys.functions",	"sys",	"shpattach",	"SYSTEM",	"create procedure shpattach(fname string) external name shp.attach;",	"shp",	"MAL",	"Procedure",	true,	false,	false,	true,	"fname",	"clob",	0,	0,	"in",	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
 [ "sys.functions",	"sys",	"shpload",	"SYSTEM",	"create procedure shpload(fid integer) external name shp.import;",	"shp",	"MAL",	"Procedure",	true,	false,	false,	true,	"fid",	"int",	32,	0,	"in",	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
 [ "sys.functions",	"sys",	"shpload",	"SYSTEM",	"create procedure shpload(fid integer, filter geometry) external name shp.import;",	"shp",	"MAL",	"Procedure",	true,	false,	false,	true,	"fid",	"int",	32,	0,	"in",	"filter",	"geometry",	0,	0,	"in",	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
-[ "sys.functions",	"sys",	"shrink",	"SYSTEM",	"create procedure shrink(sys string, tab string) external name sql.shrink;",	"sql",	"MAL",	"Procedure",	true,	false,	false,	true,	"sys",	"clob",	0,	0,	"in",	"tab",	"clob",	0,	0,	"in",	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
 [ "sys.functions",	"sys",	"shutdown",	"SYSTEM",	"create procedure sys.shutdown(delay tinyint) external name sql.shutdown;",	"sql",	"MAL",	"Procedure",	true,	false,	false,	true,	"delay",	"tinyint",	8,	0,	"in",	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
 [ "sys.functions",	"sys",	"shutdown",	"SYSTEM",	"create procedure sys.shutdown(delay tinyint, force bool) external name sql.shutdown;",	"sql",	"MAL",	"Procedure",	true,	false,	false,	true,	"delay",	"tinyint",	8,	0,	"in",	"force",	"boolean",	1,	0,	"in",	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
 [ "sys.functions",	"sys",	"sign",	"SYSTEM",	"sign",	"calc",	"Internal C",	"Scalar function",	false,	false,	false,	false,	"res_0",	"tinyint",	8,	0,	"out",	"arg_1",	"bigint",	64,	0,	"in",	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
@@ -3917,7 +3904,6 @@ drop function pcre_replace(string, string, string, string);
 [ "sys.functions",	"sys",	"upper",	"SYSTEM",	"toUpper",	"str",	"Internal C",	"Scalar function",	false,	false,	false,	false,	"res_0",	"clob",	0,	0,	"out",	"arg_1",	"clob",	0,	0,	"in",	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
 [ "sys.functions",	"sys",	"upper",	"SYSTEM",	"toUpper",	"str",	"Internal C",	"Scalar function",	false,	false,	false,	false,	"res_0",	"varchar",	0,	0,	"out",	"arg_1",	"varchar",	0,	0,	"in",	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
 [ "sys.functions",	"sys",	"uuid",	"SYSTEM",	"create function sys.uuid() returns uuid external name uuid.\"new\";",	"uuid",	"MAL",	"Scalar function",	true,	false,	false,	true,	"result",	"uuid",	0,	0,	"out",	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
-[ "sys.functions",	"sys",	"vacuum",	"SYSTEM",	"create procedure vacuum(sys string, tab string) external name sql.vacuum;",	"sql",	"MAL",	"Procedure",	true,	false,	false,	true,	"sys",	"clob",	0,	0,	"in",	"tab",	"clob",	0,	0,	"in",	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
 [ "sys.functions",	"sys",	"var",	"SYSTEM",	"CREATE FUNCTION var() RETURNS TABLE(name varchar(1024)) EXTERNAL NAME sql.sql_variables;",	"sql",	"SQL",	"Function returning a table",	false,	false,	false,	true,	"name",	"varchar",	1024,	0,	"out",	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
 [ "sys.functions",	"sys",	"var_pop",	"SYSTEM",	"create aggregate var_pop(val bigint) returns double external name \"aggr\".\"variancep\";",	"aggr",	"MAL",	"Aggregate function",	false,	false,	false,	true,	"result",	"double",	53,	0,	"out",	"val",	"bigint",	64,	0,	"in",	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
 [ "sys.functions",	"sys",	"var_pop",	"SYSTEM",	"create aggregate var_pop(val double) returns double external name \"aggr\".\"variancep\";",	"aggr",	"MAL",	"Aggregate function",	false,	false,	false,	true,	"result",	"double",	53,	0,	"out",	"val",	"double",	53,	0,	"in",	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]

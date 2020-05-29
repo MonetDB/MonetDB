@@ -496,14 +496,14 @@ INSERT INTO num_data VALUES (9, '054863480.3468502700550802275622328208474281302
 COMMIT TRANSACTION;
 
 -- Replaced PostgreSQL "VACUUM ANALYZE my_table;" with MonetDB "call vacuum('sys', 'my_table');"
-call vacuum('sys', 'num_exp_add');
-call vacuum('sys', 'num_exp_sub');
-call vacuum('sys', 'num_exp_div');
-call vacuum('sys', 'num_exp_mul');
-call vacuum('sys', 'num_exp_sqrt');
-call vacuum('sys', 'num_exp_ln');
-call vacuum('sys', 'num_exp_log10');
-call vacuum('sys', 'num_exp_power_10_ln');
+--call vacuum('sys', 'num_exp_add');
+--call vacuum('sys', 'num_exp_sub');
+--call vacuum('sys', 'num_exp_div');
+--call vacuum('sys', 'num_exp_mul');
+--call vacuum('sys', 'num_exp_sqrt');
+--call vacuum('sys', 'num_exp_ln');
+--call vacuum('sys', 'num_exp_log10');
+--call vacuum('sys', 'num_exp_power_10_ln');
 
 -- ******************************
 -- * Create indices for faster checks
