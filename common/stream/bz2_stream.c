@@ -90,6 +90,7 @@ work(inner_state_t *inner_state, pump_action action)
 		break;
 	default:
 		assert(0 /* unknown action */);
+		return PUMP_ERROR;
 	}
 
 	int ret = inner_state->work(&inner_state->strm, a);
@@ -243,31 +244,31 @@ bz2_stream(stream *inner, int preset)
 {
 	(void) inner;
 	(void) preset;
-	mnstr_set_open_error(url, 0, "BZIP2 support has been left out of this MonetDB");
+	mnstr_set_open_error(inner->name, 0, "BZIP2 support has been left out of this MonetDB");
 	return NULL;
 }
 
 stream *open_bzrstream(const char *filename)
 {
-	mnstr_set_open_error(url, 0, "BZIP2 support has been left out of this MonetDB");
+	mnstr_set_open_error(filename, 0, "BZIP2 support has been left out of this MonetDB");
 	return NULL;
 }
 
 stream *open_bzwstream(const char *filename, const char *mode)
 {
-	mnstr_set_open_error(url, 0, "BZIP2 support has been left out of this MonetDB");
+	mnstr_set_open_error(filename, 0, "BZIP2 support has been left out of this MonetDB");
 	return NULL;
 }
 
 stream *open_bzrastream(const char *filename)
 {
-	mnstr_set_open_error(url, 0, "BZIP2 support has been left out of this MonetDB");
+	mnstr_set_open_error(filename, 0, "BZIP2 support has been left out of this MonetDB");
 	return NULL;
 }
 
 stream *open_bzwastream(const char *filename, const char *mode)
 {
-	mnstr_set_open_error(url, 0, "BZIP2 support has been left out of this MonetDB");
+	mnstr_set_open_error(filename, 0, "BZIP2 support has been left out of this MonetDB");
 	return NULL;
 }
 

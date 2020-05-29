@@ -365,13 +365,14 @@ lz4_stream(stream *inner, int preset)
 {
 	(void) inner;
 	(void) preset;
-	mnstr_set_open_error(url, 0, "LZ4 support has been left out of this MonetDB");
+	mnstr_set_open_error(inner->name, 0, "LZ4 support has been left out of this MonetDB");
 	return NULL;
 }
+
 stream *open_lz4rstream(const char *filename)
 {
 	(void) filename;
-	mnstr_set_open_error(url, 0, "LZ4 support has been left out of this MonetDB");
+	mnstr_set_open_error(filename, 0, "LZ4 support has been left out of this MonetDB");
 	return NULL;
 }
 
@@ -379,14 +380,14 @@ stream *open_lz4wstream(const char *filename, const char *mode)
 {
 	(void) filename;
 	(void) mode;
-	mnstr_set_open_error(url, 0, "LZ4 support has been left out of this MonetDB");
+	mnstr_set_open_error(filename, 0, "LZ4 support has been left out of this MonetDB");
 	return NULL;
 }
 
 stream *open_lz4rastream(const char *filename)
 {
 	(void) filename;
-	mnstr_set_open_error(url, 0, "LZ4 support has been left out of this MonetDB");
+	mnstr_set_open_error(filename, 0, "LZ4 support has been left out of this MonetDB");
 	return NULL;
 }
 
@@ -394,7 +395,7 @@ stream *open_lz4wastream(const char *filename, const char *mode)
 {
 	(void) filename;
 	(void) mode;
-	mnstr_set_open_error(url, 0, "LZ4 support has been left out of this MonetDB");
+	mnstr_set_open_error(filename, 0, "LZ4 support has been left out of this MonetDB");
 	return NULL;
 }
 

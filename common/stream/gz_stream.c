@@ -85,6 +85,7 @@ work(inner_state_t *inner_state, pump_action action)
 		break;
 	default:
 		assert(0 /* unknown action */);
+		return PUMP_ERROR;
 	}
 
 	int ret = inner_state->indeflate(&inner_state->strm, a);
@@ -230,30 +231,30 @@ gz_stream(stream *inner, int preset)
 {
 	(void) inner;
 	(void) preset;
-	mnstr_set_open_error(url, 0, "GZ support has been left out of this MonetDB");
+	mnstr_set_open_error(inner->name, 0, "GZ support has been left out of this MonetDB");
 	return NULL;
 }
 stream *open_gzrstream(const char *filename)
 {
-	mnstr_set_open_error(url, 0, "GZ support has been left out of this MonetDB");
+	mnstr_set_open_error(filename, 0, "GZ support has been left out of this MonetDB");
 	return NULL;
 }
 
 stream *open_gzwstream(const char *filename, const char *mode)
 {
-	mnstr_set_open_error(url, 0, "GZ support has been left out of this MonetDB");
+	mnstr_set_open_error(filename, 0, "GZ support has been left out of this MonetDB");
 	return NULL;
 }
 
 stream *open_gzrastream(const char *filename)
 {
-	mnstr_set_open_error(url, 0, "GZ support has been left out of this MonetDB");
+	mnstr_set_open_error(filename, 0, "GZ support has been left out of this MonetDB");
 	return NULL;
 }
 
 stream *open_gzwastream(const char *filename, const char *mode)
 {
-	mnstr_set_open_error(url, 0, "GZ support has been left out of this MonetDB");
+	mnstr_set_open_error(filename, 0, "GZ support has been left out of this MonetDB");
 	return NULL;
 }
 

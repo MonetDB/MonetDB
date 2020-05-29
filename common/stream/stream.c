@@ -89,6 +89,7 @@ get_tl_error_buf(void)
 		pthread_setspecific(tl_error_key, p);
 		struct tl_error_buf *second_attempt = pthread_getspecific(tl_error_key);
 		assert(p == second_attempt /* maybe mnstr_init has not been called? */);
+		(void) second_attempt; // suppress warning if asserts disabled
 	}
 	return p;
 }
@@ -388,7 +389,7 @@ mnstr_error(const stream *s)
 		return NULL;
 }
 
-char*
+const char*
 mnstr_peek_error(const stream *s)
 {
 	if (s == NULL) {
