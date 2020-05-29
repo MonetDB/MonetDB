@@ -3240,6 +3240,8 @@ main(int argc, char **argv)
 		perror("sigaction");
 #endif
 
+	mnstr_init();
+
 	toConsole = stdout_stream = file_wastream(stdout, "stdout");
 	stderr_stream = file_wastream(stderr, "stderr");
 	if(!stdout_stream || !stderr_stream) {
