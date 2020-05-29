@@ -2632,7 +2632,7 @@ hot_snapshot_write_tar(stream *out, const char *prefix, char *plan)
 			case 'c':
 				infile = open_rstream(abs_src_path);
 				if (!infile) {
-					GDKerror("Could not open %s", abs_src_path);
+					GDKerror("%s", mnstr_peek_error(NULL));
 					goto end;
 				}
 				if (tar_copy_stream(out, dest_path, timestamp, infile, size) != GDK_SUCCEED)
@@ -2737,7 +2737,7 @@ store_hot_snapshot(str tarfile)
 	}
 	tar_stream = open_wstream(tmppath);
 	if (!tar_stream) {
-		GDKerror("Failed to open %s for writing", tmppath);
+		GDKerror("Failed to open %s for writing: %s", tmppath, mnstr_peek_error(NULL));
 		goto end;
 	}
 	do_remove = 1;

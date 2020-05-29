@@ -388,10 +388,10 @@ TKNZRdepositFile(void *r, str *fnme)
 	/* later, handle directory separator */
 	fs = open_rastream(buf);
 	if (fs == NULL)
-		throw(MAL, "tokenizer.depositFile", RUNTIME_FILE_NOT_FOUND "%s", buf);
+		throw(MAL, "tokenizer.depositFile", "%s", mnstr_peek_error(NULL));
 	if (mnstr_errnr(fs)) {
 		close_stream(fs);
-		throw(MAL, "tokenizer.depositFile", RUNTIME_FILE_NOT_FOUND "%s", buf);
+		throw(MAL, "tokenizer.depositFile", "%s", mnstr_peek_error(NULL));
 	}
 	bs = bstream_create(fs, SIZE);
 	if (bs == NULL)

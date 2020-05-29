@@ -261,7 +261,7 @@ str WLCsetConfig(void){
 	fd = open_wastream(path);
 	GDKfree(path);
 	if( fd == NULL)
-		throw(MAL,"wlc.setConfig","Could not access wlc.config\n");
+		throw(MAL,"wlc.setConfig","Could not access wlc.config: %s\n", mnstr_peek_error(NULL));
 	if( wlc_snapshot[0] )
 		mnstr_printf(fd,"snapshot=%s\n", wlc_snapshot);
 	mnstr_printf(fd,"logs=%s\n", wlc_dir);

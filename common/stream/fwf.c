@@ -166,7 +166,6 @@ stream_fwf_create(stream *restrict s, size_t num_fields, size_t *restrict widths
 		free(fsd->in_buf);
 		free(fsd->out_buf);
 		free(fsd);
-		mnstr_set_open_error(STREAM_FWF_NAME, errno, NULL);
 		return NULL;
 	}
 	ns->read = stream_fwf_read;

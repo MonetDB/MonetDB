@@ -2672,7 +2672,7 @@ doFile(Mapi mid, stream *fp, bool useinserts, bool interactive, int save_history
 					    mnstr_errnr(s)) {
 						if (s)
 							close_stream(s);
-						fprintf(stderr, "%s: cannot open\n", line);
+						fprintf(stderr, "Cannot open %s: %s\n", line, mnstr_peek_error(NULL));
 					} else
 						doFile(mid, s, 0, 0, 0);
 					continue;
@@ -2694,11 +2694,11 @@ doFile(Mapi mid, stream *fp, bool useinserts, bool interactive, int save_history
 						toConsole = stderr_stream;
 					else if ((toConsole = open_wastream(line)) == NULL ||
 						 mnstr_errnr(toConsole)) {
+						fprintf(stderr, "Cannot open %s: %s\n", line, mnstr_peek_error(toConsole));
 						if (toConsole != NULL) {
 							close_stream(toConsole);
 						}
 						toConsole = stdout_stream;
-						fprintf(stderr, "Cannot open %s\n", line);
 					}
 					continue;
 				case 'L':
@@ -3030,7 +3030,7 @@ getfile(void *data, const char *filename, bool binary,
 #endif
 		}
 		if (f == NULL)
-			return "cannot open file";
+			return (char*) mnstr_peek_error(NULL);
 		while (offset > 1) {
 			s = mnstr_readline(f, buf, READSIZE);
 			if (s < 0) {
@@ -3073,14 +3073,14 @@ putfile(void *data, const char *filename, const void *buf, size_t bufsize)
 
 	if (filename != NULL) {
 		if ((priv->f = open_wastream(filename)) == NULL)
-			return "cannot open file";
+			return (char*)mnstr_peek_error(NULL);
 #ifdef HAVE_ICONV
 		if (encoding) {
 			stream *f = priv->f;
 			priv->f = iconv_wstream(f, encoding, mnstr_name(f));
 			if (priv->f == NULL) {
 				close_stream(f);
-				return "cannot open file";
+				return (char*)mnstr_peek_error(NULL);
 			}
 		}
 #endif

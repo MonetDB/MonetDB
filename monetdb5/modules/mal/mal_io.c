@@ -611,12 +611,12 @@ IOexport(void *ret, bat *bid, str *fnme)
 	s = open_wastream(*fnme);
 	if (s == NULL ){
 		BBPunfix(b->batCacheid);
-		throw(MAL, "io.export", RUNTIME_FILE_NOT_FOUND ":%s", *fnme);
+		throw(MAL, "io.export", "%s", mnstr_peek_error(NULL));
 	}
 	if (mnstr_errnr(s)) {
 		mnstr_close(s);
 		BBPunfix(b->batCacheid);
-		throw(MAL, "io.export", RUNTIME_FILE_NOT_FOUND ":%s", *fnme);
+		throw(MAL, "io.export", "%s", mnstr_peek_error(NULL));
 	}
     BATprintcolumns(s, 1, &b);
 	close_stream(s);

@@ -130,7 +130,7 @@ WLRputConfig(void){
 	fd = open_wastream(path);
 	GDKfree(path);
 	if( fd == NULL)
-		throw(SQL,"wlr.putConfig", "Could not create wlr.config file\n");
+		throw(SQL,"wlr.putConfig", "Could not create wlr.config file: %s\n", mnstr_peek_error(NULL));
 
 	mnstr_printf(fd,"master=%s\n", wlr_master);
 	mnstr_printf(fd,"batches=%d\n", wlr_batches);
@@ -240,7 +240,7 @@ WLRprocessBatch(Client cntxt)
 	c->fdout = open_wastream(".wlr");
 	if(c->fdout == NULL) {
 		MCcloseClient(c);
-		throw(MAL,"wlr.batch", "Could not create user for WLR process\n");
+		throw(MAL,"wlr.batch", "Could not create user for WLR process: %s\n", mnstr_peek_error(NULL));
 	}
 
 	/* Cook a log file into a concreate MAL function for multiple transactions */
@@ -281,7 +281,7 @@ WLRprocessBatch(Client cntxt)
 		}
 		fd= open_rastream(path);
 		if( fd == NULL) {
-			msg = createException(MAL, "wlr.batch", "Cannot access path '%s'\n", path);
+			msg = createException(MAL, "wlr.batch", "Cannot access path '%s': %s\n", path, mnstr_peek_error(NULL));
 			break;
 		}
 		sz = getFileSize(fd);

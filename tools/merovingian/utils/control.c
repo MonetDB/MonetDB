@@ -153,7 +153,16 @@ char* control_send(
 			ver = 9;
 
 			fdin = block_stream(socket_rstream(sock, "client in"));
+			if (fdin == NULL) {
+				snprintf(sbuf, sizeof(sbuf), "cannot connect: %s", mnstr_peek_error(NULL));
+				return strdup(sbuf);
+			}
 			fdout = block_stream(socket_wstream(sock, "client out"));
+			if (fdout == NULL) {
+				close_stream(fdin);
+				snprintf(sbuf, sizeof(sbuf), "cannot connect: %s", mnstr_peek_error(NULL));
+				return strdup(sbuf);
+			}
 		} else {
 			if (strstr(rbuf + 2, ":BIG:") != NULL ||
 				strstr(rbuf + 2, ":LIT:") != NULL)

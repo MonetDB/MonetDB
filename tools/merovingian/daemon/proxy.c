@@ -247,12 +247,14 @@ startProxy(int psock, stream *cfdin, stream *cfout, char *url, char *client)
 	}
 
 	sfdin = block_stream(socket_rstream(ssock, "merovingian<-server (proxy read)"));
-	sfout = block_stream(socket_wstream(ssock, "merovingian->server (proxy write)"));
+	if (sfdin == 0) {
+		return(newErr("merovingian-server inputstream or outputstream problems: %s", mnstr_peek_error(NULL)));
+	}
 
+	sfout = block_stream(socket_wstream(ssock, "merovingian->server (proxy write)"));
 	if (sfdin == 0 || sfout == 0) {
-		close_stream(sfout);
 		close_stream(sfdin);
-		return(newErr("merovingian-server inputstream or outputstream problems"));
+		return(newErr("merovingian-server inputstream or outputstream problems: %s", mnstr_peek_error(NULL)));
 	}
 
 	/* our proxy schematically looks like this:
@@ -317,12 +319,12 @@ handleMySQLClient(int sock)
 
 	fdin = socket_rstream(sock, "merovingian<-mysqlclient (read)");
 	if (fdin == 0)
-		return(newErr("merovingian-mysqlclient inputstream problems"));
+		return(newErr("merovingian-mysqlclient inputstream problems: %s", mnstr_peek_error(NULL)));
 
 	fout = socket_wstream(sock, "merovingian->mysqlclient (write)");
 	if (fout == 0) {
 		close_stream(fdin);
-		return(newErr("merovingian-mysqlclient outputstream problems"));
+		return(newErr("merovingian-mysqlclient outputstream problems: %s", mnstr_peek_error(NULL)));
 	}
 
 #ifdef WORDS_BIGENDIAN

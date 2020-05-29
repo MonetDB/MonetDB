@@ -84,9 +84,9 @@ handleClient(void *data)
 	memcpy(chal, ((struct clientdata *) data)->challenge, sizeof(chal));
 	free(data);
 	fdin = socket_rstream(sock, "merovingian<-client (read)");
-	if (fdin == 0) {
+	if (fdin == NULL) {
 		self->dead = true;
-		return(newErr("merovingian-client inputstream problems"));
+		return(newErr("merovingian-client inputstream problems: %s", mnstr_peek_error(NULL)));
 	}
 	fdin = block_stream(fdin);
 
@@ -94,7 +94,7 @@ handleClient(void *data)
 	if (fout == 0) {
 		close_stream(fdin);
 		self->dead = true;
-		return(newErr("merovingian-client outputstream problems"));
+		return(newErr("merovingian-client outputstream problems: %s", mnstr_peek_error(NULL)));
 	}
 	fout = block_stream(fout);
 

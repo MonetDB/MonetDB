@@ -200,7 +200,7 @@ main(int argc, char **argv)
 
 	out = file_wastream(stdout, "stdout");
 	if (out == NULL) {
-		fprintf(stderr, "failed to allocate stream\n");
+		fprintf(stderr, "failed to allocate stream: %s\n", mnstr_peek_error(NULL));
 		exit(2);
 	}
 	if (!quiet) {

@@ -534,7 +534,7 @@ SQLinit(Client c)
 						}
 					}
 				} else
-					msg = createException(MAL, "createdb", SQLSTATE(HY013) "Couldn't open file %s", filename);
+					msg = createException(MAL, "createdb", SQLSTATE(HY013) "%s", mnstr_peek_error(NULL));
 			} while (p && msg == MAL_SUCCEED);
 			GDKfree(fullname);
 		} else
@@ -798,7 +798,7 @@ SQLinclude(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	fd = open_rastream(fullname);
 	if (mnstr_errnr(fd) == MNSTR_OPEN_ERROR) {
 		close_stream(fd);
-		throw(MAL, "sql.include", SQLSTATE(42000) "could not open file: %s\n", *name);
+		throw(MAL, "sql.include", SQLSTATE(42000) "%s\n", mnstr_peek_error(NULL));
 	}
 	sz = getFileSize(fd);
 	if (sz > (size_t) 1 << 29) {

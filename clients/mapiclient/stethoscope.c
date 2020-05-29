@@ -277,7 +277,7 @@ main(int argc, char **argv)
 		trace = fopen(filename,"w");
 
 		if(trace == NULL) {
-			fprintf(stderr,"Could not create file '%s', printing to stdout instead...\n", filename);
+			fprintf(stderr,"Could not create file '%s' (%s), printing to stdout instead...\n", filename, strerror(errno));
 			filename = NULL;
 		}
 	}

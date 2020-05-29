@@ -1003,7 +1003,8 @@ static ATOMIC_FLAG mapi_initialized = ATOMIC_FLAG_INIT;
 #define check_stream(mid, s, msg, e)					\
 	do {								\
 		if ((s) == NULL || mnstr_errnr(s)) {			\
-			mapi_log_record(mid, msg);			\
+			if (msg != NULL) mapi_log_record(mid, msg);	\
+			mapi_log_record(mid, mnstr_peek_error(s));	\
 			mapi_log_record(mid, __func__);			\
 			close_connection(mid);				\
 			mapi_setError((mid), (msg), __func__, MTIMEOUT); \
@@ -2560,10 +2561,10 @@ mapi_reconnect(Mapi mid)
 
 	if (!isa_block_stream(mid->to)) {
 		mid->to = block_stream(mid->to);
-		check_stream(mid, mid->to, mnstr_error(mid->to), mid->error);
+		check_stream(mid, mid->to, NULL, mid->error);
 
 		mid->from = block_stream(mid->from);
-		check_stream(mid, mid->from, mnstr_error(mid->from), mid->error);
+		check_stream(mid, mid->from, NULL, mid->error);
 	}
 
   try_again_after_redirect:
@@ -4721,7 +4722,7 @@ mapi_fetch_line(MapiHdl hdl)
 				  result->tableid,
 				  result->cache.first + result->cache.tuplecount) < 0 ||
 		    mnstr_flush(hdl->mid->to))
-			check_stream(hdl->mid, hdl->mid->to, mnstr_error(hdl->mid->to), NULL);
+			check_stream(hdl->mid, hdl->mid->to, NULL, NULL);
 		reply = mapi_fetch_line_internal(hdl);
 	}
 	return reply;
@@ -5246,7 +5247,7 @@ mapi_fetch_all_rows(MapiHdl hdl)
 			if (mnstr_printf(mid->to, "X" "export %d %" PRId64 "\n",
 					  result->tableid, result->cache.first + result->cache.tuplecount) < 0 ||
 			    mnstr_flush(mid->to))
-				check_stream(mid, mid->to, mnstr_error(mid->to), 0);
+				check_stream(mid, mid->to, NULL, 0);
 		}
 		if (mid->active)
 			read_into_cache(mid->active, 0);

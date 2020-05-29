@@ -1093,7 +1093,7 @@ logger_open(logger *lg)
 	lg->end = 0;
 
 	if (lg->log == NULL || mnstr_errnr(lg->log)) {
-		TRC_CRITICAL(GDK, "creating %s failed\n", filename);
+		TRC_CRITICAL(GDK, "creating %s failed: %s\n", filename, mnstr_peek_error(NULL));
 		GDKfree(filename);
 		return GDK_FAIL;
 	}
