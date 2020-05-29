@@ -5626,8 +5626,8 @@ set schema "sys";
 # 16:02:52 >  
 
 #select 1;
-% . # table_name
-% single_value # name
+% .%2 # table_name
+% %2 # name
 % tinyint # type
 % 1 # length
 [ 1	]

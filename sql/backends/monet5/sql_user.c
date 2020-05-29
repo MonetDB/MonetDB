@@ -520,8 +520,12 @@ monet5_user_set_def_schema(mvc *m, oid user)
 	users_schema = find_sql_column(user_info, "default_schema");
 
 	rid = table_funcs.column_find_row(m->session->tr, users_name, username, NULL);
-	if (is_oid_nil(rid))
+	if (is_oid_nil(rid)) {
+		if (m->session->tr->active && (other = mvc_rollback(m, 0, NULL, false)) != MAL_SUCCEED)
+			freeException(other);
+		GDKfree(username);
 		return NULL;
+	}
 	p = table_funcs.column_find_value(m->session->tr, users_schema, rid);
 
 	assert(p);
