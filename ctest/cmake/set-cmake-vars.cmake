@@ -44,3 +44,22 @@ if(DEFINED HAVE_LIBR)
     ${CMAKE_CURRENT_BINARY_DIR}/test_rhome_var.c)
   add_test(testDetectRhome test_rhome_var)
 endif()
+
+if(DEFINED HAVE_GETOPT_H)
+  if(NOT DEFINED HAVE_GETOPT)
+    message(FATAL_ERROR "variable HAVE_GETOPT not defined")
+    set(DETECT "1")
+  else()
+    set(DETECT "0")
+  endif()
+
+  configure_file(test_cmake_var.c.in
+    ${CMAKE_CURRENT_BINARY_DIR}/test_have_getopt1_var.c
+    @ONLY)
+
+  add_executable(test_have_getopt1_var)
+  target_sources(test_have_getopt1_var
+    PRIVATE
+    ${CMAKE_CURRENT_BINARY_DIR}/test_have_getopt1_var.c)
+  add_test(testDetectHave_getopt1 test_have_getopt1_var)
+endif()

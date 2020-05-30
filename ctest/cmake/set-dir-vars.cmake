@@ -177,3 +177,41 @@ target_sources(test_libdir_var
   PRIVATE
   ${CMAKE_CURRENT_BINARY_DIR}/test_libdir_var.c)
 add_test(testDetectLibdir test_libdir_var)
+
+if(DEFINED HAVE_GETOPT_H)
+  if(NOT DEFINED HAVE_GETOPT)
+    message(FATAL_ERROR "variable HAVE_GETOPT not defined")
+    set(DETECT "1")
+  else()
+    set(DETECT "0")
+  endif()
+
+  configure_file(test_cmake_var.c.in
+    ${CMAKE_CURRENT_BINARY_DIR}/test_have_getopt_var.c
+    @ONLY)
+
+  add_executable(test_have_getopt_var)
+  target_sources(test_have_getopt_var
+    PRIVATE
+    ${CMAKE_CURRENT_BINARY_DIR}/test_have_getopt_var.c)
+  add_test(testDetectHave_getopt test_have_getopt_var)
+endif()
+
+if(NOT DEFINED ENABLE_STATIC_ANALYSIS)
+  message(FATAL_ERROR "variable ENABLE_STATIC_ANALYSIS not defined")
+  set(DETECT "1")
+else()
+  set(DETECT "0")
+endif()
+
+configure_file(test_cmake_var.c.in
+  ${CMAKE_CURRENT_BINARY_DIR}/test_enable_static_var.c
+  @ONLY)
+
+add_executable(test_enable_static_var)
+target_sources(test_enable_static_var
+  PRIVATE
+  ${CMAKE_CURRENT_BINARY_DIR}/test_enable_static_var.c)
+add_test(testDetectEnable_static test_enable_static_var)
+
+

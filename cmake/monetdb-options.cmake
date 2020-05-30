@@ -66,8 +66,8 @@ option(ODBC
 cmake_dependent_option(SHP
   "Enable support for ESRI Shapefiles (default=ON)"
   ON
-  GEOM
-  ON)
+  "GEOM"
+  OFF)
 
 option(SANITIZER 
   "Enable support for the GCC address sanitizer (default=OFF)"
@@ -84,10 +84,6 @@ cmake_dependent_option(ASSERT
   ON
   "DEVELOPMENT"
   OFF)
-
-# Check with STATIC_CODE_ANALYSIS
-# compiler options, profiling (google perf tools), valgrind
-set(ENABLE_STATIC_ANALYSIS "NO" CACHE STRING "Configure for static code analysis (use only if you know what you are doing)")
 
 option(WITH_BZ2
   "Include bz2 support"

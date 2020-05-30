@@ -6,7 +6,7 @@
 # Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
 #]]
 
-if(HAVE_ODBC)
+if(ODBC_FOUND)
   if(WIN32)
     add_subdirectory(winsetup)
   else()
@@ -14,4 +14,4 @@ if(HAVE_ODBC)
   endif()
   add_subdirectory(driver)
   add_subdirectory(samples)
-endif(HAVE_ODBC)
+endif()

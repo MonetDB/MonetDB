@@ -86,4 +86,7 @@ else()
         "${NUMPY_INCLUDE_DIRS}${NUMPY_VERSION}")
 
     set(NUMPY_FOUND TRUE)
+    if(NUMPY_FOUND)
+      set(Python3_NumPy_FOUND 1)
+    endif()
 endif()

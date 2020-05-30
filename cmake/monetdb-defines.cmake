@@ -49,6 +49,7 @@ function(monetdb_configure_defines)
   find_path(HAVE_GETOPT_H "getopt.h")
 
   check_include_file("stdatomic.h" HAVE_STDATOMIC_H)
+  find_library(GETOPT_LIB "getopt.lib")
 
   check_symbol_exists("opendir" "dirent.h" HAVE_DIRENT_H)
   check_symbol_exists("gethostbyname" "netdb.h" HAVE_NETDB_H)
@@ -114,9 +115,7 @@ function(monetdb_configure_defines)
   check_symbol_exists("semtimedop" "sys/types.h;sys/ipc.h;sys/sem.h" HAVE_SEMTIMEDOP)
   check_function_exists("pthread_kill" HAVE_PTHREAD_KILL)
   check_function_exists("pthread_sigmask" HAVE_PTHREAD_SIGMASK)
-  if(HAVE_GETOPT_H)
-    set(HAVE_GETOPT 1 PARENT_SCOPE)
-  endif()
+  check_symbol_exists("regcomp" "regex.h" HAVE_POSIX_REGEX)
 endfunction()
 
 macro(monetdb_macro_variables)
@@ -144,6 +143,17 @@ macro(monetdb_macro_variables)
   set(HAVE_READLINE ${READLINE_FOUND})
   set(HAVE_LIBR ${LIBR_FOUND})
   set(RHOME "${LIBR_HOME}")
+  set(HAVE_GEOM ${GEOS_FOUND})
+  set(HAVE_SHP ${GDAL_FOUND})
+
+  if(PY3INTEGRATION)
+    set(HAVE_LIBPY3 "${Python3_NumPy_FOUND}")
+  else()
+    message(STATUS "Disable Py3integration, because required NumPy is missing")
+  endif()
+  if(Python3_Interpreter_FOUND)
+    set(Python_EXECUTABLE "${Python3_EXECUTABLE}")
+  endif()
 
   set(SOCKET_LIBRARIES "")
   if (WIN32)
@@ -161,6 +171,22 @@ macro(monetdb_macro_variables)
     CACHE
     INTERNAL
     "C udfs extension is available")
+  if(HAVE_GETOPT_H)
+    set(HAVE_GETOPT 1)
+  endif()
+  # Check with STATIC_CODE_ANALYSIS
+  # compiler options, profiling (google perf tools), valgrind
+  set(ENABLE_STATIC_ANALYSIS
+    "NO"
+    CACHE
+    STRING
+    "Configure for static code analysis (use only if you know what you are doing)")
+  # Check that posix regex is available when pcre is not found
+  # "monetdb5/module/mal/pcre.c" assumes the regex library is available
+  # as an alternative without checking this in the C code.
+  if(NOT PCRE_FOUND AND NOT HAVE_POSIX_REGEX)
+    message(FATAL_ERROR "PCRE library or GNU regex library not found but required for MonetDB5")
+  endif()
 
   set(DIR_SEP  "/")
   set(PATH_SEP ":")

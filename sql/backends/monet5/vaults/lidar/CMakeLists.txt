@@ -40,22 +40,24 @@ if(HAVE_LIDAR)
 
   install(TARGETS lidar 
     DESTINATION 
-    ${CMAKE_INSTALL_LIBDIR}/monetdb5)
+    ${CMAKE_INSTALL_LIBDIR}/monetdb5
+    COMPONENT lidar)
 
   install(FILES 
    lidar.mal 
    DESTINATION 
-   ${CMAKE_INSTALL_LIBDIR}/monetdb5)
+   ${CMAKE_INSTALL_LIBDIR}/monetdb5
+   COMPONENT lidar)
 
   install(FILES
     75_lidar.mal
     DESTINATION
     ${CMAKE_INSTALL_LIBDIR}/monetdb5/autoload
-    COMPONENT server)
+    COMPONENT lidar)
 
   install(FILES
     75_lidar.sql
     DESTINATION
     ${CMAKE_INSTALL_LIBDIR}/monetdb5/createdb
-    COMPONENT server)
+    COMPONENT lidar)
 endif()

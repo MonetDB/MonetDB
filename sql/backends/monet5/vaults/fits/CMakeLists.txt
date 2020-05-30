@@ -51,5 +51,6 @@ if(HAVE_FITS)
 
   install(TARGETS fits 
     DESTINATION 
-    ${CMAKE_INSTALL_LIBDIR}/monetdb5)
+    ${CMAKE_INSTALL_LIBDIR}/monetdb5
+    COMPONENT fits)
 endif()

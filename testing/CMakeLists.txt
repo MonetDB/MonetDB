@@ -27,7 +27,7 @@ set(QXmandir "${CMAKE_INSTALL_MANDIR}")
 set(QXprefix "${CMAKE_INSTALL_PREFIX}")
 set(QXPYTHON "${Python3_EXECUTABLE}")
 if (WIN32)
-	string(REPLACE "/" "\\\\" QXPYTHON_LIBDIR "${PYTHON3_LIBDIR}")
+  string(REPLACE "/" "\\\\" QXPYTHON_LIBDIR "${PYTHON3_LIBDIR}")
 else()
   set(QXPYTHON_LIBDIR "${PYTHON3_LIBDIR}")
 endif()
@@ -128,7 +128,7 @@ if(PYTHON3_LIBDIR)
     exportutils.py
     malcheck.py
     sqllogictest.py
-		DESTINATION ${CMAKE_INSTALL_PREFIX}/${PYTHON3_LIBDIR}/MonetDBtesting
+    DESTINATION ${CMAKE_INSTALL_PREFIX}/${PYTHON3_LIBDIR}/MonetDBtesting
     COMPONENT pytesting)
 endif()
 

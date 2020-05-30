@@ -149,10 +149,9 @@
 #cmakedefine HAVE_READLINE @HAVE_READLINE@
 #cmakedefine HAVE_LIBR @HAVE_LIBR@
 #cmakedefine RHOME "@RHOME@"
-
-#cmakedefine HAVE_GEOM @GEOS_FOUND@
+#cmakedefine HAVE_GEOM @HAVE_GEOM@
+#cmakedefine HAVE_SHP @HAVE_SHP@
 #cmakedefine HAVE_LIBPY3 @HAVE_LIBPY3@
-#cmakedefine HAVE_SHP @GDAL_FOUND@
 
 // #cmakedefine SOCKET_LIBRARIES
 #cmakedefine HAVE_GETADDRINFO @HAVE_GETADDRINFO@
