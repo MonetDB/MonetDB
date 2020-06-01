@@ -32,6 +32,7 @@ if(HAVE_FITS)
 
   set_target_properties(fits 
     PROPERTIES 
+    NO_SONAME ON
     OUTPUT_NAME 
     _fits)
 

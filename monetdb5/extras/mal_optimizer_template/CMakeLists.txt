@@ -34,6 +34,7 @@ target_compile_definitions(opt_sql_append
 
 set_target_properties(opt_sql_append 
   PROPERTIES 
+  NO_SONAME ON
   OUTPUT_NAME 
   _opt_sql_append)
 

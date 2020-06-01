@@ -20,6 +20,7 @@ include(CMakeDependentOption REQUIRED)
 include(monetdb-options)
 include(monetdb-versions)
 project(MonetDB VERSION "${MONETDB_VERSION}" LANGUAGES C)
+set(CMAKE_PROJECT_HOMEPAGE_URL "https://www.monetdb.org/")
 set(C_STANDARD_REQUIRED ON)
 set(CMAKE_C_STANDARD 99)
 

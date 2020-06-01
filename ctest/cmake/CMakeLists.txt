@@ -8,7 +8,7 @@
 
 # For now these tests only work on special docker containers.
 
-project(MonetDB-unittest LANGUAGES C)
+#project(MonetDB-unittest LANGUAGES C)
 
 include(os_release_info)
 

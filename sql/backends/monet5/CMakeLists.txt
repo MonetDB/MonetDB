@@ -118,6 +118,8 @@ target_link_libraries(sql
 set_target_properties(sql
   PROPERTIES
   OUTPUT_NAME _sql
+  VERSION ${MONETDB_VERSION}
+  SOVERSION ${MONETDB_VERSION_MAJOR}
   PUBLIC_HEADER ${CMAKE_CURRENT_SOURCE_DIR}/sql_import.h)
 
 target_compile_definitions(sql
@@ -136,6 +138,7 @@ install(TARGETS
   LIBRARY
   DESTINATION ${CMAKE_INSTALL_LIBDIR}/monetdb5
   COMPONENT sql
+  NAMELINK_COMPONENT monetdbdev
   ARCHIVE
   DESTINATION ${CMAKE_INSTALL_LIBDIR}
   PUBLIC_HEADER
