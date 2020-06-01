@@ -2092,15 +2092,13 @@ flusher_should_run(void)
 {
 	// We will flush if we have a reason to and no reason not to.
 	char *reason_to = NULL, *reason_not_to = NULL;
-	int changes;
 
 	if (flusher.countdown_ms <= 0)
 		reason_to = "timer expired";
 
-	int many_changes = GDKdebug & FORCEMITOMASK ? 100 : 1000000;
-	if ((changes = logger_funcs.changes()) >= many_changes)
-		reason_to = "many changes";
-	else if (changes == 0)
+	if (logger_funcs.changes() >= 0)
+		reason_to = "changes";
+	else
 		reason_not_to = "no changes";
 
 	// Read and clear flush_now. If we decide not to flush

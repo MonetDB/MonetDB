@@ -1006,6 +1006,7 @@ log_create_delta(sql_delta *bat, sqlid id)
 	if (GDKinmemory())
 		return res;
 
+	bat_set_access(b, BAT_READ);
 	ok = log_bat_persists(bat_logger, b, id);
 	bat_destroy(b);
 	if(res != LOG_OK)
@@ -1227,6 +1228,7 @@ log_create_storage( storage *bat, sqlid id)
 	if (b == NULL)
 		return LOG_ERR;
 
+	bat_set_access(b, BAT_READ);
 	ok = log_bat_persists(bat_logger, b, id);
 	bat_destroy(b);
 	return ok == GDK_SUCCEED ? LOG_OK : LOG_ERR;

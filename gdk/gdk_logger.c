@@ -1855,7 +1855,7 @@ logger_flush(logger *lg)
 lng
 logger_changes(logger *lg)
 {
-	return (lg->saved_id - lg->id);
+	return (lg->id - lg->saved_id);
 }
 
 int
