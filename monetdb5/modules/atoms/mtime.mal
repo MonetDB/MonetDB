@@ -399,6 +399,10 @@ command diff(val1:date, val2:date) :int
 address MTIMEdate_diff
 comment "returns the number of days
 	between 'val1' and 'val2'.";
+command batmtime.diff(val1:bat[:date], val2:bat[:date]) :bat[:int]
+address MTIMEdate_diff_bulk
+comment "returns the number of days
+	between 'val1' and 'val2'.";
 
 command dayofyear(d:date) :int
 address MTIMEdate_extract_dayofyear
