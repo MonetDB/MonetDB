@@ -180,12 +180,16 @@ module mtime;
 # comment "Subtract seconds from a date";
 command date_sub_msec_interval(t:date,ms:lng):date
 address MTIMEdate_sub_msec_interval;
+command batmtime.date_sub_msec_interval(t:bat[:date],ms:bat[:lng]):bat[:date]
+address MTIMEdate_sub_msec_interval_bulk;
 
 # command date_add_sec_interval(t:date,s:int):date
 # address MTIMEdate_add_sec_interval_wrap
 # comment "Add seconds to a date";
 command date_add_msec_interval(t:date,ms:lng):date
 address MTIMEdate_add_msec_interval;
+command batmtime.date_add_msec_interval(t:bat[:date],ms:bat[:lng]):bat[:date]
+address MTIMEdate_add_msec_interval_bulk;
 
 command timestamp_sub_msec_interval(t:timestamp,ms:lng):timestamp
 address MTIMEtimestamp_sub_msec_interval;
@@ -199,6 +203,8 @@ address MTIMEtimestamp_add_msec_interval_bulk;
 command timestamp_sub_month_interval(t:timestamp,s:int):timestamp
 address MTIMEtimestamp_sub_month_interval
 comment "Subtract months from a timestamp";
+command batmtime.timestamp_sub_month_interval(t:bat[:timestamp],s:bat[:int]):bat[:timestamp]
+address MTIMEtimestamp_sub_month_interval_bulk;
 
 # command timestamp_sub_month_interval(t:timestamp,s:lng):timestamp
 # address MTIMEtimestamp_sub_month_interval_lng_wrap
@@ -207,6 +213,8 @@ comment "Subtract months from a timestamp";
 command timestamp_add_month_interval(t:timestamp,s:int):timestamp
 address MTIMEtimestamp_add_month_interval
 comment "Add months to a timestamp";
+command batmtime.timestamp_add_month_interval(t:bat[:timestamp],s:bat[:int]):bat[:timestamp]
+address MTIMEtimestamp_add_month_interval_bulk;
 
 # command timestamp_add_month_interval(t:timestamp,s:lng):timestamp
 # address MTIMEtimestamp_add_month_interval_lng_wrap
@@ -218,9 +226,13 @@ comment "Add months to a timestamp";
 command time_sub_msec_interval(t:daytime,ms:lng):daytime
 address MTIMEtime_sub_msec_interval
 comment "Subtract seconds from a time";
+command batmtime.time_sub_msec_interval(t:bat[:daytime],ms:bat[:lng]):bat[:daytime]
+address MTIMEtime_sub_msec_interval_bulk;
 command time_add_msec_interval(t:daytime,ms:lng):daytime
 address MTIMEtime_add_msec_interval
 comment "Add seconds to a time";
+command batmtime.time_add_msec_interval(t:bat[:daytime],ms:bat[:lng]):bat[:daytime]
+address MTIMEtime_add_msec_interval_bulk;
 
 command diff(val1:daytime, val2:daytime) :lng
 address MTIMEdaytime_diff_msec
@@ -230,9 +242,11 @@ comment "returns the number of msec between 'val1' and 'val2'.";
 # address MTIMEdate_addmonths
 # comment "Add months to a date";
 
-command date_sub_month_interval(t:date,s:int):date
+command date_sub_month_interval(t:date,months:int):date
 address MTIMEdate_submonths
 comment "Subtract months from a date";
+command batmtime.date_sub_month_interval(value:bat[:date],months:bat[:int]):bat[:date]
+address MTIMEdate_submonths_bulk;
 
 # @-
 # #command int(d:date):int = MTIMEdate_2int;
@@ -375,6 +389,8 @@ command addmonths(value:date, months:int) :date
 address MTIMEdate_addmonths
 comment "returns the date after a number of
 	months (possibly negative).";
+command batmtime.addmonths(value:bat[:date],months:bat[:int]):bat[:date]
+address MTIMEdate_addmonths_bulk;
 # command adddays(value:date, days:int) :date
 # address MTIMEdate_adddays
 # comment "returns the date after a number

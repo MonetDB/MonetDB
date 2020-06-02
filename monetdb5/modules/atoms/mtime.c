@@ -42,16 +42,6 @@ extern char *strptime(const char *, const char *, struct tm *);
 mal_export str MTIMEcurrent_date(date *ret);
 mal_export str MTIMEcurrent_time(daytime *ret);
 mal_export str MTIMEcurrent_timestamp(timestamp *ret);
-mal_export str MTIMEdate_sub_msec_interval(date *ret, const date *d, const lng *ms);
-mal_export str MTIMEdate_add_msec_interval(date *ret, const date *d, const lng *ms);
-mal_export str MTIMEtimestamp_sub_msec_interval(timestamp *ret, const timestamp *t, const lng *ms);
-mal_export str MTIMEtimestamp_add_msec_interval(timestamp *ret, const timestamp *t, const lng *ms);
-mal_export str MTIMEtimestamp_sub_month_interval(timestamp *ret, const timestamp *t, const int *m);
-mal_export str MTIMEtimestamp_add_month_interval(timestamp *ret, const timestamp *t, const int *m);
-mal_export str MTIMEtime_sub_msec_interval(daytime *ret, const daytime *t, const lng *ms);
-mal_export str MTIMEtime_add_msec_interval(daytime *ret, const daytime *t, const lng *ms);
-mal_export str MTIMEdate_submonths(date *ret, const date *d, const int *m);
-mal_export str MTIMEdate_addmonths(date *ret, const date *d, const int *m);
 mal_export str MTIMEtimestamp_century(int *ret, const timestamp *t);
 mal_export str MTIMEtimestamp_decade(int *ret, const timestamp *t);
 mal_export str MTIMEtimestamp_year(int *ret, const timestamp *t);
@@ -283,116 +273,70 @@ NAMEBULK(bat *ret, const bat *bid1, const bat *bid2)					\
 	return MAL_SUCCEED;													\
 }
 
-str
-MTIMEdate_sub_msec_interval(date *ret, const date *d, const lng *ms)
+static inline date
+date_sub_msec_interval(const date d, const lng ms)
 {
-	if (is_date_nil(*d) || is_lng_nil(*ms))
-		*ret = date_nil;
-	else {
-		*ret = date_add_day(*d, (int) (-*ms / (24*60*60*1000)));
-		if (is_date_nil(*ret))
-			throw(MAL, "mtime.date_sub_msec_interval",
-				  SQLSTATE(22003) "overflow in calculation");
-	}
-	return MAL_SUCCEED;
+	return date_add_day(d, (int) (-ms / (24*60*60*1000)));
 }
+func2chk(MTIMEdate_sub_msec_interval, MTIMEdate_sub_msec_interval_bulk, "date_sub_msec_interval", date, lng, date, date_sub_msec_interval)
 
-str
-MTIMEdate_add_msec_interval(date *ret, const date *d, const lng *ms)
+static inline date
+date_add_msec_interval(const date d, const lng ms)
 {
-	if (is_date_nil(*d) || is_lng_nil(*ms))
-		*ret = date_nil;
-	else {
-		*ret = date_add_day(*d, (int) (*ms / (24*60*60*1000)));
-		if (is_date_nil(*ret))
-			throw(MAL, "mtime.date_add_msec_interval",
-				  SQLSTATE(22003) "overflow in calculation");
-	}
-	return MAL_SUCCEED;
+	return date_add_day(d, (int) (ms / (24*60*60*1000)));
 }
+func2chk(MTIMEdate_add_msec_interval, MTIMEdate_add_msec_interval_bulk, "date_add_msec_interval", date, lng, date, date_add_msec_interval)
 
 #define TSSUBMS(ts, ms)		timestamp_add_usec((ts), -(ms) * 1000)
 #define TSADDMS(ts, ms)		timestamp_add_usec((ts), (ms) * 1000)
 func2chk(MTIMEtimestamp_sub_msec_interval, MTIMEtimestamp_sub_msec_interval_bulk, "timestamp_sub_msec_interval", timestamp, lng, timestamp, TSSUBMS)
 func2chk(MTIMEtimestamp_add_msec_interval, MTIMEtimestamp_add_msec_interval_bulk, "timestamp_add_msec_interval", timestamp, lng, timestamp, TSADDMS)
 
-str
-MTIMEtimestamp_sub_month_interval(timestamp *ret, const timestamp *t, const int *m)
+static inline timestamp
+timestamp_sub_month_interval(const timestamp t, const int m)
 {
-	if (is_timestamp_nil(*t) || is_int_nil(*m))
-		*ret = timestamp_nil;
-	else {
-		*ret = timestamp_add_month(*t, -*m);
-		if (is_timestamp_nil(*ret))
-			throw(MAL, "mtime.timestamp_sub_month_interval",
-				  SQLSTATE(22003) "overflow in calculation");
-	}
-	return MAL_SUCCEED;
+	return timestamp_add_month(t, -m);
 }
+func2chk(MTIMEtimestamp_sub_month_interval, MTIMEtimestamp_sub_month_interval_bulk, "timestamp_sub_month_interval", timestamp, int, timestamp, timestamp_sub_month_interval)
 
-str
-MTIMEtimestamp_add_month_interval(timestamp *ret, const timestamp *t, const int *m)
+static inline timestamp
+timestamp_add_month_interval(const timestamp t, const int m)
 {
-	if (is_timestamp_nil(*t) || is_int_nil(*m))
-		*ret = timestamp_nil;
-	else {
-		*ret = timestamp_add_month(*t, *m);
-		if (is_timestamp_nil(*ret))
-			throw(MAL, "mtime.timestamp_add_month_interval",
-				  SQLSTATE(22003) "overflow in calculation");
-	}
-	return MAL_SUCCEED;
+	return timestamp_add_month(t, m);
 }
+func2chk(MTIMEtimestamp_add_month_interval, MTIMEtimestamp_add_month_interval_bulk, "timestamp_add_month_interval", timestamp, int, timestamp, timestamp_add_month_interval)
 
-str
-MTIMEtime_sub_msec_interval(daytime *ret, const daytime *t, const lng *ms)
+static inline daytime
+time_sub_msec_interval(const daytime t, const lng ms)
 {
-	if (is_daytime_nil(*t) || is_lng_nil(*ms))
-		*ret = daytime_nil;
-	else {
-		*ret = daytime_add_usec_modulo(*t, -*ms * 1000);
-	}
-	return MAL_SUCCEED;
+	if (is_daytime_nil(t) || is_lng_nil(ms))
+		return daytime_nil;
+	return daytime_add_usec_modulo(t, -ms * 1000);
 }
+func2(MTIMEtime_sub_msec_interval, MTIMEtime_sub_msec_interval_bulk, "time_sub_msec_interval", daytime, lng, daytime, time_sub_msec_interval)
 
-str
-MTIMEtime_add_msec_interval(daytime *ret, const daytime *t, const lng *ms)
+static inline daytime
+time_add_msec_interval(const daytime t, const lng ms)
 {
-	if (is_daytime_nil(*t) || is_lng_nil(*ms))
-		*ret = daytime_nil;
-	else {
-		*ret = daytime_add_usec_modulo(*t, *ms * 1000);
-	}
-	return MAL_SUCCEED;
+	if (is_daytime_nil(t) || is_lng_nil(ms))
+		return daytime_nil;
+	return daytime_add_usec_modulo(t, ms * 1000);
 }
+func2(MTIMEtime_add_msec_interval, MTIMEtime_add_msec_interval_bulk, "time_add_msec_interval", daytime, lng, daytime, time_add_msec_interval)
 
-str
-MTIMEdate_submonths(date *ret, const date *d, const int *m)
+static inline date
+date_submonths(const date d, const int m)
 {
-	if (is_date_nil(*d) || is_int_nil(*m))
-		*ret = date_nil;
-	else {
-		*ret = date_add_month(*d, -*m);
-		if (is_date_nil(*ret))
-			throw(MAL, "mtime.date_sub_month_interval",
-				  SQLSTATE(22003) "overflow in calculation");
-	}
-	return MAL_SUCCEED;
+	return date_add_month(d, -m);
 }
+func2chk(MTIMEdate_submonths, MTIMEdate_submonths_bulk, "date_submonths", date, int, date, date_submonths)
 
-str
-MTIMEdate_addmonths(date *ret, const date *d, const int *m)
+static inline date
+date_addmonths(const date d, const int m)
 {
-	if (is_date_nil(*d) || is_int_nil(*m))
-		*ret = date_nil;
-	else {
-		*ret = date_add_month(*d, *m);
-		if (is_date_nil(*ret))
-			throw(MAL, "mtime.date_sub_month_interval",
-				  SQLSTATE(22003) "overflow in calculation");
-	}
-	return MAL_SUCCEED;
+	return date_add_month(d, m);
 }
+func2chk(MTIMEdate_addmonths, MTIMEdate_addmonths_bulk, "date_addmonths", date, int, date, date_addmonths)
 
 func1(MTIMEdate_extract_century, MTIMEdate_extract_century_bulk, "century", date, int, date_century, COPYFLAGS)
 func1(MTIMEdate_extract_decade, MTIMEdate_extract_decade_bulk, "decade", date, int, date_decade, COPYFLAGS)
