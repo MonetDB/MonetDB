@@ -510,20 +510,44 @@ address MTIMEcurrent_time;
 
 command century(t:timestamp):int
 address MTIMEtimestamp_century;
+command batmtime.century(t:bat[:timestamp]):bat[:int]
+address MTIMEtimestamp_century_bulk;
+
 command decade(t:timestamp):int
 address MTIMEtimestamp_decade;
+command batmtime.decade(t:bat[:timestamp]):bat[:int]
+address MTIMEtimestamp_decade_bulk;
+
 command year(t:timestamp):int
 address MTIMEtimestamp_year;
+command batmtime.year(t:bat[:timestamp]):bat[:int]
+address MTIMEtimestamp_year_bulk;
+
 command quarter(t:timestamp):int
 address MTIMEtimestamp_quarter;
+command batmtime.quarter(t:bat[:timestamp]):bat[:int]
+address MTIMEtimestamp_quarter_bulk;
+
 command month(t:timestamp):int
 address MTIMEtimestamp_month;
+command batmtime.month(t:bat[:timestamp]):bat[:int]
+address MTIMEtimestamp_month_bulk;
+
 command day(t:timestamp):int
 address MTIMEtimestamp_day;
+command batmtime.day(t:bat[:timestamp]):bat[:int]
+address MTIMEtimestamp_day_bulk;
+
 command hours(t:timestamp):int
 address MTIMEtimestamp_hours;
+command batmtime.hours(t:bat[:timestamp]):bat[:int]
+address MTIMEtimestamp_hours_bulk;
+
 command minutes(t:timestamp):int
 address MTIMEtimestamp_minutes;
+command batmtime.minutes(t:bat[:timestamp]):bat[:int]
+address MTIMEtimestamp_minutes_bulk;
+
 # command seconds(t:timestamp):int
 # address MTIMEtimestamp_seconds;
 command sql_seconds(t:timestamp):int
@@ -535,16 +559,33 @@ address MTIMEtimestamp_sql_seconds_bulk;
 
 command year(months:int):int
 address MTIMEsql_year;
+command batmtime.year(months:bat[:int]):bat[:int]
+address MTIMEsql_year_bulk;
+
 command month(months:int):int
 address MTIMEsql_month;
+command batmtime.month(months:bat[:int]):bat[:int]
+address MTIMEsql_month_bulk;
+
 command day(msecs:lng):lng
 address MTIMEsql_day;
+command batmtime.day(msecs:bat[:lng]):bat[:lng]
+address MTIMEsql_day_bulk;
+
 command hours(msecs:lng):int
 address MTIMEsql_hours;
+command batmtime.hours(msecs:bat[:lng]):bat[:int]
+address MTIMEsql_hours_bulk;
+
 command minutes(msecs:lng):int
 address MTIMEsql_minutes;
+command batmtime.minutes(msecs:bat[:lng]):bat[:int]
+address MTIMEsql_minutes_bulk;
+
 command seconds(msecs:lng):int
 address MTIMEsql_seconds;
+command batmtime.seconds(msecs:bat[:lng]):bat[:int]
+address MTIMEsql_seconds_bulk;
 
 # unsafe command msec():lng
 # address MTIMEmsec
@@ -569,9 +610,13 @@ command daytime(t:timestamp) :daytime address MTIMEtimestamp_extract_daytime;
 
 module batcalc;
 
+command date(d:bat[:date]) :bat[:date]
+address MTIMEdate_date_bulk;
 command date(t:bat[:timestamp]) :bat[:date]
 address MTIMEtimestamp_extract_date_bulk;
 
+command timestamp(t:bat[:timestamp]) :bat[:timestamp]
+address MTIMEtimestamp_timestamp_bulk;
 command timestamp(d:bat[:date]) :bat[:timestamp]
 address MTIMEtimestamp_fromdate_bulk;
 command timestamp(secs:bat[:int]) :bat[:timestamp]
@@ -579,6 +624,8 @@ address MTIMEtimestamp_fromsecond_bulk;
 command timestamp(msecs:bat[:lng]) :bat[:timestamp]
 address MTIMEtimestamp_frommsec_bulk;
 
+command daytime(d:bat[:daytime]) :bat[:daytime]
+address MTIMEdaytime_daytime_bulk;
 command daytime(s:bat[:lng]) :bat[:daytime]
 address MTIMEdaytime_fromseconds_bulk;
 command daytime(t:bat[:timestamp]) :bat[:daytime]

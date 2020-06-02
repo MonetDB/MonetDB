@@ -42,28 +42,11 @@ extern char *strptime(const char *, const char *, struct tm *);
 mal_export str MTIMEcurrent_date(date *ret);
 mal_export str MTIMEcurrent_time(daytime *ret);
 mal_export str MTIMEcurrent_timestamp(timestamp *ret);
-mal_export str MTIMEtimestamp_century(int *ret, const timestamp *t);
-mal_export str MTIMEtimestamp_decade(int *ret, const timestamp *t);
-mal_export str MTIMEtimestamp_year(int *ret, const timestamp *t);
-mal_export str MTIMEtimestamp_quarter(int *ret, const timestamp *t);
-mal_export str MTIMEtimestamp_month(int *ret, const timestamp *t);
-mal_export str MTIMEtimestamp_day(int *ret, const timestamp *t);
-mal_export str MTIMEtimestamp_hours(int *ret, const timestamp *t);
-mal_export str MTIMEtimestamp_minutes(int *ret, const timestamp *t);
-mal_export str MTIMEsql_year(int *ret, const int *months);
-mal_export str MTIMEsql_month(int *ret, const int *months);
-mal_export str MTIMEsql_day(lng *ret, const lng *msecs);
-mal_export str MTIMEsql_hours(int *ret, const lng *msecs);
-mal_export str MTIMEsql_minutes(int *ret, const lng *msecs);
-mal_export str MTIMEsql_seconds(int *ret, const lng *msecs);
 
 mal_export str MTIMEdate_fromstr(date *ret, const char *const *s);
-mal_export str MTIMEdate_date(date *dst, const date *src);
 mal_export str MTIMEtimestamp_fromstr(timestamp *ret, const char *const *s);
-mal_export str MTIMEtimestamp_timestamp(timestamp *dst, const timestamp *src);
 mal_export str MTIMEseconds_since_epoch(int *ret, const timestamp *t);
 mal_export str MTIMEdaytime_fromstr(daytime *ret, const char *const *s);
-mal_export str MTIMEdaytime_daytime(daytime *dst, const daytime *src);
 mal_export str MTIMEdaytime_fromseconds(daytime *ret, const lng *secs);
 mal_export str MTIMEdaytime_fromseconds_bulk(bat *ret, bat *bid);
 mal_export str MTIMElocal_timezone_msec(lng *ret);
@@ -273,18 +256,9 @@ NAMEBULK(bat *ret, const bat *bid1, const bat *bid2)					\
 	return MAL_SUCCEED;													\
 }
 
-static inline date
-date_sub_msec_interval(const date d, const lng ms)
-{
-	return date_add_day(d, (int) (-ms / (24*60*60*1000)));
-}
+#define date_sub_msec_interval(d, ms) date_add_day(d, (int) (-ms / (24*60*60*1000)))
+#define date_add_msec_interval(d, ms) date_add_day(d, (int) (ms / (24*60*60*1000)))
 func2chk(MTIMEdate_sub_msec_interval, MTIMEdate_sub_msec_interval_bulk, "date_sub_msec_interval", date, lng, date, date_sub_msec_interval)
-
-static inline date
-date_add_msec_interval(const date d, const lng ms)
-{
-	return date_add_day(d, (int) (ms / (24*60*60*1000)));
-}
 func2chk(MTIMEdate_add_msec_interval, MTIMEdate_add_msec_interval_bulk, "date_add_msec_interval", date, lng, date, date_add_msec_interval)
 
 #define TSSUBMS(ts, ms)		timestamp_add_usec((ts), -(ms) * 1000)
@@ -292,18 +266,9 @@ func2chk(MTIMEdate_add_msec_interval, MTIMEdate_add_msec_interval_bulk, "date_ad
 func2chk(MTIMEtimestamp_sub_msec_interval, MTIMEtimestamp_sub_msec_interval_bulk, "timestamp_sub_msec_interval", timestamp, lng, timestamp, TSSUBMS)
 func2chk(MTIMEtimestamp_add_msec_interval, MTIMEtimestamp_add_msec_interval_bulk, "timestamp_add_msec_interval", timestamp, lng, timestamp, TSADDMS)
 
-static inline timestamp
-timestamp_sub_month_interval(const timestamp t, const int m)
-{
-	return timestamp_add_month(t, -m);
-}
+#define timestamp_sub_month_interval(d, m) timestamp_add_month(d, -m)
+#define timestamp_add_month_interval(d, m) timestamp_add_month(d, m)
 func2chk(MTIMEtimestamp_sub_month_interval, MTIMEtimestamp_sub_month_interval_bulk, "timestamp_sub_month_interval", timestamp, int, timestamp, timestamp_sub_month_interval)
-
-static inline timestamp
-timestamp_add_month_interval(const timestamp t, const int m)
-{
-	return timestamp_add_month(t, m);
-}
 func2chk(MTIMEtimestamp_add_month_interval, MTIMEtimestamp_add_month_interval_bulk, "timestamp_add_month_interval", timestamp, int, timestamp, timestamp_add_month_interval)
 
 static inline daytime
@@ -313,8 +278,6 @@ time_sub_msec_interval(const daytime t, const lng ms)
 		return daytime_nil;
 	return daytime_add_usec_modulo(t, -ms * 1000);
 }
-func2(MTIMEtime_sub_msec_interval, MTIMEtime_sub_msec_interval_bulk, "time_sub_msec_interval", daytime, lng, daytime, time_sub_msec_interval)
-
 static inline daytime
 time_add_msec_interval(const daytime t, const lng ms)
 {
@@ -322,34 +285,26 @@ time_add_msec_interval(const daytime t, const lng ms)
 		return daytime_nil;
 	return daytime_add_usec_modulo(t, ms * 1000);
 }
+func2(MTIMEtime_sub_msec_interval, MTIMEtime_sub_msec_interval_bulk, "time_sub_msec_interval", daytime, lng, daytime, time_sub_msec_interval)
 func2(MTIMEtime_add_msec_interval, MTIMEtime_add_msec_interval_bulk, "time_add_msec_interval", daytime, lng, daytime, time_add_msec_interval)
 
-static inline date
-date_submonths(const date d, const int m)
-{
-	return date_add_month(d, -m);
-}
+#define date_submonths(d, m) date_add_month(d, -m)
+#define date_addmonths(d, m) date_add_month(d, m)
 func2chk(MTIMEdate_submonths, MTIMEdate_submonths_bulk, "date_submonths", date, int, date, date_submonths)
-
-static inline date
-date_addmonths(const date d, const int m)
-{
-	return date_add_month(d, m);
-}
 func2chk(MTIMEdate_addmonths, MTIMEdate_addmonths_bulk, "date_addmonths", date, int, date, date_addmonths)
 
-func1(MTIMEdate_extract_century, MTIMEdate_extract_century_bulk, "century", date, int, date_century, COPYFLAGS)
-func1(MTIMEdate_extract_decade, MTIMEdate_extract_decade_bulk, "decade", date, int, date_decade, COPYFLAGS)
-func1(MTIMEdate_extract_year, MTIMEdate_extract_year_bulk, "year", date, int, date_year, COPYFLAGS)
-func1(MTIMEdate_extract_quarter, MTIMEdate_extract_quarter_bulk, "quarter", date, int, date_quarter, SETFLAGS)
-func1(MTIMEdate_extract_month, MTIMEdate_extract_month_bulk, "month", date, int, date_month, SETFLAGS)
-func1(MTIMEdate_extract_day, MTIMEdate_extract_day_bulk, "day", date, int, date_day, SETFLAGS)
-func1(MTIMEdate_extract_dayofyear, MTIMEdate_extract_dayofyear_bulk, "dayofyear", date, int, date_dayofyear, SETFLAGS)
-func1(MTIMEdate_extract_weekofyear, MTIMEdate_extract_weekofyear_bulk, "weekofyear", date, int, date_weekofyear, SETFLAGS)
-func1(MTIMEdate_extract_dayofweek, MTIMEdate_extract_dayofweek_bulk, "dayofweek", date, int, date_dayofweek, SETFLAGS)
-func1(MTIMEdaytime_extract_hours, MTIMEdaytime_extract_hours_bulk, "hours", daytime, int, daytime_hour, COPYFLAGS)
-func1(MTIMEdaytime_extract_minutes, MTIMEdaytime_extract_minutes_bulk, "minutes", daytime, int, daytime_min, SETFLAGS)
-func1(MTIMEdaytime_extract_sql_seconds, MTIMEdaytime_extract_sql_seconds_bulk, "seconds", daytime, int, daytime_sec_usec, SETFLAGS)
+func1(MTIMEdate_extract_century, MTIMEdate_extract_century_bulk, "date_century", date, int, date_century, COPYFLAGS)
+func1(MTIMEdate_extract_decade, MTIMEdate_extract_decade_bulk, "date_decade", date, int, date_decade, COPYFLAGS)
+func1(MTIMEdate_extract_year, MTIMEdate_extract_year_bulk, "date_year", date, int, date_year, COPYFLAGS)
+func1(MTIMEdate_extract_quarter, MTIMEdate_extract_quarter_bulk, "date_quarter", date, int, date_quarter, SETFLAGS)
+func1(MTIMEdate_extract_month, MTIMEdate_extract_month_bulk, "date_month", date, int, date_month, SETFLAGS)
+func1(MTIMEdate_extract_day, MTIMEdate_extract_day_bulk, "date_day", date, int, date_day, SETFLAGS)
+func1(MTIMEdate_extract_dayofyear, MTIMEdate_extract_dayofyear_bulk, "date_dayofyear", date, int, date_dayofyear, SETFLAGS)
+func1(MTIMEdate_extract_weekofyear, MTIMEdate_extract_weekofyear_bulk, "date_weekofyear", date, int, date_weekofyear, SETFLAGS)
+func1(MTIMEdate_extract_dayofweek, MTIMEdate_extract_dayofweek_bulk, "date_dayofweek", date, int, date_dayofweek, SETFLAGS)
+func1(MTIMEdaytime_extract_hours, MTIMEdaytime_extract_hours_bulk, "daytime_hour", daytime, int, daytime_hour, COPYFLAGS)
+func1(MTIMEdaytime_extract_minutes, MTIMEdaytime_extract_minutes_bulk, "daytime_minutes", daytime, int, daytime_min, SETFLAGS)
+func1(MTIMEdaytime_extract_sql_seconds, MTIMEdaytime_extract_sql_seconds_bulk, "daytime_seconds", daytime, int, daytime_sec_usec, SETFLAGS)
 
 static inline lng
 TSDIFF(timestamp t1, timestamp t2)
@@ -369,118 +324,47 @@ TSDIFF(timestamp t1, timestamp t2)
 }
 func2(MTIMEtimestamp_diff_msec, MTIMEtimestamp_diff_msec_bulk, "diff", timestamp, timestamp, lng, TSDIFF)
 
-str
-MTIMEtimestamp_century(int *ret, const timestamp *t)
+static inline int
+timestamp_century(const timestamp t)
 {
-	if (is_timestamp_nil(*t)) {
-		*ret = int_nil;
-	} else {
-		int y = date_year(timestamp_date(*t));
-		if (y > 0)
-			*ret = (y - 1) / 100 + 1;
-		else
-			*ret = -((-y - 1) / 100 + 1);
-	}
-	return MAL_SUCCEED;
+	if (is_timestamp_nil(t))
+		return int_nil;
+	int y = date_year(timestamp_date(t));
+	if (y > 0)
+		return (y - 1) / 100 + 1;
+	else
+		return -((-y - 1) / 100 + 1);
 }
-
-str
-MTIMEtimestamp_decade(int *ret, const timestamp *t)
-{
-	if (is_timestamp_nil(*t)) {
-		*ret = int_nil;
-	} else {
-		*ret = date_year(timestamp_date(*t)) / 10;
-	}
-	return MAL_SUCCEED;
-}
-
-str
-MTIMEtimestamp_year(int *ret, const timestamp *t)
-{
-	*ret = date_year(timestamp_date(*t));
-	return MAL_SUCCEED;
-}
-
-str
-MTIMEtimestamp_quarter(int *ret, const timestamp *t)
-{
-	*ret = is_timestamp_nil(*t) ? int_nil : (date_month(timestamp_date(*t)) - 1) / 3 + 1;
-	return MAL_SUCCEED;
-}
-
-str
-MTIMEtimestamp_month(int *ret, const timestamp *t)
-{
-	*ret = date_month(timestamp_date(*t));
-	return MAL_SUCCEED;
-}
-
-str
-MTIMEtimestamp_day(int *ret, const timestamp *t)
-{
-	*ret = date_day(timestamp_date(*t));
-	return MAL_SUCCEED;
-}
-
-str
-MTIMEtimestamp_hours(int *ret, const timestamp *t)
-{
-	*ret = daytime_hour(timestamp_daytime(*t));
-	return MAL_SUCCEED;
-}
-
-str
-MTIMEtimestamp_minutes(int *ret, const timestamp *t)
-{
-	*ret = daytime_min(timestamp_daytime(*t));
-	return MAL_SUCCEED;
-}
-
+#define timestamp_decade(t) is_timestamp_nil(t) ? int_nil : date_year(timestamp_date(t)) / 10
+#define timestamp_year(t) date_year(timestamp_date(t))
+#define timestamp_quarter(t) is_timestamp_nil(t) ? int_nil : (date_month(timestamp_date(t)) - 1) / 3 + 1
+#define timestamp_month(t) date_month(timestamp_date(t))
+#define timestamp_day(t) date_day(timestamp_date(t))
+#define timestamp_hours(t) daytime_hour(timestamp_daytime(t))
+#define timestamp_minutes(t) daytime_min(timestamp_daytime(t))
 #define timestamp_extract_usecond(ts)	daytime_sec_usec(timestamp_daytime(ts))
+func1(MTIMEtimestamp_century, MTIMEtimestamp_century_bulk, "timestamp_century", timestamp, int, timestamp_century, COPYFLAGS)
+func1(MTIMEtimestamp_decade, MTIMEtimestamp_decade_bulk, "timestamp_decade", timestamp, int, timestamp_decade, COPYFLAGS)
+func1(MTIMEtimestamp_year, MTIMEtimestamp_year_bulk, "timestamp_year", timestamp, int, timestamp_year, COPYFLAGS)
+func1(MTIMEtimestamp_quarter, MTIMEtimestamp_quarter_bulk, "timestamp_quarter", timestamp, int, timestamp_quarter, SETFLAGS)
+func1(MTIMEtimestamp_month, MTIMEtimestamp_month_bulk, "timestamp_month", timestamp, int, timestamp_month, SETFLAGS)
+func1(MTIMEtimestamp_day, MTIMEtimestamp_day_bulk, "timestamp_day", timestamp, int, timestamp_day, SETFLAGS)
+func1(MTIMEtimestamp_hours, MTIMEtimestamp_hours_bulk, "timestamp_hours", timestamp, int, timestamp_hours, SETFLAGS)
+func1(MTIMEtimestamp_minutes, MTIMEtimestamp_minutes_bulk, "timestamp_minutes", timestamp, int, timestamp_minutes, SETFLAGS)
 func1(MTIMEtimestamp_sql_seconds, MTIMEtimestamp_sql_seconds_bulk, "sql_seconds", timestamp, int, timestamp_extract_usecond, SETFLAGS)
 
-str
-MTIMEsql_year(int *ret, const int *months)
-{
-	*ret = is_int_nil(*months) ? int_nil : *months / 12;
-	return MAL_SUCCEED;
-}
-
-str
-MTIMEsql_month(int *ret, const int *months)
-{
-	*ret = is_int_nil(*months) ? int_nil : *months % 12;
-	return MAL_SUCCEED;
-}
-
-str
-MTIMEsql_day(lng *ret, const lng *msecs)
-{
-	*ret = is_lng_nil(*msecs) ? lng_nil : *msecs / (24*60*60*1000);
-	return MAL_SUCCEED;
-}
-
-str
-MTIMEsql_hours(int *ret, const lng *msecs)
-{
-	*ret = is_lng_nil(*msecs) ? int_nil : (int) ((*msecs % (24*60*60*1000)) / (60*60*1000));
-	return MAL_SUCCEED;
-}
-
-str
-MTIMEsql_minutes(int *ret, const lng *msecs)
-{
-	*ret = is_lng_nil(*msecs) ? int_nil : (int) ((*msecs % (60*60*1000)) / (60*1000));
-	return MAL_SUCCEED;
-}
-
-str
-MTIMEsql_seconds(int *ret, const lng *msecs)
-{
-	*ret = is_lng_nil(*msecs) ? int_nil : (int) ((*msecs % (60*1000)) / 1000);
-	return MAL_SUCCEED;
-}
+#define sql_year(m) is_int_nil(m) ? int_nil : m / 12
+#define sql_month(m) is_int_nil(m) ? int_nil : m % 12
+#define sql_day(m) is_lng_nil(m) ? lng_nil : m / (24*60*60*1000)
+#define sql_hours(m) is_lng_nil(m) ? int_nil : (int) ((m % (24*60*60*1000)) / (60*60*1000))
+#define sql_minutes(m) is_lng_nil(m) ? int_nil : (int) ((m % (60*60*1000)) / (60*1000))
+#define sql_seconds(m) is_lng_nil(m) ? int_nil : (int) ((m % (60*1000)) / 1000)
+func1(MTIMEsql_year, MTIMEsql_year_bulk, "sql_year", int, int, sql_year, COPYFLAGS)
+func1(MTIMEsql_month, MTIMEsql_month_bulk, "sql_month", int, int, sql_month, SETFLAGS)
+func1(MTIMEsql_day, MTIMEsql_day_bulk, "sql_day", lng, lng, sql_day, COPYFLAGS)
+func1(MTIMEsql_hours, MTIMEsql_hours_bulk, "sql_hours", lng, int, sql_hours, SETFLAGS)
+func1(MTIMEsql_minutes, MTIMEsql_minutes_bulk, "sql_minutes", lng, int, sql_minutes, SETFLAGS)
+func1(MTIMEsql_seconds, MTIMEsql_seconds_bulk, "sql_seconds", lng, int, sql_seconds, SETFLAGS)
 
 str
 MTIMEdate_fromstr(date *ret, const char *const *s)
@@ -490,12 +374,8 @@ MTIMEdate_fromstr(date *ret, const char *const *s)
 	return MAL_SUCCEED;
 }
 
-str
-MTIMEdate_date(date *dst, const date *src)
-{
-	*dst = *src;
-	return MAL_SUCCEED;
-}
+#define date_date(m) m
+func1(MTIMEdate_date, MTIMEdate_date_bulk, "date_date", date, date, date_date, COPYFLAGS)
 
 func1(MTIMEtimestamp_extract_date, MTIMEtimestamp_extract_date_bulk, "date", timestamp, date, timestamp_date, COPYFLAGS)
 
@@ -507,12 +387,8 @@ MTIMEtimestamp_fromstr(timestamp *ret, const char *const *s)
 	return MAL_SUCCEED;
 }
 
-str
-MTIMEtimestamp_timestamp(timestamp *dst, const timestamp *src)
-{
-	*dst = *src;
-	return MAL_SUCCEED;
-}
+#define timestamp_timestamp(m) m
+func1(MTIMEtimestamp_timestamp, MTIMEtimestamp_timestamp_bulk, "timestamp_timestamp", timestamp, timestamp, timestamp_timestamp, COPYFLAGS)
 
 #define mkts(dt)	timestamp_create(dt, daytime_create(0, 0, 0, 0))
 func1(MTIMEtimestamp_fromdate, MTIMEtimestamp_fromdate_bulk, "timestamp", date, timestamp, mkts, COPYFLAGS)
@@ -544,12 +420,8 @@ MTIMEdaytime_fromstr(daytime *ret, const char *const *s)
 	return MAL_SUCCEED;
 }
 
-str
-MTIMEdaytime_daytime(daytime *dst, const daytime *src)
-{
-	*dst = *src;
-	return MAL_SUCCEED;
-}
+#define daytime_daytime(m) m
+func1(MTIMEdaytime_daytime, MTIMEdaytime_daytime_bulk, "daytime_daytime", daytime, daytime, daytime_daytime, COPYFLAGS)
 
 str
 MTIMEdaytime_fromseconds(daytime *ret, const lng *secs)
