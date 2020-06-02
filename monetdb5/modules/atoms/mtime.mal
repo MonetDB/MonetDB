@@ -134,18 +134,26 @@ comment "Equality of two daytimes";
 # address MTIMEcurrent_timestamp
 # comment "unix-time (epoch) support: seconds since the Unix epoch";
 
+module batmtime;
 module mtime;
 
 command epoch(t:timestamp):int
 address MTIMEseconds_since_epoch
 comment "unix-time (epoch) support: seconds since epoch";
+command batmtime.epoch(t:bat[:timestamp]) :bat[:int]
+address MTIMEseconds_since_epoch_bulk;
 
 command epoch(t:int):timestamp
 address MTIMEtimestamp_fromsecond
 comment "convert seconds since epoch into a timestamp";
+command batmtime.epoch(t:bat[:int]) :bat[:timestamp]
+address MTIMEtimestamp_fromsecond_bulk;
+
 command epoch(t:lng):timestamp
 address MTIMEtimestamp_frommsec
 comment "convert milli seconds since epoch into a timestamp";
+command batmtime.epoch(t:bat[:lng]) :bat[:timestamp]
+address MTIMEtimestamp_frommsec_bulk;
 
 module calc;
 pattern calc.==(v:timestamp,w:timestamp):bit
@@ -173,7 +181,6 @@ pattern calc.>=(v:timestamp,w:timestamp):bit
 address CMDvarGE
 comment "Equality of two timestamps";
 
-module batmtime;
 module mtime;
 # command date_sub_sec_interval(t:date,s:int):date
 # address MTIMEdate_sub_sec_interval_wrap
@@ -397,10 +404,6 @@ address MTIMEdate_addmonths_bulk;
 # 	of days (possibly negative).";
 command diff(val1:date, val2:date) :int
 address MTIMEdate_diff
-comment "returns the number of days
-	between 'val1' and 'val2'.";
-command batmtime.diff(val1:bat[:date], val2:bat[:date]) :bat[:int]
-address MTIMEdate_diff_bulk
 comment "returns the number of days
 	between 'val1' and 'val2'.";
 

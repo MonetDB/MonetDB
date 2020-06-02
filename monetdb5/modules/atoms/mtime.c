@@ -45,7 +45,6 @@ mal_export str MTIMEcurrent_timestamp(timestamp *ret);
 
 mal_export str MTIMEdate_fromstr(date *ret, const char *const *s);
 mal_export str MTIMEtimestamp_fromstr(timestamp *ret, const char *const *s);
-mal_export str MTIMEseconds_since_epoch(int *ret, const timestamp *t);
 mal_export str MTIMEdaytime_fromstr(daytime *ret, const char *const *s);
 mal_export str MTIMEdaytime_fromseconds(daytime *ret, const lng *secs);
 mal_export str MTIMEdaytime_fromseconds_bulk(bat *ret, bat *bid);
@@ -393,13 +392,8 @@ func1(MTIMEtimestamp_timestamp, MTIMEtimestamp_timestamp_bulk, "timestamp_timest
 #define mkts(dt)	timestamp_create(dt, daytime_create(0, 0, 0, 0))
 func1(MTIMEtimestamp_fromdate, MTIMEtimestamp_fromdate_bulk, "timestamp", date, timestamp, mkts, COPYFLAGS)
 
-str
-MTIMEseconds_since_epoch(int *ret, const timestamp *t)
-{
-	lng df = timestamp_diff(*t, unixepoch);
-	*ret = is_lng_nil(df) ? int_nil : (int) (df / 1000000);
-	return MAL_SUCCEED;
-}
+#define seconds_since_epoch(t) is_timestamp_nil(t) ? int_nil : (int) (timestamp_diff(t, unixepoch) / 1000000);
+func1(MTIMEseconds_since_epoch, MTIMEseconds_since_epoch_bulk, "seconds_since_epoch", timestamp, int, seconds_since_epoch, COPYFLAGS)
 
 #define mktsfromsec(sec)	(is_int_nil(sec) ?							\
 							 timestamp_nil :							\
