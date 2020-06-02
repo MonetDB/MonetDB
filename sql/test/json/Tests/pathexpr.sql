@@ -15,12 +15,10 @@ select json.filter(js,'.book.[2]') from jspath;
 select json.filter(js,'.book.[3]') from jspath;
 select json.filter(js,'.book.[*].category') from jspath;
 
-declare s json;
-set s = '[[{"name":"john"}], {"name":"mary"}]';
-select json.filter(s,'..name');
-select  json.filter(s,'$.[*].name');
-select  json.filter(s,'..name[0]');
-select  json.filter(s,'..name[1]');
+select json.filter('[[{"name":"john"}], {"name":"mary"}]','..name');
+select  json.filter('[[{"name":"john"}], {"name":"mary"}]','$.[*].name');
+select  json.filter('[[{"name":"john"}], {"name":"mary"}]','..name[0]');
+select  json.filter('[[{"name":"john"}], {"name":"mary"}]','..name[1]');
 
 select json.filter(js,'.book[-1]') from jspath;
 select json.filter(js,'.book[4]') from jspath;

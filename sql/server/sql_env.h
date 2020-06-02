@@ -13,7 +13,7 @@
 #include "sql_symbol.h"
 #include "sql_mvc.h"
 
-extern str sql_update_var(mvc *m, const char *name, ValPtr ptr);
+extern str sql_update_var(mvc *m, sql_schema *s, const char *name, ValPtr ptr);
 
 extern int sql_create_env(mvc *m, sql_schema *s);
 

@@ -122,7 +122,11 @@ sql_symbol2relation(mvc *sql, symbol *sym)
 {
 	sql_rel *rel;
 	sql_query *query = query_create(sql);
-	int top = sql->topvars;
+	int top = sql->topframes;
+
+	/* On explain and plan modes, drop declared variables after generating the AST */
+	if (((sql->emod & mod_explain) || (sql->emode != m_normal && sql->emode != m_execute)) && !stack_push_frame(sql, NULL))
+		return sql_error(sql, 02, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 
 	rel = rel_semantic(query, sym);
 	if (rel)
@@ -287,19 +291,19 @@ create_table_or_view(mvc *sql, char* sname, char *tname, sql_table *t, int temp)
 	sql_table *nt = NULL;
 	node *n;
 	int check = 0;
+	const char *action = (temp == SQL_DECLARED_TABLE) ? "DECLARE" : "CREATE";
 
 	if (STORE_READONLY)
 		return sql_error(sql, 06, SQLSTATE(25006) "schema statements cannot be executed on a readonly database.");
 
 	if (!s)
-		return sql_message(SQLSTATE(3F000) "CREATE %s: schema '%s' doesn't exist", (t->query) ? "TABLE" : "VIEW", sname);
+		return sql_message(SQLSTATE(3F000) "%s %s: schema '%s' doesn't exist", action, (t->query) ? "TABLE" : "VIEW", sname);
 	if (mvc_bind_table(sql, s, t->base.name)) {
-		char *cd = (temp == SQL_DECLARED_TABLE) ? "DECLARE" : "CREATE";
-		return sql_message(SQLSTATE(42S01) "%s TABLE: name '%s' already in use", cd, t->base.name);
-	} else if (temp != SQL_DECLARED_TABLE && (!mvc_schema_privs(sql, s) && !(isTempSchema(s) && temp == SQL_LOCAL_TEMP))) {
-		return sql_message(SQLSTATE(42000) "CREATE TABLE: insufficient privileges for user '%s' in schema '%s'", stack_get_string(sql, "current_user"), s->base.name);
+		return sql_message(SQLSTATE(42S01) "%s TABLE: name '%s' already in use", action, t->base.name);
+	} else if (temp != SQL_DECLARED_TABLE && (!mvc_schema_privs(sql, s) && !(isTempSchema(s) && temp == SQL_LOCAL_TEMP))) { 
+		return sql_message(SQLSTATE(42000) "%s TABLE: insufficient privileges for user '%s' in schema '%s'", action, sqlvar_get_string(find_global_var(sql, mvc_bind_schema(sql, "sys"), "current_user")), s->base.name);
 	} else if (temp == SQL_DECLARED_TABLE && !list_empty(t->keys.set)) {
-		return sql_message(SQLSTATE(42000) "DECLARE TABLE: '%s' cannot have constraints", t->base.name);
+		return sql_message(SQLSTATE(42000) "%s TABLE: '%s' cannot have constraints", action, t->base.name);
 	}
 
 	osa = sql->sa;
@@ -488,7 +492,7 @@ create_table_from_emit(Client cntxt, char *sname, char *tname, sql_emit_col *col
 		goto cleanup;
 	}
 	if (!mvc_schema_privs(sql, s)) {
-		msg = sql_error(sql, 02, SQLSTATE(42000) "CREATE TABLE: Access denied for %s to schema '%s'", stack_get_string(sql, "current_user"), s->base.name);
+		msg = sql_error(sql, 02, SQLSTATE(42000) "CREATE TABLE: Access denied for %s to schema '%s'", sqlvar_get_string(find_global_var(sql, mvc_bind_schema(sql, "sys"), "current_user")), s->base.name);
 		goto cleanup;
 	}
 	if (!(t = mvc_create_table(sql, s, tname, tt_table, 0, SQL_DECLARED_TABLE, CA_COMMIT, -1, 0))) {
@@ -630,60 +634,59 @@ SQLcatalog(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	return sql_message(SQLSTATE(25006) "Deprecated statement");
 }
 
-/* setVariable(int *ret, str *name, any value) */
+/* setVariable(int *ret, str *sname, str *name, any value) */
 str
 setVariable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	int *res = getArgReference_int(stk, pci, 0);
 	mvc *m = NULL;
 	str msg;
-	const char *varname = *getArgReference_str(stk, pci, 2);
-	int mtype = getArgType(mb, pci, 3);
-	ValPtr ptr;
+	const char *sname = *getArgReference_str(stk, pci, 2);
+	const char *varname = *getArgReference_str(stk, pci, 3);
+	int mtype = getArgType(mb, pci, 4);
+	sql_schema *s;
+	sql_var *var;
 
 	if ((msg = getSQLContext(cntxt, mb, &m, NULL)) != NULL)
 		return msg;
 	if ((msg = checkSQLContext(cntxt)) != NULL)
 		return msg;
 
+	if (!(s = mvc_bind_schema(m, sname)))
+		throw(SQL, "sql.setVariable", SQLSTATE(3F000) "Cannot find the schema '%s'", sname);
+
 	*res = 0;
 	if (mtype < 0 || mtype >= 255)
 		throw(SQL, "sql.setVariable", SQLSTATE(42100) "Variable type error");
-	if (strcmp("optimizer", varname) == 0) {
-		const char *newopt = *getArgReference_str(stk, pci, 3);
-		if (newopt) {
+
+	if ((var = find_global_var(m, s, varname))) {
+		if (!strcmp("sys", s->base.name) && !strcmp("optimizer", varname)) {
+			const char *newopt = *getArgReference_str(stk, pci, 4);
 			char buf[BUFSIZ];
 
 			if (strNil(newopt))
-				throw(SQL, "sql.setVariable", SQLSTATE(42000) "optimizer cannot be NULL");
+				throw(SQL, "sql.setVariable", SQLSTATE(42000) "Variable '%s.%s' cannot be NULL", sname, varname);
 			if (!isOptimizerPipe(newopt) && strchr(newopt, (int) ';') == 0)
 				throw(SQL, "sql.setVariable", SQLSTATE(42100) "optimizer '%s' unknown", newopt);
-			snprintf(buf, BUFSIZ, "user_%d", cntxt->idx);
+			(void) snprintf(buf, BUFSIZ, "user_%d", cntxt->idx);
 			if (!isOptimizerPipe(newopt) || strcmp(buf, newopt) == 0) {
-				msg = addPipeDefinition(cntxt, buf, newopt);
-				if (msg)
+				if ((msg = addPipeDefinition(cntxt, buf, newopt)))
 					return msg;
-				if (stack_find_var(m, varname)) {
-					if (!stack_set_string(m, varname, buf))
-						throw(SQL, "sql.setVariable", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-				}
-			} else if (stack_find_var(m, varname)) {
-				if (!stack_set_string(m, varname, newopt))
+				if (!sqlvar_set_string(find_global_var(m, s, varname), buf))
 					throw(SQL, "sql.setVariable", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-			}
+			} else if (!sqlvar_set_string(find_global_var(m, s, varname), newopt))
+				throw(SQL, "sql.setVariable", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		} else {
+			ValPtr ptr = &stk->stk[getArg(pci, 4)];
+
+			if ((msg = sql_update_var(m, s, varname, ptr)))
+				return msg;
+			if (!sqlvar_set(var, ptr))
+				throw(SQL, "sql.setVariable", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		}
 		return MAL_SUCCEED;
 	}
-	ptr = &stk->stk[getArg(pci, 3)];
-	if (stack_find_var(m, varname)) {
-		if ((msg = sql_update_var(m, varname, ptr)) != NULL)
-			return msg;
-		if (!stack_set_var(m, varname, ptr))
-			throw(SQL, "sql.setVariable", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-	} else {
-		throw(SQL, "sql.setVariable", SQLSTATE(42100) "variable '%s' unknown", varname);
-	}
-	return MAL_SUCCEED;
+	throw(SQL, "sql.setVariable", SQLSTATE(42100) "Variable '%s.%s' unknown", sname, varname);
 }
 
 /* getVariable(int *ret, str *name) */
@@ -693,19 +696,24 @@ getVariable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	int mtype = getArgType(mb, pci, 0);
 	mvc *m = NULL;
 	str msg;
-	const char *varname = *getArgReference_str(stk, pci, 2);
-	atom *a;
+	const char *sname = *getArgReference_str(stk, pci, 2);
+	const char *varname = *getArgReference_str(stk, pci, 3);
 	ValRecord *dst, *src;
+	sql_schema *s;
+	sql_var *var;
 
 	if ((msg = getSQLContext(cntxt, mb, &m, NULL)) != NULL)
 		return msg;
 	if ((msg = checkSQLContext(cntxt)) != NULL)
 		return msg;
+
+	if (!(s = mvc_bind_schema(m, sname)))
+		throw(SQL, "sql.getVariable", SQLSTATE(3F000) "Cannot find the schema '%s'", sname);
 	if (mtype < 0 || mtype >= 255)
 		throw(SQL, "sql.getVariable", SQLSTATE(42100) "Variable type error");
-	if (!(a = stack_get_var(m, varname)))
-		throw(SQL, "sql.getVariable", SQLSTATE(42100) "variable '%s' unknown", varname);
-	src = &a->data;
+	if (!(var = find_global_var(m, s, varname)))
+		throw(SQL, "sql.getVariable", SQLSTATE(42100) "Variable '%s.%s' unknown", sname, varname);
+	src = &(var->var.data);
 	dst = &stk->stk[getArg(pci, 0)];
 	if (VALcopy(dst, src) == NULL)
 		throw(MAL, "sql.getVariable", SQLSTATE(HY013) MAL_MALLOC_FAIL);
@@ -715,29 +723,83 @@ getVariable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 str
 sql_variables(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	int i;
 	mvc *m = NULL;
-	BAT *vars;
-	str msg;
-	bat *res = getArgReference_bat(stk, pci, 0);
+	BAT *schemas, *names, *types, *values;
+	str msg = MAL_SUCCEED;
+	bat *s = getArgReference_bat(stk,pci,0);
+	bat *n = getArgReference_bat(stk,pci,1);
+	bat *t = getArgReference_bat(stk,pci,2);
+	bat *v = getArgReference_bat(stk,pci,3);
+	int nvars;
 
 	if ((msg = getSQLContext(cntxt, mb, &m, NULL)) != NULL)
 		return msg;
 	if ((msg = checkSQLContext(cntxt)) != NULL)
 		return msg;
 
-	vars = COLnew(0, TYPE_str, m->topvars, TRANSIENT);
-	if (vars == NULL)
-		throw(SQL, "sql.variables", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-	for (i = 0; i < m->topvars && !m->vars[i].frame; i++) {
-		if (BUNappend(vars, m->vars[i].name, false) != GDK_SUCCEED) {
-			BBPreclaim(vars);
-			throw(SQL, "sql.variables", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+	nvars = list_length(m->global_vars);
+	schemas = COLnew(0, TYPE_str, nvars, TRANSIENT);
+	names = COLnew(0, TYPE_str, nvars, TRANSIENT);
+	types = COLnew(0, TYPE_str, nvars, TRANSIENT);
+	values = COLnew(0, TYPE_str, nvars, TRANSIENT);
+	if (!schemas || !names || !types || !values) {
+		msg = createException(SQL, "sql.variables", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		goto bailout;
+	}
+
+	if (m->global_vars) {
+		for (node *n = m->global_vars->h; n ; n = n->next) {
+			sql_var *var = (sql_var*) n->data;
+			atom value = var->var;
+			ValPtr myptr = &(value.data);
+			ValRecord val = (ValRecord) {.vtype = TYPE_void,};
+			gdk_return res;
+
+			if (value.tpe.type->localtype != TYPE_str) {
+				ptr ok = VALcopy(&val, myptr);
+				if (ok)
+					ok = VALconvert(TYPE_str, &val);
+				if (!ok) {
+					VALclear(&val);
+					msg = createException(SQL, "sql.variables", SQLSTATE(HY013) "Failed to convert variable '%s.%s' into a string", var->sname, var->name);
+					goto bailout;
+				}
+				myptr = &val;
+			}
+			res = BUNappend(values, VALget(myptr), false);
+			VALclear(&val);
+			if (res != GDK_SUCCEED) {
+				msg = createException(SQL, "sql.variables", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+				goto bailout;
+			}
+			if (BUNappend(schemas, var->sname, false) != GDK_SUCCEED) {
+				msg = createException(SQL, "sql.variables", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+				goto bailout;
+			}
+			if (BUNappend(names, var->name, false) != GDK_SUCCEED) {
+				msg = createException(SQL, "sql.variables", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+				goto bailout;
+			}
+			if (BUNappend(types, value.tpe.type->sqlname, false) != GDK_SUCCEED) {
+				msg = createException(SQL, "sql.variables", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+				goto bailout;
+			}
 		}
 	}
-	*res = vars->batCacheid;
-	BBPkeepref(vars->batCacheid);
-	return MAL_SUCCEED;
+
+bailout:
+	if (msg) {
+		BBPreclaim(schemas);
+		BBPreclaim(names);
+		BBPreclaim(types);
+		BBPreclaim(values);
+	} else {
+		BBPkeepref(*s = schemas->batCacheid);
+		BBPkeepref(*n = names->batCacheid);
+		BBPkeepref(*t = types->batCacheid);
+		BBPkeepref(*v = values->batCacheid);
+	}
+	return msg;
 }
 
 /* str mvc_logfile(int *d, str *filename); */
@@ -783,13 +845,13 @@ mvc_next_value(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (!(s = mvc_bind_schema(m, sname)))
 		throw(SQL, "sql.next_value", SQLSTATE(3F000) "Cannot find the schema %s", sname);
 	if (!mvc_schema_privs(m, s))
-		throw(SQL, "sql.next_value", SQLSTATE(42000) "Access denied for %s to schema '%s'", stack_get_string(m, "current_user"), s->base.name);
+		throw(SQL, "sql.next_value", SQLSTATE(42000) "Access denied for %s to schema '%s'", sqlvar_get_string(find_global_var(m, mvc_bind_schema(m, "sys"), "current_user")), s->base.name);
 	if (!(seq = find_sql_sequence(s, seqname)))
 		throw(SQL, "sql.next_value", SQLSTATE(HY050) "Failed to fetch sequence %s.%s", sname, seqname);
 
 	if (seq_next_value(seq, res)) {
 		m->last_id = *res;
-		stack_set_number(m, "last_id", m->last_id);
+		sqlvar_set_number(find_global_var(m, mvc_bind_schema(m, "sys"), "last_id"), m->last_id);
 		return MAL_SUCCEED;
 	}
 	throw(SQL, "sql.next_value", SQLSTATE(42000) "Error in fetching next value for sequence %s.%s", sname, seqname);
@@ -897,7 +959,7 @@ mvc_bat_next_get_value(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, 
 				goto bailout;
 			}
 			if (bulk_func == seqbulk_next_value && !mvc_schema_privs(m, s)) {
-				msg = createException(SQL, call, SQLSTATE(42000) "Access denied for %s to schema '%s'", stack_get_string(m, "current_user"), s->base.name);
+				msg = createException(SQL, call, SQLSTATE(42000) "Access denied for %s to schema '%s'", sqlvar_get_string(find_global_var(m, mvc_bind_schema(m, "sys"), "current_user")), s->base.name);
 				goto bailout;
 			}
 			if (!(seq = find_sql_sequence(s, nseqname)) || !(sb = seqbulk_create(seq, BATcount(it)))) {
@@ -978,7 +1040,7 @@ mvc_restart_seq(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (!(s = mvc_bind_schema(m, sname)))
 		throw(SQL, "sql.restart", SQLSTATE(3F000) "Cannot find the schema %s", sname);
 	if (!mvc_schema_privs(m, s))
-		throw(SQL, "sql.restart", SQLSTATE(42000) "Access denied for %s to schema '%s'", stack_get_string(m, "current_user"), s->base.name);
+		throw(SQL, "sql.restart", SQLSTATE(42000) "Access denied for %s to schema '%s'", sqlvar_get_string(find_global_var(m, mvc_bind_schema(m, "sys"), "current_user")), s->base.name);
 	if (!(seq = find_sql_sequence(s, seqname)))
 		throw(SQL, "sql.restart", SQLSTATE(HY050) "Failed to fetch sequence %s.%s", sname, seqname);
 	if (is_lng_nil(start))
@@ -1085,7 +1147,7 @@ mvc_bat_restart_seq(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				goto bailout;
 			}
 			if (!mvc_schema_privs(m, s)) {
-				msg = createException(SQL, "sql.restart", SQLSTATE(42000) "Access denied for %s to schema '%s'", stack_get_string(m, "current_user"), s->base.name);
+				msg = createException(SQL, "sql.restart", SQLSTATE(42000) "Access denied for %s to schema '%s'", sqlvar_get_string(find_global_var(m, mvc_bind_schema(m, "sys"), "current_user")), s->base.name);
 				goto bailout;
 			}
 			if (!(seq = find_sql_sequence(s, nseqname)) || !(sb = seqbulk_create(seq, BATcount(it)))) {
@@ -4634,7 +4696,7 @@ SQLdrop_hash(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (s == NULL)
 		throw(SQL, "sql.drop_hash", SQLSTATE(3F000) "Schema missing %s",sch);
 	if (!mvc_schema_privs(m, s))
-		throw(SQL, "sql.drop_hash", SQLSTATE(42000) "Access denied for %s to schema '%s'", stack_get_string(m, "current_user"), s->base.name);
+		throw(SQL, "sql.drop_hash", SQLSTATE(42000) "Access denied for %s to schema '%s'", sqlvar_get_string(find_global_var(m, mvc_bind_schema(m, "sys"), "current_user")), s->base.name);
 	t = mvc_bind_table(m, s, tbl);
 	if (t == NULL)
 		throw(SQL, "sql.drop_hash", SQLSTATE(42S02) "Table missing %s.%s",sch, tbl);

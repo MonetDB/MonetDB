@@ -86,20 +86,20 @@ rel_create_seq(
 {
 	sql_rel *res = NULL;
 	sql_sequence *seq = NULL;
-	char *name = qname_table(qname);
+	char *name = qname_schema_object(qname);
 	char *sname = qname_schema(qname);
 	sql_schema *s = ss;
 
 	if (sname && !(s = mvc_bind_schema(sql, sname)))
 		return sql_error(sql, 02, SQLSTATE(3F000) "CREATE SEQUENCE: no such schema '%s'", sname);
 	if (!mvc_schema_privs(sql, s))
-		return sql_error(sql, 02, SQLSTATE(42000) "CREATE SEQUENCE: access denied for %s to schema '%s'", stack_get_string(sql, "current_user"), s->base.name);
+		return sql_error(sql, 02, SQLSTATE(42000) "CREATE SEQUENCE: access denied for %s to schema '%s'", sqlvar_get_string(find_global_var(sql, mvc_bind_schema(sql, "sys"), "current_user")), s->base.name);
 	(void) tpe;
 	if (find_sql_sequence(s, name)) {
 		return sql_error(sql, 02, SQLSTATE(42000) "CREATE SEQUENCE: name '%s' already in use", name);
 	} else if (!mvc_schema_privs(sql, s)) {
 		return sql_error(sql, 02, SQLSTATE(42000) "CREATE SEQUENCE: insufficient privileges "
-				"for '%s' in schema '%s'", stack_get_string(sql, "current_user"), s->base.name);
+				"for '%s' in schema '%s'", sqlvar_get_string(find_global_var(sql, mvc_bind_schema(sql, "sys"), "current_user")), s->base.name);
 	}
 
 	/* generate defaults */
@@ -114,8 +114,8 @@ rel_create_seq(
 	seq->bedropped = bedropped;
 	res = rel_seq(sql->sa, ddl_create_seq, s->base.name, seq, NULL, NULL);
 	/* for multi statements we keep the sequence around */
-	if (res && stack_has_frame(sql, "MUL") != 0) {
-		if(!stack_push_rel_view(sql, name, rel_dup(res)))
+	if (res && stack_has_frame(sql, "%MUL") != 0) {
+		if (!stack_push_rel_view(sql, name, rel_dup(res)))
 			return sql_error(sql, 02, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
 
@@ -246,7 +246,7 @@ rel_alter_seq(
 		bit cycle)
 {
 	mvc *sql = query->sql;
-	char* name = qname_table(qname);
+	char* name = qname_schema_object(qname);
 	char *sname = qname_schema(qname);
 	sql_sequence *seq;
 	sql_schema *s = ss;
@@ -259,14 +259,14 @@ rel_alter_seq(
 	if (sname && !(s = mvc_bind_schema(sql, sname)))
 		return sql_error(sql, 02, SQLSTATE(3F000) "ALTER SEQUENCE: no such schema '%s'", sname);
 	if (!mvc_schema_privs(sql, s))
-		return sql_error(sql, 02, SQLSTATE(42000) "ALTER SEQUENCE: access denied for %s to schema '%s'", stack_get_string(sql, "current_user"), s->base.name);
+		return sql_error(sql, 02, SQLSTATE(42000) "ALTER SEQUENCE: access denied for %s to schema '%s'", sqlvar_get_string(find_global_var(sql, mvc_bind_schema(sql, "sys"), "current_user")), s->base.name);
 	(void) tpe;
 	if (!(seq = find_sql_sequence(s, name))) {
 		return sql_error(sql, 02, SQLSTATE(42000) "ALTER SEQUENCE: no such sequence '%s'", name);
 	}
 	if (!mvc_schema_privs(sql, s)) {
 		return sql_error(sql, 02, SQLSTATE(42000) "ALTER SEQUENCE: insufficient privileges "
-				"for '%s' in schema '%s'", stack_get_string(sql, "current_user"), s->base.name);
+				"for '%s' in schema '%s'", sqlvar_get_string(find_global_var(sql, mvc_bind_schema(sql, "sys"), "current_user")), s->base.name);
 	}
 
 	/* first alter the known values */
@@ -414,7 +414,7 @@ rel_sequences(sql_query *query, symbol *s)
 		{
 			dlist *l = s->data.lval;
 			char *sname = qname_schema(l->h->data.lval);
-			char *seqname = qname_table(l->h->data.lval);
+			char *seqname = qname_schema_object(l->h->data.lval);
 
 			if (!sname) {
 				sql_schema *ss = cur_schema(sql);
