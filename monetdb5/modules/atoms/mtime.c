@@ -50,12 +50,8 @@ mal_export str MTIMEtimestamp_sub_month_interval(timestamp *ret, const timestamp
 mal_export str MTIMEtimestamp_add_month_interval(timestamp *ret, const timestamp *t, const int *m);
 mal_export str MTIMEtime_sub_msec_interval(daytime *ret, const daytime *t, const lng *ms);
 mal_export str MTIMEtime_add_msec_interval(daytime *ret, const daytime *t, const lng *ms);
-mal_export str MTIMEdaytime_diff_msec(lng *ret, const daytime *t1, const daytime *t2);
 mal_export str MTIMEdate_submonths(date *ret, const date *d, const int *m);
 mal_export str MTIMEdate_addmonths(date *ret, const date *d, const int *m);
-mal_export str MTIMEdate_extract_dayofyear(int *ret, const date *d);
-mal_export str MTIMEdate_extract_weekofyear(int *ret, const date *d);
-mal_export str MTIMEdate_extract_dayofweek(int *ret, const date *d);
 mal_export str MTIMEtimestamp_century(int *ret, const timestamp *t);
 mal_export str MTIMEtimestamp_decade(int *ret, const timestamp *t);
 mal_export str MTIMEtimestamp_year(int *ret, const timestamp *t);
@@ -209,6 +205,7 @@ NAMEBULK(bat *ret, const bat *bid1, const bat *bid2)					\
 }
 
 func2(MTIMEdate_diff, MTIMEdate_diff_bulk, "diff", date, date, int, date_diff)
+func2(MTIMEdaytime_diff_msec, MTIMEdaytime_diff_msec_bulk, "diff", daytime, daytime, lng, daytime_diff)
 
 #define func2chk(NAME, NAMEBULK, MALFUNC, INTYPE1, INTYPE2, OUTTYPE, FUNC)	\
 mal_export str NAME(OUTTYPE *ret, const INTYPE1 *v1, const INTYPE2 *v2); \
@@ -370,16 +367,6 @@ MTIMEtime_add_msec_interval(daytime *ret, const daytime *t, const lng *ms)
 }
 
 str
-MTIMEdaytime_diff_msec(lng *ret, const daytime *t1, const daytime *t2)
-{
-	if (is_daytime_nil(*t1) || is_daytime_nil(*t2))
-		*ret = lng_nil;
-	else
-		*ret = (*t1 - *t2) / 1000;
-	return MAL_SUCCEED;
-}
-
-str
 MTIMEdate_submonths(date *ret, const date *d, const int *m)
 {
 	if (is_date_nil(*d) || is_int_nil(*m))
@@ -413,30 +400,12 @@ func1(MTIMEdate_extract_year, MTIMEdate_extract_year_bulk, "year", date, int, da
 func1(MTIMEdate_extract_quarter, MTIMEdate_extract_quarter_bulk, "quarter", date, int, date_quarter, SETFLAGS)
 func1(MTIMEdate_extract_month, MTIMEdate_extract_month_bulk, "month", date, int, date_month, SETFLAGS)
 func1(MTIMEdate_extract_day, MTIMEdate_extract_day_bulk, "day", date, int, date_day, SETFLAGS)
+func1(MTIMEdate_extract_dayofyear, MTIMEdate_extract_dayofyear_bulk, "dayofyear", date, int, date_dayofyear, SETFLAGS)
+func1(MTIMEdate_extract_weekofyear, MTIMEdate_extract_weekofyear_bulk, "weekofyear", date, int, date_weekofyear, SETFLAGS)
+func1(MTIMEdate_extract_dayofweek, MTIMEdate_extract_dayofweek_bulk, "dayofweek", date, int, date_dayofweek, SETFLAGS)
 func1(MTIMEdaytime_extract_hours, MTIMEdaytime_extract_hours_bulk, "hours", daytime, int, daytime_hour, COPYFLAGS)
 func1(MTIMEdaytime_extract_minutes, MTIMEdaytime_extract_minutes_bulk, "minutes", daytime, int, daytime_min, SETFLAGS)
 func1(MTIMEdaytime_extract_sql_seconds, MTIMEdaytime_extract_sql_seconds_bulk, "seconds", daytime, int, daytime_sec_usec, SETFLAGS)
-
-str
-MTIMEdate_extract_dayofyear(int *ret, const date *d)
-{
-	*ret = date_dayofyear(*d);
-	return MAL_SUCCEED;
-}
-
-str
-MTIMEdate_extract_weekofyear(int *ret, const date *d)
-{
-	*ret = date_weekofyear(*d);
-	return MAL_SUCCEED;
-}
-
-str
-MTIMEdate_extract_dayofweek(int *ret, const date *d)
-{
-	*ret = date_dayofweek(*d);
-	return MAL_SUCCEED;
-}
 
 static inline lng
 TSDIFF(timestamp t1, timestamp t2)

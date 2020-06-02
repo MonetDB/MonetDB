@@ -388,9 +388,15 @@ command dayofyear(d:date) :int
 address MTIMEdate_extract_dayofyear
 comment "Returns N where d is the Nth day
 	of the year (january 1 returns 1)";
+command batmtime.dayofyear(d:bat[:date]):bat[:int]
+address MTIMEdate_extract_dayofyear_bulk;
+
 command weekofyear(d:date) :int
 address MTIMEdate_extract_weekofyear
 comment "Returns the week number in the year.";
+command batmtime.weekofyear(d:bat[:date]):bat[:int]
+address MTIMEdate_extract_weekofyear_bulk;
+
 # command week(d:date) :int
 # address MTIMEdate_extract_weekofyear
 # comment "Returns the week number in the year.";
@@ -398,6 +404,8 @@ command dayofweek(d:date) :int
 address MTIMEdate_extract_dayofweek
 comment "Returns the current day of the week
 	where 1=monday, .., 7=sunday";
+command batmtime.dayofweek(d:bat[:date]):bat[:int]
+address MTIMEdate_extract_dayofweek_bulk;
 
 # command add(v:timestamp, msecs:lng) :timestamp
 # address MTIMEtimestamp_add
