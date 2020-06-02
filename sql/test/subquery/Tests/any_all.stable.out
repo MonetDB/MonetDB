@@ -47,26 +47,26 @@ stdout of test 'any_all` in directory 'sql/test/subquery` itself:
 % 5 # length
 [ NULL	]
 #SELECT 1 = ALL(SELECT 1); -- true
-% . # table_name
-% %5 # name
+% .%7 # table_name
+% %7 # name
 % boolean # type
 % 5 # length
 [ true	]
 #SELECT 1 = ALL(SELECT NULL); -- NULL
-% . # table_name
-% %5 # name
+% .%7 # table_name
+% %7 # name
 % boolean # type
 % 5 # length
 [ NULL	]
 #SELECT 1 = ALL(SELECT 2); -- false
-% . # table_name
-% %5 # name
+% .%7 # table_name
+% %7 # name
 % boolean # type
 % 5 # length
 [ false	]
 #SELECT NULL = ALL(SELECT 2); -- NULL
-% . # table_name
-% %5 # name
+% .%7 # table_name
+% %7 # name
 % boolean # type
 % 5 # length
 [ NULL	]
@@ -74,76 +74,76 @@ stdout of test 'any_all` in directory 'sql/test/subquery` itself:
 #INSERT INTO integers VALUES (1), (2), (3);
 [ 3	]
 #SELECT 2 > ANY(SELECT * FROM integers); -- true
-% . # table_name
-% %6 # name
+% .%7 # table_name
+% %7 # name
 % boolean # type
 % 5 # length
 [ true	]
 #SELECT 1 > ANY(SELECT * FROM integers); -- false
-% . # table_name
-% %6 # name
+% .%7 # table_name
+% %7 # name
 % boolean # type
 % 5 # length
 [ false	]
 #SELECT 4 > ALL(SELECT * FROM integers); -- true
-% . # table_name
-% %6 # name
+% .%7 # table_name
+% %7 # name
 % boolean # type
 % 5 # length
 [ true	]
 #SELECT 1 > ALL(SELECT * FROM integers); -- false
-% . # table_name
-% %6 # name
+% .%7 # table_name
+% %7 # name
 % boolean # type
 % 5 # length
 [ false	]
 #SELECT NULL > ANY(SELECT * FROM integers); -- NULL
-% . # table_name
-% %6 # name
+% .%7 # table_name
+% %7 # name
 % boolean # type
 % 5 # length
 [ NULL	]
 #SELECT NULL > ALL(SELECT * FROM integers); -- NULL
-% . # table_name
-% %6 # name
+% .%7 # table_name
+% %7 # name
 % boolean # type
 % 5 # length
 [ NULL	]
 #INSERT INTO integers VALUES (NULL);
 [ 1	]
 #SELECT 2 > ANY(SELECT * FROM integers); -- true
-% . # table_name
-% %6 # name
+% .%7 # table_name
+% %7 # name
 % boolean # type
 % 5 # length
 [ true	]
 #SELECT 1 > ANY(SELECT * FROM integers); -- NULL
-% . # table_name
-% %6 # name
+% .%7 # table_name
+% %7 # name
 % boolean # type
 % 5 # length
 [ NULL	]
 #SELECT 4 > ALL(SELECT * FROM integers); -- NULL
-% . # table_name
-% %6 # name
+% .%7 # table_name
+% %7 # name
 % boolean # type
 % 5 # length
 [ NULL	]
 #SELECT 1 > ALL(SELECT * FROM integers); -- false
-% . # table_name
-% %6 # name
+% .%7 # table_name
+% %7 # name
 % boolean # type
 % 5 # length
 [ false	]
 #SELECT NULL > ANY(SELECT * FROM integers); -- NULL
-% . # table_name
-% %6 # name
+% .%7 # table_name
+% %7 # name
 % boolean # type
 % 5 # length
 [ NULL	]
 #SELECT NULL > ALL(SELECT * FROM integers); -- NULL
-% . # table_name
-% %6 # name
+% .%7 # table_name
+% %7 # name
 % boolean # type
 % 5 # length
 [ NULL	]
@@ -296,19 +296,19 @@ stdout of test 'any_all` in directory 'sql/test/subquery` itself:
 [ NULL	]
 [ NULL	]
 #SELECT MIN(i)>ANY(SELECT i FROM integers WHERE i>MIN(i1.i)) FROM integers i1;
-% . # table_name
+% .%21 # table_name
 % %21 # name
 % boolean # type
 % 5 # length
 [ false	]
 #SELECT SUM(i)>ANY(SELECT i FROM integers WHERE i>MIN(i1.i)) FROM integers i1;
-% . # table_name
+% .%21 # table_name
 % %21 # name
 % boolean # type
 % 5 # length
 [ true	]
 #SELECT (SELECT SUM(i)+SUM(i1.i) FROM integers)>ANY(SELECT i FROM integers WHERE i>MIN(i1.i)) FROM integers i1;
-% . # table_name
+% .%36 # table_name
 % %36 # name
 % boolean # type
 % 5 # length

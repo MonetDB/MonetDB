@@ -985,11 +985,7 @@ static str PyAPIeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bo
 											  colname->ob_type->tp_name);
 						goto wrapup;
 					}
-#ifndef IS_PY3K
-					retnames[i] = ((PyStringObject *)colname)->ob_sval;
-#else
 					retnames[i] = (char *) PyUnicode_AsUTF8(colname);
-#endif
 				}
 			}
 			pResult =
@@ -1328,12 +1324,8 @@ PYFUNCNAME(PyAPIprelude)(void *ret) {
 	(void) ret;
 	MT_lock_set(&pyapiLock);
 	if (!pyapiInitialized) {
-#ifdef IS_PY3K
 		wchar_t* program = Py_DecodeLocale("mserver5", NULL);
 		wchar_t* argv[] = { program };
-#else
-		char* argv[] = {"mserver5"};
-#endif
 		str msg = MAL_SUCCEED;
 		PyObject *tmp;
 		Py_Initialize();
@@ -1374,13 +1366,7 @@ PYFUNCNAME(PyAPIprelude)(void *ret) {
 			return msg;
 		}
 		pyapiInitialized = true;
-		fprintf(stdout, "# MonetDB/Python%d module loaded\n",
-#ifdef IS_PY3K
-			3
-#else
-			2
-#endif
-		);
+		fprintf(stdout, "# MonetDB/Python%d module loaded\n", 3);
 	}
 	MT_lock_unset(&pyapiLock);
 	option_disable_fork = GDKgetenv_istrue(fork_disableflag) || GDKgetenv_isyes(fork_disableflag);

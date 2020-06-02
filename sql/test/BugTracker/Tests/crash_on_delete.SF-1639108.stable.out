@@ -24,8 +24,8 @@ stdout of test 'crash_on_delete.SF-1639108` in directory 'sql/test/BugTracker` i
 
 [ 1	]
 #select 'the following query causes the message "missing head type 2: var" in the server. i don''t know if that matters.';
-% . # table_name
-% single_value # name
+% .%2 # table_name
+% %2 # name
 % char # type
 % 110 # length
 [ "the following query causes the message \"missing head type 2: var\" in the server. i don't know if that matters."	]
@@ -38,8 +38,8 @@ stdout of test 'crash_on_delete.SF-1639108` in directory 'sql/test/BugTracker` i
 [ 64	]
 [ 1	]
 #select 'the following query causes the server to crash printing "sql_optimize.mx:1011: set2pivot: Assertion `n'' failed."';
-% . # table_name
-% single_value # name
+% .%2 # table_name
+% %2 # name
 % char # type
 % 112 # length
 [ "the following query causes the server to crash printing \"sql_optimize.mx:1011: set2pivot: Assertion `n' failed.\""	]

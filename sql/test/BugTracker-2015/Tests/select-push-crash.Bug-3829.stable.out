@@ -65,13 +65,13 @@ stdout of test 'select-push-crash.Bug-3829` in directory 'sql/test/BugTracker-20
 #START TRANSACTION;
 #CREATE TABLE kb (value INT);
 #SELECT 1 FROM kb WHERE value=1 AND (value=2 OR value=3 AND (value=4 OR value=5));
-% . # table_name
-% single_value # name
+% .%1 # table_name
+% %1 # name
 % tinyint # type
 % 1 # length
 #SELECT 1 FROM kb WHERE value AND (value OR value AND (value OR value));
-% . # table_name
-% single_value # name
+% .%1 # table_name
+% %1 # name
 % tinyint # type
 % 1 # length
 #ROLLBACK;

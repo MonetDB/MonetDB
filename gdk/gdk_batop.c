@@ -865,6 +865,15 @@ BATreplace(BAT *b, BAT *p, BAT *n, bool force)
 		return GDK_FAIL;
 	}
 
+	BATiter bi = bat_iterator(b);
+	BATiter ni = bat_iterator(n);
+	if (BATcount(b) == 0 ||
+	    (b->tsorted && b->trevsorted &&
+	     n->tsorted && n->trevsorted &&
+	     ATOMcmp(b->ttype, BUNtail(bi, 0), BUNtail(ni, 0)) == 0)) {
+		return GDK_SUCCEED;
+	}
+
 	HASHdestroy(b);
 	OIDXdestroy(b);
 	IMPSdestroy(b);
@@ -881,8 +890,6 @@ BATreplace(BAT *b, BAT *p, BAT *n, bool force)
 	int (*atomcmp)(const void *, const void *) = ATOMcompare(b->ttype);
 	const void *nil = ATOMnilptr(b->ttype);
 	oid hseqend = b->hseqbase + BATcount(b);
-	BATiter bi = bat_iterator(b);
-	BATiter ni = bat_iterator(n);
 	bool anynil = false;
 
 	b->theap.dirty = true;
@@ -2127,8 +2134,29 @@ BATconstant(oid hseq, int tailtype, const void *v, BUN n, role_t role)
 				((hge *) p)[i] = *(hge *) v;
 			break;
 #endif
+		case TYPE_str:
+			/* insert the first value, then just copy the
+			 * offset lots of times */
+			if (tfastins_nocheck(bn, 0, v, Tsize(bn)) != GDK_SUCCEED) {
+				BBPreclaim(bn);
+				return NULL;
+			}
+			char val[sizeof(var_t)];
+			memcpy(val, bn->theap.base, bn->twidth);
+			if (bn->twidth == 1 && n > 1) {
+				/* single byte value: we have a
+				 * function for that */
+				memset(bn->theap.base + 1, val[0], n - 1);
+			} else {
+				char *p = bn->theap.base;
+				for (i = 1; i < n; i++) {
+					p += bn->twidth;
+					memcpy(p, val, bn->twidth);
+				}
+			}
+			break;
 		default:
-			for (i = 0, n += i; i < n; i++)
+			for (i = 0; i < n; i++)
 				if (tfastins_nocheck(bn, i, v, Tsize(bn)) != GDK_SUCCEED) {
 					BBPreclaim(bn);
 					return NULL;

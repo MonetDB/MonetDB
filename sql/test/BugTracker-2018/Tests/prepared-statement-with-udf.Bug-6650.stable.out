@@ -126,8 +126,8 @@ stdout of test 'prepared-statement-with-udf.Bug-6650` in directory 'sql/test/Bug
 % .prepare,	.prepare,	.prepare,	.prepare,	.prepare,	.prepare # table_name
 % type,	digits,	scale,	schema,	table,	column # name
 % varchar,	int,	int,	str,	str,	str # type
-% 7,	2,	1,	0,	0,	0 # length
-[ "tinyint",	1,	0,	"",	"",	""	]
+% 7,	2,	1,	0,	2,	2 # length
+[ "tinyint",	1,	0,	"",	"%7",	"%7"	]
 [ "int",	32,	0,	NULL,	NULL,	NULL	]
 [ "clob",	0,	0,	NULL,	NULL,	NULL	]
 #rollback;

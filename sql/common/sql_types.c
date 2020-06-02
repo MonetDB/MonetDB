@@ -575,8 +575,8 @@ sql_dup_subfunc(sql_allocator *sa, sql_func *f, list *ops, sql_subtype *member)
 				sql_arg *rarg = tn->data;
 				sql_subtype *res, *r = &rarg->type;
 	
-				/* same scale as the input */
-				if (member && member->scale > scale)
+				/* same scale as the input if result has a scale */
+				if (member && (r->type->eclass == EC_ANY || r->type->scale != SCALE_NONE) && member->scale > scale)
 					scale = member->scale;
 				digits = r->digits;
 				if (!member) {
@@ -1350,7 +1350,7 @@ sqltypeinit( sql_allocator *sa)
 	sql_create_aggr(sa, "prod", "aggr", "prod", FALSE, LargestINT, 1, INT);
 	sql_create_aggr(sa, "prod", "aggr", "prod", FALSE, LargestINT, 1, LNG);
 #ifdef HAVE_HGE
-	if (HAVE_HGE)
+	if (have_hge)
 		sql_create_aggr(sa, "prod", "aggr", "prod", FALSE, LargestINT, 1, HGE);
 #endif
 
