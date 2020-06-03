@@ -42,12 +42,6 @@ extern char *strptime(const char *, const char *, struct tm *);
 mal_export str MTIMEcurrent_date(date *ret);
 mal_export str MTIMEcurrent_time(daytime *ret);
 mal_export str MTIMEcurrent_timestamp(timestamp *ret);
-
-mal_export str MTIMEdate_fromstr(date *ret, const char *const *s);
-mal_export str MTIMEtimestamp_fromstr(timestamp *ret, const char *const *s);
-mal_export str MTIMEdaytime_fromstr(daytime *ret, const char *const *s);
-mal_export str MTIMEdaytime_fromseconds(daytime *ret, const lng *secs);
-mal_export str MTIMEdaytime_fromseconds_bulk(bat *ret, bat *bid);
 mal_export str MTIMElocal_timezone_msec(lng *ret);
 
 str
@@ -73,45 +67,60 @@ MTIMEcurrent_timestamp(timestamp *ret)
 
 #define COPYFLAGS	do { bn->tsorted = b->tsorted; bn->trevsorted = b->trevsorted; } while (0)
 #define SETFLAGS	do { bn->tsorted = bn->trevsorted = n < 2; } while (0)
-#define func1(NAME, NAMEBULK, MALFUNC, INTYPE, OUTYPE, FUNC, SETFLAGS)	\
+#define func1(NAME, NAMEBULK, MALFUNC, INTYPE, OUTYPE, FUNC, SETFLAGS, FUNC_CALL)	\
 mal_export str NAME(OUTYPE *ret, const INTYPE *src);					\
 mal_export str NAMEBULK(bat *ret, const bat *bid);						\
 str																		\
 NAME(OUTYPE *ret, const INTYPE *src)									\
 {																		\
-	*ret = FUNC(*src);													\
-	return MAL_SUCCEED;													\
+	str msg = MAL_SUCCEED; 												\
+	do {																\
+		FUNC_CALL(FUNC, (*ret), *src);									\
+	} while (0);														\
+	return msg;															\
 }																		\
 str																		\
 NAMEBULK(bat *ret, const bat *bid)										\
 {																		\
-	BAT *b, *bn;														\
+	BAT *b = NULL, *bn = NULL;											\
 	BUN n;																\
 	const INTYPE *src;													\
 	OUTYPE *dst;														\
+	str msg = MAL_SUCCEED; 												\
 																		\
-	if ((b = BATdescriptor(*bid)) == NULL)								\
-		throw(MAL, "batmtime." MALFUNC,									\
+	if ((b = BATdescriptor(*bid)) == NULL)	{							\
+		msg = createException(MAL, "batmtime." MALFUNC,					\
 			  SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);					\
+		goto bailout;													\
+	}																	\
 	n = BATcount(b);													\
 	if ((bn = COLnew(b->hseqbase, TYPE_##OUTYPE, n, TRANSIENT)) == NULL) { \
-		BBPunfix(b->batCacheid);										\
-		throw(MAL, "batmtime." MALFUNC, SQLSTATE(HY013) MAL_MALLOC_FAIL); \
+		msg = createException(MAL, "batmtime." MALFUNC, 				\
+			  SQLSTATE(HY013) MAL_MALLOC_FAIL); 						\
+		goto bailout;													\
 	}																	\
 	src = Tloc(b, 0);													\
 	dst = Tloc(bn, 0);													\
 	for (BUN i = 0; i < n; i++) {										\
-		dst[i] = FUNC(src[i]);											\
+		FUNC_CALL(FUNC, (dst[i]), src[i]);								\
 	}																	\
 	bn->tnonil = b->tnonil;												\
 	bn->tnil = b->tnil;													\
 	BATsetcount(bn, n);													\
 	SETFLAGS;															\
 	bn->tkey = false;													\
-	BBPunfix(b->batCacheid);											\
-	BBPkeepref(*ret = bn->batCacheid);									\
-	return MAL_SUCCEED;													\
+bailout: 																\
+	if (b)																\
+		BBPunfix(b->batCacheid);										\
+	if (msg && bn)														\
+		BBPreclaim(bn);													\
+	else if (bn) 														\
+		BBPkeepref(*ret = bn->batCacheid);								\
+	return msg;															\
 }
+
+#define func1_noexcept(FUNC, RET, PARAM) RET = FUNC(PARAM)
+#define func1_except(FUNC, RET, PARAM) msg = FUNC(&RET, PARAM); if (msg) break;
 
 #define func2(NAME, NAMEBULK, MALFUNC, INTYPE1, INTYPE2, OUTTYPE, FUNC, FUNC_CALL)	\
 mal_export str NAME(OUTTYPE *ret, const INTYPE1 *v1, const INTYPE2 *v2); \
@@ -128,7 +137,7 @@ NAME(OUTTYPE *ret, const INTYPE1 *v1, const INTYPE2 *v2)				\
 str																		\
 NAMEBULK(bat *ret, const bat *bid1, const bat *bid2)					\
 {																		\
-	BAT *b1, *b2, *bn;													\
+	BAT *b1 = NULL, *b2 = NULL, *bn = NULL;								\
 	BUN n;																\
 	const INTYPE1 *src1;												\
 	const INTYPE2 *src2;												\
@@ -138,25 +147,17 @@ NAMEBULK(bat *ret, const bat *bid1, const bat *bid2)					\
 	b1 = BATdescriptor(*bid1);											\
 	b2 = BATdescriptor(*bid2);											\
 	if (b1 == NULL || b2 == NULL) {										\
-		if (b1)															\
-			BBPunfix(b1->batCacheid);									\
-		if (b2)															\
-			BBPunfix(b2->batCacheid);									\
 		msg = createException(MAL, "batmtime." MALFUNC,					\
 			  SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);					\
 		goto bailout;													\
 	}																	\
 	n = BATcount(b1);													\
 	if (n != BATcount(b2)) {											\
-		BBPunfix(b1->batCacheid);										\
-		BBPunfix(b2->batCacheid);										\
 		msg = createException(MAL, "batmtime." MALFUNC, 				\
 			  "inputs not the same size");								\
 		goto bailout;													\
 	}																	\
 	if ((bn = COLnew(b1->hseqbase, TYPE_##OUTTYPE, n, TRANSIENT)) == NULL) { \
-		BBPunfix(b1->batCacheid);										\
-		BBPunfix(b2->batCacheid);										\
 		msg = createException(MAL, "batmtime." MALFUNC, 				\
 			  SQLSTATE(HY013) MAL_MALLOC_FAIL); 						\
 		goto bailout;													\
@@ -285,14 +286,14 @@ func2chk(MTIMEtimestamp_add_month_interval, MTIMEtimestamp_add_month_interval_bu
 static inline daytime
 time_sub_msec_interval(const daytime t, const lng ms)
 {
-	if (is_daytime_nil(t) || is_lng_nil(ms))
+	if (is_lng_nil(ms))
 		return daytime_nil;
 	return daytime_add_usec_modulo(t, -ms * 1000);
 }
 static inline daytime
 time_add_msec_interval(const daytime t, const lng ms)
 {
-	if (is_daytime_nil(t) || is_lng_nil(ms))
+	if (is_lng_nil(ms))
 		return daytime_nil;
 	return daytime_add_usec_modulo(t, ms * 1000);
 }
@@ -304,18 +305,18 @@ func2(MTIMEtime_add_msec_interval, MTIMEtime_add_msec_interval_bulk, "time_add_m
 func2chk(MTIMEdate_submonths, MTIMEdate_submonths_bulk, "date_submonths", date, int, date, date_submonths)
 func2chk(MTIMEdate_addmonths, MTIMEdate_addmonths_bulk, "date_addmonths", date, int, date, date_addmonths)
 
-func1(MTIMEdate_extract_century, MTIMEdate_extract_century_bulk, "date_century", date, int, date_century, COPYFLAGS)
-func1(MTIMEdate_extract_decade, MTIMEdate_extract_decade_bulk, "date_decade", date, int, date_decade, COPYFLAGS)
-func1(MTIMEdate_extract_year, MTIMEdate_extract_year_bulk, "date_year", date, int, date_year, COPYFLAGS)
-func1(MTIMEdate_extract_quarter, MTIMEdate_extract_quarter_bulk, "date_quarter", date, int, date_quarter, SETFLAGS)
-func1(MTIMEdate_extract_month, MTIMEdate_extract_month_bulk, "date_month", date, int, date_month, SETFLAGS)
-func1(MTIMEdate_extract_day, MTIMEdate_extract_day_bulk, "date_day", date, int, date_day, SETFLAGS)
-func1(MTIMEdate_extract_dayofyear, MTIMEdate_extract_dayofyear_bulk, "date_dayofyear", date, int, date_dayofyear, SETFLAGS)
-func1(MTIMEdate_extract_weekofyear, MTIMEdate_extract_weekofyear_bulk, "date_weekofyear", date, int, date_weekofyear, SETFLAGS)
-func1(MTIMEdate_extract_dayofweek, MTIMEdate_extract_dayofweek_bulk, "date_dayofweek", date, int, date_dayofweek, SETFLAGS)
-func1(MTIMEdaytime_extract_hours, MTIMEdaytime_extract_hours_bulk, "daytime_hour", daytime, int, daytime_hour, COPYFLAGS)
-func1(MTIMEdaytime_extract_minutes, MTIMEdaytime_extract_minutes_bulk, "daytime_minutes", daytime, int, daytime_min, SETFLAGS)
-func1(MTIMEdaytime_extract_sql_seconds, MTIMEdaytime_extract_sql_seconds_bulk, "daytime_seconds", daytime, int, daytime_sec_usec, SETFLAGS)
+func1(MTIMEdate_extract_century, MTIMEdate_extract_century_bulk, "date_century", date, int, date_century, COPYFLAGS, func1_noexcept)
+func1(MTIMEdate_extract_decade, MTIMEdate_extract_decade_bulk, "date_decade", date, int, date_decade, COPYFLAGS, func1_noexcept)
+func1(MTIMEdate_extract_year, MTIMEdate_extract_year_bulk, "date_year", date, int, date_year, COPYFLAGS, func1_noexcept)
+func1(MTIMEdate_extract_quarter, MTIMEdate_extract_quarter_bulk, "date_quarter", date, int, date_quarter, SETFLAGS, func1_noexcept)
+func1(MTIMEdate_extract_month, MTIMEdate_extract_month_bulk, "date_month", date, int, date_month, SETFLAGS, func1_noexcept)
+func1(MTIMEdate_extract_day, MTIMEdate_extract_day_bulk, "date_day", date, int, date_day, SETFLAGS, func1_noexcept)
+func1(MTIMEdate_extract_dayofyear, MTIMEdate_extract_dayofyear_bulk, "date_dayofyear", date, int, date_dayofyear, SETFLAGS, func1_noexcept)
+func1(MTIMEdate_extract_weekofyear, MTIMEdate_extract_weekofyear_bulk, "date_weekofyear", date, int, date_weekofyear, SETFLAGS, func1_noexcept)
+func1(MTIMEdate_extract_dayofweek, MTIMEdate_extract_dayofweek_bulk, "date_dayofweek", date, int, date_dayofweek, SETFLAGS, func1_noexcept)
+func1(MTIMEdaytime_extract_hours, MTIMEdaytime_extract_hours_bulk, "daytime_hour", daytime, int, daytime_hour, COPYFLAGS, func1_noexcept)
+func1(MTIMEdaytime_extract_minutes, MTIMEdaytime_extract_minutes_bulk, "daytime_minutes", daytime, int, daytime_min, SETFLAGS, func1_noexcept)
+func1(MTIMEdaytime_extract_sql_seconds, MTIMEdaytime_extract_sql_seconds_bulk, "daytime_seconds", daytime, int, daytime_sec_usec, SETFLAGS, func1_noexcept)
 
 static inline lng
 TSDIFF(timestamp t1, timestamp t2)
@@ -354,15 +355,15 @@ timestamp_century(const timestamp t)
 #define timestamp_hours(t) daytime_hour(timestamp_daytime(t))
 #define timestamp_minutes(t) daytime_min(timestamp_daytime(t))
 #define timestamp_extract_usecond(ts)	daytime_sec_usec(timestamp_daytime(ts))
-func1(MTIMEtimestamp_century, MTIMEtimestamp_century_bulk, "timestamp_century", timestamp, int, timestamp_century, COPYFLAGS)
-func1(MTIMEtimestamp_decade, MTIMEtimestamp_decade_bulk, "timestamp_decade", timestamp, int, timestamp_decade, COPYFLAGS)
-func1(MTIMEtimestamp_year, MTIMEtimestamp_year_bulk, "timestamp_year", timestamp, int, timestamp_year, COPYFLAGS)
-func1(MTIMEtimestamp_quarter, MTIMEtimestamp_quarter_bulk, "timestamp_quarter", timestamp, int, timestamp_quarter, SETFLAGS)
-func1(MTIMEtimestamp_month, MTIMEtimestamp_month_bulk, "timestamp_month", timestamp, int, timestamp_month, SETFLAGS)
-func1(MTIMEtimestamp_day, MTIMEtimestamp_day_bulk, "timestamp_day", timestamp, int, timestamp_day, SETFLAGS)
-func1(MTIMEtimestamp_hours, MTIMEtimestamp_hours_bulk, "timestamp_hours", timestamp, int, timestamp_hours, SETFLAGS)
-func1(MTIMEtimestamp_minutes, MTIMEtimestamp_minutes_bulk, "timestamp_minutes", timestamp, int, timestamp_minutes, SETFLAGS)
-func1(MTIMEtimestamp_sql_seconds, MTIMEtimestamp_sql_seconds_bulk, "sql_seconds", timestamp, int, timestamp_extract_usecond, SETFLAGS)
+func1(MTIMEtimestamp_century, MTIMEtimestamp_century_bulk, "timestamp_century", timestamp, int, timestamp_century, COPYFLAGS, func1_noexcept)
+func1(MTIMEtimestamp_decade, MTIMEtimestamp_decade_bulk, "timestamp_decade", timestamp, int, timestamp_decade, COPYFLAGS, func1_noexcept)
+func1(MTIMEtimestamp_year, MTIMEtimestamp_year_bulk, "timestamp_year", timestamp, int, timestamp_year, COPYFLAGS, func1_noexcept)
+func1(MTIMEtimestamp_quarter, MTIMEtimestamp_quarter_bulk, "timestamp_quarter", timestamp, int, timestamp_quarter, SETFLAGS, func1_noexcept)
+func1(MTIMEtimestamp_month, MTIMEtimestamp_month_bulk, "timestamp_month", timestamp, int, timestamp_month, SETFLAGS, func1_noexcept)
+func1(MTIMEtimestamp_day, MTIMEtimestamp_day_bulk, "timestamp_day", timestamp, int, timestamp_day, SETFLAGS, func1_noexcept)
+func1(MTIMEtimestamp_hours, MTIMEtimestamp_hours_bulk, "timestamp_hours", timestamp, int, timestamp_hours, SETFLAGS, func1_noexcept)
+func1(MTIMEtimestamp_minutes, MTIMEtimestamp_minutes_bulk, "timestamp_minutes", timestamp, int, timestamp_minutes, SETFLAGS, func1_noexcept)
+func1(MTIMEtimestamp_sql_seconds, MTIMEtimestamp_sql_seconds_bulk, "sql_seconds", timestamp, int, timestamp_extract_usecond, SETFLAGS, func1_noexcept)
 
 #define sql_year(m) is_int_nil(m) ? int_nil : m / 12
 #define sql_month(m) is_int_nil(m) ? int_nil : m % 12
@@ -370,42 +371,44 @@ func1(MTIMEtimestamp_sql_seconds, MTIMEtimestamp_sql_seconds_bulk, "sql_seconds"
 #define sql_hours(m) is_lng_nil(m) ? int_nil : (int) ((m % (24*60*60*1000)) / (60*60*1000))
 #define sql_minutes(m) is_lng_nil(m) ? int_nil : (int) ((m % (60*60*1000)) / (60*1000))
 #define sql_seconds(m) is_lng_nil(m) ? int_nil : (int) ((m % (60*1000)) / 1000)
-func1(MTIMEsql_year, MTIMEsql_year_bulk, "sql_year", int, int, sql_year, COPYFLAGS)
-func1(MTIMEsql_month, MTIMEsql_month_bulk, "sql_month", int, int, sql_month, SETFLAGS)
-func1(MTIMEsql_day, MTIMEsql_day_bulk, "sql_day", lng, lng, sql_day, COPYFLAGS)
-func1(MTIMEsql_hours, MTIMEsql_hours_bulk, "sql_hours", lng, int, sql_hours, SETFLAGS)
-func1(MTIMEsql_minutes, MTIMEsql_minutes_bulk, "sql_minutes", lng, int, sql_minutes, SETFLAGS)
-func1(MTIMEsql_seconds, MTIMEsql_seconds_bulk, "sql_seconds", lng, int, sql_seconds, SETFLAGS)
+func1(MTIMEsql_year, MTIMEsql_year_bulk, "sql_year", int, int, sql_year, COPYFLAGS, func1_noexcept)
+func1(MTIMEsql_month, MTIMEsql_month_bulk, "sql_month", int, int, sql_month, SETFLAGS, func1_noexcept)
+func1(MTIMEsql_day, MTIMEsql_day_bulk, "sql_day", lng, lng, sql_day, COPYFLAGS, func1_noexcept)
+func1(MTIMEsql_hours, MTIMEsql_hours_bulk, "sql_hours", lng, int, sql_hours, SETFLAGS, func1_noexcept)
+func1(MTIMEsql_minutes, MTIMEsql_minutes_bulk, "sql_minutes", lng, int, sql_minutes, SETFLAGS, func1_noexcept)
+func1(MTIMEsql_seconds, MTIMEsql_seconds_bulk, "sql_seconds", lng, int, sql_seconds, SETFLAGS, func1_noexcept)
 
-str
-MTIMEdate_fromstr(date *ret, const char *const *s)
+static inline str
+date_fromstr_func(date *ret, const char *const s)
 {
-	if (date_fromstr(*s, &(size_t){sizeof(date)}, &ret, true) < 0)
-		throw(MAL, "cald.date", GDK_EXCEPTION);
+	if (date_fromstr(s, &(size_t){sizeof(date)}, &ret, true) < 0)
+		throw(MAL, "mtime.date_fromstr", GDK_EXCEPTION);
 	return MAL_SUCCEED;
 }
+func1(MTIMEdate_fromstr, MTIMEdate_fromstr_bulk, "date_fromstr", const char *const, date, date_fromstr_func, SETFLAGS, func1_except)
 
 #define date_date(m) m
-func1(MTIMEdate_date, MTIMEdate_date_bulk, "date_date", date, date, date_date, COPYFLAGS)
+func1(MTIMEdate_date, MTIMEdate_date_bulk, "date_date", date, date, date_date, COPYFLAGS, func1_noexcept)
 
-func1(MTIMEtimestamp_extract_date, MTIMEtimestamp_extract_date_bulk, "date", timestamp, date, timestamp_date, COPYFLAGS)
+func1(MTIMEtimestamp_extract_date, MTIMEtimestamp_extract_date_bulk, "date", timestamp, date, timestamp_date, COPYFLAGS, func1_noexcept)
 
-str
-MTIMEtimestamp_fromstr(timestamp *ret, const char *const *s)
+static inline str
+timestamp_fromstr_func(timestamp *ret, const char *const s)
 {
-	if (timestamp_fromstr(*s, &(size_t){sizeof(timestamp)}, &ret, true) < 0)
-		throw(MAL, "calc.timestamp", GDK_EXCEPTION);
+	if (timestamp_fromstr(s, &(size_t){sizeof(timestamp)}, &ret, true) < 0)
+		throw(MAL, "mtime.timestamp_fromstr", GDK_EXCEPTION);
 	return MAL_SUCCEED;
 }
+func1(MTIMEtimestamp_fromstr, MTIMEtimestamp_fromstr_bulk, "timestamp_fromstr", const char *const, timestamp, timestamp_fromstr_func, SETFLAGS, func1_except)
 
 #define timestamp_timestamp(m) m
-func1(MTIMEtimestamp_timestamp, MTIMEtimestamp_timestamp_bulk, "timestamp_timestamp", timestamp, timestamp, timestamp_timestamp, COPYFLAGS)
+func1(MTIMEtimestamp_timestamp, MTIMEtimestamp_timestamp_bulk, "timestamp_timestamp", timestamp, timestamp, timestamp_timestamp, COPYFLAGS, func1_noexcept)
 
 #define mkts(dt)	timestamp_create(dt, daytime_create(0, 0, 0, 0))
-func1(MTIMEtimestamp_fromdate, MTIMEtimestamp_fromdate_bulk, "timestamp", date, timestamp, mkts, COPYFLAGS)
+func1(MTIMEtimestamp_fromdate, MTIMEtimestamp_fromdate_bulk, "timestamp_fromdate", date, timestamp, mkts, COPYFLAGS, func1_noexcept)
 
 #define seconds_since_epoch(t) is_timestamp_nil(t) ? int_nil : (int) (timestamp_diff(t, unixepoch) / 1000000);
-func1(MTIMEseconds_since_epoch, MTIMEseconds_since_epoch_bulk, "seconds_since_epoch", timestamp, int, seconds_since_epoch, COPYFLAGS)
+func1(MTIMEseconds_since_epoch, MTIMEseconds_since_epoch_bulk, "seconds_since_epoch", timestamp, int, seconds_since_epoch, COPYFLAGS, func1_noexcept)
 
 #define mktsfromsec(sec)	(is_int_nil(sec) ?							\
 							 timestamp_nil :							\
@@ -415,73 +418,35 @@ func1(MTIMEseconds_since_epoch, MTIMEseconds_since_epoch_bulk, "seconds_since_ep
 							 timestamp_nil :							\
 							 timestamp_add_usec(unixepoch,				\
 												(msec) * LL_CONSTANT(1000)))
-func1(MTIMEtimestamp_fromsecond, MTIMEtimestamp_fromsecond_bulk, "timestamp", int, timestamp, mktsfromsec, COPYFLAGS)
-func1(MTIMEtimestamp_frommsec, MTIMEtimestamp_frommsec_bulk, "timestamp", lng, timestamp, mktsfrommsec, COPYFLAGS)
+func1(MTIMEtimestamp_fromsecond, MTIMEtimestamp_fromsecond_bulk, "timestamp_fromsecond", int, timestamp, mktsfromsec, COPYFLAGS, func1_noexcept)
+func1(MTIMEtimestamp_frommsec, MTIMEtimestamp_frommsec_bulk, "timestamp_frommsec", lng, timestamp, mktsfrommsec, COPYFLAGS, func1_noexcept)
 
-str
-MTIMEdaytime_fromstr(daytime *ret, const char *const *s)
+static inline str
+daytime_fromstr_func(daytime *ret, const char *const s)
 {
-	if (daytime_fromstr(*s, &(size_t){sizeof(daytime)}, &ret, true) < 0)
-		throw(MAL, "calc.daytime", GDK_EXCEPTION);
+	if (daytime_fromstr(s, &(size_t){sizeof(daytime)}, &ret, true) < 0)
+		throw(MAL, "mtime.daytime_fromstr", GDK_EXCEPTION);
 	return MAL_SUCCEED;
 }
+func1(MTIMEdaytime_fromstr, MTIMEdaytime_fromstr_bulk, "daytime_fromstr", const char *const, daytime, daytime_fromstr_func, SETFLAGS, func1_except)
 
 #define daytime_daytime(m) m
-func1(MTIMEdaytime_daytime, MTIMEdaytime_daytime_bulk, "daytime_daytime", daytime, daytime, daytime_daytime, COPYFLAGS)
+func1(MTIMEdaytime_daytime, MTIMEdaytime_daytime_bulk, "daytime_daytime", daytime, daytime, daytime_daytime, COPYFLAGS, func1_noexcept)
 
-str
-MTIMEdaytime_fromseconds(daytime *ret, const lng *secs)
+static inline str
+daytime_fromseconds(daytime *ret, const lng secs)
 {
-	if (is_lng_nil(*secs))
+	if (is_lng_nil(secs))
 		*ret = daytime_nil;
-	else if (*secs < 0 || *secs >= 24*60*60)
-		throw(MAL, "calc.daytime", SQLSTATE(42000) ILLEGAL_ARGUMENT);
+	else if (secs < 0 || secs >= 24*60*60)
+		throw(MAL, "mtime.daytime_fromseconds", SQLSTATE(42000) ILLEGAL_ARGUMENT);
 	else
-		*ret = (daytime) (*secs * 1000000);
+		*ret = (daytime) (secs * 1000000);
 	return MAL_SUCCEED;
 }
+func1(MTIMEdaytime_fromseconds, MTIMEdaytime_fromseconds_bulk, "daytime_fromseconds", const lng, daytime, daytime_fromseconds, COPYFLAGS, func1_except)
 
-str
-MTIMEdaytime_fromseconds_bulk(bat *ret, bat *bid)
-{
-	BAT *b, *bn;
-	BUN n;
-	const lng *s;
-	daytime *d;
-
-	if ((b = BATdescriptor(*bid)) == NULL)
-		throw(MAL, "batcalc.daytime", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
-	n = BATcount(b);
-	if ((bn = COLnew(b->hseqbase, TYPE_daytime, n, TRANSIENT)) == NULL) {
-		BBPunfix(b->batCacheid);
-		throw(MAL, "batcalc.daytime", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-	}
-	s = Tloc(b, 0);
-	d = Tloc(bn, 0);
-	bn->tnil = false;
-	for (BUN i = 0; i < n; i++) {
-		if (is_lng_nil(s[i])) {
-			bn->tnil = true;
-			d[i] = daytime_nil;
-		} else if (s[i] < 0 || s[i] >= 24*60*60) {
-			BBPunfix(b->batCacheid);
-			BBPreclaim(bn);
-			throw(MAL, "batcalc.daytime", SQLSTATE(42000) ILLEGAL_ARGUMENT);
-		} else {
-			d[i] = (daytime) (s[i] * 1000000);
-		}
-	}
-	bn->tnonil = !bn->tnil;
-	BATsetcount(bn, n);
-	bn->tsorted = b->tsorted;
-	bn->trevsorted = b->trevsorted;
-	bn->tkey = false;
-	BBPunfix(b->batCacheid);
-	BBPkeepref(*ret = bn->batCacheid);
-	return MAL_SUCCEED;
-}
-
-func1(MTIMEtimestamp_extract_daytime, MTIMEtimestamp_extract_daytime_bulk, "daytime", timestamp, daytime, timestamp_daytime, SETFLAGS)
+func1(MTIMEtimestamp_extract_daytime, MTIMEtimestamp_extract_daytime_bulk, "timestamp_extract_daytime", timestamp, daytime, timestamp_daytime, SETFLAGS, func1_noexcept)
 
 /* return current system time zone offset in seconds East of Greenwich */
 static int

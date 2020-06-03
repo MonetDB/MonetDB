@@ -385,6 +385,29 @@ stdout of test 'simple_selects` in directory 'sql/test/miscellaneous` itself:
 % char # type
 % 0 # length
 [ NULL	]
+#start transaction;
+#create table tab1(col1 blob);
+#insert into tab1 values('2233');
+[ 1	]
+#select length(col1) from tab1;
+% sys.%1 # table_name
+% %1 # name
+% int # type
+% 1 # length
+[ 2	]
+#insert into tab1 values(null), (null), ('11'), ('2233');
+[ 4	]
+#select length(col1) from tab1;
+% sys.%1 # table_name
+% %1 # name
+% int # type
+% 1 # length
+[ 2	]
+[ NULL	]
+[ NULL	]
+[ 1	]
+[ 2	]
+#rollback;
 
 # 17:31:38 >  
 # 17:31:38 >  "Done."
