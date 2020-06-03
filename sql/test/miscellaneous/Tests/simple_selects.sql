@@ -162,3 +162,11 @@ set "current_schema" = null; --error, default global variables cannot be null
 
 select greatest(null, null);
 select sql_min(null, null);
+
+start transaction;
+create table tab1(col1 blob);
+insert into tab1 values('2233');
+select length(col1) from tab1;
+insert into tab1 values(null), (null), ('11'), ('2233');
+select length(col1) from tab1;
+rollback;
