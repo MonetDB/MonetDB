@@ -311,183 +311,86 @@ func2(MTIMEdate_diff, MTIMEdate_diff_bulk, "diff", date, date, int, date_diff, f
 func2(MTIMEdaytime_diff_msec, MTIMEdaytime_diff_msec_bulk, "diff", daytime, daytime, lng, daytime_diff, func2_noexcept,
 	 DEC_INT, DEC_INT, DEC_INT, INIT_INT, INIT_INT, INIT_INT, GET_NEXT_INT, GET_NEXT_INT, APPEND_INT)
 
-#define func2chk(NAME, NAMEBULK, MALFUNC, INTYPE1, INTYPE2, OUTTYPE, FUNC)	\
-mal_export str NAME(OUTTYPE *ret, const INTYPE1 *v1, const INTYPE2 *v2); \
-mal_export str NAMEBULK(bat *ret, const bat *bid1, const bat *bid2);	\
-mal_export str NAMEBULK##_p1(bat *ret, const INTYPE1 *v1, const bat *bid2);	\
-mal_export str NAMEBULK##_p2(bat *ret, const bat *bid1, const INTYPE2 *v2);	\
-str																		\
-NAME(OUTTYPE *ret, const INTYPE1 *v1, const INTYPE2 *v2)				\
-{																		\
-	if (is_##INTYPE1##_nil(*v1) || is_##INTYPE2##_nil(*v2))				\
-		*ret = OUTTYPE##_nil;											\
-	else {																\
-		*ret = FUNC(*v1, *v2);											\
-		if (is_##OUTTYPE##_nil(*ret))									\
-			throw(MAL, "mtime." MALFUNC,								\
-				  SQLSTATE(22003) "overflow in calculation");			\
-	}																	\
-	return MAL_SUCCEED;													\
-}																		\
-str																		\
-NAMEBULK(bat *ret, const bat *bid1, const bat *bid2)					\
-{																		\
-	BAT *b1, *b2, *bn;													\
-	BUN n;																\
-	const INTYPE1 *src1;												\
-	const INTYPE2 *src2;												\
-	OUTTYPE *dst;														\
-																		\
-	b1 = BATdescriptor(*bid1);											\
-	b2 = BATdescriptor(*bid2);											\
-	if (b1 == NULL || b2 == NULL) {										\
-		if (b1)															\
-			BBPunfix(b1->batCacheid);									\
-		if (b2)															\
-			BBPunfix(b2->batCacheid);									\
-		throw(MAL, "batmtime." MALFUNC,									\
-			  SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);					\
-	}																	\
-	n = BATcount(b1);													\
-	if (n != BATcount(b2)) {											\
-		BBPunfix(b1->batCacheid);										\
-		BBPunfix(b2->batCacheid);										\
-		throw(MAL, "batmtime." MALFUNC, "inputs not the same size");	\
-	}																	\
-	if ((bn = COLnew(b1->hseqbase, TYPE_##OUTTYPE, n, TRANSIENT)) == NULL) { \
-		BBPunfix(b1->batCacheid);										\
-		BBPunfix(b2->batCacheid);										\
-		throw(MAL, "batmtime." MALFUNC, SQLSTATE(HY013) MAL_MALLOC_FAIL); \
-	}																	\
-	src1 = Tloc(b1, 0);													\
-	src2 = Tloc(b2, 0);													\
-	dst = Tloc(bn, 0);													\
-	bn->tnil = false;													\
-	for (BUN i = 0; i < n; i++) {										\
-		if (is_##INTYPE1##_nil(src1[i]) || is_##INTYPE2##_nil(src2[i])) { \
-			dst[i] = OUTTYPE##_nil;										\
-			bn->tnil = true;											\
-		} else {														\
-			dst[i] = FUNC(src1[i], src2[i]);							\
-			if (is_##OUTTYPE##_nil(dst[i])) {							\
-				BBPunfix(b1->batCacheid);								\
-				BBPunfix(b2->batCacheid);								\
-				BBPreclaim(bn);											\
-				throw(MAL, "batmtime." MALFUNC,							\
-					  SQLSTATE(22003) "overflow in calculation");		\
-			}															\
-		}																\
-	}																	\
-	bn->tnonil = !bn->tnil;												\
-	BATsetcount(bn, n);													\
-	bn->tsorted = n < 2;												\
-	bn->trevsorted = n < 2;												\
-	bn->tkey = false;													\
-	BBPunfix(b1->batCacheid);											\
-	BBPunfix(b2->batCacheid);											\
-	BBPkeepref(*ret = bn->batCacheid);									\
-	return MAL_SUCCEED;													\
-}																		\
-str																		\
-NAMEBULK##_p1(bat *ret, const INTYPE1 *v1, const bat *bid2)				\
-{																		\
-	BAT *b2, *bn;														\
-	BUN n;																\
-	const INTYPE2 *src2;												\
-	OUTTYPE *dst;														\
-																		\
-	if ((b2 = BATdescriptor(*bid2)) == NULL) {							\
-		throw(MAL, "batmtime." MALFUNC,									\
-			  SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);					\
-	}																	\
-	n = BATcount(b2);													\
-	if ((bn = COLnew(b2->hseqbase, TYPE_##OUTTYPE, n, TRANSIENT)) == NULL) { \
-		BBPunfix(b2->batCacheid);										\
-		throw(MAL, "batmtime." MALFUNC, SQLSTATE(HY013) MAL_MALLOC_FAIL); \
-	}																	\
-	src2 = Tloc(b2, 0);													\
-	dst = Tloc(bn, 0);													\
-	bn->tnil = false;													\
-	for (BUN i = 0; i < n; i++) {										\
-		if (is_##INTYPE1##_nil(*v1) || is_##INTYPE2##_nil(src2[i])) {	\
-			dst[i] = OUTTYPE##_nil;										\
-			bn->tnil = true;											\
-		} else {														\
-			dst[i] = FUNC((*v1), src2[i]);								\
-			if (is_##OUTTYPE##_nil(dst[i])) {							\
-				BBPunfix(b2->batCacheid);								\
-				BBPreclaim(bn);											\
-				throw(MAL, "batmtime." MALFUNC,							\
-					  SQLSTATE(22003) "overflow in calculation");		\
-			}															\
-		}																\
-	}																	\
-	bn->tnonil = !bn->tnil;												\
-	BATsetcount(bn, n);													\
-	bn->tsorted = n < 2;												\
-	bn->trevsorted = n < 2;												\
-	bn->tkey = false;													\
-	BBPunfix(b2->batCacheid);											\
-	BBPkeepref(*ret = bn->batCacheid);									\
-	return MAL_SUCCEED;													\
-}																		\
-str																		\
-NAMEBULK##_p2(bat *ret, const bat *bid1, const INTYPE2 *v2)				\
-{																		\
-	BAT *b1, *bn;														\
-	BUN n;																\
-	const INTYPE1 *src1;												\
-	OUTTYPE *dst;														\
-																		\
-	if ((b1 = BATdescriptor(*bid1)) == NULL) {							\
-		throw(MAL, "batmtime." MALFUNC,									\
-			  SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);					\
-	}																	\
-	n = BATcount(b1);													\
-	if ((bn = COLnew(b1->hseqbase, TYPE_##OUTTYPE, n, TRANSIENT)) == NULL) { \
-		BBPunfix(b1->batCacheid);										\
-		throw(MAL, "batmtime." MALFUNC, SQLSTATE(HY013) MAL_MALLOC_FAIL); \
-	}																	\
-	src1 = Tloc(b1, 0);													\
-	dst = Tloc(bn, 0);													\
-	bn->tnil = false;													\
-	for (BUN i = 0; i < n; i++) {										\
-		if (is_##INTYPE1##_nil(src1[i]) || is_##INTYPE2##_nil(*v2)) {	\
-			dst[i] = OUTTYPE##_nil;										\
-			bn->tnil = true;											\
-		} else {														\
-			dst[i] = FUNC(src1[i], (*v2));								\
-			if (is_##OUTTYPE##_nil(dst[i])) {							\
-				BBPunfix(b1->batCacheid);								\
-				BBPreclaim(bn);											\
-				throw(MAL, "batmtime." MALFUNC,							\
-					  SQLSTATE(22003) "overflow in calculation");		\
-			}															\
-		}																\
-	}																	\
-	bn->tnonil = !bn->tnil;												\
-	BATsetcount(bn, n);													\
-	bn->tsorted = n < 2;												\
-	bn->trevsorted = n < 2;												\
-	bn->tkey = false;													\
-	BBPunfix(b1->batCacheid);											\
-	BBPkeepref(*ret = bn->batCacheid);									\
-	return MAL_SUCCEED;													\
+static inline str
+date_sub_msec_interval(date *ret, date d, lng ms)
+{
+	if (is_date_nil(d) || is_lng_nil(ms)) {
+		*ret = date_nil;
+		return MAL_SUCCEED;
+	}
+	if (is_date_nil((*ret = date_add_day(d, (int) (-ms / (24*60*60*1000))))))
+		throw(MAL, "mtime.date_sub_msec_interval", SQLSTATE(22003) "overflow in calculation");
+	return MAL_SUCCEED;
 }
-#define date_sub_msec_interval(d, ms) date_add_day(d, (int) (-ms / (24*60*60*1000)))
-#define date_add_msec_interval(d, ms) date_add_day(d, (int) (ms / (24*60*60*1000)))
-func2chk(MTIMEdate_sub_msec_interval, MTIMEdate_sub_msec_interval_bulk, "date_sub_msec_interval", date, lng, date, date_sub_msec_interval)
-func2chk(MTIMEdate_add_msec_interval, MTIMEdate_add_msec_interval_bulk, "date_add_msec_interval", date, lng, date, date_add_msec_interval)
+static inline str
+date_add_msec_interval(date *ret, date d, lng ms)
+{
+	if (is_date_nil(d) || is_lng_nil(ms)) {
+		*ret = date_nil;
+		return MAL_SUCCEED;
+	}
+	if (is_date_nil((*ret = date_add_day(d, (int) (ms / (24*60*60*1000))))))
+		throw(MAL, "mtime.date_add_msec_interval", SQLSTATE(22003) "overflow in calculation");
+	return MAL_SUCCEED;
+}
+func2(MTIMEdate_sub_msec_interval, MTIMEdate_sub_msec_interval_bulk, "date_sub_msec_interval", date, lng, date, date_sub_msec_interval, func2_except, 
+	  DEC_INT, DEC_INT, DEC_INT, INIT_INT, INIT_INT, INIT_INT, GET_NEXT_INT, GET_NEXT_INT, APPEND_INT)
+func2(MTIMEdate_add_msec_interval, MTIMEdate_add_msec_interval_bulk, "date_add_msec_interval", date, lng, date, date_add_msec_interval, func2_except, 
+	  DEC_INT, DEC_INT, DEC_INT, INIT_INT, INIT_INT, INIT_INT, GET_NEXT_INT, GET_NEXT_INT, APPEND_INT)
 
-#define TSSUBMS(ts, ms)		timestamp_add_usec((ts), -(ms) * 1000)
-#define TSADDMS(ts, ms)		timestamp_add_usec((ts), (ms) * 1000)
-func2chk(MTIMEtimestamp_sub_msec_interval, MTIMEtimestamp_sub_msec_interval_bulk, "timestamp_sub_msec_interval", timestamp, lng, timestamp, TSSUBMS)
-func2chk(MTIMEtimestamp_add_msec_interval, MTIMEtimestamp_add_msec_interval_bulk, "timestamp_add_msec_interval", timestamp, lng, timestamp, TSADDMS)
+static inline str
+timestamp_sub_msec_interval(timestamp *ret, timestamp ts, lng ms)
+{
+	if (is_timestamp_nil(ts) || is_lng_nil(ms)) {
+		*ret = timestamp_nil;
+		return MAL_SUCCEED;
+	}
+	if (is_timestamp_nil((*ret = timestamp_add_usec(ts, -ms * 1000))))
+		throw(MAL, "mtime.timestamp_sub_msec_interval", SQLSTATE(22003) "overflow in calculation");
+	return MAL_SUCCEED;
+}
+static inline str
+timestamp_add_msec_interval(timestamp *ret, timestamp ts, lng ms)
+{
+	if (is_timestamp_nil(ts) || is_lng_nil(ms)) {
+		*ret = timestamp_nil;
+		return MAL_SUCCEED;
+	}
+	if (is_timestamp_nil((*ret = timestamp_add_usec(ts, ms * 1000))))
+		throw(MAL, "mtime.timestamp_add_msec_interval", SQLSTATE(22003) "overflow in calculation");
+	return MAL_SUCCEED;
+}
+func2(MTIMEtimestamp_sub_msec_interval, MTIMEtimestamp_sub_msec_interval_bulk, "timestamp_sub_msec_interval", timestamp, lng, timestamp, timestamp_sub_msec_interval, func2_except, 
+	  DEC_INT, DEC_INT, DEC_INT, INIT_INT, INIT_INT, INIT_INT, GET_NEXT_INT, GET_NEXT_INT, APPEND_INT)
+func2(MTIMEtimestamp_add_msec_interval, MTIMEtimestamp_add_msec_interval_bulk, "timestamp_add_msec_interval", timestamp, lng, timestamp, timestamp_add_msec_interval, func2_except, 
+	  DEC_INT, DEC_INT, DEC_INT, INIT_INT, INIT_INT, INIT_INT, GET_NEXT_INT, GET_NEXT_INT, APPEND_INT)
 
-#define timestamp_sub_month_interval(d, m) timestamp_add_month(d, -m)
-#define timestamp_add_month_interval(d, m) timestamp_add_month(d, m)
-func2chk(MTIMEtimestamp_sub_month_interval, MTIMEtimestamp_sub_month_interval_bulk, "timestamp_sub_month_interval", timestamp, int, timestamp, timestamp_sub_month_interval)
-func2chk(MTIMEtimestamp_add_month_interval, MTIMEtimestamp_add_month_interval_bulk, "timestamp_add_month_interval", timestamp, int, timestamp, timestamp_add_month_interval)
+static inline str
+timestamp_sub_month_interval(timestamp *ret, timestamp ts, int m)
+{
+	if (is_timestamp_nil(ts) || is_int_nil(m)) {
+		*ret = timestamp_nil;
+		return MAL_SUCCEED;
+	}
+	if (is_timestamp_nil((*ret = timestamp_add_month(ts, -m))))
+		throw(MAL, "mtime.timestamp_sub_month_interval", SQLSTATE(22003) "overflow in calculation");
+	return MAL_SUCCEED;
+}
+static inline str
+timestamp_add_month_interval(timestamp *ret, timestamp ts, int m)
+{
+	if (is_timestamp_nil(ts) || is_int_nil(m)) {
+		*ret = timestamp_nil;
+		return MAL_SUCCEED;
+	}
+	if (is_timestamp_nil((*ret = timestamp_add_month(ts, m))))
+		throw(MAL, "mtime.timestamp_add_month_interval", SQLSTATE(22003) "overflow in calculation");
+	return MAL_SUCCEED;
+}
+func2(MTIMEtimestamp_sub_month_interval, MTIMEtimestamp_sub_month_interval_bulk, "timestamp_sub_month_interval", timestamp, int, timestamp, timestamp_sub_month_interval, func2_except, 
+	  DEC_INT, DEC_INT, DEC_INT, INIT_INT, INIT_INT, INIT_INT, GET_NEXT_INT, GET_NEXT_INT, APPEND_INT)
+func2(MTIMEtimestamp_add_month_interval, MTIMEtimestamp_add_month_interval_bulk, "timestamp_add_month_interval", timestamp, int, timestamp, timestamp_add_month_interval, func2_except, 
+	  DEC_INT, DEC_INT, DEC_INT, INIT_INT, INIT_INT, INIT_INT, GET_NEXT_INT, GET_NEXT_INT, APPEND_INT)
 
 static inline daytime
 time_sub_msec_interval(const daytime t, const lng ms)
@@ -508,10 +411,32 @@ func2(MTIMEtime_sub_msec_interval, MTIMEtime_sub_msec_interval_bulk, "time_sub_m
 func2(MTIMEtime_add_msec_interval, MTIMEtime_add_msec_interval_bulk, "time_add_msec_interval", daytime, lng, daytime, time_add_msec_interval, func2_noexcept, 
 	  DEC_INT, DEC_INT, DEC_INT, INIT_INT, INIT_INT, INIT_INT, GET_NEXT_INT, GET_NEXT_INT, APPEND_INT)
 
-#define date_submonths(d, m) date_add_month(d, -m)
-#define date_addmonths(d, m) date_add_month(d, m)
-func2chk(MTIMEdate_submonths, MTIMEdate_submonths_bulk, "date_submonths", date, int, date, date_submonths)
-func2chk(MTIMEdate_addmonths, MTIMEdate_addmonths_bulk, "date_addmonths", date, int, date, date_addmonths)
+static inline str
+date_submonths(date *ret, date d, int m)
+{
+	if (is_date_nil(d) || is_int_nil(m)) {
+		*ret = date_nil;
+		return MAL_SUCCEED;
+	}
+	if (is_date_nil((*ret = date_add_month(d, -m))))
+		throw(MAL, "mtime.date_submonths", SQLSTATE(22003) "overflow in calculation");
+	return MAL_SUCCEED;
+}
+static inline str
+date_addmonths(date *ret, date d, int m)
+{
+	if (is_date_nil(d) || is_int_nil(m)) {
+		*ret = date_nil;
+		return MAL_SUCCEED;
+	}
+	if (is_date_nil((*ret = date_add_month(d, m))))
+		throw(MAL, "mtime.date_addmonths", SQLSTATE(22003) "overflow in calculation");
+	return MAL_SUCCEED;
+}
+func2(MTIMEdate_submonths, MTIMEdate_submonths_bulk, "date_submonths", date, int, date, date_submonths, func2_except, 
+	  DEC_INT, DEC_INT, DEC_INT, INIT_INT, INIT_INT, INIT_INT, GET_NEXT_INT, GET_NEXT_INT, APPEND_INT)
+func2(MTIMEdate_addmonths, MTIMEdate_addmonths_bulk, "date_addmonths", date, int, date, date_addmonths, func2_except, 
+	  DEC_INT, DEC_INT, DEC_INT, INIT_INT, INIT_INT, INIT_INT, GET_NEXT_INT, GET_NEXT_INT, APPEND_INT)
 
 func1(MTIMEdate_extract_century, MTIMEdate_extract_century_bulk, "date_century", date, int, date_century, COPYFLAGS, func1_noexcept,
 	  DEC_INT, DEC_INT, INIT_INT, INIT_INT, GET_NEXT_INT)
