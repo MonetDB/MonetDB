@@ -28,11 +28,12 @@ tstdb = os.getenv('TSTDB')
 assert dbfarm
 assert tstdb
 
-mydb = tstdb + '_snap'
-mydbdir = os.path.join(dbfarm, mydb)
-tarname = os.path.join(dbfarm, mydb + '.tar')
 
-def main():
+def test_snapshot(z_extension, expected_initial_bytes):
+    mydb = tstdb + '_snap'
+    mydbdir = os.path.join(dbfarm, mydb)
+    tarname = os.path.join(dbfarm, mydb + '.tar' + z_extension)
+
     # clean up remainder of earlier run
     if os.path.exists(mydbdir):
         shutil.rmtree(mydbdir)
@@ -85,8 +86,42 @@ def main():
 
         shutil.rmtree(mydbdir)
 
-        # and extract the tarname
-        with tarfile.open(tarname) as tar:
+        # check if the file is actually compressed using the right algorithm
+        with open(tarname, "rb") as f:
+            initial_bytes = f.read(len(expected_initial_bytes))
+            assert initial_bytes == expected_initial_bytes
+
+        # if not self.compression:
+        #     f = open(filename, 'rb')
+        # elif self.compression == 'gz':
+        #     f = gzip.GzipFile(filename, 'rb', mtime=131875200)
+        # elif self.compression == 'bz2':
+        #     f = bz2.BZ2File(filename, 'rb')
+        # elif self.compression == 'xz':
+        #     f = lzma.LZMAFile(filename, 'rb')
+        # elif self.compression == 'lz4':
+        #     f = lz4.frame.LZ4FrameFile(filename, 'rb')
+        # else:
+        #     raise Exception("Unknown compression scheme: " + self.compression)
+
+        # open with decompression
+        if tarname.endswith('.bz2'):
+            import bz2
+            f = bz2.BZ2File(tarname, 'rb')
+        elif tarname.endswith('.gz'):
+            import gzip
+            f = gzip.GzipFile(tarname, 'rb')
+        elif tarname.endswith('.lz4'):
+            import lz4.frame
+            f = lz4.frame.LZ4FrameFile(tarname, 'rb')
+        elif tarname.endswith('.xz'):
+            import lzma
+            f = lzma.LZMAFile(tarname, 'rb')
+        else:
+            f = open(tarname, 'rb')
+
+        # and extract the tar file
+        with tarfile.open(fileobj=f) as tar:
             tar.extractall(dbfarm)
 
         # and restart the server
@@ -118,5 +153,6 @@ def main():
             os.remove(tarname)
 
 
-main()
+if __name__ == "__main__":
+    test_snapshot('', b'')
 

@@ -122,9 +122,9 @@ unicode
 
 window_functions
 
-HAVE_PYMONETDB?hot-snapshot
-HAVE_PYMONETDB&HAVE_LIBZ?hot-snapshot-gz
-HAVE_PYMONETDB&HAVE_LIBBZ2?hot-snapshot-bz2
-HAVE_PYMONETDB&HAVE_LIBLZMA?hot-snapshot-xz
-HAVE_PYMONETDB&HAVE_LIBLZ4?hot-snapshot-lz4
+HAVE_PYMONETDB?hot_snapshot
+HAVE_PYMONETDB&HAVE_LIBZ?hot_snapshot_gz
+HAVE_PYMONETDB&HAVE_LIBBZ2?hot_snapshot_bz2
+HAVE_PYMONETDB&HAVE_LIBLZMA?hot_snapshot_xz
+HAVE_PYMONETDB&HAVE_LIBLZ4?hot_snapshot_lz4
 
