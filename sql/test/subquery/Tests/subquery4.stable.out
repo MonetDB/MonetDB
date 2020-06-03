@@ -275,16 +275,32 @@ stdout of test 'subquery4` in directory 'sql/test/subquery` itself:
 % %13 # name
 % tinyint # type
 % 1 # length
-#DECLARE myvar INT;
-#DECLARE ovar INT;
-#DECLARE abc,def INT;
-#SET (abc, def) = (SELECT 1, 2);
-#SELECT abc, def;
-% .%2,	.%3 # table_name
-% %2,	%3 # name
-% int,	int # type
-% 1,	1 # length
-[ 1,	2	]
+#create or replace function iamok() returns int
+#begin
+#	DECLARE myvar INT;
+#	SELECT (SELECT i) INTO myvar FROM integers;
+#	return myvar;
+#end;
+#create or replace function iamok() returns int
+#begin
+#	DECLARE ovar INT;
+#	SET ovar = (SELECT (SELECT i) FROM integers);
+#	return ovar;
+#end;
+#create or replace function iamok() returns int
+#begin
+#	DECLARE abc,def INT;
+#	SET (abc, def) = (SELECT 1, 2);
+#	SET (abc, def) = (SELECT i, i from integers);
+#	return abc;
+#end;
+#create or replace function iamok() returns int
+#begin
+#	DECLARE aa,bb INT;
+#	SELECT i, i INTO aa, bb FROM integers;
+#	return aa;
+#end;
+#drop function iamok;
 #UPDATE another_T SET col4 = (SELECT SUM(col4 + ColID) FROM tbl_ProductSales); --4 rows affected
 [ 4	]
 #SELECT col4 FROM another_T;

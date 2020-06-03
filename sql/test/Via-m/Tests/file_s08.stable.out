@@ -40,6 +40,11 @@ stdout of test 'file_s08` in directory 'sql/test/Via-m` itself:
 #                        'empty',
 #                        250,
 #                        250);
+% . # table_name
+% %4 # name
+% int # type
+% 1 # length
+[ 2	]
 
 # 10:49:49 >  
 # 10:49:49 >  "Done."

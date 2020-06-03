@@ -86,11 +86,11 @@ pattern assert(b:lng,msg:str):void
 address SQLassertLng
 comment "Generate an exception when b!=0";
 
-unsafe pattern setVariable(mvc:int, varname:str, value:any_1 ):int
+unsafe pattern setVariable(mvc:int, sname:str, varname:str, value:any_1 ):int
 address setVariable
 comment "Set the value of a session variable";
 
-pattern getVariable(mvc:int, varname:str ):any_1
+pattern getVariable(mvc:int, sname:str, varname:str ):any_1
 address getVariable
 comment "Get the value of a session variable";
 
@@ -374,7 +374,7 @@ pattern argRecord(a:any...):str
 address SQLargRecord
 comment "Glue together the calling sequence";
 
-pattern sql_variables():bat[:str]
+pattern sql_variables() (sname:bat[:str], name:bat[:str], type:bat[:str], value:bat[:str])
 address sql_variables
 comment "return the table with session variables";
 

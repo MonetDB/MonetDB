@@ -89,10 +89,10 @@ SQLgetSpace(mvc *m, MalBlkPtr mb, int prepare)
 			sql_table *t = 0;
 			sql_column *c = 0;
 
-			if (!s || strcmp(s->base.name, dt_schema) == 0)
+			if (!s)
 				continue;
 			t = mvc_bind_table(m, s, tname);
-			if (!t)
+			if (!t || isDeclaredTable(t))
 				continue;
 			c = mvc_bind_column(m, t, cname);
 			if (!s)
@@ -144,7 +144,7 @@ SQLgetSpace(mvc *m, MalBlkPtr mb, int prepare)
 str
 getSQLoptimizer(mvc *m)
 {
-	char *opt = stack_get_string(m, "optimizer");
+	char *opt = sqlvar_get_string(find_global_var(m, mvc_bind_schema(m, "sys"), "optimizer"));
 	char *pipe = "default_pipe";
 
 	if (opt)

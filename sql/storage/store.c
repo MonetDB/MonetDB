@@ -3757,12 +3757,13 @@ trans_dup(backend_stack stk, sql_trans *ot, const char *newname)
 		}
 		if (ot == gtrans)
 			ot->schemas.nelm = NULL;
-
+#if 0
 		for (n = t->schemas.set->h; n; n = n->next) { /* Set table members */
 			sql_schema *s = n->data;
 
 			set_members(&s->tables);
 		}
+#endif
 	}
 	new_trans_size = t->sa->nr;
 	return t;
@@ -3786,7 +3787,7 @@ conditional_table_dup(sql_trans *tr, int flags, sql_table *ot, sql_schema *s)
 	    /* allways dup in recursive mode */
 	    tr->parent != gtrans)
 		return table_dup(tr, flags, ot, s);
-	else if (!isGlobal(ot)){/* is local temp, may need to be cleared */
+	else if (!isGlobal(ot)) { /* is local temp, may need to be cleared */
 		if (ot->commit_action == CA_DELETE) {
 			sql_trans_clear_table(tr, ot);
 		} else if (ot->commit_action == CA_DROP) {
@@ -7324,8 +7325,7 @@ sql_session_reset(sql_session *s, int ac)
 	tmp = find_sql_schema(s->tr, "tmp");
 
 	if (tmp->tables.set) {
-		node *n;
-		for (n = tmp->tables.set->h; n; n = n->next) {
+		for (node *n = tmp->tables.set->h; n; n = n->next) {
 			sql_table *t = n->data;
 
 			if (isGlobal(t) && isKindOfTable(t))
@@ -7346,11 +7346,9 @@ sql_session_reset(sql_session *s, int ac)
 int
 sql_trans_begin(sql_session *s)
 {
-	sql_trans *tr;
-	int snr;
+	sql_trans *tr = s->tr;
+	int snr = tr->schema_number;
 
-	tr = s->tr;
-	snr = tr->schema_number;
 	TRC_DEBUG(SQL_STORE, "Enter sql_trans_begin for transaction: %d\n", snr);
 	if (tr->parent && tr->parent == gtrans && 
 	    (tr->stime < gtrans->wstime || tr->wtime ||

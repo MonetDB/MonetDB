@@ -56,73 +56,30 @@ stdout of test 'session_vars` in directory 'sql/test` itself:
 % varchar # type
 % 7 # length
 [ "monetdb"	]
-#declare test_nr int;
-#declare test_str varchar(1024);
-#declare test_boolean boolean;
-#set test_nr = 1;
-#set test_str = 'help';
-#set test_boolean = true;
-#select test_nr;
-% .%2 # table_name
-% %2 # name
-% int # type
-% 1 # length
-[ 1	]
-#select test_str;
-% .%2 # table_name
-% %2 # name
-% varchar # type
-% 4 # length
-[ "help"	]
-#select test_boolean;
-% .%2 # table_name
-% %2 # name
-% boolean # type
-% 5 # length
-[ true	]
-#select @debug;
+#select sys.debug;
 % .%2 # table_name
 % %2 # name
 % int # type
 % 1 # length
 [ 0	]
-#select @current_schema;
+#select sys."current_schema";
 % .%2 # table_name
 % %2 # name
 % varchar # type
 % 3 # length
 [ "sys"	]
-#select @"current_user";
+#select sys."current_user";
 % .%2 # table_name
 % %2 # name
 % varchar # type
 % 7 # length
 [ "monetdb"	]
-#select @"current_role";
+#select sys."current_role";
 % .%2 # table_name
 % %2 # name
 % varchar # type
 % 7 # length
 [ "monetdb"	]
-#set test_str = 1;
-#select @test_nr;
-% .%2 # table_name
-% %2 # name
-% int # type
-% 1 # length
-[ 1	]
-#select @test_str;
-% .%2 # table_name
-% %2 # name
-% varchar # type
-% 1 # length
-[ "1"	]
-#select @test_boolean;
-% .%2 # table_name
-% %2 # name
-% boolean # type
-% 5 # length
-[ true	]
 
 # 12:30:00 >  
 # 12:30:00 >  Done.

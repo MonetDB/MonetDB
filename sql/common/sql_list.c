@@ -102,6 +102,10 @@ list_destroy(list *l)
 				node_destroy(l, t);
 			}
 		}
+
+		if (l->ht && !l->ht->sa)
+			hash_destroy(l->ht);
+
 		if (!l->sa)
 			_DELETE(l);
 	}
