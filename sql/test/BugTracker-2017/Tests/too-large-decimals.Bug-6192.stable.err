@@ -35,7 +35,7 @@ ERROR = !too many digits (14 > 12)
 CODE  = 22003
 MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = INSERT INTO test_table4 VALUES (531421754532);
-ERROR = !Too many digits (14 > 12)
+ERROR = !overflow in conversion to DECIMAL(12,2).
 CODE  = 22003
 
 # 14:58:48 >  

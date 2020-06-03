@@ -1,7 +1,3 @@
-declare a int;
-set a = null;
-select a;
-
 create function call_function( aa int ) RETURNS int
 begin
 	declare b int;

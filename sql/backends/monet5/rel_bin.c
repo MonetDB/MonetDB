@@ -555,12 +555,12 @@ exp_bin(backend *be, sql_exp *e, stmt *left, stmt *right, stmt *grp, stmt *ext, 
 				return NULL;
 			if (e->card <= CARD_ATOM && r->nrcols > 0) /* single value, get result from bat */
 				r = stmt_fetch(be, r);
-			return stmt_assign(be, exp_name(e), r, GET_PSM_LEVEL(e->flag));
+			return stmt_assign(be, exp_relname(e), exp_name(e), r, GET_PSM_LEVEL(e->flag));
 		} else if (e->flag & PSM_VAR) {
 			if (e->f)
 				return stmt_vars(be, exp_name(e), e->f, 1, GET_PSM_LEVEL(e->flag));
 			else
-				return stmt_var(be, exp_name(e), &e->tpe, 1, GET_PSM_LEVEL(e->flag));
+				return stmt_var(be, exp_relname(e), exp_name(e), &e->tpe, 1, GET_PSM_LEVEL(e->flag));
 		} else if (e->flag & PSM_RETURN) {
 			sql_exp *l = e->l;
 			stmt *r = exp_bin(be, l, left, right, grp, ext, cnt, sel, cond, 0, 0);
@@ -640,8 +640,10 @@ exp_bin(backend *be, sql_exp *e, stmt *left, stmt *right, stmt *grp, stmt *ext, 
 		if (e->l) { 			/* literals */
 			atom *a = e->l;
 			s = stmt_atom(be, atom_dup(sql->sa, a));
-		} else if (e->r) { 		/* parameters */
-			s = stmt_var(be, sa_strdup(sql->sa, e->r), e->tpe.type?&e->tpe:NULL, 0, e->flag);
+		} else if (e->r) { 		/* parameters and declared variables */
+			sql_var_name *vname = (sql_var_name*) e->r;
+			assert(vname->name);
+			s = stmt_var(be, vname->sname ? sa_strdup(sql->sa, vname->sname) : NULL, sa_strdup(sql->sa, vname->name), e->tpe.type?&e->tpe:NULL, 0, e->flag);
 		} else if (e->f) { 		/* values */
 			s = value_list(be, e->f, left, sel);
 		} else { 			/* arguments */
@@ -692,7 +694,7 @@ exp_bin(backend *be, sql_exp *e, stmt *left, stmt *right, stmt *grp, stmt *ext, 
 			int push_cond_exec = 0;
 			stmt *ncond = NULL, *ocond = cond;
 
-                        if (sel && strcmp(sql_func_mod(f->func), "calc") == 0 && strcmp(sql_func_imp(f->func), "ifthenelse") != 0) 
+			if (sel && strcmp(sql_func_mod(f->func), "calc") == 0 && strcmp(sql_func_imp(f->func), "ifthenelse") != 0) 
 				push_cands = 1;
                         if (strcmp(sql_func_mod(f->func), "calc") == 0 && strcmp(sql_func_imp(f->func), "ifthenelse") == 0) 
 				push_cond_exec = 1;
@@ -781,7 +783,7 @@ exp_bin(backend *be, sql_exp *e, stmt *left, stmt *right, stmt *grp, stmt *ext, 
 		if (cond_execution) {
 			/* var_x = nil; */
 			nme = number2name(name, sizeof(name), ++sql->label);
-			(void)stmt_var(be, nme, exp_subtype(e), 1, 2);
+			(void)stmt_var(be, NULL, nme, exp_subtype(e), 1, 2);
 			/* if_barrier ... */
 			cond_execution = stmt_cond(be, cond_execution, NULL, 0, 0);
 		}
@@ -795,10 +797,10 @@ exp_bin(backend *be, sql_exp *e, stmt *left, stmt *right, stmt *grp, stmt *ext, 
 			s->cand = sel;
 		if (cond_execution) {
 			/* var_x = s */
-			(void)stmt_assign(be, nme, s, 2);
+			(void)stmt_assign(be, NULL, nme, s, 2);
 			/* endif_barrier */
 			(void)stmt_control_end(be, cond_execution);
-			s = stmt_var(be, nme, exp_subtype(e), 0, 2);
+			s = stmt_var(be, NULL, nme, exp_subtype(e), 0, 2);
 		}
 	} 	break;
 	case e_aggr: {
@@ -1154,7 +1156,7 @@ stmt_col( backend *be, sql_column *c, stmt *del, int part)
 
 	if (isTable(c->t) && c->t->access != TABLE_READONLY &&
 	   (!isNew(c) || !isNew(c->t) /* alter */) &&
-	   (c->t->persistence == SQL_PERSIST || c->t->persistence == SQL_DECLARED_TABLE) && !c->t->commit_action) {
+	   (c->t->persistence == SQL_PERSIST || c->t->s) && !c->t->commit_action) {
 		stmt *i = stmt_bat(be, c, RD_INS, 0);
 		stmt *u = stmt_bat(be, c, RD_UPD_ID, part);
 		sc = stmt_project_delta(be, sc, u, i);
@@ -1173,7 +1175,7 @@ stmt_idx( backend *be, sql_idx *i, stmt *del, int part)
 
 	if (isTable(i->t) && i->t->access != TABLE_READONLY &&
 	   (!isNew(i) || !isNew(i->t) /* alter */) &&
-	   (i->t->persistence == SQL_PERSIST || i->t->persistence == SQL_DECLARED_TABLE) && !i->t->commit_action) {
+	   (i->t->persistence == SQL_PERSIST || i->t->s) && !i->t->commit_action) {
 		stmt *ic = stmt_idxbat(be, i, RD_INS, 0);
 		stmt *u = stmt_idxbat(be, i, RD_UPD_ID, part);
 		sc = stmt_project_delta(be, sc, u, ic);
@@ -1458,8 +1460,8 @@ rel_parse_value(backend *be, char *query, char emode)
 	bstream_destroy(m->scanner.rs);
 
 	m->sym = NULL;
-	o.vars = m->vars;	/* may have been realloc'ed */
-	o.sizevars = m->sizevars;
+	o.frames = m->frames;	/* may have been realloc'ed */
+	o.sizeframes = m->sizeframes;
 	o.query = m->query;
 	if (m->session->status || m->errstr[0]) {
 		int status = m->session->status;
@@ -1470,10 +1472,8 @@ rel_parse_value(backend *be, char *query, char emode)
 	} else {
 		unsigned int label = m->label;
 
-		while (m->topvars > o.topvars) {
-			if (m->vars[--m->topvars].name)
-				c_delete(m->vars[m->topvars].name);
-		}
+		while (m->topframes > o.topframes)
+			clear_frame(m, m->frames[--m->topframes]);
 		*m = o;
 		m->label = label;
 	}
@@ -1676,13 +1676,24 @@ exp2bin_args(backend *be, sql_exp *e, list *args)
 		} else if (e->f) {
 			return exps2bin_args(be, e->f, args);
 		} else if (e->r) {
-			char *nme = SA_NEW_ARRAY(sql->sa, char, strlen((char*)e->r) + 2);
+			char *nme;
+			sql_var_name *vname = (sql_var_name*) e->r;
 
-			if (!nme)
-				return NULL;
-			stpcpy(stpcpy(nme, "A"), (char*)e->r);
+			if (vname->sname) { /* Global variable */
+				nme = SA_NEW_ARRAY(be->mvc->sa, char, strlen(vname->sname) + strlen(vname->name) + 5);
+				if (!nme)
+					return NULL;
+				stpcpy(stpcpy(stpcpy(stpcpy(nme, "A0%"), vname->sname), "%"), vname->name); /* mangle variable name */
+			} else { /* Parameter or local variable */
+				char levelstr[16];
+				snprintf(levelstr, sizeof(levelstr), "%u", e->flag);
+				nme = SA_NEW_ARRAY(be->mvc->sa, char, strlen(levelstr) + strlen(vname->name) + 3);
+				if (!nme)
+					return NULL;
+				stpcpy(stpcpy(stpcpy(stpcpy(nme, "A"), levelstr), "%"), vname->name); /* mangle variable name */
+			}
 			if (!list_find(args, nme, (fcmp)&alias_cmp)) {
-				stmt *s = stmt_var(be, e->r, &e->tpe, 0, 0);
+				stmt *s = stmt_var(be, vname->sname, vname->name, &e->tpe, 0, 0);
 
 				s = stmt_alias(be, s, NULL, sa_strdup(sql->sa, nme));
 				list_append(args, s);
@@ -3671,8 +3682,9 @@ sql_parse(backend *be, sql_allocator *sa, const char *query, char mode)
 	{
 		unsigned int label = m->label;
 		int status = m->session->status;
-		int sizevars = m->sizevars, topvars = m->topvars;
-		sql_var *vars = m->vars;
+		list *global_vars = m->global_vars;
+		int sizeframes = m->sizeframes, topframes = m->topframes;
+		sql_frame **frames = m->frames;
 		/* cascade list maybe removed */
 		list *cascade_action = m->cascade_action;
 		char *mquery = m->query;
@@ -3680,9 +3692,10 @@ sql_parse(backend *be, sql_allocator *sa, const char *query, char mode)
 		strcpy(o->errstr, m->errstr);
 		*m = *o;
 		m->label = label;
-		m->sizevars = sizevars;
-		m->topvars = topvars;
-		m->vars = vars;
+		m->global_vars = global_vars;
+		m->sizeframes = sizeframes;
+		m->topframes = topframes;
+		m->frames = frames;
 		m->session->status = status;
 		m->cascade_action = cascade_action;
 		m->query = mquery;
@@ -3930,7 +3943,7 @@ sql_insert_triggers(backend *be, sql_table *t, stmt **updates, int time)
 	for (n = t->triggers.set->h; n; n = n->next) {
 		sql_trigger *trigger = n->data;
 
-		if(!stack_push_frame(sql, "OLD-NEW"))
+		if (!stack_push_frame(sql, "%OLD-NEW"))
 			return 0;
 		if (trigger->event == 0 && trigger->time == time) {
 			const char *n = trigger->new_name;
@@ -4863,7 +4876,7 @@ sql_stack_add_updated(mvc *sql, const char *on, const char *nn, sql_table *t, st
 	r->l = ti;
 
 	/* put single table into the stack with 2 names, needed for the psm code */
-	if(!stack_push_rel_view(sql, on, r) || !stack_push_rel_view(sql, nn, rel_dup(r)))
+	if (!stack_push_rel_view(sql, on, r) || !stack_push_rel_view(sql, nn, rel_dup(r)))
 		return 0;
 	return 1;
 }
@@ -4881,7 +4894,7 @@ sql_update_triggers(backend *be, sql_table *t, stmt *tids, stmt **updates, int t
 	for (n = t->triggers.set->h; n; n = n->next) {
 		sql_trigger *trigger = n->data;
 
-		if(!stack_push_frame(sql, "OLD-NEW"))
+		if (!stack_push_frame(sql, "%OLD-NEW"))
 			return 0;
 		if (trigger->event == 2 && trigger->time == time) {
 			/* add name for the 'inserted' to the stack */
@@ -5156,7 +5169,7 @@ sql_delete_triggers(backend *be, sql_table *t, stmt *tids, int time, int firing_
 	for (n = t->triggers.set->h; n; n = n->next) {
 		sql_trigger *trigger = n->data;
 
-		if(!stack_push_frame(sql, "OLD-NEW"))
+		if (!stack_push_frame(sql, "%OLD-NEW"))
 			return 0;
 		if (trigger->event == firing_type && trigger->time == time) {
 			/* add name for the 'deleted' to the stack */

@@ -57,15 +57,15 @@ alter table t add unique (b);
                         stdin=process.PIPE, stdout=process.PIPE,
                         stderr=process.PIPE) as s:
         client('''\
-select count(*) from objects inner join dependencies on objects.id = dependencies.depend_id inner join columns on dependencies.id = columns.id inner join tables on columns.table_id = tables.id where tables.name = 't';
-select count(*) from dependencies inner join columns on dependencies.id = columns.id inner join tables on columns.table_id = tables.id where tables.name = 't';
-select keys.type, keys.name, keys.rkey, keys.action from keys inner join tables on tables.id = keys.table_id where tables.name = 't';
-select idxs.type, idxs.name from idxs inner join tables on tables.id = idxs.table_id where tables.name = 't';
+select count(*) from sys.objects inner join sys.dependencies on objects.id = dependencies.depend_id inner join sys.columns on dependencies.id = columns.id inner join sys.tables on columns.table_id = tables.id where tables.name = 't';
+select count(*) from sys.dependencies inner join sys.columns on dependencies.id = columns.id inner join sys.tables on columns.table_id = tables.id where tables.name = 't';
+select keys.type, keys.name, keys.rkey, keys.action from sys.keys inner join sys.tables on tables.id = keys.table_id where tables.name = 't';
+select idxs.type, idxs.name from sys.idxs inner join tables on tables.id = idxs.table_id where tables.name = 't';
 alter table t drop column b cascade;
-select count(*) from objects inner join dependencies on objects.id = dependencies.depend_id inner join columns on dependencies.id = columns.id inner join tables on columns.table_id = tables.id where tables.name = 't';
-select count(*) from dependencies inner join columns on dependencies.id = columns.id inner join tables on columns.table_id = tables.id where tables.name = 't';
-select keys.type, keys.name, keys.rkey, keys.action from keys inner join tables on tables.id = keys.table_id where tables.name = 't';
-select idxs.type, idxs.name from idxs inner join tables on tables.id = idxs.table_id where tables.name = 't';
+select count(*) from sys.objects inner join sys.dependencies on objects.id = dependencies.depend_id inner join sys.columns on dependencies.id = columns.id inner join sys.tables on columns.table_id = tables.id where tables.name = 't';
+select count(*) from sys.dependencies inner join sys.columns on dependencies.id = columns.id inner join sys.tables on columns.table_id = tables.id where tables.name = 't';
+select keys.type, keys.name, keys.rkey, keys.action from sys.keys inner join sys.tables on tables.id = keys.table_id where tables.name = 't';
+select idxs.type, idxs.name from sys.idxs inner join tables on tables.id = idxs.table_id where tables.name = 't';
 ''')
         server_stop(s)
 
@@ -79,15 +79,15 @@ start transaction;
 create table t (a int, b int, c int);
 alter table t add unique (b);
 select * from t;
-select count(*) from objects inner join dependencies on objects.id = dependencies.depend_id inner join columns on dependencies.id = columns.id inner join tables on columns.table_id = tables.id where tables.name = 't';
-select count(*) from dependencies inner join columns on dependencies.id = columns.id inner join tables on columns.table_id = tables.id where tables.name = 't';
-select keys.type, keys.name, keys.rkey, keys.action from keys inner join tables on tables.id = keys.table_id where tables.name = 't';
-select idxs.type, idxs.name from idxs inner join tables on tables.id = idxs.table_id where tables.name = 't';
+select count(*) from sys.objects inner join sys.dependencies on objects.id = dependencies.depend_id inner join sys.columns on dependencies.id = columns.id inner join sys.tables on columns.table_id = tables.id where tables.name = 't';
+select count(*) from sys.dependencies inner join sys.columns on dependencies.id = columns.id inner join sys.tables on columns.table_id = tables.id where tables.name = 't';
+select keys.type, keys.name, keys.rkey, keys.action from sys.keys inner join sys.tables on tables.id = keys.table_id where tables.name = 't';
+select idxs.type, idxs.name from sys.idxs inner join sys.tables on tables.id = idxs.table_id where tables.name = 't';
 alter table t drop column b cascade;
-select count(*) from objects inner join dependencies on objects.id = dependencies.depend_id inner join columns on dependencies.id = columns.id inner join tables on columns.table_id = tables.id where tables.name = 't';
-select count(*) from dependencies inner join columns on dependencies.id = columns.id inner join tables on columns.table_id = tables.id where tables.name = 't';
-select keys.type, keys.name, keys.rkey, keys.action from keys inner join tables on tables.id = keys.table_id where tables.name = 't';
-select idxs.type, idxs.name from idxs inner join tables on tables.id = idxs.table_id where tables.name = 't';
+select count(*) from sys.objects inner join sys.dependencies on objects.id = dependencies.depend_id inner join sys.columns on dependencies.id = columns.id inner join sys.tables on columns.table_id = tables.id where tables.name = 't';
+select count(*) from sys.dependencies inner join sys.columns on dependencies.id = columns.id inner join sys.tables on columns.table_id = tables.id where tables.name = 't';
+select keys.type, keys.name, keys.rkey, keys.action from sys.keys inner join sys.tables on tables.id = keys.table_id where tables.name = 't';
+select idxs.type, idxs.name from sys.idxs inner join sys.tables on tables.id = idxs.table_id where tables.name = 't';
 select * from t;
 commit;
 select * from t;

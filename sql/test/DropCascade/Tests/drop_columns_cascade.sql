@@ -42,14 +42,14 @@ CREATE INDEX id_index ON t1(id);
 
 ALTER TABLE t1 DROP COLUMN id CASCADE;
 
-select name from tables where name = 't1';
-select name from tables where name = 't2';
-select name from tables where name = 'v1';
-select name from functions where name = 'f2';
-select name from triggers where name = 'test1';
-select name from idxs where name = 'id_index';
-select name from columns where name = 'id' and table_id in (select id from tables where name = 't1' or name = 't2');
-select name from keys where name not in ('files_pkey_file_id', 'sq_pkey_sn_file_id', 'sq_fkey_file_id', 'rg_pkey_id_file_id', 'rg_fkey_file_id', 'pg_pkey_id_file_id', 'pg_fkey_file_id', 'spatial_ref_sys_srid_pkey', 'comments_id_pkey');
+select name from sys.tables where name = 't1';
+select name from sys.tables where name = 't2';
+select name from sys.tables where name = 'v1';
+select name from sys.functions where name = 'f2';
+select name from sys.triggers where name = 'test1';
+select name from sys.idxs where name = 'id_index';
+select name from sys.columns where name = 'id' and table_id in (select id from sys.tables where name = 't1' or name = 't2');
+select name from sys.keys where name not in ('files_pkey_file_id', 'sq_pkey_sn_file_id', 'sq_fkey_file_id', 'rg_pkey_id_file_id', 'rg_fkey_file_id', 'pg_pkey_id_file_id', 'pg_fkey_file_id', 'spatial_ref_sys_srid_pkey', 'comments_id_pkey');
 
 
 --Just for debug

@@ -5,12 +5,12 @@
 /* SET australian_timezones = 'off'; */
 
 CREATE TABLE TIMESTAMP_TBL ( d1 timestamp(2) );
-DECLARE test_now timestamp(2);
-DECLARE test_current_date date;
 
-SET test_now = now;
-SET test_current_date = current_date;
+create table test_now (test_now timestamp(2));
+create table test_current_date (test_current_date date);
 
+insert into test_now values (now);
+insert into test_current_date values (current_date);
 -- Shorthand values
 -- Not directly usable for regression testing since these are not constants.
 -- So, just try to test parser and hope for the best - thomas 97/04/26
@@ -18,21 +18,21 @@ SET test_current_date = current_date;
 -- statements.
 
 --INSERT INTO TIMESTAMP_TBL VALUES ('now');
-INSERT INTO TIMESTAMP_TBL VALUES (test_now);
+INSERT INTO TIMESTAMP_TBL VALUES ((select test_now from test_now));
 --INSERT INTO TIMESTAMP_TBL VALUES ('current');
-INSERT INTO TIMESTAMP_TBL VALUES (cast(test_now as timestamp));
+INSERT INTO TIMESTAMP_TBL VALUES (cast((select test_now from test_now) as timestamp));
 --INSERT INTO TIMESTAMP_TBL VALUES ('today');
-INSERT INTO TIMESTAMP_TBL VALUES (cast(test_current_date as timestamp));
+INSERT INTO TIMESTAMP_TBL VALUES (cast((select test_current_date from test_current_date) as timestamp));
 --INSERT INTO TIMESTAMP_TBL VALUES ('yesterday');
-INSERT INTO TIMESTAMP_TBL VALUES (cast(sql_sub(test_current_date, 24*60*60.0) as timestamp));
+INSERT INTO TIMESTAMP_TBL VALUES (cast(sql_sub((select test_current_date from test_current_date), 24*60*60.0) as timestamp));
 --INSERT INTO TIMESTAMP_TBL VALUES ('tomorrow');
-INSERT INTO TIMESTAMP_TBL VALUES (cast(sql_add(test_current_date, 24*60*60.0) as timestamp));
+INSERT INTO TIMESTAMP_TBL VALUES (cast(sql_add((select test_current_date from test_current_date), 24*60*60.0) as timestamp));
 
 --SELECT d1 FROM TIMESTAMP_TBL;
-SELECT count(*) AS One FROM TIMESTAMP_TBL WHERE d1 = cast(test_current_date as timestamp);
-SELECT count(*) AS One FROM TIMESTAMP_TBL WHERE d1 = cast(sql_add(test_current_date, 24*60*60.0) as timestamp);
-SELECT count(*) AS One FROM TIMESTAMP_TBL WHERE d1 = cast(sql_sub(test_current_date, 24*60*60.0) as timestamp);
-SELECT count(*) AS None FROM TIMESTAMP_TBL WHERE d1 = cast(test_now as timestamp);
+SELECT count(*) AS One FROM TIMESTAMP_TBL WHERE d1 = cast((select test_current_date from test_current_date) as timestamp);
+SELECT count(*) AS One FROM TIMESTAMP_TBL WHERE d1 = cast(sql_add((select test_current_date from test_current_date), 24*60*60.0) as timestamp);
+SELECT count(*) AS One FROM TIMESTAMP_TBL WHERE d1 = cast(sql_sub((select test_current_date from test_current_date), 24*60*60.0) as timestamp);
+SELECT count(*) AS None FROM TIMESTAMP_TBL WHERE d1 = cast((select test_now from test_now) as timestamp);
 
 INSERT INTO TIMESTAMP_TBL VALUES ('tomorrow EST');
 INSERT INTO TIMESTAMP_TBL VALUES ('tomorrow zulu');
@@ -41,11 +41,14 @@ DELETE FROM TIMESTAMP_TBL;
 
 -- verify uniform transaction time within transaction block
 START TRANSACTION;
-INSERT INTO TIMESTAMP_TBL VALUES (test_now);
-INSERT INTO TIMESTAMP_TBL VALUES (test_now);
-SELECT count(*) AS two FROM TIMESTAMP_TBL WHERE d1 <= cast(test_now as timestamp);
+INSERT INTO TIMESTAMP_TBL VALUES ((select test_now from test_now));
+INSERT INTO TIMESTAMP_TBL VALUES ((select test_now from test_now));
+SELECT count(*) AS two FROM TIMESTAMP_TBL WHERE d1 <= cast((select test_now from test_now) as timestamp);
 COMMIT;
 DELETE FROM TIMESTAMP_TBL;
+
+drop table test_now;
+drop table test_current_date;
 
 -- Special values
 INSERT INTO TIMESTAMP_TBL VALUES ('-infinity');

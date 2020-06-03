@@ -232,45 +232,6 @@ SQLepilogue(void *ret)
 	return MAL_SUCCEED;
 }
 
-#define SQLglobal(name, val) \
-	if (!stack_push_var(sql, name, &ctype) || !stack_set_var(sql, name, VALset(&src, ctype.type->localtype, (char*)(val)))) \
-		failure--;
-
-/* NR_GLOBAL_VAR should match exactly the number of variables created in global_variables */
-/* initialize the global variable, ie make mvc point to these */
-static int
-global_variables(mvc *sql, const char *user, const char *schema)
-{
-	sql_subtype ctype;
-	lng sec = 0;
-	ValRecord src;
-	const char *opt;
-	int failure = 0;
-
-	sql_find_subtype(&ctype, "int", 0, 0);
-	SQLglobal("debug", &sql->debug);
-	SQLglobal("cache", &sql->cache);
-
-	sql_find_subtype(&ctype,  "varchar", 1024, 0);
-	SQLglobal("current_schema", schema);
-	SQLglobal("current_user", user);
-	SQLglobal("current_role", user);
-
-	/* inherit the optimizer from the server */
-	opt = GDKgetenv("sql_optimizer");
-	if (!opt)
-		opt = "default_pipe";
-	SQLglobal("optimizer", opt);
-
-	sql_find_subtype(&ctype, "sec_interval", inttype2digits(ihour, isec), 0);
-	SQLglobal("current_timezone", &sec);
-
-	sql_find_subtype(&ctype, "bigint", 0, 0);
-	SQLglobal("last_id", &sql->last_id);
-	SQLglobal("rowcnt", &sql->rowcnt);
-	return failure;
-}
-
 static const char *
 SQLgetquery(Client c)
 {
@@ -299,15 +260,11 @@ SQLprepareClient(Client c, int login)
 			msg = createException(SQL,"sql.initClient", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			goto bailout;
 		}
-		if (global_variables(m, "monetdb", "sys") < 0) {
-			mvc_destroy(m);
-			msg = createException(SQL,"sql.initClient", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-			goto bailout;
-		}
 		if (c->scenario && strcmp(c->scenario, "msql") == 0)
 			m->reply_size = -1;
 		be = (void *) backend_create(m, c);
 		if ( be == NULL) {
+			mvc_destroy(m);
 			msg = createException(SQL,"sql.initClient", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			goto bailout;
 		}
@@ -1112,7 +1069,7 @@ SQLparser(Client c)
 		sqlcleanup(m, err);
 		goto finalize;
 	}
-	assert(m->session->schema != NULL);
+	assert(m->session->schema);
 	/*
 	 * We have dealt with the first parsing step and advanced the input reader
 	 * to the next statement (if any).

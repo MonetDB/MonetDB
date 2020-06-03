@@ -134,7 +134,7 @@ extern stmt *stmt_none(backend *be);
 
 //#define VAR_DECLARE 1
 #define VAR_GLOBAL(f) ((f>>1)==1)
-extern stmt *stmt_var(backend *be, const char *varname, sql_subtype *t, int declare, int level);
+extern stmt *stmt_var(backend *be, const char *sname, const char *varname, sql_subtype *t, int declare, int level);
 extern stmt *stmt_vars(backend *be, const char *varname, sql_table *t, int declare, int level);
 extern stmt *stmt_varnr(backend *be, int nr, sql_subtype *t);
 
@@ -235,7 +235,7 @@ extern stmt *stmt_affected_rows(backend *be, stmt *l);
 extern stmt *stmt_cond(backend *be, stmt *cond, stmt *outer, int loop, int anti);
 extern stmt *stmt_control_end(backend *be, stmt *cond);
 extern stmt *stmt_return(backend *be, stmt *val, int nr_of_declared_tables);
-extern stmt *stmt_assign(backend *be, const char *varname, stmt *val, int level);
+extern stmt *stmt_assign(backend *be, const char *sname, const char *varname, stmt *val, int level);
 
 extern sql_subtype *tail_type(stmt *st);
 extern int stmt_has_null(stmt *s);

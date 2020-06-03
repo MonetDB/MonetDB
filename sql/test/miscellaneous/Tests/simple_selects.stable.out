@@ -341,26 +341,31 @@ stdout of test 'simple_selects` in directory 'sql/test/miscellaneous` itself:
 % tinyint # type
 % 1 # length
 #drop table x;
-#DECLARE myvar bigint;
-#SET myvar = (SELECT COUNT(*) FROM sequences);
+#create table myvar (m bigint);
+#INSERT INTO myvar VALUES ((SELECT COUNT(*) FROM sequences));
+[ 1	]
 #create table x (a int GENERATED ALWAYS AS IDENTITY);
 #alter table x alter a set default 1; --ok, remove sequence
-#SELECT CAST(COUNT(*) - myvar AS BIGINT) FROM sequences; --the total count, cannot change
-% .%2 # table_name
-% %2 # name
+#SELECT CAST(COUNT(*) - (SELECT m FROM myvar) AS BIGINT) FROM sequences; --the total count, cannot change
+% .%4 # table_name
+% %4 # name
 % bigint # type
 % 1 # length
 [ 0	]
+#drop table myvar;
 #drop table x;
-#SET myvar = (SELECT COUNT(*) FROM sequences);
+#create table myvar (m bigint);
+#INSERT INTO myvar VALUES ((SELECT COUNT(*) FROM sequences));
+[ 1	]
 #create table x (a int GENERATED ALWAYS AS IDENTITY);
 #alter table x alter a drop default; --ok, remove sequence
-#SELECT CAST(COUNT(*) - myvar AS BIGINT) FROM sequences; --the total count, cannot change
-% .%2 # table_name
-% %2 # name
+#SELECT CAST(COUNT(*) - (SELECT m FROM myvar) AS BIGINT) FROM sequences; --the total count, cannot change
+% .%4 # table_name
+% %4 # name
 % bigint # type
 % 1 # length
 [ 0	]
+#drop table myvar;
 #drop table x;
 #declare table x (a int);
 #drop table if exists x;

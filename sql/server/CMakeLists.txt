@@ -32,6 +32,7 @@ target_sources(sqlserver
   sql_env.c
   sql_privileges.c
   sql_query.c
+  sql_var.c
   rel_semantic.c
   rel_select.c
   rel_updates.c

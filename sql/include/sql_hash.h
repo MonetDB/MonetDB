@@ -35,6 +35,7 @@ typedef struct sql_hash {
 extern sql_hash *hash_new(sql_allocator *sa, int size, fkeyvalue key);
 extern sql_hash_e *hash_add(sql_hash *ht, int key, void *value);
 extern void hash_del(sql_hash *ht, int key, void *value);
+extern void hash_destroy(sql_hash *h);
 
 extern unsigned int hash_key(const char *n);
 

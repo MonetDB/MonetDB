@@ -63,6 +63,12 @@ SELECT ColID FROM tbl_ProductSales WHERE CASE WHEN ColID IS NULL THEN CAST(Produ
 	-- 3
 	-- 4
 
+SELECT SUM((SELECT col1)) FROM another_t;
+	-- 1234
+
+SELECT SUM((SELECT CAST(EXISTS(SELECT col1) AS INT))) FROM another_t;
+	-- 4
+
 DROP TABLE tbl_ProductSales;
 DROP TABLE another_T;
 DROP TABLE integers;

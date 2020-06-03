@@ -37,9 +37,9 @@ CREATE VIEW v2 as select * from v1;
 drop view v1 cascade;
 
 
-select name from tables where name = 'v1';
-select name from tables where name = 'v2';
-select name from functions where name = 'f2';
+select name from sys.tables where name = 'v1';
+select name from sys.tables where name = 'v2';
+select name from sys.functions where name = 'f2';
 
 --just for debug
 --select * from dependencies;
