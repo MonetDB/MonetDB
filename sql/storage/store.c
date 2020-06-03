@@ -2269,6 +2269,7 @@ store_manager(void)
 		}
 
 		flusher_new_cycle();
+		store_funcs.cleanup();
 		MT_thread_setworking("sleeping");
 		TRC_DEBUG(SQL_STORE, "Store flusher done\n");
 	}
@@ -2277,6 +2278,7 @@ store_manager(void)
 	MT_lock_unset(&flush_lock);
 }
 
+#if 0
 void
 idle_manager(void)
 {
@@ -2304,6 +2306,7 @@ idle_manager(void)
 	}
 	MT_lock_unset(&flush_lock);
 }
+#endif
 
 void
 store_lock(void)

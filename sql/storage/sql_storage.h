@@ -329,7 +329,7 @@ extern void store_resume_log(void);
 extern lng store_hot_snapshot(str tarfile);
 
 extern void store_manager(void);
-extern void idle_manager(void);
+//extern void idle_manager(void);
 
 extern void store_lock(void);
 extern void store_unlock(void);

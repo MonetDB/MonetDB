@@ -416,11 +416,13 @@ mvc_logmanager(void)
 	store_manager();
 }
 
+/*
 void
 mvc_idlemanager(void)
 {
 	idle_manager();
 }
+*/
 
 int
 mvc_status(mvc *m)

@@ -33,9 +33,19 @@ typedef struct segment {
 	struct segment *next;	/* usualy one should be enough */
 } segment;
 
+/* container structure too allow sharing this structure */ 
+typedef struct segments {
+	sql_ref r;
+	//BUN start;
+	BUN end;	/* current end */
+	struct segment *head;
+} segments;
+
 typedef struct storage {
 	column_storage cs;
-	segment segs;	/* local used segements */
+	//BUN start;
+	BUN end;
+	segments *segs;	/* local used segements */
 	struct storage *next;
 } storage;
 
