@@ -625,11 +625,15 @@ command daytime(t:timestamp) :daytime address MTIMEtimestamp_extract_daytime;
 
 module batcalc;
 
+command date(s:bat[:str]) :bat[:date]
+address MTIMEdate_fromstr_bulk;
 command date(d:bat[:date]) :bat[:date]
 address MTIMEdate_date_bulk;
 command date(t:bat[:timestamp]) :bat[:date]
 address MTIMEtimestamp_extract_date_bulk;
 
+command timestamp(s:bat[:str]) :bat[:timestamp]
+address MTIMEtimestamp_fromstr_bulk;
 command timestamp(t:bat[:timestamp]) :bat[:timestamp]
 address MTIMEtimestamp_timestamp_bulk;
 command timestamp(d:bat[:date]) :bat[:timestamp]
@@ -639,6 +643,8 @@ address MTIMEtimestamp_fromsecond_bulk;
 command timestamp(msecs:bat[:lng]) :bat[:timestamp]
 address MTIMEtimestamp_frommsec_bulk;
 
+command daytime(s:bat[:str]) :bat[:daytime]
+address MTIMEdaytime_fromstr_bulk;
 command daytime(d:bat[:daytime]) :bat[:daytime]
 address MTIMEdaytime_daytime_bulk;
 command daytime(s:bat[:lng]) :bat[:daytime]
