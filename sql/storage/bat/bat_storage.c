@@ -57,6 +57,7 @@ static size_t
 count_col(sql_trans *tr, sql_column *c, int access)
 {
 	storage *d;
+	sql_delta *ds;
 	sql_table *t = c->t;
 
 	if (!isTable(c->t)) 
@@ -65,11 +66,16 @@ count_col(sql_trans *tr, sql_column *c, int access)
 		sql_table *ot = tr_find_table(tr->parent, t);
 		t->data = timestamp_dbat(ot->data, t->base.stime);
 	}
+	if (!c->data) {
+		sql_column *oc = tr_find_column(tr->parent, c);
+		c->data = timestamp_delta(oc->data, c->base.stime);
+	}
 	d = t->data;
+	ds = c->data;
 	if (!d)
 		return 0;
 	if (access == 2) 
-		return d->cs.ucnt;
+		return ds?ds->cs.ucnt:0;
 	if (access == 1)
 		return count_inserts(d->segs->head, tr);
 	return d->end;
@@ -99,6 +105,7 @@ static size_t
 count_idx(sql_trans *tr, sql_idx *i, int access)
 {
 	storage *d;
+	sql_delta *ds;
 	sql_table *t = i->t;
 
 	if (!isTable(i->t) || (hash_index(i->type) && list_length(i->columns) <= 1) || !idx_has_column(i->type)) 
@@ -107,11 +114,16 @@ count_idx(sql_trans *tr, sql_idx *i, int access)
 		sql_table *ot = tr_find_table(tr->parent, t);
 		t->data = timestamp_dbat(ot->data, t->base.stime);
 	}
+	if (!i->data) {
+		sql_idx *oi = tr_find_idx(tr->parent, i);
+		i->data = timestamp_delta(oi->data, i->base.stime);
+	}
 	d = t->data;
+	ds = i->data;
 	if (!d)
 		return 0;
 	if (access == 2) 
-		return d->cs.ucnt;
+		return ds?ds->cs.ucnt:0;
 	if (access == 1)
 		return count_inserts(d->segs->head, tr);
 	return d->end;
