@@ -2650,6 +2650,8 @@ hot_snapshot_write_tar(stream *out, const char *prefix, char *plan)
 	char a;
 	a = '\0';
 	ret = tar_write(out, &a, 1);
+	if (ret == GDK_SUCCEED)
+		ret = tar_write(out, &a, 1);
 
 end:
 	free(plan);
