@@ -949,6 +949,7 @@ BUN BLOBhash(const blob *b);
 void BLOBheap(Heap *heap, size_t capacity);
 size_t BLOBlength(const blob *p);
 str BLOBnitems(int *ret, blob **b);
+str BLOBnitems_bulk(bat *ret, const bat *bid);
 const blob *BLOBnull(void);
 str BLOBprelude(void *ret);
 var_t BLOBput(Heap *h, var_t *bun, const blob *val);

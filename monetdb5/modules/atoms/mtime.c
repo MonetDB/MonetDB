@@ -95,7 +95,6 @@ NAMEBULK(bat *ret, const bat *bid)										\
 	}																	\
 	n = BATcount(b);													\
 	if ((bn = COLnew(b->hseqbase, TYPE_##OUTYPE, n, TRANSIENT)) == NULL) { \
-		BBPunfix(b->batCacheid);										\
 		msg = createException(MAL, "batmtime." MALFUNC, 				\
 			  SQLSTATE(HY013) MAL_MALLOC_FAIL); 						\
 		goto bailout;													\
@@ -148,25 +147,17 @@ NAMEBULK(bat *ret, const bat *bid1, const bat *bid2)					\
 	b1 = BATdescriptor(*bid1);											\
 	b2 = BATdescriptor(*bid2);											\
 	if (b1 == NULL || b2 == NULL) {										\
-		if (b1)															\
-			BBPunfix(b1->batCacheid);									\
-		if (b2)															\
-			BBPunfix(b2->batCacheid);									\
 		msg = createException(MAL, "batmtime." MALFUNC,					\
 			  SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);					\
 		goto bailout;													\
 	}																	\
 	n = BATcount(b1);													\
 	if (n != BATcount(b2)) {											\
-		BBPunfix(b1->batCacheid);										\
-		BBPunfix(b2->batCacheid);										\
 		msg = createException(MAL, "batmtime." MALFUNC, 				\
 			  "inputs not the same size");								\
 		goto bailout;													\
 	}																	\
 	if ((bn = COLnew(b1->hseqbase, TYPE_##OUTTYPE, n, TRANSIENT)) == NULL) { \
-		BBPunfix(b1->batCacheid);										\
-		BBPunfix(b2->batCacheid);										\
 		msg = createException(MAL, "batmtime." MALFUNC, 				\
 			  SQLSTATE(HY013) MAL_MALLOC_FAIL); 						\
 		goto bailout;													\
