@@ -189,6 +189,10 @@ command date_sub_msec_interval(t:date,ms:lng):date
 address MTIMEdate_sub_msec_interval;
 command batmtime.date_sub_msec_interval(t:bat[:date],ms:bat[:lng]):bat[:date]
 address MTIMEdate_sub_msec_interval_bulk;
+command batmtime.date_sub_msec_interval(t:date,ms:bat[:lng]):bat[:date]
+address MTIMEdate_sub_msec_interval_bulk_p1;
+command batmtime.date_sub_msec_interval(t:bat[:date],ms:lng):bat[:date]
+address MTIMEdate_sub_msec_interval_bulk_p2;
 
 # command date_add_sec_interval(t:date,s:int):date
 # address MTIMEdate_add_sec_interval_wrap
@@ -197,21 +201,38 @@ command date_add_msec_interval(t:date,ms:lng):date
 address MTIMEdate_add_msec_interval;
 command batmtime.date_add_msec_interval(t:bat[:date],ms:bat[:lng]):bat[:date]
 address MTIMEdate_add_msec_interval_bulk;
+command batmtime.date_add_msec_interval(t:date,ms:bat[:lng]):bat[:date]
+address MTIMEdate_add_msec_interval_bulk_p1;
+command batmtime.date_add_msec_interval(t:bat[:date],ms:lng):bat[:date]
+address MTIMEdate_add_msec_interval_bulk_p2;
 
 command timestamp_sub_msec_interval(t:timestamp,ms:lng):timestamp
 address MTIMEtimestamp_sub_msec_interval;
 command batmtime.timestamp_sub_msec_interval(t:bat[:timestamp],ms:bat[:lng]):bat[:timestamp]
 address MTIMEtimestamp_sub_msec_interval_bulk;
+command batmtime.timestamp_sub_msec_interval(t:timestamp,ms:bat[:lng]):bat[:timestamp]
+address MTIMEtimestamp_sub_msec_interval_bulk_p1;
+command batmtime.timestamp_sub_msec_interval(t:bat[:timestamp],ms:lng):bat[:timestamp]
+address MTIMEtimestamp_sub_msec_interval_bulk_p2;
+
 command timestamp_add_msec_interval(t:timestamp,ms:lng):timestamp
 address MTIMEtimestamp_add_msec_interval;
 command batmtime.timestamp_add_msec_interval(t:bat[:timestamp],ms:bat[:lng]):bat[:timestamp]
 address MTIMEtimestamp_add_msec_interval_bulk;
+command batmtime.timestamp_add_msec_interval(t:timestamp,ms:bat[:lng]):bat[:timestamp]
+address MTIMEtimestamp_add_msec_interval_bulk_p1;
+command batmtime.timestamp_add_msec_interval(t:bat[:timestamp],ms:lng):bat[:timestamp]
+address MTIMEtimestamp_add_msec_interval_bulk_p2;
 
 command timestamp_sub_month_interval(t:timestamp,s:int):timestamp
 address MTIMEtimestamp_sub_month_interval
 comment "Subtract months from a timestamp";
 command batmtime.timestamp_sub_month_interval(t:bat[:timestamp],s:bat[:int]):bat[:timestamp]
 address MTIMEtimestamp_sub_month_interval_bulk;
+command batmtime.timestamp_sub_month_interval(t:timestamp,s:bat[:int]):bat[:timestamp]
+address MTIMEtimestamp_sub_month_interval_bulk_p1;
+command batmtime.timestamp_sub_month_interval(t:bat[:timestamp],s:int):bat[:timestamp]
+address MTIMEtimestamp_sub_month_interval_bulk_p2;
 
 # command timestamp_sub_month_interval(t:timestamp,s:lng):timestamp
 # address MTIMEtimestamp_sub_month_interval_lng_wrap
@@ -222,6 +243,10 @@ address MTIMEtimestamp_add_month_interval
 comment "Add months to a timestamp";
 command batmtime.timestamp_add_month_interval(t:bat[:timestamp],s:bat[:int]):bat[:timestamp]
 address MTIMEtimestamp_add_month_interval_bulk;
+command batmtime.timestamp_add_month_interval(t:timestamp,s:bat[:int]):bat[:timestamp]
+address MTIMEtimestamp_add_month_interval_bulk_p1;
+command batmtime.timestamp_add_month_interval(t:bat[:timestamp],s:int):bat[:timestamp]
+address MTIMEtimestamp_add_month_interval_bulk_p2;
 
 # command timestamp_add_month_interval(t:timestamp,s:lng):timestamp
 # address MTIMEtimestamp_add_month_interval_lng_wrap
@@ -235,11 +260,20 @@ address MTIMEtime_sub_msec_interval
 comment "Subtract seconds from a time";
 command batmtime.time_sub_msec_interval(t:bat[:daytime],ms:bat[:lng]):bat[:daytime]
 address MTIMEtime_sub_msec_interval_bulk;
+command batmtime.time_sub_msec_interval(t:daytime,ms:bat[:lng]):bat[:daytime]
+address MTIMEtime_sub_msec_interval_bulk_p1;
+command batmtime.time_sub_msec_interval(t:bat[:daytime],ms:lng):bat[:daytime]
+address MTIMEtime_sub_msec_interval_bulk_p2;
+
 command time_add_msec_interval(t:daytime,ms:lng):daytime
 address MTIMEtime_add_msec_interval
 comment "Add seconds to a time";
 command batmtime.time_add_msec_interval(t:bat[:daytime],ms:bat[:lng]):bat[:daytime]
 address MTIMEtime_add_msec_interval_bulk;
+command batmtime.time_add_msec_interval(t:daytime,ms:bat[:lng]):bat[:daytime]
+address MTIMEtime_add_msec_interval_bulk_p1;
+command batmtime.time_add_msec_interval(t:bat[:daytime],ms:lng):bat[:daytime]
+address MTIMEtime_add_msec_interval_bulk_p2;
 
 command diff(val1:daytime, val2:daytime) :lng
 address MTIMEdaytime_diff_msec
@@ -252,8 +286,12 @@ comment "returns the number of msec between 'val1' and 'val2'.";
 command date_sub_month_interval(t:date,months:int):date
 address MTIMEdate_submonths
 comment "Subtract months from a date";
-command batmtime.date_sub_month_interval(value:bat[:date],months:bat[:int]):bat[:date]
+command batmtime.date_sub_month_interval(t:bat[:date],months:bat[:int]):bat[:date]
 address MTIMEdate_submonths_bulk;
+command batmtime.date_sub_month_interval(t:date,months:bat[:int]):bat[:date]
+address MTIMEdate_submonths_bulk_p1;
+command batmtime.date_sub_month_interval(t:bat[:date],months:int):bat[:date]
+address MTIMEdate_submonths_bulk_p2;
 
 # @-
 # #command int(d:date):int = MTIMEdate_2int;
@@ -398,6 +436,11 @@ comment "returns the date after a number of
 	months (possibly negative).";
 command batmtime.addmonths(value:bat[:date],months:bat[:int]):bat[:date]
 address MTIMEdate_addmonths_bulk;
+command batmtime.addmonths(value:date,months:bat[:int]):bat[:date]
+address MTIMEdate_addmonths_bulk_p1;
+command batmtime.addmonths(value:bat[:date],months:int):bat[:date]
+address MTIMEdate_addmonths_bulk_p2;
+
 # command adddays(value:date, days:int) :date
 # address MTIMEdate_adddays
 # comment "returns the date after a number
@@ -468,36 +511,60 @@ address MTIMEstr_to_date
 comment "create a date from the string, using the specified format (see man strptime)";
 command batmtime.str_to_date(s:bat[:str], format:bat[:str]) :bat[:date]
 address MTIMEstr_to_date_bulk;
+command batmtime.str_to_date(s:str, format:bat[:str]) :bat[:date]
+address MTIMEstr_to_date_bulk_p1;
+command batmtime.str_to_date(s:bat[:str], format:str) :bat[:date]
+address MTIMEstr_to_date_bulk_p2;
 
 command date_to_str(d:date, format:str) :str
 address MTIMEdate_to_str
 comment "create a string from the date, using the specified format (see man strftime)";
 command batmtime.date_to_str(d:bat[:str], format:bat[:str]) :bat[:str]
 address MTIMEdate_to_str_bulk;
+command batmtime.date_to_str(d:date, format:bat[:str]) :bat[:str]
+address MTIMEdate_to_str_bulk_p1;
+command batmtime.date_to_str(d:bat[:date], format:str) :bat[:str]
+address MTIMEdate_to_str_bulk_p2;
 
 command str_to_time(s:str, format:str) :daytime
 address MTIMEstr_to_time
 comment "create a time from the string, using the specified format (see man strptime)";
 command batmtime.str_to_time(s:bat[:str], format:bat[:str]) :bat[:daytime]
 address MTIMEstr_to_time_bulk;
+command batmtime.str_to_time(s:str, format:bat[:str]) :bat[:daytime]
+address MTIMEstr_to_time_bulk_p1;
+command batmtime.str_to_time(s:bat[:str], format:str) :bat[:daytime]
+address MTIMEstr_to_time_bulk_p2;
 
 command time_to_str(d:daytime, format:str) :str
 address MTIMEtime_to_str
 comment "create a string from the time, using the specified format (see man strftime)";
 command batmtime.time_to_str(d:bat[:daytime], format:bat[:str]) :bat[:str]
 address MTIMEtime_to_str_bulk;
+command batmtime.time_to_str(d:daytime, format:bat[:str]) :bat[:str]
+address MTIMEtime_to_str_bulk_p1;
+command batmtime.time_to_str(d:bat[:daytime], format:str) :bat[:str]
+address MTIMEtime_to_str_bulk_p2;
 
 command str_to_timestamp(s:str, format:str) :timestamp
 address MTIMEstr_to_timestamp
 comment "create a timestamp from the string, using the specified format (see man strptime)";
 command batmtime.str_to_timestamp(d:bat[:str], format:bat[:str]) :bat[:timestamp]
 address MTIMEstr_to_timestamp_bulk;
+command batmtime.str_to_timestamp(s:str, format:bat[:str]) :bat[:timestamp]
+address MTIMEstr_to_timestamp_bulk_p1;
+command batmtime.str_to_timestamp(s:bat[:str], format:str) :bat[:timestamp]
+address MTIMEstr_to_timestamp_bulk_p2;
 
 command timestamp_to_str(d:timestamp, format:str) :str
 address MTIMEtimestamp_to_str
 comment "create a string from the time, using the specified format (see man strftime)";
 command batmtime.timestamp_to_str(d:bat[:timestamp], format:bat[:str]) :bat[:str]
 address MTIMEtimestamp_to_str_bulk;
+command batmtime.timestamp_to_str(d:timestamp, format:bat[:str]) :bat[:str]
+address MTIMEtimestamp_to_str_bulk_p1;
+command batmtime.timestamp_to_str(d:bat[:timestamp], format:str) :bat[:str]
+address MTIMEtimestamp_to_str_bulk_p2;
 
 # @+ Utilities
 # The Monet V4 procs are converted into functions.
