@@ -49,12 +49,6 @@ mal_export str MTIMEdaytime_fromstr(daytime *ret, const char *const *s);
 mal_export str MTIMEdaytime_fromseconds(daytime *ret, const lng *secs);
 mal_export str MTIMEdaytime_fromseconds_bulk(bat *ret, bat *bid);
 mal_export str MTIMElocal_timezone_msec(lng *ret);
-mal_export str MTIMEstr_to_date(date *ret, const char *const *s, const char *const *format);
-mal_export str MTIMEdate_to_str(str *ret, const date *d, const char *const *format);
-mal_export str MTIMEstr_to_time(daytime *ret, const char *const *s, const char *const *format);
-mal_export str MTIMEtime_to_str(str *ret, const daytime *d, const char *const *format);
-mal_export str MTIMEstr_to_timestamp(timestamp *ret, const char *const *s, const char *const *format);
-mal_export str MTIMEtimestamp_to_str(str *ret, const timestamp *d, const char *const *format);
 
 str
 MTIMEcurrent_date(date *ret)
@@ -119,14 +113,17 @@ NAMEBULK(bat *ret, const bat *bid)										\
 	return MAL_SUCCEED;													\
 }
 
-#define func2(NAME, NAMEBULK, MALFUNC, INTYPE1, INTYPE2, OUTTYPE, FUNC)	\
+#define func2(NAME, NAMEBULK, MALFUNC, INTYPE1, INTYPE2, OUTTYPE, FUNC, FUNC_CALL)	\
 mal_export str NAME(OUTTYPE *ret, const INTYPE1 *v1, const INTYPE2 *v2); \
 mal_export str NAMEBULK(bat *ret, const bat *bid1, const bat *bid2);	\
 str																		\
 NAME(OUTTYPE *ret, const INTYPE1 *v1, const INTYPE2 *v2)				\
 {																		\
-	*ret = FUNC(*v1, *v2);												\
-	return MAL_SUCCEED;													\
+	str msg = MAL_SUCCEED; 												\
+	do {																\
+		FUNC_CALL(FUNC, (*ret), *v1, *v2);								\
+	} while (0);														\
+	return msg;															\
 }																		\
 str																		\
 NAMEBULK(bat *ret, const bat *bid1, const bat *bid2)					\
@@ -136,6 +133,7 @@ NAMEBULK(bat *ret, const bat *bid1, const bat *bid2)					\
 	const INTYPE1 *src1;												\
 	const INTYPE2 *src2;												\
 	OUTTYPE *dst;														\
+	str msg = MAL_SUCCEED; 												\
 																		\
 	b1 = BATdescriptor(*bid1);											\
 	b2 = BATdescriptor(*bid2);											\
@@ -144,25 +142,30 @@ NAMEBULK(bat *ret, const bat *bid1, const bat *bid2)					\
 			BBPunfix(b1->batCacheid);									\
 		if (b2)															\
 			BBPunfix(b2->batCacheid);									\
-		throw(MAL, "batmtime." MALFUNC,									\
+		msg = createException(MAL, "batmtime." MALFUNC,					\
 			  SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);					\
+		goto bailout;													\
 	}																	\
 	n = BATcount(b1);													\
 	if (n != BATcount(b2)) {											\
 		BBPunfix(b1->batCacheid);										\
 		BBPunfix(b2->batCacheid);										\
-		throw(MAL, "batmtime." MALFUNC, "inputs not the same size");	\
+		msg = createException(MAL, "batmtime." MALFUNC, 				\
+			  "inputs not the same size");								\
+		goto bailout;													\
 	}																	\
 	if ((bn = COLnew(b1->hseqbase, TYPE_##OUTTYPE, n, TRANSIENT)) == NULL) { \
 		BBPunfix(b1->batCacheid);										\
 		BBPunfix(b2->batCacheid);										\
-		throw(MAL, "batmtime." MALFUNC, SQLSTATE(HY013) MAL_MALLOC_FAIL); \
+		msg = createException(MAL, "batmtime." MALFUNC, 				\
+			  SQLSTATE(HY013) MAL_MALLOC_FAIL); 						\
+		goto bailout;													\
 	}																	\
 	src1 = Tloc(b1, 0);													\
 	src2 = Tloc(b2, 0);													\
 	dst = Tloc(bn, 0);													\
 	for (BUN i = 0; i < n; i++) {										\
-		dst[i] = FUNC(src1[i], src2[i]);								\
+		FUNC_CALL(FUNC, (dst[i]), src1[i], src2[i]);					\
 	}																	\
 	bn->tnonil = b1->tnonil & b2->tnonil;								\
 	bn->tnil = b1->tnil | b2->tnil;										\
@@ -170,14 +173,23 @@ NAMEBULK(bat *ret, const bat *bid1, const bat *bid2)					\
 	bn->tsorted = n < 2;												\
 	bn->trevsorted = n < 2;												\
 	bn->tkey = false;													\
-	BBPunfix(b1->batCacheid);											\
-	BBPunfix(b2->batCacheid);											\
-	BBPkeepref(*ret = bn->batCacheid);									\
-	return MAL_SUCCEED;													\
+bailout: 																\
+	if (b1)																\
+		BBPunfix(b1->batCacheid);										\
+	if (b2) 															\
+		BBPunfix(b2->batCacheid);										\
+	if (msg && bn)														\
+		BBPreclaim(bn);													\
+	else if (bn) 														\
+		BBPkeepref(*ret = bn->batCacheid);								\
+	return msg;															\
 }
 
-func2(MTIMEdate_diff, MTIMEdate_diff_bulk, "diff", date, date, int, date_diff)
-func2(MTIMEdaytime_diff_msec, MTIMEdaytime_diff_msec_bulk, "diff", daytime, daytime, lng, daytime_diff)
+#define func2_noexcept(FUNC, RET, PARAM1, PARAM2) RET = FUNC(PARAM1, PARAM2)
+#define func2_except(FUNC, RET, PARAM1, PARAM2) msg = FUNC(&RET, PARAM1, PARAM2); if (msg) break;
+
+func2(MTIMEdate_diff, MTIMEdate_diff_bulk, "diff", date, date, int, date_diff, func2_noexcept)
+func2(MTIMEdaytime_diff_msec, MTIMEdaytime_diff_msec_bulk, "diff", daytime, daytime, lng, daytime_diff, func2_noexcept)
 
 #define func2chk(NAME, NAMEBULK, MALFUNC, INTYPE1, INTYPE2, OUTTYPE, FUNC)	\
 mal_export str NAME(OUTTYPE *ret, const INTYPE1 *v1, const INTYPE2 *v2); \
@@ -284,8 +296,8 @@ time_add_msec_interval(const daytime t, const lng ms)
 		return daytime_nil;
 	return daytime_add_usec_modulo(t, ms * 1000);
 }
-func2(MTIMEtime_sub_msec_interval, MTIMEtime_sub_msec_interval_bulk, "time_sub_msec_interval", daytime, lng, daytime, time_sub_msec_interval)
-func2(MTIMEtime_add_msec_interval, MTIMEtime_add_msec_interval_bulk, "time_add_msec_interval", daytime, lng, daytime, time_add_msec_interval)
+func2(MTIMEtime_sub_msec_interval, MTIMEtime_sub_msec_interval_bulk, "time_sub_msec_interval", daytime, lng, daytime, time_sub_msec_interval, func2_noexcept)
+func2(MTIMEtime_add_msec_interval, MTIMEtime_add_msec_interval_bulk, "time_add_msec_interval", daytime, lng, daytime, time_add_msec_interval, func2_noexcept)
 
 #define date_submonths(d, m) date_add_month(d, -m)
 #define date_addmonths(d, m) date_add_month(d, m)
@@ -321,7 +333,7 @@ TSDIFF(timestamp t1, timestamp t2)
 	}
 	return diff;
 }
-func2(MTIMEtimestamp_diff_msec, MTIMEtimestamp_diff_msec_bulk, "diff", timestamp, timestamp, lng, TSDIFF)
+func2(MTIMEtimestamp_diff_msec, MTIMEtimestamp_diff_msec_bulk, "diff", timestamp, timestamp, lng, TSDIFF, func2_noexcept)
 
 static inline int
 timestamp_century(const timestamp t)
@@ -629,51 +641,56 @@ str_to_timestamp(timestamp *ret, const char *const *s, const char *const *format
 	return MAL_SUCCEED;
 }
 
-str
-MTIMEstr_to_date(date *ret, const char *const *s, const char *const *format)
+static inline str
+str_to_date(date *ret, const char *const s, const char *const format)
 {
+	str msg = MAL_SUCCEED;
 	timestamp ts;
-	str msg = str_to_timestamp(&ts, s, format, "date", "mtime.str_to_date");
-	if (msg != MAL_SUCCEED)
+	if ((msg = str_to_timestamp(&ts, &s, &format, "date", "mtime.str_to_date")) != MAL_SUCCEED)
 		return msg;
 	*ret = timestamp_date(ts);
 	return MAL_SUCCEED;
 }
+func2(MTIMEstr_to_date, MTIMEstr_to_date_bulk, "str_to_date", const char *const, const char *const, date, str_to_date, func2_except)
 
-str
-MTIMEdate_to_str(str *ret, const date *d, const char *const *format)
+static inline str
+date_to_str(str *ret, const date d, const char *const format)
 {
-	timestamp ts = timestamp_create(*d, timestamp_daytime(timestamp_current()));
-	return timestamp_to_str(ret, &ts, format, "date", "mtime.date_to_str");
+	timestamp ts = timestamp_create(d, timestamp_daytime(timestamp_current()));
+	return timestamp_to_str(ret, &ts, &format, "date", "mtime.date_to_str");
 }
+func2(MTIMEdate_to_str, MTIMEdate_to_str_bulk, "date_to_str", const date, const char *const, str, date_to_str, func2_except)
 
-str
-MTIMEstr_to_time(daytime *ret, const char *const *s, const char *const *format)
+static inline str
+str_to_time(daytime *ret, const char *const s, const char *const format)
 {
+	str msg = MAL_SUCCEED;
 	timestamp ts;
-	str msg = str_to_timestamp(&ts, s, format, "time", "mtime.str_to_time");
-	if (msg != MAL_SUCCEED)
+	if ((msg = str_to_timestamp(&ts, &s, &format, "time", "mtime.str_to_time")) != MAL_SUCCEED)
 		return msg;
 	*ret = timestamp_daytime(ts);
 	return MAL_SUCCEED;
 }
+func2(MTIMEstr_to_time, MTIMEstr_to_time_bulk, "str_to_time", const char *const, const char *const, daytime, str_to_time, func2_except)
 
-str
-MTIMEtime_to_str(str *ret, const daytime *d, const char *const *format)
+static inline str
+time_to_str(str *ret, const daytime d, const char *const format)
 {
-	timestamp ts = timestamp_create(timestamp_date(timestamp_current()), *d);
-	return timestamp_to_str(ret, &ts, format, "time", "mtime.time_to_str");
+	timestamp ts = timestamp_create(timestamp_date(timestamp_current()), d);
+	return timestamp_to_str(ret, &ts, &format, "time", "mtime.time_to_str");
 }
+func2(MTIMEtime_to_str, MTIMEtime_to_str_bulk, "time_to_str", const daytime, const char *const, str, time_to_str, func2_except)
 
-str
-MTIMEstr_to_timestamp(timestamp *ret, const char *const *s, const char *const *format)
+static inline str
+str_to_timestamp_func(timestamp *ret, const char *const s, const char *const format)
 {
-	return str_to_timestamp(ret, s, format, "timestamp", "mtime.str_to_timestamp");
+	return str_to_timestamp(ret, &s, &format, "timestamp", "mtime.str_to_timestamp");
 }
+func2(MTIMEstr_to_timestamp, MTIMEstr_to_timestamp_bulk, "str_to_timestamp", const char *const, const char *const, timestamp, str_to_timestamp_func, func2_except)
 
-str
-MTIMEtimestamp_to_str(str *ret, const timestamp *d, const char *const *format)
+static inline str
+timestamp_to_str_func(str *ret, const timestamp d, const char *const format)
 {
-	return timestamp_to_str(ret, d, format,
-							"timestamp", "mtime.timestamp_to_str");
+	return timestamp_to_str(ret, &d, &format, "timestamp", "mtime.timestamp_to_str");
 }
+func2(MTIMEtimestamp_to_str, MTIMEtimestamp_to_str_bulk, "timestamp_to_str", const timestamp, const char *const, str, timestamp_to_str_func, func2_except)
