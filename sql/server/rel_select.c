@@ -4471,7 +4471,7 @@ rel_order_by_column_exp(sql_query *query, sql_rel **R, symbol *column_r, int f)
 {
 	mvc *sql = query->sql;
 	sql_rel *r = *R, *p = NULL;
-	sql_exp *e = NULL;
+	sql_exp *e = NULL, *found = NULL;
 	exp_kind ek = {type_value, card_column, FALSE};
 
 	if (!r)
@@ -4489,15 +4489,19 @@ rel_order_by_column_exp(sql_query *query, sql_rel **R, symbol *column_r, int f)
 	else if (r)
 		p->l = r;
 	if (e && p) {
-		e = rel_project_add_exp(sql, p, e);
-		for (node *n = p->exps->h ; n ; n = n->next) {
-			sql_exp *ee = n->data;
+		if (is_project(p->op) && (found = exps_any_match(p->exps, e))) { /* if one of the projections matches, return a reference to it */
+			e = exp_ref(sql, found);
+		} else {
+			e = rel_project_add_exp(sql, p, e);
+			for (node *n = p->exps->h ; n ; n = n->next) {
+				sql_exp *ee = n->data;
 
-			if (ee->card > r->card) {
-				if (exp_name(ee))
-					return sql_error(sql, ERR_GROUPBY, SQLSTATE(42000) "SELECT: cannot use non GROUP BY column '%s' in query results without an aggregate function", exp_name(ee));
-				else
-					return sql_error(sql, ERR_GROUPBY, SQLSTATE(42000) "SELECT: cannot use non GROUP BY column in query results without an aggregate function");
+				if (ee->card > r->card) {
+					if (exp_name(ee))
+						return sql_error(sql, ERR_GROUPBY, SQLSTATE(42000) "SELECT: cannot use non GROUP BY column '%s' in query results without an aggregate function", exp_name(ee));
+					else
+						return sql_error(sql, ERR_GROUPBY, SQLSTATE(42000) "SELECT: cannot use non GROUP BY column in query results without an aggregate function");
+				}
 			}
 		}
 		return e;
