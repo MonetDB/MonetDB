@@ -207,7 +207,7 @@ BLOBnitems_bulk(bat *ret, const bat *bid)
 	BATiter bi;
 
 	if ((b = BATdescriptor(*bid)) == NULL)	{
-		throw(MAL, "blob.nitems_bulk", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
+		msg = createException(MAL, "blob.nitems_bulk", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 		goto bailout;
 	}
 	n = BATcount(b);

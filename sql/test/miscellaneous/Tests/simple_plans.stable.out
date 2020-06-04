@@ -6,6 +6,28 @@ stdout of test 'simple_plans` in directory 'sql/test/miscellaneous` itself:
 # 11:57:38 >  
 
 #start transaction;
+#create table myy (col1 int, col2 int);
+#insert into myy values (1, 1), (2, 0), (3,3), (4,2);
+[ 4	]
+#select distinct col1 + col2 from myy order by col1 + col2;
+% sys.%2 # table_name
+% %2 # name
+% bigint # type
+% 1 # length
+[ 2	]
+[ 6	]
+#plan select distinct col1 + col2 from myy order by col1 + col2;
+% .plan # table_name
+% rel # name
+% clob # type
+% 110 # length
+project (
+| group by (
+| | project (
+| | | table(sys.myy) [ "myy"."col1", "myy"."col2" ] COUNT 
+| | ) [ sys.sql_add(bigint["myy"."col1"] as "myy"."col1", bigint["myy"."col2"] as "myy"."col2") as "%2"."%2" ]
+| ) [ "%2"."%2" ] [ "%2"."%2" ]
+) [ "%2"."%2" ] [ "%2"."%2" ASC ]
 #create table myx (x uuid, y uuid);
 #plan select * from myx where x in ('1aea00e5db6e0810b554fde31d961965') or y = '1aea00e5db6e0810b554fde31d961965';
 % .plan # table_name
