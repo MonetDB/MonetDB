@@ -1640,13 +1640,14 @@ rewrite_empty_project(mvc *sql, sql_rel *rel, int *changes)
 }
 
 static sql_exp *
-exp_reset_card(mvc *sql, sql_rel *rel, sql_exp *e, int depth, int *changes)
+exp_reset_card_and_freevar(mvc *sql, sql_rel *rel, sql_exp *e, int depth, int *changes)
 {
 	(void)sql;
 	(void)depth;
 	(void)changes;
 
-	if (!e || !rel || !rel->l)
+	reset_freevar(e); /* unnesting is done, we can remove the freevar flag */
+	if (!rel->l)
 		return e;
 	if (is_groupby(rel->op)) {
 		switch(e->type) {
@@ -3162,6 +3163,6 @@ rel_unnest(mvc *sql, sql_rel *rel)
 	rel = rel_visitor_bottomup(sql, rel, &rewrite_groupings, &changes);	/* transform group combinations into union of group relations */
 	rel = rel_visitor_bottomup(sql, rel, &rewrite_empty_project, &changes);
 	// needed again! 
-	rel = rel_exp_visitor_bottomup(sql, rel, &exp_reset_card, &changes);
+	rel = rel_exp_visitor_bottomup(sql, rel, &exp_reset_card_and_freevar, &changes);
 	return rel;
 }

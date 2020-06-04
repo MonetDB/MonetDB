@@ -1631,7 +1631,7 @@ str MTIMEdaytime_extract_minutes(int *ret, const daytime *src);
 str MTIMEdaytime_extract_minutes_bulk(bat *ret, const bat *bid);
 str MTIMEdaytime_extract_sql_seconds(int *ret, const daytime *src);
 str MTIMEdaytime_extract_sql_seconds_bulk(bat *ret, const bat *bid);
-str MTIMEdaytime_fromseconds(daytime *ret, const const lng *src);
+str MTIMEdaytime_fromseconds(daytime *ret, const lng *src);
 str MTIMEdaytime_fromseconds_bulk(bat *ret, const bat *bid);
 str MTIMEdaytime_fromstr(daytime *ret, const str *src);
 str MTIMEdaytime_fromstr_bulk(bat *ret, const bat *bid);

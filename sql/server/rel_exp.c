@@ -1325,6 +1325,19 @@ exp_match_exp( sql_exp *e1, sql_exp *e2)
 	return 0;
 }
 
+sql_exp *
+exps_any_match(list *l, sql_exp *e)
+{
+	if (!l)
+		return NULL;
+	for (node *n = l->h; n ; n = n->next) {
+		sql_exp *ne = (sql_exp *) n->data;
+		if (exp_match_exp(ne, e))
+			return ne;
+	}
+	return NULL;
+}
+
 static int
 exps_are_joins( list *l )
 {
