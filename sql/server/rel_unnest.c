@@ -475,7 +475,7 @@ rel_dependent_var(mvc *sql, sql_rel *l, sql_rel *r)
 /*
  * try to bind any freevar in the expression e
  */
-static void
+void
 rel_bind_var(mvc *sql, sql_rel *rel, sql_exp *e)
 {
 	list *fvs = exp_freevar(sql, e);
