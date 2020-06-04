@@ -852,15 +852,22 @@ re_likeselect(BAT **bnp, BAT *b, BAT *s, const char *pat, bool caseignore, bool 
 
 #define proj_scanloop(TEST)	\
 	do {	\
-		BATloop (b, p, q) {	\
-			v = BUNtvar(bi, p);	\
-			if (*v == '\200') { \
-				res[p] = bit_nil; \
-				bn->tnonil = false; \
-				bn->tnil = true; \
-			} else \
+		if (bn->tnonil) { \
+			BATloop (b, p, q) {	\
+				v = BUNtail(bi, p);	\
 				res[p] = TEST; \
-		}	\
+			}	\
+		} else { \
+			BATloop (b, p, q) {	\
+				v = BUNtail(bi, p);	\
+				if (*v == '\200') { \
+					res[p] = bit_nil; \
+					bn->tnonil = false; \
+					bn->tnil = true; \
+				} else \
+					res[p] = TEST; \
+			}	\
+		} \
 	} while (0)
 
 static str
@@ -868,7 +875,7 @@ re_like_proj(BAT **bnp, BAT *b, const char *pat, bool caseignore, bool anti, boo
 {
 	BATiter bi = bat_iterator(b);
 	BAT *bn;
-	const char *v;
+	const char *restrict v;
 	RE *re = NULL;
 	uint32_t *wpat = NULL;
 	BUN p, q;
