@@ -95,7 +95,7 @@ exp_has_freevar(mvc *sql, sql_exp *e)
 	}
 
 	if (is_freevar(e))
-		return 1;
+		return is_freevar(e);
 	switch(e->type) {
 	case e_cmp:
 		if (e->flag == cmp_or || e->flag == cmp_filter) {
@@ -139,9 +139,10 @@ exps_have_freevar(mvc *sql, list *exps)
 	if (!exps)
 		return 0;
 	for (node *n = exps->h; n; n = n->next) {
+		int vf = 0;
 		sql_exp *e = n->data;
-		if (exp_has_freevar(sql, e))
-			return 1;
+		if ((vf =exp_has_freevar(sql, e)) != 0)
+			return vf;
 	}
 	return 0;
 }

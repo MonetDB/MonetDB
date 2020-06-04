@@ -86,6 +86,18 @@ stdout of test 'subquery6` in directory 'sql/test/subquery` itself:
 % bigint # type
 % 4 # length
 [ 3702	]
+#SELECT CAST((SELECT SUM((SELECT col1))) AS BIGINT) FROM another_t;
+% sys.%2 # table_name
+% %2 # name
+% bigint # type
+% 4 # length
+[ 1234	]
+#SELECT CAST((SELECT SUM((SELECT col1 + col2))) AS BIGINT) FROM another_t;
+% sys.%2 # table_name
+% %2 # name
+% bigint # type
+% 4 # length
+[ 3702	]
 #DROP TABLE tbl_ProductSales;
 #DROP TABLE another_T;
 #DROP TABLE integers;

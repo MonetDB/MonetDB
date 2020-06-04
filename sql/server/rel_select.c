@@ -5375,7 +5375,6 @@ rel_value_exp2(sql_query *query, sql_rel **rel, symbol *se, int f, exp_kind ek)
 	}
 }
 
-
 static int exps_has_rank(list *exps);
 
 static int
@@ -5404,8 +5403,8 @@ exps_has_rank(list *exps)
 	for(node *n = exps->h; n; n=n->next){
 		sql_exp *e = n->data;
 
-	if (exp_has_rank(e))
-		return 1;
+		if (exp_has_rank(e))
+			return 1;
 	}
 	return 0;
 }
@@ -5413,7 +5412,7 @@ exps_has_rank(list *exps)
 sql_exp *
 rel_value_exp(sql_query *query, sql_rel **rel, symbol *se, int f, exp_kind ek)
 {
-	SelectNode*sn = NULL;
+	SelectNode *sn = NULL;
 	sql_exp *e;
 	if (!se)
 		return NULL;
@@ -5431,11 +5430,21 @@ rel_value_exp(sql_query *query, sql_rel **rel, symbol *se, int f, exp_kind ek)
 	if (exp_has_rel(e) && sn && !sn->from && !sn->where && (ek.card < card_set || ek.card == card_exists) && ek.type != type_relation) {
 		sql_rel *r = exp_rel_get_rel(query->sql->sa, e);
 		sql_rel *l = r->l;
- 
+
 		if (r && is_simple_project(r->op) && l && is_simple_project(l->op) && !l->l && !exps_has_rank(r->exps) && list_length(r->exps) == 1) { /* should be a simple column or value */
-			e = r->exps->h->data;
-			if (*rel && !exp_has_rel(e))
-				rel_bind_var(query->sql, *rel, e);
+			if (list_length(r->exps) > 1) { /* Todo make sure the in handling can handle a list ( value lists), instead of just a list of relations */
+				e = exp_values(query->sql->sa, r->exps);
+			} else {
+				e = r->exps->h->data;
+				if (*rel && !exp_has_rel(e)) {
+					rel_bind_var(query->sql, *rel, e);
+					if (exp_has_freevar(query->sql, e) && is_sql_aggr(f)) {
+						sql_rel *outer = query_fetch_outer(query, exp_has_freevar(query->sql, e)-1);
+						query_outer_pop_last_used(query, exp_has_freevar(query->sql, e)-1);
+					        reset_outer(outer);
+					}
+				}
+			}
 		}
 	}
 	return e;
