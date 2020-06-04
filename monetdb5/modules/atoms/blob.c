@@ -202,7 +202,7 @@ BLOBnitems_bulk(bat *ret, const bat *bid)
 {
 	BAT *b = NULL, *bn = NULL;
 	BUN n, p, q;
-	int *dst;
+	int *restrict dst;
 	str msg = MAL_SUCCEED;
 	BATiter bi;
 
@@ -218,7 +218,7 @@ BLOBnitems_bulk(bat *ret, const bat *bid)
 	dst = Tloc(bn, 0);
 	bi = bat_iterator(b);
 	BATloop(b, p, q) {
-		blob *next = BUNtvar(bi, p);
+		blob *restrict next = BUNtvar(bi, p);
 		dst[p] = blob_nitems(next);
 	}
 	bn->tnonil = b->tnonil;
