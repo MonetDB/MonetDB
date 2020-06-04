@@ -29,12 +29,12 @@ stdout of test 'crash_on_alias.Bug-2798` in directory 'sql/test/BugTracker-2011`
 % .plan # table_name
 % rel # name
 % clob # type
-% 100 # length
+% 117 # length
 project (
 | left outer join (
 | | group by (
 | | | table(sys.dbg) [ "dbg"."a", "dbg"."b" ] COUNT 
-| | ) [ "dbg"."a" as "d" ] [ "d", sys.sum no nil ("dbg"."b") as "%1"."%1", "%1"."%1" as "%2"."%2" ],
+| | ) [ "dbg"."a" as "d" ] [ "d", sys.sum no nil ("dbg"."b") as "%1"."%1", sys.sum no nil ("dbg"."b") as "%2"."%2" ],
 | | project (
 | | |  [ boolean "true" ]
 | | ) [ tinyint "2" as "%3"."%3" ]
@@ -58,12 +58,12 @@ project (
 % .plan # table_name
 % rel # name
 % clob # type
-% 100 # length
+% 117 # length
 project (
 | left outer join (
 | | group by (
 | | | table(sys.dbg) [ "dbg"."a", "dbg"."b" ] COUNT 
-| | ) [ "dbg"."a" as "d" ] [ "d", sys.sum no nil ("dbg"."b") as "%1"."%1", "%1"."%1" as "%2"."%2" ],
+| | ) [ "dbg"."a" as "d" ] [ "d", sys.sum no nil ("dbg"."b") as "%1"."%1", sys.sum no nil ("dbg"."b") as "%2"."%2" ],
 | | project (
 | | |  [ boolean "true" ]
 | | ) [ tinyint "2" as "%3"."%3" ]
