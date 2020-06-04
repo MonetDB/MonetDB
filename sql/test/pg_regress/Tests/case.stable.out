@@ -108,8 +108,8 @@ stdout of test 'case` in directory 'sql/test/pg_regress` itself:
 % 1,	1 # length
 [ "6",	6	]
 #SELECT CASE 'a' WHEN 'a' THEN 1 ELSE 2 END;
-% . # table_name
-% %1 # name
+% .%3 # table_name
+% %3 # name
 % tinyint # type
 % 1 # length
 [ 1	]

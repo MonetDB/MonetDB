@@ -138,54 +138,6 @@ char* db_create(char* dbname) {
 	return(NULL);
 }
 
-/* recursive helper function to delete a directory */
-static char* deletedir(const char *dir) {
-	DIR *d;
-	struct dirent *e;
-	char buf[8192];
-	char path[4096];
-
-	d = opendir(dir);
-	if (d == NULL) {
-		/* silently return if we cannot find the directory; it's
-		 * probably already deleted */
-		if (errno == ENOENT)
-			return(NULL);
-		if (errno == ENOTDIR) {
-			if (remove(dir) != 0 && errno != ENOENT) {
-				snprintf(buf, sizeof(buf),
-					 "unable to remove file %s: %s",
-					 dir, strerror(errno));
-				return(strdup(buf));
-			}
-			return NULL;
-		}
-		snprintf(buf, sizeof(buf), "unable to open dir %s: %s",
-				dir, strerror(errno));
-		return(strdup(buf));
-	}
-	while ((e = readdir(d)) != NULL) {
-		/* ignore . and .. */
-		if (strcmp(e->d_name, ".") != 0 &&
-		    strcmp(e->d_name, "..") != 0) {
-			char* er;
-			snprintf(path, sizeof(path), "%s/%s", dir, e->d_name);
-			if ((er = deletedir(path)) != NULL) {
-				closedir(d);
-				return(er);
-			}
-		}
-	}
-	closedir(d);
-	if (rmdir(dir) == -1 && errno != ENOENT) {
-		snprintf(buf, sizeof(buf), "unable to remove directory %s: %s",
-				dir, strerror(errno));
-		return(strdup(buf));
-	}
-
-	return(NULL);
-}
-
 char* db_destroy(char* dbname) {
 	sabdb* stats;
 	char* e;

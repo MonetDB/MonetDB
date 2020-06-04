@@ -477,7 +477,7 @@ re_create(const char *pat, bool caseignore, uint32_t esc)
 			} else if (*wp == esc) {
 				escaped = true;
 			} else if (*wp == '%') {
-				n->len = (size_t) (wq - r->w);
+				n->len = (size_t) (wq - n->w);
 				while (wp[1] == '%')
 					wp++;
 				if (wp[1]) {
@@ -507,7 +507,7 @@ re_create(const char *pat, bool caseignore, uint32_t esc)
 			} else if ((unsigned char) *p == esc) {
 				escaped = true;
 			} else if (*p == '%') {
-				n->len = (size_t) (q - r->k);
+				n->len = (size_t) (q - n->k);
 				while (p[1] == '%')
 					p++;
 				if (p[1]) {
@@ -1609,7 +1609,9 @@ PCRElike4(bit *ret, const str *s, const str *pat, const str *esc, const bit *ise
 
 	if (!r) {
 		assert(ppat);
-		if (strNil(ppat)) {
+		if (strNil(*pat) || strNil(*s)) {
+			*ret = bit_nil;
+		} else if (strNil(ppat)) {
 			*ret = FALSE;
 			if (*isens) {
 				if (mystrcasecmp(*s, *pat) == 0)
@@ -1654,7 +1656,7 @@ PCREnotlike3(bit *ret, const str *s, const str *pat, const str *esc)
 	bit r;
 
 	rethrow("str.not_like", tmp, PCRElike3(&r, s, pat, esc));
-	*ret = !r;
+	*ret = r==bit_nil?bit_nil:!r;
 	return MAL_SUCCEED;
 }
 
@@ -1665,7 +1667,7 @@ PCREnotlike2(bit *ret, const str *s, const str *pat)
 	bit r;
 
 	rethrow("str.not_like", tmp, PCRElike2(&r, s, pat));
-	*ret = !r;
+	*ret = r==bit_nil?bit_nil:!r;
 	return MAL_SUCCEED;
 }
 
@@ -1692,7 +1694,7 @@ PCREnotilike3(bit *ret, const str *s, const str *pat, const str *esc)
 	bit r;
 
 	rethrow("str.not_ilike", tmp, PCREilike3(&r, s, pat, esc));
-	*ret = !r;
+	*ret = r==bit_nil?bit_nil:!r;
 	return MAL_SUCCEED;
 }
 
@@ -1703,7 +1705,7 @@ PCREnotilike2(bit *ret, const str *s, const str *pat)
 	bit r;
 
 	rethrow("str.not_ilike", tmp, PCREilike2(&r, s, pat));
-	*ret = !r;
+	*ret = r==bit_nil?bit_nil:!r;
 	return MAL_SUCCEED;
 }
 
@@ -1734,7 +1736,14 @@ BATPCRElike3(bat *ret, const bat *bid, const str *pat, const str *esc, const bit
 		br = (bit*)Tloc(r, 0);
 		strsi = bat_iterator(strs);
 
-		if (strNil(ppat)) {
+		if (strNil(*pat)) {
+			BATloop(strs, p, q) {
+				br[i] = bit_nil;
+				i++;
+			}
+			r->tnonil = false;
+			r->tnil = true;
+		} else if (strNil(ppat)) {
 			BATloop(strs, p, q) {
 				const char *s = (str)BUNtvar(strsi, p);
 
@@ -1908,6 +1917,7 @@ PCRElikeselect2(bat *ret, const bat *bid, const bat *sid, const str *pat, const 
 	char *ppat = NULL;
 	bool use_re = false;
 	bool use_strcmp = false;
+	bool empty = false;
 
 	if ((b = BATdescriptor(*bid)) == NULL) {
 		throw(MAL, "algebra.likeselect", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
@@ -1918,7 +1928,9 @@ PCRElikeselect2(bat *ret, const bat *bid, const bat *sid, const str *pat, const 
 	}
 
 	/* no escape, try if a simple list of keywords works */
-	if (is_strcmpable(*pat, *esc)) {
+	if (strNil(*pat)) {
+		empty = true;
+	} else if (is_strcmpable(*pat, *esc)) {
 		use_re = true;
 		use_strcmp = true;
 	} else if (re_simple(*pat, **esc == '\200' ? 0 : (unsigned char) **esc)) {
@@ -1953,7 +1965,10 @@ PCRElikeselect2(bat *ret, const bat *bid, const bat *sid, const str *pat, const 
 		res = re_likeselect(&bn, b, s, *pat, (bool) *caseignore, (bool) *anti, use_strcmp, **esc == '\200' ? 0 : (unsigned char) **esc);
 	} else if (ppat == NULL) {
 		/* no pattern and no special characters: can use normal select */
-		bn = BATselect(b, s, *pat, NULL, true, true, *anti);
+		if (empty) 
+			bn = BATdense(0, 0, 0);
+		else
+			bn = BATselect(b, s, *pat, NULL, true, true, *anti);
 		if (bn == NULL)
 			res = createException(MAL, "algebra.likeselect", GDK_EXCEPTION);
 		else

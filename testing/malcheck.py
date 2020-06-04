@@ -1,5 +1,3 @@
-from __future__ import print_function
-
 import re, sys
 
 try:
@@ -40,6 +38,7 @@ mappings = {
     'any_2': 'void',
     'any_3': 'void',
     'any_4': 'void',
+    'any': 'void',
     'blob': 'blob',
 }
 cmappings = {

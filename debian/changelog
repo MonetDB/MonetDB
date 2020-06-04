@@ -1,3 +1,423 @@
+monetdb (11.37.7) unstable; urgency=low
+
+  * Rebuilt.
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Fri, 29 May 2020 12:21:47 +0200
+
+monetdb (11.37.5) unstable; urgency=low
+
+  * Rebuilt.
+  * BZ#6864: (I)LIKE with multiple % doen't find matches
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Tue, 26 May 2020 10:38:30 +0200
+
+monetdb (11.37.3) unstable; urgency=low
+
+  * Rebuilt.
+  * BZ#6863: thash files not released upon drop table
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Mon, 18 May 2020 11:29:29 +0200
+
+monetdb (11.37.1) unstable; urgency=low
+
+  * Rebuilt.
+  * BZ#6298: unexpectedly slow execution of SELECT length(fieldname)
+    FROM tablename LIMIT 1 queries
+  * BZ#6401: Suspected memory leak in mserver5 when creating/dropping tables
+  * BZ#6687: Count distinct very slow and use too much the hard drive
+  * BZ#6731: Add system view to allow querying of available prepared
+    statements and their parameters
+  * BZ#6732: Add SQL command to close a specific prepared statement
+  * BZ#6750: Executing a query on a non-existing column on a remote table
+    crashes the remote server
+  * BZ#6785: function sys.isaURL(url) should have been declared as
+    sys.isaURL(string)
+  * BZ#6808: reveal the alarm.sleep procedure in SQL
+  * BZ#6813: function not_uniques(bigint) returns error when called
+  * BZ#6818: usage of multiple column expressions in where-clause (f(a),
+    f(b)) in (select a, b)  causes assertion failure on mserver5
+  * BZ#6821: Failed to start monetdb with embedded python
+  * BZ#6828: Server crashes when executing a window query with ordering
+    by EXTRACT date
+  * BZ#6846: Global temporary table not accessible in other connections
+    / sessions
+  * BZ#6847: A simple way of speeding up impscheck for dense canditers
+  * BZ#6850: Idle timestamp not set
+  * BZ#6851: json parser doesn't parse integers correctly
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Mon, 11 May 2020 11:10:50 +0200
+
+monetdb (11.37.1) unstable; urgency=low
+
+  * monetdb5: The mserver5 option --verbose (-v) was removed.  A similar effect can
+    be had by issuing the query CALL logging.setcomplevel('SQL_TRANS',
+    'INFO'); as the monetdb user.
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Fri, 8 May 2020 11:10:50 +0200
+
+monetdb (11.37.1) unstable; urgency=low
+
+  * selinux: There was a problem with the MonetDB SELinux support on Fedora 32.
+    That is fixed in this release.  In order to do a proper upgrade of
+    the package if you have already installed MonetDB-selinux on Fedora
+    32, you may need to uninstall (dnf remove) the old package and then
+    install the new.
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Wed, 6 May 2020 11:10:50 +0200
+
+monetdb (11.37.1) unstable; urgency=low
+
+  * gdk: The functions BATintersect, BATsemijoin, and BATsubcross have an
+    extra argument, bool max_one, which indicates that there must be no
+    more than one match in the join.
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Tue, 28 Apr 2020 11:10:50 +0200
+
+monetdb (11.37.1) unstable; urgency=low
+
+  * monetdb5: The functions algebra.intersect, algebra.semijoin, and
+    algebra.crossproduct have an extra argument, bool max_one, which
+    indicates that there must be no more than one match in the join.
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Tue, 28 Apr 2020 11:10:50 +0200
+
+monetdb (11.37.1) unstable; urgency=low
+
+  * sql: Updating the value of a sequence now requires privilege on its own
+    schema.
+
+ -- Pedro Ferreira <pedro.ferreira@monetdbsolutions.com>  Thu, 23 Apr 2020 11:10:50 +0200
+
+monetdb (11.37.1) unstable; urgency=low
+
+  * clients: The monetdb-client-tools (Debian/Ubuntu) and MonetDB-client-tools
+    (Fedora/RH) containing the stethoscope, tachograph, and tomograph has
+    been removed.  A completely new version of stethoscope will be released
+    to replace the old version.
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Mon, 20 Apr 2020 11:10:50 +0200
+
+monetdb (11.37.1) unstable; urgency=low
+
+  * gdk: The "unique" property on BATs was removed.  The property indicated
+    that all values in a BAT *had* to be distinct, but this was not
+    actually used.
+  * gdk: A new type of candidate list has been introduced.  Candidate lists
+    are used internally to specify which rows of a column participate
+    in an operation.  Before, candidate lists always contained a list of
+    candidate row IDs.  The new candidate list type specifies a list of
+    row IDs that should NOT be considered (negative candidates).
+  * gdk: The maximum number of BATs in the system has been increased for 64
+    bit architectures.
+  * gdk: The hash tables used internally by the system now uses a technique
+    based on Linear Hashing which allows them to grow gracefully.  This
+    means that hash tables aren't removed and recreated nearly as often
+    anymore.  This also meant that the hash table had to be split into
+    two files, which means that after an upgrade the hash tables have to
+    be recreated.
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Mon, 20 Apr 2020 11:10:50 +0200
+
+monetdb (11.37.1) unstable; urgency=low
+
+  * merovingian: On Fedora and RHEL systems (not RHEL 6), if monetdbd runs under systemd,
+    when the package is updated, monetdbd (and hence any mserver5 process
+    it runs) is restarted.
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Mon, 20 Apr 2020 11:10:50 +0200
+
+monetdb (11.37.1) unstable; urgency=low
+
+  * monetdb5: The example module opt_sql_append is not installed in the binary
+    packages anymore.
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Mon, 20 Apr 2020 11:10:50 +0200
+
+monetdb (11.37.1) unstable; urgency=low
+
+  * MonetDB: A new system to deal with debug output has been implemented.  There is
+    now an option --dbtrace to mserver5 that takes a file argument to which
+    debug output is written.  The default value is the file mdbtrace.log
+    inside the database directory.  This option can also be set through
+    the monetdb program.
+  * MonetDB: The home directory of the automatically created monetdb user was
+    changed from /var/MonetDB to /var/lib/monetdb (RPM based systems
+    only).  This home directory is (currently) not used for anything,
+    though.
+  * MonetDB: Python 2 support has been removed.  There is now only support for
+    using Python 3.
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Mon, 20 Apr 2020 11:10:50 +0200
+
+monetdb (11.37.1) unstable; urgency=low
+
+  * odbc: The NUMERIC and FLOAT types are now handled fully.  Before only DECIMAL,
+    FLOAT, and DOUBLE were handled fully.
+  * odbc: Some bugs were fixed in the passing back and forth between application
+    and server of values of type GUID (UUID).
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Mon, 20 Apr 2020 11:10:50 +0200
+
+monetdb (11.37.1) unstable; urgency=low
+
+  * clients: Removed the possibility of using the MD5 checksum for authentication
+    purposes.  It was never actively used but was there as an option.
+    Now the option has been removed.
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Thu, 16 Apr 2020 11:10:50 +0200
+
+monetdb (11.37.1) unstable; urgency=low
+
+  * sql: The sys.querylog_enable(threshold integer) now actually enables the
+    querylog and uses a threshold in milliseconds.
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Thu, 16 Apr 2020 11:10:50 +0200
+
+monetdb (11.37.1) unstable; urgency=low
+
+  * sql: Removed UNION JOIN statements. They were dropped by the SQL:2003
+    standard, plus MonetDB implementation was not fully compliant.
+
+ -- Pedro Ferreira <pedro.ferreira@monetdbsolutions.com>  Wed, 15 Apr 2020 11:10:50 +0200
+
+monetdb (11.37.1) unstable; urgency=low
+
+  * sql: The OFFSET value in the COPY INTO query now counts uninterpreted
+    newlines.  Before it counted "unquoted record separators" which meant
+    that if you had a single quote on a line that you want to skip, you
+    could not use the feature.
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Wed, 1 Apr 2020 11:10:50 +0200
+
+monetdb (11.37.1) unstable; urgency=low
+
+  * gdk: Implemented a version of BATproject, called BATproject2, with two
+    "right" arguments which conceptually follow each other.
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Mon, 30 Mar 2020 11:10:50 +0200
+
+monetdb (11.37.1) unstable; urgency=low
+
+  * sql: Added support for FROM RANGE MINVALUE TO RANGE MAXVALUE and FROM RANGE
+    MINVALUE TO RANGE MAXVALUE WITH NULL VALUES cases in partitioned tables
+    by range (before they weren't).
+
+ -- Pedro Ferreira <pedro.ferreira@monetdbsolutions.com>  Fri, 27 Mar 2020 11:10:50 +0200
+
+monetdb (11.37.1) unstable; urgency=low
+
+  * gdk: Removed MT_mmap and MT_munmap from the list of exported functions.
+    Use GDKmmap and GDKmunmap with the same parameters instead.
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Wed, 25 Mar 2020 11:10:50 +0200
+
+monetdb (11.37.1) unstable; urgency=low
+
+  * gdk: Changed the interface of the atom "fix" and "unfix" functions.
+    They now return a value of type gdk_return to indicate success/failure.
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Fri, 20 Mar 2020 11:10:50 +0200
+
+monetdb (11.37.1) unstable; urgency=low
+
+  * merovingian: Added dbtrace mserver5 option to the daemon in order to set
+    mserver5's output directory for the produced traces.
+
+ -- Thodoris Zois <thodoris.zois@monetdbsolutions.com>  Sat, 22 Feb 2020 11:10:50 +0200
+
+monetdb (11.37.1) unstable; urgency=low
+
+  * monetdb5: Added mserver5 option (--dbtrace=<path>) in order to be able to
+    specify the output file any produced traces.
+
+ -- Thodoris Zois <thodoris.zois@monetdbsolutions.com>  Sat, 22 Feb 2020 11:10:50 +0200
+
+monetdb (11.37.1) unstable; urgency=low
+
+  * clients: Add port and host as fields in the .monetdb file.
+
+ -- Panagiotis Koutsourakis <kutsurak@monetdbsolutions.com>  Sat, 22 Feb 2020 11:10:50 +0200
+
+monetdb (11.37.1) unstable; urgency=low
+
+  * MonetDB: Removed support for bam and sam files.
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Sat, 22 Feb 2020 11:10:50 +0200
+
+monetdb (11.37.1) unstable; urgency=low
+
+  * sql: Implemented 'covar_pop' and 'covar_samp' aggregate functions, as well
+    as their window function counterparts. Implemented 'stddev_samp',
+    'stddev_pop', 'var_samp', 'var_pop', 'corr' and 'group_concat'
+    window function correspondents.
+  * sql: Extended SQL catalog with CREATE WINDOW syntax for user-defined
+    SQL:2003 window functions. At the moment, window functions must be
+    defined on the backend engine, i.e. on this case MAL. In the current
+    implementation, the backend code generation creates two additional
+    columns of type lng with the start and end offsets for each row.
+
+ -- Pedro Ferreira <pedro.ferreira@monetdbsolutions.com>  Sat, 22 Feb 2020 11:10:50 +0200
+
+monetdb (11.37.1) unstable; urgency=low
+
+  * sql: Removed support for Python 2.  Python 2 itself is no longer
+    supported.  Use Python 3 instead.  Functions that were declared as
+    LANGUAGE PYTHON2 or LANGUAGE PYTHON2_MAP are changed to LANGUAGE
+    PYTHON and LANGUAGE PYTHON_MAP respectively (without changing the
+    Python code).
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Sat, 22 Feb 2020 11:10:50 +0200
+
+monetdb (11.37.1) unstable; urgency=low
+
+  * sql: Added prepared_statements_args view, which details the arguments for
+    the prepared statements created in the current session.
+
+ -- Pedro Ferreira <pedro.ferreira@monetdbsolutions.com>  Sat, 22 Feb 2020 11:10:50 +0200
+
+monetdb (11.37.1) unstable; urgency=low
+
+  * sql: Added sys.prepared_statements view, which lists the available prepared
+    statements in the current session.
+  * sql: Added deallocate statements with the syntax 'DEALLOCATE [PREPARE]
+    { number | ALL }', to close an existing prepared statement or all,
+    through the SQL layer. Previously this feature was available via MAPI
+    exclusively with the "release" command.
+
+ -- Pedro Ferreira <pedro.ferreira@monetdbsolutions.com>  Sat, 22 Feb 2020 11:10:50 +0200
+
+monetdb (11.37.1) unstable; urgency=low
+
+  * MonetDB: Added mserver5 option (--set raw_strings=true|false) and monetdb
+    database property (raw_strings=yes|no) to control interpretation
+    of strings.
+
+ -- Panagiotis Koutsourakis <kutsurak@monetdbsolutions.com>  Sat, 22 Feb 2020 11:10:50 +0200
+
+monetdb (11.37.1) unstable; urgency=low
+
+  * gdk: Removed the tunique property.  The tunique property indicated that
+    all values in the column had to be distinct.  It was removed because
+    it wasn't used.
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Sat, 22 Feb 2020 11:10:50 +0200
+
+monetdb (11.37.1) unstable; urgency=low
+
+  * monetdb5: Removed function bat.setKey().
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Sat, 22 Feb 2020 11:10:50 +0200
+
+monetdb (11.37.1) unstable; urgency=low
+
+  * sql: Added support for raw strings using the syntax r'' or R''. This means
+    that C-like escapes will remain uninterpreted within those strings. For
+    instance SELECT r'\"' returns a string of length two. The user needs
+    to escape single quotes by doubling them: SELECT r''''.
+
+ -- Panagiotis Koutsourakis <kutsurak@monetdbsolutions.com>  Sat, 22 Feb 2020 11:10:50 +0200
+
+monetdb (11.37.1) unstable; urgency=low
+
+  * sql: Implemented ROLLUP, CUBE and GROUPING SETS from SQL:1999. They
+    define grouping subsets used with the GROUP BY clause in order to
+    compute partial groupings. Also, the GROUPING aggregate was
+    added. This aggregate is a bitmask identifying the grouping columns
+    not present in the generated grouping row when used with the
+    operators described above.
+
+ -- Pedro Ferreira <pedro.ferreira@monetdbsolutions.com>  Sat, 22 Feb 2020 11:10:50 +0200
+
+monetdb (11.37.1) unstable; urgency=low
+
+  * gdk: BATrangeselect now has two extra arguments: anti and symmetric
+    (both bool).
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Sat, 22 Feb 2020 11:10:50 +0200
+
+monetdb (11.37.1) unstable; urgency=low
+
+  * monetdb5: algebra.rangejoin now has two extra arguments: anti:bit and
+    symmetric:bit.
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Sat, 22 Feb 2020 11:10:50 +0200
+
+monetdb (11.37.1) unstable; urgency=low
+
+  * monetdb5: Added session identifier, number of workers and memory claim to the
+    sysmon queue.
+  * monetdb5: The worker (number of threads), memory (in MB) and optimizer pipeline
+    limits can now be set per user session basis. The query and session
+    timeouts are now set in seconds.
+  * monetdb5: With required privileges an user can set resource limits for a session.
+
+ -- Pedro Ferreira <pedro.ferreira@monetdbsolutions.com>  Sat, 22 Feb 2020 11:10:50 +0200
+
+monetdb (11.37.1) unstable; urgency=low
+
+  * sql: Updated user session procedures by adding the possibility to set properties
+    based on a session identifier.
+    Optimizer pipeline: sys.setoptimizer(int, string)
+    Number of worker threads: sys.setworkerlimit(int, int)
+    Memory limits (in MB): sys.setmemorylimit(int, int)
+    Query timeout (in ms): sys.setquerytimeout(int, int)
+    Session timeout (in ms): sys.setsessiontimeout(int, int)
+    The first argument corresponds to the id of the session to modify, and
+    these procedures are bound to the monetdb user exclusively.
+    The versions of the mentioned procedures with just the second argument were
+    added as well, where the changes are reflected in the current user session,
+    and therefore every user can call them.
+  * sql: The procedures sys.settimeout(bigint), sys.settimeout(bigint,bigint)
+    and sys.session(bigint) are now deprecated. Instead use sys.setquerytimeout
+    and sys.setsessiontimeout mentioned above.
+
+ -- Pedro Ferreira <pedro.ferreira@monetdbsolutions.com>  Sat, 22 Feb 2020 11:10:50 +0200
+
+monetdb (11.37.1) unstable; urgency=low
+
+  * monetdb5: There are now versions of group.(sub)group(done) that produce a single
+    output containing just the groups.
+  * monetdb5: algebra.join and algebra.leftjoin now have forms which return a single
+    column.  The column that is returned is the left column of the two
+    column version.
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Sat, 22 Feb 2020 11:10:50 +0200
+
+monetdb (11.37.1) unstable; urgency=low
+
+  * sql: Added SQL procedure sys.hot_snapshot() which can be used to write
+    a snapshot of the database to a tar file. For example,
+    sys.hot_snapshot('/tmp/snapshot.tar'). If compression support is
+    compiled in, snapshots can also be compressed ('/tmp/snapshot.tar.gz').
+    The tar file expands to a single directory with the same name as the
+    database that was snapshotted. This directory can be passed directly
+    as the --dbpath argument of mserver5 or it can be copied into an
+    existing dbfarm and started from monetdbd.
+
+ -- Joeri van Ruth <joeri.van.ruth@monetdbsolutions.com>  Sat, 22 Feb 2020 11:10:50 +0200
+
+monetdb (11.37.1) unstable; urgency=low
+
+  * clients: Added 'sessionid' column to system function sys.queue(), so each query
+    gets tagged with the current session identifier
+
+ -- Pedro Ferreira <pedro.ferreira@monetdbsolutions.com>  Sat, 22 Feb 2020 11:10:50 +0200
+
+monetdb (11.37.1) unstable; urgency=low
+
+  * clients: Allow monetdb user to control session and query time out and selectively
+    stopping a client sessions with a soft termination request.
+
+ -- Martin Kersten <mk@cwi.nl>  Sat, 22 Feb 2020 11:10:50 +0200
+
+monetdb (11.37.1) unstable; urgency=low
+
+  * monetdb5: The MAL profiler now assigns the SQL TRACE output to the client record
+    thereby avoiding the interaction with other queries, but loosing
+    insight of competing queries. The stethoscope should be used for that.
+
+ -- Martin Kersten <mk@cwi.nl>  Sat, 22 Feb 2020 11:10:50 +0200
+
 monetdb (11.35.19) unstable; urgency=low
 
   * Rebuilt.
@@ -5846,29 +6266,29 @@ monetdb (11.3.3) unstable; urgency=low
 monetdb (11.3.3) unstable; urgency=low
 
   * gdk: Fixed a bug where large files (> 2GB) didn't always get deleted on
-Windows.
+    Windows.
 
  -- Sjoerd Mullender <sjoerd@acm.org>  Fri, 13 May 2011 16:45:38 +0200
 
 monetdb (11.3.3) unstable; urgency=low
 
   * java: Insertion via PreparedStatement and retrieval via ResultSet of timestamp
-and time fields with and without timezones was improved to better
-respect timezones, as partly indicated in bug #2781.
+    and time fields with and without timezones was improved to better
+    respect timezones, as partly indicated in bug #2781.
 
  -- Fabian Groffen <fabian@cwi.nl>  Wed, 11 May 2011 16:45:38 +0200
 
 monetdb (11.3.3) unstable; urgency=low
 
   * monetdb5: Fixed a bug in conversion from string to the URL type.  The bug was
-an incorrect call to free().
+    an incorrect call to free().
 
  -- Sjoerd Mullender <sjoerd@acm.org>  Wed, 11 May 2011 16:45:38 +0200
 
 monetdb (11.3.3) unstable; urgency=low
 
   * geom: Fixed various problems so that now all our tests work correctly on
-all our testing platforms.
+    all our testing platforms.
 
  -- Sjoerd Mullender <sjoerd@acm.org>  Wed, 27 Apr 2011 16:45:38 +0200
 

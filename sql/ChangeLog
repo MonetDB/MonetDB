@@ -1,50 +1,34 @@
 # ChangeLog file for sql
 # This file is updated with Maddlog
 
-* Wed Jan 29 2020 Sjoerd Mullender <sjoerd@acm.org>
-- Removed support for Python 2.  Python 2 itself is no longer supported.
-  Use Python 3 instead.
-
-* Wed Jan 29 2020 Pedro Ferreira <pedro.ferreira@monetdbsolutions.com>
-- Implemented 'covar_pop' and 'covar_samp' aggregate functions, as well
-  as their window function counterparts. Implemented 'stddev_samp',
-  'stddev_pop', 'var_samp', 'var_pop', 'corr' and 'group_concat'
-  window function correspondents.
-- Extended SQL catalog with CREATE WINDOW syntax for user-defined
-  SQL:2003 window functions. At the moment, window functions must be
-  defined on the backend engine, ie on this case MAL. At the current
-  implementation, the backend code generation, creates two additional
-  columns of lng type with the start and end offsets for each row.
-
-* Thu Jan 23 2020 Pedro Ferreira <pedro.ferreira@monetdbsolutions.com>
-- Added sys.sleep(int n) procedure, which makes the client's thread to
-  sleep for n milliseconds. Also added the function version, where it
-  returns the input value as result.
-
-* Tue Dec 17 2019 Pedro Ferreira <pedro.ferreira@monetdbsolutions.com>
-- Added prepared_statements_args view, which details the arguments for
-  the prepared statements created in the current session.
-
-* Fri Dec 13 2019 Pedro Ferreira <pedro.ferreira@monetdbsolutions.com>
-- Added sys.prepared_statements view, which depicts the available prepared
-  statements in the current session.
-- Added deallocate statements with the syntax 'DEALLOCATE [PREPARE]
-  { number | ALL }', to close an existing prepared statement or all,
-  through the SQL layer. Previously this feature was available via MAPI
-  exclusively with the "release" command.
-
-* Wed Nov 27 2019 Pedro Ferreira <pedro.ferreira@monetdbsolutions.com>
-- Implemented ROLLUP, CUBE and GROUPING SETS from SQL:1999. They define
-  grouping subsets used at GROUP BY clause in order to compute partial
-  groupings. At the same time, the GROUPING aggregate was added. This
-  aggregate is a bitmask identifying the grouping columns not present
-  in the generated grouping row when used with the operators described
-  above.
-
-* Tue Nov 19 2019 Pedro Ferreira <pedro.ferreira@monetdbsolutions.com>
-- Updated user session procedures by adding te possibility to set properties
-  based on a session identifier. The optimizer pipeline, number of worker
-  threads and memory limits can be set per user session. As a consequence,
-  the procedures sys.settimeout(bigint), sys.settimeout(bigint,bigint)
-  and sys.session(bigint) are now deprecated.
+* Tue Jun  2 2020 Pedro Ferreira <pedro.ferreira@monetdbsolutions.com>
+- Removed '@' syntax used to refer into a variable in a query. It
+  was a non-standard method, which was replaced by a schema addition to
+  variables. Variables in the global scope now have schema. All default
+  global variables are set under schema "sys". However variables
+  inside PSM don't have a schema, because there are no transaction
+  semantics inside PSM at the moment.
+- Removed declared variables and tables from the global scope. They were
+  transaction agnostic and incompatible with the SQL standard, i.e. they
+  are valid exclusively under PSM (e.g. functions, procedures and 
+  triggers).
+- Scoping semantics were added for both variables and tables. Variables
+  with the same name at a query are now resolved under the following
+  precedence rules:
+    1. Tables, Views and CTEs at the FROM clause.
+    2. Variable declared in the body of function/procedure, i.e. local
+       variable.
+    3. Function/procedure parameter.
+    4. Variable from the global scope.
+  Tables with the same name now have the following precedence rules at a
+  SQL query: 
+    1. Table declared in the body of function/procedure, ie local table.
+    2. Temporary table.
+    3. Table from the current session schema.
+  This means the query: SELECT * FROM "keys"; will list keys from
+  temporary tables instead of persisted ones, because "keys" table
+  is available for both "sys" and "tmp" schemas.
+- The table returning function "var" was extended with more details
+  about globally declared variables, namely their schema, type and
+  current value.
 

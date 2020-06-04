@@ -44,7 +44,7 @@
 struct threads {
 	struct threads *next;
 	pthread_t tid;
-	volatile char dead;
+	volatile bool dead;
 };
 struct clientdata {
 	int sock;
@@ -85,7 +85,7 @@ handleClient(void *data)
 	free(data);
 	fdin = socket_rstream(sock, "merovingian<-client (read)");
 	if (fdin == 0) {
-		self->dead = 1;
+		self->dead = true;
 		return(newErr("merovingian-client inputstream problems"));
 	}
 	fdin = block_stream(fdin);
@@ -93,7 +93,7 @@ handleClient(void *data)
 	fout = socket_wstream(sock, "merovingian->client (write)");
 	if (fout == 0) {
 		close_stream(fdin);
-		self->dead = 1;
+		self->dead = true;
 		return(newErr("merovingian-client outputstream problems"));
 	}
 	fout = block_stream(fout);
@@ -137,7 +137,7 @@ handleClient(void *data)
 		mnstr_flush(fout);
 		close_stream(fout);
 		close_stream(fdin);
-		self->dead = 1;
+		self->dead = true;
 		return(e);
 	}
 	buf[sizeof(buf) - 1] = '\0';
@@ -158,7 +158,7 @@ handleClient(void *data)
 		mnstr_flush(fout);
 		close_stream(fout);
 		close_stream(fdin);
-		self->dead = 1;
+		self->dead = true;
 		return(e);
 	}
 
@@ -174,7 +174,7 @@ handleClient(void *data)
 			mnstr_flush(fout);
 			close_stream(fout);
 			close_stream(fdin);
-			self->dead = 1;
+			self->dead = true;
 			return(e);
 		}
 		algo = passwd + 1;
@@ -185,7 +185,7 @@ handleClient(void *data)
 			mnstr_flush(fout);
 			close_stream(fout);
 			close_stream(fdin);
-			self->dead = 1;
+			self->dead = true;
 			return(e);
 		}
 		*s = 0;
@@ -196,7 +196,7 @@ handleClient(void *data)
 		mnstr_flush(fout);
 		close_stream(fout);
 		close_stream(fdin);
-		self->dead = 1;
+		self->dead = true;
 		return(e);
 	}
 
@@ -211,7 +211,7 @@ handleClient(void *data)
 		mnstr_flush(fout);
 		close_stream(fout);
 		close_stream(fdin);
-		self->dead = 1;
+		self->dead = true;
 		return(e);
 	}
 
@@ -229,7 +229,7 @@ handleClient(void *data)
 			mnstr_flush(fout);
 			close_stream(fout);
 			close_stream(fdin);
-			self->dead = 1;
+			self->dead = true;
 			return(e);
 		} else {
 			*s = '\0';
@@ -243,7 +243,7 @@ handleClient(void *data)
 		mnstr_flush(fout);
 		close_stream(fout);
 		close_stream(fdin);
-		self->dead = 1;
+		self->dead = true;
 		return(newErr("client %s specified no database", host));
 	}
 
@@ -253,7 +253,7 @@ handleClient(void *data)
 			control_handleclient(host, sock, fdin, fout);
 		close_stream(fout);
 		close_stream(fdin);
-		self->dead = 1;
+		self->dead = true;
 		return(NO_ERR);
 	}
 
@@ -283,7 +283,7 @@ handleClient(void *data)
 		mnstr_flush(fout);
 		close_stream(fout);
 		close_stream(fdin);
-		self->dead = 1;
+		self->dead = true;
 		return(e);
 	}
 	stat = top;
@@ -295,7 +295,7 @@ handleClient(void *data)
 	{
 		multiplexAddClient(top->dbname, sock, fout, fdin, host);
 		msab_freeStatus(&top);
-		self->dead = 1;
+		self->dead = true;
 		return(NO_ERR);
 	}
 
@@ -324,7 +324,7 @@ handleClient(void *data)
 		close_stream(fout);
 		close_stream(fdin);
 		msab_freeStatus(&top);
-		self->dead = 1;
+		self->dead = true;
 		return(e);
 	}
 
@@ -395,13 +395,13 @@ handleClient(void *data)
 			close_stream(fdin);
 			Mfprintf(stdout, "starting a proxy failed: %s\n", e);
 			msab_freeStatus(&top);
-			self->dead = 1;
+			self->dead = true;
 			return(e);
 		}
 	}
 
 	msab_freeStatus(&top);
-	self->dead = 1;
+	self->dead = true;
 	return(NO_ERR);
 }
 
@@ -623,7 +623,7 @@ acceptConnections(int sock, int usock)
 		}
 		data->sock = msgsock;
 		data->isusock = isusock;
-		p->dead = 0;
+		p->dead = false;
 		data->self = p;
 		data->challenge[31] = '\0';
 		generateSalt(data->challenge, 31);

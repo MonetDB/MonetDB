@@ -13,9 +13,9 @@ returns table(
 	"sessionid" int,
 	"username" string,
 	"started" timestamp,
-	"status" string,	-- paused, running
+	"status" string,	-- paused, running, finished
 	"query" string,
-	"progress" int,	-- percentage of MAL instructions handled
+	"finished" timestamp,	
 	"workers" int,
 	"memory" int
 )

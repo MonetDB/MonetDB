@@ -7,7 +7,7 @@
 -- Hot snapshot
 
 -- Main command to create a hot snapshot
-create procedure hot_snapshot(tarfile string)
+create procedure sys.hot_snapshot(tarfile string)
 	external name sql.hot_snapshot;
 
 -- We intentionally don't GRANT EXECUTE ON sys.hot_snapshot TO PUBLIC!

@@ -101,8 +101,8 @@ stdout of test 'select-in-from.Bug-6121` in directory 'sql/test/BugTracker-2016`
 [ 0	]
 [ 0	]
 #SELECT COUNT(*) , ( CASE WHEN ( table_one.this_column IN ( SELECT this_column FROM table_two ) ) THEN 1 ELSE 0 END ) AS new_column FROM table_one GROUP BY new_column;
-% .%2,	. # table_name
-% %2,	new_column # name
+% .%3,	. # table_name
+% %3,	new_column # name
 % bigint,	tinyint # type
 % 1,	1 # length
 [ 2,	1	]
@@ -162,7 +162,7 @@ stdout of test 'select-in-from.Bug-6121` in directory 'sql/test/BugTracker-2016`
 #UNION ALL
 #SELECT COUNT(*) AS count, 0 AS new_column FROM table_one
 # WHERE this_column NOT IN (SELECT this_column FROM table_two);
-% .%11,	.%11 # table_name
+% .%13,	.%13 # table_name
 % count,	new_column # name
 % bigint,	tinyint # type
 % 1,	1 # length

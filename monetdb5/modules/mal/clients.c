@@ -24,7 +24,7 @@
 #include "mal_client.h"
 #include "mal_authorize.h"
 #include "mal_private.h"
-#include "mtime.h"
+#include "gdk_time.h"
 
 static int
 pseudo(bat *ret, BAT *b, str X1,str X2) {

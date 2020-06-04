@@ -295,22 +295,20 @@ safetyBarrier(InstrPtr p, InstrPtr q)
 	return FALSE;
 }
 
-
 inline int
 isUpdateInstruction(InstrPtr p){
 	if ( getModuleId(p) == sqlRef &&
-	   ( getFunctionId(p) == inplaceRef ||
-		getFunctionId(p) == appendRef ||
+	   ( getFunctionId(p) == appendRef ||
 		getFunctionId(p) == updateRef ||
-		getFunctionId(p) == replaceRef ||
-		getFunctionId(p) == clear_tableRef))
+		getFunctionId(p) == deleteRef ||
+		getFunctionId(p) == growRef ||
+		getFunctionId(p) == clear_tableRef ||
+		getFunctionId(p) == setVariableRef))
 			return TRUE;
 	if ( getModuleId(p) == batRef &&
-	   ( getFunctionId(p) == inplaceRef ||
-		getFunctionId(p) == appendRef ||
-		getFunctionId(p) == updateRef ||
+	   ( getFunctionId(p) == appendRef ||
 		getFunctionId(p) == replaceRef ||
-		getFunctionId(p) == clear_tableRef))
+		getFunctionId(p) == deleteRef))
 			return TRUE;
 	return FALSE;
 }

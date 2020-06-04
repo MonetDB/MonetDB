@@ -11,7 +11,7 @@
  * This little helper module is used to perform instruction based profiling.
  * The QRYqueue is only update at the start/finish of a query. 
  * It is also the place to keep track on the number of workers
- * The current could relies on a scan rather than a hash.
+ * The current code relies on a scan rather than a hash.
  */
 
 #include "monetdb_config.h"
@@ -26,19 +26,19 @@
 #include "mal_private.h"
 
 
-QueryQueue QRYqueue;
-lng qtop;
-static lng qsize;
+QueryQueue QRYqueue = NULL;
+size_t qsize = 0, qhead = 0, qtail = 0;
 static oid qtag= 1;		// A unique query identifier
 
 void
 mal_runtime_reset(void)
 {
 	GDKfree(QRYqueue);
-	QRYqueue = 0;
-	qtop = 0;
+	QRYqueue = NULL;
 	qsize = 0;
 	qtag= 1;
+	qhead = 0;
+	qtail = 0;
 }
 
 static str 
@@ -56,21 +56,82 @@ isaSQLquery(MalBlkPtr mb){
 
 /*
  * Manage the runtime profiling information
+ * It is organized as a circular buffer, head/tail. 
+ * Elements are removed from the buffer when it becomes full.
+ * This way we keep the information a little longer for inspection.
  */
+
+/* clear the next entry for a new call unless it is a running query */
+static void
+clearQRYqueue(size_t idx)
+{
+		QRYqueue[idx].query = 0;
+		QRYqueue[idx].cntxt = 0;
+		QRYqueue[idx].username = 0;
+		QRYqueue[idx].idx = 0;
+		QRYqueue[idx].memory = 0;
+		QRYqueue[idx].tag = 0;
+		QRYqueue[idx].status =0;
+		QRYqueue[idx].finished = 0;
+		QRYqueue[idx].start = 0;
+		QRYqueue[idx].stk =0;
+		QRYqueue[idx].mb =0;
+}
+
+static void
+advanceQRYqueue(void)
+{
+	qhead++;
+	if( qhead == qsize)
+		qhead = 0;
+	if( qtail == qhead)
+		qtail++;
+	if( qtail == qsize)
+		qtail = 0;
+	/* clean out the element */
+	str s = QRYqueue[qhead].query;
+	if( s){
+		/* don;t wipe them when they are still running, prepared, or paused */
+		/* The upper layer has assured there is at least one slot available */
+		if(QRYqueue[qhead].status == 0 || (QRYqueue[qhead].status[0] != 'r' && QRYqueue[qhead].status[0] != 'p')){
+			advanceQRYqueue();
+			return;
+		}
+		GDKfree(s);
+		GDKfree(QRYqueue[qhead].username);
+		clearQRYqueue(qhead);
+	}
+}
+
+void
+dropQRYqueue(void)
+{
+	size_t i;
+	MT_lock_set(&mal_delayLock);
+	for(i = 0; i < qsize; i++){
+		if( QRYqueue[i].query)
+			GDKfree(QRYqueue[i].query);
+		if(QRYqueue[i].username)
+			GDKfree(QRYqueue[i].username);
+		clearQRYqueue(i);
+	}
+	GDKfree(QRYqueue);
+	QRYqueue = NULL;
+	MT_lock_unset(&mal_delayLock);
+}
 
 void
 runtimeProfileInit(Client cntxt, MalBlkPtr mb, MalStkPtr stk)
 {
-	lng i;
+	size_t i, paused = 0;
 	str q;
 	QueryQueue tmp;
 
 	MT_lock_set(&mal_delayLock);
 	tmp = QRYqueue;
-	if ( QRYqueue == 0)
-		QRYqueue = (QueryQueue) GDKzalloc( sizeof (struct QRYQUEUE) * (size_t) (qsize= 1024));
-	else if ( qtop + 1 == qsize )
-		QRYqueue = (QueryQueue) GDKrealloc( QRYqueue, sizeof (struct QRYQUEUE) * (size_t) (qsize += 256));
+	if ( QRYqueue == NULL)
+		QRYqueue = (QueryQueue) GDKzalloc( sizeof (struct QRYQUEUE) * (qsize= 8)); /* for testing */
+
 	if ( QRYqueue == NULL){
 		addMalException(mb,"runtimeProfileInit" MAL_MALLOC_FAIL);
 		GDKfree(tmp);			
@@ -78,94 +139,90 @@ runtimeProfileInit(Client cntxt, MalBlkPtr mb, MalStkPtr stk)
 		return;
 	}
 	// check for recursive call, which does not change the number of workers
-	for( i = 0; i < qtop; i++)
-		if ( QRYqueue[i].mb == mb &&  stk->up == QRYqueue[i].stk){
+	i=qtail;
+	while (i != qhead){
+		if (QRYqueue[i].mb && QRYqueue[i].mb == mb &&  stk->up == QRYqueue[i].stk){
 			QRYqueue[i].stk = stk;
 			mb->tag = stk->tag = qtag++;
 			MT_lock_unset(&mal_delayLock);
 			return;
 		}
+		if ( QRYqueue[i].status)
+			paused += (QRYqueue[i].status[0] == 'p' || QRYqueue[i].status[0] == 'r'); /* running, prepared or paused */
+		i++;
+		if ( i >= qsize)
+			i = 0;
+	}
+	assert(qhead < qsize);
+	if( (int) (qsize - paused) < MAL_MAXCLIENTS){
+		qsize += MAL_MAXCLIENTS;
+		QRYqueue = (QueryQueue) GDKrealloc( QRYqueue, sizeof (struct QRYQUEUE) * qsize);
+		if ( QRYqueue == NULL){
+			addMalException(mb,"runtimeProfileInit" MAL_MALLOC_FAIL);
+			GDKfree(tmp);			
+			MT_lock_unset(&mal_delayLock);
+			return;
+		}
+		for(i = qsize - MAL_MAXCLIENTS; i < qsize; i++)
+			clearQRYqueue(i);
+	}
 
 	// add new invocation
-	if (i == qtop) {
-		QRYqueue[i].mb = mb;
-		QRYqueue[i].tag = qtag++;
-		QRYqueue[i].stk = stk;				// for status pause 'p'/running '0'/ quiting 'q'
-		QRYqueue[i].start = time(0);
-		QRYqueue[i].runtime = mb->runtime; 	// the estimated execution time
-		q = isaSQLquery(mb);
-		QRYqueue[i].query = q? GDKstrdup(q):0;
-		QRYqueue[i].status = "running";
-		QRYqueue[i].cntxt = cntxt;
-		stk->tag = mb->tag = QRYqueue[i].tag;
-	}
-	qtop += i == qtop;
+	cntxt->idle = 0;
+	QRYqueue[qhead].mb = mb;
+	QRYqueue[qhead].tag = qtag++;
+	QRYqueue[qhead].stk = stk;				// for status pause 'p'/running '0'/ quiting 'q'
+	QRYqueue[qhead].finished = 
+	QRYqueue[qhead].start = time(0);
+	q = isaSQLquery(mb);
+	QRYqueue[qhead].query = q? GDKstrdup(q):0;
+	GDKfree(QRYqueue[qhead].username);
+	AUTHgetUsername(&QRYqueue[qhead].username, cntxt);
+	QRYqueue[qhead].idx = cntxt->idx;
+	QRYqueue[qhead].memory = (int) (stk->memory / LL_CONSTANT(1048576)); /* Convert to MB */
+	QRYqueue[qhead].workers = (int) stk->workers;
+	QRYqueue[qhead].status = "running";
+	QRYqueue[qhead].cntxt = cntxt;
+	stk->tag = mb->tag = QRYqueue[qhead].tag;
+	advanceQRYqueue();
 	MT_lock_unset(&mal_delayLock);
 }
 
-/* We should keep a short list of previously executed queries/client for inspection.
+/* 
  * Returning from a recursive call does not change the number of workers.
  */
 
 void
 runtimeProfileFinish(Client cntxt, MalBlkPtr mb, MalStkPtr stk)
 {
-	lng i,j;
+	size_t i;
 
 	(void) cntxt;
 	(void) mb;
 
 	MT_lock_set(&mal_delayLock);
-	for( i=j=0; i< qtop; i++)
-	if ( QRYqueue[i].stk != stk)
-		QRYqueue[j++] = QRYqueue[i];
-	else  {
-		if( stk->up){
-			// recursive call
-			QRYqueue[i].stk = stk->up;
-			mb->tag = stk->tag;
-			MT_lock_unset(&mal_delayLock);
-			return;
+	i=qtail;
+	while (i != qhead){
+		if ( QRYqueue[i].stk == stk){
+			if( stk->up){
+				// recursive call
+				QRYqueue[i].stk = stk->up;
+				mb->tag = stk->tag;
+				break;
+			}
+			QRYqueue[i].status = "finished";
+			QRYqueue[i].finished = time(0);
+			QRYqueue[i].cntxt = 0;
+			QRYqueue[i].stk = 0;
+			QRYqueue[i].mb = 0;
+			// assume that the user is now idle
+			cntxt->idle = time(0);
+			break;
 		}
-		QRYqueue[i].status = "finished";
-		GDKfree(QRYqueue[i].query);
-		QRYqueue[i].cntxt = 0;
-		QRYqueue[i].tag = 0;
-		QRYqueue[i].query = 0;
-		QRYqueue[i].status =0;
-		QRYqueue[i].progress =0;
-		QRYqueue[i].stk =0;
-		QRYqueue[i].mb =0;
+		i++;
+		if ( i >= qsize)
+			i = 0;
 	}
-
-	qtop = j;
-	QRYqueue[qtop].query = NULL; /* sentinel for SYSMONqueue() */
-	MT_lock_unset(&mal_delayLock);
-}
-
-/* When the client connection is closed, then also the queue should be updated */
-void
-finishSessionProfiler(Client cntxt)
-{
-	lng i,j;
-
-	(void) cntxt;
-
-	MT_lock_set(&mal_delayLock);
-	for( i=j=0; i< qtop; i++)
-	if ( QRYqueue[i].cntxt != cntxt)
-		QRYqueue[j++] = QRYqueue[i];
-	else  {
-		GDKfree(QRYqueue[i].query);
-		QRYqueue[i].cntxt = 0;
-		QRYqueue[i].tag = 0;
-		QRYqueue[i].query = 0;
-		QRYqueue[i].progress =0;
-		QRYqueue[i].status =0;
-		QRYqueue[i].stk =0;
-		QRYqueue[i].mb =0;
-	}
-	qtop = j;
 	MT_lock_unset(&mal_delayLock);
 }
 

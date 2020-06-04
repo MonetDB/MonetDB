@@ -1,0 +1,25 @@
+stdout of test 'createUserRollback` in directory 'sql/test/Users` itself:
+
+
+# 12:24:01 >  
+# 12:24:01 >  "/usr/bin/python3" "createUserRollback.SQL.py" "createUserRollback"
+# 12:24:01 >  
+
+#CREATE TABLE sys.myvar (c BIGINT);
+#INSERT INTO sys.myvar VALUES ((SELECT COUNT(*) FROM sys.users));
+[ 1	]
+#START TRANSACTION;
+#CREATE USER "1" WITH PASSWORD '1' NAME '1' SCHEMA "sys";
+#ROLLBACK;
+#SELECT CAST(COUNT(*) - (SELECT c FROM sys.myvar) AS BIGINT) FROM sys.users; -- The MAL authorization is not transaction aware, so the count changes :/
+% .%10 # table_name
+% %10 # name
+% bigint # type
+% 1 # length
+[ 1	]
+#DROP TABLE sys.myvar;
+
+# 12:24:01 >  
+# 12:24:01 >  "Done."
+# 12:24:01 >  
+

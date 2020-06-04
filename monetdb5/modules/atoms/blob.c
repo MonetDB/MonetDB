@@ -45,6 +45,7 @@ mal_export size_t BLOBlength(const blob *p);
 mal_export void BLOBheap(Heap *heap, size_t capacity);
 mal_export str BLOBtoblob(blob **retval, str *s);
 mal_export str BLOBnitems(int *ret, blob **b);
+mal_export str BLOBnitems_bulk(bat *ret, const bat *bid);
 mal_export int BLOBget(Heap *h, int *bun, int *l, blob **val);
 mal_export blob * BLOBread(blob *a, stream *s, size_t cnt);
 mal_export gdk_return BLOBwrite(const blob *a, stream *s, size_t cnt);
@@ -180,16 +181,59 @@ BLOBput(Heap *h, var_t *bun, const blob *val)
 	return *bun;
 }
 
+static inline int 
+blob_nitems(blob *b)
+{
+	if (is_blob_nil(b))
+		return int_nil;
+	assert(b->nitems <INT_MAX);
+	return (int) b->nitems;
+}
+
 str
 BLOBnitems(int *ret, blob **b)
 {
-	if (is_blob_nil(*b)) {
-		*ret = int_nil;
-		return MAL_SUCCEED;
-	}
-	assert((*b)->nitems <INT_MAX);
-	*ret = (int) (*b)->nitems;
+	*ret = blob_nitems(*b);
 	return MAL_SUCCEED;
+}
+
+str
+BLOBnitems_bulk(bat *ret, const bat *bid)
+{
+	BAT *b = NULL, *bn = NULL;
+	BUN n, p, q;
+	int *dst;
+	str msg = MAL_SUCCEED;
+	BATiter bi;
+
+	if ((b = BATdescriptor(*bid)) == NULL)	{
+		msg = createException(MAL, "blob.nitems_bulk", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
+		goto bailout;
+	}
+	n = BATcount(b);
+	if ((bn = COLnew(b->hseqbase, TYPE_int, n, TRANSIENT)) == NULL) {
+		msg = createException(MAL, "blob.nitems_bulk", SQLSTATE(HY013) MAL_MALLOC_FAIL); 
+		goto bailout;
+	}
+	dst = Tloc(bn, 0);
+	bi = bat_iterator(b);
+	BATloop(b, p, q) {
+		blob *next = BUNtvar(bi, p);
+		dst[p] = blob_nitems(next);
+	}
+	bn->tnonil = b->tnonil;
+	bn->tnil = b->tnil;
+	BATsetcount(bn, n);
+	bn->tsorted = bn->trevsorted = n < 2;
+	bn->tkey = false;
+bailout:
+	if (b)
+		BBPunfix(b->batCacheid);
+	if (msg && bn)
+		BBPreclaim(bn);
+	else if (bn)
+		BBPkeepref(*ret = bn->batCacheid);
+	return msg;
 }
 
 str
@@ -272,12 +316,12 @@ BLOBfromstr(const char *instr, size_t *l, blob **val, bool external)
 		if (isxdigit((unsigned char) instr[i]))
 			nitems++;
 		else if (!isspace((unsigned char) instr[i])) {
-			GDKerror("blob_fromstr: Illegal char in blob\n");
+			GDKerror("Illegal char in blob\n");
 			return -1;
 		}
 	}
 	if (nitems % 2 != 0) {
-		GDKerror("blob_fromstr: Illegal blob length '%zu' (should be even)\n", nitems);
+		GDKerror("Illegal blob length '%zu' (should be even)\n", nitems);
 		return -1;
 	}
 	nitems /= 2;

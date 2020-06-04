@@ -1,5 +1,3 @@
-from __future__ import print_function
-
 try:
     from MonetDBtesting import process
 except ImportError:
@@ -23,52 +21,50 @@ def query(conn, sql):
     return r
 
 # no timeout since we need to kill mserver5, not the inbetween Mtimeout
-s = process.server(stdin = process.PIPE, stdout = process.PIPE, stderr = process.PIPE)
+with process.server(stdin = process.PIPE, stdout = process.PIPE, stderr = process.PIPE) as s:
+    # boring setup and schema creation stuff:
+    c1 = connect(True)
+    c1.execute('create table foo (a int)')
+    c1.execute('create table bar (a int)')
+    c1.execute('insert into foo values (1),(2),(3)')
+    # print(query(c1, """select * from storage() where "table"='foo'"""))
+    print(query(c1, 'select * from foo'))
 
-# boring setup and schema creation stuff:
-c1 = connect(True)
-c1.execute('create table foo (a int)')
-c1.execute('create table bar (a int)')
-c1.execute('insert into foo values (1),(2),(3)')
-# print(query(c1, """select * from storage() where "table"='foo'"""))
-print(query(c1, 'select * from foo'))
+    # Run 'delete from foo' with store_nr_active > 1
+    # This causes MonetDB to allocate a new file for foo rather than
+    # wiping the existing one
+    c2 = connect(True)
+    c2.execute('start transaction')
+    c1.execute('delete from foo')
+    c2.execute('rollback')
 
-# Run 'delete from foo' with store_nr_active > 1
-# This causes MonetDB to allocate a new file for foo rather than
-# wiping the existing one
-c2 = connect(True)
-c2.execute('start transaction')
-c1.execute('delete from foo')
-c2.execute('rollback')
+    # Populate some new data into foo, and demonstrate that a new file has
+    # been allocated
+    c1.execute('insert into foo values (4),(5),(6)')
+    # print(query(c1, """select * from storage() where "table"='foo'"""))
 
-# Populate some new data into foo, and demonstrate that a new file has
-# been allocated
-c1.execute('insert into foo values (4),(5),(6)')
-# print(query(c1, """select * from storage() where "table"='foo'"""))
+    # Generate at least 1000 changes, as required by store_manager() in
+    # order to cause a logger restart
+    c1.execute('insert into bar select * from generate_series(cast(0 as int),1500)')
 
-# Generate at least 1000 changes, as required by store_manager() in
-# order to cause a logger restart
-c1.execute('insert into bar select * from generate_series(cast(0 as int),1500)')
+    # Wait at least 30 seconds in order to ensure store_manager() has done
+    # the logger restart
+    # An alternative would have been to generate at least SNAPSHOT_MINSIZE
+    # rows in one statement, but this way is simpler
+    time.sleep(1)
+    print(query(c1, 'select * from foo'))
 
-# Wait at least 30 seconds in order to ensure store_manager() has done
-# the logger restart
-# An alternative would have been to generate at least SNAPSHOT_MINSIZE
-# rows in one statement, but this way is simpler
-time.sleep(1)
-print(query(c1, 'select * from foo'))
+    s.communicate()
 
-s.communicate()
+with process.server(stdin = process.PIPE, stdout = process.PIPE, stderr = process.PIPE) as t:
+    c3 = connect(True)
+    # This prints the wrong data. It should print exactly the same as the
+    # previous line: "[(4,), (5,), (6,)]" , but actually prints "[(1,),
+    # (2,), (3,)]"
+    print(query(c3, 'select * from foo'))
 
-t = process.server(stdin = process.PIPE, stdout = process.PIPE, stderr = process.PIPE)
+    # cleanup
+    c3.execute('drop table foo')
+    c3.execute('drop table bar')
 
-c3 = connect(True)
-# This prints the wrong data. It should print exactly the same as the
-# previous line: "[(4,), (5,), (6,)]" , but actually prints "[(1,),
-# (2,), (3,)]"
-print(query(c3, 'select * from foo'))
-
-# cleanup
-c3.execute('drop table foo')
-c3.execute('drop table bar')
-
-t.communicate()
+    t.communicate()

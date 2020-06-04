@@ -1,7 +1,7 @@
 start transaction;
 
-declare deterministic_insert timestamp;
-set deterministic_insert = current_timestamp;
+create table deterministic_insert (deterministic_insert timestamp);
+insert into deterministic_insert values (current_timestamp);
 
 create table x(
 i integer,
@@ -10,13 +10,12 @@ tn timestamp default null,
 td timestamp default now(),
 tc timestamp default current_timestamp);
 
-insert into x(i,t,td,tc) values(0,deterministic_insert,deterministic_insert,deterministic_insert);
+insert into x(i,t,td,tc) values(0,(select current_timestamp from deterministic_insert),(select current_timestamp from deterministic_insert),(select current_timestamp from deterministic_insert));
 select i, tn, td - t, tc - t from x;
 insert into x(i,t) values(0,now());
 drop table x;
 
-declare other_deterministic_insert time;
-set other_deterministic_insert = current_time;
+drop table deterministic_insert;
 
 create table x(
 i integer,
@@ -25,20 +24,16 @@ tn time default null,
 td time default now(),
 tc time default current_time);
 
-insert into x(i,t,td,tc) values(0,other_deterministic_insert,other_deterministic_insert,other_deterministic_insert);
+create table other_deterministic_insert (other_deterministic_insert time);
+insert into other_deterministic_insert values (current_time);
+
+insert into x(i,t,td,tc) values(0,(select other_deterministic_insert from other_deterministic_insert),(select other_deterministic_insert from other_deterministic_insert),(select other_deterministic_insert from other_deterministic_insert));
 select i, tn, td - t, tc - t from x;
 insert into x(i,t) values(0,now());
 drop table x;
 
-declare t timestamp;
-declare tt time;
-set t = now();
-set t = current_timestamp;
-set t = current_time;
+drop table other_deterministic_insert;
 rollback;
-set tt = now(); --error, tt is no longer in the scope
-set tt = current_time; --error, tt is no longer in the scope
-set tt = current_timestamp; --error, tt is no longer in the scope
 
 create table d(t timestamp default current_time, i integer);
 create table d(t time default current_timestamp, i integer);

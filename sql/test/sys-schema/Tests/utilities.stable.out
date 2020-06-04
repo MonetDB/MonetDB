@@ -10,20 +10,20 @@ stdout of test 'utilities` in directory 'sql/test/sys-schema` itself:
 #  RETURN SELECT min(id) from sys.schemas where name = sname;
 #END;
 #SELECT schema_id('sys');
-% . # table_name
-% %1 # name
+% .%4 # table_name
+% %4 # name
 % int # type
 % 4 # length
 [ 2000	]
 #SELECT schema_id('json') > 2000;
-% . # table_name
-% %1 # name
+% .%2 # table_name
+% %2 # name
 % boolean # type
 % 5 # length
 [ true	]
 #SELECT schema_id('hsfdjkhksf does not exist');
-% . # table_name
-% %1 # name
+% .%2 # table_name
+% %2 # name
 % int # type
 % 1 # length
 [ NULL	]
@@ -32,14 +32,14 @@ stdout of test 'utilities` in directory 'sql/test/sys-schema` itself:
 #  RETURN SELECT min(id) from sys.tables where name = tname AND schema_id = (SELECT id from sys.schemas where name = sname);
 #END;
 #SELECT table_id('sys','tables') > 2000;
-% . # table_name
-% %1 # name
+% .%17 # table_name
+% %17 # name
 % boolean # type
 % 5 # length
 [ true	]
 #SELECT table_id(current_schema,'columns') > 2000;
-% . # table_name
-% %1 # name
+% .%2 # table_name
+% %2 # name
 % boolean # type
 % 5 # length
 [ true	]
@@ -58,8 +58,8 @@ stdout of test 'utilities` in directory 'sql/test/sys-schema` itself:
 [ "access",	"smallint",	16,	0,	true,	7	]
 [ "temporary",	"smallint",	16,	0,	true,	8	]
 #SELECT table_id('sys','hsfdjkhksf does not exist');
-% . # table_name
-% %1 # name
+% .%2 # table_name
+% %2 # name
 % int # type
 % 1 # length
 [ NULL	]
@@ -68,20 +68,20 @@ stdout of test 'utilities` in directory 'sql/test/sys-schema` itself:
 #  RETURN SELECT min(id) from sys.tables where name = tname AND schema_id = (SELECT id from sys.schemas where name = current_schema);
 #END;
 #SELECT current_schema;
-% . # table_name
-% single_value # name
+% .%2 # table_name
+% %2 # name
 % varchar # type
 % 3 # length
 [ "sys"	]
 #SELECT table_id('tables') > 2000;
-% . # table_name
-% %1 # name
+% .%17 # table_name
+% %17 # name
 % boolean # type
 % 5 # length
 [ true	]
 #SELECT table_id('columns') > 2000;
-% . # table_name
-% %1 # name
+% .%2 # table_name
+% %2 # name
 % boolean # type
 % 5 # length
 [ true	]
@@ -100,8 +100,8 @@ stdout of test 'utilities` in directory 'sql/test/sys-schema` itself:
 [ "access",	"smallint",	16,	0,	true,	7	]
 [ "temporary",	"smallint",	16,	0,	true,	8	]
 #SELECT table_id('hsfdjkhksf does not exist');
-% . # table_name
-% %1 # name
+% .%2 # table_name
+% %2 # name
 % int # type
 % 1 # length
 [ NULL	]

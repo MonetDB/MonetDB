@@ -4,8 +4,6 @@
 #
 # Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
 
-from __future__ import print_function
-
 import sys
 import os
 import re
@@ -83,7 +81,7 @@ bbp_dir = re.compile(r'^(-?\d+) (-?\d+) ([^ ]+) ([^ ]+) ([^ ]+) (-?\d+) (-?\d+) 
 norm_in  = re.compile('(?:'+')|(?:'.join([
                                                                                                                                                 # id: #groups
 ### r'^(ERROR = !| *!|)(syntax|parse|parse error: syntax)( error, )(unexpected .* on line |unexpected .* in: )?(.*)\n',                         # 1: 5
-    r'^(ERROR = !| *!|)(syntax|parse|parse error: syntax)( error, )(?:unexpected .* on line |unexpected .* in: )?(?:.*)\n',                     # 2: 5
+    r'^(ERROR = !| *!|)(syntax|parse|parse error: syntax)( error(?:,| in:) )(?:unexpected .* on line |unexpected .* in: )?(?:.*)\n',                     # 2: 5
     r"^(QUERY|ERROR)( =.* connect)( to|)( ')(localhost)(' port )(\d+)( .*)\n",                                                                  # 3: 8
     r"^([Uu]sage: )(/.*/\.libs/|/.*/lt-|)([A-Za-z0-9_]+:?[ \t].*)\n",                                                                           # 4: 3
     r'^(ERROR = !.*Exception:remote\.[^:]*:\(mapi:monetdb://monetdb@)([^/]*)(/mTests_.*\).*)\n',                                                # 5: 4
@@ -104,7 +102,7 @@ norm_in  = re.compile('(?:'+')|(?:'.join([
 norm_hint = '# the original non-normalized output was: '
 norm_out = (
 ### None, 'syntax/parse', None, 'unexpected ... on line/in: ', None,                                    # 1: 5
-    None, 'syntax/parse', None,                                                                         # 2: 5
+    None, 'syntax/parse', 'error,',                                                                     # 2: 5
     None, None, None, None, '<HOST>', None, '<MAPIPORT>', None,                                         # 3: 8
     None, '', None,                                                                                     # 4: 3
     None, 'localhost', None,                                                                            # 5: 4

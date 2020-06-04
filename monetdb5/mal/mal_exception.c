@@ -61,40 +61,22 @@ dupError(const char *err)
 static str __attribute__((__format__(__printf__, 3, 0), __returns_nonnull__))
 createExceptionInternal(enum malexception type, const char *fcn, const char *format, va_list ap)
 {
-	char *message, local[GDKMAXERRLEN];
+	char local[GDKMAXERRLEN];
 	int len;
-	// if there is an error we allow memory allocation once again
 #ifndef NDEBUG
+	// if there is an error we allow memory allocation once again
 	GDKsetmallocsuccesscount(-1);
 #endif
-	message = GDKmalloc(GDKMAXERRLEN);
-	if (message == NULL){
-		/* Leave a message behind in the logging system */
-		len = snprintf(local, GDKMAXERRLEN - 1, "%s:%s:", exceptionNames[type], fcn);
-		len = vsnprintf(local + len, GDKMAXERRLEN -1, format, ap);
-		TRC_ERROR(MAL_SERVER, "%s\n", local);
-		return M5OutOfMemory;	/* last resort */
-	}
-	len = snprintf(message, GDKMAXERRLEN, "%s:%s:", exceptionNames[type], fcn);
-	if (len >= GDKMAXERRLEN)	/* shouldn't happen */
-		return message;
-	len += vsnprintf(message + len, GDKMAXERRLEN - len, format, ap);
-	/* realloc to reduce amount of allocated memory (GDKMAXERRLEN is
-	 * way more than what is normally needed) */
-	if (len < GDKMAXERRLEN) {
-		/* in the extremely unlikely case that GDKrealloc fails, the
-		 * original pointer is still valid, so use that and don't
-		 * overwrite */
-		char *newmsg = GDKrealloc(message, len + 1);
-		if (newmsg != NULL)
-			message = newmsg;
-	}
-	char *q = message;
+	len = snprintf(local, GDKMAXERRLEN - 1, "%s:%s:", exceptionNames[type], fcn);
+	len = vsnprintf(local + len, GDKMAXERRLEN -1, format, ap);
+	if (len < 0)
+		TRC_CRITICAL(MAL_SERVER, "called with bad arguments");
+	char *q = local;
 	for (char *p = strchr(q, '\n'); p; q = p + 1, p = strchr(q, '\n'))
 		TRC_ERROR(MAL_SERVER, "%.*s\n", (int) (p - q), q);
 	if (*q)
 		TRC_ERROR(MAL_SERVER, "%s\n", q);
-	return message;
+	return dupError(local);
 }
 
 /**
@@ -107,7 +89,7 @@ str
 createException(enum malexception type, const char *fcn, const char *format, ...)
 {
 	va_list ap;
-	str ret;
+	str ret = NULL;
 
 	if (GDKerrbuf &&
 		(ret = strstr(format, MAL_MALLOC_FAIL)) != NULL &&
@@ -127,11 +109,15 @@ createException(enum malexception type, const char *fcn, const char *format, ...
 	if (strcmp(format, GDK_EXCEPTION) == 0 && GDKerrbuf[0]) {
 		/* for GDK errors, report the underlying error */
 		char *p = GDKerrbuf;
-		if (strncmp(p, GDKERROR, strlen(GDKERROR)) == 0)
+		if (strncmp(p, GDKERROR, strlen(GDKERROR)) == 0) {
+			/* error is "!ERROR: function_name: STATE!error message"
+			 * we need to skip everything up to the STATE */
 			p += strlen(GDKERROR);
-		if (strlen(p) > 6 && p[5] == '!')
-			ret = createException(type, fcn, "%s", p);
-		else
+			char *q = strchr(p, ':');
+			if (q && q[1] == ' ' && strlen(q) > 8 && q[7] == '!')
+				ret = createException(type, fcn, "%s", q + 2);
+		}
+		if (ret == NULL)
 			ret = createException(type, fcn, "GDK reported error: %s", p);
 		GDKclrerr();
 		return ret;

@@ -11,9 +11,12 @@
 #include "bat_utils.h"
 #include "sql_types.h" /* EC_POS */
 #include "wlc.h"
+#include "gdk_logger_internals.h"
 
 #define CATALOG_MAR2018 52201
 #define CATALOG_AUG2018 52202
+#define CATALOG_NOV2019 52203
+#define CATALOG_JUN2020 52204
 
 logger *bat_logger = NULL;
 
@@ -40,12 +43,28 @@ bl_preversion(int oldversion, int newversion)
 	}
 #endif
 
+#ifdef CATALOG_NOV2019
+	if (oldversion == CATALOG_NOV2019) {
+		/* upgrade to default releases */
+		catalog_version = oldversion;
+		return GDK_SUCCEED;
+	}
+#endif
+
+#ifdef CATALOG_JUN2020
+	if (oldversion == CATALOG_JUN2020) {
+		/* upgrade to default releases */
+		catalog_version = oldversion;
+		return GDK_SUCCEED;
+	}
+#endif
+
 	return GDK_FAIL;
 }
 
 #define N(schema, table, column)	schema "_" table "_" column
 
-#ifdef CATALOG_AUG2018
+#if defined CATALOG_AUG2018 || defined CATALOG_JUN2020
 static int
 find_table_id(logger *lg, const char *val, int *sid)
 {
@@ -186,7 +205,7 @@ bl_postversion(void *lg)
 
 		/* first figure out whether there are any columns in
 		 * the catalog called "readonly" (if there are fewer
-		 * then 2, then we don't have to do anything) */
+		 * than 2, then we don't have to do anything) */
 		BAT *cn = temp_descriptor(logger_find_bat(lg, N("sys", "_columns", "name"), 0, 0));
 		if (cn == NULL)
 			return GDK_FAIL;
@@ -260,7 +279,7 @@ bl_postversion(void *lg)
 				bat_destroy(cn);
 				return GDK_FAIL;
 			}
-			BAT *ts1 = BATintersect(tn, sn, ts, ss, 0, 2);
+			BAT *ts1 = BATintersect(tn, sn, ts, ss, false, false, 2);
 			bat_destroy(tn);
 			bat_destroy(sn);
 			bat_destroy(ts);
@@ -286,7 +305,7 @@ bl_postversion(void *lg)
 				bat_destroy(cn);
 				return GDK_FAIL;
 			}
-			BAT *cs1 = BATintersect(ct, tn, cs, ts1, 0, 2);
+			BAT *cs1 = BATintersect(ct, tn, cs, ts1, false, false, 2);
 			bat_destroy(ct);
 			bat_destroy(tn);
 			bat_destroy(ts1);
@@ -739,6 +758,110 @@ bl_postversion(void *lg)
 			   NULL) != GDK_SUCCEED)
 			return GDK_FAIL;
 		//log_sequence(lg, OBJ_SID, id);
+	}
+#endif
+
+#ifdef CATALOG_NOV2019
+	if (catalog_version <= CATALOG_NOV2019) {
+		BAT *te, *tne;
+		const int *ocl;	/* old eclass */
+		int *ncl;	/* new eclass */
+
+		te = temp_descriptor(logger_find_bat(lg, N("sys", "types", "eclass"), 0, 0));
+		if (te == NULL)
+			return GDK_FAIL;
+		tne = COLnew(te->hseqbase, TYPE_int, BATcount(te), PERSISTENT);
+		if (tne == NULL) {
+			bat_destroy(te);
+			return GDK_FAIL;
+		}
+		ocl = Tloc(te, 0);
+		ncl = Tloc(tne, 0);
+		for (BUN p = 0, q = BUNlast(te); p < q; p++) {
+			switch (ocl[p]) {
+			case EC_TIME_TZ:		/* old EC_DATE */
+				ncl[p] = EC_DATE;
+				break;
+			case EC_DATE:			/* old EC_TIMESTAMP */
+				ncl[p] = EC_TIMESTAMP;
+				break;
+			case EC_TIMESTAMP:		/* old EC_GEOM */
+				ncl[p] = EC_GEOM;
+				break;
+			case EC_TIMESTAMP_TZ:		/* old EC_EXTERNAL */
+				ncl[p] = EC_EXTERNAL;
+				break;
+			default:
+				/* others stay unchanged */
+				ncl[p] = ocl[p];
+				break;
+			}
+		}
+		BATsetcount(tne, BATcount(te));
+		bat_destroy(te);
+		tne->tnil = false;
+		tne->tnonil = true;
+		tne->tsorted = false;
+		tne->trevsorted = false;
+		tne->tkey = false;
+		if (BATsetaccess(tne, BAT_READ) != GDK_SUCCEED ||
+		    logger_add_bat(lg, tne, N("sys", "types", "eclass"), 0, 0) != GDK_SUCCEED) {
+			bat_destroy(tne);
+			return GDK_FAIL;
+		}
+		bat_destroy(tne);
+	}
+#endif
+
+#ifdef CATALOG_JUN2020
+	if (catalog_version <= CATALOG_JUN2020) {
+		int id;
+		lng lid;
+		BAT *fid = temp_descriptor(logger_find_bat(lg, N("sys", "functions", "id"), 0, 0));
+		if (logger_sequence(lg, OBJ_SID, &lid) == 0 ||
+		    fid == NULL) {
+			bat_destroy(fid);
+			return GDK_FAIL;
+		}
+		id = (int) lid;
+		BAT *sem = COLnew(fid->hseqbase, TYPE_bit, BATcount(fid), PERSISTENT);
+		if (sem == NULL) {
+			bat_destroy(fid);
+			return GDK_FAIL;
+		}
+		bit *fsys = (bit *) Tloc(sem, 0);
+		for (BUN p = 0, q = BATcount(fid); p < q; p++) {
+			fsys[p] = 1;
+		}
+
+		sem->tkey = false;
+		sem->tsorted = sem->trevsorted = true;
+		sem->tnonil = true;
+		sem->tnil = false;
+		BATsetcount(sem, BATcount(fid));
+		bat_destroy(fid);
+		if (BATsetaccess(sem, BAT_READ) != GDK_SUCCEED ||
+		    logger_add_bat(lg, sem, N("sys", "functions", "semantics"), 0, 0) != GDK_SUCCEED) {
+
+			bat_destroy(sem);
+			return GDK_FAIL;
+		}
+		bat_destroy(sem);
+		int sid;
+		int tid = find_table_id(lg, "functions", &sid);
+		if (tabins(lg, true, -1, NULL, "sys", "_columns",
+			   "id", &id,
+			   "name", "semantics",
+			   "type", "boolean",
+			   "type_digits", &((const int) {1}),
+			   "type_scale", &((const int) {0}),
+			   "table_id", &tid,
+			   "default", str_nil,
+			   "null", &((const bit) {TRUE}),
+			   "number", &((const int) {11}),
+			   "storage", str_nil,
+			   NULL) != GDK_SUCCEED)
+			return GDK_FAIL;
 	}
 #endif
 

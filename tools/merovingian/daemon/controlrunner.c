@@ -17,6 +17,7 @@
 #ifdef HAVE_POLL_H
 #include <poll.h>
 #endif
+#include <inttypes.h>
 #include <time.h>
 #include <string.h>  /* strerror */
 #include <unistd.h>  /* select */
@@ -38,6 +39,7 @@
 #include "discoveryrunner.h" /* broadcast, remotedb */
 #include "forkmserver.h"
 #include "controlrunner.h"
+#include "snapshot.h"
 #include "multiplex-funnel.h"
 
 #if !defined(HAVE_ACCEPT4) || !defined(SOCK_CLOEXEC)
@@ -355,9 +357,12 @@ static void ctl_handle_client(
 				dp = _mero_topdp->next; /* don't need the console/log */
 				while (dp != NULL) {
 					if (dp->type == MERODB && strcmp(dp->dbname, q) == 0) {
+						if (dp->pid <= 0) {
+							dp = NULL;
+							/* unlock happens below */
+							break;
+						}
 						if (strcmp(p, "stop") == 0) {
-							pid_t pid = dp->pid;
-							char *dbname = strdup(dp->dbname);
 							mtype type = dp->type;
 							pthread_mutex_unlock(&_mero_topdp_lock);
 							/* Try to shutdown the profiler before the DB.
@@ -366,10 +371,13 @@ static void ctl_handle_client(
 							 * other words: ignore any errors that shutdown_profiler
 							 * may have encountered.
 							 */
-							shutdown_profiler(dbname, &stats);
-							if (stats != NULL)
+							if ((e = shutdown_profiler(dp->dbname, &stats)) != NULL) {
+								free(e);
+							} else if (stats != NULL)
 								msab_freeStatus(&stats);
-							terminateProcess(pid, dbname, type, 1);
+							pthread_mutex_lock(&dp->fork_lock);
+							terminateProcess(dp, type);
+							pthread_mutex_unlock(&dp->fork_lock);
 							Mfprintf(_mero_ctlout, "%s: stopped "
 									"database '%s'\n", origin, q);
 						} else {
@@ -690,6 +698,107 @@ static void ctl_handle_client(
 							 origin, q);
 				}
 				msab_freeStatus(&stats);
+			} else if (strncmp(p, "snapshot create adhoc ", strlen("snapshot create adhoc ")) == 0) {
+				char *dest = p + strlen("snapshot create adhoc ");
+				Mfprintf(_mero_ctlout, "Start snapshot of database '%s' to file '%s'\n", q, dest);
+				char *e = snapshot_database_to(q, dest);
+				if (e != NULL) {
+					Mfprintf(_mero_ctlerr, "%s: snapshot database '%s' to %s failed: %s",
+						origin, q, dest, getErrMsg(e));
+					len = snprintf(buf2, sizeof(buf2), "%s\n", getErrMsg(e));
+					send_client("!");
+					freeErr(e);
+				} else {
+					len = snprintf(buf2, sizeof(buf2), "OK\n");
+					send_client("=");
+					Mfprintf(_mero_ctlout, "%s: completed snapshot of database '%s' to '%s'\n",
+						origin, q, dest);
+				}
+			} else if (strcmp(p, "snapshot create automatic") == 0) {
+				char *dest = NULL;
+				char *e = snapshot_default_filename(&dest, q);
+				if (e != NULL) {
+					Mfprintf(_mero_ctlerr, "%s: snapshot database '%s': %s",
+						origin, q, getErrMsg(e));
+					len = snprintf(buf2, sizeof(buf2), "%s\n", getErrMsg(e));
+					send_client("!");
+					freeErr(e);
+				} else {
+					Mfprintf(_mero_ctlout, "Start snapshot of database '%s' to file '%s'\n", q, dest);
+					e = snapshot_database_to(q, dest);
+					if (e != NULL) {
+						Mfprintf(_mero_ctlerr, "%s: snapshot database '%s' to %s failed: %s",
+							origin, q, dest, getErrMsg(e));
+						len = snprintf(buf2, sizeof(buf2), "%s\n", getErrMsg(e));
+						send_client("!");
+						freeErr(e);
+					} else {
+						len = snprintf(buf2, sizeof(buf2), "OK\n");
+						send_client("=");
+						Mfprintf(_mero_ctlout, "%s: completed snapshot of database '%s' to '%s'\n",
+							origin, q, dest);
+					}
+					free(dest);
+				}
+			} else if (strncmp(p, "snapshot restore adhoc ", strlen("snapshot restore adhoc ")) == 0) {
+				char *source = p + strlen("snapshot restore adhoc ");
+				Mfprintf(_mero_ctlout, "Start restore snapshot of database '%s' from file '%s'\n", q, source);
+				char *e = snapshot_restore_from(q, source);
+				if (e != NULL) {
+					Mfprintf(_mero_ctlerr, "%s: restore  database '%s' from snapshot %s failed: %s",
+						origin, q, source, getErrMsg(e));
+					len = snprintf(buf2, sizeof(buf2), "%s\n", getErrMsg(e));
+					send_client("!");
+					freeErr(e);
+				} else {
+					len = snprintf(buf2, sizeof(buf2), "OK\n");
+					send_client("=");
+					Mfprintf(_mero_ctlout, "%s: restored database '%s' from snapshot '%s'\n",
+						origin, q, source);
+				}
+			} else if (strncmp(p, "snapshot destroy ", strlen("snapshot destroy ")) == 0) {
+				char *path = p + strlen("snapshot destroy ");
+				Mfprintf(_mero_ctlout, "%s: drop snapshot '%s'\n", origin, path);
+				char *e = snapshot_destroy_file(path);
+				if (e != NULL) {
+					Mfprintf(_mero_ctlerr, "%s: drop snapshot '%s' failed: %s\n", origin, path, e);
+					len = snprintf(buf2, sizeof(buf2), "%s\n", e);
+					send_client("!");
+					freeErr(e);
+				} else {
+					len = snprintf(buf2, sizeof(buf2), "OK\n");
+					send_client("=");
+				}
+			} else if (strcmp(p, "snapshot list") == 0) {
+				Mfprintf(_mero_ctlout, "Start snapshot list\n");
+				int nsnaps = 0;
+				struct snapshot *snaps = NULL;
+				char *e = snapshot_list(&nsnaps, &snaps);
+				if (e != NULL) {
+					Mfprintf(_mero_ctlerr, "%s: snapshot list failed: %s", origin, getErrMsg(e));
+					len = snprintf(buf2, sizeof(buf2), "%s\n", getErrMsg(e));
+					send_client("!");
+					freeErr(e);
+					break; // <================== DISCONNECT!!!!
+				}
+				len = snprintf(buf2, sizeof(buf2), "OK1\n");
+				send_client("=");
+				for (int i = 0; i < nsnaps; i++) {
+					struct tm tm = { 0 };
+					char datebuf[100];
+					struct snapshot *snap = &snaps[i];
+					gmtime_r(&snap->time, &tm);
+					strftime(datebuf, sizeof(datebuf), "%Y%m%dT%H%M%S", &tm);
+					len = snprintf(buf2, sizeof(buf2), "%s %" PRIu64 " %s %s\n",
+						datebuf,
+						(uint64_t)snap->size,
+						snap->dbname,
+						snap->path != NULL ? snap->path : "");
+					send_client("=");
+				}
+				free_snapshots(snaps, nsnaps);
+				Mfprintf(_mero_ctlout, "Returned %d snapshots\n", nsnaps);
+				break; // <==================== DISCONNECT!!!!
 			} else if (strncmp(p, "name=", strlen("name=")) == 0) {
 				char *e;
 
@@ -719,7 +828,7 @@ static void ctl_handle_client(
 				}
 			} else if (strchr(p, '=') != NULL) { /* set */
 				char *val;
-				char doshare = 0;
+				bool doshare = false;
 
 				if ((e = msab_getStatus(&stats, q)) != NULL) {
 					len = snprintf(buf2, sizeof(buf2),
@@ -745,7 +854,7 @@ static void ctl_handle_client(
 				if (*val == '\0')
 					val = NULL;
 
-				if ((doshare = !strcmp(p, "shared"))) {
+				if ((doshare = strcmp(p, "shared") == 0)) {
 					/* bail out if we don't do discovery at all */
 					if (getConfNum(_mero_props, "discovery") == 0) {
 						len = snprintf(buf2, sizeof(buf2),
@@ -1069,8 +1178,10 @@ controlRunner(void *d)
 		}
 
 #ifdef HAVE_POLL
-		if ((pfd.revents & POLLIN) == 0)
+		if ((pfd.revents & POLLIN) == 0) {
+			free(p);
 			continue;
+		}
 #else
 		if (!FD_ISSET(usock, &fds)) {
 			free(p);

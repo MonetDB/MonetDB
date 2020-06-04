@@ -1,5 +1,3 @@
-from __future__ import print_function
-
 try:
     from MonetDBtesting import process
 except ImportError:
@@ -26,29 +24,28 @@ dbname = tstdb
 dbnameclone = tstdb + 'clone'
 
 #master = process.server(dbname = dbname, stdin = process.PIPE, stdout = process.PIPE, stderr = process.PIPE)
-slave = process.server(dbname = dbnameclone, mapiport = cloneport, stdin = process.PIPE, stdout = process.PIPE, stderr = process.PIPE)
+with process.server(dbname=dbnameclone, mapiport=cloneport, stdin=process.PIPE, stdout=process.PIPE, stderr=process.PIPE) as slave, \
+     process.client('sql', server = slave, stdin = process.PIPE, stdout = process.PIPE, stderr = process.PIPE) as c:
 
-c = process.client('sql', server = slave, stdin = process.PIPE, stdout = process.PIPE, stderr = process.PIPE)
-
-# make sure we are a little behind the wlc70.py
-time.sleep(3);
-# the previous test did not prepare the log files
-cout, cerr = c.communicate('''\
+    # make sure we are a little behind the wlc70.py
+    time.sleep(3);
+    # the previous test did not prepare the log files
+    cout, cerr = c.communicate('''\
 call wlr.master('%s');
 #select now();
 call wlr.replicate(now());
 select * from tmp70;
 ''' % dbname)
 
-sout, serr = slave.communicate()
-#mout, merr = master.communicate()
+    sout, serr = slave.communicate()
+    #mout, merr = master.communicate()
 
-#sys.stdout.write(mout)
-sys.stdout.write(sout)
-sys.stdout.write(cout)
-#sys.stderr.write(merr)
-sys.stderr.write(serr)
-sys.stderr.write(cerr)
+    #sys.stdout.write(mout)
+    sys.stdout.write(sout)
+    sys.stdout.write(cout)
+    #sys.stderr.write(merr)
+    sys.stderr.write(serr)
+    sys.stderr.write(cerr)
 
 def listfiles(path):
     sys.stdout.write("#LISTING OF THE WLR LOG FILE\n")

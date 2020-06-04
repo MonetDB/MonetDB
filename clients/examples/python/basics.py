@@ -4,8 +4,6 @@
 #
 # Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
 
-from __future__ import print_function
-
 import logging
 
 #configure the logger, so we can see what is happening

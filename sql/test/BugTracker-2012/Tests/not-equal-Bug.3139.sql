@@ -7,11 +7,9 @@ from t1_bug3139,
      (select count(*) as cnt from t2_bug3139) t3
 where t1_bug3139.id > 1 and t1_bug3139.dp <> t3.cnt;
 
-declare t2_bug3139_cnt bigint;
-set t2_bug3139_cnt = (select count(*) from t2_bug3139);
-select t1_bug3139.id, t1_bug3139.dp, t2_bug3139_cnt
+select t1_bug3139.id, t1_bug3139.dp, (select count(*) from t2_bug3139)
 from t1_bug3139
-where t1_bug3139.id > 1 and t1_bug3139.dp <> t2_bug3139_cnt;
+where t1_bug3139.id > 1 and t1_bug3139.dp <> (select count(*) from t2_bug3139);
 
 select t1_bug3139.id, t1_bug3139.dp
 from t1_bug3139

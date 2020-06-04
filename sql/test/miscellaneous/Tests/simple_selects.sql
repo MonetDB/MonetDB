@@ -21,26 +21,45 @@ insert into x values (1, 1);
 select cast(x as date) from x; --error, cannot cast
 select cast(x as time) from x;
 select cast(x as timestamp) from x; --error, cannot cast
+select cast(x as real) from x;
+select cast(x as double) from x;
+select cast(x as decimal) from x;
 select cast(y as date) from x; --error, cannot cast
 select cast(y as time) from x; --We throw error, but PostgreSQL doesn't
 select cast(y as timestamp) from x; --error, cannot cast
+select cast(y as real) from x;
+select cast(y as double) from x;
+select cast(y as decimal) from x;
+
 insert into x values (null, null);
 select cast(x as date) from x; --error, cannot cast
 select cast(x as time) from x;
 select cast(x as timestamp) from x; --error, cannot cast
+select cast(x as real) from x;
+select cast(x as double) from x;
+select cast(x as decimal) from x;
 select cast(y as date) from x; --error, cannot cast
 select cast(y as time) from x; --We throw error, but PostgreSQL doesn't
 select cast(y as timestamp) from x; --error, cannot cast
+select cast(y as real) from x;
+select cast(y as double) from x;
+select cast(y as decimal) from x;
 drop table x;
 
-create table x (x time, y date, z timestamp);
-insert into x values (null, null, null);
+create table x (x time, y date, z timestamp, w real, a double, b decimal);
+insert into x values (null, null, null, null, null, null);
 select cast(x as interval second) from x; --We throw error, but PostgreSQL doesn't
 select cast(x as interval month) from x; --We throw error, but PostgreSQL doesn't
 select cast(y as interval second) from x; --error, cannot cast
 select cast(y as interval month) from x; --error, cannot cast
 select cast(z as interval second) from x; --error, cannot cast
 select cast(z as interval month) from x; --error, cannot cast
+select cast(w as interval second) from x;
+select cast(w as interval month) from x;
+select cast(a as interval second) from x;
+select cast(a as interval month) from x;
+select cast(b as interval second) from x;
+select cast(b as interval month) from x;
 drop table x;
 
 select difference('foobar', 'oobar'), difference(NULL, 'oobar'), difference('foobar', NULL), difference(NULL, NULL),
@@ -65,6 +84,8 @@ select "idontexist"."idontexist"(1) over (); --error, it doesn't exist
 
 select cast(true as interval second); --error, not possible
 select cast(true as interval month); --error, not possible
+select cast(cast(1 as interval second) as boolean); --error, not possible
+select cast(cast(1 as interval month) as boolean); --error, not possible
 
 select substring('abc' from 1 for null);
 select substring('abc' from null for 2);
@@ -76,3 +97,76 @@ CREATE AGGREGATE sin(input REAL) RETURNS REAL EXTERNAL NAME "mmath"."sin"; --err
 select length(myblob), octet_length(myblob), length(mystr), octet_length(mystr) 
 from (values (cast(null as blob), cast(null as char(32)))) as my(myblob, mystr);
 select md5(null);
+
+select 'a' like null, null like 'a', null like null, 'a' ilike null, null ilike 'a', null ilike null,
+       'a' not like null, null not like 'a', null not like null, 'a' not ilike null, null not ilike 'a', null not ilike null; --all NULL
+
+create table x (x varchar(32));
+insert into x values (null), ('a');
+
+select x like null, null like x, null like null, x ilike null, null ilike x, null ilike null,
+       x not like null, null not like x, null not like null, x not ilike null, null not ilike x, null not ilike null from x;
+	-- all NULL
+
+select x like x, x ilike x, x not like x, x not ilike x from x;
+	-- NULL NULL NULL NULL
+	-- True True False False
+
+select x1.x from x x1 inner join x x2 on x1.x not like x2.x; --empty
+
+select i from (values (1),(2),(3),(NULL)) as integers(i) where not cast(i as varchar(32)) like null; --empty
+
+drop table x;
+
+create table x (x int null not null); --error, multiple null constraints
+create table x (a int default '1' GENERATED ALWAYS AS IDENTITY); --error, multiple default values
+
+create table myvar (m bigint);
+INSERT INTO myvar VALUES ((SELECT COUNT(*) FROM sequences));
+create table x (a int GENERATED ALWAYS AS IDENTITY);
+alter table x alter a set default 1; --ok, remove sequence
+SELECT CAST(COUNT(*) - (SELECT m FROM myvar) AS BIGINT) FROM sequences; --the total count, cannot change
+drop table myvar;
+drop table x;
+
+create table myvar (m bigint);
+INSERT INTO myvar VALUES ((SELECT COUNT(*) FROM sequences));
+create table x (a int GENERATED ALWAYS AS IDENTITY);
+alter table x alter a drop default; --ok, remove sequence
+SELECT CAST(COUNT(*) - (SELECT m FROM myvar) AS BIGINT) FROM sequences; --the total count, cannot change
+drop table myvar;
+drop table x;
+
+create function myudf() returns int
+begin
+declare myvar int;
+SELECT 1, 2 INTO myvar; --error, number of variables don't match
+return 1;
+end;
+
+create table x (a int);
+create table x (c int); --error table x already declared
+drop table if exists x;
+
+create table myx (a boolean);
+create table myy (a interval second);
+select * from myx natural full outer join myy; --error, types boolean(1,0) and sec_interval(13,0) are not equal
+drop table myx;
+drop table myy;
+
+create view iambad as select * from _tables sample 10; --error, sample inside views not supported
+
+set "current_timezone" = null; --error, default global variables cannot be null
+set "current_timezone" = 11111111111111; --error, value too big
+set "current_schema" = null; --error, default global variables cannot be null
+
+select greatest(null, null);
+select sql_min(null, null);
+
+start transaction;
+create table tab1(col1 blob);
+insert into tab1 values('2233');
+select length(col1) from tab1;
+insert into tab1 values(null), (null), ('11'), ('2233');
+select length(col1) from tab1;
+rollback;

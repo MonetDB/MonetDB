@@ -20,7 +20,7 @@ INCLUDES = .. \
 	../../../../../common/utils \
 	../../../../../clients/mapilib \
 	../../../../../gdk \
-	$(LIBLAS_INCS)
+	$(LIBLAS_CFLAGS)
 
 lib__lidar = {
 	MODULE

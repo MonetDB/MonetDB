@@ -10,7 +10,7 @@
 #include "cheader.h"
 #include "cheader.text.h"
 
-#include "mtime.h"
+#include "gdk_time.h"
 #include "blob.h"
 
 #include <setjmp.h>
@@ -99,7 +99,7 @@ static bool WriteTextToFile(FILE *f, const char *data)
 	return WriteDataToFile(f, data, strlen(data));
 }
 
-static void handler(int sig, siginfo_t *si, void *unused)
+static _Noreturn void handler(int sig, siginfo_t *si, void *unused)
 {
 	int tid = THRgettid();
 

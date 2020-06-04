@@ -69,7 +69,27 @@ MAPI  = (monetdb) /var/tmp/mtest-389745/.s.monetdb.32344
 QUERY = select cast(z as interval month) from x; --error, cannot cast
 ERROR = !types timestamp(7,0) and month_interval(3,0) are not equal for column 'z'
 CODE  = 42000
-MAPI  = (monetdb) /var/tmp/mtest-389745/.s.monetdb.32344
+MAPI  = (monetdb) /var/tmp/mtest-193867/.s.monetdb.35256
+QUERY = select cast(w as interval second) from x;
+ERROR = !types real(24,0) and sec_interval(13,0) are not equal for column 'w'
+CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-193867/.s.monetdb.35256
+QUERY = select cast(w as interval month) from x;
+ERROR = !types real(24,0) and month_interval(3,0) are not equal for column 'w'
+CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-193867/.s.monetdb.35256
+QUERY = select cast(a as interval second) from x;
+ERROR = !types double(53,0) and sec_interval(13,0) are not equal for column 'a'
+CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-193867/.s.monetdb.35256
+QUERY = select cast(a as interval month) from x;
+ERROR = !types double(53,0) and month_interval(3,0) are not equal for column 'a'
+CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-193867/.s.monetdb.35256
+QUERY = select cast(b as interval month) from x;
+ERROR = !types decimal(18,3) and month_interval(3,0) are not equal for column 'b'
+CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-193867/.s.monetdb.35256
 QUERY = select "idontexist"."idontexist"(); --error, it doesn't exist
 ERROR = !SELECT: no such schema 'idontexist'
 CODE  = 3F000
@@ -117,13 +137,62 @@ MAPI  = (monetdb) /var/tmp/mtest-316445/.s.monetdb.33939
 QUERY = select cast(true as interval month); --error, not possible
 ERROR = !types boolean(1,0) and month_interval(3,0) are not equal
 CODE  = 42000
-MAPI  = (monetdb) /var/tmp/mtest-416559/.s.monetdb.32222
+MAPI  = (monetdb) /var/tmp/mtest-108640/.s.monetdb.34144
+QUERY = select cast(cast(1 as interval second) as boolean); --error, not possible
+ERROR = !types sec_interval(13,0) and boolean(1,0) are not equal
+CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-108640/.s.monetdb.34144
+QUERY = select cast(cast(1 as interval month) as boolean); --error, not possible
+ERROR = !types month_interval(3,0) and boolean(1,0) are not equal
+CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-108640/.s.monetdb.34144
 QUERY = CREATE FUNCTION count(input INT) RETURNS INT BEGIN RETURN SELECT 1; END; --error, ambiguous, there's an aggregate named count with the same parameters
 ERROR = !CREATE FUNCTION: there's an aggregate with the name 'count' and the same parameters, which causes ambiguous calls
 CODE  = 42000
 MAPI  = (monetdb) /var/tmp/mtest-416559/.s.monetdb.32222
 QUERY = CREATE AGGREGATE sin(input REAL) RETURNS REAL EXTERNAL NAME "mmath"."sin"; --error, ambiguous, there's a function named sin with the same parameters
 ERROR = !CREATE AGGREGATE: there's a function with the name 'sin' and the same parameters, which causes ambiguous calls
+CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-374801/.s.monetdb.38729
+QUERY = create table x (x int null not null); --error, multiple null constraints
+ERROR = !NULL constraint for a column may be specified at most once
+CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-374801/.s.monetdb.38729
+QUERY = create table x (a int default '1' GENERATED ALWAYS AS IDENTITY); --error, multiple default values
+ERROR = !A default value for a column may be specified at most once
+CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-190980/.s.monetdb.35234
+QUERY = create function myudf() returns int
+        begin
+        declare myvar int;
+        SELECT 1, 2 INTO myvar; --error, number of variables don't match
+        return 1;
+        end;
+ERROR = !SELECT INTO: number of values doesn't match number of variables to set
+CODE  = 21S01
+MAPI  = (monetdb) /var/tmp/mtest-190980/.s.monetdb.35234
+QUERY = create table x (c int); --error table x already declared
+ERROR = !CREATE TABLE: name 'x' already in use
+CODE  = 42S01
+MAPI  = (monetdb) /var/tmp/mtest-628208/.s.monetdb.31440
+QUERY = select * from myx natural full outer join myy; --error, types boolean(1,0) and sec_interval(13,0) are not equal
+ERROR = !types boolean(1,0) and sec_interval(13,0) are not equal for column 'a'
+CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-753717/.s.monetdb.32140
+QUERY = create view iambad as select * from _tables sample 10; --error, sample inside views not supported
+ERROR = !CREATE VIEW: SAMPLE not supported
+CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-625509/.s.monetdb.34262
+QUERY = set "current_timezone" = null; --error, default global variables cannot be null
+ERROR = !Variable 'sys.current_timezone' cannot be NULL
+CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-625509/.s.monetdb.34262
+QUERY = set "current_timezone" = 11111111111111; --error, value too big
+ERROR = !Value too large for 'sys.current_timezone'
+CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-625509/.s.monetdb.34262
+QUERY = set "current_schema" = null; --error, default global variables cannot be null
+ERROR = !Variable 'sys.current_schema' cannot be NULL
 CODE  = 42000
 
 # 17:31:38 >  

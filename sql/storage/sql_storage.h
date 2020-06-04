@@ -10,7 +10,6 @@
 #define SQL_STORAGE_H
 
 #include "sql_catalog.h"
-#include "gdk_logger.h"
 #include "store_sequence.h"
 
 #define COLSIZE	1024
@@ -20,11 +19,9 @@
 
 #define isTemp(x) (isNew((x)->t)||(x)->t->persistence!=SQL_PERSIST)
 #define isTempTable(x)   ((x)->persistence!=SQL_PERSIST)
-#define isGlobal(x)      ((x)->persistence!=SQL_LOCAL_TEMP && \
-			  (x)->persistence!=SQL_DECLARED_TABLE)
+#define isGlobal(x)      ((x)->persistence!=SQL_LOCAL_TEMP && (x)->persistence!=SQL_DECLARED_TABLE)
 #define isGlobalTemp(x)  ((x)->persistence==SQL_GLOBAL_TEMP)
-#define isTempSchema(x)  (strcmp((x)->base.name, "tmp") == 0 || \
-			  strcmp((x)->base.name, dt_schema) == 0)
+#define isTempSchema(x)  (strcmp((x)->base.name, "tmp") == 0)
 #define isDeclaredTable(x)  ((x)->persistence==SQL_DECLARED_TABLE)
 
 extern int catalog_version;
@@ -124,6 +121,13 @@ typedef void *(*bind_col_fptr) (sql_trans *tr, sql_column *c, int access);
 typedef void *(*bind_idx_fptr) (sql_trans *tr, sql_idx *i, int access);
 typedef void *(*bind_del_fptr) (sql_trans *tr, sql_table *t, int access);
 
+/* 
+-- binds data for column, idx and delets (from the parent transaction)
+*/
+typedef void *(*bind_col_data_fptr) (sql_trans *tr, sql_column *c);
+typedef void *(*bind_idx_data_fptr) (sql_trans *tr, sql_idx *i);
+typedef void *(*bind_del_data_fptr) (sql_trans *tr, sql_table *t);
+
 /*
 -- append/update to columns and indices 
 */
@@ -222,6 +226,10 @@ typedef struct store_functions {
 	bind_col_fptr bind_col;
 	bind_idx_fptr bind_idx;
 	bind_del_fptr bind_del;
+
+	bind_col_data_fptr bind_col_data;
+	bind_idx_data_fptr bind_idx_data;
+	bind_del_data_fptr bind_del_data;
 
 	append_col_fptr append_col;
 	append_idx_fptr append_idx;
@@ -381,7 +389,7 @@ extern void idle_manager(void);
 
 extern void store_lock(void);
 extern void store_unlock(void);
-extern int store_next_oid(void);
+extern sqlid store_next_oid(void);
 
 extern sql_trans *sql_trans_create(backend_stack stk, sql_trans *parent, const char *name, bool try_spare);
 extern sql_trans *sql_trans_destroy(sql_trans *tr, bool try_spare);
@@ -410,8 +418,8 @@ extern sql_table *sql_trans_create_table(sql_trans *tr, sql_schema *s, const cha
 
 extern int sql_trans_set_partition_table(sql_trans *tr, sql_table *t);
 extern sql_table *sql_trans_add_table(sql_trans *tr, sql_table *mt, sql_table *pt);
-extern int sql_trans_add_range_partition(sql_trans *tr, sql_table *mt, sql_table *pt, sql_subtype tpe, ptr min, ptr max, int with_nills, int update, sql_part** err);
-extern int sql_trans_add_value_partition(sql_trans *tr, sql_table *mt, sql_table *pt, sql_subtype tpe, list* vals, int with_nills, int update, sql_part **err);
+extern int sql_trans_add_range_partition(sql_trans *tr, sql_table *mt, sql_table *pt, sql_subtype tpe, ptr min, ptr max, bit with_nills, int update, sql_part** err);
+extern int sql_trans_add_value_partition(sql_trans *tr, sql_table *mt, sql_table *pt, sql_subtype tpe, list* vals, bit with_nills, int update, sql_part **err);
 
 extern sql_table *sql_trans_rename_table(sql_trans *tr, sql_schema *s, sqlid id, const char *new_name);
 extern sql_table *sql_trans_set_table_schema(sql_trans *tr, sqlid id, sql_schema *os, sql_schema *ns);
@@ -458,7 +466,7 @@ extern sql_session * sql_session_create(backend_stack stk, int autocommit);
 extern void sql_session_destroy(sql_session *s);
 extern int sql_session_reset(sql_session *s, int autocommit);
 extern int sql_trans_begin(sql_session *s);
-extern void sql_trans_end(sql_session *s);
+extern void sql_trans_end(sql_session *s, int commit /* rollback=0, or commit=1 temporaries */);
 
 extern list* sql_trans_schema_user_dependencies(sql_trans *tr, sqlid schema_id);
 extern void sql_trans_create_dependency(sql_trans *tr, sqlid id, sqlid depend_id, sql_dependency depend_type);
@@ -494,7 +502,5 @@ extern sql_part *sql_trans_copy_part(sql_trans *tr, sql_table *t, sql_part *pt);
 
 extern void sql_trans_drop_any_comment(sql_trans *tr, sqlid id);
 extern void sql_trans_drop_obj_priv(sql_trans *tr, sqlid obj_id);
-
-extern void dup_sql_type(sql_trans *tr, sql_schema *os, sql_subtype *oc, sql_subtype *nc);
 
 #endif /*SQL_STORAGE_H */

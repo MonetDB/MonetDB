@@ -290,24 +290,25 @@ typedef enum sql_class {
 	EC_DEC,
 	EC_FLT,
 	EC_TIME,
+	EC_TIME_TZ,
 	EC_DATE,
 	EC_TIMESTAMP,
+	EC_TIMESTAMP_TZ,
 	EC_GEOM,
 	EC_EXTERNAL,
 	EC_MAX /* evaluated to the max value, should be always kept at the bottom */
 } sql_class;
 
-#define has_tz(e,n)	(EC_TEMP(e) && \
-			((e == EC_TIME && strcmp(n, "timetz") == 0) || \
-			(e == EC_TIMESTAMP && strcmp(n, "timestamptz") == 0)) )
-#define type_has_tz(t)	has_tz((t)->type->eclass, (t)->type->sqlname)
-#define EC_VARCHAR(e)	(e==EC_CHAR||e==EC_STRING)
-#define EC_INTERVAL(e)	(e==EC_MONTH||e==EC_SEC)
-#define EC_NUMBER(e)	(e==EC_POS||e==EC_NUM||EC_INTERVAL(e)||e==EC_DEC||e==EC_FLT)
-#define EC_COMPUTE(e)	(e==EC_NUM||e==EC_FLT)
-#define EC_BOOLEAN(e)	(e==EC_BIT||e==EC_NUM||e==EC_FLT)
-#define EC_TEMP(e)		(e==EC_TIME||e==EC_DATE||e==EC_TIMESTAMP)
-#define EC_TEMP_FRAC(e)	(e==EC_TIME||e==EC_TIMESTAMP)
+#define has_tz(e,n)		(EC_TEMP_TZ(e)) 
+#define type_has_tz(t)		has_tz((t)->type->eclass, (t)->type->sqlname)
+#define EC_VARCHAR(e)		(e==EC_CHAR||e==EC_STRING)
+#define EC_INTERVAL(e)		(e==EC_MONTH||e==EC_SEC)
+#define EC_NUMBER(e)		(e==EC_POS||e==EC_NUM||EC_INTERVAL(e)||e==EC_DEC||e==EC_FLT)
+#define EC_COMPUTE(e)		(e==EC_NUM||e==EC_FLT)
+#define EC_BOOLEAN(e)		(e==EC_BIT||e==EC_NUM||e==EC_FLT)
+#define EC_TEMP_TZ(e)		(e==EC_TIME_TZ||e==EC_TIMESTAMP_TZ)
+#define EC_TEMP(e)		(e==EC_TIME||e==EC_DATE||e==EC_TIMESTAMP||EC_TEMP_TZ(e))
+#define EC_TEMP_FRAC(e)		(e==EC_TIME||e==EC_TIMESTAMP||EC_TEMP_TZ(e))
 #define EC_FIXED(e)		(e==EC_BIT||e==EC_CHAR||e==EC_POS||e==EC_NUM||EC_INTERVAL(e)||e==EC_DEC||EC_TEMP(e))
 
 typedef struct sql_type {
@@ -433,6 +434,7 @@ typedef struct sql_func {
 			*/
 	sql_flang lang;
 	char *query;	/* sql code */
+	bit semantics; /*When set to true, function incorporates some kind of null semantics.*/
 	bit side_effect;
 	bit varres;	/* variable output result */
 	bit vararg;	/* variable input arguments */
@@ -603,7 +605,6 @@ typedef enum table_types {
 #define TABLE_APPENDONLY	2
 
 typedef struct sql_part_value {
-	sql_subtype tpe;
 	ptr value;
 	size_t length;
 } sql_part_value;
@@ -612,7 +613,7 @@ typedef struct sql_part {
 	sql_base base;
 	struct sql_table *t; /* cached value of the merge table */
 	sql_subtype tpe;     /* the column/expression type */
-	int with_nills;
+	bit with_nills;      /* 0 no nills, 1 holds nills, NULL holds all values -> range FROM MINVALUE TO MAXVALUE WITH NULL */
 	union {
 		list *values;         /* partition by values/list */
 		struct sql_range {    /* partition by range */
@@ -695,7 +696,7 @@ typedef struct res_table {
 typedef struct sql_session {
 	sql_trans *tr; 		/* active transaction */	
 
-	char *schema_name;
+	char *schema_name; /* transaction's schema name */
 	sql_schema *schema;
 
 	char ac_on_commit;	/* if 1, auto_commit should be enabled on
@@ -754,7 +755,7 @@ extern node *find_sql_func_node(sql_schema *s, sqlid id);
 extern node *find_sql_trigger_node(sql_schema *s, sqlid id);
 extern sql_trigger *sql_trans_find_trigger(sql_trans *tr, sqlid id);
 
-extern void *sql_values_list_element_validate_and_insert(void *v1, void *v2, int* res);
+extern void *sql_values_list_element_validate_and_insert(void *v1, void *v2, void *tpe, int* res);
 extern void *sql_range_part_validate_and_insert(void *v1, void *v2);
 extern void *sql_values_part_validate_and_insert(void *v1, void *v2);
 

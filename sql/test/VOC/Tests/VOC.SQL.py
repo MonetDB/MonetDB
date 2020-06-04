@@ -9,11 +9,11 @@ d = os.environ['RELSRCDIR']
 def client(file, user, passwd, echo=None):
     sys.stdout.flush()
     sys.stderr.flush()
-    c = process.client(lang = 'sql',
-                       user = user, passwd = passwd,
-                       args = [os.path.join(d, os.pardir, file)],
-                       log=True, echo=echo)
-    c.communicate()
+    with process.client(lang='sql',
+                       user=user, passwd=passwd,
+                       args=[os.path.join(d, os.pardir, file)],
+                       log=True, echo=echo) as c:
+        c.communicate()
 
 client('VOCcreate_user.sql', 'monetdb', 'monetdb')
 client('VOCschema.sql', 'voc', 'voc')

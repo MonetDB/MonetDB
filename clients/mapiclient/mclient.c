@@ -687,7 +687,7 @@ SQLrow(int *len, int *numeric, char **rest, int fields, int trim, char wm)
 								mnstr_printf(toConsole, "\\%03o", (unsigned char) *p);
 							else if (*p == '\302' &&
 								 (p[1] & 0xE0) == 0x80) {
-								mnstr_printf(toConsole, "\\u%04x", (p[1] & 0x3F) | 0x80);
+								mnstr_printf(toConsole, "\\u%04x", (unsigned) ((p[1] & 0x3F) | 0x80));
 								p++;
 							} else
 								mnstr_write(toConsole, p, 1, 1);
@@ -705,7 +705,7 @@ SQLrow(int *len, int *numeric, char **rest, int fields, int trim, char wm)
 								mnstr_printf(toConsole, "\\%03o", (unsigned char) *p);
 							else if (*p == '\302' &&
 								 (p[1] & 0xE0) == 0x80) {
-								mnstr_printf(toConsole, "\\u%04x", (p[1] & 0x3F) | 0x80);
+								mnstr_printf(toConsole, "\\u%04x", (unsigned) ((p[1] & 0x3F) | 0x80));
 								p++;
 							} else
 								mnstr_write(toConsole, p, 1, 1);
@@ -753,7 +753,7 @@ SQLrow(int *len, int *numeric, char **rest, int fields, int trim, char wm)
 								mnstr_printf(toConsole, "\\%03o", (unsigned char) *p);
 							else if (*p == '\302' &&
 								 (p[1] & 0xE0) == 0x80) {
-								mnstr_printf(toConsole, "\\u%04x", (p[1] & 0x3F) | 0x80);
+								mnstr_printf(toConsole, "\\u%04x", (unsigned) ((p[1] & 0x3F) | 0x80));
 								p++;
 							} else
 								mnstr_write(toConsole, p, 1, 1);
@@ -915,7 +915,7 @@ EXPANDEDrenderer(MapiHdl hdl)
 				data = nullstring;
 			do {
 				edata = utf8skip(data, ~(size_t)0);
-				mnstr_printf(toConsole, "%-*s | %.*s\n", fieldw, name, (int) (edata - data), data);
+				mnstr_printf(toConsole, "%-*s | %.*s\n", fieldw, name, (int) (edata - data), data ? data : "");
 				name = "";
 				data = edata;
 				if (*data)
@@ -1269,7 +1269,7 @@ TESTrenderer(MapiHdl hdl)
 						if ((unsigned char) *s < ' ')
 							mnstr_printf(toConsole,
 								     "\\%03o",
-								     (int) (unsigned char) *s);
+								     (unsigned char) *s);
 						else
 							mnstr_write(toConsole, s, 1, 1);
 						break;
@@ -1957,7 +1957,7 @@ format_result(Mapi mid, MapiHdl hdl, bool singleinstr)
 	return rc;
 }
 
-static int
+static bool
 doRequest(Mapi mid, const char *buf)
 {
 	MapiHdl hdl;
@@ -1974,26 +1974,25 @@ doRequest(Mapi mid, const char *buf)
 		}
 		mapi_explain(mid, stderr);
 		errseen = true;
-		return 1;
+		return true;
 	}
 
 	if (mapi_needmore(hdl) == MMORE)
-		return 0;
+		return false;
 
 	format_result(mid, hdl, false);
 
 	if (mapi_get_active(mid) == NULL)
 		mapi_close_handle(hdl);
-	return 0;
+	return errseen;
 }
 
-#define CHECK_RESULT(mid, hdl, break_or_continue, buf, fp)	\
+#define CHECK_RESULT(mid, hdl, buf, fp)				\
 	switch (mapi_error(mid)) {				\
-	case MOK:						\
-		/* everything A OK */				\
+	case MOK:	/* everything A OK */			\
 		break;						\
-	case MERROR:						\
-		/* some error, but try to continue */		\
+	case MERROR:	/* some error, but try to continue */	\
+	case MTIMEOUT:	/* lost contact with the server */	\
 		if (formatter == TABLEformatter) {		\
 			mapi_noexplain(mid, "");		\
 		} else {					\
@@ -2006,21 +2005,8 @@ doRequest(Mapi mid, const char *buf)
 		} else						\
 			mapi_explain(mid, stderr);		\
 		errseen = true;					\
-		break_or_continue;				\
-	case MTIMEOUT:						\
-		/* lost contact with the server */		\
-		if (formatter == TABLEformatter) {		\
-			mapi_noexplain(mid, "");		\
-		} else {					\
-			mapi_noexplain(mid, NULL);		\
-		}						\
-		if (hdl) {					\
-			mapi_explain_query(hdl, stderr);	\
-			mapi_close_handle(hdl);			\
-			hdl = NULL;				\
-		} else						\
-			mapi_explain(mid, stderr);		\
-		errseen = true;					\
+		if (mapi_error(mid) == MERROR)			\
+			continue; /* why not in do-while */	\
 		timerEnd();					\
 		if (buf)					\
 			free(buf);				\
@@ -2072,12 +2058,12 @@ doFileBulk(Mapi mid, stream *fp)
 		timerResume();
 		if (hdl == NULL) {
 			hdl = mapi_query_prep(mid);
-			CHECK_RESULT(mid, hdl, continue, buf, fp);
+			CHECK_RESULT(mid, hdl, buf, fp);
 		}
 
 		assert(hdl != NULL);
 		mapi_query_part(hdl, buf, (size_t) length);
-		CHECK_RESULT(mid, hdl, continue, buf, fp);
+		CHECK_RESULT(mid, hdl, buf, fp);
 
 		/* if not at EOF, make sure there is a newline in the
 		 * buffer */
@@ -2096,14 +2082,14 @@ doFileBulk(Mapi mid, stream *fp)
 		    (length > 0 || mapi_query_done(hdl) == MMORE))
 			continue;	/* get more data */
 
-		CHECK_RESULT(mid, hdl, continue, buf, fp);
+		CHECK_RESULT(mid, hdl, buf, fp);
 
 		rc = format_result(mid, hdl, false);
 
 		if (rc == MMORE && (length > 0 || mapi_query_done(hdl) != MOK))
 			continue;	/* get more data */
 
-		CHECK_RESULT(mid, hdl, continue, buf, fp);
+		CHECK_RESULT(mid, hdl, buf, fp);
 
 		mapi_close_handle(hdl);
 		hdl = NULL;
@@ -2610,7 +2596,7 @@ doFile(Mapi mid, stream *fp, bool useinserts, bool interactive, int save_history
 
 						hdl = mapi_query(mid, query);
 						free(query);
-						CHECK_RESULT(mid, hdl, continue, buf, fp);
+						CHECK_RESULT(mid, hdl, buf, fp);
 						while (fetch_row(hdl) == 3) {
 							char *type = mapi_fetch_field(hdl, 0);
 							char *name = mapi_fetch_field(hdl, 1);
@@ -2859,7 +2845,7 @@ doFile(Mapi mid, stream *fp, bool useinserts, bool interactive, int save_history
 		if (hdl == NULL) {
 			timerStart();
 			hdl = mapi_query_prep(mid);
-			CHECK_RESULT(mid, hdl, continue, buf, fp);
+			CHECK_RESULT(mid, hdl, buf, fp);
 		} else
 			timerResume();
 
@@ -2868,7 +2854,7 @@ doFile(Mapi mid, stream *fp, bool useinserts, bool interactive, int save_history
 		if (length > 0) {
 			SQLsetSpecial(line);
 			mapi_query_part(hdl, line, length);
-			CHECK_RESULT(mid, hdl, continue, buf, fp);
+			CHECK_RESULT(mid, hdl, buf, fp);
 		}
 
 		/* If the server wants more but we're at the
@@ -2886,7 +2872,7 @@ doFile(Mapi mid, stream *fp, bool useinserts, bool interactive, int save_history
 				continue;	/* done */
 			}
 		}
-		CHECK_RESULT(mid, hdl, continue, buf, fp);
+		CHECK_RESULT(mid, hdl, buf, fp);
 
 		if (mapi_get_querytype(hdl) == Q_PREPARE) {
 			prepno = mapi_get_tableid(hdl);
@@ -2898,7 +2884,7 @@ doFile(Mapi mid, stream *fp, bool useinserts, bool interactive, int save_history
 		if (rc == MMORE && (line != NULL || mapi_query_done(hdl) != MOK))
 			continue;	/* get more data */
 
-		CHECK_RESULT(mid, hdl, continue, buf, fp);
+		CHECK_RESULT(mid, hdl, buf, fp);
 
 		timerEnd();
 		mapi_close_handle(hdl);
@@ -3075,7 +3061,8 @@ getfile(void *data, const char *filename, bool binary,
 		priv->f = NULL;
 		return s < 0 ? "error reading file" : NULL;
 	}
-	*size = (size_t) s;
+	if (size)
+		*size = (size_t) s;
 	return buf;
 }
 
@@ -3266,7 +3253,6 @@ main(int argc, char **argv)
 	}
 
 	/* parse config file first, command line options override */
-	// parse_dotmonetdb(&user, &passwd, &dbname, &language, &save_history, &output, &pagewidth);
 	parse_dotmonetdb(&dotfile);
         user = dotfile.user;
         passwd = dotfile.passwd;

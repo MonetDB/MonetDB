@@ -35,6 +35,8 @@ sql_drop_statistics(mvc *m, sql_table *t)
 	sys = mvc_bind_schema(m, "sys");
 	if (sys == NULL)
 		throw(SQL, "sql_drop_statistics", SQLSTATE(3F000) "Internal error");
+	if (!mvc_schema_privs(m, sys))
+		throw(SQL, "sql.sql_drop_statistics", SQLSTATE(42000) "Access denied for %s to schema '%s'", sqlvar_get_string(find_global_var(m, mvc_bind_schema(m, "sys"), "current_user")), sys->base.name);
 	sysstats = mvc_bind_table(m, sys, "statistics");
 	if (sysstats == NULL)
 		throw(SQL, "sql_drop_statistics", SQLSTATE(3F000) "No table sys.statistics");
@@ -85,6 +87,8 @@ sql_analyze(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	sys = mvc_bind_schema(m, "sys");
 	if (sys == NULL)
 		throw(SQL, "sql.analyze", SQLSTATE(3F000) "Internal error: No schema sys");
+	if (!mvc_schema_privs(m, sys))
+		throw(SQL, "sql.analyze", SQLSTATE(42000) "Access denied for %s to schema '%s'", sqlvar_get_string(find_global_var(m, mvc_bind_schema(m, "sys"), "current_user")), sys->base.name);
 	sysstats = mvc_bind_table(m, sys, "statistics");
 	if (sysstats == NULL)
 		throw(SQL, "sql.analyze", SQLSTATE(3F000) "Internal error: No table sys.statistics");

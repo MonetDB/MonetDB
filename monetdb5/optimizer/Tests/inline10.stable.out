@@ -35,7 +35,7 @@ function user.qry():void;               	#[0] (0)  0
     X_10:int := X_14:int;               	#[4] (0)  14 <- 18 
     zz:int := X_10:int;                 	#[5] (0)  5 <- 14 
 # base line test for inlining           
-    X_23:bat[:int] := batcalc.+(b:bat[:int], b:bat[:int]);	#[1] (0) CMDbatADDsignal 27 <- 1 1 
+    X_23:bat[:int] := batcalc.+(b:bat[:int], b:bat[:int], nil:BAT, nil:BAT);	#[1] (0) CMDbatADDsignal 27 <- 1 1 29 30 
     X_19:bat[:int] := X_23:bat[:int];	#[2] (0)  23 <- 27 
     z:bat[:int] := X_19:bat[:int];	#[2] (0)  8 <- 23 
 end user.qry;                           	#[10] (0)  

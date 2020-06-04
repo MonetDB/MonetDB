@@ -31,15 +31,13 @@ QUERY = SELECT
         	EXISTS (SELECT col2 FROM tbl_ProductSales WHERE tbl_ProductSales.ColID = another_T.col1),
         	(SELECT ColID FROM tbl_ProductSales) * DENSE_RANK() OVER (PARTITION BY AVG(DISTINCT col5))
         FROM another_T GROUP BY col1, col2, col5, col8; --error, more than one row returned by a subquery used as an expression 
-ERROR = !Cardinality violation, scalar value expected
-CODE  = 21000
-MAPI  = (monetdb) /var/tmp/mtest-14741/.s.monetdb.33945
+ERROR = !GDK reported error: BATsubcross: more than one match
+MAPI  = (monetdb) /var/tmp/mtest-1456258/.s.monetdb.39356
 QUERY = SELECT
         	(SELECT MAX(col6) FROM tbl_ProductSales) IN (SELECT MIN(col3) FROM another_T)
         FROM another_T
         GROUP BY col1; --error, subquery returns more than 1 row
-ERROR = !zero_or_one: cardinality violation, scalar expression expected
-CODE  = M0M29
+ERROR = !GDK reported error: mergejoin: more than one match
 
 # 18:55:46 >  
 # 18:55:46 >  "Done."

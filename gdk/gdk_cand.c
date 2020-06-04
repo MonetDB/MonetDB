@@ -33,18 +33,20 @@ BATmergecand(BAT *a, BAT *b)
 	oid *restrict p, i;
 	struct canditer cia, cib;
 
-	BATcheck(a, "BATmergecand", NULL);
-	BATcheck(b, "BATmergecand", NULL);
+	BATcheck(a, NULL);
+	BATcheck(b, NULL);
 
 	canditer_init(&cia, NULL, a);
 	canditer_init(&cib, NULL, b);
 
 	/* we can return a if b is empty (and v.v.) */
 	if (cia.ncand == 0) {
-		return canditer_slice(&cib, 0, cib.ncand);
+		bn = canditer_slice(&cib, 0, cib.ncand);
+		goto doreturn;
 	}
 	if (cib.ncand == 0) {
-		return canditer_slice(&cia, 0, cia.ncand);
+		bn = canditer_slice(&cia, 0, cia.ncand);
+		goto doreturn;
 	}
 	/* we can return a if a fully covers b (and v.v) */
 	if (cia.tpe == cand_dense && cib.tpe == cand_dense) {
@@ -52,28 +54,32 @@ BATmergecand(BAT *a, BAT *b)
 		if (cia.seq <= cib.seq && cib.seq <= cia.seq + cia.ncand) {
 			/* partial overlap starting with a, or b is
 			 * smack bang after a */
-			return newdensecand(cia.seq, cia.seq + cia.ncand < cib.seq + cib.ncand ? cib.seq + cib.ncand : cia.seq + cia.ncand);
+			bn = newdensecand(cia.seq, cia.seq + cia.ncand < cib.seq + cib.ncand ? cib.seq + cib.ncand : cia.seq + cia.ncand);
+			goto doreturn;
 		}
 		if (cib.seq <= cia.seq && cia.seq <= cib.seq + cib.ncand) {
 			/* partial overlap starting with b, or a is
 			 * smack bang after b */
-			return newdensecand(cib.seq, cia.seq + cia.ncand < cib.seq + cib.ncand ? cib.seq + cib.ncand : cia.seq + cia.ncand);
+			bn = newdensecand(cib.seq, cia.seq + cia.ncand < cib.seq + cib.ncand ? cib.seq + cib.ncand : cia.seq + cia.ncand);
+			goto doreturn;
 		}
 	}
 	if (cia.tpe == cand_dense
 	    && cia.seq <= cib.seq
 	    && canditer_last(&cia) >= canditer_last(&cib)) {
-		return canditer_slice(&cia, 0, cia.ncand);
+		bn = canditer_slice(&cia, 0, cia.ncand);
+		goto doreturn;
 	}
 	if (cib.tpe == cand_dense
 	    && cib.seq <= cia.seq
 	    && canditer_last(&cib) >= canditer_last(&cia)) {
-		return canditer_slice(&cib, 0, cib.ncand);
+		bn = canditer_slice(&cib, 0, cib.ncand);
+		goto doreturn;
 	}
 
 	bn = COLnew(0, TYPE_oid, cia.ncand + cib.ncand, TRANSIENT);
 	if (bn == NULL)
-		return NULL;
+		goto doreturn;
 	p = (oid *) Tloc(bn, 0);
 	if (cia.tpe == cand_dense && cib.tpe == cand_dense) {
 		/* both lists are dense */
@@ -146,7 +152,11 @@ BATmergecand(BAT *a, BAT *b)
 	bn->tkey = true;
 	bn->tnil = false;
 	bn->tnonil = true;
-	return virtualize(bn);
+	bn = virtualize(bn);
+  doreturn:
+	TRC_DEBUG(ALGO, ALGOBATFMT "," ALGOBATFMT " -> " ALGOOPTBATFMT "\n",
+		  ALGOBATPAR(a), ALGOBATPAR(b), ALGOOPTBATPAR(bn));
+	return bn;
 }
 
 /* intersect two candidate lists and produce a new one
@@ -161,24 +171,26 @@ BATintersectcand(BAT *a, BAT *b)
 	oid *restrict p;
 	struct canditer cia, cib;
 
-	BATcheck(a, "BATintersectcand", NULL);
-	BATcheck(b, "BATintersectcand", NULL);
+	BATcheck(a, NULL);
+	BATcheck(b, NULL);
 
 	canditer_init(&cia, NULL, a);
 	canditer_init(&cib, NULL, b);
 
 	if (cia.ncand == 0 || cib.ncand == 0) {
-		return BATdense(0, 0, 0);
+		bn = BATdense(0, 0, 0);
+		goto doreturn;
 	}
 
 	if (cia.tpe == cand_dense && cib.tpe == cand_dense) {
 		/* both lists are dense */
-		return newdensecand(MAX(cia.seq, cib.seq), MIN(cia.seq + cia.ncand, cib.seq + cib.ncand));
+		bn = newdensecand(MAX(cia.seq, cib.seq), MIN(cia.seq + cia.ncand, cib.seq + cib.ncand));
+		goto doreturn;
 	}
 
 	bn = COLnew(0, TYPE_oid, MIN(cia.ncand, cib.ncand), TRANSIENT);
 	if (bn == NULL)
-		return NULL;
+		goto doreturn;
 	p = (oid *) Tloc(bn, 0);
 	if (cia.tpe == cand_dense || cib.tpe == cand_dense) {
 		if (cib.tpe == cand_dense) {
@@ -218,7 +230,11 @@ BATintersectcand(BAT *a, BAT *b)
 	bn->tkey = true;
 	bn->tnil = false;
 	bn->tnonil = true;
-	return virtualize(bn);
+	bn = virtualize(bn);
+  doreturn:
+	TRC_DEBUG(ALGO, ALGOBATFMT "," ALGOBATFMT " -> " ALGOOPTBATFMT "\n",
+		  ALGOBATPAR(a), ALGOBATPAR(b), ALGOOPTBATPAR(bn));
+	return bn;
 }
 
 /* calculate the difference of two candidate lists and produce a new one
@@ -230,20 +246,25 @@ BATdiffcand(BAT *a, BAT *b)
 	oid *restrict p;
 	struct canditer cia, cib;
 
-	BATcheck(a, "BATdiffcand", NULL);
-	BATcheck(b, "BATdiffcand", NULL);
+	BATcheck(a, NULL);
+	BATcheck(b, NULL);
 
 	canditer_init(&cia, NULL, a);
 	canditer_init(&cib, NULL, b);
 
-	if (cia.ncand == 0)
-		return BATdense(0, 0, 0);
-	if (cia.ncand == 0)
-		return canditer_slice(&cia, 0, cia.ncand);
+	if (cia.ncand == 0) {
+		bn = BATdense(0, 0, 0);
+		goto doreturn;
+	}
+	if (cib.ncand == 0) {
+		bn = canditer_slice(&cia, 0, cia.ncand);
+		goto doreturn;
+	}
 
 	if (cib.seq > canditer_last(&cia) || canditer_last(&cib) < cia.seq) {
 		/* no overlap, return a */
-		return canditer_slice(&cia, 0, cia.ncand);
+		bn = canditer_slice(&cia, 0, cia.ncand);
+		goto doreturn;
 	}
 
 	if (cia.tpe == cand_dense && cib.tpe == cand_dense) {
@@ -252,47 +273,56 @@ BATdiffcand(BAT *a, BAT *b)
 			/* a starts before b */
 			if (cia.seq + cia.ncand <= cib.seq + cib.ncand) {
 				/* b overlaps with end of a */
-				return canditer_slice(&cia, 0, cib.seq - cia.seq);
+				bn = canditer_slice(&cia, 0, cib.seq - cia.seq);
+				goto doreturn;
 			}
 			/* b is subset of a */
-			return canditer_slice2(&cia, 0, cib.seq - cia.seq,
-					       cib.seq + cib.ncand - cia.seq,
-					       cia.ncand);
+			bn = canditer_slice2(&cia, 0, cib.seq - cia.seq,
+					     cib.seq + cib.ncand - cia.seq,
+					     cia.ncand);
+			goto doreturn;
 		} else {
 			/* cia.seq >= cib.seq */
 			if (cia.seq + cia.ncand > cib.seq + cib.ncand) {
 				/* b overlaps with beginning of a */
-				return canditer_slice(&cia, cib.seq + cib.ncand - cia.seq, cia.ncand);
+				bn = canditer_slice(&cia, cib.seq + cib.ncand - cia.seq, cia.ncand);
+				goto doreturn;
 			}
 			/* a is subset f b */
-			return BATdense(0, 0, 0);
+			bn = BATdense(0, 0, 0);
+			goto doreturn;
 		}
 	}
 	if (cib.tpe == cand_dense) {
 		/* b is dense and a is not: we can copy the part of a
 		 * that is before the start of b and the part of a
 		 * that is after the end of b */
-		return canditer_slice2(&cia, 0,
-				       canditer_search(&cia, cib.seq, true),
-				       canditer_search(&cia, cib.seq + cib.ncand, true),
-				       cia.ncand);
+		bn = canditer_slice2(&cia, 0,
+				     canditer_search(&cia, cib.seq, true),
+				     canditer_search(&cia, cib.seq + cib.ncand, true),
+				     cia.ncand);
+		goto doreturn;
 	}
 
 	/* b is not dense */
 	bn = COLnew(0, TYPE_oid, BATcount(a), TRANSIENT);
 	if (bn == NULL)
-		return NULL;
+		goto doreturn;
 	p = Tloc(bn, 0);
 	/* find first position in b that is in range of a */
 	canditer_setidx(&cib, canditer_search(&cib, cia.seq, true));
-	oid ob = canditer_next(&cib);
-	for (BUN i = 0; i < cia.ncand; i++) {
-		oid oa = canditer_next(&cia);
-		while (!is_oid_nil(ob) && ob < oa) {
-			ob = canditer_next(&cib);
+	{
+		/* because we may jump over this declaration, we put
+		 * it inside a block */
+		oid ob = canditer_next(&cib);
+		for (BUN i = 0; i < cia.ncand; i++) {
+			oid oa = canditer_next(&cia);
+			while (!is_oid_nil(ob) && ob < oa) {
+				ob = canditer_next(&cib);
+			}
+			if (!is_oid_nil(ob) && oa < ob)
+				*p++ = oa;
 		}
-		if (!is_oid_nil(ob) && oa < ob)
-			*p++ = oa;
 	}
 
 	/* properties */
@@ -302,7 +332,11 @@ BATdiffcand(BAT *a, BAT *b)
 	bn->tkey = true;
 	bn->tnil = false;
 	bn->tnonil = true;
-	return virtualize(bn);
+	bn = virtualize(bn);
+  doreturn:
+	TRC_DEBUG(ALGO, ALGOBATFMT "," ALGOBATFMT " -> " ALGOOPTBATFMT "\n",
+		  ALGOBATPAR(a), ALGOBATPAR(b), ALGOOPTBATPAR(bn));
+	return bn;
 }
 
 /* return offset of first value in cand that is >= o */
