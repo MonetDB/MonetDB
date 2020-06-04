@@ -616,7 +616,7 @@ daytime_fromseconds(daytime *ret, const lng secs)
 		*ret = (daytime) (secs * 1000000);
 	return MAL_SUCCEED;
 }
-func1(MTIMEdaytime_fromseconds, MTIMEdaytime_fromseconds_bulk, "daytime_fromseconds", const lng, daytime, daytime_fromseconds, COPYFLAGS, func1_except, \
+func1(MTIMEdaytime_fromseconds, MTIMEdaytime_fromseconds_bulk, "daytime_fromseconds", lng, daytime, daytime_fromseconds, COPYFLAGS, func1_except, \
 	  DEC_INT, DEC_INT, INIT_INT, INIT_INT, GET_NEXT_INT)
 
 func1(MTIMEtimestamp_extract_daytime, MTIMEtimestamp_extract_daytime_bulk, "timestamp_extract_daytime", timestamp, daytime, timestamp_daytime, SETFLAGS, func1_noexcept, \
