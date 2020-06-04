@@ -9082,7 +9082,7 @@ replace_column_references_with_nulls_2(mvc *sql, list* crefs, sql_exp* e) {
         case cmp_notequal:
         {
             sql_exp* l = e->l;
-            sql_exp* r = e->l;
+            sql_exp* r = e->r;
             sql_exp* f = e->f;
 
             replace_column_references_with_nulls_2(sql, crefs, l);
