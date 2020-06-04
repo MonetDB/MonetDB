@@ -80,7 +80,8 @@ croak(int status, const char *msg, ...)
 int
 main(int argc, char *argv[])
 {
-	mnstr_init();
+	if (mnstr_init(0) < 0)
+		croak(2, "Could not initialize streams library");
 
 	if (argc < 2)
 		croak(1, NULL);

@@ -226,19 +226,6 @@ isUnsafeFunction(InstrPtr q)
 	return q->blk->unsafeProp;
 }
 
-static inline int
-isSealedFunction(InstrPtr q)
-{
-	InstrPtr p;
-
-	if (q->fcn == 0 || getFunctionId(q) == 0 || q->blk == NULL)
-		return FALSE;
-	p= getInstrPtr(q->blk,0);
-	if( p->retc== 0)
-		return TRUE;
-	return q->blk->sealedProp;
-}
-
 /*
  * Instructions are unsafe if one of the arguments is also mentioned
  * in the result list. Alternatively, the 'unsafe' property is set
@@ -490,7 +477,7 @@ isOrderDepenent(InstrPtr p)
 }
 
 inline int isMapOp(InstrPtr p){
-	if (isUnsafeFunction(p) || isSealedFunction(p))
+	if (isUnsafeFunction(p))
 		return 0;
 	return	getModuleId(p) &&
 		((getModuleId(p) == malRef && getFunctionId(p) == multiplexRef) ||
@@ -504,7 +491,7 @@ inline int isMapOp(InstrPtr p){
 }
 
 inline int isMap2Op(InstrPtr p){
-	if (isUnsafeFunction(p) || isSealedFunction(p))
+	if (isUnsafeFunction(p))
 		return 0;
 	return	getModuleId(p) &&
 		((getModuleId(p) == malRef && getFunctionId(p) == multiplexRef) ||

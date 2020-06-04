@@ -23,16 +23,15 @@ log_base2(unsigned int n)
 sql_hash *
 hash_new(sql_allocator *sa, int size, fkeyvalue key)
 {
-	int i;
-	sql_hash *ht = SA_ZNEW(sa, sql_hash);
+	sql_hash *ht = (sa)?SA_NEW(sa, sql_hash):MNEW(sql_hash);
 
 	if (ht == NULL)
 		return NULL;
 	ht->sa = sa;
 	ht->size = (1<<log_base2(size-1));
 	ht->key = key;
-	ht->buckets = SA_NEW_ARRAY(sa, sql_hash_e*, ht->size);
-	for(i = 0; i < ht->size; i++)
+	ht->buckets = (ht->sa)?SA_NEW_ARRAY(sa, sql_hash_e*, ht->size):NEW_ARRAY(sql_hash_e*, ht->size);
+	for (int i = 0; i < ht->size; i++)
 		ht->buckets[i] = NULL;
 	return ht;
 }
@@ -40,7 +39,7 @@ hash_new(sql_allocator *sa, int size, fkeyvalue key)
 sql_hash_e*
 hash_add(sql_hash *h, int key, void *value)
 {
-	sql_hash_e *e = SA_ZNEW(h->sa, sql_hash_e);
+	sql_hash_e *e = (h->sa)?SA_ZNEW(h->sa, sql_hash_e):ZNEW(sql_hash_e);
 
 	if (e == NULL)
 		return NULL;
@@ -66,6 +65,26 @@ hash_del(sql_hash *h, int key, void *value)
 		else
 			h->buckets[key&(h->size-1)] = e->chain;
 	}
+}
+
+void
+hash_destroy(sql_hash *h) /* this code should be called for hash tables created outside SQL allocators only! */
+{
+	for (int i = 0; i < h->size; i++) {
+		sql_hash_e *e = h->buckets[i], *c = NULL;
+
+		if (e)
+			c = e->chain;
+		while (c) {
+			sql_hash_e *next = c->chain;
+
+			_DELETE(c);
+			c = next;
+		}
+		_DELETE(e);
+	}
+	_DELETE(h->buckets);
+	_DELETE(h);
 }
 
 unsigned int

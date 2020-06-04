@@ -7,18 +7,55 @@
 #]]
 
 if(TESTING)
-	add_executable(sample0 sample0.c)
-	target_link_libraries(sample0 PRIVATE mapi)
-	add_executable(sample1 sample1.c)
-	target_link_libraries(sample1 PRIVATE mapi)
-	add_executable(sample4 sample4.c)
-	target_link_libraries(sample4 PRIVATE mapi)
-	add_executable(smack00 smack00.c)
-	target_link_libraries(smack00 PRIVATE mapi)
-	add_executable(smack01 smack01.c)
-	target_link_libraries(smack01 PRIVATE mapi)
-	add_executable(streamcat streamcat.c)
-	target_link_libraries(streamcat PRIVATE monetdb_config_header stream)
+  add_executable(sample0
+    sample0.c)
 
-	install(TARGETS sample0 sample1 sample4 smack00 smack01 streamcat DESTINATION ${BINDIR})
+  target_link_libraries(sample0
+    PRIVATE mapi)
+
+  add_executable(sample1
+    sample1.c)
+
+  target_link_libraries(sample1
+    PRIVATE mapi)
+
+  add_executable(sample4
+    sample4.c)
+
+  target_link_libraries(sample4
+    PRIVATE mapi)
+
+  add_executable(smack00
+    smack00.c)
+
+  target_link_libraries(smack00
+    PRIVATE mapi)
+
+  add_executable(smack01
+    smack01.c)
+
+  target_link_libraries(smack01
+    PRIVATE mapi)
+
+  add_executable(streamcat
+    streamcat.c)
+
+	target_link_libraries(streamcat
+    PRIVATE
+    monetdb_config_header
+    stream)
+
+  install(TARGETS
+    sample0
+    sample1
+    sample4
+    smack00
+    smack01
+    streamcat
+    RUNTIME
+    DESTINATION
+    ${CMAKE_INSTALL_BINDIR}
+    COMPONENT clienttest)
 endif()
+
+# vim: set ts=2:sw=2:et

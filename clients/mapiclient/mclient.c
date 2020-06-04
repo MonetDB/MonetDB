@@ -3241,7 +3241,10 @@ main(int argc, char **argv)
 		perror("sigaction");
 #endif
 
-	mnstr_init();
+	if (mnstr_init(0) < 0) {
+		fprintf(stderr, "error: could not initialize streams library");
+		exit(2);
+	}
 
 	toConsole = stdout_stream = file_wastream(stdout, "stdout");
 	stderr_stream = file_wastream(stderr, "stderr");

@@ -77,7 +77,7 @@
 #define PythonUnicodeType Py_UNICODE
 #define PYFUNCNAME(name) PYAPI3##name
 
-#if defined(WIN32) && !defined(HAVE_EMBEDDED)
+#if defined(WIN32)
 // On Windows we need to dynamically load any SQL functions we use
 // For embedded, this is not necessary because we create one large shared object
 #define CREATE_SQL_FUNCTION_PTR(retval, fcnname)                               \

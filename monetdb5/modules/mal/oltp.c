@@ -252,3 +252,23 @@ OLTPis_enabled(int *ret) {
   *ret = oltp_delay;
   return MAL_SUCCEED;
 }
+
+#include "mel.h"
+mel_func oltp_init_funcs[] = {
+ pattern("oltp", "init", OLTPinit, true, "Initialize the lock table", noargs),
+ pattern("oltp", "enable", OLTPenable, true, "Enable the OLTP delay monitor", noargs),
+ pattern("oltp", "disable", OLTPdisable, true, "Disable the OLTP delay monitor", noargs),
+ pattern("oltp", "reset", OLTPreset, true, "Reset the OLTP lock table", noargs),
+ pattern("oltp", "lock", OLTPlock, true, "Wait for all write locks needed", args(1,2, arg("",void),vararg("lck",int))),
+ pattern("oltp", "release", OLTPrelease, true, "Release for all write locks needed", args(1,2, arg("",void),vararg("lck",int))),
+ pattern("oltp", "table", OLTPtable, true, "Show status of lock table", args(4,4, batarg("start",timestamp),batarg("usr",str),batarg("unit",int),batarg("cnt",int))),
+ command("oltp", "isenabled", OLTPis_enabled, true, "Query the OLTP state", args(1,1, arg("",int))),
+ { .imp=NULL }
+};
+#include "mal_import.h"
+#ifdef _MSC_VER
+#undef read
+#pragma section(".CRT$XCU",read)
+#endif
+LIB_STARTUP_FUNC(init_oltp_mal)
+{ mal_module("oltp", NULL, oltp_init_funcs); }

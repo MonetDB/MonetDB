@@ -16,7 +16,6 @@
 #include <string.h>
 #include "sql_mvc.h"
 #include "sql.h"
-#define HAVE_CXX11 0		/* stupid include file gdal/cpl_port.h */
 #ifndef __clang_major__		/* stupid include file gdal/cpl_port.h */
 #define __clang_major__ 0
 #endif
@@ -798,3 +797,18 @@ str
 SHPpartialimport(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 	return SHPimportFile(cntxt, mb, stk, pci, true);
 }
+
+#include "mel.h"
+static mel_func shp_init_funcs[] = {
+ pattern("shp", "attach", SHPattach, false, "Register an ESRI Shapefile in the vault catalog", args(1,2, arg("",void),arg("filename",str))),
+ pattern("shp", "import", SHPimport, false, "Import an ESRI Shapefile with given id into the vault", args(1,2, arg("",void),arg("fileid",int))),
+ pattern("shp", "import", SHPpartialimport, false, "Partially import an ESRI Shapefile with given id into the vault", args(1,3, arg("",void),arg("fileid",int),arg("po",wkb))),
+ { .imp=NULL }
+};
+#include "mal_import.h"
+#ifdef _MSC_VER
+#undef read
+#pragma section(".CRT$XCU",read)
+#endif
+LIB_STARTUP_FUNC(init_shp_mal)
+{ mal_module("shp", NULL, shp_init_funcs); }

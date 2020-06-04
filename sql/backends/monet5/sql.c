@@ -122,7 +122,11 @@ sql_symbol2relation(mvc *sql, symbol *sym)
 {
 	sql_rel *rel;
 	sql_query *query = query_create(sql);
-	int top = sql->topvars;
+	int top = sql->topframes;
+
+	/* On explain and plan modes, drop declared variables after generating the AST */
+	if (((sql->emod & mod_explain) || (sql->emode != m_normal && sql->emode != m_execute)) && !stack_push_frame(sql, NULL))
+		return sql_error(sql, 02, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 
 	rel = rel_semantic(query, sym);
 	if (rel)
@@ -287,19 +291,19 @@ create_table_or_view(mvc *sql, char* sname, char *tname, sql_table *t, int temp)
 	sql_table *nt = NULL;
 	node *n;
 	int check = 0;
+	const char *action = (temp == SQL_DECLARED_TABLE) ? "DECLARE" : "CREATE";
 
 	if (STORE_READONLY)
 		return sql_error(sql, 06, SQLSTATE(25006) "schema statements cannot be executed on a readonly database.");
 
 	if (!s)
-		return sql_message(SQLSTATE(3F000) "CREATE %s: schema '%s' doesn't exist", (t->query) ? "TABLE" : "VIEW", sname);
+		return sql_message(SQLSTATE(3F000) "%s %s: schema '%s' doesn't exist", action, (t->query) ? "TABLE" : "VIEW", sname);
 	if (mvc_bind_table(sql, s, t->base.name)) {
-		char *cd = (temp == SQL_DECLARED_TABLE) ? "DECLARE" : "CREATE";
-		return sql_message(SQLSTATE(42S01) "%s TABLE: name '%s' already in use", cd, t->base.name);
-	} else if (temp != SQL_DECLARED_TABLE && (!mvc_schema_privs(sql, s) && !(isTempSchema(s) && temp == SQL_LOCAL_TEMP))) {
-		return sql_message(SQLSTATE(42000) "CREATE TABLE: insufficient privileges for user '%s' in schema '%s'", stack_get_string(sql, "current_user"), s->base.name);
+		return sql_message(SQLSTATE(42S01) "%s TABLE: name '%s' already in use", action, t->base.name);
+	} else if (temp != SQL_DECLARED_TABLE && (!mvc_schema_privs(sql, s) && !(isTempSchema(s) && temp == SQL_LOCAL_TEMP))) { 
+		return sql_message(SQLSTATE(42000) "%s TABLE: insufficient privileges for user '%s' in schema '%s'", action, sqlvar_get_string(find_global_var(sql, mvc_bind_schema(sql, "sys"), "current_user")), s->base.name);
 	} else if (temp == SQL_DECLARED_TABLE && !list_empty(t->keys.set)) {
-		return sql_message(SQLSTATE(42000) "DECLARE TABLE: '%s' cannot have constraints", t->base.name);
+		return sql_message(SQLSTATE(42000) "%s TABLE: '%s' cannot have constraints", action, t->base.name);
 	}
 
 	osa = sql->sa;
@@ -488,7 +492,7 @@ create_table_from_emit(Client cntxt, char *sname, char *tname, sql_emit_col *col
 		goto cleanup;
 	}
 	if (!mvc_schema_privs(sql, s)) {
-		msg = sql_error(sql, 02, SQLSTATE(42000) "CREATE TABLE: Access denied for %s to schema '%s'", stack_get_string(sql, "current_user"), s->base.name);
+		msg = sql_error(sql, 02, SQLSTATE(42000) "CREATE TABLE: Access denied for %s to schema '%s'", sqlvar_get_string(find_global_var(sql, mvc_bind_schema(sql, "sys"), "current_user")), s->base.name);
 		goto cleanup;
 	}
 	if (!(t = mvc_create_table(sql, s, tname, tt_table, 0, SQL_DECLARED_TABLE, CA_COMMIT, -1, 0))) {
@@ -630,60 +634,59 @@ SQLcatalog(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	return sql_message(SQLSTATE(25006) "Deprecated statement");
 }
 
-/* setVariable(int *ret, str *name, any value) */
+/* setVariable(int *ret, str *sname, str *name, any value) */
 str
 setVariable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	int *res = getArgReference_int(stk, pci, 0);
 	mvc *m = NULL;
 	str msg;
-	const char *varname = *getArgReference_str(stk, pci, 2);
-	int mtype = getArgType(mb, pci, 3);
-	ValPtr ptr;
+	const char *sname = *getArgReference_str(stk, pci, 2);
+	const char *varname = *getArgReference_str(stk, pci, 3);
+	int mtype = getArgType(mb, pci, 4);
+	sql_schema *s;
+	sql_var *var;
 
 	if ((msg = getSQLContext(cntxt, mb, &m, NULL)) != NULL)
 		return msg;
 	if ((msg = checkSQLContext(cntxt)) != NULL)
 		return msg;
 
+	if (!(s = mvc_bind_schema(m, sname)))
+		throw(SQL, "sql.setVariable", SQLSTATE(3F000) "Cannot find the schema '%s'", sname);
+
 	*res = 0;
 	if (mtype < 0 || mtype >= 255)
 		throw(SQL, "sql.setVariable", SQLSTATE(42100) "Variable type error");
-	if (strcmp("optimizer", varname) == 0) {
-		const char *newopt = *getArgReference_str(stk, pci, 3);
-		if (newopt) {
+
+	if ((var = find_global_var(m, s, varname))) {
+		if (!strcmp("sys", s->base.name) && !strcmp("optimizer", varname)) {
+			const char *newopt = *getArgReference_str(stk, pci, 4);
 			char buf[BUFSIZ];
 
 			if (strNil(newopt))
-				throw(SQL, "sql.setVariable", SQLSTATE(42000) "optimizer cannot be NULL");
+				throw(SQL, "sql.setVariable", SQLSTATE(42000) "Variable '%s.%s' cannot be NULL", sname, varname);
 			if (!isOptimizerPipe(newopt) && strchr(newopt, (int) ';') == 0)
 				throw(SQL, "sql.setVariable", SQLSTATE(42100) "optimizer '%s' unknown", newopt);
-			snprintf(buf, BUFSIZ, "user_%d", cntxt->idx);
+			(void) snprintf(buf, BUFSIZ, "user_%d", cntxt->idx);
 			if (!isOptimizerPipe(newopt) || strcmp(buf, newopt) == 0) {
-				msg = addPipeDefinition(cntxt, buf, newopt);
-				if (msg)
+				if ((msg = addPipeDefinition(cntxt, buf, newopt)))
 					return msg;
-				if (stack_find_var(m, varname)) {
-					if (!stack_set_string(m, varname, buf))
-						throw(SQL, "sql.setVariable", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-				}
-			} else if (stack_find_var(m, varname)) {
-				if (!stack_set_string(m, varname, newopt))
+				if (!sqlvar_set_string(find_global_var(m, s, varname), buf))
 					throw(SQL, "sql.setVariable", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-			}
+			} else if (!sqlvar_set_string(find_global_var(m, s, varname), newopt))
+				throw(SQL, "sql.setVariable", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		} else {
+			ValPtr ptr = &stk->stk[getArg(pci, 4)];
+
+			if ((msg = sql_update_var(m, s, varname, ptr)))
+				return msg;
+			if (!sqlvar_set(var, ptr))
+				throw(SQL, "sql.setVariable", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		}
 		return MAL_SUCCEED;
 	}
-	ptr = &stk->stk[getArg(pci, 3)];
-	if (stack_find_var(m, varname)) {
-		if ((msg = sql_update_var(m, varname, ptr)) != NULL)
-			return msg;
-		if (!stack_set_var(m, varname, ptr))
-			throw(SQL, "sql.setVariable", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-	} else {
-		throw(SQL, "sql.setVariable", SQLSTATE(42100) "variable '%s' unknown", varname);
-	}
-	return MAL_SUCCEED;
+	throw(SQL, "sql.setVariable", SQLSTATE(42100) "Variable '%s.%s' unknown", sname, varname);
 }
 
 /* getVariable(int *ret, str *name) */
@@ -693,19 +696,24 @@ getVariable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	int mtype = getArgType(mb, pci, 0);
 	mvc *m = NULL;
 	str msg;
-	const char *varname = *getArgReference_str(stk, pci, 2);
-	atom *a;
+	const char *sname = *getArgReference_str(stk, pci, 2);
+	const char *varname = *getArgReference_str(stk, pci, 3);
 	ValRecord *dst, *src;
+	sql_schema *s;
+	sql_var *var;
 
 	if ((msg = getSQLContext(cntxt, mb, &m, NULL)) != NULL)
 		return msg;
 	if ((msg = checkSQLContext(cntxt)) != NULL)
 		return msg;
+
+	if (!(s = mvc_bind_schema(m, sname)))
+		throw(SQL, "sql.getVariable", SQLSTATE(3F000) "Cannot find the schema '%s'", sname);
 	if (mtype < 0 || mtype >= 255)
 		throw(SQL, "sql.getVariable", SQLSTATE(42100) "Variable type error");
-	if (!(a = stack_get_var(m, varname)))
-		throw(SQL, "sql.getVariable", SQLSTATE(42100) "variable '%s' unknown", varname);
-	src = &a->data;
+	if (!(var = find_global_var(m, s, varname)))
+		throw(SQL, "sql.getVariable", SQLSTATE(42100) "Variable '%s.%s' unknown", sname, varname);
+	src = &(var->var.data);
 	dst = &stk->stk[getArg(pci, 0)];
 	if (VALcopy(dst, src) == NULL)
 		throw(MAL, "sql.getVariable", SQLSTATE(HY013) MAL_MALLOC_FAIL);
@@ -715,29 +723,83 @@ getVariable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 str
 sql_variables(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	int i;
 	mvc *m = NULL;
-	BAT *vars;
-	str msg;
-	bat *res = getArgReference_bat(stk, pci, 0);
+	BAT *schemas, *names, *types, *values;
+	str msg = MAL_SUCCEED;
+	bat *s = getArgReference_bat(stk,pci,0);
+	bat *n = getArgReference_bat(stk,pci,1);
+	bat *t = getArgReference_bat(stk,pci,2);
+	bat *v = getArgReference_bat(stk,pci,3);
+	int nvars;
 
 	if ((msg = getSQLContext(cntxt, mb, &m, NULL)) != NULL)
 		return msg;
 	if ((msg = checkSQLContext(cntxt)) != NULL)
 		return msg;
 
-	vars = COLnew(0, TYPE_str, m->topvars, TRANSIENT);
-	if (vars == NULL)
-		throw(SQL, "sql.variables", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-	for (i = 0; i < m->topvars && !m->vars[i].frame; i++) {
-		if (BUNappend(vars, m->vars[i].name, false) != GDK_SUCCEED) {
-			BBPreclaim(vars);
-			throw(SQL, "sql.variables", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+	nvars = list_length(m->global_vars);
+	schemas = COLnew(0, TYPE_str, nvars, TRANSIENT);
+	names = COLnew(0, TYPE_str, nvars, TRANSIENT);
+	types = COLnew(0, TYPE_str, nvars, TRANSIENT);
+	values = COLnew(0, TYPE_str, nvars, TRANSIENT);
+	if (!schemas || !names || !types || !values) {
+		msg = createException(SQL, "sql.variables", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		goto bailout;
+	}
+
+	if (m->global_vars) {
+		for (node *n = m->global_vars->h; n ; n = n->next) {
+			sql_var *var = (sql_var*) n->data;
+			atom value = var->var;
+			ValPtr myptr = &(value.data);
+			ValRecord val = (ValRecord) {.vtype = TYPE_void,};
+			gdk_return res;
+
+			if (value.tpe.type->localtype != TYPE_str) {
+				ptr ok = VALcopy(&val, myptr);
+				if (ok)
+					ok = VALconvert(TYPE_str, &val);
+				if (!ok) {
+					VALclear(&val);
+					msg = createException(SQL, "sql.variables", SQLSTATE(HY013) "Failed to convert variable '%s.%s' into a string", var->sname, var->name);
+					goto bailout;
+				}
+				myptr = &val;
+			}
+			res = BUNappend(values, VALget(myptr), false);
+			VALclear(&val);
+			if (res != GDK_SUCCEED) {
+				msg = createException(SQL, "sql.variables", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+				goto bailout;
+			}
+			if (BUNappend(schemas, var->sname, false) != GDK_SUCCEED) {
+				msg = createException(SQL, "sql.variables", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+				goto bailout;
+			}
+			if (BUNappend(names, var->name, false) != GDK_SUCCEED) {
+				msg = createException(SQL, "sql.variables", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+				goto bailout;
+			}
+			if (BUNappend(types, value.tpe.type->sqlname, false) != GDK_SUCCEED) {
+				msg = createException(SQL, "sql.variables", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+				goto bailout;
+			}
 		}
 	}
-	*res = vars->batCacheid;
-	BBPkeepref(vars->batCacheid);
-	return MAL_SUCCEED;
+
+bailout:
+	if (msg) {
+		BBPreclaim(schemas);
+		BBPreclaim(names);
+		BBPreclaim(types);
+		BBPreclaim(values);
+	} else {
+		BBPkeepref(*s = schemas->batCacheid);
+		BBPkeepref(*n = names->batCacheid);
+		BBPkeepref(*t = types->batCacheid);
+		BBPkeepref(*v = values->batCacheid);
+	}
+	return msg;
 }
 
 /* str mvc_logfile(int *d, str *filename); */
@@ -783,13 +845,13 @@ mvc_next_value(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (!(s = mvc_bind_schema(m, sname)))
 		throw(SQL, "sql.next_value", SQLSTATE(3F000) "Cannot find the schema %s", sname);
 	if (!mvc_schema_privs(m, s))
-		throw(SQL, "sql.next_value", SQLSTATE(42000) "Access denied for %s to schema '%s'", stack_get_string(m, "current_user"), s->base.name);
+		throw(SQL, "sql.next_value", SQLSTATE(42000) "Access denied for %s to schema '%s'", sqlvar_get_string(find_global_var(m, mvc_bind_schema(m, "sys"), "current_user")), s->base.name);
 	if (!(seq = find_sql_sequence(s, seqname)))
 		throw(SQL, "sql.next_value", SQLSTATE(HY050) "Failed to fetch sequence %s.%s", sname, seqname);
 
 	if (seq_next_value(seq, res)) {
 		m->last_id = *res;
-		stack_set_number(m, "last_id", m->last_id);
+		sqlvar_set_number(find_global_var(m, mvc_bind_schema(m, "sys"), "last_id"), m->last_id);
 		return MAL_SUCCEED;
 	}
 	throw(SQL, "sql.next_value", SQLSTATE(42000) "Error in fetching next value for sequence %s.%s", sname, seqname);
@@ -897,7 +959,7 @@ mvc_bat_next_get_value(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, 
 				goto bailout;
 			}
 			if (bulk_func == seqbulk_next_value && !mvc_schema_privs(m, s)) {
-				msg = createException(SQL, call, SQLSTATE(42000) "Access denied for %s to schema '%s'", stack_get_string(m, "current_user"), s->base.name);
+				msg = createException(SQL, call, SQLSTATE(42000) "Access denied for %s to schema '%s'", sqlvar_get_string(find_global_var(m, mvc_bind_schema(m, "sys"), "current_user")), s->base.name);
 				goto bailout;
 			}
 			if (!(seq = find_sql_sequence(s, nseqname)) || !(sb = seqbulk_create(seq, BATcount(it)))) {
@@ -978,7 +1040,7 @@ mvc_restart_seq(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (!(s = mvc_bind_schema(m, sname)))
 		throw(SQL, "sql.restart", SQLSTATE(3F000) "Cannot find the schema %s", sname);
 	if (!mvc_schema_privs(m, s))
-		throw(SQL, "sql.restart", SQLSTATE(42000) "Access denied for %s to schema '%s'", stack_get_string(m, "current_user"), s->base.name);
+		throw(SQL, "sql.restart", SQLSTATE(42000) "Access denied for %s to schema '%s'", sqlvar_get_string(find_global_var(m, mvc_bind_schema(m, "sys"), "current_user")), s->base.name);
 	if (!(seq = find_sql_sequence(s, seqname)))
 		throw(SQL, "sql.restart", SQLSTATE(HY050) "Failed to fetch sequence %s.%s", sname, seqname);
 	if (is_lng_nil(start))
@@ -1085,7 +1147,7 @@ mvc_bat_restart_seq(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				goto bailout;
 			}
 			if (!mvc_schema_privs(m, s)) {
-				msg = createException(SQL, "sql.restart", SQLSTATE(42000) "Access denied for %s to schema '%s'", stack_get_string(m, "current_user"), s->base.name);
+				msg = createException(SQL, "sql.restart", SQLSTATE(42000) "Access denied for %s to schema '%s'", sqlvar_get_string(find_global_var(m, mvc_bind_schema(m, "sys"), "current_user")), s->base.name);
 				goto bailout;
 			}
 			if (!(seq = find_sql_sequence(s, nseqname)) || !(sb = seqbulk_create(seq, BATcount(it)))) {
@@ -4632,7 +4694,7 @@ SQLdrop_hash(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (s == NULL)
 		throw(SQL, "sql.drop_hash", SQLSTATE(3F000) "Schema missing %s",sch);
 	if (!mvc_schema_privs(m, s))
-		throw(SQL, "sql.drop_hash", SQLSTATE(42000) "Access denied for %s to schema '%s'", stack_get_string(m, "current_user"), s->base.name);
+		throw(SQL, "sql.drop_hash", SQLSTATE(42000) "Access denied for %s to schema '%s'", sqlvar_get_string(find_global_var(m, mvc_bind_schema(m, "sys"), "current_user")), s->base.name);
 	t = mvc_bind_table(m, s, tbl);
 	if (t == NULL)
 		throw(SQL, "sql.drop_hash", SQLSTATE(42S02) "Table missing %s.%s",sch, tbl);
@@ -5748,3 +5810,1157 @@ finalize:
 	}
 	return ret;
 }
+
+#include "wlr.h"
+#include "sql_cat.h"
+#include "sql_rank.h"
+#include "sql_user.h"
+#include "sql_assert.h"
+#include "sql_session.h"
+#include "sql_execute.h"
+#include "sql_orderidx.h"
+#include "sql_subquery.h"
+#include "sql_statistics.h"
+#include "sql_transaction.h"
+#include "mel.h"
+static mel_func sql_init_funcs[] = {
+ pattern("sql", "shutdown", SQLshutdown_wrap, false, "", args(1,3, arg("",str),arg("delay",bte),arg("force",bit))),
+ pattern("sql", "shutdown", SQLshutdown_wrap, false, "", args(1,3, arg("",str),arg("delay",sht),arg("force",bit))),
+ pattern("sql", "shutdown", SQLshutdown_wrap, false, "", args(1,3, arg("",str),arg("delay",int),arg("force",bit))),
+ pattern("sql", "shutdown", SQLshutdown_wrap, false, "", args(1,2, arg("",str),arg("delay",bte))),
+ pattern("sql", "shutdown", SQLshutdown_wrap, false, "", args(1,2, arg("",str),arg("delay",sht))),
+ pattern("sql", "shutdown", SQLshutdown_wrap, false, "", args(1,2, arg("",str),arg("delay",int))),
+ pattern("sql", "mvc", SQLmvc, false, "Get the multiversion catalog context. \nNeeded for correct statement dependencies\n(ie sql.update, should be after sql.bind in concurrent execution)", args(1,1, arg("",int))),
+ pattern("sql", "transaction", SQLtransaction2, true, "Start an autocommit transaction", noargs),
+ pattern("sql", "commit", SQLcommit, true, "Trigger the commit operation for a MAL block", noargs),
+ pattern("sql", "abort", SQLabort, true, "Trigger the abort operation for a MAL block", noargs),
+ pattern("sql", "eval", SQLstatement, false, "Compile and execute a single sql statement", args(1,2, arg("",void),arg("cmd",str))),
+ pattern("sql", "eval", SQLstatement, false, "Compile and execute a single sql statement (and optionaly send output on the output stream)", args(1,3, arg("",void),arg("cmd",str),arg("output",bit))),
+ pattern("sql", "include", SQLinclude, false, "Compile and execute a sql statements on the file", args(1,2, arg("",void),arg("fname",str))),
+ pattern("sql", "evalAlgebra", RAstatement, false, "Compile and execute a single 'relational algebra' statement", args(1,3, arg("",void),arg("cmd",str),arg("optimize",bit))),
+ pattern("sql", "register", RAstatement2, false, "", args(1,5, arg("",int),arg("mod",str),arg("fname",str),arg("rel_stmt",str),arg("sig",str))),
+ pattern("sql", "register", RAstatement2, false, "Compile the relational statement (rel_smt) and register it as mal function, mod.fname(signature)", args(1,6, arg("",int),arg("mod",str),arg("fname",str),arg("rel_stmt",str),arg("sig",str),arg("typ",str))),
+ command("sql", "flush_log", SQLflush_log, true, "start flushing the write ahead log", args(1,1, arg("",void))),
+ command("sql", "hot_snapshot", SQLhot_snapshot, true, "Write db snapshot to the given tar(.gz) file", args(1,2, arg("",void),arg("tarfile",str))),
+ command("sql", "resume_log_flushing", SQLresume_log_flushing, true, "Resume WAL log flushing", args(1,1, arg("",void))),
+ command("sql", "suspend_log_flushing", SQLsuspend_log_flushing, true, "Suspend WAL log flushing", args(1,1, arg("",void))),
+ pattern("sql", "assert", SQLassert, false, "Generate an exception when b==true", args(1,3, arg("",void),arg("b",bit),arg("msg",str))),
+ pattern("sql", "assert", SQLassertInt, false, "Generate an exception when b!=0", args(1,3, arg("",void),arg("b",int),arg("msg",str))),
+ pattern("sql", "assert", SQLassertLng, false, "Generate an exception when b!=0", args(1,3, arg("",void),arg("b",lng),arg("msg",str))),
+ pattern("sql", "setVariable", setVariable, true, "Set the value of a session variable", args(1,5, arg("",int),arg("mvc",int),arg("sname",str),arg("varname",str),argany("value",1))),
+ pattern("sql", "getVariable", getVariable, false, "Get the value of a session variable", args(1,4, argany("",1),arg("mvc",int),arg("sname",str),arg("varname",str))),
+ pattern("sql", "logfile", mvc_logfile, true, "Enable/disable saving the sql statement traces", args(1,2, arg("",void),arg("filename",str))),
+ pattern("sql", "next_value", mvc_next_value, true, "return the next value of the sequence", args(1,3, arg("",lng),arg("sname",str),arg("sequence",str))),
+ pattern("batsql", "next_value", mvc_bat_next_value, true, "return the next value of the sequence", args(1,3, batarg("",lng),batarg("sname",str),arg("sequence",str))),
+ pattern("batsql", "next_value", mvc_bat_next_value, true, "return the next value of sequences", args(1,3, batarg("",lng),arg("sname",str),batarg("sequence",str))),
+ pattern("batsql", "next_value", mvc_bat_next_value, true, "return the next value of sequences", args(1,3, batarg("",lng),batarg("sname",str),batarg("sequence",str))),
+ pattern("sql", "get_value", mvc_get_value, false, "return the current value of the sequence", args(1,3, arg("",lng),arg("sname",str),arg("sequence",str))),
+ pattern("batsql", "get_value", mvc_bat_get_value, false, "return the current value of the sequence", args(1,3, batarg("",lng),batarg("sname",str),arg("sequence",str))),
+ pattern("batsql", "get_value", mvc_bat_get_value, false, "return the current value of sequences", args(1,3, batarg("",lng),arg("sname",str),batarg("sequence",str))),
+ pattern("batsql", "get_value", mvc_bat_get_value, false, "return the current value of sequences", args(1,3, batarg("",lng),batarg("sname",str),batarg("sequence",str))),
+ pattern("sql", "restart", mvc_restart_seq, true, "restart the sequence with value start", args(1,4, arg("",lng),arg("sname",str),arg("sequence",str),arg("start",lng))),
+ pattern("batsql", "restart", mvc_bat_restart_seq, true, "restart the sequence with value start", args(1,4, batarg("",lng),batarg("sname",str),arg("sequence",str),arg("start",lng))),
+ pattern("batsql", "restart", mvc_bat_restart_seq, true, "restart the sequence with value start", args(1,4, batarg("",lng),arg("sname",str),batarg("sequence",str),arg("start",lng))),
+ pattern("batsql", "restart", mvc_bat_restart_seq, true, "restart the sequence with value start", args(1,4, batarg("",lng),arg("sname",str),arg("sequence",str),batarg("start",lng))),
+ pattern("batsql", "restart", mvc_bat_restart_seq, true, "restart the sequence with value start", args(1,4, batarg("",lng),batarg("sname",str),batarg("sequence",str),arg("start",lng))),
+ pattern("batsql", "restart", mvc_bat_restart_seq, true, "restart the sequence with value start", args(1,4, batarg("",lng),batarg("sname",str),arg("sequence",str),batarg("start",lng))),
+ pattern("batsql", "restart", mvc_bat_restart_seq, true, "restart the sequence with value start", args(1,4, batarg("",lng),arg("sname",str),batarg("sequence",str),batarg("start",lng))),
+ pattern("batsql", "restart", mvc_bat_restart_seq, true, "restart the sequence with value start", args(1,4, batarg("",lng),batarg("sname",str),batarg("sequence",str),batarg("start",lng))),
+ pattern("sql", "deltas", mvc_delta_values, false, "Return the delta values sizes of all columns of the schema's tables, plus the current transaction level", args(7,8, batarg("ids",int),batarg("cleared",bit),batarg("readonly",lng),batarg("inserted",lng),batarg("updated",lng),batarg("deleted",lng),batarg("tr_level",int),arg("schema",str))),
+ pattern("sql", "deltas", mvc_delta_values, false, "Return the delta values sizes from the table's columns, plus the current transaction level", args(7,9, batarg("ids",int),batarg("cleared",bit),batarg("readonly",lng),batarg("inserted",lng),batarg("updated",lng),batarg("deleted",lng),batarg("tr_level",int),arg("schema",str),arg("table",str))),
+ pattern("sql", "deltas", mvc_delta_values, false, "Return the delta values sizes of a column, plus the current transaction level", args(7,10, batarg("ids",int),batarg("cleared",bit),batarg("readonly",lng),batarg("inserted",lng),batarg("updated",lng),batarg("deleted",lng),batarg("tr_level",int),arg("schema",str),arg("table",str),arg("column",str))),
+ pattern("sql", "emptybindidx", mvc_bind_idxbat_wrap, false, "", args(1,6, batargany("",1),arg("mvc",int),arg("schema",str),arg("table",str),arg("index",str),arg("access",int))),
+ pattern("sql", "bind_idxbat", mvc_bind_idxbat_wrap, false, "Bind the 'schema.table.index' BAT with access kind:\n0 - base table\n1 - inserts\n2 - updates", args(1,6, batargany("",1),arg("mvc",int),arg("schema",str),arg("table",str),arg("index",str),arg("access",int))),
+ pattern("sql", "emptybindidx", mvc_bind_idxbat_wrap, false, "", args(2,7, batarg("uid",oid),batargany("uval",1),arg("mvc",int),arg("schema",str),arg("table",str),arg("index",str),arg("access",int))),
+ pattern("sql", "bind_idxbat", mvc_bind_idxbat_wrap, false, "Bind the 'schema.table.index' BAT with access kind:\n0 - base table\n1 - inserts\n2 - updates", args(2,7, batarg("uid",oid),batargany("uval",1),arg("mvc",int),arg("schema",str),arg("table",str),arg("index",str),arg("access",int))),
+ pattern("sql", "emptybindidx", mvc_bind_idxbat_wrap, false, "", args(1,8, batargany("",1),arg("mvc",int),arg("schema",str),arg("table",str),arg("index",str),arg("access",int),arg("part_nr",int),arg("nr_parts",int))),
+ pattern("sql", "bind_idxbat", mvc_bind_idxbat_wrap, false, "Bind the 'schema.table.index' BAT with access kind:\n0 - base table\n1 - inserts\n2 - updates", args(1,8, batargany("",1),arg("mvc",int),arg("schema",str),arg("table",str),arg("index",str),arg("access",int),arg("part_nr",int),arg("nr_parts",int))),
+ pattern("sql", "emptybindidx", mvc_bind_idxbat_wrap, false, "", args(2,9, batarg("uid",oid),batargany("uval",1),arg("mvc",int),arg("schema",str),arg("table",str),arg("index",str),arg("access",int),arg("part_nr",int),arg("nr_parts",int))),
+ pattern("sql", "bind_idxbat", mvc_bind_idxbat_wrap, false, "Bind the 'schema.table.index' BAT with access kind:\n0 - base table\n1 - inserts\n2 - updates", args(2,9, batarg("uid",oid),batargany("uval",1),arg("mvc",int),arg("schema",str),arg("table",str),arg("index",str),arg("access",int),arg("part_nr",int),arg("nr_parts",int))),
+ pattern("sql", "emptybind", mvc_bind_wrap, false, "", args(1,6, batargany("",1),arg("mvc",int),arg("schema",str),arg("table",str),arg("column",str),arg("access",int))),
+ pattern("sql", "bind", mvc_bind_wrap, false, "Bind the 'schema.table.column' BAT with access kind:\n0 - base table\n1 - inserts\n2 - updates", args(1,6, batargany("",1),arg("mvc",int),arg("schema",str),arg("table",str),arg("column",str),arg("access",int))),
+ pattern("sql", "emptybind", mvc_bind_wrap, false, "", args(2,7, batarg("uid",oid),batargany("uval",1),arg("mvc",int),arg("schema",str),arg("table",str),arg("column",str),arg("access",int))),
+ pattern("sql", "bind", mvc_bind_wrap, false, "Bind the 'schema.table.column' BAT with access kind:\n0 - base table\n1 - inserts\n2 - updates", args(2,7, batarg("uid",oid),batargany("uval",1),arg("mvc",int),arg("schema",str),arg("table",str),arg("column",str),arg("access",int))),
+ pattern("sql", "emptybind", mvc_bind_wrap, false, "", args(1,8, batargany("",1),arg("mvc",int),arg("schema",str),arg("table",str),arg("column",str),arg("access",int),arg("part_nr",int),arg("nr_parts",int))),
+ pattern("sql", "bind", mvc_bind_wrap, false, "Bind the 'schema.table.column' BAT partition with access kind:\n0 - base table\n1 - inserts\n2 - updates", args(1,8, batargany("",1),arg("mvc",int),arg("schema",str),arg("table",str),arg("column",str),arg("access",int),arg("part_nr",int),arg("nr_parts",int))),
+ pattern("sql", "emptybind", mvc_bind_wrap, false, "", args(2,9, batarg("uid",oid),batargany("uval",1),arg("mvc",int),arg("schema",str),arg("table",str),arg("column",str),arg("access",int),arg("part_nr",int),arg("nr_parts",int))),
+ pattern("sql", "bind", mvc_bind_wrap, false, "Bind the 'schema.table.column' BAT with access kind:\n0 - base table\n1 - inserts\n2 - updates", args(2,9, batarg("uid",oid),batargany("uval",1),arg("mvc",int),arg("schema",str),arg("table",str),arg("column",str),arg("access",int),arg("part_nr",int),arg("nr_parts",int))),
+ command("sql", "delta", DELTAbat, false, "Return column bat with delta's applied.", args(1,5, batargany("",3),batargany("col",3),batarg("uid",oid),batargany("uval",3),batargany("ins",3))),
+ command("sql", "projectdelta", DELTAproject, false, "Return column bat with delta's applied.", args(1,6, batargany("",3),batarg("select",oid),batargany("col",3),batarg("uid",oid),batargany("uval",3),batargany("ins",3))),
+ command("sql", "subdelta", DELTAsub, false, "Return a single bat of selected delta.", args(1,6, batarg("",oid),batarg("col",oid),batarg("cand",oid),batarg("uid",oid),batarg("uval",oid),batarg("ins",oid))),
+ command("sql", "delta", DELTAbat2, false, "Return column bat with delta's applied.", args(1,4, batargany("",3),batargany("col",3),batarg("uid",oid),batargany("uval",3))),
+ command("sql", "projectdelta", DELTAproject2, false, "Return column bat with delta's applied.", args(1,5, batargany("",3),batarg("select",oid),batargany("col",3),batarg("uid",oid),batargany("uval",3))),
+ command("sql", "subdelta", DELTAsub2, false, "Return a single bat of selected delta.", args(1,5, batarg("",oid),batarg("col",oid),batarg("cand",oid),batarg("uid",oid),batarg("uval",oid))),
+ command("sql", "project", BATleftproject, false, "Last step of a left outer join, ie project the inner join (l,r) over the left input side (col)", args(1,4, batarg("",oid),batarg("col",oid),batarg("l",oid),batarg("r",oid))),
+ command("sql", "getVersion", mvc_getVersion, false, "Return the database version identifier for a client.", args(1,2, arg("",lng),arg("clientid",int))),
+ pattern("sql", "grow", mvc_grow_wrap, false, "Resize the tid column of a declared table.", args(1,3, arg("",int),batarg("tid",oid),argany("",1))),
+ pattern("sql", "append", mvc_append_wrap, false, "Append to the column tname.cname (possibly optimized to replace the insert bat of tname.cname. Returns sequence number for order dependence.", args(1,6, arg("",int),arg("mvc",int),arg("sname",str),arg("tname",str),arg("cname",str),argany("ins",0))),
+ pattern("sql", "update", mvc_update_wrap, false, "Update the values of the column tname.cname. Returns sequence number for order dependence)", args(1,7, arg("",int),arg("mvc",int),arg("sname",str),arg("tname",str),arg("cname",str),argany("rids",0),argany("upd",0))),
+ pattern("sql", "clear_table", mvc_clear_table_wrap, true, "Clear the table sname.tname.", args(1,3, arg("",lng),arg("sname",str),arg("tname",str))),
+ pattern("sql", "tid", SQLtid, false, "Return a column with the valid tuple identifiers associated with the table sname.tname.", args(1,4, batarg("",oid),arg("mvc",int),arg("sname",str),arg("tname",str))),
+ pattern("sql", "tid", SQLtid, false, "Return the tables tid column.", args(1,6, batarg("",oid),arg("mvc",int),arg("sname",str),arg("tname",str),arg("part_nr",int),arg("nr_parts",int))),
+ pattern("sql", "delete", mvc_delete_wrap, true, "Delete a row from a table. Returns sequence number for order dependence.", args(1,5, arg("",int),arg("mvc",int),arg("sname",str),arg("tname",str),argany("b",0))),
+ pattern("sql", "resultSet", mvc_scalar_value_wrap, true, "Prepare a table result set for the client front-end.", args(1,8, arg("",int),arg("tbl",str),arg("attr",str),arg("tpe",str),arg("len",int),arg("scale",int),arg("eclass",int),argany("val",0))),
+ pattern("sql", "resultSet", mvc_row_result_wrap, true, "Prepare a table result set for the client front-end", args(1,7, arg("",int),batarg("tbl",str),batarg("attr",str),batarg("tpe",str),batarg("len",int),batarg("scale",int),varargany("cols",0))),
+ pattern("sql", "resultSet", mvc_table_result_wrap, true, "Prepare a table result set for the client in default CSV format", args(1,7, arg("",int),batarg("tbl",str),batarg("attr",str),batarg("tpe",str),batarg("len",int),batarg("scale",int),batvarargany("cols",0))),
+ pattern("sql", "export_table", mvc_export_row_wrap, true, "Prepare a table result set for the COPY INTO stream", args(1,14, arg("",int),arg("fname",str),arg("fmt",str),arg("colsep",str),arg("recsep",str),arg("qout",str),arg("nullrep",str),arg("onclient",int),batarg("tbl",str),batarg("attr",str),batarg("tpe",str),batarg("len",int),batarg("scale",int),varargany("cols",0))),
+ pattern("sql", "export_table", mvc_export_table_wrap, true, "Prepare a table result set for the COPY INTO stream", args(1,14, arg("",int),arg("fname",str),arg("fmt",str),arg("colsep",str),arg("recsep",str),arg("qout",str),arg("nullrep",str),arg("onclient",int),batarg("tbl",str),batarg("attr",str),batarg("tpe",str),batarg("len",int),batarg("scale",int),batvarargany("cols",0))),
+ pattern("sql", "exportHead", mvc_export_head_wrap, true, "Export a result (in order) to stream s", args(1,3, arg("",void),arg("s",streams),arg("res_id",int))),
+ pattern("sql", "exportResult", mvc_export_result_wrap, true, "Export a result (in order) to stream s", args(1,3, arg("",void),arg("s",streams),arg("res_id",int))),
+ pattern("sql", "exportChunk", mvc_export_chunk_wrap, true, "Export a chunk of the result set (in order) to stream s", args(1,3, arg("",void),arg("s",streams),arg("res_id",int))),
+ pattern("sql", "exportChunk", mvc_export_chunk_wrap, true, "Export a chunk of the result set (in order) to stream s", args(1,5, arg("",void),arg("s",streams),arg("res_id",int),arg("offset",int),arg("nr",int))),
+ pattern("sql", "exportOperation", mvc_export_operation_wrap, true, "Export result of schema/transaction queries", args(1,1, arg("",void))),
+ pattern("sql", "affectedRows", mvc_affected_rows_wrap, true, "export the number of affected rows by the current query", args(1,3, arg("",int),arg("mvc",int),arg("nr",lng))),
+ pattern("sql", "copy_from", mvc_import_table_wrap, true, "Import a table from bstream s with the \ngiven tuple and seperators (sep/rsep)", args(1,13, batvarargany("",0),arg("t",ptr),arg("sep",str),arg("rsep",str),arg("ssep",str),arg("ns",str),arg("fname",str),arg("nr",lng),arg("offset",lng),arg("locked",int),arg("best",int),arg("fwf",str),arg("onclient",int))),
+ //we use bat.single now
+ //pattern("sql", "single", CMDBATsingle, false, "", args(1,2, batargany("",2),argany("x",2))),
+ pattern("sql", "importTable", mvc_bin_import_table_wrap, true, "Import a table from the files (fname)", args(1,5, batvarargany("",0),arg("sname",str),arg("tname",str),arg("onclient",int),vararg("fname",str))),
+ command("sql", "not_unique", not_unique, false, "check if the tail sorted bat b doesn't have unique tail values", args(1,2, arg("",bit),batarg("b",oid))),
+ command("sql", "optimizers", getPipeCatalog, false, "", args(3,3, batarg("",str),batarg("",str),batarg("",str))),
+ pattern("sql", "optimizer_updates", SQLoptimizersUpdate, false, "", noargs),
+ pattern("sql", "argRecord", SQLargRecord, false, "Glue together the calling sequence", args(1,1, arg("",str))),
+ pattern("sql", "argRecord", SQLargRecord, false, "Glue together the calling sequence", args(1,2, arg("",str),varargany("a",0))),
+ pattern("sql", "sql_variables", sql_variables, false, "return the table with session variables", args(4,4, batarg("sname",str),batarg("name",str),batarg("type",str),batarg("value",str))),
+ pattern("sql", "sessions", sql_sessions_wrap, false, "SQL export table of active sessions, their timeouts and idle status", args(9,9, batarg("id",int),batarg("user",str),batarg("start",timestamp),batarg("idle",timestamp),batarg("optmizer",str),batarg("stimeout",int),batarg("qtimeout",int),batarg("wlimit",int),batarg("mlimit",int))),
+ pattern("sql", "db_users", db_users_wrap, false, "return table of users with sql scenario", args(1,1, batarg("",str))),
+ pattern("sql", "password", db_password_wrap, false, "Return password hash of user", args(1,2, arg("",str),arg("user",str))),
+ pattern("batsql", "password", db_password_wrap, false, "Return password hash of user", args(1,2, batarg("",str),batarg("user",str))),
+ pattern("sql", "rt_credentials", sql_rt_credentials_wrap, false, "Return the remote table credentials for the given table", args(3,4, batarg("uri",str),batarg("username",str),batarg("hash",str),arg("tablename",str))),
+ pattern("sql", "dump_cache", dump_cache, false, "dump the content of the query cache", args(2,2, batarg("query",str),batarg("count",int))),
+ pattern("sql", "dump_opt_stats", dump_opt_stats, false, "dump the optimizer rewrite statistics", args(2,2, batarg("rewrite",str),batarg("count",int))),
+ pattern("sql", "dump_trace", dump_trace, false, "dump the trace statistics", args(2,2, batarg("ticks",lng),batarg("stmt",str))),
+ pattern("sql", "analyze", sql_analyze, true, "", args(1,3, arg("",void),arg("minmax",int),arg("sample",lng))),
+ pattern("sql", "analyze", sql_analyze, true, "", args(1,4, arg("",void),arg("minmax",int),arg("sample",lng),arg("sch",str))),
+ pattern("sql", "analyze", sql_analyze, true, "", args(1,5, arg("",void),arg("minmax",int),arg("sample",lng),arg("sch",str),arg("tbl",str))),
+ pattern("sql", "analyze", sql_analyze, true, "Update the database statistics table", args(1,6, arg("",void),arg("minmax",int),arg("sample",lng),arg("sch",str),arg("tbl",str),arg("col",str))),
+ pattern("sql", "storage", sql_storage, false, "return a table with storage information ", args(17,17, batarg("schema",str),batarg("table",str),batarg("column",str),batarg("type",str),batarg("mode",str),batarg("location",str),batarg("count",lng),batarg("atomwidth",int),batarg("columnsize",lng),batarg("heap",lng),batarg("hashes",lng),batarg("phash",bit),batarg("imprints",lng),batarg("sorted",bit),batarg("revsorted",bit),batarg("key",bit),batarg("orderidx",lng))),
+ pattern("sql", "storage", sql_storage, false, "return a table with storage information for a particular schema ", args(17,18, batarg("schema",str),batarg("table",str),batarg("column",str),batarg("type",str),batarg("mode",str),batarg("location",str),batarg("count",lng),batarg("atomwidth",int),batarg("columnsize",lng),batarg("heap",lng),batarg("hashes",lng),batarg("phash",bit),batarg("imprints",lng),batarg("sorted",bit),batarg("revsorted",bit),batarg("key",bit),batarg("orderidx",lng),arg("sname",str))),
+ pattern("sql", "storage", sql_storage, false, "return a table with storage information for a particular table", args(17,19, batarg("schema",str),batarg("table",str),batarg("column",str),batarg("type",str),batarg("mode",str),batarg("location",str),batarg("count",lng),batarg("atomwidth",int),batarg("columnsize",lng),batarg("heap",lng),batarg("hashes",lng),batarg("phash",bit),batarg("imprints",lng),batarg("sorted",bit),batarg("revsorted",bit),batarg("key",bit),batarg("orderidx",lng),arg("sname",str),arg("tname",str))),
+ pattern("sql", "storage", sql_storage, false, "return a table with storage information for a particular column", args(17,20, batarg("schema",str),batarg("table",str),batarg("column",str),batarg("type",str),batarg("mode",str),batarg("location",str),batarg("count",lng),batarg("atomwidth",int),batarg("columnsize",lng),batarg("heap",lng),batarg("hashes",lng),batarg("phash",bit),batarg("imprints",lng),batarg("sorted",bit),batarg("revsorted",bit),batarg("key",bit),batarg("orderidx",lng),arg("sname",str),arg("tname",str),arg("cname",str))),
+ pattern("sql", "createorderindex", sql_createorderindex, true, "Instantiate the order index on a column", args(0,3, arg("sch",str),arg("tbl",str),arg("col",str))),
+ pattern("sql", "droporderindex", sql_droporderindex, true, "Drop the order index on a column", args(0,3, arg("sch",str),arg("tbl",str),arg("col",str))),
+ command("calc", "identity", SQLidentity, false, "Returns a unique row identitfier.", args(1,2, arg("",oid),argany("",0))),
+ command("batcalc", "identity", BATSQLidentity, false, "Returns the unique row identitfiers.", args(1,2, batarg("",oid),batargany("b",0))),
+ pattern("batcalc", "identity", PBATSQLidentity, false, "Returns the unique row identitfiers.", args(2,4, batarg("resb",oid),arg("ns",oid),batargany("b",0),arg("s",oid))),
+ pattern("sql", "querylog_catalog", sql_querylog_catalog, false, "Obtain the query log catalog", args(8,8, batarg("id",oid),batarg("user",str),batarg("defined",timestamp),batarg("query",str),batarg("pipe",str),batarg("plan",str),batarg("mal",int),batarg("optimize",lng))),
+ pattern("sql", "querylog_calls", sql_querylog_calls, false, "Obtain the query log calls", args(9,9, batarg("id",oid),batarg("start",timestamp),batarg("stop",timestamp),batarg("arguments",str),batarg("tuples",lng),batarg("exec",lng),batarg("result",lng),batarg("cpuload",int),batarg("iowait",int))),
+ pattern("sql", "querylog_empty", sql_querylog_empty, true, "", noargs),
+ command("sql", "querylog_enable", QLOGenable, true, "", noargs),
+ command("sql", "querylog_enable", QLOGenableThreshold, true, "", args(0,1, arg("thres",int))),
+ command("sql", "querylog_disable", QLOGdisable, true, "", noargs),
+ /* use from sysmon, ie no need too rename
+ pattern("sql", "sysmon_queue", SYSMONqueue, false, "", args(9,9, batarg("tag",lng),batarg("sessionid",int),batarg("user",str),batarg("started",timestamp),batarg("status",str),batarg("query",str),batarg("finished",timestamp),batarg("workers",int),batarg("memory",int))),
+ pattern("sql", "sysmon_pause", SYSMONpause, true, "", args(0,1, arg("tag",bte))),
+ pattern("sql", "sysmon_pause", SYSMONpause, true, "", args(0,1, arg("tag",sht))),
+ pattern("sql", "sysmon_pause", SYSMONpause, true, "", args(0,1, arg("tag",int))),
+ pattern("sql", "sysmon_pause", SYSMONpause, true, "", args(0,1, arg("tag",lng))),
+ pattern("sql", "sysmon_resume", SYSMONresume, true, "", args(0,1, arg("tag",bte))),
+ pattern("sql", "sysmon_resume", SYSMONresume, true, "", args(0,1, arg("tag",sht))),
+ pattern("sql", "sysmon_resume", SYSMONresume, true, "", args(0,1, arg("tag",int))),
+ pattern("sql", "sysmon_resume", SYSMONresume, true, "", args(0,1, arg("tag",lng))),
+ pattern("sql", "sysmon_stop", SYSMONstop, true, "", args(0,1, arg("tag",bte))),
+ pattern("sql", "sysmon_stop", SYSMONstop, true, "", args(0,1, arg("tag",sht))),
+ pattern("sql", "sysmon_stop", SYSMONstop, true, "", args(0,1, arg("tag",int))),
+ pattern("sql", "sysmon_stop", SYSMONstop, true, "", args(0,1, arg("tag",lng))),
+ */
+ pattern("sql", "prepared_statements", SQLsession_prepared_statements, false, "Available prepared statements in the current session", args(5,5, batarg("sessionid",int),batarg("user",str),batarg("statementid",int),batarg("statement",str),batarg("created",timestamp))),
+ pattern("sql", "prepared_statements_args", SQLsession_prepared_statements_args, false, "Available prepared statements' arguments in the current session", args(9,9, batarg("statementid",int),batarg("type",str),batarg("digits",int),batarg("scale",int),batarg("inout",bte),batarg("number",int),batarg("schema",str),batarg("table",str),batarg("column",str))),
+ pattern("sql", "copy_rejects", COPYrejects, false, "", args(4,4, batarg("rowid",lng),batarg("fldid",int),batarg("msg",str),batarg("inp",str))),
+ pattern("sql", "copy_rejects_clear", COPYrejects_clear, true, "", noargs),
+ pattern("calc", "hash", MKEYhash, false, "", args(1,2, arg("",lng),arg("v",bte))),
+ command("batcalc", "hash", MKEYbathash, false, "", args(1,2, batarg("",lng),batarg("b",bte))),
+ pattern("calc", "hash", MKEYhash, false, "", args(1,2, arg("",lng),arg("v",sht))),
+ command("batcalc", "hash", MKEYbathash, false, "", args(1,2, batarg("",lng),batarg("b",sht))),
+ pattern("calc", "hash", MKEYhash, false, "", args(1,2, arg("",lng),arg("v",int))),
+ command("batcalc", "hash", MKEYbathash, false, "", args(1,2, batarg("",lng),batarg("b",int))),
+ pattern("calc", "hash", MKEYhash, false, "", args(1,2, arg("",lng),arg("v",lng))),
+ command("batcalc", "hash", MKEYbathash, false, "", args(1,2, batarg("",lng),batarg("b",lng))),
+ pattern("calc", "hash", MKEYhash, false, "", args(1,2, arg("",lng),arg("v",oid))),
+ command("batcalc", "hash", MKEYbathash, false, "", args(1,2, batarg("",lng),batarg("b",oid))),
+ pattern("calc", "hash", MKEYhash, false, "", args(1,2, arg("",lng),arg("v",lng))),
+ command("batcalc", "hash", MKEYbathash, false, "", args(1,2, batarg("",lng),batarg("b",lng))),
+ pattern("calc", "hash", MKEYhash, false, "", args(1,2, arg("",lng),arg("v",flt))),
+ command("batcalc", "hash", MKEYbathash, false, "", args(1,2, batarg("",lng),batarg("b",flt))),
+ pattern("calc", "hash", MKEYhash, false, "", args(1,2, arg("",lng),arg("v",dbl))),
+ command("batcalc", "hash", MKEYbathash, false, "", args(1,2, batarg("",lng),batarg("b",dbl))),
+ pattern("calc", "hash", MKEYhash, false, "", args(1,2, arg("",lng),argany("v",0))),
+ command("batcalc", "hash", MKEYbathash, false, "", args(1,2, batarg("",lng),batargany("b",1))),
+ pattern("calc", "rotate_xor_hash", MKEYrotate_xor_hash, false, "", args(1,4, arg("",lng),arg("h",lng),arg("nbits",int),argany("v",1))),
+ command("batcalc", "rotate_xor_hash", MKEYbulk_rotate_xor_hash, false, "", args(1,4, batarg("",int),batarg("h",lng),arg("nbits",int),batargany("b",1))),
+ command("sql", "dec_round", bte_dec_round_wrap, false, "round off the value v to nearests multiple of r", args(1,3, arg("",bte),arg("v",bte),arg("r",bte))),
+ command("batsql", "dec_round", bte_bat_dec_round_wrap, false, "round off the value v to nearests multiple of r", args(1,3, batarg("",bte),batarg("v",bte),arg("r",bte))),
+ command("sql", "round", bte_round_wrap, false, "round off the decimal v(d,s) to r digits behind the dot (if r < 0, before the dot)", args(1,5, arg("",bte),arg("v",bte),arg("d",int),arg("s",int),arg("r",bte))),
+ command("batsql", "round", bte_bat_round_wrap, false, "round off the decimal v(d,s) to r digits behind the dot (if r < 0, before the dot)", args(1,5, batarg("",bte),batarg("v",bte),arg("d",int),arg("s",int),arg("r",bte))),
+ command("calc", "second_interval", bte_dec2second_interval, false, "cast bte decimal to a second_interval", args(1,5, arg("",lng),arg("sc",int),arg("v",bte),arg("ek",int),arg("sk",int))),
+ command("sql", "dec_round", sht_dec_round_wrap, false, "round off the value v to nearests multiple of r", args(1,3, arg("",sht),arg("v",sht),arg("r",sht))),
+ command("batsql", "dec_round", sht_bat_dec_round_wrap, false, "round off the value v to nearests multiple of r", args(1,3, batarg("",sht),batarg("v",sht),arg("r",sht))),
+ command("sql", "round", sht_round_wrap, false, "round off the decimal v(d,s) to r digits behind the dot (if r < 0, before the dot)", args(1,5, arg("",sht),arg("v",sht),arg("d",int),arg("s",int),arg("r",bte))),
+ command("batsql", "round", sht_bat_round_wrap, false, "round off the decimal v(d,s) to r digits behind the dot (if r < 0, before the dot)", args(1,5, batarg("",sht),batarg("v",sht),arg("d",int),arg("s",int),arg("r",bte))),
+ command("calc", "second_interval", sht_dec2second_interval, false, "cast sht decimal to a second_interval", args(1,5, arg("",lng),arg("sc",int),arg("v",sht),arg("ek",int),arg("sk",int))),
+ command("sql", "dec_round", int_dec_round_wrap, false, "round off the value v to nearests multiple of r", args(1,3, arg("",int),arg("v",int),arg("r",int))),
+ command("batsql", "dec_round", int_bat_dec_round_wrap, false, "round off the value v to nearests multiple of r", args(1,3, batarg("",int),batarg("v",int),arg("r",int))),
+ command("sql", "round", int_round_wrap, false, "round off the decimal v(d,s) to r digits behind the dot (if r < 0, before the dot)", args(1,5, arg("",int),arg("v",int),arg("d",int),arg("s",int),arg("r",bte))),
+ command("batsql", "round", int_bat_round_wrap, false, "round off the decimal v(d,s) to r digits behind the dot (if r < 0, before the dot)", args(1,5, batarg("",int),batarg("v",int),arg("d",int),arg("s",int),arg("r",bte))),
+ command("calc", "second_interval", int_dec2second_interval, false, "cast int decimal to a second_interval", args(1,5, arg("",lng),arg("sc",int),arg("v",int),arg("ek",int),arg("sk",int))),
+ command("sql", "dec_round", lng_dec_round_wrap, false, "round off the value v to nearests multiple of r", args(1,3, arg("",lng),arg("v",lng),arg("r",lng))),
+ command("batsql", "dec_round", lng_bat_dec_round_wrap, false, "round off the value v to nearests multiple of r", args(1,3, batarg("",lng),batarg("v",lng),arg("r",lng))),
+ command("sql", "round", lng_round_wrap, false, "round off the decimal v(d,s) to r digits behind the dot (if r < 0, before the dot)", args(1,5, arg("",lng),arg("v",lng),arg("d",int),arg("s",int),arg("r",bte))),
+ command("batsql", "round", lng_bat_round_wrap, false, "round off the decimal v(d,s) to r digits behind the dot (if r < 0, before the dot)", args(1,5, batarg("",lng),batarg("v",lng),arg("d",int),arg("s",int),arg("r",bte))),
+ command("calc", "second_interval", lng_dec2second_interval, false, "cast lng decimal to a second_interval", args(1,5, arg("",lng),arg("sc",int),arg("v",lng),arg("ek",int),arg("sk",int))),
+ command("sql", "dec_round", flt_dec_round_wrap, false, "round off the value v to nearests multiple of r", args(1,3, arg("",flt),arg("v",flt),arg("r",flt))),
+ command("batsql", "dec_round", flt_bat_dec_round_wrap, false, "round off the value v to nearests multiple of r", args(1,3, batarg("",flt),batarg("v",flt),arg("r",flt))),
+ command("sql", "round", flt_round_wrap, false, "round off the floating point v to r digits behind the dot (if r < 0, before the dot)", args(1,3, arg("",flt),arg("v",flt),arg("r",bte))),
+ command("batsql", "round", flt_bat_round_wrap, false, "round off the floating point v to r digits behind the dot (if r < 0, before the dot)", args(1,3, batarg("",flt),batarg("v",flt),arg("r",bte))),
+ command("sql", "ms_trunc", flt_trunc_wrap, false, "truncate the floating point v to r digits behind the dot (if r < 0, before the dot)", args(1,3, arg("",flt),arg("v",flt),arg("r",int))),
+ command("sql", "dec_round", dbl_dec_round_wrap, false, "round off the value v to nearests multiple of r", args(1,3, arg("",dbl),arg("v",dbl),arg("r",dbl))),
+ command("batsql", "dec_round", dbl_bat_dec_round_wrap, false, "round off the value v to nearests multiple of r", args(1,3, batarg("",dbl),batarg("v",dbl),arg("r",dbl))),
+ command("sql", "round", dbl_round_wrap, false, "round off the floating point v to r digits behind the dot (if r < 0, before the dot)", args(1,3, arg("",dbl),arg("v",dbl),arg("r",bte))),
+ command("batsql", "round", dbl_bat_round_wrap, false, "round off the floating point v to r digits behind the dot (if r < 0, before the dot)", args(1,3, batarg("",dbl),batarg("v",dbl),arg("r",bte))),
+ command("sql", "ms_trunc", dbl_trunc_wrap, false, "truncate the floating point v to r digits behind the dot (if r < 0, before the dot)", args(1,3, arg("",dbl),arg("v",dbl),arg("r",int))),
+ command("sql", "alpha", SQLcst_alpha_cst, false, "Implementation of astronomy alpha function: expands the radius theta depending on the declination", args(1,3, arg("",dbl),arg("dec",dbl),arg("theta",dbl))),
+ command("batsql", "alpha", SQLbat_alpha_cst, false, "BAT implementation of astronomy alpha function", args(1,3, batarg("",dbl),batarg("dec",dbl),arg("theta",dbl))),
+ command("batsql", "alpha", SQLcst_alpha_bat, false, "BAT implementation of astronomy alpha function", args(1,3, batarg("",dbl),arg("dec",dbl),batarg("theta",dbl))),
+ command("calc", "bte", nil_2dec_bte, false, "cast to dec(bte) and check for overflow", args(1,4, arg("",bte),arg("v",void),arg("digits",int),arg("scale",int))),
+ command("batcalc", "bte", batnil_2dec_bte, false, "cast to dec(bte) and check for overflow", args(1,4, batarg("",bte),batarg("v",oid),arg("digits",int),arg("scale",int))),
+ command("batcalc", "bte", batnil_ce_2dec_bte, false, "cast to dec(bte) and check for overflow", args(1,5, batarg("",bte),batarg("v",oid),arg("digits",int),arg("scale",int),batarg("r",bit))),
+ command("calc", "bte", str_2dec_bte, false, "cast to dec(bte) and check for overflow", args(1,4, arg("",bte),arg("v",str),arg("digits",int),arg("scale",int))),
+ command("batcalc", "bte", batstr_2dec_bte, false, "cast to dec(bte) and check for overflow", args(1,4, batarg("",bte),batarg("v",str),arg("digits",int),arg("scale",int))),
+ command("batcalc", "bte", batstr_ce_2dec_bte, false, "cast to dec(bte) and check for overflow", args(1,5, batarg("",bte),batarg("v",str),arg("digits",int),arg("scale",int),batarg("r",bit))),
+ command("calc", "sht", nil_2dec_sht, false, "cast to dec(sht) and check for overflow", args(1,4, arg("",sht),arg("v",void),arg("digits",int),arg("scale",int))),
+ command("batcalc", "sht", batnil_2dec_sht, false, "cast to dec(sht) and check for overflow", args(1,4, batarg("",sht),batarg("v",oid),arg("digits",int),arg("scale",int))),
+ command("batcalc", "sht", batnil_ce_2dec_sht, false, "cast to dec(sht) and check for overflow", args(1,5, batarg("",sht),batarg("v",oid),arg("digits",int),arg("scale",int),batarg("r",bit))),
+ command("calc", "sht", str_2dec_sht, false, "cast to dec(sht) and check for overflow", args(1,4, arg("",sht),arg("v",str),arg("digits",int),arg("scale",int))),
+ command("batcalc", "sht", batstr_2dec_sht, false, "cast to dec(sht) and check for overflow", args(1,4, batarg("",sht),batarg("v",str),arg("digits",int),arg("scale",int))),
+ command("batcalc", "sht", batstr_ce_2dec_sht, false, "cast to dec(sht) and check for overflow", args(1,5, batarg("",sht),batarg("v",str),arg("digits",int),arg("scale",int),batarg("r",bit))),
+ command("calc", "int", nil_2dec_int, false, "cast to dec(int) and check for overflow", args(1,4, arg("",int),arg("v",void),arg("digits",int),arg("scale",int))),
+ command("batcalc", "int", batnil_2dec_int, false, "cast to dec(int) and check for overflow", args(1,4, batarg("",int),batarg("v",oid),arg("digits",int),arg("scale",int))),
+ command("batcalc", "int", batnil_ce_2dec_int, false, "cast to dec(int) and check for overflow", args(1,5, batarg("",int),batarg("v",oid),arg("digits",int),arg("scale",int),batarg("r",bit))),
+ command("calc", "int", str_2dec_int, false, "cast to dec(int) and check for overflow", args(1,4, arg("",int),arg("v",str),arg("digits",int),arg("scale",int))),
+ command("batcalc", "int", batstr_2dec_int, false, "cast to dec(int) and check for overflow", args(1,4, batarg("",int),batarg("v",str),arg("digits",int),arg("scale",int))),
+ command("batcalc", "int", batstr_ce_2dec_int, false, "cast to dec(int) and check for overflow", args(1,5, batarg("",int),batarg("v",str),arg("digits",int),arg("scale",int),batarg("r",bit))),
+ command("calc", "lng", nil_2dec_lng, false, "cast to dec(lng) and check for overflow", args(1,4, arg("",lng),arg("v",void),arg("digits",int),arg("scale",int))),
+ command("batcalc", "lng", batnil_2dec_lng, false, "cast to dec(lng) and check for overflow", args(1,4, batarg("",lng),batarg("v",oid),arg("digits",int),arg("scale",int))),
+ command("batcalc", "lng", batnil_ce_2dec_lng, false, "cast to dec(lng) and check for overflow", args(1,5, batarg("",lng),batarg("v",oid),arg("digits",int),arg("scale",int),batarg("r",bit))),
+ command("calc", "lng", str_2dec_lng, false, "cast to dec(lng) and check for overflow", args(1,4, arg("",lng),arg("v",str),arg("digits",int),arg("scale",int))),
+ command("batcalc", "lng", batstr_2dec_lng, false, "cast to dec(lng) and check for overflow", args(1,4, batarg("",lng),batarg("v",str),arg("digits",int),arg("scale",int))),
+ command("batcalc", "lng", batstr_ce_2dec_lng, false, "cast to dec(lng) and check for overflow", args(1,5, batarg("",lng),batarg("v",str),arg("digits",int),arg("scale",int),batarg("r",bit))),
+ command("calc", "timestamp", nil_2time_timestamp, false, "cast to timestamp and check for overflow", args(1,3, arg("",timestamp),arg("v",void),arg("digits",int))),
+ command("batcalc", "timestamp", batnil_2time_timestamp, false, "cast to timestamp and check for overflow", args(1,3, batarg("",timestamp),batarg("v",oid),arg("digits",int))),
+ command("batcalc", "timestamp", batnil_ce_2time_timestamp, false, "cast to timestamp and check for overflow", args(1,4, batarg("",timestamp),batarg("v",oid),arg("digits",int),batarg("r",bat))),
+ command("calc", "timestamp", str_2time_timestamp, false, "cast to timestamp and check for overflow", args(1,3, arg("",timestamp),arg("v",str),arg("digits",int))),
+ command("calc", "timestamp", str_2time_timestamptz, false, "cast to timestamp and check for overflow", args(1,4, arg("",timestamp),arg("v",str),arg("digits",int),arg("has_tz",int))),
+ command("calc", "timestamp", timestamp_2time_timestamp, false, "cast timestamp to timestamp and check for overflow", args(1,3, arg("",timestamp),arg("v",timestamp),arg("digits",int))),
+ command("batcalc", "timestamp", batstr_2time_timestamp, false, "cast to timestamp and check for overflow", args(1,3, batarg("",timestamp),batarg("v",str),arg("digits",int))),
+ command("batcalc", "timestamp", batstr_2time_timestamptz, false, "cast to timestamp and check for overflow", args(1,4, batarg("",timestamp),batarg("v",str),arg("digits",int),arg("has_tz",int))),
+ command("batcalc", "timestamp", battimestamp_2time_timestamp, false, "cast timestamp to timestamp and check for overflow", args(1,3, batarg("",timestamp),batarg("v",timestamp),arg("digits",int))),
+ command("calc", "daytime", nil_2time_daytime, false, "cast to daytime and check for overflow", args(1,3, arg("",daytime),arg("v",void),arg("digits",int))),
+ command("batcalc", "daytime", batnil_2time_daytime, false, "cast to daytime and check for overflow", args(1,3, batarg("",daytime),batarg("v",oid),arg("digits",int))),
+ command("batcalc", "daytime", batnil_ce_2time_daytime, false, "cast to daytime and check for overflow", args(1,4, batarg("",daytime),batarg("v",oid),arg("digits",int),batarg("r",bit))),
+ command("calc", "daytime", str_2time_daytime, false, "cast to daytime and check for overflow", args(1,3, arg("",daytime),arg("v",str),arg("digits",int))),
+ command("calc", "daytime", str_2time_daytimetz, false, "cast to daytime and check for overflow", args(1,4, arg("",daytime),arg("v",str),arg("digits",int),arg("has_tz",int))),
+ command("calc", "daytime", daytime_2time_daytime, false, "cast daytime to daytime and check for overflow", args(1,3, arg("",daytime),arg("v",daytime),arg("digits",int))),
+ command("batcalc", "daytime", batstr_2time_daytime, false, "cast to daytime and check for overflow", args(1,3, batarg("",daytime),batarg("v",str),arg("digits",int))),
+ command("batcalc", "daytime", batstr_2time_daytimetz, false, "cast to daytime and check for overflow", args(1,4, batarg("",daytime),batarg("v",str),arg("digits",int),arg("has_tz",int))),
+ command("batcalc", "daytime", batdaytime_2time_daytime, false, "cast daytime to daytime and check for overflow", args(1,3, batarg("",daytime),batarg("v",daytime),arg("digits",int))),
+ command("sql", "date_trunc", bat_date_trunc, false, "Truncate a timestamp to (millennium, century,decade,year,quarter,month,week,day,hour,minute,second, milliseconds,microseconds)", args(1,3, batarg("",timestamp),arg("scale",str),batarg("v",timestamp))),
+ command("sql", "date_trunc", date_trunc, false, "Truncate a timestamp to (millennium, century,decade,year,quarter,month,week,day,hour,minute,second, milliseconds,microseconds)", args(1,3, arg("",timestamp),arg("scale",str),arg("v",timestamp))),
+ pattern("sql", "current_time", SQLcurrent_daytime, false, "Get the clients current daytime", args(1,1, arg("",daytime))),
+ pattern("sql", "current_timestamp", SQLcurrent_timestamp, false, "Get the clients current timestamp", args(1,1, arg("",timestamp))),
+ command("calc", "date", nil_2_date, false, "cast to date", args(1,2, arg("",date),arg("v",void))),
+ command("batcalc", "date", batnil_2_date, false, "cast to date", args(1,2, batarg("",date),batarg("v",oid))),
+ command("batcalc", "date", batnil_ce_2_date, false, "cast to date", args(1,3, batarg("",date),batarg("v",oid),batarg("r",bit))),
+ command("calc", "date", str_2_date, false, "cast to date", args(1,2, arg("",date),arg("v",str))),
+ command("batcalc", "date", batstr_2_date, false, "cast to date", args(1,2, batarg("",date),batarg("v",str))),
+ command("batcalc", "date", batstr_ce_2_date, false, "cast to date", args(1,3, batarg("",date),batarg("v",str),batarg("r",bit))),
+ command("calc", "str", SQLdate_2_str, false, "cast date to str", args(1,2, arg("",str),arg("v",date))),
+ command("calc", "blob", str_2_blob, false, "cast to blob", args(1,2, arg("",blob),arg("v",str))),
+ command("batcalc", "blob", batstr_2_blob, false, "cast to blob", args(1,2, batarg("",blob),batarg("v",str))),
+ command("batcalc", "blob", batstr_ce_2_blob, false, "cast to blob", args(1,3, batarg("",blob),batarg("v",str),batarg("r",bit))),
+ command("calc", "str", SQLblob_2_str, false, "cast blob to str", args(1,2, arg("",str),arg("v",blob))),
+ pattern("calc", "str", SQLstr_cast, false, "cast to string and check for overflow", args(1,7, arg("",str),arg("eclass",int),arg("d1",int),arg("s1",int),arg("has_tz",int),argany("v",1),arg("digits",int))),
+ pattern("batcalc", "str", SQLbatstr_cast, false, "cast to string and check for overflow", args(1,7, batarg("",str),arg("eclass",int),arg("d1",int),arg("s1",int),arg("has_tz",int),batargany("v",1),arg("digits",int))),
+ pattern("batcalc", "str", SQLbatstr_cast, false, "cast to string and check for overflow", args(1,8, batarg("",str),arg("eclass",int),arg("d1",int),arg("s1",int),arg("has_tz",int),batargany("v",1),arg("digits",int),batarg("r",bit))),
+ command("calc", "substring", STRsubstringTail, false, "", args(1,3, arg("",str),arg("s",str),arg("offset",int))),
+ command("calc", "substring", STRsubstring, false, "", args(1,4, arg("",str),arg("s",str),arg("offset",int),arg("count",int))),
+ command("calc", "month_interval", month_interval_str, false, "cast str to a month_interval and check for overflow", args(1,4, arg("",int),arg("v",str),arg("ek",int),arg("sk",int))),
+ command("calc", "second_interval", second_interval_str, false, "cast str to a second_interval and check for overflow", args(1,4, arg("",lng),arg("v",str),arg("ek",int),arg("sk",int))),
+ pattern("calc", "month_interval", month_interval, false, "cast bte to a month_interval and check for overflow", args(1,4, arg("",int),arg("v",bte),arg("ek",int),arg("sk",int))),
+ pattern("calc", "second_interval", second_interval, false, "cast bte to a second_interval and check for overflow", args(1,4, arg("",lng),arg("v",bte),arg("ek",int),arg("sk",int))),
+ pattern("calc", "month_interval", month_interval, false, "cast sht to a month_interval and check for overflow", args(1,4, arg("",int),arg("v",sht),arg("ek",int),arg("sk",int))),
+ pattern("calc", "second_interval", second_interval, false, "cast sht to a second_interval and check for overflow", args(1,4, arg("",lng),arg("v",sht),arg("ek",int),arg("sk",int))),
+ pattern("calc", "month_interval", month_interval, false, "cast int to a month_interval and check for overflow", args(1,4, arg("",int),arg("v",int),arg("ek",int),arg("sk",int))),
+ pattern("calc", "second_interval", second_interval, false, "cast int to a second_interval and check for overflow", args(1,4, arg("",lng),arg("v",int),arg("ek",int),arg("sk",int))),
+ pattern("calc", "month_interval", month_interval, false, "cast lng to a month_interval and check for overflow", args(1,4, arg("",int),arg("v",lng),arg("ek",int),arg("sk",int))),
+ pattern("calc", "second_interval", second_interval, false, "cast lng to a second_interval and check for overflow", args(1,4, arg("",lng),arg("v",lng),arg("ek",int),arg("sk",int))),
+ pattern("calc", "rowid", sql_rowid, false, "return the next rowid", args(1,4, arg("",oid),argany("v",1),arg("schema",str),arg("table",str))),
+ pattern("sql", "shrink", SQLshrink, true, "Consolidate the deletion table over all columns using shrinking", args(0,2, arg("sch",str),arg("tbl",str))),
+ pattern("sql", "reuse", SQLreuse, true, "Consolidate the deletion table over all columns reusing deleted slots", args(0,2, arg("sch",str),arg("tbl",str))),
+ pattern("sql", "vacuum", SQLvacuum, true, "Choose an approach to consolidate the deletions", args(0,2, arg("sch",str),arg("tbl",str))),
+ pattern("sql", "drop_hash", SQLdrop_hash, true, "Drop hash indices for the given table", args(0,2, arg("sch",str),arg("tbl",str))),
+ pattern("sql", "prelude", SQLprelude, false, "", noargs),
+ command("sql", "epilogue", SQLepilogue, false, "", noargs),
+ command("calc", "second_interval", second_interval_daytime, false, "cast daytime to a second_interval and check for overflow", args(1,4, arg("",lng),arg("v",daytime),arg("ek",int),arg("sk",int))),
+ command("calc", "daytime", second_interval_2_daytime, false, "cast second_interval to a daytime and check for overflow", args(1,3, arg("",daytime),arg("v",lng),arg("d",int))),
+ command("calc", "daytime", timestamp_2_daytime, false, "cast timestamp to a daytime and check for overflow", args(1,3, arg("",daytime),arg("v",timestamp),arg("d",int))),
+ command("calc", "timestamp", date_2_timestamp, false, "cast date to a timestamp and check for overflow", args(1,3, arg("",timestamp),arg("v",date),arg("d",int))),
+ command("calc", "index", STRindex_bte, false, "Return the offsets as an index bat", args(1,3, arg("",bte),arg("v",str),arg("u",bit))),
+ command("batcalc", "index", BATSTRindex_bte, false, "Return the offsets as an index bat", args(1,3, batarg("",bte),batarg("v",str),arg("u",bit))),
+ command("calc", "index", STRindex_sht, false, "Return the offsets as an index bat", args(1,3, arg("",sht),arg("v",str),arg("u",bit))),
+ command("batcalc", "index", BATSTRindex_sht, false, "Return the offsets as an index bat", args(1,3, batarg("",sht),batarg("v",str),arg("u",bit))),
+ command("calc", "index", STRindex_int, false, "Return the offsets as an index bat", args(1,3, arg("",int),arg("v",str),arg("u",bit))),
+ command("batcalc", "index", BATSTRindex_int, false, "Return the offsets as an index bat", args(1,3, batarg("",int),batarg("v",str),arg("u",bit))),
+ command("calc", "strings", STRstrings, false, "Return the strings", args(1,2, arg("",str),arg("v",str))),
+ command("batcalc", "strings", BATSTRstrings, false, "Return the strings", args(1,2, batarg("",str),batarg("v",str))),
+ pattern("sql", "update_tables", SYSupdate_tables, true, "Procedure triggered on update of the sys._tables table", args(1,1, arg("",void))),
+ pattern("sql", "update_schemas", SYSupdate_schemas, true, "Procedure triggered on update of the sys.schemas table", args(1,1, arg("",void))),
+ pattern("sql", "unionfunc", SQLunionfunc, false, "", args(1,4, varargany("",0),arg("mod",str),arg("fcn",str),varargany("",0))),
+ /* decimals */
+ command("calc", "bte", flt_num2dec_bte, false, "cast number to decimal(bte) and check for overflow", args(1,4, arg("",bte),arg("v",flt),arg("digits",int),arg("scale",int))),
+ command("batcalc", "bte", batflt_num2dec_bte, false, "cast number to decimal(bte) and check for overflow", args(1,4, batarg("",bte),batarg("v",flt),arg("digits",int),arg("scale",int))),
+ command("batcalc", "bte", batflt_ce_num2dec_bte, false, "cast number to decimal(bte) and check for overflow", args(1,5, batarg("",bte),batarg("v",flt),arg("digits",int),arg("scale",int),batarg("r",bit))),
+ command("calc", "bte", dbl_num2dec_bte, false, "cast number to decimal(bte) and check for overflow", args(1,4, arg("",bte),arg("v",dbl),arg("digits",int),arg("scale",int))),
+ command("batcalc", "bte", batdbl_num2dec_bte, false, "cast number to decimal(bte) and check for overflow", args(1,4, batarg("",bte),batarg("v",dbl),arg("digits",int),arg("scale",int))),
+ command("batcalc", "bte", batdbl_ce_num2dec_bte, false, "cast number to decimal(bte) and check for overflow", args(1,5, batarg("",bte),batarg("v",dbl),arg("digits",int),arg("scale",int),batarg("r",bit))),
+ command("calc", "sht", flt_num2dec_sht, false, "cast number to decimal(sht) and check for overflow", args(1,4, arg("",sht),arg("v",flt),arg("digits",int),arg("scale",int))),
+ command("batcalc", "sht", batflt_num2dec_sht, false, "cast number to decimal(sht) and check for overflow", args(1,4, batarg("",sht),batarg("v",flt),arg("digits",int),arg("scale",int))),
+ command("batcalc", "sht", batflt_ce_num2dec_sht, false, "cast number to decimal(sht) and check for overflow", args(1,5, batarg("",sht),batarg("v",flt),arg("digits",int),arg("scale",int),batarg("r",bit))),
+ command("calc", "sht", dbl_num2dec_sht, false, "cast number to decimal(sht) and check for overflow", args(1,4, arg("",sht),arg("v",dbl),arg("digits",int),arg("scale",int))),
+ command("batcalc", "sht", batdbl_num2dec_sht, false, "cast number to decimal(sht) and check for overflow", args(1,4, batarg("",sht),batarg("v",dbl),arg("digits",int),arg("scale",int))),
+ command("batcalc", "sht", batdbl_ce_num2dec_sht, false, "cast number to decimal(sht) and check for overflow", args(1,5, batarg("",sht),batarg("v",dbl),arg("digits",int),arg("scale",int),batarg("r",bit))),
+ command("calc", "int", flt_num2dec_int, false, "cast number to decimal(int) and check for overflow", args(1,4, arg("",int),arg("v",flt),arg("digits",int),arg("scale",int))),
+ command("batcalc", "int", batflt_num2dec_int, false, "cast number to decimal(int) and check for overflow", args(1,4, batarg("",int),batarg("v",flt),arg("digits",int),arg("scale",int))),
+ command("batcalc", "int", batflt_ce_num2dec_int, false, "cast number to decimal(int) and check for overflow", args(1,5, batarg("",int),batarg("v",flt),arg("digits",int),arg("scale",int),batarg("r",bit))),
+ command("calc", "int", dbl_num2dec_int, false, "cast number to decimal(int) and check for overflow", args(1,4, arg("",int),arg("v",dbl),arg("digits",int),arg("scale",int))),
+ command("batcalc", "int", batdbl_num2dec_int, false, "cast number to decimal(int) and check for overflow", args(1,4, batarg("",int),batarg("v",dbl),arg("digits",int),arg("scale",int))),
+ command("batcalc", "int", batdbl_ce_num2dec_int, false, "cast number to decimal(int) and check for overflow", args(1,5, batarg("",int),batarg("v",dbl),arg("digits",int),arg("scale",int),batarg("r",bit))),
+ command("calc", "lng", flt_num2dec_lng, false, "cast number to decimal(lng) and check for overflow", args(1,4, arg("",lng),arg("v",flt),arg("digits",int),arg("scale",int))),
+ command("batcalc", "lng", batflt_num2dec_lng, false, "cast number to decimal(lng) and check for overflow", args(1,4, batarg("",lng),batarg("v",flt),arg("digits",int),arg("scale",int))),
+ command("batcalc", "lng", batflt_ce_num2dec_lng, false, "cast number to decimal(lng) and check for overflow", args(1,5, batarg("",lng),batarg("v",flt),arg("digits",int),arg("scale",int),batarg("r",bit))),
+ command("calc", "lng", dbl_num2dec_lng, false, "cast number to decimal(lng) and check for overflow", args(1,4, arg("",lng),arg("v",dbl),arg("digits",int),arg("scale",int))),
+ command("batcalc", "lng", batdbl_num2dec_lng, false, "cast number to decimal(lng) and check for overflow", args(1,4, batarg("",lng),batarg("v",dbl),arg("digits",int),arg("scale",int))),
+ command("batcalc", "lng", batdbl_ce_num2dec_lng, false, "cast number to decimal(lng) and check for overflow", args(1,5, batarg("",lng),batarg("v",dbl),arg("digits",int),arg("scale",int),batarg("r",bit))),
+ command("calc", "bte", bte_num2dec_bte, false, "cast number to decimal(bte) and check for overflow", args(1,4, arg("",bte),arg("v",bte),arg("digits",int),arg("scale",int))),
+ command("batcalc", "bte", batbte_num2dec_bte, false, "cast number to decimal(bte) and check for overflow", args(1,4, batarg("",bte),batarg("v",bte),arg("digits",int),arg("scale",int))),
+ command("batcalc", "bte", batbte_ce_num2dec_bte, false, "cast number to decimal(bte) and check for overflow", args(1,5, batarg("",bte),batarg("v",bte),arg("digits",int),arg("scale",int),batarg("r",bit))),
+ command("calc", "bte", bte_dec2_bte, false, "cast decimal(bte) to bte and check for overflow", args(1,3, arg("",bte),arg("s1",int),arg("v",bte))),
+ command("calc", "bte", bte_dec2dec_bte, false, "cast decimal(bte) to decimal(bte) and check for overflow", args(1,5, arg("",bte),arg("s1",int),arg("v",bte),arg("d2",int),arg("s2",int))),
+ command("batcalc", "bte", batbte_dec2_bte, false, "cast decimal(bte) to bte and check for overflow", args(1,3, batarg("",bte),arg("s1",int),batarg("v",bte))),
+ command("batcalc", "bte", batbte_ce_dec2_bte, false, "cast decimal(bte) to bte and check for overflow", args(1,4, batarg("",bte),arg("s1",int),batarg("v",bte),batarg("r",bit))),
+ command("batcalc", "bte", batbte_dec2dec_bte, false, "cast decimal(bte) to decimal(bte) and check for overflow", args(1,5, batarg("",bte),arg("s1",int),batarg("v",bte),arg("d2",int),arg("s2",int))),
+ command("batcalc", "bte", batbte_ce_dec2dec_bte, false, "cast decimal(bte) to decimal(bte) and check for overflow", args(1,6, batarg("",bte),arg("s1",int),batarg("v",bte),arg("d2",int),arg("s2",int),batarg("r",bit))),
+ command("calc", "bte", sht_num2dec_bte, false, "cast number to decimal(bte) and check for overflow", args(1,4, arg("",bte),arg("v",sht),arg("digits",int),arg("scale",int))),
+ command("batcalc", "bte", batsht_num2dec_bte, false, "cast number to decimal(bte) and check for overflow", args(1,4, batarg("",bte),batarg("v",sht),arg("digits",int),arg("scale",int))),
+ command("batcalc", "bte", batsht_ce_num2dec_bte, false, "cast number to decimal(bte) and check for overflow", args(1,5, batarg("",bte),batarg("v",sht),arg("digits",int),arg("scale",int),batarg("r",bit))),
+ command("calc", "bte", sht_dec2_bte, false, "cast decimal(sht) to bte and check for overflow", args(1,3, arg("",bte),arg("s1",int),arg("v",sht))),
+ command("calc", "bte", sht_dec2dec_bte, false, "cast decimal(sht) to decimal(bte) and check for overflow", args(1,5, arg("",bte),arg("s1",int),arg("v",sht),arg("d2",int),arg("s2",int))),
+ command("batcalc", "bte", batsht_dec2_bte, false, "cast decimal(sht) to bte and check for overflow", args(1,3, batarg("",bte),arg("s1",int),batarg("v",sht))),
+ command("batcalc", "bte", batsht_ce_dec2_bte, false, "cast decimal(sht) to bte and check for overflow", args(1,4, batarg("",bte),arg("s1",int),batarg("v",sht),batarg("r",bit))),
+ command("batcalc", "bte", batsht_dec2dec_bte, false, "cast decimal(sht) to decimal(bte) and check for overflow", args(1,5, batarg("",bte),arg("s1",int),batarg("v",sht),arg("d2",int),arg("s2",int))),
+ command("batcalc", "bte", batsht_ce_dec2dec_bte, false, "cast decimal(sht) to decimal(bte) and check for overflow", args(1,6, batarg("",bte),arg("s1",int),batarg("v",sht),arg("d2",int),arg("s2",int),batarg("r",bit))),
+ command("calc", "bte", int_num2dec_bte, false, "cast number to decimal(bte) and check for overflow", args(1,4, arg("",bte),arg("v",int),arg("digits",int),arg("scale",int))),
+ command("batcalc", "bte", batint_num2dec_bte, false, "cast number to decimal(bte) and check for overflow", args(1,4, batarg("",bte),batarg("v",int),arg("digits",int),arg("scale",int))),
+ command("batcalc", "bte", batint_ce_num2dec_bte, false, "cast number to decimal(bte) and check for overflow", args(1,5, batarg("",bte),batarg("v",int),arg("digits",int),arg("scale",int),batarg("r",bit))),
+ command("calc", "bte", int_dec2_bte, false, "cast decimal(int) to bte and check for overflow", args(1,3, arg("",bte),arg("s1",int),arg("v",int))),
+ command("calc", "bte", int_dec2dec_bte, false, "cast decimal(int) to decimal(bte) and check for overflow", args(1,5, arg("",bte),arg("s1",int),arg("v",int),arg("d2",int),arg("s2",int))),
+ command("batcalc", "bte", batint_dec2_bte, false, "cast decimal(int) to bte and check for overflow", args(1,3, batarg("",bte),arg("s1",int),batarg("v",int))),
+ command("batcalc", "bte", batint_ce_dec2_bte, false, "cast decimal(int) to bte and check for overflow", args(1,4, batarg("",bte),arg("s1",int),batarg("v",int),batarg("r",bit))),
+ command("batcalc", "bte", batint_dec2dec_bte, false, "cast decimal(int) to decimal(bte) and check for overflow", args(1,5, batarg("",bte),arg("s1",int),batarg("v",int),arg("d2",int),arg("s2",int))),
+ command("batcalc", "bte", batint_ce_dec2dec_bte, false, "cast decimal(int) to decimal(bte) and check for overflow", args(1,6, batarg("",bte),arg("s1",int),batarg("v",int),arg("d2",int),arg("s2",int),batarg("r",bit))),
+ command("calc", "bte", lng_num2dec_bte, false, "cast number to decimal(bte) and check for overflow", args(1,4, arg("",bte),arg("v",lng),arg("digits",int),arg("scale",int))),
+ command("batcalc", "bte", batlng_num2dec_bte, false, "cast number to decimal(bte) and check for overflow", args(1,4, batarg("",bte),batarg("v",lng),arg("digits",int),arg("scale",int))),
+ command("batcalc", "bte", batlng_ce_num2dec_bte, false, "cast number to decimal(bte) and check for overflow", args(1,5, batarg("",bte),batarg("v",lng),arg("digits",int),arg("scale",int),batarg("r",bit))),
+ command("calc", "bte", lng_dec2_bte, false, "cast decimal(lng) to bte and check for overflow", args(1,3, arg("",bte),arg("s1",int),arg("v",lng))),
+ command("calc", "bte", lng_dec2dec_bte, false, "cast decimal(lng) to decimal(bte) and check for overflow", args(1,5, arg("",bte),arg("s1",int),arg("v",lng),arg("d2",int),arg("s2",int))),
+ command("batcalc", "bte", batlng_dec2_bte, false, "cast decimal(lng) to bte and check for overflow", args(1,3, batarg("",bte),arg("s1",int),batarg("v",lng))),
+ command("batcalc", "bte", batlng_ce_dec2_bte, false, "cast decimal(lng) to bte and check for overflow", args(1,4, batarg("",bte),arg("s1",int),batarg("v",lng),batarg("r",bit))),
+ command("batcalc", "bte", batlng_dec2dec_bte, false, "cast decimal(lng) to decimal(bte) and check for overflow", args(1,5, batarg("",bte),arg("s1",int),batarg("v",lng),arg("d2",int),arg("s2",int))),
+ command("batcalc", "bte", batlng_ce_dec2dec_bte, false, "cast decimal(lng) to decimal(bte) and check for overflow", args(1,6, batarg("",bte),arg("s1",int),batarg("v",lng),arg("d2",int),arg("s2",int),batarg("r",bit))),
+ command("calc", "sht", bte_num2dec_sht, false, "cast number to decimal(sht) and check for overflow", args(1,4, arg("",sht),arg("v",bte),arg("digits",int),arg("scale",int))),
+ command("batcalc", "sht", batbte_num2dec_sht, false, "cast number to decimal(sht) and check for overflow", args(1,4, batarg("",sht),batarg("v",bte),arg("digits",int),arg("scale",int))),
+ command("batcalc", "sht", batbte_ce_num2dec_sht, false, "cast number to decimal(sht) and check for overflow", args(1,5, batarg("",sht),batarg("v",bte),arg("digits",int),arg("scale",int),batarg("r",bit))),
+ command("calc", "sht", bte_dec2_sht, false, "cast decimal(bte) to sht and check for overflow", args(1,3, arg("",sht),arg("s1",int),arg("v",bte))),
+ command("calc", "sht", bte_dec2dec_sht, false, "cast decimal(bte) to decimal(sht) and check for overflow", args(1,5, arg("",sht),arg("s1",int),arg("v",bte),arg("d2",int),arg("s2",int))),
+ command("batcalc", "sht", batbte_dec2_sht, false, "cast decimal(bte) to sht and check for overflow", args(1,3, batarg("",sht),arg("s1",int),batarg("v",bte))),
+ command("batcalc", "sht", batbte_ce_dec2_sht, false, "cast decimal(bte) to sht and check for overflow", args(1,4, batarg("",sht),arg("s1",int),batarg("v",bte),batarg("r",bit))),
+ command("batcalc", "sht", batbte_dec2dec_sht, false, "cast decimal(bte) to decimal(sht) and check for overflow", args(1,5, batarg("",sht),arg("s1",int),batarg("v",bte),arg("d2",int),arg("s2",int))),
+ command("batcalc", "sht", batbte_ce_dec2dec_sht, false, "cast decimal(bte) to decimal(sht) and check for overflow", args(1,6, batarg("",sht),arg("s1",int),batarg("v",bte),arg("d2",int),arg("s2",int),batarg("r",bit))),
+ command("calc", "sht", sht_num2dec_sht, false, "cast number to decimal(sht) and check for overflow", args(1,4, arg("",sht),arg("v",sht),arg("digits",int),arg("scale",int))),
+ command("batcalc", "sht", batsht_num2dec_sht, false, "cast number to decimal(sht) and check for overflow", args(1,4, batarg("",sht),batarg("v",sht),arg("digits",int),arg("scale",int))),
+ command("batcalc", "sht", batsht_ce_num2dec_sht, false, "cast number to decimal(sht) and check for overflow", args(1,5, batarg("",sht),batarg("v",sht),arg("digits",int),arg("scale",int),batarg("r",bit))),
+ command("calc", "sht", sht_dec2_sht, false, "cast decimal(sht) to sht and check for overflow", args(1,3, arg("",sht),arg("s1",int),arg("v",sht))),
+ command("calc", "sht", sht_dec2dec_sht, false, "cast decimal(sht) to decimal(sht) and check for overflow", args(1,5, arg("",sht),arg("s1",int),arg("v",sht),arg("d2",int),arg("s2",int))),
+ command("batcalc", "sht", batsht_dec2_sht, false, "cast decimal(sht) to sht and check for overflow", args(1,3, batarg("",sht),arg("s1",int),batarg("v",sht))),
+ command("batcalc", "sht", batsht_ce_dec2_sht, false, "cast decimal(sht) to sht and check for overflow", args(1,4, batarg("",sht),arg("s1",int),batarg("v",sht),batarg("r",bit))),
+ command("batcalc", "sht", batsht_dec2dec_sht, false, "cast decimal(sht) to decimal(sht) and check for overflow", args(1,5, batarg("",sht),arg("s1",int),batarg("v",sht),arg("d2",int),arg("s2",int))),
+ command("batcalc", "sht", batsht_ce_dec2dec_sht, false, "cast decimal(sht) to decimal(sht) and check for overflow", args(1,6, batarg("",sht),arg("s1",int),batarg("v",sht),arg("d2",int),arg("s2",int),batarg("r",bit))),
+ command("calc", "sht", int_num2dec_sht, false, "cast number to decimal(sht) and check for overflow", args(1,4, arg("",sht),arg("v",int),arg("digits",int),arg("scale",int))),
+ command("batcalc", "sht", batint_num2dec_sht, false, "cast number to decimal(sht) and check for overflow", args(1,4, batarg("",sht),batarg("v",int),arg("digits",int),arg("scale",int))),
+ command("batcalc", "sht", batint_ce_num2dec_sht, false, "cast number to decimal(sht) and check for overflow", args(1,5, batarg("",sht),batarg("v",int),arg("digits",int),arg("scale",int),batarg("r",bit))),
+ command("calc", "sht", int_dec2_sht, false, "cast decimal(int) to sht and check for overflow", args(1,3, arg("",sht),arg("s1",int),arg("v",int))),
+ command("calc", "sht", int_dec2dec_sht, false, "cast decimal(int) to decimal(sht) and check for overflow", args(1,5, arg("",sht),arg("s1",int),arg("v",int),arg("d2",int),arg("s2",int))),
+ command("batcalc", "sht", batint_dec2_sht, false, "cast decimal(int) to sht and check for overflow", args(1,3, batarg("",sht),arg("s1",int),batarg("v",int))),
+ command("batcalc", "sht", batint_ce_dec2_sht, false, "cast decimal(int) to sht and check for overflow", args(1,4, batarg("",sht),arg("s1",int),batarg("v",int),batarg("r",bit))),
+ command("batcalc", "sht", batint_dec2dec_sht, false, "cast decimal(int) to decimal(sht) and check for overflow", args(1,5, batarg("",sht),arg("s1",int),batarg("v",int),arg("d2",int),arg("s2",int))),
+ command("batcalc", "sht", batint_ce_dec2dec_sht, false, "cast decimal(int) to decimal(sht) and check for overflow", args(1,6, batarg("",sht),arg("s1",int),batarg("v",int),arg("d2",int),arg("s2",int),batarg("r",bit))),
+ command("calc", "sht", lng_num2dec_sht, false, "cast number to decimal(sht) and check for overflow", args(1,4, arg("",sht),arg("v",lng),arg("digits",int),arg("scale",int))),
+ command("batcalc", "sht", batlng_num2dec_sht, false, "cast number to decimal(sht) and check for overflow", args(1,4, batarg("",sht),batarg("v",lng),arg("digits",int),arg("scale",int))),
+ command("batcalc", "sht", batlng_ce_num2dec_sht, false, "cast number to decimal(sht) and check for overflow", args(1,5, batarg("",sht),batarg("v",lng),arg("digits",int),arg("scale",int),batarg("r",bit))),
+ command("calc", "sht", lng_dec2_sht, false, "cast decimal(lng) to sht and check for overflow", args(1,3, arg("",sht),arg("s1",int),arg("v",lng))),
+ command("calc", "sht", lng_dec2dec_sht, false, "cast decimal(lng) to decimal(sht) and check for overflow", args(1,5, arg("",sht),arg("s1",int),arg("v",lng),arg("d2",int),arg("s2",int))),
+ command("batcalc", "sht", batlng_dec2_sht, false, "cast decimal(lng) to sht and check for overflow", args(1,3, batarg("",sht),arg("s1",int),batarg("v",lng))),
+ command("batcalc", "sht", batlng_ce_dec2_sht, false, "cast decimal(lng) to sht and check for overflow", args(1,4, batarg("",sht),arg("s1",int),batarg("v",lng),batarg("r",bit))),
+ command("batcalc", "sht", batlng_dec2dec_sht, false, "cast decimal(lng) to decimal(sht) and check for overflow", args(1,5, batarg("",sht),arg("s1",int),batarg("v",lng),arg("d2",int),arg("s2",int))),
+ command("batcalc", "sht", batlng_ce_dec2dec_sht, false, "cast decimal(lng) to decimal(sht) and check for overflow", args(1,6, batarg("",sht),arg("s1",int),batarg("v",lng),arg("d2",int),arg("s2",int),batarg("r",bit))),
+ command("calc", "int", bte_num2dec_int, false, "cast number to decimal(int) and check for overflow", args(1,4, arg("",int),arg("v",bte),arg("digits",int),arg("scale",int))),
+ command("batcalc", "int", batbte_num2dec_int, false, "cast number to decimal(int) and check for overflow", args(1,4, batarg("",int),batarg("v",bte),arg("digits",int),arg("scale",int))),
+ command("batcalc", "int", batbte_ce_num2dec_int, false, "cast number to decimal(int) and check for overflow", args(1,5, batarg("",int),batarg("v",bte),arg("digits",int),arg("scale",int),batarg("r",bit))),
+ command("calc", "int", bte_dec2_int, false, "cast decimal(bte) to int and check for overflow", args(1,3, arg("",int),arg("s1",int),arg("v",bte))),
+ command("calc", "int", bte_dec2dec_int, false, "cast decimal(bte) to decimal(int) and check for overflow", args(1,5, arg("",int),arg("s1",int),arg("v",bte),arg("d2",int),arg("s2",int))),
+ command("batcalc", "int", batbte_dec2_int, false, "cast decimal(bte) to int and check for overflow", args(1,3, batarg("",int),arg("s1",int),batarg("v",bte))),
+ command("batcalc", "int", batbte_ce_dec2_int, false, "cast decimal(bte) to int and check for overflow", args(1,4, batarg("",int),arg("s1",int),batarg("v",bte),batarg("r",bit))),
+ command("batcalc", "int", batbte_dec2dec_int, false, "cast decimal(bte) to decimal(int) and check for overflow", args(1,5, batarg("",int),arg("s1",int),batarg("v",bte),arg("d2",int),arg("s2",int))),
+ command("batcalc", "int", batbte_ce_dec2dec_int, false, "cast decimal(bte) to decimal(int) and check for overflow", args(1,6, batarg("",int),arg("s1",int),batarg("v",bte),arg("d2",int),arg("s2",int),batarg("r",bit))),
+ command("calc", "int", sht_num2dec_int, false, "cast number to decimal(int) and check for overflow", args(1,4, arg("",int),arg("v",sht),arg("digits",int),arg("scale",int))),
+ command("batcalc", "int", batsht_num2dec_int, false, "cast number to decimal(int) and check for overflow", args(1,4, batarg("",int),batarg("v",sht),arg("digits",int),arg("scale",int))),
+ command("batcalc", "int", batsht_ce_num2dec_int, false, "cast number to decimal(int) and check for overflow", args(1,5, batarg("",int),batarg("v",sht),arg("digits",int),arg("scale",int),batarg("r",bit))),
+ command("calc", "int", sht_dec2_int, false, "cast decimal(sht) to int and check for overflow", args(1,3, arg("",int),arg("s1",int),arg("v",sht))),
+ command("calc", "int", sht_dec2dec_int, false, "cast decimal(sht) to decimal(int) and check for overflow", args(1,5, arg("",int),arg("s1",int),arg("v",sht),arg("d2",int),arg("s2",int))),
+ command("batcalc", "int", batsht_dec2_int, false, "cast decimal(sht) to int and check for overflow", args(1,3, batarg("",int),arg("s1",int),batarg("v",sht))),
+ command("batcalc", "int", batsht_ce_dec2_int, false, "cast decimal(sht) to int and check for overflow", args(1,4, batarg("",int),arg("s1",int),batarg("v",sht),batarg("r",bit))),
+ command("batcalc", "int", batsht_dec2dec_int, false, "cast decimal(sht) to decimal(int) and check for overflow", args(1,5, batarg("",int),arg("s1",int),batarg("v",sht),arg("d2",int),arg("s2",int))),
+ command("batcalc", "int", batsht_ce_dec2dec_int, false, "cast decimal(sht) to decimal(int) and check for overflow", args(1,6, batarg("",int),arg("s1",int),batarg("v",sht),arg("d2",int),arg("s2",int),batarg("r",bit))),
+ command("calc", "int", int_num2dec_int, false, "cast number to decimal(int) and check for overflow", args(1,4, arg("",int),arg("v",int),arg("digits",int),arg("scale",int))),
+ command("batcalc", "int", batint_num2dec_int, false, "cast number to decimal(int) and check for overflow", args(1,4, batarg("",int),batarg("v",int),arg("digits",int),arg("scale",int))),
+ command("batcalc", "int", batint_ce_num2dec_int, false, "cast number to decimal(int) and check for overflow", args(1,5, batarg("",int),batarg("v",int),arg("digits",int),arg("scale",int),batarg("r",bit))),
+ command("calc", "int", int_dec2_int, false, "cast decimal(int) to int and check for overflow", args(1,3, arg("",int),arg("s1",int),arg("v",int))),
+ command("calc", "int", int_dec2dec_int, false, "cast decimal(int) to decimal(int) and check for overflow", args(1,5, arg("",int),arg("s1",int),arg("v",int),arg("d2",int),arg("s2",int))),
+ command("batcalc", "int", batint_dec2_int, false, "cast decimal(int) to int and check for overflow", args(1,3, batarg("",int),arg("s1",int),batarg("v",int))),
+ command("batcalc", "int", batint_ce_dec2_int, false, "cast decimal(int) to int and check for overflow", args(1,4, batarg("",int),arg("s1",int),batarg("v",int),batarg("r",bit))),
+ command("batcalc", "int", batint_dec2dec_int, false, "cast decimal(int) to decimal(int) and check for overflow", args(1,5, batarg("",int),arg("s1",int),batarg("v",int),arg("d2",int),arg("s2",int))),
+ command("batcalc", "int", batint_ce_dec2dec_int, false, "cast decimal(int) to decimal(int) and check for overflow", args(1,6, batarg("",int),arg("s1",int),batarg("v",int),arg("d2",int),arg("s2",int),batarg("r",bit))),
+ command("calc", "int", lng_num2dec_int, false, "cast number to decimal(int) and check for overflow", args(1,4, arg("",int),arg("v",lng),arg("digits",int),arg("scale",int))),
+ command("batcalc", "int", batlng_num2dec_int, false, "cast number to decimal(int) and check for overflow", args(1,4, batarg("",int),batarg("v",lng),arg("digits",int),arg("scale",int))),
+ command("batcalc", "int", batlng_ce_num2dec_int, false, "cast number to decimal(int) and check for overflow", args(1,5, batarg("",int),batarg("v",lng),arg("digits",int),arg("scale",int),batarg("r",bit))),
+ command("calc", "int", lng_dec2_int, false, "cast decimal(lng) to int and check for overflow", args(1,3, arg("",int),arg("s1",int),arg("v",lng))),
+ command("calc", "int", lng_dec2dec_int, false, "cast decimal(lng) to decimal(int) and check for overflow", args(1,5, arg("",int),arg("s1",int),arg("v",lng),arg("d2",int),arg("s2",int))),
+ command("batcalc", "int", batlng_dec2_int, false, "cast decimal(lng) to int and check for overflow", args(1,3, batarg("",int),arg("s1",int),batarg("v",lng))),
+ command("batcalc", "int", batlng_ce_dec2_int, false, "cast decimal(lng) to int and check for overflow", args(1,4, batarg("",int),arg("s1",int),batarg("v",lng),batarg("r",bit))),
+ command("batcalc", "int", batlng_dec2dec_int, false, "cast decimal(lng) to decimal(int) and check for overflow", args(1,5, batarg("",int),arg("s1",int),batarg("v",lng),arg("d2",int),arg("s2",int))),
+ command("batcalc", "int", batlng_ce_dec2dec_int, false, "cast decimal(lng) to decimal(int) and check for overflow", args(1,6, batarg("",int),arg("s1",int),batarg("v",lng),arg("d2",int),arg("s2",int),batarg("r",bit))),
+ command("calc", "lng", bte_num2dec_lng, false, "cast number to decimal(lng) and check for overflow", args(1,4, arg("",lng),arg("v",bte),arg("digits",int),arg("scale",int))),
+ command("batcalc", "lng", batbte_num2dec_lng, false, "cast number to decimal(lng) and check for overflow", args(1,4, batarg("",lng),batarg("v",bte),arg("digits",int),arg("scale",int))),
+ command("batcalc", "lng", batbte_ce_num2dec_lng, false, "cast number to decimal(lng) and check for overflow", args(1,5, batarg("",lng),batarg("v",bte),arg("digits",int),arg("scale",int),batarg("r",bit))),
+ command("calc", "lng", bte_dec2_lng, false, "cast decimal(bte) to lng and check for overflow", args(1,3, arg("",lng),arg("s1",int),arg("v",bte))),
+ command("calc", "lng", bte_dec2dec_lng, false, "cast decimal(bte) to decimal(lng) and check for overflow", args(1,5, arg("",lng),arg("s1",int),arg("v",bte),arg("d2",int),arg("s2",int))),
+ command("batcalc", "lng", batbte_dec2_lng, false, "cast decimal(bte) to lng and check for overflow", args(1,3, batarg("",lng),arg("s1",int),batarg("v",bte))),
+ command("batcalc", "lng", batbte_ce_dec2_lng, false, "cast decimal(bte) to lng and check for overflow", args(1,4, batarg("",lng),arg("s1",int),batarg("v",bte),batarg("r",bit))),
+ command("batcalc", "lng", batbte_dec2dec_lng, false, "cast decimal(bte) to decimal(lng) and check for overflow", args(1,5, batarg("",lng),arg("s1",int),batarg("v",bte),arg("d2",int),arg("s2",int))),
+ command("batcalc", "lng", batbte_ce_dec2dec_lng, false, "cast decimal(bte) to decimal(lng) and check for overflow", args(1,6, batarg("",lng),arg("s1",int),batarg("v",bte),arg("d2",int),arg("s2",int),batarg("r",bit))),
+ command("calc", "lng", sht_num2dec_lng, false, "cast number to decimal(lng) and check for overflow", args(1,4, arg("",lng),arg("v",sht),arg("digits",int),arg("scale",int))),
+ command("batcalc", "lng", batsht_num2dec_lng, false, "cast number to decimal(lng) and check for overflow", args(1,4, batarg("",lng),batarg("v",sht),arg("digits",int),arg("scale",int))),
+ command("batcalc", "lng", batsht_ce_num2dec_lng, false, "cast number to decimal(lng) and check for overflow", args(1,5, batarg("",lng),batarg("v",sht),arg("digits",int),arg("scale",int),batarg("r",bit))),
+ command("calc", "lng", sht_dec2_lng, false, "cast decimal(sht) to lng and check for overflow", args(1,3, arg("",lng),arg("s1",int),arg("v",sht))),
+ command("calc", "lng", sht_dec2dec_lng, false, "cast decimal(sht) to decimal(lng) and check for overflow", args(1,5, arg("",lng),arg("s1",int),arg("v",sht),arg("d2",int),arg("s2",int))),
+ command("batcalc", "lng", batsht_dec2_lng, false, "cast decimal(sht) to lng and check for overflow", args(1,3, batarg("",lng),arg("s1",int),batarg("v",sht))),
+ command("batcalc", "lng", batsht_ce_dec2_lng, false, "cast decimal(sht) to lng and check for overflow", args(1,4, batarg("",lng),arg("s1",int),batarg("v",sht),batarg("r",bit))),
+ command("batcalc", "lng", batsht_dec2dec_lng, false, "cast decimal(sht) to decimal(lng) and check for overflow", args(1,5, batarg("",lng),arg("s1",int),batarg("v",sht),arg("d2",int),arg("s2",int))),
+ command("batcalc", "lng", batsht_ce_dec2dec_lng, false, "cast decimal(sht) to decimal(lng) and check for overflow", args(1,6, batarg("",lng),arg("s1",int),batarg("v",sht),arg("d2",int),arg("s2",int),batarg("r",bit))),
+ command("calc", "lng", int_num2dec_lng, false, "cast number to decimal(lng) and check for overflow", args(1,4, arg("",lng),arg("v",int),arg("digits",int),arg("scale",int))),
+ command("batcalc", "lng", batint_num2dec_lng, false, "cast number to decimal(lng) and check for overflow", args(1,4, batarg("",lng),batarg("v",int),arg("digits",int),arg("scale",int))),
+ command("batcalc", "lng", batint_ce_num2dec_lng, false, "cast number to decimal(lng) and check for overflow", args(1,5, batarg("",lng),batarg("v",int),arg("digits",int),arg("scale",int),batarg("r",bit))),
+ command("calc", "lng", int_dec2_lng, false, "cast decimal(int) to lng and check for overflow", args(1,3, arg("",lng),arg("s1",int),arg("v",int))),
+ command("calc", "lng", int_dec2dec_lng, false, "cast decimal(int) to decimal(lng) and check for overflow", args(1,5, arg("",lng),arg("s1",int),arg("v",int),arg("d2",int),arg("s2",int))),
+ command("batcalc", "lng", batint_dec2_lng, false, "cast decimal(int) to lng and check for overflow", args(1,3, batarg("",lng),arg("s1",int),batarg("v",int))),
+ command("batcalc", "lng", batint_ce_dec2_lng, false, "cast decimal(int) to lng and check for overflow", args(1,4, batarg("",lng),arg("s1",int),batarg("v",int),batarg("r",bit))),
+ command("batcalc", "lng", batint_dec2dec_lng, false, "cast decimal(int) to decimal(lng) and check for overflow", args(1,5, batarg("",lng),arg("s1",int),batarg("v",int),arg("d2",int),arg("s2",int))),
+ command("batcalc", "lng", batint_ce_dec2dec_lng, false, "cast decimal(int) to decimal(lng) and check for overflow", args(1,6, batarg("",lng),arg("s1",int),batarg("v",int),arg("d2",int),arg("s2",int),batarg("r",bit))),
+ command("calc", "lng", lng_num2dec_lng, false, "cast number to decimal(lng) and check for overflow", args(1,4, arg("",lng),arg("v",lng),arg("digits",int),arg("scale",int))),
+ command("batcalc", "lng", batlng_num2dec_lng, false, "cast number to decimal(lng) and check for overflow", args(1,4, batarg("",lng),batarg("v",lng),arg("digits",int),arg("scale",int))),
+ command("batcalc", "lng", batlng_ce_num2dec_lng, false, "cast number to decimal(lng) and check for overflow", args(1,5, batarg("",lng),batarg("v",lng),arg("digits",int),arg("scale",int),batarg("r",bit))),
+ command("calc", "lng", lng_dec2_lng, false, "cast decimal(lng) to lng and check for overflow", args(1,3, arg("",lng),arg("s1",int),arg("v",lng))),
+ command("calc", "lng", lng_dec2dec_lng, false, "cast decimal(lng) to decimal(lng) and check for overflow", args(1,5, arg("",lng),arg("s1",int),arg("v",lng),arg("d2",int),arg("s2",int))),
+ command("batcalc", "lng", batlng_dec2_lng, false, "cast decimal(lng) to lng and check for overflow", args(1,3, batarg("",lng),arg("s1",int),batarg("v",lng))),
+ command("batcalc", "lng", batlng_ce_dec2_lng, false, "cast decimal(lng) to lng and check for overflow", args(1,4, batarg("",lng),arg("s1",int),batarg("v",lng),batarg("r",bit))),
+ command("batcalc", "lng", batlng_dec2dec_lng, false, "cast decimal(lng) to decimal(lng) and check for overflow", args(1,5, batarg("",lng),arg("s1",int),batarg("v",lng),arg("d2",int),arg("s2",int))),
+ command("batcalc", "lng", batlng_ce_dec2dec_lng, false, "cast decimal(lng) to decimal(lng) and check for overflow", args(1,6, batarg("",lng),arg("s1",int),batarg("v",lng),arg("d2",int),arg("s2",int),batarg("r",bit))),
+ command("calc", "flt", bte_num2dec_flt, false, "cast number to decimal(flt) and check for overflow", args(1,4, arg("",flt),arg("v",bte),arg("digits",int),arg("scale",int))),
+ command("batcalc", "flt", batbte_num2dec_flt, false, "cast number to decimal(flt) and check for overflow", args(1,4, batarg("",flt),batarg("v",bte),arg("digits",int),arg("scale",int))),
+ command("batcalc", "flt", batbte_ce_num2dec_flt, false, "cast number to decimal(flt) and check for overflow", args(1,5, batarg("",flt),batarg("v",bte),arg("digits",int),arg("scale",int),batarg("r",bit))),
+ command("calc", "flt", bte_dec2_flt, false, "cast decimal(bte) to flt and check for overflow", args(1,3, arg("",flt),arg("s1",int),arg("v",bte))),
+ command("calc", "flt", bte_dec2dec_flt, false, "cast decimal(bte) to decimal(flt) and check for overflow", args(1,5, arg("",flt),arg("s1",int),arg("v",bte),arg("d2",int),arg("s2",int))),
+ command("batcalc", "flt", batbte_dec2_flt, false, "cast decimal(bte) to flt and check for overflow", args(1,3, batarg("",flt),arg("s1",int),batarg("v",bte))),
+ command("batcalc", "flt", batbte_ce_dec2_flt, false, "cast decimal(bte) to flt and check for overflow", args(1,4, batarg("",flt),arg("s1",int),batarg("v",bte),batarg("r",bit))),
+ command("batcalc", "flt", batbte_dec2dec_flt, false, "cast decimal(bte) to decimal(flt) and check for overflow", args(1,5, batarg("",flt),arg("s1",int),batarg("v",bte),arg("d2",int),arg("s2",int))),
+ command("batcalc", "flt", batbte_ce_dec2dec_flt, false, "cast decimal(bte) to decimal(flt) and check for overflow", args(1,6, batarg("",flt),arg("s1",int),batarg("v",bte),arg("d2",int),arg("s2",int),batarg("r",bit))),
+ command("calc", "flt", sht_num2dec_flt, false, "cast number to decimal(flt) and check for overflow", args(1,4, arg("",flt),arg("v",sht),arg("digits",int),arg("scale",int))),
+ command("batcalc", "flt", batsht_num2dec_flt, false, "cast number to decimal(flt) and check for overflow", args(1,4, batarg("",flt),batarg("v",sht),arg("digits",int),arg("scale",int))),
+ command("batcalc", "flt", batsht_ce_num2dec_flt, false, "cast number to decimal(flt) and check for overflow", args(1,5, batarg("",flt),batarg("v",sht),arg("digits",int),arg("scale",int),batarg("r",bit))),
+ command("calc", "flt", sht_dec2_flt, false, "cast decimal(sht) to flt and check for overflow", args(1,3, arg("",flt),arg("s1",int),arg("v",sht))),
+ command("calc", "flt", sht_dec2dec_flt, false, "cast decimal(sht) to decimal(flt) and check for overflow", args(1,5, arg("",flt),arg("s1",int),arg("v",sht),arg("d2",int),arg("s2",int))),
+ command("batcalc", "flt", batsht_dec2_flt, false, "cast decimal(sht) to flt and check for overflow", args(1,3, batarg("",flt),arg("s1",int),batarg("v",sht))),
+ command("batcalc", "flt", batsht_ce_dec2_flt, false, "cast decimal(sht) to flt and check for overflow", args(1,4, batarg("",flt),arg("s1",int),batarg("v",sht),batarg("r",bit))),
+ command("batcalc", "flt", batsht_dec2dec_flt, false, "cast decimal(sht) to decimal(flt) and check for overflow", args(1,5, batarg("",flt),arg("s1",int),batarg("v",sht),arg("d2",int),arg("s2",int))),
+ command("batcalc", "flt", batsht_ce_dec2dec_flt, false, "cast decimal(sht) to decimal(flt) and check for overflow", args(1,6, batarg("",flt),arg("s1",int),batarg("v",sht),arg("d2",int),arg("s2",int),batarg("r",bit))),
+ command("calc", "flt", int_num2dec_flt, false, "cast number to decimal(flt) and check for overflow", args(1,4, arg("",flt),arg("v",int),arg("digits",int),arg("scale",int))),
+ command("batcalc", "flt", batint_num2dec_flt, false, "cast number to decimal(flt) and check for overflow", args(1,4, batarg("",flt),batarg("v",int),arg("digits",int),arg("scale",int))),
+ command("batcalc", "flt", batint_ce_num2dec_flt, false, "cast number to decimal(flt) and check for overflow", args(1,5, batarg("",flt),batarg("v",int),arg("digits",int),arg("scale",int),batarg("r",bit))),
+ command("calc", "flt", int_dec2_flt, false, "cast decimal(int) to flt and check for overflow", args(1,3, arg("",flt),arg("s1",int),arg("v",int))),
+ command("calc", "flt", int_dec2dec_flt, false, "cast decimal(int) to decimal(flt) and check for overflow", args(1,5, arg("",flt),arg("s1",int),arg("v",int),arg("d2",int),arg("s2",int))),
+ command("batcalc", "flt", batint_dec2_flt, false, "cast decimal(int) to flt and check for overflow", args(1,3, batarg("",flt),arg("s1",int),batarg("v",int))),
+ command("batcalc", "flt", batint_ce_dec2_flt, false, "cast decimal(int) to flt and check for overflow", args(1,4, batarg("",flt),arg("s1",int),batarg("v",int),batarg("r",bit))),
+ command("batcalc", "flt", batint_dec2dec_flt, false, "cast decimal(int) to decimal(flt) and check for overflow", args(1,5, batarg("",flt),arg("s1",int),batarg("v",int),arg("d2",int),arg("s2",int))),
+ command("batcalc", "flt", batint_ce_dec2dec_flt, false, "cast decimal(int) to decimal(flt) and check for overflow", args(1,6, batarg("",flt),arg("s1",int),batarg("v",int),arg("d2",int),arg("s2",int),batarg("r",bit))),
+ command("calc", "flt", lng_num2dec_flt, false, "cast number to decimal(flt) and check for overflow", args(1,4, arg("",flt),arg("v",lng),arg("digits",int),arg("scale",int))),
+ command("batcalc", "flt", batlng_num2dec_flt, false, "cast number to decimal(flt) and check for overflow", args(1,4, batarg("",flt),batarg("v",lng),arg("digits",int),arg("scale",int))),
+ command("batcalc", "flt", batlng_ce_num2dec_flt, false, "cast number to decimal(flt) and check for overflow", args(1,5, batarg("",flt),batarg("v",lng),arg("digits",int),arg("scale",int),batarg("r",bit))),
+ command("calc", "flt", lng_dec2_flt, false, "cast decimal(lng) to flt and check for overflow", args(1,3, arg("",flt),arg("s1",int),arg("v",lng))),
+ command("calc", "flt", lng_dec2dec_flt, false, "cast decimal(lng) to decimal(flt) and check for overflow", args(1,5, arg("",flt),arg("s1",int),arg("v",lng),arg("d2",int),arg("s2",int))),
+ command("batcalc", "flt", batlng_dec2_flt, false, "cast decimal(lng) to flt and check for overflow", args(1,3, batarg("",flt),arg("s1",int),batarg("v",lng))),
+ command("batcalc", "flt", batlng_ce_dec2_flt, false, "cast decimal(lng) to flt and check for overflow", args(1,4, batarg("",flt),arg("s1",int),batarg("v",lng),batarg("r",bit))),
+ command("batcalc", "flt", batlng_dec2dec_flt, false, "cast decimal(lng) to decimal(flt) and check for overflow", args(1,5, batarg("",flt),arg("s1",int),batarg("v",lng),arg("d2",int),arg("s2",int))),
+ command("batcalc", "flt", batlng_ce_dec2dec_flt, false, "cast decimal(lng) to decimal(flt) and check for overflow", args(1,6, batarg("",flt),arg("s1",int),batarg("v",lng),arg("d2",int),arg("s2",int),batarg("r",bit))),
+ command("calc", "dbl", bte_num2dec_dbl, false, "cast number to decimal(dbl) and check for overflow", args(1,4, arg("",dbl),arg("v",bte),arg("digits",int),arg("scale",int))),
+ command("batcalc", "dbl", batbte_num2dec_dbl, false, "cast number to decimal(dbl) and check for overflow", args(1,4, batarg("",dbl),batarg("v",bte),arg("digits",int),arg("scale",int))),
+ command("batcalc", "dbl", batbte_ce_num2dec_dbl, false, "cast number to decimal(dbl) and check for overflow", args(1,5, batarg("",dbl),batarg("v",bte),arg("digits",int),arg("scale",int),batarg("r",bit))),
+ command("calc", "dbl", bte_dec2_dbl, false, "cast decimal(bte) to dbl and check for overflow", args(1,3, arg("",dbl),arg("s1",int),arg("v",bte))),
+ command("calc", "dbl", bte_dec2dec_dbl, false, "cast decimal(bte) to decimal(dbl) and check for overflow", args(1,5, arg("",dbl),arg("s1",int),arg("v",bte),arg("d2",int),arg("s2",int))),
+ command("batcalc", "dbl", batbte_dec2_dbl, false, "cast decimal(bte) to dbl and check for overflow", args(1,3, batarg("",dbl),arg("s1",int),batarg("v",bte))),
+ command("batcalc", "dbl", batbte_ce_dec2_dbl, false, "cast decimal(bte) to dbl and check for overflow", args(1,4, batarg("",dbl),arg("s1",int),batarg("v",bte),batarg("r",bit))),
+ command("batcalc", "dbl", batbte_dec2dec_dbl, false, "cast decimal(bte) to decimal(dbl) and check for overflow", args(1,5, batarg("",dbl),arg("s1",int),batarg("v",bte),arg("d2",int),arg("s2",int))),
+ command("batcalc", "dbl", batbte_ce_dec2dec_dbl, false, "cast decimal(bte) to decimal(dbl) and check for overflow", args(1,6, batarg("",dbl),arg("s1",int),batarg("v",bte),arg("d2",int),arg("s2",int),batarg("r",bit))),
+ command("calc", "dbl", sht_num2dec_dbl, false, "cast number to decimal(dbl) and check for overflow", args(1,4, arg("",dbl),arg("v",sht),arg("digits",int),arg("scale",int))),
+ command("batcalc", "dbl", batsht_num2dec_dbl, false, "cast number to decimal(dbl) and check for overflow", args(1,4, batarg("",dbl),batarg("v",sht),arg("digits",int),arg("scale",int))),
+ command("batcalc", "dbl", batsht_ce_num2dec_dbl, false, "cast number to decimal(dbl) and check for overflow", args(1,5, batarg("",dbl),batarg("v",sht),arg("digits",int),arg("scale",int),batarg("r",bit))),
+ command("calc", "dbl", sht_dec2_dbl, false, "cast decimal(sht) to dbl and check for overflow", args(1,3, arg("",dbl),arg("s1",int),arg("v",sht))),
+ command("calc", "dbl", sht_dec2dec_dbl, false, "cast decimal(sht) to decimal(dbl) and check for overflow", args(1,5, arg("",dbl),arg("s1",int),arg("v",sht),arg("d2",int),arg("s2",int))),
+ command("batcalc", "dbl", batsht_dec2_dbl, false, "cast decimal(sht) to dbl and check for overflow", args(1,3, batarg("",dbl),arg("s1",int),batarg("v",sht))),
+ command("batcalc", "dbl", batsht_ce_dec2_dbl, false, "cast decimal(sht) to dbl and check for overflow", args(1,4, batarg("",dbl),arg("s1",int),batarg("v",sht),batarg("r",bit))),
+ command("batcalc", "dbl", batsht_dec2dec_dbl, false, "cast decimal(sht) to decimal(dbl) and check for overflow", args(1,5, batarg("",dbl),arg("s1",int),batarg("v",sht),arg("d2",int),arg("s2",int))),
+ command("batcalc", "dbl", batsht_ce_dec2dec_dbl, false, "cast decimal(sht) to decimal(dbl) and check for overflow", args(1,6, batarg("",dbl),arg("s1",int),batarg("v",sht),arg("d2",int),arg("s2",int),batarg("r",bit))),
+ command("calc", "dbl", int_num2dec_dbl, false, "cast number to decimal(dbl) and check for overflow", args(1,4, arg("",dbl),arg("v",int),arg("digits",int),arg("scale",int))),
+ command("batcalc", "dbl", batint_num2dec_dbl, false, "cast number to decimal(dbl) and check for overflow", args(1,4, batarg("",dbl),batarg("v",int),arg("digits",int),arg("scale",int))),
+ command("batcalc", "dbl", batint_ce_num2dec_dbl, false, "cast number to decimal(dbl) and check for overflow", args(1,5, batarg("",dbl),batarg("v",int),arg("digits",int),arg("scale",int),batarg("r",bit))),
+ command("calc", "dbl", int_dec2_dbl, false, "cast decimal(int) to dbl and check for overflow", args(1,3, arg("",dbl),arg("s1",int),arg("v",int))),
+ command("calc", "dbl", int_dec2dec_dbl, false, "cast decimal(int) to decimal(dbl) and check for overflow", args(1,5, arg("",dbl),arg("s1",int),arg("v",int),arg("d2",int),arg("s2",int))),
+ command("batcalc", "dbl", batint_dec2_dbl, false, "cast decimal(int) to dbl and check for overflow", args(1,3, batarg("",dbl),arg("s1",int),batarg("v",int))),
+ command("batcalc", "dbl", batint_ce_dec2_dbl, false, "cast decimal(int) to dbl and check for overflow", args(1,4, batarg("",dbl),arg("s1",int),batarg("v",int),batarg("r",bit))),
+ command("batcalc", "dbl", batint_dec2dec_dbl, false, "cast decimal(int) to decimal(dbl) and check for overflow", args(1,5, batarg("",dbl),arg("s1",int),batarg("v",int),arg("d2",int),arg("s2",int))),
+ command("batcalc", "dbl", batint_ce_dec2dec_dbl, false, "cast decimal(int) to decimal(dbl) and check for overflow", args(1,6, batarg("",dbl),arg("s1",int),batarg("v",int),arg("d2",int),arg("s2",int),batarg("r",bit))),
+ command("calc", "dbl", lng_num2dec_dbl, false, "cast number to decimal(dbl) and check for overflow", args(1,4, arg("",dbl),arg("v",lng),arg("digits",int),arg("scale",int))),
+ command("batcalc", "dbl", batlng_num2dec_dbl, false, "cast number to decimal(dbl) and check for overflow", args(1,4, batarg("",dbl),batarg("v",lng),arg("digits",int),arg("scale",int))),
+ command("batcalc", "dbl", batlng_ce_num2dec_dbl, false, "cast number to decimal(dbl) and check for overflow", args(1,5, batarg("",dbl),batarg("v",lng),arg("digits",int),arg("scale",int),batarg("r",bit))),
+ command("calc", "dbl", lng_dec2_dbl, false, "cast decimal(lng) to dbl and check for overflow", args(1,3, arg("",dbl),arg("s1",int),arg("v",lng))),
+ command("calc", "dbl", lng_dec2dec_dbl, false, "cast decimal(lng) to decimal(dbl) and check for overflow", args(1,5, arg("",dbl),arg("s1",int),arg("v",lng),arg("d2",int),arg("s2",int))),
+ command("batcalc", "dbl", batlng_dec2_dbl, false, "cast decimal(lng) to dbl and check for overflow", args(1,3, batarg("",dbl),arg("s1",int),batarg("v",lng))),
+ command("batcalc", "dbl", batlng_ce_dec2_dbl, false, "cast decimal(lng) to dbl and check for overflow", args(1,4, batarg("",dbl),arg("s1",int),batarg("v",lng),batarg("r",bit))),
+ command("batcalc", "dbl", batlng_dec2dec_dbl, false, "cast decimal(lng) to decimal(dbl) and check for overflow", args(1,5, batarg("",dbl),arg("s1",int),batarg("v",lng),arg("d2",int),arg("s2",int))),
+ command("batcalc", "dbl", batlng_ce_dec2dec_dbl, false, "cast decimal(lng) to decimal(dbl) and check for overflow", args(1,6, batarg("",dbl),arg("s1",int),batarg("v",lng),arg("d2",int),arg("s2",int),batarg("r",bit))),
+ /* sql_rank */
+ pattern("sql", "diff", SQLdiff, false, "return true if cur != prev row", args(1,2, arg("",bit),argany("b",1))),
+ pattern("batsql", "diff", SQLdiff, false, "return true if cur != prev row", args(1,2, batarg("",bit),batargany("b",1))),
+ pattern("sql", "diff", SQLdiff, false, "return true if cur != prev row", args(1,3, arg("",bit),arg("p",bit),argany("b",1))),
+ pattern("batsql", "diff", SQLdiff, false, "return true if cur != prev row", args(1,3, batarg("",bit),arg("p",bit),batargany("b",1))),
+ pattern("batsql", "diff", SQLdiff, false, "return true if cur != prev row", args(1,3, batarg("",bit),batarg("p",bit),argany("b",1))),
+ pattern("batsql", "diff", SQLdiff, false, "return true if cur != prev row", args(1,3, batarg("",bit),batarg("p",bit),batargany("b",1))),
+ pattern("sql", "window_bound", SQLwindow_bound, false, "computes window ranges for each row", args(1,6, arg("",lng),argany("b",1),arg("unit",int),arg("bound",int),arg("excl",int),arg("limit",bte))),
+ pattern("batsql", "window_bound", SQLwindow_bound, false, "computes window ranges for each row", args(1,6, batarg("",lng),batargany("b",1),arg("unit",int),arg("bound",int),arg("excl",int),arg("limit",bte))),
+ pattern("sql", "window_bound", SQLwindow_bound, false, "computes window ranges for each row", args(1,7, arg("",lng),arg("p",bit),argany("b",1),arg("unit",int),arg("bound",int),arg("excl",int),arg("limit",bte))),
+ pattern("batsql", "window_bound", SQLwindow_bound, false, "computes window ranges for each row", args(1,7, batarg("",lng),batarg("p",bit),batargany("b",1),arg("unit",int),arg("bound",int),arg("excl",int),arg("limit",bte))),
+ pattern("batsql", "window_bound", SQLwindow_bound, false, "computes window ranges for each row", args(1,6, batarg("",lng),batargany("b",1),arg("unit",int),arg("bound",int),arg("excl",int),batarg("limit",bte))),
+ pattern("batsql", "window_bound", SQLwindow_bound, false, "computes window ranges for each row", args(1,7, batarg("",lng),batarg("p",bit),batargany("b",1),arg("unit",int),arg("bound",int),arg("excl",int),batarg("limit",bte))),
+ pattern("sql", "window_bound", SQLwindow_bound, false, "computes window ranges for each row", args(1,6, arg("",lng),argany("b",1),arg("unit",int),arg("bound",int),arg("excl",int),arg("limit",sht))),
+ pattern("batsql", "window_bound", SQLwindow_bound, false, "computes window ranges for each row", args(1,6, batarg("",lng),batargany("b",1),arg("unit",int),arg("bound",int),arg("excl",int),arg("limit",sht))),
+ pattern("sql", "window_bound", SQLwindow_bound, false, "computes window ranges for each row", args(1,7, arg("",lng),arg("p",bit),argany("b",1),arg("unit",int),arg("bound",int),arg("excl",int),arg("limit",sht))),
+ pattern("batsql", "window_bound", SQLwindow_bound, false, "computes window ranges for each row", args(1,7, batarg("",lng),batarg("p",bit),batargany("b",1),arg("unit",int),arg("bound",int),arg("excl",int),arg("limit",sht))),
+ pattern("batsql", "window_bound", SQLwindow_bound, false, "computes window ranges for each row", args(1,6, batarg("",lng),batargany("b",1),arg("unit",int),arg("bound",int),arg("excl",int),batarg("limit",sht))),
+ pattern("batsql", "window_bound", SQLwindow_bound, false, "computes window ranges for each row", args(1,7, batarg("",lng),batarg("p",bit),batargany("b",1),arg("unit",int),arg("bound",int),arg("excl",int),batarg("limit",sht))),
+ pattern("sql", "window_bound", SQLwindow_bound, false, "computes window ranges for each row", args(1,6, arg("",lng),argany("b",1),arg("unit",int),arg("bound",int),arg("excl",int),arg("limit",int))),
+ pattern("batsql", "window_bound", SQLwindow_bound, false, "computes window ranges for each row", args(1,6, batarg("",lng),batargany("b",1),arg("unit",int),arg("bound",int),arg("excl",int),arg("limit",int))),
+ pattern("sql", "window_bound", SQLwindow_bound, false, "computes window ranges for each row", args(1,7, arg("",lng),arg("p",bit),argany("b",1),arg("unit",int),arg("bound",int),arg("excl",int),arg("limit",int))),
+ pattern("batsql", "window_bound", SQLwindow_bound, false, "computes window ranges for each row", args(1,7, batarg("",lng),batarg("p",bit),batargany("b",1),arg("unit",int),arg("bound",int),arg("excl",int),arg("limit",int))),
+ pattern("batsql", "window_bound", SQLwindow_bound, false, "computes window ranges for each row", args(1,6, batarg("",lng),batargany("b",1),arg("unit",int),arg("bound",int),arg("excl",int),batarg("limit",int))),
+ pattern("batsql", "window_bound", SQLwindow_bound, false, "computes window ranges for each row", args(1,7, batarg("",lng),batarg("p",bit),batargany("b",1),arg("unit",int),arg("bound",int),arg("excl",int),batarg("limit",int))),
+ pattern("sql", "window_bound", SQLwindow_bound, false, "computes window ranges for each row", args(1,6, arg("",lng),argany("b",1),arg("unit",int),arg("bound",int),arg("excl",int),arg("limit",lng))),
+ pattern("batsql", "window_bound", SQLwindow_bound, false, "computes window ranges for each row", args(1,6, batarg("",lng),batargany("b",1),arg("unit",int),arg("bound",int),arg("excl",int),arg("limit",lng))),
+ pattern("sql", "window_bound", SQLwindow_bound, false, "computes window ranges for each row", args(1,7, arg("",lng),arg("p",bit),argany("b",1),arg("unit",int),arg("bound",int),arg("excl",int),arg("limit",lng))),
+ pattern("batsql", "window_bound", SQLwindow_bound, false, "computes window ranges for each row", args(1,7, batarg("",lng),batarg("p",bit),batargany("b",1),arg("unit",int),arg("bound",int),arg("excl",int),arg("limit",lng))),
+ pattern("batsql", "window_bound", SQLwindow_bound, false, "computes window ranges for each row", args(1,6, batarg("",lng),batargany("b",1),arg("unit",int),arg("bound",int),arg("excl",int),batarg("limit",lng))),
+ pattern("batsql", "window_bound", SQLwindow_bound, false, "computes window ranges for each row", args(1,7, batarg("",lng),batarg("p",bit),batargany("b",1),arg("unit",int),arg("bound",int),arg("excl",int),batarg("limit",lng))),
+ pattern("sql", "window_bound", SQLwindow_bound, false, "computes window ranges for each row", args(1,6, arg("",lng),argany("b",1),arg("unit",int),arg("bound",int),arg("excl",int),arg("limit",flt))),
+ pattern("batsql", "window_bound", SQLwindow_bound, false, "computes window ranges for each row", args(1,6, batarg("",lng),batargany("b",1),arg("unit",int),arg("bound",int),arg("excl",int),arg("limit",flt))),
+ pattern("sql", "window_bound", SQLwindow_bound, false, "computes window ranges for each row", args(1,7, arg("",lng),arg("p",bit),argany("b",1),arg("unit",int),arg("bound",int),arg("excl",int),arg("limit",flt))),
+ pattern("batsql", "window_bound", SQLwindow_bound, false, "computes window ranges for each row", args(1,7, batarg("",lng),batarg("p",bit),batargany("b",1),arg("unit",int),arg("bound",int),arg("excl",int),arg("limit",flt))),
+ pattern("batsql", "window_bound", SQLwindow_bound, false, "computes window ranges for each row", args(1,6, batarg("",lng),batargany("b",1),arg("unit",int),arg("bound",int),arg("excl",int),batarg("limit",flt))),
+ pattern("batsql", "window_bound", SQLwindow_bound, false, "computes window ranges for each row", args(1,7, batarg("",lng),batarg("p",bit),batargany("b",1),arg("unit",int),arg("bound",int),arg("excl",int),batarg("limit",flt))),
+ pattern("sql", "window_bound", SQLwindow_bound, false, "computes window ranges for each row", args(1,6, arg("",lng),argany("b",1),arg("unit",int),arg("bound",int),arg("excl",int),arg("limit",dbl))),
+ pattern("batsql", "window_bound", SQLwindow_bound, false, "computes window ranges for each row", args(1,6, batarg("",lng),batargany("b",1),arg("unit",int),arg("bound",int),arg("excl",int),arg("limit",dbl))),
+ pattern("sql", "window_bound", SQLwindow_bound, false, "computes window ranges for each row", args(1,7, arg("",lng),arg("p",bit),argany("b",1),arg("unit",int),arg("bound",int),arg("excl",int),arg("limit",dbl))),
+ pattern("batsql", "window_bound", SQLwindow_bound, false, "computes window ranges for each row", args(1,7, batarg("",lng),batarg("p",bit),batargany("b",1),arg("unit",int),arg("bound",int),arg("excl",int),arg("limit",dbl))),
+ pattern("batsql", "window_bound", SQLwindow_bound, false, "computes window ranges for each row", args(1,6, batarg("",lng),batargany("b",1),arg("unit",int),arg("bound",int),arg("excl",int),batarg("limit",dbl))),
+ pattern("batsql", "window_bound", SQLwindow_bound, false, "computes window ranges for each row", args(1,7, batarg("",lng),batarg("p",bit),batargany("b",1),arg("unit",int),arg("bound",int),arg("excl",int),batarg("limit",dbl))),
+ pattern("sql", "row_number", SQLrow_number, false, "return the row_numer-ed groups", args(1,4, arg("",int),argany("b",1),arg("p",bit),arg("o",bit))),
+ pattern("batsql", "row_number", SQLrow_number, false, "return the row_numer-ed groups", args(1,4, batarg("",int),batargany("b",1),argany("p",2),argany("o",3))),
+ pattern("sql", "rank", SQLrank, false, "return the ranked groups", args(1,4, arg("",int),argany("b",1),arg("p",bit),arg("o",bit))),
+ pattern("batsql", "rank", SQLrank, false, "return the ranked groups", args(1,4, batarg("",int),batargany("b",1),argany("p",2),argany("o",3))),
+ pattern("sql", "dense_rank", SQLdense_rank, false, "return the densely ranked groups", args(1,4, arg("",int),argany("b",1),arg("p",bit),arg("o",bit))),
+ pattern("batsql", "dense_rank", SQLdense_rank, false, "return the densely ranked groups", args(1,4, batarg("",int),batargany("b",1),argany("p",2),argany("o",3))),
+ pattern("sql", "percent_rank", SQLpercent_rank, false, "return the percentage into the total number of groups for each row", args(1,4, arg("",dbl),argany("b",1),arg("p",bit),arg("o",bit))),
+ pattern("batsql", "percent_rank", SQLpercent_rank, false, "return the percentage into the total number of groups for each row", args(1,4, batarg("",dbl),batargany("b",1),argany("p",2),argany("o",3))),
+ pattern("sql", "cume_dist", SQLcume_dist, false, "return the accumulated distribution of the number of rows per group to the total number of partition rows", args(1,4, arg("",dbl),argany("b",1),arg("p",bit),arg("o",bit))),
+ pattern("batsql", "cume_dist", SQLcume_dist, false, "return the accumulated distribution of the number of rows per group to the total number of partition rows", args(1,4, batarg("",dbl),batargany("b",1),argany("p",2),argany("o",3))),
+ pattern("sql", "lag", SQLlag, false, "return the value in the previous row in the partition or NULL if non existent", args(1,4, argany("",1),argany("b",1),argany("p",3),argany("o",4))),
+ pattern("batsql", "lag", SQLlag, false, "return the value in the previous row in the partition or NULL if non existent", args(1,4, batargany("",1),batargany("b",1),argany("p",3),argany("o",4))),
+ pattern("sql", "lag", SQLlag, false, "return the value in the previous 'l' row in the partition or NULL if non existent", args(1,5, argany("",1),argany("b",1),argany("l",2),argany("p",3),argany("o",4))),
+ pattern("batsql", "lag", SQLlag, false, "return the value in the previous 'l' row in the partition or NULL if non existent", args(1,5, batargany("",1),batargany("b",1),argany("l",2),argany("p",3),argany("o",4))),
+ pattern("batsql", "lag", SQLlag, false, "return the value in the previous 'l' row in the partition or NULL if non existent", args(1,5, batargany("",1),argany("b",1),batargany("l",2),argany("p",3),argany("o",4))),
+ pattern("batsql", "lag", SQLlag, false, "return the value in the previous 'l' row in the partition or NULL if non existent", args(1,5, batargany("",1),batargany("b",1),batargany("l",2),argany("p",3),argany("o",4))),
+ pattern("sql", "lag", SQLlag, false, "return the value in the previous 'l' row in the partition or 'd' if non existent", args(1,6, argany("",1),argany("b",1),argany("l",2),argany("d",1),argany("p",3),argany("o",4))),
+ pattern("batsql", "lag", SQLlag, false, "return the value in the previous 'l' row in the partition or 'd' if non existent", args(1,6, batargany("",1),batargany("b",1),argany("l",2),argany("d",1),argany("p",3),argany("o",4))),
+ pattern("batsql", "lag", SQLlag, false, "return the value in the previous 'l' row in the partition or 'd' if non existent", args(1,6, batargany("",1),argany("b",1),batargany("l",2),argany("d",1),argany("p",3),argany("o",4))),
+ pattern("batsql", "lag", SQLlag, false, "return the value in the previous 'l' row in the partition or 'd' if non existent", args(1,6, batargany("",1),batargany("b",1),batargany("l",2),argany("d",1),argany("p",3),argany("o",4))),
+ pattern("batsql", "lag", SQLlag, false, "return the value in the previous 'l' row in the partition or 'd' if non existent", args(1,6, batargany("",1),argany("b",1),argany("l",2),batargany("d",1),argany("p",3),argany("o",4))),
+ pattern("batsql", "lag", SQLlag, false, "return the value in the previous 'l' row in the partition or 'd' if non existent", args(1,6, batargany("",1),batargany("b",1),argany("l",2),batargany("d",1),argany("p",3),argany("o",4))),
+ pattern("batsql", "lag", SQLlag, false, "return the value in the previous 'l' row in the partition or 'd' if non existent", args(1,6, batargany("",1),argany("b",1),batargany("l",2),batargany("d",1),argany("p",3),argany("o",4))),
+ pattern("batsql", "lag", SQLlag, false, "return the value in the previous 'l' row in the partition or 'd' if non existent", args(1,6, batargany("",1),batargany("b",1),batargany("l",2),batargany("d",1),argany("p",3),argany("o",4))),
+ pattern("sql", "lead", SQLlead, false, "return the value in the next row in the partition or NULL if non existent", args(1,4, argany("",1),argany("b",1),argany("p",3),argany("o",4))),
+ pattern("batsql", "lead", SQLlead, false, "return the value in the next row in the partition or NULL if non existent", args(1,4, batargany("",1),batargany("b",1),argany("p",3),argany("o",4))),
+ pattern("sql", "lead", SQLlead, false, "return the value in the next 'l' row in the partition or NULL if non existent", args(1,5, argany("",1),argany("b",1),argany("l",2),argany("p",3),argany("o",4))),
+ pattern("batsql", "lead", SQLlead, false, "return the value in the next 'l' row in the partition or NULL if non existent", args(1,5, batargany("",1),batargany("b",1),argany("l",2),argany("p",3),argany("o",4))),
+ pattern("batsql", "lead", SQLlead, false, "return the value in the next 'l' row in the partition or NULL if non existent", args(1,5, batargany("",1),argany("b",1),batargany("l",2),argany("p",3),argany("o",4))),
+ pattern("batsql", "lead", SQLlead, false, "return the value in the next 'l' row in the partition or NULL if non existent", args(1,5, batargany("",1),batargany("b",1),batargany("l",2),argany("p",3),argany("o",4))),
+ pattern("sql", "lead", SQLlead, false, "return the value in the next 'l' row in the partition or 'd' if non existent", args(1,6, argany("",1),argany("b",1),argany("l",2),argany("d",1),argany("p",3),argany("o",4))),
+ pattern("batsql", "lead", SQLlead, false, "return the value in the next 'l' row in the partition or 'd' if non existent", args(1,6, batargany("",1),batargany("b",1),argany("l",2),argany("d",1),argany("p",3),argany("o",4))),
+ pattern("batsql", "lead", SQLlead, false, "return the value in the next 'l' row in the partition or 'd' if non existent", args(1,6, batargany("",1),argany("b",1),batargany("l",2),argany("d",1),argany("p",3),argany("o",4))),
+ pattern("batsql", "lead", SQLlead, false, "return the value in the next 'l' row in the partition or 'd' if non existent", args(1,6, batargany("",1),batargany("b",1),batargany("l",2),argany("d",1),argany("p",3),argany("o",4))),
+ pattern("batsql", "lead", SQLlead, false, "return the value in the next 'l' row in the partition or 'd' if non existent", args(1,6, batargany("",1),argany("b",1),argany("l",2),batargany("d",1),argany("p",3),argany("o",4))),
+ pattern("batsql", "lead", SQLlead, false, "return the value in the next 'l' row in the partition or 'd' if non existent", args(1,6, batargany("",1),batargany("b",1),argany("l",2),batargany("d",1),argany("p",3),argany("o",4))),
+ pattern("batsql", "lead", SQLlead, false, "return the value in the next 'l' row in the partition or 'd' if non existent", args(1,6, batargany("",1),argany("b",1),batargany("l",2),batargany("d",1),argany("p",3),argany("o",4))),
+ pattern("batsql", "lead", SQLlead, false, "return the value in the next 'l' row in the partition or 'd' if non existent", args(1,6, batargany("",1),batargany("b",1),batargany("l",2),batargany("d",1),argany("p",3),argany("o",4))),
+ pattern("sql", "ntile", SQLntile, false, "return the groups divided as equally as possible", args(1,5, argany("",2),argany("b",1),argany("n",2),argany("p",3),argany("o",4))),
+ pattern("batsql", "ntile", SQLntile, false, "return the groups divided as equally as possible", args(1,5, batargany("",2),batargany("b",1),argany("n",2),argany("p",3),argany("o",4))),
+ pattern("batsql", "ntile", SQLntile, false, "return the groups divided as equally as possible", args(1,5, batargany("",2),argany("b",1),batargany("n",2),argany("p",3),argany("o",4))),
+ pattern("batsql", "ntile", SQLntile, false, "return the groups divided as equally as possible", args(1,5, batargany("",2),batargany("b",1),batargany("n",2),argany("p",3),argany("o",4))),
+ pattern("sql", "first_value", SQLfirst_value, false, "return the first value of groups", args(1,4, argany("",1),argany("b",1),arg("s",lng),arg("e",lng))),
+ pattern("batsql", "first_value", SQLfirst_value, false, "return the first value of groups", args(1,4, batargany("",1),batargany("b",1),batarg("s",lng),batarg("e",lng))),
+ pattern("sql", "last_value", SQLlast_value, false, "return the last value of groups", args(1,4, argany("",1),argany("b",1),arg("s",lng),arg("e",lng))),
+ pattern("batsql", "last_value", SQLlast_value, false, "return the last value of groups", args(1,4, batargany("",1),batargany("b",1),batarg("s",lng),batarg("e",lng))),
+ pattern("sql", "nth_value", SQLnth_value, false, "return the nth value of each group", args(1,5, argany("",1),argany("b",1),argany("n",2),arg("s",lng),arg("e",lng))),
+ pattern("batsql", "nth_value", SQLnth_value, false, "return the nth value of each group", args(1,5, batargany("",1),batargany("b",1),argany("n",2),batarg("s",lng),batarg("e",lng))),
+ pattern("batsql", "nth_value", SQLnth_value, false, "return the nth value of each group", args(1,5, batargany("",1),argany("b",1),batargany("n",2),arg("s",lng),arg("e",lng))),
+ pattern("batsql", "nth_value", SQLnth_value, false, "return the nth value of each group", args(1,5, batargany("",1),batargany("b",1),batargany("n",2),batarg("s",lng),batarg("e",lng))),
+ pattern("sql", "min", SQLmin, false, "return the minimum of groups", args(1,4, argany("",1),argany("b",1),arg("s",lng),arg("e",lng))),
+ pattern("batsql", "min", SQLmin, false, "return the minimum of groups", args(1,4, batargany("",1),batargany("b",1),batarg("s",lng),batarg("e",lng))),
+ pattern("sql", "max", SQLmax, false, "return the maximum of groups", args(1,4, argany("",1),argany("b",1),arg("s",lng),arg("e",lng))),
+ pattern("batsql", "max", SQLmax, false, "return the maximum of groups", args(1,4, batargany("",1),batargany("b",1),batarg("s",lng),batarg("e",lng))),
+ pattern("sql", "count", SQLcount, false, "return count of groups", args(1,5, arg("",lng),argany("b",1),arg("ignils",bit),arg("s",lng),arg("e",lng))),
+ pattern("batsql", "count", SQLcount, false, "return count of groups", args(1,5, batarg("",lng),batargany("b",1),arg("ignils",bit),batarg("s",lng),batarg("e",lng))),
+ pattern("sql", "sum", SQLsum, false, "return the sum of groups", args(1,4, arg("",lng),arg("b",bte),arg("s",lng),arg("e",lng))),
+ pattern("batsql", "sum", SQLsum, false, "return the sum of groups", args(1,4, batarg("",lng),batarg("b",bte),batarg("s",lng),batarg("e",lng))),
+ pattern("sql", "prod", SQLprod, false, "return the product of groups", args(1,4, arg("",lng),arg("b",bte),arg("s",lng),arg("e",lng))),
+ pattern("batsql", "prod", SQLprod, false, "return the product of groups", args(1,4, batarg("",lng),batarg("b",bte),batarg("s",lng),batarg("e",lng))),
+ pattern("sql", "sum", SQLsum, false, "return the sum of groups", args(1,4, arg("",lng),arg("b",sht),arg("s",lng),arg("e",lng))),
+ pattern("batsql", "sum", SQLsum, false, "return the sum of groups", args(1,4, batarg("",lng),batarg("b",sht),batarg("s",lng),batarg("e",lng))),
+ pattern("sql", "prod", SQLprod, false, "return the product of groups", args(1,4, arg("",lng),arg("b",sht),arg("s",lng),arg("e",lng))),
+ pattern("batsql", "prod", SQLprod, false, "return the product of groups", args(1,4, batarg("",lng),batarg("b",sht),batarg("s",lng),batarg("e",lng))),
+ pattern("sql", "sum", SQLsum, false, "return the sum of groups", args(1,4, arg("",lng),arg("b",int),arg("s",lng),arg("e",lng))),
+ pattern("batsql", "sum", SQLsum, false, "return the sum of groups", args(1,4, batarg("",lng),batarg("b",int),batarg("s",lng),batarg("e",lng))),
+ pattern("sql", "prod", SQLprod, false, "return the product of groups", args(1,4, arg("",lng),arg("b",int),arg("s",lng),arg("e",lng))),
+ pattern("batsql", "prod", SQLprod, false, "return the product of groups", args(1,4, batarg("",lng),batarg("b",int),batarg("s",lng),batarg("e",lng))),
+ pattern("sql", "sum", SQLsum, false, "return the sum of groups", args(1,4, arg("",lng),arg("b",lng),arg("s",lng),arg("e",lng))),
+ pattern("batsql", "sum", SQLsum, false, "return the sum of groups", args(1,4, batarg("",lng),batarg("b",lng),batarg("s",lng),batarg("e",lng))),
+ pattern("sql", "prod", SQLprod, false, "return the product of groups", args(1,4, arg("",lng),arg("b",lng),arg("s",lng),arg("e",lng))),
+ pattern("batsql", "prod", SQLprod, false, "return the product of groups", args(1,4, batarg("",lng),batarg("b",lng),batarg("s",lng),batarg("e",lng))),
+ pattern("sql", "sum", SQLsum, false, "return the sum of groups", args(1,4, arg("",flt),arg("b",flt),arg("s",lng),arg("e",lng))),
+ pattern("batsql", "sum", SQLsum, false, "return the sum of groups", args(1,4, batarg("",flt),batarg("b",flt),batarg("s",lng),batarg("e",lng))),
+ pattern("sql", "prod", SQLprod, false, "return the product of groups", args(1,4, arg("",flt),arg("b",flt),arg("s",lng),arg("e",lng))),
+ pattern("batsql", "prod", SQLprod, false, "return the product of groups", args(1,4, batarg("",flt),batarg("b",flt),batarg("s",lng),batarg("e",lng))),
+ pattern("sql", "sum", SQLsum, false, "return the sum of groups", args(1,4, arg("",dbl),arg("b",flt),arg("s",lng),arg("e",lng))),
+ pattern("batsql", "sum", SQLsum, false, "return the sum of groups", args(1,4, batarg("",dbl),batarg("b",flt),batarg("s",lng),batarg("e",lng))),
+ pattern("sql", "prod", SQLprod, false, "return the product of groups", args(1,4, arg("",dbl),arg("b",flt),arg("s",lng),arg("e",lng))),
+ pattern("batsql", "prod", SQLprod, false, "return the product of groups", args(1,4, batarg("",dbl),batarg("b",flt),batarg("s",lng),batarg("e",lng))),
+ pattern("sql", "sum", SQLsum, false, "return the sum of groups", args(1,4, arg("",dbl),arg("b",dbl),arg("s",lng),arg("e",lng))),
+ pattern("batsql", "sum", SQLsum, false, "return the sum of groups", args(1,4, batarg("",dbl),batarg("b",dbl),batarg("s",lng),batarg("e",lng))),
+ pattern("sql", "prod", SQLprod, false, "return the product of groups", args(1,4, arg("",dbl),arg("b",dbl),arg("s",lng),arg("e",lng))),
+ pattern("batsql", "prod", SQLprod, false, "return the product of groups", args(1,4, batarg("",dbl),batarg("b",dbl),batarg("s",lng),batarg("e",lng))),
+ pattern("sql", "avg", SQLavg, false, "return the average of groups", args(1,4, arg("",dbl),arg("b",bte),arg("s",lng),arg("e",lng))),
+ pattern("batsql", "avg", SQLavg, false, "return the average of groups", args(1,4, batarg("",dbl),batarg("b",bte),batarg("s",lng),batarg("e",lng))),
+ pattern("sql", "stdev", SQLstddev_samp, false, "return the standard deviation sample of groups", args(1,4, arg("",dbl),arg("b",bte),arg("s",lng),arg("e",lng))),
+ pattern("batsql", "stdev", SQLstddev_samp, false, "return the standard deviation sample of groups", args(1,4, batarg("",dbl),batarg("b",bte),batarg("s",lng),batarg("e",lng))),
+ pattern("sql", "stdevp", SQLstddev_pop, false, "return the standard deviation population of groups", args(1,4, arg("",dbl),arg("b",bte),arg("s",lng),arg("e",lng))),
+ pattern("batsql", "stdevp", SQLstddev_pop, false, "return the standard deviation population of groups", args(1,4, batarg("",dbl),batarg("b",bte),batarg("s",lng),batarg("e",lng))),
+ pattern("sql", "variance", SQLvar_samp, false, "return the variance sample of groups", args(1,4, arg("",dbl),arg("b",bte),arg("s",lng),arg("e",lng))),
+ pattern("batsql", "variance", SQLvar_samp, false, "return the variance sample of groups", args(1,4, batarg("",dbl),batarg("b",bte),batarg("s",lng),batarg("e",lng))),
+ pattern("sql", "variancep", SQLvar_pop, false, "return the variance population of groups", args(1,4, arg("",dbl),arg("b",bte),arg("s",lng),arg("e",lng))),
+ pattern("batsql", "variancep", SQLvar_pop, false, "return the variance population of groups", args(1,4, batarg("",dbl),batarg("b",bte),batarg("s",lng),batarg("e",lng))),
+ pattern("sql", "covariance", SQLcovar_samp, false, "return the covariance sample value of groups", args(1,5, arg("",dbl),arg("b",bte),arg("c",bte),arg("s",lng),arg("e",lng))),
+ pattern("batsql", "covariance", SQLcovar_samp, false, "return the covariance sample value of groups", args(1,5, batarg("",dbl),batarg("b",bte),arg("c",bte),batarg("s",lng),batarg("e",lng))),
+ pattern("batsql", "covariance", SQLcovar_samp, false, "return the covariance sample value of groups", args(1,5, batarg("",dbl),arg("b",bte),batarg("c",bte),arg("s",lng),arg("e",lng))),
+ pattern("batsql", "covariance", SQLcovar_samp, false, "return the covariance sample value of groups", args(1,5, batarg("",dbl),batarg("b",bte),batarg("c",bte),batarg("s",lng),batarg("e",lng))),
+ pattern("sql", "covariancep", SQLcovar_pop, false, "return the covariance population value of groups", args(1,5, arg("",dbl),arg("b",bte),arg("c",bte),arg("s",lng),arg("e",lng))),
+ pattern("batsql", "covariancep", SQLcovar_pop, false, "return the covariance population value of groups", args(1,5, batarg("",dbl),batarg("b",bte),arg("c",bte),batarg("s",lng),batarg("e",lng))),
+ pattern("batsql", "covariancep", SQLcovar_pop, false, "return the covariance population value of groups", args(1,5, batarg("",dbl),arg("b",bte),batarg("c",bte),arg("s",lng),arg("e",lng))),
+ pattern("batsql", "covariancep", SQLcovar_pop, false, "return the covariance population value of groups", args(1,5, batarg("",dbl),batarg("b",bte),batarg("c",bte),batarg("s",lng),batarg("e",lng))),
+ pattern("sql", "corr", SQLcorr, false, "return the correlation value of groups", args(1,5, arg("",dbl),arg("b",bte),arg("c",bte),arg("s",lng),arg("e",lng))),
+ pattern("batsql", "corr", SQLcorr, false, "return the correlation value of groups", args(1,5, batarg("",dbl),batarg("b",bte),arg("c",bte),batarg("s",lng),batarg("e",lng))),
+ pattern("batsql", "corr", SQLcorr, false, "return the correlation value of groups", args(1,5, batarg("",dbl),arg("b",bte),batarg("c",bte),arg("s",lng),arg("e",lng))),
+ pattern("batsql", "corr", SQLcorr, false, "return the correlation value of groups", args(1,5, batarg("",dbl),batarg("b",bte),batarg("c",bte),batarg("s",lng),batarg("e",lng))),
+ pattern("sql", "avg", SQLavg, false, "return the average of groups", args(1,4, arg("",dbl),arg("b",sht),arg("s",lng),arg("e",lng))),
+ pattern("batsql", "avg", SQLavg, false, "return the average of groups", args(1,4, batarg("",dbl),batarg("b",sht),batarg("s",lng),batarg("e",lng))),
+ pattern("sql", "stdev", SQLstddev_samp, false, "return the standard deviation sample of groups", args(1,4, arg("",dbl),arg("b",sht),arg("s",lng),arg("e",lng))),
+ pattern("batsql", "stdev", SQLstddev_samp, false, "return the standard deviation sample of groups", args(1,4, batarg("",dbl),batarg("b",sht),batarg("s",lng),batarg("e",lng))),
+ pattern("sql", "stdevp", SQLstddev_pop, false, "return the standard deviation population of groups", args(1,4, arg("",dbl),arg("b",sht),arg("s",lng),arg("e",lng))),
+ pattern("batsql", "stdevp", SQLstddev_pop, false, "return the standard deviation population of groups", args(1,4, batarg("",dbl),batarg("b",sht),batarg("s",lng),batarg("e",lng))),
+ pattern("sql", "variance", SQLvar_samp, false, "return the variance sample of groups", args(1,4, arg("",dbl),arg("b",sht),arg("s",lng),arg("e",lng))),
+ pattern("batsql", "variance", SQLvar_samp, false, "return the variance sample of groups", args(1,4, batarg("",dbl),batarg("b",sht),batarg("s",lng),batarg("e",lng))),
+ pattern("sql", "variancep", SQLvar_pop, false, "return the variance population of groups", args(1,4, arg("",dbl),arg("b",sht),arg("s",lng),arg("e",lng))),
+ pattern("batsql", "variancep", SQLvar_pop, false, "return the variance population of groups", args(1,4, batarg("",dbl),batarg("b",sht),batarg("s",lng),batarg("e",lng))),
+ pattern("sql", "covariance", SQLcovar_samp, false, "return the covariance sample value of groups", args(1,5, arg("",dbl),arg("b",sht),arg("c",sht),arg("s",lng),arg("e",lng))),
+ pattern("batsql", "covariance", SQLcovar_samp, false, "return the covariance sample value of groups", args(1,5, batarg("",dbl),batarg("b",sht),arg("c",sht),batarg("s",lng),batarg("e",lng))),
+ pattern("batsql", "covariance", SQLcovar_samp, false, "return the covariance sample value of groups", args(1,5, batarg("",dbl),arg("b",sht),batarg("c",sht),arg("s",lng),arg("e",lng))),
+ pattern("batsql", "covariance", SQLcovar_samp, false, "return the covariance sample value of groups", args(1,5, batarg("",dbl),batarg("b",sht),batarg("c",sht),batarg("s",lng),batarg("e",lng))),
+ pattern("sql", "covariancep", SQLcovar_pop, false, "return the covariance population value of groups", args(1,5, arg("",dbl),arg("b",sht),arg("c",sht),arg("s",lng),arg("e",lng))),
+ pattern("batsql", "covariancep", SQLcovar_pop, false, "return the covariance population value of groups", args(1,5, batarg("",dbl),batarg("b",sht),arg("c",sht),batarg("s",lng),batarg("e",lng))),
+ pattern("batsql", "covariancep", SQLcovar_pop, false, "return the covariance population value of groups", args(1,5, batarg("",dbl),arg("b",sht),batarg("c",sht),arg("s",lng),arg("e",lng))),
+ pattern("batsql", "covariancep", SQLcovar_pop, false, "return the covariance population value of groups", args(1,5, batarg("",dbl),batarg("b",sht),batarg("c",sht),batarg("s",lng),batarg("e",lng))),
+ pattern("sql", "corr", SQLcorr, false, "return the correlation value of groups", args(1,5, arg("",dbl),arg("b",sht),arg("c",sht),arg("s",lng),arg("e",lng))),
+ pattern("batsql", "corr", SQLcorr, false, "return the correlation value of groups", args(1,5, batarg("",dbl),batarg("b",sht),arg("c",sht),batarg("s",lng),batarg("e",lng))),
+ pattern("batsql", "corr", SQLcorr, false, "return the correlation value of groups", args(1,5, batarg("",dbl),arg("b",sht),batarg("c",sht),arg("s",lng),arg("e",lng))),
+ pattern("batsql", "corr", SQLcorr, false, "return the correlation value of groups", args(1,5, batarg("",dbl),batarg("b",sht),batarg("c",sht),batarg("s",lng),batarg("e",lng))),
+ pattern("sql", "avg", SQLavg, false, "return the average of groups", args(1,4, arg("",dbl),arg("b",int),arg("s",lng),arg("e",lng))),
+ pattern("batsql", "avg", SQLavg, false, "return the average of groups", args(1,4, batarg("",dbl),batarg("b",int),batarg("s",lng),batarg("e",lng))),
+ pattern("sql", "stdev", SQLstddev_samp, false, "return the standard deviation sample of groups", args(1,4, arg("",dbl),arg("b",int),arg("s",lng),arg("e",lng))),
+ pattern("batsql", "stdev", SQLstddev_samp, false, "return the standard deviation sample of groups", args(1,4, batarg("",dbl),batarg("b",int),batarg("s",lng),batarg("e",lng))),
+ pattern("sql", "stdevp", SQLstddev_pop, false, "return the standard deviation population of groups", args(1,4, arg("",dbl),arg("b",int),arg("s",lng),arg("e",lng))),
+ pattern("batsql", "stdevp", SQLstddev_pop, false, "return the standard deviation population of groups", args(1,4, batarg("",dbl),batarg("b",int),batarg("s",lng),batarg("e",lng))),
+ pattern("sql", "variance", SQLvar_samp, false, "return the variance sample of groups", args(1,4, arg("",dbl),arg("b",int),arg("s",lng),arg("e",lng))),
+ pattern("batsql", "variance", SQLvar_samp, false, "return the variance sample of groups", args(1,4, batarg("",dbl),batarg("b",int),batarg("s",lng),batarg("e",lng))),
+ pattern("sql", "variancep", SQLvar_pop, false, "return the variance population of groups", args(1,4, arg("",dbl),arg("b",int),arg("s",lng),arg("e",lng))),
+ pattern("batsql", "variancep", SQLvar_pop, false, "return the variance population of groups", args(1,4, batarg("",dbl),batarg("b",int),batarg("s",lng),batarg("e",lng))),
+ pattern("sql", "covariance", SQLcovar_samp, false, "return the covariance sample value of groups", args(1,5, arg("",dbl),arg("b",int),arg("c",int),arg("s",lng),arg("e",lng))),
+ pattern("batsql", "covariance", SQLcovar_samp, false, "return the covariance sample value of groups", args(1,5, batarg("",dbl),batarg("b",int),arg("c",int),batarg("s",lng),batarg("e",lng))),
+ pattern("batsql", "covariance", SQLcovar_samp, false, "return the covariance sample value of groups", args(1,5, batarg("",dbl),arg("b",int),batarg("c",int),arg("s",lng),arg("e",lng))),
+ pattern("batsql", "covariance", SQLcovar_samp, false, "return the covariance sample value of groups", args(1,5, batarg("",dbl),batarg("b",int),batarg("c",int),batarg("s",lng),batarg("e",lng))),
+ pattern("sql", "covariancep", SQLcovar_pop, false, "return the covariance population value of groups", args(1,5, arg("",dbl),arg("b",int),arg("c",int),arg("s",lng),arg("e",lng))),
+ pattern("batsql", "covariancep", SQLcovar_pop, false, "return the covariance population value of groups", args(1,5, batarg("",dbl),batarg("b",int),arg("c",int),batarg("s",lng),batarg("e",lng))),
+ pattern("batsql", "covariancep", SQLcovar_pop, false, "return the covariance population value of groups", args(1,5, batarg("",dbl),arg("b",int),batarg("c",int),arg("s",lng),arg("e",lng))),
+ pattern("batsql", "covariancep", SQLcovar_pop, false, "return the covariance population value of groups", args(1,5, batarg("",dbl),batarg("b",int),batarg("c",int),batarg("s",lng),batarg("e",lng))),
+ pattern("sql", "corr", SQLcorr, false, "return the correlation value of groups", args(1,5, arg("",dbl),arg("b",int),arg("c",int),arg("s",lng),arg("e",lng))),
+ pattern("batsql", "corr", SQLcorr, false, "return the correlation value of groups", args(1,5, batarg("",dbl),batarg("b",int),arg("c",int),batarg("s",lng),batarg("e",lng))),
+ pattern("batsql", "corr", SQLcorr, false, "return the correlation value of groups", args(1,5, batarg("",dbl),arg("b",int),batarg("c",int),arg("s",lng),arg("e",lng))),
+ pattern("batsql", "corr", SQLcorr, false, "return the correlation value of groups", args(1,5, batarg("",dbl),batarg("b",int),batarg("c",int),batarg("s",lng),batarg("e",lng))),
+ pattern("sql", "avg", SQLavg, false, "return the average of groups", args(1,4, arg("",dbl),arg("b",lng),arg("s",lng),arg("e",lng))),
+ pattern("batsql", "avg", SQLavg, false, "return the average of groups", args(1,4, batarg("",dbl),batarg("b",lng),batarg("s",lng),batarg("e",lng))),
+ pattern("sql", "stdev", SQLstddev_samp, false, "return the standard deviation sample of groups", args(1,4, arg("",dbl),arg("b",lng),arg("s",lng),arg("e",lng))),
+ pattern("batsql", "stdev", SQLstddev_samp, false, "return the standard deviation sample of groups", args(1,4, batarg("",dbl),batarg("b",lng),batarg("s",lng),batarg("e",lng))),
+ pattern("sql", "stdevp", SQLstddev_pop, false, "return the standard deviation population of groups", args(1,4, arg("",dbl),arg("b",lng),arg("s",lng),arg("e",lng))),
+ pattern("batsql", "stdevp", SQLstddev_pop, false, "return the standard deviation population of groups", args(1,4, batarg("",dbl),batarg("b",lng),batarg("s",lng),batarg("e",lng))),
+ pattern("sql", "variance", SQLvar_samp, false, "return the variance sample of groups", args(1,4, arg("",dbl),arg("b",lng),arg("s",lng),arg("e",lng))),
+ pattern("batsql", "variance", SQLvar_samp, false, "return the variance sample of groups", args(1,4, batarg("",dbl),batarg("b",lng),batarg("s",lng),batarg("e",lng))),
+ pattern("sql", "variancep", SQLvar_pop, false, "return the variance population of groups", args(1,4, arg("",dbl),arg("b",lng),arg("s",lng),arg("e",lng))),
+ pattern("batsql", "variancep", SQLvar_pop, false, "return the variance population of groups", args(1,4, batarg("",dbl),batarg("b",lng),batarg("s",lng),batarg("e",lng))),
+ pattern("sql", "covariance", SQLcovar_samp, false, "return the covariance sample value of groups", args(1,5, arg("",dbl),arg("b",lng),arg("c",lng),arg("s",lng),arg("e",lng))),
+ pattern("batsql", "covariance", SQLcovar_samp, false, "return the covariance sample value of groups", args(1,5, batarg("",dbl),batarg("b",lng),arg("c",lng),batarg("s",lng),batarg("e",lng))),
+ pattern("batsql", "covariance", SQLcovar_samp, false, "return the covariance sample value of groups", args(1,5, batarg("",dbl),arg("b",lng),batarg("c",lng),arg("s",lng),arg("e",lng))),
+ pattern("batsql", "covariance", SQLcovar_samp, false, "return the covariance sample value of groups", args(1,5, batarg("",dbl),batarg("b",lng),batarg("c",lng),batarg("s",lng),batarg("e",lng))),
+ pattern("sql", "covariancep", SQLcovar_pop, false, "return the covariance population value of groups", args(1,5, arg("",dbl),arg("b",lng),arg("c",lng),arg("s",lng),arg("e",lng))),
+ pattern("batsql", "covariancep", SQLcovar_pop, false, "return the covariance population value of groups", args(1,5, batarg("",dbl),batarg("b",lng),arg("c",lng),batarg("s",lng),batarg("e",lng))),
+ pattern("batsql", "covariancep", SQLcovar_pop, false, "return the covariance population value of groups", args(1,5, batarg("",dbl),arg("b",lng),batarg("c",lng),arg("s",lng),arg("e",lng))),
+ pattern("batsql", "covariancep", SQLcovar_pop, false, "return the covariance population value of groups", args(1,5, batarg("",dbl),batarg("b",lng),batarg("c",lng),batarg("s",lng),batarg("e",lng))),
+ pattern("sql", "corr", SQLcorr, false, "return the correlation value of groups", args(1,5, arg("",dbl),arg("b",lng),arg("c",lng),arg("s",lng),arg("e",lng))),
+ pattern("batsql", "corr", SQLcorr, false, "return the correlation value of groups", args(1,5, batarg("",dbl),batarg("b",lng),arg("c",lng),batarg("s",lng),batarg("e",lng))),
+ pattern("batsql", "corr", SQLcorr, false, "return the correlation value of groups", args(1,5, batarg("",dbl),arg("b",lng),batarg("c",lng),arg("s",lng),arg("e",lng))),
+ pattern("batsql", "corr", SQLcorr, false, "return the correlation value of groups", args(1,5, batarg("",dbl),batarg("b",lng),batarg("c",lng),batarg("s",lng),batarg("e",lng))),
+ pattern("sql", "avg", SQLavg, false, "return the average of groups", args(1,4, arg("",dbl),arg("b",flt),arg("s",lng),arg("e",lng))),
+ pattern("batsql", "avg", SQLavg, false, "return the average of groups", args(1,4, batarg("",dbl),batarg("b",flt),batarg("s",lng),batarg("e",lng))),
+ pattern("sql", "stdev", SQLstddev_samp, false, "return the standard deviation sample of groups", args(1,4, arg("",dbl),arg("b",flt),arg("s",lng),arg("e",lng))),
+ pattern("batsql", "stdev", SQLstddev_samp, false, "return the standard deviation sample of groups", args(1,4, batarg("",dbl),batarg("b",flt),batarg("s",lng),batarg("e",lng))),
+ pattern("sql", "stdevp", SQLstddev_pop, false, "return the standard deviation population of groups", args(1,4, arg("",dbl),arg("b",flt),arg("s",lng),arg("e",lng))),
+ pattern("batsql", "stdevp", SQLstddev_pop, false, "return the standard deviation population of groups", args(1,4, batarg("",dbl),batarg("b",flt),batarg("s",lng),batarg("e",lng))),
+ pattern("sql", "variance", SQLvar_samp, false, "return the variance sample of groups", args(1,4, arg("",dbl),arg("b",flt),arg("s",lng),arg("e",lng))),
+ pattern("batsql", "variance", SQLvar_samp, false, "return the variance sample of groups", args(1,4, batarg("",dbl),batarg("b",flt),batarg("s",lng),batarg("e",lng))),
+ pattern("sql", "variancep", SQLvar_pop, false, "return the variance population of groups", args(1,4, arg("",dbl),arg("b",flt),arg("s",lng),arg("e",lng))),
+ pattern("batsql", "variancep", SQLvar_pop, false, "return the variance population of groups", args(1,4, batarg("",dbl),batarg("b",flt),batarg("s",lng),batarg("e",lng))),
+ pattern("sql", "covariance", SQLcovar_samp, false, "return the covariance sample value of groups", args(1,5, arg("",dbl),arg("b",flt),arg("c",flt),arg("s",lng),arg("e",lng))),
+ pattern("batsql", "covariance", SQLcovar_samp, false, "return the covariance sample value of groups", args(1,5, batarg("",dbl),batarg("b",flt),arg("c",flt),batarg("s",lng),batarg("e",lng))),
+ pattern("batsql", "covariance", SQLcovar_samp, false, "return the covariance sample value of groups", args(1,5, batarg("",dbl),arg("b",flt),batarg("c",flt),arg("s",lng),arg("e",lng))),
+ pattern("batsql", "covariance", SQLcovar_samp, false, "return the covariance sample value of groups", args(1,5, batarg("",dbl),batarg("b",flt),batarg("c",flt),batarg("s",lng),batarg("e",lng))),
+ pattern("sql", "covariancep", SQLcovar_pop, false, "return the covariance population value of groups", args(1,5, arg("",dbl),arg("b",flt),arg("c",flt),arg("s",lng),arg("e",lng))),
+ pattern("batsql", "covariancep", SQLcovar_pop, false, "return the covariance population value of groups", args(1,5, batarg("",dbl),batarg("b",flt),arg("c",flt),batarg("s",lng),batarg("e",lng))),
+ pattern("batsql", "covariancep", SQLcovar_pop, false, "return the covariance population value of groups", args(1,5, batarg("",dbl),arg("b",flt),batarg("c",flt),arg("s",lng),arg("e",lng))),
+ pattern("batsql", "covariancep", SQLcovar_pop, false, "return the covariance population value of groups", args(1,5, batarg("",dbl),batarg("b",flt),batarg("c",flt),batarg("s",lng),batarg("e",lng))),
+ pattern("sql", "corr", SQLcorr, false, "return the correlation value of groups", args(1,5, arg("",dbl),arg("b",flt),arg("c",flt),arg("s",lng),arg("e",lng))),
+ pattern("batsql", "corr", SQLcorr, false, "return the correlation value of groups", args(1,5, batarg("",dbl),batarg("b",flt),arg("c",flt),batarg("s",lng),batarg("e",lng))),
+ pattern("batsql", "corr", SQLcorr, false, "return the correlation value of groups", args(1,5, batarg("",dbl),arg("b",flt),batarg("c",flt),arg("s",lng),arg("e",lng))),
+ pattern("batsql", "corr", SQLcorr, false, "return the correlation value of groups", args(1,5, batarg("",dbl),batarg("b",flt),batarg("c",flt),batarg("s",lng),batarg("e",lng))),
+ pattern("sql", "avg", SQLavg, false, "return the average of groups", args(1,4, arg("",dbl),arg("b",dbl),arg("s",lng),arg("e",lng))),
+ pattern("batsql", "avg", SQLavg, false, "return the average of groups", args(1,4, batarg("",dbl),batarg("b",dbl),batarg("s",lng),batarg("e",lng))),
+ pattern("sql", "stdev", SQLstddev_samp, false, "return the standard deviation sample of groups", args(1,4, arg("",dbl),arg("b",dbl),arg("s",lng),arg("e",lng))),
+ pattern("batsql", "stdev", SQLstddev_samp, false, "return the standard deviation sample of groups", args(1,4, batarg("",dbl),batarg("b",dbl),batarg("s",lng),batarg("e",lng))),
+ pattern("sql", "stdevp", SQLstddev_pop, false, "return the standard deviation population of groups", args(1,4, arg("",dbl),arg("b",dbl),arg("s",lng),arg("e",lng))),
+ pattern("batsql", "stdevp", SQLstddev_pop, false, "return the standard deviation population of groups", args(1,4, batarg("",dbl),batarg("b",dbl),batarg("s",lng),batarg("e",lng))),
+ pattern("sql", "variance", SQLvar_samp, false, "return the variance sample of groups", args(1,4, arg("",dbl),arg("b",dbl),arg("s",lng),arg("e",lng))),
+ pattern("batsql", "variance", SQLvar_samp, false, "return the variance sample of groups", args(1,4, batarg("",dbl),batarg("b",dbl),batarg("s",lng),batarg("e",lng))),
+ pattern("sql", "variancep", SQLvar_pop, false, "return the variance population of groups", args(1,4, arg("",dbl),arg("b",dbl),arg("s",lng),arg("e",lng))),
+ pattern("batsql", "variancep", SQLvar_pop, false, "return the variance population of groups", args(1,4, batarg("",dbl),batarg("b",dbl),batarg("s",lng),batarg("e",lng))),
+ pattern("sql", "covariance", SQLcovar_samp, false, "return the covariance sample value of groups", args(1,5, arg("",dbl),arg("b",dbl),arg("c",dbl),arg("s",lng),arg("e",lng))),
+ pattern("batsql", "covariance", SQLcovar_samp, false, "return the covariance sample value of groups", args(1,5, batarg("",dbl),batarg("b",dbl),arg("c",dbl),batarg("s",lng),batarg("e",lng))),
+ pattern("batsql", "covariance", SQLcovar_samp, false, "return the covariance sample value of groups", args(1,5, batarg("",dbl),arg("b",dbl),batarg("c",dbl),arg("s",lng),arg("e",lng))),
+ pattern("batsql", "covariance", SQLcovar_samp, false, "return the covariance sample value of groups", args(1,5, batarg("",dbl),batarg("b",dbl),batarg("c",dbl),batarg("s",lng),batarg("e",lng))),
+ pattern("sql", "covariancep", SQLcovar_pop, false, "return the covariance population value of groups", args(1,5, arg("",dbl),arg("b",dbl),arg("c",dbl),arg("s",lng),arg("e",lng))),
+ pattern("batsql", "covariancep", SQLcovar_pop, false, "return the covariance population value of groups", args(1,5, batarg("",dbl),batarg("b",dbl),arg("c",dbl),batarg("s",lng),batarg("e",lng))),
+ pattern("batsql", "covariancep", SQLcovar_pop, false, "return the covariance population value of groups", args(1,5, batarg("",dbl),arg("b",dbl),batarg("c",dbl),arg("s",lng),arg("e",lng))),
+ pattern("batsql", "covariancep", SQLcovar_pop, false, "return the covariance population value of groups", args(1,5, batarg("",dbl),batarg("b",dbl),batarg("c",dbl),batarg("s",lng),batarg("e",lng))),
+ pattern("sql", "corr", SQLcorr, false, "return the correlation value of groups", args(1,5, arg("",dbl),arg("b",dbl),arg("c",dbl),arg("s",lng),arg("e",lng))),
+ pattern("batsql", "corr", SQLcorr, false, "return the correlation value of groups", args(1,5, batarg("",dbl),batarg("b",dbl),arg("c",dbl),batarg("s",lng),batarg("e",lng))),
+ pattern("batsql", "corr", SQLcorr, false, "return the correlation value of groups", args(1,5, batarg("",dbl),arg("b",dbl),batarg("c",dbl),arg("s",lng),arg("e",lng))),
+ pattern("batsql", "corr", SQLcorr, false, "return the correlation value of groups", args(1,5, batarg("",dbl),batarg("b",dbl),batarg("c",dbl),batarg("s",lng),batarg("e",lng))),
+ pattern("sql", "str_group_concat", SQLstrgroup_concat, false, "return the string concatenation of groups", args(1,4, arg("",str),arg("b",str),arg("s",lng),arg("e",lng))),
+ pattern("batsql", "str_group_concat", SQLstrgroup_concat, false, "return the string concatenation of groups", args(1,4, batarg("",str),batarg("b",str),batarg("s",lng),batarg("e",lng))),
+ pattern("sql", "str_group_concat", SQLstrgroup_concat, false, "return the string concatenation of groups with a custom separator", args(1,5, arg("",str),arg("b",str),arg("sep",str),arg("s",lng),arg("e",lng))),
+ pattern("batsql", "str_group_concat", SQLstrgroup_concat, false, "return the string concatenation of groups with a custom separator", args(1,5, batarg("",str),batarg("b",str),arg("sep",str),batarg("s",lng),batarg("e",lng))),
+ pattern("batsql", "str_group_concat", SQLstrgroup_concat, false, "return the string concatenation of groups with a custom separator", args(1,5, batarg("",str),arg("b",str),batarg("sep",str),arg("s",lng),arg("e",lng))),
+ pattern("batsql", "str_group_concat", SQLstrgroup_concat, false, "return the string concatenation of groups with a custom separator", args(1,5, batarg("",str),batarg("b",str),batarg("sep",str),batarg("s",lng),batarg("e",lng))),
+ /* sql_subquery */
+ command("sql", "zero_or_one", zero_or_one, false, "if col contains exactly one value return this. Incase of more raise an exception else return nil", args(1,2, argany("",1),batargany("col",1))),
+ command("sql", "zero_or_one", zero_or_one_error, false, "if col contains exactly one value return this. Incase of more raise an exception if err is true else return nil", args(1,3, argany("",1),batargany("col",1),arg("err",bit))),
+ command("sql", "zero_or_one", zero_or_one_error_bat, false, "if col contains exactly one value return this. Incase of more raise an exception if err is true else return nil", args(1,3, argany("",1),batargany("col",1),batarg("err",bit))),
+ command("sql", "subzero_or_one", SQLsubzero_or_one, false, "", args(1,5, batargany("",1),batargany("b",1),batarg("gp",oid),batarg("gpe",oid),arg("no_nil",bit))),
+ command("sql", "all", SQLall, false, "if all values in col are equal return this, else nil", args(1,2, argany("",1),batargany("col",1))),
+ command("sql", "suball", SQLall_grp, false, "if all values in l are equal (per group) return the value, else nil", args(1,5, batargany("",1),batargany("l",1),batarg("gp",oid),batarg("gpe",oid),arg("no_nil",bit))),
+ command("sql", "null", SQLnil, false, "if b has a nil return true, else false", args(1,2, arg("",bit),batargany("b",1))),
+ command("sql", "subnull", SQLnil_grp, false, "if any value in l is nil with in a group return true for that group, else false", args(1,5, batarg("",bit),batargany("l",1),batarg("gp",oid),batarg("gpe",oid),arg("no_nil",bit))),
+ command("sql", "any", SQLany_cmp, false, "if cmp then true, (nl or nr) nil then nil, else false", args(1,4, arg("",bit),arg("cmp",bit),arg("nl",bit),arg("nr",bit))),
+ command("sql", "all", SQLall_cmp, false, "if !cmp then false, (nl or nr) then nil, else true", args(1,4, arg("",bit),arg("cmp",bit),arg("nl",bit),arg("nr",bit))),
+// pattern("aggr", "anyequal", CMDvarEQ, false, "", args(1,3, arg("",bit),argany("l",1),argany("r",1))),
+// pattern("aggr", "not_anyequal", CMDvarNE, false, "", args(1,3, arg("",bit),argany("l",1),argany("r",1))),
+ command("aggr", "anyequal", SQLanyequal, false, "if any value in r is equal to l return true, else if r has nil nil else false", args(1,3, arg("",bit),batargany("l",1),batargany("r",1))),
+ command("aggr", "allnotequal", SQLallnotequal, false, "if all values in r are not equal to l return true, else if r has nil nil else false", args(1,3, arg("",bit),batargany("l",1),batargany("r",1))),
+ command("aggr", "subanyequal", SQLanyequal_grp, false, "if any value in r is equal to l return true, else if r has nil nil else false", args(1,6, batarg("",bit),batargany("l",1),batargany("r",1),batarg("gp",oid),batarg("gpe",oid),arg("no_nil",bit))),
+ command("aggr", "subanyequal", SQLanyequal_grp2, false, "if any value in r is equal to l return true, else if r has nil nil else false, except if rid is nil (ie empty) then false", args(1,7, batarg("",bit),batargany("l",1),batargany("r",1),batarg("rid",oid),batarg("gp",oid),batarg("gpe",oid),arg("no_nil",bit))),
+ command("aggr", "suballnotequal", SQLallnotequal_grp, false, "if all values in r are not equal to l return true, else if r has nil nil else false", args(1,6, batarg("",bit),batargany("l",1),batargany("r",1),batarg("gp",oid),batarg("gpe",oid),arg("no_nil",bit))),
+ command("aggr", "suballnotequal", SQLallnotequal_grp2, false, "if all values in r are not equal to l return true, else if r has nil nil else false, except if rid is nil (ie empty) then true", args(1,7, batarg("",bit),batargany("l",1),batargany("r",1),batarg("rid",oid),batarg("gp",oid),batarg("gpe",oid),arg("no_nil",bit))),
+// command("aggr", "exist", ALGexist, false, "", args(1,3, arg("",bit),batargany("b",2),argany("h",1))),
+ command("aggr", "exist", SQLexist, false, "", args(1,2, arg("",bit),batargany("b",2))),
+ pattern("aggr", "exist", SQLexist_val, false, "", args(1,2, arg("",bit),argany("v",2))),
+ command("aggr", "subexist", SQLsubexist, false, "", args(1,5, batarg("",bit),batargany("b",2),batarg("g",oid),batarg("e",oid),arg("no_nil",bit))),
+ command("aggr", "not_exist", SQLnot_exist, false, "", args(1,2, arg("",bit),batargany("b",2))),
+ pattern("aggr", "not_exist", SQLnot_exist_val, false, "", args(1,2, arg("",bit),argany("v",2))),
+ command("aggr", "subnot_exist", SQLsubnot_exist, false, "", args(1,5, batarg("",bit),batargany("b",2),batarg("g",oid),batarg("e",oid),arg("no_nil",bit))),
+ /* wlr */
+ pattern("wlr", "master", WLRmaster, false, "Initialize the replicator thread", args(0,1, arg("dbname",str))),
+ pattern("wlr", "stop", WLRstop, false, "Stop the replicator thread", noargs),
+ pattern("wlr", "accept", WLRaccept, false, "Accept failing transaction", noargs),
+ pattern("wlr", "replicate", WLRreplicate, false, "Continue to keep the replica in sink", noargs),
+ pattern("wlr", "replicate", WLRreplicate, false, "Roll the snapshot forward to an up-to-date clone", args(0,1, arg("ts",timestamp))),
+ pattern("wlr", "replicate", WLRreplicate, false, "Roll the snapshot forward to a specific transaction id", args(0,1, arg("id",bte))),
+ pattern("wlr", "replicate", WLRreplicate, false, "Roll the snapshot forward to a specific transaction id", args(0,1, arg("id",sht))),
+ pattern("wlr", "replicate", WLRreplicate, false, "Roll the snapshot forward to a specific transaction id", args(0,1, arg("id",int))),
+ pattern("wlr", "replicate", WLRreplicate, false, "Roll the snapshot forward to a specific transaction id", args(0,1, arg("id",lng))),
+ pattern("wlr", "getMaster", WLRgetmaster, false, "What is the current master database", args(1,1, arg("",str))),
+ pattern("wlr", "setbeat", WLRsetbeat, false, "Threshold (in seconds) for re-running queries", args(0,1, arg("dur",int))),
+ pattern("wlr", "getclock", WLRgetclock, false, "Timestamp of last replicated transaction.", args(1,1, arg("",str))),
+ pattern("wlr", "gettick", WLRgettick, false, "Transaction identifier of the last replicated transaction.", args(1,1, arg("",lng))),
+ pattern("wlr", "transaction", WLRtransaction, false, "Mark the beginning of the work unit which can be a compound transaction", args(0,3, arg("tid",lng),arg("started",str),arg("user",str))),
+ pattern("wlr", "commit", WLRcommit, false, "Mark the end of the work unit", noargs),
+ pattern("wlr", "rollback", WLRrollback, false, "Mark the end of the work unit", noargs),
+ pattern("wlr", "catalog", WLRcatalog, false, "A catalog changing query", args(0,1, arg("q",str))),
+ pattern("wlr", "action", WLRaction, false, "A query producing updates", args(0,1, arg("q",str))),
+ pattern("wlr", "append", WLRappend, false, "Apply the insertions in the workload-capture-replay list", args(1,5, arg("",int),arg("sname",str),arg("tname",str),arg("cname",str),varargany("ins",0))),
+ pattern("wlr", "update", WLRupdate, false, "Apply the update in the workload-capture-replay list", args(1,6, arg("",int),arg("sname",str),arg("tname",str),arg("cname",str),arg("tid",oid),argany("val",0))),
+ pattern("wlr", "delete", WLRdelete, false, "Apply the deletions in the workload-capture-replay list", args(1,4, arg("",int),arg("sname",str),arg("tname",str),vararg("b",oid))),
+ pattern("wlr", "clear_table", WLRclear_table, false, "Destroy the tuples in the table", args(1,3, arg("",int),arg("sname",str),arg("tname",str))),
+ pattern("wlr", "create_seq", WLRgeneric, false, "Catalog operation create_seq", args(0,3, arg("sname",str),arg("seqname",str),arg("action",int))),
+ pattern("wlr", "alter_seq", WLRgeneric, false, "Catalog operation alter_seq", args(0,3, arg("sname",str),arg("seqname",str),arg("val",lng))),
+ pattern("wlr", "alter_seq", WLRgeneric, false, "Catalog operation alter_seq", args(0,4, arg("sname",str),arg("seqname",str),arg("seq",ptr),batarg("val",lng))),
+ pattern("wlr", "drop_seq", WLRgeneric, false, "Catalog operation drop_seq", args(0,3, arg("sname",str),arg("nme",str),arg("action",int))),
+ pattern("wlr", "create_schema", WLRgeneric, false, "Catalog operation create_schema", args(0,4, arg("sname",str),arg("auth",str),arg("ifnotexists",int),arg("action",int))),
+ pattern("wlr", "drop_schema", WLRgeneric, false, "Catalog operation drop_schema", args(0,4, arg("sname",str),arg("s",str),arg("ifexists",int),arg("action",int))),
+ pattern("wlr", "create_table", WLRgeneric, false, "Catalog operation create_table", args(0,3, arg("sname",str),arg("tname",str),arg("temp",int))),
+ pattern("wlr", "create_view", WLRgeneric, false, "Catalog operation create_view", args(0,3, arg("sname",str),arg("tname",str),arg("temp",int))),
+ pattern("wlr", "drop_table", WLRgeneric, false, "Catalog operation drop_table", args(0,4, arg("sname",str),arg("name",str),arg("action",int),arg("ifexists",int))),
+ pattern("wlr", "drop_view", WLRgeneric, false, "Catalog operation drop_view", args(0,4, arg("sname",str),arg("name",str),arg("action",int),arg("ifexists",int))),
+ pattern("wlr", "drop_constraint", WLRgeneric, false, "Catalog operation drop_constraint", args(0,4, arg("sname",str),arg("name",str),arg("action",int),arg("ifexists",int))),
+ pattern("wlr", "alter_table", WLRgeneric, false, "Catalog operation alter_table", args(0,3, arg("sname",str),arg("tname",str),arg("action",int))),
+ pattern("wlr", "create_type", WLRgeneric, false, "Catalog operation create_type", args(0,3, arg("sname",str),arg("nme",str),arg("impl",str))),
+ pattern("wlr", "drop_type", WLRgeneric, false, "Catalog operation drop_type", args(0,3, arg("sname",str),arg("nme",str),arg("action",int))),
+ pattern("wlr", "grant_roles", WLRgeneric, false, "Catalog operation grant_roles", args(0,4, arg("sname",str),arg("auth",str),arg("grantor",int),arg("admin",int))),
+ pattern("wlr", "revoke_roles", WLRgeneric, false, "Catalog operation revoke_roles", args(0,4, arg("sname",str),arg("auth",str),arg("grantor",int),arg("admin",int))),
+ pattern("wlr", "grant", WLRgeneric, false, "Catalog operation grant", args(0,7, arg("sname",str),arg("tbl",str),arg("grantee",str),arg("privs",int),arg("cname",str),arg("gr",int),arg("grantor",int))),
+ pattern("wlr", "revoke", WLRgeneric, false, "Catalog operation revoke", args(0,7, arg("sname",str),arg("tbl",str),arg("grantee",str),arg("privs",int),arg("cname",str),arg("grant",int),arg("grantor",int))),
+ pattern("wlr", "grant_function", WLRgeneric, false, "Catalog operation grant_function", args(0,6, arg("sname",str),arg("fcnid",int),arg("grantee",str),arg("privs",int),arg("grant",int),arg("grantor",int))),
+ pattern("wlr", "revoke_function", WLRgeneric, false, "Catalog operation revoke_function", args(0,6, arg("sname",str),arg("fcnid",int),arg("grantee",str),arg("privs",int),arg("grant",int),arg("grantor",int))),
+ pattern("wlr", "create_user", WLRgeneric, false, "Catalog operation create_user", args(0,5, arg("sname",str),arg("passwrd",str),arg("enc",int),arg("schema",str),arg("fullname",str))),
+ pattern("wlr", "drop_user", WLRgeneric, false, "Catalog operation drop_user", args(0,2, arg("sname",str),arg("action",int))),
+ pattern("wlr", "drop_user", WLRgeneric, false, "Catalog operation drop_user", args(0,3, arg("sname",str),arg("auth",str),arg("action",int))),
+ pattern("wlr", "alter_user", WLRgeneric, false, "Catalog operation alter_user", args(0,5, arg("sname",str),arg("passwrd",str),arg("enc",int),arg("schema",str),arg("oldpasswrd",str))),
+ pattern("wlr", "rename_user", WLRgeneric, false, "Catalog operation rename_user", args(0,3, arg("sname",str),arg("newnme",str),arg("action",int))),
+ pattern("wlr", "create_role", WLRgeneric, false, "Catalog operation create_role", args(0,3, arg("sname",str),arg("role",str),arg("grator",int))),
+ pattern("wlr", "drop_role", WLRgeneric, false, "Catalog operation drop_role", args(0,3, arg("auth",str),arg("role",str),arg("action",int))),
+ pattern("wlr", "drop_role", WLRgeneric, false, "Catalog operation drop_role", args(0,2, arg("role",str),arg("action",int))),
+ pattern("wlr", "drop_index", WLRgeneric, false, "Catalog operation drop_index", args(0,3, arg("sname",str),arg("iname",str),arg("action",int))),
+ pattern("wlr", "drop_function", WLRgeneric, false, "Catalog operation drop_function", args(0,5, arg("sname",str),arg("fname",str),arg("fid",int),arg("type",int),arg("action",int))),
+ pattern("wlr", "create_function", WLRgeneric, false, "Catalog operation create_function", args(0,2, arg("sname",str),arg("fname",str))),
+ pattern("wlr", "create_trigger", WLRgeneric, false, "Catalog operation create_trigger", args(0,10, arg("sname",str),arg("tname",str),arg("triggername",str),arg("time",int),arg("orientation",int),arg("event",int),arg("old",str),arg("new",str),arg("cond",str),arg("qry",str))),
+ pattern("wlr", "drop_trigger", WLRgeneric, false, "Catalog operation drop_trigger", args(0,3, arg("sname",str),arg("nme",str),arg("ifexists",int))),
+ pattern("wlr", "alter_add_table", WLRgeneric, false, "Catalog operation alter_add_table", args(0,5, arg("sname",str),arg("mtnme",str),arg("psnme",str),arg("ptnme",str),arg("action",int))),
+ pattern("wlr", "alter_del_table", WLRgeneric, false, "Catalog operation alter_del_table", args(0,5, arg("sname",str),arg("mtnme",str),arg("psnme",str),arg("ptnme",str),arg("action",int))),
+ pattern("wlr", "alter_set_table", WLRgeneric, false, "Catalog operation alter_set_table", args(0,3, arg("sname",str),arg("tnme",str),arg("access",int))),
+ pattern("wlr", "alter_add_range_partition", WLRgeneric, false, "Catalog operation alter_add_range_partition", args(0,8, arg("sname",str),arg("mtnme",str),arg("psnme",str),arg("ptnme",str),arg("min",str),arg("max",str),arg("nills",bit),arg("update",int))),
+ pattern("wlr", "comment_on", WLRgeneric, false, "Catalog operation comment_on", args(0,2, arg("objid",int),arg("remark",str))),
+ pattern("wlr", "rename_schema", WLRgeneric, false, "Catalog operation rename_schema", args(0,2, arg("sname",str),arg("newnme",str))),
+ pattern("wlr", "rename_table", WLRgeneric, false, "Catalog operation rename_table", args(0,4, arg("osname",str),arg("nsname",str),arg("otname",str),arg("ntname",str))),
+ pattern("wlr", "rename_column", WLRgeneric, false, "Catalog operation rename_column", args(0,4, arg("sname",str),arg("tname",str),arg("cname",str),arg("newnme",str))),
+ pattern("wlr", "transaction_release", WLRgeneric, false, "A transaction statement (type can be commit,release,rollback or start)", args(1,3, arg("",void),arg("chain",int),arg("name",str))),
+ pattern("wlr", "transaction_commit", WLRgeneric, false, "A transaction statement (type can be commit,release,rollback or start)", args(1,3, arg("",void),arg("chain",int),arg("name",str))),
+ pattern("wlr", "transaction_rollback", WLRgeneric, false, "A transaction statement (type can be commit,release,rollback or start)", args(1,3, arg("",void),arg("chain",int),arg("name",str))),
+ pattern("wlr", "transaction_begin", WLRgeneric, false, "A transaction statement (type can be commit,release,rollback or start)", args(1,3, arg("",void),arg("chain",int),arg("name",str))),
+ pattern("wlr", "transaction", WLRgeneric, true, "Start an autocommit transaction", noargs),
+ pattern("wlr", "alter_add_value_partition", WLRgeneric, false, "Catalog operation alter_add_value_partition", args(0,6, arg("sname",str),arg("mtnme",str),arg("psnme",str),arg("ptnme",str),arg("nills",bit),arg("update",int))),
+ pattern("wlr", "alter_add_value_partition", WLRgeneric, false, "Catalog operation alter_add_value_partition", args(0,7, arg("sname",str),arg("mtnme",str),arg("psnme",str),arg("ptnme",str),arg("nills",bit),arg("update",int),vararg("arg",str))),
+ /* sqlcatalog */
+ pattern("sqlcatalog", "create_seq", SQLcreate_seq, false, "Catalog operation create_seq", args(0,4, arg("sname",str),arg("seqname",str),arg("seq",ptr),arg("action",int))),
+ pattern("sqlcatalog", "alter_seq", SQLalter_seq, false, "Catalog operation alter_seq", args(0,4, arg("sname",str),arg("seqname",str),arg("seq",ptr),arg("val",lng))),
+ pattern("sqlcatalog", "alter_seq", SQLalter_seq, false, "Catalog operation alter_seq", args(0,4, arg("sname",str),arg("seqname",str),arg("seq",ptr),batarg("val",lng))),
+ pattern("sqlcatalog", "drop_seq", SQLdrop_seq, false, "Catalog operation drop_seq", args(0,3, arg("sname",str),arg("nme",str),arg("action",int))),
+ pattern("sqlcatalog", "create_schema", SQLcreate_schema, false, "Catalog operation create_schema", args(0,4, arg("sname",str),arg("auth",str),arg("ifnotexists",int),arg("action",int))),
+ pattern("sqlcatalog", "drop_schema", SQLdrop_schema, false, "Catalog operation drop_schema", args(0,4, arg("sname",str),arg("s",str),arg("ifexists",int),arg("action",int))),
+ pattern("sqlcatalog", "create_table", SQLcreate_table, false, "Catalog operation create_table", args(0,4, arg("sname",str),arg("tname",str),arg("tbl",ptr),arg("temp",int))),
+ pattern("sqlcatalog", "create_view", SQLcreate_view, false, "Catalog operation create_view", args(0,4, arg("sname",str),arg("vname",str),arg("tbl",ptr),arg("temp",int))),
+ pattern("sqlcatalog", "drop_table", SQLdrop_table, false, "Catalog operation drop_table", args(0,4, arg("sname",str),arg("name",str),arg("action",int),arg("ifexists",int))),
+ pattern("sqlcatalog", "drop_view", SQLdrop_view, false, "Catalog operation drop_view", args(0,4, arg("sname",str),arg("name",str),arg("action",int),arg("ifexists",int))),
+ pattern("sqlcatalog", "drop_constraint", SQLdrop_constraint, false, "Catalog operation drop_constraint", args(0,4, arg("sname",str),arg("name",str),arg("action",int),arg("ifexists",int))),
+ pattern("sqlcatalog", "alter_table", SQLalter_table, false, "Catalog operation alter_table", args(0,4, arg("sname",str),arg("tname",str),arg("tbl",ptr),arg("action",int))),
+ pattern("sqlcatalog", "create_type", SQLcreate_type, false, "Catalog operation create_type", args(0,3, arg("sname",str),arg("nme",str),arg("impl",str))),
+ pattern("sqlcatalog", "drop_type", SQLdrop_type, false, "Catalog operation drop_type", args(0,3, arg("sname",str),arg("nme",str),arg("action",int))),
+ pattern("sqlcatalog", "grant_roles", SQLgrant_roles, false, "Catalog operation grant_roles", args(0,4, arg("sname",str),arg("auth",str),arg("grantor",int),arg("admin",int))),
+ pattern("sqlcatalog", "revoke_roles", SQLrevoke_roles, false, "Catalog operation revoke_roles", args(0,4, arg("sname",str),arg("auth",str),arg("grantor",int),arg("admin",int))),
+ pattern("sqlcatalog", "grant", SQLgrant, false, "Catalog operation grant", args(0,7, arg("sname",str),arg("tbl",str),arg("grantee",str),arg("privs",int),arg("cname",str),arg("gr",int),arg("grantor",int))),
+ pattern("sqlcatalog", "revoke", SQLrevoke, false, "Catalog operation revoke", args(0,7, arg("sname",str),arg("tbl",str),arg("grantee",str),arg("privs",int),arg("cname",str),arg("grant",int),arg("grantor",int))),
+ pattern("sqlcatalog", "grant_function", SQLgrant_function, false, "Catalog operation grant_function", args(0,6, arg("sname",str),arg("fcnid",int),arg("grantee",str),arg("privs",int),arg("grant",int),arg("grantor",int))),
+ pattern("sqlcatalog", "revoke_function", SQLrevoke_function, false, "Catalog operation revoke_function", args(0,6, arg("sname",str),arg("fcnid",int),arg("grantee",str),arg("privs",int),arg("grant",int),arg("grantor",int))),
+ pattern("sqlcatalog", "create_user", SQLcreate_user, false, "Catalog operation create_user", args(0,5, arg("sname",str),arg("passwrd",str),arg("enc",int),arg("schema",str),arg("fullname",str))),
+ pattern("sqlcatalog", "drop_user", SQLdrop_user, false, "Catalog operation drop_user", args(0,2, arg("sname",str),arg("action",int))),
+ pattern("sqlcatalog", "drop_user", SQLdrop_user, false, "Catalog operation drop_user", args(0,3, arg("sname",str),arg("auth",str),arg("action",int))),
+ pattern("sqlcatalog", "alter_user", SQLalter_user, false, "Catalog operation alter_user", args(0,5, arg("sname",str),arg("passwrd",str),arg("enc",int),arg("schema",str),arg("oldpasswrd",str))),
+ pattern("sqlcatalog", "rename_user", SQLrename_user, false, "Catalog operation rename_user", args(0,3, arg("sname",str),arg("newnme",str),arg("action",int))),
+ pattern("sqlcatalog", "create_role", SQLcreate_role, false, "Catalog operation create_role", args(0,3, arg("sname",str),arg("role",str),arg("grator",int))),
+ pattern("sqlcatalog", "drop_role", SQLdrop_role, false, "Catalog operation drop_role", args(0,3, arg("auth",str),arg("role",str),arg("action",int))),
+ pattern("sqlcatalog", "drop_role", SQLdrop_role, false, "Catalog operation drop_role", args(0,2, arg("role",str),arg("action",int))),
+ pattern("sqlcatalog", "drop_index", SQLdrop_index, false, "Catalog operation drop_index", args(0,3, arg("sname",str),arg("iname",str),arg("action",int))),
+ pattern("sqlcatalog", "drop_function", SQLdrop_function, false, "Catalog operation drop_function", args(0,5, arg("sname",str),arg("fname",str),arg("fid",int),arg("type",int),arg("action",int))),
+ pattern("sqlcatalog", "create_function", SQLcreate_function, false, "Catalog operation create_function", args(0,3, arg("sname",str),arg("fname",str),arg("fcn",ptr))),
+ pattern("sqlcatalog", "create_trigger", SQLcreate_trigger, false, "Catalog operation create_trigger", args(0,10, arg("sname",str),arg("tname",str),arg("triggername",str),arg("time",int),arg("orientation",int),arg("event",int),arg("old",str),arg("new",str),arg("cond",str),arg("qry",str))),
+ pattern("sqlcatalog", "drop_trigger", SQLdrop_trigger, false, "Catalog operation drop_trigger", args(0,3, arg("sname",str),arg("nme",str),arg("ifexists",int))),
+ pattern("sqlcatalog", "alter_add_table", SQLalter_add_table, false, "Catalog operation alter_add_table", args(0,5, arg("sname",str),arg("mtnme",str),arg("psnme",str),arg("ptnme",str),arg("action",int))),
+ pattern("sqlcatalog", "alter_del_table", SQLalter_del_table, false, "Catalog operation alter_del_table", args(0,5, arg("sname",str),arg("mtnme",str),arg("psnme",str),arg("ptnme",str),arg("action",int))),
+ pattern("sqlcatalog", "alter_set_table", SQLalter_set_table, false, "Catalog operation alter_set_table", args(0,3, arg("sname",str),arg("tnme",str),arg("access",int))),
+ pattern("sqlcatalog", "alter_add_range_partition", SQLalter_add_range_partition, false, "Catalog operation alter_add_range_partition", args(0,8, arg("sname",str),arg("mtnme",str),arg("psnme",str),arg("ptnme",str),argany("min",1),argany("max",1),arg("nills",bit),arg("update",int))),
+ pattern("sqlcatalog", "alter_add_value_partition", SQLalter_add_value_partition, false, "Catalog operation alter_add_value_partition", args(0,6, arg("sname",str),arg("mtnme",str),arg("psnme",str),arg("ptnme",str),arg("nills",bit),arg("update",int))),
+ pattern("sqlcatalog", "alter_add_value_partition", SQLalter_add_value_partition, false, "Catalog operation alter_add_value_partition", args(0,7, arg("sname",str),arg("mtnme",str),arg("psnme",str),arg("ptnme",str),arg("nills",bit),arg("update",int),varargany("arg",0))),
+ pattern("sqlcatalog", "comment_on", SQLcomment_on, false, "Catalog operation comment_on", args(0,2, arg("objid",int),arg("remark",str))),
+ pattern("sqlcatalog", "rename_schema", SQLrename_schema, false, "Catalog operation rename_schema", args(0,2, arg("sname",str),arg("newnme",str))),
+ pattern("sqlcatalog", "rename_table", SQLrename_table, false, "Catalog operation rename_table", args(0,4, arg("osname",str),arg("nsname",str),arg("otname",str),arg("ntname",str))),
+ pattern("sqlcatalog", "rename_column", SQLrename_column, false, "Catalog operation rename_column", args(0,4, arg("sname",str),arg("tname",str),arg("cname",str),arg("newnme",str))),
+ /* sql_transaction */
+ pattern("sql", "transaction_release", SQLtransaction_release, true, "A transaction statement (type can be commit,release,rollback or start)", args(1,3, arg("",void),arg("chain",int),arg("name",str))),
+ pattern("sql", "transaction_commit", SQLtransaction_commit, true, "A transaction statement (type can be commit,release,rollback or start)", args(1,3, arg("",void),arg("chain",int),arg("name",str))),
+ pattern("sql", "transaction_rollback", SQLtransaction_rollback, true, "A transaction statement (type can be commit,release,rollback or start)", args(1,3, arg("",void),arg("chain",int),arg("name",str))),
+ pattern("sql", "transaction_begin", SQLtransaction_begin, true, "A transaction statement (type can be commit,release,rollback or start)", args(1,3, arg("",void),arg("chain",int),arg("name",str))),
+ pattern("sql", "transaction", SQLtransaction2, true, "Start an autocommit transaction", noargs),
+ /* sql_sesssion */
+ pattern("sql", "setquerytimeout", SQLqueryTimeout, true, "", args(1,2, arg("",void),arg("n",int))),
+ pattern("sql", "setquerytimeout", SQLqueryTimeout, true, "", args(1,3, arg("",void),arg("sid",bte),arg("n",int))),
+ pattern("sql", "setquerytimeout", SQLqueryTimeout, true, "", args(1,3, arg("",void),arg("sid",sht),arg("n",int))),
+ pattern("sql", "setquerytimeout", SQLqueryTimeout, true, "A query is aborted after q seconds (q=0 means run undisturbed).", args(1,3, arg("",void),arg("sid",int),arg("n",int))),
+ pattern("sql", "setsessiontimeout", SQLsessionTimeout, true, "", args(1,2, arg("",void),arg("n",int))),
+ pattern("sql", "setsessiontimeout", SQLsessionTimeout, true, "", args(1,3, arg("",void),arg("sid",bte),arg("n",int))),
+ pattern("sql", "setsessiontimeout", SQLsessionTimeout, true, "", args(1,3, arg("",void),arg("sid",sht),arg("n",int))),
+ pattern("sql", "setsessiontimeout", SQLsessionTimeout, true, "Set the session timeout for a particulat session id", args(1,3, arg("",void),arg("sid",int),arg("n",int))),
+ pattern("sql", "setoptimizer", SQLsetoptimizer, true, "", args(1,2, arg("",void),arg("opt",str))),
+ pattern("sql", "setoptimizer", SQLsetoptimizer, true, "Set the session optimizer", args(1,3, arg("",void),arg("sid",int),arg("opt",str))),
+ pattern("sql", "setworkerlimit", SQLsetworkerlimit, true, "", args(1,2, arg("",void),arg("n",int))),
+ pattern("sql", "setworkerlimit", SQLsetworkerlimit, true, "Limit the number of worker threads per query", args(1,3, arg("",void),arg("sid",int),arg("n",int))),
+ pattern("sql", "setmemorylimit", SQLsetmemorylimit, true, "", args(1,2, arg("",void),arg("n",int))),
+ pattern("sql", "setmemorylimit", SQLsetmemorylimit, true, "Limit the memory claim in MB per query", args(1,3, arg("",void),arg("sid",sht),arg("n",int))),
+#ifdef HAVE_HGE
+ /* sql_hge */
+ pattern("calc", "hash", MKEYhash, false, "", args(1,2, arg("",lng),arg("v",hge))),
+ command("batcalc", "hash", MKEYbathash, false, "", args(1,2, batarg("",lng),batarg("b",hge))),
+ command("sql", "dec_round", hge_dec_round_wrap, false, "round off the value v to nearests multiple of r", args(1,3, arg("",hge),arg("v",hge),arg("r",hge))),
+ command("batsql", "dec_round", hge_bat_dec_round_wrap, false, "round off the value v to nearests multiple of r", args(1,3, batarg("",hge),batarg("v",hge),arg("r",hge))),
+ command("sql", "round", hge_round_wrap, false, "round off the decimal v(d,s) to r digits behind the dot (if r < 0, before the dot)", args(1,5, arg("",hge),arg("v",hge),arg("d",int),arg("s",int),arg("r",bte))),
+ command("batsql", "round", hge_bat_round_wrap, false, "round off the decimal v(d,s) to r digits behind the dot (if r < 0, before the dot)", args(1,5, batarg("",hge),batarg("v",hge),arg("d",int),arg("s",int),arg("r",bte))),
+ command("calc", "second_interval", hge_dec2second_interval, false, "cast hge decimal to a second_interval", args(1,5, arg("",lng),arg("sc",int),arg("v",hge),arg("ek",int),arg("sk",int))),
+ command("calc", "hge", nil_2dec_hge, false, "cast to dec(hge) and check for overflow", args(1,4, arg("",hge),arg("v",void),arg("digits",int),arg("scale",int))),
+ command("batcalc", "hge", batnil_2dec_hge, false, "cast to dec(hge) and check for overflow", args(1,4, batarg("",hge),batarg("v",void),arg("digits",int),arg("scale",int))),
+ command("batcalc", "hge", batnil_ce_2dec_hge, false, "cast to dec(hge) and check for overflow", args(1,5, batarg("",hge),batarg("v",void),arg("digits",int),arg("scale",int),batarg("r",bit))),
+ command("calc", "hge", str_2dec_hge, false, "cast to dec(hge) and check for overflow", args(1,4, arg("",hge),arg("v",str),arg("digits",int),arg("scale",int))),
+ command("batcalc", "hge", batstr_2dec_hge, false, "cast to dec(hge) and check for overflow", args(1,4, batarg("",hge),batarg("v",str),arg("digits",int),arg("scale",int))),
+ command("batcalc", "hge", batstr_ce_2dec_hge, false, "cast to dec(hge) and check for overflow", args(1,5, batarg("",hge),batarg("v",str),arg("digits",int),arg("scale",int),batarg("r",bit))),
+ pattern("calc", "month_interval", month_interval, false, "cast hge to a month_interval and check for overflow", args(1,4, arg("",int),arg("v",hge),arg("ek",int),arg("sk",int))),
+ pattern("calc", "second_interval", second_interval, false, "cast hge to a second_interval and check for overflow", args(1,4, arg("",lng),arg("v",hge),arg("ek",int),arg("sk",int))),
+ /* sql_decimal_hge */
+ command("calc", "hge", flt_num2dec_hge, false, "cast number to decimal(hge) and check for overflow", args(1,4, arg("",hge),arg("v",flt),arg("digits",int),arg("scale",int))),
+ command("batcalc", "hge", batflt_num2dec_hge, false, "cast number to decimal(hge) and check for overflow", args(1,4, batarg("",hge),batarg("v",flt),arg("digits",int),arg("scale",int))),
+ command("batcalc", "hge", batflt_ce_num2dec_hge, false, "cast number to decimal(hge) and check for overflow", args(1,5, batarg("",hge),batarg("v",flt),arg("digits",int),arg("scale",int),batarg("r",bit))),
+ command("calc", "hge", dbl_num2dec_hge, false, "cast number to decimal(hge) and check for overflow", args(1,4, arg("",hge),arg("v",dbl),arg("digits",int),arg("scale",int))),
+ command("batcalc", "hge", batdbl_num2dec_hge, false, "cast number to decimal(hge) and check for overflow", args(1,4, batarg("",hge),batarg("v",dbl),arg("digits",int),arg("scale",int))),
+ command("batcalc", "hge", batdbl_ce_num2dec_hge, false, "cast number to decimal(hge) and check for overflow", args(1,5, batarg("",hge),batarg("v",dbl),arg("digits",int),arg("scale",int),batarg("r",bit))),
+ command("calc", "hge", bte_num2dec_hge, false, "cast number to decimal(hge) and check for overflow", args(1,4, arg("",hge),arg("v",bte),arg("digits",int),arg("scale",int))),
+ command("batcalc", "hge", batbte_num2dec_hge, false, "cast number to decimal(hge) and check for overflow", args(1,4, batarg("",hge),batarg("v",bte),arg("digits",int),arg("scale",int))),
+ command("batcalc", "hge", batbte_ce_num2dec_hge, false, "cast number to decimal(hge) and check for overflow", args(1,5, batarg("",hge),batarg("v",bte),arg("digits",int),arg("scale",int),batarg("r",bit))),
+ command("calc", "hge", bte_dec2_hge, false, "cast decimal(bte) to hge and check for overflow", args(1,3, arg("",hge),arg("s1",int),arg("v",bte))),
+ command("calc", "hge", bte_dec2dec_hge, false, "cast decimal(bte) to decimal(hge) and check for overflow", args(1,5, arg("",hge),arg("s1",int),arg("v",bte),arg("d2",int),arg("s2",int))),
+ command("batcalc", "hge", batbte_dec2_hge, false, "cast decimal(bte) to hge and check for overflow", args(1,3, batarg("",hge),arg("s1",int),batarg("v",bte))),
+ command("batcalc", "hge", batbte_ce_dec2_hge, false, "cast decimal(bte) to hge and check for overflow", args(1,4, batarg("",hge),arg("s1",int),batarg("v",bte),batarg("r",bit))),
+ command("batcalc", "hge", batbte_dec2dec_hge, false, "cast decimal(bte) to decimal(hge) and check for overflow", args(1,5, batarg("",hge),arg("s1",int),batarg("v",bte),arg("d2",int),arg("s2",int))),
+ command("batcalc", "hge", batbte_ce_dec2dec_hge, false, "cast decimal(bte) to decimal(hge) and check for overflow", args(1,6, batarg("",hge),arg("s1",int),batarg("v",bte),arg("d2",int),arg("s2",int),batarg("r",bit))),
+ command("calc", "hge", sht_num2dec_hge, false, "cast number to decimal(hge) and check for overflow", args(1,4, arg("",hge),arg("v",sht),arg("digits",int),arg("scale",int))),
+ command("batcalc", "hge", batsht_num2dec_hge, false, "cast number to decimal(hge) and check for overflow", args(1,4, batarg("",hge),batarg("v",sht),arg("digits",int),arg("scale",int))),
+ command("batcalc", "hge", batsht_ce_num2dec_hge, false, "cast number to decimal(hge) and check for overflow", args(1,5, batarg("",hge),batarg("v",sht),arg("digits",int),arg("scale",int),batarg("r",bit))),
+ command("calc", "hge", sht_dec2_hge, false, "cast decimal(sht) to hge and check for overflow", args(1,3, arg("",hge),arg("s1",int),arg("v",sht))),
+ command("calc", "hge", sht_dec2dec_hge, false, "cast decimal(sht) to decimal(hge) and check for overflow", args(1,5, arg("",hge),arg("s1",int),arg("v",sht),arg("d2",int),arg("s2",int))),
+ command("batcalc", "hge", batsht_dec2_hge, false, "cast decimal(sht) to hge and check for overflow", args(1,3, batarg("",hge),arg("s1",int),batarg("v",sht))),
+ command("batcalc", "hge", batsht_ce_dec2_hge, false, "cast decimal(sht) to hge and check for overflow", args(1,4, batarg("",hge),arg("s1",int),batarg("v",sht),batarg("r",bit))),
+ command("batcalc", "hge", batsht_dec2dec_hge, false, "cast decimal(sht) to decimal(hge) and check for overflow", args(1,5, batarg("",hge),arg("s1",int),batarg("v",sht),arg("d2",int),arg("s2",int))),
+ command("batcalc", "hge", batsht_ce_dec2dec_hge, false, "cast decimal(sht) to decimal(hge) and check for overflow", args(1,6, batarg("",hge),arg("s1",int),batarg("v",sht),arg("d2",int),arg("s2",int),batarg("r",bit))),
+ command("calc", "hge", int_num2dec_hge, false, "cast number to decimal(hge) and check for overflow", args(1,4, arg("",hge),arg("v",int),arg("digits",int),arg("scale",int))),
+ command("batcalc", "hge", batint_num2dec_hge, false, "cast number to decimal(hge) and check for overflow", args(1,4, batarg("",hge),batarg("v",int),arg("digits",int),arg("scale",int))),
+ command("batcalc", "hge", batint_ce_num2dec_hge, false, "cast number to decimal(hge) and check for overflow", args(1,5, batarg("",hge),batarg("v",int),arg("digits",int),arg("scale",int),batarg("r",bit))),
+ command("calc", "hge", int_dec2_hge, false, "cast decimal(int) to hge and check for overflow", args(1,3, arg("",hge),arg("s1",int),arg("v",int))),
+ command("calc", "hge", int_dec2dec_hge, false, "cast decimal(int) to decimal(hge) and check for overflow", args(1,5, arg("",hge),arg("s1",int),arg("v",int),arg("d2",int),arg("s2",int))),
+ command("batcalc", "hge", batint_dec2_hge, false, "cast decimal(int) to hge and check for overflow", args(1,3, batarg("",hge),arg("s1",int),batarg("v",int))),
+ command("batcalc", "hge", batint_ce_dec2_hge, false, "cast decimal(int) to hge and check for overflow", args(1,4, batarg("",hge),arg("s1",int),batarg("v",int),batarg("r",bit))),
+ command("batcalc", "hge", batint_dec2dec_hge, false, "cast decimal(int) to decimal(hge) and check for overflow", args(1,5, batarg("",hge),arg("s1",int),batarg("v",int),arg("d2",int),arg("s2",int))),
+ command("batcalc", "hge", batint_ce_dec2dec_hge, false, "cast decimal(int) to decimal(hge) and check for overflow", args(1,6, batarg("",hge),arg("s1",int),batarg("v",int),arg("d2",int),arg("s2",int),batarg("r",bit))),
+ command("calc", "hge", lng_num2dec_hge, false, "cast number to decimal(hge) and check for overflow", args(1,4, arg("",hge),arg("v",lng),arg("digits",int),arg("scale",int))),
+ command("batcalc", "hge", batlng_num2dec_hge, false, "cast number to decimal(hge) and check for overflow", args(1,4, batarg("",hge),batarg("v",lng),arg("digits",int),arg("scale",int))),
+ command("batcalc", "hge", batlng_ce_num2dec_hge, false, "cast number to decimal(hge) and check for overflow", args(1,5, batarg("",hge),batarg("v",lng),arg("digits",int),arg("scale",int),batarg("r",bit))),
+ command("calc", "hge", lng_dec2_hge, false, "cast decimal(lng) to hge and check for overflow", args(1,3, arg("",hge),arg("s1",int),arg("v",lng))),
+ command("calc", "hge", lng_dec2dec_hge, false, "cast decimal(lng) to decimal(hge) and check for overflow", args(1,5, arg("",hge),arg("s1",int),arg("v",lng),arg("d2",int),arg("s2",int))),
+ command("batcalc", "hge", batlng_dec2_hge, false, "cast decimal(lng) to hge and check for overflow", args(1,3, batarg("",hge),arg("s1",int),batarg("v",lng))),
+ command("batcalc", "hge", batlng_ce_dec2_hge, false, "cast decimal(lng) to hge and check for overflow", args(1,4, batarg("",hge),arg("s1",int),batarg("v",lng),batarg("r",bit))),
+ command("batcalc", "hge", batlng_dec2dec_hge, false, "cast decimal(lng) to decimal(hge) and check for overflow", args(1,5, batarg("",hge),arg("s1",int),batarg("v",lng),arg("d2",int),arg("s2",int))),
+ command("batcalc", "hge", batlng_ce_dec2dec_hge, false, "cast decimal(lng) to decimal(hge) and check for overflow", args(1,6, batarg("",hge),arg("s1",int),batarg("v",lng),arg("d2",int),arg("s2",int),batarg("r",bit))),
+ command("calc", "hge", hge_num2dec_hge, false, "cast number to decimal(hge) and check for overflow", args(1,4, arg("",hge),arg("v",hge),arg("digits",int),arg("scale",int))),
+ command("batcalc", "hge", bathge_num2dec_hge, false, "cast number to decimal(hge) and check for overflow", args(1,4, batarg("",hge),batarg("v",hge),arg("digits",int),arg("scale",int))),
+ command("batcalc", "hge", bathge_ce_num2dec_hge, false, "cast number to decimal(hge) and check for overflow", args(1,5, batarg("",hge),batarg("v",hge),arg("digits",int),arg("scale",int),batarg("r",bit))),
+ command("calc", "hge", hge_dec2_hge, false, "cast decimal(hge) to hge and check for overflow", args(1,3, arg("",hge),arg("s1",int),arg("v",hge))),
+ command("calc", "hge", hge_dec2dec_hge, false, "cast decimal(hge) to decimal(hge) and check for overflow", args(1,5, arg("",hge),arg("s1",int),arg("v",hge),arg("d2",int),arg("s2",int))),
+ command("batcalc", "hge", bathge_dec2_hge, false, "cast decimal(hge) to hge and check for overflow", args(1,3, batarg("",hge),arg("s1",int),batarg("v",hge))),
+ command("batcalc", "hge", bathge_ce_dec2_hge, false, "cast decimal(hge) to hge and check for overflow", args(1,4, batarg("",hge),arg("s1",int),batarg("v",hge),batarg("r",bit))),
+ command("batcalc", "hge", bathge_dec2dec_hge, false, "cast decimal(hge) to decimal(hge) and check for overflow", args(1,5, batarg("",hge),arg("s1",int),batarg("v",hge),arg("d2",int),arg("s2",int))),
+ command("batcalc", "hge", bathge_ce_dec2dec_hge, false, "cast decimal(hge) to decimal(hge) and check for overflow", args(1,6, batarg("",hge),arg("s1",int),batarg("v",hge),arg("d2",int),arg("s2",int),batarg("r",bit))),
+ command("calc", "bte", hge_num2dec_bte, false, "cast number to decimal(bte) and check for overflow", args(1,4, arg("",bte),arg("v",hge),arg("digits",int),arg("scale",int))),
+ command("batcalc", "bte", bathge_num2dec_bte, false, "cast number to decimal(bte) and check for overflow", args(1,4, batarg("",bte),batarg("v",hge),arg("digits",int),arg("scale",int))),
+ command("batcalc", "bte", bathge_num2dec_bte, false, "cast number to decimal(bte) and check for overflow", args(1,4, batarg("",bte),batarg("v",hge),arg("digits",int),arg("scale",int))),
+ command("calc", "bte", hge_dec2_bte, false, "cast decimal(hge) to bte and check for overflow", args(1,3, arg("",bte),arg("s1",int),arg("v",hge))),
+ command("calc", "bte", hge_dec2dec_bte, false, "cast decimal(hge) to decimal(bte) and check for overflow", args(1,5, arg("",bte),arg("s1",int),arg("v",hge),arg("d2",int),arg("s2",int))),
+ command("batcalc", "bte", bathge_dec2_bte, false, "cast decimal(hge) to bte and check for overflow", args(1,3, batarg("",bte),arg("s1",int),batarg("v",hge))),
+ command("batcalc", "bte", bathge_ce_dec2_bte, false, "cast decimal(hge) to bte and check for overflow", args(1,4, batarg("",bte),arg("s1",int),batarg("v",hge),batarg("r",bit))),
+ command("batcalc", "bte", bathge_dec2dec_bte, false, "cast decimal(hge) to decimal(bte) and check for overflow", args(1,5, batarg("",bte),arg("s1",int),batarg("v",hge),arg("d2",int),arg("s2",int))),
+ command("batcalc", "bte", bathge_ce_dec2dec_bte, false, "cast decimal(hge) to decimal(bte) and check for overflow", args(1,6, batarg("",bte),arg("s1",int),batarg("v",hge),arg("d2",int),arg("s2",int),batarg("r",bit))),
+ command("calc", "sht", hge_num2dec_sht, false, "cast number to decimal(sht) and check for overflow", args(1,4, arg("",sht),arg("v",hge),arg("digits",int),arg("scale",int))),
+ command("batcalc", "sht", bathge_num2dec_sht, false, "cast number to decimal(sht) and check for overflow", args(1,4, batarg("",sht),batarg("v",hge),arg("digits",int),arg("scale",int))),
+ command("batcalc", "sht", bathge_num2dec_sht, false, "cast number to decimal(sht) and check for overflow", args(1,4, batarg("",sht),batarg("v",hge),arg("digits",int),arg("scale",int))),
+ command("calc", "sht", hge_dec2_sht, false, "cast decimal(hge) to sht and check for overflow", args(1,3, arg("",sht),arg("s1",int),arg("v",hge))),
+ command("calc", "sht", hge_dec2dec_sht, false, "cast decimal(hge) to decimal(sht) and check for overflow", args(1,5, arg("",sht),arg("s1",int),arg("v",hge),arg("d2",int),arg("s2",int))),
+ command("batcalc", "sht", bathge_dec2_sht, false, "cast decimal(hge) to sht and check for overflow", args(1,3, batarg("",sht),arg("s1",int),batarg("v",hge))),
+ command("batcalc", "sht", bathge_ce_dec2_sht, false, "cast decimal(hge) to sht and check for overflow", args(1,4, batarg("",sht),arg("s1",int),batarg("v",hge),batarg("r",bit))),
+ command("batcalc", "sht", bathge_dec2dec_sht, false, "cast decimal(hge) to decimal(sht) and check for overflow", args(1,5, batarg("",sht),arg("s1",int),batarg("v",hge),arg("d2",int),arg("s2",int))),
+ command("batcalc", "sht", bathge_ce_dec2dec_sht, false, "cast decimal(hge) to decimal(sht) and check for overflow", args(1,6, batarg("",sht),arg("s1",int),batarg("v",hge),arg("d2",int),arg("s2",int),batarg("r",bit))),
+ command("calc", "int", hge_num2dec_int, false, "cast number to decimal(int) and check for overflow", args(1,4, arg("",int),arg("v",hge),arg("digits",int),arg("scale",int))),
+ command("batcalc", "int", bathge_num2dec_int, false, "cast number to decimal(int) and check for overflow", args(1,4, batarg("",int),batarg("v",hge),arg("digits",int),arg("scale",int))),
+ command("batcalc", "int", bathge_num2dec_int, false, "cast number to decimal(int) and check for overflow", args(1,4, batarg("",int),batarg("v",hge),arg("digits",int),arg("scale",int))),
+ command("calc", "int", hge_dec2_int, false, "cast decimal(hge) to int and check for overflow", args(1,3, arg("",int),arg("s1",int),arg("v",hge))),
+ command("calc", "int", hge_dec2dec_int, false, "cast decimal(hge) to decimal(int) and check for overflow", args(1,5, arg("",int),arg("s1",int),arg("v",hge),arg("d2",int),arg("s2",int))),
+ command("batcalc", "int", bathge_dec2_int, false, "cast decimal(hge) to int and check for overflow", args(1,3, batarg("",int),arg("s1",int),batarg("v",hge))),
+ command("batcalc", "int", bathge_ce_dec2_int, false, "cast decimal(hge) to int and check for overflow", args(1,4, batarg("",int),arg("s1",int),batarg("v",hge),batarg("r",bit))),
+ command("batcalc", "int", bathge_dec2dec_int, false, "cast decimal(hge) to decimal(int) and check for overflow", args(1,5, batarg("",int),arg("s1",int),batarg("v",hge),arg("d2",int),arg("s2",int))),
+ command("batcalc", "int", bathge_ce_dec2dec_int, false, "cast decimal(hge) to decimal(int) and check for overflow", args(1,6, batarg("",int),arg("s1",int),batarg("v",hge),arg("d2",int),arg("s2",int),batarg("r",bit))),
+ command("calc", "lng", hge_num2dec_lng, false, "cast number to decimal(lng) and check for overflow", args(1,4, arg("",lng),arg("v",hge),arg("digits",int),arg("scale",int))),
+ command("batcalc", "lng", bathge_num2dec_lng, false, "cast number to decimal(lng) and check for overflow", args(1,4, batarg("",lng),batarg("v",hge),arg("digits",int),arg("scale",int))),
+ command("batcalc", "lng", bathge_num2dec_lng, false, "cast number to decimal(lng) and check for overflow", args(1,4, batarg("",lng),batarg("v",hge),arg("digits",int),arg("scale",int))),
+ command("calc", "lng", hge_dec2_lng, false, "cast decimal(hge) to lng and check for overflow", args(1,3, arg("",lng),arg("s1",int),arg("v",hge))),
+ command("calc", "lng", hge_dec2dec_lng, false, "cast decimal(hge) to decimal(lng) and check for overflow", args(1,5, arg("",lng),arg("s1",int),arg("v",hge),arg("d2",int),arg("s2",int))),
+ command("batcalc", "lng", bathge_dec2_lng, false, "cast decimal(hge) to lng and check for overflow", args(1,3, batarg("",lng),arg("s1",int),batarg("v",hge))),
+ command("batcalc", "lng", bathge_ce_dec2_lng, false, "cast decimal(hge) to lng and check for overflow", args(1,4, batarg("",lng),arg("s1",int),batarg("v",hge),batarg("r",bit))),
+ command("batcalc", "lng", bathge_dec2dec_lng, false, "cast decimal(hge) to decimal(lng) and check for overflow", args(1,5, batarg("",lng),arg("s1",int),batarg("v",hge),arg("d2",int),arg("s2",int))),
+ command("batcalc", "lng", bathge_ce_dec2dec_lng, false, "cast decimal(hge) to decimal(lng) and check for overflow", args(1,6, batarg("",lng),arg("s1",int),batarg("v",hge),arg("d2",int),arg("s2",int),batarg("r",bit))),
+ command("calc", "flt", hge_num2dec_flt, false, "cast number to decimal(flt) and check for overflow", args(1,4, arg("",flt),arg("v",hge),arg("digits",int),arg("scale",int))),
+ command("batcalc", "flt", bathge_num2dec_flt, false, "cast number to decimal(flt) and check for overflow", args(1,4, batarg("",flt),batarg("v",hge),arg("digits",int),arg("scale",int))),
+ command("batcalc", "flt", bathge_num2dec_flt, false, "cast number to decimal(flt) and check for overflow", args(1,4, batarg("",flt),batarg("v",hge),arg("digits",int),arg("scale",int))),
+ command("calc", "flt", hge_dec2_flt, false, "cast decimal(hge) to flt and check for overflow", args(1,3, arg("",flt),arg("s1",int),arg("v",hge))),
+ command("calc", "flt", hge_dec2dec_flt, false, "cast decimal(hge) to decimal(flt) and check for overflow", args(1,5, arg("",flt),arg("s1",int),arg("v",hge),arg("d2",int),arg("s2",int))),
+ command("batcalc", "flt", bathge_dec2_flt, false, "cast decimal(hge) to flt and check for overflow", args(1,3, batarg("",flt),arg("s1",int),batarg("v",hge))),
+ command("batcalc", "flt", bathge_ce_dec2_flt, false, "cast decimal(hge) to flt and check for overflow", args(1,4, batarg("",flt),arg("s1",int),batarg("v",hge),batarg("r",bit))),
+ command("batcalc", "flt", bathge_dec2dec_flt, false, "cast decimal(hge) to decimal(flt) and check for overflow", args(1,5, batarg("",flt),arg("s1",int),batarg("v",hge),arg("d2",int),arg("s2",int))),
+ command("batcalc", "flt", bathge_ce_dec2dec_flt, false, "cast decimal(hge) to decimal(flt) and check for overflow", args(1,6, batarg("",flt),arg("s1",int),batarg("v",hge),arg("d2",int),arg("s2",int),batarg("r",bit))),
+ command("calc", "dbl", hge_num2dec_dbl, false, "cast number to decimal(dbl) and check for overflow", args(1,4, arg("",dbl),arg("v",hge),arg("digits",int),arg("scale",int))),
+ command("batcalc", "dbl", bathge_num2dec_dbl, false, "cast number to decimal(dbl) and check for overflow", args(1,4, batarg("",dbl),batarg("v",hge),arg("digits",int),arg("scale",int))),
+ command("batcalc", "dbl", bathge_num2dec_dbl, false, "cast number to decimal(dbl) and check for overflow", args(1,4, batarg("",dbl),batarg("v",hge),arg("digits",int),arg("scale",int))),
+ command("calc", "dbl", hge_dec2_dbl, false, "cast decimal(hge) to dbl and check for overflow", args(1,3, arg("",dbl),arg("s1",int),arg("v",hge))),
+ command("calc", "dbl", hge_dec2dec_dbl, false, "cast decimal(hge) to decimal(dbl) and check for overflow", args(1,5, arg("",dbl),arg("s1",int),arg("v",hge),arg("d2",int),arg("s2",int))),
+ command("batcalc", "dbl", bathge_dec2_dbl, false, "cast decimal(hge) to dbl and check for overflow", args(1,3, batarg("",dbl),arg("s1",int),batarg("v",hge))),
+ command("batcalc", "dbl", bathge_ce_dec2_dbl, false, "cast decimal(hge) to dbl and check for overflow", args(1,4, batarg("",dbl),arg("s1",int),batarg("v",hge),batarg("r",bit))),
+ command("batcalc", "dbl", bathge_dec2dec_dbl, false, "cast decimal(hge) to decimal(dbl) and check for overflow", args(1,5, batarg("",dbl),arg("s1",int),batarg("v",hge),arg("d2",int),arg("s2",int))),
+ command("batcalc", "dbl", bathge_ce_dec2dec_dbl, false, "cast decimal(hge) to decimal(dbl) and check for overflow", args(1,6, batarg("",dbl),arg("s1",int),batarg("v",hge),arg("d2",int),arg("s2",int),batarg("r",bit))),
+ /* sql_rank_hge */
+ pattern("sql", "window_bound", SQLwindow_bound, false, "computes window ranges for each row", args(1,6, arg("",lng),argany("b",1),arg("unit",int),arg("bound",int),arg("excl",int),arg("start",hge))),
+ pattern("batsql", "window_bound", SQLwindow_bound, false, "computes window ranges for each row", args(1,6, batarg("",lng),batargany("b",1),arg("unit",int),arg("bound",int),arg("excl",int),arg("start",hge))),
+ pattern("sql", "window_bound", SQLwindow_bound, false, "computes window ranges for each row", args(1,7, arg("",lng),arg("p",bit),argany("b",1),arg("unit",int),arg("bound",int),arg("excl",int),arg("start",hge))),
+ pattern("batsql", "window_bound", SQLwindow_bound, false, "computes window ranges for each row", args(1,7, batarg("",lng),batarg("p",bit),batargany("b",1),arg("unit",int),arg("bound",int),arg("excl",int),arg("start",hge))),
+ pattern("batsql", "window_bound", SQLwindow_bound, false, "computes window ranges for each row", args(1,6, batarg("",lng),batargany("b",1),arg("unit",int),arg("bound",int),arg("excl",int),batarg("start",hge))),
+ pattern("batsql", "window_bound", SQLwindow_bound, false, "computes window ranges for each row", args(1,7, batarg("",lng),batarg("p",bit),batargany("b",1),arg("unit",int),arg("bound",int),arg("excl",int),batarg("start",hge))),
+ pattern("sql", "sum", SQLsum, false, "return the sum of groups", args(1,4, arg("",hge),arg("b",bte),arg("s",lng),arg("e",lng))),
+ pattern("batsql", "sum", SQLsum, false, "return the sum of groups", args(1,4, batarg("",hge),batarg("b",bte),batarg("s",lng),batarg("e",lng))),
+ pattern("sql", "prod", SQLprod, false, "return the product of groups", args(1,4, arg("",hge),arg("b",bte),arg("s",lng),arg("e",lng))),
+ pattern("batsql", "prod", SQLprod, false, "return the product of groups", args(1,4, batarg("",hge),batarg("b",bte),batarg("s",lng),batarg("e",lng))),
+ pattern("sql", "sum", SQLsum, false, "return the sum of groups", args(1,4, arg("",hge),arg("b",sht),arg("s",lng),arg("e",lng))),
+ pattern("batsql", "sum", SQLsum, false, "return the sum of groups", args(1,4, batarg("",hge),batarg("b",sht),batarg("s",lng),batarg("e",lng))),
+ pattern("sql", "prod", SQLprod, false, "return the product of groups", args(1,4, arg("",hge),arg("b",sht),arg("s",lng),arg("e",lng))),
+ pattern("batsql", "prod", SQLprod, false, "return the product of groups", args(1,4, batarg("",hge),batarg("b",sht),batarg("s",lng),batarg("e",lng))),
+ pattern("sql", "sum", SQLsum, false, "return the sum of groups", args(1,4, arg("",hge),arg("b",int),arg("s",lng),arg("e",lng))),
+ pattern("batsql", "sum", SQLsum, false, "return the sum of groups", args(1,4, batarg("",hge),batarg("b",int),batarg("s",lng),batarg("e",lng))),
+ pattern("sql", "prod", SQLprod, false, "return the product of groups", args(1,4, arg("",hge),arg("b",int),arg("s",lng),arg("e",lng))),
+ pattern("batsql", "prod", SQLprod, false, "return the product of groups", args(1,4, batarg("",hge),batarg("b",int),batarg("s",lng),batarg("e",lng))),
+ pattern("sql", "sum", SQLsum, false, "return the sum of groups", args(1,4, arg("",hge),arg("b",lng),arg("s",lng),arg("e",lng))),
+ pattern("batsql", "sum", SQLsum, false, "return the sum of groups", args(1,4, batarg("",hge),batarg("b",lng),batarg("s",lng),batarg("e",lng))),
+ pattern("sql", "prod", SQLprod, false, "return the product of groups", args(1,4, arg("",hge),arg("b",lng),arg("s",lng),arg("e",lng))),
+ pattern("batsql", "prod", SQLprod, false, "return the product of groups", args(1,4, batarg("",hge),batarg("b",lng),batarg("s",lng),batarg("e",lng))),
+ pattern("sql", "sum", SQLsum, false, "return the sum of groups", args(1,4, arg("",hge),arg("b",hge),arg("s",lng),arg("e",lng))),
+ pattern("batsql", "sum", SQLsum, false, "return the sum of groups", args(1,4, batarg("",hge),batarg("b",hge),batarg("s",lng),batarg("e",lng))),
+ pattern("sql", "prod", SQLprod, false, "return the product of groups", args(1,4, arg("",hge),arg("b",hge),arg("s",lng),arg("e",lng))),
+ pattern("batsql", "prod", SQLprod, false, "return the product of groups", args(1,4, batarg("",hge),batarg("b",hge),batarg("s",lng),batarg("e",lng))),
+ pattern("sql", "avg", SQLavg, false, "return the average of groups", args(1,4, arg("",dbl),arg("b",hge),arg("s",lng),arg("e",lng))),
+ pattern("batsql", "avg", SQLavg, false, "return the average of groups", args(1,4, batarg("",dbl),batarg("b",hge),batarg("s",lng),batarg("e",lng))),
+ pattern("sql", "stdev", SQLstddev_samp, false, "return the standard deviation of groups", args(1,4, arg("",dbl),arg("b",hge),arg("s",lng),arg("e",lng))),
+ pattern("batsql", "stdev", SQLstddev_samp, false, "return the standard deviation of groups", args(1,4, batarg("",dbl),batarg("b",hge),batarg("s",lng),batarg("e",lng))),
+ pattern("sql", "stdevp", SQLstddev_pop, false, "return the standard deviation of groups", args(1,4, arg("",dbl),arg("b",hge),arg("s",lng),arg("e",lng))),
+ pattern("batsql", "stdevp", SQLstddev_pop, false, "return the standard deviation of groups", args(1,4, batarg("",dbl),batarg("b",hge),batarg("s",lng),batarg("e",lng))),
+ pattern("sql", "variance", SQLvar_samp, false, "return the variance of groups", args(1,4, arg("",dbl),arg("b",hge),arg("s",lng),arg("e",lng))),
+ pattern("batsql", "variance", SQLvar_samp, false, "return the variance of groups", args(1,4, batarg("",dbl),batarg("b",hge),batarg("s",lng),batarg("e",lng))),
+ pattern("sql", "variancep", SQLvar_pop, false, "return the variance of groups", args(1,4, arg("",dbl),arg("b",hge),arg("s",lng),arg("e",lng))),
+ pattern("batsql", "variancep", SQLvar_pop, false, "return the variance of groups", args(1,4, batarg("",dbl),batarg("b",hge),batarg("s",lng),batarg("e",lng))),
+ pattern("sql", "covariance", SQLcovar_samp, false, "return the covariance sample value of groups", args(1,5, arg("",dbl),arg("b",hge),arg("c",hge),arg("s",lng),arg("e",lng))),
+ pattern("batsql", "covariance", SQLcovar_samp, false, "return the covariance sample value of groups", args(1,5, batarg("",dbl),batarg("b",hge),arg("c",hge),batarg("s",lng),batarg("e",lng))),
+ pattern("batsql", "covariance", SQLcovar_samp, false, "return the covariance sample value of groups", args(1,5, batarg("",dbl),arg("b",hge),batarg("c",hge),arg("s",lng),arg("e",lng))),
+ pattern("batsql", "covariance", SQLcovar_samp, false, "return the covariance sample value of groups", args(1,5, batarg("",dbl),batarg("b",hge),batarg("c",hge),batarg("s",lng),batarg("e",lng))),
+ pattern("sql", "covariancep", SQLcovar_pop, false, "return the covariance population value of groups", args(1,5, arg("",dbl),arg("b",hge),arg("c",hge),arg("s",lng),arg("e",lng))),
+ pattern("batsql", "covariancep", SQLcovar_pop, false, "return the covariance population value of groups", args(1,5, batarg("",dbl),batarg("b",hge),arg("c",hge),batarg("s",lng),batarg("e",lng))),
+ pattern("batsql", "covariancep", SQLcovar_pop, false, "return the covariance population value of groups", args(1,5, batarg("",dbl),arg("b",hge),batarg("c",hge),arg("s",lng),arg("e",lng))),
+ pattern("batsql", "covariancep", SQLcovar_pop, false, "return the covariance population value of groups", args(1,5, batarg("",dbl),batarg("b",hge),batarg("c",hge),batarg("s",lng),batarg("e",lng))),
+ pattern("sql", "corr", SQLcorr, false, "return the correlation value of groups", args(1,5, arg("",dbl),arg("b",hge),arg("c",hge),arg("s",lng),arg("e",lng))),
+ pattern("batsql", "corr", SQLcorr, false, "return the correlation value of groups", args(1,5, batarg("",dbl),batarg("b",hge),arg("c",hge),batarg("s",lng),batarg("e",lng))),
+ pattern("batsql", "corr", SQLcorr, false, "return the correlation value of groups", args(1,5, batarg("",dbl),arg("b",hge),batarg("c",hge),arg("s",lng),arg("e",lng))),
+ pattern("batsql", "corr", SQLcorr, false, "return the correlation value of groups", args(1,5, batarg("",dbl),batarg("b",hge),batarg("c",hge),batarg("s",lng),batarg("e",lng))),
+#endif
+ { .imp=NULL }
+};
+#include "mal_import.h"
+#ifdef _MSC_VER
+#undef read
+#pragma section(".CRT$XCU",read)
+#endif
+LIB_STARTUP_FUNC(init_sql_mal)
+{ mal_module("sql", NULL, sql_init_funcs); }

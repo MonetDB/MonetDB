@@ -17,18 +17,17 @@ add_library(stream
 
 target_sources(stream
   PRIVATE
-
   stream.c
   rw.c
   bstream.c
   bs.c
   bs2.c
   stdio_stream.c
+  compressed.c
   gz_stream.c
   bz2_stream.c
   xz_stream.c
   lz4_stream.c
-  compressed.c
   url_stream.c
   socket_stream.c
   memio.c
@@ -65,7 +64,7 @@ target_link_libraries(stream
   $<$<BOOL:${CURL_FOUND}>:CURL::libcurl>
   $<$<BOOL:${LIBLZMA_FOUND}>:LibLZMA::LibLZMA>
   $<$<BOOL:${LZ4_FOUND}>:LZ4::LZ4>
-  $<$<BOOL:${SNAPPY_FOUND}>:Snappy::snappy>
+  $<$<BOOL:${SNAPPY_FOUND}>:SNAPPY::SNAPPY>
   $<$<BOOL:${Iconv_FOUND}>:Iconv::Iconv>
   PRIVATE
   matomic
@@ -115,7 +114,8 @@ if (NOT WIN32)
 
   install(FILES
     ${CMAKE_CURRENT_BINARY_DIR}/monetdb-stream.pc
-    DESTINATION ${PKGCONFIGDIR})
+    DESTINATION ${CMAKE_INSTALL_LIBDIR}/pkgconfig
+    COMPONENT streamdev)
 endif()
 
 install(TARGETS

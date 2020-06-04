@@ -98,11 +98,11 @@ select * from all_types;
 
 -- ALTER TABLE all_types SET READ ONLY;
 
-select name, schema_id, type, system, commit_action, access, query from _tables where name = 'all_types';
+select name, schema_id, type, system, commit_action, access, query from sys._tables where name = 'all_types';
 
 -- now add imprints indexes for each column (to check all types).
 -- synthese the create imprints index commands:
--- select 'create imprints index "impidx_'||name||'" on all_types ("'||name||'");' as stmt from _columns where table_id in (select id from _tables where name = 'all_types') order by number;
+-- select 'create imprints index "impidx_'||name||'" on all_types ("'||name||'");' as stmt from sys._columns where table_id in (select id from sys._tables where name = 'all_types') order by number;
 
 create imprints index "impidx_boolean" on all_types ("boolean");
 create imprints index "impidx_tinyint" on all_types ("tinyint");
@@ -162,7 +162,7 @@ select type, name from sys.idxs where table_id in (select id from sys._tables wh
 
 
 -- synthese the select commands with order by ASC:
--- select 'select "'||name||'" from all_types order by "'||name||'" ASC;' as stmt from _columns where table_id in (select id from _tables where name = 'all_types') order by number;
+-- select 'select "'||name||'" from all_types order by "'||name||'" ASC;' as stmt from sys._columns where table_id in (select id from sys._tables where name = 'all_types') order by number;
 
 select "boolean" from all_types order by "boolean" ASC;
 select "tinyint" from all_types order by "tinyint" ASC;
@@ -215,7 +215,7 @@ select "url55" from all_types order by "url55" ASC;
 select "uuid" from all_types order by "uuid" ASC;
 
 -- synthese the select commands with order by DESC:
--- select 'select "'||name||'" from all_types order by "'||name||'" DESC;' as stmt from _columns where table_id in (select id from _tables where name = 'all_types') order by number;
+-- select 'select "'||name||'" from all_types order by "'||name||'" DESC;' as stmt from sys._columns where table_id in (select id from sys._tables where name = 'all_types') order by number;
 
 select "boolean" from all_types order by "boolean" DESC;
 select "tinyint" from all_types order by "tinyint" DESC;
@@ -277,7 +277,7 @@ select type, name from sys.idxs where table_id in (select id from sys._tables wh
 
 --cleanup
 -- synthese the drop index commands:
--- select 'drop index "impidx_'||name||'";' as stmt from _columns where table_id in (select id from _tables where name = 'all_types') order by number;
+-- select 'drop index "impidx_'||name||'";' as stmt from sys._columns where table_id in (select id from sys._tables where name = 'all_types') order by number;
 
 drop index "impidx_boolean";
 drop index "impidx_tinyint";

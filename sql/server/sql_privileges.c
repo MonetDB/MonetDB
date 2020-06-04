@@ -52,7 +52,7 @@ static void
 sql_insert_priv(mvc *sql, sqlid auth_id, sqlid obj_id, int privilege, sqlid grantor, int grantable)
 {
 	sql_schema *ss = mvc_bind_schema(sql, "sys");
-	sql_table *pt = mvc_bind_table(sql, ss, "privileges");
+	sql_table *pt = find_sql_table(ss, "privileges");
 
 	table_funcs.table_insert(sql->session->tr, pt, &obj_id, &auth_id, &privilege, &grantor, &grantable);
 }
@@ -113,7 +113,7 @@ sql_grant_global_privs( mvc *sql, char *grantee, int privs, int grant, sqlid gra
 		allowed = sql_grantable(sql, grantor, GLOBAL_OBJID, privs) == 1;
 
 	if (!allowed)
-		throw(SQL,"sql.grant_global",SQLSTATE(01007) "GRANT: Grantor '%s' is not allowed to grant global privileges", stack_get_string(sql,"current_user"));
+		throw(SQL,"sql.grant_global",SQLSTATE(01007) "GRANT: Grantor '%s' is not allowed to grant global privileges", sqlvar_get_string(find_global_var(sql, mvc_bind_schema(sql, "sys"), "current_user")));
 
 	grantee_id = sql_find_auth(sql, grantee);
 	if (grantee_id <= 0)
@@ -139,7 +139,7 @@ sql_grant_table_privs( mvc *sql, char *grantee, int privs, char *sname, char *tn
 
 	if (sname && !(s = mvc_bind_schema(sql, sname)))
 		throw(SQL,"sql.grant_table",SQLSTATE(3F000) "GRANT: no such schema '%s'", sname);
-	if (!(t = mvc_bind_table(sql, s, tname)))
+	if (!(t = find_table_on_scope(sql, &s, sname, tname)))
 		throw(SQL,"sql.grant_table",SQLSTATE(42S02) "GRANT: no such table '%s'", tname);
 
 	allowed = schema_privs(grantor, t->s);
@@ -149,7 +149,7 @@ sql_grant_table_privs( mvc *sql, char *grantee, int privs, char *sname, char *tn
 			allowed = sql_grantable(sql, grantor, t->base.id, privs) == 1;
 
 		if (!allowed)
-			throw(SQL,"sql.grant_table", SQLSTATE(01007) "GRANT: Grantor '%s' is not allowed to grant privileges for table '%s'", stack_get_string(sql,"current_user"), tname);
+			throw(SQL,"sql.grant_table", SQLSTATE(01007) "GRANT: Grantor '%s' is not allowed to grant privileges for table '%s'", sqlvar_get_string(find_global_var(sql, mvc_bind_schema(sql, "sys"), "current_user")), tname);
 	}
 	if (cname) {
 		c = mvc_bind_column(sql, t, cname);
@@ -160,7 +160,7 @@ sql_grant_table_privs( mvc *sql, char *grantee, int privs, char *sname, char *tn
 			allowed = sql_grantable(sql, grantor, c->base.id, privs) == 1;
 
 		if (!allowed)
-			throw(SQL, "sql.grant_table", SQLSTATE(01007) "GRANT: Grantor '%s' is not allowed to grant privilege %s for table '%s'", stack_get_string(sql, "current_user"), priv2string(privs), tname);
+			throw(SQL, "sql.grant_table", SQLSTATE(01007) "GRANT: Grantor '%s' is not allowed to grant privilege %s for table '%s'", sqlvar_get_string(find_global_var(sql, mvc_bind_schema(sql, "sys"), "current_user")), priv2string(privs), tname);
 	}
 
 	grantee_id = sql_find_auth(sql, grantee);
@@ -209,7 +209,7 @@ sql_grant_func_privs( mvc *sql, char *grantee, int privs, char *sname, sqlid fun
 		allowed = sql_grantable(sql, grantor, f->base.id, privs) == 1;
 
 	if (!allowed)
-		throw(SQL, "sql.grant_func", SQLSTATE(01007) "GRANT: Grantor '%s' is not allowed to grant privileges for function '%s'", stack_get_string(sql,"current_user"), f->base.name);
+		throw(SQL, "sql.grant_func", SQLSTATE(01007) "GRANT: Grantor '%s' is not allowed to grant privileges for function '%s'", sqlvar_get_string(find_global_var(sql, mvc_bind_schema(sql, "sys"), "current_user")), f->base.name);
 
 	grantee_id = sql_find_auth(sql, grantee);
 	if (grantee_id <= 0)
@@ -226,7 +226,7 @@ static void
 sql_delete_priv(mvc *sql, sqlid auth_id, sqlid obj_id, int privilege, sqlid grantor, int grantable)
 {
 	sql_schema *ss = mvc_bind_schema(sql, "sys");
-	sql_table *privs = mvc_bind_table(sql, ss, "privileges");
+	sql_table *privs = find_sql_table(ss, "privileges");
 	sql_column *priv_obj = find_sql_column(privs, "obj_id");
 	sql_column *priv_auth = find_sql_column(privs, "auth_id");
 	sql_column *priv_priv = find_sql_column(privs, "privileges");
@@ -258,7 +258,7 @@ sql_revoke_global_privs( mvc *sql, char *grantee, int privs, int grant, sqlid gr
 		allowed = sql_grantable(sql, grantor, GLOBAL_OBJID, privs) == 1;
 
 	if (!allowed)
-		throw(SQL, "sql.revoke_global", SQLSTATE(01006) "REVOKE: Grantor '%s' is not allowed to revoke global privileges", stack_get_string(sql,"current_user"));
+		throw(SQL, "sql.revoke_global", SQLSTATE(01006) "REVOKE: Grantor '%s' is not allowed to revoke global privileges", sqlvar_get_string(find_global_var(sql, mvc_bind_schema(sql, "sys"), "current_user")));
 
 	grantee_id = sql_find_auth(sql, grantee);
 	if (grantee_id <= 0)
@@ -280,15 +280,15 @@ sql_revoke_table_privs( mvc *sql, char *grantee, int privs, char *sname, char *t
 
 	if (sname && !(s = mvc_bind_schema(sql, sname)))
 		throw(SQL,"sql.revoke_table", SQLSTATE(3F000) "REVOKE: no such schema '%s'", sname);
-	if (!(t = mvc_bind_table(sql, s, tname)))
-		throw(SQL,"sql.revoke_table", SQLSTATE(42S02) "REVOKE: no such table '%s'", tname);
+	if (!(t = find_table_on_scope(sql, &s, sname, tname)))
+		throw(SQL,"sql.revoke_table",SQLSTATE(42S02) "REVOKE: no such table '%s'", tname);
 
 	allowed = schema_privs(grantor, t->s);
 	if (!allowed)
 		allowed = sql_grantable(sql, grantor, t->base.id, privs) == 1;
 
 	if (!allowed)
-		throw(SQL, "sql.revoke_table", SQLSTATE(01006) "REVOKE: Grantor '%s' is not allowed to revoke privileges for table '%s'", stack_get_string(sql,"current_user"), tname);
+		throw(SQL, "sql.revoke_table", SQLSTATE(01006) "REVOKE: Grantor '%s' is not allowed to revoke privileges for table '%s'", sqlvar_get_string(find_global_var(sql, mvc_bind_schema(sql, "sys"), "current_user")), tname);
 
 	if (cname) {
 		c = mvc_bind_column(sql, t, cname);
@@ -299,7 +299,7 @@ sql_revoke_table_privs( mvc *sql, char *grantee, int privs, char *sname, char *t
 			allowed = sql_grantable(sql, grantor, c->base.id, privs) == 1;
 
 		if (!allowed)
-			throw(SQL, "sql.revoke_table", SQLSTATE(01006) "REVOKE: Grantor '%s' is not allowed to revoke privilege %s for table '%s'", stack_get_string(sql, "current_user"), priv2string(privs), tname);
+			throw(SQL, "sql.revoke_table", SQLSTATE(01006) "REVOKE: Grantor '%s' is not allowed to revoke privilege %s for table '%s'", sqlvar_get_string(find_global_var(sql, mvc_bind_schema(sql, "sys"), "current_user")), priv2string(privs), tname);
 	}
 
 	grantee_id = sql_find_auth(sql, grantee);
@@ -339,7 +339,7 @@ sql_revoke_func_privs( mvc *sql, char *grantee, int privs, char *sname, sqlid fu
 		allowed = sql_grantable(sql, grantor, f->base.id, privs) == 1;
 
 	if (!allowed)
-		throw(SQL, "sql.revoke_func", SQLSTATE(01006) "REVOKE: Grantor '%s' is not allowed to revoke privileges for function '%s'", stack_get_string(sql,"current_user"), f->base.name);
+		throw(SQL, "sql.revoke_func", SQLSTATE(01006) "REVOKE: Grantor '%s' is not allowed to revoke privileges for function '%s'", sqlvar_get_string(find_global_var(sql, mvc_bind_schema(sql, "sys"), "current_user")), f->base.name);
 
 	grantee_id = sql_find_auth(sql, grantee);
 	if (grantee_id <= 0)
@@ -390,8 +390,8 @@ sql_drop_role(mvc *m, str auth)
 {
 	sqlid role_id = sql_find_auth(m, auth);
 	sql_schema *sys = find_sql_schema(m->session->tr, "sys");
-	sql_table *auths = mvc_bind_table(m, sys, "auths");
-	sql_table *user_roles = mvc_bind_table(m, sys, "user_role");
+	sql_table *auths = find_sql_table(sys, "auths");
+	sql_table *user_roles = find_sql_table(sys, "user_role");
 	sql_trans *tr = m->session->tr;
 	rids *A;
 	oid rid;
@@ -806,9 +806,9 @@ static char *
 sql_drop_granted_users(mvc *sql, sqlid user_id, char *user, list *deleted_users)
 {
 	sql_schema *ss = mvc_bind_schema(sql, "sys");
-	sql_table *privs = mvc_bind_table(sql, ss, "privileges");
-	sql_table *user_roles = mvc_bind_table(sql, ss, "user_role");
-	sql_table *auths = mvc_bind_table(sql, ss, "auths");
+	sql_table *privs = find_sql_table(ss, "privileges");
+	sql_table *user_roles = find_sql_table(ss, "user_role");
+	sql_table *auths = find_sql_table(ss, "auths");
 	sql_trans *tr = sql->session->tr;
 	rids *A;
 	oid rid;
@@ -890,7 +890,7 @@ sql_alter_user(mvc *sql, char *user, char *passwd, char enc, char *schema, char 
 	if (user != NULL && backend_find_user(sql, user) < 0)
 		throw(SQL,"sql.alter_user", SQLSTATE(42M32) "ALTER USER: no such user '%s'", user);
 
-	if (!admin_privs(sql->user_id) && !admin_privs(sql->role_id) && user != NULL && strcmp(user, stack_get_string(sql, "current_user")) != 0)
+	if (!admin_privs(sql->user_id) && !admin_privs(sql->role_id) && user != NULL && strcmp(user, sqlvar_get_string(find_global_var(sql, mvc_bind_schema(sql, "sys"), "current_user"))) != 0)
 		throw(SQL,"sql.alter_user", SQLSTATE(M1M05) "Insufficient privileges to change user '%s'", user);
 	if (schema && (schema_id = sql_find_schema(sql, schema)) < 0)
 		throw(SQL,"sql.alter_user", SQLSTATE(3F000) "ALTER USER: no such schema '%s'", schema);
@@ -994,7 +994,8 @@ sql_create_privileges(mvc *m, sql_schema *s)
 
 	p = PRIV_EXECUTE;
 	f = sql_bind_func_(m->sa, s, "env", NULL, F_UNION);
-
+	table_funcs.table_insert(m->session->tr, privs, &f->func->base.id, &pub, &p, &zero, &zero);
+	f = sql_bind_func_(m->sa, s, "var", NULL, F_UNION);
 	table_funcs.table_insert(m->session->tr, privs, &f->func->base.id, &pub, &p, &zero, &zero);
 
 	/* owned by the users anyway

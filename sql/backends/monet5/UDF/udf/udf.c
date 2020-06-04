@@ -350,3 +350,27 @@ UDFBATfuse(bat *ires, const bat *ione, const bat *itwo)
 
 	return msg;
 }
+
+#include "mel.h"
+static mel_func udf_init_funcs[] = {
+ command("udf", "reverse", UDFreverse, false, "Reverse a string", args(1,2, arg("",str),arg("ra1",str))),
+ command("batudf", "reverse", UDFBATreverse, false, "Reverse a BAT of strings", args(1,2, batarg("",str),batarg("b",str))),
+ command("udf", "fuse", UDFfuse_bte_sht, false, "fuse two (1-byte) bte values into one (2-byte) sht value", args(1,3, arg("",sht),arg("one",bte),arg("two",bte))),
+ command("udf", "fuse", UDFfuse_sht_int, false, "fuse two (2-byte) sht values into one (4-byte) int value", args(1,3, arg("",int),arg("one",sht),arg("two",sht))),
+ command("udf", "fuse", UDFfuse_int_lng, false, "fuse two (4-byte) int values into one (8-byte) lng value", args(1,3, arg("",lng),arg("one",int),arg("two",int))),
+ command("batudf", "fuse", UDFBATfuse, false, "fuse two (1-byte) bte values into one (2-byte) sht value", args(1,3, batarg("",sht),batarg("one",bte),batarg("two",bte))),
+ command("batudf", "fuse", UDFBATfuse, false, "fuse two (2-byte) sht values into one (4-byte) int value", args(1,3, batarg("",int),batarg("one",sht),batarg("two",sht))),
+ command("batudf", "fuse", UDFBATfuse, false, "fuse two (4-byte) int values into one (8-byte) lng value", args(1,3, batarg("",lng),batarg("one",int),batarg("two",int))),
+#ifdef HAVE_HGE
+ command("udf", "fuse", UDFfuse_lng_hge, false, "fuse two (8-byte) lng values into one (16-byte) hge value", args(1,3, arg("",hge),arg("one",lng),arg("two",lng))),
+ command("batudf", "fuse", UDFBATfuse, false, "fuse two (8-byte) lng values into one (16-byte) hge value", args(1,3, batarg("",hge),batarg("one",lng),batarg("two",lng))),
+#endif
+ { .imp=NULL }
+};
+#include "mal_import.h"
+#ifdef _MSC_VER
+#undef read
+#pragma section(".CRT$XCU",read)
+#endif
+LIB_STARTUP_FUNC(init_udf_mal)
+{ mal_module("udf", NULL, udf_init_funcs); }

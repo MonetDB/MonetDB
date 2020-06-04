@@ -219,10 +219,10 @@ absolute_path(str s)
 #define BSIZE 8192
 
 static int
-monet_init(opt *set, int setlen)
+monet_init(opt *set, int setlen, int embedded)
 {
 	/* determine Monet's kernel settings */
-	if (GDKinit(set, setlen) != GDK_SUCCEED)
+	if (GDKinit(set, setlen, embedded) != GDK_SUCCEED)
 		return 0;
 
 #ifdef HAVE_SETSID
@@ -523,7 +523,7 @@ main(int argc, char **av)
 		GDKfree(dbtrace);
 	}
 
-	if (monet_init(set, setlen) == 0) {
+	if (monet_init(set, setlen, 0) == 0) {
 		mo_free_options(set, setlen);
 		if (GDKerrbuf && *GDKerrbuf)
 			fprintf(stderr, "%s\n", GDKerrbuf);
@@ -707,7 +707,39 @@ main(int argc, char **av)
 		freeException(err);
 		exit(1);
 	}
-	if (mal_init()) {
+
+	char *modules[16]; 
+	int mods = 0;
+
+	modules[mods++] = "sql";
+	modules[mods++] = "generator";
+	modules[mods++] = "opt_sql_append";
+#ifdef HAVE_GEOM
+	modules[mods++] = "geom";
+#endif
+#ifdef HAVE_LIBR
+	/* TODO check for used */
+	modules[mods++] = "rapi";
+#endif
+#ifdef HAVE_LIBPY3
+	/* TODO check for used */
+	modules[mods++] = "pyapi3";
+#endif
+#ifdef HAVE_CUDF
+	modules[mods++] = "capi";
+#endif
+	modules[mods++] = "udf";
+#ifdef HAVE_FITS
+	modules[mods++] = "fits";
+#endif
+#ifdef HAVE_NETCDF
+	modules[mods++] = "netcdf";
+#endif
+#ifdef HAVE_SHP
+	modules[mods++] = "shp";
+#endif
+	modules[mods++] = 0;
+	if (mal_init(modules, 0)) {
 		/* don't show this as a crash */
 		if (!GDKinmemory())
 			msab_registerStop();

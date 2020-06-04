@@ -43,6 +43,8 @@
 typedef regex_t pcre;
 #endif
 
+#define TYPE_pcre TYPE_ptr 
+
 mal_export str pcre_init(void *ret);
 
 mal_export str PCREquote(str *r, const str *v);
@@ -2386,3 +2388,55 @@ ILIKEjoin1(bat *r1, bat *r2, const bat *lid, const bat *rid, const bat *slid, co
 	(void) estimate;
 	return PCREjoin(r1, r2, *lid, *rid, slid ? *slid : 0, srid ? *srid : 0, "", 1);
 }
+
+#include "mel.h"
+mel_atom pcre_init_atoms[] = {
+ { .name="pcre", },  { .cmp=NULL } 
+};
+mel_func pcre_init_funcs[] = {
+ command("pcre", "index", PCREindex, false, "match a pattern, return matched position (or 0 when not found)", args(1,3, arg("",int),arg("pat",pcre),arg("s",str))),
+ command("pcre", "match", PCREmatch, false, "Perl Compatible Regular Expression pattern matching against a string", args(1,3, arg("",bit),arg("s",str),arg("pat",str))),
+ command("pcre", "imatch", PCREimatch, false, "Caseless Perl Compatible Regular Expression pattern matching against a string", args(1,3, arg("",bit),arg("s",str),arg("pat",str))),
+ command("pcre", "patindex", PCREpatindex, false, "Location of the first POSIX pattern matching against a string", args(1,3, arg("",int),arg("pat",str),arg("s",str))),
+ command("pcre", "replace", PCREreplace_wrap, false, "Replace _all_ matches of \"pattern\" in \"origin_str\" with \"replacement\".\nParameter \"flags\" accept these flags: 'i', 'm', 's', and 'x'.\n'e': if present, an empty string is considered to be a valid match\n'i': if present, the match operates in case-insensitive mode.\nOtherwise, in case-sensitive mode.\n'm': if present, the match operates in multi-line mode.\n's': if present, the match operates in \"dot-all\"\nThe specifications of the flags can be found in \"man pcreapi\"\nThe flag letters may be repeated.\nNo other letters than 'e', 'i', 'm', 's' and 'x' are allowed in \"flags\".\nReturns the replaced string, or if no matches found, the original string.", args(1,5, arg("",str),arg("origin",str),arg("pat",str),arg("repl",str),arg("flags",str))),
+ command("pcre", "replace_first", PCREreplace_wrap, false, "Replace _the first_ match of \"pattern\" in \"origin_str\" with \"replacement\".\nParameter \"flags\" accept these flags: 'i', 'm', 's', and 'x'.\n'e': if present, an empty string is considered to be a valid match\n'i': if present, the match operates in case-insensitive mode.\nOtherwise, in case-sensitive mode.\n'm': if present, the match operates in multi-line mode.\n's': if present, the match operates in \"dot-all\"\nThe specifications of the flags can be found in \"man pcreapi\"\nThe flag letters may be repeated.\nNo other letters than 'e', 'i', 'm', 's' and 'x' are allowed in \"flags\".\nReturns the replaced string, or if no matches found, the original string.", args(1,5, arg("",str),arg("origin",str),arg("pat",str),arg("repl",str),arg("flags",str))),
+ command("pcre", "pcre_quote", PCREquote, false, "Return a PCRE pattern string that matches the argument exactly.", args(1,2, arg("",str),arg("s",str))),
+ command("pcre", "sql2pcre", PCREsql2pcre, false, "Convert a SQL like pattern with the given escape character into a PCRE pattern.", args(1,3, arg("",str),arg("pat",str),arg("esc",str))),
+ command("pcre", "prelude", pcre_init, false, "Initialize pcre", args(1,1, arg("",void))),
+ command("str", "replace", PCREreplace_wrap, false, "", args(1,5, arg("",str),arg("origin",str),arg("pat",str),arg("repl",str),arg("flags",str))),
+ command("algebra", "like", PCRElike3, false, "", args(1,4, arg("",bit),arg("s",str),arg("pat",str),arg("esc",str))),
+ command("algebra", "like", PCRElike2, false, "", args(1,3, arg("",bit),arg("s",str),arg("pat",str))),
+ command("algebra", "not_like", PCREnotlike3, false, "", args(1,4, arg("",bit),arg("s",str),arg("pat",str),arg("esc",str))),
+ command("algebra", "not_like", PCREnotlike2, false, "", args(1,3, arg("",bit),arg("s",str),arg("pat",str))),
+ command("algebra", "ilike", PCREilike3, false, "", args(1,4, arg("",bit),arg("s",str),arg("pat",str),arg("esc",str))),
+ command("algebra", "ilike", PCREilike2, false, "", args(1,3, arg("",bit),arg("s",str),arg("pat",str))),
+ command("algebra", "not_ilike", PCREnotilike3, false, "", args(1,4, arg("",bit),arg("s",str),arg("pat",str),arg("esc",str))),
+ command("algebra", "not_ilike", PCREnotilike2, false, "", args(1,3, arg("",bit),arg("s",str),arg("pat",str))),
+ command("batpcre", "replace", PCREreplace_bat_wrap, false, "", args(1,5, batarg("",str),batarg("orig",str),arg("pat",str),arg("repl",str),arg("flag",str))),
+ command("batpcre", "replace_first", PCREreplacefirst_bat_wrap, false, "", args(1,5, batarg("",str),batarg("orig",str),arg("pat",str),arg("repl",str),arg("flag",str))),
+ command("batalgebra", "like", BATPCRElike, false, "", args(1,4, batarg("",bit),batarg("s",str),arg("pat",str),arg("esc",str))),
+ command("batalgebra", "like", BATPCRElike2, false, "", args(1,3, batarg("",bit),batarg("s",str),arg("pat",str))),
+ command("batalgebra", "not_like", BATPCREnotlike, false, "", args(1,4, batarg("",bit),batarg("s",str),arg("pat",str),arg("esc",str))),
+ command("batalgebra", "not_like", BATPCREnotlike2, false, "", args(1,3, batarg("",bit),batarg("s",str),arg("pat",str))),
+ command("batalgebra", "ilike", BATPCREilike, false, "", args(1,4, batarg("",bit),batarg("s",str),arg("pat",str),arg("esc",str))),
+ command("batalgebra", "ilike", BATPCREilike2, false, "", args(1,3, batarg("",bit),batarg("s",str),arg("pat",str))),
+ command("batalgebra", "not_ilike", BATPCREnotilike, false, "", args(1,4, batarg("",bit),batarg("s",str),arg("pat",str),arg("esc",str))),
+ command("batalgebra", "not_ilike", BATPCREnotilike2, false, "", args(1,3, batarg("",bit),batarg("s",str),arg("pat",str))),
+ command("algebra", "likeselect", PCRElikeselect2, false, "Select all head values of the first input BAT for which the\ntail value is \"like\" the given (SQL-style) pattern and for\nwhich the head value occurs in the tail of the second input\nBAT.\nInput is a dense-headed BAT, output is a dense-headed BAT with in\nthe tail the head value of the input BAT for which the\nrelationship holds.  The output BAT is sorted on the tail value.", args(1,7, batarg("",oid),batarg("b",str),batarg("s",oid),arg("pat",str),arg("esc",str),arg("caseignore",bit),arg("anti",bit))),
+ command("algebra", "likeselect", PCRElikeselect3, false, "", args(1,6, batarg("",oid),batarg("b",str),batarg("cand",oid),arg("pat",str),arg("esc",str),arg("anti",bit))),
+ command("algebra", "ilikeselect", PCRElikeselect1, false, "", args(1,6, batarg("",oid),batarg("b",str),batarg("cand",oid),arg("pat",str),arg("esc",str),arg("anti",bit))),
+ command("algebra", "likeselect", PCRElikeselect5, false, "", args(1,5, batarg("",oid),batarg("b",str),batarg("cand",oid),arg("pat",str),arg("anti",bit))),
+ command("algebra", "ilikeselect", PCRElikeselect4, false, "", args(1,5, batarg("",oid),batarg("b",str),batarg("cand",oid),arg("pat",str),arg("anti",bit))),
+ command("algebra", "likejoin", LIKEjoin, false, "Join the string bat L with the pattern bat R\nwith optional candidate lists SL and SR using pattern escape string ESC\nand doing a case sensitive match.\nThe result is two aligned bats with oids of matching rows.", args(2,9, batarg("",oid),batarg("",oid),batarg("l",str),batarg("r",str),arg("esc",str),batarg("sl",oid),batarg("sr",oid),arg("nil_matches",bit),arg("estimate",lng))),
+ command("algebra", "ilikejoin", ILIKEjoin, false, "Join the string bat L with the pattern bat R\nwith optional candidate lists SL and SR using pattern escape string ESC\nand doing a case insensitive match.\nThe result is two aligned bats with oids of matching rows.", args(2,9, batarg("",oid),batarg("",oid),batarg("l",str),batarg("r",str),arg("esc",str),batarg("sl",oid),batarg("sr",oid),arg("nil_matches",bit),arg("estimate",lng))),
+ command("algebra", "likejoin", LIKEjoin1, false, "", args(2,8, batarg("",oid),batarg("",oid),batarg("l",str),batarg("r",str),batarg("sl",oid),batarg("sr",oid),arg("nil_matches",bit),arg("estimate",lng))),
+ command("algebra", "ilikejoin", ILIKEjoin1, false, "", args(2,8, batarg("",oid),batarg("",oid),batarg("l",str),batarg("r",str),batarg("sl",oid),batarg("sr",oid),arg("nil_matches",bit),arg("estimate",lng))),
+ { .imp=NULL }
+};
+#include "mal_import.h"
+#ifdef _MSC_VER
+#undef read
+#pragma section(".CRT$XCU",read)
+#endif
+LIB_STARTUP_FUNC(init_pcre_mal)
+{ mal_module("pcre", pcre_init_atoms, pcre_init_funcs); }

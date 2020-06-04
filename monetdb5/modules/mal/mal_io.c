@@ -820,3 +820,28 @@ IOsetmallocsuccesscount(void *res, lng *count) {
 	GDKsetmallocsuccesscount(*count);
 	return MAL_SUCCEED;
 }
+
+#include "mel.h"
+mel_func mal_io_init_funcs[] = {
+ pattern("io", "stdin", io_stdin, false, "return the input stream to the database client", args(1,1, arg("",bstream))),
+ pattern("io", "stdout", io_stdout, false, "return the output stream for the database client", args(1,1, arg("",streams))),
+ pattern("io", "print", IOprint_val, false, "Print a MAL value tuple .", args(1,3, arg("",void),argany("val",1),varargany("lst",0))),
+ pattern("io", "print", IOtable, false, "BATs are printed with '#' for legend \nlines, and the BUNs on seperate lines \nbetween brackets, containing each to \ncomma separated values (head and tail). \nIf multiple BATs are passed for printing, \nprint() performs an implicit natural \njoin on the void head, producing a multi attribute table.", args(1,2, arg("",void),batvarargany("b1",0))),
+ pattern("io", "print", IOprint_val, false, "Print a MAL value.", args(1,2, arg("",void),argany("val",1))),
+ pattern("io", "print", IOprint_val, false, "Print a MAL value column .", args(1,2, arg("",void),batargany("val",1))),
+ pattern("io", "printf", IOprintf, false, "Select default format ", args(1,3, arg("",void),arg("fmt",str),varargany("val",0))),
+ pattern("io", "printf", IOprintf, false, "Select default format ", args(1,2, arg("",void),arg("fmt",str))),
+ pattern("io", "printf", IOprintfStream, false, "Select default format ", args(1,4, arg("",void),arg("filep",streams),arg("fmt",str),varargany("val",0))),
+ pattern("io", "printf", IOprintfStream, false, "Select default format ", args(1,3, arg("",void),arg("filep",streams),arg("fmt",str))),
+ command("io", "export", IOexport, false, "Export a BAT as ASCII to a file. If the 'filepath' is not absolute, it\nis put into the $DBPATH directory. Success of failure is indicated.", args(0,2, batargany("b",2),arg("filepath",str))),
+ command("io", "import", IOimport, false, "Import a BAT from an ASCII dump. The tuples are appended to the\nfirst argument. Its signature must match the dump,\nelse parsing errors will occur as an exception.", args(0,2, batargany("b",2),arg("filepath",str))),
+ command("io", "setmallocsuccesscount", IOsetmallocsuccesscount, false, "Set number of mallocs that are allowed to succeed.", args(1,2, arg("",void),arg("count",lng))),
+ { .imp=NULL }
+};
+#include "mal_import.h"
+#ifdef _MSC_VER
+#undef read
+#pragma section(".CRT$XCU",read)
+#endif
+LIB_STARTUP_FUNC(init_mal_io_mal)
+{ mal_module("mal_io", NULL, mal_io_init_funcs); }

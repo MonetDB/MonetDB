@@ -629,3 +629,24 @@ TKNZRgetCardinality(bat *r)
 	return MAL_SUCCEED;
 }
 
+#include "mel.h"
+mel_func tokenizer_init_funcs[] = {
+ command("tokenizer", "open", TKNZRopen, false, "open the named tokenizer store, a new one is created if the specified name does not exist", args(1,2, arg("",void),arg("name",str))),
+ command("tokenizer", "close", TKNZRclose, false, "close the current tokenizer store", args(1,1, arg("",void))),
+ pattern("tokenizer", "take", TKNZRtakeOid, false, "reconstruct and returns the i-th string", args(1,2, arg("",str),arg("i",oid))),
+ pattern("tokenizer", "locate", TKNZRlocate, false, "if the given string is in the store returns its oid, otherwise oid_nil", args(1,2, arg("",oid),arg("s",str))),
+ command("tokenizer", "append", TKNZRappend, false, "tokenize a new string and append it to the tokenizer (duplicate elimination is performed)", args(1,2, arg("",oid),arg("u",str))),
+ command("tokenizer", "depositFile", TKNZRdepositFile, false, "batch insertion from a file of strings to tokenize, each string is separated by a new line", args(1,2, arg("",void),arg("fnme",str))),
+ command("tokenizer", "getLevel", TKNZRgetLevel, false, "administrative function that returns the bat on level i", args(1,2, batarg("",str),arg("i",int))),
+ command("tokenizer", "getIndex", TKNZRgetIndex, false, "administrative function that returns the INDEX bat", args(1,1, batarg("",oid))),
+ command("tokenizer", "getCount", TKNZRgetCount, false, "debugging function that returns the size of the bats at each level", args(1,1, batarg("",lng))),
+ command("tokenizer", "getCardinality", TKNZRgetCardinality, false, "debugging function that returns the unique tokens at each level", args(1,1, batarg("",lng))),
+ { .imp=NULL }
+};
+#include "mal_import.h"
+#ifdef _MSC_VER
+#undef read
+#pragma section(".CRT$XCU",read)
+#endif
+LIB_STARTUP_FUNC(init_tokenizer_mal)
+{ mal_module("tokenizer", NULL, tokenizer_init_funcs); }

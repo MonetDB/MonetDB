@@ -136,7 +136,6 @@ newMalBlk(int elements)
 	mb->maxarg = MAXARG;		/* the minimum for each instruction */
 	mb->inlineProp = 0;
 	mb->unsafeProp = 0;
-	mb->sealedProp = 0;
 	mb->replica = NULL;
 	mb->starttime = 0;
 	mb->runtime = 0;
@@ -256,7 +255,6 @@ freeMalBlk(MalBlkPtr mb)
 	mb->help = 0;
 	mb->inlineProp = 0;
 	mb->unsafeProp = 0;
-	mb->sealedProp = 0;
 	GDKfree(mb->errors);
 	GDKfree(mb);
 }
@@ -350,7 +348,6 @@ copyMalBlk(MalBlkPtr old)
 	mb->maxarg = old->maxarg;
 	mb->inlineProp = old->inlineProp;
 	mb->unsafeProp = old->unsafeProp;
-	mb->sealedProp = old->sealedProp;
 	return mb;
 }
 
