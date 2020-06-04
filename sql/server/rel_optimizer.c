@@ -9157,8 +9157,11 @@ rel_out2inner(mvc *sql, sql_rel *rel, int *changes) {
 
     if (rel_is_ref(join)) {
         /* Do not alter a multi-referenced join relation.
-         * This is problematic for e.g. the plan of a merge statement.
-         * */
+         * This is problematic (e.g. in the case of the plan of a merge statement)
+		 * basically because there are no guarantees on the other container relations.
+		 * In particular there is no guarantee that the other referencing relations are
+		 * select relations with null-rejacting predicates on the inner join side.
+         */
         return rel;
     }
 
