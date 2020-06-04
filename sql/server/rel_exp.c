@@ -1710,7 +1710,29 @@ exp_regular_cmp_exp_is_false(mvc *sql, sql_exp* e) {
 static inline bool
 exp_or_exp_is_false(mvc *sql, sql_exp* e) {
     assert(e->type == e_cmp && e->flag == cmp_or);
-    return exp_is_false(sql, e->l) && exp_is_false(sql, e->r);
+
+	list* left = e->l;
+	list* right = e->r;
+
+	bool left_is_false = false;
+	for(node* n = left->h; n; n=n->next) {
+		if (exp_is_false(sql, n->data)) {
+			left_is_false=true;
+			break;
+		}
+	}
+
+	if (!left_is_false) {
+		return false;
+	}
+
+	for(node* n = right->h; n; n=n->next) {
+		if (exp_is_false(sql, n->data)) {
+			return true;
+		}
+	}
+
+    return false;
 }
 
 static inline bool
