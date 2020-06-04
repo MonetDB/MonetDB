@@ -1410,46 +1410,6 @@ push_up_table(mvc *sql, sql_rel *rel, list *ad)
 	return rel;
 }
 
-/* reintroduce selects, for freevar's of other dependent joins */
-static sql_rel *
-push_down_select(mvc *sql, sql_rel *rel)
-{
-	if (!list_empty(rel->exps)) {
-		node *n;
-		list *jexps = sa_list(sql->sa);
-		list *sexps = sa_list(sql->sa);
-		sql_rel *d = rel->l;
-
-		for(n=rel->exps->h; n; n=n->next) {
-			sql_exp *e = n->data;
-			list *v = exp_freevar(sql, e);
-			int found = 1;
-
-			if (v) {
-				node *m;
-				for(m=v->h; m && found; m=m->next) {
-					sql_exp *fv = m->data;
-
-					found = (rel_find_exp(d, fv) != NULL);
-				}
-			}
-			if (found) {
-				append(jexps, e);
-			} else {
-				append(sexps, e);
-			}
-		}	
-		if (!list_empty(sexps)) {
-			sql_rel *r;
-
-			rel->exps = jexps;
-			r = rel->r = rel_select(sql->sa, rel->r, NULL);
-			r->exps = sexps;
-		}
-	}
-	return rel;
-}
-
 static sql_rel *
 rel_unnest_dependent(mvc *sql, sql_rel *rel)
 {
@@ -1471,8 +1431,7 @@ rel_unnest_dependent(mvc *sql, sql_rel *rel)
 
 		if (!rel_has_freevar(sql, r)) {
 			reset_dependent(rel);
-			/* reintroduce selects, for freevar's of other dependent joins */
-			return push_down_select(sql, rel);
+			return rel;
 		}
 
 		/* try to push dependent join down */

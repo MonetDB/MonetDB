@@ -238,14 +238,14 @@ stdout of test 'subquery5` in directory 'sql/test/subquery` itself:
 % 5 # length
 [ false	]
 #SELECT (SELECT 5) NOT IN (SELECT MIN(i1.i)) FROM integers i1;
-% .%15 # table_name
-% %15 # name
+% .%17 # table_name
+% %17 # name
 % boolean # type
 % 5 # length
 [ true	]
 #SELECT (SELECT 1) IN (SELECT i1.i) FROM integers i1;
-% .%15 # table_name
-% %15 # name
+% .%17 # table_name
+% %17 # name
 % boolean # type
 % 5 # length
 [ true	]
@@ -265,8 +265,8 @@ stdout of test 'subquery5` in directory 'sql/test/subquery` itself:
 % 1 # length
 [ NULL	]
 #SELECT (((SELECT MIN(i2.i + i1.i) FROM integers i2) IN (SELECT i1.i)) = EXISTS(SELECT i1.i)) = ANY(SELECT MIN(i1.i) = 1) FROM integers i1 GROUP BY i1.i;
-% .%50 # table_name
-% %50 # name
+% .%42 # table_name
+% %42 # name
 % boolean # type
 % 5 # length
 [ false	]
@@ -275,8 +275,8 @@ stdout of test 'subquery5` in directory 'sql/test/subquery` itself:
 [ NULL	]
 #SELECT (((SELECT MIN(i2.i + i1.i) FROM integers i2) IN (SELECT i1.i)) = EXISTS(SELECT i1.i)) = ANY(SELECT MIN(i1.i) = 1) FROM integers i1 GROUP BY i1.i 
 #HAVING (((SELECT MIN(i2.i + i1.i) FROM integers i2) IN (SELECT i1.i)) = EXISTS(SELECT i1.i)) = ANY(SELECT MIN(i1.i) = 1);
-% .%62 # table_name
-% %62 # name
+% .%54 # table_name
+% %54 # name
 % boolean # type
 % 5 # length
 [ true	]
@@ -305,8 +305,8 @@ stdout of test 'subquery5` in directory 'sql/test/subquery` itself:
 % 5 # length
 [ NULL	]
 #SELECT (SELECT col1) IN (col2) FROM another_T;
-% .%14 # table_name
-% %14 # name
+% sys.%4 # table_name
+% %4 # name
 % boolean # type
 % 5 # length
 [ false	]
