@@ -1072,21 +1072,13 @@ snapshot_wal(stream *plan, const char *db_dir)
 			return GDK_FAIL;
 		}
 
-		uint64_t size;
-		if (i < cur_id) {
-			// take the whole file
-			struct stat statbuf;
-			if (stat(log_file, &statbuf) != 0) {
-				char errbuf[512];
-				GDKerror("Could not stat %s: %s", log_file, 
-				         GDKstrerror(errno, errbuf, sizeof(errbuf)));
-			}
-			size = (uint64_t)statbuf.st_size;
-		} else {
-			// It's the current log file, only take the part that
-			// contains committed data
-			size = getFileSize(bat_logger->log);
+		struct stat statbuf;
+		if (stat(log_file, &statbuf) != 0) {
+			char errbuf[512];
+			GDKerror("Could not stat %s: %s", log_file,
+						GDKstrerror(errno, errbuf, sizeof(errbuf)));
 		}
+		uint64_t size = (uint64_t)statbuf.st_size;
 		snapshot_lazy_copy_file(plan, log_file + strlen(db_dir) + 1, size);
 	}
 
