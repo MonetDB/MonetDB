@@ -170,3 +170,5 @@ select length(col1) from tab1;
 insert into tab1 values(null), (null), ('11'), ('2233');
 select length(col1) from tab1;
 rollback;
+
+select 'a' like 'a' escape 'a'; --error, like sequence ending with escape character 
