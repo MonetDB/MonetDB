@@ -148,7 +148,7 @@ socket_read(stream *restrict s, void *restrict buf, size_t elmsize, size_t cnt)
 #endif
 				&fds, NULL, NULL, &tv);
 			if (ret == SOCKET_ERROR) {
-				s->errnr = MNSTR_READ_ERROR;
+				mnstr_set_error_errno(s, MNSTR_READ_ERROR, "select");
 				return -1;
 			}
 #endif
@@ -169,7 +169,7 @@ socket_read(stream *restrict s, void *restrict buf, size_t elmsize, size_t cnt)
 #ifdef _MSC_VER
 		nr = recv(s->stream_data.s, buf, (int) size, 0);
 		if (nr == SOCKET_ERROR) {
-			s->errnr = MNSTR_READ_ERROR;
+			mnstr_set_error_errno(s, MNSTR_READ_ERROR, "recv");
 			return -1;
 		}
 #else

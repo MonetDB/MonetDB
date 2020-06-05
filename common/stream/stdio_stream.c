@@ -51,7 +51,7 @@ console_read(stream *restrict s, void *restrict buf, size_t elmsize, size_t cnt)
 	unsigned char *p = buf;
 
 	if (c == NULL) {
-		s->errnr = MNSTR_READ_ERROR;
+		mnstr_set_error(s, MNSTR_READ_ERROR, "closed");
 		return -1;
 	}
 	if (n == 0)
@@ -60,7 +60,7 @@ console_read(stream *restrict s, void *restrict buf, size_t elmsize, size_t cnt)
 		while (WaitForSingleObject(c->h, INFINITE) == WAIT_TIMEOUT)
 			;
 		if (!ReadConsoleW(c->h, c->wbuf, 8192, &c->len, NULL)) {
-			s->errnr = MNSTR_READ_ERROR;
+			mnstr_set_error(s, MNSTR_READ_ERROR, "console read failed");
 			return -1;
 		}
 		c->rd = 0;
@@ -158,7 +158,7 @@ console_write(stream *restrict s, const void *restrict buf, size_t elmsize, size
 	int x;
 
 	if (c == NULL) {
-		s->errnr = MNSTR_WRITE_ERROR;
+		mnstr_set_error(s, MNSTR_READ_ERROR, "closed");
 		return -1;
 	}
 	if (n == 0)
@@ -168,7 +168,7 @@ console_write(stream *restrict s, const void *restrict buf, size_t elmsize, size
 	if (c->i > 0) {
 		while (c->i > 0 && n > 0) {
 			if ((*p & 0xC0) != 0x80) {
-				s->errnr = MNSTR_WRITE_ERROR;
+				mnstr_set_error(s, MNSTR_READ_ERROR, NULL);
 				return -1;
 			}
 			c->ch <<= 6;
@@ -180,7 +180,7 @@ console_write(stream *restrict s, const void *restrict buf, size_t elmsize, size
 		if (c->i > 0) {
 			;
 		} else if (c->ch > 0x10FFFF || (c->ch & 0xFFFFF800) == 0xD800) {
-			s->errnr = MNSTR_WRITE_ERROR;
+			mnstr_set_error(s, MNSTR_READ_ERROR, NULL);
 			return -1;
 		} else if (c->ch > 0xFFFF) {
 			c->wbuf[c->len++] = 0xD800 | ((c->ch >> 10) - (1 << 6));
@@ -192,7 +192,7 @@ console_write(stream *restrict s, const void *restrict buf, size_t elmsize, size
 	while (n > 0) {
 		if (c->len >= 8191) {
 			if (!WriteConsoleW(c->h, c->wbuf, c->len, &c->rd, NULL)) {
-				s->errnr = MNSTR_WRITE_ERROR;
+				mnstr_set_error(s, MNSTR_READ_ERROR, NULL);
 				return -1;
 			}
 			c->len = 0;
@@ -214,14 +214,14 @@ console_write(stream *restrict s, const void *restrict buf, size_t elmsize, size
 			x = 3;
 			ch = *p & 0x07;
 		} else {
-			s->errnr = MNSTR_WRITE_ERROR;
+			mnstr_set_error(s, MNSTR_READ_ERROR, NULL);
 			return -1;
 		}
 		p++;
 		n--;
 		while (x > 0 && n > 0) {
 			if ((*p & 0xC0) != 0x80) {
-				s->errnr = MNSTR_WRITE_ERROR;
+				mnstr_set_error(s, MNSTR_READ_ERROR, NULL);
 				return -1;
 			}
 			ch <<= 6;
@@ -234,7 +234,7 @@ console_write(stream *restrict s, const void *restrict buf, size_t elmsize, size
 			c->ch = ch;
 			c->i = x;
 		} else if (ch > 0x10FFFF || (ch & 0xFFFFF800) == 0xD800) {
-			s->errnr = MNSTR_WRITE_ERROR;
+			mnstr_set_error(s, MNSTR_READ_ERROR, NULL);
 			return -1;
 		} else if (ch > 0xFFFF) {
 			c->wbuf[c->len++] = 0xD800 | ((ch >> 10) - (1 << 6));
@@ -245,7 +245,7 @@ console_write(stream *restrict s, const void *restrict buf, size_t elmsize, size
 	}
 	if (c->len > 0) {
 		if (!WriteConsoleW(c->h, c->wbuf, c->len, &c->rd, NULL)) {
-			s->errnr = MNSTR_WRITE_ERROR;
+			mnstr_set_error(s, MNSTR_READ_ERROR, NULL);
 			return -1;
 		}
 		c->len = 0;
@@ -262,7 +262,7 @@ pipe_read(stream *restrict s, void *restrict buf, size_t elmsize, size_t cnt)
 	DWORD nread;
 
 	if (h == NULL) {
-		s->errnr = MNSTR_READ_ERROR;
+				mnstr_set_error(s, MNSTR_READ_ERROR, "closed");
 		return -1;
 	}
 	if (elmsize == 0 || cnt == 0)
@@ -276,7 +276,7 @@ pipe_read(stream *restrict s, void *restrict buf, size_t elmsize, size_t cnt)
 		if (ret == 0) {
 			if (GetLastError() == ERROR_BROKEN_PIPE)
 				return 0;
-			s->errnr = MNSTR_READ_ERROR;
+			mnstr_set_error(s, MNSTR_READ_ERROR, "PeekNamedPipe failed");
 			return -1;
 		}
 		if (nread > 0)
@@ -286,7 +286,7 @@ pipe_read(stream *restrict s, void *restrict buf, size_t elmsize, size_t cnt)
 	if ((size_t) nread < n)
 		n = (size_t) nread;
 	if (!ReadFile(h, buf, (DWORD) n, &nread, NULL)) {
-		s->errnr = MNSTR_READ_ERROR;
+		mnstr_set_error(s, MNSTR_READ_ERROR, "ReadFile failed");
 		return -1;
 	}
 	/* when in text mode, convert \r\n line endings to \n */
