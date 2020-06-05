@@ -830,10 +830,9 @@ SQLexist_val(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			*res = BATcount(b) != 0;
 		else
 			throw(SQL, "aggr.exist", SQLSTATE(HY005) "Cannot access column descriptor");
-	} else if (ATOMcmp(mtype, v, ATOMnilptr(mtype)) != 0)
+	} else {
 		*res = TRUE;
-	else
-		*res = FALSE;
+	}
 	return MAL_SUCCEED;
 }
 
