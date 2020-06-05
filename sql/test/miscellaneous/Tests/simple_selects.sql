@@ -154,3 +154,5 @@ set current_schema = null; --error, default global variables cannot be null
 
 select greatest(null, null);
 select sql_min(null, null);
+
+select 'a' like 'a' escape 'a'; --error, like sequence ending with escape character 
