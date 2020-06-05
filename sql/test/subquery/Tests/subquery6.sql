@@ -81,6 +81,12 @@ SELECT CAST((SELECT SUM((SELECT col1))) AS BIGINT) FROM another_t;
 SELECT CAST((SELECT SUM((SELECT col1 + col2))) AS BIGINT) FROM another_t;
 	-- 3702
 
+SELECT (SELECT 1 FROM another_t t1 WHERE 'aa' LIKE t2.product_category) FROM tbl_ProductSales t2;
+	-- NULL
+	-- NULL
+	-- NULL
+	-- NULL
+
 DROP TABLE tbl_ProductSales;
 DROP TABLE another_T;
 DROP TABLE integers;
