@@ -2945,13 +2945,13 @@ sql_update_default(Client c, mvc *sql, const char *prev_schema)
 			/* scoping branch changes */
 			pos += snprintf(buf + pos, bufsize - pos,
 					"drop function \"sys\".\"var\"();\n"
-					"create function \"sys\".\"var\"()\n" 
-					"returns table(\n"
-					"\"schema\" string,\n"
-					"\"name\" string,\n"
-					"\"type\" string,\n"
-					"\"value\" string)\n"
-					" external name \"sql\".\"sql_variables\";\n"
+					"create function \"sys\".\"var\"() "
+					"returns table("
+					"\"schema\" string, "
+					"\"name\" string, "
+					"\"type\" string, "
+					"\"value\" string) "
+					"external name \"sql\".\"sql_variables\";\n"
 					"grant execute on function \"sys\".\"var\" to public;\n");
 
 			pos += snprintf(buf + pos, bufsize - pos,
