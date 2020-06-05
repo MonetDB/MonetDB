@@ -111,6 +111,16 @@ query_outer_used_exp(sql_query *q, int i, sql_exp *e, int f)
 	return 0;
 }
 
+void
+query_outer_pop_last_used(sql_query *q, int i)
+{
+	stacked_query *sq = sql_stack_fetch(q->outer, i);
+
+	sq->last_used = NULL;
+	sq->used_card = 0;
+	sq->sql_state = 0;
+}
+
 int
 query_outer_aggregated(sql_query *q, int i, sql_exp *e)
 {
