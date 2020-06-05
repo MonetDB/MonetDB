@@ -1449,8 +1449,8 @@ sql2pcre(str *r, const char *pat, const char *esc_str)
 
 	if (strlen(esc_str) > 1)
 		throw(MAL, "pcre.sql2pcre", SQLSTATE(22019) ILLEGAL_ARGUMENT ": ESCAPE string must have length 1");
-	if (pat == NULL )
-		throw(MAL, "pcre.sql2pcre", OPERATION_FAILED);
+	if (pat == NULL)
+		throw(MAL, "pcre.sql2pcre", SQLSTATE(22019) ILLEGAL_ARGUMENT ": (I)LIKE pattern must not be NULL");
 	ppat = GDKmalloc(strlen(pat)*3+3 /* 3 = "^'the translated regexp'$0" */);
 	if (ppat == NULL)
 		throw(MAL, "pcre.sql2pcre", SQLSTATE(HY013) MAL_MALLOC_FAIL);
@@ -1511,7 +1511,7 @@ sql2pcre(str *r, const char *pat, const char *esc_str)
 		GDKfree(*r);
 		*r = NULL;
 		if (escaped)
-			throw(MAL, "pcre.sql2pcre", OPERATION_FAILED);
+			throw(MAL, "pcre.sql2pcre", SQLSTATE(22019) ILLEGAL_ARGUMENT ": (I)LIKE pattern must not end with escape character");
 		*r = GDKstrdup(str_nil);
 		if (*r == NULL)
 			throw(MAL, "pcre.sql2pcre", SQLSTATE(HY013) MAL_MALLOC_FAIL);
