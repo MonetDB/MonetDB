@@ -66,6 +66,7 @@ struct tl_error_buf {
 static int tl_error_init(void);
 static struct tl_error_buf *get_tl_error_buf(void);
 
+#ifdef HAVE_PTHREAD_H
 
 static pthread_key_t tl_error_key;
 
@@ -93,6 +94,54 @@ get_tl_error_buf(void)
 	}
 	return p;
 }
+
+#elif defined(WIN32)
+
+static DWORD tl_error_key = 0;
+
+static int
+tl_error_init(void)
+{
+	DWORD key = TlsAlloc();
+	if (key == TLS_OUT_OF_INDEXES)
+		return -1;
+	else {
+		tl_error_key = key;
+		return 0;
+	}
+}
+
+static struct tl_error_buf*
+get_tl_error_buf(void)
+{
+	struct tl_error_buf *p = TlsGetValue(tl_error_key);
+
+	if (p == NULL) {
+		if (GetLastError() != ERROR_SUCCESS)
+			return NULL; // something went terribly wrong
+
+		// otherwise, initialize
+		p = malloc(sizeof(*p));
+		if (p == NULL)
+			return NULL;
+		*p = (struct tl_error_buf) { 0 };
+		if (!TlsSetValue(tl_error_key, p)) {
+			free(p);
+			return NULL;
+		}
+
+		struct tl_error_buf *second_attempt = TlsGetValue(tl_error_key);
+		assert(p == second_attempt /* maybe mnstr_init has not been called? */);
+		(void) second_attempt; // suppress warning if asserts disabled
+	}
+	return p;
+}
+
+#else
+
+#error "no pthreads and no Windows, don't know what to do"
+
+#endif
 
 int
 mnstr_init(int embedded)
@@ -263,6 +312,9 @@ mnstr_va_set_error(stream *s, mnstr_error_kind kind, const char *fmt, va_list ap
 
 	if (start >= end - 1)
 		return;
+
+	if (fmt == NULL)
+		fmt = "error";
 
 	// Complicated pointer dance in order to shut up 'might be a candidate
 	// for gnu_printf format attribute' warning from gcc.
