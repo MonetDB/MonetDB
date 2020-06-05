@@ -33,14 +33,14 @@ stdout of test 'subquery6` in directory 'sql/test/subquery` itself:
 % tinyint # type
 % 1 # length
 #SELECT (SELECT (SELECT SUM(col1)) IN (MAX(col2))) FROM another_t;
-% .%5 # table_name
-% %5 # name
+% sys.%6 # table_name
+% %6 # name
 % boolean # type
 % 5 # length
 [ false	]
 #SELECT (SELECT (SELECT SUM(col1)) IN (MAX(col2), '12')) FROM another_t;
-% .%6 # table_name
-% %6 # name
+% sys.%7 # table_name
+% %7 # name
 % boolean # type
 % 5 # length
 [ false	]
@@ -62,6 +62,42 @@ stdout of test 'subquery6` in directory 'sql/test/subquery` itself:
 [ 2	]
 [ 3	]
 [ 4	]
+#SELECT SUM((SELECT col1)) FROM another_t;
+% sys.%2 # table_name
+% %2 # name
+% bigint # type
+% 4 # length
+[ 1234	]
+#SELECT CAST(SUM((SELECT col1 + col2)) AS BIGINT) FROM another_t;
+% sys.%2 # table_name
+% %2 # name
+% bigint # type
+% 4 # length
+[ 3702	]
+#SELECT CAST(SUM((SELECT CAST(EXISTS(SELECT col1) AS INT))) AS BIGINT) FROM another_t;
+% sys.%3 # table_name
+% %3 # name
+% bigint # type
+% 1 # length
+[ 4	]
+#SELECT CAST(SUM((SELECT (SELECT col1 + col2))) AS BIGINT) FROM another_t;
+% sys.%2 # table_name
+% %2 # name
+% bigint # type
+% 4 # length
+[ 3702	]
+#SELECT CAST((SELECT SUM((SELECT col1))) AS BIGINT) FROM another_t;
+% sys.%2 # table_name
+% %2 # name
+% bigint # type
+% 4 # length
+[ 1234	]
+#SELECT CAST((SELECT SUM((SELECT col1 + col2))) AS BIGINT) FROM another_t;
+% sys.%2 # table_name
+% %2 # name
+% bigint # type
+% 4 # length
+[ 3702	]
 #DROP TABLE tbl_ProductSales;
 #DROP TABLE another_T;
 #DROP TABLE integers;

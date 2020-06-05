@@ -233,7 +233,7 @@ myucslen(const uint32_t *ucs)
 	return i;
 }
 
-static int
+static inline int
 mywstrncasecmp(const char *restrict s1, const uint32_t *restrict s2, size_t n2)
 {
 	uint32_t c1;
@@ -261,7 +261,7 @@ mywstrncasecmp(const char *restrict s1, const uint32_t *restrict s2, size_t n2)
 	return 0;
 }
 
-static int
+static inline int
 mystrcasecmp(const char *s1, const char *s2)
 {
 	uint32_t c1, c2;
@@ -289,7 +289,7 @@ mystrcasecmp(const char *s1, const char *s2)
 	}
 }
 
-static int
+static inline int
 mywstrcasecmp(const char *restrict s1, const uint32_t *restrict s2)
 {
 	uint32_t c1;
@@ -315,7 +315,7 @@ mywstrcasecmp(const char *restrict s1, const uint32_t *restrict s2)
 	}
 }
 
-static const char *
+static inline const char *
 mywstrcasestr(const char *restrict haystack, const uint32_t *restrict wneedle)
 {
 	size_t nlen = myucslen(wneedle);
@@ -394,7 +394,7 @@ is_strcmpable(const char *pat, const char *esc)
 	return strlen(esc) == 0 || strNil(esc) || strstr(pat, esc) == NULL;
 }
 
-static bool
+static inline bool
 re_match_ignore(const char *s, RE *pattern)
 {
 	RE *r;
@@ -410,7 +410,7 @@ re_match_ignore(const char *s, RE *pattern)
 	return true;
 }
 
-static bool
+static inline bool
 re_match_no_ignore(const char *s, RE *pattern)
 {
 	RE *r;
@@ -725,8 +725,11 @@ re_likeselect(BAT **bnp, BAT *b, BAT *s, const char *pat, bool caseignore, bool 
 
 	if (!use_strcmp) {
 		re = re_create(pat, caseignore, esc);
-		if (!re)
+		if (!re) {
+			BBPreclaim(bn);
+			*bnp = NULL;
 			throw(MAL, "pcre.likeselect", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		}
 	}
 	if (s && !BATtdense(s)) {
 		struct canditer ci;
@@ -737,8 +740,11 @@ re_likeselect(BAT **bnp, BAT *b, BAT *s, const char *pat, bool caseignore, bool 
 		if (use_strcmp) {
 			if (caseignore) {
 				wpat = utf8stoucs(pat);
-				if (wpat == NULL)
+				if (wpat == NULL) {
+					BBPreclaim(bn);
+					*bnp = NULL;
 					throw(MAL, "pcre.likeselect", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+				}
 				if (anti)
 					candscanloop(v && *v != '\200' &&
 								 mywstrcasecmp(v, wpat) != 0);
@@ -788,8 +794,11 @@ re_likeselect(BAT **bnp, BAT *b, BAT *s, const char *pat, bool caseignore, bool 
 		if (use_strcmp) {
 			if (caseignore) {
 				wpat = utf8stoucs(pat);
-				if (wpat == NULL)
+				if (wpat == NULL) {
+					BBPreclaim(bn);
+					*bnp = NULL;
 					throw(MAL, "pcre.likeselect", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+				}
 				if (anti)
 					scanloop(v && *v != '\200' &&
 							 mywstrcasecmp(v, wpat) != 0);
@@ -839,6 +848,103 @@ re_likeselect(BAT **bnp, BAT *b, BAT *s, const char *pat, bool caseignore, bool 
 	BBPreclaim(bn);
 	*bnp = NULL;
 	throw(MAL, "pcre.likeselect", OPERATION_FAILED);
+}
+
+#define proj_scanloop(TEST)	\
+	do {	\
+		if (b->tnonil) { \
+			for (BUN p = 0; p < q; p++) {	\
+				v = BUNtail(bi, p);	\
+				res[p] = TEST; \
+			}	\
+		} else { \
+			for (BUN p = 0; p < q; p++) {	\
+				v = BUNtail(bi, p);	\
+				if (*v == '\200') { \
+					res[p] = bit_nil; \
+					bn->tnonil = false; \
+					bn->tnil = true; \
+				} else \
+					res[p] = TEST; \
+			}	\
+		} \
+	} while (0)
+
+static str
+re_like_proj(BAT **bnp, BAT *b, const char *pat, bool caseignore, bool anti, bool use_strcmp, uint32_t esc)
+{
+	BATiter bi = bat_iterator(b);
+	BAT *bn;
+	const char *restrict v;
+	RE *re = NULL;
+	uint32_t *wpat = NULL;
+	BUN q = BATcount(b);
+	bit *restrict res;
+	str msg = MAL_SUCCEED;
+
+	assert(ATOMstorage(b->ttype) == TYPE_str);
+
+	bn = COLnew(0, TYPE_bit, BATcount(b), TRANSIENT);
+	if (bn == NULL) {
+		msg = createException(MAL, "pcre.likeselect", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		goto bailout;
+	}
+	res = (bit*) Tloc(bn, 0);
+
+	if (!use_strcmp) {
+		re = re_create(pat, caseignore, esc);
+		if (!re) {
+			msg = createException(MAL, "pcre.likeselect", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+			goto bailout;
+		}
+	}
+
+	if (use_strcmp) {
+		if (caseignore) {
+			wpat = utf8stoucs(pat);
+			if (wpat == NULL) {
+				msg = createException(MAL, "pcre.likeselect", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+				goto bailout;
+			}
+			if (anti)
+				proj_scanloop(mywstrcasecmp(v, wpat) != 0);
+			else
+				proj_scanloop(mywstrcasecmp(v, wpat) == 0);
+		} else {
+			if (anti)
+				proj_scanloop(strcmp(v, pat) != 0);
+			else
+				proj_scanloop(strcmp(v, pat) == 0);
+		}
+	} else {
+		if (caseignore) {
+			if (anti)
+				proj_scanloop(re_match_ignore(v, re) == 0);
+			else
+				proj_scanloop(re_match_ignore(v, re));
+		} else {
+			if (anti)
+				proj_scanloop(re_match_no_ignore(v, re) == 0);
+			else
+				proj_scanloop(re_match_no_ignore(v, re));
+		}
+	}
+
+bailout:
+	if (bn) {
+		if (msg) {
+			BBPreclaim(bn);
+		} else {
+			BATsetcount(bn, BATcount(b));
+			bn->tsorted = false;
+			bn->trevsorted = false;
+			*bnp = bn;
+		}
+	}
+	if (re)
+		re_destroy(re);
+	GDKfree(wpat);
+	return msg;
 }
 
 /* maximum number of back references and quoted \ or $ in replacement string */
@@ -1609,7 +1715,7 @@ PCRElike4(bit *ret, const str *s, const str *pat, const str *esc, const bit *ise
 
 	if (!r) {
 		assert(ppat);
-		if (strNil(*pat) || strNil(*s)) {
+		if (strNil(*pat) || strNil(*s) || strNil(*esc)) {
 			*ret = bit_nil;
 		} else if (strNil(ppat)) {
 			*ret = FALSE;
@@ -1709,138 +1815,238 @@ PCREnotilike2(bit *ret, const str *s, const str *pat)
 	return MAL_SUCCEED;
 }
 
+/* try if a simple list of keywords works */
+static str
+choose_like_path(char **ppat, bool *use_re, bool *use_strcmp, bool *empty, const str *pat, const str *esc, const bit *caseignore)
+{
+	*use_re = false;
+	*use_strcmp = false;
+	*empty = false;
+
+	if (strNil(*pat) || strNil(*esc)) {
+		*empty = true;
+	} else if (is_strcmpable(*pat, *esc)) {
+		*use_re = true;
+		*use_strcmp = true;
+	} else if (re_simple(*pat, (unsigned char) **esc)) {
+		*use_re = true;
+	} else {
+		str res = sql2pcre(ppat, *pat, *esc);
+		if (res != MAL_SUCCEED)
+			return res;
+		if (strNil(*ppat)) {
+			GDKfree(*ppat);
+			*ppat = NULL;
+			if (*caseignore) {
+				if (!(*ppat = GDKmalloc(strlen(*pat) + 3)))
+					throw(MAL, "algebra.likeselect", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+				stpcpy(stpcpy(stpcpy(*ppat, "^"), *pat), "$");
+			}
+		}
+	}
+	return MAL_SUCCEED;
+}
+
+#define PCRE_LIKE_BODY(LOOP_BODY, RES1, RES2) \
+	do { \
+		if (b->tnonil) { \
+			for (BUN p = 0; p < q; p++) {	\
+				const char *restrict s = BUNtail(bi, p); \
+				LOOP_BODY  \
+				if (pos >= 0) \
+					res[p] = RES1; \
+				else if (pos == -1) \
+					res[p] = RES2; \
+				else { \
+					msg = createException(MAL, "pcre.match", OPERATION_FAILED ": matching of regular expression (%s) failed with %d", ppat, pos); \
+					goto bailout; \
+				} \
+			}	\
+		} else { \
+			for (BUN p = 0; p < q; p++) { \
+				const char *restrict s = BUNtail(bi, p); \
+				LOOP_BODY  \
+				if (*s == '\200') { \
+					res[p] = bit_nil; \
+					bn->tnonil = false; \
+					bn->tnil = true; \
+				} else { \
+					if (pos >= 0) \
+						res[p] = RES1; \
+					else if (pos == -1) \
+						res[p] = RES2; \
+					else { \
+						msg = createException(MAL, "pcre.match", OPERATION_FAILED ": matching of regular expression (%s) failed with %d", ppat, pos); \
+						goto bailout; \
+					} \
+				} \
+			} \
+		} \
+	} while(0)
+
+static str
+pcre_like(BAT **bnp, BAT *b, const char *ppat, bool caseignore, bool anti)
+{
+	BATiter bi = bat_iterator(b);
+	BUN q = BATcount(b);
+	int pos;
+	BAT *bn;
+	bit *restrict res;
+	str msg = MAL_SUCCEED;
+#ifdef HAVE_LIBPCRE
+	const char *err_p = NULL;
+	int errpos = 0;
+	int options = PCRE_UTF8 | PCRE_DOTALL;
+	pcre *re = NULL;
+#else
+	regex_t re = (regex_t) {0};
+	int options = REG_NEWLINE | REG_NOSUB | REG_EXTENDED;
+	int errcode;
+#endif
+
+	bn = COLnew(b->hseqbase, TYPE_bit, BATcount(b), TRANSIENT);
+	if (bn == NULL) {
+		msg = createException(MAL, "pcre.likeselect", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		goto bailout;
+	}
+	res = (bit*)Tloc(bn, 0);
+
+	if (caseignore) {
+#ifdef HAVE_LIBPCRE
+		options |= PCRE_CASELESS;
+#else
+		options |= REG_ICASE;
+#endif
+	}
+	if (
+#ifdef HAVE_LIBPCRE
+		(re = pcre_compile(ppat, options, &err_p, &errpos, NULL)) == NULL
+#else
+		(errcode = regcomp(&re, ppat, options)) != 0
+#endif
+		) {
+		msg = createException(MAL, "pcre.match", OPERATION_FAILED
+								": compilation of regular expression (%s) failed"
+#ifdef HAVE_LIBPCRE
+								" at %d with '%s'", ppat, errpos, err_p
+#else
+								, ppat
+#endif
+			);
+		goto bailout;
+	}
+
+#ifdef HAVE_LIBPCRE
+#define LOOP_BODY	\
+	pos = pcre_exec(re, NULL, s, (int) strlen(s), 0, 0, NULL, 0);
+#else
+#define LOOP_BODY	\
+	int retval = regexec(&re, s, (size_t) 0, NULL, 0); \
+	pos = retval == REG_NOMATCH ? -1 : (retval == REG_ENOSYS ? -2 : 0);
+#endif
+
+	if (anti)
+		PCRE_LIKE_BODY(LOOP_BODY, FALSE, TRUE);
+	else
+		PCRE_LIKE_BODY(LOOP_BODY, TRUE, FALSE);
+
+bailout:
+#ifdef HAVE_LIBPCRE
+	if (re)
+		pcre_free(re);
+#else
+	regfree(&re);
+#endif
+	if (bn) {
+		if (msg) {
+			BBPreclaim(bn);
+		} else {
+			BATsetcount(bn, BATcount(b));
+			bn->tsorted = false;
+			bn->trevsorted = false;
+			*bnp = bn;
+		}
+	}
+	return msg;
+}
+
+#define do_pcre_simple_scanloop(FUNC) \
+	do { \
+		if (b->tnonil) { \
+			for (BUN p = 0; p < q; p++) {	\
+				const char *restrict s = BUNtail(bi, p); \
+				br[p] = FUNC; \
+			}	\
+		} else { \
+			for (BUN p = 0; p < q; p++) { \
+				const char *restrict s = BUNtail(bi, p); \
+				if (*s == '\200') { \
+					br[p] = bit_nil; \
+					r->tnonil = false; \
+					r->tnil = true; \
+				} else { \
+					br[p] = FUNC; \
+				} \
+			} \
+		} \
+	} while (0)
+
 static str
 BATPCRElike3(bat *ret, const bat *bid, const str *pat, const str *esc, const bit *isens, const bit *not)
 {
+	str res = MAL_SUCCEED;
+	BAT *b = NULL, *r = NULL;
 	char *ppat = NULL;
-	str res = sql2pcre(&ppat, *pat, *esc);
+	bool use_re = false, use_strcmp = false, allnulls = false;
 
-	if (res == MAL_SUCCEED) {
-		BAT *strs = BATdescriptor(*bid);
-		BATiter strsi;
-		BAT *r;
-		bit *br;
-		BUN p, q, i = 0;
+	if (!(b = BATdescriptor(*bid)))
+		throw(MAL, "pcre.like3", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 
-		if (strs == NULL) {
-			GDKfree(ppat);
-			throw(MAL, "batstr.like", OPERATION_FAILED);
-		}
-
-		r = COLnew(strs->hseqbase, TYPE_bit, BATcount(strs), TRANSIENT);
-		if (r==NULL) {
-			GDKfree(ppat);
-			BBPunfix(strs->batCacheid);
-			throw(MAL, "pcre.like3", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-		}
-		br = (bit*)Tloc(r, 0);
-		strsi = bat_iterator(strs);
-
-		if (strNil(*pat)) {
-			BATloop(strs, p, q) {
-				br[i] = bit_nil;
-				i++;
-			}
-			r->tnonil = false;
-			r->tnil = true;
-		} else if (strNil(ppat)) {
-			BATloop(strs, p, q) {
-				const char *s = (str)BUNtvar(strsi, p);
-
-				if (strcmp(s, *pat) == 0)
-					br[i] = TRUE;
-				else
-					br[i] = FALSE;
-				if (*not)
-					br[i] = !br[i];
-				i++;
-			}
-		} else {
-			int pos;
-#ifdef HAVE_LIBPCRE
-			const char *err_p = NULL;
-			int errpos = 0;
-			int options = PCRE_UTF8 | PCRE_DOTALL;
-			pcre *re;
-#else
-			regex_t re;
-			int options = REG_NEWLINE | REG_NOSUB | REG_EXTENDED;
-			int errcode;
-#endif
-
-			if (*isens) {
-#ifdef HAVE_LIBPCRE
-				options |= PCRE_CASELESS;
-#else
-				options |= REG_ICASE;
-#endif
-			}
-			if (
-#ifdef HAVE_LIBPCRE
-				(re = pcre_compile(ppat, options, &err_p, &errpos, NULL)) == NULL
-#else
-				(errcode = regcomp(&re, ppat, options)) != 0
-#endif
-				) {
-				BBPunfix(strs->batCacheid);
-				BBPunfix(r->batCacheid);
-				res = createException(MAL, "pcre.match", OPERATION_FAILED
-									  ": compilation of regular expression (%s) failed"
-#ifdef HAVE_LIBPCRE
-									  " at %d with '%s'", ppat, errpos, err_p
-#else
-									  , ppat
-#endif
-					);
-				GDKfree(ppat);
-				return res;
-			}
-
-			BATloop(strs, p, q) {
-				const char *s = (str)BUNtvar(strsi, p);
-
-				if (*s == '\200') {
-					br[i] = bit_nil;
-					r->tnonil = false;
-					r->tnil = true;
-				} else {
-#ifdef HAVE_LIBPCRE
-					pos = pcre_exec(re, NULL, s, (int) strlen(s), 0, 0, NULL, 0);
-#else
-					int retval = regexec(&re, s, (size_t) 0, NULL, 0);
-					pos = retval == REG_NOMATCH ? -1 : (retval == REG_ENOSYS ? -2 : 0);
-#endif
-					if (pos >= 0)
-						br[i] = *not? FALSE:TRUE;
-					else if (pos == -1)
-						br[i] = *not? TRUE: FALSE;
-					else {
-						BBPunfix(strs->batCacheid);
-						BBPunfix(r->batCacheid);
-						res = createException(MAL, "pcre.match", OPERATION_FAILED
-											  ": matching of regular expression (%s) failed with %d", ppat, pos);
-						GDKfree(ppat);
-						return res;
-					}
-				}
-				i++;
-			}
-#ifdef HAVE_LIBPCRE
-			pcre_free(re);
-#else
-			regfree(&re);
-#endif
-		}
-		BATsetcount(r, i);
-		r->tsorted = false;
-		r->trevsorted = false;
-		BATkey(r, false);
-
-		BBPkeepref(*ret = r->batCacheid);
-		BBPunfix(strs->batCacheid);
-		GDKfree(ppat);
+	if ((res = choose_like_path(&ppat, &use_re, &use_strcmp, &allnulls, pat, esc, isens)) != MAL_SUCCEED) {
+		BBPunfix(b->batCacheid);
+		return res;
 	}
-	return res;
+
+	if (use_re) {
+		res = re_like_proj(&r, b, *pat, (bool) *isens, (bool) *not, use_strcmp, (unsigned char) **esc);
+	} else if (ppat == NULL) {
+		/* no pattern and no special characters: can use normal strcmp loop */
+		r = COLnew(b->hseqbase, TYPE_bit, BATcount(b), TRANSIENT);
+		if (r == NULL) {
+			res = createException(MAL, "pcre.like3", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		} else {
+			BUN q = BATcount(b);
+			bit *restrict br = (bit*)Tloc(r, 0);
+
+			if (allnulls) {
+				for (BUN p = 0; p < q; p++)
+					br[p] = bit_nil;
+				r->tnonil = false;
+				r->tnil = true;
+				r->tsorted = true;
+				r->trevsorted = true;
+			} else {
+				BATiter bi = bat_iterator(b);
+				const char *dpat = *pat;
+
+				if (*not)
+					do_pcre_simple_scanloop(strcmp(s, dpat) != 0);
+				else
+					do_pcre_simple_scanloop(strcmp(s, dpat) == 0);
+			}
+			BATsetcount(r, BATcount(b));
+		}
+	} else {
+		res = pcre_like(&r, b, ppat, (bool) *isens, (bool) *not);
+	}
+
+	GDKfree(ppat);
+	BBPunfix(b->batCacheid);
+	if (res != MAL_SUCCEED)
+		return res;
+	assert(r);
+	BBPkeepref(*ret = r->batCacheid);
+	return MAL_SUCCEED;
 }
 
 str
@@ -1913,11 +2119,9 @@ str
 PCRElikeselect2(bat *ret, const bat *bid, const bat *sid, const str *pat, const str *esc, const bit *caseignore, const bit *anti)
 {
 	BAT *b, *s = NULL, *bn = NULL;
-	str res;
+	str res = MAL_SUCCEED;
 	char *ppat = NULL;
-	bool use_re = false;
-	bool use_strcmp = false;
-	bool empty = false;
+	bool use_re = false, use_strcmp = false, empty = false;
 
 	if ((b = BATdescriptor(*bid)) == NULL) {
 		throw(MAL, "algebra.likeselect", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
@@ -1927,42 +2131,13 @@ PCRElikeselect2(bat *ret, const bat *bid, const bat *sid, const str *pat, const 
 		throw(MAL, "algebra.likeselect", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 	}
 
-	/* no escape, try if a simple list of keywords works */
-	if (strNil(*pat)) {
-		empty = true;
-	} else if (is_strcmpable(*pat, *esc)) {
-		use_re = true;
-		use_strcmp = true;
-	} else if (re_simple(*pat, **esc == '\200' ? 0 : (unsigned char) **esc)) {
-		use_re = true;
-	} else {
-		res = sql2pcre(&ppat, *pat, *esc);
-		if (res != MAL_SUCCEED) {
-			BBPunfix(b->batCacheid);
-			if (s)
-				BBPunfix(s->batCacheid);
-			return res;
-		}
-		if (strNil(ppat)) {
-			GDKfree(ppat);
-			ppat = NULL;
-			if (*caseignore) {
-				ppat = GDKmalloc(strlen(*pat) + 3);
-				if (ppat == NULL) {
-					BBPunfix(b->batCacheid);
-					if (s)
-						BBPunfix(s->batCacheid);
-					throw(MAL, "algebra.likeselect", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-				}
-				ppat[0] = '^';
-				strcpy(ppat + 1, *pat);
-				strcat(ppat, "$");
-			}
-		}
+	if ((res = choose_like_path(&ppat, &use_re, &use_strcmp, &empty, pat, esc, caseignore)) != MAL_SUCCEED) {
+		BBPunfix(b->batCacheid);
+		return res;
 	}
 
 	if (use_re) {
-		res = re_likeselect(&bn, b, s, *pat, (bool) *caseignore, (bool) *anti, use_strcmp, **esc == '\200' ? 0 : (unsigned char) **esc);
+		res = re_likeselect(&bn, b, s, *pat, (bool) *caseignore, (bool) *anti, use_strcmp, (unsigned char) **esc);
 	} else if (ppat == NULL) {
 		/* no pattern and no special characters: can use normal select */
 		if (empty) 
@@ -1970,9 +2145,7 @@ PCRElikeselect2(bat *ret, const bat *bid, const bat *sid, const str *pat, const 
 		else
 			bn = BATselect(b, s, *pat, NULL, true, true, *anti);
 		if (bn == NULL)
-			res = createException(MAL, "algebra.likeselect", GDK_EXCEPTION);
-		else
-			res = MAL_SUCCEED;
+			res = createException(MAL, "algebra.likeselect", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	} else {
 		res = pcre_likeselect(&bn, b, s, ppat, (bool) *caseignore, (bool) *anti);
 	}

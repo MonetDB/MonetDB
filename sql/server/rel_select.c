@@ -5365,13 +5365,50 @@ rel_value_exp2(sql_query *query, sql_rel **rel, symbol *se, int f, exp_kind ek)
 	}
 }
 
+static int exps_has_rank(list *exps);
+
+static int
+exp_has_rank(sql_exp *e)
+{
+	switch(e->type) {
+	case e_convert:
+		return exp_has_rank(e->l);
+	case e_func:
+		if (e->r)
+			return 1;
+		/* fall through */
+	case e_aggr:
+		return exps_has_rank(e->l);
+	default:
+		return 0;
+	}
+}
+
+/* TODO create exps_has (list, fptr ) */
+static int
+exps_has_rank(list *exps)
+{
+	if (!exps || list_empty(exps))
+		return 0;
+	for(node *n = exps->h; n; n=n->next){
+		sql_exp *e = n->data;
+
+		if (exp_has_rank(e))
+			return 1;
+	}
+	return 0;
+}
+
 sql_exp *
 rel_value_exp(sql_query *query, sql_rel **rel, symbol *se, int f, exp_kind ek)
 {
+	SelectNode *sn = NULL;
 	sql_exp *e;
 	if (!se)
 		return NULL;
 
+	if (se->token == SQL_SELECT)
+		sn = (SelectNode*)se;
 	if (THRhighwater())
 		return sql_error(query->sql, 10, SQLSTATE(42000) "Query too complex: running out of stack space");
 
@@ -5379,6 +5416,26 @@ rel_value_exp(sql_query *query, sql_rel **rel, symbol *se, int f, exp_kind ek)
 	if (e && (se->token == SQL_SELECT || se->token == SQL_TABLE) && !exp_is_rel(e)) {
 		assert(*rel);
 		return rel_lastexp(query->sql, *rel);
+	}
+	if (exp_has_rel(e) && sn && !sn->from && !sn->where && (ek.card < card_set || ek.card == card_exists) && ek.type != type_relation) {
+		sql_rel *r = exp_rel_get_rel(query->sql->sa, e);
+		sql_rel *l = r->l;
+
+		if (r && is_simple_project(r->op) && l && is_simple_project(l->op) && !l->l && !exps_has_rank(r->exps) && list_length(r->exps) == 1) { /* should be a simple column or value */
+			if (list_length(r->exps) > 1) { /* Todo make sure the in handling can handle a list ( value lists), instead of just a list of relations */
+				e = exp_values(query->sql->sa, r->exps);
+			} else {
+				e = r->exps->h->data;
+				if (*rel && !exp_has_rel(e)) {
+					rel_bind_var(query->sql, *rel, e);
+					if (exp_has_freevar(query->sql, e) && is_sql_aggr(f)) {
+						sql_rel *outer = query_fetch_outer(query, exp_has_freevar(query->sql, e)-1);
+						query_outer_pop_last_used(query, exp_has_freevar(query->sql, e)-1);
+					        reset_outer(outer);
+					}
+				}
+			}
+		}
 	}
 	return e;
 }

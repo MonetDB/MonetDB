@@ -1084,25 +1084,65 @@ end:
 static gdk_return
 snapshot_wal(stream *plan, const char *db_dir)
 {
-	stream *log = bat_logger->log;
-	char log_file[FILENAME_MAX];
+	char meta_file[FILENAME_MAX] = {0};     // ../sql_logs/sql/log
+	char log_file[FILENAME_MAX] = {0};      // ../sql_logs/sql/log.N
+	lng version;
+	lng start_id;
+	lng cur_id;
 	int len;
+	int ret;
 
-	len = snprintf(log_file, sizeof(log_file), "%s/%s%s", db_dir, bat_logger->dir, LOGFILE);
+	// determine the name of the log file
+	len = snprintf(meta_file, sizeof(meta_file), "%s/%s%s", db_dir, bat_logger->dir, LOGFILE);
 	if (len == -1 || (size_t)len >= sizeof(log_file)) {
-		GDKerror("Could not open %s, filename is too large", log_file);
+		GDKerror("Could not open log file, filename is too large");
 		return GDK_FAIL;
 	}
-	snapshot_immediate_copy_file(plan, log_file, log_file + strlen(db_dir) + 1);
 
-	len = snprintf(log_file, sizeof(log_file), "%s%s." LLFMT, bat_logger->dir, LOGFILE, bat_logger->id);
-	if (len == -1 || (size_t)len >= sizeof(log_file)) {
-		GDKerror("Could not open %s, filename is too large", log_file);
+	// save its current contents in the plan
+	snapshot_immediate_copy_file(plan, meta_file, meta_file + strlen(db_dir) + 1);
+
+	// parse it to determine the first log file to save
+	FILE *f = fopen(meta_file, "r");
+	if (f == NULL) {
+		GDKerror("Could not open %s", meta_file);
 		return GDK_FAIL;
 	}
-	uint64_t extent = getFileSize(log);
+	ret = fscanf(f, LLSCN, &version); // dummy read (version number)
+	if (ret != 1) {
+		GDKerror("Could not read version number from %s", meta_file);
+		fclose(f);
+		return GDK_FAIL;
+	}
+	assert(version == 52204); // if version has changed this code may need to be revised
+	ret = fscanf(f, LLSCN, &start_id); // real read (log id))
+	if (ret != 1) {
+		GDKerror("Could not read log id from %s", meta_file);
+		fclose(f);
+		return GDK_FAIL;
+	}
+	fclose(f);
 
-	snapshot_lazy_copy_file(plan, log_file, extent);
+	// Determining the current log file is easy
+	cur_id = bat_logger->id;
+
+	for (lng i = start_id; i <= cur_id; i++) {
+		len = snprintf(log_file, sizeof(log_file),
+		               "%s/%s%s." LLFMT, db_dir, bat_logger->dir, LOGFILE, i);
+		if (len == -1 || (size_t)len >= sizeof(log_file)) {
+			GDKerror("Could not open log file " LLFMT ", filename is too large", i);
+			return GDK_FAIL;
+		}
+
+		struct stat statbuf;
+		if (stat(log_file, &statbuf) != 0) {
+			char errbuf[512];
+			GDKerror("Could not stat %s: %s", log_file,
+						GDKstrerror(errno, errbuf, sizeof(errbuf)));
+		}
+		uint64_t size = (uint64_t)statbuf.st_size;
+		snapshot_lazy_copy_file(plan, log_file + strlen(db_dir) + 1, size);
+	}
 
 	return GDK_SUCCEED;
 }
