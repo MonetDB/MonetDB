@@ -96,20 +96,20 @@ ERROR = !GDK reported error: BATsubcross: more than one match
 MAPI  = (monetdb) /var/tmp/mtest-1456258/.s.monetdb.39356
 QUERY = SELECT 1 HAVING (SELECT 1 UNION SELECT 2); --error, more than one row returned by a subquery used as an expression
 ERROR = !GDK reported error: BATsubcross: more than one match
-MAPI  = (monetdb) /var/tmp/mtest-1456258/.s.monetdb.39356
-QUERY = SELECT (SELECT i) INTO myvar FROM integers; --error, one row max
+MAPI  = (monetdb) /var/tmp/mtest-459643/.s.monetdb.38884
+QUERY = select iamok(); --error, one row max
 ERROR = !Cardinality violation, scalar value expected
 CODE  = 21000
-MAPI  = (monetdb) /var/tmp/mtest-260928/.s.monetdb.34607
-QUERY = SET ovar = (SELECT (SELECT i) FROM integers); --error, one row max
+MAPI  = (monetdb) /var/tmp/mtest-193394/.s.monetdb.35402
+QUERY = select iamok(); --error, one row max
 ERROR = !Cardinality violation, scalar value expected
 CODE  = 21000
-MAPI  = (monetdb) /var/tmp/mtest-68349/.s.monetdb.35729
-QUERY = SET (abc, def) = (SELECT i, i from integers); --error, one row max
+MAPI  = (monetdb) /var/tmp/mtest-193394/.s.monetdb.35402
+QUERY = select iamok(); --error, one row max
 ERROR = !Cardinality violation, scalar value expected
 CODE  = 21000
-MAPI  = (monetdb) /var/tmp/mtest-69236/.s.monetdb.37950
-QUERY = SELECT i, i INTO aa, bb FROM integers; --error, one row max
+MAPI  = (monetdb) /var/tmp/mtest-193394/.s.monetdb.35402
+QUERY = select iamok(); --error, one row max
 ERROR = !Cardinality violation, scalar value expected
 CODE  = 21000
 MAPI  = (monetdb) /var/tmp/mtest-69236/.s.monetdb.37950
@@ -204,12 +204,20 @@ MAPI  = (monetdb) /var/tmp/mtest-48210/.s.monetdb.36376
 QUERY = UPDATE another_T SET (col5, col6) = (SELECT MIN(col1), MAX(col2)); --error, aggregate functions are not allowed in UPDATE
 ERROR = !SELECT: aggregate functions not allowed in SET clause
 CODE  = 42000
-MAPI  = (monetdb) /var/tmp/mtest-48210/.s.monetdb.36376
-QUERY = SET x = MAX(1) over (); --error, not allowed
+MAPI  = (monetdb) /var/tmp/mtest-193394/.s.monetdb.35402
+QUERY = CREATE PROCEDURE iambroken()
+        BEGIN 
+        	DECLARE x INT; 
+        	SET x = MAX(1) over (); --error, not allowed
+        END;
 ERROR = !MAX: window function 'max' not allowed in SET clause (use subquery)
 CODE  = 42000
-MAPI  = (monetdb) /var/tmp/mtest-60261/.s.monetdb.38639
-QUERY = SET y = MIN(1); --error, not allowed
+MAPI  = (monetdb) /var/tmp/mtest-193394/.s.monetdb.35402
+QUERY = CREATE PROCEDURE iambroken()
+        BEGIN 
+        	DECLARE y int;
+        	SET y = MIN(1); --error, not allowed
+        END;
 ERROR = !MIN: missing group by
 CODE  = 42000
 MAPI  = (monetdb) /var/tmp/mtest-64327/.s.monetdb.34611

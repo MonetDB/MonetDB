@@ -38,20 +38,14 @@ stdout of test 'insert_quser` in directory 'sql/test/ssqq` itself:
 % queue_id,	query_id,	queue_add,	queue_number,	os_version,	monetdb_version,	start_query,	query_ready # name
 % int,	int,	timestamp,	int,	varchar,	varchar,	timestamp,	timestamp # type
 % 1,	1,	26,	1,	0,	0,	26,	26 # length
-#select id_result;
-% .%2 # table_name
-% %2 # name
-% int # type
-% 2 # length
-[ -1	]
 #select * from quser;
 % sys.quser,	sys.quser,	sys.quser,	sys.quser,	sys.quser,	sys.quser # table_name
 % quser_id,	user_name,	uid,	emailaddress,	password,	enabled # name
 % int,	varchar,	int,	varchar,	varchar,	boolean # type
 % 1,	0,	1,	0,	0,	5 # length
 #select id_result;
-% .%2 # table_name
-% %2 # name
+% . # table_name
+% %1 # name
 % int # type
 % 1 # length
 [ 2	]
@@ -64,8 +58,8 @@ stdout of test 'insert_quser` in directory 'sql/test/ssqq` itself:
 #set id_result = -1;
 #set id_result = insert_quser('user2', 'email2@example.com', 2, 'notsecret');
 #select id_result;
-% .%2 # table_name
-% %2 # name
+% . # table_name
+% %1 # name
 % int # type
 % 1 # length
 [ 3	]
@@ -76,13 +70,6 @@ stdout of test 'insert_quser` in directory 'sql/test/ssqq` itself:
 % 1,	5,	1,	18,	9,	5 # length
 [ 2,	"user1",	1,	"email1@example.com",	"secret",	true	]
 [ 3,	"user2",	2,	"email2@example.com",	"notsecret",	true	]
-#set id_result = -1;
-#select id_result;
-% .%2 # table_name
-% %2 # name
-% int # type
-% 2 # length
-[ -1	]
 #select * from quser;
 % sys.quser,	sys.quser,	sys.quser,	sys.quser,	sys.quser,	sys.quser # table_name
 % quser_id,	user_name,	uid,	emailaddress,	password,	enabled # name

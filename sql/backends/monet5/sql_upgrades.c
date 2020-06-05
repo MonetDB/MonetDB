@@ -2800,7 +2800,7 @@ sql_update_semantics(Client c)
 static str
 sql_update_default(Client c, mvc *sql, const char *prev_schema)
 {
-	size_t bufsize = 1024, pos = 0;
+	size_t bufsize = 2048, pos = 0;
 	char *err = NULL, *buf = GDKmalloc(bufsize);
 	sql_schema *sys = mvc_bind_schema(sql, "sys");
 	res_table *output;
@@ -2856,6 +2856,22 @@ sql_update_default(Client c, mvc *sql, const char *prev_schema)
 					"update sys._tables set system = true where schema_id = (select id from sys.schemas where name = 'sys')"
 					" and name = 'queue';\n");
 
+			/* scoping branch changes */
+			pos += snprintf(buf + pos, bufsize - pos,
+					"drop function \"sys\".\"var\"();\n"
+					"create function \"sys\".\"var\"()\n" 
+					"returns table(\n"
+					"\"schema\" string,\n"
+					"\"name\" string,\n"
+					"\"type\" string,\n"
+					"\"value\" string)\n"
+					" external name \"sql\".\"sql_variables\";\n"
+					"grant execute on function \"sys\".\"var\" to public;\n");
+
+			pos += snprintf(buf + pos, bufsize - pos,
+					"update sys.functions set system = true where schema_id = (select id from sys.schemas where name = 'sys')"
+					" and name = 'var' and type = %d;\n", (int) F_UNION);
+
 			pos += snprintf(buf + pos, bufsize - pos, "set schema \"%s\";\n", prev_schema);
 			assert(pos < bufsize);
 
@@ -2880,7 +2896,7 @@ SQLupgrades(Client c, mvc *m)
 {
 	sql_subtype tp;
 	sql_subfunc *f;
-	char *err, *prev_schema = GDKstrdup(stack_get_string(m, "current_schema"));
+	char *err, *prev_schema = GDKstrdup(sqlvar_get_string(find_global_var(m, mvc_bind_schema(m, "sys"), "current_schema")));
 	sql_schema *s = mvc_bind_schema(m, "sys");
 	sql_table *t;
 	sql_column *col;

@@ -90,15 +90,31 @@ exp_print(mvc *sql, stream *fout, sql_exp *e, int depth, list *refs, int comma, 
 	switch(e->type) {
 	case e_psm: {
 		if (e->flag & PSM_SET) {
-			mnstr_printf(fout, "%s = ", exp_name(e));
+			const char *rname = exp_relname(e);
+			int level = GET_PSM_LEVEL(e->flag);
+			if (rname)
+				mnstr_printf(fout, "\"%s\".", rname);
+			mnstr_printf(fout, "\"%s\" = ", exp_name(e));
 			exp_print(sql, fout, e->l, depth, refs, 0, 0);
+			mnstr_printf(fout, " FRAME %d ", level);
+			alias = 0;
 		} else if (e->flag & PSM_VAR) {
 			// todo output table def (from e->f)
-			// or type if e-f == NULL
-			mnstr_printf(fout, "declare %s ", exp_name(e));
+			const char *rname = exp_relname(e);
+			char *type_str = e->f ? NULL : sql_subtype_string(exp_subtype(e));
+			int level = GET_PSM_LEVEL(e->flag);
+			mnstr_printf(fout, "declare ");
+			if (rname)
+				mnstr_printf(fout, "\"%s\".", rname);
+			mnstr_printf(fout, "\"%s\" %s FRAME %d ", exp_name(e), type_str ? type_str : "", level);
+			_DELETE(type_str);
+			alias = 0;
 		} else if (e->flag & PSM_RETURN) {
+			int level = GET_PSM_LEVEL(e->flag);
 			mnstr_printf(fout, "return ");
 			exp_print(sql, fout, e->l, depth, refs, 0, 0);
+			mnstr_printf(fout, " FRAME %d ", level);
+			alias = 0;
 		} else if (e->flag & PSM_WHILE) {
 			mnstr_printf(fout, "while ");
 			exp_print(sql, fout, e->l, depth, refs, 0, 0);
@@ -151,9 +167,11 @@ exp_print(mvc *sql, stream *fout, sql_exp *e, int depth, list *refs, int comma, 
 				_DELETE(t);
 			}
 		} else { /* variables */
-			if (e->r) { /* named parameters */
-				char *name = e->r;
-				mnstr_printf(fout, "%s", name);
+			if (e->r) { /* named parameters and declared variables */
+				sql_var_name *vname = (sql_var_name*) e->r;
+				if (vname->sname)
+					mnstr_printf(fout, "\"%s\".", vname->sname);
+				mnstr_printf(fout, "\"%s\"", vname->name);
 			} else if (e->f) {	/* values list */
 				list *l = e->f;
 				exps_print(sql, fout, l, depth, refs, 0, 0);
@@ -384,7 +402,7 @@ rel_print_(mvc *sql, stream  *fout, sql_rel *rel, int depth, list *refs, int dec
 		if (!t && c) {
 			mnstr_printf(fout, "dict(%s.%s)", c->t->base.name, c->base.name);
 		} else {
-			const char *sname = t->s?t->s->base.name:NULL;
+			const char *sname = t->s ? t->s->base.name : NULL; /* All tables, but declared ones on the stack have schema */
 			const char *tname = t->base.name;
 
 			if (isRemote(t)) {
@@ -1079,16 +1097,6 @@ exp_read(mvc *sql, sql_rel *lrel, sql_rel *rrel, list *pexps, char *r, int *pos,
 			}
 			assert(exp);
 		}
-		if (!exp) {
-			old = *e;
-			*e = 0;
-			if (stack_find_var(sql, b)) {
-				sql_subtype *tpe = stack_find_type(sql, b);
-				int frame = stack_find_frame(sql, b);
-				exp = exp_param(sql->sa, sa_strdup(sql->sa, b), tpe, frame);
-			}
-			*e = old;
-		}
 		if (!exp && lrel) {
 			int amb = 0;
 
@@ -1549,11 +1557,10 @@ rel_read(mvc *sql, char *r, int *pos, list *refs)
 			*e = 0;
 			(*pos)++;
 			skipWS(r, pos);
-			s = mvc_bind_schema(sql, sname);
-			if (s)
-				t = mvc_bind_table(sql, s, tname);
-			if (!s || !t)
-				return sql_error(sql, -1, SQLSTATE(42000) "Table: missing '%s.%s'\n", sname, tname);
+			if (!(s = mvc_bind_schema(sql, sname)))
+				return sql_error(sql, -1, SQLSTATE(3F000) "No such schema '%s'\n", sname);
+			if (!(t = mvc_bind_table(sql, s, tname)))
+				return sql_error(sql, -1, SQLSTATE(42S02) "Table missing '%s.%s'\n", sname, tname);
 			if (isMergeTable(t))
 				return sql_error(sql, -1, SQLSTATE(42000) "Merge tables not supported under remote connections\n");
 			if (isRemote(t))
@@ -1562,7 +1569,7 @@ rel_read(mvc *sql, char *r, int *pos, list *refs)
 				return sql_error(sql, -1, SQLSTATE(42000) "Replica tables not supported under remote connections\n");
 			rel = rel_basetable(sql, t, tname);
 			if (!table_privs(sql, t, PRIV_SELECT) && !(rel = rel_reduce_on_column_privileges(sql, rel, t)))
-				return sql_error(sql, -1, SQLSTATE(42000) "Access denied for %s to table '%s.%s'\n", stack_get_string(sql, "current_user"), s->base.name, tname);
+				return sql_error(sql, -1, SQLSTATE(42000) "Access denied for %s to table '%s.%s'\n", sqlvar_get_string(find_global_var(sql, mvc_bind_schema(sql, "sys"), "current_user")), s->base.name, tname);
 
 			if (!r[*pos])
 				return rel;
