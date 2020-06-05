@@ -1114,17 +1114,22 @@ snapshot_wal(stream *plan, const char *db_dir)
 		fclose(f);
 		return GDK_FAIL;
 	}
-	assert(version == 52204); // if version has changed this code may need to be revised
 	ret = fscanf(f, LLSCN, &start_id); // real read (log id))
 	if (ret != 1) {
 		GDKerror("Could not read log id from %s", meta_file);
 		fclose(f);
 		return GDK_FAIL;
 	}
+	// if there's more the file format must have changed
+	// and this code should be updated accordingly:
+	assert((fscanf(f, " "), feof(f))); // sanity check
 	fclose(f);
 
 	// Determining the current log file is easy
 	cur_id = bat_logger->id;
+
+	assert(start_id >= 1);
+	assert(start_id <= cur_id);
 
 	for (lng i = start_id; i <= cur_id; i++) {
 		len = snprintf(log_file, sizeof(log_file),
