@@ -37,13 +37,7 @@ grant select on sys.queue to public;
 update sys.functions set system = true where schema_id = (select id from sys.schemas where name = 'sys') and name = 'queue' and type = 5;
 update sys._tables set system = true where schema_id = (select id from sys.schemas where name = 'sys') and name = 'queue';
 drop function "sys"."var"();
-create function "sys"."var"()
-returns table(
-"schema" string,
-"name" string,
-"type" string,
-"value" string)
- external name "sql"."sql_variables";
+create function "sys"."var"() returns table("schema" string, "name" string, "type" string, "value" string) external name "sql"."sql_variables";
 grant execute on function "sys"."var" to public;
 update sys.functions set system = true where schema_id = (select id from sys.schemas where name = 'sys') and name = 'var' and type = 5;
 set schema "sys";

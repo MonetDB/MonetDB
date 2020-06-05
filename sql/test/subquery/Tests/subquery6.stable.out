@@ -98,6 +98,15 @@ stdout of test 'subquery6` in directory 'sql/test/subquery` itself:
 % bigint # type
 % 4 # length
 [ 3702	]
+#SELECT (SELECT 1 FROM another_t t1 WHERE 'aa' LIKE t2.product_category) FROM tbl_ProductSales t2;
+% .%1 # table_name
+% %1 # name
+% tinyint # type
+% 1 # length
+[ NULL	]
+[ NULL	]
+[ NULL	]
+[ NULL	]
 #DROP TABLE tbl_ProductSales;
 #DROP TABLE another_T;
 #DROP TABLE integers;

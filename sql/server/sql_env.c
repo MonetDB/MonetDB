@@ -99,6 +99,6 @@ sql_create_env(mvc *m, sql_schema *s)
 
 	/* add function */
 	ops = sa_list(m->sa);
-	mvc_create_func(m, NULL, s, "var", ops, res, F_UNION, FUNC_LANG_SQL, "sql", "sql_variables", "CREATE FUNCTION \"sys\".\"var\"() RETURNS TABLE(\"schema\" string, \"name\" string, \"type\" string, \"value\" string) EXTERNAL NAME \"sql\".\"sql_variables\";", FALSE, FALSE, TRUE);
+	mvc_create_func(m, NULL, s, "var", ops, res, F_UNION, FUNC_LANG_SQL, "sql", "sql_variables", "create function \"sys\".\"var\"() returns table(\"schema\" string, \"name\" string, \"type\" string, \"value\" string) external name \"sql\".\"sql_variables\";", FALSE, FALSE, TRUE);
 	return 0;
 }
