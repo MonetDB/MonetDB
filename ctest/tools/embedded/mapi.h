@@ -19,6 +19,7 @@ typedef struct MapiStatement {
 	Mapi mid;
 	char *query;
 	monetdb_result *result;
+	char **mapi_row;	/* keep buffers for string return values */
 	monetdb_cnt current_row;
 	monetdb_cnt affected_rows;
 	int prepare_id;

@@ -21,6 +21,15 @@ mapi_query(Mapi mid, const char *query)
 	mh->query = (char*)query;
 	mh->msg = monetdb_query(mh->mid->conn, mh->query, &mh->result, &mh->affected_rows, &mh->prepare_id);
 	mh->current_row = 0;
+	mh->mapi_row = NULL;
+	if (mh->result && mh->result->ncols) {
+		mh->mapi_row = (char**)MAPIalloc(sizeof(char*)*mh->result->ncols);
+		if (!mh->mapi_row) {
+			mh->msg = "malloc failure";
+			return mh;
+		}
+		memset(mh->mapi_row, 0, sizeof(char*)*mh->result->ncols);
+	}
 	return mh;
 }
 
@@ -28,8 +37,17 @@ MapiMsg
 mapi_close_handle(MapiHdl hdl)
 {
 	if (hdl) {
+		if (hdl->mapi_row) {
+			for (int i=0; i<hdl->result->ncols; i++) {
+				if (hdl->mapi_row[i])
+					MAPIfree(hdl->mapi_row[i]);
+			}
+			MAPIfree(hdl->mapi_row);
+		}
+
 		char *msg = monetdb_cleanup_result(hdl->mid->conn, hdl->result);
 		Mapi mid = hdl->mid;
+
 
 		MAPIfree(hdl);
 		if (msg)
@@ -48,15 +66,96 @@ mapi_fetch_row(MapiHdl hdl)
 	return n;
 }
 
+#define SIMPLE_TYPE_SIZE 128
+
 char *
 mapi_fetch_field(MapiHdl hdl, int fnr)
 {
-	/* should only be used for string columns !!! */
 	if (hdl && fnr < hdl->result->ncols && hdl->current_row > 0 && hdl->current_row <= hdl->result->nrows) {
 		monetdb_column *rcol = NULL;
 		if (monetdb_result_fetch(hdl->mid->conn, hdl->result,  &rcol, fnr) == NULL) {
-			monetdb_column_str *icol = (monetdb_column_str*)rcol;
-			return icol->data[hdl->current_row-1];
+			size_t r = hdl->current_row - 1;
+			if (rcol->type != monetdb_str && !hdl->mapi_row[fnr]) {
+				hdl->mapi_row[fnr] = MAPIalloc(SIMPLE_TYPE_SIZE);
+				if (!hdl->mapi_row[fnr]) {
+					hdl->msg = "malloc failure";
+					return NULL;
+				}
+			}
+			switch(rcol->type) {
+			case monetdb_bool: {
+				monetdb_column_bool *icol = (monetdb_column_bool*)rcol;
+				if (icol->data[r] == icol->null_value)
+					snprintf(hdl->mapi_row[fnr], SIMPLE_TYPE_SIZE, "NULL");
+				else
+					snprintf(hdl->mapi_row[fnr], SIMPLE_TYPE_SIZE, "%s", icol->data[r]==1?"true":"false");
+				return hdl->mapi_row[fnr];
+			}
+			case monetdb_int8_t: {
+				monetdb_column_int8_t *icol = (monetdb_column_int8_t*)rcol;
+				if (icol->data[r] == icol->null_value)
+					snprintf(hdl->mapi_row[fnr], SIMPLE_TYPE_SIZE, "NULL");
+				else
+					snprintf(hdl->mapi_row[fnr], SIMPLE_TYPE_SIZE, "%d", icol->data[r]);
+				return hdl->mapi_row[fnr];
+			}
+			case monetdb_int16_t: {
+				monetdb_column_int16_t *icol = (monetdb_column_int16_t*)rcol;
+				if (icol->data[r] == icol->null_value)
+					snprintf(hdl->mapi_row[fnr], SIMPLE_TYPE_SIZE, "NULL");
+				else
+					snprintf(hdl->mapi_row[fnr], SIMPLE_TYPE_SIZE, "%d", icol->data[r]);
+				return hdl->mapi_row[fnr];
+			}
+			case monetdb_int32_t: {
+				monetdb_column_int32_t *icol = (monetdb_column_int32_t*)rcol;
+				if (icol->data[r] == icol->null_value)
+					snprintf(hdl->mapi_row[fnr], SIMPLE_TYPE_SIZE, "NULL");
+				else
+					snprintf(hdl->mapi_row[fnr], SIMPLE_TYPE_SIZE, "%d", icol->data[r]);
+				return hdl->mapi_row[fnr];
+			}
+			case monetdb_int64_t: {
+				monetdb_column_int64_t *icol = (monetdb_column_int64_t*)rcol;
+				if (icol->data[r] == icol->null_value)
+					snprintf(hdl->mapi_row[fnr], SIMPLE_TYPE_SIZE, "NULL");
+				else
+					snprintf(hdl->mapi_row[fnr], SIMPLE_TYPE_SIZE, "%" PRId64, icol->data[r]);
+				return hdl->mapi_row[fnr];
+			}
+#ifdef HAVE_HGE
+			case monetdb_int128_t: {
+				monetdb_column_int128_t *icol = (monetdb_column_int128_t*)rcol;
+				if (icol->data[r] == icol->null_value)
+					snprintf(hdl->mapi_row[fnr], SIMPLE_TYPE_SIZE, "NULL");
+				else
+					snprintf(hdl->mapi_row[fnr], SIMPLE_TYPE_SIZE, "%" PRId64, (int64_t)icol->data[r]);
+				return hdl->mapi_row[fnr];
+			}
+#endif
+			case monetdb_float: {
+				monetdb_column_float *icol = (monetdb_column_float*)rcol;
+				if (icol->data[r] == icol->null_value)
+					snprintf(hdl->mapi_row[fnr], SIMPLE_TYPE_SIZE, "NULL");
+				else
+					snprintf(hdl->mapi_row[fnr], SIMPLE_TYPE_SIZE, "%f", icol->data[r]);
+				return hdl->mapi_row[fnr];
+			}
+			case monetdb_double: {
+				monetdb_column_double *icol = (monetdb_column_double*)rcol;
+				if (icol->data[r] == icol->null_value)
+					snprintf(hdl->mapi_row[fnr], SIMPLE_TYPE_SIZE, "NULL");
+				else
+					snprintf(hdl->mapi_row[fnr], SIMPLE_TYPE_SIZE, "%f", icol->data[r]);
+				return hdl->mapi_row[fnr];
+			}
+			case monetdb_str: {
+				monetdb_column_str *icol = (monetdb_column_str*)rcol;
+				return icol->data[r];
+			}
+			default:
+				return NULL;
+			}
 		}
 	}
 	return NULL;
@@ -67,18 +166,28 @@ mapi_get_type(MapiHdl hdl, int fnr)
 {
 	if (hdl && fnr < hdl->result->ncols) {
 		monetdb_column *rcol = NULL;
-		if (monetdb_result_fetch(hdl->mid->conn, hdl->result,  &rcol, fnr) != NULL) {
+		if (monetdb_result_fetch(hdl->mid->conn, hdl->result,  &rcol, fnr) == NULL) {
 			switch(rcol->type) {
+			case monetdb_bool:
+				return "boolean";
 			case monetdb_int8_t:
+				return "tinyint";
 			case monetdb_int16_t:
+				return "smallint";
 			case monetdb_int32_t:
-			case monetdb_int64_t:
 				return "integer";
+			case monetdb_int64_t:
+				return "bigint";
+#ifdef HAVE_HGE
+			case monetdb_int128_t:
+				return "hugeint";
+#endif
 			case monetdb_float:
-			case monetdb_double:
 				return "float";
+			case monetdb_double:
+				return "real";
 			case monetdb_str:
-				return "string";
+				return "varchar";
 			default:
 				return "unknown";
 			}
@@ -109,6 +218,8 @@ int64_t
 mapi_rows_affected(MapiHdl hdl) 
 {
 	if (hdl) {
+		if (hdl->result)
+			return hdl->result->nrows;
 		return hdl->affected_rows;
 	}
 	return 0;
