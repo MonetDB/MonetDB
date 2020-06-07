@@ -77,3 +77,13 @@ target_link_libraries(example_append
     #sql
     )
 add_test(run_example_append example_append)
+
+add_executable(backup backup.c mapi.h mapi.c ../../../clients/mapiclient/dump.c)
+target_include_directories(backup PUBLIC .)
+target_link_libraries(backup
+  PRIVATE
+    monetdb_config_header
+    embedded
+    sqlinclude
+    gdk)
+add_test(run_backup backup)
