@@ -469,12 +469,24 @@ module batmtime;
 command diff(b1:bat[:date],b2:bat[:date]) :bat[:int]
 address MTIMEdate_diff_bulk
 comment "Difference of two sets of date.";
+command diff(b1:date,b2:bat[:date]) :bat[:int]
+address MTIMEdate_diff_bulk_p1;
+command diff(b1:bat[:date],b2:date) :bat[:int]
+address MTIMEdate_diff_bulk_p2;
 
 command diff(b1:bat[:daytime],b2:bat[:daytime]) :bat[:lng]
 address MTIMEdaytime_diff_msec_bulk
 comment "Difference of two sets of daytime.";
+command diff(b1:daytime,b2:bat[:daytime]) :bat[:lng]
+address MTIMEdaytime_diff_bulk_p1;
+command diff(b1:bat[:daytime],b2:daytime) :bat[:lng]
+address MTIMEdaytime_diff_bulk_p2;
 
 command diff(b1:bat[:timestamp],b2:bat[:timestamp]) :bat[:lng]
 address MTIMEtimestamp_diff_msec_bulk
 comment "Difference of two sets of timestamp.";
+command diff(b1:timestamp,b2:bat[:timestamp]) :bat[:lng]
+address MTIMEtimestamp_diff_bulk_p1;
+command diff(b1:bat[:timestamp],b2:timestamp) :bat[:lng]
+address MTIMEtimestamp_diff_bulk_p2;
 
