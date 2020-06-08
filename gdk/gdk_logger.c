@@ -884,7 +884,8 @@ logger_read_transaction(logger *lg)
 	int ok = 1;
 	int dbg = GDKdebug;
 
-	GDKdebug &= ~(CHECKMASK|PROPMASK);
+	if (!lg->flushing)
+		GDKdebug &= ~(CHECKMASK|PROPMASK);
 
 	while (err == LOG_OK && (ok=log_read_format(lg, &l))) {
 		if (l.flag == 0 && l.id == 0) {
@@ -967,7 +968,8 @@ logger_read_transaction(logger *lg)
 	}
 	while (tr)
 		tr = tr_abort(lg, tr);
-	GDKdebug = dbg;
+	if (!lg->flushing)
+		GDKdebug = dbg;
 	if (!ok)
 		return LOG_EOF;
 	return err;
@@ -979,10 +981,8 @@ logger_readlog(logger *lg, char *filename, bool *filemissing)
 	log_return err = LOG_OK;
 	time_t t0, t1;
 	struct stat sb;
-	int dbg = GDKdebug;
 
 	assert(!lg->inmemory);
-	GDKdebug &= ~(CHECKMASK|PROPMASK);
 
 	if (lg->debug & 1) {
 		fprintf(stderr, "#logger_readlog opening %s\n", filename);
@@ -1026,7 +1026,6 @@ logger_readlog(logger *lg, char *filename, bool *filemissing)
 		printf("# Finished reading the write-ahead log '%s'\n", filename);
 		fflush(stdout);
 	}
-	GDKdebug = dbg;
 	/* we cannot distinguish errors from incomplete transactions
 	 * (even if we would log aborts in the logs). So we simply
 	 * abort and move to the next log file */
@@ -1629,6 +1628,7 @@ logger_load(int debug, const char *fn, char filename[FILENAME_MAX], logger *lg)
 		}
 		needcommit = true;
 	}
+	dbg = GDKdebug;
 	GDKdebug &= ~CHECKMASK;
 	if (needcommit && bm_commit(lg) != GDK_SUCCEED) {
 		GDKerror("Logger_new: commit failed");
@@ -1855,7 +1855,7 @@ logger_flush(logger *lg)
 lng
 logger_changes(logger *lg)
 {
-	return (lg->id - lg->saved_id);
+	return (lg->id - lg->saved_id - 1);
 }
 
 int

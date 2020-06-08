@@ -2047,7 +2047,7 @@ tr_log_cs( sql_trans *tr, column_storage *cs, segment *segs, int cleared, sqlid 
 	for (; segs; segs=segs->next) {
 		if (segs->owner == tr) {
 			BAT *ins = temp_descriptor(cs->bid);
-			assert(ATOMIC_GET(&store_nr_active)>0);
+			assert(ins);
 			ok = log_bat(bat_logger, ins, id, segs->start, segs->end-segs->start);
 			bat_destroy(ins);
 		}

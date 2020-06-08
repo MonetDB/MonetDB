@@ -8665,7 +8665,6 @@ rel_dicttable(mvc *sql, sql_column *c, const char *tname, int de)
 	return rel;
 }
 
-/* rewrite merge tables into union of base tables and call optimizer again */
 static sql_rel *
 rel_add_dicts(mvc *sql, sql_rel *rel, int *changes)
 {

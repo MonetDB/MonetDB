@@ -828,6 +828,7 @@ BATload_intern(bat bid, bool lock)
 	b = DESCload(bid);
 
 	if (b == NULL) {
+		assert(0);
 		return NULL;
 	}
 
@@ -835,6 +836,7 @@ BATload_intern(bat bid, bool lock)
 	if (b->ttype != TYPE_void) {
 		if (HEAPload(&b->theap, nme, "tail", b->batRestricted == BAT_READ) != GDK_SUCCEED) {
 			HEAPfree(&b->theap, false);
+		assert(0);
 			return NULL;
 		}
 		assert(b->theap.size >> b->tshift <= BUN_MAX);
@@ -848,6 +850,7 @@ BATload_intern(bat bid, bool lock)
 		if (HEAPload(b->tvheap, nme, "theap", b->batRestricted == BAT_READ) != GDK_SUCCEED) {
 			HEAPfree(&b->theap, false);
 			HEAPfree(b->tvheap, false);
+		assert(0);
 			return NULL;
 		}
 		if (ATOMstorage(b->ttype) == TYPE_str) {
@@ -867,6 +870,7 @@ BATload_intern(bat bid, bool lock)
 		HEAPfree(&b->theap, false);
 		if (b->tvheap)
 			HEAPfree(b->tvheap, false);
+		assert(0);
 		return NULL;
 	}
 	return b;

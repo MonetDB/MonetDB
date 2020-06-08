@@ -2046,110 +2046,12 @@ store_init(int debug, store_type store, int readonly, int singleuser, backend_st
 	return store_load(stk);
 }
 
-// All this must only be accessed while holding the flush_lock.
-// The exception is flush_now, which can be set by anyone at any
-// time and therefore needs some special treatment.
-static struct {
-	// These two are inputs, set from outside the store_manager
-	bool enabled;
-	ATOMIC_TYPE flush_now;
-	// These are state set from within the store_manager
-	bool working;
-	int countdown_ms;
-	unsigned int cycle;
-	char *reason_to;
-	char *reason_not_to;
-} flusher = {
-	.flush_now = ATOMIC_VAR_INIT(0),
-	.enabled = true,
-};
-
-static void
-flusher_new_cycle(void)
-{
-	int cycle_time = GDKdebug & FORCEMITOMASK ? 500 : 50000;
-
-	// do not touch .enabled and .flush_now, those are inputs
-	flusher.working = false;
-	flusher.countdown_ms = cycle_time;
-	flusher.cycle += 1;
-	flusher.reason_to = NULL;
-	flusher.reason_not_to = NULL;
-}
-
-/* Determine whether this is a good moment to flush the log.
- * Note: this function clears flusher.flush_now if it was set,
- * so if it returns true you must either flush the log or 
- * set flush_log to true again, otherwise the request will
- * be lost.
- *
- * This is done this way because flush_now can be set at any time
- * without first obtaining flush_lock. To avoid time-of-check-to-time-of-use
- * issues, this function both checks and clears the flag.
- */
-static bool
-flusher_should_run(void)
-{
-	// We will flush if we have a reason to and no reason not to.
-	char *reason_to = NULL, *reason_not_to = NULL;
-
-	if (flusher.countdown_ms <= 0)
-		reason_to = "timer expired";
-
-	if (logger_funcs.changes() >= 0)
-		reason_to = "changes";
-	else
-		reason_not_to = "no changes";
-
-	// Read and clear flush_now. If we decide not to flush
-	// we'll put it back.
-	bool my_flush_now = (bool) ATOMIC_XCG(&flusher.flush_now, 0);
-	if (my_flush_now) {
-		reason_to = "user request";
-		reason_not_to = NULL;
-	}
-
-	if (ATOMIC_GET(&store_nr_active) > 0)
-		reason_not_to = "awaiting idle time";
-
-	if (!flusher.enabled && !my_flush_now)
-		reason_not_to = "disabled";
-
-	bool do_it = (reason_to && !reason_not_to);
-
-	TRC_DEBUG_IF(SQL_STORE)
-	{
-		if (reason_to != flusher.reason_to || reason_not_to != flusher.reason_not_to) {
-			TRC_DEBUG_ENDIF(SQL_STORE, "Store flusher: %s, reason to flush: %s, reason not to: %s\n",
-										do_it ? "flushing" : "not flushing",
-										reason_to ? reason_to : "none",
-										reason_not_to ? reason_not_to : "none");
-		}
-	}
-
-	flusher.reason_to = reason_to;
-	flusher.reason_not_to = reason_not_to;
-
-	// Remember the request for next time.
-	if (!do_it && my_flush_now)
-		ATOMIC_SET(&flusher.flush_now, 1);
-
-	return do_it;
-}
-
 void
 store_exit(void)
 {
 	MT_lock_set(&flush_lock);
 
 	TRC_DEBUG(SQL_STORE, "Store locked\n");
-
-	/* busy wait till the logmanager is ready */
-	while (flusher.working) {
-		MT_lock_unset(&flush_lock);
-		MT_sleep_ms(100);
-		MT_lock_set(&flush_lock);
-	}
 
 	if (gtrans) {
 		MT_lock_unset(&flush_lock);
@@ -2189,10 +2091,10 @@ store_apply_deltas(void)
 {
 	int res = LOG_OK;
 
-	flusher.working = true;
 	/* make sure we reset all transactions on re-activation */
 	//gtrans->wstime = timestamp();
 	/* cleanup drop tables, columns and idxs first */
+	if (0)
 	trans_cleanup(gtrans);
 
 	res = logger_funcs.flush();
@@ -2207,28 +2109,13 @@ store_apply_deltas(void)
 		sql_trans_destroy(gtrans, false);
 		gtrans = ntrans;
 	}
-	flusher.working = false;
-
 	return res;
 }
 
-/* Call while holding flush_lock */
-static void
-wait_until_flusher_idle(void)
-{
-	while (flusher.working) {
-		const int sleeptime = 100;
-		MT_lock_unset(&flush_lock);
-		MT_sleep_ms(sleeptime);
-		MT_lock_set(&flush_lock);
-	}
-}
 void
 store_suspend_log(void)
 {
 	MT_lock_set(&flush_lock);
-	flusher.enabled = false;
-	wait_until_flusher_idle();
 	MT_lock_unset(&flush_lock);
 }
 
@@ -2236,7 +2123,6 @@ void
 store_resume_log(void)
 {
 	MT_lock_set(&flush_lock);
-	flusher.enabled = true;
 	MT_lock_unset(&flush_lock);
 }
 
@@ -2251,12 +2137,9 @@ store_manager(void)
 	while (!GDKexiting()) {
 		int res;
 
-		if (!flusher_should_run()) {
+		if (logger_funcs.changes() <= 0) {
 			const int sleeptime = 100;
-			MT_lock_unset(&flush_lock);
 			MT_sleep_ms(sleeptime);
-			flusher.countdown_ms -= sleeptime;
-			MT_lock_set(&flush_lock);
 			continue;
 		}
 
@@ -2268,7 +2151,6 @@ store_manager(void)
 			GDKfatal("write-ahead logging failure, disk full?");
 		}
 
-		flusher_new_cycle();
 		store_funcs.cleanup();
 		MT_thread_setworking("sleeping");
 		TRC_DEBUG(SQL_STORE, "Store flusher done\n");
@@ -2688,7 +2570,6 @@ store_hot_snapshot(str tarfile)
 
 	MT_lock_set(&flush_lock);
 	locked = 1;
-	wait_until_flusher_idle();
 	if (GDKexiting())
 		goto end;
 
