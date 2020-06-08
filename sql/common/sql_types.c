@@ -1616,7 +1616,7 @@ sqltypeinit( sql_allocator *sa)
 	sql_create_analytic(sa, "listagg", "sql", "str_group_concat", SCALE_NONE, STR, 2, STR, STR);
 
 	sql_create_func(sa, "and", "calc", "and", FALSE, FALSE, SCALE_FIX, 0, BIT, 2, BIT, BIT);
-	sql_create_func(sa, "or",  "calc",  "or", FALSE, FALSE, SCALE_FIX, 0, BIT, 2, BIT, BIT);
+	sql_create_func(sa, "or",  "calc",  "or", TRUE, FALSE, SCALE_FIX, 0, BIT, 2, BIT, BIT);
 	sql_create_func(sa, "xor", "calc", "xor", FALSE, FALSE, SCALE_FIX, 0, BIT, 2, BIT, BIT);
 	sql_create_func(sa, "not", "calc", "not", FALSE, FALSE, SCALE_FIX, 0, BIT, 1, BIT);
 

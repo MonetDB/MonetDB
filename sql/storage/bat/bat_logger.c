@@ -1122,7 +1122,7 @@ snapshot_wal(stream *plan, const char *db_dir)
 	}
 	// if there's more the file format must have changed
 	// and this code should be updated accordingly:
-	assert((fscanf(f, " "), feof(f))); // sanity check
+	//assert((fscanf(f, " "), feof(f))); // sanity check
 	fclose(f);
 
 	// Determining the current log file is easy
