@@ -95,7 +95,7 @@ exp_has_freevar(mvc *sql, sql_exp *e)
 	}
 
 	if (is_freevar(e))
-		return 1;
+		return is_freevar(e);
 	switch(e->type) {
 	case e_cmp:
 		if (e->flag == cmp_or || e->flag == cmp_filter) {
@@ -139,9 +139,10 @@ exps_have_freevar(mvc *sql, list *exps)
 	if (!exps)
 		return 0;
 	for (node *n = exps->h; n; n = n->next) {
+		int vf = 0;
 		sql_exp *e = n->data;
-		if (exp_has_freevar(sql, e))
-			return 1;
+		if ((vf =exp_has_freevar(sql, e)) != 0)
+			return vf;
 	}
 	return 0;
 }
@@ -475,7 +476,7 @@ rel_dependent_var(mvc *sql, sql_rel *l, sql_rel *r)
 /*
  * try to bind any freevar in the expression e
  */
-static void
+void
 rel_bind_var(mvc *sql, sql_rel *rel, sql_exp *e)
 {
 	list *fvs = exp_freevar(sql, e);
@@ -1410,46 +1411,6 @@ push_up_table(mvc *sql, sql_rel *rel, list *ad)
 	return rel;
 }
 
-/* reintroduce selects, for freevar's of other dependent joins */
-static sql_rel *
-push_down_select(mvc *sql, sql_rel *rel)
-{
-	if (!list_empty(rel->exps)) {
-		node *n;
-		list *jexps = sa_list(sql->sa);
-		list *sexps = sa_list(sql->sa);
-		sql_rel *d = rel->l;
-
-		for(n=rel->exps->h; n; n=n->next) {
-			sql_exp *e = n->data;
-			list *v = exp_freevar(sql, e);
-			int found = 1;
-
-			if (v) {
-				node *m;
-				for(m=v->h; m && found; m=m->next) {
-					sql_exp *fv = m->data;
-
-					found = (rel_find_exp(d, fv) != NULL);
-				}
-			}
-			if (found) {
-				append(jexps, e);
-			} else {
-				append(sexps, e);
-			}
-		}	
-		if (!list_empty(sexps)) {
-			sql_rel *r;
-
-			rel->exps = jexps;
-			r = rel->r = rel_select(sql->sa, rel->r, NULL);
-			r->exps = sexps;
-		}
-	}
-	return rel;
-}
-
 static sql_rel *
 rel_unnest_dependent(mvc *sql, sql_rel *rel)
 {
@@ -1471,8 +1432,7 @@ rel_unnest_dependent(mvc *sql, sql_rel *rel)
 
 		if (!rel_has_freevar(sql, r)) {
 			reset_dependent(rel);
-			/* reintroduce selects, for freevar's of other dependent joins */
-			return push_down_select(sql, rel);
+			return rel;
 		}
 
 		/* try to push dependent join down */
@@ -1640,13 +1600,14 @@ rewrite_empty_project(mvc *sql, sql_rel *rel, int *changes)
 }
 
 static sql_exp *
-exp_reset_card(mvc *sql, sql_rel *rel, sql_exp *e, int depth, int *changes)
+exp_reset_card_and_freevar(mvc *sql, sql_rel *rel, sql_exp *e, int depth, int *changes)
 {
 	(void)sql;
 	(void)depth;
 	(void)changes;
 
-	if (!e || !rel || !rel->l)
+	reset_freevar(e); /* unnesting is done, we can remove the freevar flag */
+	if (!rel->l)
 		return e;
 	if (is_groupby(rel->op)) {
 		switch(e->type) {
@@ -3162,6 +3123,6 @@ rel_unnest(mvc *sql, sql_rel *rel)
 	rel = rel_visitor_bottomup(sql, rel, &rewrite_groupings, &changes);	/* transform group combinations into union of group relations */
 	rel = rel_visitor_bottomup(sql, rel, &rewrite_empty_project, &changes);
 	// needed again! 
-	rel = rel_exp_visitor_bottomup(sql, rel, &exp_reset_card, &changes);
+	rel = rel_exp_visitor_bottomup(sql, rel, &exp_reset_card_and_freevar, &changes);
 	return rel;
 }

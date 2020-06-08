@@ -21,18 +21,6 @@ comment "if col contains exactly one value return this. Incase of more raise an 
 command subzero_or_one( b:bat[:any_1], gp:bat[:oid], gpe:bat[:oid], no_nil:bit) :bat[:any_1]
 address SQLsubzero_or_one;
 
-# todo implement = all aggregator (ie keep last value and compare status)
-inline function sql.all( b:bat[:any_1], gp:bat[:oid], gpe:bat[:oid], no_nil:bit) :bat[:any_1];
-	(g,e,h) := group.group(gp);
-	m := aggr.max(h);
-	c0 := calc.isnil(m);
-	c01 := calc.not(c0);
-	c1 := calc.>(m,1:lng);
-	c11 := calc.and(c01,c1);
-	sql.assert(c11, "21000!zero_or_one: cardinality violation, scalar expression expected ");
-	return all := b;
-end sql.all;
-
 command all( col:bat[:any_1]) :any_1
 address SQLall
 comment "if all values in col are equal return this, else nil";

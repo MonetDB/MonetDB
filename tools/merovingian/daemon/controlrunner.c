@@ -478,7 +478,7 @@ static void ctl_handle_client(
 								len = strlen(buf2); /* secret can contain null-bytes */
 								fclose(secretf);
 							}
-							if (GDKinit(set, setlen) != GDK_SUCCEED) {
+							if (GDKinit(set, setlen, 0) != GDK_SUCCEED) {
 								Mfprintf(_mero_ctlerr, "%s: could not "
 										 "initialize database '%s'\n",
 										 origin, q);

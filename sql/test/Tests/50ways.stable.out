@@ -174,7 +174,10 @@ stdout of test '50ways` in directory 'sql/test` itself:
 % tinyint # type
 % 2 # length
 [ 29	]
-% .s # table_name
+#SELECT  DISTINCT S.SNAME
+#      FROM     S NATURAL LEFT JOIN SP
+#      WHERE  SP.PNR = 'P2';
+% sys.s # table_name
 % sname # name
 % varchar # type
 % 0 # length
@@ -184,7 +187,10 @@ stdout of test '50ways` in directory 'sql/test` itself:
 % tinyint # type
 % 2 # length
 [ 30	]
-% .s # table_name
+#SELECT  DISTINCT S.SNAME
+#      FROM     S LEFT JOIN SP USING ( SNR )
+#      WHERE  SP.PNR = 'P2';
+% sys.s # table_name
 % sname # name
 % varchar # type
 % 0 # length
@@ -194,7 +200,10 @@ stdout of test '50ways` in directory 'sql/test` itself:
 % tinyint # type
 % 2 # length
 [ 31	]
-% .s # table_name
+#SELECT  DISTINCT S.SNAME
+#      FROM     S LEFT JOIN SP ON S.SNR = SP.SNR
+#      WHERE  SP.PNR = 'P2';
+% sys.s # table_name
 % sname # name
 % varchar # type
 % 0 # length

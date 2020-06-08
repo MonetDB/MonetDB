@@ -3791,7 +3791,7 @@ rel_project_cse(mvc *sql, sql_rel *rel, int *changes)
 				for (m=nexps->h; m; m = m->next){
 					sql_exp *e2 = m->data;
 				
-					if (exp_name(e2) && exp_match_exp(e1, e2)) {
+					if (exp_name(e2) && exp_match_exp(e1, e2) && exps_bind_column2(nexps, exp_relname(e1), exp_name(e1)) == e1) {
 						sql_exp *ne = exp_alias(sql->sa, exp_relname(e1), exp_name(e1), exp_relname(e2), exp_name(e2), exp_subtype(e2), e2->card, has_nil(e2), is_intern(e1));
 
 						ne = exp_propagate(sql->sa, ne, e1);
@@ -9037,6 +9037,157 @@ rel_merge_table_rewrite(mvc *sql, sql_rel *rel, int *changes)
 	return rel;
 }
 
+static bool is_non_trivial_select_applied_to_outer_join(sql_rel *rel) {
+    return is_select(rel->op) && rel->exps && is_outerjoin(((sql_rel*) rel->l)->op);
+}
+
+extern list *list_append_before(list *l, node *n, void *data);
+
+static void replace_column_references_with_nulls_2(mvc *sql, list* crefs, sql_exp* e);
+
+static void
+replace_column_references_with_nulls_1(mvc *sql, list* crefs, list* exps) {
+    for(node* n = exps->h; n; n=n->next) {
+        sql_exp* e = n->data;
+        replace_column_references_with_nulls_2(sql, crefs, e);
+    }
+}
+
+static void
+replace_column_references_with_nulls_2(mvc *sql, list* crefs, sql_exp* e) {
+    if (e == NULL) {
+        return;
+    }
+
+    switch (e->type) {
+    case e_column:
+        for(node* n = crefs->h; n; n=n->next) {
+            sql_exp* c = n->data;
+
+            if (exp_match(e, c)) {
+                e->type = e_atom;
+                e->l = atom_general(sql->sa, &e->tpe, NULL);
+                e->r = e->f = NULL;
+                break;
+            }
+        }
+        break;
+    case e_cmp:
+        switch (e->flag) {
+        case cmp_gt:
+        case cmp_gte:
+        case cmp_lte:
+        case cmp_lt:
+        case cmp_equal:
+        case cmp_notequal:
+        {
+            sql_exp* l = e->l;
+            sql_exp* r = e->r;
+            sql_exp* f = e->f;
+
+            replace_column_references_with_nulls_2(sql, crefs, l);
+            replace_column_references_with_nulls_2(sql, crefs, r);
+            replace_column_references_with_nulls_2(sql, crefs, f);
+            break;
+        }
+        case cmp_or:
+        {
+            list* l = e->l;
+            list* r = e->r;
+            replace_column_references_with_nulls_1(sql, crefs, l);
+            replace_column_references_with_nulls_1(sql, crefs, r);
+            break;
+        }
+        default:
+            break;
+        }
+        break;
+    case e_func:
+    {
+        list* l = e->l;
+        replace_column_references_with_nulls_1(sql, crefs, l);
+        break;
+    }
+    case e_convert:
+    {
+        sql_exp* l = e->l;
+        replace_column_references_with_nulls_2(sql, crefs, l);
+        break;
+    }
+    default:
+        break;
+    }
+}
+
+static sql_rel *
+out2inner(mvc *sql, sql_rel* sel, sql_rel* join, sql_rel* inner_join_side, int *changes, operator_type new_type) {
+
+    list* select_predicates = exps_copy(sql, sel->exps);
+
+    if (!is_base(inner_join_side->op) && !is_simple_project(inner_join_side->op)) {
+        // Nothing to do here.
+        return sel;
+    }
+
+    list* inner_join_column_references = inner_join_side->exps;
+
+    for(node* n = select_predicates->h; n; n=n->next) {
+        sql_exp* e = n->data;
+        replace_column_references_with_nulls_2(sql, inner_join_column_references, e);
+
+        if (exp_is_false(sql, e)) {
+            join->op = new_type;
+            (*changes)++;
+            break;
+        }
+    }
+
+    return sel;
+}
+
+static sql_rel *
+rel_out2inner(mvc *sql, sql_rel *rel, int *changes) {
+
+    if (!is_non_trivial_select_applied_to_outer_join(rel)) {
+        // Nothing to do here.
+        return rel;
+    }
+
+    sql_rel* join = (sql_rel*) rel->l;
+
+    if (rel_is_ref(join)) {
+        /* Do not alter a multi-referenced join relation.
+         * This is problematic (e.g. in the case of the plan of a merge statement)
+		 * basically because there are no guarantees on the other container relations.
+		 * In particular there is no guarantee that the other referencing relations are
+		 * select relations with null-rejacting predicates on the inner join side.
+         */
+        return rel;
+    }
+
+    sql_rel* inner_join_side;
+    if (is_left(join->op)) {
+        inner_join_side = join->r;
+        return out2inner(sql, rel, join, inner_join_side, changes, op_join);
+    }
+    else if (is_right(join->op)) {
+        inner_join_side = join->l;
+        return out2inner(sql, rel, join, inner_join_side, changes, op_join);
+    }
+    else /*full outer join*/ {
+        // First check if left side can degenerate from full outer join to just right outer join.
+        inner_join_side = join->r;
+        rel = out2inner(sql, rel, join, inner_join_side, changes, op_right);
+        /* Now test if the right side can degenerate to 
+         * a normal inner join or a left outer join
+         * depending on the result of previous call to out2inner.
+         */
+
+        inner_join_side = join->l;
+        return out2inner(sql, rel, join, inner_join_side, changes, is_right(join->op)? op_join: op_left);
+    }
+}
+
 static sql_rel*
 exp_skip_output_parts(sql_rel *rel)
 {
@@ -9247,6 +9398,7 @@ optimize_rel(mvc *sql, sql_rel *rel, int *g_changes, int level, int value_based_
 	if (gp.cnt[op_join] || gp.cnt[op_left] || gp.cnt[op_right] || gp.cnt[op_full] || gp.cnt[op_semi] || gp.cnt[op_anti]) {
 		rel = rel_remove_empty_join(sql, rel, &changes);
 
+		rel = rel_visitor_topdown(sql, rel, &rel_out2inner, &changes); 
 		rel = rel_visitor_bottomup(sql, rel, &rel_join2semijoin, &changes); 
 		if (!gp.cnt[op_update])
 			rel = rel_join_order(sql, rel);
@@ -9328,6 +9480,7 @@ optimize_rel(mvc *sql, sql_rel *rel, int *g_changes, int level, int value_based_
 		rel = rel_visitor_topdown(sql, rel, &rel_merge_table_rewrite, &changes);
 	if (level <= 0 && mvc_debug_on(sql,8))
 		rel = rel_visitor_topdown(sql, rel, &rel_add_dicts, &changes);
+
 	*g_changes = changes;
 	return rel;
 }

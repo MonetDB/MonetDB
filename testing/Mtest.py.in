@@ -376,7 +376,7 @@ CONDITIONALS = {
     'HAVE_MAL_DEBUGGER'    : "@HAVE_MAL_DEBUGGER_FALSE@",
     'HAVE_NETCDF'          : "@HAVE_NETCDF_FALSE@",
     'HAVE_ODBC'            : "@HAVE_ODBC_FALSE@",
-    'HAVE_PCRE'            : "@HAVE_PCRE_FALSE@",
+    'HAVE_LIBPCRE'         : "@HAVE_LIBPCRE_FALSE@",
     'HAVE_PROJ'            : "@HAVE_PROJ_FALSE@",
     'HAVE_TESTING'         : "@HAVE_TESTING_FALSE@",
     'NATIVE_WIN32'         : "@NATIVE_WIN32_FALSE@",
@@ -398,6 +398,7 @@ CONDITIONALS = {
     'HAVE_PHP'             : "",
     'HAVE_PYMONETDB'       : "", # default PYTHON can import pymonetdb
     'HAVE_PY3MONETDB'      : "", # PYTHON3 exists and can import pymonetdb
+    'HAVE_PYTHON_LZ4'      : "", # module lz4 is available
     'HAVE_RUBY'            : "",
     'HAVE_DATA_PATH'       : "",
     'MERCURIAL'            : "",
@@ -3880,6 +3881,12 @@ def main(argv) :
         print('Python available, but pymonetdb package not available')
     else:
         CONDITIONALS['HAVE_PYMONETDB'] = '#'
+    try:
+        import lz4
+    except ImportError:
+        CONDITIONALS['HAVE_PYTHON_LZ4'] = False
+    else:
+        CONDITIONALS['HAVE_PYTHON_LZ4'] = True
     if 'PYTHON3' in os.environ:
         proc = process.Popen([os.environ['PYTHON3'], '-c', 'import scipy'],
                              stdout=process.PIPE, stderr=process.PIPE,

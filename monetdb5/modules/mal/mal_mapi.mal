@@ -4,11 +4,17 @@
 #
 # Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
 
+module mal_mapi; # need to match the filename
+command prelude():int
+address SERVERlisten_default;
+
 module mapi;
 
 command listen():int
 address SERVERlisten_default
 comment "Start a Mapi server with the default settings.";
+
+
 command listen(port:int):int
 address SERVERlisten_port
 comment "Start a Mapi listener on the port given.";
@@ -207,6 +213,3 @@ comment "Bind a remote variable to a local one.";
 pattern bind(key:int,remoteName:str):bat[:any_2]
 address SERVERbindBAT
 comment "Bind a remote variable to a local one.";
-
-
-mapi.listen();

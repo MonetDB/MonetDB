@@ -65,7 +65,7 @@ fileexists(const char *path)
 
 /* Search for occurrence of the function in the library identified by the filename.  */
 MALfcn
-getAddress(str fcnname)
+getAddress(str modname, str fcnname)
 {
 	void *dl;
 	MALfcn adr;
@@ -73,7 +73,7 @@ getAddress(str fcnname)
 	static int prev= -1;
 
 	/* First try the last module loaded */
-	if( prev >= 0){
+	if( prev >= 0 && strcmp(filesLoaded[prev].modname, modname) == 0){ /* test if just pointer compare could work */
 		adr = (MALfcn) dlsym(filesLoaded[prev].handle, fcnname);
 		if( adr != NULL)
 			return adr; /* found it */
@@ -87,6 +87,7 @@ getAddress(str fcnname)
 	for (idx =0; idx < lastfile; idx++)
 		if (idx != prev &&		/* skip already searched module */
 			filesLoaded[idx].handle &&
+			strcmp(filesLoaded[idx].modname, modname) == 0 &&
 			(idx == 0 || filesLoaded[idx].handle != filesLoaded[0].handle)) {
 			adr = (MALfcn) dlsym(filesLoaded[idx].handle, fcnname);
 			if (adr != NULL)  {
@@ -95,16 +96,28 @@ getAddress(str fcnname)
 			}
 		}
 
-	if (lastfile)
+	if (lastfile) {
+		/* first should be monetdb5 */
+		assert(strcmp(filesLoaded[0].modname, "monetdb5") == 0 || strcmp(filesLoaded[0].modname, "embedded") == 0);
+		adr = (MALfcn) dlsym(filesLoaded[0].handle, fcnname);
+		if (adr != NULL)  {
+			prev = 0;
+			return adr; /* found it */
+		}
 		return NULL;
+	}
 	/*
 	 * Try the program libraries at large or run through all
 	 * loaded files and try to resolve the functionname again.
 	 *
 	 * the first argument must be the same as the base name of the
 	 * library that is created in src/tools */
+#ifdef __APPLE__
 	dl = mdlopen(SO_PREFIX "monetdb5" SO_EXT, RTLD_NOW | RTLD_GLOBAL);
-	if (dl == NULL) 
+#else
+	dl = dlopen(SO_PREFIX "monetdb5" SO_EXT, RTLD_NOW | RTLD_GLOBAL);
+#endif
+	if (dl == NULL)
 		return NULL;
 
 	adr = (MALfcn) dlsym(dl, fcnname);
@@ -149,7 +162,15 @@ loadLibrary(str filename, int flag)
 	str s;
 	int idx;
 	const char *mod_path = GDKgetenv("monet_mod_path");
+	int is_mod;
 
+	is_mod = (strcmp(filename, "monetdb5") != 0 && strcmp(filename, "embedded") != 0);
+
+	if (!lastfile && strcmp(filename, "monetdb5") != 0 && strcmp(filename, "embedded") != 0) { /* first load reference too local functions */
+		str msg = loadLibrary("monetdb5", flag);
+		if (msg != MAL_SUCCEED)
+			return msg;
+	}
 	/* AIX requires RTLD_MEMBER to load a module that is a member of an
 	 * archive.  */
 #ifdef RTLD_MEMBER
@@ -173,21 +194,38 @@ loadLibrary(str filename, int flag)
 			mod_path = NULL;
 	}
 	if (mod_path == NULL) {
-		if (flag)
-			throw(LOADER, "loadLibrary", RUNTIME_FILE_NOT_FOUND ":%s", s);
-		return MAL_SUCCEED;
+		int len;
+
+		if (is_mod)
+			len = snprintf(nme, FILENAME_MAX, "%s_%s%s", SO_PREFIX, s, SO_EXT);
+		else
+			len = snprintf(nme, FILENAME_MAX, "%s%s%s", SO_PREFIX, s, SO_EXT);
+		if (len == -1 || len >= FILENAME_MAX)
+			throw(LOADER, "loadLibrary", RUNTIME_LOAD_ERROR "Library filename path is too large");
+
+#ifdef __APPLE__
+		handle = mdlopen(nme, RTLD_NOW | RTLD_GLOBAL);
+#else
+		handle = dlopen(nme, RTLD_NOW | RTLD_GLOBAL);
+#endif
+		if (!handle) {
+			if (flag)
+				throw(LOADER, "loadLibrary", RUNTIME_FILE_NOT_FOUND ":%s", s);
+			return MAL_SUCCEED;
+		}
 	}
 
-	while (*mod_path) {
+	while (!handle && *mod_path) {
 		int len;
 		const char *p;
 
 		for (p = mod_path; *p && *p != PATH_SEP; p++)
 			;
 
-		len = snprintf(nme, FILENAME_MAX, "%.*s%c%s_%s%s",
-				 (int) (p - mod_path),
-				 mod_path, DIR_SEP, SO_PREFIX, s, SO_EXT);
+		if (is_mod)
+			len = snprintf(nme, FILENAME_MAX, "%.*s%c%s_%s%s", (int) (p - mod_path), mod_path, DIR_SEP, SO_PREFIX, s, SO_EXT);
+		else
+			len = snprintf(nme, FILENAME_MAX, "%.*s%c%s%s%s", (int) (p - mod_path), mod_path, DIR_SEP, SO_PREFIX, s, SO_EXT);
 		if (len == -1 || len >= FILENAME_MAX)
 			throw(LOADER, "loadLibrary", RUNTIME_LOAD_ERROR "Library filename path is too large");
 		handle = dlopen(nme, mode);
@@ -195,9 +233,10 @@ loadLibrary(str filename, int flag)
 			throw(LOADER, "loadLibrary", RUNTIME_LOAD_ERROR " failed to open library %s (from within file '%s'): %s", s, nme, dlerror());
 		if (handle == NULL && strcmp(SO_EXT, ".so") != /* DISABLES CODE */ (0)) {
 			/* try .so */
-			len = snprintf(nme, FILENAME_MAX, "%.*s%c%s_%s.so",
-					 (int) (p - mod_path),
-					 mod_path, DIR_SEP, SO_PREFIX, s);
+			if (is_mod)
+				len = snprintf(nme, FILENAME_MAX, "%.*s%c%s_%s.so", (int) (p - mod_path), mod_path, DIR_SEP, SO_PREFIX, s);
+			else
+				len = snprintf(nme, FILENAME_MAX, "%.*s%c%s%s.so", (int) (p - mod_path), mod_path, DIR_SEP, SO_PREFIX, s);
 			if (len == -1 || len >= FILENAME_MAX)
 				throw(LOADER, "loadLibrary", RUNTIME_LOAD_ERROR "Library filename path is too large");
 			handle = dlopen(nme, mode);
@@ -207,9 +246,10 @@ loadLibrary(str filename, int flag)
 #ifdef __APPLE__
 		if (handle == NULL && strcmp(SO_EXT, ".bundle") != 0) {
 			/* try .bundle */
-			len = snprintf(nme, FILENAME_MAX, "%.*s%c%s_%s.bundle",
-					 (int) (p - mod_path),
-					 mod_path, DIR_SEP, SO_PREFIX, s);
+			if (is_mod)
+				len = snprintf(nme, FILENAME_MAX, "%.*s%c%s_%s.bundle", (int) (p - mod_path), mod_path, DIR_SEP, SO_PREFIX, s);
+			else
+				len = snprintf(nme, FILENAME_MAX, "%.*s%c%s%s.bundle", (int) (p - mod_path), mod_path, DIR_SEP, SO_PREFIX, s);
 			if (len == -1 || len >= FILENAME_MAX)
 				throw(LOADER, "loadLibrary", RUNTIME_LOAD_ERROR "Library filename path is too large");
 			handle = dlopen(nme, mode);

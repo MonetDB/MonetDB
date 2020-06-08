@@ -749,3 +749,38 @@ str URLnoop(url *u, url *val)
 		throw(MAL, "url.noop", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	return MAL_SUCCEED;
 }
+
+#include "mel.h"
+mel_atom url_init_atoms[] = {
+ { .name="url", .basetype="str", .fromstr=(fptr)&URLfromString, .tostr=(fptr)&URLtoString, },  { .cmp=NULL } 
+};
+mel_func url_init_funcs[] = {
+ command("url", "url", URLnew, false, "Create an URL from a string literal", args(1,2, arg("",url),arg("s",str))),
+ command("url", "url", URLnoop, false, "Create an URL from a string literal", args(1,2, arg("",url),arg("s",url))),
+ command("calc", "url", URLnew, false, "Create an URL from a string literal", args(1,2, arg("",url),arg("s",str))),
+ command("calc", "url", URLnoop, false, "Create an URL from a string literal", args(1,2, arg("",url),arg("s",url))),
+ command("url", "getAnchor", URLgetAnchor, false, "Extract the URL anchor (reference)", args(1,2, arg("",str),arg("u",url))),
+ command("url", "getBasename", URLgetBasename, false, "Extract the URL base file name", args(1,2, arg("",str),arg("u",url))),
+ command("url", "getContent", URLgetContent, false, "Get the URL resource in a local file", args(1,2, arg("",str),arg("u",url))),
+ command("url", "getContext", URLgetContext, false, "Get the path context of a URL", args(1,2, arg("",str),arg("u",url))),
+ command("url", "getDomain", URLgetDomain, false, "Extract Internet domain from the URL", args(1,2, arg("",str),arg("u",url))),
+ command("url", "getExtension", URLgetExtension, false, "Extract the file extension of the URL", args(1,2, arg("",str),arg("u",url))),
+ command("url", "getFile", URLgetFile, false, "Extract the last file name of the URL", args(1,2, arg("",str),arg("u",url))),
+ command("url", "getHost", URLgetHost, false, "Extract the server name from the URL", args(1,2, arg("",str),arg("u",url))),
+ command("url", "getPort", URLgetPort, false, "Extract the port id from the URL", args(1,2, arg("",str),arg("u",url))),
+ command("url", "getProtocol", URLgetProtocol, false, "Extract the protocol from the URL", args(1,2, arg("",str),arg("u",url))),
+ command("url", "getQuery", URLgetQuery, false, "Extract the query string from the URL", args(1,2, arg("",str),arg("u",url))),
+ command("url", "getUser", URLgetUser, false, "Extract the user identity from the URL", args(1,2, arg("",str),arg("u",url))),
+ command("url", "getRobotURL", URLgetRobotURL, false, "Extract the location of the robot control file", args(1,2, arg("",str),arg("u",url))),
+ command("url", "isaURL", URLisaURL, false, "Check conformity of the URL syntax", args(1,2, arg("",bit),arg("u",str))),
+ command("url", "new", URLnew4, false, "Construct URL from protocol, host, port, and file", args(1,5, arg("",url),arg("p",str),arg("h",str),arg("prt",int),arg("f",str))),
+ command("url", "new", URLnew3, false, "Construct URL from protocol, host,and file", args(1,4, arg("",url),arg("prot",str),arg("host",str),arg("fnme",str))),
+ { .imp=NULL }
+};
+#include "mal_import.h"
+#ifdef _MSC_VER
+#undef read
+#pragma section(".CRT$XCU",read)
+#endif
+LIB_STARTUP_FUNC(init_url_mal)
+{ mal_module("url", url_init_atoms, url_init_funcs); }

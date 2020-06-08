@@ -5,8 +5,8 @@ Say we have two single integer column tables foo and bar with the following cont
 create table foo (i int);
 insert into foo values (10), (40), (20), (5);
 
-create table bar (i int);
-insert into bar values (30), (20), (50), (40);
+create table bar (i int, j int);
+insert into bar values (30, 300), (20, 200), (50, 500), (40, 400);
 
 select * from foo;
 +------+
@@ -28,7 +28,7 @@ select * from bar;
 +------+
 
 We compute the following outer join
-select * from foo left join bar on foo.i = bar.i where bar.i is not null;
+select foo.i, bar.i from foo left join bar on foo.i = bar.i where bar.j is not null;
 +------+------+
 | i    | i    |
 +======+======+

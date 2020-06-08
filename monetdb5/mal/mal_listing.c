@@ -183,8 +183,6 @@ fcnDefinition(MalBlkPtr mb, InstrPtr p, str t, int flg, str base, size_t len)
 		return base;
 	if( mb->unsafeProp && !copystring(&t, "unsafe ", &len))
 		return base;
-	if( mb->sealedProp && !copystring(&t, "sealed ", &len))
-		return base;
 	if (!copystring(&t, operatorName(p->token), &len) ||
 		!copystring(&t, " ", &len) ||
 		!copystring(&t, getModuleId(p) ? getModuleId(p) : "user", &len) ||

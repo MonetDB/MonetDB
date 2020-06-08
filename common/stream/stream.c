@@ -213,7 +213,7 @@ struct stream {
 };
 
 int
-mnstr_init(void)
+mnstr_init(int embedded)
 {
 	static ATOMIC_FLAG inited = ATOMIC_FLAG_INIT;
 
@@ -221,12 +221,14 @@ mnstr_init(void)
 		return 0;
 
 #ifdef NATIVE_WIN32
-	{
+	if (!embedded) {
 		WSADATA w;
 
 		if (WSAStartup(0x0101, &w) != 0)
 			return -1;
 	}
+#else
+	(void)embedded;
 #endif
 	return 0;
 }
@@ -1824,8 +1826,15 @@ stream_lz4close(stream *s)
 	lz4_stream *lz4 = s->stream_data.p;
 
 	if (lz4) {
-		stream_lz4flush(s);
 		if(!s->readonly) {
+			char final_bytes[128]; // 4 would probably suffice
+			stream_lz4flush(s);
+			size_t remainder = LZ4F_compressEnd(lz4->context.comp_context, final_bytes, sizeof(final_bytes), NULL);
+			// no channel to return an error from here :(
+			if (!LZ4F_isError(remainder)) {
+				// again, hope for the best
+				(void) fwrite(final_bytes, 1, remainder, lz4->fp);
+			}
 			(void) LZ4F_freeCompressionContext(lz4->context.comp_context);
 		} else {
 			(void) LZ4F_freeDecompressionContext(lz4->context.dec_context);

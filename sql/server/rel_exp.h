@@ -42,7 +42,7 @@ extern sql_exp *exp_compare_func(mvc *sql, sql_exp *le, sql_exp *re, sql_exp *oe
 #define exp_totype(e)	((list*)e->r)->h->next->data
 extern sql_exp *exp_convert(sql_allocator *sa, sql_exp *exp, sql_subtype *fromtype, sql_subtype *totype );
 extern str number2name(str s, int len, int i);
-extern sql_exp *exp_op(sql_allocator *sa, list *l, sql_subfunc *f );
+sql_export sql_exp *exp_op(sql_allocator *sa, list *l, sql_subfunc *f );
 extern sql_exp *exp_rank_op(sql_allocator *sa, list *largs, list *gbe, list *obe, sql_subfunc *f );
 
 #define append(l,v) list_append(l,v) 
@@ -63,7 +63,7 @@ extern sql_exp * exp_atom_bool(sql_allocator *sa, int b);
 extern sql_exp * exp_atom_bte(sql_allocator *sa, bte i);
 extern sql_exp * exp_atom_sht(sql_allocator *sa, sht i);
 extern sql_exp * exp_atom_int(sql_allocator *sa, int i);
-extern sql_exp * exp_atom_lng(sql_allocator *sa, lng l);
+sql_export sql_exp * exp_atom_lng(sql_allocator *sa, lng l);
 #ifdef HAVE_HGE
 extern sql_exp * exp_atom_hge(sql_allocator *sa, hge l);
 #endif
@@ -81,7 +81,7 @@ extern list * exp_get_values(sql_exp *e); /* get expression list from the values
 extern list * exp_types(sql_allocator *sa, list *exps);
 extern int have_nil(list *exps);
 
-extern sql_exp * exp_column(sql_allocator *sa, const char *rname, const char *name, sql_subtype *t, unsigned int card, int has_nils, int intern);
+sql_export sql_exp * exp_column(sql_allocator *sa, const char *rname, const char *name, sql_subtype *t, unsigned int card, int has_nils, int intern);
 extern sql_exp * exp_propagate(sql_allocator *sa, sql_exp *ne, sql_exp *oe);
 extern sql_exp * exp_ref(mvc *sql, sql_exp *e);
 extern sql_exp * exp_ref_save(mvc *sql, sql_exp *e); /* if needed mark the input expression as a referenced expression, return reference to e */
@@ -131,6 +131,7 @@ extern int exp_refers( sql_exp *p, sql_exp *c);
 extern int exp_match( sql_exp *e1, sql_exp *e2);
 extern sql_exp* exps_find_exp( list *l, sql_exp *e);
 extern int exp_match_exp( sql_exp *e1, sql_exp *e2);
+extern sql_exp* exps_any_match(list *l, sql_exp *e);
 /* match just the column (cmp equality) expressions */
 extern int exp_match_col_exps( sql_exp *e, list *l);
 extern int exps_match_col_exps( sql_exp *e1, sql_exp *e2);

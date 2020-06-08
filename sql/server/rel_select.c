@@ -1702,7 +1702,7 @@ rel_filter(mvc *sql, sql_rel *rel, list *l, list *r, char *sname, char *filter_o
 		else
 			return sql_error(sql, ERR_GROUPBY, SQLSTATE(42000) "SELECT: cannot use non GROUP BY column in query results without an aggregate function");
 	}
-	if (exps_card(r) <= CARD_ATOM && exps_are_atoms(r)) {
+	if (exps_card(r) <= CARD_ATOM && (exps_are_atoms(r) || exps_have_freevar(sql, r) || exps_have_freevar(sql, l))) {
 		if (exps_card(l) == exps_card(r) || rel->processed)  /* bin compare op */
 			return rel_select(sql->sa, rel, e);
 
@@ -4454,7 +4454,7 @@ rel_order_by_column_exp(sql_query *query, sql_rel **R, symbol *column_r, int f)
 {
 	mvc *sql = query->sql;
 	sql_rel *r = *R, *p = NULL;
-	sql_exp *e = NULL;
+	sql_exp *e = NULL, *found = NULL;
 	exp_kind ek = {type_value, card_column, FALSE};
 
 	if (!r)
@@ -4472,15 +4472,19 @@ rel_order_by_column_exp(sql_query *query, sql_rel **R, symbol *column_r, int f)
 	else if (r)
 		p->l = r;
 	if (e && p) {
-		e = rel_project_add_exp(sql, p, e);
-		for (node *n = p->exps->h ; n ; n = n->next) {
-			sql_exp *ee = n->data;
+		if (is_project(p->op) && (found = exps_any_match(p->exps, e))) { /* if one of the projections matches, return a reference to it */
+			e = exp_ref(sql, found);
+		} else {
+			e = rel_project_add_exp(sql, p, e);
+			for (node *n = p->exps->h ; n ; n = n->next) {
+				sql_exp *ee = n->data;
 
-			if (ee->card > r->card) {
-				if (exp_name(ee))
-					return sql_error(sql, ERR_GROUPBY, SQLSTATE(42000) "SELECT: cannot use non GROUP BY column '%s' in query results without an aggregate function", exp_name(ee));
-				else
-					return sql_error(sql, ERR_GROUPBY, SQLSTATE(42000) "SELECT: cannot use non GROUP BY column in query results without an aggregate function");
+				if (ee->card > r->card) {
+					if (exp_name(ee))
+						return sql_error(sql, ERR_GROUPBY, SQLSTATE(42000) "SELECT: cannot use non GROUP BY column '%s' in query results without an aggregate function", exp_name(ee));
+					else
+						return sql_error(sql, ERR_GROUPBY, SQLSTATE(42000) "SELECT: cannot use non GROUP BY column in query results without an aggregate function");
+				}
 			}
 		}
 		return e;
@@ -5361,13 +5365,50 @@ rel_value_exp2(sql_query *query, sql_rel **rel, symbol *se, int f, exp_kind ek)
 	}
 }
 
+static int exps_has_rank(list *exps);
+
+static int
+exp_has_rank(sql_exp *e)
+{
+	switch(e->type) {
+	case e_convert:
+		return exp_has_rank(e->l);
+	case e_func:
+		if (e->r)
+			return 1;
+		/* fall through */
+	case e_aggr:
+		return exps_has_rank(e->l);
+	default:
+		return 0;
+	}
+}
+
+/* TODO create exps_has (list, fptr ) */
+static int
+exps_has_rank(list *exps)
+{
+	if (!exps || list_empty(exps))
+		return 0;
+	for(node *n = exps->h; n; n=n->next){
+		sql_exp *e = n->data;
+
+		if (exp_has_rank(e))
+			return 1;
+	}
+	return 0;
+}
+
 sql_exp *
 rel_value_exp(sql_query *query, sql_rel **rel, symbol *se, int f, exp_kind ek)
 {
+	SelectNode *sn = NULL;
 	sql_exp *e;
 	if (!se)
 		return NULL;
 
+	if (se->token == SQL_SELECT)
+		sn = (SelectNode*)se;
 	if (THRhighwater())
 		return sql_error(query->sql, 10, SQLSTATE(42000) "Query too complex: running out of stack space");
 
@@ -5375,6 +5416,26 @@ rel_value_exp(sql_query *query, sql_rel **rel, symbol *se, int f, exp_kind ek)
 	if (e && (se->token == SQL_SELECT || se->token == SQL_TABLE) && !exp_is_rel(e)) {
 		assert(*rel);
 		return rel_lastexp(query->sql, *rel);
+	}
+	if (exp_has_rel(e) && sn && !sn->from && !sn->where && (ek.card < card_set || ek.card == card_exists) && ek.type != type_relation) {
+		sql_rel *r = exp_rel_get_rel(query->sql->sa, e);
+		sql_rel *l = r->l;
+
+		if (r && is_simple_project(r->op) && l && is_simple_project(l->op) && !l->l && !exps_has_rank(r->exps) && list_length(r->exps) == 1) { /* should be a simple column or value */
+			if (list_length(r->exps) > 1) { /* Todo make sure the in handling can handle a list ( value lists), instead of just a list of relations */
+				e = exp_values(query->sql->sa, r->exps);
+			} else {
+				e = r->exps->h->data;
+				if (*rel && !exp_has_rel(e)) {
+					rel_bind_var(query->sql, *rel, e);
+					if (exp_has_freevar(query->sql, e) && is_sql_aggr(f)) {
+						sql_rel *outer = query_fetch_outer(query, exp_has_freevar(query->sql, e)-1);
+						query_outer_pop_last_used(query, exp_has_freevar(query->sql, e)-1);
+					        reset_outer(outer);
+					}
+				}
+			}
+		}
 	}
 	return e;
 }

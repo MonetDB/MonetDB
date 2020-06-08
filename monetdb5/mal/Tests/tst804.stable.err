@@ -40,10 +40,8 @@ QUERY = # test definiton of a function in a unknown module
         	wrong.message();
         	wrongTo.message();
         end foo;
-ERROR = !SyntaxException:parseError:function wrong.message():void;
-        !SyntaxException:parseError:                      ^<module> name not defined
-        !SyntaxException:parseError:end message;
-        !SyntaxException:parseError:   ^non matching end label
+ERROR = !TypeException:user.foo[2]:'wrongTo.message' undefined in:     wrongTo.message();
+
 
 # 15:26:53 >  
 # 15:26:53 >  "Done."

@@ -101,7 +101,7 @@ gdk_export str GDKstrndup(const char *s, size_t n)
 
 gdk_export void MT_init(void);	/*  init the package. */
 struct opt;
-gdk_export gdk_return GDKinit(struct opt *set, int setlen);
+gdk_export gdk_return GDKinit(struct opt *set, int setlen, int embedded);
 
 /* used for testing only */
 gdk_export void GDKsetmallocsuccesscount(lng count);
@@ -111,11 +111,7 @@ gdk_export void GDKsetmallocsuccesscount(lng count);
  * the transient BATs should be removed.  The buffer pool manager
  * takes care of this.
  */
-#ifndef HAVE_EMBEDDED
-gdk_export _Noreturn void GDKexit(int status);
-#else
 gdk_export void GDKexit(int status);
-#endif
 gdk_export bool GDKexiting(void);
 
 gdk_export void GDKprepareExit(void);
