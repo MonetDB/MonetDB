@@ -316,7 +316,7 @@ extern res_col *res_col_create(sql_trans *tr, res_table *t, const char *tn, cons
 extern void res_table_destroy(res_table *t);
 
 extern res_table *res_tables_remove(res_table *results, res_table *t);
-extern void res_tables_destroy(res_table *results);
+sql_export void res_tables_destroy(res_table *results);
 extern res_table *res_tables_find(res_table *results, int res_id);
 
 extern int store_init(int debug, store_type store, int readonly, int singleuser, backend_stack stk);

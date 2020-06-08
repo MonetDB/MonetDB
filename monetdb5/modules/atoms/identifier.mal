@@ -22,5 +22,3 @@ command prelude():void
 address IDprelude
 comment "Initialize the module";
 
-identifier.prelude();
-

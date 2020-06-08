@@ -3887,7 +3887,7 @@ const_column(backend *be, stmt *val)
 
 	if (val->nr < 0) 
 		return NULL;
-	q = newStmt(mb, sqlRef, singleRef);
+	q = newStmt(mb, batRef, singleRef);
 	if (q == NULL)
 		return NULL;
 	setVarType(mb, getArg(q, 0), newBatType(tt));

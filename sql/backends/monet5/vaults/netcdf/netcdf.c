@@ -897,3 +897,19 @@ NCDFimportVariable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	return msg;
 }
+
+#include "mel.h"
+static mel_func netcdf_init_funcs[] = {
+ command("netcdf", "test", NCDFtest, false, "Returns number of variables in a given NetCDF dataset (file)", args(1,2, arg("",int),arg("filename",str))),
+ pattern("netcdf", "attach", NCDFattach, false, "Register a NetCDF file in the vault", args(1,2, arg("",void),arg("filename",str))),
+ command("netcdf", "importvar", NCDFimportVarStmt, false, "Import variable: compose create array string", args(1,3, arg("",str),arg("filename",str),arg("varid",int))),
+ pattern("netcdf", "importvariable", NCDFimportVariable, false, "Import variable: create array and load data from variable varname of file fileid", args(1,3, arg("",void),arg("fileid",int),arg("varname",str))),
+ { .imp=NULL }
+};
+#include "mal_import.h"
+#ifdef _MSC_VER
+#undef read
+#pragma section(".CRT$XCU",read)
+#endif
+LIB_STARTUP_FUNC(init_netcdf_mal)
+{ mal_module("netcdf", NULL, netcdf_init_funcs); }

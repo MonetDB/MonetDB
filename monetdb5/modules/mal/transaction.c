@@ -125,3 +125,26 @@ TRNtrans_commit(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	}
 	return MAL_SUCCEED;
 }
+
+#if 0
+
+#include "mel.h"
+mel_func transaction_init_funcs[] = {
+ command("transaction", "sync", TRNglobal_sync, false, "Save all persistent BATs", args(1,1, arg("",bit))),
+ command("transaction", "commit", TRNglobal_commit, false, "Global commit on all BATs", args(1,1, arg("",bit))),
+ command("transaction", "abort", TRNglobal_abort, false, "Global abort on all BATs", args(1,1, arg("",bit))),
+ command("transaction", "subcommit", TRNsubcommit, false, "commit only a set of BATnames, passed in the tail\n(to which you must have exclusive access!)", args(1,2, arg("",bit),batarg("b",str))),
+ pattern("transaction", "commit", TRNtrans_commit, false, "Commit changes in certain BATs.", args(0,1, varargany("c",0))),
+ pattern("transaction", "abort", TRNtrans_abort, false, "Abort changes in certain BATs.", args(0,1, varargany("c",0))),
+ pattern("transaction", "clean", TRNtrans_clean, false, "Declare a BAT clean without flushing to disk.", args(0,1, varargany("c",0))),
+ { .imp=NULL }
+};
+#include "mal_import.h"
+#ifdef _MSC_VER
+#undef read
+#pragma section(".CRT$XCU",read)
+#endif
+LIB_STARTUP_FUNC(init_transaction_mal)
+{ mal_module("transaction", NULL, transaction_init_funcs); }
+
+#endif

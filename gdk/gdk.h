@@ -1131,6 +1131,7 @@ gdk_export void BATmsync(BAT *b);
 
 gdk_export char *GDKfilepath(int farmid, const char *dir, const char *nme, const char *ext);
 gdk_export bool GDKinmemory(void);
+gdk_export bool GDKembedded(void);
 gdk_export gdk_return GDKcreatedir(const char *nme);
 
 gdk_export void OIDXdestroy(BAT *b);
@@ -1426,13 +1427,12 @@ gdk_export BAT *BBPquickdesc(bat b, bool delaccess);
 		      format, ##__VA_ARGS__)
 #define GDKsyserror(format, ...)	GDKsyserr(errno, format, ##__VA_ARGS__)
 
-#ifndef HAVE_EMBEDDED
 gdk_export _Noreturn void GDKfatal(_In_z_ _Printf_format_string_ const char *format, ...)
 	__attribute__((__format__(__printf__, 1, 2)));
-#else
+	/*
 gdk_export void GDKfatal(_In_z_ _Printf_format_string_ const char *format, ...)
 	__attribute__((__format__(__printf__, 1, 2)));
-#endif
+	*/
 gdk_export void GDKclrerr(void);
 
 /*

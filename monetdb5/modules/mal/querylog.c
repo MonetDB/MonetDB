@@ -430,3 +430,24 @@ QLOGcall(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	MT_lock_unset(&QLOGlock);
 	return MAL_SUCCEED;
 }
+
+#include "mel.h"
+mel_func querylog_init_funcs[] = {
+ command("querylog", "enable", QLOGenableThreshold, false, "Turn on the query logger", args(0,1, arg("threshold",int))),
+ command("querylog", "enable", QLOGenable, false, "Turn on the query logger", noargs),
+ command("querylog", "disable", QLOGdisable, false, "Turn off the query logger", noargs),
+ command("querylog", "isset", QLOGissetFcn, false, "Return status of query logger", args(1,1, arg("",int))),
+ command("querylog", "empty", QLOGempty, false, "Clear the query log tables", noargs),
+ pattern("querylog", "append", QLOGappend, false, "Add a new query call to the query log", args(0,4, arg("q",str),arg("pipe",str),arg("usr",str),arg("tick",timestamp))),
+ command("querylog", "define", QLOGdefineNaive, false, "Noop operation, just marking the query", args(0,3, arg("q",str),arg("pipe",str),arg("size",int))),
+ command("querylog", "context", QLOGcontextNaive, false, "Noop operation, just marking the query", args(0,4, arg("release",str),arg("version",str),arg("revision",str),arg("uri",str))),
+ pattern("querylog", "call", QLOGcall, false, "Add a new query call to the query log", args(0,8, arg("tick1",timestamp),arg("tick2",timestamp),arg("arg",str),arg("tuples",lng),arg("xtime",lng),arg("rtime",lng),arg("cpu",int),arg("iowait",int))),
+ { .imp=NULL }
+};
+#include "mal_import.h"
+#ifdef _MSC_VER
+#undef read
+#pragma section(".CRT$XCU",read)
+#endif
+LIB_STARTUP_FUNC(init_querylog_mal)
+{ mal_module("querylog", NULL, querylog_init_funcs); }

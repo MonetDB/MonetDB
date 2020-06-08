@@ -45,8 +45,6 @@ address BLOBnitems_bulk;
 command prelude() :void
 address BLOBprelude;
 
-blob.prelude();
-
 module calc;
 
 command blob(b:blob):blob address BLOBblob_blob;

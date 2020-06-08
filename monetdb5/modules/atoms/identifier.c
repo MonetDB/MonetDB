@@ -101,3 +101,20 @@ IDentifier(identifier *retval, str *in)
 
 	return (MAL_SUCCEED);
 }
+
+#include "mel.h"
+mel_atom identifier_init_atoms[] = {
+ { .name="identifier", .basetype="str", .fromstr=(fptr)&IDfromString, .tostr=(fptr)&IDtoString, },  { .cmp=NULL } 
+};
+mel_func identifier_init_funcs[] = {
+ command("identifier", "identifier", IDentifier, false, "Cast a string to an identifer ", args(1,2, arg("",identifier),arg("s",str))),
+ command("identifier", "prelude", IDprelude, false, "Initialize the module", args(1,1, arg("",void))),
+ { .imp=NULL }
+};
+#include "mal_import.h"
+#ifdef _MSC_VER
+#undef read
+#pragma section(".CRT$XCU",read)
+#endif
+LIB_STARTUP_FUNC(init_identifier_mal)
+{ mal_module("identifier", identifier_init_atoms, identifier_init_funcs); }

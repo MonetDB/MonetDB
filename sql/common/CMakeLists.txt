@@ -1,0 +1,64 @@
+#[[
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0.  If a copy of the MPL was not distributed with this
+# file, You can obtain one at http://mozilla.org/MPL/2.0/.
+#
+# Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
+#]]
+
+add_library(sqlcommon STATIC)
+
+target_sources(sqlcommon
+  PRIVATE
+  sql_mem.c
+  sql_list.c
+  sql_hash.c
+  sql_stack.c
+  sql_backend.c
+  sql_keyword.c
+  sql_changeset.c
+  sql_types.c
+  sql_string.c
+  sql_backend.h
+  sql_string.h
+  PUBLIC
+  ${CMAKE_CURRENT_SOURCE_DIR}/sql_types.h)
+
+target_include_directories(sqlcommon
+  PRIVATE
+  $<TARGET_PROPERTY:mal,INCLUDE_DIRECTORIES>
+  PUBLIC
+  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
+  $<INSTALL_INTERFACE:${INCLUDEDIR}/monetdb>)
+
+target_link_libraries(sqlcommon
+  PRIVATE
+  monetdb_config_header
+  matomic
+  stream
+  gdk
+  sqlinclude
+  sqlstorage)
+
+target_compile_definitions(sqlcommon
+  PRIVATE
+  LIBSQL
+  LIBSQLSERVER
+  LIBSQLCOMMON
+  LIBBATSTORE
+  LIBSTORE)
+
+set_target_properties(sqlcommon
+  PROPERTIES
+  POSITION_INDEPENDENT_CODE ON
+  PUBLIC_HEADER ${CMAKE_CURRENT_SOURCE_DIR}/sql_types.h)
+
+install(TARGETS
+  sqlcommon
+  LIBRARY
+  DESTINATION ${CMAKE_INSTALL_LIBDIR}
+  ARCHIVE
+  DESTINATION ${CMAKE_INSTALL_LIBDIR}
+  PUBLIC_HEADER
+  DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/monetdb
+  INCLUDES DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})

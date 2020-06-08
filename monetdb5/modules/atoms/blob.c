@@ -405,3 +405,26 @@ BLOBblob_fromstr(blob **b, const char **s)
 		throw(MAL, "blob", GDK_EXCEPTION);
 	return MAL_SUCCEED;
 }
+
+#include "mel.h"
+static mel_atom blob_init_atoms[] = {
+ { .name="blob", .tostr=(fptr)&BLOBtostr, .fromstr=(fptr)&BLOBfromstr, .cmp=(fptr)&BLOBcmp, .hash=(fptr)&BLOBhash, .null=(fptr)&BLOBnull, .read=(fptr)&BLOBread, .write=(fptr)&BLOBwrite, .put=(fptr)&BLOBput, .del=(fptr)&BLOBdel, .length=(fptr)&BLOBlength, .heap=(fptr)&BLOBheap, },  { .cmp=NULL } 
+};
+static mel_func blob_init_funcs[] = {
+ command("blob", "blob", BLOBblob_blob, false, "Noop routine.", args(1,2, arg("",blob),arg("s",blob))),
+ command("blob", "blob", BLOBblob_fromstr, false, "", args(1,2, arg("",blob),arg("s",str))),
+ command("blob", "toblob", BLOBtoblob, false, "store a string as a blob.", args(1,2, arg("",blob),arg("v",str))),
+ command("blob", "nitems", BLOBnitems, false, "get the number of bytes in this blob.", args(1,2, arg("",int),arg("b",blob))),
+ command("batblob", "nitems", BLOBnitems_bulk, false, "", args(1,2, batarg("",int),batarg("b",blob))),
+ command("blob", "prelude", BLOBprelude, false, "", args(1,1, arg("",void))),
+ command("calc", "blob", BLOBblob_blob, false, "", args(1,2, arg("",blob),arg("b",blob))),
+ command("calc", "blob", BLOBblob_fromstr, false, "", args(1,2, arg("",blob),arg("s",str))),
+ { .imp=NULL }
+};
+#include "mal_import.h"
+#ifdef _MSC_VER
+#undef read
+#pragma section(".CRT$XCU",read)
+#endif
+LIB_STARTUP_FUNC(init_blob_mal)
+{ mal_module("blob", blob_init_atoms, blob_init_funcs); }

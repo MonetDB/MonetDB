@@ -808,3 +808,47 @@ INETnull(void)
 {
 	return &inet_nil;
 }
+
+#include "mel.h"
+mel_atom inet_init_atoms[] = {
+ { .name="inet", .basetype="lng", .size=sizeof(inet), .null=(fptr)&INETnull, .cmp=(fptr)&INETcompare, .fromstr=(fptr)&INETfromString, .tostr=(fptr)&INETtoString, },  { .cmp=NULL } 
+};
+mel_func inet_init_funcs[] = {
+ command("inet", "new", INETnew, false, "Create an inet from a string literal", args(1,2, arg("",inet),arg("s",str))),
+ command("inet", "isnil", INET_isnil, false, "Nil test for inet value", args(1,2, arg("",bit),arg("v",inet))),
+ command("inet", "=", INET_comp_EQ, false, "Equality of two inets", args(1,3, arg("",bit),arg("v",inet),arg("w",inet))),
+ command("inet", "!=", INET_comp_NEQ, false, "Inequality of two inets", args(1,3, arg("",bit),arg("v",inet),arg("w",inet))),
+ command("inet", "<", INET_comp_LT, false, "Whether v is less than w", args(1,3, arg("",bit),arg("v",inet),arg("w",inet))),
+ command("inet", ">", INET_comp_GT, false, "Whether v is greater than w", args(1,3, arg("",bit),arg("v",inet),arg("w",inet))),
+ command("inet", "<=", INET_comp_LE, false, "Whether v is less than or equal to w", args(1,3, arg("",bit),arg("v",inet),arg("w",inet))),
+ command("inet", ">=", INET_comp_GE, false, "Whether v is equal to or greater than w", args(1,3, arg("",bit),arg("v",inet),arg("w",inet))),
+ command("inet", "<<", INET_comp_CW, false, "Whether v is contained within w", args(1,3, arg("",bit),arg("v",inet),arg("w",inet))),
+ command("inet", "<<=", INET_comp_CWE, false, "Whether v is contained within or is equal to w", args(1,3, arg("",bit),arg("v",inet),arg("w",inet))),
+ command("inet", ">>", INET_comp_CS, false, "Whether v contains w", args(1,3, arg("",bit),arg("v",inet),arg("w",inet))),
+ command("inet", ">>=", INET_comp_CSE, false, "Whether v contains or is equal to w", args(1,3, arg("",bit),arg("v",inet),arg("w",inet))),
+ command("inet", "broadcast", INETbroadcast, false, "Returns the broadcast address for network", args(1,2, arg("",inet),arg("",inet))),
+ command("inet", "host", INEThost, false, "Extract IP address as text", args(1,2, arg("",str),arg("",inet))),
+ command("inet", "masklen", INETmasklen, false, "Extract netmask length", args(1,2, arg("",int),arg("",inet))),
+ command("inet", "setmasklen", INETsetmasklen, false, "Set netmask length for inet value", args(1,3, arg("",inet),arg("",inet),arg("",int))),
+ command("inet", "netmask", INETnetmask, false, "Construct netmask for network", args(1,2, arg("",inet),arg("",inet))),
+ command("inet", "hostmask", INEThostmask, false, "Construct host mask for network", args(1,2, arg("",inet),arg("",inet))),
+ command("inet", "network", INETnetwork, false, "Extract network part of address", args(1,2, arg("",inet),arg("",inet))),
+ command("inet", "text", INETtext, false, "Extract IP address and netmask length as text", args(1,2, arg("",str),arg("",inet))),
+ command("inet", "abbrev", INETabbrev, false, "Abbreviated display format as text", args(1,2, arg("",str),arg("",inet))),
+ command("calc", "inet", INET_inet, false, "Convert a inet to an inet", args(1,2, arg("",inet),arg("s",inet))),
+ command("calc", "inet", INET_fromstr, false, "Convert a string to an inet", args(1,2, arg("",inet),arg("s",str))),
+ command("calc", "==", INET_comp_EQ, false, "Equality of two inets", args(1,3, arg("",bit),arg("v",inet),arg("w",inet))),
+ command("calc", "!=", INET_comp_NEQ, false, "Inequality of two inets", args(1,3, arg("",bit),arg("v",inet),arg("w",inet))),
+ command("calc", "<", INET_comp_LT, false, "Whether v is less than w", args(1,3, arg("",bit),arg("v",inet),arg("w",inet))),
+ command("calc", ">", INET_comp_GT, false, "Whether v is greater than w", args(1,3, arg("",bit),arg("v",inet),arg("w",inet))),
+ command("calc", "<=", INET_comp_LE, false, "Whether v is less than or equal to w", args(1,3, arg("",bit),arg("v",inet),arg("w",inet))),
+ command("calc", ">=", INET_comp_GE, false, "Whether v is equal to or greater than w", args(1,3, arg("",bit),arg("v",inet),arg("w",inet))),
+ { .imp=NULL }
+};
+#include "mal_import.h"
+#ifdef _MSC_VER
+#undef read
+#pragma section(".CRT$XCU",read)
+#endif
+LIB_STARTUP_FUNC(init_inet_mal)
+{ mal_module("inet", inet_init_atoms, inet_init_funcs); }

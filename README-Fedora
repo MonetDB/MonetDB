@@ -2,14 +2,12 @@ The following packages (RPMs) are or can be used by MonetDB.
 
 These packages are required.
 
+cmake			# version >= 3.12
 bison
 gettext-devel
-libtool
 libxml2-devel
 mercurial
 openssl-devel
-pkgconf-m4
-pkgconf-pkg-config
 
 These packages are optional, but they are required to build RPMs using
 the command make rpm.

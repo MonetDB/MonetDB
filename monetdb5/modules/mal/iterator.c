@@ -243,3 +243,28 @@ str ITRnext_dbl(dbl *i, dbl *step, dbl *last){
 		*i = dbl_nil;
 	return MAL_SUCCEED;
 }
+
+#include "mel.h"
+mel_func iterator_init_funcs[] = {
+ command("iterator", "new", ITRnewChunk, false, "Create an iterator with fixed granule size.\nThe result is a view.", args(2,4, arg("",lng),batargany("",2),batargany("b",2),arg("size",lng))),
+ command("iterator", "next", ITRnextChunk, false, "Produce the next chunk for processing.", args(2,4, arg("",lng),batargany("",2),batargany("b",2),arg("size",lng))),
+ pattern("iterator", "new", ITRbunIterator, false, "Process the buns one by one extracted from a void table.", args(2,3, arg("h",oid),argany("t",2),batargany("b",2))),
+ pattern("iterator", "next", ITRbunNext, false, "Produce the next bun for processing.", args(2,3, arg("h",oid),argany("t",2),batargany("b",2))),
+ command("iterator", "next", ITRnext_oid, false, "", args(1,3, arg("",oid),arg("step",oid),arg("last",oid))),
+ command("iterator", "next", ITRnext_sht, false, "", args(1,3, arg("",sht),arg("step",sht),arg("last",sht))),
+ command("iterator", "next", ITRnext_int, false, "", args(1,3, arg("",int),arg("step",int),arg("last",int))),
+ command("iterator", "next", ITRnext_lng, false, "", args(1,3, arg("",lng),arg("step",lng),arg("last",lng))),
+ command("iterator", "next", ITRnext_flt, false, "", args(1,3, arg("",flt),arg("step",flt),arg("last",flt))),
+ command("iterator", "next", ITRnext_dbl, false, "Advances the iterator with a fixed value", args(1,3, arg("",dbl),arg("step",dbl),arg("last",dbl))),
+#ifdef HAVE_HGE
+ command("iterator", "next", ITRnext_hge, false, "", args(1,3, arg("",hge),arg("step",hge),arg("last",hge))),
+#endif
+ { .imp=NULL }
+};
+#include "mal_import.h"
+#ifdef _MSC_VER
+#undef read
+#pragma section(".CRT$XCU",read)
+#endif
+LIB_STARTUP_FUNC(init_iterator_mal)
+{ mal_module("iterator", NULL, iterator_init_funcs); }

@@ -26,7 +26,6 @@ comment "grouped aggregates through CUDF";
 
 # initializer code
 command prelude() :void address CUDFprelude;
-capi.prelude();
 
 # The SQL compiler needs these functions for bat-wise operations
 module batcapi;

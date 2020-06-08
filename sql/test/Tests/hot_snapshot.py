@@ -29,7 +29,7 @@ assert dbfarm
 assert tstdb
 
 
-def test_snapshot(z_extension, expected_initial_bytes):
+def test_snapshot(z_extension, expected_initial_bytes, unpack=True):
     mydb = tstdb + '_snap'
     mydbdir = os.path.join(dbfarm, mydb)
     tarname = os.path.join(dbfarm, mydb + '.tar' + z_extension)
@@ -91,18 +91,8 @@ def test_snapshot(z_extension, expected_initial_bytes):
             initial_bytes = f.read(len(expected_initial_bytes))
             assert initial_bytes == expected_initial_bytes
 
-        # if not self.compression:
-        #     f = open(filename, 'rb')
-        # elif self.compression == 'gz':
-        #     f = gzip.GzipFile(filename, 'rb', mtime=131875200)
-        # elif self.compression == 'bz2':
-        #     f = bz2.BZ2File(filename, 'rb')
-        # elif self.compression == 'xz':
-        #     f = lzma.LZMAFile(filename, 'rb')
-        # elif self.compression == 'lz4':
-        #     f = lz4.frame.LZ4FrameFile(filename, 'rb')
-        # else:
-        #     raise Exception("Unknown compression scheme: " + self.compression)
+        if not unpack:
+            return
 
         # open with decompression
         if tarname.endswith('.bz2'):

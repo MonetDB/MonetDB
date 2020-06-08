@@ -828,7 +828,6 @@ memo_compute_cost(list *memo)
 	}
 }
 
-#ifndef HAVE_EMBEDDED
 static void
 memojoin_print( memojoin *mj )
 {
@@ -875,7 +874,6 @@ memo_print( list *memo )
 		printf("\n");
 	}
 }
-#endif
 
 static memojoin *
 find_cheapest( list *joins )
@@ -948,10 +946,8 @@ rel_planner(mvc *sql, list *rels, list *sdje, list *exps)
 	memo_apply_rules(memo, sql->sa, list_length(rels));
 	memo_locate_exps(memo);
 	memo_compute_cost(memo);
-#ifndef HAVE_EMBEDDED
 	//if (0)
 		memo_print(memo);
-#endif
 	mi = memo->t->data;
 	top = memo_select_plan(sql, memo, mi, sdje, exps);
 	if (list_length(sdje) != 0)

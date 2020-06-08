@@ -213,7 +213,7 @@ struct stream {
 };
 
 int
-mnstr_init(void)
+mnstr_init(int embedded)
 {
 	static ATOMIC_FLAG inited = ATOMIC_FLAG_INIT;
 
@@ -221,12 +221,14 @@ mnstr_init(void)
 		return 0;
 
 #ifdef NATIVE_WIN32
-	{
+	if (!embedded) {
 		WSADATA w;
 
 		if (WSAStartup(0x0101, &w) != 0)
 			return -1;
 	}
+#else
+	(void)embedded;
 #endif
 	return 0;
 }
