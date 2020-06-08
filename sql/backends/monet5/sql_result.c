@@ -1063,7 +1063,7 @@ mvc_export_prepare(mvc *c, stream *out, cq *q, str w)
 	if (!out)
 		return 0;
 
-	if (r && is_topn(r->op))
+	if (r && (is_topn(r->op) || is_sample(r->op)))
 		r = r->l;
 	if (r && is_project(r->op) && r->exps) {
 		unsigned int max2 = 10, max3 = 10;	/* to help calculate widths */
@@ -2111,7 +2111,9 @@ mvc_export_affrows(backend *b, stream *s, lng val, str w, oid query_id, lng star
 		return 0;
 
 	m->rowcnt = val;
-	stack_set_number(m, "rowcnt", m->rowcnt);
+	sqlvar_set_number(find_global_var(m, mvc_bind_schema(m, "sys"), "rowcnt"), m->rowcnt);
+	if(GDKembedded()) 
+		return 0;
 	if (mnstr_write(s, "&2 ", 3, 1) != 1 ||
 	    !mvc_send_lng(s, val) ||
 	    mnstr_write(s, " ", 1, 1) != 1 ||
@@ -2339,7 +2341,7 @@ mvc_export_head(backend *b, stream *s, int res_id, int only_header, int compute_
 			count = 1;
 	}
 	m->rowcnt = count;
-	stack_set_number(m, "rowcnt", m->rowcnt);
+	sqlvar_set_number(find_global_var(m, mvc_bind_schema(m, "sys"), "rowcnt"), m->rowcnt);
 	if (!mvc_send_lng(s, (lng) count) || mnstr_write(s, " ", 1, 1) != 1)
 		return -1;
 

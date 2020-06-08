@@ -1,0 +1,1 @@
+#cmakedefine MERCURIAL_ID "@MERCURIAL_ID@"

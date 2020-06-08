@@ -53,11 +53,11 @@ create procedure sys.flush_log ()
 	external name sql."flush_log";
 
 -- Helper function to disable the log merger
-create procedure suspend_log_flushing()
+create procedure sys.suspend_log_flushing()
 	external name sql.suspend_log_flushing;
 
 -- Helper function to enable the log merger
-create procedure resume_log_flushing()
+create procedure sys.resume_log_flushing()
 	external name sql.resume_log_flushing;
 
 create function sys.debug(debug int) returns integer
@@ -81,25 +81,3 @@ create function sys.deltas ("schema" string, "table" string)
 create function sys.deltas ("schema" string, "table" string, "column" string)
 	returns table ("id" int, "cleared" boolean, "immutable" bigint, "inserted" bigint, "updates" bigint, "deletes" bigint, "level" int)
 	external name "sql"."deltas";
-
--- Sleep procedure
-create procedure sys."sleep"(msecs tinyint)
-	external name "alarm"."sleep";
-grant execute on procedure sys."sleep"(tinyint) to public;
-create procedure sys."sleep"(msecs smallint)
-	external name "alarm"."sleep";
-grant execute on procedure sys."sleep"(smallint) to public;
-create procedure sys."sleep"(msecs int)
-	external name "alarm"."sleep";
-grant execute on procedure sys."sleep"(int) to public;
-
--- Sleep function
-create function sys."sleep"(msecs tinyint) returns tinyint
-	external name "alarm"."sleep";
-grant execute on function sys."sleep"(tinyint) to public;
-create function sys."sleep"(msecs smallint) returns smallint
-	external name "alarm"."sleep";
-grant execute on function sys."sleep"(smallint) to public;
-create function sys."sleep"(msecs int) returns int
-	external name "alarm"."sleep";
-grant execute on function sys."sleep"(int) to public;

@@ -36,16 +36,17 @@ the **--interactive** (**-i**) option is given, *mclient* interprets
 lines starting with **\\** (backslash) specially. See the section
 BACKSLASH COMMANDS below.
 
-Before *mclient* starts parsing command line options, it reads a *.monetdb*
-file. If the environment variable **DOTMONETDBFILE** is set, it reads the file
-pointed to by that variable instead. When unset, *mclient* searches for a
-*.monetdb* file in the current working directory, and if that doesn't exist, in
-the current user's home directory. This file can contain defaults for the flags
-**user**, **password**, **language**, **database**, **save_history**,
-**format**, **host**, **port**, and **width**. For example, an entry in a
-*.monetdb* file that sets the default language for *mclient* to mal looks like
-this: **language=mal**.  To disable reading the *.monetdb* file, set the
-variable **DOTMONETDBFILE** to the empty string in the environment.
+Before *mclient* starts parsing command line options, it reads a
+*.monetdb* file. If the environment variable **DOTMONETDBFILE** is set,
+it reads the file pointed to by that variable instead. When unset,
+*mclient* searches for a *.monetdb* file in the current working
+directory, and if that doesn't exist, in the current user's home
+directory. This file can contain defaults for the flags **user**,
+**password**, **language**, **database**, **save_history**, **format**,
+and **width**. For example, an entry in a *.monetdb* file that sets the
+default language for *mclient* to mal looks like this: **language=mal**.
+To disable reading the *.monetdb* file, set the variable
+**DOTMONETDBFILE** to the empty string in the environment.
 
 OPTIONS
 =======
@@ -110,40 +111,42 @@ General Options
      ("**run**"). All timings are reported on stderr.
    | **Note** that the client-measured wall-clock time is reported per
      query **only** when options **--interactive** or **--echo** are
-     used, because only then does mclient send individual lines
+     used, because only then does *mclient* send individual lines
      (statements) of the SQL script to the server. Otherwise, when
-     mclient sends the SQL script in large(r) batch(es), only the total
-     wall-clock time per batch is measured and reported. The
+     *mclient* sends the SQL script in large(r) batch(es), only the
+     total wall-clock time per batch is measured and reported. The
      server-measured detailed performance timings are always measured
      and reported per query.
 
 **--user=**\ *user* (**-u** *user*)
    Specify the user to connect as. If this flag is absent, the client
-   will ask for a user name, unless a default was found in .monetdb
-   file.
+   will ask for a user name, unless a default was found in the
+   *.monetdb* or **$DOTMONETDBFILE** file.
 
 **--format=**\ *format* (**-f** *format*)
    Specify the output format. The possible values are **sql**,
-   **expanded**, **x**, **csv**, **tab**, **raw**, **xml**, and
-   **trash**. **csv** is comma-separated values, **tab** is
-   tab-separated values, **raw** is no special formatting (data is
-   dumped the way the server sends it to the client), **sql** is a
+   **expanded**, **x**, **csv**, **tab**, **raw**, **xml**, **trash**,
+   and **rowcount**. **csv** is comma-separated values; **tab** is
+   tab-separated values; **raw** is no special formatting (data is
+   dumped the way the server sends it to the client); **sql** is a
    pretty format which is meant for human consumption where columns are
-   clearly shown, **expanded** and **x** are synonyms and are another
+   clearly shown; **expanded** and **x** are synonyms and are another
    pretty format meant for human consumption where column values are
-   printed in full and below each other, **xml** is a valid (in the XML
-   sense) document, and **trash** does not render any output, enabling
+   printed in full and below each other; **xml** is a valid (in the XML
+   sense) document; **trash** does not render any output, enabling
    performance measurements free of any output rendering/serialization
-   costs. In addition to plain **csv**, two other forms are possible.
-   **csv=**\ *c* uses *c* as column separator; **csv+**\ *c* uses *c* as
-   column separator and produces a single header line in addition to the
-   data.
+   costs; and **rowcount** is a variation on **trash** where only the
+   number of affected rows is printed. In addition to plain **csv**, two
+   other forms are possible. **csv=**\ *c* uses *c* as column separator;
+   **csv+**\ *c* uses *c* as column separator and produces a single
+   header line in addition to the data.
 
 **--echo** (**-e**)
    Echo the query. Note that using this option slows down processing.
 
 **--history** (**-H**)
-   Load and save the command line history (default off).
+   If compiled with the *readline*\ (3) library, load and save the
+   command line history (default off).
 
 **--log=**\ *logfile* (**-L** *logfile*)
    Save client/server interaction in the specified file.
@@ -303,9 +306,9 @@ name of the database.
  mclient -d $db -s "COPY INTO $table FROM '$file' USING DELIMITERS ',',E'\\n','\"'"
 
 Efficiently import data from a CSV file into a table when the file is to
-be read by mclient (e.g. the server has no access to the file). *$file*
-is the (absolute or relative) path name of the file, *$table* is the
-name of the table, *$db* is the name of the database.
+be read by *mclient* (e.g. the server has no access to the file).
+*$file* is the (absolute or relative) path name of the file, *$table* is
+the name of the table, *$db* is the name of the database.
 
 ::
 

@@ -67,8 +67,8 @@ stdout of test 'function_call_not_handled.SF-2864179` in directory 'sql/test/Bug
 #  return id_table_a1;
 #end;
 #select insert_table_error();
-% . # table_name
-% %1 # name
+% .%5 # table_name
+% %5 # name
 % int # type
 % 1 # length
 [ 0	]
@@ -78,8 +78,8 @@ stdout of test 'function_call_not_handled.SF-2864179` in directory 'sql/test/Bug
 % 1,	1 # length
 [ 1,	1	]
 #select insert_table_correct();
-% . # table_name
-% %1 # name
+% .%2 # table_name
+% %2 # name
 % int # type
 % 1 # length
 [ 2	]

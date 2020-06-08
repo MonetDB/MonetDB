@@ -76,7 +76,8 @@ void *sa_realloc( sql_allocator *sa, void *p, size_t sz, size_t oldsz )
 {
 	void *r = sa_alloc(sa, sz);
 
-	memcpy(r, p, oldsz);
+	if (r)
+		memcpy(r, p, oldsz);
 	return r;
 }
 

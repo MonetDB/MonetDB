@@ -33,6 +33,8 @@
 #include "mal_function.h"
 #include "xml.h"
 
+#include "mel.h"
+
 mal_export str BATXMLxml2str(bat *ret, const bat *bid);
 mal_export str BATXMLxmltext(bat *ret, const bat *bid);
 mal_export str BATXMLstr2xml(bat *ret, const bat *bid);
@@ -1599,4 +1601,38 @@ str AGGRsubxml(bat *retval, const bat *bid, const bat *gid, const bat *eid, cons
 	return createException(MAL, "batxml.subxml", SQLSTATE(HY005) NO_LIBXML_FATAL);
 }
 
+#endif /* HAVE_LIBXML */
+
+#include "mel.h"
+mel_func batxml_init_funcs[] = {
+ command("batxml", "xml", BATXMLstr2xml, false, "Cast the string to an xml compliant string.", args(1,2, batarg("",xml),batarg("src",str))),
+ command("batxml", "str", BATXMLxml2str, false, "Cast the xml to a string.", args(1,2, batarg("",str),batarg("src",xml))),
+ command("batxml", "document", BATXMLdocument, false, "Parse the string as an XML document.", args(1,2, batarg("",xml),batarg("src",str))),
+ command("batxml", "content", BATXMLcontent, false, "Parse the string as XML element content.", args(1,2, batarg("",xml),batarg("src",str))),
+ command("batxml", "comment", BATXMLcomment, false, "Create an XML comment element.", args(1,2, batarg("",xml),batarg("val",str))),
+ command("batxml", "parse", BATXMLparse, false, "Parse the XML document or element string values.", args(1,4, batarg("",xml),arg("doccont",str),batarg("val",str),arg("option",str))),
+ command("batxml", "serialize", BATXMLxml2str, false, "Serialize the XML object to a string.", args(1,2, batarg("",str),batarg("val",xml))),
+ command("batxml", "text", BATXMLxmltext, false, "Serialize the XML object to a string.", args(1,2, batarg("",str),batarg("val",xml))),
+ command("batxml", "xquery", BATXMLxquery, false, "Execute the XQuery against the elements.", args(1,3, batarg("",xml),batarg("val",str),arg("expr",str))),
+ command("batxml", "pi", BATXMLpi, false, "Construct a processing instruction.", args(1,3, batarg("",xml),arg("target",str),batarg("val",xml))),
+ command("batxml", "attribute", BATXMLattribute, false, "Construct an attribute value pair.", args(1,3, batarg("",xml),arg("name",str),batarg("val",str))),
+ command("batxml", "element", BATXMLelementSmall, false, "The basic building block for XML elements are namespaces, attributes and a sequence of XML elements. The name space and the attributes may be left unspecified.", args(1,3, batarg("",xml),arg("name",str),batarg("s",xml))),
+ command("batxml", "options", BATXMLoptions, false, "Create the components including NULL conversions.", args(1,4, batarg("",xml),arg("tag",str),arg("option",str),batarg("left",xml))),
+ command("batxml", "element", BATXMLelement, false, "The basic building block for XML elements are namespaces, attributes and a sequence of XML elements. The name space and the attributes may be left unspecified(=nil).", args(1,5, batarg("",xml),arg("name",str),arg("ns",xml),arg("attr",xml),batarg("s",xml))),
+ command("batxml", "concat", BATXMLconcat, false, "Concatenate the XML values.", args(1,3, batarg("",xml),batarg("left",xml),batarg("right",xml))),
+ pattern("batxml", "forest", BATXMLforest, false, "Construct an element list.", args(1,2, batarg("",xml),batvararg("val",xml))),
+ command("batxml", "root", BATXMLroot, false, "Contruct the root nodes.", args(1,4, batarg("",xml),batarg("val",xml),arg("version",str),arg("standalone",str))),
+ command("batxml", "isdocument", BATXMLisdocument, false, "Validate the string as a XML document.", args(1,2, batarg("",bit),batarg("val",str))),
+ command("xml", "aggr", BATXMLgroup, false, "Aggregate the XML values.", args(1,2, arg("",xml),batarg("val",xml))),
+ command("xml", "subaggr", AGGRsubxml, false, "Grouped aggregation of XML values.", args(1,5, batarg("",xml),batarg("val",xml),batarg("g",oid),batargany("e",1),arg("skip_nils",bit))),
+ command("xml", "subaggr", AGGRsubxmlcand, false, "Grouped aggregation of XML values with candidates list.", args(1,6, batarg("",xml),batarg("val",xml),batarg("g",oid),batargany("e",1),batarg("s",oid),arg("skip_nils",bit))),
+ command("batcalc", "xml", BATXMLstr2xml, false, "", args(1,2, batarg("",xml),batarg("src",str))),
+ { .imp=NULL }
+};
+#include "mal_import.h"
+#ifdef _MSC_VER
+#undef read
+#pragma section(".CRT$XCU",read)
 #endif
+LIB_STARTUP_FUNC(init_batxml_mal)
+{ mal_module("batxml", NULL, batxml_init_funcs); }

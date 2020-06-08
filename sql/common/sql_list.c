@@ -17,8 +17,9 @@ node_create(sql_allocator *sa, void *data)
 
 	if (n == NULL)
 		return NULL;
-	n->next = NULL;
-	n->data = data;
+	*n = (node) {
+		.data = data,
+	};
 	return n;
 }
 
@@ -101,6 +102,10 @@ list_destroy(list *l)
 				node_destroy(l, t);
 			}
 		}
+
+		if (l->ht && !l->ht->sa)
+			hash_destroy(l->ht);
+
 		if (!l->sa)
 			_DELETE(l);
 	}

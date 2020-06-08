@@ -33,13 +33,27 @@
 #define MODULE_HASH_SIZE 1024
 Module moduleIndex[MODULE_HASH_SIZE] = { NULL };
 
-void
-listModules(stream *out, Module s)
+BAT *
+getModules(void)
 {
-	while(s){
-		mnstr_printf(out,"Unexpected module %s\n",  s->name);
-		s= s->link;
-	}
+	BAT *b = COLnew(0, TYPE_str, 100, TRANSIENT);
+        int i;
+        Module s,n;
+
+        for( i = 0; i< MODULE_HASH_SIZE; i++){
+                s = moduleIndex[i];
+                while(s){
+			if (BUNappend(b, s->name, FALSE) != GDK_SUCCEED) {
+				BBPreclaim(b);
+				return NULL;
+			}
+                        n = s->link;
+                        while(n)
+                                n = n->link;
+                        s = s->link;
+                }
+        }
+	return b;
 }
 
 // perform sanity check on duplicate occurrences as well
@@ -165,7 +179,6 @@ Module globalModule(str nme)
 		return NULL;
 	cur->name = nme;
 	cur->link = NULL;
-	cur->isAtomModule = FALSE;
 	cur->space = (Symbol *) GDKzalloc(MAXSCOPE * sizeof(Symbol));
 	if (cur->space == NULL) {
 		GDKfree(cur);
@@ -186,7 +199,6 @@ Module userModule(void){
 	cur->name = putName("user");
 	cur->link = NULL;
 	cur->space = NULL;
-	cur->isAtomModule = FALSE;
 	cur->space = (Symbol *) GDKzalloc(MAXSCOPE * sizeof(Symbol));
 	if (cur->space == NULL) {
 		GDKfree(cur);

@@ -38,7 +38,6 @@
 #define NEW_ARRAY( type, size ) (type*)GDKmalloc((size)*sizeof(type))
 #define RENEW_ARRAY( type,ptr,size) (type*)GDKrealloc((void*)ptr,(size)*sizeof(type))
 
-#define NEWADT( size ) (adt*)GDKmalloc(size)
 #define _DELETE( ptr )	do { GDKfree(ptr); ptr = NULL; } while (0)
 #define _STRDUP( ptr )	GDKstrdup((char*)ptr)
 
@@ -60,8 +59,8 @@ typedef struct sql_allocator {
 	size_t usedmem;	/* used memory */
 } sql_allocator;
 
-extern sql_allocator *sa_create(void);
-extern sql_allocator *sa_reset( sql_allocator *sa );
+sql_export sql_allocator *sa_create(void);
+sql_export sql_allocator *sa_reset( sql_allocator *sa );
 extern void *sa_alloc( sql_allocator *sa,  size_t sz );
 extern void *sa_zalloc( sql_allocator *sa,  size_t sz );
 extern void *sa_realloc( sql_allocator *sa,  void *ptr, size_t sz, size_t osz );

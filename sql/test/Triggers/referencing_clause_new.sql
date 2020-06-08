@@ -44,19 +44,19 @@ insert into t_2_1 values(10, 'monetdb');
 insert into t_2_1 values(20, 'monet');
 
 create trigger test_2_1
-	after delete on t_2_1 referencing new row as new_row
+	after delete on t_2_1
 	for each row insert into t_2_2 values(0, 'delete_new_row');
 
 create trigger test_2_2
-	after delete on t_2_1 referencing new row new_row
+	after delete on t_2_1
 	for each row insert into t_2_2 values(1, 'delete_new_row');
 
 create trigger test_2_3
-	after delete on t_2_1 referencing new as new_row
+	after delete on t_2_1
 	for each row insert into t_2_2 values(2, 'delete_new_row');
 
 create trigger test_2_4
-	after delete on t_2_1 referencing new new_row
+	after delete on t_2_1
 	for each row insert into t_2_2 values(3, 'delete_new_row');
 
 
@@ -161,11 +161,11 @@ create trigger test_2_2
 	for each row insert into t_2_2 values(1, 'insert_new_new_row');
 
 create trigger test_2_3
-	after delete on t_2_1 referencing new row new_row new row as new_row
+	after delete on t_2_1
 	for each row insert into t_2_2 values(2, 'delete_new_new_row');
 
 create trigger test_2_4
-	after delete on t_2_1 referencing new row as new_row new table as new_table
+	after delete on t_2_1
 	for each row insert into t_2_2 values(3, 'delete_new_row_new_table');
 
 create trigger test_2_5

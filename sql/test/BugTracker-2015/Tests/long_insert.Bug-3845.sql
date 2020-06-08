@@ -1,5 +1,4 @@
-declare olddebug int;
-set olddebug = debug(0); -- disable debug;
+set debug = debug(0); -- disable debug;
 
 -- this works
 

@@ -939,35 +939,22 @@ fork_profiler(char *dbname, sabdb **stats, char **log_path)
 	*log_path = strdup(kv->val);
 
 	/* Check that the log_path exists and create it if it does not */
-	error_code = stat(*log_path, &path_info);
-	if (error_code == -1) {  /* stat failed */
-		if (errno == ENOENT) {  /* dir does not exist, create it */
-			mode_t mode = 0755;
-			if (mkdir(*log_path, mode) == -1) {  /* mkdir failed, bail out */
-				char error_message[BUFSIZ];
-				if (strerror_r(errno, error_message, BUFSIZ) != 0)
-					strcpy(error_message, "unknown error");
-				error = newErr("%s", error_message);
-				free(*log_path);
-				*log_path = NULL;
-				goto cleanup;
-			}
-		} else {  /* Something else went wrong, can't handle the heat */
-			char error_message[BUFSIZ];
-			if (strerror_r(errno, error_message, BUFSIZ) != 0)
+	if ((error_code = mkdir(*log_path, 0755)) == -1 &&
+		(errno != EEXIST ||
+		 (error_code = stat(*log_path, &path_info)) == -1 ||
+		 !S_ISDIR(path_info.st_mode))) {
+		/* we couldn't create a directory and there wasn't one already */
+		if (error_code == -1) {
+			char error_message[128];
+			if (strerror_r(errno, error_message, sizeof(error_message)) != 0)
 				strcpy(error_message, "unknown error");
-			error = newErr("%s", error_message);
-			free(*log_path);
-			*log_path = NULL;
-			goto cleanup;
-		}
-	} else {  /* stat succeeded */
-		if(!S_ISDIR(path_info.st_mode)) {  /* file exists but is not a directory, bail out */
+			error = newErr("%s: %s", *log_path, error_message);
+		} else {
 			error = newErr("File %s exists but is not a directory.", *log_path);
-			free(*log_path);
-			*log_path = NULL;
-			goto cleanup;
 		}
+		free(*log_path);
+		*log_path = NULL;
+		goto cleanup;
 	}
 
 	/* construct the filename of the pid file */

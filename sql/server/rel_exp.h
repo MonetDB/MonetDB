@@ -25,6 +25,7 @@
 
 extern comp_type compare_str2type(const char *compare_op);
 extern comp_type swap_compare( comp_type t );
+extern comp_type negate_compare( comp_type t );
 extern comp_type range2lcompare( int r );
 extern comp_type range2rcompare( int r );
 extern int compare2range( int l, int r );
@@ -41,7 +42,7 @@ extern sql_exp *exp_compare_func(mvc *sql, sql_exp *le, sql_exp *re, sql_exp *oe
 #define exp_totype(e)	((list*)e->r)->h->next->data
 extern sql_exp *exp_convert(sql_allocator *sa, sql_exp *exp, sql_subtype *fromtype, sql_subtype *totype );
 extern str number2name(str s, int len, int i);
-extern sql_exp *exp_op(sql_allocator *sa, list *l, sql_subfunc *f );
+sql_export sql_exp *exp_op(sql_allocator *sa, list *l, sql_subfunc *f );
 extern sql_exp *exp_rank_op(sql_allocator *sa, list *largs, list *gbe, list *obe, sql_subfunc *f );
 
 #define append(l,v) list_append(l,v) 
@@ -62,7 +63,7 @@ extern sql_exp * exp_atom_bool(sql_allocator *sa, int b);
 extern sql_exp * exp_atom_bte(sql_allocator *sa, bte i);
 extern sql_exp * exp_atom_sht(sql_allocator *sa, sht i);
 extern sql_exp * exp_atom_int(sql_allocator *sa, int i);
-extern sql_exp * exp_atom_lng(sql_allocator *sa, lng l);
+sql_export sql_exp * exp_atom_lng(sql_allocator *sa, lng l);
 #ifdef HAVE_HGE
 extern sql_exp * exp_atom_hge(sql_allocator *sa, hge l);
 #endif
@@ -73,22 +74,22 @@ extern sql_exp * exp_atom_clob(sql_allocator *sa, const char *s);
 extern sql_exp * exp_atom_ptr(sql_allocator *sa, void *s);
 extern sql_exp * exp_atom_ref(sql_allocator *sa, int i, sql_subtype *tpe);
 extern sql_exp * exp_null(sql_allocator *sa, sql_subtype *tpe);
-extern sql_exp * exp_param(sql_allocator *sa, const char *name, sql_subtype *tpe, int frame);
+extern sql_exp * exp_param_or_declared(sql_allocator *sa, const char *sname, const char *name, sql_subtype *tpe, int frame);
 extern atom * exp_value(mvc *sql, sql_exp *e, atom **args, int maxarg);
 extern sql_exp * exp_values(sql_allocator *sa, list *exps);
 extern list * exp_get_values(sql_exp *e); /* get expression list from the values expression */
 extern list * exp_types(sql_allocator *sa, list *exps);
 extern int have_nil(list *exps);
 
-extern sql_exp * exp_column(sql_allocator *sa, const char *rname, const char *name, sql_subtype *t, unsigned int card, int has_nils, int intern);
+sql_export sql_exp * exp_column(sql_allocator *sa, const char *rname, const char *name, sql_subtype *t, unsigned int card, int has_nils, int intern);
 extern sql_exp * exp_propagate(sql_allocator *sa, sql_exp *ne, sql_exp *oe);
-#define exp_ref(sa, e) exp_propagate(sa, exp_column(sa, exp_relname(e), exp_name(e), exp_subtype(e), exp_card(e), has_nil(e), is_intern(e)), e)
+extern sql_exp * exp_ref(mvc *sql, sql_exp *e);
 extern sql_exp * exp_ref_save(mvc *sql, sql_exp *e); /* if needed mark the input expression as a referenced expression, return reference to e */
 extern sql_exp * exp_alias(sql_allocator *sa, const char *arname, const char *acname, const char *org_rname, const char *org_cname, sql_subtype *t, unsigned int card, int has_nils, int intern);
 extern sql_exp * exp_alias_or_copy( mvc *sql, const char *tname, const char *cname, sql_rel *orel, sql_exp *old);
 extern sql_exp * exp_alias_ref(mvc *sql, sql_exp *e);
-extern sql_exp * exp_set(sql_allocator *sa, const char *name, sql_exp *val, int level);
-extern sql_exp * exp_var(sql_allocator *sa, const char *name, sql_subtype *type, int level);
+extern sql_exp * exp_set(sql_allocator *sa, const char *sname, const char *name, sql_exp *val, int level);
+extern sql_exp * exp_var(sql_allocator *sa, const char *sname, const char *name, sql_subtype *type, int level);
 extern sql_exp * exp_table(sql_allocator *sa, const char *name, sql_table *t, int level);
 extern sql_exp * exp_return(sql_allocator *sa, sql_exp *val, int level);
 extern sql_exp * exp_while(sql_allocator *sa, sql_exp *cond, list *stmts);
@@ -109,7 +110,7 @@ extern list* exps_label(sql_allocator *sa, list *exps, int nr);
 
 extern sql_exp * exp_copy( mvc *sql, sql_exp *e);
 extern list * exps_copy( mvc *sql, list *exps);
-extern list * exps_alias( sql_allocator *sa, list *exps);
+extern list * exps_alias( mvc *sql, list *exps);
 
 extern void exp_swap( sql_exp *e );
 
@@ -122,6 +123,7 @@ extern unsigned int exp_card(sql_exp *e);
 extern const char *exp_find_rel_name(sql_exp *e);
 
 extern sql_exp *rel_find_exp( sql_rel *rel, sql_exp *e);
+extern sql_exp *rel_find_exp_and_corresponding_rel(sql_rel *rel, sql_exp *e, sql_rel **res);
 
 extern int exp_cmp( sql_exp *e1, sql_exp *e2);
 extern int exp_equal( sql_exp *e1, sql_exp *e2);
@@ -129,6 +131,7 @@ extern int exp_refers( sql_exp *p, sql_exp *c);
 extern int exp_match( sql_exp *e1, sql_exp *e2);
 extern sql_exp* exps_find_exp( list *l, sql_exp *e);
 extern int exp_match_exp( sql_exp *e1, sql_exp *e2);
+extern sql_exp* exps_any_match(list *l, sql_exp *e);
 /* match just the column (cmp equality) expressions */
 extern int exp_match_col_exps( sql_exp *e, list *l);
 extern int exps_match_col_exps( sql_exp *e1, sql_exp *e2);
@@ -147,7 +150,7 @@ extern int exp_is_rel(sql_exp *e);
 extern int exp_has_rel(sql_exp *e);
 extern int exps_have_rel_exp(list *exps);
 extern sql_rel *exp_rel_get_rel(sql_allocator *sa, sql_exp *e);
-extern sql_exp *exp_rel_update_exp(sql_allocator *sa, sql_exp *e);
+extern sql_exp *exp_rel_update_exp(mvc *sql, sql_exp *e);
 extern sql_exp *exp_rel_label(mvc *sql, sql_exp *e);
 extern int exps_are_atoms(list *exps);
 extern int exp_has_func(sql_exp *e);

@@ -122,6 +122,7 @@ OPTmitosisImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	 * Take into account the number of client connections, 
 	 * because all user together are responsible for resource contentions
 	 */
+	cntxt->idle = 0; // this one is definitely not idle
 	activeClients = mb->activeClients = MCactiveClients();
 
 /* This code was used to experiment with block sizes, mis-using the memorylimit  variable 
@@ -222,7 +223,7 @@ OPTmitosisImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 		}
 		/* we keep the original bind operation, because it allows for
 		 * easy undo when the mergtable can not do something */
-		pushInstruction(mb, p);
+		// pushInstruction(mb, p);
 
 		qtpe = getVarType(mb, getArg(p, 0));
 
@@ -261,6 +262,7 @@ OPTmitosisImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 		pushInstruction(mb, matq);
 		if (upd)
 			pushInstruction(mb, matr);
+		freeInstruction(p);
 	}
 	for (; i<slimit; i++) 
 		if (old[i])

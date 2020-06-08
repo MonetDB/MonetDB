@@ -741,7 +741,7 @@ HEAPdelete(Heap *h, const char *o, const char *ext)
 	}
 	assert(strlen(ext) + strlen(".new") < sizeof(ext2));
 	strconcat_len(ext2, sizeof(ext2), ext, ".new", NULL);
-	return (GDKunlink(h->farmid, BATDIR, o, ext) == GDK_SUCCEED) | (GDKunlink(h->farmid, BATDIR, o, ext2) == GDK_SUCCEED) ? GDK_SUCCEED : GDK_FAIL;
+	return ((GDKunlink(h->farmid, BATDIR, o, ext) == GDK_SUCCEED) | (GDKunlink(h->farmid, BATDIR, o, ext2) == GDK_SUCCEED)) ? GDK_SUCCEED : GDK_FAIL;
 }
 
 int

@@ -58,6 +58,9 @@ find_basetables(mvc *sql, sql_rel *rel, list *tables )
 		break;
 	}
 	case op_table:
+		if (IS_TABLE_PROD_FUNC(rel->flag) || rel->flag == TABLE_FROM_RELATION)
+			if (rel->l)
+				find_basetables(sql, rel->l, tables);
 		break;
 	case op_join: 
 	case op_left: 
@@ -66,6 +69,9 @@ find_basetables(mvc *sql, sql_rel *rel, list *tables )
 	case op_union: 
 	case op_inter: 
 	case op_except: 
+	case op_insert:
+	case op_update:
+	case op_delete:
 		if (rel->l)
 			find_basetables(sql, rel->l, tables);
 		if (rel->r)
@@ -78,17 +84,20 @@ find_basetables(mvc *sql, sql_rel *rel, list *tables )
 	case op_select: 
 	case op_topn: 
 	case op_sample: 
+	case op_truncate:
 		if (rel->l)
 			find_basetables(sql, rel->l, tables);
 		break;
-	case op_ddl: 
-		break;
-	case op_insert:
-	case op_update:
-	case op_delete:
-	case op_truncate:
-		if (rel->r)
-			find_basetables(sql, rel->r, tables);
+	case op_ddl:
+		if (rel->flag == ddl_output || rel->flag == ddl_create_seq || rel->flag == ddl_alter_seq/* || rel->flag == ddl_alter_table || rel->flag == ddl_create_table || rel->flag == ddl_create_view*/) {
+			if (rel->l)
+				find_basetables(sql, rel->l, tables);
+		} else if (rel->flag == ddl_list || rel->flag == ddl_exception) {
+			if (rel->l)
+				find_basetables(sql, rel->l, tables);
+			if (rel->r)
+				find_basetables(sql, rel->r, tables);
+		}
 		break;
 	}
 }
@@ -126,11 +135,23 @@ _rel_partition(mvc *sql, sql_rel *rel)
 static int 
 has_groupby(sql_rel *rel)
 {
-	if (rel->op == op_groupby) 
+	if (!rel)
+		return 0;
+	if (is_groupby(rel->op)) 
 		return 1;
-	if (is_join(rel->op)) 
+	if (is_join(rel->op) || is_semi(rel->op) || is_set(rel->op)) 
 		return has_groupby(rel->l) || has_groupby(rel->r);
-	if ((is_select(rel->op) || is_project(rel->op)) && rel->l) 
+	if (is_simple_project(rel->op) || is_select(rel->op) || is_topn(rel->op) || is_sample(rel->op)) 
+		return has_groupby(rel->l);
+	if (is_modify(rel->op)) 
+		return has_groupby(rel->r);
+	if (is_ddl(rel->op)) {
+		if (rel->flag == ddl_output || rel->flag == ddl_create_seq || rel->flag == ddl_alter_seq || rel->flag == ddl_alter_table || rel->flag == ddl_create_table || rel->flag == ddl_create_view)
+			return has_groupby(rel->l);
+		if (rel->flag == ddl_list || rel->flag == ddl_exception)
+			return has_groupby(rel->l) || has_groupby(rel->r);
+	}
+	if (rel->op == op_table && (IS_TABLE_PROD_FUNC(rel->flag) || rel->flag == TABLE_FROM_RELATION))
 		return has_groupby(rel->l);
 	return 0;
 }
@@ -140,29 +161,43 @@ rel_partition(mvc *sql, sql_rel *rel)
 {
 	if (THRhighwater())
 		return sql_error(sql, 10, SQLSTATE(42000) "Query too complex: running out of stack space");
-	(void)sql;
-	if (rel->op == op_basetable) {
+
+	if (is_basetable(rel->op)) {
 		rel->flag = REL_PARTITION;
-	} else if ((rel->op == op_topn || rel->op == op_sample || rel->op == op_select) && rel->l) {
-		rel_partition(sql, rel->l);
-	} else if (is_modify(rel->op) && rel->card <= CARD_AGGR) {
+	} else if (is_simple_project(rel->op) || is_select(rel->op) || is_groupby(rel->op) || is_topn(rel->op) || is_sample(rel->op)) {
+		if (rel->l)
+			rel_partition(sql, rel->l);
+	} else if (is_modify(rel->op)) {
+		if (rel->r && rel->card <= CARD_AGGR)
+			rel_partition(sql, rel->r);
+	} else if (is_semi(rel->op) || is_set(rel->op)) {
+		if (rel->l)
+			rel_partition(sql, rel->l);
 		if (rel->r)
 			rel_partition(sql, rel->r);
-	} else if (is_project(rel->op) && rel->l) {
-		rel_partition(sql, rel->l);
-	} else if (rel->op == op_semi && rel->l && rel->r) {
-		rel_partition(sql, rel->l);
-		rel_partition(sql, rel->r);
-	} else if (rel->op == op_anti && rel->l && rel->r) {
-		rel_partition(sql, rel->l);
-		rel_partition(sql, rel->r);
 	} else if (is_join(rel->op)) {
 		if (has_groupby(rel->l) || has_groupby(rel->r)) {
-			rel_partition(sql, rel->l);
-			rel_partition(sql, rel->r);
-		}
-		else
+			if (rel->l)
+				rel_partition(sql, rel->l);
+			if (rel->r)
+				rel_partition(sql, rel->r);
+		} else
 			_rel_partition(sql, rel);
+	} else if (is_ddl(rel->op)) {
+		if (rel->flag == ddl_output || rel->flag == ddl_create_seq || rel->flag == ddl_alter_seq || rel->flag == ddl_alter_table || rel->flag == ddl_create_table || rel->flag == ddl_create_view) {
+			if (rel->l)
+				rel_partition(sql, rel->l);
+		} else if (rel->flag == ddl_list || rel->flag == ddl_exception) {
+			if (rel->l)
+				rel_partition(sql, rel->l);
+			if (rel->r)
+				rel_partition(sql, rel->r);
+		}
+	} else if (rel->op == op_table) {
+		if ((IS_TABLE_PROD_FUNC(rel->flag) || rel->flag == TABLE_FROM_RELATION) && rel->l)
+			rel_partition(sql, rel->l);
+	} else {
+		assert(0);
 	}
 	return rel;
 }

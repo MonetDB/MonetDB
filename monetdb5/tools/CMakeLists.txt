@@ -1,0 +1,80 @@
+#[[
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0.  If a copy of the MPL was not distributed with this
+# file, You can obtain one at http://mozilla.org/MPL/2.0/.
+#
+# Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
+#]]
+
+add_library(monetdb5 SHARED
+  $<TARGET_OBJECTS:mal>
+  $<TARGET_OBJECTS:atoms>
+  $<TARGET_OBJECTS:malmodules>
+  $<TARGET_OBJECTS:kernel>
+  $<TARGET_OBJECTS:mosaic>
+  $<TARGET_OBJECTS:optimizer>
+  $<TARGET_OBJECTS:scheduler>)
+
+target_link_libraries(monetdb5
+    PRIVATE
+    mutils
+    mcrypt
+    mapi
+    msabaoth
+    ${SOCKET_LIBRARIES}
+    $<$<BOOL:${LibXml2_FOUND}>:LibXml2::LibXml2>
+    $<$<BOOL:${PCRE_FOUND}>:PCRE::PCRE>
+    $<$<BOOL:${UUID_FOUND}>:UUID::UUID>
+    gdk)
+
+set_target_properties(monetdb5
+  PROPERTIES
+  VERSION ${MONETDB5_VERSION}
+  SOVERSION ${MONETDB5_VERSION_MAJOR})
+
+if (NOT WIN32)
+  if(XML2_FOUND)
+    set(PKG_LIBXML2 "libxml-2.0")
+  endif()
+
+  if(OPENSSL_FOUND)
+    # In OpenSSL case, we link only to the crypto library, so it will be always one library to link to
+    get_filename_component(CRYPTO_LIBRARIES_PATH "${CRYPTO_LIBRARIES}" DIRECTORY)
+    set(PKG_CRYPTO "-L${CRYPTO_LIBRARIES_PATH} -lcrypto")
+  endif()
+
+  if(HAVE_LIBPCRE)
+    get_filename_component(PCRE_LIBRARIES_PATH "${PCRE_LIBRARIES}" DIRECTORY)
+    set(PKG_PCRE "-L${PCRE_LIBRARIES_PATH} -lpcre")
+  endif()
+
+  configure_file(monetdb5.pc.in
+    ${CMAKE_CURRENT_BINARY_DIR}/monetdb5.pc @ONLY)
+
+  install(FILES
+    ${CMAKE_CURRENT_BINARY_DIR}/monetdb5.pc
+    DESTINATION ${CMAKE_INSTALL_LIBDIR}/pkgconfig
+    COMPONENT serverdev)
+endif()
+
+install(TARGETS
+  monetdb5
+  EXPORT monetdb5Targets
+  RUNTIME
+  DESTINATION ${CMAKE_INSTALL_BINDIR}
+  LIBRARY
+  DESTINATION ${CMAKE_INSTALL_LIBDIR}
+  COMPONENT server
+  ARCHIVE
+  DESTINATION ${CMAKE_INSTALL_LIBDIR}
+  PUBLIC_HEADER
+  DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/monetdb
+  INCLUDES DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
+
+install(EXPORT monetdb5Targets
+  FILE monetdb5Targets.cmake
+  NAMESPACE MonetDB::
+  DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/cmake
+  COMPONENT serverdev)
+
+# vim: set ts=2:sw=2:et

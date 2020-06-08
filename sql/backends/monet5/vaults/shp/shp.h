@@ -17,6 +17,13 @@
 #undef PACKAGE_TARNAME
 #undef PACKAGE_URL
 #undef PACKAGE_VERSION
+
+/* these were previously defined in monetdb_config.h */
+#undef HAVE_DLFCN_H
+#undef HAVE_FCNTL_H
+#undef HAVE_ICONV
+#undef HAVE_STRINGS_H
+
 #include <gdal.h>
 #include <ogr_api.h>
 

@@ -16,6 +16,7 @@
 #define CATALOG_MAR2018 52201
 #define CATALOG_AUG2018 52202
 #define CATALOG_NOV2019 52203
+#define CATALOG_JUN2020 52204
 
 logger *bat_logger = NULL;
 
@@ -50,12 +51,20 @@ bl_preversion(int oldversion, int newversion)
 	}
 #endif
 
+#ifdef CATALOG_JUN2020
+	if (oldversion == CATALOG_JUN2020) {
+		/* upgrade to default releases */
+		catalog_version = oldversion;
+		return GDK_SUCCEED;
+	}
+#endif
+
 	return GDK_FAIL;
 }
 
 #define N(schema, table, column)	schema "_" table "_" column
 
-#ifdef CATALOG_AUG2018
+#if defined CATALOG_AUG2018 || defined CATALOG_JUN2020
 static int
 find_table_id(logger *lg, const char *val, int *sid)
 {
@@ -196,7 +205,7 @@ bl_postversion(void *lg)
 
 		/* first figure out whether there are any columns in
 		 * the catalog called "readonly" (if there are fewer
-		 * then 2, then we don't have to do anything) */
+		 * than 2, then we don't have to do anything) */
 		BAT *cn = temp_descriptor(logger_find_bat(lg, N("sys", "_columns", "name"), 0, 0));
 		if (cn == NULL)
 			return GDK_FAIL;
@@ -270,7 +279,7 @@ bl_postversion(void *lg)
 				bat_destroy(cn);
 				return GDK_FAIL;
 			}
-			BAT *ts1 = BATintersect(tn, sn, ts, ss, 0, 2);
+			BAT *ts1 = BATintersect(tn, sn, ts, ss, false, false, 2);
 			bat_destroy(tn);
 			bat_destroy(sn);
 			bat_destroy(ts);
@@ -296,7 +305,7 @@ bl_postversion(void *lg)
 				bat_destroy(cn);
 				return GDK_FAIL;
 			}
-			BAT *cs1 = BATintersect(ct, tn, cs, ts1, 0, 2);
+			BAT *cs1 = BATintersect(ct, tn, cs, ts1, false, false, 2);
 			bat_destroy(ct);
 			bat_destroy(tn);
 			bat_destroy(ts1);
@@ -804,6 +813,58 @@ bl_postversion(void *lg)
 	}
 #endif
 
+#ifdef CATALOG_JUN2020
+	if (catalog_version <= CATALOG_JUN2020) {
+		int id;
+		lng lid;
+		BAT *fid = temp_descriptor(logger_find_bat(lg, N("sys", "functions", "id"), 0, 0));
+		if (logger_sequence(lg, OBJ_SID, &lid) == 0 ||
+		    fid == NULL) {
+			bat_destroy(fid);
+			return GDK_FAIL;
+		}
+		id = (int) lid;
+		BAT *sem = COLnew(fid->hseqbase, TYPE_bit, BATcount(fid), PERSISTENT);
+		if (sem == NULL) {
+			bat_destroy(fid);
+			return GDK_FAIL;
+		}
+		bit *fsys = (bit *) Tloc(sem, 0);
+		for (BUN p = 0, q = BATcount(fid); p < q; p++) {
+			fsys[p] = 1;
+		}
+
+		sem->tkey = false;
+		sem->tsorted = sem->trevsorted = true;
+		sem->tnonil = true;
+		sem->tnil = false;
+		BATsetcount(sem, BATcount(fid));
+		bat_destroy(fid);
+		if (BATsetaccess(sem, BAT_READ) != GDK_SUCCEED ||
+		    logger_add_bat(lg, sem, N("sys", "functions", "semantics"), 0, 0) != GDK_SUCCEED) {
+
+			bat_destroy(sem);
+			return GDK_FAIL;
+		}
+		bat_destroy(sem);
+		int sid;
+		int tid = find_table_id(lg, "functions", &sid);
+		if (tabins(lg, true, -1, NULL, "sys", "_columns",
+			   "id", &id,
+			   "name", "semantics",
+			   "type", "boolean",
+			   "type_digits", &((const int) {1}),
+			   "type_scale", &((const int) {0}),
+			   "table_id", &tid,
+			   "default", str_nil,
+			   "null", &((const bit) {TRUE}),
+			   "number", &((const int) {11}),
+			   "storage", str_nil,
+			   NULL) != GDK_SUCCEED)
+			return GDK_FAIL;
+	}
+#endif
+
 	return GDK_SUCCEED;
 }
 
@@ -1023,25 +1084,70 @@ end:
 static gdk_return
 snapshot_wal(stream *plan, const char *db_dir)
 {
-	stream *log = bat_logger->log;
-	char log_file[FILENAME_MAX];
+	char meta_file[FILENAME_MAX] = {0};     // ../sql_logs/sql/log
+	char log_file[FILENAME_MAX] = {0};      // ../sql_logs/sql/log.N
+	lng version;
+	lng start_id;
+	lng cur_id;
 	int len;
+	int ret;
 
-	len = snprintf(log_file, sizeof(log_file), "%s/%s%s", db_dir, bat_logger->dir, LOGFILE);
+	// determine the name of the log file
+	len = snprintf(meta_file, sizeof(meta_file), "%s/%s%s", db_dir, bat_logger->dir, LOGFILE);
 	if (len == -1 || (size_t)len >= sizeof(log_file)) {
-		GDKerror("Could not open %s, filename is too large", log_file);
+		GDKerror("Could not open log file, filename is too large");
 		return GDK_FAIL;
 	}
-	snapshot_immediate_copy_file(plan, log_file, log_file + strlen(db_dir) + 1);
 
-	len = snprintf(log_file, sizeof(log_file), "%s%s." LLFMT, bat_logger->dir, LOGFILE, bat_logger->id);
-	if (len == -1 || (size_t)len >= sizeof(log_file)) {
-		GDKerror("Could not open %s, filename is too large", log_file);
+	// save its current contents in the plan
+	snapshot_immediate_copy_file(plan, meta_file, meta_file + strlen(db_dir) + 1);
+
+	// parse it to determine the first log file to save
+	FILE *f = fopen(meta_file, "r");
+	if (f == NULL) {
+		GDKerror("Could not open %s", meta_file);
 		return GDK_FAIL;
 	}
-	uint64_t extent = getFileSize(log);
+	ret = fscanf(f, LLSCN, &version); // dummy read (version number)
+	if (ret != 1) {
+		GDKerror("Could not read version number from %s", meta_file);
+		fclose(f);
+		return GDK_FAIL;
+	}
+	ret = fscanf(f, LLSCN, &start_id); // real read (log id))
+	if (ret != 1) {
+		GDKerror("Could not read log id from %s", meta_file);
+		fclose(f);
+		return GDK_FAIL;
+	}
+	// if there's more the file format must have changed
+	// and this code should be updated accordingly:
+	//assert((fscanf(f, " "), feof(f))); // sanity check
+	fclose(f);
 
-	snapshot_lazy_copy_file(plan, log_file, extent);
+	// Determining the current log file is easy
+	cur_id = bat_logger->id;
+
+	assert(start_id >= 1);
+	assert(start_id <= cur_id);
+
+	for (lng i = start_id; i <= cur_id; i++) {
+		len = snprintf(log_file, sizeof(log_file),
+		               "%s/%s%s." LLFMT, db_dir, bat_logger->dir, LOGFILE, i);
+		if (len == -1 || (size_t)len >= sizeof(log_file)) {
+			GDKerror("Could not open log file " LLFMT ", filename is too large", i);
+			return GDK_FAIL;
+		}
+
+		struct stat statbuf;
+		if (stat(log_file, &statbuf) != 0) {
+			char errbuf[512];
+			GDKerror("Could not stat %s: %s", log_file,
+						GDKstrerror(errno, errbuf, sizeof(errbuf)));
+		}
+		uint64_t size = (uint64_t)statbuf.st_size;
+		snapshot_lazy_copy_file(plan, log_file + strlen(db_dir) + 1, size);
+	}
 
 	return GDK_SUCCEED;
 }

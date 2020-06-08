@@ -345,8 +345,8 @@ project (
 | | | | | ) [ "t2606b"."a" ]
 | | | | ) [ "t2606b"."a" ] [ "t2606b"."a" ]
 | | | ) [ "t2606b"."a" as "%4"."a" ]
-| | ) [ "%3"."a" as "%7"."a" ]
-| ) [ "%7"."a" as "t"."a" ]
+| | ) [ "%3"."a" as "t"."a" ]
+| ) [ "t"."a" ]
 ) [ "t"."a" ] [ "t"."a" ASC ]
 #select * from (select * from t2606a union select * from t2606b) as t order by a;
 % .t # table_name
@@ -376,8 +376,8 @@ project (
 | | | project (
 | | | | table(sys.t2606b) [ "t2606b"."a" ] COUNT 
 | | | ) [ "t2606b"."a" as "%4"."a" ]
-| | ) [ "%3"."a" as "%7"."a" ]
-| ) [ "%7"."a" as "t"."a" ]
+| | ) [ "%3"."a" as "t"."a" ]
+| ) [ "t"."a" ]
 ) [ "t"."a" ] [ "t"."a" ASC ]
 #select * from (select * from t2606a except select * from t2606b) as t order by a;
 % sys.t # table_name
@@ -401,8 +401,8 @@ project (
 | | | project (
 | | | | table(sys.t2606b) [ "t2606b"."a" ] COUNT 
 | | | ) [ "t2606b"."a" as "%4"."a" ]
-| | ) [ "%3"."a" as "%7"."a" ]
-| ) [ "%7"."a" as "t"."a" ]
+| | ) [ "%3"."a" as "t"."a" ]
+| ) [ "t"."a" ]
 ) [ "t"."a" ] [ "t"."a" ASC ]
 #select * from (select * from t2606a intersect select * from t2606b) as t order by a;
 % sys.t # table_name

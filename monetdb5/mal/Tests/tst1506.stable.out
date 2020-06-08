@@ -67,56 +67,56 @@ stdout of test 'tst1506` in directory 'monetdb5/mal` itself:
 #--------------------------#
 [ 0@0,	  true,	  1	  ]
 [ 1@0,	  false,  -2	  ]
-[ 2@0,	  nil,	  nil	  ]
-#-------------------------#
-# h	t	t	  # name
+[ 2@0,	nil,	-3	]
+#--------------------------#
+# t	t	t  # name
 # void	bit	int	  # type
 #-------------------------#
 [ 0@0,	  true,	  1	  ]
 [ 1@0,	  false,  -999	  ]
-[ 2@0,	  nil,	  nil	  ]
-#-------------------------#
-# h	t	t	  # name
+[ 2@0,	nil,	-999	]
+#--------------------------#
+# t	t	t  # name
 # void	bit	int	  # type
 #-------------------------#
 [ 0@0,	  true,	  999	  ]
 [ 1@0,	  false,  -2	  ]
-[ 2@0,	  nil,	  nil	  ]
+[ 2@0,	nil,	-3	]
 #--------------------------#
 # h	t	t		  # name
 # void	bit	str		  # type
 #---------------------------------#
 [ 0@0,	  true,	  "hello"	  ]
 [ 1@0,	  false,  "NEW"		  ]
-[ 2@0,	  nil,	  nil	  ]
-#---------------------------------#
-# h	t	t		  # name
+[ 2@0,	nil,	"WORLD"	]
+#--------------------------#
+# t	t	t  # name
 # void	bit	str		  # type
 #---------------------------------#
 [ 0@0,	  true,	  "hello"	  ]
 [ 1@0,	  false,  "unknown"	  ]
-[ 2@0,	  nil,	  nil		  ]
-#---------------------------------#
-# h	t	t		  # name
+[ 2@0,	nil,	"unknown"	]
+#--------------------------#
+# t	t	t  # name
 # void	bit	str		  # type
 #---------------------------------#
 [ 0@0,	  true,	  "unknown"	  ]
 [ 1@0,	  false,  "NEW"		  ]
-[ 2@0,	  nil,	  nil		  ]
+[ 2@0,	nil,	"WORLD"	]
 #--------------------------#
 # h	t	t	t	  # name
 # void	bit	bit	bit	  # type
 #---------------------------------#
 [ 0@0,	  true,	  true,	  true	  ]
 [ 1@0,	  false,  false,  true	  ]
-[ 2@0,	  nil,	  nil,	  nil	  ]
-#-------------------------#
-# h	t	t	  # name
+[ 2@0,	nil,	nil,	true	]
+#--------------------------#
+# t	t	t  # name
 # void	bit	int	  # type
 #-------------------------#
 [ 0@0,	  true,	  1	  ]
 [ 1@0,	  false,  2	  ]
-[ 2@0,	  nil,	  nil	  ]
+[ 2@0,	nil,	2	]
 
 # 13:51:17 >  
 # 13:51:17 >  "Done."

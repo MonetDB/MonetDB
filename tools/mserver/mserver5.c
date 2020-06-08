@@ -99,16 +99,16 @@ usage(char *prog, int xit)
 	fprintf(stderr, "    --version                 Print version and compile time info\n");
 
 	fprintf(stderr, "The debug, testing & trace options:\n");
-	fprintf(stderr, "     --threads\n");
-	fprintf(stderr, "     --memory\n");
-	fprintf(stderr, "     --io\n");
-	fprintf(stderr, "     --heaps\n");
-	fprintf(stderr, "     --properties\n");
-	fprintf(stderr, "     --transactions\n");
-	fprintf(stderr, "     --modules\n");
 	fprintf(stderr, "     --algorithms\n");
-	fprintf(stderr, "     --performance\n");
 	fprintf(stderr, "     --forcemito\n");
+	fprintf(stderr, "     --heaps\n");
+	fprintf(stderr, "     --io\n");
+	fprintf(stderr, "     --memory\n");
+	fprintf(stderr, "     --modules\n");
+	fprintf(stderr, "     --performance\n");
+	fprintf(stderr, "     --properties\n");
+	fprintf(stderr, "     --threads\n");
+	fprintf(stderr, "     --transactions\n");
 	fprintf(stderr, "     --debug=<bitmask>\n");
 
 	exit(xit);
@@ -219,10 +219,10 @@ absolute_path(str s)
 #define BSIZE 8192
 
 static int
-monet_init(opt *set, int setlen)
+monet_init(opt *set, int setlen, int embedded)
 {
 	/* determine Monet's kernel settings */
-	if (GDKinit(set, setlen) != GDK_SUCCEED)
+	if (GDKinit(set, setlen, embedded) != GDK_SUCCEED)
 		return 0;
 
 #ifdef HAVE_SETSID
@@ -272,26 +272,28 @@ main(int argc, char **av)
 	bool inmemory = false;
 	static struct option long_options[] = {
 		{ "config", required_argument, NULL, 'c' },
-		{ "dbpath", required_argument, NULL, 0 },
 		{ "dbextra", required_argument, NULL, 0 },
+		{ "dbpath", required_argument, NULL, 0 },
 		{ "dbtrace", required_argument, NULL, 0 },
 		{ "debug", optional_argument, NULL, 'd' },
 		{ "help", no_argument, NULL, '?' },
-		{ "version", no_argument, NULL, 0 },
+		{ "in-memory", no_argument, NULL, 0 },
 		{ "readonly", no_argument, NULL, 'r' },
-		{ "single-user", no_argument, NULL, 0 },
 		{ "set", required_argument, NULL, 's' },
-		{ "threads", no_argument, NULL, 0 },
-		{ "memory", no_argument, NULL, 0 },
-		{ "properties", no_argument, NULL, 0 },
-		{ "io", no_argument, NULL, 0 },
-		{ "transactions", no_argument, NULL, 0 },
-		{ "modules", no_argument, NULL, 0 },
+		{ "single-user", no_argument, NULL, 0 },
+		{ "version", no_argument, NULL, 0 },
+
 		{ "algorithms", no_argument, NULL, 0 },
-		{ "performance", no_argument, NULL, 0 },
 		{ "forcemito", no_argument, NULL, 0 },
 		{ "heaps", no_argument, NULL, 0 },
-		{ "in-memory", no_argument, NULL, 0 },
+		{ "io", no_argument, NULL, 0 },
+		{ "memory", no_argument, NULL, 0 },
+		{ "modules", no_argument, NULL, 0 },
+		{ "performance", no_argument, NULL, 0 },
+		{ "properties", no_argument, NULL, 0 },
+		{ "threads", no_argument, NULL, 0 },
+		{ "transactions", no_argument, NULL, 0 },
+
 		{ NULL, 0, NULL, 0 }
 	};
 
@@ -386,10 +388,6 @@ main(int argc, char **av)
 				exit(0);
 			}
 			/* debugging options */
-			if (strcmp(long_options[option_index].name, "properties") == 0) {
-				grpdebug |= GRPproperties;
-				break;
-			}
 			if (strcmp(long_options[option_index].name, "algorithms") == 0) {
 				grpdebug |= GRPalgorithms;
 				break;
@@ -398,8 +396,8 @@ main(int argc, char **av)
 				grpdebug |= GRPforcemito;
 				break;
 			}
-			if (strcmp(long_options[option_index].name, "performance") == 0) {
-				grpdebug |= GRPperformance;
+			if (strcmp(long_options[option_index].name, "heaps") == 0) {
+				grpdebug |= GRPheaps;
 				break;
 			}
 			if (strcmp(long_options[option_index].name, "io") == 0) {
@@ -414,16 +412,20 @@ main(int argc, char **av)
 				grpdebug |= GRPmodules;
 				break;
 			}
-			if (strcmp(long_options[option_index].name, "transactions") == 0) {
-				grpdebug |= GRPtransactions;
+			if (strcmp(long_options[option_index].name, "performance") == 0) {
+				grpdebug |= GRPperformance;
+				break;
+			}
+			if (strcmp(long_options[option_index].name, "properties") == 0) {
+				grpdebug |= GRPproperties;
 				break;
 			}
 			if (strcmp(long_options[option_index].name, "threads") == 0) {
 				grpdebug |= GRPthreads;
 				break;
 			}
-			if (strcmp(long_options[option_index].name, "heaps") == 0) {
-				grpdebug |= GRPheaps;
+			if (strcmp(long_options[option_index].name, "transactions") == 0) {
+				grpdebug |= GRPtransactions;
 				break;
 			}
 			usage(prog, -1);
@@ -521,7 +523,7 @@ main(int argc, char **av)
 		GDKfree(dbtrace);
 	}
 
-	if (monet_init(set, setlen) == 0) {
+	if (monet_init(set, setlen, 0) == 0) {
 		mo_free_options(set, setlen);
 		if (GDKerrbuf && *GDKerrbuf)
 			fprintf(stderr, "%s\n", GDKerrbuf);
@@ -705,7 +707,39 @@ main(int argc, char **av)
 		freeException(err);
 		exit(1);
 	}
-	if (mal_init()) {
+
+	char *modules[16]; 
+	int mods = 0;
+
+	modules[mods++] = "sql";
+	modules[mods++] = "generator";
+	modules[mods++] = "opt_sql_append";
+#ifdef HAVE_GEOM
+	modules[mods++] = "geom";
+#endif
+#ifdef HAVE_LIBR
+	/* TODO check for used */
+	modules[mods++] = "rapi";
+#endif
+#ifdef HAVE_LIBPY3
+	/* TODO check for used */
+	modules[mods++] = "pyapi3";
+#endif
+#ifdef HAVE_CUDF
+	modules[mods++] = "capi";
+#endif
+	modules[mods++] = "udf";
+#ifdef HAVE_FITS
+	modules[mods++] = "fits";
+#endif
+#ifdef HAVE_NETCDF
+	modules[mods++] = "netcdf";
+#endif
+#ifdef HAVE_SHP
+	modules[mods++] = "shp";
+#endif
+	modules[mods++] = 0;
+	if (mal_init(modules, 0)) {
 		/* don't show this as a crash */
 		if (!GDKinmemory())
 			msab_registerStop();

@@ -400,9 +400,12 @@ do_join(bat *r1, bat *r2, const bat *lid, const bat *rid, const bat *r2id,
 		const bat *slid, const bat *srid,
 		int op, const void *c1, const void *c2, bool li, bool hi,
 		bool anti, bool symmetric, /* these two only for rangejoin */
-		const bit *nil_matches, const bit *not_in, const lng *estimate,
+		const bit *nil_matches, const bit *not_in, const bit *max_one,
+		const lng *estimate,
 		gdk_return (*joinfunc)(BAT **, BAT **, BAT *, BAT *, BAT *, BAT *,
 							   bool, BUN),
+		gdk_return (*semifunc)(BAT **, BAT **, BAT *, BAT *, BAT *, BAT *,
+							   bool, bool, BUN),
 		gdk_return (*thetafunc)(BAT **, BAT **, BAT *, BAT *, BAT *, BAT *,
 								int, bool, BUN),
 		gdk_return (*bandfunc)(BAT **, BAT **, BAT *, BAT *, BAT *, BAT *,
@@ -410,7 +413,7 @@ do_join(bat *r1, bat *r2, const bat *lid, const bat *rid, const bat *r2id,
 		gdk_return (*rangefunc)(BAT **, BAT **, BAT *, BAT *, BAT *,
 								BAT *, BAT *, bool, bool, bool, bool, BUN),
 		BAT *(*difffunc)(BAT *, BAT *, BAT *, BAT *, bool, bool, BUN),
-		BAT *(*interfunc)(BAT *, BAT *, BAT *, BAT *, bool, BUN),
+		BAT *(*interfunc)(BAT *, BAT *, BAT *, BAT *, bool, bool, BUN),
 		const char *funcname)
 {
 	BAT *left = NULL, *right = NULL, *right2 = NULL;
@@ -438,6 +441,7 @@ do_join(bat *r1, bat *r2, const bat *lid, const bat *rid, const bat *r2id,
 
 	if (thetafunc) {
 		assert(joinfunc == NULL);
+		assert(semifunc == NULL);
 		assert(bandfunc == NULL);
 		assert(rangefunc == NULL);
 		assert(difffunc == NULL);
@@ -445,12 +449,21 @@ do_join(bat *r1, bat *r2, const bat *lid, const bat *rid, const bat *r2id,
 		if ((*thetafunc)(&result1, r2 ? &result2 : NULL, left, right, candleft, candright, op, *nil_matches, est) != GDK_SUCCEED)
 			goto fail;
 	} else if (joinfunc) {
+		assert(semifunc == NULL);
 		assert(bandfunc == NULL);
 		assert(rangefunc == NULL);
 		assert(difffunc == NULL);
 		assert(interfunc == NULL);
 		result2 = NULL;
 		if ((*joinfunc)(&result1, r2 ? &result2 : NULL, left, right, candleft, candright, *nil_matches, est) != GDK_SUCCEED)
+			goto fail;
+	} else if (semifunc) {
+		assert(bandfunc == NULL);
+		assert(rangefunc == NULL);
+		assert(difffunc == NULL);
+		assert(interfunc == NULL);
+		result2 = NULL;
+		if ((*semifunc)(&result1, r2 ? &result2 : NULL, left, right, candleft, candright, *nil_matches, *max_one, est) != GDK_SUCCEED)
 			goto fail;
 	} else if (bandfunc) {
 		assert(rangefunc == NULL);
@@ -476,7 +489,7 @@ do_join(bat *r1, bat *r2, const bat *lid, const bat *rid, const bat *r2id,
 		result2 = NULL;
 	} else {
 		assert(r2 == NULL);
-		if ((result1 = (*interfunc)(left, right, candleft, candright, *nil_matches, est)) == NULL)
+		if ((result1 = (*interfunc)(left, right, candleft, candright, *nil_matches, *max_one, est)) == NULL)
 			goto fail;
 		result2 = NULL;
 	}
@@ -515,8 +528,8 @@ ALGjoin(bat *r1, bat *r2, const bat *lid, const bat *rid, const bat *slid, const
 		   const bit *nil_matches, const lng *estimate)
 {
 	return do_join(r1, r2, lid, rid, NULL, slid, srid, 0, NULL, NULL,
-				   false, false, false, false, nil_matches, NULL, estimate,
-				   BATjoin, NULL, NULL, NULL, NULL, NULL, "algebra.join");
+				   false, false, false, false, nil_matches, NULL, NULL, estimate,
+				   BATjoin, NULL, NULL, NULL, NULL, NULL, NULL, "algebra.join");
 }
 
 str
@@ -524,8 +537,8 @@ ALGjoin1(bat *r1, const bat *lid, const bat *rid, const bat *slid, const bat *sr
 		   const bit *nil_matches, const lng *estimate)
 {
 	return do_join(r1, NULL, lid, rid, NULL, slid, srid, 0, NULL, NULL,
-				   false, false, false, false, nil_matches, NULL, estimate,
-				   BATjoin, NULL, NULL, NULL, NULL, NULL, "algebra.join");
+				   false, false, false, false, nil_matches, NULL, NULL, estimate,
+				   BATjoin, NULL, NULL, NULL, NULL, NULL, NULL, "algebra.join");
 }
 
 str
@@ -533,8 +546,8 @@ ALGleftjoin(bat *r1, bat *r2, const bat *lid, const bat *rid, const bat *slid, c
 			   const bit *nil_matches, const lng *estimate)
 {
 	return do_join(r1, r2, lid, rid, NULL, slid, srid, 0, NULL, NULL,
-				   false, false, false, false, nil_matches, NULL, estimate,
-				   BATleftjoin, NULL, NULL, NULL, NULL, NULL, "algebra.leftjoin");
+				   false, false, false, false, nil_matches, NULL, NULL, estimate,
+				   BATleftjoin, NULL, NULL, NULL, NULL, NULL, NULL, "algebra.leftjoin");
 }
 
 str
@@ -542,8 +555,8 @@ ALGleftjoin1(bat *r1, const bat *lid, const bat *rid, const bat *slid, const bat
 			   const bit *nil_matches, const lng *estimate)
 {
 	return do_join(r1, NULL, lid, rid, NULL, slid, srid, 0, NULL, NULL,
-				   false, false, false, false, nil_matches, NULL, estimate,
-				   BATleftjoin, NULL, NULL, NULL, NULL, NULL, "algebra.leftjoin");
+				   false, false, false, false, nil_matches, NULL, NULL, estimate,
+				   BATleftjoin, NULL, NULL, NULL, NULL, NULL, NULL, "algebra.leftjoin");
 }
 
 str
@@ -551,17 +564,17 @@ ALGouterjoin(bat *r1, bat *r2, const bat *lid, const bat *rid, const bat *slid, 
 				const bit *nil_matches, const lng *estimate)
 {
 	return do_join(r1, r2, lid, rid, NULL, slid, srid, 0, NULL, NULL,
-				   false, false, false, false, nil_matches, NULL, estimate,
-				   BATouterjoin, NULL, NULL, NULL, NULL, NULL, "algebra.outerjoin");
+				   false, false, false, false, nil_matches, NULL, NULL, estimate,
+				   BATouterjoin, NULL, NULL, NULL, NULL, NULL, NULL, "algebra.outerjoin");
 }
 
 str
 ALGsemijoin(bat *r1, bat *r2, const bat *lid, const bat *rid, const bat *slid, const bat *srid,
-			   const bit *nil_matches, const lng *estimate)
+			const bit *nil_matches, const bit *max_one, const lng *estimate)
 {
 	return do_join(r1, r2, lid, rid, NULL, slid, srid, 0, NULL, NULL,
-				   false, false, false, false, nil_matches, NULL, estimate,
-				   BATsemijoin, NULL, NULL, NULL, NULL, NULL, "algebra.semijoin");
+				   false, false, false, false, nil_matches, NULL, max_one, estimate,
+				   NULL, BATsemijoin, NULL, NULL, NULL, NULL, NULL, "algebra.semijoin");
 }
 
 str
@@ -569,8 +582,8 @@ ALGthetajoin(bat *r1, bat *r2, const bat *lid, const bat *rid, const bat *slid, 
 				const int *op, const bit *nil_matches, const lng *estimate)
 {
 	return do_join(r1, r2, lid, rid, NULL, slid, srid, *op, NULL, NULL,
-				   false, false, false, false, nil_matches, NULL, estimate,
-				   NULL, BATthetajoin, NULL, NULL, NULL, NULL, "algebra.thetajoin");
+				   false, false, false, false, nil_matches, NULL, NULL, estimate,
+				   NULL, NULL, BATthetajoin, NULL, NULL, NULL, NULL, "algebra.thetajoin");
 }
 
 str
@@ -579,16 +592,16 @@ ALGbandjoin(bat *r1, bat *r2, const bat *lid, const bat *rid, const bat *slid, c
 			   const lng *estimate)
 {
 	return do_join(r1, r2, lid, rid, NULL, slid, srid, 0, c1, c2,
-				   *li, *hi, false, false, NULL, NULL, estimate,
-				   NULL, NULL, BATbandjoin, NULL, NULL, NULL, "algebra.bandjoin");
+				   *li, *hi, false, false, NULL, NULL, NULL, estimate,
+				   NULL, NULL, NULL, BATbandjoin, NULL, NULL, NULL, "algebra.bandjoin");
 }
 
 str
 ALGrangejoin(bat *r1, bat *r2, const bat *lid, const bat *rlid, const bat *rhid, const bat *slid, const bat *srid, const bit *li, const bit *hi, const bit *anti, const bit *symmetric, const lng *estimate)
 {
 	return do_join(r1, r2, lid, rlid, rhid, slid, srid, 0, NULL, NULL,
-				   *li, *hi, *anti, *symmetric, NULL, NULL, estimate,
-				   NULL, NULL, NULL, BATrangejoin, NULL, NULL, "algebra.rangejoin");
+				   *li, *hi, *anti, *symmetric, NULL, NULL, NULL, estimate,
+				   NULL, NULL, NULL, NULL, BATrangejoin, NULL, NULL, "algebra.rangejoin");
 }
 
 str
@@ -596,17 +609,17 @@ ALGdifference(bat *r1, const bat *lid, const bat *rid, const bat *slid, const ba
 			  const bit *nil_matches, const bit *not_in, const lng *estimate)
 {
 	return do_join(r1, NULL, lid, rid, NULL, slid, srid, 0, NULL, NULL,
-				   false, false, false, false, nil_matches, not_in, estimate,
-				   NULL, NULL, NULL, NULL, BATdiff, NULL, "algebra.difference");
+				   false, false, false, false, nil_matches, not_in, NULL, estimate,
+				   NULL, NULL, NULL, NULL, NULL, BATdiff, NULL, "algebra.difference");
 }
 
 str
 ALGintersect(bat *r1, const bat *lid, const bat *rid, const bat *slid, const bat *srid,
-			   const bit *nil_matches, const lng *estimate)
+			 const bit *nil_matches, const bit *max_one, const lng *estimate)
 {
 	return do_join(r1, NULL, lid, rid, NULL, slid, srid, 0, NULL, NULL,
-				   false, false, false, false, nil_matches, NULL, estimate,
-				   NULL, NULL, NULL, NULL, NULL, BATintersect, "algebra.intersect");
+				   false, false, false, false, nil_matches, NULL, max_one, estimate,
+				   NULL, NULL, NULL, NULL, NULL, NULL, BATintersect, "algebra.intersect");
 }
 
 /* algebra.firstn(b:bat[:any],
@@ -735,7 +748,7 @@ ALGunique1(bat *result, const bat *bid)
 }
 
 str
-ALGcrossproduct2( bat *l, bat *r, const bat *left, const bat *right)
+ALGcrossproduct2(bat *l, bat *r, const bat *left, const bat *right, const bit *max_one)
 {
 	BAT *L, *R, *bn1, *bn2;
 	gdk_return ret;
@@ -747,7 +760,8 @@ ALGcrossproduct2( bat *l, bat *r, const bat *left, const bat *right)
 		BBPunfix(L->batCacheid);
 		throw(MAL, "algebra.crossproduct", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 	}
-	ret = BATsubcross(&bn1, &bn2, L, R, NULL, NULL);
+	ret = BATsubcross(&bn1, &bn2, L, R, NULL, NULL,
+					  max_one && !is_bit_nil(*max_one) && *max_one);
 	BBPunfix(L->batCacheid);
 	BBPunfix(R->batCacheid);
 	if (ret != GDK_SUCCEED)
@@ -1250,7 +1264,7 @@ ALGstdev(dbl *res, const bat *bid)
 	stdev = BATcalcstdev_sample(NULL, b);
 	BBPunfix(b->batCacheid);
 	if (is_dbl_nil(stdev) && GDKerrbuf && GDKerrbuf[0])
-		throw(MAL, "aggr.stdev", SEMANTIC_TYPE_MISMATCH);
+		throw(MAL, "aggr.stdev", GDK_EXCEPTION);
 	*res = stdev;
 	return MAL_SUCCEED;
 }
@@ -1266,7 +1280,7 @@ ALGstdevp(dbl *res, const bat *bid)
 	stdev = BATcalcstdev_population(NULL, b);
 	BBPunfix(b->batCacheid);
 	if (is_dbl_nil(stdev) && GDKerrbuf && GDKerrbuf[0])
-		throw(MAL, "aggr.stdevp", SEMANTIC_TYPE_MISMATCH);
+		throw(MAL, "aggr.stdevp", GDK_EXCEPTION);
 	*res = stdev;
 	return MAL_SUCCEED;
 }
@@ -1285,7 +1299,7 @@ ALGvariance(dbl *res, const bat *bid)
 	variance = BATcalcvariance_sample(NULL, b);
 	BBPunfix(b->batCacheid);
 	if (is_dbl_nil(variance) && GDKerrbuf && GDKerrbuf[0])
-		throw(MAL, "aggr.variance", SEMANTIC_TYPE_MISMATCH);
+		throw(MAL, "aggr.variance", GDK_EXCEPTION);
 	*res = variance;
 	return MAL_SUCCEED;
 }
@@ -1301,7 +1315,7 @@ ALGvariancep(dbl *res, const bat *bid)
 	variance = BATcalcvariance_population(NULL, b);
 	BBPunfix(b->batCacheid);
 	if (is_dbl_nil(variance) && GDKerrbuf && GDKerrbuf[0])
-		throw(MAL, "aggr.variancep", SEMANTIC_TYPE_MISMATCH);
+		throw(MAL, "aggr.variancep", GDK_EXCEPTION);
 	*res = variance;
 	return MAL_SUCCEED;
 }
@@ -1326,7 +1340,7 @@ ALGcovariance(dbl *res, const bat *bid1, const bat *bid2)
 	BBPunfix(b1->batCacheid);
 	BBPunfix(b2->batCacheid);
 	if (is_dbl_nil(covariance) && GDKerrbuf && GDKerrbuf[0])
-		throw(MAL, "aggr.covariance", SEMANTIC_TYPE_MISMATCH);
+		throw(MAL, "aggr.covariance", GDK_EXCEPTION);
 	*res = covariance;
 	return MAL_SUCCEED;
 }
@@ -1348,7 +1362,7 @@ ALGcovariancep(dbl *res, const bat *bid1, const bat *bid2)
 	BBPunfix(b1->batCacheid);
 	BBPunfix(b2->batCacheid);
 	if (is_dbl_nil(covariance) && GDKerrbuf && GDKerrbuf[0])
-		throw(MAL, "aggr.covariancep", SEMANTIC_TYPE_MISMATCH);
+		throw(MAL, "aggr.covariancep", GDK_EXCEPTION);
 	*res = covariance;
 	return MAL_SUCCEED;
 }
@@ -1373,7 +1387,89 @@ ALGcorr(dbl *res, const bat *bid1, const bat *bid2)
 	BBPunfix(b1->batCacheid);
 	BBPunfix(b2->batCacheid);
 	if (is_dbl_nil(covariance) && GDKerrbuf && GDKerrbuf[0])
-		throw(MAL, "aggr.corr", SEMANTIC_TYPE_MISMATCH);
+		throw(MAL, "aggr.corr", GDK_EXCEPTION);
 	*res = covariance;
 	return MAL_SUCCEED;
 }
+
+#include "mel.h"
+mel_func algebra_init_funcs[] = {
+ command("algebra", "groupby", ALGgroupby, false, "Produces a new BAT with groups identified by the head column. The result contains tail times the head value, ie the tail contains the result group sizes.", args(1,3, batarg("",oid),batarg("gids",oid),batarg("cnts",lng))),
+ command("algebra", "find", ALGfind, false, "Returns the index position of a value.  If no such BUN exists return OID-nil.", args(1,3, arg("",oid),batargany("b",1),argany("t",1))),
+ command("algebra", "fetch", ALGfetchoid, false, "Returns the value of the BUN at x-th position with 0 <= x < b.count", args(1,3, argany("",1),batargany("b",1),arg("x",oid))),
+ pattern("algebra", "project", ALGprojecttail, false, "Fill the tail with a constant", args(1,3, batargany("",3),batargany("b",1),argany("v",3))),
+ command("algebra", "projection", ALGprojection, false, "Project left input onto right input.", args(1,3, batargany("",3),batarg("left",oid),batargany("right",3))),
+ command("algebra", "projection2", ALGprojection2, false, "Project left input onto right inputs which should be consecutive.", args(1,4, batargany("",3),batarg("left",oid),batargany("right1",3),batargany("right2",3))),
+ command("algebra", "copy", ALGcopy, false, "Returns physical copy of a BAT.", args(1,2, batargany("",1),batargany("b",1))),
+ command("algebra", "exist", ALGexist, false, "Returns whether 'val' occurs in b.", args(1,3, arg("",bit),batargany("b",1),argany("val",1))),
+ command("algebra", "select", ALGselect1, false, "Select all head values for which the tail value is in range.\nInput is a dense-headed BAT, output is a dense-headed BAT with in\nthe tail the head value of the input BAT for which the tail value\nis between the values low and high (inclusive if li respectively\nhi is set).  The output BAT is sorted on the tail value.  If low\nor high is nil, the boundary is not considered (effectively - and\n+ infinity).  If anti is set, the result is the complement.  Nil\nvalues in the tail are never matched, unless low=nil, high=nil,\nli=1, hi=1, anti=0.  All non-nil values are returned if low=nil,\nhigh=nil, and li, hi are not both 1, or anti=1.\nNote that the output is suitable as second input for the other\nversion of this function.", args(1,7, batarg("",oid),batargany("b",1),argany("low",1),argany("high",1),arg("li",bit),arg("hi",bit),arg("anti",bit))),
+ command("algebra", "select", ALGselect2, false, "Select all head values of the first input BAT for which the tail value\nis in range and for which the head value occurs in the tail of the\nsecond input BAT.\nThe first input is a dense-headed BAT, the second input is a\ndense-headed BAT with sorted tail, output is a dense-headed BAT\nwith in the tail the head value of the input BAT for which the\ntail value is between the values low and high (inclusive if li\nrespectively hi is set).  The output BAT is sorted on the tail\nvalue.  If low or high is nil, the boundary is not considered\n(effectively - and + infinity).  If anti is set, the result is the\ncomplement.  Nil values in the tail are never matched, unless\nlow=nil, high=nil, li=1, hi=1, anti=0.  All non-nil values are\nreturned if low=nil, high=nil, and li, hi are not both 1, or anti=1.\nNote that the output is suitable as second input for this\nfunction.", args(1,8, batarg("",oid),batargany("b",1),batarg("s",oid),argany("low",1),argany("high",1),arg("li",bit),arg("hi",bit),arg("anti",bit))),
+ command("algebra", "select", ALGselect1nil, false, "With unknown set, each nil != nil", args(1,8, batarg("",oid),batargany("b",1),argany("low",1),argany("high",1),arg("li",bit),arg("hi",bit),arg("anti",bit),arg("unknown",bit))),
+ command("algebra", "select", ALGselect2nil, false, "With unknown set, each nil != nil", args(1,9, batarg("",oid),batargany("b",1),batarg("s",oid),argany("low",1),argany("high",1),arg("li",bit),arg("hi",bit),arg("anti",bit),arg("unknown",bit))),
+ command("algebra", "thetaselect", ALGthetaselect1, false, "Select all head values for which the tail value obeys the relation\nvalue OP VAL.\nInput is a dense-headed BAT, output is a dense-headed BAT with in\nthe tail the head value of the input BAT for which the\nrelationship holds.  The output BAT is sorted on the tail value.", args(1,4, batarg("",oid),batargany("b",1),argany("val",1),arg("op",str))),
+ command("algebra", "thetaselect", ALGthetaselect2, false, "Select all head values of the first input BAT for which the tail value\nobeys the relation value OP VAL and for which the head value occurs in\nthe tail of the second input BAT.\nInput is a dense-headed BAT, output is a dense-headed BAT with in\nthe tail the head value of the input BAT for which the\nrelationship holds.  The output BAT is sorted on the tail value.", args(1,5, batarg("",oid),batargany("b",1),batarg("s",oid),argany("val",1),arg("op",str))),
+ command("algebra", "selectNotNil", ALGselectNotNil, false, "Select all not-nil values", args(1,2, batargany("",2),batargany("b",2))),
+ command("algebra", "sort", ALGsort11, false, "Returns a copy of the BAT sorted on tail values.\nThe order is descending if the reverse bit is set.\nThis is a stable sort if the stable bit is set.", args(1,5, batargany("",1),batargany("b",1),arg("reverse",bit),arg("nilslast",bit),arg("stable",bit))),
+ command("algebra", "sort", ALGsort12, false, "Returns a copy of the BAT sorted on tail values and a BAT that\nspecifies how the input was reordered.\nThe order is descending if the reverse bit is set.\nThis is a stable sort if the stable bit is set.", args(2,6, batargany("",1),batarg("",oid),batargany("b",1),arg("reverse",bit),arg("nilslast",bit),arg("stable",bit))),
+ command("algebra", "sort", ALGsort13, false, "Returns a copy of the BAT sorted on tail values, a BAT that specifies\nhow the input was reordered, and a BAT with group information.\nThe order is descending if the reverse bit is set.\nThis is a stable sort if the stable bit is set.", args(3,7, batargany("",1),batarg("",oid),batarg("",oid),batargany("b",1),arg("reverse",bit),arg("nilslast",bit),arg("stable",bit))),
+ command("algebra", "sort", ALGsort21, false, "Returns a copy of the BAT sorted on tail values.\nThe order is descending if the reverse bit is set.\nThis is a stable sort if the stable bit is set.", args(1,6, batargany("",1),batargany("b",1),batarg("o",oid),arg("reverse",bit),arg("nilslast",bit),arg("stable",bit))),
+ command("algebra", "sort", ALGsort22, false, "Returns a copy of the BAT sorted on tail values and a BAT that\nspecifies how the input was reordered.\nThe order is descending if the reverse bit is set.\nThis is a stable sort if the stable bit is set.", args(2,7, batargany("",1),batarg("",oid),batargany("b",1),batarg("o",oid),arg("reverse",bit),arg("nilslast",bit),arg("stable",bit))),
+ command("algebra", "sort", ALGsort23, false, "Returns a copy of the BAT sorted on tail values, a BAT that specifies\nhow the input was reordered, and a BAT with group information.\nThe order is descending if the reverse bit is set.\nThis is a stable sort if the stable bit is set.", args(3,8, batargany("",1),batarg("",oid),batarg("",oid),batargany("b",1),batarg("o",oid),arg("reverse",bit),arg("nilslast",bit),arg("stable",bit))),
+ command("algebra", "sort", ALGsort31, false, "Returns a copy of the BAT sorted on tail values.\nThe order is descending if the reverse bit is set.\nThis is a stable sort if the stable bit is set.", args(1,7, batargany("",1),batargany("b",1),batarg("o",oid),batarg("g",oid),arg("reverse",bit),arg("nilslast",bit),arg("stable",bit))),
+ command("algebra", "sort", ALGsort32, false, "Returns a copy of the BAT sorted on tail values and a BAT that\nspecifies how the input was reordered.\nThe order is descending if the reverse bit is set.\nThis is a stable sort if the stable bit is set.", args(2,8, batargany("",1),batarg("",oid),batargany("b",1),batarg("o",oid),batarg("g",oid),arg("reverse",bit),arg("nilslast",bit),arg("stable",bit))),
+ command("algebra", "sort", ALGsort33, false, "Returns a copy of the BAT sorted on tail values, a BAT that specifies\nhow the input was reordered, and a BAT with group information.\nThe order is descending if the reverse bit is set.\nThis is a stable sort if the stable bit is set.", args(3,9, batargany("",1),batarg("",oid),batarg("",oid),batargany("b",1),batarg("o",oid),batarg("g",oid),arg("reverse",bit),arg("nilslast",bit),arg("stable",bit))),
+ command("algebra", "unique", ALGunique2, false, "Select all unique values from the tail of the first input.\nInput is a dense-headed BAT, the second input is a\ndense-headed BAT with sorted tail, output is a dense-headed\nBAT with in the tail the head value of the input BAT that was\nselected.  The output BAT is sorted on the tail value.  The\nsecond input BAT is a list of candidates.", args(1,3, batarg("",oid),batargany("b",1),batarg("s",oid))),
+ command("algebra", "unique", ALGunique1, false, "Select all unique values from the tail of the input.\nInput is a dense-headed BAT, output is a dense-headed BAT with\nin the tail the head value of the input BAT that was selected.\nThe output BAT is sorted on the tail value.", args(1,2, batarg("",oid),batargany("b",1))),
+ command("algebra", "crossproduct", ALGcrossproduct2, false, "Returns 2 columns with all BUNs, consisting of the head-oids\nfrom 'left' and 'right' for which there are BUNs in 'left'\nand 'right' with equal tails", args(2,5, batarg("l",oid),batarg("r",oid),batargany("left",1),batargany("right",2),arg("max_one",bit))),
+ command("algebra", "join", ALGjoin, false, "Join", args(2,8, batarg("",oid),batarg("",oid),batargany("l",1),batargany("r",1),batarg("sl",oid),batarg("sr",oid),arg("nil_matches",bit),arg("estimate",lng))),
+ command("algebra", "join", ALGjoin1, false, "Join; only produce left output", args(1,7, batarg("",oid),batargany("l",1),batargany("r",1),batarg("sl",oid),batarg("sr",oid),arg("nil_matches",bit),arg("estimate",lng))),
+ command("algebra", "leftjoin", ALGleftjoin, false, "Left join with candidate lists", args(2,8, batarg("",oid),batarg("",oid),batargany("l",1),batargany("r",1),batarg("sl",oid),batarg("sr",oid),arg("nil_matches",bit),arg("estimate",lng))),
+ command("algebra", "leftjoin", ALGleftjoin1, false, "Left join with candidate lists; only produce left output", args(1,7, batarg("",oid),batargany("l",1),batargany("r",1),batarg("sl",oid),batarg("sr",oid),arg("nil_matches",bit),arg("estimate",lng))),
+ command("algebra", "outerjoin", ALGouterjoin, false, "Left outer join with candidate lists", args(2,8, batarg("",oid),batarg("",oid),batargany("l",1),batargany("r",1),batarg("sl",oid),batarg("sr",oid),arg("nil_matches",bit),arg("estimate",lng))),
+ command("algebra", "semijoin", ALGsemijoin, false, "Semi join with candidate lists", args(2,9, batarg("",oid),batarg("",oid),batargany("l",1),batargany("r",1),batarg("sl",oid),batarg("sr",oid),arg("nil_matches",bit),arg("max_one",bit),arg("estimate",lng))),
+ command("algebra", "thetajoin", ALGthetajoin, false, "Theta join with candidate lists", args(2,9, batarg("",oid),batarg("",oid),batargany("l",1),batargany("r",1),batarg("sl",oid),batarg("sr",oid),arg("op",int),arg("nil_matches",bit),arg("estimate",lng))),
+ command("algebra", "bandjoin", ALGbandjoin, false, "Band join: values in l and r match if r - c1 <[=] l <[=] r + c2", args(2,11, batarg("",oid),batarg("",oid),batargany("l",1),batargany("r",1),batarg("sl",oid),batarg("sr",oid),argany("c1",1),argany("c2",1),arg("li",bit),arg("hi",bit),arg("estimate",lng))),
+ command("algebra", "rangejoin", ALGrangejoin, false, "Range join: values in l and r1/r2 match if r1 <[=] l <[=] r2", args(2,12, batarg("",oid),batarg("",oid),batargany("l",1),batargany("r1",1),batargany("r2",1),batarg("sl",oid),batarg("sr",oid),arg("li",bit),arg("hi",bit),arg("anti",bit),arg("symmetric",bit),arg("estimate",lng))),
+ command("algebra", "difference", ALGdifference, false, "Difference of l and r with candidate lists", args(1,8, batarg("",oid),batargany("l",1),batargany("r",1),batarg("sl",oid),batarg("sr",oid),arg("nil_matches",bit),arg("nil_clears",bit),arg("estimate",lng))),
+ command("algebra", "intersect", ALGintersect, false, "Intersection of l and r with candidate lists (i.e. half of semi-join)", args(1,8, batarg("",oid),batargany("l",1),batargany("r",1),batarg("sl",oid),batarg("sr",oid),arg("nil_matches",bit),arg("max_one",bit),arg("estimate",lng))),
+ pattern("algebra", "firstn", ALGfirstn, false, "Calculate first N values of B", args(1,6, batarg("",oid),batargany("b",0),arg("n",lng),arg("asc",bit),arg("nilslast",bit),arg("distinct",bit))),
+ pattern("algebra", "firstn", ALGfirstn, false, "Calculate first N values of B with candidate list S", args(1,7, batarg("",oid),batargany("b",0),batarg("s",oid),arg("n",lng),arg("asc",bit),arg("nilslast",bit),arg("distinct",bit))),
+ pattern("algebra", "firstn", ALGfirstn, false, "Calculate first N values of B with candidate list S", args(1,8, batarg("",oid),batargany("b",0),batarg("s",oid),batarg("g",oid),arg("n",lng),arg("asc",bit),arg("nilslast",bit),arg("distinct",bit))),
+ pattern("algebra", "firstn", ALGfirstn, false, "Calculate first N values of B", args(2,7, batarg("",oid),batarg("",oid),batargany("b",0),arg("n",lng),arg("asc",bit),arg("nilslast",bit),arg("distinct",bit))),
+ pattern("algebra", "firstn", ALGfirstn, false, "Calculate first N values of B with candidate list S", args(2,8, batarg("",oid),batarg("",oid),batargany("b",0),batarg("s",oid),arg("n",lng),arg("asc",bit),arg("nilslast",bit),arg("distinct",bit))),
+ pattern("algebra", "firstn", ALGfirstn, false, "Calculate first N values of B with candidate list S", args(2,9, batarg("",oid),batarg("",oid),batargany("b",0),batarg("s",oid),batarg("g",oid),arg("n",lng),arg("asc",bit),arg("nilslast",bit),arg("distinct",bit))),
+ command("algebra", "reuse", ALGreuse, false, "Reuse a temporary BAT if you can. Otherwise,\nallocate enough storage to accept result of an\noperation (not involving the heap)", args(1,2, batargany("",1),batargany("b",1))),
+ command("algebra", "slice", ALGslice_oid, false, "Return the slice based on head oid x till y (exclusive).", args(1,4, batargany("",1),batargany("b",1),arg("x",oid),arg("y",oid))),
+ command("algebra", "slice", ALGslice, false, "Return the slice with the BUNs at position x till y.", args(1,4, batargany("",1),batargany("b",1),arg("x",lng),arg("y",lng))),
+ command("algebra", "slice", ALGslice_int, false, "Return the slice with the BUNs at position x till y.", args(1,4, batargany("",1),batargany("b",1),arg("x",int),arg("y",int))),
+ command("algebra", "slice", ALGslice_lng, false, "Return the slice with the BUNs at position x till y.", args(1,4, batargany("",1),batargany("b",1),arg("x",lng),arg("y",lng))),
+ command("algebra", "subslice", ALGsubslice_lng, false, "Return the oids of the slice with the BUNs at position x till y.", args(1,4, batarg("",oid),batargany("b",1),arg("x",lng),arg("y",lng))),
+ command("aggr", "count", ALGcount_bat, false, "Return the current size (in number of elements) in a BAT.", args(1,2, arg("",lng),batargany("b",0))),
+ command("aggr", "count", ALGcount_nil, false, "Return the number of elements currently in a BAT ignores\nBUNs with nil-tail iff ignore_nils==TRUE.", args(1,3, arg("",lng),batargany("b",0),arg("ignore_nils",bit))),
+ command("aggr", "count_no_nil", ALGcount_no_nil, false, "Return the number of elements currently\nin a BAT ignoring BUNs with nil-tail", args(1,2, arg("",lng),batargany("b",2))),
+ command("aggr", "count", ALGcountCND_bat, false, "Return the current size (in number of elements) in a BAT.", args(1,3, arg("",lng),batargany("b",0),batarg("cnd",oid))),
+ command("aggr", "count", ALGcountCND_nil, false, "Return the number of elements currently in a BAT ignores\nBUNs with nil-tail iff ignore_nils==TRUE.", args(1,4, arg("",lng),batargany("b",0),batarg("cnd",oid),arg("ignore_nils",bit))),
+ command("aggr", "count_no_nil", ALGcountCND_no_nil, false, "Return the number of elements currently\nin a BAT ignoring BUNs with nil-tail", args(1,3, arg("",lng),batargany("b",2),batarg("cnd",oid))),
+ command("aggr", "cardinality", ALGcard, false, "Return the cardinality of the BAT tail values.", args(1,2, arg("",lng),batargany("b",2))),
+ command("aggr", "min", ALGminany, false, "Return the lowest tail value or nil.", args(1,2, argany("",2),batargany("b",2))),
+ command("aggr", "min", ALGminany_skipnil, false, "Return the lowest tail value or nil.", args(1,3, argany("",2),batargany("b",2),arg("skipnil",bit))),
+ command("aggr", "max", ALGmaxany, false, "Return the highest tail value or nil.", args(1,2, argany("",2),batargany("b",2))),
+ command("aggr", "max", ALGmaxany_skipnil, false, "Return the highest tail value or nil.", args(1,3, argany("",2),batargany("b",2),arg("skipnil",bit))),
+ command("aggr", "stdev", ALGstdev, false, "Gives the standard deviation of all tail values", args(1,2, arg("",dbl),batargany("b",2))),
+ command("aggr", "stdevp", ALGstdevp, false, "Gives the standard deviation of all tail values", args(1,2, arg("",dbl),batargany("b",2))),
+ command("aggr", "variance", ALGvariance, false, "Gives the variance of all tail values", args(1,2, arg("",dbl),batargany("b",2))),
+ command("aggr", "variancep", ALGvariancep, false, "Gives the variance of all tail values", args(1,2, arg("",dbl),batargany("b",2))),
+ command("aggr", "covariance", ALGcovariance, false, "Gives the covariance of all tail values", args(1,3, arg("",dbl),batargany("b1",2),batargany("b2",2))),
+ command("aggr", "covariancep", ALGcovariancep, false, "Gives the covariance of all tail values", args(1,3, arg("",dbl),batargany("b1",2),batargany("b2",2))),
+ command("aggr", "corr", ALGcorr, false, "Gives the correlation of all tail values", args(1,3, arg("",dbl),batargany("b1",2),batargany("b2",2))),
+ // sql
+ command("aggr", "exist", ALGexist, false, "", args(1,3, arg("",bit),batargany("b",2),argany("h",1))),
+ { .imp=NULL }
+};
+#include "mal_import.h"
+#ifdef _MSC_VER
+#undef read
+#pragma section(".CRT$XCU",read)
+#endif
+LIB_STARTUP_FUNC(init_algebra_mal)
+{ mal_module("algebra", NULL, algebra_init_funcs); }

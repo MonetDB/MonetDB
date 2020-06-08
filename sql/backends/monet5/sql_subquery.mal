@@ -21,18 +21,6 @@ comment "if col contains exactly one value return this. Incase of more raise an 
 command subzero_or_one( b:bat[:any_1], gp:bat[:oid], gpe:bat[:oid], no_nil:bit) :bat[:any_1]
 address SQLsubzero_or_one;
 
-# todo implement = all aggregator (ie keep last value and compare status)
-inline function sql.all( b:bat[:any_1], gp:bat[:oid], gpe:bat[:oid], no_nil:bit) :bat[:any_1];
-	(g,e,h) := group.group(gp);
-	m := aggr.max(h);
-	c0 := calc.isnil(m);
-	c01 := calc.not(c0);
-	c1 := calc.>(m,1:lng);
-	c11 := calc.and(c01,c1);
-	sql.assert(c11, "21000!zero_or_one: cardinality violation, scalar expression expected ");
-	return all := b;
-end sql.all;
-
 command all( col:bat[:any_1]) :any_1
 address SQLall
 comment "if all values in col are equal return this, else nil";
@@ -90,20 +78,20 @@ comment "if all values in r are not equal to l return true, else if r has nil ni
 command aggr.exist(b:bat[:any_2], h:any_1):bit
 address ALGexist;
 
-command aggr.exist(b:bat[:any_2]):bit
+command aggr.exist(b:bat[:any_0]):bit
 address SQLexist;
 
-pattern aggr.exist(v:any_2):bit
+pattern aggr.exist(v:any_0):bit
 address SQLexist_val;
 
-command aggr.subexist(b:bat[:any_2], g:bat[:oid], e:bat[:oid], no_nil:bit):bat[:bit]
+command aggr.subexist(b:bat[:any_0], g:bat[:oid], e:bat[:oid], no_nil:bit):bat[:bit]
 address SQLsubexist;
 
-command aggr.not_exist(b:bat[:any_2]):bit
+command aggr.not_exist(b:bat[:any_0]):bit
 address SQLnot_exist;
 
-pattern aggr.not_exist(v:any_2):bit
+pattern aggr.not_exist(v:any_0):bit
 address SQLnot_exist_val;
 
-command aggr.subnot_exist(b:bat[:any_2], g:bat[:oid], e:bat[:oid], no_nil:bit):bat[:bit]
+command aggr.subnot_exist(b:bat[:any_0], g:bat[:oid], e:bat[:oid], no_nil:bit):bat[:bit]
 address SQLsubnot_exist;

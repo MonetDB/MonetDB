@@ -153,27 +153,29 @@ address JSONrenderobject;
 pattern renderarray(val:any...):json
 address JSONrenderarray;
 
-command aggr.jsonaggr(val:bat[:str]):str
+module aggr;
+
+command jsonaggr(val:bat[:str]):str
 address JSONgroupStr
 comment "Aggregate the string values to array.";
 
-command aggr.jsonaggr(val:bat[:dbl]):str
+command jsonaggr(val:bat[:dbl]):str
 address JSONgroupStr
 comment "Aggregate the double values to array.";
 
-command aggr.subjsonaggr(val:bat[:str],g:bat[:oid],e:bat[:any_1], skip_nils:bit) :bat[:str]
+command subjsonaggr(val:bat[:str],g:bat[:oid],e:bat[:any_1], skip_nils:bit) :bat[:str]
 address JSONsubjson
 comment "Grouped aggregation of values.";
 
-command aggr.subjsonaggr(val:bat[:dbl],g:bat[:oid],e:bat[:any_1], skip_nils:bit) :bat[:str]
+command subjsonaggr(val:bat[:dbl],g:bat[:oid],e:bat[:any_1], skip_nils:bit) :bat[:str]
 address JSONsubjson
 comment "Grouped aggregation of values.";
 
-command aggr.subjsonaggr(val:bat[:str],g:bat[:oid],e:bat[:any_1],s:bat[:oid], skip_nils:bit) :bat[:str]
+command subjsonaggr(val:bat[:str],g:bat[:oid],e:bat[:any_1],s:bat[:oid], skip_nils:bit) :bat[:str]
 address JSONsubjsoncand
 comment "Grouped aggregation of values with candidates list.";
 
-command aggr.subjsonaggr(val:bat[:dbl],g:bat[:oid],e:bat[:any_1],s:bat[:oid], skip_nils:bit) :bat[:str]
+command subjsonaggr(val:bat[:dbl],g:bat[:oid],e:bat[:any_1],s:bat[:oid], skip_nils:bit) :bat[:str]
 address JSONsubjsoncand
 comment "Grouped aggregation of values with candidates list.";
 
@@ -244,5 +246,3 @@ comment "Return B1 > B2";
 pattern >=(b1:bat[:json],b2:bat[:json]) :bat[:bit]
 address CMDbatGE
 comment "Return B1 >= B2";
-
-json.prelude();

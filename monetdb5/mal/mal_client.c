@@ -133,14 +133,13 @@ static Client
 MCnewClient(void)
 {
 	Client c;
-	MT_lock_set(&mal_contextLock);
+
 	for (c = mal_clients; c < mal_clients + MAL_MAXCLIENTS; c++) {
 		if (c->mode == FREECLIENT) {
 			c->mode = RUNCLIENT;
 			break;
 		}
 	}
-	MT_lock_unset(&mal_contextLock);
 
 	if (c == mal_clients + MAL_MAXCLIENTS)
 		return NULL;
@@ -206,6 +205,7 @@ MCinitClientRecord(Client c, oid user, bstream *fin, stream *fout)
 {
 	const char *prompt;
 
+	/* mal_contextLock is held when this is called */
 	c->user = user;
 	c->username = 0;
 	c->scenario = NULL;
@@ -261,13 +261,12 @@ MCinitClientRecord(Client c, oid user, bstream *fin, stream *fout)
 	c->sqlprofiler = 0;
 	c->wlc_kind = 0;
 	c->wlc = NULL;
-#ifndef HAVE_EMBEDDED /* no authentication in embedded mode */
-	{
+	/* no authentication in embedded mode */
+	if (!GDKembedded()) {
 		str msg = AUTHgetUsername(&c->username, c);
 		if (msg)				/* shouldn't happen */
 			freeException(msg);
 	}
-#endif
 	c->blocksize = BLOCK;
 	c->protocol = PROTOCOL_9;
 
@@ -285,10 +284,14 @@ MCinitClient(oid user, bstream *fin, stream *fout)
 {
 	Client c = NULL;
 
-	if ((c = MCnewClient()) == NULL)
-		return NULL;
-	return MCinitClientRecord(c, user, fin, fout);
+	MT_lock_set(&mal_contextLock);
+	c = MCnewClient();
+	if (c)
+		c = MCinitClientRecord(c, user, fin, fout);
+	MT_lock_unset(&mal_contextLock);
+	return c;
 }
+
 
 /*
  * The administrator should be initialized to enable interpretation of
@@ -407,10 +410,9 @@ MCfreeClient(Client c)
 	c->prompt = NULL;
 	c->promptlength = -1;
 	if (c->errbuf) {
-/* no client threads in embedded mode */
-#ifndef HAVE_EMBEDDED
+		/* no client threads in embedded mode */
+		//if (!GDKembedded())
 		GDKsetbuf(0);
-#endif
 		if (c->father == NULL)
 			GDKfree(c->errbuf);
 		c->errbuf = 0;
@@ -498,13 +500,13 @@ MCstopClients(Client cntxt)
 int
 MCactiveClients(void)
 {
-	int idles = 0;
+	int active = 0;
 	Client cntxt = mal_clients;
 
 	for(cntxt = mal_clients;  cntxt<mal_clients+MAL_MAXCLIENTS; cntxt++){
-		idles += (cntxt->idle != 0 && cntxt->mode == RUNCLIENT);
+		active += (cntxt->idle == 0 && cntxt->mode == RUNCLIENT);
 	}
-	return idles;
+	return active;
 }
 
 void

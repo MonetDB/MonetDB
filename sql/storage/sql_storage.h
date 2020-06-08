@@ -19,11 +19,9 @@
 
 #define isTemp(x) (isNew((x)->t)||(x)->t->persistence!=SQL_PERSIST)
 #define isTempTable(x)   ((x)->persistence!=SQL_PERSIST)
-#define isGlobal(x)      ((x)->persistence!=SQL_LOCAL_TEMP && \
-			  (x)->persistence!=SQL_DECLARED_TABLE)
+#define isGlobal(x)      ((x)->persistence!=SQL_LOCAL_TEMP && (x)->persistence!=SQL_DECLARED_TABLE)
 #define isGlobalTemp(x)  ((x)->persistence==SQL_GLOBAL_TEMP)
-#define isTempSchema(x)  (strcmp((x)->base.name, "tmp") == 0 || \
-			  strcmp((x)->base.name, dt_schema) == 0)
+#define isTempSchema(x)  (strcmp((x)->base.name, "tmp") == 0)
 #define isDeclaredTable(x)  ((x)->persistence==SQL_DECLARED_TABLE)
 
 extern int catalog_version;
@@ -374,7 +372,7 @@ extern res_col *res_col_create(sql_trans *tr, res_table *t, const char *tn, cons
 extern void res_table_destroy(res_table *t);
 
 extern res_table *res_tables_remove(res_table *results, res_table *t);
-extern void res_tables_destroy(res_table *results);
+sql_export void res_tables_destroy(res_table *results);
 extern res_table *res_tables_find(res_table *results, int res_id);
 
 extern int store_init(int debug, store_type store, int readonly, int singleuser, backend_stack stk);
@@ -391,7 +389,7 @@ extern void idle_manager(void);
 
 extern void store_lock(void);
 extern void store_unlock(void);
-extern int store_next_oid(void);
+extern sqlid store_next_oid(void);
 
 extern sql_trans *sql_trans_create(backend_stack stk, sql_trans *parent, const char *name, bool try_spare);
 extern sql_trans *sql_trans_destroy(sql_trans *tr, bool try_spare);

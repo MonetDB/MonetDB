@@ -74,7 +74,6 @@ malOpenSource(str file)
 	return fd;
 }
 
-#ifndef HAVE_EMBEDDED
 /*
  * The malLoadScript routine merely reads the contents of a file into
  * the input buffer of the client. It is typically used in situations
@@ -110,7 +109,6 @@ malLoadScript(str name, bstream **fdin)
 	}
 	return MAL_SUCCEED;
 }
-#endif
 
 /*
  * Beware that we have to isolate the execution of the source file
@@ -143,9 +141,59 @@ malLoadScript(str name, bstream **fdin)
 	restoreClient1 \
 	restoreClient2
 
-#ifdef HAVE_EMBEDDED
-extern char* mal_init_inline;
-#endif
+str
+malIncludeString(Client c, const str name, const str mal, int listing, MALfcn address) 
+{
+	str msg = MAL_SUCCEED;
+
+	bstream *oldfdin = c->fdin;
+	size_t oldyycur = c->yycur;
+	int oldlisting = c->listing;
+	enum clientmode oldmode = c->mode;
+	int oldblkmode = c->blkmode;
+	ClientInput *oldbak = c->bak;
+	str oldprompt = c->prompt;
+	str oldsrcFile = c->srcFile;
+
+	MalStkPtr oldglb = c->glb;
+	Module oldusermodule = c->usermodule;
+	Module oldcurmodule = c->curmodule;
+	Symbol oldprg = c->curprg;
+
+	c->prompt = GDKstrdup("");	/* do not produce visible prompts */
+	c->promptlength = 0;
+	c->listing = listing;
+	c->fdin = NULL;
+
+	size_t mal_len = strlen(mal);
+	buffer* mal_buf;
+	stream* mal_stream;
+
+	if ((mal_buf = GDKmalloc(sizeof(buffer))) == NULL)
+		throw(MAL, "malIncludeString", MAL_MALLOC_FAIL);
+	if ((mal_stream = buffer_rastream(mal_buf, name)) == NULL) {
+		GDKfree(mal_buf);
+		throw(MAL, "malIncludeString", MAL_MALLOC_FAIL);
+	}
+	buffer_init(mal_buf, mal, mal_len);
+	c->srcFile = name;
+	c->yycur = 0;
+	c->bak = NULL;
+	if ((c->fdin = bstream_create(mal_stream, mal_len)) == NULL) {
+		mnstr_destroy(mal_stream);
+		GDKfree(mal_buf);
+		throw(MAL, "malIncludeString", MAL_MALLOC_FAIL);
+	}
+	bstream_next(c->fdin);
+	parseMAL(c, c->curprg, 1, INT_MAX, address);
+	bstream_destroy(c->fdin);
+	c->fdin = NULL;
+	GDKfree(mal_buf);
+
+	restoreClient;
+	return msg;
+}
+
 /*
  * The include operation parses the file indentified and
  * leaves the MAL code behind in the 'main' function.
@@ -176,36 +224,6 @@ malInclude(Client c, str name, int listing)
 	c->listing = listing;
 	c->fdin = NULL;
 
-#ifdef HAVE_EMBEDDED
-	(void) filename;
-	(void) p;
-	{
-		size_t mal_init_len = strlen(mal_init_inline);
-		buffer* mal_init_buf;
-		stream* mal_init_stream;
-
-		if ((mal_init_buf = GDKmalloc(sizeof(buffer))) == NULL)
-			throw(MAL, "malInclude", MAL_MALLOC_FAIL);
-		if ((mal_init_stream = buffer_rastream(mal_init_buf, name)) == NULL) {
-			GDKfree(mal_init_buf);
-			throw(MAL, "malInclude", MAL_MALLOC_FAIL);
-		}
-		buffer_init(mal_init_buf, mal_init_inline, mal_init_len);
-		c->srcFile = name;
-		c->yycur = 0;
-		c->bak = NULL;
-		if ((c->fdin = bstream_create(mal_init_stream, mal_init_len)) == NULL) {
-			mnstr_destroy(mal_init_stream);
-			GDKfree(mal_init_buf);
-			throw(MAL, "malInclude", MAL_MALLOC_FAIL);
-		}
-		bstream_next(c->fdin);
-		parseMAL(c, c->curprg, 1, INT_MAX);
-		bstream_destroy(c->fdin);
-		c->fdin = NULL;
-		GDKfree(mal_init_buf);
-	}
-#else
 	if ((filename = malResolveFile(name)) != NULL) {
 		name = filename;
 		do {
@@ -216,7 +234,7 @@ malInclude(Client c, str name, int listing)
 			c->yycur = 0;
 			c->bak = NULL;
 			if ((msg = malLoadScript(filename, &c->fdin)) == MAL_SUCCEED) {
-				parseMAL(c, c->curprg, 1, INT_MAX);
+				parseMAL(c, c->curprg, 1, INT_MAX, 0);
 				bstream_destroy(c->fdin);
 			} else {
 				/* TODO output msg ? */
@@ -229,7 +247,6 @@ malInclude(Client c, str name, int listing)
 		GDKfree(name);
 		c->fdin = NULL;
 	}
-#endif
 	restoreClient;
 	return msg;
 }
@@ -259,6 +276,7 @@ evalFile(str fname, int listing)
 	stream *fd;
 	str filename;
 	str msg = MAL_SUCCEED;
+	bstream *bs;
 
 	filename = malResolveFile(fname);
 	if (filename == NULL)
@@ -270,8 +288,12 @@ evalFile(str fname, int listing)
 			close_stream(fd);
 		throw(MAL,"mal.eval", "WARNING: could not open file '%s'\n", fname);
 	}
-
-	c= MCinitClient(MAL_ADMIN, bstream_create(fd, 128 * BLOCK),0);
+	if (!(bs = bstream_create(fd, 128 * BLOCK))) {
+		if (fd)
+			close_stream(fd);
+		throw(MAL,"mal.eval",SQLSTATE(HY013) MAL_MALLOC_FAIL);
+	}
+	c= MCinitClient(MAL_ADMIN, bs, 0);
 	if( c == NULL){
 		throw(MAL,"mal.eval","Can not create user context");
 	}

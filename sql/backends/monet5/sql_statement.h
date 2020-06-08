@@ -134,7 +134,7 @@ extern stmt *stmt_none(backend *be);
 
 //#define VAR_DECLARE 1
 #define VAR_GLOBAL(f) ((f>>1)==1)
-extern stmt *stmt_var(backend *be, const char *varname, sql_subtype *t, int declare, int level);
+extern stmt *stmt_var(backend *be, const char *sname, const char *varname, sql_subtype *t, int declare, int level);
 extern stmt *stmt_vars(backend *be, const char *varname, sql_table *t, int declare, int level);
 extern stmt *stmt_varnr(backend *be, int nr, sql_subtype *t);
 
@@ -180,14 +180,14 @@ extern stmt *stmt_genselect(backend *be, stmt *lops, stmt *rops, sql_subfunc *f,
 extern stmt *stmt_tunion(backend *be, stmt *op1, stmt *op2);
 extern stmt *stmt_tdiff(backend *be, stmt *op1, stmt *op2, stmt *lcand);
 extern stmt *stmt_tdiff2(backend *be, stmt *op1, stmt *op2, stmt *lcand);
-extern stmt *stmt_tinter(backend *be, stmt *op1, stmt *op2);
+extern stmt *stmt_tinter(backend *be, stmt *op1, stmt *op2, bool single);
 
-extern stmt *stmt_join(backend *be, stmt *op1, stmt *op2, int anti, comp_type cmptype, int is_semantics);
+extern stmt *stmt_join(backend *be, stmt *op1, stmt *op2, int anti, comp_type cmptype, int is_semantics, bool single);
 extern stmt *stmt_join2(backend *be, stmt *l, stmt *ra, stmt *rb, int cmp, int anti, int swapped);
 /* generic join operator, with a left and right statement list */
 extern stmt *stmt_genjoin(backend *be, stmt *l, stmt *r, sql_subfunc *op, int anti, int swapped);
-extern stmt *stmt_semijoin(backend *be, stmt *l, stmt *r, stmt *lcand, stmt *rcand, int is_semantics);
-extern stmt *stmt_join_cand(backend *be, stmt *l, stmt *r, stmt *lcand, stmt *rcand, int anti, comp_type cmptype, int is_semantics);
+extern stmt *stmt_semijoin(backend *be, stmt *l, stmt *r, stmt *lcand, stmt *rcand, int is_semantics, bool single);
+extern stmt *stmt_join_cand(backend *be, stmt *l, stmt *r, stmt *lcand, stmt *rcand, int anti, comp_type cmptype, int is_semantics, bool single);
 
 extern stmt *stmt_project(backend *be, stmt *op1, stmt *op2);
 extern stmt *stmt_project_delta(backend *be, stmt *col, stmt *upd, stmt *ins);
@@ -218,7 +218,7 @@ extern stmt *stmt_sample(backend *be, stmt *s, stmt *sample, stmt *seed);
 extern stmt *stmt_order(backend *be, stmt *s, int direction, int nullslast);
 extern stmt *stmt_reorder(backend *be, stmt *s, int direction, int nullslast, stmt *orderby_ids, stmt *orderby_grp);
 
-extern stmt *stmt_convert(backend *sa, stmt *v, sql_subtype *from, sql_subtype *to, stmt *sel);
+extern stmt *stmt_convert(backend *sa, stmt *v, sql_subtype *from, sql_subtype *to, stmt *cond);
 extern stmt *stmt_unop(backend *be, stmt *op1, sql_subfunc *op);
 extern stmt *stmt_binop(backend *be, stmt *op1, stmt *op2, sql_subfunc *op);
 extern stmt *stmt_Nop(backend *be, stmt *ops, sql_subfunc *op);
@@ -235,7 +235,7 @@ extern stmt *stmt_affected_rows(backend *be, stmt *l);
 extern stmt *stmt_cond(backend *be, stmt *cond, stmt *outer, int loop, int anti);
 extern stmt *stmt_control_end(backend *be, stmt *cond);
 extern stmt *stmt_return(backend *be, stmt *val, int nr_of_declared_tables);
-extern stmt *stmt_assign(backend *be, const char *varname, stmt *val, int level);
+extern stmt *stmt_assign(backend *be, const char *sname, const char *varname, stmt *val, int level);
 
 extern sql_subtype *tail_type(stmt *st);
 extern int stmt_has_null(stmt *s);

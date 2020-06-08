@@ -159,6 +159,146 @@ SELECT * FROM integers i1 LEFT OUTER JOIN integers i2 ON i2.i = ANY(SELECT SUM(i
 	-- NULL 2
 	-- NULL 1
 
+SELECT * FROM integers i1 RIGHT OUTER JOIN integers i2 ON i2.i = ANY(SELECT SUM(i2.i + i3.i) FROM integers i3) = NOT EXISTS(SELECT MIN(i1.i) OVER ());
+	-- 1 3
+	-- 1 2
+	-- 1 1
+	-- 2 3
+	-- 2 2
+	-- 2 1
+	-- 3 3
+	-- 3 2
+	-- 3 1
+	-- NULL 3
+	-- NULL 2
+	-- NULL 1
+	-- NULL NULL
+
+SELECT * FROM integers i1 FULL OUTER JOIN integers i2 ON i2.i = ANY(SELECT SUM(i2.i + i3.i) FROM integers i3) = NOT EXISTS(SELECT MIN(i1.i) OVER ());
+	-- 1 3
+	-- 1 2
+	-- 1 1
+	-- 2 3
+	-- 2 2
+	-- 2 1
+	-- 3 3
+	-- 3 2
+	-- 3 1
+	-- NULL 3
+	-- NULL 2
+	-- NULL 1
+	-- NULL NULL
+
+SELECT 1 FROM integers i1 RIGHT OUTER JOIN integers i2 ON NOT EXISTS(SELECT 1);
+	-- 1
+	-- 1
+	-- 1
+	-- 1
+
+SELECT (SELECT 1 FROM integers i2 INNER JOIN integers i3 ON i1.i = 1) = (SELECT 1 FROM integers i2 INNER JOIN integers i3 ON MIN(i1.i) = 1) FROM integers i1;
+	--error, subquery uses ungrouped column "i1.i" from outer query
+
+SELECT (SELECT i1.i) = (SELECT SUM(i1.i)) FROM integers i1;
+	--error, subquery uses ungrouped column "i1.i" from outer query
+
+SELECT (VALUES(col1)), (VALUES(MAX(col2))) FROM another_t;
+	--error, subquery uses ungrouped column "another_t.col1" from outer query
+
+SELECT (SELECT CORR(MIN(i1.i), 1) FROM integers i2) FROM integers i1;
+	--error, aggregate function calls cannot be nested
+
+SELECT (SELECT 1) IN (SELECT 2 UNION SELECT 3) FROM integers i1;
+	-- False
+	-- False
+	-- False
+	-- False
+
+SELECT (SELECT 1 UNION SELECT 2) IN (SELECT 1) FROM integers i1;
+	--error, more than one row returned by a subquery used as an expression
+
+SELECT (SELECT 1 FROM integers i2 INNER JOIN integers i3 ON MAX(i1.i) = 1) IN (SELECT 1 FROM integers i2 INNER JOIN integers i3 ON MIN(i1.i) = 1) FROM integers i1;
+	-- NULL
+
+SELECT (SELECT MAX(i1.i + i2.i) FROM integers i2) IN (SELECT MIN(i1.i)) FROM integers i1;
+	--error, subquery uses ungrouped column "i1.i" from outer query
+
+SELECT (SELECT COVAR_SAMP(i1.i, i2.i) FROM integers i2) IN (SELECT MIN(i1.i)) FROM integers i1;
+	--error, subquery uses ungrouped column "i1.i" from outer query
+
+SELECT (SELECT COVAR_POP(i1.i, 1)) IN (SELECT SUM(i1.i)) FROM integers i1;
+	-- False
+
+SELECT (SELECT MAX(i1.i + i2.i) FROM integers i2) = MIN(i1.i) FROM integers i1;
+	--error, subquery uses ungrouped column "i1.i" from outer query
+
+SELECT (SELECT i2.i FROM integers i2) IN (SELECT MIN(i1.i)) FROM integers i1;
+	--error, more than one row returned by a subquery used as an expression
+
+SELECT (SELECT 5) NOT IN (SELECT MIN(i1.i)) FROM integers i1;
+	-- True
+
+SELECT (SELECT 1) IN (SELECT i1.i) FROM integers i1;
+	-- True
+	-- False
+	-- False
+	-- NULL
+
+SELECT SUM((SELECT MAX(i1.i + i2.i) FROM integers i2)) FROM integers i1;
+	-- 15
+
+SELECT CORR((SELECT i1.i FROM integers i2), (SELECT SUM(i1.i + i2.i) FROM integers i2)) FROM integers i1;
+	--error, more than one row returned by a subquery used as an expression
+
+SELECT i1.i FROM integers i1 WHERE (SELECT TRUE EXCEPT SELECT i1.i > 0);
+	-- NULL
+
+SELECT (((SELECT MIN(i2.i + i1.i) FROM integers i2) IN (SELECT i1.i)) = EXISTS(SELECT i1.i)) = ANY(SELECT MIN(i1.i) = 1) FROM integers i1 GROUP BY i1.i;
+	-- NULL
+	-- True
+	-- True
+	-- False
+
+SELECT (((SELECT MIN(i2.i + i1.i) FROM integers i2) IN (SELECT i1.i)) = EXISTS(SELECT i1.i)) = ANY(SELECT MIN(i1.i) = 1) FROM integers i1 GROUP BY i1.i 
+HAVING (((SELECT MIN(i2.i + i1.i) FROM integers i2) IN (SELECT i1.i)) = EXISTS(SELECT i1.i)) = ANY(SELECT MIN(i1.i) = 1);
+	-- True
+	-- True
+
+SELECT (VALUES (SUM(i1.i)),(AVG(i1.i)) INTERSECT VALUES(AVG(i1.i))) FROM integers i1;
+	-- 2.0
+
+SELECT CAST(SUM(i1.i) AS BIGINT) FROM integers i1 HAVING (VALUES(SUM(i1.i)),(AVG(i1.i)) INTERSECT VALUES(AVG(i1.i))) > 0;
+	-- 6
+
+SELECT MAX(i1.i) FROM integers i1 HAVING (VALUES((AVG(i1.i))) EXCEPT VALUES(AVG(i1.i))) <> 0;
+	--empty
+
+SELECT (VALUES(SUM(i1.i)) UNION VALUES(AVG(i1.i))) FROM integers i1;
+	--error, more than one row returned by a subquery used as an expression
+
+SELECT ((SELECT SUM(i1.i)) UNION ALL (SELECT AVG(i1.i))) FROM integers i1;
+	--error, more than one row returned by a subquery used as an expression
+
+SELECT ((SELECT i1.i NOT IN (SELECT i1.i)) UNION (SELECT SUM(i1.i) IN (SELECT i1.i))) FROM integers i1;
+	--error, subquery uses ungrouped column "i1.i" from outer query
+
+SELECT (SELECT 6 EXCEPT (SELECT SUM(i1.i))) IN (SELECT 1) FROM integers i1; -- OPTmergetableImplementation: !ERROR: Mergetable bailout on group input reuse in group statement
+	-- NULL
+
+SELECT (SELECT col1) IN (col2) FROM another_T;
+	-- False
+	-- False
+	-- False
+	-- False
+
+SELECT (col2) IN ((SELECT col2), MIN(col3)) FROM another_T GROUP BY col2;
+	-- True
+	-- True
+	-- True
+	-- True
+
+SELECT (SELECT CASE WHEN MIN(i1.i) IS NULL THEN (SELECT i2.i FROM integers i2) ELSE MAX(i1.i) END) FROM integers i1;
+	-- 3
+
 DROP FUNCTION evilfunction(INT);
 DROP TABLE tbl_ProductSales;
 DROP TABLE another_T;

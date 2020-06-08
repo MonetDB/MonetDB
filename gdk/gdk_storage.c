@@ -118,11 +118,11 @@ GDKcreatedir(const char *dir)
 #endif
 			mkdir(path, MONETDB_DIRMODE) < 0) {
 			if (errno != EEXIST) {
-				GDKsyserror("GDKcreatedir: cannot create directory %s\n", path);
+				GDKsyserror("cannot create directory %s\n", path);
 				return GDK_FAIL;
 			}
 			if ((dirp = opendir(path)) == NULL) {
-				GDKsyserror("GDKcreatedir: %s not a directory\n", path);
+				GDKsyserror("%s cannot open directory\n", path);
 				return GDK_FAIL;
 			}
 			/* it's a directory, we can continue */
@@ -165,17 +165,18 @@ GDKremovedir(int farmid, const char *dirname)
 		if (path == NULL) {
 			/* most likely the rmdir will now fail causing
 			 * an error return */
-			goto bailout;
+			break;
 		}
 		ret = remove(path);
+		if (ret == -1)
+			GDKsyserror("remove(%s) failed\n", path);
 		TRC_DEBUG(IO_, "Remove %s = %d\n", path, ret);
 		GDKfree(path);
 	}
-  bailout:
 	closedir(dirp);
 	ret = rmdir(dirnamestr);
 	if (ret != 0)
-		GDKsyserror("GDKremovedir: rmdir(%s) failed.\n", dirnamestr);
+		GDKsyserror("rmdir(%s) failed.\n", dirnamestr);
 	TRC_DEBUG(IO_, "rmdir %s = %d\n", dirnamestr, ret);
 	GDKfree(dirnamestr);
 	return ret ? GDK_FAIL : GDK_SUCCEED;
@@ -187,7 +188,9 @@ GDKremovedir(int farmid, const char *dirname)
 
 /* open a file and return its file descriptor; the file is specified
  * using farmid, name and extension; if opening for writing, we create
- * the parent directory if necessary */
+ * the parent directory if necessary; if opening for reading, we don't
+ * necessarily report an error if it fails, but we make sure errno is
+ * set */
 int
 GDKfdlocate(int farmid, const char *nme, const char *mode, const char *extension)
 {
@@ -195,14 +198,19 @@ GDKfdlocate(int farmid, const char *nme, const char *mode, const char *extension
 	int fd, flags = O_CLOEXEC;
 
 	assert(!GDKinmemory());
-	if (nme == NULL || *nme == 0)
+	if (nme == NULL || *nme == 0) {
+		GDKerror("no name specified\n");
+		errno = EFAULT;
 		return -1;
+	}
 
 	assert(farmid != NOFARM || extension == NULL);
 	if (farmid != NOFARM) {
 		path = GDKfilepath(farmid, BATDIR, nme, extension);
-		if (path == NULL)
+		if (path == NULL) {
+			errno = ENOMEM;
 			return -1;
+		}
 		nme = path;
 	}
 
@@ -230,11 +238,13 @@ GDKfdlocate(int farmid, const char *nme, const char *mode, const char *extension
 		if (GDKcreatedir(nme) == GDK_SUCCEED) {
 			fd = open(nme, flags, MONETDB_MODE);
 			if (fd < 0)
-				GDKsyserror("GDKfdlocate: cannot open file %s\n", nme);
+				GDKsyserror("cannot open file %s\n", nme);
 		}
 	}
+	int err = errno;	/* save */
 	/* don't generate error if we can't open a file for reading */
 	GDKfree(path);
+	errno = err;		/* restore */
 	return fd;
 }
 
@@ -250,7 +260,7 @@ GDKfilelocate(int farmid, const char *nme, const char *mode, const char *extensi
 	if (*mode == 'm')
 		mode++;
 	if ((f = fdopen(fd, mode)) == NULL) {
-		GDKsyserror("GDKfilelocate: cannot fdopen file\n");
+		GDKsyserror("cannot fdopen file\n");
 		close(fd);
 		return NULL;
 	}
@@ -269,7 +279,9 @@ GDKfileopen(int farmid, const char *dir, const char *name, const char *extension
 		FILE *f;
 		TRC_DEBUG(IO_, "GDKfileopen(%s)\n", path);
 		f = fopen(path, mode);
+		int err = errno;
 		GDKfree(path);
+		errno = err;
 		return f;
 	}
 	return NULL;
@@ -287,7 +299,7 @@ GDKunlink(int farmid, const char *dir, const char *nme, const char *ext)
 			return GDK_FAIL;
 		/* if file already doesn't exist, we don't care */
 		if (remove(path) != 0 && errno != ENOENT) {
-			GDKsyserror("GDKunlink(%s)\n", path);
+			GDKsyserror("remove(%s)\n", path);
 			GDKfree(path);
 			return GDK_FAIL;
 		}
@@ -307,7 +319,7 @@ GDKmove(int farmid, const char *dir1, const char *nme1, const char *ext1, const 
 	char *path2;
 	int ret, t0 = GDKms();
 
-	if ((nme1 == NULL) || (*nme1 == 0)) {
+	if (nme1 == NULL || *nme1 == 0) {
 		GDKerror("no file specified\n");
 		return GDK_FAIL;
 	}
@@ -316,7 +328,7 @@ GDKmove(int farmid, const char *dir1, const char *nme1, const char *ext1, const 
 	if (path1 && path2) {
 		ret = rename(path1, path2);
 		if (ret < 0)
-			GDKsyserror("GDKmove: cannot rename %s to %s\n", path1, path2);
+			GDKsyserror("cannot rename %s to %s\n", path1, path2);
 
 		TRC_DEBUG(IO_, "Move %s %s = %d (%dms)\n", path1, path2, ret, GDKms() - t0);
 	} else {
@@ -341,7 +353,7 @@ GDKextendf(int fd, size_t size, const char *fn)
 #endif
 	if (fstat(fd, &stb) < 0) {
 		/* shouldn't happen */
-		GDKsyserror("GDKextendf: fstat unexpectedly failed\n");
+		GDKsyserror("fstat failed unexpectedly\n");
 		return GDK_FAIL;
 	}
 	/* if necessary, extend the underlying file */
@@ -364,18 +376,16 @@ GDKextendf(int fd, size_t size, const char *fn)
 			 * the operation, so just resize the file */
 #endif
 #endif
-		/* we get here when (posix_)fallocate fails because it
-		 * is not supported on the file system, or if neither
-		 * function exists */
-		rt = ftruncate(fd, (off_t) size);
+			/* we get here when (posix_)fallocate fails
+			 * because it is not supported on the file
+			 * system, or if neither function exists */
+			rt = ftruncate(fd, (off_t) size);
 		if (rt != 0) {
 			/* extending failed, try to reduce file size
 			 * back to original */
-			int err = errno;
+			GDKsyserror("could not extend file\n");
 			if (ftruncate(fd, stb.st_size))
-				perror("ftruncate");
-			errno = err; /* restore for error message */
-			GDKsyserror("GDKextendf: could not extend file\n");
+				GDKsyserror("ftruncate to old size");
 		}
 	}
 	TRC_DEBUG(IO_, "GDKextend %s %zu -> %zu %dms%s\n",
@@ -403,7 +413,7 @@ GDKextend(const char *fn, size_t size)
 		rt = GDKextendf(fd, size, fn);
 		close(fd);
 	} else {
-		GDKsyserror("GDKextend: cannot open file %s\n", fn);
+		GDKsyserror("cannot open file %s\n", fn);
 	}
 	return rt;
 }
@@ -427,12 +437,11 @@ GDKsave(int farmid, const char *nme, const char *ext, void *buf, size_t size, st
 
 	assert(!GDKinmemory());
 	if (mode == STORE_MMAP) {
-		if (dosync && size && !(GDKdebug & NOSYNCMASK) && MT_msync(buf, size) < 0)
-			err = -1;
+		if (dosync && size && !(GDKdebug & NOSYNCMASK))
+			err = MT_msync(buf, size);
 		if (err)
-			GDKsyserror("GDKsave: error on: name=%s, ext=%s, "
-				    "mode=%d\n", nme, ext ? ext : "",
-				    (int) mode);
+			GDKerror("error on: name=%s, ext=%s, mode=%d\n",
+				 nme, ext ? ext : "", (int) mode);
 		TRC_DEBUG(IO_, "MT_msync(buf %p, size %zu) = %d\n",
 			  buf, size, err);
 	} else {
@@ -559,7 +568,7 @@ GDKload(int farmid, const char *nme, const char *ext, size_t size, size_t *maxsi
 			}
 			close(fd);
 		} else {
-			GDKerror("cannot open: name=%s, ext=%s\n", nme, ext ? ext : "");
+			GDKsyserror("cannot open: name=%s, ext=%s\n", nme, ext ? ext : "");
 		}
 	} else {
 		char *path = NULL;
@@ -687,15 +696,14 @@ BATmsync(BAT *b)
 		return;
 #ifndef DISABLE_MSYNC
 #ifdef MS_ASYNC
-	if (b->theap.storage == STORE_MMAP)
-		(void) msync(b->theap.base, b->theap.free, MS_ASYNC);
-	if (b->tvheap && b->tvheap->storage == STORE_MMAP)
-		(void) msync(b->tvheap->base, b->tvheap->free, MS_ASYNC);
+	if (b->theap.storage == STORE_MMAP &&
+	    msync(b->theap.base, b->theap.free, MS_ASYNC) < 0)
+		GDKsyserror("msync heap of bat %d failed\n", b->batCacheid);
+	if (b->tvheap && b->tvheap->storage == STORE_MMAP &&
+	    msync(b->tvheap->base, b->tvheap->free, MS_ASYNC) < 0)
+		GDKsyserror("msync vheap of bat %d failed\n", b->batCacheid);
 #else
 	{
-#ifdef MSYNC_BACKGROUND
-		MT_Id tid;
-#endif
 		struct msync *arg;
 
 		assert(!b->batTransient);
@@ -706,6 +714,7 @@ BATmsync(BAT *b)
 			BBPfix(b->batCacheid);
 #ifdef MSYNC_BACKGROUND
 			char name[MT_NAME_LEN];
+			MT_Id tid;
 			snprintf(name, sizeof(name), "msync%d", b->batCacheid);
 			if (MT_create_thread(&tid, BATmsyncImplementation, arg,
 					     MT_THR_DETACHED, name) < 0) {
@@ -725,6 +734,7 @@ BATmsync(BAT *b)
 			BBPfix(b->batCacheid);
 #ifdef MSYNC_BACKGROUND
 			char name[MT_NAME_LEN];
+			MT_Id tid;
 			snprintf(name, sizeof(name), "msync%d", b->batCacheid);
 			if (MT_create_thread(&tid, BATmsyncImplementation, arg,
 					     MT_THR_DETACHED, name) < 0) {
@@ -887,11 +897,11 @@ BATdelete(BAT *b)
 	assert(bid > 0);
 	if (loaded) {
 		b = loaded;
-		HASHdestroy(b);
-		IMPSdestroy(b);
-		MOSdestroy(b);
-		OIDXdestroy(b);
 	}
+	HASHdestroy(b);
+	IMPSdestroy(b);
+	MOSdestroy(b);
+	OIDXdestroy(b);
 	if (b->batCopiedtodisk || (b->theap.storage != STORE_MEM)) {
 		if (b->ttype != TYPE_void &&
 		    HEAPdelete(&b->theap, o, "tail") != GDK_SUCCEED &&

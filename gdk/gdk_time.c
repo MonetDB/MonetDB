@@ -266,6 +266,15 @@ daytime_create(int hour, int min, int sec, int usec)
 	return istime(hour, min, sec, usec) ? mkdaytime(hour, min, sec, usec) : daytime_nil;
 }
 
+/* return the difference in milliseconds between the two daytimes */
+lng
+daytime_diff(daytime d1, daytime d2)
+{
+	if (is_daytime_nil(d1) || is_daytime_nil(d2))
+		return lng_nil;
+	return (d1 - d2) / 1000;
+}
+
 int
 daytime_hour(daytime tm)
 {

@@ -27,7 +27,7 @@ comment "grouped aggregates through R";
 # initializer code
 command prelude() :void
 address RAPIprelude;
-rapi.prelude();
+#rapi.prelude();
 
 # sql compiler needs these functions for bat-wise operations
 module batrapi;

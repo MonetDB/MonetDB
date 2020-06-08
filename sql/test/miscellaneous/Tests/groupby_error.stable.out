@@ -92,6 +92,12 @@ stdout of test 'groupby_error` in directory 'sql/test/miscellaneous` itself:
 % col0,	col1,	col2 # name
 % int,	int,	int # type
 % 1,	1,	1 # length
+#SELECT CAST(58 + + 78 + - COALESCE ( ( + CASE 68 WHEN - 77 - - 38 THEN NULL ELSE COUNT ( * ) END ), + 81 + - COUNT ( * ) + + CAST ( NULL AS INTEGER ), + + 34 * - 30 * + COUNT ( * ) ) * 15 * 38 AS BIGINT) AS col1;
+% . # table_name
+% col1 # name
+% bigint # type
+% 4 # length
+[ -434	]
 #SELECT * FROM tab0 AS cor0 WHERE NOT - 39 <> 11; --empty
 % sys.cor0,	sys.cor0,	sys.cor0 # table_name
 % col0,	col1,	col2 # name
@@ -126,6 +132,32 @@ stdout of test 'groupby_error` in directory 'sql/test/miscellaneous` itself:
 [ 64	]
 [ 75	]
 [ 46	]
+#SELECT 1 FROM tab0 WHERE NOT (NOT NULL IN (1));
+% .%3 # table_name
+% %3 # name
+% tinyint # type
+% 1 # length
+#SELECT NOT (NOT NULL IN (1)) FROM tab0;
+% .%3 # table_name
+% %3 # name
+% boolean # type
+% 5 # length
+[ NULL	]
+[ NULL	]
+[ NULL	]
+#SELECT - col0 + + CAST ( NULL AS INTEGER ) AS col2 FROM tab0 AS cor0 WHERE NOT ( NOT + - CAST ( NULL AS INTEGER ) NOT IN ( col0 / CAST ( col2 AS INTEGER ) - + col1 ) );
+% . # table_name
+% col2 # name
+% bigint # type
+% 1 # length
+#SELECT NOT ( NOT + - CAST ( NULL AS INTEGER ) NOT IN ( col0 / CAST ( col2 AS INTEGER ) - + col1 ) ) FROM tab0 AS cor0;
+% .%3 # table_name
+% %3 # name
+% boolean # type
+% 5 # length
+[ NULL	]
+[ NULL	]
+[ NULL	]
 #PLAN SELECT DISTINCT col0, col1, col2, col0 FROM tab0;
 % .plan # table_name
 % rel # name
@@ -161,8 +193,8 @@ project (
 % 2 # length
 [ 64	]
 #SELECT 11 FROM tab1 AS cor0 LEFT JOIN tab0 ON 80 = 70;
-% . # table_name
-% single_value # name
+% .%4 # table_name
+% %4 # name
 % tinyint # type
 % 2 # length
 [ 11	]
@@ -187,14 +219,14 @@ project (
 % col0,	col1,	col2 # name
 % int,	int,	int # type
 % 1,	1,	1 # length
-#SELECT + col2 * col2 FROM tab2 AS cor0 WHERE NOT - CAST ( NULL AS INTEGER ) <> - - col1 AND NOT NULL NOT BETWEEN ( NULL ) AND - 91 - - + 27 * + col2;
-% sys. # table_name
-% %2 # name
+#SELECT CAST(+ col2 * col2 AS BIGINT) FROM tab2 AS cor0 WHERE NOT - CAST ( NULL AS INTEGER ) <> - - col1 AND NOT NULL NOT BETWEEN ( NULL ) AND - 91 - - + 27 * + col2;
+% sys.%6 # table_name
+% %6 # name
 % bigint # type
 % 1 # length
 #SELECT + 2 FROM tab0 AS cor0 WHERE NOT - 29 IS NULL OR NOT NULL IS NULL AND NOT NULL BETWEEN + col1 - + 60 AND + 37 * + col1 + + col0;
-% . # table_name
-% single_value # name
+% .%2 # table_name
+% %2 # name
 % tinyint # type
 % 1 # length
 [ 2	]
@@ -290,8 +322,8 @@ project (
 % .prepare,	.prepare,	.prepare,	.prepare,	.prepare,	.prepare # table_name
 % type,	digits,	scale,	schema,	table,	column # name
 % varchar,	int,	int,	str,	str,	str # type
-% 7,	1,	1,	0,	0,	0 # length
-[ "tinyint",	1,	0,	"",	"",	""	]
+% 7,	1,	1,	0,	2,	2 # length
+[ "tinyint",	1,	0,	"",	"%2",	"%2"	]
 [ "tinyint",	1,	0,	NULL,	NULL,	NULL	]
 [ "tinyint",	1,	0,	NULL,	NULL,	NULL	]
 #prepare select 1 from tab0 where ? between 1 and ?;
@@ -299,8 +331,8 @@ project (
 % .prepare,	.prepare,	.prepare,	.prepare,	.prepare,	.prepare # table_name
 % type,	digits,	scale,	schema,	table,	column # name
 % varchar,	int,	int,	str,	str,	str # type
-% 7,	1,	1,	0,	0,	0 # length
-[ "tinyint",	1,	0,	"",	"",	""	]
+% 7,	1,	1,	0,	2,	2 # length
+[ "tinyint",	1,	0,	"",	"%2",	"%2"	]
 [ "tinyint",	1,	0,	NULL,	NULL,	NULL	]
 [ "tinyint",	1,	0,	NULL,	NULL,	NULL	]
 #prepare select 1 from tab0 where ? between ? and 1;
@@ -308,8 +340,8 @@ project (
 % .prepare,	.prepare,	.prepare,	.prepare,	.prepare,	.prepare # table_name
 % type,	digits,	scale,	schema,	table,	column # name
 % varchar,	int,	int,	str,	str,	str # type
-% 7,	1,	1,	0,	0,	0 # length
-[ "tinyint",	1,	0,	"",	"",	""	]
+% 7,	1,	1,	0,	2,	2 # length
+[ "tinyint",	1,	0,	"",	"%2",	"%2"	]
 [ "tinyint",	1,	0,	NULL,	NULL,	NULL	]
 [ "tinyint",	1,	0,	NULL,	NULL,	NULL	]
 #prepare select EXISTS (SELECT ? FROM tab0) from tab0;
@@ -361,12 +393,80 @@ project (
 % .prepare,	.prepare,	.prepare,	.prepare,	.prepare,	.prepare # table_name
 % type,	digits,	scale,	schema,	table,	column # name
 % varchar,	int,	int,	str,	str,	str # type
-% 7,	2,	1,	0,	0,	0 # length
-[ "tinyint",	1,	0,	"",	"",	""	]
+% 7,	2,	1,	0,	3,	3 # length
+[ "tinyint",	1,	0,	"",	"%11",	"%11"	]
 [ "int",	32,	0,	NULL,	NULL,	NULL	]
 [ "clob",	0,	0,	NULL,	NULL,	NULL	]
+#SELECT 1 FROM tab0 where CASE WHEN 64 IN ( col0 ) THEN true END;
+% .%5 # table_name
+% %5 # name
+% tinyint # type
+% 1 # length
+#SELECT 1 FROM tab0 GROUP BY col0 HAVING CASE WHEN 64 IN ( col0 ) THEN TRUE END;
+% .%5 # table_name
+% %5 # name
+% tinyint # type
+% 1 # length
+#SELECT + col2 + + col0 AS col0 FROM tab0 AS cor0 GROUP BY col1, col2, col0 HAVING NULL IN ( + ( - - ( CASE WHEN 64 IN ( col0 * - col2 + + col1 ) THEN - 98 END ) ) * - 13 );
+% sys. # table_name
+% col0 # name
+% bigint # type
+% 1 # length
 #drop table tab0;
 #drop table tab1;
+#drop table tab2;
+#SELECT DISTINCT CAST(+ 77 - - - CASE - CAST ( NULL AS INTEGER ) WHEN - 11 THEN NULL WHEN - 34 THEN 81 ELSE - 15 + 20 * - ( + CAST ( + ( 96 ) AS INTEGER ) ) END AS BIGINT) AS col0, 35 AS col0;
+% .,	. # table_name
+% col0,	col0 # name
+% bigint,	tinyint # type
+% 4,	2 # length
+[ 2012,	35	]
+#SELECT CAST(- CASE - ( + 0 ) WHEN 18 + - 60 THEN NULL WHEN - CASE - 67 WHEN + - 79 * + COUNT ( * ) / 30 - + 32 * + 69 THEN MAX ( DISTINCT + 34 ) / + 0 ELSE NULL END * + ( + 45 ) + + 19 * 17 THEN 
+#20 WHEN + SUM ( ALL + 78 ) + + 69 THEN 29 * 74 ELSE + NULLIF ( 82, + 72 + 26 ) * 7 END * - 92 + MIN ( 88 + 57 ) AS BIGINT) AS col0;
+% . # table_name
+% col0 # name
+% bigint # type
+% 5 # length
+[ 52953	]
+#SELECT ALL CAST(19 * - CASE + - COUNT ( * ) WHEN 40 THEN NULL WHEN - - CAST ( NULL AS INTEGER ) * + - 1 THEN + 39 ELSE 27 + - MIN ( DISTINCT 13 ) END + 36 + 70 - - 69 * + COUNT ( * ) * 20 + + 83 AS BIGINT) AS col0;
+% . # table_name
+% col0 # name
+% bigint # type
+% 4 # length
+[ 1303	]
+#SELECT CAST(- 4 * + COUNT ( * ) + 22 + 69 AS BIGINT) AS col2, CAST(- ( + CASE + 85 WHEN - 77 / - CAST ( + CASE - + 51 WHEN 79 THEN + 95 + 13 * ( 60 * 77 ) END AS INTEGER ) + + 82 - COUNT ( * ) * COUNT ( * ) THEN 
+#NULL WHEN SUM ( ALL 99 ) THEN COUNT ( * ) ELSE COUNT ( * ) * - ( COUNT ( * ) ) END ) * 46 - 83 AS BIGINT);
+% .,	.%16 # table_name
+% col2,	%16 # name
+% bigint,	bigint # type
+% 2,	3 # length
+[ 87,	-37	]
+#SELECT DISTINCT CAST(- CAST ( CASE 81 WHEN 48 - - 3 / - - 47 - - CAST ( NULL AS INTEGER ) THEN NULL WHEN COUNT ( * ) THEN + - 91 + + 43 ELSE + - 0 END AS INTEGER ) AS BIGINT) AS col0, CAST(- 27 * + 43 AS BIGINT);
+% .,	. # table_name
+% col0,	%3 # name
+% bigint,	bigint # type
+% 1,	5 # length
+[ 0,	-1161	]
+#SELECT DISTINCT CAST(66 * - + CAST ( - - COUNT ( * ) AS INTEGER ) * 54 * + CASE 68 WHEN - 56 * + CAST ( NULL AS INTEGER ) + + + 47 THEN 
+#- 83 ELSE + 59 + - COUNT ( * ) - 26 * ( 59 ) * 11 - - + COUNT ( * ) * - 73 END + + COUNT ( * ) / + ( 86 + 19 * 90 ) AS BIGINT);
+% .%16 # table_name
+% %16 # name
+% bigint # type
+% 8 # length
+[ 60192396	]
+#SELECT DISTINCT CAST(+ - CASE + 66 WHEN - CAST ( NULL AS INTEGER ) THEN NULL ELSE COUNT ( * ) + - CASE + COUNT ( * ) WHEN - 69 - + - 28 THEN - + MIN ( + 92 ) WHEN - COUNT ( 32 ) THEN 
+#+ ( + 23 ) * + 17 * - 37 WHEN 63 THEN NULL ELSE + 67 * - 34 - 64 END - 31 END * - 94 AS BIGINT) AS col2;
+% . # table_name
+% col2 # name
+% bigint # type
+% 6 # length
+[ 217328	]
+#SELECT DISTINCT CAST(( + CASE WHEN NOT NULL BETWEEN NULL AND NULL THEN NULL ELSE + COUNT ( * ) END ) AS BIGINT) AS col1;
+% . # table_name
+% col1 # name
+% bigint # type
+% 1 # length
+[ 1	]
 
 # 10:56:47 >  
 # 10:56:47 >  "Done."

@@ -32,7 +32,6 @@ static struct PIPELINES {
 	char *name;
 	char *def;
 	char *status;
-	char *prerequisite;
 	MalBlkPtr mb;
 	char builtin;
 } pipes[MAXOPTPIPES] = {
@@ -52,7 +51,7 @@ static struct PIPELINES {
 	 "optimizer.profiler();"
 	 "optimizer.candidates();"
 	 "optimizer.garbageCollector();",
-	 "stable", NULL, NULL, 1},
+	 "stable", NULL, 1},
 /* The default pipe line contains as of Feb2010
  * mitosis-mergetable-reorder, aimed at large tables and improved
  * access locality.
@@ -172,7 +171,7 @@ static struct PIPELINES {
 //	 "optimizer.oltp();"awaiting the autocommit front-end changes
 	 "optimizer.wlc();"
 	 "optimizer.garbageCollector();",
-	 "stable", NULL, NULL, 1},
+	 "stable", NULL, 1},
 /*
  * Optimistic concurreny control in general leads to more transaction failures 
  * in an OLTP setting. The partial solution provided is to give out 
@@ -209,7 +208,7 @@ static struct PIPELINES {
 	 "optimizer.oltp();"
 	 "optimizer.wlc();"
 	 "optimizer.garbageCollector();",
-	 "stable", NULL, NULL, 1},
+	 "stable", NULL, 1},
 /*
  * Volcano style execution produces a sequence of blocks from the source relation
  */
@@ -246,7 +245,7 @@ static struct PIPELINES {
 //	 "optimizer.jit();" awaiting the new batcalc api
 	 "optimizer.wlc();"
 	 "optimizer.garbageCollector();",
-	 "stable", NULL, NULL, 1},
+	 "stable", NULL, 1},
 /* The no_mitosis pipe line is (and should be kept!) identical to the
  * default pipeline, except that optimizer mitosis is omitted.  It is
  * used mainly to make some tests work deterministically, and to check
@@ -288,7 +287,7 @@ static struct PIPELINES {
 //	 "optimizer.mosaic();"
 	 "optimizer.wlc();"
 	 "optimizer.garbageCollector();",
-	 "stable", NULL, NULL, 1},
+	 "stable", NULL, 1},
 /* The sequential pipe line is (and should be kept!) identical to the
  * default pipeline, except that optimizers mitosis & dataflow are
  * omitted.  It is use mainly to make some tests work
@@ -329,14 +328,14 @@ static struct PIPELINES {
 //	 "optimizer.jit();" awaiting the new batcalc api
 	 "optimizer.wlc();"
 	 "optimizer.garbageCollector();",
-	 "stable", NULL, NULL, 1},
+	 "stable", NULL, 1},
 /* Experimental pipelines stressing various components under
  * development.  Do not use any of these pipelines in production
  * settings!
  *	 "optimizer.mosaic();"
  */
 /* sentinel */
-	{NULL, NULL, NULL, NULL, NULL, 0}
+	{NULL, NULL, NULL, NULL, 0}
 };
 
 /*
@@ -349,7 +348,6 @@ static struct PIPELINES {
  * trace. It is a server wide property and can not be set dynamically,",
  * as it is intended for internal use.",
  */
-#include "opt_pipes.h"
 #include "optimizer_private.h"
 
 static MT_Lock pipeLock = MT_LOCK_INITIALIZER("pipeLock");
@@ -455,12 +453,6 @@ getPipeCatalog(bat *nme, bat *def, bat *stat)
 	}
 
 	for (i = 0; i < MAXOPTPIPES && pipes[i].name; i++) {
-		if (pipes[i].prerequisite && getAddress(pipes[i].prerequisite) == NULL){
-			BBPreclaim(b);
-			BBPreclaim(bn);
-			BBPreclaim(bs);
-			throw(MAL,"getPipeCatalog", SQLSTATE(HY002) "#MAL.getAddress address of '%s' not found",pipes[i].name);
-		}
 		if (BUNappend(b, pipes[i].name, false) != GDK_SUCCEED ||
 			BUNappend(bn, pipes[i].def, false) != GDK_SUCCEED ||
 			BUNappend(bs, pipes[i].status, false) != GDK_SUCCEED) {
@@ -562,8 +554,6 @@ compileOptimizer(Client cntxt, const char *name)
 			/* precompile a pipeline as MAL string */
 			for (j = 0; j < MAXOPTPIPES && pipes[j].def; j++) {
 				if (pipes[j].mb == NULL) {
-					if (pipes[j].prerequisite && getAddress(pipes[j].prerequisite) == NULL)
-						continue;
 					snprintf(buf,2048,"function optimizer.%s(); %s;end %s;", pipes[j].name,pipes[j].def,pipes[j].name);
 					msg = compileString(&fcn,cntxt, buf);
 					if( msg == MAL_SUCCEED){

@@ -14,14 +14,8 @@ stdout of test 'variables.SF-1508160` in directory 'sql/test/BugTracker` itself:
 
 
 #select debug;
-% . # table_name
-% single_value # name
-% int # type
-% 1 # length
-[ 0	]
-#select @debug;
-% . # table_name
-% single_value # name
+% .%2 # table_name
+% %2 # name
 % int # type
 % 1 # length
 [ 0	]

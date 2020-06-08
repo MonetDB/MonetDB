@@ -63,7 +63,7 @@
 #define nancheck_lng(bat) ((void)0)
 #define nancheck_hge(bat) ((void)0) /* not used if no HAVE_HGE */
 #define nancheck_oid(bat) ((void)0)
-#if defined(HAVE_FORK) && !defined(HAVE_EMBEDDED)
+#if defined(HAVE_FORK)
 #define CREATE_BAT_ZEROCOPY(bat, mtpe, batstore)                               \
 	{                                                                          \
 		bat = COLnew(seqbase, TYPE_##mtpe, 0, TRANSIENT);                      \
@@ -463,7 +463,7 @@ convert_and_append(BAT* b, const char* text, bool force) {
 						goto wrapup;                                           \
 					}                                                          \
 				} else {                                                       \
-					if (!string_copy(&data[(index_offset * ret->count + iu) *  \
+					if (!pyapi3_string_copy(&data[(index_offset * ret->count + iu) *  \
 										   ret->memory_size],                  \
 									 utf8_string, ret->memory_size, false)) {  \
 						msg = createException(MAL, "pyapi3.eval",              \

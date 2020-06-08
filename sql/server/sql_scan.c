@@ -250,6 +250,7 @@ scanner_init_keywords(void)
 	failed += keywords_insert("CURRENT_USER", CURRENT_USER);
 	failed += keywords_insert("CURRENT_ROLE", CURRENT_ROLE);
 	failed += keywords_insert("SESSION_USER", SESSION_USER);
+	failed += keywords_insert("CURRENT_SCHEMA", CURRENT_SCHEMA);
 	failed += keywords_insert("SESSION", sqlSESSION);
 
 	failed += keywords_insert("RIGHT", RIGHT);
@@ -294,6 +295,7 @@ scanner_init_keywords(void)
 	failed += keywords_insert("CURRENT_DATE", CURRENT_DATE);
 	failed += keywords_insert("CURRENT_TIME", CURRENT_TIME);
 	failed += keywords_insert("CURRENT_TIMESTAMP", CURRENT_TIMESTAMP);
+	failed += keywords_insert("CURRENT_TIMEZONE", CURRENT_TIMEZONE);
 	failed += keywords_insert("NOW", CURRENT_TIMESTAMP);
 	failed += keywords_insert("LOCALTIME", LOCALTIME);
 	failed += keywords_insert("LOCALTIMESTAMP", LOCALTIMESTAMP);

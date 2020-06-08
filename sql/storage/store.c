@@ -17,8 +17,8 @@
 #include "bat/bat_table.h"
 #include "bat/bat_logger.h"
 
-/* version 05.22.04 of catalog */
-#define CATALOG_VERSION 52204
+/* version 05.22.05 of catalog */
+#define CATALOG_VERSION 52205
 int catalog_version = 0;
 
 static MT_Lock bs_lock = MT_LOCK_INITIALIZER("bs_lock");
@@ -26,6 +26,7 @@ static sqlid store_oid = 0;
 static sqlid prev_oid = 0;
 static sqlid *store_oids = NULL;
 static int nstore_oids = 0;
+static size_t new_trans_size = 0;
 sql_trans *gtrans = NULL;
 list *active_sessions = NULL;
 sql_allocator *store_sa = NULL;
@@ -306,7 +307,7 @@ sql_trans_destroy(sql_trans *t, bool try_spare)
 
 	TRC_DEBUG(SQL_STORE, "Destroy transaction: %p\n", t);
 
-	if (t->sa->nr > 2*gtrans->sa->nr)
+	if (t->sa->nr > 2*new_trans_size)
 		try_spare = 0;
 	if (res == gtrans && spares < ((GDKdebug & FORCEMITOMASK) ? 2 : MAX_SPARES) && !t->name && try_spare) {
 		TRC_DEBUG(SQL_STORE, "Spared '%d' transactions '%p'\n", spares, t);
@@ -1056,10 +1057,18 @@ load_func(sql_trans *tr, sql_schema *s, sqlid fid, subrids *rs)
 	t->vararg = *(bit *)v;	_DELETE(v);
 	v = table_funcs.column_find_value(tr, find_sql_column(funcs, "system"), rid);
 	t->system = *(bit *)v;	_DELETE(v);
+	v = table_funcs.column_find_value(tr, find_sql_column(funcs, "semantics"), rid);
+	t->semantics = *(bit *)v;		_DELETE(v);
 	t->res = NULL;
 	t->s = s;
 	t->fix_scale = SCALE_EQ;
 	t->sa = tr->sa;
+	/* convert old PYTHON2 and PYTHON2_MAP to PYTHON and PYTHON_MAP
+	 * see also function sql_update_jun2020() in sql_upgrades.c */
+	if ((int) t->lang == 8)		/* old FUNC_LANG_PY2 */
+		t->lang = FUNC_LANG_PY;
+	else if ((int) t->lang == 9)	/* old FUNC_LANG_MAP_PY2 */
+		t->lang = FUNC_LANG_MAP_PY;
 	if (t->lang != FUNC_LANG_INT) {
 		t->query = t->imp;
 		t->imp = NULL;
@@ -1484,95 +1493,48 @@ insert_schemas(sql_trans *tr)
 static void
 insert_types(sql_trans *tr, sql_table *systype)
 {
-	int zero = 0;
-	node *n;
-
-	for (n = types->h; n; n = n->next) {
+	for (node *n = types->h; n; n = n->next) {
 		sql_type *t = n->data;
-		int radix = t->radix;
-		int eclass = (int) t->eclass;
+		int radix = t->radix, eclass = (int) t->eclass;
+		sqlid next_schema = t->s ? t->s->base.id : 0;
 
-		if (t->s)
-			table_funcs.table_insert(tr, systype, &t->base.id, t->base.name, t->sqlname, &t->digits, &t->scale, &radix, &eclass, &t->s->base.id);
-		else
-			table_funcs.table_insert(tr, systype, &t->base.id, t->base.name, t->sqlname, &t->digits, &t->scale, &radix, &eclass, &zero);
+		table_funcs.table_insert(tr, systype, &t->base.id, t->base.name, t->sqlname, &t->digits, &t->scale, &radix, &eclass, &next_schema);
+	}
+}
+
+static void
+insert_args(sql_trans *tr, sql_table *sysarg, list *args, sqlid funcid, const char *arg_def, int *number) 
+{
+	for (node *n = args->h; n; n = n->next) {
+		sql_arg *a = n->data;
+		sqlid id = next_oid();
+		int next_number = (*number)++;
+		char buf[32], *next_name;
+
+		if (a->name) {
+			next_name = a->name;
+		} else {
+			snprintf(buf, sizeof(buf), arg_def, next_number);
+			next_name = buf;
+		}
+		table_funcs.table_insert(tr, sysarg, &id, &funcid, next_name, a->type.type->sqlname, &a->type.digits, &a->type.scale, &a->inout, &next_number);
 	}
 }
 
 static void
 insert_functions(sql_trans *tr, sql_table *sysfunc, sql_table *sysarg)
 {
-	int zero = 0;
-	node *n = NULL, *m = NULL;
-
-	for (n = funcs->h; n; n = n->next) {
+	for (node *n = funcs->h; n; n = n->next) {
 		sql_func *f = n->data;
-		sqlid id;
+		bit se = (f->type == F_AGGR) ? FALSE : f->side_effect;
+		int number = 0, ftype = (int) f->type, flang = (int) FUNC_LANG_INT;
+		sqlid next_schema = f->s ? f->s->base.id : 0;
 
-		if (f->type == F_AGGR) {
-			char *name1 = "res";
-			char *name2 = "arg";
-			sql_arg *res = NULL;
-			sql_func *aggr = n->data;
-			bit F = FALSE;
-			int number = 0, atype = (int) aggr->type, lang = (int) FUNC_LANG_INT;
-
-			if (aggr->s)
-				table_funcs.table_insert(tr, sysfunc, &aggr->base.id, aggr->base.name, aggr->imp, aggr->mod, &lang, &atype, &F, &aggr->varres, &aggr->vararg, &aggr->s->base.id, &aggr->system);
-			else
-				table_funcs.table_insert(tr, sysfunc, &aggr->base.id, aggr->base.name, aggr->imp, aggr->mod, &lang, &atype, &F, &aggr->varres, &aggr->vararg, &zero, &aggr->system);
-			
-			res = aggr->res->h->data;
-			id = next_oid();
-			table_funcs.table_insert(tr, sysarg, &id, &aggr->base.id, name1, res->type.type->sqlname, &res->type.digits, &res->type.scale, &res->inout, &number);
-
-			if (aggr->ops->h) {
-				sql_arg *arg = aggr->ops->h->data;
-
-				number++;
-				id = next_oid();
-				table_funcs.table_insert(tr, sysarg, &id, &aggr->base.id, name2, arg->type.type->sqlname, &arg->type.digits, &arg->type.scale, &arg->inout, &number);
-			}
-		} else {
-			bit se = f->side_effect;
-			int number = 0, ftype = (int) f->type, flang = (int) FUNC_LANG_INT;
-			char arg_nme[7] = "arg_0";
-
-			if (f->s)
-				table_funcs.table_insert(tr, sysfunc, &f->base.id, f->base.name, f->imp, f->mod, &flang, &ftype, &se, &f->varres, &f->vararg, &f->s->base.id, &f->system);
-			else
-				table_funcs.table_insert(tr, sysfunc, &f->base.id, f->base.name, f->imp, f->mod, &flang, &ftype, &se, &f->varres, &f->vararg, &zero, &f->system);
-
-			if (f->res) {
-				char res_nme[] = "res_0";
-
-				for (m = f->res->h; m; m = m->next, number++) {
-					sql_arg *a = m->data;
-					res_nme[4] = '0' + number;
-
-					id = next_oid();
-					table_funcs.table_insert(tr, sysarg, &id, &f->base.id, res_nme, a->type.type->sqlname, &a->type.digits, &a->type.scale, &a->inout, &number);
-				}
-			}
-			for (m = f->ops->h; m; m = m->next, number++) {
-				sql_arg *a = m->data;
-
-				id = next_oid();
-				if (a->name) {
-					table_funcs.table_insert(tr, sysarg, &id, &f->base.id, a->name, a->type.type->sqlname, &a->type.digits, &a->type.scale, &a->inout, &number);
-				} else {
-					if (number < 10) {
-						arg_nme[4] = '0' + number;
-						arg_nme[5] = 0;
-					} else {
-						arg_nme[4] = '0' + number / 10;
-						arg_nme[5] = '0' + number % 10;
-						arg_nme[6] = 0;
-					}
-					table_funcs.table_insert(tr, sysarg, &id, &f->base.id, arg_nme, a->type.type->sqlname, &a->type.digits, &a->type.scale, &a->inout, &number);
-				}
-			}
-		}
+		table_funcs.table_insert(tr, sysfunc, &f->base.id, f->base.name, f->imp, f->mod, &flang, &ftype, &se, &f->varres, &f->vararg, &next_schema, &f->system, &f->semantics);
+		if (f->res)
+			insert_args(tr, sysarg, f->res, f->base.id, "res_%d", &number);
+		if (f->ops)
+			insert_args(tr, sysarg, f->ops, f->base.id, "arg_%d", &number);
 	}
 }
 
@@ -1934,6 +1896,7 @@ store_load(backend_stack stk) {
 	bootstrap_create_column(tr, t, "vararg", "boolean", 1);
 	bootstrap_create_column(tr, t, "schema_id", "int", 32);
 	bootstrap_create_column(tr, t, "system", "boolean", 1);
+	bootstrap_create_column(tr, t, "semantics", "boolean", 1);
 
 	args = t = bootstrap_create_table(tr, s, "args");
 	bootstrap_create_column(tr, t, "id", "int", 32);
@@ -2042,8 +2005,6 @@ store_load(backend_stack stk) {
 			s = NULL;
 		}
 	}
-
-	(void) bootstrap_create_schema(tr, dt_schema, ROLE_SYSADMIN, USER_MONETDB);
 
 	if (first) {
 		insert_types(tr, types);
@@ -2299,8 +2260,6 @@ store_exit(void)
 	store_initialized=0;
 }
 
-
-sql_trans *sql_trans_create(backend_stack stk, sql_trans *parent, const char *name, bool try_spare);
 static sql_trans * trans_init(sql_trans *tr, backend_stack stk, sql_trans *otr);
 
 /* call locked! */
@@ -2326,7 +2285,7 @@ store_apply_deltas(bool not_locked)
 			MT_lock_set(&bs_lock);
 	}
 
-	if (/*gtrans->sa->nr > 40 &&*/ !(ATOMIC_GET(&nr_sessions)) /* only save when there are no dependencies on the gtrans */) { /* TODO need better estimate */
+	if (gtrans->sa->nr > 2*new_trans_size && !(ATOMIC_GET(&nr_sessions)) /* only save when there are no dependencies on the gtrans */) {
 		sql_trans *ntrans = sql_trans_create(gtrans->stk, gtrans, NULL, false);
 
 		trans_init(ntrans, ntrans->stk, gtrans);
@@ -2692,6 +2651,8 @@ hot_snapshot_write_tar(stream *out, const char *prefix, char *plan)
 	char a;
 	a = '\0';
 	ret = tar_write(out, &a, 1);
+	if (ret == GDK_SUCCEED)
+		ret = tar_write(out, &a, 1);
 
 end:
 	free(plan);
@@ -2703,7 +2664,7 @@ end:
 /* Pick a name for the temporary tar file. Make sure it has the same extension
  * so as not to confuse the streams library.
  *
- * This function is not entirely safe as compare to for example mkstemp.
+ * This function is not entirely safe as compared to for example mkstemp.
  */
 static str pick_tmp_name(str filename)
 {
@@ -2720,10 +2681,11 @@ static str pick_tmp_name(str filename)
 	char *ext = strrchr(name, '.');
 	char *sep = strrchr(name, DIR_SEP);
 	char *slash = strrchr(name, '/'); // on Windows, / and \ both work
-	if (ext != NULL && sep != NULL && sep > ext)
-		ext = NULL;
-	else if (ext != NULL && slash != NULL && slash > ext)
-		ext = NULL;
+	if (ext != NULL) {
+		// is ext actually after sep and slash?
+		if ((sep != NULL && sep > ext) || (slash != NULL && slash > ext))
+			ext = NULL;
+	}
 
 	if (ext == NULL) {
 		return strcat(name, "..tmp");
@@ -2742,6 +2704,7 @@ store_hot_snapshot(str tarfile)
 {
 	int locked = 0;
 	lng result = 0;
+	struct stat st = {0};
 	char *tmppath = NULL;
 	char *dirpath = NULL;
 	int do_remove = 0;
@@ -2753,6 +2716,16 @@ store_hot_snapshot(str tarfile)
 
 	if (!logger_funcs.get_snapshot_files) {
 		GDKerror("backend does not support hot snapshots");
+		goto end;
+	}
+
+	if (!MT_path_absolute(tarfile)) {
+		GDKerror("Hot snapshot requires an absolute path");
+		goto end;
+	}
+
+	if (stat(tarfile, &st) == 0) {
+		GDKerror("File already exists: %s", tarfile);
 		goto end;
 	}
 
@@ -2860,7 +2833,6 @@ store_hot_snapshot(str tarfile)
 	result = 42;
 
 end:
-	GDKfree(tmppath);
 	GDKfree(dirpath);
 	if (dir_fd >= 0)
 		close(dir_fd);
@@ -2872,8 +2844,9 @@ end:
 		close_stream(plan_stream);
 	if (plan_buf)
 		buffer_destroy(plan_buf);
-	if (do_remove) // ERROR no unlink
+	if (do_remove)
 		(void) remove(tmppath);	// Best effort, ignore the result
+	GDKfree(tmppath);
 	return result;
 }
 
@@ -3703,6 +3676,9 @@ schema_dup(sql_trans *tr, int flags, sql_schema *os, sql_trans *o)
 		}
 		if (tr->parent == gtrans)
 			os->tables.nelm = NULL;
+
+		// Set the ->p member for each sql_table that is a child of some other merge table.
+		set_members(&s->tables);
 	}
 	if (os->funcs.set) {
 		for (n = os->funcs.set->h; n; n = n->next) {
@@ -3889,6 +3865,7 @@ trans_dup(backend_stack stk, sql_trans *ot, const char *newname)
 		if (ot == gtrans)
 			ot->schemas.nelm = NULL;
 	}
+	new_trans_size = t->sa->nr;
 	return t;
 }
 
@@ -3911,7 +3888,7 @@ conditional_table_dup(sql_trans *tr, int flags, sql_table *ot, sql_schema *s)
 	    /* allways dup in recursive mode */
 	    tr->parent != gtrans)
 		return table_dup(tr, flags, ot, s);
-	else if (!isGlobal(ot)){/* is local temp, may need to be cleared */
+	else if (!isGlobal(ot)) { /* is local temp, may need to be cleared */
 		if (ot->commit_action == CA_DELETE) {
 			sql_trans_clear_table(tr, ot);
 		} else if (ot->commit_action == CA_DROP) {
@@ -4584,7 +4561,7 @@ validate_tables(sql_schema *s, sql_schema *os)
 				continue;
 
  			ot = find_sql_table(os, t->base.name);
-			if (ot && isKindOfTable(ot) && isKindOfTable(t)) {
+			if (ot && isKindOfTable(ot) && isKindOfTable(t) && !isDeclaredTable(ot) && !isDeclaredTable(t)) {
 				if ((t->base.wtime && (t->base.wtime < ot->base.rtime || t->base.wtime < ot->base.wtime)) ||
 				    (t->base.rtime && (t->base.rtime < ot->base.wtime))) 
 					return 0;
@@ -5014,7 +4991,7 @@ save_tables_snapshots(sql_schema *s)
 			if (!t->base.wtime)
 				continue;
 
-			if (isKindOfTable(t)) {
+			if (isKindOfTable(t) && !isDeclaredTable(t)) {
 				if (store_funcs.save_snapshot(t) != LOG_OK)
 					return SQL_ERR;
 			}
@@ -5629,6 +5606,7 @@ create_sql_func(sql_allocator *sa, const char *func, list *args, list *res, sql_
 	t->type = type;
 	t->lang = lang;
 	t->sql = (lang==FUNC_LANG_SQL||lang==FUNC_LANG_MAL);
+	t->semantics = TRUE;
 	t->side_effect = (type==F_FILT || (res && (lang==FUNC_LANG_SQL || !list_empty(args))))?FALSE:TRUE;
 	t->varres = varres;
 	t->vararg = vararg;
@@ -5659,6 +5637,7 @@ sql_trans_create_func(sql_trans *tr, sql_schema *s, const char *func, list *args
 	t->type = type;
 	t->lang = lang;
 	t->sql = (lang==FUNC_LANG_SQL||lang==FUNC_LANG_MAL);
+	t->semantics = TRUE;
 	se = t->side_effect = (type==F_FILT || (res && (lang==FUNC_LANG_SQL || !list_empty(args))))?FALSE:TRUE;
 	t->varres = varres;
 	t->vararg = vararg;
@@ -5677,7 +5656,7 @@ sql_trans_create_func(sql_trans *tr, sql_schema *s, const char *func, list *args
 
 	cs_add(&s->funcs, t, TR_NEW);
 	table_funcs.table_insert(tr, sysfunc, &t->base.id, t->base.name, query?query:t->imp, t->mod, &flang, &ftype, &se,
-							 &t->varres, &t->vararg, &s->base.id, &t->system);
+							 &t->varres, &t->vararg, &s->base.id, &t->system, &t->semantics);
 	if (t->res) for (n = t->res->h; n; n = n->next, number++) {
 		sql_arg *a = n->data;
 		sqlid id = next_oid();
@@ -7432,7 +7411,7 @@ sql_trans_seqbulk_restart(sql_trans *tr, seqbulk *sb, lng start)
 }
 
 sql_session *
-sql_session_create(backend_stack stk, int ac )
+sql_session_create(backend_stack stk, int ac)
 {
 	sql_session *s;
 
@@ -7517,8 +7496,7 @@ sql_session_reset(sql_session *s, int ac)
 	tmp = find_sql_schema(s->tr, "tmp");
 
 	if (tmp->tables.set) {
-		node *n;
-		for (n = tmp->tables.set->h; n; n = n->next) {
+		for (node *n = tmp->tables.set->h; n; n = n->next) {
 			sql_table *t = n->data;
 
 			if (isGlobal(t) && isKindOfTable(t))
@@ -7539,11 +7517,9 @@ sql_session_reset(sql_session *s, int ac)
 int
 sql_trans_begin(sql_session *s)
 {
-	sql_trans *tr;
-	int snr;
+	sql_trans *tr = s->tr;
+	int snr = tr->schema_number;
 
-	tr = s->tr;
-	snr = tr->schema_number;
 	TRC_DEBUG(SQL_STORE, "Enter sql_trans_begin for transaction: %d\n", snr);
 	if (tr->parent && tr->parent == gtrans && 
 	    (tr->stime < gtrans->wstime || tr->wtime ||

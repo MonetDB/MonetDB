@@ -26,16 +26,20 @@
 #ifdef HAVE_UNISTD_H
 #include <unistd.h>
 #endif
-#ifndef HAVE_EMBEDDED
 #ifdef HAVE_OPENSSL
+#ifdef HAVE_MD5_UPDATE
 #include <openssl/md5.h>
+#endif
+#if defined(HAVE_SHA256_UPDATE) || defined(HAVE_SHA1_UPDATE)
 #include <openssl/sha.h>
+#endif
+#ifdef HAVE_RIPEMD160_UPDATE
 #include <openssl/ripemd.h>
+#endif
 #else
 #ifdef HAVE_COMMONCRYPTO
 #define COMMON_DIGEST_FOR_OPENSSL
 #include <CommonCrypto/CommonDigest.h>
-#endif
 #endif
 #endif
 
@@ -940,7 +944,7 @@ AUTHcypherValue(str *ret, const char *value)
 static str
 AUTHverifyPassword(const char *passwd)
 {
-#if !defined(HAVE_EMBEDDED) && (defined(HAVE_OPENSSL) || defined(HAVE_COMMONCRYPTO))
+#if (defined(HAVE_OPENSSL) || defined(HAVE_COMMONCRYPTO))
 	const char *p = passwd;
 	size_t len = strlen(p);
 

@@ -18,7 +18,7 @@ stream *maleventstream = 0;
 lng MALdebug;
 
 #ifdef HAVE_HGE
-int have_hge;
+int have_hge = 1;
 #endif
 
 #include "mal_stack.h"
@@ -51,7 +51,7 @@ MT_Lock     mal_oltpLock = MT_LOCK_INITIALIZER("mal_oltpLock");
  * Initialization of the MAL context
  */
 
-int mal_init(void){
+int mal_init(char *modules[], int embedded){
 /* Any error encountered here terminates the process
  * with a message sent to stderr
  */
@@ -66,7 +66,7 @@ int mal_init(void){
 	initNamespace();
 	initParser();
 	initHeartbeat();
-	str err = malBootstrap();
+	str err = malBootstrap(modules, embedded);
 	if (err != MAL_SUCCEED) {
 		mal_client_reset();
 #ifndef NDEBUG
@@ -91,10 +91,8 @@ int mal_init(void){
  * activity first.
  * This function should be called after you have issued sql_reset();
  */
-void mserver_reset(void)
+void mal_reset(void)
 {
-	str err = 0;
-
 	GDKprepareExit();
 	MCstopClients(0);
 	dropQRYqueue();
@@ -102,6 +100,8 @@ void mserver_reset(void)
 	stopProfiler(0);
 	AUTHreset();
 	if (!GDKinmemory()) {
+		str err = 0;
+
 		if ((err = msab_wildRetreat()) != NULL) {
 			TRC_ERROR(MAL_SERVER, "%s\n", err);
 			free(err);
@@ -144,6 +144,6 @@ void mserver_reset(void)
 
 void mal_exit(int status)
 {
-	mserver_reset();
+	mal_reset();
 	exit(status);				/* properly end GDK */
 }

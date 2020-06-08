@@ -578,12 +578,12 @@ stdout of test 'alter_table` in directory 'sql/test/pg_regress` itself:
 #insert into altinhoid values (1);
 [ 1	]
 #select oid > 0, * from altwithoid;
-% sys.,	sys.altwithoid,	sys.altwithoid # table_name
+% sys.%2,	sys.altwithoid,	sys.altwithoid # table_name
 % %2,	oid,	col # name
 % boolean,	oid,	int # type
 % 5,	3,	1 # length
 #select oid > 0, * from altwithoid; -- fails
-% sys.,	sys.altwithoid,	sys.altwithoid # table_name
+% sys.%2,	sys.altwithoid,	sys.altwithoid # table_name
 % %2,	oid,	col # name
 % boolean,	oid,	int # type
 % 5,	3,	1 # length

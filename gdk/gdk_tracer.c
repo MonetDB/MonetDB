@@ -16,9 +16,6 @@
 
 #define FILE_NAME "mdbtrace.log"
 
-#define OPENFILE_FAILED "Failed to open "FILE_NAME
-#define GDKTRACER_FAILED "Failed to write logs"
-
 #define AS_STR(x) #x
 #define STR(x) AS_STR(x)
 
@@ -123,7 +120,8 @@ _GDKtracer_init_basic_adptr(void)
 	active_tracer = fopen(file_name, "a");
 	
 	if (active_tracer == NULL) {
-		GDK_TRACER_EXCEPTION(OPENFILE_FAILED);
+		GDK_TRACER_EXCEPTION("Failed to open %s: %s\n", file_name,
+				     GDKstrerror(errno, (char[64]){0}, 64));
 		file_name[0] = 0; /* uninitialize */
 		active_tracer = stderr;
 		return GDK_FAIL;
@@ -132,7 +130,7 @@ _GDKtracer_init_basic_adptr(void)
 	return GDK_SUCCEED;
 
   too_long:
-	GDK_TRACER_EXCEPTION("path name for dbtrace file too long");
+	GDK_TRACER_EXCEPTION("path name for dbtrace file too long\n");
 	file_name[0] = 0; /* uninitialize */
 	active_tracer = stderr;
 	return GDK_FAIL;
@@ -293,6 +291,18 @@ GDKtracer_set_component_level(const char *comp, const char *lvl)
 	return GDK_SUCCEED;
 }
 
+const char *
+GDKtracer_get_component_level(const char *comp)
+{
+	component_t component = find_component(comp);
+
+	if (component == COMPONENTS_COUNT) {
+		GDKerror("unknown component\n");
+		return NULL;
+	}
+	return level_str[(int) lvl_per_component[component]];
+}
+
 
 gdk_return
 GDKtracer_reset_component_level(const char *comp)
@@ -406,6 +416,7 @@ GDKtracer_log(const char *file, const char *func, int lineno,
 	static size_t prefix_length = (size_t) -1;
 
 	if (prefix_length == (size_t) -1) {
+		/* first time, calculate prefix of file name */
 		msg = strstr(file_prefix, "gdk" DIR_SEP_STR "gdk_tracer.c");
 		if (msg == NULL)
 			prefix_length = 0;
@@ -417,29 +428,30 @@ GDKtracer_log(const char *file, const char *func, int lineno,
 		file += prefix_length;
 
 	va_start(va, fmt);
+	int pad = (int) strlen(file);
+	pad = (pad > 40) ? 0 : 40 - pad;
 	bytes_written = snprintf(buffer, sizeof(buffer),
-				 "%s "
-				 "%-"MXW"s:%d "
-				 "%"MXW"s "
-				 "%"MXW"s "
-				 "%-"MXW"s "
-				 "%-"MXW"s # ",
+				 "%s "		/* timestamp */
+				 "%10s "	/* level */
+				 "%-8s "	/* component */
+				 "%-20s "	/* thread name */
+				 "%s:%-5d %*s"	/* file, lineno, pad */
+				 "%-20s ",	/* function */
 				 get_timestamp(ts, sizeof(ts)),
-				 file,
-				 lineno,
-				 func,
 				 level_str[level],
 				 component_str[comp],
-				 MT_thread_getname());
+				 MT_thread_getname(),
+				 file, lineno, pad, "",
+				 func);
 	if (bytes_written > 0 && bytes_written < (int) sizeof(buffer)) {
 		msg = buffer + bytes_written;
-		bytes_written += vsnprintf(msg,
-					   sizeof(buffer) - bytes_written,
-					   fmt, va);
+		bytes_written = vsnprintf(msg,
+					  sizeof(buffer) - bytes_written,
+					  fmt, va);
 	}
 	va_end(va);
 	if (bytes_written < 0) {
-		GDK_TRACER_EXCEPTION(GDKTRACER_FAILED "\n");
+		GDK_TRACER_EXCEPTION("Failed to write logs\n");
 		return;
 	}
 	char *p;

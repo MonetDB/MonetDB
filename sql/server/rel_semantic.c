@@ -17,11 +17,11 @@
 #include "rel_psm.h"
 #include "rel_sequence.h"
 #include "rel_exp.h"
+#include "sql_privileges.h"
 
 #include <unistd.h>
 #include <string.h>
 #include <ctype.h>
-
 
 sql_rel *
 rel_parse(mvc *m, sql_schema *s, char *query, char emode)
@@ -43,10 +43,8 @@ rel_parse(mvc *m, sql_schema *s, char *query, char emode)
 	if (s)
 		m->session->schema = s;
 
-	b = (buffer*)GDKmalloc(sizeof(buffer));
-	if (!b) {
+	if (!(b = (buffer*)GDKmalloc(sizeof(buffer))))
 		return NULL;
-	}
 	n = GDKmalloc(len + 1 + 1);
 	if (!n) {
 		GDKfree(b);
@@ -88,8 +86,8 @@ rel_parse(mvc *m, sql_schema *s, char *query, char emode)
 	bstream_destroy(m->scanner.rs);
 
 	m->sym = NULL;
-	o.vars = m->vars;	/* may have been realloc'ed */
-	o.sizevars = m->sizevars;
+	o.frames = m->frames;	/* may have been realloc'ed */
+	o.sizeframes = m->sizeframes;
 	o.query = m->query;
 	if (m->session->status || m->errstr[0]) {
 		int status = m->session->status;
@@ -98,12 +96,10 @@ rel_parse(mvc *m, sql_schema *s, char *query, char emode)
 		*m = o;
 		m->session->status = status;
 	} else {
-		int label = m->label;
+		unsigned int label = m->label;
 
-		while (m->topvars > o.topvars) {
-			if (m->vars[--m->topvars].name)
-				c_delete(m->vars[m->topvars].name);
-		}
+		while (m->topframes > o.topframes)
+			clear_frame(m, m->frames[--m->topframes]);
 		*m = o;
 		m->label = label;
 	}
@@ -202,7 +198,7 @@ rel_semantic(sql_query *query, symbol *s)
 		dnode *d;
 		sql_rel *r = NULL;
 
-		if(!stack_push_frame(sql, "MUL"))
+		if (!stack_push_frame(sql, "%MUL"))
 			return sql_error(sql, 02, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		for (d = s->data.lval->h; d; d = d->next) {
 			symbol *sym = d->data.sym;

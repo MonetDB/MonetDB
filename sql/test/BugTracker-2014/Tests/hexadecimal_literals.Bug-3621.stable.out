@@ -54,134 +54,134 @@ stdout of test 'hexadecimal_literals.Bug-3621` in directory 'sql/test/BugTracker
 # 17:24:30 >  
 
 #select 0x0;
-% . # table_name
-% single_value # name
+% .%2 # table_name
+% %2 # name
 % tinyint # type
 % 1 # length
 [ 0	]
 #select 0x1;
-% . # table_name
-% single_value # name
+% .%2 # table_name
+% %2 # name
 % tinyint # type
 % 1 # length
 [ 1	]
 #select 0x2;
-% . # table_name
-% single_value # name
+% .%2 # table_name
+% %2 # name
 % tinyint # type
 % 1 # length
 [ 2	]
 #select 0x3;
-% . # table_name
-% single_value # name
+% .%2 # table_name
+% %2 # name
 % tinyint # type
 % 1 # length
 [ 3	]
 #select 0x4;
-% . # table_name
-% single_value # name
+% .%2 # table_name
+% %2 # name
 % tinyint # type
 % 1 # length
 [ 4	]
 #select 0x5;
-% . # table_name
-% single_value # name
+% .%2 # table_name
+% %2 # name
 % tinyint # type
 % 1 # length
 [ 5	]
 #select 0x6;
-% . # table_name
-% single_value # name
+% .%2 # table_name
+% %2 # name
 % tinyint # type
 % 1 # length
 [ 6	]
 #select 0x7;
-% . # table_name
-% single_value # name
+% .%2 # table_name
+% %2 # name
 % tinyint # type
 % 1 # length
 [ 7	]
 #select 0x8;
-% . # table_name
-% single_value # name
+% .%2 # table_name
+% %2 # name
 % tinyint # type
 % 1 # length
 [ 8	]
 #select 0x9;
-% . # table_name
-% single_value # name
+% .%2 # table_name
+% %2 # name
 % tinyint # type
 % 1 # length
 [ 9	]
 #select 0xa;
-% . # table_name
-% single_value # name
+% .%2 # table_name
+% %2 # name
 % tinyint # type
 % 2 # length
 [ 10	]
 #select 0xA;
-% . # table_name
-% single_value # name
+% .%2 # table_name
+% %2 # name
 % tinyint # type
 % 2 # length
 [ 10	]
 #select 0xb;
-% . # table_name
-% single_value # name
+% .%2 # table_name
+% %2 # name
 % tinyint # type
 % 2 # length
 [ 11	]
 #select 0xB;
-% . # table_name
-% single_value # name
+% .%2 # table_name
+% %2 # name
 % tinyint # type
 % 2 # length
 [ 11	]
 #select 0xc;
-% . # table_name
-% single_value # name
+% .%2 # table_name
+% %2 # name
 % tinyint # type
 % 2 # length
 [ 12	]
 #select 0xC;
-% . # table_name
-% single_value # name
+% .%2 # table_name
+% %2 # name
 % tinyint # type
 % 2 # length
 [ 12	]
 #select 0xd;
-% . # table_name
-% single_value # name
+% .%2 # table_name
+% %2 # name
 % tinyint # type
 % 2 # length
 [ 13	]
 #select 0xD;
-% . # table_name
-% single_value # name
+% .%2 # table_name
+% %2 # name
 % tinyint # type
 % 2 # length
 [ 13	]
 #select 0xe;
-% . # table_name
-% single_value # name
+% .%2 # table_name
+% %2 # name
 % tinyint # type
 % 2 # length
 [ 14	]
 #select 0xE;
-% . # table_name
-% single_value # name
+% .%2 # table_name
+% %2 # name
 % tinyint # type
 % 2 # length
 [ 14	]
 #select 0xf;
-% . # table_name
-% single_value # name
+% .%2 # table_name
+% %2 # name
 % tinyint # type
 % 2 # length
 [ 15	]
 #select 0xF;
-% . # table_name
-% single_value # name
+% .%2 # table_name
+% %2 # name
 % tinyint # type
 % 2 # length
 [ 15	]
@@ -198,537 +198,537 @@ stdout of test 'hexadecimal_literals.Bug-3621` in directory 'sql/test/BugTracker
 % 1 # length
 [ 0	]
 #select 0x00;
-% . # table_name
-% single_value # name
+% .%2 # table_name
+% %2 # name
 % tinyint # type
 % 1 # length
 [ 0	]
 #select 0x0000;
-% . # table_name
-% single_value # name
+% .%2 # table_name
+% %2 # name
 % tinyint # type
 % 1 # length
 [ 0	]
 #select 0x00000000;
-% . # table_name
-% single_value # name
+% .%2 # table_name
+% %2 # name
 % tinyint # type
 % 1 # length
 [ 0	]
 #select 0x0000000000000000;
-% . # table_name
-% single_value # name
+% .%2 # table_name
+% %2 # name
 % tinyint # type
 % 1 # length
 [ 0	]
 #select 0x00000000000000000000000000000000;
-% . # table_name
-% single_value # name
+% .%2 # table_name
+% %2 # name
 % tinyint # type
 % 1 # length
 [ 0	]
 #select 0x01;
-% . # table_name
-% single_value # name
+% .%2 # table_name
+% %2 # name
 % tinyint # type
 % 1 # length
 [ 1	]
 #select 0x0001;
-% . # table_name
-% single_value # name
+% .%2 # table_name
+% %2 # name
 % tinyint # type
 % 1 # length
 [ 1	]
 #select 0x00000001;
-% . # table_name
-% single_value # name
+% .%2 # table_name
+% %2 # name
 % tinyint # type
 % 1 # length
 [ 1	]
 #select 0x0000000000000001;
-% . # table_name
-% single_value # name
+% .%2 # table_name
+% %2 # name
 % tinyint # type
 % 1 # length
 [ 1	]
 #select 0x00000000000000000000000000000001;
-% . # table_name
-% single_value # name
+% .%2 # table_name
+% %2 # name
 % tinyint # type
 % 1 # length
 [ 1	]
 #select 0x7f;
-% . # table_name
-% single_value # name
+% .%2 # table_name
+% %2 # name
 % tinyint # type
 % 3 # length
 [ 127	]
 #select 0x007f;
-% . # table_name
-% single_value # name
+% .%2 # table_name
+% %2 # name
 % tinyint # type
 % 3 # length
 [ 127	]
 #select 0x0000007f;
-% . # table_name
-% single_value # name
+% .%2 # table_name
+% %2 # name
 % tinyint # type
 % 3 # length
 [ 127	]
 #select 0x000000000000007f;
-% . # table_name
-% single_value # name
+% .%2 # table_name
+% %2 # name
 % tinyint # type
 % 3 # length
 [ 127	]
 #select 0x0000000000000000000000000000007f;
-% . # table_name
-% single_value # name
+% .%2 # table_name
+% %2 # name
 % tinyint # type
 % 3 # length
 [ 127	]
 #select 0x80;
-% . # table_name
-% single_value # name
+% .%2 # table_name
+% %2 # name
 % smallint # type
 % 3 # length
 [ 128	]
 #select 0x0080;
-% . # table_name
-% single_value # name
+% .%2 # table_name
+% %2 # name
 % smallint # type
 % 3 # length
 [ 128	]
 #select 0x00000080;
-% . # table_name
-% single_value # name
+% .%2 # table_name
+% %2 # name
 % smallint # type
 % 3 # length
 [ 128	]
 #select 0x0000000000000080;
-% . # table_name
-% single_value # name
+% .%2 # table_name
+% %2 # name
 % smallint # type
 % 3 # length
 [ 128	]
 #select 0x00000000000000000000000000000080;
-% . # table_name
-% single_value # name
+% .%2 # table_name
+% %2 # name
 % smallint # type
 % 3 # length
 [ 128	]
 #select 0x81;
-% . # table_name
-% single_value # name
+% .%2 # table_name
+% %2 # name
 % smallint # type
 % 3 # length
 [ 129	]
 #select 0x0081;
-% . # table_name
-% single_value # name
+% .%2 # table_name
+% %2 # name
 % smallint # type
 % 3 # length
 [ 129	]
 #select 0x00000081;
-% . # table_name
-% single_value # name
+% .%2 # table_name
+% %2 # name
 % smallint # type
 % 3 # length
 [ 129	]
 #select 0x0000000000000081;
-% . # table_name
-% single_value # name
+% .%2 # table_name
+% %2 # name
 % smallint # type
 % 3 # length
 [ 129	]
 #select 0x00000000000000000000000000000081;
-% . # table_name
-% single_value # name
+% .%2 # table_name
+% %2 # name
 % smallint # type
 % 3 # length
 [ 129	]
 #select 0xff;
-% . # table_name
-% single_value # name
+% .%2 # table_name
+% %2 # name
 % smallint # type
 % 3 # length
 [ 255	]
 #select 0x00ff;
-% . # table_name
-% single_value # name
+% .%2 # table_name
+% %2 # name
 % smallint # type
 % 3 # length
 [ 255	]
 #select 0x000000ff;
-% . # table_name
-% single_value # name
+% .%2 # table_name
+% %2 # name
 % smallint # type
 % 3 # length
 [ 255	]
 #select 0x00000000000000ff;
-% . # table_name
-% single_value # name
+% .%2 # table_name
+% %2 # name
 % smallint # type
 % 3 # length
 [ 255	]
 #select 0x000000000000000000000000000000ff;
-% . # table_name
-% single_value # name
+% .%2 # table_name
+% %2 # name
 % smallint # type
 % 3 # length
 [ 255	]
 #select 0x7fff;
-% . # table_name
-% single_value # name
+% .%2 # table_name
+% %2 # name
 % smallint # type
 % 5 # length
 [ 32767	]
 #select 0x00007fff;
-% . # table_name
-% single_value # name
+% .%2 # table_name
+% %2 # name
 % smallint # type
 % 5 # length
 [ 32767	]
 #select 0x0000000000007fff;
-% . # table_name
-% single_value # name
+% .%2 # table_name
+% %2 # name
 % smallint # type
 % 5 # length
 [ 32767	]
 #select 0x00000000000000000000000000007fff;
-% . # table_name
-% single_value # name
+% .%2 # table_name
+% %2 # name
 % smallint # type
 % 5 # length
 [ 32767	]
 #select 0x8000;
-% . # table_name
-% single_value # name
+% .%2 # table_name
+% %2 # name
 % int # type
 % 5 # length
 [ 32768	]
 #select 0x00008000;
-% . # table_name
-% single_value # name
+% .%2 # table_name
+% %2 # name
 % int # type
 % 5 # length
 [ 32768	]
 #select 0x0000000000008000;
-% . # table_name
-% single_value # name
+% .%2 # table_name
+% %2 # name
 % int # type
 % 5 # length
 [ 32768	]
 #select 0x00000000000000000000000000008000;
-% . # table_name
-% single_value # name
+% .%2 # table_name
+% %2 # name
 % int # type
 % 5 # length
 [ 32768	]
 #select 0x8001;
-% . # table_name
-% single_value # name
+% .%2 # table_name
+% %2 # name
 % int # type
 % 5 # length
 [ 32769	]
 #select 0x00008001;
-% . # table_name
-% single_value # name
+% .%2 # table_name
+% %2 # name
 % int # type
 % 5 # length
 [ 32769	]
 #select 0x0000000000008001;
-% . # table_name
-% single_value # name
+% .%2 # table_name
+% %2 # name
 % int # type
 % 5 # length
 [ 32769	]
 #select 0x00000000000000000000000000008001;
-% . # table_name
-% single_value # name
+% .%2 # table_name
+% %2 # name
 % int # type
 % 5 # length
 [ 32769	]
 #select 0xffff;
-% . # table_name
-% single_value # name
+% .%2 # table_name
+% %2 # name
 % int # type
 % 5 # length
 [ 65535	]
 #select 0x0000ffff;
-% . # table_name
-% single_value # name
+% .%2 # table_name
+% %2 # name
 % int # type
 % 5 # length
 [ 65535	]
 #select 0x000000000000ffff;
-% . # table_name
-% single_value # name
+% .%2 # table_name
+% %2 # name
 % int # type
 % 5 # length
 [ 65535	]
 #select 0x0000000000000000000000000000ffff;
-% . # table_name
-% single_value # name
+% .%2 # table_name
+% %2 # name
 % int # type
 % 5 # length
 [ 65535	]
 #select 0x7fffffff;
-% . # table_name
-% single_value # name
+% .%2 # table_name
+% %2 # name
 % int # type
 % 10 # length
 [ 2147483647	]
 #select 0x000000007fffffff;
-% . # table_name
-% single_value # name
+% .%2 # table_name
+% %2 # name
 % int # type
 % 10 # length
 [ 2147483647	]
 #select 0x0000000000000000000000007fffffff;
-% . # table_name
-% single_value # name
+% .%2 # table_name
+% %2 # name
 % int # type
 % 10 # length
 [ 2147483647	]
 #select 0x80000000;
-% . # table_name
-% single_value # name
+% .%2 # table_name
+% %2 # name
 % bigint # type
 % 10 # length
 [ 2147483648	]
 #select 0x0000000080000000;
-% . # table_name
-% single_value # name
+% .%2 # table_name
+% %2 # name
 % bigint # type
 % 10 # length
 [ 2147483648	]
 #select 0x00000000000000000000000080000000;
-% . # table_name
-% single_value # name
+% .%2 # table_name
+% %2 # name
 % bigint # type
 % 10 # length
 [ 2147483648	]
 #select 0x80000001;
-% . # table_name
-% single_value # name
+% .%2 # table_name
+% %2 # name
 % bigint # type
 % 10 # length
 [ 2147483649	]
 #select 0x0000000080000001;
-% . # table_name
-% single_value # name
+% .%2 # table_name
+% %2 # name
 % bigint # type
 % 10 # length
 [ 2147483649	]
 #select 0x00000000000000000000000080000001;
-% . # table_name
-% single_value # name
+% .%2 # table_name
+% %2 # name
 % bigint # type
 % 10 # length
 [ 2147483649	]
 #select 0xffffffff;
-% . # table_name
-% single_value # name
+% .%2 # table_name
+% %2 # name
 % bigint # type
 % 10 # length
 [ 4294967295	]
 #select 0x00000000ffffffff;
-% . # table_name
-% single_value # name
+% .%2 # table_name
+% %2 # name
 % bigint # type
 % 10 # length
 [ 4294967295	]
 #select 0x000000000000000000000000ffffffff;
-% . # table_name
-% single_value # name
+% .%2 # table_name
+% %2 # name
 % bigint # type
 % 10 # length
 [ 4294967295	]
 #select 0x7fffffffffffffff;
-% . # table_name
-% single_value # name
+% .%2 # table_name
+% %2 # name
 % bigint # type
 % 19 # length
 [ 9223372036854775807	]
 #select 0x00000000000000007fffffffffffffff;
-% . # table_name
-% single_value # name
+% .%2 # table_name
+% %2 # name
 % bigint # type
 % 19 # length
 [ 9223372036854775807	]
 #select 0x12;
-% . # table_name
-% single_value # name
+% .%2 # table_name
+% %2 # name
 % tinyint # type
 % 2 # length
 [ 18	]
 #select 0x123;
-% . # table_name
-% single_value # name
+% .%2 # table_name
+% %2 # name
 % smallint # type
 % 3 # length
 [ 291	]
 #select 0x1234;
-% . # table_name
-% single_value # name
+% .%2 # table_name
+% %2 # name
 % smallint # type
 % 4 # length
 [ 4660	]
 #select 0x12345;
-% . # table_name
-% single_value # name
+% .%2 # table_name
+% %2 # name
 % int # type
 % 5 # length
 [ 74565	]
 #select 0x12345678;
-% . # table_name
-% single_value # name
+% .%2 # table_name
+% %2 # name
 % int # type
 % 9 # length
 [ 305419896	]
 #select 0x123456789;
-% . # table_name
-% single_value # name
+% .%2 # table_name
+% %2 # name
 % bigint # type
 % 10 # length
 [ 4886718345	]
 #select 0x123456789abcdef0;
-% . # table_name
-% single_value # name
+% .%2 # table_name
+% %2 # name
 % bigint # type
 % 19 # length
 [ 1311768467463790320	]
 
 #select -0x0;
-% . # table_name
-% single_value # name
+% .%2 # table_name
+% %2 # name
 % tinyint # type
 % 1 # length
 [ 0	]
 #select -0x1;
-% . # table_name
-% single_value # name
+% .%2 # table_name
+% %2 # name
 % tinyint # type
 % 2 # length
 [ -1	]
 #select -0x2;
-% . # table_name
-% single_value # name
+% .%2 # table_name
+% %2 # name
 % tinyint # type
 % 2 # length
 [ -2	]
 #select -0x3;
-% . # table_name
-% single_value # name
+% .%2 # table_name
+% %2 # name
 % tinyint # type
 % 2 # length
 [ -3	]
 #select -0x4;
-% . # table_name
-% single_value # name
+% .%2 # table_name
+% %2 # name
 % tinyint # type
 % 2 # length
 [ -4	]
 #select -0x5;
-% . # table_name
-% single_value # name
+% .%2 # table_name
+% %2 # name
 % tinyint # type
 % 2 # length
 [ -5	]
 #select -0x6;
-% . # table_name
-% single_value # name
+% .%2 # table_name
+% %2 # name
 % tinyint # type
 % 2 # length
 [ -6	]
 #select -0x7;
-% . # table_name
-% single_value # name
+% .%2 # table_name
+% %2 # name
 % tinyint # type
 % 2 # length
 [ -7	]
 #select -0x8;
-% . # table_name
-% single_value # name
+% .%2 # table_name
+% %2 # name
 % tinyint # type
 % 2 # length
 [ -8	]
 #select -0x9;
-% . # table_name
-% single_value # name
+% .%2 # table_name
+% %2 # name
 % tinyint # type
 % 2 # length
 [ -9	]
 #select -0xa;
-% . # table_name
-% single_value # name
+% .%2 # table_name
+% %2 # name
 % tinyint # type
 % 3 # length
 [ -10	]
 #select -0xA;
-% . # table_name
-% single_value # name
+% .%2 # table_name
+% %2 # name
 % tinyint # type
 % 3 # length
 [ -10	]
 #select -0xb;
-% . # table_name
-% single_value # name
+% .%2 # table_name
+% %2 # name
 % tinyint # type
 % 3 # length
 [ -11	]
 #select -0xB;
-% . # table_name
-% single_value # name
+% .%2 # table_name
+% %2 # name
 % tinyint # type
 % 3 # length
 [ -11	]
 #select -0xc;
-% . # table_name
-% single_value # name
+% .%2 # table_name
+% %2 # name
 % tinyint # type
 % 3 # length
 [ -12	]
 #select -0xC;
-% . # table_name
-% single_value # name
+% .%2 # table_name
+% %2 # name
 % tinyint # type
 % 3 # length
 [ -12	]
 #select -0xd;
-% . # table_name
-% single_value # name
+% .%2 # table_name
+% %2 # name
 % tinyint # type
 % 3 # length
 [ -13	]
 #select -0xD;
-% . # table_name
-% single_value # name
+% .%2 # table_name
+% %2 # name
 % tinyint # type
 % 3 # length
 [ -13	]
 #select -0xe;
-% . # table_name
-% single_value # name
+% .%2 # table_name
+% %2 # name
 % tinyint # type
 % 3 # length
 [ -14	]
 #select -0xE;
-% . # table_name
-% single_value # name
+% .%2 # table_name
+% %2 # name
 % tinyint # type
 % 3 # length
 [ -14	]
 #select -0xf;
-% . # table_name
-% single_value # name
+% .%2 # table_name
+% %2 # name
 % tinyint # type
 % 3 # length
 [ -15	]
 #select -0xF;
-% . # table_name
-% single_value # name
+% .%2 # table_name
+% %2 # name
 % tinyint # type
 % 3 # length
 [ -15	]
@@ -745,404 +745,404 @@ stdout of test 'hexadecimal_literals.Bug-3621` in directory 'sql/test/BugTracker
 % 1 # length
 [ 0	]
 #select -0x00;
-% . # table_name
-% single_value # name
+% .%2 # table_name
+% %2 # name
 % tinyint # type
 % 1 # length
 [ 0	]
 #select -0x0000;
-% . # table_name
-% single_value # name
+% .%2 # table_name
+% %2 # name
 % tinyint # type
 % 1 # length
 [ 0	]
 #select -0x00000000;
-% . # table_name
-% single_value # name
+% .%2 # table_name
+% %2 # name
 % tinyint # type
 % 1 # length
 [ 0	]
 #select -0x0000000000000000;
-% . # table_name
-% single_value # name
+% .%2 # table_name
+% %2 # name
 % tinyint # type
 % 1 # length
 [ 0	]
 #select -0x00000000000000000000000000000000;
-% . # table_name
-% single_value # name
+% .%2 # table_name
+% %2 # name
 % tinyint # type
 % 1 # length
 [ 0	]
 #select -0x01;
-% . # table_name
-% single_value # name
+% .%2 # table_name
+% %2 # name
 % tinyint # type
 % 2 # length
 [ -1	]
 #select -0x0001;
-% . # table_name
-% single_value # name
+% .%2 # table_name
+% %2 # name
 % tinyint # type
 % 2 # length
 [ -1	]
 #select -0x00000001;
-% . # table_name
-% single_value # name
+% .%2 # table_name
+% %2 # name
 % tinyint # type
 % 2 # length
 [ -1	]
 #select -0x0000000000000001;
-% . # table_name
-% single_value # name
+% .%2 # table_name
+% %2 # name
 % tinyint # type
 % 2 # length
 [ -1	]
 #select -0x00000000000000000000000000000001;
-% . # table_name
-% single_value # name
+% .%2 # table_name
+% %2 # name
 % tinyint # type
 % 2 # length
 [ -1	]
 #select -0x7f;
-% . # table_name
-% single_value # name
+% .%2 # table_name
+% %2 # name
 % tinyint # type
 % 4 # length
 [ -127	]
 #select -0x007f;
-% . # table_name
-% single_value # name
+% .%2 # table_name
+% %2 # name
 % tinyint # type
 % 4 # length
 [ -127	]
 #select -0x0000007f;
-% . # table_name
-% single_value # name
+% .%2 # table_name
+% %2 # name
 % tinyint # type
 % 4 # length
 [ -127	]
 #select -0x000000000000007f;
-% . # table_name
-% single_value # name
+% .%2 # table_name
+% %2 # name
 % tinyint # type
 % 4 # length
 [ -127	]
 #select -0x0000000000000000000000000000007f;
-% . # table_name
-% single_value # name
+% .%2 # table_name
+% %2 # name
 % tinyint # type
 % 4 # length
 [ -127	]
 #select -0x80;
-% . # table_name
-% single_value # name
+% .%2 # table_name
+% %2 # name
 % smallint # type
 % 4 # length
 [ -128	]
 #select -0x0080;
-% . # table_name
-% single_value # name
+% .%2 # table_name
+% %2 # name
 % smallint # type
 % 4 # length
 [ -128	]
 #select -0x00000080;
-% . # table_name
-% single_value # name
+% .%2 # table_name
+% %2 # name
 % smallint # type
 % 4 # length
 [ -128	]
 #select -0x0000000000000080;
-% . # table_name
-% single_value # name
+% .%2 # table_name
+% %2 # name
 % smallint # type
 % 4 # length
 [ -128	]
 #select -0x00000000000000000000000000000080;
-% . # table_name
-% single_value # name
+% .%2 # table_name
+% %2 # name
 % smallint # type
 % 4 # length
 [ -128	]
 #select -0x81;
-% . # table_name
-% single_value # name
+% .%2 # table_name
+% %2 # name
 % smallint # type
 % 4 # length
 [ -129	]
 #select -0x0081;
-% . # table_name
-% single_value # name
+% .%2 # table_name
+% %2 # name
 % smallint # type
 % 4 # length
 [ -129	]
 #select -0x00000081;
-% . # table_name
-% single_value # name
+% .%2 # table_name
+% %2 # name
 % smallint # type
 % 4 # length
 [ -129	]
 #select -0x0000000000000081;
-% . # table_name
-% single_value # name
+% .%2 # table_name
+% %2 # name
 % smallint # type
 % 4 # length
 [ -129	]
 #select -0x00000000000000000000000000000081;
-% . # table_name
-% single_value # name
+% .%2 # table_name
+% %2 # name
 % smallint # type
 % 4 # length
 [ -129	]
 #select -0xff;
-% . # table_name
-% single_value # name
+% .%2 # table_name
+% %2 # name
 % smallint # type
 % 4 # length
 [ -255	]
 #select -0x00ff;
-% . # table_name
-% single_value # name
+% .%2 # table_name
+% %2 # name
 % smallint # type
 % 4 # length
 [ -255	]
 #select -0x000000ff;
-% . # table_name
-% single_value # name
+% .%2 # table_name
+% %2 # name
 % smallint # type
 % 4 # length
 [ -255	]
 #select -0x00000000000000ff;
-% . # table_name
-% single_value # name
+% .%2 # table_name
+% %2 # name
 % smallint # type
 % 4 # length
 [ -255	]
 #select -0x000000000000000000000000000000ff;
-% . # table_name
-% single_value # name
+% .%2 # table_name
+% %2 # name
 % smallint # type
 % 4 # length
 [ -255	]
 #select -0x7fff;
-% . # table_name
-% single_value # name
+% .%2 # table_name
+% %2 # name
 % smallint # type
 % 6 # length
 [ -32767	]
 #select -0x00007fff;
-% . # table_name
-% single_value # name
+% .%2 # table_name
+% %2 # name
 % smallint # type
 % 6 # length
 [ -32767	]
 #select -0x0000000000007fff;
-% . # table_name
-% single_value # name
+% .%2 # table_name
+% %2 # name
 % smallint # type
 % 6 # length
 [ -32767	]
 #select -0x00000000000000000000000000007fff;
-% . # table_name
-% single_value # name
+% .%2 # table_name
+% %2 # name
 % smallint # type
 % 6 # length
 [ -32767	]
 #select -0x8000;
-% . # table_name
-% single_value # name
+% .%2 # table_name
+% %2 # name
 % int # type
 % 6 # length
 [ -32768	]
 #select -0x00008000;
-% . # table_name
-% single_value # name
+% .%2 # table_name
+% %2 # name
 % int # type
 % 6 # length
 [ -32768	]
 #select -0x0000000000008000;
-% . # table_name
-% single_value # name
+% .%2 # table_name
+% %2 # name
 % int # type
 % 6 # length
 [ -32768	]
 #select -0x00000000000000000000000000008000;
-% . # table_name
-% single_value # name
+% .%2 # table_name
+% %2 # name
 % int # type
 % 6 # length
 [ -32768	]
 #select -0x8001;
-% . # table_name
-% single_value # name
+% .%2 # table_name
+% %2 # name
 % int # type
 % 6 # length
 [ -32769	]
 #select -0x00008001;
-% . # table_name
-% single_value # name
+% .%2 # table_name
+% %2 # name
 % int # type
 % 6 # length
 [ -32769	]
 #select -0x0000000000008001;
-% . # table_name
-% single_value # name
+% .%2 # table_name
+% %2 # name
 % int # type
 % 6 # length
 [ -32769	]
 #select -0x00000000000000000000000000008001;
-% . # table_name
-% single_value # name
+% .%2 # table_name
+% %2 # name
 % int # type
 % 6 # length
 [ -32769	]
 #select -0xffff;
-% . # table_name
-% single_value # name
+% .%2 # table_name
+% %2 # name
 % int # type
 % 6 # length
 [ -65535	]
 #select -0x0000ffff;
-% . # table_name
-% single_value # name
+% .%2 # table_name
+% %2 # name
 % int # type
 % 6 # length
 [ -65535	]
 #select -0x000000000000ffff;
-% . # table_name
-% single_value # name
+% .%2 # table_name
+% %2 # name
 % int # type
 % 6 # length
 [ -65535	]
 #select -0x0000000000000000000000000000ffff;
-% . # table_name
-% single_value # name
+% .%2 # table_name
+% %2 # name
 % int # type
 % 6 # length
 [ -65535	]
 #select -0x7fffffff;
-% . # table_name
-% single_value # name
+% .%2 # table_name
+% %2 # name
 % int # type
 % 11 # length
 [ -2147483647	]
 #select -0x000000007fffffff;
-% . # table_name
-% single_value # name
+% .%2 # table_name
+% %2 # name
 % int # type
 % 11 # length
 [ -2147483647	]
 #select -0x0000000000000000000000007fffffff;
-% . # table_name
-% single_value # name
+% .%2 # table_name
+% %2 # name
 % int # type
 % 11 # length
 [ -2147483647	]
 #select -0x80000000;
-% . # table_name
-% single_value # name
+% .%2 # table_name
+% %2 # name
 % bigint # type
 % 11 # length
 [ -2147483648	]
 #select -0x0000000080000000;
-% . # table_name
-% single_value # name
+% .%2 # table_name
+% %2 # name
 % bigint # type
 % 11 # length
 [ -2147483648	]
 #select -0x00000000000000000000000080000000;
-% . # table_name
-% single_value # name
+% .%2 # table_name
+% %2 # name
 % bigint # type
 % 11 # length
 [ -2147483648	]
 #select -0x80000001;
-% . # table_name
-% single_value # name
+% .%2 # table_name
+% %2 # name
 % bigint # type
 % 11 # length
 [ -2147483649	]
 #select -0x0000000080000001;
-% . # table_name
-% single_value # name
+% .%2 # table_name
+% %2 # name
 % bigint # type
 % 11 # length
 [ -2147483649	]
 #select -0x00000000000000000000000080000001;
-% . # table_name
-% single_value # name
+% .%2 # table_name
+% %2 # name
 % bigint # type
 % 11 # length
 [ -2147483649	]
 #select -0xffffffff;
-% . # table_name
-% single_value # name
+% .%2 # table_name
+% %2 # name
 % bigint # type
 % 11 # length
 [ -4294967295	]
 #select -0x00000000ffffffff;
-% . # table_name
-% single_value # name
+% .%2 # table_name
+% %2 # name
 % bigint # type
 % 11 # length
 [ -4294967295	]
 #select -0x000000000000000000000000ffffffff;
-% . # table_name
-% single_value # name
+% .%2 # table_name
+% %2 # name
 % bigint # type
 % 11 # length
 [ -4294967295	]
 #select -0x7fffffffffffffff;
-% . # table_name
-% single_value # name
+% .%2 # table_name
+% %2 # name
 % bigint # type
 % 20 # length
 [ -9223372036854775807	]
 #select -0x00000000000000007fffffffffffffff;
-% . # table_name
-% single_value # name
+% .%2 # table_name
+% %2 # name
 % bigint # type
 % 20 # length
 [ -9223372036854775807	]
 #select -0x12;
-% . # table_name
-% single_value # name
+% .%2 # table_name
+% %2 # name
 % tinyint # type
 % 3 # length
 [ -18	]
 #select -0x123;
-% . # table_name
-% single_value # name
+% .%2 # table_name
+% %2 # name
 % smallint # type
 % 4 # length
 [ -291	]
 #select -0x1234;
-% . # table_name
-% single_value # name
+% .%2 # table_name
+% %2 # name
 % smallint # type
 % 5 # length
 [ -4660	]
 #select -0x12345;
-% . # table_name
-% single_value # name
+% .%2 # table_name
+% %2 # name
 % int # type
 % 6 # length
 [ -74565	]
 #select -0x12345678;
-% . # table_name
-% single_value # name
+% .%2 # table_name
+% %2 # name
 % int # type
 % 10 # length
 [ -305419896	]
 #select -0x123456789;
-% . # table_name
-% single_value # name
+% .%2 # table_name
+% %2 # name
 % bigint # type
 % 11 # length
 [ -4886718345	]
 #select -0x123456789abcdef0;
-% . # table_name
-% single_value # name
+% .%2 # table_name
+% %2 # name
 % bigint # type
 % 20 # length
 [ -1311768467463790320	]

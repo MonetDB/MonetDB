@@ -67,9 +67,9 @@ stdout of test 'not-equal-Bug.3139` in directory 'sql/test/BugTracker-2012` itse
 #set t2_bug3139_cnt = (select count(*) from t2_bug3139);
 #select t1_bug3139.id, t1_bug3139.dp, t2_bug3139_cnt
 #from t1_bug3139
-#where t1_bug3139.id > 1 and t1_bug3139.dp <> t2_bug3139_cnt;
-% sys.t1_bug3139,	sys.t1_bug3139,	. # table_name
-% id,	dp,	single_value # name
+#where t1_bug3139.id > 1 and t1_bug3139.dp <> (select count(*) from t2_bug3139);
+% .t1_bug3139,	.t1_bug3139,	.%2 # table_name
+% id,	dp,	%2 # name
 % int,	int,	bigint # type
 % 1,	1,	1 # length
 [ 2,	2,	3	]

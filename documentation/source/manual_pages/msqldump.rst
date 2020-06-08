@@ -23,13 +23,14 @@ accelerators, and an SQL front end.
 *Msqldump* is the program to dump an MonetDB/SQL database. The dump can
 be used to populate a new MonetDB/SQL database.
 
-Before *msqldump* starts parsing command line options, it reads a *.monetdb*
-file. If the environment variable **DOTMONETDBFILE** is set, it reads the file
-pointed to by that variable instead. When unset, *msqldump* searches for a
-*.monetdb* file in the current working directory, and if that doesn't exist, in
-the current user's home directory. This file can contain defaults for the flags
-**user**, **password**, **host**, and **port**. To disable reading the
-*.monetdb* file, set the variable **DOTMONETDBFILE** to the empty string in the
+Before *msqldump* starts parsing command line options, it reads a
+*.monetdb* file. If the environment variable **DOTMONETDBFILE** is set,
+it reads the file pointed to by that variable instead. When unset,
+*msqldump* searches for a *.monetdb* file in the current working
+directory, and if that doesn't exist, in the current user's home
+directory. This file can contain defaults for the flags **user**,
+**password**, **host**, and **port**. To disable reading the *.monetdb*
+file, set the variable **DOTMONETDBFILE** to the empty string in the
 environment.
 
 OPTIONS

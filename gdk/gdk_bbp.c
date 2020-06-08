@@ -652,8 +652,8 @@ fixdatebats(void)
 			}
 			fp = fopen(filename, "w");
 			if (fp == NULL) {
-				TRC_CRITICAL(GDK, "cannot create file %s: %s\n",
-					     filename, GDKstrerror(errno, (char[128]){0}, 128));
+				GDKsyserror("cannot create file %s\n",
+					    filename);
 				return GDK_FAIL;
 			}
 			fclose(fp);
@@ -677,7 +677,7 @@ fixdatebats(void)
 #endif
 
 static int
-heapinit(BAT *b, const char *buf, int *hashash, unsigned bbpversion, bat bid, const char *filename)
+heapinit(BAT *b, const char *buf, int *hashash, unsigned bbpversion, bat bid, const char *filename, int lineno)
 {
 	int t;
 	char type[33];
@@ -706,12 +706,12 @@ heapinit(BAT *b, const char *buf, int *hashash, unsigned bbpversion, bat bid, co
 		   &nokey1, &nosorted, &norevsorted, &base,
 		   &free, &size, &storage,
 		   &n) < 12) {
-		TRC_CRITICAL(GDK, "invalid format for BBP.dir\n%s", buf);
+		TRC_CRITICAL(GDK, "invalid format for BBP.dir on line %d", lineno);
 		return -1;
 	}
 
 	if (properties & ~0x0F81) {
-		TRC_CRITICAL(GDK, "unknown properties are set: incompatible database\n");
+		TRC_CRITICAL(GDK, "unknown properties are set: incompatible database on line %d of BBP.dir\n", lineno);
 		return -1;
 	}
 	*hashash = var & 2;
@@ -729,7 +729,7 @@ heapinit(BAT *b, const char *buf, int *hashash, unsigned bbpversion, bat bid, co
 			return -1;
 		}
 	} else if (var != (t == TYPE_void || BATatoms[t].atomPut != NULL)) {
-		TRC_CRITICAL(GDK, "inconsistent entry in BBP.dir: tvarsized mismatch for BAT %d\n", (int) bid);
+		TRC_CRITICAL(GDK, "inconsistent entry in BBP.dir: tvarsized mismatch for BAT %d on line %d\n", (int) bid, lineno);
 		return -1;
 	} else if (var && t != 0 ?
 		   ATOMsize(t) < width ||
@@ -739,7 +739,7 @@ heapinit(BAT *b, const char *buf, int *hashash, unsigned bbpversion, bat bid, co
 #endif
 			   ) :
 		   ATOMsize(t) != width) {
-		TRC_CRITICAL(GDK, "inconsistent entry in BBP.dir: tsize mismatch for BAT %d\n", (int) bid);
+		TRC_CRITICAL(GDK, "inconsistent entry in BBP.dir: tsize mismatch for BAT %d on line %d\n", (int) bid, lineno);
 		return -1;
 	}
 	b->ttype = t;
@@ -776,14 +776,14 @@ heapinit(BAT *b, const char *buf, int *hashash, unsigned bbpversion, bat bid, co
 	}
 #endif
 	if (b->theap.free > b->theap.size) {
-		TRC_CRITICAL(GDK, "\"free\" value larger than \"size\" in heap of bat %d\n", (int) bid);
+		TRC_CRITICAL(GDK, "\"free\" value larger than \"size\" in heap of bat %d on line %d\n", (int) bid, lineno);
 		return -1;
 	}
 	return n;
 }
 
 static int
-vheapinit(BAT *b, const char *buf, int hashash, bat bid, const char *filename)
+vheapinit(BAT *b, const char *buf, int hashash, bat bid, const char *filename, int lineno)
 {
 	int n = 0;
 	uint64_t free, size;
@@ -799,7 +799,7 @@ vheapinit(BAT *b, const char *buf, int hashash, bat bid, const char *filename)
 			   " %" SCNu64 " %" SCNu64 " %" SCNu16
 			   "%n",
 			   &free, &size, &storage, &n) < 3) {
-			TRC_CRITICAL(GDK, "invalid format for BBP.dir\n%s", buf);
+			TRC_CRITICAL(GDK, "invalid format for BBP.dir on line %d", lineno);
 			return -1;
 		}
 		b->tvheap->free = (size_t) free;
@@ -816,7 +816,7 @@ vheapinit(BAT *b, const char *buf, int hashash, bat bid, const char *filename)
 		b->tvheap->parentid = bid;
 		b->tvheap->farmid = BBPselectfarm(PERSISTENT, b->ttype, varheap);
 		if (b->tvheap->free > b->tvheap->size) {
-			TRC_CRITICAL(GDK, "\"free\" value larger than \"size\" in var heap of bat %d\n", (int) bid);
+			TRC_CRITICAL(GDK, "\"free\" value larger than \"size\" in var heap of bat %d on line %d\n", (int) bid, lineno);
 			return -1;
 		}
 	}
@@ -824,7 +824,7 @@ vheapinit(BAT *b, const char *buf, int hashash, bat bid, const char *filename)
 }
 
 static gdk_return
-BBPreadEntries(FILE *fp, unsigned bbpversion)
+BBPreadEntries(FILE *fp, unsigned bbpversion, int lineno)
 {
 	bat bid = 0;
 	char buf[4096];
@@ -843,10 +843,11 @@ BBPreadEntries(FILE *fp, unsigned bbpversion)
 		uint64_t count, capacity, base = 0;
 		int Thashash;
 
+		lineno++;
 		if ((s = strchr(buf, '\r')) != NULL) {
 			/* convert \r\n into just \n */
 			if (s[1] != '\n') {
-				TRC_CRITICAL(GDK, "invalid format for BBP.dir");
+				TRC_CRITICAL(GDK, "invalid format for BBP.dir on line %d", lineno);
 				return GDK_FAIL;
 			}
 			*s++ = '\n';
@@ -861,12 +862,12 @@ BBPreadEntries(FILE *fp, unsigned bbpversion)
 			   &properties,
 			   &count, &capacity, &base,
 			   &nread) < 8) {
-			TRC_CRITICAL(GDK, "invalid format for BBP.dir\n%s", buf);
+			TRC_CRITICAL(GDK, "invalid format for BBP.dir on line %d", lineno);
 			return GDK_FAIL;
 		}
 
 		if (batid >= N_BBPINIT * BBPINIT) {
-			TRC_CRITICAL(GDK, "bat ID (%" PRIu64 ") too large to accomodate (max %d).", batid, N_BBPINIT * BBPINIT - 1);
+			TRC_CRITICAL(GDK, "bat ID (%" PRIu64 ") too large to accomodate (max %d), on line %d.", batid, N_BBPINIT * BBPINIT - 1, lineno);
 			return GDK_FAIL;
 		}
 
@@ -890,7 +891,7 @@ BBPreadEntries(FILE *fp, unsigned bbpversion)
 		}
 		if (BBP_desc(bid) != NULL) {
 			TRC_CRITICAL(GDK, "duplicate entry in BBP.dir (ID = "
-				     "%" PRIu64 ").", batid);
+				     "%" PRIu64 ") on line %d.", batid, lineno);
 			return GDK_FAIL;
 		}
 		bn = GDKzalloc(sizeof(BAT));
@@ -916,17 +917,17 @@ BBPreadEntries(FILE *fp, unsigned bbpversion)
 
 		if (base > (uint64_t) GDK_oid_max) {
 			BATdestroy(bn);
-			TRC_CRITICAL(GDK, "head seqbase out of range (ID = %" PRIu64 ", seq = %" PRIu64 ").", batid, base);
+			TRC_CRITICAL(GDK, "head seqbase out of range (ID = %" PRIu64 ", seq = %" PRIu64 ") on line %d.", batid, base, lineno);
 			return GDK_FAIL;
 		}
 		bn->hseqbase = (oid) base;
-		n = heapinit(bn, buf + nread, &Thashash, bbpversion, bid, filename);
+		n = heapinit(bn, buf + nread, &Thashash, bbpversion, bid, filename, lineno);
 		if (n < 0) {
 			BATdestroy(bn);
 			return GDK_FAIL;
 		}
 		nread += n;
-		n = vheapinit(bn, buf + nread, Thashash, bid, filename);
+		n = vheapinit(bn, buf + nread, Thashash, bid, filename, lineno);
 		if (n < 0) {
 			BATdestroy(bn);
 			return GDK_FAIL;
@@ -935,7 +936,7 @@ BBPreadEntries(FILE *fp, unsigned bbpversion)
 
 		if (buf[nread] != '\n' && buf[nread] != ' ') {
 			BATdestroy(bn);
-			TRC_CRITICAL(GDK, "invalid format for BBP.dir\n%s", buf);
+			TRC_CRITICAL(GDK, "invalid format for BBP.dir on line %d", lineno);
 			return GDK_FAIL;
 		}
 		if (buf[nread] == ' ')
@@ -945,7 +946,7 @@ BBPreadEntries(FILE *fp, unsigned bbpversion)
 			int len = snprintf(logical, sizeof(logical), "tmp_%o", (unsigned) bid);
 			if (len == -1 || len >= (int) sizeof(logical)) {
 				BATdestroy(bn);
-				TRC_CRITICAL(GDK, "BBP logical filename directory is too large\n");
+				TRC_CRITICAL(GDK, "BBP logical filename directory is too large, on line %d\n", lineno);
 				return GDK_FAIL;
 			}
 		} else {
@@ -1038,7 +1039,7 @@ BBPcheckbats(void)
 #endif
 
 static unsigned
-BBPheader(FILE *fp)
+BBPheader(FILE *fp, int *lineno)
 {
 	char buf[BUFSIZ];
 	int sz, ptrsize, oidsize, intsize;
@@ -1048,6 +1049,7 @@ BBPheader(FILE *fp)
 		TRC_CRITICAL(GDK, "BBP.dir is empty");
 		return 0;
 	}
+	++*lineno;
 	if (sscanf(buf, "BBP.dir, GDKversion %u\n", &bbpversion) != 1) {
 		GDKerror("old BBP without version number; "
 			 "dump the database using a compatible version, "
@@ -1057,7 +1059,7 @@ BBPheader(FILE *fp)
 	if (bbpversion != GDKLIBRARY &&
 	    bbpversion != GDKLIBRARY_OLDDATE &&
 	    bbpversion != GDKLIBRARY_BLOB_SORT) {
-		TRC_CRITICAL(GDK, "incompatible BBP version: expected 0%o, got 0%o.\n"
+		TRC_CRITICAL(GDK, "incompatible BBP version: expected 0%o, got 0%o. "
 			     "This database was probably created by a %s version of MonetDB.",
 			     GDKLIBRARY, bbpversion,
 			     bbpversion > GDKLIBRARY ? "newer" : "too old");
@@ -1067,18 +1069,19 @@ BBPheader(FILE *fp)
 		TRC_CRITICAL(GDK, "short BBP");
 		return 0;
 	}
+	++*lineno;
 	if (sscanf(buf, "%d %d %d", &ptrsize, &oidsize, &intsize) != 3) {
-		TRC_CRITICAL(GDK, "BBP.dir has incompatible format: pointer, OID, and max. integer sizes are missing");
+		TRC_CRITICAL(GDK, "BBP.dir has incompatible format: pointer, OID, and max. integer sizes are missing on line %d", *lineno);
 		return 0;
 	}
 	if (ptrsize != SIZEOF_SIZE_T || oidsize != SIZEOF_OID) {
-		TRC_CRITICAL(GDK, "database created with incompatible server:\n"
+		TRC_CRITICAL(GDK, "database created with incompatible server: "
 			     "expected pointer size %d, got %d, expected OID size %d, got %d.",
 			     SIZEOF_SIZE_T, ptrsize, SIZEOF_OID, oidsize);
 		return 0;
 	}
 	if (intsize > SIZEOF_MAX_INT) {
-		TRC_CRITICAL(GDK, "database created with incompatible server:\n"
+		TRC_CRITICAL(GDK, "database created with incompatible server: "
 			     "expected max. integer size %d, got %d.",
 			     SIZEOF_MAX_INT, intsize);
 		return 0;
@@ -1087,6 +1090,7 @@ BBPheader(FILE *fp)
 		TRC_CRITICAL(GDK, "short BBP");
 		return 0;
 	}
+	++*lineno;
 	if (sscanf(buf, "BBPsize=%d", &sz) != 1) {
 		TRC_CRITICAL(GDK, "no BBPsize value found\n");
 		return 0;
@@ -1133,7 +1137,7 @@ BBPaddfarm(const char *dirname, int rolemask)
 				return GDK_FAIL;
 			}
 		} else {
-			GDKerror("%s: cannot create directory\n", dirname);
+			GDKsyserror("%s: cannot create directory\n", dirname);
 			return GDK_FAIL;
 		}
 	}
@@ -1157,7 +1161,6 @@ BBPaddfarm(const char *dirname, int rolemask)
 				 * database */
 				bbpdir = GDKfilepath(i, BATDIR, "BBP", "dir");
 				if (bbpdir == NULL) {
-					GDKerror("malloc failed\n");
 					return GDK_FAIL;
 				}
 				if (stat(bbpdir, &st) != -1 || errno != ENOENT) {
@@ -1168,7 +1171,6 @@ BBPaddfarm(const char *dirname, int rolemask)
 				GDKfree(bbpdir);
 				bbpdir = GDKfilepath(i, BAKDIR, "BBP", "dir");
 				if (bbpdir == NULL) {
-					GDKerror("malloc failed\n");
 					return GDK_FAIL;
 				}
 				if (stat(bbpdir, &st) != -1 || errno != ENOENT) {
@@ -1192,6 +1194,7 @@ BBPinit(void)
 	struct stat st;
 	unsigned bbpversion = 0;
 	int i;
+	int lineno = 0;
 
 	/* the maximum number of BATs allowed in the system and the
 	 * size of the "physical" array are linked in a complicated
@@ -1286,7 +1289,7 @@ BBPinit(void)
 	if (GDKinmemory()) {
 		bbpversion = GDKLIBRARY;
 	} else {
-		bbpversion = BBPheader(fp);
+		bbpversion = BBPheader(fp, &lineno);
 		if (bbpversion == 0)
 			return GDK_FAIL;
 	}
@@ -1295,7 +1298,7 @@ BBPinit(void)
 
 	if (!GDKinmemory()) {
 		ATOMIC_SET(&BBPsize, 1);
-		if (BBPreadEntries(fp, bbpversion) != GDK_SUCCEED)
+		if (BBPreadEntries(fp, bbpversion, lineno) != GDK_SUCCEED)
 			return GDK_FAIL;
 		fclose(fp);
 	}
@@ -1327,7 +1330,6 @@ BBPinit(void)
 		if (j == i) {
 			char *d = GDKfilepath(i, NULL, BATDIR, NULL);
 			if (d == NULL) {
-				TRC_CRITICAL(GDK, "malloc failed\n");
 				return GDK_FAIL;
 			}
 			BBPdiskscan(d, strlen(d) - strlen(BATDIR));
@@ -1538,7 +1540,7 @@ BBPdir_subcommit(int cnt, bat *subcommit)
 	 * replacing the entries for the subcommitted bats */
 	if ((obbpf = GDKfileopen(0, SUBDIR, "BBP", "dir", "r")) == NULL &&
 	    (obbpf = GDKfileopen(0, BAKDIR, "BBP", "dir", "r")) == NULL) {
-		GDKerror("subcommit attempted without backup BBP.dir.");
+		GDKsyserror("subcommit attempted without backup BBP.dir.");
 		goto bailout;
 	}
 	/* read first three lines */
@@ -2950,7 +2952,7 @@ BBPprepare(bool subcommit)
 		ret = BBPrecover(0);
 		if (ret == GDK_SUCCEED) {
 			if (mkdir(bakdirpath, MONETDB_DIRMODE) < 0 && errno != EEXIST) {
-				GDKsyserror("BBPprepare: cannot create directory %s\n", bakdirpath);
+				GDKsyserror("cannot create directory %s\n", bakdirpath);
 				ret = GDK_FAIL;
 			}
 			/* if BAKDIR already exists, don't signal error */
@@ -2960,7 +2962,7 @@ BBPprepare(bool subcommit)
 	if (ret == GDK_SUCCEED && start_subcommit) {
 		/* make a new SUBDIR (subdir of BAKDIR) */
 		if (mkdir(subdirpath, MONETDB_DIRMODE) < 0) {
-			GDKsyserror("BBPprepare: cannot create directory %s\n", subdirpath);
+			GDKsyserror("cannot create directory %s\n", subdirpath);
 			ret = GDK_FAIL;
 		}
 		TRC_DEBUG(IO_, "mkdir %s = %d\n", subdirpath, (int) ret);
@@ -3259,7 +3261,6 @@ force_move(int farmid, const char *srcdir, const char *dstdir, const char *name)
 		strncpy(srcpath, name, len);
 		srcpath[len] = '\0';
 		if(!(dstpath = GDKfilepath(farmid, dstdir, srcpath, NULL))) {
-			GDKsyserror("force_move: malloc fail\n");
 			return GDK_FAIL;
 		}
 
@@ -3277,7 +3278,6 @@ force_move(int farmid, const char *srcdir, const char *dstdir, const char *name)
 		/* step 2: now remove the .kill file. This one is
 		 * crucial, otherwise we'll never finish recovering */
 		if(!(killfile = GDKfilepath(farmid, srcdir, name, NULL))) {
-			GDKsyserror("force_move: malloc fail\n");
 			return GDK_FAIL;
 		}
 		if (remove(killfile) != 0) {
@@ -3337,6 +3337,8 @@ BBPrecover(int farmid)
 	}
 	dirp = opendir(bakdirpath);
 	if (dirp == NULL) {
+		if (errno != ENOENT)
+			GDKsyserror("cannot open directory %s\n", bakdirpath);
 		GDKfree(bakdirpath);
 		GDKfree(leftdirpath);
 		return GDK_SUCCEED;	/* nothing to do */
@@ -3348,7 +3350,7 @@ BBPrecover(int farmid)
 	TRC_DEBUG(IO_, "start\n");
 
 	if (mkdir(leftdirpath, MONETDB_DIRMODE) < 0 && errno != EEXIST) {
-		GDKsyserror("BBPrecover: cannot create directory %s\n", leftdirpath);
+		GDKsyserror("cannot create directory %s\n", leftdirpath);
 		closedir(dirp);
 		GDKfree(bakdirpath);
 		GDKfree(leftdirpath);
@@ -3447,6 +3449,8 @@ BBPrecover_subdir(void)
 	if (subdirpath == NULL)
 		return GDK_FAIL;
 	dirp = opendir(subdirpath);
+	if (dirp == NULL && errno != ENOENT)
+		GDKsyserror("cannot open directory %s\n", subdirpath);
 	GDKfree(subdirpath);
 	if (dirp == NULL) {
 		return GDK_SUCCEED;	/* nothing to do */
@@ -3525,8 +3529,11 @@ BBPdiskscan(const char *parent, size_t baseoff)
 	size_t dstlen = sizeof(fullname);
 	const char *src = parent;
 
-	if (dirp == NULL)
+	if (dirp == NULL) {
+		if (errno != ENOENT)
+			GDKsyserror("cannot open directory %s\n", parent);
 		return true;	/* nothing to do */
+	}
 
 	while (*src) {
 		*dst++ = *src++;

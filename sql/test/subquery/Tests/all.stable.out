@@ -118,8 +118,8 @@ stdout of test 'all` in directory 'sql/test/subquery` itself:
 [ 2	]
 [ 3	]
 #SELECT i, i <> ALL(SELECT i FROM integers WHERE i>10) FROM integers ORDER BY i; 
-% .integers,	.%3 # table_name
-% i,	%3 # name
+% .integers,	.%5 # table_name
+% i,	%5 # name
 % int,	boolean # type
 % 1,	5 # length
 [ NULL,	true	]
@@ -136,8 +136,8 @@ stdout of test 'all` in directory 'sql/test/subquery` itself:
 [ 2,	false	]
 [ 3,	false	]
 #SELECT i, i = ANY(SELECT i FROM integers WHERE i>10) FROM integers ORDER BY i;
-% .integers,	.%3 # table_name
-% i,	%3 # name
+% .integers,	.%5 # table_name
+% i,	%5 # name
 % int,	boolean # type
 % 1,	5 # length
 [ NULL,	false	]
@@ -181,31 +181,31 @@ stdout of test 'all` in directory 'sql/test/subquery` itself:
 [ 2,	false	]
 [ 3,	false	]
 #SELECT i >= ALL(SELECT i FROM integers WHERE i IS NOT NULL) AS k, CAST(SUM(i) AS BIGINT) FROM integers GROUP BY k ORDER BY k;
-% .,	.%3 # table_name
-% k,	%3 # name
+% .,	.%2 # table_name
+% k,	%2 # name
 % boolean,	bigint # type
 % 5,	1 # length
 [ NULL,	NULL	]
 [ false,	3	]
 [ true,	3	]
 #SELECT CAST(SUM(i) AS BIGINT) FROM integers GROUP BY (i >= ALL(SELECT i FROM integers WHERE i IS NOT NULL)) ORDER BY 1; -- NULL, 3, 3
-% .%4 # table_name
-% %4 # name
+% .%3 # table_name
+% %3 # name
 % bigint # type
 % 1 # length
 [ NULL	]
 [ 3	]
 [ 3	]
 #SELECT i >= ALL(SELECT MIN(i) FROM integers WHERE i IS NOT NULL) AS k, CAST(SUM(i) AS BIGINT) FROM integers GROUP BY k ORDER BY k;
-% .,	.%3 # table_name
-% k,	%3 # name
+% .,	.%2 # table_name
+% k,	%2 # name
 % boolean,	bigint # type
 % 5,	1 # length
 [ NULL,	NULL	]
 [ true,	6	]
 #SELECT i, CAST(SUM(CASE WHEN (i >= ALL(SELECT i FROM integers WHERE i=2)) THEN 1 ELSE 0 END) AS BIGINT) FROM integers GROUP BY i ORDER BY i;
-% .integers,	.%3 # table_name
-% i,	%3 # name
+% .integers,	.%2 # table_name
+% i,	%2 # name
 % int,	bigint # type
 % 1,	1 # length
 [ NULL,	0	]

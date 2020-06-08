@@ -17,16 +17,16 @@ Usage: mserver5.exe [options]
     --help                    Print this list of options
     --version                 Print version and compile time info
 The debug, testing & trace options:
-     --threads
-     --memory
-     --io
-     --heaps
-     --properties
-     --transactions
-     --modules
      --algorithms
-     --performance
      --forcemito
+     --heaps
+     --io
+     --memory
+     --modules
+     --performance
+     --properties
+     --threads
+     --transactions
      --debug=<bitmask>
 
 # 10:03:11 >  
