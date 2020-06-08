@@ -1583,7 +1583,7 @@ str MTIMEdate_addmonths_bulk_p1(bat *ret, const date *restrict src1, const bat *
 str MTIMEdate_addmonths_bulk_p2(bat *ret, const bat *bid1, const int *restrict src2);
 str MTIMEdate_date(date *ret, const date *src);
 str MTIMEdate_date_bulk(bat *ret, const bat *bid);
-str MTIMEdate_diff(int *ret, const date *v1, const date *v2);
+str MTIMEdate_diff(lng *ret, const date *v1, const date *v2);
 str MTIMEdate_diff_bulk(bat *ret, const bat *bid1, const bat *bid2);
 str MTIMEdate_diff_bulk_p1(bat *ret, const date *restrict src1, const bat *bid2);
 str MTIMEdate_diff_bulk_p2(bat *ret, const bat *bid1, const date *restrict src2);
