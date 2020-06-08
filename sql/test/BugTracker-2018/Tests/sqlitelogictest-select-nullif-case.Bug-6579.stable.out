@@ -31,8 +31,8 @@ stdout of test 'sqlitelogictest-select-nullif-case.Bug-6579` in directory 'sql/t
 #CASE + + NULLIF ( - MAX ( + NULLIF ( + 43, + 25 + + - CAST ( NULL AS INTEGER ) ) ), - - COUNT ( * ) ) WHEN 12 + + 36 *
 #- + CAST ( NULL AS INTEGER ) THEN NULL WHEN + 34 * + 10 THEN MIN ( DISTINCT + 68 ) / 10 WHEN 31 - COUNT ( * ) / + 16
 #THEN + 12 ELSE NULL END AS BIGINT); -- 110, NULL
-% .,	. # table_name
-% col1,	%26 # name
+% .,	.%33 # table_name
+% col1,	%33 # name
 % bigint,	bigint # type
 % 4,	1 # length
 [ -110,	NULL	]

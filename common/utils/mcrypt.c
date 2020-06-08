@@ -10,7 +10,6 @@
 #include "mcrypt.h"
 #include <string.h>
 
-#ifndef HAVE_EMBEDDED
 /* only provide digest functions if not embedded */
 #ifdef HAVE_OPENSSL
 #ifdef HAVE_MD5_UPDATE
@@ -26,7 +25,6 @@
 #ifdef HAVE_COMMONCRYPTO
 #define COMMON_DIGEST_FOR_OPENSSL
 #include <CommonCrypto/CommonDigest.h>
-#endif
 #endif
 #endif
 
@@ -84,7 +82,6 @@ mcrypt_getHashAlgorithms(void)
 char *
 mcrypt_MD5Sum(const char *string, size_t len)
 {
-#ifndef HAVE_EMBEDDED
 	MD5_CTX c;
 	unsigned char md[MD5_DIGEST_LENGTH];
 	char *ret;
@@ -106,11 +103,6 @@ mcrypt_MD5Sum(const char *string, size_t len)
 	}
 
 	return ret;
-#else
-	(void) string;
-	(void) len;
-	return NULL;
-#endif
 }
 #endif
 
@@ -122,7 +114,6 @@ mcrypt_MD5Sum(const char *string, size_t len)
 char *
 mcrypt_SHA1Sum(const char *string, size_t len)
 {
-#ifndef HAVE_EMBEDDED
 	SHA_CTX c;
 	unsigned char md[SHA_DIGEST_LENGTH];
 	char *ret;
@@ -144,11 +135,6 @@ mcrypt_SHA1Sum(const char *string, size_t len)
 	}
 
 	return ret;
-#else
-	(void) string;
-	(void) len;
-	return NULL;
-#endif
 }
 #endif
 
@@ -160,7 +146,6 @@ mcrypt_SHA1Sum(const char *string, size_t len)
 char *
 mcrypt_SHA224Sum(const char *string, size_t len)
 {
-#ifndef HAVE_EMBEDDED
 	SHA256_CTX c;
 	unsigned char md[SHA224_DIGEST_LENGTH];
 	char *ret;
@@ -185,11 +170,6 @@ mcrypt_SHA224Sum(const char *string, size_t len)
 	}
 
 	return ret;
-#else
-	(void) string;
-	(void) len;
-	return NULL;
-#endif
 }
 #endif
 
@@ -201,7 +181,6 @@ mcrypt_SHA224Sum(const char *string, size_t len)
 char *
 mcrypt_SHA256Sum(const char *string, size_t len)
 {
-#ifndef HAVE_EMBEDDED
 	SHA256_CTX c;
 	unsigned char md[SHA256_DIGEST_LENGTH];
 	char *ret;
@@ -228,11 +207,6 @@ mcrypt_SHA256Sum(const char *string, size_t len)
 	}
 
 	return ret;
-#else
-	(void) string;
-	(void) len;
-	return NULL;
-#endif
 }
 #endif
 
@@ -244,7 +218,6 @@ mcrypt_SHA256Sum(const char *string, size_t len)
 char *
 mcrypt_SHA384Sum(const char *string, size_t len)
 {
-#ifndef HAVE_EMBEDDED
 	SHA512_CTX c;
 	unsigned char md[SHA384_DIGEST_LENGTH];
 	char *ret;
@@ -275,11 +248,6 @@ mcrypt_SHA384Sum(const char *string, size_t len)
 	}
 
 	return ret;
-#else
-	(void) string;
-	(void) len;
-	return NULL;
-#endif
 }
 #endif
 
@@ -291,7 +259,6 @@ mcrypt_SHA384Sum(const char *string, size_t len)
 char *
 mcrypt_SHA512Sum(const char *string, size_t len)
 {
-#ifndef HAVE_EMBEDDED
 	SHA512_CTX c;
 	unsigned char md[SHA512_DIGEST_LENGTH];
 	char *ret;
@@ -327,11 +294,6 @@ mcrypt_SHA512Sum(const char *string, size_t len)
 	}
 
 	return ret;
-#else
-	(void) string;
-	(void) len;
-	return NULL;
-#endif
 }
 #endif
 
@@ -343,7 +305,6 @@ mcrypt_SHA512Sum(const char *string, size_t len)
 char *
 mcrypt_RIPEMD160Sum(const char *string, size_t len)
 {
-#ifndef HAVE_EMBEDDED
 	RIPEMD160_CTX c;
 	unsigned char md[RIPEMD160_DIGEST_LENGTH];
 	char *ret;
@@ -365,11 +326,6 @@ mcrypt_RIPEMD160Sum(const char *string, size_t len)
 	}
 
 	return ret;
-#else
-	(void) string;
-	(void) len;
-	return NULL;
-#endif
 }
 #endif
 
@@ -382,7 +338,7 @@ mcrypt_RIPEMD160Sum(const char *string, size_t len)
 char *
 mcrypt_BackendSum(const char *string, size_t len)
 {
-#if !defined(HAVE_EMBEDDED) && (defined(HAVE_OPENSSL) || defined(HAVE_COMMONCRYPTO))
+#if (defined(HAVE_OPENSSL) || defined(HAVE_COMMONCRYPTO))
 	return mcryptsum(MONETDB5_PASSWDHASH_TOKEN)(string, len);
 #else
 	(void) string;
@@ -404,7 +360,7 @@ mcrypt_hashPassword(
 		const char *password,
 		const char *challenge)
 {
-#if !defined(HAVE_EMBEDDED) && (defined(HAVE_OPENSSL) || defined(HAVE_COMMONCRYPTO))
+#if (defined(HAVE_OPENSSL) || defined(HAVE_COMMONCRYPTO))
 	unsigned char md[64];	/* should be SHA512_DIGEST_LENGTH */
 	char ret[sizeof(md) * 2 + 1];
 	int len;
@@ -505,7 +461,7 @@ mcrypt_hashPassword(
 		return NULL;
 	}
 
-#if !defined(HAVE_EMBEDDED) && (defined(HAVE_OPENSSL) || defined(HAVE_COMMONCRYPTO))
+#if (defined(HAVE_OPENSSL) || defined(HAVE_COMMONCRYPTO))
 	snprintf(ret, sizeof(ret),
 			"%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x"
 			"%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x"

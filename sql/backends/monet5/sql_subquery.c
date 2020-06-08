@@ -287,6 +287,17 @@ SQLall_grp(bat *ret, const bat *bid, const bat *gp, const bat *gpe, bit *no_nil)
 	return MAL_SUCCEED;
 }
 
+#define SQLnil_imp(TPE) \
+	do {		\
+		TPE *restrict bp = (TPE*)Tloc(b, 0);	\
+		for (BUN q = 0; q < o; q++) {	\
+			if (is_##TPE##_nil(bp[q])) { \
+				*ret = TRUE; \
+				break; \
+			} \
+		} \
+	} while (0)
+
 str
 SQLnil(bit *ret, const bat *bid)
 {
@@ -299,24 +310,64 @@ SQLnil(bit *ret, const bat *bid)
 	if (BATcount(b) == 0)
 		*ret = bit_nil;
 	if (BATcount(b) > 0) {
-		BUN q, o;
-		int (*ocmp) (const void *, const void *);
-		BATiter bi = bat_iterator(b);
-		const void *nilp = ATOMnilptr(b->ttype);
+		BUN o = BUNlast(b);
 
-		o = BUNlast(b);
-		ocmp = ATOMcompare(b->ttype);
-		for (q = 0; q < o; q++) {
-			const void *c = BUNtail(bi, q);
-			if (ocmp(nilp, c) == 0) {
-				*ret = TRUE;
-				break;
+		switch (b->ttype) {
+		case TYPE_bit:
+			SQLnil_imp(bit);
+			break;
+		case TYPE_bte:
+			SQLnil_imp(bte);
+			break;
+		case TYPE_sht:
+			SQLnil_imp(sht);
+			break;
+		case TYPE_int:
+			SQLnil_imp(int);
+			break;
+		case TYPE_lng:
+			SQLnil_imp(lng);
+			break;
+#ifdef HAVE_HGE
+		case TYPE_hge:
+			SQLnil_imp(hge);
+			break;
+#endif
+		case TYPE_flt:
+			SQLnil_imp(flt);
+			break;
+		case TYPE_dbl:
+			SQLnil_imp(dbl);
+			break;
+		default: {
+			int (*ocmp) (const void *, const void *) = ATOMcompare(b->ttype);
+			const void *restrict nilp = ATOMnilptr(b->ttype);
+			BATiter bi = bat_iterator(b);
+
+			for (BUN q = 0; q < o; q++) {
+				const void *restrict c = BUNtail(bi, q);
+				if (ocmp(nilp, c) == 0) {
+					*ret = TRUE;
+					break;
+				}
 			}
+		}
 		}
 	}
 	BBPunfix(b->batCacheid);
 	return MAL_SUCCEED;
 }
+
+#define SQLnil_grp_imp(TPE) \
+	do {		\
+		TPE *restrict lp = (TPE*)Tloc(l, 0);	\
+		for (BUN q = offset, s = 0; s < o; q++, s++) {	\
+			TPE lv = lp[q]; \
+			oid id = *(oid*)BUNtail(gi, s); \
+			if (ret[id] != TRUE && is_##TPE##_nil(lv)) \
+				ret[id] = TRUE; \
+		} \
+	} while (0)
 
 str
 SQLnil_grp(bat *ret, const bat *bid, const bat *gp, const bat *gpe, bit *no_nil)
@@ -347,26 +398,50 @@ SQLnil_grp(bat *ret, const bat *bid, const bat *gp, const bat *gpe, bit *no_nil)
 	BAThseqbase(res, e->hseqbase);
 	offset = g->hseqbase - l->hseqbase;
 	if (BATcount(g) > 0) {
-		BUN q, o, s;
-		int (*ocmp) (const void *, const void *);
-		BATiter li = bat_iterator(l);
+		bit *restrict ret = (bit*)Tloc(res, 0);
 		BATiter gi = bat_iterator(g);
-		BATiter rt = bat_iterator(res);
+		BUN o = BUNlast(g);
 
-		bit *ret = BUNtail(rt, 0);
-		const void *nilp = ATOMnilptr(l->ttype);
+		switch (l->ttype) {
+		case TYPE_bit:
+			SQLnil_grp_imp(bit);
+			break;
+		case TYPE_bte:
+			SQLnil_grp_imp(bte);
+			break;
+		case TYPE_sht:
+			SQLnil_grp_imp(sht);
+			break;
+		case TYPE_int:
+			SQLnil_grp_imp(int);
+			break;
+		case TYPE_lng:
+			SQLnil_grp_imp(lng);
+			break;
+#ifdef HAVE_HGE
+		case TYPE_hge:
+			SQLnil_grp_imp(hge);
+			break;
+#endif
+		case TYPE_flt:
+			SQLnil_grp_imp(flt);
+			break;
+		case TYPE_dbl:
+			SQLnil_grp_imp(dbl);
+			break;
+		default: {
+			int (*ocmp) (const void *, const void *) = ATOMcompare(l->ttype);
+			const void *restrict nilp = ATOMnilptr(l->ttype);
+			BATiter li = bat_iterator(l);
 
-		o = BUNlast(g);
-		ocmp = ATOMcompare(l->ttype);
-		for (q = offset, s = 0; s < o; q++, s++) {
-			const void *lv = BUNtail(li, q);
-			oid id = *(oid*)BUNtail(gi, s);
+			for (BUN q = offset, s = 0; s < o; q++, s++) {
+				const void *restrict lv = BUNtail(li, q);
+				const oid id = *(oid*)BUNtail(gi, s);
 
-			if (ret[id] != TRUE) {
-				if (ocmp(lv, nilp) == 0) {
+				if (ret[id] != TRUE && ocmp(lv, nilp) == 0)
 					ret[id] = TRUE;
-				}
 			}
+		}
 		}
 	}
 	res->hseqbase = g->hseqbase;
@@ -409,11 +484,24 @@ SQLall_cmp(bit *ret, const bit *cmp, const bit *nl, const bit *nr)
 	return MAL_SUCCEED;
 }
 
+#define SQLanyequal_or_not_imp(TPE, OUTPUT) \
+	do {							\
+		TPE *rp = (TPE*)Tloc(r, 0), *lp = (TPE*)Tloc(l, 0), p = lp[0];	\
+		for (BUN q = 0; q < o; q++) {	\
+			TPE c = rp[q]; \
+			if (is_##TPE##_nil(c)) { \
+				*ret = bit_nil; \
+			} else if (p == c) { \
+				*ret = OUTPUT; \
+				break; \
+			} \
+		} \
+	} while (0)
+
 str
 SQLanyequal(bit *ret, const bat *bid1, const bat *bid2)
 {
 	BAT *l, *r;
-	const void *p;
 
 	if ((l = BATdescriptor(*bid1)) == NULL) {
 		throw(SQL, "sql.any =", SQLSTATE(HY005) "Cannot access column descriptor");
@@ -424,29 +512,74 @@ SQLanyequal(bit *ret, const bat *bid1, const bat *bid2)
 	}
 	*ret = FALSE;
 	if (BATcount(r) > 0) {
-		BUN q, o;
-		int (*ocmp) (const void *, const void *);
-		BATiter li = bat_iterator(l);
-		BATiter ri = bat_iterator(r);
-		const void *nilp = ATOMnilptr(l->ttype);
+		BUN o = BUNlast(r);
 
-		o = BUNlast(r);
-		p = BUNtail(li, 0);
-		ocmp = ATOMcompare(l->ttype);
-		for (q = 0; q < o; q++) {
-			const void *c = BUNtail(ri, q);
-			if (ocmp(nilp, c) == 0)
-				*ret = bit_nil;
-			else if (ocmp(p, c) == 0) {
-				*ret = TRUE;
-				break;
+		switch (l->ttype) {
+		case TYPE_bit:
+			SQLanyequal_or_not_imp(bit, TRUE);
+			break;
+		case TYPE_bte:
+			SQLanyequal_or_not_imp(bte, TRUE);
+			break;
+		case TYPE_sht:
+			SQLanyequal_or_not_imp(sht, TRUE);
+			break;
+		case TYPE_int:
+			SQLanyequal_or_not_imp(int, TRUE);
+			break;
+		case TYPE_lng:
+			SQLanyequal_or_not_imp(lng, TRUE);
+			break;
+#ifdef HAVE_HGE
+		case TYPE_hge:
+			SQLanyequal_or_not_imp(hge, TRUE);
+			break;
+#endif
+		case TYPE_flt:
+			SQLanyequal_or_not_imp(flt, TRUE);
+			break;
+		case TYPE_dbl:
+			SQLanyequal_or_not_imp(dbl, TRUE);
+			break;
+		default: {
+			int (*ocmp) (const void *, const void *) = ATOMcompare(l->ttype);
+			const void *nilp = ATOMnilptr(l->ttype);
+			BATiter li = bat_iterator(l), ri = bat_iterator(r);
+			const void *p = BUNtail(li, 0);
+
+			for (BUN q = 0; q < o; q++) {
+				const void *c = BUNtail(ri, q);
+				if (ocmp(nilp, c) == 0)
+					*ret = bit_nil;
+				else if (ocmp(p, c) == 0) {
+					*ret = TRUE;
+					break;
+				}
 			}
+		}
 		}
 	}
 	BBPunfix(l->batCacheid);
 	BBPunfix(r->batCacheid);
 	return MAL_SUCCEED;
 }
+
+#define SQLanyequal_or_not_grp_imp(TPE, TEST) \
+	do {		\
+		TPE *lp = (TPE*)Tloc(l, 0), *rp = (TPE*)Tloc(r, 0);	\
+		for (BUN q = offset, s = 0; s < o; q++, s++) {	\
+			TPE lv = lp[q], rv = rp[q]; \
+			oid id = *(oid*)BUNtail(gi, s); \
+			if (ret[id] != TEST) { \
+				if (is_##TPE##_nil(lv) || is_##TPE##_nil(rv)) { \
+					ret[id] = bit_nil; \
+					hasnil = 1; \
+				} else if (lv == rv) { \
+					ret[id] = TEST; \
+				} \
+			} \
+		} \
+	} while (0)
 
 str
 SQLanyequal_grp(bat *ret, const bat *bid1, const bat *bid2, const bat *gp, const bat *gpe, bit *no_nil)
@@ -485,30 +618,56 @@ SQLanyequal_grp(bat *ret, const bat *bid1, const bat *bid2, const bat *gp, const
 	assert(BATcount(l) == BATcount(r));
 	offset = g->hseqbase - l->hseqbase;
 	if (BATcount(g) > 0) {
-		BUN q, o, s;
-		int (*ocmp) (const void *, const void *);
-		BATiter li = bat_iterator(l);
-		BATiter ri = bat_iterator(r);
+		bit *restrict ret = (bit*)Tloc(res, 0);
 		BATiter gi = bat_iterator(g);
-		BATiter rt = bat_iterator(res);
+		BUN o = BUNlast(g);
 
-		bit *ret = BUNtail(rt, 0);
-		const void *nilp = ATOMnilptr(l->ttype);
+		switch (l->ttype) {
+		case TYPE_bit:
+			SQLanyequal_or_not_grp_imp(bit, TRUE);
+			break;
+		case TYPE_bte:
+			SQLanyequal_or_not_grp_imp(bte, TRUE);
+			break;
+		case TYPE_sht:
+			SQLanyequal_or_not_grp_imp(sht, TRUE);
+			break;
+		case TYPE_int:
+			SQLanyequal_or_not_grp_imp(int, TRUE);
+			break;
+		case TYPE_lng:
+			SQLanyequal_or_not_grp_imp(lng, TRUE);
+			break;
+#ifdef HAVE_HGE
+		case TYPE_hge:
+			SQLanyequal_or_not_grp_imp(hge, TRUE);
+			break;
+#endif
+		case TYPE_flt:
+			SQLanyequal_or_not_grp_imp(flt, TRUE);
+			break;
+		case TYPE_dbl:
+			SQLanyequal_or_not_grp_imp(dbl, TRUE);
+			break;
+		default: {
+			int (*ocmp) (const void *, const void *) = ATOMcompare(l->ttype);
+			const void *nilp = ATOMnilptr(l->ttype);
+			BATiter li = bat_iterator(l), ri = bat_iterator(r);
 
-		o = BUNlast(g);
-		ocmp = ATOMcompare(l->ttype);
-		for (q = offset, s = 0; s < o; q++, s++) {
-			const void *lv = BUNtail(li, q);
-			const void *rv = BUNtail(ri, q);
-			oid id = *(oid*)BUNtail(gi, s);
+			for (BUN q = offset, s = 0; s < o; q++, s++) {
+				const void *lv = BUNtail(li, q);
+				const void *rv = BUNtail(ri, q);
+				const oid id = *(oid*)BUNtail(gi, s);
 
-			if (ret[id] != TRUE) {
-				if (ocmp(lv, nilp) == 0 || ocmp(rv, nilp) == 0) {
-					ret[id] = bit_nil;
-					hasnil = 1;
-				} else if (ocmp(lv, rv) == 0)
-					ret[id] = TRUE;
+				if (ret[id] != TRUE) {
+					if (ocmp(lv, nilp) == 0 || ocmp(rv, nilp) == 0) {
+						ret[id] = bit_nil;
+						hasnil = 1;
+					} else if (ocmp(lv, rv) == 0)
+						ret[id] = TRUE;
+				}
 			}
+		}
 		}
 	}
 	res->hseqbase = g->hseqbase;
@@ -523,6 +682,25 @@ SQLanyequal_grp(bat *ret, const bat *bid1, const bat *bid2, const bat *gp, const
 	BBPkeepref(*ret = res->batCacheid);
 	return MAL_SUCCEED;
 }
+
+#define SQLanyequal_or_not_grp2_imp(TPE, VAL1, VAL2) \
+	do {		\
+		TPE *lp = (TPE*)Tloc(l, 0), *rp = (TPE*)Tloc(r, 0);	\
+		for (BUN q = offset, s = 0; s < o; q++, s++) {	\
+			TPE lv = lp[q], rv = rp[q]; \
+			const oid rid = *(oid*)BUNtail(ii, q); \
+			const oid id = *(oid*)BUNtail(gi, s); \
+			if (ret[id] != VAL1) { \
+				if (rid == oid_nil) { \
+					ret[id] = VAL2; \
+				} else if (is_##TPE##_nil(lv) || is_##TPE##_nil(rv)) { \
+					ret[id] = bit_nil; \
+					hasnil = 1; \
+				} else if (lv == rv) \
+					ret[id] = VAL1; \
+			} \
+		} \
+	} while (0)
 
 str
 SQLanyequal_grp2(bat *ret, const bat *bid1, const bat *bid2, const bat *Rid, const bat *gp, const bat *gpe, bit *no_nil)
@@ -569,34 +747,59 @@ SQLanyequal_grp2(bat *ret, const bat *bid1, const bat *bid2, const bat *Rid, con
 	assert(BATcount(l) == BATcount(r));
 	offset = g->hseqbase - l->hseqbase;
 	if (BATcount(g) > 0) {
-		BUN q, o, s;
-		int (*ocmp) (const void *, const void *);
-		BATiter li = bat_iterator(l);
-		BATiter ri = bat_iterator(r);
-		BATiter ii = bat_iterator(rid);
-		BATiter gi = bat_iterator(g);
-		BATiter rt = bat_iterator(res);
+		bit *restrict ret = (bit*)Tloc(res, 0);
+		BATiter gi = bat_iterator(g), ii = bat_iterator(rid);
+		BUN o = BUNlast(g);
 
-		bit *ret = BUNtail(rt, 0);
-		const void *nilp = ATOMnilptr(l->ttype);
+		switch (l->ttype) {
+		case TYPE_bit:
+			SQLanyequal_or_not_grp2_imp(bit, TRUE, FALSE);
+			break;
+		case TYPE_bte:
+			SQLanyequal_or_not_grp2_imp(bte, TRUE, FALSE);
+			break;
+		case TYPE_sht:
+			SQLanyequal_or_not_grp2_imp(sht, TRUE, FALSE);
+			break;
+		case TYPE_int:
+			SQLanyequal_or_not_grp2_imp(int, TRUE, FALSE);
+			break;
+		case TYPE_lng:
+			SQLanyequal_or_not_grp2_imp(lng, TRUE, FALSE);
+			break;
+#ifdef HAVE_HGE
+		case TYPE_hge:
+			SQLanyequal_or_not_grp2_imp(hge, TRUE, FALSE);
+			break;
+#endif
+		case TYPE_flt:
+			SQLanyequal_or_not_grp2_imp(flt, TRUE, FALSE);
+			break;
+		case TYPE_dbl:
+			SQLanyequal_or_not_grp2_imp(dbl, TRUE, FALSE);
+			break;
+		default: {
+			int (*ocmp) (const void *, const void *) = ATOMcompare(l->ttype);
+			const void *nilp = ATOMnilptr(l->ttype);
+			BATiter li = bat_iterator(l), ri = bat_iterator(r);
 
-		o = BUNlast(g);
-		ocmp = ATOMcompare(l->ttype);
-		for (q = offset, s = 0; s < o; q++, s++) {
-			const void *lv = BUNtail(li, q);
-			const void *rv = BUNtail(ri, q);
-			const oid rid = *(oid*)BUNtail(ii, q);
-			oid id = *(oid*)BUNtail(gi, s);
+			for (BUN q = offset, s = 0; s < o; q++, s++) {
+				const void *lv = BUNtail(li, q);
+				const void *rv = BUNtail(ri, q);
+				const oid rid = *(oid*)BUNtail(ii, q);
+				const oid id = *(oid*)BUNtail(gi, s);
 
-			if (ret[id] != TRUE) {
-				if (rid == oid_nil) { /* empty */
-					ret[id] = FALSE;
-				} else if (ocmp(lv, nilp) == 0 || ocmp(rv, nilp) == 0) {
-					ret[id] = bit_nil;
-					hasnil = 1;
-				} else if (ocmp(lv, rv) == 0)
-					ret[id] = TRUE;
+				if (ret[id] != TRUE) {
+					if (rid == oid_nil) { /* empty */
+						ret[id] = FALSE;
+					} else if (ocmp(lv, nilp) == 0 || ocmp(rv, nilp) == 0) {
+						ret[id] = bit_nil;
+						hasnil = 1;
+					} else if (ocmp(lv, rv) == 0)
+						ret[id] = TRUE;
+				}
 			}
+		}
 		}
 	}
 	res->hseqbase = g->hseqbase;
@@ -616,7 +819,6 @@ str
 SQLallnotequal(bit *ret, const bat *bid1, const bat *bid2)
 {
 	BAT *l, *r;
-	const void *p;
 
 	if ((l = BATdescriptor(*bid1)) == NULL) {
 		throw(SQL, "sql.all <>", SQLSTATE(HY005) "Cannot access column descriptor");
@@ -627,23 +829,51 @@ SQLallnotequal(bit *ret, const bat *bid1, const bat *bid2)
 	}
 	*ret = TRUE;
 	if (BATcount(r) > 0) {
-		BUN q, o;
-		int (*ocmp) (const void *, const void *);
-		BATiter li = bat_iterator(l);
-		BATiter ri = bat_iterator(r);
-		const void *nilp = ATOMnilptr(l->ttype);
+		BUN o = BUNlast(r);
 
-		o = BUNlast(r);
-		p = BUNtail(li, 0);
-		ocmp = ATOMcompare(l->ttype);
-		for (q = 0; q < o; q++) {
-			const void *c = BUNtail(ri, q);
-			if (ocmp(nilp, c) == 0)
-				*ret = bit_nil;
-			else if (ocmp(p, c) == 0) {
-				*ret = FALSE;
-				break;
+		switch (l->ttype) {
+		case TYPE_bit:
+			SQLanyequal_or_not_imp(bit, FALSE);
+			break;
+		case TYPE_bte:
+			SQLanyequal_or_not_imp(bte, FALSE);
+			break;
+		case TYPE_sht:
+			SQLanyequal_or_not_imp(sht, FALSE);
+			break;
+		case TYPE_int:
+			SQLanyequal_or_not_imp(int, FALSE);
+			break;
+		case TYPE_lng:
+			SQLanyequal_or_not_imp(lng, FALSE);
+			break;
+#ifdef HAVE_HGE
+		case TYPE_hge:
+			SQLanyequal_or_not_imp(hge, FALSE);
+			break;
+#endif
+		case TYPE_flt:
+			SQLanyequal_or_not_imp(flt, FALSE);
+			break;
+		case TYPE_dbl:
+			SQLanyequal_or_not_imp(dbl, FALSE);
+			break;
+		default: {
+			int (*ocmp) (const void *, const void *) = ATOMcompare(l->ttype);
+			const void *nilp = ATOMnilptr(l->ttype);
+			BATiter li = bat_iterator(l), ri = bat_iterator(r);
+			const void *p = BUNtail(li, 0);
+
+			for (BUN q = 0; q < o; q++) {
+				const void *c = BUNtail(ri, q);
+				if (ocmp(nilp, c) == 0)
+					*ret = bit_nil;
+				else if (ocmp(p, c) == 0) {
+					*ret = FALSE;
+					break;
+				}
 			}
+		}
 		}
 	}
 	BBPunfix(l->batCacheid);
@@ -688,30 +918,56 @@ SQLallnotequal_grp(bat *ret, const bat *bid1, const bat *bid2, const bat *gp, co
 	assert(BATcount(l) == BATcount(r));
 	offset = g->hseqbase - l->hseqbase;
 	if (BATcount(g) > 0) {
-		BUN q, o, s;
-		int (*ocmp) (const void *, const void *);
-		BATiter li = bat_iterator(l);
-		BATiter ri = bat_iterator(r);
+		bit *restrict ret = (bit*)Tloc(res, 0);
 		BATiter gi = bat_iterator(g);
-		BATiter rt = bat_iterator(res);
+		BUN o = BUNlast(g);
 
-		bit *ret = BUNtail(rt, 0);
-		const void *nilp = ATOMnilptr(l->ttype);
+		switch (l->ttype) {
+		case TYPE_bit:
+			SQLanyequal_or_not_grp_imp(bit, FALSE);
+			break;
+		case TYPE_bte:
+			SQLanyequal_or_not_grp_imp(bte, FALSE);
+			break;
+		case TYPE_sht:
+			SQLanyequal_or_not_grp_imp(sht, FALSE);
+			break;
+		case TYPE_int:
+			SQLanyequal_or_not_grp_imp(int, FALSE);
+			break;
+		case TYPE_lng:
+			SQLanyequal_or_not_grp_imp(lng, FALSE);
+			break;
+#ifdef HAVE_HGE
+		case TYPE_hge:
+			SQLanyequal_or_not_grp_imp(hge, FALSE);
+			break;
+#endif
+		case TYPE_flt:
+			SQLanyequal_or_not_grp_imp(flt, FALSE);
+			break;
+		case TYPE_dbl:
+			SQLanyequal_or_not_grp_imp(dbl, FALSE);
+			break;
+		default: {
+			int (*ocmp) (const void *, const void *) = ATOMcompare(l->ttype);
+			const void *nilp = ATOMnilptr(l->ttype);
+			BATiter li = bat_iterator(l), ri = bat_iterator(r);
 
-		o = BUNlast(g);
-		ocmp = ATOMcompare(l->ttype);
-		for (q = offset, s = 0; s < o; q++, s++) {
-			const void *lv = BUNtail(li, q);
-			const void *rv = BUNtail(ri, q);
-			oid id = *(oid*)BUNtail(gi, s);
+			for (BUN q = offset, s = 0; s < o; q++, s++) {
+				const void *lv = BUNtail(li, q);
+				const void *rv = BUNtail(ri, q);
+				const oid id = *(oid*)BUNtail(gi, s);
 
-			if (ret[id] != FALSE) {
-				if (ocmp(lv, nilp) == 0 || ocmp(rv, nilp) == 0) {
-					ret[id] = bit_nil;
-					hasnil = 1;
-				} else if (ocmp(lv, rv) == 0)
-					ret[id] = FALSE;
+				if (ret[id] != FALSE) {
+					if (ocmp(lv, nilp) == 0 || ocmp(rv, nilp) == 0) {
+						ret[id] = bit_nil;
+						hasnil = 1;
+					} else if (ocmp(lv, rv) == 0)
+						ret[id] = FALSE;
+				}
 			}
+		}
 		}
 	}
 	res->hseqbase = g->hseqbase;
@@ -772,34 +1028,59 @@ SQLallnotequal_grp2(bat *ret, const bat *bid1, const bat *bid2, const bat *Rid, 
 	assert(BATcount(l) == BATcount(r));
 	offset = g->hseqbase - l->hseqbase;
 	if (BATcount(g) > 0) {
-		BUN q, o, s;
-		int (*ocmp) (const void *, const void *);
-		BATiter li = bat_iterator(l);
-		BATiter ri = bat_iterator(r);
-		BATiter ii = bat_iterator(rid);
-		BATiter gi = bat_iterator(g);
-		BATiter rt = bat_iterator(res);
+		bit *restrict ret = (bit*)Tloc(res, 0);
+		BATiter gi = bat_iterator(g), ii = bat_iterator(rid);
+		BUN o = BUNlast(g);
 
-		bit *ret = BUNtail(rt, 0);
-		const void *nilp = ATOMnilptr(l->ttype);
+		switch (l->ttype) {
+		case TYPE_bit:
+			SQLanyequal_or_not_grp2_imp(bit, FALSE, TRUE);
+			break;
+		case TYPE_bte:
+			SQLanyequal_or_not_grp2_imp(bte, FALSE, TRUE);
+			break;
+		case TYPE_sht:
+			SQLanyequal_or_not_grp2_imp(sht, FALSE, TRUE);
+			break;
+		case TYPE_int:
+			SQLanyequal_or_not_grp2_imp(int, FALSE, TRUE);
+			break;
+		case TYPE_lng:
+			SQLanyequal_or_not_grp2_imp(lng, FALSE, TRUE);
+			break;
+#ifdef HAVE_HGE
+		case TYPE_hge:
+			SQLanyequal_or_not_grp2_imp(hge, FALSE, TRUE);
+			break;
+#endif
+		case TYPE_flt:
+			SQLanyequal_or_not_grp2_imp(flt, FALSE, TRUE);
+			break;
+		case TYPE_dbl:
+			SQLanyequal_or_not_grp2_imp(dbl, FALSE, TRUE);
+			break;
+		default: {
+			int (*ocmp) (const void *, const void *) = ATOMcompare(l->ttype);
+			const void *nilp = ATOMnilptr(l->ttype);
+			BATiter li = bat_iterator(l), ri = bat_iterator(r);
 
-		o = BUNlast(g);
-		ocmp = ATOMcompare(l->ttype);
-		for (q = offset, s = 0; s < o; q++, s++) {
-			const void *lv = BUNtail(li, q);
-			const void *rv = BUNtail(ri, q);
-			const oid rid = *(oid*)BUNtail(ii, q);
-			oid id = *(oid*)BUNtail(gi, s);
+			for (BUN q = offset, s = 0; s < o; q++, s++) {
+				const void *lv = BUNtail(li, q);
+				const void *rv = BUNtail(ri, q);
+				const oid rid = *(oid*)BUNtail(ii, q);
+				const oid id = *(oid*)BUNtail(gi, s);
 
-			if (ret[id] != FALSE) {
-				if (rid == oid_nil) { /* empty */
-					ret[id] = TRUE;
-				} else if (ocmp(lv, nilp) == 0 || ocmp(rv, nilp) == 0) {
-					ret[id] = bit_nil;
-					hasnil = 1;
-				} else if (ocmp(lv, rv) == 0)
-					ret[id] = FALSE;
+				if (ret[id] != FALSE) {
+					if (rid == oid_nil) { /* empty */
+						ret[id] = TRUE;
+					} else if (ocmp(lv, nilp) == 0 || ocmp(rv, nilp) == 0) {
+						ret[id] = bit_nil;
+						hasnil = 1;
+					} else if (ocmp(lv, rv) == 0)
+						ret[id] = FALSE;
+				}
 			}
+		}
 		}
 	}
 	res->hseqbase = g->hseqbase;
@@ -830,10 +1111,9 @@ SQLexist_val(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			*res = BATcount(b) != 0;
 		else
 			throw(SQL, "aggr.exist", SQLSTATE(HY005) "Cannot access column descriptor");
-	} else if (ATOMcmp(mtype, v, ATOMnilptr(mtype)) != 0)
+	} else {
 		*res = TRUE;
-	else
-		*res = FALSE;
+	}
 	return MAL_SUCCEED;
 }
 

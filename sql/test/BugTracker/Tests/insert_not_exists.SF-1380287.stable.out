@@ -24,8 +24,8 @@ stdout of test 'insert_not_exists.SF-1380287` in directory 'sql/test/BugTracker`
 
 #START TRANSACTION;
 #SELECT 'creating tables';
-% . # table_name
-% single_value # name
+% .%2 # table_name
+% %2 # name
 % char # type
 % 15 # length
 [ "creating tables"	]
@@ -36,8 +36,8 @@ stdout of test 'insert_not_exists.SF-1380287` in directory 'sql/test/BugTracker`
 #COMMIT;
 #START TRANSACTION;
 #SELECT 'filling kwTemp';
-% . # table_name
-% single_value # name
+% .%2 # table_name
+% %2 # name
 % char # type
 % 14 # length
 [ "filling kwTemp"	]
@@ -64,8 +64,8 @@ stdout of test 'insert_not_exists.SF-1380287` in directory 'sql/test/BugTracker`
 #COMMIT;
 #START TRANSACTION;
 #SELECT 'filling kwmTemp';
-% . # table_name
-% single_value # name
+% .%2 # table_name
+% %2 # name
 % char # type
 % 15 # length
 [ "filling kwmTemp"	]
@@ -98,15 +98,15 @@ stdout of test 'insert_not_exists.SF-1380287` in directory 'sql/test/BugTracker`
 % 2 # length
 [ 20	]
 #SELECT 'filling s4_keywords from kwTemp';
-% . # table_name
-% single_value # name
+% .%2 # table_name
+% %2 # name
 % char # type
 % 31 # length
 [ "filling s4_keywords from kwTemp"	]
 [ 20	]
 #SELECT 'dropping kwTemp';
-% . # table_name
-% single_value # name
+% .%2 # table_name
+% %2 # name
 % char # type
 % 15 # length
 [ "dropping kwTemp"	]
@@ -120,15 +120,15 @@ stdout of test 'insert_not_exists.SF-1380287` in directory 'sql/test/BugTracker`
 % 2 # length
 [ 20	]
 #SELECT 'filling s4_kwm from kwmTemp';
-% . # table_name
-% single_value # name
+% .%2 # table_name
+% %2 # name
 % char # type
 % 27 # length
 [ "filling s4_kwm from kwmTemp"	]
 [ 20	]
 #SELECT 'dropping kwmTemp';
-% . # table_name
-% single_value # name
+% .%2 # table_name
+% %2 # name
 % char # type
 % 16 # length
 [ "dropping kwmTemp"	]
@@ -136,22 +136,22 @@ stdout of test 'insert_not_exists.SF-1380287` in directory 'sql/test/BugTracker`
 #COMMIT;
 #START TRANSACTION;
 #SELECT 'expect 20', COUNT(*) FROM s4_keywords;
-% .,	.%1 # table_name
-% single_value,	%1 # name
+% .%2,	.%1 # table_name
+% %2,	%1 # name
 % char,	bigint # type
 % 9,	2 # length
 [ "expect 20",	20	]
 #SELECT 'expect 20', COUNT(*) FROM s4_kwm;
-% .,	.%1 # table_name
-% single_value,	%1 # name
+% .%2,	.%1 # table_name
+% %2,	%1 # name
 % char,	bigint # type
 % 9,	2 # length
 [ "expect 20",	20	]
 #COMMIT;
 #START TRANSACTION;
 #SELECT 'dropping s4_kwm and s4_keywords';
-% . # table_name
-% single_value # name
+% .%2 # table_name
+% %2 # name
 % char # type
 % 31 # length
 [ "dropping s4_kwm and s4_keywords"	]

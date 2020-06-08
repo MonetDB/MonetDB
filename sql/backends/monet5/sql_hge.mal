@@ -30,32 +30,25 @@ address hge_dec2second_interval
 comment "cast hge decimal to a second_interval";
 
 
-command calc.hge( v:void, digits:int ) :hge 
-address nil_2num_hge
-comment "cast to hge and check for overflow";
 command calc.hge( v:void, digits:int, scale:int ) :hge 
 address nil_2dec_hge
 comment "cast to dec(hge) and check for overflow";
-command batcalc.hge( v:bat[:void], digits:int ) :bat[:hge] 
-address batnil_2num_hge
-comment "cast to hge and check for overflow";
 command batcalc.hge( v:bat[:void], digits:int, scale:int ) :bat[:hge] 
 address batnil_2dec_hge
 comment "cast to dec(hge) and check for overflow";
+command batcalc.hge( v:bat[:void], digits:int, scale:int, r:bat[:bit]) :bat[:hge] 
+address batnil_ce_2dec_hge
+comment "cast to dec(hge) and check for overflow";
 
-command calc.hge( v:str, digits:int ) :hge 
-address str_2num_hge
-comment "cast to hge and check for overflow";
 command calc.hge( v:str, digits:int, scale:int ) :hge 
 address str_2dec_hge
 comment "cast to dec(hge) and check for overflow";
-command batcalc.hge( v:bat[:str], digits:int ) :bat[:hge] 
-address batstr_2num_hge
-comment "cast to hge and check for overflow";
 command batcalc.hge( v:bat[:str], digits:int, scale:int ) :bat[:hge] 
 address batstr_2dec_hge
 comment "cast to dec(hge) and check for overflow";
-
+command batcalc.hge( v:bat[:str], digits:int, scale:int, r:bat[:bit]) :bat[:hge] 
+address batstr_ce_2dec_hge
+comment "cast to dec(hge) and check for overflow";
 
 pattern calc.month_interval( v:hge, ek:int, sk:int ) :int
 address month_interval
@@ -65,5 +58,5 @@ pattern calc.second_interval( v:hge, ek:int, sk:int ) :lng
 address second_interval
 comment "cast hge to a second_interval and check for overflow";
 
-include sql_decimal_hge;
-include sql_rank_hge;
+#include sql_decimal_hge;
+#include sql_rank_hge;

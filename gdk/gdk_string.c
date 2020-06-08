@@ -1164,7 +1164,7 @@ BATgroupstr_group_concat(BAT *b, BAT *g, BAT *e, BAT *s, BAT *sep, bool skip_nil
 	if (BATtdense(g) || (g->tkey && g->tnonil)) {
 		/* trivial: singleton groups, so all results are equal
 		 * to the inputs (but possibly a different type) */
-		return BATconvert(b, s, NULL, TYPE_str, abort_on_error);
+		return BATconvert(b, s, NULL, TYPE_str, abort_on_error, 0, 0, 0);
 	}
 
 	res = concat_strings(&bn, NULL, b, b->hseqbase, ngrp, &ci, ncand,
@@ -1293,6 +1293,5 @@ GDKanalytical_str_group_concat(BAT *r, BAT *b, BAT *sep, BAT *s, BAT *e, const c
 	return GDK_SUCCEED;
   allocation_error:
 	GDKfree(single_str);
-	GDKerror("malloc failure\n");
 	return GDK_FAIL;
 }

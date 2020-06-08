@@ -92,7 +92,6 @@
  */
 #include "monetdb_config.h"
 #include "mal_scenario.h"
-#include "mal_linker.h"		/* for getAddress() */
 #include "mal_client.h"
 #include "mal_authorize.h"
 #include "mal_exception.h"
@@ -153,66 +152,10 @@ getFreeScenario(void)
 	return scen;
 }
 
-/*
- * A scenario is initialized only once per session.
- * All other requests are silently ignored.
- * After initialization, all state functions should have been set.
- * Initialization includes searching for the scenario startup file in
- * the etc/MonetDB directory. This creates a dependency, because the
- * malInclude also needs a scenario. To break this cycle, the system should
- * call once the routine default scenario for each client first.
- */
-static str
-initScenario(Client c, Scenario s)
-{
-	str l = s->language;
-	str msg = MAL_SUCCEED;
-
-	if (s->initSystemCmd)
-		return(fillScenario(c, s));
-	/* prepare for conclicts */
-	MT_lock_set(&mal_contextLock);
-	if (s->initSystem && s->initSystemCmd == 0) {
-		s->initSystemCmd = (MALfcn) getAddress(s->initSystem);
-		if (s->initSystemCmd) {
-			msg = (*s->initSystemCmd) (c);
-		} else {
-			char buf[BUFSIZ];
-			snprintf(buf,BUFSIZ,"%s.init", l);
-			msg = createException(MAL, buf, "Scenario not initialized");
-		}
-	}
-	if (msg) {
-		MT_lock_unset(&mal_contextLock);
-		return msg;
-	}
-
-	if (s->exitSystem && s->exitSystemCmd == 0)
-		s->exitSystemCmd = (MALfcn) getAddress(s->exitSystem);
-	if (s->initClient && s->initClientCmd == 0)
-		s->initClientCmd = (MALfcn) getAddress(s->initClient);
-	if (s->exitClient && s->exitClientCmd == 0)
-		s->exitClientCmd = (MALfcn) getAddress(s->exitClient);
-	if (s->reader && s->readerCmd == 0)
-		s->readerCmd = (MALfcn) getAddress(s->reader);
-	if (s->parser && s->parserCmd == 0)
-		s->parserCmd = (MALfcn) getAddress(s->parser);
-	if (s->optimizer && s->optimizerCmd == 0)
-		s->optimizerCmd = (MALfcn) getAddress(s->optimizer);
-	if (s->tactics && s->tacticsCmd == 0)
-		s->tacticsCmd = (MALfcn) getAddress(s->tactics);
-	if (s->callback && s->callbackCmd == 0)
-		s->callbackCmd = (MALfcn) getAddress(s->callback);
-	if (s->engine && s->engineCmd == 0)
-		s->engineCmd = (MALfcn) getAddress(s->engine);
-	MT_lock_unset(&mal_contextLock);
-	return(fillScenario(c, s));
-}
-
 str
 defaultScenario(Client c)
 {
-	return initScenario(c, scenarioRec);
+	return fillScenario(c, scenarioRec);
 }
 
 /*
@@ -251,8 +194,8 @@ findScenario(str nme)
 	int i;
 	Scenario scen = scenarioRec;
 
-	for (i = 0; i < MAXSCEN && scen->name; i++, scen++)
-		if (strcmp(scen->name, nme) == 0)
+	for (i = 0; i < MAXSCEN; i++, scen++)
+		if (scen->name && strcmp(scen->name, nme) == 0)
 			return scen;
 	return NULL;
 }
@@ -408,7 +351,7 @@ setScenario(Client c, str nme)
 	for (i = 0; i < SCENARIO_PROPERTIES; i++)
 		c->state[i] = 0;
 
-	msg = initScenario(c, scen);
+	msg = fillScenario(c, scen);
 	if (msg) {
 		/* error occurred, reset the scenario , assume default always works */
 		c->scenario = c->oldscenario;

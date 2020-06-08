@@ -76,7 +76,7 @@ typedef __int128_t hge;
 typedef struct stream stream;
 
 /* some os specific initialization */
-stream_export int mnstr_init(void);
+stream_export int mnstr_init(int embedded);
 
 /* all mnstr_readX/mnstr_writeX return
  *  0 on error

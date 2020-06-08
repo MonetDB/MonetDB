@@ -102,13 +102,23 @@ query_outer_used_exp(sql_query *q, int i, sql_exp *e, int f)
 
 	sq->last_used = e;
 	sq->used_card = sq->rel->card;
-	assert( (!is_sql_aggr(f) && sq->grouped == 0 && e->card > CARD_AGGR) || /* outer is a none grouped relation */
+	assert( (!is_sql_aggr(f) && sq->grouped == 0 && e->card != CARD_AGGR) || /* outer is a none grouped relation */
 		(!is_sql_aggr(f) && sq->grouped == 1 && e->card <= CARD_AGGR) || /* outer is groupbed, ie only return aggregations or groupby cols */
-		(is_sql_aggr(f) && !is_sql_farg(f) && !sq->grouped && e->card > CARD_AGGR) || /* a column to be aggregated */
-		(is_sql_aggr(f) && !is_sql_farg(f) && sq->grouped && e->card > CARD_AGGR) || /* a column to be aggregated */
+		(is_sql_aggr(f) && !is_sql_farg(f) && !sq->grouped && e->card != CARD_AGGR) || /* a column/constant to be aggregated */
+		(is_sql_aggr(f) && !is_sql_farg(f) && sq->grouped && e->card != CARD_AGGR) || /* a column/constant to be aggregated */
 		(is_sql_aggr(f) && is_sql_farg(f) && sq->grouped && e->card <= CARD_AGGR) ||  /* groupby ( function (group by col)) */
 		(is_sql_aggr(f) && sq->grouped && e->card <= CARD_AGGR) ); /* nested aggregations is handled later */
 	return 0;
+}
+
+void
+query_outer_pop_last_used(sql_query *q, int i)
+{
+	stacked_query *sq = sql_stack_fetch(q->outer, i);
+
+	sq->last_used = NULL;
+	sq->used_card = 0;
+	sq->sql_state = 0;
 }
 
 int
@@ -121,7 +131,6 @@ query_outer_aggregated(sql_query *q, int i, sql_exp *e)
 	sq->used_card = sq->rel->card;
 	return 0;
 }
-
 
 int
 query_outer_used_card(sql_query *q, int i)

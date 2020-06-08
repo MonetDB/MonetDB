@@ -394,3 +394,25 @@ MBMskewed(bat *ret, oid *base, lng *size, int *domain, int *skew){
 	} else throw(MAL, "microbenchmark.skewed", OPERATION_FAILED);
 	return MAL_SUCCEED;
 }
+
+#if 0
+
+#include "mel.h"
+mel_func microbenchmark_init_funcs[] = {
+ command("microbenchmark", "random", MBMrandom, false, "Create a BAT with random integer distribution; domain == nil:int ? [0:RAND_MAX] : [0,domain)", args(1,4, batarg("",int),arg("base",oid),arg("size",lng),arg("domain",int))),
+ command("microbenchmark", "random", MBMrandom_seed, false, "Create a BAT with random integer distribution,\nusing given seed (seed == nil:int -> no seed used);\ndomain == nil:int ? [0:RAND_MAX] : [0,domain)", args(1,5, batarg("",int),arg("base",oid),arg("size",lng),arg("domain",int),arg("seed",int))),
+ command("microbenchmark", "uniform", MBMuniform, false, "Create a BAT with uniform integer distribution", args(1,4, batarg("",int),arg("base",oid),arg("size",lng),arg("domain",int))),
+ command("microbenchmark", "normal", MBMnormal, false, "Create a BAT with a normal integer distribution", args(1,6, batarg("",int),arg("base",oid),arg("size",lng),arg("domain",int),arg("stddev",int),arg("mean",int))),
+ command("microbenchmark", "mix", MBMmix, false, "Mix the BUNs of this BAT", args(1,2, batarg("",int),batarg("b1",int))),
+ command("microbenchmark", "skewed", MBMskewed, false, "Create a BAT with skewed integer distribution", args(1,5, batarg("",int),arg("base",oid),arg("size",lng),arg("domain",int),arg("skew",int))),
+ { .imp=NULL }
+};
+#include "mal_import.h"
+#ifdef _MSC_VER
+#undef read
+#pragma section(".CRT$XCU",read)
+#endif
+LIB_STARTUP_FUNC(init_microbenchmark_mal)
+{ mal_module("microbenchmark", NULL, microbenchmark_init_funcs); }
+
+#endif

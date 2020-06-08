@@ -2544,3 +2544,63 @@ JSONsubjson(bat *retval, bat *bid, bat *gid, bat *eid, bit *skip_nils)
 {
 	return JSONsubjsoncand(retval, bid, gid, eid, NULL, skip_nils);
 }
+
+#include "mel.h"
+static mel_atom json_init_atoms[] = {
+ { .name="json", .basetype="str", .fromstr=(fptr)&JSONfromString, .tostr=(fptr)&JSONtoString, },  { .cmp=NULL } 
+};
+static mel_func json_init_funcs[] = {
+ command("json", "new", JSONstr2json, false, "Convert string to its JSON. Dealing with escape characters", args(1,2, arg("",json),arg("j",str))),
+ command("calc", "json", JSONstr2json, false, "Convert string to its JSON. Dealing with escape characters", args(1,2, arg("",json),arg("j",str))),
+ command("calc", "json", JSONstr2json, false, "Convert JSON to JSON. Dealing with escape characters", args(1,2, arg("",json),arg("j",json))),
+ command("json", "str", JSONjson2str, false, "Convert JSON to its string equivalent. Dealing with escape characters", args(1,2, arg("",str),arg("j",json))),
+ command("json", "text", JSONjson2text, false, "Convert JSON values to their plain string equivalent.", args(1,2, arg("",str),arg("j",json))),
+ command("json", "text", JSONjson2textSeparator, false, "Convert JSON values to their plain string equivalent, injecting a separator.", args(1,3, arg("",str),arg("j",json),arg("s",str))),
+ command("json", "number", JSONjson2number, false, "Convert simple JSON values to a double, return nil upon error.", args(1,2, arg("",dbl),arg("j",json))),
+ command("json", "integer", JSONjson2integer, false, "Convert simple JSON values to an integer, return nil upon error.", args(1,2, arg("",lng),arg("j",json))),
+ pattern("json", "dump", JSONdump, false, "", args(1,2, arg("",void),arg("j",json))),
+ command("json", "filter", JSONfilter, false, "Filter all members of an object by a path expression, returning an array.\nNon-matching elements are skipped.", args(1,3, arg("",json),arg("name",json),arg("pathexpr",str))),
+ command("json", "filter", JSONfilterArray_bte, false, "", args(1,3, arg("",json),arg("name",json),arg("idx",bte))),
+ command("json", "filter", JSONfilterArrayDefault_bte, false, "", args(1,4, arg("",json),arg("name",json),arg("idx",bte),arg("other",str))),
+ command("json", "filter", JSONfilterArray_sht, false, "", args(1,3, arg("",json),arg("name",json),arg("idx",sht))),
+ command("json", "filter", JSONfilterArrayDefault_sht, false, "", args(1,4, arg("",json),arg("name",json),arg("idx",sht),arg("other",str))),
+ command("json", "filter", JSONfilterArray_int, false, "", args(1,3, arg("",json),arg("name",json),arg("idx",int))),
+ command("json", "filter", JSONfilterArrayDefault_int, false, "", args(1,4, arg("",json),arg("name",json),arg("idx",int),arg("other",str))),
+ command("json", "filter", JSONfilterArray_lng, false, "", args(1,3, arg("",json),arg("name",json),arg("idx",lng))),
+ command("json", "filter", JSONfilterArrayDefault_lng, false, "Extract a single array element", args(1,4, arg("",json),arg("name",json),arg("idx",lng),arg("other",str))),
+ command("json", "isvalid", JSONisvalid, false, "Validate the string as a valid JSON document", args(1,2, arg("",bit),arg("val",json))),
+ command("json", "isobject", JSONisobject, false, "Validate the string as a valid JSON object", args(1,2, arg("",bit),arg("val",json))),
+ command("json", "isarray", JSONisarray, false, "Validate the string as a valid JSON array", args(1,2, arg("",bit),arg("val",json))),
+ command("json", "isvalid", JSONisvalid, false, "Validate the string as a valid JSON document", args(1,2, arg("",bit),arg("val",str))),
+ command("json", "isobject", JSONisobject, false, "Validate the string as a valid JSON object", args(1,2, arg("",bit),arg("val",str))),
+ command("json", "isarray", JSONisarray, false, "Validate the string as a valid JSON array", args(1,2, arg("",bit),arg("val",str))),
+ command("json", "length", JSONlength, false, "Returns the number of elements in the outermost JSON object.", args(1,2, arg("",int),arg("val",json))),
+ pattern("json", "unfold", JSONunfold, false, "Expands the outermost JSON object into key-value pairs.", args(2,3, batarg("k",str),batarg("v",json),arg("val",json))),
+ pattern("json", "unfold", JSONunfold, false, "Expands the outermost JSON object into key-value pairs.", args(3,4, batarg("o",oid),batarg("k",str),batarg("v",json),arg("val",json))),
+ pattern("json", "fold", JSONfold, false, "Combine the key-value pairs into a single json object list.", args(1,4, arg("",json),batarg("o",oid),batarg("k",str),batargany("v",0))),
+ pattern("json", "fold", JSONfold, false, "Combine the key-value pairs into a single json object list.", args(1,3, arg("",json),batarg("k",str),batargany("v",0))),
+ pattern("json", "fold", JSONfold, false, "Combine the value list into a single json array object.", args(1,2, arg("",json),batargany("v",0))),
+ command("json", "keyarray", JSONkeyArray, false, "Expands the outermost JSON object keys into a JSON value array.", args(1,2, arg("",json),arg("val",json))),
+ command("json", "valuearray", JSONvalueArray, false, "Expands the outermost JSON object values into a JSON value array.", args(1,2, arg("",json),arg("val",json))),
+ command("json", "keys", JSONkeyTable, false, "Expands the outermost JSON object names.", args(1,2, batarg("",str),arg("val",json))),
+ command("json", "values", JSONvalueTable, false, "Expands the outermost JSON values.", args(1,2, batarg("",json),arg("val",json))),
+ command("json", "output", JSONtextString, false, "Pack the values into a single json structure", args(1,2, arg("",str),batargany("b",1))),
+ command("json", "suboutput", JSONtextGrouped, false, "Pack the values into a json structure", args(1,5, batarg("",str),batargany("b",1),batarg("gid",oid),batarg("ext",lng),arg("flg",bit))),
+ command("json", "prelude", JSONprelude, false, "", noargs),
+ pattern("json", "renderobject", JSONrenderobject, false, "", args(1,2, arg("",json),varargany("val",0))),
+ pattern("json", "renderarray", JSONrenderarray, false, "", args(1,2, arg("",json),varargany("val",0))),
+ command("aggr", "jsonaggr", JSONgroupStr, false, "Aggregate the string values to array.", args(1,2, arg("",str),batarg("val",str))),
+ command("aggr", "jsonaggr", JSONgroupStr, false, "Aggregate the double values to array.", args(1,2, arg("",str),batarg("val",dbl))),
+ command("aggr", "subjsonaggr", JSONsubjson, false, "Grouped aggregation of values.", args(1,5, batarg("",str),batarg("val",str),batarg("g",oid),batargany("e",1),arg("skip_nils",bit))),
+ command("aggr", "subjsonaggr", JSONsubjson, false, "Grouped aggregation of values.", args(1,5, batarg("",str),batarg("val",dbl),batarg("g",oid),batargany("e",1),arg("skip_nils",bit))),
+ command("aggr", "subjsonaggr", JSONsubjsoncand, false, "Grouped aggregation of values with candidates list.", args(1,6, batarg("",str),batarg("val",str),batarg("g",oid),batargany("e",1),batarg("s",oid),arg("skip_nils",bit))),
+ command("aggr", "subjsonaggr", JSONsubjsoncand, false, "Grouped aggregation of values with candidates list.", args(1,6, batarg("",str),batarg("val",dbl),batarg("g",oid),batargany("e",1),batarg("s",oid),arg("skip_nils",bit))),
+ { .imp=NULL }
+};
+#include "mal_import.h"
+#ifdef _MSC_VER
+#undef read
+#pragma section(".CRT$XCU",read)
+#endif
+LIB_STARTUP_FUNC(init_json_mal)
+{ mal_module("json", json_init_atoms, json_init_funcs); }

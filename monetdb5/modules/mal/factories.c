@@ -64,3 +64,21 @@ FCTshutdown(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	shutdownFactory(cntxt,s->def);
 	return MAL_SUCCEED;
 }
+
+#include "mel.h"
+mel_func factories_init_funcs[] = {
+ command("factories", "getPlants", FCTgetPlants, false, "Retrieve the names for all active factories.", args(2,2, batarg("mod",str),batarg("fcn",str))),
+ command("factories", "getCaller", FCTgetCaller, false, "Retrieve the unique identity of the factory caller.", args(1,1, arg("",int))),
+ command("factories", "getOwners", FCTgetOwners, false, "Retrieve the factory owners table.", args(1,1, batarg("",str))),
+ command("factories", "getArrival", FCTgetArrival, false, "Retrieve the time stamp the last call was made.", args(1,1, batarg("",timestamp))),
+ command("factories", "getDeparture", FCTgetDeparture, false, "Retrieve the time stamp the last answer was returned.", args(1,1, batarg("",timestamp))),
+ pattern("factories", "shutdown", FCTshutdown, false, "Close a factory.", args(1,3, arg("",void),arg("m",str),arg("f",str))),
+ { .imp=NULL }
+};
+#include "mal_import.h"
+#ifdef _MSC_VER
+#undef read
+#pragma section(".CRT$XCU",read)
+#endif
+LIB_STARTUP_FUNC(init_factories_mal)
+{ mal_module("factories", NULL, factories_init_funcs); }

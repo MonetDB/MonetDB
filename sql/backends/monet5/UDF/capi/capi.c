@@ -1851,3 +1851,23 @@ void blob_initialize(struct cudf_data_struct_blob *self,
 	self->data = jump_GDK_malloc(count * sizeof(self->null_value));
 	memset(self->data, 0, count * sizeof(self->null_value));
 }
+
+#include "mel.h"
+static mel_func capi_init_funcs[] = {
+ pattern("capi", "eval", CUDFevalStd, false, "Execute a simple CUDF script returning a single value", args(1,4, argany("",0),arg("fptr",ptr),arg("cpp",bit),arg("expr",str))),
+ pattern("capi", "eval", CUDFevalStd, false, "Execute a simple CUDF script value", args(1,5, varargany("",0),arg("fptr",ptr),arg("cpp",bit),arg("expr",str),varargany("arg",0))),
+ pattern("capi", "subeval_aggr", CUDFevalAggr, false, "grouped aggregates through CUDF", args(1,5, varargany("",0),arg("fptr",ptr),arg("cpp",bit),arg("expr",str),varargany("arg",0))),
+ pattern("capi", "eval_aggr", CUDFevalAggr, false, "grouped aggregates through CUDF", args(1,5, varargany("",0),arg("fptr",ptr),arg("cpp",bit),arg("expr",str),varargany("arg",0))),
+ command("capi", "prelude", CUDFprelude, false, "", args(1,1, arg("",void))),
+ pattern("batcapi", "eval", CUDFevalStd, false, "Execute a simple CUDF script value", args(1,5, varargany("",0),arg("fptr",ptr),arg("cpp",bit),arg("expr",str),varargany("arg",0))),
+ pattern("batcapi", "subeval_aggr", CUDFevalAggr, false, "grouped aggregates through CUDF", args(1,5, varargany("",0),arg("fptr",ptr),arg("cpp",bit),arg("expr",str),varargany("arg",0))),
+ pattern("batcapi", "eval_aggr", CUDFevalAggr, false, "grouped aggregates through CUDF", args(1,5, varargany("",0),arg("fptr",ptr),arg("cpp",bit),arg("expr",str),varargany("arg",0))),
+ { .imp=NULL }
+};
+#include "mal_import.h"
+#ifdef _MSC_VER
+#undef read
+#pragma section(".CRT$XCU",read)
+#endif
+LIB_STARTUP_FUNC(init_capi_mal)
+{ mal_module("capi", NULL, capi_init_funcs); }

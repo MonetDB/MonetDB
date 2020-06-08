@@ -14,9 +14,6 @@ pattern getSignature(mod:str,fcn:str) :bat[:str]
 address INSPECTgetSignature
 comment "Returns the function signature(s).";
 
-pattern getAddress(mod:str,fcn:str) :bat[:str] 
-address INSPECTgetAddress
-comment "Returns the function signature(s).";
 
 pattern getComment(mod:str,fcn:str) :bat[:str]
 address INSPECTgetComment
@@ -38,9 +35,6 @@ comment "Obtain the function name.";
 pattern getSignatures():bat[:str]
 address INSPECTgetAllSignatures
 comment "Obtain the function signatures.";
-pattern getAddresses():bat[:str]
-address INSPECTgetAllAddresses
-comment "Obtain the function address.";
 
 
 pattern getSize():lng

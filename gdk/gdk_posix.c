@@ -325,7 +325,7 @@ MT_mmap(const char *path, int mode, size_t len)
 
 	fd = open(path, O_CREAT | ((mode & MMAP_WRITE) ? O_RDWR : O_RDONLY) | O_CLOEXEC, MONETDB_MODE);
 	if (fd < 0) {
-		GDKsyserror("MT_mmap: open %s failed\n", path);
+		GDKsyserror("open %s failed\n", path);
 		return MAP_FAILED;
 	}
 	ret = mmap(NULL,
@@ -335,7 +335,7 @@ MT_mmap(const char *path, int mode, size_t len)
 		   fd,
 		   0);
 	if (ret == MAP_FAILED) {
-		GDKsyserror("MT_mmap: mmap(%s,%zu) failed\n", path, len);
+		GDKsyserror("mmap(%s,%zu) failed\n", path, len);
 		ret = NULL;
 	}
 	close(fd);
@@ -349,8 +349,7 @@ MT_munmap(void *p, size_t len)
 	int ret = munmap(p, len);
 
 	if (ret < 0)
-		GDKsyserror("MT_munmap: munmap(%p,%zu) failed\n",
-			    p, len);
+		GDKsyserror("munmap(%p,%zu) failed\n", p, len);
 	VALGRIND_FREELIKE_BLOCK(p, 0);
 	return ret;
 }
@@ -387,7 +386,8 @@ MT_mremap(const char *path, int mode, void *old_address, size_t old_size, size_t
 			return old_address;
 		}
 		if (path && truncate(path, *new_size) < 0)
-			TRC_WARNING(GDK, "MT_mremap(%s): truncate failed\n", path);
+			TRC_WARNING(GDK, "MT_mremap(%s): truncate failed: %s\n",
+				    path, GDKstrerror(errno, (char[64]){0}, 64));
 #endif	/* !STATIC_CODE_ANALYSIS */
 		return old_address;
 	}
@@ -441,7 +441,8 @@ MT_mremap(const char *path, int mode, void *old_address, size_t old_size, size_t
 				if (munmap(p, *new_size - old_size) < 0)
 					GDKsyserror("munmap");
 #ifdef NO_MMAP_ALIASING
-				msync(old_address, old_size, MS_SYNC);
+				if (msync(old_address, old_size, MS_SYNC) < 0)
+					GDKsyserror("msync");
 #endif
 				/* first create full mmap, then, if
 				 * successful, remove old mmap */
@@ -630,7 +631,7 @@ MT_msync(void *p, size_t len)
 	int ret = msync(p, len, MS_SYNC);
 
 	if (ret < 0)
-		GDKsyserror("MT_msync: msync failed\n");
+		GDKsyserror("msync failed\n");
 	return ret;
 }
 

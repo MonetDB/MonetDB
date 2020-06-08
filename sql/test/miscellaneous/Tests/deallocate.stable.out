@@ -68,9 +68,9 @@ stdout of test 'deallocate` in directory 'sql/test/miscellaneous` itself:
 % .prepared_statements # table_name
 % statement # name
 % clob # type
-% 54 # length
-[ "prepare select \"system\" or ? from _tables where false;"	]
-#select "inout", "number", "type", "type_digits", "type_scale", "schema", "table", "column" from prepared_statements_args; --only 1
+% 58 # length
+[ "prepare select \"system\" or ? from sys._tables where false;"	]
+#select "inout", "number", "type", "type_digits", "type_scale", "schema", "table", "column" from sys.prepared_statements_args; --only 1
 % .prepared_statements_args,	.prepared_statements_args,	.prepared_statements_args,	.prepared_statements_args,	.prepared_statements_args,	.prepared_statements_args,	.prepared_statements_args,	.prepared_statements_args # table_name
 % inout,	number,	type,	type_digits,	type_scale,	schema,	table,	column # name
 % tinyint,	int,	clob,	int,	int,	clob,	clob,	clob # type
@@ -83,11 +83,11 @@ stdout of test 'deallocate` in directory 'sql/test/miscellaneous` itself:
 % .prep,	.psa,	.psa,	.psa,	.psa,	.psa,	.psa,	.psa,	.psa # table_name
 % statement,	inout,	number,	type,	type_digits,	type_scale,	schema,	table,	column # name
 % clob,	tinyint,	int,	clob,	int,	int,	clob,	clob,	clob # type
-% 54,	1,	1,	7,	1,	1,	0,	2,	2 # length
-[ "prepare select \"system\" or ? from _tables where false;",	0,	0,	"boolean",	1,	0,	NULL,	"%1",	"%1"	]
-[ "prepare select \"system\" or ? from _tables where false;",	1,	1,	"boolean",	1,	0,	NULL,	NULL,	NULL	]
+% 58,	1,	1,	7,	1,	1,	0,	2,	2 # length
+[ "prepare select \"system\" or ? from sys._tables where false;",	0,	0,	"boolean",	1,	0,	NULL,	"%1",	"%1"	]
+[ "prepare select \"system\" or ? from sys._tables where false;",	1,	1,	"boolean",	1,	0,	NULL,	NULL,	NULL	]
 #EXEC  3(false);
-% sys. # table_name
+% sys.%1 # table_name
 % %1 # name
 % boolean # type
 % 5 # length
@@ -95,9 +95,9 @@ stdout of test 'deallocate` in directory 'sql/test/miscellaneous` itself:
 % .prepared_statements # table_name
 % statement # name
 % clob # type
-% 54 # length
-[ "prepare select \"system\" or ? from _tables where false;"	]
-#select "inout", "number", "type", "type_digits", "type_scale", "schema", "table", "column" from prepared_statements_args; --only 1
+% 58 # length
+[ "prepare select \"system\" or ? from sys._tables where false;"	]
+#select "inout", "number", "type", "type_digits", "type_scale", "schema", "table", "column" from sys.prepared_statements_args; --only 1
 % .prepared_statements_args,	.prepared_statements_args,	.prepared_statements_args,	.prepared_statements_args,	.prepared_statements_args,	.prepared_statements_args,	.prepared_statements_args,	.prepared_statements_args # table_name
 % inout,	number,	type,	type_digits,	type_scale,	schema,	table,	column # name
 % tinyint,	int,	clob,	int,	int,	clob,	clob,	clob # type
@@ -123,8 +123,8 @@ stdout of test 'deallocate` in directory 'sql/test/miscellaneous` itself:
 % 7,	1,	1,	0,	2,	2 # length
 [ "boolean",	1,	0,	"",	"%1",	"%1"	]
 [ "boolean",	1,	0,	NULL,	NULL,	NULL	]
-#execute  5(false);
-% sys. # table_name
+#execute 15(false);
+% sys.%1 # table_name
 % %1 # name
 % boolean # type
 % 5 # length

@@ -1227,7 +1227,7 @@ atom_add(atom *a1, atom *a2)
 	dst.vtype = TYPE_dbl;
 	if (a1->isnull || a2->isnull)
 		a1->isnull = 1;
-	if (VARconvert(&dst, &a1->data, 1) == GDK_SUCCEED)
+	if (VARconvert(&dst, &a1->data, 1, 0, 0, 0) == GDK_SUCCEED)
 		a1->d = dst.val.dval;
 	return a1;
 }
@@ -1255,7 +1255,7 @@ atom_sub(atom *a1, atom *a2)
 	dst.vtype = TYPE_dbl;
 	if (a1->isnull || a2->isnull) 
 		a1->isnull = 1;
-	if (VARconvert(&dst, &a1->data, 1) == GDK_SUCCEED)
+	if (VARconvert(&dst, &a1->data, 1, 0, 0, 0) == GDK_SUCCEED)
 		a1->d = dst.val.dval;
 	return a1;
 }
@@ -1299,7 +1299,7 @@ atom_mul(atom *a1, atom *a2)
 		return NULL;
 	a1->data = dst;
 	dst.vtype = TYPE_dbl;
-	if (VARconvert(&dst, &a1->data, 1) == GDK_SUCCEED)
+	if (VARconvert(&dst, &a1->data, 1, 0, 0, 0) == GDK_SUCCEED)
 		a1->d = dst.val.dval;
 	a1->tpe.digits += a2->tpe.digits;
 	return a1;
@@ -1317,7 +1317,7 @@ atom_inc(atom *a)
 		return -1;
 	a->data = dst;
 	dst.vtype = TYPE_dbl;
-	if (VARconvert(&dst, &a->data, 1) == GDK_SUCCEED)
+	if (VARconvert(&dst, &a->data, 1, 0, 0, 0) == GDK_SUCCEED)
 		a->d = dst.val.dval;
 	return 0;
 }

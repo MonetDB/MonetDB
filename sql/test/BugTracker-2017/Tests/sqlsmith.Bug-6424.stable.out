@@ -51,7 +51,7 @@ stdout of test 'sqlsmith.Bug-6424` in directory 'sql/test/BugTracker-2017` itsel
 #    inner join sys.netcdf_vardim as ref_3
 #    on (true)
 #where ref_2.col4 is NULL;
-% .,	. # table_name
+% .,	sys. # table_name
 % c0,	c1 # name
 % int,	int # type
 % 1,	1 # length

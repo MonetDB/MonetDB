@@ -105,7 +105,7 @@ Group: Applications/Databases
 License: MPLv2.0
 URL: https://www.monetdb.org/
 BugURL: https://bugs.monetdb.org/
-Source: https://www.monetdb.org/downloads/sources/Nov2019-SP3/%{name}-%{version}.tar.bz2
+Source: https://www.monetdb.org/downloads/sources/Jun2020/%{name}-%{version}.tar.bz2
 
 # The Fedora packaging document says we need systemd-rpm-macros for
 # the _unitdir and _tmpfilesdir macros to exist; however on RHEL 7
@@ -984,6 +984,291 @@ fi
 %postun -p /sbin/ldconfig
 
 %changelog
+* Fri May 29 2020 Sjoerd Mullender <sjoerd@acm.org> - 11.37.7-20200529
+- Rebuilt.
+
+* Tue May 26 2020 Sjoerd Mullender <sjoerd@acm.org> - 11.37.5-20200526
+- Rebuilt.
+- BZ#6864: (I)LIKE with multiple % doen't find matches
+
+* Mon May 18 2020 Sjoerd Mullender <sjoerd@acm.org> - 11.37.3-20200518
+- Rebuilt.
+- BZ#6863: thash files not released upon drop table
+
+* Mon May 11 2020 Sjoerd Mullender <sjoerd@acm.org> - 11.37.1-20200511
+- Rebuilt.
+- BZ#6298: unexpectedly slow execution of SELECT length(fieldname)
+  FROM tablename LIMIT 1 queries
+- BZ#6401: Suspected memory leak in mserver5 when creating/dropping tables
+- BZ#6687: Count distinct very slow and use too much the hard drive
+- BZ#6731: Add system view to allow querying of available prepared
+  statements and their parameters
+- BZ#6732: Add SQL command to close a specific prepared statement
+- BZ#6750: Executing a query on a non-existing column on a remote table
+  crashes the remote server
+- BZ#6785: function sys.isaURL(url) should have been declared as
+  sys.isaURL(string)
+- BZ#6808: reveal the alarm.sleep procedure in SQL
+- BZ#6813: function not_uniques(bigint) returns error when called
+- BZ#6818: usage of multiple column expressions in where-clause (f(a),
+  f(b)) in (select a, b)  causes assertion failure on mserver5
+- BZ#6821: Failed to start monetdb with embedded python
+- BZ#6828: Server crashes when executing a window query with ordering
+  by EXTRACT date
+- BZ#6846: Global temporary table not accessible in other connections
+  / sessions
+- BZ#6847: A simple way of speeding up impscheck for dense canditers
+- BZ#6850: Idle timestamp not set
+- BZ#6851: json parser doesn't parse integers correctly
+
+* Fri May  8 2020 Sjoerd Mullender <sjoerd@acm.org> - 11.37.1-20200511
+- monetdb5: The mserver5 option --verbose (-v) was removed.  A similar effect can
+  be had by issuing the query CALL logging.setcomplevel('SQL_TRANS',
+  'INFO'); as the monetdb user.
+
+* Wed May  6 2020 Sjoerd Mullender <sjoerd@acm.org> - 11.37.1-20200511
+- selinux: There was a problem with the MonetDB SELinux support on Fedora 32.
+  That is fixed in this release.  In order to do a proper upgrade of
+  the package if you have already installed MonetDB-selinux on Fedora
+  32, you may need to uninstall (dnf remove) the old package and then
+  install the new.
+
+* Tue Apr 28 2020 Sjoerd Mullender <sjoerd@acm.org> - 11.37.1-20200511
+- gdk: The functions BATintersect, BATsemijoin, and BATsubcross have an
+  extra argument, bool max_one, which indicates that there must be no
+  more than one match in the join.
+
+* Tue Apr 28 2020 Sjoerd Mullender <sjoerd@acm.org> - 11.37.1-20200511
+- monetdb5: The functions algebra.intersect, algebra.semijoin, and
+  algebra.crossproduct have an extra argument, bool max_one, which
+  indicates that there must be no more than one match in the join.
+
+* Thu Apr 23 2020 Pedro Ferreira <pedro.ferreira@monetdbsolutions.com> - 11.37.1-20200511
+- sql: Updating the value of a sequence now requires privilege on its own
+  schema.
+
+* Mon Apr 20 2020 Sjoerd Mullender <sjoerd@acm.org> - 11.37.1-20200511
+- clients: The monetdb-client-tools (Debian/Ubuntu) and MonetDB-client-tools
+  (Fedora/RH) containing the stethoscope, tachograph, and tomograph has
+  been removed.  A completely new version of stethoscope will be released
+  to replace the old version.
+
+* Mon Apr 20 2020 Sjoerd Mullender <sjoerd@acm.org> - 11.37.1-20200511
+- gdk: The "unique" property on BATs was removed.  The property indicated
+  that all values in a BAT *had* to be distinct, but this was not
+  actually used.
+- gdk: A new type of candidate list has been introduced.  Candidate lists
+  are used internally to specify which rows of a column participate
+  in an operation.  Before, candidate lists always contained a list of
+  candidate row IDs.  The new candidate list type specifies a list of
+  row IDs that should NOT be considered (negative candidates).
+- gdk: The maximum number of BATs in the system has been increased for 64
+  bit architectures.
+- gdk: The hash tables used internally by the system now uses a technique
+  based on Linear Hashing which allows them to grow gracefully.  This
+  means that hash tables aren't removed and recreated nearly as often
+  anymore.  This also meant that the hash table had to be split into
+  two files, which means that after an upgrade the hash tables have to
+  be recreated.
+
+* Mon Apr 20 2020 Sjoerd Mullender <sjoerd@acm.org> - 11.37.1-20200511
+- merovingian: On Fedora and RHEL systems (not RHEL 6), if monetdbd runs under systemd,
+  when the package is updated, monetdbd (and hence any mserver5 process
+  it runs) is restarted.
+
+* Mon Apr 20 2020 Sjoerd Mullender <sjoerd@acm.org> - 11.37.1-20200511
+- monetdb5: The example module opt_sql_append is not installed in the binary
+  packages anymore.
+
+* Mon Apr 20 2020 Sjoerd Mullender <sjoerd@acm.org> - 11.37.1-20200511
+- MonetDB: A new system to deal with debug output has been implemented.  There is
+  now an option --dbtrace to mserver5 that takes a file argument to which
+  debug output is written.  The default value is the file mdbtrace.log
+  inside the database directory.  This option can also be set through
+  the monetdb program.
+- MonetDB: The home directory of the automatically created monetdb user was
+  changed from /var/MonetDB to /var/lib/monetdb (RPM based systems
+  only).  This home directory is (currently) not used for anything,
+  though.
+- MonetDB: Python 2 support has been removed.  There is now only support for
+  using Python 3.
+
+* Mon Apr 20 2020 Sjoerd Mullender <sjoerd@acm.org> - 11.37.1-20200511
+- odbc: The NUMERIC and FLOAT types are now handled fully.  Before only DECIMAL,
+  FLOAT, and DOUBLE were handled fully.
+- odbc: Some bugs were fixed in the passing back and forth between application
+  and server of values of type GUID (UUID).
+
+* Thu Apr 16 2020 Sjoerd Mullender <sjoerd@acm.org> - 11.37.1-20200511
+- clients: Removed the possibility of using the MD5 checksum for authentication
+  purposes.  It was never actively used but was there as an option.
+  Now the option has been removed.
+
+* Thu Apr 16 2020 Sjoerd Mullender <sjoerd@acm.org> - 11.37.1-20200511
+- sql: The sys.querylog_enable(threshold integer) now actually enables the
+  querylog and uses a threshold in milliseconds.
+
+* Wed Apr 15 2020 Pedro Ferreira <pedro.ferreira@monetdbsolutions.com> - 11.37.1-20200511
+- sql: Removed UNION JOIN statements. They were dropped by the SQL:2003
+  standard, plus MonetDB implementation was not fully compliant.
+
+* Wed Apr  1 2020 Sjoerd Mullender <sjoerd@acm.org> - 11.37.1-20200511
+- sql: The OFFSET value in the COPY INTO query now counts uninterpreted
+  newlines.  Before it counted "unquoted record separators" which meant
+  that if you had a single quote on a line that you want to skip, you
+  could not use the feature.
+
+* Mon Mar 30 2020 Sjoerd Mullender <sjoerd@acm.org> - 11.37.1-20200511
+- gdk: Implemented a version of BATproject, called BATproject2, with two
+  "right" arguments which conceptually follow each other.
+
+* Fri Mar 27 2020 Pedro Ferreira <pedro.ferreira@monetdbsolutions.com> - 11.37.1-20200511
+- sql: Added support for FROM RANGE MINVALUE TO RANGE MAXVALUE and FROM RANGE
+  MINVALUE TO RANGE MAXVALUE WITH NULL VALUES cases in partitioned tables
+  by range (before they weren't).
+
+* Wed Mar 25 2020 Sjoerd Mullender <sjoerd@acm.org> - 11.37.1-20200511
+- gdk: Removed MT_mmap and MT_munmap from the list of exported functions.
+  Use GDKmmap and GDKmunmap with the same parameters instead.
+
+* Fri Mar 20 2020 Sjoerd Mullender <sjoerd@acm.org> - 11.37.1-20200511
+- gdk: Changed the interface of the atom "fix" and "unfix" functions.
+  They now return a value of type gdk_return to indicate success/failure.
+
+* Sat Feb 22 2020 Thodoris Zois <thodoris.zois@monetdbsolutions.com> - 11.37.1-20200511
+- merovingian: Added dbtrace mserver5 option to the daemon in order to set
+  mserver5's output directory for the produced traces.
+
+* Sat Feb 22 2020 Thodoris Zois <thodoris.zois@monetdbsolutions.com> - 11.37.1-20200511
+- monetdb5: Added mserver5 option (--dbtrace=<path>) in order to be able to
+  specify the output file any produced traces.
+
+* Sat Feb 22 2020 Panagiotis Koutsourakis <kutsurak@monetdbsolutions.com> - 11.37.1-20200511
+- clients: Add port and host as fields in the .monetdb file.
+
+* Sat Feb 22 2020 Sjoerd Mullender <sjoerd@acm.org> - 11.37.1-20200511
+- MonetDB: Removed support for bam and sam files.
+
+* Sat Feb 22 2020 Pedro Ferreira <pedro.ferreira@monetdbsolutions.com> - 11.37.1-20200511
+- sql: Implemented 'covar_pop' and 'covar_samp' aggregate functions, as well
+  as their window function counterparts. Implemented 'stddev_samp',
+  'stddev_pop', 'var_samp', 'var_pop', 'corr' and 'group_concat'
+  window function correspondents.
+- sql: Extended SQL catalog with CREATE WINDOW syntax for user-defined
+  SQL:2003 window functions. At the moment, window functions must be
+  defined on the backend engine, i.e. on this case MAL. In the current
+  implementation, the backend code generation creates two additional
+  columns of type lng with the start and end offsets for each row.
+
+* Sat Feb 22 2020 Sjoerd Mullender <sjoerd@acm.org> - 11.37.1-20200511
+- sql: Removed support for Python 2.  Python 2 itself is no longer
+  supported.  Use Python 3 instead.  Functions that were declared as
+  LANGUAGE PYTHON2 or LANGUAGE PYTHON2_MAP are changed to LANGUAGE
+  PYTHON and LANGUAGE PYTHON_MAP respectively (without changing the
+  Python code).
+
+* Sat Feb 22 2020 Pedro Ferreira <pedro.ferreira@monetdbsolutions.com> - 11.37.1-20200511
+- sql: Added prepared_statements_args view, which details the arguments for
+  the prepared statements created in the current session.
+
+* Sat Feb 22 2020 Pedro Ferreira <pedro.ferreira@monetdbsolutions.com> - 11.37.1-20200511
+- sql: Added sys.prepared_statements view, which lists the available prepared
+  statements in the current session.
+- sql: Added deallocate statements with the syntax 'DEALLOCATE [PREPARE]
+  { number | ALL }', to close an existing prepared statement or all,
+  through the SQL layer. Previously this feature was available via MAPI
+  exclusively with the "release" command.
+
+* Sat Feb 22 2020 Panagiotis Koutsourakis <kutsurak@monetdbsolutions.com> - 11.37.1-20200511
+- MonetDB: Added mserver5 option (--set raw_strings=true|false) and monetdb
+  database property (raw_strings=yes|no) to control interpretation
+  of strings.
+
+* Sat Feb 22 2020 Sjoerd Mullender <sjoerd@acm.org> - 11.37.1-20200511
+- gdk: Removed the tunique property.  The tunique property indicated that
+  all values in the column had to be distinct.  It was removed because
+  it wasn't used.
+
+* Sat Feb 22 2020 Sjoerd Mullender <sjoerd@acm.org> - 11.37.1-20200511
+- monetdb5: Removed function bat.setKey().
+
+* Sat Feb 22 2020 Panagiotis Koutsourakis <kutsurak@monetdbsolutions.com> - 11.37.1-20200511
+- sql: Added support for raw strings using the syntax r'' or R''. This means
+  that C-like escapes will remain uninterpreted within those strings. For
+  instance SELECT r'\"' returns a string of length two. The user needs
+  to escape single quotes by doubling them: SELECT r''''.
+
+* Sat Feb 22 2020 Pedro Ferreira <pedro.ferreira@monetdbsolutions.com> - 11.37.1-20200511
+- sql: Implemented ROLLUP, CUBE and GROUPING SETS from SQL:1999. They
+  define grouping subsets used with the GROUP BY clause in order to
+  compute partial groupings. Also, the GROUPING aggregate was
+  added. This aggregate is a bitmask identifying the grouping columns
+  not present in the generated grouping row when used with the
+  operators described above.
+
+* Sat Feb 22 2020 Sjoerd Mullender <sjoerd@acm.org> - 11.37.1-20200511
+- gdk: BATrangeselect now has two extra arguments: anti and symmetric
+  (both bool).
+
+* Sat Feb 22 2020 Sjoerd Mullender <sjoerd@acm.org> - 11.37.1-20200511
+- monetdb5: algebra.rangejoin now has two extra arguments: anti:bit and
+  symmetric:bit.
+
+* Sat Feb 22 2020 Pedro Ferreira <pedro.ferreira@monetdbsolutions.com> - 11.37.1-20200511
+- monetdb5: Added session identifier, number of workers and memory claim to the
+  sysmon queue.
+- monetdb5: The worker (number of threads), memory (in MB) and optimizer pipeline
+  limits can now be set per user session basis. The query and session
+  timeouts are now set in seconds.
+- monetdb5: With required privileges an user can set resource limits for a session.
+
+* Sat Feb 22 2020 Pedro Ferreira <pedro.ferreira@monetdbsolutions.com> - 11.37.1-20200511
+- sql: Updated user session procedures by adding the possibility to set properties
+  based on a session identifier.
+  Optimizer pipeline: sys.setoptimizer(int, string)
+  Number of worker threads: sys.setworkerlimit(int, int)
+  Memory limits (in MB): sys.setmemorylimit(int, int)
+  Query timeout (in ms): sys.setquerytimeout(int, int)
+  Session timeout (in ms): sys.setsessiontimeout(int, int)
+  The first argument corresponds to the id of the session to modify, and
+  these procedures are bound to the monetdb user exclusively.
+  The versions of the mentioned procedures with just the second argument were
+  added as well, where the changes are reflected in the current user session,
+  and therefore every user can call them.
+- sql: The procedures sys.settimeout(bigint), sys.settimeout(bigint,bigint)
+  and sys.session(bigint) are now deprecated. Instead use sys.setquerytimeout
+  and sys.setsessiontimeout mentioned above.
+
+* Sat Feb 22 2020 Sjoerd Mullender <sjoerd@acm.org> - 11.37.1-20200511
+- monetdb5: There are now versions of group.(sub)group(done) that produce a single
+  output containing just the groups.
+- monetdb5: algebra.join and algebra.leftjoin now have forms which return a single
+  column.  The column that is returned is the left column of the two
+  column version.
+
+* Sat Feb 22 2020 Joeri van Ruth <joeri.van.ruth@monetdbsolutions.com> - 11.37.1-20200511
+- sql: Added SQL procedure sys.hot_snapshot() which can be used to write
+  a snapshot of the database to a tar file. For example,
+  sys.hot_snapshot('/tmp/snapshot.tar'). If compression support is
+  compiled in, snapshots can also be compressed ('/tmp/snapshot.tar.gz').
+  The tar file expands to a single directory with the same name as the
+  database that was snapshotted. This directory can be passed directly
+  as the --dbpath argument of mserver5 or it can be copied into an
+  existing dbfarm and started from monetdbd.
+
+* Sat Feb 22 2020 Pedro Ferreira <pedro.ferreira@monetdbsolutions.com> - 11.37.1-20200511
+- clients: Added 'sessionid' column to system function sys.queue(), so each query
+  gets tagged with the current session identifier
+
+* Sat Feb 22 2020 Martin Kersten <mk@cwi.nl> - 11.37.1-20200511
+- clients: Allow monetdb user to control session and query time out and selectively
+  stopping a client sessions with a soft termination request.
+
+* Sat Feb 22 2020 Martin Kersten <mk@cwi.nl> - 11.37.1-20200511
+- monetdb5: The MAL profiler now assigns the SQL TRACE output to the client record
+  thereby avoiding the interaction with other queries, but loosing
+  insight of competing queries. The stethoscope should be used for that.
+
 * Sat Feb 22 2020 Sjoerd Mullender <sjoerd@acm.org> - 11.35.19-20200222
 - Rebuilt.
 - BZ#6829: NTILE window function returns incorrect results

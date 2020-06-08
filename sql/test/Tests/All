@@ -124,4 +124,10 @@ window_functions
 
 sysqueue
 
-HAVE_PYMONETDB?hot-snapshot
+HAVE_PYMONETDB?hot_snapshot
+HAVE_PYMONETDB&HAVE_LIBZ?hot_snapshot_gz
+HAVE_PYMONETDB&HAVE_LIBBZ2?hot_snapshot_bz2
+HAVE_PYMONETDB&HAVE_LIBLZMA?hot_snapshot_xz
+HAVE_PYTHON_LZ4&HAVE_PYMONETDB&HAVE_LIBLZ4?hot_snapshot_lz4
+!HAVE_PYTHON_LZ4&HAVE_PYMONETDB&HAVE_LIBLZ4?hot_snapshot_lz4_lite
+

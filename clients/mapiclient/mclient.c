@@ -3061,7 +3061,8 @@ getfile(void *data, const char *filename, bool binary,
 		priv->f = NULL;
 		return s < 0 ? "error reading file" : NULL;
 	}
-	*size = (size_t) s;
+	if (size)
+		*size = (size_t) s;
 	return buf;
 }
 

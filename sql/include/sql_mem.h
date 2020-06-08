@@ -59,8 +59,8 @@ typedef struct sql_allocator {
 	size_t usedmem;	/* used memory */
 } sql_allocator;
 
-extern sql_allocator *sa_create(void);
-extern sql_allocator *sa_reset( sql_allocator *sa );
+sql_export sql_allocator *sa_create(void);
+sql_export sql_allocator *sa_reset( sql_allocator *sa );
 extern void *sa_alloc( sql_allocator *sa,  size_t sz );
 extern void *sa_zalloc( sql_allocator *sa,  size_t sz );
 extern void *sa_realloc( sql_allocator *sa,  void *ptr, size_t sz, size_t osz );

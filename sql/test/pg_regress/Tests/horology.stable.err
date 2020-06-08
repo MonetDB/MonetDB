@@ -31,11 +31,11 @@ stderr of test 'horology` in directory 'sql/test/pg_regress` itself:
 
 MAPI  = (monetdb) /var/tmp/mtest-18336/.s.monetdb.30933
 QUERY = SET australian_timezones = 'off';
-ERROR = !Variable australian_timezones unknown
+ERROR = !SET: Variable 'australian_timezones' unknown
 CODE  = 42000
 MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = SET DateStyle = 'Postgres, MDY';
-ERROR = !Variable datestyle unknown
+ERROR = !SET: Variable 'datestyle' unknown
 CODE  = 42000
 MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = SELECT timestamp with time zone '20011227 040506+08';
@@ -159,7 +159,7 @@ ERROR = !Incorrect timestamp value (12.27.2001 04:05:06.789-08) in: "select time
 CODE  = 22007
 MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = SET DateStyle = 'German';
-ERROR = !Variable datestyle unknown
+ERROR = !SET: Variable 'datestyle' unknown
 CODE  = 42000
 MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = SELECT timestamp with time zone '27.12.2001 04:05:06.789+08';
@@ -171,7 +171,7 @@ ERROR = !Incorrect timestamp value (27.12.2001 04:05:06.789-08) in: "select time
 CODE  = 22007
 MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = SET DateStyle = 'ISO';
-ERROR = !Variable datestyle unknown
+ERROR = !SET: Variable 'datestyle' unknown
 CODE  = 42000
 MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = SELECT time without time zone '040506.789+08';
@@ -215,7 +215,7 @@ ERROR = !Incorrect time value (T040506.789 -08) in: "select time with time zone 
 CODE  = 22007
 MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = SET DateStyle = 'Postgres, MDY';
-ERROR = !Variable datestyle unknown
+ERROR = !SET: Variable 'datestyle' unknown
 CODE  = 42000
 MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = SELECT date '1981-02-03' + time '04:05:06' AS "Date + Time";
@@ -336,17 +336,17 @@ CODE  = 42000
 MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = SELECT (timestamp with time zone 'today' = (timestamp with time zone 'yesterday' + interval '1 day')) as "True";
 ERROR = !Incorrect timestamp value (today) in: "select (timestamp with time zone 'today' ="
-        !syntax error, unexpected TIMESTAMP, expecting SELECT or '(' in: "(timestamp"
+        !syntax error, unexpected TIMESTAMP, expecting SELECT or '(' or VALUES in: "(timestamp"
 CODE  = 22007
 MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = SELECT (timestamp with time zone 'today' = (timestamp with time zone 'tomorrow' - interval '1 day')) as "True";
 ERROR = !Incorrect timestamp value (today) in: "select (timestamp with time zone 'today' ="
-        !syntax error, unexpected TIMESTAMP, expecting SELECT or '(' in: "(timestamp"
+        !syntax error, unexpected TIMESTAMP, expecting SELECT or '(' or VALUES in: "(timestamp"
 CODE  = 22007
 MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = SELECT (timestamp with time zone 'tomorrow' = (timestamp with time zone 'yesterday' + interval '2 days')) as "True";
 ERROR = !Incorrect timestamp value (tomorrow) in: "select (timestamp with time zone 'tomorrow' ="
-        !syntax error, unexpected TIMESTAMP, expecting SELECT or '(' in: "(timestamp"
+        !syntax error, unexpected TIMESTAMP, expecting SELECT or '(' or VALUES in: "(timestamp"
 CODE  = 22007
 MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = SELECT (timestamp with time zone 'tomorrow' > 'now') as "True";

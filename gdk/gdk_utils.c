@@ -703,8 +703,15 @@ GDKgetdebug(void)
 	return debug;
 }
 
+static bool Mbedded = 1;
+bool
+GDKembedded(void)
+{
+	return Mbedded;
+}
+
 gdk_return
-GDKinit(opt *set, int setlen)
+GDKinit(opt *set, int setlen, int embedded)
 {
 	static bool first = true;
 	char *dbpath = mo_find_option(set, setlen, "gdk_dbpath");
@@ -713,6 +720,7 @@ GDKinit(opt *set, int setlen)
 	int i, nlen = 0;
 	char buf[16];
 
+	Mbedded = embedded;
 	/* some sanity checks (should also find if symbols are not defined) */
 	static_assert(sizeof(int) == sizeof(int32_t),
 		      "int is not equal in size to int32_t");
@@ -759,7 +767,7 @@ GDKinit(opt *set, int setlen)
 			MT_lock_init(&GDKbbpLock[i].trim, name);
 			GDKbbpLock[i].free = 0;
 		}
-		if (mnstr_init() < 0) {
+		if (mnstr_init(embedded) < 0) {
 			TRC_CRITICAL(GDK, "mnstr_init failed\n");
 			return GDK_FAIL;
 		}
@@ -822,7 +830,7 @@ GDKinit(opt *set, int setlen)
 
 	n = (opt *) malloc(setlen * sizeof(opt));
 	if (n == NULL) {
-		TRC_CRITICAL(GDK, "malloc failed\n");
+		GDKsyserror("malloc failed\n");
 		return GDK_FAIL;
 	}
 
@@ -1093,21 +1101,17 @@ void
 GDKexit(int status)
 {
 	if (!GDKinmemory() && GET_GDKLOCK(PERSISTENT) == NULL) {
-#ifdef HAVE_EMBEDDED
-		return;
-#else
 		/* stop GDKtracer */
 		GDKtracer_stop();
 
 		/* no database lock, so no threads, so exit now */
-		exit(status);
-#endif
+		if (!GDKembedded())
+			exit(status);
 	}
 	GDKprepareExit();
 	GDKreset(status);
-#ifndef HAVE_EMBEDDED
-	exit(status);
-#endif
+	if (!GDKembedded())
+		exit(status);
 }
 
 /*
@@ -1145,7 +1149,6 @@ GDKlockHome(int farmid)
 	assert(BBPfarms[farmid].lock_file == NULL);
 
 	if(!(gdklockpath = GDKfilepath(farmid, NULL, GDKLOCK, NULL))) {
-		TRC_CRITICAL(GDK, "malloc failure\n");
 		return GDK_FAIL;
 	}
 
@@ -1170,8 +1173,8 @@ GDKlockHome(int farmid)
 	 * process allowed in this section */
 
 	if ((GDKlockFile = fdopen(fd, "r+")) == NULL) {
+		GDKsyserror("Could not fdopen %s\n", gdklockpath);
 		close(fd);
-		TRC_CRITICAL(GDK, "Could not fdopen %s\n", gdklockpath);
 		GDKfree(gdklockpath);
 		return GDK_FAIL;
 	}
@@ -1630,28 +1633,6 @@ GDKvm_cursize(void)
 
 #ifndef STATIC_CODE_ANALYSIS
 
-static void
-GDKmemfail(const char *s, size_t len)
-{
-	/* bumped your nose against the wall; try to prevent
-	 * repetition by adjusting maxsizes
-	   if (memtarget < 0.3 * GDKmem_cursize()) {
-		   size_t newmax = (size_t) (0.7 * (double) GDKmem_cursize());
-
-		   if (newmax < GDK_mem_maxsize)
-		   GDK_mem_maxsize = newmax;
-	   }
-	   if (vmtarget < 0.3 * GDKvm_cursize()) {
-		   size_t newmax = (size_t) (0.7 * (double) GDKvm_cursize());
-
-		   if (newmax < GDK_vm_maxsize)
-			   GDK_vm_maxsize = newmax;
-	   }
-	 */
-
-	TRC_WARNING(GDK, "%s(%zu) fails, try to free up space [memory in use=%zu,virtual memory in use=%zu]\n", s, len, GDKmem_cursize(), GDKvm_cursize());
-}
-
 /* Memory allocation
  *
  * The functions GDKmalloc, GDKzalloc, GDKrealloc, GDKstrdup, and
@@ -1710,8 +1691,7 @@ GDKmalloc_internal(size_t size)
 	 * extra space for check bytes */
 	nsize = (size + 7) & ~7;
 	if ((s = malloc(nsize + MALLOC_EXTRA_SPACE + DEBUG_SPACE)) == NULL) {
-		GDKmemfail("GDKmalloc", size);
-		GDKerror("failed for %zu bytes", size);
+		GDKsyserror("malloc failed; memory requested: %zu, memory in use: %zu, virtual memory in use: %zu\n", size, GDKmem_cursize(), GDKvm_cursize());;
 		return NULL;
 	}
 	s = (void *) ((char *) s + MALLOC_EXTRA_SPACE);
@@ -1869,8 +1849,7 @@ GDKrealloc(void *s, size_t size)
 #ifndef NDEBUG
 		os[-1] &= ~2;	/* not freed after all */
 #endif
-		GDKmemfail(__func__, size);
-		GDKerror("failed for %zu bytes", size);
+		GDKsyserror("realloc failed; memory requested: %zu, memory in use: %zu, virtual memory in use: %zu\n", size, GDKmem_cursize(), GDKvm_cursize());;
 		return NULL;
 	}
 	s = (void *) ((char *) s + MALLOC_EXTRA_SPACE);
@@ -1895,14 +1874,12 @@ GDKrealloc(void *s, size_t size)
 
 #else
 
-#define GDKmemfail(s, len)	/* nothing */
-
 void *
 GDKmalloc(size_t size)
 {
 	void *p = malloc(size);
 	if (p == NULL)
-		GDKerror("failed for %zu bytes", size);
+		GDKsyserror("failed for %zu bytes", size);
 	return p;
 }
 
@@ -1945,7 +1922,7 @@ GDKstrndup(const char *s, size_t size)
 {
 	char *p = malloc(size + 1);
 	if (p == NULL) {
-		GDKerror("failed for %s\n", s);
+		GDKsyserror("failed for %s\n", s);
 		return NULL;
 	}
 	memcpy(p, s, size);
@@ -1976,17 +1953,14 @@ GDKmmap(const char *path, int mode, size_t len)
 
 	if (GDKvm_cursize() + len >= GDK_vm_maxsize &&
 	    !MT_thread_override_limits()) {
-		GDKmemfail(__func__, len);
-		GDKerror("allocating too much virtual address space\n");
+		GDKerror("requested too much virtual memory; memory requested: %zu, memory in use: %zu, virtual memory in use: %zu\n", len, GDKmem_cursize(), GDKvm_cursize());
 		return NULL;
 	}
 	ret = MT_mmap(path, mode, len);
-	if (ret == NULL) {
-		GDKmemfail(__func__, len);
-	}
-	if (ret != NULL) {
+	if (ret != NULL)
 		meminc(len);
-	}
+	else
+		GDKerror("requesting virtual memory failed; memory requested: %zu, memory in use: %zu, virtual memory in use: %zu\n", len, GDKmem_cursize(), GDKvm_cursize());
 	return ret;
 }
 
@@ -2011,17 +1985,15 @@ GDKmremap(const char *path, int mode, void *old_address, size_t old_size, size_t
 	if (*new_size > old_size &&
 	    GDKvm_cursize() + *new_size - old_size >= GDK_vm_maxsize &&
 	    !MT_thread_override_limits()) {
-		GDKmemfail(__func__, *new_size);
-		GDKerror("allocating too much virtual address space\n");
+		GDKerror("requested too much virtual memory; memory requested: %zu, memory in use: %zu, virtual memory in use: %zu\n", *new_size, GDKmem_cursize(), GDKvm_cursize());
 		return NULL;
 	}
 	ret = MT_mremap(path, mode, old_address, old_size, new_size);
-	if (ret == NULL) {
-		GDKmemfail(__func__, *new_size);
-	}
 	if (ret != NULL) {
 		memdec(old_size);
 		meminc(*new_size);
+	} else {
+		GDKerror("requesting virtual memory failed; memory requested: %zu, memory in use: %zu, virtual memory in use: %zu\n", *new_size, GDKmem_cursize(), GDKvm_cursize());
 	}
 	return ret;
 }

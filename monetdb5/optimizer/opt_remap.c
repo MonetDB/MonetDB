@@ -56,7 +56,8 @@ OPTremapDirect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int idx,
 		if (p->argc == 3 &&
 			/* these two filter out unary batcalc.- with a candidate list */
 			getBatType(getArgType(mb, p, 1)) != TYPE_oid &&
-			getBatType(getArgType(mb, p, 2)) != TYPE_oid) {
+			getBatType(getArgType(mb, p, 2)) != TYPE_oid &&
+			getBatType(getArgType(mb, p, 2)) != TYPE_bit) { 
 			/* add candidate lists */
 			if (isaBatType(getArgType(mb, p, 1)))
 				p = pushNil(mb, p, TYPE_bat);

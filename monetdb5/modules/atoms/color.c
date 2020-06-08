@@ -395,3 +395,35 @@ CLRcolor(color *c, const char **val)
 		throw(MAL, "color.color", GDK_EXCEPTION);
 	return MAL_SUCCEED;
 }
+
+#include "mel.h"
+mel_atom color_init_atoms[] = {
+ { .name="color", .basetype="int", .size=sizeof(color), .tostr=(fptr)&color_tostr, .fromstr=(fptr)&color_fromstr, },  { .cmp=NULL } 
+};
+mel_func color_init_funcs[] = {
+ command("color", "str", CLRstr, false, "Converts color to string ", args(1,2, arg("",str),arg("s",color))),
+ command("color", "color", CLRcolor, false, "Converts string to color", args(1,2, arg("",color),arg("s",str))),
+ command("color", "rgb", CLRrgb, false, "Converts an RGB triplets to a color atom", args(1,4, arg("",color),arg("r",int),arg("g",int),arg("b",int))),
+ command("color", "red", CLRred, false, "Extracts red component from a color atom", args(1,2, arg("",int),arg("c",color))),
+ command("color", "green", CLRgreen, false, "Extracts green component from a color atom", args(1,2, arg("",int),arg("c",color))),
+ command("color", "blue", CLRblue, false, "Extracts blue component from a color atom", args(1,2, arg("",int),arg("c",color))),
+ command("color", "hue", CLRhueInt, false, "Extracts hue component from a color atom", args(1,2, arg("",int),arg("c",color))),
+ command("color", "saturation", CLRsaturationInt, false, "Extracts saturation component from a color atom", args(1,2, arg("",int),arg("c",color))),
+ command("color", "value", CLRvalueInt, false, "Extracts value component from a color atom", args(1,2, arg("",int),arg("c",color))),
+ command("color", "hsv", CLRhsv, false, "Converts an HSV triplets to a color atom", args(1,4, arg("",color),arg("h",flt),arg("s",flt),arg("v",flt))),
+ command("color", "hue", CLRhue, false, "Extracts hue component from a color atom", args(1,2, arg("",flt),arg("c",color))),
+ command("color", "saturation", CLRsaturation, false, "Extracts saturation component from a color atom", args(1,2, arg("",flt),arg("c",color))),
+ command("color", "value", CLRvalue, false, "Extracts value component from a color atom", args(1,2, arg("",flt),arg("c",color))),
+ command("color", "ycc", CLRycc, false, "Converts an YCC triplets to a color atom", args(1,4, arg("",color),arg("y",int),arg("cr",int),arg("cb",int))),
+ command("color", "luminance", CLRluminance, false, "Extracts Y(luminance) component from a color atom", args(1,2, arg("",int),arg("c",color))),
+ command("color", "cr", CLRcr, false, "Extracts Cr(red color) component from a color atom", args(1,2, arg("",int),arg("c",color))),
+ command("color", "cb", CLRcb, false, "Extracts Cb(blue color) component from a color atom", args(1,2, arg("",int),arg("c",color))),
+ { .imp=NULL }
+};
+#include "mal_import.h"
+#ifdef _MSC_VER
+#undef read
+#pragma section(".CRT$XCU",read)
+#endif
+LIB_STARTUP_FUNC(init_color_mal)
+{ mal_module("color", color_init_atoms, color_init_funcs); }
