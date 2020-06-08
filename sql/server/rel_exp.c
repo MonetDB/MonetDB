@@ -326,6 +326,7 @@ exp_op( sql_allocator *sa, list *l, sql_subfunc *f )
 		e->card = CARD_ATOM; /* unop returns a single atom */
 	e->l = l;
 	e->f = f;
+	e->semantics = f->func->semantics;
 
 	fres = exp_subtype(e);
 	 /* corner case if the output of the function is void, set the type to one of the inputs */
@@ -1693,10 +1694,10 @@ exp_is_cmp_exp_is_false(mvc *sql, sql_exp* e) {
      * Other cases in is-semantics are unspecified.
      */
     if (e->flag == cmp_equal && !e->anti) {
-        return (exp_is_null(sql, l) && exp_is_null(sql, r));
+        return ((exp_is_null(sql, l) && exp_is_not_null(sql, r)) || (exp_is_not_null(sql, l) && exp_is_null(sql, r)));
     }
     if (((e->flag == cmp_notequal) && !e->anti) || ((e->flag == cmp_equal) && e->anti) ) {
-        return ((exp_is_null(sql, l) && exp_is_not_null(sql, r))) || ((exp_is_not_null(sql, l) && exp_is_null(sql, r)));
+        return ((exp_is_null(sql, l) && exp_is_null(sql, r)) || (exp_is_not_null(sql, l) && exp_is_not_null(sql, r)));
     }
 
     return false;
@@ -1736,7 +1737,29 @@ exp_regular_cmp_exp_is_false(mvc *sql, sql_exp* e) {
 static inline bool
 exp_or_exp_is_false(mvc *sql, sql_exp* e) {
     assert(e->type == e_cmp && e->flag == cmp_or);
-    return exp_is_false(sql, e->l) && exp_is_false(sql, e->r);
+
+	list* left = e->l;
+	list* right = e->r;
+
+	bool left_is_false = false;
+	for(node* n = left->h; n; n=n->next) {
+		if (exp_is_false(sql, n->data)) {
+			left_is_false=true;
+			break;
+		}
+	}
+
+	if (!left_is_false) {
+		return false;
+	}
+
+	for(node* n = right->h; n; n=n->next) {
+		if (exp_is_false(sql, n->data)) {
+			return true;
+		}
+	}
+
+    return false;
 }
 
 static inline bool
@@ -1817,6 +1840,19 @@ exp_is_null(mvc *sql, sql_exp *e )
 	case e_convert:
 		return exp_is_null(sql, e->l);
 	case e_func:
+		if (!e->semantics && e->l) {
+			/* This is a call to a function with no-nil semantics.
+			 * If one of the parameters is null the expression itself is null
+			 */
+			list* l = e->l;
+			for(node* n = l->h; n; n=n->next) {
+				sql_exp* p = n->data;
+				if (exp_is_null(sql, p)) {
+					return true;
+				}
+			}
+		}
+		return 0;
 	case e_aggr:
 	case e_column:
 	case e_cmp:

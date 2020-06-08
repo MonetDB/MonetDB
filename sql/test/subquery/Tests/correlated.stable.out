@@ -620,7 +620,7 @@ stdout of test 'correlated` in directory 'sql/test/subquery` itself:
 % 1,	1 # length
 [ 1,	2	]
 #SELECT * FROM integers s1 INNER JOIN integers s2 ON (SELECT s1.i=s2.i) ORDER BY s1.i;
-% .s1,	.s2 # table_name
+% sys.s1,	sys.s2 # table_name
 % i,	i # name
 % int,	int # type
 % 1,	1 # length
@@ -628,7 +628,7 @@ stdout of test 'correlated` in directory 'sql/test/subquery` itself:
 [ 2,	2	]
 [ 3,	3	]
 #SELECT * FROM integers s1 INNER JOIN integers s2 ON (SELECT s1.i=i FROM integers WHERE s2.i=i) ORDER BY s1.i;
-% .s1,	.s2 # table_name
+% sys.s1,	sys.s2 # table_name
 % i,	i # name
 % int,	int # type
 % 1,	1 # length

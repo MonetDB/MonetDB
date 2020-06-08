@@ -2789,7 +2789,7 @@ sql_update_semantics(Client c)
 {
 	char* update_query =
 	"update sys.functions set semantics = false where type <> 6 and func not ilike '%CREATE FUNCTION%' and name in ('length','octet_length','>','>=','<','<=','min','max','sql_min','sql_max','least','greatest','sum','prod','mod','and',\n"
-	"'or','xor','not','sql_mul','sql_div','sql_sub','sql_add','bit_and','bit_or','bit_xor','bit_not','left_shift','right_shift','abs','sign','scale_up','scale_down','round','power','floor','ceil','ceiling','sin','cos','tan','asin',\n"
+	"'xor','not','sql_mul','sql_div','sql_sub','sql_add','bit_and','bit_or','bit_xor','bit_not','left_shift','right_shift','abs','sign','scale_up','scale_down','round','power','floor','ceil','ceiling','sin','cos','tan','asin',\n"
 	"'acos','atan','sinh','cot','cosh','tanh','sqrt','exp','log','ln','log10','log2','pi','curdate','current_date','curtime','current_time','current_timestamp','localtime','localtimestamp','local_timezone','century','decade','year',\n"
 	"'quarter','month','day','dayofyear','weekofyear','dayofweek','dayofmonth','week','hour','minute','second','strings','locate','charindex','splitpart','substring','substr','truncate','concat','ascii','code','right','left','upper',\n"
 	"'ucase','lower','lcase','trim','ltrim','rtrim','lpad','rpad','insert','replace','repeat','space','char_length','character_length','soundex','qgramnormalize');";
