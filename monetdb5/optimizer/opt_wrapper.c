@@ -51,6 +51,7 @@
 #include "opt_reorder.h"
 #include "opt_volcano.h"
 #include "opt_wlc.h"
+#include "optimizer_private.h"
 
 struct{
 	str nme;
@@ -91,7 +92,6 @@ struct{
 	{"wlc", &OPTwlcImplementation,0,0},
 	{0,0,0,0}
 };
-mal_export str OPTwrapper(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
 
 str OPTwrapper (Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
 	str modnme = "(NONE)";
@@ -155,8 +155,6 @@ str OPTwrapper (Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
 		throw(MAL, optimizer, SQLSTATE(42000) PROGRAM_GENERAL ":%s.%s %s", modnme, fcnnme, mb->errors);
 	return MAL_SUCCEED;
 }
-
-mal_export str OPTstatistics(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
 
 str
 OPTstatistics(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)

@@ -96,3 +96,16 @@ MANUALcreateOverview(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	BBPreclaim(com);
 	throw(MAL, "manual.functions", GDK_EXCEPTION);
 }
+
+#include "mel.h"
+mel_func manual_init_funcs[] = {
+ pattern("manual", "functions", MANUALcreateOverview, false, "Produces a table with all MAL functions known", args(5,5, batarg("mod",str),batarg("fcn",str),batarg("sig",str),batarg("adr",str),batarg("com",str))),
+ { .imp=NULL }
+};
+#include "mal_import.h"
+#ifdef _MSC_VER
+#undef read
+#pragma section(".CRT$XCU",read)
+#endif
+LIB_STARTUP_FUNC(init_manual_mal)
+{ mal_module("manual", NULL, manual_init_funcs); }

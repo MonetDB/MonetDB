@@ -248,18 +248,18 @@ rel_with_query(sql_query *query, symbol *q )
 	symbol *next = d->next->data.sym;
 	sql_rel *rel;
 
-	if (!stack_push_frame(sql, "WITH"))
+	if (!stack_push_frame(sql, NULL))
 		return sql_error(sql, 02, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	/* first handle all with's (ie inlined views) */
 	for (d = d->data.lval->h; d; d = d->next) {
 		symbol *sym = d->data.sym;
 		dnode *dn = sym->data.lval->h;
-		char *name = qname_table(dn->data.lval);
+		char *name = qname_schema_object(dn->data.lval);
 		sql_rel *nrel;
 
-		if (frame_find_var(sql, name)) {
+		if (frame_find_rel_view(sql, name)) {
 			stack_pop_frame(sql);
-			return sql_error(sql, 01, SQLSTATE(42000) "Variable '%s' already declared", name);
+			return sql_error(sql, 01, SQLSTATE(42000) "View '%s' already declared", name);
 		}
 		nrel = rel_semantic(query, sym);
 		if (!nrel) {  
@@ -573,7 +573,7 @@ rel_named_table_function(sql_query *query, sql_rel *rel, symbol *ast, int latera
 	symbol *sym = ast->data.lval->h->data.sym, *subquery = NULL;
 	dnode *l = sym->data.lval->h, *n;
 	char *tname = NULL;
-	char *fname = qname_fname(l->data.lval); 
+	char *fname = qname_schema_object(l->data.lval); 
 	char *sname = qname_schema(l->data.lval);
 	node *en;
 	sql_schema *s = cur_schema(sql);
@@ -953,33 +953,24 @@ table_ref(sql_query *query, sql_rel *rel, symbol *tableref, int lateral)
 		sql_schema *s = cur_schema(sql);
 		int allowed = 1;
 
-		tname = qname_table(name);
+		tname = qname_schema_object(name);
 
 		if (dlist_length(name) > 2)
 			return sql_error(sql, 02, SQLSTATE(3F000) "SELECT: only a schema and table name expected");
 
 		if (sname && !(s = mvc_bind_schema(sql, sname)))
 			return sql_error(sql, 02, SQLSTATE(3F000) "SELECT: no such schema '%s'", sname);
-		if (!sname) {
+		if (!sname)
 			temp_table = stack_find_rel_view(sql, tname);
-			if (!temp_table)
-				t = mvc_bind_table(sql, NULL, tname);
-		}
-		if (!t && !temp_table) {
-			t = mvc_bind_table(sql, s, tname);
-			if (!t && !sname) {
-				s = tmp_schema(sql);
-				t = mvc_bind_table(sql, s, tname);
-			}
-		}
+		if (!temp_table)
+			t = find_table_on_scope(sql, &s, sname, tname);
 		if (!t && !temp_table) {
 			return sql_error(sql, 02, SQLSTATE(42S02) "SELECT: no such table '%s'", tname);
 		} else if (!temp_table && !table_privs(sql, t, PRIV_SELECT)) {
 			allowed = 0;
 		}
-		if (tableref->data.lval->h->next->data.sym) {	/* AS */
+		if (tableref->data.lval->h->next->data.sym)	/* AS */
 			tname = tableref->data.lval->h->next->data.sym->data.lval->h->data.sval;
-		}
 		if (temp_table && !t) {
 			node *n;
 			int needed = !is_simple_project(temp_table->op);
@@ -1004,7 +995,7 @@ table_ref(sql_query *query, sql_rel *rel, symbol *tableref, int lateral)
 			}
 			if (allowed)
 				return temp_table;
-			return sql_error(sql, 02, SQLSTATE(42000) "SELECT: access denied for %s to table '%s.%s'", stack_get_string(sql, "current_user"), s->base.name, tname);
+			return sql_error(sql, 02, SQLSTATE(42000) "SELECT: access denied for %s to table '%s.%s'", sqlvar_get_string(find_global_var(sql, mvc_bind_schema(sql, "sys"), "current_user")), s->base.name, tname);
 		} else if (isView(t)) {
 			/* instantiate base view */
 			node *n,*m;
@@ -1035,7 +1026,7 @@ table_ref(sql_query *query, sql_rel *rel, symbol *tableref, int lateral)
 				rel = rel_reduce_on_column_privileges(sql, rel, t);
 			if (allowed && rel)
 				return rel;
-			return sql_error(sql, 02, SQLSTATE(42000) "SELECT: access denied for %s to table '%s.%s'", stack_get_string(sql, "current_user"), s->base.name, tname);
+			return sql_error(sql, 02, SQLSTATE(42000) "SELECT: access denied for %s to table '%s.%s'", sqlvar_get_string(find_global_var(sql, mvc_bind_schema(sql, "sys"), "current_user")), s->base.name, tname);
 		}
 		if ((isMergeTable(t) || isReplicaTable(t)) && list_empty(t->members.set))
 			return sql_error(sql, 02, SQLSTATE(42000) "MERGE or REPLICA TABLE should have at least one table associated");
@@ -1043,7 +1034,7 @@ table_ref(sql_query *query, sql_rel *rel, symbol *tableref, int lateral)
 		if (!allowed) {
 			res = rel_reduce_on_column_privileges(sql, res, t);
 			if (!res)
-				return sql_error(sql, 02, SQLSTATE(42000) "SELECT: access denied for %s to table '%s.%s'", stack_get_string(sql, "current_user"), s->base.name, tname);
+				return sql_error(sql, 02, SQLSTATE(42000) "SELECT: access denied for %s to table '%s.%s'", sqlvar_get_string(find_global_var(sql, mvc_bind_schema(sql, "sys"), "current_user")), s->base.name, tname);
 		}
 		if (tableref->data.lval->h->next->data.sym && tableref->data.lval->h->next->data.sym->data.lval->h->next->data.lval) /* AS with column aliases */
 			res = rel_table_optname(sql, res, tableref->data.lval->h->next->data.sym);
@@ -1059,19 +1050,33 @@ table_ref(sql_query *query, sql_rel *rel, symbol *tableref, int lateral)
 	}
 }
 
-static sql_exp *
-rel_var_ref(mvc *sql, char *name, int at)
+static inline sql_exp *
+rel_exp_variable_on_scope(mvc *sql, sql_schema *s, const char *sname, const char *vname)
 {
-	if (stack_find_var(sql, name)) {
-		sql_subtype *tpe = stack_find_type(sql, name);
-		int frame = stack_find_frame(sql, name);
+	sql_var *var = NULL;
+	sql_arg *a = NULL;
+	int level = 1;
 
-		return exp_param(sql->sa, name, tpe, frame);
-	} else if (at) {
-		return sql_error(sql, 02, SQLSTATE(42000) "SELECT: '@""%s' unknown", name);
-	} else {
-		return sql_error(sql, 02, SQLSTATE(42000) "SELECT: identifier '%s' unknown", name);
-	}
+	if (!sname && (var = stack_find_var_frame(sql, vname, &level))) /* check if variable is known from the stack */
+		return exp_param_or_declared(sql->sa, NULL, sa_strdup(sql->sa, var->name), &(var->var.tpe), level);
+	if (!sname && (a = sql_bind_param(sql, vname))) /* then if it is a parameter */
+		return exp_param_or_declared(sql->sa, NULL, sa_strdup(sql->sa, vname), &(a->type), 1);
+	if ((var = find_global_var(sql, s, vname))) /* then if it is a global var */
+		return exp_param_or_declared(sql->sa, sa_strdup(sql->sa, var->sname), sa_strdup(sql->sa, var->name), &(var->var.tpe), 0);
+	return NULL;
+}
+
+static sql_exp *
+rel_var_ref(mvc *sql, const char *sname, const char *vname)
+{
+	sql_schema *s = cur_schema(sql);
+	sql_exp *res = NULL;
+
+	if (sname && !(s = mvc_bind_schema(sql, sname)))
+		return sql_error(sql, 02, SQLSTATE(3F000) "SELECT: no such schema '%s'", sname);
+	if (!(res = rel_exp_variable_on_scope(sql, s, sname, vname)))
+		return sql_error(sql, 02, SQLSTATE(42000) "SELECT: identifier '%s%s%s' unknown", sname ? sname : "", sname ? "." : "", vname);
+	return res;
 }
 
 static sql_exp *
@@ -1154,9 +1159,7 @@ rel_column_ref(sql_query *query, sql_rel **rel, symbol *column_r, int f)
 		}
 		return NULL;
 	} else if (dlist_length(l) == 1) {
-		char *name = l->h->data.sval;
-		sql_arg *a = sql_bind_param(sql, name);
-		int var = stack_find_var(sql, name);
+		const char *name = l->h->data.sval;
 
 		if (!exp && inner)
 			if (!(exp = rel_bind_column(sql, inner, name, f, 0)) && sql->session->status == -ERR_AMBIGUOUS)
@@ -1204,31 +1207,34 @@ rel_column_ref(sql_query *query, sql_rel **rel, symbol *column_r, int f)
 			if (exp && outer && is_join(outer->op))
 				set_dependent(outer);
 		}
-		if (exp) {
-			if (var || a)
+
+		/* some views are just in the stack, like before and after updates views */
+		if (rel && sql->use_views) {
+			sql_rel *v = NULL;
+			int dup = stack_find_rel_view_projection_columns(sql, name, &v); /* trigger views are basetables relations, so those may conflict */
+
+			if (dup < 0 || (v && exp && *rel && is_base(v->op) && v != *rel)) /* comparing pointers, ugh */
 				return sql_error(sql, ERR_AMBIGUOUS, SQLSTATE(42000) "SELECT: identifier '%s' ambiguous", name);
-		} else if (a) {
-			if (var)
-				return sql_error(sql, ERR_AMBIGUOUS, SQLSTATE(42000) "SELECT: identifier '%s' ambiguous", name);
-			exp = exp_param(sql->sa, a->name, &a->type, 0);
-		}
-		if (!exp && var) {
-			sql_rel *r = stack_find_rel_var(sql, name);
-			if (r) {
-				*rel = r;
-				return exp_rel(sql, r);
+			if (v && !exp) {
+				if (*rel)
+					*rel = rel_crossproduct(sql->sa, *rel, v, op_join);
+				else
+					*rel = v;
+				exp = rel_bind_column(sql, *rel, name, f, 0);
 			}
-			return rel_var_ref(sql, name, 0);
 		}
-		if (!exp && !var)
+		if (!exp) /* If no column was found, try a variable or parameter */
+			exp = rel_exp_variable_on_scope(sql, cur_schema(sql), NULL, name);
+
+		if (!exp)
 			return sql_error(sql, 02, SQLSTATE(42000) "SELECT: identifier '%s' unknown", name);
 		if (exp && inner && inner->card <= CARD_AGGR && exp->card > CARD_AGGR && (is_sql_sel(f) || is_sql_having(f)) && !is_sql_aggr(f))
 			return sql_error(sql, ERR_GROUPBY, SQLSTATE(42000) "SELECT: cannot use non GROUP BY column '%s' in query results without an aggregate function", name);
 		if (exp && inner && is_groupby(inner->op) && !is_sql_aggr(f) && !is_freevar(exp))
 			exp = rel_groupby_add_aggr(sql, inner, exp);
 	} else if (dlist_length(l) == 2) {
-		char *tname = l->h->data.sval;
-		char *cname = l->h->next->data.sval;
+		const char *tname = l->h->data.sval;
+		const char *cname = l->h->next->data.sval;
 
 		if (!exp && rel && inner)
 			exp = rel_bind_column2(sql, inner, tname, cname, f);
@@ -1274,12 +1280,13 @@ rel_column_ref(sql_query *query, sql_rel **rel, symbol *column_r, int f)
 				set_dependent(outer);
 		}
 
-		/* some views are just in the stack,
-		   like before and after updates views */
-		if (rel && !exp && sql->use_views) {
+		/* some views are just in the stack, like before and after updates views */
+		if (rel && sql->use_views) {
 			sql_rel *v = stack_find_rel_view(sql, tname);
 
-			if (v) {
+			if (v && exp && *rel && is_base(v->op) && v != *rel) /* trigger views are basetables relations, so those may conflict */
+				return sql_error(sql, ERR_AMBIGUOUS, SQLSTATE(42000) "SELECT: identifier '%s.%s' ambiguous", tname, cname);
+			if (v && !exp) {
 				if (*rel)
 					*rel = rel_crossproduct(sql->sa, *rel, v, op_join);
 				else
@@ -1287,6 +1294,14 @@ rel_column_ref(sql_query *query, sql_rel **rel, symbol *column_r, int f)
 				exp = rel_bind_column2(sql, *rel, tname, cname, f);
 			}
 		}
+		if (!exp) { /* If no column was found, try a global variable */
+			sql_schema *s = mvc_bind_schema(sql, tname); /* search schema with table name, ugh */
+			sql_var *var = NULL;
+
+			if (s && (var = find_global_var(sql, s, cname)))
+				exp = exp_param_or_declared(sql->sa, sa_strdup(sql->sa, var->sname), sa_strdup(sql->sa, var->name), &(var->var.tpe), 0);
+		}
+
 		if (!exp)
 			return sql_error(sql, 02, SQLSTATE(42S22) "SELECT: no such column '%s.%s'", tname, cname);
 		if (exp && inner && inner->card <= CARD_AGGR && exp->card > CARD_AGGR && (is_sql_sel(f) || is_sql_having(f)) && !is_sql_aggr(f))
@@ -1687,7 +1702,7 @@ rel_filter(mvc *sql, sql_rel *rel, list *l, list *r, char *sname, char *filter_o
 		else
 			return sql_error(sql, ERR_GROUPBY, SQLSTATE(42000) "SELECT: cannot use non GROUP BY column in query results without an aggregate function");
 	}
-	if (exps_card(r) <= CARD_ATOM && exps_are_atoms(r)) {
+	if (exps_card(r) <= CARD_ATOM && (exps_are_atoms(r) || exps_have_freevar(sql, r) || exps_have_freevar(sql, l))) {
 		if (exps_card(l) == exps_card(r) || rel->processed)  /* bin compare op */
 			return rel_select(sql->sa, rel, e);
 
@@ -2321,7 +2336,7 @@ rel_logical_value_exp(sql_query *query, sql_rel **rel, symbol *sc, int f, exp_ki
 		dnode *ln = sc->data.lval->h->data.lval->h;
 		dnode *rn = sc->data.lval->h->next->next->data.lval->h;
 		dlist *filter_op = sc->data.lval->h->next->data.lval;
-		char *fname = qname_fname(filter_op);
+		char *fname = qname_schema_object(filter_op);
 		char *sname = qname_schema(filter_op);
 		list *exps, *tl;
 		sql_schema *s = cur_schema(sql);
@@ -2668,7 +2683,7 @@ rel_logical_exp(sql_query *query, sql_rel *rel, symbol *sc, int f)
 		dnode *ln = sc->data.lval->h->data.lval->h;
 		dnode *rn = sc->data.lval->h->next->next->data.lval->h;
 		dlist *filter_op = sc->data.lval->h->next->data.lval;
-		char *fname = qname_fname(filter_op);
+		char *fname = qname_schema_object(filter_op);
 		char *sname = qname_schema(filter_op);
 		list *l, *r;
 
@@ -2938,7 +2953,7 @@ rel_op(sql_query *query, sql_rel **rel, symbol *se, int f, exp_kind ek )
 {
 	mvc *sql = query->sql;
 	dnode *l = se->data.lval->h;
-	char *fname = qname_fname(l->data.lval);
+	char *fname = qname_schema_object(l->data.lval);
 	char *sname = qname_schema(l->data.lval);
 	sql_schema *s = cur_schema(sql);
 	sql_subfunc *sf = NULL;
@@ -3051,7 +3066,7 @@ rel_unop(sql_query *query, sql_rel **rel, symbol *se, int f, exp_kind ek)
 {
 	mvc *sql = query->sql;
 	dnode *l = se->data.lval->h;
-	char *fname = qname_fname(l->data.lval);
+	char *fname = qname_schema_object(l->data.lval);
 	char *sname = qname_schema(l->data.lval);
 	sql_schema *s = cur_schema(sql);
 	exp_kind iek = {type_value, card_column, FALSE};
@@ -3308,7 +3323,7 @@ rel_binop(sql_query *query, sql_rel **rel, symbol *se, int f, exp_kind ek)
 	mvc *sql = query->sql;
 	dnode *dl = se->data.lval->h;
 	sql_exp *l, *r;
-	char *fname = qname_fname(dl->data.lval);
+	char *fname = qname_schema_object(dl->data.lval);
 	char *sname = qname_schema(dl->data.lval);
 	sql_schema *s = cur_schema(sql);
 	exp_kind iek = {type_value, card_column, FALSE};
@@ -3364,7 +3379,7 @@ rel_nop(sql_query *query, sql_rel **rel, symbol *se, int f, exp_kind ek)
 	list *tl = sa_list(sql->sa);
 	sql_subfunc *sf = NULL;
 	sql_subtype *obj_type = NULL;
-	char *fname = qname_fname(l->data.lval);
+	char *fname = qname_schema_object(l->data.lval);
 	char *sname = qname_schema(l->data.lval);
 	sql_schema *s = cur_schema(sql);
 	exp_kind iek = {type_value, card_column, FALSE};
@@ -3901,7 +3916,7 @@ rel_aggr(sql_query *query, sql_rel **rel, symbol *se, int f)
 	dlist *l = se->data.lval;
 	dnode *d = l->h->next->next;
 	int distinct = l->h->next->data.i_val;
-	char *aname = qname_fname(l->h->data.lval);
+	char *aname = qname_schema_object(l->h->data.lval);
 	char *sname = qname_schema(l->h->data.lval);
 	sql_schema *s = cur_schema(sql);
 
@@ -4147,7 +4162,7 @@ rel_cast(sql_query *query, sql_rel **rel, symbol *se, int f)
 static sql_exp *
 rel_next_value_for( mvc *sql, symbol *se )
 {
-	char *seq = qname_table(se->data.lval);
+	char *seq = qname_schema_object(se->data.lval);
 	char *sname = qname_schema(se->data.lval);
 	sql_schema *s = cur_schema(sql);
 	sql_subtype t;
@@ -4156,7 +4171,7 @@ rel_next_value_for( mvc *sql, symbol *se )
 	if (sname && !(s = mvc_bind_schema(sql, sname)))
 		return sql_error(sql, 02, SQLSTATE(3F000) "NEXT VALUE FOR: no such schema '%s'", sname);
 	if (!mvc_schema_privs(sql, s))
-		return sql_error(sql, 02, SQLSTATE(42000) "NEXT VALUE FOR: access denied for %s to schema '%s'", stack_get_string(sql, "current_user"), s->base.name);
+		return sql_error(sql, 02, SQLSTATE(42000) "NEXT VALUE FOR: access denied for %s to schema '%s'", sqlvar_get_string(find_global_var(sql, mvc_bind_schema(sql, "sys"), "current_user")), s->base.name);
 
 	if (!find_sql_sequence(s, seq) && !stack_find_rel_view(sql, seq))
 		return sql_error(sql, 02, SQLSTATE(42000) "NEXT VALUE FOR: no such sequence '%s'.'%s'", s->base.name, seq);
@@ -4359,7 +4374,7 @@ rel_groupings(sql_query *query, sql_rel **rel, symbol *groupby, dlist *selection
 						if (e->type != e_column) { /* store group by expressions in the stack */
 							if (is_sql_group_totals(f))
 								return sql_error(sql, 02, SQLSTATE(42000) "GROUP BY: grouping expressions not possible with ROLLUP, CUBE and GROUPING SETS");
-							if (!stack_push_groupby_expression(sql, grp, e))
+							if (!frame_push_groupby_expression(sql, grp, e))
 								return NULL;
 						}
 						list_append(next_tuple, e);
@@ -4422,7 +4437,7 @@ rel_partition_groupings(sql_query *query, sql_rel **rel, symbol *partitionby, dl
 		if (exp_is_rel(e))
 			return sql_error(sql, 02, SQLSTATE(42000) "PARTITION BY: subqueries not allowed in PARTITION BY clause");
 		if (e->type != e_column) { /* store group by expressions in the stack */
-			if (!stack_push_groupby_expression(sql, grp, e))
+			if (!frame_push_groupby_expression(sql, grp, e))
 				return NULL;
 		}
 		if (e->card > CARD_AGGR)
@@ -4439,7 +4454,7 @@ rel_order_by_column_exp(sql_query *query, sql_rel **R, symbol *column_r, int f)
 {
 	mvc *sql = query->sql;
 	sql_rel *r = *R, *p = NULL;
-	sql_exp *e = NULL;
+	sql_exp *e = NULL, *found = NULL;
 	exp_kind ek = {type_value, card_column, FALSE};
 
 	if (!r)
@@ -4457,15 +4472,19 @@ rel_order_by_column_exp(sql_query *query, sql_rel **R, symbol *column_r, int f)
 	else if (r)
 		p->l = r;
 	if (e && p) {
-		e = rel_project_add_exp(sql, p, e);
-		for (node *n = p->exps->h ; n ; n = n->next) {
-			sql_exp *ee = n->data;
+		if (is_project(p->op) && (found = exps_any_match(p->exps, e))) { /* if one of the projections matches, return a reference to it */
+			e = exp_ref(sql, found);
+		} else {
+			e = rel_project_add_exp(sql, p, e);
+			for (node *n = p->exps->h ; n ; n = n->next) {
+				sql_exp *ee = n->data;
 
-			if (ee->card > r->card) {
-				if (exp_name(ee))
-					return sql_error(sql, ERR_GROUPBY, SQLSTATE(42000) "SELECT: cannot use non GROUP BY column '%s' in query results without an aggregate function", exp_name(ee));
-				else
-					return sql_error(sql, ERR_GROUPBY, SQLSTATE(42000) "SELECT: cannot use non GROUP BY column in query results without an aggregate function");
+				if (ee->card > r->card) {
+					if (exp_name(ee))
+						return sql_error(sql, ERR_GROUPBY, SQLSTATE(42000) "SELECT: cannot use non GROUP BY column '%s' in query results without an aggregate function", exp_name(ee));
+					else
+						return sql_error(sql, ERR_GROUPBY, SQLSTATE(42000) "SELECT: cannot use non GROUP BY column in query results without an aggregate function");
+				}
 			}
 		}
 		return e;
@@ -4757,13 +4776,13 @@ get_window_clauses(mvc *sql, char* ident, symbol **partition_by_clause, symbol *
 	if (THRhighwater())
 		return sql_error(sql, 10, SQLSTATE(42000) "Query too complex: running out of stack space");
 
-	if ((window_specification = stack_get_window_def(sql, ident, &pos)) == NULL)
+	if ((window_specification = frame_get_window_def(sql, ident, &pos)) == NULL)
 		return sql_error(sql, 02, SQLSTATE(42000) "SELECT: window '%s' not found", ident);
 
 	/* avoid infinite lookups */
-	if (stack_check_var_visited(sql, pos))
+	if (frame_check_var_visited(sql, pos))
 		return sql_error(sql, 02, SQLSTATE(42000) "SELECT: cyclic references to window '%s' found", ident);
-	stack_set_var_visited(sql, pos);
+	frame_set_var_visited(sql, pos);
 
 	if (window_specification->h->next->data.sym) {
 		if (*partition_by_clause)
@@ -4842,15 +4861,15 @@ rel_rankop(sql_query *query, sql_rel **rel, symbol *se, int f)
 	int distinct = 0, frame_type, pos, nf = f, nfargs = 0;
 	bool is_nth_value, supports_frames;
 
-	stack_clear_frame_visited_flag(sql); /* clear visited flags before iterating */
+	frame_clear_visited_flag(sql); /* clear visited flags before iterating */
 
 	if (l->h->next->type == type_list) {
 		window_specification = l->h->next->data.lval;
 	} else if (l->h->next->type == type_string) {
 		const char* window_alias = l->h->next->data.sval;
-		if ((window_specification = stack_get_window_def(sql, window_alias, &pos)) == NULL)
+		if ((window_specification = frame_get_window_def(sql, window_alias, &pos)) == NULL)
 			return sql_error(sql, 02, SQLSTATE(42000) "SELECT: window '%s' not found", window_alias);
-		stack_set_var_visited(sql, pos);
+		frame_set_var_visited(sql, pos);
 	} else {
 		assert(0);
 	}
@@ -4864,7 +4883,7 @@ rel_rankop(sql_query *query, sql_rel **rel, symbol *se, int f)
 		return NULL;
 
 	frame_type = order_by_clause ? FRAME_RANGE : FRAME_ROWS;
-	aname = qname_fname(dn->data.lval);
+	aname = qname_schema_object(dn->data.lval);
 	sname = qname_schema(dn->data.lval);
 
 	if (sname && !(s = mvc_bind_schema(sql, sname)))
@@ -5240,7 +5259,7 @@ rel_value_exp2(sql_query *query, sql_rel **rel, symbol *se, int f, exp_kind ek)
 		return sql_error(sql, 10, SQLSTATE(42000) "Query too complex: running out of stack space");
 
 	if (rel && *rel && (*rel)->card == CARD_AGGR) { /* group by expression case, handle it before */
-		sql_exp *exp = stack_get_groupby_expression(sql, se);
+		sql_exp *exp = frame_get_groupby_expression(sql, se);
 		if (sql->errstr[0] != '\0')
 			return NULL;
 		if (exp) {
@@ -5271,8 +5290,15 @@ rel_value_exp2(sql_query *query, sql_rel **rel, symbol *se, int f, exp_kind ek)
 		return rel_aggr(query, rel, se, f);
 	case SQL_WINDOW:
 		return rel_rankop(query, rel, se, f);
-	case SQL_NAME:
-		return rel_var_ref(sql, se->data.sval, 1);
+	case SQL_IDENT:
+	case SQL_COLUMN:
+		return rel_column_ref(query, rel, se, f );
+	case SQL_NAME: {
+		dlist *l = se->data.lval;
+		const char *sname = qname_schema(l);
+		const char *vname = qname_schema_object(l);
+		return rel_var_ref(sql, sname, vname);
+	}
 	case SQL_VALUES:
 	case SQL_WITH: 
 	case SQL_SELECT: {
@@ -5324,7 +5350,7 @@ rel_value_exp2(sql_query *query, sql_rel **rel, symbol *se, int f, exp_kind ek)
 	case SQL_NULLIF:
 		return rel_case_exp(query, rel, se, f);
 	case SQL_RANK:
-		return sql_error(sql, 02, SQLSTATE(42000) "SELECT: window function %s requires an OVER clause", qname_fname(se->data.lval->h->data.lval));
+		return sql_error(sql, 02, SQLSTATE(42000) "SELECT: window function %s requires an OVER clause", qname_schema_object(se->data.lval->h->data.lval));
 	case SQL_XMLELEMENT:
 	case SQL_XMLFOREST:
 	case SQL_XMLCOMMENT:
@@ -5339,13 +5365,50 @@ rel_value_exp2(sql_query *query, sql_rel **rel, symbol *se, int f, exp_kind ek)
 	}
 }
 
+static int exps_has_rank(list *exps);
+
+static int
+exp_has_rank(sql_exp *e)
+{
+	switch(e->type) {
+	case e_convert:
+		return exp_has_rank(e->l);
+	case e_func:
+		if (e->r)
+			return 1;
+		/* fall through */
+	case e_aggr:
+		return exps_has_rank(e->l);
+	default:
+		return 0;
+	}
+}
+
+/* TODO create exps_has (list, fptr ) */
+static int
+exps_has_rank(list *exps)
+{
+	if (!exps || list_empty(exps))
+		return 0;
+	for(node *n = exps->h; n; n=n->next){
+		sql_exp *e = n->data;
+
+		if (exp_has_rank(e))
+			return 1;
+	}
+	return 0;
+}
+
 sql_exp *
 rel_value_exp(sql_query *query, sql_rel **rel, symbol *se, int f, exp_kind ek)
 {
+	SelectNode *sn = NULL;
 	sql_exp *e;
 	if (!se)
 		return NULL;
 
+	if (se->token == SQL_SELECT)
+		sn = (SelectNode*)se;
 	if (THRhighwater())
 		return sql_error(query->sql, 10, SQLSTATE(42000) "Query too complex: running out of stack space");
 
@@ -5353,6 +5416,26 @@ rel_value_exp(sql_query *query, sql_rel **rel, symbol *se, int f, exp_kind ek)
 	if (e && (se->token == SQL_SELECT || se->token == SQL_TABLE) && !exp_is_rel(e)) {
 		assert(*rel);
 		return rel_lastexp(query->sql, *rel);
+	}
+	if (exp_has_rel(e) && sn && !sn->from && !sn->where && (ek.card < card_set || ek.card == card_exists) && ek.type != type_relation) {
+		sql_rel *r = exp_rel_get_rel(query->sql->sa, e);
+		sql_rel *l = r->l;
+
+		if (r && is_simple_project(r->op) && l && is_simple_project(l->op) && !l->l && !exps_has_rank(r->exps) && list_length(r->exps) == 1) { /* should be a simple column or value */
+			if (list_length(r->exps) > 1) { /* Todo make sure the in handling can handle a list ( value lists), instead of just a list of relations */
+				e = exp_values(query->sql->sa, r->exps);
+			} else {
+				e = r->exps->h->data;
+				if (*rel && !exp_has_rel(e)) {
+					rel_bind_var(query->sql, *rel, e);
+					if (exp_has_freevar(query->sql, e) && is_sql_aggr(f)) {
+						sql_rel *outer = query_fetch_outer(query, exp_has_freevar(query->sql, e)-1);
+						query_outer_pop_last_used(query, exp_has_freevar(query->sql, e)-1);
+					        reset_outer(outer);
+					}
+				}
+			}
+		}
 	}
 	return e;
 }
@@ -5768,9 +5851,9 @@ rel_query(sql_query *query, sql_rel *rel, symbol *sq, int toplevel, exp_kind ek)
 			dlist *wd = n->data.sym->data.lval;
 			const char *name = wd->h->data.sval;
 			dlist *wdef = wd->h->next->data.lval;
-			if (stack_get_window_def(sql, name, NULL)) {
+			if (frame_get_window_def(sql, name, NULL)) {
 				return sql_error(sql, 01, SQLSTATE(42000) "SELECT: Redefinition of window '%s'", name);
-			} else if (!stack_push_window_def(sql, name, wdef)) {
+			} else if (!frame_push_window_def(sql, name, wdef)) {
 				return sql_error(sql, 02, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			}
 		}
@@ -6089,7 +6172,7 @@ rel_subquery(sql_query *query, sql_rel *rel, symbol *sq, exp_kind ek)
 	mvc *sql = query->sql;
 	int toplevel = 0;
 
-	if (!stack_push_frame(sql, "SELECT"))
+	if (!stack_push_frame(sql, NULL))
 		return sql_error(sql, 02, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 
 	if (!rel || (rel->op == op_project &&
@@ -6156,12 +6239,13 @@ rel_selects(sql_query *query, symbol *s)
 sql_rel *
 schema_selects(sql_query *query, sql_schema *schema, symbol *s)
 {
+	mvc *sql = query->sql;
 	sql_rel *res;
-	sql_schema *os = query->sql->session->schema;
+	sql_schema *os = cur_schema(sql);
 
-	query->sql->session->schema = schema;
+	sql->session->schema = schema;
 	res = rel_selects(query, s);
-	query->sql->session->schema = os;
+	sql->session->schema = os;
 	return res;
 }
 
@@ -6176,7 +6260,7 @@ rel_loader_function(sql_query *query, symbol* fcall, list *fexps, sql_subfunc **
 	symbol *sym = fcall, *subquery = NULL;
 	dnode *l = sym->data.lval->h, *n;
 	char *sname = qname_schema(l->data.lval);
-	char *fname = qname_fname(l->data.lval);
+	char *fname = qname_schema_object(l->data.lval);
 	char *tname = NULL;
 	node *en;
 	sql_schema *s = cur_schema(sql);

@@ -204,3 +204,16 @@ GROUPmulticolumngroup(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	GROUPdelete(aggr);
 	return msg;
 }
+
+#include "mel.h"
+mel_func groupby_init_funcs[] = {
+ pattern("group", "multicolumn", GROUPmulticolumngroup, false, "Derivation of a group index over multiple columns.", args(3,4, batarg("ref",oid),batarg("grp",oid),batargany("hist",0),batvarargany("b",0))),
+ { .imp=NULL }
+};
+#include "mal_import.h"
+#ifdef _MSC_VER
+#undef read
+#pragma section(".CRT$XCU",read)
+#endif
+LIB_STARTUP_FUNC(init_groupby_mal)
+{ mal_module("groupby", NULL, groupby_init_funcs); }

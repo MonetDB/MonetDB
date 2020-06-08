@@ -78,19 +78,19 @@ delete from t_3_2 where id >-1;
 insert into t_3_1 values(10, 'monetdb');
 
 create trigger test_3_1
-	after insert on t_3_1 referencing old row as old_row
+	after insert on t_3_1
 	for each row insert into t_3_2 values(0, 'insert_old_row');
 
 create trigger test_3_2
-	after insert on t_3_1 referencing old row old_row
+	after insert on t_3_1
 	for each row insert into t_3_2 values(1, 'insert_old_row');
 
 create trigger test_3_3
-	after insert on t_3_1 referencing old as old_row
+	after insert on t_3_1
 	for each row insert into t_3_2 values(2, 'insert_old_row');
 
 create trigger test_3_4
-	after insert on t_3_1 referencing old old_row
+	after insert on t_3_1
 	for each row insert into t_3_2 values(3, 'insert_old_row');
 
 
@@ -157,19 +157,19 @@ create trigger test_3_1
 	for each row insert into t_3_2 values(0, 'update_old_row_new_table');
 
 create trigger test_3_2
-	after insert on t_3_1 referencing old row old_row new row as new_row
+	after insert on t_3_1
 	for each row insert into t_3_2 values(1, 'insert_old_new_row');
 
 create trigger test_3_3
-	after delete on t_3_1 referencing old row old_row new row as new_row
+	after delete on t_3_1 referencing old row old_row
 	for each row insert into t_3_2 values(2, 'delete_old_new_row');
 
 create trigger test_3_4
-	after delete on t_3_1 referencing old row as old_row new table as new_table
+	after delete on t_3_1 referencing old row as old_row
 	for each row insert into t_3_2 values(3, 'delete_old_row_new_table');
 
 create trigger test_3_5
-	after insert on t_3_1 referencing old table as old_table new row as new_row
+	after insert on t_3_1
 	for each row insert into t_3_2 values(4, 'insert_old_table_new_row');
 
 insert into t_3_1 values(20, 'monet');

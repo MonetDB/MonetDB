@@ -259,10 +259,8 @@ rel_bind_column_(mvc *sql, int *exp_has_nil, sql_rel *rel, const char *cname, in
 
 			if (!r || !e || !is_freevar(e)) {
 				l = rel_bind_column_(sql, exp_has_nil, rel->l, cname, no_tname);
-				if (l && r && !rel_issubquery(r) && !is_dependent(rel)) {
-					(void) sql_error(sql, ERR_AMBIGUOUS, SQLSTATE(42000) "SELECT: identifier '%s' ambiguous", cname);
-					return NULL;
-				}
+				if (l && r && !rel_issubquery(r) && !is_dependent(rel))
+					return sql_error(sql, ERR_AMBIGUOUS, SQLSTATE(42000) "SELECT: identifier '%s' ambiguous", cname);
 			}
 		}
 		if (sql->session->status == -ERR_AMBIGUOUS)
@@ -287,10 +285,8 @@ rel_bind_column_(mvc *sql, int *exp_has_nil, sql_rel *rel, const char *cname, in
 			return rel;
 		if (rel->r && is_groupby(rel->op) && exps_bind_column(rel->r, cname, &ambiguous, no_tname))
 			return rel;
-		if (ambiguous) {
-			(void) sql_error(sql, ERR_AMBIGUOUS, SQLSTATE(42000) "SELECT: identifier '%s' ambiguous", cname);
-			return NULL;
-		}
+		if (ambiguous)
+			return sql_error(sql, ERR_AMBIGUOUS, SQLSTATE(42000) "SELECT: identifier '%s' ambiguous", cname);
 		if (is_processed(rel))
 			return NULL;
 		if (rel->l && !(is_base(rel->op)))

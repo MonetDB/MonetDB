@@ -19,13 +19,14 @@ typedef struct exp_kind_t {
 	bit reduce;	
 } exp_kind;
 
-extern sql_schema *cur_schema(mvc *sql);
+sql_export sql_schema *cur_schema(mvc *sql);
 extern sql_schema *tmp_schema(mvc *sql);
+extern sql_table *find_table_on_scope(mvc *sql, sql_schema **s, const char *sname, const char *tname);
+
 extern char *qname_schema(dlist *qname);
-extern char *qname_table(dlist *qname);
+extern char *qname_schema_object(dlist *qname);
 extern char *qname_catalog(dlist *qname);
 #define qname_module(qname) qname_schema(qname)
-#define qname_fname(qname) qname_table(qname)
 
 extern sql_subtype *supertype(sql_subtype *super, sql_subtype *r, sql_subtype *i);
 

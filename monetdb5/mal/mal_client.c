@@ -261,13 +261,12 @@ MCinitClientRecord(Client c, oid user, bstream *fin, stream *fout)
 	c->sqlprofiler = 0;
 	c->wlc_kind = 0;
 	c->wlc = NULL;
-#ifndef HAVE_EMBEDDED /* no authentication in embedded mode */
-	{
+	/* no authentication in embedded mode */
+	if (!GDKembedded()) {
 		str msg = AUTHgetUsername(&c->username, c);
 		if (msg)				/* shouldn't happen */
 			freeException(msg);
 	}
-#endif
 	c->blocksize = BLOCK;
 	c->protocol = PROTOCOL_9;
 
@@ -411,10 +410,9 @@ MCfreeClient(Client c)
 	c->prompt = NULL;
 	c->promptlength = -1;
 	if (c->errbuf) {
-/* no client threads in embedded mode */
-#ifndef HAVE_EMBEDDED
+		/* no client threads in embedded mode */
+		//if (!GDKembedded())
 		GDKsetbuf(0);
-#endif
 		if (c->father == NULL)
 			GDKfree(c->errbuf);
 		c->errbuf = 0;

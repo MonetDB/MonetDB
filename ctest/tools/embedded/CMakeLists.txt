@@ -1,0 +1,89 @@
+#[[
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0.  If a copy of the MPL was not distributed with this
+# file, You can obtain one at http://mozilla.org/MPL/2.0/.
+#
+# Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
+#]]
+
+add_executable(example1 example1.c)
+target_link_libraries(example1
+  PRIVATE
+    monetdb_config_header
+    embedded
+    sqlinclude
+    gdk
+    mapi
+    #sql
+    )
+add_test(run_example1 example1)
+
+add_executable(example2 example2.c)
+target_link_libraries(example2
+  PRIVATE
+    monetdb_config_header
+    embedded
+    sqlinclude
+    gdk
+    mapi
+    #sql
+    )
+add_test(run_example2 example2)
+
+add_executable(example_temporal example_temporal.c)
+target_link_libraries(example_temporal
+  PRIVATE
+    monetdb_config_header
+    embedded
+    sqlinclude
+    gdk
+    mapi
+    #sql
+    )
+add_test(run_example_temporal example_temporal)
+
+add_executable(example_decimals example_decimals.c)
+target_link_libraries(example_decimals
+  PRIVATE
+    monetdb_config_header
+    embedded
+    sqlinclude
+    gdk
+    mapi
+    #sql
+    )
+add_test(run_example_decimals example_decimals)
+
+add_executable(example_blob example_blob.c)
+target_link_libraries(example_blob
+  PRIVATE
+    monetdb_config_header
+    embedded
+    sqlinclude
+    gdk
+    mapi
+    #sql
+    )
+add_test(run_example_blob example_blob)
+
+add_executable(example_append example_append.c)
+target_link_libraries(example_append
+  PRIVATE
+    monetdb_config_header
+    embedded
+    sqlinclude
+    gdk
+    mapi
+    #sql
+    )
+add_test(run_example_append example_append)
+
+add_executable(backup backup.c mapi.h mapi.c ../../../clients/mapiclient/dump.c)
+target_include_directories(backup PUBLIC .)
+target_link_libraries(backup
+  PRIVATE
+    monetdb_config_header
+    embedded
+    sqlinclude
+    gdk)
+add_test(run_backup backup)

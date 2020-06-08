@@ -134,18 +134,26 @@ comment "Equality of two daytimes";
 # address MTIMEcurrent_timestamp
 # comment "unix-time (epoch) support: seconds since the Unix epoch";
 
+module batmtime;
 module mtime;
 
 command epoch(t:timestamp):int
 address MTIMEseconds_since_epoch
 comment "unix-time (epoch) support: seconds since epoch";
+command batmtime.epoch(t:bat[:timestamp]) :bat[:int]
+address MTIMEseconds_since_epoch_bulk;
 
 command epoch(t:int):timestamp
 address MTIMEtimestamp_fromsecond
 comment "convert seconds since epoch into a timestamp";
+command batmtime.epoch(t:bat[:int]) :bat[:timestamp]
+address MTIMEtimestamp_fromsecond_bulk;
+
 command epoch(t:lng):timestamp
 address MTIMEtimestamp_frommsec
 comment "convert milli seconds since epoch into a timestamp";
+command batmtime.epoch(t:bat[:lng]) :bat[:timestamp]
+address MTIMEtimestamp_frommsec_bulk;
 
 module calc;
 pattern calc.==(v:timestamp,w:timestamp):bit
@@ -173,32 +181,58 @@ pattern calc.>=(v:timestamp,w:timestamp):bit
 address CMDvarGE
 comment "Equality of two timestamps";
 
-module batmtime;
 module mtime;
 # command date_sub_sec_interval(t:date,s:int):date
 # address MTIMEdate_sub_sec_interval_wrap
 # comment "Subtract seconds from a date";
 command date_sub_msec_interval(t:date,ms:lng):date
 address MTIMEdate_sub_msec_interval;
+command batmtime.date_sub_msec_interval(t:bat[:date],ms:bat[:lng]):bat[:date]
+address MTIMEdate_sub_msec_interval_bulk;
+command batmtime.date_sub_msec_interval(t:date,ms:bat[:lng]):bat[:date]
+address MTIMEdate_sub_msec_interval_bulk_p1;
+command batmtime.date_sub_msec_interval(t:bat[:date],ms:lng):bat[:date]
+address MTIMEdate_sub_msec_interval_bulk_p2;
 
 # command date_add_sec_interval(t:date,s:int):date
 # address MTIMEdate_add_sec_interval_wrap
 # comment "Add seconds to a date";
 command date_add_msec_interval(t:date,ms:lng):date
 address MTIMEdate_add_msec_interval;
+command batmtime.date_add_msec_interval(t:bat[:date],ms:bat[:lng]):bat[:date]
+address MTIMEdate_add_msec_interval_bulk;
+command batmtime.date_add_msec_interval(t:date,ms:bat[:lng]):bat[:date]
+address MTIMEdate_add_msec_interval_bulk_p1;
+command batmtime.date_add_msec_interval(t:bat[:date],ms:lng):bat[:date]
+address MTIMEdate_add_msec_interval_bulk_p2;
 
 command timestamp_sub_msec_interval(t:timestamp,ms:lng):timestamp
 address MTIMEtimestamp_sub_msec_interval;
 command batmtime.timestamp_sub_msec_interval(t:bat[:timestamp],ms:bat[:lng]):bat[:timestamp]
 address MTIMEtimestamp_sub_msec_interval_bulk;
+command batmtime.timestamp_sub_msec_interval(t:timestamp,ms:bat[:lng]):bat[:timestamp]
+address MTIMEtimestamp_sub_msec_interval_bulk_p1;
+command batmtime.timestamp_sub_msec_interval(t:bat[:timestamp],ms:lng):bat[:timestamp]
+address MTIMEtimestamp_sub_msec_interval_bulk_p2;
+
 command timestamp_add_msec_interval(t:timestamp,ms:lng):timestamp
 address MTIMEtimestamp_add_msec_interval;
 command batmtime.timestamp_add_msec_interval(t:bat[:timestamp],ms:bat[:lng]):bat[:timestamp]
 address MTIMEtimestamp_add_msec_interval_bulk;
+command batmtime.timestamp_add_msec_interval(t:timestamp,ms:bat[:lng]):bat[:timestamp]
+address MTIMEtimestamp_add_msec_interval_bulk_p1;
+command batmtime.timestamp_add_msec_interval(t:bat[:timestamp],ms:lng):bat[:timestamp]
+address MTIMEtimestamp_add_msec_interval_bulk_p2;
 
 command timestamp_sub_month_interval(t:timestamp,s:int):timestamp
 address MTIMEtimestamp_sub_month_interval
 comment "Subtract months from a timestamp";
+command batmtime.timestamp_sub_month_interval(t:bat[:timestamp],s:bat[:int]):bat[:timestamp]
+address MTIMEtimestamp_sub_month_interval_bulk;
+command batmtime.timestamp_sub_month_interval(t:timestamp,s:bat[:int]):bat[:timestamp]
+address MTIMEtimestamp_sub_month_interval_bulk_p1;
+command batmtime.timestamp_sub_month_interval(t:bat[:timestamp],s:int):bat[:timestamp]
+address MTIMEtimestamp_sub_month_interval_bulk_p2;
 
 # command timestamp_sub_month_interval(t:timestamp,s:lng):timestamp
 # address MTIMEtimestamp_sub_month_interval_lng_wrap
@@ -207,6 +241,12 @@ comment "Subtract months from a timestamp";
 command timestamp_add_month_interval(t:timestamp,s:int):timestamp
 address MTIMEtimestamp_add_month_interval
 comment "Add months to a timestamp";
+command batmtime.timestamp_add_month_interval(t:bat[:timestamp],s:bat[:int]):bat[:timestamp]
+address MTIMEtimestamp_add_month_interval_bulk;
+command batmtime.timestamp_add_month_interval(t:timestamp,s:bat[:int]):bat[:timestamp]
+address MTIMEtimestamp_add_month_interval_bulk_p1;
+command batmtime.timestamp_add_month_interval(t:bat[:timestamp],s:int):bat[:timestamp]
+address MTIMEtimestamp_add_month_interval_bulk_p2;
 
 # command timestamp_add_month_interval(t:timestamp,s:lng):timestamp
 # address MTIMEtimestamp_add_month_interval_lng_wrap
@@ -218,9 +258,22 @@ comment "Add months to a timestamp";
 command time_sub_msec_interval(t:daytime,ms:lng):daytime
 address MTIMEtime_sub_msec_interval
 comment "Subtract seconds from a time";
+command batmtime.time_sub_msec_interval(t:bat[:daytime],ms:bat[:lng]):bat[:daytime]
+address MTIMEtime_sub_msec_interval_bulk;
+command batmtime.time_sub_msec_interval(t:daytime,ms:bat[:lng]):bat[:daytime]
+address MTIMEtime_sub_msec_interval_bulk_p1;
+command batmtime.time_sub_msec_interval(t:bat[:daytime],ms:lng):bat[:daytime]
+address MTIMEtime_sub_msec_interval_bulk_p2;
+
 command time_add_msec_interval(t:daytime,ms:lng):daytime
 address MTIMEtime_add_msec_interval
 comment "Add seconds to a time";
+command batmtime.time_add_msec_interval(t:bat[:daytime],ms:bat[:lng]):bat[:daytime]
+address MTIMEtime_add_msec_interval_bulk;
+command batmtime.time_add_msec_interval(t:daytime,ms:bat[:lng]):bat[:daytime]
+address MTIMEtime_add_msec_interval_bulk_p1;
+command batmtime.time_add_msec_interval(t:bat[:daytime],ms:lng):bat[:daytime]
+address MTIMEtime_add_msec_interval_bulk_p2;
 
 command diff(val1:daytime, val2:daytime) :lng
 address MTIMEdaytime_diff_msec
@@ -230,9 +283,15 @@ comment "returns the number of msec between 'val1' and 'val2'.";
 # address MTIMEdate_addmonths
 # comment "Add months to a date";
 
-command date_sub_month_interval(t:date,s:int):date
+command date_sub_month_interval(t:date,months:int):date
 address MTIMEdate_submonths
 comment "Subtract months from a date";
+command batmtime.date_sub_month_interval(t:bat[:date],months:bat[:int]):bat[:date]
+address MTIMEdate_submonths_bulk;
+command batmtime.date_sub_month_interval(t:date,months:bat[:int]):bat[:date]
+address MTIMEdate_submonths_bulk_p1;
+command batmtime.date_sub_month_interval(t:bat[:date],months:int):bat[:date]
+address MTIMEdate_submonths_bulk_p2;
 
 # @-
 # #command int(d:date):int = MTIMEdate_2int;
@@ -375,6 +434,13 @@ command addmonths(value:date, months:int) :date
 address MTIMEdate_addmonths
 comment "returns the date after a number of
 	months (possibly negative).";
+command batmtime.addmonths(value:bat[:date],months:bat[:int]):bat[:date]
+address MTIMEdate_addmonths_bulk;
+command batmtime.addmonths(value:date,months:bat[:int]):bat[:date]
+address MTIMEdate_addmonths_bulk_p1;
+command batmtime.addmonths(value:bat[:date],months:int):bat[:date]
+address MTIMEdate_addmonths_bulk_p2;
+
 # command adddays(value:date, days:int) :date
 # address MTIMEdate_adddays
 # comment "returns the date after a number
@@ -388,9 +454,15 @@ command dayofyear(d:date) :int
 address MTIMEdate_extract_dayofyear
 comment "Returns N where d is the Nth day
 	of the year (january 1 returns 1)";
+command batmtime.dayofyear(d:bat[:date]):bat[:int]
+address MTIMEdate_extract_dayofyear_bulk;
+
 command weekofyear(d:date) :int
 address MTIMEdate_extract_weekofyear
 comment "Returns the week number in the year.";
+command batmtime.weekofyear(d:bat[:date]):bat[:int]
+address MTIMEdate_extract_weekofyear_bulk;
+
 # command week(d:date) :int
 # address MTIMEdate_extract_weekofyear
 # comment "Returns the week number in the year.";
@@ -398,6 +470,8 @@ command dayofweek(d:date) :int
 address MTIMEdate_extract_dayofweek
 comment "Returns the current day of the week
 	where 1=monday, .., 7=sunday";
+command batmtime.dayofweek(d:bat[:date]):bat[:int]
+address MTIMEdate_extract_dayofweek_bulk;
 
 # command add(v:timestamp, msecs:lng) :timestamp
 # address MTIMEtimestamp_add
@@ -435,26 +509,62 @@ comment "returns the number of milliseconds
 command str_to_date(s:str, format:str) :date
 address MTIMEstr_to_date
 comment "create a date from the string, using the specified format (see man strptime)";
+command batmtime.str_to_date(s:bat[:str], format:bat[:str]) :bat[:date]
+address MTIMEstr_to_date_bulk;
+command batmtime.str_to_date(s:str, format:bat[:str]) :bat[:date]
+address MTIMEstr_to_date_bulk_p1;
+command batmtime.str_to_date(s:bat[:str], format:str) :bat[:date]
+address MTIMEstr_to_date_bulk_p2;
 
 command date_to_str(d:date, format:str) :str
 address MTIMEdate_to_str
 comment "create a string from the date, using the specified format (see man strftime)";
+command batmtime.date_to_str(d:bat[:str], format:bat[:str]) :bat[:str]
+address MTIMEdate_to_str_bulk;
+command batmtime.date_to_str(d:date, format:bat[:str]) :bat[:str]
+address MTIMEdate_to_str_bulk_p1;
+command batmtime.date_to_str(d:bat[:date], format:str) :bat[:str]
+address MTIMEdate_to_str_bulk_p2;
 
 command str_to_time(s:str, format:str) :daytime
 address MTIMEstr_to_time
 comment "create a time from the string, using the specified format (see man strptime)";
+command batmtime.str_to_time(s:bat[:str], format:bat[:str]) :bat[:daytime]
+address MTIMEstr_to_time_bulk;
+command batmtime.str_to_time(s:str, format:bat[:str]) :bat[:daytime]
+address MTIMEstr_to_time_bulk_p1;
+command batmtime.str_to_time(s:bat[:str], format:str) :bat[:daytime]
+address MTIMEstr_to_time_bulk_p2;
 
 command time_to_str(d:daytime, format:str) :str
 address MTIMEtime_to_str
 comment "create a string from the time, using the specified format (see man strftime)";
+command batmtime.time_to_str(d:bat[:daytime], format:bat[:str]) :bat[:str]
+address MTIMEtime_to_str_bulk;
+command batmtime.time_to_str(d:daytime, format:bat[:str]) :bat[:str]
+address MTIMEtime_to_str_bulk_p1;
+command batmtime.time_to_str(d:bat[:daytime], format:str) :bat[:str]
+address MTIMEtime_to_str_bulk_p2;
 
 command str_to_timestamp(s:str, format:str) :timestamp
 address MTIMEstr_to_timestamp
 comment "create a timestamp from the string, using the specified format (see man strptime)";
+command batmtime.str_to_timestamp(d:bat[:str], format:bat[:str]) :bat[:timestamp]
+address MTIMEstr_to_timestamp_bulk;
+command batmtime.str_to_timestamp(s:str, format:bat[:str]) :bat[:timestamp]
+address MTIMEstr_to_timestamp_bulk_p1;
+command batmtime.str_to_timestamp(s:bat[:str], format:str) :bat[:timestamp]
+address MTIMEstr_to_timestamp_bulk_p2;
 
 command timestamp_to_str(d:timestamp, format:str) :str
 address MTIMEtimestamp_to_str
 comment "create a string from the time, using the specified format (see man strftime)";
+command batmtime.timestamp_to_str(d:bat[:timestamp], format:bat[:str]) :bat[:str]
+address MTIMEtimestamp_to_str_bulk;
+command batmtime.timestamp_to_str(d:timestamp, format:bat[:str]) :bat[:str]
+address MTIMEtimestamp_to_str_bulk_p1;
+command batmtime.timestamp_to_str(d:bat[:timestamp], format:str) :bat[:str]
+address MTIMEtimestamp_to_str_bulk_p2;
 
 # @+ Utilities
 # The Monet V4 procs are converted into functions.
@@ -482,20 +592,44 @@ address MTIMEcurrent_time;
 
 command century(t:timestamp):int
 address MTIMEtimestamp_century;
+command batmtime.century(t:bat[:timestamp]):bat[:int]
+address MTIMEtimestamp_century_bulk;
+
 command decade(t:timestamp):int
 address MTIMEtimestamp_decade;
+command batmtime.decade(t:bat[:timestamp]):bat[:int]
+address MTIMEtimestamp_decade_bulk;
+
 command year(t:timestamp):int
 address MTIMEtimestamp_year;
+command batmtime.year(t:bat[:timestamp]):bat[:int]
+address MTIMEtimestamp_year_bulk;
+
 command quarter(t:timestamp):int
 address MTIMEtimestamp_quarter;
+command batmtime.quarter(t:bat[:timestamp]):bat[:int]
+address MTIMEtimestamp_quarter_bulk;
+
 command month(t:timestamp):int
 address MTIMEtimestamp_month;
+command batmtime.month(t:bat[:timestamp]):bat[:int]
+address MTIMEtimestamp_month_bulk;
+
 command day(t:timestamp):int
 address MTIMEtimestamp_day;
+command batmtime.day(t:bat[:timestamp]):bat[:int]
+address MTIMEtimestamp_day_bulk;
+
 command hours(t:timestamp):int
 address MTIMEtimestamp_hours;
+command batmtime.hours(t:bat[:timestamp]):bat[:int]
+address MTIMEtimestamp_hours_bulk;
+
 command minutes(t:timestamp):int
 address MTIMEtimestamp_minutes;
+command batmtime.minutes(t:bat[:timestamp]):bat[:int]
+address MTIMEtimestamp_minutes_bulk;
+
 # command seconds(t:timestamp):int
 # address MTIMEtimestamp_seconds;
 command sql_seconds(t:timestamp):int
@@ -507,16 +641,33 @@ address MTIMEtimestamp_sql_seconds_bulk;
 
 command year(months:int):int
 address MTIMEsql_year;
+command batmtime.year(months:bat[:int]):bat[:int]
+address MTIMEsql_year_bulk;
+
 command month(months:int):int
 address MTIMEsql_month;
+command batmtime.month(months:bat[:int]):bat[:int]
+address MTIMEsql_month_bulk;
+
 command day(msecs:lng):lng
 address MTIMEsql_day;
+command batmtime.day(msecs:bat[:lng]):bat[:lng]
+address MTIMEsql_day_bulk;
+
 command hours(msecs:lng):int
 address MTIMEsql_hours;
+command batmtime.hours(msecs:bat[:lng]):bat[:int]
+address MTIMEsql_hours_bulk;
+
 command minutes(msecs:lng):int
 address MTIMEsql_minutes;
+command batmtime.minutes(msecs:bat[:lng]):bat[:int]
+address MTIMEsql_minutes_bulk;
+
 command seconds(msecs:lng):int
 address MTIMEsql_seconds;
+command batmtime.seconds(msecs:bat[:lng]):bat[:int]
+address MTIMEsql_seconds_bulk;
 
 # unsafe command msec():lng
 # address MTIMEmsec
@@ -541,9 +692,17 @@ command daytime(t:timestamp) :daytime address MTIMEtimestamp_extract_daytime;
 
 module batcalc;
 
+command date(s:bat[:str]) :bat[:date]
+address MTIMEdate_fromstr_bulk;
+command date(d:bat[:date]) :bat[:date]
+address MTIMEdate_date_bulk;
 command date(t:bat[:timestamp]) :bat[:date]
 address MTIMEtimestamp_extract_date_bulk;
 
+command timestamp(s:bat[:str]) :bat[:timestamp]
+address MTIMEtimestamp_fromstr_bulk;
+command timestamp(t:bat[:timestamp]) :bat[:timestamp]
+address MTIMEtimestamp_timestamp_bulk;
 command timestamp(d:bat[:date]) :bat[:timestamp]
 address MTIMEtimestamp_fromdate_bulk;
 command timestamp(secs:bat[:int]) :bat[:timestamp]
@@ -551,6 +710,10 @@ address MTIMEtimestamp_fromsecond_bulk;
 command timestamp(msecs:bat[:lng]) :bat[:timestamp]
 address MTIMEtimestamp_frommsec_bulk;
 
+command daytime(s:bat[:str]) :bat[:daytime]
+address MTIMEdaytime_fromstr_bulk;
+command daytime(d:bat[:daytime]) :bat[:daytime]
+address MTIMEdaytime_daytime_bulk;
 command daytime(s:bat[:lng]) :bat[:daytime]
 address MTIMEdaytime_fromseconds_bulk;
 command daytime(t:bat[:timestamp]) :bat[:daytime]

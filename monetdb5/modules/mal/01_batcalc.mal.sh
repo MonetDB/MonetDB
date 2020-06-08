@@ -1274,13 +1274,13 @@ for tp in ${numeric[@]}; do
     cat <<EOF
 pattern avg(b:bat[:$tp]) :dbl
 address CMDcalcavg
-comment "average of non-nil values of B with candidates list";
+comment "average of non-nil values of B";
 pattern avg(b:bat[:$tp],s:bat[:oid]) :dbl
 address CMDcalcavg
-comment "average of non-nil values of B";
+comment "average of non-nil values of B with candidates list";
 pattern avg(b:bat[:$tp],s:bat[:msk]) :dbl
 address CMDcalcavg
-comment "average of non-nil values of B";
+comment "average of non-nil values of B with candidates mask";
 pattern avg(b:bat[:$tp]) (:dbl, :lng)
 address CMDcalcavg
 comment "average and number of non-nil values of B";

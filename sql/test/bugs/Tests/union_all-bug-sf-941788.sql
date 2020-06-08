@@ -4,7 +4,7 @@ SELECT * FROM ( SELECT null AS
 "TABLE_TYPE", '' AS "REMARKS", null AS "TYPE_CAT", null
 AS "TYPE_SCHEM", null AS "TYPE_NAME", 'id' AS
 "SELF_REFERENCING_COL_NAME", 'SYSTEM' AS
-"REF_GENERATION" FROM "_tables" as ptables, "schemas" WHERE
+"REF_GENERATION" FROM "sys"."_tables" as ptables, "schemas" WHERE
 "ptables"."schema_id" = "schemas"."id" AND
 "ptables"."type" = 0 AND "ptables"."system" = true
 AND "ptables"."name" IN ('args', 'columns', 'functions', 'idxs',
@@ -29,7 +29,7 @@ SELECT null AS "TABLE_CAT", "schemas"."name" AS
 AS "TYPE_CAT", null AS "TYPE_SCHEM",
 null AS "TYPE_NAME", 'id' AS
 "SELF_REFERENCING_COL_NAME", 'SYSTEM' AS "REF_GENERATION"
-FROM "_tables" as ptables, "schemas" WHERE "ptables"."schema_id" =
+FROM "sys"."_tables" as ptables, "schemas" WHERE "ptables"."schema_id" =
 "schemas"."id" AND "ptables"."type" = 0 AND "ptables"."system" = true
 AND "ptables"."name" IN ('args', 'columns', 'functions', 'idxs',
     'objects', 'keys', 'modules', 'sequences')

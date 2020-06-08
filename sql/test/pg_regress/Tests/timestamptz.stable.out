@@ -30,26 +30,30 @@ stdout of test 'timestamptz` in directory 'sql/test/pg_regress` itself:
 [ 1 ]
 #INSERT INTO TIMESTAMPTZ_TBL VALUES (cast(sql_add(current_date, 24*60*60.0) as timestamptz));
 [ 1	]
-#SELECT count(*) AS One FROM TIMESTAMPTZ_TBL WHERE d1 = cast(test_current_date as timestamptz);
-% sys. # table_name
+#INSERT INTO TIMESTAMPTZ_TBL VALUES (cast(sql_sub((select test_current_date from test_current_date), 24*60*60.0) as timestamptz));
+[ 1	]
+#INSERT INTO TIMESTAMPTZ_TBL VALUES (cast(sql_add((select test_current_date from test_current_date), 24*60*60.0) as timestamptz));
+[ 1	]
+#SELECT count(*) AS One FROM TIMESTAMPTZ_TBL WHERE d1 = cast((select test_current_date from test_current_date) as timestamptz);
+% . # table_name
 % one # name
 % bigint # type
 % 1 # length
 [ 1 ]
-#SELECT count(*) AS One FROM TIMESTAMPTZ_TBL WHERE d1 = cast(sql_add(test_current_date, 24*60*60.0)as timestamptz);
-% sys. # table_name
+#SELECT count(*) AS One FROM TIMESTAMPTZ_TBL WHERE d1 = cast(sql_add((select test_current_date from test_current_date), 24*60*60.0)as timestamptz);
+% . # table_name
 % one # name
 % bigint # type
 % 1 # length
 [ 1 ]
-#SELECT count(*) AS One FROM TIMESTAMPTZ_TBL WHERE d1 = cast(sql_sub(test_current_date, 24*60*60.0)as timestamptz);
-% sys. # table_name
+#SELECT count(*) AS One FROM TIMESTAMPTZ_TBL WHERE d1 = cast(sql_sub((select test_current_date from test_current_date), 24*60*60.0)as timestamptz);
+% . # table_name
 % one # name
 % bigint # type
 % 1 # length
 [ 1 ]
-#SELECT count(*) AS None FROM TIMESTAMPTZ_TBL WHERE d1 = cast(test_now as timestamptz);
-% sys. # table_name
+#SELECT count(*) AS None FROM TIMESTAMPTZ_TBL WHERE d1 = cast((select test_now from test_now) as timestamptz);
+% . # table_name
 % none # name
 % bigint # type
 % 1 # length
@@ -61,8 +65,8 @@ stdout of test 'timestamptz` in directory 'sql/test/pg_regress` itself:
 [ 1 ]
 #INSERT INTO TIMESTAMPTZ_TBL VALUES ('now');
 [ 1 ]
-#SELECT count(*) AS two FROM TIMESTAMPTZ_TBL WHERE d1 <= cast(test_now as timestamptz);
-% sys. # table_name
+#SELECT count(*) AS two FROM TIMESTAMPTZ_TBL WHERE d1 <= cast((select test_now from test_now) as timestamptz);
+% . # table_name
 % two # name
 % bigint # type
 % 1 # length

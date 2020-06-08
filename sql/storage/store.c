@@ -2006,8 +2006,6 @@ store_load(backend_stack stk) {
 		}
 	}
 
-	(void) bootstrap_create_schema(tr, dt_schema, ROLE_SYSADMIN, USER_MONETDB);
-
 	if (first) {
 		insert_types(tr, types);
 		insert_functions(tr, funcs, args);
@@ -2262,8 +2260,6 @@ store_exit(void)
 	store_initialized=0;
 }
 
-
-sql_trans *sql_trans_create(backend_stack stk, sql_trans *parent, const char *name, bool try_spare);
 static sql_trans * trans_init(sql_trans *tr, backend_stack stk, sql_trans *otr);
 
 /* call locked! */
@@ -2655,6 +2651,8 @@ hot_snapshot_write_tar(stream *out, const char *prefix, char *plan)
 	char a;
 	a = '\0';
 	ret = tar_write(out, &a, 1);
+	if (ret == GDK_SUCCEED)
+		ret = tar_write(out, &a, 1);
 
 end:
 	free(plan);
@@ -3890,7 +3888,7 @@ conditional_table_dup(sql_trans *tr, int flags, sql_table *ot, sql_schema *s)
 	    /* allways dup in recursive mode */
 	    tr->parent != gtrans)
 		return table_dup(tr, flags, ot, s);
-	else if (!isGlobal(ot)){/* is local temp, may need to be cleared */
+	else if (!isGlobal(ot)) { /* is local temp, may need to be cleared */
 		if (ot->commit_action == CA_DELETE) {
 			sql_trans_clear_table(tr, ot);
 		} else if (ot->commit_action == CA_DROP) {
@@ -4563,7 +4561,7 @@ validate_tables(sql_schema *s, sql_schema *os)
 				continue;
 
  			ot = find_sql_table(os, t->base.name);
-			if (ot && isKindOfTable(ot) && isKindOfTable(t)) {
+			if (ot && isKindOfTable(ot) && isKindOfTable(t) && !isDeclaredTable(ot) && !isDeclaredTable(t)) {
 				if ((t->base.wtime && (t->base.wtime < ot->base.rtime || t->base.wtime < ot->base.wtime)) ||
 				    (t->base.rtime && (t->base.rtime < ot->base.wtime))) 
 					return 0;
@@ -4993,7 +4991,7 @@ save_tables_snapshots(sql_schema *s)
 			if (!t->base.wtime)
 				continue;
 
-			if (isKindOfTable(t)) {
+			if (isKindOfTable(t) && !isDeclaredTable(t)) {
 				if (store_funcs.save_snapshot(t) != LOG_OK)
 					return SQL_ERR;
 			}
@@ -7413,7 +7411,7 @@ sql_trans_seqbulk_restart(sql_trans *tr, seqbulk *sb, lng start)
 }
 
 sql_session *
-sql_session_create(backend_stack stk, int ac )
+sql_session_create(backend_stack stk, int ac)
 {
 	sql_session *s;
 
@@ -7498,8 +7496,7 @@ sql_session_reset(sql_session *s, int ac)
 	tmp = find_sql_schema(s->tr, "tmp");
 
 	if (tmp->tables.set) {
-		node *n;
-		for (n = tmp->tables.set->h; n; n = n->next) {
+		for (node *n = tmp->tables.set->h; n; n = n->next) {
 			sql_table *t = n->data;
 
 			if (isGlobal(t) && isKindOfTable(t))
@@ -7520,11 +7517,9 @@ sql_session_reset(sql_session *s, int ac)
 int
 sql_trans_begin(sql_session *s)
 {
-	sql_trans *tr;
-	int snr;
+	sql_trans *tr = s->tr;
+	int snr = tr->schema_number;
 
-	tr = s->tr;
-	snr = tr->schema_number;
 	TRC_DEBUG(SQL_STORE, "Enter sql_trans_begin for transaction: %d\n", snr);
 	if (tr->parent && tr->parent == gtrans && 
 	    (tr->stime < gtrans->wstime || tr->wtime ||
