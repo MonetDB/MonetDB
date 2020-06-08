@@ -161,10 +161,8 @@ address STRrepeat;
 command space(l:int):str
 address STRspace;
 
-command STRprelude() :void
+command prelude() :void
 address strPrelude;
 
 command STRepilogue() :void
 address strEpilogue;
-
-str.STRprelude();	

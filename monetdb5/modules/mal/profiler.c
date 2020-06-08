@@ -201,3 +201,33 @@ CMDcpuloadPercentage(int *cycles, int *io, lng *user, lng *nice, lng *sys, lng *
 	}
 	return MAL_SUCCEED;
 }
+
+#include "mel.h"
+mel_func profiler_init_funcs[] = {
+ pattern("profiler", "start", CMDstartProfiler, false, "Start offline performance profiling", noargs),
+ pattern("profiler", "stop", CMDstopProfiler, false, "Stop offline performance profiling", args(1,1, arg("",void))),
+ pattern("profiler", "starttrace", CMDstartTrace, false, "Start collecting trace information", noargs),
+ pattern("profiler", "stoptrace", CMDstopTrace, false, "Stop collecting trace information", args(1,1, arg("",void))),
+ command("profiler", "setheartbeat", CMDsetHeartbeat, false, "Set heart beat performance tracing", args(1,2, arg("",void),arg("b",int))),
+ command("profiler", "getlimit", CMDgetprofilerlimit, false, "Set profiler limit", args(1,1, arg("",int))),
+ command("profiler", "setlimit", CMDsetprofilerlimit, false, "Get profiler limit", args(1,2, arg("",void),arg("l",int))),
+ pattern("profiler", "openstream", CMDopenProfilerStream, false, "Start profiling the events, send to output stream", args(1,1, arg("",void))),
+ pattern("profiler", "closestream", CMDcloseProfilerStream, false, "Stop offline proviling", args(1,1, arg("",void))),
+ command("profiler", "noop", CMDnoopProfiler, false, "Fetch any pending performance events", args(1,1, arg("",void))),
+ pattern("profiler", "getTrace", CMDgetTrace, false, "Get the trace details of a specific event", args(1,2, batargany("",1),arg("e",str))),
+ pattern("profiler", "cleanup", CMDcleanupTraces, false, "Remove the temporary tables for profiling", args(1,1, arg("",void))),
+ command("profiler", "getDiskReads", CMDgetDiskReads, false, "Obtain the number of physical reads", args(1,1, arg("",lng))),
+ command("profiler", "getDiskWrites", CMDgetDiskWrites, false, "Obtain the number of physical reads", args(1,1, arg("",lng))),
+ command("profiler", "getUserTime", CMDgetUserTime, false, "Obtain the user timing information.", args(1,1, arg("",lng))),
+ command("profiler", "getSystemTime", CMDgetSystemTime, false, "Obtain the user timing information.", args(1,1, arg("",lng))),
+ command("profiler", "cpustats", CMDcpustats, false, "Extract cpu statistics from the kernel", args(5,5, arg("user",lng),arg("nice",lng),arg("sys",lng),arg("idle",lng),arg("iowait",lng))),
+ command("profiler", "cpuload", CMDcpuloadPercentage, false, "Calculate the average cpu load percentage and io waiting times", args(2,7, arg("cycles",int),arg("io",int),arg("user",lng),arg("nice",lng),arg("sys",lng),arg("idle",lng),arg("iowait",lng))),
+ { .imp=NULL }
+};
+#include "mal_import.h"
+#ifdef _MSC_VER
+#undef read
+#pragma section(".CRT$XCU",read)
+#endif
+LIB_STARTUP_FUNC(init_profiler_mal)
+{ mal_module("profiler", NULL, profiler_init_funcs); }

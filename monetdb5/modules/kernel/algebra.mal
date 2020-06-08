@@ -210,12 +210,6 @@ command thetajoin(l:bat[:any_1],r:bat[:any_1],sl:bat[:oid],sr:bat[:oid],op:int,n
 address ALGthetajoin
 comment "Theta join with candidate lists";
 
-function antijoin(l:bat[:any_1],r:bat[:any_1],sl:bat[:oid],sr:bat[:oid],nil_matches:bit,estimate:lng) (:bat[:oid],:bat[:oid]);
-	 # JOIN_NE == -3
-	(r1,r2) := thetajoin(l,r,sl,sr,-3:int,nil_matches,estimate);
-	return (r1,r2);
-end antijoin;
-
 command bandjoin(l:bat[:any_1],r:bat[:any_1],sl:bat[:oid],sr:bat[:oid],c1:any_1,c2:any_1,li:bit,hi:bit,estimate:lng) (:bat[:oid],:bat[:oid])
 address ALGbandjoin
 comment "Band join: values in l and r match if r - c1 <[=] l <[=] r + c2";

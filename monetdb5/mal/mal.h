@@ -77,9 +77,9 @@ mal_export MT_Lock  mal_copyLock ;
 mal_export MT_Lock  mal_delayLock ;
 mal_export MT_Lock  mal_oltpLock ;
 
-mal_export int mal_init(void);
+mal_export int mal_init(char *modules[], int embedded);
 mal_export _Noreturn void mal_exit(int status);
-mal_export void mserver_reset(void);
+mal_export void mal_reset(void);
 
 /* This should be here, but cannot, as "Client" isn't known, yet ... |-(
  * For now, we move the prototype declaration to src/mal/mal_client.c,
@@ -185,8 +185,7 @@ typedef struct MALBLK {
 	InstrPtr *stmt;				/* Instruction location */
 
 	bool inlineProp:1,		/* inline property */
-		     unsafeProp:1,		/* unsafe property */
-		     sealedProp:1;		/* sealed property (opertions for sealed object should be on the full object once) */
+	     unsafeProp:1;		/* unsafe property */
 
 	str errors;				/* left over errors */
 	struct MALBLK *history;	/* of optimizer actions */

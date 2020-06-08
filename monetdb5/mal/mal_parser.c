@@ -784,18 +784,30 @@ typeElm(Client cntxt, int def)
 static void
 helpInfo(Client cntxt, str *help)
 {
-	int l;
+	int l = 0;
+	char c, *e, *s;
 
 	if (MALkeyword(cntxt, "comment", 7)) {
 		skipSpace(cntxt);
-		if ((l = stringLength(cntxt))) {
-			GDKfree(*help);
+		// The comment is either a quoted string or all characters up to the next semicolon
+		c = currChar(cntxt);
+		if (c != '"'){
+			e = s = CURRENT(cntxt);
+			for (;*e; l++, e++) 
+				if (*e == ';')
+					break;
 			*help = strCopy(cntxt, l);
-			if (*help)
-				advance(cntxt, l - 1);
 			skipToEnd(cntxt);
 		} else {
-			parseError(cntxt, "<string> expected\n");
+			if ((l = stringLength(cntxt))) {
+				GDKfree(*help);
+				*help = strCopy(cntxt, l);
+				if (*help)
+					advance(cntxt, l - 1);
+				skipToEnd(cntxt);
+			} else {
+				parseError(cntxt, "<string> expected\n");
+			}
 		}
 	} else if (currChar(cntxt) != ';')
 		parseError(cntxt, "';' expected\n");
@@ -964,9 +976,7 @@ parseAtom(Client cntxt)
 		tpe = TYPE_void;  /* no type qualifier */
 	else
 		tpe = parseTypeId(cntxt, TYPE_int);
-	if( ATOMindex(modnme) >= 0)
-		parseError(cntxt, "Atom redefinition\n");
-	else {
+	if( ATOMindex(modnme) < 0) {
 		if(cntxt->curprg->def->errors)
 			GDKfree(cntxt->curprg->def->errors);
 		cntxt->curprg->def->errors = malAtomDefinition(modnme, tpe);
@@ -1048,12 +1058,14 @@ parseInclude(Client cntxt)
 		return 0;
 	}
 
+	/*
 	s = loadLibrary(modnme, FALSE);
 	if (s) {
 		parseError(cntxt, s);
 		freeException(s);
 		return 0;
 	}
+	*/
 	if ((s = malInclude(cntxt, modnme, 0))) {
 		parseError(cntxt, s);
 		freeException(s);
@@ -1103,8 +1115,10 @@ fcnHeader(Client cntxt, int kind)
 		nextChar(cntxt); /* skip '.' */
 		modnme = fnme;
 		if( strcmp(modnme,"user") && getModule(modnme) == NULL){
-			parseError(cntxt, "<module> name not defined\n");
-			return 0;
+			if( globalModule(modnme) == NULL){
+				parseError(cntxt, "<module> name not defined\n");
+				return 0;
+			}
 		}
 		l = operatorLength(cntxt);
 		if (l == 0)
@@ -1253,7 +1267,7 @@ fcnHeader(Client cntxt, int kind)
 }
 
 static MalBlkPtr
-parseCommandPattern(Client cntxt, int kind)
+parseCommandPattern(Client cntxt, int kind, MALfcn address)
 {
 	MalBlkPtr curBlk = 0;
 	Symbol curPrg = 0;
@@ -1274,9 +1288,11 @@ parseCommandPattern(Client cntxt, int kind)
 
 	modnme = getModuleId(getInstrPtr(curBlk, 0));
 	if (modnme && (getModule(modnme) == FALSE && strcmp(modnme,"user"))){
-		parseError(cntxt, "<module> not defined\n");
-		cntxt->blkmode = 0;
-		return curBlk;
+		// introduce the module
+		if( globalModule(modnme) == NULL){
+			parseError(cntxt, "<module> could not be defined\n");
+			return 0;
+		}
 	}
 	modnme = modnme ? modnme : cntxt->usermodule->name;
 
@@ -1315,6 +1331,7 @@ parseCommandPattern(Client cntxt, int kind)
  * [note, command and patterns do not have a MAL block]
  */
 	if (MALkeyword(cntxt, "address", 7)) {
+		/* TO BE DEPRECATED */
 		int i;
 		i = idLength(cntxt);
 		if (i == 0) {
@@ -1331,7 +1348,7 @@ parseCommandPattern(Client cntxt, int kind)
 		curBlk->binding[(i< IDLENGTH? i:IDLENGTH-1)] = 0;
 		/* avoid a clash with old temporaries */
 		advance(cntxt, i);
-		curInstr->fcn = getAddress(curBlk->binding);
+		curInstr->fcn = getAddress(getModuleId(curInstr), curBlk->binding);
 
 		if (cntxt->usermodule->isAtomModule) {
 			if (curInstr->fcn == NULL) {
@@ -1341,10 +1358,12 @@ parseCommandPattern(Client cntxt, int kind)
 			malAtomProperty(curBlk, curInstr);
 		}
 		skipSpace(cntxt);
-	} else {
-		parseError(cntxt, "'address' expected\n");
-		return 0;
-	}
+	} else
+       if(address){
+		setModuleScope(curInstr, findModule(cntxt->usermodule, modnme));
+		setModuleId(curInstr, modnme);
+		curInstr->fcn = address;
+       }
 	helpInfo(cntxt, &curBlk->help);
 #ifdef HAVE_HGE
 	if (!have_hge)
@@ -1362,6 +1381,7 @@ parseFunction(Client cntxt, int kind)
 	if (curBlk == NULL)
 		return curBlk;
 	if (MALkeyword(cntxt, "address", 7)) {
+		/* TO BE DEPRECATED */
 		str nme;
 		int i;
 		InstrPtr curInstr = getInstrPtr(curBlk, 0);
@@ -1375,14 +1395,14 @@ parseFunction(Client cntxt, int kind)
 			parseError(cntxt, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			return 0;
 		}
-		curInstr->fcn = getAddress(nme);
+		curInstr->fcn = getAddress(getModuleId(curInstr), nme);
 		GDKfree(nme);
 		if (curInstr->fcn == NULL) {
 			parseError(cntxt, "<address> not found\n");
 			return 0;
 		}
 		skipSpace(cntxt);
-	}
+	} 
 	/* block is terminated at the END statement */
 	helpInfo(cntxt, &curBlk->help);
 	return curBlk;
@@ -1756,12 +1776,12 @@ part3:
 }
 
 void
-parseMAL(Client cntxt, Symbol curPrg, int skipcomments, int lines)
+parseMAL(Client cntxt, Symbol curPrg, int skipcomments, int lines, MALfcn address)
 {
 	int cntrl = 0;
 	/*Symbol curPrg= cntxt->curprg;*/
 	char c;
-	int inlineProp =0, unsafeProp = 0, sealedProp = 0;
+	int inlineProp =0, unsafeProp = 0;
 
 	(void) curPrg;
 	echoInput(cntxt);
@@ -1840,18 +1860,15 @@ parseMAL(Client cntxt, Symbol curPrg, int skipcomments, int lines)
 			goto allLeft;
 		case 'C': case 'c':
 			if (MALkeyword(cntxt, "command", 7)) {
-				MalBlkPtr p = parseCommandPattern(cntxt, COMMANDsymbol);
+				MalBlkPtr p = parseCommandPattern(cntxt, COMMANDsymbol, address);
 				if (p) {
 					p->unsafeProp = unsafeProp;
-					p->sealedProp = sealedProp;
 				}
 				cntxt->curprg->def->unsafeProp = unsafeProp;
-				cntxt->curprg->def->sealedProp = sealedProp;
 				if (inlineProp)
 					parseError(cntxt, "<identifier> expected\n");
 				inlineProp = 0;
 				unsafeProp = 0;
-				sealedProp = 0;
 				continue;
 			}
 			if (MALkeyword(cntxt, "catch", 5)) {
@@ -1875,13 +1892,10 @@ parseMAL(Client cntxt, Symbol curPrg, int skipcomments, int lines)
 				cntxt->blkmode++;
 				if ((p = parseFunction(cntxt, FUNCTIONsymbol))){
 					p->unsafeProp = unsafeProp;
-					p->sealedProp = sealedProp;
 					cntxt->curprg->def->inlineProp = inlineProp;
 					cntxt->curprg->def->unsafeProp = unsafeProp;
-					cntxt->curprg->def->sealedProp = sealedProp;
 					inlineProp = 0;
 					unsafeProp = 0;
-					sealedProp = 0;
 					break;
 				}
 			} else if (MALkeyword(cntxt, "factory", 7)) {
@@ -1889,11 +1903,8 @@ parseMAL(Client cntxt, Symbol curPrg, int skipcomments, int lines)
 					parseError(cntxt, "parseError:INLINE ignored\n");
 				if( unsafeProp)
 					parseError(cntxt, "parseError:UNSAFE ignored\n");
-				if( sealedProp)
-					parseError(cntxt, "parseError:SEALED ignored\n");
 				inlineProp = 0;
 				unsafeProp = 0;
-				sealedProp = 0;
 				cntxt->blkmode++;
 				parseFunction(cntxt, FACTORYsymbol);
 				break;
@@ -1924,16 +1935,13 @@ parseMAL(Client cntxt, Symbol curPrg, int skipcomments, int lines)
 				MalBlkPtr p;
 				if( inlineProp )
 					parseError(cntxt, "parseError:INLINE ignored\n");
-				p = parseCommandPattern(cntxt, PATTERNsymbol);
+				p = parseCommandPattern(cntxt, PATTERNsymbol, address);
 				if (p) {
 					p->unsafeProp = unsafeProp;
-					p->sealedProp = sealedProp;
 				}
 				cntxt->curprg->def->unsafeProp = unsafeProp;
-				cntxt->curprg->def->sealedProp = sealedProp;
 				inlineProp = 0;
 				unsafeProp = 0;
-				sealedProp = 0;
 				continue;
 			}
 			goto allLeft;
@@ -1948,13 +1956,6 @@ parseMAL(Client cntxt, Symbol curPrg, int skipcomments, int lines)
 			}
 			if (MALkeyword(cntxt, "return", 6)) {
 				cntrl = RETURNsymbol;
-			}
-			goto allLeft;
-		case 's':
-			if (MALkeyword(cntxt, "sealed", 6)) {
-				sealedProp= 1;
-				skipSpace(cntxt);
-				continue;
 			}
 			goto allLeft;
 		case 'U': case 'u':

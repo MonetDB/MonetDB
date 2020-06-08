@@ -27,11 +27,10 @@
  * The startup script is run as user Admin.
  */
 str
-malBootstrap(void)
+malBootstrap(char *modules[], int embedded)
 {
 	Client c;
 	str msg = MAL_SUCCEED;
-	str bootfile = "mal_init";
 
 	c = MCinitClient(MAL_ADMIN, NULL, NULL);
 	if(c == NULL) {
@@ -55,7 +54,7 @@ malBootstrap(void)
 		MCfreeClient(c);
 		throw(MAL, "malBootstrap", "Failed to create client thread");
 	}
-	if ((msg = malInclude(c, bootfile, 0)) != MAL_SUCCEED) {
+	if ((msg = malIncludeModules(c, modules, 0, embedded)) != MAL_SUCCEED) {
 		MCfreeClient(c);
 		return msg;
 	}
@@ -585,7 +584,7 @@ MALparser(Client c)
 
 	if( prepareMalBlk(c->curprg->def, CURRENT(c)) < 0)
 		throw(MAL, "mal.parser", "Failed to prepare");
-	parseMAL(c, c->curprg, 0, INT_MAX);
+	parseMAL(c, c->curprg, 0, INT_MAX, 0);
 
 	/* now the parsing is done we should advance the stream */
 	c->fdin->pos += c->yycur;

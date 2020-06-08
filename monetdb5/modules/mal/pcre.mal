@@ -61,10 +61,10 @@ command prelude() :void
 address pcre_init
 comment "Initialize pcre";
 
-pcre.prelude();
-
 command str.replace(origin:str,pat:str,repl:str,flags:str):str
 address PCREreplace_wrap;
+
+module algebra;
 
 command algebra.like(s:str, pat:str, esc:str):bit address PCRElike3;
 command algebra.like(s:str, pat:str):bit address PCRElike2;

@@ -4,7 +4,6 @@ m0:= algebra.select(m,nil:bat[:oid],"bat", "bat", true,true,false);	# limit the 
 k:= inspect.getKind();
 f:= inspect.getFunction();
 s:= inspect.getSignatures();
-a:= inspect.getAddresses();
 
 f0:= algebra.projection(m0,f);
 (fv,forder):= algebra.sort(f0,false,false,true);
@@ -12,6 +11,5 @@ f0:= algebra.projection(m0,f);
 m1:= algebra.projectionpath(forder,m0,m);
 k0:= algebra.projectionpath(forder,m0,k);
 s0:= algebra.projectionpath(forder,m0,s);
-a0:= algebra.projectionpath(forder,m0,a);
 
-io.print(fv,k0,m1,s0,a0);
+io.print(fv,k0,m1,s0);
