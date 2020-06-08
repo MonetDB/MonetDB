@@ -1522,3 +1522,30 @@ MOSAnalysis(BAT *b, BAT *btech, BAT *blayout, BAT *boutput, BAT *bratio, BAT *bc
 	BBPreclaim(bc);
 	return msg;
 }
+
+#include "mel.h"
+static mel_func mosaic_init_funcs[] = {
+ pattern("mosaic", "compress", MOScompress, false, "Apply dynamic compression over chunks", args(1,3, batargany("",1),batargany("b",1),arg("prop",str))),
+ pattern("mosaic", "compress", MOScompress, false, "Apply dynamic compression producing a temporary", args(1,2, batargany("",1),batargany("b",1))),
+ command("mosaic", "decompress", MOSdecompress, false, "Apply dynamic decompression over chunks producing a temporary version", args(1,2, batargany("",1),batargany("b",1))),
+ pattern("mosaic", "select", MOSselect, false, "", args(1,7, batarg("",oid),batargany("b",1),argany("low",1),argany("high",1),arg("li",bit),arg("hi",bit),arg("anti",bit))),
+ pattern("mosaic", "select", MOSselect, false, "", args(1,8, batarg("",oid),batargany("b",1),argany("low",1),argany("high",1),arg("li",bit),arg("hi",bit),arg("anti",bit),arg("unknown",bit))),
+ pattern("mosaic", "select", MOSselect, false, "", args(1,8, batarg("",oid),batargany("b",1),batarg("cand",oid),argany("low",1),argany("high",1),arg("li",bit),arg("hi",bit),arg("anti",bit))),
+ pattern("mosaic", "select", MOSselect, false, "", args(1,9, batarg("",oid),batargany("b",1),batarg("cand",oid),argany("low",1),argany("high",1),arg("li",bit),arg("hi",bit),arg("anti",bit),arg("unknown",bit))),
+ pattern("mosaic", "thetaselect", MOSthetaselect, false, "", args(1,4, batarg("",oid),batargany("b",1),argany("low",1),arg("oper",str))),
+ pattern("mosaic", "thetaselect", MOSthetaselect, false, "", args(1,5, batarg("",oid),batargany("b",1),batarg("c",oid),argany("low",1),arg("oper",str))),
+ pattern("mosaic", "projection", MOSprojection, false, "", args(1,3, batargany("",1),batarg("b",oid),batargany("cand",1))),
+ pattern("mosaic", "join", MOSjoin, false, "join operation mimicking algebra.join based on nested loop join with compressed side in the inner loop.", args(2,8, batarg("",oid),batarg("",oid),batargany("l",1),batargany("r",1),batarg("sl",oid),batarg("sr",oid),arg("nil_matches",bit),arg("estimate",lng))),
+ pattern("mosaic", "join", MOSjoin, false, "Same as above but when the COUI flag is set to true, it puts the compressed side in the outer loop.", args(2,9, batarg("",oid),batarg("",oid),batargany("l",1),batargany("r",1),batarg("sl",oid),batarg("sr",oid),arg("nil_matches",bit),arg("estimate",lng),arg("COUI",bit))),
+#ifdef HAVE_HGE
+ pattern("mosaic", "projection", MOSprojection, false, "", args(1,3, batarg("",hge),batarg("b",oid),batarg("cand",hge))),
+#endif
+ { .imp=NULL }
+};
+#include "mal_import.h"
+#ifdef _MSC_VER
+#undef read
+#pragma section(".CRT$XCU",read)
+#endif
+LIB_STARTUP_FUNC(init_mosaic_mal)
+{ mal_module("mosaic", NULL, mosaic_init_funcs); }
