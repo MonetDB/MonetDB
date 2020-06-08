@@ -5422,7 +5422,7 @@ stdout of test 'systemfunctions` in directory 'sql/test/sys-schema` itself:
 [ "sys",	"uuid",	0,	"uuid",	"create function sys.uuid()\nreturns uuid external name uuid.\"new\";"	]
 [ "sys",	"vacuum",	0,	"clob",	"create procedure vacuum(sys string, tab string)\n external name sql.vacuum;"	]
 [ "sys",	"vacuum",	1,	"clob",	""	]
-[ "sys",	"var",	0,	"char",	"CREATE FUNCTION \"sys\".\"var\"() RETURNS TABLE(\"schema\" string, \"name\" string, \"type\" string, \"value\" string) EXTERNAL NAME \"sql\".\"sql_variables\";"	]
+[ "sys",	"var",	0,	"char",	"create function \"sys\".\"var\"() returns table(\"schema\" string, \"name\" string, \"type\" string, \"value\" string) external name \"sql\".\"sql_variables\";"	]
 [ "sys",	"var",	1,	"char",	""	]
 [ "sys",	"var",	2,	"char",	""	]
 [ "sys",	"var",	3,	"char",	""	]

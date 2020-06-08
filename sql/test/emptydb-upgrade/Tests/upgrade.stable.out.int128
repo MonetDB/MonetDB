@@ -5915,15 +5915,39 @@ external name generator.series;
 create aggregate stddev_samp(val HUGEINT) returns DOUBLE
     external name "aggr"."stdev";
 GRANT EXECUTE ON AGGREGATE stddev_samp(HUGEINT) TO PUBLIC;
+create window stddev_samp(val HUGEINT) returns DOUBLE
+ external name "sql"."stdev";
+GRANT EXECUTE ON WINDOW stddev_samp(HUGEINT) TO PUBLIC;
 create aggregate stddev_pop(val HUGEINT) returns DOUBLE
     external name "aggr"."stdevp";
 GRANT EXECUTE ON AGGREGATE stddev_pop(HUGEINT) TO PUBLIC;
+create window stddev_pop(val HUGEINT) returns DOUBLE
+ external name "sql"."stdevp";
+GRANT EXECUTE ON WINDOW stddev_pop(HUGEINT) TO PUBLIC;
 create aggregate var_samp(val HUGEINT) returns DOUBLE
     external name "aggr"."variance";
 GRANT EXECUTE ON AGGREGATE var_samp(HUGEINT) TO PUBLIC;
+create window var_samp(val HUGEINT) returns DOUBLE
+ external name "sql"."variance";
+GRANT EXECUTE ON WINDOW var_samp(HUGEINT) TO PUBLIC;
+create aggregate covar_samp(e1 HUGEINT, e2 HUGEINT) returns DOUBLE
+ external name "aggr"."covariance";
+GRANT EXECUTE ON AGGREGATE covar_samp(HUGEINT, HUGEINT) TO PUBLIC;
+create window covar_samp(e1 HUGEINT, e2 HUGEINT) returns DOUBLE
+ external name "sql"."covariance";
+GRANT EXECUTE ON WINDOW covar_samp(HUGEINT, HUGEINT) TO PUBLIC;
 create aggregate var_pop(val HUGEINT) returns DOUBLE
     external name "aggr"."variancep";
 GRANT EXECUTE ON AGGREGATE var_pop(HUGEINT) TO PUBLIC;
+create window var_pop(val HUGEINT) returns DOUBLE
+ external name "sql"."variancep";
+GRANT EXECUTE ON WINDOW var_pop(HUGEINT) TO PUBLIC;
+create aggregate covar_pop(e1 HUGEINT, e2 HUGEINT) returns DOUBLE
+ external name "aggr"."covariancep";
+GRANT EXECUTE ON AGGREGATE covar_pop(HUGEINT, HUGEINT) TO PUBLIC;
+create window covar_pop(e1 HUGEINT, e2 HUGEINT) returns DOUBLE
+ external name "sql"."covariancep";
+GRANT EXECUTE ON WINDOW covar_pop(HUGEINT, HUGEINT) TO PUBLIC;
 create aggregate median(val HUGEINT) returns HUGEINT
     external name "aggr"."median";
 GRANT EXECUTE ON AGGREGATE median(HUGEINT) TO PUBLIC;
@@ -5939,12 +5963,16 @@ GRANT EXECUTE ON AGGREGATE quantile_avg(HUGEINT, DOUBLE) TO PUBLIC;
 create aggregate corr(e1 HUGEINT, e2 HUGEINT) returns DOUBLE
     external name "aggr"."corr";
 GRANT EXECUTE ON AGGREGATE corr(HUGEINT, HUGEINT) TO PUBLIC;
+create window corr(e1 HUGEINT, e2 HUGEINT) returns DOUBLE
+ external name "sql"."corr";
+GRANT EXECUTE ON WINDOW corr(HUGEINT, HUGEINT) TO PUBLIC;
 create function json.filter(js json, name hugeint)
 returns json external name json.filter;
 GRANT EXECUTE ON FUNCTION json.filter(json, hugeint) TO PUBLIC;
 update sys.functions set system = true where system <> true and name in ('fuse') and schema_id = (select id from sys.schemas where name = 'sys') and type = 1;
 update sys.functions set system = true where system <> true and name in ('generate_series') and schema_id = (select id from sys.schemas where name = 'sys') and type = 5;
-update sys.functions set system = true where system <> true and name in ('stddev_samp', 'stddev_pop', 'var_samp', 'var_pop', 'median', 'median_avg', 'quantile', 'quantile_avg', 'corr') and schema_id = (select id from sys.schemas where name = 'sys') and type = 3;
+update sys.functions set system = true where system <> true and name in ('stddev_samp', 'stddev_pop', 'var_samp', 'covar_samp', 'var_pop', 'covar_pop', 'median', 'median_avg', 'quantile', 'quantile_avg', 'corr') and schema_id = (select id from sys.schemas where name = 'sys') and type = 3;
+update sys.functions set system = true where system <> true and name in ('stddev_samp', 'stddev_pop', 'var_samp', 'covar_samp', 'var_pop', 'covar_pop', 'corr') and schema_id = (select id from sys.schemas where name = 'sys') and type = 6;
 update sys.functions set system = true where system <> true and name = 'filter' and schema_id = (select id from sys.schemas where name = 'json') and type = 1;
 set schema "sys";
 
@@ -5970,13 +5998,7 @@ grant select on sys.queue to public;
 update sys.functions set system = true where schema_id = (select id from sys.schemas where name = 'sys') and name = 'queue' and type = 5;
 update sys._tables set system = true where schema_id = (select id from sys.schemas where name = 'sys') and name = 'queue';
 drop function "sys"."var"();
-create function "sys"."var"()
-returns table(
-"schema" string,
-"name" string,
-"type" string,
-"value" string)
- external name "sql"."sql_variables";
+create function "sys"."var"() returns table("schema" string, "name" string, "type" string, "value" string) external name "sql"."sql_variables";
 grant execute on function "sys"."var" to public;
 update sys.functions set system = true where schema_id = (select id from sys.schemas where name = 'sys') and name = 'var' and type = 5;
 set schema "sys";

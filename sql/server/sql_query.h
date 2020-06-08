@@ -36,6 +36,7 @@ extern void query_update_outer(sql_query *q, sql_rel *r, int i);
 extern int query_has_outer(sql_query *q); /* returns number of outer relations */
 
 extern int query_outer_used_exp(sql_query *q, int i, sql_exp *e, int f);
+extern void query_outer_pop_last_used(sql_query *q, int i);
 extern int query_outer_aggregated(sql_query *q, int i, sql_exp *e);
 extern int query_outer_used_card(sql_query *q, int i);
 extern sql_exp *query_outer_last_used(sql_query *q, int i);
