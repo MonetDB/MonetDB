@@ -74,13 +74,13 @@ option(SANITIZER
   OFF)
 
 cmake_dependent_option(STRICT 
-  "Enable strict compiler flags (default=ON for development sources, OFF for tarball instalation)"
+  "Enable strict compiler flags (default=ON for development sources, OFF for tarball installation)"
   ON
   "DEVELOPMENT"
   OFF)
 
 cmake_dependent_option(ASSERT 
-  "Enable asserts (default=ON for development sources, OFF for tarball instalation)"
+  "Enable asserts (default=ON for development sources, OFF for tarball installation)"
   ON
   "DEVELOPMENT"
   OFF)
