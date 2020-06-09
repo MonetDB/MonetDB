@@ -2045,7 +2045,7 @@ BATPCRElike3(bat *ret, const bat *bid, const str *pat, const str *esc, const bit
 		if (bn == NULL) {
 			res = createException(MAL, "pcre.like3", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		} else {
-			bit *restrict res = (bit*)Tloc(bn, 0);
+			bit *res = (bit*)Tloc(bn, 0);
 
 			if (allnulls) {
 				for (BUN p = 0; p < q; p++)
