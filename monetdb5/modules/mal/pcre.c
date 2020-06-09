@@ -913,7 +913,7 @@ re_like_proj(BAT **bnp, BAT *b, const char *pat, bool caseignore, bool anti, boo
 
 	assert(ATOMstorage(b->ttype) == TYPE_str);
 
-	bn = COLnew(0, TYPE_bit, q, TRANSIENT);
+	bn = COLnew(b->hseqbase, TYPE_bit, q, TRANSIENT);
 	if (bn == NULL) {
 		msg = createException(MAL, "pcre.likeselect", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		goto bailout;
