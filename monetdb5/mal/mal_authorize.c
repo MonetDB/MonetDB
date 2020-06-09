@@ -451,21 +451,39 @@ AUTHcheckCredentials(
 	assert (tmp != NULL);
 	/* decypher the password (we lose the original tmp here) */
 	rethrow("checkCredentials", tmp, AUTHdecypherValue(&pwd, tmp));
+
 	/* generate the hash as the client should have done */
 	hash = mcrypt_hashPassword(algo, pwd, challenge);
 	GDKfree(pwd);
 	if(!hash)
 		throw(MAL, "checkCredentials", "hash '%s' backend not found", algo);
 	/* and now we have it, compare it to what was given to us */
-	if (strcmp(passwd, hash) != 0) {
-		/* of course we DO NOT print the password here */
+	if (strcmp(passwd, hash) == 0) {
+		*uid = p;
 		free(hash);
-		throw(INVCRED, "checkCredentials", INVCRED_INVALID_USER " '%s'", username);
+		return(MAL_SUCCEED);
 	}
 	free(hash);
 
-	*uid = p;
-	return(MAL_SUCCEED);
+	const char *master_password = GDKgetenv("master_password");
+	if (master_password && master_password[0] != '\0') {
+		// first encrypt the master password as if we've just found it
+		// in the password store
+		assert(strcmp(MONETDB5_PASSWDHASH, "SHA512") == 0);
+		str encrypted = mcrypt_SHA512Sum(master_password, strlen(master_password));
+		if (encrypted == NULL)
+			throw(MAL, "checkCredentials", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		hash = mcrypt_hashPassword(algo, encrypted, challenge);
+		if (hash && strcmp(passwd, hash) == 0) {
+			*uid = p;
+			free(hash);
+			return(MAL_SUCCEED);
+		}
+		free(hash);
+	}
+
+	/* of course we DO NOT print the password here */
+	throw(INVCRED, "checkCredentials", INVCRED_INVALID_USER " '%s'", username);
 }
 
 /**
