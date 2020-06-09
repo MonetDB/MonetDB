@@ -3117,7 +3117,7 @@ log_tstart(logger *lg)
 #define DBLKSZ		8192
 #define SEGSZ		(64*DBLKSZ)
 
-#define LOG_LARGE	LL_CONSTANT(2)*1024*1024*1024
+#define LOG_LARGE	(LL_CONSTANT(2)*1024*1024*1024)
 
 static gdk_return
 pre_allocate(logger *lg)
@@ -3130,6 +3130,7 @@ pre_allocate(logger *lg)
 	if (p == -1)
 		return GDK_FAIL;
 	if (p > LOG_LARGE) {
+		logger_close(lg);
 		lg->id++;
 		return logger_open(lg);
 	}
