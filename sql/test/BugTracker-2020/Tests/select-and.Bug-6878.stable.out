@@ -28,35 +28,35 @@ stdout of test 'select-and.Bug-6878` in directory 'sql/test/BugTracker-2020` its
 #0.809
 #0.504
 [ 10	]
-#select (temp_table.mmax - temp_table.mmin)+temp_table.mmin from temp_value, temp_table where temp_value.vvalue<=temp_table.norm_max and temp_value.vvalue>temp_table.norm_min;
-% sys.%1 # table_name
-% %1 # name
+#select (temp_table.mmax - temp_table.mmin)+temp_table.mmin as col1 from temp_value, temp_table where temp_value.vvalue<=temp_table.norm_max and temp_value.vvalue>temp_table.norm_min order by col1;
+% sys. # table_name
+% col1 # name
 % double # type
 % 24 # length
-[ 24.75	]
-[ 24.75	]
-[ 31	]
-[ 31	]
-[ 31	]
 [ 12.25	]
-[ 31	]
+[ 24.75	]
+[ 24.75	]
 [ 24.75	]
 [ 24.75	]
 [ 31	]
-#select (0.72/2147483648.0)*(temp_table.mmax - temp_table.mmin)+temp_table.mmin from temp_value, temp_table where temp_value.vvalue<=temp_table.norm_max and temp_value.vvalue>temp_table.norm_min;
-% .%1 # table_name
-% %1 # name
+[ 31	]
+[ 31	]
+[ 31	]
+[ 31	]
+#select (0.72/2147483648.0)*(temp_table.mmax - temp_table.mmin)+temp_table.mmin as col1 from temp_value, temp_table where temp_value.vvalue<=temp_table.norm_max and temp_value.vvalue>temp_table.norm_min order by col1;
+% . # table_name
+% col1 # name
 % double # type
 % 24 # length
-[ 18.5	]
-[ 18.5	]
-[ 24.75	]
-[ 24.75	]
-[ 24.75	]
 [ 6	]
+[ 18.5	]
+[ 18.5	]
+[ 18.5	]
+[ 18.5	]
 [ 24.75	]
-[ 18.5	]
-[ 18.5	]
+[ 24.75	]
+[ 24.75	]
+[ 24.75	]
 [ 24.75	]
 #rollback;
 

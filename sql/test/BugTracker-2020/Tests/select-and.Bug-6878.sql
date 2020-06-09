@@ -18,6 +18,6 @@ COPY 10 RECORDS INTO "sys"."temp_value" FROM stdin USING DELIMITERS E'\t',E'\n',
 0.504
 
 
-select (temp_table.mmax - temp_table.mmin)+temp_table.mmin from temp_value, temp_table where temp_value.vvalue<=temp_table.norm_max and temp_value.vvalue>temp_table.norm_min;
-select (0.72/2147483648.0)*(temp_table.mmax - temp_table.mmin)+temp_table.mmin from temp_value, temp_table where temp_value.vvalue<=temp_table.norm_max and temp_value.vvalue>temp_table.norm_min;
+select (temp_table.mmax - temp_table.mmin)+temp_table.mmin as col1 from temp_value, temp_table where temp_value.vvalue<=temp_table.norm_max and temp_value.vvalue>temp_table.norm_min order by col1;
+select (0.72/2147483648.0)*(temp_table.mmax - temp_table.mmin)+temp_table.mmin as col1 from temp_value, temp_table where temp_value.vvalue<=temp_table.norm_max and temp_value.vvalue>temp_table.norm_min order by col1;
 rollback;
