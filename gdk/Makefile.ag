@@ -78,6 +78,7 @@ headers_h = {
 		gdk_posix.h \
 		gdk_hash.h \
 		gdk_system.h \
+		gdk_tracer.h \
 		gdk_utils.h
 }
 
