@@ -1019,6 +1019,10 @@ HASHins_locked(BAT *b, BUN i, const void *v)
 		doHASHdestroy(b, h);
 		return;
 	}
+	if (HASHwidth(i + 1) > h->width &&
+	     HASHupgradehashheap(b) != GDK_SUCCEED) {
+		return;
+	}
 	if ((ATOMsize(b->ttype) > 2 &&
 	     HASHgrowbucket(b) != GDK_SUCCEED) ||
 	    ((i + 1) * h->width > h->heaplink.size &&
