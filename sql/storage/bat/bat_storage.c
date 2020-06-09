@@ -560,7 +560,7 @@ update_idx(sql_trans *tr, sql_idx * i, void *tids, void *upd, int tpe)
 }
 
 static int
-delta_append_bat( sql_delta *bat, size_t offset, BAT *i ) 
+delta_append_bat( sql_delta *bat, size_t offset, BAT *i, sql_table *t ) 
 {
 	BAT *b;
 
@@ -570,10 +570,16 @@ delta_append_bat( sql_delta *bat, size_t offset, BAT *i )
 	if (b == NULL)
 		return LOG_ERR;
 
-	if (BATcount(b) > offset+BATcount(i)){
-		assert(0);
-		//BATreplace();
+	if (BATcount(b) >= offset+BATcount(i)){
+		BAT *ui = BATdense(0, offset, BATcount(i));
+		if (BATreplace(b, ui, i, true) != GDK_SUCCEED) {
+			bat_destroy(b);
+			bat_destroy(ui);
+			return LOG_ERR;
+		}
+		bat_destroy(ui);
 	} else {
+		assert (isNew(t) || isTempTable(t) || bat->cs.cleared);
 		if (BATcount(b) < offset) { /* add space */
 			const void *tv = ATOMnilptr(b->ttype);
 			lng i, d = offset - BATcount(b);
@@ -604,7 +610,7 @@ delta_append_bat( sql_delta *bat, size_t offset, BAT *i )
 }
 
 static int
-delta_append_val( sql_delta *bat, size_t offset, void *i ) 
+delta_append_val( sql_delta *bat, size_t offset, void *i, sql_table *t ) 
 {
 	BAT *b;
 
@@ -618,6 +624,7 @@ delta_append_val( sql_delta *bat, size_t offset, void *i )
 			return LOG_ERR;
 		}
 	} else {
+		assert (isNew(t) || isTempTable(t) || bat->cs.cleared);
 		if (BATcount(b) < offset) { /* add space */
 			const void *tv = ATOMnilptr(b->ttype);
 			lng i, d = offset - BATcount(b);
@@ -766,9 +773,9 @@ append_col(sql_trans *tr, sql_column *c, size_t offset, void *i, int tpe)
 	assert(tr != gtrans);
 	c->t->s->base.rtime = c->t->base.rtime = tr->stime;
 	if (tpe == TYPE_bat)
-		ok = delta_append_bat(bat, offset, i);
+		ok = delta_append_bat(bat, offset, i, c->t);
 	else
-		ok = delta_append_val(bat, offset, i);
+		ok = delta_append_val(bat, offset, i, c->t);
 	return ok;
 }
 
@@ -789,9 +796,9 @@ append_idx(sql_trans *tr, sql_idx * i, size_t offset, void *ib, int tpe)
 	/* appends only write */
 	bat->cs.wtime = i->base.wtime = i->t->base.wtime = i->t->s->base.wtime = tr->wtime = tr->wstime;
 	if (tpe == TYPE_bat)
-		ok = delta_append_bat(bat, offset, ib);
+		ok = delta_append_bat(bat, offset, ib, i->t);
 	else
-		ok = delta_append_val(bat, offset, ib);
+		ok = delta_append_val(bat, offset, ib, i->t);
 	return ok;
 }
 
@@ -858,6 +865,56 @@ delete_tab(sql_trans *tr, sql_table * t, void *ib, int tpe)
 	return ok;
 }
 
+static int
+claim_cs(sql_trans *tr, column_storage *cs, size_t cnt) 
+{
+	BAT *b = temp_descriptor(cs->bid);
+
+	if (!b)
+		return LOG_ERR;
+	const void *nilptr = ATOMnilptr(b->ttype);
+
+	for(int i=0; i<cnt; i++){
+		if (BUNappend(b, nilptr, TRUE) != GDK_SUCCEED)
+			return LOG_ERR;
+	}
+	return LOG_OK;
+}
+
+static int
+table_claim_space(sql_trans *tr, sql_table *t, size_t cnt)
+{
+	node *n = t->columns.set->h;
+	sql_column *c = n->data;
+
+	t->base.wtime = t->s->base.wtime = tr->wtime = tr->wstime;
+	c->base.wtime = tr->wstime;
+
+	for (n = t->columns.set->h; n; n = n->next) {
+		c = n->data;
+		c->base.wtime = tr->wstime;
+
+		if (bind_col_data(tr, c) == LOG_ERR)
+			return LOG_ERR;
+		if (claim_cs(tr, c->data, cnt) == LOG_ERR)
+			return LOG_ERR;
+	}
+	if (t->idxs.set) {
+		for (n = t->idxs.set->h; n; n = n->next) {
+			sql_idx *ci = n->data;
+
+			ci->base.wtime = tr->wstime;
+			if (isTable(ci->t) && idx_has_column(ci->type)) {
+				if (bind_idx_data(tr, ci) == LOG_ERR)
+					return LOG_ERR;
+				if (claim_cs(tr, ci->data, cnt) == LOG_ERR)
+					return LOG_ERR;
+			}
+		}
+	}
+	return LOG_OK;
+}
+
 /*
  * Claim cnt slots to store the tuples. The claim_tab should claim storage on the level
  * of the global transaction and mark the newly added storage slots unused on the global
@@ -912,6 +969,10 @@ claim_tab(sql_trans *tr, sql_table *t, size_t cnt)
 		/* add updates */
 		BAT *ui, *uv;
 
+		if (table_claim_space(tr, t, cnt) == LOG_ERR) {
+			store_unlock();
+			return LOG_ERR;
+		}
 		if (cs_real_update_bats(&s->cs, &ui, &uv) == LOG_ERR) {
 			store_unlock();
 			return LOG_ERR;
@@ -2154,6 +2215,9 @@ log_table(sql_trans *tr, sql_table *ft)
 
 			/* some indices have no bats or changes */
 			if (!ci->data || !ci->base.wtime || !ci->base.allocated)
+				continue;
+
+			if (!isTable(ci->t) || (hash_index(ci->type) && list_length(ci->columns) <= 1) || !idx_has_column(ci->type))
 				continue;
 
 			ok = tr_log_delta(tr, ci->data, s?s->segs->head:NULL, ft->cleared, ci->base.id);

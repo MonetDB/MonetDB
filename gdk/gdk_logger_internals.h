@@ -30,6 +30,7 @@ struct logger {
 	stream *input_log;	/* current stream too flush */
 	lng end;		/* end of pre-allocated blocks for faster f(data)sync */
 
+	MT_Lock lock;
 	/* Store log_bids (int) to circumvent trouble with reference counting */
 	BAT *catalog_bid;	/* int bid column */
 	BAT *catalog_id;	/* object identifier is unique */

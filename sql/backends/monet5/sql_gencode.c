@@ -1004,7 +1004,8 @@ monet5_has_module(ptr M, char *module)
 	int clientID = *(int*) M;
 
 	c = MCgetClient(clientID);
-	if (findModule(c->usermodule, module)) 
+	Module m = findModule(c->usermodule, putName(module));
+	if (m && m != c->usermodule)
 		return 1;
 	return 0;
 }

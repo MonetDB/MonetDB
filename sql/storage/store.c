@@ -2139,7 +2139,9 @@ store_manager(void)
 
 		if (logger_funcs.changes() <= 0) {
 			const int sleeptime = 100;
+			MT_lock_unset(&flush_lock);
 			MT_sleep_ms(sleeptime);
+			MT_lock_set(&flush_lock);
 			continue;
 		}
 

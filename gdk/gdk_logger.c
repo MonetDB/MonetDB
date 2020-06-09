@@ -92,6 +92,18 @@ typedef enum {LOG_OK, LOG_EOF, LOG_ERR} log_return;
 static gdk_return bm_commit(logger *lg);
 static gdk_return tr_grow(trans *tr);
 
+static void
+logger_lock(logger *lg)
+{
+	MT_lock_set(&lg->lock);
+}
+
+static void
+logger_unlock(logger *lg)
+{
+	MT_lock_unset(&lg->lock);
+}
+
 static char
 find_type(logger *lg, int tpe)
 {
@@ -153,6 +165,22 @@ log_find(BAT *b, BAT *d, int val)
 	return BUN_NONE;
 }
 
+static log_bid
+internal_find_bat(logger *lg, log_id id)
+{
+	BATiter cni = bat_iterator(lg->catalog_id);
+	BUN p;
+
+	if (BAThash(lg->catalog_id) == GDK_SUCCEED) {
+		HASHloop_int(cni, cni.b->thash, p, &id) {
+			oid pos = p;
+			if (BUNfnd(lg->dcatalog, &pos) == BUN_NONE)
+				return *(log_bid *) Tloc(lg->catalog_bid, p);
+		}
+	}
+	return 0;
+}
+
 static void
 logbat_destroy(BAT *b)
 {
@@ -210,7 +238,7 @@ log_read_clear(logger *lg, trans *tr, log_id id)
 static gdk_return
 la_bat_clear(logger *lg, logaction *la)
 {
-	log_bid bid = logger_find_bat(lg, la->cid);
+	log_bid bid = internal_find_bat(lg, la->cid);
 	BAT *b;
 
 	if (lg->debug & 1)
@@ -426,7 +454,7 @@ la_bat_update_count(logger *lg, log_id id, lng cnt)
 static gdk_return
 la_bat_updates(logger *lg, logaction *la)
 {
-	log_bid bid = logger_find_bat(lg, la->cid);
+	log_bid bid = internal_find_bat(lg, la->cid);
 
 	if (bid == 0)
 		return GDK_SUCCEED; /* ignore bats no longer in the catalog */
@@ -515,7 +543,7 @@ log_read_destroy(logger *lg, trans *tr, log_id id)
 static gdk_return
 la_bat_destroy(logger *lg, logaction *la)
 {
-	log_bid bid = logger_find_bat(lg, la->cid);
+	log_bid bid = internal_find_bat(lg, la->cid);
 
 	if (bid && logger_del_bat(lg, bid) != GDK_SUCCEED)
 		return GDK_FAIL;
@@ -1703,6 +1731,7 @@ logger_new(int debug, const char *fn, const char *logdir, int version, preversio
 		.saved_id = getBBPlogno(), 		/* get saved log numer from bbp */
 		.saved_tid = (int)getBBPtransid(), 	/* get saved transaction id from bbp */
 	};
+	MT_lock_init(&lg->lock, fn);
 
 	/* probably open file and check version first, then call call old logger code */
 	len = snprintf(filename, sizeof(filename), "%s%c%s%c", logdir, DIR_SEP, fn, DIR_SEP);
@@ -1737,6 +1766,7 @@ void
 logger_destroy(logger *lg)
 {
 	if (lg->catalog_bid) {
+		logger_lock(lg);
 		BUN p, q;
 		BAT *b = lg->catalog_bid;
 
@@ -1758,6 +1788,7 @@ logger_destroy(logger *lg)
 		logbat_destroy(lg->dcatalog);
 
 		logbat_destroy(lg->catalog_cnt);
+		logger_unlock(lg);
 	}
 	GDKfree(lg->fn);
 	GDKfree(lg->dir);
@@ -1830,6 +1861,7 @@ logger_flush(logger *lg)
 		GDKfree(filename);
 	}
 	/* we read the full file because skipping is impossible with current log format */
+	logger_lock(lg);
 	lg->flushing = 1;
 	log_return res = logger_read_transaction(lg);
 	lg->flushing = 0;
@@ -1843,9 +1875,12 @@ logger_flush(logger *lg)
 		}
 
 		/* remove old log file */
-		if (res != LOG_ERR)
+		if (res != LOG_ERR) {
+			logger_unlock(lg);
 			return logger_cleanup(lg, lg->saved_id);
+		}
 	}
+	logger_unlock(lg);
 	return res == LOG_ERR ? GDK_FAIL : GDK_SUCCEED;
 }
 
@@ -1861,68 +1896,21 @@ logger_changes(logger *lg)
 int
 logger_sequence(logger *lg, int seq, lng *id)
 {
+	logger_lock(lg);
 	BUN p = log_find(lg->seqs_id, lg->dseqs, seq);
 
 	if (p != BUN_NONE) {
 		*id = *(lng *) Tloc(lg->seqs_val, p);
 
+		logger_unlock(lg);
 		return 1;
 	}
+	logger_unlock(lg);
 	return 0;
 }
 
-/*
- * Changes made to the BAT descriptor should be stored in the log
- * files.  Actually, we need to save the descriptor file, perhaps we
- * should simply introduce a versioning scheme.
- */
-gdk_return
-log_bat_persists(logger *lg, BAT *b, int id)
-{
-	char ta = find_type(lg, b->ttype);
-	logformat l;
-
-	if (logger_add_bat(lg, b, id) != GDK_SUCCEED)
-		return GDK_FAIL;
-
-	l.flag = LOG_CREATE;
-	l.id = id;
-	if (!lg->inmemory && !LOG_DISABLED(lg)) {
-		if (log_write_format(lg, &l) != GDK_SUCCEED ||
-		    mnstr_write(lg->output_log, &ta, 1, 1) != 1) 
-			return GDK_FAIL;
-	}
-	if (lg->debug & 1)
-		fprintf(stderr, "#persists id (%d) bat (%d)\n", id, b->batCacheid);
-	if (lg->inmemory || LOG_DISABLED(lg))
-		return GDK_SUCCEED;
-	return log_bat(lg, b, id, 0, BATcount(b));
-}
-
-gdk_return
-log_bat_transient(logger *lg, int id)
-{
-	log_bid bid = logger_find_bat(lg, id);
-	logformat l;
-
-	l.flag = LOG_DESTROY;
-	l.id = id;
-
-	if (lg->inmemory || LOG_DISABLED(lg))
-		return GDK_SUCCEED;
-
-	if (log_write_format(lg, &l) != GDK_SUCCEED) {
-		TRC_CRITICAL(GDK, "write failed\n");
-		return GDK_FAIL;
-	}
-	if (lg->debug & 1)
-		fprintf(stderr, "#Logged destroyed bat (%d)\n", id);
-
-	return logger_del_bat(lg, bid);
-}
-
 static gdk_return
-_log_bat(logger *lg, BAT *b, log_id id, lng offset, lng cnt, int sliced)
+internal_log_bat(logger *lg, BAT *b, log_id id, lng offset, lng cnt, int sliced)
 {
 	char tpe = find_type(lg, b->ttype);
 	gdk_return ok = GDK_SUCCEED;
@@ -1979,23 +1967,94 @@ _log_bat(logger *lg, BAT *b, log_id id, lng offset, lng cnt, int sliced)
 	return ok;
 }
 
+/*
+ * Changes made to the BAT descriptor should be stored in the log
+ * files.  Actually, we need to save the descriptor file, perhaps we
+ * should simply introduce a versioning scheme.
+ */
+gdk_return
+log_bat_persists(logger *lg, BAT *b, int id)
+{
+	logger_lock(lg);
+	char ta = find_type(lg, b->ttype);
+	logformat l;
+
+	if (logger_add_bat(lg, b, id) != GDK_SUCCEED) {
+		logger_unlock(lg);
+		return GDK_FAIL;
+	}
+
+	l.flag = LOG_CREATE;
+	l.id = id;
+	if (!lg->inmemory && !LOG_DISABLED(lg)) {
+		if (log_write_format(lg, &l) != GDK_SUCCEED ||
+		    mnstr_write(lg->output_log, &ta, 1, 1) != 1) {
+			logger_unlock(lg);
+			return GDK_FAIL;
+		}
+	}
+	if (lg->debug & 1)
+		fprintf(stderr, "#persists id (%d) bat (%d)\n", id, b->batCacheid);
+	if (lg->inmemory || LOG_DISABLED(lg)) {
+		logger_unlock(lg);
+		return GDK_SUCCEED;
+	}
+	gdk_return r = internal_log_bat(lg, b, id, 0, BATcount(b), 0);
+	logger_unlock(lg);
+	return r;
+}
+
+gdk_return
+log_bat_transient(logger *lg, int id)
+{
+	logger_lock(lg);
+	log_bid bid = internal_find_bat(lg, id);
+	logformat l;
+
+	l.flag = LOG_DESTROY;
+	l.id = id;
+
+	if (lg->inmemory || LOG_DISABLED(lg)) {
+		logger_unlock(lg);
+		return GDK_SUCCEED;
+	}
+
+	if (log_write_format(lg, &l) != GDK_SUCCEED) {
+		TRC_CRITICAL(GDK, "write failed\n");
+		logger_unlock(lg);
+		return GDK_FAIL;
+	}
+	if (lg->debug & 1)
+		fprintf(stderr, "#Logged destroyed bat (%d)\n", id);
+	gdk_return r =  logger_del_bat(lg, bid);
+	logger_unlock(lg);
+	return r;
+}
+
 gdk_return
 log_bat(logger *lg, BAT *b, log_id id, lng offset, lng cnt)
 {
-	return _log_bat(lg, b, id, offset, cnt, 0);
+	logger_lock(lg);
+	gdk_return r = internal_log_bat(lg, b, id, offset, cnt, 0);
+	logger_unlock(lg);
+	return r;
 }
 
 gdk_return
 log_delta(logger *lg, BAT *uid, BAT *uval, log_id id)
 {
+	logger_lock(lg);
 	char tpe = find_type(lg, uval->ttype);
 	gdk_return ok = GDK_SUCCEED;
 	logformat l;
 	BUN p;
 	lng nr;
 
-	if (BATtdense(uid)) 
-		return _log_bat(lg, uval, id, uid->tseqbase, BATcount(uval), 1);
+	if (BATtdense(uid)) {
+		ok = internal_log_bat(lg, uval, id, uid->tseqbase, BATcount(uval), 1);
+		logger_unlock(lg);
+		return ok;
+	}
 
 	assert(uid->ttype == TYPE_oid || uid->ttype == TYPE_void);
 
@@ -2006,6 +2065,7 @@ log_delta(logger *lg, BAT *uid, BAT *uval, log_id id)
 
 	if (LOG_DISABLED(lg) || lg->inmemory) {
 		/* logging is switched off */
+		logger_unlock(lg);
 		return GDK_SUCCEED;
 	}
 
@@ -2015,8 +2075,10 @@ log_delta(logger *lg, BAT *uid, BAT *uval, log_id id)
 
 	if (log_write_format(lg, &l) != GDK_SUCCEED ||
 	    !mnstr_writeLng(lg->output_log, nr) ||
-	    mnstr_write(lg->output_log, &tpe, 1, 1) != 1) 
+	    mnstr_write(lg->output_log, &tpe, 1, 1) != 1) {
+		logger_unlock(lg);
 		return GDK_FAIL;
+	}
 	/* TODO call efficient n-value writes */
 	for (p = 0; p < BUNlast(uid) && ok == GDK_SUCCEED; p++) {
 		const oid id = BUNtoid(uid, p);
@@ -2034,6 +2096,7 @@ log_delta(logger *lg, BAT *uid, BAT *uval, log_id id)
 
 	if (ok != GDK_SUCCEED)
 		TRC_CRITICAL(GDK, "write failed\n");
+	logger_unlock(lg);
 	return ok;
 }
 
@@ -2146,21 +2209,30 @@ log_sequence(logger *lg, int seq, lng val)
 	if (lg->debug & 1)
 		fprintf(stderr, "#log_sequence (%d," LLFMT ")\n", seq, val);
 
+	logger_lock(lg);
 	if ((p = log_find(lg->seqs_id, lg->dseqs, seq)) != BUN_NONE &&
 	    p >= lg->seqs_id->batInserted) {
-		if (BUNinplace(lg->seqs_val, p, &val, false) != GDK_SUCCEED)
+		if (BUNinplace(lg->seqs_val, p, &val, false) != GDK_SUCCEED) {
+			logger_unlock(lg);
 			return GDK_FAIL;
+		}
 	} else {
 		if (p != BUN_NONE) {
 			oid pos = p;
-			if (BUNappend(lg->dseqs, &pos, false) != GDK_SUCCEED)
+			if (BUNappend(lg->dseqs, &pos, false) != GDK_SUCCEED) {
+				logger_unlock(lg);
 				return GDK_FAIL;
+			}
 		}
 		if (BUNappend(lg->seqs_id, &seq, false) != GDK_SUCCEED ||
-		    BUNappend(lg->seqs_val, &val, false) != GDK_SUCCEED)
+		    BUNappend(lg->seqs_val, &val, false) != GDK_SUCCEED) {
+			logger_unlock(lg);
 			return GDK_FAIL;
+		}
 	}
-	return log_sequence_(lg, seq, val, 1);
+	gdk_return r = log_sequence_(lg, seq, val, 1);
+	logger_unlock(lg);
+	return r;
 }
 
 static gdk_return
@@ -2195,10 +2267,10 @@ bm_commit(logger *lg)
 	return bm_subcommit(lg);
 }
 
-gdk_return
+static gdk_return
 logger_add_bat(logger *lg, BAT *b, log_id id)
 {
-	log_bid bid = logger_find_bat(lg, id);
+	log_bid bid = internal_find_bat(lg, id);
 	lng cnt = 0;
 
 	assert(b->batRestricted != BAT_WRITE ||
@@ -2213,7 +2285,6 @@ logger_add_bat(logger *lg, BAT *b, log_id id)
 	       b == lg->type_nr);
 	assert(b->batRole == PERSISTENT);
 	if (bid) {
-		assert(0);
 		if (bid != b->batCacheid) {
 			if (logger_del_bat(lg, bid) != GDK_SUCCEED)
 				return GDK_FAIL;
@@ -2233,7 +2304,7 @@ logger_add_bat(logger *lg, BAT *b, log_id id)
 	return GDK_SUCCEED;
 }
 
-gdk_return
+static gdk_return
 logger_del_bat(logger *lg, log_bid bid)
 {
 	BAT *b = BATdescriptor(bid);
@@ -2260,17 +2331,10 @@ logger_del_bat(logger *lg, log_bid bid)
 log_bid
 logger_find_bat(logger *lg, log_id id)
 {
-	BATiter cni = bat_iterator(lg->catalog_id);
-	BUN p;
-
-	if (BAThash(lg->catalog_id) == GDK_SUCCEED) {
-		HASHloop_int(cni, cni.b->thash, p, &id) {
-			oid pos = p;
-			if (BUNfnd(lg->dcatalog, &pos) == BUN_NONE)
-				return *(log_bid *) Tloc(lg->catalog_bid, p);
-		}
-	}
-	return 0;
+	logger_lock(lg);
+	log_bid bid = internal_find_bat(lg, id);
+	logger_unlock(lg);
+	return bid;
 }
 
 
