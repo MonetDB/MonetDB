@@ -133,6 +133,7 @@ target_compile_definitions(sql
 
 install(TARGETS
   sql
+  EXPORT sqlTargets
   RUNTIME
   DESTINATION ${CMAKE_INSTALL_LIBDIR}/monetdb5
   LIBRARY
@@ -155,3 +156,9 @@ target_include_directories(sqlembedded
   INTERFACE
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
   $<INSTALL_INTERFACE:${INCLUDEDIR}/monetdb>)
+
+install(EXPORT sqlTargets
+  FILE sqlTargets.cmake
+  NAMESPACE MonetDB::
+  DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/cmake
+  COMPONENT monetdbdev)

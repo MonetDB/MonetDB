@@ -6,22 +6,25 @@
 # Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
 #]]
 
+set(embedded_public_headers
+  $<BUILD_INTERFACE:$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>/monetdb_embedded.h>
+  $<INSTALL_INTERFACE:$<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}/monetdb>/monetdb_embedded.h>)
+
 add_library(embedded SHARED)
 
 target_sources(embedded
   PRIVATE
   monetdb_embedded.c
   PUBLIC
-  ${CMAKE_CURRENT_SOURCE_DIR}/monetdb_embedded.h)
+  ${embedded_public_headers})
 
 target_include_directories(embedded
-  PUBLIC
-  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
-  $<INSTALL_INTERFACE:${INCLUDEDIR}/monetdb>
   PRIVATE
   $<TARGET_PROPERTY:mal,INCLUDE_DIRECTORIES>
   $<TARGET_PROPERTY:sql,INCLUDE_DIRECTORIES>
-  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>)
+  PUBLIC
+  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
+  $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}/monetdb>)
 
 target_compile_definitions(embedded
   PRIVATE
@@ -29,7 +32,7 @@ target_compile_definitions(embedded
 
 set_target_properties(embedded
   PROPERTIES
-  PUBLIC_HEADER monetdb_embedded.h)
+  PUBLIC_HEADER "${embedded_public_headers}")
 
 target_link_libraries(embedded
   PRIVATE
@@ -51,6 +54,7 @@ target_link_libraries(embedded
 
 install(TARGETS
   embedded
+  EXPORT embeddedTargets
   RUNTIME
   DESTINATION ${CMAKE_INSTALL_BINDIR}
   LIBRARY
@@ -61,3 +65,9 @@ install(TARGETS
   PUBLIC_HEADER
   DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/monetdb
   INCLUDES DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
+
+install(EXPORT embeddedTargets
+  FILE embeddedTargets.cmake
+  NAMESPACE MonetDB::
+  DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/cmake
+  COMPONENT serverdev)
