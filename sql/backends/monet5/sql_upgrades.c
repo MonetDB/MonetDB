@@ -2897,7 +2897,7 @@ sql_update_default_lidar(Client c)
 static str
 sql_update_default(Client c, mvc *sql, const char *prev_schema)
 {
-	size_t bufsize = 2048, pos = 0;
+	size_t bufsize = 4096, pos = 0;
 	char *err = NULL, *buf = GDKmalloc(bufsize);
 	sql_schema *sys = mvc_bind_schema(sql, "sys");
 	res_table *output;
@@ -2905,8 +2905,6 @@ sql_update_default(Client c, mvc *sql, const char *prev_schema)
 
 	if (buf == NULL)
 		throw(SQL, __func__, SQLSTATE(HY013) MAL_MALLOC_FAIL);
-
-	/* TODO drop/recreate env(), ie mal function changed */
 
 	/* if column 6 of sys.queue is named "progress" we need to update */
 	pos += snprintf(buf + pos, bufsize - pos,
@@ -2923,6 +2921,17 @@ sql_update_default(Client c, mvc *sql, const char *prev_schema)
 			pos = 0;
 			pos += snprintf(buf + pos, bufsize - pos,
 					"set schema \"sys\";\n");
+
+			/* the real update of sys.env() has happened
+			 * in load_func, here we merely update the
+			 * sys.functions table */
+			pos += snprintf(buf + pos, bufsize - pos,
+					"update sys.functions set"
+					" mod = 'inspect',"
+					" func = 'CREATE FUNCTION env() RETURNS TABLE( name varchar(1024), value varchar(2048)) EXTERNAL NAME inspect.\"getEnvironment\";'"
+					" where schema_id = (select id from sys.schemas where name = 'sys')"
+					" and name = 'env' and type = %d;\n",
+					(int) F_UNION);
 
 			/* 26_sysmon */
 			sql_table *t;

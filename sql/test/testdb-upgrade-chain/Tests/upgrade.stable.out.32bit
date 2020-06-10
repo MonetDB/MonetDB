@@ -17,6 +17,7 @@ stdout of test 'upgrade` in directory 'sql/test/testdb-upgrade-chain` itself:
 # MonetDB/GIS module loaded
 Running database upgrade commands:
 set schema "sys";
+update sys.functions set mod = 'inspect', func = 'CREATE FUNCTION env() RETURNS TABLE( name varchar(1024), value varchar(2048)) EXTERNAL NAME inspect."getEnvironment";' where schema_id = (select id from sys.schemas where name = 'sys') and name = 'env' and type = 5;
 drop view sys.queue;
 drop function sys.queue;
 create function sys.queue()
