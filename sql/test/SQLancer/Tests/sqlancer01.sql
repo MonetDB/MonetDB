@@ -16,6 +16,11 @@ delete from integers where (((0.7161494983624688) in (integers.i)) = true) = fal
 	-- 3 rows affected
 select i from integers;
 	-- NULL
+
+CREATE TABLE t0 (a1 INT, a2 int, a3 int); --Bug 6884
+UPDATE t0 SET a2 = (- (- (t0.a1))), a3 = (ascii(CAST(ascii('}悂Y8K*韖5<c>^n8_X1X|p(''bX') AS STRING(920)))) WHERE NOT (((0.27023923567918073) NOT IN (0.9149447665258329)) = FALSE);
+	--0 rows affected
+
 ROLLBACK;
 
 DROP TABLE tbl_ProductSales;
