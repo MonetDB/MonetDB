@@ -2943,14 +2943,29 @@ sql_update_default(Client c, mvc *sql, const char *prev_schema)
 					"\"finished\" timestamp,\n"
 					"\"workers\" int,\n"
 					"\"memory\" int)\n"
-					" external name sql.sysmon_queue;\n"
+					" external name sysmon.queue;\n"
 					"grant execute on function sys.queue to public;\n"
 					"create view sys.queue as select * from sys.queue();\n"
-					"grant select on sys.queue to public;\n");
+					"grant select on sys.queue to public;\n"
+					"drop procedure sys.pause(bigint);\n"
+					"drop procedure sys.resume(bigint);\n"
+					"drop procedure sys.stop(bigint);\n"
+					"create procedure sys.pause(tag bigint)\n"
+					"external name sysmon.pause;\n"
+					"grant execute on procedure sys.pause(bigint) to public;\n"
+					"create procedure sys.resume(tag bigint)\n"
+					"external name sysmon.resume;\n"
+					"grant execute on procedure sys.resume(bigint) to public;\n"
+					"create procedure sys.stop(tag bigint)\n"
+					"external name sysmon.stop;\n"
+					"grant execute on procedure sys.stop(bigint) to public;\n");
 
 			pos += snprintf(buf + pos, bufsize - pos,
 					"update sys.functions set system = true where schema_id = (select id from sys.schemas where name = 'sys')"
-					" and name = 'queue' and type = %d;\n", (int) F_UNION);
+					" and name = 'queue' and type = %d;\n"
+					"update sys.functions set system = true where schema_id = (select id from sys.schemas where name = 'sys')"
+					" and name in ('pause', 'resume', 'stop') and type = %d;\n",
+					(int) F_UNION, (int) F_PROC);
 			pos += snprintf(buf + pos, bufsize - pos,
 					"update sys._tables set system = true where schema_id = (select id from sys.schemas where name = 'sys')"
 					" and name = 'queue';\n");
