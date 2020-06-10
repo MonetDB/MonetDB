@@ -22,6 +22,10 @@ UPDATE t0 SET a2 = (- (- (t0.a1))), a3 = (ascii(CAST(ascii('}悂Y8K*韖5<c>^n8_X
 	--0 rows affected
 
 insert into integers(i) values(((length(reverse('8 \rcr੧[bp1eMY쫺4j5s뮯!<Rn4*}')))>>(((- (- (528640982)))&(ascii('528640982')))))); --Bug 6885
+SELECT i from integers order by i;
+	-- NULL
+	-- 0
+select reverse('8 \rcr੧[bp1eMY쫺4j5s뮯!<Rn4*}');
 
 ROLLBACK;
 
