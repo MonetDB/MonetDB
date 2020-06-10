@@ -1021,7 +1021,7 @@ insert into sys.functions values (251, 'and', 'and', 'calc', 0, 1, false, false,
 insert into sys.args values (9821, 251, 'res_0', 'boolean', 1, 0, 0, 0);
 insert into sys.args values (9822, 251, 'arg_1', 'boolean', 1, 0, 1, 1);
 insert into sys.args values (9823, 251, 'arg_2', 'boolean', 1, 0, 1, 2);
-insert into sys.functions values (252, 'or', 'or', 'calc', 0, 1, false, false, false, 2000, true, false);
+insert into sys.functions values (252, 'or', 'or', 'calc', 0, 1, false, false, false, 2000, true, true);
 insert into sys.args values (9824, 252, 'res_0', 'boolean', 1, 0, 0, 0);
 insert into sys.args values (9825, 252, 'arg_1', 'boolean', 1, 0, 1, 1);
 insert into sys.args values (9826, 252, 'arg_2', 'boolean', 1, 0, 1, 2);
