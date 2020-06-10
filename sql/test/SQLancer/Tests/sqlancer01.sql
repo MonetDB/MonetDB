@@ -21,6 +21,8 @@ CREATE TABLE t0 (a1 INT, a2 int, a3 int); --Bug 6884
 UPDATE t0 SET a2 = (- (- (t0.a1))), a3 = (ascii(CAST(ascii('}悂Y8K*韖5<c>^n8_X1X|p(''bX') AS STRING(920)))) WHERE NOT (((0.27023923567918073) NOT IN (0.9149447665258329)) = FALSE);
 	--0 rows affected
 
+insert into integers(i) values(((length(reverse('8 \rcr੧[bp1eMY쫺4j5s뮯!<Rn4*}')))>>(((- (- (528640982)))&(ascii('528640982')))))); --Bug 6885
+
 ROLLBACK;
 
 DROP TABLE tbl_ProductSales;
