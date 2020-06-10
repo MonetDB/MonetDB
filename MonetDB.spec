@@ -201,6 +201,7 @@ functionality of MonetDB.
 %dir %{_includedir}/monetdb
 %{_includedir}/monetdb/gdk*.h
 %{_includedir}/monetdb/matomic.h
+%{_includedir}/monetdb/mstring.h
 %{_includedir}/monetdb/monet*.h
 %{_libdir}/libbat.so
 %{_libdir}/pkgconfig/monetdb-gdk.pc
