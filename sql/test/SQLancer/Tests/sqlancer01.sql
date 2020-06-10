@@ -27,6 +27,10 @@ SELECT i from integers order by i;
 	-- 0
 select reverse('8 \rcr੧[bp1eMY쫺4j5s뮯!<Rn4*}');
 
+-- Bug 6886
+INSERT INTO another_t(col4) VALUES(-589206676), (-1557408577);
+DELETE FROM another_t WHERE ((another_t.col8)<=(+ (another_t.col8)));
+ALTER TABLE another_t ADD UNIQUE(col8, col1, col6, col3);
 ROLLBACK;
 
 DROP TABLE tbl_ProductSales;
