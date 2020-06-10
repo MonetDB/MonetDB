@@ -127,7 +127,23 @@ gdk_export oid canditer_idx(struct canditer *ci, BUN p);
 gdk_export void canditer_setidx(struct canditer *ci, BUN p);
 gdk_export void canditer_reset(struct canditer *ci);
 gdk_export BUN canditer_search(struct canditer *ci, oid o, bool next);
-#define canditer_contains(ci, o) (canditer_search(ci, o, false) != BUN_NONE)
+static inline bool
+canditer_contains(struct canditer *ci, oid o)
+{
+	if (ci->tpe == cand_mask) {
+		if (o < ci->mskoff)
+			return false;
+		o -= ci->mskoff;
+		BUN p = o / 32;
+		if (p >= ci->nvals)
+			return false;
+		o %= 32;
+		if (p == ci->nvals - 1 && o >= ci->lastbit)
+			return false;
+		return ci->mask[p] & (1U << o);
+	}
+	return canditer_search(ci, o, false) != BUN_NONE;
+}
 gdk_export BAT *canditer_slice(struct canditer *ci, BUN lo, BUN hi);
 gdk_export BAT *canditer_sliceval(struct canditer *ci, oid lo, oid hi);
 gdk_export BAT *canditer_slice2(struct canditer *ci, BUN lo1, BUN hi1, BUN lo2, BUN hi2);
