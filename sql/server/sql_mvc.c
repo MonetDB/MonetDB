@@ -509,6 +509,8 @@ sql_trans_deref( sql_trans *tr )
 
 				if (t->base.rtime < p->base.rtime)
 					t->base.rtime = p->base.rtime;
+				if (t->base.atime < p->base.atime)
+					t->base.atime = p->base.atime;
 				if (t->base.wtime < p->base.wtime)
 					t->base.wtime = p->base.wtime;
 				t->po = p->po;
@@ -525,6 +527,8 @@ sql_trans_deref( sql_trans *tr )
 
 						if (c->base.rtime < p->base.rtime)
 							c->base.rtime = p->base.rtime;
+						if (c->base.atime < p->base.atime)
+							c->base.atime = p->base.atime;
 						if (c->base.wtime < p->base.wtime)
 							c->base.wtime = p->base.wtime;
 						c->po = p->po;
@@ -547,6 +551,8 @@ sql_trans_deref( sql_trans *tr )
 
 					if (i->base.rtime < p->base.rtime)
 						i->base.rtime = p->base.rtime;
+					if (i->base.atime < p->base.atime)
+						i->base.atime = p->base.atime;
 					if (i->base.wtime < p->base.wtime)
 						i->base.wtime = p->base.wtime;
 					i->po = p->po;
@@ -633,7 +639,7 @@ build up the hash (not copied in the trans dup)) */
 
 	store_lock();
 	/* if there is nothing to commit reuse the current transaction */
-	if (tr->wtime == 0) {
+	if (tr->wtime == 0 && tr->atime == 0) {
 		if (!chain) 
 			sql_trans_end(m->session, 1);
 		m->type = Q_TRANS;
@@ -708,7 +714,7 @@ mvc_rollback(mvc *m, int chain, const char *name, bool disabling_auto_commit)
 		tr = m->session->tr;
 		while (!tr->name || strcmp(tr->name, name) != 0) {
 			/* make sure we do not reuse changed data */
-			if (tr->wtime)
+			if (tr->wtime || tr->atime)
 				tr->status = 1;
 			tr = sql_trans_destroy(tr, true);
 		}
@@ -724,7 +730,7 @@ mvc_rollback(mvc *m, int chain, const char *name, bool disabling_auto_commit)
 		}
 		m->session-> tr = tr;
 		/* make sure we do not reuse changed data */
-		if (tr->wtime)
+		if (tr->wtime || tr->atime)
 			tr->status = 1;
 		sql_trans_end(m->session, 0);
 		if (chain) 
@@ -740,7 +746,7 @@ mvc_rollback(mvc *m, int chain, const char *name, bool disabling_auto_commit)
 	TRC_INFO(SQL_TRANS, 
 		"Commit%s%s rolled back%s%s%.200s\n",
 		name ? " " : "", name ? name : "",
-		tr->wtime == 0 ? " (no changes)" : "",
+		(tr->wtime == 0 || tr->atime) ? " (no changes)" : "",
 		m->query ? ", query: " : "",
 		m->query ? m->query : "");
 	return msg;

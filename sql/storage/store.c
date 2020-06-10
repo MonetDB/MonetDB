@@ -1335,7 +1335,7 @@ create_trans(sql_allocator *sa, backend_stack stk)
 
 	t->sa = sa;
 	t->name = NULL;
-	t->wtime = t->rtime = 0;
+	t->wtime = t->rtime = t->atime = 0;
 	t->stime = 0;
 	t->wstime = timestamp();
 	t->schema_updates = 0;
@@ -3480,8 +3480,8 @@ schema_dup(sql_trans *tr, int flags, sql_schema *os, sql_trans *o)
 static void
 _trans_init(sql_trans *tr, backend_stack stk, sql_trans *otr)
 {
-	tr->wtime = tr->rtime = 0;
-	tr->stime = otr->wtime;
+	tr->wtime = tr->rtime = tr->atime = 0;
+	tr->stime = (otr->wtime>otr->atime?otr->wtime:otr->atime);
 	tr->wstime = timestamp();
 	tr->schema_updates = 0;
 	tr->dropped = NULL;
@@ -3507,8 +3507,8 @@ trans_init(sql_trans *tr, backend_stack stk, sql_trans *otr)
 		if (s->base.id == ps->base.id) {
 			node *k, *l;
 
-			s->base.rtime = s->base.wtime = 0;
-			s->base.stime = ps->base.wtime;
+			s->base.rtime = s->base.wtime = s->base.atime = 0;
+			s->base.stime = (ps->base.wtime>ps->base.atime?ps->base.wtime:ps->base.atime);
 
 			if (ps->tables.set && s->tables.set)
 			for (k = ps->tables.set->h, l = s->tables.set->h; k && l; l = l->next ) { 
@@ -3518,8 +3518,8 @@ trans_init(sql_trans *tr, backend_stack stk, sql_trans *otr)
 				if (t->persistence == SQL_LOCAL_TEMP) /* skip local tables */
 					continue;
 
-				t->base.rtime = t->base.wtime = 0;
-				t->base.stime = pt->base.wtime;
+				t->base.rtime = t->base.wtime = t->base.atime = 0;
+				t->base.stime = (pt->base.wtime>pt->base.atime?pt->base.wtime:pt->base.atime);
 				if (!istmp && !t->base.allocated)
 					t->data = NULL;
 				assert (istmp || !t->base.allocated);
@@ -3533,8 +3533,8 @@ trans_init(sql_trans *tr, backend_stack stk, sql_trans *otr)
 
 						if (pc->base.id == c->base.id) {
 							c->colnr = pc->colnr;
-							c->base.rtime = c->base.wtime = 0;
-							c->base.stime = pc->base.wtime;
+							c->base.rtime = c->base.wtime = c->base.atime = 0;
+							c->base.stime = (pc->base.wtime>pc->base.atime?pc->base.wtime:pc->base.atime);
 							if (!istmp && !c->base.allocated)
 								c->data = NULL;
 							assert (istmp || !c->base.allocated);
@@ -3549,8 +3549,8 @@ trans_init(sql_trans *tr, backend_stack stk, sql_trans *otr)
 						sql_idx *c = j->data; 
 
 						if (pc->base.id == c->base.id) {
-							c->base.rtime = c->base.wtime = 0;
-							c->base.stime = pc->base.wtime;
+							c->base.rtime = c->base.wtime = c->base.atime = 0;
+							c->base.stime = (pc->base.wtime>pc->base.atime?pc->base.wtime:pc->base.atime);
 							if (!istmp && !c->base.allocated)
 								c->data = NULL;
 							assert (istmp || !c->base.allocated);
@@ -3565,8 +3565,8 @@ trans_init(sql_trans *tr, backend_stack stk, sql_trans *otr)
 						sql_part *c = j->data; 
 
 						if (pc->base.id == c->base.id) {
-							c->base.rtime = c->base.wtime = 0;
-							c->base.stime = pc->base.wtime;
+							c->base.rtime = c->base.wtime = c->base.atime = 0;
+							c->base.stime = (pc->base.wtime>pc->base.atime?pc->base.wtime:pc->base.atime);
 						} else {
 							/* for now assert */
 							assert(0);
@@ -3583,24 +3583,24 @@ trans_init(sql_trans *tr, backend_stack stk, sql_trans *otr)
 				sql_sequence *pt = k->data; /* parent transactions sequence */
 				sql_sequence *t = l->data; 
 
-				t->base.rtime = t->base.wtime = 0;
-				t->base.stime = pt->base.wtime;
+				t->base.rtime = t->base.wtime = t->base.atime = 0;
+				t->base.stime = (pt->base.wtime>pt->base.atime?pt->base.wtime:pt->base.atime);
 			}
 			if (ps->funcs.set && s->funcs.set)
 			for (k = ps->funcs.set->h, l = s->funcs.set->h; k && l; k = k->next, l = l->next ) { 
 				sql_func *pt = k->data; /* parent transactions func */
 				sql_func *t = l->data; 
 
-				t->base.rtime = t->base.wtime = 0;
-				t->base.stime = pt->base.wtime;
+				t->base.rtime = t->base.wtime = t->base.atime = 0;
+				t->base.stime = (pt->base.wtime>pt->base.atime?pt->base.wtime:pt->base.atime);
 			}
 			if (ps->types.set && s->types.set)
 			for (k = ps->types.set->h, l = s->types.set->h; k && l; k = k->next, l = l->next ) { 
 				sql_type *pt = k->data; /* parent transactions type */
 				sql_type *t = l->data; 
 
-				t->base.rtime = t->base.wtime = 0;
-				t->base.stime = pt->base.wtime;
+				t->base.rtime = t->base.wtime = t->base.atime = 0;
+				t->base.stime = (pt->base.wtime>pt->base.atime?pt->base.wtime:pt->base.atime);
 			}
 		} else {
 			/* for now assert */
@@ -3736,10 +3736,10 @@ rollforward_changeset_updates(sql_trans *tr, changeset * fs, changeset * ts, sql
 			for (n = fs->set->h; ok == LOG_OK && n && n != fs->nelm; n = n->next) {
 				sql_base *fb = n->data;
 
-				if (fb->wtime && !newFlagSet(fb->flags)) {
+				if ((fb->wtime || fb->atime) && !newFlagSet(fb->flags)) {
 					node *tbn = cs_find_id(ts, fb->id);
 
-					assert(fb->rtime <= fb->wtime);
+					assert(fb->rtime <= fb->wtime || fb->atime);
 					if (tbn) {
 						sql_base *tb = tbn->data;
 
@@ -3751,8 +3751,8 @@ rollforward_changeset_updates(sql_trans *tr, changeset * fs, changeset * ts, sql
 						if (apply && fb->wtime && fb->wtime > tb->wtime)
 							tb->wtime = fb->wtime;
 						if (apply)
-							fb->stime = tb->stime = tb->wtime;
-						assert(!apply || tb->rtime <= tb->wtime);
+							fb->stime = tb->stime = (tb->wtime>tb->atime?tb->wtime:tb->atime);
+						assert(!apply || tb->rtime <= tb->wtime || fb->atime);
 					}
 				}
 			}
@@ -3776,7 +3776,7 @@ rollforward_changeset_updates(sql_trans *tr, changeset * fs, changeset * ts, sql
 							ok = LOG_ERR;
 						fb->flags = 0;
 						tb->flags = 0;
-						fb->stime = tb->stime = tb->wtime;
+						fb->stime = tb->stime = (tb->wtime>tb->atime?tb->wtime:tb->atime);
 					}
 				} else if (!rollforward_creates(tr, fb, mode)) {
 					ok = LOG_ERR;
@@ -4294,8 +4294,9 @@ rollforward_trans(sql_trans *tr, int mode)
 {
 	int ok = LOG_OK;
 
-	if (mode == R_APPLY && tr->parent && tr->wtime > tr->parent->wtime) {
+	if (mode == R_APPLY && tr->parent && (tr->wtime > tr->parent->wtime || tr->atime > tr->parent->atime)) {
 		tr->parent->wtime = tr->wtime;
+		tr->parent->atime = tr->atime;
 		tr->parent->schema_updates += tr->schema_updates;
 	}
 
@@ -4339,7 +4340,7 @@ validate_tables(sql_schema *s, sql_schema *os)
 			sql_table *t = n->data;
 			sql_table *ot;
 
-			if (!t->base.wtime && !t->base.rtime)
+			if (!t->base.wtime && !t->base.rtime && !t->base.atime)
 				continue;
 
  			ot = find_sql_table(os, t->base.name);
@@ -4458,7 +4459,7 @@ reset_idx(sql_trans *tr, sql_idx *fi, sql_idx *pfi)
 {
 	(void)tr;
 	/* did we access the idx or is the global changed after we started */
-	if (fi->base.rtime || fi->base.wtime || fi->base.stime < pfi->base.wtime) {
+	if (fi->base.rtime || fi->base.wtime || fi->base.atime || fi->base.stime < pfi->base.wtime) {
 		if (isTable(fi->t)) 
 			store_funcs.destroy_idx(NULL, fi);
 	}
@@ -4469,7 +4470,7 @@ static int
 reset_type(sql_trans *tr, sql_type *ft, sql_type *pft)
 {
 	/* did we access the type or is the global changed after we started */
-	if (ft->base.rtime || ft->base.wtime || ft->base.stime < pft->base.wtime) {
+	if (ft->base.rtime || ft->base.wtime || ft->base.atime || ft->base.stime < pft->base.wtime) {
 
 		ft->sqlname = pft->sqlname;
 		ft->radix = pft->radix;
@@ -4487,7 +4488,7 @@ static int
 reset_func(sql_trans *tr, sql_func *ff, sql_func *pff)
 {
 	/* did we access the type or is the global changed after we started */
-	if (ff->base.rtime || ff->base.wtime || ff->base.stime < pff->base.wtime) {
+	if (ff->base.rtime || ff->base.wtime || ff->base.atime || ff->base.stime < pff->base.wtime) {
 
 		ff->imp = pff->imp;
 		ff->mod = pff->mod;
@@ -4513,7 +4514,7 @@ static int
 reset_column(sql_trans *tr, sql_column *fc, sql_column *pfc)
 {
 	/* did we access the column or is the global changed after we started */
-	if (fc->base.rtime || fc->base.wtime || fc->base.stime < pfc->base.wtime) {
+	if (fc->base.rtime || fc->base.wtime || fc->base.atime || fc->base.stime < pfc->base.wtime) {
 
 		if (isTable(fc->t)) 
 			store_funcs.destroy_col(NULL, fc);
@@ -4556,7 +4557,7 @@ reset_seq(sql_trans *tr, sql_sequence *ft, sql_sequence *pft)
 static int
 reset_part(sql_trans *tr, sql_part *ft, sql_part *pft)
 {
-	if (ft->base.rtime || ft->base.wtime || ft->base.stime < pft->base.wtime) {
+	if (ft->base.rtime || ft->base.wtime || ft->base.atime || ft->base.stime < pft->base.wtime) {
 
 		if (pft->t) {
 			sql_table *mt = pft->t;
@@ -4592,7 +4593,7 @@ reset_table(sql_trans *tr, sql_table *ft, sql_table *pft)
 		return LOG_OK;
 
 	/* did we access the table or did the global change */
-	if (ft->base.rtime || ft->base.wtime || ft->base.stime < pft->base.wtime) {
+	if (ft->base.rtime || ft->base.wtime || ft->base.atime || ft->base.stime < pft->base.wtime) {
 		int ok = LOG_OK;
 
 		if (isTable(ft) && !isTempTable(ft)) 
@@ -4602,7 +4603,7 @@ reset_table(sql_trans *tr, sql_table *ft, sql_table *pft)
 		ft->access = pft->access;
 		if (pft->p) {
 			ft->p = find_sql_table(ft->s, pft->p->base.name);
-			assert(isMergeTable(ft->p) || isReplicaTable(ft->p));
+	//		assert(isMergeTable(ft->p) || isReplicaTable(ft->p));
 		} else
 			ft->p = NULL;
 
@@ -4711,6 +4712,12 @@ reset_trans(sql_trans *tr, sql_trans *ptr)
 {
 	int res = reset_changeset(tr, &tr->schemas, &ptr->schemas, (sql_base *)tr->parent, (resetf) &reset_schema, (dupfunc) &schema_dup);
 	TRC_DEBUG(SQL_STORE, "Reset transaction: %d\n", tr->wtime);
+
+	for (node *n = tr->schemas.set->h; n; n = n->next) { /* Set table members */
+		sql_schema *s = n->data;
+
+		set_members(&s->tables);
+	}
 	return res;
 }
 
@@ -4753,7 +4760,7 @@ sql_trans_validate(sql_trans *tr)
 				continue;
 
  			os = find_sql_schema(tr->parent, s->base.name);
-			if (os && (s->base.wtime != 0 || s->base.rtime != 0)) {
+			if (os && (s->base.wtime != 0 || s->base.rtime != 0 || s->base.atime != 0)) {
 				if (!validate_tables(s, os)) 
 					return false;
 			}
@@ -7236,7 +7243,7 @@ sql_trans_begin(sql_session *s)
 
 	TRC_DEBUG(SQL_STORE, "Enter sql_trans_begin for transaction: %d\n", snr);
 	if (tr->parent && tr->parent == gtrans && 
-	    (tr->stime < gtrans->wstime || tr->wtime ||
+	    (tr->stime < gtrans->wstime || tr->wtime || tr->atime ||
 			store_schema_number() != snr)) {
 		if (!list_empty(tr->moved_tables)) {
 			sql_trans_destroy(tr, false);

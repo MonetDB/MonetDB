@@ -338,21 +338,25 @@ log_read_updates(logger *lg, trans *tr, logformat *l, log_id id, lng offset)
 			tv = lg->buf;
 
 		assert(nr <= (lng) BUN_MAX);
-		if (l->flag == LOG_UPDATE) {
+		if (!lg->flushing && l->flag == LOG_UPDATE) {
 			uid = COLnew(0, TYPE_oid, (BUN)nr, PERSISTENT);
 			if (uid == NULL) {
 				return LOG_ERR;
 			}
 		}
-		r = COLnew(0, tpe, (BUN) nr, PERSISTENT);
-		if (r == NULL) {
-			BBPreclaim(uid);
-			return LOG_ERR;
+		if (!lg->flushing) {
+			r = COLnew(0, tpe, (BUN) nr, PERSISTENT);
+			if (r == NULL) {
+				if (uid) 
+					BBPreclaim(uid);
+				return LOG_ERR;
+			}
 		}
 
 		if (l->flag == LOG_UPDATE_BULK) {
 	    		if (!mnstr_readLng(lg->input_log, &offset)) {
-				BBPreclaim(r);
+				if (r) 
+					BBPreclaim(r);
 				return LOG_ERR;
 			}
 			for (; res == LOG_OK && nr > 0; nr--) {
@@ -2075,11 +2079,10 @@ log_delta(logger *lg, BAT *uid, BAT *uval, log_id id)
 
 	if (log_write_format(lg, &l) != GDK_SUCCEED ||
 	    !mnstr_writeLng(lg->output_log, nr) ||
-	    mnstr_write(lg->output_log, &tpe, 1, 1) != 1) {
+	     mnstr_write(lg->output_log, &tpe, 1, 1) != 1){ 
 		logger_unlock(lg);
 		return GDK_FAIL;
 	}
-	/* TODO call efficient n-value writes */
 	for (p = 0; p < BUNlast(uid) && ok == GDK_SUCCEED; p++) {
 		const oid id = BUNtoid(uid, p);
 

@@ -195,6 +195,7 @@ typedef int sqlid;
 typedef struct sql_base {
 	int wtime;
 	int rtime;
+	int atime;	/* appends should not conflict */
 	int stime;
 	int allocated;
 	int flags;
@@ -242,6 +243,7 @@ typedef struct sql_trans {
 	int wstime;		/* first write transaction time stamp */
 	int rtime;		/* timestamp of latest read performed in transaction*/
 	int wtime;		/* timestamp of latest write performed in transaction*/
+	int atime;		
 	int schema_number;	/* schema timestamp */
 	int schema_updates;	/* set on schema changes */
 	int active;		/* active transaction */
