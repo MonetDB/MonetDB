@@ -27,9 +27,7 @@ UDFreverse_(char **ret, const char *src)
 	if (strNil(src)) {
 		*ret = GDKstrdup(str_nil);
 		if (*ret == NULL)
-			throw(MAL, "udf.reverse",
-			      "failed to create copy of str_nil");
-
+			throw(MAL, "udf.reverse", "failed to create copy of str_nil");
 		return MAL_SUCCEED;
 	}
 
@@ -37,13 +35,48 @@ UDFreverse_(char **ret, const char *src)
 	len = strlen(src);
 	*ret = dst = GDKmalloc(len + 1);
 	if (dst == NULL)
-		throw(MAL, "udf.reverse",
-		      "failed to allocate string of length %zu", len + 1);
+		throw(MAL, "udf.reverse", "failed to allocate string of length %zu", len + 1);
 
-	/* copy characters from src to dst in reverse order */
 	dst[len] = 0;
-	while (len > 0)
-		*dst++ = src[--len];
+	/* all strings in MonetDB are encoded using UTF-8; we must
+	 * make sure that the reversed string is also encoded in valid
+	 * UTF-8, so we treat multibyte characters as single units */
+	while (*src) {
+		if ((*src & 0xF8) == 0xF0) {
+			/* 4 byte UTF-8 sequence */
+			assert(len >= 4);
+			dst[len - 4] = *src++;
+			assert((*src & 0xC0) == 0x80);
+			dst[len - 3] = *src++;
+			assert((*src & 0xC0) == 0x80);
+			dst[len - 2] = *src++;
+			assert((*src & 0xC0) == 0x80);
+			dst[len - 1] = *src++;
+			len -= 4;
+		} else if ((*src & 0xF0) == 0xE0) {
+			/* 3 byte UTF-8 sequence */
+			assert(len >= 3);
+			dst[len - 3] = *src++;
+			assert((*src & 0xC0) == 0x80);
+			dst[len - 2] = *src++;
+			assert((*src & 0xC0) == 0x80);
+			dst[len - 1] = *src++;
+			len -= 3;
+		} else if ((*src & 0xE0) == 0xC0) {
+			/* 2 byte UTF-8 sequence */
+			assert(len >= 2);
+			dst[len - 2] = *src++;
+			assert((*src & 0xC0) == 0x80);
+			dst[len - 1] = *src++;
+			len -= 2;
+		} else {
+			/* 1 byte UTF-8 "sequence" */
+			assert(len >= 1);
+			assert((*src & 0x80) == 0);
+			dst[--len] = *src++;
+		}
+	}
+	assert(len == 0);
 
 	return MAL_SUCCEED;
 }
