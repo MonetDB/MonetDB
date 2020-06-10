@@ -2991,9 +2991,19 @@ sql_update_default(Client c, mvc *sql, const char *prev_schema)
 					"external name \"sql\".\"sql_variables\";\n"
 					"grant execute on function \"sys\".\"var\" to public;\n");
 
+			/* update system tables so that the content
+			 * looks more like what it would be if sys.var
+			 * had been defined by the C code in
+			 * sql_create_env() */
 			pos += snprintf(buf + pos, bufsize - pos,
-					"update sys.functions set system = true where schema_id = (select id from sys.schemas where name = 'sys')"
-					" and name = 'var' and type = %d;\n", (int) F_UNION);
+					"update sys.functions set system = true,"
+					//" func = 'CREATE FUNCTION \"sys\".\"var\"() RETURNS TABLE(\"schema\" string, \"name\" string, \"type\" string, \"value\" string) EXTERNAL NAME \"sql\".\"sql_variables\";',"
+					" language = 2, side_effect = false where name = 'var' and schema_id = (select id from sys.schemas where name = 'sys') and type = %d;\n"
+					"update sys.args set type = 'char' where func_id = (select id from sys.functions where name = 'var' and schema_id = (select id from sys.schemas where name = 'sys') and type = %d) and type = 'clob';\n"
+					"update sys.privileges set grantor = 0 where obj_id = (select id from sys.functions where name = 'var' and schema_id = (select id from sys.schemas where name = 'sys') and type = %d);\n",
+					(int) F_UNION,
+					(int) F_UNION,
+					(int) F_UNION);
 
 			pos += snprintf(buf + pos, bufsize - pos, "set schema \"%s\";\n", prev_schema);
 			assert(pos < bufsize);
