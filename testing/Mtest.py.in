@@ -37,7 +37,7 @@ try:
 except ImportError:
     winreg = None               # not on Windows
 
-MonetDB_VERSION = '@VERSION@'.split('.')
+MonetDB_VERSION = '11.38.0'.split('.')
 
 procdebug = False
 verbose = False
