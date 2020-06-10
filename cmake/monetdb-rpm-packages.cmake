@@ -68,11 +68,6 @@ set(CPACK_RPM_geom_FILE_NAME "${CMAKE_PROJECT_NAME}-${CPACK_RPM_geom_PACKAGE_NAM
 set(CPACK_RPM_geom_PACKAGE_SUMMARY "MonetDB5 SQL GIS support module")
 set(CPACK_RPM_geom_PACKAGE_REQUIRES "MonetDB5-server%{?_isa} = %{version}-%{release}")
 
-set(CPACK_RPM_lidar_PACKAGE_NAME "lidar")
-set(CPACK_RPM_lidar_FILE_NAME "${CMAKE_PROJECT_NAME}-${CPACK_RPM_lidar_PACKAGE_NAME}-${MONETDB_VERSION}.rpm")
-set(CPACK_RPM_lidar_PACKAGE_SUMMARY "MonetDB5 SQL support for working with LiDAR data")
-set(CPACK_RPM_lidar_PACKAGE_REQUIRES "MonetDB5-server%{?_isa} = %{version}-%{release}")
-
 set(CPACK_RPM_rapi_PACKAGE_NAME "R")
 set(CPACK_RPM_rapi_FILE_NAME "${CMAKE_PROJECT_NAME}-${CPACK_RPM_rapi_PACKAGE_NAME}-${MONETDB_VERSION}.rpm")
 set(CPACK_RPM_rapi_PACKAGE_SUMMARY "Integration of MonetDB and R, allowing use of R from within SQL")

@@ -94,10 +94,6 @@ if(SHP)
   endif()
 endif()
 
-if(LIDAR)
-  find_package(Lidar)
-endif()
-
 if(ODBC)
   find_package(ODBC)
   set(HAVE_ODBC "${ODBC_FOUND}")

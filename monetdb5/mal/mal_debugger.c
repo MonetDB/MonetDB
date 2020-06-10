@@ -221,7 +221,7 @@ local_itoa(ssize_t i, char *buf)
 	snprintf(buf, 32, "%zd", i);
 	return buf;
 }
-static char *
+static inline char *
 local_utoa(size_t i, char *buf)
 {
 	snprintf(buf, 32, "%zu", i);

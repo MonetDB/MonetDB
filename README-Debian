@@ -15,7 +15,6 @@ These packages are optional, but required when building the MonetDB
 libbz2-dev		# optional: read and write .bz2 compressed files
 libcurl4-gnutls-dev	# optional: read remote files with sys.getcontent(url)
 libgeos-dev		# optional: required for geom module
-liblas-c-dev		# optional: read LIDAR files
 liblzma-dev		# optional: read and write .xz compressed files
 libpcre3-dev		# optional: use PCRE library, enable some functions
 libreadline-dev		# optional, enable editing in mclient

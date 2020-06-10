@@ -1021,7 +1021,7 @@ insert into sys.functions values (251, 'and', 'and', 'calc', 0, 1, false, false,
 insert into sys.args values (9821, 251, 'res_0', 'boolean', 1, 0, 0, 0);
 insert into sys.args values (9822, 251, 'arg_1', 'boolean', 1, 0, 1, 1);
 insert into sys.args values (9823, 251, 'arg_2', 'boolean', 1, 0, 1, 2);
-insert into sys.functions values (252, 'or', 'or', 'calc', 0, 1, false, false, false, 2000, true, false);
+insert into sys.functions values (252, 'or', 'or', 'calc', 0, 1, false, false, false, 2000, true, true);
 insert into sys.args values (9824, 252, 'res_0', 'boolean', 1, 0, 0, 0);
 insert into sys.args values (9825, 252, 'arg_1', 'boolean', 1, 0, 1, 1);
 insert into sys.args values (9826, 252, 'arg_2', 'boolean', 1, 0, 1, 2);
@@ -5977,6 +5977,11 @@ update sys.functions set system = true where system <> true and name = 'filter' 
 set schema "sys";
 
 Running database upgrade commands:
+drop procedure sys.lidarattach(string);
+drop procedure sys.lidarload(string);
+drop procedure sys.lidarexport(string, string, string);
+
+Running database upgrade commands:
 set schema "sys";
 drop view sys.queue;
 drop function sys.queue;
@@ -5991,11 +5996,24 @@ returns table(
 "finished" timestamp,
 "workers" int,
 "memory" int)
- external name sql.sysmon_queue;
+ external name sysmon.queue;
 grant execute on function sys.queue to public;
 create view sys.queue as select * from sys.queue();
 grant select on sys.queue to public;
+drop procedure sys.pause(bigint);
+drop procedure sys.resume(bigint);
+drop procedure sys.stop(bigint);
+create procedure sys.pause(tag bigint)
+external name sysmon.pause;
+grant execute on procedure sys.pause(bigint) to public;
+create procedure sys.resume(tag bigint)
+external name sysmon.resume;
+grant execute on procedure sys.resume(bigint) to public;
+create procedure sys.stop(tag bigint)
+external name sysmon.stop;
+grant execute on procedure sys.stop(bigint) to public;
 update sys.functions set system = true where schema_id = (select id from sys.schemas where name = 'sys') and name = 'queue' and type = 5;
+update sys.functions set system = true where schema_id = (select id from sys.schemas where name = 'sys') and name in ('pause', 'resume', 'stop') and type = 2;
 update sys._tables set system = true where schema_id = (select id from sys.schemas where name = 'sys') and name = 'queue';
 drop function "sys"."var"();
 create function "sys"."var"() returns table("schema" string, "name" string, "type" string, "value" string) external name "sql"."sql_variables";

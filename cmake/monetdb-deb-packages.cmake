@@ -148,18 +148,6 @@ set(CPACK_COMPONENT_GEOM_DESCRIPTION "MonetDB5 SQL GIS support module
  extensions for MonetDB-SQL-server5.
 ")
 
-set(CPACK_DEBIAN_LIDAR_PACKAGE_NAME "libmonetdb5-server-lidar")
-set(CPACK_DEBIAN_LIDAR_PACKAGE_DEPENDS "\\\${shlibs:Depends}\\\${misc:Depends}, monetdb5-sql (= \\\${source:Version}")
-set(CPACK_DEBIAN_LIDAR_PACKAGE_SECTION "libs")
-set(CPACK_COMPONENT_LIDAR_DESCRIPTION "MonetDB5 SQL GIS support module
- MonetDB is a database management system that is developed from a
- main-memory perspective with use of a fully decomposed storage model,
- automatic index management, extensibility of data types and search
- accelerators.  It also has an SQL front end.
- .
- This package contains support for reading and writing LiDAR data.
-")
-
 set(CPACK_DEBIAN_FITS_PACKAGE_NAME "libmonetdb5-server-cfitsio")
 set(CPACK_DEBIAN_FITS_PACKAGE_DEPENDS "\\\${shlibs:Depends}, \\\${misc:Depends}, monetdb5-sql (= \\\${source:Version}")
 set(CPACK_DEBIAN_FITS_PACKAGE_SECTION "libs")

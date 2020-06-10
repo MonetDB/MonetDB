@@ -9,6 +9,6 @@ check_MaxStrLength_violations
 HAVE_GEOM?geom_tables_checks
 HAVE_NETCDF?netcdf_tables_checks
 
-HAVE_FITS&HAVE_GEOM&HAVE_LIDAR&HAVE_SHP&HAVE_NETCDF?systemfunctions
+HAVE_FITS&HAVE_GEOM&HAVE_SHP&HAVE_NETCDF?systemfunctions
 
 utilities

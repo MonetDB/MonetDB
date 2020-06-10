@@ -51,10 +51,6 @@ option(INT128
   "Enable support for 128-bit integers (default=ON)"
   ON) 
 
-option(LIDAR 
-  "Enable support for LiDAR data (default=ON)"
-  ON) 
-
 option(NETCDF 
   "Enable support for netcdf (default=ON)" 
   ON)
@@ -74,13 +70,13 @@ option(SANITIZER
   OFF)
 
 cmake_dependent_option(STRICT 
-  "Enable strict compiler flags (default=ON for development sources, OFF for tarball instalation)"
+  "Enable strict compiler flags (default=ON for development sources, OFF for tarball installation)"
   ON
   "DEVELOPMENT"
   OFF)
 
 cmake_dependent_option(ASSERT 
-  "Enable asserts (default=ON for development sources, OFF for tarball instalation)"
+  "Enable asserts (default=ON for development sources, OFF for tarball installation)"
   ON
   "DEVELOPMENT"
   OFF)

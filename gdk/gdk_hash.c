@@ -35,7 +35,7 @@
 #include "gdk.h"
 #include "gdk_private.h"
 
-static int
+static uint8_t
 HASHwidth(BUN hashsize)
 {
 	if (hashsize <= (BUN) BUN2_NONE)
@@ -1007,51 +1007,61 @@ HASHprobe(const Hash *h, const void *v)
 	}
 }
 
-void
-HASHins(BAT *b, BUN i, const void *v)
+static void
+HASHins_locked(BAT *b, BUN i, const void *v)
 {
-	MT_lock_set(&b->batIdxLock);
 	Hash *h = b->thash;
 	if (h == NULL) {
-		/* nothing to do */
-	} else if (h == (Hash *) 1) {
-		GDKunlink(BBPselectfarm(b->batRole, b->ttype, hashheap),
-			  BATDIR,
-			  BBP_physical(b->batCacheid),
-			  "thash");
+		return;
+	}
+	if (h == (Hash *) 1) {
 		b->thash = NULL;
-	} else if ((ATOMsize(b->ttype) > 2 &&
-		    HASHgrowbucket(b) != GDK_SUCCEED) ||
-		   ((i + 1) * h->width > h->heaplink.size &&
-		    HEAPextend(&h->heaplink,
-			       i * h->width + GDK_mmap_pagesize,
-			       true) != GDK_SUCCEED)) {
+		doHASHdestroy(b, h);
+		return;
+	}
+	if (HASHwidth(i + 1) > h->width &&
+	     HASHupgradehashheap(b) != GDK_SUCCEED) {
+		return;
+	}
+	if ((ATOMsize(b->ttype) > 2 &&
+	     HASHgrowbucket(b) != GDK_SUCCEED) ||
+	    ((i + 1) * h->width > h->heaplink.size &&
+	     HEAPextend(&h->heaplink,
+			i * h->width + GDK_mmap_pagesize,
+			true) != GDK_SUCCEED)) {
 		b->thash = NULL;
 		HEAPfree(&h->heapbckt, true);
 		HEAPfree(&h->heaplink, true);
 		GDKfree(h);
-	} else {
-		h->Link = h->heaplink.base;
-		BUN c = HASHprobe(h, v);
-		h->heaplink.free += h->width;
-		BUN hb = HASHget(h, c);
-		BUN hb2;
-		BATiter bi = bat_iterator(b);
-		for (hb2 = hb;
-		     hb2 != HASHnil(h);
-		     hb2 = HASHgetlink(h, hb2)) {
-			if (ATOMcmp(h->type,
-				    v,
-				    BUNtail(bi, hb2)) == 0)
-				break;
-		}
-		h->nheads += hb == HASHnil(h);
-		h->nunique += hb2 == HASHnil(h);
-		HASHputlink(h, i, hb);
-		HASHput(h, c, i);
-		h->heapbckt.dirty = true;
-		h->heaplink.dirty = true;
+		return;
 	}
+	h->Link = h->heaplink.base;
+	BUN c = HASHprobe(h, v);
+	h->heaplink.free += h->width;
+	BUN hb = HASHget(h, c);
+	BUN hb2;
+	BATiter bi = bat_iterator(b);
+	for (hb2 = hb;
+	     hb2 != HASHnil(h);
+	     hb2 = HASHgetlink(h, hb2)) {
+		if (ATOMcmp(h->type,
+			    v,
+			    BUNtail(bi, hb2)) == 0)
+			break;
+	}
+	h->nheads += hb == HASHnil(h);
+	h->nunique += hb2 == HASHnil(h);
+	HASHputlink(h, i, hb);
+	HASHput(h, c, i);
+	h->heapbckt.dirty = true;
+	h->heaplink.dirty = true;
+}
+
+void
+HASHins(BAT *b, BUN i, const void *v)
+{
+	MT_lock_set(&b->batIdxLock);
+	HASHins_locked(b, i, v);
 	MT_lock_unset(&b->batIdxLock);
 }
 

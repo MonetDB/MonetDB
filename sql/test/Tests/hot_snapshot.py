@@ -114,6 +114,7 @@ def test_snapshot(z_extension, expected_initial_bytes, unpack=True):
         with tarfile.open(fileobj=f) as tar:
             tar.extractall(dbfarm)
 
+        f.close()
         # and restart the server
         with process.server(dbname=mydb, mapiport = mapi_port, stdin=process.PIPE) as server:
 

@@ -915,7 +915,7 @@ re_like_proj(BAT **bnp, BAT *b, const char *pat, bool caseignore, bool anti, boo
 
 	assert(ATOMstorage(b->ttype) == TYPE_str);
 
-	bn = COLnew(0, TYPE_bit, q, TRANSIENT);
+	bn = COLnew(b->hseqbase, TYPE_bit, q, TRANSIENT);
 	if (bn == NULL) {
 		msg = createException(MAL, "pcre.likeselect", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		goto bailout;
@@ -2047,7 +2047,7 @@ BATPCRElike3(bat *ret, const bat *bid, const str *pat, const str *esc, const bit
 		if (bn == NULL) {
 			res = createException(MAL, "pcre.like3", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		} else {
-			bit *restrict res = (bit*)Tloc(bn, 0);
+			bit *res = (bit*)Tloc(bn, 0);
 
 			if (allnulls) {
 				for (BUN p = 0; p < q; p++)

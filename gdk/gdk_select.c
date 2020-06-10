@@ -1971,6 +1971,7 @@ rangejoin(BAT *r1, BAT *r2, BAT *l, BAT *rl, BAT *rh,
 				rhval = ro - rl->hseqbase + rl->tseqbase;
 			}
 			dst1 = (oid *) Tloc(r1, 0);
+			canditer_reset(lci);
 			switch (t) {
 			case TYPE_bte: {
 				bte vl, vh;

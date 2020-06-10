@@ -17,6 +17,11 @@ stdout of test 'upgrade` in directory 'sql/test/testdb-upgrade-hge` itself:
 # Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-30503/.s.monetdb.34683
 # MonetDB/GIS module loaded
 Running database upgrade commands:
+drop procedure sys.lidarattach(string);
+drop procedure sys.lidarload(string);
+drop procedure sys.lidarexport(string, string, string);
+
+Running database upgrade commands:
 set schema "sys";
 drop view sys.queue;
 drop function sys.queue;
@@ -31,11 +36,24 @@ returns table(
 "finished" timestamp,
 "workers" int,
 "memory" int)
- external name sql.sysmon_queue;
+ external name sysmon.queue;
 grant execute on function sys.queue to public;
 create view sys.queue as select * from sys.queue();
 grant select on sys.queue to public;
+drop procedure sys.pause(bigint);
+drop procedure sys.resume(bigint);
+drop procedure sys.stop(bigint);
+create procedure sys.pause(tag bigint)
+external name sysmon.pause;
+grant execute on procedure sys.pause(bigint) to public;
+create procedure sys.resume(tag bigint)
+external name sysmon.resume;
+grant execute on procedure sys.resume(bigint) to public;
+create procedure sys.stop(tag bigint)
+external name sysmon.stop;
+grant execute on procedure sys.stop(bigint) to public;
 update sys.functions set system = true where schema_id = (select id from sys.schemas where name = 'sys') and name = 'queue' and type = 5;
+update sys.functions set system = true where schema_id = (select id from sys.schemas where name = 'sys') and name in ('pause', 'resume', 'stop') and type = 2;
 update sys._tables set system = true where schema_id = (select id from sys.schemas where name = 'sys') and name = 'queue';
 drop function "sys"."var"();
 create function "sys"."var"() returns table("schema" string, "name" string, "type" string, "value" string) external name "sql"."sql_variables";
