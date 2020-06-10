@@ -34,6 +34,7 @@ typedef struct Ssabdb {
 	struct Ssabuplog *uplog; /* sabuplog struct for this database */
 	char *uri;               /* URI to connect to this database */
 	struct Ssabdb* next;     /* next database */
+	char *secret;            /* authentication secret for this running database */
 } sabdb;
 
 typedef struct Ssabuplog {

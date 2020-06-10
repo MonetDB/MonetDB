@@ -597,6 +597,7 @@ msab_getSingleStatus(const char *pathbuf, const char *dbname, sabdb *next)
 	sdb = malloc(sizeof(sabdb));
 	sdb->uplog = NULL;
 	sdb->uri = NULL;
+	sdb->secret = NULL;
 	sdb->next = next;
 
 	/* store the database name */
@@ -792,12 +793,10 @@ msab_freeStatus(sabdb** ret)
 
 	p = *ret;
 	while (p != NULL) {
-		if (p->path != NULL)
-			free(p->path);
-		if (p->uri != NULL)
-			free(p->uri);
-		if (p->uplog != NULL)
-			free(p->uplog);
+		free(p->path);
+		free(p->uri);
+		free(p->secret);
+		free(p->uplog);
 		r = p->scens;
 		while (r != NULL) {
 			if (r->val != NULL)
@@ -1229,6 +1228,7 @@ msab_deserialise(sabdb **ret, char *sdb)
 	/* msab_freeStatus() actually relies on this trick */
 	s->path = s->dbname = strdup(dbname);
 	s->uri = strdup(uri);
+	s->secret = NULL;
 	s->locked = locked;
 	s->state = (SABdbState)state;
 	if (strlen(scens) == 0) {

@@ -588,9 +588,6 @@ main(int argc, char **av)
 			fprintf(stderr, "!ERROR: GSKsetenv failed\n");
 			exit(1);
 		}
-
-		// do not do this in production!
-		fprintf(stderr, "TOP SECRET: %s", pw);
 	} while (0);
 
 	if ((modpath = GDKgetenv("monet_mod_path")) == NULL) {

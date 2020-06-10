@@ -549,8 +549,13 @@ forkMserver(char *database, sabdb** stats, bool force)
 		argv[c++] = dbtrace_path;
 	}
 
-	char master_password[] = "koekje";
-	if (master_password[0] != '\0') {
+	free((*stats)->secret);
+	const int master_password_len = 200;
+	char *master_password = (*stats)->secret = malloc(master_password_len);
+
+	if (master_password != NULL) {
+		generateSalt(master_password, master_password_len);
+
 		int pipefds[2];
 		if (pipe(pipefds) < 0) {
 			msab_freeStatus(stats);

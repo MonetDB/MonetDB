@@ -71,6 +71,11 @@ snapshot_database_to(char *dbname, char *dest)
 		goto bailout;
 	}
 
+	if (stats->secret == NULL) {
+		e = newErr("Lost the secret for database '%s'", dbname);
+		goto bailout;
+	}
+
 	/* Do not overwrite random files on the system. */
 	e = validate_location(dest);
 	if (e != NO_ERR) {
@@ -83,7 +88,7 @@ snapshot_database_to(char *dbname, char *dest)
 	 * We'll improve this when have figured out how to authenticate.
 	 */
 	port = getConfNum(_mero_props, "port");
-	conn = mapi_connect("localhost", port, "monetdb", "monetdb", "sql", dbname);
+	conn = mapi_connect("localhost", port, ".snapshot", stats->secret, "sql", dbname);
 	if (conn == NULL || mapi_error(conn)) {
 		e = newErr("connection error: %s", mapi_error_str(conn));
 		goto bailout;
