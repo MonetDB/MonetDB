@@ -8,7 +8,10 @@ INSERT INTO integers VALUES (1), (2), (3), (NULL);
 START TRANSACTION;
 -- Bug 6883
 select 1 from integers where (((0.7161494983624688) in (integers.i)) = true) = false;
-	--empty
+	-- 1
+	-- 1
+	-- 1
+
 delete from integers where (((0.7161494983624688) in (integers.i)) = true) = false;
 	-- 3 rows affected
 select i from integers;
