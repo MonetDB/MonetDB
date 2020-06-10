@@ -51,10 +51,6 @@ option(INT128
   "Enable support for 128-bit integers (default=ON)"
   ON) 
 
-option(LIDAR 
-  "Enable support for LiDAR data (default=ON)"
-  ON) 
-
 option(NETCDF 
   "Enable support for netcdf (default=ON)" 
   ON)

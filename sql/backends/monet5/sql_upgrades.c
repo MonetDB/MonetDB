@@ -2884,6 +2884,17 @@ sql_update_semantics(Client c)
 }
 
 static str
+sql_update_default_lidar(Client c)
+{
+	char *query =
+		"drop procedure sys.lidarattach(string);\n"
+		"drop procedure sys.lidarload(string);\n"
+		"drop procedure sys.lidarexport(string, string, string);\n";
+	printf("Running database upgrade commands:\n%s\n", query);
+	return SQLstatementIntern(c, &query, "update", true, false, NULL);
+}
+
+static str
 sql_update_default(Client c, mvc *sql, const char *prev_schema)
 {
 	size_t bufsize = 2048, pos = 0;
@@ -3287,6 +3298,15 @@ SQLupgrades(Client c, mvc *m)
 	}
 #endif
 
+	sql_find_subtype(&tp, "varchar", 0, 0);
+	if (sql_bind_func(m->sa, s, "lidarattach", &tp, NULL, F_PROC) &&
+	    (err = sql_update_default_lidar(c)) != NULL) {
+		TRC_CRITICAL(SQL_PARSER, "%s\n", err);
+		freeException(err);
+		GDKfree(prev_schema);
+		return -1;
+	}		
+	
 	if ((err = sql_update_default(c, m, prev_schema)) != NULL) {
 		TRC_CRITICAL(SQL_PARSER, "%s\n", err);
 		freeException(err);
