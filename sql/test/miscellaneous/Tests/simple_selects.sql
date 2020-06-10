@@ -108,6 +108,10 @@ select x like null, null like x, null like null, x ilike null, null ilike x, nul
        x not like null, null not like x, null not like null, x not ilike null, null not ilike x, null not ilike null from x;
 	-- all NULL
 
+select x like null from x;
+	-- NULL
+	-- NULL
+
 select x like x, x ilike x, x not like x, x not ilike x from x;
 	-- NULL NULL NULL NULL
 	-- True True False False

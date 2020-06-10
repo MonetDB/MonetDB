@@ -9,3 +9,4 @@ window-order-by-extract.Bug-6828
 ntile-wrong-results.Bug-6829
 HAVE_PYMONETDB?global_table_propagation.Bug-6846
 ilike-matches.Bug-6864
+select-and.Bug-6878

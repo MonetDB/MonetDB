@@ -10,72 +10,42 @@ add_executable(example1 example1.c)
 target_link_libraries(example1
   PRIVATE
     monetdb_config_header
-    embedded
-    sqlinclude
-    gdk
-    mapi
-    #sql
-    )
+    embedded)
 add_test(run_example1 example1)
 
 add_executable(example2 example2.c)
 target_link_libraries(example2
   PRIVATE
     monetdb_config_header
-    embedded
-    sqlinclude
-    gdk
-    mapi
-    #sql
-    )
+    embedded)
 add_test(run_example2 example2)
 
 add_executable(example_temporal example_temporal.c)
 target_link_libraries(example_temporal
   PRIVATE
     monetdb_config_header
-    embedded
-    sqlinclude
-    gdk
-    mapi
-    #sql
-    )
+    embedded)
 add_test(run_example_temporal example_temporal)
 
 add_executable(example_decimals example_decimals.c)
 target_link_libraries(example_decimals
   PRIVATE
     monetdb_config_header
-    embedded
-    sqlinclude
-    gdk
-    mapi
-    #sql
-    )
+    embedded)
 add_test(run_example_decimals example_decimals)
 
 add_executable(example_blob example_blob.c)
 target_link_libraries(example_blob
   PRIVATE
     monetdb_config_header
-    embedded
-    sqlinclude
-    gdk
-    mapi
-    #sql
-    )
+    embedded)
 add_test(run_example_blob example_blob)
 
 add_executable(example_append example_append.c)
 target_link_libraries(example_append
   PRIVATE
     monetdb_config_header
-    embedded
-    sqlinclude
-    gdk
-    mapi
-    #sql
-    )
+    embedded)
 add_test(run_example_append example_append)
 
 add_executable(backup backup.c mapi.h mapi.c ../../../clients/mapiclient/dump.c)
@@ -84,6 +54,6 @@ target_link_libraries(backup
   PRIVATE
     monetdb_config_header
     embedded
-    sqlinclude
-    gdk)
+    stream
+    matomic)
 add_test(run_backup backup)
