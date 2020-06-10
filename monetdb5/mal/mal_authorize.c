@@ -466,7 +466,7 @@ AUTHcheckCredentials(
 	free(hash);
 
 	const char *master_password = GDKgetenv("master_password");
-	if (master_password && master_password[0] != '\0') {
+	if (username[0] == '.' && master_password != NULL && master_password[0] != '\0') {
 		// first encrypt the master password as if we've just found it
 		// in the password store
 		assert(strcmp(MONETDB5_PASSWDHASH, "SHA512") == 0);
