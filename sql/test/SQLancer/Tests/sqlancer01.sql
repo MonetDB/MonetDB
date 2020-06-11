@@ -27,10 +27,49 @@ SELECT i from integers order by i;
 	-- 0
 select reverse('8 \rcr੧[bp1eMY쫺4j5s뮯!<Rn4*}');
 
+select true in (1 in (1));
+	-- true
+INSERT INTO integers VALUES(ascii(CAST(0.1 AS STRING)) IN (-1.186003652E9));
+
 -- Bug 6886
 INSERT INTO another_t(col4) VALUES(-589206676), (-1557408577);
 DELETE FROM another_t WHERE ((another_t.col8)<=(+ (another_t.col8)));
 ALTER TABLE another_t ADD UNIQUE(col8, col1, col6, col3);
+ROLLBACK;
+
+START TRANSACTION; --Bug 6888
+create view v0(c0) as (select distinct - (tbl_productsales.totalsales) from tbl_productsales, another_t);
+select another_t.col1 from another_t, tbl_productsales cross join v0;
+ROLLBACK;
+
+-- Bug 6887
+SELECT "sys"."replace"(cast(cast(0.8009925043335998 as clob) as clob(169)),cast("sys"."replace"('!','','wtkg춑5,I}楘') as clob),"sys"."concat"("sys"."concat"('?dMHr펔2!FU4Rᔎ%',-1194732688),0.7566860950241294));
+SELECT "replace"('!','','wtkg춑5,I}楘'), "replace"('','!','wtkg춑5,I}楘'), "replace"('abc',NULL,'wtkg춑5,I}楘'), "replace"('abc','b',NULL);
+
+-- Bug 6889
+select all integers.i from another_t inner join integers on ((another_t.col3)<=(cast((another_t.col4) between symmetric (cast(0.29924480503501805 as int)) and (another_t.col3) as int))) 
+where true union all select all integers.i from another_t join integers on ((another_t.col3)<=(cast((another_t.col4) between symmetric (cast(0.29924480503501805 as int)) and (another_t.col3) as int))) 
+where not (true) union all select all integers.i from another_t join integers on ((another_t.col3)<=(cast((another_t.col4) between symmetric (cast(0.29924480503501805 as int)) and (another_t.col3) as int))) where (true) is null;
+	-- empty
+select 1 from another_t join integers on (cast(another_t.col4 between 1 and 2 as int)) where false;
+	-- empty
+
+-- Bug 6892
+SELECT another_T.col2 FROM tbl_productsales, integers LEFT OUTER JOIN another_T ON another_T.col1 > 1 WHERE another_T.col2 > 1 GROUP BY another_T.col2 HAVING COUNT((another_T.col2) IN (another_T.col2)) > 0;
+	-- 22
+	-- 222
+	-- 2222
+
+SELECT COUNT(1 IN (1));
+	-- 1
+
+START TRANSACTION; --Bug 6893
+create view v0(c0) as (select distinct - (tbl_productsales.totalsales) from tbl_productsales, another_t);
+create view v1(c0) as (select distinct not (not ((((v0.c0)=(1560867215))) = false)) from integers, another_t, tbl_productsales, v0);
+create view v2(c0, c1) as (select v1.c0, -3.025584E8 from v0, tbl_productsales, v1, another_t);
+create view v3(c0, c1, c2) as (select all 0.9104878744438205107059047804796136915683746337890625, -705263737, 0.7147939 from v2 where (cast(v2.c0 as varchar(32))) is null order by v2.c1 desc, v2.c0 desc);
+SELECT v3.c0 FROM v3, v0, tbl_productsales FULL OUTER JOIN v2 ON v2.c0 RIGHT OUTER JOIN integers ON (tbl_productsales.TotalSales) BETWEEN (NULL) AND (v2.c1) JOIN another_t ON v2.c0;
+	-- empty
 ROLLBACK;
 
 DROP TABLE tbl_ProductSales;
