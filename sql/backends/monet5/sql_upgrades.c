@@ -75,96 +75,65 @@ sql_fix_system_tables(Client c, mvc *sql, const char *prev_schema)
 		if (func->base.id >= FUNC_OIDS)
 			continue;
 
-		if (func->type == F_AGGR) {
-			pos += snprintf(buf + pos, bufsize - pos,
-					"insert into sys.functions values"
-					" (%d, '%s', '%s', '%s', %d, %d, false,"
-					" %s, %s, %d, %s);\n",
-					func->base.id, func->base.name, func->imp,
-					func->mod, (int) FUNC_LANG_INT, (int) func->type,
-					func->varres ? "true" : "false",
-					func->vararg ? "true" : "false",
-					func->s ? func->s->base.id : s->base.id,
-					func->system ? "true" : "false");
-			arg = func->res->h->data;
-			pos += snprintf(buf + pos, bufsize - pos,
-					"insert into sys.args values"
-					" (%d, %d, 'res', '%s', %u, %u, %d, 0);\n",
-					store_next_oid(), func->base.id,
-					arg->type.type->sqlname, arg->type.digits,
-					arg->type.scale, arg->inout);
-			if (func->ops->h) {
-				arg = func->ops->h->data;
-				pos += snprintf(buf + pos, bufsize - pos,
-						"insert into sys.args values"
-						" (%d, %d, 'arg', '%s', %u,"
-						" %u, %d, 1);\n",
-						store_next_oid(), func->base.id,
-						arg->type.type->sqlname,
-						arg->type.digits, arg->type.scale,
-						arg->inout);
-			}
-		} else {
-			pos += snprintf(buf + pos, bufsize - pos,
-					"insert into sys.functions values"
-					" (%d, '%s', '%s', '%s',"
-					" %d, %d, %s, %s, %s, %d, %s);\n",
-					func->base.id, func->base.name,
-					func->imp, func->mod, (int) FUNC_LANG_INT,
-					(int) func->type,
-					func->side_effect ? "true" : "false",
-					func->varres ? "true" : "false",
-					func->vararg ? "true" : "false",
-					func->s ? func->s->base.id : s->base.id,
-					func->system ? "true" : "false");
-			if (func->res) {
-				for (m = func->res->h; m; m = m->next, number++) {
-					arg = m->data;
-					pos += snprintf(buf + pos, bufsize - pos,
-							"insert into sys.args"
-							" values"
-							" (%d, %d, 'res_%d',"
-							" '%s', %u, %u, %d,"
-							" %d);\n",
-							store_next_oid(),
-							func->base.id,
-							number,
-							arg->type.type->sqlname,
-							arg->type.digits,
-							arg->type.scale,
-							arg->inout, number);
-				}
-			}
-			for (m = func->ops->h; m; m = m->next, number++) {
+		pos += snprintf(buf + pos, bufsize - pos,
+				"insert into sys.functions values"
+				" (%d, '%s', '%s', '%s',"
+				" %d, %d, %s, %s, %s, %d, %s);\n",
+				func->base.id, func->base.name,
+				func->imp, func->mod, (int) FUNC_LANG_INT,
+				(int) func->type,
+				func->side_effect ? "true" : "false",
+				func->varres ? "true" : "false",
+				func->vararg ? "true" : "false",
+				func->s ? func->s->base.id : s->base.id,
+				func->system ? "true" : "false");
+		if (func->res) {
+			for (m = func->res->h; m; m = m->next, number++) {
 				arg = m->data;
-				if (arg->name)
-					pos += snprintf(buf + pos, bufsize - pos,
-							"insert into sys.args"
-							" values"
-							" (%d, %d, '%s', '%s',"
-							" %u, %u, %d, %d);\n",
-							store_next_oid(),
-							func->base.id,
-							arg->name,
-							arg->type.type->sqlname,
-							arg->type.digits,
-							arg->type.scale,
-							arg->inout, number);
-				else
-					pos += snprintf(buf + pos, bufsize - pos,
-							"insert into sys.args"
-							" values"
-							" (%d, %d, 'arg_%d',"
-							" '%s', %u, %u, %d,"
-							" %d);\n",
-							store_next_oid(),
-							func->base.id,
-							number,
-							arg->type.type->sqlname,
-							arg->type.digits,
-							arg->type.scale,
-							arg->inout, number);
+				pos += snprintf(buf + pos, bufsize - pos,
+						"insert into sys.args"
+						" values"
+						" (%d, %d, 'res_%d',"
+						" '%s', %u, %u, %d,"
+						" %d);\n",
+						store_next_oid(),
+						func->base.id,
+						number,
+						arg->type.type->sqlname,
+						arg->type.digits,
+						arg->type.scale,
+						arg->inout, number);
 			}
+		}
+		for (m = func->ops->h; m; m = m->next, number++) {
+			arg = m->data;
+			if (arg->name)
+				pos += snprintf(buf + pos, bufsize - pos,
+						"insert into sys.args"
+						" values"
+						" (%d, %d, '%s', '%s',"
+						" %u, %u, %d, %d);\n",
+						store_next_oid(),
+						func->base.id,
+						arg->name,
+						arg->type.type->sqlname,
+						arg->type.digits,
+						arg->type.scale,
+						arg->inout, number);
+			else
+				pos += snprintf(buf + pos, bufsize - pos,
+						"insert into sys.args"
+						" values"
+						" (%d, %d, 'arg_%d',"
+						" '%s', %u, %u, %d,"
+						" %d);\n",
+						store_next_oid(),
+						func->base.id,
+						number,
+						arg->type.type->sqlname,
+						arg->type.digits,
+						arg->type.scale,
+						arg->inout, number);
 		}
 	}
 
@@ -2328,13 +2297,6 @@ sql_update_jun2020(Client c, mvc *sql, const char *prev_schema, bool *systabfixe
 	 * see also function load_func() in store.c */
 	pos += snprintf(buf + pos, bufsize - pos,
 			"update sys.functions set language = language - 2 where language in (8, 9);\n");
-	sql_subtype tp;
-	sql_find_subtype(&tp, "varchar", 0, 0);
-	sql_subfunc *f = sql_bind_func(sql->sa, sys, "listagg", &tp, &tp, F_AGGR);
-	pos += snprintf(buf + pos, bufsize - pos,
-			"insert into sys.args values"
-			" (%d, %d, 'arg_2', 'varchar', 0, 0, %d, 2);\n",
-			store_next_oid(), f->func->base.id, ARG_IN);
 
 	pos += snprintf(buf + pos, bufsize - pos,
 			"update sys.args set name = name || '_' || cast(number as string) where name in ('arg', 'res') and func_id in (select id from sys.functions f where f.system);\n");
