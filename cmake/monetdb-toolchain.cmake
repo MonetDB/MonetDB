@@ -86,4 +86,7 @@ function(monetdb_default_toolchain)
   if(NOT ASSERT)
     MT_checkCompilerFlag("-DNDEBUG=1")
   endif()
+
+  set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS}" PARENT_SCOPE)
+
 endfunction()
