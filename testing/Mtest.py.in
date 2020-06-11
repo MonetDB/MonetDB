@@ -3160,18 +3160,22 @@ def DoIt(env, SERVER, CALL, TST, EXT, TestOutFile, TestErrFile, STIMEOUT, CTIMEO
             elif CALL == "sqltest":
                 import MonetDBtesting.sqllogictest as sqllogictest
                 sql = sqllogictest.SQLLogic(ClntErr)
-                sql.connect(hostname='localhost',
-                            port=int(env['MAPIPORT']),
-                            database=TSTDB)
-                sql.drop()
                 try:
-                    sql.parse(TST+EXT)
-                except sqllogictest.SQLLogicSyntaxError:
-                    pass
-                except BrokenPipeError:
-                    # server timeout
-                    pass
-                sql.close()
+                    sql.connect(hostname='localhost',
+                                port=int(env['MAPIPORT']),
+                                database=TSTDB)
+                except:
+                    returncode = 'error'
+                else:
+                    sql.drop()
+                    try:
+                        sql.parse(TST+EXT)
+                    except sqllogictest.SQLLogicSyntaxError:
+                        pass
+                    except BrokenPipeError:
+                        # server timeout
+                        pass
+                    sql.close()
             elif CALL in ["sql", "sqlXs"]:
                 TSTs = []
                 if CALL == "sql":
