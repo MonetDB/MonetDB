@@ -33,6 +33,9 @@ DELETE FROM another_t WHERE ((another_t.col8)<=(+ (another_t.col8)));
 ALTER TABLE another_t ADD UNIQUE(col8, col1, col6, col3);
 ROLLBACK;
 
+-- Bug 6887
+SELECT "sys"."replace"(cast(cast(0.8009925043335998 as clob) as clob(169)),cast("sys"."replace"('!','','wtkg춑5,I}楘') as clob),"sys"."concat"("sys"."concat"('?dMHr펔2!FU4Rᔎ%',-1194732688),0.7566860950241294));
+
 DROP TABLE tbl_ProductSales;
 DROP TABLE another_T;
 DROP TABLE integers;
