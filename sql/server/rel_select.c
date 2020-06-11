@@ -2323,10 +2323,7 @@ rel_logical_value_exp(sql_query *query, sql_rel **rel, symbol *sc, int f, exp_ki
 			return NULL;
 		if (!(rs = rel_logical_value_exp(query, rel, ro, f, ek)))
 			return NULL;
-		if (sc->token == SQL_OR)
-			return rel_binop_(sql, rel ? *rel : NULL, ls, rs, NULL, "or", card_value);
-		else
-			return rel_binop_(sql, rel ? *rel : NULL, ls, rs, NULL, "and", card_value);
+		return rel_binop_(sql, rel ? *rel : NULL, ls, rs, NULL, sc->token == SQL_OR ? "or": "and", card_value);
 	}
 	case SQL_FILTER:
 		/* [ x,..] filter [ y,..] */
@@ -2518,23 +2515,11 @@ rel_logical_value_exp(sql_query *query, sql_rel **rel, symbol *sc, int f, exp_ki
 			re1 = tmp;
 		}
 
-		if (sc->token == SQL_NOT_BETWEEN) {
-			if (!(e1 = rel_binop_(sql, rel ? *rel : NULL, le, re1, NULL, "<", card_value)))
-				return NULL;
-			if (!(e2 = rel_binop_(sql, rel ? *rel : NULL, le, re2, NULL, ">", card_value)))
-				return NULL;
-		} else {
-			if (!(e1 = rel_binop_(sql, rel ? *rel : NULL, le, re1, NULL, ">=", card_value)))
-				return NULL;
-			if (!(e2 = rel_binop_(sql, rel ? *rel : NULL, le, re2, NULL, "<=", card_value)))
-				return NULL;
-		}
-		assert(e1 && e2);
-		if (sc->token == SQL_NOT_BETWEEN) {
-			return rel_binop_(sql, rel ? *rel : NULL, e1, e2, NULL, "or", card_value);
-		} else {
-			return rel_binop_(sql, rel ? *rel : NULL, e1, e2, NULL, "and", card_value);
-		}
+		if (!(e1 = rel_binop_(sql, rel ? *rel : NULL, le, re1, NULL, sc->token == SQL_NOT_BETWEEN ? "<" : ">=", card_value)))
+			return NULL;
+		if (!(e2 = rel_binop_(sql, rel ? *rel : NULL, le, re2, NULL, sc->token == SQL_NOT_BETWEEN ? ">" : "<=", card_value)))
+			return NULL;
+		return rel_binop_(sql, rel ? *rel : NULL, e1, e2, NULL, sc->token == SQL_NOT_BETWEEN ? "or" : "and", card_value);
 	}
 	case SQL_IS_NULL:
 	case SQL_IS_NOT_NULL:
@@ -2819,24 +2804,11 @@ rel_logical_exp(sql_query *query, sql_rel *rel, symbol *sc, int f)
 
 		if (le->card == CARD_ATOM) {
 			sql_exp *e1, *e2;
-			if (sc->token == SQL_NOT_BETWEEN) {
-				if (!(e1 = rel_binop_(sql, rel, le, re1, NULL, "<", card_value)))
-					return NULL;
-				if (!(e2 = rel_binop_(sql, rel, le, re2, NULL, ">", card_value)))
-					return NULL;
-			} else {
-				if (!(e1 = rel_binop_(sql, rel, le, re1, NULL, ">=", card_value)))
-					return NULL;
-				if (!(e2 = rel_binop_(sql, rel, le, re2, NULL, "<=", card_value)))
-					return NULL;
-			}
-			assert(e1 && e2);
-			if (sc->token == SQL_NOT_BETWEEN) {
-				e1 = rel_binop_(sql, rel, e1, e2, NULL, "or", card_value);
-			} else {
-				e1 = rel_binop_(sql, rel, e1, e2, NULL, "and", card_value);
-			}
-			if (!e1)
+			if (!(e1 = rel_binop_(sql, rel, le, re1, NULL, sc->token == SQL_NOT_BETWEEN ? "<" : ">=", card_value)))
+				return NULL;
+			if (!(e2 = rel_binop_(sql, rel, le, re2, NULL, sc->token == SQL_NOT_BETWEEN ? ">" : "<=", card_value)))
+				return NULL;
+			if (!(e1 = rel_binop_(sql, rel, e1, e2, NULL, sc->token == SQL_NOT_BETWEEN ? "or" : "and", card_value)))
 				return NULL;
 			e2 = exp_compare(sql->sa, e1, exp_atom_bool(sql->sa, 1), cmp_equal);
 			return rel_select_push_exp_down(sql, rel, e2, le, le, re1, re1, re2, f);

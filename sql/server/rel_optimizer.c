@@ -2491,7 +2491,7 @@ static sql_rel *
 rel_remove_redundant_join(mvc *sql, sql_rel *rel, int *changes)
 {
 	(void)sql;
-	if (is_join(rel->op) || is_semi(rel->op)) {
+	if ((is_join(rel->op) || is_semi(rel->op)) && !list_empty(rel->exps)) {
 		sql_rel *l = rel->l, *r = rel->r, *b, *p = NULL, *j;
 
 		if (is_basetable(l->op) && is_simple_project(r->op) && need_distinct(r)) {
@@ -3976,8 +3976,11 @@ exp_merge_project_rse( mvc *sql, sql_exp *e)
 		}
 	} else if (is_convert(e->type)) {
 		sql_exp *n = exp_merge_project_rse(sql, e->l);
-		if (n && n != e->l)
-			return exp_convert(sql->sa, n, exp_fromtype(e), exp_totype(e));
+		if (n && n != e->l) {
+			n = exp_convert(sql->sa, n, exp_fromtype(e), exp_totype(e));
+			exp_setname(sql->sa, n, exp_relname(e), exp_name(e));
+			return n;
+		}
 	}
 	return e;
 }

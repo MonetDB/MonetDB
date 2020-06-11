@@ -107,12 +107,130 @@ stdout of test 'sqlancer01` in directory 'sql/test/SQLancer` itself:
 % clob # type
 % 28 # length
 [ "}*4nR<!뮯s5j4쫺YMe1pb[੧rc\r 8"	]
+#select true in (1 in (1));
+% .%6 # table_name
+% %6 # name
+% boolean # type
+% 5 # length
+[ true	]
+#INSERT INTO integers VALUES(ascii(CAST(0.1 AS STRING)) IN (-1.186003652E9));
+[ 1	]
 #INSERT INTO another_t(col4) VALUES(-589206676), (-1557408577);
 [ 2	]
 #DELETE FROM another_t WHERE ((another_t.col8)<=(+ (another_t.col8)));
 [ 4	]
 #ALTER TABLE another_t ADD UNIQUE(col8, col1, col6, col3);
 #ROLLBACK;
+#START TRANSACTION; --Bug 6888
+#create view v0(c0) as (select distinct - (tbl_productsales.totalsales) from tbl_productsales, another_t);
+#select another_t.col1 from another_t, tbl_productsales cross join v0;
+% sys.another_t # table_name
+% col1 # name
+% int # type
+% 4 # length
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 11	]
+[ 11	]
+[ 11	]
+[ 11	]
+[ 11	]
+[ 11	]
+[ 11	]
+[ 11	]
+[ 11	]
+[ 11	]
+[ 11	]
+[ 11	]
+[ 11	]
+[ 11	]
+[ 11	]
+[ 11	]
+[ 111	]
+[ 111	]
+[ 111	]
+[ 111	]
+[ 111	]
+[ 111	]
+[ 111	]
+[ 111	]
+[ 111	]
+[ 111	]
+[ 111	]
+[ 111	]
+[ 111	]
+[ 111	]
+[ 111	]
+[ 111	]
+[ 1111	]
+[ 1111	]
+[ 1111	]
+[ 1111	]
+[ 1111	]
+[ 1111	]
+[ 1111	]
+[ 1111	]
+[ 1111	]
+[ 1111	]
+[ 1111	]
+[ 1111	]
+[ 1111	]
+[ 1111	]
+[ 1111	]
+[ 1111	]
+#ROLLBACK;
+#SELECT "sys"."replace"(cast(cast(0.8009925043335998 as clob) as clob(169)),cast("sys"."replace"('!','','wtkg춑5,I}楘') as clob),"sys"."concat"("sys"."concat"('?dMHr펔2!FU4Rᔎ%',-1194732688),0.7566860950241294));
+% .%2 # table_name
+% %2 # name
+% varchar # type
+% 18 # length
+[ "0.8009925043335998"	]
+#SELECT "replace"('!','','wtkg춑5,I}楘'), "replace"('','!','wtkg춑5,I}楘'), "replace"('abc',NULL,'wtkg춑5,I}楘'), "replace"('abc','b',NULL);
+% .%2,	.%3,	.%4,	.%5 # table_name
+% %2,	%3,	%4,	%5 # name
+% varchar,	varchar,	clob,	clob # type
+% 1,	0,	0,	0 # length
+[ "!",	"",	NULL,	NULL	]
+#select all integers.i from another_t inner join integers on ((another_t.col3)<=(cast((another_t.col4) between symmetric (cast(0.29924480503501805 as int)) and (another_t.col3) as int))) 
+#where true union all select all integers.i from another_t join integers on ((another_t.col3)<=(cast((another_t.col4) between symmetric (cast(0.29924480503501805 as int)) and (another_t.col3) as int))) 
+#where not (true) union all select all integers.i from another_t join integers on ((another_t.col3)<=(cast((another_t.col4) between symmetric (cast(0.29924480503501805 as int)) and (another_t.col3) as int))) where (true) is null;
+% .%20 # table_name
+% i # name
+% int # type
+% 1 # length
+#select 1 from another_t join integers on (cast(another_t.col4 between 1 and 2 as int)) where false;
+% .%14 # table_name
+% %14 # name
+% tinyint # type
+% 1 # length
+#SELECT another_T.col2 FROM tbl_productsales, integers LEFT OUTER JOIN another_T ON another_T.col1 > 1 WHERE another_T.col2 > 1 GROUP BY another_T.col2 HAVING COUNT((another_T.col2) IN (another_T.col2)) > 0;
+% .another_t # table_name
+% col2 # name
+% int # type
+% 4 # length
+[ 22	]
+[ 222	]
+[ 2222	]
+#SELECT COUNT(1 IN (1));
+% .%3 # table_name
+% %3 # name
+% bigint # type
+% 1 # length
+[ 1	]
 #DROP TABLE tbl_ProductSales;
 #DROP TABLE another_T;
 #DROP TABLE integers;
