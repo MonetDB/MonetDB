@@ -113,6 +113,18 @@ stdout of test 'sqlancer01` in directory 'sql/test/SQLancer` itself:
 [ 4	]
 #ALTER TABLE another_t ADD UNIQUE(col8, col1, col6, col3);
 #ROLLBACK;
+#SELECT "sys"."replace"(cast(cast(0.8009925043335998 as clob) as clob(169)),cast("sys"."replace"('!','','wtkg춑5,I}楘') as clob),"sys"."concat"("sys"."concat"('?dMHr펔2!FU4Rᔎ%',-1194732688),0.7566860950241294));
+% .%2 # table_name
+% %2 # name
+% varchar # type
+% 18 # length
+[ "0.8009925043335998"	]
+#SELECT "replace"('!','','wtkg춑5,I}楘'), "replace"('','!','wtkg춑5,I}楘'), "replace"('abc',NULL,'wtkg춑5,I}楘'), "replace"('abc','b',NULL);
+% .%2,	.%3,	.%4,	.%5 # table_name
+% %2,	%3,	%4,	%5 # name
+% varchar,	varchar,	clob,	clob # type
+% 1,	0,	0,	0 # length
+[ "!",	"",	NULL,	NULL	]
 #DROP TABLE tbl_ProductSales;
 #DROP TABLE another_T;
 #DROP TABLE integers;

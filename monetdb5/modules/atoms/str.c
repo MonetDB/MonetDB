@@ -3989,23 +3989,26 @@ STRSubstitute(str *res, const str *arg1, const str *arg2, const str *arg3, const
 	const char *pfnd;
 	char *fnd;
 
-	if (strNil(s)) {
+	if (strNil(s) || strNil(src) || strNil(dst)) {
 		if ((*res = GDKstrdup(str_nil)) == NULL)
+			throw(MAL, "str.substitute", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		return MAL_SUCCEED;
+	}
+	if (!lsrc || !l) { /* s/src is an empty string, there's nothing to substitute */
+		if ((*res = GDKstrdup(s)) == NULL)
 			throw(MAL, "str.substitute", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		return MAL_SUCCEED;
 	}
 
 	n = l + ldst;
-	if (repeat && ldst > lsrc && lsrc) {
+	if (repeat && ldst > lsrc)
 		n = (ldst * l) / lsrc;	/* max length */
-	}
+
 	buf = *res = GDKmalloc(n);
 	if (*res == NULL)
 		throw(MAL, "str.substitute", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 
 	pfnd = s;
-	if (lsrc == 0)
-		lsrc = 1;				/* make sure we make progress */
 	do {
 		fnd = strstr(pfnd, src);
 		if (fnd == NULL)
