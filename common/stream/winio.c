@@ -79,7 +79,7 @@ struct console {
 	WCHAR wbuf[8192];
 };
 
-static ssize_t
+ssize_t
 console_read(stream *restrict s, void *restrict buf, size_t elmsize, size_t cnt)
 {
 	struct console *c = s->stream_data.p;
@@ -184,7 +184,7 @@ console_read(stream *restrict s, void *restrict buf, size_t elmsize, size_t cnt)
 	return (ssize_t) ((p - (unsigned char *) buf) / elmsize);
 }
 
-static ssize_t
+ssize_t
 console_write(stream *restrict s, const void *restrict buf, size_t elmsize, size_t cnt)
 {
 	struct console *c = s->stream_data.p;
@@ -368,6 +368,7 @@ stream *win_console_in_stream(const char *name)
 		mnstr_set_error_errno(NULL, MNSTR_OPEN_ERROR, NULL);
 		return NULL;
 	}
+	s->readonly = true;
 
 	switch (GetFileType(h)) {
 	case FILE_TYPE_PIPE:
@@ -403,6 +404,7 @@ stream *win_console_in_stream(const char *name)
 		s->isutf8 = true;
 		break;
 	}
+	return s;
 }
 
 stream *win_console_out_stream(const char *name)
@@ -412,6 +414,7 @@ stream *win_console_out_stream(const char *name)
 		mnstr_set_error_errno(NULL, MNSTR_OPEN_ERROR, NULL);
 		return NULL;
 	}
+	s->readonly = false;
 
 	struct console *c = malloc(sizeof(struct console));
 	if (c == NULL) {
