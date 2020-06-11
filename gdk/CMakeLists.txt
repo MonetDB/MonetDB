@@ -96,6 +96,7 @@ target_link_libraries(gdk
   $<$<NOT:$<PLATFORM_ID:Windows>>:m>
   $<$<PLATFORM_ID:Windows>:ws2_32>
   $<$<BOOL:${KVM_FOUND}>:KVM::KVM>
+  ${CMAKE_DL_LIBS}
   Threads::Threads)
 
 # This definition is also used in Linux
