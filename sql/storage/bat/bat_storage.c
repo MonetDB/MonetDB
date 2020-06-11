@@ -15,6 +15,9 @@
 
 static MT_Lock segs_lock = MT_LOCK_INITIALIZER("segs_lock");
 static MT_Lock destroy_lock = MT_LOCK_INITIALIZER("destroy_lock");
+#define NR_TABLE_LOCKS 64
+static MT_Lock table_locks[NR_TABLE_LOCKS]; /* set of locks to protect table changes (claim) */
+
 storage *tobe_destroyed_dbat = NULL;
 sql_delta *tobe_destroyed_delta = NULL;
 
@@ -913,6 +916,17 @@ table_claim_space(sql_trans *tr, sql_table *t, size_t cnt)
 	return LOG_OK;
 }
 
+void
+lock_table(sqlid id)
+{
+	MT_lock_set(&table_locks[id&(NR_TABLE_LOCKS-1)]);
+}
+
+void
+unlock_table(sqlid id)
+{
+	MT_lock_unset(&table_locks[id&(NR_TABLE_LOCKS-1)]);
+}
 /*
  * Claim cnt slots to store the tuples. The claim_tab should claim storage on the level
  * of the global transaction and mark the newly added storage slots unused on the global
@@ -929,7 +943,7 @@ claim_tab(sql_trans *tr, sql_table *t, size_t cnt)
 		return 0;
 
 	/* use (resizeable) array of locks like BBP */
-	store_lock();
+	lock_table(t->base.id);
 
 	s = t->data;
 	if (isNew(t) || isTempTable(t) || s->cs.cleared) {
@@ -968,11 +982,11 @@ claim_tab(sql_trans *tr, sql_table *t, size_t cnt)
 		BAT *ui, *uv;
 
 		if (0 && table_claim_space(tr, t, cnt) == LOG_ERR) {
-			store_unlock();
+			unlock_table(t->base.id);
 			return LOG_ERR;
 		}
 		if (cs_real_update_bats(&s->cs, &ui, &uv) == LOG_ERR) {
-			store_unlock();
+			unlock_table(t->base.id);
 			return LOG_ERR;
 		}
 
@@ -982,7 +996,7 @@ claim_tab(sql_trans *tr, sql_table *t, size_t cnt)
 			    BUNappend(uv, &deleted, true) != GDK_SUCCEED) {
 				bat_destroy(ui);
 				bat_destroy(uv);
-				store_unlock();
+				unlock_table(t->base.id);
 				return LOG_ERR;
 			}
 		}
@@ -997,7 +1011,7 @@ claim_tab(sql_trans *tr, sql_table *t, size_t cnt)
 	for(lng i=0; i<(lng)cnt; i++){
 		if (BUNappend(b, &deleted, true) != GDK_SUCCEED) {
 			bat_destroy(b);
-			store_unlock();
+			unlock_table(t->base.id);
 			return LOG_ERR;
 		}
 	}
@@ -1006,7 +1020,7 @@ claim_tab(sql_trans *tr, sql_table *t, size_t cnt)
 
 	/* inserts only write */
 	s->cs.wtime = t->base.atime = t->s->base.atime = tr->atime = tr->wstime;
-	store_unlock();
+	unlock_table(t->base.id);
 	return (size_t)slot;
 }
 
@@ -2294,4 +2308,7 @@ bat_storage_init( store_functions *sf)
 	sf->gtrans_minmax = (gtrans_update_fptr)&minmax;
 
 	sf->cleanup = (cleanup_fptr)&cleanup;
+
+	for(int i=0;i<NR_TABLE_LOCKS;i++)
+		MT_lock_init(&table_locks[i], "table_lock");
 }
