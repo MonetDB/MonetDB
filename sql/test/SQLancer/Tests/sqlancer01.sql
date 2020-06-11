@@ -27,6 +27,10 @@ SELECT i from integers order by i;
 	-- 0
 select reverse('8 \rcr੧[bp1eMY쫺4j5s뮯!<Rn4*}');
 
+select true in (1 in (1));
+	-- true
+INSERT INTO integers VALUES(ascii(CAST(0.1 AS STRING)) IN (-1.186003652E9));
+
 -- Bug 6886
 INSERT INTO another_t(col4) VALUES(-589206676), (-1557408577);
 DELETE FROM another_t WHERE ((another_t.col8)<=(+ (another_t.col8)));

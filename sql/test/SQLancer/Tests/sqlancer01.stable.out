@@ -107,6 +107,14 @@ stdout of test 'sqlancer01` in directory 'sql/test/SQLancer` itself:
 % clob # type
 % 28 # length
 [ "}*4nR<!뮯s5j4쫺YMe1pb[੧rc\r 8"	]
+#select true in (1 in (1));
+% .%6 # table_name
+% %6 # name
+% boolean # type
+% 5 # length
+[ true	]
+#INSERT INTO integers VALUES(ascii(CAST(0.1 AS STRING)) IN (-1.186003652E9));
+[ 1	]
 #INSERT INTO another_t(col4) VALUES(-589206676), (-1557408577);
 [ 2	]
 #DELETE FROM another_t WHERE ((another_t.col8)<=(+ (another_t.col8)));
