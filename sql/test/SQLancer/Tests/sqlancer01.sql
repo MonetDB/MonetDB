@@ -33,6 +33,11 @@ DELETE FROM another_t WHERE ((another_t.col8)<=(+ (another_t.col8)));
 ALTER TABLE another_t ADD UNIQUE(col8, col1, col6, col3);
 ROLLBACK;
 
+START TRANSACTION; --Bug 6888
+create view v0(c0) as (select distinct - (tbl_productsales.totalsales) from tbl_productsales, another_t);
+select another_t.col1 from another_t, tbl_productsales cross join v0;
+ROLLBACK;
+
 -- Bug 6887
 SELECT "sys"."replace"(cast(cast(0.8009925043335998 as clob) as clob(169)),cast("sys"."replace"('!','','wtkg춑5,I}楘') as clob),"sys"."concat"("sys"."concat"('?dMHr펔2!FU4Rᔎ%',-1194732688),0.7566860950241294));
 SELECT "replace"('!','','wtkg춑5,I}楘'), "replace"('','!','wtkg춑5,I}楘'), "replace"('abc',NULL,'wtkg춑5,I}楘'), "replace"('abc','b',NULL);
