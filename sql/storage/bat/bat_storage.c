@@ -567,6 +567,7 @@ delta_append_bat( sql_delta *bat, size_t offset, BAT *i, sql_table *t )
 {
 	BAT *b;
 
+	(void)t;
 	if (!BATcount(i))
 		return LOG_OK;
 	b = temp_descriptor(bat->cs.bid); /* TODO VIEW get parent */
@@ -617,6 +618,7 @@ delta_append_val( sql_delta *bat, size_t offset, void *i, sql_table *t )
 {
 	BAT *b;
 
+	(void)t;
 	b = temp_descriptor(bat->cs.bid); /* TODO VIEW get parent */
 	if(b == NULL)
 		return LOG_ERR;
@@ -867,7 +869,7 @@ delete_tab(sql_trans *tr, sql_table * t, void *ib, int tpe)
 }
 
 static int
-claim_cs(sql_trans *tr, column_storage *cs, size_t cnt) 
+claim_cs(column_storage *cs, size_t cnt) 
 {
 	BAT *b = temp_descriptor(cs->bid);
 
@@ -875,7 +877,7 @@ claim_cs(sql_trans *tr, column_storage *cs, size_t cnt)
 		return LOG_ERR;
 	const void *nilptr = ATOMnilptr(b->ttype);
 
-	for(int i=0; i<cnt; i++){
+	for(size_t i=0; i<cnt; i++){
 		if (BUNappend(b, nilptr, TRUE) != GDK_SUCCEED)
 			return LOG_ERR;
 	}
@@ -897,7 +899,7 @@ table_claim_space(sql_trans *tr, sql_table *t, size_t cnt)
 
 		if (bind_col_data(tr, c) == LOG_ERR)
 			return LOG_ERR;
-		if (claim_cs(tr, c->data, cnt) == LOG_ERR)
+		if (claim_cs(c->data, cnt) == LOG_ERR)
 			return LOG_ERR;
 	}
 	if (t->idxs.set) {
@@ -908,7 +910,7 @@ table_claim_space(sql_trans *tr, sql_table *t, size_t cnt)
 			if (isTable(ci->t) && idx_has_column(ci->type)) {
 				if (bind_idx_data(tr, ci) == LOG_ERR)
 					return LOG_ERR;
-				if (claim_cs(tr, ci->data, cnt) == LOG_ERR)
+				if (claim_cs(ci->data, cnt) == LOG_ERR)
 					return LOG_ERR;
 			}
 		}
@@ -916,13 +918,13 @@ table_claim_space(sql_trans *tr, sql_table *t, size_t cnt)
 	return LOG_OK;
 }
 
-void
+static void
 lock_table(sqlid id)
 {
 	MT_lock_set(&table_locks[id&(NR_TABLE_LOCKS-1)]);
 }
 
-void
+static void
 unlock_table(sqlid id)
 {
 	MT_lock_unset(&table_locks[id&(NR_TABLE_LOCKS-1)]);
