@@ -32,6 +32,8 @@ target_compile_definitions(embedded
 
 set_target_properties(embedded
   PROPERTIES
+  VERSION ${MONETDBE_VERSION}
+  SOVERSION ${MONETDBE_VERSION_MAJOR}
   PUBLIC_HEADER "${embedded_public_headers}")
 
 target_link_libraries(embedded

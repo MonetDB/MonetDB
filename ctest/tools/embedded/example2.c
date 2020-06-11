@@ -139,9 +139,24 @@ main(void)
 		}
 		printf("\n");
 	}
-
 	if ((err = monetdb_cleanup_result(conn, result)) != NULL)
 		error(err)
+
+	/* test empty results */
+	if ((err = monetdb_query(conn, "SELECT b, t, s, x, l, h, f, d, y FROM test where t > 127; ", &result, NULL, NULL)) != NULL)
+		error(err)
+	fprintf(stdout, "Query result with %zu cols and %"PRId64" rows\n", result->ncols, result->nrows);
+	for (int64_t r = 0; r < result->nrows; r++) {
+		/* fetching the meta data should work */
+		for (size_t c = 0; c < result->ncols; c++) {
+			monetdb_column* rcol;
+			if ((err = monetdb_result_fetch(conn, result, &rcol, c)) != NULL)
+				error(err)
+		}
+	}
+	if ((err = monetdb_cleanup_result(conn, result)) != NULL)
+		error(err)
+
 	if ((err = monetdb_disconnect(conn)) != NULL)
 		error(err)
 	if ((err = monetdb_shutdown()) != NULL)

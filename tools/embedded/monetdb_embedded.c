@@ -901,10 +901,12 @@ GENERATE_BASE_HEADERS(monetdb_data_timestamp, timestamp);
 		GENERATE_BAT_INPUT_BASE(tpe_name);                            	   \
 		bat_data->count = BATcount(b);                                     \
 		bat_data->null_value = mtype##_nil;                                \
-		bat_data->data = GDKzalloc(bat_data->count * sizeof(bat_data->null_value)); \
-		if (!bat_data->data) {                                             \
-			msg = createException(MAL, "embedded.monetdb_result_fetch", MAL_MALLOC_FAIL); \
-			goto cleanup;                                              \
+		if (bat_data->count) {                                             \
+			bat_data->data = GDKzalloc(bat_data->count * sizeof(bat_data->null_value)); \
+			if (!bat_data->data) {                                     \
+				msg = createException(MAL, "embedded.monetdb_result_fetch", MAL_MALLOC_FAIL); \
+				goto cleanup;                                      \
+			}                                                          \
 		}                                                                  \
 		size_t it = 0;                                                     \
 		mtype* val = (mtype*)Tloc(b, 0);                                   \
@@ -989,11 +991,13 @@ monetdb_result_fetch(monetdb_connection conn, monetdb_result* mres, monetdb_colu
 		BUN p = 0, q = 0;
 		GENERATE_BAT_INPUT_BASE(str);
 		bat_data->count = BATcount(b);
-		bat_data->data = GDKzalloc(sizeof(char *) * bat_data->count);
-		bat_data->null_value = NULL;
-		if (!bat_data->data) {
-			msg = createException(MAL, "embedded.monetdb_result_fetch", MAL_MALLOC_FAIL);
-			goto cleanup;
+		if (bat_data->count) {
+			bat_data->data = GDKzalloc(sizeof(char *) * bat_data->count);
+			bat_data->null_value = NULL;
+			if (!bat_data->data) {
+				msg = createException(MAL, "embedded.monetdb_result_fetch", MAL_MALLOC_FAIL);
+				goto cleanup;
+			}
 		}
 
 		j = 0;
@@ -1015,10 +1019,12 @@ monetdb_result_fetch(monetdb_connection conn, monetdb_result* mres, monetdb_colu
 		date *baseptr;
 		GENERATE_BAT_INPUT_BASE(date);
 		bat_data->count = BATcount(b);
-		bat_data->data = GDKmalloc(sizeof(bat_data->null_value) * bat_data->count);
-		if (!bat_data->data) {
-			msg = createException(MAL, "embedded.monetdb_result_fetch", MAL_MALLOC_FAIL);
-			goto cleanup;
+		if (bat_data->count) {
+			bat_data->data = GDKmalloc(sizeof(bat_data->null_value) * bat_data->count);
+			if (!bat_data->data) {
+				msg = createException(MAL, "embedded.monetdb_result_fetch", MAL_MALLOC_FAIL);
+				goto cleanup;
+			}
 		}
 
 		baseptr = (date *)Tloc(b, 0);
@@ -1029,10 +1035,12 @@ monetdb_result_fetch(monetdb_connection conn, monetdb_result* mres, monetdb_colu
 		daytime *baseptr;
 		GENERATE_BAT_INPUT_BASE(time);
 		bat_data->count = BATcount(b);
-		bat_data->data = GDKmalloc(sizeof(bat_data->null_value) * bat_data->count);
-		if (!bat_data->data) {
-			msg = createException(MAL, "embedded.monetdb_result_fetch", MAL_MALLOC_FAIL);
-			goto cleanup;
+		if (bat_data->count) {
+			bat_data->data = GDKmalloc(sizeof(bat_data->null_value) * bat_data->count);
+			if (!bat_data->data) {
+				msg = createException(MAL, "embedded.monetdb_result_fetch", MAL_MALLOC_FAIL);
+				goto cleanup;
+			}
 		}
 
 		baseptr = (daytime *)Tloc(b, 0);
@@ -1043,10 +1051,12 @@ monetdb_result_fetch(monetdb_connection conn, monetdb_result* mres, monetdb_colu
 		timestamp *baseptr;
 		GENERATE_BAT_INPUT_BASE(timestamp);
 		bat_data->count = BATcount(b);
-		bat_data->data = GDKmalloc(sizeof(bat_data->null_value) * bat_data->count);
-		if (!bat_data->data) {
-			msg = createException(MAL, "embedded.monetdb_result_fetch", MAL_MALLOC_FAIL);
-			goto cleanup;
+		if (bat_data->count) {
+			bat_data->data = GDKmalloc(sizeof(bat_data->null_value) * bat_data->count);
+			if (!bat_data->data) {
+				msg = createException(MAL, "embedded.monetdb_result_fetch", MAL_MALLOC_FAIL);
+				goto cleanup;
+			}
 		}
 
 		baseptr = (timestamp *)Tloc(b, 0);
@@ -1058,10 +1068,12 @@ monetdb_result_fetch(monetdb_connection conn, monetdb_result* mres, monetdb_colu
 		BUN p = 0, q = 0;
 		GENERATE_BAT_INPUT_BASE(blob);
 		bat_data->count = BATcount(b);
-		bat_data->data = GDKmalloc(sizeof(monetdb_data_blob) * bat_data->count);
-		if (!bat_data->data) {
-			msg = createException(MAL, "embedded.monetdb_result_fetch", MAL_MALLOC_FAIL);
-			goto cleanup;
+		if (bat_data->count) {
+			bat_data->data = GDKmalloc(sizeof(monetdb_data_blob) * bat_data->count);
+			if (!bat_data->data) {
+				msg = createException(MAL, "embedded.monetdb_result_fetch", MAL_MALLOC_FAIL);
+				goto cleanup;
+			}
 		}
 		j = 0;
 
@@ -1091,11 +1103,13 @@ monetdb_result_fetch(monetdb_connection conn, monetdb_result* mres, monetdb_colu
 		BUN p = 0, q = 0;
 		GENERATE_BAT_INPUT_BASE(str);
 		bat_data->count = BATcount(b);
-		bat_data->null_value = NULL;
-		bat_data->data = GDKzalloc(sizeof(char *) * bat_data->count);
-		if (!bat_data->data) {
-			msg = createException(MAL, "embedded.monetdb_result_fetch", MAL_MALLOC_FAIL);
-			goto cleanup;
+		if (bat_data->count) {
+			bat_data->null_value = NULL;
+			bat_data->data = GDKzalloc(sizeof(char *) * bat_data->count);
+			if (!bat_data->data) {
+				msg = createException(MAL, "embedded.monetdb_result_fetch", MAL_MALLOC_FAIL);
+				goto cleanup;
+			}
 		}
 		j = 0;
 

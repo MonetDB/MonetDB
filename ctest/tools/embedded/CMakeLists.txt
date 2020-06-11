@@ -57,3 +57,11 @@ target_link_libraries(backup
     stream
     matomic)
 add_test(run_backup backup)
+
+add_executable(example_connections example_connections.c)
+target_link_libraries(example_connections
+  PRIVATE
+    monetdb_config_header
+    embedded)
+add_test(run_example_connections example_connections)
+
