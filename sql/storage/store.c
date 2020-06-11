@@ -1022,14 +1022,24 @@ load_func(sql_trans *tr, sql_schema *s, sqlid fid, subrids *rs)
 	sql_schema *syss = find_sql_schema(tr, "sys");
 	sql_table *funcs = find_sql_table(syss, "functions");
 	oid rid;
+	bool update_env;	/* hacky way to update env function */
 
 	rid = table_funcs.column_find_row(tr, find_sql_column(funcs, "id"), &fid, NULL);
 	v = table_funcs.column_find_value(tr, find_sql_column(funcs, "name"), rid);
+	update_env = strcmp(v, "env") == 0;
 	base_init(tr->sa, &t->base, fid, 0, v); 	_DELETE(v);
 	v = table_funcs.column_find_value(tr, find_sql_column(funcs, "func"), rid);
-	t->imp = (v)?sa_strdup(tr->sa, v):NULL;	_DELETE(v);
+	update_env = update_env && strstr(v, "EXTERNAL NAME sql.sql_environment") != NULL;
+	if (update_env) {
+		/* see creation of env in sql_create_env()
+		 * also see upgrade code in sql_upgrades.c */
+		v = "CREATE FUNCTION env() RETURNS TABLE( name varchar(1024), value varchar(2048)) EXTERNAL NAME inspect.\"getEnvironment\";";
+	}
+	t->imp = (v)?sa_strdup(tr->sa, v):NULL;	if (!update_env) _DELETE(v);
 	v = table_funcs.column_find_value(tr, find_sql_column(funcs, "mod"), rid);
-	t->mod = (v)?sa_strdup(tr->sa, v):NULL;	_DELETE(v);
+	if (update_env)
+		v = "inspect";
+	t->mod = (v)?sa_strdup(tr->sa, v):NULL;	if (!update_env) _DELETE(v);
 	v = table_funcs.column_find_value(tr, find_sql_column(funcs, "language"), rid);
 	t->lang = (sql_flang) *(int *)v;			_DELETE(v);
 	v = table_funcs.column_find_value(tr, find_sql_column(funcs, "type"), rid);

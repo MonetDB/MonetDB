@@ -104,7 +104,6 @@ typedef enum {
 	COMP( THRD )				\
 						\
 	COMP( GEOM )				\
-	COMP( LIDAR )				\
 	COMP( FITS )				\
 	COMP( SHP )				\
 						\

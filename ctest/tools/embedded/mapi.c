@@ -38,7 +38,7 @@ mapi_close_handle(MapiHdl hdl)
 {
 	if (hdl) {
 		if (hdl->mapi_row) {
-			for (int i=0; i<hdl->result->ncols; i++) {
+			for (size_t i=0; i<hdl->result->ncols; i++) {
 				if (hdl->mapi_row[i])
 					MAPIfree(hdl->mapi_row[i]);
 			}
@@ -46,9 +46,6 @@ mapi_close_handle(MapiHdl hdl)
 		}
 
 		char *msg = monetdb_cleanup_result(hdl->mid->conn, hdl->result);
-		Mapi mid = hdl->mid;
-
-
 		MAPIfree(hdl);
 		if (msg)
 			hdl->mid->msg = msg;
@@ -71,7 +68,7 @@ mapi_fetch_row(MapiHdl hdl)
 char *
 mapi_fetch_field(MapiHdl hdl, int fnr)
 {
-	if (hdl && fnr < hdl->result->ncols && hdl->current_row > 0 && hdl->current_row <= hdl->result->nrows) {
+	if (hdl && fnr < (int)hdl->result->ncols && hdl->current_row > 0 && hdl->current_row <= hdl->result->nrows) {
 		monetdb_column *rcol = NULL;
 		if (monetdb_result_fetch(hdl->mid->conn, hdl->result,  &rcol, fnr) == NULL) {
 			size_t r = hdl->current_row - 1;
@@ -164,7 +161,7 @@ mapi_fetch_field(MapiHdl hdl, int fnr)
 char *
 mapi_get_type(MapiHdl hdl, int fnr)
 {
-	if (hdl && fnr < hdl->result->ncols) {
+	if (hdl && fnr < (int)hdl->result->ncols) {
 		monetdb_column *rcol = NULL;
 		if (monetdb_result_fetch(hdl->mid->conn, hdl->result,  &rcol, fnr) == NULL) {
 			switch(rcol->type) {

@@ -880,8 +880,6 @@ exp_bin(backend *be, sql_exp *e, stmt *left, stmt *right, stmt *grp, stmt *ext, 
 		int swapped = 0, is_select = 0;
 		sql_exp *re = e->r, *re2 = e->f;
 
-		assert((reduce && !depth) || e->flag == cmp_in || e->flag == cmp_notin);
-
 		/* general predicate, select and join */
 		if (e->flag == cmp_filter) {
 			list *args;
@@ -1070,7 +1068,7 @@ exp_bin(backend *be, sql_exp *e, stmt *left, stmt *right, stmt *grp, stmt *ext, 
 			}
 		} else {
 			if (r2) {
-				if (l->nrcols == 0 && r->nrcols == 0 && r2->nrcols == 0) {
+				if (!reduce || (l->nrcols == 0 && r->nrcols == 0 && r2->nrcols == 0)) {
 					sql_subtype *bt = sql_bind_localtype("bit");
 					sql_subfunc *lf = sql_bind_func(sql->sa, sql->session->schema,
 							compare_func(range2lcompare(e->flag), 0),
@@ -1113,7 +1111,7 @@ exp_bin(backend *be, sql_exp *e, stmt *left, stmt *right, stmt *grp, stmt *ext, 
 				}
 			} else {
 				/* value compare or select */
-				if (l->nrcols == 0 && r->nrcols == 0 && (e->flag == mark_in || e->flag == mark_notin)) {
+				if (!reduce || (l->nrcols == 0 && r->nrcols == 0 && (e->flag == mark_in || e->flag == mark_notin))) {
 					sql_subfunc *f = sql_bind_func(sql->sa, sql->session->schema, "=", tail_type(l), tail_type(l), F_FUNC);
 					assert(f);
 					s = stmt_binop(be, l, r, f);
@@ -4263,7 +4261,7 @@ update_check_ukey(backend *be, stmt **updates, sql_key *k, stmt *tids, stmt *idx
 					upd = stmt_project(be, tids, stmt_col(be, c->c, dels, dels->partition));
 					*/
 				} else {
-					upd = stmt_project(be, tids, stmt_col(be, c->c, dels, dels->partition));
+					upd = stmt_col(be, c->c, dels, dels->partition);
 				}
 
 				/* apply cand list first */

@@ -37,7 +37,7 @@ try:
 except ImportError:
     winreg = None               # not on Windows
 
-MonetDB_VERSION = '@VERSION@'.split('.')
+MonetDB_VERSION = '@MONETDB_VERSION@'.split('.')
 
 procdebug = False
 verbose = False
@@ -360,25 +360,22 @@ CONDITIONALS = {
     'BITS64'               : "@BITS64_FALSE@",
     'CROSS_COMPILING'      : "@CROSS_COMPILING_FALSE@",
     'HAVE_CURL'            : "@HAVE_CURL_FALSE@",
-    'HAVE_DEVELOPER'       : "@HAVE_DEVELOPER_FALSE@",
     'HAVE_FITS'            : "@HAVE_FITS_FALSE@",
     'HAVE_GEOM'            : "@HAVE_GEOM_FALSE@",
     'HAVE_HGE'             : "@HAVE_HGE_FALSE@",
     'HAVE_LIBBZ2'          : "@HAVE_LIBBZ2_FALSE@",
     'HAVE_LIBLZ4'          : "@HAVE_LIBLZ4_FALSE@",
     'HAVE_LIBLZMA'         : "@HAVE_LIBLZMA_FALSE@",
-    'HAVE_LIBR'            : "@HAVE_LIBR_FALSE@",
+    'HAVE_LIBPCRE'         : "@HAVE_LIBPCRE_FALSE@",
     'HAVE_LIBPY3'          : "@HAVE_LIBPY3_FALSE@",
+    'HAVE_LIBR'            : "@HAVE_LIBR_FALSE@",
     'HAVE_LIBXML'          : "@HAVE_LIBXML_FALSE@",
     'HAVE_LIBZ'            : "@HAVE_LIBZ_FALSE@",
-    'HAVE_LIDAR'           : "@HAVE_LIDAR_FALSE@",
-    'HAVE_SHP'             : "@HAVE_SHP_FALSE@",
     'HAVE_MAL_DEBUGGER'    : "@HAVE_MAL_DEBUGGER_FALSE@",
     'HAVE_NETCDF'          : "@HAVE_NETCDF_FALSE@",
     'HAVE_ODBC'            : "@HAVE_ODBC_FALSE@",
-    'HAVE_LIBPCRE'         : "@HAVE_LIBPCRE_FALSE@",
     'HAVE_PROJ'            : "@HAVE_PROJ_FALSE@",
-    'HAVE_TESTING'         : "@HAVE_TESTING_FALSE@",
+    'HAVE_SHP'             : "@HAVE_SHP_FALSE@",
     'NATIVE_WIN32'         : "@NATIVE_WIN32_FALSE@",
     'NOT_WIN32'            : "@NOT_WIN32_FALSE@",
     # unknown at compile time;

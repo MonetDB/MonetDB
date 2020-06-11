@@ -991,7 +991,7 @@ exp_subtype( sql_exp *e )
 		return NULL;
 	}
 	case e_cmp:
-		/* return bit */
+		return sql_bind_localtype("bit");
 	case e_psm:
 		if (e->tpe.type)
 			return &e->tpe;
