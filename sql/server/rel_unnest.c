@@ -2085,10 +2085,13 @@ rewrite_anyequal(mvc *sql, sql_rel *rel, sql_exp *e, int depth)
 			if (!lsq && !is_tuple && is_values(re) && !exps_have_rel_exp(re->f)) { /* exp_values */
 				list *vals = re->f;
 
-				if (is_select(rel->op))
+				if (is_select(rel->op)) {
 					return exp_in_compare(sql, &le, vals, is_anyequal(sf));
-				else
-					return exp_in_project(sql, &le, vals, is_anyequal(sf));
+				} else {
+					sql_exp *res = exp_in_project(sql, &le, vals, is_anyequal(sf));
+					exp_setname(sql->sa, res, exp_relname(e), exp_name(e));
+					return res;
+				}
 			}
 
 			if (is_atom(re->type) && re->f) { /* exp_values */
@@ -2291,10 +2294,13 @@ rewrite_compare(mvc *sql, sql_rel *rel, sql_exp *e, int depth)
 				list *vals = re->f;
 
 				assert(0);
-				if (depth == 0 && is_select(rel->op))
+				if (depth == 0 && is_select(rel->op)) {
 					return exp_in_compare(sql, &le, vals, is_anyequal(sf));
-				else
-					return exp_in_project(sql, &le, vals, is_anyequal(sf));
+				} else {
+					sql_exp *res = exp_in_project(sql, &le, vals, is_anyequal(sf));
+					exp_setname(sql->sa, res, exp_relname(e), exp_name(e));
+					return res;
+				}
 			}
 
 			if (is_values(re)) { /* exp_values */

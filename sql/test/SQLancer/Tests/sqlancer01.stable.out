@@ -217,6 +217,20 @@ stdout of test 'sqlancer01` in directory 'sql/test/SQLancer` itself:
 % %14 # name
 % tinyint # type
 % 1 # length
+#SELECT another_T.col2 FROM tbl_productsales, integers LEFT OUTER JOIN another_T ON another_T.col1 > 1 WHERE another_T.col2 > 1 GROUP BY another_T.col2 HAVING COUNT((another_T.col2) IN (another_T.col2)) > 0;
+% .another_t # table_name
+% col2 # name
+% int # type
+% 4 # length
+[ 22	]
+[ 222	]
+[ 2222	]
+#SELECT COUNT(1 IN (1));
+% .%3 # table_name
+% %3 # name
+% bigint # type
+% 1 # length
+[ 1	]
 #DROP TABLE tbl_ProductSales;
 #DROP TABLE another_T;
 #DROP TABLE integers;

@@ -424,7 +424,7 @@ int yydebug=1;
 	atom_commalist
 	authid_list
 	case_opt_else_statement
-	case_scalar_exp_list
+	case_search_condition_commalist
 	column_commalist_parens
 	column_def_opt_list
 	column_exp_commalist
@@ -481,7 +481,6 @@ int yydebug=1;
 	routine_designator
 	routine_name
 	row_commalist
-	scalar_exp_list
 	schema_element_list
 	schema_name_clause
 	schema_name_list
@@ -2270,12 +2269,10 @@ routine_invocation:
 routine_name: qname ;
 
 argument_list:
- /*empty*/		{$$ = L();}
- |  scalar_exp 		{ $$ = append_symbol( L(), $1); }
- |  argument_list ',' scalar_exp
-			{ $$ = append_symbol( $1, $3); }
+    /* empty */							{ $$ = L(); }
+ |  search_condition 					{ $$ = append_symbol( L(), $1); }
+ |  argument_list ',' search_condition	{ $$ = append_symbol( $1, $3); }
  ;
-
 
 return_statement:
         RETURN return_value { $$ = _symbol_create_symbol(SQL_RETURN, $2); }
@@ -2284,12 +2281,12 @@ return_statement:
 return_value:
       query_expression
    |  search_condition
-   |  TABLE '(' query_expression ')'	
+   |  TABLE '(' query_expression ')'
 		{ $$ = _symbol_create_symbol(SQL_TABLE, $3); }
    ;
 
 case_statement:
-     CASE scalar_exp when_statements case_opt_else_statement END CASE
+     CASE search_condition when_statements case_opt_else_statement END CASE
 		{ $$ = _symbol_create_list(SQL_CASE,
 		   append_list(
 		    append_list(
@@ -2303,7 +2300,7 @@ case_statement:
  ;
 
 when_statement:
-    WHEN scalar_exp THEN procedure_statement_list
+    WHEN search_condition THEN procedure_statement_list
 			{ $$ = _symbol_create_list( SQL_WHEN,
 			   append_list(
 			    append_symbol(
@@ -3697,8 +3694,8 @@ like_exp:
  ;
 
 test_for_null:
-    scalar_exp IS NOT sqlNULL { $$ = _symbol_create_symbol( SQL_IS_NOT_NULL, $1 );}
- |  scalar_exp IS sqlNULL     { $$ = _symbol_create_symbol( SQL_IS_NULL, $1 ); }
+    pred_exp IS NOT sqlNULL { $$ = _symbol_create_symbol( SQL_IS_NOT_NULL, $1 );}
+ |  pred_exp IS sqlNULL     { $$ = _symbol_create_symbol( SQL_IS_NULL, $1 ); }
  ;
 
 in_predicate:
@@ -4115,7 +4112,7 @@ window_frame_start:
 	UNBOUNDED PRECEDING   { symbol *s = _symbol_create_int( SQL_PRECEDING, UNBOUNDED_PRECEDING_BOUND);
                             dlist *l2 = append_symbol(L(), s);
                             $$ = _symbol_create_list( SQL_PRECEDING, l2); }
-  | scalar_exp PRECEDING { dlist *l2 = append_symbol(L(), $1);
+  | search_condition PRECEDING { dlist *l2 = append_symbol(L(), $1);
                             $$ = _symbol_create_list( SQL_PRECEDING, l2); }
   | CURRENT ROW           { symbol *s = _symbol_create_int( SQL_PRECEDING, CURRENT_ROW_BOUND);
                             dlist *l = append_symbol(L(), s);
@@ -4135,7 +4132,7 @@ window_following_bound:
 	UNBOUNDED FOLLOWING   { symbol *s = _symbol_create_int( SQL_FOLLOWING, UNBOUNDED_FOLLOWING_BOUND);
                             dlist *l2 = append_symbol(L(), s);
                             $$ = _symbol_create_list( SQL_FOLLOWING, l2); }
-  | scalar_exp FOLLOWING { dlist *l2 = append_symbol(L(), $1);
+  | search_condition FOLLOWING { dlist *l2 = append_symbol(L(), $1);
                             $$ = _symbol_create_list( SQL_FOLLOWING, l2); }
   ;
 
@@ -4157,7 +4154,7 @@ func_ref:
   	  append_list(l, $1);
       append_int(l, FALSE); /* ignore distinct */
 	  $$ = _symbol_create_list( SQL_OP, l ); }
-|   qfunc '(' scalar_exp_list ')'
+|   qfunc '(' search_condition_commalist ')'
 	{ dlist *l = L();
   	  append_list(l, $1);
 	  append_int(l, FALSE); /* ignore distinct */
@@ -4375,19 +4372,19 @@ aggr_or_window_ref:
   		  append_int(l, FALSE); /* ignore distinct */
   		  append_list(l, NULL);
   		  $$ = _symbol_create_list( SQL_RANK, l ); }
- |  qrank '(' scalar_exp_list ')'
+ |  qrank '(' search_condition_commalist ')'
 		{ dlist *l = L();
   		  append_list(l, $1);
   		  append_int(l, FALSE); /* ignore distinct */
   		  append_list(l, $3);
   		  $$ = _symbol_create_list( SQL_RANK, l ); }
- |  qrank '(' DISTINCT scalar_exp_list ')'
+ |  qrank '(' DISTINCT search_condition_commalist ')'
 		{ dlist *l = L();
   		  append_list(l, $1);
   		  append_int(l, TRUE);
   		  append_list(l, $4);
   		  $$ = _symbol_create_list( SQL_RANK, l ); }
- |  qrank '(' ALL scalar_exp_list ')'
+ |  qrank '(' ALL search_condition_commalist ')'
 		{ dlist *l = L();
   		  append_list(l, $1);
   		  append_int(l, FALSE);
@@ -4411,7 +4408,7 @@ aggr_or_window_ref:
 		  append_int(l, FALSE); /* ignore distinct */
 		  append_list(l, NULL);
 		  $$ = _symbol_create_list( SQL_OP, l ); }
- |  qfunc '(' scalar_exp_list ')'
+ |  qfunc '(' search_condition_commalist ')'
 		{ dlist *l = L();
 		  append_list(l, $1);
 		  append_int(l, FALSE); /* ignore distinct */
@@ -4427,7 +4424,7 @@ aggr_or_window_ref:
 		  	$$ = _symbol_create_list( SQL_NOP, l ); 
 		  }
 		}
- |  qfunc '(' DISTINCT scalar_exp_list ')'
+ |  qfunc '(' DISTINCT search_condition_commalist ')'
 		{ dlist *l = L();
 		  append_list(l, $1);
 		  append_int(l, TRUE);
@@ -4443,7 +4440,7 @@ aggr_or_window_ref:
 		  	$$ = _symbol_create_list( SQL_NOP, l ); 
 		  }
 		}
- |  qfunc '(' ALL scalar_exp_list ')'
+ |  qfunc '(' ALL search_condition_commalist ')'
 		{ dlist *l = L();
 		  append_list(l, $1);
 		  append_int(l, FALSE);
@@ -5049,14 +5046,14 @@ cast_exp:
  ;
 
 case_exp:
-     NULLIF '(' scalar_exp ',' scalar_exp ')'
+     NULLIF '(' search_condition ',' search_condition ')'
 		{ $$ = _symbol_create_list(SQL_NULLIF,
 		   append_symbol(
 		    append_symbol(
 		     L(), $3), $5)); }
- |   COALESCE '(' case_scalar_exp_list ')'
+ |   COALESCE '(' case_search_condition_commalist ')'
 		{ $$ = _symbol_create_list(SQL_COALESCE, $3); }
- |   CASE scalar_exp when_value_list case_opt_else END
+ |   CASE search_condition when_value_list case_opt_else END
 		{ $$ = _symbol_create_list(SQL_CASE,
 		   append_symbol(
 		    append_list(
@@ -5069,24 +5066,17 @@ case_exp:
 		     L(),$2),$3)); }
  ;
 
-scalar_exp_list:
-    scalar_exp
-			{ $$ = append_symbol( L(), $1); }
- |  scalar_exp_list ',' scalar_exp
-			{ $$ = append_symbol( $1, $3); }
- ;
-
-case_scalar_exp_list: /* at least 2 scalar_exp (or null) */
-    scalar_exp ',' scalar_exp
+case_search_condition_commalist: /* at least 2 search_condition (or null) */
+    search_condition ',' search_condition
 			{ $$ = append_symbol( L(), $1);
 			  $$ = append_symbol( $$, $3);
 			}
- |  case_scalar_exp_list ',' scalar_exp
+ |  case_search_condition_commalist ',' search_condition
 			{ $$ = append_symbol( $1, $3); }
  ;
 
 when_value:
-    WHEN scalar_exp THEN scalar_exp
+    WHEN search_condition THEN search_condition
 			{ $$ = _symbol_create_list( SQL_WHEN,
 			   append_symbol(
 			    append_symbol(
@@ -5101,7 +5091,7 @@ when_value_list:
  ;
 
 when_search:
-    WHEN search_condition THEN scalar_exp
+    WHEN search_condition THEN search_condition
 			{ $$ = _symbol_create_list( SQL_WHEN,
 			   append_symbol(
 			    append_symbol(
@@ -5117,7 +5107,7 @@ when_search_list:
 
 case_opt_else:
     /* empty */	        { $$ = NULL; }
- |  ELSE scalar_exp	{ $$ = $2; }
+ |  ELSE search_condition	{ $$ = $2; }
  ;
 
 		/* data types, more types to come */

@@ -54,6 +54,15 @@ where not (true) union all select all integers.i from another_t join integers on
 select 1 from another_t join integers on (cast(another_t.col4 between 1 and 2 as int)) where false;
 	-- empty
 
+-- Bug 6892
+SELECT another_T.col2 FROM tbl_productsales, integers LEFT OUTER JOIN another_T ON another_T.col1 > 1 WHERE another_T.col2 > 1 GROUP BY another_T.col2 HAVING COUNT((another_T.col2) IN (another_T.col2)) > 0;
+	-- 22
+	-- 222
+	-- 2222
+
+SELECT COUNT(1 IN (1));
+	-- 1
+
 DROP TABLE tbl_ProductSales;
 DROP TABLE another_T;
 DROP TABLE integers;
