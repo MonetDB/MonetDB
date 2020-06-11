@@ -664,7 +664,7 @@ monetdb_append(monetdb_connection conn, const char* schema, const char* table, m
 
 	/* small number of rows */
 	if (input[0]->count <= 16) {
-		int i, cnt = (int)input[0]->count;
+		size_t i, cnt = input[0]->count;
 		node *n;
 
 		for (i = 0, n = t->columns.set->h; i < column_count && n; i++, n = n->next) {
@@ -674,12 +674,12 @@ monetdb_append(monetdb_connection conn, const char* schema, const char* table, m
 			int w = 1;
 
 			if (mtype < 0) {
-				msg = createException(SQL, "embedded.monetdb_append", "Cannot find type for column %d", i);
+				msg = createException(SQL, "embedded.monetdb_append", "Cannot find type for column %zu", i);
 				goto cleanup;
 			}
 			if (mtype >= TYPE_bit && mtype <= TYPE_dbl) {
 				w = BATatoms[mtype].size;
-				for (int j=0; j<cnt; j++, v+=w){
+				for (size_t j=0; j<cnt; j++, v+=w){
 					if (store_funcs.append_col(m->session->tr, c, v, mtype) != 0) {
 						msg = createException(SQL, "embedded.monetdb_append", "Cannot append values");
 						goto cleanup;
@@ -688,7 +688,7 @@ monetdb_append(monetdb_connection conn, const char* schema, const char* table, m
 			} else if (mtype == TYPE_str) {
 				char **d = (char**)v;
 
-				for (int j=0; j<cnt; j++){
+				for (size_t j=0; j<cnt; j++){
 					char *s = d[j];
 					if (!s)
 						s = (char*)str_nil;

@@ -13,7 +13,7 @@ extern int dump_database(Mapi mid, stream *toConsole, bool describe, bool useIns
 #define error(msg) {fprintf(stderr, "Failure: %s\n", msg); return -1;}
 
 int
-main() 
+main(void) 
 {
 	char* err = NULL;
 	Mapi mid = (Mapi)malloc(sizeof(struct MapiStruct));
