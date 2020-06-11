@@ -10,7 +10,7 @@
 #ifndef MT_SEEN_MONETDB_CONFIG_H
 #define MT_SEEN_MONETDB_CONFIG_H 1
 
-#cmakedefine HAVE_SYS_TYPES_H @HAVE_SYS_TYPES_H@
+#cmakedefine HAVE_SYS_TYPES_H 1
 #ifdef HAVE_SYS_TYPES_H
 # include <sys/types.h>
 #endif
