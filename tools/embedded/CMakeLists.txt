@@ -7,8 +7,8 @@
 #]]
 
 set(embedded_public_headers
-  $<BUILD_INTERFACE:$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>/monetdb_embedded.h>
-  $<INSTALL_INTERFACE:$<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}/monetdb>/monetdb_embedded.h>)
+  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/monetdb_embedded.h>
+  $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}/monetdb/monetdb_embedded.h>)
 
 add_library(embedded SHARED)
 
