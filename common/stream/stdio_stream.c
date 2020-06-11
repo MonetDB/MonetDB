@@ -17,315 +17,6 @@
 /* streams working on a disk file */
 
 
-#ifdef _MSC_VER
-/* special case code for reading from/writing to a Windows console and
- * for reading from a Windows pipe
- *
- * For reading from and writing to the console we can use a wide
- * character interface which means that we are independent of the code
- * page being used.  We can translate the wide characters (which are
- * Unicode code points) easily to UTF-8.
- *
- * Both for reading from the console and from a pipe, we avoid hanging
- * (waiting for input) in the read function.  Instead, we only call
- * the read function when we know there is input available.  This is
- * to prevent a deadlock situation, especially for reading from pipes,
- * when another thread were to also interact with pipes (as happend in
- * the scipy Python module as used in the sql/backends/monet5/pyapi05
- * test). */
-
-struct console {
-	HANDLE h;
-	DWORD len;
-	DWORD rd;
-	unsigned char i;
-	uint32_t ch;
-	WCHAR wbuf[8192];
-};
-
-static ssize_t
-console_read(stream *restrict s, void *restrict buf, size_t elmsize, size_t cnt)
-{
-	struct console *c = s->stream_data.p;
-	size_t n = elmsize * cnt;
-	unsigned char *p = buf;
-
-	if (c == NULL) {
-		mnstr_set_error(s, MNSTR_READ_ERROR, "closed");
-		return -1;
-	}
-	if (n == 0)
-		return 0;
-	if (c->rd == c->len) {
-		while (WaitForSingleObject(c->h, INFINITE) == WAIT_TIMEOUT)
-			;
-		if (!ReadConsoleW(c->h, c->wbuf, 8192, &c->len, NULL)) {
-			mnstr_set_error(s, MNSTR_READ_ERROR, "console read failed");
-			return -1;
-		}
-		c->rd = 0;
-		if (c->len > 0 && c->wbuf[0] == 26) {	/* control-Z */
-			c->len = 0;
-			return 0;
-		}
-		if (c->len > 0 && c->wbuf[0] == 0xFEFF)
-			c->rd++;	/* skip BOM */
-	}
-	while (n > 0 && c->rd < c->len) {
-		if (c->wbuf[c->rd] == L'\r') {
-			/* skip CR */
-			c->rd++;
-		} else if (c->wbuf[c->rd] <= 0x7F) {
-			/* old-fashioned ASCII */
-			*p++ = (unsigned char) c->wbuf[c->rd++];
-			n--;
-		} else if (c->wbuf[c->rd] <= 0x7FF) {
-			if (c->i == 0) {
-				*p++ = 0xC0 | (c->wbuf[c->rd] >> 6);
-				c->i = 1;
-				n--;
-			}
-			if (c->i == 1 && n > 0) {
-				*p++ = 0x80 | (c->wbuf[c->rd++] & 0x3F);
-				c->i = 0;
-				n--;
-			}
-		} else if ((c->wbuf[c->rd] & 0xFC00) == 0xD800) {
-			/* high surrogate */
-			/* Unicode code points U+10000 and
-			 * higher cannot be represented in two
-			 * bytes in UTF-16.  Instead they are
-			 * represented in four bytes using so
-			 * called high and low surrogates.
-			 * 00000000000uuuuuxxxxyyyyyyzzzzzz
-			 * 110110wwwwxxxxyy 110111yyyyzzzzzz
-			 * -> 11110uuu 10uuxxxx 10yyyyyy 10zzzzzz
-			 * where uuuuu = wwww + 1 */
-			if (c->i == 0) {
-				*p++ = 0xF0 | (((c->wbuf[c->rd] & 0x03C0) + 0x0040) >> 8);
-				c->i = 1;
-				n--;
-			}
-			if (c->i == 1 && n > 0) {
-				*p++ = 0x80 | ((((c->wbuf[c->rd] & 0x03FC) + 0x0040) >> 2) & 0x3F);
-				c->i = 2;
-				n--;
-			}
-			if (c->i == 2 && n > 0) {
-				*p = 0x80 | ((c->wbuf[c->rd++] & 0x0003) << 4);
-				c->i = 3;
-			}
-		} else if ((c->wbuf[c->rd] & 0xFC00) == 0xDC00) {
-			/* low surrogate */
-			if (c->i == 3) {
-				*p++ |= (c->wbuf[c->rd] & 0x03C0) >> 6;
-				c->i = 4;
-				n--;
-			}
-			if (c->i == 4 && n > 0) {
-				*p++ = 0x80 | (c->wbuf[c->rd++] & 0x3F);
-				c->i = 0;
-				n--;
-			}
-		} else {
-			if (c->i == 0) {
-				*p++ = 0xE0 | (c->wbuf[c->rd] >> 12);
-				c->i = 1;
-				n--;
-			}
-			if (c->i == 1 && n > 0) {
-				*p++ = 0x80 | ((c->wbuf[c->rd] >> 6) & 0x3F);
-				c->i = 2;
-				n--;
-			}
-			if (c->i == 2 && n > 0) {
-				*p++ = 0x80 | (c->wbuf[c->rd++] & 0x3F);
-				c->i = 0;
-				n--;
-			}
-		}
-	}
-	return (ssize_t) ((p - (unsigned char *) buf) / elmsize);
-}
-
-static ssize_t
-console_write(stream *restrict s, const void *restrict buf, size_t elmsize, size_t cnt)
-{
-	struct console *c = s->stream_data.p;
-	size_t n = elmsize * cnt;
-	const unsigned char *p = buf;
-	uint32_t ch;
-	int x;
-
-	if (c == NULL) {
-		mnstr_set_error(s, MNSTR_READ_ERROR, "closed");
-		return -1;
-	}
-	if (n == 0)
-		return 0;
-
-	c->len = 0;
-	if (c->i > 0) {
-		while (c->i > 0 && n > 0) {
-			if ((*p & 0xC0) != 0x80) {
-				mnstr_set_error(s, MNSTR_READ_ERROR, NULL);
-				return -1;
-			}
-			c->ch <<= 6;
-			c->ch |= *p & 0x3F;
-			p++;
-			n--;
-			c->i--;
-		}
-		if (c->i > 0) {
-			;
-		} else if (c->ch > 0x10FFFF || (c->ch & 0xFFFFF800) == 0xD800) {
-			mnstr_set_error(s, MNSTR_READ_ERROR, NULL);
-			return -1;
-		} else if (c->ch > 0xFFFF) {
-			c->wbuf[c->len++] = 0xD800 | ((c->ch >> 10) - (1 << 6));
-			c->wbuf[c->len++] = 0xDC00 | (c->ch & 0x03FF);
-		} else {
-			c->wbuf[c->len++] = c->ch;
-		}
-	}
-	while (n > 0) {
-		if (c->len >= 8191) {
-			if (!WriteConsoleW(c->h, c->wbuf, c->len, &c->rd, NULL)) {
-				mnstr_set_error(s, MNSTR_READ_ERROR, NULL);
-				return -1;
-			}
-			c->len = 0;
-		}
-		if ((*p & 0x80) == 0) {
-			if (*p == '\n')
-				c->wbuf[c->len++] = L'\r';
-			c->wbuf[c->len++] = *p++;
-			n--;
-			x = 0;
-			continue;
-		} else if ((*p & 0xE0) == 0xC0) {
-			x = 1;
-			ch = *p & 0x1F;
-		} else if ((*p & 0xF0) == 0xE0) {
-			x = 2;
-			ch = *p & 0x0F;
-		} else if ((*p & 0xF8) == 0xF0) {
-			x = 3;
-			ch = *p & 0x07;
-		} else {
-			mnstr_set_error(s, MNSTR_READ_ERROR, NULL);
-			return -1;
-		}
-		p++;
-		n--;
-		while (x > 0 && n > 0) {
-			if ((*p & 0xC0) != 0x80) {
-				mnstr_set_error(s, MNSTR_READ_ERROR, NULL);
-				return -1;
-			}
-			ch <<= 6;
-			ch |= *p & 0x3F;
-			p++;
-			n--;
-			x--;
-		}
-		if (x > 0) {
-			c->ch = ch;
-			c->i = x;
-		} else if (ch > 0x10FFFF || (ch & 0xFFFFF800) == 0xD800) {
-			mnstr_set_error(s, MNSTR_READ_ERROR, NULL);
-			return -1;
-		} else if (ch > 0xFFFF) {
-			c->wbuf[c->len++] = 0xD800 | ((ch >> 10) - (1 << 6));
-			c->wbuf[c->len++] = 0xDC00 | (ch & 0x03FF);
-		} else {
-			c->wbuf[c->len++] = ch;
-		}
-	}
-	if (c->len > 0) {
-		if (!WriteConsoleW(c->h, c->wbuf, c->len, &c->rd, NULL)) {
-			mnstr_set_error(s, MNSTR_READ_ERROR, NULL);
-			return -1;
-		}
-		c->len = 0;
-	}
-	return (ssize_t) ((p - (const unsigned char *) buf) / elmsize);
-}
-
-static ssize_t
-pipe_read(stream *restrict s, void *restrict buf, size_t elmsize, size_t cnt)
-{
-	HANDLE h = s->stream_data.p;
-	size_t n;
-	unsigned char *p;
-	DWORD nread;
-
-	if (h == NULL) {
-				mnstr_set_error(s, MNSTR_READ_ERROR, "closed");
-		return -1;
-	}
-	if (elmsize == 0 || cnt == 0)
-		return 0;
-  tailrecurse:
-	n = elmsize * cnt;
-	p = buf;
-
-	for (;;) {
-		DWORD ret = PeekNamedPipe(h, NULL, 0, NULL, &nread, NULL);
-		if (ret == 0) {
-			if (GetLastError() == ERROR_BROKEN_PIPE)
-				return 0;
-			mnstr_set_error(s, MNSTR_READ_ERROR, "PeekNamedPipe failed");
-			return -1;
-		}
-		if (nread > 0)
-			break;
-		Sleep(100);
-	}
-	if ((size_t) nread < n)
-		n = (size_t) nread;
-	if (!ReadFile(h, buf, (DWORD) n, &nread, NULL)) {
-		mnstr_set_error(s, MNSTR_READ_ERROR, "ReadFile failed");
-		return -1;
-	}
-	/* when in text mode, convert \r\n line endings to \n */
-	if (!s->binary && nread > 0) {
-		char *p1, *p2, *pe;
-
-		p1 = buf;
-		pe = p1 + nread;
-		while (p1 < pe && *p1 != '\r')
-			p1++;
-		p2 = p1;
-		while (p1 < pe) {
-			if (*p1 == '\r' /*&& p1[1] == '\n'*/)
-				nread--;
-			else
-				*p2++ = *p1;
-			p1++;
-		}
-		if (nread == 0) {
-			/* try again after removing \r and ending up
-			 * with nothing */
-			goto tailrecurse;
-		}
-	}
-	return nread / elmsize;
-}
-
-static void
-console_destroy(stream *s)
-{
-	if (s->stream_data.p)
-		free(s->stream_data.p);
-	destroy_stream(s);
-}
-#endif
-
-
-
-
 /* should be static but isn't because there are some other parts of the
  * library that have a specific fast path for stdio streams.
  */
@@ -471,23 +162,9 @@ file_fsetpos(stream *restrict s, fpos_t *restrict p)
 	return fsetpos(fp, p) ? -1 : 0;
 }
 
-/* This is used in the file opening functions, in a code sequence that is
- * duplicated between open_stream and
- *     open_gzstream open_bzstream open_xzstream open_lz4stream
- * Eventually these will all just use open_stream.
- *
- * Currently in misc.c
- */
-#ifdef HAVE__WFOPEN
-wchar_t *utf8towchar(const char *src);
-#else
-char *cvfilename(const char *filename);
-#endif
-
-#ifdef HAVE__WFOPEN
 /* convert a string from UTF-8 to wide characters; the return value is
  * freshly allocated */
-wchar_t *
+static wchar_t *
 utf8towchar(const char *src)
 {
 	wchar_t *dest;
@@ -567,8 +244,8 @@ utf8towchar(const char *src)
 	dest[i] = 0;
 	return dest;
 }
-#else
-char *
+
+static char *
 cvfilename(const char *filename)
 {
 #if defined(HAVE_NL_LANGINFO) && defined(HAVE_ICONV)
@@ -603,7 +280,6 @@ cvfilename(const char *filename)
 	 * locale's encoding is not UTF-8) */
 	return strdup(filename);
 }
-#endif
 
 
 stream *
@@ -620,6 +296,7 @@ open_stream(const char *restrict filename, const char *restrict flags)
 	{
 		wchar_t *wfname = utf8towchar(filename);
 		wchar_t *wflags = utf8towchar(flags);
+		(void)cvfilename;
 		if (wfname != NULL && wflags != NULL)
 			fp = _wfopen(wfname, wflags);
 		else
@@ -632,6 +309,7 @@ open_stream(const char *restrict filename, const char *restrict flags)
 #else
 	{
 		char *fname = cvfilename(filename);
+		(void)utf8towchar;
 		if (fname) {
 			fp = fopen(fname, flags);
 			free(fname);
@@ -673,7 +351,7 @@ open_stream(const char *restrict filename, const char *restrict flags)
 	return s;
 }
 
-static stream *
+stream *
 file_stream(const char *name)
 {
 	stream *s;
@@ -730,143 +408,31 @@ file_wstream(FILE *restrict fp, bool binary, const char *restrict name)
 stream *
 stdin_rastream(void)
 {
+	const char *name = "<stdin>";
 #ifdef _MSC_VER
-#error "still have to implement windows support"
+	return win_console_in_stream(name);
 #endif
-	return file_rstream(stdin, false, "<stdin>");
+	return file_rstream(stdin, false, name);
 }
 
 stream *
 stdout_wastream(void)
 {
+	const char *name = "<stdout>";
 #ifdef _MSC_VER
-#error "still have to implement windows support"
+	return win_console_out_stream(name);
 #endif
-	return file_wstream(stdout, false, "<stdout>");
+	return file_wstream(stdout, false, name);
 }
 
 stream *
 stderr_wastream(void)
 {
+	const char *name = "<stderr>";
 #ifdef _MSC_VER
-#error "still have to implement windows support"
+	return win_console_out_stream(name);
 #endif
-	return file_wstream(stderr, false, "<stderr>");
-}
-
-stream *
-file_rastream(FILE *restrict fp, const char *restrict name)
-{
-	stream *s;
-	fpos_t pos;
-	char buf[UTF8BOMLENGTH + 1];
-	struct stat stb;
-
-	if (fp == NULL)
-		return NULL;
-#ifdef STREAM_DEBUG
-	fprintf(stderr, "file_rastream %s\n", name);
-#endif
-	if ((s = file_stream(name)) == NULL)
-		return NULL;
-	s->binary = false;
-	s->stream_data.p = (void *) fp;
-	if (fstat(fileno(fp), &stb) == 0 &&
-	    S_ISREG(stb.st_mode) &&
-	    fgetpos(fp, &pos) == 0) {
-		if (file_read(s, buf, 1, UTF8BOMLENGTH) == UTF8BOMLENGTH &&
-		    strncmp(buf, UTF8BOM, UTF8BOMLENGTH) == 0) {
-			s->isutf8 = true;
-			return s;
-		}
-		if (fsetpos(fp, &pos) != 0) {
-			/* unlikely: we couldn't seek the file back */
-			destroy_stream(s);
-			return NULL;
-		}
-	}
-#ifdef _MSC_VER
-	if (fp == stdin) {
-		HANDLE h = GetStdHandle(STD_INPUT_HANDLE);
-
-		switch (GetFileType(h)) {
-		case FILE_TYPE_PIPE:
-			s->stream_data.p = h;
-			s->read = pipe_read;
-			s->write = NULL;
-			s->destroy = destroy_stream;
-			s->close = NULL;
-			s->flush = NULL;
-			s->fsync = NULL;
-			s->fgetpos = NULL;
-			s->fsetpos = NULL;
-			break;
-		case FILE_TYPE_CHAR: {
-			struct console *c = malloc(sizeof(struct console));
-			if (c == NULL) {
-				destroy_stream(s);
-				return NULL;
-			}
-			s->stream_data.p = c;
-			*c = (struct console) {
-				.h = h,
-			};
-			s->read = console_read;
-			s->write = NULL;
-			s->destroy = console_destroy;
-			s->close = NULL;
-			s->flush = NULL;
-			s->fsync = NULL;
-			s->fgetpos = NULL;
-			s->fsetpos = NULL;
-			s->isutf8 = true;
-			break;
-		}
-		}
-	}
-#endif
-	return s;
-}
-
-stream *
-file_wastream(FILE *restrict fp, const char *restrict name)
-{
-	stream *s;
-
-	if (fp == NULL)
-		return NULL;
-#ifdef STREAM_DEBUG
-	fprintf(stderr, "file_wastream %s\n", name);
-#endif
-	if ((s = file_stream(name)) == NULL)
-		return NULL;
-	s->readonly = false;
-	s->binary = false;
-#ifdef _MSC_VER
-	if ((fileno(fp) == 1 || fileno(fp) == 2) && isatty(fileno(fp))) {
-		struct console *c = malloc(sizeof(struct console));
-		if (c == NULL) {
-			destroy_stream(s);
-			return NULL;
-		}
-		s->stream_data.p = c;
-		*c = (struct console) {
-			.h = GetStdHandle(STD_OUTPUT_HANDLE),
-		};
-		s->read = NULL;
-		s->write = console_write;
-		s->destroy = console_destroy;
-		s->close = NULL;
-		s->flush = NULL;
-		s->fsync = NULL;
-		s->fgetpos = NULL;
-		s->fsetpos = NULL;
-		s->isutf8 = true;
-		return s;
-	}
-#endif
-	s->stream_data.p = (void *) fp;
-	return s;
+	return file_wstream(stderr, false, name);
 }
 
 /* some lower-level access functions */
@@ -875,8 +441,6 @@ getFile(stream *s)
 {
 	for (; s != NULL; s = s->inner) {
 #ifdef _MSC_VER
-#error "oops not implemented yet"
-	// console is a separate stream type now?
 		if (s->read == console_read)
 			return stdin;
 		if (s->write == console_write)

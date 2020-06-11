@@ -187,6 +187,8 @@ stream *create_wrapper_stream(const char *name, stream *inner);
 void destroy_stream(stream *s);
 stream *open_stream(const char *restrict filename, const char *restrict flags);
 
+stream *file_stream(const char *name);
+
 /* implementation detail of stdio_stream.c which must be public because
  * for example bstream() special cases on it to provide a fast path for file
  * i/o.
@@ -235,3 +237,12 @@ void bs_destroy(stream *ss);
 
 ssize_t bs2_read(stream *restrict ss, void *restrict buf, size_t elmsize, size_t cnt);
 ssize_t bs2_write(stream *restrict ss, const void *restrict buf, size_t elmsize, size_t cnt);
+
+
+#ifdef _MSC_VER
+/* windows specific */
+ssize_t console_write(stream *restrict s, const void *restrict buf, size_t elmsize, size_t cnt);
+ssize_t console_read(stream *restrict s, void *restrict buf, size_t elmsize, size_t cnt);
+stream *win_console_in_stream(const char *name);
+stream *win_console_out_stream(const char *name);
+#endif

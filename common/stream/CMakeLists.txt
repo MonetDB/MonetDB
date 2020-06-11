@@ -23,6 +23,7 @@ target_sources(stream
   bs.c
   bs2.c
   stdio_stream.c
+  winio.c
   compressed.c
   gz_stream.c
   bz2_stream.c
