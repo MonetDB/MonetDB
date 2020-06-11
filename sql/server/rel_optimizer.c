@@ -4012,8 +4012,11 @@ exp_merge_project_rse( mvc *sql, sql_exp *e)
 		}
 	} else if (is_convert(e->type)) {
 		sql_exp *n = exp_merge_project_rse(sql, e->l);
-		if (n && n != e->l)
-			return exp_convert(sql->sa, n, exp_fromtype(e), exp_totype(e));
+		if (n && n != e->l) {
+			n = exp_convert(sql->sa, n, exp_fromtype(e), exp_totype(e));
+			exp_setname(sql->sa, n, exp_relname(e), exp_name(e));
+			return n;
+		}
 	}
 	return e;
 }

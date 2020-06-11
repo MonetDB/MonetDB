@@ -51,6 +51,8 @@ select all integers.i from another_t inner join integers on ((another_t.col3)<=(
 where true union all select all integers.i from another_t join integers on ((another_t.col3)<=(cast((another_t.col4) between symmetric (cast(0.29924480503501805 as int)) and (another_t.col3) as int))) 
 where not (true) union all select all integers.i from another_t join integers on ((another_t.col3)<=(cast((another_t.col4) between symmetric (cast(0.29924480503501805 as int)) and (another_t.col3) as int))) where (true) is null;
 	-- empty
+select 1 from another_t join integers on (cast(another_t.col4 between 1 and 2 as int)) where false;
+	-- empty
 
 DROP TABLE tbl_ProductSales;
 DROP TABLE another_T;
