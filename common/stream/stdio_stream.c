@@ -692,7 +692,7 @@ file_stream(const char *name)
 }
 
 stream *
-file_rstream(FILE *restrict fp, const char *restrict name)
+file_rstream(FILE *restrict fp, bool binary, const char *restrict name)
 {
 	stream *s;
 
@@ -703,13 +703,13 @@ file_rstream(FILE *restrict fp, const char *restrict name)
 #endif
 	if ((s = file_stream(name)) == NULL)
 		return NULL;
-	s->binary = true;
+	s->binary = binary;
 	s->stream_data.p = (void *) fp;
 	return s;
 }
 
 stream *
-file_wstream(FILE *restrict fp, const char *restrict name)
+file_wstream(FILE *restrict fp, bool binary, const char *restrict name)
 {
 	stream *s;
 
@@ -721,9 +721,37 @@ file_wstream(FILE *restrict fp, const char *restrict name)
 	if ((s = file_stream(name)) == NULL)
 		return NULL;
 	s->readonly = false;
-	s->binary = true;
+	s->binary = binary;
 	s->stream_data.p = (void *) fp;
 	return s;
+}
+
+
+stream *
+stdin_rastream(void)
+{
+#ifdef _MSC_VER
+#error "still have to implement windows support"
+#endif
+	return file_rstream(stdin, false, "<stdin>");
+}
+
+stream *
+stdout_wastream(void)
+{
+#ifdef _MSC_VER
+#error "still have to implement windows support"
+#endif
+	return file_wstream(stdout, false, "<stdout>");
+}
+
+stream *
+stderr_wastream(void)
+{
+#ifdef _MSC_VER
+#error "still have to implement windows support"
+#endif
+	return file_wstream(stderr, false, "<stderr>");
 }
 
 stream *
@@ -847,6 +875,8 @@ getFile(stream *s)
 {
 	for (; s != NULL; s = s->inner) {
 #ifdef _MSC_VER
+#error "oops not implemented yet"
+	// console is a separate stream type now?
 		if (s->read == console_read)
 			return stdin;
 		if (s->write == console_write)

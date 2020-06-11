@@ -1733,7 +1733,7 @@ start_pager(stream **saveFD)
 		else {
 			*saveFD = toConsole;
 			/* put | in name to indicate that file should be closed with pclose */
-			if ((toConsole = file_wastream(p, "|pager")) == NULL) {
+			if ((toConsole = file_wstream(p, false, "|pager")) == NULL) {
 				toConsole = *saveFD;
 				*saveFD = NULL;
 				fprintf(stderr, "Starting '%s' failed\n", pager);
@@ -3242,8 +3242,8 @@ main(int argc, char **argv)
 		exit(2);
 	}
 
-	toConsole = stdout_stream = file_wastream(stdout, "stdout");
-	stderr_stream = file_wastream(stderr, "stderr");
+	toConsole = stdout_stream = stdout_wastream();
+	stderr_stream = stderr_wastream();
 	if(!stdout_stream || !stderr_stream) {
 		if(stdout_stream)
 			close_stream(stdout_stream);
@@ -3674,19 +3674,25 @@ main(int argc, char **argv)
 		/* execute from file(s) */
 		while (optind < argc) {
 			stream *s;
+			const char *arg = argv[optind];
 
-			if (fp == NULL &&
-			    (fp = (strcmp(argv[optind], "-") == 0 ?
-				   stdin :
-				   fopen(argv[optind], "r"))) == NULL) {
-				fprintf(stderr, "%s: cannot open\n", argv[optind]);
+			if (fp != NULL)
+				s = file_rstream(fp, false, arg);
+			else if (strcmp(arg, "-") == 0)
+				s = stdin_rastream();
+			else
+				s = open_rastream(arg);
+			if (s == NULL) {
+				fprintf(stderr, "%s: cannot open: %s", arg, mnstr_peek_error(NULL));
+				if (fp) {
+					fclose(fp);
+					fp = NULL;
+				}
 				c |= 1;
-			} else if ((s = file_rastream(fp, argv[optind])) == NULL) {
-				fclose(fp);
-				c |= 1;
-			} else {
-				c |= doFile(mid, s, useinserts, interactive, save_history);
+				continue;
 			}
+			// doFile closes 's'.
+			c |= doFile(mid, s, useinserts, interactive, save_history);
 			fp = NULL;
 			optind++;
 		}
@@ -3694,7 +3700,7 @@ main(int argc, char **argv)
 		c = doFileBulk(mid, NULL);
 
 	if (!has_fileargs && command == NULL) {
-		stream *s = file_rastream(stdin, "<stdin>");
+		stream *s = stdin_rastream();
 		if(!s) {
 			mapi_destroy(mid);
 			mnstr_destroy(stdout_stream);

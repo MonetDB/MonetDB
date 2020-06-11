@@ -165,10 +165,11 @@ stream_export void close_stream(stream *s);
 
 stream_export stream *open_urlstream(const char *url); // mclient.c, future copy from remote
 
-stream_export stream *file_rstream(FILE *restrict fp, const char *restrict name); // unused
-stream_export stream *file_wstream(FILE *restrict fp, const char *restrict name); // unused
-stream_export stream *file_rastream(FILE *restrict fp, const char *restrict name); // mclient.c, gdk_utils.c/THRinit
-stream_export stream *file_wastream(FILE *restrict fp, const char *restrict name); // mclient.c, msqldump.c, gdk_utils/THRinit
+stream_export stream *file_rstream(FILE *restrict fp, bool binary, const char *restrict name); // unused
+stream_export stream *file_wstream(FILE *restrict fp, bool binary, const char *restrict name); // unused
+stream_export stream *stdin_rastream(void);
+stream_export stream *stdout_wastream(void);
+stream_export stream *stderr_wastream(void);
 
 stream_export stream *xz_stream(stream *inner, int preset);
 stream_export stream *gz_stream(stream *inner, int preset);

@@ -198,7 +198,7 @@ main(int argc, char **argv)
 	mapi_trace(mid, trace);
 	mapi_cache_limit(mid, -1);
 
-	out = file_wastream(stdout, "stdout");
+	out = stdout_wastream();
 	if (out == NULL) {
 		fprintf(stderr, "failed to allocate stream: %s\n", mnstr_peek_error(NULL));
 		exit(2);
