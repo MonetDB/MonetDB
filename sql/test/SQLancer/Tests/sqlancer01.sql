@@ -63,6 +63,15 @@ SELECT another_T.col2 FROM tbl_productsales, integers LEFT OUTER JOIN another_T 
 SELECT COUNT(1 IN (1));
 	-- 1
 
+START TRANSACTION; --Bug 6893
+create view v0(c0) as (select distinct - (tbl_productsales.totalsales) from tbl_productsales, another_t);
+create view v1(c0) as (select distinct not (not ((((v0.c0)=(1560867215))) = false)) from integers, another_t, tbl_productsales, v0);
+create view v2(c0, c1) as (select v1.c0, -3.025584E8 from v0, tbl_productsales, v1, another_t);
+create view v3(c0, c1, c2) as (select all 0.9104878744438205107059047804796136915683746337890625, -705263737, 0.7147939 from v2 where (cast(v2.c0 as varchar(32))) is null order by v2.c1 desc, v2.c0 desc);
+SELECT v3.c0 FROM v3, v0, tbl_productsales FULL OUTER JOIN v2 ON v2.c0 RIGHT OUTER JOIN integers ON (tbl_productsales.TotalSales) BETWEEN (NULL) AND (v2.c1) JOIN another_t ON v2.c0;
+	-- empty
+ROLLBACK;
+
 DROP TABLE tbl_ProductSales;
 DROP TABLE another_T;
 DROP TABLE integers;
