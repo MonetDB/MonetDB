@@ -84,7 +84,7 @@ main(void)
 					}
 					break;
 				}
-#if HAVE_HGE
+#ifdef HAVE_HGE
 				case monetdb_int128_t: {
 					monetdb_column_int128_t * col = (monetdb_column_int128_t *) rcol;
 					if (col->data[r] == col->null_value) {

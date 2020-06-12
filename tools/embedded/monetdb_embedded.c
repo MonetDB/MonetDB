@@ -42,7 +42,7 @@ monetdb_type(monetdb_types t) {
 	case monetdb_int16_t: return TYPE_sht;
 	case monetdb_int32_t: return TYPE_int;
 	case monetdb_int64_t: return TYPE_lng;
-#if HAVE_HGE
+#ifdef HAVE_HGE
 	case monetdb_int128_t: return TYPE_hge;
 #endif 
 	case monetdb_size_t: return TYPE_oid;
@@ -846,7 +846,7 @@ GENERATE_BASE_FUNCTIONS(int8_t, int8_t, bte)
 GENERATE_BASE_FUNCTIONS(int16_t, int16_t, sht)
 GENERATE_BASE_FUNCTIONS(int32_t, int32_t, int)
 GENERATE_BASE_FUNCTIONS(int64_t, int64_t, lng)
-#if HAVE_HGE
+#ifdef HAVE_HGE
 GENERATE_BASE_FUNCTIONS(__int128, int128_t, hge)
 #endif
 GENERATE_BASE_FUNCTIONS(size_t, size_t, oid)
@@ -954,7 +954,7 @@ monetdb_result_fetch(monetdb_connection conn, monetdb_result* mres, monetdb_colu
 		GENERATE_BAT_INPUT(b, size_t, size_t, oid);
 	} else if (bat_type == TYPE_lng) {
 		GENERATE_BAT_INPUT(b, int64_t, int64_t, lng);
-#if HAVE_HGE
+#ifdef HAVE_HGE
 	} else if (bat_type == TYPE_hge) {
 		GENERATE_BAT_INPUT(b, __int128, int128_t, hge);
 #endif

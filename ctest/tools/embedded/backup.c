@@ -24,7 +24,7 @@ main(void)
 		error(mid->msg);
 
 	if ((err = monetdb_query(mid->conn, "CREATE TABLE test (b bool, t tinyint, s smallint, x integer, l bigint, "
-#if HAVE_HGE
+#ifdef HAVE_HGE
 		"h hugeint, "
 #else
 		"h bigint, "

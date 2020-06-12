@@ -26,7 +26,7 @@ main(void)
 	if ((err = monetdb_connect(&conn)) != NULL)
 		error(err)
 	if ((err = monetdb_query(conn, "CREATE TABLE test (b bool, t tinyint, s smallint, x integer, l bigint, "
-#if HAVE_HGE
+#ifdef HAVE_HGE
 		"h hugeint, "
 #else
 		"h bigint, "
@@ -90,7 +90,7 @@ main(void)
 					}
 					break;
 				}
-#if HAVE_HGE
+#ifdef HAVE_HGE
 				case monetdb_int128_t: {
 					monetdb_column_int128_t * col = (monetdb_column_int128_t *) rcol;
 					if (col->data[r] == col->null_value) {

@@ -54,7 +54,7 @@ typedef struct {
 
 typedef enum  {
 	monetdb_bool, monetdb_int8_t, monetdb_int16_t, monetdb_int32_t, monetdb_int64_t, 
-#if HAVE_HGE
+#ifdef HAVE_HGE
 	monetdb_int128_t, 
 #endif
 	monetdb_size_t, monetdb_float, monetdb_double,
@@ -98,7 +98,7 @@ DEFAULT_STRUCT_DEFINITION(int8_t, int8_t);
 DEFAULT_STRUCT_DEFINITION(int16_t, int16_t);
 DEFAULT_STRUCT_DEFINITION(int32_t, int32_t);
 DEFAULT_STRUCT_DEFINITION(int64_t, int64_t);
-#if HAVE_HGE
+#ifdef HAVE_HGE
 DEFAULT_STRUCT_DEFINITION(__int128, int128_t);
 #endif
 DEFAULT_STRUCT_DEFINITION(size_t, size_t);
