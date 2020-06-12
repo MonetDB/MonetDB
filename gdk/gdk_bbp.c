@@ -1472,10 +1472,10 @@ heap_entry(FILE *fp, BAT *b, BUN size)
 		           ((unsigned short) BATtdense(b) << 9) |
 			   ((unsigned short) b->tnonil << 10) |
 			   ((unsigned short) b->tnil << 11),
-		       b->tnokey[0],
-		       b->tnokey[1],
-		       b->tnosorted,
-		       b->tnorevsorted,
+		       b->tnokey[0] >= size || b->tnokey[1] >= size ? 0 : b->tnokey[0],
+		       b->tnokey[0] >= size || b->tnokey[1] >= size ? 0 : b->tnokey[1],
+		       b->tnosorted >= size ? 0 : b->tnosorted,
+		       b->tnorevsorted >= size ? 0 : b->tnorevsorted,
 		       b->tseqbase,
 		       free,
 		       b->theap.size,
