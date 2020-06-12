@@ -25,7 +25,7 @@ insert into integers(i) values(((length(reverse('8 \rcr੧[bp1eMY쫺4j5s뮯!<Rn4
 SELECT i from integers order by i;
 	-- NULL
 	-- 0
-select reverse('8 \rcr੧[bp1eMY쫺4j5s뮯!<Rn4*}');
+select reverse(r'8 \rcr੧[bp1eMY쫺4j5s뮯!<Rn4*}');
 
 select true in (1 in (1));
 	-- true
@@ -71,6 +71,17 @@ create view v3(c0, c1, c2) as (select all 0.910487874443820510705904780479613691
 SELECT v3.c0 FROM v3, v0, tbl_productsales FULL OUTER JOIN v2 ON v2.c0 RIGHT OUTER JOIN integers ON (tbl_productsales.TotalSales) BETWEEN (NULL) AND (v2.c1) JOIN another_t ON v2.c0;
 	-- empty
 ROLLBACK;
+
+START TRANSACTION; --Bug 6894
+insert into tbl_productsales(product_name, totalsales) values (((cast(0.1 as string))||(charindex(cast(((((1)*(-1)))&(((-1)|(-1)))) as string), 
+((((rtrim('0.9407860360743894', ''))||(1)))||(cast(1.44041702E9 as string(75)))), 
+((- (((1)*(-1))))*(1))))), -1833694753);
+select rtrim('0.9407860360743894', '');
+ROLLBACK;
+
+-- Bug 6895
+SELECT another_t.col1 FROM tbl_productsales CROSS JOIN another_t WHERE ((tbl_productsales.product_category) NOT IN (tbl_productsales.product_category, tbl_productsales.product_category)) IS NULL;
+	-- empty
 
 DROP TABLE tbl_ProductSales;
 DROP TABLE another_T;

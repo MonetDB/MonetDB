@@ -3745,10 +3745,10 @@ STRRtrim(str *res, const str *arg1)
 
 /* return a list of codepoints in s */
 static int *
-trimchars(const char *s, size_t *n)
+trimchars(const char *s, size_t *n, size_t len_s)
 {
 	size_t len = 0;
-	int *chars = GDKmalloc(strlen(s) * sizeof(int));
+	int *chars = GDKmalloc(len_s * sizeof(int));
 	int c;
 
 	if (chars == NULL)
@@ -3772,15 +3772,15 @@ str
 STRStrip2(str *res, const str *arg1, const str *arg2)
 {
 	const char *s = *arg1;
-	size_t len;
-	size_t n;
-	size_t nchars;
+	size_t len, n, nchars, n2;
 	int *chars;
 
 	if (strNil(s) || strNil(*arg2)) {
 		*res = GDKstrdup(str_nil);
+	} else if ((n2 = strlen(*arg2)) == 0) {
+		*res = GDKstrdup(*arg1);
 	} else {
-		chars = trimchars(*arg2, &nchars);
+		chars = trimchars(*arg2, &nchars, n2);
 		if (chars == NULL)
 			throw(MAL, "str.trim", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		len = strlen(s);
@@ -3802,15 +3802,15 @@ str
 STRLtrim2(str *res, const str *arg1, const str *arg2)
 {
 	const char *s = *arg1;
-	size_t len;
-	size_t n;
-	size_t nchars;
+	size_t len, n, nchars, n2;
 	int *chars;
 
 	if (strNil(s) || strNil(*arg2)) {
 		*res = GDKstrdup(str_nil);
+	} else if ((n2 = strlen(*arg2)) == 0) {
+		*res = GDKstrdup(*arg1);
 	} else {
-		chars = trimchars(*arg2, &nchars);
+		chars = trimchars(*arg2, &nchars, n2);
 		if (chars == NULL)
 			throw(MAL, "str.trim", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		len = strlen(s);
@@ -3829,15 +3829,15 @@ str
 STRRtrim2(str *res, const str *arg1, const str *arg2)
 {
 	const char *s = *arg1;
-	size_t len;
-	size_t n;
-	size_t nchars;
+	size_t len, n, nchars, n2;
 	int *chars;
 
 	if (strNil(s) || strNil(*arg2)) {
 		*res = GDKstrdup(str_nil);
+	} else if ((n2 = strlen(*arg2)) == 0) {
+		*res = GDKstrdup(*arg1);
 	} else {
-		chars = trimchars(*arg2, &nchars);
+		chars = trimchars(*arg2, &nchars, n2);
 		if (chars == NULL)
 			throw(MAL, "str.trim", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		len = strlen(s);
