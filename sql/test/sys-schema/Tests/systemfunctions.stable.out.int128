@@ -756,7 +756,7 @@ stdout of test 'systemfunctions` in directory 'sql/test/sys-schema` itself:
 [ "sys",	"editdistance2",	0,	"int",	"editdistance2"	]
 [ "sys",	"editdistance2",	1,	"clob",	""	]
 [ "sys",	"editdistance2",	2,	"clob",	""	]
-[ "sys",	"env",	0,	"varchar",	"CREATE FUNCTION env () RETURNS TABLE( name varchar(1024), value varchar(2048)) EXTERNAL NAME inspect.\"getEnvironment\";"	]
+[ "sys",	"env",	0,	"varchar",	"CREATE FUNCTION env() RETURNS TABLE( name varchar(1024), value varchar(2048)) EXTERNAL NAME inspect.\"getEnvironment\";"	]
 [ "sys",	"env",	1,	"varchar",	""	]
 [ "sys",	"epoch",	0,	"timestamptz",	"create function sys.epoch(sec bigint) returns timestamp with time zone\nexternal name mtime.epoch;"	]
 [ "sys",	"epoch",	1,	"bigint",	""	]
