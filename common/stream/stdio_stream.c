@@ -420,7 +420,8 @@ stdout_wastream(void)
 {
 	const char *name = "<stdout>";
 #ifdef _MSC_VER
-	return win_console_out_stream(name);
+	if (isatty(fileno(stdout)))
+		return win_console_out_stream(name);
 #endif
 	return file_wstream(stdout, false, name);
 }
@@ -430,7 +431,8 @@ stderr_wastream(void)
 {
 	const char *name = "<stderr>";
 #ifdef _MSC_VER
-	return win_console_out_stream(name);
+	if (isatty(fileno(stderr)))
+		return win_console_out_stream(name);
 #endif
 	return file_wstream(stderr, false, name);
 }

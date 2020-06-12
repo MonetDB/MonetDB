@@ -143,7 +143,7 @@ get_tl_error_buf(void)
 
 #endif
 
-const char *mnstr_error_kind_description(mnstr_error_kind kind);
+static const char *mnstr_error_kind_description(mnstr_error_kind kind);
 
 int
 mnstr_init(int embedded)
