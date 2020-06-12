@@ -73,6 +73,11 @@ struct monetdb_table_t;
 typedef struct monetdb_table_t monetdb_table;
 
 typedef struct {
+	size_t nparam;
+	monetdb_types  *type;
+} monetdb_statement;
+
+typedef struct {
 	monetdb_cnt nrows;
 	size_t ncols;
 	int type;
@@ -123,15 +128,18 @@ embedded_export char* monetdb_get_autocommit(monetdb_connection conn, int* resul
 embedded_export char* monetdb_set_autocommit(monetdb_connection conn, int value);
 embedded_export int   monetdb_in_transaction(monetdb_connection conn);
 
-/* TODO split query in prepare/bind/execute */
-embedded_export char* monetdb_query(monetdb_connection conn, char* query, monetdb_result** result, monetdb_cnt* affected_rows, int* prepare_id);
+embedded_export char* monetdb_query(monetdb_connection conn, char* query, monetdb_result** result, monetdb_cnt* affected_rows);
 embedded_export char* monetdb_result_fetch(monetdb_connection conn, monetdb_result *mres, monetdb_column** res, size_t column_index);
+embedded_export char* monetdb_cleanup_result(monetdb_connection conn, monetdb_result* result);
+embedded_export char* monetdb_prepare(monetdb_connection conn, char *query, monetdb_statement **stmt);
+embedded_export char* monetdb_bind(monetdb_statement *stmt, void *data, size_t parameter_nr);
+embedded_export char* monetdb_execute(monetdb_statement *stmt, monetdb_result **result, monetdb_cnt* affected_rows);
+embedded_export char* monetdb_cleanup_statement(monetdb_connection conn, monetdb_statement *stmt);
 
 embedded_export char* monetdb_append(monetdb_connection conn, const char* schema, const char* table, monetdb_column **input, size_t column_count);
 
-embedded_export char* monetdb_cleanup_result(monetdb_connection conn, monetdb_result* result);
+
 embedded_export char* monetdb_get_table(monetdb_connection conn, monetdb_table** table, const char* schema_name, const char* table_name);
-/* TODO add get table info functions */
 embedded_export char* monetdb_get_columns(monetdb_connection conn, const char* schema_name, const char *table_name, size_t *column_count, char ***column_names, int **column_types);
 
 embedded_export char* monetdb_shutdown(void);

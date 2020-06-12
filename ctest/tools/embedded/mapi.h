@@ -22,7 +22,6 @@ typedef struct MapiStatement {
 	char **mapi_row;	/* keep buffers for string return values */
 	monetdb_cnt current_row;
 	monetdb_cnt affected_rows;
-	int prepare_id;
 	char *msg;
 } *MapiHdl;
 

@@ -29,9 +29,9 @@ main(void)
 #else
 		"h bigint, "
 #endif
-		"f float, d double, y string)", NULL, NULL, NULL)) != NULL)
+		"f float, d double, y string)", NULL, NULL)) != NULL)
 		error(err)
-	if ((err = monetdb_query(mid->conn, "INSERT INTO test VALUES (TRUE, 42, 42, 42, 42, 42, 42.42, 42.42, 'Hello'), (NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 'World')", NULL, NULL, NULL)) != NULL)
+	if ((err = monetdb_query(mid->conn, "INSERT INTO test VALUES (TRUE, 42, 42, 42, 42, 42, 42.42, 42.42, 'Hello'), (NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 'World')", NULL, NULL)) != NULL)
 		error(err)
 
 	/* open file stream */

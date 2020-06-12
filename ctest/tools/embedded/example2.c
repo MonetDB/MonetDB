@@ -31,11 +31,11 @@ main(void)
 #else
 		"h bigint, "
 #endif
-		"f float, d double, y string)", NULL, NULL, NULL)) != NULL)
+		"f float, d double, y string)", NULL, NULL)) != NULL)
 		error(err)
-	if ((err = monetdb_query(conn, "INSERT INTO test VALUES (TRUE, 42, 42, 42, 42, 42, 42.42, 42.42, 'Hello'), (NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 'World')", NULL, NULL, NULL)) != NULL)
+	if ((err = monetdb_query(conn, "INSERT INTO test VALUES (TRUE, 42, 42, 42, 42, 42, 42.42, 42.42, 'Hello'), (NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 'World')", NULL, NULL)) != NULL)
 		error(err)
-	if ((err = monetdb_query(conn, "SELECT b, t, s, x, l, h, f, d, y FROM test; ", &result, NULL, NULL)) != NULL)
+	if ((err = monetdb_query(conn, "SELECT b, t, s, x, l, h, f, d, y FROM test; ", &result, NULL)) != NULL)
 		error(err)
 
 	fprintf(stdout, "Query result with %zu cols and %"PRId64" rows\n", result->ncols, result->nrows);
@@ -143,7 +143,7 @@ main(void)
 		error(err)
 
 	/* test empty results */
-	if ((err = monetdb_query(conn, "SELECT b, t, s, x, l, h, f, d, y FROM test where t > 127; ", &result, NULL, NULL)) != NULL)
+	if ((err = monetdb_query(conn, "SELECT b, t, s, x, l, h, f, d, y FROM test where t > 127; ", &result, NULL)) != NULL)
 		error(err)
 	fprintf(stdout, "Query result with %zu cols and %"PRId64" rows\n", result->ncols, result->nrows);
 	for (int64_t r = 0; r < result->nrows; r++) {
@@ -155,6 +155,20 @@ main(void)
 		}
 	}
 	if ((err = monetdb_cleanup_result(conn, result)) != NULL)
+		error(err)
+
+	monetdb_statement *stmt = NULL;
+	if ((err = monetdb_prepare(conn, "SELECT b, t FROM test where t = ?; ", &stmt)) != NULL)
+		error(err)
+	char s = 42;
+	if ((err = monetdb_bind(stmt, &s, 0)) != NULL)
+		error(err)
+	if ((err = monetdb_execute(stmt, &result, NULL)) != NULL)
+		error(err)
+	fprintf(stdout, "Query result with %zu cols and %"PRId64" rows\n", result->ncols, result->nrows);
+	if ((err = monetdb_cleanup_result(conn, result)) != NULL)
+		error(err)
+	if ((err = monetdb_cleanup_statement(conn, stmt)) != NULL)
 		error(err)
 
 	if ((err = monetdb_disconnect(conn)) != NULL)

@@ -19,7 +19,7 @@ mapi_query(Mapi mid, const char *query)
 
 	mh->mid = mid;
 	mh->query = (char*)query;
-	mh->msg = monetdb_query(mh->mid->conn, mh->query, &mh->result, &mh->affected_rows, &mh->prepare_id);
+	mh->msg = monetdb_query(mh->mid->conn, mh->query, &mh->result, &mh->affected_rows);
 	mh->current_row = 0;
 	mh->mapi_row = NULL;
 	if (mh->result && mh->result->ncols) {
