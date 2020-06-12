@@ -25,7 +25,7 @@ insert into integers(i) values(((length(reverse('8 \rcr੧[bp1eMY쫺4j5s뮯!<Rn4
 SELECT i from integers order by i;
 	-- NULL
 	-- 0
-select reverse('8 \rcr੧[bp1eMY쫺4j5s뮯!<Rn4*}');
+select reverse(r'8 \rcr੧[bp1eMY쫺4j5s뮯!<Rn4*}');
 
 select true in (1 in (1));
 	-- true
@@ -70,6 +70,13 @@ create view v2(c0, c1) as (select v1.c0, -3.025584E8 from v0, tbl_productsales, 
 create view v3(c0, c1, c2) as (select all 0.9104878744438205107059047804796136915683746337890625, -705263737, 0.7147939 from v2 where (cast(v2.c0 as varchar(32))) is null order by v2.c1 desc, v2.c0 desc);
 SELECT v3.c0 FROM v3, v0, tbl_productsales FULL OUTER JOIN v2 ON v2.c0 RIGHT OUTER JOIN integers ON (tbl_productsales.TotalSales) BETWEEN (NULL) AND (v2.c1) JOIN another_t ON v2.c0;
 	-- empty
+ROLLBACK;
+
+START TRANSACTION; --Bug 6894
+insert into tbl_productsales(product_name, totalsales) values (((cast(0.1 as string))||(charindex(cast(((((1)*(-1)))&(((-1)|(-1)))) as string), 
+((((rtrim('0.9407860360743894', ''))||(1)))||(cast(1.44041702E9 as string(75)))), 
+((- (((1)*(-1))))*(1))))), -1833694753);
+select rtrim('0.9407860360743894', '');
 ROLLBACK;
 
 DROP TABLE tbl_ProductSales;

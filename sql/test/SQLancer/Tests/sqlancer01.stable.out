@@ -105,8 +105,8 @@ stdout of test 'sqlancer01` in directory 'sql/test/SQLancer` itself:
 % .%2 # table_name
 % %2 # name
 % clob # type
-% 28 # length
-[ "}*4nR<!뮯s5j4쫺YMe1pb[੧rc\r 8"	]
+% 29 # length
+[ "}*4nR<!뮯s5j4쫺YMe1pb[੧rcr\\ 8"	]
 #select true in (1 in (1));
 % .%6 # table_name
 % %6 # name
@@ -241,6 +241,18 @@ stdout of test 'sqlancer01` in directory 'sql/test/SQLancer` itself:
 % c0 # name
 % double # type
 % 24 # length
+#ROLLBACK;
+#START TRANSACTION; --Bug 6894
+#insert into tbl_productsales(product_name, totalsales) values (((cast(0.1 as string))||(charindex(cast(((((1)*(-1)))&(((-1)|(-1)))) as string), 
+#((((rtrim('0.9407860360743894', ''))||(1)))||(cast(1.44041702E9 as string(75)))), 
+#((- (((1)*(-1))))*(1))))), -1833694753);
+[ 1	]
+#select rtrim('0.9407860360743894', '');
+% .%2 # table_name
+% %2 # name
+% varchar # type
+% 18 # length
+[ "0.9407860360743894"	]
 #ROLLBACK;
 #DROP TABLE tbl_ProductSales;
 #DROP TABLE another_T;
