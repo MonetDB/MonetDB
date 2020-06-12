@@ -127,10 +127,6 @@ embedded_export int   monetdb_in_transaction(monetdb_connection conn);
 embedded_export char* monetdb_query(monetdb_connection conn, char* query, monetdb_result** result, monetdb_cnt* affected_rows, int* prepare_id);
 embedded_export char* monetdb_result_fetch(monetdb_connection conn, monetdb_result *mres, monetdb_column** res, size_t column_index);
 
-/* ?? */
-embedded_export char* monetdb_clear_prepare(monetdb_connection conn, int id);
-embedded_export char* monetdb_send_close(monetdb_connection conn, int id);
-
 embedded_export char* monetdb_append(monetdb_connection conn, const char* schema, const char* table, monetdb_column **input, size_t column_count);
 
 embedded_export char* monetdb_cleanup_result(monetdb_connection conn, monetdb_result* result);

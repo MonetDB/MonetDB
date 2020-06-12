@@ -515,30 +515,6 @@ done:
 }
 
 char*
-monetdb_clear_prepare(monetdb_connection conn, int id)
-{
-	char query[64], *msg;
-
-	sprintf(query, "release %d", id); //no need to validate at this level
-	MT_lock_set(&embedded_lock);
-	msg = monetdb_query_internal(conn, query, NULL, NULL, NULL, 'X');
-	MT_lock_unset(&embedded_lock);
-	return msg;
-}
-
-char*
-monetdb_send_close(monetdb_connection conn, int id)
-{
-	char query[64], *msg;
-
-	sprintf(query, "close %d", id); //no need to validate at this level
-	MT_lock_set(&embedded_lock);
-	msg = monetdb_query_internal(conn, query, NULL, NULL, NULL, 'X');
-	MT_lock_unset(&embedded_lock);
-	return msg;
-}
-
-char*
 monetdb_get_autocommit(monetdb_connection conn, int* result)
 {
 	mvc *m;
