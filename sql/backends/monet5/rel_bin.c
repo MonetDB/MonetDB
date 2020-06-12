@@ -2213,7 +2213,7 @@ rel2bin_join(backend *be, sql_rel *rel, list *refs)
 		char *handled = SA_ZNEW_ARRAY(sql->sa, char, list_length(rel->exps));
 
 		/* get equi-joins/filters first */
-		if (list_length(rel->exps) > 1) {
+		if (list_length(rel->exps) > 1 || is_outerjoin(rel->op)) {
 			for( en = rel->exps->h, i=0; en; en = en->next, i++) {
 				sql_exp *e = en->data;
 

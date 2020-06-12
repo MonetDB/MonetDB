@@ -1918,13 +1918,13 @@ stmt_join_cand(backend *be, stmt *op1, stmt *op2, stmt *lcand, stmt *rcand, int 
 	MalBlkPtr mb = be->mb;
 	InstrPtr q = NULL;
 	int left = (cmptype == cmp_left);
-	const char *sjt = "join";
+	const char *sjt = joinRef;
 
 	(void)anti;
 
 	if (left) {
 		cmptype = cmp_equal;
-		sjt = "leftjoin";
+		sjt = leftjoinRef;
 	}
 	if (op1->nr < 0 || op2->nr < 0)
 		return NULL;
