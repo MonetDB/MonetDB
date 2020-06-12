@@ -79,6 +79,10 @@ insert into tbl_productsales(product_name, totalsales) values (((cast(0.1 as str
 select rtrim('0.9407860360743894', '');
 ROLLBACK;
 
+-- Bug 6895
+SELECT another_t.col1 FROM tbl_productsales CROSS JOIN another_t WHERE ((tbl_productsales.product_category) NOT IN (tbl_productsales.product_category, tbl_productsales.product_category)) IS NULL;
+	-- empty
+
 DROP TABLE tbl_ProductSales;
 DROP TABLE another_T;
 DROP TABLE integers;
