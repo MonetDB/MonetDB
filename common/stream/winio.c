@@ -79,6 +79,34 @@ struct console {
 	WCHAR wbuf[8192];
 };
 
+
+void
+mnstr_set_error_lasterror(stream *s, mnstr_error_kind kind, const char *fmt, ...)
+{
+	va_list ap;
+	va_start(ap, fmt);
+	mnstr_va_set_error(s, kind, fmt, ap);
+	va_end(ap);
+
+	/* append as much as fits of the system error message */
+	char *start = &s->errmsg[0] + strlen(s->errmsg);
+	char *end = &s->errmsg[0] + sizeof(s->errmsg);
+	if (end - start >= 3) {
+		DWORD last_error = GetLastError();
+		start += snprintf(start, end - start, ": [%ld] ", (long)last_error);
+		FormatMessage(
+			/* flags */ FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS,
+			/* lpSource, we don't provide our own format string */ NULL,
+			/* message id */ last_error,
+			/* language */MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
+			/* result buffer */ start,
+			/* buffer size */ (DWORD)(end - start - 1),
+			/* no arguments */ NULL
+		);
+	}
+}
+
+
 ssize_t
 console_read(stream *restrict s, void *restrict buf, size_t elmsize, size_t cnt)
 {
@@ -194,7 +222,7 @@ console_write(stream *restrict s, const void *restrict buf, size_t elmsize, size
 	int x;
 
 	if (c == NULL) {
-		mnstr_set_error(s, MNSTR_READ_ERROR, "closed");
+		mnstr_set_error(s, MNSTR_WRITE_ERROR, "closed");
 		return -1;
 	}
 	if (n == 0)
@@ -204,7 +232,7 @@ console_write(stream *restrict s, const void *restrict buf, size_t elmsize, size
 	if (c->i > 0) {
 		while (c->i > 0 && n > 0) {
 			if ((*p & 0xC0) != 0x80) {
-				mnstr_set_error(s, MNSTR_READ_ERROR, NULL);
+				mnstr_set_error(s, MNSTR_WRITE_ERROR, "encoding error %d", __LINE__);
 				return -1;
 			}
 			c->ch <<= 6;
@@ -216,7 +244,7 @@ console_write(stream *restrict s, const void *restrict buf, size_t elmsize, size
 		if (c->i > 0) {
 			;
 		} else if (c->ch > 0x10FFFF || (c->ch & 0xFFFFF800) == 0xD800) {
-			mnstr_set_error(s, MNSTR_READ_ERROR, NULL);
+			mnstr_set_error(s, MNSTR_WRITE_ERROR, "encoding error %d", __LINE__);
 			return -1;
 		} else if (c->ch > 0xFFFF) {
 			c->wbuf[c->len++] = 0xD800 | ((c->ch >> 10) - (1 << 6));
@@ -228,7 +256,7 @@ console_write(stream *restrict s, const void *restrict buf, size_t elmsize, size
 	while (n > 0) {
 		if (c->len >= 8191) {
 			if (!WriteConsoleW(c->h, c->wbuf, c->len, &c->rd, NULL)) {
-				mnstr_set_error(s, MNSTR_READ_ERROR, NULL);
+				mnstr_set_error_lasterror(s, MNSTR_WRITE_ERROR, NULL);
 				return -1;
 			}
 			c->len = 0;
@@ -250,14 +278,14 @@ console_write(stream *restrict s, const void *restrict buf, size_t elmsize, size
 			x = 3;
 			ch = *p & 0x07;
 		} else {
-			mnstr_set_error(s, MNSTR_READ_ERROR, NULL);
+			mnstr_set_error(s, MNSTR_WRITE_ERROR, "encoding error %d", __LINE__);
 			return -1;
 		}
 		p++;
 		n--;
 		while (x > 0 && n > 0) {
 			if ((*p & 0xC0) != 0x80) {
-				mnstr_set_error(s, MNSTR_READ_ERROR, NULL);
+				mnstr_set_error(s, MNSTR_WRITE_ERROR, "encoding error %d", __LINE__);
 				return -1;
 			}
 			ch <<= 6;
@@ -270,7 +298,7 @@ console_write(stream *restrict s, const void *restrict buf, size_t elmsize, size
 			c->ch = ch;
 			c->i = x;
 		} else if (ch > 0x10FFFF || (ch & 0xFFFFF800) == 0xD800) {
-			mnstr_set_error(s, MNSTR_READ_ERROR, NULL);
+			mnstr_set_error(s, MNSTR_WRITE_ERROR, "encoding error %d", __LINE__);
 			return -1;
 		} else if (ch > 0xFFFF) {
 			c->wbuf[c->len++] = 0xD800 | ((ch >> 10) - (1 << 6));
@@ -280,8 +308,10 @@ console_write(stream *restrict s, const void *restrict buf, size_t elmsize, size
 		}
 	}
 	if (c->len > 0) {
-		if (!WriteConsoleW(c->h, c->wbuf, c->len, &c->rd, NULL)) {
-			mnstr_set_error(s, MNSTR_READ_ERROR, NULL);
+		if (WriteConsoleW(c->h, c->wbuf, c->len, &c->rd, NULL) == 0) {
+			// char errbuf[4096];
+			DWORD last_error = GetLastError();
+			mnstr_set_error_lasterror(s, MNSTR_WRITE_ERROR, NULL);
 			return -1;
 		}
 		c->len = 0;

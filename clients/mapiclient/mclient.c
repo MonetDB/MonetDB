@@ -1942,8 +1942,8 @@ format_result(Mapi mid, MapiHdl hdl, bool singleinstr)
 	if (timerHumanCalled)
 		timerHuman(sqloptimizer, maloptimizer, querytime, singleinstr, true);
 	if (mnstr_errnr(toConsole)) {
+		fprintf(stderr, "write error: %s\n", mnstr_peek_error(toConsole));
 		mnstr_clearerr(toConsole);
-		fprintf(stderr, "write error\n");
 		errseen = true;
 	}
 #ifdef HAVE_POPEN

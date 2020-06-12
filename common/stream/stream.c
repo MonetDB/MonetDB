@@ -143,6 +143,8 @@ get_tl_error_buf(void)
 
 #endif
 
+const char *mnstr_error_kind_description(mnstr_error_kind kind);
+
 int
 mnstr_init(int embedded)
 {
@@ -314,7 +316,7 @@ mnstr_va_set_error(stream *s, mnstr_error_kind kind, const char *fmt, va_list ap
 		return;
 
 	if (fmt == NULL)
-		fmt = "error";
+		fmt = mnstr_error_kind_description(kind);
 
 	// Complicated pointer dance in order to shut up 'might be a candidate
 	// for gnu_printf format attribute' warning from gcc.
@@ -460,7 +462,13 @@ mnstr_peek_error(const stream *s)
 	if (s->errmsg[0] != '\0')
 		return s->errmsg;
 
-	switch (s->errkind) {
+	return mnstr_error_kind_description(s->errkind);
+}
+
+static const char *
+mnstr_error_kind_description(mnstr_error_kind kind)
+{
+	switch (kind) {
 	case MNSTR_NO__ERROR:
 		/* unreachable */
 		assert(0);
