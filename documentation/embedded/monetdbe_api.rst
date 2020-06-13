@@ -21,10 +21,10 @@ The API wraps the internal data types to those more convenient for programming d
 |float  |  float|
 |double  |  double|
 |char *  |  str|
-|monetdb_data_blob  |  blob|
-|monetdb_data_date  |  date|
-|monetdb_data_time  |  time|
-|monetdb_data_timestamp  |  timestamp|
+|monetdbe_data_blob  |  blob|
+|monetdbe_data_date  |  date|
+|monetdbe_data_time  |  time|
+|monetdbe_data_timestamp  |  timestamp|
 
 Data Types
 ----------
@@ -49,29 +49,29 @@ Connection and server options
     A simplified wrapper around the official MAPI protocol. It allows for development of the application
     using a local directory and simply replacing the startup call with a mapi_connect.
 
-.. c:char* monetdb_connect(monetdb_connection *conn);
+.. c:char* monetdbe_connect(monetdbe_connection *conn);
 
     Create a separate connection channel with the database. Don't use it in parallel threads to submit
     queries, because they would become mangled and even could hang your application. 
     [TODO protect against it]
 
 
-.. c:char* monetdb_disconnect(monetdb_connection *conn);
+.. c:char* monetdbe_disconnect(monetdbe_connection *conn);
 
     From here on the connection can not be used anymore to pass queries or any pending result set is cleaned up.
 
-.. c:char* monetdb_shutdown(void);
+.. c:char* monetdbe_shutdown(void);
 
     Force a shutdown of the database server. This will not shutdown your application, you can simply restart
     the database server. However, be aware that the content of an ':inmemory:' database is discarded at shutdown.
 
 Transaction management
 ---------------------
-.. c: char* monetdb_get_autocommit(monetdb_connection conn, int* result);
+.. c: char* monetdbe_get_autocommit(monetdbe_connection conn, int* result);
 
     Retrieve the current transaction mode, i.e. 'autocommit' or 'no-autocommit' [TODO ?]
 
-.. c:char *monetdb_set_autocommit(monetdb_connection conn, int value);
+.. c:char *monetdbe_set_autocommit(monetdbe_connection conn, int value);
 
     Set the auto-commit mode to either true or false. An error is raised when you attempt
     to ...??
@@ -79,25 +79,25 @@ Transaction management
 
 Query execution
 ______________
-.. c:char* monetdb_query(monetdb_connection conn, char* query, monetdb_result** result, monetdb_cnt* affected_rows)
+.. c:char* monetdbe_query(monetdbe_connection conn, char* query, monetdbe_result** result, monetdbe_cnt* affected_rows)
 
     The main query interface to the database kernel. The query should obey the MonetDB syntax. It returns a nested
     structure with the result set in binary form and the number of rows in the result set or affected by an update.
 
-.. c:char* monetdb_prepare(monetdb_connection conn, char *query, monetdb_statement **stmt);
+.. c:char* monetdbe_prepare(monetdbe_connection conn, char *query, monetdbe_statement **stmt);
 
     Sent a query to the database server and prepare an execution plan. Its arguments should be passed when called.
 
-.. c:char* monetdb_bind(monetdb_statement *stmt, void *data, size_t parameter_nr);
+.. c:char* monetdbe_bind(monetdbe_statement *stmt, void *data, size_t parameter_nr);
 
     Bind a local variable to a parameter in the prepared query structure. [TODO by pointer, do do you take a copy??]]
 
-.. c:char* monetdb_execute(monetdb_statement *stmt, monetdb_result **result, monetdb_cnt* affected_rows);
+.. c:char* monetdbe_execute(monetdbe_statement *stmt, monetdbe_result **result, monetdbe_cnt* affected_rows);
 
     When all parameters are bound, the statement is executed by the database server. An error is thrown if the
     number of parameters does not match. 
 
-.. c: char* monetdb_cleanup_statement(monetdb_connection conn, monetdb_statement *stmt);
+.. c: char* monetdbe_cleanup_statement(monetdbe_connection conn, monetdbe_statement *stmt);
 
     Remove the execution pland and all bound variables.
 
@@ -105,14 +105,14 @@ ______________
 Database insert
 --------------
 
-.. c: char* monetdb_append(monetdb_connection conn, const char* schema, const char* table, monetdb_column **input, size_t column_count);
+.. c: char* monetdbe_append(monetdbe_connection conn, const char* schema, const char* table, monetdbe_column **input, size_t column_count);
 
     The result set obtained from any query can be assigned to a new database table. [TODO which schema...]
 
 
 Result set
 ----------
-.. c: char* monetdb_result_fetch(monetdb_connection conn, monetdb_result *mres, monetdb_column** res, size_t column_index);
+.. c: char* monetdbe_result_fetch(monetdbe_connection conn, monetdbe_result *mres, monetdbe_column** res, size_t column_index);
 
     Given a result set from a query obtain its structure as a collection of column descriptors. [TODO]
 
@@ -121,20 +121,22 @@ Result set
 Schema inspection
 ----------------
 
-.. c:char* monetdb_get_table(monetdb_connection conn, monetdb_table** table, const char* schema_name, const char* table_name);
+.. c:char* monetdbe_get_table(monetdbe_connection conn, monetdbe_table** table, const char* schema_name, const char* table_name);
 
-    Retrieve the structure of the schema.table  into the monetdb_table structure.
+    Retrieve the structure of the schema.table  into the monetdbe_table structure.
 
-.. c:char* monetdb_get_columns(monetdb_connection conn, const char* schema_name, const char *table_name, size_t *column_count, char ***column_names, int **column_types);
+.. c:char* monetdbe_get_columns(monetdbe_connection conn, const char* schema_name, const char *table_name, size_t *column_count, char ***column_names, int **column_types);
 
     Retrieve the details of each column.
 
 Miscellaneous
 -------------
 
-..c:bool  monetdb_is_initialized(void)
+.. c:bool  monetdbe_is_initialized(void)
 
     Simple function to check if MonetDBe has already been started. [TODO For a remote connection
     it behaves like a 'ping', telling if the remote server is available for interactions.]
 
+.. c:char * monetdbe_error(monetdbe_connection conn)
 
+    [TODO] return the last error associated with the connection object.
