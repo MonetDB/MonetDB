@@ -83,6 +83,17 @@ ROLLBACK;
 SELECT another_t.col1 FROM tbl_productsales CROSS JOIN another_t WHERE ((tbl_productsales.product_category) NOT IN (tbl_productsales.product_category, tbl_productsales.product_category)) IS NULL;
 	-- empty
 
+START TRANSACTION; --Bug 6896
+CREATE TABLE t0 (c0 int, c1 int);
+insert into t0 values (1, 1);
+select all t0.c0 from t0 where (sql_min("locate"(reverse('qﺛ}(C.0D?\r'), cast(t0.c1 as string), cast(-1483214882 as int)), ((cast('1186727519' as int))||(abs(785610124))))) not in (1.52414541E9, 0.13482326) 
+union all select all t0.c0 from t0 where not ((sql_min("locate"(reverse('qﺛ}(C.0D?\r'), cast(t0.c1 as string), cast(-1483214882 as int)), ((cast('1186727519' as int))||(abs(785610124))))) not in (1.52414541E9, 0.13482326)) 
+union all select t0.c0 from t0 where ((sql_min("locate"(reverse('qﺛ}(C.0D?\r'), cast(t0.c1 as string), cast(-1483214882 as int)), ((cast('1186727519' as int))||(abs(785610124))))) not in (1.52414541E9, 0.13482326)) is null;
+
+select 1 from t0 where (3 in (1, 2)) is null; --simplified
+	-- empty
+ROLLBACK;
+
 DROP TABLE tbl_ProductSales;
 DROP TABLE another_T;
 DROP TABLE integers;
