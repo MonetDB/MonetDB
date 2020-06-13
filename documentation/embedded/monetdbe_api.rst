@@ -116,7 +116,13 @@ Result set
 
     Given a result set from a query obtain its structure as a collection of column descriptors. [TODO]
 
+.. c: char* monetdbe_backup(monetdbe_connection conn, char *localfile);
 
+    [TODO] Dump an :inmemory: database as a collection of SQL statements on a local file
+
+.. c: char* monetdbe_restore(monetdbe_connection conn, char *localfile);
+
+    [TODO] Restore a SQL dump to initialize the ':inmemory:' case.
 
 Schema inspection
 ----------------
@@ -128,6 +134,7 @@ Schema inspection
 .. c:char* monetdbe_get_columns(monetdbe_connection conn, const char* schema_name, const char *table_name, size_t *column_count, char ***column_names, int **column_types);
 
     Retrieve the details of each column.
+
 
 Miscellaneous
 -------------
