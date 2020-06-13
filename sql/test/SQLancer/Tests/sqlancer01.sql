@@ -114,6 +114,18 @@ SELECT MIN(DISTINCT t0.c1) FROM t0 WHERE 1 >= t0.c0 GROUP BY true;
 	-- -1239303309
 ROLLBACK;
 
+START TRANSACTION; --Bug 6898
+CREATE TABLE t0 (c0 int, c1 int);
+insert into t0 values (1, 1);
+CREATE TABLE v0 (c0 int, c1 int);
+insert into v0 values (1, 1);
+select all count(all 0.5923759) from v0 left outer join t0 on ((((substr(cast(0.2753589295956522 as string), cast(cast(0.1980253 as string) as int), ((+ (v0.c0))^(((v0.c0)+(v0.c0))))))||
+((0.95672141382556563637962199209141544997692108154296875) in (0.93132256561636328484610203304328024387359619140625, t0.c0))))like('jBlZöx TW9*ࡈxw㟩*'));
+
+select 1 from v0 join t0 on (((substr('1', 1, v0.c0)) || (1) in (1, t0.c0)) like 'a'); --simplified
+	-- empty
+ROLLBACK;
+
 DROP TABLE tbl_ProductSales;
 DROP TABLE another_T;
 DROP TABLE integers;
