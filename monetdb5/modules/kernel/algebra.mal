@@ -182,6 +182,10 @@ comment "Returns 2 columns with all BUNs, consisting of the head-oids
 	  from 'left' and 'right' for which there are BUNs in 'left'
 	  and 'right' with equal tails";
 
+command crossproduct(left:bat[:any_1], right:bat[:any_2], max_one:bit) :bat[:oid]
+address ALGcrossproduct1
+comment "Compute the crossproduct of both input bats; but only produce left output";
+
 command join(l:bat[:any_1],r:bat[:any_1],sl:bat[:oid],sr:bat[:oid],nil_matches:bit,estimate:lng) (:bat[:oid],:bat[:oid])
 address ALGjoin
 comment "Join";

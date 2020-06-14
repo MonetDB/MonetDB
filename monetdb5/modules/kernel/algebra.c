@@ -785,10 +785,10 @@ ALGunique1(bat *result, const bat *bid)
 	return ALGunique2(result, bid, NULL);
 }
 
-str
-ALGcrossproduct2(bat *l, bat *r, const bat *left, const bat *right, const bit *max_one)
+static str
+ALGcrossproduct(bat *l, bat *r, const bat *left, const bat *right, const bit *max_one)
 {
-	BAT *L, *R, *bn1, *bn2;
+	BAT *L, *R, *bn1, *bn2 = NULL;
 	gdk_return ret;
 
 	if ((L = BATdescriptor(*left)) == NULL) {
@@ -798,15 +798,28 @@ ALGcrossproduct2(bat *l, bat *r, const bat *left, const bat *right, const bit *m
 		BBPunfix(L->batCacheid);
 		throw(MAL, "algebra.crossproduct", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 	}
-	ret = BATsubcross(&bn1, &bn2, L, R, NULL, NULL,
+	ret = BATsubcross(&bn1, r ? &bn2 : NULL, L, R, NULL, NULL,
 					  max_one && !is_bit_nil(*max_one) && *max_one);
 	BBPunfix(L->batCacheid);
 	BBPunfix(R->batCacheid);
 	if (ret != GDK_SUCCEED)
 		throw(MAL, "algebra.crossproduct", GDK_EXCEPTION);
 	BBPkeepref(*l = bn1->batCacheid);
-	BBPkeepref(*r = bn2->batCacheid);
+	if (r)
+		BBPkeepref(*r = bn2->batCacheid);
 	return MAL_SUCCEED;
+}
+
+str
+ALGcrossproduct1(bat *l, const bat *left, const bat *right, const bit *max_one)
+{
+	return ALGcrossproduct(l, NULL, left, right, max_one);
+}
+
+str
+ALGcrossproduct2(bat *l, bat *r, const bat *left, const bat *right, const bit *max_one)
+{
+	return ALGcrossproduct(l, r, left, right, max_one);
 }
 
 str
@@ -1459,6 +1472,7 @@ mel_func algebra_init_funcs[] = {
  command("algebra", "unique", ALGunique2, false, "Select all unique values from the tail of the first input.\nInput is a dense-headed BAT, the second input is a\ndense-headed BAT with sorted tail, output is a dense-headed\nBAT with in the tail the head value of the input BAT that was\nselected.  The output BAT is sorted on the tail value.  The\nsecond input BAT is a list of candidates.", args(1,3, batarg("",oid),batargany("b",1),batarg("s",oid))),
  command("algebra", "unique", ALGunique1, false, "Select all unique values from the tail of the input.\nInput is a dense-headed BAT, output is a dense-headed BAT with\nin the tail the head value of the input BAT that was selected.\nThe output BAT is sorted on the tail value.", args(1,2, batarg("",oid),batargany("b",1))),
  command("algebra", "crossproduct", ALGcrossproduct2, false, "Returns 2 columns with all BUNs, consisting of the head-oids\nfrom 'left' and 'right' for which there are BUNs in 'left'\nand 'right' with equal tails", args(2,5, batarg("l",oid),batarg("r",oid),batargany("left",1),batargany("right",2),arg("max_one",bit))),
+ command("algebra", "crossproduct", ALGcrossproduct1, false, "Compute the cross product of both input bats; but only produce left output", args(1,4, batarg("",oid),batargany("left",1),batargany("right",2),arg("max_one",bit))),
  command("algebra", "join", ALGjoin, false, "Join", args(2,8, batarg("",oid),batarg("",oid),batargany("l",1),batargany("r",1),batarg("sl",oid),batarg("sr",oid),arg("nil_matches",bit),arg("estimate",lng))),
  command("algebra", "join", ALGjoin1, false, "Join; only produce left output", args(1,7, batarg("",oid),batargany("l",1),batargany("r",1),batarg("sl",oid),batarg("sr",oid),arg("nil_matches",bit),arg("estimate",lng))),
  command("algebra", "leftjoin", ALGleftjoin, false, "Left join with candidate lists", args(2,8, batarg("",oid),batarg("",oid),batargany("l",1),batargany("r",1),batarg("sl",oid),batarg("sr",oid),arg("nil_matches",bit),arg("estimate",lng))),

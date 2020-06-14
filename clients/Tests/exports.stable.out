@@ -802,6 +802,7 @@ str ALGcount_nil(lng *result, const bat *bid, const bit *ignore_nils);
 str ALGcount_no_nil(lng *result, const bat *bid);
 str ALGcovariance(dbl *res, const bat *bid1, const bat *bid2);
 str ALGcovariancep(dbl *res, const bat *bid1, const bat *bid2);
+str ALGcrossproduct1(bat *l, const bat *lid, const bat *rid, const bit *max_one);
 str ALGcrossproduct2(bat *l, bat *r, const bat *lid, const bat *rid, const bit *max_one);
 str ALGdifference(bat *r1, const bat *lid, const bat *rid, const bat *slid, const bat *srid, const bit *nil_matches, const bit *not_in, const lng *estimate);
 str ALGexist(bit *ret, const bat *bid, const void *val);
