@@ -17,28 +17,26 @@ int
 main(void)
 {
 	char* err = NULL;
-	monetdb_connection conn1 = NULL, conn2 = NULL;
+	monetdb_database mdbe1 = NULL, mdbe2 = NULL;
 	monetdb_result* result = NULL;
 
-	// first argument is a string for the db directory or NULL for in-memory mode
-	if ((err = monetdb_startup(NULL, 0)) != NULL)
+	// second argument is a string for the db directory or NULL for in-memory mode
+	if ((err = monetdb_open(&mdbe1, NULL)) != NULL)
 		error(err)
-	if ((err = monetdb_connect(&conn1)) != NULL)
+	if ((err = monetdb_open(&mdbe2, NULL)) != NULL)
 		error(err)
-	if ((err = monetdb_connect(&conn2)) != NULL)
+	if ((err = monetdb_query(mdbe1, "CREATE TABLE test (x integer, y string)", NULL, NULL)) != NULL)
 		error(err)
-	if ((err = monetdb_query(conn1, "CREATE TABLE test (x integer, y string)", NULL, NULL)) != NULL)
+	if ((err = monetdb_query(mdbe2, "INSERT INTO test VALUES (42, 'Hello'), (NULL, 'World')", NULL, NULL)) != NULL)
 		error(err)
-	if ((err = monetdb_query(conn2, "INSERT INTO test VALUES (42, 'Hello'), (NULL, 'World')", NULL, NULL)) != NULL)
-		error(err)
-	if ((err = monetdb_query(conn1, "SELECT x, y FROM test; ", &result, NULL)) != NULL)
+	if ((err = monetdb_query(mdbe1, "SELECT x, y FROM test; ", &result, NULL)) != NULL)
 		error(err)
 
 	fprintf(stdout, "Query result with %zu cols and %"PRId64" rows\n", result->ncols, result->nrows);
 	for (int64_t r = 0; r < result->nrows; r++) {
 		for (size_t c = 0; c < result->ncols; c++) {
 			monetdb_column* rcol;
-			if ((err = monetdb_result_fetch(conn1, result, &rcol, c)) != NULL)
+			if ((err = monetdb_result_fetch(mdbe1, result, &rcol, c)) != NULL)
 				error(err)
 			switch (rcol->type) {
 				case monetdb_int32_t: {
@@ -71,13 +69,11 @@ main(void)
 		printf("\n");
 	}
 
-	if ((err = monetdb_cleanup_result(conn1, result)) != NULL)
+	if ((err = monetdb_cleanup_result(mdbe1, result)) != NULL)
 		error(err)
-	if ((err = monetdb_disconnect(conn2)) != NULL)
+	if ((err = monetdb_close(mdbe2)) != NULL)
 		error(err)
-	if ((err = monetdb_disconnect(conn1)) != NULL)
-		error(err)
-	if ((err = monetdb_shutdown()) != NULL)
+	if ((err = monetdb_close(mdbe1)) != NULL)
 		error(err)
 	return 0;
 }

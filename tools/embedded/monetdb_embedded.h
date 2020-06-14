@@ -80,11 +80,11 @@ typedef struct {
 typedef struct {
 	monetdb_cnt nrows;
 	size_t ncols;
-	int type;
-	monetdb_cnt id;
+	char *name;
+	monetdb_cnt last_id;		/* last auto incremented id */
 } monetdb_result;
 
-typedef void* monetdb_connection;
+typedef void* monetdb_database;
 
 #define DEFAULT_STRUCT_DEFINITION(ctype, typename)         \
 	typedef struct                                     \
@@ -119,28 +119,26 @@ DEFAULT_STRUCT_DEFINITION(monetdb_data_time, time);
 DEFAULT_STRUCT_DEFINITION(monetdb_data_timestamp, timestamp);
 // UUID, INET, XML ?
 
-embedded_export char* monetdb_connect(monetdb_connection *conn);
-embedded_export char* monetdb_disconnect(monetdb_connection conn);
-embedded_export char* monetdb_startup(char* dbdir, bool sequential);
-embedded_export bool  monetdb_is_initialized(void);
+embedded_export char* monetdb_open(monetdb_database *db, char *url); 
+embedded_export char* monetdb_close(monetdb_database db); 
 
-embedded_export char* monetdb_get_autocommit(monetdb_connection conn, int* result);
-embedded_export char* monetdb_set_autocommit(monetdb_connection conn, int value);
-embedded_export int   monetdb_in_transaction(monetdb_connection conn);
+embedded_export char* monetdb_get_autocommit(monetdb_database dbhdl, int* result);
+embedded_export char* monetdb_set_autocommit(monetdb_database dbhdl, int value);
+embedded_export int   monetdb_in_transaction(monetdb_database dbhdl);
 
-embedded_export char* monetdb_query(monetdb_connection conn, char* query, monetdb_result** result, monetdb_cnt* affected_rows);
-embedded_export char* monetdb_result_fetch(monetdb_connection conn, monetdb_result *mres, monetdb_column** res, size_t column_index);
-embedded_export char* monetdb_cleanup_result(monetdb_connection conn, monetdb_result* result);
-embedded_export char* monetdb_prepare(monetdb_connection conn, char *query, monetdb_statement **stmt);
+embedded_export char* monetdb_query(monetdb_database dbhdl, char* query, monetdb_result** result, monetdb_cnt* affected_rows);
+embedded_export char* monetdb_result_fetch(monetdb_database dbhdl, monetdb_result *mres, monetdb_column** res, size_t column_index);
+embedded_export char* monetdb_cleanup_result(monetdb_database dbhdl, monetdb_result* result);
+embedded_export char* monetdb_prepare(monetdb_database dbhdl, char *query, monetdb_statement **stmt);
 embedded_export char* monetdb_bind(monetdb_statement *stmt, void *data, size_t parameter_nr);
 embedded_export char* monetdb_execute(monetdb_statement *stmt, monetdb_result **result, monetdb_cnt* affected_rows);
-embedded_export char* monetdb_cleanup_statement(monetdb_connection conn, monetdb_statement *stmt);
+embedded_export char* monetdb_cleanup_statement(monetdb_database dbhdl, monetdb_statement *stmt);
 
-embedded_export char* monetdb_append(monetdb_connection conn, const char* schema, const char* table, monetdb_column **input, size_t column_count);
+embedded_export char* monetdb_append(monetdb_database dbhdl, const char* schema, const char* table, monetdb_column **input, size_t column_count);
 
 
-embedded_export char* monetdb_get_table(monetdb_connection conn, monetdb_table** table, const char* schema_name, const char* table_name);
-embedded_export char* monetdb_get_columns(monetdb_connection conn, const char* schema_name, const char *table_name, size_t *column_count, char ***column_names, int **column_types);
+embedded_export char* monetdb_get_table(monetdb_database dbhdl, monetdb_table** table, const char* schema_name, const char* table_name);
+embedded_export char* monetdb_get_columns(monetdb_database dbhdl, const char* schema_name, const char *table_name, size_t *column_count, char ***column_names, int **column_types);
 
 embedded_export char* monetdb_shutdown(void);
 

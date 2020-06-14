@@ -11,7 +11,7 @@
 #include <monetdb_embedded.h>
 
 typedef struct MapiStruct {
-	monetdb_connection conn;
+	monetdb_database mdbe;
 	char *msg;
 } *Mapi;
 

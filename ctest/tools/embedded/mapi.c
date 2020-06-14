@@ -19,7 +19,7 @@ mapi_query(Mapi mid, const char *query)
 
 	mh->mid = mid;
 	mh->query = (char*)query;
-	mh->msg = monetdb_query(mh->mid->conn, mh->query, &mh->result, &mh->affected_rows);
+	mh->msg = monetdb_query(mh->mid->mdbe, mh->query, &mh->result, &mh->affected_rows);
 	mh->current_row = 0;
 	mh->mapi_row = NULL;
 	if (mh->result && mh->result->ncols) {
@@ -45,7 +45,7 @@ mapi_close_handle(MapiHdl hdl)
 			MAPIfree(hdl->mapi_row);
 		}
 
-		char *msg = monetdb_cleanup_result(hdl->mid->conn, hdl->result);
+		char *msg = monetdb_cleanup_result(hdl->mid->mdbe, hdl->result);
 		MAPIfree(hdl);
 		if (msg)
 			hdl->mid->msg = msg;
@@ -70,7 +70,7 @@ mapi_fetch_field(MapiHdl hdl, int fnr)
 {
 	if (hdl && fnr < (int)hdl->result->ncols && hdl->current_row > 0 && hdl->current_row <= hdl->result->nrows) {
 		monetdb_column *rcol = NULL;
-		if (monetdb_result_fetch(hdl->mid->conn, hdl->result,  &rcol, fnr) == NULL) {
+		if (monetdb_result_fetch(hdl->mid->mdbe, hdl->result,  &rcol, fnr) == NULL) {
 			size_t r = hdl->current_row - 1;
 			if (rcol->type != monetdb_str && !hdl->mapi_row[fnr]) {
 				hdl->mapi_row[fnr] = MAPIalloc(SIMPLE_TYPE_SIZE);
@@ -163,7 +163,7 @@ mapi_get_type(MapiHdl hdl, int fnr)
 {
 	if (hdl && fnr < (int)hdl->result->ncols) {
 		monetdb_column *rcol = NULL;
-		if (monetdb_result_fetch(hdl->mid->conn, hdl->result,  &rcol, fnr) == NULL) {
+		if (monetdb_result_fetch(hdl->mid->mdbe, hdl->result,  &rcol, fnr) == NULL) {
 			switch(rcol->type) {
 			case monetdb_bool:
 				return "boolean";

@@ -84,6 +84,7 @@ typedef struct monetdb_table_t {
 
 typedef struct {
 	monetdb_result res;
+	int type;
 	res_table *monetdb_resultset;
 	monetdb_column **converted_columns;
 } monetdb_result_internal;
@@ -97,28 +98,25 @@ typedef struct {
 	cq *q;
 } monetdb_stmt_internal;
 
+typedef struct {
+	Client c;
+} monetdb_database_internal;
+
 static MT_Lock embedded_lock = MT_LOCK_INITIALIZER("embedded_lock");
 static bool monetdb_embedded_initialized = false;
+static char *monetdb_embedded_url = NULL;
+static int open_dbs = 0;
 
-bool
-monetdb_is_initialized(void)
-{
-	MT_lock_set(&embedded_lock);
-	bool res = monetdb_embedded_initialized;
-	MT_lock_unset(&embedded_lock);
-	return res;
-}
-
-static char* monetdb_cleanup_result_internal(monetdb_connection conn, monetdb_result* result);
+static char* monetdb_cleanup_result_internal(monetdb_database dbhdl, monetdb_result* result);
 
 static char*
-commit_action(mvc* m, char* msg, monetdb_connection conn, monetdb_result **result, monetdb_result_internal *res_internal)
+commit_action(mvc* m, char* msg, monetdb_database dbhdl, monetdb_result **result, monetdb_result_internal *res_internal)
 {
 	/* handle autocommit */
     	char *commit_msg = SQLautocommit(m);
 	if ((msg != MAL_SUCCEED || commit_msg != MAL_SUCCEED)) {
 		if (res_internal) {
-			char* other = monetdb_cleanup_result_internal(conn, (monetdb_result*) res_internal);
+			char* other = monetdb_cleanup_result_internal(dbhdl, (monetdb_result*) res_internal);
 			if (other)
 				freeException(other);
 		}
@@ -133,20 +131,20 @@ commit_action(mvc* m, char* msg, monetdb_connection conn, monetdb_result **resul
 }
 
 static int
-validate_connection_noerror(monetdb_connection conn)
+validate_database_handle_noerror(monetdb_database dbhdl)
 {
-	if (!monetdb_embedded_initialized || !MCvalid((Client)conn))
+	if (!monetdb_embedded_initialized || !MCvalid((Client)dbhdl))
 		return 0;
 	return 1;
 }
 
 static char*
-validate_connection(monetdb_connection conn, const char* call) // Call this function always inside the embedded_lock
+validate_database_handle(monetdb_database dbhdl, const char* call) // Call this function always inside the embedded_lock
 {
 	if (!monetdb_embedded_initialized)
 		return createException(MAL, call, "MonetDBe has not yet started");
-	if (!MCvalid((Client) conn))
-		return createException(MAL, call, "Invalid connection");
+	if (!MCvalid((Client) dbhdl))
+		return createException(MAL, call, "Invalid database handle");
 	return MAL_SUCCEED;
 }
 
@@ -177,15 +175,15 @@ monetdb_destroy_column(monetdb_column* column)
 }
 
 static char*
-monetdb_cleanup_result_internal(monetdb_connection conn, monetdb_result* result)
+monetdb_cleanup_result_internal(monetdb_database dbhdl, monetdb_result* result)
 {
 	char* msg = MAL_SUCCEED;
 	monetdb_result_internal* res = (monetdb_result_internal *) result;
-	Client c = (Client) conn;
+	Client c = (Client) dbhdl;
 
 	mvc* m = NULL;
 
-	if ((msg = validate_connection(conn, "embedded.monetdb_cleanup_result_internal")) != MAL_SUCCEED)
+	if ((msg = validate_database_handle(dbhdl, "embedded.monetdb_cleanup_result_internal")) != MAL_SUCCEED)
 		return msg;
 	if ((msg = getSQLContext(c, NULL, &m, NULL)) != MAL_SUCCEED)
 		goto cleanup;
@@ -208,10 +206,10 @@ cleanup:
 }
 
 static char*
-monetdb_query_internal(monetdb_connection conn, char* query, monetdb_result** result, monetdb_cnt* affected_rows, int *prepare_id, char language)
+monetdb_query_internal(monetdb_database dbhdl, char* query, monetdb_result** result, monetdb_cnt* affected_rows, int *prepare_id, char language)
 {
 	char* msg = MAL_SUCCEED, *nq = NULL;
-	Client c = (Client) conn;
+	Client c = (Client) dbhdl;
 	mvc* m = NULL;
 	backend *b;
 	size_t query_len, input_query_len, prep_len = 0;
@@ -221,7 +219,7 @@ monetdb_query_internal(monetdb_connection conn, char* query, monetdb_result** re
 	bstream *old_bstream = NULL;
 	stream *fdout = c->fdout;
 
-	if ((msg = validate_connection(conn, "embedded.monetdb_query_internal")) != MAL_SUCCEED)
+	if ((msg = validate_database_handle(dbhdl, "embedded.monetdb_query_internal")) != MAL_SUCCEED)
 		return msg;
 
 	old_bstream = c->fdin;
@@ -301,12 +299,12 @@ monetdb_query_internal(monetdb_connection conn, char* query, monetdb_result** re
 			goto cleanup;
 		}
 		if (m->emode == m_execute)
-			res_internal->res.type = (m->results) ? Q_TABLE : Q_UPDATE;
+			res_internal->type = (m->results) ? Q_TABLE : Q_UPDATE;
 		else if (m->emode & m_prepare)
-			res_internal->res.type = Q_PREPARE;
+			res_internal->type = Q_PREPARE;
 		else
-			res_internal->res.type = (m->results) ? m->results->query_type : m->type;
-		res_internal->res.id = m->last_id;
+			res_internal->type = (m->results) ? m->results->query_type : m->type;
+		res_internal->res.last_id = m->last_id;
 		*result = (monetdb_result*) res_internal;
 		m->reply_size = -2; /* do not clean up result tables */
 
@@ -340,41 +338,41 @@ cleanup:
 		bstream_destroy(c->fdin);
 		c->fdin = old_bstream;
 	}
-	return commit_action(m, msg, conn, result, res_internal);
+	return commit_action(m, msg, dbhdl, result, res_internal);
 }
 
 static char*
-monetdb_disconnect_internal(monetdb_connection conn)
+monetdb_close_internal(monetdb_database dbhdl)
 {
 	char* msg = MAL_SUCCEED;
 
-	if ((msg = validate_connection(conn, "embedded.monetdb_disconnect_internal")) != MAL_SUCCEED)
+	if ((msg = validate_database_handle(dbhdl, "embedded.monetdb_close_internal")) != MAL_SUCCEED)
 		return msg;
-	if ((msg = SQLexitClient((Client) conn)) != MAL_SUCCEED)
+	if ((msg = SQLexitClient((Client) dbhdl)) != MAL_SUCCEED)
 		return msg;
-	MCcloseClient((Client) conn);
+	MCcloseClient((Client) dbhdl);
 	return msg;
 }
 
 static char*
-monetdb_connect_internal(monetdb_connection *conn)
+monetdb_open_internal(monetdb_database *dbhdl)
 {
 	mvc *m;
 	char* msg = MAL_SUCCEED;
 	Client mc = NULL;
 
 	if (!monetdb_embedded_initialized) {
-		msg = createException(MAL, "embedded.monetdb_connect_internal", "Embedded MonetDB is not started");
+		msg = createException(MAL, "embedded.monetdb_open_internal", "Embedded MonetDB is not started");
 		goto cleanup;
 	}
 	mc = MCinitClient((oid) 0, 0, 0);
 	if (!MCvalid(mc)) {
-		msg = createException(MAL, "embedded.monetdb_connect_internal", "Failed to initialize client");
+		msg = createException(MAL, "embedded.monetdb_open_internal", "Failed to initialize client");
 		goto cleanup;
 	}
 	mc->curmodule = mc->usermodule = userModule();
 	if (mc->usermodule == NULL) {
-		msg = createException(MAL, "embedded.monetdb_connect_internal", "Failed to initialize client MAL module");
+		msg = createException(MAL, "embedded.monetdb_open_internal", "Failed to initialize client MAL module");
 		goto cleanup;
 	}
 	if ((msg = SQLinitClient(mc)) != MAL_SUCCEED)
@@ -385,40 +383,18 @@ monetdb_connect_internal(monetdb_connection *conn)
 	if (!m->sa)
 		m->sa = sa_create();
 	if (!m->sa) {
-		msg = createException(SQL, "embedded.monetdb_connect_internal", MAL_MALLOC_FAIL);
+		msg = createException(SQL, "embedded.monetdb_open_internal", MAL_MALLOC_FAIL);
 		goto cleanup;
 	}
 
 cleanup:
 	if (msg && mc) {
-		char* other = monetdb_disconnect_internal(mc);
+		char* other = monetdb_close_internal(mc);
 		if (other)
 			freeException(other);
-		*conn = NULL;
-	} else if (conn)
-		*conn = mc;
-	return msg;
-}
-
-char*
-monetdb_connect(monetdb_connection *conn)
-{
-	char* msg = MAL_SUCCEED;
-	if (!conn)
-		return createException(MAL, "embedded.monetdb_connect_internal", "monetdb_connection parameter is NULL");
-	MT_lock_set(&embedded_lock);
-	msg = monetdb_connect_internal(conn);
-	MT_lock_unset(&embedded_lock);
-	return msg;
-}
-
-char*
-monetdb_disconnect(monetdb_connection conn)
-{
-	char* msg = MAL_SUCCEED;
-	MT_lock_set(&embedded_lock);
-	msg = monetdb_disconnect_internal(conn);
-	MT_lock_unset(&embedded_lock);
+		*dbhdl = NULL;
+	} else if (dbhdl)
+		*dbhdl = mc;
 	return msg;
 }
 
@@ -431,8 +407,8 @@ monetdb_shutdown_internal(void) // Call this function always inside the embedded
 	}
 }
 
-char*
-monetdb_startup(char* dbdir, bool sequential)
+static char*
+monetdb_startup(char* dbdir)
 {
 	char* msg = MAL_SUCCEED, *err;
 	monetdb_result* res = NULL;
@@ -441,7 +417,6 @@ monetdb_startup(char* dbdir, bool sequential)
 	int setlen;
 	gdk_return gdk_res;
 
-	MT_lock_set(&embedded_lock);
 	GDKfataljumpenable = 1;
 	if(setjmp(GDKfataljump) != 0) {
 		msg = GDKfatalmsg;
@@ -469,9 +444,11 @@ monetdb_startup(char* dbdir, bool sequential)
 		msg = createException(MAL, "embedded.monetdb_startup", MAL_MALLOC_FAIL);
 		goto cleanup;
 	}
+	/* get sequential and other flags from url
 	if (sequential)
 		setlen = mo_add_option(&set, setlen, opt_cmdline, "sql_optimizer", "sequential_pipe");
 	else
+	*/
 		setlen = mo_add_option(&set, setlen, opt_cmdline, "sql_optimizer", "default_pipe");
 	if (setlen == 0) {
 		mo_free_options(set, setlen);
@@ -518,16 +495,11 @@ monetdb_startup(char* dbdir, bool sequential)
 	}
 	if ((msg = malEmbeddedBoot()) != MAL_SUCCEED)
 		goto cleanup;
-        //[FIX]: still exists in cmake monetdblite branch
-	//#define SQLisInitialized
-	//if (!SQLisInitialized()) {
-	//	msg = createException(MAL, "embedded.monetdb_startup", "SQL initialization failed");
-	//	goto cleanup;
-	//}
 
 	monetdb_embedded_initialized = true;
+	monetdb_embedded_url = dbdir;
 
-	if ((msg = monetdb_connect_internal(&c)) != MAL_SUCCEED)
+	if ((msg = monetdb_open_internal(&c)) != MAL_SUCCEED)
 		goto cleanup;
 	GDKfataljumpenable = 0;
 	// we do not want to jump after this point, since we cannot do so between threads sanity check, run a SQL query
@@ -535,23 +507,55 @@ monetdb_startup(char* dbdir, bool sequential)
 		goto cleanup;
 	if ((msg = monetdb_cleanup_result_internal(c, res)) != MAL_SUCCEED)
 		goto cleanup;
-	msg = monetdb_disconnect_internal(c);
+	msg = monetdb_close_internal(c);
 
 cleanup:
 	if (msg)
 		monetdb_shutdown_internal();
 done:
+	return msg;
+}
+
+char*
+monetdb_open(monetdb_database *dbhdl, char *url)
+{
+	char* msg = MAL_SUCCEED;
+	if (!dbhdl)
+		return createException(MAL, "embedded.monetdb_open", "monetdb_open parameter is NULL");
+	MT_lock_set(&embedded_lock);
+	if (!monetdb_embedded_initialized) {
+		/* later handle url !*/
+		msg = monetdb_startup(url);
+	} else { /* check uri */
+		if ((monetdb_embedded_url && url && strcmp(monetdb_embedded_url, url) != 0) || (monetdb_embedded_url != url && (monetdb_embedded_url == NULL || url == NULL)))
+			msg = createException(MAL, "embedded.monetdb_open", "monetdb_open currently only one active database is supported");
+	}
+	if (!msg)
+		msg = monetdb_open_internal(dbhdl);
+	open_dbs++;
 	MT_lock_unset(&embedded_lock);
 	return msg;
 }
 
 char*
-monetdb_get_autocommit(monetdb_connection conn, int* result)
+monetdb_close(monetdb_database dbhdl)
+{
+	MT_lock_set(&embedded_lock);
+	open_dbs--;
+	char *msg = monetdb_close_internal(dbhdl);
+	if (!open_dbs)
+		monetdb_shutdown_internal();
+	MT_lock_unset(&embedded_lock);
+	return msg;
+}
+
+char*
+monetdb_get_autocommit(monetdb_database dbhdl, int* result)
 {
 	char *msg = MAL_SUCCEED;
 
 	MT_lock_set(&embedded_lock);
-	if ((msg = validate_connection(conn, "embedded.monetdb_get_autocommit")) != MAL_SUCCEED) {
+	if ((msg = validate_database_handle(dbhdl, "embedded.monetdb_get_autocommit")) != MAL_SUCCEED) {
 		MT_lock_unset(&embedded_lock);
 		return msg;
 	}
@@ -559,8 +563,8 @@ monetdb_get_autocommit(monetdb_connection conn, int* result)
 	if (!result) {
 		msg = createException(MAL, "embedded.monetdb_get_autocommit", "Parameter result is NULL");
 	} else {
-		Client connection = (Client) conn;
-		mvc *m = ((backend *) connection->sqlcontext)->mvc;
+		Client db = (Client) dbhdl;
+		mvc *m = ((backend *) db->sqlcontext)->mvc;
 		*result = m->session->auto_commit;
 	}
 	MT_lock_unset(&embedded_lock);
@@ -568,18 +572,18 @@ monetdb_get_autocommit(monetdb_connection conn, int* result)
 }
 
 char*
-monetdb_set_autocommit(monetdb_connection conn, int value)
+monetdb_set_autocommit(monetdb_database dbhdl, int value)
 {
 	char *msg = MAL_SUCCEED;
 
 	MT_lock_set(&embedded_lock);
-	if (!validate_connection_noerror(conn)) {
+	if (!validate_database_handle_noerror(dbhdl)) {
 		MT_lock_unset(&embedded_lock);
 		return 0;
 	}
 
-	Client connection = (Client) conn;
-	mvc *m = ((backend *) connection->sqlcontext)->mvc;
+	Client db = (Client) dbhdl;
+	mvc *m = ((backend *) db->sqlcontext)->mvc;
 	int commit = !m->session->auto_commit && value;
 
 	m->session->auto_commit = value;
@@ -596,17 +600,17 @@ monetdb_set_autocommit(monetdb_connection conn, int value)
 }
 
 int
-monetdb_in_transaction(monetdb_connection conn)
+monetdb_in_transaction(monetdb_database dbhdl)
 {
 	MT_lock_set(&embedded_lock);
 
-	if (!validate_connection_noerror(conn)) {
+	if (!validate_database_handle_noerror(dbhdl)) {
 		MT_lock_unset(&embedded_lock);
 		return 0;
 	}
 
-	Client connection = (Client) conn;
-	mvc *m = ((backend *) connection->sqlcontext)->mvc;
+	Client db = (Client) dbhdl;
+	mvc *m = ((backend *) db->sqlcontext)->mvc;
 	int result = 0;
 
 	if (m->session->tr)
@@ -616,17 +620,17 @@ monetdb_in_transaction(monetdb_connection conn)
 }
 
 char*
-monetdb_query(monetdb_connection conn, char* query, monetdb_result** result, monetdb_cnt* affected_rows)
+monetdb_query(monetdb_database dbhdl, char* query, monetdb_result** result, monetdb_cnt* affected_rows)
 {
 	char* msg;
 	MT_lock_set(&embedded_lock);
-	msg = monetdb_query_internal(conn, query, result, affected_rows, NULL, 'S');
+	msg = monetdb_query_internal(dbhdl, query, result, affected_rows, NULL, 'S');
 	MT_lock_unset(&embedded_lock);
 	return msg;
 }
 
 char*
-monetdb_prepare(monetdb_connection conn, char* query, monetdb_statement **stmt)
+monetdb_prepare(monetdb_database dbhdl, char* query, monetdb_statement **stmt)
 {
 	char* msg;
 	int prepare_id = 0;
@@ -635,18 +639,18 @@ monetdb_prepare(monetdb_connection conn, char* query, monetdb_statement **stmt)
 	if (!stmt)
 		msg = createException(MAL, "embedded.monetdb_prepare", "Parameter stmt is NULL");
 	else {
-		msg = monetdb_query_internal(conn, query, NULL, NULL, &prepare_id, 'S');
+		msg = monetdb_query_internal(dbhdl, query, NULL, NULL, &prepare_id, 'S');
 	}
 	if (msg == MAL_SUCCEED) {
-		Client connection = (Client) conn;
-		mvc *m = ((backend *) connection->sqlcontext)->mvc;
+		Client db = (Client) dbhdl;
+		mvc *m = ((backend *) db->sqlcontext)->mvc;
 		monetdb_stmt_internal *stmt_internal = (monetdb_stmt_internal*)GDKmalloc(sizeof(monetdb_stmt_internal));
 		cq *q = qc_find(m->qc, prepare_id);
 		
 		if (q && stmt_internal) {
 			Symbol s = (Symbol)q->code;
 			InstrPtr p = s->def->stmt[0];
-			stmt_internal->c = connection;
+			stmt_internal->c = db;
 			stmt_internal->q = q;
 			stmt_internal->retc = p->retc;
 			stmt_internal->res.nparam = q->paramlen;
@@ -716,8 +720,8 @@ monetdb_execute(monetdb_statement *stmt, monetdb_result **result, monetdb_cnt *a
 			msg = createException(MAL, "embedded.monetdb_query_internal", MAL_MALLOC_FAIL);
 			goto cleanup;
 		}
-		res_internal->res.type = (m->results) ? Q_TABLE : Q_UPDATE;
-		res_internal->res.id = m->last_id;
+		res_internal->type = (m->results) ? Q_TABLE : Q_UPDATE;
+		res_internal->res.last_id = m->last_id;
 		*result = (monetdb_result*) res_internal;
 		m->reply_size = -2; /* do not clean up result tables */
 
@@ -742,13 +746,13 @@ monetdb_execute(monetdb_statement *stmt, monetdb_result **result, monetdb_cnt *a
 		}
 	}
 cleanup:
-	return commit_action(m, msg, (monetdb_connection)stmt_internal->c, result, res_internal);
+	return commit_action(m, msg, (monetdb_database)stmt_internal->c, result, res_internal);
 }
 
 char*
-monetdb_cleanup_statement(monetdb_connection conn, monetdb_statement *stmt)
+monetdb_cleanup_statement(monetdb_database dbhdl, monetdb_statement *stmt)
 {
-	(void)conn;
+	(void)dbhdl;
 	monetdb_stmt_internal *stmt_internal = (monetdb_stmt_internal*)stmt;
 	mvc *m = ((backend *) stmt_internal->c->sqlcontext)->mvc;
 	cq *q = stmt_internal->q;
@@ -763,16 +767,16 @@ monetdb_cleanup_statement(monetdb_connection conn, monetdb_statement *stmt)
 }
 
 char*
-monetdb_append(monetdb_connection conn, const char* schema, const char* table, monetdb_column **input /*bat *batids*/, size_t column_count)
+monetdb_append(monetdb_database dbhdl, const char* schema, const char* table, monetdb_column **input /*bat *batids*/, size_t column_count)
 {
-	Client c = (Client) conn;
+	Client c = (Client) dbhdl;
 	mvc *m;
 	char* msg = MAL_SUCCEED;
 
 	MT_lock_set(&embedded_lock);
-	if ((msg = validate_connection(conn, "embedded.monetdb_append")) != MAL_SUCCEED) {
+	if ((msg = validate_database_handle(dbhdl, "embedded.monetdb_append")) != MAL_SUCCEED) {
 		MT_lock_unset(&embedded_lock);
-		return msg; //The connection is invalid, there is no transaction going
+		return msg; //The dbhdl is invalid, there is no transaction going
 	}
 
 	if ((msg = getSQLContext(c, NULL, &m, NULL)) != MAL_SUCCEED)
@@ -869,30 +873,30 @@ cleanup:
 }
 
 char*
-monetdb_cleanup_result(monetdb_connection conn, monetdb_result* result)
+monetdb_cleanup_result(monetdb_database dbhdl, monetdb_result* result)
 {
 	char* msg = MAL_SUCCEED;
 	MT_lock_set(&embedded_lock);
-	msg = monetdb_cleanup_result_internal(conn, result);
+	msg = monetdb_cleanup_result_internal(dbhdl, result);
 	MT_lock_unset(&embedded_lock);
 	return msg;
 }
 
 char*
-monetdb_get_table(monetdb_connection conn, monetdb_table** table, const char* schema_name, const char* table_name)
+monetdb_get_table(monetdb_database dbhdl, monetdb_table** table, const char* schema_name, const char* table_name)
 {
 	mvc *m;
 	sql_schema *s;
 	char *msg = MAL_SUCCEED;
-	Client connection = (Client) conn;
+	Client db = (Client) dbhdl;
 
 	MT_lock_set(&embedded_lock);
-	if ((msg = validate_connection(conn, "embedded.monetdb_get_table")) != MAL_SUCCEED) {
+	if ((msg = validate_database_handle(dbhdl, "embedded.monetdb_get_table")) != MAL_SUCCEED) {
 		MT_lock_unset(&embedded_lock);
 		return msg;
 	}
 
-	if ((msg = getSQLContext(connection, NULL, &m, NULL)) != NULL)
+	if ((msg = getSQLContext(db, NULL, &m, NULL)) != NULL)
 		goto cleanup;
 	if ((msg = SQLtrans(m)) != MAL_SUCCEED)
 		goto cleanup;
@@ -920,7 +924,7 @@ cleanup:
 }
 
 char*
-monetdb_get_columns(monetdb_connection conn, const char* schema_name, const char *table_name, size_t *column_count,
+monetdb_get_columns(monetdb_database dbhdl, const char* schema_name, const char *table_name, size_t *column_count,
 					char ***column_names, int **column_types)
 {
 	mvc *m;
@@ -929,10 +933,10 @@ monetdb_get_columns(monetdb_connection conn, const char* schema_name, const char
 	char* msg = MAL_SUCCEED;
 	int columns;
 	node *n;
-	Client c = (Client) conn;
+	Client c = (Client) dbhdl;
 
 	MT_lock_set(&embedded_lock);
-	if ((msg = validate_connection(conn, "embedded.monetdb_get_columns")) != MAL_SUCCEED) {
+	if ((msg = validate_database_handle(dbhdl, "embedded.monetdb_get_columns")) != MAL_SUCCEED) {
 		MT_lock_unset(&embedded_lock);
 		return msg;
 	}
@@ -1078,7 +1082,7 @@ static void data_from_time(daytime d, monetdb_data_time *ptr);
 static void data_from_timestamp(timestamp d, monetdb_data_timestamp *ptr);
 
 char*
-monetdb_result_fetch(monetdb_connection conn, monetdb_result* mres, monetdb_column** res, size_t column_index)
+monetdb_result_fetch(monetdb_database dbhdl, monetdb_result* mres, monetdb_column** res, size_t column_index)
 {
 	BAT* b = NULL;
 	int bat_type;
@@ -1088,10 +1092,10 @@ monetdb_result_fetch(monetdb_connection conn, monetdb_result* mres, monetdb_colu
 	sql_subtype* sqltpe = NULL;
 	monetdb_column* column_result = NULL;
 	size_t j = 0;
-	Client c = (Client) conn;
+	Client c = (Client) dbhdl;
 
 	MT_lock_set(&embedded_lock);
-	if ((msg = validate_connection(conn, "embedded.monetdb_result_fetch")) != MAL_SUCCEED) {
+	if ((msg = validate_database_handle(dbhdl, "embedded.monetdb_result_fetch")) != MAL_SUCCEED) {
 		MT_lock_unset(&embedded_lock);
 		return msg;
 	}
