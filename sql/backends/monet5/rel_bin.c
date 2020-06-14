@@ -2221,13 +2221,13 @@ rel2bin_join(backend *be, sql_rel *rel, list *refs)
 							continue;
 						}
 					} else if (flag <= cmp_filter && e->f) { /* range */
-						int nrcr = 0, nrcl = 0;
+						int nrcr1 = 0, nrcr2 = 0, nrcl1 = 0, nrcl2 = 0;
 						if ((rel_find_exp(rel->l, e->l) && !rel_find_exp(rel->r, e->l) &&
-						   ((rel_find_exp(rel->r, e->r) && !rel_find_exp(rel->l, e->r)) || (nrcr += exp_is_atom(e->r))) &&
-						   ((rel_find_exp(rel->r, e->f) && !rel_find_exp(rel->l, e->f)) || (nrcr += exp_is_atom(e->f))) && nrcr <= 1) ||
+						   ((rel_find_exp(rel->r, e->r) && !rel_find_exp(rel->l, e->r)) || (nrcr1 = exp_is_atom(e->r))) &&
+						   ((rel_find_exp(rel->r, e->f) && !rel_find_exp(rel->l, e->f)) || (nrcr2 = exp_is_atom(e->f))) && (nrcr1+nrcr2) <= 1) ||
 						    (rel_find_exp(rel->r, e->l) && !rel_find_exp(rel->l, e->l) &&
-						   ((rel_find_exp(rel->l, e->r) && !rel_find_exp(rel->r, e->r)) || (nrcl += exp_is_atom(e->r))) &&
-						   ((rel_find_exp(rel->l, e->f) && !rel_find_exp(rel->r, e->f)) || (nrcl += exp_is_atom(e->f))) && nrcl <= 1)) {
+						   ((rel_find_exp(rel->l, e->r) && !rel_find_exp(rel->r, e->r)) || (nrcl1 = exp_is_atom(e->r))) &&
+						   ((rel_find_exp(rel->l, e->f) && !rel_find_exp(rel->r, e->f)) || (nrcl2 = exp_is_atom(e->f))) && (nrcl1+nrcl2) <= 1)) {
 							append(jexps, e);
 							continue;
 						}
