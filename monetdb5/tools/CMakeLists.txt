@@ -32,17 +32,18 @@ set_target_properties(monetdb5
   SOVERSION ${MONETDB5_VERSION_MAJOR})
 
 if (NOT WIN32)
-  if(XML2_FOUND)
+  if(LibXml2_FOUND)
     set(PKG_LIBXML2 "libxml-2.0")
   endif()
 
   if(OPENSSL_FOUND)
-    # In OpenSSL case, we link only to the crypto library, so it will be always one library to link to
+    # In OpenSSL case, we link only to the crypto library, so it will be
+    # always one library to link to
     get_filename_component(CRYPTO_LIBRARIES_PATH "${CRYPTO_LIBRARIES}" DIRECTORY)
     set(PKG_CRYPTO "-L${CRYPTO_LIBRARIES_PATH} -lcrypto")
   endif()
 
-  if(HAVE_LIBPCRE)
+  if(PCRE_FOUND)
     get_filename_component(PCRE_LIBRARIES_PATH "${PCRE_LIBRARIES}" DIRECTORY)
     set(PKG_PCRE "-L${PCRE_LIBRARIES_PATH} -lpcre")
   endif()

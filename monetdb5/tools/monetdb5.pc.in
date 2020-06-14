@@ -4,15 +4,10 @@
 #
 # Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
 
-prefix=@CMAKE_INSTALL_PREFIX@
-exec_prefix=${exec_prefix}
-libdir=${libdir}
-includedir=${includedir}
-
 Name: monetdb5
 Description: MonetDB5
 Version: @MONETDB_VERSION@
 Requires: monetdb-gdk monetdb-stream @PKG_LIBXML2@
 
-Libs: -L${libdir} -lmonetdb5 @PKG_CRYPTO@ @PKG_PCRE@
-Cflags: -I${includedir}/monetdb
+Libs: -L@CMAKE_INSTALL_FULL_LIBDIR@ -lmonetdb5 @PKG_CRYPTO@ @PKG_PCRE@
+Cflags: -I@CMAKE_INSTALL_FULL_INCLUDEDIR@/monetdb

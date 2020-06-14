@@ -79,7 +79,7 @@ if (NOT WIN32)
     set(PKG_SNAPPY "snappy")
   endif()
 
-  if(ICONV_FOUND AND NOT ICONV_IS_BUILT_IN)
+  if(ICONV_FOUND AND NOT Iconv_IS_BUILT_IN)
     get_filename_component(ICONV_LIBRARIES_PATH
       "${ICONV_LIBRARIES}"
       DIRECTORY)
