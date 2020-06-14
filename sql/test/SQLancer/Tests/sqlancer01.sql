@@ -92,6 +92,9 @@ union all select t0.c0 from t0 where ((sql_min("locate"(reverse('qﺛ}(C.0D?\r')
 
 select 1 from t0 where (3 in (1, 2)) is null; --simplified
 	-- empty
+
+SELECT 1 FROM t0 WHERE t0.c0 BETWEEN SYMMETRIC (1 IN (2, 1)) AND t0.c0;
+	-- empty
 ROLLBACK;
 
 START TRANSACTION; --Bug 6897
