@@ -3466,6 +3466,9 @@ rel2bin_groupby(backend *be, sql_rel *rel, list *refs)
 			return NULL;
 		}
 
+		if (!aggrstmt->nrcols && ext && ext->nrcols)
+			aggrstmt = stmt_const(be, ext, aggrstmt);
+
 		aggrstmt = stmt_rename(be, aggrexp, aggrstmt);
 		list_append(l, aggrstmt);
 	}
