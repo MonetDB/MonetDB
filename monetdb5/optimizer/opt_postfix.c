@@ -32,13 +32,12 @@ OPTpostfixImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	for( i = 0; i< slimit; i++){
 /* POSTFIX ACTION FOR THE JOIN CASE  */
 		p= getInstrPtr(mb, i);
-		if ( getModuleId(p) == algebraRef && getFunctionId(p) == joinRef && getVarEolife(mb, getArg(p, p->retc -1)) == i){
-			delArgument(p, p->retc -1);
-			typeChecker(cntxt->usermodule, mb, p, i, TRUE);
-			actions++;
-			continue;
-		}
-		if ( getModuleId(p) == algebraRef && getFunctionId(p) == leftjoinRef && getVarEolife(mb, getArg(p, p->retc -1)) == i){
+		if ( getModuleId(p) == algebraRef && (getFunctionId(p) == joinRef 
+											  || getFunctionId(p) == leftjoinRef
+											  || getFunctionId(p) == outerjoinRef
+											  || getFunctionId(p) == thetajoinRef
+											  || getFunctionId(p) == bandjoinRef
+											  || getFunctionId(p) == rangejoinRef) && getVarEolife(mb, getArg(p, p->retc -1)) == i){
 			delArgument(p, p->retc -1);
 			typeChecker(cntxt->usermodule, mb, p, i, TRUE);
 			actions++;
