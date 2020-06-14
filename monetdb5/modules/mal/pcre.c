@@ -359,7 +359,7 @@ mywstrcasestr(const char *restrict haystack, const uint32_t *restrict wneedle, b
 /* returns true if the pattern does not contain unescaped `_' (single
  * character match) and ends with unescaped `%' (any sequence
  * match) */
-static bool
+static inline bool
 re_simple(const char *pat, unsigned char esc)
 {
 	bool escaped = false;
@@ -382,7 +382,7 @@ re_simple(const char *pat, unsigned char esc)
 	return true;
 }
 
-static bool
+static inline bool
 re_is_pattern_properly_escaped(const char *pat, unsigned char esc)
 {
 	bool escaped = false;
@@ -1736,7 +1736,7 @@ PCREsql2pcre(str *ret, const str *pat, const str *esc)
 	return sql2pcre(ret, *pat, *esc);
 }
 
-static str
+static inline str
 choose_like_path(char **ppat, bool *use_re, bool *use_strcmp, bool *empty, const str *pat, const str *esc, const bit *caseignore)
 {
 	str res = MAL_SUCCEED;
@@ -2240,6 +2240,8 @@ pcrejoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr,
 	char *msg = MAL_SUCCEED;
 	struct RE *re = NULL;
 	char *pcrepat = NULL;
+	bool use_re = false, use_strcmp = false, empty = false;
+	uint32_t *wpat = NULL;
 #ifdef HAVE_LIBPCRE
 	pcre *pcrere = NULL;
 	pcre_extra *pcreex = NULL;
@@ -2253,7 +2255,6 @@ pcrejoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr,
 	int options =  REG_NEWLINE | REG_NOSUB | REG_EXTENDED;
 	int errcode = -1;
 #endif
-
 
 	if (caseignore)
 #ifdef HAVE_LIBPCRE
@@ -2306,79 +2307,85 @@ pcrejoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr,
 	for (BUN ri = 0; ri < rci.ncand; ri++) {
 		ro = canditer_next(&rci);
 		vr = VALUE(r, ro - r->hseqbase);
-		if (strNil(vr))
+		use_re = false;
+		use_strcmp = false;
+		empty = false;
+
+		if ((msg = choose_like_path(&pcrepat, &use_re, &use_strcmp, &empty, (const str*)&vr, (const str*)&esc, (const bit*)&caseignore)))
+			goto bailout;
+		if (empty) {
 			continue;
-		if (re_simple(vr, esc && *esc != '\200' ? (unsigned char) *esc : 0)) {
-			re = re_create(vr, caseignore, esc && *esc != '\200' ? (unsigned char) *esc : 0);
-			if (re == NULL) {
+		} else if (use_re) {
+			if (use_strcmp) {
+				if (caseignore && !(wpat = utf8stoucs(vr))) {
+					msg = createException(MAL, "pcre.join", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+					goto bailout;
+				}
+			} else if (!(re = re_create(vr, caseignore, (unsigned char) *esc))) {
 				msg = createException(MAL, "pcre.join", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 				goto bailout;
 			}
-		} else {
-			assert(pcrepat == NULL);
-			msg = sql2pcre(&pcrepat, vr, esc);
-			if (msg != MAL_SUCCEED)
-				goto bailout;
-			if (strNil(pcrepat)) {
-				GDKfree(pcrepat);
-				if (caseignore) {
-					pcrepat = GDKmalloc(strlen(vr) + 3);
-					if (pcrepat == NULL) {
-						msg = createException(MAL, "pcre.join", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-						goto bailout;
-					}
-					sprintf(pcrepat, "^%s$", vr);
-				} else {
-					/* a simple strcmp suffices */
-					pcrepat = NULL;
-				}
-			}
-			if (pcrepat) {
+		} else if (pcrepat) {
 #ifdef HAVE_LIBPCRE
-				pcrere = pcre_compile(pcrepat, pcreopt, &err_p, &errpos, NULL);
-				if (pcrere == NULL) {
-					msg = createException(MAL, "pcre.join", OPERATION_FAILED
-										  ": pcre compile of pattern (%s) "
-										  "failed at %d with '%s'",
-										  pcrepat, errpos, err_p);
-					goto bailout;
-				}
-				pcreex = pcre_study(pcrere, pcrestopt, &err_p);
-				if (err_p != NULL) {
-					msg = createException(MAL, "pcre.join", OPERATION_FAILED
-										  ": pcre study of pattern (%s) "
-										  "failed with '%s'", pcrepat, err_p);
-					goto bailout;
-				}
-#else
-				if ((errcode = regcomp(&regex, pcrepat, options)) != 0) {
-					msg = createException(MAL, "pcre.join", OPERATION_FAILED
-										  ": pcre compile of pattern (%s)",
-										  pcrepat);
-					goto bailout;
-				}
-				pcrere = 1;
-#endif
-				GDKfree(pcrepat);
-				pcrepat = NULL;
+			pcrere = pcre_compile(pcrepat, pcreopt, &err_p, &errpos, NULL);
+			if (pcrere == NULL) {
+				msg = createException(MAL, "pcre.join", OPERATION_FAILED
+									  ": pcre compile of pattern (%s) "
+									  "failed at %d with '%s'",
+									  pcrepat, errpos, err_p);
+				goto bailout;
 			}
+			pcreex = pcre_study(pcrere, pcrestopt, &err_p);
+			if (err_p != NULL) {
+				msg = createException(MAL, "pcre.join", OPERATION_FAILED
+									  ": pcre study of pattern (%s) "
+									  "failed with '%s'", pcrepat, err_p);
+				goto bailout;
+			}
+#else
+			if ((errcode = regcomp(&regex, pcrepat, options)) != 0) {
+				msg = createException(MAL, "pcre.join", OPERATION_FAILED
+									  ": pcre compile of pattern (%s)",
+									  pcrepat);
+				goto bailout;
+			}
+			pcrere = 1;
+#endif
+			GDKfree(pcrepat);
+			pcrepat = NULL;
 		}
 		nl = 0;
 		canditer_reset(&lci);
 		for (BUN li = 0; li < lci.ncand; li++) {
 			lo = canditer_next(&lci);
 			vl = VALUE(l, lo - l->hseqbase);
-			if (strNil(vl))
+			if (strNil(vl)) {
 				continue;
-			if (re) {
-				if (caseignore) {
-					if (!re_match_ignore(vl, re))
-						continue;
+			} else if (use_re) {
+				if (use_strcmp) {
+					if (caseignore) {
+						assert(wpat);
+						if (mywstrcasecmp(vl, wpat) != 0)
+							continue;
+					} else {
+						if (strcmp(vl, vr) != 0)
+							continue;
+					}
 				} else {
-					if (!re_match_no_ignore(vl, re))
-						continue;
+					assert(re);
+					if (caseignore) {
+						if (!re_match_ignore(vl, re))
+							continue;
+					} else {
+						if (!re_match_no_ignore(vl, re))
+							continue;
+					}
 				}
-			} else if (pcrere) {
+			} else if (!pcrere) {
+				if (strcmp(vl, vr) != 0)
+					continue;
+			} else {
+				assert(pcrere);
 #ifdef HAVE_LIBPCRE
 				if (pcre_exec(pcrere, pcreex, vl, (int) strlen(vl), 0, 0, NULL, 0) < 0)
 					continue;
@@ -2387,9 +2394,6 @@ pcrejoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr,
 				if (retval == REG_NOMATCH || retval == REG_ENOSYS)
 					continue;
 #endif
-			} else {
-				if (strcmp(vl, vr) != 0)
-					continue;
 			}
 			if (BUNlast(r1) == BATcapacity(r1)) {
 				newcap = BATgrows(r1);
@@ -2425,6 +2429,10 @@ pcrejoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr,
 		if (re) {
 			re_destroy(re);
 			re = NULL;
+		}
+		if (wpat) {
+			GDKfree(wpat);
+			wpat = NULL;
 		}
 		if (pcrere) {
 #ifdef HAVE_LIBPCRE
@@ -2475,6 +2483,8 @@ pcrejoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr,
 		re_destroy(re);
 	if (pcrepat)
 		GDKfree(pcrepat);
+	if (wpat)
+		GDKfree(wpat);
 #ifdef HAVE_LIBPCRE
 	if (pcreex)
 		pcre_free_study(pcreex);
