@@ -70,7 +70,7 @@ mapi_fetch_field(MapiHdl hdl, int fnr)
 {
 	if (hdl && fnr < (int)hdl->result->ncols && hdl->current_row > 0 && hdl->current_row <= hdl->result->nrows) {
 		monetdb_column *rcol = NULL;
-		if (monetdb_result_fetch(hdl->mid->mdbe, hdl->result,  &rcol, fnr) == NULL) {
+		if (monetdb_result_fetch(hdl->result,  &rcol, fnr) == NULL) {
 			size_t r = hdl->current_row - 1;
 			if (rcol->type != monetdb_str && !hdl->mapi_row[fnr]) {
 				hdl->mapi_row[fnr] = MAPIalloc(SIMPLE_TYPE_SIZE);
@@ -163,7 +163,7 @@ mapi_get_type(MapiHdl hdl, int fnr)
 {
 	if (hdl && fnr < (int)hdl->result->ncols) {
 		monetdb_column *rcol = NULL;
-		if (monetdb_result_fetch(hdl->mid->mdbe, hdl->result,  &rcol, fnr) == NULL) {
+		if (monetdb_result_fetch(hdl->result,  &rcol, fnr) == NULL) {
 			switch(rcol->type) {
 			case monetdb_bool:
 				return "boolean";

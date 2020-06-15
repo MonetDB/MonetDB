@@ -127,8 +127,9 @@ monetdbe_export char* monetdb_set_autocommit(monetdb_database dbhdl, int value);
 monetdbe_export int   monetdb_in_transaction(monetdb_database dbhdl);
 
 monetdbe_export char* monetdb_query(monetdb_database dbhdl, char* query, monetdb_result** result, monetdb_cnt* affected_rows);
-monetdbe_export char* monetdb_result_fetch(monetdb_database dbhdl, monetdb_result *mres, monetdb_column** res, size_t column_index);
+monetdbe_export char* monetdb_result_fetch(monetdb_result *mres, monetdb_column** res, size_t column_index);
 monetdbe_export char* monetdb_cleanup_result(monetdb_database dbhdl, monetdb_result* result);
+
 monetdbe_export char* monetdb_prepare(monetdb_database dbhdl, char *query, monetdb_statement **stmt);
 monetdbe_export char* monetdb_bind(monetdb_statement *stmt, void *data, size_t parameter_nr);
 monetdbe_export char* monetdb_execute(monetdb_statement *stmt, monetdb_result **result, monetdb_cnt* affected_rows);
