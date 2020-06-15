@@ -87,6 +87,7 @@ typedef struct {
 	int type;
 	res_table *monetdb_resultset;
 	monetdb_column **converted_columns;
+	monetdb_database dbhdl;
 } monetdb_result_internal;
 
 typedef struct {
@@ -94,7 +95,7 @@ typedef struct {
 	ValRecord *data;
 	ValPtr *args;	/* only used during calls */
 	int retc;
-	Client c;
+	monetdb_database dbhdl;
 	cq *q;
 } monetdb_stmt_internal;
 
@@ -183,6 +184,7 @@ monetdb_cleanup_result_internal(monetdb_database dbhdl, monetdb_result* result)
 
 	mvc* m = NULL;
 
+	assert(!res->dbhdl || res->dbhdl == dbhdl);
 	if ((msg = validate_database_handle(dbhdl, "embedded.monetdb_cleanup_result_internal")) != MAL_SUCCEED)
 		return msg;
 	if ((msg = getSQLContext(c, NULL, &m, NULL)) != MAL_SUCCEED)
@@ -321,6 +323,7 @@ monetdb_query_internal(monetdb_database dbhdl, char* query, monetdb_result** res
 			}
 			res_internal->monetdb_resultset = m->results;
 			res_internal->converted_columns = GDKzalloc(sizeof(monetdb_column*) * res_internal->res.ncols);
+			res_internal->dbhdl = dbhdl;
 			if (!res_internal->converted_columns) {
 				msg = createException(MAL, "embedded.monetdb_query_internal", MAL_MALLOC_FAIL);
 				goto cleanup;
@@ -650,7 +653,7 @@ monetdb_prepare(monetdb_database dbhdl, char* query, monetdb_statement **stmt)
 		if (q && stmt_internal) {
 			Symbol s = (Symbol)q->code;
 			InstrPtr p = s->def->stmt[0];
-			stmt_internal->c = db;
+			stmt_internal->dbhdl = db;
 			stmt_internal->q = q;
 			stmt_internal->retc = p->retc;
 			stmt_internal->res.nparam = q->paramlen;
@@ -696,7 +699,9 @@ monetdb_execute(monetdb_statement *stmt, monetdb_result **result, monetdb_cnt *a
 {
 	monetdb_result_internal *res_internal = NULL;
 	monetdb_stmt_internal *stmt_internal = (monetdb_stmt_internal*)stmt;
-	mvc *m = ((backend *) stmt_internal->c->sqlcontext)->mvc;
+	monetdb_database dbhdl = stmt_internal->dbhdl;
+	Client c = (Client)dbhdl;
+	mvc *m = ((backend *) c->sqlcontext)->mvc;
 	cq *q = stmt_internal->q;
 	str msg = MAL_SUCCEED;
 
@@ -710,7 +715,7 @@ monetdb_execute(monetdb_statement *stmt, monetdb_result **result, monetdb_cnt *a
 	}
 	MalStkPtr glb = (MalStkPtr) (q->stk);
 	Symbol s = (Symbol)q->code;
-	msg = callMAL(stmt_internal->c, s->def, &glb, stmt_internal->args, 0);
+	msg = callMAL(c, s->def, &glb, stmt_internal->args, 0);
 
 	if (!m->results && m->rowcnt >= 0 && affected_rows)
 		*affected_rows = m->rowcnt;
@@ -738,6 +743,7 @@ monetdb_execute(monetdb_statement *stmt, monetdb_result **result, monetdb_cnt *a
 			}
 			res_internal->monetdb_resultset = m->results;
 			res_internal->converted_columns = GDKzalloc(sizeof(monetdb_column*) * res_internal->res.ncols);
+			res_internal->dbhdl = dbhdl;
 			if (!res_internal->converted_columns) {
 				msg = createException(MAL, "embedded.monetdb_query_internal", MAL_MALLOC_FAIL);
 				goto cleanup;
@@ -746,7 +752,7 @@ monetdb_execute(monetdb_statement *stmt, monetdb_result **result, monetdb_cnt *a
 		}
 	}
 cleanup:
-	return commit_action(m, msg, (monetdb_database)stmt_internal->c, result, res_internal);
+	return commit_action(m, msg, dbhdl, result, res_internal);
 }
 
 char*
@@ -754,15 +760,18 @@ monetdb_cleanup_statement(monetdb_database dbhdl, monetdb_statement *stmt)
 {
 	(void)dbhdl;
 	monetdb_stmt_internal *stmt_internal = (monetdb_stmt_internal*)stmt;
-	mvc *m = ((backend *) stmt_internal->c->sqlcontext)->mvc;
+	Client c = (Client)dbhdl;
+	mvc *m = ((backend *) c->sqlcontext)->mvc;
 	cq *q = stmt_internal->q;
 
+	assert(!stmt_internal->dbhdl || dbhdl == stmt_internal->dbhdl);
 	GDKfree(stmt_internal->data);
 	GDKfree(stmt_internal->args);
 	GDKfree(stmt_internal->res.type);
 	GDKfree(stmt_internal);
 
-	qc_delete(m->qc, q);
+	if (q)
+		qc_delete(m->qc, q);
 	return MAL_SUCCEED;
 }
 
@@ -1003,19 +1012,6 @@ cleanup:
 	return msg;
 }
 
-char*
-monetdb_shutdown(void)
-{
-	char* msg = MAL_SUCCEED;
-	MT_lock_set(&embedded_lock);
-	if (monetdb_embedded_initialized)
-		monetdb_shutdown_internal();
-	else
-		msg = createException(MAL, "embedded.monetdb_shutdown", "MonetDBe has not yet started");
-	MT_lock_unset(&embedded_lock);
-	return msg;
-}
-
 #define GENERATE_BASE_HEADERS(type, tpename) \
 	static int tpename##_is_null(type value)
 
@@ -1082,7 +1078,7 @@ static void data_from_time(daytime d, monetdb_data_time *ptr);
 static void data_from_timestamp(timestamp d, monetdb_data_timestamp *ptr);
 
 char*
-monetdb_result_fetch(monetdb_database dbhdl, monetdb_result* mres, monetdb_column** res, size_t column_index)
+monetdb_result_fetch(monetdb_result* mres, monetdb_column** res, size_t column_index)
 {
 	BAT* b = NULL;
 	int bat_type;
@@ -1092,6 +1088,7 @@ monetdb_result_fetch(monetdb_database dbhdl, monetdb_result* mres, monetdb_colum
 	sql_subtype* sqltpe = NULL;
 	monetdb_column* column_result = NULL;
 	size_t j = 0;
+	monetdb_database dbhdl = result->dbhdl;
 	Client c = (Client) dbhdl;
 
 	MT_lock_set(&embedded_lock);

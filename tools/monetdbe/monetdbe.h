@@ -127,7 +127,7 @@ monetdbe_export char* monetdb_set_autocommit(monetdb_database dbhdl, int value);
 monetdbe_export int   monetdb_in_transaction(monetdb_database dbhdl);
 
 monetdbe_export char* monetdb_query(monetdb_database dbhdl, char* query, monetdb_result** result, monetdb_cnt* affected_rows);
-monetdbe_export char* monetdb_result_fetch(monetdb_database dbhdl, monetdb_result *mres, monetdb_column** res, size_t column_index);
+monetdbe_export char* monetdb_result_fetch(monetdb_result *mres, monetdb_column** res, size_t column_index);
 monetdbe_export char* monetdb_cleanup_result(monetdb_database dbhdl, monetdb_result* result);
 monetdbe_export char* monetdb_prepare(monetdb_database dbhdl, char *query, monetdb_statement **stmt);
 monetdbe_export char* monetdb_bind(monetdb_statement *stmt, void *data, size_t parameter_nr);
@@ -136,11 +136,8 @@ monetdbe_export char* monetdb_cleanup_statement(monetdb_database dbhdl, monetdb_
 
 monetdbe_export char* monetdb_append(monetdb_database dbhdl, const char* schema, const char* table, monetdb_column **input, size_t column_count);
 
-
 monetdbe_export char* monetdb_get_table(monetdb_database dbhdl, monetdb_table** table, const char* schema_name, const char* table_name);
 monetdbe_export char* monetdb_get_columns(monetdb_database dbhdl, const char* schema_name, const char *table_name, size_t *column_count, char ***column_names, int **column_types);
-
-monetdbe_export char* monetdb_shutdown(void);
 
 #ifdef __cplusplus
 }
