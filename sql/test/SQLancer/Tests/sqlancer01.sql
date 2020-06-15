@@ -171,6 +171,48 @@ CREATE TABLE t0 (c0 boolean);
 ALTER TABLE t0 ALTER c0 SET DEFAULT (0.1) IS NULL;
 ROLLBACK;
 
+START TRANSACTION; --Bug 6900
+CREATE TABLE "sys"."t0" (
+	"c0" DOUBLE
+);
+COPY 29 RECORDS INTO "sys"."t0" FROM stdin USING DELIMITERS E'\t',E'\n','"';
+0.17813417838107104
+0.9549819803006688
+0.9780564272521242
+0.10974679657112596
+0.14469007311670268
+0.40657910792795704
+767899608
+1305867053
+50
+0.4710730955889548
+0.052675133884161784
+0.196080224553812
+0.7984139684271494
+-160886149
+0.55847644848666
+0.2139700012938821
+0.6006984400193495
+0.14469007311670268
+0.8294571584056999
+0.857353880253944
+0.13593948125817867
+0.39845038529139776
+1589184525
+0.549119773445742
+1039732501
+0.17914678733737166
+0.5721433567835664
+1.58919798e+09
+0.10009920106256454
+
+select max(agg0) from (select max(all cast(0.18525435 as string)) as agg0 from t0 where cast(scale_down(- (greatest(greatest(631218936, -562663513), cast(-265902058 as int))), cast(0.41370374 as int)) as boolean) 
+union all select all max(all cast(0.18525435 as string)) as agg0 from t0 where not (cast(scale_down(- (greatest(greatest(631218936, -562663513), cast(-265902058 as int))), cast(0.41370374 as int)) as boolean))
+union all select all max(all cast(0.18525435 as string)) as agg0 from t0 where (cast(scale_down(- (greatest(greatest(631218936, -562663513), cast(-265902058 as int))), cast(0.41370374 as int)) as boolean)) is null) as asdf;
+
+select scale_down(-631218936, cast(0.41370374 as int)); --simplified
+ROLLBACK;
+
 DROP TABLE tbl_ProductSales;
 DROP TABLE another_T;
 DROP TABLE integers;
