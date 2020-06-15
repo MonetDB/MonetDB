@@ -1109,11 +1109,14 @@ exp_bin(backend *be, sql_exp *e, stmt *left, stmt *right, stmt *grp, stmt *ext, 
 				}
 			} else {
 				/* value compare or select */
-				if (!reduce || (l->nrcols == 0 && r->nrcols == 0 && (e->flag == mark_in || e->flag == mark_notin))) {
-					sql_subfunc *f = sql_bind_func(sql->sa, sql->session->schema, "=", tail_type(l), tail_type(l), F_FUNC);
+				if ((!reduce || (l->nrcols == 0 && r->nrcols == 0)) && (e->flag == mark_in || e->flag == mark_notin)) {
+					int in_flag = e->flag==mark_in?1:0;
+					if (e->anti)
+						in_flag = !in_flag;
+					sql_subfunc *f = sql_bind_func(sql->sa, sql->session->schema, in_flag?"=":"<>", tail_type(l), tail_type(l), F_FUNC);
 					assert(f);
 					s = stmt_binop(be, l, r, f);
-				} else if (l->nrcols == 0 && r->nrcols == 0) {
+				} else if (!reduce || (l->nrcols == 0 && r->nrcols == 0)) {
 					sql_subfunc *f = sql_bind_func(sql->sa, sql->session->schema,
 							compare_func((comp_type)e->flag, is_anti(e)),
 							tail_type(l), tail_type(l), F_FUNC);
