@@ -14,3 +14,4 @@ aggregate01
 shop
 jsonvalidity.Bug-3753
 jsonkeyarray.Bug-6858
+jsontext.Bug-6859
