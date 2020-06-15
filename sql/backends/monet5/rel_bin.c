@@ -2231,7 +2231,7 @@ rel2bin_join(backend *be, sql_rel *rel, list *refs)
 							append(jexps, e);
 							continue;
 						}
-					} else if (e->flag == cmp_filter) {
+					} else if (e->flag == cmp_filter && !e->anti) {
 						int nrcl = 0, nrcr = 0;
 						bool fll = true, flr = true, frl = true, frr = true;
 						list *l = e->l, *r = e->r;
