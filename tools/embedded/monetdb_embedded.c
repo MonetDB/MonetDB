@@ -1012,19 +1012,6 @@ cleanup:
 	return msg;
 }
 
-char*
-monetdb_shutdown(void)
-{
-	char* msg = MAL_SUCCEED;
-	MT_lock_set(&embedded_lock);
-	if (monetdb_embedded_initialized)
-		monetdb_shutdown_internal();
-	else
-		msg = createException(MAL, "embedded.monetdb_shutdown", "MonetDBe has not yet started");
-	MT_lock_unset(&embedded_lock);
-	return msg;
-}
-
 #define GENERATE_BASE_HEADERS(type, tpename) \
 	static int tpename##_is_null(type value)
 

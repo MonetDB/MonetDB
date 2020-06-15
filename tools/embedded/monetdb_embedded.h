@@ -141,8 +141,6 @@ embedded_export char* monetdb_append(monetdb_database dbhdl, const char* schema,
 embedded_export char* monetdb_get_table(monetdb_database dbhdl, monetdb_table** table, const char* schema_name, const char* table_name);
 embedded_export char* monetdb_get_columns(monetdb_database dbhdl, const char* schema_name, const char *table_name, size_t *column_count, char ***column_names, int **column_types);
 
-embedded_export char* monetdb_shutdown(void);
-
 #ifdef __cplusplus
 }
 #endif
