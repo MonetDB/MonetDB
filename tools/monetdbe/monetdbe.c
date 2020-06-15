@@ -555,14 +555,15 @@ monetdbe_close(monetdbe_database dbhdl)
 
 /* needs to be before the undef of the bool type */
 extern int dump_database(Mapi mid, stream *toConsole, bool describe, bool useInserts);
+extern int dump_table(Mapi mid, const char *schema, const char *tname, stream *toConsole, bool describe, bool foreign, bool useInserts, bool databaseDump);
 
 char* 
-monetdbe_backup(monetdbe_database dbhdl, char *backupfile)
+monetdbe_dump_database(monetdbe_database dbhdl, const char *filename)
 {
 	char* msg = MAL_SUCCEED;
 
 	MT_lock_set(&embedded_lock);
-	if ((msg = validate_database_handle(dbhdl, "embedded.monetdbe_backup")) != MAL_SUCCEED) {
+	if ((msg = validate_database_handle(dbhdl, "embedded.monetdbe_dump_database")) != MAL_SUCCEED) {
 		MT_lock_unset(&embedded_lock);
 		return msg; //The dbhdl is invalid, there is no transaction going
 	}
@@ -570,7 +571,7 @@ monetdbe_backup(monetdbe_database dbhdl, char *backupfile)
 
 	mid.mdbe = dbhdl;
 	/* open file stream */
-	stream *fd = open_wastream(backupfile);
+	stream *fd = open_wastream(filename);
 	if (fd) {
 		if (dump_database(&mid, fd, 0, 0)) {
 			if (mid.msg)
@@ -578,12 +579,50 @@ monetdbe_backup(monetdbe_database dbhdl, char *backupfile)
 		}
 		close_stream(fd);
 	} else {
-		msg = createException(MAL, "embedded.monetdbe_backup", "Unable too open backup file %s", backupfile);
+		msg = createException(MAL, "embedded.monetdbe_dump_database", "Unable too open file %s", filename);
 	}
 
 	MT_lock_unset(&embedded_lock);
 	return msg;
 }
+
+char* 
+monetdbe_dump_table(monetdbe_database dbhdl, const char *sname, const char *tname, const char *filename)
+{
+	char* msg = MAL_SUCCEED;
+
+	MT_lock_set(&embedded_lock);
+	if ((msg = validate_database_handle(dbhdl, "embedded.monetdbe_dump_table")) != MAL_SUCCEED) {
+		MT_lock_unset(&embedded_lock);
+		return msg; //The dbhdl is invalid, there is no transaction going
+	}
+	struct MapiStruct mid;
+
+	mid.mdbe = dbhdl;
+	/* open file stream */
+	stream *fd = open_wastream(filename);
+	if (fd) {
+		if (dump_table(&mid, sname, tname, fd, 0, 0, 0, 0)) {
+			if (mid.msg)
+				msg = mid.msg;
+		}
+		close_stream(fd);
+	} else {
+		msg = createException(MAL, "embedded.monetdbe_dump_table", "Unable too open file %s", filename);
+	}
+
+	MT_lock_unset(&embedded_lock);
+	return msg;
+}
+
+char*
+monetdbe_memorylimit(monetdbe_database dbhdl, monetdbe_cnt bytes)
+{
+	(void)dbhdl;
+	(void)bytes;
+	return MAL_SUCCEED;
+}
+
 char*
 monetdbe_get_autocommit(monetdbe_database dbhdl, int* result)
 {

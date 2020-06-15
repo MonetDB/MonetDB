@@ -25,7 +25,7 @@ main(void)
 	if ((err = monetdbe_query(mdbe, "INSERT INTO test VALUES (TRUE, 42, 42, 42, 42, 42, 42.42, 42.42, 'Hello'), (NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 'World')", NULL, NULL)) != NULL)
 		error(err)
 
-	msg = monetdbe_backup(mdbe, "/tmp/backup");
+	msg = monetdbe_dump_database(mdbe, "/tmp/backup");
 
 	if ((msg = monetdbe_close(mdbe)) != NULL)
 		error(msg);
