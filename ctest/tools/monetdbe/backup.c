@@ -18,10 +18,10 @@ main(void)
 	char* err = NULL;
 	Mapi mid = (Mapi)malloc(sizeof(struct MapiStruct));
 
-	if ((mid->msg = monetdb_open(&mid->mdbe, NULL)) != NULL)
+	if ((mid->msg = monetdbe_open(&mid->mdbe, NULL)) != NULL)
 		error(mid->msg);
 
-	if ((err = monetdb_query(mid->mdbe, "CREATE TABLE test (b bool, t tinyint, s smallint, x integer, l bigint, "
+	if ((err = monetdbe_query(mid->mdbe, "CREATE TABLE test (b bool, t tinyint, s smallint, x integer, l bigint, "
 #ifdef HAVE_HGE
 		"h hugeint, "
 #else
@@ -29,7 +29,7 @@ main(void)
 #endif
 		"f float, d double, y string)", NULL, NULL)) != NULL)
 		error(err)
-	if ((err = monetdb_query(mid->mdbe, "INSERT INTO test VALUES (TRUE, 42, 42, 42, 42, 42, 42.42, 42.42, 'Hello'), (NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 'World')", NULL, NULL)) != NULL)
+	if ((err = monetdbe_query(mid->mdbe, "INSERT INTO test VALUES (TRUE, 42, 42, 42, 42, 42, 42.42, 42.42, 'Hello'), (NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 'World')", NULL, NULL)) != NULL)
 		error(err)
 
 	/* open file stream */
@@ -42,6 +42,6 @@ main(void)
 	}
 	close_stream(fd);
 
-	if ((mid->msg = monetdb_close(mid->mdbe)) != NULL)
+	if ((mid->msg = monetdbe_close(mid->mdbe)) != NULL)
 		error(mid->msg);
 }
