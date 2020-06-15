@@ -38,6 +38,8 @@ OPTpostfixImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 											  || getFunctionId(p) == thetajoinRef
 											  || getFunctionId(p) == bandjoinRef
 											  || getFunctionId(p) == rangejoinRef
+											  || getFunctionId(p) == likejoinRef
+											  || getFunctionId(p) == ilikejoinRef
 											  || getFunctionId(p) == crossRef) && getVarEolife(mb, getArg(p, p->retc -1)) == i){
 			delArgument(p, p->retc -1);
 			typeChecker(cntxt->usermodule, mb, p, i, TRUE);
