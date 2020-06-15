@@ -650,21 +650,12 @@ URLgetUser(str *retval, url *val)
 	if (val == NULL || *val == NULL)
 		throw(ILLARG, "url.getUser", "url missing");
 	if ((s = skip_scheme(*val)) == NULL ||
-		(p = skip_authority(s, NULL, NULL, NULL, NULL)) == NULL ||
-		(s = skip_path(p, NULL, NULL)) == NULL)
+		(p = skip_authority(s, &u, NULL, NULL, NULL)) == NULL)
 		throw(ILLARG, "url.getUser", "bad url");
-	if (p == s || *p != '/' || p[1] != '~') {
+	if (u == s || !u) {
 		*retval = GDKstrdup(str_nil);
 	} else {
-		size_t l;
-
-		u = p + 2;
-		for (p = u; p < s && *p != '/'; p++)
-			;
-		l = p - u;
-		if ((*retval = GDKmalloc(l + 1)) != NULL) {
-			strcpy_len(*retval, u, l + 1);
-		}
+		*retval = GDKstrdup(u);
 	}
 	if (*retval == NULL)
 		throw(MAL, "url.getUser", SQLSTATE(HY013) MAL_MALLOC_FAIL);

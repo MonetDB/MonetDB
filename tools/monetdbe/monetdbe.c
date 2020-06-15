@@ -25,7 +25,6 @@
 #include "rel_rel.h"
 #include "rel_updates.h"
 #include "monet_options.h"
-#include "msabaoth.h"
 #include "mapi.h"
 
 #define UNUSED(x) (void)(x)
@@ -414,7 +413,7 @@ monetdbe_shutdown_internal(void) // Call this function always inside the embedde
 static char*
 monetdbe_startup(char* dbdir, monetdbe_options *opts)
 {
-	char* msg = MAL_SUCCEED, *err;
+	char* msg = MAL_SUCCEED;//, *err;
 	monetdbe_result* res = NULL;
 	void* c;
 	opt *set = NULL;
@@ -476,19 +475,6 @@ monetdbe_startup(char* dbdir, monetdbe_options *opts)
 		if (GDKcreatedir(dbdir) != GDK_SUCCEED) {
 			mo_free_options(set, setlen);
 			msg = createException(MAL, "monetdbe.monetdbe_startup", "Cannot create directory %s", dbdir);
-			goto cleanup;
-		}
-		msab_dbpathinit(dbdir);
-		if ((err = msab_wildRetreat()) != NULL) {
-			mo_free_options(set, setlen);
-			msg = createException(MAL, "monetdbe.monetdbe_startup", "%s", err);
-			free(err);
-			goto cleanup;
-		}
-		if ((err = msab_registerStarting()) != NULL) {
-			mo_free_options(set, setlen);
-			msg = createException(MAL, "monetdbe.monetdbe_startup", "%s", err);
-			free(err);
 			goto cleanup;
 		}
 	}
