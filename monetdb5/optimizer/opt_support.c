@@ -544,7 +544,6 @@ isMatJoinOp(InstrPtr p)
 	return (isSubJoin(p) || (getModuleId(p) == algebraRef &&
 				(getFunctionId(p) == crossRef ||
 				 getFunctionId(p) == joinRef ||
-				 getFunctionId(p) == antijoinRef || /* is not mat save */
 				 getFunctionId(p) == thetajoinRef ||
 				 getFunctionId(p) == bandjoinRef ||
 				 getFunctionId(p) == rangejoinRef)

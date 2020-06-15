@@ -11,7 +11,7 @@
 #include <monetdb_embedded.h>
 
 typedef struct MapiStruct {
-	monetdb_connection conn;
+	monetdb_database mdbe;
 	char *msg;
 } *Mapi;
 
@@ -22,7 +22,6 @@ typedef struct MapiStatement {
 	char **mapi_row;	/* keep buffers for string return values */
 	monetdb_cnt current_row;
 	monetdb_cnt affected_rows;
-	int prepare_id;
 	char *msg;
 } *MapiHdl;
 

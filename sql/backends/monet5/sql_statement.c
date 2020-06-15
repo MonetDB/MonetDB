@@ -1924,13 +1924,13 @@ stmt_join_cand(backend *be, stmt *op1, stmt *op2, stmt *lcand, stmt *rcand, int 
 	MalBlkPtr mb = be->mb;
 	InstrPtr q = NULL;
 	int left = (cmptype == cmp_left);
-	const char *sjt = "join";
+	const char *sjt = joinRef;
 
 	(void)anti;
 
 	if (left) {
 		cmptype = cmp_equal;
-		sjt = "leftjoin";
+		sjt = leftjoinRef;
 	}
 	if (op1->nr < 0 || op2->nr < 0)
 		return NULL;
@@ -2214,7 +2214,6 @@ stmt_genjoin(backend *be, stmt *l, stmt *r, sql_subfunc *op, int anti, int swapp
 	const char *mod, *fimp;
 	node *n;
 
-	(void)anti;
 	if (backend_create_subfunc(be, op, NULL) < 0)
 		return NULL;
 	mod = sql_func_mod(op->func);
@@ -2239,6 +2238,7 @@ stmt_genjoin(backend *be, stmt *l, stmt *r, sql_subfunc *op, int anti, int swapp
 	q = pushNil(mb, q, TYPE_bat); /* candidate lists */
 	q = pushBit(mb, q, TRUE);     /* nil_matches */
 	q = pushNil(mb, q, TYPE_lng); /* estimate */
+	q = pushBit(mb, q, anti?TRUE:FALSE); /* 'not' matching */
 
 	if (swapped) {
 		InstrPtr r = newInstruction(mb,  NULL, NULL);

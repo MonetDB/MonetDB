@@ -9,17 +9,8 @@
 if(GEOS_FOUND)
   add_library(geomodule MODULE)
 
-	#set(include_mal_files
-	#  geom
-	#	geom_funcs)
-
   set(include_sql_files
     40_geom)
-
-	#create_include_object(
-	#  MAL_LANGUAGE
-	#  name_module "geomodule"
-	#  modules_list ${include_mal_files})
 
   create_include_object(
     SQL_LANGUAGE
@@ -35,7 +26,6 @@ if(GEOS_FOUND)
     geom.c
     geomBulk.c
     geom_upgrade.c
-		#  ${MONETDB_CURRENT_MAL_SOURCES}
     ${MONETDB_CURRENT_SQL_SOURCES}
     PUBLIC
     ${geomodule_public_headers})

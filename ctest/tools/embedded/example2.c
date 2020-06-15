@@ -17,32 +17,30 @@ int
 main(void)
 {
 	char* err = NULL;
-	monetdb_connection conn = NULL;
+	monetdb_database mdbe = NULL;
 	monetdb_result* result = NULL;
 
-	// first argument is a string for the db directory or NULL for in-memory mode
-	if ((err = monetdb_startup(NULL, 0)) != NULL)
+	// second argument is a string for the db directory or NULL for in-memory mode
+	if ((err = monetdb_open(&mdbe, NULL)) != NULL)
 		error(err)
-	if ((err = monetdb_connect(&conn)) != NULL)
-		error(err)
-	if ((err = monetdb_query(conn, "CREATE TABLE test (b bool, t tinyint, s smallint, x integer, l bigint, "
-#if HAVE_HGE
+	if ((err = monetdb_query(mdbe, "CREATE TABLE test (b bool, t tinyint, s smallint, x integer, l bigint, "
+#ifdef HAVE_HGE
 		"h hugeint, "
 #else
 		"h bigint, "
 #endif
-		"f float, d double, y string)", NULL, NULL, NULL)) != NULL)
+		"f float, d double, y string)", NULL, NULL)) != NULL)
 		error(err)
-	if ((err = monetdb_query(conn, "INSERT INTO test VALUES (TRUE, 42, 42, 42, 42, 42, 42.42, 42.42, 'Hello'), (NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 'World')", NULL, NULL, NULL)) != NULL)
+	if ((err = monetdb_query(mdbe, "INSERT INTO test VALUES (TRUE, 42, 42, 42, 42, 42, 42.42, 42.42, 'Hello'), (NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 'World')", NULL, NULL)) != NULL)
 		error(err)
-	if ((err = monetdb_query(conn, "SELECT b, t, s, x, l, h, f, d, y FROM test; ", &result, NULL, NULL)) != NULL)
+	if ((err = monetdb_query(mdbe, "SELECT b, t, s, x, l, h, f, d, y FROM test; ", &result, NULL)) != NULL)
 		error(err)
 
 	fprintf(stdout, "Query result with %zu cols and %"PRId64" rows\n", result->ncols, result->nrows);
 	for (int64_t r = 0; r < result->nrows; r++) {
 		for (size_t c = 0; c < result->ncols; c++) {
 			monetdb_column* rcol;
-			if ((err = monetdb_result_fetch(conn, result, &rcol, c)) != NULL)
+			if ((err = monetdb_result_fetch(result, &rcol, c)) != NULL)
 				error(err)
 			switch (rcol->type) {
 				case monetdb_bool: {
@@ -90,7 +88,7 @@ main(void)
 					}
 					break;
 				}
-#if HAVE_HGE
+#ifdef HAVE_HGE
 				case monetdb_int128_t: {
 					monetdb_column_int128_t * col = (monetdb_column_int128_t *) rcol;
 					if (col->data[r] == col->null_value) {
@@ -139,27 +137,39 @@ main(void)
 		}
 		printf("\n");
 	}
-	if ((err = monetdb_cleanup_result(conn, result)) != NULL)
+	if ((err = monetdb_cleanup_result(mdbe, result)) != NULL)
 		error(err)
 
 	/* test empty results */
-	if ((err = monetdb_query(conn, "SELECT b, t, s, x, l, h, f, d, y FROM test where t > 127; ", &result, NULL, NULL)) != NULL)
+	if ((err = monetdb_query(mdbe, "SELECT b, t, s, x, l, h, f, d, y FROM test where t > 127; ", &result, NULL)) != NULL)
 		error(err)
 	fprintf(stdout, "Query result with %zu cols and %"PRId64" rows\n", result->ncols, result->nrows);
 	for (int64_t r = 0; r < result->nrows; r++) {
 		/* fetching the meta data should work */
 		for (size_t c = 0; c < result->ncols; c++) {
 			monetdb_column* rcol;
-			if ((err = monetdb_result_fetch(conn, result, &rcol, c)) != NULL)
+			if ((err = monetdb_result_fetch(result, &rcol, c)) != NULL)
 				error(err)
 		}
 	}
-	if ((err = monetdb_cleanup_result(conn, result)) != NULL)
+	if ((err = monetdb_cleanup_result(mdbe, result)) != NULL)
 		error(err)
 
-	if ((err = monetdb_disconnect(conn)) != NULL)
+	monetdb_statement *stmt = NULL;
+	if ((err = monetdb_prepare(mdbe, "SELECT b, t FROM test where t = ?; ", &stmt)) != NULL)
 		error(err)
-	if ((err = monetdb_shutdown()) != NULL)
+	char s = 42;
+	if ((err = monetdb_bind(stmt, &s, 0)) != NULL)
+		error(err)
+	if ((err = monetdb_execute(stmt, &result, NULL)) != NULL)
+		error(err)
+	fprintf(stdout, "Query result with %zu cols and %"PRId64" rows\n", result->ncols, result->nrows);
+	if ((err = monetdb_cleanup_result(mdbe, result)) != NULL)
+		error(err)
+	if ((err = monetdb_cleanup_statement(mdbe, stmt)) != NULL)
+		error(err)
+
+	if ((err = monetdb_close(mdbe)) != NULL)
 		error(err)
 	return 0;
 }

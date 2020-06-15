@@ -50,6 +50,9 @@ endif()
 
 if(WITH_LZ4)
   find_package(LZ4)
+	if (LZ4_FOUND AND LZ4_VERSION VERSION_LESS "1.8.0")
+					unset(LZ4_FOUND)
+	endif()
 endif()
 
 if(WITH_PROJ)

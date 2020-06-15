@@ -1074,7 +1074,6 @@ SQLworker(void *arg)
 	while (task->top[task->cur] >= 0) {
 		MT_sema_down(&task->sema);
 
-
 		/* stage one, break the lines spread the worker over the workers */
 		switch (task->state) {
 		case BREAKLINE:
@@ -1093,6 +1092,8 @@ SQLworker(void *arg)
 			task->wtime = GDKusec() - t0;
 			break;
 		case UPDATEBAT:
+			if (!task->besteffort && task->errorcnt)
+				break;
 			/* stage two, updating the BATs */
 			for (i = 0; i < task->as->nr_attrs; i++)
 				if (task->cols[i]) {
@@ -1105,6 +1106,8 @@ SQLworker(void *arg)
 				}
 			break;
 		case SYNCBAT:
+			if (!task->besteffort && task->errorcnt)
+				break;
 			for (i = 0; i < task->as->nr_attrs; i++)
 				if (task->cols[i]) {
 					BAT *b = task->as->format[task->cols[i] - 1].c;

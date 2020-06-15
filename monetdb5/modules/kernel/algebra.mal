@@ -182,6 +182,10 @@ comment "Returns 2 columns with all BUNs, consisting of the head-oids
 	  from 'left' and 'right' for which there are BUNs in 'left'
 	  and 'right' with equal tails";
 
+command crossproduct(left:bat[:any_1], right:bat[:any_2], max_one:bit) :bat[:oid]
+address ALGcrossproduct1
+comment "Compute the crossproduct of both input bats; but only produce left output";
+
 command join(l:bat[:any_1],r:bat[:any_1],sl:bat[:oid],sr:bat[:oid],nil_matches:bit,estimate:lng) (:bat[:oid],:bat[:oid])
 address ALGjoin
 comment "Join";
@@ -202,6 +206,10 @@ command outerjoin(l:bat[:any_1],r:bat[:any_1],sl:bat[:oid],sr:bat[:oid],nil_matc
 address ALGouterjoin
 comment "Left outer join with candidate lists";
 
+command outerjoin(l:bat[:any_1],r:bat[:any_1],sl:bat[:oid],sr:bat[:oid],nil_matches:bit,estimate:lng) :bat[:oid]
+address ALGouterjoin1
+comment "Left outer join with candidate lists; only produce left output";
+
 command semijoin(l:bat[:any_1],r:bat[:any_1],sl:bat[:oid],sr:bat[:oid],nil_matches:bit,max_one:bit,estimate:lng) (:bat[:oid],:bat[:oid])
 address ALGsemijoin
 comment "Semi join with candidate lists";
@@ -210,13 +218,25 @@ command thetajoin(l:bat[:any_1],r:bat[:any_1],sl:bat[:oid],sr:bat[:oid],op:int,n
 address ALGthetajoin
 comment "Theta join with candidate lists";
 
+command thetajoin(l:bat[:any_1],r:bat[:any_1],sl:bat[:oid],sr:bat[:oid],op:int,nil_matches:bit,estimate:lng) :bat[:oid]
+address ALGthetajoin1
+comment "Theta join with candidate lists; only produce left output";
+
 command bandjoin(l:bat[:any_1],r:bat[:any_1],sl:bat[:oid],sr:bat[:oid],c1:any_1,c2:any_1,li:bit,hi:bit,estimate:lng) (:bat[:oid],:bat[:oid])
 address ALGbandjoin
 comment "Band join: values in l and r match if r - c1 <[=] l <[=] r + c2";
 
+command bandjoin(l:bat[:any_1],r:bat[:any_1],sl:bat[:oid],sr:bat[:oid],c1:any_1,c2:any_1,li:bit,hi:bit,estimate:lng) :bat[:oid]
+address ALGbandjoin1
+comment "Band join: values in l and r match if r - c1 <[=] l <[=] r + c2; only produce left output";
+
 command rangejoin(l:bat[:any_1],r1:bat[:any_1],r2:bat[:any_1],sl:bat[:oid],sr:bat[:oid],li:bit,hi:bit,anti:bit,symmetric:bit,estimate:lng) (:bat[:oid],:bat[:oid])
 address ALGrangejoin
 comment "Range join: values in l and r1/r2 match if r1 <[=] l <[=] r2";
+
+command rangejoin(l:bat[:any_1],r1:bat[:any_1],r2:bat[:any_1],sl:bat[:oid],sr:bat[:oid],li:bit,hi:bit,anti:bit,symmetric:bit,estimate:lng) :bat[:oid]
+address ALGrangejoin1
+comment "Range join: values in l and r1/r2 match if r1 <[=] l <[=] r2; only produce left output";
 
 command difference(l:bat[:any_1],r:bat[:any_1],sl:bat[:oid],sr:bat[:oid],nil_matches:bit,nil_clears:bit,estimate:lng) :bat[:oid]
 address ALGdifference

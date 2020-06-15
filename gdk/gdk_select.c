@@ -2250,16 +2250,12 @@ rangejoin(BAT *r1, BAT *r2, BAT *l, BAT *rl, BAT *rh,
 				ro = canditer_next(rci);
 				if (rlvals) {
 					vrl = VALUE(rl, ro - rl->hseqbase);
-					if (cmp(vrl, nil) == 0)
-						continue;
 				} else {
 					/* TYPE_void */
 					rlval = ro - rl->hseqbase + rl->tseqbase;
 				}
 				if (rhvals) {
 					vrh = VALUE(rh, ro - rh->hseqbase);
-					if (cmp(vrh, nil) == 0)
-						continue;
 				} else {
 					/* TYPE_void */
 					rhval = ro - rh->hseqbase + rh->tseqbase;

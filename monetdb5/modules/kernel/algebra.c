@@ -569,6 +569,15 @@ ALGouterjoin(bat *r1, bat *r2, const bat *lid, const bat *rid, const bat *slid, 
 }
 
 str
+ALGouterjoin1(bat *r1, const bat *lid, const bat *rid, const bat *slid, const bat *srid,
+				const bit *nil_matches, const lng *estimate)
+{
+	return do_join(r1, NULL, lid, rid, NULL, slid, srid, 0, NULL, NULL,
+				   false, false, false, false, nil_matches, NULL, NULL, estimate,
+				   BATouterjoin, NULL, NULL, NULL, NULL, NULL, NULL, "algebra.outerjoin");
+}
+
+str
 ALGsemijoin(bat *r1, bat *r2, const bat *lid, const bat *rid, const bat *slid, const bat *srid,
 			const bit *nil_matches, const bit *max_one, const lng *estimate)
 {
@@ -587,6 +596,15 @@ ALGthetajoin(bat *r1, bat *r2, const bat *lid, const bat *rid, const bat *slid, 
 }
 
 str
+ALGthetajoin1(bat *r1, const bat *lid, const bat *rid, const bat *slid, const bat *srid,
+				const int *op, const bit *nil_matches, const lng *estimate)
+{
+	return do_join(r1, NULL, lid, rid, NULL, slid, srid, *op, NULL, NULL,
+				   false, false, false, false, nil_matches, NULL, NULL, estimate,
+				   NULL, NULL, BATthetajoin, NULL, NULL, NULL, NULL, "algebra.thetajoin");
+}
+
+str
 ALGbandjoin(bat *r1, bat *r2, const bat *lid, const bat *rid, const bat *slid, const bat *srid,
 			   const void *c1, const void *c2, const bit *li, const bit *hi,
 			   const lng *estimate)
@@ -597,9 +615,29 @@ ALGbandjoin(bat *r1, bat *r2, const bat *lid, const bat *rid, const bat *slid, c
 }
 
 str
-ALGrangejoin(bat *r1, bat *r2, const bat *lid, const bat *rlid, const bat *rhid, const bat *slid, const bat *srid, const bit *li, const bit *hi, const bit *anti, const bit *symmetric, const lng *estimate)
+ALGbandjoin1(bat *r1, const bat *lid, const bat *rid, const bat *slid, const bat *srid,
+			   const void *c1, const void *c2, const bit *li, const bit *hi,
+			   const lng *estimate)
+{
+	return do_join(r1, NULL, lid, rid, NULL, slid, srid, 0, c1, c2,
+				   *li, *hi, false, false, NULL, NULL, NULL, estimate,
+				   NULL, NULL, NULL, BATbandjoin, NULL, NULL, NULL, "algebra.bandjoin");
+}
+
+str
+ALGrangejoin(bat *r1, bat *r2, const bat *lid, const bat *rlid, const bat *rhid, const bat *slid, const bat *srid, 
+			 const bit *li, const bit *hi, const bit *anti, const bit *symmetric, const lng *estimate)
 {
 	return do_join(r1, r2, lid, rlid, rhid, slid, srid, 0, NULL, NULL,
+				   *li, *hi, *anti, *symmetric, NULL, NULL, NULL, estimate,
+				   NULL, NULL, NULL, NULL, BATrangejoin, NULL, NULL, "algebra.rangejoin");
+}
+
+str
+ALGrangejoin1(bat *r1, const bat *lid, const bat *rlid, const bat *rhid, const bat *slid, const bat *srid,
+			  const bit *li, const bit *hi, const bit *anti, const bit *symmetric, const lng *estimate)
+{
+	return do_join(r1, NULL, lid, rlid, rhid, slid, srid, 0, NULL, NULL,
 				   *li, *hi, *anti, *symmetric, NULL, NULL, NULL, estimate,
 				   NULL, NULL, NULL, NULL, BATrangejoin, NULL, NULL, "algebra.rangejoin");
 }
@@ -747,10 +785,10 @@ ALGunique1(bat *result, const bat *bid)
 	return ALGunique2(result, bid, NULL);
 }
 
-str
-ALGcrossproduct2(bat *l, bat *r, const bat *left, const bat *right, const bit *max_one)
+static str
+ALGcrossproduct(bat *l, bat *r, const bat *left, const bat *right, const bit *max_one)
 {
-	BAT *L, *R, *bn1, *bn2;
+	BAT *L, *R, *bn1, *bn2 = NULL;
 	gdk_return ret;
 
 	if ((L = BATdescriptor(*left)) == NULL) {
@@ -760,15 +798,28 @@ ALGcrossproduct2(bat *l, bat *r, const bat *left, const bat *right, const bit *m
 		BBPunfix(L->batCacheid);
 		throw(MAL, "algebra.crossproduct", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 	}
-	ret = BATsubcross(&bn1, &bn2, L, R, NULL, NULL,
+	ret = BATsubcross(&bn1, r ? &bn2 : NULL, L, R, NULL, NULL,
 					  max_one && !is_bit_nil(*max_one) && *max_one);
 	BBPunfix(L->batCacheid);
 	BBPunfix(R->batCacheid);
 	if (ret != GDK_SUCCEED)
 		throw(MAL, "algebra.crossproduct", GDK_EXCEPTION);
 	BBPkeepref(*l = bn1->batCacheid);
-	BBPkeepref(*r = bn2->batCacheid);
+	if (r)
+		BBPkeepref(*r = bn2->batCacheid);
 	return MAL_SUCCEED;
+}
+
+str
+ALGcrossproduct1(bat *l, const bat *left, const bat *right, const bit *max_one)
+{
+	return ALGcrossproduct(l, NULL, left, right, max_one);
+}
+
+str
+ALGcrossproduct2(bat *l, bat *r, const bat *left, const bat *right, const bit *max_one)
+{
+	return ALGcrossproduct(l, r, left, right, max_one);
 }
 
 str
@@ -1421,15 +1472,20 @@ mel_func algebra_init_funcs[] = {
  command("algebra", "unique", ALGunique2, false, "Select all unique values from the tail of the first input.\nInput is a dense-headed BAT, the second input is a\ndense-headed BAT with sorted tail, output is a dense-headed\nBAT with in the tail the head value of the input BAT that was\nselected.  The output BAT is sorted on the tail value.  The\nsecond input BAT is a list of candidates.", args(1,3, batarg("",oid),batargany("b",1),batarg("s",oid))),
  command("algebra", "unique", ALGunique1, false, "Select all unique values from the tail of the input.\nInput is a dense-headed BAT, output is a dense-headed BAT with\nin the tail the head value of the input BAT that was selected.\nThe output BAT is sorted on the tail value.", args(1,2, batarg("",oid),batargany("b",1))),
  command("algebra", "crossproduct", ALGcrossproduct2, false, "Returns 2 columns with all BUNs, consisting of the head-oids\nfrom 'left' and 'right' for which there are BUNs in 'left'\nand 'right' with equal tails", args(2,5, batarg("l",oid),batarg("r",oid),batargany("left",1),batargany("right",2),arg("max_one",bit))),
+ command("algebra", "crossproduct", ALGcrossproduct1, false, "Compute the cross product of both input bats; but only produce left output", args(1,4, batarg("",oid),batargany("left",1),batargany("right",2),arg("max_one",bit))),
  command("algebra", "join", ALGjoin, false, "Join", args(2,8, batarg("",oid),batarg("",oid),batargany("l",1),batargany("r",1),batarg("sl",oid),batarg("sr",oid),arg("nil_matches",bit),arg("estimate",lng))),
  command("algebra", "join", ALGjoin1, false, "Join; only produce left output", args(1,7, batarg("",oid),batargany("l",1),batargany("r",1),batarg("sl",oid),batarg("sr",oid),arg("nil_matches",bit),arg("estimate",lng))),
  command("algebra", "leftjoin", ALGleftjoin, false, "Left join with candidate lists", args(2,8, batarg("",oid),batarg("",oid),batargany("l",1),batargany("r",1),batarg("sl",oid),batarg("sr",oid),arg("nil_matches",bit),arg("estimate",lng))),
  command("algebra", "leftjoin", ALGleftjoin1, false, "Left join with candidate lists; only produce left output", args(1,7, batarg("",oid),batargany("l",1),batargany("r",1),batarg("sl",oid),batarg("sr",oid),arg("nil_matches",bit),arg("estimate",lng))),
  command("algebra", "outerjoin", ALGouterjoin, false, "Left outer join with candidate lists", args(2,8, batarg("",oid),batarg("",oid),batargany("l",1),batargany("r",1),batarg("sl",oid),batarg("sr",oid),arg("nil_matches",bit),arg("estimate",lng))),
+ command("algebra", "outerjoin", ALGouterjoin1, false, "Left outer join with candidate lists; only produce left output", args(1,7,batarg("",oid),batargany("l",1),batargany("r",1),batarg("sl",oid),batarg("sr",oid),arg("nil_matches",bit),arg("estimate",lng))),
  command("algebra", "semijoin", ALGsemijoin, false, "Semi join with candidate lists", args(2,9, batarg("",oid),batarg("",oid),batargany("l",1),batargany("r",1),batarg("sl",oid),batarg("sr",oid),arg("nil_matches",bit),arg("max_one",bit),arg("estimate",lng))),
  command("algebra", "thetajoin", ALGthetajoin, false, "Theta join with candidate lists", args(2,9, batarg("",oid),batarg("",oid),batargany("l",1),batargany("r",1),batarg("sl",oid),batarg("sr",oid),arg("op",int),arg("nil_matches",bit),arg("estimate",lng))),
+ command("algebra", "thetajoin", ALGthetajoin1, false, "Theta join with candidate lists; only produce left output", args(1,8, batarg("",oid),batargany("l",1),batargany("r",1),batarg("sl",oid),batarg("sr",oid),arg("op",int),arg("nil_matches",bit),arg("estimate",lng))),
  command("algebra", "bandjoin", ALGbandjoin, false, "Band join: values in l and r match if r - c1 <[=] l <[=] r + c2", args(2,11, batarg("",oid),batarg("",oid),batargany("l",1),batargany("r",1),batarg("sl",oid),batarg("sr",oid),argany("c1",1),argany("c2",1),arg("li",bit),arg("hi",bit),arg("estimate",lng))),
+ command("algebra", "bandjoin", ALGbandjoin1, false, "Band join: values in l and r match if r - c1 <[=] l <[=] r + c2; only produce left output", args(1,10, batarg("",oid),batargany("l",1),batargany("r",1),batarg("sl",oid),batarg("sr",oid),argany("c1",1),argany("c2",1),arg("li",bit),arg("hi",bit),arg("estimate",lng))),
  command("algebra", "rangejoin", ALGrangejoin, false, "Range join: values in l and r1/r2 match if r1 <[=] l <[=] r2", args(2,12, batarg("",oid),batarg("",oid),batargany("l",1),batargany("r1",1),batargany("r2",1),batarg("sl",oid),batarg("sr",oid),arg("li",bit),arg("hi",bit),arg("anti",bit),arg("symmetric",bit),arg("estimate",lng))),
+ command("algebra", "rangejoin", ALGrangejoin1, false, "Range join: values in l and r1/r2 match if r1 <[=] l <[=] r2; only produce left output", args(1,11,batarg("",oid),batargany("l",1),batargany("r1",1),batargany("r2",1),batarg("sl",oid),batarg("sr",oid),arg("li",bit),arg("hi",bit),arg("anti",bit),arg("symmetric",bit),arg("estimate",lng))),
  command("algebra", "difference", ALGdifference, false, "Difference of l and r with candidate lists", args(1,8, batarg("",oid),batargany("l",1),batargany("r",1),batarg("sl",oid),batarg("sr",oid),arg("nil_matches",bit),arg("nil_clears",bit),arg("estimate",lng))),
  command("algebra", "intersect", ALGintersect, false, "Intersection of l and r with candidate lists (i.e. half of semi-join)", args(1,8, batarg("",oid),batargany("l",1),batargany("r",1),batarg("sl",oid),batarg("sr",oid),arg("nil_matches",bit),arg("max_one",bit),arg("estimate",lng))),
  pattern("algebra", "firstn", ALGfirstn, false, "Calculate first N values of B", args(1,6, batarg("",oid),batargany("b",0),arg("n",lng),arg("asc",bit),arg("nilslast",bit),arg("distinct",bit))),
