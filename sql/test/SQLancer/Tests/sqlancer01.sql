@@ -86,9 +86,9 @@ SELECT another_t.col1 FROM tbl_productsales CROSS JOIN another_t WHERE ((tbl_pro
 START TRANSACTION; --Bug 6896
 CREATE TABLE t0 (c0 int, c1 int);
 insert into t0 values (1, 1);
-select all t0.c0 from t0 where (sql_min("locate"(reverse('qﺛ}(C.0D?\r'), cast(t0.c1 as string), cast(-1483214882 as int)), ((cast('1186727519' as int))||(abs(785610124))))) not in (1.52414541E9, 0.13482326) 
-union all select all t0.c0 from t0 where not ((sql_min("locate"(reverse('qﺛ}(C.0D?\r'), cast(t0.c1 as string), cast(-1483214882 as int)), ((cast('1186727519' as int))||(abs(785610124))))) not in (1.52414541E9, 0.13482326)) 
-union all select t0.c0 from t0 where ((sql_min("locate"(reverse('qﺛ}(C.0D?\r'), cast(t0.c1 as string), cast(-1483214882 as int)), ((cast('1186727519' as int))||(abs(785610124))))) not in (1.52414541E9, 0.13482326)) is null;
+select all t0.c0 from t0 where (1) not in (1.52414541E9, 0.13482326) 
+union all select all t0.c0 from t0 where not (1) not in (1.52414541E9, 0.13482326) 
+union all select t0.c0 from t0 where (1) not in (1.52414541E9, 0.13482326) is null;
 
 select 1 from t0 where (3 in (1, 2)) is null; --simplified
 	-- empty
@@ -122,8 +122,8 @@ CREATE TABLE t0 (c0 int, c1 int);
 insert into t0 values (1, 1);
 CREATE TABLE v0 (c0 int, c1 int);
 insert into v0 values (1, 1);
-select all count(all 0.5923759) from v0 left outer join t0 on ((((substr(cast(0.2753589295956522 as string), cast(cast(0.1980253 as string) as int), ((+ (v0.c0))^(((v0.c0)+(v0.c0))))))||
-((0.95672141382556563637962199209141544997692108154296875) in (0.93132256561636328484610203304328024387359619140625, t0.c0))))like('jBlZöx TW9*ࡈxw㟩*'));
+select all count(all 0.5923759) from v0 left outer join t0 on (('1')||
+cast((0.95672141382556563637962199209141544997692108154296875) in (0.93132256561636328484610203304328024387359619140625, t0.c0) as varchar(32)) like('jBlZöx TW9*ࡈxw㟩*'));
 
 select 1 from v0 join t0 on (((substr('1', 1, v0.c0)) || (1) in (1, t0.c0)) like 'a'); --simplified
 	-- empty
