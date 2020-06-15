@@ -4,6 +4,11 @@ MonetDBe API
 The application built around the MonetDBe library. All instructions return a string which contains possible
 errors encountered during the interpretation. If all went well they return a NULL.
 
+General considerations
+---------------------
+[TODO!] An embedded application can have multiple database open concurrently. This enables easy
+transport of data from one to another, and forms the basis for distributed query processing.
+
 Data Types
 ---------------
 The API wraps the internal data types to those more convenient for programming directly in C.
@@ -28,42 +33,23 @@ The API wraps the internal data types to those more convenient for programming d
 
 Data Types
 ----------
-The MonetDBe interface uses a few structures you need to be aware of.
-Data Types
-----------
-The MonetDBe interface uses a few structures you need to be aware of.
-See the monetdbe.h file
+[TODO]The MonetDBe interface uses a few structures you need to be aware of.
 
 Connection and server options
 ---------------------------------
-.. c:char* monetdbe_startup(char* dbdir, bool sequential);
+.. c:char* monetdbe_open(char* dbname, bool sequential);
 
-    Initialize the database component. The dbname identifies the path to the directory holding the persistent data.
-    It will be locked for exclusive access. An in-memory only database is created by passing a NULL argument.
+    Initialize access to a database component. The dbname is an URL and denote either ':memory:', /path/directory,
+    mapi:monetdb://company.nl:50000/database. The latter refers to a MonetDB server location.
+    The :memory: and local path options lead to an exclusive lock. There may be multiple connections to the MonetDB servers.
     
     The sequential argument indicates [WHAT]
 
-[TODO, consider this seriously!  ]
-.. c:char* monetdbe_connect_mapi(char* dbdir, char *username, char *password, char *host, int port);
 
-    A simplified wrapper around the official MAPI protocol. It allows for development of the application
-    using a local directory and simply replacing the startup call with a mapi_connect.
-
-.. c:char* monetdbe_connect(monetdbe_connection *conn);
-
-    Create a separate connection channel with the database. Don't use it in parallel threads to submit
-    queries, because they would become mangled and even could hang your application. 
-    [TODO protect against it]
-
-
-.. c:char* monetdbe_disconnect(monetdbe_connection *conn);
+.. c:char* monetdbe_close(monetdbe_connection *conn);
 
     From here on the connection can not be used anymore to pass queries or any pending result set is cleaned up.
-
-.. c:char* monetdbe_shutdown(void);
-
-    Force a shutdown of the database server. This will not shutdown your application, you can simply restart
-    the database server. However, be aware that the content of an ':inmemory:' database is discarded at shutdown.
+    Be aware that the content of an ':inmemory:' database is discarded.
 
 Transaction management
 ---------------------
