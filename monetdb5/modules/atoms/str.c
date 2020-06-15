@@ -4133,7 +4133,7 @@ STRinsert(str *ret, const str *s, const int *start, const int *l, const str *s2)
 		if (l1 + l2 + 1 >= INT_MAX)
 			throw(MAL, "str.insert", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		if (*l < 0)
-			throw(MAL, "str.insert", SQLSTATE(42000) ILLEGAL_ARGUMENT);
+			throw(MAL, "str.insert", SQLSTATE(42000) "The number of characters for insert function must be non negative");
 		if (strt < 0) {
 			if ((size_t) -strt <= l1)
 				strt = (int) (l1 + strt);

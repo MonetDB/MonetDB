@@ -83,6 +83,52 @@ ROLLBACK;
 SELECT another_t.col1 FROM tbl_productsales CROSS JOIN another_t WHERE ((tbl_productsales.product_category) NOT IN (tbl_productsales.product_category, tbl_productsales.product_category)) IS NULL;
 	-- empty
 
+START TRANSACTION; --Bug 6896
+CREATE TABLE t0 (c0 int, c1 int);
+insert into t0 values (1, 1);
+select all t0.c0 from t0 where (1) not in (1.52414541E9, 0.13482326) 
+union all select all t0.c0 from t0 where not (1) not in (1.52414541E9, 0.13482326) 
+union all select t0.c0 from t0 where (1) not in (1.52414541E9, 0.13482326) is null;
+
+select 1 from t0 where (3 in (1, 2)) is null; --simplified
+	-- empty
+
+SELECT 1 FROM t0 WHERE t0.c0 BETWEEN SYMMETRIC (1 IN (2, 1)) AND t0.c0;
+	-- empty
+ROLLBACK;
+
+START TRANSACTION; --Bug 6897
+CREATE TABLE "t0"("c0" DECIMAL(18,3), "c1" BIGINT);
+COPY 12 RECORDS INTO "t0" FROM stdin USING DELIMITERS E'\t',E'\n','"';
+0.244	NULL
+0.578	NULL
+0.119	NULL
+0.773	495026350
+0.329	2108706088
+0.483	1298757529
+0.880	39
+0.084	1
+0.332	859611948
+0.607	NULL
+0.835	0
+0.455	-1239303309
+
+SELECT MIN(DISTINCT t0.c1) FROM t0 WHERE 1 >= t0.c0 GROUP BY true;
+	-- -1239303309
+ROLLBACK;
+
+START TRANSACTION; --Bug 6898
+CREATE TABLE t0 (c0 int, c1 int);
+insert into t0 values (1, 1);
+CREATE TABLE v0 (c0 int, c1 int);
+insert into v0 values (1, 1);
+select all count(all 0.5923759) from v0 left outer join t0 on (('1')||
+cast((0.95672141382556563637962199209141544997692108154296875) in (0.93132256561636328484610203304328024387359619140625, t0.c0) as varchar(32)) like('jBlZöx TW9*ࡈxw㟩*'));
+
+select 1 from v0 join t0 on (((substr('1', 1, v0.c0)) || (1) in (1, t0.c0)) like 'a'); --simplified
+	-- empty
+ROLLBACK;
+
 DROP TABLE tbl_ProductSales;
 DROP TABLE another_T;
 DROP TABLE integers;

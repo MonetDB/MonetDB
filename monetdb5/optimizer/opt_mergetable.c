@@ -2205,6 +2205,19 @@ OPTmergetableImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 			}
 			continue;
 		}
+		if (match == 1 && getModuleId(p) == algebraRef &&
+		    getFunctionId(p) == projectRef &&
+		   (m=is_a_mat(getArg(p,1), &ml)) >= 0 &&
+		   (ml.v[m].type == mat_ext)) {
+			assert(ml.v[m].pushed);
+			cp = copyInstruction(p);
+			if(!cp) {
+				msg = createException(MAL,"optimizer.mergetable",SQLSTATE(HY013) MAL_MALLOC_FAIL);
+				goto cleanup;
+			}
+			pushInstruction(mb, cp);
+			continue;
+		}
 
 		/* Handle cases of slice.projection */
 		if (match == 2 && getModuleId(p) == algebraRef &&
