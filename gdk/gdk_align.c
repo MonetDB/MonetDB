@@ -91,7 +91,7 @@ VIEWcreate(oid seq, BAT *b)
 		return NULL;
 
 	tp = VIEWtparent(b);
-	if ((tp == 0 && b->ttype != TYPE_void) || b->theap.copied)
+	if (tp == 0 && b->ttype != TYPE_void)
 		tp = b->batCacheid;
 	assert(b->ttype != TYPE_void || !tp);
 	/* the T column descriptor is fully copied. We need copies
@@ -111,11 +111,6 @@ VIEWcreate(oid seq, BAT *b)
 		BBPshare(bn->tvheap->parentid);
 	}
 
-	/* note: theap points into bn which was just overwritten
-	 * with a copy from the parent.  Clear the copied flag since
-	 * our heap was not copied from our parent(s) even if our
-	 * parent's heap was copied from its parent. */
-	bn->theap.copied = false;
 	bn->tprops = NULL;
 
 	/* correct values after copy of head and tail info */

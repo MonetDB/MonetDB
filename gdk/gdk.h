@@ -529,8 +529,7 @@ typedef struct {
 #endif
 
 	bte farmid;		/* id of farm where heap is located */
-	bool copied:1,		/* a copy of an existing map. */
-		hashash:1,	/* the string heap contains hash values */
+	bool hashash:1,		/* the string heap contains hash values */
 		cleanhash:1,	/* string heaps must clean hash */
 		dirty:1;	/* specific heap dirty marker */
 	storage_t storage;	/* storage mode (mmap/malloc). */

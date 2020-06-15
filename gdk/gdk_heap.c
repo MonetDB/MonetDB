@@ -98,7 +98,6 @@ HEAPalloc(Heap *h, size_t nitems, size_t itemsize)
 {
 	h->base = NULL;
 	h->size = 1;
-	h->copied = false;
 	if (itemsize)
 		h->size = MAX(1, nitems) * itemsize;
 	h->free = 0;
@@ -736,9 +735,6 @@ HEAPdelete(Heap *h, const char *o, const char *ext)
 	}
 	if (h->base)
 		HEAPfree(h, false);	/* we will do the unlinking */
-	if (h->copied) {
-		return GDK_SUCCEED;
-	}
 	assert(strlen(ext) + strlen(".new") < sizeof(ext2));
 	strconcat_len(ext2, sizeof(ext2), ext, ".new", NULL);
 	return ((GDKunlink(h->farmid, BATDIR, o, ext) == GDK_SUCCEED) | (GDKunlink(h->farmid, BATDIR, o, ext2) == GDK_SUCCEED)) ? GDK_SUCCEED : GDK_FAIL;

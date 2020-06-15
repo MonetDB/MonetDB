@@ -779,7 +779,6 @@ heapinit(BAT *b, const char *buf, int *hashash, unsigned bbpversion, bat bid, co
 	strconcat_len(b->theap.filename, sizeof(b->theap.filename),
 		      filename, ".tail", NULL);
 	b->theap.storage = (storage_t) storage;
-	b->theap.copied = false;
 	b->theap.newstorage = (storage_t) storage;
 	b->theap.farmid = BBPselectfarm(PERSISTENT, b->ttype, offheap);
 	b->theap.dirty = false;
@@ -823,7 +822,6 @@ vheapinit(BAT *b, const char *buf, int hashash, bat bid, const char *filename, i
 		strconcat_len(b->tvheap->filename, sizeof(b->tvheap->filename),
 			      filename, ".theap", NULL);
 		b->tvheap->storage = (storage_t) storage;
-		b->tvheap->copied = false;
 		b->tvheap->hashash = hashash != 0;
 		b->tvheap->cleanhash = true;
 		b->tvheap->newstorage = (storage_t) storage;

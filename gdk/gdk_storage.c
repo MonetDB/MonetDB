@@ -769,8 +769,7 @@ BATsave(BAT *bd)
 	assert(b->batCacheid > 0);
 	/* views cannot be saved, but make an exception for
 	 * force-remapped views */
-	if (isVIEW(b) &&
-	    !(b->theap.copied && b->theap.storage == STORE_MMAP)) {
+	if (isVIEW(b)) {
 		GDKerror("%s is a view on %s; cannot be saved\n", BATgetId(b), BBPname(VIEWtparent(b)));
 		return GDK_FAIL;
 	}
