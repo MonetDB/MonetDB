@@ -86,6 +86,11 @@ typedef struct {
 
 typedef void* monetdbe_database;
 
+typedef struct {
+	monetdbe_cnt memorylimit;
+	int nr_threads;
+} monetdbe_options;
+
 #define DEFAULT_STRUCT_DEFINITION(ctype, typename)         \
 	typedef struct                                     \
 	{                                                  \
@@ -119,7 +124,7 @@ DEFAULT_STRUCT_DEFINITION(monetdbe_data_time, time);
 DEFAULT_STRUCT_DEFINITION(monetdbe_data_timestamp, timestamp);
 // UUID, INET, XML ?
 
-monetdbe_export char* monetdbe_open(monetdbe_database *db, char *url); 
+monetdbe_export char* monetdbe_open(monetdbe_database *db, char *url, monetdbe_options *opts); 
 monetdbe_export char* monetdbe_close(monetdbe_database db); 
 
 monetdbe_export char* monetdbe_get_autocommit(monetdbe_database dbhdl, int* result);
@@ -142,8 +147,6 @@ monetdbe_export char* monetdbe_get_columns(monetdbe_database dbhdl, const char* 
 
 monetdbe_export char* monetdbe_dump_database(monetdbe_database dbhdl, const char *backupfile);
 monetdbe_export char* monetdbe_dump_table(monetdbe_database dbhdl, const char *schema_name, const char *table_name, const char *backupfile);
-
-monetdbe_export char* monetdbe_memorylimit(monetdbe_database dbhdl, monetdbe_cnt bytes);
 
 #ifdef __cplusplus
 }

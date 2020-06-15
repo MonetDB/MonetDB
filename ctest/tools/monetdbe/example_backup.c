@@ -11,7 +11,7 @@ main(void)
 	char *msg;
 	monetdbe_database mdbe;
 
-	if ((msg = monetdbe_open(&mdbe, NULL)) != NULL)
+	if ((msg = monetdbe_open(&mdbe, NULL, NULL)) != NULL)
 		error(msg);
 
 	if ((err = monetdbe_query(mdbe, "CREATE TABLE test (b bool, t tinyint, s smallint, x integer, l bigint, "

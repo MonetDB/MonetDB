@@ -21,7 +21,7 @@ main(void)
 	monetdbe_result* result = NULL;
 
 	// second argument is a string for the db directory or NULL for in-memory mode
-	if ((err = monetdbe_open(&mdbe, NULL)) != NULL)
+	if ((err = monetdbe_open(&mdbe, NULL, NULL)) != NULL)
 		error(err)
 	if ((err = monetdbe_query(mdbe, "CREATE TABLE test (x integer, y string)", NULL, NULL)) != NULL)
 		error(err)

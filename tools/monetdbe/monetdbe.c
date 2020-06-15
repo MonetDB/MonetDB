@@ -412,7 +412,7 @@ monetdbe_shutdown_internal(void) // Call this function always inside the embedde
 }
 
 static char*
-monetdbe_startup(char* dbdir)
+monetdbe_startup(char* dbdir, monetdbe_options *opts)
 {
 	char* msg = MAL_SUCCEED, *err;
 	monetdbe_result* res = NULL;
@@ -435,10 +435,6 @@ monetdbe_startup(char* dbdir)
 		goto done;
 	}
 
-        //hacked
-	// define MT_fprintf_silent 
-	// MT_fprintf_silent(silent);
-
 	if ((setlen = mo_builtin_settings(&set)) == 0) {
 		msg = createException(MAL, "monetdbe.monetdbe_startup", MAL_MALLOC_FAIL);
 		goto cleanup;
@@ -448,17 +444,22 @@ monetdbe_startup(char* dbdir)
 		msg = createException(MAL, "monetdbe.monetdbe_startup", MAL_MALLOC_FAIL);
 		goto cleanup;
 	}
-	/* get sequential and other flags from url
-	if (sequential)
+	if (opts && opts->nr_threads == 1)
 		setlen = mo_add_option(&set, setlen, opt_cmdline, "sql_optimizer", "sequential_pipe");
 	else
-	*/
 		setlen = mo_add_option(&set, setlen, opt_cmdline, "sql_optimizer", "default_pipe");
 	if (setlen == 0) {
 		mo_free_options(set, setlen);
 		msg = createException(MAL, "monetdbe.monetdbe_startup", MAL_MALLOC_FAIL);
 		goto cleanup;
 	}
+	if (opts && opts->nr_threads) {
+		GDKnr_threads = opts->nr_threads;
+	}
+	if (opts && opts->memorylimit) {
+		GDK_vm_maxsize = opts->memorylimit;
+	}
+
 	if (!dbdir) { /* in-memory */
 		if (BBPaddfarm(NULL, (1 << PERSISTENT) | (1 << TRANSIENT)) != GDK_SUCCEED) {
 			mo_free_options(set, setlen);
@@ -521,7 +522,7 @@ done:
 }
 
 char*
-monetdbe_open(monetdbe_database *dbhdl, char *url)
+monetdbe_open(monetdbe_database *dbhdl, char *url, monetdbe_options *opts)
 {
 	char* msg = MAL_SUCCEED;
 	if (!dbhdl)
@@ -529,7 +530,7 @@ monetdbe_open(monetdbe_database *dbhdl, char *url)
 	MT_lock_set(&embedded_lock);
 	if (!monetdbe_embedded_initialized) {
 		/* later handle url !*/
-		msg = monetdbe_startup(url);
+		msg = monetdbe_startup(url, opts);
 	} else { /* check uri */
 		if ((monetdbe_embedded_url && url && strcmp(monetdbe_embedded_url, url) != 0) || (monetdbe_embedded_url != url && (monetdbe_embedded_url == NULL || url == NULL)))
 			msg = createException(MAL, "monetdbe.monetdbe_open", "monetdbe_open currently only one active database is supported");
@@ -613,14 +614,6 @@ monetdbe_dump_table(monetdbe_database dbhdl, const char *sname, const char *tnam
 
 	MT_lock_unset(&embedded_lock);
 	return msg;
-}
-
-char*
-monetdbe_memorylimit(monetdbe_database dbhdl, monetdbe_cnt bytes)
-{
-	(void)dbhdl;
-	(void)bytes;
-	return MAL_SUCCEED;
 }
 
 char*
