@@ -2211,7 +2211,7 @@ rel2bin_join(backend *be, sql_rel *rel, list *refs)
 				if (e->type <= e_cmp) {
 					int flag = e->flag & ~CMP_BETWEEN;
 					/* check if its a select or join expression, ie use only expressions of one relation left and of the other right (than join) */
-					if (flag <= cmp_filter && !e->f) { /* theta join */
+					if (flag < cmp_filter && !e->f) { /* theta join */
 						/* join or select ? */
 						if ((rel_find_exp(rel->l, e->l) && !rel_find_exp(rel->r, e->l) &&
 						     rel_find_exp(rel->r, e->r) && !rel_find_exp(rel->l, e->r)) ||
@@ -2220,7 +2220,7 @@ rel2bin_join(backend *be, sql_rel *rel, list *refs)
 							append(jexps, e);
 							continue;
 						}
-					} else if (flag <= cmp_filter && e->f) { /* range */
+					} else if (flag < cmp_filter && e->f) { /* range */
 						int nrcr1 = 0, nrcr2 = 0, nrcl1 = 0, nrcl2 = 0;
 						if ((rel_find_exp(rel->l, e->l) && !rel_find_exp(rel->r, e->l) &&
 						   ((rel_find_exp(rel->r, e->r) && !rel_find_exp(rel->l, e->r)) || (nrcr1 = exp_is_atom(e->r))) &&
@@ -2304,36 +2304,13 @@ rel2bin_join(backend *be, sql_rel *rel, list *refs)
 			}
 			if (join_idx != sql->opt_stats[0])
 				idx = 1;
-
-			if (s->type != st_join && 
-			    s->type != st_join2 && 
-			    s->type != st_joinN) {
-				assert(0);
-
-				/* predicate */
-				if (!list_length(lje) && s->nrcols == 0) { 
-					assert(0);
-					stmt *l = bin_first_column(be, left);
-					stmt *r = bin_first_column(be, right);
-
-					l = stmt_uselect(be, stmt_const(be, l, stmt_bool(be, 1)), s, cmp_equal, NULL, 0, 0);
-					join = stmt_join(be, l, r, 0, cmp_all, 0, false);
-					continue;
-				}
-				if (!join) {
-					assert(0);
-					stmt *l = bin_first_column(be, left);
-					stmt *r = bin_first_column(be, right);
-					join = stmt_join(be, l, r, 0, cmp_all, 0, false); 
-					en = rel->exps->h;
-				}
-				break;
-			}
-
+			assert(s->type == st_join || s->type == st_join2 || s->type == st_joinN);
 			if (!join) 
 				join = s;
-			if (e->flag != cmp_equal) /* only collect equi joins */
+			if (e->flag != cmp_equal) { /* only collect equi joins */
+				en = en->next;
 				break;
+			}
 			list_append(lje, s->op1);
 			list_append(rje, s->op2);
 			list_append(exps, e);
