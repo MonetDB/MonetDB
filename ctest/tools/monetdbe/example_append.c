@@ -34,7 +34,7 @@ main(void)
 	monetdb_column* rcol[2];
 	for (int64_t r = 0; r < result->nrows; r++) {
 		for (size_t c = 0; c < result->ncols; c++) {
-			if ((err = monetdb_result_fetch(mdbe, result, rcol+c, c)) != NULL)
+			if ((err = monetdb_result_fetch(result, rcol+c, c)) != NULL)
 				error(err)
 			switch (rcol[c]->type) {
 				case monetdb_int32_t: {
@@ -77,7 +77,7 @@ main(void)
 	fprintf(stdout, "Query result after append with %zu cols and %"PRId64" rows\n", result->ncols, result->nrows);
 	for (int64_t r = 0; r < result->nrows; r++) {
 		for (size_t c = 0; c < result->ncols; c++) {
-			if ((err = monetdb_result_fetch(mdbe, result, rcol+c, c)) != NULL)
+			if ((err = monetdb_result_fetch(result, rcol+c, c)) != NULL)
 				error(err)
 			switch (rcol[c]->type) {
 				case monetdb_int32_t: {

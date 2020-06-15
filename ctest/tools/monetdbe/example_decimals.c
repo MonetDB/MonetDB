@@ -34,7 +34,7 @@ main(void)
 	for (int64_t r = 0; r < result->nrows; r++) {
 		for (size_t c = 0; c < result->ncols; c++) {
 			monetdb_column* rcol;
-			if ((err = monetdb_result_fetch(mdbe, result, &rcol, c)) != NULL)
+			if ((err = monetdb_result_fetch(result, &rcol, c)) != NULL)
 				error(err)
 			switch (rcol->type) {
 				case monetdb_bool: {

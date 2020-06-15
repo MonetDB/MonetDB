@@ -129,14 +129,12 @@ embedded_export int   monetdb_in_transaction(monetdb_database dbhdl);
 embedded_export char* monetdb_query(monetdb_database dbhdl, char* query, monetdb_result** result, monetdb_cnt* affected_rows);
 embedded_export char* monetdb_result_fetch(monetdb_result *mres, monetdb_column** res, size_t column_index);
 embedded_export char* monetdb_cleanup_result(monetdb_database dbhdl, monetdb_result* result);
-
 embedded_export char* monetdb_prepare(monetdb_database dbhdl, char *query, monetdb_statement **stmt);
 embedded_export char* monetdb_bind(monetdb_statement *stmt, void *data, size_t parameter_nr);
 embedded_export char* monetdb_execute(monetdb_statement *stmt, monetdb_result **result, monetdb_cnt* affected_rows);
 embedded_export char* monetdb_cleanup_statement(monetdb_database dbhdl, monetdb_statement *stmt);
 
 embedded_export char* monetdb_append(monetdb_database dbhdl, const char* schema, const char* table, monetdb_column **input, size_t column_count);
-
 
 embedded_export char* monetdb_get_table(monetdb_database dbhdl, monetdb_table** table, const char* schema_name, const char* table_name);
 embedded_export char* monetdb_get_columns(monetdb_database dbhdl, const char* schema_name, const char *table_name, size_t *column_count, char ***column_names, int **column_types);
