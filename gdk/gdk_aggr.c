@@ -2580,7 +2580,7 @@ BATmin_skipnil(BAT *b, void *aggr, bit skipnil)
 		if (BATcheckorderidx(b) ||
 		    (VIEWtparent(b) &&
 		     (pb = BBPdescriptor(VIEWtparent(b))) != NULL &&
-		     pb->theap.base == b->theap.base &&
+		     pb->tbaseoff == b->tbaseoff &&
 		     BATcount(pb) == BATcount(b) &&
 		     pb->hseqbase == b->hseqbase &&
 		     BATcheckorderidx(pb))) {
@@ -2685,7 +2685,7 @@ BATmax_skipnil(BAT *b, void *aggr, bit skipnil)
 		if (BATcheckorderidx(b) ||
 		    (VIEWtparent(b) &&
 		     (pb = BBPdescriptor(VIEWtparent(b))) != NULL &&
-		     pb->theap.base == b->theap.base &&
+		     pb->tbaseoff == b->tbaseoff &&
 		     BATcount(pb) == BATcount(b) &&
 		     pb->hseqbase == b->hseqbase &&
 		     BATcheckorderidx(pb))) {
@@ -2969,7 +2969,7 @@ doBATgroupquantile(BAT *b, BAT *g, BAT *e, BAT *s, int tp, double quantile,
 			if (bunfastapp_nocheck(bn, BUNlast(bn), dnil, Tsize(bn)) != GDK_SUCCEED)
 				goto bunins_failed;
 		}
-		bn->theap.dirty = true;
+		bn->theap->dirty = true;
 		BBPunfix(g->batCacheid);
 	} else {
 		BUN index, r, p = BATcount(b);
@@ -2985,7 +2985,7 @@ doBATgroupquantile(BAT *b, BAT *g, BAT *e, BAT *s, int tp, double quantile,
 		if (BATcheckorderidx(b) ||
 		    (VIEWtparent(b) &&
 		     (pb = BBPdescriptor(VIEWtparent(b))) != NULL &&
-		     pb->theap.base == b->theap.base &&
+		     pb->tbaseoff == b->tbaseoff &&
 		     BATcount(pb) == BATcount(b) &&
 		     pb->hseqbase == b->hseqbase &&
 		     BATcheckorderidx(pb))) {

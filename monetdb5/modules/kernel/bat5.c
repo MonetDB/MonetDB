@@ -570,7 +570,7 @@ BKCgetSize(lng *tot, const bat *bid){
 	size = sizeof (bat);
 	if ( !isVIEW(b)) {
 		BUN cnt = BATcapacity(b);
-		size += ROUND_UP(b->theap.free, blksize);
+		size += ROUND_UP(b->theap->free, blksize);
 		if (b->tvheap)
 			size += ROUND_UP(b->tvheap->free, blksize);
 		if (b->thash)

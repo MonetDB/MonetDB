@@ -109,7 +109,7 @@ mal_export str STRbatsubstring(bat *ret, const bat *l, const bat *r, const bat *
 	X->tsorted=false;									\
 	X->trevsorted=false;
 #define finalizeResult(X,Y,Z)								\
-	(Y)->theap.dirty |= BATcount(Y) > 0;					\
+	(Y)->theap->dirty |= BATcount(Y) > 0;					\
 	*X = (Y)->batCacheid;									\
 	BBPkeepref(*(X));										\
 	BBPunfix(Z->batCacheid);

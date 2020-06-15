@@ -283,7 +283,7 @@ project_any(BAT *restrict bn, BAT *restrict l, struct canditer *restrict ci,
 		}
 	}
 	BATsetcount(bn, lo);
-	bn->theap.dirty = true;
+	bn->theap->dirty = true;
 	return GDK_SUCCEED;
 }
 
@@ -538,7 +538,7 @@ BATprojectchain(BAT **bats)
 			.b = b,
 			.hlo = b->hseqbase,
 			.cnt = b->batCount,
-			.t = (oid *) b->theap.base,
+			.t = (oid *) Tloc(b, 0),
 		};
 		allnil |= b->ttype == TYPE_void && is_oid_nil(b->tseqbase);
 		issorted &= b->tsorted;

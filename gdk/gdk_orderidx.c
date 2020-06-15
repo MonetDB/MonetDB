@@ -165,7 +165,7 @@ persistOIDX(BAT *b)
 #ifdef PERSISTENTIDX
 	if ((BBP_status(b->batCacheid) & BBPEXISTING) &&
 	    b->batInserted == b->batCount &&
-	    !b->theap.dirty &&
+	    !b->theap->dirty &&
 	    !GDKinmemory()) {
 		MT_Id tid;
 		BBPfix(b->batCacheid);

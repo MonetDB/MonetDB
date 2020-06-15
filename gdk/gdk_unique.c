@@ -167,7 +167,7 @@ BATunique(BAT *b, BAT *s)
 		seq = b->hseqbase;
 		if (b->thash == NULL && (parent = VIEWtparent(b)) != 0) {
 			BAT *b2 = BBPdescriptor(parent);
-			lo = (BUN) ((b->theap.base - b2->theap.base) >> b->tshift);
+			lo = b->tbaseoff - b2->tbaseoff;
 			b = b2;
 			bi = bat_iterator(b);
 		} else {
@@ -251,7 +251,7 @@ BATunique(BAT *b, BAT *s)
 		GDKfree(hs);
 	}
 
-	bn->theap.dirty = true;
+	bn->theap->dirty = true;
 	bn->tsorted = true;
 	bn->trevsorted = BATcount(bn) <= 1;
 	bn->tkey = true;

@@ -716,7 +716,7 @@ pcre_likeselect(BAT **bnp, BAT *b, BAT *s, const char *pat, bool caseignore, boo
 	regfree(&re);
 #endif
 	BATsetcount(bn, BATcount(bn)); /* set some properties */
-	bn->theap.dirty |= BATcount(bn) > 0;
+	bn->theap->dirty |= BATcount(bn) > 0;
 	bn->tsorted = true;
 	bn->trevsorted = bn->batCount <= 1;
 	bn->tkey = true;
@@ -2222,7 +2222,7 @@ PCRElikeselect5(bat *ret, const bat *bid, const bat *sid, const str *pat, const 
 	return PCRElikeselect2(ret, bid, sid, pat, &esc, &f, anti);
 }
 
-#define APPEND(b, o)	(((oid *) b->theap.base)[b->batCount++] = (o))
+#define APPEND(b, o)	(((oid *) b->theap->base)[b->batCount++] = (o))
 #define VALUE(s, x)		(s##vars + VarHeapVal(s##vals, (x), s##width))
 
 static char *
@@ -2455,9 +2455,9 @@ pcrejoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr,
 	BATsetcount(r2, BATcount(r2));
 	if (BATcount(r1) > 0) {
 		if (BATtdense(r1))
-			r1->tseqbase = ((oid *) r1->theap.base)[0];
+			r1->tseqbase = ((oid *) r1->theap->base)[0];
 		if (BATtdense(r2))
-			r2->tseqbase = ((oid *) r2->theap.base)[0];
+			r2->tseqbase = ((oid *) r2->theap->base)[0];
 	} else {
 		r1->tseqbase = r2->tseqbase = 0;
 	}

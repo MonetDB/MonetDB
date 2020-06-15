@@ -3164,6 +3164,9 @@ convertCase(BAT *from, BAT *to, str *res, const char *src, const char *malfunc)
 	const char *end = src + len;
 	bool lower_to_upper = from == UTF8_toUpperFrom;
 
+	/* the from and to bats are not views */
+	assert(from->tbaseoff == 0);
+	assert(to->tbaseoff == 0);
 	if (strNil(src)) {
 		*res = GDKstrdup(str_nil);
 	} else {
@@ -3192,8 +3195,8 @@ convertCase(BAT *from, BAT *to, str *res, const char *src, const char *malfunc)
 				for (BUN hb = HASHget(h, hash_int(h, &c));
 					 hb != HASHnil(h);
 					 hb = HASHgetlink(h, hb)) {
-					if (c == ((int *) from->theap.base)[hb]) {
-						c = ((int *) to->theap.base)[hb];
+					if (c == ((int *) from->theap->base)[hb]) {
+						c = ((int *) to->theap->base)[hb];
 						break;
 					}
 				}

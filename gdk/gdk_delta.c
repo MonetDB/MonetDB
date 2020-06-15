@@ -36,7 +36,7 @@ BATcommit(BAT *b, BUN size)
 	if (b == NULL)
 		return;
 	TRC_DEBUG(DELTA, "BATcommit1 %s free %zu ins " BUNFMT " base %p\n",
-		  BATgetId(b), b->theap.free, b->batInserted, b->theap.base);
+		  BATgetId(b), b->theap->free, b->batInserted, b->theap->base);
 	if (!BATdirty(b)) {
 		b->batDirtyflushed = false;
 	}
@@ -45,7 +45,7 @@ BATcommit(BAT *b, BUN size)
 	}
 	b->batInserted = size < BUNlast(b) ? size : BUNlast(b);
 	TRC_DEBUG(DELTA, "BATcommit2 %s free %zu ins " BUNFMT " base %p\n",
-		  BATgetId(b), b->theap.free, b->batInserted, b->theap.base);
+		  BATgetId(b), b->theap->free, b->batInserted, b->theap->base);
 }
 
 /*
@@ -57,7 +57,7 @@ BATfakeCommit(BAT *b)
 {
 	if (b) {
 		BATcommit(b, BUN_NONE);
-		b->batDirtydesc = b->theap.dirty = false;
+		b->batDirtydesc = b->theap->dirty = false;
 		if (b->tvheap)
 			b->tvheap->dirty = false;
 	}
@@ -77,11 +77,12 @@ BATundo(BAT *b)
 
 	if (b == NULL)
 		return;
+	assert(b->theap->parentid == b->batCacheid);
 	TRC_DEBUG(DELTA, "BATundo: %s \n", BATgetId(b));
 	if (b->batDirtyflushed) {
-		b->batDirtydesc = b->theap.dirty = true;
+		b->batDirtydesc = b->theap->dirty = true;
 	} else {
-		b->batDirtydesc = b->theap.dirty = false;
+		b->batDirtydesc = b->theap->dirty = false;
 		if (b->tvheap)
 			b->tvheap->dirty = false;
 	}
@@ -103,7 +104,7 @@ BATundo(BAT *b)
 			}
 		}
 	}
-	b->theap.free = tailsize(b, b->batInserted);
+	b->theap->free = tailsize(b, b->batInserted);
 
 	BATsetcount(b, b->batInserted);
 }

@@ -70,6 +70,8 @@ insert_string_bat(BAT *b, BAT *n, struct canditer *ci, bool force)
 	BUN oldcnt = BATcount(b);
 
 	assert(b->ttype == TYPE_str);
+	assert(b->tbaseoff == 0);
+	assert(b->theap->parentid == b->batCacheid);
 	/* only transient bats can use some other bat's string heap */
 	assert(b->batRole == TRANSIENT || b->tvheap->parentid == b->batCacheid);
 	if (cnt == 0)
@@ -278,24 +280,24 @@ insert_string_bat(BAT *b, BAT *n, struct canditer *ci, bool force)
 			switch (b->twidth) {
 			case 1:
 				assert(v - GDK_VAROFFSET < ((var_t) 1 << 8));
-				((uint8_t *) b->theap.base)[b->batCount++] = (uint8_t) (v - GDK_VAROFFSET);
-				b->theap.free += 1;
+				((uint8_t *) b->theap->base)[b->batCount++] = (uint8_t) (v - GDK_VAROFFSET);
+				b->theap->free += 1;
 				break;
 			case 2:
 				assert(v - GDK_VAROFFSET < ((var_t) 1 << 16));
-				((uint16_t *) b->theap.base)[b->batCount++] = (uint16_t) (v - GDK_VAROFFSET);
-				b->theap.free += 2;
+				((uint16_t *) b->theap->base)[b->batCount++] = (uint16_t) (v - GDK_VAROFFSET);
+				b->theap->free += 2;
 				break;
 #if SIZEOF_VAR_T == 8
 			case 4:
 				assert(v < ((var_t) 1 << 32));
-				((uint32_t *) b->theap.base)[b->batCount++] = (uint32_t) v;
-				b->theap.free += 4;
+				((uint32_t *) b->theap->base)[b->batCount++] = (uint32_t) v;
+				b->theap->free += 4;
 				break;
 #endif
 			default:
-				((var_t *) b->theap.base)[b->batCount++] = v;
-				b->theap.free += sizeof(var_t);
+				((var_t *) b->theap->base)[b->batCount++] = v;
+				b->theap->free += sizeof(var_t);
 				break;
 			}
 		}
@@ -353,23 +355,23 @@ insert_string_bat(BAT *b, BAT *n, struct canditer *ci, bool force)
 				case 1:
 					assert(v - GDK_VAROFFSET < ((var_t) 1 << 8));
 					*(unsigned char *)Tloc(b, BUNlast(b)) = (unsigned char) (v - GDK_VAROFFSET);
-					b->theap.free += 1;
+					b->theap->free += 1;
 					break;
 				case 2:
 					assert(v - GDK_VAROFFSET < ((var_t) 1 << 16));
 					*(unsigned short *)Tloc(b, BUNlast(b)) = (unsigned short) (v - GDK_VAROFFSET);
-					b->theap.free += 2;
+					b->theap->free += 2;
 					break;
 #if SIZEOF_VAR_T == 8
 				case 4:
 					assert(v < ((var_t) 1 << 32));
 					*(unsigned int *)Tloc(b, BUNlast(b)) = (unsigned int) v;
-					b->theap.free += 4;
+					b->theap->free += 4;
 					break;
 #endif
 				default:
 					*(var_t *)Tloc(b, BUNlast(b)) = v;
-					b->theap.free += SIZEOF_VAR_T;
+					b->theap->free += SIZEOF_VAR_T;
 					break;
 				}
 				b->batCount++;
@@ -380,10 +382,10 @@ insert_string_bat(BAT *b, BAT *n, struct canditer *ci, bool force)
 			r++;
 		}
 	}
-	b->theap.dirty = true;
+	b->theap->dirty = true;
 	/* maintain hash */
 	for (r = oldcnt, cnt = BATcount(b); b->thash && r < cnt; r++) {
-		HASHins(b, r, Tbase(b) + VarHeapVal(b->theap.base, r, b->twidth));
+		HASHins(b, r, Tbase(b) + VarHeapVal(Tloc(b, 0), r, b->twidth));
 	}
 	return GDK_SUCCEED;
       bunins_failed:
@@ -440,13 +442,13 @@ append_varsized_bat(BAT *b, BAT *n, struct canditer *ci)
 				*dst++ = src[canditer_next(ci) - hseq];
 			}
 		}
-		b->theap.dirty = true;
+		b->theap->dirty = true;
 		BATsetcount(b, BATcount(b) + ci->ncand);
 		/* maintain hash table */
 		for (BUN i = BATcount(b) - ci->ncand;
 		     b->thash && i < BATcount(b);
 		     i++) {
-			HASHins(b, i, b->tvheap->base + ((var_t *) b->theap.base)[i]);
+			HASHins(b, i, b->tvheap->base + *(var_t *) Tloc(b, i));
 		}
 		return GDK_SUCCEED;
 	}
@@ -481,7 +483,7 @@ append_varsized_bat(BAT *b, BAT *n, struct canditer *ci)
 			HASHins(b, r, t);
 		r++;
 	}
-	b->theap.dirty = true;
+	b->theap->dirty = true;
 	return GDK_SUCCEED;
 }
 
@@ -503,7 +505,7 @@ BATappend(BAT *b, BAT *n, BAT *s, bool force)
 		return GDK_SUCCEED;
 	}
 	assert(b->batCacheid > 0);
-	assert(b->theap.parentid == 0);
+	assert(b->theap->parentid == b->batCacheid);
 
 	TRC_DEBUG_IF(ALGO) {
 		t0 = GDKusec();
@@ -692,7 +694,7 @@ BATappend(BAT *b, BAT *n, BAT *s, bool force)
 			       Tloc(n, ci.seq - hseq),
 			       cnt * Tsize(n));
 			for (BUN i = 0; b->thash && i < cnt; i++) {
-				HASHins(b, r, b->theap.base + r * b->twidth);
+				HASHins(b, r, Tloc(b, r));
 				r++;
 			}
 			BATsetcount(b, BATcount(b) + cnt);
@@ -710,7 +712,7 @@ BATappend(BAT *b, BAT *n, BAT *s, bool force)
 				r++;
 			}
 		}
-		b->theap.dirty = true;
+		b->theap->dirty = true;
 	}
 	if (b->thash)
 		BATsetprop(b, GDK_NUNIQUE, TYPE_oid, &(oid){b->thash->nunique});
@@ -892,7 +894,7 @@ BATreplace(BAT *b, BAT *p, BAT *n, bool force)
 	oid hseqend = b->hseqbase + BATcount(b);
 	bool anynil = false;
 
-	b->theap.dirty = true;
+	b->theap->dirty = true;
 	if (b->tvarsized) {
 		b->tvheap->dirty = true;
 		for (BUN i = 0, j = BATcount(p); i < j; i++) {
@@ -962,18 +964,18 @@ BATreplace(BAT *b, BAT *p, BAT *n, bool force)
 
 			var_t d;
 			switch (b->twidth) {
-			default: /* only three of four cases possible */
-				d = (var_t) ((uint8_t *) b->theap.base)[updid] + GDK_VAROFFSET;
+			default: /* only three or four cases possible */
+				d = (var_t) ((uint8_t *) b->theap->base)[updid] + GDK_VAROFFSET;
 				break;
 			case 2:
-				d = (var_t) ((uint16_t *) b->theap.base)[updid] + GDK_VAROFFSET;
+				d = (var_t) ((uint16_t *) b->theap->base)[updid] + GDK_VAROFFSET;
 				break;
 			case 4:
-				d = (var_t) ((uint32_t *) b->theap.base)[updid];
+				d = (var_t) ((uint32_t *) b->theap->base)[updid];
 				break;
 #if SIZEOF_VAR_T == 8
 			case 8:
-				d = (var_t) ((uint64_t *) b->theap.base)[updid];
+				d = (var_t) ((uint64_t *) b->theap->base)[updid];
 				break;
 #endif
 			}
@@ -987,17 +989,17 @@ BATreplace(BAT *b, BAT *p, BAT *n, bool force)
 			}
 			switch (b->twidth) {
 			case 1:
-				((uint8_t *) b->theap.base)[updid] = (uint8_t) (d - GDK_VAROFFSET);
+				((uint8_t *) b->theap->base)[updid] = (uint8_t) (d - GDK_VAROFFSET);
 				break;
 			case 2:
-				((uint16_t *) b->theap.base)[updid] = (uint16_t) (d - GDK_VAROFFSET);
+				((uint16_t *) b->theap->base)[updid] = (uint16_t) (d - GDK_VAROFFSET);
 				break;
 			case 4:
-				((uint32_t *) b->theap.base)[updid] = (uint32_t) d;
+				((uint32_t *) b->theap->base)[updid] = (uint32_t) d;
 				break;
 #if SIZEOF_VAR_T == 8
 			case 8:
-				((uint64_t *) b->theap.base)[updid] = (uint64_t) d;
+				((uint64_t *) b->theap->base)[updid] = (uint64_t) d;
 				break;
 #endif
 			}
@@ -1151,20 +1153,20 @@ BATreplace(BAT *b, BAT *p, BAT *n, bool force)
 
 			switch (b->twidth) {
 			case 1:
-				((bte *) b->theap.base)[updid] = * (bte *) new;
+				((bte *) b->theap->base)[updid] = * (bte *) new;
 				break;
 			case 2:
-				((sht *) b->theap.base)[updid] = * (sht *) new;
+				((sht *) b->theap->base)[updid] = * (sht *) new;
 				break;
 			case 4:
-				((int *) b->theap.base)[updid] = * (int *) new;
+				((int *) b->theap->base)[updid] = * (int *) new;
 				break;
 			case 8:
-				((lng *) b->theap.base)[updid] = * (lng *) new;
+				((lng *) b->theap->base)[updid] = * (lng *) new;
 				break;
 #ifdef HAVE_HGE
 			case 16:
-				((hge *) b->theap.base)[updid] = * (hge *) new;
+				((hge *) b->theap->base)[updid] = * (hge *) new;
 				break;
 #endif
 			default:
@@ -1249,7 +1251,7 @@ BATslice(BAT *b, BUN l, BUN h)
 			if (bn->ttype) {
 				memcpy(Tloc(bn, 0), Tloc(b, p),
 				       (q - p) * Tsize(bn));
-				bn->theap.dirty = true;
+				bn->theap->dirty = true;
 			}
 			BATsetcount(bn, h - l);
 		} else {
@@ -1261,7 +1263,7 @@ BATslice(BAT *b, BUN l, BUN h)
 				}
 			}
 		}
-		bn->theap.dirty = true;
+		bn->theap->dirty = true;
 		bn->tsorted = b->tsorted;
 		bn->trevsorted = b->trevsorted;
 		bn->tkey = b->tkey;
@@ -1371,7 +1373,7 @@ BATkeyed(BAT *b)
 			hs = b->thash;
 			if (hs == NULL && VIEWtparent(b) != 0) {
 				BAT *b2 = BBPdescriptor(VIEWtparent(b));
-				lo = (BUN) ((b->theap.base - b2->theap.base) >> b->tshift);
+				lo = b->tbaseoff - b2->tbaseoff;
 				hs = b2->thash;
 			}
 			for (q = BUNlast(b), p = 0; p < q; p++) {
@@ -1767,7 +1769,7 @@ BATsort(BAT **sorted, BAT **order, BAT **groups,
 	}
 	if (VIEWtparent(b)) {
 		pb = BBPdescriptor(VIEWtparent(b));
-		if (b->theap.base != pb->theap.base ||
+		if (b->tbaseoff != pb->tbaseoff ||
 		    BATcount(b) != BATcount(pb) ||
 		    b->hseqbase != pb->hseqbase ||
 		    BATatoms[b->ttype].atomCmp != BATatoms[pb->ttype].atomCmp)
@@ -2040,7 +2042,7 @@ BATsort(BAT **sorted, BAT **order, BAT **groups,
 	}
 	if (orderidxlock)
 		MT_lock_unset(&pb->batIdxLock);
-	bn->theap.dirty = true;
+	bn->theap->dirty = true;
 	bn->tnosorted = 0;
 	bn->tnorevsorted = 0;
 	bn->tnokey[0] = bn->tnokey[1] = 0;
@@ -2142,13 +2144,13 @@ BATconstant(oid hseq, int tailtype, const void *v, BUN n, role_t role)
 				return NULL;
 			}
 			char val[sizeof(var_t)];
-			memcpy(val, bn->theap.base, bn->twidth);
+			memcpy(val, Tloc(bn, 0), bn->twidth);
 			if (bn->twidth == 1 && n > 1) {
 				/* single byte value: we have a
 				 * function for that */
-				memset(bn->theap.base + 1, val[0], n - 1);
+				memset(Tloc(bn, 1), val[0], n - 1);
 			} else {
-				char *p = bn->theap.base;
+				char *p = Tloc(bn, 0);
 				for (i = 1; i < n; i++) {
 					p += bn->twidth;
 					memcpy(p, val, bn->twidth);
@@ -2163,7 +2165,7 @@ BATconstant(oid hseq, int tailtype, const void *v, BUN n, role_t role)
 				}
 			break;
 		}
-		bn->theap.dirty = true;
+		bn->theap->dirty = true;
 		bn->tnil = n >= 1 && (*ATOMcompare(tailtype))(v, ATOMnilptr(tailtype)) == 0;
 		BATsetcount(bn, n);
 		bn->tsorted = true;

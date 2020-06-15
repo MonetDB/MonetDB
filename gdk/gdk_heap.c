@@ -372,7 +372,8 @@ GDKupgradevarheap(BAT *b, var_t v, bool copyall, bool mayshare)
 	const char *filename;
 	bat bid = b->batCacheid;
 
-	assert(b->theap.parentid == 0);
+	assert(b->theap->parentid == b->batCacheid);
+	assert(b->tbaseoff == 0);
 	assert(width != 0);
 	assert(v >= GDK_VAROFFSET);
 	assert(width < SIZEOF_VAR_T && (width <= 2 ? v - GDK_VAROFFSET : v) >= ((var_t) 1 << (8 * width)));
@@ -387,7 +388,7 @@ GDKupgradevarheap(BAT *b, var_t v, bool copyall, bool mayshare)
 	 * we may be in the middle of an insert loop that adjusts the
 	 * free value at the end; otherwise only copy the area
 	 * indicated by the "free" pointer */
-	n = (copyall ? b->theap.size : b->theap.free) >> b->tshift;
+	n = (copyall ? b->theap->size : b->theap->free) >> b->tshift;
 
 	/* Create a backup copy before widening.
 	 *
@@ -400,24 +401,24 @@ GDKupgradevarheap(BAT *b, var_t v, bool copyall, bool mayshare)
 	 * file.  Then the same problem arises.
 	 *
 	 * also see do_backup in gdk_bbp.c */
-	filename = strrchr(b->theap.filename, DIR_SEP);
+	filename = strrchr(b->theap->filename, DIR_SEP);
 	if (filename == NULL)
-		filename = b->theap.filename;
+		filename = b->theap->filename;
 	else
 		filename++;
 	int exists = 0;
 	if ((BBP_status(bid) & (BBPEXISTING|BBPDELETED)) &&
-	    !(exists = file_exists(b->theap.farmid, BAKDIR, filename, NULL)) &&
-	    (b->theap.storage != STORE_MEM ||
-	     GDKmove(b->theap.farmid, BATDIR, b->theap.filename, NULL,
+	    !(exists = file_exists(b->theap->farmid, BAKDIR, filename, NULL)) &&
+	    (b->theap->storage != STORE_MEM ||
+	     GDKmove(b->theap->farmid, BATDIR, b->theap->filename, NULL,
 		     BAKDIR, filename, NULL) != GDK_SUCCEED)) {
 		int fd;
 		ssize_t ret = 0;
 		size_t size = n << b->tshift;
-		const char *base = b->theap.base;
+		const char *base = b->theap->base;
 
 		/* first save heap in file with extra .tmp extension */
-		if ((fd = GDKfdlocate(b->theap.farmid, b->theap.filename, "wb", "tmp")) < 0)
+		if ((fd = GDKfdlocate(b->theap->farmid, b->theap->filename, "wb", "tmp")) < 0)
 			return GDK_FAIL;
 		while (size > 0) {
 			ret = write(fd, base, (unsigned) MIN(1 << 30, size));
@@ -440,40 +441,40 @@ GDKupgradevarheap(BAT *b, var_t v, bool copyall, bool mayshare)
 			/* something went wrong: abandon ship */
 			GDKsyserror("GDKupgradevarheap: syncing heap to disk failed\n");
 			close(fd);
-			GDKunlink(b->theap.farmid, BATDIR, b->theap.filename, "tmp");
+			GDKunlink(b->theap->farmid, BATDIR, b->theap->filename, "tmp");
 			return GDK_FAIL;
 		}
 		/* move tmp file to backup directory (without .tmp
 		 * extension) */
-		if (GDKmove(b->theap.farmid, BATDIR, b->theap.filename, "tmp", BAKDIR, filename, NULL) != GDK_SUCCEED) {
+		if (GDKmove(b->theap->farmid, BATDIR, b->theap->filename, "tmp", BAKDIR, filename, NULL) != GDK_SUCCEED) {
 			/* backup failed */
-			GDKunlink(b->theap.farmid, BATDIR, b->theap.filename, "tmp");
+			GDKunlink(b->theap->farmid, BATDIR, b->theap->filename, "tmp");
 			return GDK_FAIL;
 		}
 	}
 	if (exists == -1)
 		return GDK_FAIL;
 
-	savefree = b->theap.free;
+	savefree = b->theap->free;
 	if (copyall)
-		b->theap.free = b->theap.size;
-	if (HEAPextend(&b->theap, (b->theap.size >> b->tshift) << shift, mayshare) != GDK_SUCCEED)
+		b->theap->free = b->theap->size;
+	if (HEAPextend(b->theap, (b->theap->size >> b->tshift) << shift, mayshare) != GDK_SUCCEED)
 		return GDK_FAIL;
 	if (copyall)
-		b->theap.free = savefree;
+		b->theap->free = savefree;
 	/* note, cast binds more closely than addition */
-	pc = (unsigned char *) b->theap.base + n;
-	ps = (unsigned short *) b->theap.base + n;
-	pi = (unsigned int *) b->theap.base + n;
+	pc = (unsigned char *) b->theap->base + n;
+	ps = (unsigned short *) b->theap->base + n;
+	pi = (unsigned int *) b->theap->base + n;
 #if SIZEOF_VAR_T == 8
-	pv = (var_t *) b->theap.base + n;
+	pv = (var_t *) b->theap->base + n;
 #endif
 
 	/* convert from back to front so that we can do it in-place */
 	switch (width) {
 	case 2:
 #ifndef NDEBUG
-		memset(ps, 0, b->theap.base + b->theap.size - (char *) ps);
+		memset(ps, 0, b->theap->base + b->theap->size - (char *) ps);
 #endif
 		switch (b->twidth) {
 		case 1:
@@ -484,7 +485,7 @@ GDKupgradevarheap(BAT *b, var_t v, bool copyall, bool mayshare)
 		break;
 	case 4:
 #ifndef NDEBUG
-		memset(pi, 0, b->theap.base + b->theap.size - (char *) pi);
+		memset(pi, 0, b->theap->base + b->theap->size - (char *) pi);
 #endif
 		switch (b->twidth) {
 		case 1:
@@ -500,7 +501,7 @@ GDKupgradevarheap(BAT *b, var_t v, bool copyall, bool mayshare)
 #if SIZEOF_VAR_T == 8
 	case 8:
 #ifndef NDEBUG
-		memset(pv, 0, b->theap.base + b->theap.size - (char *) pv);
+		memset(pv, 0, b->theap->base + b->theap->size - (char *) pv);
 #endif
 		switch (b->twidth) {
 		case 1:
@@ -519,7 +520,7 @@ GDKupgradevarheap(BAT *b, var_t v, bool copyall, bool mayshare)
 		break;
 #endif
 	}
-	b->theap.free <<= shift - b->tshift;
+	b->theap->free <<= shift - b->tshift;
 	b->tshift = shift;
 	b->twidth = width;
 	return GDK_SUCCEED;

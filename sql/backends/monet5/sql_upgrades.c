@@ -1907,7 +1907,7 @@ sql_update_jun2020_bam(Client c, mvc *m, const char *prev_schema)
 			"drop procedure bam.sam_export;\n"
 			"drop procedure bam.bam_export;\n");
 	if (b) {
-		if (BATcount(b) > 0 && ((lng *) b->theap.base)[0] == 0) {
+		if (BATcount(b) > 0 && *(lng *) Tloc(b, 0) == 0) {
 			/* tables in bam schema are empty: drop them */
 			pos += snprintf(buf + pos, bufsize - pos,
 					"drop table bam.sq;\n"

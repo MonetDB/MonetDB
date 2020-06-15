@@ -70,7 +70,7 @@ BATcreatedesc(oid hseq, int tt, bool heapnames, role_t role)
 	 */
 	assert(tt >= 0);
 
-	bn = GDKzalloc(sizeof(BAT));
+	bn = GDKmalloc(sizeof(BAT));
 
 	if (bn == NULL)
 		return NULL;
@@ -78,48 +78,61 @@ BATcreatedesc(oid hseq, int tt, bool heapnames, role_t role)
 	/*
 	 * Fill in basic column info
 	 */
-	bn->hseqbase = hseq;
+	*bn = (BAT) {
+		.hseqbase = hseq,
 
-	bn->ttype = tt;
-	bn->tkey = false;
-	bn->tnonil = true;
-	bn->tnil = false;
-	bn->tsorted = bn->trevsorted = ATOMlinear(tt);
-	bn->tident = BATstring_t;
-	bn->tseqbase = oid_nil;
-	bn->tprops = NULL;
+		.ttype = tt,
+		.tkey = false,
+		.tnonil = true,
+		.tnil = false,
+		.tsorted = ATOMlinear(tt),
+		.trevsorted = ATOMlinear(tt),
+		.tident = BATstring_t,
+		.tseqbase = oid_nil,
 
-	bn->batRole = role;
-	bn->batTransient = true;
+		.batRole = role,
+		.batTransient = true,
+	};
+	if (heapnames && (bn->theap = GDKzalloc(sizeof(Heap))) == NULL) {
+		GDKfree(bn);
+		return NULL;
+	}
+
 	/*
 	 * add to BBP
 	 */
 	if (BBPinsert(bn) == 0) {
+		GDKfree(bn->theap);
 		GDKfree(bn);
 		return NULL;
 	}
-	/*
- 	* Default zero for order oid index
- 	*/
-	bn->torderidx = NULL;
+
 	/*
 	 * fill in heap names, so HEAPallocs can resort to disk for
 	 * very large writes.
 	 */
 	assert(bn->batCacheid > 0);
 
-	const char *nme = BBP_physical(bn->batCacheid);
-	strconcat_len(bn->theap.filename, sizeof(bn->theap.filename),
-		      nme, ".tail", NULL);
-	bn->theap.farmid = BBPselectfarm(role, bn->ttype, offheap);
-	if (heapnames && ATOMneedheap(tt)) {
-		if ((bn->tvheap = (Heap *) GDKzalloc(sizeof(Heap))) == NULL)
-			goto bailout;
-		strconcat_len(bn->tvheap->filename,
-			      sizeof(bn->tvheap->filename),
-			      nme, ".theap", NULL);
-		bn->tvheap->parentid = bn->batCacheid;
-		bn->tvheap->farmid = BBPselectfarm(role, bn->ttype, varheap);
+	if (heapnames) {
+		assert(bn->theap != NULL);
+		bn->theap->parentid = bn->batCacheid;
+		bn->theap->farmid = BBPselectfarm(role, bn->ttype, offheap);
+
+		const char *nme = BBP_physical(bn->batCacheid);
+		strconcat_len(bn->theap->filename, sizeof(bn->theap->filename),
+			      nme, ".tail", NULL);
+
+		if (ATOMneedheap(tt)) {
+			if ((bn->tvheap = GDKmalloc(sizeof(Heap))) == NULL)
+				goto bailout;
+			*bn->tvheap = (Heap) {
+				.parentid = bn->batCacheid,
+				.farmid = BBPselectfarm(role, bn->ttype, varheap),
+			};
+			strconcat_len(bn->tvheap->filename,
+				      sizeof(bn->tvheap->filename),
+				      nme, ".theap", NULL);
+		}
 	}
 	char name[MT_NAME_LEN];
 	snprintf(name, sizeof(name), "BATlock%d", bn->batCacheid); /* fits */
@@ -128,12 +141,13 @@ BATcreatedesc(oid hseq, int tt, bool heapnames, role_t role)
 	return bn;
       bailout:
 	BBPclear(bn->batCacheid);
-	if (tt)
-		HEAPfree(&bn->theap, true);
+	if (tt && bn->theap)
+		HEAPfree(bn->theap, true);
 	if (bn->tvheap) {
 		HEAPfree(bn->tvheap, true);
 		GDKfree(bn->tvheap);
 	}
+	GDKfree(bn->theap);
 	GDKfree(bn);
 	return NULL;
 }
@@ -190,7 +204,7 @@ COLnew(oid hseq, int tt, BUN cap, role_t role)
 	if (cap > BUN_MAX)
 		cap = BUN_MAX;
 
-	bn = BATcreatedesc(hseq, tt, tt != TYPE_void, role);
+	bn = BATcreatedesc(hseq, tt, true, role);
 	if (bn == NULL)
 		return NULL;
 
@@ -198,7 +212,7 @@ COLnew(oid hseq, int tt, BUN cap, role_t role)
 	bn->batCapacity = cap;
 
 	/* alloc the main heaps */
-	if (tt && HEAPalloc(&bn->theap, cap, bn->twidth) != GDK_SUCCEED) {
+	if (tt && HEAPalloc(bn->theap, cap, bn->twidth) != GDK_SUCCEED) {
 		goto bailout;
 	}
 
@@ -215,8 +229,9 @@ COLnew(oid hseq, int tt, BUN cap, role_t role)
 	return bn;
   bailout:
 	BBPclear(bn->batCacheid);
-	HEAPfree(&bn->theap, true);
+	HEAPfree(bn->theap, true);
 	MT_lock_destroy(&bn->batIdxLock);
+	GDKfree(bn->theap);
 	GDKfree(bn);
 	return NULL;
 }
@@ -449,10 +464,10 @@ BATextend(BAT *b, BUN newcap)
 	b->batCapacity = newcap;
 
 	theap_size *= Tsize(b);
-	if (b->theap.base) {
+	if (b->theap->base) {
 		TRC_DEBUG(HEAP, "HEAPextend in BATextend %s %zu %zu\n",
-			  b->theap.filename, b->theap.size, theap_size);
-		if (HEAPextend(&b->theap, theap_size, b->batRestricted == BAT_READ) != GDK_SUCCEED)
+			  b->theap->filename, b->theap->size, theap_size);
+		if (HEAPextend(b->theap, theap_size, b->batRestricted == BAT_READ) != GDK_SUCCEED)
 			return GDK_FAIL;
 	}
 	return GDK_SUCCEED;
@@ -531,7 +546,7 @@ BATclear(BAT *b, bool force)
 	BAThseqbase(b, 0);
 	BATtseqbase(b, ATOMtype(b->ttype) == TYPE_oid ? 0 : oid_nil);
 	b->batDirtydesc = true;
-	b->theap.dirty = true;
+	b->theap->dirty = true;
 	BATsettrivprop(b);
 	b->tnosorted = b->tnorevsorted = 0;
 	b->tnokey[0] = b->tnokey[1] = 0;
@@ -554,10 +569,10 @@ BATfree(BAT *b)
 	HASHfree(b);
 	IMPSfree(b);
 	OIDXfree(b);
-	if (b->ttype)
-		HEAPfree(&b->theap, false);
+	if (b->ttype && b->theap)
+		HEAPfree(b->theap, false);
 	else
-		assert(!b->theap.base);
+		assert(b->theap == NULL || b->theap->base == NULL);
 	if (b->tvheap) {
 		assert(b->tvheap->parentid == b->batCacheid);
 		HEAPfree(b->tvheap, false);
@@ -575,6 +590,7 @@ BATdestroy(BAT *b)
 		GDKfree(b->tvheap);
 	PROPdestroy(b);
 	MT_lock_destroy(&b->batIdxLock);
+	GDKfree(b->theap);
 	GDKfree(b);
 }
 
@@ -709,14 +725,14 @@ COLcopy(BAT *b, int tt, bool writable, role_t role)
 		if (bn->tvarsized && bn->ttype && bunstocopy == BUN_NONE) {
 			bn->tshift = b->tshift;
 			bn->twidth = b->twidth;
-			if (HEAPextend(&bn->theap, BATcapacity(bn) << bn->tshift, true) != GDK_SUCCEED)
+			if (HEAPextend(bn->theap, BATcapacity(bn) << bn->tshift, true) != GDK_SUCCEED)
 				goto bunins_failed;
 		}
 
 		if (tt == TYPE_void) {
 			/* case (2): a void,void result => nothing to
 			 * copy! */
-			bn->theap.free = 0;
+			bn->theap->free = 0;
 		} else if (bunstocopy == BUN_NONE) {
 			/* case (3): just copy the heaps; if possible
 			 * with copy-on-write VM support */
@@ -724,9 +740,11 @@ COLcopy(BAT *b, int tt, bool writable, role_t role)
 
 			bthp = (Heap) {
 				.farmid = BBPselectfarm(role, b->ttype, offheap),
+				.parentid = bn->batCacheid,
 			};
 			thp = (Heap) {
 				.farmid = BBPselectfarm(role, b->ttype, varheap),
+				.parentid = bn->batCacheid,
 			};
 			strconcat_len(bthp.filename, sizeof(bthp.filename),
 				      BBP_physical(bn->batCacheid),
@@ -734,7 +752,7 @@ COLcopy(BAT *b, int tt, bool writable, role_t role)
 			strconcat_len(thp.filename, sizeof(thp.filename),
 				      BBP_physical(bn->batCacheid),
 				      ".theap", NULL);
-			if ((b->ttype && HEAPcopy(&bthp, &b->theap) != GDK_SUCCEED) ||
+			if ((b->ttype && HEAPcopy(&bthp, b->theap) != GDK_SUCCEED) ||
 			    (bn->tvheap && HEAPcopy(&thp, b->tvheap) != GDK_SUCCEED)) {
 				HEAPfree(&thp, true);
 				HEAPfree(&bthp, true);
@@ -743,13 +761,12 @@ COLcopy(BAT *b, int tt, bool writable, role_t role)
 			}
 			/* succeeded; replace dummy small heaps by the
 			 * real ones */
-			heapmove(&bn->theap, &bthp);
-			thp.parentid = bn->batCacheid;
+			heapmove(bn->theap, &bthp);
 			if (bn->tvheap)
 				heapmove(bn->tvheap, &thp);
 
 			/* make sure we use the correct capacity */
-			bn->batCapacity = (BUN) (bn->ttype ? bn->theap.size >> bn->tshift : 0);
+			bn->batCapacity = (BUN) (bn->ttype ? bn->theap->size >> bn->tshift : 0);
 		} else if (BATatoms[tt].atomFix || tt != TYPE_void || ATOMextern(tt)) {
 			/* case (4): one-by-one BUN insert (really slow) */
 			BUN p, q, r = 0;
@@ -762,24 +779,24 @@ COLcopy(BAT *b, int tt, bool writable, role_t role)
 					goto bunins_failed;
 				r++;
 			}
-			bn->theap.dirty |= bunstocopy > 0;
+			bn->theap->dirty |= bunstocopy > 0;
 		} else if (tt != TYPE_void && b->ttype == TYPE_void) {
 			/* case (4): optimized for unary void
 			 * materialization */
-			oid cur = b->tseqbase, *dst = (oid *) bn->theap.base;
+			oid cur = b->tseqbase, *dst = (oid *) Tloc(bn, 0);
 			oid inc = !is_oid_nil(cur);
 
-			bn->theap.free = bunstocopy * sizeof(oid);
-			bn->theap.dirty |= bunstocopy > 0;
+			bn->theap->free = bunstocopy * sizeof(oid);
+			bn->theap->dirty |= bunstocopy > 0;
 			while (bunstocopy--) {
 				*dst++ = cur;
 				cur += inc;
 			}
 		} else {
 			/* case (4): optimized for simple array copy */
-			bn->theap.free = bunstocopy * Tsize(bn);
-			bn->theap.dirty |= bunstocopy > 0;
-			memcpy(Tloc(bn, 0), Tloc(b, 0), bn->theap.free);
+			bn->theap->free = bunstocopy * Tsize(bn);
+			bn->theap->dirty |= bunstocopy > 0;
+			memcpy(Tloc(bn, 0), Tloc(b, 0), bn->theap->free);
 		}
 		/* copy all properties (size+other) from the source bat */
 		BATsetcount(bn, cnt);
@@ -1065,7 +1082,7 @@ BUNappend(BAT *b, const void *t, bool force)
 	if (b->ttype != TYPE_void) {
 		if (bunfastapp(b, t) != GDK_SUCCEED)
 			return GDK_FAIL;
-		b->theap.dirty = true;
+		b->theap->dirty = true;
 	} else {
 		BATsetcount(b, b->batCount + 1);
 	}
@@ -1139,7 +1156,7 @@ BUNdelete(BAT *b, oid o)
 		memcpy(Tloc(b, p), Tloc(b, BUNlast(b) - 1), Tsize(b));
 		/* no longer sorted */
 		b->tsorted = b->trevsorted = false;
-		b->theap.dirty = true;
+		b->theap->dirty = true;
 	}
 	if (b->tnosorted >= p)
 		b->tnosorted = 0;
@@ -1196,6 +1213,7 @@ BUNinplace(BAT *b, BUN p, const void *t, bool force)
 	const void *val;
 
 	assert(p >= b->batInserted || force);
+	assert(b->tbaseoff == 0);
 
 	/* uncommitted BUN elements */
 
@@ -1320,20 +1338,20 @@ BUNinplace(BAT *b, BUN p, const void *t, bool force)
 		case 0:	     /* void */
 			break;
 		case 1:
-			((bte *) b->theap.base)[p] = * (bte *) t;
+			((bte *) b->theap->base)[p] = * (bte *) t;
 			break;
 		case 2:
-			((sht *) b->theap.base)[p] = * (sht *) t;
+			((sht *) b->theap->base)[p] = * (sht *) t;
 			break;
 		case 4:
-			((int *) b->theap.base)[p] = * (int *) t;
+			((int *) b->theap->base)[p] = * (int *) t;
 			break;
 		case 8:
-			((lng *) b->theap.base)[p] = * (lng *) t;
+			((lng *) b->theap->base)[p] = * (lng *) t;
 			break;
 #ifdef HAVE_HGE
 		case 16:
-			((hge *) b->theap.base)[p] = * (hge *) t;
+			((hge *) b->theap->base)[p] = * (hge *) t;
 			break;
 #endif
 		default:
@@ -1387,7 +1405,7 @@ BUNinplace(BAT *b, BUN p, const void *t, bool force)
 		b->tnokey[0] = b->tnokey[1] = 0;
 	if (b->tnonil)
 		b->tnonil = t && ATOMcmp(b->ttype, t, ATOMnilptr(b->ttype)) != 0;
-	b->theap.dirty = true;
+	b->theap->dirty = true;
 	if (b->tvheap)
 		b->tvheap->dirty = true;
 
@@ -1540,7 +1558,8 @@ BATsetcount(BAT *b, BUN cnt)
 
 	b->batCount = cnt;
 	b->batDirtydesc = true;
-	b->theap.free = tailsize(b, cnt);
+	if (b->theap->parentid == b->batCacheid)
+		b->theap->free = tailsize(b, cnt);
 	if (b->ttype == TYPE_void)
 		b->batCapacity = cnt;
 	if (cnt <= 1) {
@@ -1908,8 +1927,8 @@ BATcheckmodes(BAT *b, bool existing)
 	BATcheck(b, GDK_FAIL);
 
 	if (b->ttype) {
-		m1 = HEAPcommitpersistence(&b->theap, wr, existing);
-		dirty |= (b->theap.newstorage != m1);
+		m1 = HEAPcommitpersistence(b->theap, wr, existing);
+		dirty |= (b->theap->newstorage != m1);
 	}
 
 	if (b->tvheap) {
@@ -1922,7 +1941,7 @@ BATcheckmodes(BAT *b, bool existing)
 
 	if (dirty) {
 		b->batDirtydesc = true;
-		b->theap.newstorage = m1;
+		b->theap->newstorage = m1;
 		if (b->tvheap)
 			b->tvheap->newstorage = m3;
 	}
@@ -1956,8 +1975,8 @@ BATsetaccess(BAT *b, restrict_t newmode)
 			return GDK_FAIL;
 		}
 
-		b1 = b->theap.newstorage;
-		m1 = HEAPchangeaccess(&b->theap, ACCESSMODE(wr, rd), existing);
+		b1 = b->theap->newstorage;
+		m1 = HEAPchangeaccess(b->theap, ACCESSMODE(wr, rd), existing);
 		if (b->tvheap) {
 			bool ta = (newmode == BAT_APPEND && ATOMappendpriv(b->ttype, b->tvheap));
 			b3 = b->tvheap->newstorage;
@@ -1969,7 +1988,7 @@ BATsetaccess(BAT *b, restrict_t newmode)
 		/* set new access mode and mmap modes */
 		b->batRestricted = (unsigned int) newmode;
 		b->batDirtydesc = true;
-		b->theap.newstorage = m1;
+		b->theap->newstorage = m1;
 		if (b->tvheap)
 			b->tvheap->newstorage = m3;
 
@@ -1977,7 +1996,7 @@ BATsetaccess(BAT *b, restrict_t newmode)
 			/* roll back all changes */
 			b->batRestricted = (unsigned int) bakmode;
 			b->batDirtydesc = bakdirty;
-			b->theap.newstorage = b1;
+			b->theap->newstorage = b1;
 			if (b->tvheap)
 				b->tvheap->newstorage = b3;
 			return GDK_FAIL;
@@ -2167,7 +2186,7 @@ BATassertProps(BAT *b)
 	assert(b->ttype != TYPE_bat);
 	assert(isVIEW(b) ||
 	       b->ttype == TYPE_void ||
-	       BBPfarms[b->theap.farmid].roles & (1 << b->batRole));
+	       BBPfarms[b->theap->farmid].roles & (1 << b->batRole));
 	assert(isVIEW(b) ||
 	       b->tvheap == NULL ||
 	       (BBPfarms[b->tvheap->farmid].roles & (1 << b->batRole)));
@@ -2175,11 +2194,11 @@ BATassertProps(BAT *b)
 	cmpf = ATOMcompare(b->ttype);
 	nilp = ATOMnilptr(b->ttype);
 
-	assert(b->theap.free >= tailsize(b, BUNlast(b)));
+	assert(b->theap->free >= tailsize(b, BUNlast(b)));
 	if (b->ttype != TYPE_void) {
 		assert(b->batCount <= b->batCapacity);
-		assert(b->theap.size >= b->theap.free);
-		assert(b->theap.size >> b->tshift >= b->batCapacity);
+		assert(b->theap->size >= b->theap->free);
+		assert(b->theap->size >> b->tshift >= b->batCapacity);
 	}
 
 	/* void and str imply varsized */

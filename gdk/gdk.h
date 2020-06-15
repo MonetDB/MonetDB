@@ -695,7 +695,8 @@ typedef struct {
 	BUN norevsorted;	/* position that proves revsorted==FALSE */
 	oid seq;		/* start of dense sequence */
 
-	Heap heap;		/* space for the column. */
+	Heap *heap;		/* space for the column. */
+	BUN baseoff;		/* offset in heap->base (in whole items) */
 	Heap *vheap;		/* space for the varsized data. */
 	Hash *hash;		/* hash table */
 	Imprints *imprints;	/* column imprints index */
@@ -765,6 +766,7 @@ typedef struct BATiter {
 #define tnosorted	T.nosorted
 #define tnorevsorted	T.norevsorted
 #define theap		T.heap
+#define tbaseoff	T.baseoff
 #define tvheap		T.vheap
 #define thash		T.hash
 #define timprints	T.imprints
@@ -929,13 +931,13 @@ gdk_export BUN BUNfnd(BAT *b, const void *right);
 
 #define tailsize(b,p)	((b)->ttype?((size_t)(p))<<(b)->tshift:0)
 
-#define Tloc(b,p)	((void *)((b)->theap.base+(((size_t)(p))<<(b)->tshift)))
+#define Tloc(b,p)	((void *)((b)->theap->base+(((size_t)(p)+(b)->tbaseoff)<<(b)->tshift)))
 
 typedef var_t stridx_t;
 #define SIZEOF_STRIDX_T SIZEOF_VAR_T
 #define GDK_VARALIGN SIZEOF_STRIDX_T
 
-#define BUNtvaroff(bi,p) VarHeapVal((bi).b->theap.base, (p), (bi).b->twidth)
+#define BUNtvaroff(bi,p) VarHeapVal(Tloc((bi).b, 0), (p), (bi).b->twidth)
 
 #define BUNtloc(bi,p)	Tloc((bi).b,p)
 #define BUNtpos(bi,p)	Tpos(&(bi),p)
@@ -962,7 +964,7 @@ BUNtoid(BAT *b, BUN p)
 	if (is_oid_nil(b->tseqbase)) {
 		if (b->ttype == TYPE_void)
 			return b->tseqbase;
-		return ((const oid *) (b)->theap.base)[p];
+		return ((const oid *) b->theap->base)[p + b->tbaseoff];
 	}
 	oid o = b->tseqbase + p;
 	if (b->ttype == TYPE_oid || b->tvheap == NULL) {
@@ -1071,7 +1073,7 @@ gdk_export restrict_t BATgetaccess(BAT *b);
 
 #define BATdirty(b)	(!(b)->batCopiedtodisk ||			\
 			 (b)->batDirtydesc ||				\
-			 (b)->theap.dirty ||				\
+			 (b)->theap->dirty ||				\
 			 ((b)->tvheap != NULL && (b)->tvheap->dirty))
 
 #define BATcapacity(b)	(b)->batCapacity
@@ -1223,7 +1225,7 @@ BATsettrivprop(BAT *b)
 			}
 		} else if (b->ttype == TYPE_oid) {
 			/* b->batCount == 1 */
-			oid sqbs = ((const oid *) b->theap.base)[0];
+			oid sqbs = ((const oid *) b->theap->base)[b->tbaseoff];
 			if (is_oid_nil(sqbs)) {
 				b->tnonil = false;
 				b->tnil = true;
@@ -1237,8 +1239,8 @@ BATsettrivprop(BAT *b)
 		int c;
 		if (b->tvarsized)
 			c = ATOMcmp(b->ttype,
-				    Tbase(b) + VarHeapVal(b->theap.base, 0, b->twidth),
-				    Tbase(b) + VarHeapVal(b->theap.base, 1, b->twidth));
+				    Tbase(b) + VarHeapVal(Tloc(b, 0), 0, b->twidth),
+				    Tbase(b) + VarHeapVal(Tloc(b, 0), 1, b->twidth));
 		else
 			c = ATOMcmp(b->ttype, Tloc(b, 0), Tloc(b, 1));
 		b->tsorted = c <= 0;
@@ -1490,6 +1492,7 @@ gdk_export void GDKclrerr(void);
 static inline gdk_return __attribute__((__warn_unused_result__))
 Tputvalue(BAT *b, BUN p, const void *v, bool copyall)
 {
+	assert(b->tbaseoff == 0);
 	if (b->tvarsized && b->ttype) {
 		var_t d;
 		gdk_return rc;
@@ -1507,17 +1510,17 @@ Tputvalue(BAT *b, BUN p, const void *v, bool copyall)
 		}
 		switch (b->twidth) {
 		case 1:
-			((uint8_t *) b->theap.base)[p] = (uint8_t) (d - GDK_VAROFFSET);
+			((uint8_t *) b->theap->base)[p] = (uint8_t) (d - GDK_VAROFFSET);
 			break;
 		case 2:
-			((uint16_t *) b->theap.base)[p] = (uint16_t) (d - GDK_VAROFFSET);
+			((uint16_t *) b->theap->base)[p] = (uint16_t) (d - GDK_VAROFFSET);
 			break;
 		case 4:
-			((uint32_t *) b->theap.base)[p] = (uint32_t) d;
+			((uint32_t *) b->theap->base)[p] = (uint32_t) d;
 			break;
 #if SIZEOF_VAR_T == 8
 		case 8:
-			((uint64_t *) b->theap.base)[p] = (uint64_t) d;
+			((uint64_t *) b->theap->base)[p] = (uint64_t) d;
 			break;
 #endif
 		}
@@ -1530,7 +1533,8 @@ Tputvalue(BAT *b, BUN p, const void *v, bool copyall)
 static inline gdk_return __attribute__((__warn_unused_result__))
 tfastins_nocheck(BAT *b, BUN p, const void *v, int s)
 {
-	b->theap.free += s;
+	assert(b->theap->parentid == b->batCacheid);
+	b->theap->free += s;
 	return Tputvalue(b, p, v, false);
 }
 
@@ -1566,8 +1570,9 @@ bunfastapp(BAT *b, const void *v)
 	    true)) ||							\
 	  BATextend((b), BATgrows(b)) != GDK_SUCCEED) ?			\
 	 GDK_FAIL :							\
-	 ((b)->theap.free += sizeof(TYPE),				\
-	  ((TYPE *) (b)->theap.base)[(b)->batCount++] = * (const TYPE *) (v), \
+	 (assert((b)->theap->parentid == (b)->batCacheid),		\
+	  (b)->theap->free += sizeof(TYPE),				\
+	  ((TYPE *) (b)->theap->base)[(b)->batCount++] = * (const TYPE *) (v), \
 	  GDK_SUCCEED))
 
 static inline gdk_return __attribute__((__warn_unused_result__))
@@ -1575,7 +1580,9 @@ tfastins_nocheckVAR(BAT *b, BUN p, const void *v, int s)
 {
 	var_t d;
 	gdk_return rc;
-	b->theap.free += s;
+	assert(b->tbaseoff == 0);
+	assert(b->theap->parentid == b->batCacheid);
+	b->theap->free += s;
 	if ((rc = ATOMputVAR(b->ttype, b->tvheap, &d, v)) != GDK_SUCCEED)
 		return rc;
 	if (b->twidth < SIZEOF_VAR_T &&
@@ -1588,17 +1595,17 @@ tfastins_nocheckVAR(BAT *b, BUN p, const void *v, int s)
 	}
 	switch (b->twidth) {
 	case 1:
-		((uint8_t *) b->theap.base)[p] = (uint8_t) (d - GDK_VAROFFSET);
+		((uint8_t *) b->theap->base)[p] = (uint8_t) (d - GDK_VAROFFSET);
 		break;
 	case 2:
-		((uint16_t *) b->theap.base)[p] = (uint16_t) (d - GDK_VAROFFSET);
+		((uint16_t *) b->theap->base)[p] = (uint16_t) (d - GDK_VAROFFSET);
 		break;
 	case 4:
-		((uint32_t *) b->theap.base)[p] = (uint32_t) d;
+		((uint32_t *) b->theap->base)[p] = (uint32_t) d;
 		break;
 #if SIZEOF_VAR_T == 8
 	case 8:
-		((uint64_t *) b->theap.base)[p] = (uint64_t) d;
+		((uint64_t *) b->theap->base)[p] = (uint64_t) d;
 		break;
 #endif
 	}
@@ -1948,10 +1955,10 @@ gdk_export void VIEWbounds(BAT *b, BAT *view, BUN l, BUN h);
  */
 #define isVIEW(x)							\
 	(assert((x)->batCacheid > 0),					\
-	 ((x)->theap.parentid ||					\
+	 (((x)->theap && (x)->theap->parentid != (x)->batCacheid) ||	\
 	  ((x)->tvheap && (x)->tvheap->parentid != (x)->batCacheid)))
 
-#define VIEWtparent(x)	((x)->theap.parentid)
+#define VIEWtparent(x)	((x)->theap == NULL || (x)->theap->parentid == (x)->batCacheid ? 0 : (x)->theap->parentid)
 #define VIEWvtparent(x)	((x)->tvheap == NULL || (x)->tvheap->parentid == (x)->batCacheid ? 0 : (x)->tvheap->parentid)
 
 /*

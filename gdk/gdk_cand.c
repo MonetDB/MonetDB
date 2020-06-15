@@ -426,7 +426,7 @@ canditer_init(struct canditer *ci, BAT *b, BAT *s)
 		}
 	} else if (is_oid_nil(ci->seq)) {
 		ci->tpe = cand_materialized;
-		ci->oids = (const oid *) s->theap.base;
+		ci->oids = (const oid *) Tloc(s, 0);
 		ci->seq = ci->oids[0];
 		ci->noids = cnt;
 	} else {

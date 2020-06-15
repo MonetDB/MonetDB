@@ -54,13 +54,20 @@ virtualize(BAT *bn)
 		if (VIEWtparent(bn)) {
 			BBPunshare(VIEWtparent(bn));
 			BBPunfix(VIEWtparent(bn));
-			bn->theap.parentid = 0;
-			bn->theap.base = NULL;
+			Heap *h = bn->theap;
+			bn->theap = GDKmalloc(sizeof(Heap));
+			if (bn->theap == NULL) {
+				BBPunfix(bn->batCacheid);
+				return NULL;
+			}
+			*bn->theap = *h;
+			bn->theap->parentid = bn->batCacheid;
+			bn->theap->base = NULL;
 		} else {
-			HEAPfree(&bn->theap, true);
+			HEAPfree(bn->theap, true);
 		}
-		bn->theap.storage = bn->theap.newstorage = STORE_MEM;
-		bn->theap.size = 0;
+		bn->theap->storage = bn->theap->newstorage = STORE_MEM;
+		bn->theap->size = 0;
 		bn->ttype = TYPE_void;
 		bn->tvarsized = true;
 		bn->twidth = 0;
@@ -103,7 +110,7 @@ hashselect(BAT *b, struct canditer *restrict ci, BAT *bn,
 			  "for hash\n",
 			  ALGOBATPAR(b),
 			  ALGOBATPAR(b2));
-		d = (BUN) ((b->theap.base - b2->theap.base) >> b->tshift);
+		d = b->tbaseoff - b2->tbaseoff;
 		l += d;
 		h += d;
 		b = b2;
@@ -1357,7 +1364,7 @@ BATselect(BAT *b, BAT *s, const void *tl, const void *th,
 		if ((ORDERfnd(b, th) - ORDERfnd(b, tl)) < b->batCount/3) {
 			use_orderidx = true;
 			if (view) {
-				vwo = (lng) ((view->theap.base - b->theap.base) >> b->tshift);
+				vwo = (lng) (view->tbaseoff - b->tbaseoff);
 				vwl = b->hseqbase + (oid) vwo + ci.seq - view->hseqbase;
 				vwh = vwl + canditer_last(&ci) - ci.seq;
 				vwo = (lng) view->hseqbase - (lng) b->hseqbase - vwo;

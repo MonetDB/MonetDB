@@ -214,7 +214,7 @@ joininitresults(BAT **r1p, BAT **r2p, BUN lcnt, BUN rcnt, bool lkey, bool rkey,
 			 (s##val = BUNtoid(s, (x)), (const char *) &s##val))
 #define FVALUE(s, x)	((const char *) s##vals + ((x) * s##width))
 
-#define APPEND(b, o)		(((oid *) b->theap.base)[b->batCount++] = (o))
+#define APPEND(b, o)		(((oid *) b->theap->base)[b->batCount++] = (o))
 
 static inline gdk_return
 maybeextend(BAT *restrict r1, BAT *restrict r2,
@@ -989,7 +989,7 @@ mergejoin_int(BAT **r1p, BAT **r2p, BAT *l, BAT *r,
 				r2->trevsorted = false;
 			}
 			if (BATtdense(r1) &&
-			    ((oid *) r1->theap.base)[r1->batCount - 1] + 1 != l->hseqbase + lstart - nl) {
+			    ((oid *) r1->theap->base)[r1->batCount - 1] + 1 != l->hseqbase + lstart - nl) {
 				r1->tseqbase = oid_nil;
 			}
 		}
@@ -997,7 +997,7 @@ mergejoin_int(BAT **r1p, BAT **r2p, BAT *l, BAT *r,
 		if (r2 &&
 		    BATcount(r2) > 0 &&
 		    BATtdense(r2) &&
-		    ((oid *) r2->theap.base)[r2->batCount - 1] + 1 != r->hseqbase + rstart - nr) {
+		    ((oid *) r2->theap->base)[r2->batCount - 1] + 1 != r->hseqbase + rstart - nr) {
 			r2->tseqbase = oid_nil;
 		}
 
@@ -1028,9 +1028,9 @@ mergejoin_int(BAT **r1p, BAT **r2p, BAT *l, BAT *r,
 	}
 	if (BATcount(r1) > 0) {
 		if (BATtdense(r1))
-			r1->tseqbase = ((oid *) r1->theap.base)[0];
+			r1->tseqbase = ((oid *) r1->theap->base)[0];
 		if (r2 && BATtdense(r2))
-			r2->tseqbase = ((oid *) r2->theap.base)[0];
+			r2->tseqbase = ((oid *) r2->theap->base)[0];
 	} else {
 		r1->tseqbase = 0;
 		if (r2) {
@@ -1287,7 +1287,7 @@ mergejoin_lng(BAT **r1p, BAT **r2p, BAT *l, BAT *r,
 				r2->trevsorted = false;
 			}
 			if (BATtdense(r1) &&
-			    ((oid *) r1->theap.base)[r1->batCount - 1] + 1 != l->hseqbase + lstart - nl) {
+			    ((oid *) r1->theap->base)[r1->batCount - 1] + 1 != l->hseqbase + lstart - nl) {
 				r1->tseqbase = oid_nil;
 			}
 		}
@@ -1295,7 +1295,7 @@ mergejoin_lng(BAT **r1p, BAT **r2p, BAT *l, BAT *r,
 		if (r2 &&
 		    BATcount(r2) > 0 &&
 		    BATtdense(r2) &&
-		    ((oid *) r2->theap.base)[r2->batCount - 1] + 1 != r->hseqbase + rstart - nr) {
+		    ((oid *) r2->theap->base)[r2->batCount - 1] + 1 != r->hseqbase + rstart - nr) {
 			r2->tseqbase = oid_nil;
 		}
 
@@ -1326,9 +1326,9 @@ mergejoin_lng(BAT **r1p, BAT **r2p, BAT *l, BAT *r,
 	}
 	if (BATcount(r1) > 0) {
 		if (BATtdense(r1))
-			r1->tseqbase = ((oid *) r1->theap.base)[0];
+			r1->tseqbase = ((oid *) r1->theap->base)[0];
 		if (r2 && BATtdense(r2))
-			r2->tseqbase = ((oid *) r2->theap.base)[0];
+			r2->tseqbase = ((oid *) r2->theap->base)[0];
 	} else {
 		r1->tseqbase = 0;
 		if (r2) {
@@ -1564,7 +1564,7 @@ mergejoin_cand(BAT **r1p, BAT **r2p, BAT *l, BAT *r,
 				r2->trevsorted = false;
 			}
 			if (BATtdense(r1) &&
-			    ((oid *) r1->theap.base)[r1->batCount - 1] + 1 != l->hseqbase + lstart - nl) {
+			    ((oid *) r1->theap->base)[r1->batCount - 1] + 1 != l->hseqbase + lstart - nl) {
 				r1->tseqbase = oid_nil;
 			}
 		}
@@ -1572,7 +1572,7 @@ mergejoin_cand(BAT **r1p, BAT **r2p, BAT *l, BAT *r,
 		if (r2 &&
 		    BATcount(r2) > 0 &&
 		    BATtdense(r2) &&
-		    ((oid *) r2->theap.base)[r2->batCount - 1] + 1 != r->hseqbase + rci.next - nr) {
+		    ((oid *) r2->theap->base)[r2->batCount - 1] + 1 != r->hseqbase + rci.next - nr) {
 			r2->tseqbase = oid_nil;
 		}
 
@@ -1603,9 +1603,9 @@ mergejoin_cand(BAT **r1p, BAT **r2p, BAT *l, BAT *r,
 	}
 	if (BATcount(r1) > 0) {
 		if (BATtdense(r1))
-			r1->tseqbase = ((oid *) r1->theap.base)[0];
+			r1->tseqbase = ((oid *) r1->theap->base)[0];
 		if (r2 && BATtdense(r2))
-			r2->tseqbase = ((oid *) r2->theap.base)[0];
+			r2->tseqbase = ((oid *) r2->theap->base)[0];
 	} else {
 		r1->tseqbase = 0;
 		if (r2) {
@@ -2279,7 +2279,7 @@ mergejoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r,
 			 * be that the next value added isn't
 			 * consecutive with the last one */
 			if (lskipped ||
-			    ((oid *) r1->theap.base)[r1->batCount - 1] + 1 != canditer_peek(lci))
+			    ((oid *) r1->theap->base)[r1->batCount - 1] + 1 != canditer_peek(lci))
 				r1->tseqbase = oid_nil;
 		}
 
@@ -2303,7 +2303,7 @@ mergejoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r,
 			struct canditer ci = *rci; /* work on copy */
 			if (r2->batCount > 0 &&
 			    BATtdense(r2) &&
-			    ((oid *) r2->theap.base)[r2->batCount - 1] + 1 != canditer_idx(&ci, ci.next - nr))
+			    ((oid *) r2->theap->base)[r2->batCount - 1] + 1 != canditer_idx(&ci, ci.next - nr))
 				r2->tseqbase = oid_nil;
 			do {
 				canditer_setidx(&ci, ci.next - nr);
@@ -2314,7 +2314,7 @@ mergejoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r,
 		} else {
 			if (r2->batCount > 0 &&
 			    BATtdense(r2) &&
-			    ((oid *) r2->theap.base)[r2->batCount - 1] + 1 != canditer_peek(rci))
+			    ((oid *) r2->theap->base)[r2->batCount - 1] + 1 != canditer_peek(rci))
 				r2->tseqbase = oid_nil;
 			do {
 				struct canditer ci = *rci; /* work on copy */
@@ -2334,9 +2334,9 @@ mergejoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r,
 	}
 	if (BATcount(r1) > 0) {
 		if (BATtdense(r1))
-			r1->tseqbase = ((oid *) r1->theap.base)[0];
+			r1->tseqbase = ((oid *) r1->theap->base)[0];
 		if (r2 && BATtdense(r2))
-			r2->tseqbase = ((oid *) r2->theap.base)[0];
+			r2->tseqbase = ((oid *) r2->theap->base)[0];
 	} else {
 		r1->tseqbase = 0;
 		if (r2) {
@@ -2551,7 +2551,7 @@ hashjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r,
 			  BATgetId(r), ALGOBATPAR(b),
 			  swapped ? " (swapped)" : "");
 		hsh = b->thash;
-		roff = (BUN) ((r->theap.base - b->theap.base) >> r->tshift);
+		roff = r->tbaseoff - b->tbaseoff;
 		rl += roff;
 		rh += roff;
 		r = b;
@@ -2775,9 +2775,9 @@ hashjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r,
 	}
 	if (BATcount(r1) > 0) {
 		if (BATtdense(r1))
-			r1->tseqbase = ((oid *) r1->theap.base)[0];
+			r1->tseqbase = ((oid *) r1->theap->base)[0];
 		if (r2 && BATtdense(r2))
-			r2->tseqbase = ((oid *) r2->theap.base)[0];
+			r2->tseqbase = ((oid *) r2->theap->base)[0];
 	} else {
 		r1->tseqbase = 0;
 		if (r2) {
@@ -2966,9 +2966,9 @@ thetajoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr, int opcode, BU
 	}
 	if (BATcount(r1) > 0) {
 		if (BATtdense(r1))
-			r1->tseqbase = ((oid *) r1->theap.base)[0];
+			r1->tseqbase = ((oid *) r1->theap->base)[0];
 		if (r2 && BATtdense(r2))
-			r2->tseqbase = ((oid *) r2->theap.base)[0];
+			r2->tseqbase = ((oid *) r2->theap->base)[0];
 	} else {
 		r1->tseqbase = 0;
 		if (r2) {
@@ -3166,7 +3166,7 @@ leftjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr,
 #ifdef PERSISTENTHASH
 		/* only count the cost of creating the hash for
 		 * non-persistent bats */
-		if (rci.ncand != BATcount(r) || !(BBP_status(r->batCacheid) & BBPEXISTING) || r->theap.dirty || GDKinmemory())
+		if (rci.ncand != BATcount(r) || !(BBP_status(r->batCacheid) & BBPEXISTING) || r->theap->dirty || GDKinmemory())
 #endif
 			rcost += rci.ncand * 2.0;
 	} else {
@@ -3215,7 +3215,7 @@ leftjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr,
 #ifdef PERSISTENTHASH
 			/* only count the cost of creating the hash
 			 * for non-persistent bats */
-			if (lci.ncand != BATcount(l) || !(BBP_status(l->batCacheid) & BBPEXISTING) || l->theap.dirty || GDKinmemory())
+			if (lci.ncand != BATcount(l) || !(BBP_status(l->batCacheid) & BBPEXISTING) || l->theap->dirty || GDKinmemory())
 #endif
 				lcost += lci.ncand * 2.0;
 		} else {
@@ -3517,7 +3517,7 @@ BATjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr, bool nil_matches
 #ifdef PERSISTENTHASH
 		/* only count the cost of creating the hash for
 		 * non-persistent bats */
-		if (lci.ncand != BATcount(l) || !(BBP_status(l->batCacheid) & BBPEXISTING) || l->theap.dirty || GDKinmemory())
+		if (lci.ncand != BATcount(l) || !(BBP_status(l->batCacheid) & BBPEXISTING) || l->theap->dirty || GDKinmemory())
 #endif
 			lcost += lci.ncand * 2.0;
 	} else {
@@ -3562,7 +3562,7 @@ BATjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr, bool nil_matches
 #ifdef PERSISTENTHASH
 		/* only count the cost of creating the hash for
 		 * non-persistent bats */
-		if (rci.ncand != BATcount(r) || !(BBP_status(r->batCacheid) & BBPEXISTING) || r->theap.dirty || GDKinmemory())
+		if (rci.ncand != BATcount(r) || !(BBP_status(r->batCacheid) & BBPEXISTING) || r->theap->dirty || GDKinmemory())
 #endif
 			rcost += rci.ncand * 2.0;
 	} else {
@@ -3995,9 +3995,9 @@ BATbandjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr,
 	}
 	if (BATcount(r1) > 0) {
 		if (BATtdense(r1))
-			r1->tseqbase = ((oid *) r1->theap.base)[0];
+			r1->tseqbase = ((oid *) r1->theap->base)[0];
 		if (r2 && BATtdense(r2))
-			r2->tseqbase = ((oid *) r2->theap.base)[0];
+			r2->tseqbase = ((oid *) r2->theap->base)[0];
 	} else {
 		r1->tseqbase = 0;
 		if (r2) {

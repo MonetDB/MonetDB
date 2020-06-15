@@ -517,13 +517,13 @@ fixdateheap(BAT *b, const char *anme)
 	sprintf(filename, "BACKUP%c%s", DIR_SEP, bnme);
 
 	/* make backup of heap */
-	if (GDKmove(b->theap.farmid, srcdir, bnme, "tail", BAKDIR, bnme, "tail") != GDK_SUCCEED) {
+	if (GDKmove(b->theap->farmid, srcdir, bnme, "tail", BAKDIR, bnme, "tail") != GDK_SUCCEED) {
 		GDKfree(srcdir);
 		TRC_CRITICAL(GDK, "cannot make backup of %s.tail\n", nme);
 		return GDK_FAIL;
 	}
 	/* load old heap */
-	h1 = b->theap;
+	h1 = *b->theap;
 	strconcat_len(h1.filename, sizeof(h1.filename),
 		      filename, ".tail", NULL);
 	h1.base = NULL;
@@ -536,7 +536,7 @@ fixdateheap(BAT *b, const char *anme)
 	}
 
 	/* create new heap */
-	h2 = b->theap;
+	h2 = *b->theap;
 	strconcat_len(h2.filename, sizeof(h2.filename), nme, ".tail", NULL);
 	if (HEAPalloc(&h2, b->batCapacity, strcmp(anme, "date") == 0 ? 4 : 8) != GDK_SUCCEED) {
 		GDKfree(srcdir);
@@ -608,7 +608,7 @@ fixdateheap(BAT *b, const char *anme)
 	if (nofix) {
 		/* didn't fix anything, move backup back */
 		HEAPfree(&h2, true);
-		if (GDKmove(b->theap.farmid, BAKDIR, bnme, "tail", srcdir, bnme, "tail") != GDK_SUCCEED) {
+		if (GDKmove(b->theap->farmid, BAKDIR, bnme, "tail", srcdir, bnme, "tail") != GDK_SUCCEED) {
 			GDKfree(srcdir);
 			TRC_CRITICAL(GDK, "cannot restore backup of %s.tail\n", nme);
 			return GDK_FAIL;
@@ -627,7 +627,7 @@ fixdateheap(BAT *b, const char *anme)
 			b->tshift = 3;
 		}
 		HEAPfree(&h2, false);
-		b->theap = h2;
+		*b->theap = h2;
 	}
 	GDKfree(srcdir);
 	return GDK_SUCCEED;
@@ -711,7 +711,6 @@ heapinit(BAT *b, const char *buf, int *hashash, unsigned bbpversion, bat bid, co
 
 	(void) bbpversion;	/* could be used to implement compatibility */
 
-	norevsorted = 0; /* default for first case */
 	if (sscanf(buf,
 		   " %10s %" SCNu16 " %" SCNu16 " %" SCNu16 " %" SCNu64
 		   " %" SCNu64 " %" SCNu64 " %" SCNu64 " %" SCNu64
@@ -773,15 +772,16 @@ heapinit(BAT *b, const char *buf, int *hashash, unsigned bbpversion, bat bid, co
 	b->tnorevsorted = (BUN) norevsorted;
 	/* (properties & 0x0200) is the old tdense flag */
 	b->tseqbase = (properties & 0x0200) == 0 || base >= (uint64_t) oid_nil ? oid_nil : (oid) base;
-	b->theap.free = (size_t) free;
-	b->theap.size = (size_t) size;
-	b->theap.base = NULL;
-	strconcat_len(b->theap.filename, sizeof(b->theap.filename),
+	b->theap->free = (size_t) free;
+	b->theap->size = (size_t) size;
+	b->theap->base = NULL;
+	strconcat_len(b->theap->filename, sizeof(b->theap->filename),
 		      filename, ".tail", NULL);
-	b->theap.storage = (storage_t) storage;
-	b->theap.newstorage = (storage_t) storage;
-	b->theap.farmid = BBPselectfarm(PERSISTENT, b->ttype, offheap);
-	b->theap.dirty = false;
+	b->theap->storage = (storage_t) storage;
+	b->theap->newstorage = (storage_t) storage;
+	b->theap->farmid = BBPselectfarm(PERSISTENT, b->ttype, offheap);
+	b->theap->dirty = false;
+	b->theap->parentid = b->batCacheid;
 #ifdef GDKLIBRARY_BLOB_SORT
 	if (bbpversion <= GDKLIBRARY_BLOB_SORT && strcmp(type, "blob") == 0) {
 		b->tsorted = b->trevsorted = false;
@@ -789,7 +789,7 @@ heapinit(BAT *b, const char *buf, int *hashash, unsigned bbpversion, bat bid, co
 		OIDXdestroy(b);
 	}
 #endif
-	if (b->theap.free > b->theap.size) {
+	if (b->theap->free > b->theap->size) {
 		TRC_CRITICAL(GDK, "\"free\" value larger than \"size\" in heap of bat %d on line %d\n", (int) bid, lineno);
 		return -1;
 	}
@@ -907,13 +907,15 @@ BBPreadEntries(FILE *fp, unsigned bbpversion, int lineno)
 				     "%" PRIu64 ") on line %d.", batid, lineno);
 			return GDK_FAIL;
 		}
-		bn = GDKzalloc(sizeof(BAT));
-		if (bn == NULL) {
+		if ((bn = GDKzalloc(sizeof(BAT))) == NULL ||
+		    (bn->theap = GDKzalloc(sizeof(Heap))) == NULL) {
+			GDKfree(bn);
 			TRC_CRITICAL(GDK, "cannot allocate memory for BAT.");
 			return GDK_FAIL;
 		}
 		bn->batCacheid = bid;
 		if (BATroles(bn, NULL) != GDK_SUCCEED) {
+			GDKfree(bn->theap);
 			GDKfree(bn);
 			TRC_CRITICAL(GDK, "BATroles failed.");
 			return GDK_FAIL;
@@ -1014,12 +1016,12 @@ BBPcheckbats(void)
 			return GDK_FAIL;
 		if (stat(path, &statb) < 0) {
 			GDKsyserror("BBPcheckbats: cannot stat file %s (expected size %zu)\n",
-				    path, b->theap.free);
+				    path, b->theap->free);
 			GDKfree(path);
 			return GDK_FAIL;
 		}
-		if ((size_t) statb.st_size < b->theap.free) {
-			GDKerror("file %s too small (expected %zu, actual %zu)\n", path, b->theap.free, (size_t) statb.st_size);
+		if ((size_t) statb.st_size < b->theap->free) {
+			GDKerror("file %s too small (expected %zu, actual %zu)\n", path, b->theap->free, (size_t) statb.st_size);
 			GDKfree(path);
 			return GDK_FAIL;
 		}
@@ -1456,7 +1458,7 @@ BBPexit(void)
 static inline int
 heap_entry(FILE *fp, BAT *b, BUN size)
 {
-	size_t free = b->theap.free;
+	size_t free = b->theap->free;
 	if (b->twidth > 0 && free / b->twidth > size)
 		free = size * b->twidth;
 	return fprintf(fp, " %s %d %d %d " BUNFMT " " BUNFMT " " BUNFMT " "
@@ -1476,8 +1478,8 @@ heap_entry(FILE *fp, BAT *b, BUN size)
 		       b->tnorevsorted >= size ? 0 : b->tnorevsorted,
 		       b->tseqbase,
 		       free,
-		       b->theap.size,
-		       (int) b->theap.newstorage);
+		       b->theap->size,
+		       (int) b->theap->newstorage);
 }
 
 static inline int
@@ -1498,8 +1500,8 @@ new_bbpentry(FILE *fp, bat i, BUN size)
 	assert(BBP_desc(i));
 	assert(BBP_desc(i)->batCacheid == i);
 	assert(BBP_desc(i)->batRole == PERSISTENT);
-	assert(0 <= BBP_desc(i)->theap.farmid && BBP_desc(i)->theap.farmid < MAXFARMS);
-	assert(BBPfarms[BBP_desc(i)->theap.farmid].roles & (1 << PERSISTENT));
+	assert(0 <= BBP_desc(i)->theap->farmid && BBP_desc(i)->theap->farmid < MAXFARMS);
+	assert(BBPfarms[BBP_desc(i)->theap->farmid].roles & (1 << PERSISTENT));
 	if (BBP_desc(i)->tvheap) {
 		assert(0 <= BBP_desc(i)->tvheap->farmid && BBP_desc(i)->tvheap->farmid < MAXFARMS);
 		assert(BBPfarms[BBP_desc(i)->tvheap->farmid].roles & (1 << PERSISTENT));
@@ -1754,21 +1756,21 @@ BBPdump(void)
 			fprintf(stderr, " shares=%d", b->batSharecnt);
 		if (b->batDirtydesc)
 			fprintf(stderr, " DirtyDesc");
-		if (b->theap.parentid) {
-			fprintf(stderr, " Theap -> %d", b->theap.parentid);
+		if (b->theap->parentid != b->batCacheid) {
+			fprintf(stderr, " Theap -> %d", b->theap->parentid);
 		} else {
 			fprintf(stderr,
 				" Theap=[%zu,%zu]%s",
-				HEAPmemsize(&b->theap),
-				HEAPvmsize(&b->theap),
-				b->theap.dirty ? "(Dirty)" : "");
+				HEAPmemsize(b->theap),
+				HEAPvmsize(b->theap),
+				b->theap->dirty ? "(Dirty)" : "");
 			if (BBP_logical(i) && BBP_logical(i)[0] == '.') {
-				cmem += HEAPmemsize(&b->theap);
-				cvm += HEAPvmsize(&b->theap);
+				cmem += HEAPmemsize(b->theap);
+				cvm += HEAPvmsize(b->theap);
 				nc++;
 			} else {
-				mem += HEAPmemsize(&b->theap);
-				vm += HEAPvmsize(&b->theap);
+				mem += HEAPmemsize(b->theap);
+				vm += HEAPvmsize(b->theap);
 				n++;
 			}
 		}
@@ -2077,6 +2079,8 @@ BBPcacheit(BAT *bn, bool lock)
 		i = BBPinsert(bn);	/* bat was not previously entered */
 		if (i == 0)
 			return GDK_FAIL;
+		if (bn->theap)
+			bn->theap->parentid = i;
 		if (bn->tvheap)
 			bn->tvheap->parentid = i;
 	}
@@ -2302,8 +2306,8 @@ incref(bat i, bool logical, bool lock)
 	 * reference, getting the parent BAT descriptor is
 	 * superfluous, but not too expensive, so we do it anyway. */
 	if (!logical && (b = BBP_desc(i)) != NULL) {
-		if (b->theap.parentid) {
-			pb = BATdescriptor(b->theap.parentid);
+		if (b->theap->parentid != i) {
+			pb = BATdescriptor(b->theap->parentid);
 			if (pb == NULL)
 				return 0;
 		}
@@ -2344,7 +2348,7 @@ incref(bat i, bool logical, bool lock)
 		tp = tvp = 0;
 		refs = ++BBP_lrefs(i);
 	} else {
-		tp = b->theap.parentid;
+		tp = b->theap->parentid == i ? 0 : b->theap->parentid;
 		assert(tp >= 0);
 		tvp = b->tvheap == 0 || b->tvheap->parentid == i ? 0 : b->tvheap->parentid;
 		refs = ++BBP_refs(i);
@@ -2362,12 +2366,11 @@ incref(bat i, bool logical, bool lock)
 		MT_lock_unset(&GDKswapLock(i));
 
 	if (load) {
-		/* load the parent BATs and set the heap base pointers
-		 * to the correct values */
+		/* load the parent BATs */
 		assert(!logical);
 		if (tp) {
 			assert(pb != NULL);
-			b->theap.base = pb->theap.base + (size_t) b->theap.base;
+			b->theap = pb->theap;
 		}
 		/* done loading, release descriptor */
 		BBP_status_off(i, BBPLOADING, "BBPfix");
@@ -2456,21 +2459,19 @@ decref(bat i, bool logical, bool releaseShare, bool lock, const char *func)
 			GDKerror("%s: %s does not have pointer fixes.\n", func, BBPname(i));
 			assert(0);
 		} else {
-			assert(b == NULL || b->theap.parentid == 0 || BBP_refs(b->theap.parentid) > 0);
-			assert(b == NULL || b->tvheap == NULL || b->tvheap->parentid == 0 || BBP_refs(b->tvheap->parentid) > 0);
+			assert(b == NULL || b->theap == NULL || BBP_refs(b->theap->parentid) > 0);
+			assert(b == NULL || b->tvheap == NULL || BBP_refs(b->tvheap->parentid) > 0);
 			refs = --BBP_refs(i);
 			if (b && refs == 0) {
-				if ((tp = b->theap.parentid) != 0)
-					b->theap.base = (char *) (b->theap.base - BBP_cache(tp)->theap.base);
 				tvp = VIEWvtparent(b);
 			}
 		}
 	}
 
-	/* Make sure we do not unload bats which have more rows than marked persistend */
+	/* Make sure we do not unload bats which have more rows than marked persistent */
 	if (b && BBP_lrefs(i) > 0 && DELTAdirty(b)) {
 		b->batDirtydesc = true;
-		b->theap.dirty = true;
+		b->theap->dirty = true;
 		if (b->tvheap)
 			b->tvheap->dirty = true;
 	}
@@ -2721,7 +2722,7 @@ BBPsave(BAT *b)
 static void
 BBPdestroy(BAT *b)
 {
-	bat tp = b->theap.parentid;
+	bat tp = VIEWtparent(b);
 	bat vtp = VIEWvtparent(b);
 
 	if (isVIEW(b)) {	/* a physical view */
@@ -3133,8 +3134,8 @@ BBPbackup(BAT *b, bool subcommit)
 	srcdir[s - srcdir] = 0;
 
 	if (b->ttype != TYPE_void &&
-	    do_backup(srcdir, nme, "tail", &b->theap,
-		      b->batDirtydesc || b->theap.dirty,
+	    do_backup(srcdir, nme, "tail", b->theap,
+		      b->batDirtydesc || b->theap->dirty,
 		      subcommit) != GDK_SUCCEED)
 		goto fail;
 	if (b->tvheap &&
@@ -3195,21 +3196,21 @@ BBPsync(int cnt, bat *restrict subcommit, BUN *restrict sizes, lng logno, lng tr
 				char o[10];
 				char *f;
 				snprintf(o, sizeof(o), "%o", (unsigned) b->batCacheid);
-				f = GDKfilepath(b->theap.farmid, BAKDIR, o, "tail");
+				f = GDKfilepath(b->theap->farmid, BAKDIR, o, "tail");
 				if (f == NULL) {
 					ret = GDK_FAIL;
 					goto bailout;
 				}
 				if (access(f, F_OK) == 0)
-					file_move(b->theap.farmid, BAKDIR, SUBDIR, o, "tail");
+					file_move(b->theap->farmid, BAKDIR, SUBDIR, o, "tail");
 				GDKfree(f);
-				f = GDKfilepath(b->theap.farmid, BAKDIR, o, "theap");
+				f = GDKfilepath(b->theap->farmid, BAKDIR, o, "theap");
 				if (f == NULL) {
 					ret = GDK_FAIL;
 					goto bailout;
 				}
 				if (access(f, F_OK) == 0)
-					file_move(b->theap.farmid, BAKDIR, SUBDIR, o, "theap");
+					file_move(b->theap->farmid, BAKDIR, SUBDIR, o, "theap");
 				GDKfree(f);
 			}
 		}

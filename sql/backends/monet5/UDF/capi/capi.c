@@ -232,7 +232,7 @@ static void *wrapped_GDK_zalloc_nojump(size_t size)
 		}                                                                      \
 		self->bat = (void*) b;                                                 \
 		self->count = count;                                                   \
-		self->data = (type*) b->theap.base;                                    \
+		self->data = (type*) b->theap->base;                                   \
 		BATsetcount(b, count);                                                 \
 	}
 

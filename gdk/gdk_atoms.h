@@ -413,24 +413,22 @@ strCmp(const char *l, const char *r)
 		: strNil(l) ? -1 : strcmp(l, r);
 }
 
-static inline var_t
-VarHeapValRaw(const void *b, BUN p, int w)
+static inline size_t
+VarHeapVal(const void *b, BUN p, int w)
 {
 	switch (w) {
 	case 1:
-		return (var_t) ((const uint8_t *) b)[p] + GDK_VAROFFSET;
+		return (size_t) ((const uint8_t *) b)[p] + GDK_VAROFFSET;
 	case 2:
-		return (var_t) ((const uint16_t *) b)[p] + GDK_VAROFFSET;
+		return (size_t) ((const uint16_t *) b)[p] + GDK_VAROFFSET;
 #if SIZEOF_VAR_T == 8
 	case 4:
-		return (var_t) ((const uint32_t *) b)[p];
+		return (size_t) ((const uint32_t *) b)[p];
 #endif
 	default:
-		return ((const var_t *) b)[p];
+		return (size_t) ((const var_t *) b)[p];
 	}
 }
-
-#define VarHeapVal(b,p,w)	((size_t) VarHeapValRaw(b,p,w))
 
 static inline BUN __attribute__((__pure__))
 strHash(const char *key)

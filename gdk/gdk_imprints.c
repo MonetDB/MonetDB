@@ -530,7 +530,7 @@ BATimprints(BAT *b)
 		imprints->imprints.parentid = b->batCacheid;
 		b->timprints = imprints;
 		if (BBP_status(b->batCacheid) & BBPEXISTING &&
-		    !b->theap.dirty &&
+		    !b->theap->dirty &&
 		    !GDKinmemory()) {
 			MT_Id tid;
 			BBPfix(b->batCacheid);

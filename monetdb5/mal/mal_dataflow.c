@@ -505,6 +505,7 @@ DFLOWinitialize(void)
 	limit = GDKnr_threads ? GDKnr_threads - 1 : 0;
 	if (limit > THREADS)
 		limit = THREADS;
+	limit = 0;
 	MT_lock_set(&dataflowLock);
 	for (i = 0; i < limit; i++) {
 		workers[i].errbuf = GDKmalloc(GDKMAXERRLEN);

@@ -808,8 +808,8 @@ la_bat_destroy(logger *lg, logaction *la)
 			oid pos = (oid) p;
 #ifndef NDEBUG
 			assert(BBP_desc(bid)->batRole == PERSISTENT);
-			assert(0 <= BBP_desc(bid)->theap.farmid && BBP_desc(bid)->theap.farmid < MAXFARMS);
-			assert(BBPfarms[BBP_desc(bid)->theap.farmid].roles & (1 << PERSISTENT));
+			assert(0 <= BBP_desc(bid)->theap->farmid && BBP_desc(bid)->theap->farmid < MAXFARMS);
+			assert(BBPfarms[BBP_desc(bid)->theap->farmid].roles & (1 << PERSISTENT));
 			if (BBP_desc(bid)->tvheap) {
 				assert(0 <= BBP_desc(bid)->tvheap->farmid && BBP_desc(bid)->tvheap->farmid < MAXFARMS);
 				assert(BBPfarms[BBP_desc(bid)->tvheap->farmid].roles & (1 << PERSISTENT));
@@ -926,8 +926,8 @@ la_bat_use(logger *lg, logaction *la)
 		goto bailout;
 #ifndef NDEBUG
 	assert(b->batRole == PERSISTENT);
-	assert(0 <= b->theap.farmid && b->theap.farmid < MAXFARMS);
-	assert(BBPfarms[b->theap.farmid].roles & (1 << PERSISTENT));
+	assert(0 <= b->theap->farmid && b->theap->farmid < MAXFARMS);
+	assert(BBPfarms[b->theap->farmid].roles & (1 << PERSISTENT));
 	if (b->tvheap) {
 		assert(0 <= b->tvheap->farmid && b->tvheap->farmid < MAXFARMS);
 		assert(BBPfarms[b->tvheap->farmid].roles & (1 << PERSISTENT));

@@ -93,32 +93,32 @@
 		}                                                                      \
                                                                                \
 		/*When we create a BAT a small part of memory is allocated, free it*/  \
-		GDKfree(bat->theap.base);                                              \
-		bat->theap.base =                                                      \
+		GDKfree(bat->theap->base);                                             \
+		bat->theap->base =                                                     \
 			&data[(index_offset * ret->count) * ret->memory_size];             \
-		bat->theap.size = ret->count * ret->memory_size;                       \
-		bat->theap.free =                                                      \
-			bat->theap.size; /*There are no free places in the array*/         \
+		bat->theap->size = ret->count * ret->memory_size;                      \
+		bat->theap->free =                                                     \
+			bat->theap->size; /*There are no free places in the array*/        \
 		/*If index_offset > 0, we are mapping part of a multidimensional       \
 		 * array.*/                                                            \
 		/*The entire array will be cleared when the part with index_offset=0   \
 		 * is freed*/                                                          \
 		/*So we set this part of the mapping to 'NOWN'*/                       \
 		if (index_offset > 0)                                                  \
-			bat->theap.storage = STORE_NOWN;                                   \
+			bat->theap->storage = STORE_NOWN;                                  \
 		else {                                                                 \
-			bat->theap.storage = batstore;                                     \
+			bat->theap->storage = batstore;                                    \
 			if (batstore == STORE_MMAPABS) {                                   \
 				/* If we are taking data from a MMAP file, set the filename to \
 				 * the absolute path */                                        \
 				char address[100];                                             \
 				GDKmmapfile(address, sizeof(address), ret->mmap_id);           \
-				snprintf(bat->theap.filename, sizeof(bat->theap.filename),     \
+				snprintf(bat->theap->filename, sizeof(bat->theap->filename),   \
 					"%s%c%s.tmp", BATDIR, DIR_SEP, address);                   \
 				ret->mmap_id = -1;                                             \
 			}                                                                  \
 		}                                                                      \
-		bat->theap.newstorage = STORE_MEM;                                     \
+		bat->theap->newstorage = STORE_MEM;                                    \
 		bat->batCount = ret->count;                                            \
 		bat->batCapacity = ret->count;                                         \
 		bat->batCopiedtodisk = false;                                          \
@@ -156,23 +156,23 @@
 			nancheck_##mtpe(bat);                                              \
 		}                                                                      \
 		/*When we create a BAT a small part of memory is allocated, free it*/  \
-		GDKfree(bat->theap.base);                                              \
-		bat->theap.base =                                                      \
+		GDKfree(bat->theap->base);                                             \
+		bat->theap->base =                                                     \
 			&data[(index_offset * ret->count) * ret->memory_size];             \
-		bat->theap.size = ret->count * ret->memory_size;                       \
-		bat->theap.free =                                                      \
-			bat->theap.size; /*There are no free places in the array*/         \
+		bat->theap->size = ret->count * ret->memory_size;                      \
+		bat->theap->free =                                                     \
+			bat->theap->size; /*There are no free places in the array*/        \
 		/*If index_offset > 0, we are mapping part of a multidimensional       \
 		 * array.*/                                                            \
 		/*The entire array will be cleared when the part with index_offset=0   \
 		 * is freed*/                                                          \
 		/*So we set this part of the mapping to 'NOWN'*/                       \
 		if (index_offset > 0)                                                  \
-			bat->theap.storage = STORE_NOWN;                                   \
+			bat->theap->storage = STORE_NOWN;                                  \
 		else {                                                                 \
-			bat->theap.storage = batstore;                                     \
+			bat->theap->storage = batstore;                                    \
 		}                                                                      \
-		bat->theap.newstorage = STORE_MEM;                                     \
+		bat->theap->newstorage = STORE_MEM;                                    \
 		bat->batCount = (BUN)ret->count;                                       \
 		bat->batCapacity = (BUN)ret->count;                                    \
 		bat->batCopiedtodisk = false;                                          \

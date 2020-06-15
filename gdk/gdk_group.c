@@ -988,7 +988,7 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 			 * calculate the bounds [lo, lo+BATcount(b))
 			 * in the parent that b uses */
 			BAT *b2 = BBPdescriptor(parent);
-			lo = (BUN) ((b->theap.base - b2->theap.base) >> b->tshift);
+			lo = b->tbaseoff - b2->tbaseoff;
 			b = b2;
 			bi = bat_iterator(b);
 		}

@@ -134,7 +134,7 @@ typedef struct{
 			break;														\
 		}																\
 		}																\
-		mut->args[0].b->theap.dirty = true;								\
+		mut->args[0].b->theap->dirty = true;								\
 	} while (0)
 
 // single argument is preparatory step for GDK_mapreduce

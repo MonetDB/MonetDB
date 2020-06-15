@@ -86,9 +86,15 @@ VIEWcreate(oid seq, BAT *b)
 
 	BATcheck(b, NULL);
 
+	if (b->ttype == TYPE_void) {
+		/* we don't do views on void bats */
+		return BATdense(seq, b->tseqbase, b->batCount);
+	}
+
 	bn = BATcreatedesc(seq, b->ttype, false, TRANSIENT);
 	if (bn == NULL)
 		return NULL;
+	assert(bn->theap == NULL);
 
 	tp = VIEWtparent(b);
 	if (tp == 0 && b->ttype != TYPE_void)
@@ -106,16 +112,13 @@ VIEWcreate(oid seq, BAT *b)
 	if (tp)
 		BBPshare(tp);
 	if (bn->tvheap) {
-		assert(b->tvheap);
 		assert(bn->tvheap->parentid > 0);
 		BBPshare(bn->tvheap->parentid);
 	}
 
 	bn->tprops = NULL;
 
-	/* correct values after copy of head and tail info */
-	if (tp)
-		bn->theap.parentid = tp;
+	/* correct values after copy of column info */
 	BATinit_idents(bn);
 	bn->batRestricted = BAT_READ;
 	bn->thash = NULL;
@@ -156,7 +159,7 @@ BATmaterialize(BAT *b)
 	assert(!isVIEW(b));
 	tt = b->ttype;
 	cnt = BATcapacity(b);
-	tail = b->theap;
+	tail = *b->theap;
 	p = 0;
 	q = BUNlast(b);
 	assert(cnt >= q - p);
@@ -173,10 +176,10 @@ BATmaterialize(BAT *b)
 	IMPSdestroy(b);
 	OIDXdestroy(b);
 
-	strconcat_len(b->theap.filename, sizeof(b->theap.filename),
+	strconcat_len(b->theap->filename, sizeof(b->theap->filename),
 		      BBP_physical(b->batCacheid), ".tail", NULL);
-	if (HEAPalloc(&b->theap, cnt, sizeof(oid)) != GDK_SUCCEED) {
-		b->theap = tail;
+	if (HEAPalloc(b->theap, cnt, sizeof(oid)) != GDK_SUCCEED) {
+		*b->theap = tail;
 		return GDK_FAIL;
 	}
 
@@ -184,11 +187,11 @@ BATmaterialize(BAT *b)
 	b->ttype = tt;
 	BATsetdims(b);
 	b->batDirtydesc = true;
-	b->theap.dirty = true;
+	b->theap->dirty = true;
 
 	/* So now generate [t..t+cnt-1] */
 	t = b->tseqbase;
-	x = (oid *) b->theap.base;
+	x = (oid *) Tloc(b, 0);
 	if (is_oid_nil(t)) {
 		while (p < q)
 			x[p++] = oid_nil;
@@ -244,6 +247,8 @@ VIEWunlink(BAT *b)
 			return;
 
 		/* unlink heaps shared with parent */
+		if (b->theap && b->theap->parentid != b->batCacheid)
+			b->theap = NULL;
 		assert(b->tvheap == NULL || b->tvheap->parentid > 0);
 		if (b->tvheap && b->tvheap->parentid != b->batCacheid)
 			b->tvheap = NULL;
@@ -266,7 +271,7 @@ gdk_return
 VIEWreset(BAT *b)
 {
 	bat tp, tvp;
-	Heap tail, *th = NULL;
+	Heap *tail, *th = NULL;
 	BAT *v = NULL;
 
 	if (b == NULL)
@@ -279,24 +284,29 @@ VIEWreset(BAT *b)
 		const char *nme;
 
 		/* alloc heaps */
-		tail = (Heap) {0};
+		tail = GDKmalloc(sizeof(Heap));
+		if (tail == NULL)
+			return GDK_FAIL;
+		*tail = (Heap) {
+			.parentid = b->batCacheid,
+			.farmid = BBPselectfarm(b->batRole, b->ttype, offheap),
+		};
 
 		cnt = BATcount(b) + 1;
 		nme = BBP_physical(b->batCacheid);
 
-		assert(b->batCacheid > 0);
-		assert(tp || tvp || !b->ttype);
-
-		tail.farmid = BBPselectfarm(b->batRole, b->ttype, offheap);
-		strconcat_len(tail.filename, sizeof(tail.filename),
+		strconcat_len(tail->filename, sizeof(tail->filename),
 			      nme, ".tail", NULL);
-		if (b->ttype && HEAPalloc(&tail, cnt, Tsize(b)) != GDK_SUCCEED)
+		if (b->ttype && HEAPalloc(tail, cnt, Tsize(b)) != GDK_SUCCEED)
 			goto bailout;
 		if (b->tvheap) {
-			th = GDKzalloc(sizeof(Heap));
+			th = GDKmalloc(sizeof(Heap));
 			if (th == NULL)
 				goto bailout;
-			th->farmid = BBPselectfarm(b->batRole, b->ttype, varheap);
+			*th = (Heap) {
+				.parentid = b->batCacheid,
+				.farmid = BBPselectfarm(b->batRole, b->ttype, varheap),
+			};
 			strconcat_len(th->filename, sizeof(th->filename),
 				      nme, ".tail", NULL);
 			if (ATOMheap(b->ttype, th, cnt) != GDK_SUCCEED)
@@ -307,7 +317,7 @@ VIEWreset(BAT *b)
 		if (v == NULL)
 			goto bailout;
 
-		/* cut the link to your parents */
+		/* point of no return: cut the link to your parents */
 		VIEWunlink(b);
 		if (tp) {
 			BBPunshare(tp);
@@ -326,28 +336,27 @@ VIEWreset(BAT *b)
 		b->twidth = v->twidth;
 		b->tseqbase = v->tseqbase;
 
-		b->theap.parentid = 0;
 		b->batRestricted = BAT_WRITE;
 
 		b->tkey = BATtkey(v);
 
-		/* copy the heaps */
+		/* replace the heaps */
 		b->theap = tail;
+		b->tbaseoff = 0;
 
 		/* unshare from parents heap */
 		if (th) {
 			assert(b->tvheap == NULL);
 			b->tvheap = th;
 			th = NULL;
-			b->tvheap->parentid = b->batCacheid;
 		}
 
-		if (v->theap.parentid == b->batCacheid) {
+		if (v->theap->parentid == b->batCacheid) {
 			assert(tp == 0);
 			assert(b->batSharecnt > 0);
 			BBPunshare(b->batCacheid);
 			BBPunfix(b->batCacheid);
-			v->theap.parentid = 0;
+			v->theap->parentid = v->batCacheid;
 		}
 		b->batSharecnt = 0;
 		b->batCopiedtodisk = false;
@@ -368,7 +377,8 @@ VIEWreset(BAT *b)
 	return GDK_SUCCEED;
       bailout:
 	BBPreclaim(v);
-	HEAPfree(&tail, false);
+	HEAPfree(tail, false);
+	GDKfree(tail);
 	GDKfree(th);
 	return GDK_FAIL;
 }
@@ -382,7 +392,6 @@ void
 VIEWbounds(BAT *b, BAT *view, BUN l, BUN h)
 {
 	BUN cnt;
-	BATiter bi = bat_iterator(b);
 
 	if (b == NULL || view == NULL)
 		return;
@@ -392,8 +401,10 @@ VIEWbounds(BAT *b, BAT *view, BUN l, BUN h)
 		h = l;
 	cnt = h - l;
 	view->batInserted = 0;
-	view->theap.base = view->ttype ? BUNtloc(bi, l) : NULL;
-	view->theap.size = tailsize(view, cnt);
+	if (view->ttype != TYPE_void) {
+		assert(view->theap == b->theap);
+		view->tbaseoff = b->tbaseoff + l;
+	}
 	BATsetcount(view, cnt);
 	BATsetcapacity(view, cnt);
 	if (view->tnosorted > l && view->tnosorted < l + cnt)
@@ -428,10 +439,12 @@ VIEWdestroy(BAT *b)
 	OIDXdestroy(b);
 	VIEWunlink(b);
 
-	if (b->ttype && !b->theap.parentid) {
-		HEAPfree(&b->theap, false);
-	} else {
-		b->theap.base = NULL;
+	if (b->theap) {
+		if (b->ttype && b->theap->parentid == b->batCacheid) {
+			HEAPfree(b->theap, false);
+		} else {
+			b->theap->base = NULL;
+		}
 	}
 	b->tvheap = NULL;
 	BATfree(b);

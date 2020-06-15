@@ -572,7 +572,7 @@ BAThashsave(BAT *b, bool dosync)
 		((size_t *) hp->base)[4] = (size_t) BATcount(b);
 		((size_t *) hp->base)[5] = (size_t) h->nunique;
 		((size_t *) hp->base)[6] = (size_t) h->nheads;
-		if (!b->theap.dirty &&
+		if (!b->theap->dirty &&
 		    HEAPsave(&h->heaplink, h->heaplink.filename, NULL, dosync) == GDK_SUCCEED &&
 		    HEAPsave(hp, hp->filename, NULL, dosync) == GDK_SUCCEED) {
 			h->heaplink.dirty = false;
@@ -958,7 +958,7 @@ BAThash(BAT *b)
 			return GDK_FAIL;
 		}
 #ifdef PERSISTENTHASH
-		if (BBP_status(b->batCacheid) & BBPEXISTING && !b->theap.dirty && !GDKinmemory()) {
+		if (BBP_status(b->batCacheid) & BBPEXISTING && !b->theap->dirty && !GDKinmemory()) {
 			MT_Id tid;
 			BBPfix(b->batCacheid);
 			char name[MT_NAME_LEN];

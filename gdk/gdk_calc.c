@@ -1313,7 +1313,7 @@ BATcalcmincst(BAT *b, const ValRecord *v, BAT *s, BAT *r)
 			goto bunins_failed;
 	}
 
-	bn->theap.dirty = true;
+	bn->theap->dirty = true;
 	bn->tnil = nils > 0;
 	bn->tnonil = nils == 0;
 	if (ncand <= 1) {
@@ -1415,7 +1415,7 @@ BATcalcmincst_no_nil(BAT *b, const ValRecord *v, BAT *s, BAT *r)
 			goto bunins_failed;
 	}
 
-	bn->theap.dirty = true;
+	bn->theap->dirty = true;
 	bn->tnil = nils > 0;
 	bn->tnonil = nils == 0;
 	if (ncand <= 1) {
@@ -1683,7 +1683,7 @@ BATcalcmaxcst(BAT *b, const ValRecord *v, BAT *s, BAT *r)
 			goto bunins_failed;
 	}
 
-	bn->theap.dirty = true;
+	bn->theap->dirty = true;
 	bn->tnil = nils > 0;
 	bn->tnonil = nils == 0;
 	if (ncand <= 1) {
@@ -1785,7 +1785,7 @@ BATcalcmaxcst_no_nil(BAT *b, const ValRecord *v, BAT *s, BAT *r)
 			goto bunins_failed;
 	}
 
-	bn->theap.dirty = true;
+	bn->theap->dirty = true;
 	bn->tnil = nils > 0;
 	bn->tnonil = nils == 0;
 	if (ncand <= 1) {
@@ -3518,7 +3518,7 @@ addstr_loop(BAT *b1, const char *l, BAT *b2, const char *r, BAT *bn,
 		}
 	}
 	GDKfree(s);
-	bn->theap.dirty = true;
+	bn->theap->dirty = true;
 	return nils;
 
   bunins_failed:
@@ -13488,7 +13488,7 @@ BATcalcifthenelse_intern(BAT *b,
 	}
 
 	BATsetcount(bn, cnt);
-	bn->theap.dirty = true;
+	bn->theap->dirty = true;
 
 	bn->tsorted = cnt <= 1;
 	bn->trevsorted = cnt <= 1;
@@ -14281,7 +14281,7 @@ convert_any_str(BAT *b, BAT *bn, struct canditer *restrict ci,
 			}
 		}
 	}
-	bn->theap.dirty = true;
+	bn->theap->dirty = true;
 	BATsetcount(bn, ci->ncand);
 	GDKfree(dst);
 	return nils;
@@ -14458,7 +14458,7 @@ convert_void_any(oid seq, BAT *bn,
 		return BUN_NONE + 1;
 	}
 
-	bn->theap.dirty = true;
+	bn->theap->dirty = true;
 	return nils;
 
   bunins_failed:
