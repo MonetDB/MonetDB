@@ -48,21 +48,12 @@ target_link_libraries(example_append
     monetdbe)
 add_test(run_example_append example_append)
 
-add_executable(backup
-  backup.c
-  mapi.h
-  mapi.c
-  ${CMAKE_SOURCE_DIR}/clients/mapiclient/dump.c)
-target_include_directories(backup
-  PRIVATE
-  ${CMAKE_SOURCE_DIR}/clients/mapilib)
-target_link_libraries(backup
+add_executable(example_backup example_backup.c)
+target_link_libraries(example_backup
   PRIVATE
     monetdb_config_header
-    monetdbe
-    stream
-    matomic)
-add_test(run_backup backup)
+    monetdbe)
+add_test(run_example_backup example_backup)
 
 add_executable(example_connections example_connections.c)
 target_link_libraries(example_connections

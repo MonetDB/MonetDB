@@ -26,6 +26,7 @@
 #include "rel_updates.h"
 #include "monet_options.h"
 #include "msabaoth.h"
+#include "mapi.h"
 
 #define UNUSED(x) (void)(x)
 
@@ -552,6 +553,37 @@ monetdbe_close(monetdbe_database dbhdl)
 	return msg;
 }
 
+/* needs to be before the undef of the bool type */
+extern int dump_database(Mapi mid, stream *toConsole, bool describe, bool useInserts);
+
+char* 
+monetdbe_backup(monetdbe_database dbhdl, char *backupfile)
+{
+	char* msg = MAL_SUCCEED;
+
+	MT_lock_set(&embedded_lock);
+	if ((msg = validate_database_handle(dbhdl, "embedded.monetdbe_backup")) != MAL_SUCCEED) {
+		MT_lock_unset(&embedded_lock);
+		return msg; //The dbhdl is invalid, there is no transaction going
+	}
+	struct MapiStruct mid;
+
+	mid.mdbe = dbhdl;
+	/* open file stream */
+	stream *fd = open_wastream(backupfile);
+	if (fd) {
+		if (dump_database(&mid, fd, 0, 0)) {
+			if (mid.msg)
+				msg = mid.msg;
+		}
+		close_stream(fd);
+	} else {
+		msg = createException(MAL, "embedded.monetdbe_backup", "Unable too open backup file %s", backupfile);
+	}
+
+	MT_lock_unset(&embedded_lock);
+	return msg;
+}
 char*
 monetdbe_get_autocommit(monetdbe_database dbhdl, int* result)
 {
@@ -1342,13 +1374,9 @@ data_from_timestamp(timestamp d, monetdbe_data_timestamp *ptr)
 static timestamp
 timestamp_from_data(monetdbe_data_timestamp *ptr)
 {
-	return timestamp_create(date_create(ptr->date.year,
-										ptr->date.month,
-										ptr->date.day),
-							daytime_create(ptr->time.hours,
-										   ptr->time.minutes,
-										   ptr->time.seconds,
-										   ptr->time.ms * 1000));
+	return timestamp_create(
+		date_create(ptr->date.year, ptr->date.month, ptr->date.day),
+		daytime_create(ptr->time.hours, ptr->time.minutes, ptr->time.seconds, ptr->time.ms * 1000));
 }
 
 int

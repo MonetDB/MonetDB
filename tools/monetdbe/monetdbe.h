@@ -140,6 +140,8 @@ monetdbe_export char* monetdbe_append(monetdbe_database dbhdl, const char* schem
 monetdbe_export char* monetdbe_get_table(monetdbe_database dbhdl, monetdbe_table** table, const char* schema_name, const char* table_name);
 monetdbe_export char* monetdbe_get_columns(monetdbe_database dbhdl, const char* schema_name, const char *table_name, size_t *column_count, char ***column_names, int **column_types);
 
+monetdbe_export char* monetdbe_backup(monetdbe_database dbhdl, char *backupfile);
+
 #ifdef __cplusplus
 }
 #endif
