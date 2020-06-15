@@ -2212,7 +2212,6 @@ stmt_genjoin(backend *be, stmt *l, stmt *r, sql_subfunc *op, int anti, int swapp
 	const char *mod, *fimp;
 	node *n;
 
-	(void)anti;
 	if (backend_create_subfunc(be, op, NULL) < 0)
 		return NULL;
 	mod = sql_func_mod(op->func);
@@ -2237,6 +2236,7 @@ stmt_genjoin(backend *be, stmt *l, stmt *r, sql_subfunc *op, int anti, int swapp
 	q = pushNil(mb, q, TYPE_bat); /* candidate lists */
 	q = pushBit(mb, q, TRUE);     /* nil_matches */
 	q = pushNil(mb, q, TYPE_lng); /* estimate */
+	q = pushBit(mb, q, anti?TRUE:FALSE); /* 'not' matching */
 
 	if (swapped) {
 		InstrPtr r = newInstruction(mb,  NULL, NULL);
