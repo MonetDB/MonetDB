@@ -10384,7 +10384,6 @@ stdout of test 'MAL-signatures` in directory 'clients` itself:
 [ "udf",	"reverse",	"command udf.reverse(X_1:str):str ",	"UDFreverse;",	""	]
 [ "url",	"getAnchor",	"command url.getAnchor(X_1:url):str ",	"URLgetAnchor;",	""	]
 [ "url",	"getBasename",	"command url.getBasename(X_1:url):str ",	"URLgetBasename;",	""	]
-[ "url",	"getContent",	"command url.getContent(X_1:url):str ",	"URLgetContent;",	""	]
 [ "url",	"getContext",	"command url.getContext(X_1:url):str ",	"URLgetContext;",	""	]
 [ "url",	"getDomain",	"command url.getDomain(X_1:url):str ",	"URLgetDomain;",	""	]
 [ "url",	"getExtension",	"command url.getExtension(X_1:url):str ",	"URLgetExtension;",	""	]
