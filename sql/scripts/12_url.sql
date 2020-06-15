@@ -12,9 +12,6 @@ GRANT EXECUTE ON FUNCTION getAnchor(url) TO PUBLIC;
 CREATE function getBasename(theUrl url) RETURNS STRING
 	EXTERNAL NAME url."getBasename";
 GRANT EXECUTE ON FUNCTION getBasename(url) TO PUBLIC;
-CREATE function getContent(theUrl url)   RETURNS STRING
-	EXTERNAL NAME url."getContent";
-GRANT EXECUTE ON FUNCTION getContent(url) TO PUBLIC;
 CREATE function getContext(theUrl url)   RETURNS STRING
 	EXTERNAL NAME url."getContext";
 GRANT EXECUTE ON FUNCTION getContext(url) TO PUBLIC;

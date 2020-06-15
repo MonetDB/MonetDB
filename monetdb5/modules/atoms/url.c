@@ -388,17 +388,6 @@ URLgetBasename(str *retval, url *val)
 	return MAL_SUCCEED;
 }
 
-/* COMMAND "getContent": Retrieve the file referenced
- * SIGNATURE: getContent(str) : str; */
-str
-URLgetContent(str *retval, url *Str1)
-{
-	(void) retval;
-	(void) Str1;
-
-	throw(MAL, "url.getContent", SQLSTATE(0A000) "Feature not supported");
-}
-
 /* COMMAND "getContext": Extract the path context from the URL
  * SIGNATURE: getContext(str) : str; */
 str
@@ -761,7 +750,6 @@ mel_func url_init_funcs[] = {
  command("calc", "url", URLnoop, false, "Create an URL from a string literal", args(1,2, arg("",url),arg("s",url))),
  command("url", "getAnchor", URLgetAnchor, false, "Extract the URL anchor (reference)", args(1,2, arg("",str),arg("u",url))),
  command("url", "getBasename", URLgetBasename, false, "Extract the URL base file name", args(1,2, arg("",str),arg("u",url))),
- command("url", "getContent", URLgetContent, false, "Get the URL resource in a local file", args(1,2, arg("",str),arg("u",url))),
  command("url", "getContext", URLgetContext, false, "Get the path context of a URL", args(1,2, arg("",str),arg("u",url))),
  command("url", "getDomain", URLgetDomain, false, "Extract Internet domain from the URL", args(1,2, arg("",str),arg("u",url))),
  command("url", "getExtension", URLgetExtension, false, "Extract the file extension of the URL", args(1,2, arg("",str),arg("u",url))),

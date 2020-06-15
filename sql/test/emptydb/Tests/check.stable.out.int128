@@ -165,7 +165,6 @@ stdout of test 'check` in directory 'sql/test/emptydb` itself:
 \dSf sys."get_type"
 \dSf sys."getanchor"
 \dSf sys."getbasename"
-\dSf sys."getcontent"
 \dSf sys."getcontext"
 \dSf sys."getdomain"
 \dSf sys."getextension"
@@ -549,7 +548,6 @@ SYSTEM FUNCTION         sys.get_type
 SYSTEM FUNCTION         sys.get_value_for
 SYSTEM FUNCTION         sys.getanchor
 SYSTEM FUNCTION         sys.getbasename
-SYSTEM FUNCTION         sys.getcontent
 SYSTEM FUNCTION         sys.getcontext
 SYSTEM FUNCTION         sys.getdomain
 SYSTEM FUNCTION         sys.getextension
@@ -1083,7 +1081,6 @@ create function geometrytype(geom geometry) returns string external name geom."G
 create function get_type(info integer, format integer) returns string external name geom."getType";
 create function getanchor(theurl url) returns string external name url."getAnchor";
 create function getbasename(theurl url) returns string external name url."getBasename";
-create function getcontent(theurl url) returns string external name url."getContent";
 create function getcontext(theurl url) returns string external name url."getContext";
 create function getdomain(theurl url) returns string external name url."getDomain";
 create function getextension(theurl url) returns string external name url."getExtension";
@@ -2553,7 +2550,6 @@ drop function pcre_replace(string, string, string, string);
 [ "sys.functions",	"sys",	"get_value_for",	"SYSTEM",	"get_value",	"sql",	"Internal C",	"Scalar function",	false,	false,	false,	true,	"res_0",	"bigint",	64,	0,	"out",	"arg_1",	"varchar",	0,	0,	"in",	"arg_2",	"varchar",	0,	0,	"in",	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
 [ "sys.functions",	"sys",	"getanchor",	"SYSTEM",	"create function getanchor(theurl url) returns string external name url.\"getAnchor\";",	"url",	"MAL",	"Scalar function",	false,	false,	false,	true,	"result",	"clob",	0,	0,	"out",	"theurl",	"url",	0,	0,	"in",	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
 [ "sys.functions",	"sys",	"getbasename",	"SYSTEM",	"create function getbasename(theurl url) returns string external name url.\"getBasename\";",	"url",	"MAL",	"Scalar function",	false,	false,	false,	true,	"result",	"clob",	0,	0,	"out",	"theurl",	"url",	0,	0,	"in",	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
-[ "sys.functions",	"sys",	"getcontent",	"SYSTEM",	"create function getcontent(theurl url) returns string external name url.\"getContent\";",	"url",	"MAL",	"Scalar function",	false,	false,	false,	true,	"result",	"clob",	0,	0,	"out",	"theurl",	"url",	0,	0,	"in",	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
 [ "sys.functions",	"sys",	"getcontext",	"SYSTEM",	"create function getcontext(theurl url) returns string external name url.\"getContext\";",	"url",	"MAL",	"Scalar function",	false,	false,	false,	true,	"result",	"clob",	0,	0,	"out",	"theurl",	"url",	0,	0,	"in",	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
 [ "sys.functions",	"sys",	"getdomain",	"SYSTEM",	"create function getdomain(theurl url) returns string external name url.\"getDomain\";",	"url",	"MAL",	"Scalar function",	false,	false,	false,	true,	"result",	"clob",	0,	0,	"out",	"theurl",	"url",	0,	0,	"in",	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
 [ "sys.functions",	"sys",	"getextension",	"SYSTEM",	"create function getextension(theurl url) returns string external name url.\"getExtension\";",	"url",	"MAL",	"Scalar function",	false,	false,	false,	true,	"result",	"clob",	0,	0,	"out",	"theurl",	"url",	0,	0,	"in",	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
@@ -4963,7 +4959,6 @@ drop function pcre_replace(string, string, string, string);
 [ "type used by function",	"inet",	"inet",	"sys",	"broadcast",	"TYPE"	]
 [ "type used by function",	"url",	"url",	"sys",	"getanchor",	"TYPE"	]
 [ "type used by function",	"url",	"url",	"sys",	"getbasename",	"TYPE"	]
-[ "type used by function",	"url",	"url",	"sys",	"getcontent",	"TYPE"	]
 [ "type used by function",	"url",	"url",	"sys",	"getcontext",	"TYPE"	]
 [ "type used by function",	"url",	"url",	"sys",	"getdomain",	"TYPE"	]
 [ "type used by function",	"url",	"url",	"sys",	"getextension",	"TYPE"	]
@@ -5239,7 +5234,6 @@ drop function pcre_replace(string, string, string, string);
 [ "grant on function",	"get_type",	"public",	"EXECUTE",	"monetdb",	0	]
 [ "grant on function",	"getanchor",	"public",	"EXECUTE",	"monetdb",	0	]
 [ "grant on function",	"getbasename",	"public",	"EXECUTE",	"monetdb",	0	]
-[ "grant on function",	"getcontent",	"public",	"EXECUTE",	"monetdb",	0	]
 [ "grant on function",	"getcontext",	"public",	"EXECUTE",	"monetdb",	0	]
 [ "grant on function",	"getdomain",	"public",	"EXECUTE",	"monetdb",	0	]
 [ "grant on function",	"getextension",	"public",	"EXECUTE",	"monetdb",	0	]

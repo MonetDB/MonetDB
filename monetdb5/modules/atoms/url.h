@@ -26,7 +26,6 @@ mal_export str URLnoop(url *u, url *val);
 mal_export str URLnew(url *u, str *val);
 mal_export str URLgetAnchor(str *retval, url *val);
 mal_export str URLgetBasename(str *retval, url *t);
-mal_export str URLgetContent(str *retval, url *Str1);
 mal_export str URLgetContext(str *retval, url *val);
 mal_export str URLgetDomain(str *retval, url *tv);
 mal_export str URLgetExtension(str *retval, url *tv);

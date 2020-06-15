@@ -32,3 +32,5 @@
   about globally declared variables, namely their schema, type and
   current value.
 
+* Mon Jun 15 2020 Pedro Ferreira <pedro.ferreira@monetdbsolutions.com>
+- Removed obsolete sys.getContent(url) function.
