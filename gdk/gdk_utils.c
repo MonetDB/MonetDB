@@ -413,7 +413,7 @@ MT_init(void)
 				cgr = cgr2;
 			else
 				continue;
-			/* buf point at mount ID */
+			/* buf points at mount ID */
 			p = strchr(buf, ' ');
 			if (p == NULL)
 				break;
@@ -469,13 +469,14 @@ MT_init(void)
 			bool success = false; /* true if we can open any file */
 			FILE *f;
 			uint64_t mem;
-			size_t l;
 
 			p = strchr(buf, '\n');
 			if (p == NULL)
 				break;
 			*p = 0;
 			if (strncmp(buf, "0::", 3) == 0) {
+				size_t l;
+
 				/* cgroup v2 entry */
 				l = strconcat_len(pth, sizeof(pth),
 						  cgr2, buf + 3, "/", NULL);
@@ -525,11 +526,19 @@ MT_init(void)
 				*p++ = 0;
 				if (strstr(q, "memory") == NULL)
 					continue;
-				l = strconcat_len(pth, sizeof(pth),
-						  cgr1, p, "/", NULL);
 				/* limit of memory usage */
-				strcpy(pth + l, "memory.limit_in_bytes");
+				strconcat_len(pth, sizeof(pth),
+					      cgr1, p,
+					      "/memory.limit_in_bytes",
+					      NULL);
 				f = fopen(pth, "r");
+				if (f == NULL) {
+					strconcat_len(pth, sizeof(pth),
+						      cgr1,
+						      "/memory.limit_in_bytes",
+						      NULL);
+					f = fopen(pth, "r");
+				}
 				if (f != NULL) {
 					if (fscanf(f, "%" SCNu64, &mem) == 1
 					    && mem < (uint64_t) _MT_pagesize * _MT_npages) {
@@ -539,8 +548,18 @@ MT_init(void)
 					fclose(f);
 				}
 				/* soft limit of memory usage */
-				strcpy(pth + l, "memory.soft_limit_in_bytes");
+				strconcat_len(pth, sizeof(pth),
+					      cgr1, p,
+					      "/memory.soft_limit_in_bytes",
+					      NULL);
 				f = fopen(pth, "r");
+				if (f == NULL) {
+					strconcat_len(pth, sizeof(pth),
+						      cgr1,
+						      "/memory.soft_limit_in_bytes",
+						      NULL);
+					f = fopen(pth, "r");
+				}
 				if (f != NULL) {
 					if (fscanf(f, "%" SCNu64, &mem) == 1
 					    && mem < (uint64_t) _MT_pagesize * _MT_npages) {
@@ -551,8 +570,18 @@ MT_init(void)
 				}
 				/* limit of memory+swap usage
 				 * we use this as maximum virtual memory size */
-				strcpy(pth + l, "memory.memsw.limit_in_bytes");
+				strconcat_len(pth, sizeof(pth),
+					      cgr1, p,
+					      "/memory.memsw.limit_in_bytes",
+					      NULL);
 				f = fopen(pth, "r");
+				if (f == NULL) {
+					strconcat_len(pth, sizeof(pth),
+						      cgr1,
+						      "/memory.memsw.limit_in_bytes",
+						      NULL);
+					f = fopen(pth, "r");
+				}
 				if (f != NULL) {
 					if (fscanf(f, "%" SCNu64, &mem) == 1
 					    && mem < (uint64_t) GDK_vm_maxsize) {
