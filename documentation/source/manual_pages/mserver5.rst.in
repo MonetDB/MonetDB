@@ -52,7 +52,7 @@ MSERVER5 OPTIONS
 **--dbpath=**\ *path*
    Path where *mserver5* should find a database. Shorthand for option
    **gdk_dbpath**. Default value:
-   **@localstatedir@/monetdb5/dbfarm/demo**.
+   **@CMAKE_INSTALL_FULL_LOCALSTATEDIR@/monetdb5/dbfarm/demo**.
 
 **--dbextra=**\ *path*
    Path where *mserver5* should store transient data. Default value is
