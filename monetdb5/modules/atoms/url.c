@@ -637,25 +637,31 @@ URLgetRobotURL(str *retval, url *val)
 	return MAL_SUCCEED;
 }
 
-
 /* COMMAND "getUser": Extract the user identity from the URL
  * SIGNATURE: getUser(str) : str; */
 str
 URLgetUser(str *retval, url *val)
 {
-	const char *s;
-	const char *p;
-	const char *u;
+	const char *s, *h, *u, *p;
 
 	if (val == NULL || *val == NULL)
 		throw(ILLARG, "url.getUser", "url missing");
 	if ((s = skip_scheme(*val)) == NULL ||
-		(p = skip_authority(s, &u, NULL, NULL, NULL)) == NULL)
-		throw(ILLARG, "url.getUser", "bad url");
-	if (u == s || !u) {
+		(s = skip_authority(s, &u, &p, &h, NULL)) == NULL)
+		throw(ILLARG, "url.getHost", "bad url");
+	if (u == NULL || h == NULL) {
 		*retval = GDKstrdup(str_nil);
 	} else {
-		*retval = GDKstrdup(u);
+		size_t l;
+
+		if (p) {
+			l = p - u - 1;
+		} else {
+			l = h - u - 1;
+		}
+		if ((*retval = GDKmalloc(l + 1)) != NULL) {
+			strcpy_len(*retval, u, l + 1);
+		}
 	}
 	if (*retval == NULL)
 		throw(MAL, "url.getUser", SQLSTATE(HY013) MAL_MALLOC_FAIL);
