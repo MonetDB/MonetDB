@@ -2210,8 +2210,8 @@ rel2bin_join(backend *be, sql_rel *rel, list *refs)
 				sql_exp *e = en->data;
 
 				/* we can handle thetajoins, rangejoins and filter joins (like) */
-				/* ToDo how about in/notin, mark_in/notin, mark_exists/not_exists */
-				if (e->type <= e_cmp) {
+				/* ToDo how about in/notin, mark_in/notin, mark_exists/not_exists and atom expressions? */
+				if (e->type == e_cmp) {
 					int flag = e->flag & ~CMP_BETWEEN;
 					/* check if its a select or join expression, ie use only expressions of one relation left and of the other right (than join) */
 					if (flag < cmp_filter && !e->f) { /* theta join */
@@ -2234,7 +2234,7 @@ rel2bin_join(backend *be, sql_rel *rel, list *refs)
 							append(jexps, e);
 							continue;
 						}
-					} else if (e->flag == cmp_filter && !e->anti) {
+					} else if (flag == cmp_filter && !e->anti) {
 						int nrcl = 0, nrcr = 0;
 						bool fll = true, flr = true, frl = true, frr = true;
 						list *l = e->l, *r = e->r;
@@ -2258,9 +2258,7 @@ rel2bin_join(backend *be, sql_rel *rel, list *refs)
 							append(jexps, e);
 							continue;
 						}
-
 					}
-
 				}
 				append(sexps, e);
 			}
