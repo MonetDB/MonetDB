@@ -523,7 +523,8 @@ monetdbe_open(monetdbe_database *dbhdl, char *url, monetdbe_options *opts)
 	}
 	if (!msg)
 		msg = monetdbe_open_internal(dbhdl);
-	open_dbs++;
+	if (!msg)
+		open_dbs++;
 	MT_lock_unset(&embedded_lock);
 	return msg;
 }
