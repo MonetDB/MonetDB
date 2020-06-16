@@ -97,6 +97,10 @@ option(WITH_XML2
   "Include xml2 support"
   ON)
 
+option(WITH_CMOCKA
+  "Include cmocka support"
+  OFF)
+
 option(WITH_LZ4
   "Include lz4 support"
   ON)
