@@ -12,44 +12,6 @@
 #include "stream.h"
 #include "stream_internal.h"
 
-#ifndef _MSC_VER
-ssize_t
-console_write(stream *restrict s, const void *restrict buf, size_t elmsize, size_t cnt)
-{
-	assert(0 /* only on windows */);
-	mnstr_set_error(NULL, MNSTR_OPEN_ERROR, "internal error. no win.");
-	return -1;
-}
-ssize_t
-console_read(stream *restrict s, void *restrict buf, size_t elmsize, size_t cnt)
-{
-	assert(0 /* only on windows */);
-	mnstr_set_error(NULL, MNSTR_OPEN_ERROR, "internal error. no win.");
-	return -1;
-}
-
-stream *win_stdin_stream(void)
-{
-	assert(0 /* only on windows */);
-	mnstr_set_error(NULL, MNSTR_OPEN_ERROR, "internal error. no win.");
-	return NULL;
-}
-
-stream *win_stdout_stream(void)
-{
-	assert(0 /* only on windows */);
-	mnstr_set_error(NULL, MNSTR_OPEN_ERROR, "internal error. no win.");
-	return NULL;
-}
-
-stream *win_stderr_stream(void)
-{
-	assert(0 /* only on windows */);
-	mnstr_set_error(NULL, MNSTR_OPEN_ERROR, "internal error. no win.");
-	return NULL;
-}
-
-#endif
 
 #ifdef _MSC_VER
 
