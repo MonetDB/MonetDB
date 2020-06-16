@@ -412,6 +412,33 @@ stdin_rastream(void)
 #ifdef _MSC_VER
 	return win_console_in_stream(name);
 #endif
+	// Make an attempt to skip a BOM marker.
+	// It would be nice to integrate this with with the BOM removal code
+	// in text_stream.c but that is complicated. In text_stream, 
+	do {
+		struct stat stb;
+		if (fstat(fileno(stdin), &stb) < 0)
+			break;
+		if (!S_ISREG(stb.st_mode))
+			break;
+		fpos_t pos;
+		if (fgetpos(stdin, &pos) != 0)
+			break;
+		char bytes[UTF8BOMLENGTH];
+		size_t nread = fread(bytes, 1, UTF8BOMLENGTH, stdin);
+		if (nread == 3 && memcmp(bytes, UTF8BOM, UTF8BOMLENGTH) == 0) {
+			// found BOM, skip it
+			break;
+		}
+		// not a BOM, rewind
+		if (fsetpos(stdin, &pos) != 0 && nread > 0) {
+			// oops, bytes have been read but we can't rewind
+			mnstr_set_error_errno(NULL, MNSTR_OPEN_ERROR, "while rewinding after checking for byte order mark");
+			return NULL;
+		}
+
+	} while (0);
+
 	return file_rstream(stdin, false, name);
 }
 
