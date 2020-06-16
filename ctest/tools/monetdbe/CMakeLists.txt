@@ -62,3 +62,9 @@ target_link_libraries(example_connections
     monetdbe)
 add_test(run_example_connections example_connections)
 
+add_executable(example_remote example_remote.c)
+target_link_libraries(example_remote
+  PRIVATE
+    monetdb_config_header
+    monetdbe)
+add_test(run_example_remote example_remote)

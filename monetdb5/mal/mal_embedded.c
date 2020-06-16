@@ -119,7 +119,7 @@ malEmbeddedReset(void) //remove extra modules and set to non-initialized again
 	setHeartbeat(-1);
 	stopProfiler(0);
 	AUTHreset();
-	if (!GDKinmemory()) {
+	if (!GDKinmemory() && !GDKembedded()) {
             	str err = 0;
 
 		if ((err = msab_wildRetreat()) != NULL) {
