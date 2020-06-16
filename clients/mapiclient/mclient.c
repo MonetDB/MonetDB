@@ -3170,7 +3170,7 @@ main(int argc, char **argv)
 	char *dbname = NULL;
 	char *output = NULL;	/* output format as string */
 	DotMonetdb dotfile = {0};
-	FILE *fp = NULL;
+	stream *s = NULL;
 	bool trace = false;
 	bool dump = false;
 	bool useinserts = false;
@@ -3501,12 +3501,17 @@ main(int argc, char **argv)
 	c = 0;
 	has_fileargs = optind != argc;
 
-	if (dbname == NULL && has_fileargs &&
-	    ((fp = fopen(argv[optind], "r")) == NULL || !isfile(fp))) {
-		fp = NULL;
-		dbname = strdup(argv[optind]);
-		optind++;
-		has_fileargs = optind != argc;
+	if (dbname == NULL && has_fileargs) {
+		s = open_rastream(argv[optind]);
+		if (s == NULL || !isfile(getFile(s))) {
+			mnstr_close(s);
+			s = NULL;
+		}
+		if (s == NULL) {
+			dbname = strdup(argv[optind]);
+			optind++;
+			has_fileargs = optind != argc;
+		}
 	}
 
 	if (dbname != NULL && strncmp(dbname, "mapi:monetdb://", 15) == 0) {
@@ -3673,34 +3678,29 @@ main(int argc, char **argv)
 	if (optind < argc) {
 		/* execute from file(s) */
 		while (optind < argc) {
-			stream *s;
 			const char *arg = argv[optind];
 
-			if (fp != NULL)
-				s = file_rstream(fp, false, arg);
-			else if (strcmp(arg, "-") == 0)
-				s = stdin_rastream();
-			else
-				s = open_rastream(arg);
+			if (s == NULL) {
+				if (strcmp(arg, "-") == 0)
+					s = stdin_rastream();
+				else
+					s = open_rastream(arg);
+			}
 			if (s == NULL) {
 				fprintf(stderr, "%s: cannot open: %s", arg, mnstr_peek_error(NULL));
-				if (fp) {
-					fclose(fp);
-					fp = NULL;
-				}
 				c |= 1;
 				continue;
 			}
 			// doFile closes 's'.
 			c |= doFile(mid, s, useinserts, interactive, save_history);
-			fp = NULL;
+			s = NULL;
 			optind++;
 		}
 	} else if (command && mapi_get_active(mid))
 		c = doFileBulk(mid, NULL);
 
 	if (!has_fileargs && command == NULL) {
-		stream *s = stdin_rastream();
+		s = stdin_rastream();
 		if(!s) {
 			mapi_destroy(mid);
 			mnstr_destroy(stdout_stream);
@@ -3709,6 +3709,7 @@ main(int argc, char **argv)
 			exit(2);
 		}
 		c = doFile(mid, s, useinserts, interactive, save_history);
+		s = NULL;
 	}
 
 	mapi_destroy(mid);
