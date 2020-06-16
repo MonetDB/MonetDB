@@ -325,7 +325,8 @@ symbol2string(mvc *sql, symbol *se, int expression, char **err) /**/
 			sname = sql->session->schema->base.name;
 
 		for (aux = ops; aux; aux = aux->next) nargs++;
-		inputs = GDKzalloc(nargs * sizeof(char**));
+		if (!(inputs = GDKzalloc(nargs * sizeof(char**))))
+			return NULL;
 
 		for (aux = ops; aux; aux = aux->next) {
 			if (!(inputs[i] = symbol2string(sql, aux->data.sym, expression, err))) {
