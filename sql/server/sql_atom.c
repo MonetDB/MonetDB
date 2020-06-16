@@ -595,6 +595,12 @@ atom_type(atom *a)
 	return &a->tpe;
 }
 
+void
+atom_set_type(atom *a, sql_subtype *t)
+{
+	a->tpe = *t;
+}
+
 atom *
 atom_dup(sql_allocator *sa, atom *a)
 {
