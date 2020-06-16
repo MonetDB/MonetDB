@@ -222,6 +222,8 @@ ROLLBACK;
 START TRANSACTION; --Bug 6902
 CREATE TABLE "t0" ("c0" DOUBLE PRECISION NOT NULL,"c1" VARCHAR(64));
 create view v0(c0, c1) as (select all t0.c0, r'epfNW⟚榢tptPbC{5{ZW}6,R' from t0) with check option;
+SELECT v0.c0 FROM v0 WHERE (v0.c1) BETWEEN (replace('2', '2', '1')) AND (v0.c1);
+	--empty
 SELECT v0.c0 FROM v0 WHERE (v0.c1) NOT BETWEEN SYMMETRIC (replace(CAST(CAST(v0.c0 AS INT) AS STRING), v0.c1, replace(CAST(0.1 AS STRING), v0.c1, v0.c1))) AND (v0.c1);
 	--empty
 ROLLBACK;
