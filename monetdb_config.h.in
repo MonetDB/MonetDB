@@ -238,6 +238,8 @@
 #cmakedefine LENP_OR_POINTER_T @LENP_OR_POINTER_T@
 #cmakedefine SIZEOF_SQLWCHAR @SIZEOF_SQLWCHAR@
 
+#cmakedefine WORDS_BIGENDIAN @HAVE_WORDS_BIGENDIAN@
+
 /* Does your compiler support `ssize_t' type? (Posix type) */
 #ifndef ssize_t
 #cmakedefine ssize_t @ssize_t@
