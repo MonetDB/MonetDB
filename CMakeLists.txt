@@ -45,6 +45,7 @@ include(TestBigEndian REQUIRED)
 if(WIN32)
   set(CMAKE_REQUIRED_LIBRARIES  ws2_32.lib shell32.lib advapi32.lib)
 endif()
+test_big_endian(IS_BIG_ENDIAN)
 
 # Include MonetDB specific functions
 include(monetdb-functions)
