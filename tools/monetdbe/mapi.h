@@ -11,17 +11,17 @@
 #include <monetdbe.h>
 
 typedef struct MapiStruct {
-	monetdb_database mdbe;
+	monetdbe_database mdbe;
 	char *msg;
 } *Mapi;
 
 typedef struct MapiStatement {
 	Mapi mid;
 	char *query;
-	monetdb_result *result;
+	monetdbe_result *result;
 	char **mapi_row;	/* keep buffers for string return values */
-	monetdb_cnt current_row;
-	monetdb_cnt affected_rows;
+	monetdbe_cnt current_row;
+	monetdbe_cnt affected_rows;
 	char *msg;
 } *MapiHdl;
 

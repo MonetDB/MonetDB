@@ -212,7 +212,7 @@ SQLepilogue(void *ret)
 	(void) SQLexit(NULL);
 	/* this function is never called, but for the style of it, we clean
 	 * up our own mess */
-	if (!GDKinmemory()) {
+	if (!GDKinmemory() && !GDKembedded()) {
 		res = msab_retreatScenario(m);
 		if (!res)
 			res = msab_retreatScenario(s);

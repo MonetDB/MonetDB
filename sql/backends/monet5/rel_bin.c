@@ -1107,15 +1107,20 @@ exp_bin(backend *be, sql_exp *e, stmt *left, stmt *right, stmt *grp, stmt *ext, 
 							r2 = stmt_project(be, sel, r2);
 						sel = NULL;
 					}
+					if (l->nrcols == 0)
+						l = stmt_const(be, bin_first_column(be, left), l); 
 					s = stmt_uselect2(be, l, r, r2, (comp_type)e->flag, sel, is_anti(e));
 				}
 			} else {
 				/* value compare or select */
-				if (!reduce || (l->nrcols == 0 && r->nrcols == 0 && (e->flag == mark_in || e->flag == mark_notin))) {
-					sql_subfunc *f = sql_bind_func(sql->sa, sql->session->schema, "=", tail_type(l), tail_type(l), F_FUNC);
+				if ((!reduce || (l->nrcols == 0 && r->nrcols == 0)) && (e->flag == mark_in || e->flag == mark_notin)) {
+					int in_flag = e->flag==mark_in?1:0;
+					if (e->anti)
+						in_flag = !in_flag;
+					sql_subfunc *f = sql_bind_func(sql->sa, sql->session->schema, in_flag?"=":"<>", tail_type(l), tail_type(l), F_FUNC);
 					assert(f);
 					s = stmt_binop(be, l, r, f);
-				} else if (l->nrcols == 0 && r->nrcols == 0) {
+				} else if (!reduce || (l->nrcols == 0 && r->nrcols == 0)) {
 					sql_subfunc *f = sql_bind_func(sql->sa, sql->session->schema,
 							compare_func((comp_type)e->flag, is_anti(e)),
 							tail_type(l), tail_type(l), F_FUNC);
@@ -2216,8 +2221,8 @@ rel2bin_join(backend *be, sql_rel *rel, list *refs)
 				sql_exp *e = en->data;
 
 				/* we can handle thetajoins, rangejoins and filter joins (like) */
-				/* ToDo how about in/notin, mark_in/notin, mark_exists/not_exists */
-				if (e->type <= e_cmp) {
+				/* ToDo how about in/notin, mark_in/notin, mark_exists/not_exists and atom expressions? */
+				if (e->type == e_cmp) {
 					int flag = e->flag & ~CMP_BETWEEN;
 					/* check if its a select or join expression, ie use only expressions of one relation left and of the other right (than join) */
 					if (flag < cmp_filter && !e->f) { /* theta join */
@@ -2240,7 +2245,7 @@ rel2bin_join(backend *be, sql_rel *rel, list *refs)
 							append(jexps, e);
 							continue;
 						}
-					} else if (e->flag == cmp_filter) {
+					} else if (flag == cmp_filter) {
 						int nrcl = 0, nrcr = 0;
 						bool fll = true, flr = true, frl = true, frr = true;
 						list *l = e->l, *r = e->r;
@@ -2264,9 +2269,7 @@ rel2bin_join(backend *be, sql_rel *rel, list *refs)
 							append(jexps, e);
 							continue;
 						}
-
 					}
-
 				}
 				append(sexps, e);
 			}

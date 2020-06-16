@@ -2124,6 +2124,11 @@ sql_update_default(Client c, mvc *sql, const char *prev_schema)
 					(int) F_UNION,
 					(int) F_UNION);
 
+			/* SQL functions without backend implementations */
+			pos += snprintf(buf + pos, bufsize - pos,
+					"DROP FUNCTION \"sys\".\"getContent\"(url);\n"
+					"DROP FUNCTION \"json\".\"output\"(json);\n");
+
 			pos += snprintf(buf + pos, bufsize - pos, "set schema \"%s\";\n", prev_schema);
 			assert(pos < bufsize);
 

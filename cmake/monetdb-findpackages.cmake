@@ -26,6 +26,10 @@ if(WITH_XML2)
   find_package(LibXml2)
 endif()
 
+if(WITH_CMOCKA)
+  find_package(CMocka)
+endif()
+
 if(WITH_PCRE)
   find_package(PCRE)
 endif()

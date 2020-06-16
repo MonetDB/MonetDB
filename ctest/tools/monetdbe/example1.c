@@ -17,28 +17,28 @@ int
 main(void)
 {
 	char* err = NULL;
-	monetdb_database mdbe = NULL;
-	monetdb_result* result = NULL;
+	monetdbe_database mdbe = NULL;
+	monetdbe_result* result = NULL;
 
 	// second argument is a string for the db directory or NULL for in-memory mode
-	if ((err = monetdb_open(&mdbe, NULL)) != NULL)
+	if ((err = monetdbe_open(&mdbe, NULL, NULL)) != NULL)
 		error(err)
-	if ((err = monetdb_query(mdbe, "CREATE TABLE test (x integer, y string)", NULL, NULL)) != NULL)
+	if ((err = monetdbe_query(mdbe, "CREATE TABLE test (x integer, y string)", NULL, NULL)) != NULL)
 		error(err)
-	if ((err = monetdb_query(mdbe, "INSERT INTO test VALUES (42, 'Hello'), (NULL, 'World')", NULL, NULL)) != NULL)
+	if ((err = monetdbe_query(mdbe, "INSERT INTO test VALUES (42, 'Hello'), (NULL, 'World')", NULL, NULL)) != NULL)
 		error(err)
-	if ((err = monetdb_query(mdbe, "SELECT x, y FROM test; ", &result, NULL)) != NULL)
+	if ((err = monetdbe_query(mdbe, "SELECT x, y FROM test; ", &result, NULL)) != NULL)
 		error(err)
 
 	fprintf(stdout, "Query result with %zu cols and %"PRId64" rows\n", result->ncols, result->nrows);
 	for (int64_t r = 0; r < result->nrows; r++) {
 		for (size_t c = 0; c < result->ncols; c++) {
-			monetdb_column* rcol;
-			if ((err = monetdb_result_fetch(result, &rcol, c)) != NULL)
+			monetdbe_column* rcol;
+			if ((err = monetdbe_result_fetch(result, &rcol, c)) != NULL)
 				error(err)
 			switch (rcol->type) {
-				case monetdb_int32_t: {
-					monetdb_column_int32_t * col = (monetdb_column_int32_t *) rcol;
+				case monetdbe_int32_t: {
+					monetdbe_column_int32_t * col = (monetdbe_column_int32_t *) rcol;
 					if (col->data[r] == col->null_value) {
 						printf("NULL");
 					} else {
@@ -46,8 +46,8 @@ main(void)
 					}
 					break;
 				}
-				case monetdb_str: {
-					monetdb_column_str * col = (monetdb_column_str *) rcol;
+				case monetdbe_str: {
+					monetdbe_column_str * col = (monetdbe_column_str *) rcol;
 					if (col->is_null(col->data[r])) {
 						printf("NULL");
 					} else {
@@ -67,9 +67,9 @@ main(void)
 		printf("\n");
 	}
 
-	if ((err = monetdb_cleanup_result(mdbe, result)) != NULL)
+	if ((err = monetdbe_cleanup_result(mdbe, result)) != NULL)
 		error(err)
-	if ((err = monetdb_close(mdbe)) != NULL)
+	if ((err = monetdbe_close(mdbe)) != NULL)
 		error(err)
 	return 0;
 }

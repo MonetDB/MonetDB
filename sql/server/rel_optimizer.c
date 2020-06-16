@@ -7630,20 +7630,22 @@ rel_simplify_predicates(mvc *sql, sql_rel *rel, sql_exp *e, int depth, int *chan
 						if (is_func(inner->type) && 
 							!inf->func->s && 
 							is_not_func(inf)) {
-							int anti = is_anti(e);
+							int anti = is_anti(e), is_semantics = is_semantics(e);
 
 							args = inner->l;
 							assert(list_length(args) == 1);
 							l = args->h->data;
 							e = exp_compare(sql->sa, l, r, e->flag);
 							if (anti) set_anti(e);
+							if (is_semantics) set_semantics(e);
 							(*changes)++;
-						/* rewrite not(=/<>(a,b)) = TRUE/FALSE => a=b of a<>b */
+						/* rewrite not(=/<>(a,b)) = TRUE/FALSE => a=b / a<>b */
 						} else if (is_func(inner->type) && 
 							!inf->func->s && 
 							(!strcmp(inf->func->base.name, "=") ||
-								!strcmp(inf->func->base.name, "<>"))) {
+							 !strcmp(inf->func->base.name, "<>"))) {
 							int flag = a->data.val.bval;
+							sql_exp *ne;
 							args = inner->l;
 
 							if (!strcmp(inf->func->base.name, "<>"))
@@ -7651,16 +7653,22 @@ rel_simplify_predicates(mvc *sql, sql_rel *rel, sql_exp *e, int depth, int *chan
 							assert(list_length(args) == 2);
 							l = args->h->data;
 							r = args->h->next->data;
-							e = exp_compare(sql->sa, l, r, (!flag)?cmp_equal:cmp_notequal);
+							ne = exp_compare(sql->sa, l, r, (!flag)?cmp_equal:cmp_notequal);
+							if (a->isnull)
+								e->l = ne;
+							else
+								e = ne;
 							(*changes)++;
 						} else if (a && a->data.vtype == TYPE_bit) {
-							int anti = is_anti(e);
+							int anti = is_anti(e), is_semantics = is_semantics(e);
 
 							/* change atom's value on right */
 							l = args->h->data;
-							a->data.val.bval = !a->data.val.bval;
+							if (!a->isnull)
+								a->data.val.bval = !a->data.val.bval;
 							e = exp_compare(sql->sa, l, r, e->flag);
 							if (anti) set_anti(e);
+							if (is_semantics) set_semantics(e);
 							(*changes)++;
 						}
 					}

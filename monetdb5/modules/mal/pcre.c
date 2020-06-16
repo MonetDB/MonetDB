@@ -2218,6 +2218,7 @@ PCRElikeselect5(bat *ret, const bat *bid, const bat *sid, const str *pat, const 
 	} while (0)
 #define PCRE_EXEC_COND (retval < 0)
 #else
+#define PCRE_EXEC \
 	do { \
 		retval = regexec(&regex, vl, (size_t) 0, NULL, 0); \
 	} while (0)
@@ -2233,6 +2234,7 @@ PCRElikeselect5(bat *ret, const bat *bid, const bat *sid, const str *pat, const 
 		pcreex = NULL; \
 	} while (0)
 #else
+#define PCRE_CLEAN \
 	do { \
 		regfree(&regex); \
 		pcrere = 0; \

@@ -1588,7 +1588,7 @@ partition_type:
  ;
 
 partition_expression:
-   simple_scalar_exp 	{ $$ = $1; }
+   search_condition 	{ $$ = $1; }
  ;
 
 partition_on:
@@ -1618,16 +1618,16 @@ opt_partition_by:
  ;
 
 partition_list_value:
-   simple_scalar_exp { $$ = $1; }
+   search_condition { $$ = $1; }
  ;
 
 partition_range_from:
-   simple_scalar_exp { $$ = $1; }
+   search_condition { $$ = $1; }
  | RANGE MINVALUE    { $$ = _symbol_create(SQL_MINVALUE, NULL ); }
  ;
 
 partition_range_to:
-   simple_scalar_exp { $$ = $1; }
+   search_condition { $$ = $1; }
  | RANGE MAXVALUE    { $$ = _symbol_create(SQL_MAXVALUE, NULL ); }
  ;
 
@@ -1835,7 +1835,7 @@ default:
  ;
 
 default_value:
-    simple_scalar_exp 	{ $$ = $1; }
+    search_condition 	{ $$ = $1; }
  ;
 
 column_constraint:

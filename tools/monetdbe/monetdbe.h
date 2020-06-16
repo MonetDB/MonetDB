@@ -27,76 +27,81 @@ extern "C" {
 #define monetdbe_export extern
 #endif
 
-typedef int64_t monetdb_cnt;
+typedef int64_t monetdbe_cnt;
 
 typedef struct {
 	unsigned char day;
 	unsigned char month;
 	int year;
-} monetdb_data_date;
+} monetdbe_data_date;
 
 typedef struct {
 	unsigned int ms;
 	unsigned char seconds;
 	unsigned char minutes;
 	unsigned char hours;
-} monetdb_data_time;
+} monetdbe_data_time;
 
 typedef struct {
-	monetdb_data_date date;
-	monetdb_data_time time;
-} monetdb_data_timestamp;
+	monetdbe_data_date date;
+	monetdbe_data_time time;
+} monetdbe_data_timestamp;
 
 typedef struct {
 	size_t size;
 	char* data;
-} monetdb_data_blob;
+} monetdbe_data_blob;
 
 typedef enum  {
-	monetdb_bool, monetdb_int8_t, monetdb_int16_t, monetdb_int32_t, monetdb_int64_t, 
+	monetdbe_bool, monetdbe_int8_t, monetdbe_int16_t, monetdbe_int32_t, monetdbe_int64_t, 
 #ifdef HAVE_HGE
-	monetdb_int128_t, 
+	monetdbe_int128_t, 
 #endif
-	monetdb_size_t, monetdb_float, monetdb_double,
-	monetdb_str, monetdb_blob,
-	monetdb_date, monetdb_time, monetdb_timestamp
-} monetdb_types;
+	monetdbe_size_t, monetdbe_float, monetdbe_double,
+	monetdbe_str, monetdbe_blob,
+	monetdbe_date, monetdbe_time, monetdbe_timestamp
+} monetdbe_types;
 
 typedef struct {
-	monetdb_types type;
+	monetdbe_types type;
 	void *data;
 	size_t count;
 	char* name;
-} monetdb_column;
+} monetdbe_column;
 
-struct monetdb_table_t;
-typedef struct monetdb_table_t monetdb_table;
+struct monetdbe_table_t;
+typedef struct monetdbe_table_t monetdbe_table;
 
 typedef struct {
 	size_t nparam;
-	monetdb_types  *type;
-} monetdb_statement;
+	monetdbe_types  *type;
+} monetdbe_statement;
 
 typedef struct {
-	monetdb_cnt nrows;
+	monetdbe_cnt nrows;
 	size_t ncols;
 	char *name;
-	monetdb_cnt last_id;		/* last auto incremented id */
-} monetdb_result;
+	monetdbe_cnt last_id;		/* last auto incremented id */
+} monetdbe_result;
 
-typedef void* monetdb_database;
+typedef void* monetdbe_database;
+
+typedef struct {
+	monetdbe_cnt memorylimit;
+	int nr_threads;
+} monetdbe_options;
 
 #define DEFAULT_STRUCT_DEFINITION(ctype, typename)         \
 	typedef struct                                     \
 	{                                                  \
-		monetdb_types type;                        \
+		monetdbe_types type;                        \
 		ctype *data;                               \
 		size_t count;                              \
 		char *name;				   \
 		ctype null_value;                          \
 		double scale;                              \
 		int (*is_null)(ctype value);               \
-	} monetdb_column_##typename
+	} monetdbe_column_##typename
 
 DEFAULT_STRUCT_DEFINITION(int8_t, bool);
 DEFAULT_STRUCT_DEFINITION(int8_t, int8_t);
@@ -112,33 +117,36 @@ DEFAULT_STRUCT_DEFINITION(float, float);
 DEFAULT_STRUCT_DEFINITION(double, double);
 
 DEFAULT_STRUCT_DEFINITION(char *, str);
-DEFAULT_STRUCT_DEFINITION(monetdb_data_blob, blob);
+DEFAULT_STRUCT_DEFINITION(monetdbe_data_blob, blob);
 
-DEFAULT_STRUCT_DEFINITION(monetdb_data_date, date);
-DEFAULT_STRUCT_DEFINITION(monetdb_data_time, time);
-DEFAULT_STRUCT_DEFINITION(monetdb_data_timestamp, timestamp);
+DEFAULT_STRUCT_DEFINITION(monetdbe_data_date, date);
+DEFAULT_STRUCT_DEFINITION(monetdbe_data_time, time);
+DEFAULT_STRUCT_DEFINITION(monetdbe_data_timestamp, timestamp);
 // UUID, INET, XML ?
 
-monetdbe_export char* monetdb_open(monetdb_database *db, char *url); 
-monetdbe_export char* monetdb_close(monetdb_database db); 
+monetdbe_export char* monetdbe_open(monetdbe_database *db, char *url, monetdbe_options *opts); 
+monetdbe_export char* monetdbe_close(monetdbe_database db); 
 
-monetdbe_export char* monetdb_get_autocommit(monetdb_database dbhdl, int* result);
-monetdbe_export char* monetdb_set_autocommit(monetdb_database dbhdl, int value);
-monetdbe_export int   monetdb_in_transaction(monetdb_database dbhdl);
+monetdbe_export char* monetdbe_get_autocommit(monetdbe_database dbhdl, int* result);
+monetdbe_export char* monetdbe_set_autocommit(monetdbe_database dbhdl, int value);
+monetdbe_export int   monetdbe_in_transaction(monetdbe_database dbhdl);
 
-monetdbe_export char* monetdb_query(monetdb_database dbhdl, char* query, monetdb_result** result, monetdb_cnt* affected_rows);
-monetdbe_export char* monetdb_result_fetch(monetdb_result *mres, monetdb_column** res, size_t column_index);
-monetdbe_export char* monetdb_cleanup_result(monetdb_database dbhdl, monetdb_result* result);
+monetdbe_export char* monetdbe_query(monetdbe_database dbhdl, char* query, monetdbe_result** result, monetdbe_cnt* affected_rows);
+monetdbe_export char* monetdbe_result_fetch(monetdbe_result *mres, monetdbe_column** res, size_t column_index);
+monetdbe_export char* monetdbe_cleanup_result(monetdbe_database dbhdl, monetdbe_result* result);
 
-monetdbe_export char* monetdb_prepare(monetdb_database dbhdl, char *query, monetdb_statement **stmt);
-monetdbe_export char* monetdb_bind(monetdb_statement *stmt, void *data, size_t parameter_nr);
-monetdbe_export char* monetdb_execute(monetdb_statement *stmt, monetdb_result **result, monetdb_cnt* affected_rows);
-monetdbe_export char* monetdb_cleanup_statement(monetdb_database dbhdl, monetdb_statement *stmt);
+monetdbe_export char* monetdbe_prepare(monetdbe_database dbhdl, char *query, monetdbe_statement **stmt);
+monetdbe_export char* monetdbe_bind(monetdbe_statement *stmt, void *data, size_t parameter_nr);
+monetdbe_export char* monetdbe_execute(monetdbe_statement *stmt, monetdbe_result **result, monetdbe_cnt* affected_rows);
+monetdbe_export char* monetdbe_cleanup_statement(monetdbe_database dbhdl, monetdbe_statement *stmt);
 
-monetdbe_export char* monetdb_append(monetdb_database dbhdl, const char* schema, const char* table, monetdb_column **input, size_t column_count);
+monetdbe_export char* monetdbe_append(monetdbe_database dbhdl, const char* schema, const char* table, monetdbe_column **input, size_t column_count);
 
-monetdbe_export char* monetdb_get_table(monetdb_database dbhdl, monetdb_table** table, const char* schema_name, const char* table_name);
-monetdbe_export char* monetdb_get_columns(monetdb_database dbhdl, const char* schema_name, const char *table_name, size_t *column_count, char ***column_names, int **column_types);
+monetdbe_export char* monetdbe_get_table(monetdbe_database dbhdl, monetdbe_table** table, const char* schema_name, const char* table_name);
+monetdbe_export char* monetdbe_get_columns(monetdbe_database dbhdl, const char* schema_name, const char *table_name, size_t *column_count, char ***column_names, int **column_types);
+
+monetdbe_export char* monetdbe_dump_database(monetdbe_database dbhdl, const char *backupfile);
+monetdbe_export char* monetdbe_dump_table(monetdbe_database dbhdl, const char *schema_name, const char *table_name, const char *backupfile);
 
 #ifdef __cplusplus
 }
