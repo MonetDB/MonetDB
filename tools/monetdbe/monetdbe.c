@@ -555,6 +555,7 @@ monetdbe_dump_database(monetdbe_database dbhdl, const char *filename)
 		MT_lock_unset(&embedded_lock);
 		return msg; //The dbhdl is invalid, there is no transaction going
 	}
+	MT_lock_unset(&embedded_lock);
 	struct MapiStruct mid;
 
 	mid.mdbe = dbhdl;
@@ -569,8 +570,6 @@ monetdbe_dump_database(monetdbe_database dbhdl, const char *filename)
 	} else {
 		msg = createException(MAL, "embedded.monetdbe_dump_database", "Unable too open file %s", filename);
 	}
-
-	MT_lock_unset(&embedded_lock);
 	return msg;
 }
 
@@ -584,6 +583,7 @@ monetdbe_dump_table(monetdbe_database dbhdl, const char *sname, const char *tnam
 		MT_lock_unset(&embedded_lock);
 		return msg; //The dbhdl is invalid, there is no transaction going
 	}
+	MT_lock_unset(&embedded_lock);
 	struct MapiStruct mid;
 
 	mid.mdbe = dbhdl;
@@ -598,8 +598,6 @@ monetdbe_dump_table(monetdbe_database dbhdl, const char *sname, const char *tnam
 	} else {
 		msg = createException(MAL, "embedded.monetdbe_dump_table", "Unable too open file %s", filename);
 	}
-
-	MT_lock_unset(&embedded_lock);
 	return msg;
 }
 
