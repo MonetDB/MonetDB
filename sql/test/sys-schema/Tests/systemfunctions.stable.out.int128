@@ -64,8 +64,6 @@ stdout of test 'systemfunctions` in directory 'sql/test/sys-schema` itself:
 [ "json",	"length",	1,	"json",	""	]
 [ "json",	"number",	0,	"double",	"create function json.number(js json)\nreturns float external name json.number;"	]
 [ "json",	"number",	1,	"json",	""	]
-[ "json",	"output",	0,	"clob",	"create aggregate json.output(js json)\nreturns string external name json.output;"	]
-[ "json",	"output",	1,	"json",	""	]
 [ "json",	"text",	0,	"clob",	"create function json.text(js json, e string)\nreturns string external name json.text;"	]
 [ "json",	"text",	1,	"json",	""	]
 [ "json",	"text",	2,	"clob",	""	]

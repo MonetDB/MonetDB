@@ -2092,26 +2092,6 @@ JSONfold(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 }
 
 str
-JSONtextString(str *ret, bat *bid)
-{
-	(void) ret;
-	(void) bid;
-	throw(MAL, "json.text", SQLSTATE(0A000) PROGRAM_NYI);
-}
-
-
-str
-JSONtextGrouped(bat *ret, bat *bid, bat *gid, bat *ext, bit *flg)
-{
-	(void) ret;
-	(void) bid;
-	(void) gid;
-	(void) ext;
-	(void) flg;
-	throw(MAL, "json.text", SQLSTATE(0A000) PROGRAM_NYI);
-}
-
-str
 JSONgroupStr(str *ret, const bat *bid)
 {
 	BAT *b;
@@ -2584,8 +2564,6 @@ static mel_func json_init_funcs[] = {
  command("json", "valuearray", JSONvalueArray, false, "Expands the outermost JSON object values into a JSON value array.", args(1,2, arg("",json),arg("val",json))),
  command("json", "keys", JSONkeyTable, false, "Expands the outermost JSON object names.", args(1,2, batarg("",str),arg("val",json))),
  command("json", "values", JSONvalueTable, false, "Expands the outermost JSON values.", args(1,2, batarg("",json),arg("val",json))),
- command("json", "output", JSONtextString, false, "Pack the values into a single json structure", args(1,2, arg("",str),batargany("b",1))),
- command("json", "suboutput", JSONtextGrouped, false, "Pack the values into a json structure", args(1,5, batarg("",str),batargany("b",1),batarg("gid",oid),batarg("ext",lng),arg("flg",bit))),
  command("json", "prelude", JSONprelude, false, "", noargs),
  pattern("json", "renderobject", JSONrenderobject, false, "", args(1,2, arg("",json),varargany("val",0))),
  pattern("json", "renderarray", JSONrenderarray, false, "", args(1,2, arg("",json),varargany("val",0))),

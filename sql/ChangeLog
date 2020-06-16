@@ -34,3 +34,6 @@
 
 * Mon Jun 15 2020 Pedro Ferreira <pedro.ferreira@monetdbsolutions.com>
 - Removed obsolete sys.getContent(url) function.
+
+* Tue Jun 16 2020 Pedro Ferreira <pedro.ferreira@monetdbsolutions.com>
+- Removed obsolete json.output(json) function.

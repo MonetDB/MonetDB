@@ -86,8 +86,6 @@ mal_export str JSONvalueTable(bat *ret, json *j);
 mal_export str JSONkeyArray(json *ret, json *arg);
 mal_export str JSONvalueArray(json *ret, json *arg);
 
-mal_export str JSONtextString(str *ret, bat *bid);
-mal_export str JSONtextGrouped(bat *ret, bat *bid, bat *gid, bat *ext, bit *flg);
 mal_export str JSONdump(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 mal_export str JSONprelude(void *ret);
 

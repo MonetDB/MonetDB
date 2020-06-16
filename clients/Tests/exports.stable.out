@@ -1417,8 +1417,6 @@ str JSONresultSet(json *res, bat *u, bat *rev, bat *js);
 str JSONstr2json(json *ret, str *j);
 str JSONsubjson(bat *retval, bat *bid, bat *gid, bat *eid, bit *skipnils);
 str JSONsubjsoncand(bat *retval, bat *bid, bat *gid, bat *eid, bat *id, bit *skip_nils);
-str JSONtextGrouped(bat *ret, bat *bid, bat *gid, bat *ext, bit *flg);
-str JSONtextString(str *ret, bat *bid);
 ssize_t JSONtoString(str *s, size_t *len, const char *src, bool external);
 str JSONunfold(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 str JSONvalueArray(json *ret, json *arg);
