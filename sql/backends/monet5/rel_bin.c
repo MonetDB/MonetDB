@@ -1105,7 +1105,7 @@ exp_bin(backend *be, sql_exp *e, stmt *left, stmt *right, stmt *grp, stmt *ext, 
 							r2 = stmt_project(be, sel, r2);
 						sel = NULL;
 					}
-					s = stmt_uselect2(be, l, r, r2, (comp_type)e->flag, sel, is_anti(e));
+					s = stmt_uselect2(be, column(be, l), r, r2, (comp_type)e->flag, sel, is_anti(e));
 				}
 			} else {
 				/* value compare or select */
