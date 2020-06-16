@@ -34,7 +34,7 @@ ERROR = !The PRECEDING boundary must be non-negative
 CODE  = 42000
 MAPI  = (monetdb) /var/tmp/mtest-4630/.s.monetdb.34662
 QUERY = select count(*) over (order by aa range between interval '3' month preceding and interval '5' month following) from testintervals3; --error, for time columns month intervals are not allowed
-ERROR = !For time(1) input the PRECEDING boundary must be an interval type up to the day
+ERROR = !For time input the PRECEDING boundary must be an interval type up to the day
 CODE  = 42000
 
 # 11:59:18 >  

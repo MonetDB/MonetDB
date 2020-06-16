@@ -418,10 +418,10 @@ subtype2string2(sql_subtype *tpe) //distinguish char(n), decimal(n,m) from other
 
 	switch (tpe->type->eclass) {
 		case EC_SEC:
-			snprintf(buf, BUFSIZ, "BIGINT");
+			snprintf(buf, BUFSIZ, "INTERVAL SECOND");
 			break;
 		case EC_MONTH:
-			snprintf(buf, BUFSIZ, "INT");
+			snprintf(buf, BUFSIZ, "INTERVAL MONTH");
 			break;
 		case EC_CHAR:
 		case EC_STRING:

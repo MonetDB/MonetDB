@@ -461,7 +461,7 @@ symbol2string(mvc *sql, symbol *se, int expression, char **err) /**/
 		dlist *dl = se->data.lval;
 		char *val = NULL, *tpe = NULL, *res;
 
-		if (!(val = symbol2string(sql, dl->h->data.sym, expression, err)) || !(tpe = subtype2string(&dl->h->next->data.typeval))) {
+		if (!(val = symbol2string(sql, dl->h->data.sym, expression, err)) || !(tpe = subtype2string2(&dl->h->next->data.typeval))) {
 			_DELETE(val);
 			_DELETE(tpe);
 			return NULL;
