@@ -314,21 +314,9 @@ ROLLBACK;
 
 START TRANSACTION; -- Bug 6908
 CREATE TABLE t0(c0 BOOLEAN,c1 CHAR(140));
-COMMENT ON TABLE "sys"."t0" IS 'Kn䛺䛺r';
-COPY 9 RECORDS INTO "sys"."t0" FROM stdin USING DELIMITERS E'\t',E'\n','"';
-false	"0.6481236457757975-2109927659"
-NULL	"-21099276590.48742518585365991"
-false	NULL
-false	NULL
-false	"heQhWJB<WMpPTuH⛿KZn6Gy|I[7nY*"
-true	"10626644390.31732346086015495"
-true	"붺Bu-夵jc"
-true	"-7416460080.4072199619164287325034012"
-NULL	"0.019193566362750714"
-
 create view v0(c0) as (select distinct 0.4 from t0 where ((t0.c0)and((((lower(t0.c1))||(((((-69891801)/(1210439951)))+(cast(0.5895729273161221 as int)))))) between symmetric (cast(0.3 as string)) and (greatest(t0.c1, ((t0.c1)||(-2045486895)))))));
-SELECT ALL v0.c0 FROM v0 CROSS JOIN t0 WHERE NOT (((((NOT (t0.c0))AND(t0.c0)))OR(((((((CAST(+ (((-498346404)*(1808267325))) AS BOOLEAN))OR(((((((((((((upper(t0.c1))<(t0.c1)))OR(t0.c0)))OR(t0.c0)))AND((v0.c0)
-BETWEEN ASYMMETRIC (0.41195698232255074) AND (v0.c0))))OR(t0.c0)))OR(t0.c0)))))OR(NOT ((0.8823237) NOT IN (0.5788206, -351441275)))))AND(((0.149425566998711)<(v0.c0)))))));
+create view v1(c0) as (select distinct t0.c1 from t0 where t0.c0);
+select max(all abs(+ (- (- (-1620427795))))) from v0, t0 join v1 on ((((v1.c0)||(t0.c1)))ilike(v1.c0));
 ROLLBACK;
 
 DROP TABLE tbl_ProductSales;
