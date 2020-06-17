@@ -330,17 +330,19 @@ BUN
 UUIDhash(const void *v)
 {
 	const uuid *u = (const uuid *) v;
-	unsigned int u1, u2, u3, u4;
+	ulng u1, u2;
 
-	u1 = (unsigned int) u->u[0] << 24 | (unsigned int) u->u[1] << 16 |
-		(unsigned int) u->u[2] << 8 | (unsigned int) u->u[3];
-	u2 = (unsigned int) u->u[4] << 24 | (unsigned int) u->u[5] << 16 |
-		(unsigned int) u->u[6] << 8 | (unsigned int) u->u[7];
-	u3 = (unsigned int) u->u[8] << 24 | (unsigned int) u->u[9] << 16 |
-		(unsigned int) u->u[10] << 8 | (unsigned int) u->u[11];
-	u4 = (unsigned int) u->u[12] << 24 | (unsigned int) u->u[13] << 16 |
-		(unsigned int) u->u[14] << 8 | (unsigned int) u->u[15];
-	return (BUN) mix_int(u1 ^ u2 ^ u3 ^ u4);
+	u1 = (ulng) u->u[0] << 56 | (ulng) u->u[1] << 48 |
+		(ulng) u->u[2] << 40 | (ulng) u->u[3] << 32 |
+		(ulng) u->u[4] << 24 | (ulng) u->u[5] << 16 |
+		(ulng) u->u[6] << 8 | (ulng) u->u[7];
+	u2 = (ulng) u->u[8] << 56 | (ulng) u->u[9] << 48 |
+		(ulng) u->u[10] << 40 | (ulng) u->u[11] << 32 |
+		(ulng) u->u[12] << 24 | (ulng) u->u[13] << 16 |
+		(ulng) u->u[14] << 8 | (ulng) u->u[15];
+	/* we're not using mix_hge since this we way get the same result
+	 * on systems with and without 128 bit integer support */
+	return (BUN) (mix_lng(u1) ^ mix_lng(u2));
 }
 
 const uuid *
