@@ -97,7 +97,11 @@ HASHclear(Hash *h)
 	memset(h->Bckt, 0xFF, h->nbucket * h->width);
 }
 
-#define HASH_VERSION		3
+#define HASH_VERSION		4
+/* this is only for the change of hash function of the UUID type; if
+ * HASH_VERSION is increased again from 4, the code associated with
+ * HASH_VERSION_NOUUID must be deleted */
+#define HASH_VERSION_NOUUID	3
 #define HASH_HEADER_SIZE	7	/* nr of size_t fields in header */
 
 static void
@@ -442,11 +446,21 @@ BATcheckhash(BAT *b)
 					struct stat st;
 
 					if (read(fd, hdata, sizeof(hdata)) == sizeof(hdata) &&
-					    hdata[0] == (
+					    (hdata[0] == (
 #ifdef PERSISTENTHASH
 						    ((size_t) 1 << 24) |
 #endif
-						    HASH_VERSION) &&
+						    HASH_VERSION)
+#ifdef HASH_VERSION_NOUUID
+					     /* if not uuid, also allow previous version */
+					     || (hdata[0] == (
+#ifdef PERSISTENTHASH
+							 ((size_t) 1 << 24) |
+#endif
+							 HASH_VERSION_NOUUID) &&
+						 strcmp(ATOMname(b->ttype), "uuid") != 0)
+#endif
+						    ) &&
 					    hdata[1] > 0 &&
 					    hdata[4] == (size_t) BATcount(b) &&
 					    fstat(fd, &st) == 0 &&
