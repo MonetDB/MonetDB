@@ -26,4 +26,5 @@ EXPLAIN SELECT 1 FROM another_t t1 INNER JOIN another_t t2 ON t1.col1 BETWEEN t2
 EXPLAIN SELECT 1 FROM another_t t1 INNER JOIN another_t t2 ON t1.col1 BETWEEN t2.col1 AND 2;
 EXPLAIN SELECT 1 FROM tbl_productsales t1 INNER JOIN tbl_productsales t2 ON t1.product_category LIKE t2.product_category;
 
+EXPLAIN SELECT 1 FROM another_t t1 INNER JOIN another_t t2 ON t1.col1 > t2.col1;
 rollback;
