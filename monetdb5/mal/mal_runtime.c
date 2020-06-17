@@ -177,7 +177,7 @@ runtimeProfileInit(Client cntxt, MalBlkPtr mb, MalStkPtr stk)
 	QRYqueue[qhead].start = time(0);
 	q = isaSQLquery(mb);
 	QRYqueue[qhead].query = q? GDKstrdup(q):0;
-	if(QRYqueue[i].username)
+	if(QRYqueue[qhead].username)
 		GDKfree(QRYqueue[qhead].username);
 	if (!GDKembedded())
 		AUTHgetUsername(&QRYqueue[qhead].username, cntxt);
