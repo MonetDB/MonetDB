@@ -85,6 +85,38 @@ decompose_filename(str nme)
 	return ext;
 }
 
+Heap *
+HEAPgrow(const Heap *old, size_t size)
+{
+	assert(size >= old->free);
+	assert(old->storage == STORE_MEM || old->storage == STORE_MMAP);
+
+	Heap *new = GDKmalloc(sizeof(Heap));
+	if (new == NULL)
+		return NULL;
+	*new = (Heap) {
+		.farmid = old->farmid,
+		.hashash = old->hashash,
+		.cleanhash = old->cleanhash,
+		.dirty = true,
+		.remove = old->remove,
+		.parentid = old->parentid,
+	};
+	memcpy(new->filename, old->filename, sizeof(new->filename));
+	if (HEAPalloc(new, size, 1) != GDK_SUCCEED) {
+		GDKfree(new);
+		return NULL;
+	}
+	ATOMIC_INIT(&new->refs, 1);
+	assert(new->storage == STORE_MEM || new->storage == STORE_MMAP);
+	new->free = old->free;
+	if (old->free > 0 &&
+	    (new->storage == STORE_MEM || old->storage == STORE_MEM))
+		memcpy(new->base, old->base, old->free);
+	/* else both are STORE_MMAP and refer to the same file */
+	return new;
+}
+
 /*
  * @- HEAPalloc
  *

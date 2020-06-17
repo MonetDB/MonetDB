@@ -176,10 +176,13 @@ insert_string_bat(BAT *b, BAT *n, struct canditer *ci, bool force)
 				toff = (toff + GDK_VARALIGN - 1) & ~(GDK_VARALIGN - 1);
 				/* if in "force" mode, the heap may be
 				 * shared when memory mapped */
-				if (HEAPextend(b->tvheap, toff + n->tvheap->size, force) != GDK_SUCCEED) {
-					toff = ~(size_t) 0;
+				Heap *h = HEAPgrow(b->tvheap, toff + n->tvheap->size);
+				if (h == NULL)
 					return GDK_FAIL;
-				}
+				MT_lock_set(&b->theaplock);
+				HEAPdecref(b->tvheap, false);
+				b->tvheap = h;
+				MT_lock_unset(&b->theaplock);
 				memcpy(b->tvheap->base + toff, n->tvheap->base, n->tvheap->free);
 				b->tvheap->free = toff + n->tvheap->free;
 				if (toff > 0) {

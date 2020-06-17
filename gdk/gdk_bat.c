@@ -467,10 +467,15 @@ BATextend(BAT *b, BUN newcap)
 
 	theap_size *= Tsize(b);
 	if (b->theap->base) {
-		TRC_DEBUG(HEAP, "HEAPextend in BATextend %s %zu %zu\n",
+		TRC_DEBUG(HEAP, "HEAPgrow in BATextend %s %zu %zu\n",
 			  b->theap->filename, b->theap->size, theap_size);
-		if (HEAPextend(b->theap, theap_size, b->batRestricted == BAT_READ) != GDK_SUCCEED)
+		Heap *h = HEAPgrow(b->theap, theap_size);
+		if (h == NULL)
 			return GDK_FAIL;
+		MT_lock_set(&b->theaplock);
+		HEAPdecref(b->theap, false);
+		b->theap = h;
+		MT_lock_unset(&b->theaplock);
 	}
 	return GDK_SUCCEED;
 }
