@@ -177,6 +177,7 @@ include(monetdb-packages)
 
 include(CTest)
 add_subdirectory(ctest)
+add_subdirectory(documentation)
 
 if(CMAKE_SUMMARY)
   monetdb_cmake_summary()

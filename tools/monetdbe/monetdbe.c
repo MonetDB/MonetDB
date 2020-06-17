@@ -221,6 +221,9 @@ monetdbe_query_internal(monetdbe_database dbhdl, char* query, monetdbe_result** 
 	bstream *old_bstream = NULL;
 	stream *fdout = c->fdout;
 
+	if (result)
+		*result = NULL;
+
 	if ((msg = validate_database_handle(dbhdl, "monetdbe.monetdbe_query_internal")) != MAL_SUCCEED)
 		return msg;
 
