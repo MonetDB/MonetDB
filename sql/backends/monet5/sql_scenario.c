@@ -166,7 +166,7 @@ SQLprelude(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		fprintf(stdout, "# MonetDB/SQL module loaded\n");
 		fflush(stdout);		/* make merovingian see this *now* */
 	}
-	if (GDKinmemory()) {
+	if (GDKinmemory() || GDKembedded()) {
 		s->name = "sql";
 		ms->name = "msql";
 		return MAL_SUCCEED;
