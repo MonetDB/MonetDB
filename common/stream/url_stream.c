@@ -27,15 +27,7 @@ struct curl_data {
 	size_t usesize;		/* end of used data */
 	size_t offset;		/* start of unread data */
 	int running;		/* whether still transferring */
-#ifdef USE_CURL_MULTI
-	CURLMcode result;	/* result of transfer (if !running) */
-	struct curl_data *next;	/* linked list (curl_handles) */
-#endif
 };
-#ifdef USE_CURL_MULTI
-static CURLM *multi_handle;
-static struct curl_data *curl_handles;
-#endif
 
 #define BLOCK_CURL	((size_t) 1 << 16)
 
@@ -58,14 +50,12 @@ write_callback(char *buffer, size_t size, size_t nitems, void *userp)
 		c->usesize = 0;
 		c->offset = 0;
 	}
-#ifndef USE_CURL_MULTI
 	/* move data if we don't have enough space */
 	if (c->maxsize - c->usesize < size && c->offset > 0) {
 		memmove(c->buffer, c->buffer + c->offset, c->usesize - c->offset);
 		c->usesize -= c->offset;
 		c->offset = 0;
 	}
-#endif
 	/* allocate more buffer space if we still don't have enough space */
 	if (c->maxsize - c->usesize < size) {
 		char *b;
@@ -88,25 +78,10 @@ static void
 curl_destroy(stream *s)
 {
 	struct curl_data *c;
-#ifdef USE_CURL_MULTI
-	struct curl_data **cp;
-#endif
 
 	if ((c = (struct curl_data *) s->stream_data.p) != NULL) {
 		s->stream_data.p = NULL;
-#ifdef USE_CURL_MULTI
-		/* lock access to curl_handles */
-		cp = &curl_handles;
-		while (*cp && *cp != c)
-			cp = &(*cp)->next;
-		if (*cp)
-			*cp = c->next;
-		/* unlock access to curl_handles */
-#endif
 		if (c->handle) {
-#ifdef USE_CURL_MULTI
-			curl_multi_remove_handle(mult_handle, c->handle);
-#endif
 			curl_easy_cleanup(c->handle);
 		}
 		if (c->buffer)
@@ -144,9 +119,7 @@ curl_read(stream *restrict s, void *restrict buf, size_t elmsize, size_t cnt)
 		return (ssize_t) cnt;
 	}
 	/* not enough data, we must wait until we get some */
-#ifndef USE_CURL_MULTI
 	return 0;
-#endif
 }
 
 static ssize_t
@@ -171,9 +144,6 @@ open_urlstream(const char *url)
 {
 	stream *s;
 	struct curl_data *c;
-#ifdef USE_CURL_MULTI
-	CURLMsg *msg;
-#endif
 
 	if ((c = malloc(sizeof(*c))) == NULL) {
 		mnstr_set_open_error(url, errno, NULL);
@@ -186,12 +156,6 @@ open_urlstream(const char *url)
 		free(c);
 		return NULL;
 	}
-#ifdef USE_CURL_MULTI
-	/* lock access to curl_handles */
-	c->next = curl_handles;
-	curl_handles = c;
-	/* unlock access to curl_handles */
-#endif
 	s->read = curl_read;
 	s->write = curl_write;
 	s->close = curl_close;
@@ -208,34 +172,6 @@ open_urlstream(const char *url)
 	curl_easy_setopt(c->handle, CURLOPT_VERBOSE, 0);
 	curl_easy_setopt(c->handle, CURLOPT_NOSIGNAL, 1);
 	curl_easy_setopt(c->handle, CURLOPT_WRITEFUNCTION, write_callback);
-#ifdef USE_CURL_MULTI
-	if (multi_handle == NULL)
-		multi_handle = curl_multi_init();
-	curl_multi_add_handle(multi_handle, c->handle);
-	while (curl_multi_perform(multi_handle, NULL) == CURLM_CALL_MULTI_PERFORM)
-		;
-	while ((msg = curl_multi_info_read(multi_handle, NULL)) != NULL) {
-		struct curl_data *p;
-		/* lock access to curl_handles */
-		for (p = curl_handles; p; p = p->next) {
-			if (p->handle == msg->easy_handle) {
-				switch (msg->msg) {
-				case CURLMSG_DONE:
-					p->running = 0;
-					p->result = msg->data.result;
-					curl_multi_remove_handle(multi_handle, p->handle);
-					curl_easy_cleanup(p->handle);
-					p->handle = NULL;
-					break;
-				default:
-					break;
-				}
-				break;
-			}
-		}
-		/* unlock access to curl_handles */
-	}
-#else
 	CURLcode ret = curl_easy_perform(c->handle);
 	if (ret != CURLE_OK) {
 		curl_destroy(s);
@@ -245,7 +181,6 @@ open_urlstream(const char *url)
 	curl_easy_cleanup(c->handle);
 	c->handle = NULL;
 	c->running = 0;
-#endif
 	return s;
 }
 
