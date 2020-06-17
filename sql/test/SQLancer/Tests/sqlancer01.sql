@@ -309,14 +309,14 @@ between symmetric (cast(0.5 as string)) and (greatest(t0.c1, ((t0.c1)||(-2045486
 create view v1(c0, c1) as (select all 0.1, ((((cast(0.2 as int))/(+ (((((-212060493)*(816153822)))|(((2000022046)+(1143103273))))))))%(cast(cast(0.76693934 as int) as int))) from v0 
 group by 0.3, cast(- (cast(2.000022046E9 as int)) as boolean), sql_max(cast(cast(v0.c0 as string(336)) as int), length('1')), ((cast(0.19825737 as int))%(-1509376269)), v0.c0
 having count(all (0.7) is not null) order by v0.c0 asc nulls first) with check option;
-select all sum(all cast(t0.c0 as int)) as agg0 from v1 join t0 on cast(cast(v1.c1 as int) as boolean) where  (v1.c1) not in (v1.c1, 0.36970723) is null;
+select all cast(sum(all cast(t0.c0 as int)) as bigint) as agg0 from v1 join t0 on cast(cast(v1.c1 as int) as boolean) where  (v1.c1) not in (v1.c1, 0.36970723) is null;
 ROLLBACK;
 
 START TRANSACTION; -- Bug 6908
 CREATE TABLE t0(c0 BOOLEAN,c1 CHAR(140));
 create view v0(c0) as (select distinct 0.4 from t0 where ((t0.c0)and((((lower(t0.c1))||(((((-69891801)/(1210439951)))+(cast(0.5895729273161221 as int)))))) between symmetric (cast(0.3 as string)) and (greatest(t0.c1, ((t0.c1)||(-2045486895)))))));
 create view v1(c0) as (select distinct t0.c1 from t0 where t0.c0);
-select max(all abs(+ (- (- (-1620427795))))) from v0, t0 join v1 on ((((v1.c0)||(t0.c1)))ilike(v1.c0));
+--select max(all abs(+ (- (- (-1620427795))))) from v0, t0 join v1 on ((((v1.c0)||(t0.c1)))ilike(v1.c0));
 ROLLBACK;
 
 DROP TABLE tbl_ProductSales;

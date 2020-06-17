@@ -2054,7 +2054,7 @@ exp_unsafe( sql_exp *e, int allow_identity)
 
 	if (e->type == e_convert && e->l)
 		return exp_unsafe(e->l, allow_identity);
-	if (e->type == e_func && e->l) {
+	if ((e->type == e_func || e->type == e_aggr) && e->l) {
 		sql_subfunc *f = e->f;
 		list *args = e->l;
 		node *n;
