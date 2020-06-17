@@ -15,21 +15,21 @@ typedef struct mel_atom {
 	char name[14];
 	char basetype[14];
 	int size;
-	fptr tostr;
-	fptr fromstr;
-	fptr cmp;
-	fptr nequal;
-	fptr hash;
-	fptr null;
-	fptr read;
-	fptr write;
-	fptr put;
-	fptr del;
-	fptr length;
-	fptr heap;
-	fptr fix;
-	fptr unfix;
-	fptr storage;
+	ssize_t (*tostr) (char **, size_t *, const void *, bool);
+	ssize_t (*fromstr) (const char *, size_t *, void **, bool);
+	int (*cmp) (const void *, const void *);
+	int (*nequal) (const void *, const void *);
+	BUN (*hash) (const void *);
+	const void *(*null) (void);
+	void *(*read) (void *, stream *, size_t);
+	gdk_return (*write) (const void *, stream *, size_t);
+	var_t (*put) (Heap *, var_t *, const void *);
+	void (*del) (Heap *, var_t *);
+	size_t (*length) (const void *);
+	void (*heap) (Heap *, size_t);
+	gdk_return (*fix) (const void *);
+	gdk_return (*unfix) (const void *);
+	int (*storage) (void);
 } mel_atom;
 
 /*strings */

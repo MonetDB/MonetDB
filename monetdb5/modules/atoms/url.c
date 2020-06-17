@@ -281,9 +281,10 @@ x2c(char *what)
  * Here you find the wrappers around the V4 url library included above.
  */
 
-ssize_t
-URLfromString(const char *src, size_t *len, str *u, bool external)
+static ssize_t
+URLfromString(const char *src, size_t *len, void **U, bool external)
 {
+	char **u = (char **) U;
 	size_t l = strlen(src) + 1;
 
 	if (*len < l || *u == NULL) {
@@ -303,9 +304,10 @@ URLfromString(const char *src, size_t *len, str *u, bool external)
 	return (ssize_t) l - 1;
 }
 
-ssize_t
-URLtoString(str *s, size_t *len, const char *src, bool external)
+static ssize_t
+URLtoString(str *s, size_t *len, const void *SRC, bool external)
 {
+	const char *src = SRC;
 	size_t l = strlen(src);
 
 	if (external)
@@ -815,7 +817,7 @@ str URLnoop(url *u, url *val)
 
 #include "mel.h"
 mel_atom url_init_atoms[] = {
- { .name="url", .basetype="str", .fromstr=(fptr)&URLfromString, .tostr=(fptr)&URLtoString, },  { .cmp=NULL } 
+ { .name="url", .basetype="str", .fromstr=URLfromString, .tostr=URLtoString, },  { .cmp=NULL } 
 };
 mel_func url_init_funcs[] = {
  command("url", "url", URLnew, false, "Create an URL from a string literal", args(1,2, arg("",url),arg("s",str))),

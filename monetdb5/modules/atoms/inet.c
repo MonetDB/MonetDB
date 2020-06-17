@@ -69,9 +69,6 @@ typedef struct _inet {
 #endif
 #define in_setnil(i) (i)->q1 = (i)->q2 = (i)->q3 = (i)->q4 = (i)->mask = (i)->filler1 = (i)->filler2 = 0; (i)->isnil = 1
 
-mal_export ssize_t INETfromString(const char *src, size_t *len, inet **retval, bool external);
-mal_export ssize_t INETtoString(str *retval, size_t *len, const inet *handle, bool external);
-mal_export int INETcompare(const inet *l, const inet *r);
 mal_export str INETnew(inet *retval, str *in);
 mal_export str INET_isnil(bit *retval, const inet *val);
 mal_export str INET_comp_EQ(bit *retval, const inet *val1, const inet *val2);
@@ -95,7 +92,6 @@ mal_export str INETtext(str *retval, const inet *val);
 mal_export str INETabbrev(str *retval, const inet *val);
 mal_export str INET_inet(inet *d, const inet *s);
 mal_export str INET_fromstr(inet *ret, str *s);
-mal_export const inet *INETnull(void);
 
 static inet inet_nil = {{{0,0,0,0,0,0,0,1}}};
 
@@ -105,9 +101,10 @@ static inet inet_nil = {{{0,0,0,0,0,0,0,1}}};
  * a pointer to a pointer for the retval!
  * Returns the number of chars read
  */
-ssize_t
-INETfromString(const char *src, size_t *len, inet **retval, bool external)
+static ssize_t
+INETfromString(const char *src, size_t *len, void **RETVAL, bool external)
 {
+	inet **retval = (inet **) RETVAL;
 	int i, last, type;
 	long parse; /* type long returned by strtol() */
 	char *endptr;
@@ -228,8 +225,8 @@ INETfromString(const char *src, size_t *len, inet **retval, bool external)
  * Warning: GDK function
  * Returns the length of the string
  */
-ssize_t
-INETtoString(str *retval, size_t *len, const inet *handle, bool external)
+static ssize_t
+INETtoString(str *retval, size_t *len, const void *handle, bool external)
 {
 	const inet *value = (const inet *)handle;
 
@@ -263,16 +260,17 @@ INETnew(inet *retval, str *in)
 	ssize_t pos;
 	size_t len = sizeof(inet);
 
-	pos = INETfromString(*in, &len, &retval, false);
+	pos = INETfromString(*in, &len, (void **) &retval, false);
 	if (pos < 0)
 		throw(PARSE, "inet.new", GDK_EXCEPTION);
 
 	return (MAL_SUCCEED);
 }
 
-int
-INETcompare(const inet *l, const inet *r)
+static int
+INETcompare(const void *L, const void *R)
 {
+	const inet *l = L, *r = R;
 	bit res = 0;
 	if (is_inet_nil(l))
 		return is_inet_nil(r) ? 0 : -1;
@@ -798,12 +796,12 @@ str
 INET_fromstr(inet *ret, str *s)
 {
 	size_t len = sizeof(inet);
-	if (INETfromString(*s, &len, &ret, false) < 0)
+	if (INETfromString(*s, &len, (void **) &ret, false) < 0)
 		throw(MAL, "inet.inet",  GDK_EXCEPTION);
 	return MAL_SUCCEED;
 }
 
-const inet *
+static const void *
 INETnull(void)
 {
 	return &inet_nil;
@@ -811,7 +809,7 @@ INETnull(void)
 
 #include "mel.h"
 mel_atom inet_init_atoms[] = {
- { .name="inet", .basetype="lng", .size=sizeof(inet), .null=(fptr)&INETnull, .cmp=(fptr)&INETcompare, .fromstr=(fptr)&INETfromString, .tostr=(fptr)&INETtoString, },  { .cmp=NULL } 
+ { .name="inet", .basetype="lng", .size=sizeof(inet), .null=INETnull, .cmp=INETcompare, .fromstr=INETfromString, .tostr=INETtoString, },  { .cmp=NULL } 
 };
 mel_func inet_init_funcs[] = {
  command("inet", "new", INETnew, false, "Create an inet from a string literal", args(1,2, arg("",inet),arg("s",str))),

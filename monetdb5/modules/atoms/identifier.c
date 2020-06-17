@@ -25,8 +25,6 @@ typedef str identifier;
 
 mal_export int TYPE_identifier;
 mal_export str IDprelude(void *ret);
-mal_export ssize_t IDfromString(const char *src, size_t *len, identifier *retval, bool external);
-mal_export ssize_t IDtoString(str *retval, size_t *len, const char *handle, bool external);
 mal_export str IDentifier(identifier *retval, str *in);
 
 int TYPE_identifier;
@@ -44,9 +42,10 @@ str IDprelude(void *ret)
  * a pointer to a pointer for the retval!
  * Returns the number of chars read
  */
-ssize_t
-IDfromString(const char *src, size_t *len, identifier *retval, bool external)
+static ssize_t
+IDfromString(const char *src, size_t *len, void **RETVAL, bool external)
 {
+	identifier *retval = (identifier *) RETVAL;
 	size_t l = strlen(src) + 1;
 	if (*retval == NULL || *len < l) {
 		GDKfree(*retval);
@@ -68,9 +67,10 @@ IDfromString(const char *src, size_t *len, identifier *retval, bool external)
  * Warning: GDK function
  * Returns the length of the string
  */
-ssize_t
-IDtoString(str *retval, size_t *len, const char *handle, bool external)
+static ssize_t
+IDtoString(char **retval, size_t *len, const void *HANDLE, bool external)
 {
+	const char *handle = HANDLE;
 	size_t hl = strlen(handle) + 1;
 	if (external && strNil(handle))
 		hl = 4;
@@ -96,7 +96,7 @@ IDentifier(identifier *retval, str *in)
 {
 	size_t len = 0;
 
-	if (IDfromString(*in, &len, retval, false) < 0)
+	if (IDfromString(*in, &len, (void **) retval, false) < 0)
 		throw(PARSE, "identifier.identifier", "Error while parsing %s", *in);
 
 	return (MAL_SUCCEED);
@@ -104,7 +104,7 @@ IDentifier(identifier *retval, str *in)
 
 #include "mel.h"
 mel_atom identifier_init_atoms[] = {
- { .name="identifier", .basetype="str", .fromstr=(fptr)&IDfromString, .tostr=(fptr)&IDtoString, },  { .cmp=NULL } 
+ { .name="identifier", .basetype="str", .fromstr=IDfromString, .tostr=IDtoString, },  { .cmp=NULL } 
 };
 mel_func identifier_init_funcs[] = {
  command("identifier", "identifier", IDentifier, false, "Cast a string to an identifer ", args(1,2, arg("",identifier),arg("s",str))),

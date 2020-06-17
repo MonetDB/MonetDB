@@ -103,9 +103,10 @@ JSONfree(JSON *c)
 	GDKfree(c);
 }
 
-ssize_t
-JSONfromString(const char *src, size_t *len, json *j, bool external)
+static ssize_t
+JSONfromString(const char *src, size_t *len, void **J, bool external)
 {
+	json *j = (json *) J;
 	size_t slen = strlen(src);
 	JSON *jt;
 
@@ -146,9 +147,10 @@ JSONfromString(const char *src, size_t *len, json *j, bool external)
 	return (ssize_t) slen;
 }
 
-ssize_t
-JSONtoString(str *s, size_t *len, const char *src, bool external)
+static ssize_t
+JSONtoString(str *s, size_t *len, const void *SRC, bool external)
 {
+	const char *src = SRC;
 	size_t cnt;
 	const char *c;
 	char *dst;
@@ -2527,7 +2529,7 @@ JSONsubjson(bat *retval, bat *bid, bat *gid, bat *eid, bit *skip_nils)
 
 #include "mel.h"
 static mel_atom json_init_atoms[] = {
- { .name="json", .basetype="str", .fromstr=(fptr)&JSONfromString, .tostr=(fptr)&JSONtoString, },  { .cmp=NULL } 
+ { .name="json", .basetype="str", .fromstr=JSONfromString, .tostr=JSONtoString, },  { .cmp=NULL } 
 };
 static mel_func json_init_funcs[] = {
  command("json", "new", JSONstr2json, false, "Convert string to its JSON. Dealing with escape characters", args(1,2, arg("",json),arg("j",str))),
