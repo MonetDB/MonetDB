@@ -316,7 +316,7 @@ START TRANSACTION; -- Bug 6908
 CREATE TABLE t0(c0 BOOLEAN,c1 CHAR(140));
 create view v0(c0) as (select distinct 0.4 from t0 where ((t0.c0)and((((lower(t0.c1))||(((((-69891801)/(1210439951)))+(cast(0.5895729273161221 as int)))))) between symmetric (cast(0.3 as string)) and (greatest(t0.c1, ((t0.c1)||(-2045486895)))))));
 create view v1(c0) as (select distinct t0.c1 from t0 where t0.c0);
---select max(all abs(+ (- (- (-1620427795))))) from v0, t0 join v1 on ((((v1.c0)||(t0.c1)))ilike(v1.c0));
+select max(all abs(+ (- (- (-1620427795))))) from v0, t0 join v1 on ((((v1.c0)||(t0.c1)))ilike(v1.c0));
 ROLLBACK;
 
 DROP TABLE tbl_ProductSales;
