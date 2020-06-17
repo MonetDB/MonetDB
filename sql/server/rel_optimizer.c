@@ -7749,7 +7749,17 @@ add_exp_too_project(mvc *sql, sql_exp *e, sql_rel *rel)
 		exp_label(sql->sa, e, ++sql->label);
 		append(rel->exps, e);
 	} else {
-		e = n->data;
+		sql_exp *ne = n->data;
+
+		if (rel && rel->l) { 
+			if ((exp_relname(ne) && exp_name(ne) && rel_bind_column2(sql, rel->l, exp_relname(ne), exp_name(ne), 0)) ||
+			   (!exp_relname(ne) && exp_name(ne) && rel_bind_column(sql, rel->l, exp_name(ne), 0, 1))) {
+				exp_label(sql->sa, e, ++sql->label);
+				append(rel->exps, e);
+				ne = e;
+			}
+		}
+		e = ne;
 	}
 	e = exp_ref(sql, e);
 	return e;
