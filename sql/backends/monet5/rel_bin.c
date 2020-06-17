@@ -2210,59 +2210,55 @@ rel2bin_join(backend *be, sql_rel *rel, list *refs)
 		if (!list_empty(rel->exps)) {
 			for( en = rel->exps->h, i=0; en; en = en->next, i++) {
 				sql_exp *e = en->data;
+				int left_reference = 0, right_reference = 0;
 
 				/* we can handle thetajoins, rangejoins and filter joins (like) */
 				/* ToDo how about in/notin, mark_in/notin, mark_exists/not_exists and atom expressions? */
 				if (e->type == e_cmp) {
 					int flag = e->flag & ~CMP_BETWEEN;
 					/* check if its a select or join expression, ie use only expressions of one relation left and of the other right (than join) */
-					if (flag < cmp_filter && !e->f) { /* theta join */
+					if (flag < cmp_filter) { /* theta and range joins */
 						/* join or select ? */
-						if ((rel_find_exp(rel->l, e->l) && !rel_find_exp(rel->r, e->l) &&
-						     rel_find_exp(rel->r, e->r) && !rel_find_exp(rel->l, e->r)) ||
-						    (rel_find_exp(rel->r, e->l) && !rel_find_exp(rel->l, e->l) &&
-						     rel_find_exp(rel->l, e->r) && !rel_find_exp(rel->r, e->r))) {
-							append(jexps, e);
-							continue;
+						sql_exp *l = e->l, *r = e->r, *f = e->f;
+
+						if (l->card != CARD_ATOM) {
+							left_reference += rel_find_exp(rel->l, l) != NULL;
+							right_reference += rel_find_exp(rel->r, l) != NULL;
 						}
-					} else if (flag < cmp_filter && e->f) { /* range */
-						int nrcr1 = 0, nrcr2 = 0, nrcl1 = 0, nrcl2 = 0;
-						if ((rel_find_exp(rel->l, e->l) && !rel_find_exp(rel->r, e->l) &&
-						   ((rel_find_exp(rel->r, e->r) && !rel_find_exp(rel->l, e->r)) || (nrcr1 = ((sql_exp*)e->r)->card == CARD_ATOM)) &&
-						   ((rel_find_exp(rel->r, e->f) && !rel_find_exp(rel->l, e->f)) || (nrcr2 = ((sql_exp*)e->f)->card == CARD_ATOM)) && (nrcr1+nrcr2) <= 1) ||
-						    (rel_find_exp(rel->r, e->l) && !rel_find_exp(rel->l, e->l) &&
-						   ((rel_find_exp(rel->l, e->r) && !rel_find_exp(rel->r, e->r)) || (nrcl1 = ((sql_exp*)e->r)->card == CARD_ATOM)) &&
-						   ((rel_find_exp(rel->l, e->f) && !rel_find_exp(rel->r, e->f)) || (nrcl2 = ((sql_exp*)e->f)->card == CARD_ATOM)) && (nrcl1+nrcl2) <= 1)) {
-							append(jexps, e);
-							continue;
+						if (r->card != CARD_ATOM) {
+							left_reference += rel_find_exp(rel->l, r) != NULL;
+							right_reference += rel_find_exp(rel->r, r) != NULL;
+						}
+						if (f && f->card != CARD_ATOM) {
+							left_reference += rel_find_exp(rel->l, f) != NULL;
+							right_reference += rel_find_exp(rel->r, f) != NULL;
 						}
 					} else if (flag == cmp_filter && !e->anti) {
-						int nrcl = 0, nrcr = 0;
-						bool fll = true, flr = true, frl = true, frr = true;
 						list *l = e->l, *r = e->r;
 
 						for (node *n = l->h ; n ; n = n->next) {
 							sql_exp *ee = n->data;
 
-							fll &= rel_find_exp(rel->l, ee) != NULL;
-							frl &= rel_find_exp(rel->r, ee) != NULL;
-							nrcl += ee->card == CARD_ATOM;
+							if (ee->card != CARD_ATOM) {
+								left_reference += rel_find_exp(rel->l, ee) != NULL;
+								right_reference += rel_find_exp(rel->r, ee) != NULL;
+							}
 						}
 						for (node *n = r->h ; n ; n = n->next) {
 							sql_exp *ee = n->data;
 
-							flr &= rel_find_exp(rel->l, ee) != NULL;
-							frr &= rel_find_exp(rel->r, ee) != NULL;
-							nrcr += ee->card == CARD_ATOM;
-						}
-						if (!((fll && flr) || (frl && frr)) && 
-						      nrcl < list_length(l) && nrcr < list_length(r)) {
-							append(jexps, e);
-							continue;
+							if (ee->card != CARD_ATOM) {
+								left_reference += rel_find_exp(rel->l, ee) != NULL;
+								right_reference += rel_find_exp(rel->r, ee) != NULL;
+							}
 						}
 					}
 				}
-				append(sexps, e);
+				if (left_reference && right_reference) {
+					append(jexps, e);
+				} else {
+					append(sexps, e);
+				}
 			}
 		}
 

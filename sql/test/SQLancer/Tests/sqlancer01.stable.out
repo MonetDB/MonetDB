@@ -588,6 +588,17 @@ stdout of test 'sqlancer01` in directory 'sql/test/SQLancer` itself:
 % %11 # name
 % tinyint # type
 % 1 # length
+#select 1 from v0 full outer join t0 on cast((v0.c1) in (1) as string) like v0.c0;
+% .%6 # table_name
+% %6 # name
+% tinyint # type
+% 1 # length
+#select cast(sum(all + (cast(t0.c0 as int))) as bigint) from v0 full outer join t0 on ((cast((cast(v0.c1 as boolean)) not in (true, ((t0.c0)=(t0.c0)), cast(1745166981 as boolean)) as string))ilike(v0.c0));
+% .%14 # table_name
+% %14 # name
+% bigint # type
+% 1 # length
+[ NULL	]
 #ROLLBACK;
 #DROP TABLE tbl_ProductSales;
 #DROP TABLE another_T;
