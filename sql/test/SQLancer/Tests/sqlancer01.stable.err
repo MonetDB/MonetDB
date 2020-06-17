@@ -19,6 +19,10 @@ MAPI  = (monetdb) /var/tmp/mtest-337778/.s.monetdb.34155
 QUERY = select scale_down(-631218936, cast(0.41370374 as int)); --simplified
 ERROR = !Current transaction is aborted (please ROLLBACK)
 CODE  = 25005
+MAPI  = (monetdb) /var/tmp/mtest-118864/.s.monetdb.39484
+QUERY = SELECT ALL CAST(VAR_SAMP(ALL abs(CAST(t0.c1 AS INT))) AS INT) FROM t0 GROUP BY CAST(t0.c1 AS INT), t0.c1; --error, cannot convert string into int
+ERROR = !conversion of string '0.6278315174254069' to type int failed.
+CODE  = 22018
 
 # 11:08:12 >  
 # 11:08:12 >  "mclient" "-lsql" "-ftest" "-tnone" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-117725" "--port=30085"

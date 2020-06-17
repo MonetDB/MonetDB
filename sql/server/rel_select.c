@@ -4145,6 +4145,8 @@ rel_cast(sql_query *query, sql_rel **rel, symbol *se, int f)
 	}
 	if (e) 
 		e = rel_check_type(sql, tpe, rel ? *rel : NULL, e, type_cast);
+	if (e && e->type == e_convert)
+		exp_label(sql->sa, e, ++sql->label);
 	return e;
 }
 
