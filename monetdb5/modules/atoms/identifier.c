@@ -23,13 +23,9 @@
 
 typedef str identifier;
 
-mal_export int TYPE_identifier;
-mal_export str IDprelude(void *ret);
-mal_export str IDentifier(identifier *retval, str *in);
+static int TYPE_identifier;
 
-int TYPE_identifier;
-
-str IDprelude(void *ret)
+static str IDprelude(void *ret)
 {
 	(void) ret;
 	TYPE_identifier = ATOMindex("identifier");
@@ -91,7 +87,7 @@ IDtoString(char **retval, size_t *len, const void *HANDLE, bool external)
  * Returns an identifier, parsed from a string.  The fromStr function is used
  * to parse the string.
  */
-str
+static str
 IDentifier(identifier *retval, str *in)
 {
 	size_t len = 0;

@@ -77,18 +77,6 @@ typedef struct mel_func {
 
 #else
 
-#define TYPE_bstream TYPE_ptr
-#define TYPE_streams TYPE_ptr
-#define TYPE_url 17
-#define TYPE_json 18
-#define TYPE_uuid 19
-#define TYPE_blob 20
-#define TYPE_identifier 21
-#define TYPE_inet 22
-#define TYPE_xml 23
-#define TYPE_color 24
-#define TYPE_wkb 25
-
 //#ifdef NDEBUG
 #define command(MOD,FCN,IMP,UNSAFE,COMMENT,ARGS) { .command=true, .mod=MOD, .fcn=FCN, .imp=(fptr)&IMP, .unsafe=UNSAFE, .args=ARGS }
 #define pattern(MOD,FCN,IMP,UNSAFE,COMMENT,ARGS) { .command=false, .mod=MOD, .fcn=FCN, .imp=(fptr)&IMP, .unsafe=UNSAFE, .args=ARGS }

@@ -34,23 +34,13 @@
 
 int TYPE_blob;
 
-mal_export str BLOBprelude(void *ret);
-
-mal_export str BLOBtoblob(blob **retval, str *s);
-mal_export str BLOBnitems(int *ret, blob **b);
-mal_export str BLOBnitems_bulk(bat *ret, const bat *bid);
-mal_export int BLOBget(Heap *h, int *bun, int *l, blob **val);
-
-mal_export str BLOBblob_blob(blob **d, blob **s);
-mal_export str BLOBblob_fromstr(blob **b, const char **d);
-
 static blob nullval = {
 	~(size_t) 0
 };
 
 #define is_blob_nil(x)	((x)->nitems == nullval.nitems)
 
-str
+static str
 BLOBprelude(void *ret)
 {
 	(void) ret;
@@ -187,14 +177,14 @@ blob_nitems(blob *b)
 	return (int) b->nitems;
 }
 
-str
+static str
 BLOBnitems(int *ret, blob **b)
 {
 	*ret = blob_nitems(*b);
 	return MAL_SUCCEED;
 }
 
-str
+static str
 BLOBnitems_bulk(bat *ret, const bat *bid)
 {
 	BAT *b = NULL, *bn = NULL;
@@ -233,7 +223,7 @@ bailout:
 	return msg;
 }
 
-str
+static str
 BLOBtoblob(blob **retval, str *s)
 {
 	size_t len = strLen(*s);
@@ -380,7 +370,7 @@ BLOBfromstr(const char *instr, size_t *l, void **VAL, bool external)
 	return (ssize_t) (s - instr);
 }
 
-str
+static str
 BLOBblob_blob(blob **d, blob **s)
 {
 	size_t len = blobsize((*s)->nitems);
@@ -395,7 +385,7 @@ BLOBblob_blob(blob **d, blob **s)
 	return MAL_SUCCEED;
 }
 
-str
+static str
 BLOBblob_fromstr(blob **b, const char **s)
 {
 	size_t len = 0;

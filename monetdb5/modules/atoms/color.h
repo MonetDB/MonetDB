@@ -10,23 +10,40 @@
 #define _COLOR_H
 typedef unsigned int color;
 
-mal_export str CLRstr(str *val, const color *c);
-mal_export str CLRcolor(color *c, const char **val);
-mal_export str CLRred(int *r, const color *c);
-mal_export str CLRgreen(int *g, const color *c);
-mal_export str CLRblue(int *b, const color *c);
-mal_export str CLRhue(flt *r, const color *c);
-mal_export str CLRsaturation(flt *g, const color *c);
-mal_export str CLRvalue(flt *b, const color *c);
-mal_export str CLRhueInt(int *r, const color *c);
-mal_export str CLRsaturationInt(int *g, const color *c);
-mal_export str CLRvalueInt(int *b, const color *c);
-mal_export str CLRluminance(int *r, const color *c);
-mal_export str CLRcr(int *r, const color *c);
-mal_export str CLRcb(int *g, const color *c);
-mal_export str CLRhsv(color *c, const flt *h, const flt *s, const flt *v);
-mal_export str CLRrgb(color *rgb, const int *r, const int *g, const int *b);
-mal_export str CLRycc(color *c, const int *y, const int *cr, const int *cb);
+extern str CLRstr(str *val, const color *c)
+	__attribute__((__visibility__("hidden")));
+extern str CLRcolor(color *c, const char **val)
+	__attribute__((__visibility__("hidden")));
+extern str CLRred(int *r, const color *c)
+	__attribute__((__visibility__("hidden")));
+extern str CLRgreen(int *g, const color *c)
+	__attribute__((__visibility__("hidden")));
+extern str CLRblue(int *b, const color *c)
+	__attribute__((__visibility__("hidden")));
+extern str CLRhue(flt *r, const color *c)
+	__attribute__((__visibility__("hidden")));
+extern str CLRsaturation(flt *g, const color *c)
+	__attribute__((__visibility__("hidden")));
+extern str CLRvalue(flt *b, const color *c)
+	__attribute__((__visibility__("hidden")));
+extern str CLRhueInt(int *r, const color *c)
+	__attribute__((__visibility__("hidden")));
+extern str CLRsaturationInt(int *g, const color *c)
+	__attribute__((__visibility__("hidden")));
+extern str CLRvalueInt(int *b, const color *c)
+	__attribute__((__visibility__("hidden")));
+extern str CLRluminance(int *r, const color *c)
+	__attribute__((__visibility__("hidden")));
+extern str CLRcr(int *r, const color *c)
+	__attribute__((__visibility__("hidden")));
+extern str CLRcb(int *g, const color *c)
+	__attribute__((__visibility__("hidden")));
+extern str CLRhsv(color *c, const flt *h, const flt *s, const flt *v)
+	__attribute__((__visibility__("hidden")));
+extern str CLRrgb(color *rgb, const int *r, const int *g, const int *b)
+	__attribute__((__visibility__("hidden")));
+extern str CLRycc(color *c, const int *y, const int *cr, const int *cb)
+	__attribute__((__visibility__("hidden")));
 
 #define color_nil ((color)int_nil)
 #define is_color_nil(v)		is_int_nil((int) (v))
