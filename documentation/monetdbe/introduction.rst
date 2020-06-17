@@ -2,16 +2,15 @@ Introduction
 ============
 
 ``MonetDBe`` is the embedded version of MonetDB. It provides all the
-functionality offered by the MonetDB SQL environment, but makes
+functionality offered by the MonetDB SQL server environment, but makes
 this available as a single ``libmonetdbe.so`` library. This library
 can be directly linked with a C application to benefit from the
 functionality.
-//Sample mature offerings in the space are SQLanywhere(SAP),  SQLite, Cache, ExtremeDB, solidDB, Pervasive PSQL, Raima, Interbas
 
 ``An embedded database system is a database management system (DBMS) which 
 is tightly integrated with an application software that requires access to stored data, 
 such that the database system is "hidden" from the application’s end-user 
-and requires little or no ongoing maintenance. `` [wikipedia]
+and requires little or no ongoing maintenance. `` `[wikipedia] https://en.wikipedia.org/wiki/Embedded_database`_
 
 The embedded database market has for a long time been dominated by traditional row-stores, 
 often with limited SQL functionality, scalability or performance. 
@@ -53,7 +52,8 @@ A single library to be linked into the application code directly. With the obvio
 . Working with :inmemory: databases with controlled RAM footprint.
 . Boosting your data analytics
 
-TODO include picture
+.. image:: architecture.png
+   
 
 How does it work?
 ----------------
