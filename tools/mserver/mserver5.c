@@ -497,13 +497,13 @@ main(int argc, char **av)
 		}
 	}
 	if (inmemory) {
-		if (BBPaddfarm(NULL, (1 << PERSISTENT) | (1 << TRANSIENT), 1) != GDK_SUCCEED) {
+		if (BBPaddfarm(NULL, (1 << PERSISTENT) | (1 << TRANSIENT), true) != GDK_SUCCEED) {
 			fprintf(stderr, "!ERROR: cannot add in-memory farm\n");
 			exit(1);
 		}
 	} else {
-		if (BBPaddfarm(dbpath, 1 << PERSISTENT, 1) != GDK_SUCCEED ||
-		    BBPaddfarm(dbextra ? dbextra : dbpath, 1 << TRANSIENT, 1) != GDK_SUCCEED) {
+		if (BBPaddfarm(dbpath, 1 << PERSISTENT, true) != GDK_SUCCEED ||
+		    BBPaddfarm(dbextra ? dbextra : dbpath, 1 << TRANSIENT, true) != GDK_SUCCEED) {
 			fprintf(stderr, "!ERROR: cannot add farm\n");
 			exit(1);
 		}

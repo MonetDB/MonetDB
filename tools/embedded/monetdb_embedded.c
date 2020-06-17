@@ -459,14 +459,14 @@ monetdb_startup(char* dbdir)
 		goto cleanup;
 	}
 	if (!dbdir) { /* in-memory */
-		if (BBPaddfarm(NULL, (1 << PERSISTENT) | (1 << TRANSIENT), 0) != GDK_SUCCEED) {
+		if (BBPaddfarm(NULL, (1 << PERSISTENT) | (1 << TRANSIENT), false) != GDK_SUCCEED) {
 			mo_free_options(set, setlen);
 			msg = createException(MAL, "embedded.monetdb_startup", "Cannot add in-memory farm");
 			goto cleanup;
 		}
 	} else {
-		if (BBPaddfarm(dbdir, 1 << PERSISTENT, 0) != GDK_SUCCEED ||
-			BBPaddfarm(/*dbextra ? dbextra : */dbdir, 1 << TRANSIENT, 0) != GDK_SUCCEED) {
+		if (BBPaddfarm(dbdir, 1 << PERSISTENT, false) != GDK_SUCCEED ||
+			BBPaddfarm(/*dbextra ? dbextra : */dbdir, 1 << TRANSIENT, false) != GDK_SUCCEED) {
 			mo_free_options(set, setlen);
 			msg = createException(MAL, "embedded.monetdb_startup", "Cannot add farm %s", dbdir);
 			goto cleanup;

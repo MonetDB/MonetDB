@@ -1110,7 +1110,7 @@ GDKinmemory(void)
 
 /* all errors are fatal */
 gdk_return
-BBPaddfarm(const char *dirname, int rolemask, int logerror)
+BBPaddfarm(const char *dirname, int rolemask, bool logerror)
 {
 	struct stat st;
 	int i;

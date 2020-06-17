@@ -194,7 +194,7 @@ void BATtseqbase(BAT *b, oid o);
 void BATundo(BAT *b);
 BAT *BATunique(BAT *b, BAT *s);
 BBPrec *BBP[N_BBPINIT];
-gdk_return BBPaddfarm(const char *dirname, int rolemask);
+gdk_return BBPaddfarm(const char *dirname, int rolemask, bool logerror);
 void BBPclear(bat bid);
 BAT *BBPdescriptor(bat b);
 int BBPfix(bat b);
