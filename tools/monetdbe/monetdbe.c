@@ -307,6 +307,7 @@ monetdbe_query_internal(monetdbe_database dbhdl, char* query, monetdbe_result** 
 		else
 			res_internal->type = (m->results) ? m->results->query_type : m->type;
 		res_internal->res.last_id = m->last_id;
+		res_internal->dbhdl = dbhdl;
 		*result = (monetdbe_result*) res_internal;
 		m->reply_size = -2; /* do not clean up result tables */
 
@@ -323,7 +324,6 @@ monetdbe_query_internal(monetdbe_database dbhdl, char* query, monetdbe_result** 
 			}
 			res_internal->monetdbe_resultset = m->results;
 			res_internal->converted_columns = GDKzalloc(sizeof(monetdbe_column*) * res_internal->res.ncols);
-			res_internal->dbhdl = dbhdl;
 			if (!res_internal->converted_columns) {
 				msg = createException(MAL, "monetdbe.monetdbe_query_internal", MAL_MALLOC_FAIL);
 				goto cleanup;
@@ -776,6 +776,7 @@ monetdbe_execute(monetdbe_statement *stmt, monetdbe_result **result, monetdbe_cn
 		}
 		res_internal->type = (m->results) ? Q_TABLE : Q_UPDATE;
 		res_internal->res.last_id = m->last_id;
+		res_internal->dbhdl = dbhdl;
 		*result = (monetdbe_result*) res_internal;
 		m->reply_size = -2; /* do not clean up result tables */
 
@@ -792,7 +793,6 @@ monetdbe_execute(monetdbe_statement *stmt, monetdbe_result **result, monetdbe_cn
 			}
 			res_internal->monetdbe_resultset = m->results;
 			res_internal->converted_columns = GDKzalloc(sizeof(monetdbe_column*) * res_internal->res.ncols);
-			res_internal->dbhdl = dbhdl;
 			if (!res_internal->converted_columns) {
 				msg = createException(MAL, "monetdbe.monetdbe_query_internal", MAL_MALLOC_FAIL);
 				goto cleanup;
