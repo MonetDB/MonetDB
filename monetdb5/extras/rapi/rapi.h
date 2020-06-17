@@ -29,19 +29,10 @@
 
 #define RAPI_MAX_TUPLES 2147483647L
 
-rapi_export str RAPIeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
-		InstrPtr pci, bit grouped);
-rapi_export str RAPIevalStd(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
-		InstrPtr pci);
-rapi_export str RAPIevalAggr(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
-		InstrPtr pci);
 rapi_export void* RAPIloopback(void *query);
-rapi_export str RAPIprelude(void *ret);
 
-rapi_export void writeConsoleEx(const char * buf, int buflen, int foo);
-rapi_export void writeConsole(const char * buf, int buflen);
-rapi_export void clearRErrConsole(void);
-
+#if 0
 char* rtypename(int rtypeid);
+#endif
 
 #endif /* _RAPI_LIB_ */

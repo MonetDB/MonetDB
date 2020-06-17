@@ -69,7 +69,7 @@
  * This allows the optimizer implementation to find them and react on them.
  */
 #include "monetdb_config.h"
-#include "opt_sql_append.h"
+#include "opt_prelude.h"
 #include "mal_interpreter.h"
 
 /* focus initially on persistent tables. */
@@ -246,7 +246,8 @@ OPTsql_appendImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
  * actions taken, i.e. number of successful changes to the code.
  */
 
-str OPTsql_append(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
+static str
+OPTsql_append(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
 	str modnme;
 	str fcnnme;
 	str msg= MAL_SUCCEED;
