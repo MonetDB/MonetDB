@@ -1,28 +1,9 @@
 #include "test_helper.h"
 
-#define ACTUAL_TPE_monetdb_bool int8_t
-#define ACTUAL_TPE_monetdb_int8_t int8_t
-#define ACTUAL_TPE_monetdb_int16_t int16_t
-#define ACTUAL_TPE_monetdb_int32_t int32_t
-#define ACTUAL_TPE_monetdb_int64_t int64_t
-#if HAVE_HGE
-#define ACTUAL_TPE_monetdb_int128_t __int128
-#endif
-#define ACTUAL_TPE_monetdb_size_t size_t
-#define ACTUAL_TPE_monetdb_float float
-#define ACTUAL_TPE_monetdb_double double
-#define ACTUAL_TPE_monetdb_str char*
-#define ACTUAL_TPE_monetdb_blob monetdbe_data_blob
-#define ACTUAL_TPE_monetdb_date monetdbe_data_date
-#define ACTUAL_TPE_monetdb_time monetdbe_data_time
-#define ACTUAL_TPE_monetdb_timestamp monetdbe_data_timestamp
-
 #define _CONCAT(A, B)   A##B
 #define CONCAT(A, B)    _CONCAT(A, B)
-
 #define EXPAND(A) A
 
-#define GET_ACTUAL_TPE(TPE_ID) ACTUAL_TPE_monetdb_##TPE_ID
 #define GET_TPE_ENUM(TPE) CONCAT(monetdb_, TPE)
 
 #define TPE int8_t
