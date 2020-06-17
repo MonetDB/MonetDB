@@ -7,7 +7,7 @@ error messages encountered during the interpretation. If all went well they retu
 exception message thrown by the MonetDB kernel.
 
 General considerations
----------------------
+----------------------
 
 There can be a single :memory: database or local persistent database open at a time. As soon as you open another database its
 content is gone. It is possible to have multiple connections open with full-fledge MonetDB servers.
@@ -17,24 +17,22 @@ Data Types
 
 The API wraps the internal data types to those more convenient for programming directly in C.
 
-
 | MonetDBe type           | MonetDB internal type |
 | ----------------------- | --------------------- |
-|int8_t  |  bool|
-|int8_t  |  int8_t|
-|int16_t  |  int16_t|
-|int32_t  |  int32_t|
-|int64_t  |  int64_t|
-|__int128  |  int128_t|
-|float  |  float|
-|double  |  double|
-|char *  |  str|
-|monetdbe_data_blob  |  blob|
-|monetdbe_data_date  |  date|
-|monetdbe_data_time  |  time|
-|monetdbe_data_timestamp  |  timestamp|
+| int8_t  |  bool|
+| int8_t  |  int8_t|
+| int16_t  |  int16_t|
+| int32_t  |  int32_t|
+| int64_t  |  int64_t|
+| __int128  |  int128_t|
+| float  |  float|
+| double  |  double|
+| char *  |  str|
+| monetdbe_data_blob  |  blob|
+| monetdbe_data_date  |  date|
+| monetdbe_data_time  |  time|
+| monetdbe_data_timestamp  |  timestamp|
 | ----------------------- | --------------------- |
-
 
 Connection and server options
 -----------------------------
@@ -52,7 +50,6 @@ Connection and server options
     Close the database handler and release the resources for another database connection.
     From here on the connection can not be used anymore to pass queries and any pending result set is cleaned up.
     Be aware that the content of an ':memory:' database is discarded.
-
 
 Transaction management
 ----------------------
@@ -108,14 +105,12 @@ Query prepare, bind, execute
 
     Remove the execution pland and all bound variables.
 
-
 Database append
---------------
+-=-------------
 
 .. c:function:: char* monetdbe_append(monetdbe_database db, const char* schema, const char* table, monetdbe_result *result, size_t column_count);
 
     The result set obtained from any query can be assigned to a new database table. 
-
 
 Backup and restore
 ------------------
@@ -123,14 +118,13 @@ Backup and restore
 
     [TODO] Dump a :memory: database as a collection of SQL statements on a local file
 
-.. c:function:: monetdbe_export char* monetdbe_dump_table(monetdbe_database db, const char *schema_name, const char *table_name, const char *backupfile);
+.. c:function:: char* monetdbe_dump_table(monetdbe_database db, const char *schema_name, const char *table_name, const char *backupfile);
     
     [TODO] Dump a specific tables
 
 .. c:function:: char* monetdbe_restore(monetdbe_database db, char *localfile);
 
     [TODO] Restore a SQL dump to initialize the ':memory:' case. This is simular  to loading a SQL script.
-
 
 Miscellaneous
 -------------
@@ -147,6 +141,6 @@ Miscellaneous
 Caveats and errors
 ------------------
 
-If the program with the monetdbe.so library is killed forcefully then there may be some garbage files left behind in the
-database directory. In particular, you may have to remove the .gdk_lock and uuid files.
+  If the program with the monetdbe.so library is killed forcefully then there may be some garbage files left behind in the
+  database directory. In particular, you may have to remove the .gdk_lock and uuid files.
 

@@ -10,7 +10,7 @@ functionality.
 ``An embedded database system is a database management system (DBMS) which 
 is tightly integrated with an application software that requires access to stored data, 
 such that the database system is "hidden" from the application’s end-user 
-and requires little or no ongoing maintenance. `` `[wikipedia] https://en.wikipedia.org/wiki/Embedded_database`_
+and requires little or no ongoing maintenance. `` `wikipedia <https://en.wikipedia.org/wiki/Embedded_database>`
 
 The embedded database market has for a long time been dominated by traditional row-stores, 
 often with limited SQL functionality, scalability or performance. 
@@ -27,7 +27,7 @@ data analytics and machine learning, without relying on expensive interprocess c
 A strong embeddedness with the application to easily use the UDFs at close range without overhead in data exchanges.
 
 How we solved it
----------------
+----------------
 
 The solution brought to you is illustrated below. On the left we see MonetDB in 
 the role of a client/server architecture as it has worked all along. 
@@ -56,7 +56,8 @@ A single library to be linked into the application code directly. With the obvio
    
 
 How does it work?
-----------------
+-----------------
+
 MonetDBe encapsulates the full SQL functionality offered by MonetDB. 
 To achieve this, we had to create a single shared library (libmonetdbe) to 
 expose the main sql interfaces using a small api (monetdbe.h). 
@@ -64,6 +65,7 @@ It is an integral component of the server version nowadays, which avoids maintai
 
 What to expect?
 ---------------
+
 The MonetDBe library supports three different storage schemes. 
 A light-weight scheme for small databases confined to main memory, i.e. connect(‘ :inmemory:’). 
 The maximum footprint can be set explicitly or is derived from the host (VM) resource limits. 
