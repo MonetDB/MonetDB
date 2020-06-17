@@ -1110,7 +1110,7 @@ GDKinmemory(void)
 
 /* all errors are fatal */
 gdk_return
-BBPaddfarm(const char *dirname, int rolemask)
+BBPaddfarm(const char *dirname, int rolemask, int logerror)
 {
 	struct stat st;
 	int i;
@@ -1123,21 +1123,25 @@ BBPaddfarm(const char *dirname, int rolemask)
 		return GDK_SUCCEED;
 	}
 	if (strchr(dirname, '\n') != NULL) {
-		GDKerror("no newline allowed in directory name\n");
+		if (logerror)
+			GDKerror("no newline allowed in directory name\n");
 		return GDK_FAIL;
 	}
 	if (rolemask == 0 || (rolemask & 1 && BBPfarms[0].dirname != NULL)) {
-		GDKerror("bad rolemask\n");
+		if (logerror)
+			GDKerror("bad rolemask\n");
 		return GDK_FAIL;
 	}
 	if (mkdir(dirname, MONETDB_DIRMODE) < 0) {
 		if (errno == EEXIST) {
 			if (stat(dirname, &st) == -1 || !S_ISDIR(st.st_mode)) {
-				GDKerror("%s: not a directory\n", dirname);
+				if (logerror)
+					GDKerror("%s: not a directory\n", dirname);
 				return GDK_FAIL;
 			}
 		} else {
-			GDKsyserror("%s: cannot create directory\n", dirname);
+			if (logerror)
+				GDKsyserror("%s: cannot create directory\n", dirname);
 			return GDK_FAIL;
 		}
 	}
@@ -1165,7 +1169,8 @@ BBPaddfarm(const char *dirname, int rolemask)
 				}
 				if (stat(bbpdir, &st) != -1 || errno != ENOENT) {
 					GDKfree(bbpdir);
-					GDKerror("%s is a database\n", dirname);
+					if (logerror)
+						GDKerror("%s is a database\n", dirname);
 					return GDK_FAIL;
 				}
 				GDKfree(bbpdir);
@@ -1175,7 +1180,8 @@ BBPaddfarm(const char *dirname, int rolemask)
 				}
 				if (stat(bbpdir, &st) != -1 || errno != ENOENT) {
 					GDKfree(bbpdir);
-					GDKerror("%s is a database\n", dirname);
+					if (logerror)
+						GDKerror("%s is a database\n", dirname);
 					return GDK_FAIL;
 				}
 				GDKfree(bbpdir);
@@ -1183,7 +1189,8 @@ BBPaddfarm(const char *dirname, int rolemask)
 			return GDK_SUCCEED;
 		}
 	}
-	GDKerror("too many farms\n");
+	if (logerror)
+		GDKerror("too many farms\n");
 	return GDK_FAIL;
 }
 

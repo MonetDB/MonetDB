@@ -447,7 +447,7 @@ static void ctl_handle_client(
 							free(sadbfarm);
 							setlen = mo_add_option(&set, setlen, opt_cmdline, "gdk_dbpath", buf2);
 							setlen = mo_system_config(&set, setlen);
-							if (BBPaddfarm(buf2, (1 << PERSISTENT) | (1 << TRANSIENT)) != GDK_SUCCEED) {
+							if (BBPaddfarm(buf2, (1 << PERSISTENT) | (1 << TRANSIENT), 1) != GDK_SUCCEED) {
 								Mfprintf(_mero_ctlerr, "%s: could not add farm to "
 									"'%s': %d: %s\n", origin, q, errno, strerror(errno));
 								exit(0);
