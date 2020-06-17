@@ -297,6 +297,7 @@ ROLLBACK;
 START TRANSACTION; -- Bug 6906
 CREATE TABLE t0("c0" DOUBLE PRECISION, "c1" VARCHAR(496));
 create view v0(c0, c1) as (select all t0.c0, r'epfNW⟚榢tptPbC{5{ZW}6,R' from t0) with check option;
+select 1 from v0 full outer join t0 on (cast(('a') in ('a') as string) ilike v0.c0);
 select sum(all + (cast(t0.c0 as int))) from v0 full outer join t0 on ((cast((cast(v0.c1 as boolean)) not in (true, ((t0.c0)=(t0.c0)), cast(1745166981 as boolean)) as string))ilike(v0.c0));
 ROLLBACK;
 

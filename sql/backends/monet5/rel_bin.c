@@ -2228,11 +2228,11 @@ rel2bin_join(backend *be, sql_rel *rel, list *refs)
 					} else if (flag < cmp_filter && e->f) { /* range */
 						int nrcr1 = 0, nrcr2 = 0, nrcl1 = 0, nrcl2 = 0;
 						if ((rel_find_exp(rel->l, e->l) && !rel_find_exp(rel->r, e->l) &&
-						   ((rel_find_exp(rel->r, e->r) && !rel_find_exp(rel->l, e->r)) || (nrcr1 = exp_is_atom(e->r))) &&
-						   ((rel_find_exp(rel->r, e->f) && !rel_find_exp(rel->l, e->f)) || (nrcr2 = exp_is_atom(e->f))) && (nrcr1+nrcr2) <= 1) ||
+						   ((rel_find_exp(rel->r, e->r) && !rel_find_exp(rel->l, e->r)) || (nrcr1 = ((sql_exp*)e->r)->card == CARD_ATOM)) &&
+						   ((rel_find_exp(rel->r, e->f) && !rel_find_exp(rel->l, e->f)) || (nrcr2 = ((sql_exp*)e->f)->card == CARD_ATOM)) && (nrcr1+nrcr2) <= 1) ||
 						    (rel_find_exp(rel->r, e->l) && !rel_find_exp(rel->l, e->l) &&
-						   ((rel_find_exp(rel->l, e->r) && !rel_find_exp(rel->r, e->r)) || (nrcl1 = exp_is_atom(e->r))) &&
-						   ((rel_find_exp(rel->l, e->f) && !rel_find_exp(rel->r, e->f)) || (nrcl2 = exp_is_atom(e->f))) && (nrcl1+nrcl2) <= 1)) {
+						   ((rel_find_exp(rel->l, e->r) && !rel_find_exp(rel->r, e->r)) || (nrcl1 = ((sql_exp*)e->r)->card == CARD_ATOM)) &&
+						   ((rel_find_exp(rel->l, e->f) && !rel_find_exp(rel->r, e->f)) || (nrcl2 = ((sql_exp*)e->f)->card == CARD_ATOM)) && (nrcl1+nrcl2) <= 1)) {
 							append(jexps, e);
 							continue;
 						}
@@ -2246,14 +2246,14 @@ rel2bin_join(backend *be, sql_rel *rel, list *refs)
 
 							fll &= rel_find_exp(rel->l, ee) != NULL;
 							frl &= rel_find_exp(rel->r, ee) != NULL;
-							nrcl += exp_is_atom(ee);
+							nrcl += ee->card == CARD_ATOM;
 						}
 						for (node *n = r->h ; n ; n = n->next) {
 							sql_exp *ee = n->data;
 
 							flr &= rel_find_exp(rel->l, ee) != NULL;
 							frr &= rel_find_exp(rel->r, ee) != NULL;
-							nrcr += exp_is_atom(ee);
+							nrcr += ee->card == CARD_ATOM;
 						}
 						if (!((fll && flr) || (frl && frr)) && 
 						      nrcl < list_length(l) && nrcr < list_length(r)) {
