@@ -15,20 +15,23 @@
 
 const char *USAGE =
 	"Usage:\n"
-	"    streamcat read  [-o FILE] FILE R_OPENER [R_WRAPPER..]\n"
-	"    streamcat write [-i FILE] FILE W_OPENER [W_WRAPPER..]\n"
+	"    streamcat read    [-o FILE] FILE R_OPENER [R_WRAPPER..]\n"
+	"    streamcat write   [-i FILE] FILE W_OPENER [W_WRAPPER..]\n"
 	"Options:\n"
 	"    -o FILE             use FILE instead of stdout\n"
 	"    -i FILE             use FILE instead of stdin\n"
 	"With R_OPENER:\n"
 	"    - rstream           stream = open_rstream(filename)\n"
 	"    - rastream          stream = open_rastream(filename)\n"
+	"    - urlstream         stream = open_urlstream(filename)\n"
+	""
 	"With W_OPENER:\n"
 	"    - wstream           stream = open_wstream(filename)\n"
 	"    - wastream          stream = open_wastream(filename)\n"
 	"With R_WRAPPER:\n"
 	"    - iconv:enc         stream = iconv_rstream(stream, enc)\n"
 	"    - blocksize:N       Copy in blocks of this size\n"
+	"    - compr             Autodecompress\n"
 	"With W_WRAPPER:\n"
 	"    - iconv:enc         stream = iconv_wstream(stream, enc)\n"
 	"    - blocksize:N       Copy out blocks of this size\n"
@@ -41,6 +44,7 @@ typedef stream *(*opener_fun)(char *filename);
 
 static stream *opener_rstream(char *filename);
 static stream *opener_rastream(char *filename);
+static stream *opener_urlstream(char *url);
 
 static stream *opener_wstream(char *filename);
 static stream *opener_wastream(char *filename);
@@ -48,6 +52,8 @@ static stream *opener_wastream(char *filename);
 static stream *wrapper_read_iconv(stream *s, char *enc);
 
 static stream *wrapper_write_iconv(stream *s, char *enc);
+
+static stream *wrapper_autocompression(stream *s, char *level);
 
 static void copy_stream_to_file(stream *in, FILE *out, size_t bufsize);
 
@@ -135,13 +141,15 @@ int cmd_read(char *argv[])
 		opener = opener_rstream;
 	else if (strcmp(opener_name, "rastream") == 0)
 		opener = opener_rastream;
+	else if (strcmp(opener_name, "urlstream") == 0)
+		opener = opener_urlstream;
 	else
 		croak(1, "Unknown opener '%s'", opener_name);
 
 	s = opener(filename);
-	if (s == NULL) {
-		char *msg = mnstr_error(NULL);
-		croak(2, "Opener %s failed: %s", opener_name, msg ? msg : "");
+	if (s == NULL || mnstr_errnr(s)) {
+		char *msg = mnstr_error(s);
+		croak(2, "Opener %s failed: %s", opener_name, msg ? msg : "<no error message>");
 	}
 
 	for (; *arg != NULL; arg++) {
@@ -168,6 +176,8 @@ int cmd_read(char *argv[])
 			if (*end != '\0' || size <= 0)
 				croak(1, "invalid blocksize: %ld", size);
 			bufsize = size;
+		} else if (strcmp(wrapper_name, "compr") == 0) {
+			wrapper = wrapper_autocompression;
 		} else {
 			croak(1, "Unknown wrapper: %s", wrapper_name);
 		}
@@ -236,7 +246,7 @@ int cmd_write(char *argv[])
 		croak(1, "Unknown opener '%s'", opener_name);
 
 	s = opener(filename);
-	if (s == NULL) {
+	if (s == NULL || mnstr_errnr(s)) {
 		char *msg = mnstr_error(NULL);
 		croak(2, "Opener %s failed: %s", opener_name, msg ? msg : "");
 	}
@@ -367,8 +377,6 @@ static stream *
 opener_rstream(char *filename)
 {
 	stream *s = open_rstream(filename);
-	if (s == NULL)
-		croak(2, "Error opening file '%s': %s", filename, strerror(errno));
 	if (!mnstr_isbinary(s))
 		croak(2, "open_rastream returned binary stream");
 	return s;
@@ -379,10 +387,15 @@ static stream *
 opener_rastream(char *filename)
 {
 	stream *s = open_rastream(filename);
-	if (s == NULL)
-		croak(2, "Error opening file '%s': %s", filename, strerror(errno));
 	if (mnstr_isbinary(s))
 		croak(2, "open_rastream returned binary stream");
+	return s;
+}
+
+static stream *
+opener_urlstream(char *url)
+{
+	stream *s = open_urlstream(url);
 	return s;
 }
 
@@ -413,4 +426,17 @@ static stream *
 wrapper_write_iconv(stream *s, char *enc)
 {
 	return iconv_wstream(s, enc, "wrapper_write_iconv");
+}
+
+static stream *
+wrapper_autocompression(stream *s, char *level_parm)
+{
+	int level = 0;
+	if (level_parm) {
+		char *end;
+		level = strtol(level_parm, &end, 10);
+		if (*end != '\0' || level < 0)
+			croak(1, "invalid compression level: %s", level_parm);
+	}
+	return compressed_stream(s, level);
 }
