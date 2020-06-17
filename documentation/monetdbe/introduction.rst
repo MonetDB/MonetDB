@@ -7,10 +7,10 @@ this available as a single ``libmonetdbe.so`` library. This library
 can be directly linked with a C application to benefit from the
 functionality.
 
-``An embedded database system is a database management system (DBMS) which ``
-``is tightly integrated with an application software that requires access to stored data, ``
-``such that the database system is "hidden" from the application’s end-user ``
-``and requires little or no ongoing maintenance.`` `wikipedia <https://en.wikipedia.org/wiki/Embedded_database>`
+``An embedded database system is a database management system (DBMS) which
+is tightly integrated with an application software that requires access to stored data,
+such that the database system is "hidden" from the application’s end-user
+and requires little or no ongoing maintenance.`` `wikipedia <https://en.wikipedia.org/wiki/Embedded_database>`
 
 The embedded database market has for a long time been dominated by traditional row-stores, 
 often with limited SQL functionality, scalability or performance. 
