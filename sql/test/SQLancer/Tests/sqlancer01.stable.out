@@ -530,6 +530,56 @@ stdout of test 'sqlancer01` in directory 'sql/test/SQLancer` itself:
 [ NULL	]
 [ NULL	]
 #ROLLBACK;
+#START TRANSACTION; -- Bug 6905
+#CREATE TABLE "sys"."t0" ("c0" INTEGER,"c1" DOUBLE);
+#COPY 15 RECORDS INTO "sys"."t0" FROM stdin USING DELIMITERS E'\t',E'\n','"';
+#-1498252621	-1498252621
+#0	NULL
+#-539579569	-539579569
+#-108613919	NULL
+#0	0
+#8	NULL
+#1783007739	NULL
+#498706403	NULL
+#0	0.6103170716911988
+#1493854316	0.6198781779645515
+#-1608947797	1
+#1	0.8356779050811012
+#-101868623	0.16442926747225173
+#1493854316	-1498252621
+#1	0.9401903184230552
+[ 15	]
+#SELECT t0.c0 FROM t0 WHERE (0.9952398693354088) IN (t0.c1, t0.c1);
+% sys.t0 # table_name
+% c0 # name
+% int # type
+% 1 # length
+#SELECT ALL t0.c0 FROM t0 WHERE NOT ((0.9952398693354088) IN (t0.c1, t0.c1));
+% sys.t0 # table_name
+% c0 # name
+% int # type
+% 11 # length
+[ -1498252621	]
+[ -539579569	]
+[ 0	]
+[ 0	]
+[ 1493854316	]
+[ -1608947797	]
+[ 1	]
+[ -101868623	]
+[ 1493854316	]
+[ 1	]
+#SELECT t0.c0 FROM t0 WHERE ((0.9952398693354088) IN (t0.c1, t0.c1)) IS NULL;
+% sys.t0 # table_name
+% c0 # name
+% int # type
+% 10 # length
+[ 0	]
+[ -108613919	]
+[ 8	]
+[ 1783007739	]
+[ 498706403	]
+#ROLLBACK;
 #DROP TABLE tbl_ProductSales;
 #DROP TABLE another_T;
 #DROP TABLE integers;
