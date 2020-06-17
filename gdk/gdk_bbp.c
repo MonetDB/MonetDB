@@ -828,6 +828,7 @@ vheapinit(BAT *b, const char *buf, int hashash, bat bid, const char *filename, i
 		b->tvheap->dirty = false;
 		b->tvheap->parentid = bid;
 		b->tvheap->farmid = BBPselectfarm(PERSISTENT, b->ttype, varheap);
+		ATOMIC_INIT(&b->tvheap->refs, 1);
 		if (b->tvheap->free > b->tvheap->size) {
 			TRC_CRITICAL(GDK, "\"free\" value larger than \"size\" in var heap of bat %d on line %d\n", (int) bid, lineno);
 			return -1;
@@ -927,8 +928,11 @@ BBPreadEntries(FILE *fp, unsigned bbpversion, int lineno)
 		bn->batInserted = bn->batCount;
 		bn->batCapacity = (BUN) capacity;
 		char name[MT_NAME_LEN];
+		snprintf(name, sizeof(name), "heaplock%d", bn->batCacheid); /* fits */
+		MT_lock_init(&bn->theaplock, name);
 		snprintf(name, sizeof(name), "BATlock%d", bn->batCacheid); /* fits */
 		MT_lock_init(&bn->batIdxLock, name);
+		ATOMIC_INIT(&bn->theap->refs, 1);
 
 		if (base > (uint64_t) GDK_oid_max) {
 			BATdestroy(bn);
@@ -2730,11 +2734,11 @@ BBPdestroy(BAT *b)
 	} else {
 		/* bats that get destroyed must unfix their atoms */
 		gdk_return (*tunfix) (const void *) = BATatoms[b->ttype].atomUnfix;
-		BUN p, q;
-		BATiter bi = bat_iterator(b);
-
 		assert(b->batSharecnt == 0);
 		if (tunfix) {
+			BUN p, q;
+			BATiter bi = bat_iterator(b);
+
 			BATloop(b, p, q) {
 				/* ignore errors */
 				(void) (*tunfix)(BUNtail(bi, p));

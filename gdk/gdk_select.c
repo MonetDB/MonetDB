@@ -52,17 +52,20 @@ virtualize(BAT *bn)
 		else
 			bn->tseqbase = * (const oid *) Tloc(bn, 0);
 		if (VIEWtparent(bn)) {
-			BBPunshare(VIEWtparent(bn));
-			BBPunfix(VIEWtparent(bn));
-			Heap *h = bn->theap;
-			bn->theap = GDKmalloc(sizeof(Heap));
-			if (bn->theap == NULL) {
+			Heap *h = GDKmalloc(sizeof(Heap));
+			bat bid = VIEWtparent(bn);
+			if (h == NULL) {
 				BBPunfix(bn->batCacheid);
 				return NULL;
 			}
-			*bn->theap = *h;
-			bn->theap->parentid = bn->batCacheid;
-			bn->theap->base = NULL;
+			*h = *bn->theap;
+			h->parentid = bn->batCacheid;
+			h->base = NULL;
+			ATOMIC_INIT(&h->refs, 1);
+			HEAPdecref(bn->theap, false);
+			bn->theap = h;
+			BBPunshare(bid);
+			BBPunfix(bid);
 		} else {
 			HEAPfree(bn->theap, true);
 		}

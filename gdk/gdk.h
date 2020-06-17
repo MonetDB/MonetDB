@@ -528,10 +528,12 @@ typedef struct {
 	char filename[40];	/* file containing image of the heap */
 #endif
 
+	ATOMIC_TYPE refs;	/* reference count for this heap */
 	bte farmid;		/* id of farm where heap is located */
 	bool hashash:1,		/* the string heap contains hash values */
 		cleanhash:1,	/* string heaps must clean hash */
-		dirty:1;	/* specific heap dirty marker */
+		dirty:1,	/* specific heap dirty marker */
+		remove:1;	/* remove storage file when freeing */
 	storage_t storage;	/* storage mode (mmap/malloc). */
 	storage_t newstorage;	/* new desired storage mode at re-allocation. */
 	bat parentid;		/* cache id of VIEW parent bat */
@@ -740,6 +742,7 @@ typedef struct BAT {
 
 	/* dynamic column properties */
 	COLrec T;		/* column info */
+	MT_Lock theaplock;	/* lock protecting heap reference changes */
 
 	MT_Lock batIdxLock;	/* lock to manipulate indexes */
 } BAT;
@@ -814,6 +817,7 @@ gdk_export gdk_return HEAPextend(Heap *h, size_t size, bool mayshare)
 	__attribute__((__warn_unused_result__));
 gdk_export size_t HEAPvmsize(Heap *h);
 gdk_export size_t HEAPmemsize(Heap *h);
+gdk_export void HEAPdecref(Heap *h, bool remove);
 
 /*
  * @- Internal HEAP Chunk Management

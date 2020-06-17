@@ -115,6 +115,7 @@ BATcreatedesc(oid hseq, int tt, bool heapnames, role_t role)
 
 	if (heapnames) {
 		assert(bn->theap != NULL);
+		ATOMIC_INIT(&bn->theap->refs, 1);
 		bn->theap->parentid = bn->batCacheid;
 		bn->theap->farmid = BBPselectfarm(role, bn->ttype, offheap);
 
@@ -129,25 +130,25 @@ BATcreatedesc(oid hseq, int tt, bool heapnames, role_t role)
 				.parentid = bn->batCacheid,
 				.farmid = BBPselectfarm(role, bn->ttype, varheap),
 			};
+			ATOMIC_INIT(&bn->tvheap->refs, 1);
 			strconcat_len(bn->tvheap->filename,
 				      sizeof(bn->tvheap->filename),
 				      nme, ".theap", NULL);
 		}
 	}
 	char name[MT_NAME_LEN];
+	snprintf(name, sizeof(name), "heaplock%d", bn->batCacheid); /* fits */
+	MT_lock_init(&bn->theaplock, name);
 	snprintf(name, sizeof(name), "BATlock%d", bn->batCacheid); /* fits */
 	MT_lock_init(&bn->batIdxLock, name);
 	bn->batDirtydesc = true;
 	return bn;
       bailout:
 	BBPclear(bn->batCacheid);
-	if (tt && bn->theap)
-		HEAPfree(bn->theap, true);
-	if (bn->tvheap) {
-		HEAPfree(bn->tvheap, true);
-		GDKfree(bn->tvheap);
-	}
-	GDKfree(bn->theap);
+	if (bn->theap)
+		HEAPdecref(bn->theap, true);
+	if (bn->tvheap)
+		HEAPdecref(bn->tvheap, true);
 	GDKfree(bn);
 	return NULL;
 }
@@ -217,21 +218,22 @@ COLnew(oid hseq, int tt, BUN cap, role_t role)
 	}
 
 	if (bn->tvheap && ATOMheap(tt, bn->tvheap, cap) != GDK_SUCCEED) {
-		GDKfree(bn->tvheap);
 		goto bailout;
 	}
 	DELTAinit(bn);
 	if (BBPcacheit(bn, true) != GDK_SUCCEED) {
-		GDKfree(bn->tvheap);
 		goto bailout;
 	}
 	TRC_DEBUG(ALGO, "-> " ALGOBATFMT "\n", ALGOBATPAR(bn));
 	return bn;
   bailout:
 	BBPclear(bn->batCacheid);
-	HEAPfree(bn->theap, true);
+	if (bn->theap)
+		HEAPdecref(bn->theap, true);
+	if (bn->tvheap)
+		HEAPdecref(bn->tvheap, true);
+	MT_lock_destroy(&bn->theaplock);
 	MT_lock_destroy(&bn->batIdxLock);
-	GDKfree(bn->theap);
 	GDKfree(bn);
 	return NULL;
 }
@@ -512,18 +514,23 @@ BATclear(BAT *b, bool force)
 		   free > 0
 		*/
 		if (b->tvheap && b->tvheap->free > 0) {
-			Heap th;
+			Heap *th = GDKmalloc(sizeof(Heap));
 
-			th = (Heap) {
+			if (th == NULL)
+				return GDK_FAIL;
+			*th = (Heap) {
 				.farmid = b->tvheap->farmid,
 			};
-			strcpy_len(th.filename, b->tvheap->filename, sizeof(th.filename));
-			if (ATOMheap(b->ttype, &th, 0) != GDK_SUCCEED)
+			strcpy_len(th->filename, b->tvheap->filename, sizeof(th->filename));
+			if (ATOMheap(b->ttype, th, 0) != GDK_SUCCEED)
 				return GDK_FAIL;
-			th.parentid = b->tvheap->parentid;
-			th.dirty = true;
-			HEAPfree(b->tvheap, false);
-			*b->tvheap = th;
+			ATOMIC_INIT(&th->refs, 1);
+			th->parentid = b->tvheap->parentid;
+			th->dirty = true;
+			MT_lock_set(&b->theaplock);
+			HEAPdecref(b->tvheap, false);
+			b->tvheap = th;
+			MT_lock_unset(&b->theaplock);
 		}
 	} else {
 		/* do heap-delete of all inserted atoms */
@@ -569,14 +576,18 @@ BATfree(BAT *b)
 	HASHfree(b);
 	IMPSfree(b);
 	OIDXfree(b);
-	if (b->ttype && b->theap)
+	MT_lock_set(&b->theaplock);
+	if (b->theap) {
+		assert(ATOMIC_GET(&b->theap->refs) == 1);
+		assert(b->theap->parentid == b->batCacheid);
 		HEAPfree(b->theap, false);
-	else
-		assert(b->theap == NULL || b->theap->base == NULL);
+	}
 	if (b->tvheap) {
+		assert(ATOMIC_GET(&b->tvheap->refs) == 1);
 		assert(b->tvheap->parentid == b->batCacheid);
 		HEAPfree(b->tvheap, false);
 	}
+	MT_lock_unset(&b->theaplock);
 }
 
 /* free a cached BAT descriptor */
@@ -586,9 +597,9 @@ BATdestroy(BAT *b)
 	if (b->tident && !default_ident(b->tident))
 		GDKfree(b->tident);
 	b->tident = BATstring_t;
-	if (b->tvheap)
-		GDKfree(b->tvheap);
+	GDKfree(b->tvheap);
 	PROPdestroy(b);
+	MT_lock_destroy(&b->theaplock);
 	MT_lock_destroy(&b->batIdxLock);
 	GDKfree(b->theap);
 	GDKfree(b);
@@ -631,7 +642,17 @@ static void
 heapmove(Heap *dst, Heap *src)
 {
 	HEAPfree(dst, false);
-	*dst = *src;
+	/* copy all fields of src except filename and refs */
+	dst->free = src->free;
+	dst->size = src->size;
+	dst->base = src->base;
+	dst->farmid = src->farmid;
+	dst->hashash = src->hashash;
+	dst->cleanhash = src->cleanhash;
+	dst->storage = src->storage;
+	dst->newstorage = src->newstorage;
+	dst->parentid = src->parentid;
+	dst->dirty = true;
 }
 
 static bool

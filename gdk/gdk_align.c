@@ -107,7 +107,12 @@ VIEWcreate(oid seq, BAT *b)
 	bn->batInserted = b->batInserted;
 	bn->batCount = b->batCount;
 	bn->batCapacity = b->batCapacity;
+	MT_lock_set(&b->theaplock);
 	bn->T = b->T;
+	(void) ATOMIC_INC(&b->theap->refs);
+	if (b->tvheap)
+		(void) ATOMIC_INC(&b->tvheap->refs);
+	MT_lock_unset(&b->theaplock);
 
 	if (tp)
 		BBPshare(tp);
@@ -129,8 +134,12 @@ VIEWcreate(oid seq, BAT *b)
 	if (BBPcacheit(bn, true) != GDK_SUCCEED) {	/* enter in BBP */
 		if (tp)
 			BBPunshare(tp);
-		if (bn->tvheap)
+		if (bn->tvheap) {
 			BBPunshare(bn->tvheap->parentid);
+			HEAPdecref(bn->tvheap, false);
+		}
+		HEAPdecref(bn->theap, false);
+		MT_lock_destroy(&bn->theaplock);
 		MT_lock_destroy(&bn->batIdxLock);
 		GDKfree(bn);
 		return NULL;
@@ -149,27 +158,27 @@ VIEWcreate(oid seq, BAT *b)
 gdk_return
 BATmaterialize(BAT *b)
 {
-	int tt;
 	BUN cnt;
-	Heap tail;
+	Heap *tail;
 	BUN p, q;
 	oid t, *x;
 
 	BATcheck(b, GDK_FAIL);
 	assert(!isVIEW(b));
-	tt = b->ttype;
+	if (b->ttype != TYPE_void) {
+		/* no voids */
+		return GDK_SUCCEED;
+	}
+
 	cnt = BATcapacity(b);
-	tail = *b->theap;
+	if ((tail = GDKmalloc(sizeof(Heap))) == NULL)
+		return GDK_FAIL;
+	*tail = *b->theap;
+	ATOMIC_INIT(&tail->refs, 1);
 	p = 0;
 	q = BUNlast(b);
 	assert(cnt >= q - p);
 	TRC_DEBUG(ALGO, "BATmaterialize(" ALGOBATFMT ")\n", ALGOBATPAR(b));
-
-	if (tt != TYPE_void) {
-		/* no voids */
-		return GDK_SUCCEED;
-	}
-	tt = TYPE_oid;
 
 	/* cleanup possible ACC's */
 	HASHdestroy(b);
@@ -178,13 +187,17 @@ BATmaterialize(BAT *b)
 
 	strconcat_len(b->theap->filename, sizeof(b->theap->filename),
 		      BBP_physical(b->batCacheid), ".tail", NULL);
-	if (HEAPalloc(b->theap, cnt, sizeof(oid)) != GDK_SUCCEED) {
-		*b->theap = tail;
+	if (HEAPalloc(tail, cnt, sizeof(oid)) != GDK_SUCCEED) {
 		return GDK_FAIL;
 	}
 
 	/* point of no return */
-	b->ttype = tt;
+	MT_lock_set(&b->theaplock);
+	assert(ATOMIC_GET(&b->theap->refs) > 0);
+	HEAPdecref(b->theap, false);
+	b->theap = tail;
+	MT_lock_unset(&b->theaplock);
+	b->ttype = TYPE_oid;
 	BATsetdims(b);
 	b->batDirtydesc = true;
 	b->theap->dirty = true;
@@ -209,16 +222,17 @@ BATmaterialize(BAT *b)
 			x[p++] = t++;
 		}
 		b->tseqbase = oid_nil;
-		HEAPfree(b->tvheap, true);
+		MT_lock_set(&b->theaplock);
+		assert(ATOMIC_GET(&b->tvheap->refs) > 0);
+		HEAPdecref(b->tvheap, true);
 		b->tvheap = NULL;
+		MT_lock_unset(&b->theaplock);
 	} else {
 		while (p < q)
 			x[p++] = t++;
 	}
 	BATsetcount(b, b->batCount);
 
-	/* cleanup the old heaps */
-	HEAPfree(&tail, false);
 	return GDK_SUCCEED;
 }
 
@@ -247,11 +261,17 @@ VIEWunlink(BAT *b)
 			return;
 
 		/* unlink heaps shared with parent */
-		if (b->theap && b->theap->parentid != b->batCacheid)
+		MT_lock_set(&b->theaplock);
+		if (b->theap && b->theap->parentid != b->batCacheid) {
+			HEAPdecref(b->theap, false);
 			b->theap = NULL;
+		}
 		assert(b->tvheap == NULL || b->tvheap->parentid > 0);
-		if (b->tvheap && b->tvheap->parentid != b->batCacheid)
+		if (b->tvheap && b->tvheap->parentid != b->batCacheid) {
+			HEAPdecref(b->tvheap, false);
 			b->tvheap = NULL;
+		}
+		MT_lock_unset(&b->theaplock);
 
 		/* unlink properties shared with parent */
 		if (tpb && b->tprops && b->tprops == tpb->tprops)
@@ -291,6 +311,7 @@ VIEWreset(BAT *b)
 			.parentid = b->batCacheid,
 			.farmid = BBPselectfarm(b->batRole, b->ttype, offheap),
 		};
+		ATOMIC_INIT(&tail->refs, 1);
 
 		cnt = BATcount(b) + 1;
 		nme = BBP_physical(b->batCacheid);
@@ -307,6 +328,7 @@ VIEWreset(BAT *b)
 				.parentid = b->batCacheid,
 				.farmid = BBPselectfarm(b->batRole, b->ttype, varheap),
 			};
+			ATOMIC_INIT(&th->refs, 1);
 			strconcat_len(th->filename, sizeof(th->filename),
 				      nme, ".tail", NULL);
 			if (ATOMheap(b->ttype, th, cnt) != GDK_SUCCEED)
@@ -342,6 +364,7 @@ VIEWreset(BAT *b)
 
 		/* replace the heaps */
 		b->theap = tail;
+		tail = NULL;
 		b->tbaseoff = 0;
 
 		/* unshare from parents heap */
@@ -377,9 +400,16 @@ VIEWreset(BAT *b)
 	return GDK_SUCCEED;
       bailout:
 	BBPreclaim(v);
-	HEAPfree(tail, false);
-	GDKfree(tail);
-	GDKfree(th);
+	if (tail) {
+		ATOMIC_DESTROY(&tail->refs);
+		HEAPfree(tail, true);
+		GDKfree(tail);
+	}
+	if (th) {
+		ATOMIC_DESTROY(&th->refs);
+		HEAPfree(th, true);
+		GDKfree(th);
+	}
 	return GDK_FAIL;
 }
 
@@ -402,7 +432,6 @@ VIEWbounds(BAT *b, BAT *view, BUN l, BUN h)
 	cnt = h - l;
 	view->batInserted = 0;
 	if (view->ttype != TYPE_void) {
-		assert(view->theap == b->theap);
 		view->tbaseoff = b->tbaseoff + l;
 	}
 	BATsetcount(view, cnt);
@@ -439,13 +468,15 @@ VIEWdestroy(BAT *b)
 	OIDXdestroy(b);
 	VIEWunlink(b);
 
+	MT_lock_set(&b->theaplock);
 	if (b->theap) {
-		if (b->ttype && b->theap->parentid == b->batCacheid) {
-			HEAPfree(b->theap, false);
-		} else {
-			b->theap->base = NULL;
-		}
+		HEAPdecref(b->theap, false);
+		b->theap = NULL;
 	}
-	b->tvheap = NULL;
+	if (b->tvheap) {
+		HEAPdecref(b->tvheap, false);
+		b->tvheap = NULL;
+	}
+	MT_lock_unset(&b->theaplock);
 	BATfree(b);
 }

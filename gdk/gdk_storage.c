@@ -759,7 +759,7 @@ BATsave(BAT *bd)
 	gdk_return err = GDK_SUCCEED;
 	const char *nme;
 	BAT bs;
-	Heap vhs;
+	Heap hs, vhs;
 	BAT *b = bd;
 	bool dosync = (BBP_status(b->batCacheid) & BBPPERSISTENT) != 0;
 
@@ -782,7 +782,8 @@ BATsave(BAT *bd)
 	 * only read it. */
 	bs = *b;
 	b = &bs;
-
+	hs = *bd->theap;
+	b->theap = &hs;
 	if (b->tvheap) {
 		vhs = *bd->tvheap;
 		b->tvheap = &vhs;

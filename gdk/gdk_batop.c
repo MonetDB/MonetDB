@@ -36,8 +36,12 @@ unshare_string_heap(BAT *b)
 			GDKfree(h);
 			return GDK_FAIL;
 		}
+		ATOMIC_INIT(&h->refs, 1);
 		BBPunshare(b->tvheap->parentid);
+		MT_lock_set(&b->theaplock);
+		HEAPdecref(b->tvheap, false);
 		b->tvheap = h;
+		MT_lock_unset(&b->theaplock);
 	}
 	return GDK_SUCCEED;
 }
@@ -105,14 +109,24 @@ insert_string_bat(BAT *b, BAT *n, struct canditer *ci, bool force)
 			if (oldcnt == 0 &&
 			    b->tvheap != n->tvheap &&
 			    ci->tpe == cand_dense) {
-				if (b->tvheap->parentid != bid) {
-					BBPunshare(b->tvheap->parentid);
+				/* make sure locking happens in a
+				 * predictable order: lowest id
+				 * first */
+				if (b->batCacheid < n->batCacheid) {
+					MT_lock_set(&b->theaplock);
+					MT_lock_set(&n->theaplock);
 				} else {
-					HEAPfree(b->tvheap, true);
-					GDKfree(b->tvheap);
+					MT_lock_set(&n->theaplock);
+					MT_lock_set(&b->theaplock);
 				}
-				BBPshare(n->tvheap->parentid);
+				if (b->tvheap->parentid != bid)
+					BBPunshare(b->tvheap->parentid);
+				HEAPdecref(b->tvheap, true);
+				(void) ATOMIC_INC(&n->tvheap->refs);
 				b->tvheap = n->tvheap;
+				BBPshare(n->tvheap->parentid);
+				MT_lock_unset(&b->theaplock);
+				MT_lock_unset(&n->theaplock);
 				b->batDirtydesc = true;
 				toff = 0;
 			} else if (b->tvheap->parentid == n->tvheap->parentid &&
@@ -415,14 +429,24 @@ append_varsized_bat(BAT *b, BAT *n, struct canditer *ci)
 		/* if b is still empty, in the transient farm, and n
 		 * is read-only, we replace b's vheap with a reference
 		 * to n's */
-		if (b->tvheap->parentid != b->batCacheid) {
-			BBPunshare(b->tvheap->parentid);
+		/* make sure locking happens in a
+		 * predictable order: lowest id
+		 * first */
+		if (b->batCacheid < n->batCacheid) {
+			MT_lock_set(&b->theaplock);
+			MT_lock_set(&n->theaplock);
 		} else {
-			HEAPfree(b->tvheap, true);
-			GDKfree(b->tvheap);
+			MT_lock_set(&n->theaplock);
+			MT_lock_set(&b->theaplock);
 		}
+		if (b->tvheap->parentid != b->batCacheid)
+			BBPunshare(b->tvheap->parentid);
 		BBPshare(n->tvheap->parentid);
+		HEAPdecref(b->tvheap, true);
+		(void) ATOMIC_INC(&n->tvheap->refs);
 		b->tvheap = n->tvheap;
+		MT_lock_unset(&b->theaplock);
+		MT_lock_unset(&n->theaplock);
 		b->batDirtydesc = true;
 	}
 	if (b->tvheap == n->tvheap) {
@@ -468,7 +492,11 @@ append_varsized_bat(BAT *b, BAT *n, struct canditer *ci)
 			return GDK_FAIL;
 		}
 		BBPunshare(b->tvheap->parentid);
+		MT_lock_set(&b->theaplock);
+		HEAPdecref(b->tvheap, false);
+		ATOMIC_INIT(&h->refs, 1);
 		b->tvheap = h;
+		MT_lock_unset(&b->theaplock);
 	}
 	/* copy data from n to b */
 	ni = bat_iterator(n);

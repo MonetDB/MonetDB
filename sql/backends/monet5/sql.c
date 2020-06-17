@@ -4870,6 +4870,7 @@ BATSTRindex_int(bat *res, const bat *src, const bit *u)
 		}
 		r->ttype = TYPE_int;
 		r->tvarsized = false;
+		HEAPdecref(r->tvheap, false);
 		r->tvheap = NULL;
 	}
 	BBPunfix(s->batCacheid);
@@ -4928,6 +4929,7 @@ BATSTRindex_sht(bat *res, const bat *src, const bit *u)
 		}
 		r->ttype = TYPE_sht;
 		r->tvarsized = false;
+		HEAPdecref(r->tvheap, false);
 		r->tvheap = NULL;
 	}
 	BBPunfix(s->batCacheid);
@@ -4987,6 +4989,7 @@ BATSTRindex_bte(bat *res, const bat *src, const bit *u)
 		}
 		r->ttype = TYPE_bte;
 		r->tvarsized = false;
+		HEAPdecref(r->tvheap, false);
 		r->tvheap = NULL;
 	}
 	BBPunfix(s->batCacheid);

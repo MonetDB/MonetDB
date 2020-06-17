@@ -591,6 +591,17 @@ HEAPfree(Heap *h, bool rmheap)
 	}
 }
 
+void
+HEAPdecref(Heap *h, bool remove)
+{
+	h->remove |= remove;
+	if (ATOMIC_DEC(&h->refs) == 0) {
+		ATOMIC_DESTROY(&h->refs);
+		HEAPfree(h, h->remove);
+		GDKfree(h);
+	}
+}
+
 /*
  * @- HEAPload
  *

@@ -429,9 +429,13 @@ BATproject2(BAT *restrict l, BAT *restrict r1, BAT *restrict r2)
 		assert(r1->tvheap);
 		if (r1->batRestricted == BAT_READ) {
 			/* really share string heap */
+			MT_lock_set(&r1->theaplock);
+			/* no need to lock bn, it's ours */
 			assert(r1->tvheap->parentid > 0);
 			BBPshare(r1->tvheap->parentid);
 			bn->tvheap = r1->tvheap;
+			(void) ATOMIC_INC(&r1->tvheap->refs);
+			MT_lock_unset(&r1->theaplock);
 		} else {
 			/* make copy of string heap */
 			bn->tvheap = (Heap *) GDKzalloc(sizeof(Heap));
@@ -443,6 +447,7 @@ BATproject2(BAT *restrict l, BAT *restrict r1, BAT *restrict r2)
 				      sizeof(bn->tvheap->filename),
 				      BBP_physical(bn->batCacheid), ".theap",
 				      NULL);
+			ATOMIC_INIT(&bn->tvheap->refs, 1);
 			if (HEAPcopy(bn->tvheap, r1->tvheap) != GDK_SUCCEED)
 				goto bailout;
 		}
@@ -636,8 +641,11 @@ BATprojectchain(BAT **bats)
 			bn->tnil = false;
 			bn->tnonil = nonil;
 			bn->tkey = false;
+			MT_lock_set(&b->theaplock);
 			BBPshare(b->tvheap->parentid);
 			bn->tvheap = b->tvheap;
+			(void) ATOMIC_INC(&b->tvheap->refs);
+			MT_lock_unset(&b->theaplock);
 			bn->ttype = b->ttype;
 			bn->tvarsized = true;
 			assert(bn->twidth == b->twidth);
