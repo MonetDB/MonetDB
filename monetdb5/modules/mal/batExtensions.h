@@ -12,7 +12,6 @@
 #include "mal_client.h"
 #include "mal_interpreter.h"
 #include "bat5.h"
-#include "algebra.h"
 
 mal_export str CMDBATnewColumn(Client cntxt, MalBlkPtr m, MalStkPtr s, InstrPtr p);
 mal_export str CMDBATnew(Client cntxt, MalBlkPtr m, MalStkPtr s, InstrPtr p);

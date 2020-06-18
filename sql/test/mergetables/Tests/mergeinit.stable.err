@@ -7,7 +7,7 @@ stderr of test 'mergeinit` in directory 'sql/test/mergetables` itself:
 
 MAPI  = (monetdb) /var/tmp/mtest-119047/.s.monetdb.33596
 QUERY = ALTER TABLE complete ADD TABLE wrong; --error, cannot add views to a merge table
-ERROR = !ALTER TABLE: can't add a view into a MERGE TABLE
+ERROR = !ALTER TABLE: can't add/drop a view into a MERGE TABLE
 CODE  = 42000
 
 # 16:18:31 >  

@@ -1045,12 +1045,15 @@ load_func(sql_trans *tr, sql_schema *s, sqlid fid, subrids *rs)
 	if (update_env) {
 		/* see creation of env in sql_create_env()
 		 * also see upgrade code in sql_upgrades.c */
+		_DELETE(v);
 		v = "CREATE FUNCTION env() RETURNS TABLE( name varchar(1024), value varchar(2048)) EXTERNAL NAME inspect.\"getEnvironment\";";
 	}
 	t->imp = (v)?sa_strdup(tr->sa, v):NULL;	if (!update_env) _DELETE(v);
-	v = table_funcs.column_find_value(tr, find_sql_column(funcs, "mod"), rid);
-	if (update_env)
+	if (update_env) {
 		v = "inspect";
+	} else {
+		v = table_funcs.column_find_value(tr, find_sql_column(funcs, "mod"), rid);
+	}
 	t->mod = (v)?sa_strdup(tr->sa, v):NULL;	if (!update_env) _DELETE(v);
 	v = table_funcs.column_find_value(tr, find_sql_column(funcs, "language"), rid);
 	t->lang = (sql_flang) *(int *)v;			_DELETE(v);
