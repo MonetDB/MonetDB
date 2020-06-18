@@ -836,112 +836,6 @@ monetdbe_cleanup_statement(monetdbe_database dbhdl, monetdbe_statement *stmt)
 }
 
 char*
-monetdbe_append(monetdbe_database dbhdl, const char* schema, const char* table, monetdbe_column **input /*bat *batids*/, size_t column_count)
-{
-	Client c = (Client) dbhdl;
-	mvc *m;
-	char* msg = MAL_SUCCEED;
-
-	MT_lock_set(&embedded_lock);
-	if ((msg = validate_database_handle(dbhdl, "monetdbe.monetdbe_append")) != MAL_SUCCEED) {
-		MT_lock_unset(&embedded_lock);
-		return msg; //The dbhdl is invalid, there is no transaction going
-	}
-
-	if ((msg = getSQLContext(c, NULL, &m, NULL)) != MAL_SUCCEED)
-		goto cleanup;
-        if ((msg = SQLtrans(m)) != MAL_SUCCEED)
-		goto cleanup;
-
-	if (schema == NULL) {
-		msg = createException(MAL, "monetdbe.monetdbe_append", "schema parameter is NULL");
-		goto cleanup;
-	}
-	if (table == NULL) {
-		msg = createException(MAL, "monetdbe.monetdbe_append", "table parameter is NULL");
-		goto cleanup;
-	}
-	if (input == NULL) {
-		msg = createException(MAL, "monetdbe.monetdbe_append", "input parameter is NULL");
-		goto cleanup;
-	}
-	if (column_count < 1) {
-		msg = createException(MAL, "monetdbe.monetdbe_append", "column_count must be higher than 0");
-		goto cleanup;
-	}
-
-	sql_schema *s;
-	sql_table *t;
-
-	if (schema) {
-		if (!(s = mvc_bind_schema(m, schema))) {
-			msg = createException(MAL, "monetdbe.monetdbe_append", "Schema missing %s", schema);
-			goto cleanup;
-		}
-	} else {
-		s = cur_schema(m);
-	}
-	if (!(t = mvc_bind_table(m, s, table))) {
-		msg = createException(SQL, "monetdbe.monetdbe_append", "Table missing %s.%s", schema, table);
-		goto cleanup;
-	}
-	
-	/* for now no default values, ie user should supply all columns */
-
-	if (column_count != (size_t)list_length(t->columns.set)) {
-		msg = createException(SQL, "monetdbe.monetdbe_append", "Incorrect number of columns");
-		goto cleanup;
-	}
-
-	/* small number of rows */
-	if (input[0]->count <= 16) {
-		size_t i, cnt = input[0]->count;
-		node *n;
-
-		for (i = 0, n = t->columns.set->h; i < column_count && n; i++, n = n->next) {
-			sql_column *c = n->data;
-			int mtype = monetdbe_type(input[i]->type);
-			char *v = input[i]->data;
-			int w = 1;
-
-			if (mtype < 0) {
-				msg = createException(SQL, "monetdbe.monetdbe_append", "Cannot find type for column %zu", i);
-				goto cleanup;
-			}
-			if (mtype >= TYPE_bit && mtype <= TYPE_dbl) {
-				w = BATatoms[mtype].size;
-				for (size_t j=0; j<cnt; j++, v+=w){
-					if (store_funcs.append_col(m->session->tr, c, v, mtype) != 0) {
-						msg = createException(SQL, "monetdbe.monetdbe_append", "Cannot append values");
-						goto cleanup;
-					}
-				}
-			} else if (mtype == TYPE_str) {
-				char **d = (char**)v;
-
-				for (size_t j=0; j<cnt; j++){
-					char *s = d[j];
-					if (!s)
-						s = (char*)str_nil;
-					if (store_funcs.append_col(m->session->tr, c, s, mtype) != 0) {
-						msg = createException(SQL, "monetdbe.monetdbe_append", "Cannot append values");
-						goto cleanup;
-					}
-				}
-			}
-			/* TODO blob, temperal */
-		}
-	} else { 
-		msg = createException(SQL, "monetdbe.monetdbe_append", "TODO bulk insert");
-		goto cleanup;
-	}
-cleanup:
-	msg = commit_action(m, msg, NULL, NULL, NULL);
-	MT_lock_unset(&embedded_lock);
-	return msg;
-}
-
-char*
 monetdbe_cleanup_result(monetdbe_database dbhdl, monetdbe_result* result)
 {
 	char* msg = MAL_SUCCEED;
@@ -1136,6 +1030,156 @@ GENERATE_BASE_HEADERS(monetdbe_data_timestamp, timestamp);
 static void data_from_date(date d, monetdbe_data_date *ptr);
 static void data_from_time(daytime d, monetdbe_data_time *ptr);
 static void data_from_timestamp(timestamp d, monetdbe_data_timestamp *ptr);
+static timestamp timestamp_from_data(monetdbe_data_timestamp *ptr);
+static date date_from_data(monetdbe_data_date *ptr);
+static daytime time_from_data(monetdbe_data_time *ptr);
+
+char*
+monetdbe_append(monetdbe_database dbhdl, const char* schema, const char* table, monetdbe_column **input /*bat *batids*/, size_t column_count)
+{
+	Client c = (Client) dbhdl;
+	mvc *m;
+	char* msg = MAL_SUCCEED;
+
+	MT_lock_set(&embedded_lock);
+	if ((msg = validate_database_handle(dbhdl, "monetdbe.monetdbe_append")) != MAL_SUCCEED) {
+		MT_lock_unset(&embedded_lock);
+		return msg; //The dbhdl is invalid, there is no transaction going
+	}
+
+	if ((msg = getSQLContext(c, NULL, &m, NULL)) != MAL_SUCCEED)
+		goto cleanup;
+        if ((msg = SQLtrans(m)) != MAL_SUCCEED)
+		goto cleanup;
+
+	if (schema == NULL) {
+		msg = createException(MAL, "monetdbe.monetdbe_append", "schema parameter is NULL");
+		goto cleanup;
+	}
+	if (table == NULL) {
+		msg = createException(MAL, "monetdbe.monetdbe_append", "table parameter is NULL");
+		goto cleanup;
+	}
+	if (input == NULL) {
+		msg = createException(MAL, "monetdbe.monetdbe_append", "input parameter is NULL");
+		goto cleanup;
+	}
+	if (column_count < 1) {
+		msg = createException(MAL, "monetdbe.monetdbe_append", "column_count must be higher than 0");
+		goto cleanup;
+	}
+
+	sql_schema *s;
+	sql_table *t;
+
+	if (schema) {
+		if (!(s = mvc_bind_schema(m, schema))) {
+			msg = createException(MAL, "monetdbe.monetdbe_append", "Schema missing %s", schema);
+			goto cleanup;
+		}
+	} else {
+		s = cur_schema(m);
+	}
+	if (!(t = mvc_bind_table(m, s, table))) {
+		msg = createException(SQL, "monetdbe.monetdbe_append", "Table missing %s.%s", schema, table);
+		goto cleanup;
+	}
+	
+	/* for now no default values, ie user should supply all columns */
+
+	if (column_count != (size_t)list_length(t->columns.set)) {
+		msg = createException(SQL, "monetdbe.monetdbe_append", "Incorrect number of columns");
+		goto cleanup;
+	}
+
+	/* small number of rows */
+	if (input[0]->count <= 16) {
+		size_t i, cnt = input[0]->count;
+		node *n;
+
+		for (i = 0, n = t->columns.set->h; i < column_count && n; i++, n = n->next) {
+			sql_column *c = n->data;
+			int mtype = monetdbe_type(input[i]->type);
+			char *v = input[i]->data;
+			int w = 1;
+
+			if (mtype < 0) {
+				msg = createException(SQL, "monetdbe.monetdbe_append", "Cannot find type for column %zu", i);
+				goto cleanup;
+			}
+			if ((mtype >= TYPE_bit && mtype <= TYPE_lng)) {
+				w = BATatoms[mtype].size;
+				for (size_t j=0; j<cnt; j++, v+=w){
+					if (store_funcs.append_col(m->session->tr, c, v, mtype) != 0) {
+						msg = createException(SQL, "monetdbe.monetdbe_append", "Cannot append values");
+						goto cleanup;
+					}
+				}
+			} else if (mtype == TYPE_str) {
+				char **d = (char**)v;
+
+				for (size_t j=0; j<cnt; j++){
+					char *s = d[j];
+					if (!s)
+						s = (char*)str_nil;
+					if (store_funcs.append_col(m->session->tr, c, s, mtype) != 0) {
+						msg = createException(SQL, "monetdbe.monetdbe_append", "Cannot append values");
+						goto cleanup;
+					}
+				}
+			} else if (mtype == TYPE_timestamp) {
+				monetdbe_data_timestamp* ts = (monetdbe_data_timestamp*)v;
+				timestamp t = timestamp_from_data(ts);
+
+				if (store_funcs.append_col(m->session->tr, c, &t, mtype) != 0) {
+					msg = createException(SQL, "monetdbe.monetdbe_append", "Cannot append values");
+					goto cleanup;
+				}
+			} else if (mtype == TYPE_daytime) {
+				monetdbe_data_time* t = (monetdbe_data_time*)v;
+				daytime dt = time_from_data(t);
+
+				if (store_funcs.append_col(m->session->tr, c, &dt, mtype) != 0) {
+					msg = createException(SQL, "monetdbe.monetdbe_append", "Cannot append values");
+					goto cleanup;
+				}
+			} else if (mtype == TYPE_date) {
+				monetdbe_data_date* de = (monetdbe_data_date*)v;
+				date d = date_from_data(de);
+
+				if (store_funcs.append_col(m->session->tr, c, &d, mtype) != 0) {
+					msg = createException(SQL, "monetdbe.monetdbe_append", "Cannot append values");
+					goto cleanup;
+				}
+			} else if (mtype == TYPE_blob) {
+				monetdbe_data_blob* be = (monetdbe_data_blob*)v;
+				blob *b = NULL;
+
+				if (!blob_is_null(*be)) {
+					size_t len = be->size;
+					b = (blob *) GDKmalloc(blobsize(len));
+					if (b == NULL)
+						msg = createException(MAL, "monetdbe.monetdbe_append", MAL_MALLOC_FAIL);
+
+					b->nitems = len;
+					memcpy(b->data, be->data, len);
+				}
+
+				if (store_funcs.append_col(m->session->tr, c, b, mtype) != 0) {
+					msg = createException(SQL, "monetdbe.monetdbe_append", "Cannot append values");
+					goto cleanup;
+				}
+			} 
+		}
+	} else { 
+		msg = createException(SQL, "monetdbe.monetdbe_append", "TODO bulk insert");
+		goto cleanup;
+	}
+cleanup:
+	msg = commit_action(m, msg, NULL, NULL, NULL);
+	MT_lock_unset(&embedded_lock);
+	return msg;
+}
 
 char*
 monetdbe_result_fetch(monetdbe_result* mres, monetdbe_column** res, size_t column_index)
@@ -1375,6 +1419,12 @@ data_from_date(date d, monetdbe_data_date *ptr)
 	ptr->year = date_year(d);
 }
 
+static date
+date_from_data(monetdbe_data_date *ptr)
+{
+	return date_create(ptr->year, ptr->month, ptr->day);
+}
+
 void
 data_from_time(daytime d, monetdbe_data_time *ptr)
 {
@@ -1382,6 +1432,12 @@ data_from_time(daytime d, monetdbe_data_time *ptr)
 	ptr->minutes = daytime_min(d);
 	ptr->seconds = daytime_sec(d);
 	ptr->ms = daytime_usec(d) / 1000;
+}
+
+static daytime
+time_from_data(monetdbe_data_time *ptr)
+{
+	return daytime_create(ptr->hours, ptr->minutes, ptr->seconds, ptr->ms * 1000);
 }
 
 void
