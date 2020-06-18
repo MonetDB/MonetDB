@@ -181,14 +181,14 @@ monetdbe_cleanup_result_internal(monetdbe_database dbhdl, monetdbe_result* resul
 	char* msg = MAL_SUCCEED;
 	monetdbe_result_internal* res = (monetdbe_result_internal *) result;
 	Client c = (Client) dbhdl;
-
-	mvc* m = NULL;
+	mvc *m = NULL;
 
 	assert(!res->dbhdl || res->dbhdl == dbhdl);
 	if ((msg = validate_database_handle(dbhdl, "monetdbe.monetdbe_cleanup_result_internal")) != MAL_SUCCEED)
 		return msg;
 	if ((msg = getSQLContext(c, NULL, &m, NULL)) != MAL_SUCCEED)
 		goto cleanup;
+
 	if (!result) {
 		msg = createException(MAL, "monetdbe.monetdbe_cleanup_result_internal", "Parameter result is NULL");
 		goto cleanup;
@@ -316,8 +316,10 @@ monetdbe_query_internal(monetdbe_database dbhdl, char* query, monetdbe_result** 
 
 		if (m->results) {
 			res_internal->res.ncols = (size_t) m->results->nr_cols;
+			res_internal->monetdbe_resultset = m->results;
 			if (m->results->nr_cols > 0 && m->results->order) {
 				BAT* bb = BATdescriptor(m->results->order);
+				m->results = NULL;
 				if (!bb) {
 					msg = createException(MAL, "monetdbe.monetdbe_query_internal", RUNTIME_OBJECT_MISSING);
 					goto cleanup;
@@ -325,13 +327,12 @@ monetdbe_query_internal(monetdbe_database dbhdl, char* query, monetdbe_result** 
 				res_internal->res.nrows = BATcount(bb);
 				BBPunfix(bb->batCacheid);
 			}
-			res_internal->monetdbe_resultset = m->results;
+			m->results = NULL;
 			res_internal->converted_columns = GDKzalloc(sizeof(monetdbe_column*) * res_internal->res.ncols);
 			if (!res_internal->converted_columns) {
 				msg = createException(MAL, "monetdbe.monetdbe_query_internal", MAL_MALLOC_FAIL);
 				goto cleanup;
 			}
-			m->results = NULL;
 		}
 	}
 
@@ -791,8 +792,10 @@ monetdbe_execute(monetdbe_statement *stmt, monetdbe_result **result, monetdbe_cn
 
 		if (m->results) {
 			res_internal->res.ncols = (size_t) m->results->nr_cols;
+			res_internal->monetdbe_resultset = m->results;
 			if (m->results->nr_cols > 0 && m->results->order) {
 				BAT* bb = BATdescriptor(m->results->order);
+				m->results = NULL;
 				if (!bb) {
 					msg = createException(MAL, "monetdbe.monetdbe_query_internal", RUNTIME_OBJECT_MISSING);
 					goto cleanup;
@@ -800,13 +803,12 @@ monetdbe_execute(monetdbe_statement *stmt, monetdbe_result **result, monetdbe_cn
 				res_internal->res.nrows = BATcount(bb);
 				BBPunfix(bb->batCacheid);
 			}
-			res_internal->monetdbe_resultset = m->results;
+			m->results = NULL;
 			res_internal->converted_columns = GDKzalloc(sizeof(monetdbe_column*) * res_internal->res.ncols);
 			if (!res_internal->converted_columns) {
 				msg = createException(MAL, "monetdbe.monetdbe_query_internal", MAL_MALLOC_FAIL);
 				goto cleanup;
 			}
-			m->results = NULL;
 		}
 	}
 cleanup:
