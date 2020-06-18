@@ -1275,7 +1275,8 @@ sqltypeinit( sql_allocator *sa)
 	sql_create_aggr(sa, "grouping", "", "", TRUE, INT, 1, ANY);
 	sql_create_aggr(sa, "grouping", "", "", TRUE, LNG, 1, ANY);
 #ifdef HAVE_HGE
-	sql_create_aggr(sa, "grouping", "", "", TRUE, HGE, 1, ANY);
+	if (have_hge)
+		sql_create_aggr(sa, "grouping", "", "", TRUE, HGE, 1, ANY);
 #endif
 
 	sql_create_aggr(sa, "not_unique", "sql", "not_unique", TRUE, BIT, 1, OID);

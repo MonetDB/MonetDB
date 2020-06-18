@@ -89,6 +89,9 @@ typedef void* monetdbe_database;
 typedef struct {
 	monetdbe_cnt memorylimit;
 	int nr_threads;
+#ifdef HAVE_HGE
+	bool have_hge;
+#endif
 } monetdbe_options;
 
 #define DEFAULT_STRUCT_DEFINITION(ctype, typename)         \
