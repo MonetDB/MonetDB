@@ -3800,7 +3800,7 @@ rel_project_cse(mvc *sql, sql_rel *rel, int *changes)
 				for (m=nexps->h; m; m = m->next){
 					sql_exp *e2 = m->data;
 				
-					if (exp_name(e2) && exp_match_exp(e1, e2) && exps_bind_column2(nexps, exp_relname(e1), exp_name(e1)) == e1) {
+					if (exp_name(e2) && exp_match_exp(e1, e2) && (e1->type != e_column || exps_bind_column2(nexps, exp_relname(e1), exp_name(e1)) == e1)) {
 						sql_exp *ne = exp_alias(sql->sa, exp_relname(e1), exp_name(e1), exp_relname(e2), exp_name(e2), exp_subtype(e2), e2->card, has_nil(e2), is_intern(e1));
 
 						ne = exp_propagate(sql->sa, ne, e1);
