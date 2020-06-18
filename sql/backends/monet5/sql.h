@@ -37,7 +37,6 @@
 #include "mal_interpreter.h"
 
 #include "tablet.h"
-#include "streams.h"
 #include "gdk_time.h"
 #include <math.h>
 #include "blob.h"

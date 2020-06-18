@@ -50,27 +50,11 @@ typedef union {
 #endif
 } uuid;
 
-mal_export str UUIDprelude(void *ret);
-mal_export str UUIDuuid2uuid(uuid *retval, uuid *s);
-
-#ifdef HAVE_HGE
-mal_export str UUIDgenerateUuid(uuid *retval);
-mal_export str UUIDgenerateUuidInt(uuid *retval, int *d);
-mal_export str UUIDstr2uuid(uuid *retval, str *s);
-mal_export str UUIDuuid2str(str *retval, const uuid *u);
-#else
-mal_export str UUIDgenerateUuid(uuid **retval);
-mal_export str UUIDgenerateUuidInt(uuid **retval, int *d);
-mal_export str UUIDstr2uuid(uuid **retval, str *s);
-mal_export str UUIDuuid2str(str *retval, uuid **u);
-#endif
-mal_export str UUIDisaUUID(bit *retval, str *u);
-
 static uuid uuid_nil;			/* automatically initialized as zeros */
 
 int TYPE_uuid = 0;
 
-str
+static str
 UUIDprelude(void *ret)
 {
 	(void) ret;
@@ -203,7 +187,7 @@ UUIDcompare(const void *L, const void *R)
 #endif
 }
 
-str
+static str
 #ifdef HAVE_HGE
 UUIDgenerateUuid(uuid *retval)
 #else
@@ -243,7 +227,7 @@ UUIDgenerateUuid(uuid **retval)
 	return MAL_SUCCEED;
 }
 
-str
+static str
 #ifdef HAVE_HGE
 UUIDgenerateUuidInt(uuid *retval, int *d)
 #else
@@ -254,7 +238,7 @@ UUIDgenerateUuidInt(uuid **retval, int *d)
 	return UUIDgenerateUuid(retval);
 }
 
-str
+static str
 UUIDisaUUID(bit *retval, str *s)
 {
 	uuid u;
@@ -271,7 +255,7 @@ UUIDisaUUID(bit *retval, str *s)
 	return MAL_SUCCEED;
 }
 
-str
+static str
 UUIDuuid2uuid(uuid *retval, uuid *i)
 {
 	*retval = *i;
@@ -279,7 +263,7 @@ UUIDuuid2uuid(uuid *retval, uuid *i)
 }
 
 #ifdef HAVE_HGE
-str
+static str
 UUIDstr2uuid(uuid *retval, str *s)
 {
 	size_t l = UUID_SIZE;
@@ -290,7 +274,7 @@ UUIDstr2uuid(uuid *retval, str *s)
 	throw(MAL, "uuid.uuid", "Not a UUID");
 }
 
-str
+static str
 UUIDuuid2str(str *retval, const uuid *u)
 {
 	size_t l = 0;
@@ -300,7 +284,7 @@ UUIDuuid2str(str *retval, const uuid *u)
 	return MAL_SUCCEED;
 }
 #else
-str
+static str
 UUIDstr2uuid(uuid **retval, str *s)
 {
 	size_t l = *retval ? UUID_SIZE : 0;
@@ -311,7 +295,7 @@ UUIDstr2uuid(uuid **retval, str *s)
 	throw(MAL, "uuid.uuid", "Not a UUID");
 }
 
-str
+static str
 UUIDuuid2str(str *retval, uuid **u)
 {
 	size_t l = 0;

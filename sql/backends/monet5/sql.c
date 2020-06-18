@@ -15,7 +15,6 @@
  */
 #include "monetdb_config.h"
 #include "sql.h"
-#include "streams.h"
 #include "mapi_prompt.h"
 #include "sql_result.h"
 #include "sql_gencode.h"
