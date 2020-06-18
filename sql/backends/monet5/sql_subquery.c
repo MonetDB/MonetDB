@@ -1097,35 +1097,33 @@ SQLallnotequal_grp2(bat *ret, const bat *bid1, const bat *bid2, const bat *Rid, 
 }
 
 str
-SQLexist_val(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+SQLexist(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	bit *res = getArgReference_bit(stk, pci, 0);
-	ptr v = getArgReference(stk, pci, 1);
-	int mtype = getArgType(mb, pci, 1);
+	BAT *b = NULL, *r = NULL;
+	bit count = TRUE;
 
 	(void)cntxt;
-	if ((mtype == TYPE_bat || mtype > GDKatomcnt)) {
-		BAT *b = BATdescriptor(*(bat *)v);
-
-		if (b)
-			*res = BATcount(b) != 0;
-		else
+	if (isaBatType(getArgType(mb, pci, 1))) {
+		bat *bid = getArgReference_bat(stk, pci, 1);
+		if (!(b = BATdescriptor(*bid)))
 			throw(SQL, "aggr.exist", SQLSTATE(HY005) "Cannot access column descriptor");
-	} else {
-		*res = TRUE;
+		count = BATcount(b) != 0;
 	}
-	return MAL_SUCCEED;
-}
+	if (isaBatType(getArgType(mb, pci, 0))) {
+		bat *res = getArgReference_bat(stk, pci, 0);
+		if ((r = BATconstant(b ? b->hseqbase : 0, TYPE_bit, &count, b ? BATcount(b) : 1, TRANSIENT)) == NULL) {
+			if (b)
+				BBPunfix(b->batCacheid);
+			throw(SQL, "aggr.exist", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		}
+		BBPkeepref(*res = r->batCacheid);
+	} else {
+		bit *res = getArgReference_bit(stk, pci, 0);
+		*res = count;
+	}
 
-str
-SQLexist(bit *res, bat *id)
-{
-	BAT *b;
-
-	if ((b = BATdescriptor(*id)) == NULL)
-		throw(SQL, "aggr.exist", SQLSTATE(HY005) "Cannot access column descriptor");
-	*res = BATcount(b) != 0;
-	BBPunfix(b->batCacheid);
+	if (b)
+		BBPunfix(b->batCacheid);
 	return MAL_SUCCEED;
 }
 
@@ -1195,34 +1193,33 @@ SQLsubexist(bat *ret, const bat *bp, const bat *gp, const bat *gpe, bit *no_nil)
 }
 
 str
-SQLnot_exist_val(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+SQLnot_exist(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	bit *res = getArgReference_bit(stk, pci, 0);
-	ptr v = getArgReference(stk, pci, 1);
-	int mtype = getArgType(mb, pci, 1);
+	BAT *b = NULL, *r = NULL;
+	bit count = FALSE;
 
 	(void)cntxt;
-	if ((mtype == TYPE_bat || mtype > GDKatomcnt)) {
-		BAT *b = BATdescriptor(*(bat *)v);
-
-		if (b)
-			*res = BATcount(b) == 0;
-		else
+	if (isaBatType(getArgType(mb, pci, 1))) {
+		bat *bid = getArgReference_bat(stk, pci, 1);
+		if (!(b = BATdescriptor(*bid)))
 			throw(SQL, "aggr.not_exist", SQLSTATE(HY005) "Cannot access column descriptor");
-	} else
-		*res = FALSE;
-	return MAL_SUCCEED;
-}
+		count = BATcount(b) == 0;
+	}
+	if (isaBatType(getArgType(mb, pci, 0))) {
+		bat *res = getArgReference_bat(stk, pci, 0);
+		if ((r = BATconstant(b ? b->hseqbase : 0, TYPE_bit, &count, b ? BATcount(b) : 1, TRANSIENT)) == NULL) {
+			if (b)
+				BBPunfix(b->batCacheid);
+			throw(SQL, "aggr.not_exist", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		}
+		BBPkeepref(*res = r->batCacheid);
+	} else {
+		bit *res = getArgReference_bit(stk, pci, 0);
+		*res = count;
+	}
 
-str
-SQLnot_exist(bit *res, bat *id)
-{
-	BAT *b;
-
-	if ((b = BATdescriptor(*id)) == NULL)
-		throw(SQL, "aggr.not_exist", SQLSTATE(HY005) "Cannot access column descriptor");
-	*res = BATcount(b) == 0;
-	BBPunfix(b->batCacheid);
+	if (b)
+		BBPunfix(b->batCacheid);
 	return MAL_SUCCEED;
 }
 
