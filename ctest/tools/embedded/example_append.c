@@ -23,12 +23,13 @@ main(void)
 	// second argument is a string for the db directory or NULL for in-memory mode
 	if ((err = monetdb_open(&mdbe, NULL)) != NULL)
 		error(err)
-	if ((err = monetdb_query(mdbe, "CREATE TABLE test (x integer, y string)", NULL, NULL)) != NULL)
+	if ((err = monetdb_query(mdbe, "CREATE TABLE test (x integer, y string, ts timestamp, dt date, t time, bl blob)", NULL, NULL)) != NULL)
 		error(err)
-	if ((err = monetdb_query(mdbe, "INSERT INTO test VALUES (42, 'Hello'), (NULL, 'World')", NULL, NULL)) != NULL)
+	if ((err = monetdb_query(mdbe, "INSERT INTO test VALUES (42, 'Hello', CURRENT_TIMESTAMP, '2008-11-11', '14:30:12', '123412'), \
+															(NULL, 'World', NULL, NULL, NULL, NULL)", NULL, NULL)) != NULL)
 		error(err)
 
-	if ((err = monetdb_query(mdbe, "SELECT x, y FROM test; ", &result, NULL)) != NULL)
+	if ((err = monetdb_query(mdbe, "SELECT * FROM test; ", &result, NULL)) != NULL)
 		error(err)
 	fprintf(stdout, "Query result with %zu cols and %"PRId64" rows\n", result->ncols, result->nrows);
 	monetdb_column* rcol[2];
@@ -55,6 +56,43 @@ main(void)
 					}
 					break;
 				}
+				case monetdb_timestamp: {
+					monetdb_column_timestamp * col = (monetdb_column_timestamp *) rcol[c];
+					if(col->is_null(col->data[r])) {
+						printf("NULL");
+					} else {
+						printf("%s-%s-%d %s:%s:%s.%d", col->data[r].date.day, col->data[r].date.month, col->data[r].date.year,
+														col->data[r].time.hours, col->data[r].time.minutes, col->data[r].time.seconds, col->data[r].time.ms);
+					}
+					break;
+				}
+				case monetdb_date: {
+					monetdb_column_date * col = (monetdb_column_date *) rcol[c];
+					if(col->is_null(col->data[r])) {
+						printf("NULL");
+					} else {
+						printf("%s-%s-%d", col->data[r].day, col->data[r].month, col->data[r].year);
+					}
+					break;
+				}
+				case monetdb_time: {
+					monetdb_column_time * col = (monetdb_column_time *) rcol[c];
+					if(col->is_null(col->data[r])) {
+						printf("NULL");
+					} else {
+						printf("%s:%s:%s.%d", col->data[r].hours, col->data[r].minutes, col->data[r].seconds, col->data[r].ms);
+					}
+					break;
+				}
+				case monetdb_blob: {
+					monetdb_column_blob * col = (monetdb_column_blob *) rcol[c];
+					if(col->is_null(col->data[r])) {
+						printf("NULL");
+					} else {
+						printf("%s", col->data[r].data);
+					}
+					break;
+				}
 				default: {
 					printf("UNKNOWN");
 				}
@@ -72,7 +110,7 @@ main(void)
 	if ((err = monetdb_cleanup_result(mdbe, result)) != NULL)
 		error(err)
 
-	if ((err = monetdb_query(mdbe, "SELECT x, y FROM test; ", &result, NULL)) != NULL)
+	if ((err = monetdb_query(mdbe, "SELECT * FROM test; ", &result, NULL)) != NULL)
 		error(err)
 	fprintf(stdout, "Query result after append with %zu cols and %"PRId64" rows\n", result->ncols, result->nrows);
 	for (int64_t r = 0; r < result->nrows; r++) {
@@ -95,6 +133,43 @@ main(void)
 						printf("NULL");
 					} else {
 						printf("%s", (char*) col->data[r]);
+					}
+					break;
+				}
+				case monetdb_timestamp: {
+					monetdb_column_timestamp * col = (monetdb_column_timestamp *) rcol[c];
+					if(col->is_null(col->data[r])) {
+						printf("NULL");
+					} else {
+						printf("%s-%s-%d %s:%s:%s.%d", col->data[r].date.day, col->data[r].date.month, col->data[r].date.year,
+														col->data[r].time.hours, col->data[r].time.minutes, col->data[r].time.seconds, col->data[r].time.ms);
+					}
+					break;
+				}
+				case monetdb_date: {
+					monetdb_column_date * col = (monetdb_column_date *) rcol[c];
+					if(col->is_null(col->data[r])) {
+						printf("NULL");
+					} else {
+						printf("%s-%s-%d", col->data[r].day, col->data[r].month, col->data[r].year);
+					}
+					break;
+				}
+				case monetdb_time: {
+					monetdb_column_time * col = (monetdb_column_time *) rcol[c];
+					if(col->is_null(col->data[r])) {
+						printf("NULL");
+					} else {
+						printf("%s:%s:%s.%d", col->data[r].hours, col->data[r].minutes, col->data[r].seconds, col->data[r].ms);
+					}
+					break;
+				}
+				case monetdb_blob: {
+					monetdb_column_blob * col = (monetdb_column_blob *) rcol[c];
+					if(col->is_null(col->data[r])) {
+						printf("NULL");
+					} else {
+						printf("%s", col->data[r].data);
 					}
 					break;
 				}
