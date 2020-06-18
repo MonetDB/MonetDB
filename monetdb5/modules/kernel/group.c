@@ -10,7 +10,6 @@
 #include "mal.h"
 #include "mal_exception.h"
 #include "group.h"
-#include "algebra.h"
 
 str
 GRPsubgroup5(bat *ngid, bat *next, bat *nhis, const bat *bid, const bat *sid, const bat *gid, const bat *eid, const bat *hid)
