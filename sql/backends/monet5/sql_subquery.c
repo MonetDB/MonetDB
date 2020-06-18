@@ -1111,7 +1111,7 @@ SQLexist(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	}
 	if (isaBatType(getArgType(mb, pci, 0))) {
 		bat *res = getArgReference_bat(stk, pci, 0);
-		if ((r = BATconstant(b ? b->hseqbase : 0, TYPE_bit, &count, b ? BATcount(b) : 1, TRANSIENT)) == NULL) {
+		if ((r = BATconstant(0, TYPE_bit, &count, b ? BATcount(b) : 1, TRANSIENT)) == NULL) {
 			if (b)
 				BBPunfix(b->batCacheid);
 			throw(SQL, "aggr.exist", SQLSTATE(HY013) MAL_MALLOC_FAIL);
@@ -1207,7 +1207,7 @@ SQLnot_exist(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	}
 	if (isaBatType(getArgType(mb, pci, 0))) {
 		bat *res = getArgReference_bat(stk, pci, 0);
-		if ((r = BATconstant(b ? b->hseqbase : 0, TYPE_bit, &count, b ? BATcount(b) : 1, TRANSIENT)) == NULL) {
+		if ((r = BATconstant(0, TYPE_bit, &count, b ? BATcount(b) : 1, TRANSIENT)) == NULL) {
 			if (b)
 				BBPunfix(b->batCacheid);
 			throw(SQL, "aggr.not_exist", SQLSTATE(HY013) MAL_MALLOC_FAIL);
