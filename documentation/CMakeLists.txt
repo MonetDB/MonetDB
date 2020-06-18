@@ -1,4 +1,4 @@
-find_package(Sphinx REQUIRED)
+find_package(Sphinx)
  
 if(SPHINX_EXECUTABLE) 
   if(NOT DEFINED SPHINX_THEME)
