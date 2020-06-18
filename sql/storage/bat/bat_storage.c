@@ -2973,7 +2973,7 @@ snapshot_bat(sql_delta *cbat)
 	if (!cbat->ibase && cbat->cnt > SNAPSHOT_MINSIZE) {
 		BAT *ins = temp_descriptor(cbat->ibid);
 		if(ins) {
-			if (BATsave(ins) != GDK_SUCCEED) {
+			if (!GDKinmemory() && BATsave(ins) != GDK_SUCCEED) {
 				bat_destroy(ins);
 				return LOG_ERR;
 			}
