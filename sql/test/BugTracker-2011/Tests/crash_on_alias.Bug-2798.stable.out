@@ -29,11 +29,11 @@ stdout of test 'crash_on_alias.Bug-2798` in directory 'sql/test/BugTracker-2011`
 % .plan # table_name
 % rel # name
 % clob # type
-% 114 # length
+% 103 # length
 project (
 | group by (
 | | table(sys.dbg) [ "dbg"."a", "dbg"."b" ] COUNT 
-| ) [ "dbg"."a" as "d" ] [ "d", sys.sum no nil ("dbg"."b") as "%1"."%1", sys.sum no nil ("dbg"."b") as "%2"."%2" ]
+| ) [ "dbg"."a" as "d" ] [ "d", sys.sum no nil ("dbg"."b") as "%1"."%1", "%1"."%1" as "%2"."%2" ]
 ) [ "d", "%1"."%1", sys.sql_mul(sys.sql_div("%2"."%2", tinyint "2" as "%3"."%3"), tinyint "2") as "f" ]
 #set optimizer = 'sequential_pipe';
 #set optimizer = 'default_pipe';
@@ -53,11 +53,11 @@ project (
 % .plan # table_name
 % rel # name
 % clob # type
-% 114 # length
+% 110 # length
 project (
 | group by (
 | | table(sys.dbg) [ "dbg"."a", "dbg"."b" ] COUNT 
-| ) [ "dbg"."a" as "d" ] [ "d", sys.sum no nil ("dbg"."b") as "%1"."%1", sys.sum no nil ("dbg"."b") as "%2"."%2" ]
+| ) [ "dbg"."a" as "d" ] [ "d", sys.sum no nil ("dbg"."b") as "%1"."%1", "%1"."%1" as "%2"."%2" ]
 ) [ "d", "%1"."%1" as "e", sys.sql_mul(sys.sql_div("%2"."%2", tinyint "2" as "%3"."%3"), tinyint "2") as "f" ]
 #set optimizer = 'sequential_pipe';
 #set optimizer = 'default_pipe';
