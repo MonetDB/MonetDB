@@ -29,9 +29,9 @@ sql5_export str SQLallnotequal_grp(bat *ret, const bat *l, const bat *r, const b
 sql5_export str SQLallnotequal_grp2(bat *ret, const bat *l, const bat *r, const bat *rid, const bat *gp, const bat *gpe, bit *no_nil);
 
 sql5_export str SQLexist(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-sql5_export str SQLsubexist(bat *ret, const bat *b, const bat *gp, const bat *gpe, bit *no_nil);
+sql5_export str SQLsubexist(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 
 sql5_export str SQLnot_exist(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-sql5_export str SQLsubnot_exist(bat *ret, const bat *b, const bat *gp, const bat *gpe, bit *no_nil);
+sql5_export str SQLsubnot_exist(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 
 #endif /* _SQL_SUBQUERY_H */

@@ -89,7 +89,10 @@ address SQLexist;
 pattern bataggr.exist(b:bat[:any_1]):bat[:bit]
 address SQLexist;
 
-command aggr.subexist(b:bat[:any_1], g:bat[:oid], e:bat[:oid], no_nil:bit):bat[:bit]
+pattern aggr.subexist(b:bat[:any_1], g:bat[:oid], e:bat[:oid], no_nil:bit):bat[:bit]
+address SQLsubexist;
+
+pattern aggr.subexist(b:bat[:any_1], g:bat[:oid], e:bat[:oid], s:bat[:oid], no_nil:bit) :bat[:bit]
 address SQLsubexist;
 
 pattern aggr.not_exist(b:any_1):bit
@@ -104,5 +107,8 @@ address SQLnot_exist;
 pattern bataggr.not_exist(b:bat[:any_1]):bat[:bit]
 address SQLnot_exist;
 
-command aggr.subnot_exist(b:bat[:any_1], g:bat[:oid], e:bat[:oid], no_nil:bit):bat[:bit]
+pattern aggr.subnot_exist(b:bat[:any_1], g:bat[:oid], e:bat[:oid], no_nil:bit):bat[:bit]
+address SQLsubnot_exist;
+
+pattern aggr.subexist(b:bat[:any_1], g:bat[:oid], e:bat[:oid], s:bat[:oid], no_nil:bit) :bat[:bit]
 address SQLsubnot_exist;
