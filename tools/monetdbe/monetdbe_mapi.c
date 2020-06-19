@@ -76,7 +76,7 @@ mapi_fetch_field(MapiHdl hdl, int fnr)
 	if (hdl && fnr < (int)hdl->result->ncols && hdl->current_row > 0 && hdl->current_row <= hdl->result->nrows) {
 		monetdbe_column *rcol = NULL;
 		if (monetdbe_result_fetch(hdl->result,  &rcol, fnr) == NULL) {
-			size_t r = hdl->current_row - 1;
+			size_t r = (size_t) hdl->current_row - 1;
 			if (rcol->type != monetdbe_str && !hdl->mapi_row[fnr]) {
 				hdl->mapi_row[fnr] = MAPIalloc(SIMPLE_TYPE_SIZE);
 				if (!hdl->mapi_row[fnr]) {

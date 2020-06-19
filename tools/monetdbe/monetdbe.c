@@ -462,7 +462,7 @@ monetdbe_startup(char* dbdir, monetdbe_options *opts)
 		GDKnr_threads = opts->nr_threads;
 	}
 	if (opts && opts->memorylimit) {
-		GDK_vm_maxsize = opts->memorylimit;
+		GDK_vm_maxsize = (size_t) opts->memorylimit;
 	}
 
 	GDKtracer_set_adapter(mbedded); /* set the output of GDKtracer logs */
