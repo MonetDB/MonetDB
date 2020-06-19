@@ -252,6 +252,7 @@ int mapi_get_len(MapiHdl hdl, int fnr)
 	return 0;
 }
 
+/* implement these to make dump.c error's more informative */
 void mapi_explain(Mapi mid, FILE *fd)
 {
 	(void)mid;
@@ -269,4 +270,3 @@ void mapi_explain_result(MapiHdl hdl, FILE *fd)
 	(void)hdl;
 	(void)fd;
 }
-

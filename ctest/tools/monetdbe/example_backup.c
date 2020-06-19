@@ -8,11 +8,10 @@ int
 main(void) 
 {
 	char* err = NULL;
-	char *msg;
 	monetdbe_database mdbe;
 
-	if ((msg = monetdbe_open(&mdbe, NULL, NULL)) != NULL)
-		error(msg);
+	if (monetdbe_open(&mdbe, NULL, NULL))
+		error("Failed to open database");
 
 	if ((err = monetdbe_query(mdbe, "CREATE TABLE test (b bool, t tinyint, s smallint, x integer, l bigint, "
 		"h bigint, "
@@ -21,9 +20,10 @@ main(void)
 	if ((err = monetdbe_query(mdbe, "INSERT INTO test VALUES (TRUE, 42, 42, 42, 42, 42, 42.42, 42.42, 'Hello'), (NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 'World')", NULL, NULL)) != NULL)
 		error(err)
 
-	msg = monetdbe_dump_database(mdbe, "/tmp/backup");
-
-	if ((msg = monetdbe_close(mdbe)) != NULL)
-		error(msg);
+	err = monetdbe_dump_database(mdbe, "/tmp/backup");
+	if (err)
+		error(err);
+	if (monetdbe_close(mdbe))
+		error("Failed to close database");
 	return 0;
 }

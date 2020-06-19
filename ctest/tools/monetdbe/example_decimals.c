@@ -21,8 +21,8 @@ main(void)
 	monetdbe_result* result = NULL;
 
 	// second argument is a string for the db directory or NULL for in-memory mode
-	if ((err = monetdbe_open(&mdbe, NULL, NULL)) != NULL)
-		error(err)
+	if (monetdbe_open(&mdbe, NULL, NULL))
+		error("Failed to open database")
 	if ((err = monetdbe_query(mdbe, "CREATE TABLE test (b bigint, d1 decimal(15,3), m decimal(4,2), y string)", NULL, NULL)) != NULL)
 		error(err)
 	if ((err = monetdbe_query(mdbe, "INSERT INTO test VALUES (42, 200042.024, 42.42, 'Hello'), (NULL, NULL, NULL, 'World')", NULL, NULL)) != NULL)
@@ -134,7 +134,7 @@ main(void)
 
 	if ((err = monetdbe_cleanup_result(mdbe, result)) != NULL)
 		error(err)
-	if ((err = monetdbe_close(mdbe)) != NULL)
-		error(err)
+	if (monetdbe_close(mdbe))
+		error("Failed to close database")
 	return 0;
 }
