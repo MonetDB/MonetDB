@@ -118,7 +118,7 @@ SQLsubzero_or_one(bat *ret, const bat *bid, const bat *gid, const bat *eid, bit 
 
 #define SQLall_imp(TPE) \
 	do {		\
-		TPE *restrict bp = (TPE*)Tloc(b, 0), val;	\
+		TPE *restrict bp = (TPE*)Tloc(b, 0), val = TPE##_nil;	\
 		for (; q < c; q++) { /* find first non nil */ \
 			val = bp[q]; \
 			if (!is_##TPE##_nil(val)) \
@@ -183,6 +183,7 @@ SQLall(ptr ret, const bat *bid)
 			int (*ocmp) (const void *, const void *) = ATOMcompare(b->ttype);
 			const void *restrict n = ATOMnilptr(b->ttype);
 			BATiter bi = bat_iterator(b);
+			p = n;
 
 			for (; q < c; q++) { /* find first non nil */
 				p = BUNtail(bi, q);
@@ -235,99 +236,201 @@ SQLall(ptr ret, const bat *bid)
 	return MAL_SUCCEED;
 }
 
-str
-SQLall_grp(bat *ret, const bat *bid, const bat *gp, const bat *gpe, bit *no_nil)
-{
-	BAT *l, *g, *e, *res;
-	BATiter li;
-	ssize_t p, *pos = NULL;
-	int error = 0, has_nil = 0;
-	int (*ocmp) (const void *, const void *);
-	const void *nilp;
+#define SQLall_grp_imp(TYPE)	\
+	do {			\
+		const TYPE *restrict vals = (const TYPE *) Tloc(l, 0); \
+		TYPE *restrict rp = (TYPE *) Tloc(res, 0); \
+		while (ncand > 0) {					\
+			ncand--;					\
+			i = canditer_next(&ci) - l->hseqbase;		\
+			if (gids == NULL ||				\
+			    (gids[i] >= min && gids[i] <= max)) {	\
+				if (gids)				\
+					gid = gids[i] - min;		\
+				else					\
+					gid = (oid) i;			\
+				if (oids[gid] != (BUN_NONE - 1)) { \
+					if (oids[gid] == BUN_NONE) { \
+						if (!is_##TYPE##_nil(vals[i])) \
+							oids[gid] = i; \
+					} else { \
+						if (vals[oids[gid]] != vals[i] && !is_##TYPE##_nil(vals[i])) \
+							oids[gid] = BUN_NONE - 1; \
+					} \
+				} \
+			} \
+		} \
+		for (i = 0; i < ngrp; i++) { /* convert the found oids in values */ \
+			BUN noid = oids[i]; \
+			if (noid >= (BUN_NONE - 1)) { \
+				rp[i] = TYPE##_nil; \
+				hasnil = 1; \
+			} else { \
+				rp[i] = vals[noid]; \
+			} \
+		} \
+	} while (0)
 
-	(void)no_nil;
-	if ((l = BATdescriptor(*bid)) == NULL) {
-		throw(SQL, "sql.all =", SQLSTATE(HY005) "Cannot access column descriptor");
+str
+SQLall_grp(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	bat *ret = getArgReference_bat(stk, pci, 0);
+	bat *lp = getArgReference_bat(stk, pci, 1);
+	bat *gp = getArgReference_bat(stk, pci, 2);
+	bat *gpe = getArgReference_bat(stk, pci, 3);
+	bat *sp = pci->argc == 6 ? getArgReference_bat(stk, pci, 4) : NULL;
+	//bit *no_nil = getArgReference_bit(stk, pci, pci->argc == 6 ? 5 : 4); no_nil argument is ignored
+	BAT *l = NULL, *g = NULL, *e = NULL, *s = NULL, *res = NULL;
+	const oid *restrict gids;
+	oid gid, min, max, *restrict oids = NULL; /* The oids variable controls if we have found a nil in the group so far */
+	BUN i, ngrp, ncand;
+	bit hasnil = 0;
+	struct canditer ci;
+	str msg = MAL_SUCCEED;
+
+	(void)cntxt;
+	(void)mb;
+	if ((l = BATdescriptor(*lp)) == NULL) {
+		msg = createException(SQL, "sql.all =", SQLSTATE(HY005) "Cannot access column descriptor");
+		goto bailout;
 	}
 	if ((g = BATdescriptor(*gp)) == NULL) {
-		BBPunfix(l->batCacheid);
-		throw(SQL, "sql.all =", SQLSTATE(HY005) "Cannot access column descriptor");
+		msg = createException(SQL, "sql.all =", SQLSTATE(HY005) "Cannot access column descriptor");
+		goto bailout;
 	}
 	if ((e = BATdescriptor(*gpe)) == NULL) {
-		BBPunfix(l->batCacheid);
-		BBPunfix(g->batCacheid);
-		throw(SQL, "sql.all =", SQLSTATE(HY005) "Cannot access column descriptor");
+		msg = createException(SQL, "sql.all =", SQLSTATE(HY005) "Cannot access column descriptor");
+		goto bailout;
 	}
-	li = bat_iterator(l);
-       	nilp = ATOMnilptr(l->ttype);
-	ocmp = ATOMcompare(l->ttype);
-	if (BATcount(g) > 0) {
-		BUN q, o, s, offset = 0;
-		BATiter gi = bat_iterator(g);
+	if (sp && (s = BATdescriptor(*sp)) == NULL) {
+		msg = createException(SQL, "sql.all =", SQLSTATE(HY005) "Cannot access column descriptor");
+		goto bailout;
+	}
 
-		if ((pos = GDKmalloc(sizeof(BUN)*BATcount(e))) == NULL) {
-			BBPunfix(l->batCacheid);
-			BBPunfix(g->batCacheid);
-			BBPunfix(e->batCacheid);
-			throw(SQL, "sql.all =", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+	if ((msg = (str)BATgroupaggrinit(l, g, e, s, &min, &max, &ngrp, &ci, &ncand)) != NULL)
+		goto bailout;
+	if (g == NULL) {
+		msg = createException(SQL, "sql.all =", SQLSTATE(HY005) "l and g must be aligned");
+		goto bailout;
+	}
+	if (BATcount(l) == 0 || ngrp == 0) {
+		const void *nilp = ATOMnilptr(l->ttype);
+		if ((res = BATconstant(ngrp == 0 ? 0 : min, l->ttype, nilp, ngrp, TRANSIENT)) == NULL) {
+			msg = createException(SQL, "sql.all =", SQLSTATE(HY005) "Cannot access column descriptor");
+			goto bailout;
 		}
-		for (s = 0; s < BATcount(e); s++) 
-			pos[s] = -1;
+	} else {
+		if ((res = COLnew(min, l->ttype, ngrp, TRANSIENT)) == NULL) {
+			msg = createException(SQL, "sql.all =", SQLSTATE(HY005) "Cannot access column descriptor");
+			goto bailout;
+		}
+		if ((oids = GDKmalloc(ngrp * sizeof(oid))) == NULL) {
+			msg = createException(SQL, "sql.all =", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+			goto bailout;
+		}
+		for (i = 0; i < ngrp; i++)
+			oids[i] = BUN_NONE;
 
-		offset = g->hseqbase - l->hseqbase;
-		o = BUNlast(g);
-		for (q = offset, s = 0; s < o; q++, s++) {
-			oid id = *(oid*)BUNtail(gi, s);
-			if (pos[id] == -2)
-				continue;
-			else if (pos[id] == -1) {
-				const void *lv = BUNtail(li, q);
-				if (ocmp(nilp, lv) != 0) /* not nil */
-					pos[id] = q;
-			} else {
-				const void *lv = BUNtail(li, q);
-				const void *rv = BUNtail(li, pos[id]);
+		if (!g || BATtdense(g))
+			gids = NULL;
+		else
+			gids = (const oid *) Tloc(g, 0);
 
-				if (ocmp(lv, rv) != 0) /* values are different */
-					if (ocmp(nilp, rv) != 0) /* and not nil */
-						pos[id] = -2;
+		switch (l->ttype) {
+		case TYPE_bit:
+			SQLall_grp_imp(bit);
+			break;
+		case TYPE_bte:
+			SQLall_grp_imp(bte);
+			break;
+		case TYPE_sht:
+			SQLall_grp_imp(sht);
+			break;
+		case TYPE_int:
+			SQLall_grp_imp(int);
+			break;
+		case TYPE_lng:
+			SQLall_grp_imp(lng);
+			break;
+#ifdef HAVE_HGE
+		case TYPE_hge:
+			SQLall_grp_imp(hge);
+			break;
+#endif
+		case TYPE_flt:
+			SQLall_grp_imp(flt);
+			break;
+		case TYPE_dbl:
+			SQLall_grp_imp(dbl);
+			break;
+		default: {
+			int (*ocmp) (const void *, const void *) = ATOMcompare(l->ttype);
+			const void *restrict nilp = ATOMnilptr(l->ttype);
+			BATiter li = bat_iterator(l);
+
+			while (ncand > 0) {
+				ncand--;
+				i = canditer_next(&ci) - l->hseqbase;
+				if (gids == NULL ||
+					(gids[i] >= min && gids[i] <= max)) {
+					if (gids)
+						gid = gids[i] - min;
+					else
+						gid = (oid) i;
+					if (oids[gid] != (BUN_NONE - 1)) {
+						if (oids[gid] == BUN_NONE) {
+							if (ocmp(BUNtail(li, i), nilp) != 0)
+								oids[gid] = i;
+						} else {
+							const void *pi = BUNtail(li, oids[gid]);
+							const void *pp = BUNtail(li, i);
+							if (ocmp(pi, pp) != 0 && ocmp(pp, nilp) != 0)
+								oids[gid] = BUN_NONE - 1;
+						}
+					}
+				}
+			}
+
+			for (i = 0; i < ngrp; i++) { /* convert the found oids in values */
+				BUN noid = oids[i];
+				void *next;
+				if (noid == BUN_NONE) {
+					next = (void*) nilp;
+					hasnil = 1;
+				} else {
+					next = BUNtail(li, noid);
+				}
+				if (BUNappend(res, next, false) != GDK_SUCCEED) {
+					msg = createException(SQL, "sql.all =", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+					goto bailout;
+				}
 			}
 		}
+		}
+		BATsetcount(res, ngrp);
+		res->tnil = hasnil != 0;
+		res->tnonil = hasnil == 0;
+		res->tkey = BATcount(res) <= 1;
+		res->tsorted = BATcount(res) <= 1;
+		res->trevsorted = BATcount(res) <= 1;
 	}
 
-	if ((res = COLnew(e->hseqbase, l->ttype, BATcount(e), TRANSIENT)) == NULL) {
+bailout:
+	if (res && !msg)
+		BBPkeepref(*ret = res->batCacheid);
+	else if (res)
+		BBPreclaim(res);
+	if (l)
 		BBPunfix(l->batCacheid);
+	if (g)
 		BBPunfix(g->batCacheid);
+	if (e)
 		BBPunfix(e->batCacheid);
-		GDKfree(pos);
-		throw(SQL, "sql.all =", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-	}
-
-	for (p = 0; p < (ssize_t)BATcount(e) && !error; p++) {
-		const void *v = nilp;
-		if (pos[p] >= 0) {
-			v = BUNtail(li, pos[p]);
-			if (ocmp(v, nilp) == 0)
-				has_nil = 1;
-		} else
-			has_nil = 1;
-		if (BUNappend(res, v, false) != GDK_SUCCEED)
-			error = 1;
-	}
-	GDKfree(pos);
-	if (error)
-		throw(SQL, "sql.all =", SQLSTATE(HY005) "all append failed");
-
-	res->hseqbase = g->hseqbase;
-	res->tnil = (has_nil)?1:0;
-	res->tnonil = (has_nil)?0:1;
-	res->tsorted = res->trevsorted = 0;
-	res->tkey = 0;
-	BBPunfix(l->batCacheid);
-	BBPunfix(g->batCacheid);
-	BBPunfix(e->batCacheid);
-	BBPkeepref(*ret = res->batCacheid);
-	return MAL_SUCCEED;
+	if (s)
+		BBPunfix(s->batCacheid);
+	if (oids)
+		GDKfree(oids);
+	return msg;
 }
 
 #define SQLnil_imp(TPE) \
