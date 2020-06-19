@@ -21,9 +21,9 @@ comment "if col contains exactly one value return this. Incase of more raise an 
 command subzero_or_one( b:bat[:any_1], g:bat[:oid], e:bat[:oid], no_nil:bit) :bat[:any_1]
 address SQLsubzero_or_one;
 
-command all( col:bat[:any_1]) :any_1
+command all(b:bat[:any_1]) :any_1
 address SQLall
-comment "if all values in col are equal return this, else nil";
+comment "if all values in b are equal return this, else nil";
 
 pattern suball(l:bat[:any_1], g:bat[:oid], e:bat[:oid], no_nil:bit) :bat[:any_1]
 address SQLall_grp
@@ -52,12 +52,8 @@ comment "if cmp then true, (nl or nr) nil then nil, else false";
 command all(cmp:bit, nl:bit, nr:bit) :bit
 address SQLall_cmp
 comment "if !cmp then false, (nl or nr) then nil, else true";
-module aggr;
 
-pattern anyequal(l:any_1,r:any_1) :bit
-address CMDvarEQ;
-pattern not_anyequal(l:any_1,r:any_1) :bit
-address CMDvarNE;
+module aggr;
 
 command anyequal(l:bat[:any_1], r:bat[:any_1]) :bit
 address SQLanyequal
