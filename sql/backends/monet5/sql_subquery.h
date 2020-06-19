@@ -23,10 +23,10 @@ sql5_export str SQLany_cmp(bit *ret, const bit *cmp, const bit *nl, const bit *n
 sql5_export str SQLall_cmp(bit *ret, const bit *cmp, const bit *nl, const bit *nr);
 sql5_export str SQLanyequal(bit *ret, const bat *l, const bat *r);
 sql5_export str SQLanyequal_grp(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-sql5_export str SQLanyequal_grp2(bat *ret, const bat *l, const bat *r, const bat *rid, const bat *gp, const bat *gpe, bit *no_nil);
+sql5_export str SQLanyequal_grp2(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 sql5_export str SQLallnotequal(bit *ret, const bat *l, const bat *r);
 sql5_export str SQLallnotequal_grp(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-sql5_export str SQLallnotequal_grp2(bat *ret, const bat *l, const bat *r, const bat *rid, const bat *gp, const bat *gpe, bit *no_nil);
+sql5_export str SQLallnotequal_grp2(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 
 sql5_export str SQLexist(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 sql5_export str SQLsubexist(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);

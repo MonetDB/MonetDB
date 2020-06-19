@@ -67,9 +67,13 @@ pattern subanyequal(l:bat[:any_1], r:bat[:any_1], g:bat[:oid], e:bat[:oid], s:ba
 address SQLanyequal_grp
 comment "if any value in r is equal to l return true, else if r has nil nil else false; with candidate list";
 
-command subanyequal(l:bat[:any_1], r:bat[:any_1], rid:bat[:oid], g:bat[:oid], e:bat[:oid], no_nil:bit) :bat[:bit]
+pattern subanyequal(l:bat[:any_1], r:bat[:any_1], rid:bat[:oid], g:bat[:oid], e:bat[:oid], no_nil:bit) :bat[:bit]
 address SQLanyequal_grp2
 comment "if any value in r is equal to l return true, else if r has nil nil else false, except if rid is nil (ie empty) then false";
+
+pattern subanyequal(l:bat[:any_1], r:bat[:any_1], rid:bat[:oid], g:bat[:oid], e:bat[:oid], s:bat[:oid], no_nil:bit) :bat[:bit]
+address SQLanyequal_grp2
+comment "if any value in r is equal to l return true, else if r has nil nil else false, except if rid is nil (ie empty) then false; with candidate list";
 
 pattern suballnotequal(l:bat[:any_1], r:bat[:any_1], g:bat[:oid], e:bat[:oid], no_nil:bit) :bat[:bit]
 address SQLallnotequal_grp
@@ -79,9 +83,13 @@ pattern suballnotequal(l:bat[:any_1], r:bat[:any_1], g:bat[:oid], e:bat[:oid], s
 address SQLallnotequal_grp
 comment "if all values in r are not equal to l return true, else if r has nil nil else false; with candidate list";
 
-command suballnotequal(l:bat[:any_1], r:bat[:any_1], rid:bat[:oid], g:bat[:oid], e:bat[:oid], no_nil:bit) :bat[:bit]
+pattern suballnotequal(l:bat[:any_1], r:bat[:any_1], rid:bat[:oid], g:bat[:oid], e:bat[:oid], no_nil:bit) :bat[:bit]
 address SQLallnotequal_grp2
 comment "if all values in r are not equal to l return true, else if r has nil nil else false, except if rid is nil (ie empty) then true";
+
+pattern suballnotequal(l:bat[:any_1], r:bat[:any_1], rid:bat[:oid], g:bat[:oid], e:bat[:oid], s:bat[:oid], no_nil:bit) :bat[:bit]
+address SQLallnotequal_grp2
+comment "if all values in r are not equal to l return true, else if r has nil nil else false, except if rid is nil (ie empty) then true; with candidate list";
 
 module bataggr;
 
