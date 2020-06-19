@@ -184,7 +184,7 @@ monetdbe_cleanup_result_internal(monetdbe_database dbhdl, monetdbe_result* resul
 	Client c = (Client) dbhdl;
 	mvc *m = NULL;
 
-	assert(!res->dbhdl || res->dbhdl == dbhdl);
+	assert(!res || !res->dbhdl || res->dbhdl == dbhdl);
 	if ((msg = validate_database_handle(dbhdl, "monetdbe.monetdbe_cleanup_result_internal")) != MAL_SUCCEED)
 		return msg;
 	if ((msg = getSQLContext(c, NULL, &m, NULL)) != MAL_SUCCEED)
@@ -570,9 +570,8 @@ monetdbe_dump_database(monetdbe_database dbhdl, const char *filename)
 		return msg; //The dbhdl is invalid, there is no transaction going
 	}
 	MT_lock_unset(&embedded_lock);
-	struct MapiStruct mid;
+	struct MapiStruct mid = { .mdbe = dbhdl };
 
-	mid.mdbe = dbhdl;
 	/* open file stream */
 	stream *fd = open_wastream(filename);
 	if (fd) {
@@ -598,9 +597,8 @@ monetdbe_dump_table(monetdbe_database dbhdl, const char *sname, const char *tnam
 		return msg; //The dbhdl is invalid, there is no transaction going
 	}
 	MT_lock_unset(&embedded_lock);
-	struct MapiStruct mid;
+	struct MapiStruct mid = { .mdbe = dbhdl };
 
-	mid.mdbe = dbhdl;
 	/* open file stream */
 	stream *fd = open_wastream(filename);
 	if (fd) {

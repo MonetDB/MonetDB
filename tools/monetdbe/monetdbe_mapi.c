@@ -40,18 +40,20 @@ MapiMsg
 mapi_close_handle(MapiHdl hdl)
 {
 	if (hdl) {
-		if (hdl->mapi_row) {
-			for (size_t i=0; i<hdl->result->ncols; i++) {
-				if (hdl->mapi_row[i])
-					MAPIfree(hdl->mapi_row[i]);
+		char *msg = NULL;
+		if (hdl->result) {
+			if (hdl->mapi_row) {
+				for (size_t i=0; i<hdl->result->ncols; i++) {
+					if (hdl->mapi_row[i])
+						MAPIfree(hdl->mapi_row[i]);
+				}
+				MAPIfree(hdl->mapi_row);
 			}
-			MAPIfree(hdl->mapi_row);
+			msg = monetdbe_cleanup_result(hdl->mid->mdbe, hdl->result);
+			if (msg)
+				hdl->mid->msg = msg;
 		}
-
-		char *msg = monetdbe_cleanup_result(hdl->mid->mdbe, hdl->result);
 		MAPIfree(hdl);
-		if (msg)
-			hdl->mid->msg = msg;
 	}
 	return MOK;
 }
