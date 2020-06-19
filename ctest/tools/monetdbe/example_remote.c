@@ -11,6 +11,7 @@
 #include <stdio.h>
 #include <inttypes.h>
 
+#define expected_error(msg) {fprintf(stderr, "Failure: %s\n", msg); return 0;}
 #define error(msg) {fprintf(stderr, "Failure: %s\n", msg); return -1;}
 
 int
@@ -22,7 +23,7 @@ main(void)
 
 	// second argument is a string for the db directory or NULL for in-memory mode
 	if ((err = monetdbe_open(&mdbe, "monetdb://localhost:5000/sf1?user=monetdb&password=monetdb", NULL)) != NULL)
-		error(err)
+		expected_error(err)
 	if ((err = monetdbe_query(mdbe, "CREATE TABLE test (x integer, y string)", NULL, NULL)) != NULL)
 		error(err)
 	if ((err = monetdbe_query(mdbe, "INSERT INTO test VALUES (42, 'Hello'), (NULL, 'World')", NULL, NULL)) != NULL)

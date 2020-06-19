@@ -15,7 +15,7 @@ add_library(monetdbe SHARED)
 target_sources(monetdbe
   PRIVATE
   monetdbe.c
-  monetdbe_mapi.c
+  monetdbe_mapi.c monetdbe_mapi.h
   ${CMAKE_SOURCE_DIR}/clients/mapiclient/dump.c
   PUBLIC
   ${monetdbe_public_headers})
