@@ -58,7 +58,7 @@ mapi_fetch_row(MapiHdl hdl)
 {
 	int n = 0;
 	if (hdl && hdl->current_row < hdl->result->nrows) {
-		n = ++hdl->current_row;
+		n = (int) ++hdl->current_row;
 	}
 	return n;
 }
@@ -226,7 +226,7 @@ int
 mapi_get_field_count(MapiHdl hdl)
 {
 	if (hdl) {
-		return hdl->result->ncols;
+		return (int) hdl->result->ncols;
 	}
 	return 0;
 }
