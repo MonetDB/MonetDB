@@ -20,8 +20,6 @@ target_sources(moptions
   ${moptions_public_headers})
 
 target_include_directories(moptions
-  PRIVATE
-  $<$<PLATFORM_ID:Windows>:${HAVE_GETOPT_H}>
   PUBLIC
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
   $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}/monetdb>)

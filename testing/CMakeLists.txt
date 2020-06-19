@@ -89,10 +89,6 @@ endif()
 
 add_executable(Mdiff)
 
-target_include_directories(Mdiff
-  PRIVATE
-  $<$<PLATFORM_ID:Windows>:${HAVE_GETOPT_H}>)
-
 target_sources(Mdiff
   PRIVATE
   difflib.c

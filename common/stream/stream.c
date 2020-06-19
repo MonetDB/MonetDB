@@ -101,10 +101,8 @@
 #endif
 
 #ifdef HAVE_ICONV
-#ifdef HAVE_ICONV_H
 #include <iconv.h>
-#endif
-#ifdef HAVE_LANGINFO_H
+#ifdef HAVE_NL_LANGINFO
 #include <langinfo.h>
 #endif
 #endif
@@ -130,6 +128,10 @@
 #ifdef NATIVE_WIN32
 #define pclose _pclose
 #define fileno(fd) _fileno(fd)
+#endif
+
+#ifndef S_ISREG
+#define S_ISREG(mode)	(((mode) & _S_IFMT) == _S_IFREG)
 #endif
 
 #define UTF8BOM		"\xEF\xBB\xBF"	/* UTF-8 encoding of Unicode BOM */

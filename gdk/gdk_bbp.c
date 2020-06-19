@@ -82,6 +82,9 @@
 #ifdef _MSC_VER
 #define access(f, m)	_access(f, m)
 #endif
+#ifndef S_ISDIR
+#define S_ISDIR(mode)	(((mode) & _S_IFMT) == _S_IFDIR)
+#endif
 
 /*
  * The BBP has a fixed address, so re-allocation due to a growing BBP
