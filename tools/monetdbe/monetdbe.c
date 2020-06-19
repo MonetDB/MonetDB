@@ -26,6 +26,7 @@
 #include "rel_updates.h"
 #include "monet_options.h"
 #include "mapi.h"
+#include "monetdbe_mapi.h"
 
 #define UNUSED(x) (void)(x)
 

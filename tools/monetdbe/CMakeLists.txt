@@ -15,7 +15,7 @@ add_library(monetdbe SHARED)
 target_sources(monetdbe
   PRIVATE
   monetdbe.c
-  monetdbe_mapi.c mapi.h
+  monetdbe_mapi.c
   ${CMAKE_SOURCE_DIR}/clients/mapiclient/dump.c
   PUBLIC
   ${monetdbe_public_headers})
@@ -30,6 +30,7 @@ target_include_directories(monetdbe
 
 target_compile_definitions(monetdbe
   PRIVATE
+  LIBMAPI
   LIBMONETDBE)
 
 set_target_properties(monetdbe
@@ -46,7 +47,6 @@ target_link_libraries(monetdbe
   mutils
   mcrypt
   gdk
-  mapi
   monetdb5
   sql
   $<$<NOT:$<PLATFORM_ID:Windows>>:m>

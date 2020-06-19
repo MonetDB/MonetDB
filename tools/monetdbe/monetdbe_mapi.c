@@ -2,14 +2,17 @@
 #include "monetdb_config.h"
 #include "stream.h"
 #include "mapi.h"
+#include "monetdbe_mapi.h"
 
 #define MAPIalloc(sz) malloc(sz)
 #define MAPIfree(p)   free(p)
 
-char *
+MapiMsg
 mapi_error(Mapi mid)
 {
-	return mid->msg;
+	if (mid->msg)
+		return MERROR;
+	return MOK;
 }
 
 MapiHdl 
