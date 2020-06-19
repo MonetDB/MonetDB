@@ -7,13 +7,14 @@
 #]]
 
 if(WIN32)
-  add_custom_target(mtest
-    COMMAND
-    ${CMAKE_INSTALL_FULL_BINDIR}/monetdb_mtest.bat
-    WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR})
+  set (MONETDB_MTEST_SCRIPT "monetdb_mtest.bat")
 else()
+  set (MONETDB_MTEST_SCRIPT "monetdb_mtest.sh")
+endif()
+
+if (TESTING)
   add_custom_target(mtest
-    COMMAND
-    ${CMAKE_INSTALL_FULL_BINDIR}/monetdb_mtest.sh
-    WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR})
+      COMMAND
+      ${CMAKE_INSTALL_FULL_BINDIR}/${MONETDB_MTEST_SCRIPT}
+      WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR})
 endif()
