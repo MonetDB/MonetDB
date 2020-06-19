@@ -110,16 +110,17 @@ static bool monetdbe_embedded_initialized = false;
 static char *monetdbe_embedded_url = NULL;
 static int open_dbs = 0;
 
-static char* monetdbe_cleanup_result_internal(monetdbe_database_internal *mdbe, monetdbe_result* result);
+static char* monetdbe_cleanup_result_internal(monetdbe_database_internal *mdbe, monetdbe_result_internal* res);
 
 static char*
 commit_action(mvc* m, monetdbe_database_internal *mdbe, monetdbe_result **result, monetdbe_result_internal *res_internal)
 {
 	/* handle autocommit */
     	char *commit_msg = SQLautocommit(m);
+
 	if ((mdbe->msg != MAL_SUCCEED || commit_msg != MAL_SUCCEED)) {
 		if (res_internal) {
-			char* other = monetdbe_cleanup_result_internal(mdbe, (monetdbe_result*) res_internal);
+			char* other = monetdbe_cleanup_result_internal(mdbe, res_internal);
 			if (other)
 				freeException(other);
 		}
@@ -179,31 +180,25 @@ monetdbe_destroy_column(monetdbe_column* column)
 }
 
 static char*
-monetdbe_cleanup_result_internal(monetdbe_database_internal *mdbe, monetdbe_result* result)
+monetdbe_cleanup_result_internal(monetdbe_database_internal *mdbe, monetdbe_result_internal* result)
 {
-	monetdbe_result_internal* res = (monetdbe_result_internal *) result;
 	mvc *m = NULL;
 
-	assert(!res || !res->mdbe || res->mdbe == mdbe);
+	assert(!result || !result->mdbe || result->mdbe == mdbe);
 	if ((mdbe->msg = validate_database_handle(mdbe, "monetdbe.monetdbe_cleanup_result_internal")) != MAL_SUCCEED)
 		return mdbe->msg;
 	if ((mdbe->msg = getSQLContext(mdbe->c, NULL, &m, NULL)) != MAL_SUCCEED)
 		goto cleanup;
 
-	if (!result) {
-		mdbe->msg = createException(MAL, "monetdbe.monetdbe_cleanup_result_internal", "Parameter result is NULL");
-		goto cleanup;
-	}
+	if (result->monetdbe_resultset)
+		res_tables_destroy(result->monetdbe_resultset);
 
-	if (res->monetdbe_resultset)
-		res_tables_destroy(res->monetdbe_resultset);
-
-	if (res->converted_columns) {
-		for (size_t i = 0; i < res->res.ncols; i++)
-			monetdbe_destroy_column(res->converted_columns[i]);
-		GDKfree(res->converted_columns);
+	if (result->converted_columns) {
+		for (size_t i = 0; i < result->res.ncols; i++)
+			monetdbe_destroy_column(result->converted_columns[i]);
+		GDKfree(result->converted_columns);
 	}
-	GDKfree(res);
+	GDKfree(result);
 cleanup:
 	return commit_action(m, mdbe, NULL, NULL);
 }
@@ -355,8 +350,10 @@ monetdbe_close_internal(monetdbe_database_internal *mdbe)
 	if (!mdbe)
 		return 0;
 
-	if (mdbe->msg)
+	if (mdbe->msg) {
 		freeException(mdbe->msg);
+		mdbe->msg = NULL;
+	}
 	if (validate_database_handle_noerror(mdbe)) {
 		open_dbs--;
 		SQLexitClient(mdbe->c);
@@ -398,12 +395,6 @@ monetdbe_open_internal(monetdbe_database_internal *mdbe)
 		goto cleanup;
 	}
 cleanup:
-	if (mdbe->msg && mdbe->c) {
-		/* although startup failed close (cleanup) should be called by the application */
-		// char* other = monetdbe_close_internal(mdbe);
-		// if (other)
-		//	freeException(other);
-	}
 	if (mdbe->msg)
 		return -2;
 	return 0;
@@ -849,9 +840,14 @@ char*
 monetdbe_cleanup_result(monetdbe_database dbhdl, monetdbe_result* result)
 {
 	monetdbe_database_internal *mdbe = (monetdbe_database_internal*)dbhdl;
+	monetdbe_result_internal* res = (monetdbe_result_internal *) result;
 
 	MT_lock_set(&embedded_lock);
-	mdbe->msg = monetdbe_cleanup_result_internal(mdbe, result);
+	if (!result) {
+		mdbe->msg = createException(MAL, "monetdbe.monetdbe_cleanup_result_internal", "Parameter result is NULL");
+	} else {
+		mdbe->msg = monetdbe_cleanup_result_internal(mdbe, res);
+	}
 	MT_lock_unset(&embedded_lock);
 	return mdbe->msg;
 }
