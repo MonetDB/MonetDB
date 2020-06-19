@@ -116,12 +116,30 @@ SQLsubzero_or_one(bat *ret, const bat *bid, const bat *gid, const bat *eid, bit 
 	return MAL_SUCCEED;
 }
 
+#define SQLall_imp(TPE) \
+	do {		\
+		TPE *restrict bp = (TPE*)Tloc(b, 0), val;	\
+		for (; q < c; q++) { /* find first non nil */ \
+			val = bp[q]; \
+			if (!is_##TPE##_nil(val)) \
+				break; \
+		} \
+		for (; q < c; q++) { \
+			TPE pp = bp[q]; \
+			if (val != pp && !is_##TPE##_nil(pp)) { /* values != and not nil */ \
+				val = TPE##_nil; \
+				break; \
+			} \
+		} \
+		p = &val; \
+	} while (0)
+
 str
 SQLall(ptr ret, const bat *bid)
 {
 	BAT *b;
-	BUN c, _s;
-	const void *p;
+	BUN c, q = 0, _s;
+	const void *p = NULL;
 
 	if ((b = BATdescriptor(*bid)) == NULL) {
 		throw(SQL, "sql.all", SQLSTATE(HY005) "Cannot access column descriptor");
@@ -130,30 +148,55 @@ SQLall(ptr ret, const bat *bid)
 	if (c == 0) {
 		p = ATOMnilptr(b->ttype);
 	} else if (c == 1 || (b->tsorted && b->trevsorted)) {
-		BATiter bi = bat_iterator(b);
-		p = BUNtail(bi, 0);
+		p = BUNtail(bat_iterator(b), 0);
 	} else if (b->ttype == TYPE_void && is_oid_nil(b->tseqbase)) {
 		p = ATOMnilptr(b->ttype);
 	} else {
-		BUN q, r;
-		int (*ocmp) (const void *, const void *);
-		const void *n = ATOMnilptr(b->ttype);
-		BATiter bi = bat_iterator(b);
-		r = BUNlast(b);
-		ocmp = ATOMcompare(b->ttype);
-		for (q = 0; q < r; q++) { /* find first non nil */
-			p = BUNtail(bi, q);
-			if (ocmp(n, p) != 0) 
-				break;
-		}
-		for (; q < r; q++) {
-			const void *c = BUNtail(bi, q);
-			if (ocmp(p, c) != 0) { /* values != */
-				if (ocmp(n, c) != 0) { /* and not nil */ 
+		switch (b->ttype) {
+		case TYPE_bit:
+			SQLall_imp(bit);
+			break;
+		case TYPE_bte:
+			SQLall_imp(bte);
+			break;
+		case TYPE_sht:
+			SQLall_imp(sht);
+			break;
+		case TYPE_int:
+			SQLall_imp(int);
+			break;
+		case TYPE_lng:
+			SQLall_imp(lng);
+			break;
+#ifdef HAVE_HGE
+		case TYPE_hge:
+			SQLall_imp(hge);
+			break;
+#endif
+		case TYPE_flt:
+			SQLall_imp(flt);
+			break;
+		case TYPE_dbl:
+			SQLall_imp(dbl);
+			break;
+		default: {
+			int (*ocmp) (const void *, const void *) = ATOMcompare(b->ttype);
+			const void *restrict n = ATOMnilptr(b->ttype);
+			BATiter bi = bat_iterator(b);
+
+			for (; q < c; q++) { /* find first non nil */
+				p = BUNtail(bi, q);
+				if (ocmp(n, p) != 0)
+					break;
+			}
+			for (; q < c; q++) {
+				const void *pp = BUNtail(bi, q);
+				if (ocmp(p, pp) != 0 && ocmp(n, pp) != 0) { /*  values != and not nil */ 
 					p = n;
 					break;
 				}
 			}
+		}
 		}
 	}
 	_s = ATOMsize(ATOMtype(b->ttype));
@@ -391,7 +434,6 @@ SQLnil_grp(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	BUN i, ngrp, ncand;
 	struct canditer ci;
 	str msg = MAL_SUCCEED;
-	bit hasnil = 0;
 
 	(void)cntxt;
 	(void)mb;
@@ -491,8 +533,8 @@ SQLnil_grp(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		res->tkey = BATcount(res) <= 1;
 		res->tsorted = BATcount(res) <= 1;
 		res->trevsorted = BATcount(res) <= 1;
-		res->tnil = hasnil != 0;
-		res->tnonil = hasnil == 0;
+		res->tnil = false;
+		res->tnonil = true;
 	}
 
 bailout:
