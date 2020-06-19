@@ -118,39 +118,42 @@ SQLsubzero_or_one(bat *ret, const bat *bid, const bat *gid, const bat *eid, bit 
 
 #define SQLall_imp(TPE) \
 	do {		\
-		TPE *restrict bp = (TPE*)Tloc(b, 0), val = TPE##_nil;	\
-		for (; q < c; q++) { /* find first non nil */ \
-			val = bp[q]; \
-			if (!is_##TPE##_nil(val)) \
-				break; \
-		} \
-		for (; q < c; q++) { \
-			TPE pp = bp[q]; \
-			if (val != pp && !is_##TPE##_nil(pp)) { /* values != and not nil */ \
-				val = TPE##_nil; \
-				break; \
+		TPE val = TPE##_nil;	\
+		if (c > 0) { \
+			TPE *restrict bp = (TPE*)Tloc(b, 0); \
+			if (c == 1 || (b->tsorted && b->trevsorted)) { \
+				val = bp[0]; \
+			} else { \
+				for (; q < c; q++) { /* find first non nil */ \
+					val = bp[q]; \
+					if (!is_##TPE##_nil(val)) \
+						break; \
+				} \
+				for (; q < c; q++) { \
+					TPE pp = bp[q]; \
+					if (val != pp && !is_##TPE##_nil(pp)) { /* values != and not nil */ \
+						val = TPE##_nil; \
+						break; \
+					} \
+				} \
 			} \
 		} \
-		p = &val; \
+		*(TPE *) ret = val; \
 	} while (0)
 
 str
 SQLall(ptr ret, const bat *bid)
 {
 	BAT *b;
-	BUN c, q = 0, _s;
-	const void *p = NULL;
+	BUN c, q = 0;
 
-	if ((b = BATdescriptor(*bid)) == NULL) {
+	if ((b = BATdescriptor(*bid)) == NULL)
 		throw(SQL, "sql.all", SQLSTATE(HY005) "Cannot access column descriptor");
-	}
+
 	c = BATcount(b);
-	if (c == 0) {
-		p = ATOMnilptr(b->ttype);
-	} else if (c == 1 || (b->tsorted && b->trevsorted)) {
-		p = BUNtail(bat_iterator(b), 0);
-	} else if (b->ttype == TYPE_void && is_oid_nil(b->tseqbase)) {
-		p = ATOMnilptr(b->ttype);
+	if (b->ttype == TYPE_void) {
+		oid p = oid_nil;
+		memcpy(ret, &p, sizeof(oid));
 	} else {
 		switch (b->ttype) {
 		case TYPE_bit:
@@ -181,56 +184,41 @@ SQLall(ptr ret, const bat *bid)
 			break;
 		default: {
 			int (*ocmp) (const void *, const void *) = ATOMcompare(b->ttype);
-			const void *restrict n = ATOMnilptr(b->ttype);
-			BATiter bi = bat_iterator(b);
-			p = n;
+			const void *n = ATOMnilptr(b->ttype), *p = n;
+			size_t s;
 
-			for (; q < c; q++) { /* find first non nil */
-				p = BUNtail(bi, q);
-				if (ocmp(n, p) != 0)
-					break;
-			}
-			for (; q < c; q++) {
-				const void *pp = BUNtail(bi, q);
-				if (ocmp(p, pp) != 0 && ocmp(n, pp) != 0) { /*  values != and not nil */ 
-					p = n;
-					break;
+			if (c > 0) {
+				BATiter bi = bat_iterator(b);
+				if (c == 1 || (b->tsorted && b->trevsorted)) {
+					p = BUNtail(bi, 0);
+				} else {
+					for (; q < c; q++) { /* find first non nil */
+						p = BUNtail(bi, q);
+						if (ocmp(n, p) != 0)
+							break;
+					}
+					for (; q < c; q++) {
+						const void *pp = BUNtail(bi, q);
+						if (ocmp(p, pp) != 0 && ocmp(n, pp) != 0) { /* values != and not nil */ 
+							p = n;
+							break;
+						}
+					}
 				}
 			}
+			s = ATOMlen(ATOMtype(b->ttype), p);
+			if (ATOMvarsized(b->ttype)) {
+				*(ptr *) ret = GDKmalloc(s);
+				if (*(ptr *) ret == NULL) {
+					BBPunfix(b->batCacheid);
+					throw(SQL, "sql.all", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+				}
+				memcpy(*(ptr *)ret, p, s);
+			} else {
+				memcpy(ret, p, s);
+			}
 		}
 		}
-	}
-	_s = ATOMsize(ATOMtype(b->ttype));
-	if (b->ttype == TYPE_void)
-		p = &oid_nil;
-	if (ATOMextern(b->ttype)) {
-		_s = ATOMlen(ATOMtype(b->ttype), p);
-		*(ptr *) ret = GDKmalloc(_s);
-		if (*(ptr *) ret == NULL) {
-			BBPunfix(b->batCacheid);
-			throw(SQL, "sql.all", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-		}
-		memcpy(*(ptr *) ret, p, _s);
-	} else if (b->ttype == TYPE_bat) {
-		bat bid = *(bat *) p;
-		if ((*(BAT **) ret = BATdescriptor(bid)) == NULL) {
-			BBPunfix(b->batCacheid);
-			throw(SQL, "sql.all", SQLSTATE(HY005) "Cannot access column descriptor");
-		}
-	} else if (_s == 4) {
-		*(int *) ret = *(int *) p;
-	} else if (_s == 1) {
-		*(bte *) ret = *(bte *) p;
-	} else if (_s == 2) {
-		*(sht *) ret = *(sht *) p;
-	} else if (_s == 8) {
-		*(lng *) ret = *(lng *) p;
-#ifdef HAVE_HGE
-	} else if (_s == 16) {
-		*(hge *) ret = *(hge *) p;
-#endif
-	} else {
-		memcpy(ret, p, _s);
 	}
 	BBPunfix(b->batCacheid);
 	return MAL_SUCCEED;
