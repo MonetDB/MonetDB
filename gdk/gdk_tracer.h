@@ -39,10 +39,11 @@
 
 
 // ADAPTERS
-#define FOREACH_ADPTR(ADPTR)			\
+#define FOREACH_ADPTR(ADPTR)	\
 	ADPTR( BASIC )				\
 	ADPTR( PROFILER )			\
-						\
+	ADPTR( MBEDDED )			\
+								\
 	ADPTR( ADAPTERS_COUNT )
 
 typedef enum {
