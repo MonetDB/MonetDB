@@ -358,49 +358,86 @@ SQLnil(bit *ret, const bat *bid)
 	return MAL_SUCCEED;
 }
 
-#define SQLnil_grp_imp(TPE) \
-	do {		\
-		TPE *restrict lp = (TPE*)Tloc(l, 0);	\
-		for (BUN q = offset, s = 0; s < o; q++, s++) {	\
-			TPE lv = lp[q]; \
-			oid id = *(oid*)BUNtail(gi, s); \
-			if (ret[id] != TRUE && is_##TPE##_nil(lv)) \
-				ret[id] = TRUE; \
+#define SQLnil_grp_imp(TYPE)	\
+	do {								\
+		const TYPE *restrict vals = (const TYPE *) Tloc(l, 0);		\
+		while (ncand > 0) {					\
+			ncand--;					\
+			i = canditer_next(&ci) - l->hseqbase;		\
+			if (gids == NULL ||				\
+			    (gids[i] >= min && gids[i] <= max)) {	\
+				if (gids)				\
+					gid = gids[i] - min;		\
+				else					\
+					gid = (oid) i;			\
+				if (ret[gid] != TRUE && is_##TYPE##_nil(vals[i])) \
+					ret[gid] = TRUE; \
+			} \
 		} \
 	} while (0)
 
 str
-SQLnil_grp(bat *ret, const bat *bid, const bat *gp, const bat *gpe, bit *no_nil)
+SQLnil_grp(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	BAT *l, *g, *e, *res;
-	bit F = FALSE;
-	BUN offset = 0;
+	bat *ret = getArgReference_bat(stk, pci, 0);
+	bat *lp = getArgReference_bat(stk, pci, 1);
+	bat *gp = getArgReference_bat(stk, pci, 2);
+	bat *gpe = getArgReference_bat(stk, pci, 3);
+	bat *sp = pci->argc == 6 ? getArgReference_bat(stk, pci, 4) : NULL;
+	//bit *no_nil = getArgReference_bit(stk, pci, pci->argc == 6 ? 5 : 4); no_nil argument is ignored
+	BAT *l = NULL, *g = NULL, *e = NULL, *s = NULL, *res = NULL;
+	const oid *restrict gids;
+	oid gid, min, max;
+	BUN i, ngrp, ncand;
+	struct canditer ci;
+	str msg = MAL_SUCCEED;
+	bit hasnil = 0;
 
-	(void)no_nil;
-	if ((l = BATdescriptor(*bid)) == NULL) {
-		throw(SQL, "sql.any =", SQLSTATE(HY005) "Cannot access column descriptor");
+	(void)cntxt;
+	(void)mb;
+	if ((l = BATdescriptor(*lp)) == NULL) {
+		msg = createException(SQL, "sql.nil", SQLSTATE(HY005) "Cannot access column descriptor");
+		goto bailout;
 	}
 	if ((g = BATdescriptor(*gp)) == NULL) {
-		BBPunfix(l->batCacheid);
-		throw(SQL, "sql.any =", SQLSTATE(HY005) "Cannot access column descriptor");
+		msg = createException(SQL, "sql.nil", SQLSTATE(HY005) "Cannot access column descriptor");
+		goto bailout;
 	}
 	if ((e = BATdescriptor(*gpe)) == NULL) {
-		BBPunfix(l->batCacheid);
-		BBPunfix(g->batCacheid);
-		throw(SQL, "sql.any =", SQLSTATE(HY005) "Cannot access column descriptor");
+		msg = createException(SQL, "sql.nil", SQLSTATE(HY005) "Cannot access column descriptor");
+		goto bailout;
 	}
-	if ((res = BATconstant(0, TYPE_bit, &F, BATcount(e), TRANSIENT)) == NULL) {
-		BBPunfix(l->batCacheid);
-		BBPunfix(g->batCacheid);
-		BBPunfix(e->batCacheid);
-		throw(SQL, "sql.any =", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+	if (sp && (s = BATdescriptor(*sp)) == NULL) {
+		msg = createException(SQL, "sql.nil", SQLSTATE(HY005) "Cannot access column descriptor");
+		goto bailout;
 	}
-	BAThseqbase(res, e->hseqbase);
-	offset = g->hseqbase - l->hseqbase;
-	if (BATcount(g) > 0) {
-		bit *restrict ret = (bit*)Tloc(res, 0);
-		BATiter gi = bat_iterator(g);
-		BUN o = BUNlast(g);
+
+	if ((msg = (str)BATgroupaggrinit(l, g, e, s, &min, &max, &ngrp, &ci, &ncand)) != NULL)
+		goto bailout;
+	if (g == NULL) {
+		msg = createException(SQL, "sql.nil", SQLSTATE(HY005) "l and g must be aligned");
+		goto bailout;
+	}
+	if (BATcount(l) == 0 || ngrp == 0) {
+		bit F = FALSE;
+		if ((res = BATconstant(ngrp == 0 ? 0 : min, TYPE_bit, &F, ngrp, TRANSIENT)) == NULL) {
+			msg = createException(SQL, "sql.nil", SQLSTATE(HY005) "Cannot access column descriptor");
+			goto bailout;
+		}
+	} else {
+		bit *restrict ret;
+
+		if ((res = COLnew(min, TYPE_bit, ngrp, TRANSIENT)) == NULL) {
+			msg = createException(SQL, "sql.nil", SQLSTATE(HY005) "Cannot access column descriptor");
+			goto bailout;
+		}
+		ret = (bit *) Tloc(res, 0);
+		memset(ret, FALSE, ngrp * sizeof(bit));
+
+		if (!g || BATtdense(g))
+			gids = NULL;
+		else
+			gids = (const oid *) Tloc(g, 0);
 
 		switch (l->ttype) {
 		case TYPE_bit:
@@ -431,29 +468,47 @@ SQLnil_grp(bat *ret, const bat *bid, const bat *gp, const bat *gpe, bit *no_nil)
 			break;
 		default: {
 			int (*ocmp) (const void *, const void *) = ATOMcompare(l->ttype);
-			const void *restrict nilp = ATOMnilptr(l->ttype);
+			const void *nilp = ATOMnilptr(l->ttype);
 			BATiter li = bat_iterator(l);
 
-			for (BUN q = offset, s = 0; s < o; q++, s++) {
-				const void *restrict lv = BUNtail(li, q);
-				const oid id = *(oid*)BUNtail(gi, s);
-
-				if (ret[id] != TRUE && ocmp(lv, nilp) == 0)
-					ret[id] = TRUE;
+			while (ncand > 0) {
+				ncand--;
+				i = canditer_next(&ci) - l->hseqbase;
+				if (gids == NULL ||	
+					(gids[i] >= min && gids[i] <= max)) {
+					if (gids)
+						gid = gids[i] - min;
+					else
+						gid = (oid) i;
+					const void *lv = BUNtail(li, i);
+					if (ret[gid] != TRUE && ocmp(lv, nilp) == 0)
+						ret[gid] = TRUE;
+				}
 			}
 		}
 		}
+		BATsetcount(res, ngrp);
+		res->tkey = BATcount(res) <= 1;
+		res->tsorted = BATcount(res) <= 1;
+		res->trevsorted = BATcount(res) <= 1;
+		res->tnil = hasnil != 0;
+		res->tnonil = hasnil == 0;
 	}
-	res->hseqbase = g->hseqbase;
-	res->tnil = 0;
-	res->tnonil = 1;
-	res->tsorted = res->trevsorted = 0;
-	res->tkey = 0;
-	BBPunfix(l->batCacheid);
-	BBPunfix(g->batCacheid);
-	BBPunfix(e->batCacheid);
-	BBPkeepref(*ret = res->batCacheid);
-	return MAL_SUCCEED;
+
+bailout:
+	if (res && !msg)
+		BBPkeepref(*ret = res->batCacheid);
+	else if (res)
+		BBPreclaim(res);
+	if (l)
+		BBPunfix(l->batCacheid);
+	if (g)
+		BBPunfix(g->batCacheid);
+	if (e)
+		BBPunfix(e->batCacheid);
+	if (s)
+		BBPunfix(s->batCacheid);
+	return msg;
 }
 
 str 
