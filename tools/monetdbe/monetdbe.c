@@ -418,6 +418,7 @@ static char*
 monetdbe_startup(char* dbdir, monetdbe_options *opts)
 {
 	char* msg = MAL_SUCCEED;//, *err;
+	const char* mbedded = "MBEDDED";
 	monetdbe_result* res = NULL;
 	void* c;
 	opt *set = NULL;
@@ -462,6 +463,8 @@ monetdbe_startup(char* dbdir, monetdbe_options *opts)
 	if (opts && opts->memorylimit) {
 		GDK_vm_maxsize = opts->memorylimit;
 	}
+
+	GDKtracer_set_adapter(mbedded); /* set the output of GDKtracer logs */
 
 	if (!dbdir) { /* in-memory */
 		if (BBPaddfarm(NULL, (1 << PERSISTENT) | (1 << TRANSIENT), false) != GDK_SUCCEED) {
