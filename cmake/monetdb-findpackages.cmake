@@ -128,4 +128,6 @@ if(RINTEGRATION)
   find_package(LibR)
 endif()
 
+find_package(Sphinx)
+
 # vim: set ts=2:sw=2:et

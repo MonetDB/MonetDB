@@ -18,7 +18,7 @@ else()
 endif()
 
 option(TESTING 
-  "Enable support for testing" 
+  "Enable support for testing"
   ON)
 
 cmake_dependent_option(CINTEGRATION 
