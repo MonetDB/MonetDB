@@ -37,7 +37,7 @@ The API wraps the internal data types to those more convenient for programming d
 Connection and server options
 -----------------------------
 
-.. c:function:: char* monetdbe_open(monetdbe_database *db, char *url)
+.. c:function:: int monetdbe_open(monetdbe_database *db, char *url, monetdbe_options *options)
 
     Initialize a monetdbe_database structure. The database of interest is denoted by an url and denote either ':memory:', /path/directory,
     mapi:monetdb://company.nl:50000/database. The latter refers to a MonetDB server location.
@@ -45,7 +45,7 @@ Connection and server options
     Opening the same database is allowed, but opening another one concurrently will throw an error for now.
     There may be multiple connections to the MonetDB servers.
 
-.. c:function:: char* monetdbe_close(monetdbe_database *db)
+.. c:function:: int monetdbe_close(monetdbe_database db)
 
     Close the database handler and release the resources for another database connection.
     From here on the connection can not be used anymore to pass queries and any pending result set is cleaned up.
@@ -114,13 +114,13 @@ Database append
 
 Backup and restore
 ------------------
-.. c:function:: char* monetdbe_backup(monetdbe_database db, char *backupfile);
+.. c:function:: char* monetdbe_dump_database(monetdbe_database db, char *backupfile);
 
-    [TODO] Dump a :memory: database as a collection of SQL statements on a local file
+    Dump a :memory: database as a collection of SQL statements on a local file
 
 .. c:function:: char* monetdbe_dump_table(monetdbe_database db, const char *schema_name, const char *table_name, const char *backupfile);
     
-    [TODO] Dump a specific tables
+    Dump a specific tables
 
 .. c:function:: char* monetdbe_restore(monetdbe_database db, char *localfile);
 
