@@ -160,5 +160,5 @@ target_include_directories(sqlembedded
 install(EXPORT sqlTargets
   FILE sqlTargets.cmake
   NAMESPACE MonetDB::
-  DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/cmake
+  DESTINATION ${EXPORT_TARGET_PATH}
   COMPONENT monetdbdev)

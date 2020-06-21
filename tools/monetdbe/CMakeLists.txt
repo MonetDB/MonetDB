@@ -73,5 +73,5 @@ install(TARGETS
 install(EXPORT monetdbeTargets
   FILE monetdbeTargets.cmake
   NAMESPACE MonetDB::
-  DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/cmake
+  DESTINATION ${EXPORT_TARGET_PATH}
   COMPONENT serverdev)
