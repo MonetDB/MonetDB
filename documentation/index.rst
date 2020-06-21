@@ -10,8 +10,21 @@ Welcome to MonetDB's documentation!
    :maxdepth: 3
    :caption: Contents:
 
-   monetdbe
-   source
+   monetdbe/authors
+   monetdbe/introduction
+   monetdbe/dev_notes
+   monetdbe/examples
+   monetdbe/installation
+   monetdbe/monetdbe_api
+   source/build
+   source/build-fedora
+   source/build-debian
+   source/clients
+   source/design
+   source/input
+   source/json
+   source/manual_pages
+   source/release
 
 Indices and tables
 ==================
