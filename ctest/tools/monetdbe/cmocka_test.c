@@ -17,22 +17,19 @@
 #define error(msg) {fprintf(stderr, "Failure: %s\n", msg); return -1;}
 
 static int setup(void **state) {
-	char* err = NULL;
 	monetdbe_database mdbe = NULL;
-	if ((err = monetdbe_open(&mdbe, NULL, NULL)) != NULL)
-		error(err)
+	if (monetdbe_open(&mdbe, NULL, NULL))
+		error("Failed to open database")
 
 	*state = mdbe;
      return 0;
 }
 
 static int teardown(void **state) {
-	char* err = NULL;
-
 	monetdbe_database mdbe = *state;
 
-	if ((err = monetdbe_close(mdbe)) != NULL)
-		error(err)
+	if (monetdbe_close(mdbe))
+		error("Failed to close database")
      return 0;
 }
 
