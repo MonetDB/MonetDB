@@ -106,7 +106,7 @@ Query prepare, bind, execute
     Remove the execution pland and all bound variables.
 
 Database append
--=-------------
+---------------
 
 .. c:function:: char* monetdbe_append(monetdbe_database db, const char* schema, const char* table, monetdbe_result *result, size_t column_count);
 
@@ -129,14 +129,9 @@ Backup and restore
 Miscellaneous
 -------------
 
-.. c:function::bool  monetdbe_is_initialized(void)
-
-    Simple function to check if MonetDBe has already been started. [TODO For a remote connection
-    it behaves like a 'ping', telling if the remote server is available for interactions.]
-
 .. c:function:: char * monetdbe_error(monetdbe_database db)
 
-    [TODO] return the last error associated with the connection object.
+    return the last error associated with the connection object.
 
 Caveats and errors
 ------------------
