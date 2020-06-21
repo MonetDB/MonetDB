@@ -397,6 +397,7 @@ monetdbe_open_internal(monetdbe_database_internal *mdbe)
 cleanup:
 	if (mdbe->msg)
 		return -2;
+	open_dbs++;
 	return 0;
 }
 
@@ -524,8 +525,6 @@ monetdbe_open(monetdbe_database *dbhdl, char *url, monetdbe_options *opts)
 	}
 	if (!mdbe->msg)
 		res = monetdbe_open_internal(mdbe);
-	if (res)
-		open_dbs++;
 	MT_lock_unset(&embedded_lock);
 	if (mdbe->msg)
 		return -2;
