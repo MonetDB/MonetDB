@@ -1554,6 +1554,13 @@ JSONkeyArray(json *ret, json *js)
 			}
 			if (jt->elm[i].valuelen)
 				strncpy(r, jt->elm[i].value - 1, jt->elm[i].valuelen + 2);
+			else {
+				r = GDKstrdup("\"\"");
+				if(r == NULL) {
+					JSONfree(jt);
+					goto memfail;
+				}
+			}
 			result = JSONglue(result, r, ',');
 			if (result == NULL) {
 				JSONfree(jt);

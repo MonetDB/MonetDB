@@ -9411,6 +9411,7 @@ optimize_rel(mvc *sql, sql_rel *rel, int *g_changes, int level, int value_based_
 		rel = rel_visitor_topdown(sql, rel, &rel_push_count_down, &changes);
 		if (level <= 0) {
 			rel = rel_visitor_topdown(sql, rel, &rel_push_select_down, &changes); 
+			rel = rel_visitor_bottomup(sql, rel, &rel_remove_empty_select, &e_changes); 
 			rel = rel_visitor_topdown(sql, rel, &rel_push_join_down, &changes); 
 		}
 
