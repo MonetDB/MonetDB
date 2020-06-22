@@ -9,12 +9,12 @@
 #include <ctype.h>
 #include <monetdbe.h>
 
-typedef struct MapiStruct {
+struct MapiStruct {
 	monetdbe_database mdbe;
 	char *msg;
-} *Mapi;
+};
 
-typedef struct MapiStatement {
+struct MapiStatement {
 	Mapi mid;
 	char *query;
 	monetdbe_result *result;
@@ -22,6 +22,6 @@ typedef struct MapiStatement {
 	monetdbe_cnt current_row;
 	monetdbe_cnt affected_rows;
 	char *msg;
-} *MapiHdl;
+};
 
 #endif // MONETDBE_MAPI_H_

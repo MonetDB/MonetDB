@@ -34,7 +34,7 @@ if(WITH_PCRE)
   find_package(PCRE)
 endif()
 
-if(${CMAKE_SYSTEM_NAME} STREQUAL "Darwin" AND ${CMAKE_SYSTEM_VERSION} VERSION_LESS "19.0.0")
+if(${CMAKE_SYSTEM_NAME} STREQUAL "Darwin" AND ${CMAKE_HOST_SYSTEM_VERSION} VERSION_LESS "19.0.0")
   find_package(CommonCrypto)
 else()
   find_package(OpenSSL)

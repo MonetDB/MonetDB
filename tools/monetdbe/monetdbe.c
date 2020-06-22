@@ -313,16 +313,8 @@ monetdbe_query_internal(monetdbe_database_internal *mdbe, char* query, monetdbe_
 		if (m->results) {
 			res_internal->res.ncols = (size_t) m->results->nr_cols;
 			res_internal->monetdbe_resultset = m->results;
-			if (m->results->nr_cols > 0 && m->results->order) {
-				BAT* bb = BATdescriptor(m->results->order);
-				m->results = NULL;
-				if (!bb) {
-					mdbe->msg = createException(MAL, "monetdbe.monetdbe_query_internal", RUNTIME_OBJECT_MISSING);
-					goto cleanup;
-				}
-				res_internal->res.nrows = BATcount(bb);
-				BBPunfix(bb->batCacheid);
-			}
+			if (m->results->nr_cols > 0)
+				res_internal->res.nrows = m->results->nr_rows;
 			m->results = NULL;
 			res_internal->converted_columns = GDKzalloc(sizeof(monetdbe_column*) * res_internal->res.ncols);
 			if (!res_internal->converted_columns) {
@@ -794,16 +786,8 @@ monetdbe_execute(monetdbe_statement *stmt, monetdbe_result **result, monetdbe_cn
 		if (m->results) {
 			res_internal->res.ncols = (size_t) m->results->nr_cols;
 			res_internal->monetdbe_resultset = m->results;
-			if (m->results->nr_cols > 0 && m->results->order) {
-				BAT* bb = BATdescriptor(m->results->order);
-				m->results = NULL;
-				if (!bb) {
-					mdbe->msg = createException(MAL, "monetdbe.monetdbe_query_internal", RUNTIME_OBJECT_MISSING);
-					goto cleanup;
-				}
-				res_internal->res.nrows = BATcount(bb);
-				BBPunfix(bb->batCacheid);
-			}
+			if (m->results->nr_cols > 0)
+				res_internal->res.nrows = m->results->nr_rows;
 			m->results = NULL;
 			res_internal->converted_columns = GDKzalloc(sizeof(monetdbe_column*) * res_internal->res.ncols);
 			if (!res_internal->converted_columns) {
@@ -1007,9 +991,9 @@ GENERATE_BASE_HEADERS(monetdbe_data_timestamp, timestamp);
 		mdbe->msg = createException(MAL, "monetdbe.monetdbe_result_fetch", MAL_MALLOC_FAIL); \
 		goto cleanup;                                                      \
 	}                                                                          \
-	bat_data->type = monetdbe_##tpe;                                            \
+	bat_data->type = monetdbe_##tpe;                                           \
 	bat_data->is_null = tpe##_is_null;                                         \
-	bat_data->scale = pow(10, sqltpe->scale);                                  \
+	if (sqltpe->type->radix == 10) bat_data->scale = pow(10, sqltpe->scale);   \
 	column_result = (monetdbe_column*) bat_data;
 
 #define GENERATE_BAT_INPUT(b, tpe, tpe_name, mtype)                                \
