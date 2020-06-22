@@ -48,18 +48,20 @@ wkbNULLcopy(void)
 static inline void
 degrees2radians(double *x, double *y, double *z)
 {
-	*x *= M_PI / 180.0;
-	*y *= M_PI / 180.0;
-	*z *= M_PI / 180.0;
+	double val = M_PI / 180.0;
+	*x *= val;
+	*y *= val;
+	*z *= val;
 }
 
 /** convert radians to degrees */
 static inline void
 radians2degrees(double *x, double *y, double *z)
 {
-	*x *= 180.0 / M_PI;
-	*y *= 180.0 / M_PI;
-	*z *= 180.0 / M_PI;
+	double val = 180.0 / M_PI;
+	*x *= val;
+	*y *= val;
+	*z *= val;
 }
 
 static str
