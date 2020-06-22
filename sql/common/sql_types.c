@@ -1279,7 +1279,7 @@ sqltypeinit( sql_allocator *sa)
 		sql_create_aggr(sa, "grouping", "", "", TRUE, HGE, 1, ANY);
 #endif
 
-	sql_create_aggr(sa, "not_unique", "sql", "not_unique", TRUE, BIT, 1, OID);
+	sql_create_aggr(sa, "not_unique", "aggr", "not_unique", TRUE, BIT, 1, OID);
 	/* well to be precise it does reduce and map */
 
 	/* functions needed for all types */
