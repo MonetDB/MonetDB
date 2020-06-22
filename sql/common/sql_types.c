@@ -1293,9 +1293,9 @@ sqltypeinit( sql_allocator *sa)
 	sql_create_func(sa, "<", "calc", "<", FALSE, FALSE, SCALE_FIX, 0, BIT, 2, ANY, ANY);
 	sql_create_func(sa, "<=", "calc", "<=", FALSE, FALSE, SCALE_FIX, 0, BIT, 2, ANY, ANY);
 	sql_create_func(sa, "between", "calc", "between", TRUE, FALSE, SCALE_FIX, 0, BIT, 8, ANY, ANY, ANY, BIT, BIT, BIT, BIT, BIT);
-	sql_create_aggr(sa, "zero_or_one", "sql", "zero_or_one", TRUE, ANY, 1, ANY);
-	sql_create_aggr(sa, "all", "sql", "all", TRUE, ANY, 1, ANY);
-	sql_create_aggr(sa, "null", "sql", "null", TRUE, BIT, 1, ANY);
+	sql_create_aggr(sa, "zero_or_one", "aggr", "zero_or_one", TRUE, ANY, 1, ANY);
+	sql_create_aggr(sa, "all", "aggr", "all", TRUE, ANY, 1, ANY);
+	sql_create_aggr(sa, "null", "aggr", "null", TRUE, BIT, 1, ANY);
 	sql_create_func(sa, "any", "sql", "any", TRUE, FALSE, SCALE_NONE, 0, BIT, 3, BIT, BIT, BIT);
 	sql_create_func(sa, "all", "sql", "all", TRUE, FALSE, SCALE_NONE, 0, BIT, 3, BIT, BIT, BIT);
 	sql_create_aggr(sa, "anyequal", "aggr", "anyequal", TRUE, BIT, 1, ANY); /* needs 3 arguments (l,r,nil)(ugh) */

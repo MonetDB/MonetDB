@@ -386,32 +386,212 @@ SQLnil_grp(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	return MAL_SUCCEED;
 }
 
-str 
-SQLany_cmp(bit *ret, const bit *cmp, const bit *nl, const bit *nr)
+static inline bit
+any_cmp(const bit cmp, const bit nl, const bit nr)
 {
-	*ret = FALSE;
-	if (*nr == bit_nil) /* empty -> FALSE */
-		*ret = FALSE;
-	else if (*cmp == TRUE)
-		*ret = TRUE;
-	else if (*nl == TRUE || *nr == TRUE)
-		*ret = bit_nil;
-	return MAL_SUCCEED;
+	if (nr == bit_nil) /* empty -> FALSE */
+		return FALSE;
+	else if (cmp == TRUE)
+		return TRUE;
+	else if (nl == TRUE || nr == TRUE)
+		return bit_nil;
+	return FALSE;
+}
+
+#define ANY_ALL_CMP_BULK(FUNC, CMP, NL, NR) \
+	do { \
+		for (BUN i = 0 ; i < q ; i++) { \
+			res_l[i] = FUNC(CMP, NL, NR); \
+			has_nil |= is_bit_nil(res_l[i]); \
+		} \
+	} while (0);
+
+str
+SQLany_cmp(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	bat *ret = isaBatType(getArgType(mb, pci, 0)) ? getArgReference_bat(stk, pci, 0) : NULL;
+	bat *cid = isaBatType(getArgType(mb, pci, 1)) ? getArgReference_bat(stk, pci, 1) : NULL;
+	bat *nlid = isaBatType(getArgType(mb, pci, 2)) ? getArgReference_bat(stk, pci, 2) : NULL;
+	bat *nrid = isaBatType(getArgType(mb, pci, 3)) ? getArgReference_bat(stk, pci, 3) : NULL;
+	BAT *cmp = NULL, *nl = NULL, *nr = NULL, *res = NULL;
+	str msg = MAL_SUCCEED;
+	BUN q = 0;
+	bit *restrict res_l = NULL, *cmp_l = NULL, *nl_l = NULL, *nr_l = NULL, cmp_at = FALSE, nl_at = FALSE, nr_at = FALSE, has_nil = 0;
+
+	(void) cntxt;
+	if (cid && (cmp = BATdescriptor(*cid)) == NULL) {
+		msg = createException(SQL, "sql.any_cmp", SQLSTATE(HY005) "Cannot access column descriptor");
+		goto bailout;
+	}
+	if (nlid && (nl = BATdescriptor(*nlid)) == NULL) {
+		msg = createException(SQL, "sql.any_cmp", SQLSTATE(HY005) "Cannot access column descriptor");
+		goto bailout;
+	}
+	if (nrid && (nr = BATdescriptor(*nrid)) == NULL) {
+		msg = createException(SQL, "sql.any_cmp", SQLSTATE(HY005) "Cannot access column descriptor");
+		goto bailout;
+	}
+	if (cmp)
+		cmp_l = (bit *) Tloc(cmp, 0);
+	else
+		cmp_at = *getArgReference_bit(stk, pci, 1);
+	if (nl)
+		nl_l = (bit *) Tloc(nl, 0);
+	else
+		nl_at = *getArgReference_bit(stk, pci, 2);
+	if (nr)
+		nr_l = (bit *) Tloc(nr, 0);
+	else
+		nr_at = *getArgReference_bit(stk, pci, 3);
+
+	if (cmp || nl || nr) {
+		q = cmp ? BATcount(cmp) : nl ? BATcount(nl) : BATcount(nr);
+		if ((res = COLnew(cmp ? cmp->hseqbase : nl ? nl->hseqbase : nr->hseqbase, TYPE_bit, q, TRANSIENT)) == NULL)
+			goto bailout;
+		res_l = (bit *) Tloc(res, 0);
+	}
+
+	if (!cmp && !nl && !nr) {
+		bit *b = getArgReference_bit(stk, pci, 0);
+		*b = any_cmp(cmp_at, nl_at, nr_at);
+	} else if (cmp && !nl && !nr) {
+		ANY_ALL_CMP_BULK(any_cmp, cmp_l[i], nl_at, nr_at);
+	} else if (!cmp && nl && !nr) {
+		ANY_ALL_CMP_BULK(any_cmp, cmp_at, nl_l[i], nr_at);
+	} else if (!cmp && !nl && nr) {
+		ANY_ALL_CMP_BULK(any_cmp, cmp_at, nl_at, nr_l[i]);
+	} else if (!cmp && nl && nr) {
+		ANY_ALL_CMP_BULK(any_cmp, cmp_at, nl_l[i], nr_l[i]);
+	} else if (cmp && !nl && nr) {
+		ANY_ALL_CMP_BULK(any_cmp, cmp_l[i], nl_at, nr_l[i]);
+	} else if (cmp && nl && !nr) {
+		ANY_ALL_CMP_BULK(any_cmp, cmp_l[i], nl_l[i], nr_at);
+	} else {
+		ANY_ALL_CMP_BULK(any_cmp, cmp_l[i], nl_l[i], nr_l[i]);
+	}
+
+	if (res) {
+		BATsetcount(res, q);
+		res->tkey = BATcount(res) <= 1;
+		res->tsorted = BATcount(res) <= 1;
+		res->trevsorted = BATcount(res) <= 1;
+		res->tnil = has_nil;
+		res->tnonil = !has_nil;
+	}
+
+bailout:
+	if (res && !msg)
+		BBPkeepref(*ret = res->batCacheid);
+	else if (res)
+		BBPreclaim(res);
+	if (cmp)
+		BBPunfix(cmp->batCacheid);
+	if (nl)
+		BBPunfix(nl->batCacheid);
+	if (nr)
+		BBPunfix(nr->batCacheid);
+	return msg;
+}
+
+static inline bit
+all_cmp(const bit cmp, const bit nl, const bit nr)
+{
+	if (nr == bit_nil) /* empty -> TRUE */
+		return TRUE;
+	else if (cmp == FALSE || (cmp == bit_nil && !nl && !nr))
+		return FALSE;
+	else if (nl == TRUE || nr == TRUE)
+		return bit_nil;
+	else 
+		return cmp;
+	return TRUE;
 }
 
 str 
-SQLall_cmp(bit *ret, const bit *cmp, const bit *nl, const bit *nr)
+SQLall_cmp(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	*ret = TRUE;
-	if (*nr == bit_nil) /* empty -> TRUE */
-		*ret = TRUE;
-	else if (*cmp == FALSE || (*cmp == bit_nil && !*nl && !*nr))
-		*ret = FALSE;
-	else if (*nl == TRUE || *nr == TRUE)
-		*ret = bit_nil;
-	else 
-		*ret = *cmp;
-	return MAL_SUCCEED;
+	bat *ret = isaBatType(getArgType(mb, pci, 0)) ? getArgReference_bat(stk, pci, 0) : NULL;
+	bat *cid = isaBatType(getArgType(mb, pci, 1)) ? getArgReference_bat(stk, pci, 1) : NULL;
+	bat *nlid = isaBatType(getArgType(mb, pci, 2)) ? getArgReference_bat(stk, pci, 2) : NULL;
+	bat *nrid = isaBatType(getArgType(mb, pci, 3)) ? getArgReference_bat(stk, pci, 3) : NULL;
+	BAT *cmp = NULL, *nl = NULL, *nr = NULL, *res = NULL;
+	str msg = MAL_SUCCEED;
+	BUN q = 0;
+	bit *restrict res_l = NULL, *cmp_l = NULL, *nl_l = NULL, *nr_l = NULL, cmp_at = FALSE, nl_at = FALSE, nr_at = FALSE, has_nil = 0;
+
+	(void) cntxt;
+	if (cid && (cmp = BATdescriptor(*cid)) == NULL) {
+		msg = createException(SQL, "sql.all_cmp", SQLSTATE(HY005) "Cannot access column descriptor");
+		goto bailout;
+	}
+	if (nlid && (nl = BATdescriptor(*nlid)) == NULL) {
+		msg = createException(SQL, "sql.all_cmp", SQLSTATE(HY005) "Cannot access column descriptor");
+		goto bailout;
+	}
+	if (nrid && (nr = BATdescriptor(*nrid)) == NULL) {
+		msg = createException(SQL, "sql.all_cmp", SQLSTATE(HY005) "Cannot access column descriptor");
+		goto bailout;
+	}
+	if (cmp)
+		cmp_l = (bit *) Tloc(cmp, 0);
+	else
+		cmp_at = *getArgReference_bit(stk, pci, 1);
+	if (nl)
+		nl_l = (bit *) Tloc(nl, 0);
+	else
+		nl_at = *getArgReference_bit(stk, pci, 2);
+	if (nr)
+		nr_l = (bit *) Tloc(nr, 0);
+	else
+		nr_at = *getArgReference_bit(stk, pci, 3);
+
+	if (cmp || nl || nr) {
+		q = cmp ? BATcount(cmp) : nl ? BATcount(nl) : BATcount(nr);
+		if ((res = COLnew(cmp ? cmp->hseqbase : nl ? nl->hseqbase : nr->hseqbase, TYPE_bit, q, TRANSIENT)) == NULL)
+			goto bailout;
+		res_l = (bit *) Tloc(res, 0);
+	}
+
+	if (!cmp && !nl && !nr) {
+		bit *b = getArgReference_bit(stk, pci, 0);
+		*b = all_cmp(cmp_at, nl_at, nr_at);
+	} else if (cmp && !nl && !nr) {
+		ANY_ALL_CMP_BULK(all_cmp, cmp_l[i], nl_at, nr_at);
+	} else if (!cmp && nl && !nr) {
+		ANY_ALL_CMP_BULK(all_cmp, cmp_at, nl_l[i], nr_at);
+	} else if (!cmp && !nl && nr) {
+		ANY_ALL_CMP_BULK(all_cmp, cmp_at, nl_at, nr_l[i]);
+	} else if (!cmp && nl && nr) {
+		ANY_ALL_CMP_BULK(all_cmp, cmp_at, nl_l[i], nr_l[i]);
+	} else if (cmp && !nl && nr) {
+		ANY_ALL_CMP_BULK(all_cmp, cmp_l[i], nl_at, nr_l[i]);
+	} else if (cmp && nl && !nr) {
+		ANY_ALL_CMP_BULK(all_cmp, cmp_l[i], nl_l[i], nr_at);
+	} else {
+		ANY_ALL_CMP_BULK(all_cmp, cmp_l[i], nl_l[i], nr_l[i]);
+	}
+
+	if (res) {
+		BATsetcount(res, q);
+		res->tkey = BATcount(res) <= 1;
+		res->tsorted = BATcount(res) <= 1;
+		res->trevsorted = BATcount(res) <= 1;
+		res->tnil = has_nil;
+		res->tnonil = !has_nil;
+	}
+
+bailout:
+	if (res && !msg)
+		BBPkeepref(*ret = res->batCacheid);
+	else if (res)
+		BBPreclaim(res);
+	if (cmp)
+		BBPunfix(cmp->batCacheid);
+	if (nl)
+		BBPunfix(nl->batCacheid);
+	if (nr)
+		BBPunfix(nr->batCacheid);
+	return msg;
 }
 
 #define SQLanyequal_or_not_imp(TPE, OUTPUT) \
