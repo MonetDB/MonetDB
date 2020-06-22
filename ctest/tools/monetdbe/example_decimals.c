@@ -60,7 +60,10 @@ main(void)
 					if (col->data[r] == col->null_value) {
 						printf("NULL");
 					} else {
-						printf("%d", col->data[r]);
+						if (col->scale)
+							printf("%d.%02d", col->data[r]/(int)col->scale, col->data[r]%(int)col->scale);
+						else
+							printf("%d", col->data[r]);
 					}
 					break;
 				}
@@ -78,7 +81,10 @@ main(void)
 					if (col->data[r] == col->null_value) {
 						printf("NULL");
 					} else {
-						printf("%" PRId64, col->data[r]);
+						if (col->scale)
+							printf("%" PRId64 ".%03" PRId64, col->data[r]/(int64_t)col->scale, col->data[r]%(int64_t)col->scale);
+						else
+							printf("%" PRId64, col->data[r]);
 					}
 					break;
 				}
