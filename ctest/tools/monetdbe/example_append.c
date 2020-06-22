@@ -39,7 +39,7 @@ main(void)
 	if ((err = monetdbe_query(mdbe, "SELECT * FROM test; ", &result, NULL)) != NULL)
 		error(err)
 	fprintf(stdout, "Query result with %zu cols and %"PRId64" rows\n", result->ncols, result->nrows);
-	monetdbe_column* rcol[result->ncols];
+	monetdbe_column* rcol[6];
 	for (int64_t r = 0; r < result->nrows; r++) {
 		for (size_t c = 0; c < result->ncols; c++) {
 			if ((err = monetdbe_result_fetch(result, rcol+c, c)) != NULL)
@@ -116,7 +116,7 @@ main(void)
 		}
 		printf("\n");
 	}
-	if ((err = monetdbe_append(mdbe, "sys", "test", rcol, result->ncols)) != NULL)
+	if ((err = monetdbe_append(mdbe, "sys", "test", rcol, 6)) != NULL)
 		error(err)
 	/* we can now cleanup the previous query */
 	if ((err = monetdbe_cleanup_result(mdbe, result)) != NULL)
