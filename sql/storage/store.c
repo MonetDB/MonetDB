@@ -1534,10 +1534,10 @@ insert_args(sql_trans *tr, sql_table *sysarg, list *args, sqlid funcid, const ch
 	}
 }
 
-static void
-insert_functions(sql_trans *tr, sql_table *sysfunc, sql_table *sysarg)
+void
+insert_functions(sql_trans *tr, sql_table *sysfunc, list *funcs_list, sql_table *sysarg)
 {
-	for (node *n = funcs->h; n; n = n->next) {
+	for (node *n = funcs_list->h; n; n = n->next) {
 		sql_func *f = n->data;
 		bit se = (f->type == F_AGGR) ? FALSE : f->side_effect;
 		int number = 0, ftype = (int) f->type, flang = (int) FUNC_LANG_INT;
@@ -1829,7 +1829,7 @@ store_load(backend_stack stk) {
 
 	sql_allocator *sa;
 	sql_trans *tr;
-	sql_table *t, *types, *funcs, *args;
+	sql_table *t, *types, *functions, *arguments;
 	sql_schema *s, *p = NULL;
 
 	lng lng_store_oid;
@@ -1893,7 +1893,7 @@ store_load(backend_stack stk) {
 	bootstrap_create_column(tr, t, "eclass", "int", 32);
 	bootstrap_create_column(tr, t, "schema_id", "int", 32);
 
-	funcs = t = bootstrap_create_table(tr, s, "functions");
+	functions = t = bootstrap_create_table(tr, s, "functions");
 	bootstrap_create_column(tr, t, "id", "int", 32);
 	bootstrap_create_column(tr, t, "name", "varchar", 256);
 	bootstrap_create_column(tr, t, "func", "varchar", 8196);
@@ -1911,7 +1911,7 @@ store_load(backend_stack stk) {
 	bootstrap_create_column(tr, t, "system", "boolean", 1);
 	bootstrap_create_column(tr, t, "semantics", "boolean", 1);
 
-	args = t = bootstrap_create_table(tr, s, "args");
+	arguments = t = bootstrap_create_table(tr, s, "args");
 	bootstrap_create_column(tr, t, "id", "int", 32);
 	bootstrap_create_column(tr, t, "func_id", "int", 32);
 	bootstrap_create_column(tr, t, "name", "varchar", 256);
@@ -2021,7 +2021,7 @@ store_load(backend_stack stk) {
 
 	if (first) {
 		insert_types(tr, types);
-		insert_functions(tr, funcs, args);
+		insert_functions(tr, functions, funcs, arguments);
 		insert_schemas(tr);
 
 		if (sql_trans_commit(tr) != SQL_OK) {

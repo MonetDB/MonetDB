@@ -2971,6 +2971,20 @@ sql_update_default(Client c, mvc *sql, const char *prev_schema)
 					"DROP FUNCTION \"sys\".\"getcontent\"(url);\n"
 					"DROP AGGREGATE \"json\".\"output\"(json);\n");
 
+			/* Move sys.degrees and sys.radians to sql_types.c definitions */
+			pos += snprintf(buf + pos, bufsize - pos,
+					"delete from args where args.id in (select args.id from args left join functions on args.func_id = functions.id where args.name in ('r', 'd') and functions.id is null);\n"
+					"delete from privileges where obj_id in (select obj_id from privileges left join functions on privileges.obj_id = functions.id where functions.id is null and privileges.obj_id not in ((SELECT tables.id from tables), 0));\n");
+
+			sql_subtype *types[2] = {sql_bind_localtype("flt"), sql_bind_localtype("dbl")};
+			list *functions = sa_list(sql->sa);
+			for (int i = 0; i < 2; i++) {
+				sql_subtype *next = types[i];
+				list_append(functions, sql_create_func(sql->sa, "degrees", "mmath", "degrees", FALSE, FALSE, SCALE_FIX, 0, next->type, 1, next->type));
+				list_append(functions, sql_create_func(sql->sa, "radians", "mmath", "radians", FALSE, FALSE, SCALE_FIX, 0, next->type, 1, next->type));
+			}
+			insert_functions(sql->session->tr, mvc_bind_table(sql, sys, "functions"), functions, mvc_bind_table(sql, sys, "args"));
+
 			pos += snprintf(buf + pos, bufsize - pos, "set schema \"%s\";\n", prev_schema);
 			assert(pos < bufsize);
 

@@ -15,7 +15,6 @@ add_library(sql SHARED)
 
 set(include_sql_files
   09_like
-  10_math
   12_url
   13_date
   14_inet

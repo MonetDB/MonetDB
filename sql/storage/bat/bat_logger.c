@@ -64,6 +64,8 @@ bl_preversion(int oldversion, int newversion)
 
 #define N(schema, table, column)	schema "_" table "_" column
 
+#define D(schema, table)	"D_" schema "_" table
+
 #if defined CATALOG_AUG2018 || defined CATALOG_JUN2020
 static int
 find_table_id(logger *lg, const char *val, int *sid)
@@ -862,7 +864,43 @@ bl_postversion(void *lg)
 			   "storage", str_nil,
 			   NULL) != GDK_SUCCEED)
 			return GDK_FAIL;
+		{	/* move sql.degrees and sql.radians functions from 10_math.sql script to sql_types list */
+			BAT *func_func = temp_descriptor(logger_find_bat(lg, N("sys", "functions", "name"), 0, 0));
+			if (func_func == NULL) {
+				return GDK_FAIL;
+			}
+			BAT *degrees_func = BATselect(func_func, NULL, "degrees", NULL, 1, 1, 0);
+			if (degrees_func == NULL) {
+				bat_destroy(func_func);
+				return GDK_FAIL;
+			}
+			BAT *radians_func = BATselect(func_func, NULL, "radians", NULL, 1, 1, 0);
+			bat_destroy(func_func);
+			if (radians_func == NULL) {
+				bat_destroy(degrees_func);
+				return GDK_FAIL;
+			}
 
+			BAT *cands = BATmergecand(degrees_func, radians_func);
+			bat_destroy(degrees_func);
+			bat_destroy(radians_func);
+			if (cands == NULL) {
+				return GDK_FAIL;
+			}
+
+			BAT *sys_funcs = temp_descriptor(logger_find_bat(lg, D("sys", "functions"), 0, 0));
+			if (sys_funcs == NULL) {
+				bat_destroy(cands);
+				return GDK_FAIL;
+			}
+			gdk_return res = BATappend(sys_funcs, cands, NULL, true);
+			bat_destroy(cands);
+			bat_destroy(sys_funcs);
+			if (res != GDK_SUCCEED)
+				return res;
+			if ((res = logger_upgrade_bat(lg, D("sys", "functions"), LOG_TAB, 0)) != GDK_SUCCEED)
+				return res;
+		}
 		{	/* Fix SQL aggregation functions defined on the wrong modules: sql.null, sql.all, sql.zero_or_one and sql.not_unique */
 			BAT *func_mod = temp_descriptor(logger_find_bat(lg, N("sys", "functions", "mod"), 0, 0));
 			if (func_mod == NULL)
