@@ -2181,11 +2181,11 @@ split_join_exps(sql_rel *rel, list *joinable, list *not_joinable)
 			int left_reference = 0, right_reference = 0;
 
 			/* we can handle thetajoins, rangejoins and filter joins (like) */
-			/* ToDo how about in/notin, mark_in/notin, mark_exists/not_exists and atom expressions? */
+			/* ToDo how about mark_exists/not_exists and atom expressions? */
 			if (e->type == e_cmp) {
 				int flag = e->flag & ~CMP_BETWEEN;
 				/* check if its a select or join expression, ie use only expressions of one relation left and of the other right (than join) */
-				if (flag < cmp_filter) { /* theta and range joins */
+				if (flag < cmp_filter || flag == mark_in || flag == mark_notin) { /* theta and range joins */
 					/* join or select ? */
 					sql_exp *l = e->l, *r = e->r, *f = e->f;
 
