@@ -57,7 +57,7 @@ unshare_string_heap(BAT *b)
 #endif
 
 static gdk_return
-insert_string_bat(BAT *b, BAT *n, struct canditer *ci, bool force)
+insert_string_bat(BAT *b, BAT *n, struct canditer *ci)
 {
 	BATiter ni;		/* iterator */
 	size_t toff = ~(size_t) 0;	/* tail offset */
@@ -193,26 +193,15 @@ insert_string_bat(BAT *b, BAT *n, struct canditer *ci, bool force)
 				}
 			}
 		}
-		if (toff != ~(size_t) 0) {
-			/* we only have to copy the offsets from n to
-			 * b, possibly with an offset (if toff != 0),
-			 * so set up some variables and set up b's
-			 * tail so that it looks like it's a fixed
-			 * size column.  Of course, we must make sure
-			 * first that the width of b's offset heap can
-			 * accommodate all values. */
-			if (b->twidth < SIZEOF_VAR_T &&
-			    ((size_t) 1 << 8 * b->twidth) <= (b->twidth <= 2 ? b->tvheap->size - GDK_VAROFFSET : b->tvheap->size)) {
-				/* offsets aren't going to fit, so
-				 * widen offset heap */
-				if (GDKupgradevarheap(b, (var_t) b->tvheap->size, false, force) != GDK_SUCCEED) {
-					toff = ~(size_t) 0;
-					return GDK_FAIL;
-				}
-			}
-		}
 	} else if (unshare_string_heap(b) != GDK_SUCCEED)
 		return GDK_FAIL;
+
+	/* make sure there is (vertical) space in the offset heap, we
+	 * may have to widen the heap later */
+	if (GDKupgradevarheap(b, (var_t) b->tvheap->size, BATcount(b) + cnt,
+			      false) != GDK_SUCCEED)
+		return GDK_FAIL;
+
 	if (toff == 0 && n->twidth == b->twidth && ci->tpe == cand_dense) {
 		/* we don't need to do any translation of offset
 		 * values, so we can use fast memcpy */
@@ -224,6 +213,7 @@ insert_string_bat(BAT *b, BAT *n, struct canditer *ci, bool force)
 		 * string heap at known locations (namely the offset
 		 * in n added to toff), so insert offsets from n after
 		 * adding toff into b */
+
 		/* note the use of the "restrict" qualifier here: all
 		 * four pointers below point to the same value, but
 		 * only one of them will actually be used, hence we
@@ -286,14 +276,6 @@ insert_string_bat(BAT *b, BAT *n, struct canditer *ci, bool force)
 			v = (var_t) ((size_t) v + toff);
 			assert(v >= GDK_VAROFFSET);
 			assert((size_t) v < b->tvheap->free);
-			if (BUNlast(b) >= BATcapacity(b)) {
-				if (BATcount(b) == BUN_MAX) {
-					GDKerror("too many elements to accomodate (" BUNFMT ")\n", BUN_MAX);
-					goto bunins_failed;
-				}
-				if (BATextend(b, BATgrows(b)) != GDK_SUCCEED)
-					goto bunins_failed;
-			}
 			switch (b->twidth) {
 			case 1:
 				assert(v - GDK_VAROFFSET < ((var_t) 1 << 8));
@@ -360,14 +342,6 @@ insert_string_bat(BAT *b, BAT *n, struct canditer *ci, bool force)
 				 * have to insert a new string into b:
 				 * we can just copy the offset */
 				v = (var_t) off;
-				if (b->twidth < SIZEOF_VAR_T &&
-				    ((size_t) 1 << 8 * b->twidth) <= (b->twidth <= 2 ? v - GDK_VAROFFSET : v)) {
-					/* offset isn't going to fit,
-					 * so widen offset heap */
-					if (GDKupgradevarheap(b, v, false, force) != GDK_SUCCEED) {
-						goto bunins_failed;
-					}
-				}
 				switch (b->twidth) {
 				case 1:
 					assert(v - GDK_VAROFFSET < ((var_t) 1 << 8));
@@ -425,6 +399,17 @@ append_varsized_bat(BAT *b, BAT *n, struct canditer *ci)
 	assert(b->twidth == SIZEOF_VAR_T);
 	if (cnt == 0)
 		return GDK_SUCCEED;
+	if (cnt > BATcapacity(b) - BATcount(b)) {
+		/* if needed space exceeds a normal growth extend just
+		 * with what's needed */
+		BUN ncap = BATcount(b) + cnt;
+		BUN grows = BATgrows(b);
+
+		if (ncap > grows)
+			grows = ncap;
+		if (BATextend(b, grows) != GDK_SUCCEED)
+			return GDK_FAIL;
+	}
 	if (BATcount(b) == 0 &&
 	    b->batRole == TRANSIENT &&
 	    n->batRestricted == BAT_READ &&
@@ -432,9 +417,8 @@ append_varsized_bat(BAT *b, BAT *n, struct canditer *ci)
 		/* if b is still empty, in the transient farm, and n
 		 * is read-only, we replace b's vheap with a reference
 		 * to n's */
-		/* make sure locking happens in a
-		 * predictable order: lowest id
-		 * first */
+		/* make sure locking happens in a predictable order:
+		 * lowest id first */
 		if (b->batCacheid < n->batCacheid) {
 			MT_lock_set(&b->theaplock);
 			MT_lock_set(&n->theaplock);
@@ -532,7 +516,7 @@ BATappend(BAT *b, BAT *n, BAT *s, bool force)
 	char buf[64];
 	lng t0 = 0;
 
-	if (b == NULL || n == NULL || (cnt = BATcount(n)) == 0) {
+	if (b == NULL || n == NULL || BATcount(n) == 0) {
 		return GDK_SUCCEED;
 	}
 	assert(b->batCacheid > 0);
@@ -638,27 +622,17 @@ BATappend(BAT *b, BAT *n, BAT *s, bool force)
 		b->batCapacity = BATcount(b) + cnt;
 		if (BATmaterialize(b) != GDK_SUCCEED)
 			return GDK_FAIL;
-	} else if (cnt > BATcapacity(b) - BATcount(b)) {
-		/* if needed space exceeds a normal growth extend just
-		 * with what's needed */
-		BUN ncap = BATcount(b) + cnt;
-		BUN grows = BATgrows(b);
-
-		if (ncap > grows)
-			grows = ncap;
-		if (BATextend(b, grows) != GDK_SUCCEED)
-			return GDK_FAIL;
 	}
 
 	r = BUNlast(b);
 
+	/* property setting */
 	if (BATcount(b) == 0) {
 		b->tsorted = n->tsorted;
 		b->trevsorted = n->trevsorted;
 		b->tseqbase = oid_nil;
 		b->tnonil = n->tnonil;
 		b->tnil = n->tnil && cnt == BATcount(n);
-		b->tseqbase = oid_nil;
 		if (ci.tpe == cand_dense) {
 			b->tnosorted = ci.seq - hseq <= n->tnosorted && n->tnosorted < ci.seq + cnt - hseq ? n->tnosorted + hseq - ci.seq : 0;
 			b->tnorevsorted = ci.seq - hseq <= n->tnorevsorted && n->tnorevsorted < ci.seq + cnt - hseq ? n->tnorevsorted + hseq - ci.seq : 0;
@@ -707,8 +681,9 @@ BATappend(BAT *b, BAT *n, BAT *s, bool force)
 		b->tnonil &= n->tnonil;
 		b->tnil |= n->tnil && cnt == BATcount(n);
 	}
+
 	if (b->ttype == TYPE_str) {
-		if (insert_string_bat(b, n, &ci, force) != GDK_SUCCEED) {
+		if (insert_string_bat(b, n, &ci) != GDK_SUCCEED) {
 			return GDK_FAIL;
 		}
 	} else if (ATOMvarsized(b->ttype)) {
@@ -716,6 +691,17 @@ BATappend(BAT *b, BAT *n, BAT *s, bool force)
 			return GDK_FAIL;
 		}
 	} else {
+		if (cnt > BATcapacity(b) - BATcount(b)) {
+			/* if needed space exceeds a normal growth
+			 * extend just with what's needed */
+			BUN ncap = BATcount(b) + cnt;
+			BUN grows = BATgrows(b);
+
+			if (ncap > grows)
+				grows = ncap;
+			if (BATextend(b, grows) != GDK_SUCCEED)
+				return GDK_FAIL;
+		}
 		if (BATatoms[b->ttype].atomFix == NULL &&
 		    b->ttype != TYPE_void &&
 		    n->ttype != TYPE_void &&
@@ -1015,7 +1001,7 @@ BATreplace(BAT *b, BAT *p, BAT *n, bool force)
 			if (b->twidth < SIZEOF_VAR_T &&
 			    (b->twidth <= 2 ? d - GDK_VAROFFSET : d) >= ((size_t) 1 << (8 * b->twidth))) {
 				/* doesn't fit in current heap, upgrade it */
-				if (GDKupgradevarheap(b, d, false, b->batRestricted == BAT_READ) != GDK_SUCCEED)
+				if (GDKupgradevarheap(b, d, 0, false) != GDK_SUCCEED)
 					return GDK_FAIL;
 			}
 			switch (b->twidth) {

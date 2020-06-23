@@ -916,7 +916,7 @@ BATnegcands(BAT *dense_cands, BAT *odels)
 	strconcat_len(dels->filename, sizeof(dels->filename),
 		      nme, ".theap", NULL);
 
-    	if (HEAPalloc(dels, hi - lo, sizeof(oid)) != GDK_SUCCEED) {
+    	if (HEAPalloc(dels, hi - lo, sizeof(oid), 0) != GDK_SUCCEED) {
 		GDKfree(dels);
         	return GDK_FAIL;
 	}

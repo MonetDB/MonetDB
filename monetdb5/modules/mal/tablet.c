@@ -52,16 +52,12 @@ static MT_Lock errorlock = MT_LOCK_INITIALIZER("errorlock");
 static BAT *
 void_bat_create(int adt, BUN nr)
 {
-	BAT *b = COLnew(0, adt, BATTINY, PERSISTENT);
+	BAT *b = COLnew(0, adt, nr, PERSISTENT);
 
 	/* check for correct structures */
 	if (b == NULL)
 		return NULL;
 	if (BATsetaccess(b, BAT_APPEND) != GDK_SUCCEED) {
-		BBPunfix(b->batCacheid);
-		return NULL;
-	}
-	if (nr > BATTINY && adt && BATextend(b, nr) != GDK_SUCCEED) {
 		BBPunfix(b->batCacheid);
 		return NULL;
 	}

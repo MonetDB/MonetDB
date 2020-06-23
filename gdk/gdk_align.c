@@ -187,7 +187,7 @@ BATmaterialize(BAT *b)
 
 	strconcat_len(b->theap->filename, sizeof(b->theap->filename),
 		      BBP_physical(b->batCacheid), ".tail", NULL);
-	if (HEAPalloc(tail, cnt, sizeof(oid)) != GDK_SUCCEED) {
+	if (HEAPalloc(tail, cnt, sizeof(oid), 0) != GDK_SUCCEED) {
 		return GDK_FAIL;
 	}
 
@@ -196,6 +196,7 @@ BATmaterialize(BAT *b)
 	assert(ATOMIC_GET(&b->theap->refs) > 0);
 	HEAPdecref(b->theap, false);
 	b->theap = tail;
+	b->tbaseoff = 0;
 	MT_lock_unset(&b->theaplock);
 	b->ttype = TYPE_oid;
 	BATsetdims(b);
@@ -318,7 +319,7 @@ VIEWreset(BAT *b)
 
 		strconcat_len(tail->filename, sizeof(tail->filename),
 			      nme, ".tail", NULL);
-		if (b->ttype && HEAPalloc(tail, cnt, Tsize(b)) != GDK_SUCCEED)
+		if (b->ttype && HEAPalloc(tail, cnt, Tsize(b), ATOMsize(b->ttype)) != GDK_SUCCEED)
 			goto bailout;
 		if (b->tvheap) {
 			th = GDKmalloc(sizeof(Heap));
@@ -363,6 +364,10 @@ VIEWreset(BAT *b)
 		b->tkey = BATtkey(v);
 
 		/* replace the heaps */
+		if (tail->storage == STORE_MMAP) {
+			b->twidth = ATOMsize(b->ttype);
+			b->tshift = ATOMelmshift(Tsize(b));
+		}
 		b->theap = tail;
 		tail = NULL;
 		b->tbaseoff = 0;

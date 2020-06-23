@@ -541,7 +541,7 @@ fixdateheap(BAT *b, const char *anme)
 	/* create new heap */
 	h2 = *b->theap;
 	strconcat_len(h2.filename, sizeof(h2.filename), nme, ".tail", NULL);
-	if (HEAPalloc(&h2, b->batCapacity, strcmp(anme, "date") == 0 ? 4 : 8) != GDK_SUCCEED) {
+	if (HEAPalloc(&h2, b->batCapacity, strcmp(anme, "date") == 0 ? 4 : 8, 0) != GDK_SUCCEED) {
 		GDKfree(srcdir);
 		HEAPfree(&h1, false);
 		TRC_CRITICAL(GDK, "allocating new tail heap "

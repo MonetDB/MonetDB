@@ -889,7 +889,7 @@ gdk_export gdk_return BATextend(BAT *b, BUN newcap)
 gdk_export uint8_t ATOMelmshift(int sz)
 	__attribute__((__const__));
 
-gdk_export gdk_return GDKupgradevarheap(BAT *b, var_t v, bool copyall, bool mayshare)
+gdk_export gdk_return GDKupgradevarheap(BAT *b, var_t v, BUN cap, bool copyall)
 	__attribute__((__warn_unused_result__));
 gdk_export gdk_return BUNappend(BAT *b, const void *right, bool force)
 	__attribute__((__warn_unused_result__));
@@ -1507,8 +1507,7 @@ Tputvalue(BAT *b, BUN p, const void *v, bool copyall)
 		if (b->twidth < SIZEOF_VAR_T &&
 		    (b->twidth <= 2 ? d - GDK_VAROFFSET : d) >= ((size_t) 1 << (8 * b->twidth))) {
 			/* doesn't fit in current heap, upgrade it */
-			rc = GDKupgradevarheap(b, d, copyall,
-					       b->batRestricted == BAT_READ);
+			rc = GDKupgradevarheap(b, d, 0, copyall);
 			if (rc != GDK_SUCCEED)
 				return rc;
 		}
@@ -1592,8 +1591,7 @@ tfastins_nocheckVAR(BAT *b, BUN p, const void *v, int s)
 	if (b->twidth < SIZEOF_VAR_T &&
 	    (b->twidth <= 2 ? d - GDK_VAROFFSET : d) >= ((size_t) 1 << (8 * b->twidth))) {
 		/* doesn't fit in current heap, upgrade it */
-		rc = GDKupgradevarheap(b, d, false,
-				       b->batRestricted == BAT_READ);
+		rc = GDKupgradevarheap(b, d, 0, false);
 		if (rc != GDK_SUCCEED)
 			return rc;
 	}

@@ -213,8 +213,12 @@ COLnew(oid hseq, int tt, BUN cap, role_t role)
 	bn->batCapacity = cap;
 
 	/* alloc the main heaps */
-	if (tt && HEAPalloc(bn->theap, cap, bn->twidth) != GDK_SUCCEED) {
+	if (tt && HEAPalloc(bn->theap, cap, bn->twidth, ATOMsize(bn->ttype)) != GDK_SUCCEED) {
 		goto bailout;
+	}
+	if (bn->theap->storage == STORE_MMAP) {
+		bn->twidth = ATOMsize(bn->ttype);
+		bn->tshift = ATOMelmshift(Tsize(bn));
 	}
 
 	if (bn->tvheap && ATOMheap(tt, bn->tvheap, cap) != GDK_SUCCEED) {
@@ -469,6 +473,8 @@ BATextend(BAT *b, BUN newcap)
 	if (b->theap->base) {
 		TRC_DEBUG(HEAP, "HEAPgrow in BATextend %s %zu %zu\n",
 			  b->theap->filename, b->theap->size, theap_size);
+		if (b->ttype == TYPE_str)
+			return GDKupgradevarheap(b, GDK_VAROFFSET, newcap, false);
 		Heap *h = HEAPgrow(b->theap, theap_size);
 		if (h == NULL)
 			return GDK_FAIL;
@@ -1094,6 +1100,8 @@ BUNappend(BAT *b, const void *t, bool force)
 			b->tseqbase = * (const oid *) t;
 		} else if (is_oid_nil(* (oid *) t) ||
 			   b->tseqbase + b->batCount != *(const oid *) t) {
+			/* we need to materialize b; allocate enough capacity */
+			b->batCapacity = BATcount(b) + 1;
 			if (BATmaterialize(b) != GDK_SUCCEED)
 				return GDK_FAIL;
 		}
@@ -1334,7 +1342,7 @@ BUNinplace(BAT *b, BUN p, const void *t, bool force)
 		if (b->twidth < SIZEOF_VAR_T &&
 		    (b->twidth <= 2 ? _d - GDK_VAROFFSET : _d) >= ((size_t) 1 << (8 * b->twidth))) {
 			/* doesn't fit in current heap, upgrade it */
-			if (GDKupgradevarheap(b, _d, false, b->batRestricted == BAT_READ) != GDK_SUCCEED)
+			if (GDKupgradevarheap(b, _d, 0, false) != GDK_SUCCEED)
 				return GDK_FAIL;
 		}
 		_ptr = BUNtloc(bi, p);
