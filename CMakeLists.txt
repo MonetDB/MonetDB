@@ -140,11 +140,6 @@ install(FILES
   DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/monetdb
   COMPONENT monetdbdev)
 
-# [TODO]: install created python file
-configure_file(create_include_object.py.in
-  ${CMAKE_CURRENT_BINARY_DIR}/create_include_object.py
-  @ONLY)
-
 if(${CMAKE_SYSTEM_NAME} STREQUAL "Darwin")
   set(CMAKE_MODULE_LINKER_FLAGS "-Wl,-undefined,dynamic_lookup -Wl,-undefined,dynamic_lookup")
 endif()
@@ -152,6 +147,7 @@ endif()
 add_subdirectory(common)
 add_subdirectory(clients)
 add_subdirectory(gdk)
+add_subdirectory(misc)
 add_subdirectory(monetdb5)
 add_subdirectory(sql)
 add_subdirectory(geom)

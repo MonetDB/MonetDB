@@ -83,7 +83,7 @@ function(create_include_object)
   foreach(mod_name IN LISTS create_prefix_modules_list)
     add_custom_command(
       OUTPUT  ${CMAKE_CURRENT_BINARY_DIR}/${mod_name}.${lang_ext}.c
-      COMMAND ${Python3_EXECUTABLE} ${PROJECT_BINARY_DIR}/create_include_object.py ${mod_name} ${lang_ext} ${file_path}/${mod_name}.${lang_ext} ${CMAKE_CURRENT_BINARY_DIR}/${mod_name}.${lang_ext}.c
+      COMMAND ${Python3_EXECUTABLE} ${PROJECT_BINARY_DIR}/misc/python/create_include_object.py ${mod_name} ${lang_ext} ${file_path}/${mod_name}.${lang_ext} ${CMAKE_CURRENT_BINARY_DIR}/${mod_name}.${lang_ext}.c
       DEPENDS ${file_path}/${mod_name}.${lang_ext}
       )
     list(APPEND include_sources
