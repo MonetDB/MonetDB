@@ -2800,7 +2800,7 @@ rel_logical_exp(sql_query *query, sql_rel *rel, symbol *sc, int f)
 			return NULL;
 
 		/* for between 3 columns we use the between operator */
-		if (symmetric && re1->card == CARD_ATOM && re2->card == CARD_ATOM) {
+		if (symmetric && (le->card == CARD_ATOM || (re1->card == CARD_ATOM && re2->card == CARD_ATOM))) {
 			sql_exp *tmp = NULL;
 			sql_subfunc *min = sql_bind_func(sql->sa, sql->session->schema, "sql_min", exp_subtype(re1), exp_subtype(re2), F_FUNC);
 			sql_subfunc *max = sql_bind_func(sql->sa, sql->session->schema, "sql_max", exp_subtype(re1), exp_subtype(re2), F_FUNC);
@@ -2827,10 +2827,8 @@ rel_logical_exp(sql_query *query, sql_rel *rel, symbol *sc, int f)
 				return NULL;
 			e2 = exp_compare(sql->sa, e1, exp_atom_bool(sql->sa, 1), cmp_equal);
 			return rel_compare_push_exp(sql, rel, e2, le, le, re1, re1, re2);
-		} else if (sc->token == SQL_NOT_BETWEEN) {
-			rel = rel_compare_exp_(query, rel, le, re1, re2, 3|CMP_BETWEEN|flag, 1, 0);
 		} else {
-			rel = rel_compare_exp_(query, rel, le, re1, re2, 3|CMP_BETWEEN|flag, 0, 0);
+			rel = rel_compare_exp_(query, rel, le, re1, re2, 3|CMP_BETWEEN|flag, sc->token == SQL_NOT_BETWEEN ? 1 : 0, 0);
 		}
 		return rel;
 	}
