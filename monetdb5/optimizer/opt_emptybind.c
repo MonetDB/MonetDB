@@ -59,7 +59,7 @@ OPTemptybindImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
 	for( i=0; i< mb->stop; i++)
 		if( getFunctionId(getInstrPtr(mb,i)) == emptybindRef || getFunctionId(getInstrPtr(mb,i)) == emptybindidxRef)
 			extras += getInstrPtr(mb,i)->argc;
-	if( extras == 0)
+	if (extras == 0)
 		goto wrapup;
 
 	// track of where 'emptybind' results are produced
@@ -74,7 +74,7 @@ OPTemptybindImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
 		return 0;
 	}
 
-	if ( newMalBlkStmt(mb, mb->ssize) < 0) {
+	if (newMalBlkStmt(mb, mb->ssize) < 0) {
 		GDKfree(empty);
 		GDKfree(updated);
 		throw(MAL,"optimizer.emptybind", SQLSTATE(HY013) MAL_MALLOC_FAIL);
@@ -185,14 +185,26 @@ OPTemptybindImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
 		}
 
 		// delta operations without updates+ insert can be replaced by an assignment
-		if (getModuleId(p)== sqlRef && getFunctionId(p) == deltaRef  && p->argc ==5){
-			if( empty[getArg(p,2)] && empty[getArg(p,3)] && empty[getArg(p,4)] ){
+		if (getModuleId(p)== sqlRef && getFunctionId(p) == deltaRef  && p->argc == 5){
+			if (empty[getArg(p,2)] && empty[getArg(p,3)] && empty[getArg(p,4)]){
 				actions++;
 				clrFunction(p);
 				p->argc = 2;
-				if ( empty[getArg(p,1)] ){
+				if (empty[getArg(p,1)])
 					empty[getArg(p,0)] = i;
-				}
+				continue;
+			}
+		}
+		// delta operations without updates can be replaced by an pack of base and inserts
+		if (getModuleId(p)== sqlRef && getFunctionId(p) == deltaRef  && p->argc == 5){
+			if (empty[getArg(p,2)] && empty[getArg(p,3)]){
+				actions++;
+				clrFunction(p);
+				setModuleId(p,matRef);
+				setFunctionId(p,packRef);
+				p->argc = 3;
+				getArg(p, 2) = getArg(p, 4);  
+				p->typechk= TYPE_UNKNOWN;
 			}
 			continue;
 		}
@@ -230,8 +242,7 @@ OPTemptybindImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
 		if (getModuleId(p)== batRef && isUpdateInstruction(p)){
 			if( empty[getArg(p,1)] && empty[getArg(p,2)]){
 				emptyresult(0);
-			} else
-			if( empty[getArg(p,2)]){
+			} else if (empty[getArg(p,2)]){
 				actions++;
 				clrFunction(p);	
 				p->argc = 2;
@@ -240,7 +251,7 @@ OPTemptybindImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
 	}
 
 	for(; i<slimit; i++)
-		if( old[i])
+		if (old[i])
 			freeInstruction(old[i]);
 	GDKfree(old);
 	GDKfree(empty);
