@@ -91,6 +91,12 @@ SELECT t1.colid FROM tbl_productsales t1 INNER JOIN tbl_productsales t2 ON t1.pr
 
 SELECT t1.colid FROM tbl_productsales t1 INNER JOIN tbl_productsales t2 ON t1.product_category NOT LIKE t2.product_name ORDER BY t1.colid;
 
+SELECT (SELECT t2.col2 FROM another_t t2 WHERE t1.col1 BETWEEN t2.col1 AND t2.col2) FROM another_t t1;
+	-- 2
+	-- 22
+	-- 222
+	-- 2222
+
 DROP TABLE tbl_ProductSales;
 DROP TABLE another_T;
 DROP TABLE integers;
