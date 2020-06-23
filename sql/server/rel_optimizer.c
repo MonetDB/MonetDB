@@ -883,7 +883,7 @@ order_joins(mvc *sql, list *rels, list *exps)
 		/* complex expressions may touch multiple base tables 
 		 * Should be pushed up to extra selection.
 		 * */
-		if (cje->type != e_cmp || !is_complex_exp(cje->flag) || !find_prop(cje->p, PROP_HASHCOL) /*||
+		if (cje->type != e_cmp || is_complex_exp(cje->flag) || !find_prop(cje->p, PROP_HASHCOL) /*||
 		   (cje->type == e_cmp && cje->f == NULL)*/) {
 			l = find_one_rel(rels, cje->l);
 			r = find_one_rel(rels, cje->r);
