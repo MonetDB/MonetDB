@@ -1428,7 +1428,6 @@ destroy_segs(segment *s)
 {
 	if (!s)
 		return;
-	s = s->next;
 	while(s) {
 		segment *n = s->next;
 		_DELETE(s);
@@ -1459,6 +1458,7 @@ destroy_dbat(sql_trans *tr, storage *bat)
 		n = bat->next;
 		destroy_cs(&bat->cs);
 		destroy_segments(bat->segs);
+		_DELETE(bat);
 		bat = n;
 	}
 	return LOG_OK;

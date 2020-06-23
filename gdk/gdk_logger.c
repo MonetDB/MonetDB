@@ -764,7 +764,7 @@ logger_read_types_file(logger *lg, FILE *fp)
 	char atom_name[IDLENGTH];
 
 	/* scanf should use IDLENGTH somehow */
-	while(fscanf(fp, "%d,%64s\n", &id, atom_name) == 2) {
+	while(fscanf(fp, "%d,%63s\n", &id, atom_name) == 2) {
 		int i = ATOMindex(atom_name);
 
 		if (id > 255 || i < 0) {
