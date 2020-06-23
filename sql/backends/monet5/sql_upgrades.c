@@ -2303,7 +2303,7 @@ sql_update_jun2020(Client c, mvc *sql, const char *prev_schema, bool *systabfixe
 			"\"progress\" int,\n"
 			"\"workers\" int,\n"
 			"\"memory\" int)\n"
-			" external name sql.sysmon_queue;\n"
+			" external name sysmon.queue;\n"
 			"grant execute on function sys.queue to public;\n"
 			"create view sys.queue as select * from sys.queue();\n"
 			"grant select on sys.queue to public;\n"
