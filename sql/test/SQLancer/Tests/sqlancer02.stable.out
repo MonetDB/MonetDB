@@ -44,6 +44,20 @@ stdout of test 'sqlancer02` in directory 'sql/test/SQLancer` itself:
 [ NULL	]
 [ false	]
 #ROLLBACK;
+#START TRANSACTION;
+#CREATE TABLE integers(i INTEGER);
+#INSERT INTO integers VALUES (1), (2), (3), (NULL);
+[ 4	]
+#select i between symmetric cast(1 as decimal) and cast(2 as double) from integers;
+% sys.%3 # table_name
+% %3 # name
+% boolean # type
+% 5 # length
+[ true	]
+[ true	]
+[ false	]
+[ NULL	]
+#ROLLBACK;
 
 # 17:04:12 >  
 # 17:04:12 >  "Done."

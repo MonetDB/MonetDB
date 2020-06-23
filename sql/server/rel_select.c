@@ -2510,9 +2510,12 @@ rel_logical_value_exp(sql_query *query, sql_rel **rel, symbol *sc, int f, exp_ki
 
 		if (symmetric) {
 			sql_exp *tmp = NULL;
-			sql_subfunc *min = sql_bind_func(sql->sa, sql->session->schema, "sql_min", exp_subtype(re1), exp_subtype(re2), F_FUNC);
-			sql_subfunc *max = sql_bind_func(sql->sa, sql->session->schema, "sql_max", exp_subtype(re1), exp_subtype(re2), F_FUNC);
+			sql_subfunc *min, *max;
 
+			if (rel_convert_types(sql, rel ? *rel : NULL, rel ? *rel : NULL, &re1, &re2, 1, type_equal) < 0)
+				return NULL;
+			min = sql_bind_func(sql->sa, sql->session->schema, "sql_min", exp_subtype(re1), exp_subtype(re2), F_FUNC);
+			max = sql_bind_func(sql->sa, sql->session->schema, "sql_max", exp_subtype(re1), exp_subtype(re2), F_FUNC);
 			if (!min || !max)
 				return sql_error(sql, 02, SQLSTATE(42000) "min or max operator on types %s %s missing", exp_subtype(re1)->type->sqlname, exp_subtype(re2)->type->sqlname);
 			tmp = exp_binop(sql->sa, re1, re2, min);
@@ -2802,9 +2805,12 @@ rel_logical_exp(sql_query *query, sql_rel *rel, symbol *sc, int f)
 		/* for between 3 columns we use the between operator */
 		if (symmetric && (le->card == CARD_ATOM || (re1->card == CARD_ATOM && re2->card == CARD_ATOM))) {
 			sql_exp *tmp = NULL;
-			sql_subfunc *min = sql_bind_func(sql->sa, sql->session->schema, "sql_min", exp_subtype(re1), exp_subtype(re2), F_FUNC);
-			sql_subfunc *max = sql_bind_func(sql->sa, sql->session->schema, "sql_max", exp_subtype(re1), exp_subtype(re2), F_FUNC);
+			sql_subfunc *min, *max;
 
+			if (rel_convert_types(sql, rel, rel, &re1, &re2, 1, type_equal) < 0)
+				return NULL;
+			min = sql_bind_func(sql->sa, sql->session->schema, "sql_min", exp_subtype(re1), exp_subtype(re2), F_FUNC);
+			max = sql_bind_func(sql->sa, sql->session->schema, "sql_max", exp_subtype(re1), exp_subtype(re2), F_FUNC);
 			if (!min || !max)
 				return sql_error(sql, 02, SQLSTATE(42000) "min or max operator on types %s %s missing", exp_subtype(re1)->type->sqlname, exp_subtype(re2)->type->sqlname);
 			tmp = exp_binop(sql->sa, re1, re2, min);

@@ -23,6 +23,16 @@ SELECT t0.c0 FROM t0 WHERE ((((0.654013919354451) BETWEEN SYMMETRIC (t0.c1) AND 
 	-- False
 ROLLBACK;
 
+START TRANSACTION;
+CREATE TABLE integers(i INTEGER);
+INSERT INTO integers VALUES (1), (2), (3), (NULL);
+select i between symmetric cast(1 as decimal) and cast(2 as double) from integers;
+	-- True
+	-- True
+	-- False
+	-- NULL
+ROLLBACK;
+
 START TRANSACTION; -- Bug 6910
 CREATE TABLE t0("c0" DOUBLE NOT NULL);
 COPY 11 RECORDS INTO "sys"."t0" FROM stdin USING DELIMITERS E'\t',E'\n','"';
