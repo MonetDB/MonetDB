@@ -270,7 +270,6 @@ main(int argc, char **av)
 	char *dbextra = NULL;
 	char *dbtrace = NULL;
 	bool inmemory = false;
-	char *master_auth_fd = NULL;
 	static struct option long_options[] = {
 		{ "config", required_argument, NULL, 'c' },
 		{ "dbextra", required_argument, NULL, 0 },
@@ -294,8 +293,6 @@ main(int argc, char **av)
 		{ "properties", no_argument, NULL, 0 },
 		{ "threads", no_argument, NULL, 0 },
 		{ "transactions", no_argument, NULL, 0 },
-
-		{ "master-auth-fd", required_argument, NULL, '\x01'},
 
 		{ NULL, 0, NULL, 0 }
 	};
@@ -470,9 +467,6 @@ main(int argc, char **av)
 			   current `c' is based on and see if we recognize
 			   it: if -? or --help, exit with 0, else with -1 */
 			usage(prog, strcmp(av[optind - 1], "-?") == 0 || strcmp(av[optind - 1], "--help") == 0 ? 0 : -1);
-		case '\x01':
-			master_auth_fd = optarg;
-			break;
 		default:
 			fprintf(stderr, "ERROR: getopt returned character "
 				"code '%c' 0%o\n", c, (unsigned) (uint8_t) c);
@@ -548,47 +542,6 @@ main(int argc, char **av)
 		fprintf(stderr, "!ERROR: GDKsetenv failed\n");
 		exit(1);
 	}
-
-	// Deal with --master-password-fd.
-	// About error handling: if the argument is not a number, that's an error.
-	// If the fd turns out to be unreadable, or if it reads invalid data,
-	// that's just a warning. It's possible someone copy-pasted the commandline
-	// of an mserver that was originally run by Merovingian, and is now running
-	// in the debugger. Or whatever. We'll just print a warning and continue.
-	do {
-		if (master_auth_fd == NULL)
-			break;
-
-		char *end;
-		int fd = strtol(master_auth_fd, &end, 10);
-		if (*end != '\0') {
-			fprintf(stderr, "!ERROR: MASTER_AUTH_FD '%s' not valid integer", master_auth_fd);
-			// syntactical errors are unforgivable.
-			exit(1);
-		}
-
-		char master_password[1024];
-		ssize_t nread = read(fd, master_password, sizeof(master_password) - 1);
-		if (nread <= 0) {
-			fprintf(stderr, "#warning: could not read from master_auth_fd %d: %s\n", fd, strerror(errno));
-			break;
-		}
-		master_password[nread] = '\0';
-
-		char req_prefix[] = "master_auth=";
-		size_t req_len = strlen(req_prefix);
-		if (nread <= (ssize_t)req_len || strncmp(master_password, req_prefix, req_len) != 0) {
-			// do not print it, it may be malformed but it might still give information about the password
-			fprintf(stderr, "#warning: invalid master_auth!\n");
-			break;
-		}
-		char *pw = master_password + req_len;
-
-		if (GDKsetenv("master_password", pw) != GDK_SUCCEED) {
-			fprintf(stderr, "!ERROR: GSKsetenv failed\n");
-			exit(1);
-		}
-	} while (0);
 
 	if ((modpath = GDKgetenv("monet_mod_path")) == NULL) {
 		/* start probing based on some heuristics given the binary

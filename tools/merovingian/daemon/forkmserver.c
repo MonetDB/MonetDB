@@ -549,54 +549,6 @@ forkMserver(char *database, sabdb** stats, bool force)
 		argv[c++] = dbtrace_path;
 	}
 
-	free((*stats)->secret);
-	const int master_password_len = 200;
-	char *master_password = (*stats)->secret = malloc(master_password_len);
-
-	if (master_password != NULL) {
-		generateSalt(master_password, master_password_len);
-
-		int pipefds[2];
-		if (pipe(pipefds) < 0) {
-			msab_freeStatus(stats);
-			freeConfFile(ckv);
-			free(ckv);
-			pthread_mutex_unlock(&dp->fork_lock);
-			return newErr("pipe master_auth: %s", strerror(errno));
-		}
-		FILE *f = fdopen(pipefds[1], "w");
-		if (f == NULL) {
-			close(pipefds[0]);
-			close(pipefds[1]);
-			msab_freeStatus(stats);
-			freeConfFile(ckv);
-			free(ckv);
-			pthread_mutex_unlock(&dp->fork_lock);
-			return newErr("fdopen master_auth: %s", strerror(errno));
-		}
-		if (fprintf(f, "master_auth=%s", master_password) < 0) {
-			close(pipefds[0]);
-			fclose(f);
-			msab_freeStatus(stats);
-			freeConfFile(ckv);
-			free(ckv);
-			pthread_mutex_unlock(&dp->fork_lock);
-			return newErr("write master_auth: %s", strerror(errno));
-		}
-		if (fclose(f) < 0) {
-			close(pipefds[0]);
-			msab_freeStatus(stats);
-			freeConfFile(ckv);
-			free(ckv);
-			pthread_mutex_unlock(&dp->fork_lock);
-			return newErr("close master_auth: %s", strerror(errno));
-		}
-		// read end is still open, pass it to child
-		char buf[100];
-		sprintf(buf, "--master-auth-fd=%d", pipefds[0]);
-		argv[c++] = strdup(buf);
-	}
-
 	if (mydoproxy) {
 		argv[c++] = set; argv[c++] = "mapi_open=false";
 		/* we "proxy", so we can just solely use UNIX domain sockets

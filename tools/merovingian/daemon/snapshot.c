@@ -72,7 +72,11 @@ snapshot_database_to(char *dbname, char *dest)
 	}
 
 	if (stats->secret == NULL) {
-		e = newErr("Lost the secret for database '%s'", dbname);
+#if !defined(HAVE_OPENSSL) && !defined(HAVE_COMMONCRYPTO)
+		e = newErr("snapshotting only works when MonetDB has been compiled with secure crypto support");
+#else
+		e = newErr("Cannot find secret for database '%s'", dbname);
+#endif
 		goto bailout;
 	}
 
