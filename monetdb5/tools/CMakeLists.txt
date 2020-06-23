@@ -74,7 +74,7 @@ install(TARGETS
 install(EXPORT monetdb5Targets
   FILE monetdb5Targets.cmake
   NAMESPACE MonetDB::
-  DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/cmake
+  DESTINATION ${EXPORT_TARGET_PATH}
   COMPONENT serverdev)
 
 # vim: set ts=2:sw=2:et

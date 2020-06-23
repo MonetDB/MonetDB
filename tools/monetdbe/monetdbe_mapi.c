@@ -2,14 +2,17 @@
 #include "monetdb_config.h"
 #include "stream.h"
 #include "mapi.h"
+#include "monetdbe_mapi.h"
 
 #define MAPIalloc(sz) malloc(sz)
 #define MAPIfree(p)   free(p)
 
-char *
+MapiMsg
 mapi_error(Mapi mid)
 {
-	return mid->msg;
+	if (mid->msg)
+		return MERROR;
+	return MOK;
 }
 
 MapiHdl 
@@ -37,18 +40,20 @@ MapiMsg
 mapi_close_handle(MapiHdl hdl)
 {
 	if (hdl) {
-		if (hdl->mapi_row) {
-			for (size_t i=0; i<hdl->result->ncols; i++) {
-				if (hdl->mapi_row[i])
-					MAPIfree(hdl->mapi_row[i]);
+		char *msg = NULL;
+		if (hdl->result) {
+			if (hdl->mapi_row) {
+				for (size_t i=0; i<hdl->result->ncols; i++) {
+					if (hdl->mapi_row[i])
+						MAPIfree(hdl->mapi_row[i]);
+				}
+				MAPIfree(hdl->mapi_row);
 			}
-			MAPIfree(hdl->mapi_row);
+			msg = monetdbe_cleanup_result(hdl->mid->mdbe, hdl->result);
+			if (msg)
+				hdl->mid->msg = msg;
 		}
-
-		char *msg = monetdbe_cleanup_result(hdl->mid->mdbe, hdl->result);
 		MAPIfree(hdl);
-		if (msg)
-			hdl->mid->msg = msg;
 	}
 	return MOK;
 }
@@ -58,7 +63,7 @@ mapi_fetch_row(MapiHdl hdl)
 {
 	int n = 0;
 	if (hdl && hdl->current_row < hdl->result->nrows) {
-		n = ++hdl->current_row;
+		n = (int) ++hdl->current_row;
 	}
 	return n;
 }
@@ -71,7 +76,7 @@ mapi_fetch_field(MapiHdl hdl, int fnr)
 	if (hdl && fnr < (int)hdl->result->ncols && hdl->current_row > 0 && hdl->current_row <= hdl->result->nrows) {
 		monetdbe_column *rcol = NULL;
 		if (monetdbe_result_fetch(hdl->result,  &rcol, fnr) == NULL) {
-			size_t r = hdl->current_row - 1;
+			size_t r = (size_t) hdl->current_row - 1;
 			if (rcol->type != monetdbe_str && !hdl->mapi_row[fnr]) {
 				hdl->mapi_row[fnr] = MAPIalloc(SIMPLE_TYPE_SIZE);
 				if (!hdl->mapi_row[fnr]) {
@@ -226,7 +231,7 @@ int
 mapi_get_field_count(MapiHdl hdl)
 {
 	if (hdl) {
-		return hdl->result->ncols;
+		return (int) hdl->result->ncols;
 	}
 	return 0;
 }
@@ -247,6 +252,7 @@ int mapi_get_len(MapiHdl hdl, int fnr)
 	return 0;
 }
 
+/* implement these to make dump.c error's more informative */
 void mapi_explain(Mapi mid, FILE *fd)
 {
 	(void)mid;
@@ -264,4 +270,3 @@ void mapi_explain_result(MapiHdl hdl, FILE *fd)
 	(void)hdl;
 	(void)fd;
 }
-

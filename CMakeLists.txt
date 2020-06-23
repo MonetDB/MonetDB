@@ -76,6 +76,10 @@ monetdb_configure_crypto()
 monetdb_configure_sizes()
 
 include(GNUInstallDirs)
+# The documentation is unclear on what is the best location to install
+# the configuration for the exported targets, especially when building
+# the packages (deb/rpm). For now set the variable to a reasonable value
+set(EXPORT_TARGET_PATH "${CMAKE_INSTALL_DATAROOTDIR}/monetdb/cmake")
 
 # Define the macro variables after configuring the install directories.
 # Some variables define additional installation settings.
@@ -128,7 +132,7 @@ install(TARGETS
 install(EXPORT monetdb_config_headerTargets
   FILE monetdb_config_headerTargets.cmake
   NAMESPACE MonetDB::
-  DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/cmake
+  DESTINATION ${EXPORT_TARGET_PATH}
   COMPONENT monetdbdev)
 
 install(FILES
@@ -159,7 +163,7 @@ endif()
 include(CMakePackageConfigHelpers)
 configure_package_config_file(${CMAKE_CURRENT_SOURCE_DIR}/Config.cmake.in
   "${CMAKE_CURRENT_BINARY_DIR}/MonetDBConfig.cmake"
-  INSTALL_DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}/cmake)"
+  INSTALL_DESTINATION "${EXPORT_TARGET_PATH}"
   NO_SET_AND_CHECK_MACRO
   NO_CHECK_REQUIRED_COMPONENTS_MACRO)
 
@@ -170,13 +174,14 @@ write_basic_package_version_file(
 
 install(FILES
   ${CMAKE_CURRENT_BINARY_DIR}/MonetDBConfig.cmake
-  DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/cmake
+  DESTINATION ${EXPORT_TARGET_PATH}
   COMPONENT monetdbdev)
 
 include(monetdb-packages)
 
 include(CTest)
 add_subdirectory(ctest)
+add_subdirectory(documentation)
 
 if(CMAKE_SUMMARY)
   monetdb_cmake_summary()

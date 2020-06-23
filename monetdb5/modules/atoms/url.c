@@ -43,10 +43,11 @@
 
 #include "monetdb_config.h"
 #include "mal.h"
-#include "url.h"
+#include "gdk.h"
+#include <ctype.h>
 #include "mal_exception.h"
 
-static char x2c(char *what);
+typedef str url;
 
 /* SCHEME "://" AUTHORITY [ PATH ] [ "?" SEARCH ] [ "#" FRAGMENT ]
  * AUTHORITY is: [ USER [ ":" PASSWORD ] "@" ] HOST [ ":" PORT ] */
@@ -173,6 +174,22 @@ skip_search(const char *uri)
 	return uri;
 }
 
+#if 0
+/*
+ * Utilities
+ */
+
+static char
+x2c(char *what)
+{
+	char digit;
+
+	digit = (what[0] >= 'A' ? ((what[0] & 0xdf) - 'A') + 10 : (what[0] - '0'));
+	digit *= 16;
+	digit += (what[1] >= 'A' ? ((what[1] & 0xdf) - 'A') + 10 : (what[1] - '0'));
+	return (digit);
+}
+
 static int needEscape(char c){
 	if( isalnum((unsigned char)c) )
 		return 0;
@@ -196,7 +213,7 @@ static int needEscape(char c){
  * letters A-F.
  *
  * SIGNATURE: escape(str) : str; */
-str
+static str
 escape_str(str *retval, str s)
 {
 	int x, y;
@@ -231,7 +248,7 @@ escape_str(str *retval, str s)
 /* COMMAND "unescape": Convert hexadecimal representations to ASCII characters.
  *                     All sequences of the form "% HEX HEX" are unescaped.
  * SIGNATURE: unescape(str) : str; */
-str
+static str
 unescape_str(str *retval, str s)
 {
 	int x, y;
@@ -260,30 +277,17 @@ unescape_str(str *retval, str s)
 	}
 	return MAL_SUCCEED;
 }
-
-/*
- * Utilities
- */
-
-static char
-x2c(char *what)
-{
-	char digit;
-
-	digit = (what[0] >= 'A' ? ((what[0] & 0xdf) - 'A') + 10 : (what[0] - '0'));
-	digit *= 16;
-	digit += (what[1] >= 'A' ? ((what[1] & 0xdf) - 'A') + 10 : (what[1] - '0'));
-	return (digit);
-}
+#endif
 
 /*
  * Wrapping
  * Here you find the wrappers around the V4 url library included above.
  */
 
-ssize_t
-URLfromString(const char *src, size_t *len, str *u, bool external)
+static ssize_t
+URLfromString(const char *src, size_t *len, void **U, bool external)
 {
+	char **u = (char **) U;
 	size_t l = strlen(src) + 1;
 
 	if (*len < l || *u == NULL) {
@@ -303,9 +307,10 @@ URLfromString(const char *src, size_t *len, str *u, bool external)
 	return (ssize_t) l - 1;
 }
 
-ssize_t
-URLtoString(str *s, size_t *len, const char *src, bool external)
+static ssize_t
+URLtoString(str *s, size_t *len, const void *SRC, bool external)
 {
+	const char *src = SRC;
 	size_t l = strlen(src);
 
 	if (external)
@@ -332,7 +337,7 @@ URLtoString(str *s, size_t *len, const char *src, bool external)
 
 /* COMMAND "getAnchor": Extract an anchor (reference) from the URL
  * SIGNATURE: getAnchor(url) : str; */
-str
+static str
 URLgetAnchor(str *retval, url *val)
 {
 	const char *s;
@@ -362,7 +367,7 @@ URLgetAnchor(str *retval, url *val)
 /* COMMAND "getBasename": Extract the base of the last file name of the URL,
  *                        thus, excluding the file extension.
  * SIGNATURE: getBasename(str) : str; */
-str
+static str
 URLgetBasename(str *retval, url *val)
 {
 	const char *s;
@@ -402,7 +407,7 @@ URLgetBasename(str *retval, url *val)
 
 /* COMMAND "getContext": Extract the path context from the URL
  * SIGNATURE: getContext(str) : str; */
-str
+static str
 URLgetContext(str *retval, url *val)
 {
 	const char *s;
@@ -432,7 +437,7 @@ URLgetContext(str *retval, url *val)
 
 /* COMMAND "getExtension": Extract the file extension of the URL
  * SIGNATURE: getExtension(str) : str; */
-str
+static str
 URLgetExtension(str *retval, url *val)
 {
 	const char *s;
@@ -467,7 +472,7 @@ URLgetExtension(str *retval, url *val)
 
 /* COMMAND "getFile": Extract the last file name of the URL
  * SIGNATURE: getFile(str) : str; */
-str
+static str
 URLgetFile(str *retval, url *val)
 {
 	const char *s;
@@ -502,7 +507,7 @@ URLgetFile(str *retval, url *val)
 
 /* COMMAND "getHost": Extract the server identity from the URL */
 /* SIGNATURE: getHost(str) : str; */
-str
+static str
 URLgetHost(str *retval, url *val)
 {
 	const char *s;
@@ -541,7 +546,7 @@ URLgetHost(str *retval, url *val)
 
 /* COMMAND "getDomain": Extract the Internet domain from the URL
  * SIGNATURE: getDomain(str) : str; */
-str
+static str
 URLgetDomain(str *retval, url *val)
 {
 	const char *s;
@@ -584,7 +589,7 @@ URLgetDomain(str *retval, url *val)
 
 /* COMMAND "getPort": Extract the port id from the URL
  * SIGNATURE: getPort(str) : str; */
-str
+static str
 URLgetPort(str *retval, url *val)
 {
 	const char *s;
@@ -617,7 +622,7 @@ URLgetPort(str *retval, url *val)
 
 /* COMMAND "getProtocol": Extract the protocol from the URL
  * SIGNATURE: getProtocol(str) : str; */
-str
+static str
 URLgetProtocol(str *retval, url *val)
 {
 	const char *s;
@@ -644,7 +649,7 @@ URLgetProtocol(str *retval, url *val)
 
 /* COMMAND "getQuery": Extract the query part from the URL
  * SIGNATURE: getQuery(str) : str; */
-str
+static str
 URLgetQuery(str *retval, url *val)
 {
 	const char *s;
@@ -681,7 +686,7 @@ URLgetQuery(str *retval, url *val)
 
 /* COMMAND "getRobotURL": Extract the location of the robot control file
  * SIGNATURE: getRobotURL(str) : str; */
-str
+static str
 URLgetRobotURL(str *retval, url *val)
 {
 	const char *s;
@@ -710,7 +715,7 @@ URLgetRobotURL(str *retval, url *val)
 
 /* COMMAND "getUser": Extract the user identity from the URL
  * SIGNATURE: getUser(str) : str; */
-str
+static str
 URLgetUser(str *retval, url *val)
 {
 	const char *s, *h, *u, *p;
@@ -747,7 +752,7 @@ URLgetUser(str *retval, url *val)
 
 /* COMMAND "isaURL": Check conformity of the URL syntax
  * SIGNATURE: isaURL(str) : bit; */
-str
+static str
 URLisaURL(bit *retval, str *val)
 {
 	if (val == NULL || *val == NULL)
@@ -759,7 +764,7 @@ URLisaURL(bit *retval, str *val)
 	return MAL_SUCCEED;
 }
 
-str
+static str
 URLnew(url *u, str *val)
 {
 	*u = GDKstrdup(*val);
@@ -768,7 +773,7 @@ URLnew(url *u, str *val)
 	return MAL_SUCCEED;
 }
 
-str
+static str
 URLnew3(url *u, str *protocol, str *server, str *file)
 {
 	size_t l;
@@ -781,7 +786,7 @@ URLnew3(url *u, str *protocol, str *server, str *file)
 	return MAL_SUCCEED;
 }
 
-str
+static str
 URLnew4(url *u, str *protocol, str *server, int *port, str *file)
 {
 	str Protocol = *protocol;
@@ -805,7 +810,7 @@ URLnew4(url *u, str *protocol, str *server, int *port, str *file)
 	return MAL_SUCCEED;
 }
 
-str URLnoop(url *u, url *val)
+static str URLnoop(url *u, url *val)
 {
 	*u = GDKstrdup(*val);
 	if (*u == NULL)
@@ -815,7 +820,7 @@ str URLnoop(url *u, url *val)
 
 #include "mel.h"
 mel_atom url_init_atoms[] = {
- { .name="url", .basetype="str", .fromstr=(fptr)&URLfromString, .tostr=(fptr)&URLtoString, },  { .cmp=NULL } 
+ { .name="url", .basetype="str", .fromstr=URLfromString, .tostr=URLtoString, },  { .cmp=NULL } 
 };
 mel_func url_init_funcs[] = {
  command("url", "url", URLnew, false, "Create an URL from a string literal", args(1,2, arg("",url),arg("s",str))),

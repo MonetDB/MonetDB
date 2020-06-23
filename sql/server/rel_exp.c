@@ -168,18 +168,18 @@ exp_compare(sql_allocator *sa, sql_exp *l, sql_exp *r, int cmptype)
 }
 
 sql_exp * 
-exp_compare2(sql_allocator *sa, sql_exp *l, sql_exp *r, sql_exp *h, int cmptype) 
+exp_compare2(sql_allocator *sa, sql_exp *l, sql_exp *r, sql_exp *f, int cmptype) 
 {
 	sql_exp *e = exp_create(sa, e_cmp);
 	if (e == NULL)
 		return NULL;
-	e->card = l->card;
+	e->card = MAX(MAX(l->card,r->card),f->card);
 	if (e->card == CARD_ATOM && !exp_is_atom(l))
 		e->card = CARD_AGGR;
 	e->l = l;
 	e->r = r;
-	if (h)
-		e->f = h;
+	assert(f);
+	e->f = f;
 	e->flag = cmptype;
 	return e;
 }
@@ -191,7 +191,7 @@ exp_filter(sql_allocator *sa, list *l, list *r, sql_subfunc *f, int anti)
 
 	if (e == NULL)
 		return NULL;
-	e->card = exps_card(l);
+	e->card = MAX(exps_card(l),exps_card(r));
 	e->l = l;
 	e->r = r;
 	e->f = f;
@@ -204,17 +204,13 @@ exp_filter(sql_allocator *sa, list *l, list *r, sql_subfunc *f, int anti)
 sql_exp *
 exp_or(sql_allocator *sa, list *l, list *r, int anti)
 {
-	sql_exp *f = NULL;
 	sql_exp *e = exp_create(sa, e_cmp);
 
 	if (e == NULL)
 		return NULL;
-	f = l->h?l->h->data:r->h?r->h->data:NULL;
-	e->card = l->h?exps_card(l):exps_card(r);
+	e->card = MAX(exps_card(l),exps_card(r));
 	e->l = l;
 	e->r = r;
-	assert(f);
-	e->f = f;
 	e->flag = cmp_or;
 	if (anti)
 		set_anti(e);
@@ -2190,7 +2186,7 @@ exp_unsafe( sql_exp *e, int allow_identity)
 
 	if (e->type == e_convert && e->l)
 		return exp_unsafe(e->l, allow_identity);
-	if (e->type == e_func && e->l) {
+	if ((e->type == e_func || e->type == e_aggr) && e->l) {
 		sql_subfunc *f = e->f;
 		list *args = e->l;
 		node *n;

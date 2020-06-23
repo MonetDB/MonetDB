@@ -21,8 +21,8 @@ main(void)
 	monetdbe_result* result = NULL;
 
 	// second argument is a string for the db directory or NULL for in-memory mode
-	if ((err = monetdbe_open(&mdbe, NULL, NULL)) != NULL)
-		error(err)
+	if (monetdbe_open(&mdbe, NULL, NULL))
+		error("Failed to open database")
 	if ((err = monetdbe_query(mdbe, "CREATE TABLE test (b bigint, d1 decimal(15,3), m decimal(4,2), y string)", NULL, NULL)) != NULL)
 		error(err)
 	if ((err = monetdbe_query(mdbe, "INSERT INTO test VALUES (42, 200042.024, 42.42, 'Hello'), (NULL, NULL, NULL, 'World')", NULL, NULL)) != NULL)
@@ -60,7 +60,10 @@ main(void)
 					if (col->data[r] == col->null_value) {
 						printf("NULL");
 					} else {
-						printf("%d", col->data[r]);
+						if (col->scale)
+							printf("%d.%02d", col->data[r]/(int)col->scale, col->data[r]%(int)col->scale);
+						else
+							printf("%d", col->data[r]);
 					}
 					break;
 				}
@@ -78,7 +81,10 @@ main(void)
 					if (col->data[r] == col->null_value) {
 						printf("NULL");
 					} else {
-						printf("%" PRId64, col->data[r]);
+						if (col->scale)
+							printf("%" PRId64 ".%03" PRId64, col->data[r]/(int64_t)col->scale, col->data[r]%(int64_t)col->scale);
+						else
+							printf("%" PRId64, col->data[r]);
 					}
 					break;
 				}
@@ -134,7 +140,7 @@ main(void)
 
 	if ((err = monetdbe_cleanup_result(mdbe, result)) != NULL)
 		error(err)
-	if ((err = monetdbe_close(mdbe)) != NULL)
-		error(err)
+	if (monetdbe_close(mdbe))
+		error("Failed to close database")
 	return 0;
 }

@@ -74,6 +74,7 @@ target_sources(gdk
   gdk_unique.c
   gdk_interprocess.c gdk_interprocess.h
   gdk_firstn.c
+  gdk_subquery.c gdk_subquery.h
   gdk_analytic_bounds.c
   gdk_analytic_func.c
   gdk_analytic.h
@@ -141,5 +142,5 @@ install(TARGETS
 install(EXPORT gdkTargets
   FILE gdkTargets.cmake
   NAMESPACE MonetDB::
-  DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/cmake
+  DESTINATION ${EXPORT_TARGET_PATH}
   COMPONENT monetdbdev)

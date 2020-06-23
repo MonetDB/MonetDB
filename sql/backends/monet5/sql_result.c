@@ -2080,7 +2080,6 @@ mvc_export_head_prot10(backend *b, stream *s, int res_id, int only_header, int c
 	size_t i = 0;
 	BUN count = 0;
 	res_table *t = res_tables_find(m->results, res_id);
-	BAT *order = NULL;
 	int fres = 0;
 
 	if (!t || !s) {
@@ -2090,11 +2089,7 @@ mvc_export_head_prot10(backend *b, stream *s, int res_id, int only_header, int c
 	/* tuple count */
 	if (only_header) {
 		if (t->order) {
-			order = BBPquickdesc(t->order, false);
-			if (!order)
-				return -1;
-
-			count = BATcount(order);
+			count = t->nr_rows;
 		} else
 			count = 1;
 	}
@@ -2242,7 +2237,6 @@ mvc_export_head(backend *b, stream *s, int res_id, int only_header, int compute_
 	int i, res = 0;
 	BUN count = 0;
 	res_table *t = res_tables_find(m->results, res_id);
-	BAT *order = NULL;
 
 	if (!s || !t)
 		return 0;
@@ -2264,13 +2258,10 @@ mvc_export_head(backend *b, stream *s, int res_id, int only_header, int compute_
 	/* tuple count */
 	if (only_header) {
 		if (t->order) {
-			order = BBPquickdesc(t->order, false);
-			if (!order)
-				return -1;
-
-			count = BATcount(order);
-		} else
+			count = t->nr_rows;
+		} else {
 			count = 1;
+		}
 	}
 	m->rowcnt = count;
 	sqlvar_set_number(find_global_var(m, mvc_bind_schema(m, "sys"), "rowcnt"), m->rowcnt);
@@ -2397,7 +2388,7 @@ mvc_export_file(backend *b, stream *s, res_table *t)
 		order = BATdescriptor(t->order);
 		if (!order)
 			return -1;
-		count = BATcount(order);
+		count = t->nr_rows;
 
 		res = mvc_export_table(b, s, t, order, 0, count, "", t->tsep, t->rsep, t->ssep, t->ns);
 		BBPunfix(order->batCacheid);
@@ -2444,8 +2435,8 @@ mvc_export_result(backend *b, stream *s, int res_id, bool header, lng starttime,
 		return -1;
 
 	count = m->reply_size;
-	if (m->reply_size != -2 && (count <= 0 || count >= BATcount(order))) {
-		count = BATcount(order);
+	if (m->reply_size != -2 && (count <= 0 || count >= t->nr_rows)) {
+		count = t->nr_rows;
 		clean = 1;
 	}
 	if (json) {
@@ -2495,11 +2486,11 @@ mvc_export_chunk(backend *b, stream *s, int res_id, BUN offset, BUN nr)
 		return -1;
 	cnt = nr;
 	if (cnt == 0)
-		cnt = BATcount(order);
-	if (offset >= BATcount(order))
+		cnt = t->nr_rows;
+	if (offset >= t->nr_rows)
 		cnt = 0;
-	if (cnt == BUN_NONE || offset + cnt > BATcount(order))
-		cnt = BATcount(order) - offset;
+	if (cnt == BUN_NONE || offset + cnt > t->nr_rows)
+		cnt = t->nr_rows - offset;
 
 	if (b->client->protocol != PROTOCOL_10) {
 		/* query type: Q_BLOCK */

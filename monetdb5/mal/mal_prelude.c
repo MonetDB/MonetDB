@@ -117,43 +117,43 @@ addAtom( mel_atom *atoms)
 			BATatoms[i].linear = false;
 		}
 		if (atoms->del)
-			BATatoms[i].atomDel = (void (*)(Heap *, var_t *))atoms->del;
+			BATatoms[i].atomDel = atoms->del;
 		if (atoms->cmp) {
-			BATatoms[i].atomCmp = (int (*)(const void *, const void *))atoms->cmp;
+			BATatoms[i].atomCmp = atoms->cmp;
 			BATatoms[i].linear = true;
 		}
 		if (atoms->fromstr)
-			BATatoms[i].atomFromStr = (ssize_t (*)(const char *, size_t *, ptr *, bool))atoms->fromstr;
+			BATatoms[i].atomFromStr = atoms->fromstr;
 		if (atoms->tostr)
-			BATatoms[i].atomToStr = (ssize_t (*)(str *, size_t *, const void *, bool))atoms->tostr;
+			BATatoms[i].atomToStr = atoms->tostr;
 		if (atoms->fix)
-			BATatoms[i].atomFix = (gdk_return (*)(const void *))atoms->fix;
+			BATatoms[i].atomFix = atoms->fix;
 		if (atoms->unfix)
-			BATatoms[i].atomUnfix = (gdk_return (*)(const void *))atoms->unfix;
+			BATatoms[i].atomUnfix = atoms->unfix;
 		if (atoms->heap) {
 			BATatoms[i].size = sizeof(var_t);
 			assert_shift_width(ATOMelmshift(ATOMsize(i)), ATOMsize(i));
-			BATatoms[i].atomHeap = (void (*)(Heap *, size_t))atoms->heap;
+			BATatoms[i].atomHeap = atoms->heap;
 		}
 		if (atoms->hash)
-			BATatoms[i].atomHash = (BUN (*)(const void *))atoms->hash;
+			BATatoms[i].atomHash = atoms->hash;
 		if (atoms->length)
-			BATatoms[i].atomLen = (size_t (*)(const void *))atoms->length;
+			BATatoms[i].atomLen = atoms->length;
 		if (atoms->null) {
-			const void *atmnull = ((const void *(*)(void))atoms->null)();
+			const void *atmnull = (*atoms->null)();
 
 			BATatoms[i].atomNull = atmnull;
 		}
 		if (atoms->nequal)
-			BATatoms[i].atomCmp = (int (*)(const void *, const void *))atoms->nequal;
+			BATatoms[i].atomCmp = atoms->nequal;
 		if (atoms->put)
-			BATatoms[i].atomPut = (var_t (*)(Heap *, var_t *, const void *))atoms->put;
+			BATatoms[i].atomPut = atoms->put;
 		if (atoms->storage)
-			BATatoms[i].storage = (*(int (*)(void))atoms->storage)();
+			BATatoms[i].storage = (*atoms->storage)();
 		if (atoms->read)
-			BATatoms[i].atomRead = (void *(*)(void *, stream *, size_t))atoms->read;
+			BATatoms[i].atomRead = atoms->read;
 		if (atoms->write)
-			BATatoms[i].atomWrite = (gdk_return (*)(const void *, stream *, size_t))atoms->write;
+			BATatoms[i].atomWrite = atoms->write;
 	}
 	return MAL_SUCCEED;
 }

@@ -10,7 +10,6 @@
 #include "bat_storage.h"
 #include "bat_utils.h"
 #include "sql_string.h"
-#include "algebra.h"
 #include "gdk_atoms.h"
 
 static MT_Lock segs_lock = MT_LOCK_INITIALIZER("segs_lock");

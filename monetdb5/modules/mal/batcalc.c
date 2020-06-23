@@ -1620,8 +1620,6 @@ CMDifthen(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 }
 
 #include "mel.h"
-#include "json.h"
-#include "uuid.h"
 
 static str 
 batcalc_init(void)
@@ -2123,7 +2121,7 @@ batcalc_init(void)
 		.comment_v_ = "Return B != V",
 	  }
 	};
-	int newtypes[6] = { TYPE_json, TYPE_uuid, TYPE_date, TYPE_daytime, TYPE_timestamp };
+	int newtypes[6] = { ATOMindex("json"), ATOMindex("uuid"), TYPE_date, TYPE_daytime, TYPE_timestamp };
 	for (int f=0; f<6; f++) {
 	  mel_func_arg ret = { .type = TYPE_bit, .isbat =1 };
 	  mel_func_arg arg = { .type = TYPE_any, .isbat =1, .nr=1 };

@@ -89,6 +89,9 @@ typedef void* monetdbe_database;
 typedef struct {
 	monetdbe_cnt memorylimit;
 	int nr_threads;
+#ifdef HAVE_HGE
+	bool have_hge;
+#endif
 } monetdbe_options;
 
 #define DEFAULT_STRUCT_DEFINITION(ctype, typename)         \
@@ -124,8 +127,11 @@ DEFAULT_STRUCT_DEFINITION(monetdbe_data_time, time);
 DEFAULT_STRUCT_DEFINITION(monetdbe_data_timestamp, timestamp);
 // UUID, INET, XML ?
 
-monetdbe_export char* monetdbe_open(monetdbe_database *db, char *url, monetdbe_options *opts); 
-monetdbe_export char* monetdbe_close(monetdbe_database db); 
+monetdbe_export int   monetdbe_open(monetdbe_database *db, char *url, monetdbe_options *opts); 
+/* 0 ok, -1 (allocation failed),  -2 error in db */
+monetdbe_export int   monetdbe_close(monetdbe_database db);
+
+monetdbe_export char* monetdbe_error(monetdbe_database db);
 
 monetdbe_export char* monetdbe_get_autocommit(monetdbe_database dbhdl, int* result);
 monetdbe_export char* monetdbe_set_autocommit(monetdbe_database dbhdl, int value);

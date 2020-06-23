@@ -1033,12 +1033,15 @@ load_func(sql_trans *tr, sql_schema *s, sqlid fid, subrids *rs)
 	if (update_env) {
 		/* see creation of env in sql_create_env()
 		 * also see upgrade code in sql_upgrades.c */
+		_DELETE(v);
 		v = "CREATE FUNCTION env() RETURNS TABLE( name varchar(1024), value varchar(2048)) EXTERNAL NAME inspect.\"getEnvironment\";";
 	}
 	t->imp = (v)?sa_strdup(tr->sa, v):NULL;	if (!update_env) _DELETE(v);
-	v = table_funcs.column_find_value(tr, find_sql_column(funcs, "mod"), rid);
-	if (update_env)
+	if (update_env) {
 		v = "inspect";
+	} else {
+		v = table_funcs.column_find_value(tr, find_sql_column(funcs, "mod"), rid);
+	}
 	t->mod = (v)?sa_strdup(tr->sa, v):NULL;	if (!update_env) _DELETE(v);
 	v = table_funcs.column_find_value(tr, find_sql_column(funcs, "language"), rid);
 	t->lang = (sql_flang) *(int *)v;			_DELETE(v);
@@ -1480,10 +1483,10 @@ insert_args(sql_trans *tr, sql_table *sysarg, list *args, sqlid funcid, const ch
 	}
 }
 
-static void
-insert_functions(sql_trans *tr, sql_table *sysfunc, sql_table *sysarg)
+void
+insert_functions(sql_trans *tr, sql_table *sysfunc, list *funcs_list, sql_table *sysarg)
 {
-	for (node *n = funcs->h; n; n = n->next) {
+	for (node *n = funcs_list->h; n; n = n->next) {
 		sql_func *f = n->data;
 		bit se = (f->type == F_AGGR) ? FALSE : f->side_effect;
 		int number = 0, ftype = (int) f->type, flang = (int) FUNC_LANG_INT;
@@ -1760,7 +1763,7 @@ store_load(backend_stack stk) {
 
 	sql_allocator *sa;
 	sql_trans *tr;
-	sql_table *t, *types, *funcs, *args;
+	sql_table *t, *types, *functions, *arguments;
 	sql_schema *s;
 
 	lng lng_store_oid;
@@ -1820,7 +1823,7 @@ store_load(backend_stack stk) {
 	bootstrap_create_column(tr, t, "eclass", 2014, "int", 32);
 	bootstrap_create_column(tr, t, "schema_id", 2015, "int", 32);
 
-	funcs = t = bootstrap_create_table(tr, s, "functions", 2016);
+	functions = t = bootstrap_create_table(tr, s, "functions", 2016);
 	bootstrap_create_column(tr, t, "id", 2017, "int", 32);
 	bootstrap_create_column(tr, t, "name", 2018, "varchar", 256);
 	bootstrap_create_column(tr, t, "func", 2019, "varchar", 8196);
@@ -1838,7 +1841,7 @@ store_load(backend_stack stk) {
 	bootstrap_create_column(tr, t, "system", 2027, "boolean", 1);
 	bootstrap_create_column(tr, t, "semantics", 2162, "boolean", 1);
 
-	args = t = bootstrap_create_table(tr, s, "args", 2028);
+	arguments = t = bootstrap_create_table(tr, s, "args", 2028);
 	bootstrap_create_column(tr, t, "id", 2029, "int", 32);
 	bootstrap_create_column(tr, t, "func_id", 2030, "int", 32);
 	bootstrap_create_column(tr, t, "name", 2031, "varchar", 256);
@@ -1995,7 +1998,7 @@ store_load(backend_stack stk) {
 
 	if (first) {
 		insert_types(tr, types);
-		insert_functions(tr, funcs, args);
+		insert_functions(tr, functions, funcs, arguments);
 		insert_schemas(tr);
 
 		if (sql_trans_commit(tr) != SQL_OK) {

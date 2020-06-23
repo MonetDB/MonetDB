@@ -30,10 +30,8 @@
 #cmakedefine HAVE_DISPATCH_DISPATCH_H 1
 #cmakedefine HAVE_DLFCN_H 1
 #cmakedefine HAVE_FCNTL_H 1
-#cmakedefine HAVE_ICONV_H 1
 #cmakedefine HAVE_IO_H 1
 #cmakedefine HAVE_KVM_H 1
-#cmakedefine HAVE_LANGINFO_H 1
 #cmakedefine HAVE_LIBGEN_H 1
 #cmakedefine HAVE_LIBINTL_H 1
 #cmakedefine HAVE_MACH_MACH_INIT_H 1

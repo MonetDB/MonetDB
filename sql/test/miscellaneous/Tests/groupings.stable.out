@@ -29,8 +29,8 @@ stdout of test 'groupings` in directory 'sql/test/miscellaneous` itself:
 #) AS totals
 #LEFT JOIN products ON products.id = totals.productid
 #ORDER BY sale_day NULLS LAST, productid NULLS LAST;
-% .,	.,	.totals # table_name
-% description,	sale_day,	total # name
+% .,	.,	.%6 # table_name
+% description,	sale_day,	%6 # name
 % clob,	char,	decimal # type
 % 12,	10,	14 # length
 [ "apples",	"2020-03-01",	15.0000	]
@@ -62,8 +62,8 @@ stdout of test 'groupings` in directory 'sql/test/miscellaneous` itself:
 #) AS totals
 #LEFT JOIN categories ON totals.categoryid = categories.id
 #LEFT JOIN sections ON totals.sectionid = sections.id;
-% .,	.,	.totals # table_name
-% section,	category,	total # name
+% .,	.,	.%10 # table_name
+% section,	category,	%10 # name
 % clob,	clob,	decimal # type
 % 12,	14,	14 # length
 [ "front",	"all_categories",	43.5000	]
@@ -84,8 +84,8 @@ stdout of test 'groupings` in directory 'sql/test/miscellaneous` itself:
 #FROM sales_totals
 #LEFT JOIN categories ON sales_totals.categoryid = categories.id
 #WHERE category_aggregates = 0;
-% .categories,	.sales_totals # table_name
-% description,	total # name
+% .categories,	.%10 # table_name
+% description,	%10 # name
 % clob,	decimal # type
 % 10,	14 # length
 [ "fresh food",	58.5000	]

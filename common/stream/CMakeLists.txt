@@ -116,5 +116,5 @@ install(TARGETS
 install(EXPORT streamTargets
   FILE streamTargets.cmake
   NAMESPACE MonetDB::
-  DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/cmake
+  DESTINATION ${EXPORT_TARGET_PATH}
   COMPONENT streamdev)

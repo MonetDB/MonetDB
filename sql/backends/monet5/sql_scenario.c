@@ -166,7 +166,7 @@ SQLprelude(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		fprintf(stdout, "# MonetDB/SQL module loaded\n");
 		fflush(stdout);		/* make merovingian see this *now* */
 	}
-	if (GDKinmemory()) {
+	if (GDKinmemory() || GDKembedded()) {
 		s->name = "sql";
 		ms->name = "msql";
 		return MAL_SUCCEED;
@@ -439,6 +439,12 @@ SQLinit(Client c)
 		maybeupgrade = 0;
 
 		for (int i = 0; i < sql_modules && !msg; i++) {
+#ifdef HAVE_HGE
+			if (!have_hge) {
+				if (strstr(sql_module_name[i], "_hge"))
+					continue;
+			}
+#endif
 			char *createdb_inline = (char*)sql_module_code[i];
 
 			msg = SQLstatementIntern(c, &createdb_inline, "sql.init", TRUE, FALSE, NULL);

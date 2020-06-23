@@ -126,7 +126,7 @@ slice(BAT **retval, BAT *b, lng start, lng end)
  * is large enough to prevent overflow.
  */
 
-str
+static str
 ALGminany_skipnil(ptr result, const bat *bid, const bit *skipnil)
 {
 	BAT *b;
@@ -155,14 +155,14 @@ ALGminany_skipnil(ptr result, const bat *bid, const bit *skipnil)
 	return msg;
 }
 
-str
+static str
 ALGminany(ptr result, const bat *bid)
 {
 	bit skipnil = TRUE;
 	return ALGminany_skipnil(result, bid, &skipnil);
 }
 
-str
+static str
 ALGmaxany_skipnil(ptr result, const bat *bid, const bit *skipnil)
 {
 	BAT *b;
@@ -191,14 +191,14 @@ ALGmaxany_skipnil(ptr result, const bat *bid, const bit *skipnil)
 	return msg;
 }
 
-str
+static str
 ALGmaxany(ptr result, const bat *bid)
 {
 	bit skipnil = TRUE;
 	return ALGmaxany_skipnil(result, bid, &skipnil);
 }
 
-str
+static str
 ALGgroupby(bat *res, const bat *gids, const bat *cnts)
 {
 	BAT *bn, *g, *c;
@@ -224,7 +224,7 @@ ALGgroupby(bat *res, const bat *gids, const bat *cnts)
 	return MAL_SUCCEED;
 }
 
-str
+static str
 ALGcard(lng *result, const bat *bid)
 {
 	BAT *b, *en;
@@ -242,7 +242,7 @@ ALGcard(lng *result, const bat *bid)
 	return MAL_SUCCEED;
 }
 
-str
+static str
 ALGselect2(bat *result, const bat *bid, const bat *sid, const void *low, const void *high, const bit *li, const bit *hi, const bit *anti)
 {
 	BAT *b, *s = NULL, *bn;
@@ -280,7 +280,7 @@ ALGselect2(bat *result, const bat *bid, const bat *sid, const void *low, const v
 	return MAL_SUCCEED;
 }
 
-str
+static str
 ALGselect2nil(bat *result, const bat *bid, const bat *sid, const void *low, const void *high, const bit *li, const bit *hi, const bit *anti, const bit *unknown)
 {
 	BAT *b, *s = NULL, *bn;
@@ -323,19 +323,19 @@ ALGselect2nil(bat *result, const bat *bid, const bat *sid, const void *low, cons
 	return MAL_SUCCEED;
 }
 
-str
+static str
 ALGselect1(bat *result, const bat *bid, const void *low, const void *high, const bit *li, const bit *hi, const bit *anti)
 {
 	return ALGselect2(result, bid, NULL, low, high, li, hi, anti);
 }
 
-str
+static str
 ALGselect1nil(bat *result, const bat *bid, const void *low, const void *high, const bit *li, const bit *hi, const bit *anti, const bit *unknown)
 {
 	return ALGselect2nil(result, bid, NULL, low, high, li, hi, anti, unknown);
 }
 
-str
+static str
 ALGthetaselect2(bat *result, const bat *bid, const bat *sid, const void *val, const char **op)
 {
 	BAT *b, *s = NULL, *bn;
@@ -359,13 +359,13 @@ ALGthetaselect2(bat *result, const bat *bid, const bat *sid, const void *val, co
 	return MAL_SUCCEED;
 }
 
-str
+static str
 ALGthetaselect1(bat *result, const bat *bid, const void *val, const char **op)
 {
 	return ALGthetaselect2(result, bid, NULL, val, op);
 }
 
-str
+static str
 ALGselectNotNil(bat *result, const bat *bid)
 {
 	BAT *b, *bn = NULL;
@@ -523,7 +523,7 @@ do_join(bat *r1, bat *r2, const bat *lid, const bat *rid, const bat *r2id,
 	throw(MAL, funcname, "%s", err);
 }
 
-str
+static str
 ALGjoin(bat *r1, bat *r2, const bat *lid, const bat *rid, const bat *slid, const bat *srid,
 		   const bit *nil_matches, const lng *estimate)
 {
@@ -532,7 +532,7 @@ ALGjoin(bat *r1, bat *r2, const bat *lid, const bat *rid, const bat *slid, const
 				   BATjoin, NULL, NULL, NULL, NULL, NULL, NULL, "algebra.join");
 }
 
-str
+static str
 ALGjoin1(bat *r1, const bat *lid, const bat *rid, const bat *slid, const bat *srid,
 		   const bit *nil_matches, const lng *estimate)
 {
@@ -541,7 +541,7 @@ ALGjoin1(bat *r1, const bat *lid, const bat *rid, const bat *slid, const bat *sr
 				   BATjoin, NULL, NULL, NULL, NULL, NULL, NULL, "algebra.join");
 }
 
-str
+static str
 ALGleftjoin(bat *r1, bat *r2, const bat *lid, const bat *rid, const bat *slid, const bat *srid,
 			   const bit *nil_matches, const lng *estimate)
 {
@@ -550,7 +550,7 @@ ALGleftjoin(bat *r1, bat *r2, const bat *lid, const bat *rid, const bat *slid, c
 				   BATleftjoin, NULL, NULL, NULL, NULL, NULL, NULL, "algebra.leftjoin");
 }
 
-str
+static str
 ALGleftjoin1(bat *r1, const bat *lid, const bat *rid, const bat *slid, const bat *srid,
 			   const bit *nil_matches, const lng *estimate)
 {
@@ -559,7 +559,7 @@ ALGleftjoin1(bat *r1, const bat *lid, const bat *rid, const bat *slid, const bat
 				   BATleftjoin, NULL, NULL, NULL, NULL, NULL, NULL, "algebra.leftjoin");
 }
 
-str
+static str
 ALGouterjoin(bat *r1, bat *r2, const bat *lid, const bat *rid, const bat *slid, const bat *srid,
 				const bit *nil_matches, const lng *estimate)
 {
@@ -568,7 +568,7 @@ ALGouterjoin(bat *r1, bat *r2, const bat *lid, const bat *rid, const bat *slid, 
 				   BATouterjoin, NULL, NULL, NULL, NULL, NULL, NULL, "algebra.outerjoin");
 }
 
-str
+static str
 ALGouterjoin1(bat *r1, const bat *lid, const bat *rid, const bat *slid, const bat *srid,
 				const bit *nil_matches, const lng *estimate)
 {
@@ -577,7 +577,7 @@ ALGouterjoin1(bat *r1, const bat *lid, const bat *rid, const bat *slid, const ba
 				   BATouterjoin, NULL, NULL, NULL, NULL, NULL, NULL, "algebra.outerjoin");
 }
 
-str
+static str
 ALGsemijoin(bat *r1, bat *r2, const bat *lid, const bat *rid, const bat *slid, const bat *srid,
 			const bit *nil_matches, const bit *max_one, const lng *estimate)
 {
@@ -586,7 +586,7 @@ ALGsemijoin(bat *r1, bat *r2, const bat *lid, const bat *rid, const bat *slid, c
 				   NULL, BATsemijoin, NULL, NULL, NULL, NULL, NULL, "algebra.semijoin");
 }
 
-str
+static str
 ALGthetajoin(bat *r1, bat *r2, const bat *lid, const bat *rid, const bat *slid, const bat *srid,
 				const int *op, const bit *nil_matches, const lng *estimate)
 {
@@ -595,7 +595,7 @@ ALGthetajoin(bat *r1, bat *r2, const bat *lid, const bat *rid, const bat *slid, 
 				   NULL, NULL, BATthetajoin, NULL, NULL, NULL, NULL, "algebra.thetajoin");
 }
 
-str
+static str
 ALGthetajoin1(bat *r1, const bat *lid, const bat *rid, const bat *slid, const bat *srid,
 				const int *op, const bit *nil_matches, const lng *estimate)
 {
@@ -604,7 +604,7 @@ ALGthetajoin1(bat *r1, const bat *lid, const bat *rid, const bat *slid, const ba
 				   NULL, NULL, BATthetajoin, NULL, NULL, NULL, NULL, "algebra.thetajoin");
 }
 
-str
+static str
 ALGbandjoin(bat *r1, bat *r2, const bat *lid, const bat *rid, const bat *slid, const bat *srid,
 			   const void *c1, const void *c2, const bit *li, const bit *hi,
 			   const lng *estimate)
@@ -614,7 +614,7 @@ ALGbandjoin(bat *r1, bat *r2, const bat *lid, const bat *rid, const bat *slid, c
 				   NULL, NULL, NULL, BATbandjoin, NULL, NULL, NULL, "algebra.bandjoin");
 }
 
-str
+static str
 ALGbandjoin1(bat *r1, const bat *lid, const bat *rid, const bat *slid, const bat *srid,
 			   const void *c1, const void *c2, const bit *li, const bit *hi,
 			   const lng *estimate)
@@ -624,7 +624,7 @@ ALGbandjoin1(bat *r1, const bat *lid, const bat *rid, const bat *slid, const bat
 				   NULL, NULL, NULL, BATbandjoin, NULL, NULL, NULL, "algebra.bandjoin");
 }
 
-str
+static str
 ALGrangejoin(bat *r1, bat *r2, const bat *lid, const bat *rlid, const bat *rhid, const bat *slid, const bat *srid, 
 			 const bit *li, const bit *hi, const bit *anti, const bit *symmetric, const lng *estimate)
 {
@@ -633,7 +633,7 @@ ALGrangejoin(bat *r1, bat *r2, const bat *lid, const bat *rlid, const bat *rhid,
 				   NULL, NULL, NULL, NULL, BATrangejoin, NULL, NULL, "algebra.rangejoin");
 }
 
-str
+static str
 ALGrangejoin1(bat *r1, const bat *lid, const bat *rlid, const bat *rhid, const bat *slid, const bat *srid,
 			  const bit *li, const bit *hi, const bit *anti, const bit *symmetric, const lng *estimate)
 {
@@ -642,7 +642,7 @@ ALGrangejoin1(bat *r1, const bat *lid, const bat *rlid, const bat *rhid, const b
 				   NULL, NULL, NULL, NULL, BATrangejoin, NULL, NULL, "algebra.rangejoin");
 }
 
-str
+static str
 ALGdifference(bat *r1, const bat *lid, const bat *rid, const bat *slid, const bat *srid,
 			  const bit *nil_matches, const bit *not_in, const lng *estimate)
 {
@@ -651,7 +651,7 @@ ALGdifference(bat *r1, const bat *lid, const bat *rid, const bat *slid, const ba
 				   NULL, NULL, NULL, NULL, NULL, BATdiff, NULL, "algebra.difference");
 }
 
-str
+static str
 ALGintersect(bat *r1, const bat *lid, const bat *rid, const bat *slid, const bat *srid,
 			 const bit *nil_matches, const bit *max_one, const lng *estimate)
 {
@@ -669,7 +669,7 @@ ALGintersect(bat *r1, const bat *lid, const bat *rid, const bat *slid, const bat
  *                distinct:bit)
  * returns :bat[:oid] [ , :bat[:oid] ]
  */
-str
+static str
 ALGfirstn(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	bat *ret1, *ret2 = NULL;
@@ -750,13 +750,13 @@ BATwcopy(BAT *b)
 	return COLcopy(b, b->ttype, true, TRANSIENT);
 }
 
-str
+static str
 ALGcopy(bat *result, const bat *bid)
 {
 	return ALGunary(result, bid, BATwcopy, "algebra.copy");
 }
 
-str
+static str
 ALGunique2(bat *result, const bat *bid, const bat *sid)
 {
 	BAT *b, *s = NULL, *bn = NULL;
@@ -779,7 +779,7 @@ ALGunique2(bat *result, const bat *bid, const bat *sid)
 	return MAL_SUCCEED;
 }
 
-str
+static str
 ALGunique1(bat *result, const bat *bid)
 {
 	return ALGunique2(result, bid, NULL);
@@ -810,13 +810,13 @@ ALGcrossproduct(bat *l, bat *r, const bat *left, const bat *right, const bit *ma
 	return MAL_SUCCEED;
 }
 
-str
+static str
 ALGcrossproduct1(bat *l, const bat *left, const bat *right, const bit *max_one)
 {
 	return ALGcrossproduct(l, NULL, left, right, max_one);
 }
 
-str
+static str
 ALGcrossproduct2(bat *l, bat *r, const bat *left, const bat *right, const bit *max_one)
 {
 	return ALGcrossproduct(l, r, left, right, max_one);
@@ -844,7 +844,7 @@ ALGprojection(bat *result, const bat *lid, const bat *rid)
 	return MAL_SUCCEED;
 }
 
-str
+static str
 ALGprojection2(bat *result, const bat *lid, const bat *r1id, const bat *r2id)
 {
 	BAT *l, *r1, *r2 = NULL, *bn;
@@ -873,7 +873,7 @@ ALGprojection2(bat *result, const bat *lid, const bat *r1id, const bat *r2id)
 	return MAL_SUCCEED;
 }
 
-str
+static str
 ALGsort33(bat *result, bat *norder, bat *ngroup, const bat *bid, const bat *order, const bat *group, const bit *reverse, const bit *nilslast, const bit *stable)
 {
 	BAT *bn = NULL, *on = NULL, *gn = NULL;
@@ -916,55 +916,55 @@ ALGsort33(bat *result, bat *norder, bat *ngroup, const bat *bid, const bat *orde
 	return MAL_SUCCEED;
 }
 
-str
+static str
 ALGsort32(bat *result, bat *norder, const bat *bid, const bat *order, const bat *group, const bit *reverse, const bit *nilslast, const bit *stable)
 {
 	return ALGsort33(result, norder, NULL, bid, order, group, reverse, nilslast, stable);
 }
 
-str
+static str
 ALGsort31(bat *result, const bat *bid, const bat *order, const bat *group, const bit *reverse, const bit *nilslast, const bit *stable)
 {
 	return ALGsort33(result, NULL, NULL, bid, order, group, reverse, nilslast, stable);
 }
 
-str
+static str
 ALGsort23(bat *result, bat *norder, bat *ngroup, const bat *bid, const bat *order, const bit *reverse, const bit *nilslast, const bit *stable)
 {
 	return ALGsort33(result, norder, ngroup, bid, order, NULL, reverse, nilslast, stable);
 }
 
-str
+static str
 ALGsort22(bat *result, bat *norder, const bat *bid, const bat *order, const bit *reverse, const bit *nilslast, const bit *stable)
 {
 	return ALGsort33(result, norder, NULL, bid, order, NULL, reverse, nilslast, stable);
 }
 
-str
+static str
 ALGsort21(bat *result, const bat *bid, const bat *order, const bit *reverse, const bit *nilslast, const bit *stable)
 {
 	return ALGsort33(result, NULL, NULL, bid, order, NULL, reverse, nilslast, stable);
 }
 
-str
+static str
 ALGsort13(bat *result, bat *norder, bat *ngroup, const bat *bid, const bit *reverse, const bit *nilslast, const bit *stable)
 {
 	return ALGsort33(result, norder, ngroup, bid, NULL, NULL, reverse, nilslast, stable);
 }
 
-str
+static str
 ALGsort12(bat *result, bat *norder, const bat *bid, const bit *reverse, const bit *nilslast, const bit *stable)
 {
 	return ALGsort33(result, norder, NULL, bid, NULL, NULL, reverse, nilslast, stable);
 }
 
-str
+static str
 ALGsort11(bat *result, const bat *bid, const bit *reverse, const bit *nilslast, const bit *stable)
 {
 	return ALGsort33(result, NULL, NULL, bid, NULL, NULL, reverse, nilslast, stable);
 }
 
-str
+static str
 ALGcount_bat(lng *result, const bat *bid)
 {
 	BAT *b;
@@ -977,7 +977,7 @@ ALGcount_bat(lng *result, const bat *bid)
 	return MAL_SUCCEED;
 }
 
-str
+static str
 ALGcount_nil(lng *result, const bat *bid, const bit *ignore_nils)
 {
 	BAT *b;
@@ -995,7 +995,7 @@ ALGcount_nil(lng *result, const bat *bid, const bit *ignore_nils)
 	return MAL_SUCCEED;
 }
 
-str
+static str
 ALGcount_no_nil(lng *result, const bat *bid)
 {
 	bit ignore_nils = 1;
@@ -1003,7 +1003,7 @@ ALGcount_no_nil(lng *result, const bat *bid)
 	return ALGcount_nil(result, bid, &ignore_nils);
 }
 
-str
+static str
 ALGcountCND_bat(lng *result, const bat *bid, const bat *cnd)
 {
 	BAT *b;
@@ -1024,7 +1024,7 @@ ALGcountCND_bat(lng *result, const bat *bid, const bat *cnd)
 	return MAL_SUCCEED;
 }
 
-str
+static str
 ALGcountCND_nil(lng *result, const bat *bid, const bat *cnd, const bit *ignore_nils)
 {
 	BAT *b;
@@ -1054,7 +1054,7 @@ ALGcountCND_nil(lng *result, const bat *bid, const bat *cnd, const bit *ignore_n
 	return MAL_SUCCEED;
 }
 
-str
+static str
 ALGcountCND_no_nil(lng *result, const bat *bid, const bat *cnd)
 {
 	bit ignore_nils = 1;
@@ -1062,7 +1062,7 @@ ALGcountCND_no_nil(lng *result, const bat *bid, const bat *cnd)
 	return ALGcountCND_nil(result, bid, cnd, &ignore_nils);
 }
 
-str
+static str
 ALGslice(bat *ret, const bat *bid, const lng *start, const lng *end)
 {
 	BAT *b, *bn = NULL;
@@ -1080,7 +1080,7 @@ ALGslice(bat *ret, const bat *bid, const lng *start, const lng *end)
 	throw(MAL, "algebra.slice", GDK_EXCEPTION);
 }
 
-str
+static str
 ALGslice_int(bat *ret, const bat *bid, const int *start, const int *end)
 {
 	lng s = *start;
@@ -1089,7 +1089,7 @@ ALGslice_int(bat *ret, const bat *bid, const int *start, const int *end)
 	return ALGslice(ret, bid, &s, &e);
 }
 
-str
+static str
 ALGslice_lng(bat *ret, const bat *bid, const lng *start, const lng *end)
 {
 	lng s = *start;
@@ -1100,7 +1100,7 @@ ALGslice_lng(bat *ret, const bat *bid, const lng *start, const lng *end)
 
 /* carve out a slice based on the OIDs */
 /* beware that BATs may have different OID bases */
-str
+static str
 ALGslice_oid(bat *ret, const bat *bid, const oid *start, const oid *end)
 {
 	lng s = (lng) (is_oid_nil(*start) ? 0 : (lng) *start);
@@ -1109,7 +1109,7 @@ ALGslice_oid(bat *ret, const bat *bid, const oid *start, const oid *end)
 	return ALGslice(ret, bid, &s, &e) ;
 }
 
-str
+static str
 ALGsubslice_lng(bat *ret, const bat *bid, const lng *start, const lng *end)
 {
 	BAT *b, *bn;
@@ -1206,7 +1206,7 @@ ALGfetchoid(ptr ret, const bat *bid, const oid *pos)
 	return ALGfetch(ret, bid, &o);
 }
 
-str
+static str
 ALGexist(bit *ret, const bat *bid, const void *val)
 {
 	BAT *b;
@@ -1222,7 +1222,7 @@ ALGexist(bit *ret, const bat *bid, const void *val)
 	return MAL_SUCCEED;
 }
 
-str
+static str
 ALGfind(oid *ret, const bat *bid, ptr val)
 {
 	BAT *b;
@@ -1244,7 +1244,7 @@ ALGfind(oid *ret, const bat *bid, ptr val)
 }
 
 
-str
+static str
 ALGprojecttail(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	bat *ret = getArgReference_bat(stk, pci, 0);
@@ -1270,7 +1270,8 @@ ALGprojecttail(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 }
 
 
-str ALGreuse(bat *ret, const bat *bid)
+static str
+ALGreuse(bat *ret, const bat *bid)
 {
 	BAT *b,*bn;
 	if ((b = BATdescriptor(*bid)) == NULL)
@@ -1304,7 +1305,7 @@ str ALGreuse(bat *ret, const bat *bid)
 /*
  * BAT standard deviation
  */
-str
+static str
 ALGstdev(dbl *res, const bat *bid)
 {
 	BAT *b;
@@ -1320,7 +1321,7 @@ ALGstdev(dbl *res, const bat *bid)
 	return MAL_SUCCEED;
 }
 
-str
+static str
 ALGstdevp(dbl *res, const bat *bid)
 {
 	BAT *b;
@@ -1339,7 +1340,7 @@ ALGstdevp(dbl *res, const bat *bid)
 /*
  * BAT variance
  */
-str
+static str
 ALGvariance(dbl *res, const bat *bid)
 {
 	BAT *b;
@@ -1355,7 +1356,7 @@ ALGvariance(dbl *res, const bat *bid)
 	return MAL_SUCCEED;
 }
 
-str
+static str
 ALGvariancep(dbl *res, const bat *bid)
 {
 	BAT *b;
@@ -1374,7 +1375,7 @@ ALGvariancep(dbl *res, const bat *bid)
 /*
  * BAT covariance
  */
-str
+static str
 ALGcovariance(dbl *res, const bat *bid1, const bat *bid2)
 {
 	BAT *b1, *b2;
@@ -1396,7 +1397,7 @@ ALGcovariance(dbl *res, const bat *bid1, const bat *bid2)
 	return MAL_SUCCEED;
 }
 
-str
+static str
 ALGcovariancep(dbl *res, const bat *bid1, const bat *bid2)
 {
 	BAT *b1, *b2;
@@ -1421,7 +1422,7 @@ ALGcovariancep(dbl *res, const bat *bid1, const bat *bid2)
 /*
  * BAT correlation
  */
-str
+static str
 ALGcorr(dbl *res, const bat *bid1, const bat *bid2)
 {
 	BAT *b1, *b2;

@@ -3731,14 +3731,14 @@ _rel_aggr(sql_query *query, sql_rel **rel, int distinct, sql_schema *s, char *an
 		else if (list_length(l) <= 63)
 			tpe = sql_bind_localtype("lng");
 #ifdef HAVE_HGE
-		else if (list_length(l) <= 127)
+		else if (have_hge && list_length(l) <= 127)
 			tpe = sql_bind_localtype("hge");
 #endif
 		else
 			return sql_error(sql, 02, SQLSTATE(42000) "SELECT: GROUPING the number of grouping columns is larger"
 								" than the maximum number of representable bits from this server (%d > %d)", list_length(l),
 #ifdef HAVE_HGE
-							 127
+							have_hge ? 127 : 63
 #else
 							 63
 #endif
@@ -4128,6 +4128,8 @@ rel_cast(sql_query *query, sql_rel **rel, symbol *se, int f)
 	}
 	if (e) 
 		e = rel_check_type(sql, tpe, rel ? *rel : NULL, e, type_cast);
+	if (e && e->type == e_convert)
+		exp_label(sql->sa, e, ++sql->label);
 	return e;
 }
 

@@ -79,7 +79,7 @@ install(TARGETS
 install(EXPORT mapiTargets
   FILE mapiTargets.cmake
   NAMESPACE MonetDB::
-  DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/cmake
+  DESTINATION ${EXPORT_TARGET_PATH}
   COMPONENT clientdev)
 
 # vim: set ts=2:sw=2:et

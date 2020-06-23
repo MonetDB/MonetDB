@@ -18,12 +18,16 @@
  */
 
 #include "monetdb_config.h"
-#include "batcolor.h"
+#include "gdk.h"
+#include <string.h>
+#include "mal.h"
+#include "color.h"
+#include "mal_exception.h"
 
 #include "mel.h"
 
 #define BATwalk(NAME,FUNC,TYPE1,ISNIL,TYPE2,TPE,APP)					\
-str CLRbat##NAME(bat *ret, const bat *l)								\
+static str CLRbat##NAME(bat *ret, const bat *l)							\
 {																		\
 	BATiter bi;															\
 	BAT *bn, *b;														\
@@ -90,7 +94,7 @@ BATwalk(Cr,CLRcr,color,is_color_nil,int,TYPE_int,bunfastappTYPE(int, bn, &y))
 BATwalk(Cb,CLRcb,color,is_color_nil,int,TYPE_int,bunfastappTYPE(int, bn, &y))
 
 #define BATwalk3(NAME,FUNC,TYPE)										\
-str CLRbat##NAME(bat *ret, const bat *l, const bat *bid2, const bat *bid3) \
+static str CLRbat##NAME(bat *ret, const bat *l, const bat *bid2, const bat *bid3) \
 {																		\
 	BATiter bi, b2i, b3i;												\
 	BAT *bn, *b2,*b3, *b;												\

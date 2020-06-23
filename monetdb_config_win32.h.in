@@ -82,13 +82,6 @@
 #endif
 #define fstat _fstat64
 
-#ifndef S_ISREG
-#define S_ISREG(mode)   (((mode) & _S_IFMT) == _S_IFREG)
-#endif
-#ifndef S_ISDIR
-#define S_ISDIR(mode)	(((mode) & _S_IFMT) == _S_IFDIR)
-#endif
-
 /* Does your compiler support `restrict' keyword? (C99 feature) */
 #ifndef restrict
 #cmakedefine restrict @restrict@
@@ -126,7 +119,6 @@ stpcpy(char *restrict dst, const char *restrict src)
 // Section: monetdb configure defines
 #cmakedefine HAVE_DLFCN_H 1
 #cmakedefine HAVE_FCNTL_H 1
-#cmakedefine HAVE_ICONV_H 1
 #cmakedefine HAVE_STRINGS_H 1
 #cmakedefine HAVE_SYS_MMAN_H 1
 #cmakedefine HAVE_SYS_UN_H 1

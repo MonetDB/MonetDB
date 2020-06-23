@@ -38,6 +38,13 @@ SELECT 1 > ALL(SELECT * FROM integers); -- false
 SELECT NULL > ANY(SELECT * FROM integers); -- NULL
 SELECT NULL > ALL(SELECT * FROM integers); -- NULL
 
+SELECT '1' = ALL(SELECT NULL); -- NULL
+SELECT '1' = ALL(SELECT '1'); -- true
+SELECT '1' = ALL(SELECT '2'); -- false
+SELECT time '10:00:00' = ALL(SELECT NULL); -- NULL
+SELECT time '10:00:00' = ALL(SELECT time '10:00:00'); -- true
+SELECT time '10:00:00' = ALL(SELECT time '10:00:01'); -- false
+
 SELECT i=ANY(SELECT i FROM integers WHERE i=i1.i) FROM integers i1 ORDER BY i;
 --True
 --True

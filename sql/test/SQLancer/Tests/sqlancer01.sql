@@ -256,8 +256,11 @@ NULL	"0.44968215744290607"
 NULL	".v"
 NULL	"-174251119"
 
-SELECT ALL CAST(VAR_SAMP(ALL abs(CAST(t0.c1 AS INT))) AS INT) FROM t0 GROUP BY CAST(t0.c1 AS INT), t0.c1;
-SELECT ALL 0.1002352, AVG(ALL t0.c0) FROM t0 GROUP BY CAST(t0.c0 AS STRING(799)), 0.4665444117594173, ((sql_min(+ ("locate"('', 'F', 150648381)), ((((-1039870396)||(390810869)))*(length(r'u')))))>>(CAST(0.588018201374832 AS INT)));
+SELECT AVG(t0.c0) FROM t0 GROUP BY CAST(t0.c0 AS VARCHAR(32));
+SELECT ALL 0.1002352, AVG(ALL t0.c0) FROM t0 GROUP BY CAST(t0.c0 AS STRING(799)), 0.4665444117594173, ((sql_min(+ ("locate"('', 'F', 150648381)), (((-1039870396))*(length(r'u')))))>>(CAST(0.588018201374832 AS INT)));
+
+SELECT ALL VAR_SAMP(ALL abs(t0.c0)) FROM t0 GROUP BY t0.c1 || '2', t0.c1;
+SELECT ALL CAST(VAR_SAMP(ALL abs(CAST(t0.c1 AS INT))) AS INT) FROM t0 GROUP BY CAST(t0.c1 AS INT), t0.c1; --error, cannot convert string into int
 ROLLBACK;
 
 START TRANSACTION; -- Bug 6905
@@ -289,6 +292,31 @@ SELECT t0.c0 FROM t0 WHERE ((0.9952398693354088) IN (t0.c1, t0.c1)) IS NULL;
 	--          8
 	-- 1783007739
 	--  498706403
+ROLLBACK;
+
+START TRANSACTION; -- Bug 6906
+CREATE TABLE t0("c0" DOUBLE PRECISION, "c1" VARCHAR(496));
+create view v0(c0, c1) as (select all t0.c0, r'epfNW⟚榢tptPbC{5{ZW}6,R' from t0) with check option;
+select 1 from v0 full outer join t0 on (cast(('a') in ('a') as string) ilike v0.c0);
+select 1 from v0 full outer join t0 on cast((v0.c1) in (1) as string) like v0.c0;
+select cast(sum(all + (cast(t0.c0 as int))) as bigint) from v0 full outer join t0 on ((cast((cast(v0.c1 as boolean)) not in (true, ((t0.c0)=(t0.c0)), cast(1745166981 as boolean)) as string))ilike(v0.c0));
+ROLLBACK;
+
+START TRANSACTION; -- Bug 6907
+CREATE TABLE t0 (c0 BOOLEAN, c1 CHAR(140));
+create view v0(c0) as (select distinct 0.4 from t0 where ((t0.c0)and((((lower(t0.c1))||(((((-69891801)/(1210439951)))+(cast(0.5895729273161221 as int)))))) 
+between symmetric (cast(0.5 as string)) and (greatest(t0.c1, ((t0.c1)||(-2045486895)))))));
+create view v1(c0, c1) as (select all 0.1, ((((cast(0.2 as int))/(+ (((((-212060493)*(816153822)))|(((2000022046)+(1143103273))))))))%(cast(cast(0.76693934 as int) as int))) from v0 
+group by 0.3, cast(- (cast(2.000022046E9 as int)) as boolean), sql_max(cast(cast(v0.c0 as string(336)) as int), length('1')), ((cast(0.19825737 as int))%(-1509376269)), v0.c0
+having count(all (0.7) is not null) order by v0.c0 asc nulls first) with check option;
+select all cast(sum(all cast(t0.c0 as int)) as bigint) as agg0 from v1 join t0 on cast(cast(v1.c1 as int) as boolean) where  (v1.c1) not in (v1.c1, 0.36970723) is null;
+ROLLBACK;
+
+START TRANSACTION; -- Bug 6908
+CREATE TABLE t0(c0 BOOLEAN,c1 CHAR(140));
+create view v0(c0) as (select distinct 0.4 from t0 where ((t0.c0)and((((lower(t0.c1))||(((((-69891801)/(1210439951)))+(cast(0.5895729273161221 as int)))))) between symmetric (cast(0.3 as string)) and (greatest(t0.c1, ((t0.c1)||(-2045486895)))))));
+create view v1(c0) as (select distinct t0.c1 from t0 where t0.c0);
+select max(all abs(+ (- (- (-1620427795))))) from v0, t0 join v1 on ((((v1.c0)||(t0.c1)))ilike(v1.c0));
 ROLLBACK;
 
 DROP TABLE tbl_ProductSales;
