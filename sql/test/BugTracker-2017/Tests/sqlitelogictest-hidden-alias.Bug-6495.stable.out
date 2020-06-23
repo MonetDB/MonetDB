@@ -40,7 +40,7 @@ stdout of test 'sqlitelogictest-hidden-alias.Bug-6495` in directory 'sql/test/Bu
 % bigint # type
 % 1 # length
 #SELECT DISTINCT + MAX ( DISTINCT - col1 ) col2 FROM tab0 WHERE - col3 + + 72 IS NULL;
-% . # table_name
+% sys. # table_name
 % col2 # name
 % double # type
 % 24 # length

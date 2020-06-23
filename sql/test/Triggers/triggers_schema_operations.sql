@@ -22,7 +22,7 @@ create trigger test_7_1
 
 update t_7_1 set name = 'mo' where id = 1;
 
-select name from tables where name = 't_7_2';
+select name from sys.tables where name = 't_7_2';
 
 drop trigger test_7_1;
 
@@ -55,11 +55,11 @@ create trigger test_7_5
 	after update on t_7_1
 	create index id_index on t_7_2(id);
 
-select name from tables where name = 'v1';
+select name from sys.tables where name = 'v1';
 
-select name from functions where name = 'f1';
+select name from sys.functions where name = 'f1';
 
-select name from idxs where name = 'id_index';
+select name from sys.idxs where name = 'id_index';
 
 drop trigger test_7_1;
 drop trigger test_7_2;

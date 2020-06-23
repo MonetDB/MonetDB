@@ -30,6 +30,7 @@
 
 #define USE_RINTERNALS 1
 
+#include <Rversion.h>
 #include <Rembedded.h>
 #include <Rdefines.h>
 #include <Rinternals.h>
@@ -58,14 +59,17 @@ static bool RAPIEnabled(void) {
 // The R-environment should be single threaded, calling for some protective measures.
 static MT_Lock rapiLock = MT_LOCK_INITIALIZER("rapiLock");
 static bool rapiInitialized = false;
+#if 0
 static char* rtypenames[] = { "NIL", "SYM", "LIST", "CLO", "ENV", "PROM",
 		"LANG", "SPECIAL", "BUILTIN", "CHAR", "LGL", "unknown", "unknown",
 		"INT", "REAL", "CPLX", "STR", "DOT", "ANY", "VEC", "EXPR", "BCODE",
 		"EXTPTR", "WEAKREF", "RAW", "S4" };
+#endif
 
 static Client rapiClient = NULL;
 
 
+#if 0
 // helper function to translate R TYPEOF() return values to something readable
 char* rtypename(int rtypeid) {
 	if (rtypeid < 0 || rtypeid > 25) {
@@ -73,8 +77,9 @@ char* rtypename(int rtypeid) {
 	} else
 		return rtypenames[rtypeid];
 }
+#endif
 
-void writeConsoleEx(const char * buf, int buflen, int foo) {
+static void writeConsoleEx(const char * buf, int buflen, int foo) {
 	(void) buflen;
 	(void) foo;
 	(void) buf; // silence compiler
@@ -83,11 +88,11 @@ void writeConsoleEx(const char * buf, int buflen, int foo) {
 #endif
 }
 
-void writeConsole(const char * buf, int buflen) {
+static void writeConsole(const char * buf, int buflen) {
 	writeConsoleEx(buf, buflen, -42);
 }
 
-void clearRErrConsole(void) {
+static void clearRErrConsole(void) {
 	// Do nothing?
 }
 
@@ -110,25 +115,34 @@ static char *RAPIinitialize(void) {
 	// set some command line arguments
 	{
 		structRstart rp;
-		Rstart Rp = &rp;
-		char *rargv[] = { "R", "--slave", "--vanilla" };
+		char *rargv[] = { "R",
+#if R_VERSION >= R_Version(4,0,0)
+						  "--no-echo",
+#else
+						  "--slave",
+#endif
+						  "--vanilla" };
 		int stat = 0;
 
-		R_DefParams(Rp);
-		Rp->R_Slave = (Rboolean) TRUE;
-		Rp->R_Quiet = (Rboolean) TRUE;
-		Rp->R_Interactive = (Rboolean) FALSE;
-		Rp->R_Verbose = (Rboolean) FALSE;
-		Rp->LoadSiteFile = (Rboolean) FALSE;
-		Rp->LoadInitFile = (Rboolean) FALSE;
-		Rp->RestoreAction = SA_NORESTORE;
-		Rp->SaveAction = SA_NOSAVE;
-		Rp->NoRenviron = TRUE;
+		R_DefParams(&rp);
+#if R_VERSION >= R_Version(4,0,0)
+		rp.R_NoEcho = (Rboolean) TRUE;
+#else
+		rp.R_Slave = (Rboolean) TRUE;
+#endif
+		rp.R_Quiet = (Rboolean) TRUE;
+		rp.R_Interactive = (Rboolean) FALSE;
+		rp.R_Verbose = (Rboolean) FALSE;
+		rp.LoadSiteFile = (Rboolean) FALSE;
+		rp.LoadInitFile = (Rboolean) FALSE;
+		rp.RestoreAction = SA_NORESTORE;
+		rp.SaveAction = SA_NOSAVE;
+		rp.NoRenviron = TRUE;
 		stat = Rf_initialize_R(2, rargv);
 		if (stat < 0) {
 			return "Rf_initialize failed";
 		}
-		R_SetParams(Rp);
+		R_SetParams(&rp);
 	}
 
 	/* disable stack checking, because threads will throw it off */
@@ -220,16 +234,7 @@ static char *RAPIinstalladdons(void) {
 	return NULL;
 }
 
-rapi_export str RAPIevalStd(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
-							InstrPtr pci) {
-	return RAPIeval(cntxt, mb, stk, pci, 0);
-}
-rapi_export str RAPIevalAggr(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
-							 InstrPtr pci) {
-	return RAPIeval(cntxt, mb, stk, pci, 1);
-}
-
-str RAPIeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bit grouped) {
+static str RAPIeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bit grouped) {
 	sql_func * sqlfun = NULL;
 	str exprStr = *getArgReference_str(stk, pci, pci->retc + 1);
 
@@ -479,6 +484,15 @@ str RAPIeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bit groupe
 	return msg;
 }
 
+static str RAPIevalStd(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
+							InstrPtr pci) {
+	return RAPIeval(cntxt, mb, stk, pci, 0);
+}
+static str RAPIevalAggr(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
+							 InstrPtr pci) {
+	return RAPIeval(cntxt, mb, stk, pci, 1);
+}
+
 void* RAPIloopback(void *query) {
 	res_table* output = NULL;
 	char* querystr = (char*)CHAR(STRING_ELT(query, 0));
@@ -517,7 +531,7 @@ void* RAPIloopback(void *query) {
 }
 
 
-str RAPIprelude(void *ret) {
+static str RAPIprelude(void *ret) {
 	(void) ret;
 
 	if (RAPIEnabled()) {
@@ -539,3 +553,23 @@ str RAPIprelude(void *ret) {
 	}
 	return MAL_SUCCEED;
 }
+
+#include "mel.h"
+static mel_func rapi_init_funcs[] = {
+ pattern("rapi", "eval", RAPIevalStd, false, "Execute a simple R script returning a single value", args(1,3, argany("",0),arg("fptr",ptr),arg("expr",str))),
+ pattern("rapi", "eval", RAPIevalStd, false, "Execute a simple R script value", args(1,4, varargany("",0),arg("fptr",ptr),arg("expr",str),varargany("arg",0))),
+ pattern("rapi", "subeval_aggr", RAPIevalAggr, false, "grouped aggregates through R", args(1,4, varargany("",0),arg("fptr",ptr),arg("expr",str),varargany("arg",0))),
+ pattern("rapi", "eval_aggr", RAPIevalAggr, false, "grouped aggregates through R", args(1,4, varargany("",0),arg("fptr",ptr),arg("expr",str),varargany("arg",0))),
+ command("rapi", "prelude", RAPIprelude, false, "", args(1,1, arg("",void))),
+ pattern("batrapi", "eval", RAPIevalStd, false, "Execute a simple R script value", args(1,4, varargany("",0),arg("fptr",ptr),arg("expr",str),varargany("arg",0))),
+ pattern("batrapi", "subeval_aggr", RAPIevalAggr, false, "grouped aggregates through R", args(1,4, varargany("",0),arg("fptr",ptr),arg("expr",str),varargany("arg",0))),
+ pattern("batrapi", "eval_aggr", RAPIevalAggr, false, "grouped aggregates through R", args(1,4, varargany("",0),arg("fptr",ptr),arg("expr",str),varargany("arg",0))),
+ { .imp=NULL }
+};
+#include "mal_import.h"
+#ifdef _MSC_VER
+#undef read
+#pragma section(".CRT$XCU",read)
+#endif
+LIB_STARTUP_FUNC(init_rapi_mal)
+{ mal_module("rapi", NULL, rapi_init_funcs); }

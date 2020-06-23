@@ -108,6 +108,10 @@ select x like null, null like x, null like null, x ilike null, null ilike x, nul
        x not like null, null not like x, null not like null, x not ilike null, null not ilike x, null not ilike null from x;
 	-- all NULL
 
+select x like null from x;
+	-- NULL
+	-- NULL
+
 select x like x, x ilike x, x not like x, x not ilike x from x;
 	-- NULL NULL NULL NULL
 	-- True True False False
@@ -121,23 +125,31 @@ drop table x;
 create table x (x int null not null); --error, multiple null constraints
 create table x (a int default '1' GENERATED ALWAYS AS IDENTITY); --error, multiple default values
 
-DECLARE myvar bigint;
-SET myvar = (SELECT COUNT(*) FROM sequences);
+create table myvar (m bigint);
+INSERT INTO myvar VALUES ((SELECT COUNT(*) FROM sequences));
 create table x (a int GENERATED ALWAYS AS IDENTITY);
 alter table x alter a set default 1; --ok, remove sequence
-SELECT CAST(COUNT(*) - myvar AS BIGINT) FROM sequences; --the total count, cannot change
+SELECT CAST(COUNT(*) - (SELECT m FROM myvar) AS BIGINT) FROM sequences; --the total count, cannot change
+drop table myvar;
 drop table x;
 
-SET myvar = (SELECT COUNT(*) FROM sequences);
+create table myvar (m bigint);
+INSERT INTO myvar VALUES ((SELECT COUNT(*) FROM sequences));
 create table x (a int GENERATED ALWAYS AS IDENTITY);
 alter table x alter a drop default; --ok, remove sequence
-SELECT CAST(COUNT(*) - myvar AS BIGINT) FROM sequences; --the total count, cannot change
+SELECT CAST(COUNT(*) - (SELECT m FROM myvar) AS BIGINT) FROM sequences; --the total count, cannot change
+drop table myvar;
 drop table x;
 
+create function myudf() returns int
+begin
+declare myvar int;
 SELECT 1, 2 INTO myvar; --error, number of variables don't match
+return 1;
+end;
 
-declare table x (a int);
-declare table x (c int); --error table x already declared
+create table x (a int);
+create table x (c int); --error table x already declared
 drop table if exists x;
 
 create table myx (a boolean);
@@ -148,6 +160,19 @@ drop table myy;
 
 create view iambad as select * from _tables sample 10; --error, sample inside views not supported
 
-set current_timezone = null; --error, default global variables cannot be null
-set current_timezone = 11111111111111; --error, value too big
-set current_schema = null; --error, default global variables cannot be null
+set "current_timezone" = null; --error, default global variables cannot be null
+set "current_timezone" = 11111111111111; --error, value too big
+set "current_schema" = null; --error, default global variables cannot be null
+
+select greatest(null, null);
+select sql_min(null, null);
+
+start transaction;
+create table tab1(col1 blob);
+insert into tab1 values('2233');
+select length(col1) from tab1;
+insert into tab1 values(null), (null), ('11'), ('2233');
+select length(col1) from tab1;
+rollback;
+
+select 'a' like 'a' escape 'a'; --error, like sequence ending with escape character 

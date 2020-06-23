@@ -19,7 +19,7 @@
 #include "streams.h"
 #include "mal_exception.h"
 
-str mnstr_open_rstreamwrap(Stream *S, str *filename)
+static str mnstr_open_rstreamwrap(Stream *S, str *filename)
 {
 	stream *s;
 
@@ -35,7 +35,7 @@ str mnstr_open_rstreamwrap(Stream *S, str *filename)
 
 	return MAL_SUCCEED;
 }
-str mnstr_open_wstreamwrap(Stream *S, str *filename)
+static str mnstr_open_wstreamwrap(Stream *S, str *filename)
 {
 	stream *s;
 
@@ -52,7 +52,7 @@ str mnstr_open_wstreamwrap(Stream *S, str *filename)
 	return MAL_SUCCEED;
 }
 
-str mnstr_open_rastreamwrap(Stream *S, str *filename)
+static str mnstr_open_rastreamwrap(Stream *S, str *filename)
 {
 	stream *s;
 
@@ -69,7 +69,7 @@ str mnstr_open_rastreamwrap(Stream *S, str *filename)
 	return MAL_SUCCEED;
 }
 
-str mnstr_open_wastreamwrap(Stream *S, str *filename)
+static str mnstr_open_wastreamwrap(Stream *S, str *filename)
 {
 	stream *s;
 
@@ -86,7 +86,7 @@ str mnstr_open_wastreamwrap(Stream *S, str *filename)
 	return MAL_SUCCEED;
 }
 
-str
+static str
 mnstr_write_stringwrap(void *ret, Stream *S, str *data)
 {
 	stream *s = *(stream **)S;
@@ -98,7 +98,7 @@ mnstr_write_stringwrap(void *ret, Stream *S, str *data)
 	return MAL_SUCCEED;
 }
 
-str
+static str
 mnstr_writeIntwrap(void *ret, Stream *S, int *data)
 {
 	stream *s = *(stream **)S;
@@ -110,7 +110,7 @@ mnstr_writeIntwrap(void *ret, Stream *S, int *data)
 	return MAL_SUCCEED;
 }
 
-str
+static str
 mnstr_readIntwrap(int *ret, Stream *S)
 {
 	stream *s = *(stream **)S;
@@ -122,7 +122,7 @@ mnstr_readIntwrap(int *ret, Stream *S)
 }
 
 #define CHUNK (64 * 1024)
-str
+static str
 mnstr_read_stringwrap(str *res, Stream *S)
 {
 	stream *s = *(stream **)S;
@@ -153,7 +153,7 @@ mnstr_read_stringwrap(str *res, Stream *S)
 	return MAL_SUCCEED;
 }
 
-str
+static str
 mnstr_flush_streamwrap(void *ret, Stream *S)
 {
 	stream *s = *(stream **)S;
@@ -165,7 +165,7 @@ mnstr_flush_streamwrap(void *ret, Stream *S)
 	return MAL_SUCCEED;
 }
 
-str
+static str
 mnstr_close_streamwrap(void *ret, Stream *S)
 {
 	(void)ret;
@@ -175,7 +175,7 @@ mnstr_close_streamwrap(void *ret, Stream *S)
 	return MAL_SUCCEED;
 }
 
-str
+static str
 open_block_streamwrap(Stream *S, Stream *is)
 {
 	if ((*(stream **)S = block_stream(*(stream **)is)) == NULL)
@@ -184,7 +184,7 @@ open_block_streamwrap(Stream *S, Stream *is)
 	return MAL_SUCCEED;
 }
 
-str
+static str
 bstream_create_wrapwrap(Bstream *Bs, Stream *S, int *bufsize)
 {
 	if ((*(bstream **)Bs = bstream_create(*(stream **)S, (size_t)*bufsize)) == NULL)
@@ -193,7 +193,7 @@ bstream_create_wrapwrap(Bstream *Bs, Stream *S, int *bufsize)
 	return MAL_SUCCEED;
 }
 
-str
+static str
 bstream_destroy_wrapwrap(void *ret, Bstream *BS)
 {
 	(void)ret;
@@ -203,10 +203,40 @@ bstream_destroy_wrapwrap(void *ret, Bstream *BS)
 	return MAL_SUCCEED;
 }
 
-str
+static str
 bstream_read_wrapwrap(int *res, Bstream *BS, int *size)
 {
 	*res = (int)bstream_read(*(bstream **)BS, (size_t)*size);
 
 	return MAL_SUCCEED;
 }
+
+#include "mel.h"
+mel_atom streams_init_atoms[] = {
+ { .name="streams", .basetype="ptr", },
+ { .name="bstream", .basetype="ptr", },  { .cmp=NULL } 
+};
+mel_func streams_init_funcs[] = {
+ command("streams", "openReadBytes", mnstr_open_rstreamwrap, true, "open a file stream for reading", args(1,2, arg("",streams),arg("filename",str))),
+ command("streams", "openWriteBytes", mnstr_open_wstreamwrap, true, "open a file stream for writing", args(1,2, arg("",streams),arg("filename",str))),
+ command("streams", "openRead", mnstr_open_rastreamwrap, true, "open ascii file stream for reading", args(1,2, arg("",streams),arg("filename",str))),
+ command("streams", "openWrite", mnstr_open_wastreamwrap, true, "open ascii file stream for writing", args(1,2, arg("",streams),arg("filename",str))),
+ command("streams", "blocked", open_block_streamwrap, true, "open a block based stream", args(1,2, arg("",streams),arg("s",streams))),
+ command("streams", "writeStr", mnstr_write_stringwrap, true, "write data on the stream", args(1,3, arg("",void),arg("s",streams),arg("data",str))),
+ command("streams", "writeInt", mnstr_writeIntwrap, true, "write data on the stream", args(1,3, arg("",void),arg("s",streams),arg("data",int))),
+ command("streams", "readStr", mnstr_read_stringwrap, true, "read string data from the stream", args(1,2, arg("",str),arg("s",streams))),
+ command("streams", "readInt", mnstr_readIntwrap, true, "read integer data from the stream", args(1,2, arg("",int),arg("s",streams))),
+ command("streams", "flush", mnstr_flush_streamwrap, true, "flush the stream", args(0,1, arg("s",streams))),
+ command("streams", "close", mnstr_close_streamwrap, true, "close and destroy the stream s", args(0,1, arg("s",streams))),
+ command("streams", "create", bstream_create_wrapwrap, true, "create a buffered stream", args(1,3, arg("",bstream),arg("s",streams),arg("bufsize",int))),
+ command("streams", "destroy", bstream_destroy_wrapwrap, true, "destroy bstream", args(0,1, arg("s",bstream))),
+ command("streams", "read", bstream_read_wrapwrap, true, "read at least size bytes into the buffer of s", args(1,3, arg("",int),arg("s",bstream),arg("size",int))),
+ { .imp=NULL }
+};
+#include "mal_import.h"
+#ifdef _MSC_VER
+#undef read
+#pragma section(".CRT$XCU",read)
+#endif
+LIB_STARTUP_FUNC(init_streams_mal)
+{ mal_module("streams", streams_init_atoms, streams_init_funcs); }

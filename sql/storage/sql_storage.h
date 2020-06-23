@@ -19,11 +19,9 @@
 
 #define isTemp(x) (isNew((x)->t)||(x)->t->persistence!=SQL_PERSIST)
 #define isTempTable(x)   ((x)->persistence!=SQL_PERSIST)
-#define isGlobal(x)      ((x)->persistence!=SQL_LOCAL_TEMP && \
-			  (x)->persistence!=SQL_DECLARED_TABLE)
+#define isGlobal(x)      ((x)->persistence!=SQL_LOCAL_TEMP && (x)->persistence!=SQL_DECLARED_TABLE)
 #define isGlobalTemp(x)  ((x)->persistence==SQL_GLOBAL_TEMP)
-#define isTempSchema(x)  (strcmp((x)->base.name, "tmp") == 0 || \
-			  strcmp((x)->base.name, dt_schema) == 0)
+#define isTempSchema(x)  (strcmp((x)->base.name, "tmp") == 0)
 #define isDeclaredTable(x)  ((x)->persistence==SQL_DECLARED_TABLE)
 
 extern int catalog_version;
@@ -374,7 +372,7 @@ extern res_col *res_col_create(sql_trans *tr, res_table *t, const char *tn, cons
 extern void res_table_destroy(res_table *t);
 
 extern res_table *res_tables_remove(res_table *results, res_table *t);
-extern void res_tables_destroy(res_table *results);
+sql_export void res_tables_destroy(res_table *results);
 extern res_table *res_tables_find(res_table *results, int res_id);
 
 extern int store_init(int debug, store_type store, int readonly, int singleuser, backend_stack stk);
@@ -504,5 +502,8 @@ extern sql_part *sql_trans_copy_part(sql_trans *tr, sql_table *t, sql_part *pt);
 
 extern void sql_trans_drop_any_comment(sql_trans *tr, sqlid id);
 extern void sql_trans_drop_obj_priv(sql_trans *tr, sqlid obj_id);
+
+/* This function should be used in exceptional cases such as dealing with tricky upgrades! */
+extern void insert_functions(sql_trans *tr, sql_table *sysfunc, list *funcs_list, sql_table *sysarg);
 
 #endif /*SQL_STORAGE_H */

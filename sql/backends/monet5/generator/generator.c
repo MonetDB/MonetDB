@@ -13,7 +13,6 @@
 
 #include "monetdb_config.h"
 #include "opt_prelude.h"
-#include "algebra.h"
 #include "generator.h"
 #include "gdk_time.h"
 #include <math.h>
@@ -715,7 +714,6 @@ str VLTgenerator_projection(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 	BUN cnt;
 	oid *ol =0, o= 0;
 	InstrPtr p;
-	str msg;
 
 	(void) cntxt;
 	p = findGeneratorDefinition(mb,pci,pci->argv[2]);
@@ -733,10 +731,14 @@ str VLTgenerator_projection(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 			BBPunfix(b->batCacheid);
 			throw(MAL,"generator.projection", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 		}
-		msg = ALGprojection(ret, &b->batCacheid, &bn->batCacheid);
+		BAT *bp = BATproject(b, bn);
 		BBPunfix(b->batCacheid);
 		BBPunfix(bn->batCacheid);
-		return msg;
+		if (bp == NULL)
+			throw(MAL, "generator.projection", GDK_EXCEPTION);
+		*ret = bp->batCacheid;
+		BBPkeepref(*ret);
+		return MAL_SUCCEED;
 	}
 
 	cnt = BATcount(b);
@@ -851,15 +853,25 @@ str VLTgenerator_join(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	q = findGeneratorDefinition(mb,pci,pci->argv[3]);
 
 	if (p == NULL && q == NULL) {
-		bit zero = 0;
-		return ALGjoin(getArgReference_bat(stk, pci, 0),
-			       getArgReference_bat(stk, pci, 1),
-			       getArgReference_bat(stk, pci, 2),
-			       getArgReference_bat(stk, pci, 3),
-			       NULL,  /* left candidate */
-			       NULL,  /* right candidate */
-			       &zero, /* nil_matches */
-			       NULL); /* estimate */
+		bl = BATdescriptor(*getArgReference_bat(stk, pci, 2));
+		br = BATdescriptor(*getArgReference_bat(stk, pci, 3));
+		if (bl == NULL || br == NULL) {
+			if (bl)
+				BBPunfix(bl->batCacheid);
+			if (br)
+				BBPunfix(br->batCacheid);
+			throw(MAL,"generator.join", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
+		}
+		gdk_return rc = BATjoin(&bln, &brn, bl, br, NULL, NULL, false, BUN_NONE);
+		BBPunfix(bl->batCacheid);
+		BBPunfix(br->batCacheid);
+		if (rc != GDK_SUCCEED)
+			throw(MAL,"generator.join", GDK_EXCEPTION);
+		*getArgReference_bat(stk, pci, 0) = bln->batCacheid;
+		*getArgReference_bat(stk, pci, 1) = brn->batCacheid;
+		BBPkeepref(bln->batCacheid);
+		BBPkeepref(brn->batCacheid);
+		return MAL_SUCCEED;
 	}
 
 	if( p == NULL){
@@ -1084,3 +1096,100 @@ str VLTgenerator_rangejoin(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
 	BBPkeepref(*getArgReference_bat(stk,pci,1)= brn->batCacheid);
 	return msg;
 }
+
+#include "mel.h"
+static mel_func generator_init_funcs[] = {
+ pattern("generator", "series", VLTgenerator_table, false, "", args(1,3, batarg("",bte),arg("first",bte),arg("limit",bte))),
+ pattern("generator", "series", VLTgenerator_table, false, "", args(1,3, batarg("",sht),arg("first",sht),arg("limit",sht))),
+ pattern("generator", "series", VLTgenerator_table, false, "", args(1,3, batarg("",int),arg("first",int),arg("limit",int))),
+ pattern("generator", "series", VLTgenerator_table, false, "", args(1,3, batarg("",lng),arg("first",lng),arg("limit",lng))),
+ pattern("generator", "series", VLTgenerator_table, false, "", args(1,3, batarg("",flt),arg("first",flt),arg("limit",flt))),
+ pattern("generator", "series", VLTgenerator_table, false, "", args(1,3, batarg("",dbl),arg("first",dbl),arg("limit",dbl))),
+ pattern("generator", "series", VLTgenerator_table, false, "", args(1,4, batarg("",bte),arg("first",bte),arg("limit",bte),arg("step",bte))),
+ pattern("generator", "series", VLTgenerator_table, false, "", args(1,4, batarg("",sht),arg("first",sht),arg("limit",sht),arg("step",sht))),
+ pattern("generator", "series", VLTgenerator_table, false, "", args(1,4, batarg("",int),arg("first",int),arg("limit",int),arg("step",int))),
+ pattern("generator", "series", VLTgenerator_table, false, "", args(1,4, batarg("",lng),arg("first",lng),arg("limit",lng),arg("step",lng))),
+ pattern("generator", "series", VLTgenerator_table, false, "", args(1,4, batarg("",flt),arg("first",flt),arg("limit",flt),arg("step",flt))),
+ pattern("generator", "series", VLTgenerator_table, false, "Create and materialize a generator table", args(1,4, batarg("",dbl),arg("first",dbl),arg("limit",dbl),arg("step",dbl))),
+ pattern("generator", "series", VLTgenerator_table, false, "", args(1,4, batarg("",timestamp),arg("first",timestamp),arg("limit",timestamp),arg("step",lng))),
+ pattern("generator", "parameters", VLTgenerator_noop, false, "", args(1,4, batarg("",bte),arg("first",bte),arg("limit",bte),arg("step",bte))),
+ pattern("generator", "parameters", VLTgenerator_noop, false, "", args(1,4, batarg("",sht),arg("first",sht),arg("limit",sht),arg("step",sht))),
+ pattern("generator", "parameters", VLTgenerator_noop, false, "", args(1,4, batarg("",int),arg("first",int),arg("limit",int),arg("step",int))),
+ pattern("generator", "parameters", VLTgenerator_noop, false, "", args(1,4, batarg("",lng),arg("first",lng),arg("limit",lng),arg("step",lng))),
+ pattern("generator", "parameters", VLTgenerator_noop, false, "", args(1,4, batarg("",flt),arg("first",flt),arg("limit",flt),arg("step",flt))),
+ pattern("generator", "parameters", VLTgenerator_noop, false, "", args(1,4, batarg("",dbl),arg("first",dbl),arg("limit",dbl),arg("step",dbl))),
+ pattern("generator", "parameters", VLTgenerator_noop, false, "Retain the table definition, but don't materialize", args(1,4, batarg("",timestamp),arg("first",timestamp),arg("limit",timestamp),arg("step",lng))),
+ pattern("generator", "parameters", VLTgenerator_noop, false, "", args(1,3, batarg("",bte),arg("first",bte),arg("limit",bte))),
+ pattern("generator", "parameters", VLTgenerator_noop, false, "", args(1,3, batarg("",sht),arg("first",sht),arg("limit",sht))),
+ pattern("generator", "parameters", VLTgenerator_noop, false, "", args(1,3, batarg("",int),arg("first",int),arg("limit",int))),
+ pattern("generator", "parameters", VLTgenerator_noop, false, "", args(1,3, batarg("",lng),arg("first",lng),arg("limit",lng))),
+ pattern("generator", "parameters", VLTgenerator_noop, false, "", args(1,3, batarg("",flt),arg("first",flt),arg("limit",flt))),
+ pattern("generator", "parameters", VLTgenerator_noop, false, "", args(1,3, batarg("",dbl),arg("first",dbl),arg("limit",dbl))),
+ pattern("generator", "thetaselect", VLTgenerator_thetasubselect, false, "", args(1,4, batarg("",oid),batarg("b",bte),arg("low",bte),arg("oper",str))),
+ pattern("generator", "thetaselect", VLTgenerator_thetasubselect, false, "", args(1,4, batarg("",oid),batarg("b",sht),arg("low",sht),arg("oper",str))),
+ pattern("generator", "thetaselect", VLTgenerator_thetasubselect, false, "", args(1,4, batarg("",oid),batarg("b",int),arg("low",int),arg("oper",str))),
+ pattern("generator", "thetaselect", VLTgenerator_thetasubselect, false, "", args(1,4, batarg("",oid),batarg("b",lng),arg("low",lng),arg("oper",str))),
+ pattern("generator", "thetaselect", VLTgenerator_thetasubselect, false, "", args(1,4, batarg("",oid),batarg("b",flt),arg("low",flt),arg("oper",str))),
+ pattern("generator", "thetaselect", VLTgenerator_thetasubselect, false, "", args(1,4, batarg("",oid),batarg("b",dbl),arg("low",dbl),arg("oper",str))),
+ pattern("generator", "thetaselect", VLTgenerator_thetasubselect, false, "Overloaded selection routine", args(1,4, batarg("",oid),batarg("b",timestamp),arg("low",timestamp),arg("oper",str))),
+ pattern("generator", "thetaselect", VLTgenerator_thetasubselect, false, "", args(1,5, batarg("",oid),batarg("b",bte),batarg("cnd",oid),arg("low",bte),arg("oper",str))),
+ pattern("generator", "thetaselect", VLTgenerator_thetasubselect, false, "", args(1,5, batarg("",oid),batarg("b",sht),batarg("cnd",oid),arg("low",sht),arg("oper",str))),
+ pattern("generator", "thetaselect", VLTgenerator_thetasubselect, false, "", args(1,5, batarg("",oid),batarg("b",int),batarg("cnd",oid),arg("low",int),arg("oper",str))),
+ pattern("generator", "thetaselect", VLTgenerator_thetasubselect, false, "", args(1,5, batarg("",oid),batarg("b",lng),batarg("cnd",oid),arg("low",lng),arg("oper",str))),
+ pattern("generator", "thetaselect", VLTgenerator_thetasubselect, false, "", args(1,5, batarg("",oid),batarg("b",flt),batarg("cnd",oid),arg("low",flt),arg("oper",str))),
+ pattern("generator", "thetaselect", VLTgenerator_thetasubselect, false, "", args(1,5, batarg("",oid),batarg("b",dbl),batarg("cnd",oid),arg("low",dbl),arg("oper",str))),
+ pattern("generator", "thetaselect", VLTgenerator_thetasubselect, false, "Overloaded selection routine", args(1,5, batarg("",oid),batarg("b",timestamp),batarg("cnd",oid),arg("low",timestamp),arg("oper",str))),
+ pattern("generator", "select", VLTgenerator_subselect, false, "", args(1,7, batarg("",oid),batarg("b",bte),arg("low",bte),arg("high",bte),arg("li",bit),arg("hi",bit),arg("anti",bit))),
+ pattern("generator", "select", VLTgenerator_subselect, false, "", args(1,7, batarg("",oid),batarg("b",sht),arg("low",sht),arg("high",sht),arg("li",bit),arg("hi",bit),arg("anti",bit))),
+ pattern("generator", "select", VLTgenerator_subselect, false, "", args(1,7, batarg("",oid),batarg("b",int),arg("low",int),arg("high",int),arg("li",bit),arg("hi",bit),arg("anti",bit))),
+ pattern("generator", "select", VLTgenerator_subselect, false, "", args(1,7, batarg("",oid),batarg("b",lng),arg("low",lng),arg("high",lng),arg("li",bit),arg("hi",bit),arg("anti",bit))),
+ pattern("generator", "select", VLTgenerator_subselect, false, "", args(1,7, batarg("",oid),batarg("b",flt),arg("low",flt),arg("high",flt),arg("li",bit),arg("hi",bit),arg("anti",bit))),
+ pattern("generator", "select", VLTgenerator_subselect, false, "", args(1,7, batarg("",oid),batarg("b",dbl),arg("low",dbl),arg("high",dbl),arg("li",bit),arg("hi",bit),arg("anti",bit))),
+ pattern("generator", "select", VLTgenerator_subselect, false, "Overloaded selection routine", args(1,7, batarg("",oid),batarg("b",timestamp),arg("low",timestamp),arg("high",timestamp),arg("li",bit),arg("hi",bit),arg("anti",bit))),
+ pattern("generator", "select", VLTgenerator_subselect, false, "", args(1,8, batarg("",oid),batarg("b",bte),batarg("cand",oid),arg("low",bte),arg("high",bte),arg("li",bit),arg("hi",bit),arg("anti",bit))),
+ pattern("generator", "select", VLTgenerator_subselect, false, "", args(1,8, batarg("",oid),batarg("b",sht),batarg("cand",oid),arg("low",sht),arg("high",sht),arg("li",bit),arg("hi",bit),arg("anti",bit))),
+ pattern("generator", "select", VLTgenerator_subselect, false, "", args(1,8, batarg("",oid),batarg("b",int),batarg("cand",oid),arg("low",int),arg("high",int),arg("li",bit),arg("hi",bit),arg("anti",bit))),
+ pattern("generator", "select", VLTgenerator_subselect, false, "", args(1,8, batarg("",oid),batarg("b",lng),batarg("cand",oid),arg("low",lng),arg("high",lng),arg("li",bit),arg("hi",bit),arg("anti",bit))),
+ pattern("generator", "select", VLTgenerator_subselect, false, "", args(1,8, batarg("",oid),batarg("b",flt),batarg("cand",oid),arg("low",flt),arg("high",flt),arg("li",bit),arg("hi",bit),arg("anti",bit))),
+ pattern("generator", "select", VLTgenerator_subselect, false, "", args(1,8, batarg("",oid),batarg("b",dbl),batarg("cand",oid),arg("low",dbl),arg("high",dbl),arg("li",bit),arg("hi",bit),arg("anti",bit))),
+ pattern("generator", "select", VLTgenerator_subselect, false, "Overloaded selection routine", args(1,8, batarg("",oid),batarg("b",timestamp),batarg("cand",oid),arg("low",timestamp),arg("high",timestamp),arg("li",bit),arg("hi",bit),arg("anti",bit))),
+ pattern("generator", "projection", VLTgenerator_projection, false, "", args(1,3, batarg("",bte),batarg("b",oid),batarg("cand",bte))),
+ pattern("generator", "projection", VLTgenerator_projection, false, "", args(1,3, batarg("",sht),batarg("b",oid),batarg("cand",sht))),
+ pattern("generator", "projection", VLTgenerator_projection, false, "", args(1,3, batarg("",int),batarg("b",oid),batarg("cand",int))),
+ pattern("generator", "projection", VLTgenerator_projection, false, "", args(1,3, batarg("",lng),batarg("b",oid),batarg("cand",lng))),
+ pattern("generator", "projection", VLTgenerator_projection, false, "", args(1,3, batarg("",flt),batarg("b",oid),batarg("cand",flt))),
+ pattern("generator", "projection", VLTgenerator_projection, false, "", args(1,3, batarg("",dbl),batarg("b",oid),batarg("cand",dbl))),
+ pattern("generator", "projection", VLTgenerator_projection, false, "Overloaded projection operation", args(1,3, batarg("",timestamp),batarg("b",oid),batarg("cand",timestamp))),
+ pattern("generator", "join", VLTgenerator_join, false, "", args(2,4, batarg("l",oid),batarg("r",oid),batarg("b",bte),batarg("gen",bte))),
+ pattern("generator", "join", VLTgenerator_join, false, "", args(2,4, batarg("l",oid),batarg("r",oid),batarg("b",sht),batarg("gen",sht))),
+ pattern("generator", "join", VLTgenerator_join, false, "", args(2,4, batarg("l",oid),batarg("r",oid),batarg("b",int),batarg("gen",int))),
+ pattern("generator", "join", VLTgenerator_join, false, "", args(2,4, batarg("l",oid),batarg("r",oid),batarg("b",lng),batarg("gen",lng))),
+ pattern("generator", "join", VLTgenerator_join, false, "", args(2,4, batarg("l",oid),batarg("r",oid),batarg("b",flt),batarg("gen",flt))),
+ pattern("generator", "join", VLTgenerator_join, false, "Overloaded join operation", args(2,4, batarg("l",oid),batarg("r",oid),batarg("b",dbl),batarg("gen",dbl))),
+ pattern("generator", "join", VLTgenerator_rangejoin, false, "", args(2,7, batarg("l",oid),batarg("r",oid),batarg("gen",bte),batarg("low",bte),batarg("hgh",bte),arg("li",bit),arg("ri",bit))),
+ pattern("generator", "join", VLTgenerator_rangejoin, false, "", args(2,7, batarg("l",oid),batarg("r",oid),batarg("gen",sht),batarg("low",sht),batarg("hgh",sht),arg("li",bit),arg("ri",bit))),
+ pattern("generator", "join", VLTgenerator_rangejoin, false, "", args(2,7, batarg("l",oid),batarg("r",oid),batarg("gen",int),batarg("low",int),batarg("hgh",int),arg("li",bit),arg("ri",bit))),
+ pattern("generator", "join", VLTgenerator_rangejoin, false, "", args(2,7, batarg("l",oid),batarg("r",oid),batarg("gen",lng),batarg("low",lng),batarg("hgh",lng),arg("li",bit),arg("ri",bit))),
+ pattern("generator", "join", VLTgenerator_rangejoin, false, "", args(2,7, batarg("l",oid),batarg("r",oid),batarg("gen",flt),batarg("low",flt),batarg("hgh",flt),arg("li",bit),arg("ri",bit))),
+ pattern("generator", "join", VLTgenerator_rangejoin, false, "Overloaded range join operation", args(2,7, batarg("l",oid),batarg("r",oid),batarg("gen",dbl),batarg("low",dbl),batarg("hgh",dbl),arg("li",bit),arg("ri",bit))),
+#ifdef HAVE_HGE
+ pattern("generator", "series", VLTgenerator_table, false, "", args(1,3, batarg("",hge),arg("first",hge),arg("limit",hge))),
+ pattern("generator", "series", VLTgenerator_table, false, "Create and materialize a generator table", args(1,4, batarg("",hge),arg("first",hge),arg("limit",hge),arg("step",hge))),
+ pattern("generator", "parameters", VLTgenerator_noop, false, "Retain the table definition, but don't materialize", args(1,4, batarg("",hge),arg("first",hge),arg("limit",hge),arg("step",hge))),
+ pattern("generator", "parameters", VLTgenerator_noop, false, "", args(1,3, batarg("",hge),arg("first",hge),arg("limit",hge))),
+ pattern("generator", "thetaselect", VLTgenerator_thetasubselect, false, "Overloaded selection routine", args(1,4, batarg("",oid),batarg("b",hge),arg("low",hge),arg("oper",str))),
+ pattern("generator", "thetaselect", VLTgenerator_thetasubselect, false, "Overloaded selection routine", args(1,5, batarg("",oid),batarg("b",hge),batarg("cnd",oid),arg("low",hge),arg("oper",str))),
+ pattern("generator", "select", VLTgenerator_subselect, false, "Overloaded selection routine", args(1,7, batarg("",oid),batarg("b",hge),arg("low",hge),arg("high",hge),arg("li",bit),arg("hi",bit),arg("anti",bit))),
+ pattern("generator", "select", VLTgenerator_subselect, false, "Overloaded selection routine", args(1,8, batarg("",oid),batarg("b",hge),batarg("cand",oid),arg("low",hge),arg("high",hge),arg("li",bit),arg("hi",bit),arg("anti",bit))),
+ pattern("generator", "projection", VLTgenerator_projection, false, "Overloaded projection operation", args(1,3, batarg("",hge),batarg("b",oid),batarg("cand",hge))),
+ pattern("generator", "join", VLTgenerator_join, false, "Overloaded join operation", args(2,4, batarg("l",oid),batarg("r",oid),batarg("b",hge),batarg("gen",hge))),
+#endif
+ { .imp=NULL }
+};
+#include "mal_import.h"
+#ifdef _MSC_VER
+#undef read
+#pragma section(".CRT$XCU",read)
+#endif
+LIB_STARTUP_FUNC(init_generator_mal)
+{ mal_module("generator", NULL, generator_init_funcs); }

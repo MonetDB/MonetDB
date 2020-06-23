@@ -1,6 +1,4 @@
 START TRANSACTION;
-declare epsilon double;
-set epsilon=0.00001;
 
 create table alphatest(expected double, computed double);
 insert into alphatest values(1.1547200925865859,Alpha(cast(30.0 as double),cast(1.0 as double)));
@@ -9,7 +7,7 @@ insert into alphatest values(2.0003048809350625,Alpha(cast(60.0 as double),cast(
 
 select abs(expected - computed) as err
 from alphatest 
-where abs(expected - computed)>epsilon;
+where abs(expected - computed)>0.00001;
 
 ---------Spatial Zone Index-------------
 create table photoobj (
@@ -49,13 +47,9 @@ create table ZoneIndex (
 create table ZoneHeight( "value" double not null); -- zone height in degrees.
 insert into ZoneHeight values(cast (0.1  as double));
 
-declare zHeight double;
-set zHeight = (select min("value") from ZoneHeight);
-
-
 insert into zoneindex
      select objID,
-            cast(floor("dec"/zHeight) as int) as zone,
+            cast(floor("dec"/(select min("value") from ZoneHeight)) as int) as zone,
             ra, "dec",
               cos(radians("dec"))*cos(radians(ra)) as x,
               cos(radians("dec"))*sin(radians(ra)) as y,
@@ -118,7 +112,7 @@ insert into zonetest values( 687726014001184896,	0.13973831452158963);
 
 select S.objID,S.distance, T.expected 
 from GetNearbyObjects(193.75,1.48, 1.0) as S, zonetest as T
-where S.objID=T.objID and abs(S.distance-T.expected)>epsilon;
+where S.objID=T.objID and abs(S.distance-T.expected)>0.00001;
 
 -----------------------------------
 create function GetNearestObject(
@@ -141,10 +135,7 @@ begin
         return ob;
 end;
 
-declare nearest bigint;
-set nearest=687726014001184891;
-
-select cast(fGetNearestObjIdAllEq(193.75,1.48,0.1) - nearest as bigint);
+select cast(fGetNearestObjIdAllEq(193.75,1.48,0.1) - 687726014001184891 as bigint);
 
 ---------------------------------------------
 drop function fGetNearestObjIdAllEq;

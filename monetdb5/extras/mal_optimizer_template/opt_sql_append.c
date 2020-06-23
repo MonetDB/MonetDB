@@ -69,7 +69,7 @@
  * This allows the optimizer implementation to find them and react on them.
  */
 #include "monetdb_config.h"
-#include "opt_sql_append.h"
+#include "opt_prelude.h"
 #include "mal_interpreter.h"
 
 /* focus initially on persistent tables. */
@@ -246,7 +246,8 @@ OPTsql_appendImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
  * actions taken, i.e. number of successful changes to the code.
  */
 
-str OPTsql_append(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
+static str
+OPTsql_append(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
 	str modnme;
 	str fcnnme;
 	str msg= MAL_SUCCEED;
@@ -308,3 +309,17 @@ str OPTsql_append(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
 	addtoMalBlkHistory(mb);
 	return msg;
 }
+
+#include "mel.h"
+static mel_func opt_sql_append_init_funcs[] = {
+ pattern("optimizer", "sql_append", OPTsql_append, false, "Avoid extra BAT copy with sql.append() whenever possible.", args(1,1, arg("",str))),
+ pattern("optimizer", "sql_append", OPTsql_append, false, "Avoid extra BAT copy with sql.append() whenever possible.", args(1,3, arg("",str),arg("mod",str),arg("fcn",str))),
+ { .imp=NULL }
+};
+#include "mal_import.h"
+#ifdef _MSC_VER
+#undef read
+#pragma section(".CRT$XCU",read)
+#endif
+LIB_STARTUP_FUNC(init_opt_sql_append_mal)
+{ mal_module("opt_sql_append", NULL, opt_sql_append_init_funcs); }

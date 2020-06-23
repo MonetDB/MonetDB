@@ -37,7 +37,6 @@
 #include "mal_interpreter.h"
 
 #include "tablet.h"
-#include "streams.h"
 #include "gdk_time.h"
 #include <math.h>
 #include "blob.h"
@@ -147,60 +146,52 @@ sql5_export str bte_bat_dec_round_wrap(bat *res, const bat *v, const bte *r);
 sql5_export str bte_round_wrap(bte *res, const bte *v, const int *d, const int *s, const bte *r);
 sql5_export str bte_bat_round_wrap(bat *res, const bat *v, const int *d, const int *s, const bte *r);
 sql5_export str str_2dec_bte(bte *res, const str *val, const int *d, const int *sc);
-sql5_export str str_2num_bte(bte *res, const str *v, const int *len);
 sql5_export str batstr_2dec_bte(bat *res, const bat *val, const int *d, const int *sc);
-sql5_export str batstr_2num_bte(bat *res, const bat *v, const int *len);
+sql5_export str batstr_ce_2dec_bte(bat *res, const bat *val, const int *d, const int *sc, const bat *r);
 sql5_export str bte_dec2second_interval(lng *res, const int *sc, const bte *dec, const int *ek, const int *sk);
 
 sql5_export str nil_2dec_bte(bte *res, const void *val, const int *d, const int *sc);
-sql5_export str nil_2num_bte(bte *res, const void *v, const int *len);
 sql5_export str batnil_2dec_bte(bat *res, const bat *val, const int *d, const int *sc);
-sql5_export str batnil_2num_bte(bat *res, const bat *v, const int *len);
+sql5_export str batnil_ce_2dec_bte(bat *res, const bat *val, const int *d, const int *sc, const bat *r);
 
 sql5_export str sht_dec_round_wrap(sht *res, const sht *v, const sht *r);
 sql5_export str sht_bat_dec_round_wrap(bat *res, const bat *v, const sht *r);
 sql5_export str sht_round_wrap(sht *res, const sht *v, const int *d, const int *s, const bte *r);
 sql5_export str sht_bat_round_wrap(bat *res, const bat *v, const int *d, const int *s, const bte *r);
 sql5_export str str_2dec_sht(sht *res, const str *val, const int *d, const int *sc);
-sql5_export str str_2num_sht(sht *res, const str *v, const int *len);
 sql5_export str batstr_2dec_sht(bat *res, const bat *val, const int *d, const int *sc);
-sql5_export str batstr_2num_sht(bat *res, const bat *v, const int *len);
+sql5_export str batstr_ce_2dec_sht(bat *res, const bat *val, const int *d, const int *sc, const bat *r);
 sql5_export str sht_dec2second_interval(lng *res, const int *sc, const sht *dec, const int *ek, const int *sk);
 
 sql5_export str nil_2dec_sht(sht *res, const void *val, const int *d, const int *sc);
-sql5_export str nil_2num_sht(sht *res, const void *v, const int *len);
 sql5_export str batnil_2dec_sht(bat *res, const bat *val, const int *d, const int *sc);
-sql5_export str batnil_2num_sht(bat *res, const bat *v, const int *len);
+sql5_export str batnil_ce_2dec_sht(bat *res, const bat *val, const int *d, const int *sc, const bat *r);
 
 sql5_export str int_dec_round_wrap(int *res, const int *v, const int *r);
 sql5_export str int_bat_dec_round_wrap(bat *res, const bat *v, const int *r);
 sql5_export str int_round_wrap(int *res, const int *v, const int *d, const int *s, const bte *r);
 sql5_export str int_bat_round_wrap(bat *res, const bat *v, const int *d, const int *s, const bte *r);
 sql5_export str str_2dec_int(int *res, const str *val, const int *d, const int *sc);
-sql5_export str str_2num_int(int *res, const str *v, const int *len);
 sql5_export str batstr_2dec_int(bat *res, const bat *val, const int *d, const int *sc);
-sql5_export str batstr_2num_int(bat *res, const bat *v, const int *len);
+sql5_export str batstr_ce_2dec_int(bat *res, const bat *val, const int *d, const int *sc, const bat *r);
 sql5_export str int_dec2second_interval(lng *res, const int *sc, const int *dec, const int *ek, const int *sk);
 
 sql5_export str nil_2dec_int(int *res, const void *val, const int *d, const int *sc);
-sql5_export str nil_2num_int(int *res, const void *v, const int *len);
 sql5_export str batnil_2dec_int(bat *res, const bat *val, const int *d, const int *sc);
-sql5_export str batnil_2num_int(bat *res, const bat *v, const int *len);
+sql5_export str batnil_ce_2dec_int(bat *res, const bat *val, const int *d, const int *sc, const bat *r);
 
 sql5_export str lng_dec_round_wrap(lng *res, const lng *v, const lng *r);
 sql5_export str lng_bat_dec_round_wrap(bat *res, const bat *v, const lng *r);
 sql5_export str lng_round_wrap(lng *res, const lng *v, const int *d, const int *s, const bte *r);
 sql5_export str lng_bat_round_wrap(bat *res, const bat *v, const int *d, const int *s, const bte *r);
 sql5_export str str_2dec_lng(lng *res, const str *val, const int *d, const int *sc);
-sql5_export str str_2num_lng(lng *res, const str *v, const int *len);
 sql5_export str batstr_2dec_lng(bat *res, const bat *val, const int *d, const int *sc);
-sql5_export str batstr_2num_lng(bat *res, const bat *v, const int *len);
+sql5_export str batstr_ce_2dec_lng(bat *res, const bat *val, const int *d, const int *sc, const bat *r);
 sql5_export str lng_dec2second_interval(lng *res, const int *sc, const lng *dec, const int *ek, const int *sk);
 
 sql5_export str nil_2dec_lng(lng *res, const void *val, const int *d, const int *sc);
-sql5_export str nil_2num_lng(lng *res, const void *v, const int *len);
 sql5_export str batnil_2dec_lng(bat *res, const bat *val, const int *d, const int *sc);
-sql5_export str batnil_2num_lng(bat *res, const bat *v, const int *len);
+sql5_export str batnil_ce_2dec_lng(bat *res, const bat *val, const int *d, const int *sc, const bat *r);
 
 #ifdef HAVE_HGE
 sql5_export str hge_dec_round_wrap(hge *res, const hge *v, const hge *r);
@@ -208,19 +199,18 @@ sql5_export str hge_bat_dec_round_wrap(bat *res, const bat *v, const hge *r);
 sql5_export str hge_round_wrap(hge *res, const hge *v, const int *d, const int *s, const bte *r);
 sql5_export str hge_bat_round_wrap(bat *res, const bat *v, const int *d, const int *s, const bte *r);
 sql5_export str str_2dec_hge(hge *res, const str *val, const int *d, const int *sc);
-sql5_export str str_2num_hge(hge *res, const str *v, const int *len);
 sql5_export str batstr_2dec_hge(bat *res, const bat *val, const int *d, const int *sc);
-sql5_export str batstr_2num_hge(bat *res, const bat *v, const int *len);
+sql5_export str batstr_ce_2dec_hge(bat *res, const bat *val, const int *d, const int *sc, const bat *r);
 sql5_export str hge_dec2second_interval(lng *res, const int *sc, const hge *dec, const int *ek, const int *sk);
 
 sql5_export str nil_2dec_hge(hge *res, const void *val, const int *d, const int *sc);
-sql5_export str nil_2num_hge(hge *res, const void *v, const int *len);
 sql5_export str batnil_2dec_hge(bat *res, const bat *val, const int *d, const int *sc);
-sql5_export str batnil_2num_hge(bat *res, const bat *v, const int *len);
+sql5_export str batnil_ce_2dec_hge(bat *res, const bat *val, const int *d, const int *sc, const bat *r);
 #endif
 
 sql5_export str nil_2time_timestamp(timestamp *res, const void *v, const int *len);
 sql5_export str batnil_2time_timestamp(bat *res, const bat *v, const int *len);
+sql5_export str batnil_ce_2time_timestamp(bat *res, const bat *v, const int *len, const bat *r);
 sql5_export str str_2time_timestamp(timestamp *res, const str *v, const int *len);
 sql5_export str str_2time_timestamptz(timestamp *res, const str *v, const int *len, int *tz);
 sql5_export str batstr_2time_timestamp(bat *res, const bat *v, const int *len);
@@ -230,6 +220,7 @@ sql5_export str battimestamp_2time_timestamp(bat *res, const bat *v, const int *
 
 sql5_export str nil_2time_daytime(daytime *res, const void *v, const int *len);
 sql5_export str batnil_2time_daytime(bat *res, const bat *v, const int *len);
+sql5_export str batnil_ce_2time_daytime(bat *res, const bat *v, const int *len, const bat *r);
 sql5_export str str_2time_daytime(daytime *res, const str *v, const int *len);
 sql5_export str str_2time_daytimetz(daytime *res, const str *v, const int *len, int *tz);
 sql5_export str batstr_2time_daytime(bat *res, const bat *v, const int *len);
@@ -252,12 +243,15 @@ sql5_export str batstr_2_daytime(bat *res, const bat *val);
 
 sql5_export str nil_2_date(date *res, const void *val);
 sql5_export str batnil_2_date(bat *res, const bat *val);
+sql5_export str batnil_ce_2_date(bat *res, const bat *val, const bat *r);
 sql5_export str str_2_date(date *res, const str *val);
 sql5_export str batstr_2_date(bat *res, const bat *val);
+sql5_export str batstr_ce_2_date(bat *res, const bat *val, const bat *r);
 sql5_export str SQLdate_2_str(str *res, const date *val);
 
 sql5_export str str_2_blob(blob * *res, const str *val);
 sql5_export str batstr_2_blob(bat *res, const bat *val);
+sql5_export str batstr_ce_2_blob(bat *res, const bat *val, const bat *r);
 sql5_export str SQLblob_2_str(str *res, const blob * val);
 
 sql5_export str SQLstr_cast(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
@@ -275,8 +269,8 @@ sql5_export str dbl_round_wrap(dbl *res, const dbl *v, const bte *r);
 sql5_export str dbl_bat_round_wrap(bat *res, const bat *v, const bte *r);
 sql5_export str dbl_trunc_wrap(dbl *res, const dbl *v, const int *r);
 
-#define radians(x)	((x) * 3.14159265358979323846 /180.0 )
-#define degrees(x)	((x) * 180.0/3.14159265358979323846 )
+#define radians(x)	((x) * (3.14159265358979323846 / 180.0))
+#define degrees(x)	((x) * (180.0 / 3.14159265358979323846))
 
 sql5_export str SQLcst_alpha_cst(dbl *res, const dbl *decl, const dbl *theta);
 sql5_export str SQLbat_alpha_cst(bat *res, const bat *decl, const dbl *theta);

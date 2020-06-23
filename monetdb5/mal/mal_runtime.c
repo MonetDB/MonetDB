@@ -132,7 +132,8 @@ advanceQRYqueue(void)
 			return;
 		}
 		GDKfree(s);
-		GDKfree(QRYqueue[qhead].username);
+		if(QRYqueue[qhead].username)
+			GDKfree(QRYqueue[qhead].username);
 		clearQRYqueue(qhead);
 	}
 }
@@ -173,12 +174,8 @@ runtimeProfileInit(Client cntxt, MalBlkPtr mb, MalStkPtr stk)
 		return;
 	}
 	// check for recursive call, which does not change the number of workers
-	for( i = qtail; i != qhead; i++){
-		if( i == qsize){
-			i = 0;
-		}
-		if( i == qhead)
-			break;
+	i=qtail;
+	while (i != qhead){
 		if (QRYqueue[i].mb && QRYqueue[i].mb == mb &&  stk->up == QRYqueue[i].stk){
 			QRYqueue[i].stk = stk;
 			mb->tag = stk->tag = qtag++;
@@ -187,6 +184,9 @@ runtimeProfileInit(Client cntxt, MalBlkPtr mb, MalStkPtr stk)
 		}
 		if ( QRYqueue[i].status)
 			paused += (QRYqueue[i].status[0] == 'p' || QRYqueue[i].status[0] == 'r'); /* running, prepared or paused */
+		i++;
+		if ( i >= qsize)
+			i = 0;
 	}
 	assert(qhead < qsize);
 	if( qsize - paused < (size_t) MAL_MAXCLIENTS){
@@ -211,8 +211,10 @@ runtimeProfileInit(Client cntxt, MalBlkPtr mb, MalStkPtr stk)
 	QRYqueue[qhead].start = time(0);
 	q = isaSQLquery(mb);
 	QRYqueue[qhead].query = q? GDKstrdup(q):0;
-	GDKfree(QRYqueue[qhead].username);
-	AUTHgetUsername(&QRYqueue[qhead].username, cntxt);
+	if(QRYqueue[qhead].username)
+		GDKfree(QRYqueue[qhead].username);
+	if (!GDKembedded())
+		AUTHgetUsername(&QRYqueue[qhead].username, cntxt);
 	QRYqueue[qhead].idx = cntxt->idx;
 	QRYqueue[qhead].memory = (int) (stk->memory / LL_CONSTANT(1048576)); /* Convert to MB */
 	QRYqueue[qhead].workers = (int) stk->workers;
@@ -237,10 +239,8 @@ runtimeProfileFinish(Client cntxt, MalBlkPtr mb, MalStkPtr stk)
 	(void) mb;
 
 	MT_lock_set(&mal_delayLock);
-	for( i=qtail; i != qhead; i++){
-		if ( i >= qsize){
-			i = 0;
-		}
+	i=qtail;
+	while (i != qhead){
 		if ( QRYqueue[i].stk == stk){
 			if( stk->up){
 				// recursive call
@@ -258,8 +258,10 @@ runtimeProfileFinish(Client cntxt, MalBlkPtr mb, MalStkPtr stk)
 			cntxt->idle = time(0);
 			break;
 		}
+		i++;
+		if ( i >= qsize)
+			i = 0;
 	}
-
 	MT_lock_unset(&mal_delayLock);
 }
 

@@ -157,6 +157,25 @@ tmp_schema(mvc *sql)
 	return mvc_bind_schema(sql, "tmp");
 }
 
+sql_table *
+find_table_on_scope(mvc *sql, sql_schema **s, const char *sname, const char *tname)
+{
+	sql_table *t = NULL;
+
+	if (!sname) {
+		t = stack_find_table(sql, tname); /* first try a declared table from the stack */
+		if (!t) { /* then a temporary one */
+			sql_schema *tmp = tmp_schema(sql);
+			t = mvc_bind_table(sql, tmp, tname);
+			if (t)
+				*s = tmp;
+		}
+	}
+	if (!t) /* then a table from the provided schema */
+		t = mvc_bind_table(sql, *s, tname); 
+	return t;
+}
+
 char *
 qname_schema(dlist *qname)
 {
@@ -171,7 +190,7 @@ qname_schema(dlist *qname)
 }
 
 char *
-qname_table(dlist *qname)
+qname_schema_object(dlist *qname)
 {
 	assert(qname && qname->h);
 
@@ -316,7 +335,7 @@ symbol2string(mvc *sql, symbol *se, int expression, char **err) /**/
 	switch (se->token) {
 	case SQL_NOP: {
 		dnode *lst = se->data.lval->h, *ops = lst->next->next->data.lval->h, *aux;
-		const char *op = qname_fname(lst->data.lval), *sname = qname_schema(lst->data.lval);
+		const char *op = qname_schema_object(lst->data.lval), *sname = qname_schema(lst->data.lval);
 		int i = 0, nargs = 0;
 		char** inputs = NULL, *res;
 		size_t inputs_length = 0;
@@ -325,7 +344,8 @@ symbol2string(mvc *sql, symbol *se, int expression, char **err) /**/
 			sname = sql->session->schema->base.name;
 
 		for (aux = ops; aux; aux = aux->next) nargs++;
-		inputs = GDKzalloc(nargs * sizeof(char**));
+		if (!(inputs = GDKzalloc(nargs * sizeof(char**))))
+			return NULL;
 
 		for (aux = ops; aux; aux = aux->next) {
 			if (!(inputs[i] = symbol2string(sql, aux->data.sym, expression, err))) {
@@ -357,7 +377,7 @@ symbol2string(mvc *sql, symbol *se, int expression, char **err) /**/
 	} break;
 	case SQL_BINOP: {
 		dnode *lst = se->data.lval->h;
-		const char *op = qname_fname(lst->data.lval), *sname = qname_schema(lst->data.lval);
+		const char *op = qname_schema_object(lst->data.lval), *sname = qname_schema(lst->data.lval);
 		char *l = NULL, *r = NULL, *res;
 
 		if (!sname)
@@ -377,7 +397,7 @@ symbol2string(mvc *sql, symbol *se, int expression, char **err) /**/
 	} break;
 	case SQL_OP: {
 		dnode *lst = se->data.lval->h;
-		const char *op = qname_fname(lst->data.lval), *sname = qname_schema(lst->data.lval);
+		const char *op = qname_schema_object(lst->data.lval), *sname = qname_schema(lst->data.lval);
 		char *res;
 
 		if (!sname)
@@ -390,7 +410,7 @@ symbol2string(mvc *sql, symbol *se, int expression, char **err) /**/
 	} break;
 	case SQL_UNOP: {
 		dnode *lst = se->data.lval->h;
-		const char *op = qname_fname(lst->data.lval), *sname = qname_schema(lst->data.lval);
+		const char *op = qname_schema_object(lst->data.lval), *sname = qname_schema(lst->data.lval);
 		char *l = symbol2string(sql, lst->next->next->data.sym, expression, err), *res;
 
 		if (!sname)
@@ -416,7 +436,7 @@ symbol2string(mvc *sql, symbol *se, int expression, char **err) /**/
 			return _STRDUP("NULL");
 	}
 	case SQL_NEXT: {
-		const char *seq = qname_table(se->data.lval), *sname = qname_schema(se->data.lval);
+		const char *seq = qname_schema_object(se->data.lval), *sname = qname_schema(se->data.lval);
 		char *res;
 
 		if (!sname)
@@ -461,7 +481,7 @@ symbol2string(mvc *sql, symbol *se, int expression, char **err) /**/
 		dlist *dl = se->data.lval;
 		char *val = NULL, *tpe = NULL, *res;
 
-		if (!(val = symbol2string(sql, dl->h->data.sym, expression, err)) || !(tpe = subtype2string(&dl->h->next->data.typeval))) {
+		if (!(val = symbol2string(sql, dl->h->data.sym, expression, err)) || !(tpe = subtype2string2(&dl->h->next->data.typeval))) {
 			_DELETE(val);
 			_DELETE(tpe);
 			return NULL;

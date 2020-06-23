@@ -32,10 +32,6 @@ command getBasename(u:url) :str
 address URLgetBasename
 comment "Extract the URL base file name";
 
-command getContent(u:url) :str
-address URLgetContent
-comment "Get the URL resource in a local file";
-
 command getContext(u:url) :str
 address URLgetContext
 comment "Get the path context of a URL";

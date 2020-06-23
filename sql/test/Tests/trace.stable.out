@@ -31,8 +31,8 @@ stdout of test 'trace` in directory 'sql/test` itself:
 #(20,'int'),(21,'lng'),(22,'daytime'),(23,'daytime'),(24,'date'),(25,'timestamp'),(26,'timestamp'),(27,'blob');
 [ 26	]
 #select '~BeginVariableOutput~';
-% . # table_name
-% single_value # name
+% .%2 # table_name
+% %2 # name
 % char # type
 % 21 # length
 [ "~BeginVariableOutput~"	]
@@ -46,15 +46,15 @@ stdout of test 'trace` in directory 'sql/test` itself:
 % .trace,	.trace # table_name
 % usec,	statement # name
 % bigint,	clob # type
-% 2,	106 # length
-[ 1,	"X_1=0@0:void := querylog.define(\"trace select count(*) from mytypes;\":str, \"sequential_pipe\":str, 12:int);"	]
-[ 0,	"X_4=0:int := sql.mvc();"	]
-[ 1,	"C_5=<tmp_2513>[26]:bat[:oid] := sql.tid(X_4=0:int, \"sys\":str, \"mytypes\":str);"	]
-[ 0,	"X_18=26:lng := aggr.count(C_5=<tmp_2513>[26]:bat[:oid]);"	]
-[ 18,	"sql.resultSet(\".%1\":str, \"%1\":str, \"bigint\":str, 64:int, 0:int, 7:int, X_18=26:lng);"	]
+% 2,	144 # length
+[ 2,	"X_1=0@0:void := querylog.define(\"trace select count(*) from mytypes;\":str, \"sequential_pipe\":str, 16:int);\t#[1] (0) QLOGdefineNaive 1 <- 2 3 31 "	]
+[ 0,	"X_4=0:int := sql.mvc();\t#[2] (0) SQLmvc 4 "	]
+[ 3,	"C_5=[26]:bat[:oid] := sql.tid(X_4=0:int, \"sys\":str, \"mytypes\":str);\t#[3] (26) SQLtid 5 <- 4 6 7 "	]
+[ 0,	"X_23=26:lng := aggr.count(C_5=[26]:bat[:oid]);\t#[4] (1) ALGcount_bat 23 <- 5 "	]
+[ 23,	"sql.resultSet(\".%1\":str, \"%1\":str, \"bigint\":str, 64:int, 0:int, 7:int, X_23=26:lng);\t#[5] (0) mvc_scalar_value_wrap 25 <- 26 27 28 29 10 30 23 "	]
 #select '~EndVariableOutput~';
-% . # table_name
-% single_value # name
+% .%2 # table_name
+% %2 # name
 % char # type
 % 19 # length
 [ "~EndVariableOutput~"	]

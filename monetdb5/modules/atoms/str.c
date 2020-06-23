@@ -3745,10 +3745,10 @@ STRRtrim(str *res, const str *arg1)
 
 /* return a list of codepoints in s */
 static int *
-trimchars(const char *s, size_t *n)
+trimchars(const char *s, size_t *n, size_t len_s)
 {
 	size_t len = 0;
-	int *chars = GDKmalloc(strlen(s) * sizeof(int));
+	int *chars = GDKmalloc(len_s * sizeof(int));
 	int c;
 
 	if (chars == NULL)
@@ -3772,15 +3772,15 @@ str
 STRStrip2(str *res, const str *arg1, const str *arg2)
 {
 	const char *s = *arg1;
-	size_t len;
-	size_t n;
-	size_t nchars;
+	size_t len, n, nchars, n2;
 	int *chars;
 
 	if (strNil(s) || strNil(*arg2)) {
 		*res = GDKstrdup(str_nil);
+	} else if ((n2 = strlen(*arg2)) == 0) {
+		*res = GDKstrdup(*arg1);
 	} else {
-		chars = trimchars(*arg2, &nchars);
+		chars = trimchars(*arg2, &nchars, n2);
 		if (chars == NULL)
 			throw(MAL, "str.trim", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		len = strlen(s);
@@ -3802,15 +3802,15 @@ str
 STRLtrim2(str *res, const str *arg1, const str *arg2)
 {
 	const char *s = *arg1;
-	size_t len;
-	size_t n;
-	size_t nchars;
+	size_t len, n, nchars, n2;
 	int *chars;
 
 	if (strNil(s) || strNil(*arg2)) {
 		*res = GDKstrdup(str_nil);
+	} else if ((n2 = strlen(*arg2)) == 0) {
+		*res = GDKstrdup(*arg1);
 	} else {
-		chars = trimchars(*arg2, &nchars);
+		chars = trimchars(*arg2, &nchars, n2);
 		if (chars == NULL)
 			throw(MAL, "str.trim", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		len = strlen(s);
@@ -3829,15 +3829,15 @@ str
 STRRtrim2(str *res, const str *arg1, const str *arg2)
 {
 	const char *s = *arg1;
-	size_t len;
-	size_t n;
-	size_t nchars;
+	size_t len, n, nchars, n2;
 	int *chars;
 
 	if (strNil(s) || strNil(*arg2)) {
 		*res = GDKstrdup(str_nil);
+	} else if ((n2 = strlen(*arg2)) == 0) {
+		*res = GDKstrdup(*arg1);
 	} else {
-		chars = trimchars(*arg2, &nchars);
+		chars = trimchars(*arg2, &nchars, n2);
 		if (chars == NULL)
 			throw(MAL, "str.trim", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		len = strlen(s);
@@ -3989,23 +3989,26 @@ STRSubstitute(str *res, const str *arg1, const str *arg2, const str *arg3, const
 	const char *pfnd;
 	char *fnd;
 
-	if (strNil(s)) {
+	if (strNil(s) || strNil(src) || strNil(dst)) {
 		if ((*res = GDKstrdup(str_nil)) == NULL)
+			throw(MAL, "str.substitute", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		return MAL_SUCCEED;
+	}
+	if (!lsrc || !l) { /* s/src is an empty string, there's nothing to substitute */
+		if ((*res = GDKstrdup(s)) == NULL)
 			throw(MAL, "str.substitute", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		return MAL_SUCCEED;
 	}
 
 	n = l + ldst;
-	if (repeat && ldst > lsrc && lsrc) {
+	if (repeat && ldst > lsrc)
 		n = (ldst * l) / lsrc;	/* max length */
-	}
+
 	buf = *res = GDKmalloc(n);
 	if (*res == NULL)
 		throw(MAL, "str.substitute", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 
 	pfnd = s;
-	if (lsrc == 0)
-		lsrc = 1;				/* make sure we make progress */
 	do {
 		fnd = strstr(pfnd, src);
 		if (fnd == NULL)
@@ -4130,7 +4133,7 @@ STRinsert(str *ret, const str *s, const int *start, const int *l, const str *s2)
 		if (l1 + l2 + 1 >= INT_MAX)
 			throw(MAL, "str.insert", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		if (*l < 0)
-			throw(MAL, "str.insert", SQLSTATE(42000) ILLEGAL_ARGUMENT);
+			throw(MAL, "str.insert", SQLSTATE(42000) "The number of characters for insert function must be non negative");
 		if (strt < 0) {
 			if ((size_t) -strt <= l1)
 				strt = (int) (l1 + strt);
@@ -4190,3 +4193,58 @@ STRspace(str *ret, const int *l)
 	char buf[]= " ", *s= buf;
 	return STRrepeat(ret,&s,l);
 }
+
+#include "mel.h"
+mel_func str_init_funcs[] = {
+ command("str", "str", STRtostr, false, "Noop routine.", args(1,2, arg("",str),arg("s",str))),
+ command("str", "string", STRTail, false, "Return the tail s[offset..n]\nof a string s[0..n].", args(1,3, arg("",str),arg("s",str),arg("offset",int))),
+ command("str", "string", STRSubString, false, "Return substring s[offset..offset+count] of a string s[0..n]", args(1,4, arg("",str),arg("s",str),arg("offset",int),arg("count",int))),
+ command("str", "+", STRConcat, false, "Concatenate two strings.", args(1,3, arg("",str),arg("l",str),arg("r",str))),
+ command("str", "length", STRLength, false, "Return the length of a string.", args(1,2, arg("",int),arg("s",str))),
+ command("str", "nbytes", STRBytes, false, "Return the string length in bytes.", args(1,2, arg("",int),arg("s",str))),
+ command("str", "unicodeAt", STRWChrAt, false, "get a unicode character\n(as an int) from a string position.", args(1,3, arg("",int),arg("s",str),arg("index",int))),
+ command("str", "unicode", STRFromWChr, false, "convert a unicode to a character.", args(1,2, arg("",str),arg("wchar",int))),
+ command("str", "startsWith", STRPrefix, false, "Prefix check.", args(1,3, arg("",bit),arg("s",str),arg("prefix",str))),
+ command("str", "endsWith", STRSuffix, false, "Suffix check.", args(1,3, arg("",bit),arg("s",str),arg("suffix",str))),
+ command("str", "toLower", STRLower, false, "Convert a string to lower case.", args(1,2, arg("",str),arg("s",str))),
+ command("str", "toUpper", STRUpper, false, "Convert a string to upper case.", args(1,2, arg("",str),arg("s",str))),
+ command("str", "search", STRstrSearch, false, "Search for a substring. Returns\nposition, -1 if not found.", args(1,3, arg("",int),arg("s",str),arg("c",str))),
+ command("str", "r_search", STRReverseStrSearch, false, "Reverse search for a substring. Returns\nposition, -1 if not found.", args(1,3, arg("",int),arg("s",str),arg("c",str))),
+ command("str", "splitpart", STRsplitpart, false, "Split string on delimiter. Returns\ngiven field (counting from one.)", args(1,4, arg("",str),arg("s",str),arg("needle",str),arg("field",int))),
+ command("str", "trim", STRStrip, false, "Strip whitespaces around a string.", args(1,2, arg("",str),arg("s",str))),
+ command("str", "ltrim", STRLtrim, false, "Strip whitespaces from start of a string.", args(1,2, arg("",str),arg("s",str))),
+ command("str", "rtrim", STRRtrim, false, "Strip whitespaces from end of a string.", args(1,2, arg("",str),arg("s",str))),
+ command("str", "trim", STRStrip2, false, "Remove the longest string containing only characters from the second string around the first string.", args(1,3, arg("",str),arg("s",str),arg("s2",str))),
+ command("str", "ltrim", STRLtrim2, false, "Remove the longest string containing only characters from the second string from the start of the first string.", args(1,3, arg("",str),arg("s",str),arg("s2",str))),
+ command("str", "rtrim", STRRtrim2, false, "Remove the longest string containing only characters from the second string from the end of the first string.", args(1,3, arg("",str),arg("s",str),arg("s2",str))),
+ command("str", "lpad", STRLpad, false, "Fill up a string to the given length prepending the whitespace character.", args(1,3, arg("",str),arg("s",str),arg("len",int))),
+ command("str", "rpad", STRRpad, false, "Fill up a string to the given length appending the whitespace character.", args(1,3, arg("",str),arg("s",str),arg("len",int))),
+ command("str", "lpad", STRLpad2, false, "Fill up the first string to the given length prepending characters of the second string.", args(1,4, arg("",str),arg("s",str),arg("len",int),arg("s2",str))),
+ command("str", "rpad", STRRpad2, false, "Fill up the first string to the given length appending characters of the second string.", args(1,4, arg("",str),arg("s",str),arg("len",int),arg("s2",str))),
+ command("str", "substitute", STRSubstitute, false, "Substitute first occurrence of 'src' by\n'dst'.  Iff repeated = true this is\nrepeated while 'src' can be found in the\nresult string. In order to prevent\nrecursion and result strings of unlimited\nsize, repeating is only done iff src is\nnot a substring of dst.", args(1,5, arg("",str),arg("s",str),arg("src",str),arg("dst",str),arg("rep",bit))),
+ command("str", "like", STRlikewrap2, false, "SQL pattern match function", args(1,3, arg("",bit),arg("s",str),arg("pat",str))),
+ command("str", "like", STRlikewrap, false, "SQL pattern match function", args(1,4, arg("",bit),arg("s",str),arg("pat",str),arg("esc",str))),
+ command("str", "ascii", STRascii, false, "Return unicode of head of string", args(1,2, arg("",int),arg("s",str))),
+ command("str", "substring", STRsubstringTail, false, "Extract the tail of a string", args(1,3, arg("",str),arg("s",str),arg("start",int))),
+ command("str", "substring", STRsubstring, false, "Extract a substring from str starting at start, for length len", args(1,4, arg("",str),arg("s",str),arg("start",int),arg("len",int))),
+ command("str", "prefix", STRprefix, false, "Extract the prefix of a given length", args(1,3, arg("",str),arg("s",str),arg("l",int))),
+ command("str", "suffix", STRsuffix, false, "Extract the suffix of a given length", args(1,3, arg("",str),arg("s",str),arg("l",int))),
+ command("str", "stringleft", STRprefix, false, "", args(1,3, arg("",str),arg("s",str),arg("l",int))),
+ command("str", "stringright", STRsuffix, false, "", args(1,3, arg("",str),arg("s",str),arg("l",int))),
+ command("str", "locate", STRlocate, false, "Locate the start position of a string", args(1,3, arg("",int),arg("s1",str),arg("s2",str))),
+ command("str", "locate", STRlocate2, false, "Locate the start position of a string", args(1,4, arg("",int),arg("s1",str),arg("s2",str),arg("start",int))),
+ command("str", "insert", STRinsert, false, "Insert a string into another", args(1,5, arg("",str),arg("s",str),arg("start",int),arg("l",int),arg("s2",str))),
+ command("str", "replace", STRreplace, false, "Insert a string into another", args(1,4, arg("",str),arg("s",str),arg("pat",str),arg("s2",str))),
+ command("str", "repeat", STRrepeat, false, "", args(1,3, arg("",str),arg("s2",str),arg("c",int))),
+ command("str", "space", STRspace, false, "", args(1,2, arg("",str),arg("l",int))),
+ command("str", "prelude", strPrelude, false, "", args(1,1, arg("",void))),
+ command("str", "STRepilogue", strEpilogue, false, "", args(1,1, arg("",void))),
+ { .imp=NULL }
+};
+#include "mal_import.h"
+#ifdef _MSC_VER
+#undef read
+#pragma section(".CRT$XCU",read)
+#endif
+LIB_STARTUP_FUNC(init_str_mal)
+{ mal_module("str", NULL, str_init_funcs); }

@@ -20,5 +20,6 @@ mal_export void printStack(stream *f, MalBlkPtr mb, MalStkPtr s);
 
 mal_export void mdbSetBreakRequest(Client cntxt, MalBlkPtr mb, str request, char cmd);
 mal_export str runMALDebugger(Client cntxt, MalBlkPtr mb);
+mal_export str BATinfo(BAT **key, BAT **val, const bat bid);
 
 #endif /* _MAL_DEBUGGER_h */

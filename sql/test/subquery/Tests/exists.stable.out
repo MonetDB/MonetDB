@@ -92,7 +92,7 @@ stdout of test 'exists` in directory 'sql/test/subquery` itself:
 [ 2	]
 [ 3	]
 #SELECT EXISTS(SELECT i FROM integers WHERE i>MIN(i1.i)) FROM integers i1;
-% . # table_name
+% .%17 # table_name
 % %17 # name
 % boolean # type
 % 5 # length
@@ -105,13 +105,13 @@ stdout of test 'exists` in directory 'sql/test/subquery` itself:
 [ 1,	1	]
 [ 2,	2	]
 #SELECT EXISTS(SELECT i+MIN(i1.i) FROM integers WHERE i=3) FROM integers i1;
-% . # table_name
+% .%20 # table_name
 % %20 # name
 % boolean # type
 % 5 # length
 [ true	]
 #SELECT EXISTS(SELECT i+MIN(i1.i) FROM integers WHERE i=5) FROM integers i1;
-% . # table_name
+% .%20 # table_name
 % %20 # name
 % boolean # type
 % 5 # length

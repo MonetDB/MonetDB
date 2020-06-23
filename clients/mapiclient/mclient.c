@@ -44,13 +44,9 @@
 #include <locale.h>
 
 #ifdef HAVE_ICONV
-#ifdef HAVE_ICONV_H
 #include <iconv.h>
-#endif
 #ifdef HAVE_NL_LANGINFO
-#ifdef HAVE_LANGINFO_H
 #include <langinfo.h>
-#endif
 #endif
 #endif
 
@@ -3061,7 +3057,8 @@ getfile(void *data, const char *filename, bool binary,
 		priv->f = NULL;
 		return s < 0 ? "error reading file" : NULL;
 	}
-	*size = (size_t) s;
+	if (size)
+		*size = (size_t) s;
 	return buf;
 }
 

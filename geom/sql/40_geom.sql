@@ -4566,7 +4566,7 @@ GRANT EXECUTE ON FUNCTION ST_DumpPoints(Geometry) TO PUBLIC;
 --		RETURN SELECT InternalTransform(geom, srid_src, srid, proj4_src, 'null');
 --	ELSE
 --		RETURN SELECT InternalTransform(geom, srid_src, srid, proj4_src, proj4_dest);
---	END IF;▸
+--	END IF;
 --END IF;
 
 

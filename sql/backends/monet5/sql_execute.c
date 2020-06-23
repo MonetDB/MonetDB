@@ -448,16 +448,17 @@ SQLescapeString(str s)
 str
 SQLstatementIntern(Client c, str *expr, str nme, bit execute, bit output, res_table **result)
 {
-	int status = 0, err = 0, oldvtop, oldstop = 1, inited = 0, ac, sizevars, topvars;
+	int status = 0, err = 0, oldvtop, oldstop = 1, inited = 0, ac, sizeframes, topframes;
 	unsigned int label;
-	mvc *o, *m;
-	sql_var *vars;
-	buffer *b;
-	char *n, *mquery;
-	bstream *bs;
-	stream *buf;
+	mvc *o = NULL, *m = NULL;
+	sql_frame **frames;
+	list *global_vars;
+	buffer *b = NULL;
+	char *n = NULL, *mquery;
+	bstream *bs = NULL;
+	stream *buf = NULL;
 	str msg = MAL_SUCCEED;
-	backend *be, *sql = (backend *) c->sqlcontext;
+	backend *be = NULL, *sql = (backend *) c->sqlcontext;
 	size_t len = strlen(*expr);
 
 #ifdef _SQL_COMPILE
@@ -488,17 +489,19 @@ SQLstatementIntern(Client c, str *expr, str nme, bit execute, bit output, res_ta
 	/* create private allocator */
 	m->sa = NULL;
 	if ((msg = SQLtrans(m)) != MAL_SUCCEED) {
-		if (inited)
-			SQLresetClient(c);
-		return msg;
+		be = sql;
+		sql = NULL;
+		goto endofcompile;
 	}
 	status = m->session->status;
 
 	m->type = Q_PARSE;
 	be = sql;
 	sql = backend_create(m, c);
-	if( sql == NULL)
-		throw(SQL,"sql.statement",SQLSTATE(HY013) MAL_MALLOC_FAIL);
+	if (sql == NULL) {
+		msg = createException(SQL,"sql.statement",SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		goto endofcompile;
+	}
 	sql->output_format = be->output_format;
 	if (!output) {
 		sql->output_format = OFMT_NONE;
@@ -513,12 +516,14 @@ SQLstatementIntern(Client c, str *expr, str nme, bit execute, bit output, res_ta
 
 	/* mimic a client channel on which the query text is received */
 	b = (buffer *) GDKmalloc(sizeof(buffer));
-	if( b == NULL)
-		throw(SQL,"sql.statement", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+	if (b == NULL) {
+		msg = createException(SQL,"sql.statement",SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		goto endofcompile;
+	}
 	n = GDKmalloc(len + 1 + 1);
-	if( n == NULL) {
-		GDKfree(b);
-		throw(SQL,"sql.statement", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+	if (n == NULL) {
+		msg = createException(SQL,"sql.statement",SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		goto endofcompile;
 	}
 	strncpy(n, *expr, len);
 	n[len] = '\n';
@@ -526,14 +531,18 @@ SQLstatementIntern(Client c, str *expr, str nme, bit execute, bit output, res_ta
 	len++;
 	buffer_init(b, n, len);
 	buf = buffer_rastream(b, "sqlstatement");
-	if(buf == NULL) {
-		buffer_destroy(b);//n and b will be freed by the buffer
-		throw(SQL,"sql.statement",SQLSTATE(HY013) MAL_MALLOC_FAIL);
+	if (buf == NULL) {
+		buffer_destroy(b); /* n and b will be freed by the buffer */
+		b = NULL;
+		msg = createException(SQL,"sql.statement",SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		goto endofcompile;
 	}
 	bs = bstream_create(buf, b->len);
-	if(bs == NULL) {
-		buffer_destroy(b);//n and b will be freed by the buffer
-		throw(SQL,"sql.statement",SQLSTATE(HY013) MAL_MALLOC_FAIL);
+	if (bs == NULL) {
+		mnstr_destroy(buf);
+		b = NULL;
+		msg = createException(SQL,"sql.statement",SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		goto endofcompile;
 	}
 	scanner_init(&m->scanner, bs, NULL);
 	m->scanner.mode = LINE_N;
@@ -545,10 +554,8 @@ SQLstatementIntern(Client c, str *expr, str nme, bit execute, bit output, res_ta
 	if (!m->sa)
 		m->sa = sa_create();
 	if (!m->sa) {
-		*m = *o;
-		_DELETE(o);
-		bstream_destroy(m->scanner.rs);
-		throw(SQL,"sql.statement",SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		msg = createException(SQL,"sql.statement",SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		goto endofcompile;
 	}
 
 	/*
@@ -699,16 +706,18 @@ endofcompile:
 	/* variable stack maybe resized, ie we need to keep the new stack */
 	label = m->label;
 	status = m->session->status;
-	sizevars = m->sizevars;
-	topvars = m->topvars;
-	vars = m->vars;
+	global_vars = m->global_vars;
+	sizeframes = m->sizeframes;
+	topframes = m->topframes;
+	frames = m->frames;
 	mquery = m->query;
 	*m = *o;
 	_DELETE(o);
 	m->label = label;
-	m->sizevars = sizevars;
-	m->topvars = topvars;
-	m->vars = vars;
+	m->global_vars = global_vars;
+	m->sizeframes = sizeframes;
+	m->topframes = topframes;
+	m->frames = frames;
 	m->session->status = status;
 	m->session->auto_commit = ac;
 	m->query = mquery;
@@ -944,11 +953,11 @@ RAstatement2(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				return createException(SQL,"RAstatement2",SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			}
 		} else {
-			if (!stack_push_var(m, vnme+1, &t)) {
+			if (!push_global_var(m, "sys", vnme+1, &t)) {
 				sqlcleanup(m, 0);
 				return createException(SQL,"RAstatement2",SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			}
-			append(ops, exp_var(m->sa, sa_strdup(m->sa, vnme+1), &t, m->frame));
+			append(ops, exp_var(m->sa, NULL, sa_strdup(m->sa, vnme+1), &t, 0));
 		}
 		sig = strchr(p, (int)',');
 		if (sig)

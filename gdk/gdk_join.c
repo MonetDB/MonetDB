@@ -3162,7 +3162,13 @@ leftjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr,
 		/* no hash table, so cost includes time to build the
 		 * hash table (single scan) plus the time to do the
 		 * lookups (also single scan, we assume some chains) */
-		rcost = (double) rci.ncand * 2 + lci.ncand * 1.1;
+		rcost = lci.ncand * 1.1;
+#ifdef PERSISTENTHASH
+		/* only count the cost of creating the hash for
+		 * non-persistent bats */
+		if (rci.ncand != BATcount(r) || !(BBP_status(r->batCacheid) & BBPEXISTING) || r->theap.dirty || GDKinmemory())
+#endif
+			rcost += rci.ncand * 2.0;
 	} else {
 		if (rci.noids > 0) {
 			/* if we need to do binary search on candidate
@@ -3205,7 +3211,13 @@ leftjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr,
 			/* no hash table, so cost includes time to build the
 			 * hash table (single scan) plus the time to do the
 			 * lookups (also single scan, we assume some chains) */
-			lcost = (double) lci.ncand * 2 + rci.ncand * 1.1;
+			lcost = rci.ncand * 1.1;
+#ifdef PERSISTENTHASH
+			/* only count the cost of creating the hash
+			 * for non-persistent bats */
+			if (lci.ncand != BATcount(l) || !(BBP_status(l->batCacheid) & BBPEXISTING) || l->theap.dirty || GDKinmemory())
+#endif
+				lcost += lci.ncand * 2.0;
 		} else {
 			if (lci.noids > 0) {
 				/* if we need to do binary search on candidate
@@ -3501,9 +3513,13 @@ BATjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr, bool nil_matches
 		/* no hash table, so cost includes time to build the
 		 * hash table (single scan) plus the time to do the
 		 * lookups (also single scan, we assume some chains) */
-		lcost = (double) lci.ncand * 2 + rci.ncand * 1.1;
-		if (lci.ncand == BATcount(l) && !l->batTransient)
-			lcost *= 0.8;
+		lcost = rci.ncand * 1.1;
+#ifdef PERSISTENTHASH
+		/* only count the cost of creating the hash for
+		 * non-persistent bats */
+		if (lci.ncand != BATcount(l) || !(BBP_status(l->batCacheid) & BBPEXISTING) || l->theap.dirty || GDKinmemory())
+#endif
+			lcost += lci.ncand * 2.0;
 	} else {
 		if (lci.noids > 0) {
 			/* if we need to do binary search on candidate
@@ -3542,9 +3558,13 @@ BATjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr, bool nil_matches
 		/* no hash table, so cost includes time to build the
 		 * hash table (single scan) plus the time to do the
 		 * lookups (also single scan, we assume some chains) */
-		rcost = (double) rci.ncand * 2 + lci.ncand * 1.1;
-		if (rci.ncand == BATcount(r) && !r->batTransient)
-			rcost *= 0.8;
+		rcost = lci.ncand * 1.1;
+#ifdef PERSISTENTHASH
+		/* only count the cost of creating the hash for
+		 * non-persistent bats */
+		if (rci.ncand != BATcount(r) || !(BBP_status(r->batCacheid) & BBPEXISTING) || r->theap.dirty || GDKinmemory())
+#endif
+			rcost += rci.ncand * 2.0;
 	} else {
 		if (rci.noids > 0) {
 			/* if we need to do binary search on candidate
@@ -4006,7 +4026,7 @@ BATrangejoin(BAT **r1p, BAT **r2p, BAT *l, BAT *rl, BAT *rh,
 	     BUN estimate)
 {
 	struct canditer lci, rci;
-	BAT *r1, *r2;
+	BAT *r1 = NULL, *r2 = NULL;
 	BUN maxsize;
 	lng t0 = 0;
 

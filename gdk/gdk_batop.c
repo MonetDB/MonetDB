@@ -496,12 +496,19 @@ BATappend(BAT *b, BAT *n, BAT *s, bool force)
 	BUN r;
 	PROPrec *prop, *nprop;
 	oid hseq = n->hseqbase;
+	char buf[64];
+	lng t0 = 0;
 
 	if (b == NULL || n == NULL || (cnt = BATcount(n)) == 0) {
 		return GDK_SUCCEED;
 	}
 	assert(b->batCacheid > 0);
 	assert(b->theap.parentid == 0);
+
+	TRC_DEBUG_IF(ALGO) {
+		t0 = GDKusec();
+		snprintf(buf, sizeof(buf), ALGOBATFMT, ALGOBATPAR(b));
+	}
 
 	ALIGNapp(b, force, GDK_FAIL);
 
@@ -518,7 +525,7 @@ BATappend(BAT *b, BAT *n, BAT *s, bool force)
 
 	cnt = canditer_init(&ci, n, s);
 	if (cnt == 0) {
-		return GDK_SUCCEED;
+		goto doreturn;
 	}
 
 	if (BUNlast(b) + cnt > BUN_MAX) {
@@ -585,14 +592,14 @@ BATappend(BAT *b, BAT *n, BAT *s, bool force)
 			if (BATcount(b) == 0)
 				BATtseqbase(b, n->tseqbase + ci.seq - hseq);
 			BATsetcount(b, BATcount(b) + cnt);
-			return GDK_SUCCEED;
+			goto doreturn;
 		}
 		if ((BATcount(b) == 0 || is_oid_nil(b->tseqbase)) &&
 		    n->ttype == TYPE_void && is_oid_nil(n->tseqbase)) {
 			/* both b and n are void/nil */
 			BATtseqbase(b, oid_nil);
 			BATsetcount(b, BATcount(b) + cnt);
-			return GDK_SUCCEED;
+			goto doreturn;
 		}
 		/* we need to materialize b; allocate enough capacity */
 		b->batCapacity = BATcount(b) + cnt;
@@ -707,6 +714,13 @@ BATappend(BAT *b, BAT *n, BAT *s, bool force)
 	}
 	if (b->thash)
 		BATsetprop(b, GDK_NUNIQUE, TYPE_oid, &(oid){b->thash->nunique});
+
+  doreturn:
+	TRC_DEBUG(ALGO, "b=%s,n=" ALGOBATFMT ",s=" ALGOOPTBATFMT
+		  " -> " ALGOBATFMT " (" LLFMT " usec)\n",
+		  buf, ALGOBATPAR(n), ALGOOPTBATPAR(s), ALGOBATPAR(b),
+		  GDKusec() - t0);
+
 	return GDK_SUCCEED;
 }
 
@@ -851,6 +865,15 @@ BATreplace(BAT *b, BAT *p, BAT *n, bool force)
 		return GDK_FAIL;
 	}
 
+	BATiter bi = bat_iterator(b);
+	BATiter ni = bat_iterator(n);
+	if (BATcount(b) == 0 ||
+	    (b->tsorted && b->trevsorted &&
+	     n->tsorted && n->trevsorted &&
+	     ATOMcmp(b->ttype, BUNtail(bi, 0), BUNtail(ni, 0)) == 0)) {
+		return GDK_SUCCEED;
+	}
+
 	HASHdestroy(b);
 	OIDXdestroy(b);
 	IMPSdestroy(b);
@@ -867,8 +890,6 @@ BATreplace(BAT *b, BAT *p, BAT *n, bool force)
 	int (*atomcmp)(const void *, const void *) = ATOMcompare(b->ttype);
 	const void *nil = ATOMnilptr(b->ttype);
 	oid hseqend = b->hseqbase + BATcount(b);
-	BATiter bi = bat_iterator(b);
-	BATiter ni = bat_iterator(n);
 	bool anynil = false;
 
 	b->theap.dirty = true;
@@ -2113,8 +2134,29 @@ BATconstant(oid hseq, int tailtype, const void *v, BUN n, role_t role)
 				((hge *) p)[i] = *(hge *) v;
 			break;
 #endif
+		case TYPE_str:
+			/* insert the first value, then just copy the
+			 * offset lots of times */
+			if (tfastins_nocheck(bn, 0, v, Tsize(bn)) != GDK_SUCCEED) {
+				BBPreclaim(bn);
+				return NULL;
+			}
+			char val[sizeof(var_t)];
+			memcpy(val, bn->theap.base, bn->twidth);
+			if (bn->twidth == 1 && n > 1) {
+				/* single byte value: we have a
+				 * function for that */
+				memset(bn->theap.base + 1, val[0], n - 1);
+			} else {
+				char *p = bn->theap.base;
+				for (i = 1; i < n; i++) {
+					p += bn->twidth;
+					memcpy(p, val, bn->twidth);
+				}
+			}
+			break;
 		default:
-			for (i = 0, n += i; i < n; i++)
+			for (i = 0; i < n; i++)
 				if (tfastins_nocheck(bn, i, v, Tsize(bn)) != GDK_SUCCEED) {
 					BBPreclaim(bn);
 					return NULL;

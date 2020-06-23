@@ -20,6 +20,77 @@ MERGE INTO another_t USING (SELECT col1 FROM another_t) sub ON (SELECT 1 UNION S
 MERGE INTO another_t USING (SELECT (SELECT 1 UNION SELECT 2) FROM another_t) sub ON TRUE WHEN MATCHED THEN DELETE WHEN NOT MATCHED THEN INSERT;
 	--error, more than one row returned by a subquery used as an expression
 
+WITH customer_total_return AS
+  (SELECT 1 AS ctr_customer_sk,
+          1 AS ctr_state,
+          1 AS ctr_total_return)
+SELECT 1
+FROM customer_total_return ctr1,
+     another_T,
+     tbl_ProductSales
+WHERE ctr1.ctr_total_return >
+    (SELECT avg(ctr_total_return)*1.2
+     FROM customer_total_return ctr2
+     WHERE ctr1.ctr_state = ctr2.ctr_state)
+  AND col1 = ColID
+  AND ctr1.ctr_customer_sk = TotalSales;
+	--empty
+
+SELECT i FROM integers i1 WHERE (SELECT CASE WHEN i1.i IS NULL THEN (SELECT FALSE FROM integers i2) ELSE TRUE END);
+	--error, more than one row returned by a subquery used as an expression
+
+SELECT (SELECT (SELECT SUM(col1)) IN (MAX(col2))) FROM another_t;
+	-- False
+
+SELECT 1 IN (col4, MIN(col2)) FROM another_t;
+	--error, column "another_t.col4" must appear in the GROUP BY clause or be used in an aggregate function
+
+SELECT (SELECT col1) IN ('not a number') FROM another_t;
+	-- error, cannot cast string into number
+
+SELECT (SELECT (SELECT SUM(col1)) IN (MAX(col2), '12')) FROM another_t;
+	-- False
+
+SELECT CASE WHEN ColID IS NULL THEN CAST(Product_Category AS INT) ELSE TotalSales END FROM tbl_ProductSales;
+	-- 200
+	-- 400
+	-- 500
+	-- 100
+
+SELECT ColID FROM tbl_ProductSales WHERE CASE WHEN ColID IS NULL THEN CAST(Product_Category AS INT) ELSE TotalSales END;
+	-- 1
+	-- 2
+	-- 3
+	-- 4
+
+SELECT CAST(SUM((SELECT col1)) AS BIGINT) FROM another_t;
+	-- 1234
+
+SELECT CAST(SUM((SELECT col1 + col2)) AS BIGINT) FROM another_t;
+	-- 3702
+
+SELECT CAST(SUM((SELECT CAST(EXISTS(SELECT col1) AS INT))) AS BIGINT) FROM another_t;
+	-- 4
+
+SELECT CAST(SUM((SELECT (SELECT col1 + col2))) AS BIGINT) FROM another_t;
+	-- 3702
+
+SELECT CAST((SELECT SUM((SELECT col1))) AS BIGINT) FROM another_t;
+	-- 1234
+
+SELECT CAST((SELECT SUM((SELECT col1 + col2))) AS BIGINT) FROM another_t;
+	-- 3702
+
+SELECT (SELECT 1 FROM another_t t1 WHERE 'aa' LIKE t2.product_category) FROM tbl_ProductSales t2;
+	-- NULL
+	-- NULL
+	-- NULL
+	-- NULL
+
+SELECT t1.colid FROM tbl_productsales t1 INNER JOIN tbl_productsales t2 ON t1.product_category NOT LIKE t2.product_category ORDER BY t1.colid;
+
+SELECT t1.colid FROM tbl_productsales t1 INNER JOIN tbl_productsales t2 ON t1.product_category NOT LIKE t2.product_name ORDER BY t1.colid;
+
 DROP TABLE tbl_ProductSales;
 DROP TABLE another_T;
 DROP TABLE integers;

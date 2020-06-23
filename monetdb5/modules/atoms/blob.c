@@ -34,31 +34,13 @@
 
 int TYPE_blob;
 
-mal_export str BLOBprelude(void *ret);
-
-mal_export int BLOBcmp(const blob *l, const blob *r);
-mal_export BUN BLOBhash(const blob *b);
-mal_export const blob *BLOBnull(void);
-mal_export var_t BLOBput(Heap *h, var_t *bun, const blob *val);
-mal_export void BLOBdel(Heap *h, var_t *index);
-mal_export size_t BLOBlength(const blob *p);
-mal_export void BLOBheap(Heap *heap, size_t capacity);
-mal_export str BLOBtoblob(blob **retval, str *s);
-mal_export str BLOBnitems(int *ret, blob **b);
-mal_export int BLOBget(Heap *h, int *bun, int *l, blob **val);
-mal_export blob * BLOBread(blob *a, stream *s, size_t cnt);
-mal_export gdk_return BLOBwrite(const blob *a, stream *s, size_t cnt);
-
-mal_export str BLOBblob_blob(blob **d, blob **s);
-mal_export str BLOBblob_fromstr(blob **b, const char **d);
-
 static blob nullval = {
 	~(size_t) 0
 };
 
 #define is_blob_nil(x)	((x)->nitems == nullval.nitems)
 
-str
+static str
 BLOBprelude(void *ret)
 {
 	(void) ret;
@@ -83,9 +65,10 @@ static char hexit[] = "0123456789ABCDEF";
  * section of the blob modules from MonetDB 4.3
  * @-
  */
-int
-BLOBcmp(const blob *l, const blob *r)
+static int
+BLOBcmp(const void *L, const void *R)
 {
+	const blob *l = L, *r = R;
 	int c;
 	if (is_blob_nil(r))
 		return !is_blob_nil(l);
@@ -103,27 +86,29 @@ BLOBcmp(const blob *l, const blob *r)
 	return c;
 }
 
-void
+static void
 BLOBdel(Heap *h, var_t *idx)
 {
 	HEAP_free(h, *idx);
 }
 
-BUN
-BLOBhash(const blob *b)
+static BUN
+BLOBhash(const void *B)
 {
+	const blob *b = B;
 	return (BUN) b->nitems;
 }
 
-const blob *
+static const void *
 BLOBnull(void)
 {
 	return &nullval;
 }
 
-blob *
-BLOBread(blob *a, stream *s, size_t cnt)
+static void *
+BLOBread(void *A, stream *s, size_t cnt)
 {
+	blob *a = A;
 	int len;
 
 	(void) cnt;
@@ -139,9 +124,10 @@ BLOBread(blob *a, stream *s, size_t cnt)
 	return a;
 }
 
-gdk_return
-BLOBwrite(const blob *a, stream *s, size_t cnt)
+static gdk_return
+BLOBwrite(const void *A, stream *s, size_t cnt)
 {
+	const blob *a = A;
 	var_t len = blobsize(a->nitems);
 
 	(void) cnt;
@@ -152,23 +138,25 @@ BLOBwrite(const blob *a, stream *s, size_t cnt)
 	return GDK_SUCCEED;
 }
 
-size_t
-BLOBlength(const blob *p)
+static size_t
+BLOBlength(const void *P)
 {
+	const blob *p = P;
 	var_t l = blobsize(p->nitems); /* 64bit: check for overflow */
 	assert(l <= GDK_int_max);
 	return (size_t) l;
 }
 
-void
+static void
 BLOBheap(Heap *heap, size_t capacity)
 {
 	HEAP_initialize(heap, capacity, 0, (int) sizeof(var_t));
 }
 
-var_t
-BLOBput(Heap *h, var_t *bun, const blob *val)
+static var_t
+BLOBput(Heap *h, var_t *bun, const void *VAL)
 {
+	const blob *val = VAL;
 	char *base = NULL;
 
 	*bun = HEAP_malloc(h, blobsize(val->nitems));
@@ -180,19 +168,62 @@ BLOBput(Heap *h, var_t *bun, const blob *val)
 	return *bun;
 }
 
-str
+static inline int 
+blob_nitems(blob *b)
+{
+	if (is_blob_nil(b))
+		return int_nil;
+	assert(b->nitems <INT_MAX);
+	return (int) b->nitems;
+}
+
+static str
 BLOBnitems(int *ret, blob **b)
 {
-	if (is_blob_nil(*b)) {
-		*ret = int_nil;
-		return MAL_SUCCEED;
-	}
-	assert((*b)->nitems <INT_MAX);
-	*ret = (int) (*b)->nitems;
+	*ret = blob_nitems(*b);
 	return MAL_SUCCEED;
 }
 
-str
+static str
+BLOBnitems_bulk(bat *ret, const bat *bid)
+{
+	BAT *b = NULL, *bn = NULL;
+	BUN n, p, q;
+	int *restrict dst;
+	str msg = MAL_SUCCEED;
+	BATiter bi;
+
+	if ((b = BATdescriptor(*bid)) == NULL)	{
+		msg = createException(MAL, "blob.nitems_bulk", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
+		goto bailout;
+	}
+	n = BATcount(b);
+	if ((bn = COLnew(b->hseqbase, TYPE_int, n, TRANSIENT)) == NULL) {
+		msg = createException(MAL, "blob.nitems_bulk", SQLSTATE(HY013) MAL_MALLOC_FAIL); 
+		goto bailout;
+	}
+	dst = Tloc(bn, 0);
+	bi = bat_iterator(b);
+	BATloop(b, p, q) {
+		blob *restrict next = BUNtvar(bi, p);
+		dst[p] = blob_nitems(next);
+	}
+	bn->tnonil = b->tnonil;
+	bn->tnil = b->tnil;
+	BATsetcount(bn, n);
+	bn->tsorted = bn->trevsorted = n < 2;
+	bn->tkey = false;
+bailout:
+	if (b)
+		BBPunfix(b->batCacheid);
+	if (msg && bn)
+		BBPreclaim(bn);
+	else if (bn)
+		BBPkeepref(*ret = bn->batCacheid);
+	return msg;
+}
+
+static str
 BLOBtoblob(blob **retval, str *s)
 {
 	size_t len = strLen(*s);
@@ -207,8 +238,9 @@ BLOBtoblob(blob **retval, str *s)
 }
 
 ssize_t
-BLOBtostr(str *tostr, size_t *l, const blob *p, bool external)
+BLOBtostr(str *tostr, size_t *l, const void *P, bool external)
 {
+	const blob *p = P;
 	char *s;
 	size_t i;
 	size_t expectedlen;
@@ -246,9 +278,10 @@ BLOBtostr(str *tostr, size_t *l, const blob *p, bool external)
 	return (ssize_t) (s - *tostr);
 }
 
-ssize_t
-BLOBfromstr(const char *instr, size_t *l, blob **val, bool external)
+static ssize_t
+BLOBfromstr(const char *instr, size_t *l, void **VAL, bool external)
 {
+	blob **val = (blob **) VAL;
 	size_t i;
 	size_t nitems;
 	var_t nbytes;
@@ -337,7 +370,7 @@ BLOBfromstr(const char *instr, size_t *l, blob **val, bool external)
 	return (ssize_t) (s - instr);
 }
 
-str
+static str
 BLOBblob_blob(blob **d, blob **s)
 {
 	size_t len = blobsize((*s)->nitems);
@@ -352,12 +385,35 @@ BLOBblob_blob(blob **d, blob **s)
 	return MAL_SUCCEED;
 }
 
-str
+static str
 BLOBblob_fromstr(blob **b, const char **s)
 {
 	size_t len = 0;
 
-	if (BLOBfromstr(*s, &len, b, false) < 0)
+	if (BLOBfromstr(*s, &len, (void **) b, false) < 0)
 		throw(MAL, "blob", GDK_EXCEPTION);
 	return MAL_SUCCEED;
 }
+
+#include "mel.h"
+static mel_atom blob_init_atoms[] = {
+ { .name="blob", .tostr=BLOBtostr, .fromstr=BLOBfromstr, .cmp=BLOBcmp, .hash=BLOBhash, .null=BLOBnull, .read=BLOBread, .write=BLOBwrite, .put=BLOBput, .del=BLOBdel, .length=BLOBlength, .heap=BLOBheap, },  { .cmp=NULL } 
+};
+static mel_func blob_init_funcs[] = {
+ command("blob", "blob", BLOBblob_blob, false, "Noop routine.", args(1,2, arg("",blob),arg("s",blob))),
+ command("blob", "blob", BLOBblob_fromstr, false, "", args(1,2, arg("",blob),arg("s",str))),
+ command("blob", "toblob", BLOBtoblob, false, "store a string as a blob.", args(1,2, arg("",blob),arg("v",str))),
+ command("blob", "nitems", BLOBnitems, false, "get the number of bytes in this blob.", args(1,2, arg("",int),arg("b",blob))),
+ command("batblob", "nitems", BLOBnitems_bulk, false, "", args(1,2, batarg("",int),batarg("b",blob))),
+ command("blob", "prelude", BLOBprelude, false, "", args(1,1, arg("",void))),
+ command("calc", "blob", BLOBblob_blob, false, "", args(1,2, arg("",blob),arg("b",blob))),
+ command("calc", "blob", BLOBblob_fromstr, false, "", args(1,2, arg("",blob),arg("s",str))),
+ { .imp=NULL }
+};
+#include "mal_import.h"
+#ifdef _MSC_VER
+#undef read
+#pragma section(".CRT$XCU",read)
+#endif
+LIB_STARTUP_FUNC(init_blob_mal)
+{ mal_module("blob", blob_init_atoms, blob_init_funcs); }

@@ -45,7 +45,7 @@ stdout of test 'insert_queue` in directory 'sql/test/ssqq` itself:
 % 1,	1,	1,	0,	0,	26,	26 # length
 #select id_result;
 % . # table_name
-% single_value # name
+% %1 # name
 % int # type
 % 1 # length
 [ 1	]
@@ -55,12 +55,6 @@ stdout of test 'insert_queue` in directory 'sql/test/ssqq` itself:
 % int,	int,	int,	varchar,	varchar,	timestamp,	timestamp # type
 % 1,	1,	1,	5,	5,	26,	26 # length
 [ 1,	1,	0,	"monet",	"linux",	NULL,	NULL	]
-#select id_result;
-% . # table_name
-% single_value # name
-% int # type
-% 2 # length
-[ -1	]
 #select queue_id, query_id, queue_number, os_version, monetdb_version, start_query, query_ready from ssqq_queue;
 % sys.ssqq_queue,	sys.ssqq_queue,	sys.ssqq_queue,	sys.ssqq_queue,	sys.ssqq_queue,	sys.ssqq_queue,	sys.ssqq_queue # table_name
 % queue_id,	query_id,	queue_number,	os_version,	monetdb_version,	start_query,	query_ready # name
@@ -69,7 +63,7 @@ stdout of test 'insert_queue` in directory 'sql/test/ssqq` itself:
 [ 1,	1,	0,	"monet",	"linux",	NULL,	NULL	]
 #select id_result;
 % . # table_name
-% single_value # name
+% %1 # name
 % int # type
 % 1 # length
 [ 3	]
@@ -82,7 +76,7 @@ stdout of test 'insert_queue` in directory 'sql/test/ssqq` itself:
 [ 3,	2,	0,	"monet",	"linux",	NULL,	NULL	]
 #select id_result;
 % . # table_name
-% single_value # name
+% %1 # name
 % int # type
 % 1 # length
 [ 4	]

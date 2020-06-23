@@ -454,8 +454,9 @@ monet5_user_get_def_schema(mvc *m, int user)
 	auths_id = find_sql_column(auths, "id");
 	auths_name = find_sql_column(auths, "name");
 	rid = table_funcs.column_find_row(m->session->tr, auths_id, &user, NULL);
-	if (!is_oid_nil(rid))
-		username = table_funcs.column_find_value(m->session->tr, auths_name, rid);
+	if (is_oid_nil(rid))
+		return NULL;
+	username = table_funcs.column_find_value(m->session->tr, auths_name, rid);
 
 	user_info = find_sql_table(sys, "db_user_info");
 	users_name = find_sql_column(user_info, "name");
@@ -476,8 +477,6 @@ monet5_user_get_def_schema(mvc *m, int user)
 	rid = table_funcs.column_find_row(m->session->tr, schemas_id, &schema_id, NULL);
 	if (!is_oid_nil(rid))
 		schema = table_funcs.column_find_value(m->session->tr, schemas_name, rid);
-	if(!stack_set_string(m, "current_schema", schema))
-		return NULL;
 	return schema;
 }
 
@@ -510,7 +509,7 @@ monet5_user_set_def_schema(mvc *m, oid user)
 		return (NULL);	/* don't reveal that the user doesn't exist */
 	}
 
-	if(mvc_trans(m) < 0) {
+	if (mvc_trans(m) < 0) {
 		GDKfree(username);
 		return NULL;
 	}
@@ -521,8 +520,13 @@ monet5_user_set_def_schema(mvc *m, oid user)
 	users_schema = find_sql_column(user_info, "default_schema");
 
 	rid = table_funcs.column_find_row(m->session->tr, users_name, username, NULL);
-	if (!is_oid_nil(rid))
-		p = table_funcs.column_find_value(m->session->tr, users_schema, rid);
+	if (is_oid_nil(rid)) {
+		if (m->session->tr->active && (other = mvc_rollback(m, 0, NULL, false)) != MAL_SUCCEED)
+			freeException(other);
+		GDKfree(username);
+		return NULL;
+	}
+	p = table_funcs.column_find_value(m->session->tr, users_schema, rid);
 
 	assert(p);
 	schema_id = *(sqlid *) p;
@@ -554,20 +558,20 @@ monet5_user_set_def_schema(mvc *m, oid user)
 
 	if (!schema || !mvc_set_schema(m, schema)) {
 		if (m->session->tr->active) {
-			if((other = mvc_rollback(m, 0, NULL, false)) != MAL_SUCCEED)
+			if ((other = mvc_rollback(m, 0, NULL, false)) != MAL_SUCCEED)
 				freeException(other);
 		}
 		GDKfree(username);
 		return NULL;
 	}
 	/* reset the user and schema names */
-	if(!stack_set_string(m, "current_schema", schema) ||
-		!stack_set_string(m, "current_user", username) ||
-		!stack_set_string(m, "current_role", username)) {
+	if (!sqlvar_set_string(find_global_var(m, sys, "current_schema"), schema) ||
+		!sqlvar_set_string(find_global_var(m, sys, "current_user"), username) ||
+		!sqlvar_set_string(find_global_var(m, sys, "current_role"), username)) {
 		schema = NULL;
 	}
 	GDKfree(username);
-	if((other = mvc_rollback(m, 0, NULL, false)) != MAL_SUCCEED) {
+	if ((other = mvc_rollback(m, 0, NULL, false)) != MAL_SUCCEED) {
 		freeException(other);
 		return NULL;
 	}

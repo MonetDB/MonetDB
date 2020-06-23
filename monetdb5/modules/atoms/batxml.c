@@ -33,26 +33,7 @@
 #include "mal_function.h"
 #include "xml.h"
 
-mal_export str BATXMLxml2str(bat *ret, const bat *bid);
-mal_export str BATXMLxmltext(bat *ret, const bat *bid);
-mal_export str BATXMLstr2xml(bat *ret, const bat *bid);
-mal_export str BATXMLdocument(bat *ret, const bat *bid);
-mal_export str BATXMLcontent(bat *ret, const bat *bid);
-mal_export str BATXMLisdocument(bat *ret, const bat *bid);
-mal_export str BATXMLelementSmall(bat *ret, const char * const *name, const bat *bid);
-mal_export str BATXMLoptions(bat *ret, const char * const *name, const char * const *options, const bat *bid);
-mal_export str BATXMLcomment(bat *ret, const bat *bid);
-mal_export str BATXMLparse(bat *ret, const char * const *doccont, const bat *bid, const char * const *option);
-mal_export str BATXMLxquery(bat *ret, const bat *bid, const char * const *expr);
-mal_export str BATXMLpi(bat *ret, const char * const *tgt, const bat *bid);
-mal_export str BATXMLroot(bat *ret, const bat *bid, const char * const *version, const char * const *standalone);
-mal_export str BATXMLattribute(bat *ret, const char * const *name, const bat *bid);
-mal_export str BATXMLelement(bat *ret, const char * const *name, xml *ns, xml *attr, const bat *bid);
-mal_export str BATXMLconcat(bat *ret, const bat *bid, const bat *rid);
-mal_export str BATXMLforest(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
-mal_export str BATXMLgroup(xml *ret, const bat *bid);
-mal_export str AGGRsubxmlcand(bat *retval, const bat *bid, const bat *gid, const bat *eid, const bat *sid, const bit *skip_nils);
-mal_export str AGGRsubxml(bat *retval, const bat *bid, const bat *gid, const bat *eid, const bit *skip_nils);
+#include "mel.h"
 
 #ifdef HAVE_LIBXML
 
@@ -78,7 +59,7 @@ mal_export str AGGRsubxml(bat *retval, const bat *bid, const bat *gid, const bat
 		BBPunfix((Z)->batCacheid);				\
 	} while (0)
 
-str
+static str
 BATXMLxml2str(bat *ret, const bat *bid)
 {
 	BAT *b, *bn;
@@ -110,7 +91,7 @@ BATXMLxml2str(bat *ret, const bat *bid)
 	throw(MAL, "xml.str", OPERATION_FAILED " during bulk coercion");
 }
 
-str
+static str
 BATXMLxmltext(bat *ret, const bat *bid)
 {
 	BAT *b, *bn;
@@ -230,7 +211,7 @@ BATXMLxmltext(bat *ret, const bat *bid)
  * [FOR LATER, FIRST GO FOR THE EASY IMPLEMENTATION]
  * XML values are represented by strings already.
  */
-str
+static str
 BATXMLstr2xml(bat *ret, const bat *bid)
 {
 	BAT *b, *bn;
@@ -286,7 +267,7 @@ BATXMLstr2xml(bat *ret, const bat *bid)
 	throw(MAL, "xml.xml", "%s", err);
 }
 
-str
+static str
 BATXMLdocument(bat *ret, const bat *bid)
 {
 	BAT *b, *bn;
@@ -348,7 +329,7 @@ BATXMLdocument(bat *ret, const bat *bid)
 	throw(MAL, "xml.document", "%s", err);
 }
 
-str
+static str
 BATXMLcontent(bat *ret, const bat *bid)
 {
 	BAT *b, *bn;
@@ -425,7 +406,7 @@ BATXMLcontent(bat *ret, const bat *bid)
 	throw(MAL, "xml.document", "%s", err);
 }
 
-str
+static str
 BATXMLisdocument(bat *ret, const bat *bid)
 {
 	BAT *b, *bn;
@@ -476,7 +457,7 @@ BATXMLisdocument(bat *ret, const bat *bid)
  * For the time being, the variaton on XMLtag seems the
  * most reasonable interpretation.
  */
-str
+static str
 BATXMLoptions(bat *ret, const char * const *name, const char * const *options, const bat *bid)
 {
 	BAT *b, *bn;
@@ -553,7 +534,7 @@ bunins_failed:
 	throw(MAL, "batxml.options", "%s", err);
 }
 
-str
+static str
 BATXMLcomment(bat *ret, const bat *bid)
 {
 	BAT *b, *bn;
@@ -612,7 +593,7 @@ BATXMLcomment(bat *ret, const bat *bid)
 	throw(MAL, "xml.comment", "%s", err);
 }
 
-str
+static str
 BATXMLparse(bat *ret, const char * const *doccont, const bat *bid, const char * const *option)
 {
 	(void) option;
@@ -623,7 +604,7 @@ BATXMLparse(bat *ret, const char * const *doccont, const bat *bid, const char * 
 	throw(MAL, "xml.parse", ILLEGAL_ARGUMENT " <document> or <content> expected");
 }
 
-str
+static str
 BATXMLpi(bat *ret, const char * const *target, const bat *bid)
 {
 	BAT *b, *bn;
@@ -686,7 +667,7 @@ BATXMLpi(bat *ret, const char * const *target, const bat *bid)
 	throw(MAL, "xml.pi", "%s", err);
 }
 
-str
+static str
 BATXMLroot(bat *ret, const bat *bid, const char * const *version, const char * const *standalone)
 {
 	BAT *b, *bn;
@@ -769,7 +750,7 @@ BATXMLroot(bat *ret, const bat *bid, const char * const *version, const char * c
 	throw(MAL, "xml.root", "%s", err);
 }
 
-str
+static str
 BATXMLattribute(bat *ret, const char * const *name, const bat *bid)
 {
 	BAT *b, *bn;
@@ -834,7 +815,7 @@ BATXMLattribute(bat *ret, const char * const *name, const bat *bid)
 	throw(MAL, "xml.attribute", "%s", err);
 }
 
-str
+static str
 BATXMLelement(bat *ret, const char * const *name, xml *nspace, xml *attr, const bat *bid)
 {
 	BAT *b, *bn;
@@ -923,13 +904,13 @@ BATXMLelement(bat *ret, const char * const *name, xml *nspace, xml *attr, const 
 	throw(MAL, "xml.element", "%s", err);
 }
 
-str
+static str
 BATXMLelementSmall(bat *ret, const char * const *name, const bat *bid)
 {
 	return BATXMLelement(ret, name, NULL, NULL, bid);
 }
 
-str
+static str
 BATXMLforest(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	bat *ret = getArgReference_bat(stk, pci, 0);
@@ -1048,7 +1029,7 @@ bunins_failed:
 	throw(MAL, "xml.forest", "%s", err);
 }
 
-str
+static str
 BATXMLconcat(bat *ret, const bat *bid, const bat *rid)
 {
 	BAT *b, *r = 0, *bn;
@@ -1132,7 +1113,7 @@ BATXMLconcat(bat *ret, const bat *bid, const bat *rid)
 	throw(MAL, "xml.concat", "%s", err);
 }
 
-str
+static str
 BATXMLgroup(xml *ret, const bat *bid)
 {
 	BAT *b;
@@ -1408,7 +1389,7 @@ BATxmlaggr(BAT **bnp, BAT *b, BAT *g, BAT *e, BAT *s, int skip_nils)
 	goto out;
 }
 
-str
+static str
 AGGRsubxmlcand(bat *retval, const bat *bid, const bat *gid, const bat *eid, const bat *sid, const bit *skip_nils)
 {
 	BAT *b, *g, *e, *s, *bn = NULL;
@@ -1455,13 +1436,13 @@ AGGRsubxmlcand(bat *retval, const bat *bid, const bat *gid, const bat *eid, cons
 	return MAL_SUCCEED;
 }
 
-str
+static str
 AGGRsubxml(bat *retval, const bat *bid, const bat *gid, const bat *eid, const bit *skip_nils)
 {
 	return AGGRsubxmlcand(retval, bid, gid, eid, NULL, skip_nils);
 }
 
-str
+static str
 BATXMLxquery(bat *ret, const bat *bid, const char * const *expr)
 {
 	(void) ret;
@@ -1475,87 +1456,87 @@ BATXMLxquery(bat *ret, const bat *bid, const char * const *expr)
 
 #define NO_LIBXML_FATAL "batxml: MonetDB was built without libxml, but what you are trying to do requires it."
 
-str BATXMLxml2str(bat *ret, const bat *bid) {
+static str BATXMLxml2str(bat *ret, const bat *bid) {
 	(void) ret;
 	(void) bid;
 	return createException(MAL, "batxml.xml2str", SQLSTATE(HY005) NO_LIBXML_FATAL);
 }
-str BATXMLxmltext(bat *ret, const bat *bid) {
+static str BATXMLxmltext(bat *ret, const bat *bid) {
 	(void) ret;
 	(void) bid;
 	return createException(MAL, "batxml.xmltext", SQLSTATE(HY005) NO_LIBXML_FATAL);
 }
-str BATXMLstr2xml(bat *ret, const bat *bid) {
+static str BATXMLstr2xml(bat *ret, const bat *bid) {
 	(void) ret;
 	(void) bid;
 	return createException(MAL, "batxml.str2xml", SQLSTATE(HY005) NO_LIBXML_FATAL);
 }
-str BATXMLdocument(bat *ret, const bat *bid) {
+static str BATXMLdocument(bat *ret, const bat *bid) {
 	(void) ret;
 	(void) bid;
 	return createException(MAL, "batxml.document", SQLSTATE(HY005) NO_LIBXML_FATAL);
 }
-str BATXMLcontent(bat *ret, const bat *bid) {
+static str BATXMLcontent(bat *ret, const bat *bid) {
 	(void) ret;
 	(void) bid;
 	return createException(MAL, "batxml.content", SQLSTATE(HY005) NO_LIBXML_FATAL);
 }
-str BATXMLisdocument(bat *ret, const bat *bid) {
+static str BATXMLisdocument(bat *ret, const bat *bid) {
 	(void) ret;
 	(void) bid;
 	return createException(MAL, "batxml.isdocument", SQLSTATE(HY005) NO_LIBXML_FATAL);
 }
-str BATXMLelementSmall(bat *ret, const char * const *name, const bat *bid) {
+static str BATXMLelementSmall(bat *ret, const char * const *name, const bat *bid) {
 	(void) ret;
 	(void) name;
 	(void) bid;
 	return createException(MAL, "batxml.elementSmall", SQLSTATE(HY005) NO_LIBXML_FATAL);
 }
-str BATXMLoptions(bat *ret, const char * const *name, const char * const *options, const bat *bid) {
+static str BATXMLoptions(bat *ret, const char * const *name, const char * const *options, const bat *bid) {
 	(void) ret;
 	(void) name;
 	(void) options;
 	(void) bid;
 	return createException(MAL, "batxml.options", SQLSTATE(HY005) NO_LIBXML_FATAL);
 }
-str BATXMLcomment(bat *ret, const bat *bid) {
+static str BATXMLcomment(bat *ret, const bat *bid) {
 	(void) ret;
 	(void) bid;
 	return createException(MAL, "batxml.comment", SQLSTATE(HY005) NO_LIBXML_FATAL);
 }
-str BATXMLparse(bat *ret, const char * const *doccont, const bat *bid, const char * const *option) {
+static str BATXMLparse(bat *ret, const char * const *doccont, const bat *bid, const char * const *option) {
 	(void) ret;
 	(void) doccont;
 	(void) bid;
 	(void) option;
 	return createException(MAL, "batxml.parse", SQLSTATE(HY005) NO_LIBXML_FATAL);
 }
-str BATXMLxquery(bat *ret, const bat *bid, const char * const *expr) {
+static str BATXMLxquery(bat *ret, const bat *bid, const char * const *expr) {
 	(void) ret;
 	(void) bid;
 	(void) expr;
 	return createException(MAL, "batxml.xquery", SQLSTATE(HY005) NO_LIBXML_FATAL);
 }
-str BATXMLpi(bat *ret, const char * const *tgt, const bat *bid) {
+static str BATXMLpi(bat *ret, const char * const *tgt, const bat *bid) {
 	(void) ret;
 	(void) tgt;
 	(void) bid;
 	return createException(MAL, "batxml.pi", SQLSTATE(HY005) NO_LIBXML_FATAL);
 }
-str BATXMLroot(bat *ret, const bat *bid, const char * const *version, const char * const *standalone) {
+static str BATXMLroot(bat *ret, const bat *bid, const char * const *version, const char * const *standalone) {
 	(void) ret;
 	(void) bid;
 	(void) version;
 	(void) standalone;
 	return createException(MAL, "batxml.root", SQLSTATE(HY005) NO_LIBXML_FATAL);
 }
-str BATXMLattribute(bat *ret, const char * const *name, const bat *bid) {
+static str BATXMLattribute(bat *ret, const char * const *name, const bat *bid) {
 	(void) ret;
 	(void) name;
 	(void) bid;
 	return createException(MAL, "batxml.attribute", SQLSTATE(HY005) NO_LIBXML_FATAL);
 }
-str BATXMLelement(bat *ret, const char * const *name, xml *ns, xml *attr, const bat *bid) {
+static str BATXMLelement(bat *ret, const char * const *name, xml *ns, xml *attr, const bat *bid) {
 	(void) ret;
 	(void) name;
 	(void) ns;
@@ -1563,25 +1544,25 @@ str BATXMLelement(bat *ret, const char * const *name, xml *ns, xml *attr, const 
 	(void) bid;
 	return createException(MAL, "batxml.element", SQLSTATE(HY005) NO_LIBXML_FATAL);
 }
-str BATXMLconcat(bat *ret, const bat *bid, const bat *rid) {
+static str BATXMLconcat(bat *ret, const bat *bid, const bat *rid) {
 	(void) ret;
 	(void) bid;
 	(void) rid;
 	return createException(MAL, "batxml.concat", SQLSTATE(HY005) NO_LIBXML_FATAL);
 }
-str BATXMLforest(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p) {
+static str BATXMLforest(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p) {
 	(void) cntxt;
 	(void) mb;
 	(void) stk;
 	(void) p;
 	return createException(MAL, "batxml.forest", SQLSTATE(HY005) NO_LIBXML_FATAL);
 }
-str BATXMLgroup(xml *ret, const bat *bid) {
+static str BATXMLgroup(xml *ret, const bat *bid) {
 	(void) ret;
 	(void) bid;
 	return createException(MAL, "batxml.group", SQLSTATE(HY005) NO_LIBXML_FATAL);
 }
-str AGGRsubxmlcand(bat *retval, const bat *bid, const bat *gid, const bat *eid, const bat *sid, const bit *skip_nils) {
+static str AGGRsubxmlcand(bat *retval, const bat *bid, const bat *gid, const bat *eid, const bat *sid, const bit *skip_nils) {
 	(void) retval;
 	(void) bid;
 	(void) gid;
@@ -1590,7 +1571,7 @@ str AGGRsubxmlcand(bat *retval, const bat *bid, const bat *gid, const bat *eid, 
 	(void) skip_nils;
 	return createException(MAL, "batxml.subxmlcand", SQLSTATE(HY005) NO_LIBXML_FATAL);
 }
-str AGGRsubxml(bat *retval, const bat *bid, const bat *gid, const bat *eid, const bit *skip_nils) {
+static str AGGRsubxml(bat *retval, const bat *bid, const bat *gid, const bat *eid, const bit *skip_nils) {
 	(void) retval;
 	(void) bid;
 	(void) gid;
@@ -1599,4 +1580,38 @@ str AGGRsubxml(bat *retval, const bat *bid, const bat *gid, const bat *eid, cons
 	return createException(MAL, "batxml.subxml", SQLSTATE(HY005) NO_LIBXML_FATAL);
 }
 
+#endif /* HAVE_LIBXML */
+
+#include "mel.h"
+mel_func batxml_init_funcs[] = {
+ command("batxml", "xml", BATXMLstr2xml, false, "Cast the string to an xml compliant string.", args(1,2, batarg("",xml),batarg("src",str))),
+ command("batxml", "str", BATXMLxml2str, false, "Cast the xml to a string.", args(1,2, batarg("",str),batarg("src",xml))),
+ command("batxml", "document", BATXMLdocument, false, "Parse the string as an XML document.", args(1,2, batarg("",xml),batarg("src",str))),
+ command("batxml", "content", BATXMLcontent, false, "Parse the string as XML element content.", args(1,2, batarg("",xml),batarg("src",str))),
+ command("batxml", "comment", BATXMLcomment, false, "Create an XML comment element.", args(1,2, batarg("",xml),batarg("val",str))),
+ command("batxml", "parse", BATXMLparse, false, "Parse the XML document or element string values.", args(1,4, batarg("",xml),arg("doccont",str),batarg("val",str),arg("option",str))),
+ command("batxml", "serialize", BATXMLxml2str, false, "Serialize the XML object to a string.", args(1,2, batarg("",str),batarg("val",xml))),
+ command("batxml", "text", BATXMLxmltext, false, "Serialize the XML object to a string.", args(1,2, batarg("",str),batarg("val",xml))),
+ command("batxml", "xquery", BATXMLxquery, false, "Execute the XQuery against the elements.", args(1,3, batarg("",xml),batarg("val",str),arg("expr",str))),
+ command("batxml", "pi", BATXMLpi, false, "Construct a processing instruction.", args(1,3, batarg("",xml),arg("target",str),batarg("val",xml))),
+ command("batxml", "attribute", BATXMLattribute, false, "Construct an attribute value pair.", args(1,3, batarg("",xml),arg("name",str),batarg("val",str))),
+ command("batxml", "element", BATXMLelementSmall, false, "The basic building block for XML elements are namespaces, attributes and a sequence of XML elements. The name space and the attributes may be left unspecified.", args(1,3, batarg("",xml),arg("name",str),batarg("s",xml))),
+ command("batxml", "options", BATXMLoptions, false, "Create the components including NULL conversions.", args(1,4, batarg("",xml),arg("tag",str),arg("option",str),batarg("left",xml))),
+ command("batxml", "element", BATXMLelement, false, "The basic building block for XML elements are namespaces, attributes and a sequence of XML elements. The name space and the attributes may be left unspecified(=nil).", args(1,5, batarg("",xml),arg("name",str),arg("ns",xml),arg("attr",xml),batarg("s",xml))),
+ command("batxml", "concat", BATXMLconcat, false, "Concatenate the XML values.", args(1,3, batarg("",xml),batarg("left",xml),batarg("right",xml))),
+ pattern("batxml", "forest", BATXMLforest, false, "Construct an element list.", args(1,2, batarg("",xml),batvararg("val",xml))),
+ command("batxml", "root", BATXMLroot, false, "Contruct the root nodes.", args(1,4, batarg("",xml),batarg("val",xml),arg("version",str),arg("standalone",str))),
+ command("batxml", "isdocument", BATXMLisdocument, false, "Validate the string as a XML document.", args(1,2, batarg("",bit),batarg("val",str))),
+ command("xml", "aggr", BATXMLgroup, false, "Aggregate the XML values.", args(1,2, arg("",xml),batarg("val",xml))),
+ command("xml", "subaggr", AGGRsubxml, false, "Grouped aggregation of XML values.", args(1,5, batarg("",xml),batarg("val",xml),batarg("g",oid),batargany("e",1),arg("skip_nils",bit))),
+ command("xml", "subaggr", AGGRsubxmlcand, false, "Grouped aggregation of XML values with candidates list.", args(1,6, batarg("",xml),batarg("val",xml),batarg("g",oid),batargany("e",1),batarg("s",oid),arg("skip_nils",bit))),
+ command("batcalc", "xml", BATXMLstr2xml, false, "", args(1,2, batarg("",xml),batarg("src",str))),
+ { .imp=NULL }
+};
+#include "mal_import.h"
+#ifdef _MSC_VER
+#undef read
+#pragma section(".CRT$XCU",read)
 #endif
+LIB_STARTUP_FUNC(init_batxml_mal)
+{ mal_module("batxml", NULL, batxml_init_funcs); }

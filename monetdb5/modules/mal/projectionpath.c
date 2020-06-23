@@ -47,3 +47,16 @@ ALGprojectionpath(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		throw(MAL, "algebra.projectionpath", INTERNAL_OBJ_CREATE);
 	return MAL_SUCCEED;
 }
+
+#include "mel.h"
+mel_func projectionpath_init_funcs[] = {
+ pattern("algebra", "projectionpath", ALGprojectionpath, false, "Routine to handle join paths.  The type analysis is rather tricky.", args(1,2, batargany("",0),batvarargany("l",0))),
+ { .imp=NULL }
+};
+#include "mal_import.h"
+#ifdef _MSC_VER
+#undef read
+#pragma section(".CRT$XCU",read)
+#endif
+LIB_STARTUP_FUNC(init_projectionpath_mal)
+{ mal_module("projectionpath", NULL, projectionpath_init_funcs); }

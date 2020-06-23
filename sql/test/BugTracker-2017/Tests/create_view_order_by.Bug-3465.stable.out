@@ -262,7 +262,7 @@ stdout of test 'create_view_order_by.Bug-3465` in directory 'sql/test/BugTracker
 #select * from system_tables
 #ORDER BY system, query, name DESC
 #LIMIT 10;
-% .%37,	.%37,	.%37,	.%37,	.%37,	.%37,	.%37,	.%37 # table_name
+% .%41,	.%41,	.%41,	.%41,	.%41,	.%41,	.%41,	.%41 # table_name
 % name,	schema_id,	query,	type,	system,	commit_action,	access,	temporary # name
 % varchar,	int,	varchar,	smallint,	boolean,	smallint,	smallint,	tinyint # type
 % 13,	4,	177,	2,	5,	1,	1,	1 # length
@@ -280,7 +280,7 @@ stdout of test 'create_view_order_by.Bug-3465` in directory 'sql/test/BugTracker
 #INTERSECT
 #(select * from system_tables UNION select * from system_views)
 #ORDER BY name DESC;
-% .%37,	.%37,	.%37,	.%37,	.%37,	.%37,	.%37,	.%37 # table_name
+% .%41,	.%41,	.%41,	.%41,	.%41,	.%41,	.%41,	.%41 # table_name
 % name,	schema_id,	query,	type,	system,	commit_action,	access,	temporary # name
 % varchar,	int,	varchar,	smallint,	boolean,	smallint,	smallint,	tinyint # type
 % 0,	1,	0,	1,	5,	1,	1,	1 # length
@@ -288,7 +288,7 @@ stdout of test 'create_view_order_by.Bug-3465` in directory 'sql/test/BugTracker
 #EXCEPT
 #(select * from user_views UNION select * from user_tables)
 #ORDER BY name DESC;
-% .%35,	.%35,	.%35,	.%35,	.%35,	.%35,	.%35,	.%35 # table_name
+% .%33,	.%33,	.%33,	.%33,	.%33,	.%33,	.%33,	.%33 # table_name
 % name,	schema_id,	query,	type,	system,	commit_action,	access,	temporary # name
 % varchar,	int,	varchar,	smallint,	boolean,	smallint,	smallint,	tinyint # type
 % 0,	1,	0,	1,	5,	1,	1,	1 # length

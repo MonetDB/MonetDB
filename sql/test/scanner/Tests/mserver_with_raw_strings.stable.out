@@ -22,8 +22,8 @@ stdout of test 'mserver_with_raw_strings` in directory 'sql/test/scanner` itself
 # 17:10:47 >  
 
 #SELECT '\"';
-% . # table_name
-% single_value # name
+% .%2 # table_name
+% %2 # name
 % char # type
 % 2 # length
 [ "\\\""	]

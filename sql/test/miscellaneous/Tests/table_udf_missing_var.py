@@ -11,15 +11,14 @@ def client(input):
         sys.stderr.write(err)
 
 client('''
-declare myvar int;
-create function myfunc() returns table (x int) begin return select myvar; end;
-create function myfunc2() returns int begin return myvar; end;
+create function myfunc() returns table (x int) begin declare myvar int; return select myvar; end;
+create function myfunc2() returns int begin declare myvar int; return myvar; end;
 select * from myfunc();
 select myfunc2();
 ''')
 client('''
-select * from myfunc(); --error, myvar doesn\'t exist
-select myfunc2(); --error, myvar doesn\'t exist
+select * from myfunc();
+select myfunc2();
 drop function myfunc();
 drop function myfunc2();
 ''')

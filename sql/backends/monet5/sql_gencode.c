@@ -518,7 +518,7 @@ _create_relational_remote(mvc *m, const char *mod, const char *name, sql_rel *re
 	pushInstruction(curBlk, p);
 
 	char *mal_session_uuid, *err = NULL;
-	if (!GDKinmemory() && (err = msab_getUUID(&mal_session_uuid)) == NULL) {
+	if (!GDKinmemory() && !GDKembedded() && (err = msab_getUUID(&mal_session_uuid)) == NULL) {
 		str lsupervisor_session = GDKstrdup(mal_session_uuid);
 		str rsupervisor_session = GDKstrdup(mal_session_uuid);
 		free(mal_session_uuid);
@@ -756,7 +756,7 @@ backend_dumpstmt(backend *be, MalBlkPtr mb, sql_rel *r, int top, int add_end, co
 
 	be->mvc_var = old_mv;
 	be->mb = old_mb;
-	if (top && !be->depth && (m->type == Q_SCHEMA || m->type == Q_TRANS)) {
+	if (top && !be->depth && (m->type == Q_SCHEMA || m->type == Q_TRANS) && !GDKembedded()) {
 		q = newStmt(mb, sqlRef, exportOperationRef);
 		if (q == NULL) {
 			sql_error(m, 001, SQLSTATE(HY013) MAL_MALLOC_FAIL);
@@ -1193,7 +1193,6 @@ mal_function_find_implementation_address(mvc *m, sql_func *f)
 	}
 	if (s)
 		m->session->schema = s;
-
 	if (!(m->sa = sa_create())) {
 		(void) sql_error(o, 02, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		goto bailout;
@@ -1225,7 +1224,7 @@ mal_function_find_implementation_address(mvc *m, sql_func *f)
 	assert(m->sym->token == SQL_CREATE_FUNC);
 	l = m->sym->data.lval;
 	ext_name = l->h->next->next->next->data.lval;
-	f->imp = sa_strdup(f->sa, qname_fname(ext_name)); /* found the implementation, set it */
+	f->imp = sa_strdup(f->sa, qname_schema_object(ext_name)); /* found the implementation, set it */
 
 bailout:
 	if (m) {
@@ -1344,9 +1343,9 @@ backend_create_sql_func(backend *be, sql_func *f, list *restypes, list *ops)
 			char *buf;
 
 			if (a->name) {
-				buf = SA_NEW_ARRAY(m->sa, char, strlen(a->name) + 2);
+				buf = SA_NEW_ARRAY(m->sa, char, strlen(a->name) + 4);
 				if (buf)
-					stpcpy(stpcpy(buf, "A"), a->name);
+					stpcpy(stpcpy(buf, "A1%"), a->name);  /* mangle variable name */
 			} else {
 				buf = SA_NEW_ARRAY(m->sa, char, IDLENGTH);
 				if (buf)

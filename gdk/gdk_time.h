@@ -59,6 +59,8 @@ gdk_export int date_day(date dt)
 
 gdk_export daytime daytime_create(int hour, int minute, int second, int usec)
 	__attribute__((__const__));
+gdk_export lng daytime_diff(daytime d1, daytime d2)
+	__attribute__((__const__));
 gdk_export daytime daytime_add_usec(daytime tm, lng usec)
 	__attribute__((__const__));
 #define daytime_add_sec(t, s)	daytime_add_usec(t, (s)*LL_CONSTANT(1000000))

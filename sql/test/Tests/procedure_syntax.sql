@@ -19,8 +19,8 @@ END;
 
 create PROCEDURE p3(id int, name varchar(1024))
 BEGIN
-	declare id int;
-	set id = 0;
+	declare id2 int;
+	set id2 = 0;
 END;
 
 select name from functions where name = 'p1' or name = 'p2' or name = 'p3';

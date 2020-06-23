@@ -1105,3 +1105,21 @@ str FITSloadTable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	fits_close_file(fptr, &status);
 	return msg;
 }
+
+#include "mel.h"
+static mel_func fits_init_funcs[] = {
+ pattern("fits", "listdir", FITSdir, false, "Attach all FITS files in the directory", args(1,2, arg("",void),arg("dirname",str))),
+ pattern("fits", "listdirpattern", FITSdirpat, false, "Attach all FITS file in the directory, giving a pattern", args(1,3, arg("",void),arg("dirname",str),arg("pattern",str))),
+ command("fits", "fitstest", FITStest, false, "Returns the type of first extension in the FITS file filename", args(1,2, arg("",int),arg("filename",str))),
+ pattern("fits", "attach", FITSattach, false, "Open a FITS file and return catalog of the table HDUs", args(1,2, arg("",void),arg("fname",str))),
+ pattern("fits", "load", FITSloadTable, false, "Load a FITS table from an attached file", args(1,2, arg("",void),arg("tablename",str))),
+ pattern("fits", "export", FITSexportTable, false, "Export a table to a FITS file", args(1,2, arg("",void),arg("tablename",str))),
+ { .imp=NULL }
+};
+#include "mal_import.h"
+#ifdef _MSC_VER
+#undef read
+#pragma section(".CRT$XCU",read)
+#endif
+LIB_STARTUP_FUNC(init_fits_mal)
+{ mal_module("fits", NULL, fits_init_funcs); }

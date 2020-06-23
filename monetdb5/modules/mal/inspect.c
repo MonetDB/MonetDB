@@ -355,60 +355,6 @@ INSPECTgetSignature(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 }
 
 str
-INSPECTgetAddress(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
-{
-	bat *ret = getArgReference_bat(stk,pci,0);
-	str *mod = getArgReference_str(stk,pci,1);
-	str *fcn = getArgReference_str(stk,pci,2);
-	Symbol s;
-	str ps, tail;
-	BAT *b;
-	(void) mb;
-
-	s = findSymbol(cntxt->usermodule, getName(*mod), putName(*fcn));
-	if (s == 0)
-		throw(MAL, "inspect.getAddress", RUNTIME_SIGNATURE_MISSING);
-	b = COLnew(0, TYPE_str, 12, TRANSIENT);
-	if (b == 0)
-		throw(MAL, "inspect.getAddress", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-
-	while (s != NULL) {
-		if (idcmp(s->name, *fcn) == 0) {
-			InstrPtr p = getSignature(s);
-			char *c,*w;
-
-			ps = instruction2str(s->def, 0, p, 0);
-			if(ps == NULL)
-				continue;
-			c = strchr(ps, '(');
-			if (c == 0) {
-				GDKfree(ps);
-				continue;
-			}
-			tail= strstr(c,"address");
-			if( tail){
-				*tail = 0;
-				for( tail=tail+7; isspace((unsigned char) *tail); tail++)  ;
-			}
-			if (tail && (w=strchr(tail, ';')) )
-				*w = 0;
-			if (BUNappend(b, (tail? tail: "nil"), false) != GDK_SUCCEED) {
-				GDKfree(ps);
-				goto bailout;
-			}
-			GDKfree(ps);
-		}
-		s = s->peer;
-	}
-
-	if (pseudo(ret,b,"view","input","result"))
-		goto bailout;
-	return MAL_SUCCEED;
-  bailout:
-	BBPreclaim(b);
-	throw(MAL, "inspect.getAddress", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-}
-str
 INSPECTgetComment(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	bat *ret = getArgReference_bat(stk,pci,0);
@@ -703,3 +649,32 @@ INSPECTtypeName(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		*hn = getTypeName(getArgType(mb, pci, 1));
 	return MAL_SUCCEED;
 }
+
+#include "mel.h"
+mel_func inspect_init_funcs[] = {
+ pattern("inspect", "getDefinition", INSPECTgetDefinition, false, "Returns a string representation of a specific function.", args(1,3, batarg("",str),arg("mod",str),arg("fcn",str))),
+ pattern("inspect", "getSignature", INSPECTgetSignature, false, "Returns the function signature(s).", args(1,3, batarg("",str),arg("mod",str),arg("fcn",str))),
+ pattern("inspect", "getComment", INSPECTgetComment, false, "Returns the function help information.", args(1,3, batarg("",str),arg("mod",str),arg("fcn",str))),
+ pattern("inspect", "getSource", INSPECTgetSource, false, "Return the original input for a function.", args(1,3, arg("",str),arg("mod",str),arg("fcn",str))),
+ pattern("inspect", "getKind", INSPECTgetkind, false, "Obtain the instruction kind.", args(1,1, batarg("",str))),
+ pattern("inspect", "getModule", INSPECTgetAllModules, false, "Obtain the function name.", args(1,1, batarg("",str))),
+ pattern("inspect", "getFunction", INSPECTgetAllFunctions, false, "Obtain the function name.", args(1,1, batarg("",str))),
+ pattern("inspect", "getSignatures", INSPECTgetAllSignatures, false, "Obtain the function signatures.", args(1,1, batarg("",str))),
+ pattern("inspect", "getSize", INSPECTgetSize, false, "Return the storage size for the current function (in bytes).", args(1,1, arg("",lng))),
+ pattern("inspect", "getSize", INSPECTgetFunctionSize, false, "Return the storage size for a function (in bytes).", args(1,3, arg("",lng),arg("mod",str),arg("fcn",str))),
+ pattern("inspect", "getType", INSPECTtypeName, false, "Return the concrete type of a variable (expression).", args(1,2, arg("",str),argany("v",1))),
+ pattern("inspect", "equalType", INSPECTequalType, false, "Return true if both operands are of the same type", args(1,3, arg("",bit),argany("l",0),argany("r",0))),
+ command("inspect", "getAtomNames", INSPECTatom_names, false, "Collect a BAT with the atom names.", args(1,1, batarg("",str))),
+ command("inspect", "getAtomSuper", INSPECTatom_sup_names, false, "Collect a BAT with the atom names.", args(1,1, batarg("",str))),
+ command("inspect", "getAtomSizes", INSPECTatom_sizes, false, "Collect a BAT with the atom sizes.", args(1,1, batarg("",int))),
+ command("inspect", "getEnvironment", INSPECTgetEnvironment, false, "Collect the environment variables.", args(2,2, batarg("k",str),batarg("v",str))),
+ command("inspect", "getEnvironment", INSPECTgetEnvironmentKey, false, "Get the value of an environemnt variable", args(1,2, arg("",str),arg("k",str))),
+ { .imp=NULL }
+};
+#include "mal_import.h"
+#ifdef _MSC_VER
+#undef read
+#pragma section(".CRT$XCU",read)
+#endif
+LIB_STARTUP_FUNC(init_inspect_mal)
+{ mal_module("inspect", NULL, inspect_init_funcs); }

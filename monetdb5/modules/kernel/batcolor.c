@@ -18,10 +18,16 @@
  */
 
 #include "monetdb_config.h"
-#include "batcolor.h"
+#include "gdk.h"
+#include <string.h>
+#include "mal.h"
+#include "color.h"
+#include "mal_exception.h"
+
+#include "mel.h"
 
 #define BATwalk(NAME,FUNC,TYPE1,ISNIL,TYPE2,TPE,APP)					\
-str CLRbat##NAME(bat *ret, const bat *l)								\
+static str CLRbat##NAME(bat *ret, const bat *l)							\
 {																		\
 	BATiter bi;															\
 	BAT *bn, *b;														\
@@ -88,7 +94,7 @@ BATwalk(Cr,CLRcr,color,is_color_nil,int,TYPE_int,bunfastappTYPE(int, bn, &y))
 BATwalk(Cb,CLRcb,color,is_color_nil,int,TYPE_int,bunfastappTYPE(int, bn, &y))
 
 #define BATwalk3(NAME,FUNC,TYPE)										\
-str CLRbat##NAME(bat *ret, const bat *l, const bat *bid2, const bat *bid3) \
+static str CLRbat##NAME(bat *ret, const bat *l, const bat *bid2, const bat *bid3) \
 {																		\
 	BATiter bi, b2i, b3i;												\
 	BAT *bn, *b2,*b3, *b;												\
@@ -160,3 +166,32 @@ bunins_failed:															\
 BATwalk3(Hsv,CLRhsv,flt)
 BATwalk3(Rgb,CLRrgb,int)
 BATwalk3(ycc,CLRycc,int)
+
+#include "mel.h"
+mel_func batcolor_init_funcs[] = {
+ command("batcolor", "str", CLRbatStr, false, "Identity mapping for string bats", args(1,2, batarg("",str),batarg("b",color))),
+ command("batcolor", "color", CLRbatColor, false, "Converts string to color", args(1,2, batarg("",color),batarg("s",str))),
+ command("batcolor", "rgb", CLRbatRgb, false, "Converts an RGB triplets to a color atom", args(1,4, batarg("",color),batarg("r",int),batarg("g",int),batarg("b",int))),
+ command("batcolor", "red", CLRbatRed, false, "Extracts red component from a color atom", args(1,2, batarg("",int),batarg("c",color))),
+ command("batcolor", "green", CLRbatGreen, false, "Extracts green component from a color atom", args(1,2, batarg("",int),batarg("c",color))),
+ command("batcolor", "blue", CLRbatBlue, false, "Extracts blue component from a color atom", args(1,2, batarg("",int),batarg("c",color))),
+ command("batcolor", "hue", CLRbatHueInt, false, "Extracts hue component from a color atom", args(1,2, batarg("",int),batarg("c",color))),
+ command("batcolor", "saturation", CLRbatSaturationInt, false, "Extracts saturation component from a color atom", args(1,2, batarg("",int),batarg("c",color))),
+ command("batcolor", "value", CLRbatValueInt, false, "Extracts value component from a color atom", args(1,2, batarg("",int),batarg("c",color))),
+ command("batcolor", "hsv", CLRbatHsv, false, "Converts an HSV triplets to a color atom", args(1,4, batarg("",color),batarg("h",flt),batarg("s",flt),batarg("v",flt))),
+ command("batcolor", "hue", CLRbatHue, false, "Extracts hue component from a color atom", args(1,2, batarg("",flt),batarg("c",color))),
+ command("batcolor", "saturation", CLRbatSaturation, false, "Extracts saturation component from a color atom", args(1,2, batarg("",flt),batarg("c",color))),
+ command("batcolor", "value", CLRbatValue, false, "Extracts value component from a color atom", args(1,2, batarg("",flt),batarg("c",color))),
+ command("batcolor", "ycc", CLRbatycc, false, "Converts an YCC triplets to a color atom", args(1,4, batarg("",color),batarg("y",flt),batarg("cr",flt),batarg("cb",flt))),
+ command("batcolor", "luminance", CLRbatLuminance, false, "Extracts Y(luminance) component from a color atom", args(1,2, batarg("",int),batarg("c",color))),
+ command("batcolor", "cr", CLRbatCr, false, "Extracts Cr(red color) component from a color atom", args(1,2, batarg("",int),batarg("c",color))),
+ command("batcolor", "cb", CLRbatCb, false, "Extracts Cb(blue color) component from a color atom", args(1,2, batarg("",int),batarg("c",color))),
+ { .imp=NULL }
+};
+#include "mal_import.h"
+#ifdef _MSC_VER
+#undef read
+#pragma section(".CRT$XCU",read)
+#endif
+LIB_STARTUP_FUNC(init_batcolor_mal)
+{ mal_module("batcolor", NULL, batcolor_init_funcs); }

@@ -1077,3 +1077,26 @@ CMDstr2qgrams(bat *ret, str *val)
 	GDKfree(s);
 	return MAL_SUCCEED;
 }
+
+#include "mel.h"
+mel_func txtsim_init_funcs[] = {
+ command("txtsim", "levenshtein", levenshtein_impl, false, "Calculates Levenshtein distance (edit distance) between two strings, variable operation costs (ins/del, replacement, transposition)", args(1,6, arg("",int),arg("s",str),arg("t",str),arg("insdel_cost",int),arg("replace_cost",int),arg("transpose_cost",int))),
+ command("txtsim", "levenshtein", levenshteinbasic_impl, false, "Calculates Levenshtein distance (edit distance) between two strings", args(1,3, arg("",int),arg("s",str),arg("t",str))),
+ command("txtsim", "editdistance", levenshteinbasic_impl, false, "Alias for Levenshtein(str,str)", args(1,3, arg("",int),arg("s",str),arg("t",str))),
+ command("txtsim", "editdistance2", levenshteinbasic2_impl, false, "Calculates Levenshtein distance (edit distance) between two strings. Cost of transposition is 1 instead of 2", args(1,3, arg("",int),arg("s",str),arg("t",str))),
+ command("txtsim", "similarity", fstrcmp_impl, false, "Normalized edit distance between two strings", args(1,4, arg("",dbl),arg("string1",str),arg("string2",str),arg("minimum",dbl))),
+ command("txtsim", "similarity", fstrcmp0_impl, false, "Normalized edit distance between two strings", args(1,3, arg("",dbl),arg("string1",str),arg("string2",str))),
+ command("txtsim", "soundex", soundex_impl, false, "Soundex function for phonetic matching", args(1,2, arg("",str),arg("name",str))),
+ command("txtsim", "stringdiff", stringdiff_impl, false, "calculate the soundexed editdistance", args(1,3, arg("",int),arg("s1",str),arg("s2",str))),
+ command("txtsim", "qgramnormalize", CMDqgramnormalize, false, "'Normalizes' strings (eg. toUpper and replaces non-alphanumerics with one space", args(1,2, arg("",str),arg("input",str))),
+ command("txtsim", "qgramselfjoin", CMDqgramselfjoin, false, "QGram self-join on ordered(!) qgram tables and sub-ordered q-gram positions", args(2,8, batarg("",int),batarg("",int),batarg("qgram",oid),batarg("id",oid),batarg("pos",int),batarg("len",int),arg("c",flt),arg("k",int))),
+ command("txtsim", "str2qgrams", CMDstr2qgrams, false, "Break the string into 4-grams", args(1,2, batarg("",str),arg("s",str))),
+ { .imp=NULL }
+};
+#include "mal_import.h"
+#ifdef _MSC_VER
+#undef read
+#pragma section(".CRT$XCU",read)
+#endif
+LIB_STARTUP_FUNC(init_txtsim_mal)
+{ mal_module("txtsim", NULL, txtsim_init_funcs); }

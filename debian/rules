@@ -21,7 +21,6 @@ override_dh_auto_configure:
 	--enable-embedded-r=no \
 	--enable-fits=yes \
 	--enable-geom=yes \
-	--enable-lidar=yes \
 	--enable-mapi=yes \
 	--enable-netcdf=no \
 	--enable-odbc=yes \
@@ -36,9 +35,8 @@ override_dh_auto_configure:
 	--enable-testing=yes \
 	--with-bz2=yes \
 	--with-curl=yes \
-	--with-gdal=yes \
+	--with-gdal=no \
 	--with-geos=yes \
-	--with-liblas=yes \
 	--with-libxml2=yes \
 	--with-lz4=no \
 	--with-lzma=yes \

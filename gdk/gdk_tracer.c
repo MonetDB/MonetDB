@@ -16,9 +16,6 @@
 
 #define FILE_NAME "mdbtrace.log"
 
-#define OPENFILE_FAILED "Failed to open "FILE_NAME
-#define GDKTRACER_FAILED "Failed to write logs"
-
 #define AS_STR(x) #x
 #define STR(x) AS_STR(x)
 
@@ -123,7 +120,8 @@ _GDKtracer_init_basic_adptr(void)
 	active_tracer = fopen(file_name, "a");
 	
 	if (active_tracer == NULL) {
-		GDK_TRACER_EXCEPTION(OPENFILE_FAILED);
+		GDK_TRACER_EXCEPTION("Failed to open %s: %s\n", file_name,
+				     GDKstrerror(errno, (char[64]){0}, 64));
 		file_name[0] = 0; /* uninitialize */
 		active_tracer = stderr;
 		return GDK_FAIL;
@@ -132,7 +130,7 @@ _GDKtracer_init_basic_adptr(void)
 	return GDK_SUCCEED;
 
   too_long:
-	GDK_TRACER_EXCEPTION("path name for dbtrace file too long");
+	GDK_TRACER_EXCEPTION("path name for dbtrace file too long\n");
 	file_name[0] = 0; /* uninitialize */
 	active_tracer = stderr;
 	return GDK_FAIL;
@@ -409,6 +407,9 @@ GDKtracer_log(const char *file, const char *func, int lineno,
 	      const char *syserr,
 	      const char *fmt, ...)
 {
+	if ((adapter_t) ATOMIC_GET(&cur_adapter) == MBEDDED)
+		return;
+
 	int bytes_written;
 	char buffer[512];	/* should be plenty big enough for a message */
 	va_list va;
@@ -447,13 +448,13 @@ GDKtracer_log(const char *file, const char *func, int lineno,
 				 func);
 	if (bytes_written > 0 && bytes_written < (int) sizeof(buffer)) {
 		msg = buffer + bytes_written;
-		bytes_written += vsnprintf(msg,
-					   sizeof(buffer) - bytes_written,
-					   fmt, va);
+		bytes_written = vsnprintf(msg,
+					  sizeof(buffer) - bytes_written,
+					  fmt, va);
 	}
 	va_end(va);
 	if (bytes_written < 0) {
-		GDK_TRACER_EXCEPTION(GDKTRACER_FAILED "\n");
+		GDK_TRACER_EXCEPTION("Failed to write logs\n");
 		return;
 	}
 	char *p;

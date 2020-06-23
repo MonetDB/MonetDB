@@ -4,6 +4,7 @@
 #
 # Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
 
+module batblob;
 module blob;
 
 atom blob;
@@ -38,11 +39,11 @@ comment "store a string as a blob.";
 command nitems(b:blob):int
 address BLOBnitems
 comment "get the number of bytes in this blob.";
+command batblob.nitems(b:bat[:blob]):bat[:int]
+address BLOBnitems_bulk;
 
 command prelude() :void
 address BLOBprelude;
-
-blob.prelude();
 
 module calc;
 

@@ -26,13 +26,7 @@
 #include "mal_interpreter.h"
 #include <time.h>
 
-mal_export str ALARMusec(lng *ret);
-mal_export str ALARMsleep(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-mal_export str ALARMctime(str *res);
-mal_export str ALARMepoch(int *res);
-mal_export str ALARMtime(int *res);
-
-str
+static str
 ALARMusec(lng *ret)
 {
 	*ret = GDKusec();
@@ -70,7 +64,7 @@ ALARMusec(lng *ret)
 		} \
 	} while (0)
 
-str
+static str
 ALARMsleep(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	BAT *r = NULL, *b = NULL;
@@ -132,7 +126,7 @@ ALARMsleep(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	return MAL_SUCCEED;
 }
 
-str
+static str
 ALARMctime(str *res)
 {
 	time_t t = time(0);
@@ -155,17 +149,35 @@ ALARMctime(str *res)
 	return MAL_SUCCEED;
 }
 
-str
+static str
 ALARMepoch(int *res)  /* XXX should be lng */
 {
 	*res = (int) time(0);
 	return MAL_SUCCEED;
 }
 
-str
+static str
 ALARMtime(int *res)
 {
 	*res = GDKms();
 	return MAL_SUCCEED;
 }
 
+#include "mel.h"
+mel_func alarm_init_funcs[] = {
+ pattern("alarm", "sleep", ALARMsleep, true, "Sleep a few milliseconds", args(1,2, arg("",void),argany("msecs",1))),
+ pattern("alarm", "sleep", ALARMsleep, true, "Sleep a few milliseconds and return the slept value", args(1,2, argany("",1),argany("msecs",1))),
+ pattern("alarm", "sleep", ALARMsleep, true, "Sleep a few milliseconds and return the slept value", args(1,2, batargany("",1),batargany("msecs",1))),
+ command("alarm", "usec", ALARMusec, true, "Return time since Jan 1, 1970 in microseconds.", args(1,1, arg("",lng))),
+ command("alarm", "time", ALARMtime, true, "Return time since program start in milliseconds.", args(1,1, arg("",int))),
+ command("alarm", "epoch", ALARMepoch, true, "Return time since Jan 1, 1970 in seconds.", args(1,1, arg("",int))),
+ command("alarm", "ctime", ALARMctime, true, "Return the current time as a C-time string.", args(1,1, arg("",str))),
+ { .imp=NULL }
+};
+#include "mal_import.h"
+#ifdef _MSC_VER
+#undef read
+#pragma section(".CRT$XCU",read)
+#endif
+LIB_STARTUP_FUNC(init_alarm_mal)
+{ mal_module("alarm", NULL, alarm_init_funcs); }

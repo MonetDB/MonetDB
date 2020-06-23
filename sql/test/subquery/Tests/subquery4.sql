@@ -160,7 +160,7 @@ SELECT NOT EXISTS(SELECT i1.i) from integers i1;
 SELECT i1.i, i2.i FROM integers i1 INNER JOIN integers i2 ON EXISTS (SELECT i1.i) = NOT EXISTS (SELECT i2.i);
 	-- empty
 
-SELECT i1.i, i2.i FROM integers i1 INNER JOIN integers i2 ON EXISTS (SELECT i1.i) = EXISTS (SELECT i2.i);
+SELECT i1.i, i2.i FROM integers i1 INNER JOIN integers i2 ON EXISTS (SELECT i1.i) = EXISTS (SELECT i2.i) ORDER BY i1.i NULLS LAST, i2.i NULLS LAST;
 	-- 1    1
 	-- 1    2
 	-- 1    3
@@ -178,7 +178,7 @@ SELECT i1.i, i2.i FROM integers i1 INNER JOIN integers i2 ON EXISTS (SELECT i1.i
 	-- NULL 3
 	-- NULL NULL
 
-SELECT i1.i, i2.i FROM integers i1, integers i2 WHERE (i1.i <= ANY (SELECT i1.i)) = (i1.i) IN (SELECT i1.i);
+SELECT i1.i, i2.i FROM integers i1, integers i2 WHERE (i1.i <= ANY (SELECT i1.i)) = (i1.i) IN (SELECT i1.i) ORDER BY i1.i NULLS LAST, i2.i NULLS LAST;
 	-- 1    1
 	-- 1    2
 	-- 1    3
@@ -204,17 +204,40 @@ SELECT (SELECT 1 UNION ALL SELECT 2), (SELECT 1 UNION ALL SELECT 2); --error, mo
 
 SELECT 1 HAVING (SELECT 1 UNION SELECT 2); --error, more than one row returned by a subquery used as an expression
 
-DECLARE myvar INT;
-SELECT (SELECT i) INTO myvar FROM integers; --error, one row max
-DECLARE ovar INT;
-SET ovar = (SELECT (SELECT i) FROM integers); --error, one row max
+create or replace function iamok() returns int
+begin
+	DECLARE myvar INT;
+	SELECT (SELECT i) INTO myvar FROM integers;
+	return myvar;
+end;
+select iamok(); --error, one row max
 
-DECLARE abc,def INT;
-SET (abc, def) = (SELECT 1, 2);
-SELECT abc, def;
-SET (abc, def) = (SELECT i, i from integers); --error, one row max
-DECLARE aa,bb INT;
-SELECT i, i INTO aa, bb FROM integers; --error, one row max
+create or replace function iamok() returns int
+begin
+	DECLARE ovar INT;
+	SET ovar = (SELECT (SELECT i) FROM integers);
+	return ovar;
+end;
+select iamok(); --error, one row max
+
+create or replace function iamok() returns int
+begin
+	DECLARE abc,def INT;
+	SET (abc, def) = (SELECT 1, 2);
+	SET (abc, def) = (SELECT i, i from integers);
+	return abc;
+end;
+select iamok(); --error, one row max
+
+create or replace function iamok() returns int
+begin
+	DECLARE aa,bb INT;
+	SELECT i, i INTO aa, bb FROM integers;
+	return aa;
+end;
+select iamok(); --error, one row max
+
+drop function iamok;
 
 UPDATE another_T SET col1 = MIN(col1); --error, aggregates not allowed in update set clause
 UPDATE another_T SET col2 = 1 WHERE col1 = SUM(col2); --error, aggregates not allowed in update set clause
@@ -289,10 +312,17 @@ UPDATE another_T t1 SET (col3, col4) = (SELECT COUNT(tb.ColID), SUM(tb.ColID) FR
 
 SELECT col1, col2, col3, col4, col5, col6 FROM another_T;
 
-DECLARE x int;
-SET x = MAX(1) over (); --error, not allowed
-DECLARE y int;
-SET y = MIN(1); --error, not allowed
+CREATE PROCEDURE iambroken()
+BEGIN 
+	DECLARE x INT; 
+	SET x = MAX(1) over (); --error, not allowed
+END;
+
+CREATE PROCEDURE iambroken()
+BEGIN 
+	DECLARE y int;
+	SET y = MIN(1); --error, not allowed
+END;
 
 INSERT INTO another_T (col1,col1) VALUES (1,1); --error, multiple assignments to same column "col1"
 INSERT INTO another_T VALUES (SUM(1),2,3,4,5,6,7,8); --error, not allowed

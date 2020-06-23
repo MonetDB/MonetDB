@@ -2,7 +2,7 @@ create table t_0_1(id int, name varchar(1024), age int);
 create table t_0_2(id int, age int);
 
 create trigger test_0 after insert on t_0_1
-	insert into t_0_2 select id,age from t_0_1;
+	insert into t_0_2 select t_0_1.id,t_0_1.age from t_0_1;
 
 insert into t_0_1 values(1, 'mo', 25);
 

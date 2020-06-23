@@ -30,8 +30,8 @@ stdout of test 'case_substring` in directory 'sql/test/bugs` itself:
 [ 1	]
 #SELECT col1, SUBSTRING(col1,1,4), SUBSTRING(col1 ,5,2), SUBSTRING(col1 ,7,2)
 #FROM   test456  ;
-% sys.test456,	sys.,	sys.,	sys. # table_name
-% col1,	%2,	%3,	%4 # name
+% sys.test456,	sys.%1,	sys.%2,	sys.%3 # table_name
+% col1,	%1,	%2,	%3 # name
 % int,	clob,	clob,	clob # type
 % 8,	4,	2,	2 # length
 [ 20080101,	"2008",	"01",	"01"	]
@@ -45,7 +45,7 @@ stdout of test 'case_substring` in directory 'sql/test/bugs` itself:
 #,5,2)||'-'||SUBSTRING(col1 ,7,2) AS DATE)
 #       END
 #FROM   test456 ;
-% sys. # table_name
+% sys.%1 # table_name
 % %1 # name
 % date # type
 % 10 # length
@@ -58,7 +58,7 @@ stdout of test 'case_substring` in directory 'sql/test/bugs` itself:
 #,5,2)||'-'||SUBSTRING(col1 ,7,2) AS DATE)
 #FROM   test456
 #WHERE  col1 IS NOT NULL ;
-% sys. # table_name
+% sys.%2 # table_name
 % %2 # name
 % date # type
 % 10 # length

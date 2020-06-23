@@ -488,3 +488,32 @@ CMDsetName(str *rname, const bat *bid, str *name)
 		throw(MAL, "bbp.setName", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	return MAL_SUCCEED;
 }
+
+#include "mel.h"
+mel_func bbp_init_funcs[] = {
+ pattern("bbp", "bind", CMDbbpbind, false, "Locate the BAT using its logical name", args(1,2, batargany("",2),arg("name",str))),
+ command("bbp", "getIndex", CMDbbpgetIndex, false, "Retrieve the index in the BBP", args(1,2, arg("",int),batargany("b",2))),
+ command("bbp", "getNames", CMDbbpNames, false, "Map BAT into its bbp name", args(1,1, batarg("",str))),
+ command("bbp", "get", CMDbbp, false, "bpp", args(11,11, batarg("id",int),batarg("ns",str),batarg("tt",str),batarg("cnt",lng),batarg("refcnt",int),batarg("lrefcnt",int),batarg("location",str),batarg("heat",int),batarg("dirty",str),batarg("status",str),batarg("kind",str))),
+ command("bbp", "getName", CMDbbpName, false, "Map a BAT into its internal name", args(1,2, arg("",str),batargany("b",1))),
+ command("bbp", "setName", CMDsetName, false, "Rename a BAT", args(1,3, arg("",str),batargany("b",1),arg("n",str))),
+ command("bbp", "getCount", CMDbbpCount, false, "Create a BAT with the cardinalities of all known BATs", args(1,1, batarg("",lng))),
+ command("bbp", "getRefCount", CMDbbpRefCount, false, "Create a BAT with the (hard) reference counts", args(1,1, batarg("",int))),
+ command("bbp", "getLRefCount", CMDbbpLRefCount, false, "Create a BAT with the logical reference counts", args(1,1, batarg("",int))),
+ command("bbp", "getLocation", CMDbbpLocation, false, "Create a BAT with their disk locations", args(1,1, batarg("",str))),
+ command("bbp", "getDirty", CMDbbpDirty, false, "Create a BAT with the dirty/ diffs/clean status", args(1,1, batarg("",str))),
+ command("bbp", "getStatus", CMDbbpStatus, false, "Create a BAT with the disk/load status", args(1,1, batarg("",str))),
+ command("bbp", "getKind", CMDbbpKind, false, "Create a BAT with the persistency status", args(1,1, batarg("",str))),
+ command("bbp", "getRefCount", CMDgetBATrefcnt, false, "Utility for debugging MAL interpreter", args(1,2, arg("",int),batargany("b",1))),
+ command("bbp", "getLRefCount", CMDgetBATlrefcnt, false, "Utility for debugging MAL interpreter", args(1,2, arg("",int),batargany("b",1))),
+ command("bbp", "getDiskSpace", CMDbbpDiskSpace, false, "Estimate the amount of disk space occupied by dbpath", args(1,1, arg("",lng))),
+ command("bbp", "getPageSize", CMDgetPageSize, false, "Obtain the memory page size", args(1,1, arg("",int))),
+ { .imp=NULL }
+};
+#include "mal_import.h"
+#ifdef _MSC_VER
+#undef read
+#pragma section(".CRT$XCU",read)
+#endif
+LIB_STARTUP_FUNC(init_bbp_mal)
+{ mal_module("bbp", NULL, bbp_init_funcs); }

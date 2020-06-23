@@ -304,7 +304,7 @@ WLRprocessBatch(Client cntxt)
 
 		// now parse the file line by line to reconstruct the WLR blocks
 		do{
-			parseMAL(c, c->curprg, 1, 1);
+			parseMAL(c, c->curprg, 1, 1, NULL);
 
 			mb = c->curprg->def; 
 			if( mb->errors){

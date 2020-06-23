@@ -1,0 +1,95 @@
+Introduction 
+
+Say we have two single integer column tables foo and bar with the following content:
+
+create table foo (i int);
+insert into foo values (10), (40), (20), (5);
+
+create table bar (i int, j int);
+insert into bar values (30, 300), (20, 200), (50, 500), (40, 400);
+
+select * from foo;
++------+
+| i    |
++======+
+|   10 |
+|   40 |
+|   20 |
+|    5 |
++------+
+select * from bar;
++------+
+| i    |
++======+
+|   30 |
+|   20 |
+|   50 |
+|   40 |
++------+
+
+We compute the following outer join
+select foo.i, bar.i from foo left join bar on foo.i = bar.i where bar.j is not null;
++------+------+
+| i    | i    |
++======+======+
+|   40 |   40 |
+|   20 |   20 |
++------+------+
+
+The plan currently generated for this query is given by
++---------------------------------------------------+
+| rel                                               |
++===================================================+
+| project (                                         |
+| | select (                                        |
+| | | left outer join (                             |
+| | | | table(sys.foo) [ "foo"."i" ] COUNT ,        |
+| | | | table(sys.bar) [ "bar"."i" ] COUNT          |
+| | | ) [ "foo"."i" = "bar"."i" ]                   |
+| | ) [ int "NULL" ! <= "bar"."i" ! <= int "NULL" ] |
+| ) [ "foo"."i", "bar"."i" ]                        |
++---------------------------------------------------+
+
+Notice that the select's filter expression 'bar.i is not null' has the effect that all tuples that are in the assymetric difference foo excluding bar are filtered from the result set of the outer join. For any outer join X left join Y, we call such a filter that depends on the inner part Y of the outer join, a null-rejecting predicate in Y if the predicate evaluates to false if one or more of the attributes in Y is NULL.
+
+We can improve the plan in the case of an outer join followed by a select containing a null-rejecting predicate on the inner part of the outer join by transforming the outer join into an inner join.
+
+So in the above example we can change the plan to 
+
++---------------------------------------------------+
+| rel                                               |
++===================================================+
+| project (                                         |
+| | select (                                        |
+| | | join (                                        |
+| | | | table(sys.foo) [ "foo"."i" ] COUNT ,        |
+| | | | table(sys.bar) [ "bar"."i" ] COUNT          |
+| | | ) [ "foo"."i" = "bar"."i" ]                   |
+| | ) [ int "NULL" ! <= "bar"."i" ! <= int "NULL" ] |
+| ) [ "foo"."i", "bar"."i" ]                        |
++---------------------------------------------------+
+
+This should even allow for more optimization like potentially pushing down the select underneath the join or even removing it in its entirety.
+
+step 1: figure out at a suitable moment in the relational optimizer when a plan containing a select and an outer join has a high probility to look like this
+
+select(
+    left_join(
+        L,
+        R,
+        j_pred
+    ),
+    s_pred
+)
+
+step 2: create a temporary copy of the s_pred
+step 2: assume that j_pred is always a list of expressions type e_cmp or e_or. where the comma in the list represents logical AND.
+step 3: create a list of the sub-expression's of s_pred.
+step 3: find all column references to the inner side R of the left join and for each subset of the total set column references replace them with an atomic null in this list of expressions. 
+step 4: for each element in the j_pred's list of filter expressions that is of type e_cmp. check
+
+1) if e_cmp is of type =-semantics or is-semantics.
+    if =-semantics apply is_null check on each of the operand terms in the e_cmp expression if there  is a null term then null rejection applies 
+    else if is-semantics we must check if the e_cmp expression is of the form 'r is not null' to have null rejection
+    else we are not sure and null-jection is false.
+2) else if the expression is of type e_or, we require that both terms of e_or are null rejecting which is a recursive traversal until we have reached terms of e_cmp for which the previously described procedure 1) applies to check null rejection.

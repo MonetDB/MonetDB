@@ -434,6 +434,7 @@ typedef struct sql_func {
 			*/
 	sql_flang lang;
 	char *query;	/* sql code */
+	bit semantics; /*When set to true, function incorporates some kind of null semantics.*/
 	bit side_effect;
 	bit varres;	/* variable output result */
 	bit vararg;	/* variable input arguments */
@@ -682,6 +683,7 @@ typedef struct res_table {
 	oid query_id;
 	mapi_query_t query_type;
 	int nr_cols;
+	BUN nr_rows;
 	int cur_col;
 	const char *tsep;
 	const char *rsep;
@@ -695,7 +697,7 @@ typedef struct res_table {
 typedef struct sql_session {
 	sql_trans *tr; 		/* active transaction */	
 
-	char *schema_name;
+	char *schema_name; /* transaction's schema name */
 	sql_schema *schema;
 
 	char ac_on_commit;	/* if 1, auto_commit should be enabled on
