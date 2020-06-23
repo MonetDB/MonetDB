@@ -55,7 +55,7 @@ OPTemptybindImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
 	//if ( optimizerIsApplied(mb,"emptybind") )
 		//return 0;
 	// use an instruction reference table to keep
-	
+
 	for( i=0; i< mb->stop; i++)
 		if( getFunctionId(getInstrPtr(mb,i)) == emptybindRef || getFunctionId(getInstrPtr(mb,i)) == emptybindidxRef)
 			extras += getInstrPtr(mb,i)->argc;
@@ -95,12 +95,12 @@ OPTemptybindImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
 
  		/*
  		 * The bulk of the intelligence lies in inspecting calling
- 		 * sequences to filter and replace results 
+ 		 * sequences to filter and replace results
  		 */
 		if ( getModuleId(p) == batRef && getFunctionId(p) == newRef){
 			empty[getArg(p,0)] = i;
 			continue;
-		} 
+		}
 
 		// any of these instructions leave a non-empty BAT behind
 		if(p && getModuleId(p) == sqlRef && isUpdateInstruction(p)){
@@ -116,7 +116,7 @@ OPTemptybindImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
 			updated[etop++]= p;
 		}
 
-		/* restore the naming, dropping the runtime property 'empty' 
+		/* restore the naming, dropping the runtime property 'empty'
 		 * Keep the bind operation, because it is cheap, rather focus on their re-use
 		 */
 
@@ -127,7 +127,7 @@ OPTemptybindImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
 			if( p->retc == 2){
 				empty[getArg(p,1)] = i;
 			}
-			// replace the call into a empty bat creation unless the table was updated already in the same query 
+			// replace the call into a empty bat creation unless the table was updated already in the same query
 			sch = getVarConstant(mb,getArg(p,2  + (p->retc==2))).val.sval;
 			tbl = getVarConstant(mb,getArg(p,3  + (p->retc==2))).val.sval;
 			for(j= 0; j< etop; j++){
@@ -159,7 +159,7 @@ OPTemptybindImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
 			setFunctionId(p,bindidxRef);
 			p->typechk= TYPE_UNKNOWN;
 			empty[getArg(p,0)] = i;
-			// replace the call into a empty bat creation unless the table was updated already in the same query 
+			// replace the call into a empty bat creation unless the table was updated already in the same query
 			sch = getVarConstant(mb,getArg(p,2  + (p->retc==2))).val.sval;
 			tbl = getVarConstant(mb,getArg(p,3  + (p->retc==2))).val.sval;
 			for(j= 0; j< etop; j++){
@@ -194,6 +194,7 @@ OPTemptybindImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
 					empty[getArg(p,0)] = i;
 				continue;
 			}
+			continue;
 		}
 		// delta operations without updates can be replaced by an pack of base and inserts
 		if (getModuleId(p)== sqlRef && getFunctionId(p) == deltaRef  && p->argc == 5){
@@ -203,7 +204,7 @@ OPTemptybindImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
 				setModuleId(p,matRef);
 				setFunctionId(p,packRef);
 				p->argc = 3;
-				getArg(p, 2) = getArg(p, 4);  
+				getArg(p, 2) = getArg(p, 4);
 				p->typechk= TYPE_UNKNOWN;
 			}
 			continue;
@@ -244,7 +245,7 @@ OPTemptybindImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
 				emptyresult(0);
 			} else if (empty[getArg(p,2)]){
 				actions++;
-				clrFunction(p);	
+				clrFunction(p);
 				p->argc = 2;
 			}
 		}
