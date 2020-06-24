@@ -2181,7 +2181,7 @@ split_join_exps(sql_rel *rel, list *joinable, list *not_joinable)
 			int left_reference = 0, right_reference = 0;
 
 			/* we can handle thetajoins, rangejoins and filter joins (like) */
-			/* ToDo how about mark_exists/not_exists and atom expressions? */
+			/* ToDo how about atom expressions? */
 			if (e->type == e_cmp) {
 				int flag = e->flag & ~CMP_BETWEEN;
 				/* check if its a select or join expression, ie use only expressions of one relation left and of the other right (than join) */
@@ -2231,7 +2231,7 @@ split_join_exps(sql_rel *rel, list *joinable, list *not_joinable)
 	}
 }
 
-#define is_priority_exp(e) ((e)->type == e_cmp && (e)->flag == cmp_equal)
+#define is_priority_exp(e) ((e)->flag == cmp_equal)
 
 static list *
 get_equi_joins_first(mvc *sql, list *exps, int *equality_only)
@@ -2240,17 +2240,17 @@ get_equi_joins_first(mvc *sql, list *exps, int *equality_only)
 
 	for( node *n = exps->h; n; n = n->next ) {
 		sql_exp *e = n->data;
-		if (is_priority_exp(e)) {
+
+		assert(e->type == e_cmp && e->flag != cmp_in && e->flag != cmp_notin && e->flag != cmp_or);
+		if (is_priority_exp(e))
 			list_append(new_exps, e);
-			*equality_only &= (e->flag == cmp_equal);
-		}
+		*equality_only &= (e->flag == cmp_equal || e->flag == mark_in || e->flag == mark_notin);
 	}
 	for( node *n = exps->h; n; n = n->next ) {
 		sql_exp *e = n->data;
-		if (!is_priority_exp(e)) {
+
+		if (!is_priority_exp(e))
 			list_append(new_exps, e);
-			*equality_only &= (e->flag == mark_in || e->flag == mark_notin);
-		}
 	}
 	return new_exps;
 }
@@ -2471,9 +2471,7 @@ rel2bin_join(backend *be, sql_rel *rel, list *refs)
 static int
 exp_is_mark(sql_exp *e)
 {
-	if (e->type == e_cmp &&
-		(e->flag == mark_in || e->flag == mark_notin ||
-		 e->flag == mark_exists || e->flag == mark_notexists))
+	if (e->type == e_cmp && (e->flag == mark_in || e->flag == mark_notin))
 		return 1;
 	return 0;
 }

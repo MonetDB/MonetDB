@@ -453,8 +453,6 @@ exp_count(int *cnt, sql_exp *e)
 			return 3;
 		case mark_in:
 		case mark_notin:
-		case mark_exists:
-		case mark_notexists:
 			*cnt += 0;
 			return 0;
 		default:
