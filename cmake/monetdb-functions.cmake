@@ -146,3 +146,22 @@ function(monetdb_cmake_summary)
   message(STATUS "-----------------------------------------")
   message(STATUS "")
 endfunction()
+
+function(assert_variable_exists assert_variable_variablename)
+  if(NOT ${assert_variable_variablename})
+    message(FATAL_ERROR "variable ${assert_variable_variablename} not defined")
+    set(DETECT "1")
+  else()
+    set(DETECT "0")
+  endif()
+
+  configure_file(test_cmake_var.c.in
+    "${CMAKE_CURRENT_BINARY_DIR}/test_${assert_variable_variablename}_var.c"
+    @ONLY)
+
+  add_executable("test_${assert_variable_variablename}_var")
+  target_sources("test_${assert_variable_variablename}_var"
+    PRIVATE
+    "${CMAKE_CURRENT_BINARY_DIR}/test_${assert_variable_variablename}_var.c")
+  add_test("testDetect${assert_variable_variablename}" "test_${assert_variable_variablename}_var")
+endfunction()
