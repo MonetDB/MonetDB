@@ -109,6 +109,23 @@ SELECT (SELECT t2.col2 FROM another_t t2 WHERE t2.col1 BETWEEN t1.col1 AND t2.co
 SELECT (SELECT t2.col2 FROM another_t t2 WHERE t2.col1 BETWEEN t2.col1 AND t1.col2) FROM another_t t1;
 	-- error, more than one row returned by a subquery used as an expression
 
+SELECT 1 > (SELECT 2 FROM integers);
+	-- error, more than one row returned by a subquery used as an expression
+
+SELECT (SELECT 1) > ANY(SELECT 1);
+	-- False
+
+CREATE FUNCTION debugme() RETURNS INT
+BEGIN
+	DECLARE res INT;
+	SET res = 1 > (select 9 from integers);
+	RETURN res;
+END;
+
+SELECT debugme(); --error, more than one row returned by a subquery used as an expression
+
+DROP FUNCTION debugme;
+
 DROP TABLE tbl_ProductSales;
 DROP TABLE another_T;
 DROP TABLE integers;

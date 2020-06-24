@@ -159,6 +159,19 @@ stdout of test 'subquery6` in directory 'sql/test/subquery` itself:
 [ 22	]
 [ 222	]
 [ 2222	]
+#SELECT (SELECT 1) > ANY(SELECT 1);
+% .%10 # table_name
+% %10 # name
+% boolean # type
+% 5 # length
+[ false	]
+#CREATE FUNCTION debugme() RETURNS INT
+#BEGIN
+#	DECLARE res INT;
+#	SET res = 1 > (select 9 from integers);
+#	RETURN res;
+#END;
+#DROP FUNCTION debugme;
 #DROP TABLE tbl_ProductSales;
 #DROP TABLE another_T;
 #DROP TABLE integers;

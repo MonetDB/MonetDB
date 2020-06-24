@@ -1756,7 +1756,7 @@ rel_compare_exp_(sql_query *query, sql_rel *rel, sql_exp *ls, sql_exp *rs, sql_e
 		} else {
 			if (rel_binop_check_types(sql, rel, ls, rs, 0) < 0)
 				return NULL;
-			e = exp_compare_func(sql, ls, rs, rs2, compare_func((comp_type)type, quantifier?0:anti), quantifier);
+			e = exp_compare_func(sql, ls, rs, compare_func((comp_type)type, quantifier?0:anti), quantifier);
 			if (anti && quantifier)
 				if (!(e = rel_unop_(sql, NULL, e, NULL, "not", card_value)))
 					return NULL;
@@ -2428,7 +2428,7 @@ rel_logical_value_exp(sql_query *query, sql_rel **rel, symbol *sc, int f, exp_ki
 
 		if (rel_binop_check_types(sql, rel ? *rel : NULL, ls, rs, 0) < 0)
 			return NULL;
-		ls = exp_compare_func(sql, ls, rs, NULL, compare_func(compare_str2type(compare_op), quantifier?0:need_not), quantifier);
+		ls = exp_compare_func(sql, ls, rs, compare_func(compare_str2type(compare_op), quantifier?0:need_not), quantifier);
 		if (need_not && quantifier)
 			ls = rel_unop_(sql, NULL, ls, NULL, "not", card_value);
 		return ls;

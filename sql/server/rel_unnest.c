@@ -2330,7 +2330,7 @@ rewrite_compare(mvc *sql, sql_rel *rel, sql_exp *e, int depth)
 
 				if (rel_convert_types(sql, NULL, NULL, &le, &re, 1, type_equal_no_any) < 0)
 					return NULL;
-				le = exp_compare_func(sql, le, re, NULL, op, 0);
+				le = exp_compare_func(sql, le, re, op, 0);
 				if (exp_name(e))
 					exp_prop_alias(sql->sa, le, e);
 				return le;
@@ -2414,12 +2414,12 @@ rewrite_compare(mvc *sql, sql_rel *rel, sql_exp *e, int depth)
 				if (rnull) { /* complex compare operator */
 					sql_exp *lnull = rel_unop_(sql, rel, le, NULL, "isnull", card_value);
 					set_has_no_nil(lnull);
-					le = exp_compare_func(sql, le, re, NULL, op, 0);
+					le = exp_compare_func(sql, le, re, op, 0);
 					le = rel_nop_(sql, rel, le, lnull, rnull, NULL, NULL, (quantifier==1)?"any":"all", card_value);
 					if (is_notequal_func(sf))
 						le = rel_unop_(sql, rel, le, NULL, "not", card_value);
 				} else if (is_project(rel->op) || depth) {
-					le = exp_compare_func(sql, le, re, NULL, op, 0);
+					le = exp_compare_func(sql, le, re, op, 0);
 				} else {
 					return exp_compare(sql->sa, le, re, compare_str2type(op));
 				}
