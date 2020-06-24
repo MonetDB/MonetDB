@@ -24,6 +24,7 @@
 #include "snapshot.h"
 #include "stream.h"
 #include "utils/database.h"
+#include "forkmserver.h"
 
 struct dir_helper {
 	char *dir;
@@ -55,13 +56,11 @@ snapshot_database_to(char *dbname, char *dest)
 {
 	err e = NO_ERR;
 	sabdb *stats = NULL;
-	int port = -1;
 	Mapi conn = NULL;
 	MapiHdl handle = NULL;
 
-
-	/* First look up the database in our administration. */
-	e = msab_getStatus(&stats, dbname);
+	/* Start the database if necessary */
+	e = forkMserver(dbname, &stats, false);
 	if (e != NO_ERR) {
 		goto bailout;
 	}
@@ -86,10 +85,19 @@ snapshot_database_to(char *dbname, char *dest)
 		goto bailout;
 	}
 
-	port = getConfNum(_mero_props, "port");
-	conn = mapi_connect("localhost", port, ".snapshot", stats->secret, "sql", dbname);
-	if (conn == NULL || mapi_error(conn)) {
+	/* Set up the connection. Connect directly to the unix domain socket */
+	if (stats->conns == NULL || stats->conns[0].val == NULL) {
+		e = newErr("internal error: non conn");
+		goto bailout;
+	}
+	conn = mapi_mapiuri(stats->conns[0].val, ".snapshot", stats->secret, "sql");
+	if (conn == NULL || mapi_error(conn) != MOK) {
 		e = newErr("connection error: %s", mapi_error_str(conn));
+		goto bailout;
+	}
+	mapi_reconnect(conn);
+	if (mapi_error(conn) != MOK) {
+		e = newErr("connection error:: %s", mapi_error_str(conn));
 		goto bailout;
 	}
 
