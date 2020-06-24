@@ -139,7 +139,7 @@ RUNchoice(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 			p = q;
 			break;
 		}
-	} 
+	}
 	if (i == mb->stop)
 		return MAL_SUCCEED;
 	target = getArg(p, 2);

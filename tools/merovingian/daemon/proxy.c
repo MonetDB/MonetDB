@@ -175,7 +175,7 @@ startProxy(int psock, stream *cfdin, stream *cfout, char *url, char *client)
 		cmsg->cmsg_level = SOL_SOCKET;
 		cmsg->cmsg_type = SCM_RIGHTS;
 		cmsg->cmsg_len = CMSG_LEN(sizeof(psock));
-		/* HACK to avoid 
+		/* HACK to avoid
 		 * "dereferencing type-punned pointer will break strict-aliasing rules"
 		 * (with gcc 4.5.1 on Fedora 14)
 		 */

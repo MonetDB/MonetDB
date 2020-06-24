@@ -31,9 +31,9 @@ OPTreduceImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	/* plan is not changed */
     //if( actions > 0){
         //msg = chkTypes(cntxt->usermodule, mb, FALSE);
-        //if (!msg) 
+        //if (!msg)
 	//	msg = chkFlow(mb);
-        //if (!msg) 
+        //if (!msg)
         // 	msg = chkDeclarations(mb);
     //}
     /* keep all actions taken as a post block comment */

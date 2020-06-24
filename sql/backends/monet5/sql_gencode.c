@@ -243,7 +243,7 @@ _create_relational_function(mvc *m, const char *mod, const char *name, sql_rel *
 	if (curBlk->inlineProp == 0 && !c->curprg->def->errors) {
 		msg = SQLoptimizeQuery(c, c->curprg->def);
 	} else if (curBlk->inlineProp != 0) {
-		if( msg == MAL_SUCCEED) 
+		if( msg == MAL_SUCCEED)
 			msg = chkProgram(c->usermodule, c->curprg->def);
 		if (msg == MAL_SUCCEED && !c->curprg->def->errors)
 			msg = SQLoptimizeFunction(c,c->curprg->def);
@@ -421,7 +421,7 @@ _create_relational_remote(mvc *m, const char *mod, const char *name, sql_rel *re
 	o = pushStr(curBlk, o, lname);
 	p = pushArgument(curBlk, p, getArg(o,0));
 
-	{ 
+	{
 	int len = 1024, nr = 0;
 	char *s, *buf = GDKmalloc(len);
 	if (!buf) {
@@ -440,7 +440,7 @@ _create_relational_remote(mvc *m, const char *mod, const char *name, sql_rel *re
 	o = pushArgument(curBlk, o, q);
 	o = pushStr(curBlk, o, s);	/* relational plan */
 	p = pushArgument(curBlk, p, getArg(o,0));
-	free(s); 
+	free(s);
 
 	s = "";
 	if (call && call->type == st_list) { /* Send existing variables in the plan */
@@ -557,7 +557,7 @@ _create_relational_remote(mvc *m, const char *mod, const char *name, sql_rel *re
 		 */
 		o = newFcnCall(curBlk, remoteRef, putRef);
 		o = pushArgument(curBlk, o, q);
-		o = pushInt(curBlk, o, TYPE_int);  
+		o = pushInt(curBlk, o, TYPE_int);
 		p = pushReturn(curBlk, p, getArg(o, 0));
 
 		o = newFcnCall(curBlk, remoteRef, putRef);
@@ -789,7 +789,7 @@ backend_callinline(backend *be, Client c)
 	MalBlkPtr curBlk = c->curprg->def;
 
 	setVarType(curBlk, 0, 0);
-	if (m->argc) {	
+	if (m->argc) {
 		int argc = 0;
 
 		for (; argc < m->argc && !curBlk->errors; argc++) {
@@ -1034,10 +1034,10 @@ monet5_resolve_function(ptr M, sql_func *f)
 						sql_arg *arg = (sql_arg *) n->data;
 						int nsql_tpe = arg->type.type->localtype;
 						int nmal_tpe = getArgType(s->def, sig, i);
-						if (isaBatType(nmal_tpe) || (nmal_tpe & 0377) == TYPE_any) any type is excluded from isaBatType 
+						if (isaBatType(nmal_tpe) || (nmal_tpe & 0377) == TYPE_any) any type is excluded from isaBatType
 							nmal_tpe = getBatType(nmal_tpe);
 
-						 any/void types allways match 
+						 any/void types allways match
 						if (nsql_tpe != TYPE_any && nmal_tpe != TYPE_any && nsql_tpe != TYPE_void && nmal_tpe != TYPE_void)
 							all_match = nsql_tpe == nmal_tpe;
 					}
@@ -1052,7 +1052,7 @@ monet5_resolve_function(ptr M, sql_func *f)
 						if (isaBatType(nmal_tpe) || (nmal_tpe & 0377) == TYPE_any)  any type is excluded from isaBatType
 							nmal_tpe = getBatType(nmal_tpe);
 
-						 any/void types allways match 
+						 any/void types allways match
 						if (nsql_tpe != TYPE_any && nmal_tpe != TYPE_any && nsql_tpe != TYPE_void && nmal_tpe != TYPE_void)
 							all_match = nsql_tpe == nmal_tpe;
 					}
@@ -1217,7 +1217,7 @@ mal_function_find_implementation_address(mvc *m, sql_func *f)
 		goto bailout;
 	}
 	scanner_init(&m->scanner, bs, NULL);
-	m->scanner.mode = LINE_1; 
+	m->scanner.mode = LINE_1;
 	bstream_next(m->scanner.rs);
 
 	(void) sqlparse(m); /* blindly ignore errors */
@@ -1362,7 +1362,7 @@ backend_create_sql_func(backend *be, sql_func *f, list *restypes, list *ops)
 		}
 	}
 	/* announce the transaction mode */
-	if (backend_dumpstmt(be, curBlk, r, 0, 1, NULL) < 0) 
+	if (backend_dumpstmt(be, curBlk, r, 0, 1, NULL) < 0)
 		goto cleanup;
 	/* selectively make functions available for inlineing */
 	/* for the time being we only inline scalar functions */
@@ -1373,7 +1373,7 @@ backend_create_sql_func(backend *be, sql_func *f, list *restypes, list *ops)
 		InstrPtr p = getInstrPtr(curBlk, i);
 		if (getFunctionId(p) == bindRef || getFunctionId(p) == bindidxRef)
 			continue;
-		sideeffects = sideeffects || hasSideEffects(curBlk, p, FALSE); 
+		sideeffects = sideeffects || hasSideEffects(curBlk, p, FALSE);
 		no_inline |= (getModuleId(p) == malRef && getFunctionId(p) == multiplexRef);
 		if (p->token == RETURNsymbol || p->token == YIELDsymbol || p->barrier == RETURNsymbol || p->barrier == YIELDsymbol)
 			retseen++;
@@ -1464,7 +1464,7 @@ backend_create_subaggr(backend *be, sql_subfunc *f)
 }
 
 void
-_rel_print(mvc *sql, sql_rel *rel) 
+_rel_print(mvc *sql, sql_rel *rel)
 {
 	list *refs = sa_list(sql->sa);
 	rel_print_refs(sql, GDKstdout, rel, 0, refs, 1);
@@ -1473,7 +1473,7 @@ _rel_print(mvc *sql, sql_rel *rel)
 }
 
 void
-rel_print(mvc *sql, sql_rel *rel, int depth) 
+rel_print(mvc *sql, sql_rel *rel, int depth)
 {
 	list *refs = sa_list(sql->sa);
 	size_t pos;

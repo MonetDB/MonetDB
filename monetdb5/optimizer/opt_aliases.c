@@ -58,9 +58,9 @@ OPTaliasesImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 				actions++;
 				k--;
 				mb->stmt[k]= 0;
-			} else 
+			} else
 				OPTaliasRemap(p,alias);
-		} else 
+		} else
 			OPTaliasRemap(p,alias);
 	}
 
@@ -74,9 +74,9 @@ OPTaliasesImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	/* Defense line against incorrect plans */
 	/* Plan is unaffected */
 	// msg = chkTypes(cntxt->usermodule, mb, FALSE);
-	// if ( msg == MAL_SUCCEED) 
+	// if ( msg == MAL_SUCCEED)
 	//	msg = chkFlow(mb);
-	// if ( msg == MAL_SUCCEED) 
+	// if ( msg == MAL_SUCCEED)
 	// 	msg = chkDeclarations(mb);
     /* keep all actions taken as a post block comment
 	 * and update statics */

@@ -708,7 +708,7 @@ main(int argc, char **av)
 		exit(1);
 	}
 
-	char *modules[16]; 
+	char *modules[16];
 	int mods = 0;
 
 	modules[mods++] = "sql";

@@ -115,12 +115,12 @@ slice(BAT **retval, BAT *b, lng start, lng end)
 	return (*retval = BATslice(b, (BUN) start, (BUN) end + 1)) ? GDK_SUCCEED : GDK_FAIL;
 }
 /*
- * 
+ *
  * The remainder of this file contains the wrapper around the V4 code base
  * The BAT identifiers passed through this module may indicate
  * that the 'reverse' view applies. This should be taken into
  * account while resolving them.
- * 
+ *
  * The sum aggregate only works for int and float fields.
  * The routines below assumes that the caller knows what type
  * is large enough to prevent overflow.
@@ -306,8 +306,8 @@ ALGselect2nil(bat *result, const bat *bid, const bat *sid, const void *low, cons
 	derefStr(b, high);
 	/* here we don't need open ended parts with nil */
 	nilptr = ATOMnilptr(b->ttype);
-	if (*li == 1 && ATOMcmp(b->ttype, low, nilptr) == 0) 
-		low = high; 
+	if (*li == 1 && ATOMcmp(b->ttype, low, nilptr) == 0)
+		low = high;
 	else if (*hi == 1 && ATOMcmp(b->ttype, high, nilptr) == 0)
 		high = low;
 	if (ATOMcmp(b->ttype, low, high) == 0 && ATOMcmp(b->ttype, high, nilptr) == 0) /* ugh sql nil != nil */
@@ -625,7 +625,7 @@ ALGbandjoin1(bat *r1, const bat *lid, const bat *rid, const bat *slid, const bat
 }
 
 static str
-ALGrangejoin(bat *r1, bat *r2, const bat *lid, const bat *rlid, const bat *rhid, const bat *slid, const bat *srid, 
+ALGrangejoin(bat *r1, bat *r2, const bat *lid, const bat *rlid, const bat *rhid, const bat *slid, const bat *srid,
 			 const bit *li, const bit *hi, const bit *anti, const bit *symmetric, const lng *estimate)
 {
 	return do_join(r1, r2, lid, rlid, rhid, slid, srid, 0, NULL, NULL,
@@ -1011,7 +1011,7 @@ ALGcountCND_bat(lng *result, const bat *bid, const bat *cnd)
 	if ( *cnd) {
 		if ((b = BATdescriptor(*cnd)) == NULL) {
 			throw(MAL, "aggr.count", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
-		}		
+		}
 		*result = (lng) BATcount(b);
 		BBPunfix(b->batCacheid);
 		return MAL_SUCCEED;
@@ -1039,7 +1039,7 @@ ALGcountCND_nil(lng *result, const bat *bid, const bat *cnd, const bit *ignore_n
 		if ( *cnd) {
 			if ((b = BATdescriptor(*cnd)) == NULL) {
 				throw(MAL, "aggr.count", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
-			}		
+			}
 			*result = (lng) BATcount(b);
 			BBPunfix(b->batCacheid);
 			return MAL_SUCCEED;

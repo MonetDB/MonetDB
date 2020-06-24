@@ -153,18 +153,18 @@ MANIFOLDjob(MULTItask *mut)
 	args = (char**) GDKzalloc(sizeof(char*) * mut->pci->argc);
 	if( args == NULL)
 		throw(MAL,"mal.manifold", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-	
+
 	// the mod.fcn arguments are ignored from the call
 	for( i = mut->pci->retc+2; i< mut->pci->argc; i++) {
 		if ( mut->args[i].b ){
-			if(ATOMstorage(mut->args[i].type) < TYPE_str){ 	
+			if(ATOMstorage(mut->args[i].type) < TYPE_str){
 				args[i] = (char*) mut->args[i].first;
-			} else if(ATOMvarsized(mut->args[i].type)){	
+			} else if(ATOMvarsized(mut->args[i].type)){
 				mut->args[i].s = (str*) BUNtail(mut->args[i].bi, mut->args[i].o);
-				args[i] =  (void*) & mut->args[i].s; 
+				args[i] =  (void*) & mut->args[i].s;
 			} else {
 				mut->args[i].s = (str*) Tloc(mut->args[i].b, mut->args[i].o);
-				args[i] =  (void*) & mut->args[i].s; 
+				args[i] =  (void*) & mut->args[i].s;
 			}
 		} else {
 			args[i] = (char *) getArgReference(mut->stk,mut->pci,i);
@@ -183,8 +183,8 @@ MANIFOLDjob(MULTItask *mut)
 	default:
 		msg= createException(MAL,"mal.manifold","manifold call limitation ");
 	}
-	if (ATOMextern(mut->args[0].type) && y) 
-		GDKfree(y); 
+	if (ATOMextern(mut->args[0].type) && y)
+		GDKfree(y);
 bunins_failed:
 	GDKfree(args);
 	return msg;
@@ -215,11 +215,11 @@ MANIFOLDtypecheck(Client cntxt, MalBlkPtr mb, InstrPtr pci, int checkprops){
 	tpe =getBatType(getArgType(mb,pci,0));
 	k= getArg(q,0);
 	setVarType(nmb,k,tpe);
-	if ( isVarFixed(nmb,k)) 
+	if ( isVarFixed(nmb,k))
 		setVarFixed(nmb,k);
 	if (isVarUDFtype(nmb,k))
 		setVarUDFtype(nmb,k);
-	
+
 	// extract their scalar argument type
 	for ( i = pci->retc+2; i < pci->argc; i++){
 		tpe = getBatType(getArgType(mb,pci,i));
@@ -274,7 +274,7 @@ MANIFOLDevaluate(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	mat = (MULTIarg *) GDKzalloc(sizeof(MULTIarg) * pci->argc);
 	if( mat == NULL)
 		throw(MAL, "mal.manifold", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-	
+
 	// mr-job structure preparation
 	mut.fvar = mut.lvar = 0;
 	mut.cntxt= cntxt;
@@ -298,9 +298,9 @@ MANIFOLDevaluate(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 			} else if (BATcount(mat[i].b)!= cnt){
 				msg = createException(MAL,"mal.manifold","Columns must be of same length");
 				goto wrapup;
-			} 
+			}
 			mut.lvar = i;
-			if (ATOMstorage(tpe) == TYPE_str) 
+			if (ATOMstorage(tpe) == TYPE_str)
 				mat[i].size = Tsize(mat[i].b);
 			else
 				mat[i].size = ATOMsize(tpe);

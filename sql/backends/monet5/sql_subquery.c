@@ -200,7 +200,7 @@ SQLall(ptr ret, const bat *bid)
 					}
 					for (; q < c; q++) {
 						const void *pp = BUNtail(bi, q);
-						if (ocmp(p, pp) != 0 && ocmp(n, pp) != 0) { /* values != and not nil */ 
+						if (ocmp(p, pp) != 0 && ocmp(n, pp) != 0) { /* values != and not nil */
 							p = n;
 							break;
 						}
@@ -502,12 +502,12 @@ all_cmp(const bit cmp, const bit nl, const bit nr)
 		return FALSE;
 	else if (nl == TRUE || nr == TRUE)
 		return bit_nil;
-	else 
+	else
 		return cmp;
 	return TRUE;
 }
 
-str 
+str
 SQLall_cmp(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	bat *ret = isaBatType(getArgType(mb, pci, 0)) ? getArgReference_bat(stk, pci, 0) : NULL;

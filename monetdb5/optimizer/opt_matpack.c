@@ -13,7 +13,7 @@
 #include "monetdb_config.h"
 #include "opt_matpack.h"
 
-str 
+str
 OPTmatpackImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	int v, i, j, limit, slimit;
@@ -30,9 +30,9 @@ OPTmatpackImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci
 	(void) cntxt;
 	(void) stk;		/* to fool compilers */
 	for( i = 1; i < mb->stop; i++)
-		if( getModuleId(getInstrPtr(mb,i)) == matRef  && getFunctionId(getInstrPtr(mb,i)) == packRef && isaBatType(getArgType(mb,getInstrPtr(mb,i),1))) 
+		if( getModuleId(getInstrPtr(mb,i)) == matRef  && getFunctionId(getInstrPtr(mb,i)) == packRef && isaBatType(getArgType(mb,getInstrPtr(mb,i),1)))
 			break;
-	if( i == mb->stop) 
+	if( i == mb->stop)
 		goto wrapup;
 
 	old= mb->stmt;
@@ -66,9 +66,9 @@ OPTmatpackImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci
 			continue;
 		}
 		pushInstruction(mb,p);
-	} 
+	}
 	for(; i<slimit; i++)
-		if (old[i]) 
+		if (old[i])
 			freeInstruction(old[i]);
 	GDKfree(old);
 

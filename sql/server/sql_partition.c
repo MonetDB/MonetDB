@@ -138,7 +138,7 @@ rel_find_table_columns(mvc* sql, sql_rel* rel, sql_table *t, list *cols)
 			if (rel->r)
 				rel_find_table_columns(sql, rel->r, t, cols);
 			break;
-		case op_ddl: 
+		case op_ddl:
 			if (rel->flag == ddl_output || rel->flag == ddl_create_seq || rel->flag == ddl_alter_seq || rel->flag == ddl_alter_table || rel->flag == ddl_create_table || rel->flag == ddl_create_view) {
 				if (rel->l)
 					rel_find_table_columns(sql, rel->l, t, cols);

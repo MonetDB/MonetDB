@@ -15,7 +15,7 @@
  * The Monet interface supports two timer commands: @emph{ alarm} and @emph{ sleep}.
  * Their argument is the number of seconds to wait before the timer goes off.
  * The @emph{ sleep} command blocks till the alarm goes off.
- * The @emph{ alarm} command continues directly, executes off a 
+ * The @emph{ alarm} command continues directly, executes off a
  * string when it goes off.
  * The parameterless routines @emph{ time} and @emph{ ctime} provide access to
  * the cpu clock.They return an integer and string, respectively.

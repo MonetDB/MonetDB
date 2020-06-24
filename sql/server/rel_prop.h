@@ -9,7 +9,7 @@
 #ifndef _REL_PROP_H_
 #define _REL_PROP_H_
 
-typedef enum rel_prop { 
+typedef enum rel_prop {
 	PROP_COUNT,
 	PROP_JOINIDX,   /* could use join idx */
 	PROP_HASHIDX,   /* is hash idx */

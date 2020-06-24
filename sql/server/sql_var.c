@@ -415,7 +415,7 @@ clear_frame(mvc *sql, sql_frame *frame)
 }
 
 void
-stack_pop_until(mvc *sql, int frame) 
+stack_pop_until(mvc *sql, int frame)
 {
 	while (sql->topframes > frame) {
 		assert(sql->topframes >= 0);
@@ -521,7 +521,7 @@ frame_find_rel_view(mvc *sql, const char *name)
 	return NULL;
 }
 
-void 
+void
 stack_update_rel_view(mvc *sql, const char *name, sql_rel *view)
 {
 	for (int i = sql->topframes-1; i >= 0; i--) {
@@ -557,7 +557,7 @@ find_global_var(mvc *sql, sql_schema *s, const char *name)
 	return NULL;
 }
 
-int 
+int
 frame_find_var(mvc *sql, const char *name)
 {
 	assert(sql->topframes > 0);
@@ -657,21 +657,21 @@ sqlvar_set_number(sql_var *var, lng val)
 	if (a != NULL) {
 		ValRecord *v = &a->data;
 #ifdef HAVE_HGE
-		if (v->vtype == TYPE_hge) 
+		if (v->vtype == TYPE_hge)
 			v->val.hval = val;
 #endif
-		if (v->vtype == TYPE_lng) 
+		if (v->vtype == TYPE_lng)
 			v->val.lval = val;
-		if (v->vtype == TYPE_int) 
+		if (v->vtype == TYPE_int)
 			v->val.lval = (int) val;
-		if (v->vtype == TYPE_sht) 
+		if (v->vtype == TYPE_sht)
 			v->val.lval = (sht) val;
-		if (v->vtype == TYPE_bte) 
+		if (v->vtype == TYPE_bte)
 			v->val.lval = (bte) val;
 		if (v->vtype == TYPE_bit) {
 			if (val)
 				v->val.btval = 1;
-			else 
+			else
 				v->val.btval = 0;
 		}
 	}
@@ -682,22 +682,22 @@ hge
 #else
 lng
 #endif
-val_get_number(ValRecord *v) 
+val_get_number(ValRecord *v)
 {
 	if (v != NULL) {
 #ifdef HAVE_HGE
-		if (v->vtype == TYPE_hge) 
+		if (v->vtype == TYPE_hge)
 			return v->val.hval;
 #endif
-		if (v->vtype == TYPE_lng) 
+		if (v->vtype == TYPE_lng)
 			return v->val.lval;
-		if (v->vtype == TYPE_int) 
+		if (v->vtype == TYPE_int)
 			return v->val.ival;
-		if (v->vtype == TYPE_sht) 
+		if (v->vtype == TYPE_sht)
 			return v->val.shval;
-		if (v->vtype == TYPE_bte) 
+		if (v->vtype == TYPE_bte)
 			return v->val.btval;
-		if (v->vtype == TYPE_bit) 
+		if (v->vtype == TYPE_bit)
 			if (v->val.btval)
 				return 1;
 		return 0;

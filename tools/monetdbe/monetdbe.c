@@ -30,7 +30,7 @@
 
 #define UNUSED(x) (void)(x)
 
-static int 
+static int
 monetdbe_type(monetdbe_types t) {
 	switch(t) {
 	case monetdbe_bool: return TYPE_bit;
@@ -40,7 +40,7 @@ monetdbe_type(monetdbe_types t) {
 	case monetdbe_int64_t: return TYPE_lng;
 #ifdef HAVE_HGE
 	case monetdbe_int128_t: return TYPE_hge;
-#endif 
+#endif
 	case monetdbe_size_t: return TYPE_oid;
 	case monetdbe_float: return TYPE_flt;
 	case monetdbe_double: return TYPE_dbl;
@@ -51,20 +51,20 @@ monetdbe_type(monetdbe_types t) {
 	case monetdbe_timestamp: return TYPE_timestamp;
 	default:
 		return -1;
-	}	
+	}
 }
 
-static int 
+static int
 embedded_type(int t) {
 	switch(t) {
 	case TYPE_bit: return monetdbe_bool;
-	case TYPE_bte: return monetdbe_int8_t; 
+	case TYPE_bte: return monetdbe_int8_t;
 	case TYPE_sht: return monetdbe_int16_t;
 	case TYPE_int: return monetdbe_int32_t;
 	case TYPE_lng: return monetdbe_int64_t;
 #ifdef HAVE_HGE
 	case TYPE_hge: return monetdbe_int128_t;
-#endif 
+#endif
 	case TYPE_oid: return monetdbe_size_t;
 	case TYPE_flt: return monetdbe_float;
 	case TYPE_dbl: return monetdbe_double;
@@ -76,7 +76,7 @@ embedded_type(int t) {
 	  	if (t==TYPE_blob)
 			return monetdbe_blob;
 		return -1;
-	}	
+	}
 }
 
 typedef struct monetdbe_table_t {
@@ -144,7 +144,7 @@ validate_database_handle_noerror(monetdbe_database_internal *mdbe)
 
 // Call this function always inside the embedded_lock
 static char*
-validate_database_handle(monetdbe_database_internal *mdbe, const char* call) 
+validate_database_handle(monetdbe_database_internal *mdbe, const char* call)
 {
 	if (!monetdbe_embedded_initialized)
 		return createException(MAL, call, "MonetDBe has not yet started");
@@ -246,7 +246,7 @@ monetdbe_query_internal(monetdbe_database_internal *mdbe, char* query, monetdbe_
 		mdbe->msg = createException(MAL, "monetdbe.monetdbe_query_internal", "Could not setup query stream");
 		goto cleanup;
 	}
-	if (prepare_id) 
+	if (prepare_id)
 		strcpy(nq, "PREPARE ");
 	strcpy(nq + prep_len, query);
 	strcpy(nq + prep_len + input_query_len, "\n;");
@@ -523,7 +523,7 @@ monetdbe_open(monetdbe_database *dbhdl, char *url, monetdbe_options *opts)
 	return res;
 }
 
-int 
+int
 monetdbe_close(monetdbe_database dbhdl)
 {
 	if (!dbhdl)
@@ -542,7 +542,7 @@ monetdbe_close(monetdbe_database dbhdl)
 extern int dump_database(Mapi mid, stream *toConsole, bool describe, bool useInserts);
 extern int dump_table(Mapi mid, const char *schema, const char *tname, stream *toConsole, bool describe, bool foreign, bool useInserts, bool databaseDump);
 
-char* 
+char*
 monetdbe_dump_database(monetdbe_database dbhdl, const char *filename)
 {
 	if (!dbhdl)
@@ -571,7 +571,7 @@ monetdbe_dump_database(monetdbe_database dbhdl, const char *filename)
 	return mdbe->msg;
 }
 
-char* 
+char*
 monetdbe_dump_table(monetdbe_database dbhdl, const char *sname, const char *tname, const char *filename)
 {
 	if (!dbhdl)
@@ -581,7 +581,7 @@ monetdbe_dump_table(monetdbe_database dbhdl, const char *sname, const char *tnam
 	MT_lock_set(&embedded_lock);
 	if ((mdbe->msg = validate_database_handle(mdbe, "embedded.monetdbe_dump_table")) != MAL_SUCCEED) {
 		MT_lock_unset(&embedded_lock);
-		return mdbe->msg; 
+		return mdbe->msg;
 	}
 	MT_lock_unset(&embedded_lock);
 	struct MapiStruct mid = { .mdbe = mdbe };
@@ -703,7 +703,7 @@ monetdbe_prepare(monetdbe_database dbhdl, char* query, monetdbe_statement **stmt
 		mvc *m = ((backend *) mdbe->c->sqlcontext)->mvc;
 		monetdbe_stmt_internal *stmt_internal = (monetdbe_stmt_internal*)GDKmalloc(sizeof(monetdbe_stmt_internal));
 		cq *q = qc_find(m->qc, prepare_id);
-		
+
 		if (q && stmt_internal) {
 			Symbol s = (Symbol)q->code;
 			InstrPtr p = s->def->stmt[0];
@@ -1071,7 +1071,7 @@ monetdbe_append(monetdbe_database dbhdl, const char* schema, const char* table, 
 		mdbe->msg = createException(SQL, "monetdbe.monetdbe_append", "Table missing %s.%s", schema, table);
 		goto cleanup;
 	}
-	
+
 	/* for now no default values, ie user should supply all columns */
 
 	if (column_count != (size_t)list_length(t->columns.set)) {
@@ -1123,7 +1123,7 @@ monetdbe_append(monetdbe_database dbhdl, const char* schema, const char* table, 
 					timestamp t = *(timestamp*) nil;
 					if(!timestamp_is_null(ts[j]))
 						t = timestamp_from_data(&ts[j]);
-					
+
 					if (store_funcs.append_col(m->session->tr, c, &t, mtype) != 0) {
 						mdbe->msg = createException(SQL, "monetdbe.monetdbe_append", "Cannot append values");
 						goto cleanup;
@@ -1157,7 +1157,7 @@ monetdbe_append(monetdbe_database dbhdl, const char* schema, const char* table, 
 				}
 			} else if (mtype == TYPE_blob) {
 				monetdbe_data_blob* be = (monetdbe_data_blob*)v;
-				
+
 				for (size_t j=0; j<cnt; j++){
 					blob* b = (blob*) nil;
 					if (!blob_is_null(be[j])) {
@@ -1165,7 +1165,7 @@ monetdbe_append(monetdbe_database dbhdl, const char* schema, const char* table, 
 						b = (blob*) GDKmalloc(blobsize(len));
 						if (b == NULL)
 							mdbe->msg = createException(MAL, "monetdbe.monetdbe_append", MAL_MALLOC_FAIL);
-						
+
 						b->nitems = len;
 						memcpy(b->data, be[j].data, len);
 					}
@@ -1175,9 +1175,9 @@ monetdbe_append(monetdbe_database dbhdl, const char* schema, const char* table, 
 						goto cleanup;
 					}
 				}
-			} 
+			}
 		}
-	} else { 
+	} else {
 		mdbe->msg = createException(SQL, "monetdbe.monetdbe_append", "TODO bulk insert");
 		goto cleanup;
 	}
