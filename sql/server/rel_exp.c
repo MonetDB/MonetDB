@@ -92,10 +92,6 @@ negate_compare( comp_type t )
 		return mark_notin;
 	case mark_notin:
 		return mark_in;
-	case mark_exists:
-		return mark_notexists;
-	case mark_notexists:
-		return mark_exists;
 
 	default:
 		return t;

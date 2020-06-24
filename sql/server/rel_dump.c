@@ -65,8 +65,6 @@ cmp_print(mvc *sql, stream *fout, int cmp)
 
 	case mark_in: 		r = "any ="; break;
 	case mark_notin: 	r = "all <>"; break;
-	case mark_exists: 	r = "exists"; break;
-	case mark_notexists: 	r = "!exists"; break;
 
 	case cmp_all:
 	case cmp_project:
@@ -1233,15 +1231,6 @@ exp_read(mvc *sql, sql_rel *lrel, sql_rel *rrel, list *pexps, char *r, int *pos,
 		} else if (strncmp(r+*pos, "all <>",  strlen("all <>")) == 0) {
 			(*pos)+= (int) strlen("all <>");
 			f = mark_notin;
-		}
-		break;
-	case 'e':
-		if (strncmp(r+*pos, "exists",  strlen("exists")) == 0) {
-			(*pos)+= (int) strlen("exists");
-			f = mark_exists;
-		} else if (strncmp(r+*pos, "!exists",  strlen("!exists")) == 0) {
-			(*pos)+= (int) strlen("!exists");
-			f = mark_notexists;
 		}
 		break;
 	case 'n':

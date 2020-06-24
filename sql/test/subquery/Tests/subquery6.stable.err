@@ -31,6 +31,12 @@ MAPI  = (monetdb) /var/tmp/mtest-25203/.s.monetdb.33709
 QUERY = SELECT (SELECT col1) IN ('not a number') FROM another_t;
 ERROR = !conversion of string 'not a number' to type int failed.
 CODE  = 22018
+MAPI  = (monetdb) /var/tmp/mtest-289487/.s.monetdb.36720
+QUERY = SELECT (SELECT t2.col2 FROM another_t t2 WHERE t2.col1 BETWEEN t1.col1 AND t2.col2) FROM another_t t1;
+ERROR = !GDK reported error: mergejoin: more than one match
+MAPI  = (monetdb) /var/tmp/mtest-289487/.s.monetdb.36720
+QUERY = SELECT (SELECT t2.col2 FROM another_t t2 WHERE t2.col1 BETWEEN t2.col1 AND t1.col2) FROM another_t t1;
+ERROR = !GDK reported error: mergejoin: more than one match
 
 # 11:45:43 >  
 # 11:45:43 >  "Done."
