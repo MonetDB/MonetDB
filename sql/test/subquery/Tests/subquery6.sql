@@ -91,6 +91,24 @@ SELECT t1.colid FROM tbl_productsales t1 INNER JOIN tbl_productsales t2 ON t1.pr
 
 SELECT t1.colid FROM tbl_productsales t1 INNER JOIN tbl_productsales t2 ON t1.product_category NOT LIKE t2.product_name ORDER BY t1.colid;
 
+SELECT (SELECT 1 FROM another_t t1 WHERE t2.product_category LIKE CAST(t1.col1 AS VARCHAR(32))) FROM tbl_ProductSales t2;
+	-- NULL
+	-- NULL
+	-- NULL
+	-- NULL
+
+SELECT (SELECT t2.col2 FROM another_t t2 WHERE t1.col1 BETWEEN t2.col1 AND t2.col2) FROM another_t t1;
+	-- 2
+	-- 22
+	-- 222
+	-- 2222
+
+SELECT (SELECT t2.col2 FROM another_t t2 WHERE t2.col1 BETWEEN t1.col1 AND t2.col2) FROM another_t t1;
+	-- error, more than one row returned by a subquery used as an expression
+
+SELECT (SELECT t2.col2 FROM another_t t2 WHERE t2.col1 BETWEEN t2.col1 AND t1.col2) FROM another_t t1;
+	-- error, more than one row returned by a subquery used as an expression
+
 DROP TABLE tbl_ProductSales;
 DROP TABLE another_T;
 DROP TABLE integers;

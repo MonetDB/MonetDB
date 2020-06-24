@@ -1702,6 +1702,8 @@ rel_filter(mvc *sql, sql_rel *rel, list *l, list *r, char *sname, char *filter_o
 		else
 			return sql_error(sql, ERR_GROUPBY, SQLSTATE(42000) "SELECT: cannot use non GROUP BY column in query results without an aggregate function");
 	}
+	if (!is_join(rel->op) && !is_select(rel->op))
+		return rel_select(sql->sa, rel, e);
 	if (exps_card(r) <= CARD_ATOM && (exps_are_atoms(r) || exps_have_freevar(sql, r) || exps_have_freevar(sql, l))) {
 		if (exps_card(l) == exps_card(r) || rel->processed)  /* bin compare op */
 			return rel_select(sql->sa, rel, e);
@@ -1729,6 +1731,8 @@ rel_filter_exp_(mvc *sql, sql_rel *rel, sql_exp *ls, sql_exp *rs, sql_exp *rs2, 
 static sql_rel *
 rel_select_push_exp_down(mvc *sql, sql_rel *rel, sql_exp *e, sql_exp *ls, sql_exp *L, sql_exp *rs, sql_exp *R, sql_exp *rs2, int f)
 {
+	if (!is_join(rel->op) && !is_select(rel->op))
+		return rel_select(sql->sa, rel, e);
 	if (rs->card <= CARD_ATOM && (exp_is_atom(rs) || exp_has_freevar(sql, rs) || exp_has_freevar(sql, ls)) &&
 	   (!rs2 || (rs2->card <= CARD_ATOM && (exp_is_atom(rs2) || exp_has_freevar(sql, rs2))))) {
 		if ((ls->card == rs->card && !rs2) || rel->processed)  /* bin compare op */
@@ -2505,9 +2509,12 @@ rel_logical_value_exp(sql_query *query, sql_rel **rel, symbol *sc, int f, exp_ki
 
 		if (symmetric) {
 			sql_exp *tmp = NULL;
-			sql_subfunc *min = sql_bind_func(sql->sa, sql->session->schema, "sql_min", exp_subtype(re1), exp_subtype(re2), F_FUNC);
-			sql_subfunc *max = sql_bind_func(sql->sa, sql->session->schema, "sql_max", exp_subtype(re1), exp_subtype(re2), F_FUNC);
+			sql_subfunc *min, *max;
 
+			if (rel_convert_types(sql, rel ? *rel : NULL, rel ? *rel : NULL, &re1, &re2, 1, type_equal) < 0)
+				return NULL;
+			min = sql_bind_func(sql->sa, sql->session->schema, "sql_min", exp_subtype(re1), exp_subtype(re2), F_FUNC);
+			max = sql_bind_func(sql->sa, sql->session->schema, "sql_max", exp_subtype(re1), exp_subtype(re2), F_FUNC);
 			if (!min || !max)
 				return sql_error(sql, 02, SQLSTATE(42000) "min or max operator on types %s %s missing", exp_subtype(re1)->type->sqlname, exp_subtype(re2)->type->sqlname);
 			tmp = exp_binop(sql->sa, re1, re2, min);
@@ -2785,11 +2792,14 @@ rel_logical_exp(sql_query *query, sql_rel *rel, symbol *sc, int f)
 			return NULL;
 
 		/* for between 3 columns we use the between operator */
-		if (symmetric && re1->card == CARD_ATOM && re2->card == CARD_ATOM) {
+		if (symmetric && (le->card == CARD_ATOM || (re1->card == CARD_ATOM && re2->card == CARD_ATOM))) {
 			sql_exp *tmp = NULL;
-			sql_subfunc *min = sql_bind_func(sql->sa, sql->session->schema, "sql_min", exp_subtype(re1), exp_subtype(re2), F_FUNC);
-			sql_subfunc *max = sql_bind_func(sql->sa, sql->session->schema, "sql_max", exp_subtype(re1), exp_subtype(re2), F_FUNC);
+			sql_subfunc *min, *max;
 
+			if (rel_convert_types(sql, rel, rel, &re1, &re2, 1, type_equal) < 0)
+				return NULL;
+			min = sql_bind_func(sql->sa, sql->session->schema, "sql_min", exp_subtype(re1), exp_subtype(re2), F_FUNC);
+			max = sql_bind_func(sql->sa, sql->session->schema, "sql_max", exp_subtype(re1), exp_subtype(re2), F_FUNC);
 			if (!min || !max)
 				return sql_error(sql, 02, SQLSTATE(42000) "min or max operator on types %s %s missing", exp_subtype(re1)->type->sqlname, exp_subtype(re2)->type->sqlname);
 			tmp = exp_binop(sql->sa, re1, re2, min);
@@ -2812,10 +2822,8 @@ rel_logical_exp(sql_query *query, sql_rel *rel, symbol *sc, int f)
 				return NULL;
 			e2 = exp_compare(sql->sa, e1, exp_atom_bool(sql->sa, 1), cmp_equal);
 			return rel_select_push_exp_down(sql, rel, e2, le, le, re1, re1, re2, f);
-		} else if (sc->token == SQL_NOT_BETWEEN) {
-			rel = rel_compare_exp_(query, rel, le, re1, re2, 3|CMP_BETWEEN|flag, 1, 0, f);
 		} else {
-			rel = rel_compare_exp_(query, rel, le, re1, re2, 3|CMP_BETWEEN|flag, 0, 0, f);
+			rel = rel_compare_exp_(query, rel, le, re1, re2, 3|CMP_BETWEEN|flag, sc->token == SQL_NOT_BETWEEN ? 1 : 0, 0, f);
 		}
 		return rel;
 	}
