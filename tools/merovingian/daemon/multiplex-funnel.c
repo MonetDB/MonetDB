@@ -589,7 +589,7 @@ multiplexQuery(multiplex *m, char *buf, stream *fout)
 					"got %d, expected %d\n", mapi_get_querytype(h), qtype);
 			break;
 		}
-		
+
 		/* determine correctness based on headers */
 		switch (qtype) {
 			case Q_PARSE:
@@ -706,7 +706,7 @@ multiplexThread(void *d)
 
 	/* select on upstream clients, on new data, read query, forward,
 	 * union all results, send back, and restart cycle. */
-	
+
 	while (!m->shutdown) {
 #ifdef HAVE_POLL
 		msock = 0;

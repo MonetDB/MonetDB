@@ -72,7 +72,7 @@ skipToEnd(Client cntxt)
  */
 static void
 parseError(Client cntxt, str msg)
-{	
+{
 	MalBlkPtr mb;
 	char *old, *new;
 	char buf[1028]={0};

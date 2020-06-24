@@ -94,8 +94,8 @@ static struct PIPELINES {
 	 "optimizer.garbageCollector();",
 	 "stable", NULL, NULL, 1},
 /*
- * Optimistic concurreny control in general leads to more transaction failures 
- * in an OLTP setting. The partial solution provided is to give out 
+ * Optimistic concurreny control in general leads to more transaction failures
+ * in an OLTP setting. The partial solution provided is to give out
  * advisory locks and delay updates until they are released or timeout.
  */
 	{"oltp_pipe",
@@ -473,7 +473,7 @@ compileOptimizer(Client cntxt, const char *name)
 	Symbol fcn, compiled;
 
 	MT_lock_set(&pipeLock);
-	for (i = 0; i < MAXOPTPIPES && pipes[i].name; i++) 
+	for (i = 0; i < MAXOPTPIPES && pipes[i].name; i++)
 		if (strcmp(pipes[i].name, name) == 0 && pipes[i].mb == 0) {
 			/* precompile a pipeline as MAL string */
 			for (j = 0; j < MAXOPTPIPES && pipes[j].def; j++) {
@@ -509,7 +509,7 @@ compileAllOptimizers(Client cntxt)
 	return msg;
 }
 
-/* 
+/*
  * Add a new components of the optimizer pipe to the plan
  */
 str

@@ -514,7 +514,7 @@ BKCgetKey(bit *ret, const bat *bid)
 {
 	BAT *b;
 
-	if ((b = BATdescriptor(*bid)) == NULL) 
+	if ((b = BATdescriptor(*bid)) == NULL)
 		throw(MAL, "bat.setPersistence", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 	*ret = BATkeyed(b);
 	BBPunfix(b->batCacheid);
@@ -790,7 +790,7 @@ BKCgetSize(lng *tot, const bat *bid){
 		if (b->thash)
 			size += ROUND_UP(sizeof(BUN) * cnt, blksize);
 		size += IMPSimprintsize(b);
-	} 
+	}
 	*tot = size;
 	BBPunfix(*bid);
 	return MAL_SUCCEED;

@@ -215,7 +215,7 @@ monet5_create_privileges(ptr _mvc, sql_schema *s)
 	uinfo = t;
 
 	res = sa_list(m->sa);
-	list_append(res, sql_create_arg(m->sa, "name", sql_bind_subtype(m->sa, "varchar", 2048, 0), ARG_OUT));  
+	list_append(res, sql_create_arg(m->sa, "name", sql_bind_subtype(m->sa, "varchar", 2048, 0), ARG_OUT));
 
 	/* add function */
 	ops = sa_list(m->sa);

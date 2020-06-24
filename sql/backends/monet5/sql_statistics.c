@@ -7,11 +7,11 @@
  */
 
 /* (c) M.L. Kersten
-Most optimizers need easy access to key information 
+Most optimizers need easy access to key information
 for proper plan generation. Amongst others, this
 information consists of the tuple count, size,
 min- and max-value, and the null-density.
-They are kept around as persistent tables, modeled 
+They are kept around as persistent tables, modeled
 directly as a collection of BATs.
 
 We made need an directly accessible structure to speedup

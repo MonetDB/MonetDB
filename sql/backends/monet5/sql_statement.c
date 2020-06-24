@@ -232,7 +232,7 @@ stmt_group(backend *be, stmt *s, stmt *grp, stmt *ext, stmt *cnt, int done)
 
 	if (s->nr < 0)
 		return NULL;
-	if (grp && (grp->nr < 0 || ext->nr < 0 || cnt->nr < 0)) 
+	if (grp && (grp->nr < 0 || ext->nr < 0 || cnt->nr < 0))
 		return NULL;
 
 	q = newStmt(mb, groupRef, done ? grp ? subgroupdoneRef : groupdoneRef : grp ? subgroupRef : groupRef);
@@ -298,7 +298,7 @@ dump_table(sql_allocator *sa, MalBlkPtr mb, sql_table *t)
 		return NULL;
 
 	/* tid column */
-	if ((l[i++] = create_bat(mb, TYPE_oid)) < 0) 
+	if ((l[i++] = create_bat(mb, TYPE_oid)) < 0)
 		return NULL;
 
 	for (n = t->columns.set->h; n; n = n->next) {
@@ -392,7 +392,7 @@ stmt_vars(backend *be, const char *varname, sql_table *t, int declare, int level
 
 		t->data = l;
 		/*
-		s->op2 = (stmt*)l; 
+		s->op2 = (stmt*)l;
 		s->op3 = (stmt*)t;
 		*/
 		s->flag = declare + (level << 1);
@@ -693,12 +693,12 @@ stmt_append_col(backend *be, sql_column *c, stmt *b, int fake)
 			q = newStmt(mb, sqlRef, growRef);
 			q = pushArgument(mb, q, l[0]);
 			q = pushArgument(mb, q, b->nr);
-		} 
+		}
 		q = newStmt(mb, batRef, appendRef);
 		q = pushArgument(mb, q, l[c->colnr+1]);
 		q = pushArgument(mb, q, b->nr);
 		q = pushBit(mb, q, TRUE);
-		getArg(q,0) = l[c->colnr+1]; 
+		getArg(q,0) = l[c->colnr+1];
 	} else if (!fake) {	/* fake append */
 		q = newStmt(mb, sqlRef, appendRef);
 		q = pushArgument(mb, q, be->mvc_var);
@@ -908,7 +908,7 @@ stmt_const(backend *be, stmt *s, stmt *val)
 
 	if (val)
 		q = dump_2(mb, algebraRef, projectRef, s, val);
-	else 
+	else
 		q = dump_1(mb, algebraRef, projectRef, s);
 	if (q) {
 		stmt *ns = stmt_create(be->mvc->sa, st_const);
@@ -946,7 +946,7 @@ stmt_gen_group(backend *be, stmt *gids, stmt *cnts)
 
 		ns->op1 = gids;
 		ns->op2 = cnts;
-	
+
 		ns->nrcols = gids->nrcols;
 		ns->key = 0;
 		ns->aggr = 0;
@@ -1145,7 +1145,7 @@ stmt_sample(backend *be, stmt *s, stmt *sample, stmt *seed)
 {
 	MalBlkPtr mb = be->mb;
 	InstrPtr q = NULL;
-	
+
 	if (s->nr < 0 || sample->nr < 0)
 		return NULL;
 	q = newStmt(mb, sampleRef, subuniformRef);
@@ -1326,12 +1326,12 @@ stmt_genselect(backend *be, stmt *lops, stmt *rops, sql_subfunc *f, stmt *sub, i
 		q = pushStr(mb, q, convertMultiplexFcn(op));
 		for (n = lops->op4.lval->h; n; n = n->next) {
 			stmt *op = n->data;
-	
+
 			q = pushArgument(mb, q, op->nr);
 		}
 		for (n = rops->op4.lval->h; n; n = n->next) {
 			stmt *op = n->data;
-	
+
 			q = pushArgument(mb, q, op->nr);
 		}
 		k = getDestVar(q);
@@ -1367,7 +1367,7 @@ stmt_genselect(backend *be, stmt *lops, stmt *rops, sql_subfunc *f, stmt *sub, i
 		if (sub)
 			q = pushArgument(mb, q, sub->nr);
 		else
-			q = pushNil(mb, q, TYPE_bat); 
+			q = pushNil(mb, q, TYPE_bat);
 
 		for (n = rops->op4.lval->h; n; n = n->next) {
 			stmt *op = n->data;
@@ -1451,7 +1451,7 @@ stmt_uselect(backend *be, stmt *op1, stmt *op2, comp_type cmptype, stmt *sub, in
 			TRC_ERROR(SQL_EXECUTION, "Unknown operator\n");
 		}
 
-		if ((q = multiplex2(mb, mod, convertOperator(op), l, r, TYPE_bit)) == NULL) 
+		if ((q = multiplex2(mb, mod, convertOperator(op), l, r, TYPE_bit)) == NULL)
 			return NULL;
 		if (sub && (op1->cand || op2->cand)) {
 			if (op1->cand && !op2->cand) {
@@ -1466,7 +1466,7 @@ stmt_uselect(backend *be, stmt *op1, stmt *op2, comp_type cmptype, stmt *sub, in
 			sub = NULL;
 		}
 		if (is_semantics)
-			q = pushBit(mb, q, TRUE); 
+			q = pushBit(mb, q, TRUE);
 		k = getDestVar(q);
 
 		q = newStmt(mb, algebraRef, selectRef);
@@ -1654,7 +1654,7 @@ select2_join2(backend *be, stmt *op1, stmt *op2, stmt *op3, int cmp, stmt *sub, 
 		stmt *base, *low = NULL, *high = NULL;
 		if (type == st_join2 && range_join_convertable(s, &base, &low, &high)) {
 			int tt = tail_type(base)->type->localtype;
-	
+
 			if ((rs = _dumpstmt(sql, mb, base)) < 0)
 				return -1;
 			if (low) {
@@ -1732,7 +1732,7 @@ select2_join2(backend *be, stmt *op1, stmt *op2, stmt *op3, int cmp, stmt *sub, 
 			getArg(r, 0) = newTmpVariable(mb, TYPE_any);
 			r = pushReturn(mb, r, newTmpVariable(mb, TYPE_any));
 			r = pushArgument(mb, r, getArg(q,1));
-			r = pushArgument(mb, r, getArg(q,0)); 
+			r = pushArgument(mb, r, getArg(q,0));
 			pushInstruction(mb, r);
 			q = r;
 		}
@@ -1779,7 +1779,7 @@ stmt_tunion(backend *be, stmt *op1, stmt *op2)
 			freeInstruction(q);
 			return NULL;
 		}
-	
+
 		s->op1 = op1;
 		s->op2 = op2;
 		s->nrcols = op1->nrcols;
@@ -1809,7 +1809,7 @@ stmt_tdiff(backend *be, stmt *op1, stmt *op2, stmt *lcand)
 		q = pushNil(mb, q, TYPE_bat); /* left candidate */
 	q = pushNil(mb, q, TYPE_bat); /* right candidate */
 	q = pushBit(mb, q, FALSE);    /* nil matches */
-	q = pushBit(mb, q, FALSE);    /* do not clear nils */    
+	q = pushBit(mb, q, FALSE);    /* do not clear nils */
 	q = pushNil(mb, q, TYPE_lng); /* estimate */
 
 	if (q) {
@@ -2024,7 +2024,7 @@ stmt_join_cand(backend *be, stmt *op1, stmt *op2, stmt *lcand, stmt *rcand, int 
 stmt *
 stmt_join(backend *be, stmt *l, stmt *r, int anti, comp_type cmptype, int is_semantics, bool single)
 {
-	return stmt_join_cand(be, l, r, NULL, NULL, anti, cmptype, is_semantics, single); 
+	return stmt_join_cand(be, l, r, NULL, NULL, anti, cmptype, is_semantics, single);
 }
 
 stmt *
@@ -2073,8 +2073,8 @@ stmt_semijoin(backend *be, stmt *op1, stmt *op2, stmt *lcand, stmt *rcand, int i
 	return NULL;
 }
 
-static InstrPtr 
-stmt_project_join(backend *be, stmt *op1, stmt *op2, stmt *ins) 
+static InstrPtr
+stmt_project_join(backend *be, stmt *op1, stmt *op2, stmt *ins)
 {
 	MalBlkPtr mb = be->mb;
 	InstrPtr q = NULL;
@@ -2190,7 +2190,7 @@ stmt_join2(backend *be, stmt *l, stmt *ra, stmt *rb, int cmp, int anti, int swap
 		s->nr = getDestVar(q);
 		s->q = q;
 		return s;
-	} 
+	}
 	return NULL;
 }
 
@@ -2235,7 +2235,7 @@ stmt_genjoin(backend *be, stmt *l, stmt *r, sql_subfunc *op, int anti, int swapp
 		getArg(r, 0) = newTmpVariable(mb, TYPE_any);
 		r = pushReturn(mb, r, newTmpVariable(mb, TYPE_any));
 		r = pushArgument(mb, r, getArg(q,1));
-		r = pushArgument(mb, r, getArg(q,0)); 
+		r = pushArgument(mb, r, getArg(q,0));
 		pushInstruction(mb, r);
 		q = r;
 	}
@@ -2252,7 +2252,7 @@ stmt_genjoin(backend *be, stmt *l, stmt *r, sql_subfunc *op, int anti, int swapp
 		s->nr = getDestVar(q);
 		s->q = q;
 		return s;
-	}	
+	}
 	return NULL;
 }
 
@@ -2362,7 +2362,7 @@ dump_export_header(mvc *sql, MalBlkPtr mb, list *l, int file, const char * forma
 			} else
 				error = true;
 		} else
-			error = true; 
+			error = true;
 		c_delete(ntn);
 		c_delete(nsn);
 		if(error)
@@ -2696,7 +2696,7 @@ stmt_output(backend *be, stmt *lst)
 		if(!ok)
 			return NULL;
 	} else {
-		if ((q = dump_header(be->mvc, mb, lst, l)) == NULL) 
+		if ((q = dump_header(be->mvc, mb, lst, l)) == NULL)
 			return NULL;
 	}
 	if (q) {
@@ -2810,7 +2810,7 @@ stmt_exception(backend *be, stmt *cond, const char *errstr, int errcode)
 	MalBlkPtr mb = be->mb;
 	InstrPtr q = NULL;
 
-	if (cond->nr < 0) 
+	if (cond->nr < 0)
 		return NULL;
 
 	/* if(bit(l)) { error(r);}  ==raising an exception */
@@ -2834,7 +2834,7 @@ stmt_exception(backend *be, stmt *cond, const char *errstr, int errcode)
 	return NULL;
 }
 
-/* The type setting is not propagated to statements such as st_bat and st_append, 
+/* The type setting is not propagated to statements such as st_bat and st_append,
 	because they are not considered projections */
 static void
 tail_set_type(stmt *st, sql_subtype *t)
@@ -2860,7 +2860,7 @@ tail_set_type(stmt *st, sql_subtype *t)
 				continue;
 			}
 			return;
-		case st_aggr: 
+		case st_aggr:
 		case st_Nop: {
 			list *res = st->op4.funcval->res;
 
@@ -2904,7 +2904,7 @@ stmt_convert(backend *be, stmt *v, sql_subtype *f, sql_subtype *t, stmt *cond)
 	    f->type->eclass != EC_DEC &&
 	    (t->digits == 0 || f->digits == t->digits) &&
 	    type_has_tz(t) == type_has_tz(f)) {
-		/* set output type. Despite the MAL code already being generated, 
+		/* set output type. Despite the MAL code already being generated,
 		   the output type may still be checked */
 		tail_set_type(v, t);
 		return v;
@@ -2915,7 +2915,7 @@ stmt_convert(backend *be, stmt *v, sql_subtype *f, sql_subtype *t, stmt *cond)
 	if (t->type->eclass == EC_EXTERNAL)
 		convert = t->type->sqlname;
 
-	if (t->type->eclass == EC_MONTH) 
+	if (t->type->eclass == EC_MONTH)
 		convert = "month_interval";
 	else if (t->type->eclass == EC_SEC)
 		convert = "second_interval";
@@ -2979,11 +2979,11 @@ stmt_convert(backend *be, stmt *v, sql_subtype *f, sql_subtype *t, stmt *cond)
 		/* we decided to create the EWKB type also used by PostGIS and has the SRID provided by the user inside alreay */
 		/* push the SRID provided for this value */
 		/* GEOS library is able to store in the returned wkb the type an
- 		 * number if coordinates but not the SRID so SRID should be provided 
+ 		 * number if coordinates but not the SRID so SRID should be provided
  		 * from this level */
 /*		if(be->argc > 1)
 			f->scale = ((ValRecord)((atom*)(be->mvc)->args[1])->data).val.ival;
-			
+
 			q = pushInt(mb, q, f->digits);
 			q = pushInt(mb, q, f->scale);
 */			//q = pushInt(mb, q, ((ValRecord)((atom*)(be->mvc)->args[1])->data).val.ival);
@@ -3078,7 +3078,7 @@ stmt_Nop(backend *be, stmt *ops, sql_subfunc *f)
 	} else {
 		fimp = convertOperator(fimp);
 		q = newStmt(mb, mod, fimp);
-		
+
 		if (f->res && list_length(f->res)) {
 			sql_subtype *res = f->res->h->data;
 
@@ -3095,7 +3095,7 @@ stmt_Nop(backend *be, stmt *ops, sql_subfunc *f)
 	}
 	if (f->func->lang == FUNC_LANG_R || f->func->lang >= FUNC_LANG_PY ||
 		f->func->lang == FUNC_LANG_C || f->func->lang == FUNC_LANG_CPP) {
-		q = pushStr(mb, q, f->func->query);	
+		q = pushStr(mb, q, f->func->query);
 	}
 	/* first dynamic output of copy* functions */
 	if (f->func->type == F_UNION || (f->func->type == F_LOADER && f->res != NULL))
@@ -3109,7 +3109,7 @@ stmt_Nop(backend *be, stmt *ops, sql_subfunc *f)
 		stmt *op = n->data;
 
 		if (!op)
-			q = pushNil(mb, q, TYPE_bat); 
+			q = pushNil(mb, q, TYPE_bat);
 		else
 			q = pushArgument(mb, q, op->nr);
 		if (op && special) {
@@ -3120,7 +3120,7 @@ stmt_Nop(backend *be, stmt *ops, sql_subfunc *f)
 		}
 		special = 0;
 	}
-	
+
 	if (q) {
 		stmt *s = stmt_create(be->mvc->sa, st_Nop);
 		if(!s) {
@@ -3176,7 +3176,7 @@ stmt_func(backend *be, stmt *ops, const char *name, sql_rel *rel, int f_union)
 		return NULL;
 
 	p = find_prop(rel->p, PROP_REMOTE);
-	if (p) 
+	if (p)
 		rel->p = prop_remove(rel->p, p);
 	rel = sql_processrelation(be->mvc, rel, 0);
 	if (p) {
@@ -3187,7 +3187,7 @@ stmt_func(backend *be, stmt *ops, const char *name, sql_rel *rel, int f_union)
 	if (monet5_create_relational_function(be->mvc, mod, name, rel, ops, NULL, 1) < 0)
 		 return NULL;
 
-	if (f_union) 
+	if (f_union)
 		q = newStmt(mb, batmalRef, multiplexRef);
 	else
 		q = newStmt(mb, mod, name);
@@ -3219,7 +3219,7 @@ stmt_func(backend *be, stmt *ops, const char *name, sql_rel *rel, int f_union)
 		if (ops && list_length(ops->op4.lval)) {
 			for (n = ops->op4.lval->h, o = n->data; n; n = n->next) {
 				stmt *c = n->data;
-	
+
 				if (o->nrcols < c->nrcols)
 					o = c;
 			}
@@ -3263,7 +3263,7 @@ stmt_aggr(backend *be, stmt *op1, stmt *grp, stmt *ext, sql_subfunc *op, int red
 		|| strcmp(aggrfunc, "str_group_concat") == 0)
 		complex_aggr = true;
 	/* some "sub" aggregates have an extra argument "abort_on_error" */
-	abort_on_error = complex_aggr || strncmp(aggrfunc, "stdev", 5) == 0 || strncmp(aggrfunc, "variance", 8) == 0 || 
+	abort_on_error = complex_aggr || strncmp(aggrfunc, "stdev", 5) == 0 || strncmp(aggrfunc, "variance", 8) == 0 ||
 					strncmp(aggrfunc, "covariance", 10) == 0 || strncmp(aggrfunc, "corr", 4) == 0;
 
 	if (ext) {
@@ -3293,7 +3293,7 @@ stmt_aggr(backend *be, stmt *op1, stmt *grp, stmt *ext, sql_subfunc *op, int red
 	if (LANG_EXT(op->func->lang))
 		q = pushPtr(mb, q, op->func);
 	if (op->func->lang == FUNC_LANG_R ||
-		op->func->lang >= FUNC_LANG_PY || 
+		op->func->lang >= FUNC_LANG_PY ||
 		op->func->lang == FUNC_LANG_C ||
 		op->func->lang == FUNC_LANG_CPP) {
 		if (!grp) {
@@ -3662,7 +3662,7 @@ stmt_cond(backend *be, stmt *cond, stmt *outer, int loop /* 0 if, 1 while */, in
 		sql_subfunc *not = sql_bind_func(be->mvc->sa, NULL, "not", bt, NULL, F_FUNC);
 		sql_subfunc *or = sql_bind_func(be->mvc->sa, NULL, "or", bt, bt, F_FUNC);
 		sql_subfunc *isnull = sql_bind_func(be->mvc->sa, NULL, "isnull", bt, NULL, F_FUNC);
-		cond = stmt_binop(be, 
+		cond = stmt_binop(be,
 			stmt_unop(be, cond, not),
 			stmt_unop(be, cond, isnull), or);
 	}
@@ -3827,7 +3827,7 @@ stmt_assign(backend *be, const char *varname, stmt *val, int level)
 
 	if (val && val->nr < 0)
 		return NULL;
-	if (level != 1) {	
+	if (level != 1) {
 		char *buf;
 
 		if (!val) {
@@ -3883,7 +3883,7 @@ const_column(backend *be, stmt *val)
 	InstrPtr q = NULL;
 	int tt = ct->type->localtype;
 
-	if (val->nr < 0) 
+	if (val->nr < 0)
 		return NULL;
 	q = newStmt(mb, sqlRef, singleRef);
 	if (q == NULL)
@@ -3917,7 +3917,7 @@ stmt_fetch(backend *be, stmt *val)
 	InstrPtr q = NULL;
 	int tt = ct->type->localtype;
 
-	if (val->nr < 0) 
+	if (val->nr < 0)
 		return NULL;
 	q = newStmt(mb, algebraRef, fetchRef);
 	if (q == NULL)

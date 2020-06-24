@@ -94,11 +94,11 @@ geom_export str mbrFromMBR(mbr **w, mbr **src);
 geom_export str wkbFromWKB(wkb **w, wkb **src);
 //Is it needed?? geom_export str wkbFromWKB_bat(bat* outBAT_id, bat* inBAT_id);
 
-/* The WKB we use is the EWKB used also in PostGIS 
+/* The WKB we use is the EWKB used also in PostGIS
  * because we decided that it is easire to carry around
  * the SRID */
- 
-/* gets a GEOSGeometry and returns the mbr of it 
+
+/* gets a GEOSGeometry and returns the mbr of it
  * works only for 2D geometries */
 geom_export mbr* mbrFromGeos(const GEOSGeom geosGeometry);
 
@@ -152,7 +152,7 @@ geom_export str wkbDWithin(bit*, wkb**, wkb**, dbl*);
 //LocateAlong
 //LocateBetween
 
-//geom_export str wkbFromString(wkb**, str*); 
+//geom_export str wkbFromString(wkb**, str*);
 
 geom_export str wkbMakePoint(wkb**, dbl*, dbl*, dbl*, dbl*, int*);
 geom_export str wkbMakePoint_bat(bat*, bat*, bat*, bat*, bat*, int*);
@@ -207,7 +207,7 @@ geom_export str wkbDifference(wkb **out, wkb **a, wkb **b);
 geom_export str wkbSymDifference(wkb **out, wkb **a, wkb **b);
 geom_export str wkbBuffer(wkb **out, wkb **geom, dbl *distance);
 
-geom_export str wkbGeometryN(wkb** out, wkb** geom, const int* geometryNum); 
+geom_export str wkbGeometryN(wkb** out, wkb** geom, const int* geometryNum);
 geom_export str wkbGeometryN_bat(bat *outBAT_id, bat *inBAT_id, const int* flag);
 
 geom_export str wkbNumGeometries(int* out, wkb** geom);
@@ -223,7 +223,7 @@ geom_export str wkbSegmentize(wkb**, wkb**, dbl*);
 geom_export str wkbDump(bat* idBAT_id, bat* geomBAT_id, wkb**);
 geom_export str wkbDumpPoints(bat* idBAT_id, bat* geomBAT_id, wkb**);
 
-geom_export str geom_2_geom(wkb** resWKB, wkb **valueWKB, int* columnType, int* columnSRID); 
+geom_export str geom_2_geom(wkb** resWKB, wkb **valueWKB, int* columnType, int* columnSRID);
 
 geom_export str wkbMBR(mbr **res, wkb **geom);
 

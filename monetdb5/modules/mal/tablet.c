@@ -150,7 +150,7 @@ TABLETcreate_bats(Tablet *as, BUN est)
 		fmt[i].ci = bat_iterator(fmt[i].c);
 		nr++;
 	}
-	if (!nr) 
+	if (!nr)
 		throw(SQL, "copy", "At least one column should be read from the input\n");
 	return MAL_SUCCEED;
 }
@@ -1005,7 +1005,7 @@ SQLload_parse_line(READERtask *task, int idx)
 				for (; i < as->nr_attrs; i++)
 					task->fields[i][idx] = NULL;
 				i--;
-			} 
+			}
 		  endoffieldcheck:
 			;
 			/* check for user defined NULL string */
@@ -1079,7 +1079,7 @@ SQLworker(void *arg)
 		case BREAKLINE:
 			t0 = GDKusec();
 			piece = (task->top[task->cur] + task->workers) / task->workers;
-			
+
 			for (j = piece * task->id; j < task->top[task->cur] && j < piece * (task->id +1); j++)
 				if (task->lines[task->cur][j]) {
 					if (SQLload_parse_line(task, j) < 0) {
@@ -1241,7 +1241,7 @@ SQLproducer(void *p)
 	}
 
 /*	TRC_DEBUG(MAL_SERVER, "SQLproducer started size '%zu' and len '%zu'\n", task->b->size, task->b->len);*/
-	
+
 	base = end = s = task->input[cur];
 	*s = 0;
 	task->cur = cur;
@@ -1251,7 +1251,7 @@ SQLproducer(void *p)
 	}
 	for (;;) {
 		ateof[cur] = !tablet_read_more(task->b, task->out, task->b->size);
-				
+
 		// we may be reading from standard input and may be out of input
 		// warn the consumers
 		if (ateof[cur] && partial) {
@@ -1714,8 +1714,8 @@ SQLload_file(Client cntxt, Tablet *as, bstream *b, stream *out, const char *csep
 			}
 		}
 
-/*		TRC_DEBUG(MAL_SERVER, 
-			"Fill the BATs '%d' " BUNFMT " cap " BUNFMT "\n", 
+/*		TRC_DEBUG(MAL_SERVER,
+			"Fill the BATs '%d' " BUNFMT " cap " BUNFMT "\n",
 			task.top[task.cur], task.cnt, BATcapacity(as->format[task.cur].c));*/
 
 		lio += GDKusec() - t1;	/* line break done */
@@ -1831,7 +1831,7 @@ SQLload_file(Client cntxt, Tablet *as, bstream *b, stream *out, const char *csep
 	task.ateof = true;
 	task.state = ENDOFCOPY;
 /*	TRC_DEBUG(MAL_SERVER, "Activate sync on disk\n");*/
-	
+
 	// activate the workers to sync the BATs to disk
 	if (res == 0) {
 		for (j = 0; j < threads; j++) {

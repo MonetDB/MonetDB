@@ -63,7 +63,7 @@ int
 getMbrGeos(mbr *res, const GEOSGeom geosGeometry)
 {
 	GEOSGeom envelope;
-	//int coordinatesNum  = 0; 
+	//int coordinatesNum  = 0;
 	double xmin = 0, ymin = 0, xmax = 0, ymax = 0;
 
 	if (!geosGeometry || (envelope = GEOSEnvelope(geosGeometry)) == NULL)

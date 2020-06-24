@@ -83,70 +83,70 @@ void print_lidar_header(LASHeaderH header, const char* file_name, int bSkipVLR, 
     }
     TRC_DEBUG(LIDAR, "  Version:                    %hhu.%hhu\n", major, minor);
 
-    TRC_DEBUG(LIDAR, "  Source ID:                  %hu\n", 
+    TRC_DEBUG(LIDAR, "  Source ID:                  %hu\n",
                 	LASHeader_GetFileSourceId(header));
 
-    TRC_DEBUG(LIDAR, "  Reserved:                   %hu\n", 
+    TRC_DEBUG(LIDAR, "  Reserved:                   %hu\n",
                     LASHeader_GetReserved(header));
 
-    TRC_DEBUG(LIDAR, "  Project ID/GUID:           '%s'\n", 
+    TRC_DEBUG(LIDAR, "  Project ID/GUID:           '%s'\n",
 					pszProjectId);
 
-    TRC_DEBUG(LIDAR, "  System Identifier:         '%s'\n", 
+    TRC_DEBUG(LIDAR, "  System Identifier:         '%s'\n",
                     pszSystemId);
 
-    TRC_DEBUG(LIDAR, "  Generating Software:       '%s'\n", 
+    TRC_DEBUG(LIDAR, "  Generating Software:       '%s'\n",
                     pszSoftwareId);
 
-    TRC_DEBUG(LIDAR, "  File Creation Day/Year:    %hu/%hu\n", 
-                    LASHeader_GetCreationDOY(header), 
+    TRC_DEBUG(LIDAR, "  File Creation Day/Year:    %hu/%hu\n",
+                    LASHeader_GetCreationDOY(header),
                     LASHeader_GetCreationYear(header));
 
-    TRC_DEBUG(LIDAR, "  Header Size                %hu\n", 
+    TRC_DEBUG(LIDAR, "  Header Size                %hu\n",
                     LASHeader_GetHeaderSize(header));
 
-    TRC_DEBUG(LIDAR, "  Offset to Point Data       %u\n", 
+    TRC_DEBUG(LIDAR, "  Offset to Point Data       %u\n",
                     LASHeader_GetDataOffset(header));
 
-    TRC_DEBUG(LIDAR, "  Number Var. Length Records %u\n", 
+    TRC_DEBUG(LIDAR, "  Number Var. Length Records %u\n",
                     LASHeader_GetRecordsCount(header));
 
-    TRC_DEBUG(LIDAR, "  Point Data Format          %hhu\n", 
+    TRC_DEBUG(LIDAR, "  Point Data Format          %hhu\n",
                     LASHeader_GetDataFormatId(header));
 
-    TRC_DEBUG(LIDAR, "  Point Data Record Length   %hu\n", 
+    TRC_DEBUG(LIDAR, "  Point Data Record Length   %hu\n",
                     LASHeader_GetDataRecordLength(header));
 
-    TRC_DEBUG(LIDAR, "  Number of Point Records    %u\n", 
+    TRC_DEBUG(LIDAR, "  Number of Point Records    %u\n",
                     LASHeader_GetPointRecordsCount(header));
 
-    TRC_DEBUG(LIDAR, "  Number of Points by Return %u %u %u %u %u\n", 
-                    LASHeader_GetPointRecordsByReturnCount(header, 0), 
-                    LASHeader_GetPointRecordsByReturnCount(header, 1), 
-                    LASHeader_GetPointRecordsByReturnCount(header, 2), 
-                    LASHeader_GetPointRecordsByReturnCount(header, 3), 
+    TRC_DEBUG(LIDAR, "  Number of Points by Return %u %u %u %u %u\n",
+                    LASHeader_GetPointRecordsByReturnCount(header, 0),
+                    LASHeader_GetPointRecordsByReturnCount(header, 1),
+                    LASHeader_GetPointRecordsByReturnCount(header, 2),
+                    LASHeader_GetPointRecordsByReturnCount(header, 3),
                     LASHeader_GetPointRecordsByReturnCount(header, 4));
 
-    TRC_DEBUG(LIDAR, "  Scale Factor X Y Z         %.6g %.6g %.6g\n", 
-                    LASHeader_GetScaleX(header), 
+    TRC_DEBUG(LIDAR, "  Scale Factor X Y Z         %.6g %.6g %.6g\n",
+                    LASHeader_GetScaleX(header),
                     LASHeader_GetScaleY(header),
                     LASHeader_GetScaleZ(header));
 
-    TRC_DEBUG(LIDAR, "  Offset X Y Z               %.6f %.6f %.6f\n", 
-                    LASHeader_GetOffsetX(header), 
-                    LASHeader_GetOffsetY(header), 
+    TRC_DEBUG(LIDAR, "  Offset X Y Z               %.6f %.6f %.6f\n",
+                    LASHeader_GetOffsetX(header),
+                    LASHeader_GetOffsetY(header),
                     LASHeader_GetOffsetZ(header));
 
     TRC_DEBUG(LIDAR, "  Min X Y Z                  %.6f %.6f %.6f\n",
-                    LASHeader_GetMinX(header), 
-                    LASHeader_GetMinY(header), 
+                    LASHeader_GetMinX(header),
+                    LASHeader_GetMinY(header),
                     LASHeader_GetMinZ(header));
 
-    TRC_DEBUG(LIDAR, "  Max X Y Z                  %.6f %.6f %.6f\n", 
-                    LASHeader_GetMaxX(header), 
-                    LASHeader_GetMaxY(header), 
+    TRC_DEBUG(LIDAR, "  Max X Y Z                  %.6f %.6f %.6f\n",
+                    LASHeader_GetMaxX(header),
+                    LASHeader_GetMaxY(header),
                     LASHeader_GetMaxZ(header));
-    
+
     TRC_DEBUG(LIDAR, " Spatial Reference           %s\n",
                     pszProj4);
     if (bWKT)
@@ -154,7 +154,7 @@ void print_lidar_header(LASHeaderH header, const char* file_name, int bSkipVLR, 
         TRC_DEBUG(LIDAR, "%s\n", pszWKT);
     }
     if (nVLR && !bSkipVLR) {
-        
+
     TRC_DEBUG(LIDAR, "---------------------------------------------------------\n");
     TRC_DEBUG(LIDAR, "  VLR Summary\n");
     TRC_DEBUG(LIDAR, "---------------------------------------------------------\n");
@@ -166,26 +166,26 @@ void print_lidar_header(LASHeaderH header, const char* file_name, int bSkipVLR, 
                 LASError_Print("Unable to fetch VLR");
                 exit(1);
             }
-            
+
             pszVLRUser = LASVLR_GetUserId(pVLR);
             pszVLRDescription = LASVLR_GetDescription(pVLR);
             nVLRLength = LASVLR_GetRecordLength(pVLR);
             nVLRRecordId = LASVLR_GetRecordId(pVLR);
-            
+
             TRC_DEBUG(LIDAR, "   User          : '%s'\n", pszVLRUser);
 			TRC_DEBUG(LIDAR, "   Description   : '%s'\n", pszVLRDescription);
 			TRC_DEBUG(LIDAR, "   ID            : '%hu'\n", nVLRRecordId);
             TRC_DEBUG(LIDAR, "   Length        : %hu\n", nVLRLength);
-           
-            MT_lock_set(&mt_lidar_lock); 
+
+            MT_lock_set(&mt_lidar_lock);
             LASVLR_Destroy(pVLR);
             MT_lock_unset(&mt_lidar_lock);
             pVLR = NULL;
-            
+
             LASString_Free(pszVLRUser);
             LASString_Free(pszVLRDescription);
         }
-        
+
     }
     LASString_Free(pszSignature);
     LASString_Free(pszProjectId);
@@ -213,7 +213,7 @@ LIDARinitCatalog(mvc *m)
 		mvc_create_column_(m, lidar_fl, "id", "int", 32);
 		mvc_create_column_(m, lidar_fl, "name", "varchar", 255);
 	}
-	
+
 	lidar_tbl = mvc_bind_table(m, sch, "lidar_tables");
 	if (lidar_tbl == NULL) {
 		lidar_tbl = mvc_create_table(m, sch, "lidar_tables", tt_table, 0, SQL_PERSIST, 0, 21, 0);
@@ -356,7 +356,7 @@ str LIDARexportTable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	sql_table *tbl;
 	BUN nrows = 0;
 	BUN i;
-	
+
 	sql_column *cols[3];
 	dbl *cols_dbl[3];
 	BAT *bats_dbl[3];
@@ -374,7 +374,7 @@ str LIDARexportTable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	sch = mvc_bind_schema(m, "sys");
 
 	/* First step: look if the table exists in the database. If the table is not in the database, the export function cannot continue */
- 
+
 	tbl = mvc_bind_table(m, sch, tname);
 	if (tbl == NULL) {
 		msg = createException (MAL, "lidar.exporttable", SQLSTATE(LI000) "Table %s is missing.\n", tname);
@@ -388,7 +388,7 @@ str LIDARexportTable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (cols[0] == NULL || cols[1] == NULL || cols[2] == NULL) {
 		msg = createException(MAL, "lidar.exporttable", SQLSTATE(LI000) "Could not locate a column with name 'x', 'y', or 'z'.");
 		return msg;
-	} 
+	}
 	//bats_dbl[0] = mvc_bind(m, *sname, *tname, *cname, *access);
 	bats_dbl[0] = store_funcs.bind_col(tr, cols[0], 0);
 	bats_dbl[1] = store_funcs.bind_col(tr, cols[1], 0);
@@ -581,7 +581,7 @@ LIDARtest(int *res, str *fname)
 	MT_lock_unset(&mt_lidar_lock);
 
 	if (LASError_GetErrorCount() != 0) {
-		msg = createException(MAL, "lidar.test", SQLSTATE(LI000) "Error accessing LIDAR file %s (%s)", 
+		msg = createException(MAL, "lidar.test", SQLSTATE(LI000) "Error accessing LIDAR file %s (%s)",
 		*fname, LASError_GetLastErrorMsg());
 	} else 	{
 		header=LASReader_GetHeader(reader);
@@ -591,7 +591,7 @@ LIDARtest(int *res, str *fname)
                 if (reader != NULL) LASReader_Destroy(reader);
 		MT_lock_unset(&mt_lidar_lock);
 		if (LASError_GetErrorCount() != 0) {
-			msg = createException(MAL, "lidar.test", SQLSTATE(LI000) "Error accessing LIDAR file %s (%s)", 
+			msg = createException(MAL, "lidar.test", SQLSTATE(LI000) "Error accessing LIDAR file %s (%s)",
 			*fname, LASError_GetLastErrorMsg());
 		}
 	}
@@ -641,7 +641,7 @@ str LIDARattach(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
         reader = LASReader_Create(fname);
 	MT_lock_unset(&mt_lidar_lock);
 	if (LASError_GetErrorCount() != 0) {
-		msg = createException(MAL, "lidar.test", SQLSTATE(LI000) "Error accessing LIDAR file %s (%s)", 
+		msg = createException(MAL, "lidar.test", SQLSTATE(LI000) "Error accessing LIDAR file %s (%s)",
 		fname, LASError_GetLastErrorMsg());
 		return msg;
 	}
@@ -649,7 +649,7 @@ str LIDARattach(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	/* get the header */
 	header = LASReader_GetHeader(reader);
 	if (!header) {
-		msg = createException(MAL, "lidar.test", SQLSTATE(LI000) "Error accessing LIDAR file %s (%s)", 
+		msg = createException(MAL, "lidar.test", SQLSTATE(LI000) "Error accessing LIDAR file %s (%s)",
 		fname, LASError_GetLastErrorMsg());
 		return msg;
 	}
@@ -714,7 +714,7 @@ str LIDARattach(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		msg = createException(SQL, "lidar.attach", SQLSTATE(LI000) "Table %s already exists\n", tname_low);
 		return msg;
 	}
-	
+
 	/* read values from the header */
 	FileSourceId = LASHeader_GetFileSourceId(header);
 	VersionMajor = LASHeader_GetVersionMajor(header);
@@ -934,7 +934,7 @@ str LIDARloadTable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	reader = LASReader_Create(fname);
 	MT_lock_unset(&mt_lidar_lock);
 	if (LASError_GetErrorCount() != 0) {
-		msg = createException(MAL, "lidar.lidarload", SQLSTATE(LI000) "Error accessing LIDAR file %s (%s)", 
+		msg = createException(MAL, "lidar.lidarload", SQLSTATE(LI000) "Error accessing LIDAR file %s (%s)",
 		fname, LASError_GetLastErrorMsg());
 		return msg;
 	}
@@ -942,7 +942,7 @@ str LIDARloadTable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	/* get the header */
 	header = LASReader_GetHeader(reader);
 	if (!header) {
-		msg = createException(MAL, "lidar.lidarload", SQLSTATE(LI000) "Error accessing LIDAR file %s (%s)", 
+		msg = createException(MAL, "lidar.lidarload", SQLSTATE(LI000) "Error accessing LIDAR file %s (%s)",
 		fname, LASError_GetLastErrorMsg());
 		return msg;
 	}
@@ -1049,7 +1049,7 @@ str LIDARloadTable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	store_funcs.append_col(m->session->tr, colz, z, TYPE_bat);
 
 	TRC_DEBUG(LIDAR, "Total time: %d ms\n", GDKms() - time0);
-	
+
 	BBPrelease(x->batCacheid);
 	BBPrelease(y->batCacheid);
 	BBPrelease(z->batCacheid);

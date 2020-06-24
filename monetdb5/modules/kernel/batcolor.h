@@ -33,4 +33,4 @@ mal_export str CLRbatCb(bat *ret, const bat *l);
 mal_export str CLRbatHsv(bat *ret, const bat *l, const bat *bid2, const bat *bid3);
 mal_export str CLRbatRgb(bat *ret, const bat *l, const bat *bid2, const bat *bid3);
 mal_export str CLRbatycc(bat *ret, const bat *l, const bat *bid2, const bat *bid3);
-#endif 
+#endif

@@ -143,13 +143,13 @@ SQLall(ptr ret, const bat *bid)
 		ocmp = ATOMcompare(b->ttype);
 		for (q = 0; q < r; q++) { /* find first non nil */
 			p = BUNtail(bi, q);
-			if (ocmp(n, p) != 0) 
+			if (ocmp(n, p) != 0)
 				break;
 		}
 		for (; q < r; q++) {
 			const void *c = BUNtail(bi, q);
 			if (ocmp(p, c) != 0) { /* values != */
-				if (ocmp(n, c) != 0) { /* and not nil */ 
+				if (ocmp(n, c) != 0) { /* and not nil */
 					p = n;
 					break;
 				}
@@ -228,7 +228,7 @@ SQLall_grp(bat *ret, const bat *bid, const bat *gp, const bat *gpe, bit *no_nil)
 			BBPunfix(e->batCacheid);
 			throw(SQL, "sql.all =", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		}
-		for (s = 0; s < BATcount(e); s++) 
+		for (s = 0; s < BATcount(e); s++)
 			pos[s] = -1;
 
 		offset = g->hseqbase - l->hseqbase;
@@ -381,7 +381,7 @@ SQLnil_grp(bat *ret, const bat *bid, const bat *gp, const bat *gpe, bit *no_nil)
 	return MAL_SUCCEED;
 }
 
-str 
+str
 SQLany_cmp(bit *ret, const bit *cmp, const bit *nl, const bit *nr)
 {
 	*ret = FALSE;
@@ -394,7 +394,7 @@ SQLany_cmp(bit *ret, const bit *cmp, const bit *nl, const bit *nr)
 	return MAL_SUCCEED;
 }
 
-str 
+str
 SQLall_cmp(bit *ret, const bit *cmp, const bit *nl, const bit *nr)
 {
 	*ret = TRUE;
@@ -404,7 +404,7 @@ SQLall_cmp(bit *ret, const bit *cmp, const bit *nl, const bit *nr)
 		*ret = FALSE;
 	else if (*nl == TRUE || *nr == TRUE)
 		*ret = bit_nil;
-	else 
+	else
 		*ret = *cmp;
 	return MAL_SUCCEED;
 }

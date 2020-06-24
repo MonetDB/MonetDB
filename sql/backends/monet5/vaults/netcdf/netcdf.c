@@ -49,8 +49,8 @@ fix_quote( char *n, int l)
 {
 	int i;
 
-	for(i=0;i<l;i++) 
-		if (n[i]=='\'') 
+	for(i=0;i<l;i++)
+		if (n[i]=='\'')
 			n[i] = ' ';
 }
 
@@ -232,7 +232,7 @@ NCDFattach(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	int vdims[NC_MAX_VAR_DIMS];
 
 	size_t dlen, alen;
-	char dname[NC_MAX_NAME+1], vname[NC_MAX_NAME+1], aname[NC_MAX_NAME +1], 
+	char dname[NC_MAX_NAME+1], vname[NC_MAX_NAME+1], aname[NC_MAX_NAME +1],
 		abuf[80], *aval;
 	char **dims = NULL;
 	nc_type vtype, atype; /* == int */
@@ -257,14 +257,14 @@ NCDFattach(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	tvardim = mvc_bind_table(m, sch, "netcdf_vardim");
 	tattrs = mvc_bind_table(m, sch, "netcdf_attrs");
 
-	if (tfiles == NULL || tdims == NULL || tvars == NULL || 
+	if (tfiles == NULL || tdims == NULL || tvars == NULL ||
 	    tvardim == NULL || tattrs == NULL)
         return createException(MAL, "netcdf.attach", SQLSTATE(NC000) "Catalog table missing\n");
 
 	/* check if the file is already attached */
 	col = mvc_bind_column(m, tfiles, "location");
 	rid = table_funcs.column_find_row(m->session->tr, col, fname, NULL);
-	if (!is_oid_nil(rid)) 
+	if (!is_oid_nil(rid))
 	    return createException(SQL, "netcdf.attach", SQLSTATE(NC000) "File %s is already attached\n", fname);
 
 	/* Open NetCDF file  */
@@ -324,7 +324,7 @@ header: %s", nc_strerror(retval));
 	/* Read variables and attributes from the header and insert rows in netcdf_vars, netcdf_vardims, and netcdf_attrs tables */
 	for (vidx = 0; vidx < nvars; vidx++){
 	    if ( (retval = nc_inq_var(ncid, vidx, vname, &vtype, &vndims, vdims, &vnatts)))
-	        return createException(MAL, "netcdf.attach", 
+	        return createException(MAL, "netcdf.attach",
 								   SQLSTATE(NC000) "Cannot read variable %d : %s",
 								   vidx, nc_strerror(retval));
 
@@ -761,7 +761,7 @@ NCDFimportVariable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	/* Open NetCDF file  */
 	if ((retval = nc_open(fname, NC_NOWRITE, &ncid))) {
-		char *msg = createException(MAL, "netcdf.importvar", SQLSTATE(NC000) "Cannot open NetCDF file %s: %s", 
+		char *msg = createException(MAL, "netcdf.importvar", SQLSTATE(NC000) "Cannot open NetCDF file %s: %s",
 			   fname, nc_strerror(retval));
 		GDKfree(fname);
 		return msg;

@@ -49,7 +49,7 @@
  * SAMPLE is been treated as LIMIT, ORDER BY, etc., that means that it can only
  * be in the outer most SELECT clause, i.e., SAMPLE cannot appear in a
  * subquery. However, if this is needed, then one may define a function, for
- * example 
+ * example
  *
  * CREATE FUNCTION mysample ()
  * RETURNS TABLE(col a,...)

@@ -104,7 +104,7 @@ getAddress(str fcnname)
 	 * the first argument must be the same as the base name of the
 	 * library that is created in src/tools */
 	dl = mdlopen(SO_PREFIX "monetdb5" SO_EXT, RTLD_NOW | RTLD_GLOBAL);
-	if (dl == NULL) 
+	if (dl == NULL)
 		return NULL;
 
 	adr = (MALfcn) dlsym(dl, fcnname);

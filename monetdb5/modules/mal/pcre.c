@@ -1423,7 +1423,7 @@ pcre_match_with_flags(bit *ret, const char *val, const char *pat, const char *fl
 	}
 
 #ifdef HAVE_LIBPCRE
-	if ((re = pcre_compile(pat, options, &err_p, &errpos, NULL)) == NULL) 
+	if ((re = pcre_compile(pat, options, &err_p, &errpos, NULL)) == NULL)
 #else
 		if ((errcode = regcomp(&re, pat, options)) != 0)
 #endif
@@ -2214,7 +2214,7 @@ pcrejoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr,
 #endif
 	}
 
-	TRC_DEBUG(ALGO, 
+	TRC_DEBUG(ALGO,
 			  "pcrejoin(l=%s#" BUNFMT "[%s]%s%s,"
 			  "r=%s#" BUNFMT "[%s]%s%s,sl=%s#" BUNFMT "%s%s,"
 			  "sr=%s#" BUNFMT "%s%s)\n",
@@ -2415,7 +2415,7 @@ pcrejoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr,
 	} else {
 		r1->tseqbase = r2->tseqbase = 0;
 	}
-	TRC_DEBUG(ALGO, 
+	TRC_DEBUG(ALGO,
 			  "pcrejoin(l=%s,r=%s)=(%s#"BUNFMT"%s%s,%s#"BUNFMT"%s%s\n",
 			  BATgetId(l), BATgetId(r),
 			  BATgetId(r1), BATcount(r1),

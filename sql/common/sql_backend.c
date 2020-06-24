@@ -105,7 +105,7 @@ backend_schema_user_dependencies(ptr trans, sqlid schema_id)
 	return NULL;
 }
 
-int	
+int
 backend_resolve_function(ptr M, sql_func *f)
 {
 	if (be_funcs.fresolve_function != NULL)

@@ -45,7 +45,7 @@
 		 (0xffffffffffffffff&long_long_SWAP(h>>64)))
 #endif
 
-static lng 
+static lng
 mnstr_swap_lng(stream *s, lng lngval) {
 	return mnstr_get_swapbytes(s) ? long_long_SWAP(lngval) : lngval;
 }
@@ -722,7 +722,7 @@ static void *
 _ASCIIadt_frStr(Column *c, int type, const char *s)
 {
 	ssize_t len;
-	const char *e; 
+	const char *e;
 
 	if (type == TYPE_str) {
 		sql_column *col = (sql_column *) c->extra;
@@ -973,7 +973,7 @@ mvc_import_table(Client cntxt, BAT ***bats, mvc *m, bstream *bs, sql_table *t, c
 			}
 		}
 		if ( (locked || (msg = TABLETcreate_bats(&as, (BUN) (sz < 0 ? 1000 : sz))) == MAL_SUCCEED)  ){
-			if (!sz || (SQLload_file(cntxt, &as, bs, out, sep, rsep, ssep ? ssep[0] : 0, offset, sz, best, from_stdin, t->base.name) != BUN_NONE && 
+			if (!sz || (SQLload_file(cntxt, &as, bs, out, sep, rsep, ssep ? ssep[0] : 0, offset, sz, best, from_stdin, t->base.name) != BUN_NONE &&
 				(best || !as.error))) {
 				*bats = (BAT**) GDKzalloc(sizeof(BAT *) * as.nr_attrs);
 				if ( *bats == NULL){
@@ -1440,7 +1440,7 @@ static int write_str_term(stream* s, const char* const val) {
 }
 
 // align to 8 bytes
-static char* 
+static char*
 eight_byte_align(char* ptr) {
 	return (char*) (((size_t) ptr + 7) & ~7);
 }
@@ -1564,8 +1564,8 @@ mvc_export_table_prot10(backend *b, stream *s, res_table *t, BAT *order, BUN off
 			}
 			if (row == srow) {
 				lng new_size = rowsize + 1024;
-				if (!mnstr_writeLng(s, (lng) -1) || 
-					!mnstr_writeLng(s, new_size) || 
+				if (!mnstr_writeLng(s, (lng) -1) ||
+					!mnstr_writeLng(s, new_size) ||
 					mnstr_flush(s) < 0) {
 					fres = -1;
 					goto cleanup;
@@ -1626,7 +1626,7 @@ mvc_export_table_prot10(backend *b, stream *s, res_table *t, BAT *order, BUN off
 					*((lng*)startbuf) = mnstr_swap_lng(s, buf - (startbuf + sizeof(lng)));
 				} else {
 					// for variable length strings and large fixed strings we use varints
-					// variable columns are prefixed by a length, 
+					// variable columns are prefixed by a length,
 					// but since we don't know the length yet, just skip over it for now
 					char *startbuf = buf;
 					buf += sizeof(lng);
@@ -2168,8 +2168,8 @@ mvc_export_head_prot10(backend *b, stream *s, int res_id, int only_header, int c
 
 	// protocol 10 result sets start with "*\n" followed by the binary data:
 	// [tableid][queryid][rowcount][colcount][timezone]
-	if (!mnstr_writeStr(s, "*\n") || 
-		!mnstr_writeInt(s, t->id) || 
+	if (!mnstr_writeStr(s, "*\n") ||
+		!mnstr_writeInt(s, t->id) ||
 		!mnstr_writeLng(s, (lng) t->query_id) ||
 		!mnstr_writeLng(s, count) || !mnstr_writeLng(s, (lng) t->nr_cols)) {
 		fres = -1;

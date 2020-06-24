@@ -451,7 +451,7 @@ IOprintf_(str *res, str format, ...)
 
 /*
 	if ( va_arg(ap, char *) != NULL){
-		GDKfree(buf); 
+		GDKfree(buf);
 		throw(MAL,"io.printf", "params %d and beyond ignored %s.\n",argc);
 	}
 */
@@ -605,9 +605,9 @@ IOexport(void *ret, bat *bid, str *fnme)
 	stream *s;
 
 	(void) ret;
-	if ((b = BATdescriptor(*bid)) == NULL) 
+	if ((b = BATdescriptor(*bid)) == NULL)
 		throw(MAL, "io.export", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
-	
+
 	s = open_wastream(*fnme);
 	if (s == NULL ){
 		BBPunfix(b->batCacheid);

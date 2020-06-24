@@ -496,7 +496,7 @@ mvc_trans(mvc *m)
 }
 
 static sql_trans *
-sql_trans_deref( sql_trans *tr ) 
+sql_trans_deref( sql_trans *tr )
 {
 	node *n, *m, *o;
 
@@ -507,7 +507,7 @@ sql_trans_deref( sql_trans *tr )
 		for ( m = s->tables.set->h; m; m = m->next) {
 			sql_table *t = m->data;
 
-			if (t->po) { 
+			if (t->po) {
 				sql_table *p = t->po;
 
 				if (t->base.rtime < p->base.rtime)
@@ -627,7 +627,7 @@ build up the hash (not copied in the trans dup)) */
 			 */
 			ctr = sql_trans_deref(ctr);
 		}
-		while (tr->parent != NULL && ok == SQL_OK) 
+		while (tr->parent != NULL && ok == SQL_OK)
 			tr = sql_trans_destroy(tr, true);
 		store_unlock();
 	}
@@ -637,7 +637,7 @@ build up the hash (not copied in the trans dup)) */
 	store_lock();
 	/* if there is nothing to commit reuse the current transaction */
 	if (tr->wtime == 0) {
-		if (!chain) 
+		if (!chain)
 			sql_trans_end(m->session, 1);
 		m->type = Q_TRANS;
 		msg = WLCcommit(m->clientid);
@@ -647,8 +647,8 @@ build up the hash (not copied in the trans dup)) */
 				freeException(other);
 			return msg;
 		}
-		TRC_INFO(SQL_TRANS, 
-			"Commit done (no changes)%s%.200s\n", 
+		TRC_INFO(SQL_TRANS,
+			"Commit done (no changes)%s%.200s\n",
 			m->query ? ", query: " : "",
 			m->query ? m->query : "");
 		return msg;
@@ -687,7 +687,7 @@ build up the hash (not copied in the trans dup)) */
 		sql_trans_begin(m->session);
 	store_unlock();
 	m->type = Q_TRANS;
-	TRC_INFO(SQL_TRANS, 
+	TRC_INFO(SQL_TRANS,
 		"Commit done%s%.200s\n",
 		m->query ? ", query: " : "",
 		m->query ? m->query : "");
@@ -705,7 +705,7 @@ mvc_rollback(mvc *m, int chain, const char *name, bool disabling_auto_commit)
 	store_lock();
 	sql_trans *tr = m->session->tr;
 	assert(m->session->tr && m->session->tr->active);	/* only abort an active transaction */
-	if (m->qc) 
+	if (m->qc)
 		qc_clean(m->qc, false);
 	if (name && name[0] != '\0') {
 		while (tr && (!tr->name || strcmp(tr->name, name) != 0))
@@ -725,7 +725,7 @@ mvc_rollback(mvc *m, int chain, const char *name, bool disabling_auto_commit)
 		}
 		m->session->tr = tr;	/* restart at savepoint */
 		m->session->status = tr->status;
-		if (tr->name) 
+		if (tr->name)
 			tr->name = NULL;
 		m->session->schema = find_sql_schema(m->session->tr, m->session->schema_name);
 	} else if (tr->parent) {
@@ -738,7 +738,7 @@ mvc_rollback(mvc *m, int chain, const char *name, bool disabling_auto_commit)
 		if (tr->wtime)
 			tr->status = 1;
 		sql_trans_end(m->session, 0);
-		if (chain) 
+		if (chain)
 			sql_trans_begin(m->session);
 	}
 	msg = WLCrollback(m->clientid);
@@ -748,7 +748,7 @@ mvc_rollback(mvc *m, int chain, const char *name, bool disabling_auto_commit)
 		return msg;
 	}
 	m->type = Q_TRANS;
-	TRC_INFO(SQL_TRANS, 
+	TRC_INFO(SQL_TRANS,
 		"Commit%s%s rolled back%s%s%.200s\n",
 		name ? " " : "", name ? name : "",
 		tr->wtime == 0 ? " (no changes)" : "",
@@ -757,7 +757,7 @@ mvc_rollback(mvc *m, int chain, const char *name, bool disabling_auto_commit)
 	return msg;
 }
 
-/* release all savepoints up including the given named savepoint 
+/* release all savepoints up including the given named savepoint
  * but keep the current changes.
  * */
 str
@@ -894,7 +894,7 @@ mvc_reset(mvc *m, bstream *rs, stream *ws, int debug)
 	store_lock();
 	if (tr && tr->parent) {
 		assert(m->session->tr->active == 0);
-		while (tr->parent->parent != NULL) 
+		while (tr->parent->parent != NULL)
 			tr = sql_trans_destroy(tr, true);
 	}
 	reset = sql_session_reset(m->session, 1 /*autocommit on*/);
@@ -1189,7 +1189,7 @@ sql_type *
 mvc_create_type(mvc *sql, sql_schema *s, const char *name, int digits, int scale, int radix, const char *impl)
 {
 	sql_type *t = NULL;
-	
+
 	TRC_DEBUG(SQL_TRANS, "Create type: %s\n", name);
 	t = sql_trans_create_type(sql->session->tr, s, name, digits, scale, radix, impl);
 	return t;
@@ -1254,7 +1254,7 @@ mvc_create_ukey(mvc *m, sql_table *t, const char *name, key_type kt)
 {
 	TRC_DEBUG(SQL_TRANS, "Create ukey: %s %u\n", t->base.name, (unsigned) kt);
 	if (t->persistence == SQL_DECLARED_TABLE)
-		return create_sql_ukey(m->sa, t, name, kt);	
+		return create_sql_ukey(m->sa, t, name, kt);
 	else
 		return (sql_ukey*)sql_trans_create_ukey(m->session->tr, t, name, kt);
 }
@@ -1273,7 +1273,7 @@ mvc_create_fkey(mvc *m, sql_table *t, const char *name, key_type kt, sql_key *rk
 {
 	TRC_DEBUG(SQL_TRANS, "Create fkey: %s %u %p\n", t->base.name, (unsigned) kt, rkey);
 	if (t->persistence == SQL_DECLARED_TABLE)
-		return create_sql_fkey(m->sa, t, name, kt, rkey, on_delete, on_update);	
+		return create_sql_fkey(m->sa, t, name, kt, rkey, on_delete, on_update);
 	else
 		return sql_trans_create_fkey(m->session->tr, t, name, kt, rkey, on_delete, on_update);
 }
@@ -1345,13 +1345,13 @@ mvc_drop_idx(mvc *m, sql_schema *s, sql_idx *i)
 		return sql_trans_drop_idx(m->session->tr, s, i->base.id, DROP_RESTRICT);
 }
 
-sql_trigger * 
+sql_trigger *
 mvc_create_trigger(mvc *m, sql_table *t, const char *name, sht time, sht orientation, sht event, const char *old_name, const char *new_name, const char *condition, const char *statement )
 {
 	sql_trigger *i;
-	
+
 	TRC_DEBUG(SQL_TRANS, "Create trigger: %s %d %d %d\n", t->base.name, time, orientation, event);
-	i = sql_trans_create_trigger(m->session->tr, t, name, time, orientation, 
+	i = sql_trans_create_trigger(m->session->tr, t, name, time, orientation,
 			event, old_name, new_name, condition, statement);
 	return i;
 }
@@ -1404,7 +1404,7 @@ sql_table *
 mvc_create_view(mvc *m, sql_schema *s, const char *name, int persistence, const char *sql, bit system)
 {
 	sql_table *t = NULL;
-	
+
 	TRC_DEBUG(SQL_TRANS, "Create view: %s %s %s\n", s->base.name, name, sql);
 	if (persistence == SQL_DECLARED_TABLE) {
 		t = create_sql_table(m->sa, name, tt_view, system, persistence, 0, 0);
@@ -1484,7 +1484,7 @@ sql_column *
 mvc_create_column(mvc *m, sql_table *t, const char *name, sql_subtype *tpe)
 {
 	TRC_DEBUG(SQL_TRANS, "Create column: %s %s %s\n", t->base.name, name, tpe->type->sqlname);
-	if (t->persistence == SQL_DECLARED_TABLE && (!t->s || strcmp(t->s->base.name, dt_schema))) 
+	if (t->persistence == SQL_DECLARED_TABLE && (!t->s || strcmp(t->s->base.name, dt_schema)))
 		/* declared tables should not end up in the catalog */
 		return create_sql_column(m->session->tr, t, name, tpe);
 	else
@@ -1531,23 +1531,23 @@ mvc_check_dependency(mvc * m, sqlid id, sql_dependency type, list *ignore_ids)
 
 	TRC_DEBUG(SQL_TRANS, "Check dependency on: %d\n", id);
 	switch (type) {
-		case OWNER_DEPENDENCY: 
+		case OWNER_DEPENDENCY:
 			dep_list = sql_trans_owner_schema_dependencies(m->session->tr, id);
 			break;
 		case SCHEMA_DEPENDENCY:
 			dep_list = sql_trans_schema_user_dependencies(m->session->tr, id);
 			break;
-		case TABLE_DEPENDENCY: 
+		case TABLE_DEPENDENCY:
 			dep_list = sql_trans_get_dependencies(m->session->tr, id, TABLE_DEPENDENCY, NULL);
 			break;
-		case VIEW_DEPENDENCY: 
+		case VIEW_DEPENDENCY:
 			dep_list = sql_trans_get_dependencies(m->session->tr, id, TABLE_DEPENDENCY, NULL);
 			break;
-		case FUNC_DEPENDENCY: 
+		case FUNC_DEPENDENCY:
 		case PROC_DEPENDENCY:
 			dep_list = sql_trans_get_dependencies(m->session->tr, id, FUNC_DEPENDENCY, ignore_ids);
 			break;
-		default: 
+		default:
 			dep_list =  sql_trans_get_dependencies(m->session->tr, id, COLUMN_DEPENDENCY, NULL);
 	}
 
@@ -1621,7 +1621,7 @@ mvc_access(mvc *m, sql_table *t, sht access)
 	return sql_trans_alter_access(m->session->tr, t, access);
 }
 
-int 
+int
 mvc_is_sorted(mvc *m, sql_column *col)
 {
 	TRC_DEBUG(SQL_TRANS, "Is sorted: %s\n", col->base.name);
@@ -1825,7 +1825,7 @@ stack_push_frame(mvc *sql, const char *name)
 }
 
 void
-stack_pop_until(mvc *sql, int top) 
+stack_pop_until(mvc *sql, int top)
 {
 	while (sql->topvars > top) {
 		sql_var *v = &sql->vars[--sql->topvars];
@@ -1839,7 +1839,7 @@ stack_pop_until(mvc *sql, int top)
 	}
 }
 
-void 
+void
 stack_pop_frame(mvc *sql)
 {
 	while (!sql->vars[--sql->topvars].frame) {
@@ -1856,7 +1856,7 @@ stack_pop_frame(mvc *sql)
 			_DELETE(v->exp);
 		v->wdef = NULL;
 	}
-	if (sql->vars[sql->topvars].name)  
+	if (sql->vars[sql->topvars].name)
 		c_delete(sql->vars[sql->topvars].name);
 	sql->frame--;
 }
@@ -1899,7 +1899,7 @@ stack_find_rel_view(mvc *sql, const char *name)
 	return NULL;
 }
 
-void 
+void
 stack_update_rel_view(mvc *sql, const char *name, sql_rel *view)
 {
 	int i;
@@ -1913,7 +1913,7 @@ stack_update_rel_view(mvc *sql, const char *name, sql_rel *view)
 	}
 }
 
-int 
+int
 stack_find_var(mvc *sql, const char *name)
 {
 	int i;
@@ -1938,7 +1938,7 @@ stack_find_rel_var(mvc *sql, const char *name)
 	return NULL;
 }
 
-int 
+int
 frame_find_var(mvc *sql, const char *name)
 {
 	int i;
@@ -1956,7 +1956,7 @@ stack_find_frame(mvc *sql, const char *name)
 	int i, frame = sql->frame;
 
 	for (i = sql->topvars-1; i >= 0; i--) {
-		if (sql->vars[i].frame) 
+		if (sql->vars[i].frame)
 			frame--;
 		else if (sql->vars[i].name && strcmp(sql->vars[i].name, name)==0)
 			return frame;
@@ -2032,21 +2032,21 @@ stack_set_number(mvc *sql, const char *name, lng val)
 	if (a != NULL) {
 		ValRecord *v = &a->data;
 #ifdef HAVE_HGE
-		if (v->vtype == TYPE_hge) 
+		if (v->vtype == TYPE_hge)
 			v->val.hval = val;
 #endif
-		if (v->vtype == TYPE_lng) 
+		if (v->vtype == TYPE_lng)
 			v->val.lval = val;
-		if (v->vtype == TYPE_int) 
+		if (v->vtype == TYPE_int)
 			v->val.lval = (int) val;
-		if (v->vtype == TYPE_sht) 
+		if (v->vtype == TYPE_sht)
 			v->val.lval = (sht) val;
-		if (v->vtype == TYPE_bte) 
+		if (v->vtype == TYPE_bte)
 			v->val.lval = (bte) val;
 		if (v->vtype == TYPE_bit) {
 			if (val)
 				v->val.btval = 1;
-			else 
+			else
 				v->val.btval = 0;
 		}
 	}
@@ -2057,22 +2057,22 @@ hge
 #else
 lng
 #endif
-val_get_number(ValRecord *v) 
+val_get_number(ValRecord *v)
 {
 	if (v != NULL) {
 #ifdef HAVE_HGE
-		if (v->vtype == TYPE_hge) 
+		if (v->vtype == TYPE_hge)
 			return v->val.hval;
 #endif
-		if (v->vtype == TYPE_lng) 
+		if (v->vtype == TYPE_lng)
 			return v->val.lval;
-		if (v->vtype == TYPE_int) 
+		if (v->vtype == TYPE_int)
 			return v->val.ival;
-		if (v->vtype == TYPE_sht) 
+		if (v->vtype == TYPE_sht)
 			return v->val.shval;
-		if (v->vtype == TYPE_bte) 
+		if (v->vtype == TYPE_bte)
 			return v->val.btval;
-		if (v->vtype == TYPE_bit) 
+		if (v->vtype == TYPE_bit)
 			if (v->val.btval)
 				return 1;
 		return 0;

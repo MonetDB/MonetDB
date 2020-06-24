@@ -25,7 +25,7 @@ OPTpostfixImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 
 	(void) cntxt;
 	(void) stk;
-	
+
 	slimit = mb->stop;
 	setVariableScope(mb);
 	/* Remove the result from any join/group instruction when it is not used later on */

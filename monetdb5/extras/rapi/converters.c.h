@@ -135,8 +135,8 @@ bat_to_sexp(BAT* b, int type)
 					} else {
 						//Type stored as int but no implementation to decode into native R type
 						BAT_TO_INTSXP(b, int, varvalue, 1);
-					}			
-				}			
+					}
+				}
 			}
 			break;
 		default:

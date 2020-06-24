@@ -28,7 +28,7 @@ exps_simplify_exp(mvc *sql, list *exps, int *changes)
 	for (node *n=exps->h; n && !needed; n = n->next) {
 		sql_exp *e = n->data;
 
-		needed = (exp_is_true(sql, e) || exp_is_false(sql, e) || (is_compare(e->type) && e->flag == cmp_or)); 
+		needed = (exp_is_true(sql, e) || exp_is_false(sql, e) || (is_compare(e->type) && e->flag == cmp_or));
 	}
 	/* if there's only one expression and it is false, we have to keep it */
 	if (list_length(exps) == 1 && exp_is_false(sql, exps->h->data))
@@ -38,16 +38,16 @@ exps_simplify_exp(mvc *sql, list *exps, int *changes)
 		sql->caching = 0;
 		for (node *n=exps->h; n; n = n->next) {
 			sql_exp *e = n->data;
-	
+
 			/* TRUE or X -> TRUE
 		 	* FALSE or X -> X */
 			if (is_compare(e->type) && e->flag == cmp_or) {
 				list *l = e->l = exps_simplify_exp(sql, e->l, changes);
-				list *r = e->r = exps_simplify_exp(sql, e->r, changes); 
+				list *r = e->r = exps_simplify_exp(sql, e->r, changes);
 
 				if (list_length(l) == 1) {
-					sql_exp *ie = l->h->data; 
-	
+					sql_exp *ie = l->h->data;
+
 					if (exp_is_true(sql, ie)) {
 						(*changes)++;
 						continue;
@@ -61,8 +61,8 @@ exps_simplify_exp(mvc *sql, list *exps, int *changes)
 					continue;
 				}
 				if (list_length(r) == 1) {
-					sql_exp *ie = r->h->data; 
-	
+					sql_exp *ie = r->h->data;
+
 					if (exp_is_true(sql, ie)) {
 						(*changes)++;
 						continue;
@@ -114,7 +114,7 @@ rewrite_simplify_exp(mvc *sql, sql_rel *rel, sql_exp *e, int depth, int *changes
 		if (is_func(ie->type) && list_length(ie->l) == 1 && is_not_func(sf)) {
 			args = ie->l;
 
-			ie = args->h->data;	
+			ie = args->h->data;
 			if (exp_name(e))
 				exp_prop_alias(sql->sa, ie, e);
 			(*changes)++;
@@ -136,11 +136,11 @@ rewrite_simplify_exp(mvc *sql, sql_rel *rel, sql_exp *e, int depth, int *changes
 		 * FALSE or X -> X */
 		if (is_compare(e->type) && e->flag == cmp_or) {
 			list *l = e->l = exps_simplify_exp(sql, e->l, changes);
-			list *r = e->r = exps_simplify_exp(sql, e->r, changes); 
+			list *r = e->r = exps_simplify_exp(sql, e->r, changes);
 
 			sql->caching = 0;
 			if (list_length(l) == 1) {
-				sql_exp *ie = l->h->data; 
+				sql_exp *ie = l->h->data;
 
 				if (exp_is_true(sql, ie)) {
 					(*changes)++;
@@ -154,7 +154,7 @@ rewrite_simplify_exp(mvc *sql, sql_rel *rel, sql_exp *e, int depth, int *changes
 				return exp_atom_bool(sql->sa, 1);
 			}
 			if (list_length(r) == 1) {
-				sql_exp *ie = r->h->data; 
+				sql_exp *ie = r->h->data;
 
 				if (exp_is_true(sql, ie)) {
 					(*changes)++;
@@ -195,7 +195,7 @@ rel_remove_empty_select(mvc *sql, sql_rel *rel, int *changes)
 			l->l = NULL;
 			rel_destroy(l);
 			(*changes)++;
-		} 
+		}
 	}
 	if ((is_join(rel->op) || is_semi(rel->op) || is_set(rel->op)) && rel->r) {
 		sql_rel *r = rel->r;
@@ -205,8 +205,8 @@ rel_remove_empty_select(mvc *sql, sql_rel *rel, int *changes)
 			rel_destroy(r);
 			(*changes)++;
 		}
-	} 
-	if (is_join(rel->op) && list_empty(rel->exps)) 
+	}
+	if (is_join(rel->op) && list_empty(rel->exps))
 		rel->exps = NULL; /* crossproduct */
 	return rel;
 }

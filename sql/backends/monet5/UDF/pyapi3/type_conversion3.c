@@ -90,7 +90,7 @@ str pyobject_to_blob(PyObject **ptr, size_t maxsize, blob **value) {
 		goto wrapup;
 	}
 	obj = *ptr;
-	
+
 	(void)maxsize;
 #ifndef IS_PY3K
 	if (PyString_CheckExact(obj)) {

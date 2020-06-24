@@ -789,7 +789,7 @@ scanner_body(mvc *c)
 	return LEX_ERROR;
 }
 
-static int 
+static int
 keyword_or_ident(mvc * c, int cur)
 {
 	struct scanner *lc = &c->scanner;
@@ -805,20 +805,20 @@ keyword_or_ident(mvc * c, int cur)
 			utf8_putchar(lc, cur);
 			(void)scanner_token(lc, IDENT);
 			k = find_keyword_bs(lc,s);
-			if (k) 
+			if (k)
 				lc->yyval = k->token;
 			/* find keyword in SELECT/JOIN/UNION FUNCTIONS */
-			else if (sql_find_func(c->sa, cur_schema(c), lc->rs->buf+lc->rs->pos+s, -1, F_FILT, NULL)) 
+			else if (sql_find_func(c->sa, cur_schema(c), lc->rs->buf+lc->rs->pos+s, -1, F_FILT, NULL))
 				lc->yyval = FILTER_FUNC;
 			return lc->yyval;
 		}
 	}
 	(void)scanner_token(lc, IDENT);
 	k = find_keyword_bs(lc,s);
-	if (k) 
+	if (k)
 		lc->yyval = k->token;
 	/* find keyword in SELECT/JOIN/UNION FUNCTIONS */
-	else if (sql_find_func(c->sa, cur_schema(c), lc->rs->buf+lc->rs->pos+s, -1, F_FILT, NULL)) 
+	else if (sql_find_func(c->sa, cur_schema(c), lc->rs->buf+lc->rs->pos+s, -1, F_FILT, NULL))
 		lc->yyval = FILTER_FUNC;
 	return lc->yyval;
 }
@@ -834,7 +834,7 @@ skip_white_space(struct scanner * lc)
 	return cur;
 }
 
-static int 
+static int
 skip_c_comment(struct scanner * lc)
 {
 	int cur;
@@ -859,7 +859,7 @@ skip_c_comment(struct scanner * lc)
 	return cur == EOF ? cur : '\n';
 }
 
-static int 
+static int
 skip_sql_comment(struct scanner * lc)
 {
 	int cur;
@@ -876,7 +876,7 @@ skip_sql_comment(struct scanner * lc)
 
 static int tokenize(mvc * lc, int cur);
 
-static int 
+static int
 number(mvc * c, int cur)
 {
 	struct scanner *lc = &c->scanner;
@@ -885,16 +885,16 @@ number(mvc * c, int cur)
 
 	lc->started = 1;
 	if (cur == '0' && (cur = scanner_getc(lc)) == 'x') {
-		while ((cur = scanner_getc(lc)) != EOF && 
-		       (iswdigit(cur) || 
-				 (cur >= 'A' && cur <= 'F') || 
+		while ((cur = scanner_getc(lc)) != EOF &&
+		       (iswdigit(cur) ||
+				 (cur >= 'A' && cur <= 'F') ||
 				 (cur >= 'a' && cur <= 'f')))
-			token = HEXADECIMAL; 
+			token = HEXADECIMAL;
 		if (token == sqlINT)
 			before_cur = 'x';
 	} else {
 		if (iswdigit(cur))
-			while ((cur = scanner_getc(lc)) != EOF && iswdigit(cur)) 
+			while ((cur = scanner_getc(lc)) != EOF && iswdigit(cur))
 				;
 		if (cur == '@') {
 			token = OIDNUM;
@@ -905,16 +905,16 @@ number(mvc * c, int cur)
 
 		if (cur == '.') {
 			token = INTNUM;
-	
-			while ((cur = scanner_getc(lc)) != EOF && iswdigit(cur)) 
+
+			while ((cur = scanner_getc(lc)) != EOF && iswdigit(cur))
 				;
 		}
 		if (cur == 'e' || cur == 'E') {
 			token = APPROXNUM;
 			cur = scanner_getc(lc);
-			if (cur == '-' || cur == '+') 
+			if (cur == '-' || cur == '+')
 				token = 0;
-			while ((cur = scanner_getc(lc)) != EOF && iswdigit(cur)) 
+			while ((cur = scanner_getc(lc)) != EOF && iswdigit(cur))
 				token = APPROXNUM;
 		}
 	}
@@ -952,7 +952,7 @@ int scanner_symbol(mvc * c, int cur)
 				return EOF;
 			return tokenize(c, cur);
 		} else {
-			utf8_putchar(lc, next); 
+			utf8_putchar(lc, next);
 			return scanner_token(lc, cur);
 		}
 	case '0':
@@ -990,14 +990,14 @@ int scanner_symbol(mvc * c, int cur)
 			return tokenize(c, cur);
 		}
 		lc->started = 1;
-		utf8_putchar(lc, next); 
+		utf8_putchar(lc, next);
 		return scanner_token(lc, cur);
 	case '~': /* binary not */
 		lc->started = 1;
 		next = scanner_getc(lc);
-		if (next == '=') 
+		if (next == '=')
 			return scanner_token(lc, GEOM_MBR_EQUAL);
-		utf8_putchar(lc, next); 
+		utf8_putchar(lc, next);
 		return scanner_token(lc, cur);
 	case '^': /* binary xor */
 	case '*':
@@ -1065,7 +1065,7 @@ int scanner_symbol(mvc * c, int cur)
 				return scanner_token( lc, COMPARISON);
 			}
 		} else {
-			utf8_putchar(lc, cur); 
+			utf8_putchar(lc, cur);
 			return scanner_token( lc, COMPARISON);
 		}
 	case '>':
@@ -1075,10 +1075,10 @@ int scanner_symbol(mvc * c, int cur)
 			cur = scanner_getc(lc);
 			if (cur == '=')
 				return scanner_token( lc, RIGHT_SHIFT_ASSIGN);
-			utf8_putchar(lc, cur); 
+			utf8_putchar(lc, cur);
 			return scanner_token( lc, RIGHT_SHIFT);
 		} else if (cur != '=') {
-			utf8_putchar(lc, cur); 
+			utf8_putchar(lc, cur);
 			return scanner_token( lc, COMPARISON);
 		} else {
 			return scanner_token( lc, COMPARISON);
@@ -1087,10 +1087,10 @@ int scanner_symbol(mvc * c, int cur)
 		lc->started = 1;
 		cur = scanner_getc(lc);
 		if (!iswdigit(cur)) {
-			utf8_putchar(lc, cur); 
+			utf8_putchar(lc, cur);
 			return scanner_token( lc, '.');
 		} else {
-			utf8_putchar(lc, cur); 
+			utf8_putchar(lc, cur);
 			cur = '.';
 			return number(c, cur);
 		}
@@ -1118,7 +1118,7 @@ int scanner_symbol(mvc * c, int cur)
 				return scanner_token(lc, '|');
 			}
 		} else {
-			utf8_putchar(lc, cur); 
+			utf8_putchar(lc, cur);
 			return scanner_token(lc, '|');
 		}
 	}
@@ -1126,7 +1126,7 @@ int scanner_symbol(mvc * c, int cur)
 	return LEX_ERROR;
 }
 
-static int 
+static int
 tokenize(mvc * c, int cur)
 {
 	struct scanner *lc = &c->scanner;
@@ -1189,12 +1189,12 @@ tokenize(mvc * c, int cur)
 	}
 }
 
-/* SQL 'quoted' idents consist of a set of any character of 
- * the source language character set other than a 'quote' 
+/* SQL 'quoted' idents consist of a set of any character of
+ * the source language character set other than a 'quote'
  *
  * MonetDB has 2 restrictions:
  * 	1 we disallow '%' as the first character.
- * 	2 the length is limited to 1024 characters 
+ * 	2 the length is limited to 1024 characters
  */
 static bool
 valid_ident(const char *restrict s, char *restrict dst)
@@ -1400,7 +1400,7 @@ sqllex(YYSTYPE * yylval, void *parm)
 		}
 	}
 
-	if (lc->log) 
+	if (lc->log)
 		mnstr_write(lc->log, lc->rs->buf+pos, lc->rs->pos + lc->yycur - pos, 1);
 
 	/* Don't include literals in the calculation of the key */

@@ -20,7 +20,7 @@ typedef struct store_sequence {
 
 static list *sql_seqs = NULL;
 
-static void 
+static void
 sequence_destroy( store_sequence *s )
 {
 	_DELETE(s);
@@ -43,15 +43,15 @@ sequences_exit(void)
 }
 
 /* lock is held */
-static void 
-sql_update_sequence_cache(sql_sequence *seq, lng cached) 
+static void
+sql_update_sequence_cache(sql_sequence *seq, lng cached)
 {
 	logger_funcs.log_sequence(seq->base.id, cached);
 }
 
 /* lock is held */
 static store_sequence *
-sql_create_sequence(sql_sequence *seq ) 
+sql_create_sequence(sql_sequence *seq )
 {
 	lng id = 0;
 	store_sequence *s = NULL;
@@ -106,7 +106,7 @@ seq_restart(sql_sequence *seq, lng start)
 		return 0;
 	}
 	sql_update_sequence_cache(seq, s->cached);
-	store_unlock(); 
+	store_unlock();
 	return 1;
 }
 
@@ -156,11 +156,11 @@ seq_next_value(sql_sequence *seq, lng *val)
 	if (save || nr == s->cached) {
 		s->cached = nr + seq->cacheinc*seq->increment;
 		sql_update_sequence_cache(seq, s->cached);
-		store_unlock(); 
+		store_unlock();
 		return 1;
 	}
 	assert(nr<s->cached);
-	store_unlock(); 
+	store_unlock();
 	return 1;
 }
 

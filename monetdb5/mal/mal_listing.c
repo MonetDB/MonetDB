@@ -17,17 +17,17 @@
 #include "mal_exception.h"
 #include "mal_listing.h"
 
-/* 
+/*
  * Since MAL programs can be created on the fly by linked-in query
  * compilers, or transformed by optimizers, it becomes
  * mandatory to be able to produce textual correct MAL programs
  * from its internal representation for several purposes.
- * 
+ *
  * Whenever there is an overriding property it is applied.
- * 
+ *
  * The hiddenInstruction operator assumes a sufficiently large block
  * to leave information on the signature behind.
- * 
+ *
  * The protection against overflow is not tight.
 */
 #define advance(X,B,L)  while(*(X) && B+L>X)(X)++;
@@ -80,7 +80,7 @@ renderTerm(MalBlkPtr mb, MalStkPtr stk, InstrPtr p, int idx, int flg)
 		nme = getVarName(mb,varid);
 		len +=snprintf(buf, maxlen, "%s", nme);
 		nameused =1;
-	} 
+	}
 	// show the value when required or being a constant
 	if( ((flg & LIST_MAL_VALUE) && stk != 0) || isVarConstant(mb,varid) ){
 		if (nameused){
@@ -116,8 +116,8 @@ renderTerm(MalBlkPtr mb, MalStkPtr stk, InstrPtr p, int idx, int flg)
 			strcat(buf+len,cv);
 			len += strlen(buf+len);
 			GDKfree(cv);
-			showtype = showtype || (getBatType(getVarType(mb,varid)) >= TYPE_date && getBatType(getVarType(mb,varid)) != TYPE_str) || 
-				((isVarUDFtype(mb,varid) || isVarTypedef(mb,varid)) && isVarConstant(mb,varid)) || isaBatType(getVarType(mb,varid)); 
+			showtype = showtype || (getBatType(getVarType(mb,varid)) >= TYPE_date && getBatType(getVarType(mb,varid)) != TYPE_str) ||
+				((isVarUDFtype(mb,varid) || isVarTypedef(mb,varid)) && isVarConstant(mb,varid)) || isaBatType(getVarType(mb,varid));
 		} else{
 			if ( !isaBatType(getVarType(mb,varid)) && getBatType(getVarType(mb,varid)) >= TYPE_date && getBatType(getVarType(mb,varid)) != TYPE_str ){
 				closequote = 1;
@@ -487,7 +487,7 @@ instruction2str(MalBlkPtr mb, MalStkPtr stk,  InstrPtr p, int flg)
 
 /* the MAL beautifier is meant to simplify correlation of MAL variables and
  * the columns in the underlying database.
- * If the status is set, then we consider the instruction DONE and the result variables 
+ * If the status is set, then we consider the instruction DONE and the result variables
  * should be shown as well.
  */
 
@@ -617,13 +617,13 @@ void showMalBlkHistory(stream *out, MalBlkPtr mb)
 		if( p->token == REMsymbol){
 			msg= instruction2str(m, 0, p, FALSE);
 			if (msg ) {
-				mnstr_printf(out,"%s.%s[%2d] %s\n", 
+				mnstr_printf(out,"%s.%s[%2d] %s\n",
 					getModuleId(sig), getFunctionId(sig),j++,msg+3);
 				GDKfree(msg);
 			} else {
 				mnstr_printf(out,"#failed instruction2str()\n");
 			}
-		} 
+		}
 		m= m->history;
 	}
 }

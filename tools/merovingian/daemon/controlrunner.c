@@ -158,7 +158,7 @@ control_authorise(
 		stream *fout)
 {
 	char *pwd;
-	
+
 	if (getConfNum(_mero_props, "control") == 0 ||
 			getConfVal(_mero_props, "passphrase") == NULL)
 	{

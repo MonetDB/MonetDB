@@ -12,7 +12,7 @@
 #include "mal_interpreter.h"
 #include "mal_function.h"
 
-//#define VLT_DEBUG 
+//#define VLT_DEBUG
 
 #ifdef WIN32
 #ifndef LIBGENERATOR

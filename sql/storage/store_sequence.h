@@ -24,7 +24,7 @@ typedef struct seqbulk {
 	void *internal_seq;
 	sql_sequence *seq;
 	BUN cnt;
-	int save; 
+	int save;
 } seqbulk;
 
 extern seqbulk *seqbulk_create(sql_sequence *seq, BUN cnt);

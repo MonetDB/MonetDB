@@ -7,9 +7,9 @@
  */
 
 /*
- * Clients gain access to the Monet server through a internet connection.  
- * Access through the internet requires a client program at the source, 
- * which addresses the default port of a running server. It is a textual 
+ * Clients gain access to the Monet server through a internet connection.
+ * Access through the internet requires a client program at the source,
+ * which addresses the default port of a running server. It is a textual
  * interface for expert use.
  *
  * At the server side, each client is represented by a session record
@@ -18,7 +18,7 @@
  * control.
  *
  * The number of clients permitted concurrent access is a run time
- * option. 
+ * option.
  *
  * Client sessions remain in existence until the corresponding
  * communication channels break.
@@ -51,7 +51,7 @@
 int MAL_MAXCLIENTS = 0;
 ClientRec *mal_clients = NULL;
 
-void 
+void
 mal_client_reset(void)
 {
 	MAL_MAXCLIENTS = 0;
@@ -492,7 +492,7 @@ MCstopClients(Client cntxt)
 	for(c = mal_clients;  c < mal_clients+MAL_MAXCLIENTS; c++)
 	if (cntxt != c){
 		if (c->mode == RUNCLIENT)
-			c->mode = FINISHCLIENT; 
+			c->mode = FINISHCLIENT;
 		else if (c->mode == FREECLIENT)
 			c->mode = BLOCKCLIENT;
 	}
@@ -555,7 +555,7 @@ MCawakeClient(int id)
  *
  * The default action is to read information from an ascii-stream one
  * line at a time. This is the preferred mode for reading from terminal.
- * 
+ *
  * The next statement block is to be read. Send a prompt to warn the
  * front-end to issue the request.
  */

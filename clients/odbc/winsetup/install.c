@@ -13,7 +13,7 @@
 
 #ifdef __MINGW32__
 #define DLL "-0.dll"
-#else 
+#else
 #define DLL ".dll"
 #endif
 
@@ -60,7 +60,7 @@ ProcessSysErrorMessage(DWORD err, const char *func)
 	LocalFree(lpMsgBuf);
 }
 
-int 
+int
 CheckIfFileExists(const char *filepath, const char *filename)
 {
 	char buf[300];

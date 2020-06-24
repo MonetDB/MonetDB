@@ -9,7 +9,7 @@
 /* Author(s) M.L. Kersten
  * The MAL Runtime Profiler and system queue
  * This little helper module is used to perform instruction based profiling.
- * The QRYqueue is only update at the start/finish of a query. 
+ * The QRYqueue is only update at the start/finish of a query.
  * It is also the place to keep track on the number of workers
  * The current could relies on a scan rather than a hash.
  */
@@ -41,7 +41,7 @@ mal_runtime_reset(void)
 	qtag= 1;
 }
 
-static str 
+static str
 isaSQLquery(MalBlkPtr mb){
 	int i;
 	InstrPtr p;
@@ -73,7 +73,7 @@ runtimeProfileInit(Client cntxt, MalBlkPtr mb, MalStkPtr stk)
 		QRYqueue = (QueryQueue) GDKrealloc( QRYqueue, sizeof (struct QRYQUEUE) * (size_t) (qsize += 256));
 	if ( QRYqueue == NULL){
 		addMalException(mb,"runtimeProfileInit" MAL_MALLOC_FAIL);
-		GDKfree(tmp);			
+		GDKfree(tmp);
 		MT_lock_unset(&mal_delayLock);
 		return;
 	}
@@ -222,7 +222,7 @@ runtimeProfileExit(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, Runt
 	pci->ticks = ticks - prof->ticks;
 	pci->totticks += pci->ticks;
 	pci->calls++;
-	
+
 	if(malProfileMode > 0 )
 		profilerEvent(cntxt, mb, stk, pci, FALSE);
 	if( cntxt->sqlprofiler )
@@ -249,8 +249,8 @@ getBatSpace(BAT *b){
 		return 0;
 	space += BATcount(b) * b->twidth;
 	if( space){
-		if( b->tvheap) space += heapinfo(b->tvheap, b->batCacheid); 
-		space += hashinfo(b->thash, b->batCacheid); 
+		if( b->tvheap) space += heapinfo(b->tvheap, b->batCacheid);
+		space += hashinfo(b->thash, b->batCacheid);
 		space += IMPSimprintsize(b);
 	}
 	return space;

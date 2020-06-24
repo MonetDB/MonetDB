@@ -289,7 +289,7 @@
 static gdk_return
 convert_and_append(BAT* b, const char* text, bool force) {
 	if (b->ttype == TYPE_str) {
-		return BUNappend(b, text, force);	
+		return BUNappend(b, text, force);
 	} else if (text == str_nil) {
 		return BUNappend(b, BATatoms[b->ttype].atomNull, force);
 	} else {

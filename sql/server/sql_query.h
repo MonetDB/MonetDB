@@ -41,4 +41,4 @@ extern int query_outer_aggregated(sql_query *q, int i, sql_exp *e);
 extern int query_outer_used_card(sql_query *q, int i);
 extern sql_exp *query_outer_last_used(sql_query *q, int i);
 
-#endif 
+#endif

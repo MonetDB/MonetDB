@@ -25,7 +25,7 @@ if(P->typechk == TYPE_UNKNOWN){\
 	setFunctionId(series[I], seriesRef);\
 	typeChecker(cntxt->usermodule, mb, series[I], I, TRUE);\
 }\
-pushInstruction(mb,P); 
+pushInstruction(mb,P);
 
 #define casting(TPE)\
 			k= getArg(p,1);\
@@ -56,7 +56,7 @@ pushInstruction(mb,P);
 			series[getArg(p,0)] = p;\
 			pushInstruction(mb,p);
 
-str 
+str
 OPTgeneratorImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	InstrPtr p,q, *old, *series;
@@ -93,7 +93,7 @@ OPTgeneratorImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
 		GDKfree(series);
 		return 0;
 	}
-	
+
 	if (newMalBlkStmt(mb, mb->ssize) < 0) {
 		GDKfree(series);
 		throw(MAL,"optimizer.generator", SQLSTATE(HY013) MAL_MALLOC_FAIL);
@@ -102,7 +102,7 @@ OPTgeneratorImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
 	for( i=0; i < limit; i++){
 		p = old[i];
 		if (p->token == ENDsymbol){
-			pushInstruction(mb,p); 
+			pushInstruction(mb,p);
 			break;
 		}
 		if ( getModuleId(p) == generatorRef && getFunctionId(p) == seriesRef){
@@ -110,7 +110,7 @@ OPTgeneratorImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
 			setModuleId(p, generatorRef);
 			setFunctionId(p, parametersRef);
 			typeChecker(cntxt->usermodule, mb, p, i, TRUE);
-			pushInstruction(mb,p); 
+			pushInstruction(mb,p);
 		} else if ( getModuleId(p) == algebraRef && getFunctionId(p) == selectRef && series[getArg(p,1)]){
 			errorCheck(p,i, algebraRef,getArg(p,1));
 		} else if ( getModuleId(p) == algebraRef && getFunctionId(p) == thetaselectRef && series[getArg(p,1)]){

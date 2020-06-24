@@ -544,7 +544,7 @@ forkMserver(char *database, sabdb** stats, bool force)
 				 "--dbtrace=%s", dbtrace);
 		argv[c++] = dbtrace_path;
 	}
-	
+
 	if (mydoproxy) {
 		argv[c++] = set; argv[c++] = "mapi_open=false";
 		/* we "proxy", so we can just solely use UNIX domain sockets
