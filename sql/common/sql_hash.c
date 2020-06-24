@@ -20,7 +20,6 @@ log_base2(unsigned int n)
 	return l ;
 }
 
-
 sql_hash *
 hash_new(sql_allocator *sa, int size, fkeyvalue key)
 {
@@ -62,7 +61,7 @@ hash_del(sql_hash *h, int key, void *value)
 		e = e->chain;
 	}
 	if (e) {
-		if (p) 
+		if (p)
 			p->chain = e->chain;
 		else
 			h->buckets[key&(h->size-1)] = e->chain;

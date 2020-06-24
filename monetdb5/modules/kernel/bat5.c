@@ -226,7 +226,7 @@ BKCmirror(bat *ret, const bat *bid)
 	return MAL_SUCCEED;
 }
 
-char *
+str
 BKCdelete(bat *r, const bat *bid, const oid *h)
 {
 	BAT *b;
@@ -274,7 +274,7 @@ BKCdelete_all(bat *r, const bat *bid)
 		throw(MAL, "bat.delete", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 	if (BATclear(b, false) != GDK_SUCCEED) {
 		BBPunfix(b->batCacheid);
-		throw(MAL, "bat.delete_all", GDK_EXCEPTION);
+		throw(MAL, "bat.delete", GDK_EXCEPTION);
 	}
 	if( !b->batTransient)
 		BATmsync(b);
@@ -282,7 +282,7 @@ BKCdelete_all(bat *r, const bat *bid)
 	return MAL_SUCCEED;
 }
 
-char *
+str
 BKCappend_cand_force_wrap(bat *r, const bat *bid, const bat *uid, const bat *sid, const bit *force)
 {
 	BAT *b, *u, *s = NULL;
@@ -315,19 +315,19 @@ BKCappend_cand_force_wrap(bat *r, const bat *bid, const bat *uid, const bat *sid
 	return MAL_SUCCEED;
 }
 
-char *
+str
 BKCappend_cand_wrap(bat *r, const bat *bid, const bat *uid, const bat *sid)
 {
 	return BKCappend_cand_force_wrap(r, bid, uid, sid, NULL);
 }
 
-char *
+str
 BKCappend_wrap(bat *r, const bat *bid, const bat *uid)
 {
 	return BKCappend_cand_force_wrap(r, bid, uid, NULL, NULL);
 }
 
-char *
+str
 BKCappend_force_wrap(bat *r, const bat *bid, const bat *uid, const bit *force)
 {
 	return BKCappend_cand_force_wrap(r, bid, uid, NULL, force);
@@ -514,7 +514,7 @@ BKCgetKey(bit *ret, const bat *bid)
 {
 	BAT *b;
 
-	if ((b = BATdescriptor(*bid)) == NULL) 
+	if ((b = BATdescriptor(*bid)) == NULL)
 		throw(MAL, "bat.setPersistence", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 	*ret = BATkeyed(b);
 	BBPunfix(b->batCacheid);
@@ -790,7 +790,7 @@ BKCgetSize(lng *tot, const bat *bid){
 		if (b->thash)
 			size += ROUND_UP(sizeof(BUN) * cnt, blksize);
 		size += IMPSimprintsize(b);
-	} 
+	}
 	*tot = size;
 	BBPunfix(*bid);
 	return MAL_SUCCEED;

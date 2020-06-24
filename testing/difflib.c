@@ -548,10 +548,14 @@ lwc_diff2html(char *old_fn, char *new_fn, char *lwc_diff_fn, char *html_fn, char
 		fprintf(stderr, "syntax or malloc error\n");
 		exit(1);
 	}
-	old_time = strchr(old, '\t');
-	*old_time++ = '\0';
-	new_time = strchr(new, '\t');
-	*new_time++ = '\0';
+	if ((old_time = strchr(old, '\t')) != NULL)
+		*old_time++ = '\0';
+	else
+		old_time = "";
+	if ((new_time = strchr(new, '\t')) != NULL)
+		*new_time++ = '\0';
+	else
+		new_time = "";
 	fprintf(html_fp, "<thead><tr><th colspan='3' align='center' class='colhead'><a href='%s'>%s%s</a> %s</th>", filename(old), filename(old_fn), revision, old_time);
 	fprintf(html_fp, "<th></th>");
 	fprintf(html_fp, "<th colspan='3' align='center' class='colhead'><a href='%s'>%s</a> %s</th></tr></thead>\n", new, new_fn, new_time);

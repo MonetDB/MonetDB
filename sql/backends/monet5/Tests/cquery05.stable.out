@@ -28,8 +28,8 @@ stdout of test 'cquery05` in directory 'sql/backends/monet5` itself:
 #	insert into cqresult05 (select count(*) from cqresult05);
 #end;
 #select 'RESULT';
-% . # table_name
-% single_value # name
+% .%2 # table_name
+% %2 # name
 % char # type
 % 6 # length
 [ "RESULT"	]

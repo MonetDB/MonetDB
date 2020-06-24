@@ -30,7 +30,7 @@ RQcall2str(MalBlkPtr mb, InstrPtr p)
 	msg[1]=0;
 	if( p->barrier)
 		strcat(msg, operatorName(p->barrier));
-	
+
 	if( p->retc > 1) strcat(msg,"(");
 	len = strlen(msg);
 	for (k = 0; k < p->retc; k++) {
@@ -190,7 +190,7 @@ OPTremoteQueriesImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrP
 				cnt++;
 
 		/* detect remote variable binding */
-		
+
 		if( (getModuleId(p)== mapiRef && getFunctionId(p)==bindRef)){
 			if( p->argc == 3 && getArgType(mb,p,1) == TYPE_int ) {
 				int tpe;

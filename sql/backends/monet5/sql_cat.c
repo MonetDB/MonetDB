@@ -163,6 +163,10 @@ validate_alter_table_add_table(mvc *sql, char* call, char *msname, char *mtname,
 	node *n = cs_find_id(&rmt->members, rpt->base.id);
 	if (isView(rpt))
 		throw(SQL,call,SQLSTATE(42000) "ALTER TABLE: can't add a view into a %s", errtable);
+	if (isDeclaredTable(rpt))
+		throw(SQL,call,SQLSTATE(42000) "ALTER TABLE: can't add a declared table into a %s", errtable);
+	if (isTempSchema(rpt->s))
+		throw(SQL,call,SQLSTATE(42000) "ALTER TABLE: can't add a temporary table into a %s", errtable);
 	if (ms->base.id != ps->base.id)
 		throw(SQL,call,SQLSTATE(42000) "ALTER TABLE: all children tables of '%s.%s' must be part of schema '%s'", msname, mtname, msname);
 	if (n && !update)
@@ -173,7 +177,7 @@ validate_alter_table_add_table(mvc *sql, char* call, char *msname, char *mtname,
 		return msg;
 
 	*mt = rmt;
-	*pt = rpt;	
+	*pt = rpt;
 	return MAL_SUCCEED;
 }
 
@@ -183,22 +187,25 @@ alter_table_add_table(mvc *sql, char *msname, char *mtname, char *psname, char *
 	sql_table *mt = NULL, *pt = NULL;
 	str msg = validate_alter_table_add_table(sql, "sql.alter_table_add_table", msname, mtname, psname, ptname, &mt, &pt, 0);
 
-	if (msg == MAL_SUCCEED)
+	if (msg == MAL_SUCCEED) {
+		if (isRangePartitionTable(mt))
+			return createException(SQL, "sql.alter_table_add_table",SQLSTATE(42000) "ALTER TABLE: a range partition is required while adding under a range partition table");
+		if (isListPartitionTable(mt))
+			return createException(SQL, "sql.alter_table_add_table",SQLSTATE(42000) "ALTER TABLE: a value partition is required while adding under a list partition table");
 		sql_trans_add_table(sql->session->tr, mt, pt);
-
+	}
 	return msg;
 }
 
 static char *
 alter_table_add_range_partition(mvc *sql, char *msname, char *mtname, char *psname, char *ptname, ptr min, ptr max,
-								int with_nills, int update)
+								bit with_nills, int update)
 {
 	sql_table *mt = NULL, *pt = NULL;
 	sql_part *err = NULL;
 	str msg = MAL_SUCCEED, err_min = NULL, err_max = NULL, conflict_err_min = NULL, conflict_err_max = NULL;
 	int tp1 = 0, errcode = 0, min_null = 0, max_null = 0;
 	size_t length = 0;
-	ssize_t (*atomtostr)(str *, size_t *, const void *, bool);
 	sql_subtype tpe;
 
 	if ((msg = validate_alter_table_add_table(sql, "sql.alter_table_add_range_partition", msname, mtname, psname, ptname,
@@ -207,11 +214,11 @@ alter_table_add_range_partition(mvc *sql, char *msname, char *mtname, char *psna
 	} else if (!isRangePartitionTable(mt)) {
 		msg = createException(SQL,"sql.alter_table_add_range_partition",SQLSTATE(42000)
 									"ALTER TABLE: cannot add range partition into a %s table",
-									(mt->type == tt_merge_table)?"merge":"list partition");
+									(isListPartitionTable(mt))?"list partition":"merge");
 		goto finish;
 	} else if (!update && pt->p) {
 		msg = createException(SQL,"sql.alter_table_add_range_partition",SQLSTATE(42000)
-							  "ALTER TABLE: table %s.%s is already part of another range partition table",
+							  "ALTER TABLE: table '%s.%s' is already part of another table",
 							  psname, ptname);
 		goto finish;
 	}
@@ -221,10 +228,7 @@ alter_table_add_range_partition(mvc *sql, char *msname, char *mtname, char *psna
 	min_null = ATOMcmp(tp1, min, ATOMnilptr(tp1)) == 0;
 	max_null = ATOMcmp(tp1, max, ATOMnilptr(tp1)) == 0;
 
-	if (max_null && min_null && !with_nills) {
-		msg = createException(SQL,"sql.alter_table_add_range_partition",SQLSTATE(42000) "ALTER TABLE: range bound cannot be null");
-		goto finish;
-	} else if (!min_null && !max_null && ATOMcmp(tp1, min, max) > 0) {
+	if (!min_null && !max_null && ATOMcmp(tp1, min, max) > 0) {
 		msg = createException(SQL,"sql.alter_table_add_range_partition",SQLSTATE(42000) "ALTER TABLE: minimum value is higher than maximum value");
 		goto finish;
 	}
@@ -246,26 +250,57 @@ alter_table_add_range_partition(mvc *sql, char *msname, char *mtname, char *psna
 			break;
 		case -4:
 			assert(err);
-			if (with_nills && err->with_nills) {
+			if (is_bit_nil(err->with_nills)) {
+				msg = createException(SQL,"sql.alter_table_add_range_partition",SQLSTATE(42000)
+										"ALTER TABLE: conflicting partitions: table %s.%s stores every possible value", err->t->s->base.name, err->base.name);
+			} else if (with_nills && err->with_nills) {
 				msg = createException(SQL,"sql.alter_table_add_range_partition",SQLSTATE(42000)
 										"ALTER TABLE: conflicting partitions: table %s.%s stores null values and only "
 										"one partition can store null values at the time", err->t->s->base.name, err->base.name);
 			} else {
-				atomtostr = BATatoms[tp1].atomToStr;
-				if (atomtostr(&conflict_err_min, &length, err->part.range.minvalue, true) < 0) {
+				ssize_t (*atomtostr)(str *, size_t *, const void *, bool) = BATatoms[tp1].atomToStr;
+				const void *nil = ATOMnilptr(tp1);
+				sql_table *errt = mvc_bind_table(sql, mt->s, err->base.name);
+
+				if (!ATOMcmp(tp1, nil, err->part.range.minvalue)) {
+					if (!(conflict_err_min = GDKstrdup("absolute min value")))
+						msg = createException(SQL,"sql.alter_table_add_range_partition",SQLSTATE(HY013) MAL_MALLOC_FAIL);
+				} else if (atomtostr(&conflict_err_min, &length, err->part.range.minvalue, true) < 0) {
 					msg = createException(SQL,"sql.alter_table_add_range_partition",SQLSTATE(HY013) MAL_MALLOC_FAIL);
+				}
+				if (msg)
+					goto finish;
+
+				if (!ATOMcmp(tp1, nil, err->part.range.maxvalue)) {
+					if (!(conflict_err_max = GDKstrdup("absolute max value")))
+						msg = createException(SQL,"sql.alter_table_add_range_partition",SQLSTATE(HY013) MAL_MALLOC_FAIL);
 				} else if (atomtostr(&conflict_err_max, &length, err->part.range.maxvalue, true) < 0) {
 					msg = createException(SQL,"sql.alter_table_add_range_partition",SQLSTATE(HY013) MAL_MALLOC_FAIL);
+				}
+				if (msg)
+					goto finish;
+
+				if (!ATOMcmp(tp1, nil, min)) {
+					if (!(err_min = GDKstrdup("absolute min value")))
+						msg = createException(SQL,"sql.alter_table_add_range_partition",SQLSTATE(HY013) MAL_MALLOC_FAIL);
 				} else if (atomtostr(&err_min, &length, min, true) < 0) {
 					msg = createException(SQL,"sql.alter_table_add_range_partition",SQLSTATE(HY013) MAL_MALLOC_FAIL);
+				}
+				if (msg)
+					goto finish;
+
+				if (!ATOMcmp(tp1, nil, max)) {
+					if (!(err_max = GDKstrdup("absolute max value")))
+						msg = createException(SQL,"sql.alter_table_add_range_partition",SQLSTATE(HY013) MAL_MALLOC_FAIL);
 				} else if (atomtostr(&err_max, &length, max, true) < 0) {
 					msg = createException(SQL,"sql.alter_table_add_range_partition",SQLSTATE(HY013) MAL_MALLOC_FAIL);
-				} else {
-					sql_table *errt = mvc_bind_table(sql, mt->s, err->base.name);
-					msg = createException(SQL,"sql.alter_table_add_range_partition",SQLSTATE(42000)
+				}
+				if (msg)
+					goto finish;
+
+				msg = createException(SQL,"sql.alter_table_add_range_partition",SQLSTATE(42000)
 									  "ALTER TABLE: conflicting partitions: %s to %s and %s to %s from table %s.%s",
 									  err_min, err_max, conflict_err_min, conflict_err_max, errt->s->base.name, errt->base.name);
-				}
 			}
 			break;
 		default:
@@ -288,7 +323,7 @@ finish:
 
 static char *
 alter_table_add_value_partition(mvc *sql, MalStkPtr stk, InstrPtr pci, char *msname, char *mtname, char *psname,
-								char *ptname, int with_nills, int update)
+								char *ptname, bit with_nills, int update)
 {
 	sql_table *mt = NULL, *pt = NULL;
 	str msg = MAL_SUCCEED;
@@ -297,17 +332,18 @@ alter_table_add_value_partition(mvc *sql, MalStkPtr stk, InstrPtr pci, char *msn
 	list *values = list_new(sql->session->tr->sa, (fdestroy) NULL);
 	sql_subtype tpe;
 
+	assert(with_nills == false || with_nills == true); /* No nills allowed here */
 	if ((msg = validate_alter_table_add_table(sql, "sql.alter_table_add_value_partition", msname, mtname, psname, ptname,
 											 &mt, &pt, update))) {
 		return msg;
 	} else if (!isListPartitionTable(mt)) {
 		msg = createException(SQL,"sql.alter_table_add_value_partition",SQLSTATE(42000)
 									"ALTER TABLE: cannot add value partition into a %s table",
-									(mt->type == tt_merge_table)?"merge":"range partition");
+									(isRangePartitionTable(mt))?"range partition":"merge");
 		goto finish;
 	} else if (!update && pt->p) {
 		msg = createException(SQL,"sql.alter_table_add_value_partition",SQLSTATE(42000)
-							  "ALTER TABLE: table %s.%s is already part of another list partition table",
+							  "ALTER TABLE: table '%s.%s' is already part of another table",
 							  psname, ptname);
 		goto finish;
 	}
@@ -331,12 +367,11 @@ alter_table_add_value_partition(mvc *sql, MalStkPtr stk, InstrPtr pci, char *msn
 		}
 
 		nextv = SA_ZNEW(sql->session->tr->sa, sql_part_value); /* instantiate the part value */
-		nextv->tpe = tpe;
 		nextv->value = sa_alloc(sql->session->tr->sa, len);
 		memcpy(nextv->value, pnext, len);
 		nextv->length = len;
 
-		if (list_append_sorted(values, nextv, sql_values_list_element_validate_and_insert) != NULL) {
+		if (list_append_sorted(values, nextv, &tpe, sql_values_list_element_validate_and_insert) != NULL) {
 			msg = createException(SQL,"sql.alter_table_add_value_partition",SQLSTATE(42000)
 									"ALTER TABLE: there are duplicated values in the list");
 			goto finish;
@@ -388,7 +423,7 @@ alter_table_del_table(mvc *sql, char *msname, char *mtname, char *psname, char *
 	if (!isMergeTable(mt) && !isReplicaTable(mt))
 		throw(SQL,"sql.alter_table_del_table",SQLSTATE(42S02) "ALTER TABLE: cannot drop table '%s.%s' to %s '%s.%s'", psname, ptname, errtable, msname, mtname);
 	if (!(n = cs_find_id(&mt->members, pt->base.id)))
-		throw(SQL,"sql.alter_table_del_table",SQLSTATE(42S02) "ALTER TABLE: table '%s.%s' isn't part of the MERGE TABLE '%s.%s'", ps->base.name, ptname, ms->base.name, mtname);
+		throw(SQL,"sql.alter_table_del_table",SQLSTATE(42S02) "ALTER TABLE: table '%s.%s' isn't part of %s '%s.%s'", ps->base.name, ptname, errtable, ms->base.name, mtname);
 
 	sql_trans_del_table(sql->session->tr, mt, pt, drop_action);
 	return MAL_SUCCEED;
@@ -498,6 +533,12 @@ create_trigger(mvc *sql, char *sname, char *tname, char *triggername, int time, 
 		}
 		sa_destroy(sql->sa);
 		sql->sa = sa;
+		if (!r) {
+			if (strlen(sql->errstr) > 6 && sql->errstr[5] == '!')
+				throw(SQL, "sql.create_trigger", "%s", sql->errstr);
+			else
+				throw(SQL, "sql.create_trigger", SQLSTATE(42000) "%s", sql->errstr);
+		}
 	}
 	return MAL_SUCCEED;
 }
@@ -638,7 +679,7 @@ drop_index(Client cntxt, mvc *sql, char *sname, char *iname)
 	if (sname && !(s = mvc_bind_schema(sql, sname)))
 		throw(SQL,"sql.drop_index", SQLSTATE(3F000) "DROP INDEX: no such schema '%s'", sname);
 	if (!mvc_schema_privs(sql, s))
-		throw(SQL,"sql.drop_index", SQLSTATE(42000) "DROP INDEX: access denied for %s to schema '%s'", stack_get_string(sql, "current_user"), s->base.name); 
+		throw(SQL,"sql.drop_index", SQLSTATE(42000) "DROP INDEX: access denied for %s to schema '%s'", stack_get_string(sql, "current_user"), s->base.name);
 	if (!(i = mvc_bind_idx(sql, s, iname)))
 		throw(SQL,"sql.drop_index", SQLSTATE(42S12) "DROP INDEX: no such index '%s'", iname);
 	if (i->type == ordered_idx) {
@@ -858,9 +899,9 @@ create_func(mvc *sql, char *sname, char *fname, sql_func *f, sql_func *fo, int r
 
 		assert(nf->query);
 		if (!(sql->sa = sa_create()))
-			throw(SQL, "sql.catalog", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+			throw(SQL, "sql.create_func", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		if (!(buf = sa_strdup(sql->sa, nf->query)))
-			throw(SQL, "sql.catalog", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+			throw(SQL, "sql.create_func", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		r = rel_parse(sql, s, buf, m_deps);
 		if (r)
 			r = sql_processrelation(sql, r, 0);
@@ -872,7 +913,7 @@ create_func(mvc *sql, char *sname, char *fname, sql_func *f, sql_func *fo, int r
 				for (n = f->ops->h; n; n = n->next) {
 					sql_arg *a = n->data;
 
-					if (a->type.type->s) 
+					if (a->type.type->s)
 						mvc_create_dependency(sql, a->type.type->base.id, nf->base.id, TYPE_DEPENDENCY);
 				}
 			}
@@ -880,7 +921,7 @@ create_func(mvc *sql, char *sname, char *fname, sql_func *f, sql_func *fo, int r
 				for (n = f->res->h; n; n = n->next) {
 					sql_arg *a = n->data;
 
-					if (a->type.type->s) 
+					if (a->type.type->s)
 						mvc_create_dependency(sql, a->type.type->base.id, nf->base.id, TYPE_DEPENDENCY);
 				}
 			}
@@ -888,6 +929,12 @@ create_func(mvc *sql, char *sname, char *fname, sql_func *f, sql_func *fo, int r
 		}
 		sa_destroy(sql->sa);
 		sql->sa = sa;
+		if (!r) {
+			if (strlen(sql->errstr) > 6 && sql->errstr[5] == '!')
+				throw(SQL, "sql.create_func", "%s", sql->errstr);
+			else
+				throw(SQL, "sql.create_func", SQLSTATE(42000) "%s", sql->errstr);
+		}
 	}
 	default:
 		break;
@@ -1045,8 +1092,8 @@ str
 SQLcreate_seq(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {	mvc *sql = NULL;
 	str msg;
-	str sname = *getArgReference_str(stk, pci, 1); 
-	str seqname = *getArgReference_str(stk, pci, 2); 
+	str sname = *getArgReference_str(stk, pci, 1);
+	str seqname = *getArgReference_str(stk, pci, 2);
 	sql_sequence *s = *(sql_sequence **) getArgReference(stk, pci, 3);
 
 	initcontext();
@@ -1055,11 +1102,11 @@ SQLcreate_seq(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 }
 
 str
-SQLalter_seq(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) 
+SQLalter_seq(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {	mvc *sql = NULL;
 	str msg = MAL_SUCCEED;
-	str sname = *getArgReference_str(stk, pci, 1); 
-	str seqname = *getArgReference_str(stk, pci, 2); 
+	str sname = *getArgReference_str(stk, pci, 1);
+	str seqname = *getArgReference_str(stk, pci, 2);
 	sql_sequence *s = *(sql_sequence **) getArgReference(stk, pci, 3);
 	lng *val = NULL;
 	BAT *b = NULL;
@@ -1074,7 +1121,7 @@ SQLalter_seq(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			throw(SQL, "sql.alter_seq", SQLSTATE(HY005) "Cannot access column descriptor");
 		if (BATcount(b) != 1) {
 			BBPunfix(b->batCacheid);
-			throw(SQL, "sql.alter_seq", SQLSTATE(42000) "Only one value allowed to alter a sequence value");	
+			throw(SQL, "sql.alter_seq", SQLSTATE(42000) "Only one value allowed to alter a sequence value");
 		}
 		if (getBatType(getArgType(mb, pci, 4)) == TYPE_lng)
 			val = (lng*)Tloc(b, 0);
@@ -1091,10 +1138,10 @@ SQLalter_seq(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 }
 
 str
-SQLdrop_seq(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) 
+SQLdrop_seq(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {	mvc *sql = NULL;
 	str msg = MAL_SUCCEED;
-	str sname = *getArgReference_str(stk, pci, 1); 
+	str sname = *getArgReference_str(stk, pci, 1);
 	str name = *getArgReference_str(stk, pci, 2);
 
 	initcontext();
@@ -1103,7 +1150,7 @@ SQLdrop_seq(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 }
 
 str
-SQLcreate_schema(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) 
+SQLcreate_schema(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {	mvc *sql = NULL;
 	str msg = MAL_SUCCEED;
 	str sname = *getArgReference_str(stk, pci, 1);
@@ -1123,10 +1170,10 @@ SQLcreate_schema(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 }
 
 str
-SQLdrop_schema(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) 
+SQLdrop_schema(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {	mvc *sql = NULL;
 	str msg= MAL_SUCCEED;
-	str sname = *getArgReference_str(stk, pci, 1); 
+	str sname = *getArgReference_str(stk, pci, 1);
 	str notused = *getArgReference_str(stk, pci, 2);
 	int if_exists = *getArgReference_int(stk, pci, 3);
 	int action = *getArgReference_int(stk, pci, 4);
@@ -1159,7 +1206,7 @@ SQLdrop_schema(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 }
 
 str
-SQLcreate_table(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) 
+SQLcreate_table(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {	mvc *sql = NULL;
 	str msg;
 	str sname = *getArgReference_str(stk, pci, 1);
@@ -1173,7 +1220,7 @@ SQLcreate_table(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 }
 
 str
-SQLcreate_view(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) 
+SQLcreate_view(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {	mvc *sql = NULL;
 	str msg;
 	str sname = *getArgReference_str(stk, pci, 1);
@@ -1187,7 +1234,7 @@ SQLcreate_view(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 }
 
 str
-SQLdrop_table(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) 
+SQLdrop_table(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {	mvc *sql = NULL;
 	str msg;
 	str sname = *getArgReference_str(stk, pci, 1);
@@ -1201,7 +1248,7 @@ SQLdrop_table(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 }
 
 str
-SQLdrop_view(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) 
+SQLdrop_view(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {	mvc *sql = NULL;
 	str msg;
 	str sname = *getArgReference_str(stk, pci, 1);
@@ -1215,7 +1262,7 @@ SQLdrop_view(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 }
 
 str
-SQLdrop_constraint(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) 
+SQLdrop_constraint(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {	mvc *sql = NULL;
 	str msg;
 	str sname = *getArgReference_str(stk, pci, 1);
@@ -1229,11 +1276,11 @@ SQLdrop_constraint(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 }
 
 str
-SQLalter_table(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) 
+SQLalter_table(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {	mvc *sql = NULL;
 	str msg;
-	str sname = *getArgReference_str(stk, pci, 1); 
-	str tname = *getArgReference_str(stk, pci, 2); 
+	str sname = *getArgReference_str(stk, pci, 1);
+	str tname = *getArgReference_str(stk, pci, 2);
 	sql_table *t = *(sql_table **) getArgReference(stk, pci, 3);
 
 	(void)tname;
@@ -1243,10 +1290,10 @@ SQLalter_table(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 }
 
 str
-SQLcreate_type(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) 
+SQLcreate_type(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {	mvc *sql = NULL;
 	str msg;
-	str sname = *getArgReference_str(stk, pci, 1); 
+	str sname = *getArgReference_str(stk, pci, 1);
 	char *name = *getArgReference_str(stk, pci, 2);
 	char *impl = *getArgReference_str(stk, pci, 3);
 	sql_schema *s;
@@ -1266,10 +1313,10 @@ SQLcreate_type(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 }
 
 str
-SQLdrop_type(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) 
+SQLdrop_type(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {	mvc *sql = NULL;
 	str msg;
-	str sname = *getArgReference_str(stk, pci, 1); 
+	str sname = *getArgReference_str(stk, pci, 1);
 	char *name = *getArgReference_str(stk, pci, 2);
 	int drop_action = *getArgReference_int(stk, pci, 3);
 	sql_schema *s;
@@ -1292,10 +1339,10 @@ SQLdrop_type(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 }
 
 str
-SQLgrant_roles(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) 
+SQLgrant_roles(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {	mvc *sql = NULL;
 	str msg;
-	str sname = *getArgReference_str(stk, pci, 1); 
+	str sname = *getArgReference_str(stk, pci, 1);
 	char *auth = SaveArgReference(stk, pci, 2);
 	sqlid grantor = (sqlid) *getArgReference_int(stk, pci, 3);
 	int admin = *getArgReference_int(stk, pci, 4);
@@ -1306,10 +1353,10 @@ SQLgrant_roles(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 }
 
 str
-SQLrevoke_roles(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) 
+SQLrevoke_roles(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {	mvc *sql = NULL;
 	str msg;
-	str sname = *getArgReference_str(stk, pci, 1); 
+	str sname = *getArgReference_str(stk, pci, 1);
 	char *auth = SaveArgReference(stk, pci, 2);
 	sqlid grantor = (sqlid) *getArgReference_int(stk, pci, 3);
 	int admin = *getArgReference_int(stk, pci, 4);
@@ -1320,10 +1367,10 @@ SQLrevoke_roles(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 }
 
 str
-SQLgrant(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) 
+SQLgrant(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {	mvc *sql = NULL;
 	str msg;
-	str sname = *getArgReference_str(stk, pci, 1); 
+	str sname = *getArgReference_str(stk, pci, 1);
 	char *tname = *getArgReference_str(stk, pci, 2);
 	char *grantee = *getArgReference_str(stk, pci, 3);
 	int privs = *getArgReference_int(stk, pci, 4);
@@ -1339,10 +1386,10 @@ SQLgrant(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	return msg;
 }
 
-str SQLrevoke(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) 
+str SQLrevoke(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {	mvc *sql = NULL;
 	str msg;
-	str sname = *getArgReference_str(stk, pci, 1); 
+	str sname = *getArgReference_str(stk, pci, 1);
 	char *tname = *getArgReference_str(stk, pci, 2);
 	char *grantee = *getArgReference_str(stk, pci, 3);
 	int privs = *getArgReference_int(stk, pci, 4);
@@ -1359,7 +1406,7 @@ str SQLrevoke(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 }
 
 str
-SQLgrant_function(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) 
+SQLgrant_function(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {	mvc *sql = NULL;
 	str msg;
 	str sname = *getArgReference_str(stk, pci, 1);
@@ -1375,7 +1422,7 @@ SQLgrant_function(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 }
 
 str
-SQLrevoke_function(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) 
+SQLrevoke_function(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {	mvc *sql = NULL;
 	str msg;
 	str sname = *getArgReference_str(stk, pci, 1);
@@ -1391,10 +1438,10 @@ SQLrevoke_function(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 }
 
 str
-SQLcreate_user(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) 
+SQLcreate_user(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {	mvc *sql = NULL;
 	str msg;
-	str sname = *getArgReference_str(stk, pci, 1); 
+	str sname = *getArgReference_str(stk, pci, 1);
 	char *passwd = *getArgReference_str(stk, pci, 2);
 	int enc = *getArgReference_int(stk, pci, 3);
 	char *schema = SaveArgReference(stk, pci, 4);
@@ -1406,10 +1453,10 @@ SQLcreate_user(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 }
 
 str
-SQLdrop_user(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) 
+SQLdrop_user(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {	mvc *sql = NULL;
 	str msg;
-	str sname = *getArgReference_str(stk, pci, 1); 
+	str sname = *getArgReference_str(stk, pci, 1);
 
 	initcontext();
 	 msg = sql_drop_user(sql, sname);
@@ -1417,10 +1464,10 @@ SQLdrop_user(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 }
 
 str
-SQLalter_user(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) 
+SQLalter_user(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {	mvc *sql = NULL;
 	str msg;
-	str sname = *getArgReference_str(stk, pci, 1); 
+	str sname = *getArgReference_str(stk, pci, 1);
 	char *passwd = SaveArgReference(stk, pci, 2);
 	int enc = *getArgReference_int(stk, pci, 3);
 	char *schema = SaveArgReference(stk, pci, 4);
@@ -1433,10 +1480,10 @@ SQLalter_user(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 }
 
 str
-SQLrename_user(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) 
+SQLrename_user(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {	mvc *sql = NULL;
 	str msg;
-	str sname = *getArgReference_str(stk, pci, 1); 
+	str sname = *getArgReference_str(stk, pci, 1);
 	char *newuser = *getArgReference_str(stk, pci, 2);
 
 	initcontext();
@@ -1445,10 +1492,10 @@ SQLrename_user(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 }
 
 str
-SQLcreate_role(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) 
+SQLcreate_role(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {	mvc *sql = NULL;
 	str msg;
-	str sname = *getArgReference_str(stk, pci, 1); 
+	str sname = *getArgReference_str(stk, pci, 1);
 	char *role = sname;
 	sqlid grantor = (sqlid)*getArgReference_int(stk, pci, 3);
 
@@ -1458,10 +1505,10 @@ SQLcreate_role(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 }
 
 str
-SQLdrop_role(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) 
+SQLdrop_role(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {	mvc *sql = NULL;
 	str msg;
-	str sname = *getArgReference_str(stk, pci, 1); 
+	str sname = *getArgReference_str(stk, pci, 1);
 	char *role = sname;
 
 	initcontext();
@@ -1470,10 +1517,10 @@ SQLdrop_role(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 }
 
 str
-SQLdrop_index(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) 
+SQLdrop_index(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {	mvc *sql = NULL;
 	str msg;
-	str sname = *getArgReference_str(stk, pci, 1); 
+	str sname = *getArgReference_str(stk, pci, 1);
 	char *iname = *getArgReference_str(stk, pci, 2);
 
 	initcontext();
@@ -1527,10 +1574,10 @@ SQLchange_all_cp(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 }
 
 str
-SQLdrop_function(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) 
+SQLdrop_function(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {	mvc *sql = NULL;
 	str msg;
-	str sname = *getArgReference_str(stk, pci, 1); 
+	str sname = *getArgReference_str(stk, pci, 1);
 	char *fname = *getArgReference_str(stk, pci, 2);
 	sqlid fid = (sqlid)*getArgReference_int(stk, pci, 3);
 	sql_ftype type = (sql_ftype) *getArgReference_int(stk, pci, 4);
@@ -1542,11 +1589,11 @@ SQLdrop_function(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 }
 
 str
-SQLcreate_function(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) 
+SQLcreate_function(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {	mvc *sql = NULL;
 	str msg;
-	str sname = *getArgReference_str(stk, pci, 1); 
-	str fname = *getArgReference_str(stk, pci, 2); 
+	str sname = *getArgReference_str(stk, pci, 1);
+	str fname = *getArgReference_str(stk, pci, 2);
 	sql_func *f = *(sql_func **) getArgReference(stk, pci, 3);
 	sql_func *fo = *(sql_func **) getArgReference(stk, pci, 4);
 	int replace = *getArgReference_int(stk, pci, 5);
@@ -1557,10 +1604,10 @@ SQLcreate_function(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 }
 
 str
-SQLcreate_trigger(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) 
+SQLcreate_trigger(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {	mvc *sql = NULL;
 	str msg;
-	str sname = *getArgReference_str(stk, pci, 1); 
+	str sname = *getArgReference_str(stk, pci, 1);
 	char *tname = *getArgReference_str(stk, pci, 2);
 	char *triggername = *getArgReference_str(stk, pci, 3);
 	int time = *getArgReference_int(stk, pci, 4);
@@ -1572,18 +1619,18 @@ SQLcreate_trigger(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	char *query = *getArgReference_str(stk, pci, 10);
 
 	initcontext();
-	old_name=(strNil(old_name))?NULL:old_name; 
-	new_name=(strNil(new_name))?NULL:new_name; 
+	old_name=(strNil(old_name))?NULL:old_name;
+	new_name=(strNil(new_name))?NULL:new_name;
 	condition=(strNil(condition))?NULL:condition;
 	msg = create_trigger(sql, sname, tname, triggername, time, orientation, event, old_name, new_name, condition, query);
 	return msg;
 }
 
 str
-SQLdrop_trigger(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) 
+SQLdrop_trigger(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {	mvc *sql = NULL;
 	str msg;
-	str sname = *getArgReference_str(stk, pci, 1); 
+	str sname = *getArgReference_str(stk, pci, 1);
 	char *triggername = *getArgReference_str(stk, pci, 2);
 	int if_exists = *getArgReference_int(stk, pci, 3);
 
@@ -1593,10 +1640,10 @@ SQLdrop_trigger(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 }
 
 str
-SQLalter_add_table(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) 
+SQLalter_add_table(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {	mvc *sql = NULL;
 	str msg;
-	str sname = *getArgReference_str(stk, pci, 1); 
+	str sname = *getArgReference_str(stk, pci, 1);
 	char *mtname = SaveArgReference(stk, pci, 2);
 	char *psname = SaveArgReference(stk, pci, 3);
 	char *ptname = SaveArgReference(stk, pci, 4);
@@ -1616,7 +1663,7 @@ SQLalter_add_range_partition(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr
 	char *ptname = SaveArgReference(stk, pci, 4);
 	ValRecord *min = &(stk)->stk[(pci)->argv[5]];
 	ValRecord *max = &(stk)->stk[(pci)->argv[6]];
-	int with_nills = *getArgReference_int(stk, pci, 7);
+	bit with_nills = *getArgReference_bit(stk, pci, 7);
 	int update = *getArgReference_int(stk, pci, 8);
 
 	initcontext();
@@ -1632,7 +1679,7 @@ SQLalter_add_value_partition(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr
 	char *mtname = SaveArgReference(stk, pci, 2);
 	char *psname = SaveArgReference(stk, pci, 3);
 	char *ptname = SaveArgReference(stk, pci, 4);
-	int with_nills = *getArgReference_int(stk, pci, 5);
+	bit with_nills = *getArgReference_bit(stk, pci, 5);
 	int update = *getArgReference_int(stk, pci, 6);
 
 	initcontext();
@@ -1641,10 +1688,10 @@ SQLalter_add_value_partition(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr
 }
 
 str
-SQLalter_del_table(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) 
+SQLalter_del_table(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {	mvc *sql = NULL;
 	str msg;
-	str sname = *getArgReference_str(stk, pci, 1); 
+	str sname = *getArgReference_str(stk, pci, 1);
 	char *mtname = SaveArgReference(stk, pci, 2);
 	char *psname = SaveArgReference(stk, pci, 3);
 	char *ptname = SaveArgReference(stk, pci, 4);
@@ -1656,10 +1703,10 @@ SQLalter_del_table(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 }
 
 str
-SQLalter_set_table(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) 
+SQLalter_set_table(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {	mvc *sql = NULL;
 	str msg;
-	str sname = *getArgReference_str(stk, pci, 1); 
+	str sname = *getArgReference_str(stk, pci, 1);
 	char *tname = SaveArgReference(stk, pci, 2);
 	int access = *getArgReference_int(stk, pci, 3);
 
@@ -1790,6 +1837,10 @@ SQLrename_table(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			throw(SQL, "sql.rename_table", SQLSTATE(42S02) "ALTER TABLE: no such table '%s' in schema '%s'", otable_name, oschema_name);
 		if (t->system)
 			throw(SQL, "sql.rename_table", SQLSTATE(42000) "ALTER TABLE: cannot rename a system table");
+		if (isView(t))
+			throw(SQL, "sql.rename_table", SQLSTATE(42000) "ALTER TABLE: cannot rename a view");
+		if (isDeclaredTable(t))
+			throw(SQL, "sql.rename_table", SQLSTATE(42000) "ALTER TABLE: cannot rename a declared table");
 		if (mvc_check_dependency(sql, t->base.id, TABLE_DEPENDENCY, NULL))
 			throw (SQL,"sql.rename_table", SQLSTATE(2BM37) "ALTER TABLE: unable to rename table '%s' (there are database objects which depend on it)", otable_name);
 		if (strNil(ntable_name) || *ntable_name == '\0')
@@ -1810,10 +1861,12 @@ SQLrename_table(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			throw(SQL, "sql.rename_table", SQLSTATE(42S02) "ALTER TABLE: no such table '%s' in schema '%s'", otable_name, oschema_name);
 		if (t->system)
 			throw(SQL, "sql.rename_table", SQLSTATE(42000) "ALTER TABLE: cannot set schema of a system table");
-		if (isTempSchema(o) || isTempTable(t))
+		if (isTempSchema(o))
 			throw(SQL, "sql.rename_table", SQLSTATE(42000) "ALTER TABLE: not possible to change a temporary table schema");
 		if (isView(t))
 			throw(SQL, "sql.rename_table", SQLSTATE(42000) "ALTER TABLE: not possible to change schema of a view");
+		if (isDeclaredTable(t))
+			throw(SQL, "sql.rename_table", SQLSTATE(42000) "ALTER TABLE: not possible to change schema of a declared table");
 		if (mvc_check_dependency(sql, t->base.id, TABLE_DEPENDENCY, NULL))
 			throw(SQL, "sql.rename_table", SQLSTATE(2BM37) "ALTER TABLE: unable to set schema of table '%s' (there are database objects which depend on it)", otable_name);
 		if (t->members.set || t->triggers.set)
@@ -1858,6 +1911,8 @@ SQLrename_column(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		throw(SQL, "sql.rename_column", SQLSTATE(42000) "ALTER TABLE: cannot rename a column in a system table");
 	if (isView(t))
 		throw(SQL, "sql.rename_column", SQLSTATE(42000) "ALTER TABLE: cannot rename column '%s': '%s' is a view", old_name, table_name);
+	if (isDeclaredTable(t))
+		throw(SQL, "sql.rename_column", SQLSTATE(42000) "ALTER TABLE: cannot rename column in a declared table");
 	if (!(col = mvc_bind_column(sql, t, old_name)))
 		throw(SQL, "sql.rename_column", SQLSTATE(42S22) "ALTER TABLE: no such column '%s' in table '%s'", old_name, table_name);
 	if (mvc_check_dependency(sql, col->base.id, COLUMN_DEPENDENCY, NULL))

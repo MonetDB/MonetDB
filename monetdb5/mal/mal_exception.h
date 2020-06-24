@@ -45,7 +45,7 @@ mal_export str createException(enum malexception, const char *,
 	__attribute__((__format__(__printf__, 3, 4)))
 	__attribute__((__returns_nonnull__));
 /*FIXmal_export str createMalException(MalBlkPtr mb, int pc, enum malexception type, const char *prev, const char *format, ...);*/
-mal_export str createMalException(MalBlkPtr , int , enum malexception , 
+mal_export str createMalException(MalBlkPtr , int , enum malexception ,
 	_In_z_ _Printf_format_string_ const char *, ...)
 	__attribute__((__format__(__printf__, 4, 5)))
 	__attribute__((__returns_nonnull__));

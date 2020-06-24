@@ -123,7 +123,7 @@ fi
 case "$CL" in
 '')
     d=.
-    while [ ! -f $d/vertoo.data -a ! -f $d/ChangeLog -a ! -f $d/ChangeLog.$tag ]; do
+    while [ ! -f $d/.bumpversion.cfg -a ! -f $d/ChangeLog -a ! -f $d/ChangeLog.$tag ]; do
 	if [ $d -ef / ]; then
 	    echo "$0: cannot find top directory of package" >&2
 	    exit 1

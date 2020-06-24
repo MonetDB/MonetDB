@@ -54,4 +54,11 @@ monetdb_hgversion.h: always
 		touch monetdb_hgversion.h; \
 	fi
 
+
+install: install-lock
+
+install-lock: always
+	mkdir -p $(DESTDIR)$(localstatedir)/monetdb5/dbfarm
+	touch $(DESTDIR)$(localstatedir)/monetdb5/dbfarm/.merovingian_lock
+
 always:

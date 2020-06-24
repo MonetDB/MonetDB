@@ -39,17 +39,14 @@ sql_createorderindex(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	tbl = *getArgReference_str(stk, pci, 2);
 	col = *getArgReference_str(stk, pci, 3);
 
-	s = mvc_bind_schema(m, sch);
-	if (s == NULL)
-		throw(SQL, "sql.createorderindex", SQLSTATE(42000) "Unknown schema %s", sch);
-	t = mvc_bind_table(m, s, tbl);
-	if (t == NULL || !isTable(t))
-		throw(SQL, "sql.createorderindex", SQLSTATE(42000) "Unknown table %s.%s",
-		      sch, tbl);
-	c = mvc_bind_column(m, t, col);
-	if (c == NULL)
-		throw(SQL, "sql.createorderindex", SQLSTATE(42000) "Unknown column %s.%s.%s",
-		      sch, tbl, col);
+	if (!(s = mvc_bind_schema(m, sch)))
+		throw(SQL, "sql.createorderindex", SQLSTATE(3FOOO) "Unknown schema %s", sch);
+	if (!mvc_schema_privs(m, s))
+		throw(SQL, "sql.createorderindex", SQLSTATE(42000) "Access denied for %s to schema '%s'", stack_get_string(m, "current_user"), s->base.name);
+	if (!(t = mvc_bind_table(m, s, tbl)) || !isTable(t))
+		throw(SQL, "sql.createorderindex", SQLSTATE(42S02) "Unknown table %s.%s", sch, tbl);
+	if (!(c = mvc_bind_column(m, t, col)))
+		throw(SQL, "sql.createorderindex", SQLSTATE(38000) "Unknown column %s.%s.%s", sch, tbl, col);
 	b = store_funcs.bind_col(m->session->tr, c, 0);
 	if (b == 0)
 		throw(SQL,"sql.createorderindex", SQLSTATE(HY005) "Column can not be accessed");
@@ -77,14 +74,13 @@ sql_droporderindex(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	tbl = *getArgReference_str(stk, pci, 2);
 	col = *getArgReference_str(stk, pci, 3);
 
-	s = mvc_bind_schema(m, sch);
-	if (s == NULL)
+	if (!(s = mvc_bind_schema(m, sch)))
 		throw(SQL, "sql.droporderindex", SQLSTATE(3FOOO) "Unknown schema %s", sch);
-	t = mvc_bind_table(m, s, tbl);
-	if (t == NULL || !isTable(t))
+	if (!mvc_schema_privs(m, s))
+		throw(SQL, "sql.droporderindex", SQLSTATE(42000) "Access denied for %s to schema '%s'", stack_get_string(m, "current_user"), s->base.name);
+	if (!(t = mvc_bind_table(m, s, tbl)) || !isTable(t))
 		throw(SQL, "sql.droporderindex", SQLSTATE(42S02) "Unknown table %s.%s", sch, tbl);
-	c = mvc_bind_column(m, t, col);
-	if (c == NULL)
+	if (!(c = mvc_bind_column(m, t, col)))
 		throw(SQL, "sql.droporderindex", SQLSTATE(38000) "Unknown column %s.%s.%s", sch, tbl, col);
 	b = store_funcs.bind_col(m->session->tr, c, 0);
 	if (b == 0)
@@ -93,4 +89,3 @@ sql_droporderindex(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	BBPunfix(b->batCacheid);
 	return MAL_SUCCEED;
 }
-

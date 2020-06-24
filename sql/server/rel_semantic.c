@@ -67,7 +67,7 @@ rel_parse(mvc *m, sql_schema *s, char *query, char emode)
 		return NULL;
 	}
 	scanner_init( &m->scanner, bs, NULL);
-	m->scanner.mode = LINE_1; 
+	m->scanner.mode = LINE_1;
 	bstream_next(m->scanner.rs);
 
 	m->params = NULL;
@@ -94,11 +94,13 @@ rel_parse(mvc *m, sql_schema *s, char *query, char emode)
 	if (m->session->status || m->errstr[0]) {
 		int status = m->session->status;
 
-		memcpy(o.errstr, m->errstr, sizeof(o.errstr));
+		strcpy(o.errstr, m->errstr);
 		*m = o;
 		m->session->status = status;
 	} else {
-		int label = m->label, is_factory = m->is_factory;
+		unsigned int label = m->label;
+		int is_factory = m->is_factory;
+
 		while (m->topvars > o.topvars) {
 			if (m->vars[--m->topvars].name)
 				c_delete(m->vars[m->topvars].name);
@@ -111,7 +113,7 @@ rel_parse(mvc *m, sql_schema *s, char *query, char emode)
 	return rel;
 }
 
-sql_rel * 
+sql_rel *
 rel_semantic(sql_query *query, symbol *s)
 {
 	mvc *sql = query->sql;
@@ -229,7 +231,7 @@ rel_semantic(sql_query *query, symbol *s)
 		symbol *sym = d->data.sym;
 		sql_rel *r = rel_semantic(query, sym);
 
-		if (!r) 
+		if (!r)
 			return NULL;
 		return r;
 	}

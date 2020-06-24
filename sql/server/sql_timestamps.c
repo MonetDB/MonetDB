@@ -16,6 +16,7 @@
 #include "sql_mvc.h"
 #include "sql_atom.h"
 #include "sql_parser.h"
+#include "gdk_time.h"
 
 #include "mtime.h"
 

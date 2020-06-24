@@ -617,7 +617,7 @@ msab_getSingleStatus(const char *pathbuf, const char *dbname, sabdb *next)
 	 */
 	snprintf(buf, sizeof(buf), "%s/%s/%s", pathbuf, dbname,
 			 _sabaoth_internal_uuid);
-	if (stat(buf, &statbuf) != -1) {
+	if (stat(buf, &statbuf) == 0) {
 		/* database has the same process signature as ours, which
 		 * means, it must be us, rely on the uplog state */
 		snprintf(log, sizeof(log), "%s/%s/%s", pathbuf, dbname, UPLOGFILE);
@@ -641,7 +641,7 @@ msab_getSingleStatus(const char *pathbuf, const char *dbname, sabdb *next)
 			(void)fclose(f);
 		}
 	} else if (snprintf(buf, sizeof(buf), "%s/%s/%s", pathbuf, dbname, ".gdk_lock"),
-			   ((fd = MT_lockf(buf, F_TEST)) == -2)) {
+			   ((fd = MT_lockf(buf, F_TLOCK)) == -2)) {
 		/* Locking failed; this can be because the lockfile couldn't
 		 * be created.  Probably there is no Mserver running for
 		 * that case also.
@@ -650,15 +650,18 @@ msab_getSingleStatus(const char *pathbuf, const char *dbname, sabdb *next)
 	} else if (fd == -1) {
 		/* file is locked, so mserver is running, see if the database
 		 * has finished starting */
-		snprintf(buf, sizeof(buf), "%s/%s/%s",
-				 pathbuf, dbname, STARTEDFILE);
+		snprintf(buf, sizeof(buf), "%s/%s/%s", pathbuf, dbname, STARTEDFILE);
 		if (stat(buf, &statbuf) == -1) {
 			sdb->state = SABdbStarting;
 		} else {
 			sdb->state = SABdbRunning;
 		}
 	} else {
-		/* file is not locked, check for a crash in the uplog */
+		/* file was not locked (we just locked it), check for a crash
+		 * in the uplog */
+		snprintf(log, sizeof(log), "%s/%s/%s", pathbuf, dbname, STARTEDFILE);
+		/* just to be sure, remove the .started file */
+		(void) remove(log);		/* may fail, that's fine */
 		snprintf(log, sizeof(log), "%s/%s/%s", pathbuf, dbname, UPLOGFILE);
 		if ((f = fopen(log, "r")) != NULL) {
 			(void)fseek(f, -1, SEEK_END);
@@ -675,28 +678,27 @@ msab_getSingleStatus(const char *pathbuf, const char *dbname, sabdb *next)
 			/* no uplog, so presumably never started */
 			sdb->state = SABdbInactive;
 		}
+		MT_lockf(buf, F_ULOCK);
+		close(fd);
 	}
 	snprintf(buf, sizeof(buf), "%s/%s/%s", pathbuf, dbname, MAINTENANCEFILE);
-	sdb->locked = stat(buf, &statbuf) != -1;
+	sdb->locked = stat(buf, &statbuf) == 0;
 
 	/* add scenarios that are supported */
 	sdb->scens = NULL;
 	snprintf(buf, sizeof(buf), "%s/%s/%s", pathbuf, dbname, SCENARIOFILE);
 	if ((f = fopen(buf, "r")) != NULL) {
 		sablist* np = NULL;
-		while (fgets(data, 8095, f) != NULL) {
+		while (fgets(data, (int) sizeof(data), f) != NULL) {
 			if (*data != '\0' && data[strlen(data) - 1] == '\n')
 				data[strlen(data) - 1] = '\0';
 			if (sdb->scens == NULL) {
-				sdb->scens = malloc(sizeof(sablist));
-				sdb->scens->val = strdup(data);
-				sdb->scens->next = NULL;
-				np = sdb->scens;
+				np = sdb->scens = malloc(sizeof(sablist));
 			} else {
 				np = np->next = malloc(sizeof(sablist));
-				np->val = strdup(data);
-				np->next = NULL;
 			}
+			np->val = strdup(data);
+			np->next = NULL;
 		}
 		(void)fclose(f);
 	}
@@ -706,19 +708,16 @@ msab_getSingleStatus(const char *pathbuf, const char *dbname, sabdb *next)
 	snprintf(buf, sizeof(buf), "%s/%s/%s", pathbuf, dbname, CONNECTIONFILE);
 	if ((f = fopen(buf, "r")) != NULL) {
 		sablist* np = NULL;
-		while (fgets(data, 8095, f) != NULL) {
+		while (fgets(data, (int) sizeof(data), f) != NULL) {
 			if (*data != '\0' && data[strlen(data) - 1] == '\n')
 				data[strlen(data) - 1] = '\0';
 			if (sdb->conns == NULL) {
-				sdb->conns = malloc(sizeof(sablist));
-				sdb->conns->val = strdup(data);
-				sdb->conns->next = NULL;
-				np = sdb->conns;
+				np = sdb->conns = malloc(sizeof(sablist));
 			} else {
 				np = np->next = malloc(sizeof(sablist));
-				np->val = strdup(data);
-				np->next = NULL;
 			}
+			np->val = strdup(data);
+			np->next = NULL;
 		}
 		(void)fclose(f);
 	}
@@ -751,6 +750,11 @@ msab_getStatus(sabdb** ret, char *dbname)
 	sabdb *sdb;
 	sdb = *ret = NULL;
 
+	if (dbname && strpbrk(dbname, "/\\") != NULL) {
+		snprintf(data, sizeof(data),
+				 "database name contains disallowed characters");
+		return strdup(data);
+	}
 	/* scan the parent for directories */
 	if ((p = getFarmPath(pathbuf, sizeof(pathbuf), NULL)) != NULL)
 		return(p);
@@ -837,7 +841,7 @@ msab_getUplogInfo(sabuplog *ret, const sabdb *db)
 		*ret = *db->uplog;
 		return(NULL);
 	}
-		
+
 	memset(avg10, 0, sizeof(int) * 10);
 	memset(avg30, 0, sizeof(int) * 30);
 
@@ -862,7 +866,7 @@ msab_getUplogInfo(sabuplog *ret, const sabdb *db)
 						ret->lastcrash = start;
 					memmove(&avg10[0], &avg10[1], sizeof(int) * 9);
 					memmove(&avg30[0], &avg30[1], sizeof(int) * 29);
-					avg10[9] = avg30[29] = ret->crashavg1 = 
+					avg10[9] = avg30[29] = ret->crashavg1 =
 						(start != 0);
 					*p = '\0';
 					ret->laststart = start = (time_t)atol(data);
@@ -1002,19 +1006,19 @@ msab_deserialise(sabdb **ret, char *sdb)
 
 	lasts = sdb;
 	if ((p = strchr(lasts, ':')) == NULL) {
-		snprintf(buf, sizeof(buf), 
+		snprintf(buf, sizeof(buf),
 				"string does not contain a magic: %s", lasts);
 		return(strdup(buf));
 	}
 	*p++ = '\0';
 	if (strcmp(lasts, "sabdb") != 0) {
-		snprintf(buf, sizeof(buf), 
+		snprintf(buf, sizeof(buf),
 				"string is not a sabdb struct: %s", lasts);
 		return(strdup(buf));
 	}
 	lasts = p;
 	if ((p = strchr(p, ':')) == NULL) {
-		snprintf(buf, sizeof(buf), 
+		snprintf(buf, sizeof(buf),
 				"string does not contain a version number: %s", lasts);
 		return(strdup(buf));
 	}
@@ -1033,14 +1037,14 @@ msab_deserialise(sabdb **ret, char *sdb)
 		 * ignore the path information (and set uri to "<unknown>".  The
 		 * SABdbStarting state never occurs. */
 	} else if (strcmp(lasts, SABDBVER) != 0) {
-		snprintf(buf, sizeof(buf), 
+		snprintf(buf, sizeof(buf),
 				"string has unsupported version: %s", lasts);
 		return(strdup(buf));
 	}
 	protover = lasts[0];
 	lasts = p;
 	if ((p = strchr(p, ',')) == NULL) {
-		snprintf(buf, sizeof(buf), 
+		snprintf(buf, sizeof(buf),
 				"string does not contain %s: %s",
 				protover == '1' ? "path" : "dbname", lasts);
 		return(strdup(buf));
@@ -1052,7 +1056,7 @@ msab_deserialise(sabdb **ret, char *sdb)
 	} else {
 		lasts = p;
 		if ((p = strchr(p, ',')) == NULL) {
-			snprintf(buf, sizeof(buf), 
+			snprintf(buf, sizeof(buf),
 					"string does not contain uri: %s", lasts);
 			return(strdup(buf));
 		}
@@ -1061,7 +1065,7 @@ msab_deserialise(sabdb **ret, char *sdb)
 	}
 	lasts = p;
 	if ((p = strchr(p, ',')) == NULL) {
-		snprintf(buf, sizeof(buf), 
+		snprintf(buf, sizeof(buf),
 				"string does not contain locked state: %s", lasts);
 		return(strdup(buf));
 	}
@@ -1069,7 +1073,7 @@ msab_deserialise(sabdb **ret, char *sdb)
 	locked = atoi(lasts);
 	lasts = p;
 	if ((p = strchr(p, ',')) == NULL) {
-		snprintf(buf, sizeof(buf), 
+		snprintf(buf, sizeof(buf),
 				"string does not contain state: %s", lasts);
 		return(strdup(buf));
 	}
@@ -1077,7 +1081,7 @@ msab_deserialise(sabdb **ret, char *sdb)
 	state = atoi(lasts);
 	lasts = p;
 	if ((p = strchr(p, ',')) == NULL) {
-		snprintf(buf, sizeof(buf), 
+		snprintf(buf, sizeof(buf),
 				"string does not contain scenarios: %s", lasts);
 		return(strdup(buf));
 	}
@@ -1086,7 +1090,7 @@ msab_deserialise(sabdb **ret, char *sdb)
 	lasts = p;
 	if (protover == '1') {
 		if ((p = strchr(p, ',')) == NULL) {
-			snprintf(buf, sizeof(buf), 
+			snprintf(buf, sizeof(buf),
 					"string does not contain connections: %s", lasts);
 			return(strdup(buf));
 		}
@@ -1099,7 +1103,7 @@ msab_deserialise(sabdb **ret, char *sdb)
 
 	if ((p = strchr(p, ',')) == NULL) {
 		free(u);
-		snprintf(buf, sizeof(buf), 
+		snprintf(buf, sizeof(buf),
 				"string does not contain startcounter: %s", lasts);
 		return(strdup(buf));
 	}
@@ -1108,7 +1112,7 @@ msab_deserialise(sabdb **ret, char *sdb)
 	lasts = p;
 	if ((p = strchr(p, ',')) == NULL) {
 		free(u);
-		snprintf(buf, sizeof(buf), 
+		snprintf(buf, sizeof(buf),
 				"string does not contain stopcounter: %s", lasts);
 		return(strdup(buf));
 	}
@@ -1117,7 +1121,7 @@ msab_deserialise(sabdb **ret, char *sdb)
 	lasts = p;
 	if ((p = strchr(p, ',')) == NULL) {
 		free(u);
-		snprintf(buf, sizeof(buf), 
+		snprintf(buf, sizeof(buf),
 				"string does not contain crashcounter: %s", lasts);
 		return(strdup(buf));
 	}
@@ -1126,7 +1130,7 @@ msab_deserialise(sabdb **ret, char *sdb)
 	lasts = p;
 	if ((p = strchr(p, ',')) == NULL) {
 		free(u);
-		snprintf(buf, sizeof(buf), 
+		snprintf(buf, sizeof(buf),
 				"string does not contain avguptime: %s", lasts);
 		return(strdup(buf));
 	}
@@ -1135,7 +1139,7 @@ msab_deserialise(sabdb **ret, char *sdb)
 	lasts = p;
 	if ((p = strchr(p, ',')) == NULL) {
 		free(u);
-		snprintf(buf, sizeof(buf), 
+		snprintf(buf, sizeof(buf),
 				"string does not contain maxuptime: %s", lasts);
 		return(strdup(buf));
 	}
@@ -1144,7 +1148,7 @@ msab_deserialise(sabdb **ret, char *sdb)
 	lasts = p;
 	if ((p = strchr(p, ',')) == NULL) {
 		free(u);
-		snprintf(buf, sizeof(buf), 
+		snprintf(buf, sizeof(buf),
 				"string does not contain minuptime: %s", lasts);
 		return(strdup(buf));
 	}
@@ -1153,7 +1157,7 @@ msab_deserialise(sabdb **ret, char *sdb)
 	lasts = p;
 	if ((p = strchr(p, ',')) == NULL) {
 		free(u);
-		snprintf(buf, sizeof(buf), 
+		snprintf(buf, sizeof(buf),
 				"string does not contain lastcrash: %s", lasts);
 		return(strdup(buf));
 	}
@@ -1162,7 +1166,7 @@ msab_deserialise(sabdb **ret, char *sdb)
 	lasts = p;
 	if ((p = strchr(p, ',')) == NULL) {
 		free(u);
-		snprintf(buf, sizeof(buf), 
+		snprintf(buf, sizeof(buf),
 				"string does not contain laststart: %s", lasts);
 		return(strdup(buf));
 	}
@@ -1172,7 +1176,7 @@ msab_deserialise(sabdb **ret, char *sdb)
 	if (protover != '1') {
 		if ((p = strchr(p, ',')) == NULL) {
 			free(u);
-			snprintf(buf, sizeof(buf), 
+			snprintf(buf, sizeof(buf),
 					"string does not contain laststop: %s", lasts);
 			return(strdup(buf));
 		}
@@ -1184,7 +1188,7 @@ msab_deserialise(sabdb **ret, char *sdb)
 	}
 	if ((p = strchr(p, ',')) == NULL) {
 		free(u);
-		snprintf(buf, sizeof(buf), 
+		snprintf(buf, sizeof(buf),
 				"string does not contain crashavg1: %s", lasts);
 		return(strdup(buf));
 	}
@@ -1193,7 +1197,7 @@ msab_deserialise(sabdb **ret, char *sdb)
 	lasts = p;
 	if ((p = strchr(p, ',')) == NULL) {
 		free(u);
-		snprintf(buf, sizeof(buf), 
+		snprintf(buf, sizeof(buf),
 				"string does not contain crashavg10: %s", lasts);
 		return(strdup(buf));
 	}
@@ -1202,7 +1206,7 @@ msab_deserialise(sabdb **ret, char *sdb)
 	lasts = p;
 	if ((p = strchr(p, ',')) != NULL) {
 		free(u);
-		snprintf(buf, sizeof(buf), 
+		snprintf(buf, sizeof(buf),
 				"string contains additional garbage after crashavg30: %s",
 				p);
 		return(strdup(buf));

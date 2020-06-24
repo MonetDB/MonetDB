@@ -179,15 +179,16 @@ extern stmt *stmt_uselect2(backend *be, stmt *op1, stmt *op2, stmt *op3, int cmp
 extern stmt *stmt_genselect(backend *be, stmt *lops, stmt *rops, sql_subfunc *f, stmt *sub, int anti);
 
 extern stmt *stmt_tunion(backend *be, stmt *op1, stmt *op2);
-extern stmt *stmt_tdiff(backend *be, stmt *op1, stmt *op2);
-extern stmt *stmt_tdiff2(backend *be, stmt *op1, stmt *op2);
-extern stmt *stmt_tinter(backend *be, stmt *op1, stmt *op2);
+extern stmt *stmt_tdiff(backend *be, stmt *op1, stmt *op2, stmt *lcand);
+extern stmt *stmt_tdiff2(backend *be, stmt *op1, stmt *op2, stmt *lcand);
+extern stmt *stmt_tinter(backend *be, stmt *op1, stmt *op2, bool single);
 
-extern stmt *stmt_join(backend *be, stmt *op1, stmt *op2, int anti, comp_type cmptype, int is_semantics);
+extern stmt *stmt_join(backend *be, stmt *op1, stmt *op2, int anti, comp_type cmptype, int is_semantics, bool single);
 extern stmt *stmt_join2(backend *be, stmt *l, stmt *ra, stmt *rb, int cmp, int anti, int swapped);
 /* generic join operator, with a left and right statement list */
 extern stmt *stmt_genjoin(backend *be, stmt *l, stmt *r, sql_subfunc *op, int anti, int swapped);
-extern stmt *stmt_semijoin(backend *be, stmt *op1, stmt *op2, int is_semantics);
+extern stmt *stmt_semijoin(backend *be, stmt *l, stmt *r, stmt *lcand, stmt *rcand, int is_semantics, bool single);
+extern stmt *stmt_join_cand(backend *be, stmt *l, stmt *r, stmt *lcand, stmt *rcand, int anti, comp_type cmptype, int is_semantics, bool single);
 
 extern stmt *stmt_project(backend *be, stmt *op1, stmt *op2);
 extern stmt *stmt_project_delta(backend *be, stmt *col, stmt *upd, stmt *ins);
@@ -207,18 +208,18 @@ extern stmt *stmt_gen_group(backend *be, stmt *gids, stmt *cnts);	/* given a gid
 extern stmt *stmt_mirror(backend *be, stmt *s);
 extern stmt *stmt_result(backend *be, stmt *s, int nr);
 
-/* 
+/*
  * distinct: compute topn on unique groups
  * dir:      direction of the ordering, ie 1 Ascending, 0 decending
- * last:     intermediate step or last step 
+ * last:     intermediate step or last step
  * order:    is order important or not (firstn vs slice)
- */ 
+ */
 extern stmt *stmt_limit(backend *sa, stmt *c, stmt *piv, stmt *gid, stmt *offset, stmt *limit, int distinct, int dir, int nullslast, int last, int order);
 extern stmt *stmt_sample(backend *be, stmt *s, stmt *sample, stmt *seed);
 extern stmt *stmt_order(backend *be, stmt *s, int direction, int nullslast);
 extern stmt *stmt_reorder(backend *be, stmt *s, int direction, int nullslast, stmt *orderby_ids, stmt *orderby_grp);
 
-extern stmt *stmt_convert(backend *sa, stmt *v, sql_subtype *from, sql_subtype *to, stmt *sel);
+extern stmt *stmt_convert(backend *sa, stmt *v, sql_subtype *from, sql_subtype *to, stmt *cond);
 extern stmt *stmt_unop(backend *be, stmt *op1, sql_subfunc *op);
 extern stmt *stmt_binop(backend *be, stmt *op1, stmt *op2, sql_subfunc *op);
 extern stmt *stmt_Nop(backend *be, stmt *ops, sql_subfunc *op);

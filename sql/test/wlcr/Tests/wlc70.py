@@ -1,5 +1,3 @@
-from __future__ import print_function
-
 try:
     from MonetDBtesting import process
 except ImportError:
@@ -16,23 +14,22 @@ if not tstdb or not dbfarm:
 #clean up first
 dbname = tstdb
 
-s = process.server(dbname = dbname, stdin = process.PIPE, stdout = process.PIPE, stderr = process.PIPE)
+with process.server(dbname=dbname, stdin=process.PIPE, stdout=process.PIPE, stderr=process.PIPE) as s, \
+     process.client('sql', server = s, stdin = process.PIPE, stdout = process.PIPE, stderr = process.PIPE) as c:
 
-c = process.client('sql', server = s, stdin = process.PIPE, stdout = process.PIPE, stderr = process.PIPE)
-
-#continue logging
-cout, cerr = c.communicate('''\
+    #continue logging
+    cout, cerr = c.communicate('''\
 create table tmp70(i int, s string);
 insert into tmp70 values(1,'hello'), (2,'world');
 select * from tmp70;
 ''')
 
-sout, serr = s.communicate()
+    sout, serr = s.communicate()
 
-sys.stdout.write(sout)
-sys.stdout.write(cout)
-sys.stderr.write(serr)
-sys.stderr.write(cerr)
+    sys.stdout.write(sout)
+    sys.stdout.write(cout)
+    sys.stderr.write(serr)
+    sys.stderr.write(cerr)
 
 def listfiles(path):
     sys.stdout.write("#LISTING OF THE LOG FILES\n")

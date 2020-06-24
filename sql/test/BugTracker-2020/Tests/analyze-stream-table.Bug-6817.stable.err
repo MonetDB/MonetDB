@@ -21,16 +21,7 @@ stderr of test 'analyze-stream-table.Bug-6817` in directory 'sql/test/BugTracker
 #client2:!ERROR:SQLException:analyze:42S02!Table 'strt' is not persistent
 #client2:!ERROR:SQLException:analyze:42S02!Table 'strt' is not persistent
 
-# 13:50:18 >  
-# 13:50:18 >  "mclient" "-lsql" "-ftest" "-tnone" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-891865" "--port=35996"
-# 13:50:18 >  
-
-MAPI  = (monetdb) /var/tmp/mtest-4325/.s.monetdb.33720
-QUERY = analyze "ttt"."strt";
-ERROR = !STREAM TABLE 'strt' is not persistent
-CODE  = 42S02
-
-# 13:50:18 >  
-# 13:50:18 >  "Done."
-# 13:50:18 >  
+# 18:39:02 >  
+# 18:39:02 >  "Done."
+# 18:39:02 >  
 

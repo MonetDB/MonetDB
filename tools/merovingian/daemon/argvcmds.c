@@ -187,7 +187,7 @@ command_get(confkeyval *ckv, int argc, char *argv[])
 	{
 		/* check if there is a merovingian serving this dbfarm */
 		int ret;
-		if ((ret = MT_lockf(".merovingian_lock", F_TLOCK)) == -1) {
+		if ((ret = MT_lockf(".merovingian_lock", F_TEST)) == -1) {
 			/* locking failed, merovingian is running */
 			FILE *pf;
 			char *pfile = getConfVal(ckv, "pidfile");
@@ -199,11 +199,7 @@ command_get(confkeyval *ckv, int argc, char *argv[])
 				fclose(pf);
 			}
 		} else {
-			if (ret >= 0) {
-				/* release a possible lock */
-				MT_lockf(".merovingian_lock", F_ULOCK);
-				close(ret);
-			}
+			/* there is no lock, hence no merovingian */
 			meropid = 0;
 		}
 	}
@@ -387,7 +383,7 @@ command_set(confkeyval *ckv, int argc, char *argv[])
 		return(1);
 	}
 	if (strcmp(property, "passphrase") == 0) {
-		char dohash = 1;
+		bool dohash = true;
 		/* allow to either set a hash ({X}xxx), or convert the given
 		 * string to its hash */
 		if (*p == '{') {
@@ -401,10 +397,10 @@ command_set(confkeyval *ckv, int argc, char *argv[])
 					return(1);
 				}
 				*q = '}';
-				dohash = 0;
+				dohash = false;
 			}
 		}
-		if (dohash == 1) {
+		if (dohash) {
 			p = mcrypt_BackendSum(p, strlen(p));
 			if(p) {
 				snprintf(h, sizeof(h), "{%s}%s", MONETDB5_PASSWDHASH, p);

@@ -64,8 +64,8 @@ stderr of test 'new-readonly-db.Bug-2695` in directory 'sql/test/BugTracker-2010
 # cmdline opt 	mal_listing = 2
 # cmdline opt 	gdk_dbname = mTests_src_test_BugTracker-2010-2695
 # cmdline opt 	gdk_readonly = yes
-2020-03-11 14:03:29 ../../../src/sql/server/sql_mvc.c:146             mvc_init           M_CRITICAL SQL_TRANS            main thread          # Unable to create system tables
-2020-03-11 14:03:29 ../../../../src/sql/backends/monet5/sql_scenario.c:139           SQLprelude           M_CRITICAL SQL_PARSER           main thread          # Fatal error during initialization: SQLException:SQLinit:42000!Catalogue initialization failed
+#main thread: mvc_init: !ERROR: Unable to create system tables
+#main thread: SQLprelude: !ERROR: Fatal error during initialization: SQLException:SQLinit:42000!Catalogue initialization failed
 
 # 12:51:24 >  
 # 12:51:24 >  Done.

@@ -17,7 +17,7 @@
 typedef struct _multiplex_database {
 	Mapi conn;              /* current connection in use */
 	Mapi newconn;           /* new connection we should set live (or NULL) */
-	char connupdate;        /* if set, we have to cycle newconn into conn */
+	bool connupdate;        /* if set, we have to cycle newconn into conn */
 	char *user;
 	char *pass;
 	char *database;
@@ -35,7 +35,7 @@ typedef struct _multiplex_client {
 typedef struct _multiplex {
 	pthread_t            tid;
 	int                  gdklock;
-	char                 shutdown;
+	bool                 shutdown;
 	char                *name;
 	char                *pool;
 	FILE                *sout;

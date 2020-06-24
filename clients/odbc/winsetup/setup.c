@@ -113,7 +113,7 @@ DialogProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM lParam)
 
 	switch (uMsg) {
 	case WM_INITDIALOG:
-		ODBCLOG("DialogProc WM_INITDIALOG 0x%x 0x%x\n", (int) wParam, (int) lParam);
+		ODBCLOG("DialogProc WM_INITDIALOG 0x%x 0x%x\n", (unsigned) wParam, (unsigned) lParam);
 
 		datap = (struct data *) lParam;
 		/* center dialog on parent */
@@ -124,7 +124,7 @@ DialogProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM lParam)
 			     rcOwner.top + (rcOwner.bottom - rcOwner.top - (rcDlg.bottom - rcDlg.top)) / 2,
 			     0, 0, /* ignores size arguments */
 			     SWP_NOSIZE | SWP_NOZORDER);
-		
+
 		/* fill in text fields */
 		SetDlgItemText(hwndDlg, IDC_EDIT_DSN, datap->dsn ? datap->dsn : "");
 		SetDlgItemText(hwndDlg, IDC_EDIT_UID, datap->uid ? datap->uid : "");
@@ -136,7 +136,7 @@ DialogProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM lParam)
 			EnableWindow(GetDlgItem(hwndDlg, IDC_EDIT_DSN), FALSE);
 		return TRUE;
 	case WM_COMMAND:
-		ODBCLOG("DialogProc WM_COMMAND 0x%x 0x%x\n", (int) wParam, (int) lParam);
+		ODBCLOG("DialogProc WM_COMMAND 0x%x 0x%x\n", (unsigned) wParam, (unsigned) lParam);
 
 		switch (LOWORD(wParam)) {
 		case IDOK:
@@ -179,7 +179,7 @@ DialogProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM lParam)
 			return TRUE;
 		}
 	default:
-		ODBCLOG("DialogProc 0x%x 0x%x 0x%x\n", uMsg, (int) wParam, (int) lParam);
+		ODBCLOG("DialogProc 0x%x 0x%x 0x%x\n", uMsg, (unsigned) wParam, (unsigned) lParam);
 		break;
 	}
 	return FALSE;

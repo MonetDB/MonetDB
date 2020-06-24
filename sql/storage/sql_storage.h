@@ -113,7 +113,7 @@ typedef struct table_functions {
 	subrids_nextid_fptr subrids_nextid;
 	subrids_destroy_fptr subrids_destroy;
 	rids_diff_fptr rids_diff;
-} table_functions; 
+} table_functions;
 
 sqlstore_export table_functions table_funcs;
 
@@ -125,7 +125,14 @@ typedef void *(*bind_idx_fptr) (sql_trans *tr, sql_idx *i, int access);
 typedef void *(*bind_del_fptr) (sql_trans *tr, sql_table *t, int access);
 
 /*
--- append/update to columns and indices 
+-- binds data for column, idx and delets (from the parent transaction)
+*/
+typedef void *(*bind_col_data_fptr) (sql_trans *tr, sql_column *c);
+typedef void *(*bind_idx_data_fptr) (sql_trans *tr, sql_idx *i);
+typedef void *(*bind_del_data_fptr) (sql_trans *tr, sql_table *t);
+
+/*
+-- append/update to columns and indices
 */
 typedef int (*append_col_fptr) (sql_trans *tr, sql_column *c, void *d, int t);
 typedef int (*append_idx_fptr) (sql_trans *tr, sql_idx *i, void *d, int t);
@@ -149,9 +156,9 @@ typedef int (*prop_col_fptr) (sql_trans *tr, sql_column *c);
 -- create the necessary storage resources for columns, indices and tables
 -- returns LOG_OK, LOG_ERR
 */
-typedef int (*create_col_fptr) (sql_trans *tr, sql_column *c); 
-typedef int (*create_idx_fptr) (sql_trans *tr, sql_idx *i); 
-typedef int (*create_del_fptr) (sql_trans *tr, sql_table *t); 
+typedef int (*create_col_fptr) (sql_trans *tr, sql_column *c);
+typedef int (*create_idx_fptr) (sql_trans *tr, sql_idx *i);
+typedef int (*create_del_fptr) (sql_trans *tr, sql_table *t);
 
 /*
 -- upgrade the necessary storage resources for columns, indices and tables
@@ -160,45 +167,45 @@ typedef int (*create_del_fptr) (sql_trans *tr, sql_table *t);
 -- renames.
 -- returns LOG_OK, LOG_ERR
 */
-typedef int (*upgrade_col_fptr) (sql_column *c); 
-typedef int (*upgrade_idx_fptr) (sql_idx *i); 
-typedef int (*upgrade_del_fptr) (sql_table *t); 
+typedef int (*upgrade_col_fptr) (sql_column *c);
+typedef int (*upgrade_idx_fptr) (sql_idx *i);
+typedef int (*upgrade_del_fptr) (sql_table *t);
 
 /*
 -- duplicate the necessary storage resources for columns, indices and tables
 -- returns LOG_OK, LOG_ERR
 */
 typedef int (*dup_col_fptr) (sql_trans *tr, sql_column *oc, sql_column *c);
-typedef int (*dup_idx_fptr) (sql_trans *tr, sql_idx *oi, sql_idx *i ); 
-typedef int (*dup_del_fptr) (sql_trans *tr, sql_table *ot, sql_table *t); 
+typedef int (*dup_idx_fptr) (sql_trans *tr, sql_idx *oi, sql_idx *i );
+typedef int (*dup_del_fptr) (sql_trans *tr, sql_table *ot, sql_table *t);
 
 /*
 -- free the storage resources for columns, indices and tables
 -- returns LOG_OK, LOG_ERR
 */
-typedef int (*destroy_col_fptr) (sql_trans *tr, sql_column *c); 
-typedef int (*destroy_idx_fptr) (sql_trans *tr, sql_idx *i); 
-typedef int (*destroy_del_fptr) (sql_trans *tr, sql_table *t); 
+typedef int (*destroy_col_fptr) (sql_trans *tr, sql_column *c);
+typedef int (*destroy_idx_fptr) (sql_trans *tr, sql_idx *i);
+typedef int (*destroy_del_fptr) (sql_trans *tr, sql_table *t);
 
 /*
 -- clear any storage resources for columns, indices and tables
 -- returns number of removed tuples
 */
-typedef BUN (*clear_col_fptr) (sql_trans *tr, sql_column *c); 
-typedef BUN (*clear_idx_fptr) (sql_trans *tr, sql_idx *i); 
-typedef BUN (*clear_del_fptr) (sql_trans *tr, sql_table *t); 
+typedef BUN (*clear_col_fptr) (sql_trans *tr, sql_column *c);
+typedef BUN (*clear_idx_fptr) (sql_trans *tr, sql_idx *i);
+typedef BUN (*clear_del_fptr) (sql_trans *tr, sql_table *t);
 
 /*
--- update_table rollforward the changes made from table ft to table tt 
+-- update_table rollforward the changes made from table ft to table tt
 -- returns LOG_OK, LOG_ERR
 */
-typedef int (*update_table_fptr) (sql_trans *tr, sql_table *ft, sql_table *tt); 
+typedef int (*update_table_fptr) (sql_trans *tr, sql_table *ft, sql_table *tt);
 
 /*
 -- gtrans_update push ibats and ubats
 -- returns LOG_OK, LOG_ERR
 */
-typedef int (*gtrans_update_fptr) (sql_trans *tr); 
+typedef int (*gtrans_update_fptr) (sql_trans *tr);
 
 /*
 -- handle inserts and updates of columns and indices
@@ -213,8 +220,8 @@ typedef int (*idx_upd_fptr) (sql_trans *tr, sql_idx *c, void *rows, void *data);
 -- returns LOG_OK, LOG_ERR
 */
 typedef int (*del_fptr) (sql_trans *tr, sql_table *c, void *rows);
-typedef int (*snapshot_fptr) ( sql_table *t ); 
-typedef int (*cleanup_fptr) (); 
+typedef int (*snapshot_fptr) ( sql_table *t );
+typedef int (*cleanup_fptr) ();
 
 /* backing struct for this interface */
 typedef struct store_functions {
@@ -222,6 +229,10 @@ typedef struct store_functions {
 	bind_col_fptr bind_col;
 	bind_idx_fptr bind_idx;
 	bind_del_fptr bind_del;
+
+	bind_col_data_fptr bind_col_data;
+	bind_idx_data_fptr bind_idx_data;
+	bind_del_data_fptr bind_del_data;
 
 	append_col_fptr append_col;
 	append_idx_fptr append_idx;
@@ -381,7 +392,7 @@ extern void idle_manager(void);
 
 extern void store_lock(void);
 extern void store_unlock(void);
-extern int store_next_oid(void);
+extern sqlid store_next_oid(void);
 
 extern sql_trans *sql_trans_create(backend_stack stk, sql_trans *parent, const char *name, bool try_spare);
 extern sql_trans *sql_trans_destroy(sql_trans *tr, bool try_spare);
@@ -410,8 +421,8 @@ extern sql_table *sql_trans_create_table(sql_trans *tr, sql_schema *s, const cha
 
 extern int sql_trans_set_partition_table(sql_trans *tr, sql_table *t);
 extern sql_table *sql_trans_add_table(sql_trans *tr, sql_table *mt, sql_table *pt);
-extern int sql_trans_add_range_partition(sql_trans *tr, sql_table *mt, sql_table *pt, sql_subtype tpe, ptr min, ptr max, int with_nills, int update, sql_part** err);
-extern int sql_trans_add_value_partition(sql_trans *tr, sql_table *mt, sql_table *pt, sql_subtype tpe, list* vals, int with_nills, int update, sql_part **err);
+extern int sql_trans_add_range_partition(sql_trans *tr, sql_table *mt, sql_table *pt, sql_subtype tpe, ptr min, ptr max, bit with_nills, int update, sql_part** err);
+extern int sql_trans_add_value_partition(sql_trans *tr, sql_table *mt, sql_table *pt, sql_subtype tpe, list* vals, bit with_nills, int update, sql_part **err);
 
 extern sql_table *sql_trans_rename_table(sql_trans *tr, sql_schema *s, sqlid id, const char *new_name);
 extern sql_table *sql_trans_set_table_schema(sql_trans *tr, sqlid id, sql_schema *os, sql_schema *ns);
@@ -460,7 +471,7 @@ extern sql_session * sql_session_create(backend_stack stk, int autocommit);
 extern void sql_session_destroy(sql_session *s);
 extern int sql_session_reset(sql_session *s, int autocommit);
 extern int sql_trans_begin(sql_session *s);
-extern void sql_trans_end(sql_session *s);
+extern void sql_trans_end(sql_session *s, int commit /* rollback=0, or commit=1 temporaries */);
 
 extern list* sql_trans_schema_user_dependencies(sql_trans *tr, sqlid schema_id);
 extern void sql_trans_create_dependency(sql_trans *tr, sqlid id, sqlid depend_id, sql_dependency depend_type);
@@ -497,7 +508,5 @@ extern sql_part *sql_trans_copy_part(sql_trans *tr, sql_table *t, sql_part *pt);
 
 extern void sql_trans_drop_any_comment(sql_trans *tr, sqlid id);
 extern void sql_trans_drop_obj_priv(sql_trans *tr, sqlid obj_id);
-
-extern void dup_sql_type(sql_trans *tr, sql_schema *os, sql_subtype *oc, sql_subtype *nc);
 
 #endif /*SQL_STORAGE_H */

@@ -50,6 +50,35 @@ OPTremapDirect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int idx,
 	p->retc= p->argc= pci->retc;
 	for(i= pci->retc+2; i<pci->argc; i++)
 		p= addArgument(mb,p,getArg(pci,i));
+	if (p->retc == 1 &&
+		bufName == batcalcRef &&
+		(fcnName == mulRef || fcnName == divRef || fcnName == plusRef || fcnName == minusRef || fcnName == modRef)) {
+		if (p->argc == 3 &&
+			/* these two filter out unary batcalc.- with a candidate list */
+			getBatType(getArgType(mb, p, 1)) != TYPE_oid &&
+			getBatType(getArgType(mb, p, 2)) != TYPE_oid &&
+			getBatType(getArgType(mb, p, 2)) != TYPE_bit) {
+			/* add candidate lists */
+			if (isaBatType(getArgType(mb, p, 1)))
+				p = pushNil(mb, p, TYPE_bat);
+			if (isaBatType(getArgType(mb, p, 2)))
+				p = pushNil(mb, p, TYPE_bat);
+		} else if (p->argc == 4 &&
+				   getBatType(getArgType(mb, p, 3)) == TYPE_bit &&
+				   /* these two filter out unary batcalc.- with a
+					* candidate list */
+				   getBatType(getArgType(mb, p, 1)) != TYPE_oid &&
+				   getBatType(getArgType(mb, p, 2)) != TYPE_oid) {
+			int a = getArg(p, 3);
+			p->argc--;
+			/* add candidate lists */
+			if (isaBatType(getArgType(mb, p, 1)))
+				p = pushNil(mb, p, TYPE_bat);
+			if (isaBatType(getArgType(mb, p, 2)))
+				p = pushNil(mb, p, TYPE_bat);
+			p = pushArgument(mb, p, a);
+		}
+	}
 
 	/* now see if we can resolve the instruction */
 	typeChecker(scope,mb,p,idx,TRUE);
@@ -92,7 +121,7 @@ OPTremapDirect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int idx,
  * find an instruction that does not have a multiplex
  * counterpart.
  */
-static int 
+static int
 OPTmultiplexInline(Client cntxt, MalBlkPtr mb, InstrPtr p, int pc )
 {
 	MalBlkPtr mq;
@@ -105,11 +134,11 @@ OPTmultiplexInline(Client cntxt, MalBlkPtr mb, InstrPtr p, int pc )
 	str msg;
 
 
-	s= findSymbol(cntxt->usermodule, 
+	s= findSymbol(cntxt->usermodule,
 			VALget(&getVar(mb, getArg(p, retc+0))->value),
 			VALget(&getVar(mb, getArg(p, retc+1))->value));
 
-	if( s== NULL || !isSideEffectFree(s->def) || 
+	if( s== NULL || !isSideEffectFree(s->def) ||
 		getInstrPtr(s->def,0)->retc != p->retc ) {
 		return 0;
 	}
@@ -155,12 +184,12 @@ OPTmultiplexInline(Client cntxt, MalBlkPtr mb, InstrPtr p, int pc )
 		q = getInstrPtr(mq,i);
 		if (q->token == ENDsymbol)
 			break;
-		for(j=0; j<q->argc && !fnd; j++) 
+		for(j=0; j<q->argc && !fnd; j++)
 			if (upgrade[getArg(q,j)]) {
 				for(k=0; k<q->retc; k++){
 					setVarType(mq,getArg(q,j),newBatType(getArgType(mq, q, j)));
 					/* for typing */
-					clrVarFixed(mq,getArg(q,k)); 
+					clrVarFixed(mq,getArg(q,k));
 					if (!upgrade[getArg(q,k)]) {
 						upgrade[getArg(q,k)]= TRUE;
 						/* lets restart */
@@ -171,7 +200,7 @@ OPTmultiplexInline(Client cntxt, MalBlkPtr mb, InstrPtr p, int pc )
 			}
 		/* nil:type -> nil:bat[:oid,:type] */
 		if (!getModuleId(q) && q->token == ASSIGNsymbol &&
-		    q->argc == 2 && isVarConstant(mq, getArg(q,1)) && 
+		    q->argc == 2 && isVarConstant(mq, getArg(q,1)) &&
 		    upgrade[getArg(q,0)] &&
 			getArgType(mq,q,0) == TYPE_void &&
 		    !isaBatType(getArgType(mq, q, 1)) ){
@@ -212,13 +241,42 @@ OPTmultiplexInline(Client cntxt, MalBlkPtr mb, InstrPtr p, int pc )
 			break;
 		for(j=0; j<q->argc; j++)
 			if ( upgrade[getArg(q,j)]){
-				if ( blockStart(q) || 
+				if ( blockStart(q) ||
 					 q->barrier== REDOsymbol || q->barrier==LEAVEsymbol )
 					goto terminateMX;
 				if (getModuleId(q)){
 					snprintf(buf,1024,"bat%s",getModuleId(q));
 					setModuleId(q,putName(buf));
 					q->typechk = TYPE_UNKNOWN;
+					if (q->retc == 1 &&
+						getModuleId(q) == batcalcRef &&
+						(getFunctionId(q) == mulRef || getFunctionId(q) == divRef || getFunctionId(q) == plusRef || getFunctionId(q) == minusRef || getFunctionId(q) == modRef)) {
+						if (q->argc == 3 &&
+							/* these two filter out unary batcalc.- with a candidate list */
+							getBatType(getArgType(mq, q, 1)) != TYPE_oid &&
+							getBatType(getArgType(mq, q, 2)) != TYPE_oid) {
+							/* add candidate lists */
+							if (isaBatType(getArgType(mq, q, 1)))
+								q = pushNil(mq, q, TYPE_bat);
+							if (isaBatType(getArgType(mq, q, 2)))
+								q = pushNil(mq, q, TYPE_bat);
+						} else if (q->argc == 4 &&
+								   getBatType(getArgType(mq, q, 3)) == TYPE_bit &&
+								   /* these two filter out unary
+									* batcalc.- with a candidate
+									* list */
+								   getBatType(getArgType(mq, q, 1)) != TYPE_oid &&
+								   getBatType(getArgType(mq, q, 2)) != TYPE_oid) {
+							int a = getArg(q, 3);
+							q->argc--;
+							/* add candidate lists */
+							if (isaBatType(getArgType(mq, q, 1)))
+								q = pushNil(mq, q, TYPE_bat);
+							if (isaBatType(getArgType(mq, q, 2)))
+								q = pushNil(mq, q, TYPE_bat);
+							q = pushArgument(mq, q, a);
+						}
+					}
 
 					/* now see if we can resolve the instruction */
 					typeChecker(cntxt->usermodule,mq,q,i,TRUE);
@@ -236,7 +294,7 @@ OPTmultiplexInline(Client cntxt, MalBlkPtr mb, InstrPtr p, int pc )
 					q= addArgument(mq,q, getArg(q,1));
 					mq->stmt[i] = q;
 					getArg(q,1)= refbat;
-				
+
 					q->typechk = TYPE_UNKNOWN;
 					typeChecker(cntxt->usermodule,mq,q,i,TRUE);
 					if( q->typechk== TYPE_UNKNOWN)
@@ -256,7 +314,7 @@ terminateMX:
 
 		/* ugh ugh, fallback to non inline, but optimized code */
 		msg = OPTmultiplexSimple(cntxt, s->def);
-		if(msg) 
+		if(msg)
 			freeException(msg);
 		s->def->inlineProp = 0;
 		return 0;
@@ -302,7 +360,7 @@ OPTremapSwitched(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int id
 	    !isVarConstant(mb,getArg(pci,1)) &&
 	    !isVarConstant(mb,getArg(pci,2)) &&
 	    !isVarConstant(mb,getArg(pci,4)) &&
-		pci->argc != 5) 
+		pci->argc != 5)
 			return 0;
 	fcn = VALget(&getVar(mb, getArg(pci, 2))->value);
 	for(i=0;OperatorMap[i].src;i++)
@@ -364,15 +422,15 @@ OPTremapImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				}
 			} else if (OPTremapDirect(cntxt, mb, stk, p, i, scope) ||
 				OPTremapSwitched(cntxt, mb, stk, p, i, scope)) {
-				freeInstruction(p); 
+				freeInstruction(p);
 				doit++;
 			} else {
 				pushInstruction(mb, p);
 			}
-		} else if (p->argc == 4 && 
-			getModuleId(p) == aggrRef && 
+		} else if (p->argc == 4 &&
+			getModuleId(p) == aggrRef &&
 			getFunctionId(p) == avgRef) {
-			/* group aggr.avg -> aggr.sum/aggr.count */	
+			/* group aggr.avg -> aggr.sum/aggr.count */
 			InstrPtr sum, avg,t, iszero;
 			InstrPtr cnt;
 			sum = copyInstruction(p);
@@ -390,7 +448,7 @@ OPTremapImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			pushInstruction(mb, sum);
 			pushInstruction(mb, cnt);
 
-			t = newInstruction(mb, batcalcRef, putName("=="));
+			t = newInstruction(mb, batcalcRef, eqRef);
 			getArg(t,0) = newTmpVariable(mb, newBatType(TYPE_bit));
 			t = addArgument(mb, t, getDestVar(cnt));
 			t = pushLng(mb, t, 0);
@@ -403,7 +461,7 @@ OPTremapImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			pushInstruction(mb, t);
 			sum = t;
 
-			t = newInstruction(mb, batcalcRef, putName("ifthenelse"));
+			t = newInstruction(mb, batcalcRef, ifthenelseRef);
 			getArg(t,0) = newTmpVariable(mb, getArgType(mb, p, 0));
 			t = addArgument(mb, t, getDestVar(iszero));
 			t = pushNil(mb, t, TYPE_dbl);
@@ -421,6 +479,8 @@ OPTremapImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			getArg(avg, 0) = getArg(p, 0);
 			avg = addArgument(mb, avg, getDestVar(sum));
 			avg = addArgument(mb, avg, getDestVar(cnt));
+			avg = pushNil(mb, avg, TYPE_bat);
+			avg = pushNil(mb, avg, TYPE_bat);
 			freeInstruction(p);
 			pushInstruction(mb, avg);
 		} else {
@@ -432,7 +492,7 @@ OPTremapImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			freeInstruction(old[i]);
 	GDKfree(old);
 
-	if (doit) 
+	if (doit)
 		msg = chkTypes(cntxt->usermodule,mb,TRUE);
     /* Defense line against incorrect plans */
     if( msg == MAL_SUCCEED && doit > 0){

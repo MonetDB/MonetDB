@@ -140,42 +140,36 @@ project (
 % .plan # table_name
 % rel # name
 % clob # type
-% 113 # length
+% 111 # length
 project (
 | group by (
 | | project (
-| | | project (
-| | | | table(sys.dummyme) [ "dummyme"."a" NOT NULL HASHCOL  ] COUNT 
-| | | ) [ bigint["dummyme"."a" NOT NULL HASHCOL ] as "%3"."%3", sys.sql_add("%3"."%3", bigint "1") as "%2"."%2" ]
-| | ) [ "%2"."%2" ]
+| | | table(sys.dummyme) [ "dummyme"."a" NOT NULL HASHCOL  ] COUNT 
+| | ) [ bigint["dummyme"."a" NOT NULL HASHCOL ] as "%3"."%3", sys.sql_add("%3"."%3", bigint "1") as "%2"."%2" ]
 | ) [  ] [ sys.count unique  no nil ("%2"."%2") as "%1"."%1" ]
 ) [ "%1"."%1" ]
 #plan select count(distinct a + b) from dummyme;
 % .plan # table_name
 % rel # name
 % clob # type
-% 148 # length
+% 146 # length
 project (
 | group by (
 | | project (
-| | | project (
-| | | | table(sys.dummyme) [ "dummyme"."a" NOT NULL HASHCOL , "dummyme"."b" ] COUNT 
-| | | ) [ bigint["dummyme"."a" NOT NULL HASHCOL ] as "%3"."%3", bigint["dummyme"."b"] as "%4"."%4", sys.sql_add("%3"."%3", "%4"."%4") as "%2"."%2" ]
-| | ) [ "%2"."%2" ]
+| | | table(sys.dummyme) [ "dummyme"."a" NOT NULL HASHCOL , "dummyme"."b" ] COUNT 
+| | ) [ bigint["dummyme"."a" NOT NULL HASHCOL ] as "%3"."%3", bigint["dummyme"."b"] as "%4"."%4", sys.sql_add("%3"."%3", "%4"."%4") as "%2"."%2" ]
 | ) [  ] [ sys.count unique  no nil ("%2"."%2") as "%1"."%1" ]
 ) [ "%1"."%1" ]
 #plan select count(distinct abs(a)) from dummyme;
 % .plan # table_name
 % rel # name
 % clob # type
-% 69 # length
+% 67 # length
 project (
 | group by (
 | | project (
-| | | project (
-| | | | table(sys.dummyme) [ "dummyme"."a" NOT NULL HASHCOL  ] COUNT 
-| | | ) [ sys.abs("dummyme"."a" NOT NULL HASHCOL ) as "%2"."%2" ]
-| | ) [ "%2"."%2" ]
+| | | table(sys.dummyme) [ "dummyme"."a" NOT NULL HASHCOL  ] COUNT 
+| | ) [ sys.abs("dummyme"."a" NOT NULL HASHCOL ) as "%2"."%2" ]
 | ) [  ] [ sys.count unique  no nil ("%2"."%2") as "%1"."%1" ]
 ) [ "%1"."%1" ]
 #ROLLBACK;

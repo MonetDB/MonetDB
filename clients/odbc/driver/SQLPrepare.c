@@ -74,10 +74,6 @@ MNDBPrepare(ODBCStmt *stmt,
 	}
 
 	fixODBCstring(StatementText, TextLength, SQLINTEGER, addStmtError, stmt, return SQL_ERROR);
-	/* TODO: convert ODBC escape sequences ( {d 'value'} or {t
-	 * 'value'} or {ts 'value'} or {escape 'e-char'} or {oj
-	 * outer-join} or {fn scalar-function} etc. ) to MonetDB SQL
-	 * syntax */
 	query = ODBCTranslateSQL(stmt->Dbc, StatementText, (size_t) TextLength,
 				 stmt->noScan);
 	if (query == NULL) {
@@ -88,14 +84,15 @@ MNDBPrepare(ODBCStmt *stmt,
 #ifdef ODBCDEBUG
 	ODBCLOG("SQLPrepare: \"%s\"\n", query);
 #endif
-	s = malloc(strlen(query) + 9);
+	size_t querylen = strlen(query) + 9;
+	s = malloc(querylen);
 	if (s == NULL) {
 		free(query);
 		/* Memory allocation error */
 		addStmtError(stmt, "HY001", NULL, 0);
 		return SQL_ERROR;
 	}
-	strcat(strcpy(s, "prepare "), query);
+	strconcat_len(s, querylen, "prepare ", query, NULL);
 	free(query);
 
 	ODBCResetStmt(stmt);

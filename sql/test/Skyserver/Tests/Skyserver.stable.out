@@ -30,8 +30,8 @@ tables
 [ 0	]
 [ 12	]
 #select 'Region';
-% . # table_name
-% single_value # name
+% .%2 # table_name
+% %2 # name
 % char # type
 % 6 # length
 [ "Region"	]
@@ -68,8 +68,8 @@ tables
 [ 37	]
 [ 923	]
 #select 'TiledTargetAll';
-% . # table_name
-% single_value # name
+% .%2 # table_name
+% %2 # name
 % char # type
 % 14 # length
 [ "TiledTargetAll"	]
@@ -117,8 +117,8 @@ tables
 [ 0	]
 [ 84	]
 #select 'ALL DONE';
-% . # table_name
-% single_value # name
+% .%2 # table_name
+% %2 # name
 % char # type
 % 8 # length
 [ "ALL DONE"	]

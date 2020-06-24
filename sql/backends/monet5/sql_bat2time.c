@@ -109,8 +109,8 @@ batnil_2time_timestamp(bat *res, const bat *bid, const int *digits)
 {
 	BAT *b, *dst;
 	BUN p, q;
-	char *msg = NULL;
 
+	(void)digits;
 	if ((b = BATdescriptor(*bid)) == NULL) {
 		throw(SQL, "batcalc.nil_2time_timestamp", SQLSTATE(HY005) "Cannot access column descriptor");
 	}
@@ -120,14 +120,7 @@ batnil_2time_timestamp(bat *res, const bat *bid, const int *digits)
 		throw(SQL, "sql.timestamp", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
 	BATloop(b, p, q) {
-		timestamp r;
-		msg = nil_2time_timestamp(&r, NULL, digits);
-		if (msg) {
-			BBPunfix(dst->batCacheid);
-			BBPunfix(b->batCacheid);
-			return msg;
-		}
-		if (BUNappend(dst, &r, false) != GDK_SUCCEED) {
+		if (BUNappend(dst, &timestamp_nil, false) != GDK_SUCCEED) {
 			BBPunfix(b->batCacheid);
 			BBPreclaim(dst);
 			throw(SQL, "sql.timestamp", SQLSTATE(HY013) MAL_MALLOC_FAIL);
@@ -135,7 +128,14 @@ batnil_2time_timestamp(bat *res, const bat *bid, const int *digits)
 	}
 	BBPkeepref(*res = dst->batCacheid);
 	BBPunfix(b->batCacheid);
-	return msg;
+	return MAL_SUCCEED;
+}
+
+str
+batnil_ce_2time_timestamp(bat *res, const bat *bid, const int *digits, const bat *r)
+{
+	(void)r;
+	return batnil_2time_timestamp(res, bid, digits);
 }
 
 str
@@ -223,8 +223,8 @@ batnil_2time_daytime(bat *res, const bat *bid, const int *digits)
 {
 	BAT *b, *dst;
 	BUN p, q;
-	char *msg = NULL;
 
+	(void)digits;
 	if ((b = BATdescriptor(*bid)) == NULL) {
 		throw(SQL, "batcalc.nil_2time_daytime", SQLSTATE(HY005) "Cannot access column descriptor");
 	}
@@ -234,14 +234,7 @@ batnil_2time_daytime(bat *res, const bat *bid, const int *digits)
 		throw(SQL, "sql.daytime", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
 	BATloop(b, p, q) {
-		daytime r;
-		msg = nil_2time_daytime(&r, NULL, digits);
-		if (msg) {
-			BBPunfix(dst->batCacheid);
-			BBPunfix(b->batCacheid);
-			return msg;
-		}
-		if (BUNappend(dst, &r, false) != GDK_SUCCEED) {
+		if (BUNappend(dst, &daytime_nil, false) != GDK_SUCCEED) {
 			BBPunfix(b->batCacheid);
 			BBPreclaim(dst);
 			throw(SQL, "sql.daytime", SQLSTATE(HY013) MAL_MALLOC_FAIL);
@@ -249,6 +242,13 @@ batnil_2time_daytime(bat *res, const bat *bid, const int *digits)
 	}
 	BBPkeepref(*res = dst->batCacheid);
 	BBPunfix(b->batCacheid);
-	return msg;
+	return MAL_SUCCEED;
+}
+
+str
+batnil_ce_2time_daytime(bat *res, const bat *bid, const int *digits, const bat *r)
+{
+	(void)r;
+	return batnil_2time_daytime(res, bid, digits);
 }
 

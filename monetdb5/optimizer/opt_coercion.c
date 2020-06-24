@@ -39,23 +39,23 @@ coercionOptimizerCalcStep(Client cntxt, MalBlkPtr mb, int i, Coercion *coerce)
 		return;
 #endif
 	if( getModuleId(p) != batcalcRef || getFunctionId(p) == 0) return;
-	if( ! (getFunctionId(p) == plusRef || getFunctionId(p) == minusRef || getFunctionId(p) == mulRef || getFunctionId(p) == divRef || *getFunctionId(p) =='%') || p->argc !=3)
+	if( ! (getFunctionId(p) == plusRef || getFunctionId(p) == minusRef || getFunctionId(p) == mulRef || getFunctionId(p) == divRef || getFunctionId(p) == modRef) || p->argc !=3)
 		return;
 
 	a = getBatType(getVarType(mb, getArg(p,1)));
 	b = getBatType(getVarType(mb, getArg(p,2)));
 	varid = getArg(p,1);
-	if ( a == r && coerce[varid].src && coerce[varid].fromtype < r ) 
+	if ( a == r && coerce[varid].src && coerce[varid].fromtype < r )
 	{
-		// Remove upcast on first argument 
+		// Remove upcast on first argument
 		getArg(p,1) = coerce[varid].src;
 		if ( chkInstruction(cntxt->usermodule, mb, p) || p->typechk == TYPE_UNKNOWN)
 			getArg(p,1) = varid;
 	}
 	varid = getArg(p,2);
-	if ( b == r && coerce[varid].src &&  coerce[varid].fromtype < r ) 
+	if ( b == r && coerce[varid].src &&  coerce[varid].fromtype < r )
 	{
-		// Remove upcast on second argument 
+		// Remove upcast on second argument
 		getArg(p,2) = coerce[varid].src;
 		if ( chkInstruction(cntxt->usermodule, mb, p) || p->typechk == TYPE_UNKNOWN)
 			getArg(p,2) = varid;
@@ -136,7 +136,7 @@ OPTcoercionImplementation(Client cntxt,MalBlkPtr mb, MalStkPtr stk, InstrPtr pci
 		          || ( p->argc == 3
 		               && isVarConstant(mb,getArg(p,1))
 		               && getArgType(mb,p,1) == TYPE_int
-		               //to-scale == 0, i.e., no scale change 
+		               //to-scale == 0, i.e., no scale change
 		               && *(int*) getVarValue(mb, getArg(p,1)) == 0 ) ) ) {
 			k = getArg(p,0);
 			coerce[k].pc= i;
@@ -168,7 +168,7 @@ OPTcoercionImplementation(Client cntxt,MalBlkPtr mb, MalStkPtr stk, InstrPtr pci
         	msg = chkFlow(mb);
 	if (!msg)
         	msg = chkDeclarations(mb);
-    } 
+    }
     /* keep all actions taken as a post block comment */
 	usec = GDKusec()- usec;
     snprintf(buf,256,"%-20s actions=%2d time=" LLFMT " usec","coercion",actions, usec);

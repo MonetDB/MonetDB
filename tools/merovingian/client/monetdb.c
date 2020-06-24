@@ -49,7 +49,7 @@
 static char *mero_host = NULL;
 static int mero_port = -1;
 static char *mero_pass = NULL;
-static char monetdb_quiet = 0;
+static bool monetdb_quiet = false;
 static int TERMWIDTH = 0;  /* default to no wrapping */
 
 static void
@@ -487,22 +487,23 @@ printStatus(sabdb *stats, int mode, int dbwidth, int uriwidth)
 }
 
 static sabdb *
-globMatchDBS(int argc, char *argv[], sabdb **orig, char *cmd)
+globMatchDBS(int *fails, int argc, char *argv[], sabdb **orig, char *cmd)
 {
 	sabdb *w = NULL;
 	sabdb *top = NULL;
 	sabdb *prev;
 	sabdb *stats;
 	int i;
-	char matched;
+	int failcount = 0;
+	bool matched;
 
 	for (i = 1; i < argc; i++) {
-		matched = 0;
+		matched = false;
 		if (argv[i] != NULL) {
 			prev = NULL;
 			for (stats = *orig; stats != NULL; stats = stats->next) {
 				if (db_glob(argv[i], stats->dbname)) {
-					matched = 1;
+					matched = true;
 					/* move out of orig into w, such that we can't
 					 * get double matches in the same output list
 					 * (as side effect also avoids a double free
@@ -528,12 +529,15 @@ globMatchDBS(int argc, char *argv[], sabdb **orig, char *cmd)
 			}
 			if (w != NULL)
 				w->next = NULL;
-			if (matched == 0) {
+			if (!matched) {
 				fprintf(stderr, "%s: no such database: %s\n", cmd, argv[i]);
 				argv[i] = NULL;
+				failcount++;
 			}
 		}
 	}
+	if (fails)
+		*fails = failcount;
 	return(top);
 }
 
@@ -607,13 +611,14 @@ simple_argv_cmd(char *cmd, sabdb *dbs, char *merocmd,
  * flags and just pushing all (database) arguments over to merovingian
  * for performing merocmd action.
  */
-static void
-simple_command(int argc, char *argv[], char *merocmd, char *successmsg, char glob)
+static int
+simple_command(int argc, char *argv[], char *merocmd, char *successmsg, bool glob)
 {
 	int i;
 	sabdb *orig = NULL;
 	sabdb *stats = NULL;
 	char *e;
+	int fails = 0;
 
 	if (argc == 1) {
 		/* print help message for this command */
@@ -640,12 +645,12 @@ simple_command(int argc, char *argv[], char *merocmd, char *successmsg, char glo
 			free(e);
 			exit(2);
 		}
-		stats = globMatchDBS(argc, argv, &orig, argv[0]);
+		stats = globMatchDBS(&fails, argc, argv, &orig, argv[0]);
 		msab_freeStatus(&orig);
 		orig = stats;
 
 		if (orig == NULL)
-			exit(1);
+			return 1;
 	} else {
 		for (i = 1; i < argc; i++) {
 			if (argv[i] != NULL) {
@@ -662,12 +667,13 @@ simple_command(int argc, char *argv[], char *merocmd, char *successmsg, char glo
 
 	simple_argv_cmd(argv[0], orig, merocmd, successmsg, NULL);
 	msab_freeStatus(&orig);
+	return fails > 0;
 }
 
-static void
+static int
 command_status(int argc, char *argv[])
 {
-	int doall = 1; /* we default to showing all */
+	bool doall = true; /* we default to showing all */
 	int mode = 1;  /* 0=crash, 1=short, 2=long */
 	char *state = "rbscl"; /* contains states to show */
 	int i;
@@ -681,6 +687,7 @@ command_status(int argc, char *argv[])
 	int twidth = TERMWIDTH;
 	int dbwidth = 0;
 	int uriwidth = 0;
+	int fails = 0;
 
 	if (argc == 0) {
 		exit(2);
@@ -726,7 +733,7 @@ command_status(int argc, char *argv[])
 					case '-':
 						if (p[1] == '\0') {
 							if (argc - 1 > i)
-								doall = 0;
+								doall = false;
 							i = argc;
 							break;
 						}
@@ -741,7 +748,7 @@ command_status(int argc, char *argv[])
 			 * later on */
 			argv[i] = NULL;
 		} else {
-			doall = 0;
+			doall = false;
 		}
 	}
 
@@ -753,8 +760,8 @@ command_status(int argc, char *argv[])
 
 	/* look at the arguments and evaluate them based on a glob (hence we
 	 * listed all databases before) */
-	if (doall != 1) {
-		stats = globMatchDBS(argc, argv, &orig, "status");
+	if (!doall) {
+		stats = globMatchDBS(&fails, argc, argv, &orig, "status");
 		msab_freeStatus(&orig);
 		orig = stats;
 	}
@@ -872,6 +879,8 @@ command_status(int argc, char *argv[])
 
 	if (orig != NULL)
 		msab_freeStatus(&orig);
+
+	return fails > 0;
 }
 
 static int
@@ -983,10 +992,10 @@ typedef enum {
 	KILL
 } startstop;
 
-static void
+static int
 command_startstop(int argc, char *argv[], startstop mode)
 {
-	int doall = 0;
+	bool doall = false;
 	int i;
 	char *e;
 	sabdb *orig = NULL;
@@ -996,6 +1005,7 @@ command_startstop(int argc, char *argv[], startstop mode)
 	char *action = NULL;
 	char *p;
 	char *nargv[64];
+	int fails = 0;
 
 	switch (mode) {
 		case START:
@@ -1026,12 +1036,12 @@ command_startstop(int argc, char *argv[], startstop mode)
 			for (p = argv[i] + 1; *p != '\0'; p++) {
 				switch (*p) {
 					case 'a':
-						doall = 1;
+						doall = true;
 					break;
 					case '-':
 						if (p[1] == '\0') {
 							if (argc - 1 > i)
-								doall = 0;
+								doall = false;
 							i = argc;
 							break;
 						}
@@ -1055,7 +1065,7 @@ command_startstop(int argc, char *argv[], startstop mode)
 		exit(2);
 	}
 	if (!doall) {
-		stats = globMatchDBS(argc, argv, &orig, type);
+		stats = globMatchDBS(&fails, argc, argv, &orig, type);
 		msab_freeStatus(&orig);
 		orig = stats;
 	}
@@ -1098,7 +1108,7 @@ command_startstop(int argc, char *argv[], startstop mode)
 		msab_freeStatus(&orig);
 	}
 
-	return;
+	return fails > 0;
 }
 
 typedef enum {
@@ -1120,6 +1130,7 @@ command_set(int argc, char *argv[], meroset type)
 	sabdb *orig = NULL;
 	sabdb *stats = NULL;
 	char *e;
+	int fails = 0;
 
 	if (argc >= 1 && argc <= 2) {
 		/* print help message for this command */
@@ -1182,7 +1193,7 @@ command_set(int argc, char *argv[], meroset type)
 		free(e);
 		exit(2);
 	}
-	stats = globMatchDBS(argc, argv, &orig, argv[0]);
+	stats = globMatchDBS(&fails, argc, argv, &orig, argv[0]);
 	msab_freeStatus(&orig);
 	orig = stats;
 
@@ -1233,13 +1244,13 @@ command_set(int argc, char *argv[], meroset type)
 	}
 
 	msab_freeStatus(&orig);
-	exit(state);
+	exit(state || fails > 0);
 }
 
-static void
+static int
 command_get(int argc, char *argv[])
 {
-	char doall = 1;
+	bool doall = true;
 	char *p;
 	char *property = NULL;
 	char propall = 0;
@@ -1253,6 +1264,7 @@ command_get(int argc, char *argv[])
 	confkeyval *kv;
 	confkeyval *defprops = getDefaultProps();
 	confkeyval *props = getDefaultProps();
+	int fails = 0;
 
 	if (argc == 1) {
 		/* print help message for this command */
@@ -1270,7 +1282,7 @@ command_get(int argc, char *argv[])
 					case '-':
 						if (p[1] == '\0') {
 							if (argc - 1 > i)
-								doall = 0;
+								doall = false;
 							i = argc;
 							break;
 						}
@@ -1292,7 +1304,7 @@ command_get(int argc, char *argv[])
 			if (strcmp(property, "all") == 0)
 				propall = 1;
 		} else {
-			doall = 0;
+			doall = false;
 		}
 	}
 
@@ -1310,7 +1322,7 @@ command_get(int argc, char *argv[])
 	/* look at the arguments and evaluate them based on a glob (hence we
 	 * listed all databases before) */
 	if (!doall) {
-		stats = globMatchDBS(argc, argv, &orig, "get");
+		stats = globMatchDBS(&fails, argc, argv, &orig, "get");
 		msab_freeStatus(&orig);
 		orig = stats;
 	}
@@ -1319,7 +1331,7 @@ command_get(int argc, char *argv[])
 	if (orig == NULL) {
 		free(props);
 		free(defprops);
-		return;
+		return 1;
 	}
 
 	e = control_send(&buf, mero_host, mero_port,
@@ -1462,6 +1474,7 @@ command_get(int argc, char *argv[])
 	msab_freeStatus(&orig);
 	free(props);
 	free(defprops);
+	return fails > 0;
 }
 
 static void
@@ -1596,7 +1609,7 @@ command_destroy(int argc, char *argv[])
 		free(e);
 		exit(2);
 	}
-	stats = globMatchDBS(argc, argv, &orig, "destroy");
+	stats = globMatchDBS(NULL, argc, argv, &orig, "destroy");
 	msab_freeStatus(&orig);
 	orig = stats;
 
@@ -1635,28 +1648,28 @@ command_destroy(int argc, char *argv[])
 	msab_freeStatus(&orig);
 }
 
-static void
+static int
 command_lock(int argc, char *argv[])
 {
-	simple_command(argc, argv, "lock", "put database under maintenance", 1);
+	return simple_command(argc, argv, "lock", "put database under maintenance", true);
 }
 
-static void
+static int
 command_release(int argc, char *argv[])
 {
-	simple_command(argc, argv, "release", "taken database out of maintenance mode", 1);
+	return simple_command(argc, argv, "release", "taken database out of maintenance mode", true);
 }
 
-static void
+static int
 command_profilerstart(int argc, char *argv[])
 {
-	simple_command(argc, argv, "profilerstart", "started profiler", 1);
+	return simple_command(argc, argv, "profilerstart", "started profiler", true);
 }
 
-static void
+static int
 command_profilerstop(int argc, char *argv[])
 {
-	simple_command(argc, argv, "profilerstop", "stopped profiler", 1);
+	return simple_command(argc, argv, "profilerstop", "stopped profiler", true);
 }
 
 int
@@ -1664,6 +1677,7 @@ main(int argc, char *argv[])
 {
 	char buf[1024];
 	int i;
+	int retval = 0;
 #ifdef TIOCGWINSZ
 	struct winsize ws;
 
@@ -1689,7 +1703,7 @@ main(int argc, char *argv[])
 				command_version();
 			return(0);
 			case 'q':
-				monetdb_quiet = 1;
+				monetdb_quiet = true;
 			break;
 			case 'h':
 				if (strlen(&argv[i][2]) > 0) {
@@ -1780,12 +1794,13 @@ main(int argc, char *argv[])
 		/* a socket looks like /tmp/.s.merovingian.<tcpport>, try
 		 * finding such port.  If mero_host is set, it is the location
 		 * where we should search, which defaults to '/tmp' */
+		char *err;
 		if (mero_host == NULL)
 			mero_host = "/tmp";
 		/* first try the port given (or else its default) */
 		snprintf(buf, sizeof(buf), "%s/.s.merovingian.%d",
 			 mero_host, mero_port == -1 ? 50000 : mero_port);
-		if (control_ping(buf, -1, NULL) == 0) {
+		if ((err = control_ping(buf, -1, NULL)) == NULL) {
 			mero_host = buf;
 		} else {
 			/* if port wasn't given, we can try and search
@@ -1797,7 +1812,8 @@ main(int argc, char *argv[])
 
 				d = opendir(mero_host);
 				if (d == NULL) {
-					fprintf(stderr, "monetdb: cannot find a control socket, use -h and/or -p\n");
+					fprintf(stderr, "monetdb: %s: %s\n",
+							mero_host, strerror(errno));
 					exit(1);
 				}
 				while ((e = readdir(d)) != NULL) {
@@ -1807,10 +1823,14 @@ main(int argc, char *argv[])
 					if (stat(buf, &s) == -1)
 						continue;
 					if (S_ISSOCK(s.st_mode)) {
-						if (control_ping(buf, -1, NULL) == 0) {
+						char *nerr;
+						if ((nerr = control_ping(buf, -1, NULL)) == NULL) {
 							mero_host = buf;
+							free(err);
+							err = NULL;
 							break;
 						}
+						free(nerr);
 					}
 				}
 				closedir(d);
@@ -1818,7 +1838,7 @@ main(int argc, char *argv[])
 		}
 
 		if (mero_host != buf) {
-			fprintf(stderr, "monetdb: cannot find a control socket, use -h and/or -p\n");
+			fprintf(stderr, "monetdb: %s\n", err);
 			exit(1);
 		}
 		/* don't confuse control_send later on */
@@ -1834,25 +1854,25 @@ main(int argc, char *argv[])
 	} else if (strcmp(argv[i], "destroy") == 0) {
 		command_destroy(argc - i, &argv[i]);
 	} else if (strcmp(argv[i], "lock") == 0) {
-		command_lock(argc - i, &argv[i]);
+		retval = command_lock(argc - i, &argv[i]);
 	} else if (strcmp(argv[i], "release") == 0) {
-		command_release(argc - i, &argv[i]);
+		retval = command_release(argc - i, &argv[i]);
 	} else if (strcmp(argv[i], "profilerstart") == 0) {
-		command_profilerstart(argc - i, &argv[i]);
+		retval = command_profilerstart(argc - i, &argv[i]);
 	} else if (strcmp(argv[i], "profilerstop") == 0) {
-		command_profilerstop(argc - i, &argv[i]);
+		retval = command_profilerstop(argc - i, &argv[i]);
 	} else if (strcmp(argv[i], "status") == 0) {
-		command_status(argc - i, &argv[i]);
+		retval = command_status(argc - i, &argv[i]);
 	} else if (strcmp(argv[i], "start") == 0) {
-		command_startstop(argc - i, &argv[i], START);
+		retval = command_startstop(argc - i, &argv[i], START);
 	} else if (strcmp(argv[i], "stop") == 0) {
-		command_startstop(argc - i, &argv[i], STOP);
+		retval = command_startstop(argc - i, &argv[i], STOP);
 	} else if (strcmp(argv[i], "kill") == 0) {
-		command_startstop(argc - i, &argv[i], KILL);
+		retval = command_startstop(argc - i, &argv[i], KILL);
 	} else if (strcmp(argv[i], "set") == 0) {
 		command_set(argc - i, &argv[i], SET);
 	} else if (strcmp(argv[i], "get") == 0) {
-		command_get(argc - i, &argv[i]);
+		retval = command_get(argc - i, &argv[i]);
 	} else if (strcmp(argv[i], "inherit") == 0) {
 		command_set(argc - i, &argv[i], INHERIT);
 	} else if (strcmp(argv[i], "discover") == 0) {
@@ -1860,12 +1880,13 @@ main(int argc, char *argv[])
 	} else {
 		fprintf(stderr, "monetdb: unknown command: %s\n", argv[i]);
 		command_help(0, NULL);
+		retval = 1;
 	}
 
 	if (mero_pass != NULL)
 		free(mero_pass);
 
-	return(0);
+	return retval;
 }
 
 /* vim:set ts=4 sw=4 noexpandtab: */

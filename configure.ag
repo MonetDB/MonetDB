@@ -52,7 +52,7 @@ dnl  configure file, whereas comments starting with dnl are elided
 dnl  (including their trailing newline).
 
 AC_PREREQ([2.63b])
-AC_INIT([MonetDB], [11.36.0], [https://bugs.monetdb.org/], [MonetDB], [https://www.monetdb.org/])
+AC_INIT([MonetDB], [11.37.8], [https://bugs.monetdb.org/], [MonetDB], [https://www.monetdb.org/])
 AC_COPYRIGHT([Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.])
 AC_CONFIG_AUX_DIR([buildtools/conf])
 AC_CONFIG_MACRO_DIR([buildtools/conf])
@@ -131,7 +131,7 @@ AS_CASE([$CC],
 		#  __GNUC_MINOR__, and __GNUC_PATCHLEVEL__ macros.
 		CC="$CC -no-gcc"])
 
-AS_IF([test -f "$srcdir"/vertoo.data],
+AS_IF([test -f "$srcdir"/.bumpversion.cfg],
 	[
 	# Developers compiling from Mercurial:
 	# default is --enable-strict --enable-assert --enable-debug --disable-optimize --enable-developer --enable-profiler=auto
@@ -314,14 +314,14 @@ AC_ARG_ENABLE([static-analysis],
 MONETDB5_PASSWDHASH="SHA512"
 AC_ARG_WITH([password-backend],
 	[AS_HELP_STRING([--with-password-backend=HASHALG],
-		[password hash algorithm, one of MD5, SHA1, RIPEMD160, SHA224, SHA256, SHA384, SHA512, defaults to SHA512])],
+		[password hash algorithm, one of SHA1, RIPEMD160, SHA224, SHA256, SHA384, SHA512, defaults to SHA512])],
 	[password_backend="$withval"])
 AS_CASE([$password_backend],
 	[yes|no|auto|""],
 		[],
-	[MD5|SHA1|RIPEMD160|SHA224|SHA256|SHA384|SHA512],
+	[SHA1|RIPEMD160|SHA224|SHA256|SHA384|SHA512],
 		[MONETDB5_PASSWDHASH="$password_backend"],
-	[AC_MSG_ERROR(['$password_backend' invalid, choose one of MD5, SHA1, RIPEMD160, SHA224, SHA256, SHA384, SHA512])])
+	[AC_MSG_ERROR(['$password_backend' invalid, choose one of SHA1, RIPEMD160, SHA224, SHA256, SHA384, SHA512])])
 AC_DEFINE_UNQUOTED([MONETDB5_PASSWDHASH], ["$MONETDB5_PASSWDHASH"],
 	[The used password hash algorithm])
 AC_DEFINE_UNQUOTED([MONETDB5_PASSWDHASH_TOKEN], [$MONETDB5_PASSWDHASH],
@@ -536,40 +536,47 @@ AS_VAR_IF([enable_strict], [yes], [
 		MCHECK_ADD_FLAG([-Wall])
 		MCHECK_ADD_FLAG([-Wextra])
 		MCHECK_ADD_FLAG([-W])
-		MCHECK_ADD_FLAG([-Werror-implicit-function-declaration])
 
-		MCHECK_ADD_FLAG([-Wpointer-arith])
-		MCHECK_ADD_FLAG([-Wundef])
-		MCHECK_ADD_FLAG([-Wformat=2])
-		MCHECK_ADD_FLAG([-Wformat-overflow=1])
-		MCHECK_ADD_FLAG([-Wno-format-truncation])
-		MCHECK_ADD_FLAG([-Wno-format-nonliteral])
-dnl		MCHECK_ADD_FLAG([-Wformat-signedness]) -- numpy messes this up
 		AS_VAR_IF([target_os], [cygwin],
 			[MCHECK_ADD_FLAG([-Wno-error=suggest-attribute=format])],
 			[MCHECK_ADD_FLAG([-Wno-cast-function-type])])
+		MCHECK_ADD_FLAG([-Wduplicated-branches])
+		MCHECK_ADD_FLAG([-Wduplicated-cond])
+		MCHECK_ADD_FLAG([-Wformat=2])
+		MCHECK_ADD_FLAG([-Wformat-overflow=1])
+		dnl needed for lots of snprintf calls
+		MCHECK_ADD_FLAG([-Wno-format-truncation])
+		dnl needed for timestamp_to_str()
+		MCHECK_ADD_FLAG([-Wno-format-nonliteral])
+		MCHECK_ADD_FLAG([-Wformat-signedness])
 		MCHECK_ADD_FLAG([-Winit-self])
 		MCHECK_ADD_FLAG([-Winvalid-pch])
+		MCHECK_ADD_FLAG([-Wjump-misses-init])
+		MCHECK_ADD_FLAG([-Wlogical-op])
 		MCHECK_ADD_FLAG([-Wmissing-declarations])
 		MCHECK_ADD_FLAG([-Wmissing-format-attribute])
+		MCHECK_ADD_FLAG([-Wmissing-include-dirs])
+		MCHECK_ADD_FLAG([-Wmissing-noreturn])
 		MCHECK_ADD_FLAG([-Wmissing-prototypes])
-		# need this for clang 9.1.0 on Darwin:
-		MCHECK_ADD_FLAG([-Wno-missing-field-initializers])
+		MCHECK_ADD_FLAG([-Wnested-externs])
+		# apparently, we get warnings (hence errors) on some
+		# versions of Darwin:
+		AS_CASE([$CC_ver],
+			[clang-*],
+			[MCHECK_ADD_FLAG([-Wno-nullability-completeness])])
 		MCHECK_ADD_FLAG([-Wold-style-definition])
 		MCHECK_ADD_FLAG([-Wpacked])
+		MCHECK_ADD_FLAG([-Wpacked-bitfield-compat])
+		MCHECK_ADD_FLAG([-Wpointer-arith])
+		MCHECK_ADD_FLAG([-Wrestrict])
+		MCHECK_ADD_FLAG([-Wstack-protector])
+		MCHECK_ADD_FLAG([-fstack-protector-all])
+		MCHECK_ADD_FLAG([-fstrict-aliasing])
+		MCHECK_ADD_FLAG([-Wsync-nand])
+		MCHECK_ADD_FLAG([-Wundef])
+		MCHECK_ADD_FLAG([-Wuninitialized])
 		MCHECK_ADD_FLAG([-Wunknown-pragmas])
 		MCHECK_ADD_FLAG([-Wvariadic-macros])
-		MCHECK_ADD_FLAG([-fstack-protector-all])
-		MCHECK_ADD_FLAG([-Wstack-protector])
-		MCHECK_ADD_FLAG([-Wpacked-bitfield-compat])
-		MCHECK_ADD_FLAG([-Wsync-nand])
-		MCHECK_ADD_FLAG([-Wjump-misses-init])
-		MCHECK_ADD_FLAG([-Wmissing-include-dirs])
-		MCHECK_ADD_FLAG([-Wlogical-op])
-		MCHECK_ADD_FLAG([-Wduplicated-cond])
-		MCHECK_ADD_FLAG([-Wduplicated-branches])
-		MCHECK_ADD_FLAG([-Wrestrict])
-		MCHECK_ADD_FLAG([-Wnested-externs])
 
 		# since we use values of type "int8_t" as subscript,
 		# and int8_t may be defined as plain "char", we cannot
@@ -594,7 +601,6 @@ dnl		MCHECK_ADD_FLAG([-Wformat-signedness]) -- numpy messes this up
 		dnl  MCHECK_ADD_FLAG([-Wdisabled-optimization])
 		dnl  MCHECK_ADD_FLAG([-Wfloat-equal])
 		dnl  MCHECK_ADD_FLAG([-Winline])
-		dnl  MCHECK_ADD_FLAG([-Wmissing-noreturn])
 		dnl  MCHECK_ADD_FLAG([-Wpadded])
 		dnl  MCHECK_ADD_FLAG([-Wredundant-decls])
 		dnl  MCHECK_ADD_FLAG([-Wshadow])
@@ -807,6 +813,9 @@ AM_CONDITIONAL([HAVE_MAL_DEBUGGER], [test "x$enable_assert" != xno])
 
 AC_MSG_CHECKING([for --enable-optimize])
 AS_CASE([$enable_optimize], [yes], [
+	# if optimizing *and* enable-strict, use FORTIFY_SOURCE
+	AS_VAR_IF([enable_strict], [yes], [
+		MCHECK_ADD_FLAG([-D_FORTIFY_SOURCE=2])])
 	origCFLAGS="$CFLAGS"
 	# remove "-O2" as we add "-Ox" and some compilers don't like "-Oy -Ox" combinations
 	CFLAGS=`AS_ECHO([" $CFLAGS "]) | sed -e 's| -O2 | |g' -e 's|^ ||' -e 's| $||'`
@@ -847,7 +856,7 @@ AS_CASE([$enable_optimize], [yes], [
 			# -finline-functions, -funswitch-loops,
 			# -fpredictive-commoning, -fgcse-after-reload,
 			# -ftree-vectorize and -fipa-cp-clone
-			CFLAGS="-O3 -fomit-frame-pointer -pipe ${CFLAGS}"
+			CFLAGS="-O2 -fomit-frame-pointer -pipe ${CFLAGS}"
 			# because we explicitly disable debugging, we can explicitly
 			# enable -fomit-frame-pointer here
 			# notes on -funroll-all-loops:
@@ -1422,7 +1431,10 @@ AM_CONDITIONAL([HAVE_UUID], [test x"$have_uuid" != xno])
 AS_CASE([$host],
 [*-darwin*], [
 	AC_DEFINE([HAVE_COMMONCRYPTO], 1, [Define if you have the CommonCrypto library])
-	AC_CHECK_FUNC([CC_MD5_Update], [AC_DEFINE([HAVE_MD5_UPDATE], 1, [Define to 1 if you have the `MD5_Update' function.])])
+	# MD5 is deprecated and gives a warning message on Darwin 19.0.0
+	AS_CASE([$host],
+	[*-darwin1[[0-8]]*],
+		[AC_CHECK_FUNC([CC_MD5_Update], [AC_DEFINE([HAVE_MD5_UPDATE], 1, [Define to 1 if you have the `MD5_Update' function.])])])
 	AC_CHECK_FUNC([CC_RIPEMD160_Update], [AC_DEFINE([HAVE_RIPEMD160_UPDATE], 1, [Define to 1 if you have the `RIPEMD160_Update' function.])])
 	AC_CHECK_FUNC([CC_SHA1_Update], [AC_DEFINE([HAVE_SHA1_UPDATE], 1, [Define to 1 if you have the `SHA1_Update' function.])])
 	AC_CHECK_FUNC([CC_SHA224_Update], [AC_DEFINE([HAVE_SHA224_UPDATE], 1, [Define to 1 if you have the `SHA224_Update' function.])])
@@ -1549,19 +1561,19 @@ AS_VAR_IF([have_zlib], [yes], [
 	AC_DEFINE([HAVE_LIBZ], 1, [Define if you have the z library])])
 AM_CONDITIONAL([HAVE_LIBZ], [test x"$have_zlib" != xno])
 
-org_have_lzma=yes
-have_lzma=$org_have_lzma
+org_have_liblzma=yes
+have_liblzma=$org_have_liblzma
 AC_ARG_WITH([lzma],
 	[AS_HELP_STRING([--with-lzma],
 		[include lzma support (default=yes)])],
-	[have_lzma=$withval])
-AS_VAR_IF([have_lzma], [no], [], [
-	PKG_CHECK_MODULES([liblzma], [liblzma], [have_lzma=yes], [have_lzma=no; why_not_liblzma="(liblzma not found, install xz-libs and xz-devel)"])
-	AS_VAR_IF([have_lzma], [yes], [
+	[have_liblzma=$withval])
+AS_VAR_IF([have_liblzma], [no], [], [
+	PKG_CHECK_MODULES([liblzma], [liblzma], [have_liblzma=yes], [have_liblzma=no; why_not_liblzma="(liblzma not found, install xz-libs and xz-devel)"])
+	AS_VAR_IF([have_liblzma], [yes], [
 		AC_SUBST([PKG_LIBLZMA], [liblzma])])
-	AS_VAR_IF([have_lzma], [yes], [
+	AS_VAR_IF([have_liblzma], [yes], [
 		AC_DEFINE([HAVE_LIBLZMA], 1, [Define if you have the lzma library])])])
-AM_CONDITIONAL([HAVE_LIBLZMA], [test x"$have_lzma" != xno])
+AM_CONDITIONAL([HAVE_LIBLZMA], [test x"$have_liblzma" != xno])
 
 org_have_valgrind=no
 have_valgrind=$org_have_valgrind
@@ -1899,7 +1911,7 @@ AM_CONDITIONAL([HAVE_NETCDF], [test x"$have_netcdf" != xno])
 # liblas, only used in lidar module
 org_have_liblas=auto
 have_liblas=$org_have_liblas
-LIBLAS_INCS=''
+LIBLAS_CFLAGS=''
 LIBLAS_LIBS=''
 AC_ARG_WITH([liblas],
 	[AS_HELP_STRING([--with-liblas=DIR],
@@ -1909,49 +1921,57 @@ AS_CASE([$have_lidar],
 [yes|auto], [
 	# liblas >= 1.8.0 required
 	LIBLAS_VERSION_REQUIRED_MIN=1.8.0
-	LIBLAS_CONFIG=''
-	# locate liblas-config
-	AS_VAR_IF([have_liblas], [no], [], [
-		AS_CASE([$have_liblas],
-		[yes|auto], [XPATH="$PATH"],
+	PKG_CHECK_MODULES([LIBLAS],
+		[liblas >= $LIBLAS_VERSION_REQUIRED_MIN],
+		[have_liblas=yes
+		# work around bug in Fedora 32's liblas-devel-1.8.1-7
+		LIBLAS_CFLAGS=`AS_ECHO(["$LIBLAS_CFLAGS"]) | sed 's|-Iinclude|-I/usr/include|'`
+		LIBLAS_LIBS=`AS_ECHO(["$LIBLAS_LIBS"]) | sed 's|-Llib|-L/usr/lib|'`
+		],
 		[
-			XPATH="$have_liblas/bin"
-			have_liblas=yes])
-		AC_PATH_PROG([LIBLAS_CONFIG], [liblas-config], [], [$XPATH])
-		AS_VAR_IF([LIBLAS_CONFIG], [],
-			[AS_VAR_IF([have_liblas], [yes],
-				[AC_MSG_ERROR([liblas-config not found in $XPATH])],
+		LIBLAS_CONFIG=''
+		# locate liblas-config
+		AS_VAR_IF([have_liblas], [no], [], [
+			AS_CASE([$have_liblas],
+			[yes|auto], [XPATH="$PATH"],
+			[
+				XPATH="$have_liblas/bin"
+				have_liblas=yes])
+			AC_PATH_PROG([LIBLAS_CONFIG], [liblas-config], [], [$XPATH])
+			AS_VAR_IF([LIBLAS_CONFIG], [],
+				[AS_VAR_IF([have_liblas], [yes],
+					[AC_MSG_ERROR([liblas-config not found in $XPATH])],
+					[have_liblas=no
+					 why_not_liblas="(liblas-config not found)"])])])
+		# check the version of liblas
+		AS_VAR_IF([have_liblas], [no], [], [
+			AC_MSG_CHECKING([for liblas >= $LIBLAS_VERSION_REQUIRED_MIN])
+			LIBLAS_VERSION=`$LIBLAS_CONFIG --version`
+			AC_MSG_RESULT([found $LIBLAS_VERSION])
+			AS_VERSION_COMPARE([$LIBLAS_VERSION], [$LIBLAS_VERSION_REQUIRED_MIN],
+				[AS_VAR_IF([have_liblas], [yes],
+					[AC_MSG_ERROR([liblas version $LIBLAS_VERSION is too old])],
+					[have_liblas=no
+					 why_not_liblas="(liblas version $LIBLAS_VERSION is older than required version $LIBLAS_VERSION_REQUIRED_MIN)"])])])
+		# read include dirs, libs and cflags
+		AS_VAR_IF([have_liblas], [no], [], [
+			LIBLAS_CFLAGS=`$LIBLAS_CONFIG --includes`
+			LIBLAS_LIBS=`$LIBLAS_CONFIG --libs`])
+		# liblas-config and liblas/capi/liblas.h could be in different
+		# packages (think Ubuntu) so we need to test for them both
+		AS_VAR_IF([have_liblas], [no], [], [
+			save_CPPFLAGS="$CPPFLAGS"
+			save_LDFLAGS="$LDFLAGS"
+			save_LIBS="$LIBS"
+			CPPFLAGS="$CPPFLAGS $LIBLAS_CFLAGS"
+			LDFLAGS="$LDFLAGS $LIBLAS_LIBS"
+			LIBS=""
+			AC_CHECK_HEADER([liblas/capi/liblas.h], [],
 				[have_liblas=no
-				 why_not_liblas="(liblas-config not found)"])])])
-	# check the version if liblas
-	AS_VAR_IF([have_liblas], [no], [], [
-		AC_MSG_CHECKING([for liblas >= $LIBLAS_VERSION_REQUIRED_MIN])
-		LIBLAS_VERSION=`$LIBLAS_CONFIG --version`
-		AC_MSG_RESULT([found $LIBLAS_VERSION])
-		AS_VERSION_COMPARE([$LIBLAS_VERSION], [$LIBLAS_VERSION_REQUIRED_MIN],
-			[AS_VAR_IF([have_liblas], [yes],
-				[AC_MSG_ERROR([liblas version $LIBLAS_VERSION is too old])],
-				[have_liblas=no
-				 why_not_liblas="(liblas version $LIBLAS_VERSION is older than required version $LIBLAS_VERSION_REQUIRED_MIN)"])])])
-	# read include dirs, libs and cflags
-	AS_VAR_IF([have_liblas], [no], [], [
-		LIBLAS_INCS=`$LIBLAS_CONFIG --includes`
-		LIBLAS_LIBS=`$LIBLAS_CONFIG --libs`])
-	# liblas-config and liblas/capi/liblas.h could be in different
-	# packages (think Ubuntu) so we need to test for them both
-	AS_VAR_IF([have_liblas], [no], [], [
-		save_CPPFLAGS="$CPPFLAGS"
-		save_LDFLAGS="$LDFLAGS"
-		save_LIBS="$LIBS"
-		CPPFLAGS="$CPPFLAGS $LIBLAS_INCS"
-		LDFLAGS="$LDFLAGS $LIBLAS_LIBS"
-		LIBS=""
-		AC_CHECK_HEADER([liblas/capi/liblas.h], [],
-			[have_liblas=no
-			 why_not_liblas="(liblas/capi/liblas.h header file not found)"])
-		CPPFLAGS="$save_CPPFLAGS"
-		LDFLAGS="$save_LDFLAGS"
-		LIBS="$save_LIBS"])
+				 why_not_liblas="(liblas/capi/liblas.h header file not found)"])
+			CPPFLAGS="$save_CPPFLAGS"
+			LDFLAGS="$save_LDFLAGS"
+			LIBS="$save_LIBS"])])
 	# if lidar is enabled and liblas was not found abort
 	AS_VAR_IF([have_liblas], [no], [
 		AS_VAR_IF([have_lidar], [yes],
@@ -1970,22 +1990,22 @@ AS_VAR_IF([have_lidar], [no],
 # this is only used in rpm.mk.in to maybe avoid building MonetDB-lidar
 AC_SUBST([LIBLAS_RPM])
 
-AC_SUBST([LIBLAS_INCS])
+AC_SUBST([LIBLAS_CFLAGS])
 AC_SUBST([LIBLAS_LIBS])
 
 AM_CONDITIONAL([HAVE_LIDAR], [test "x$have_lidar" = xyes -o "x$have_lidar" = xauto])
 
 dnl  check for profiler library
 AS_CASE([$enable_profiler],
-	[no], [have_profiler=no],
+	[no], [],
 	[
 		PKG_CHECK_MODULES([PROFILER], [libprofiler],
-			[have_profiler=yes],
-			[have_profiler=no; why_not_profiler="(profiler library not found)"])
-		AS_VAR_IF([have_profiler], [yes], [
+			[enable_profiler=yes],
+			[enable_profiler=no; why_not_profiler="(profiler library not found)"])
+		AS_VAR_IF([enable_profiler], [yes], [
 			AC_DEFINE([HAVE_LIBPROFILER], 1, [Define if you have the profiler library])
 			AC_SUBST([PKG_PROFILER], [libprofiler])])])
-AM_CONDITIONAL([HAVE_LIBPROFILER], [test x$have_profiler != xno])
+AM_CONDITIONAL([HAVE_LIBPROFILER], [test enable_profiler != xno])
 
 
 #    checks for header files
@@ -2489,13 +2509,12 @@ stpcpy(char *restrict dst, const char *restrict src)
 }
 @%:@endif
 
-@%:@ifndef HAVE_STPCPY
-#ifndef HAVE_STRNCASECMP
-#ifdef WIN32
-#ifndef strncasecmp
-#define strncasecmp _strnicmp
-#endif
-#else
+@%:@ifndef HAVE_STRNCASECMP
+@%:@ifdef WIN32
+@%:@ifndef strncasecmp
+@%:@define strncasecmp _strnicmp
+@%:@endif
+@%:@else
 static inline int
 strncasecmp(const char *s1, const char *s2, size_t n)
 {
@@ -2514,8 +2533,7 @@ strncasecmp(const char *s1, const char *s2, size_t n)
 	}
 	return 0;
 }
-#endif
-#endif
+@%:@endif
 @%:@endif
 
 @%:@if defined(HAVE___INT128)
@@ -2595,6 +2613,7 @@ for comp in \
 	'optimize  ' \
 	'developer ' \
 	'sanitizer ' \
+	'profiler  ' \
 ; do
 	AS_VAR_COPY([dft], [dft_$comp])
 	AS_VAR_COPY([enable], [enable_$comp])

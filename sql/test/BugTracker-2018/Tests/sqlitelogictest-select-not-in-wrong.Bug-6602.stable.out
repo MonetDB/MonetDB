@@ -40,41 +40,41 @@ stdout of test 'sqlitelogictest-select-not-in-wrong.Bug-6602` in directory 'sql/
 #	SELECT NULL;
 [ 4	]
 #SELECT 'Found Montreal' WHERE 'Montreal' IN (SELECT city from CITIES);
-% . # table_name
-% single_value # name
+% .%7 # table_name
+% %7 # name
 % char # type
 % 14 # length
 [ "Found Montreal"	]
-#SELECT 'Found Sidney' WHERE 'Sidney' IN (SELECT city from CITIES);
-% . # table_name
-% single_value # name
+#SELECT 'Found Sydney' WHERE 'Sydney' IN (SELECT city from CITIES);
+% .%7 # table_name
+% %7 # name
 % char # type
 % 12 # length
-#SELECT 'Sidney Not Found' WHERE 'Sidney' NOT IN (SELECT city from CITIES);
-% . # table_name
-% single_value # name
+#SELECT 'Sydney Not Found' WHERE 'Sydney' NOT IN (SELECT city from CITIES);
+% .%7 # table_name
+% %7 # name
 % char # type
 % 16 # length
-#SELECT 'Sidney Not Found' WHERE 'Sidney' NOT IN ('Paris','Montreal','New York');
-% . # table_name
-% single_value # name
+#SELECT 'Sydney Not Found' WHERE 'Sydney' NOT IN ('Paris','Montreal','New York');
+% .%6 # table_name
+% %6 # name
 % char # type
 % 16 # length
-[ "Sidney Not Found"	]
-#SELECT 'Sidney Not Found' WHERE 'Sidney' NOT IN ('Paris','Montreal','New York', NULL);
-% . # table_name
-% single_value # name
+[ "Sydney Not Found"	]
+#SELECT 'Sydney Not Found' WHERE 'Sydney' NOT IN ('Paris','Montreal','New York', NULL);
+% .%7 # table_name
+% %7 # name
 % char # type
 % 16 # length
-#SELECT 'Sidney Not Found' WHERE 'Sidney'<>'Paris' AND 'Sidney'<>'Montreal';
-% . # table_name
-% single_value # name
+#SELECT 'Sydney Not Found' WHERE 'Sydney'<>'Paris' AND 'Sydney'<>'Montreal';
+% .%2 # table_name
+% %2 # name
 % char # type
 % 16 # length
-[ "Sidney Not Found"	]
-#SELECT 'Sidney Not Found' WHERE 'Sidney'<>'Paris' AND 'Sidney'<>'Montreal' AND 'Sidney'<>null;
-% . # table_name
-% single_value # name
+[ "Sydney Not Found"	]
+#SELECT 'Sydney Not Found' WHERE 'Sydney'<>'Paris' AND 'Sydney'<>'Montreal' AND 'Sydney'<>null;
+% .%2 # table_name
+% %2 # name
 % char # type
 % 16 # length
 #SELECT city from CITIES WHERE city in (select city from CITIES);

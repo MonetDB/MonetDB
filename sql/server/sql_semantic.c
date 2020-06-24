@@ -23,8 +23,8 @@
 #include "rel_unnest.h"
 #include "rel_optimizer.h"
 
-/* 
- * For debugging purposes we need to be able to convert sql-tokens to 
+/*
+ * For debugging purposes we need to be able to convert sql-tokens to
  * a string representation.
  *
  * !SQL ERROR <sqlerrno> : <details>
@@ -86,7 +86,7 @@ sql_add_param(mvc *sql, const char *name, sql_subtype *st)
 	if (st && st->type)
 		a->type = *st;
 	a->inout = ARG_IN;
-	if (name && strcmp(name, "*") == 0) 
+	if (name && strcmp(name, "*") == 0)
 		a->type = *sql_bind_localtype("int");
 	if (!sql->params)
 		sql->params = sa_list(sql->sa);
@@ -102,7 +102,7 @@ sql_bind_param(mvc *sql, const char *name)
 		for (n = sql->params->h; n; n = n->next) {
 			sql_arg *a = n->data;
 
-			if (a->name && strcmp(a->name, name) == 0) 
+			if (a->name && strcmp(a->name, name) == 0)
 				return a;
 		}
 	}
@@ -116,7 +116,7 @@ sql_bind_paramnr(mvc *sql, int nr)
 	node *n;
 
 	if (sql->params && nr < list_length(sql->params)) {
-		for (n = sql->params->h, i=0; n && i<nr; n = n->next, i++) 
+		for (n = sql->params->h, i=0; n && i<nr; n = n->next, i++)
 			;
 
 		if (n)
@@ -201,7 +201,7 @@ set_type_param(mvc *sql, sql_subtype *type, int nr)
 {
 	sql_arg *a = sql_bind_paramnr(sql, nr);
 
-	if (!a) 
+	if (!a)
 		return -1;
 	a->type = *type;
 	return 0;
@@ -220,7 +220,7 @@ supertype(sql_subtype *super, sql_subtype *r, sql_subtype *i)
 	sql_subtype lsuper;
 
 	lsuper = *r;
-	if (i->type->base.id > r->type->base.id || 
+	if (i->type->base.id > r->type->base.id ||
 	    (EC_VARCHAR(i->type->eclass) && !EC_VARCHAR(r->type->eclass))) {
 		lsuper = *i;
 		radix = i->type->radix;
@@ -228,7 +228,7 @@ supertype(sql_subtype *super, sql_subtype *r, sql_subtype *i)
 	}
 	if (!lsuper.type->localtype)
 		tpe = "smallint";
-	/* 
+	/*
 	 * In case of different radix we should change one.
 	 */
 	if (i->type->radix != r->type->radix) {
@@ -259,7 +259,7 @@ supertype(sql_subtype *super, sql_subtype *r, sql_subtype *i)
 }
 
 char *
-toUpperCopy(char *dest, const char *src) 
+toUpperCopy(char *dest, const char *src)
 {
 	size_t i, len;
 
@@ -271,7 +271,7 @@ toUpperCopy(char *dest, const char *src)
 	len = _strlen(src);
 	for (i = 0; i < len; i++)
 		dest[i] = (char)toupper((int)src[i]);
-	
+
 	dest[i] = '\0';
 	return(dest);
 }
@@ -325,7 +325,8 @@ symbol2string(mvc *sql, symbol *se, int expression, char **err) /**/
 			sname = sql->session->schema->base.name;
 
 		for (aux = ops; aux; aux = aux->next) nargs++;
-		inputs = GDKzalloc(nargs * sizeof(char**));
+		if (!(inputs = GDKzalloc(nargs * sizeof(char**))))
+			return NULL;
 
 		for (aux = ops; aux; aux = aux->next) {
 			if (!(inputs[i] = symbol2string(sql, aux->data.sym, expression, err))) {
@@ -410,7 +411,7 @@ symbol2string(mvc *sql, symbol *se, int expression, char **err) /**/
 		return _STRDUP("NULL");
 	case SQL_ATOM:{
 		AtomNode *an = (AtomNode *) se;
-		if (an && an->a) 
+		if (an && an->a)
 			return atom2sql(an->a);
 		else
 			return _STRDUP("NULL");
@@ -461,7 +462,7 @@ symbol2string(mvc *sql, symbol *se, int expression, char **err) /**/
 		dlist *dl = se->data.lval;
 		char *val = NULL, *tpe = NULL, *res;
 
-		if (!(val = symbol2string(sql, dl->h->data.sym, expression, err)) || !(tpe = subtype2string(&dl->h->next->data.typeval))) {
+		if (!(val = symbol2string(sql, dl->h->data.sym, expression, err)) || !(tpe = subtype2string2(&dl->h->next->data.typeval))) {
 			_DELETE(val);
 			_DELETE(tpe);
 			return NULL;
@@ -472,13 +473,12 @@ symbol2string(mvc *sql, symbol *se, int expression, char **err) /**/
 		_DELETE(tpe);
 		return res;
 	}
-	case SQL_AGGR:
-	case SQL_SELECT:
-	case SQL_CASE:
-	case SQL_COALESCE:
-	case SQL_NULLIF:
-	default:
-		return NULL;
+	default: {
+		const char *msg = "SQL feature not yet available for expressions and default values: ";
+		char *tok_str = token2string(se->token);
+		if ((*err = NEW_ARRAY(char, strlen(msg) + strlen(tok_str) + 1)))
+			stpcpy(stpcpy(*err, msg), tok_str);
+	}
 	}
 	return NULL;
 }

@@ -38,7 +38,7 @@
 #include "wlc.h"
 #include "wlr.h"
 #include "msabaoth.h"
-#include "mtime.h"
+#include "gdk_time.h"
 #include "optimizer.h"
 #include "opt_prelude.h"
 #include "opt_pipes.h"
@@ -262,25 +262,28 @@ SQLgetquery(Client c)
 static char*
 SQLprepareClient(Client c, int login)
 {
-	mvc *m;
-	str schema;
-	backend *be;
+	mvc *m = NULL;
+	backend *be = NULL;
+	str msg = MAL_SUCCEED;
 
 	c->getquery = SQLgetquery;
 	if (c->sqlcontext == 0) {
 		m = mvc_create(c->idx, 0, SQLdebug, c->fdin, c->fdout);
-		if (m == NULL)
-			throw(SQL,"sql.initClient",SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		if (m == NULL) {
+			msg = createException(SQL,"sql.initClient", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+			goto bailout;
+		}
 		if (global_variables(m, "monetdb", "sys") < 0) {
 			mvc_destroy(m);
-			throw(SQL,"sql.initClient",SQLSTATE(HY013) MAL_MALLOC_FAIL);
+			msg = createException(SQL,"sql.initClient", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+			goto bailout;
 		}
 		if (c->scenario && strcmp(c->scenario, "msql") == 0)
 			m->reply_size = -1;
 		be = (void *) backend_create(m, c);
 		if ( be == NULL) {
-			mvc_destroy(m);
-			throw(SQL,"sql.initClient", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+			msg = createException(SQL,"sql.initClient", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+			goto bailout;
 		}
 	} else {
 		be = c->sqlcontext;
@@ -290,21 +293,24 @@ SQLprepareClient(Client c, int login)
 		*/
 		if (m->session->tr->active)
 			return NULL;
-		if (mvc_reset(m, c->fdin, c->fdout, SQLdebug) < 0)
-			throw(SQL,"sql.initClient", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		if (mvc_reset(m, c->fdin, c->fdout, SQLdebug) < 0) {
+			msg = createException(SQL,"sql.initClient", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+			goto bailout;
+		}
 		backend_reset(be);
 	}
 	if (m->session->tr)
 		reset_functions(m->session->tr);
 	if (login) {
-		schema = monet5_user_set_def_schema(m, c->user);
+		str schema = monet5_user_set_def_schema(m, c->user);
 		if (!schema) {
-			_DELETE(schema);
-			throw(PERMD, "SQLinitClient", SQLSTATE(08004) "schema authorization error");
+			msg = createException(PERMD,"sql.initClient", SQLSTATE(08004) "Schema authorization error");
+			goto bailout;
 		}
 		_DELETE(schema);
-	} 
+	}
 
+bailout:
 	/*expect SQL text first */
 	be->language = 'S';
 	/* Set state, this indicates an initialized client scenario */
@@ -312,7 +318,9 @@ SQLprepareClient(Client c, int login)
 	c->state[MAL_SCENARIO_PARSER] = c;
 	c->state[MAL_SCENARIO_OPTIMIZE] = c;
 	c->sqlcontext = be;
-	return NULL;
+	if (msg)
+		c->mode = FINISHCLIENT;
+	return msg;
 }
 
 str
@@ -981,7 +989,7 @@ cachable(mvc *m, sql_rel *r)
 	if (m->type == Q_TRANS )	/* m->type == Q_SCHEMA || cachable to make sure we have trace on alter statements  */
 		return 0;
 	/* we don't store queries with a large footprint */
-	if (r && sa_size(m->sa) > MAX_QUERY) 
+	if (r && sa_size(m->sa) > MAX_QUERY)
 		return 0;
 	return 1;
 }
@@ -1035,7 +1043,7 @@ SQLparser(Client c)
 
 	/* sqlparse needs sql allocator to be available.  It can be NULL at
 	 * this point if this is a recursive call. */
-	if (!m->sa) 
+	if (!m->sa)
 		m->sa = sa_create();
 	if (!m->sa) {
 		c->mode = FINISHCLIENT;

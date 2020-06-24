@@ -25,10 +25,10 @@
 
 #include "monetdb_config.h"
 #include "querylog.h"
-#include "mtime.h"
+#include "gdk_time.h"
 
 /* (c) M.L. Kersten
- * The query logger facility is hardwired to avoid interference 
+ * The query logger facility is hardwired to avoid interference
  * with the SQL transaction manager.
  *
  * The events being captured are stored in separate BATs.
@@ -58,7 +58,7 @@ create table querylog.calls(
 
 static bool QLOGtrace = false;
 static bool QLOG_init = false;
-static int QLOGthreshold = 0;
+static lng QLOGthreshold = 0;
 
 static BAT *QLOG_cat_id = 0;
 static BAT *QLOG_cat_user = 0;
@@ -164,7 +164,7 @@ QLOGcreate(str hnme, str tnme, int tt)
 
 	snprintf(buf, 128, "querylog_%s_%s", hnme, tnme);
 	b = BATdescriptor(BBPindex(buf));
-	if (b) 
+	if (b)
 		return b;
 
 	b = COLnew(0, tt, 1 << 16, PERSISTENT);
@@ -194,7 +194,7 @@ _QLOGcleanup(void)
 	cleanup(QLOG_cat_plan);
 	cleanup(QLOG_cat_mal);
 	cleanup(QLOG_cat_optimize);
-	
+
 	cleanup(QLOG_calls_id);
 	cleanup(QLOG_calls_start);
 	cleanup(QLOG_calls_stop);
@@ -217,7 +217,7 @@ _initQlog(void)
 	QLOG_cat_plan = QLOGcreate("cat","size",TYPE_str);
 	QLOG_cat_mal = QLOGcreate("cat","mal",TYPE_int);
 	QLOG_cat_optimize = QLOGcreate("cat","optimize",TYPE_lng);
-	
+
 	QLOG_calls_id = QLOGcreate("calls","id",TYPE_oid);
 	QLOG_calls_start = QLOGcreate("calls","start",TYPE_timestamp);
 	QLOG_calls_stop = QLOGcreate("calls","stop",TYPE_timestamp);
@@ -261,6 +261,7 @@ QLOGenable(void *ret)
 {
 	(void) ret;
 	QLOGtrace = true;
+	QLOGthreshold = 0;
 	return MAL_SUCCEED;
 }
 
@@ -268,7 +269,8 @@ str
 QLOGenableThreshold(void *ret, int *threshold)
 {
 	(void) ret;
-	QLOGthreshold = *threshold;
+	QLOGtrace = true;
+	QLOGthreshold = *threshold * LL_CONSTANT(1000);
 	return MAL_SUCCEED;
 }
 
@@ -313,7 +315,7 @@ QLOGempty(void *ret)
 	BATclear(QLOG_cat_plan,true);
 	BATclear(QLOG_cat_mal,true);
 	BATclear(QLOG_cat_optimize,true);
-	
+
 	BATclear(QLOG_calls_id,true);
 	BATclear(QLOG_calls_start,true);
 	BATclear(QLOG_calls_stop,true);
@@ -363,8 +365,8 @@ QLOGappend(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			throw(MAL, "querylog.append", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		}
 	}
-	MT_lock_unset(&QLOGlock);
 	TMsubcommit_list(commitlist, committop);
+	MT_lock_unset(&QLOGlock);
 	return MAL_SUCCEED;
 }
 
@@ -424,7 +426,7 @@ QLOGcall(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		MT_lock_unset(&QLOGlock);
 		throw(MAL, "querylog.call", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
-	MT_lock_unset(&QLOGlock);
 	TMsubcommit_list(commitlist, committop);
+	MT_lock_unset(&QLOGlock);
 	return MAL_SUCCEED;
 }

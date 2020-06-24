@@ -24,7 +24,7 @@
 #include "mal_client.h"
 #include "mal_authorize.h"
 #include "mal_private.h"
-#include "mtime.h"
+#include "gdk_time.h"
 
 static int
 pseudo(bat *ret, BAT *b, str X1,str X2) {
@@ -219,7 +219,7 @@ CLTstop(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	if ( idx < 0 || idx > MAL_MAXCLIENTS)
 		throw(MAL,"clients.stop","Illegal session id");
-	
+
 	MT_lock_set(&mal_contextLock);
 	if (mal_clients[idx].mode == FREECLIENT)
 		msg = createException(MAL,"clients.stop","Session not active anymore");
@@ -362,7 +362,7 @@ CLTsuspend(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	str msg = MAL_SUCCEED;
 	int idx = cntxt->idx;
-	
+
 	if (cntxt->user == MAL_ADMIN)
 		idx = *getArgReference_int(stk,pci,1);
 	(void) mb;
@@ -384,7 +384,7 @@ CLTwakeup(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	str msg = MAL_SUCCEED;
 	int idx = cntxt->idx;
-	
+
 	if (cntxt->user == MAL_ADMIN)
 		idx = *getArgReference_int(stk,pci,1);
 	(void) mb;
@@ -562,7 +562,7 @@ CLTgetProfile(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	return MAL_SUCCEED;
 }
 
-/* Long running queries are traced in the logger 
+/* Long running queries are traced in the logger
  * with a message from the interpreter.
  * This value should be set to minutes to avoid a lengthly log */
 str
@@ -703,7 +703,7 @@ str CLTaddUser(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 	str *pw = getArgReference_str(stk, pci, 2);
 
 	(void)mb;
-	
+
 	return AUTHaddUser(ret, cntxt, *usr, *pw);
 }
 
@@ -808,7 +808,7 @@ CLTshutdown(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 	int leftover;
 	char buf[1024]={"safe to stop last connection"};
 
-	if ( pci->argc == 3) 
+	if ( pci->argc == 3)
 		force = *getArgReference_bit(stk,pci,2);
 
 	(void) mb;

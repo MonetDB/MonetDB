@@ -10,7 +10,7 @@
 #include "cheader.h"
 #include "cheader.text.h"
 
-#include "mtime.h"
+#include "gdk_time.h"
 #include "blob.h"
 
 #include <setjmp.h>
@@ -99,7 +99,7 @@ static bool WriteTextToFile(FILE *f, const char *data)
 	return WriteDataToFile(f, data, strlen(data));
 }
 
-static void handler(int sig, siginfo_t *si, void *unused)
+static _Noreturn void handler(int sig, siginfo_t *si, void *unused)
 {
 	int tid = THRgettid();
 
@@ -711,7 +711,7 @@ static str CUDFeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 					if (is_preprocessor_directive) {
 						// the previous line was a preprocessor directive
 						// first check if it is one of our special preprocessor directives
-						if (i - preprocessor_start >= strlen(cflags_pragma) && 
+						if (i - preprocessor_start >= strlen(cflags_pragma) &&
 							memcmp(exprStr + preprocessor_start, cflags_pragma, strlen(cflags_pragma)) == 0) {
 							size_t cflags_characters = (i - preprocessor_start) - strlen(cflags_pragma);
 							if (cflags_characters > 0 && !extra_cflags) {
@@ -720,7 +720,7 @@ static str CUDFeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 									memcpy(extra_cflags, exprStr + preprocessor_start + strlen(cflags_pragma), cflags_characters);
 								}
 							}
-						} else if (i - preprocessor_start >= strlen(ldflags_pragma) && 
+						} else if (i - preprocessor_start >= strlen(ldflags_pragma) &&
 							memcmp(exprStr + preprocessor_start, ldflags_pragma, strlen(ldflags_pragma)) == 0) {
 							size_t ldflags_characters = (i - preprocessor_start) - strlen(ldflags_pragma);
 							if (ldflags_characters > 0 && !extra_ldflags) {
@@ -854,7 +854,7 @@ static str CUDFeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 		error_buffer_position = 0;
 		error_buf[0] = '\0';
 
-		snprintf(buf, sizeof(buf), "%s %s %s -shared -o %s 2>&1 >/dev/null", c_compiler, 
+		snprintf(buf, sizeof(buf), "%s %s %s -shared -o %s 2>&1 >/dev/null", c_compiler,
 			extra_ldflags ? extra_ldflags : "", oname, libname);
 		compiler = popen(buf, "r");
 		if (!compiler) {
@@ -1112,7 +1112,7 @@ static str CUDFeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 					if (can_mprotect_varheap) {
 						bat_data->data[j].data = &t->data[0];
 					} else {
-						bat_data->data[j].data = t->nitems == 0 ? NULL : 
+						bat_data->data[j].data = t->nitems == 0 ? NULL :
 							wrapped_GDK_malloc_nojump(t->nitems);
 						if (t->nitems > 0 && !bat_data->data[j].data) {
 							msg = createException(MAL, "cudf.eval", MAL_MALLOC_FAIL);
@@ -1144,7 +1144,7 @@ static str CUDFeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 			GENERATE_BAT_INPUT_BASE(str);
 			bat_data->count = BATcount(input_bats[index]);
 			bat_data->null_value = NULL;
-			bat_data->data = bat_data->count == 0 ? NULL : 
+			bat_data->data = bat_data->count == 0 ? NULL :
 				GDKzalloc(sizeof(char *) * bat_data->count);
 			if (bat_data->count > 0 && !bat_data->data) {
 				msg = createException(MAL, "cudf.eval", MAL_MALLOC_FAIL);
@@ -1327,7 +1327,7 @@ static str CUDFeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 		void *data;
 		BAT *b;
 		bat_type = getBatType(getArgType(mb, pci, i));
-		
+
 		if (!outputs[i]) {
 			msg = createException(MAL, "cudf.eval", "No data returned.");
 			goto wrapup;

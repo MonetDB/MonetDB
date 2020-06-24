@@ -11,11 +11,12 @@ except ImportError:
     import process
 
 def sql_test_client(user, passwd, input):
-    process.client(lang = "sql", user = user, passwd = passwd, communicate = True,
-                   stdin = process.PIPE, stdout = process.PIPE, stderr = process.PIPE,
-                   input = input, port = int(os.getenv("MAPIPORT")))
+    with process.client(lang="sql", user=user, passwd=passwd, communicate=True,
+                        stdin=process.PIPE, stdout=process.PIPE, stderr=process.PIPE,
+                        input=input, port=int(os.getenv("MAPIPORT"))) as c:
+        c.communicate()
 
-sql_test_client('monetdb', 'monetdb', input = """\
+sql_test_client('monetdb', 'monetdb', input="""\
 CREATE USER user_with_many_rights with password 'ThisIsAS3m1S3cur3P4ssw0rd' name 'user gets monetdb rights' schema sys;
 
 CREATE SCHEMA a_brand_new_schema_with_a_longer_name_than_usual;
@@ -27,7 +28,7 @@ GRANT sysadmin to user_with_many_rights;
 
 """)
 
-sql_test_client('user_with_many_rights', 'ThisIsAS3m1S3cur3P4ssw0rd', input = """\
+sql_test_client('user_with_many_rights', 'ThisIsAS3m1S3cur3P4ssw0rd', input="""\
 -- Check delete.
 set schema a_brand_new_schema_with_a_longer_name_than_usual;
 set role sysadmin;

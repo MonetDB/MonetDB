@@ -339,15 +339,21 @@ URLgetAnchor(str *retval, url *val)
 
 	if (val == NULL || *val == NULL)
 		throw(ILLARG, "url.getAnchor", "url missing");
-	if ((s = skip_scheme(*val)) == NULL ||
-		(s = skip_authority(s, NULL, NULL, NULL, NULL)) == NULL ||
-		(s = skip_path(s, NULL, NULL)) == NULL ||
-		(s = skip_search(s)) == NULL)
-		throw(ILLARG, "url.getAnchor", "bad url");
-	if (*s == '#')
-		s++;
-	else
+
+	if (strNil(*val)) {
 		s = str_nil;
+	} else {
+		if ((s = skip_scheme(*val)) == NULL ||
+			(s = skip_authority(s, NULL, NULL, NULL, NULL)) == NULL ||
+			(s = skip_path(s, NULL, NULL)) == NULL ||
+			(s = skip_search(s)) == NULL)
+			throw(ILLARG, "url.getAnchor", "bad url");
+		if (*s == '#')
+			s++;
+		else
+			s = str_nil;
+	}
+
 	if ((*retval = GDKstrdup(s)) == NULL)
 		throw(MAL, "url.getAnchor", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	return MAL_SUCCEED;
@@ -365,24 +371,30 @@ URLgetBasename(str *retval, url *val)
 
 	if (val == NULL || *val == NULL)
 		throw(ILLARG, "url.getBasename", "url missing");
-	if ((s = skip_scheme(*val)) == NULL ||
-		(s = skip_authority(s, NULL, NULL, NULL, NULL)) == NULL ||
-		(s = skip_path(s, &b, &e)) == NULL)
-		throw(ILLARG, "url.getBasename", "bad url");
-	if (b == NULL) {
+
+	if (strNil(*val)) {
 		*retval = GDKstrdup(str_nil);
 	} else {
-		size_t l;
-
-		if (e != NULL) {
-			l = e - b;
+		if ((s = skip_scheme(*val)) == NULL ||
+			(s = skip_authority(s, NULL, NULL, NULL, NULL)) == NULL ||
+			(s = skip_path(s, &b, &e)) == NULL)
+			throw(ILLARG, "url.getBasename", "bad url");
+		if (b == NULL) {
+			*retval = GDKstrdup(str_nil);
 		} else {
-			l = s - b;
-		}
-		if ((*retval = GDKmalloc(l + 1)) != NULL) {
-			strcpy_len(*retval, b, l + 1);
+			size_t l;
+
+			if (e != NULL) {
+				l = e - b;
+			} else {
+				l = s - b;
+			}
+			if ((*retval = GDKmalloc(l + 1)) != NULL) {
+				strcpy_len(*retval, b, l + 1);
+			}
 		}
 	}
+
 	if (*retval == NULL)
 		throw(MAL, "url.getBasename", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	return MAL_SUCCEED;
@@ -409,15 +421,21 @@ URLgetContext(str *retval, url *val)
 
 	if (val == NULL || *val == NULL)
 		throw(ILLARG, "url.getContext", "url missing");
-	if ((s = skip_scheme(*val)) == NULL ||
-		(p = skip_authority(s, NULL, NULL, NULL, NULL)) == NULL ||
-		(s = skip_path(p, NULL, NULL)) == NULL)
-		throw(ILLARG, "url.getContext", "bad url");
-	if (p == s) {
+
+	if (strNil(*val)) {
 		*retval = GDKstrdup(str_nil);
-	} else if ((*retval = GDKmalloc(s - p + 1)) != NULL) {
-		strcpy_len(*retval, p, s - p + 1);
+	} else {
+		if ((s = skip_scheme(*val)) == NULL ||
+			(p = skip_authority(s, NULL, NULL, NULL, NULL)) == NULL ||
+			(s = skip_path(p, NULL, NULL)) == NULL)
+			throw(ILLARG, "url.getContext", "bad url");
+		if (p == s) {
+			*retval = GDKstrdup(str_nil);
+		} else if ((*retval = GDKmalloc(s - p + 1)) != NULL) {
+			strcpy_len(*retval, p, s - p + 1);
+		}
 	}
+
 	if (*retval == NULL)
 		throw(MAL, "url.getContext", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	return MAL_SUCCEED;
@@ -433,20 +451,26 @@ URLgetExtension(str *retval, url *val)
 
 	if (val == NULL || *val == NULL)
 		throw(ILLARG, "url.getExtension", "url missing");
-	if ((s = skip_scheme(*val)) == NULL ||
-		(s = skip_authority(s, NULL, NULL, NULL, NULL)) == NULL ||
-		(s = skip_path(s, NULL, &e)) == NULL)
-		throw(ILLARG, "url.getExtension", "bad url");
-	if (e == NULL) {
+
+	if (strNil(*val)) {
 		*retval = GDKstrdup(str_nil);
 	} else {
-		size_t l = s - e;
+		if ((s = skip_scheme(*val)) == NULL ||
+			(s = skip_authority(s, NULL, NULL, NULL, NULL)) == NULL ||
+			(s = skip_path(s, NULL, &e)) == NULL)
+			throw(ILLARG, "url.getExtension", "bad url");
+		if (e == NULL) {
+			*retval = GDKstrdup(str_nil);
+		} else {
+			size_t l = s - e;
 
-		assert(*e == '.');
-		if ((*retval = GDKmalloc(l)) != NULL) {
-			strcpy_len(*retval, e + 1, l);
+			assert(*e == '.');
+			if ((*retval = GDKmalloc(l)) != NULL) {
+				strcpy_len(*retval, e + 1, l);
+			}
 		}
 	}
+
 	if (*retval == NULL)
 		throw(MAL, "url.getExtension", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	return MAL_SUCCEED;
@@ -462,20 +486,26 @@ URLgetFile(str *retval, url *val)
 
 	if (val == NULL || *val == NULL)
 		throw(ILLARG, "url.getFile", "url missing");
-	if ((s = skip_scheme(*val)) == NULL ||
-		(s = skip_authority(s, NULL, NULL, NULL, NULL)) == NULL ||
-		(s = skip_path(s, &b, NULL)) == NULL)
-		throw(ILLARG, "url.getFile", "bad url");
-	if (b == NULL) {
+
+	if (strNil(*val)) {
 		*retval = GDKstrdup(str_nil);
 	} else {
-		size_t l;
+		if ((s = skip_scheme(*val)) == NULL ||
+			(s = skip_authority(s, NULL, NULL, NULL, NULL)) == NULL ||
+			(s = skip_path(s, &b, NULL)) == NULL)
+			throw(ILLARG, "url.getFile", "bad url");
+		if (b == NULL) {
+			*retval = GDKstrdup(str_nil);
+		} else {
+			size_t l;
 
-		l = s - b;
-		if ((*retval = GDKmalloc(l + 1)) != NULL) {
-			strcpy_len(*retval, b, l + 1);
+			l = s - b;
+			if ((*retval = GDKmalloc(l + 1)) != NULL) {
+				strcpy_len(*retval, b, l + 1);
+			}
 		}
 	}
+
 	if (*retval == NULL)
 		throw(MAL, "url.getFile", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	return MAL_SUCCEED;
@@ -492,23 +522,29 @@ URLgetHost(str *retval, url *val)
 
 	if (val == NULL || *val == NULL)
 		throw(ILLARG, "url.getHost", "url missing");
-	if ((s = skip_scheme(*val)) == NULL ||
-		(s = skip_authority(s, NULL, NULL, &h, &p)) == NULL)
-		throw(ILLARG, "url.getHost", "bad url");
-	if (h == NULL) {
+
+	if (strNil(*val)) {
 		*retval = GDKstrdup(str_nil);
 	} else {
-		size_t l;
-
-		if (p != NULL) {
-			l = p - h - 1;
+		if ((s = skip_scheme(*val)) == NULL ||
+			(s = skip_authority(s, NULL, NULL, &h, &p)) == NULL)
+			throw(ILLARG, "url.getHost", "bad url");
+		if (h == NULL) {
+			*retval = GDKstrdup(str_nil);
 		} else {
-			l = s - h;
-		}
-		if ((*retval = GDKmalloc(l + 1)) != NULL) {
-			strcpy_len(*retval, h, l + 1);
+			size_t l;
+
+			if (p != NULL) {
+				l = p - h - 1;
+			} else {
+				l = s - h;
+			}
+			if ((*retval = GDKmalloc(l + 1)) != NULL) {
+				strcpy_len(*retval, h, l + 1);
+			}
 		}
 	}
+
 	if (*retval == NULL)
 		throw(MAL, "url.getHost", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	return MAL_SUCCEED;
@@ -525,27 +561,33 @@ URLgetDomain(str *retval, url *val)
 
 	if (val == NULL || *val == NULL)
 		throw(ILLARG, "url.getDomain", "url missing");
-	if ((s = skip_scheme(*val)) == NULL ||
-		(s = skip_authority(s, NULL, NULL, &h, &p)) == NULL)
-		throw(ILLARG, "url.getDomain", "bad url");
-	if (h == NULL) {
+
+	if (strNil(*val)) {
 		*retval = GDKstrdup(str_nil);
 	} else {
-		size_t l;
+		if ((s = skip_scheme(*val)) == NULL ||
+			(s = skip_authority(s, NULL, NULL, &h, &p)) == NULL)
+			throw(ILLARG, "url.getDomain", "bad url");
+		if (h == NULL) {
+			*retval = GDKstrdup(str_nil);
+		} else {
+			size_t l;
 
-		if (p != NULL)
-			p--;
-		else
-			p = s;
-		l = 0;
-		while (p > h && p[-1] != '.') {
-			p--;
-			l++;
-		}
-		if ((*retval = GDKmalloc(l + 1)) != NULL) {
-			strcpy_len(*retval, p, l + 1);
+			if (p != NULL)
+				p--;
+			else
+				p = s;
+			l = 0;
+			while (p > h && p[-1] != '.') {
+				p--;
+				l++;
+			}
+			if ((*retval = GDKmalloc(l + 1)) != NULL) {
+				strcpy_len(*retval, p, l + 1);
+			}
 		}
 	}
+
 	if (*retval == NULL)
 		throw(MAL, "url.getDomain", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	return MAL_SUCCEED;
@@ -561,18 +603,24 @@ URLgetPort(str *retval, url *val)
 
 	if (val == NULL || *val == NULL)
 		throw(ILLARG, "url.getPort", "url missing");
-	if ((s = skip_scheme(*val)) == NULL ||
-		(s = skip_authority(s, NULL, NULL, NULL, &p)) == NULL)
-		throw(ILLARG, "url.getPort", "bad url");
-	if (p == NULL) {
+
+	if (strNil(*val)) {
 		*retval = GDKstrdup(str_nil);
 	} else {
-		size_t l = s - p;
+		if ((s = skip_scheme(*val)) == NULL ||
+			(s = skip_authority(s, NULL, NULL, NULL, &p)) == NULL)
+			throw(ILLARG, "url.getPort", "bad url");
+		if (p == NULL) {
+			*retval = GDKstrdup(str_nil);
+		} else {
+			size_t l = s - p;
 
-		if ((*retval = GDKmalloc(l + 1)) != NULL) {
-			strcpy_len(*retval, p, l + 1);
+			if ((*retval = GDKmalloc(l + 1)) != NULL) {
+				strcpy_len(*retval, p, l + 1);
+			}
 		}
 	}
+
 	if (*retval == NULL)
 		throw(MAL, "url.getPort", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	return MAL_SUCCEED;
@@ -584,16 +632,24 @@ str
 URLgetProtocol(str *retval, url *val)
 {
 	const char *s;
-	size_t l;
 
 	if (val == NULL || *val == NULL)
 		throw(ILLARG, "url.getProtocol", "url missing");
-	if ((s = skip_scheme(*val)) == NULL)
-		throw(ILLARG, "url.getProtocol", "bad url");
-	l = s - *val;
-	if ((*retval = GDKmalloc(l)) == NULL)
+
+	if (strNil(*val)) {
+		*retval = GDKstrdup(str_nil);
+	} else {
+		if ((s = skip_scheme(*val)) == NULL)
+			throw(ILLARG, "url.getProtocol", "bad url");
+		size_t l = s - *val;
+
+		if ((*retval = GDKmalloc(l)) != NULL) {
+			strcpy_len(*retval, *val, l);
+		}
+	}
+
+	if (*retval == NULL)
 		throw(MAL, "url.getProtocol", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-	strcpy_len(*retval, *val, l);
 	return MAL_SUCCEED;
 }
 
@@ -607,22 +663,28 @@ URLgetQuery(str *retval, url *val)
 
 	if (val == NULL || *val == NULL)
 		throw(ILLARG, "url.getQuery", "url missing");
-	if ((s = skip_scheme(*val)) == NULL ||
-		(s = skip_authority(s, NULL, NULL, NULL, NULL)) == NULL ||
-		(q = skip_path(s, NULL, NULL)) == NULL ||
-		(s = skip_search(q)) == NULL)
-		throw(ILLARG, "url.getQuery", "bad url");
-	if (*q == '?') {
-		size_t l;
 
-		q++;
-		l = s - q;
-		if ((*retval = GDKmalloc(l + 1)) != NULL) {
-			strcpy_len(*retval, q, l + 1);
-		}
-	} else {
+	if (strNil(*val)) {
 		*retval = GDKstrdup(str_nil);
+	} else {
+		if ((s = skip_scheme(*val)) == NULL ||
+			(s = skip_authority(s, NULL, NULL, NULL, NULL)) == NULL ||
+			(q = skip_path(s, NULL, NULL)) == NULL ||
+			(s = skip_search(q)) == NULL)
+			throw(ILLARG, "url.getQuery", "bad url");
+		if (*q == '?') {
+			size_t l;
+
+			q++;
+			l = s - q;
+			if ((*retval = GDKmalloc(l + 1)) != NULL) {
+				strcpy_len(*retval, q, l + 1);
+			}
+		} else {
+			*retval = GDKstrdup(str_nil);
+		}
 	}
+
 	if (*retval == NULL)
 		throw(MAL, "url.getQuery", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	return MAL_SUCCEED;
@@ -638,45 +700,57 @@ URLgetRobotURL(str *retval, url *val)
 
 	if (val == NULL || *val == NULL)
 		throw(ILLARG, "url.getQuery", "url missing");
-	if ((s = skip_scheme(*val)) == NULL ||
-		(s = skip_authority(s, NULL, NULL, NULL, NULL)) == NULL)
-		throw(ILLARG, "url.getQuery", "bad url");
-	l = s - *val;
-	if ((*retval = GDKmalloc(l + sizeof("/robots.txt"))) == NULL)
+
+	if (strNil(*val)) {
+		*retval = GDKstrdup(str_nil);
+	} else {
+		if ((s = skip_scheme(*val)) == NULL ||
+			(s = skip_authority(s, NULL, NULL, NULL, NULL)) == NULL)
+			throw(ILLARG, "url.getQuery", "bad url");
+		l = s - *val;
+
+		if ((*retval = GDKmalloc(l + sizeof("/robots.txt"))) != NULL) {
+			sprintf(*retval, "%.*s/robots.txt", (int) l, *val);
+		}
+	}
+
+	if (*retval == NULL)
 		throw(MAL, "url.getQuery", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-	sprintf(*retval, "%.*s/robots.txt", (int) l, *val);
 	return MAL_SUCCEED;
 }
-
 
 /* COMMAND "getUser": Extract the user identity from the URL
  * SIGNATURE: getUser(str) : str; */
 str
 URLgetUser(str *retval, url *val)
 {
-	const char *s;
-	const char *p;
-	const char *u;
+	const char *s, *h, *u, *p;
 
 	if (val == NULL || *val == NULL)
 		throw(ILLARG, "url.getUser", "url missing");
-	if ((s = skip_scheme(*val)) == NULL ||
-		(p = skip_authority(s, NULL, NULL, NULL, NULL)) == NULL ||
-		(s = skip_path(p, NULL, NULL)) == NULL)
-		throw(ILLARG, "url.getUser", "bad url");
-	if (p == s || *p != '/' || p[1] != '~') {
+
+	if (strNil(*val)) {
 		*retval = GDKstrdup(str_nil);
 	} else {
-		size_t l;
+		if ((s = skip_scheme(*val)) == NULL ||
+			(s = skip_authority(s, &u, &p, &h, NULL)) == NULL)
+			throw(ILLARG, "url.getHost", "bad url");
+		if (u == NULL || h == NULL) {
+			*retval = GDKstrdup(str_nil);
+		} else {
+			size_t l;
 
-		u = p + 2;
-		for (p = u; p < s && *p != '/'; p++)
-			;
-		l = p - u;
-		if ((*retval = GDKmalloc(l + 1)) != NULL) {
-			strcpy_len(*retval, u, l + 1);
+			if (p) {
+				l = p - u - 1;
+			} else {
+				l = h - u - 1;
+			}
+			if ((*retval = GDKmalloc(l + 1)) != NULL) {
+				strcpy_len(*retval, u, l + 1);
+			}
 		}
 	}
+
 	if (*retval == NULL)
 		throw(MAL, "url.getUser", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	return MAL_SUCCEED;

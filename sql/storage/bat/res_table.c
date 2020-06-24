@@ -49,7 +49,7 @@ res_table_create(sql_trans *tr, int res_id, oid query_id, int nr_cols, mapi_quer
 	if (order) {
 		t->order = order->batCacheid;
 		bat_incref(t->order);
-	} 
+	}
 	t->next = next;
 	return t;
 }
@@ -60,7 +60,7 @@ res_col_create(sql_trans *tr, res_table *t, const char *tn, const char *name, co
 	res_col *c = t->cols + t->cur_col;
 	BAT *b;
 
-	if (!sql_find_subtype(&c->type, typename, digits, scale)) 
+	if (!sql_find_subtype(&c->type, typename, digits, scale))
 		sql_init_subtype(&c->type, sql_trans_bind_type(tr, NULL, typename), digits, scale);
 	c->tn = _STRDUP(tn);
 	c->name = _STRDUP(name);

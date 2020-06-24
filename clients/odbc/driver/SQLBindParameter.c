@@ -173,11 +173,11 @@ MNDBBindParameter(ODBCStmt *stmt,
 		ipdrec->sql_desc_length = ColumnSize;
 		break;
 	case SQL_DECIMAL:
-/* 	case SQL_NUMERIC: */
+	case SQL_NUMERIC:
 		ipdrec->sql_desc_precision = (SQLSMALLINT) ColumnSize;
 		ipdrec->sql_desc_scale = DecimalDigits;
 		break;
-/* 	case SQL_FLOAT: */
+	case SQL_FLOAT:
 	case SQL_REAL:
 	case SQL_DOUBLE:
 		ipdrec->sql_desc_precision = (SQLSMALLINT) ColumnSize;
@@ -211,8 +211,6 @@ MNDBBindParameter(ODBCStmt *stmt,
 	case SQL_INTERVAL_DAY_TO_SECOND:
 	case SQL_INTERVAL_HOUR_TO_SECOND:
 	case SQL_INTERVAL_MINUTE_TO_SECOND:
-	case SQL_NUMERIC:
-	case SQL_FLOAT:
 		/* Optional feature not implemented */
 		addStmtError(stmt, "HYC00", NULL, 0);
 		return SQL_ERROR;

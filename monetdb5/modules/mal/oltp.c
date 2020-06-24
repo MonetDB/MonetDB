@@ -15,7 +15,7 @@
  */
 #include "monetdb_config.h"
 #include "oltp.h"
-#include "mtime.h"
+#include "gdk_time.h"
 
 #define LOCKTIMEOUT (20 * 1000)
 #define LOCKDELAY 20
@@ -52,7 +52,7 @@ OLTPreset(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	(void) mb;
 	(void) stk;
 	(void) pci;
-	
+
 	MT_lock_set(&mal_oltpLock);
 
 	for( i=0; i<MAXOLTPLOCKS; i++){
@@ -116,7 +116,7 @@ OLTPlock(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		MT_lock_set(&mal_oltpLock);
 		clk = GDKms();
 		now = GDKusec();
-		// check if all write locks are available 
+		// check if all write locks are available
 		for( i=1; i< pci->argc; i++){
 			lck= getVarConstant(mb, getArg(pci,i)).val.ival;
 			if ( lck > 0 && (oltp_locks[lck].locked || oltp_locks[lck].retention > now ))
@@ -203,7 +203,7 @@ OLTPtable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	bat *lockid = getArgReference_bat(stk,pci,2);
 	bat *used = getArgReference_bat(stk,pci,3);
 	int i;
-	str msg = MAL_SUCCEED; 
+	str msg = MAL_SUCCEED;
 	timestamp tsn;
 
 	(void) cntxt;

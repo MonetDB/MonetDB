@@ -22,7 +22,7 @@ ALGprojectionpath(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	if(pci->argc <= 1)
 		throw(MAL, "algebra.projectionpath", SQLSTATE(HY013) "INTERNAL ERROR");
-	joins = (BAT**)GDKzalloc(pci->argc * sizeof(BAT*)); 
+	joins = (BAT**)GDKzalloc(pci->argc * sizeof(BAT*));
 	if ( joins == NULL)
 		throw(MAL, "algebra.projectionpath", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	for (i = pci->retc; i < pci->argc; i++) {

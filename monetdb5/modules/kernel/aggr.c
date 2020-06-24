@@ -1083,7 +1083,7 @@ AGGRsubstr_group_concatcand_sep(bat *retval, const bat *bid, const bat *sep, con
 }
 
 static str
-AGGRgrouped2(bat *retval, const bat *bid1, const bat *bid2, const bat *gid, const bat *eid, const bat *sid, bool skip_nils, bool abort_on_error, 
+AGGRgrouped2(bat *retval, const bat *bid1, const bat *bid2, const bat *gid, const bat *eid, const bat *sid, bool skip_nils, bool abort_on_error,
 			 int tp, BAT *(*func)(BAT *, BAT *, BAT *, BAT *, BAT *, int tp, bool skip_nils, bool abort_on_error),
 			 const char *malfunc)
 {

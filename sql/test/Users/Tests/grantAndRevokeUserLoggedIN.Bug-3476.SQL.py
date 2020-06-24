@@ -1,5 +1,3 @@
-from __future__ import print_function
-
 ###
 # Assess that the user can use a granted privilege without having to logout.
 # Assess that a user can no longer use the privilege as soon as it was revoked.

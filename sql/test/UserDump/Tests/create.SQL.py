@@ -5,13 +5,13 @@ except ImportError:
     import process
 
 def client(lang, user = 'monetdb', passwd = 'monetdb', input = None):
-    clt = process.client(lang, user = user, passwd = passwd,
-                         stdin = process.PIPE,
-                         stdout = process.PIPE,
-                         stderr = process.PIPE)
-    out, err = clt.communicate(input)
-    sys.stdout.write(out)
-    sys.stderr.write(err)
+    with process.client(lang, user = user, passwd = passwd,
+                        stdin = process.PIPE,
+                        stdout = process.PIPE,
+                        stderr = process.PIPE) as clt:
+        out, err = clt.communicate(input)
+        sys.stdout.write(out)
+        sys.stderr.write(err)
 
 client('sql', input = """\
 create user voc with password 'voc' name 'VOC Explorer' schema sys;

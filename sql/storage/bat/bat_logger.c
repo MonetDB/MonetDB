@@ -14,6 +14,7 @@
 
 #define CATALOG_MAR2018 52201
 #define CATALOG_AUG2018 52202
+#define CATALOG_NOV2019 52203
 
 logger *bat_logger = NULL;
 
@@ -34,6 +35,14 @@ bl_preversion(int oldversion, int newversion)
 
 #ifdef CATALOG_AUG2018
 	if (oldversion == CATALOG_AUG2018) {
+		/* upgrade to default releases */
+		catalog_version = oldversion;
+		return GDK_SUCCEED;
+	}
+#endif
+
+#ifdef CATALOG_NOV2019
+	if (oldversion == CATALOG_NOV2019) {
 		/* upgrade to default releases */
 		catalog_version = oldversion;
 		return GDK_SUCCEED;
@@ -186,7 +195,7 @@ bl_postversion(void *lg)
 
 		/* first figure out whether there are any columns in
 		 * the catalog called "readonly" (if there are fewer
-		 * then 2, then we don't have to do anything) */
+		 * than 2, then we don't have to do anything) */
 		BAT *cn = temp_descriptor(logger_find_bat(lg, N("sys", "_columns", "name"), 0, 0));
 		if (cn == NULL)
 			return GDK_FAIL;
@@ -260,7 +269,7 @@ bl_postversion(void *lg)
 				bat_destroy(cn);
 				return GDK_FAIL;
 			}
-			BAT *ts1 = BATintersect(tn, sn, ts, ss, 0, 2);
+			BAT *ts1 = BATintersect(tn, sn, ts, ss, false, false, 2);
 			bat_destroy(tn);
 			bat_destroy(sn);
 			bat_destroy(ts);
@@ -286,7 +295,7 @@ bl_postversion(void *lg)
 				bat_destroy(cn);
 				return GDK_FAIL;
 			}
-			BAT *cs1 = BATintersect(ct, tn, cs, ts1, 0, 2);
+			BAT *cs1 = BATintersect(ct, tn, cs, ts1, false, false, 2);
 			bat_destroy(ct);
 			bat_destroy(tn);
 			bat_destroy(ts1);
@@ -742,10 +751,62 @@ bl_postversion(void *lg)
 	}
 #endif
 
+#ifdef CATALOG_NOV2019
+	if (catalog_version <= CATALOG_NOV2019) {
+		BAT *te, *tne;
+		const int *ocl;	/* old eclass */
+		int *ncl;	/* new eclass */
+
+		te = temp_descriptor(logger_find_bat(lg, N("sys", "types", "eclass"), 0, 0));
+		if (te == NULL)
+			return GDK_FAIL;
+		tne = COLnew(te->hseqbase, TYPE_int, BATcount(te), PERSISTENT);
+		if (tne == NULL) {
+			bat_destroy(te);
+			return GDK_FAIL;
+		}
+		ocl = Tloc(te, 0);
+		ncl = Tloc(tne, 0);
+		for (BUN p = 0, q = BUNlast(te); p < q; p++) {
+			switch (ocl[p]) {
+			case EC_TIME_TZ:		/* old EC_DATE */
+				ncl[p] = EC_DATE;
+				break;
+			case EC_DATE:			/* old EC_TIMESTAMP */
+				ncl[p] = EC_TIMESTAMP;
+				break;
+			case EC_TIMESTAMP:		/* old EC_GEOM */
+				ncl[p] = EC_GEOM;
+				break;
+			case EC_TIMESTAMP_TZ:		/* old EC_EXTERNAL */
+				ncl[p] = EC_EXTERNAL;
+				break;
+			default:
+				/* others stay unchanged */
+				ncl[p] = ocl[p];
+				break;
+			}
+		}
+		BATsetcount(tne, BATcount(te));
+		bat_destroy(te);
+		tne->tnil = false;
+		tne->tnonil = true;
+		tne->tsorted = false;
+		tne->trevsorted = false;
+		tne->tkey = false;
+		if (BATsetaccess(tne, BAT_READ) != GDK_SUCCEED ||
+		    logger_add_bat(lg, tne, N("sys", "types", "eclass"), 0, 0) != GDK_SUCCEED) {
+			bat_destroy(tne);
+			return GDK_FAIL;
+		}
+		bat_destroy(tne);
+	}
+#endif
+
 	return GDK_SUCCEED;
 }
 
-static int 
+static int
 bl_create(int debug, const char *logdir, int cat_version)
 {
 	if (bat_logger)
@@ -756,7 +817,7 @@ bl_create(int debug, const char *logdir, int cat_version)
 	return LOG_ERR;
 }
 
-static void 
+static void
 bl_destroy(void)
 {
 	logger *l = bat_logger;
@@ -772,7 +833,7 @@ bl_destroy(void)
 	}
 }
 
-static int 
+static int
 bl_restart(void)
 {
 	if (bat_logger)
@@ -797,11 +858,11 @@ bl_with_ids(void)
 
 static int
 bl_changes(void)
-{	
+{
 	return (int) MIN(logger_changes(bat_logger), GDK_int_max);
 }
 
-static int 
+static int
 bl_get_sequence(int seq, lng *id)
 {
 	return logger_sequence(bat_logger, seq, id);
@@ -822,19 +883,19 @@ bl_log_needs_update(void)
 	return !bat_logger->with_ids;
 }
 
-static int 
+static int
 bl_tstart(void)
 {
 	return log_tstart(bat_logger) == GDK_SUCCEED ? LOG_OK : LOG_ERR;
 }
 
-static int 
+static int
 bl_tend(void)
 {
 	return log_tend(bat_logger) == GDK_SUCCEED ? LOG_OK : LOG_ERR;
 }
 
-static int 
+static int
 bl_sequence(int seq, lng id)
 {
 	return log_sequence(bat_logger, seq, id) == GDK_SUCCEED ? LOG_OK : LOG_ERR;
@@ -961,25 +1022,65 @@ end:
 static gdk_return
 snapshot_wal(stream *plan, const char *db_dir)
 {
-	stream *log = bat_logger->log;
-	char log_file[FILENAME_MAX];
+	char meta_file[FILENAME_MAX] = {0};     // ../sql_logs/sql/log
+	char log_file[FILENAME_MAX] = {0};      // ../sql_logs/sql/log.N
+	lng version;
+	lng start_id;
+	lng cur_id;
 	int len;
+	int ret;
 
-	len = snprintf(log_file, sizeof(log_file), "%s/%s%s", db_dir, bat_logger->dir, LOGFILE);
+	// determine the name of the log file
+	len = snprintf(meta_file, sizeof(meta_file), "%s/%s%s", db_dir, bat_logger->dir, LOGFILE);
 	if (len == -1 || (size_t)len >= sizeof(log_file)) {
-		GDKerror("Could not open %s, filename is too large", log_file);
+		GDKerror("Could not open log file, filename is too large");
 		return GDK_FAIL;
 	}
-	snapshot_immediate_copy_file(plan, log_file, log_file + strlen(db_dir) + 1);
 
-	len = snprintf(log_file, sizeof(log_file), "%s%s." LLFMT, bat_logger->dir, LOGFILE, bat_logger->id);
-	if (len == -1 || (size_t)len >= sizeof(log_file)) {
-		GDKerror("Could not open %s, filename is too large", log_file);
+	// save its current contents in the plan
+	snapshot_immediate_copy_file(plan, meta_file, meta_file + strlen(db_dir) + 1);
+
+	// parse it to determine the first log file to save
+	FILE *f = fopen(meta_file, "r");
+	if (f == NULL) {
+		GDKerror("Could not open %s", meta_file);
 		return GDK_FAIL;
 	}
-	uint64_t extent = getFileSize(log);
+	ret = fscanf(f, LLSCN, &version); // dummy read (version number)
+	if (ret != 1) {
+		GDKerror("Could not read version number from %s", meta_file);
+		fclose(f);
+		return GDK_FAIL;
+	}
+	assert(version == 52204); // if version has changed this code may need to be revised
+	ret = fscanf(f, LLSCN, &start_id); // real read (log id))
+	if (ret != 1) {
+		GDKerror("Could not read log id from %s", meta_file);
+		fclose(f);
+		return GDK_FAIL;
+	}
+	fclose(f);
 
-	snapshot_lazy_copy_file(plan, log_file, extent);
+	// Determining the current log file is easy
+	cur_id = bat_logger->id;
+
+	for (lng i = start_id; i <= cur_id; i++) {
+		len = snprintf(log_file, sizeof(log_file),
+		               "%s/%s%s." LLFMT, db_dir, bat_logger->dir, LOGFILE, i);
+		if (len == -1 || (size_t)len >= sizeof(log_file)) {
+			GDKerror("Could not open log file " LLFMT ", filename is too large", i);
+			return GDK_FAIL;
+		}
+
+		struct stat statbuf;
+		if (stat(log_file, &statbuf) != 0) {
+			char errbuf[512];
+			GDKerror("Could not stat %s: %s", log_file,
+						GDKstrerror(errno, errbuf, sizeof(errbuf)));
+		}
+		uint64_t size = (uint64_t)statbuf.st_size;
+		snapshot_lazy_copy_file(plan, log_file + strlen(db_dir) + 1, size);
+	}
 
 	return GDK_SUCCEED;
 }
@@ -1065,9 +1166,9 @@ snapshot_bats(stream *plan, const char *db_dir)
 		goto end;
 	}
 	if (gdk_version != 061042U) {
-		// If this version number has changed, the structure of BBP.dir 
+		// If this version number has changed, the structure of BBP.dir
 		// may have changed. Update this whole function to take this
-		// into account. 
+		// into account.
 		// Note: when startup has completed BBP.dir is guaranteed
 		// to the latest format so we don't have to support any older
 		// formats in this function.
@@ -1128,7 +1229,7 @@ snapshot_bats(stream *plan, const char *db_dir)
 					goto end;
 				/* fallthrough */
 			case 2:
-				// no tail? 
+				// no tail?
 				break;
 		}
 	}

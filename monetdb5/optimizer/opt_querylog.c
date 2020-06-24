@@ -8,10 +8,10 @@
 
 #include "monetdb_config.h"
 #include "opt_querylog.h"
-#include "mtime.h"
+#include "gdk_time.h"
 #include "querylog.h"
 
-str 
+str
 OPTquerylogImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	int i, limit, slimit;
@@ -96,8 +96,8 @@ OPTquerylogImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 
 	for (i = 1; i < limit; i++) {
 		p = old[i];
-		
-		if (getModuleId(p)==sqlRef && 
+
+		if (getModuleId(p)==sqlRef &&
 			(idcmp(getFunctionId(p),"exportValue")==0 ||
 			 idcmp(getFunctionId(p),"exportResult")==0  ) ) {
 
@@ -118,7 +118,7 @@ OPTquerylogImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 			(void) pushArgument(mb,q, getArg(p,3));
 			pushInstruction(mb,p);
 			continue;
-		}	
+		}
 		if ( p->token== ENDsymbol || p->barrier == RETURNsymbol || p->barrier == YIELDsymbol){
 			if ( rtime == 0){
 				q = newStmt(mb, "alarm", "usec");
@@ -153,13 +153,13 @@ OPTquerylogImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 
 			q = newStmt(mb, querylogRef, "call");
 			q = pushArgument(mb, q, start);
-			q = pushArgument(mb, q, finish); 
+			q = pushArgument(mb, q, finish);
 			q = pushArgument(mb, q, arg);
-			q = pushArgument(mb, q, tuples); 
-			q = pushArgument(mb, q, xtime); 
-			q = pushArgument(mb, q, rtime); 
-			q = pushArgument(mb, q, load); 
-			q = pushArgument(mb, q, io); 
+			q = pushArgument(mb, q, tuples);
+			q = pushArgument(mb, q, xtime);
+			q = pushArgument(mb, q, rtime);
+			q = pushArgument(mb, q, load);
+			q = pushArgument(mb, q, io);
 			pushInstruction(mb,p);
 			continue;
 		}

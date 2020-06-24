@@ -43,7 +43,7 @@ _list_find_name(list *l, const char *name)
 		}
 		if (l->ht) {
 			int key = hash_key(name);
-			sql_hash_e *he = l->ht->buckets[key&(l->ht->size-1)]; 
+			sql_hash_e *he = l->ht->buckets[key&(l->ht->size-1)];
 
 			for (; he; he = he->chain) {
 				sql_base *b = he->value;
@@ -151,7 +151,7 @@ list_find_base_id(list *l, sqlid id)
 		for (n = l->h; n; n = n->next) {
 			sql_base *b = n->data;
 
-			if (id == b->id) 
+			if (id == b->id)
 				return n;
 		}
 	}
@@ -323,7 +323,7 @@ find_sqlname(list *l, const char *name)
 
 			if (strcmp(t->sqlname, name) == 0)
 				return t;
-		} 
+		}
 	}
 	return NULL;
 }
@@ -467,12 +467,12 @@ sql_trans_find_trigger(sql_trans *tr, sqlid id)
 }
 
 void*
-sql_values_list_element_validate_and_insert(void *v1, void *v2, int* res)
+sql_values_list_element_validate_and_insert(void *v1, void *v2, void *tpe, int* res)
 {
 	sql_part_value* pt = (sql_part_value*) v1, *newp = (sql_part_value*) v2;
+	sql_subtype *tp = (sql_subtype *) tpe;
 
-	assert(pt->tpe.type->localtype == newp->tpe.type->localtype);
-	*res = ATOMcmp(pt->tpe.type->localtype, newp->value, pt->value);
+	*res = ATOMcmp(tp->type->localtype, newp->value, pt->value);
 	return *res == 0 ? pt : NULL;
 }
 
@@ -480,17 +480,45 @@ void*
 sql_range_part_validate_and_insert(void *v1, void *v2)
 {
 	sql_part* pt = (sql_part*) v1, *newp = (sql_part*) v2;
-	int res1, res2;
+	int res1, res2, tpe = pt->tpe.type->localtype;
+	const void *nil = ATOMnilptr(tpe);
+	bool pt_down_all = false, pt_upper_all = false;
 
 	if (pt == newp) /* same pointer, skip (used in updates) */
 		return NULL;
 
-	assert(pt->tpe.type->localtype == newp->tpe.type->localtype);
+	assert(tpe == newp->tpe.type->localtype);
+	if (is_bit_nil(pt->with_nills)) //if one partition holds all including nills, then conflicts
+		return pt;
 	if (newp->with_nills && pt->with_nills) //only one partition at most has null values
 		return pt;
 
-	res1 = ATOMcmp(pt->tpe.type->localtype, pt->part.range.minvalue, newp->part.range.maxvalue);
-	res2 = ATOMcmp(pt->tpe.type->localtype, newp->part.range.minvalue, pt->part.range.maxvalue);
+	pt_down_all = !ATOMcmp(tpe, nil, pt->part.range.minvalue);
+	pt_upper_all = !ATOMcmp(tpe, nil, pt->part.range.maxvalue);
+
+	if (pt_down_all || pt_upper_all) {
+		if (pt_down_all) {
+			if (pt->with_nills == true) /* only holds nils, allowed */
+				return NULL;
+			if (pt_upper_all)  /* holds all range, conflicts if newp holds more than nills */
+				return newp->with_nills ? NULL : pt;
+			if (!ATOMcmp(tpe, nil, newp->part.range.minvalue) || ATOMcmp(tpe, pt->part.range.maxvalue, newp->part.range.minvalue) > 0)
+				return pt;
+		}
+		if (pt_upper_all) {
+			if (pt->with_nills == true) /* only holds nils, allowed */
+				return NULL;
+			if (pt_down_all) /* holds all range, conflicts if newp holds more than nills */
+				return newp->with_nills ? NULL : pt;
+			if (!ATOMcmp(tpe, nil, newp->part.range.maxvalue) || ATOMcmp(tpe, newp->part.range.maxvalue, pt->part.range.minvalue) > 0)
+				return pt;
+		}
+		return NULL;
+	}
+
+	/* Fallback into normal cases */
+	res1 = ATOMcmp(tpe, pt->part.range.minvalue, newp->part.range.maxvalue);
+	res2 = ATOMcmp(tpe, newp->part.range.minvalue, pt->part.range.maxvalue);
 	if (res1 < 0 && res2 < 0) //overlap: x1 < y2 && y1 < x2
 		return pt;
 	return NULL;
@@ -516,7 +544,7 @@ sql_values_part_validate_and_insert(void *v1, void *v2)
 		res = ATOMcmp(pt->tpe.type->localtype, p1->value, p2->value);
 		if (!res) { //overlap -> same value in both partitions
 			return pt;
-		} else if(res < 0) {
+		} else if (res < 0) {
 			n1 = n1->next;
 		} else {
 			n2 = n2->next;

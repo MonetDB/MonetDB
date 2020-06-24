@@ -1,12 +1,10 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 # This Source Code Form is subject to the terms of the Mozilla Public
 # License, v. 2.0.  If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 #
 # Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
-
-from __future__ import print_function
 
 import pymonetdb
 import sys
@@ -23,7 +21,7 @@ print(cursor.fetchone())
 
 # deliberately executing a wrong SQL statement:
 try:
-    cursor.execute('( xyz 1);')
+    cursor.execute('select commit_action, access from tables group by access;')
 except pymonetdb.OperationalError as e:
     print(e)
 

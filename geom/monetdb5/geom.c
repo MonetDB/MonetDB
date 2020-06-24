@@ -45,21 +45,23 @@ wkbNULLcopy(void)
 #ifdef HAVE_PROJ
 
 /** convert degrees to radians */
-static void
+static inline void
 degrees2radians(double *x, double *y, double *z)
 {
-	*x *= M_PI / 180.0;
-	*y *= M_PI / 180.0;
-	*z *= M_PI / 180.0;
+	double val = M_PI / 180.0;
+	*x *= val;
+	*y *= val;
+	*z *= val;
 }
 
 /** convert radians to degrees */
-static void
+static inline void
 radians2degrees(double *x, double *y, double *z)
 {
-	*x *= 180.0 / M_PI;
-	*y *= 180.0 / M_PI;
-	*z *= 180.0 / M_PI;
+	double val = 180.0 / M_PI;
+	*x *= val;
+	*y *= val;
+	*z *= val;
 }
 
 static str
@@ -954,7 +956,7 @@ segmentizeLineString(GEOSGeometry **outGeometry, const GEOSGeometry *geosGeometr
 		double dist;
 		while ((dist = sqrt(pow(xl - xCoords_org[i], 2) + pow(yl - yCoords_org[i], 2) + pow(zl - zCoords_org[i], 2))) > sz) {
 			TRC_DEBUG(GEOM, "Old: (%f, %f, %f) vs (%f, %f, %f) = %f\n", xl, yl, zl, xCoords_org[i], yCoords_org[i], zCoords_org[i], dist);
-			
+
 			assert(j < additionalPoints);
 
 			//compute intermediate point
@@ -1593,7 +1595,15 @@ dumpGeometriesSingle(BAT *idBAT, BAT *geomBAT, const GEOSGeometry *geosGeometry,
 		snprintf(newPath, lvlDigitsNum + 1, "%u", *lvl);
 	} else {
 		//remove the comma at the end of the path
+#ifdef STATIC_CODE_ANALYSIS
+		/* coverity complains about the allocated space being
+		 * too small, but we just want to reduce the length of
+		 * the string by one, so the length in the #else part
+		 * is exactly what we need */
+		newPath = GDKmalloc(pathLength + 1);
+#else
 		newPath = GDKmalloc(pathLength);
+#endif
 		if (newPath == NULL) {
 			GDKfree(singleWKB);
 			throw(MAL, "geom.Dump", SQLSTATE(HY013) MAL_MALLOC_FAIL);

@@ -116,8 +116,7 @@
 /* debug and errno integers */
 gdk_export int GDKdebug;
 gdk_export void GDKsetdebug(int debug);
-gdk_export int GDKverbose;
-gdk_export void GDKsetverbose(int verbosity);
+gdk_export int GDKgetdebug(void);
 
 gdk_export int GDKnr_threads;
 
@@ -135,6 +134,7 @@ gdk_export void MT_sleep_ms(unsigned int ms);
 typedef size_t MT_Id;		/* thread number. will not be zero */
 
 enum MT_thr_detach { MT_THR_JOINABLE, MT_THR_DETACHED };
+#define MT_NAME_LEN	32	/* length of thread/semaphore/etc. names */
 
 gdk_export bool MT_thread_init(void);
 gdk_export int MT_create_thread(MT_Id *t, void (*function) (void *),
@@ -285,7 +285,7 @@ gdk_export int MT_join_thread(MT_Id t);
 #if !defined(HAVE_PTHREAD_H) && defined(WIN32)
 typedef struct MT_Lock {
 	HANDLE lock;
-	char name[16];
+	char name[MT_NAME_LEN];
 #ifdef LOCK_STATS
 	size_t count;
 	ATOMIC_TYPE contention;
@@ -359,7 +359,7 @@ MT_lock_try(MT_Lock *l)
 
 typedef struct MT_Lock {
 	pthread_mutex_t lock;
-	char name[16];
+	char name[MT_NAME_LEN];
 #ifdef LOCK_STATS
 	size_t count;
 	ATOMIC_TYPE contention;
@@ -424,7 +424,7 @@ typedef struct MT_Lock {
  * a linked list of active locks */
 typedef struct MT_Lock {
 	ATOMIC_FLAG lock;
-	char name[16];
+	char name[MT_NAME_LEN];
 #ifdef LOCK_STATS
 	size_t count;
 	ATOMIC_TYPE contention;
@@ -503,7 +503,7 @@ gdk_export ATOMIC_TYPE GDKlocksleepcnt;
 
 typedef struct {
 	HANDLE sema;
-	char name[16];
+	char name[MT_NAME_LEN];
 } MT_Sema;
 
 #define MT_sema_init(s, nr, n)						\
@@ -539,7 +539,7 @@ typedef struct {
 /* MacOS X */
 typedef struct {
 	dispatch_semaphore_t sema;
-	char name[16];
+	char name[MT_NAME_LEN];
 } MT_Sema;
 
 #define MT_sema_init(s, nr, n)						\
@@ -560,7 +560,7 @@ typedef struct {
 	int cnt;
 	pthread_mutex_t mutex;
 	pthread_cond_t cond;
-	char name[16];
+	char name[MT_NAME_LEN];
 } MT_Sema;
 
 #define MT_sema_init(s, nr, n)					\
@@ -606,7 +606,7 @@ typedef struct {
 
 typedef struct {
 	sem_t sema;
-	char name[16];
+	char name[MT_NAME_LEN];
 } MT_Sema;
 
 #define MT_sema_init(s, nr, n)					\

@@ -36,7 +36,7 @@ CODE  = 42000
 MAPI  = (monetdb) /var/tmp/mtest-26840/.s.monetdb.38434
 QUERY = CREATE TABLE "" (i INT); --error
 ERROR = !An identifier cannot be empty in: "create table """
-        !syntax error, unexpected IDENT, expecting SELECT or '(' in: "(i"
+        !syntax error, unexpected IDENT, expecting SELECT or '(' or VALUES in: "(i"
 CODE  = 42000
 MAPI  = (monetdb) /var/tmp/mtest-26840/.s.monetdb.38434
 QUERY = INSERT INTO selectme VALUES (""); --error

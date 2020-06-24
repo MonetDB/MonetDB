@@ -188,7 +188,7 @@ inlineMALblock(MalBlkPtr mb, int pc, MalBlkPtr mc)
 			ns[k]->token = ASSIGNsymbol;
 		}
 		k++;
-	} 
+	}
 
 	/* copy the remainder of the stable part */
 	freeInstruction(p);
@@ -253,7 +253,7 @@ MACROprocessor(Client cntxt, MalBlkPtr mb, Symbol t)
 		return msg;
 	for (i = 0; i < mb->stop; i++) {
 		q = getInstrPtr(mb, i);
-		if (getFunctionId(q) && idcmp(getFunctionId(q), t->name) == 0 && 
+		if (getFunctionId(q) && idcmp(getFunctionId(q), t->name) == 0 &&
 			getSignature(t)->token == FUNCTIONsymbol) {
 			if (i == last)
 				throw(MAL, "optimizer.MACROoptimizer", SQLSTATE(HY002) MACRO_DUPLICATE);
@@ -262,7 +262,7 @@ MACROprocessor(Client cntxt, MalBlkPtr mb, Symbol t)
 			i = inlineMALblock(mb, i, t->def);
 			if( i < 0)
 				throw(MAL, "optimizer.MACROoptimizer", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-				
+
 			cnt++;
 			if (cnt > MAXEXPANSION)
 				throw(MAL, "optimizer.MACROoptimizer", SQLSTATE(HY002) MACRO_TOO_DEEP);
@@ -503,7 +503,7 @@ str OPTmacro(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
 		return 0;
 
 	msg = MACROvalidate(t->def);
-	if( msg) 
+	if( msg)
 		return msg;
 	if( mb->errors == 0)
 		msg= OPTmacroImplementation(cntxt,mb,stk,p);
@@ -550,11 +550,11 @@ str OPTorcam(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
 		return 0;
 
 	msg = MACROvalidate(t->def);
-	if( msg) 
+	if( msg)
 		return msg;
 	if( mb->errors == 0)
 		msg= OPTorcamImplementation(cntxt,mb,stk,p);
-	if( msg) 
+	if( msg)
 		return msg;
 	msg = chkTypes(cntxt->usermodule, mb, FALSE);
 	if( msg == MAL_SUCCEED) msg = chkFlow(mb);

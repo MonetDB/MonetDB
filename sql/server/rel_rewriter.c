@@ -16,8 +16,7 @@
 /* simplify expressions, such as not(not(x)) */
 /* exp visitor */
 
-#define is_not_func(sf) (strcmp(sf->func->base.name, "not") == 0) 
-#define is_not_anyequal(sf) (strcmp(sf->func->base.name, "sql_not_anyequal") == 0)
+#define is_not_anyequal(sf) (strcmp((sf)->func->base.name, "sql_not_anyequal") == 0)
 
 static list *
 exps_simplify_exp(mvc *sql, list *exps, int *changes)
@@ -29,68 +28,78 @@ exps_simplify_exp(mvc *sql, list *exps, int *changes)
 	for (node *n=exps->h; n && !needed; n = n->next) {
 		sql_exp *e = n->data;
 
-		needed = (exp_is_true(sql, e) || exp_is_false(sql, e) || (is_compare(e->type) && e->flag == cmp_or)); 
+		needed = (exp_is_true(sql, e) || exp_is_false(sql, e) || (is_compare(e->type) && e->flag == cmp_or));
 	}
+	/* if there's only one expression and it is false, we have to keep it */
+	if (list_length(exps) == 1 && exp_is_false(sql, exps->h->data))
+		return exps;
 	if (needed) {
 		list *nexps = sa_list(sql->sa);
 		sql->caching = 0;
 		for (node *n=exps->h; n; n = n->next) {
 			sql_exp *e = n->data;
-	
+
 			/* TRUE or X -> TRUE
 		 	* FALSE or X -> X */
 			if (is_compare(e->type) && e->flag == cmp_or) {
 				list *l = e->l = exps_simplify_exp(sql, e->l, changes);
-				list *r = e->r = exps_simplify_exp(sql, e->r, changes); 
+				list *r = e->r = exps_simplify_exp(sql, e->r, changes);
 
 				if (list_length(l) == 1) {
-					sql_exp *ie = l->h->data; 
-	
+					sql_exp *ie = l->h->data;
+
 					if (exp_is_true(sql, ie)) {
+						(*changes)++;
 						continue;
 					} else if (exp_is_false(sql, ie)) {
+						(*changes)++;
 						nexps = list_merge(nexps, r, (fdup)NULL);
 						continue;
 					}
 				} else if (list_length(l) == 0) { /* left is true */
+					(*changes)++;
 					continue;
 				}
 				if (list_length(r) == 1) {
-					sql_exp *ie = r->h->data; 
-	
-					if (exp_is_true(sql, ie))
+					sql_exp *ie = r->h->data;
+
+					if (exp_is_true(sql, ie)) {
+						(*changes)++;
 						continue;
-					else if (exp_is_false(sql, ie)) {
+					} else if (exp_is_false(sql, ie)) {
 						nexps = list_merge(nexps, l, (fdup)NULL);
+						(*changes)++;
 						continue;
 					}
 				} else if (list_length(r) == 0) { /* right is true */
+					(*changes)++;
 					continue;
 				}
 			}
 			/* TRUE and X -> X */
 			if (exp_is_true(sql, e)) {
+				(*changes)++;
 				continue;
 			/* FALSE and X -> FALSE */
 			} else if (exp_is_false(sql, e)) {
+				(*changes)++;
 				return append(sa_list(sql->sa), e);
 			} else {
 				append(nexps, e);
 			}
 		}
-		(*changes)++;
 		return nexps;
 	}
 	return exps;
 }
 
 sql_exp *
-rewrite_simplify_exp(mvc *sql, sql_rel *rel, sql_exp *e, int depth)
+rewrite_simplify_exp(mvc *sql, sql_rel *rel, sql_exp *e, int depth, int *changes)
 {
 	if (!e)
 		return e;
 
-	int changes = 0;
+	*changes = 0;
 	(void)sql; (void)rel; (void)depth; (void) changes;
 
 	sql_subfunc *sf = e->f;
@@ -105,9 +114,10 @@ rewrite_simplify_exp(mvc *sql, sql_rel *rel, sql_exp *e, int depth)
 		if (is_func(ie->type) && list_length(ie->l) == 1 && is_not_func(sf)) {
 			args = ie->l;
 
-			ie = args->h->data;	
+			ie = args->h->data;
 			if (exp_name(e))
 				exp_prop_alias(sql->sa, ie, e);
+			(*changes)++;
 			return ie;
 		}
 		if (is_func(ie->type) && list_length(ie->l) == 2 && is_not_anyequal(sf)) {
@@ -119,33 +129,42 @@ rewrite_simplify_exp(mvc *sql, sql_rel *rel, sql_exp *e, int depth)
 			ie = exp_in_func(sql, l, vals, 1, 0);
 			if (exp_name(e))
 				exp_prop_alias(sql->sa, ie, e);
+			(*changes)++;
 			return ie;
 		}
 		/* TRUE or X -> TRUE
 		 * FALSE or X -> X */
 		if (is_compare(e->type) && e->flag == cmp_or) {
-			list *l = e->l = exps_simplify_exp(sql, e->l, &changes);
-			list *r = e->r = exps_simplify_exp(sql, e->r, &changes); 
+			list *l = e->l = exps_simplify_exp(sql, e->l, changes);
+			list *r = e->r = exps_simplify_exp(sql, e->r, changes);
 
 			sql->caching = 0;
 			if (list_length(l) == 1) {
-				sql_exp *ie = l->h->data; 
+				sql_exp *ie = l->h->data;
 
-				if (exp_is_true(sql, ie))
+				if (exp_is_true(sql, ie)) {
+					(*changes)++;
 					return ie;
-				else if (exp_is_false(sql, ie) && list_length(r) == 1)
+				} else if (exp_is_false(sql, ie) && list_length(r) == 1) {
+					(*changes)++;
 					return r->h->data;
+				}
 			} else if (list_length(l) == 0) { /* left is true */
+				(*changes)++;
 				return exp_atom_bool(sql->sa, 1);
 			}
 			if (list_length(r) == 1) {
-				sql_exp *ie = r->h->data; 
+				sql_exp *ie = r->h->data;
 
-				if (exp_is_true(sql, ie))
+				if (exp_is_true(sql, ie)) {
+					(*changes)++;
 					return ie;
-				else if (exp_is_false(sql, ie) && list_length(l) == 1)
+				} else if (exp_is_false(sql, ie) && list_length(l) == 1) {
+					(*changes)++;
 					return l->h->data;
+				}
 			} else if (list_length(r) == 0) { /* right is true */
+				(*changes)++;
 				return exp_atom_bool(sql->sa, 1);
 			}
 		}
@@ -176,7 +195,7 @@ rel_remove_empty_select(mvc *sql, sql_rel *rel, int *changes)
 			l->l = NULL;
 			rel_destroy(l);
 			(*changes)++;
-		} 
+		}
 	}
 	if ((is_join(rel->op) || is_semi(rel->op) || is_set(rel->op)) && rel->r) {
 		sql_rel *r = rel->r;
@@ -186,8 +205,8 @@ rel_remove_empty_select(mvc *sql, sql_rel *rel, int *changes)
 			rel_destroy(r);
 			(*changes)++;
 		}
-	} 
-	if (is_join(rel->op) && list_empty(rel->exps)) 
+	}
+	if (is_join(rel->op) && list_empty(rel->exps))
 		rel->exps = NULL; /* crossproduct */
 	return rel;
 }

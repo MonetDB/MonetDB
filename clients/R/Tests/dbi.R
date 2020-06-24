@@ -193,7 +193,7 @@ stopifnot(identical("Роман Mühleisen", dbGetQuery(conn,"SELECT a FROM mone
 dbRollback(conn)
 
 # this returns a column with esoteric type MONTH_INTERVAL
-stopifnot(identical(1L, as.integer(dbGetQuery(con, "select cast('2015-03-02' as date) - cast('2015-03-01' as date)")[[1]][[1]])))
+stopifnot(identical(1L, as.integer(dbGetQuery(con, "select cast(1 as interval month) - cast(0 as interval month)")[[1]][[1]])))
 
 # reserved words in data frame column names
 stopifnot(dbIsValid(conn))

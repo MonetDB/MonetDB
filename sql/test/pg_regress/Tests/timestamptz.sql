@@ -35,8 +35,6 @@ DELETE FROM TIMESTAMPTZ_TBL;
 
 -- verify uniform transaction time within transaction block
 START TRANSACTION;
-DECLARE test_now timestamp(2) with time zone;
-SET test_now = now;
 INSERT INTO TIMESTAMPTZ_TBL VALUES (test_now);
 INSERT INTO TIMESTAMPTZ_TBL VALUES (test_now);
 SELECT count(*) AS two FROM TIMESTAMPTZ_TBL WHERE d1 <= cast(test_now as timestamptz);

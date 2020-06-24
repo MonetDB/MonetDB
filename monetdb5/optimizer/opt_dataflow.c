@@ -21,7 +21,7 @@
  * Also simple expressions dont have to be executed in parallel.
  *
  * The garbagesink contains variables whose endoflife is within
- * a dataflow block and who are used concurrently. 
+ * a dataflow block and who are used concurrently.
  * They are garbage collected at the end of the parallel block.
  *
  * The dataflow analysis centers around the read/write use patterns of
@@ -59,12 +59,12 @@ simpleFlow(InstrPtr *old, int start, int last)
 	if ( last - start == 1)
 		return TRUE;
 	/* skip sequence of simple arithmetic first */
-	for( ; simple && start < last; start++)  
+	for( ; simple && start < last; start++)
 	if ( old[start] ) {
 		p= old[start];
 		simple = getModuleId(p) == calcRef || getModuleId(p) == mtimeRef || getModuleId(p) == strRef || getModuleId(p)== mmathRef;
 	}
-	for( i = start; i < last; i++) 
+	for( i = start; i < last; i++)
 	if ( old[i]) {
 		q= old[i];
 		simple = getModuleId(q) == calcRef || getModuleId(q) == mtimeRef || getModuleId(q) == strRef || getModuleId(q)== mmathRef;
@@ -82,7 +82,7 @@ simpleFlow(InstrPtr *old, int start, int last)
 	return simple;
 }
 
-/* Updates are permitted if it is a unique update on 
+/* Updates are permitted if it is a unique update on
  * a BAT created in the context of this block
  * As far as we know, no SQL nor MAL test re-uses the
  * target BAT to insert again and subsequently calls dataflow.
@@ -95,7 +95,7 @@ dataflowBreakpoint(Client cntxt, MalBlkPtr mb, InstrPtr p, States states)
 {
 	int j;
 
-	if (p->token == ENDsymbol || p->barrier || isUnsafeFunction(p) || 
+	if (p->token == ENDsymbol || p->barrier || isUnsafeFunction(p) ||
 		(isMultiplex(p) && MANIFOLDtypecheck(cntxt,mb,p,0) == NULL) ){
 			return TRUE;
 		}
@@ -141,7 +141,7 @@ dflowGarbagesink(Client cntxt, MalBlkPtr mb, int var, InstrPtr *sink, int top)
 		if( getArg(sink[i],1) == var)
 			return top;
 	(void) cntxt;
-	
+
 	r = newInstruction(NULL,languageRef, passRef);
 	getArg(r,0) = newTmpVariable(mb,TYPE_void);
 	r= addArgument(mb,r, var);
@@ -182,7 +182,7 @@ OPTdataflowImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 		msg= createException(MAL,"optimizer.dataflow", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		goto wrapup;
 	}
-	
+
 	setVariableScope(mb);
 
 	limit= mb->stop;
@@ -211,11 +211,11 @@ OPTdataflowImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 				getArg(q,0)= flowblock;
 				actions++;
 			}
-			// copyblock the collected statements 
+			// copyblock the collected statements
 			for( j=start ; j<i; j++) {
 				q= old[j];
 				pushInstruction(mb,q);
-				// collect BAT variables garbage collected within the block 
+				// collect BAT variables garbage collected within the block
 				if( !simple)
 					for( k=q->retc; k<q->argc; k++){
 						if (getState(states,q,k) & VAR2READ &&  getEndScope(mb,getArg(q,k)) == j && isaBatType(getVarType(mb,getArg(q,k))) )
@@ -223,13 +223,13 @@ OPTdataflowImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 					}
 			}
 			/* exit parallel block */
-			if ( ! simple){ 
+			if ( ! simple){
 				// force the pending final garbage statements
-				for( j=0; j<top; j++) 
+				for( j=0; j<top; j++)
 					pushInstruction(mb,sink[j]);
-				q= newAssignment(mb); 
-				q->barrier= EXITsymbol; 
-				getArg(q,0) = flowblock; 
+				q= newAssignment(mb);
+				q->barrier= EXITsymbol;
+				getArg(q,0) = flowblock;
 			}
 			if (p->token == ENDsymbol){
 				for(; i < limit; i++)
@@ -267,7 +267,7 @@ OPTdataflowImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 			}
 			// reset admin
 			start = i+1;
-		} 
+		}
 		// remember you assigned/read variables
 		for ( k = 0; k < p->retc; k++)
 			setState(states, p, k, VARWRITE);
@@ -283,7 +283,7 @@ OPTdataflowImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 		}
 	}
 	/* take the remainder as is */
-	for (; i<slimit; i++) 
+	for (; i<slimit; i++)
 		if (old[i])
 			freeInstruction(old[i]);
     /* Defense line against incorrect plans */

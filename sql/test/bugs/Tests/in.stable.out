@@ -24,152 +24,152 @@ stdout of test 'in` in directory 'sql/test/bugs` itself:
 # 14:08:26 >  
 
 #select 'hello world' where 1 in (1);
-% . # table_name
-% single_value # name
+% .%4 # table_name
+% %4 # name
 % char # type
 % 11 # length
 [ "hello world"	]
 #select 'hello world' where 1 in (0);
-% . # table_name
-% single_value # name
+% .%4 # table_name
+% %4 # name
 % char # type
 % 11 # length
 #select 'hello world' where 1 not in (1);
-% . # table_name
-% single_value # name
+% .%4 # table_name
+% %4 # name
 % char # type
 % 11 # length
 #select 'hello world' where 1 not in (0);
-% . # table_name
-% single_value # name
+% .%4 # table_name
+% %4 # name
 % char # type
 % 11 # length
 [ "hello world"	]
 #select 'hello world' where NULL in (NULL);
-% . # table_name
-% single_value # name
+% .%4 # table_name
+% %4 # name
 % char # type
 % 11 # length
 #select 'hello world' where NULL in (0);
-% . # table_name
-% single_value # name
+% .%4 # table_name
+% %4 # name
 % char # type
 % 11 # length
 #select 'hello world' where NULL not in (NULL);
-% . # table_name
-% single_value # name
+% .%4 # table_name
+% %4 # name
 % char # type
 % 11 # length
 #select 'hello world' where NULL not in (0);
-% . # table_name
-% single_value # name
+% .%4 # table_name
+% %4 # name
 % char # type
 % 11 # length
 #select 'hello world' where 1 in (1,5);
-% . # table_name
-% single_value # name
+% .%5 # table_name
+% %5 # name
 % char # type
 % 11 # length
 [ "hello world"	]
 #select 'hello world' where 1 in (0,5);
-% . # table_name
-% single_value # name
+% .%5 # table_name
+% %5 # name
 % char # type
 % 11 # length
 #select 'hello world' where 1 not in (1,5);
-% . # table_name
-% single_value # name
+% .%5 # table_name
+% %5 # name
 % char # type
 % 11 # length
 #select 'hello world' where 1 not in (0,5);
-% . # table_name
-% single_value # name
+% .%5 # table_name
+% %5 # name
 % char # type
 % 11 # length
 [ "hello world"	]
 #select 'hello world' where NULL in (NULL,5);
-% . # table_name
-% single_value # name
+% .%5 # table_name
+% %5 # name
 % char # type
 % 11 # length
 #select 'hello world' where NULL in (0,5);
-% . # table_name
-% single_value # name
+% .%5 # table_name
+% %5 # name
 % char # type
 % 11 # length
 #select 'hello world' where NULL not in (NULL,5);
-% . # table_name
-% single_value # name
+% .%5 # table_name
+% %5 # name
 % char # type
 % 11 # length
 #select 'hello world' where NULL not in (0,5);
-% . # table_name
-% single_value # name
+% .%5 # table_name
+% %5 # name
 % char # type
 % 11 # length
 #select 'hello world' where 1 in (4,1,5);
-% . # table_name
-% single_value # name
+% .%6 # table_name
+% %6 # name
 % char # type
 % 11 # length
 [ "hello world"	]
 #select 'hello world' where 1 in (4,0,5);
-% . # table_name
-% single_value # name
+% .%6 # table_name
+% %6 # name
 % char # type
 % 11 # length
 #select 'hello world' where 1 not in (4,1,5);
-% . # table_name
-% single_value # name
+% .%6 # table_name
+% %6 # name
 % char # type
 % 11 # length
 #select 'hello world' where 1 not in (4,0,5);
-% . # table_name
-% single_value # name
+% .%6 # table_name
+% %6 # name
 % char # type
 % 11 # length
 [ "hello world"	]
 #select 'hello world' where 1 in (select 1);
-% . # table_name
-% single_value # name
+% .%10 # table_name
+% %10 # name
 % char # type
 % 11 # length
 [ "hello world"	]
 #select 'hello world' where 1 in (select 0);
-% . # table_name
-% single_value # name
+% .%10 # table_name
+% %10 # name
 % char # type
 % 11 # length
 #select 'hello world' where 1 not in (select 1);
-% . # table_name
-% single_value # name
+% .%10 # table_name
+% %10 # name
 % char # type
 % 11 # length
 #select 'hello world' where 1 not in (select 0);
-% . # table_name
-% single_value # name
+% .%10 # table_name
+% %10 # name
 % char # type
 % 11 # length
 [ "hello world"	]
 #select 'hello world' where (1,1) in (select 1,1);
-% . # table_name
-% single_value # name
+% .%13 # table_name
+% %13 # name
 % char # type
 % 11 # length
 [ "hello world"	]
 #select 'hello world' where (1,1) in (select 1,5);
-% . # table_name
-% single_value # name
+% .%13 # table_name
+% %13 # name
 % char # type
 % 11 # length
 #select 'hello world' where (1,1) not in (select 1,1);
-% . # table_name
-% single_value # name
+% .%13 # table_name
+% %13 # name
 % char # type
 % 11 # length
 #select 'hello world' where (1,1) not in (select 1,5);
-% . # table_name
-% single_value # name
+% .%13 # table_name
+% %13 # name
 % char # type
 % 11 # length
 [ "hello world"	]

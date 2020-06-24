@@ -4,9 +4,9 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
  * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
- * 
+ *
  * All the functions correspond one by one to the API calls in gdk_tracer.h
- * 
+ *
  */
 
 #ifndef _TRACER_H

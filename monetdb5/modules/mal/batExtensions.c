@@ -167,7 +167,7 @@ CMDBATimprints(void *ret, bat *bid)
 	gdk_return r;
 
 	(void) ret;
-	if ((b = BATdescriptor(*bid)) == NULL) 
+	if ((b = BATdescriptor(*bid)) == NULL)
 		throw(MAL, "bat.imprints", INTERNAL_BAT_ACCESS);
 
 	r = BATimprints(b);
@@ -181,7 +181,7 @@ CMDBATimprintsize(lng *ret, bat *bid)
 {
 	BAT *b;
 
-	if ((b = BATdescriptor(*bid)) == NULL) 
+	if ((b = BATdescriptor(*bid)) == NULL)
 		throw(MAL, "bat.imprints", INTERNAL_BAT_ACCESS);
 
 	*ret = IMPSimprintsize(b);

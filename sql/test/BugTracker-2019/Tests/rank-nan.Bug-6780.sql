@@ -918,7 +918,7 @@ NULL	NULL	"XS0130574600"	NULL	"SUNDERLAND (SHG) FINANCE"	NULL	NULL	NULL	"30-Mar-
 "Supranational"	NULL	"XS0202407093"	"EIB"	NULL	"N"	NULL	NULL	"12-Oct-2054 00:00:00"	NULL	"4.25  36"	"AAA"	NULL	"N"	NULL	NULL	4.203	4.357	NULL	NULL	891
 
 select *, rank() over (partition by "c2_h_field_2" order by "count_1" desc) as "RANK", dense_rank() over (partition by "c2_h_field_2" order by "count_1" desc) as "DRANK",
-	row_number() over (partition by "c2_h_field_2" order by "count_1" desc) as "RNUMBER"
+	row_number() over (partition by "c2_h_field_2" order by "count_1" desc, "Ticker") as "RNUMBER"
 from 
 (
 	select 

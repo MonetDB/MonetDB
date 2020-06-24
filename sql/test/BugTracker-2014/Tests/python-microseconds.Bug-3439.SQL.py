@@ -1,5 +1,3 @@
-from __future__ import print_function
-
 import pymonetdb, os
 
 dbh = pymonetdb.connect(port=int(os.getenv('MAPIPORT')),hostname=os.getenv('MAPIHOST'),database=os.getenv('TSTDB'))

@@ -70,7 +70,7 @@ int mal_init(void){
 #ifndef NDEBUG
 		mdbExit();
 #endif
-		TRC_ERROR(MAL_SERVER, "%s\n", err);
+		TRC_CRITICAL(MAL_SERVER, "%s\n", err);
 		freeException(err);
 		return -1;
 	}
@@ -83,7 +83,7 @@ int mal_init(void){
  * This seemingly superflous action is necessary to simplify analyis of
  * memory leakage problems later ons and to allow an embedded server to
  * restart the server properly.
- * 
+ *
  * It is the responsibility of the enclosing application to finish/cease all
  * activity first.
  * This function should be called after you have issued sql_reset();

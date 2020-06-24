@@ -146,7 +146,7 @@ getFreeScenario(void)
 	MT_lock_set(&scenarioLock);
 	for (i = 0; i < MAXSCEN && scenarioRec[i].name; i++)
 		;
-	if (i < MAXSCEN) 
+	if (i < MAXSCEN)
 		scen = scenarioRec + i;
 	MT_lock_unset(&scenarioLock);
 
@@ -518,7 +518,7 @@ runScenarioBody(Client c, int once)
 
 	while (c->mode > FINISHCLIENT && !GDKexiting()) {
 		// be aware that a MAL call  may initialize a different scenario
-		if ( !c->state[0] && (msg = runPhase(c, MAL_SCENARIO_INITCLIENT)) ) 
+		if ( !c->state[0] && (msg = runPhase(c, MAL_SCENARIO_INITCLIENT)) )
 			goto wrapup;
 		if ( c->mode <= FINISHCLIENT ||  (msg = runPhase(c, MAL_SCENARIO_READER)) )
 			goto wrapup;

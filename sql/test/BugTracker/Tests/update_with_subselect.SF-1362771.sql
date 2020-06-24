@@ -7,7 +7,7 @@ create table click_(
 ;
 
 INSERT INTO click_
-values ('00:02:54:458',1)
+values ('00:02:54.458',1)
 ;
 
 

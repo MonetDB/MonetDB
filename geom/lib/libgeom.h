@@ -29,6 +29,7 @@
 #include <geos_c.h>
 
 #ifdef HAVE_PROJ
+#define ACCEPT_USE_OF_DEPRECATED_PROJ_API_H
 #include <proj_api.h> //it is needed to transform from one srid to another
 #endif
 
@@ -38,12 +39,12 @@ typedef struct mbr {
 	float ymin;
 //	float zmin;
 //	float mmin;
-	
+
 	float xmax;
 	float ymax;
 //	float zmax;
 //	float mmax;
-	
+
 } mbr;
 
 /*
@@ -134,7 +135,7 @@ libgeom_export void libgeom_exit(void);
  * On failure, returns NULL.
  */
 //#define wkb2geos( geom ) is_wkb_nil((geom))? NULL: GEOSGeomFromWKB_buf((unsigned char *)((geom)->data), (geom)->len)
-#define mbr_nil mbrFromGeos(NULL); 
+#define mbr_nil mbrFromGeos(NULL);
 
 libgeom_export bool is_wkb_nil(const wkb *wkbp);
 libgeom_export int getMbrGeos(mbr *mbr, const GEOSGeom geosGeometry);

@@ -700,7 +700,7 @@ ssize_t XMLfromString(const char *src, size_t *len, xml *x, bool external) {
 	(void) len;
 	(void) x;
 	(void) external;
-	GDKerror("XMLfromString is not implemented\n");
+	GDKerror("not implemented\n");
 	return -1;
 }
 ssize_t XMLtoString(str *s, size_t *len, const char *src, bool external) {
@@ -708,7 +708,7 @@ ssize_t XMLtoString(str *s, size_t *len, const char *src, bool external) {
 	(void) len;
 	(void) src;
 	(void) external;
-	GDKerror("XMLtoString is not implemented\n");
+	GDKerror("not implemented\n");
 	return -1;
 }
 str XMLxml2str(str *s, xml *x) {

@@ -97,7 +97,7 @@ newMalBlkStmt(MalBlkPtr mb, int maxstmts)
 	InstrPtr *p;
 
 	p = (InstrPtr *) GDKzalloc(sizeof(InstrPtr) * maxstmts);
-	if (p == NULL) 
+	if (p == NULL)
 		return -1;
 	mb->stmt = p;
 	mb->stop = 0;
@@ -115,7 +115,7 @@ newMalBlk(int elements)
 	if (mb == NULL)
 		return NULL;
 
-	/* each MAL instruction implies at least one variable 
+	/* each MAL instruction implies at least one variable
  	 * we reserve some extra for constants */
 	v = (VarRecord *) GDKzalloc(sizeof(VarRecord) * (elements + 8) );
 	if (v == NULL) {
@@ -207,7 +207,7 @@ resetMalBlk(MalBlkPtr mb, int stop)
 {
 	int i;
 
-	for(i=0; i<stop; i++) 
+	for(i=0; i<stop; i++)
 		mb->stmt[i] ->typechk = TYPE_UNKNOWN;
 	mb->stop = stop;
 	mb->errors = NULL;
@@ -461,7 +461,7 @@ newInstructionArgs(MalBlkPtr mb, str modnme, str fcnnme, int args)
 		 * Furthermore, failure to allocate such a small data structure indicates we are in serious trouble.
 		 * The only way out is declare it a fatal error, terminate the system to avoid crashes in all kind of places.
 		 */
-		GDKerror("newInstruction:" SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		GDKerror(SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		mal_exit(1);
 	}
 	p->maxarg = args;
@@ -488,7 +488,7 @@ InstrPtr
 copyInstruction(InstrPtr p)
 {
 	InstrPtr new = (InstrPtr) GDKmalloc(offsetof(InstrRecord, argv) + p->maxarg * sizeof(p->argv[0]));
-	if(new == NULL) 
+	if(new == NULL)
 		return new;
 	oldmoveInstruction(new, p);
 	return new;
@@ -548,7 +548,7 @@ removeInstruction(MalBlkPtr mb, InstrPtr p)
 	if (i == mb->stop)
 		return;
 
-	for (; i < mb->stop - 1; i++) 
+	for (; i < mb->stop - 1; i++)
 		mb->stmt[i] = mb->stmt[i + 1];
 	mb->stmt[i] = 0;
 	mb->stop--;
@@ -784,7 +784,7 @@ newVariable(MalBlkPtr mb, const char *name, size_t len, malType type)
 		mb->errors = createMalException(mb,0,TYPE, "newVariable: id too long");
 		return -1;
 	}
-	if (makeVarSpace(mb)) 
+	if (makeVarSpace(mb))
 		/* no space for a new variable */
 		return -1;
 	n = mb->vtop;
@@ -862,7 +862,7 @@ clearVariable(MalBlkPtr mb, int varid)
 		VALclear(&v->value);
 	v->type = 0;
 	v->constant= 0;
-	v->typevar= 0;		
+	v->typevar= 0;
 	v->fixedtype= 0;
 	v->udftype= 0;
 	v->cleanup= 0;
@@ -934,7 +934,7 @@ trimMalVariables_(MalBlkPtr mb, MalStkPtr glb)
 	for( i =0; i< cnt; i++)
 	if( isTmpVar(mb,i))
         (void) snprintf(mb->var[i].id, IDLENGTH,"%c%c%d", REFMARKER, TMPMARKER,mb->vid++);
-	
+
 	GDKfree(alias);
 	mb->vtop = cnt;
 }
@@ -946,7 +946,7 @@ trimMalVariables(MalBlkPtr mb, MalStkPtr stk)
 	InstrPtr q;
 
 	/* reset the use bit for all non-signature arguments */
-	for (i = 0; i < mb->vtop; i++) 
+	for (i = 0; i < mb->vtop; i++)
 		clrVarUsed(mb,i);
 	/* build the use table */
 	for (i = 0; i < mb->stop; i++) {
@@ -1046,7 +1046,7 @@ fndConstant(MalBlkPtr mb, const ValRecord *cst, int depth)
 	k = mb->vtop - depth;
 	if (k < 0)
 		k = 0;
-	for (i=k; i < mb->vtop - 1; i++) 
+	for (i=k; i < mb->vtop - 1; i++)
 	if (getVar(mb,i) && isVarConstant(mb,i)){
 		VarPtr v = getVar(mb, i);
 		if (v && v->type == cst->vtype && ATOMcmp(cst->vtype, VALptr(&v->value), p) == 0)
@@ -1117,10 +1117,10 @@ defConstant(MalBlkPtr mb, int type, ValPtr cst)
 		setVarCleanup(mb, k);
 	else
 		clrVarCleanup(mb, k);
-	if(VALcopy( &getVarConstant(mb, k),cst) == NULL)
-		return -1;
-	if (ATOMextern(cst->vtype) && cst->val.pval)
-		VALclear(cst);
+	/* if cst is external, we give its allocated buffer away, so clear
+	 * it to avoid confusion */
+	getVarConstant(mb, k) = *cst;
+	VALempty(cst);
 	return k;
 }
 
@@ -1130,7 +1130,7 @@ defConstant(MalBlkPtr mb, int type, ValPtr cst)
  * referenced before being assigned. Failure to obey should mark the
  * instruction as type-error. */
 
-static InstrPtr 
+static InstrPtr
 extendInstruction(MalBlkPtr mb, InstrPtr p)
 {
 	InstrPtr pn = p;
@@ -1321,7 +1321,7 @@ destinationType(MalBlkPtr mb, InstrPtr p)
 /* For polymorphic instructions we should keep around the maximal
  * index to later allocate sufficient space for type resolutions maps.
  * Beware, that we should only consider the instruction polymorphic if
- * it has a positive index or belongs to the signature. 
+ * it has a positive index or belongs to the signature.
  * BATs can only have a polymorphic type at the tail.
  */
 inline void
@@ -1331,7 +1331,7 @@ setPolymorphic(InstrPtr p, int tpe, int force)
 
 	if (force == FALSE && tpe == TYPE_any)
 		return;
-	if (isaBatType(tpe)) 
+	if (isaBatType(tpe))
 		c1= TYPE_oid;
 	if (getTypeIndex(tpe) > 0)
 		c2 = getTypeIndex(tpe);
@@ -1374,7 +1374,7 @@ pushInstruction(MalBlkPtr mb, InstrPtr p)
 						freeInstruction(q);
 						mb->stmt[i] = p;
 						return;
-					}		
+					}
 				}
 				freeInstruction(getInstrPtr(mb,0));
 				mb->stmt[0] = p;

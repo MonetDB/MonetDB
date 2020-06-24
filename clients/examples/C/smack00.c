@@ -16,10 +16,6 @@
 #include <string.h>
 #include <mapi.h>
 
-#ifdef _MSC_VER
-#define snprintf _snprintf
-#endif
-
 #define die(dbh,hdl)	do {						\
 				if (hdl)				\
 					mapi_explain_result(hdl,stderr); \
@@ -48,7 +44,7 @@ main(int argc, char **argv)
 	}
 	if (argc == 3) {
 		l = argv[2];
-		if (strcmp(argv[2], "sql") == 0) 
+		if (strcmp(argv[2], "sql") == 0)
 			lang = 1;
 		else if (strcmp(argv[2], "mal") == 0)
 			lang = 3;

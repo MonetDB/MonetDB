@@ -44,8 +44,8 @@ stdout of test 'cqstream01` in directory 'sql/backends/monet5` itself:
 #    insert into result2 select * from stmp2 where val >12;
 #end;
 #select 'RESULT';
-% . # table_name
-% single_value # name
+% .%2 # table_name
+% %2 # name
 % char # type
 % 6 # length
 [ "RESULT"	]

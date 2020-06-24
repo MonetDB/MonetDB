@@ -55,12 +55,23 @@ MSERVER5 OPTIONS
    **@localstatedir@/monetdb5/dbfarm/demo**.
 
 **--dbextra=**\ *path*
-   Path where mserver5 should store transient data. Default value is the
-   value of the **--dbpath** option.
+   Path where *mserver5* should store transient data. Default value is
+   the value of the **--dbpath** option.
+
+**--dbtrace=**\ *path*
+   File name for the trace log file for *mserver5*. Default value is the
+   file **mdbtrace.log** inside the directory specified with the
+   **--dbpath** option.
 
 **--config=**\ *file*
    Config file to read options from. This file can contain all options
    as can be set with the --set flag. See *CONFIG FILE FORMAT*.
+
+**--single-user**
+   Allow only a single user at a time.
+
+**--readonly**
+   The database is opened in read-only mode.
 
 **--set** *option*\ **=**\ *value*
    Set individual configuration option. For possible options, see
@@ -73,17 +84,7 @@ MSERVER5 OPTIONS
    Print version and compile configuration.
 
 **--in-memory**
-   Run mserver5 in-memory. **No** data will be persisted.
-
-**--trace**
-   Print information about MAL instructions as they are executed.
-
-**--verbose**\ [**=**\ *value*]
-
-**-v**\ [*value*]
-   Set or increase verbosity level. If no *value* is specified, the
-   verbosity level is increased by **1**. If a *value* is specified, the
-   verbosity level is set to the given value.
+   Run *mserver5* in-memory. **No** data will be persisted.
 
 **--debug**\ [**=**\ *value*]
 
@@ -95,7 +96,6 @@ MSERVER5 OPTIONS
 
              1 = THRDMASK     = thread-specific debug output
              2 = CHECKMASK    = property enforcing on new BATs
-             4 = MEMMASK      = memory allocation
              8 = PROPMASK     = property checking on all values:
                                 tells about wrongly set properties
             16 = IOMASK       = major IO activity
@@ -106,9 +106,8 @@ MSERVER5 OPTIONS
           4096 = PERFMASK     = BBP Performance (?)
           8192 = DELTAMASK    = Delta debugging (?)
          16384 = LOADMASK     = Module loading
-       2097152 = ALGOMASK     = show join/select algorithm chosen
-       4194304 = ESTIMASK     = show result size estimations
-                                (for join, select)
+       1048576 = ACCELMASK    = Accelerator debugging
+       2097152 = ALGOMASK     = show low level algorithm chosen
       16777216 = NOSYNCMASK   = disable forcefully synchronizing files
                                 to disk.  If this flag is set, there is
                                 no guarantee that the database remains
@@ -116,8 +115,10 @@ MSERVER5 OPTIONS
                                 (unless you really don't care about your
                                 data).
       33554432 = DEADBEEFMASK = disable "cleaning" of freed memory
-                                in GDKfree() (e.g., for performance
-                                measurements)
+                                in GDKfree() which only happens in a
+                                debug build (i.e. with assertions
+                                enabled) e.g., for performance
+                                measurements
       67108864 = ALLOCMASK    = exhaustive GDK malloc & free tracing
                                 for debugging (GDK developers, only)
      134217728 = OPTMASK      = trace the actions, decisions and
@@ -141,38 +142,35 @@ it defaults to **1**. In the short form **-d**, the value, if present,
 must immediately (i.e. without space) follow the option. The values of
 multiple instances of this flag are OR-ed together.
 
-**--threads**
-   Equivalent to **--debug=**\ *(THRDMASK \| PARMASK)*.
+**--algorithms**
+   Equivalent to **--debug=**\ *(ALGOMASK)*.
 
-**--memory**
-   Equivalent to **--debug=**\ *(MEMMASK \| ALLOCMASK)*.
-
-**--properties**
-   Equivalent to **--debug=**\ *(CHECKMASK \| PROPMASK \| BATMASK)*.
-
-**--io**
-   Equivalent to **--debug=**\ *(IOMASK \| PERFMASK)*.
+**--forcemito**
+   Equivalent to **--debug=**\ *(FORCEMITOMASK \| NOSYNCMASK)*.
 
 **--heaps**
    Equivalent to **--debug=**\ *(HEAPMASK)*.
 
-**--transactions**
-   Equivalent to **--debug=**\ *(TMMASK \| DELTAMASK \| TEMMASK)*.
+**--io**
+   Equivalent to **--debug=**\ *(IOMASK \| PERFMASK)*.
+
+**--memory**
+   Equivalent to **--debug=**\ *(ALLOCMASK)*.
 
 **--modules**
    Equivalent to **--debug=**\ *(LOADMASK)*.
 
-**--algorithms**
-   Equivalent to **--debug=**\ *(ALGOMASK \| ESTIMASK)*.
-
 **--performance**
    Equivalent to **--debug=**\ *(DEADBEEFMASK)*.
 
-**--optimizers**
-   Equivalent to **--debug=**\ *(OPTMASK)*.
+**--properties**
+   Equivalent to **--debug=**\ *(CHECKMASK \| PROPMASK \| BATMASK)*.
 
-**--forcemito**
-   Equivalent to **--debug=**\ *(FORCEMITOMASK \| NOSYNCMASK)*.
+**--threads**
+   Equivalent to **--debug=**\ *(THRDMASK \| PARMASK)*.
+
+**--transactions**
+   Equivalent to **--debug=**\ *(TMMASK \| DELTAMASK \| TEMMASK)*.
 
 MSERVER5 PARAMETERS
 ===================
@@ -183,18 +181,20 @@ to transform MAL plans into more optimal or functional (e.g.
 distributed) plans. These parameters control behaviour on the MAL level.
 
 **monet_vault_key**
-   The authorisation tables inside *mserver5* can be encrypted with a key, such
-   that reading the BATs does not directly disclose any credentials. The
-   **monet_vault_key** setting points to a file that stores a secret key to
-   unlock the password vault. It can contain anything. The file is read up to
-   the first null-byte (``'\0'``), hence it can be padded to any length with
-   trailing null-bytes to obfuscate the key length. Generating a key can be done
-   for example by using a tool such as *pwgen* and adding a few of the passwords
-   generated. Make sure not to choose a too small key. Note that on absence of a
-   vault key file, some default key is used to encrypt the authorisation
-   tables. Changing this setting (effectively changing the key) for an existing
-   database makes that database unusable as noone is any longer able to
-   login. If you use *monetdbd*\ (1), a per-database vault key is set.
+   The authorisation tables inside *mserver5* can be encrypted with a
+   key, such that reading the BATs does not directly disclose any
+   credentials. The **monet_vault_key** setting points to a file that
+   stores a secret key to unlock the password vault. It can contain
+   anything. The file is read up to the first null-byte (``'\0'``), hence it
+   can be padded to any length with trailing null-bytes to obfuscate the
+   key length. Generating a key can be done for example by using a tool
+   such as *pwgen* and adding a few of the passwords generated. Make
+   sure not to choose a too small key. Note that on absence of a vault
+   key file, some default key is used to encrypt the authorisation
+   tables. Changing this setting (effectively changing the key) for an
+   existing database makes that database unusable as noone is any longer
+   able to login. If you use *monetdbd*\ (1), a per-database vault key
+   is set.
 
 **max_clients**
    Controls how many client slots are allocated for clients to connect.

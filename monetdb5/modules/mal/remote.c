@@ -576,7 +576,7 @@ str RMTget(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 		BAT *b;
 
 		snprintf(qbuf, BUFSIZ, "io.print(%s);", ident);
-		
+
 		TRC_DEBUG(MAL_REMOTE, "Remote get: %s\n", qbuf);
 
 		/* this call should be a single transaction over the channel*/
@@ -611,7 +611,7 @@ str RMTget(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 			}
 		} else
 			while (mapi_fetch_row(mhdl)) {
-				var = mapi_fetch_field(mhdl, 1); 
+				var = mapi_fetch_field(mhdl, 1);
 				if (var == NULL)
 					var = "nil";
 				s = 0;
@@ -816,7 +816,7 @@ str RMTput(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 					MT_lock_unset(&c->lock);
 					throw(MAL, "remote.put", GDK_EXCEPTION);
 				}
-				if (getBatType(type) > TYPE_str)
+				if (getBatType(type) >= TYPE_date && getBatType(type) != TYPE_str)
 					mnstr_printf(sout, "\"%s\"\n", tailv);
 				else
 					mnstr_printf(sout, "%s\n", tailv);
@@ -869,7 +869,7 @@ str RMTput(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 			GDKfree(tpe);
 			throw(MAL, "remote.put", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		}
-		if (type <= TYPE_str)
+		if (type < TYPE_date || type == TYPE_str)
 			snprintf(nbuf, l, "%s := %s:%s;\n", ident, val, tpe);
 		else
 			snprintf(nbuf, l, "%s := \"%s\":%s;\n", ident, val, tpe);

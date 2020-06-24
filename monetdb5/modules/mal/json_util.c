@@ -22,7 +22,7 @@ JSONresultSet(json *res, bat *uuid, bat *rev, bat *js)
 	char *result;
 	size_t sz, len=0;
 
-	if ((bu = BATdescriptor(*uuid)) == NULL) 
+	if ((bu = BATdescriptor(*uuid)) == NULL)
 		throw(MAL, "json.resultset", INTERNAL_BAT_ACCESS);
 	if ((br = BATdescriptor(*rev)) == NULL) {
 		BBPunfix(bu->batCacheid);

@@ -42,7 +42,8 @@ MNDBColumnPrivileges(ODBCStmt *stmt,
 {
 	RETCODE rc;
 	char *query = NULL;
-	char *query_end = NULL;
+	size_t querylen;
+	size_t pos = 0;
 	char *sch = NULL, *tab = NULL, *col = NULL;
 
 	fixODBCstring(CatalogName, NameLength1, SQLSMALLINT,
@@ -109,11 +110,11 @@ MNDBColumnPrivileges(ODBCStmt *stmt,
 	}
 
 	/* construct the query now */
-	query = malloc(1200 + strlen(stmt->Dbc->dbname) + (sch ? strlen(sch) : 0) +
-			(tab ? strlen(tab) : 0) + (col ? strlen(col) : 0));
+	querylen = 1200 + strlen(stmt->Dbc->dbname) + (sch ? strlen(sch) : 0) +
+		(tab ? strlen(tab) : 0) + (col ? strlen(col) : 0);
+	query = malloc(querylen);
 	if (query == NULL)
 		goto nomem;
-	query_end = query;
 
 	/* SQLColumnPrivileges returns a table with the following columns:
 	   table_cat    VARCHAR
@@ -126,7 +127,7 @@ MNDBColumnPrivileges(ODBCStmt *stmt,
 	   is_grantable VARCHAR
 	 */
 
-	sprintf(query_end,
+	pos += snprintf(query + pos, querylen - pos,
 		"select '%s' as table_cat, "
 		       "s.name as table_schem, "
 		       "t.name as table_name, "
@@ -169,43 +170,38 @@ MNDBColumnPrivileges(ODBCStmt *stmt,
 			     "(8, 'DELETE'), "
 			     "(16, 'EXECUTE'), "
 			     "(32, 'GRANT')) as pc(privilege_code_id, privilege_code_name)");
-	assert(strlen(query) < 1100);
-	query_end += strlen(query_end);
+	assert(pos < querylen);
 
 	/* Construct the selection condition query part */
 	if (NameLength1 > 0 && CatalogName != NULL) {
 		/* filtering requested on catalog name */
 		if (strcmp((char *) CatalogName, stmt->Dbc->dbname) != 0) {
 			/* catalog name does not match the database name, so return no rows */
-			sprintf(query_end, " and 1=2");
-			query_end += strlen(query_end);
+			pos += snprintf(query + pos, querylen - pos, " and 1=2");
 		}
 	}
 	if (sch) {
 		/* filtering requested on schema name */
-		sprintf(query_end, " and %s", sch);
-		query_end += strlen(query_end);
+		pos += snprintf(query + pos, querylen - pos, " and %s", sch);
 		free(sch);
 	}
 	if (tab) {
 		/* filtering requested on table name */
-		sprintf(query_end, " and %s", tab);
-		query_end += strlen(query_end);
+		pos += snprintf(query + pos, querylen - pos, " and %s", tab);
 		free(tab);
 	}
 	if (col) {
 		/* filtering requested on column name */
-		sprintf(query_end, " and %s", col);
-		query_end += strlen(query_end);
+		pos += snprintf(query + pos, querylen - pos, " and %s", col);
 		free(col);
 	}
 
 	/* add the ordering (exclude table_cat as it is the same for all rows) */
-	strcpy(query_end, " order by table_schem, table_name, column_name, privilege");
-	query_end += strlen(query_end);
+	pos += strcpy_len(query + pos, " order by table_schem, table_name, column_name, privilege", querylen - pos);
+	assert(pos <= querylen);
 
 	/* query the MonetDB data dictionary tables */
-	rc = MNDBExecDirect(stmt, (SQLCHAR *) query, (SQLINTEGER) (query_end - query));
+	rc = MNDBExecDirect(stmt, (SQLCHAR *) query, (SQLINTEGER) pos);
 
 	free(query);
 

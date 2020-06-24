@@ -23,35 +23,7 @@ stderr of test 'lateral.Bug-6310` in directory 'sql/test/BugTracker-2017` itself
 # cmdline opt 	gdk_dbpath = /home/niels/scratch/rc-old/Linux-x86_64/var/MonetDB/mTests_sql_test_BugTracker-2017
 # cmdline opt 	gdk_debug = 536870922
 
-# 16:49:27 >  
-# 16:49:27 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-31693" "--port=34067"
-# 16:49:27 >  
-
-MAPI  = (monetdb) /var/tmp/mtest-4110/.s.monetdb.34271
-QUERY = select
-          ref_0.i as c0
-        from
-          integers as ref_0,
-          lateral (select
-        		(select col1 from tab0)
-        		   as c0
-        	  from
-        		tab1 as sample_1
-        		  right join tab2 as ref_4
-        			  inner join part as ref_6
-        				  inner join tbl_ProductSales as sample_5
-        				  on (ref_6.p_comment = sample_5.col3 )
-        				right join LongTable as ref_7
-        				on (sample_5.col1 = ref_7.col1 )
-        			  on (ref_4.col0 = sample_5.col4 )
-        			right join another_t as sample_8
-        			  inner join partsupp as ref_10
-        			  on (sample_8.col1 = ref_10.ps_partkey )
-        			on (ref_4.col0 = ref_10.ps_suppkey )
-ERROR = !Cardinality violation, scalar value expected
-CODE  = 21000
-
-# 16:49:27 >  
-# 16:49:27 >  "Done."
-# 16:49:27 >  
+# 13:56:28 >  
+# 13:56:28 >  "Done."
+# 13:56:28 >  
 

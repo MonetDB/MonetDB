@@ -46,8 +46,7 @@ stdout of test 'analyze-stream-table.Bug-6817` in directory 'sql/test/BugTracker
 % has_rows # name
 % boolean # type
 % 5 # length
-[ false	]
-#analyze sys;
+[ true	]
 #select (count(*) > 0) as has_rows from statistics;
 % . # table_name
 % has_rows # name

@@ -32,19 +32,19 @@ stdout of test 'sqlitelogictest-algebra-join-not-in.Bug-6519` in directory 'sql/
 % int,	int,	int # type
 % 1,	1,	1 # length
 #SELECT CAST ( SUM ( DISTINCT 23 ) * - COUNT ( DISTINCT + - col1 ) AS BIGINT ) FROM tab2 AS cor0 WHERE NOT NULL; --NULL
-% . # table_name
+% .%6 # table_name
 % %6 # name
 % bigint # type
 % 1 # length
 [ NULL	]
 #SELECT CAST ( SUM ( DISTINCT 23 ) * - COUNT ( DISTINCT + - col1 ) AS BIGINT ) FROM tab2 AS cor0 WHERE NULL; --NULL
-% . # table_name
+% .%5 # table_name
 % %5 # name
 % bigint # type
 % 1 # length
 [ NULL	]
 #SELECT DISTINCT CAST ( SUM ( DISTINCT 23 ) * - COUNT ( DISTINCT + - col1 ) AS BIGINT ) FROM tab2 AS cor0 WHERE NOT ( NULL ) IS NULL; --NULL
-% . # table_name
+% .%6 # table_name
 % %6 # name
 % bigint # type
 % 1 # length

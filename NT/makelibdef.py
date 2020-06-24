@@ -1,5 +1,3 @@
-from __future__ import print_function
-
 import fileinput, re
 p = re.compile('^\s*\d+\s+[0-9A-F]+\s+[0-9A-F]+\s+(\w+)')
 print('LIBRARY R')

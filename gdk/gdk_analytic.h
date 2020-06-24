@@ -14,8 +14,6 @@
 #ifndef _GDK_ANALYTIC_H_
 #define _GDK_ANALYTIC_H_
 
-#include "gdk.h"
-
 gdk_export gdk_return GDKanalyticaldiff(BAT *r, BAT *b, BAT *p, int tpe);
 
 gdk_export gdk_return GDKanalyticalntile(BAT *r, BAT *b, BAT *p, BAT *n, int tpe, const void *restrict ntile);

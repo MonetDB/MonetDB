@@ -143,13 +143,13 @@ SQLall(ptr ret, const bat *bid)
 		ocmp = ATOMcompare(b->ttype);
 		for (q = 0; q < r; q++) { /* find first non nil */
 			p = BUNtail(bi, q);
-			if (ocmp(n, p) != 0) 
+			if (ocmp(n, p) != 0)
 				break;
 		}
 		for (; q < r; q++) {
 			const void *c = BUNtail(bi, q);
 			if (ocmp(p, c) != 0) { /* values != */
-				if (ocmp(n, c) != 0) { /* and not nil */ 
+				if (ocmp(n, c) != 0) { /* and not nil */
 					p = n;
 					break;
 				}
@@ -228,7 +228,7 @@ SQLall_grp(bat *ret, const bat *bid, const bat *gp, const bat *gpe, bit *no_nil)
 			BBPunfix(e->batCacheid);
 			throw(SQL, "sql.all =", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		}
-		for (s = 0; s < BATcount(e); s++) 
+		for (s = 0; s < BATcount(e); s++)
 			pos[s] = -1;
 
 		offset = g->hseqbase - l->hseqbase;
@@ -381,7 +381,7 @@ SQLnil_grp(bat *ret, const bat *bid, const bat *gp, const bat *gpe, bit *no_nil)
 	return MAL_SUCCEED;
 }
 
-str 
+str
 SQLany_cmp(bit *ret, const bit *cmp, const bit *nl, const bit *nr)
 {
 	*ret = FALSE;
@@ -394,7 +394,7 @@ SQLany_cmp(bit *ret, const bit *cmp, const bit *nl, const bit *nr)
 	return MAL_SUCCEED;
 }
 
-str 
+str
 SQLall_cmp(bit *ret, const bit *cmp, const bit *nl, const bit *nr)
 {
 	*ret = TRUE;
@@ -404,7 +404,7 @@ SQLall_cmp(bit *ret, const bit *cmp, const bit *nl, const bit *nr)
 		*ret = FALSE;
 	else if (*nl == TRUE || *nr == TRUE)
 		*ret = bit_nil;
-	else 
+	else
 		*ret = *cmp;
 	return MAL_SUCCEED;
 }
@@ -830,10 +830,9 @@ SQLexist_val(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			*res = BATcount(b) != 0;
 		else
 			throw(SQL, "aggr.exist", SQLSTATE(HY005) "Cannot access column descriptor");
-	} else if (ATOMcmp(mtype, v, ATOMnilptr(mtype)) != 0)
+	} else {
 		*res = TRUE;
-	else
-		*res = FALSE;
+	}
 	return MAL_SUCCEED;
 }
 
@@ -854,7 +853,7 @@ SQLsubexist(bat *ret, const bat *bp, const bat *gp, const bat *gpe, bit *no_nil)
 {
 	BAT *b, *g, *e, *res;
 	bit T = TRUE;
-	BUN offset = 0;
+	//BUN offset = 0;
 
 	(void)no_nil;
 	if ((b = BATdescriptor(*bp)) == NULL) {
@@ -876,6 +875,7 @@ SQLsubexist(bat *ret, const bat *bp, const bat *gp, const bat *gpe, bit *no_nil)
 		throw(SQL, "aggr.subexist", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
 	BAThseqbase(res, e->hseqbase);
+#if 0
 	offset = g->hseqbase - b->hseqbase;
 	if (BATcount(g) > 0) {
 		BUN q, o, s;
@@ -900,6 +900,7 @@ SQLsubexist(bat *ret, const bat *bp, const bat *gp, const bat *gpe, bit *no_nil)
 			}
 		}
 	}
+#endif
 	res->hseqbase = g->hseqbase;
 	res->tnil = 0;
 	res->tnonil = 1;
@@ -948,8 +949,8 @@ str
 SQLsubnot_exist(bat *ret, const bat *bp, const bat *gp, const bat *gpe, bit *no_nil)
 {
 	BAT *b, *g, *e, *res;
-	bit F = FALSE, hasnil = 0;
-	BUN offset = 0;
+	bit F = FALSE;
+	//BUN offset = 0;
 
 	(void)no_nil;
 	if ((b = BATdescriptor(*bp)) == NULL) {
@@ -971,6 +972,7 @@ SQLsubnot_exist(bat *ret, const bat *bp, const bat *gp, const bat *gpe, bit *no_
 		throw(SQL, "aggr.subnot_exist", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
 	BAThseqbase(res, e->hseqbase);
+#if 0
 	offset = g->hseqbase - b->hseqbase;
 	if (BATcount(g) > 0) {
 		BUN q, o, s;
@@ -988,17 +990,17 @@ SQLsubnot_exist(bat *ret, const bat *bp, const bat *gp, const bat *gpe, bit *no_
 			const void *bv = BUNtail(bi, q);
 			oid id = *(oid*)BUNtail(gi, s);
 
-			if (ret[id] != TRUE) {
+			if (ret[id] == FALSE) {
 				if (ocmp(bv, nilp) == 0) {
-					ret[id] = bit_nil;
-					hasnil = 1;
+					ret[id] = TRUE;
 				}
 			}
 		}
 	}
+#endif
 	res->hseqbase = g->hseqbase;
-	res->tnil = hasnil != 0;
-	res->tnonil = hasnil == 0;
+	res->tnil = 0;
+	res->tnonil = 1;
 	res->tsorted = res->trevsorted = 0;
 	res->tkey = 0;
 	BBPunfix(b->batCacheid);

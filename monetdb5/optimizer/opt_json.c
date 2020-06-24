@@ -15,7 +15,7 @@
 #include "mal_builder.h"
 #include "opt_json.h"
 
-str 
+str
 OPTjsonImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	int i, j, limit, slimit;
@@ -70,9 +70,9 @@ OPTjsonImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			continue;
 		}
 		pushInstruction(mb,p);
-	} 
+	}
 	for(; i<slimit; i++)
-		if (old[i]) 
+		if (old[i])
 			freeInstruction(old[i]);
 	GDKfree(old);
     /* Defense line against incorrect plans */

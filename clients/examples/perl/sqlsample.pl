@@ -37,7 +37,7 @@ my $dbh = DBI->connect( $dsn,
 }
 {
   # deliberately executing a wrong SQL statement:
-  my $sth = $dbh->prepare('( xyz 1);');
+  my $sth = $dbh->prepare('select commit_action, access from tables group by access;');
   eval { $sth->execute }; print "ERROR REPORTED: $@" if $@;
 }
 $dbh->do('create table perl_table (i smallint,s string);');
@@ -47,6 +47,9 @@ $dbh->do('insert into perl_table values ( 3, \'three\');');
   my $sth = $dbh->prepare('insert into perl_table values(?,?);');
   $sth->bind_param( 1,     7 , DBI::SQL_INTEGER() );
   $sth->bind_param( 2,'seven' );
+  $sth->execute;
+  $sth->bind_param( 1,    42 , DBI::SQL_INTEGER() );
+  $sth->bind_param( 2,  '\\n' );
   $sth->execute;
 }
 {

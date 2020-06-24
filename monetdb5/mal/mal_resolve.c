@@ -8,7 +8,7 @@
 
 /*
  * (author) M. Kersten
- * 
+ *
  * Search the first definition of the operator in the current module
  * and check the parameter types.
  * For a polymorphic MAL function we make a fully instantiated clone.
@@ -536,7 +536,7 @@ typeChecker(Module scope, MalBlkPtr mb, InstrPtr p, int idx, int silent)
 		 */
 		if (!isaSignature(p) && !getInstrPtr(mb, 0)->polymorphic) {
 			if (!silent) {
-				char *errsig;
+				char *errsig = NULL;
 				if (!malLibraryEnabled(p->modname)) {
 					mb->errors = createMalException(mb, idx, TYPE,
 										"'%s%s%s' library error in: %s",
@@ -544,15 +544,23 @@ typeChecker(Module scope, MalBlkPtr mb, InstrPtr p, int idx, int silent)
 										(getModuleId(p) ? "." : ""),
 										getFunctionId(p), malLibraryHowToEnable(p->modname));
 				} else {
-					errsig = instruction2str(mb,0,p, (LIST_MAL_NAME | LIST_MAL_TYPE | LIST_MAL_VALUE));
+					bool free_errsig = false, special_undefined = false;
+					errsig = malLibraryHowToEnable(p->modname);
+					if (!strcmp(errsig, "")) {
+						errsig = instruction2str(mb,0,p, (LIST_MAL_NAME | LIST_MAL_TYPE | LIST_MAL_VALUE));
+						free_errsig = true;
+					} else {
+						special_undefined = true;
+					}
 					mb->errors = createMalException(mb, idx, TYPE,
-										"'%s%s%s' undefined in: %s",
+										"'%s%s%s' undefined%s: %s",
 										(getModuleId(p) ? getModuleId(p) : ""),
 										(getModuleId(p) ? "." : ""),
-										getFunctionId(p), errsig?errsig:"failed instruction2str()");
-					GDKfree(errsig);
+										getFunctionId(p), special_undefined ? "" : " in", errsig?errsig:"failed instruction2str()");
+					if (free_errsig)
+						GDKfree(errsig);
 				}
-			} 
+			}
 			p->typechk = TYPE_UNKNOWN;
 		} else
 			p->typechk = TYPE_RESOLVED;
@@ -727,7 +735,7 @@ getPolyType(malType t, int *polytype)
 		return polytype[ti];
 
 	tail = ti == 0 ? getBatType(t) : polytype[ti];
-	if (isaBatType(t)) 
+	if (isaBatType(t))
 		return newBatType(tail);
 	return tail;
 }

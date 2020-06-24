@@ -45,8 +45,8 @@ OPTmitosisImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 			goto bailout;
 
 		/* mitosis/mergetable bailout conditions */
-		
-		if (p->argc > 2 && getModuleId(p) == aggrRef && 
+
+		if (p->argc > 2 && getModuleId(p) == aggrRef &&
 		        getFunctionId(p) != subcountRef &&
 		    	getFunctionId(p) != subminRef &&
 		    	getFunctionId(p) != submaxRef &&
@@ -75,12 +75,12 @@ OPTmitosisImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 			 getBatType(getArgType(mb, p, p->retc)) == TYPE_dbl))
 			goto bailout;
 
-		if (p->argc > 2 && (getModuleId(p) == capiRef || getModuleId(p) == rapiRef || getModuleId(p) == pyapi3Ref) && 
+		if (p->argc > 2 && (getModuleId(p) == capiRef || getModuleId(p) == rapiRef || getModuleId(p) == pyapi3Ref) &&
 		        getFunctionId(p) == subeval_aggrRef)
 			goto bailout;
 
 		/* Mergetable cannot handle intersect/except's for now */
-		if (getModuleId(p) == algebraRef && getFunctionId(p) == groupbyRef) 
+		if (getModuleId(p) == algebraRef && getFunctionId(p) == groupbyRef)
 			goto bailout;
 
 		/* locate the largest non-partitioned table */
@@ -119,14 +119,15 @@ OPTmitosisImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	 * Experience shows that the pieces should not be too small.
 	 * If we should limit to |threads| is still an open issue.
 	 *
-	 * Take into account the number of client connections, 
+	 * Take into account the number of client connections,
 	 * because all user together are responsible for resource contentions
 	 */
+	cntxt->idle = 0; // this one is definitely not idle
 	activeClients = mb->activeClients = MCactiveClients();
 
-/* This code was used to experiment with block sizes, mis-using the memorylimit  variable 
+/* This code was used to experiment with block sizes, mis-using the memorylimit  variable
 	if (cntxt->memorylimit){
-		// the new mitosis scheme uses a maximum chunck size in MB from the client context 
+		// the new mitosis scheme uses a maximum chunck size in MB from the client context
 		m = (size_t) ((cntxt->memorylimit * 1024 *1024) / row_size);
 		pieces = (int) (rowcnt / m + (rowcnt - m * pieces > 0));
 	}
@@ -153,7 +154,7 @@ OPTmitosisImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 		 * limit overhead */
 			pieces = (int) MIN(rowcnt / MINPARTCNT, (BUN) threads);
 		}
-	} 
+	}
 
 	/* when testing, always aim for full parallelism, but avoid
 	 * empty pieces */
@@ -167,10 +168,10 @@ OPTmitosisImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	 * the number of parts required and/or the size of each chunk (in K)
 	 */
 	mito_parts = GDKgetenv_int("mito_parts", 0);
-	if (mito_parts > 0) 
+	if (mito_parts > 0)
 		pieces = mito_parts;
 	mito_size = GDKgetenv_int("mito_size", 0);
-	if (mito_size > 0) 
+	if (mito_size > 0)
 		pieces = (int) ((rowcnt * row_size) / (mito_size * 1024));
 
 	if (pieces <= 1)
@@ -222,7 +223,7 @@ OPTmitosisImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 		}
 		/* we keep the original bind operation, because it allows for
 		 * easy undo when the mergtable can not do something */
-		pushInstruction(mb, p);
+		// pushInstruction(mb, p);
 
 		qtpe = getVarType(mb, getArg(p, 0));
 
@@ -238,7 +239,7 @@ OPTmitosisImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 		for (j = 0; j < pieces; j++) {
 			q = copyInstruction(p);
 			if( q == NULL){
-				for (; i<limit; i++) 
+				for (; i<limit; i++)
 					if (old[i])
 						pushInstruction(mb,old[i]);
 				GDKfree(old);
@@ -261,8 +262,9 @@ OPTmitosisImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 		pushInstruction(mb, matq);
 		if (upd)
 			pushInstruction(mb, matr);
+		freeInstruction(p);
 	}
-	for (; i<slimit; i++) 
+	for (; i<slimit; i++)
 		if (old[i])
 			freeInstruction(old[i]);
 	GDKfree(old);

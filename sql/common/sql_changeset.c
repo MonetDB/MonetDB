@@ -12,11 +12,10 @@
 void
 cs_new(changeset * cs, sql_allocator *sa, fdestroy destroy)
 {
-	cs->sa = sa;
-	cs->destroy = destroy;
-	cs->set = NULL;
-	cs->dset = NULL;
-	cs->nelm = NULL;
+	*cs = (changeset) {
+		.sa = sa,
+		.destroy = destroy,
+	};
 }
 
 void
@@ -35,7 +34,7 @@ cs_destroy(changeset * cs)
 void
 cs_add(changeset * cs, void *elm, int flags)
 {
-	if (!cs->set) 
+	if (!cs->set)
 		cs->set = list_new(cs->sa, cs->destroy);
 	list_append(cs->set, elm);
 	if (newFlagSet(flags) && !cs->nelm)
@@ -75,7 +74,7 @@ cs_del(changeset * cs, node *elm, int flags)
 			cs->nelm = elm->next;
 		list_remove_node(cs->set, elm);
 	} else {
-		if (!cs->dset) 
+		if (!cs->dset)
 			cs->dset = list_new(cs->sa, cs->destroy);
 		list_move_data(cs->set, cs->dset, elm->data);
 	}
@@ -109,7 +108,7 @@ cs_last_node(changeset * cs)
 	return cs->set->t;
 }
 
-void 
+void
 cs_remove_node(changeset * cs, node *n)
 {
 	node *nxt = n->next;

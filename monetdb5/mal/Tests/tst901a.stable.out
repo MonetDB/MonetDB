@@ -45,14 +45,14 @@ exit i:lng;                             	#[12] (0)  13
     mdb.setDebug(dbgmsk_restore:int);   	#[14] (0) MDBsetDebug 19 <- 5 
     c:bat[:lng] := algebra.copy(b:bat[:lng]);	#[15] (0) ALGcopy 20 <- 1 
     t2:lng := alarm.usec();             	#[16] (0) ALARMusec 21 
-    x:bat[:lng] := batcalc.+(b:bat[:lng], c:bat[:lng]);	#[17] (0) CMDbatADDsignal 22 <- 1 20 
-    t3:lng := alarm.usec();             	#[18] (0) ALARMusec 23 
-    d1:lng := calc.-(t1:lng, t0:lng);   	#[19] (0) CMDvarSUBsignal 24 <- 18 12 
-    d2:lng := calc.-(t3:lng, t2:lng);   	#[20] (0) CMDvarSUBsignal 25 <- 23 21 
-    xc:lng := aggr.count(b:bat[:lng]);  	#[21] (0) ALGcount_bat 26 <- 1 
-    io.printf("#count %d\n":str, xc:lng);	#[22] (0) IOprintf 27 <- 28 26 
-    io.printf("#make %d \n":str, d1:lng);	#[23] (0) IOprintf 29 <- 30 24 
-    io.printf("#multiplex %d\n":str, d2:lng);	#[24] (0) IOprintf 31 <- 32 25 
+    x:bat[:lng] := batcalc.+(b:bat[:lng], c:bat[:lng], nil:BAT, nil:BAT);	#[17] (0) CMDbatADDsignal 22 <- 1 20 23 24 
+    t3:lng := alarm.usec();	#[18] (0) ALARMusec 25 
+    d1:lng := calc.-(t1:lng, t0:lng);	#[19] (0) CMDvarSUBsignal 26 <- 18 12 
+    d2:lng := calc.-(t3:lng, t2:lng);	#[20] (0) CMDvarSUBsignal 27 <- 25 21 
+    xc:lng := aggr.count(b:bat[:lng]);	#[21] (0) ALGcount_bat 28 <- 1 
+    io.printf("#count %d\n":str, xc:lng);	#[22] (0) IOprintf 29 <- 30 28 
+    io.printf("#make %d \n":str, d1:lng);	#[23] (0) IOprintf 31 <- 32 26 
+    io.printf("#multiplex %d\n":str, d2:lng);	#[24] (0) IOprintf 33 <- 34 27 
 end user.foo;                           	#[25] (0)  
 #count 1000000
 #make 788950 

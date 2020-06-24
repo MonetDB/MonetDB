@@ -16,6 +16,7 @@
 
 #include "monetdb_config.h"
 #include "mal_exception.h"
+#include "gdk_time.h"
 #include "mtime.h"
 
 #define date_sub_month(D,M)			date_add_month(D,-(M))

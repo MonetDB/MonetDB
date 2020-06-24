@@ -7,9 +7,9 @@
  */
 
 /*
- * Clients gain access to the Monet server through a internet connection.  
- * Access through the internet requires a client program at the source, 
- * which addresses the default port of a running server. It is a textual 
+ * Clients gain access to the Monet server through a internet connection.
+ * Access through the internet requires a client program at the source,
+ * which addresses the default port of a running server. It is a textual
  * interface for expert use.
  *
  * At the server side, each client is represented by a session record
@@ -18,7 +18,7 @@
  * control.
  *
  * The number of clients permitted concurrent access is a run time
- * option. 
+ * option.
  *
  * Client sessions remain in existence until the corresponding
  * communication channels break.
@@ -51,7 +51,7 @@
 int MAL_MAXCLIENTS = 0;
 ClientRec *mal_clients = NULL;
 
-void 
+void
 mal_client_reset(void)
 {
 	MAL_MAXCLIENTS = 0;
@@ -133,14 +133,13 @@ static Client
 MCnewClient(void)
 {
 	Client c;
-	MT_lock_set(&mal_contextLock);
+
 	for (c = mal_clients; c < mal_clients + MAL_MAXCLIENTS; c++) {
 		if (c->mode == FREECLIENT) {
 			c->mode = RUNCLIENT;
 			break;
 		}
 	}
-	MT_lock_unset(&mal_contextLock);
 
 	if (c == mal_clients + MAL_MAXCLIENTS)
 		return NULL;
@@ -207,6 +206,7 @@ MCinitClientRecord(Client c, oid user, bstream *fin, stream *fout)
 {
 	const char *prompt;
 
+	/* mal_contextLock is held when this is called */
 	c->user = user;
 	c->username = 0;
 	c->iscqscheduleruser = 0;
@@ -280,7 +280,7 @@ MCinitClientRecord(Client c, oid user, bstream *fin, stream *fout)
 	c->plantId = 1;
 	c->plants = 0;
 
-	char name[16];
+	char name[MT_NAME_LEN];
 	snprintf(name, sizeof(name), "Client%d->s", (int) (c - mal_clients));
 	MT_sema_init(&c->s, 0, name);
 	return c;
@@ -291,10 +291,14 @@ MCinitClient(oid user, bstream *fin, stream *fout)
 {
 	Client c = NULL;
 
-	if ((c = MCnewClient()) == NULL)
-		return NULL;
-	return MCinitClientRecord(c, user, fin, fout);
+	MT_lock_set(&mal_contextLock);
+	c = MCnewClient();
+	if (c)
+		c = MCinitClientRecord(c, user, fin, fout);
+	MT_lock_unset(&mal_contextLock);
+	return c;
 }
+
 
 /*
  * The administrator should be initialized to enable interpretation of
@@ -494,7 +498,7 @@ MCstopClients(Client cntxt)
 	for(c = mal_clients;  c < mal_clients+MAL_MAXCLIENTS; c++)
 	if (cntxt != c){
 		if (c->mode == RUNCLIENT)
-			c->mode = FINISHCLIENT; 
+			c->mode = FINISHCLIENT;
 		else if (c->mode == FREECLIENT)
 			c->mode = BLOCKCLIENT;
 	}
@@ -505,13 +509,13 @@ MCstopClients(Client cntxt)
 int
 MCactiveClients(void)
 {
-	int idles = 0;
+	int active = 0;
 	Client cntxt = mal_clients;
 
 	for(cntxt = mal_clients;  cntxt<mal_clients+MAL_MAXCLIENTS; cntxt++){
-		idles += (cntxt->idle != 0 && cntxt->mode == RUNCLIENT);
+		active += (cntxt->idle == 0 && cntxt->mode == RUNCLIENT);
 	}
-	return idles;
+	return active;
 }
 
 void
@@ -557,7 +561,7 @@ MCawakeClient(int id)
  *
  * The default action is to read information from an ascii-stream one
  * line at a time. This is the preferred mode for reading from terminal.
- * 
+ *
  * The next statement block is to be read. Send a prompt to warn the
  * front-end to issue the request.
  */

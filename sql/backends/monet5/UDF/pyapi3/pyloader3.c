@@ -43,7 +43,7 @@ pyapi_list_length(list *l)
 	return 0;
 }
 
-str 
+str
 PYFUNCNAME(PyAPIevalLoader)(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
     sql_func * sqlfun;
     sql_subfunc * sqlmorefun;

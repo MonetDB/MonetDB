@@ -262,7 +262,7 @@ JSONdumpInternal(stream *fd, JSON *jt, int depth)
 			mnstr_printf(fd, "null ");
 			break;
 		default:
-			mnstr_printf(fd, "unknown %d ", je->kind);
+			mnstr_printf(fd, "unknown %d ", (int) je->kind);
 		}
 		mnstr_printf(fd, "child %d list ", je->child);
 		for (i = je->next; i; i = jt->elm[i].next)
@@ -769,13 +769,13 @@ JSONstringParser(const char *j, const char **next)
 
 static bool
 JSONintegerParser(const char *j, const char **next) {
-  if (*j == '-')
-    j++;
+	if (*j == '-')
+		j++;
 
-  // skipblancs(j);
-  if (!isdigit((unsigned char)*j)) {
-    *next = j;
-    return false;
+	// skipblancs(j);
+	if (!isdigit((unsigned char)*j)) {
+		*next = j;
+		return false;
 	}
 
 	if (*j == '0') {
@@ -784,7 +784,7 @@ JSONintegerParser(const char *j, const char **next) {
 	}
 
 	for(; *j; j++)
-		if (!(isdigit((unsigned char) *j) && *j != '0'))
+		if (!(isdigit((unsigned char) *j)))
 			break;
 	*next = j;
 
@@ -1518,6 +1518,13 @@ JSONkeyArray(json *ret, json *js)
 			}
 			if (jt->elm[i].valuelen)
 				strncpy(r, jt->elm[i].value - 1, jt->elm[i].valuelen + 2);
+			else {
+				r = GDKstrdup("\"\"");
+				if(r == NULL) {
+					JSONfree(jt);
+					goto memfail;
+				}
+			}
 			result = JSONglue(result, r, ',');
 			if (result == NULL) {
 				JSONfree(jt);

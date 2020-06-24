@@ -12,7 +12,7 @@
  */
 /*
  * Execution of SQL instructions.
- * Before we are can process SQL statements the global catalog should be initialized. 
+ * Before we are can process SQL statements the global catalog should be initialized.
  */
 #include "monetdb_config.h"
 #include "mal_backend.h"
@@ -35,7 +35,7 @@
 #include "rel_exp.h"
 #include "rel_dump.h"
 #include "mal_debugger.h"
-#include "mtime.h"
+#include "gdk_time.h"
 #include "optimizer.h"
 #include "opt_inline.h"
 #include <unistd.h>
@@ -66,7 +66,7 @@
 /*
  * The trace operation collects the events in the BATs
  * and creates a secondary result set upon termination
- * of the query. 
+ * of the query.
  *
  * SQLsetTrace extends the MAL plan with code to collect the events.
  * from the profile cache and returns it as a secondary resultset.
@@ -176,12 +176,12 @@ SQLsetTrace(Client cntxt, MalBlkPtr mb)
 
 	/* add the ticks column */
 
-	q = newStmt(mb, profilerRef, "getTrace");
+	q = newStmt(mb, profilerRef, getTraceRef);
 	q = pushStr(mb, q, putName("usec"));
 	resultset= addArgument(mb,resultset, getArg(q,0));
 
 	/* add the stmt column */
-	q = newStmt(mb, profilerRef, "getTrace");
+	q = newStmt(mb, profilerRef, getTraceRef);
 	q = pushStr(mb, q, putName("stmt"));
 	resultset= addArgument(mb,resultset, getArg(q,0));
 
@@ -291,7 +291,7 @@ SQLrun(Client c, backend *be, mvc *m)
 	if (*m->errstr){
 		if (strlen(m->errstr) > 6 && m->errstr[5] == '!')
 			msg = createException(PARSE, "SQLparser", "%s", m->errstr);
-		else 
+		else
 			msg = createException(PARSE, "SQLparser", SQLSTATE(42000) "%s", m->errstr);
 		*m->errstr=0;
 		return msg;
@@ -448,20 +448,17 @@ SQLescapeString(str s)
 str
 SQLstatementIntern(Client c, str *expr, str nme, bit execute, bit output, res_table **result)
 {
-	int status = 0;
-	int err = 0;
-	mvc *o, *m;
-	int ac, sizevars, topvars;
+	int status = 0, err = 0, oldvtop, oldstop = 1, inited = 0, ac, sizevars, topvars;
+	unsigned int label;
+	mvc *o = NULL, *m = NULL;
 	sql_var *vars;
-	int oldvtop, oldstop = 1;
-	buffer *b;
-	char *n;
-	bstream *bs;
-	stream *buf;
+	buffer *b = NULL;
+	char *n = NULL, *mquery;
+	bstream *bs = NULL;
+	stream *buf = NULL;
 	str msg = MAL_SUCCEED;
-	backend *be, *sql = (backend *) c->sqlcontext;
+	backend *be = NULL, *sql = (backend *) c->sqlcontext;
 	size_t len = strlen(*expr);
-	int inited = 0;
 
 #ifdef _SQL_COMPILE
 	mnstr_printf(c->fdout, "#SQLstatement:%s\n", *expr);
@@ -491,17 +488,19 @@ SQLstatementIntern(Client c, str *expr, str nme, bit execute, bit output, res_ta
 	/* create private allocator */
 	m->sa = NULL;
 	if ((msg = SQLtrans(m)) != MAL_SUCCEED) {
-		if (inited)
-			SQLresetClient(c);
-		return msg;
+		be = sql;
+		sql = NULL;
+		goto endofcompile;
 	}
 	status = m->session->status;
 
 	m->type = Q_PARSE;
 	be = sql;
 	sql = backend_create(m, c);
-	if( sql == NULL)
-		throw(SQL,"sql.statement",SQLSTATE(HY013) MAL_MALLOC_FAIL);
+	if (sql == NULL) {
+		msg = createException(SQL,"sql.statement",SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		goto endofcompile;
+	}
 	sql->output_format = be->output_format;
 	if (!output) {
 		sql->output_format = OFMT_NONE;
@@ -516,12 +515,14 @@ SQLstatementIntern(Client c, str *expr, str nme, bit execute, bit output, res_ta
 
 	/* mimic a client channel on which the query text is received */
 	b = (buffer *) GDKmalloc(sizeof(buffer));
-	if( b == NULL)
-		throw(SQL,"sql.statement", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+	if (b == NULL) {
+		msg = createException(SQL,"sql.statement",SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		goto endofcompile;
+	}
 	n = GDKmalloc(len + 1 + 1);
-	if( n == NULL) {
-		GDKfree(b);
-		throw(SQL,"sql.statement", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+	if (n == NULL) {
+		msg = createException(SQL,"sql.statement",SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		goto endofcompile;
 	}
 	strncpy(n, *expr, len);
 	n[len] = '\n';
@@ -529,14 +530,18 @@ SQLstatementIntern(Client c, str *expr, str nme, bit execute, bit output, res_ta
 	len++;
 	buffer_init(b, n, len);
 	buf = buffer_rastream(b, "sqlstatement");
-	if(buf == NULL) {
-		buffer_destroy(b);//n and b will be freed by the buffer
-		throw(SQL,"sql.statement",SQLSTATE(HY013) MAL_MALLOC_FAIL);
+	if (buf == NULL) {
+		buffer_destroy(b); /* n and b will be freed by the buffer */
+		b = NULL;
+		msg = createException(SQL,"sql.statement",SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		goto endofcompile;
 	}
 	bs = bstream_create(buf, b->len);
-	if(bs == NULL) {
-		buffer_destroy(b);//n and b will be freed by the buffer
-		throw(SQL,"sql.statement",SQLSTATE(HY013) MAL_MALLOC_FAIL);
+	if (bs == NULL) {
+		mnstr_destroy(buf);
+		b = NULL;
+		msg = createException(SQL,"sql.statement",SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		goto endofcompile;
 	}
 	scanner_init(&m->scanner, bs, NULL);
 	m->scanner.mode = LINE_N;
@@ -548,10 +553,8 @@ SQLstatementIntern(Client c, str *expr, str nme, bit execute, bit output, res_ta
 	if (!m->sa)
 		m->sa = sa_create();
 	if (!m->sa) {
-		*m = *o;
-		_DELETE(o);
-		bstream_destroy(m->scanner.rs);
-		throw(SQL,"sql.statement",SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		msg = createException(SQL,"sql.statement",SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		goto endofcompile;
 	}
 
 	/*
@@ -700,17 +703,21 @@ endofcompile:
 	m->sa = NULL;
 	m->sym = NULL;
 	/* variable stack maybe resized, ie we need to keep the new stack */
+	label = m->label;
 	status = m->session->status;
 	sizevars = m->sizevars;
 	topvars = m->topvars;
 	vars = m->vars;
+	mquery = m->query;
 	*m = *o;
 	_DELETE(o);
+	m->label = label;
 	m->sizevars = sizevars;
 	m->topvars = topvars;
 	m->vars = vars;
 	m->session->status = status;
 	m->session->auto_commit = ac;
+	m->query = mquery;
 	if (inited)
 		SQLresetClient(c);
 	return msg;
@@ -752,9 +759,9 @@ SQLengineIntern(Client c, backend *be)
 	 * in the context of a user global environment. We have a private
 	 * environment.
 	 */
-	if (MALcommentsOnly(c->curprg->def)) 
+	if (MALcommentsOnly(c->curprg->def))
 		msg = MAL_SUCCEED;
-	else 
+	else
 		msg = SQLrun(c,be,m);
 
 cleanup_engine:
@@ -779,7 +786,7 @@ cleanup_engine:
 
 	if (m->type != Q_SCHEMA && be->q && msg) {
 		qc_delete(m->qc, be->q);
-	} 
+	}
 	be->q = NULL;
 	sqlcleanup(be->mvc, (!msg) ? 0 : -1);
 	MSresetInstructions(c->curprg->def, 1);
@@ -858,7 +865,7 @@ RAstatement(Client c, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	return msg;
 }
 
-static int 
+static int
 is_a_number(char *v)
 {
 	while(*v) {
@@ -931,11 +938,12 @@ RAstatement2(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 		sql_find_subtype(&t, tnme, d, s);
 		a = atom_general(m->sa, &t, NULL);
+		a->isnull = 0; // disable NULL value optimizations ugh
 		/* the argument list may have holes and maybe out of order, ie
 		 * don't use sql_add_arg, but special numbered version
 		 * sql_set_arg(m, a, nr);
 		 * */
-		if (nr >= 0) { 
+		if (nr >= 0) {
 			append(ops, exp_atom_ref(m->sa, nr, &t));
 			if (!sql_set_arg(m, nr, a)) {
 				sqlcleanup(m, 0);
@@ -966,11 +974,11 @@ RAstatement2(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		list *types_list = sa_list(m->sa);
 		str token, rest;
 
-		for (token = strtok_r(types, "%%", &rest); token; token = strtok_r(NULL, "%%", &rest))
+		for (token = strtok_r(types, "%", &rest); token; token = strtok_r(NULL, "%", &rest))
 			list_append(types_list, token);
 
 		if (list_length(types_list) != list_length(rel->exps))
-			msg = createException(SQL, "RAstatement2", SQLSTATE(42000) "The number of projections don't match between the generated plan and the expected one: %d != %d", 
+			msg = createException(SQL, "RAstatement2", SQLSTATE(42000) "The number of projections don't match between the generated plan and the expected one: %d != %d",
 								  list_length(types_list), list_length(rel->exps));
 		else {
 			int i = 1;

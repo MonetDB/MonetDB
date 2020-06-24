@@ -202,14 +202,14 @@ struct stream {
 	ssize_t (*write)(stream *restrict s, const void *restrict buf, size_t elmsize, size_t cnt);
 	void (*close)(stream *s);
 	void (*clrerr)(stream *s);
-	char *(*error)(stream *s);
+	char *(*error)(const stream *s);
 	void (*destroy)(stream *s);
 	int (*flush)(stream *s);
 	int (*fsync)(stream *s);
 	int (*fgetpos)(stream *restrict s, fpos_t *restrict p);
 	int (*fsetpos)(stream *restrict s, fpos_t *restrict p);
 	void (*update_timeout)(stream *s);
-	int (*isalive)(stream *s);
+	int (*isalive)(const stream *s);
 };
 
 int
@@ -447,6 +447,8 @@ mnstr_write(stream *restrict s, const void *restrict buf, size_t elmsize, size_t
 	assert(!s->readonly);
 	if (s->errnr)
 		return -1;
+	if (cnt == 0)
+		return 0;
 	return s->write(s, buf, elmsize, cnt);
 }
 
@@ -485,7 +487,7 @@ mnstr_destroy(stream *s)
 }
 
 char *
-mnstr_error(stream *s)
+mnstr_error(const stream *s)
 {
 	if (s == NULL)
 		return "Connection terminated";
@@ -558,7 +560,7 @@ mnstr_fsetpos(stream *restrict s, fpos_t *restrict p)
 }
 
 int
-mnstr_isalive(stream *s)
+mnstr_isalive(const stream *s)
 {
 	if (s == NULL)
 		return 0;
@@ -570,7 +572,7 @@ mnstr_isalive(stream *s)
 }
 
 char *
-mnstr_name(stream *s)
+mnstr_name(const stream *s)
 {
 	if (s == NULL)
 		return "connection terminated";
@@ -578,7 +580,7 @@ mnstr_name(stream *s)
 }
 
 int
-mnstr_errnr(stream *s)
+mnstr_errnr(const stream *s)
 {
 	if (s == NULL)
 		return MNSTR_READ_ERROR;
@@ -596,7 +598,7 @@ mnstr_clearerr(stream *s)
 }
 
 bool
-mnstr_isbinary(stream *s)
+mnstr_isbinary(const stream *s)
 {
 	if (s == NULL)
 		return false;
@@ -604,7 +606,7 @@ mnstr_isbinary(stream *s)
 }
 
 bool
-mnstr_get_swapbytes(stream *s)
+mnstr_get_swapbytes(const stream *s)
 {
 	if (s == NULL)
 		return 0;
@@ -661,7 +663,7 @@ destroy(stream *s)
 }
 
 static char *
-error(stream *s)
+error(const stream *s)
 {
 	char buf[128];
 
@@ -1766,7 +1768,7 @@ stream_lz4write(stream *restrict s, const void *restrict buf, size_t elmsize, si
 			lz4->total_processing += ret;
 		}
 
-		if(lz4->total_processing == lz4->ring_buffer_size) {
+		if (lz4->total_processing > 0) {
 			real_written = fwrite((void *)lz4->ring_buffer, 1, lz4->total_processing, lz4->fp);
 			if (real_written == 0) {
 				s->errnr = MNSTR_WRITE_ERROR;
@@ -1778,52 +1780,6 @@ stream_lz4write(stream *restrict s, const void *restrict buf, size_t elmsize, si
 	}
 
 	return (ssize_t) (total_written / elmsize);
-}
-
-static void
-stream_lz4close(stream *s)
-{
-	lz4_stream *lz4 = s->stream_data.p;
-
-	if (lz4) {
-		if (!s->readonly) {
-			size_t ret, real_written;
-
-			if (lz4->total_processing > 0 && lz4->total_processing < lz4->ring_buffer_size) { /* compress remaining */
-				real_written = fwrite(lz4->ring_buffer, 1, lz4->total_processing, lz4->fp);
-				if (real_written == 0) {
-					s->errnr = MNSTR_WRITE_ERROR;
-					return ;
-				}
-				lz4->total_processing = 0;
-			} /* finish compression */
-			ret = LZ4F_compressEnd(lz4->context.comp_context, lz4->ring_buffer, lz4->ring_buffer_size, NULL);
-			if(LZ4F_isError(ret)) {
-				s->errnr = MNSTR_WRITE_ERROR;
-				return ;
-			}
-			assert(ret < LZ4DECOMPBUFSIZ);
-			lz4->total_processing = ret;
-
-			real_written = fwrite(lz4->ring_buffer, 1, lz4->total_processing, lz4->fp);
-			if (real_written == 0) {
-				s->errnr = MNSTR_WRITE_ERROR;
-				return ;
-			}
-			lz4->total_processing = 0;
-
-			fflush(lz4->fp);
-		}
-		if(!s->readonly) {
-			(void) LZ4F_freeCompressionContext(lz4->context.comp_context);
-		} else {
-			(void) LZ4F_freeDecompressionContext(lz4->context.dec_context);
-		}
-		fclose(lz4->fp);
-		free(lz4->ring_buffer);
-		free(lz4);
-	}
-	s->stream_data.p = NULL;
 }
 
 static int
@@ -1860,6 +1816,32 @@ stream_lz4flush(stream *s)
 			return -1;
 	}
 	return 0;
+}
+
+static void
+stream_lz4close(stream *s)
+{
+	lz4_stream *lz4 = s->stream_data.p;
+
+	if (lz4) {
+		if(!s->readonly) {
+			char final_bytes[128]; // 4 would probably suffice
+			stream_lz4flush(s);
+			size_t remainder = LZ4F_compressEnd(lz4->context.comp_context, final_bytes, sizeof(final_bytes), NULL);
+			// no channel to return an error from here :(
+			if (!LZ4F_isError(remainder)) {
+				// again, hope for the best
+				(void) fwrite(final_bytes, 1, remainder, lz4->fp);
+			}
+			(void) LZ4F_freeCompressionContext(lz4->context.comp_context);
+		} else {
+			(void) LZ4F_freeDecompressionContext(lz4->context.dec_context);
+		}
+		fclose(lz4->fp);
+		free(lz4->ring_buffer);
+		free(lz4);
+	}
+	s->stream_data.p = NULL;
 }
 
 static stream *
@@ -2214,7 +2196,7 @@ write_callback(char *buffer, size_t size, size_t nitems, void *userp)
 		size_t maxsize;
 
 		maxsize = (c->usesize + size + BLOCK_CURL - 1) & ~(BLOCK_CURL - 1);
-		b = realloc(c->buffer, c->maxsize);
+		b = realloc(c->buffer, maxsize);
 		if (b == NULL)
 			return 0;	/* indicate failure to library */
 		c->buffer = b;
@@ -2651,7 +2633,7 @@ socket_update_timeout(stream *s)
 #endif
 
 static int
-socket_isalive(stream *s)
+socket_isalive(const stream *s)
 {
 	SOCKET fd = s->stream_data.s;
 #ifdef HAVE_POLL
@@ -3532,7 +3514,7 @@ ic_update_timeout(stream *s)
 }
 
 static int
-ic_isalive(stream *s)
+ic_isalive(const stream *s)
 {
 	struct icstream *ic = (struct icstream *) s->stream_data.p;
 
@@ -3920,7 +3902,7 @@ bs_write(stream *restrict ss, const void *restrict buf, size_t elmsize, size_t c
 					if (' ' <= s->buf[i] && s->buf[i] < 127)
 						putc(s->buf[i], stderr);
 					else
-						fprintf(stderr, "\\%03o", s->buf[i]);
+						fprintf(stderr, "\\%03o", (unsigned char) s->buf[i]);
 				fprintf(stderr, "\"\n");
 			}
 #endif
@@ -3973,7 +3955,7 @@ bs_flush(stream *ss)
 				if (' ' <= s->buf[i] && s->buf[i] < 127)
 					putc(s->buf[i], stderr);
 				else
-					fprintf(stderr, "\\%03o", s->buf[i]);
+					fprintf(stderr, "\\%03o", (unsigned char) s->buf[i]);
 			fprintf(stderr, "\"\n");
 			fprintf(stderr, "W %s 0\n", ss->name);
 		}
@@ -4083,7 +4065,7 @@ bs_read(stream *restrict ss, void *restrict buf, size_t elmsize, size_t cnt)
 					    ((char *) buf)[i] < 127)
 						putc(((char *) buf)[i], stderr);
 					else
-						fprintf(stderr, "\\%03o", ((char *) buf)[i]);
+						fprintf(stderr, "\\%03o", ((unsigned char *) buf)[i]);
 				fprintf(stderr, "\"\n");
 			}
 #endif
@@ -4150,7 +4132,7 @@ bs_update_timeout(stream *ss)
 }
 
 static int
-bs_isalive(stream *ss)
+bs_isalive(const stream *ss)
 {
 	struct bs *s;
 
@@ -4420,12 +4402,12 @@ bs2_write(stream *restrict ss, const void *restrict buf, size_t elmsize, size_t 
 			{
 				size_t i;
 
-				fprintf(stderr, "W %s %lu \"", ss->name, s->nr);
+				fprintf(stderr, "W %s %zu \"", ss->name, s->nr);
 				for (i = 0; i < s->nr; i++)
 					if (' ' <= s->buf[i] && s->buf[i] < 127)
 						putc(s->buf[i], stderr);
 					else
-						fprintf(stderr, "\\%03o", s->buf[i]);
+						fprintf(stderr, "\\%03o", (unsigned char) s->buf[i]);
 				fprintf(stderr, "\"\n");
 			}
 #endif
@@ -4484,12 +4466,12 @@ bs2_flush(stream *ss)
 		if (s->nr > 0) {
 			size_t i;
 
-			fprintf(stderr, "W %s %lu \"", ss->name, s->nr);
+			fprintf(stderr, "W %s %zu \"", ss->name, s->nr);
 			for (i = 0; i < s->nr; i++)
 				if (' ' <= s->buf[i] && s->buf[i] < 127)
 					putc(s->buf[i], stderr);
 				else
-					fprintf(stderr, "\\%03o", s->buf[i]);
+					fprintf(stderr, "\\%03o", (unsigned char) s->buf[i]);
 			fprintf(stderr, "\"\n");
 			fprintf(stderr, "W %s 0\n", ss->name);
 		}
@@ -4771,7 +4753,7 @@ bs2_setpos(stream *ss, size_t pos)
 }
 
 bool
-isa_block_stream(stream *s)
+isa_block_stream(const stream *s)
 {
 	assert(s != NULL);
 	return s &&
@@ -4831,7 +4813,7 @@ bs2_update_timeout(stream *ss)
 }
 
 static int
-bs2_isalive(stream *ss)
+bs2_isalive(const stream *ss)
 {
 	struct bs2 *s;
 

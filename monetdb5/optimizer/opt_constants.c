@@ -17,7 +17,7 @@
 /*
  * We have to keep an alias table to reorganize the program
  * after the variable stack has changed.
- * The plan may contain many constants and to check them all would be quadratic 
+ * The plan may contain many constants and to check them all would be quadratic
  * in the size of the constant list.
  * The heuristic is to look back into the list only partially.
  * A hash structure could help out with further reduction.
@@ -52,7 +52,7 @@ OPTconstantsImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
 		alias[ i]= i;
 	for (i=0; i< mb->vtop; i++)
 		if ( isVarConstant(mb,i)  && isVarFixed(mb,i)  && getVarType(mb,i) != TYPE_ptr){
-			x= getVar(mb,i); 
+			x= getVar(mb,i);
 			fnd = 0;
 			limit = n - 128; // don't look to far back
 			if ( x->type && x->value.vtype)
@@ -74,8 +74,8 @@ OPTconstantsImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
 				cst[n]= x;
 				index[n]= i;
 				n++;
-			} 
-		} 
+			}
+		}
 
 	if (actions)
 		for (i = 0; i < mb->stop; i++){
@@ -87,9 +87,9 @@ OPTconstantsImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
     /* Defense line against incorrect plans */
 	/* Plan remains unaffected */
 	// msg = chkTypes(cntxt->usermodule, mb, FALSE);
-	// if (!msg) 
+	// if (!msg)
 	// 	msg = chkFlow(mb);
-	// if(!msg) 
+	// if(!msg)
 	// 	msg = chkDeclarations(mb);
     /* keep all actions taken as a post block comment */
 	usec = GDKusec()- usec;

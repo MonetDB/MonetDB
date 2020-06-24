@@ -26,38 +26,136 @@
 #endif
 
 
-static const char *sigint  = "SIGINT";
-static const char *sigterm = "SIGTERM";
-static const char *sigquit = "SIGQUIT";
-static const char *sighup  = "SIGHUP";
-static const char *sigabrt = "SIGABRT";
-static const char *sigsegv = "SIGSEGV";
-static const char *sigbus  = "SIGBUS";
-static const char *sigkill = "SIGKILL";
 static const char *
 sigtostr(int sig)
 {
 	switch (sig) {
-		case SIGINT:
-			return(sigint);
-		case SIGTERM:
-			return(sigterm);
-		case SIGQUIT:
-			return(sigquit);
-		case SIGHUP:
-			return(sighup);
-		case SIGABRT:
-			return(sigabrt);
-		case SIGSEGV:
-			return(sigsegv);
-#ifdef SIGBUS
-		case SIGBUS:
-			return(sigbus);
+#ifdef SIGABRT
+	case SIGABRT:
+		return "SIGABRT";		/* Aborted */
 #endif
-		case SIGKILL:
-			return(sigkill);
-		default:
-			return(NULL);
+#ifdef SIGALRM
+	case SIGALRM:
+		return "SIGALRM";		/* Alarm clock */
+#endif
+#ifdef SIGBUS
+	case SIGBUS:
+		return "SIGBUS";		/* Bus error */
+#endif
+#ifdef SIGCHLD
+	case SIGCHLD:
+		return "SIGCHLD";		/* Child exited */
+#endif
+#ifdef SIGCONT
+	case SIGCONT:
+		return "SIGCONT";		/* Continued */
+#endif
+#ifdef SIGFPE
+	case SIGFPE:
+		return "SIGFPE";		/* Floating point exception */
+#endif
+#ifdef SIGHUP
+	case SIGHUP:
+		return "SIGHUP";		/* Hangup */
+#endif
+#ifdef SIGILL
+	case SIGILL:
+		return "SIGILL";		/* Illegal instruction */
+#endif
+#ifdef SIGINT
+	case SIGINT:
+		return "SIGINT";		/* Interrupt */
+#endif
+#ifdef SIGKILL
+	case SIGKILL:
+		return "SIGKILL";		/* Killed */
+#endif
+#ifdef SIGPIPE
+	case SIGPIPE:
+		return "SIGPIPE";		/* Broken pipe */
+#endif
+#ifdef SIGPOLL
+	case SIGPOLL:
+		return "SIGPOLL";		/* Pollable event */
+#endif
+#ifdef SIGPROF
+	case SIGPROF:
+		return "SIGPROF";		/* Profiling timer expired */
+#endif
+#ifdef SIGPWR
+	case SIGPWR:
+		return "SIGPWR";		/* Power fail */
+#endif
+#ifdef SIGQUIT
+	case SIGQUIT:
+		return "SIGQUIT";		/* Quit */
+#endif
+#ifdef SIGSEGV
+	case SIGSEGV:
+		return "SIGSEGV";		/* Segmentation fault */
+#endif
+#ifdef SIGSTKFLT
+	case SIGSTKFLT:
+		return "SIGSTKFLT";		/* Stack fault */
+#endif
+#ifdef SIGSTOP
+	case SIGSTOP:
+		return "SIGSTOP";		/* Stopped (signal) */
+#endif
+#ifdef SIGSYS
+	case SIGSYS:
+		return "SIGSYS";		/* Bad system call */
+#endif
+#ifdef SIGTERM
+	case SIGTERM:
+		return "SIGTERM";		/* Terminated */
+#endif
+#ifdef SIGTRAP
+	case SIGTRAP:
+		return "SIGTRAP";		/* Trace/breakpoint trap */
+#endif
+#ifdef SIGTSTP
+	case SIGTSTP:
+		return "SIGTSTP";		/* Stopped */
+#endif
+#ifdef SIGTTIN
+	case SIGTTIN:
+		return "SIGTTIN";		/* Stopped (tty input) */
+#endif
+#ifdef SIGTTOU
+	case SIGTTOU:
+		return "SIGTTOU";		/* Stopped (tty output) */
+#endif
+#ifdef SIGURG
+	case SIGURG:
+		return "SIGURG";		/* Urgent I/O condition */
+#endif
+#ifdef SIGUSR1
+	case SIGUSR1:
+		return "SIGUSR1";		/* User defined signal 1 */
+#endif
+#ifdef SIGUSR2
+	case SIGUSR2:
+		return "SIGUSR2";		/* User defined signal 2 */
+#endif
+#ifdef SIGVTALRM
+	case SIGVTALRM:
+		return "SIGVTALRM";		/* Virtual timer expired */
+#endif
+#ifdef SIGWINCH
+	case SIGWINCH:
+		return "SIGWINCH";		/* Window changed */
+#endif
+#ifdef SIGXCPU
+	case SIGXCPU:
+		return "SIGXCPU";		/* CPU time limit exceeded */
+#endif
+#ifdef SIGXFSZ
+	case SIGXFSZ:
+		return "SIGXFSZ";		/* File size limit exceeded */
+#endif
+	default:
+		return NULL;
 	}
 }
 
@@ -186,35 +284,34 @@ childhandler(void)
 			if (p->pid == pid) {
 				/* log everything that's still in the pipes */
 				logFD(p->out, "MSG", p->dbname, (long long int)p->pid, _mero_logfile, 1);
-				/* remove from the list */
-				q->next = p->next;
+				p->pid = -1;	/* indicate the process is dead */
+
 				/* close the descriptors */
 				close(p->out);
 				close(p->err);
+				p->out = -1;
+				p->err = -1;
 				if (WIFEXITED(wstatus)) {
 					Mfprintf(stdout, "database '%s' (%lld) has exited with "
 							 "exit status %d\n", p->dbname,
 							 (long long int)p->pid, WEXITSTATUS(wstatus));
 				} else if (WIFSIGNALED(wstatus)) {
+					const char *sigstr = sigtostr(WTERMSIG(wstatus));
+					char signum[8];
+					if (sigstr == NULL) {
+						snprintf(signum, 8, "%d", WTERMSIG(wstatus));
+						sigstr = signum;
+					}
 					if (WCOREDUMP(wstatus)) {
 						Mfprintf(stdout, "database '%s' (%lld) has crashed "
-								 "(dumped core)\n", p->dbname,
-								 (long long int)p->pid);
+								 "with signal %s (dumped core)\n",
+								 p->dbname, (long long int)p->pid, sigstr);
 					} else {
-						const char *sigstr = sigtostr(WTERMSIG(wstatus));
-						char signum[8];
-						if (sigstr == NULL) {
-							snprintf(signum, 8, "%d", WTERMSIG(wstatus));
-							sigstr = signum;
-						}
-						Mfprintf(stdout, "database '%s' (%lld) was killed by signal "
-								 "%s\n", p->dbname,
-								 (long long int)p->pid, sigstr);
+						Mfprintf(stdout, "database '%s' (%lld) was killed "
+								 "by signal %s\n",
+								 p->dbname, (long long int)p->pid, sigstr);
 					}
 				}
-				if (p->dbname)
-					free(p->dbname);
-				free(p);
 				break;
 			}
 			q = p;

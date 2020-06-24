@@ -11,7 +11,7 @@
 #include "monetdb_config.h"
 #include "opt_deadcode.h"
 
-str 
+str
 OPTdeadcodeImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	int i, k, se,limit, slimit;
@@ -59,33 +59,33 @@ OPTdeadcodeImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 
 	/* catched by the hasSideEffects
 		if( getModuleId(p)== sqlRef && getFunctionId(p)== assertRef ){
-			varused[getArg(p,0)]++; // force keeping 
+			varused[getArg(p,0)]++; // force keeping
 			continue;
 		}
 */
 		if ( getModuleId(p) == batRef && isUpdateInstruction(p) && !p->barrier){
-			/* bat.append and friends are intermediates that need not be retained 
+			/* bat.append and friends are intermediates that need not be retained
 			 * unless they are not used outside of an update */
 			if( varused[getArg(p,1)] > 1 )
 				varused[getArg(p,0)]++; // force keeping it
 		} else
-		if (hasSideEffects(mb, p, FALSE) || !isLinearFlow(p) || 
+		if (hasSideEffects(mb, p, FALSE) || !isLinearFlow(p) ||
 				(p->retc == 1 && mb->unsafeProp) || p->barrier /* ==side-effect */){
 			varused[getArg(p,0)]++; // force keeping it
 			continue;
 		}
-			
+
 		// The results should be used somewhere
 		se = 0;
 		for ( k=0; k < p->retc; k++)
 			se += varused[getArg(p,k)] > 0;
-		
+
 		// Reduce input variable count when garbage is detected
 		if (se == 0 )
 			for ( k=p->retc; k < p->argc; k++)
 				varused[getArg(p,k)]--;
 	}
-	
+
 	// Now we can simply copy the intructions and discard useless ones.
 	pushInstruction(mb, old[0]);
 	for (i = 1; i < limit; i++) {
@@ -103,7 +103,7 @@ OPTdeadcodeImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 			se = 0;
 			for ( k=0; k < p->retc; k++)
 				se += varused[getArg(p,k)] > 0;
-	
+
 			if (se)
 				pushInstruction(mb,p);
 			else {
@@ -112,9 +112,9 @@ OPTdeadcodeImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 			}
 			/* Enable when bugTracker-2012/Tests/mal_errors survives it
 			if ( getModuleId(p) == groupRef && p->retc == 3 && varused[getArg(p,2)] == 0 &&
-				(getFunctionId(p) == groupRef || 
-				 getFunctionId(p) == subgroupRef || 
-				 getFunctionId(p) == groupdoneRef || 
+				(getFunctionId(p) == groupRef ||
+				 getFunctionId(p) == subgroupRef ||
+				 getFunctionId(p) == groupdoneRef ||
 				 getFunctionId(p) == subgroupdoneRef)){
 				// remove the histogram unless needed
 				delArgument(p,2);

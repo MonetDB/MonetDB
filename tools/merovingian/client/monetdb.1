@@ -41,6 +41,14 @@ to connect to a remote
 The use of this option requires
 .B \-P
 (see below).
+If
+.I hostname
+starts with a forward slash (/),
+.I hostname
+is assumed to be the directory where the UNIX sockets are stored.  In
+that case, the
+.B \-P
+option is not allowed.
 .TP
 \fB\-p\fP \fIport\fP
 Connects to the given portnumber instead of the default (50000).
@@ -369,10 +377,14 @@ allow to be controlled remotely can be found in the discover list masked
 with an asterisk.  These entries can easily be filtered out using an
 expression (e.g. "mapi:monetdb:*") if desired.  The control entries come
 in handy when one wants to get an overview of available monetdbds in
-e.g. a local cluster.  Note that for monetdbd to announce its control
+e.g. a local cluster.  Note that for
+.I monetdbd
+to announce its control
 port, the
 .I mero_controlport
-setting for that monetdbd must be enabled in the configuration file.
+setting for that
+.I monetdbd
+must be enabled in the configuration file.
 .TP
 .B \-h
 .PD 0

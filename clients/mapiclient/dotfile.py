@@ -4,8 +4,6 @@
 #
 # Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
 
-from __future__ import print_function
-
 '''
 The output of the Stethoscope can be saved in JSON format using the -j flag.
 This program converts such a Stethoscope output file into a .dot file
