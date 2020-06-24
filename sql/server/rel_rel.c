@@ -536,6 +536,8 @@ rel_crossproduct(sql_allocator *sa, sql_rel *l, sql_rel *r, operator_type join)
 	rel->card = CARD_MULTI;
 	rel->nrcols = l->nrcols + r->nrcols;
 	rel->single = r->single;
+	if (r->single)
+		reset_single(r);
 	return rel;
 }
 
