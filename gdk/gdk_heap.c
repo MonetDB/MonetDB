@@ -91,6 +91,7 @@ HEAPgrow(const Heap *old, size_t size)
 	assert(size >= old->free);
 	assert(old->storage == STORE_MEM || old->storage == STORE_MMAP);
 
+	TRC_DEBUG(HEAP, "Growing heap %s %zu", old->filename, size);
 	Heap *new = GDKmalloc(sizeof(Heap));
 	if (new == NULL)
 		return NULL;
@@ -1072,8 +1073,13 @@ HEAP_malloc(BAT *b, size_t nbytes)
 
 		/* Increase the size of the heap. */
 		TRC_DEBUG(HEAP, "HEAPextend in HEAP_malloc %s %zu %zu\n", heap->filename, heap->size, newsize);
-		if (HEAPextend(heap, newsize, false) != GDK_SUCCEED)
+		Heap *new = HEAPgrow(heap, newsize);
+		if (new == NULL)
 			return 0;
+		MT_lock_set(&b->theaplock);
+		HEAPdecref(heap, false);
+		b->tvheap = heap = new;
+		MT_lock_unset(&b->theaplock);
 		heap->free = newsize;
 		hheader = HEAP_index(heap, 0, HEADER);
 

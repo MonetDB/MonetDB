@@ -292,9 +292,13 @@ strPut(BAT *b, var_t *dst, const void *V)
 			return 0;
 		}
 		TRC_DEBUG(HEAP, "HEAPextend in strPut %s %zu %zu\n", h->filename, h->size, newsize);
-		if (HEAPextend(h, newsize, true) != GDK_SUCCEED) {
+		Heap *new = HEAPgrow(h, newsize);
+		if (new == NULL)
 			return 0;
-		}
+		MT_lock_set(&b->theaplock);
+		HEAPdecref(h, false);
+		b->tvheap = h = new;
+		MT_lock_unset(&b->theaplock);
 #ifndef NDEBUG
 		/* fill should solve initialization problems within
 		 * valgrind */
