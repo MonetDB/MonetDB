@@ -51,8 +51,8 @@ OPTprofilerImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 		if( getModuleId(p)== algebraRef && getFunctionId(p)== projectionRef){
 			getVarSTC(mb,getArg(p,0)) = getVarSTC(mb,getArg(p,p->argc-1));
 		} else
-		if( getModuleId(p)== algebraRef && 
-			(getFunctionId(p)== selectRef || 
+		if( getModuleId(p)== algebraRef &&
+			(getFunctionId(p)== selectRef ||
 			 getFunctionId(p) == thetaselectRef ||
 			 getFunctionId(p) == selectNotNilRef) ){
 			getVarSTC(mb,getArg(p,0)) = getVarSTC(mb,getArg(p,p->retc));
@@ -60,19 +60,18 @@ OPTprofilerImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 		if( getModuleId(p)== algebraRef && (getFunctionId(p)== likeselectRef || getFunctionId(p) == ilikeselectRef)){
 			getVarSTC(mb,getArg(p,0)) = getVarSTC(mb,getArg(p,p->retc));
 		} else
-		if( getModuleId(p)== algebraRef && 
+		if( getModuleId(p)== algebraRef &&
 			( getFunctionId(p)== joinRef ||
 			  getFunctionId(p) == leftjoinRef ||
 			  getFunctionId(p) == thetajoinRef ||
-			  getFunctionId(p) == antijoinRef ||
 			  getFunctionId(p) == bandjoinRef ||
 			  getFunctionId(p) == rangejoinRef )){
 				getVarSTC(mb,getArg(p,0)) = getVarSTC(mb,getArg(p,p->retc));
 				getVarSTC(mb,getArg(p,1)) = getVarSTC(mb,getArg(p,p->retc +1));
-		} else 
+		} else
 		if( getModuleId(p)== matRef && getFunctionId(p)== packIncrementRef){
 			getVarSTC(mb,getArg(p,0)) = getVarSTC(mb,getArg(p,1));
-		} 
+		}
 	}
     	/* Defense line against incorrect plans */
 	/* Plan remains unaffected */

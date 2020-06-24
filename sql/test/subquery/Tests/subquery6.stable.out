@@ -33,14 +33,14 @@ stdout of test 'subquery6` in directory 'sql/test/subquery` itself:
 % tinyint # type
 % 1 # length
 #SELECT (SELECT (SELECT SUM(col1)) IN (MAX(col2))) FROM another_t;
-% sys.%6 # table_name
-% %6 # name
+% sys.%5 # table_name
+% %5 # name
 % boolean # type
 % 5 # length
 [ false	]
 #SELECT (SELECT (SELECT SUM(col1)) IN (MAX(col2), '12')) FROM another_t;
-% sys.%7 # table_name
-% %7 # name
+% sys.%6 # table_name
+% %6 # name
 % boolean # type
 % 5 # length
 [ false	]
@@ -107,6 +107,40 @@ stdout of test 'subquery6` in directory 'sql/test/subquery` itself:
 [ NULL	]
 [ NULL	]
 [ NULL	]
+#SELECT t1.colid FROM tbl_productsales t1 INNER JOIN tbl_productsales t2 ON t1.product_category NOT LIKE t2.product_category ORDER BY t1.colid;
+% sys.t1 # table_name
+% colid # name
+% int # type
+% 1 # length
+[ 1	]
+[ 1	]
+[ 2	]
+[ 2	]
+[ 3	]
+[ 3	]
+[ 4	]
+[ 4	]
+#SELECT t1.colid FROM tbl_productsales t1 INNER JOIN tbl_productsales t2 ON t1.product_category NOT LIKE t2.product_name ORDER BY t1.colid;
+% sys.t1 # table_name
+% colid # name
+% int # type
+% 1 # length
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 2	]
+[ 2	]
+[ 2	]
+[ 2	]
+[ 3	]
+[ 3	]
+[ 3	]
+[ 3	]
+[ 4	]
+[ 4	]
+[ 4	]
+[ 4	]
 #DROP TABLE tbl_ProductSales;
 #DROP TABLE another_T;
 #DROP TABLE integers;

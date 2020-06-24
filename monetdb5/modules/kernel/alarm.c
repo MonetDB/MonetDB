@@ -15,7 +15,7 @@
  * The Monet interface supports two timer commands: @emph{ alarm} and @emph{ sleep}.
  * Their argument is the number of seconds to wait before the timer goes off.
  * The @emph{ sleep} command blocks till the alarm goes off.
- * The @emph{ alarm} command continues directly, executes off a 
+ * The @emph{ alarm} command continues directly, executes off a
  * string when it goes off.
  * The parameterless routines @emph{ time} and @emph{ ctime} provide access to
  * the cpu clock.They return an integer and string, respectively.
@@ -26,13 +26,7 @@
 #include "mal_interpreter.h"
 #include <time.h>
 
-mal_export str ALARMusec(lng *ret);
-mal_export str ALARMsleep(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-mal_export str ALARMctime(str *res);
-mal_export str ALARMepoch(int *res);
-mal_export str ALARMtime(int *res);
-
-str
+static str
 ALARMusec(lng *ret)
 {
 	*ret = GDKusec();
@@ -70,7 +64,7 @@ ALARMusec(lng *ret)
 		} \
 	} while (0)
 
-str
+static str
 ALARMsleep(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	BAT *r = NULL, *b = NULL;
@@ -132,7 +126,7 @@ ALARMsleep(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	return MAL_SUCCEED;
 }
 
-str
+static str
 ALARMctime(str *res)
 {
 	time_t t = time(0);
@@ -155,14 +149,14 @@ ALARMctime(str *res)
 	return MAL_SUCCEED;
 }
 
-str
+static str
 ALARMepoch(int *res)  /* XXX should be lng */
 {
 	*res = (int) time(0);
 	return MAL_SUCCEED;
 }
 
-str
+static str
 ALARMtime(int *res)
 {
 	*res = GDKms();

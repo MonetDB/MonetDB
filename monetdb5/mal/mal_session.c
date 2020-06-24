@@ -131,7 +131,7 @@ MSinitClientPrg(Client cntxt, str mod, str nme)
 	if( (idx= findVariable(cntxt->curprg->def,"main")) >=0)
 		setVarType(cntxt->curprg->def, idx, TYPE_void);
 	insertSymbol(cntxt->usermodule,cntxt->curprg);
-	
+
 	if (cntxt->glb == NULL )
 		cntxt->glb = newGlobalStack(MAXGLOBALS + cntxt->curprg->def->vsize);
 	if( cntxt->glb == NULL)
@@ -273,7 +273,7 @@ MSscheduleClient(str command, str challenge, bstream *fin, stream *fout, protoco
 			return;
 		}
 
-		if (!GDKinmemory()) {
+		if (!GDKinmemory() && !GDKembedded()) {
 			err = msab_getMyStatus(&stats);
 			if (err != NULL) {
 				/* this is kind of awful, but we need to get rid of this
@@ -713,7 +713,7 @@ MALengine(Client c)
 		/* for global stacks avoid reinitialization from this point */
 		c->glb->stkbot = prg->def->vtop;
 	}
-	
+
 	if (prg->def->errors)
 		GDKfree(prg->def->errors);
 	prg->def->errors = NULL;

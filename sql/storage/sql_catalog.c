@@ -43,7 +43,7 @@ _list_find_name(list *l, const char *name)
 		}
 		if (l->ht) {
 			int key = hash_key(name);
-			sql_hash_e *he = l->ht->buckets[key&(l->ht->size-1)]; 
+			sql_hash_e *he = l->ht->buckets[key&(l->ht->size-1)];
 
 			for (; he; he = he->chain) {
 				sql_base *b = he->value;
@@ -151,7 +151,7 @@ list_find_base_id(list *l, sqlid id)
 		for (n = l->h; n; n = n->next) {
 			sql_base *b = n->data;
 
-			if (id == b->id) 
+			if (id == b->id)
 				return n;
 		}
 	}
@@ -303,7 +303,7 @@ find_sqlname(list *l, const char *name)
 
 			if (strcmp(t->sqlname, name) == 0)
 				return t;
-		} 
+		}
 	}
 	return NULL;
 }

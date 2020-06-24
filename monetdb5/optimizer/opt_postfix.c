@@ -25,20 +25,22 @@ OPTpostfixImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 
 	(void) cntxt;
 	(void) stk;
-	
+
 	slimit = mb->stop;
 	setVariableScope(mb);
 	/* Remove the result from any join/group instruction when it is not used later on */
 	for( i = 0; i< slimit; i++){
 /* POSTFIX ACTION FOR THE JOIN CASE  */
 		p= getInstrPtr(mb, i);
-		if ( getModuleId(p) == algebraRef && getFunctionId(p) == joinRef && getVarEolife(mb, getArg(p, p->retc -1)) == i){
-			delArgument(p, p->retc -1);
-			typeChecker(cntxt->usermodule, mb, p, i, TRUE);
-			actions++;
-			continue;
-		}
-		if ( getModuleId(p) == algebraRef && getFunctionId(p) == leftjoinRef && getVarEolife(mb, getArg(p, p->retc -1)) == i){
+		if ( getModuleId(p) == algebraRef && (getFunctionId(p) == joinRef
+											  || getFunctionId(p) == leftjoinRef
+											  || getFunctionId(p) == outerjoinRef
+											  || getFunctionId(p) == thetajoinRef
+											  || getFunctionId(p) == bandjoinRef
+											  || getFunctionId(p) == rangejoinRef
+											  || getFunctionId(p) == likejoinRef
+											  || getFunctionId(p) == ilikejoinRef
+											  || getFunctionId(p) == crossRef) && getVarEolife(mb, getArg(p, p->retc -1)) == i){
 			delArgument(p, p->retc -1);
 			typeChecker(cntxt->usermodule, mb, p, i, TRUE);
 			actions++;

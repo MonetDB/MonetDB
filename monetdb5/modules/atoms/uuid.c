@@ -50,34 +50,11 @@ typedef union {
 #endif
 } uuid;
 
-mal_export str UUIDprelude(void *ret);
-mal_export int UUIDcompare(const uuid *l, const uuid *r);
-mal_export ssize_t UUIDfromString(const char *svalue, size_t *len, uuid **retval, bool external);
-mal_export BUN UUIDhash(const void *u);
-mal_export const uuid *UUIDnull(void);
-mal_export uuid *UUIDread(uuid *u, stream *s, size_t cnt);
-mal_export ssize_t UUIDtoString(str *retval, size_t *len, const uuid *value, bool external);
-mal_export gdk_return UUIDwrite(const uuid *u, stream *s, size_t cnt);
-mal_export str UUIDuuid2uuid(uuid *retval, uuid *s);
-
-#ifdef HAVE_HGE
-mal_export str UUIDgenerateUuid(uuid *retval);
-mal_export str UUIDgenerateUuidInt(uuid *retval, int *d);
-mal_export str UUIDstr2uuid(uuid *retval, str *s);
-mal_export str UUIDuuid2str(str *retval, const uuid *u);
-#else
-mal_export str UUIDgenerateUuid(uuid **retval);
-mal_export str UUIDgenerateUuidInt(uuid **retval, int *d);
-mal_export str UUIDstr2uuid(uuid **retval, str *s);
-mal_export str UUIDuuid2str(str *retval, uuid **u);
-#endif
-mal_export str UUIDisaUUID(bit *retval, str *u);
-
 static uuid uuid_nil;			/* automatically initialized as zeros */
 
 int TYPE_uuid = 0;
 
-str
+static str
 UUIDprelude(void *ret)
 {
 	(void) ret;
@@ -105,9 +82,10 @@ UUIDprelude(void *ret)
  * Warning: GDK function
  * Returns the length of the string
  */
-ssize_t
-UUIDtoString(str *retval, size_t *len, const uuid *value, bool external)
+static ssize_t
+UUIDtoString(str *retval, size_t *len, const void *VALUE, bool external)
 {
+	const uuid *value = VALUE;
 	if (*len <= UUID_STRLEN || *retval == NULL) {
 		if (*retval)
 			GDKfree(*retval);
@@ -136,9 +114,10 @@ UUIDtoString(str *retval, size_t *len, const uuid *value, bool external)
 	return UUID_STRLEN;
 }
 
-ssize_t
-UUIDfromString(const char *svalue, size_t *len, uuid **retval, bool external)
+static ssize_t
+UUIDfromString(const char *svalue, size_t *len, void **RETVAL, bool external)
 {
+	uuid **retval = (uuid **) RETVAL;
 	const char *s = svalue;
 
 	if (*len < UUID_SIZE || *retval == NULL) {
@@ -193,9 +172,10 @@ UUIDfromString(const char *svalue, size_t *len, uuid **retval, bool external)
 	return -1;
 }
 
-int
-UUIDcompare(const uuid *l, const uuid *r)
+static int
+UUIDcompare(const void *L, const void *R)
 {
+	const uuid *l = L, *r = R;
 	if (is_uuid_nil(r))
 		return !is_uuid_nil(l);
 	if (is_uuid_nil(l))
@@ -207,7 +187,7 @@ UUIDcompare(const uuid *l, const uuid *r)
 #endif
 }
 
-str
+static str
 #ifdef HAVE_HGE
 UUIDgenerateUuid(uuid *retval)
 #else
@@ -247,7 +227,7 @@ UUIDgenerateUuid(uuid **retval)
 	return MAL_SUCCEED;
 }
 
-str
+static str
 #ifdef HAVE_HGE
 UUIDgenerateUuidInt(uuid *retval, int *d)
 #else
@@ -258,13 +238,13 @@ UUIDgenerateUuidInt(uuid **retval, int *d)
 	return UUIDgenerateUuid(retval);
 }
 
-str
+static str
 UUIDisaUUID(bit *retval, str *s)
 {
 	uuid u;
 	uuid *pu = &u;
 	size_t l = UUID_SIZE;
-	ssize_t res = UUIDfromString(*s, &l, &pu, false);
+	ssize_t res = UUIDfromString(*s, &l, (void **) &pu, false);
 
 	if (res > 1)
 		*retval = true;
@@ -275,7 +255,7 @@ UUIDisaUUID(bit *retval, str *s)
 	return MAL_SUCCEED;
 }
 
-str
+static str
 UUIDuuid2uuid(uuid *retval, uuid *i)
 {
 	*retval = *i;
@@ -283,18 +263,18 @@ UUIDuuid2uuid(uuid *retval, uuid *i)
 }
 
 #ifdef HAVE_HGE
-str
+static str
 UUIDstr2uuid(uuid *retval, str *s)
 {
 	size_t l = UUID_SIZE;
 
-	if (UUIDfromString(*s, &l, &retval, false) > 0) {
+	if (UUIDfromString(*s, &l, (void **) &retval, false) > 0) {
 		return MAL_SUCCEED;
 	}
 	throw(MAL, "uuid.uuid", "Not a UUID");
 }
 
-str
+static str
 UUIDuuid2str(str *retval, const uuid *u)
 {
 	size_t l = 0;
@@ -304,18 +284,18 @@ UUIDuuid2str(str *retval, const uuid *u)
 	return MAL_SUCCEED;
 }
 #else
-str
+static str
 UUIDstr2uuid(uuid **retval, str *s)
 {
 	size_t l = *retval ? UUID_SIZE : 0;
 
-	if (UUIDfromString(*s, &l, retval, false) > 0) {
+	if (UUIDfromString(*s, &l, (void **) retval, false) > 0) {
 		return MAL_SUCCEED;
 	}
 	throw(MAL, "uuid.uuid", "Not a UUID");
 }
 
-str
+static str
 UUIDuuid2str(str *retval, uuid **u)
 {
 	size_t l = 0;
@@ -326,31 +306,33 @@ UUIDuuid2str(str *retval, uuid **u)
 }
 #endif
 
-BUN
+static BUN
 UUIDhash(const void *v)
 {
 	const uuid *u = (const uuid *) v;
-	unsigned int u1, u2, u3, u4;
+	ulng u1, u2;
 
-	u1 = (unsigned int) u->u[0] << 24 | (unsigned int) u->u[1] << 16 |
-		(unsigned int) u->u[2] << 8 | (unsigned int) u->u[3];
-	u2 = (unsigned int) u->u[4] << 24 | (unsigned int) u->u[5] << 16 |
-		(unsigned int) u->u[6] << 8 | (unsigned int) u->u[7];
-	u3 = (unsigned int) u->u[8] << 24 | (unsigned int) u->u[9] << 16 |
-		(unsigned int) u->u[10] << 8 | (unsigned int) u->u[11];
-	u4 = (unsigned int) u->u[12] << 24 | (unsigned int) u->u[13] << 16 |
-		(unsigned int) u->u[14] << 8 | (unsigned int) u->u[15];
-	return (BUN) mix_int(u1 ^ u2 ^ u3 ^ u4);
+	u1 = (ulng) u->u[0] << 56 | (ulng) u->u[1] << 48 |
+		(ulng) u->u[2] << 40 | (ulng) u->u[3] << 32 |
+		(ulng) u->u[4] << 24 | (ulng) u->u[5] << 16 |
+		(ulng) u->u[6] << 8 | (ulng) u->u[7];
+	u2 = (ulng) u->u[8] << 56 | (ulng) u->u[9] << 48 |
+		(ulng) u->u[10] << 40 | (ulng) u->u[11] << 32 |
+		(ulng) u->u[12] << 24 | (ulng) u->u[13] << 16 |
+		(ulng) u->u[14] << 8 | (ulng) u->u[15];
+	/* we're not using mix_hge since this we way get the same result
+	 * on systems with and without 128 bit integer support */
+	return (BUN) (mix_lng(u1) ^ mix_lng(u2));
 }
 
-const uuid *
+static const void *
 UUIDnull(void)
 {
 	return &uuid_nil;
 }
 
-uuid *
-UUIDread(uuid *U, stream *s, size_t cnt)
+static void *
+UUIDread(void *U, stream *s, size_t cnt)
 {
 	uuid *u = U;
 	if (u == NULL && (u = GDKmalloc(cnt * sizeof(uuid))) == NULL)
@@ -363,15 +345,15 @@ UUIDread(uuid *U, stream *s, size_t cnt)
 	return u;
 }
 
-gdk_return
-UUIDwrite(const uuid *u, stream *s, size_t cnt)
+static gdk_return
+UUIDwrite(const void *u, stream *s, size_t cnt)
 {
 	return mnstr_write(s, u, UUID_SIZE, cnt) ? GDK_SUCCEED : GDK_FAIL;
 }
- 
+
 #include "mel.h"
 mel_atom uuid_init_atoms[] = {
- { .name="uuid", .cmp=(fptr)&UUIDcompare, .fromstr=(fptr)&UUIDfromString, .hash=(fptr)&UUIDhash, .null=(fptr)&UUIDnull, .read=(fptr)&UUIDread, .tostr=(fptr)&UUIDtoString, .write=(fptr)&UUIDwrite, },  { .cmp=NULL } 
+ { .name="uuid", .cmp=UUIDcompare, .fromstr=UUIDfromString, .hash=UUIDhash, .null=UUIDnull, .read=UUIDread, .tostr=UUIDtoString, .write=UUIDwrite, },  { .cmp=NULL }
 };
 mel_func uuid_init_funcs[] = {
  command("uuid", "prelude", UUIDprelude, false, "", args(1,1, arg("",void))),

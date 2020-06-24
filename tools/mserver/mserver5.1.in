@@ -60,7 +60,7 @@ should find a database.
 Shorthand for option
 .BR gdk_dbpath .
 Default value:
-.BR @localstatedir@/monetdb5/dbfarm/demo .
+.BR @CMAKE_INSTALL_FULL_LOCALSTATEDIR@/monetdb5/dbfarm/demo .
 .TP
 \fB\-\-dbextra=\fP\fIpath\fP
 Path where

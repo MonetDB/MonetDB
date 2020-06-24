@@ -98,7 +98,7 @@ stdout of test 'strings` in directory 'sql/test/pg_regress` itself:
 #SELECT CAST('namefield' AS text) AS "text(name)";
 % . # table_name
 % text(name) # name
-% char # type
+% clob # type
 % 9 # length
 [ "namefield"	]
 #CREATE TABLE TEXT_TBL (f1 text);
@@ -158,7 +158,7 @@ stdout of test 'strings` in directory 'sql/test/pg_regress` itself:
 #SELECT CAST('namefield' AS string) AS "varchar(name)";
 % . # table_name
 % varchar(name) # name
-% char # type
+% clob # type
 % 9 # length
 [ "namefield"	]
 #DROP TABLE CHAR_TBL;

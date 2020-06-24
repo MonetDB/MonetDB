@@ -83,7 +83,7 @@ function(create_include_object)
   foreach(mod_name IN LISTS create_prefix_modules_list)
     add_custom_command(
       OUTPUT  ${CMAKE_CURRENT_BINARY_DIR}/${mod_name}.${lang_ext}.c
-      COMMAND ${Python3_EXECUTABLE} ${PROJECT_BINARY_DIR}/create_include_object.py ${mod_name} ${lang_ext} ${file_path}/${mod_name}.${lang_ext} ${CMAKE_CURRENT_BINARY_DIR}/${mod_name}.${lang_ext}.c
+      COMMAND ${Python3_EXECUTABLE} ${PROJECT_BINARY_DIR}/misc/python/create_include_object.py ${mod_name} ${lang_ext} ${file_path}/${mod_name}.${lang_ext} ${CMAKE_CURRENT_BINARY_DIR}/${mod_name}.${lang_ext}.c
       DEPENDS ${file_path}/${mod_name}.${lang_ext}
       )
     list(APPEND include_sources
@@ -107,6 +107,7 @@ function(monetdb_cmake_summary)
   message(STATUS "")
   message(STATUS "Summary of cmake configuration of MonetDB")
   message(STATUS "-----------------------------------------")
+  message(STATUS "System is big endian: ${IS_BIG_ENDIAN}")
   if(${CMAKE_VERSION} VERSION_LESS "3.14.0")
     message(STATUS "NumPy include dirs: ${NUMPY_INCLUDE_DIRS}")
   else()
@@ -141,6 +142,7 @@ function(monetdb_cmake_summary)
   message(STATUS "Netcdf library: ${NETCDF_FOUND}")
   message(STATUS "Readline library: ${READLINE_FOUND}")
   message(STATUS "R library: ${LIBR_FOUND}")
+  message(STATUS "Sphinx: ${SPHINX_FOUND}")
   message(STATUS "-----------------------------------------")
   message(STATUS "")
 endfunction()

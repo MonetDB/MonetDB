@@ -8,7 +8,7 @@
 
 /*
  * (author) M. Kersten
- * 
+ *
  * Search the first definition of the operator in the current module
  * and check the parameter types.
  * For a polymorphic MAL function we make a fully instantiated clone.
@@ -560,7 +560,7 @@ typeChecker(Module scope, MalBlkPtr mb, InstrPtr p, int idx, int silent)
 					if (free_errsig)
 						GDKfree(errsig);
 				}
-			} 
+			}
 			p->typechk = TYPE_UNKNOWN;
 		} else
 			p->typechk = TYPE_RESOLVED;
@@ -735,7 +735,7 @@ getPolyType(malType t, int *polytype)
 		return polytype[ti];
 
 	tail = ti == 0 ? getBatType(t) : polytype[ti];
-	if (isaBatType(t)) 
+	if (isaBatType(t))
 		return newBatType(tail);
 	return tail;
 }

@@ -52,6 +52,8 @@ dec_round_wrap(TYPE *res, const TYPE *v, const TYPE *r)
 	/* basic sanity checks */
 	assert(res && v && r);
 
+	if (*r <= 0)
+		throw(MAL, "round", SQLSTATE(42000) "Argument 2 to round function must be positive");
 	*res = dec_round_body(*v, *r);
 	return MAL_SUCCEED;
 }
@@ -67,6 +69,8 @@ bat_dec_round_wrap(bat *_res, const bat *_v, const TYPE *r)
 	/* basic sanity checks */
 	assert(_res && _v && r);
 
+	if (*r <= 0)
+		throw(MAL, "round", SQLSTATE(42000) "Argument 2 to round function must be positive");
 	/* get argument BAT descriptor */
 	if ((v = BATdescriptor(*_v)) == NULL)
 		throw(MAL, "round", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
@@ -421,7 +425,7 @@ batstr_ce_2dec(bat *res, const bat *bid, const int *d, const int *sc, const bat 
 	BATloop(b, p, q) {
 		str v = (str) BUNtvar(bi, p);
 		TYPE r;
-		if (ce[p]) 
+		if (ce[p])
 			msg = str_2dec(&r, &v, d, sc);
 		else
 			r = n;

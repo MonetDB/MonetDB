@@ -26,6 +26,10 @@
 #include "multiplex-funnel.h" /* multiplexInit */
 #include "forkmserver.h"
 
+#ifndef S_ISDIR
+#define S_ISDIR(mode)	(((mode) & _S_IFMT) == _S_IFDIR)
+#endif
+
 /**
  * The terminateProcess function tries to let the given mserver process
  * shut down gracefully within a given time-out.  If that fails, it
@@ -544,7 +548,7 @@ forkMserver(char *database, sabdb** stats, bool force)
 				 "--dbtrace=%s", dbtrace);
 		argv[c++] = dbtrace_path;
 	}
-	
+
 	if (mydoproxy) {
 		argv[c++] = set; argv[c++] = "mapi_open=false";
 		/* we "proxy", so we can just solely use UNIX domain sockets

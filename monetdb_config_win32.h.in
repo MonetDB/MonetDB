@@ -82,13 +82,6 @@
 #endif
 #define fstat _fstat64
 
-#ifndef S_ISREG
-#define S_ISREG(mode)   (((mode) & _S_IFMT) == _S_IFREG)
-#endif
-#ifndef S_ISDIR
-#define S_ISDIR(mode)	(((mode) & _S_IFMT) == _S_IFDIR)
-#endif
-
 /* Does your compiler support `restrict' keyword? (C99 feature) */
 #ifndef restrict
 #cmakedefine restrict @restrict@
@@ -124,35 +117,34 @@ stpcpy(char *restrict dst, const char *restrict src)
 #endif /* _MSC_VER */
 
 // Section: monetdb configure defines
-#cmakedefine HAVE_DLFCN_H @HAVE_DLFCN_H@
-#cmakedefine HAVE_FCNTL_H @HAVE_FCNTL_H@
-#cmakedefine HAVE_ICONV_H @HAVE_ICONV_H@
-#cmakedefine HAVE_STRINGS_H @HAVE_STRINGS_H@
-#cmakedefine HAVE_SYS_MMAN_H @HAVE_SYS_MMAN_H@
-#cmakedefine HAVE_SYS_UN_H @HAVE_SYS_UN_H@
-#cmakedefine HAVE_UNISTD_H @HAVE_UNISTD_H@
-#cmakedefine HAVE_UUID_UUID_H @HAVE_UUID_UUID_H@
-#cmakedefine HAVE_WINSOCK_H @HAVE_WINSOCK_H@
-#cmakedefine HAVE_SEMAPHORE_H @HAVE_SEMAPHORE_H@
-#cmakedefine HAVE_GETOPT_H @HAVE_GETOPT_H@
+#cmakedefine HAVE_DLFCN_H 1
+#cmakedefine HAVE_FCNTL_H 1
+#cmakedefine HAVE_STRINGS_H 1
+#cmakedefine HAVE_SYS_MMAN_H 1
+#cmakedefine HAVE_SYS_UN_H 1
+#cmakedefine HAVE_UNISTD_H 1
+#cmakedefine HAVE_UUID_UUID_H 1
+#cmakedefine HAVE_WINSOCK_H 1
+#cmakedefine HAVE_SEMAPHORE_H 1
+#cmakedefine HAVE_GETOPT_H 1
 
-#cmakedefine HAVE_DIRENT_H @HAVE_DIRENT_H@
-#cmakedefine HAVE_NETDB_H @HAVE_NETDB_H@
-#cmakedefine HAVE_SYS_SOCKET_H @HAVE_SYS_SOCKET_H@
-#cmakedefine HAVE_SYS_TIME_H @HAVE_SYS_TIME_H@
-#cmakedefine HAVE_SYS_STAT_H @HAVE_SYS_STAT_H@
-#cmakedefine HAVE_FDATASYNC @HAVE_FDATASYNC@
-//#cmakedefine HAVE_CTIME_R @HAVE_CTIME_R@
-#cmakedefine HAVE_FSYNC @HAVE_FSYNC@
-#cmakedefine HAVE_FTIME @HAVE_FTIME@
-#cmakedefine HAVE_GETTIMEOFDAY @HAVE_SYS_TIME_H@
-#cmakedefine HAVE_LOCKF @HAVE_LOCKF@
-#cmakedefine HAVE_STRERROR_R @HAVE_STRERROR_R@
-#cmakedefine HAVE_MADVISE  @HAVE_MADVISE@
-#cmakedefine HAVE_POPEN @HAVE_POPEN@
-#cmakedefine HAVE_POSIX_MADVISE @HAVE_POSIX_MADVISE@
-#cmakedefine HAVE_STRNCASECMP @HAVE_STRNCASECMP@
-#cmakedefine HAVE_SYSCONF @HAVE_SYSCONF@
+#cmakedefine HAVE_DIRENT_H 1
+#cmakedefine HAVE_NETDB_H 1
+#cmakedefine HAVE_SYS_SOCKET_H 1
+#cmakedefine HAVE_SYS_TIME_H 1
+#cmakedefine HAVE_SYS_STAT_H 1
+#cmakedefine HAVE_FDATASYNC 1
+//#cmakedefine HAVE_CTIME_R 1
+#cmakedefine HAVE_FSYNC 1
+#cmakedefine HAVE_FTIME 1
+#cmakedefine HAVE_GETTIMEOFDAY 1
+#cmakedefine HAVE_LOCKF 1
+#cmakedefine HAVE_STRERROR_R 1
+#cmakedefine HAVE_MADVISE  1
+#cmakedefine HAVE_POPEN 1
+#cmakedefine HAVE_POSIX_MADVISE 1
+#cmakedefine HAVE_STRNCASECMP 1
+#cmakedefine HAVE_SYSCONF 1
 
 #cmakedefine GETOPT_LIB @GETOPT_LIB@
 
@@ -165,37 +157,37 @@ stpcpy(char *restrict dst, const char *restrict src)
 #define ENABLE_MAPI 1
 #define HAVE_MAPI 1
 
-#cmakedefine HAVE_GETOPT @HAVE_GETOPT@
+#cmakedefine HAVE_GETOPT 1
 // End Section: monetdb configure defines
 
 // Section: monetdb macro variables
-#cmakedefine HAVE_ICONV @HAVE_ICONV@
-#cmakedefine HAVE_PTHREAD_H @HAVE_PTHREAD_H@
-#cmakedefine HAVE_LIBPCRE @HAVE_LIBPCRE@
-#cmakedefine HAVE_OPENSSL @HAVE_OPENSSL@
-#cmakedefine HAVE_COMMONCRYPTO @HAVE_COMMONCRYPTO@
-#cmakedefine HAVE_LIBBZ2 @HAVE_LIBBZ2@
-#cmakedefine HAVE_CURL @HAVE_CURL@
-#cmakedefine HAVE_LIBLZMA @HAVE_LIBLZMA@
-#cmakedefine HAVE_LIBXML @HAVE_LIBXML@
-#cmakedefine HAVE_LIBZ @HAVE_LIBZ@
-#cmakedefine HAVE_LIBLZ4 @HAVE_LIBLZ4@
-#cmakedefine HAVE_PROJ @HAVE_PROJ@
-#cmakedefine HAVE_SNAPPY @HAVE_SNAPPY@
-#cmakedefine HAVE_FITS @HAVE_FITS@
-#cmakedefine HAVE_UUID @HAVE_UUID@
-#cmakedefine HAVE_VALGRIND @HAVE_VALGRIND@
-#cmakedefine HAVE_NETCDF @HAVE_NETCDF@
-#cmakedefine HAVE_READLINE @HAVE_READLINE@
-#cmakedefine HAVE_LIBR @HAVE_LIBR@
+#cmakedefine HAVE_ICONV 1
+#cmakedefine HAVE_PTHREAD_H 1
+#cmakedefine HAVE_LIBPCRE 1
+#cmakedefine HAVE_OPENSSL 1
+#cmakedefine HAVE_COMMONCRYPTO 1
+#cmakedefine HAVE_LIBBZ2 1
+#cmakedefine HAVE_CURL 1
+#cmakedefine HAVE_LIBLZMA 1
+#cmakedefine HAVE_LIBXML 1
+#cmakedefine HAVE_LIBZ 1
+#cmakedefine HAVE_LIBLZ4 1
+#cmakedefine HAVE_PROJ 1
+#cmakedefine HAVE_SNAPPY 1
+#cmakedefine HAVE_FITS 1
+#cmakedefine HAVE_UUID 1
+#cmakedefine HAVE_VALGRIND 1
+#cmakedefine HAVE_NETCDF 1
+#cmakedefine HAVE_READLINE 1
+#cmakedefine HAVE_LIBR 1
 #cmakedefine RHOME "@RHOME@"
-#cmakedefine HAVE_GEOM @HAVE_GEOM@
-#cmakedefine HAVE_SHP @HAVE_SHP@
-#cmakedefine HAVE_LIBPY3 @HAVE_LIBPY3@
+#cmakedefine HAVE_GEOM 1
+#cmakedefine HAVE_SHP 1
+#cmakedefine HAVE_LIBPY3 1
 
 // #cmakedefine SOCKET_LIBRARIES
-#cmakedefine HAVE_GETADDRINFO @HAVE_GETADDRINFO@
-#cmakedefine HAVE_CUDF @HAVE_CUDF@
+#cmakedefine HAVE_GETADDRINFO 1
+#cmakedefine HAVE_CUDF 1
 
 #define DIR_SEP '\\'
 #define PATH_SEP ';'
@@ -240,13 +232,13 @@ stpcpy(char *restrict dst, const char *restrict src)
 /* The used password hash algorithm */
 #define MONETDB5_PASSWDHASH_TOKEN @PASSWORD_BACKEND@
 
-#cmakedefine HAVE_MD5_UPDATE @HAVE_MD5_UPDATE@
-#cmakedefine HAVE_RIPEMD160_UPDATE @HAVE_RIPEMD160_UPDATE@
-#cmakedefine HAVE_SHA1_UPDATE @HAVE_SHA1_UPDATE@
-#cmakedefine HAVE_SHA224_UPDATE @HAVE_SHA224_UPDATE@
-#cmakedefine HAVE_SHA256_UPDATE @HAVE_SHA256_UPDATE@
-#cmakedefine HAVE_SHA384_UPDATE @HAVE_SHA384_UPDATE@
-#cmakedefine HAVE_SHA512_UPDATE @HAVE_SHA512_UPDATE@
+#cmakedefine HAVE_MD5_UPDATE 1
+#cmakedefine HAVE_RIPEMD160_UPDATE 1
+#cmakedefine HAVE_SHA1_UPDATE 1
+#cmakedefine HAVE_SHA224_UPDATE 1
+#cmakedefine HAVE_SHA256_UPDATE 1
+#cmakedefine HAVE_SHA384_UPDATE 1
+#cmakedefine HAVE_SHA512_UPDATE 1
 
 #ifndef _Noreturn
 #cmakedefine _Noreturn @_Noreturn@

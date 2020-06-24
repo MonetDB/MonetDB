@@ -83,7 +83,7 @@ int mal_init(char *modules[], int embedded){
  * This seemingly superflous action is necessary to simplify analyis of
  * memory leakage problems later ons and to allow an embedded server to
  * restart the server properly.
- * 
+ *
  * It is the responsibility of the enclosing application to finish/cease all
  * activity first.
  * This function should be called after you have issued sql_reset();
@@ -96,7 +96,7 @@ void mal_reset(void)
 	setHeartbeat(-1);
 	stopProfiler(0);
 	AUTHreset();
-	if (!GDKinmemory()) {
+	if (!GDKinmemory() && !GDKembedded()) {
 		str err = 0;
 
 		if ((err = msab_wildRetreat()) != NULL) {

@@ -7,10 +7,10 @@
 #]]
 
 set(stream_public_headers
-  $<BUILD_INTERFACE:$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>/stream.h>
-  $<BUILD_INTERFACE:$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>/stream_socket.h>
-  $<INSTALL_INTERFACE:$<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}/monetdb>/stream.h>
-  $<INSTALL_INTERFACE:$<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}/monetdb>/stream_socket.h>)
+  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/stream.h>
+  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/stream_socket.h>
+  $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}/monetdb/stream.h>
+  $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}/monetdb/stream_socket.h>)
 
 add_library(stream
   SHARED)
@@ -79,7 +79,7 @@ if (NOT WIN32)
     set(PKG_SNAPPY "snappy")
   endif()
 
-  if(ICONV_FOUND AND NOT ICONV_IS_BUILT_IN)
+  if(ICONV_FOUND AND NOT Iconv_IS_BUILT_IN)
     get_filename_component(ICONV_LIBRARIES_PATH
       "${ICONV_LIBRARIES}"
       DIRECTORY)
@@ -116,5 +116,5 @@ install(TARGETS
 install(EXPORT streamTargets
   FILE streamTargets.cmake
   NAMESPACE MonetDB::
-  DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/cmake
+  DESTINATION ${EXPORT_TARGET_PATH}
   COMPONENT streamdev)

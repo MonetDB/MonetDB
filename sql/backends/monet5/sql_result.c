@@ -45,7 +45,7 @@
 		 (0xffffffffffffffff&long_long_SWAP(h>>64)))
 #endif
 
-static lng 
+static lng
 mnstr_swap_lng(stream *s, lng lngval) {
 	return mnstr_get_swapbytes(s) ? long_long_SWAP(lngval) : lngval;
 }
@@ -722,7 +722,7 @@ static void *
 _ASCIIadt_frStr(Column *c, int type, const char *s)
 {
 	ssize_t len;
-	const char *e; 
+	const char *e;
 
 	if (type == TYPE_str) {
 		sql_column *col = (sql_column *) c->extra;
@@ -973,7 +973,7 @@ mvc_import_table(Client cntxt, BAT ***bats, mvc *m, bstream *bs, sql_table *t, c
 			}
 		}
 		if ( (locked || (msg = TABLETcreate_bats(&as, (BUN) (sz < 0 ? 1000 : sz))) == MAL_SUCCEED)  ){
-			if (!sz || (SQLload_file(cntxt, &as, bs, out, sep, rsep, ssep ? ssep[0] : 0, offset, sz, best, from_stdin, t->base.name) != BUN_NONE && 
+			if (!sz || (SQLload_file(cntxt, &as, bs, out, sep, rsep, ssep ? ssep[0] : 0, offset, sz, best, from_stdin, t->base.name) != BUN_NONE &&
 				(best || !as.error))) {
 				*bats = (BAT**) GDKzalloc(sizeof(BAT *) * as.nr_attrs);
 				if ( *bats == NULL){
@@ -1060,92 +1060,94 @@ mvc_export_prepare(mvc *c, stream *out, cq *q, str w)
 	sql_subtype *t;
 	sql_rel *r = q->rel;
 
-	if (!out)
+	if(!out)
 		return 0;
 
-	if (r && (is_topn(r->op) || is_sample(r->op)))
-		r = r->l;
-	if (r && is_project(r->op) && r->exps) {
-		unsigned int max2 = 10, max3 = 10;	/* to help calculate widths */
-		nrows += list_length(r->exps);
+	if (!GDKembedded()) {
+		if (r && (is_topn(r->op) || is_sample(r->op)))
+			r = r->l;
+		if (r && is_project(r->op) && r->exps) {
+			unsigned int max2 = 10, max3 = 10;	/* to help calculate widths */
+			nrows += list_length(r->exps);
 
-		for (n = r->exps->h; n; n = n->next) {
-			const char *name;
-			sql_exp *e = n->data;
-			size_t slen;
+			for (n = r->exps->h; n; n = n->next) {
+				const char *name;
+				sql_exp *e = n->data;
+				size_t slen;
 
-			t = exp_subtype(e);
-			slen = strlen(t->type->sqlname);
-			if (slen > len1)
-				len1 = slen;
-			while (t->digits >= max2) {
-				len2++;
-				max2 *= 10;
+				t = exp_subtype(e);
+				slen = strlen(t->type->sqlname);
+				if (slen > len1)
+					len1 = slen;
+				while (t->digits >= max2) {
+					len2++;
+					max2 *= 10;
+				}
+				while (t->scale >= max3) {
+					len3++;
+					max3 *= 10;
+				}
+				name = exp_relname(e);
+				if (!name && e->type == e_column && e->l)
+					name = e->l;
+				slen = name ? strlen(name) : 0;
+				if (slen > len5)
+					len5 = slen;
+				name = exp_name(e);
+				if (!name && e->type == e_column && e->r)
+					name = e->r;
+				slen = name ? strlen(name) : 0;
+				if (slen > len6)
+					len6 = slen;
 			}
-			while (t->scale >= max3) {
-				len3++;
-				max3 *= 10;
-			}
-			name = exp_relname(e);
-			if (!name && e->type == e_column && e->l)
-				name = e->l;
-			slen = name ? strlen(name) : 0;
-			if (slen > len5)
-				len5 = slen;
-			name = exp_name(e);
-			if (!name && e->type == e_column && e->r)
-				name = e->r;
-			slen = name ? strlen(name) : 0;
-			if (slen > len6)
-				len6 = slen;
 		}
-	}
-	/* calculate column widths */
-	if (c->params) {
-		unsigned int max2 = 10, max3 = 10;	/* to help calculate widths */
 
-		for (n = c->params->h; n; n = n->next) {
-			size_t slen;
+		/* calculate column widths */
+		if (c->params) {
+			unsigned int max2 = 10, max3 = 10;	/* to help calculate widths */
 
-			a = n->data;
-			t = &a->type;
-			slen = strlen(t->type->sqlname);
-			if (slen > len1)
-				len1 = slen;
-			while (t->digits >= max2) {
-				len2++;
-				max2 *= 10;
+			for (n = c->params->h; n; n = n->next) {
+				size_t slen;
+
+				a = n->data;
+				t = &a->type;
+				slen = strlen(t->type->sqlname);
+				if (slen > len1)
+					len1 = slen;
+				while (t->digits >= max2) {
+					len2++;
+					max2 *= 10;
+				}
+				while (t->scale >= max3) {
+					len3++;
+					max3 *= 10;
+				}
 			}
-			while (t->scale >= max3) {
-				len3++;
-				max3 *= 10;
-			}
-
 		}
-	}
 
-	/* write header, query type: Q_PREPARE */
-	if (mnstr_printf(out, "&5 %d %d 6 %d\n"	/* TODO: add type here: r(esult) or u(pdate) */
-			 "%% .prepare,\t.prepare,\t.prepare,\t.prepare,\t.prepare,\t.prepare # table_name\n" "%% type,\tdigits,\tscale,\tschema,\ttable,\tcolumn # name\n" "%% varchar,\tint,\tint,\tstr,\tstr,\tstr # type\n" "%% %zu,\t%d,\t%d,\t"
-			 "%zu,\t%zu,\t%zu # length\n", q->id, nrows, nrows, len1, len2, len3, len4, len5, len6) < 0) {
-		return -1;
-	}
+		/* write header, query type: Q_PREPARE */
+		if (mnstr_printf(out, "&5 %d %d 6 %d\n"	/* TODO: add type here: r(esult) or u(pdate) */
+			 	"%% .prepare,\t.prepare,\t.prepare,\t.prepare,\t.prepare,\t.prepare # table_name\n" "%% type,\tdigits,\tscale,\tschema,\ttable,\tcolumn # name\n" "%% varchar,\tint,\tint,\tstr,\tstr,\tstr # type\n" "%% %zu,\t%d,\t%d,\t"
+			 	"%zu,\t%zu,\t%zu # length\n", q->id, nrows, nrows, len1, len2, len3, len4, len5, len6) < 0) {
+			return -1;
+		}
 
-	if (r && is_project(r->op) && r->exps) {
-		for (n = r->exps->h; n; n = n->next) {
-			const char *name, *rname, *schema = NULL;
-			sql_exp *e = n->data;
+		if (r && is_project(r->op) && r->exps) {
+			for (n = r->exps->h; n; n = n->next) {
+				const char *name, *rname, *schema = NULL;
+				sql_exp *e = n->data;
 
-			t = exp_subtype(e);
-			name = exp_name(e);
-			if (!name && e->type == e_column && e->r)
-				name = e->r;
-			rname = exp_relname(e);
-			if (!rname && e->type == e_column && e->l)
-				rname = e->l;
+				t = exp_subtype(e);
+				name = exp_name(e);
+				if (!name && e->type == e_column && e->r)
+					name = e->r;
+				rname = exp_relname(e);
+				if (!rname && e->type == e_column && e->l)
+					rname = e->l;
 
-			if (mnstr_printf(out, "[ \"%s\",\t%u,\t%u,\t\"%s\",\t\"%s\",\t\"%s\"\t]\n", t->type->sqlname, t->digits, t->scale, schema ? schema : "", rname ? rname : "", name ? name : "") < 0) {
-				return -1;
+				if (mnstr_printf(out, "[ \"%s\",\t%u,\t%u,\t\"%s\",\t\"%s\",\t\"%s\"\t]\n", t->type->sqlname, t->digits, t->scale, schema ? schema : "", rname ? rname : "", name ? name : "") < 0) {
+					return -1;
+				}
 			}
 		}
 	}
@@ -1159,7 +1161,7 @@ mvc_export_prepare(mvc *c, stream *out, cq *q, str w)
 			t = &a->type;
 
 			if (t) {
-				if (mnstr_printf(out, "[ \"%s\",\t%u,\t%u,\tNULL,\tNULL,\tNULL\t]\n", t->type->sqlname, t->digits, t->scale) < 0) {
+				if (!GDKembedded() && mnstr_printf(out, "[ \"%s\",\t%u,\t%u,\tNULL,\tNULL,\tNULL\t]\n", t->type->sqlname, t->digits, t->scale) < 0) {
 					return -1;
 				}
 				/* add to the query cache parameters */
@@ -1169,7 +1171,7 @@ mvc_export_prepare(mvc *c, stream *out, cq *q, str w)
 			}
 		}
 	}
-	if (mvc_export_warning(out, w) != 1)
+	if (!GDKembedded() && mvc_export_warning(out, w) != 1)
 		return -1;
 	return 0;
 }
@@ -1440,7 +1442,7 @@ static int write_str_term(stream* s, const char* const val) {
 }
 
 // align to 8 bytes
-static char* 
+static char*
 eight_byte_align(char* ptr) {
 	return (char*) (((size_t) ptr + 7) & ~7);
 }
@@ -1564,8 +1566,8 @@ mvc_export_table_prot10(backend *b, stream *s, res_table *t, BAT *order, BUN off
 			}
 			if (row == srow) {
 				lng new_size = rowsize + 1024;
-				if (!mnstr_writeLng(s, (lng) -1) || 
-					!mnstr_writeLng(s, new_size) || 
+				if (!mnstr_writeLng(s, (lng) -1) ||
+					!mnstr_writeLng(s, new_size) ||
 					mnstr_flush(s) < 0) {
 					fres = -1;
 					goto cleanup;
@@ -1626,7 +1628,7 @@ mvc_export_table_prot10(backend *b, stream *s, res_table *t, BAT *order, BUN off
 					*((lng*)startbuf) = mnstr_swap_lng(s, buf - (startbuf + sizeof(lng)));
 				} else {
 					// for variable length strings and large fixed strings we use varints
-					// variable columns are prefixed by a length, 
+					// variable columns are prefixed by a length,
 					// but since we don't know the length yet, just skip over it for now
 					char *startbuf = buf;
 					buf += sizeof(lng);
@@ -2112,7 +2114,7 @@ mvc_export_affrows(backend *b, stream *s, lng val, str w, oid query_id, lng star
 
 	m->rowcnt = val;
 	sqlvar_set_number(find_global_var(m, mvc_bind_schema(m, "sys"), "rowcnt"), m->rowcnt);
-	if(GDKembedded()) 
+	if(GDKembedded())
 		return 0;
 	if (mnstr_write(s, "&2 ", 3, 1) != 1 ||
 	    !mvc_send_lng(s, val) ||
@@ -2148,7 +2150,6 @@ mvc_export_head_prot10(backend *b, stream *s, int res_id, int only_header, int c
 	size_t i = 0;
 	BUN count = 0;
 	res_table *t = res_tables_find(m->results, res_id);
-	BAT *order = NULL;
 	int fres = 0;
 
 	if (!t || !s) {
@@ -2158,11 +2159,7 @@ mvc_export_head_prot10(backend *b, stream *s, int res_id, int only_header, int c
 	/* tuple count */
 	if (only_header) {
 		if (t->order) {
-			order = BBPquickdesc(t->order, false);
-			if (!order)
-				return -1;
-
-			count = BATcount(order);
+			count = t->nr_rows;
 		} else
 			count = 1;
 	}
@@ -2170,8 +2167,8 @@ mvc_export_head_prot10(backend *b, stream *s, int res_id, int only_header, int c
 
 	// protocol 10 result sets start with "*\n" followed by the binary data:
 	// [tableid][queryid][rowcount][colcount][timezone]
-	if (!mnstr_writeStr(s, "*\n") || 
-		!mnstr_writeInt(s, t->id) || 
+	if (!mnstr_writeStr(s, "*\n") ||
+		!mnstr_writeInt(s, t->id) ||
 		!mnstr_writeLng(s, (lng) t->query_id) ||
 		!mnstr_writeLng(s, count) || !mnstr_writeLng(s, (lng) t->nr_cols)) {
 		fres = -1;
@@ -2310,7 +2307,6 @@ mvc_export_head(backend *b, stream *s, int res_id, int only_header, int compute_
 	int i, res = 0;
 	BUN count = 0;
 	res_table *t = res_tables_find(m->results, res_id);
-	BAT *order = NULL;
 
 	if (!s || !t)
 		return 0;
@@ -2332,13 +2328,10 @@ mvc_export_head(backend *b, stream *s, int res_id, int only_header, int compute_
 	/* tuple count */
 	if (only_header) {
 		if (t->order) {
-			order = BBPquickdesc(t->order, false);
-			if (!order)
-				return -1;
-
-			count = BATcount(order);
-		} else
+			count = t->nr_rows;
+		} else {
 			count = 1;
+		}
 	}
 	m->rowcnt = count;
 	sqlvar_set_number(find_global_var(m, mvc_bind_schema(m, "sys"), "rowcnt"), m->rowcnt);
@@ -2465,7 +2458,7 @@ mvc_export_file(backend *b, stream *s, res_table *t)
 		order = BATdescriptor(t->order);
 		if (!order)
 			return -1;
-		count = BATcount(order);
+		count = t->nr_rows;
 
 		res = mvc_export_table(b, s, t, order, 0, count, "", t->tsep, t->rsep, t->ssep, t->ns);
 		BBPunfix(order->batCacheid);
@@ -2512,8 +2505,8 @@ mvc_export_result(backend *b, stream *s, int res_id, bool header, lng starttime,
 		return -1;
 
 	count = m->reply_size;
-	if (m->reply_size != -2 && (count <= 0 || count >= BATcount(order))) {
-		count = BATcount(order);
+	if (m->reply_size != -2 && (count <= 0 || count >= t->nr_rows)) {
+		count = t->nr_rows;
 		clean = 1;
 	}
 	if (json) {
@@ -2563,11 +2556,11 @@ mvc_export_chunk(backend *b, stream *s, int res_id, BUN offset, BUN nr)
 		return -1;
 	cnt = nr;
 	if (cnt == 0)
-		cnt = BATcount(order);
-	if (offset >= BATcount(order))
+		cnt = t->nr_rows;
+	if (offset >= t->nr_rows)
 		cnt = 0;
-	if (cnt == BUN_NONE || offset + cnt > BATcount(order))
-		cnt = BATcount(order) - offset;
+	if (cnt == BUN_NONE || offset + cnt > t->nr_rows)
+		cnt = t->nr_rows - offset;
 
 	if (b->client->protocol != PROTOCOL_10) {
 		/* query type: Q_BLOCK */

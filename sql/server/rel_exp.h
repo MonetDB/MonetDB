@@ -31,7 +31,7 @@ extern comp_type range2rcompare( int r );
 extern int compare2range( int l, int r );
 
 extern sql_exp *exp_compare(sql_allocator *sa, sql_exp *l, sql_exp *r, int cmptype);
-extern sql_exp *exp_compare2(sql_allocator *sa, sql_exp *l, sql_exp *r, sql_exp *h, int cmptype);
+extern sql_exp *exp_compare2(sql_allocator *sa, sql_exp *l, sql_exp *r, sql_exp *f, int cmptype);
 extern sql_exp *exp_filter(sql_allocator *sa, list *l, list *r, sql_subfunc *f, int anti);
 extern sql_exp *exp_or(sql_allocator *sa, list *l, list *r, int anti);
 extern sql_exp *exp_in(sql_allocator *sa, sql_exp *l, list *r, int cmptype);
@@ -45,7 +45,7 @@ extern str number2name(str s, int len, int i);
 sql_export sql_exp *exp_op(sql_allocator *sa, list *l, sql_subfunc *f );
 extern sql_exp *exp_rank_op(sql_allocator *sa, list *largs, list *gbe, list *obe, sql_subfunc *f );
 
-#define append(l,v) list_append(l,v) 
+#define append(l,v) list_append(l,v)
 #define exp_unop(sa,l,f) \
 	exp_op(sa, append(new_exp_list(sa),l), f)
 #define exp_binop(sa,l,r,f) \
@@ -59,7 +59,7 @@ extern sql_exp *exp_aggr(sql_allocator *sa, list *l, sql_subfunc *a, int distinc
 	exp_aggr(sa, append(new_exp_list(sa), e), a, d, n, c, hn)
 extern sql_exp * exp_atom(sql_allocator *sa, atom *a);
 extern sql_exp * exp_atom_max(sql_allocator *sa, sql_subtype *tpe);
-extern sql_exp * exp_atom_bool(sql_allocator *sa, int b); 
+extern sql_exp * exp_atom_bool(sql_allocator *sa, int b);
 extern sql_exp * exp_atom_bte(sql_allocator *sa, bte i);
 extern sql_exp * exp_atom_sht(sql_allocator *sa, sht i);
 extern sql_exp * exp_atom_int(sql_allocator *sa, int i);

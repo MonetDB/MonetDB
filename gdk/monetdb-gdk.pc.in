@@ -4,15 +4,10 @@
 #
 # Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
 
-prefix=@CMAKE_INSTALL_PREFIX@
-exec_prefix=${exec_prefix}
-libdir=${libdir}
-includedir=${includedir}
-
 Name: monetdb-gdk
 Description: MonetDB GDK libary
 Version: @MONETDB_VERSION@
 Requires: monetdb-stream
 
-Libs: -L${libdir} -lbat -lm @CMAKE_THREAD_LIBS_INIT@ @CMAKE_DL_LIBS@
-Cflags: -I${includedir}/monetdb
+Libs: -L@CMAKE_INSTALL_FULL_LIBDIR@ -lbat -lm @CMAKE_THREAD_LIBS_INIT@ -l@CMAKE_DL_LIBS@
+Cflags: -I@CMAKE_INSTALL_FULL_INCLUDEDIR@/monetdb

@@ -10,10 +10,44 @@
  * (c) 2013 Martin Kersten
  */
 #include "monetdb_config.h"
-#include "json.h"
+#include "gdk.h"
 #include "mal.h"
+#include "mal_client.h"
 #include "mal_instruction.h"
+#include "mal_exception.h"
 #include "mal_interpreter.h"
+
+typedef enum JSONkind {
+  JSON_OBJECT=1,
+  JSON_ARRAY,
+  JSON_ELEMENT,
+  JSON_VALUE,
+  JSON_STRING,
+  JSON_NUMBER,
+  JSON_BOOL,
+  JSON_NULL
+} JSONkind;
+
+/* The JSON index structure is meant for short lived versions */
+typedef struct JSONterm {
+  JSONkind kind;
+  char *name; /* exclude the quotes */
+  size_t namelen;
+  const char *value; /* start of string rep */
+  size_t valuelen;
+  int child, next, tail; /* next offsets allow you to walk array/object chains
+													and append quickly */
+  /* An array or object item has a number of components */
+} JSONterm;
+
+typedef struct JSON{
+    JSONterm *elm;
+    str error;
+    int size;
+    int free;
+} JSON;
+
+typedef str json;
 
 // just validate the string according to www.json.org
 // A straightforward recursive solution
@@ -103,9 +137,10 @@ JSONfree(JSON *c)
 	GDKfree(c);
 }
 
-ssize_t
-JSONfromString(const char *src, size_t *len, json *j, bool external)
+static ssize_t
+JSONfromString(const char *src, size_t *len, void **J, bool external)
 {
+	json *j = (json *) J;
 	size_t slen = strlen(src);
 	JSON *jt;
 
@@ -139,9 +174,10 @@ JSONfromString(const char *src, size_t *len, json *j, bool external)
 	return (ssize_t) slen;
 }
 
-ssize_t
-JSONtoString(str *s, size_t *len, const char *src, bool external)
+static ssize_t
+JSONtoString(str *s, size_t *len, const void *SRC, bool external)
 {
+	const char *src = SRC;
 	size_t cnt;
 	const char *c;
 	char *dst;
@@ -269,7 +305,7 @@ JSONdumpInternal(stream *fd, JSON *jt, int depth)
 	}
 }
 
-str
+static str
 JSONdump(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	(void) mb;
@@ -283,7 +319,7 @@ JSONdump(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	return MAL_SUCCEED;
 }
 
-str
+static str
 JSONjson2str(str *ret, json *j)
 {
 	char *s = *j, *c;
@@ -299,7 +335,7 @@ JSONjson2str(str *ret, json *j)
 	return MAL_SUCCEED;
 }
 
-str
+static str
 JSONstr2json(json *ret, str *j)
 {
 	JSON *jt = JSONparse(*j);
@@ -311,7 +347,7 @@ JSONstr2json(json *ret, str *j)
 	return MAL_SUCCEED;
 }
 
-str
+static str
 JSONisvalid(bit *ret, json *j)
 {
 	if (strNil(*j)) {
@@ -326,7 +362,7 @@ JSONisvalid(bit *ret, json *j)
 	return MAL_SUCCEED;
 }
 
-str
+static str
 JSONisobject(bit *ret, json *js)
 {
 	if (strNil(*js)) {
@@ -340,7 +376,7 @@ JSONisobject(bit *ret, json *js)
 	return MAL_SUCCEED;
 }
 
-str
+static str
 JSONisarray(bit *ret, json *js)
 {
 	if (strNil(*js)) {
@@ -354,7 +390,7 @@ JSONisarray(bit *ret, json *js)
 	return MAL_SUCCEED;
 }
 
-str
+static str
 JSONprelude(void *ret)
 {
 	(void) ret;
@@ -1037,7 +1073,7 @@ JSONparse(const char *j)
 	return jt;
 }
 
-str
+static str
 JSONlength(int *ret, json *j)
 {
 	int i, cnt = 0;
@@ -1059,56 +1095,56 @@ JSONfilterArrayDefault(json *ret, json *js, lng index, str other)
 	return JSONfilterInternal(ret, js, &s, other);
 }
 
-str
+static str
 JSONfilterArray_bte(json *ret, json *js, bte *index)
 {
 	return JSONfilterArrayDefault(ret, js, (lng) *index, 0);
 }
 
-str
+static str
 JSONfilterArrayDefault_bte(json *ret, json *js, bte *index, str *other)
 {
 	return JSONfilterArrayDefault(ret, js, (lng) *index, *other);
 }
 
-str
+static str
 JSONfilterArray_sht(json *ret, json *js, sht *index)
 {
 	return JSONfilterArrayDefault(ret, js, (lng) *index, 0);
 }
 
-str
+static str
 JSONfilterArrayDefault_sht(json *ret, json *js, sht *index, str *other)
 {
 	return JSONfilterArrayDefault(ret, js, (lng) *index, *other);
 }
 
-str
+static str
 JSONfilterArray_int(json *ret, json *js, int *index)
 {
 	return JSONfilterArrayDefault(ret, js, (lng) *index, 0);
 }
 
-str
+static str
 JSONfilterArrayDefault_int(json *ret, json *js, int *index, str *other)
 {
 	return JSONfilterArrayDefault(ret, js, (lng) *index, *other);
 }
 
-str
+static str
 JSONfilterArray_lng(json *ret, json *js, lng *index)
 {
 	return JSONfilterArrayDefault(ret, js, (lng) *index, 0);
 }
 
-str
+static str
 JSONfilterArrayDefault_lng(json *ret, json *js, lng *index, str *other)
 {
 	return JSONfilterArrayDefault(ret, js, (lng) *index, *other);
 }
 
 #ifdef HAVE_HGE
-str
+static str
 JSONfilterArray_hge(json *ret, json *js, hge *index)
 {
 	if (*index < (hge) GDK_lng_min || *index > (hge) GDK_lng_max)
@@ -1116,7 +1152,7 @@ JSONfilterArray_hge(json *ret, json *js, hge *index)
 	return JSONfilterArrayDefault(ret, js, (lng) *index, 0);
 }
 
-str
+static str
 JSONfilterArrayDefault_hge(json *ret, json *js, hge *index, str *other)
 {
 	if (*index < (hge) GDK_lng_min || *index > (hge) GDK_lng_max)
@@ -1125,7 +1161,7 @@ JSONfilterArrayDefault_hge(json *ret, json *js, hge *index, str *other)
 }
 #endif
 
-str
+static str
 JSONfilter(json *ret, json *js, str *expr)
 {
 	return JSONfilterInternal(ret, js, expr, 0);
@@ -1185,7 +1221,7 @@ JSONplaintext(char *r, size_t *l, JSON *jt, int idx, char sep)
 	return r;
 }
 
-str
+static str
 JSONjson2text(str *ret, json *js)
 {
 	JSON *jt;
@@ -1210,7 +1246,7 @@ JSONjson2text(str *ret, json *js)
 	return MAL_SUCCEED;
 }
 
-str
+static str
 JSONjson2textSeparator(str *ret, json *js, str *sep)
 {
 	JSON *jt;
@@ -1297,7 +1333,7 @@ strtol_wrapper(void **ret, const char *nptr, size_t len) {
 	}
 }
 
-str
+static str
 JSONjson2number(dbl *ret, json *js)
 {
 	dbl val = 0;
@@ -1314,7 +1350,7 @@ JSONjson2number(dbl *ret, json *js)
 	return MAL_SUCCEED;
 }
 
-str
+static str
 JSONjson2integer(lng *ret, json *js)
 {
 	lng val = 0;
@@ -1456,7 +1492,7 @@ JSONunfoldInternal(bat *od, bat *key, bat *val, json *js)
 
 
 
-str
+static str
 JSONkeyTable(bat *ret, json *js)
 {
 	BAT *bn;
@@ -1491,7 +1527,7 @@ JSONkeyTable(bat *ret, json *js)
 	return MAL_SUCCEED;
 }
 
-str
+static str
 JSONkeyArray(json *ret, json *js)
 {
 	char *result = NULL;
@@ -1511,6 +1547,13 @@ JSONkeyArray(json *ret, json *js)
 			}
 			if (jt->elm[i].valuelen)
 				strncpy(r, jt->elm[i].value - 1, jt->elm[i].valuelen + 2);
+			else {
+				r = GDKstrdup("\"\"");
+				if(r == NULL) {
+					JSONfree(jt);
+					goto memfail;
+				}
+			}
 			result = JSONglue(result, r, ',');
 			if (result == NULL) {
 				JSONfree(jt);
@@ -1543,7 +1586,7 @@ JSONkeyArray(json *ret, json *js)
 }
 
 
-str
+static str
 JSONvalueTable(bat *ret, json *js)
 {
 	BAT *bn;
@@ -1581,7 +1624,7 @@ JSONvalueTable(bat *ret, json *js)
 	return MAL_SUCCEED;
 }
 
-str
+static str
 JSONvalueArray(json *ret, json *js)
 {
 	char *result = NULL;
@@ -1725,7 +1768,7 @@ JSONrenderRowObject(BAT **bl, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, BUN idx
 	return row;
 }
 
-str
+static str
 JSONrenderobject(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	BAT **bl;
@@ -1841,7 +1884,7 @@ JSONrenderRowArray(BAT **bl, MalBlkPtr mb, InstrPtr pci, BUN idx)
 	return NULL;
 }
 
-str
+static str
 JSONrenderarray(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	BAT **bl;
@@ -2026,7 +2069,7 @@ JSONfoldKeyValue(str *ret, const bat *id, const bat *key, const bat *values)
 	throw(MAL, "json.fold", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 }
 
-str
+static str
 JSONunfold(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	bat *id = 0, *key = 0, *val = 0;
@@ -2053,7 +2096,7 @@ JSONunfold(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	return JSONunfoldInternal(id, key, val, js);
 }
 
-str
+static str
 JSONfold(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	bat *id = 0, *key = 0, *val = 0;
@@ -2084,27 +2127,7 @@ JSONfold(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	return JSONfoldKeyValue(ret, id, key, val);
 }
 
-str
-JSONtextString(str *ret, bat *bid)
-{
-	(void) ret;
-	(void) bid;
-	throw(MAL, "json.text", SQLSTATE(0A000) PROGRAM_NYI);
-}
-
-
-str
-JSONtextGrouped(bat *ret, bat *bid, bat *gid, bat *ext, bit *flg)
-{
-	(void) ret;
-	(void) bid;
-	(void) gid;
-	(void) ext;
-	(void) flg;
-	throw(MAL, "json.text", SQLSTATE(0A000) PROGRAM_NYI);
-}
-
-str
+static str
 JSONgroupStr(str *ret, const bat *bid)
 {
 	BAT *b;
@@ -2498,7 +2521,7 @@ JSONjsonaggr(BAT **bnp, BAT *b, BAT *g, BAT *e, BAT *s, int skip_nils)
 	goto out;
 }
 
-str
+static str
 JSONsubjsoncand(bat *retval, bat *bid, bat *gid, bat *eid, bat *sid, bit *skip_nils)
 {
 	BAT *b, *g, *e, *s, *bn = NULL;
@@ -2532,7 +2555,7 @@ JSONsubjsoncand(bat *retval, bat *bid, bat *gid, bat *eid, bat *sid, bit *skip_n
 	return MAL_SUCCEED;
 }
 
-str
+static str
 JSONsubjson(bat *retval, bat *bid, bat *gid, bat *eid, bit *skip_nils)
 {
 	return JSONsubjsoncand(retval, bid, gid, eid, NULL, skip_nils);
@@ -2540,7 +2563,7 @@ JSONsubjson(bat *retval, bat *bid, bat *gid, bat *eid, bit *skip_nils)
 
 #include "mel.h"
 static mel_atom json_init_atoms[] = {
- { .name="json", .basetype="str", .fromstr=(fptr)&JSONfromString, .tostr=(fptr)&JSONtoString, },  { .cmp=NULL } 
+ { .name="json", .basetype="str", .fromstr=JSONfromString, .tostr=JSONtoString, },  { .cmp=NULL }
 };
 static mel_func json_init_funcs[] = {
  command("json", "new", JSONstr2json, false, "Convert string to its JSON. Dealing with escape characters", args(1,2, arg("",json),arg("j",str))),
@@ -2561,6 +2584,10 @@ static mel_func json_init_funcs[] = {
  command("json", "filter", JSONfilterArrayDefault_int, false, "", args(1,4, arg("",json),arg("name",json),arg("idx",int),arg("other",str))),
  command("json", "filter", JSONfilterArray_lng, false, "", args(1,3, arg("",json),arg("name",json),arg("idx",lng))),
  command("json", "filter", JSONfilterArrayDefault_lng, false, "Extract a single array element", args(1,4, arg("",json),arg("name",json),arg("idx",lng),arg("other",str))),
+#ifdef HAVE_HGE
+ command("json", "filter", JSONfilterArray_hge, false, "", args(1,3, arg("",json),arg("name",json),arg("idx",hge))),
+ command("json", "filter", JSONfilterArrayDefault_hge, false, "Extract a single array element", args(1,4, arg("",json),arg("name",json),arg("idx",hge),arg("other",str))),
+#endif
  command("json", "isvalid", JSONisvalid, false, "Validate the string as a valid JSON document", args(1,2, arg("",bit),arg("val",json))),
  command("json", "isobject", JSONisobject, false, "Validate the string as a valid JSON object", args(1,2, arg("",bit),arg("val",json))),
  command("json", "isarray", JSONisarray, false, "Validate the string as a valid JSON array", args(1,2, arg("",bit),arg("val",json))),
@@ -2577,8 +2604,6 @@ static mel_func json_init_funcs[] = {
  command("json", "valuearray", JSONvalueArray, false, "Expands the outermost JSON object values into a JSON value array.", args(1,2, arg("",json),arg("val",json))),
  command("json", "keys", JSONkeyTable, false, "Expands the outermost JSON object names.", args(1,2, batarg("",str),arg("val",json))),
  command("json", "values", JSONvalueTable, false, "Expands the outermost JSON values.", args(1,2, batarg("",json),arg("val",json))),
- command("json", "output", JSONtextString, false, "Pack the values into a single json structure", args(1,2, arg("",str),batargany("b",1))),
- command("json", "suboutput", JSONtextGrouped, false, "Pack the values into a json structure", args(1,5, batarg("",str),batargany("b",1),batarg("gid",oid),batarg("ext",lng),arg("flg",bit))),
  command("json", "prelude", JSONprelude, false, "", noargs),
  pattern("json", "renderobject", JSONrenderobject, false, "", args(1,2, arg("",json),varargany("val",0))),
  pattern("json", "renderarray", JSONrenderarray, false, "", args(1,2, arg("",json),varargany("val",0))),

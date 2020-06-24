@@ -13,16 +13,17 @@
 #include "monetdb_config.h"
 #include "gdk.h"
 #include "mal_exception.h"
-#include "json_util.h"
 
-str
+typedef str json;
+
+static str
 JSONresultSet(json *res, bat *uuid, bat *rev, bat *js)
 {
 	BAT *bu, *br, *bj;
 	char *result;
 	size_t sz, len=0;
 
-	if ((bu = BATdescriptor(*uuid)) == NULL) 
+	if ((bu = BATdescriptor(*uuid)) == NULL)
 		throw(MAL, "json.resultset", INTERNAL_BAT_ACCESS);
 	if ((br = BATdescriptor(*rev)) == NULL) {
 		BBPunfix(bu->batCacheid);
@@ -59,7 +60,6 @@ JSONresultSet(json *res, bat *uuid, bat *rev, bat *js)
 
 }
 
-#define TYPE_uuid 19
 #include "mel.h"
 mel_func json_util_init_funcs[] = {
  command("json", "resultSet", JSONresultSet, false, "Converts the json store into a single json string:", args(1,4, arg("",json),batarg("u",uuid),batarg("rev",lng),batarg("js",json))),

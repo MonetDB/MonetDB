@@ -28,23 +28,26 @@ exps_simplify_exp(mvc *sql, list *exps, int *changes)
 	for (node *n=exps->h; n && !needed; n = n->next) {
 		sql_exp *e = n->data;
 
-		needed = (exp_is_true(sql, e) || exp_is_false(sql, e) || (is_compare(e->type) && e->flag == cmp_or)); 
+		needed = (exp_is_true(sql, e) || exp_is_false(sql, e) || (is_compare(e->type) && e->flag == cmp_or));
 	}
+	/* if there's only one expression and it is false, we have to keep it */
+	if (list_length(exps) == 1 && exp_is_false(sql, exps->h->data))
+		return exps;
 	if (needed) {
 		list *nexps = sa_list(sql->sa);
 		sql->caching = 0;
 		for (node *n=exps->h; n; n = n->next) {
 			sql_exp *e = n->data;
-	
+
 			/* TRUE or X -> TRUE
 		 	* FALSE or X -> X */
 			if (is_compare(e->type) && e->flag == cmp_or) {
 				list *l = e->l = exps_simplify_exp(sql, e->l, changes);
-				list *r = e->r = exps_simplify_exp(sql, e->r, changes); 
+				list *r = e->r = exps_simplify_exp(sql, e->r, changes);
 
 				if (list_length(l) == 1) {
-					sql_exp *ie = l->h->data; 
-	
+					sql_exp *ie = l->h->data;
+
 					if (exp_is_true(sql, ie)) {
 						(*changes)++;
 						continue;
@@ -58,8 +61,8 @@ exps_simplify_exp(mvc *sql, list *exps, int *changes)
 					continue;
 				}
 				if (list_length(r) == 1) {
-					sql_exp *ie = r->h->data; 
-	
+					sql_exp *ie = r->h->data;
+
 					if (exp_is_true(sql, ie)) {
 						(*changes)++;
 						continue;
@@ -111,7 +114,7 @@ rewrite_simplify_exp(mvc *sql, sql_rel *rel, sql_exp *e, int depth, int *changes
 		if (is_func(ie->type) && list_length(ie->l) == 1 && is_not_func(sf)) {
 			args = ie->l;
 
-			ie = args->h->data;	
+			ie = args->h->data;
 			if (exp_name(e))
 				exp_prop_alias(sql->sa, ie, e);
 			(*changes)++;
@@ -133,11 +136,11 @@ rewrite_simplify_exp(mvc *sql, sql_rel *rel, sql_exp *e, int depth, int *changes
 		 * FALSE or X -> X */
 		if (is_compare(e->type) && e->flag == cmp_or) {
 			list *l = e->l = exps_simplify_exp(sql, e->l, changes);
-			list *r = e->r = exps_simplify_exp(sql, e->r, changes); 
+			list *r = e->r = exps_simplify_exp(sql, e->r, changes);
 
 			sql->caching = 0;
 			if (list_length(l) == 1) {
-				sql_exp *ie = l->h->data; 
+				sql_exp *ie = l->h->data;
 
 				if (exp_is_true(sql, ie)) {
 					(*changes)++;
@@ -151,7 +154,7 @@ rewrite_simplify_exp(mvc *sql, sql_rel *rel, sql_exp *e, int depth, int *changes
 				return exp_atom_bool(sql->sa, 1);
 			}
 			if (list_length(r) == 1) {
-				sql_exp *ie = r->h->data; 
+				sql_exp *ie = r->h->data;
 
 				if (exp_is_true(sql, ie)) {
 					(*changes)++;
@@ -192,7 +195,7 @@ rel_remove_empty_select(mvc *sql, sql_rel *rel, int *changes)
 			l->l = NULL;
 			rel_destroy(l);
 			(*changes)++;
-		} 
+		}
 	}
 	if ((is_join(rel->op) || is_semi(rel->op) || is_set(rel->op)) && rel->r) {
 		sql_rel *r = rel->r;
@@ -202,15 +205,15 @@ rel_remove_empty_select(mvc *sql, sql_rel *rel, int *changes)
 			rel_destroy(r);
 			(*changes)++;
 		}
-	} 
-	if (is_join(rel->op) && list_empty(rel->exps)) 
+	}
+	if (is_join(rel->op) && list_empty(rel->exps))
 		rel->exps = NULL; /* crossproduct */
 	return rel;
 }
 
-/* push the expression down, ie translate colum references 
-	from relation f into expression of relation t 
-*/ 
+/* push the expression down, ie translate colum references
+	from relation f into expression of relation t
+*/
 
 static sql_exp * _exp_push_down(mvc *sql, sql_exp *e, sql_rel *f, sql_rel *t);
 
@@ -224,7 +227,7 @@ exps_push_down(mvc *sql, list *exps, sql_rel *f, sql_rel *t)
 		sql_exp *arg = n->data, *narg = NULL;
 
 		narg = _exp_push_down(sql, arg, f, t);
-		if (!narg) 
+		if (!narg)
 			return NULL;
 		narg = exp_propagate(sql->sa, narg, arg);
 		append(nl, narg);
@@ -233,7 +236,7 @@ exps_push_down(mvc *sql, list *exps, sql_rel *f, sql_rel *t)
 }
 
 static sql_exp *
-_exp_push_down(mvc *sql, sql_exp *e, sql_rel *f, sql_rel *t) 
+_exp_push_down(mvc *sql, sql_exp *e, sql_rel *f, sql_rel *t)
 {
 	sql_exp *oe = e;
 	sql_exp *ne = NULL, *l, *r, *r2;
@@ -245,7 +248,7 @@ _exp_push_down(mvc *sql, sql_exp *e, sql_rel *f, sql_rel *t)
 
 			return list_fetch(t->exps, p);
 		}
-		if (e->l) { 
+		if (e->l) {
 			ne = rel_bind_column2(sql, f, e->l, e->r, 0);
 			/* if relation name matches expressions relation name, find column based on column name alone */
 		}
@@ -262,11 +265,11 @@ _exp_push_down(mvc *sql, sql_exp *e, sql_rel *f, sql_rel *t)
 		sql->errstr[0] = 0;
 		if (e && oe)
 			e = exp_propagate(sql->sa, e, oe);
-		/* if the upper exp was an alias, keep this */ 
-		if (e && exp_relname(ne)) 
+		/* if the upper exp was an alias, keep this */
+		if (e && exp_relname(ne))
 			exp_setname(sql->sa, e, exp_relname(ne), exp_name(ne));
 		return e;
-	case e_cmp: 
+	case e_cmp:
 		if (e->flag == cmp_or || e->flag == cmp_filter) {
 			list *l, *r;
 
@@ -274,9 +277,9 @@ _exp_push_down(mvc *sql, sql_exp *e, sql_rel *f, sql_rel *t)
 			if (!l)
 				return NULL;
 			r = exps_push_down(sql, e->r, f, t);
-			if (!r) 
+			if (!r)
 				return NULL;
-			if (e->flag == cmp_filter) 
+			if (e->flag == cmp_filter)
 				return exp_filter(sql->sa, l, r, e->f, is_anti(e));
 			return exp_or(sql->sa, l, r, is_anti(e));
 		} else if (e->flag == cmp_in || e->flag == cmp_notin) {
@@ -307,7 +310,7 @@ _exp_push_down(mvc *sql, sql_exp *e, sql_rel *f, sql_rel *t)
 					ne = exp_compare(sql->sa, l, r, e->flag);
 			}
 		}
-		if (!ne) 
+		if (!ne)
 			return NULL;
 		return exp_propagate(sql->sa, ne, e);
 	case e_convert:
@@ -328,9 +331,9 @@ _exp_push_down(mvc *sql, sql_exp *e, sql_rel *f, sql_rel *t)
 		}
 		if (e->type == e_func)
 			return exp_op(sql->sa, nl, e->f);
-		else 
+		else
 			return exp_aggr(sql->sa, nl, e->f, need_distinct(e), need_no_nil(e), e->card, has_nil(e));
-	}	
+	}
 	case e_atom:
 	case e_psm:
 		return e;

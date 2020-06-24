@@ -7,15 +7,14 @@
 #]]
 
 set(sql_public_headers
-  $<BUILD_INTERFACE:$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>/sql_import.h>
-  $<INSTALL_INTERFACE:$<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}/monetdb>/sql_import.h>)
+  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/sql_import.h>
+  $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}/monetdb/sql_import.h>)
 
 #add_library(sql MODULE)
 add_library(sql SHARED)
 
 set(include_sql_files
   09_like
-  10_math
   12_url
   13_date
   14_inet
@@ -133,6 +132,7 @@ target_compile_definitions(sql
 
 install(TARGETS
   sql
+  EXPORT sqlTargets
   RUNTIME
   DESTINATION ${CMAKE_INSTALL_LIBDIR}/monetdb5
   LIBRARY
@@ -155,3 +155,9 @@ target_include_directories(sqlembedded
   INTERFACE
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
   $<INSTALL_INTERFACE:${INCLUDEDIR}/monetdb>)
+
+install(EXPORT sqlTargets
+  FILE sqlTargets.cmake
+  NAMESPACE MonetDB::
+  DESTINATION ${EXPORT_TARGET_PATH}
+  COMPONENT monetdbdev)

@@ -38,7 +38,7 @@ mal_startup(void)
 	return 0;
 }
 
-/* all MAL related functions register themselves 
+/* all MAL related functions register themselves
 * the order in which these registrations happen is significant
 * because there may be dependencies among the definitions.
 * For example, you better know the atoms before you use them
@@ -68,8 +68,8 @@ mal_module(str name, mel_atom *atoms, mel_func *funcs)
 	mel_modules++;
 }
 
-static void 
-initModule(Client c, char *name) 
+static void
+initModule(Client c, char *name)
 {
 	if (!getName(name))
 		return;
@@ -117,43 +117,43 @@ addAtom( mel_atom *atoms)
 			BATatoms[i].linear = false;
 		}
 		if (atoms->del)
-			BATatoms[i].atomDel = (void (*)(Heap *, var_t *))atoms->del;
+			BATatoms[i].atomDel = atoms->del;
 		if (atoms->cmp) {
-			BATatoms[i].atomCmp = (int (*)(const void *, const void *))atoms->cmp;
+			BATatoms[i].atomCmp = atoms->cmp;
 			BATatoms[i].linear = true;
 		}
 		if (atoms->fromstr)
-			BATatoms[i].atomFromStr = (ssize_t (*)(const char *, size_t *, ptr *, bool))atoms->fromstr;
+			BATatoms[i].atomFromStr = atoms->fromstr;
 		if (atoms->tostr)
-			BATatoms[i].atomToStr = (ssize_t (*)(str *, size_t *, const void *, bool))atoms->tostr;
+			BATatoms[i].atomToStr = atoms->tostr;
 		if (atoms->fix)
-			BATatoms[i].atomFix = (gdk_return (*)(const void *))atoms->fix;
+			BATatoms[i].atomFix = atoms->fix;
 		if (atoms->unfix)
-			BATatoms[i].atomUnfix = (gdk_return (*)(const void *))atoms->unfix;
+			BATatoms[i].atomUnfix = atoms->unfix;
 		if (atoms->heap) {
 			BATatoms[i].size = sizeof(var_t);
 			assert_shift_width(ATOMelmshift(ATOMsize(i)), ATOMsize(i));
-			BATatoms[i].atomHeap = (void (*)(Heap *, size_t))atoms->heap;
+			BATatoms[i].atomHeap = atoms->heap;
 		}
 		if (atoms->hash)
-			BATatoms[i].atomHash = (BUN (*)(const void *))atoms->hash;
+			BATatoms[i].atomHash = atoms->hash;
 		if (atoms->length)
-			BATatoms[i].atomLen = (size_t (*)(const void *))atoms->length;
+			BATatoms[i].atomLen = atoms->length;
 		if (atoms->null) {
-			const void *atmnull = ((const void *(*)(void))atoms->null)();
+			const void *atmnull = (*atoms->null)();
 
 			BATatoms[i].atomNull = atmnull;
 		}
 		if (atoms->nequal)
-			BATatoms[i].atomCmp = (int (*)(const void *, const void *))atoms->nequal;
+			BATatoms[i].atomCmp = atoms->nequal;
 		if (atoms->put)
-			BATatoms[i].atomPut = (var_t (*)(Heap *, var_t *, const void *))atoms->put;
+			BATatoms[i].atomPut = atoms->put;
 		if (atoms->storage)
-			BATatoms[i].storage = (*(int (*)(void))atoms->storage)();
+			BATatoms[i].storage = (*atoms->storage)();
 		if (atoms->read)
-			BATatoms[i].atomRead = (void *(*)(void *, stream *, size_t))atoms->read;
+			BATatoms[i].atomRead = atoms->read;
 		if (atoms->write)
-			BATatoms[i].atomWrite = (gdk_return (*)(const void *, stream *, size_t))atoms->write;
+			BATatoms[i].atomWrite = atoms->write;
 	}
 	return MAL_SUCCEED;
 }
@@ -227,9 +227,9 @@ addFunctions(mel_func *fcn){
 		sig->token = fcn->command?COMMANDsymbol:PATTERNsymbol;
 		sig->fcn = (MALfcn)fcn->imp;
 		if( fcn->unsafe)
-			mb->unsafeProp = 1; 
+			mb->unsafeProp = 1;
 		/* add the return variables */
-		if(fcn->retc == 0){ 
+		if(fcn->retc == 0){
 			int idx = newTmpVariable(mb, TYPE_void);
 			sig = pushReturn(mb, sig, idx);
 			if (sig == NULL)
@@ -302,7 +302,7 @@ makeFuncArgument(MalBlkPtr mb, mel_func_arg *a)
 	return newTmpVariable(mb, tpe);
 }
 
-int 
+int
 melFunction(bool command, char *mod, char *fcn, fptr imp, char *fname, bool unsafe, char *comment, int retc, int argc, ... )
 {
 	int i, idx;
@@ -337,9 +337,9 @@ melFunction(bool command, char *mod, char *fcn, fptr imp, char *fname, bool unsa
 	sig->token = command ? COMMANDsymbol:PATTERNsymbol;
 	sig->fcn = (MALfcn)imp;
 	if (unsafe)
-		mb->unsafeProp = 1; 
+		mb->unsafeProp = 1;
 	/* add the return variables */
-	if(retc == 0) { 
+	if(retc == 0) {
 		idx = newTmpVariable(mb, TYPE_void);
 		sig = pushReturn(mb, sig, idx);
 		if (sig == NULL)
@@ -416,7 +416,7 @@ malPrelude(Client c, int listing, int embedded)
                                	return msg;
 
 			/* skip sql should be last to startup and mapi in the embedded version */
-			if (strcmp(mel_module_name[i], "sql") == 0 || (embedded && strcmp(mel_module_name[i], "mapi") == 0)) 
+			if (strcmp(mel_module_name[i], "sql") == 0 || (embedded && strcmp(mel_module_name[i], "mapi") == 0))
 				continue;
 			if (!mel_module_inits[i])
 				initModule(c, mel_module_name[i]);
@@ -426,7 +426,7 @@ malPrelude(Client c, int listing, int embedded)
 			if (msg)
 				return msg;
 			/* skip sql should be last to startup and mapi in the embedded version */
-			if (strcmp(mel_module_name[i], "sql") == 0 || (embedded && strcmp(mel_module_name[i], "mapi") == 0)) 
+			if (strcmp(mel_module_name[i], "sql") == 0 || (embedded && strcmp(mel_module_name[i], "mapi") == 0))
 				continue;
 			initModule(c, mel_module_name[i]);
 		}
@@ -439,7 +439,7 @@ malIncludeModules(Client c, char *modules[], int listing, int embedded)
 {
 	int i;
 	str msg;
-	
+
 	for(i = 0; modules[i]; i++) {
 		/* load library */
 		if (!malLibraryEnabled(modules[i]))

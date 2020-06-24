@@ -118,7 +118,7 @@ _GDKtracer_init_basic_adptr(void)
 	}
 
 	active_tracer = fopen(file_name, "a");
-	
+
 	if (active_tracer == NULL) {
 		GDK_TRACER_EXCEPTION("Failed to open %s: %s\n", file_name,
 				     GDKstrerror(errno, (char[64]){0}, 64));
@@ -243,7 +243,7 @@ GDKtracer_reinit_basic(int sig)
 {
 	(void) sig;
 
-	// GDKtracer needs to reopen the file only in 
+	// GDKtracer needs to reopen the file only in
 	// case the adapter is BASIC
 	if ((adapter_t) ATOMIC_GET(&cur_adapter) != BASIC)
 		return;
@@ -407,6 +407,9 @@ GDKtracer_log(const char *file, const char *func, int lineno,
 	      const char *syserr,
 	      const char *fmt, ...)
 {
+	if ((adapter_t) ATOMIC_GET(&cur_adapter) == MBEDDED)
+		return;
+
 	int bytes_written;
 	char buffer[512];	/* should be plenty big enough for a message */
 	va_list va;
@@ -519,7 +522,7 @@ GDKtracer_fill_comp_info(BAT *id, BAT *component, BAT *log_level)
 		if (BUNappend(component, component_str[i], false) != GDK_SUCCEED)
 			return GDK_FAIL;
 
-		if (BUNappend(log_level, level_str[lvl_per_component[i]], false) != GDK_SUCCEED) 
+		if (BUNappend(log_level, level_str[lvl_per_component[i]], false) != GDK_SUCCEED)
 			return GDK_FAIL;
 	}
 

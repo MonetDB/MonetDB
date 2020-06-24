@@ -13,7 +13,6 @@
 
 #include "monetdb_config.h"
 #include "opt_prelude.h"
-#include "algebra.h"
 #include "generator.h"
 #include "gdk_time.h"
 #include <math.h>
@@ -134,7 +133,7 @@ VLTgenerator_table_(BAT **result, Client cntxt, MalBlkPtr mb, MalStkPtr stk, Ins
 				      SQLSTATE(42000) "Illegal generator expression range");
 			f = *getArgReference_TYPE(stk, pci, 1, timestamp);
 			l = *getArgReference_TYPE(stk, pci, 2, timestamp);
-			if ( pci->argc == 3) 
+			if ( pci->argc == 3)
 					throw(MAL,"generator.table", SQLSTATE(42000) "Timestamp step missing");
 			s = *getArgReference_lng(stk, pci, 3);
 			if (s == 0 ||
@@ -347,13 +346,13 @@ VLTgenerator_subselect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 			tsf = *getArgReference_TYPE(stk, p, 1, timestamp);
 			tsl = *getArgReference_TYPE(stk, p, 2, timestamp);
-			if ( p->argc == 3) 
+			if ( p->argc == 3)
 				throw(MAL,"generator.table", SQLSTATE(42000) "Timestamp step missing");
 			tss = *getArgReference_lng(stk, p, 3);
-			if ( tss == 0 || 
+			if ( tss == 0 ||
 				is_timestamp_nil(tsf) || is_timestamp_nil(tsl) ||
 				 (tss > 0 && tsf > tsl ) ||
-				 (tss < 0 && tsf < tsl ) 
+				 (tss < 0 && tsf < tsl )
 				)
 				throw(MAL, "generator.select",  SQLSTATE(42000) "Illegal generator range");
 
@@ -557,13 +556,13 @@ str VLTgenerator_thetasubselect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, Instr
 			if( cand == NULL)
 				throw(MAL,"generator.select", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 			canditer_init(&ci, NULL, cand);
-		} 
+		}
 		idx = 3;
 	} else idx = 2;
 	oper= *getArgReference_str(stk,pci,idx+1);
 
 	// check the step direction
-	
+
 	switch( tpe =getArgType(mb,pci,idx)){
 	case TYPE_bte: VLTthetasubselect(bte,abs);break;
 	case TYPE_sht: VLTthetasubselect(sht,abs);break;
@@ -589,9 +588,9 @@ str VLTgenerator_thetasubselect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, Instr
 				throw(MAL,"generator.table", SQLSTATE(42000) "Timestamp step missing");
 			}
 			s = *getArgReference_lng(stk,p, 3);
-			if ( s == 0 || 
+			if ( s == 0 ||
 				 (s > 0 && f > l) ||
-				 (s < 0 && f < l) 
+				 (s < 0 && f < l)
 				) {
 				if (cand)
 					BBPunfix(cand->batCacheid);
@@ -647,7 +646,7 @@ str VLTgenerator_thetasubselect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, Instr
 
 			val = f;
 			for(j = 0; j< cap; j++,  o++){
-				if (((is_timestamp_nil(low) || val >= low) && 
+				if (((is_timestamp_nil(low) || val >= low) &&
 				     (is_timestamp_nil(hgh) || val <= hgh)) != anti){
 					if(cand == NULL || canditer_contains(&ci, o)){
 						*v++ = o;
@@ -715,7 +714,6 @@ str VLTgenerator_projection(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 	BUN cnt;
 	oid *ol =0, o= 0;
 	InstrPtr p;
-	str msg;
 
 	(void) cntxt;
 	p = findGeneratorDefinition(mb,pci,pci->argv[2]);
@@ -733,10 +731,14 @@ str VLTgenerator_projection(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 			BBPunfix(b->batCacheid);
 			throw(MAL,"generator.projection", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 		}
-		msg = ALGprojection(ret, &b->batCacheid, &bn->batCacheid);
+		BAT *bp = BATproject(b, bn);
 		BBPunfix(b->batCacheid);
 		BBPunfix(bn->batCacheid);
-		return msg;
+		if (bp == NULL)
+			throw(MAL, "generator.projection", GDK_EXCEPTION);
+		*ret = bp->batCacheid;
+		BBPkeepref(*ret);
+		return MAL_SUCCEED;
 	}
 
 	cnt = BATcount(b);
@@ -851,15 +853,25 @@ str VLTgenerator_join(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	q = findGeneratorDefinition(mb,pci,pci->argv[3]);
 
 	if (p == NULL && q == NULL) {
-		bit zero = 0;
-		return ALGjoin(getArgReference_bat(stk, pci, 0),
-			       getArgReference_bat(stk, pci, 1),
-			       getArgReference_bat(stk, pci, 2),
-			       getArgReference_bat(stk, pci, 3),
-			       NULL,  /* left candidate */
-			       NULL,  /* right candidate */
-			       &zero, /* nil_matches */
-			       NULL); /* estimate */
+		bl = BATdescriptor(*getArgReference_bat(stk, pci, 2));
+		br = BATdescriptor(*getArgReference_bat(stk, pci, 3));
+		if (bl == NULL || br == NULL) {
+			if (bl)
+				BBPunfix(bl->batCacheid);
+			if (br)
+				BBPunfix(br->batCacheid);
+			throw(MAL,"generator.join", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
+		}
+		gdk_return rc = BATjoin(&bln, &brn, bl, br, NULL, NULL, false, BUN_NONE);
+		BBPunfix(bl->batCacheid);
+		BBPunfix(br->batCacheid);
+		if (rc != GDK_SUCCEED)
+			throw(MAL,"generator.join", GDK_EXCEPTION);
+		*getArgReference_bat(stk, pci, 0) = bln->batCacheid;
+		*getArgReference_bat(stk, pci, 1) = brn->batCacheid;
+		BBPkeepref(bln->batCacheid);
+		BBPkeepref(brn->batCacheid);
+		return MAL_SUCCEED;
 	}
 
 	if( p == NULL){
@@ -885,14 +897,14 @@ str VLTgenerator_join(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		materialized =1;
 	}
 
-	// switch roles to have a single target bat[:oid,:any] designated 
+	// switch roles to have a single target bat[:oid,:any] designated
 	// by b and reference instruction p for the generator
 	b = q? bl : br;
 	p = q? q : p;
 	cnt = BATcount(b);
 	tpe = b->ttype;
 	o= b->hseqbase;
-	
+
 	bln = COLnew(0,TYPE_oid, cnt, TRANSIENT);
 	brn = COLnew(0,TYPE_oid, cnt, TRANSIENT);
 	if( bln == NULL || brn == NULL){
@@ -917,7 +929,7 @@ str VLTgenerator_join(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	case TYPE_flt: VLTjoin(flt,fabsf); break;
 	case TYPE_dbl: VLTjoin(dbl,fabs); break;
 	default:
-		if( tpe == TYPE_timestamp){ 
+		if( tpe == TYPE_timestamp){
 			// it is easier to produce the timestamp series
 			// then to estimate the possible index
 			}
@@ -931,7 +943,7 @@ str VLTgenerator_join(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	BATsetcount(bln,c);
 	bln->tsorted = incr || c <= 1;
 	bln->trevsorted = !incr || c <= 1;
-	
+
 	brn->tsorted = brn->trevsorted = false;
 	brn->tkey = false;
 	brn->tnil = false;
@@ -1033,7 +1045,7 @@ str VLTgenerator_rangejoin(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
 	limit = 2 * cnt; //top off result before expansion
 	tpe = blow->ttype;
 	o= blow->hseqbase;
-	
+
 	bln = COLnew(0,TYPE_oid, limit, TRANSIENT);
 	brn = COLnew(0,TYPE_oid, limit, TRANSIENT);
 	if( bln == NULL || brn == NULL){
@@ -1058,7 +1070,7 @@ str VLTgenerator_rangejoin(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
 	case TYPE_flt: VLTrangejoin(flt,fabsf,floorf); break;
 	case TYPE_dbl: VLTrangejoin(dbl,fabs,floor); break;
 	default:
-		if( tpe == TYPE_timestamp){ 
+		if( tpe == TYPE_timestamp){
 			// it is easier to produce the timestamp series
 			// then to estimate the possible index
 			}
@@ -1072,7 +1084,7 @@ str VLTgenerator_rangejoin(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
 	BATsetcount(bln,c);
 	bln->tsorted = incr || c <= 1;
 	bln->trevsorted = !incr || c <= 1;
-	
+
 	brn->tsorted = brn->trevsorted = false;
 	brn->tkey = false;
 	brn->tnil = false;

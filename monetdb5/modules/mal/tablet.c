@@ -36,9 +36,7 @@
  */
 
 #include "monetdb_config.h"
-#include "streams.h"
 #include "tablet.h"
-#include "algebra.h"
 #include "mapi_prompt.h"
 
 #include <string.h>
@@ -150,7 +148,7 @@ TABLETcreate_bats(Tablet *as, BUN est)
 		fmt[i].ci = bat_iterator(fmt[i].c);
 		nr++;
 	}
-	if (!nr) 
+	if (!nr)
 		throw(SQL, "copy", "At least one column should be read from the input\n");
 	return MAL_SUCCEED;
 }
@@ -1005,7 +1003,7 @@ SQLload_parse_line(READERtask *task, int idx)
 				for (; i < as->nr_attrs; i++)
 					task->fields[i][idx] = NULL;
 				i--;
-			} 
+			}
 		  endoffieldcheck:
 			;
 			/* check for user defined NULL string */
@@ -1074,13 +1072,12 @@ SQLworker(void *arg)
 	while (task->top[task->cur] >= 0) {
 		MT_sema_down(&task->sema);
 
-
 		/* stage one, break the lines spread the worker over the workers */
 		switch (task->state) {
 		case BREAKLINE:
 			t0 = GDKusec();
 			piece = (task->top[task->cur] + task->workers) / task->workers;
-			
+
 			for (j = piece * task->id; j < task->top[task->cur] && j < piece * (task->id +1); j++)
 				if (task->lines[task->cur][j]) {
 					if (SQLload_parse_line(task, j) < 0) {
@@ -1093,6 +1090,8 @@ SQLworker(void *arg)
 			task->wtime = GDKusec() - t0;
 			break;
 		case UPDATEBAT:
+			if (!task->besteffort && task->errorcnt)
+				break;
 			/* stage two, updating the BATs */
 			for (i = 0; i < task->as->nr_attrs; i++)
 				if (task->cols[i]) {
@@ -1105,6 +1104,8 @@ SQLworker(void *arg)
 				}
 			break;
 		case SYNCBAT:
+			if (!task->besteffort && task->errorcnt)
+				break;
 			for (i = 0; i < task->as->nr_attrs; i++)
 				if (task->cols[i]) {
 					BAT *b = task->as->format[task->cols[i] - 1].c;
@@ -1238,7 +1239,7 @@ SQLproducer(void *p)
 	}
 
 /*	TRC_DEBUG(MAL_SERVER, "SQLproducer started size '%zu' and len '%zu'\n", task->b->size, task->b->len);*/
-	
+
 	base = end = s = task->input[cur];
 	*s = 0;
 	task->cur = cur;
@@ -1248,7 +1249,7 @@ SQLproducer(void *p)
 	}
 	for (;;) {
 		ateof[cur] = !tablet_read_more(task->b, task->out, task->b->size);
-				
+
 		// we may be reading from standard input and may be out of input
 		// warn the consumers
 		if (ateof[cur] && partial) {
@@ -1511,7 +1512,7 @@ SQLload_file(Client cntxt, Tablet *as, bstream *b, stream *out, const char *csep
 	BUN i, attr;
 	READERtask task;
 	READERtask ptask[MAXWORKERS];
-	int threads = (!maxrow || maxrow > (1 << 16)) ? (GDKnr_threads < MAXWORKERS && GDKnr_threads > 1 ? GDKnr_threads - 1 : MAXWORKERS - 1) : 1;
+	int threads = (maxrow< 0 || maxrow > (1 << 16)) ? (GDKnr_threads < MAXWORKERS && GDKnr_threads > 1 ? GDKnr_threads - 1 : MAXWORKERS - 1) : 1;
 	lng lio = 0, tio, t1 = 0, total = 0, iototal = 0;
 	char name[MT_NAME_LEN];
 
@@ -1711,8 +1712,8 @@ SQLload_file(Client cntxt, Tablet *as, bstream *b, stream *out, const char *csep
 			}
 		}
 
-/*		TRC_DEBUG(MAL_SERVER, 
-			"Fill the BATs '%d' " BUNFMT " cap " BUNFMT "\n", 
+/*		TRC_DEBUG(MAL_SERVER,
+			"Fill the BATs '%d' " BUNFMT " cap " BUNFMT "\n",
 			task.top[task.cur], task.cnt, BATcapacity(as->format[task.cur].c));*/
 
 		lio += GDKusec() - t1;	/* line break done */
@@ -1828,7 +1829,7 @@ SQLload_file(Client cntxt, Tablet *as, bstream *b, stream *out, const char *csep
 	task.ateof = true;
 	task.state = ENDOFCOPY;
 /*	TRC_DEBUG(MAL_SERVER, "Activate sync on disk\n");*/
-	
+
 	// activate the workers to sync the BATs to disk
 	if (res == 0) {
 		for (j = 0; j < threads; j++) {

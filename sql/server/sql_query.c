@@ -35,7 +35,7 @@ query_create( mvc *sql)
 	return q;
 }
 
-void 
+void
 query_push_outer(sql_query *q, sql_rel *r, int sql_state)
 {
 	stacked_query *sq = sq_create(q->sql->sa, r, sql_state);
@@ -69,7 +69,7 @@ query_fetch_outer_state(sql_query *q, int i)
 	return sq->sql_state;
 }
 
-void 
+void
 query_update_outer(sql_query *q, sql_rel *r, int i)
 {
 	stacked_query *sq = sql_stack_fetch(q->outer, i);
@@ -79,7 +79,7 @@ query_update_outer(sql_query *q, sql_rel *r, int i)
 	sq->grouped = is_groupby(r->op);
 }
 
-int 
+int
 query_has_outer(sql_query *q)
 {
 	return sql_stack_top(q->outer);

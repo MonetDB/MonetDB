@@ -221,7 +221,7 @@ local_itoa(ssize_t i, char *buf)
 	snprintf(buf, 32, "%zd", i);
 	return buf;
 }
-static char *
+static inline char *
 local_utoa(size_t i, char *buf)
 {
 	snprintf(buf, 32, "%zu", i);
@@ -881,7 +881,7 @@ retryRead:
 						mnstr_printf(out, "#'%s.%s' not found\n", modnme,fcnnme);
 						continue;
 					}
-					for(; fs; fs = fs->peer){ 
+					for(; fs; fs = fs->peer){
 						for(i=0; i< fs->def->stop; i++)
 							fs->def->stmt[i]->typechk = TYPE_UNKNOWN;
 						msg = chkProgram(cntxt->usermodule, fs->def);
@@ -939,7 +939,7 @@ retryRead:
 			} else if (strncmp("scenario", b, 3) == 0) {
 				showScenarioByName(out, cntxt->scenario);
 				continue;
-			} 
+			}
 			stk->cmd = *b;
 			m = 0;
 			break;
@@ -983,7 +983,7 @@ retryRead:
 				mnstr_printf(out,"#%s ",cntxt->usermodule->name);
 				getModuleList(&list, &length);
 				for(i = 0; i < length; i++) {
-					mnstr_printf(out, "%s ", list[i]->name);	
+					mnstr_printf(out, "%s ", list[i]->name);
 				}
 				freeModuleList(list);
 				mnstr_printf(out,"\n");
@@ -1265,7 +1265,7 @@ retryRead:
 			if (*b != 0) {
 				/* debug the current block */
 				MalBlkPtr m = mdbLocateMalBlk(cntxt, mb, b);
-				
+
 				if ( m == 0)
 					m = mb;
 				if ( m ){
@@ -1275,7 +1275,7 @@ retryRead:
 						b = s + strlen(nme);
 						skipBlanc(cntxt,b);
 					}
-				} 
+				}
 				if (isdigit((unsigned char) *b) || *b == '-' || *b == '+')
 					goto partial;
 
@@ -1287,7 +1287,7 @@ retryRead:
 					*fcnnme++  = 0;
 					b = fcnnme;
 					skipNonBlanc(cntxt, b);
-					if ( b) 
+					if ( b)
 						*b++  = 0;
 
 					fs = findSymbol(cntxt->usermodule, putName(modnme),putName(fcnnme));
@@ -1373,7 +1373,7 @@ partial:
 	cntxt->promptlength = oldpromptlength;
 }
 
-static str 
+static str
 mdbTrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 {
 	int pc = getPC(mb,p);
@@ -1466,7 +1466,7 @@ runMALDebugger(Client cntxt, MalBlkPtr mb)
 }
 
 #else
-str runMALDebugger(Client cntxt, MalBlkPtr mb) 
+str runMALDebugger(Client cntxt, MalBlkPtr mb)
 {
 	(void)cntxt; (void)mb;
 	return NULL;

@@ -166,7 +166,7 @@ SQLprelude(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		fprintf(stdout, "# MonetDB/SQL module loaded\n");
 		fflush(stdout);		/* make merovingian see this *now* */
 	}
-	if (GDKinmemory()) {
+	if (GDKinmemory() || GDKembedded()) {
 		s->name = "sql";
 		ms->name = "msql";
 		return MAL_SUCCEED;
@@ -212,7 +212,7 @@ SQLepilogue(void *ret)
 	(void) SQLexit(NULL);
 	/* this function is never called, but for the style of it, we clean
 	 * up our own mess */
-	if (!GDKinmemory()) {
+	if (!GDKinmemory() && !GDKembedded()) {
 		res = msab_retreatScenario(m);
 		if (!res)
 			res = msab_retreatScenario(s);
@@ -291,7 +291,7 @@ SQLprepareClient(Client c, int login)
 			goto bailout;
 		}
 		_DELETE(schema);
-	} 
+	}
 
 bailout:
 	/*expect SQL text first */
@@ -436,6 +436,12 @@ SQLinit(Client c)
 		maybeupgrade = 0;
 
 		for (int i = 0; i < sql_modules && !msg; i++) {
+#ifdef HAVE_HGE
+			if (!have_hge) {
+				if (strstr(sql_module_name[i], "_hge"))
+					continue;
+			}
+#endif
 			char *createdb_inline = (char*)sql_module_code[i];
 
 			msg = SQLstatementIntern(c, &createdb_inline, "sql.init", TRUE, FALSE, NULL);
@@ -905,7 +911,7 @@ cachable(mvc *m, sql_rel *r)
 	if (m->type == Q_TRANS )	/* m->type == Q_SCHEMA || cachable to make sure we have trace on alter statements  */
 		return 0;
 	/* we don't store queries with a large footprint */
-	if (r && sa_size(m->sa) > MAX_QUERY) 
+	if (r && sa_size(m->sa) > MAX_QUERY)
 		return 0;
 	return 1;
 }
@@ -959,7 +965,7 @@ SQLparser(Client c)
 
 	/* sqlparse needs sql allocator to be available.  It can be NULL at
 	 * this point if this is a recursive call. */
-	if (!m->sa) 
+	if (!m->sa)
 		m->sa = sa_create();
 	if (!m->sa) {
 		c->mode = FINISHCLIENT;

@@ -11,11 +11,11 @@
  * C-programs geared at optimizing a piece of MAL.
  * The query transformer appears at the language level as an ordinary function,
  * but it is effective only at a specific execution phase.
- * 
+ *
  * Each optimizer function has access to the runtime scope of the
  * routine in which it is called. This can be used to maintain status
- * information between successive calls. 
- * 
+ * information between successive calls.
+ *
  * The routines below are linked with the kernel by default
 */
 #include "monetdb_config.h"
@@ -26,7 +26,7 @@
 
 /*
  * Upon loading the module it should inspect the scenario table
- * for any unresolved references to the MALoptimizer and set the 
+ * for any unresolved references to the MALoptimizer and set the
  * callback function.
 */
 str

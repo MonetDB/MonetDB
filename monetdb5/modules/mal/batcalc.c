@@ -1620,16 +1620,14 @@ CMDifthen(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 }
 
 #include "mel.h"
-#include "json.h"
-#include "uuid.h"
 
-static str 
+static str
 batcalc_init(void)
 {
 	int types[16], cur = 0, *tp;
 	int specials[4];
 	int *integer, *floats, *extra;
-	
+
 	types[cur++] = TYPE_bit;
 	integer = types+cur;
 	types[cur++] = TYPE_bte;
@@ -1665,7 +1663,7 @@ batcalc_init(void)
 		err += melFunction(false, "batcalc", "iszero", (fptr)&CMDbatISZERO, "CMDbatISZERO", false, "Unary check for zero over the tail of the bat with candidates list", 1, 3, ret, arg, cand);
 		err += melFunction(false, "batcalc", "iszero", (fptr)&CMDbatISZERO, "CMDbatISZERO", false, "Unary check for zero over the tail of the bat", 1, 3, ret, arg, condexec);
 		err += melFunction(false, "batcalc", "iszero", (fptr)&CMDbatISZERO, "CMDbatISZERO", false, "Unary check for zero over the tail of the bat with candidates list", 1, 4, ret, arg, cand, condexec);
-	}	
+	}
 	for(tp = types; tp < extra && !err; tp++) { /* bit + numeric */
 		mel_func_arg ret = { .type = *tp, .isbat =1 };
 		mel_func_arg arg = { .type = *tp, .isbat =1 };
@@ -1674,7 +1672,7 @@ batcalc_init(void)
 		err += melFunction(false, "batcalc", "not", (fptr)&CMDbatNOT, "CMDbatNOT", false, "Unary bitwise not over the tail of the bat with candidates list", 1, 3, ret, arg, cand);
 		err += melFunction(false, "batcalc", "not", (fptr)&CMDbatNOT, "CMDbatNOT", false, "Unary bitwise not over the tail of the bat", 1, 3, ret, arg, condexec);
 		err += melFunction(false, "batcalc", "not", (fptr)&CMDbatNOT, "CMDbatNOT", false, "Unary bitwise not over the tail of the bat with candidates list", 1, 4, ret, arg, cand, condexec);
-	}	
+	}
 	for(tp = integer; tp < extra && !err; tp++) {
 		mel_func_arg ret = { .type = TYPE_bte, .isbat =1 };
 		mel_func_arg arg = { .type = *tp, .isbat =1 };
@@ -1683,7 +1681,7 @@ batcalc_init(void)
 		err += melFunction(false, "batcalc", "sign", (fptr)&CMDbatSIGN, "CMDbatSIGN", false, "Unary sign (-1,0,1) over the tail of the bat with candidates list", 1, 3, ret, arg, cand);
 		err += melFunction(false, "batcalc", "sign", (fptr)&CMDbatSIGN, "CMDbatSIGN", false, "Unary sign (-1,0,1) over the tail of the bat", 1, 3, ret, arg, condexec);
 		err += melFunction(false, "batcalc", "sign", (fptr)&CMDbatSIGN, "CMDbatSIGN", false, "Unary sign (-1,0,1) over the tail of the bat with candidates list", 1, 4, ret, arg, cand, condexec);
-	}	
+	}
 	for(tp = integer; tp < extra && !err; tp++) {
 		mel_func_arg ret = { .type = *tp, .isbat =1 };
 		mel_func_arg arg = { .type = *tp, .isbat =1 };
@@ -1707,10 +1705,10 @@ batcalc_init(void)
 		err += melFunction(false, "batcalc", "--", (fptr)&CMDbatDECR, "CMDbatDECR", false, "Unary decrement over the tail of the bat with candidates list", 1, 3, ret, arg, cand);
 		err += melFunction(false, "batcalc", "--", (fptr)&CMDbatDECR, "CMDbatDECR", false, "Unary decrement over the tail of the bat", 1, 3, ret, arg, condexec);
 		err += melFunction(false, "batcalc", "--", (fptr)&CMDbatDECR, "CMDbatDECR", false, "Unary decrement over the tail of the bat with candidates list", 1, 4, ret, arg, cand, condexec);
-	}	
+	}
 	/* possibly add the min/max + _no_nil */
 	/* binops on numeric types */
-	struct { 
+	struct {
 	   char *op;
 	   char *op_ne;
 	   char *fname;
@@ -1728,12 +1726,12 @@ batcalc_init(void)
 	   char *comment_el;
 	   char *comment_el_v;
 	   char *comment_el_v_;
-	} funcs[3] = { 
-	  { 
+	} funcs[3] = {
+	  {
 		.op = "+",
 		.fcn = (fptr)CMDbatADDsignal,
 		.fname = "CMDbatADDsignal",
-		.op_ne = "add_noerror", 
+		.op_ne = "add_noerror",
 		.fcn_ne = (fptr)&CMDbatADD,
 		.fname_ne = "CMDbatADD",
 		.fcn_el = (fptr)&CMDbatADDenlarge,
@@ -1766,7 +1764,7 @@ batcalc_init(void)
 		.comment_el_v = "Return B - V with candidates list, guarantee no overflow by returning larger type",
 		.comment_el_v_ = "Return V - B with candidates list, guarantee no overflow by returning larger type",
 	  }, {
-		.op = "*", 
+		.op = "*",
 		.fcn = (fptr)CMDbatMULsignal,
 		.fname = "CMDbatMULsignal",
 		.op_ne = "mul_noerror",
@@ -1821,9 +1819,9 @@ batcalc_init(void)
 		}
 	      }
 	    }
-	  }	
+	  }
 	}
-	struct { 
+	struct {
 	   char *op;
 	   char *op_ne;
 	   char *fname;
@@ -1841,8 +1839,8 @@ batcalc_init(void)
 	   char *comment_el;
 	   char *comment_el_v;
 	   char *comment_el_v_;
-	} div = { 
-		.op = "/", 
+	} div = {
+		.op = "/",
 		.fcn = (fptr)CMDbatDIVsignal,
 		.fname = "CMDbatDIVsignal",
 		.op_ne = "div_noerror",
@@ -1880,7 +1878,7 @@ batcalc_init(void)
 	      }
 	    }
 	}
-	struct { 
+	struct {
 	   char *op;
 	   char *op_ne;
 	   char *fname;
@@ -1893,11 +1891,11 @@ batcalc_init(void)
 	   char *comment_v_ne;
 	   char *comment_v_;
 	   char *comment_v__ne;
-	} mods = { 
+	} mods = {
 		.op = "%",
 		.fcn = (fptr)CMDbatMODsignal,
 		.fname = "CMDbatMODsignal",
-		.op_ne = "mod_noerror", 
+		.op_ne = "mod_noerror",
 		.fcn_ne = (fptr)&CMDbatMOD,
 		.fname_ne = "CMDbatMOD",
 		.comment = "Return B1 % B2 with candidates list, signal error on overflow",
@@ -1912,9 +1910,9 @@ batcalc_init(void)
 	      for(rt = extra-1; rt >= integer && !err; rt--) {
 		if (rt < tp1 || rt < tp2)
 			continue;
-		if (*rt == TYPE_dbl && *tp1 != TYPE_dbl && *tp2 != TYPE_dbl) 
+		if (*rt == TYPE_dbl && *tp1 != TYPE_dbl && *tp2 != TYPE_dbl)
 			continue;
-		else if (*rt == TYPE_flt && ((*tp1 != TYPE_flt && *tp2 != TYPE_flt) || *tp1 == TYPE_dbl || *tp2 == TYPE_dbl)) 
+		else if (*rt == TYPE_flt && ((*tp1 != TYPE_flt && *tp2 != TYPE_flt) || *tp1 == TYPE_dbl || *tp2 == TYPE_dbl))
 			continue;
 		else if (*tp1 == TYPE_flt || *tp2 == TYPE_flt || *tp1 == TYPE_dbl || *tp2 == TYPE_dbl)
 			continue;
@@ -1939,15 +1937,15 @@ batcalc_init(void)
 	      }
 	    }
 	}
-	struct { 
+	struct {
 	   char *op;
 	   char *fname;
            fptr fcn;
 	   char *comment;
 	   char *comment_v;
 	   char *comment_v_;
-	} logops[3] = { 
-	  { 
+	} logops[3] = {
+	  {
 		.op = "and",
 		.fcn = (fptr)CMDbatAND,
 		.fname = "CMDbatAND",
@@ -1988,9 +1986,9 @@ batcalc_init(void)
 		err += melFunction(false, "batcalc", logops[f].op, logops[f].fcn, logops[f].fname, false, logops[f].comment_v, 1, 5, ret, arg, varg, cand, condexec);
 		err += melFunction(false, "batcalc", logops[f].op, logops[f].fcn, logops[f].fname, false, logops[f].comment_v_, 1, 4, ret, varg, arg, condexec);
 		err += melFunction(false, "batcalc", logops[f].op, logops[f].fcn, logops[f].fname, false, logops[f].comment_v_, 1, 5, ret, varg, arg, cand, condexec);
-	  }	
+	  }
 	}
-	struct { 
+	struct {
 	   char *op;
 	   char *op_ne;
 	   char *fname;
@@ -2003,8 +2001,8 @@ batcalc_init(void)
 	   char *comment_ne;
 	   char *comment_ne_v;
 	   char *comment_ne_v_;
-	} shifts[2] = { 
-	  { 
+	} shifts[2] = {
+	  {
 		.op = "<<",
 		.op_ne = "lsh_noerror",
 		.fcn = (fptr)CMDbatLSHsignal,
@@ -2068,18 +2066,18 @@ batcalc_init(void)
 		err += melFunction(false, "batcalc", shifts[f].op_ne, shifts[f].fcn_ne, shifts[f].fname_ne, false, shifts[f].comment_ne_v_, 1, 4, ret, varg1, arg2, condexec);
 		err += melFunction(false, "batcalc", shifts[f].op_ne, shifts[f].fcn_ne, shifts[f].fname_ne, false, shifts[f].comment_ne_v_, 1, 5, ret, varg1, arg2, cand, condexec);
 	    }
-	  }	
+	  }
 	}
 
-	struct { 
+	struct {
 	   char *op;
 	   char *fname;
            fptr fcn;
 	   char *comment;
 	   char *comment_v;
 	   char *comment_v_;
-	} cmps[6] = { 
-	  { 
+	} cmps[6] = {
+	  {
 		.op = "<",
 		.fcn = (fptr)CMDbatLT,
 		.fname = "CMDbatLT",
@@ -2123,7 +2121,7 @@ batcalc_init(void)
 		.comment_v_ = "Return B != V",
 	  }
 	};
-	int newtypes[6] = { TYPE_json, TYPE_uuid, TYPE_date, TYPE_daytime, TYPE_timestamp };
+	int newtypes[6] = { ATOMindex("json"), ATOMindex("uuid"), TYPE_date, TYPE_daytime, TYPE_timestamp };
 	for (int f=0; f<6; f++) {
 	  mel_func_arg ret = { .type = TYPE_bit, .isbat =1 };
 	  mel_func_arg arg = { .type = TYPE_any, .isbat =1, .nr=1 };
@@ -2151,7 +2149,7 @@ batcalc_init(void)
 	  	err += melFunction(false, "batcalc", cmps[f].op, cmps[f].fcn, cmps[f].fname, false, cmps[f].comment_v, 1, 5, ret, arg, varg, cand, nil_matches);
 	  	err += melFunction(false, "batcalc", cmps[f].op, cmps[f].fcn, cmps[f].fname, false, cmps[f].comment_v_, 1, 4, ret, varg, arg, nil_matches);
 	  	err += melFunction(false, "batcalc", cmps[f].op, cmps[f].fcn, cmps[f].fname, false, cmps[f].comment_v_, 1, 5, ret, varg, arg, cand, nil_matches);
-	
+
 	  	err += melFunction(false, "batcalc", cmps[f].op, cmps[f].fcn, cmps[f].fname, false, cmps[f].comment, 1, 5, ret, arg, arg, condexec, nil_matches);
 	  	err += melFunction(false, "batcalc", cmps[f].op, cmps[f].fcn, cmps[f].fname, false, cmps[f].comment, 1, 7, ret, arg, arg, cand, cand, condexec, nil_matches);
 	  	err += melFunction(false, "batcalc", cmps[f].op, cmps[f].fcn, cmps[f].fname, false, cmps[f].comment_v, 1, 5, ret, arg, varg, condexec, nil_matches);
@@ -2165,14 +2163,14 @@ batcalc_init(void)
 	     mel_func_arg ret = { .type = TYPE_bit, .isbat =1 };
 	     mel_func_arg arg = { .type = newtypes[nt], .isbat =1, .nr=1 };
 	     mel_func_arg varg = { .type = newtypes[nt], .nr=1 };
-   
+
  	     err += melFunction(false, "batcalc", cmps[f].op, cmps[f].fcn, cmps[f].fname, false, cmps[f].comment, 1, 3, ret, arg, arg);
  	     err += melFunction(false, "batcalc", cmps[f].op, cmps[f].fcn, cmps[f].fname, false, cmps[f].comment, 1, 5, ret, arg, arg, cand, cand);
  	     err += melFunction(false, "batcalc", cmps[f].op, cmps[f].fcn, cmps[f].fname, false, cmps[f].comment_v, 1, 3, ret, arg, varg);
 	     err += melFunction(false, "batcalc", cmps[f].op, cmps[f].fcn, cmps[f].fname, false, cmps[f].comment_v, 1, 4, ret, arg, varg, cand);
 	     err += melFunction(false, "batcalc", cmps[f].op, cmps[f].fcn, cmps[f].fname, false, cmps[f].comment_v_, 1, 3, ret, varg, arg);
 	     err += melFunction(false, "batcalc", cmps[f].op, cmps[f].fcn, cmps[f].fname, false, cmps[f].comment_v_, 1, 4, ret, varg, arg, cand);
-   
+
  	     err += melFunction(false, "batcalc", cmps[f].op, cmps[f].fcn, cmps[f].fname, false, cmps[f].comment, 1, 4, ret, arg, arg, condexec);
 	     err += melFunction(false, "batcalc", cmps[f].op, cmps[f].fcn, cmps[f].fname, false, cmps[f].comment, 1, 6, ret, arg, arg, cand, cand, condexec);
 	     err += melFunction(false, "batcalc", cmps[f].op, cmps[f].fcn, cmps[f].fname, false, cmps[f].comment_v, 1, 4, ret, arg, varg, condexec);
@@ -2188,7 +2186,7 @@ batcalc_init(void)
 	  	err += melFunction(false, "batcalc", cmps[f].op, cmps[f].fcn, cmps[f].fname, false, cmps[f].comment_v, 1, 5, ret, arg, varg, cand, nil_matches);
 	  	err += melFunction(false, "batcalc", cmps[f].op, cmps[f].fcn, cmps[f].fname, false, cmps[f].comment_v_, 1, 4, ret, varg, arg, nil_matches);
 	  	err += melFunction(false, "batcalc", cmps[f].op, cmps[f].fcn, cmps[f].fname, false, cmps[f].comment_v_, 1, 5, ret, varg, arg, cand, nil_matches);
-	
+
 	  	err += melFunction(false, "batcalc", cmps[f].op, cmps[f].fcn, cmps[f].fname, false, cmps[f].comment, 1, 5, ret, arg, arg, condexec, nil_matches);
 	  	err += melFunction(false, "batcalc", cmps[f].op, cmps[f].fcn, cmps[f].fname, false, cmps[f].comment, 1, 7, ret, arg, arg, cand, cand, condexec, nil_matches);
 	  	err += melFunction(false, "batcalc", cmps[f].op, cmps[f].fcn, cmps[f].fname, false, cmps[f].comment_v, 1, 5, ret, arg, varg, condexec, nil_matches);
@@ -2197,7 +2195,7 @@ batcalc_init(void)
 	  	err += melFunction(false, "batcalc", cmps[f].op, cmps[f].fcn, cmps[f].fname, false, cmps[f].comment_v_, 1, 6, ret, varg, arg, cand, condexec, nil_matches);
 	     }
 	  }
-		
+
 	  int *tp1, *tp2;
 	  for(tp1 = integer; tp1 < floats && !err; tp1++) {
 	    for(tp2 = integer; tp < floats && !err; tp2++) {
@@ -2232,7 +2230,7 @@ batcalc_init(void)
 			err += melFunction(false, "batcalc", cmps[f].op, cmps[f].fcn, cmps[f].fname, false, cmps[f].comment_v, 1, 4, ret, arg1, varg2, cand, nil_matches);
 			err += melFunction(false, "batcalc", cmps[f].op, cmps[f].fcn, cmps[f].fname, false, cmps[f].comment_v_, 1, 3, ret, varg1, arg2, nil_matches);
 			err += melFunction(false, "batcalc", cmps[f].op, cmps[f].fcn, cmps[f].fname, false, cmps[f].comment_v_, 1, 4, ret, varg1, arg2, cand, nil_matches);
-	
+
 			err += melFunction(false, "batcalc", cmps[f].op, cmps[f].fcn, cmps[f].fname, false, cmps[f].comment, 1, 4, ret, arg1, arg2, condexec, nil_matches);
 			err += melFunction(false, "batcalc", cmps[f].op, cmps[f].fcn, cmps[f].fname, false, cmps[f].comment, 1, 6, ret, arg1, arg2, cand, cand, condexec, nil_matches);
 			err += melFunction(false, "batcalc", cmps[f].op, cmps[f].fcn, cmps[f].fname, false, cmps[f].comment_v, 1, 4, ret, arg1, varg2, condexec, nil_matches);
@@ -2241,17 +2239,17 @@ batcalc_init(void)
 			err += melFunction(false, "batcalc", cmps[f].op, cmps[f].fcn, cmps[f].fname, false, cmps[f].comment_v_, 1, 5, ret, varg1, arg2, cand, condexec, nil_matches);
 		}
 	    }
-	  }	
+	  }
 	}
 
-	struct { 
+	struct {
 	   char *op;
 	   char *fname;
            fptr fcn;
 	   char *comment;
 	   char *comment_v;
 	   char *comment_v_;
-	} cmp = { 
+	} cmp = {
 		.op = "cmp",
 		.fcn = (fptr)CMDbatCMP,
 		.fname = "CMDbatCMP",
@@ -2278,7 +2276,7 @@ batcalc_init(void)
 		err += melFunction(false, "batcalc", cmp.op, cmp.fcn, cmp.fname, false, cmp.comment_v, 1, 5, ret, arg, varg, cand, condexec);
 		err += melFunction(false, "batcalc", cmp.op, cmp.fcn, cmp.fname, false, cmp.comment_v_, 1, 4, ret, varg, arg, condexec);
 		err += melFunction(false, "batcalc", cmp.op, cmp.fcn, cmp.fname, false, cmp.comment_v_, 1, 5, ret, varg, arg, cand, condexec);
-	}	
+	}
 	for(tp1 = integer; tp1 < extra && !err; tp1++) {
 	    for(tp2 = integer; tp < extra && !err; tp2++) {
 		mel_func_arg ret = { .type = TYPE_bte, .isbat =1 };
@@ -2301,7 +2299,7 @@ batcalc_init(void)
 		err += melFunction(false, "batcalc", cmp.op, cmp.fcn, cmp.fname, false, cmp.comment_v_, 1, 4, ret, varg1, arg2, condexec);
 		err += melFunction(false, "batcalc", cmp.op, cmp.fcn, cmp.fname, false, cmp.comment_v_, 1, 5, ret, varg1, arg2, cand, condexec);
 	    }
-	}	
+	}
 	for(tp = integer; tp < extra && !err; tp++) {
 		mel_func_arg ret = { .type = TYPE_dbl };
 		mel_func_arg nr = { .type = TYPE_lng };
@@ -2316,7 +2314,7 @@ batcalc_init(void)
 		err += melFunction(false, "batcalc", "avg", (fptr)&CMDcalcavg, "CMDcalcavg", false, "average of non-nil values of B with candidates list", 1, 4, ret, arg, cand, scale);
 		err += melFunction(false, "batcalc", "avg", (fptr)&CMDcalcavg, "CMDcalcavg", false, "average and number of non-nil values of B", 2, 4, ret, nr, arg, scale);
 		err += melFunction(false, "batcalc", "avg", (fptr)&CMDcalcavg, "CMDcalcavg", false, "average and number of non-nil values of B with candidates list", 2, 5, ret, nr, arg, cand, scale);
-	}	
+	}
 
 	struct {
 		int type;
@@ -2326,7 +2324,7 @@ batcalc_init(void)
 		char *name_ne;
 		char *fname_ne;
 		fptr fcn_ne;
-	} typeops[10] = { 
+	} typeops[10] = {
 	  {
 		.type = TYPE_bit,
 		.name = "bit",
@@ -2425,12 +2423,12 @@ batcalc_init(void)
 		if (strcmp(typeops[t].name, "str")==0) {
 			mel_func_arg ret = { .type = typeops[t].type, .isbat =1 };
 			mel_func_arg arg = { .type = TYPE_any, .isbat =1 };
-	
+
 			err += melFunction(false, "batcalc", typeops[t].name, typeops[t].fcn, typeops[t].fname, false, "", 1, 2, ret, arg);
 			err += melFunction(false, "batcalc", typeops[t].name, typeops[t].fcn, typeops[t].fname, false, "", 1, 3, ret, arg, cand);
 			err += melFunction(false, "batcalc", typeops[t].name_ne, typeops[t].fcn_ne, typeops[t].fname_ne, false, "", 1, 2, ret, arg);
 			err += melFunction(false, "batcalc", typeops[t].name_ne, typeops[t].fcn_ne, typeops[t].fname_ne, false, "", 1, 3, ret, arg, cand);
-	
+
 			err += melFunction(false, "batcalc", typeops[t].name, typeops[t].fcn, typeops[t].fname, false, "", 1, 3, ret, arg, condexec);
 			err += melFunction(false, "batcalc", typeops[t].name, typeops[t].fcn, typeops[t].fname, false, "", 1, 4, ret, arg, cand, condexec);
 			err += melFunction(false, "batcalc", typeops[t].name_ne, typeops[t].fcn_ne, typeops[t].fname_ne, false, "", 1, 3, ret, arg, condexec);
@@ -2443,12 +2441,12 @@ batcalc_init(void)
 #endif
 			mel_func_arg ret = { .type = typeops[t].type, .isbat =1 };
 			mel_func_arg arg = { .type = typeops[p].type, .isbat =1 };
-	
+
 			err += melFunction(false, "batcalc", typeops[t].name, typeops[t].fcn, typeops[t].fname, false, "", 1, 2, ret, arg);
 			err += melFunction(false, "batcalc", typeops[t].name, typeops[t].fcn, typeops[t].fname, false, "", 1, 3, ret, arg, cand);
 			err += melFunction(false, "batcalc", typeops[t].name_ne, typeops[t].fcn_ne, typeops[t].fname_ne, false, "", 1, 2, ret, arg);
 			err += melFunction(false, "batcalc", typeops[t].name_ne, typeops[t].fcn_ne, typeops[t].fname_ne, false, "", 1, 3, ret, arg, cand);
-	
+
 			err += melFunction(false, "batcalc", typeops[t].name, typeops[t].fcn, typeops[t].fname, false, "", 1, 3, ret, arg, condexec);
 			err += melFunction(false, "batcalc", typeops[t].name, typeops[t].fcn, typeops[t].fname, false, "", 1, 4, ret, arg, cand, condexec);
 			err += melFunction(false, "batcalc", typeops[t].name_ne, typeops[t].fcn_ne, typeops[t].fname_ne, false, "", 1, 3, ret, arg, condexec);

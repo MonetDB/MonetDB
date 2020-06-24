@@ -12,7 +12,7 @@
 #include "sql_storage.h"
 #include "bat_logger.h"
 
-typedef struct sql_delta {	
+typedef struct sql_delta {
 	char *name;		/* name of the main bat */
 	int bid;
 	oid ibase;		/* ibase: first id of inserts */
@@ -28,6 +28,7 @@ typedef struct sql_delta {
 } sql_delta;
 
 typedef struct sql_dbat {
+	sql_ref r;
 	char *dname;		/* name of the persistent deletes bat */
 	int dbid;		/* bat with deletes */
 	int cleared;

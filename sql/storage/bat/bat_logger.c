@@ -64,6 +64,8 @@ bl_preversion(int oldversion, int newversion)
 
 #define N(schema, table, column)	schema "_" table "_" column
 
+#define D(schema, table)	"D_" schema "_" table
+
 #if defined CATALOG_AUG2018 || defined CATALOG_JUN2020
 static int
 find_table_id(logger *lg, const char *val, int *sid)
@@ -862,13 +864,164 @@ bl_postversion(void *lg)
 			   "storage", str_nil,
 			   NULL) != GDK_SUCCEED)
 			return GDK_FAIL;
+		{	/* move sql.degrees and sql.radians functions from 10_math.sql script to sql_types list */
+			BAT *func_func = temp_descriptor(logger_find_bat(lg, N("sys", "functions", "name"), 0, 0));
+			if (func_func == NULL) {
+				return GDK_FAIL;
+			}
+			BAT *degrees_func = BATselect(func_func, NULL, "degrees", NULL, 1, 1, 0);
+			if (degrees_func == NULL) {
+				bat_destroy(func_func);
+				return GDK_FAIL;
+			}
+			BAT *radians_func = BATselect(func_func, NULL, "radians", NULL, 1, 1, 0);
+			bat_destroy(func_func);
+			if (radians_func == NULL) {
+				bat_destroy(degrees_func);
+				return GDK_FAIL;
+			}
+
+			BAT *cands = BATmergecand(degrees_func, radians_func);
+			bat_destroy(degrees_func);
+			bat_destroy(radians_func);
+			if (cands == NULL) {
+				return GDK_FAIL;
+			}
+
+			BAT *sys_funcs = temp_descriptor(logger_find_bat(lg, D("sys", "functions"), 0, 0));
+			if (sys_funcs == NULL) {
+				bat_destroy(cands);
+				return GDK_FAIL;
+			}
+			gdk_return res = BATappend(sys_funcs, cands, NULL, true);
+			bat_destroy(cands);
+			bat_destroy(sys_funcs);
+			if (res != GDK_SUCCEED)
+				return res;
+			if ((res = logger_upgrade_bat(lg, D("sys", "functions"), LOG_TAB, 0)) != GDK_SUCCEED)
+				return res;
+		}
+		{	/* Fix SQL aggregation functions defined on the wrong modules: sql.null, sql.all, sql.zero_or_one and sql.not_unique */
+			BAT *func_mod = temp_descriptor(logger_find_bat(lg, N("sys", "functions", "mod"), 0, 0));
+			if (func_mod == NULL)
+				return GDK_FAIL;
+
+			BAT *sqlfunc = BATselect(func_mod, NULL, "sql", NULL, 1, 1, 0); /* Find the functions defined on sql module */
+			if (sqlfunc == NULL) {
+				bat_destroy(func_mod);
+				return GDK_FAIL;
+			}
+			BAT *func_type = temp_descriptor(logger_find_bat(lg, N("sys", "functions", "type"), 0, 0));
+			if (func_type == NULL) {
+				bat_destroy(func_mod);
+				bat_destroy(sqlfunc);
+				return GDK_FAIL;
+			}
+			int three = 3; /* and are aggregates */
+			BAT *sqlaggr_func = BATselect(func_type, sqlfunc, &three, NULL, 1, 1, 0);
+			bat_destroy(sqlfunc);
+			if (sqlaggr_func == NULL) {
+				bat_destroy(func_mod);
+				return GDK_FAIL;
+			}
+
+			BAT *func_func = temp_descriptor(logger_find_bat(lg, N("sys", "functions", "func"), 0, 0));
+			if (func_func == NULL) {
+				bat_destroy(func_mod);
+				bat_destroy(sqlaggr_func);
+				return GDK_FAIL;
+			}
+			BAT *nullfunc = BATselect(func_func, sqlaggr_func, "null", NULL, 1, 1, 0);
+			if (nullfunc == NULL) {
+				bat_destroy(func_mod);
+				bat_destroy(sqlaggr_func);
+				bat_destroy(func_func);
+				return GDK_FAIL;
+			}
+			BAT *allfunc = BATselect(func_func, sqlaggr_func, "all", NULL, 1, 1, 0);
+			if (allfunc == NULL) {
+				bat_destroy(func_mod);
+				bat_destroy(sqlaggr_func);
+				bat_destroy(func_func);
+				bat_destroy(nullfunc);
+				return GDK_FAIL;
+			}
+			BAT *zero_or_onefunc = BATselect(func_func, sqlaggr_func, "zero_or_one", NULL, 1, 1, 0);
+			if (zero_or_onefunc == NULL) {
+				bat_destroy(func_func);
+				bat_destroy(sqlaggr_func);
+				bat_destroy(func_mod);
+				bat_destroy(nullfunc);
+				bat_destroy(allfunc);
+				return GDK_FAIL;
+			}
+			BAT *not_uniquefunc = BATselect(func_func, sqlaggr_func, "not_unique", NULL, 1, 1, 0);
+			bat_destroy(func_func);
+			bat_destroy(sqlaggr_func);
+			if (not_uniquefunc == NULL) {
+				bat_destroy(func_mod);
+				bat_destroy(nullfunc);
+				bat_destroy(allfunc);
+				bat_destroy(zero_or_onefunc);
+				return GDK_FAIL;
+			}
+
+			BAT *cands1 = BATmergecand(nullfunc, allfunc);
+			bat_destroy(nullfunc);
+			bat_destroy(allfunc);
+			if (cands1 == NULL) {
+				bat_destroy(func_mod);
+				bat_destroy(zero_or_onefunc);
+				bat_destroy(not_uniquefunc);
+				return GDK_FAIL;
+			}
+			BAT *cands2 = BATmergecand(cands1, zero_or_onefunc);
+			bat_destroy(zero_or_onefunc);
+			bat_destroy(cands1);
+			if (cands2 == NULL) {
+				bat_destroy(func_mod);
+				bat_destroy(not_uniquefunc);
+				return GDK_FAIL;
+			}
+			BAT *cands3 = BATmergecand(cands2, not_uniquefunc);
+			bat_destroy(not_uniquefunc);
+			bat_destroy(cands2);
+			if (cands3 == NULL) {
+				bat_destroy(func_mod);
+				return GDK_FAIL;
+			}
+
+			BAT *cands_project = BATproject(cands3, func_mod);
+			if (cands_project == NULL) {
+				bat_destroy(func_mod);
+				bat_destroy(cands3);
+				return GDK_FAIL;
+			}
+			const char *right_module = "aggr"; /* set module to 'aggr' */
+			BAT *update_bat = BATconstant(cands_project->hseqbase, TYPE_str, right_module, 4, TRANSIENT);
+			bat_destroy(cands_project);
+			if (update_bat == NULL) {
+				bat_destroy(func_mod);
+				bat_destroy(cands3);
+				return GDK_FAIL;
+			}
+
+			gdk_return res = BATreplace(func_mod, cands3, update_bat, TRUE);
+			bat_destroy(func_mod);
+			bat_destroy(cands3);
+			bat_destroy(update_bat);
+			if (res != GDK_SUCCEED)
+				return res;
+			if ((res = logger_upgrade_bat(lg, N("sys", "functions", "mod"), LOG_COL, 0)) != GDK_SUCCEED)
+				return res;
+		}
 	}
 #endif
 
 	return GDK_SUCCEED;
 }
 
-static int 
+static int
 bl_create(int debug, const char *logdir, int cat_version)
 {
 	if (bat_logger)
@@ -879,7 +1032,7 @@ bl_create(int debug, const char *logdir, int cat_version)
 	return LOG_ERR;
 }
 
-static void 
+static void
 bl_destroy(void)
 {
 	logger *l = bat_logger;
@@ -895,7 +1048,7 @@ bl_destroy(void)
 	}
 }
 
-static int 
+static int
 bl_restart(void)
 {
 	if (bat_logger)
@@ -920,11 +1073,11 @@ bl_with_ids(void)
 
 static int
 bl_changes(void)
-{	
+{
 	return (int) MIN(logger_changes(bat_logger), GDK_int_max);
 }
 
-static int 
+static int
 bl_get_sequence(int seq, lng *id)
 {
 	return logger_sequence(bat_logger, seq, id);
@@ -945,19 +1098,19 @@ bl_log_needs_update(void)
 	return !bat_logger->with_ids;
 }
 
-static int 
+static int
 bl_tstart(void)
 {
 	return log_tstart(bat_logger) == GDK_SUCCEED ? LOG_OK : LOG_ERR;
 }
 
-static int 
+static int
 bl_tend(void)
 {
 	return log_tend(bat_logger) == GDK_SUCCEED ? LOG_OK : LOG_ERR;
 }
 
-static int 
+static int
 bl_sequence(int seq, lng id)
 {
 	return log_sequence(bat_logger, seq, id) == GDK_SUCCEED ? LOG_OK : LOG_ERR;
@@ -1233,9 +1386,9 @@ snapshot_bats(stream *plan, const char *db_dir)
 		goto end;
 	}
 	if (gdk_version != 061042U) {
-		// If this version number has changed, the structure of BBP.dir 
+		// If this version number has changed, the structure of BBP.dir
 		// may have changed. Update this whole function to take this
-		// into account. 
+		// into account.
 		// Note: when startup has completed BBP.dir is guaranteed
 		// to the latest format so we don't have to support any older
 		// formats in this function.
@@ -1296,7 +1449,7 @@ snapshot_bats(stream *plan, const char *db_dir)
 					goto end;
 				/* fallthrough */
 			case 2:
-				// no tail? 
+				// no tail?
 				break;
 		}
 	}

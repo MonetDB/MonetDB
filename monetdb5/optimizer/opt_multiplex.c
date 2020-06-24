@@ -230,7 +230,7 @@ OPTmultiplexImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
 
 	for (i = 0; i < limit; i++) {
 		p = old[i];
-		if (msg == MAL_SUCCEED && isMultiplex(p)) { 
+		if (msg == MAL_SUCCEED && isMultiplex(p)) {
 			if ( MANIFOLDtypecheck(cntxt,mb,p,0) != NULL){
 				setFunctionId(p, manifoldRef);
 				p->typechk = TYPE_UNKNOWN;
@@ -244,7 +244,7 @@ OPTmultiplexImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
 				old[i]=0;
 				actions++;
 				continue;
-			} 
+			}
 
 			pushInstruction(mb, p);
 			actions++;

@@ -31,10 +31,6 @@ target_link_libraries(moptions
   monetdb_config_header
   $<$<PLATFORM_ID:Windows>:${GETOPT_LIB}>)
 
-#if(WIN32)
-#  target_compile_definitions(moptions PRIVATE LIBMOPTIONS LIBGDK LIBMAPI)
-#endif()
-
 set_target_properties(moptions
   PROPERTIES
   POSITION_INDEPENDENT_CODE ON

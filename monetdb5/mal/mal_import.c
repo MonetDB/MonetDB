@@ -142,7 +142,7 @@ malLoadScript(str name, bstream **fdin)
 	restoreClient2
 
 str
-malIncludeString(Client c, const str name, const str mal, int listing, MALfcn address) 
+malIncludeString(Client c, const str name, const str mal, int listing, MALfcn address)
 {
 	str msg = MAL_SUCCEED;
 

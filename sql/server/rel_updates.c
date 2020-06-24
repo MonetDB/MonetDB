@@ -63,7 +63,7 @@ get_table(sql_rel *t)
 {
 	sql_table *tab = NULL;
 
-	assert(is_updateble(t)); 
+	assert(is_updateble(t));
 	if (t->op == op_basetable) { /* existing base table */
 		tab = t->l;
 	} else if (t->op == op_ddl &&
@@ -103,7 +103,7 @@ rel_insert_hash_idx(mvc *sql, const char* alias, sql_idx *i, sql_rel *inserts)
 		sql_kc *c = m->data;
 		sql_exp *e = list_fetch(get_inserts(inserts), c->c->colnr);
 
-		if (h && i->type == hash_idx)  { 
+		if (h && i->type == hash_idx)  {
 			list *exps = new_exp_list(sql->sa);
 			sql_subfunc *xor = sql_bind_func_result(sql->sa, sql->session->schema, "rotate_xor_hash", F_FUNC, lng, 3, lng, it, &c->c->type);
 
@@ -117,13 +117,13 @@ rel_insert_hash_idx(mvc *sql, const char* alias, sql_idx *i, sql_rel *inserts)
 			sql_subfunc *lor = sql_bind_func_result(sql->sa, sql->session->schema, "bit_or", F_FUNC, lng, 2, lng, lng);
 			sql_subfunc *hf = sql_bind_func_result(sql->sa, sql->session->schema, "hash", F_FUNC, lng, 1, &c->c->type);
 
-			h = exp_binop(sql->sa, h, exp_atom_int(sql->sa, bits), lsh); 
+			h = exp_binop(sql->sa, h, exp_atom_int(sql->sa, bits), lsh);
 			h2 = exp_unop(sql->sa, e, hf);
 			h = exp_binop(sql->sa, h, h2, lor);
 		} else {
 			sql_subfunc *hf = sql_bind_func_result(sql->sa, sql->session->schema, "hash", F_FUNC, lng, 1, &c->c->type);
 			h = exp_unop(sql->sa, e, hf);
-			if (i->type == oph_idx) 
+			if (i->type == oph_idx)
 				break;
 		}
 	}
@@ -152,7 +152,7 @@ rel_insert_join_idx(mvc *sql, const char* alias, sql_idx *i, sql_rel *inserts)
 	for (m = i->columns->h; m; m = m->next) {
 		sql_kc *c = m->data;
 
-		if (c->c->null) 
+		if (c->c->null)
 			need_nulls = 1;
 	}
 	/* NULL and NOT NULL, for 'SIMPLE MATCH' semantics */
@@ -161,7 +161,7 @@ rel_insert_join_idx(mvc *sql, const char* alias, sql_idx *i, sql_rel *inserts)
 		sql_kc *c = m->data;
 		sql_kc *rc = o->data;
 		sql_subfunc *isnil = sql_bind_func(sql->sa, sql->session->schema, "isnull", &c->c->type, NULL, F_FUNC);
-		sql_exp *_is = list_fetch(ins->exps, c->c->colnr), *lnl, *rnl, *je; 
+		sql_exp *_is = list_fetch(ins->exps, c->c->colnr), *lnl, *rnl, *je;
 		sql_exp *rtc = exp_column(sql->sa, rel_name(rt), rc->c->base.name, &rc->c->type, CARD_MULTI, rc->c->null, 0);
 
 		_is = exp_ref(sql, _is);
@@ -227,12 +227,12 @@ rel_insert_idxs(mvc *sql, sql_table *t, const char* alias, sql_rel *inserts)
 	if (!t->idxs.set)
 		return inserts;
 
-	inserts->r = rel_label(sql, inserts->r, 1); 
+	inserts->r = rel_label(sql, inserts->r, 1);
 	for (n = t->idxs.set->h; n; n = n->next) {
 		sql_idx *i = n->data;
 		sql_rel *ins = inserts->r;
 
-		if (is_union(ins->op)) 
+		if (is_union(ins->op))
 			inserts->r = rel_project(sql->sa, ins, rel_projections(sql, ins, NULL, 0, 1));
 		if (hash_index(i->type) || i->type == no_idx) {
 			rel_insert_hash_idx(sql, alias, i, inserts);
@@ -359,11 +359,11 @@ rel_inserts(mvc *sql, sql_table *t, sql_rel *r, list *collist, size_t rowcount, 
 							atom *a = atom_general(sql->sa, &c->type, NULL);
 							e = exp_atom(sql->sa, a);
 						}
-						if (!e) 
+						if (!e)
 							return sql_error(sql, 02, SQLSTATE(42000) "%s: column '%s' has no valid default value", action, c->base.name);
 						if (exps) {
 							list *vals_list = exps->f;
-			
+
 							list_append(vals_list, e);
 						}
 						if (!exps && j+1 < rowcount) {
@@ -382,7 +382,7 @@ rel_inserts(mvc *sql, sql_table *t, sql_rel *r, list *collist, size_t rowcount, 
 	}
 	/* now rewrite project exps in proper table order */
 	exps = new_exp_list(sql->sa);
-	for (i = 0; i<len; i++) 
+	for (i = 0; i<len; i++)
 		list_append(exps, inserts[i]);
 	return exps;
 }
@@ -416,10 +416,10 @@ insert_allowed(mvc *sql, sql_table *t, char *tname, char *op, char *opname)
 	return t;
 }
 
-static int 
+static int
 copy_allowed(mvc *sql, int from)
 {
-	if (!global_privs(sql, (from)?PRIV_COPYFROMFILE:PRIV_COPYINTOFILE)) 
+	if (!global_privs(sql, (from)?PRIV_COPYFROMFILE:PRIV_COPYINTOFILE))
 		return 0;
 	return 1;
 }
@@ -612,7 +612,7 @@ insert_into(sql_query *query, dlist *qname, dlist *columns, symbol *val_or_q)
 	if (sname && !(s = mvc_bind_schema(sql, sname)))
 		return sql_error(sql, 02, SQLSTATE(3F000) "INSERT INTO: no such schema '%s'", sname);
 	t = find_table_on_scope(sql, &s, sname, tname);
-	if (insert_allowed(sql, t, tname, "INSERT INTO", "insert into") == NULL) 
+	if (insert_allowed(sql, t, tname, "INSERT INTO", "insert into") == NULL)
 		return NULL;
 	r = insert_generate_inserts(query, t, columns, val_or_q, "INSERT INTO");
 	if(!r)
@@ -662,7 +662,7 @@ rel_update_hash_idx(mvc *sql, const char* alias, sql_idx *i, sql_rel *updates)
 
 			e = list_fetch(get_inserts(updates), c->c->colnr+1);
 
-			if (h && i->type == hash_idx)  { 
+			if (h && i->type == hash_idx)  {
 				list *exps = new_exp_list(sql->sa);
 				sql_subfunc *xor = sql_bind_func_result(sql->sa, sql->session->schema, "rotate_xor_hash", F_FUNC, lng, 3, lng, it, &c->c->type);
 
@@ -676,13 +676,13 @@ rel_update_hash_idx(mvc *sql, const char* alias, sql_idx *i, sql_rel *updates)
 				sql_subfunc *lor = sql_bind_func_result(sql->sa, sql->session->schema, "bit_or", F_FUNC, lng, 2, lng, lng);
 				sql_subfunc *hf = sql_bind_func_result(sql->sa, sql->session->schema, "hash", F_FUNC, lng, 1, &c->c->type);
 
-				h = exp_binop(sql->sa, h, exp_atom_int(sql->sa, bits), lsh); 
+				h = exp_binop(sql->sa, h, exp_atom_int(sql->sa, bits), lsh);
 				h2 = exp_unop(sql->sa, e, hf);
 				h = exp_binop(sql->sa, h, h2, lor);
 			} else {
 				sql_subfunc *hf = sql_bind_func_result(sql->sa, sql->session->schema, "hash", F_FUNC, lng, 1, &c->c->type);
 				h = exp_unop(sql->sa, e, hf);
-				if (i->type == oph_idx) 
+				if (i->type == oph_idx)
 					break;
 			}
 		}
@@ -745,7 +745,7 @@ rel_update_join_idx(mvc *sql, const char* alias, sql_idx *i, sql_rel *updates)
 	for (m = i->columns->h; m; m = m->next) {
 		sql_kc *c = m->data;
 
-		if (c->c->null) 
+		if (c->c->null)
 			need_nulls = 1;
 	}
 	for (m = i->columns->h, o = rk->columns->h; m && o; m = m->next, o = o->next) {
@@ -831,13 +831,13 @@ rel_update_idxs(mvc *sql, const char *alias, sql_table *t, sql_rel *relup)
 	for (n = t->idxs.set->h; n; n = n->next) {
 		sql_idx *i = n->data;
 
-		/* check if update is needed, 
-		 * ie atleast on of the idx columns is updated 
+		/* check if update is needed,
+		 * ie atleast on of the idx columns is updated
 		 */
-		if (relup->exps && is_idx_updated(i, relup->exps) == 0) 
+		if (relup->exps && is_idx_updated(i, relup->exps) == 0)
 			continue;
 
-		/* 
+		/*
 		 * relup->exps isn't set in case of alter statements!
 		 * Ie todo check for new indices.
 		 */
@@ -896,7 +896,7 @@ rel_update(mvc *sql, sql_rel *t, sql_rel *uprel, sql_exp **updates, list *exps)
 sql_exp *
 update_check_column(mvc *sql, sql_table *t, sql_column *c, sql_exp *v, sql_rel *r, char *cname, const char *action)
 {
-	if (!table_privs(sql, t, PRIV_UPDATE) && !sql_privilege(sql, sql->user_id, c->base.id, PRIV_UPDATE)) 
+	if (!table_privs(sql, t, PRIV_UPDATE) && !sql_privilege(sql, sql->user_id, c->base.id, PRIV_UPDATE))
 		return sql_error(sql, 02, SQLSTATE(42000) "%s: insufficient privileges for user '%s' to update table '%s' on column '%s'", action, sqlvar_get_string(find_global_var(sql, mvc_bind_schema(sql, "sys"), "current_user")), t->base.name, cname);
 	if (!v || (v = rel_check_type(sql, &c->type, r, v, type_equal)) == NULL)
 		return NULL;
@@ -1098,11 +1098,11 @@ update_table(sql_query *query, dlist *qname, str alias, dlist *assignmentlist, s
 				} else
 					res = fnd;
 			}
-			if (!res) 
+			if (!res)
 				return NULL;
 		}
 		if (opt_where) {
-			if (!table_privs(sql, t, PRIV_SELECT)) 
+			if (!table_privs(sql, t, PRIV_SELECT))
 				return sql_error(sql, 02, SQLSTATE(42000) "UPDATE: insufficient privileges for user '%s' to update table '%s'", sqlvar_get_string(find_global_var(sql, mvc_bind_schema(sql, "sys"), "current_user")), tname);
 			if (!(r = rel_logical_exp(query, res, opt_where, sql_where)))
 				return NULL;
@@ -1111,7 +1111,7 @@ update_table(sql_query *query, dlist *qname, str alias, dlist *assignmentlist, s
 				r->op = op_semi;
 			else if (r && res && r->nrcols != res->nrcols)
 				r = rel_project(sql->sa, r, rel_projections(sql, res, NULL, 1, 1));
-			if (!r) 
+			if (!r)
 				return NULL;
 		} else {	/* update all */
 			r = res;
@@ -1167,7 +1167,7 @@ delete_table(sql_query *query, dlist *qname, str alias, symbol *opt_where)
 		if (opt_where) {
 			sql_exp *e;
 
-			if (!table_privs(sql, t, PRIV_SELECT)) 
+			if (!table_privs(sql, t, PRIV_SELECT))
 				return sql_error(sql, 02, SQLSTATE(42000) "DELETE FROM: insufficient privileges for user '%s' to delete from table '%s'", sqlvar_get_string(find_global_var(sql, mvc_bind_schema(sql, "sys"), "current_user")), tname);
 			if (!(r = rel_logical_exp(query, r, opt_where, sql_where)))
 				return NULL;
@@ -1467,16 +1467,16 @@ rel_import(mvc *sql, sql_table *t, const char *tsep, const char *rsep, const cha
 	sql_schema *sys = mvc_bind_schema(sql, "sys");
 	sql_subfunc *f = sql_find_func(sql->sa, sys, "copyfrom", 12, F_UNION, NULL);
 	char *fwf_string = NULL;
-	
+
 	if (!f) /* we do expect copyfrom to be there */
 		return NULL;
 	f->res = table_column_types(sql->sa, t);
  	sql_find_subtype(&tpe, "varchar", 0, 0);
-	args = append( append( append( append( append( new_exp_list(sql->sa), 
-		exp_atom_ptr(sql->sa, t)), 
-		exp_atom_str(sql->sa, tsep, &tpe)), 
-		exp_atom_str(sql->sa, rsep, &tpe)), 
-		exp_atom_str(sql->sa, ssep, &tpe)), 
+	args = append( append( append( append( append( new_exp_list(sql->sa),
+		exp_atom_ptr(sql->sa, t)),
+		exp_atom_str(sql->sa, tsep, &tpe)),
+		exp_atom_str(sql->sa, rsep, &tpe)),
+		exp_atom_str(sql->sa, ssep, &tpe)),
 		exp_atom_str(sql->sa, ns, &tpe));
 
 	if (fwf_widths && dlist_length(fwf_widths) > 0) {
@@ -1484,7 +1484,7 @@ rel_import(mvc *sql, sql_table *t, const char *tsep, const char *rsep, const cha
 		int ncol = 0;
 		char *fwf_string_cur = fwf_string = sa_alloc(sql->sa, 20 * dlist_length(fwf_widths) + 1); // a 64 bit int needs 19 characters in decimal representation plus the separator
 
-		if (!fwf_string) 
+		if (!fwf_string)
 			return NULL;
 		for (dn = fwf_widths->h; dn; dn = dn->next) {
 			fwf_string_cur += sprintf(fwf_string_cur, LLFMT"%c", dn->data.l_val, STREAM_FWF_FIELD_SEP);
@@ -1495,7 +1495,7 @@ rel_import(mvc *sql, sql_table *t, const char *tsep, const char *rsep, const cha
 		*fwf_string_cur = '\0';
 	}
 
-	append( args, exp_atom_str(sql->sa, filename, &tpe)); 
+	append( args, exp_atom_str(sql->sa, filename, &tpe));
 	import = exp_op(sql->sa,
 	append(
 		append(
@@ -1690,7 +1690,7 @@ copyfrom(sql_query *query, dlist *qname, dlist *columns, dlist *files, dlist *he
 				ne = exp_op(sql->sa, args, f);
 				exp_setname(sql->sa, ne, exp_relname(e), exp_name(e));
 			} else {
-				ne = exp_ref(sql, e); 
+				ne = exp_ref(sql, e);
 			}
 			append(nexps, ne);
 			m = m->next;
@@ -1737,7 +1737,7 @@ bincopyfrom(sql_query *query, dlist *qname, dlist *columns, dlist *files, int co
 	sql_subtype strtpe;
 	sql_exp *import;
 	sql_schema *sys = mvc_bind_schema(sql, "sys");
-	sql_subfunc *f = sql_find_func(sql->sa, sys, "copyfrom", 3, F_UNION, NULL); 
+	sql_subfunc *f = sql_find_func(sql->sa, sys, "copyfrom", 3, F_UNION, NULL);
 	list *collist;
 	int i;
 
@@ -1749,7 +1749,7 @@ bincopyfrom(sql_query *query, dlist *qname, dlist *columns, dlist *files, int co
 	if (sname && !(s = mvc_bind_schema(sql, sname)))
 		return sql_error(sql, 02, SQLSTATE(3F000) "COPY INTO: no such schema '%s'", sname);
 	t = find_table_on_scope(sql, &s, sname, tname);
-	if (insert_allowed(sql, t, tname, "COPY INTO", "copy into") == NULL) 
+	if (insert_allowed(sql, t, tname, "COPY INTO", "copy into") == NULL)
 		return NULL;
 	if (files == NULL)
 		return sql_error(sql, 02, SQLSTATE(42000) "COPY INTO: must specify files");
@@ -1761,7 +1761,7 @@ bincopyfrom(sql_query *query, dlist *qname, dlist *columns, dlist *files, int co
 	f->res = table_column_types(sql->sa, t);
  	sql_find_subtype(&strtpe, "varchar", 0, 0);
 	args = append( append( append( new_exp_list(sql->sa),
-		exp_atom_str(sql->sa, t->s?t->s->base.name:NULL, &strtpe)), 
+		exp_atom_str(sql->sa, t->s?t->s->base.name:NULL, &strtpe)),
 		exp_atom_str(sql->sa, t->base.name, &strtpe)),
 		exp_atom_int(sql->sa, onclient));
 
@@ -1775,18 +1775,18 @@ bincopyfrom(sql_query *query, dlist *qname, dlist *columns, dlist *files, int co
 			sql_column *c = n->data;
 			if (i == c->colnr) {
 				// this column number was present in the input arguments; pass in the file name
-				append(args, exp_atom_str(sql->sa, dn->data.sval, &strtpe)); 
+				append(args, exp_atom_str(sql->sa, dn->data.sval, &strtpe));
 				found = 1;
 				break;
 			}
 		}
 		if (!found) {
 			// this column was not present in the input arguments; pass in NULL
-			append(args, exp_atom_str(sql->sa, NULL, &strtpe)); 
+			append(args, exp_atom_str(sql->sa, NULL, &strtpe));
 		}
 	}
 
-	import = exp_op(sql->sa,  args, f); 
+	import = exp_op(sql->sa,  args, f);
 
 	exps = new_exp_list(sql->sa);
 	for (n = t->columns.set->h; n; n = n->next) {
@@ -1838,7 +1838,7 @@ copyfromloader(sql_query *query, dlist *qname, symbol *fcall)
 }
 
 static sql_rel *
-rel_output(mvc *sql, sql_rel *l, sql_exp *sep, sql_exp *rsep, sql_exp *ssep, sql_exp *null_string, sql_exp *file, sql_exp *onclient) 
+rel_output(mvc *sql, sql_rel *l, sql_exp *sep, sql_exp *rsep, sql_exp *ssep, sql_exp *null_string, sql_exp *file, sql_exp *onclient)
 {
 	sql_rel *rel = rel_create(sql->sa);
 	list *exps = new_exp_list(sql->sa);
@@ -1940,7 +1940,7 @@ rel_parse_val(mvc *m, char *query, char emode, sql_rel *from)
 		return NULL;
 	}
 	scanner_init(&m->scanner, bs, NULL);
-	m->scanner.mode = LINE_1; 
+	m->scanner.mode = LINE_1;
 	bstream_next(m->scanner.rs);
 
 	m->params = NULL;
@@ -1951,7 +1951,7 @@ rel_parse_val(mvc *m, char *query, char emode, sql_rel *from)
 	/* via views we give access to protected objects */
 	m->user_id = USER_MONETDB;
 
-	(void) sqlparse(m);	
+	(void) sqlparse(m);
 
 	/* get out the single value as we don't want an enclosing projection! */
 	if (m->sym && m->sym->token == SQL_SELECT) {
@@ -2002,17 +2002,17 @@ rel_updates(sql_query *query, symbol *s)
 		dlist *l = s->data.lval;
 
 		ret = copyfrom(query,
-				l->h->data.lval, 
-				l->h->next->data.lval, 
-				l->h->next->next->data.lval, 
-				l->h->next->next->next->data.lval, 
-				l->h->next->next->next->next->data.lval, 
-				l->h->next->next->next->next->next->data.lval, 
-				l->h->next->next->next->next->next->next->data.sval, 
-				l->h->next->next->next->next->next->next->next->data.i_val, 
-				l->h->next->next->next->next->next->next->next->next->data.i_val, 
+				l->h->data.lval,
+				l->h->next->data.lval,
+				l->h->next->next->data.lval,
+				l->h->next->next->next->data.lval,
+				l->h->next->next->next->next->data.lval,
+				l->h->next->next->next->next->next->data.lval,
+				l->h->next->next->next->next->next->next->data.sval,
+				l->h->next->next->next->next->next->next->next->data.i_val,
+				l->h->next->next->next->next->next->next->next->next->data.i_val,
 				l->h->next->next->next->next->next->next->next->next->next->data.i_val,
-				l->h->next->next->next->next->next->next->next->next->next->next->data.lval, 
+				l->h->next->next->next->next->next->next->next->next->next->next->data.lval,
 				l->h->next->next->next->next->next->next->next->next->next->next->next->data.i_val);
 		sql->type = Q_UPDATE;
 	}

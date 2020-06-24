@@ -7,7 +7,6 @@
 #]]
 
 add_subdirectory(fits)
-add_subdirectory(lidar)
 add_subdirectory(netcdf)
 add_subdirectory(shp)
 

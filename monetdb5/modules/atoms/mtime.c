@@ -39,26 +39,22 @@ extern char *strptime(const char *, const char *, struct tm *);
 #endif
 
 /* interfaces callable from MAL, not used from any C code */
-mal_export str MTIMEcurrent_date(date *ret);
-mal_export str MTIMEcurrent_time(daytime *ret);
-mal_export str MTIMEcurrent_timestamp(timestamp *ret);
-mal_export str MTIMElocal_timezone_msec(lng *ret);
 
-str
+static str
 MTIMEcurrent_date(date *ret)
 {
 	*ret = timestamp_date(timestamp_current());
 	return MAL_SUCCEED;
 }
 
-str
+static str
 MTIMEcurrent_time(daytime *ret)
 {
 	*ret = timestamp_daytime(timestamp_current());
 	return MAL_SUCCEED;
 }
 
-str
+static str
 MTIMEcurrent_timestamp(timestamp *ret)
 {
 	*ret = timestamp_current();
@@ -99,9 +95,7 @@ MTIMEcurrent_timestamp(timestamp *ret)
 #define SETFLAGS	do { bn->tsorted = bn->trevsorted = n < 2; } while (0)
 #define func1(NAME, NAMEBULK, MALFUNC, INTYPE, OUTTYPE, FUNC, SETFLAGS, FUNC_CALL, DEC_SRC, DEC_OUTPUT, \
 			  INIT_SRC, INIT_OUTPUT, GET_NEXT_SRC)	\
-mal_export str NAME(OUTTYPE *ret, const INTYPE *src);					\
-mal_export str NAMEBULK(bat *ret, const bat *bid);						\
-str																		\
+static str																\
 NAME(OUTTYPE *ret, const INTYPE *src)									\
 {																		\
 	str msg = MAL_SUCCEED; 												\
@@ -110,7 +104,7 @@ NAME(OUTTYPE *ret, const INTYPE *src)									\
 	} while (0);														\
 	return msg;															\
 }																		\
-str																		\
+static str																\
 NAMEBULK(bat *ret, const bat *bid)										\
 {																		\
 	BAT *b1 = NULL, *bn = NULL;											\
@@ -155,11 +149,7 @@ bailout: 																\
 
 #define func2(NAME, NAMEBULK, MALFUNC, INTYPE1, INTYPE2, OUTTYPE, FUNC, FUNC_CALL, DEC_INPUT1, DEC_INPUT2, DEC_SRC1, DEC_SRC2, DEC_OUTPUT, \
 			 INIT_SRC1, INIT_SRC2, INIT_OUTPUT, GET_NEXT_SRC1, GET_NEXT_SRC2, APPEND_NEXT)	\
-mal_export str NAME(OUTTYPE *ret, const INTYPE1 *v1, const INTYPE2 *v2); \
-mal_export str NAMEBULK(bat *ret, const bat *bid1, const bat *bid2);	\
-mal_export str NAMEBULK##_p1(bat *ret, const DEC_INPUT1(INTYPE1, src1), const bat *bid2);	\
-mal_export str NAMEBULK##_p2(bat *ret, const bat *bid1, const DEC_INPUT2(INTYPE2, src2));	\
-str																		\
+static str																\
 NAME(OUTTYPE *ret, const INTYPE1 *v1, const INTYPE2 *v2)				\
 {																		\
 	str msg = MAL_SUCCEED; 												\
@@ -168,7 +158,7 @@ NAME(OUTTYPE *ret, const INTYPE1 *v1, const INTYPE2 *v2)				\
 	} while (0);														\
 	return msg;															\
 }																		\
-str																		\
+static str																\
 NAMEBULK(bat *ret, const bat *bid1, const bat *bid2)					\
 {																		\
 	BAT *b1 = NULL, *b2 = NULL, *bn = NULL;								\
@@ -221,7 +211,7 @@ bailout: 																\
 		BBPkeepref(*ret = bn->batCacheid);								\
 	return msg;															\
 }																		\
-str																		\
+static str																\
 NAMEBULK##_p1(bat *ret, const DEC_INPUT1(INTYPE1, src1), const bat *bid2)	\
 {																		\
 	BAT *b2 = NULL, *bn = NULL;											\
@@ -263,7 +253,7 @@ bailout: 																\
 		BBPkeepref(*ret = bn->batCacheid);								\
 	return msg;															\
 }																		\
-str																		\
+static str																\
 NAMEBULK##_p2(bat *ret, const bat *bid1, const DEC_INPUT2(INTYPE2, src2))	\
 {																		\
 	BAT *b1 = NULL, *bn = NULL;											\
@@ -693,7 +683,7 @@ local_timezone(int *isdstp)
 	return tzone;
 }
 
-str
+static str
 MTIMElocal_timezone_msec(lng *ret)
 {
 	int tzone = local_timezone(NULL);
@@ -884,6 +874,9 @@ static mel_func mtime_init_funcs[] = {
  command("batmtime", "time_add_msec_interval", MTIMEtime_add_msec_interval_bulk_p1, false, "", args(1,3, batarg("",daytime),arg("t",daytime),batarg("ms",lng))),
  command("batmtime", "time_add_msec_interval", MTIMEtime_add_msec_interval_bulk_p2, false, "", args(1,3, batarg("",daytime),batarg("t",daytime),arg("ms",lng))),
  command("mtime", "diff", MTIMEdaytime_diff_msec, false, "returns the number of msec between 'val1' and 'val2'.", args(1,3, arg("",lng),arg("val1",daytime),arg("val2",daytime))),
+ command("batmtime", "diff", MTIMEdaytime_diff_msec_bulk, false, "", args(1,3, batarg("",lng),batarg("val1",daytime),batarg("val2",daytime))),
+ command("batmtime", "diff", MTIMEdaytime_diff_msec_bulk_p1, false, "", args(1,3, batarg("",lng),arg("val1",daytime),batarg("val2",daytime))),
+ command("batmtime", "diff", MTIMEdaytime_diff_msec_bulk_p2, false, "", args(1,3, batarg("",lng),batarg("val1",daytime),arg("val2",daytime))),
  command("mtime", "date_sub_month_interval", MTIMEdate_submonths, false, "Subtract months from a date", args(1,3, arg("",date),arg("t",date),arg("months",int))),
  command("batmtime", "date_sub_month_interval", MTIMEdate_submonths_bulk, false, "", args(1,3, batarg("",date),batarg("t",date),batarg("months",int))),
  command("batmtime", "date_sub_month_interval", MTIMEdate_submonths_bulk_p1, false, "", args(1,3, batarg("",date),arg("t",date),batarg("months",int))),
@@ -912,6 +905,9 @@ static mel_func mtime_init_funcs[] = {
  command("batmtime", "addmonths", MTIMEdate_addmonths_bulk_p1, false, "", args(1,3, batarg("",date),arg("value",date),batarg("months",int))),
  command("batmtime", "addmonths", MTIMEdate_addmonths_bulk_p2, false, "", args(1,3, batarg("",date),batarg("value",date),arg("months",int))),
  command("mtime", "diff", MTIMEdate_diff, false, "returns the number of days\nbetween 'val1' and 'val2'.", args(1,3, arg("",int),arg("val1",date),arg("val2",date))),
+ command("batmtime", "diff", MTIMEdate_diff_bulk, false, "", args(1,3, batarg("",int),batarg("val1",date),batarg("val2",date))),
+ command("batmtime", "diff", MTIMEdate_diff_bulk_p1, false, "", args(1,3, batarg("",int),arg("val1",date),batarg("val2",date))),
+ command("batmtime", "diff", MTIMEdate_diff_bulk_p2, false, "", args(1,3, batarg("",int),batarg("val1",date),arg("val2",date))),
  command("mtime", "dayofyear", MTIMEdate_extract_dayofyear, false, "Returns N where d is the Nth day\nof the year (january 1 returns 1)", args(1,2, arg("",int),arg("d",date))),
  command("batmtime", "dayofyear", MTIMEdate_extract_dayofyear_bulk, false, "", args(1,2, batarg("",int),batarg("d",date))),
  command("mtime", "weekofyear", MTIMEdate_extract_weekofyear, false, "Returns the week number in the year.", args(1,2, arg("",int),arg("d",date))),
@@ -919,6 +915,9 @@ static mel_func mtime_init_funcs[] = {
  command("mtime", "dayofweek", MTIMEdate_extract_dayofweek, false, "Returns the current day of the week\nwhere 1=monday, .., 7=sunday", args(1,2, arg("",int),arg("d",date))),
  command("batmtime", "dayofweek", MTIMEdate_extract_dayofweek_bulk, false, "", args(1,2, batarg("",int),batarg("d",date))),
  command("mtime", "diff", MTIMEtimestamp_diff_msec, false, "returns the number of milliseconds\nbetween 'val1' and 'val2'.", args(1,3, arg("",lng),arg("val1",timestamp),arg("val2",timestamp))),
+ command("batmtime", "diff", MTIMEtimestamp_diff_msec_bulk, false, "", args(1,3, batarg("",lng),batarg("val1",timestamp),batarg("val2",timestamp))),
+ command("batmtime", "diff", MTIMEtimestamp_diff_msec_bulk_p1, false, "", args(1,3, batarg("",lng),arg("val1",timestamp),batarg("val2",timestamp))),
+ command("batmtime", "diff", MTIMEtimestamp_diff_msec_bulk_p2, false, "", args(1,3, batarg("",lng),batarg("val1",timestamp),arg("val2",timestamp))),
  command("mtime", "str_to_date", MTIMEstr_to_date, false, "create a date from the string, using the specified format (see man strptime)", args(1,3, arg("",date),arg("s",str),arg("format",str))),
  command("batmtime", "str_to_date", MTIMEstr_to_date_bulk, false, "", args(1,3, batarg("",date),batarg("s",str),batarg("format",str))),
  command("batmtime", "str_to_date", MTIMEstr_to_date_bulk_p1, false, "", args(1,3, batarg("",date),arg("s",str),batarg("format",str))),
