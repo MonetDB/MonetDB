@@ -107,7 +107,7 @@ append_inserted(BAT *b, BAT *i )
 
 BAT *ebats[MAXATOMS] = { NULL };
 
-log_bid 
+log_bid
 ebat2real(log_bid b, oid ibase)
 {
 	/* make a copy of b */
@@ -125,7 +125,7 @@ ebat2real(log_bid b, oid ibase)
 	return r;
 }
 
-log_bid 
+log_bid
 e_bat(int type)
 {
 	if (ebats[type] == NULL &&
@@ -134,7 +134,7 @@ e_bat(int type)
 	return temp_create(ebats[type]);
 }
 
-BAT * 
+BAT *
 e_BAT(int type)
 {
 	if (ebats[type] == NULL &&
@@ -143,7 +143,7 @@ e_BAT(int type)
 	return temp_descriptor(ebats[type]->batCacheid);
 }
 
-log_bid 
+log_bid
 ebat_copy(log_bid b)
 {
 	/* make a copy of b */

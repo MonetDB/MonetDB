@@ -1495,7 +1495,7 @@ static void ComputeParallelAggregation(AggrParams *p)
 				switch (input.bat_type) {
 					case TYPE_void:
 						vararray = PyArray_New(
-							&PyArray_Type, 1, elements, 
+							&PyArray_Type, 1, elements,
 #if SIZEOF_OID == SIZEOF_INT
 							NPY_UINT
 #else
@@ -1508,7 +1508,7 @@ static void ComputeParallelAggregation(AggrParams *p)
 						break;
 					case TYPE_oid:
 						vararray = PyArray_New(
-							&PyArray_Type, 1, elements, 
+							&PyArray_Type, 1, elements,
 #if SIZEOF_OID == SIZEOF_INT
 							NPY_UINT32
 #else

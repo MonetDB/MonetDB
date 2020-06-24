@@ -83,7 +83,7 @@ str pyobject_to_blob(PyObject **ptr, size_t maxsize, blob **value) {
 		goto wrapup;
 	}
 	obj = *ptr;
-	
+
 	(void)maxsize;
 	if (PyByteArray_CheckExact(obj)) {
 		size = PyByteArray_Size(obj);

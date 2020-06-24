@@ -28,7 +28,7 @@
 #include "gdk_time.h"
 
 /* (c) M.L. Kersten
- * The query logger facility is hardwired to avoid interference 
+ * The query logger facility is hardwired to avoid interference
  * with the SQL transaction manager.
  *
  * The events being captured are stored in separate BATs.
@@ -164,7 +164,7 @@ QLOGcreate(str hnme, str tnme, int tt)
 
 	snprintf(buf, 128, "querylog_%s_%s", hnme, tnme);
 	b = BATdescriptor(BBPindex(buf));
-	if (b) 
+	if (b)
 		return b;
 
 	b = COLnew(0, tt, 1 << 16, PERSISTENT);
@@ -194,7 +194,7 @@ _QLOGcleanup(void)
 	cleanup(QLOG_cat_plan);
 	cleanup(QLOG_cat_mal);
 	cleanup(QLOG_cat_optimize);
-	
+
 	cleanup(QLOG_calls_id);
 	cleanup(QLOG_calls_start);
 	cleanup(QLOG_calls_stop);
@@ -217,7 +217,7 @@ _initQlog(void)
 	QLOG_cat_plan = QLOGcreate("cat","size",TYPE_str);
 	QLOG_cat_mal = QLOGcreate("cat","mal",TYPE_int);
 	QLOG_cat_optimize = QLOGcreate("cat","optimize",TYPE_lng);
-	
+
 	QLOG_calls_id = QLOGcreate("calls","id",TYPE_oid);
 	QLOG_calls_start = QLOGcreate("calls","start",TYPE_timestamp);
 	QLOG_calls_stop = QLOGcreate("calls","stop",TYPE_timestamp);
@@ -315,7 +315,7 @@ QLOGempty(void *ret)
 	BATclear(QLOG_cat_plan,true);
 	BATclear(QLOG_cat_mal,true);
 	BATclear(QLOG_cat_optimize,true);
-	
+
 	BATclear(QLOG_calls_id,true);
 	BATclear(QLOG_calls_start,true);
 	BATclear(QLOG_calls_stop,true);

@@ -8,7 +8,7 @@
 
 /*
  * Authors: K. Kyzirakos, D. Savva
- * This module contains primitives for accessing geospatial data 
+ * This module contains primitives for accessing geospatial data
  * stored in ESRI Shapefile documents.
  */
 
@@ -254,7 +254,7 @@ SHPattach(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if ( ( msg = SQLstatementIntern(cntxt, &s,"shp.attach",TRUE,FALSE,NULL)) != MAL_SUCCEED)
 			goto finish;
 
-	/* add information about the fields of the shape file 
+	/* add information about the fields of the shape file
  	* one row for each field with info (shapefile_id, field_name, field_type) */
 	field_definitions = GDALWGetSimpleFieldDefinitions(shp_conn);
 	if (field_definitions == NULL) {
@@ -279,7 +279,7 @@ SHPattach(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		} else if (strcmp(field_definitions[i].fieldType, "Date") == 0) {
 			sprintf(temp_buf + strlen(temp_buf), "\"%s\" STRING, ", nameToLowerCase);
 #endif
-        	} else 
+        	} else
 			sprintf(temp_buf + strlen(temp_buf), "\"%s\" STRING, ", nameToLowerCase);
 		GDKfree(nameToLowerCase);
 	}
@@ -312,7 +312,7 @@ SHPimportFile(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bool part
 
 	sql_table *shps_table = NULL, *fls_table = NULL, *data_table = NULL;
 	char *shps_table_name = "shapefiles";
-	char *fls_table_name = "files";	
+	char *fls_table_name = "files";
 	char *data_table_name = NULL;
 
 	sql_column *col;
@@ -362,7 +362,7 @@ SHPimportFile(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bool part
 		return createException(MAL, "shp.import", SQLSTATE(38000) "Shapefile with id %d not in the %s.%s table\n", vid, sch_name, fls_table_name);
 	if(!(col = mvc_bind_column(m, fls_table, "path")))
 		return createException(MAL, "shp.import", SQLSTATE(38000) "Column '%s.%s(path)' missing", sch_name, fls_table_name);
-	fname = (str)table_funcs.column_find_value(m->session->tr, col, irid); 
+	fname = (str)table_funcs.column_find_value(m->session->tr, col, irid);
 
 	/* find the name of the table that has been reserved for this shape file */
 	if(!(shps_table = mvc_bind_table(m, sch, shps_table_name)))
@@ -378,7 +378,7 @@ SHPimportFile(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bool part
 
 
 	/* add the data on the file to the table */
-	if(!(shp_conn_ptr = GDALWConnect((char *) fname))) 
+	if(!(shp_conn_ptr = GDALWConnect((char *) fname)))
 		return createException(MAL, "shp.import", SQLSTATE(38000) "Missing shape file %s\n", fname);
 	shp_conn = *shp_conn_ptr;
 
@@ -420,7 +420,7 @@ SHPimportFile(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bool part
 		OGR_F_Destroy(geom);
 	}
 
-	/* bind the columns of the data file that was just created 
+	/* bind the columns of the data file that was just created
 	* and create a BAT for each of the columns */
 	if(!(data_table = mvc_bind_table(m, sch, data_table_name))) {
 		msg = createException(MAL, "shp.import", SQLSTATE(42SO2) "Table '%s.%s' missing", sch_name, data_table_name);
@@ -571,7 +571,7 @@ SHPpartialimport(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 
 	sql_table *shps_table = NULL, *fls_table = NULL, *data_table = NULL;
 	char *shps_table_name = "shapefiles";
-	char *fls_table_name = "files";	
+	char *fls_table_name = "files";
 	char *data_table_name = NULL;
 
 	sql_column *col;
@@ -605,7 +605,7 @@ SHPpartialimport(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 	geom = OGR_G_CreateGeometry(wkbPolygon);
 	if (OGR_G_ImportFromWkb(geom, (unsigned char*)g->data, g->len) != OGRERR_NONE)
 		return createException(MAL, "shp.import", SQLSTATE(38000) "Could not intantiate the query polygon.");
-	if (!(mbb = (OGREnvelope*)GDKmalloc(sizeof(OGREnvelope)))) 
+	if (!(mbb = (OGREnvelope*)GDKmalloc(sizeof(OGREnvelope))))
 		return createException(MAL, "shp.import", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	OGR_G_GetEnvelope(geom, mbb);
 	//FIXME: Take into account the coordinate reference system
@@ -630,7 +630,7 @@ SHPpartialimport(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 		return createException(MAL, "shp.import", SQLSTATE(38000) "Shapefile with id %d not in the %s.%s table\n", vid, sch_name, fls_table_name);
 	if(!(col = mvc_bind_column(m, fls_table, "path")))
 		return createException(MAL, "shp.import", SQLSTATE(38000) "Column '%s.%s(path)' missing", sch_name, fls_table_name);
-	fname = (str)table_funcs.column_find_value(m->session->tr, col, irid); 
+	fname = (str)table_funcs.column_find_value(m->session->tr, col, irid);
 
 	/* find the name of the table that has been reserved for this shape file */
 	if(!(shps_table = mvc_bind_table(m, sch, shps_table_name)))
@@ -657,7 +657,7 @@ SHPpartialimport(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 	while( (feature = OGR_L_GetNextFeature(shp_conn.layer)) != NULL )
 		rowsNum++;
 
-	/* bind the columns of the data file that was just created 
+	/* bind the columns of the data file that was just created
  	* and create a BAT for each of the columns */
 	if(!(data_table = mvc_bind_table(m, sch, data_table_name)))
 		return createException(MAL, "shp.import", SQLSTATE(38000) "Table '%s.%s' missing", sch_name, data_table_name);
@@ -746,7 +746,7 @@ SHPpartialimport(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 				goto bailout;
 			}
 		}
-	
+
 		if (BUNappend(colsBAT[colsNum - 2], &gidTemp, false) != HY013) {
 			msg = createException(MAL, "shp.import", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			goto bailout;

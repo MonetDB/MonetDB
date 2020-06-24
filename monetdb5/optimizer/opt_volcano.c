@@ -80,7 +80,7 @@ OPTvolcanoImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci
 		}
 		if( getModuleId(p) == sqlRef){
 			if ( getFunctionId(p) == bindRef ||
-				getFunctionId(p) == bindidxRef || 
+				getFunctionId(p) == bindidxRef ||
 				getFunctionId(p)== tidRef ||
 				getFunctionId(p)== appendRef ||
 				getFunctionId(p)== updateRef ||
@@ -90,7 +90,7 @@ OPTvolcanoImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci
 				setArg(p,p->retc,mvcvar);
 			}
 		}
-	} 
+	}
 	GDKfree(old);
 
     /* Defense line against incorrect plans */

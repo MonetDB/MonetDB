@@ -60,7 +60,7 @@ hash_del(sql_hash *h, int key, void *value)
 		e = e->chain;
 	}
 	if (e) {
-		if (p) 
+		if (p)
 			p->chain = e->chain;
 		else
 			h->buckets[key&(h->size-1)] = e->chain;

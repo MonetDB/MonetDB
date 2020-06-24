@@ -525,7 +525,7 @@ GDKload(int farmid, const char *nme, const char *ext, size_t size, size_t *maxsi
 	assert(size <= *maxsize);
 	assert(farmid != NOFARM || ext == NULL);
 	TRC_DEBUG(IO_, "GDKload: name=%s, ext=%s, mode %d\n", nme, ext ? ext : "", (int) mode);
-	
+
 	if (mode == STORE_MEM) {
 		int fd = GDKfdlocate(farmid, nme, "rb", ext);
 
@@ -625,7 +625,7 @@ DESCload(int i)
 	int tt;
 
 	TRC_DEBUG(IO_, "DESCload: %s\n", nme ? nme : "<noname>");
-	
+
 	b = BBP_desc(i);
 
 	if (b == NULL)

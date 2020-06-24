@@ -20,19 +20,19 @@ int debug=0;
 static void
 resetEventRecord(EventRecord *ev)
 {	int i;
-	
+
 	FREE(ev->version);
 
 	// event state
 	FREE(ev->version);
-	FREE(ev->user); 
+	FREE(ev->user);
 	FREE(ev->session);
 	FREE(ev->function);
 	FREE(ev->module);
 	FREE(ev->instruction);
 	FREE(ev->state);
 	FREE(ev->stmt);
-	FREE(ev->time);	
+	FREE(ev->time);
 	for(i=0; i< ev->maxarg; i++){
 		FREE(ev->args[i].alias);
 		FREE(ev->args[i].name);
@@ -89,7 +89,7 @@ argparser(char *txt, EventRecord *ev){
 				cnt ++;
 		}
 	}
-	
+
 	/* Allocate the space for their properties */
 	if(ev->args) free(ev->args);
 	ev->args = (Argrecord*) malloc(cnt * sizeof(Argrecord));
@@ -236,7 +236,7 @@ keyvalueparser(char *txt, EventRecord *ev)
 	if(strstr(key,"swaps")) { ev->swaps= atol(val); return 0;}
 	if(strstr(key,"nvcsw")) { ev->nvcsw= atol(val); return 0;}
 
-	if (strstr(key,"args")) 
+	if (strstr(key,"args"))
 		argparser(val,ev);
 	return 0;
 }
@@ -268,7 +268,7 @@ renderArgs(FILE *fd, EventRecord *ev, int start, int kind)
 
 void
 renderSummary(FILE *fd, EventRecord *ev, char * filter)
-{	
+{
 	char *c, *t;
 	(void) filter;
 	fprintf(fd,"%s\t",ev->time);

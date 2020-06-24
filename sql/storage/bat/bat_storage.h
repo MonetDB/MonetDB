@@ -21,7 +21,7 @@ typedef struct column_storage {
 	int wtime;		/* time stamp */
 } column_storage;
 
-typedef struct sql_delta {	
+typedef struct sql_delta {
 	column_storage cs;
 	struct sql_delta *next;	/* possibly older version of the same column/idx */
 } sql_delta;
@@ -33,7 +33,7 @@ typedef struct segment {
 	struct segment *next;	/* usualy one should be enough */
 } segment;
 
-/* container structure too allow sharing this structure */ 
+/* container structure too allow sharing this structure */
 typedef struct segments {
 	sql_ref r;
 	//BUN start;

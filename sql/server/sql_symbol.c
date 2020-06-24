@@ -84,7 +84,7 @@ dnode_create(sql_allocator *sa )
 {
 	dnode *n = SA_NEW(sa, dnode);
 
-	if (n) 
+	if (n)
 		n->next = NULL;
 	return n;
 }
@@ -195,7 +195,7 @@ dlist *
 dlist_append_string(sql_allocator *sa, dlist *l, const char *data)
 {
 	dnode *n = dnode_create_string(sa, data);
-	
+
 	if (!n)
 		return NULL;
 	return dlist_append_default(l, n);

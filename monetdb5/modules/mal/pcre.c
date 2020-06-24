@@ -43,7 +43,7 @@
 typedef regex_t pcre;
 #endif
 
-#define TYPE_pcre TYPE_ptr 
+#define TYPE_pcre TYPE_ptr
 
 mal_export str pcre_init(void *ret);
 
@@ -1429,7 +1429,7 @@ pcre_match_with_flags(bit *ret, const char *val, const char *pat, const char *fl
 	}
 
 #ifdef HAVE_LIBPCRE
-	if ((re = pcre_compile(pat, options, &err_p, &errpos, NULL)) == NULL) 
+	if ((re = pcre_compile(pat, options, &err_p, &errpos, NULL)) == NULL)
 #else
 		if ((errcode = regcomp(&re, pat, options)) != 0)
 #endif
@@ -2392,7 +2392,7 @@ pcrejoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr, const char *esc, bo
 #endif
 	}
 
-	TRC_DEBUG(ALGO, 
+	TRC_DEBUG(ALGO,
 			  "pcrejoin(l=%s#" BUNFMT "[%s]%s%s,"
 			  "r=%s#" BUNFMT "[%s]%s%s,sl=%s#" BUNFMT "%s%s,"
 			  "sr=%s#" BUNFMT "%s%s)\n",
@@ -2464,7 +2464,7 @@ pcrejoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr, const char *esc, bo
 			r2->tseqbase = 0;
 	}
 	if (r2)
-		TRC_DEBUG(ALGO, 
+		TRC_DEBUG(ALGO,
 				"pcrejoin(l=%s,r=%s)=(%s#"BUNFMT"%s%s,%s#"BUNFMT"%s%s\n",
 				BATgetId(l), BATgetId(r),
 				BATgetId(r1), BATcount(r1),
@@ -2474,7 +2474,7 @@ pcrejoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr, const char *esc, bo
 				r2->tsorted ? "-sorted" : "",
 				r2->trevsorted ? "-revsorted" : "");
 	else
-		TRC_DEBUG(ALGO, 
+		TRC_DEBUG(ALGO,
 			"pcrejoin(l=%s,r=%s)=(%s#"BUNFMT"%s%s\n",
 			BATgetId(l), BATgetId(r),
 			BATgetId(r1), BATcount(r1),
@@ -2640,7 +2640,7 @@ ILIKEjoin1(bat *r1, const bat *lid, const bat *rid, const bat *slid, const bat *
 
 #include "mel.h"
 mel_atom pcre_init_atoms[] = {
- { .name="pcre", },  { .cmp=NULL } 
+ { .name="pcre", },  { .cmp=NULL }
 };
 mel_func pcre_init_funcs[] = {
  command("pcre", "index", PCREindex, false, "match a pattern, return matched position (or 0 when not found)", args(1,3, arg("",int),arg("pat",pcre),arg("s",str))),

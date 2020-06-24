@@ -23,7 +23,7 @@
 		r->tnonil = true;					\
 	} while (0)
 
-str 
+str
 SQLdiff(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	(void)cntxt;
@@ -266,11 +266,11 @@ SQLwindow_bound(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	return msg;
 }
 
-str 
+str
 SQLrow_number(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	if (pci->argc != 4 || 
-		(getArgType(mb, pci, 2) != TYPE_bit && getBatType(getArgType(mb, pci, 2)) != TYPE_bit) || 
+	if (pci->argc != 4 ||
+		(getArgType(mb, pci, 2) != TYPE_bit && getBatType(getArgType(mb, pci, 2)) != TYPE_bit) ||
 		(getArgType(mb, pci, 3) != TYPE_bit && getBatType(getArgType(mb, pci, 3)) != TYPE_bit)){
 		throw(SQL, "sql.row_number", SQLSTATE(42000) "row_number(:any_1,:bit,:bit)");
 	}
@@ -287,7 +287,7 @@ SQLrow_number(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		cnt = BATcount(b);
 	 	voidresultBAT(r, TYPE_int, cnt, b, "sql.row_number");
 		rp = (int*)Tloc(r, 0);
-		if (isaBatType(getArgType(mb, pci, 2))) { 
+		if (isaBatType(getArgType(mb, pci, 2))) {
 			/* order info not used */
 			p = BATdescriptor(*getArgReference_bat(stk, pci, 2));
 			if (!p) {
@@ -322,11 +322,11 @@ SQLrow_number(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	return MAL_SUCCEED;
 }
 
-str 
+str
 SQLrank(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	if (pci->argc != 4 || 
-		(getArgType(mb, pci, 2) != TYPE_bit && getBatType(getArgType(mb, pci, 2)) != TYPE_bit) || 
+	if (pci->argc != 4 ||
+		(getArgType(mb, pci, 2) != TYPE_bit && getBatType(getArgType(mb, pci, 2)) != TYPE_bit) ||
 		(getArgType(mb, pci, 3) != TYPE_bit && getBatType(getArgType(mb, pci, 3)) != TYPE_bit)){
 		throw(SQL, "sql.rank", SQLSTATE(42000) "rank(:any_1,:bit,:bit)");
 	}
@@ -344,8 +344,8 @@ SQLrank(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		voidresultBAT(r, TYPE_int, cnt, b, "sql.rank");
 		rp = (int*)Tloc(r, 0);
 		end = rp + cnt;
-		if (isaBatType(getArgType(mb, pci, 2))) { 
-			if (isaBatType(getArgType(mb, pci, 3))) { 
+		if (isaBatType(getArgType(mb, pci, 2))) {
+			if (isaBatType(getArgType(mb, pci, 3))) {
 				p = BATdescriptor(*getArgReference_bat(stk, pci, 2));
 				o = BATdescriptor(*getArgReference_bat(stk, pci, 3));
 				if (!p || !o) {
@@ -380,7 +380,7 @@ SQLrank(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				BBPunfix(p->batCacheid);
 			}
 		} else { /* single value, ie no partitions */
-			if (isaBatType(getArgType(mb, pci, 3))) { 
+			if (isaBatType(getArgType(mb, pci, 3))) {
 				o = BATdescriptor(*getArgReference_bat(stk, pci, 3));
 				if (!o) {
 					BBPunfix(b->batCacheid);
@@ -414,11 +414,11 @@ SQLrank(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	return MAL_SUCCEED;
 }
 
-str 
+str
 SQLdense_rank(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	if (pci->argc != 4 || 
-		(getArgType(mb, pci, 2) != TYPE_bit && getBatType(getArgType(mb, pci, 2)) != TYPE_bit) || 
+	if (pci->argc != 4 ||
+		(getArgType(mb, pci, 2) != TYPE_bit && getBatType(getArgType(mb, pci, 2)) != TYPE_bit) ||
 		(getArgType(mb, pci, 3) != TYPE_bit && getBatType(getArgType(mb, pci, 3)) != TYPE_bit)){
 		throw(SQL, "sql.dense_rank", SQLSTATE(42000) "dense_rank(:any_1,:bit,:bit)");
 	}
@@ -436,8 +436,8 @@ SQLdense_rank(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		voidresultBAT(r, TYPE_int, cnt, b, "sql.dense_rank");
 		rp = (int*)Tloc(r, 0);
 		end = rp + cnt;
-		if (isaBatType(getArgType(mb, pci, 2))) { 
-			if (isaBatType(getArgType(mb, pci, 3))) { 
+		if (isaBatType(getArgType(mb, pci, 2))) {
+			if (isaBatType(getArgType(mb, pci, 3))) {
 				p = BATdescriptor(*getArgReference_bat(stk, pci, 2));
 				o = BATdescriptor(*getArgReference_bat(stk, pci, 3));
 				if (!p || !o) {
@@ -472,7 +472,7 @@ SQLdense_rank(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				BBPunfix(p->batCacheid);
 			}
 		} else { /* single value, ie no partitions */
-			if (isaBatType(getArgType(mb, pci, 3))) { 
+			if (isaBatType(getArgType(mb, pci, 3))) {
 				o = BATdescriptor(*getArgReference_bat(stk, pci, 3));
 				if (!o) {
 					BBPunfix(b->batCacheid);
@@ -1594,7 +1594,7 @@ SQLavg(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 }
 
 static str
-do_stddev_and_variance(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, const char* op, const char* err, 
+do_stddev_and_variance(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, const char* op, const char* err,
 					   gdk_return (*func)(BAT *, BAT *, BAT *, BAT *, int))
 {
 	BAT *r, *b, *s, *e;
@@ -1670,7 +1670,7 @@ SQLvar_pop(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 }
 
 static str
-do_covariance_and_correlation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, const char* op, const char* err, 
+do_covariance_and_correlation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, const char* op, const char* err,
 							  gdk_return (*func)(BAT *, BAT *, BAT *, BAT *, BAT *, int), BUN minimum, dbl single_case)
 {
 	BAT *r = NULL, *b = NULL, *c = NULL, *s = NULL, *e = NULL;
@@ -1845,7 +1845,7 @@ SQLstrgroup_concat(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			parameters++;
 		} else
 			separator = ",";
-	
+
 		s = BATdescriptor(*getArgReference_bat(stk, pci, parameters));
 		if (!s) {
 			BBPunfix(b->batCacheid);

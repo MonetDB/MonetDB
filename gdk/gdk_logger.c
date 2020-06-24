@@ -323,7 +323,7 @@ log_read_updates(logger *lg, trans *tr, logformat *l, log_id id, lng offset)
 		fprintf(stderr, "#logger found log_read_updates %d %s\n", id, l->flag == LOG_UPDATE ? "update" : "update_buld");
 
 	if (!mnstr_readLng(lg->input_log, &nr) ||
-	    mnstr_read(lg->input_log, &type_id, 1, 1) != 1) 
+	    mnstr_read(lg->input_log, &type_id, 1, 1) != 1)
 		return LOG_ERR;
 
 	pnr = nr;
@@ -347,7 +347,7 @@ log_read_updates(logger *lg, trans *tr, logformat *l, log_id id, lng offset)
 		if (!lg->flushing) {
 			r = COLnew(0, tpe, (BUN) nr, PERSISTENT);
 			if (r == NULL) {
-				if (uid) 
+				if (uid)
 					BBPreclaim(uid);
 				return LOG_ERR;
 			}
@@ -355,7 +355,7 @@ log_read_updates(logger *lg, trans *tr, logformat *l, log_id id, lng offset)
 
 		if (l->flag == LOG_UPDATE_BULK) {
 	    		if (!mnstr_readLng(lg->input_log, &offset)) {
-				if (r) 
+				if (r)
 					BBPreclaim(r);
 				return LOG_ERR;
 			}
@@ -425,9 +425,9 @@ log_read_updates(logger *lg, trans *tr, logformat *l, log_id id, lng offset)
 			}
 		}
 		if (res == LOG_ERR) {
-			if (r) 
+			if (r)
 				BBPreclaim(r);
-			if (uid) 
+			if (uid)
 				BBPreclaim(uid);
 		}
 	} else {
@@ -452,7 +452,7 @@ la_bat_update_count(logger *lg, log_id id, lng cnt)
 		}
 	}
 	return GDK_SUCCEED;
-	
+
 }
 
 static gdk_return
@@ -492,10 +492,10 @@ la_bat_updates(logger *lg, logaction *la)
 			} else {
 				BATiter vi = bat_iterator(la->b);
 				BUN p, q;
-	
+
 				for (p=0, q = (BUN)la->offset; p<(BUN)la->nr; p++, q++) {
 					const void *t = BUNtail(vi, p);
-	
+
 					if (q < cnt) {
 						if (BUNreplace(b, q, t, true) != GDK_SUCCEED) {
 							logbat_destroy(b);
@@ -511,7 +511,7 @@ la_bat_updates(logger *lg, logaction *la)
 			}
 		}
 		cnt = (BUN)(la->offset + la->nr);
-		if (la_bat_update_count(lg, la->cid, cnt) != GDK_SUCCEED) 
+		if (la_bat_update_count(lg, la->cid, cnt) != GDK_SUCCEED)
 			return GDK_FAIL;
 	} else if (!lg->flushing && la->type == LOG_UPDATE) {
 		BATiter vi = bat_iterator(la->b);
@@ -1940,11 +1940,11 @@ internal_log_bat(logger *lg, BAT *b, log_id id, lng offset, lng cnt, int sliced)
 	gdk_return (*wt) (const void *, stream *, size_t) = BATatoms[b->ttype].atomWrite;
 
 	if (is_row)
-		l.flag = tpe; 
+		l.flag = tpe;
 	if (log_write_format(lg, &l) != GDK_SUCCEED ||
 	    (!is_row && !mnstr_writeLng(lg->output_log, nr)) ||
 	    (!is_row && mnstr_write(lg->output_log, &tpe, 1, 1) != 1) ||
-	    (!is_row && !mnstr_writeLng(lg->output_log, offset))) 
+	    (!is_row && !mnstr_writeLng(lg->output_log, offset)))
 		return GDK_FAIL;
 
 	/* if offset is just for the log, but BAT is already sliced, reset offset */
@@ -2079,7 +2079,7 @@ log_delta(logger *lg, BAT *uid, BAT *uval, log_id id)
 
 	if (log_write_format(lg, &l) != GDK_SUCCEED ||
 	    !mnstr_writeLng(lg->output_log, nr) ||
-	     mnstr_write(lg->output_log, &tpe, 1, 1) != 1){ 
+	     mnstr_write(lg->output_log, &tpe, 1, 1) != 1){
 		logger_unlock(lg);
 		return GDK_FAIL;
 	}

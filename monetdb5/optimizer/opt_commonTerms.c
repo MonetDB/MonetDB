@@ -18,14 +18,14 @@
  * Therefore we skip all constants, except for a constant only situation.
  */
 
-static int 
+static int
 hashInstruction(MalBlkPtr mb, InstrPtr p)
 {
 	int i;
 	for ( i = p->argc - 1 ; i >= p->retc; i--)
-		if (! isVarConstant(mb,getArg(p,i)) ) 
+		if (! isVarConstant(mb,getArg(p,i)) )
 			return getArg(p,i);
-	if (isVarConstant(mb,getArg(p, p->retc)) ) 
+	if (isVarConstant(mb,getArg(p, p->retc)) )
 		return p->retc;
 	return -1;
 }
@@ -40,7 +40,7 @@ OPTcommonTermsImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr
 	int duplicate;
 	int *alias;
 	int *hash, h;
-	int *list;	
+	int *list;
 	str msg = MAL_SUCCEED;
 
 	InstrPtr *old = NULL;
@@ -74,7 +74,7 @@ OPTcommonTermsImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr
 		for ( k = 0; k < p->argc; k++)
 			if ( alias[getArg(p,k)] )
 				getArg(p,k) = alias[getArg(p,k)];
-			
+
 		if (p->token == ENDsymbol){
 			pushInstruction(mb,p);
 			/* wrap up the remainder */
@@ -129,15 +129,15 @@ OPTcommonTermsImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr
 
 		bailout = 1024 ;  // don't run over long collision list
 		/* Look into the hash structure for matching instructions */
-		for (j = hash[h];  j > 0 && bailout-- > 0  ; j = list[j]) 
+		for (j = hash[h];  j > 0 && bailout-- > 0  ; j = list[j])
 			if ( (q= getInstrPtr(mb,j)) && getFunctionId(q) == getFunctionId(p) && getModuleId(q) == getModuleId(p)  ){
 				TRC_DEBUG(MAL_OPTIMIZER, "Candidate[%d->%d] %d %d :%d %d %d=%d %d %d %d\n",
-					j, list[j], 
-					hasSameSignature(mb, p, q), 
+					j, list[j],
+					hasSameSignature(mb, p, q),
 					hasSameArguments(mb, p, q),
 					q->token != ASSIGNsymbol ,
 					list[getArg(q,q->argc-1)],i,
-					!hasCommonResults(p, q), 
+					!hasCommonResults(p, q),
 					!isUnsafeFunction(q),
 					!isUpdateInstruction(q),
 					isLinearFlow(q));
@@ -148,12 +148,12 @@ OPTcommonTermsImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr
 				 * handled by the alias removal part. All arguments should
 				 * be assigned their value before instruction p.
 				 */
-				if ( hasSameArguments(mb, p, q) && 
-					 hasSameSignature(mb, p, q) && 
-					 !hasCommonResults(p, q) && 
-					 !isUnsafeFunction(q) && 
+				if ( hasSameArguments(mb, p, q) &&
+					 hasSameSignature(mb, p, q) &&
+					 !hasCommonResults(p, q) &&
+					 !isUnsafeFunction(q) &&
 					 !isUpdateInstruction(q) &&
-					 isLinearFlow(q) 
+					 isLinearFlow(q)
 					) {
 					if (safetyBarrier(p, q) ){
 						TRC_DEBUG(MAL_OPTIMIZER, "Safety barrier reached\n");
@@ -184,7 +184,7 @@ OPTcommonTermsImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr
 		if (duplicate){
 			pushInstruction(mb,p);
 			continue;
-		} 
+		}
 		/* update the hash structure with another candidate for re-use */
 		TRC_DEBUG(MAL_OPTIMIZER, "Update hash[%d] - look at arg '%d' hash '%d' list '%d'\n", i, getArg(p,p->argc-1), h, hash[h]);
 		traceInstruction(MAL_OPTIMIZER, mb, 0, p, LIST_MAL_ALL);

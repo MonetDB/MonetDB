@@ -52,7 +52,7 @@ OPTjitImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		}
 		/* case 1
 		 * X_527 := algebra.projection(C_353, X_329);
-		 * X_535 := batcalc.-(100:lng, X_527); 
+		 * X_535 := batcalc.-(100:lng, X_527);
 		 */
 		if( getModuleId(p) == batcalcRef && *getFunctionId(p) == '-' && p->argc == 3 && isVarConstant(mb, getArg(p,1)) ){
 			q= getInstrPtr(mb, getVar(mb,getArg(p,2))->updated);

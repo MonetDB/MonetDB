@@ -576,7 +576,7 @@ str RMTget(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 		BAT *b;
 
 		snprintf(qbuf, BUFSIZ, "io.print(%s);", ident);
-		
+
 		TRC_DEBUG(MAL_REMOTE, "Remote get: %s\n", qbuf);
 
 		/* this call should be a single transaction over the channel*/
@@ -611,7 +611,7 @@ str RMTget(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 			}
 		} else
 			while (mapi_fetch_row(mhdl)) {
-				var = mapi_fetch_field(mhdl, 1); 
+				var = mapi_fetch_field(mhdl, 1);
 				if (var == NULL)
 					var = "nil";
 				s = 0;
@@ -1505,4 +1505,4 @@ mel_func remote_init_funcs[] = {
 LIB_STARTUP_FUNC(init_remote_mal)
 { mal_module("remote", NULL, remote_init_funcs); }
 
-#endif 
+#endif

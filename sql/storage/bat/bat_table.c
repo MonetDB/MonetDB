@@ -28,7 +28,7 @@ _delta_cands(sql_trans *tr, sql_table *t)
 		if ((d = store_funcs.bind_del(tr, t, RDONLY)) != NULL) {
 			BAT *del_ids = COLnew(0, TYPE_oid, dcnt, TRANSIENT);
 
-			if (!d) 
+			if (!d)
 				return NULL;
 			if (store_funcs.count_del(tr, t, 2) > 0) {
 				BAT *nd = COLcopy(d, d->ttype, true, TRANSIENT);
@@ -47,7 +47,7 @@ _delta_cands(sql_trans *tr, sql_table *t)
 				BBPunfix(uv->batCacheid);
 				d = nd;
 			}
-			bit *deleted = (bit*)Tloc(d, 0); 
+			bit *deleted = (bit*)Tloc(d, 0);
 			for(BUN p = 0; p < nr; p++) {
 				if (deleted[p]) {
 					oid id = p;
@@ -90,7 +90,7 @@ delta_cands(sql_trans *tr, sql_table *t)
 
 static BAT *
 full_column(sql_trans *tr, sql_column *c)
-{	
+{
 	/* TODO use bat_storage via callbacks */
 	if (!c->data) {
 		sql_column *oc = tr_find_column(tr->parent, c);
@@ -106,15 +106,15 @@ full_column(sql_trans *tr, sql_column *c)
 	sql_delta *bat = c->data;
 
 	b = temp_descriptor(bat->cs.bid);
-	if (temp) 
+	if (temp)
 		return b;
 	if (b && bat->cs.uibid && bat->cs.ucnt) {
 		ui = temp_descriptor(bat->cs.uibid);
 		uv = temp_descriptor(bat->cs.uvbid);
 		if (ui && BATcount(ui)) {
-			BAT *r = COLcopy(b, b->ttype, true, TRANSIENT); 
+			BAT *r = COLcopy(b, b->ttype, true, TRANSIENT);
 
-			bat_destroy(b); 
+			bat_destroy(b);
 			b = r;
 	    		if (!b || !ui || !uv || BATreplace(b, ui, uv, true) != GDK_SUCCEED) {
 				if (b) BBPunfix(b->batCacheid);
@@ -123,8 +123,8 @@ full_column(sql_trans *tr, sql_column *c)
 				return NULL;
 			}
 		}
-		bat_destroy(ui); 
-		bat_destroy(uv); 
+		bat_destroy(ui);
+		bat_destroy(uv);
 	}
 	(void)c;
 	return b;
@@ -249,7 +249,7 @@ table_insert(sql_trans *tr, sql_table *t, ...)
 	}
 	va_end(va);
 	if (n) {
-		// This part of the code should never get reached  
+		// This part of the code should never get reached
 		TRC_ERROR(SQL_STORE, "Called table_insert(%s) with wrong number of args (%d,%d)\n", t->base.name, list_length(t->columns.set), cnt);
 		assert(0);
 		return LOG_ERR;
@@ -311,7 +311,7 @@ rids_select( sql_trans *tr, sql_column *key, const void *key_value_low, const vo
 		while ((key = va_arg(va, sql_column *)) != NULL) {
 			kvl = va_arg(va, void *);
 			kvh = va_arg(va, void *);
-	
+
 			b = full_column(tr, key);
 			if (!kvl)
 				kvl = ATOMnilptr(b->ttype);
@@ -360,7 +360,7 @@ rids_orderby(sql_trans *tr, rids *r, sql_column *orderby_col)
 
 
 /* return table rids from result of rids_select, return (oid_nil) when done */
-static oid 
+static oid
 rids_next(rids *r)
 {
 	if (r->cur < BATcount((BAT *) r->data)) {
@@ -370,7 +370,7 @@ rids_next(rids *r)
 }
 
 /* clean up the resources taken by the result of rids_select */
-static void 
+static void
 rids_destroy(rids *r)
 {
 	bat_destroy(r->data);
@@ -389,7 +389,7 @@ rids_join(sql_trans *tr, rids *l, sql_column *lc, rids *r, sql_column *rc)
 {
 	BAT *lcb, *rcb, *s = NULL, *d = NULL;
 	gdk_return ret;
-	
+
 	lcb = full_column(tr, lc);
 	rcb = full_column(tr, rc);
 	ret = BATjoin(&s, &d, lcb, rcb, l->data, r->data, false, BATcount(lcb));
@@ -651,7 +651,7 @@ bat_table_init( table_functions *tf )
 	tf->table_insert = table_insert;
 	tf->table_delete = table_delete;
 	tf->table_vacuum = table_vacuum;
-	
+
 	tf->rids_select = rids_select;
 	tf->rids_orderby = rids_orderby;
 	tf->rids_join = rids_join;

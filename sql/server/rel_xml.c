@@ -14,12 +14,12 @@
 #include "sql_parser.h"
 
 static sql_exp *
-rel_xmlelement(sql_query *query, sql_rel **rel, symbol *sym, int f, exp_kind knd) 
+rel_xmlelement(sql_query *query, sql_rel **rel, symbol *sym, int f, exp_kind knd)
 {
 	mvc *sql = query->sql;
 	dnode *d = sym->data.lval->h;
-	const char *tag = d->data.sval; 
-	dlist *ns_attrs_elms = d->next->data.lval; 
+	const char *tag = d->data.sval;
+	dlist *ns_attrs_elms = d->next->data.lval;
 	sql_exp *ns_st = NULL, *attr_st = NULL, *res = NULL;
 	sql_type *t = NULL;
 	sql_subtype xml_type;
@@ -39,10 +39,10 @@ rel_xmlelement(sql_query *query, sql_rel **rel, symbol *sym, int f, exp_kind knd
 
 			for (n=cl->h; n; n = n->next) {
 				symbol *c = n->data.sym;
-				sql_subtype *st; 
+				sql_subtype *st;
 				sql_exp *c_st = rel_value_exp(query, rel, c, f, knd);
 
-				if (!c_st) 
+				if (!c_st)
 					return NULL;
 
 				st = exp_subtype(c_st);
@@ -57,7 +57,7 @@ rel_xmlelement(sql_query *query, sql_rel **rel, symbol *sym, int f, exp_kind knd
 					if (!c_st || (c_st = rel_check_type(sql, &xml_type, rel ? *rel : NULL, c_st, type_equal)) == NULL)
 						return NULL;
 				}
-				
+
 				/* lets glue the xml content together */
 				if (res) {
 					res = rel_binop_(sql, rel ? *rel : NULL, res, c_st, NULL, "concat", card_value);
@@ -66,13 +66,13 @@ rel_xmlelement(sql_query *query, sql_rel **rel, symbol *sym, int f, exp_kind knd
 				}
 			}
 		}
-		if (ns) { 
-			ns_st = rel_value_exp(query, rel, ns, f, knd); 
+		if (ns) {
+			ns_st = rel_value_exp(query, rel, ns, f, knd);
 			if (!ns_st)
 				return NULL;
 		}
 		if (attr) {
-			attr_st = rel_value_exp(query, rel, attr, f, knd); 
+			attr_st = rel_value_exp(query, rel, attr, f, knd);
 			if (!attr_st)
 				return NULL;
 		}
@@ -85,19 +85,19 @@ rel_xmlelement(sql_query *query, sql_rel **rel, symbol *sym, int f, exp_kind knd
 	if (!res)
 		res = exp_atom(sql->sa, atom_general(sql->sa, &xml_type, NULL));
 
-	if (!ns_st || !attr_st || !res) 
+	if (!ns_st || !attr_st || !res)
 		return NULL;
 	return rel_nop_(query->sql, rel ? *rel : NULL, exp_atom_clob(sql->sa, tag), ns_st, attr_st, res, NULL, "element",
 					card_value);
 }
 
 static sql_exp *
-rel_xmlforest(sql_query *query, sql_rel **rel, symbol *sym, int f, exp_kind knd) 
+rel_xmlforest(sql_query *query, sql_rel **rel, symbol *sym, int f, exp_kind knd)
 {
 	mvc *sql = query->sql;
 	dnode *d = sym->data.lval->h;
 	symbol *ns = d->data.sym;
-	dlist *elms = d->next->data.lval;  
+	dlist *elms = d->next->data.lval;
 	sql_exp *ns_st, *attr_st, *res = NULL;
 	sql_type *t = NULL;
 	sql_subtype xml_type;
@@ -106,7 +106,7 @@ rel_xmlforest(sql_query *query, sql_rel **rel, symbol *sym, int f, exp_kind knd)
 		return sql_error(sql, 02, SQLSTATE(42000) "XML: xml type missing, probably the xml module wasn't added");
 	sql_init_subtype(&xml_type, t, 0, 0);
 	if (ns) {
-		ns_st = rel_value_exp(query, rel, ns, f, knd); 
+		ns_st = rel_value_exp(query, rel, ns, f, knd);
 	} else {
 		ns_st = exp_atom(sql->sa, atom_general(sql->sa, &xml_type, NULL));
 	}
@@ -123,7 +123,7 @@ rel_xmlforest(sql_query *query, sql_rel **rel, symbol *sym, int f, exp_kind knd)
 
 			sql_exp *c_st = rel_value_exp(query, rel, c, f, knd);
 			sql_subtype *st;
-			if (!c_st) 
+			if (!c_st)
 				return NULL;
 
 			st = exp_subtype(c_st);
@@ -158,27 +158,27 @@ rel_xmlforest(sql_query *query, sql_rel **rel, symbol *sym, int f, exp_kind knd)
 }
 
 static sql_exp *
-rel_xmlcomment(sql_query *query, sql_rel **rel, symbol *sym, int f, exp_kind knd) 
+rel_xmlcomment(sql_query *query, sql_rel **rel, symbol *sym, int f, exp_kind knd)
 {
 	dnode *d = sym->data.lval->h;
 	symbol *comment = d->data.sym;
 	sql_exp *comment_st;
 
-	comment_st = rel_value_exp(query, rel, comment, f, knd); 
+	comment_st = rel_value_exp(query, rel, comment, f, knd);
 	if (!comment_st)
 		return NULL;
 	return rel_unop_(query->sql, rel ? *rel : NULL, comment_st, NULL, "comment", card_value);
 }
 
 static sql_exp *
-rel_xmlattribute(sql_query *query, sql_rel **rel, symbol *sym, int f, exp_kind knd) 
+rel_xmlattribute(sql_query *query, sql_rel **rel, symbol *sym, int f, exp_kind knd)
 {
 	dnode *d = sym->data.lval->h;
 	const char *attr_name = d->data.sval;
 	symbol *attr = d->next->data.sym;
 	sql_exp *attr_st, *attr_name_st = NULL;
 
-	attr_st = rel_value_exp(query, rel, attr, f, knd); 
+	attr_st = rel_value_exp(query, rel, attr, f, knd);
 	if (!attr_st)
 		return NULL;
 	if (!attr_name) {
@@ -195,7 +195,7 @@ rel_xmlattribute(sql_query *query, sql_rel **rel, symbol *sym, int f, exp_kind k
 }
 
 static sql_exp *
-rel_xmlconcat(sql_query *query, sql_rel **rel, symbol *sym, int f, exp_kind knd) 
+rel_xmlconcat(sql_query *query, sql_rel **rel, symbol *sym, int f, exp_kind knd)
 {
 	dnode *d = sym->data.lval->h;
 	dnode *en = d->data.lval->h;
@@ -203,32 +203,32 @@ rel_xmlconcat(sql_query *query, sql_rel **rel, symbol *sym, int f, exp_kind knd)
 
 	for (; en; en = en->next) {
 		symbol *c = en->data.sym;
-		concat_st = rel_value_exp(query, rel, c, f, knd); 
-		if (!concat_st) 
+		concat_st = rel_value_exp(query, rel, c, f, knd);
+		if (!concat_st)
 			return NULL;
 		if (res)
 			res = rel_binop_(query->sql, rel ? *rel : NULL, res, concat_st, NULL, "concat", card_value);
 		else
 			res = concat_st;
-	}	
+	}
 	return res;
 }
 
 static sql_exp *
-rel_xmldocument(sql_query *query, sql_rel **rel, symbol *sym, int f, exp_kind knd) 
+rel_xmldocument(sql_query *query, sql_rel **rel, symbol *sym, int f, exp_kind knd)
 {
 	dnode *d = sym->data.lval->h;
 	symbol *val = d->data.sym;
 	sql_exp *val_st;
 
-	val_st = rel_value_exp(query, rel, val, f, knd); 
+	val_st = rel_value_exp(query, rel, val, f, knd);
 	if (!val_st)
 		return NULL;
 	return rel_unop_(query->sql, rel ? *rel : NULL, val_st, NULL, "document", card_value);
 }
 
 static sql_exp *
-rel_xmlpi(sql_query *query, sql_rel **rel, symbol *sym, int f, exp_kind knd) 
+rel_xmlpi(sql_query *query, sql_rel **rel, symbol *sym, int f, exp_kind knd)
 {
 	dnode *d = sym->data.lval->h;
 	char *target = d->data.sval;
@@ -239,17 +239,17 @@ rel_xmlpi(sql_query *query, sql_rel **rel, symbol *sym, int f, exp_kind knd)
 	sql_find_subtype(&str_type, "clob", 0, 0);
 	target_st = exp_atom_str(query->sql->sa, target, &str_type);
 	if (!val)
-		val_st = rel_value_exp(query, rel, val, f, knd); 
+		val_st = rel_value_exp(query, rel, val, f, knd);
 	else
 		val_st = exp_atom(query->sql->sa, atom_general(query->sql->sa, &str_type, NULL));
-	if (!val_st) 
+	if (!val_st)
 		return NULL;
 	return rel_binop_(query->sql, rel ? *rel : NULL, target_st, val_st, NULL, "pi", card_value);
 }
 
 /* cast string too xml */
 static sql_exp *
-rel_xmltext(sql_query *query, sql_rel **rel, symbol *sym, int f, exp_kind knd) 
+rel_xmltext(sql_query *query, sql_rel **rel, symbol *sym, int f, exp_kind knd)
 {
 	dnode *d = sym->data.lval->h;
 	symbol *text = d->data.sym;
@@ -260,7 +260,7 @@ rel_xmltext(sql_query *query, sql_rel **rel, symbol *sym, int f, exp_kind knd)
 	if ((t = mvc_bind_type(query->sql, "xml")) == NULL)
 		return sql_error(query->sql, 02, SQLSTATE(42000) "XML: xml type missing, probably the xml module wasn't added");
 	sql_init_subtype(&xml_type, t, 0, 0);
-	text_st = rel_value_exp(query, rel, text, f, knd); 
+	text_st = rel_value_exp(query, rel, text, f, knd);
 	if (!text_st || (text_st = rel_check_type(query->sql, &xml_type, rel ? *rel : NULL, text_st, type_equal)) == NULL)
 		return NULL;
 	return text_st;
@@ -273,28 +273,28 @@ rel_xml(sql_query *query, sql_rel **rel, symbol *s, int f, exp_kind knd)
 	sql_exp *ret = NULL;
 
 	switch (s->token) {
-	case SQL_XMLELEMENT: 
+	case SQL_XMLELEMENT:
 		ret = rel_xmlelement(query, rel, s, f, knd);
 		break;
-	case SQL_XMLFOREST: 
+	case SQL_XMLFOREST:
 		ret = rel_xmlforest(query, rel, s, f, knd);
 		break;
-	case SQL_XMLCOMMENT: 
+	case SQL_XMLCOMMENT:
 		ret = rel_xmlcomment(query, rel, s, f, knd);
 		break;
-	case SQL_XMLATTRIBUTE: 
+	case SQL_XMLATTRIBUTE:
 		ret = rel_xmlattribute(query, rel, s, f, knd);
 		break;
-	case SQL_XMLCONCAT: 
+	case SQL_XMLCONCAT:
 		ret = rel_xmlconcat(query, rel, s, f, knd);
 		break;
-	case SQL_XMLDOCUMENT: 
+	case SQL_XMLDOCUMENT:
 		ret = rel_xmldocument(query, rel, s, f, knd);
 		break;
-	case SQL_XMLPI: 
+	case SQL_XMLPI:
 		ret = rel_xmlpi(query, rel, s, f, knd);
 		break;
-	case SQL_XMLTEXT: 
+	case SQL_XMLTEXT:
 		ret = rel_xmltext(query, rel, s, f, knd);
 		break;
 	default:

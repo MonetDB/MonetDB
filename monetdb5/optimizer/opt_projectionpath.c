@@ -14,13 +14,13 @@
 #include "opt_projectionpath.h"
 
 
-// Common prefix reduction was not effective it is retained for 
+// Common prefix reduction was not effective it is retained for
 // future experiments.
 //#define ELIMCOMMONPREFIX
 
 #define LOOKAHEAD 500   /* limit the lookahead for candidates */
 
-/* locate common prefixes  in projection lists 
+/* locate common prefixes  in projection lists
  * The algorithm is quadratic in the number of paths considered. */
 
 #ifdef ELIMCOMMONPREFIX
@@ -38,7 +38,7 @@ OPTprojectionPrefix(Client cntxt, MalBlkPtr mb, int prefixlength)
 	if (newMalBlkStmt(mb,mb->ssize) < 0)
 		return 0;
 
- 
+
 	for( i = 0; i < limit; i++){
 		p = old[i];
 		assert(p);
@@ -49,11 +49,11 @@ OPTprojectionPrefix(Client cntxt, MalBlkPtr mb, int prefixlength)
 
 		/* we fixed a projection path of the target prefixlength
 		 * Search now the remainder for at least one case where it
-		 * has a common prefix of prefixlength 
+		 * has a common prefix of prefixlength
 		 */
 		for(match = 0,  j= i+1; j < limit && j < i + LOOKAHEAD; j++) {
 			q= old[j];
-			if ( getFunctionId(q) != projectionpathRef || q->argc < prefixlength) 
+			if ( getFunctionId(q) != projectionpathRef || q->argc < prefixlength)
 				continue;
 			for( match =0,  k = q->retc; k <  prefixlength; k++)
 				match += getArg(q,k) == getArg(p,k);
@@ -83,7 +83,7 @@ OPTprojectionPrefix(Client cntxt, MalBlkPtr mb, int prefixlength)
 			/* patch all instructions with same prefix. */
 			for( ; j < limit; j++) {
 				q= old[j];
-				if ( getFunctionId(q) != projectionpathRef || q->argc < prefixlength) 
+				if ( getFunctionId(q) != projectionpathRef || q->argc < prefixlength)
 					continue;
 				for( match =0,  k = r->retc; k < r->argc; k++)
 					match += getArg(q,k) == getArg(r,k);
@@ -158,7 +158,7 @@ OPTprojectionpathImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, Instr
 
 	/* beware, new variables and instructions are introduced */
 	pc= (int*) GDKzalloc(sizeof(int)* mb->vtop * 2); /* to find last assignment */
-	varcnt= (int*) GDKzalloc(sizeof(int)* mb->vtop * 2); 
+	varcnt= (int*) GDKzalloc(sizeof(int)* mb->vtop * 2);
 	if (pc == NULL || varcnt == NULL ){
 		msg = createException(MAL,"optimizer.projectionpath", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		goto wrapupall;
@@ -175,7 +175,7 @@ OPTprojectionpathImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, Instr
 			varcnt[getArg(p,j)]++;
 	}
 
-	/* assume a single pass over the plan, and only consider projection sequences 
+	/* assume a single pass over the plan, and only consider projection sequences
 	 * beware, we are only able to deal with projections without candidate lists. (argc=3)
 	 * We also should not change the type of the outcome, i.e. leaving the last argument untouched.
  	 */
@@ -194,18 +194,18 @@ OPTprojectionpathImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, Instr
 			for(j=p->retc; j<p->argc; j++){
 				if (pc[getArg(p,j)] )
 					r = getInstrPtr(mb,pc[getArg(p,j)]);
-				else 
+				else
 					r = 0;
 				if (r && varcnt[getArg(p,j)] > 1 )
 					r = 0;
-				
+
 				/* inject the complete sub-path */
 
 				if ( getFunctionId(p) == projectionRef){
 					if( r &&  getModuleId(r)== algebraRef && ( getFunctionId(r)== projectionRef  || getFunctionId(r)== projectionpathRef) ){
-						for(k= r->retc; k<r->argc; k++) 
+						for(k= r->retc; k<r->argc; k++)
 							q = addArgument(mb,q,getArg(r,k));
-					} else 
+					} else
 						q = addArgument(mb,q,getArg(p,j));
 				}
 			}
@@ -238,7 +238,7 @@ OPTprojectionpathImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, Instr
 			if ( p->argc  > maxprefixlength)
 				maxprefixlength = p->argc;
 			actions++;
-		} 
+		}
 	wrapup:
 		pushInstruction(mb,p);
 		for(j=0; j< p->retc; j++)
@@ -261,7 +261,7 @@ OPTprojectionpathImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, Instr
 	 * On medium scale databases it may save cpu cycles.
 	 * Turning this feature into a compile time option.
 		if( maxprefixlength > 3){
-			 //Before searching the prefix, we should remove all non-used instructions.  
+			 //Before searching the prefix, we should remove all non-used instructions.
 			actions += OPTdeadcodeImplementation(cntxt, mb, 0, 0);
 			for( ; maxprefixlength > 2; maxprefixlength--)
 				actions += OPTprojectionPrefix(cntxt, mb, maxprefixlength);

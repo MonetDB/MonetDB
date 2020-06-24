@@ -78,7 +78,7 @@ OPTdependencies(Client cntxt, MalBlkPtr mb, int **Ulist)
 	int i,j,sz=0;
 	InstrPtr p = NULL;
 	int block = 0;
-	
+
 	(void) cntxt;
 
 	if (list == NULL || var == NULL){

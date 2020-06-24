@@ -5,7 +5,7 @@
 #define error(msg) {fprintf(stderr, "Failure: %s\n", msg); return -1;}
 
 int
-main(void) 
+main(void)
 {
 	char* err = NULL;
 	monetdbe_database mdbe;

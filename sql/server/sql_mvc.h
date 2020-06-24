@@ -64,9 +64,9 @@
 #define mod_none 	0
 #define mod_debug 	1
 #define mod_trace 	2
-#define mod_explain 	4 
+#define mod_explain 	4
 /* locked needs unlocking */
-#define mod_locked 	16 
+#define mod_locked 	16
 
 typedef struct sql_groupby_expression {
 	symbol *sdef;
@@ -146,7 +146,7 @@ typedef struct mvc {
 	char emode;		/* execution mode */
 	char emod;		/* execution modifier */
 
-	sql_session *session;	
+	sql_session *session;
 
 	mapi_query_t type;	/* query type */
 	unsigned int label;	/* numbers for relational projection labels */
@@ -176,10 +176,10 @@ extern int mvc_type(mvc *c);
 extern int mvc_debug_on(mvc *m, int flag);
 extern void mvc_cancel_session(mvc *m);
 
-/* since Savepoints and transactions are related the 
+/* since Savepoints and transactions are related the
  * commit function includes the savepoint creation.
- * Rollbacks can be either full or until a given savepoint. 
- * The special mvc_release can be used to release savepoints. 
+ * Rollbacks can be either full or until a given savepoint.
+ * The special mvc_release can be used to release savepoints.
  */
 #define has_snapshots(tr) ((tr) && (tr)->parent && (tr)->parent->parent)
 

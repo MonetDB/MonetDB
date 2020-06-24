@@ -209,12 +209,12 @@ extern stmt *stmt_gen_group(backend *be, stmt *gids, stmt *cnts);	/* given a gid
 extern stmt *stmt_mirror(backend *be, stmt *s);
 extern stmt *stmt_result(backend *be, stmt *s, int nr);
 
-/* 
+/*
  * distinct: compute topn on unique groups
  * dir:      direction of the ordering, ie 1 Ascending, 0 decending
- * last:     intermediate step or last step 
+ * last:     intermediate step or last step
  * order:    is order important or not (firstn vs slice)
- */ 
+ */
 extern stmt *stmt_limit(backend *sa, stmt *c, stmt *piv, stmt *gid, stmt *offset, stmt *limit, int distinct, int dir, int nullslast, int last, int order);
 extern stmt *stmt_sample(backend *be, stmt *s, stmt *sample, stmt *seed);
 extern stmt *stmt_order(backend *be, stmt *s, int direction, int nullslast);

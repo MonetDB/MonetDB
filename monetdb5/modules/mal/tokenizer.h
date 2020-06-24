@@ -22,6 +22,6 @@ mal_export str TKNZRgetLevel         (bat *r, int *level);
 mal_export str TKNZRgetIndex         (bat *r);
 mal_export str TKNZRgetCount         (bat *r);
 mal_export str TKNZRgetCardinality   (bat *r);
-mal_export str takeOid	 	   (oid id, str *val); 			
+mal_export str takeOid	 	   (oid id, str *val);
 
 #endif /* _TKNZR_H */

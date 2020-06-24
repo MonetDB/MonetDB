@@ -820,7 +820,7 @@ static str URLnoop(url *u, url *val)
 
 #include "mel.h"
 mel_atom url_init_atoms[] = {
- { .name="url", .basetype="str", .fromstr=URLfromString, .tostr=URLtoString, },  { .cmp=NULL } 
+ { .name="url", .basetype="str", .fromstr=URLfromString, .tostr=URLtoString, },  { .cmp=NULL }
 };
 mel_func url_init_funcs[] = {
  command("url", "url", URLnew, false, "Create an URL from a string literal", args(1,2, arg("",url),arg("s",str))),

@@ -45,7 +45,7 @@ OPTwlcImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		}
 		if( getModuleId(p) == sqlcatalogRef)
 			query = 0;
-		if( getModuleId(p) == sqlRef && 
+		if( getModuleId(p) == sqlRef &&
 			( getFunctionId(p) == appendRef  ||
 			  getFunctionId(p) == updateRef  ||
 			  getFunctionId(p) == claimRef  ||
@@ -57,7 +57,7 @@ OPTwlcImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	if(query) // nothing to log
 		return MAL_SUCCEED;
-	
+
 	// We use a fake collection of objects to speed up the checking later.
 
 	// Now optimize the code
@@ -112,7 +112,7 @@ OPTwlcImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				pushInstruction(mb,q);
 				updates++;
 		} else
-		if( def && getModuleId(p) == sqlRef && 
+		if( def && getModuleId(p) == sqlRef &&
 			( getFunctionId(p) == appendRef  ||
 			  getFunctionId(p) == updateRef  ||
 			  getFunctionId(p) == claimRef  ||
@@ -138,7 +138,7 @@ OPTwlcImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				pushInstruction(mb,q);
 				updates++;
 		}
-	} 
+	}
 	for(; i<slimit; i++)
 		if( old[i])
 			freeInstruction(old[i]);
@@ -148,7 +148,7 @@ OPTwlcImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	msg = chkTypes(cntxt->usermodule, mb, FALSE);
 	if (!msg)
 		msg = chkFlow(mb);
-	//if (!msg) 
+	//if (!msg)
 	//	msg = chkDeclarations(mb);
     /* keep all actions taken as a post block comment */
 

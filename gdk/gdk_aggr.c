@@ -3392,7 +3392,7 @@ BATcalccorrelation(BAT *b1, BAT *b2)
 	}
 	if (n != 0 && down1 != 0 && down2 != 0)
 		aux = (up / n) / (sqrt(down1 / n) * sqrt(down2 / n));
-	else 
+	else
 		aux = dbl_nil;
 	TRC_DEBUG(ALGO, "b1=" ALGOBATFMT ",b2=" ALGOBATFMT " (" LLFMT " usec)\n",
 		  ALGOBATPAR(b1), ALGOBATPAR(b2), GDKusec() - t0);

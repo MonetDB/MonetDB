@@ -376,7 +376,7 @@ bl_postversion(void *lg)
 	return GDK_SUCCEED;
 }
 
-static int 
+static int
 bl_create(int debug, const char *logdir, int cat_version)
 {
 	if (bat_logger)
@@ -387,7 +387,7 @@ bl_create(int debug, const char *logdir, int cat_version)
 	return LOG_ERR;
 }
 
-static void 
+static void
 bl_destroy(void)
 {
 	logger *l = bat_logger;
@@ -403,7 +403,7 @@ bl_destroy(void)
 	}
 }
 
-static int 
+static int
 bl_flush(void)
 {
 	if (bat_logger)
@@ -413,11 +413,11 @@ bl_flush(void)
 
 static int
 bl_changes(void)
-{	
+{
 	return (int) MIN(logger_changes(bat_logger), GDK_int_max);
 }
 
-static int 
+static int
 bl_get_sequence(int seq, lng *id)
 {
 	return logger_sequence(bat_logger, seq, id);
@@ -432,19 +432,19 @@ bl_log_isnew(void)
 	return 1;
 }
 
-static int 
+static int
 bl_tstart(void)
 {
 	return log_tstart(bat_logger) == GDK_SUCCEED ? LOG_OK : LOG_ERR;
 }
 
-static int 
+static int
 bl_tend(void)
 {
 	return log_tend(bat_logger) == GDK_SUCCEED ? LOG_OK : LOG_ERR;
 }
 
-static int 
+static int
 bl_sequence(int seq, lng id)
 {
 	return log_sequence(bat_logger, seq, id) == GDK_SUCCEED ? LOG_OK : LOG_ERR;
@@ -636,9 +636,9 @@ snapshot_bats(stream *plan, const char *db_dir)
 		goto end;
 	}
 	if (gdk_version != 061043U) {
-		// If this version number has changed, the structure of BBP.dir 
+		// If this version number has changed, the structure of BBP.dir
 		// may have changed. Update this whole function to take this
-		// into account. 
+		// into account.
 		// Note: when startup has completed BBP.dir is guaranteed
 		// to the latest format so we don't have to support any older
 		// formats in this function.
@@ -705,7 +705,7 @@ snapshot_bats(stream *plan, const char *db_dir)
 					goto end;
 				/* fallthrough */
 			case 2:
-				// no tail? 
+				// no tail?
 				break;
 		}
 	}

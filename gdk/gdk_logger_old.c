@@ -649,7 +649,7 @@ log_read_updates(logger *lg, trans *tr, logformat *l, char *name, int tpe, oid i
 
 				if (compressed) {
 					void *h = rh(hv, lg->log, 1);
-				
+
 					assert(uid->ttype == TYPE_void);
 					if (h == NULL)
 						res = LOG_EOF;

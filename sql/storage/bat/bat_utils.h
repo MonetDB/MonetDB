@@ -32,7 +32,7 @@ extern BUN append_inserted(BAT *b, BAT *i );
 
 extern BAT *ebats[MAXATOMS];
 
-#define isEbat(b) 	(ebats[b->ttype] && ebats[b->ttype] == b) 
+#define isEbat(b) 	(ebats[b->ttype] && ebats[b->ttype] == b)
 
 extern log_bid ebat2real(log_bid b, oid ibase);
 extern log_bid e_bat(int type);

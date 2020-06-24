@@ -14,7 +14,7 @@
 
 #define is_ifthenelse_func(sf) (strcmp((sf)->func->base.name, "ifthenelse") == 0)
 #define is_isnull_func(sf) (strcmp((sf)->func->base.name, "isnull") == 0)
-#define is_not_func(sf) (strcmp((sf)->func->base.name, "not") == 0) 
+#define is_not_func(sf) (strcmp((sf)->func->base.name, "not") == 0)
 
 extern sql_exp *rewrite_simplify_exp(mvc *sql, sql_rel *rel, sql_exp *e, int depth, int *changes);
 extern sql_rel *rewrite_simplify(mvc *sql, sql_rel *rel, int *changes);

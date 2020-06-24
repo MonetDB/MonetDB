@@ -150,7 +150,7 @@ chkFlow(MalBlkPtr mb)
 			if(j<0){
 				str nme=getVarName(mb,v);
 			    throw(MAL,buf, "label '%s' not in guarded block", nme);
-			} 
+			}
 			break;
 		case YIELDsymbol:
 			{ InstrPtr ps= getInstrPtr(mb,0);
@@ -168,7 +168,7 @@ chkFlow(MalBlkPtr mb)
 					yieldseen = FALSE;    /* always end with a return */
 				if (ps->retc != p->retc) {
 					throw(MAL, buf, "invalid return target!");
-				} else 
+				} else
 				if (ps->typechk == TYPE_RESOLVED)
 					for (e = 0; e < p->retc; e++) {
 						if (resolveType(getArgType(mb, ps, e), getArgType(mb, p, e)) < 0) {
@@ -205,7 +205,7 @@ chkFlow(MalBlkPtr mb)
 
 	if(lastInstruction < mb->stop-1 )
 		throw(MAL, buf, "instructions after END");
-	
+
 	if( endseen && btop  > 0)
 			throw(MAL, buf, "barrier '%s' without exit in %s[%d]", getVarName(mb,var[btop - 1]),getFcnName(mb),i);
 	p= getInstrPtr(mb,0);
@@ -564,7 +564,7 @@ setVariableScope(MalBlkPtr mb)
 				setVarEolife(mb,k,pc);
 			else if ( getVarEolife(mb,k) == -1 )
 				setVarEolife(mb,k,pc);
-			
+
 			if( dflow == depth)
 				dflow= -1;
 			else depth--;
@@ -750,7 +750,7 @@ chkDeclarations(MalBlkPtr mb){
 					if( dflow != -1)
 						throw(MAL, buf, "setLifeSpan nested dataflow blocks not allowed" );
 					dflow= blkId;
-				} 
+				}
 				blks[++top]= blkId;
 			}
 			if( blockExit(p) && top > 0 ){

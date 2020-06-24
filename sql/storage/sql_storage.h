@@ -110,7 +110,7 @@ typedef struct table_functions {
 	subrids_nextid_fptr subrids_nextid;
 	subrids_destroy_fptr subrids_destroy;
 	rids_diff_fptr rids_diff;
-} table_functions; 
+} table_functions;
 
 sqlstore_export table_functions table_funcs;
 
@@ -121,7 +121,7 @@ typedef void *(*bind_col_fptr) (sql_trans *tr, sql_column *c, int access);
 typedef void *(*bind_idx_fptr) (sql_trans *tr, sql_idx *i, int access);
 typedef void *(*bind_del_fptr) (sql_trans *tr, sql_table *t, int access);
 
-/* 
+/*
 -- binds data for column, idx and delets (from the parent transaction)
 */
 typedef void *(*bind_col_data_fptr) (sql_trans *tr, sql_column *c);
@@ -129,7 +129,7 @@ typedef void *(*bind_idx_data_fptr) (sql_trans *tr, sql_idx *i);
 typedef void *(*bind_del_data_fptr) (sql_trans *tr, sql_table *t);
 
 /*
--- append/update to columns and indices 
+-- append/update to columns and indices
 */
 typedef int (*append_col_fptr) (sql_trans *tr, sql_column *c, size_t offset, void *d, int t);
 typedef int (*append_idx_fptr) (sql_trans *tr, sql_idx *i, size_t offset, void *d, int t);
@@ -152,9 +152,9 @@ typedef int (*prop_col_fptr) (sql_trans *tr, sql_column *c);
 -- create the necessary storage resources for columns, indices and tables
 -- returns LOG_OK, LOG_ERR
 */
-typedef int (*create_col_fptr) (sql_trans *tr, sql_column *c); 
-typedef int (*create_idx_fptr) (sql_trans *tr, sql_idx *i); 
-typedef int (*create_del_fptr) (sql_trans *tr, sql_table *t); 
+typedef int (*create_col_fptr) (sql_trans *tr, sql_column *c);
+typedef int (*create_idx_fptr) (sql_trans *tr, sql_idx *i);
+typedef int (*create_del_fptr) (sql_trans *tr, sql_table *t);
 
 /*
 -- upgrade the necessary storage resources for columns, indices and tables
@@ -163,49 +163,49 @@ typedef int (*create_del_fptr) (sql_trans *tr, sql_table *t);
 -- renames.
 -- returns LOG_OK, LOG_ERR
 */
-typedef int (*upgrade_col_fptr) (sql_column *c); 
-typedef int (*upgrade_idx_fptr) (sql_idx *i); 
-typedef int (*upgrade_del_fptr) (sql_table *t); 
+typedef int (*upgrade_col_fptr) (sql_column *c);
+typedef int (*upgrade_idx_fptr) (sql_idx *i);
+typedef int (*upgrade_del_fptr) (sql_table *t);
 
 /*
 -- duplicate the necessary storage resources for columns, indices and tables
 -- returns LOG_OK, LOG_ERR
 */
 typedef int (*dup_col_fptr) (sql_trans *tr, sql_column *oc, sql_column *c);
-typedef int (*dup_idx_fptr) (sql_trans *tr, sql_idx *oi, sql_idx *i ); 
-typedef int (*dup_del_fptr) (sql_trans *tr, sql_table *ot, sql_table *t); 
+typedef int (*dup_idx_fptr) (sql_trans *tr, sql_idx *oi, sql_idx *i );
+typedef int (*dup_del_fptr) (sql_trans *tr, sql_table *ot, sql_table *t);
 
 /*
 -- free the storage resources for columns, indices and tables
 -- returns LOG_OK, LOG_ERR
 */
-typedef int (*destroy_col_fptr) (sql_trans *tr, sql_column *c); 
-typedef int (*destroy_idx_fptr) (sql_trans *tr, sql_idx *i); 
-typedef int (*destroy_del_fptr) (sql_trans *tr, sql_table *t); 
+typedef int (*destroy_col_fptr) (sql_trans *tr, sql_column *c);
+typedef int (*destroy_idx_fptr) (sql_trans *tr, sql_idx *i);
+typedef int (*destroy_del_fptr) (sql_trans *tr, sql_table *t);
 
 /*
 -- clear any storage resources for columns, indices and tables
 -- returns number of removed tuples
 */
-typedef int (*clear_table_fptr) (sql_trans *tr, sql_table *t); 
+typedef int (*clear_table_fptr) (sql_trans *tr, sql_table *t);
 
 /*
--- update_table rollforward the changes made from table ft to table tt 
+-- update_table rollforward the changes made from table ft to table tt
 -- returns LOG_OK, LOG_ERR
 */
-typedef int (*update_table_fptr) (sql_trans *tr, sql_table *ft, sql_table *tt); 
+typedef int (*update_table_fptr) (sql_trans *tr, sql_table *ft, sql_table *tt);
 
 /*
 -- gtrans_update push ibats and ubats
 -- returns LOG_OK, LOG_ERR
 */
-typedef int (*gtrans_update_fptr) (sql_trans *tr); 
+typedef int (*gtrans_update_fptr) (sql_trans *tr);
 
 /*
 -- handle deletes
 -- returns LOG_OK, LOG_ERR
 */
-typedef int (*cleanup_fptr) (); 
+typedef int (*cleanup_fptr) ();
 
 /* backing struct for this interface */
 typedef struct store_functions {
