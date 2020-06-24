@@ -2135,6 +2135,8 @@ rewrite_anyequal(mvc *sql, sql_rel *rel, sql_exp *e, int depth)
 					exp_setname(sql->sa, res, exp_relname(e), exp_name(e));
 					return res;
 				}
+			} else if (!lsq && is_tuple && is_values(re) && !exps_have_rel_exp(re->f)) {
+				return e; /* leave as is, handled later */
 			}
 
 			if (is_atom(re->type) && re->f) { /* exp_values */
