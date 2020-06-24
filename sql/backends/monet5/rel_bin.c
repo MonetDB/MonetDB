@@ -2231,7 +2231,7 @@ split_join_exps(sql_rel *rel, list *joinable, list *not_joinable)
 	}
 }
 
-#define is_priority_exp(e) ((e)->flag == cmp_equal)
+#define is_equi_exp(e) ((e)->flag == cmp_equal || (e)->flag == mark_in || (e)->flag == mark_notin)
 
 static list *
 get_equi_joins_first(mvc *sql, list *exps, int *equality_only)
@@ -2242,14 +2242,15 @@ get_equi_joins_first(mvc *sql, list *exps, int *equality_only)
 		sql_exp *e = n->data;
 
 		assert(e->type == e_cmp && e->flag != cmp_in && e->flag != cmp_notin && e->flag != cmp_or);
-		if (is_priority_exp(e))
+		if (is_equi_exp(e))
 			list_append(new_exps, e);
-		*equality_only &= (e->flag == cmp_equal || e->flag == mark_in || e->flag == mark_notin);
+		else
+			*equality_only = 0;
 	}
 	for( node *n = exps->h; n; n = n->next ) {
 		sql_exp *e = n->data;
 
-		if (!is_priority_exp(e))
+		if (!is_equi_exp(e))
 			list_append(new_exps, e);
 	}
 	return new_exps;
