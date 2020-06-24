@@ -86,11 +86,6 @@ snapshot_database_to(char *dbname, char *dest)
 		goto bailout;
 	}
 
-	/* Connect. This is a dirty hack, making two assumptions:
-	 * 1. we're listening on localhost
-	 * 2. the database has a root user 'monetdb' with password 'monetdb'.
-	 * We'll improve this when have figured out how to authenticate.
-	 */
 	port = getConfNum(_mero_props, "port");
 	conn = mapi_connect("localhost", port, ".snapshot", stats->secret, "sql", dbname);
 	if (conn == NULL || mapi_error(conn)) {

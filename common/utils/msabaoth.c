@@ -40,6 +40,15 @@
 #define fdopen _fdopen
 #endif
 
+#ifdef HAVE_OPENSSL
+#include <openssl/rand.h>		/* RAND_bytes */
+#else
+#ifdef HAVE_COMMONCRYPTO
+#include <CommonCrypto/CommonCrypto.h>
+#include <CommonCrypto/CommonRandom.h>
+#endif
+#endif
+
 /** the directory where the databases are (aka dbfarm) */
 static char *_sabaoth_internal_dbfarm = NULL;
 /** the database which is "active" */
@@ -556,6 +565,89 @@ msab_registerStop(void)
 	return(NULL);
 }
 
+#define SECRETFILE ".secret"
+char *
+msab_pickSecret(char **generated_secret)
+{
+	const size_t secret_size = 32;
+	char *secret;
+	char pathbuf[FILENAME_MAX];
+	char *e;
+	int fd;
+	FILE *f;
+
+	if ((e = getDBPath(pathbuf, sizeof(pathbuf), SECRETFILE)) != NULL)
+		return e;
+
+	// delete existing so we can recreate with appropriate permissions
+	if (remove(pathbuf) < 0 && errno != ENOENT) {
+		char err[FILENAME_MAX + 512];
+		snprintf(err, sizeof(err), "unable to remove '%s': %s",
+			pathbuf, strerror(errno));
+		return strdup(err);
+	}
+
+	secret = malloc(secret_size + 1);
+	secret[secret_size] = '\0';
+
+	unsigned char *bin_secret = (unsigned char*)secret + secret_size / 2;
+
+#ifdef HAVE_OPENSSL
+	if (RAND_bytes(bin_secret, secret_size / 2) != 1) {
+		free(secret);
+		return strdup("RAND_bytes failed");
+	}
+#else
+#ifdef HAVE_COMMONCRYPTO
+	if (CCRandomGenerateBytes(bin_secret, secret_size / 2) != kCCSuccess) {
+		free(secret);
+		return strdup("CCRandomGenerateBytes failed");
+	}
+#else
+	(void)bin_secret;
+	if (generated_secret)
+	// do not return an error, just continue without a secret
+		*generated_secret = NULL;
+	return NULL;
+#endif
+#endif
+
+	for (size_t i = 0; i < secret_size / 2; i++) {
+		snprintf(
+			secret + 2 * i, 3,
+			"%02x",
+			bin_secret[i]
+		);
+	}
+
+	if ((fd = open(pathbuf, O_CREAT | O_WRONLY | O_CLOEXEC, S_IRUSR | S_IWUSR)) == -1) {
+		char err[512];
+		snprintf(err, sizeof(err), "unable to open '%s': %s",
+				pathbuf, strerror(errno));
+		return strdup(err);
+	}
+	if ((f = fdopen(fd, "w")) == NULL) {
+		char err[512];
+		snprintf(err, sizeof(err), "unable to open '%s': %s",
+				pathbuf, strerror(errno));
+		close(fd);
+		(void)remove(pathbuf);
+		return strdup(err);
+	}
+	if (fwrite(secret, 1, secret_size, f) < secret_size || fclose(f) < 0) {
+		char err[512];
+		snprintf(err, sizeof(err), "cannot write secret: %s",
+				strerror(errno));
+		fclose(f);
+		(void)remove(pathbuf);
+		return strdup(err);
+	}
+
+	if (generated_secret)
+		*generated_secret = (char*)secret;
+	return NULL;
+}
+
 /**
  * Returns the status as NULL terminated sabdb struct list for the
  * current database.  Since the current database should always exist,
@@ -722,6 +814,28 @@ msab_getSingleStatus(const char *pathbuf, const char *dbname, sabdb *next)
 		}
 		(void)fclose(f);
 	}
+
+	do {
+		struct stat stb;
+		snprintf(buf, sizeof(buf), "%s/%s/%s", pathbuf, dbname, SECRETFILE);
+		if ((f = fopen(buf, "r")) == NULL)
+			break;
+		if (fstat(fileno(f), &stb) < 0)
+			break;
+		size_t len = (size_t)stb.st_size;
+		char *secret = malloc(len + 1);
+		if (!secret) {
+			fclose(f);
+			break;
+		}
+		if (fread(secret, 1, len, f) != len) {
+			fclose(f);
+			free(secret);
+		}
+		secret[len] = '\0';
+		sdb->secret = secret;
+
+	} while (0);
 
 	return sdb;
 }
