@@ -1024,8 +1024,9 @@ HEAP_initialize(Heap *heap, size_t nbytes, size_t nprivate, int alignment)
 
 
 var_t
-HEAP_malloc(Heap *heap, size_t nbytes)
+HEAP_malloc(BAT *b, size_t nbytes)
 {
+	Heap *heap = b->tvheap;
 	size_t block, trail, ttrail;
 	CHUNK *blockp;
 	CHUNK *trailp;

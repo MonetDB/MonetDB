@@ -23,7 +23,7 @@ typedef struct mel_atom {
 	const void *(*null) (void);
 	void *(*read) (void *, stream *, size_t);
 	gdk_return (*write) (const void *, stream *, size_t);
-	var_t (*put) (Heap *, var_t *, const void *);
+	var_t (*put) (BAT *, var_t *, const void *);
 	void (*del) (Heap *, var_t *);
 	size_t (*length) (const void *);
 	void (*heap) (Heap *, size_t);
@@ -67,7 +67,7 @@ typedef struct mel_func {
 	     command:1,
 	     unsafe:1,
 	     retc:6,
-	     argc:6; 
+	     argc:6;
 //#ifdef NDEBUG
 	//char *comment;
 //#endif
@@ -110,7 +110,7 @@ typedef struct mel_func {
 	     command:1,
 	     unsafe:1,
 	     retc:6,
-	     argc:6; 
+	     argc:6;
 //#ifdef NDEBUG
 	//char *comment;
 //#endif

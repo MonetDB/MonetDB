@@ -996,7 +996,7 @@ BATreplace(BAT *b, BAT *p, BAT *n, bool force)
 				break;
 #endif
 			}
-			if (ATOMreplaceVAR(b->ttype, b->tvheap, &d, new) != GDK_SUCCEED)
+			if (ATOMreplaceVAR(b, &d, new) != GDK_SUCCEED)
 				return GDK_FAIL;
 			if (b->twidth < SIZEOF_VAR_T &&
 			    (b->twidth <= 2 ? d - GDK_VAROFFSET : d) >= ((size_t) 1 << (8 * b->twidth))) {

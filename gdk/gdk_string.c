@@ -177,8 +177,10 @@ strLocate(Heap *h, const char *v)
 }
 
 var_t
-strPut(Heap *h, var_t *dst, const char *v)
+strPut(BAT *b, var_t *dst, const void *V)
 {
+	const char *v = V;
+	Heap *h = b->tvheap;
 	size_t elimbase = GDK_ELIMBASE(h->free);
 	size_t pad;
 	size_t pos, len = strLen(v);

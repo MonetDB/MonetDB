@@ -1337,7 +1337,7 @@ BUNinplace(BAT *b, BUN p, const void *t, bool force)
 			break;
 #endif
 		}
-		if (ATOMreplaceVAR(b->ttype, b->tvheap, &_d, t) != GDK_SUCCEED)
+		if (ATOMreplaceVAR(b, &_d, t) != GDK_SUCCEED)
 			return GDK_FAIL;
 		if (b->twidth < SIZEOF_VAR_T &&
 		    (b->twidth <= 2 ? _d - GDK_VAROFFSET : _d) >= ((size_t) 1 << (8 * b->twidth))) {

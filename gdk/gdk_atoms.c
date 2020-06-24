@@ -1401,7 +1401,7 @@ atomDesc BATatoms[MAXATOMS] = {
 		.atomWrite = (gdk_return (*)(const void *, stream *, size_t)) strWrite,
 		.atomCmp = (int (*)(const void *, const void *)) strCmp,
 		.atomHash = (BUN (*)(const void *)) strHash,
-		.atomPut = (var_t (*)(Heap *, var_t *, const void *)) strPut,
+		.atomPut = strPut,
 		.atomLen = (size_t (*)(const void *)) strLen,
 		.atomHeap = strHeap,
 	},

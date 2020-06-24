@@ -855,7 +855,7 @@ gdk_export void HEAP_initialize(
 	int alignment		/* alignment restriction for allocated chunks */
 	);
 
-gdk_export var_t HEAP_malloc(Heap *heap, size_t nbytes);
+gdk_export var_t HEAP_malloc(BAT *b, size_t nbytes);
 gdk_export void HEAP_free(Heap *heap, var_t block);
 
 /*
@@ -1501,7 +1501,7 @@ Tputvalue(BAT *b, BUN p, const void *v, bool copyall)
 		var_t d;
 		gdk_return rc;
 
-		rc = ATOMputVAR(b->ttype, b->tvheap, &d, v);
+		rc = ATOMputVAR(b, &d, v);
 		if (rc != GDK_SUCCEED)
 			return rc;
 		if (b->twidth < SIZEOF_VAR_T &&
@@ -1586,7 +1586,7 @@ tfastins_nocheckVAR(BAT *b, BUN p, const void *v, int s)
 	assert(b->tbaseoff == 0);
 	assert(b->theap->parentid == b->batCacheid);
 	b->theap->free += s;
-	if ((rc = ATOMputVAR(b->ttype, b->tvheap, &d, v)) != GDK_SUCCEED)
+	if ((rc = ATOMputVAR(b, &d, v)) != GDK_SUCCEED)
 		return rc;
 	if (b->twidth < SIZEOF_VAR_T &&
 	    (b->twidth <= 2 ? d - GDK_VAROFFSET : d) >= ((size_t) 1 << (8 * b->twidth))) {

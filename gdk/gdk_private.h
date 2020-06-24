@@ -234,7 +234,7 @@ void strHeap(Heap *d, size_t cap)
 	__attribute__((__visibility__("hidden")));
 var_t strLocate(Heap *h, const char *v)
 	__attribute__((__visibility__("hidden")));
-var_t strPut(Heap *h, var_t *dst, const char *v)
+var_t strPut(BAT *b, var_t *dst, const void *v)
 	__attribute__((__visibility__("hidden")));
 str strRead(str a, stream *s, size_t cnt)
 	__attribute__((__visibility__("hidden")));

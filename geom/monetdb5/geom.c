@@ -958,7 +958,7 @@ segmentizeLineString(GEOSGeometry **outGeometry, const GEOSGeometry *geosGeometr
 		double dist;
 		while ((dist = sqrt(pow(xl - xCoords_org[i], 2) + pow(yl - yCoords_org[i], 2) + pow(zl - zCoords_org[i], 2))) > sz) {
 			TRC_DEBUG(GEOM, "Old: (%f, %f, %f) vs (%f, %f, %f) = %f\n", xl, yl, zl, xCoords_org[i], yCoords_org[i], zCoords_org[i], dist);
-			
+
 			assert(j < additionalPoints);
 
 			//compute intermediate point
@@ -5223,16 +5223,16 @@ wkbWRITE(const void *A, stream *s, size_t cnt)
 }
 
 static var_t
-wkbPUT(Heap *h, var_t *bun, const void *VAL)
+wkbPUT(BAT *b, var_t *bun, const void *VAL)
 {
 	const wkb *val = VAL;
 	char *base;
 
-	*bun = HEAP_malloc(h, wkb_size(val->len));
-	base = h->base;
+	*bun = HEAP_malloc(b, wkb_size(val->len));
+	base = b->tvheap->base;
 	if (*bun) {
 		memcpy(&base[*bun], val, wkb_size(val->len));
-		h->dirty = true;
+		b->tvheap->dirty = true;
 	}
 	return *bun;
 }
@@ -5670,16 +5670,16 @@ wkbaWRITE(const void *A, stream *s, size_t cnt)
 }
 
 static var_t
-wkbaPUT(Heap *h, var_t *bun, const void *VAL)
+wkbaPUT(BAT *b, var_t *bun, const void *VAL)
 {
 	const wkba *val = VAL;
 	char *base;
 
-	*bun = HEAP_malloc(h, wkba_size(val->itemsNum));
-	base = h->base;
+	*bun = HEAP_malloc(b, wkba_size(val->itemsNum));
+	base = b->tvheap->base;
 	if (*bun) {
 		memcpy(&base[*bun], val, wkba_size(val->itemsNum));
-		h->dirty = true;
+		b->tvheap->dirty = true;
 	}
 	return *bun;
 }
@@ -6041,7 +6041,7 @@ static const unsigned char geom_functions[] = {109,111,100,117,108,101,32,103,10
 static mel_atom geom_init_atoms[] = {
  { .name="mbr", .basetype="lng", .size=sizeof(mbr), .tostr=mbrTOSTR, .fromstr=mbrFROMSTR, .hash=mbrHASH, .null=mbrNULL, .cmp=mbrCOMP, .read=mbrREAD, .write=mbrWRITE, },
  { .name="wkb", .tostr=wkbTOSTR, .fromstr=wkbFROMSTR, .hash=wkbHASH, .null=wkbNULL, .cmp=wkbCOMP, .read=wkbREAD, .write=wkbWRITE, .put=wkbPUT, .del=wkbDEL, .length=wkbLENGTH, .heap=wkbHEAP, },
- { .name="wkba", .tostr=wkbaTOSTR, .fromstr=wkbaFROMSTR, .null=wkbaNULL, .hash=wkbaHASH, .cmp=wkbaCOMP, .read=wkbaREAD, .write=wkbaWRITE, .put=wkbaPUT, .del=wkbaDEL, .length=wkbaLENGTH, .heap=wkbaHEAP, },  { .cmp=NULL } 
+ { .name="wkba", .tostr=wkbaTOSTR, .fromstr=wkbaFROMSTR, .null=wkbaNULL, .hash=wkbaHASH, .cmp=wkbaCOMP, .read=wkbaREAD, .write=wkbaWRITE, .put=wkbaPUT, .del=wkbaDEL, .length=wkbaLENGTH, .heap=wkbaHEAP, },  { .cmp=NULL }
 };
 static mel_func geom_init_funcs[] = {
  command("geom", "hasZ", geoHasZ, false, "returns 1 if the geometry has z coordinate", args(1,2, arg("",int),arg("flags",int))),

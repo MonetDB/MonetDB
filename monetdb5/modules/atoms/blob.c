@@ -154,21 +154,21 @@ BLOBheap(Heap *heap, size_t capacity)
 }
 
 static var_t
-BLOBput(Heap *h, var_t *bun, const void *VAL)
+BLOBput(BAT *b, var_t *bun, const void *VAL)
 {
 	const blob *val = VAL;
 	char *base = NULL;
 
-	*bun = HEAP_malloc(h, blobsize(val->nitems));
- 	base = h->base;
+	*bun = HEAP_malloc(b, blobsize(val->nitems));
+ 	base = b->tvheap->base;
 	if (*bun) {
 		memcpy(&base[*bun], val, blobsize(val->nitems));
-		h->dirty = true;
+		b->tvheap->dirty = true;
 	}
 	return *bun;
 }
 
-static inline int 
+static inline int
 blob_nitems(blob *b)
 {
 	if (is_blob_nil(b))
@@ -199,7 +199,7 @@ BLOBnitems_bulk(bat *ret, const bat *bid)
 	}
 	n = BATcount(b);
 	if ((bn = COLnew(b->hseqbase, TYPE_int, n, TRANSIENT)) == NULL) {
-		msg = createException(MAL, "blob.nitems_bulk", SQLSTATE(HY013) MAL_MALLOC_FAIL); 
+		msg = createException(MAL, "blob.nitems_bulk", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		goto bailout;
 	}
 	dst = Tloc(bn, 0);
@@ -397,7 +397,7 @@ BLOBblob_fromstr(blob **b, const char **s)
 
 #include "mel.h"
 static mel_atom blob_init_atoms[] = {
- { .name="blob", .tostr=BLOBtostr, .fromstr=BLOBfromstr, .cmp=BLOBcmp, .hash=BLOBhash, .null=BLOBnull, .read=BLOBread, .write=BLOBwrite, .put=BLOBput, .del=BLOBdel, .length=BLOBlength, .heap=BLOBheap, },  { .cmp=NULL } 
+ { .name="blob", .tostr=BLOBtostr, .fromstr=BLOBfromstr, .cmp=BLOBcmp, .hash=BLOBhash, .null=BLOBnull, .read=BLOBread, .write=BLOBwrite, .put=BLOBput, .del=BLOBdel, .length=BLOBlength, .heap=BLOBheap, },  { .cmp=NULL }
 };
 static mel_func blob_init_funcs[] = {
  command("blob", "blob", BLOBblob_blob, false, "Noop routine.", args(1,2, arg("",blob),arg("s",blob))),
