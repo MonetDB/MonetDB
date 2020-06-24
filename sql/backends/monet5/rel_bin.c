@@ -2189,17 +2189,32 @@ split_join_exps(sql_rel *rel, list *joinable, list *not_joinable)
 					/* join or select ? */
 					sql_exp *l = e->l, *r = e->r, *f = e->f;
 
-					if (l->card != CARD_ATOM) {
-						left_reference += rel_find_exp(rel->l, l) != NULL;
-						right_reference += rel_find_exp(rel->r, l) != NULL;
-					}
-					if (r->card != CARD_ATOM) {
-						left_reference += rel_find_exp(rel->l, r) != NULL;
-						right_reference += rel_find_exp(rel->r, r) != NULL;
-					}
-					if (f && f->card != CARD_ATOM) {
-						left_reference += rel_find_exp(rel->l, f) != NULL;
-						right_reference += rel_find_exp(rel->r, f) != NULL;
+					if (f) {
+						int ll = rel_find_exp(rel->l, l) != NULL;
+						int rl = rel_find_exp(rel->r, l) != NULL;
+						int lr = rel_find_exp(rel->l, r) != NULL;
+						int rr = rel_find_exp(rel->r, r) != NULL;
+						int lf = rel_find_exp(rel->l, f) != NULL;
+						int rf = rel_find_exp(rel->r, f) != NULL;
+						int nrcr1 = 0, nrcr2 = 0, nrcl1 = 0, nrcl2 = 0;
+
+						if ((ll && !rl &&
+						   ((rr && !lr) || (nrcr1 = r->card == CARD_ATOM)) &&
+						   ((rf && !lf) || (nrcr2 = f->card == CARD_ATOM)) && (nrcr1+nrcr2) <= 1) ||
+						    (rl && !ll &&
+						   ((lr && !rr) || (nrcl1 = r->card == CARD_ATOM)) &&
+						   ((lf && !rf) || (nrcl2 = f->card == CARD_ATOM)) && (nrcl1+nrcl2) <= 1)) {
+							left_reference = right_reference = 1;
+						}
+					} else {
+						if (l->card != CARD_ATOM) {
+							left_reference += rel_find_exp(rel->l, l) != NULL;
+							right_reference += rel_find_exp(rel->r, l) != NULL;
+						}
+						if (r->card != CARD_ATOM) {
+							left_reference += rel_find_exp(rel->l, r) != NULL;
+							right_reference += rel_find_exp(rel->r, r) != NULL;
+						}
 					}
 				} else if (flag == cmp_filter && !e->anti) {
 					list *l = e->l, *r = e->r;
