@@ -166,6 +166,25 @@ SELECT debugme(1), debugme(2);
 	-- True False
 DROP FUNCTION debugme;
 
+CREATE FUNCTION debugme3() RETURNS BOOLEAN
+BEGIN
+	DECLARE n BOOLEAN;
+	SET n = (select true union all select false);
+	RETURN n;
+END;
+SELECT debugme3(); --error, more than one row returned by a subquery used as an expression
+DROP FUNCTION debugme3;
+
+CREATE FUNCTION debugme4() RETURNS BOOLEAN
+BEGIN
+	DECLARE n BOOLEAN;
+	SET n = (select 1 where null);
+	RETURN n;
+END;
+SELECT debugme4();
+	-- NULL
+DROP FUNCTION debugme4;
+
 DROP TABLE tbl_ProductSales;
 DROP TABLE another_T;
 DROP TABLE integers;
