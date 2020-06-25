@@ -566,10 +566,11 @@ msab_registerStop(void)
 }
 
 #define SECRETFILE ".secret"
+#define SECRET_LENGTH (32)
 char *
 msab_pickSecret(char **generated_secret)
 {
-	const size_t secret_size = 32;
+	unsigned char bin_secret[SECRET_LENGTH / 2];
 	char *secret;
 	char pathbuf[FILENAME_MAX];
 	char *e;
@@ -587,19 +588,17 @@ msab_pickSecret(char **generated_secret)
 		return strdup(err);
 	}
 
-	secret = malloc(secret_size + 1);
-	secret[secret_size] = '\0';
-
-	unsigned char *bin_secret = (unsigned char*)secret + secret_size / 2;
+	secret = malloc(SECRET_LENGTH + 1);
+	secret[SECRET_LENGTH] = '\0';
 
 #ifdef HAVE_OPENSSL
-	if (RAND_bytes(bin_secret, secret_size / 2) != 1) {
+	if (RAND_bytes(bin_secret, SECRET_LENGTH / 2) != 1) {
 		free(secret);
 		return strdup("RAND_bytes failed");
 	}
 #else
 #ifdef HAVE_COMMONCRYPTO
-	if (CCRandomGenerateBytes(bin_secret, secret_size / 2) != kCCSuccess) {
+	if (CCRandomGenerateBytes(bin_secret, SECRET_LENGTH / 2) != kCCSuccess) {
 		free(secret);
 		return strdup("CCRandomGenerateBytes failed");
 	}
@@ -612,7 +611,7 @@ msab_pickSecret(char **generated_secret)
 #endif
 #endif
 
-	for (size_t i = 0; i < secret_size / 2; i++) {
+	for (size_t i = 0; i < SECRET_LENGTH / 2; i++) {
 		snprintf(
 			secret + 2 * i, 3,
 			"%02x",
@@ -634,7 +633,7 @@ msab_pickSecret(char **generated_secret)
 		(void)remove(pathbuf);
 		return strdup(err);
 	}
-	if (fwrite(secret, 1, secret_size, f) < secret_size || fclose(f) < 0) {
+	if (fwrite(secret, 1, SECRET_LENGTH, f) < SECRET_LENGTH || fclose(f) < 0) {
 		char err[512];
 		snprintf(err, sizeof(err), "cannot write secret: %s",
 				strerror(errno));
@@ -815,6 +814,7 @@ msab_getSingleStatus(const char *pathbuf, const char *dbname, sabdb *next)
 		(void)fclose(f);
 	}
 
+	// read the secret
 	do {
 		struct stat stb;
 		snprintf(buf, sizeof(buf), "%s/%s/%s", pathbuf, dbname, SECRETFILE);
@@ -831,10 +831,10 @@ msab_getSingleStatus(const char *pathbuf, const char *dbname, sabdb *next)
 		if (fread(secret, 1, len, f) != len) {
 			fclose(f);
 			free(secret);
+			break;
 		}
 		secret[len] = '\0';
 		sdb->secret = secret;
-
 	} while (0);
 
 	return sdb;

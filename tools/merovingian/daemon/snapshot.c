@@ -87,7 +87,7 @@ snapshot_database_to(char *dbname, char *dest)
 
 	/* Set up the connection. Connect directly to the unix domain socket */
 	if (stats->conns == NULL || stats->conns[0].val == NULL) {
-		e = newErr("internal error: non conn");
+		e = newErr("internal error: no conn");
 		goto bailout;
 	}
 	conn = mapi_mapiuri(stats->conns[0].val, ".snapshot", stats->secret, "sql");

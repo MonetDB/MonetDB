@@ -465,6 +465,9 @@ AUTHcheckCredentials(
 	}
 	free(hash);
 
+	/* special case: users whose name starts with '.' can authenticate using
+	 * the temporary master password.
+	 */
 	const char *master_password = GDKgetenv("master_password");
 	if (username[0] == '.' && master_password != NULL && master_password[0] != '\0') {
 		// first encrypt the master password as if we've just found it
