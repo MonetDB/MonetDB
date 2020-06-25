@@ -6932,7 +6932,9 @@ static mel_func sql_init_funcs[] = {
  command("batcalc", "hge", batstr_2dec_hge, false, "cast to dec(hge) and check for overflow", args(1,4, batarg("",hge),batarg("v",str),arg("digits",int),arg("scale",int))),
  command("batcalc", "hge", batstr_ce_2dec_hge, false, "cast to dec(hge) and check for overflow", args(1,5, batarg("",hge),batarg("v",str),arg("digits",int),arg("scale",int),batarg("r",bit))),
  pattern("calc", "month_interval", month_interval, false, "cast hge to a month_interval and check for overflow", args(1,4, arg("",int),arg("v",hge),arg("ek",int),arg("sk",int))),
+ pattern("batcalc", "month_interval", month_interval, false, "cast hge to a month_interval and check for overflow", args(1,4, batarg("",int),batarg("v",hge),arg("ek",int),arg("sk",int))),
  pattern("calc", "second_interval", second_interval, false, "cast hge to a second_interval and check for overflow", args(1,4, arg("",lng),arg("v",hge),arg("ek",int),arg("sk",int))),
+ pattern("batcalc", "second_interval", second_interval, false, "cast hge to a second_interval and check for overflow", args(1,4, batarg("",lng),batarg("v",hge),arg("ek",int),arg("sk",int))),
  /* sql_decimal_hge */
  command("calc", "hge", flt_num2dec_hge, false, "cast number to decimal(hge) and check for overflow", args(1,4, arg("",hge),arg("v",flt),arg("digits",int),arg("scale",int))),
  command("batcalc", "hge", batflt_num2dec_hge, false, "cast number to decimal(hge) and check for overflow", args(1,4, batarg("",hge),batarg("v",flt),arg("digits",int),arg("scale",int))),
