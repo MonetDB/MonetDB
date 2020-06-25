@@ -1439,6 +1439,18 @@ rel_unnest_dependent(mvc *sql, sql_rel *rel)
 		if (rel_has_freevar(sql, r)) {
 			list *ad = rel_dependent_var(sql, rel->l, rel->r);
 
+			if (r && is_select(r->op)) {
+				sql_rel *l = r->l;
+
+				if (!rel_is_ref(r) && l && !rel_is_ref(l) && l->op == op_join && list_empty(l->exps)) {
+					l->exps = r->exps;
+					r->l = NULL;
+					rel_destroy(r);
+					rel->r = l;
+					return rel_unnest_dependent(sql, rel);
+				}
+			}
+
 			if (r && is_simple_project(r->op) && ((!exps_have_freevar(sql, r->exps) && !exps_have_analytics(sql, r->exps)) || is_distinct_set(sql, l, ad))) {
 				rel = push_up_project(sql, rel, ad);
 				return rel_unnest_dependent(sql, rel);
