@@ -198,24 +198,10 @@ snapshot_restore_from(char *dbname, char *source)
 	if (e != NO_ERR)
 		goto bailout;
 
-	/* Stop the existing database, if any */
+	/* Stop the existing database, if any. Don't bother with a graceful shutdown. */
 	if (existing != NULL) {
-		/* search connection list for pid to kill */
-		pid_t pid = 0;
-		pthread_mutex_lock(&_mero_topdp_lock);
-		for (dpair dp = _mero_topdp->next; dp != NULL; dp = dp->next) {
-			if (dp->type != MERODB)
-				continue;
-			if (strcmp(dp->dbname, dbname) != 0)
-				continue;
-			// hah!
-			pid = dp->pid;
-			break;
-		}
-		pthread_mutex_unlock(&_mero_topdp_lock);
-		/* kill kill */
-		if (pid != 0) {
-			kill(pid, SIGKILL);
+		if (existing->pid != 0) {
+			kill(existing->pid, SIGKILL);
 			sleep(1); // not sure if this is needed
 		}
 		db_destroy(existing->dbname);
