@@ -3884,123 +3884,225 @@ second_interval_str(lng *res, const str *s, const int *d, const int *sk)
 	return MAL_SUCCEED;
 }
 
+#define interval_loop(FUNC, TPE) \
+	do { \
+		if (is_a_bat) { \
+			TPE *restrict vals = Tloc(b, 0); \
+			for (BUN i = 0 ; i < q ; i++) \
+				FUNC(ret[i], TPE, vals[i]); \
+		} else { \
+			TPE val = *(TPE*)getArgReference(stk, pci, 1); \
+			FUNC(*ret, TPE, val); \
+		} \
+	} while(0)
+
+#define month_interval_convert(OUT, TPE, IN) \
+	do { \
+		if (is_##TPE##_nil(IN)) { \
+			OUT = int_nil; \
+			hasnil = 1; \
+		} else { \
+			int r = (int) IN; \
+			r *= multiplier; \
+			OUT = r; \
+		} \
+	} while (0)
+
 str
 month_interval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	int *ret = getArgReference_int(stk, pci, 0);
-	int k = digits2ek(*getArgReference_int(stk, pci, 2)), r = 0;
+	str msg = MAL_SUCCEED;
+	int *restrict ret = getArgReference_int(stk, pci, 0), multiplier = 1;
+	int k = digits2ek(*getArgReference_int(stk, pci, 2)), tpe = getArgType(mb, pci, 1);
+	bool is_a_bat = false;
+	BAT *b = NULL, *res = NULL;
+	bat *r;
+	BUN q = 0;
+	bit hasnil = 0;
 
 	(void) cntxt;
-	*ret = int_nil;
-	switch (getArgType(mb, pci, 1)) {
-	case TYPE_bte:
-		if (is_bte_nil(stk->stk[getArg(pci, 1)].val.btval))
-			return MAL_SUCCEED;
-		r = stk->stk[getArg(pci, 1)].val.btval;
-		break;
-	case TYPE_sht:
-		if (is_sht_nil(stk->stk[getArg(pci, 1)].val.shval))
-			return MAL_SUCCEED;
-		r = stk->stk[getArg(pci, 1)].val.shval;
-		break;
-	case TYPE_int:
-		if (is_int_nil(stk->stk[getArg(pci, 1)].val.ival))
-			return MAL_SUCCEED;
-		r = stk->stk[getArg(pci, 1)].val.ival;
-		break;
-	case TYPE_lng:
-		if (is_lng_nil(stk->stk[getArg(pci, 1)].val.lval))
-			return MAL_SUCCEED;
-		r = (int) stk->stk[getArg(pci, 1)].val.lval;
-		break;
-#ifdef HAVE_HGE
-	case TYPE_hge:
-		if (is_hge_nil(stk->stk[getArg(pci, 1)].val.hval))
-			return MAL_SUCCEED;
-		r = (int) stk->stk[getArg(pci, 1)].val.hval;
-		break;
-#endif
-	default:
-		throw(ILLARG, "calc.month_interval", SQLSTATE(42000) "Illegal argument");
+	is_a_bat = isaBatType(tpe);
+	if (is_a_bat) {
+		tpe = getBatType(tpe);
+		if (!(b = BATdescriptor(*getArgReference_bat(stk, pci, 1)))) {
+			msg = createException(SQL, "calc.month_interval", SQLSTATE(HY005) "Cannot access column descriptor");
+			goto bailout;
+		}
+		q = BATcount(b);
+		if (!(res = COLnew(b->hseqbase, TYPE_int, q, TRANSIENT))) {
+			msg = createException(SQL, "calc.month_interval", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+			goto bailout;
+		}
+		r = getArgReference_bat(stk, pci, 0);
+		ret = (int*) Tloc(res, 0);
+	} else {
+		ret = getArgReference_int(stk, pci, 0);
 	}
+
 	switch (k) {
 	case iyear:
-		r *= 12;
+		multiplier *= 12;
 		break;
 	case imonth:
 		break;
-	default:
-		throw(ILLARG, "calc.month_interval", SQLSTATE(42000) "Illegal argument");
+	default: {
+		msg = createException(ILLARG, "calc.month_interval", SQLSTATE(42000) "Illegal argument");
+		goto bailout;
 	}
-	*ret = r;
-	return MAL_SUCCEED;
+	}
+
+	switch (tpe) {
+	case TYPE_bte:
+		interval_loop(month_interval_convert, bte);
+		break;
+	case TYPE_sht:
+		interval_loop(month_interval_convert, sht);
+		break;
+	case TYPE_int:
+		interval_loop(month_interval_convert, int);
+		break;
+	case TYPE_lng:
+		interval_loop(month_interval_convert, lng);
+		break;
+#ifdef HAVE_HGE
+	case TYPE_hge:
+		interval_loop(month_interval_convert, hge);
+		break;
+#endif
+	default: {
+		msg = createException(ILLARG, "calc.month_interval", SQLSTATE(42000) "Illegal argument in month interval");
+	}
+	}
+
+bailout:
+	if (b)
+		BBPunfix(b->batCacheid);
+	if (res && !msg) {
+		BATsetcount(res, q);
+		res->tnil = hasnil != 0;
+		res->tnonil = hasnil == 0;
+		res->tkey = BATcount(res) <= 1;
+		res->tsorted = BATcount(res) <= 1;
+		res->trevsorted = BATcount(res) <= 1;
+		BBPkeepref(*r = res->batCacheid);
+	} else if (res)
+		BBPreclaim(res);
+	return msg;
 }
+
+#define second_interval_convert(OUT, TPE, IN) \
+	do { \
+		if (is_##TPE##_nil(IN)) { \
+			OUT = lng_nil; \
+			hasnil = 1; \
+		} else { \
+			lng r = (lng) IN; \
+			r *= multiplier; \
+			if (scale) { \
+				r += scale_shift; \
+				r /= division; \
+			} \
+			OUT = r; \
+		} \
+	} while (0)
 
 str
 second_interval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	lng *ret = getArgReference_lng(stk, pci, 0), r;
-	int k = digits2ek(*getArgReference_int(stk, pci, 2)), scale = 0;
+	str msg = MAL_SUCCEED;
+	lng *restrict ret = NULL, multiplier = 1, scale_shift = 0, division = 1;
+	int tpe = getArgType(mb, pci, 1), k = digits2ek(*getArgReference_int(stk, pci, 2)), scale = 0;
+	bool is_a_bat = false;
+	BAT *b = NULL, *res = NULL;
+	bat *r;
+	BUN q = 0;
+	bit hasnil = 0;
 
 	(void) cntxt;
 	if (pci->argc > 3)
 		scale = *getArgReference_int(stk, pci, 3);
-	*ret = lng_nil;
-	switch (getArgType(mb, pci, 1)) {
-	case TYPE_bte:
-		if (is_bte_nil(stk->stk[getArg(pci, 1)].val.btval))
-			return MAL_SUCCEED;
-		r = stk->stk[getArg(pci, 1)].val.btval;
-		break;
-	case TYPE_sht:
-		if (is_sht_nil(stk->stk[getArg(pci, 1)].val.shval))
-			return MAL_SUCCEED;
-		r = stk->stk[getArg(pci, 1)].val.shval;
-		break;
-	case TYPE_int:
-		if (is_int_nil(stk->stk[getArg(pci, 1)].val.ival))
-			return MAL_SUCCEED;
-		r = stk->stk[getArg(pci, 1)].val.ival;
-		break;
-	case TYPE_lng:
-		if (is_lng_nil(stk->stk[getArg(pci, 1)].val.lval))
-			return MAL_SUCCEED;
-		r = stk->stk[getArg(pci, 1)].val.lval;
-		break;
-#ifdef HAVE_HGE
-	case TYPE_hge:
-		if (is_hge_nil(stk->stk[getArg(pci, 1)].val.hval))
-			return MAL_SUCCEED;
-		r = (lng) stk->stk[getArg(pci, 1)].val.hval;
-		break;
-#endif
-	default:
-		throw(ILLARG, "calc.sec_interval", SQLSTATE(42000) "Illegal argument in second interval");
+	is_a_bat = isaBatType(tpe);
+	if (is_a_bat) {
+		tpe = getBatType(tpe);
+		if (!(b = BATdescriptor(*getArgReference_bat(stk, pci, 1)))) {
+			msg = createException(SQL, "calc.sec_interval", SQLSTATE(HY005) "Cannot access column descriptor");
+			goto bailout;
+		}
+		q = BATcount(b);
+		if (!(res = COLnew(b->hseqbase, TYPE_lng, q, TRANSIENT))) {
+			msg = createException(SQL, "calc.sec_interval", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+			goto bailout;
+		}
+		r = getArgReference_bat(stk, pci, 0);
+		ret = (lng*) Tloc(res, 0);
+	} else {
+		ret = getArgReference_lng(stk, pci, 0);
 	}
+
 	switch (k) {
 	case iday:
-		r *= 24;
+		multiplier *= 24;
 		/* fall through */
 	case ihour:
-		r *= 60;
+		multiplier *= 60;
 		/* fall through */
 	case imin:
-		r *= 60;
+		multiplier *= 60;
 		/* fall through */
 	case isec:
-		r *= 1000;
+		multiplier *= 1000;
 		break;
-	default:
-		throw(ILLARG, "calc.sec_interval", SQLSTATE(42000) "Illegal argument in second interval");
+	default: {
+		msg = createException(ILLARG, "calc.sec_interval", SQLSTATE(42000) "Illegal argument in second interval");
+		goto bailout;
+	}
 	}
 	if (scale) {
 #ifndef TRUNCATE_NUMBERS
-		r += scales[scale] >> 1;
+		scale_shift = scales[scale] >> 1;
+#else
+		(void) scale_shift;
 #endif
-		r /= scales[scale];
+		division = scales[scale];
 	}
-	*ret = r;
-	return MAL_SUCCEED;
+
+	switch (tpe) {
+	case TYPE_bte:
+		interval_loop(second_interval_convert, bte);
+		break;
+	case TYPE_sht:
+		interval_loop(second_interval_convert, sht);
+		break;
+	case TYPE_int:
+		interval_loop(second_interval_convert, int);
+		break;
+	case TYPE_lng:
+		interval_loop(second_interval_convert, lng);
+		break;
+#ifdef HAVE_HGE
+	case TYPE_hge:
+		interval_loop(second_interval_convert, hge);
+		break;
+#endif
+	default: {
+		msg = createException(ILLARG, "calc.sec_interval", SQLSTATE(42000) "Illegal argument in second interval");
+	}
+	}
+
+bailout:
+	if (b)
+		BBPunfix(b->batCacheid);
+	if (res && !msg) {
+		BATsetcount(res, q);
+		res->tnil = hasnil != 0;
+		res->tnonil = hasnil == 0;
+		res->tkey = BATcount(res) <= 1;
+		res->tsorted = BATcount(res) <= 1;
+		res->trevsorted = BATcount(res) <= 1;
+		BBPkeepref(*r = res->batCacheid);
+	} else if (res)
+		BBPreclaim(res);
+	return msg;
 }
 
 str
@@ -6086,13 +6188,21 @@ static mel_func sql_init_funcs[] = {
  command("calc", "month_interval", month_interval_str, false, "cast str to a month_interval and check for overflow", args(1,4, arg("",int),arg("v",str),arg("ek",int),arg("sk",int))),
  command("calc", "second_interval", second_interval_str, false, "cast str to a second_interval and check for overflow", args(1,4, arg("",lng),arg("v",str),arg("ek",int),arg("sk",int))),
  pattern("calc", "month_interval", month_interval, false, "cast bte to a month_interval and check for overflow", args(1,4, arg("",int),arg("v",bte),arg("ek",int),arg("sk",int))),
+ pattern("batcalc", "month_interval", month_interval, false, "cast bte to a month_interval and check for overflow", args(1,4, batarg("",int),batarg("v",bte),arg("ek",int),arg("sk",int))),
  pattern("calc", "second_interval", second_interval, false, "cast bte to a second_interval and check for overflow", args(1,4, arg("",lng),arg("v",bte),arg("ek",int),arg("sk",int))),
+ pattern("batcalc", "second_interval", second_interval, false, "cast bte to a second_interval and check for overflow", args(1,4, batarg("",lng),batarg("v",bte),arg("ek",int),arg("sk",int))),
  pattern("calc", "month_interval", month_interval, false, "cast sht to a month_interval and check for overflow", args(1,4, arg("",int),arg("v",sht),arg("ek",int),arg("sk",int))),
+ pattern("batcalc", "month_interval", month_interval, false, "cast sht to a month_interval and check for overflow", args(1,4, batarg("",int),batarg("v",sht),arg("ek",int),arg("sk",int))),
  pattern("calc", "second_interval", second_interval, false, "cast sht to a second_interval and check for overflow", args(1,4, arg("",lng),arg("v",sht),arg("ek",int),arg("sk",int))),
+ pattern("batcalc", "second_interval", second_interval, false, "cast sht to a second_interval and check for overflow", args(1,4, batarg("",lng),batarg("v",sht),arg("ek",int),arg("sk",int))),
  pattern("calc", "month_interval", month_interval, false, "cast int to a month_interval and check for overflow", args(1,4, arg("",int),arg("v",int),arg("ek",int),arg("sk",int))),
+ pattern("batcalc", "month_interval", month_interval, false, "cast int to a month_interval and check for overflow", args(1,4, batarg("",int),batarg("v",int),arg("ek",int),arg("sk",int))),
  pattern("calc", "second_interval", second_interval, false, "cast int to a second_interval and check for overflow", args(1,4, arg("",lng),arg("v",int),arg("ek",int),arg("sk",int))),
+ pattern("batcalc", "second_interval", second_interval, false, "cast int to a second_interval and check for overflow", args(1,4, batarg("",lng),batarg("v",int),arg("ek",int),arg("sk",int))),
  pattern("calc", "month_interval", month_interval, false, "cast lng to a month_interval and check for overflow", args(1,4, arg("",int),arg("v",lng),arg("ek",int),arg("sk",int))),
+ pattern("batcalc", "month_interval", month_interval, false, "cast lng to a month_interval and check for overflow", args(1,4, batarg("",int),batarg("v",lng),arg("ek",int),arg("sk",int))),
  pattern("calc", "second_interval", second_interval, false, "cast lng to a second_interval and check for overflow", args(1,4, arg("",lng),arg("v",lng),arg("ek",int),arg("sk",int))),
+ pattern("batcalc", "second_interval", second_interval, false, "cast lng to a second_interval and check for overflow", args(1,4, batarg("",lng),batarg("v",lng),arg("ek",int),arg("sk",int))),
  pattern("calc", "rowid", sql_rowid, false, "return the next rowid", args(1,4, arg("",oid),argany("v",1),arg("schema",str),arg("table",str))),
  pattern("sql", "shrink", SQLshrink, true, "Consolidate the deletion table over all columns using shrinking", args(0,2, arg("sch",str),arg("tbl",str))),
  pattern("sql", "reuse", SQLreuse, true, "Consolidate the deletion table over all columns reusing deleted slots", args(0,2, arg("sch",str),arg("tbl",str))),
