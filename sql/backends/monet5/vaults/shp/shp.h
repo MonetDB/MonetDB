@@ -17,6 +17,7 @@
 #undef PACKAGE_TARNAME
 #undef PACKAGE_URL
 #undef PACKAGE_VERSION
+#undef HAVE_CXX11
 #include <gdal.h>
 #include <ogr_api.h>
 
