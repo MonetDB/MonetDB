@@ -159,6 +159,57 @@ stdout of test 'subquery6` in directory 'sql/test/subquery` itself:
 [ 22	]
 [ 222	]
 [ 2222	]
+#SELECT (SELECT 1) > ANY(SELECT 1);
+% .%10 # table_name
+% %10 # name
+% boolean # type
+% 5 # length
+[ false	]
+#CREATE FUNCTION debugme() RETURNS INT
+#BEGIN
+#	DECLARE res INT;
+#	SET res = 1 > (select 9 from integers);
+#	RETURN res;
+#END;
+#DROP FUNCTION debugme;
+#SELECT i = ALL(i), i < ANY(i), i = ANY(NULL) FROM integers;
+% sys.%3,	sys.%4,	. # table_name
+% %3,	%4,	%2 # name
+% boolean,	boolean,	boolean # type
+% 5,	5,	5 # length
+[ true,	false,	NULL	]
+[ true,	false,	NULL	]
+[ true,	false,	NULL	]
+[ NULL,	NULL,	NULL	]
+#SELECT i FROM integers WHERE i = ANY(NULL);
+% sys.integers # table_name
+% i # name
+% int # type
+% 1 # length
+#CREATE FUNCTION debugme() RETURNS INT
+#BEGIN
+#	DECLARE n INT;
+#	WHILE (1 > (select 9 from integers)) do
+#		SET n = n -1;
+#	END WHILE;
+#	RETURN n;
+#END;
+#DROP FUNCTION debugme;
+#CREATE FUNCTION debugme() RETURNS INT
+#BEGIN
+#	DECLARE n INT;
+#	WHILE (1 > ALL(select 1)) do
+#		SET n = n -1;
+#	END WHILE;
+#	RETURN n;
+#END;
+#SELECT debugme(); --error, more than one row returned by a subquery used as an expression
+% .%4 # table_name
+% %4 # name
+% int # type
+% 1 # length
+[ NULL	]
+#DROP FUNCTION debugme;
 #DROP TABLE tbl_ProductSales;
 #DROP TABLE another_T;
 #DROP TABLE integers;

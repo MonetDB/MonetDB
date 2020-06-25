@@ -253,7 +253,7 @@ ERROR = !syntax error, unexpected '[', expecting SCOLON in: "select array["
 CODE  = 42000
 MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = SELECT CAST(ARRAY[[[[[['a','bb','ccc']]]]]] as text[]) as "{{{{{{a,bb,ccc}}}}}}";
-ERROR = !syntax error, unexpected '[', expecting AS in: "select cast(array["
+ERROR = !syntax error, unexpected '[', expecting OR or AS in: "select cast(array["
 CODE  = 42000
 MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = select 33 = any ('{1,2,3}');
@@ -269,9 +269,9 @@ ERROR = !conversion of string '{1,2,33}' to type bte failed.
 CODE  = 22018
 MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = select 33 >= all ('{1,2,33}');
-ERROR = !syntax error, unexpected STRING, expecting SELECT or WITH or '(' or VALUES in: "select 33 >= all ('{1,2,33}'"
-CODE  = 42000
-MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
+ERROR = !conversion of string '{1,2,33}' to type bte failed.
+CODE  = 22018
+MAPI  = (monetdb) /var/tmp/mtest-88942/.s.monetdb.36488
 QUERY = select null::int >= all ('{1,2,33}');
 ERROR = !Unexpected symbol (:)
 CODE  = 42000
@@ -289,7 +289,7 @@ ERROR = !syntax error, unexpected '[', expecting ')' or OR in: "select 33.4 = an
 CODE  = 42000
 MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = select 33.4 > all (array[1,2,3]);
-ERROR = !syntax error, unexpected IDENT, expecting SELECT or WITH or '(' or VALUES in: "select 33.4 > all (array"
+ERROR = !syntax error, unexpected '[', expecting ')' or OR in: "select 33.4 > all (array["
 CODE  = 42000
 MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = select 33 * any ('{1,2,3}');
