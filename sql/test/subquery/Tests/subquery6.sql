@@ -121,9 +121,7 @@ BEGIN
 	SET res = 1 > (select 9 from integers);
 	RETURN res;
 END;
-
 SELECT debugme(); --error, more than one row returned by a subquery used as an expression
-
 DROP FUNCTION debugme;
 
 SELECT i = ALL(i), i < ANY(i), i = ANY(NULL) FROM integers;
@@ -134,6 +132,17 @@ SELECT i = ALL(i), i < ANY(i), i = ANY(NULL) FROM integers;
 
 SELECT i FROM integers WHERE i = ANY(NULL);
 	--empty
+
+CREATE FUNCTION debugme() RETURNS INT
+BEGIN
+	DECLARE n INT;
+	WHILE (1 > (select 9 from integers)) do
+		SET n = n -1;
+	END WHILE;
+	RETURN n;
+END;
+SELECT debugme(); --error, more than one row returned by a subquery used as an expression
+DROP FUNCTION debugme;
 
 DROP TABLE tbl_ProductSales;
 DROP TABLE another_T;
