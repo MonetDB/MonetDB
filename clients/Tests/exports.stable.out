@@ -342,6 +342,7 @@ lng IMPSimprintsize(BAT *b);
 int MT_check_nr_cores(void);
 int MT_create_thread(MT_Id *t, void (*function)(void *), void *arg, enum MT_thr_detach d, const char *threadname);
 void MT_exiting_thread(void);
+pid_t MT_get_locking_pid(char *filename);
 MT_Id MT_getpid(void);
 size_t MT_getrss(void);
 void MT_init(void);
