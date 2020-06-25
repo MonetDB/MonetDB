@@ -23,7 +23,7 @@
 #undef HAVE_FCNTL_H
 #undef HAVE_ICONV
 #undef HAVE_STRINGS_H
-
+#undef HAVE_CXX11
 #include <gdal.h>
 #include <ogr_api.h>
 
