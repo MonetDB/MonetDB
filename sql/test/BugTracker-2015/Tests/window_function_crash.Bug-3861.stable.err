@@ -13,11 +13,11 @@ QUERY = UPDATE foo SET test5 = ROW_NUMBER() OVER (
               test8 DESC,      
               test7 ASC,      
               test3 ASC); --error
-ERROR = !ROW_NUMBER: window function 'row_number' not allowed in SET clause (use subquery)
+ERROR = !ROW_NUMBER: window function 'row_number' not allowed in SET, WHILE, IF, ELSE, CASE, ANALYZE clauses (use subquery)
 CODE  = 42000
 MAPI  = (monetdb) /var/tmp/mtest-312670/.s.monetdb.31404
 QUERY = UPDATE foo SET col = ROW_NUMBER() OVER (ORDER BY col); --error
-ERROR = !ROW_NUMBER: window function 'row_number' not allowed in SET clause (use subquery)
+ERROR = !ROW_NUMBER: window function 'row_number' not allowed in SET, WHILE, IF, ELSE, CASE, ANALYZE clauses (use subquery)
 CODE  = 42000
 
 # 11:10:37 >  

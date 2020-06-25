@@ -16,6 +16,15 @@
 #include "rel_updates.h"
 #include "sql_privileges.h"
 
+#define psm_zero_or_one(exp) \
+	do { \
+		if (exp && exp->card > CARD_AGGR) { \
+			sql_subfunc *zero_or_one = sql_bind_func(sql->sa, sql->session->schema, "zero_or_one", exp_subtype(exp), NULL, F_AGGR); \
+			assert(zero_or_one); \
+			exp = exp_aggr1(sql->sa, exp, zero_or_one, 0, 0, CARD_ATOM, has_nil(exp)); \
+		} \
+	} while(0)
+
 static list *sequential_block(sql_query *query, sql_subtype *restype, list *restypelist, dlist *blk, char *opt_name, int is_func);
 
 sql_rel *
@@ -80,14 +89,10 @@ psm_set_exp(sql_query *query, dnode *n)
 			tpe = stack_find_type(sql, name);
 		}
 
-		e = rel_value_exp2(query, &rel, val, sql_sel | sql_psm_set, ek);
+		e = rel_value_exp2(query, &rel, val, sql_sel | sql_psm, ek);
 		if (!e)
 			return NULL;
-		if (e->card > CARD_AGGR) {
-			sql_subfunc *zero_or_one = sql_bind_func(sql->sa, sql->session->schema, "zero_or_one", exp_subtype(e), NULL, F_AGGR);
-			assert(zero_or_one);
-			e = exp_aggr1(sql->sa, e, zero_or_one, 0, 0, CARD_ATOM, has_nil(e));
-		}
+		psm_zero_or_one(e);
 
 		level = stack_find_frame(sql, name);
 		e = rel_check_type(sql, tpe, rel, e, type_cast);
@@ -238,14 +243,14 @@ rel_psm_while_do( sql_query *query, sql_subtype *res, list *restypelist, dnode *
 		sql_rel *rel = NULL;
 		exp_kind ek = {type_value, card_value, FALSE};
 
-		cond = rel_logical_value_exp(query, &rel, n->data.sym, sql_sel, ek);
+		cond = rel_logical_value_exp(query, &rel, n->data.sym, sql_sel | sql_psm, ek);
+		psm_zero_or_one(cond);
 		n = n->next;
 		whilestmts = sequential_block(query, res, restypelist, n->data.lval, n->next->data.sval, is_func);
 
 		if (sql->session->status || !cond || !whilestmts)
 			return NULL;
 
-		assert(!rel);
 		return exp_while( sql->sa, cond, whilestmts );
 	}
 	return NULL;
@@ -270,7 +275,8 @@ psm_if_then_else( sql_query *query, sql_subtype *res, list *restypelist, dnode *
 		sql_rel *rel = NULL;
 		exp_kind ek = {type_value, card_value, FALSE};
 
-		cond = rel_logical_value_exp(query, &rel, n->data.sym, sql_sel, ek);
+		cond = rel_logical_value_exp(query, &rel, n->data.sym, sql_sel | sql_psm, ek);
+		psm_zero_or_one(cond);
 		n = n->next;
 		ifstmts = sequential_block(query, res, restypelist, n->data.lval, NULL, is_func);
 		n = n->next;
@@ -279,7 +285,6 @@ psm_if_then_else( sql_query *query, sql_subtype *res, list *restypelist, dnode *
 		if (sql->session->status || !cond || !ifstmts)
 			return NULL;
 
-		assert(!rel);
 		return append(sa_list(sql->sa), exp_if( sql->sa, cond, ifstmts, elsestmts));
 	} else { /* else */
 		symbol *e = elseif->data.sym;
@@ -303,7 +308,8 @@ rel_psm_if_then_else( sql_query *query, sql_subtype *res, list *restypelist, dno
 		sql_rel *rel = NULL;
 		exp_kind ek = {type_value, card_value, FALSE};
 
-		cond = rel_logical_value_exp(query, &rel, n->data.sym, sql_sel, ek);
+		cond = rel_logical_value_exp(query, &rel, n->data.sym, sql_sel | sql_psm, ek);
+		psm_zero_or_one(cond);
 		n = n->next;
 		ifstmts = sequential_block(query, res, restypelist, n->data.lval, NULL, is_func);
 		n = n->next;
@@ -311,7 +317,6 @@ rel_psm_if_then_else( sql_query *query, sql_subtype *res, list *restypelist, dno
 		if (sql->session->status || !cond || !ifstmts)
 			return NULL;
 
-		assert(!rel);
 		return exp_if( sql->sa, cond, ifstmts, elsestmts);
 	}
 	return NULL;
@@ -349,30 +354,28 @@ rel_psm_case( sql_query *query, sql_subtype *res, list *restypelist, dnode *case
 		list *else_stmt = NULL;
 		sql_rel *rel = NULL;
 		exp_kind ek = {type_value, card_value, FALSE};
-		sql_exp *v = rel_value_exp(query, &rel, case_value, sql_sel, ek);
+		sql_exp *v = rel_value_exp(query, &rel, case_value, sql_sel | sql_psm, ek);
 
+		psm_zero_or_one(v);
 		if (!v)
 			return NULL;
-		if (rel)
-			return sql_error(sql, 02, SQLSTATE(42000) "CASE: No SELECT statements allowed within the CASE condition");
-		if (else_statements) {
-			if (!(else_stmt = sequential_block(query, res, restypelist, else_statements, NULL, is_func)))
-				return NULL;
-		}
+		if (else_statements && !(else_stmt = sequential_block(query, res, restypelist, else_statements, NULL, is_func)))
+			return NULL;
+
 		n = when_statements->h;
 		while(n) {
 			dnode *m = n->data.sym->data.lval->h;
-			sql_exp *cond=0, *when_value = rel_value_exp(query, &rel, m->data.sym, sql_sel, ek);
+			sql_exp *cond=0, *when_value = rel_value_exp(query, &rel, m->data.sym, sql_sel | sql_psm, ek);
 			list *if_stmts = NULL;
 			sql_exp *case_stmt = NULL;
 
-			if (!when_value || rel ||
+			psm_zero_or_one(when_value);
+			if (!when_value ||
 			   (cond = rel_binop_(sql, rel, v, when_value, NULL, "=", card_value)) == NULL ||
 			   (if_stmts = sequential_block(query, res, restypelist, m->next->data.lval, NULL, is_func)) == NULL ) {
-				if (rel)
-					return sql_error(sql, 02, SQLSTATE(42000) "CASE: No SELECT statements allowed within the CASE condition");
 				return NULL;
 			}
+			psm_zero_or_one(cond);
 			case_stmt = exp_if(sql->sa, cond, if_stmts, NULL);
 			list_append(case_stmts, case_stmt);
 			n = n->next;
@@ -387,23 +390,21 @@ rel_psm_case( sql_query *query, sql_subtype *res, list *restypelist, dnode *case
 		dlist *else_statements = n->next->data.lval;
 		list *else_stmt = NULL;
 
-		if (else_statements) {
-			if (!(else_stmt = sequential_block(query, res, restypelist, else_statements, NULL, is_func)))
-				return NULL;
-		}
+		if (else_statements && !(else_stmt = sequential_block(query, res, restypelist, else_statements, NULL, is_func)))
+			return NULL;
+
 		n = whenlist->h;
 		while(n) {
 			dnode *m = n->data.sym->data.lval->h;
 			sql_rel *rel = NULL;
 			exp_kind ek = {type_value, card_value, FALSE};
-			sql_exp *cond = rel_logical_value_exp(query, &rel, m->data.sym, sql_sel, ek);
+			sql_exp *cond = rel_logical_value_exp(query, &rel, m->data.sym, sql_sel | sql_psm, ek);
 			list *if_stmts = NULL;
 			sql_exp *case_stmt = NULL;
 
-			if (!cond || rel ||
+			psm_zero_or_one(cond);
+			if (!cond ||
 			   (if_stmts = sequential_block(query, res, restypelist, m->next->data.lval, NULL, is_func)) == NULL ) {
-				if (rel)
-					return sql_error(sql, 02, SQLSTATE(42000) "CASE: No SELECT statements allowed within the CASE condition");
 				return NULL;
 			}
 			case_stmt = exp_if(sql->sa, cond, if_stmts, NULL);
@@ -1379,7 +1380,9 @@ psm_analyze(sql_query *query, char *analyzeType, dlist *qname, dlist *columns, s
 	append(exps, mm_exp = exp_atom_int(sql->sa, minmax));
 	append(tl, exp_subtype(mm_exp));
 	if (sample) {
-		sample_exp = rel_value_exp(query, NULL, sample, 0, ek);
+		sql_rel *rel = NULL;
+		sample_exp = rel_value_exp(query, &rel, sample, sql_sel | sql_psm, ek);
+		psm_zero_or_one(sample_exp);
 		if (!sample_exp || !(sample_exp = rel_check_type(sql, sql_bind_localtype("lng"), NULL, sample_exp, type_cast)))
 			return NULL;
 	} else {
