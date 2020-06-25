@@ -2131,9 +2131,10 @@ rewrite_anyequal(mvc *sql, sql_rel *rel, sql_exp *e, int depth)
 				if (is_select(rel->op)) {
 					return exp_in_compare(sql, &le, vals, is_anyequal(sf));
 				} else {
-					sql_exp *res = exp_in_project(sql, &le, vals, is_anyequal(sf));
-					exp_setname(sql->sa, res, exp_relname(e), exp_name(e));
-					return res;
+					le = exp_in_project(sql, &le, vals, is_anyequal(sf));
+					if (exp_name(e))
+						exp_prop_alias(sql->sa, le, e);
+					return le;
 				}
 			} else if (!lsq && is_tuple && is_values(re) && !exps_have_rel_exp(re->f)) {
 				return e; /* leave as is, handled later */
@@ -2192,7 +2193,6 @@ rewrite_anyequal(mvc *sql, sql_rel *rel, sql_exp *e, int depth)
 					} else
 						(void)rewrite_inner(sql, rel, rsq, !is_tuple?op_join:is_anyequal(sf)?op_semi:op_anti);
 				}
-
 
 				if (on_right) {
 					sql_rel *join = rel->l; /* the introduced join */
@@ -2324,16 +2324,19 @@ rewrite_compare(mvc *sql, sql_rel *rel, sql_exp *e, int depth)
 			if (is_values(le)) /* exp_values */
 				is_tuple = 1;
 
-			/* re should be a values list */
-			if (!is_tuple && exp_is_atom(le) && exp_is_atom(re)) {
+			if (!is_tuple && !lsq && !rsq) { /* trivial case, just re-write into a comparison */
 				e->flag = 0; /* remove quantifier */
 
-				if (rel_convert_types(sql, NULL, NULL, &le, &re, 1, type_equal_no_any) < 0)
+				if (rel_convert_types(sql, NULL, NULL, &le, &re, 1, type_equal) < 0)
 					return NULL;
-				le = exp_compare_func(sql, le, re, op, 0);
-				if (exp_name(e))
-					exp_prop_alias(sql->sa, le, e);
-				return le;
+				if (depth == 0 && is_select(rel->op)) {
+					return exp_compare(sql->sa, le, re, compare_str2type(op));
+				} else {
+					le = exp_compare_func(sql, le, re, op, 0);
+					if (exp_name(e))
+						exp_prop_alias(sql->sa, le, e);
+					return le;
+				}
 			}
 			if (!is_tuple && is_values(re) && !exps_have_rel_exp(re->f)) { /* exp_values */
 				list *vals = re->f;
@@ -2342,9 +2345,10 @@ rewrite_compare(mvc *sql, sql_rel *rel, sql_exp *e, int depth)
 				if (depth == 0 && is_select(rel->op)) {
 					return exp_in_compare(sql, &le, vals, is_anyequal(sf));
 				} else {
-					sql_exp *res = exp_in_project(sql, &le, vals, is_anyequal(sf));
-					exp_setname(sql->sa, res, exp_relname(e), exp_name(e));
-					return res;
+					le = exp_in_project(sql, &le, vals, is_anyequal(sf));
+					if (exp_name(e))
+						exp_prop_alias(sql->sa, le, e);
+					return le;
 				}
 			}
 

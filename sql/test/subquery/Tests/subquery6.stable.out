@@ -172,6 +172,20 @@ stdout of test 'subquery6` in directory 'sql/test/subquery` itself:
 #	RETURN res;
 #END;
 #DROP FUNCTION debugme;
+#SELECT i = ALL(i), i < ANY(i), i = ANY(NULL) FROM integers;
+% sys.%3,	sys.%4,	. # table_name
+% %3,	%4,	%2 # name
+% boolean,	boolean,	boolean # type
+% 5,	5,	5 # length
+[ true,	false,	NULL	]
+[ true,	false,	NULL	]
+[ true,	false,	NULL	]
+[ NULL,	NULL,	NULL	]
+#SELECT i FROM integers WHERE i = ANY(NULL);
+% sys.integers # table_name
+% i # name
+% int # type
+% 1 # length
 #DROP TABLE tbl_ProductSales;
 #DROP TABLE another_T;
 #DROP TABLE integers;

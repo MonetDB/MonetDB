@@ -126,11 +126,14 @@ SELECT debugme(); --error, more than one row returned by a subquery used as an e
 
 DROP FUNCTION debugme;
 
-SELECT i = ALL(i) FROM integers;
-	-- True
-	-- True
-	-- True
-	-- NULL
+SELECT i = ALL(i), i < ANY(i), i = ANY(NULL) FROM integers;
+	-- True False NULL
+	-- True False NULL
+	-- True False NULL
+	-- NULL NULL  NULL
+
+SELECT i FROM integers WHERE i = ANY(NULL);
+	--empty
 
 DROP TABLE tbl_ProductSales;
 DROP TABLE another_T;
