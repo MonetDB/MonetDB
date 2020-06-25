@@ -2284,3 +2284,25 @@ rel_visitor_bottomup(mvc *sql, sql_rel *rel, rel_rewrite_fptr rel_rewriter, int 
 {
 	return rel_visitor(sql, rel, rel_rewriter, changes, false);
 }
+
+static sql_exp *
+exp_check_has_analytics(mvc *sql, sql_rel *rel, sql_exp *e, int depth, int *changes)
+{
+	(void)sql; (void)rel; (void)depth;
+	if (e && e->type == e_func) {
+		sql_subfunc *f = e->f;
+
+		if (f && f->func && f->func->type == F_ANALYTIC)
+			(*changes)++;
+	}
+	return e;
+}
+
+int
+exps_have_analytics(mvc *sql, list *exps)
+{
+	int changes = 0;
+    (void)exps_exp_visitor(sql, NULL, exps, 0, &exp_check_has_analytics, &changes, 1);
+	return changes;
+}
+

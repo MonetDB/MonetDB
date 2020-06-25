@@ -130,4 +130,6 @@ typedef sql_rel *(*rel_rewrite_fptr)(mvc *sql, sql_rel *rel, int *changes);
 extern sql_rel *rel_visitor_topdown(mvc *sql, sql_rel *rel, rel_rewrite_fptr rel_rewriter, int *changes);
 extern sql_rel *rel_visitor_bottomup(mvc *sql, sql_rel *rel, rel_rewrite_fptr rel_rewriter, int *changes);
 
+extern int exps_have_analytics(mvc *sql, list *exps);
+
 #endif /* _REL_REL_H_ */
