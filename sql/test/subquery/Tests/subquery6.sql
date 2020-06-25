@@ -144,6 +144,28 @@ END;
 SELECT debugme(); --error, more than one row returned by a subquery used as an expression
 DROP FUNCTION debugme;
 
+CREATE FUNCTION debugme() RETURNS INT
+BEGIN
+	DECLARE n INT;
+	WHILE (1 > ALL(select 1)) do
+		SET n = n -1;
+	END WHILE;
+	RETURN n;
+END;
+SELECT debugme();
+	--NULL
+DROP FUNCTION debugme;
+
+CREATE FUNCTION debugme(input int) RETURNS BOOLEAN
+BEGIN
+	DECLARE n BOOLEAN;
+	SET n = exists (select i from integers where i < input);
+	RETURN n;
+END;
+SELECT debugme(1), debugme(2);
+	-- True False
+DROP FUNCTION debugme;
+
 DROP TABLE tbl_ProductSales;
 DROP TABLE another_T;
 DROP TABLE integers;

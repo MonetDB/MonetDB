@@ -2099,7 +2099,7 @@ static sql_exp *
 rewrite_anyequal(mvc *sql, sql_rel *rel, sql_exp *e, int depth)
 {
 	sql_subfunc *sf;
-	if (e->type != e_func)
+	if (e->type != e_func || is_ddl(rel->op))
 		return e;
 
 	sf = e->f;
@@ -2579,7 +2579,7 @@ static sql_exp *
 rewrite_exists(mvc *sql, sql_rel *rel, sql_exp *e, int depth)
 {
 	sql_subfunc *sf;
-	if (e->type != e_func)
+	if (e->type != e_func || is_ddl(rel->op))
 		return e;
 
 	sf = e->f;

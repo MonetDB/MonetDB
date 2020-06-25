@@ -186,6 +186,30 @@ stdout of test 'subquery6` in directory 'sql/test/subquery` itself:
 % i # name
 % int # type
 % 1 # length
+#CREATE FUNCTION debugme() RETURNS INT
+#BEGIN
+#	DECLARE n INT;
+#	WHILE (1 > (select 9 from integers)) do
+#		SET n = n -1;
+#	END WHILE;
+#	RETURN n;
+#END;
+#DROP FUNCTION debugme;
+#CREATE FUNCTION debugme() RETURNS INT
+#BEGIN
+#	DECLARE n INT;
+#	WHILE (1 > ALL(select 1)) do
+#		SET n = n -1;
+#	END WHILE;
+#	RETURN n;
+#END;
+#SELECT debugme(); --error, more than one row returned by a subquery used as an expression
+% .%4 # table_name
+% %4 # name
+% int # type
+% 1 # length
+[ NULL	]
+#DROP FUNCTION debugme;
 #DROP TABLE tbl_ProductSales;
 #DROP TABLE another_T;
 #DROP TABLE integers;
