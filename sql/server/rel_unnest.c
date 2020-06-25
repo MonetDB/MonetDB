@@ -1213,6 +1213,16 @@ push_up_select_l(mvc *sql, sql_rel *rel)
 static sql_rel *
 push_up_join(mvc *sql, sql_rel *rel, list *ad)
 {
+	if (rel && (is_join(rel->op) || is_semi(rel->op)) && is_dependent(rel)) {
+		sql_rel *j = rel->r;
+
+		if (j->op == op_join && !rel_is_ref(rel) && !rel_is_ref(j) && j->exps) {
+			rel->exps =	rel->exps?list_merge(rel->exps, j->exps, (fdup)NULL):j->exps;
+			j->exps = NULL;
+			return rel;
+		}
+	}
+
 	/* input rel is dependent join with on the right a project */
 	if (rel && (is_join(rel->op) || is_semi(rel->op)) && is_dependent(rel)) {
 		sql_rel *d = rel->l, *j = rel->r;
