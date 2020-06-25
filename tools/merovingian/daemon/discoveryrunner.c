@@ -189,6 +189,7 @@ getRemoteDB(char *database)
 			walk->path = walk->dbname; /* only freed by sabaoth */
 			walk->locked = false;
 			walk->state = SABdbRunning;
+			walk->pid = 0;
 			walk->scens = malloc(sizeof(sablist));
 			walk->scens->val = strdup("sql");
 			walk->scens->next = NULL;

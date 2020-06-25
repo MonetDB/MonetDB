@@ -695,6 +695,7 @@ msab_getSingleStatus(const char *pathbuf, const char *dbname, sabdb *next)
 	snprintf(buf, sizeof(buf), "%s/%s", pathbuf, dbname);
 	sdb->path = strdup(buf);
 	sdb->dbname = sdb->path + strlen(sdb->path) - strlen(dbname);
+	sdb->pid = 0;
 
 
 	/* check the state of the server by looking at its gdk lock:
@@ -740,8 +741,9 @@ msab_getSingleStatus(const char *pathbuf, const char *dbname, sabdb *next)
 		 */
 		sdb->state = SABdbInactive;
 	} else if (fd == -1) {
-		/* file is locked, so mserver is running, see if the database
-		 * has finished starting */
+		/* file is locked, so mserver is running. can we find it? */
+		sdb->pid = MT_get_locking_pid(buf);
+		/* see if the database has finished starting */
 		snprintf(buf, sizeof(buf), "%s/%s/%s", pathbuf, dbname, STARTEDFILE);
 		if (stat(buf, &statbuf) == -1) {
 			sdb->state = SABdbStarting;
@@ -1345,6 +1347,7 @@ msab_deserialise(sabdb **ret, char *sdb)
 	s->secret = NULL;
 	s->locked = locked;
 	s->state = (SABdbState)state;
+	s->pid = 0;
 	if (strlen(scens) == 0) {
 		s->scens = NULL;
 	} else {

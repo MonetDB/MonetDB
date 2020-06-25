@@ -421,6 +421,37 @@ MT_lockf(char *filename, int mode)
 	return -1;
 }
 
+/* returns pid of the process holding the gdk lock, or 0 if that is not possible.
+ * 'not possible' could be for a variety of reasons.
+ */
+pid_t
+MT_get_locking_pid(char *filename)
+{
+#if !defined(HAVE_FCNTL) || !defined(HAVE_F_GETLK)
+	(void)filename;
+	return 0;
+#else
+	int fd;
+	struct flock fl = {
+		.l_type = F_WRLCK,
+		.l_whence = SEEK_SET,
+		.l_start = 4,
+		.l_len = 1,
+	};
+	pid_t pid = 0;
+
+	fd = open(filename, O_RDONLY | O_CLOEXEC, 0);
+	if (fd < 0)
+		return 0;
+
+	if (fcntl(fd, F_GETLK, &fl) == 0)
+		pid = fl.l_pid;
+
+	close(fd);
+	return pid;
+#endif
+}
+
 #endif
 
 #ifndef PATH_MAX
