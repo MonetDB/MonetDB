@@ -1087,7 +1087,7 @@ monetdbe_append(monetdbe_database dbhdl, const char* schema, const char* table, 
 		for (i = 0, n = t->columns.set->h; i < column_count && n; i++, n = n->next) {
 			sql_column *c = n->data;
 			int mtype = monetdbe_type(input[i]->type);
-			const void* nil = ATOMnilptr(mtype);
+			const void* nil = (mtype>=0)?ATOMnilptr(mtype):NULL;
 			char *v = input[i]->data;
 			int w = 1;
 
