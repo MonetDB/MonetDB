@@ -1455,6 +1455,25 @@ rel_numeric_supertype(mvc *sql, sql_exp *e )
 	return e;
 }
 
+static sql_subtype*
+largest_numeric_type(sql_subtype *res, int ec)
+{
+	if (ec == EC_NUM) {
+#ifdef HAVE_HGE
+		*res = *sql_bind_localtype(have_hge ? "hge" : "lng");
+#else
+		*res = *sql_bind_localtype("lng");
+#endif
+		return res;
+	}
+	if (ec == EC_DEC && sql_find_subtype(res, "decimal", 38, 0)) {
+		/* we don't know the precision nor scale ie we use a double */
+		*res = *sql_bind_localtype("dbl");
+		return res;
+	}
+	return NULL;
+}
+
 sql_exp *
 rel_check_type(mvc *sql, sql_subtype *t, sql_rel *rel, sql_exp *exp, check_type tpe)
 {
@@ -3068,6 +3087,10 @@ rel_unop(sql_query *query, sql_rel **rel, symbol *se, int f, exp_kind ek)
 
 #define is_addition(fname) (strcmp(fname, "sql_add") == 0)
 #define is_subtraction(fname) (strcmp(fname, "sql_sub") == 0)
+#define is_multiplication(fname) (strcmp(fname, "sql_mul") == 0)
+#define is_division(fname) (strcmp(fname, "sql_div") == 0)
+
+#define is_numeric_dyadic_func(fname) (is_addition(fname) || is_subtraction(fname) || is_multiplication(fname) || is_division(fname))
 
 sql_exp *
 rel_binop_(mvc *sql, sql_rel *rel, sql_exp *l, sql_exp *r, sql_schema *s, char *fname, int card)
@@ -3126,6 +3149,31 @@ rel_binop_(mvc *sql, sql_rel *rel, sql_exp *l, sql_exp *r, sql_schema *s, char *
 			res = l;
 			l = r;
 			r = res;
+		}
+	}
+	if (!f) {
+		if (is_numeric_dyadic_func(fname)) {
+			if (EC_NUMBER(t1->type->eclass) && !EC_NUMBER(t2->type->eclass)) {
+				sql_subtype tp;
+				if (!largest_numeric_type(&tp, t1->type->eclass))
+					tp = *t1; /* for float and interval fall back too the same as left */
+				r = rel_check_type(sql, &tp, rel, r, type_equal);
+				if (!r)
+					return NULL;
+				t2 = exp_subtype(r);
+			} else if (!EC_NUMBER(t1->type->eclass) && !EC_TEMP(t1->type->eclass) && EC_NUMBER(t2->type->eclass)) {
+				sql_subtype tp;
+				if (!largest_numeric_type(&tp, t2->type->eclass))
+					tp = *t2; /* for float and interval fall back too the same as right */
+				l = rel_check_type(sql, &tp, rel, l, type_equal);
+				if (!l)
+					return NULL;
+				t1 = exp_subtype(l);
+			} else if (!EC_NUMBER(t1->type->eclass) && !EC_TEMP(t1->type->eclass) && !EC_NUMBER(t2->type->eclass)) {
+				return sql_error(sql, 02, SQLSTATE(42000) "SELECT: no such binary operator '%s(%s,%s)'", fname,
+					exp_subtype(l)->type->sqlname,
+					exp_subtype(r)->type->sqlname);
+			}
 		}
 	}
 	if (f && check_card(card,f)) {
