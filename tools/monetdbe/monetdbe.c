@@ -1029,7 +1029,7 @@ monetdbe_append(monetdbe_database dbhdl, const char* schema, const char* table, 
 	mvc *m = NULL;
 	sql_schema *s = NULL;
 	sql_table *t = NULL;
-	size_t i, cnt = input[0]->count;
+	size_t i, cnt;
 	node *n;
 
 	MT_lock_set(&embedded_lock);
