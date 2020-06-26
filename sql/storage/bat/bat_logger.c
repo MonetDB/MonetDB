@@ -998,7 +998,7 @@ bl_postversion(void *lg)
 				return GDK_FAIL;
 			}
 			const char *right_module = "aggr"; /* set module to 'aggr' */
-			BAT *update_bat = BATconstant(cands_project->hseqbase, TYPE_str, right_module, 4, TRANSIENT);
+			BAT *update_bat = BATconstant(cands_project->hseqbase, TYPE_str, right_module, BATcount(cands_project), TRANSIENT);
 			bat_destroy(cands_project);
 			if (update_bat == NULL) {
 				bat_destroy(func_mod);
