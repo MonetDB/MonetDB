@@ -12,7 +12,7 @@
  */
 /*
  * Execution of SQL instructions.
- * Before we are can process SQL statements the global catalog should be initialized. 
+ * Before we are can process SQL statements the global catalog should be initialized.
  */
 #include "monetdb_config.h"
 #include "mal_backend.h"
@@ -66,7 +66,7 @@
 /*
  * The trace operation collects the events in the BATs
  * and creates a secondary result set upon termination
- * of the query. 
+ * of the query.
  *
  * SQLsetTrace extends the MAL plan with code to collect the events.
  * from the profile cache and returns it as a secondary resultset.
@@ -291,7 +291,7 @@ SQLrun(Client c, backend *be, mvc *m)
 	if (*m->errstr){
 		if (strlen(m->errstr) > 6 && m->errstr[5] == '!')
 			msg = createException(PARSE, "SQLparser", "%s", m->errstr);
-		else 
+		else
 			msg = createException(PARSE, "SQLparser", SQLSTATE(42000) "%s", m->errstr);
 		*m->errstr=0;
 		return msg;
@@ -762,9 +762,9 @@ SQLengineIntern(Client c, backend *be)
 	 * in the context of a user global environment. We have a private
 	 * environment.
 	 */
-	if (MALcommentsOnly(c->curprg->def)) 
+	if (MALcommentsOnly(c->curprg->def))
 		msg = MAL_SUCCEED;
-	else 
+	else
 		msg = SQLrun(c,be,m);
 
 cleanup_engine:
@@ -789,7 +789,7 @@ cleanup_engine:
 
 	if (m->type != Q_SCHEMA && be->q && msg) {
 		qc_delete(m->qc, be->q);
-	} 
+	}
 	be->q = NULL;
 	sqlcleanup(be->mvc, (!msg) ? 0 : -1);
 	MSresetInstructions(c->curprg->def, 1);
@@ -868,7 +868,7 @@ RAstatement(Client c, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	return msg;
 }
 
-static int 
+static int
 is_a_number(char *v)
 {
 	while(*v) {
@@ -946,7 +946,7 @@ RAstatement2(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		 * don't use sql_add_arg, but special numbered version
 		 * sql_set_arg(m, a, nr);
 		 * */
-		if (nr >= 0) { 
+		if (nr >= 0) {
 			append(ops, exp_atom_ref(m->sa, nr, &t));
 			if (!sql_set_arg(m, nr, a)) {
 				sqlcleanup(m, 0);
@@ -981,7 +981,7 @@ RAstatement2(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			list_append(types_list, token);
 
 		if (list_length(types_list) != list_length(rel->exps))
-			msg = createException(SQL, "RAstatement2", SQLSTATE(42000) "The number of projections don't match between the generated plan and the expected one: %d != %d", 
+			msg = createException(SQL, "RAstatement2", SQLSTATE(42000) "The number of projections don't match between the generated plan and the expected one: %d != %d",
 								  list_length(types_list), list_length(rel->exps));
 		else {
 			int i = 1;

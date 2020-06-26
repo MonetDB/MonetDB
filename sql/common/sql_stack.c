@@ -28,7 +28,7 @@ sql_stack_new(sql_allocator *sa, int size)
 	return s;
 }
 
-void 
+void
 sql_stack_push(sql_stack *s, void *v)
 {
 	if (s->top >= s->size) {

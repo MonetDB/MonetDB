@@ -20,14 +20,14 @@
  *
  * For REPLICATION, also called a database clone or slave, we take a snapshot and the
  * log files that reflect the recent changes. The log updates are replayed against
- * the snapshot until a specific time point or transaction id is reached. 
- * 
+ * the snapshot until a specific time point or transaction id is reached.
+ *
  * Some systems also use the logical logs to REPLAY all (expensive) queries
  * against the database. We skip this for the time being, as those queries
  * can be captured already in the server.
  * [A flag should be added to at least capture them]
  *
- * The goal of this module is to ease BACKUP and REPLICATION of a master database 
+ * The goal of this module is to ease BACKUP and REPLICATION of a master database
  * with a time-bounded delay. This means that both master and replica run at a certain beat
  * (in seconds) by which information is made available or read by the replica.
  *
@@ -41,7 +41,7 @@
  *
  * IMPLEMENTATION
  * The underlying assumption of the techniques deployed is that the database
- * resides on a proper (global/distributed) file system to guarantees recovery 
+ * resides on a proper (global/distributed) file system to guarantees recovery
  * from most storage system related failures, e.g. using RAID disks or LSF systems.
  *
  * A database can be set into 'master' mode only once using the SQL command:
@@ -62,7 +62,7 @@
  *
  * A missing path to the snapshot denotes that we can start the clone with an empty database.
  * The log files are stored as master/<dbname>_<batchnumber>. They belong to the snapshot.
- * 
+ *
  * Each wlc log file contains a serial log of a number of committed compound transactions.
  * The log records are represented as ordinary MAL statement blocks, which
  * are executed in serial mode. (parallelism can be considered for large updates later)
@@ -105,7 +105,7 @@
  * It will also maintain the list of replicas for inspection and managing their drift.
  * For example,
  *	 monetdb master <dbname> [ <optional snapshot path>]
- * which locks the database, takes a save copy, initializes the state chance to master. 
+ * which locks the database, takes a save copy, initializes the state chance to master.
  *
  * A fresh replica can be constructed as follows:
  * 	monetdb replicate <dbname> <mastername>
@@ -119,14 +119,14 @@
  * A fresh database can be turned into a clone using the call
  *     CALL wcr_replica.master('mastername')
  * It will grab the latest snapshot of the master and applies all
- * available log files before releasing the system. 
+ * available log files before releasing the system.
  * The master has no knowledge about the number of clones and their whereabouts.
  *
- * The clone process will iterate in the background through the log files, 
+ * The clone process will iterate in the background through the log files,
  * applying all update transactions.
  *
  * An optional timestamp or transaction id can be added to the replicate() command to
- * apply the logs until a given moment. This is particularly handy when an unexpected 
+ * apply the logs until a given moment. This is particularly handy when an unexpected
  * desastrous user action (drop persistent table) has to be recovered from.
  *
  * CALL wcr_replica.master('mastername');  -- get logs from a specific master
@@ -154,7 +154,7 @@
  * The wlc files purposely have a textual format derived from the MAL statements.
  * This provides a stepping stone for remote execution later.
  *
- * [TODO consider the roll logging of SQL session variables, i.e. optimizer_pipe 
+ * [TODO consider the roll logging of SQL session variables, i.e. optimizer_pipe
  * as part of the log record]
  * For updates we don't need special care for this.
  */
@@ -194,7 +194,7 @@ WLCused(void)
 /* The master configuration file is a simple key=value table */
 str
 WLCreadConfig(FILE *fd)
-{	
+{
 	str msg = MAL_SUCCEED;
 	char path[FILENAME_MAX];
 	int len;
@@ -223,7 +223,7 @@ WLCreadConfig(FILE *fd)
 				msg = createException(MAL, "wlc.readConfig", "write config value is too large");
 				goto bailout;
 			}
-		}			
+		}
 		if( strncmp("batches=", path, 8) == 0)
 			wlc_batches = atoi(path+ 8);
 		if( strncmp("beat=", path, 5) == 0)
@@ -250,7 +250,7 @@ WLCgetConfig(void){
 	return WLCreadConfig(fd);
 }
 
-static 
+static
 str WLCsetConfig(void){
 	str path;
 	stream *fd;
@@ -333,7 +333,7 @@ WLCflush(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	return WLCsetConfig();
 }
 
-str 
+str
 WLCepilogue(void *ret)
 {
 	str msg = MAL_SUCCEED;
@@ -390,7 +390,7 @@ WLClogger(void *arg)
 #define access(f, m)	_access(f, m)
 #endif
 
-str 
+str
 WLCinit(void)
 {
 	str conf, msg;
@@ -421,7 +421,7 @@ WLCinit(void)
 	return MAL_SUCCEED;
 }
 
-str 
+str
 WLCinitCmd(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	(void) cntxt;
@@ -431,7 +431,7 @@ WLCinitCmd(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	return WLCinit();
 }
 
-str 
+str
 WLCgetclock(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {	str *ret = getArgReference_str(stk,pci,0);
 	(void) cntxt;
@@ -445,7 +445,7 @@ WLCgetclock(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	return MAL_SUCCEED;
 }
 
-str 
+str
 WLCgettick(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {	lng *ret = getArgReference_lng(stk,pci,0);
 	(void) cntxt;
@@ -457,7 +457,7 @@ WLCgettick(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 /* Changing the beat should have immediate effect
  * It forces a new log file
  */
-str 
+str
 WLCsetbeat(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {	int beat;
 	(void) mb;
@@ -469,7 +469,7 @@ WLCsetbeat(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	return WLCcloselogger();
 }
 
-str 
+str
 WLCgetbeat(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {	int *ret = getArgReference_int(stk,pci,0);
 	(void) mb;
@@ -478,7 +478,7 @@ WLCgetbeat(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	return MAL_SUCCEED;
 }
 
-str 
+str
 WLCmaster(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	int len;
@@ -516,9 +516,9 @@ WLCmaster(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	return WLCsetConfig();
 }
 
-str 
+str
 WLCstop(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
-{	
+{
 	(void) cntxt;
 	(void) mb;
 	(void) stk;
@@ -557,7 +557,7 @@ WLCsettime(Client cntxt, InstrPtr pci, InstrPtr p, str fcn)
 static str
 WLCpreparewrite(Client cntxt)
 {	str msg = MAL_SUCCEED;
-	// save the wlc record on a file 
+	// save the wlc record on a file
 
 	if( cntxt->wlc == 0 || cntxt->wlc->stop <= 1 ||  cntxt->wlc_kind == WLC_QUERY )
 		return MAL_SUCCEED;
@@ -568,14 +568,14 @@ WLCpreparewrite(Client cntxt)
 		cntxt->wlc_kind = WLC_QUERY;
 		return MAL_SUCCEED;
 	}
-	if( wlc_dir[0] ){	
+	if( wlc_dir[0] ){
 		if (wlc_fd == NULL){
 			msg = WLCsetlogger();
 			if( msg) {
 				return msg;
 			}
 		}
-		
+
 		MT_lock_set(&wlc_lock);
 		printFunction(wlc_fd, cntxt->wlc, 0, LIST_MAL_CALL );
 		(void) mnstr_flush(wlc_fd);
@@ -583,7 +583,7 @@ WLCpreparewrite(Client cntxt)
 		// close file if no delay is allowed
 		if( wlc_beat == 0 )
 			msg = WLCcloselogger();
-		
+
 		MT_lock_unset(&wlc_lock);
 		trimMalVariables(cntxt->wlc, NULL);
 		resetMalBlk(cntxt->wlc, 0);
@@ -605,8 +605,8 @@ WLCstart(Client cntxt, str fcn)
 	lng tag;
 
 	if( cntxt->wlc == NULL){
-		if((cntxt->wlc = newMalBlk(STMT_INCREMENT)) == NULL) 
-			throw(MAL, fcn, MAL_MALLOC_FAIL); 
+		if((cntxt->wlc = newMalBlk(STMT_INCREMENT)) == NULL)
+			throw(MAL, fcn, MAL_MALLOC_FAIL);
 		mb = cntxt->wlc;
 	}
 	/* Find a single transaction sequence ending with COMMIT or ROLLBACK */
@@ -798,10 +798,10 @@ WLCdatashipping(Client cntxt, MalBlkPtr mb, InstrPtr pci, int bid)
 #ifdef HAVE_HGE
 	case TYPE_hge: bulk(hge,Hge); break;
 #endif
-	case TYPE_str: 
+	case TYPE_str:
 		{	BATiter bi;
 			BUN p,q;
-			int k=0; 
+			int k=0;
 			bi= bat_iterator(b);
 			BATloop(b,p,q){
 				if( k % 32 == 31){
@@ -846,7 +846,7 @@ WLCappend(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	p = pushStr(cntxt->wlc, p, getVarConstant(mb, getArg(pci,2)).val.sval);
 	p = pushStr(cntxt->wlc, p, getVarConstant(mb, getArg(pci,3)).val.sval);
 
-	// extend the instructions with all values. 
+	// extend the instructions with all values.
 	// If this become too large we can always switch to a "catalog" mode
 	// forcing re-execution instead
 	tpe= getArgType(mb,pci,4);
@@ -863,14 +863,14 @@ WLCappend(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	}
 	if( cntxt->wlc_kind < WLC_UPDATE)
 		cntxt->wlc_kind = WLC_UPDATE;
-	
+
 	return msg;
 }
 
 /* check for empty BATs first */
 str
 WLCdelete(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
-{	InstrPtr p;	
+{	InstrPtr p;
 	int tpe, k = 0;
 	int bid =  stk->stk[getArg(pci,3)].val.bval;
 	oid o=0, last, *ol;
@@ -891,7 +891,7 @@ WLCdelete(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	p = newStmt(cntxt->wlc, "wlr","delete");
 	p = pushStr(cntxt->wlc, p, getVarConstant(mb, getArg(pci,1)).val.sval);
 	p = pushStr(cntxt->wlc, p, getVarConstant(mb, getArg(pci,2)).val.sval);
-	
+
 	tpe= getArgType(mb,pci,3);
 	if (isaBatType(tpe) ){
 		b= BATdescriptor(bid);
@@ -972,7 +972,7 @@ WLCupdate(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 #endif
 		case TYPE_str:
 		{	BATiter bi;
-			int k=0; 
+			int k=0;
 			BUN x,y;
 			bi = bat_iterator(bval);
 			BATloop(bval,x,y){
@@ -1029,7 +1029,7 @@ WLCclear_table(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 str
 WLCcommit(int clientid)
-{	
+{
 	if( mal_clients[clientid].wlc && mal_clients[clientid].wlc->stop > 1){
 		newStmt(mal_clients[clientid].wlc,"wlr","commit");
 		return WLCpreparewrite( &mal_clients[clientid]);

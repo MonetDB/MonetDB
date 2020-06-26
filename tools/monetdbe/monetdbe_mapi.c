@@ -15,7 +15,7 @@ mapi_error(Mapi mid)
 	return MOK;
 }
 
-MapiHdl 
+MapiHdl
 mapi_query(Mapi mid, const char *query)
 {
 	MapiHdl mh = (MapiHdl)MAPIalloc(sizeof(struct MapiStatement));
@@ -58,7 +58,7 @@ mapi_close_handle(MapiHdl hdl)
 	return MOK;
 }
 
-int 
+int
 mapi_fetch_row(MapiHdl hdl)
 {
 	int n = 0;
@@ -198,7 +198,7 @@ mapi_get_type(MapiHdl hdl, int fnr)
 	return NULL;
 }
 
-MapiMsg 
+MapiMsg
 mapi_seek_row(MapiHdl hdl, int64_t rowne, int whence)
 {
 	if (hdl && rowne == 0 && whence == MAPI_SEEK_SET) {
@@ -207,7 +207,7 @@ mapi_seek_row(MapiHdl hdl, int64_t rowne, int whence)
 	return MOK;
 }
 
-int64_t 
+int64_t
 mapi_get_row_count(MapiHdl hdl)
 {
 	if (hdl) {
@@ -216,8 +216,8 @@ mapi_get_row_count(MapiHdl hdl)
 	return 0;
 }
 
-int64_t 
-mapi_rows_affected(MapiHdl hdl) 
+int64_t
+mapi_rows_affected(MapiHdl hdl)
 {
 	if (hdl) {
 		if (hdl->result)
@@ -227,7 +227,7 @@ mapi_rows_affected(MapiHdl hdl)
 	return 0;
 }
 
-int 
+int
 mapi_get_field_count(MapiHdl hdl)
 {
 	if (hdl) {

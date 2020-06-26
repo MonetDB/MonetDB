@@ -109,7 +109,7 @@ compr(inner_state_t *inner_state, pump_action action)
 
 	if (inner_state->finished)
 		return PUMP_END;
-	
+
 	size_t chunk = inner_state->src_win.count;
 	if (chunk > WRITE_CHUNK)
 		chunk = WRITE_CHUNK;

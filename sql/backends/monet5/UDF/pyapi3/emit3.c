@@ -298,7 +298,7 @@ PyObject *PyEmit_Emit(PyEmitObject *self, PyObject *args)
 				msg = PyObject_GetReturnValues(dictEntry, ret);
 				if (msg != MAL_SUCCEED) {
 					goto wrapup;
-				}	
+				}
 				if (ret->array_data == NULL) {
 					msg = GDKstrdup("No return value stored in the structure.");
 					goto wrapup;

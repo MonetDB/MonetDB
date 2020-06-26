@@ -350,10 +350,10 @@ UUIDwrite(const void *u, stream *s, size_t cnt)
 {
 	return mnstr_write(s, u, UUID_SIZE, cnt) ? GDK_SUCCEED : GDK_FAIL;
 }
- 
+
 #include "mel.h"
 mel_atom uuid_init_atoms[] = {
- { .name="uuid", .cmp=UUIDcompare, .fromstr=UUIDfromString, .hash=UUIDhash, .null=UUIDnull, .read=UUIDread, .tostr=UUIDtoString, .write=UUIDwrite, },  { .cmp=NULL } 
+ { .name="uuid", .cmp=UUIDcompare, .fromstr=UUIDfromString, .hash=UUIDhash, .null=UUIDnull, .read=UUIDread, .tostr=UUIDtoString, .write=UUIDwrite, },  { .cmp=NULL }
 };
 mel_func uuid_init_funcs[] = {
  command("uuid", "prelude", UUIDprelude, false, "", args(1,1, arg("",void))),

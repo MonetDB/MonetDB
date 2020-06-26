@@ -275,7 +275,7 @@ BATnil_grp(BAT *l, BAT *g, BAT *e, BAT *s)
 			while (ncand > 0) {
 				ncand--;
 				i = canditer_next(&ci) - l->hseqbase;
-				if (gids == NULL ||	
+				if (gids == NULL ||
 					(gids[i] >= min && gids[i] <= max)) {
 					if (gids)
 						gid = gids[i] - min;
@@ -410,7 +410,7 @@ BATanyequal_grp(BAT *l, BAT *r, BAT *g, BAT *e, BAT *s)
 			while (ncand > 0) {
 				ncand--;
 				i = canditer_next(&ci) - l->hseqbase;
-				if (gids == NULL ||	
+				if (gids == NULL ||
 					(gids[i] >= min && gids[i] <= max)) {
 					if (gids)
 						gid = gids[i] - min;
@@ -526,7 +526,7 @@ BATallnotequal_grp(BAT *l, BAT *r, BAT *g, BAT *e, BAT *s)
 			while (ncand > 0) {
 				ncand--;
 				i = canditer_next(&ci) - l->hseqbase;
-				if (gids == NULL ||	
+				if (gids == NULL ||
 					(gids[i] >= min && gids[i] <= max)) {
 					if (gids)
 						gid = gids[i] - min;
@@ -689,7 +689,7 @@ BATanyequal_grp2(BAT *l, BAT *r, BAT *rid, BAT *g, BAT *e, BAT *s)
 								hasnil = 1;
 							} else if (ocmp(lv, rv) == 0)
 								ret[gid] = TRUE;
-						} 
+						}
 					}
 				}
 			}
@@ -811,7 +811,7 @@ BATallnotequal_grp2(BAT *l, BAT *r, BAT *rid, BAT *g, BAT *e, BAT *s)
 								hasnil = 1;
 							} else if (ocmp(lv, rv) == 0)
 								ret[gid] = FALSE;
-						} 
+						}
 					}
 				}
 			}

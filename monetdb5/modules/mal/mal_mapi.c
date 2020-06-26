@@ -922,7 +922,7 @@ SERVERlisten(int port, const char *usockfile, int maxusers)
 
 	gethostname(host, sizeof(host));
 	TRC_DEBUG(MAL_SERVER, "Ready to accept connections on: %s:%d\n", host, port);
-	
+
 	/* seed the randomiser such that our challenges aren't
 	 * predictable... */
 	srand((unsigned int) GDKusec());

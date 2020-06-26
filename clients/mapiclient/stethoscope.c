@@ -13,7 +13,7 @@
  * will collect the tomograph pages for at most 10 SQL queries
  * For each page a gnuplot file, a data file, and the event trace
  * are collected for more focussed analysis.
- * 
+ *
 */
 
 #include "monetdb_config.h"
@@ -313,7 +313,7 @@ main(int argc, char **argv)
 		}
 		while ((e = strchr(response, '\n')) != NULL) {
 			*e = 0;
-			if(json) 
+			if(json)
 				printf("%s\n", response);
 			else{
 				if (debug)

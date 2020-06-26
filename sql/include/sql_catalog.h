@@ -41,7 +41,7 @@
 #define PRIV_COPYFROMFILE 1
 #define PRIV_COPYINTOFILE 2
 
-typedef enum sql_dependency { 
+typedef enum sql_dependency {
 	SCHEMA_DEPENDENCY = 1,
 	TABLE_DEPENDENCY = 2,
 	COLUMN_DEPENDENCY = 3,
@@ -79,7 +79,7 @@ typedef enum sql_dependency {
                            scales/precision for all their inputs */
 #define SCALE_NOFIX	2
 #define SCALE_MUL	3	/* multiplication gives the sum of scales */
-#define SCALE_DIV	4	/* div on the other hand reduces the scales */ 
+#define SCALE_DIV	4	/* div on the other hand reduces the scales */
 #define DIGITS_ADD	5	/* some types grow under functions (concat) */
 #define INOUT		6	/* output type equals input type */
 #define SCALE_EQ	7	/* user defined functions need equal scales */
@@ -102,7 +102,7 @@ typedef enum sql_dependency {
 #define FRAME_ROWS  0 		/* number of rows (preceding/following) */
 #define FRAME_RANGE 1		/* logical range (based on the ordering column).
 				   Example:
-				   RANGE BETWEEN INTERVAL '1' MONTH PRECEDING  
+				   RANGE BETWEEN INTERVAL '1' MONTH PRECEDING
 				             AND INTERVAL '1' MONTH FOLLOWING */
 #define FRAME_GROUPS 2
 #define FRAME_ALL 3 /* special case of FRAME_RANGE, cover the entire partition */
@@ -138,7 +138,7 @@ typedef enum sql_dependency {
 
 extern const char *TID;
 
-typedef enum temp_t { 
+typedef enum temp_t {
 	SQL_PERSIST = 0,
 	SQL_LOCAL_TEMP = 1,
 	SQL_GLOBAL_TEMP = 2,
@@ -184,7 +184,7 @@ typedef enum comp_type {
 
 #define is_complex_exp(et) ((et) == cmp_or || (et) == cmp_in || (et) == cmp_notin || (et) == cmp_filter)
 
-typedef enum commit_action_t { 
+typedef enum commit_action_t {
 	CA_COMMIT, 	/* commit rows, only for persistent tables */
 	CA_DELETE, 	/* delete rows */
 	CA_PRESERVE,	/* preserve rows */
@@ -254,7 +254,7 @@ typedef struct sql_trans {
 	sql_allocator *sa;	/* transaction allocator */
 
 	struct sql_trans *parent;	/* multilevel transaction support */
-	backend_stack stk;		
+	backend_stack stk;
 } sql_trans;
 
 typedef struct sql_schema {
@@ -299,7 +299,7 @@ typedef enum sql_class {
 	EC_MAX /* evaluated to the max value, should be always kept at the bottom */
 } sql_class;
 
-#define has_tz(e,n)		(EC_TEMP_TZ(e)) 
+#define has_tz(e,n)		(EC_TEMP_TZ(e))
 #define type_has_tz(t)		has_tz((t)->type->eclass, (t)->type->sqlname)
 #define EC_VARCHAR(e)		(e==EC_CHAR||e==EC_STRING)
 #define EC_INTERVAL(e)		(e==EC_MONTH||e==EC_SEC)
@@ -429,8 +429,8 @@ typedef struct sql_func {
 	list *res;	/* list of results */
 	int nr;
 	int sql;	/* 0 native implementation
-			   1 sql 
-			   2 sql instantiated proc 
+			   1 sql
+			   2 sql instantiated proc
 			*/
 	sql_flang lang;
 	char *query;	/* sql code */
@@ -519,8 +519,8 @@ typedef struct sql_ukey {	/* pkey, ukey */
 typedef struct sql_fkey {	/* fkey */
 	sql_key k;
 	/* no action, restrict (default), cascade, set null, set default */
-	int on_delete;	
-	int on_update;	
+	int on_delete;
+	int on_update;
 	struct sql_ukey *rkey;	/* only set for fkey and rkey */
 } sql_fkey;
 
@@ -535,7 +535,7 @@ typedef struct sql_trigger {
 	struct sql_table *t;
 	char *old_name;		/* name referencing the old values */
 	char *new_name;		/* name referencing the new values */
-	
+
 	char *condition; 	/* when search condition, ie query */
 	char *statement;	/* action, ie list of sql statements */
 } sql_trigger;
@@ -695,7 +695,7 @@ typedef struct res_table {
 } res_table;
 
 typedef struct sql_session {
-	sql_trans *tr; 		/* active transaction */	
+	sql_trans *tr; 		/* active transaction */
 
 	char *schema_name; /* transaction's schema name */
 	sql_schema *schema;

@@ -36,13 +36,13 @@ rel_outer2inner_join(mvc *sql, sql_rel *rel, int *changes)
 	/* push select through join */
 	if (is_select(rel->op) && exps && r && r->op == op_left && !(rel_is_ref(r))) {
 		if ()
-		for (n = exps->h; n; n = n->next) { 
+		for (n = exps->h; n; n = n->next) {
 			sql_exp *e = n->data;
 			if (e->type == e_cmp && !e->f && !is_complex_exp(e->flag)) {
 				sql_rel *nr = NULL;
 				sql_exp *re = e->r, *ne = rel_find_exp(r, re);
 
-				if (ne && ne->card >= CARD_AGGR) 
+				if (ne && ne->card >= CARD_AGGR)
 					re->card = ne->card;
 
 				if (re->card >= CARD_AGGR) {
@@ -66,7 +66,7 @@ rel_outer2inner_join(mvc *sql, sql_rel *rel, int *changes)
 				assert(r == rel->l);
 			} else {
 				list_append(rel->exps, e);
-			} 
+			}
 		}
 		return rel;
 	}

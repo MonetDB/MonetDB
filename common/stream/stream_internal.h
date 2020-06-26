@@ -216,7 +216,7 @@ stream *open_lz4rastream(const char *filename);
 stream *open_lz4wastream(const char *restrict filename, const char *restrict mode);
 
 
-/* Shared between bs2.c, bs.c and stream.c. 
+/* Shared between bs2.c, bs.c and stream.c.
  * Have to look into this but I think it should all be in bs.c only, and
  * bs2.c should be dropped.*/
 typedef struct bs bs;

@@ -8,7 +8,7 @@
 
 /*  author M.L. Kersten
  * The optimizer wrapper code is the interface to the MAL optimizer calls.
- * 
+ *
  * Before an optimizer is finished, it should leave a clean state behind.
  * Moreover, some information of the optimization step is saved for
  * debugging and analysis.
@@ -130,11 +130,11 @@ str OPTwrapper (Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
 		removeInstruction(mb, p);
 		s= findSymbol(cntxt->usermodule, putName(modnme),putName(fcnnme));
 
-		if( s == NULL) 
+		if( s == NULL)
 			throw(MAL, optimizer, SQLSTATE(HY002) RUNTIME_OBJECT_UNDEFINED ":%s.%s", modnme, fcnnme);
 		mb = s->def;
 		stk= 0;
-	} else if( p ) 
+	} else if( p )
 		removeInstruction(mb, p);
 
 	for (i=0; codes[i].nme; i++)
@@ -146,7 +146,7 @@ str OPTwrapper (Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
 			if (msg) {
 				throw(MAL, optimizer, SQLSTATE(42000) "Error in optimizer %s: %s", optimizer, msg);
 			}
-			break;	
+			break;
 		}
 	if (codes[i].nme == 0)
 		throw(MAL, optimizer, SQLSTATE(HY002) "Optimizer implementation '%s' missing", fcnnme);

@@ -46,7 +46,7 @@
 #define INDEX MAX_TKNZR_DEPTH
 static int tokenDepth = 0;
 struct {
-	BAT *idx, *val; 
+	BAT *idx, *val;
 } tokenBAT[MAX_TKNZR_DEPTH + 1];
 
 static BAT *TRANS = NULL;   /* the catalog of tokenizers */
@@ -124,7 +124,7 @@ TKNZRopen(void *ret, str *in)
 	MT_lock_unset(&mal_contextLock);
 
 	snprintf(name, 128, "%s", *in);
-	
+
 	snprintf(batname, sizeof(batname), "%s_index", name);
 	idx = BBPindex(batname);
 
@@ -162,7 +162,7 @@ TKNZRopen(void *ret, str *in)
 
 			/* For idx BATs */
 			snprintf(batname, sizeof(batname), "%s_idx_%d", name, depth);
-			idx = BBPindex(batname); 
+			idx = BBPindex(batname);
 			if (idx == 0)
 				break;
 			tokenBAT[depth].idx = BATdescriptor(idx);
@@ -240,7 +240,7 @@ TKNZRappend(oid *pos, str *s)
 	int i, new, depth;
 	bat r;
 	BAT *bVal;
-	BAT *bIdx; 
+	BAT *bIdx;
 	BUN p;
 	BUN idx = 0;
 	oid prv = 0;
@@ -275,7 +275,7 @@ TKNZRappend(oid *pos, str *s)
 				GDKfree(url);
 				throw(MAL, "tokenizer.append", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			}
-			
+
 			tokenBAT[i].val = bVal;
 
 			if ((msg = BKCsetName(&r, &bVal->batCacheid, &(const char*){batname})) != MAL_SUCCEED ||
@@ -292,7 +292,7 @@ TKNZRappend(oid *pos, str *s)
 				GDKfree(url);
 				throw(MAL, "tokenizer.append", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			}
-			
+
 			tokenBAT[i].idx = bIdx;
 
 			if ((msg = BKCsetName(&r, &bIdx->batCacheid, &(const char*){batname})) != MAL_SUCCEED ||

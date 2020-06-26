@@ -475,7 +475,7 @@ file_fsetpos(stream *restrict s, fpos_t *restrict p)
  * duplicated between open_stream and
  *     open_gzstream open_bzstream open_xzstream open_lz4stream
  * Eventually these will all just use open_stream.
- * 
+ *
  * Currently in misc.c
  */
 #ifdef HAVE__WFOPEN

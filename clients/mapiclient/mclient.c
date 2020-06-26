@@ -2505,7 +2505,7 @@ doFile(Mapi mid, stream *fp, bool useinserts, bool interactive, int save_history
 #endif
 					} else {
 						/* get all object names in current schema */
-						char *with_clause = 
+						char *with_clause =
 							", describe_all_objects AS (\n"
 							"  SELECT s.name AS sname,\n"
 							"      t.name,\n"

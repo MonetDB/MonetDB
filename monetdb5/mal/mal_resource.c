@@ -6,7 +6,7 @@
  * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
  */
 
-/* (author) M.L. Kersten 
+/* (author) M.L. Kersten
  */
 #include "monetdb_config.h"
 #include "mal_resource.h"
@@ -51,7 +51,7 @@ mal_resource_reset(void)
 /*
  * The memory claim is the estimate for the amount of memory hold.
  * Views are consider cheap and ignored.
- * Given that auxiliary structures are important for performance, 
+ * Given that auxiliary structures are important for performance,
  * we use their maximum as an indication of the memory footprint.
  * An alternative would be to focus solely on the base table cost.
  * (Good for a MSc study)
@@ -74,10 +74,10 @@ getMemoryClaim(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int i, int flag)
 
 		/* calculate the basic scan size */
 		total += BATcount(b) * b->twidth;
-		total += heapinfo(b->tvheap, b->batCacheid); 
+		total += heapinfo(b->tvheap, b->batCacheid);
 
 		/* indices should help, find their maximum footprint */
-		itotal = hashinfo(b->thash, d->batCacheid); 
+		itotal = hashinfo(b->thash, d->batCacheid);
 		t = IMPSimprintsize(b);
 		if( t > itotal)
 			itotal = t;
@@ -124,7 +124,7 @@ MALadmission_claim(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, lng 
 
 	/* the argument claim is based on the input for an instruction */
 	if ( memorypool > argclaim || stk->workers == 0 ) {
-		/* If we are low on memory resources, limit the user if he exceeds his memory budget 
+		/* If we are low on memory resources, limit the user if he exceeds his memory budget
 		 * but make sure there is at least one worker thread active */
 		if ( cntxt->memorylimit) {
 			if (argclaim + stk->memory > (lng) cntxt->memorylimit * LL_CONSTANT(1048576)){

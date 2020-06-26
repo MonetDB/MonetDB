@@ -16,7 +16,7 @@
 typedef struct exp_kind_t {
 	bte type;
 	bte card;
-	bit reduce;	
+	bit reduce;
 } exp_kind;
 
 sql_export sql_schema *cur_schema(mvc *sql);
@@ -48,7 +48,7 @@ extern void sql_destroy_args(mvc *sql);		/* used in backend */
 /* SQL's parameters '?' (in prepare statements) and parameters of sql
  * functions and procedures are kept in the param list.  */
 
-extern void sql_add_param(mvc *sql, const char *name, sql_subtype *st);	
+extern void sql_add_param(mvc *sql, const char *name, sql_subtype *st);
 extern sql_arg *sql_bind_param(mvc *sql, const char *name);
 /* once the type of the '?' parameters is known it's set using the set_type
  * function */
@@ -58,7 +58,7 @@ extern void sql_destroy_params(mvc *sql);	/* used in backend */
 extern char *symbol2string(mvc *sql, symbol *s, int expression, char **err);
 extern char *dlist2string(mvc *sql, dlist *s, int expression, char **err);
 
-extern char * toUpperCopy(char *dest, const char *src); 
+extern char * toUpperCopy(char *dest, const char *src);
 
 #endif /*_SQL_SEMANTIC_H_*/
 

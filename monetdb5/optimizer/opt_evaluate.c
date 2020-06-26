@@ -31,7 +31,7 @@ OPTallConstant(Client cntxt, MalBlkPtr mb, InstrPtr p)
 	for (i = 0; i < p->retc; i++) {
 		if (isaBatType(getArgType(mb, p, i)))
 			return FALSE;
-		if ( mb->unsafeProp ) 
+		if ( mb->unsafeProp )
 			return FALSE;
 	}
 	return TRUE;
@@ -96,7 +96,7 @@ OPTremoveUnusedBlocks(Client cntxt, MalBlkPtr mb)
 					mb->stmt[i]= 0;
 					continue;
 				}
-			} else 
+			} else
 			if( p->argc == 2 &&  blockStart(p) && block >= 0 && skip == 0 && isVarConstant(mb, getArg(p, 1)) && getArgType(mb, p, 1) == TYPE_bit && multipass == 0)
 				multipass++;
 			if (skip){
@@ -121,7 +121,7 @@ OPTevaluateImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 	int i, k, limit, *alias = 0, barrier;
 	MalStkPtr env = NULL;
 	int debugstate = cntxt->itrace, actions = 0, constantblock = 0;
-	int *assigned = 0, use; 
+	int *assigned = 0, use;
 	char buf[256];
 	lng usec = GDKusec();
 	str msg = MAL_SUCCEED;
@@ -239,9 +239,9 @@ wrapup:
 		assert(env->stktop < env->stksize);
 		freeStack(env);
 	}
-	if (assigned) 
+	if (assigned)
 		GDKfree(assigned);
-	if (alias)	
+	if (alias)
 		GDKfree(alias);
 	return msg;
 }

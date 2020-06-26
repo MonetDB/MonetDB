@@ -67,7 +67,7 @@ cq_delete(int clientid, cq *q)
 		_DELETE(q->codestring);
 
 	/* params and name are allocated using sa, ie need to be delete last */
-	if (q->sa) 
+	if (q->sa)
 		sa_destroy(q->sa);
 	_DELETE(q);
 }
@@ -99,7 +99,7 @@ qc_clean(qc *cache, bool prepared)
 	for (q = cache->q; q; ) {
 		if (q->prepared == prepared) {
 			n = q->next;
-			if (p) 
+			if (p)
 				p->next = n;
 			else
 				cache->q = n;
@@ -170,13 +170,13 @@ param_list_cmp(sql_subtype *typelist, atom **atoms, int plen, mapi_query_t type)
 		if (!atom_null(a) && param_cmp(tp, atom_type(a)) != 0) {
 			sql_subtype *at = atom_type(a);
 
-			if (tp->type->eclass == EC_CHAR && 
+			if (tp->type->eclass == EC_CHAR &&
 			    at->type->eclass == EC_CHAR &&
-			      (!tp->digits || tp->digits == at->digits)) 
+			      (!tp->digits || tp->digits == at->digits))
 				continue;
-			if (tp->type->eclass == EC_STRING && 
+			if (tp->type->eclass == EC_STRING &&
 			    at->type->eclass == EC_CHAR &&
-			      (!tp->digits || tp->digits >= at->digits)) 
+			      (!tp->digits || tp->digits >= at->digits))
 				continue;
 			if (type != Q_UPDATE)
 				return -1;
@@ -184,7 +184,7 @@ param_list_cmp(sql_subtype *typelist, atom **atoms, int plen, mapi_query_t type)
 			if ((!((at->type->eclass == EC_DEC ||
 			        at->type->eclass == EC_NUM) &&
 			       tp->type->eclass == EC_FLT)) &&
-			   (!(EC_VARCHAR(tp->type->eclass) && 
+			   (!(EC_VARCHAR(tp->type->eclass) &&
 			      EC_VARCHAR(at->type->eclass) &&
 			      (!tp->digits ||
 			       tp->digits >= at->digits))) &&
@@ -199,7 +199,7 @@ param_list_cmp(sql_subtype *typelist, atom **atoms, int plen, mapi_query_t type)
 			      at->digits <= tp->digits &&
 			      at->scale <= tp->scale)) &&
 			*/
-			   (!(at->type->eclass == EC_NUM && tp->type->eclass == EC_NUM && 
+			   (!(at->type->eclass == EC_NUM && tp->type->eclass == EC_NUM &&
 			      at->type->localtype <= tp->type->localtype)))
 				return -1;
 		}

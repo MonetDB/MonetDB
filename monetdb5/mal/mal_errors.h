@@ -30,7 +30,7 @@
  * SEMANTIC_*
  * The patterns can be used to defer semantic type errors
  * to runtime.
- * 
+ *
  * Getting all exception strings in one place improves consistency
  * and maintenance.
  *

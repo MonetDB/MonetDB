@@ -111,7 +111,7 @@ GROUPcollect( Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	return a;
 }
 
-static void 
+static void
 GROUPcollectSort(AGGRtask *a, int start, int finish)
 {
 	int i,j,k;

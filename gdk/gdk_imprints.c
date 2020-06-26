@@ -743,7 +743,7 @@ IMPSprint(BAT *b)
 	for (i = 0; i < imprints->bits; i++) {
 		fprintf(stderr, "[ " BUNFMT " ]\n", min_bins[i]);
 	}
-	
+
 	fprintf(stderr, "MAX\n");
 	for (i = 0; i < imprints->bits; i++) {
 		fprintf(stderr, "[ " BUNFMT " ]\n", max_bins[i]);

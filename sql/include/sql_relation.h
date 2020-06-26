@@ -51,11 +51,11 @@ typedef struct expression {
 	 ascending:1,	/* order direction */
 	 nulls_last:1,	/* return null after all other rows */
 	 zero_if_empty:1, 	/* in case of partial aggregator computation, some aggregators need to return 0 instead of NULL */
-	 distinct:1,	
+	 distinct:1,
 
 	 semantics:1,	/* is vs = semantics (nil = nil vs unknown != unknown), ranges with or without nil, aggregation with or without nil */
-	 need_no_nil:1,	
-	 has_no_nil:1,	
+	 need_no_nil:1,
+	 has_no_nil:1,
 
 	 base:1,
 	 ref:1,		/* used to indicate an other expression may reference this one */
@@ -276,11 +276,11 @@ typedef struct relation {
 	 flag:16,
 	 card:4,	/* 0, 1 (row), 2 aggr, 3 */
 	 dependent:1, 	/* dependent join */
-	 distinct:1,	
+	 distinct:1,
 	 processed:1,   /* fully processed or still in the process of building */
 	 outer:1,	/* used as outer (ungrouped) */
 	 grouped:1,	/* groupby processed all the group by exps */
-	 single:1,	
+	 single:1,
 	 subquery:1,	/* is this part a subquery, this is needed for proper name binding */
 	 used:1;	/* used by rewrite_fix_count at rel_unnest, so a relation is not modified twice */
 	void *p;	/* properties for the optimizer, distribution */
