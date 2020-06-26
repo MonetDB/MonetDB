@@ -28,6 +28,7 @@ typedef struct sql_delta {
 } sql_delta;
 
 typedef struct sql_dbat {
+	sql_ref r;
 	char *dname;		/* name of the persistent deletes bat */
 	int dbid;		/* bat with deletes */
 	int cleared;

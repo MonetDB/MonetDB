@@ -1918,13 +1918,13 @@ stmt_join_cand(backend *be, stmt *op1, stmt *op2, stmt *lcand, stmt *rcand, int 
 	MalBlkPtr mb = be->mb;
 	InstrPtr q = NULL;
 	int left = (cmptype == cmp_left);
-	const char *sjt = "join";
+	const char *sjt = joinRef;
 
 	(void)anti;
 
 	if (left) {
 		cmptype = cmp_equal;
-		sjt = "leftjoin";
+		sjt = leftjoinRef;
 	}
 	if (op1->nr < 0 || op2->nr < 0)
 		return NULL;
@@ -2212,7 +2212,6 @@ stmt_genjoin(backend *be, stmt *l, stmt *r, sql_subfunc *op, int anti, int swapp
 	const char *mod, *fimp;
 	node *n;
 
-	(void)anti;
 	if (backend_create_subfunc(be, op, NULL) < 0)
 		return NULL;
 	mod = sql_func_mod(op->func);
@@ -2237,6 +2236,7 @@ stmt_genjoin(backend *be, stmt *l, stmt *r, sql_subfunc *op, int anti, int swapp
 	q = pushNil(mb, q, TYPE_bat); /* candidate lists */
 	q = pushBit(mb, q, TRUE);     /* nil_matches */
 	q = pushNil(mb, q, TYPE_lng); /* estimate */
+	q = pushBit(mb, q, anti?TRUE:FALSE); /* 'not' matching */
 
 	if (swapped) {
 		InstrPtr r = newInstruction(mb,  NULL, NULL);
@@ -2844,6 +2844,58 @@ stmt_exception(backend *be, stmt *cond, const char *errstr, int errcode)
 	return NULL;
 }
 
+/* The type setting is not propagated to statements such as st_bat and st_append, 
+	because they are not considered projections */
+static void
+tail_set_type(stmt *st, sql_subtype *t)
+{
+	for (;;) {
+		switch (st->type) {
+		case st_const:
+			st = st->op2;
+			continue;
+		case st_alias:
+		case st_gen_group:
+		case st_order:
+			st = st->op1;
+			continue;
+		case st_list:
+			st = st->op4.lval->h->data;
+			continue;
+		case st_join:
+		case st_join2:
+		case st_joinN:
+			if (st->flag == cmp_project) {
+				st = st->op2;
+				continue;
+			}
+			return;
+		case st_aggr: 
+		case st_Nop: {
+			list *res = st->op4.funcval->res;
+
+			if (res && list_length(res) == 1)
+				res->h->data = t;
+			return;
+		}
+		case st_atom:
+			atom_set_type(st->op4.aval, t);
+			return;
+		case st_convert:
+		case st_temp:
+		case st_single:
+			st->op4.typeval = *t;
+			return;
+		case st_var:
+			if (st->op4.typeval.type)
+				st->op4.typeval = *t;
+			return;
+		default:
+			return;
+		}
+	}
+}
+
 stmt *
 stmt_convert(backend *be, stmt *v, sql_subtype *f, sql_subtype *t, stmt *cond)
 {
@@ -2862,6 +2914,9 @@ stmt_convert(backend *be, stmt *v, sql_subtype *f, sql_subtype *t, stmt *cond)
 	    f->type->eclass != EC_DEC &&
 	    (t->digits == 0 || f->digits == t->digits) &&
 	    type_has_tz(t) == type_has_tz(f)) {
+		/* set output type. Despite the MAL code already being generated, 
+		   the output type may still be checked */
+		tail_set_type(v, t);
 		return v;
 	}
 
@@ -3354,7 +3409,6 @@ tail_type(stmt *st)
 		case st_const:
 			st = st->op2;
 			continue;
-
 		case st_semijoin:
 		case st_uselect:
 		case st_uselect2:
@@ -3371,17 +3425,15 @@ tail_type(stmt *st)
 		case st_order:
 			st = st->op1;
 			continue;
-
 		case st_list:
 			st = st->op4.lval->h->data;
 			continue;
-
 		case st_bat:
 			return &st->op4.cval->type;
 		case st_idxbat:
 			if (hash_index(st->op4.idxval->type)) {
 				return sql_bind_localtype("lng");
-			} else if (st->op4.idxval->type == join_idx) {
+			} else if (oid_index(st->op4.idxval->type)) {
 				return sql_bind_localtype("oid");
 			}
 			/* fall through */
@@ -3401,20 +3453,13 @@ tail_type(stmt *st)
 			return sql_bind_localtype("oid");
 		case st_table_clear:
 			return sql_bind_localtype("lng");
-
-		case st_aggr: {
-			list *res = st->op4.funcval->res;
-
-			if (res && list_length(res) == 1)
-				return res->h->data;
-
-			return NULL;
-		}
+		case st_aggr:
 		case st_Nop: {
 			list *res = st->op4.funcval->res;
 
 			if (res && list_length(res) == 1)
 				return res->h->data;
+
 			return NULL;
 		}
 		case st_atom:

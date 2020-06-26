@@ -206,8 +206,8 @@ stdout of test 'subquery3` in directory 'sql/test/subquery` itself:
 #    CASE WHEN NOT t1.col2 NOT IN (SELECT (SELECT MAX(t1.col7)) UNION (SELECT MIN(ColID) FROM tbl_ProductSales tp LEFT JOIN another_T t2 ON tp.ColID = t1.col1 AND tp.ColID = t2.col2)) THEN 1 ELSE 2 END
 #FROM another_T t1
 #GROUP BY t1.col1, t1.col2;
-% .%213,	.%214 # table_name
-% %213,	%214 # name
+% .%151,	.%152 # table_name
+% %151,	%152 # name
 % tinyint,	tinyint # type
 % 1,	1 # length
 [ 2,	2	]
@@ -525,7 +525,7 @@ stdout of test 'subquery3` in directory 'sql/test/subquery` itself:
 [ 3	]
 [ NULL	]
 #SELECT i FROM integers GROUP BY i HAVING (SELECT i);
-% .integers # table_name
+% sys.integers # table_name
 % i # name
 % int # type
 % 1 # length

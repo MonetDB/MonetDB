@@ -32,8 +32,8 @@
 #endif
 
 #define cot(x)				(1 / tan(x))
-#define radians(x)			((x) * 3.14159265358979323846 / 180.0)
-#define degrees(x)			((x) * 180.0 / 3.14159265358979323846)
+#define radians(x)			((x) * (3.14159265358979323846 / 180.0))
+#define degrees(x)			((x) * (180.0 / 3.14159265358979323846))
 
 double
 logbs(double x, double base)

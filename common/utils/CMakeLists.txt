@@ -170,7 +170,7 @@ install(TARGETS
 install(EXPORT matomicTargets
   FILE matomicTargets.cmake
   NAMESPACE MonetDB::
-  DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/cmake
+  DESTINATION ${EXPORT_TARGET_PATH}
   COMPONENT monetdbdev)
 
 install(FILES

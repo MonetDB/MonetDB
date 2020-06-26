@@ -36,9 +36,7 @@
  */
 
 #include "monetdb_config.h"
-#include "streams.h"
 #include "tablet.h"
-#include "algebra.h"
 #include "mapi_prompt.h"
 
 #include <string.h>
@@ -1074,7 +1072,6 @@ SQLworker(void *arg)
 	while (task->top[task->cur] >= 0) {
 		MT_sema_down(&task->sema);
 
-
 		/* stage one, break the lines spread the worker over the workers */
 		switch (task->state) {
 		case BREAKLINE:
@@ -1093,6 +1090,8 @@ SQLworker(void *arg)
 			task->wtime = GDKusec() - t0;
 			break;
 		case UPDATEBAT:
+			if (!task->besteffort && task->errorcnt)
+				break;
 			/* stage two, updating the BATs */
 			for (i = 0; i < task->as->nr_attrs; i++)
 				if (task->cols[i]) {
@@ -1105,6 +1104,8 @@ SQLworker(void *arg)
 				}
 			break;
 		case SYNCBAT:
+			if (!task->besteffort && task->errorcnt)
+				break;
 			for (i = 0; i < task->as->nr_attrs; i++)
 				if (task->cols[i]) {
 					BAT *b = task->as->format[task->cols[i] - 1].c;
@@ -1511,7 +1512,7 @@ SQLload_file(Client cntxt, Tablet *as, bstream *b, stream *out, const char *csep
 	BUN i, attr;
 	READERtask task;
 	READERtask ptask[MAXWORKERS];
-	int threads = (!maxrow || maxrow > (1 << 16)) ? (GDKnr_threads < MAXWORKERS && GDKnr_threads > 1 ? GDKnr_threads - 1 : MAXWORKERS - 1) : 1;
+	int threads = (maxrow< 0 || maxrow > (1 << 16)) ? (GDKnr_threads < MAXWORKERS && GDKnr_threads > 1 ? GDKnr_threads - 1 : MAXWORKERS - 1) : 1;
 	lng lio = 0, tio, t1 = 0, total = 0, iototal = 0;
 	char name[MT_NAME_LEN];
 

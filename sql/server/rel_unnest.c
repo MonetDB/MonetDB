@@ -95,7 +95,7 @@ exp_has_freevar(mvc *sql, sql_exp *e)
 	}
 
 	if (is_freevar(e))
-		return 1;
+		return is_freevar(e);
 	switch(e->type) {
 	case e_cmp:
 		if (e->flag == cmp_or || e->flag == cmp_filter) {
@@ -139,9 +139,10 @@ exps_have_freevar(mvc *sql, list *exps)
 	if (!exps)
 		return 0;
 	for (node *n = exps->h; n; n = n->next) {
+		int vf = 0;
 		sql_exp *e = n->data;
-		if (exp_has_freevar(sql, e))
-			return 1;
+		if ((vf =exp_has_freevar(sql, e)) != 0)
+			return vf;
 	}
 	return 0;
 }
@@ -475,7 +476,7 @@ rel_dependent_var(mvc *sql, sql_rel *l, sql_rel *r)
 /*
  * try to bind any freevar in the expression e
  */
-static void
+void
 rel_bind_var(mvc *sql, sql_rel *rel, sql_exp *e)
 {
 	list *fvs = exp_freevar(sql, e);
@@ -1410,46 +1411,6 @@ push_up_table(mvc *sql, sql_rel *rel, list *ad)
 	return rel;
 }
 
-/* reintroduce selects, for freevar's of other dependent joins */
-static sql_rel *
-push_down_select(mvc *sql, sql_rel *rel)
-{
-	if (!list_empty(rel->exps)) {
-		node *n;
-		list *jexps = sa_list(sql->sa);
-		list *sexps = sa_list(sql->sa);
-		sql_rel *d = rel->l;
-
-		for(n=rel->exps->h; n; n=n->next) {
-			sql_exp *e = n->data;
-			list *v = exp_freevar(sql, e);
-			int found = 1;
-
-			if (v) {
-				node *m;
-				for(m=v->h; m && found; m=m->next) {
-					sql_exp *fv = m->data;
-
-					found = (rel_find_exp(d, fv) != NULL);
-				}
-			}
-			if (found) {
-				append(jexps, e);
-			} else {
-				append(sexps, e);
-			}
-		}	
-		if (!list_empty(sexps)) {
-			sql_rel *r;
-
-			rel->exps = jexps;
-			r = rel->r = rel_select(sql->sa, rel->r, NULL);
-			r->exps = sexps;
-		}
-	}
-	return rel;
-}
-
 static sql_rel *
 rel_unnest_dependent(mvc *sql, sql_rel *rel)
 {
@@ -1471,8 +1432,7 @@ rel_unnest_dependent(mvc *sql, sql_rel *rel)
 
 		if (!rel_has_freevar(sql, r)) {
 			reset_dependent(rel);
-			/* reintroduce selects, for freevar's of other dependent joins */
-			return push_down_select(sql, rel);
+			return rel;
 		}
 
 		/* try to push dependent join down */
@@ -1649,40 +1609,83 @@ exp_reset_card_and_freevar(mvc *sql, sql_rel *rel, sql_exp *e, int depth, int *c
 	reset_freevar(e); /* unnesting is done, we can remove the freevar flag */
 	if (!rel->l)
 		return e;
-	if (is_groupby(rel->op)) {
+
+	switch(rel->op){
+	case op_basetable:
+	case op_truncate:
+	case op_topn:
+	case op_sample:
+	case op_insert:
+	case op_update:
+	case op_delete:
+	case op_ddl:
+	case op_table:
+		break;
+	case op_select:
+	case op_join:
+	case op_left:
+	case op_right:
+	case op_full:
+	case op_semi:
+	case op_anti: 
+	case op_project:
+	case op_union:
+	case op_inter:
+	case op_except: {
+		switch(e->type) { 
+		case e_aggr:
+		case e_func: {
+			e->card = exps_card(e->l);
+		} break;
+		case e_column: {
+			sql_rel *l = rel->l, *r = rel->r, *ll = NULL, *rr = NULL;
+			sql_exp *le = NULL, *re = NULL;
+
+			if (is_set(rel->op)) {
+				le = rel_find_exp_and_corresponding_rel(l, e, &ll);
+				re = rel_find_exp_and_corresponding_rel(r, e, &rr);
+				if (ll && rr) /* TODO fix this? */
+					e->card = MAX(ll->card, rr->card);
+			} else {
+				if (l && (le = rel_find_exp_and_corresponding_rel(l, e, &ll)) && ll) {
+					e->card = ll->card;
+				} else if (!is_simple_project(rel->op) && r && (re = rel_find_exp_and_corresponding_rel(r, e, &rr)) && rr) {
+					e->card = rr->card;
+				}
+			}
+		} break;
+		case e_convert: {
+			e->card = exp_card(e->l);
+		} break;
+		case e_cmp: {
+			if (e->flag == cmp_or || e->flag == cmp_filter) {
+				e->card = MAX(exps_card(e->l), exps_card(e->r));
+			} else if (e->flag == cmp_in || e->flag == cmp_notin) {
+				e->card = MAX(exp_card(e->l), exps_card(e->r));
+			} else {
+				e->card = MAX(exp_card(e->l), exp_card(e->r));
+				if (e->f)
+					e->card = MAX(e->card, exp_card(e->f));
+			}
+		} break;
+		case e_atom:
+		case e_psm:
+			break;
+		}
+	} break;
+	case op_groupby: {
 		switch(e->type) {
 		case e_aggr:
 		case e_column:
 			e->card = rel->card;
 			break;
-		case e_func:
-		case e_convert:
-		case e_cmp:
-		case e_atom:
-		case e_psm:
+		default:
 			break;
 		}
+	} break;
 	}
-	if (!is_simple_project(rel->op)) /* only need to fix projections */
-		return e;
-	sql_rel *l;
-	/* need card of lower relation */
-	switch(e->type) {
-	case e_func:
-	case e_column:
-	case e_convert:
-		l = rel->l;
-		if (e->card < l->card)
-			e->card = l->card;
-		if (need_distinct(rel)) /* Need distinct, all expressions should have CARD_AGGR at max */
-			e->card = MIN(e->card, CARD_AGGR);
-		break;
-	case e_aggr: /* should have been corrected by rewrites already */
-	case e_cmp:  
-	case e_atom:
-	case e_psm:
-		break;
-	}
+	if (is_simple_project(rel->op) && need_distinct(rel)) /* Need distinct, all expressions should have CARD_AGGR at max */
+		e->card = MIN(e->card, CARD_AGGR);
 	return e;
 }
 
@@ -2125,10 +2128,13 @@ rewrite_anyequal(mvc *sql, sql_rel *rel, sql_exp *e, int depth)
 			if (!lsq && !is_tuple && is_values(re) && !exps_have_rel_exp(re->f)) { /* exp_values */
 				list *vals = re->f;
 
-				if (is_select(rel->op))
+				if (is_select(rel->op)) {
 					return exp_in_compare(sql, &le, vals, is_anyequal(sf));
-				else
-					return exp_in_project(sql, &le, vals, is_anyequal(sf));
+				} else {
+					sql_exp *res = exp_in_project(sql, &le, vals, is_anyequal(sf));
+					exp_setname(sql->sa, res, exp_relname(e), exp_name(e));
+					return res;
+				}
 			}
 
 			if (is_atom(re->type) && re->f) { /* exp_values */
@@ -2331,10 +2337,13 @@ rewrite_compare(mvc *sql, sql_rel *rel, sql_exp *e, int depth)
 				list *vals = re->f;
 
 				assert(0);
-				if (depth == 0 && is_select(rel->op))
+				if (depth == 0 && is_select(rel->op)) {
 					return exp_in_compare(sql, &le, vals, is_anyequal(sf));
-				else
-					return exp_in_project(sql, &le, vals, is_anyequal(sf));
+				} else {
+					sql_exp *res = exp_in_project(sql, &le, vals, is_anyequal(sf));
+					exp_setname(sql->sa, res, exp_relname(e), exp_name(e));
+					return res;
+				}
 			}
 
 			if (is_values(re)) { /* exp_values */

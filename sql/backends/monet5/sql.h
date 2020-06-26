@@ -37,7 +37,6 @@
 #include "mal_interpreter.h"
 
 #include "tablet.h"
-#include "streams.h"
 #include "gdk_time.h"
 #include <math.h>
 #include "blob.h"
@@ -270,8 +269,8 @@ sql5_export str dbl_round_wrap(dbl *res, const dbl *v, const bte *r);
 sql5_export str dbl_bat_round_wrap(bat *res, const bat *v, const bte *r);
 sql5_export str dbl_trunc_wrap(dbl *res, const dbl *v, const int *r);
 
-#define radians(x)	((x) * 3.14159265358979323846 /180.0 )
-#define degrees(x)	((x) * 180.0/3.14159265358979323846 )
+#define radians(x)	((x) * (3.14159265358979323846 / 180.0))
+#define degrees(x)	((x) * (180.0 / 3.14159265358979323846))
 
 sql5_export str SQLcst_alpha_cst(dbl *res, const dbl *decl, const dbl *theta);
 sql5_export str SQLbat_alpha_cst(bat *res, const bat *decl, const dbl *theta);

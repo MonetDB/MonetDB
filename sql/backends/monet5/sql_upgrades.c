@@ -76,98 +76,66 @@ sql_fix_system_tables(Client c, mvc *sql, const char *prev_schema)
 		if (func->base.id >= FUNC_OIDS)
 			continue;
 
-		if (func->type == F_AGGR) {
-			pos += snprintf(buf + pos, bufsize - pos,
-					"insert into sys.functions values"
-					" (%d, '%s', '%s', '%s', %d, %d, false,"
-					" %s, %s, %d, %s, %s);\n",
-					func->base.id, func->base.name, func->imp,
-					func->mod, (int) FUNC_LANG_INT, (int) func->type,
-					func->varres ? "true" : "false",
-					func->vararg ? "true" : "false",
-					func->s ? func->s->base.id : s->base.id,
-					func->system ? "true" : "false",
-					func->semantics ? "true" : "false");
-			arg = func->res->h->data;
-			pos += snprintf(buf + pos, bufsize - pos,
-					"insert into sys.args values"
-					" (%d, %d, 'res', '%s', %u, %u, %d, 0);\n",
-					store_next_oid(), func->base.id,
-					arg->type.type->sqlname, arg->type.digits,
-					arg->type.scale, arg->inout);
-			if (func->ops->h) {
-				arg = func->ops->h->data;
-				pos += snprintf(buf + pos, bufsize - pos,
-						"insert into sys.args values"
-						" (%d, %d, 'arg', '%s', %u,"
-						" %u, %d, 1);\n",
-						store_next_oid(), func->base.id,
-						arg->type.type->sqlname,
-						arg->type.digits, arg->type.scale,
-						arg->inout);
-			}
-		} else {
-			pos += snprintf(buf + pos, bufsize - pos,
-					"insert into sys.functions values"
-					" (%d, '%s', '%s', '%s',"
-					" %d, %d, %s, %s, %s, %d, %s, %s);\n",
-					func->base.id, func->base.name,
-					func->imp, func->mod, (int) FUNC_LANG_INT,
-					(int) func->type,
-					func->side_effect ? "true" : "false",
-					func->varres ? "true" : "false",
-					func->vararg ? "true" : "false",
-					func->s ? func->s->base.id : s->base.id,
-					func->system ? "true" : "false",
-					func->semantics ? "true" : "false");
-			if (func->res) {
-				for (m = func->res->h; m; m = m->next, number++) {
-					arg = m->data;
-					pos += snprintf(buf + pos, bufsize - pos,
-							"insert into sys.args"
-							" values"
-							" (%d, %d, 'res_%d',"
-							" '%s', %u, %u, %d,"
-							" %d);\n",
-							store_next_oid(),
-							func->base.id,
-							number,
-							arg->type.type->sqlname,
-							arg->type.digits,
-							arg->type.scale,
-							arg->inout, number);
-				}
-			}
-			for (m = func->ops->h; m; m = m->next, number++) {
+		pos += snprintf(buf + pos, bufsize - pos,
+				"insert into sys.functions values"
+				" (%d, '%s', '%s', '%s',"
+				" %d, %d, %s, %s, %s, %d, %s, %s);\n",
+				func->base.id, func->base.name,
+				func->imp, func->mod, (int) FUNC_LANG_INT,
+				(int) func->type,
+				func->side_effect ? "true" : "false",
+				func->varres ? "true" : "false",
+				func->vararg ? "true" : "false",
+				func->s ? func->s->base.id : s->base.id,
+				func->system ? "true" : "false",
+				func->semantics ? "true" : "false");
+		if (func->res) {
+			for (m = func->res->h; m; m = m->next, number++) {
 				arg = m->data;
-				if (arg->name)
-					pos += snprintf(buf + pos, bufsize - pos,
-							"insert into sys.args"
-							" values"
-							" (%d, %d, '%s', '%s',"
-							" %u, %u, %d, %d);\n",
-							store_next_oid(),
-							func->base.id,
-							arg->name,
-							arg->type.type->sqlname,
-							arg->type.digits,
-							arg->type.scale,
-							arg->inout, number);
-				else
-					pos += snprintf(buf + pos, bufsize - pos,
-							"insert into sys.args"
-							" values"
-							" (%d, %d, 'arg_%d',"
-							" '%s', %u, %u, %d,"
-							" %d);\n",
-							store_next_oid(),
-							func->base.id,
-							number,
-							arg->type.type->sqlname,
-							arg->type.digits,
-							arg->type.scale,
-							arg->inout, number);
+				pos += snprintf(buf + pos, bufsize - pos,
+						"insert into sys.args"
+						" values"
+						" (%d, %d, 'res_%d',"
+						" '%s', %u, %u, %d,"
+						" %d);\n",
+						store_next_oid(),
+						func->base.id,
+						number,
+						arg->type.type->sqlname,
+						arg->type.digits,
+						arg->type.scale,
+						arg->inout, number);
 			}
+		}
+		for (m = func->ops->h; m; m = m->next, number++) {
+			arg = m->data;
+			if (arg->name)
+				pos += snprintf(buf + pos, bufsize - pos,
+						"insert into sys.args"
+						" values"
+						" (%d, %d, '%s', '%s',"
+						" %u, %u, %d, %d);\n",
+						store_next_oid(),
+						func->base.id,
+						arg->name,
+						arg->type.type->sqlname,
+						arg->type.digits,
+						arg->type.scale,
+						arg->inout, number);
+			else
+				pos += snprintf(buf + pos, bufsize - pos,
+						"insert into sys.args"
+						" values"
+						" (%d, %d, 'arg_%d',"
+						" '%s', %u, %u, %d,"
+						" %d);\n",
+						store_next_oid(),
+						func->base.id,
+						number,
+						arg->type.type->sqlname,
+						arg->type.digits,
+						arg->type.scale,
+						arg->inout, number);
 		}
 	}
 
@@ -216,15 +184,39 @@ sql_update_hugeint(Client c, mvc *sql, const char *prev_schema, bool *systabfixe
 			"create aggregate stddev_samp(val HUGEINT) returns DOUBLE\n"
 			" external name \"aggr\".\"stdev\";\n"
 			"GRANT EXECUTE ON AGGREGATE stddev_samp(HUGEINT) TO PUBLIC;\n"
+			"create window stddev_samp(val HUGEINT) returns DOUBLE\n"
+			" external name \"sql\".\"stdev\";\n"
+			"GRANT EXECUTE ON WINDOW stddev_samp(HUGEINT) TO PUBLIC;\n"
 			"create aggregate stddev_pop(val HUGEINT) returns DOUBLE\n"
 			" external name \"aggr\".\"stdevp\";\n"
 			"GRANT EXECUTE ON AGGREGATE stddev_pop(HUGEINT) TO PUBLIC;\n"
+			"create window stddev_pop(val HUGEINT) returns DOUBLE\n"
+			" external name \"sql\".\"stdevp\";\n"
+			"GRANT EXECUTE ON WINDOW stddev_pop(HUGEINT) TO PUBLIC;\n"
 			"create aggregate var_samp(val HUGEINT) returns DOUBLE\n"
 			" external name \"aggr\".\"variance\";\n"
 			"GRANT EXECUTE ON AGGREGATE var_samp(HUGEINT) TO PUBLIC;\n"
+			"create window var_samp(val HUGEINT) returns DOUBLE\n"
+			" external name \"sql\".\"variance\";\n"
+			"GRANT EXECUTE ON WINDOW var_samp(HUGEINT) TO PUBLIC;\n"
+			"create aggregate covar_samp(e1 HUGEINT, e2 HUGEINT) returns DOUBLE\n"
+			" external name \"aggr\".\"covariance\";\n"
+			"GRANT EXECUTE ON AGGREGATE covar_samp(HUGEINT, HUGEINT) TO PUBLIC;\n"
+			"create window covar_samp(e1 HUGEINT, e2 HUGEINT) returns DOUBLE\n"
+			" external name \"sql\".\"covariance\";\n"
+			"GRANT EXECUTE ON WINDOW covar_samp(HUGEINT, HUGEINT) TO PUBLIC;\n"
 			"create aggregate var_pop(val HUGEINT) returns DOUBLE\n"
 			" external name \"aggr\".\"variancep\";\n"
 			"GRANT EXECUTE ON AGGREGATE var_pop(HUGEINT) TO PUBLIC;\n"
+			"create window var_pop(val HUGEINT) returns DOUBLE\n"
+			" external name \"sql\".\"variancep\";\n"
+			"GRANT EXECUTE ON WINDOW var_pop(HUGEINT) TO PUBLIC;\n"
+			"create aggregate covar_pop(e1 HUGEINT, e2 HUGEINT) returns DOUBLE\n"
+			" external name \"aggr\".\"covariancep\";\n"
+			"GRANT EXECUTE ON AGGREGATE covar_pop(HUGEINT, HUGEINT) TO PUBLIC;\n"
+			"create window covar_pop(e1 HUGEINT, e2 HUGEINT) returns DOUBLE\n"
+			" external name \"sql\".\"covariancep\";\n"
+			"GRANT EXECUTE ON WINDOW covar_pop(HUGEINT, HUGEINT) TO PUBLIC;\n"
 			"create aggregate median(val HUGEINT) returns HUGEINT\n"
 			" external name \"aggr\".\"median\";\n"
 			"GRANT EXECUTE ON AGGREGATE median(HUGEINT) TO PUBLIC;\n"
@@ -239,7 +231,10 @@ sql_update_hugeint(Client c, mvc *sql, const char *prev_schema, bool *systabfixe
 			"GRANT EXECUTE ON AGGREGATE quantile_avg(HUGEINT, DOUBLE) TO PUBLIC;\n"
 			"create aggregate corr(e1 HUGEINT, e2 HUGEINT) returns DOUBLE\n"
 			" external name \"aggr\".\"corr\";\n"
-			"GRANT EXECUTE ON AGGREGATE corr(HUGEINT, HUGEINT) TO PUBLIC;\n");
+			"GRANT EXECUTE ON AGGREGATE corr(HUGEINT, HUGEINT) TO PUBLIC;\n"
+			"create window corr(e1 HUGEINT, e2 HUGEINT) returns DOUBLE\n"
+			" external name \"sql\".\"corr\";\n"
+			"GRANT EXECUTE ON WINDOW corr(HUGEINT, HUGEINT) TO PUBLIC;\n");
 
 	/* 40_json_hge.sql */
 	pos += snprintf(buf + pos, bufsize - pos,
@@ -250,9 +245,10 @@ sql_update_hugeint(Client c, mvc *sql, const char *prev_schema, bool *systabfixe
 	pos += snprintf(buf + pos, bufsize - pos,
 			"update sys.functions set system = true where system <> true and name in ('fuse') and schema_id = (select id from sys.schemas where name = 'sys') and type = %d;\n"
 			"update sys.functions set system = true where system <> true and name in ('generate_series') and schema_id = (select id from sys.schemas where name = 'sys') and type = %d;\n"
-			"update sys.functions set system = true where system <> true and name in ('stddev_samp', 'stddev_pop', 'var_samp', 'var_pop', 'median', 'median_avg', 'quantile', 'quantile_avg', 'corr') and schema_id = (select id from sys.schemas where name = 'sys') and type = %d;\n"
+			"update sys.functions set system = true where system <> true and name in ('stddev_samp', 'stddev_pop', 'var_samp', 'covar_samp', 'var_pop', 'covar_pop', 'median', 'median_avg', 'quantile', 'quantile_avg', 'corr') and schema_id = (select id from sys.schemas where name = 'sys') and type = %d;\n"
+			"update sys.functions set system = true where system <> true and name in ('stddev_samp', 'stddev_pop', 'var_samp', 'covar_samp', 'var_pop', 'covar_pop', 'corr') and schema_id = (select id from sys.schemas where name = 'sys') and type = %d;\n"
 			"update sys.functions set system = true where system <> true and name = 'filter' and schema_id = (select id from sys.schemas where name = 'json') and type = %d;\n",
-			(int) F_FUNC, (int) F_UNION, (int) F_AGGR, (int) F_FUNC);
+			(int) F_FUNC, (int) F_UNION, (int) F_AGGR, (int) F_ANALYTIC, (int) F_FUNC);
 
 	pos += snprintf(buf + pos, bufsize - pos, "set schema \"%s\";\n", prev_schema);
 	assert(pos < bufsize);
@@ -2095,13 +2091,6 @@ sql_update_jun2020(Client c, mvc *sql, const char *prev_schema, bool *systabfixe
 	 * see also function load_func() in store.c */
 	pos += snprintf(buf + pos, bufsize - pos,
 			"update sys.functions set language = language - 2 where language in (8, 9);\n");
-	sql_subtype tp;
-	sql_find_subtype(&tp, "varchar", 0, 0);
-	sql_subfunc *f = sql_bind_func(sql->sa, sys, "listagg", &tp, &tp, F_AGGR);
-	pos += snprintf(buf + pos, bufsize - pos,
-			"insert into sys.args values"
-			" (%d, %d, 'arg_2', 'varchar', 0, 0, %d, 2);\n",
-			store_next_oid(), f->func->base.id, ARG_IN);
 
 	pos += snprintf(buf + pos, bufsize - pos,
 			"update sys.args set name = name || '_' || cast(number as string) where name in ('arg', 'res') and func_id in (select id from sys.functions f where f.system);\n");
@@ -2314,7 +2303,7 @@ sql_update_jun2020(Client c, mvc *sql, const char *prev_schema, bool *systabfixe
 			"\"progress\" int,\n"
 			"\"workers\" int,\n"
 			"\"memory\" int)\n"
-			" external name sql.sysmon_queue;\n"
+			" external name sysmon.queue;\n"
 			"grant execute on function sys.queue to public;\n"
 			"create view sys.queue as select * from sys.queue();\n"
 			"grant select on sys.queue to public;\n"
@@ -2784,12 +2773,70 @@ sql_update_jun2020_bam(Client c, mvc *m, const char *prev_schema)
 	return err;
 }
 
+
+#ifdef HAVE_HGE
+static str
+sql_update_jun2020_sp1_hugeint(Client c, const char *prev_schema)
+{
+	size_t bufsize = 8192, pos = 0;
+	char *buf, *err;
+
+	if ((buf = GDKmalloc(bufsize)) == NULL)
+		throw(SQL, __func__, SQLSTATE(HY013) MAL_MALLOC_FAIL);
+
+	pos += snprintf(buf + pos, bufsize - pos, "set schema \"sys\";\n");
+
+	/* 39_analytics_hge.sql */
+	pos += snprintf(buf + pos, bufsize - pos,
+			"create window stddev_samp(val HUGEINT) returns DOUBLE\n"
+			" external name \"sql\".\"stdev\";\n"
+			"GRANT EXECUTE ON WINDOW stddev_samp(HUGEINT) TO PUBLIC;\n"
+			"create window stddev_pop(val HUGEINT) returns DOUBLE\n"
+			" external name \"sql\".\"stdevp\";\n"
+			"GRANT EXECUTE ON WINDOW stddev_pop(HUGEINT) TO PUBLIC;\n"
+			"create window var_samp(val HUGEINT) returns DOUBLE\n"
+			" external name \"sql\".\"variance\";\n"
+			"GRANT EXECUTE ON WINDOW var_samp(HUGEINT) TO PUBLIC;\n"
+			"create aggregate covar_samp(e1 HUGEINT, e2 HUGEINT) returns DOUBLE\n"
+			" external name \"aggr\".\"covariance\";\n"
+			"GRANT EXECUTE ON AGGREGATE covar_samp(HUGEINT, HUGEINT) TO PUBLIC;\n"
+			"create window covar_samp(e1 HUGEINT, e2 HUGEINT) returns DOUBLE\n"
+			" external name \"sql\".\"covariance\";\n"
+			"GRANT EXECUTE ON WINDOW covar_samp(HUGEINT, HUGEINT) TO PUBLIC;\n"
+			"create window var_pop(val HUGEINT) returns DOUBLE\n"
+			" external name \"sql\".\"variancep\";\n"
+			"GRANT EXECUTE ON WINDOW var_pop(HUGEINT) TO PUBLIC;\n"
+			"create aggregate covar_pop(e1 HUGEINT, e2 HUGEINT) returns DOUBLE\n"
+			" external name \"aggr\".\"covariancep\";\n"
+			"GRANT EXECUTE ON AGGREGATE covar_pop(HUGEINT, HUGEINT) TO PUBLIC;\n"
+			"create window covar_pop(e1 HUGEINT, e2 HUGEINT) returns DOUBLE\n"
+			" external name \"sql\".\"covariancep\";\n"
+			"GRANT EXECUTE ON WINDOW covar_pop(HUGEINT, HUGEINT) TO PUBLIC;\n"
+			"create window corr(e1 HUGEINT, e2 HUGEINT) returns DOUBLE\n"
+			" external name \"sql\".\"corr\";\n"
+			"GRANT EXECUTE ON WINDOW corr(HUGEINT, HUGEINT) TO PUBLIC;\n");
+
+	pos += snprintf(buf + pos, bufsize - pos,
+			"update sys.functions set system = true where system <> true and name in ('covar_samp', 'covar_pop') and schema_id = (select id from sys.schemas where name = 'sys') and type = %d;\n"
+			"update sys.functions set system = true where system <> true and name in ('stddev_samp', 'stddev_pop', 'var_samp', 'covar_samp', 'var_pop', 'covar_pop', 'corr') and schema_id = (select id from sys.schemas where name = 'sys') and type = %d;\n",
+			(int) F_AGGR, (int) F_ANALYTIC);
+
+	pos += snprintf(buf + pos, bufsize - pos, "set schema \"%s\";\n", prev_schema);
+	assert(pos < bufsize);
+
+	printf("Running database upgrade commands:\n%s\n", buf);
+	err = SQLstatementIntern(c, &buf, "update", true, false, NULL);
+	GDKfree(buf);
+	return err;		/* usually MAL_SUCCEED */
+}
+#endif
+
 static str
 sql_update_semantics(Client c)
 {
 	char* update_query =
 	"update sys.functions set semantics = false where type <> 6 and func not ilike '%CREATE FUNCTION%' and name in ('length','octet_length','>','>=','<','<=','min','max','sql_min','sql_max','least','greatest','sum','prod','mod','and',\n"
-	"'or','xor','not','sql_mul','sql_div','sql_sub','sql_add','bit_and','bit_or','bit_xor','bit_not','left_shift','right_shift','abs','sign','scale_up','scale_down','round','power','floor','ceil','ceiling','sin','cos','tan','asin',\n"
+	"'xor','not','sql_mul','sql_div','sql_sub','sql_add','bit_and','bit_or','bit_xor','bit_not','left_shift','right_shift','abs','sign','scale_up','scale_down','round','power','floor','ceil','ceiling','sin','cos','tan','asin',\n"
 	"'acos','atan','sinh','cot','cosh','tanh','sqrt','exp','log','ln','log10','log2','pi','curdate','current_date','curtime','current_time','current_timestamp','localtime','localtimestamp','local_timezone','century','decade','year',\n"
 	"'quarter','month','day','dayofyear','weekofyear','dayofweek','dayofmonth','week','hour','minute','second','strings','locate','charindex','splitpart','substring','substr','truncate','concat','ascii','code','right','left','upper',\n"
 	"'ucase','lower','lcase','trim','ltrim','rtrim','lpad','rpad','insert','replace','repeat','space','char_length','character_length','soundex','qgramnormalize');";
@@ -2798,9 +2845,20 @@ sql_update_semantics(Client c)
 }
 
 static str
+sql_update_default_lidar(Client c)
+{
+	char *query =
+		"drop procedure sys.lidarattach(string);\n"
+		"drop procedure sys.lidarload(string);\n"
+		"drop procedure sys.lidarexport(string, string, string);\n";
+	printf("Running database upgrade commands:\n%s\n", query);
+	return SQLstatementIntern(c, &query, "update", true, false, NULL);
+}
+
+static str
 sql_update_default(Client c, mvc *sql, const char *prev_schema)
 {
-	size_t bufsize = 2048, pos = 0;
+	size_t bufsize = 4096, pos = 0;
 	char *err = NULL, *buf = GDKmalloc(bufsize);
 	sql_schema *sys = mvc_bind_schema(sql, "sys");
 	res_table *output;
@@ -2808,8 +2866,6 @@ sql_update_default(Client c, mvc *sql, const char *prev_schema)
 
 	if (buf == NULL)
 		throw(SQL, __func__, SQLSTATE(HY013) MAL_MALLOC_FAIL);
-
-	/* TODO drop/recreate env(), ie mal function changed */
 
 	/* if column 6 of sys.queue is named "progress" we need to update */
 	pos += snprintf(buf + pos, bufsize - pos,
@@ -2826,6 +2882,17 @@ sql_update_default(Client c, mvc *sql, const char *prev_schema)
 			pos = 0;
 			pos += snprintf(buf + pos, bufsize - pos,
 					"set schema \"sys\";\n");
+
+			/* the real update of sys.env() has happened
+			 * in load_func, here we merely update the
+			 * sys.functions table */
+			pos += snprintf(buf + pos, bufsize - pos,
+					"update sys.functions set"
+					" mod = 'inspect',"
+					" func = 'CREATE FUNCTION env() RETURNS TABLE( name varchar(1024), value varchar(2048)) EXTERNAL NAME inspect.\"getEnvironment\";'"
+					" where schema_id = (select id from sys.schemas where name = 'sys')"
+					" and name = 'env' and type = %d;\n",
+					(int) F_UNION);
 
 			/* 26_sysmon */
 			sql_table *t;
@@ -2846,14 +2913,29 @@ sql_update_default(Client c, mvc *sql, const char *prev_schema)
 					"\"finished\" timestamp,\n"
 					"\"workers\" int,\n"
 					"\"memory\" int)\n"
-					" external name sql.sysmon_queue;\n"
+					" external name sysmon.queue;\n"
 					"grant execute on function sys.queue to public;\n"
 					"create view sys.queue as select * from sys.queue();\n"
-					"grant select on sys.queue to public;\n");
+					"grant select on sys.queue to public;\n"
+					"drop procedure sys.pause(bigint);\n"
+					"drop procedure sys.resume(bigint);\n"
+					"drop procedure sys.stop(bigint);\n"
+					"create procedure sys.pause(tag bigint)\n"
+					"external name sysmon.pause;\n"
+					"grant execute on procedure sys.pause(bigint) to public;\n"
+					"create procedure sys.resume(tag bigint)\n"
+					"external name sysmon.resume;\n"
+					"grant execute on procedure sys.resume(bigint) to public;\n"
+					"create procedure sys.stop(tag bigint)\n"
+					"external name sysmon.stop;\n"
+					"grant execute on procedure sys.stop(bigint) to public;\n");
 
 			pos += snprintf(buf + pos, bufsize - pos,
 					"update sys.functions set system = true where schema_id = (select id from sys.schemas where name = 'sys')"
-					" and name = 'queue' and type = %d;\n", (int) F_UNION);
+					" and name = 'queue' and type = %d;\n"
+					"update sys.functions set system = true where schema_id = (select id from sys.schemas where name = 'sys')"
+					" and name in ('pause', 'resume', 'stop') and type = %d;\n",
+					(int) F_UNION, (int) F_PROC);
 			pos += snprintf(buf + pos, bufsize - pos,
 					"update sys._tables set system = true where schema_id = (select id from sys.schemas where name = 'sys')"
 					" and name = 'queue';\n");
@@ -2861,18 +2943,47 @@ sql_update_default(Client c, mvc *sql, const char *prev_schema)
 			/* scoping branch changes */
 			pos += snprintf(buf + pos, bufsize - pos,
 					"drop function \"sys\".\"var\"();\n"
-					"create function \"sys\".\"var\"()\n" 
-					"returns table(\n"
-					"\"schema\" string,\n"
-					"\"name\" string,\n"
-					"\"type\" string,\n"
-					"\"value\" string)\n"
-					" external name \"sql\".\"sql_variables\";\n"
+					"create function \"sys\".\"var\"() "
+					"returns table("
+					"\"schema\" string, "
+					"\"name\" string, "
+					"\"type\" string, "
+					"\"value\" string) "
+					"external name \"sql\".\"sql_variables\";\n"
 					"grant execute on function \"sys\".\"var\" to public;\n");
 
+			/* update system tables so that the content
+			 * looks more like what it would be if sys.var
+			 * had been defined by the C code in
+			 * sql_create_env() */
 			pos += snprintf(buf + pos, bufsize - pos,
-					"update sys.functions set system = true where schema_id = (select id from sys.schemas where name = 'sys')"
-					" and name = 'var' and type = %d;\n", (int) F_UNION);
+					"update sys.functions set system = true,"
+					//" func = 'CREATE FUNCTION \"sys\".\"var\"() RETURNS TABLE(\"schema\" string, \"name\" string, \"type\" string, \"value\" string) EXTERNAL NAME \"sql\".\"sql_variables\";',"
+					" language = 2, side_effect = false where name = 'var' and schema_id = (select id from sys.schemas where name = 'sys') and type = %d;\n"
+					"update sys.args set type = 'char' where func_id = (select id from sys.functions where name = 'var' and schema_id = (select id from sys.schemas where name = 'sys') and type = %d) and type = 'clob';\n"
+					"update sys.privileges set grantor = 0 where obj_id = (select id from sys.functions where name = 'var' and schema_id = (select id from sys.schemas where name = 'sys') and type = %d);\n",
+					(int) F_UNION,
+					(int) F_UNION,
+					(int) F_UNION);
+
+			/* SQL functions without backend implementations */
+			pos += snprintf(buf + pos, bufsize - pos,
+					"DROP FUNCTION \"sys\".\"getcontent\"(url);\n"
+					"DROP AGGREGATE \"json\".\"output\"(json);\n");
+
+			/* Move sys.degrees and sys.radians to sql_types.c definitions */
+			pos += snprintf(buf + pos, bufsize - pos,
+					"delete from args where args.id in (select args.id from args left join functions on args.func_id = functions.id where args.name in ('r', 'd') and functions.id is null);\n"
+					"delete from privileges where obj_id in (select obj_id from privileges left join functions on privileges.obj_id = functions.id where functions.id is null and privileges.obj_id not in ((SELECT tables.id from tables), 0));\n");
+
+			sql_subtype *types[2] = {sql_bind_localtype("flt"), sql_bind_localtype("dbl")};
+			list *functions = sa_list(sql->sa);
+			for (int i = 0; i < 2; i++) {
+				sql_subtype *next = types[i];
+				list_append(functions, sql_create_func(sql->sa, "degrees", "mmath", "degrees", FALSE, FALSE, SCALE_FIX, 0, next->type, 1, next->type));
+				list_append(functions, sql_create_func(sql->sa, "radians", "mmath", "radians", FALSE, FALSE, SCALE_FIX, 0, next->type, 1, next->type));
+			}
+			insert_functions(sql->session->tr, mvc_bind_table(sql, sys, "functions"), functions, mvc_bind_table(sql, sys, "args"));
 
 			pos += snprintf(buf + pos, bufsize - pos, "set schema \"%s\";\n", prev_schema);
 			assert(pos < bufsize);
@@ -2892,7 +3003,6 @@ sql_update_default(Client c, mvc *sql, const char *prev_schema)
 
 	return err;		/* usually MAL_SUCCEED */
 }
-
 int
 SQLupgrades(Client c, mvc *m)
 {
@@ -3189,6 +3299,28 @@ SQLupgrades(Client c, mvc *m)
 		return -1;
 	}
 
+#ifdef HAVE_HGE
+	if (have_hge) {
+		sql_find_subtype(&tp, "hugeint", 0, 0);
+		if (!sql_bind_func(m->sa, s, "covar_pop", &tp, &tp, F_AGGR) &&
+		    (err = sql_update_jun2020_sp1_hugeint(c, prev_schema)) != NULL) {
+			TRC_CRITICAL(SQL_PARSER, "%s\n", err);
+			freeException(err);
+			GDKfree(prev_schema);
+			return -1;
+		}
+	}
+#endif
+
+	sql_find_subtype(&tp, "varchar", 0, 0);
+	if (sql_bind_func(m->sa, s, "lidarattach", &tp, NULL, F_PROC) &&
+	    (err = sql_update_default_lidar(c)) != NULL) {
+		TRC_CRITICAL(SQL_PARSER, "%s\n", err);
+		freeException(err);
+		GDKfree(prev_schema);
+		return -1;
+	}		
+	
 	if ((err = sql_update_default(c, m, prev_schema)) != NULL) {
 		TRC_CRITICAL(SQL_PARSER, "%s\n", err);
 		freeException(err);

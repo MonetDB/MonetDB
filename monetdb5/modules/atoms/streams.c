@@ -19,7 +19,7 @@
 #include "streams.h"
 #include "mal_exception.h"
 
-str mnstr_open_rstreamwrap(Stream *S, str *filename)
+static str mnstr_open_rstreamwrap(Stream *S, str *filename)
 {
 	stream *s;
 
@@ -34,7 +34,7 @@ str mnstr_open_rstreamwrap(Stream *S, str *filename)
 
 	return MAL_SUCCEED;
 }
-str mnstr_open_wstreamwrap(Stream *S, str *filename)
+static str mnstr_open_wstreamwrap(Stream *S, str *filename)
 {
 	stream *s;
 
@@ -50,7 +50,7 @@ str mnstr_open_wstreamwrap(Stream *S, str *filename)
 	return MAL_SUCCEED;
 }
 
-str mnstr_open_rastreamwrap(Stream *S, str *filename)
+static str mnstr_open_rastreamwrap(Stream *S, str *filename)
 {
 	stream *s;
 
@@ -66,7 +66,7 @@ str mnstr_open_rastreamwrap(Stream *S, str *filename)
 	return MAL_SUCCEED;
 }
 
-str mnstr_open_wastreamwrap(Stream *S, str *filename)
+static str mnstr_open_wastreamwrap(Stream *S, str *filename)
 {
 	stream *s;
 
@@ -82,7 +82,7 @@ str mnstr_open_wastreamwrap(Stream *S, str *filename)
 	return MAL_SUCCEED;
 }
 
-str
+static str
 mnstr_write_stringwrap(void *ret, Stream *S, str *data)
 {
 	stream *s = *(stream **)S;
@@ -94,7 +94,7 @@ mnstr_write_stringwrap(void *ret, Stream *S, str *data)
 	return MAL_SUCCEED;
 }
 
-str
+static str
 mnstr_writeIntwrap(void *ret, Stream *S, int *data)
 {
 	stream *s = *(stream **)S;
@@ -106,7 +106,7 @@ mnstr_writeIntwrap(void *ret, Stream *S, int *data)
 	return MAL_SUCCEED;
 }
 
-str
+static str
 mnstr_readIntwrap(int *ret, Stream *S)
 {
 	stream *s = *(stream **)S;
@@ -118,7 +118,7 @@ mnstr_readIntwrap(int *ret, Stream *S)
 }
 
 #define CHUNK (64 * 1024)
-str
+static str
 mnstr_read_stringwrap(str *res, Stream *S)
 {
 	stream *s = *(stream **)S;
@@ -149,7 +149,7 @@ mnstr_read_stringwrap(str *res, Stream *S)
 	return MAL_SUCCEED;
 }
 
-str
+static str
 mnstr_flush_streamwrap(void *ret, Stream *S)
 {
 	stream *s = *(stream **)S;
@@ -161,7 +161,7 @@ mnstr_flush_streamwrap(void *ret, Stream *S)
 	return MAL_SUCCEED;
 }
 
-str
+static str
 mnstr_close_streamwrap(void *ret, Stream *S)
 {
 	(void)ret;
@@ -171,7 +171,7 @@ mnstr_close_streamwrap(void *ret, Stream *S)
 	return MAL_SUCCEED;
 }
 
-str
+static str
 open_block_streamwrap(Stream *S, Stream *is)
 {
 	if ((*(stream **)S = block_stream(*(stream **)is)) == NULL)
@@ -180,7 +180,7 @@ open_block_streamwrap(Stream *S, Stream *is)
 	return MAL_SUCCEED;
 }
 
-str
+static str
 bstream_create_wrapwrap(Bstream *Bs, Stream *S, int *bufsize)
 {
 	if ((*(bstream **)Bs = bstream_create(*(stream **)S, (size_t)*bufsize)) == NULL)
@@ -189,7 +189,7 @@ bstream_create_wrapwrap(Bstream *Bs, Stream *S, int *bufsize)
 	return MAL_SUCCEED;
 }
 
-str
+static str
 bstream_destroy_wrapwrap(void *ret, Bstream *BS)
 {
 	(void)ret;
@@ -199,7 +199,7 @@ bstream_destroy_wrapwrap(void *ret, Bstream *BS)
 	return MAL_SUCCEED;
 }
 
-str
+static str
 bstream_read_wrapwrap(int *res, Bstream *BS, int *size)
 {
 	*res = (int)bstream_read(*(bstream **)BS, (size_t)*size);

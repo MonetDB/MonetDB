@@ -205,7 +205,7 @@ from a remote machine, a passphrase is necessary, to be given to
 The passphrase can be either given as hashed value prefixed by the hash
 type in curly braces (e.g. {SHA512}xxx...) or as plain text value which
 will be hashed automatically.  Note that the only hash accepted is the
-one specified at configure time, which is @MONETDB5_PASSWDHASH@.
+one specified at configure time, which is @PASSWORD_BACKEND@.
 Changing this property takes effect immediately at runtime.
 .TP
 .B discovery

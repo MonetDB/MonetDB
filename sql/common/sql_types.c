@@ -419,10 +419,10 @@ subtype2string2(sql_subtype *tpe) //distinguish char(n), decimal(n,m) from other
 
 	switch (tpe->type->eclass) {
 		case EC_SEC:
-			snprintf(buf, BUFSIZ, "BIGINT");
+			snprintf(buf, BUFSIZ, "INTERVAL SECOND");
 			break;
 		case EC_MONTH:
-			snprintf(buf, BUFSIZ, "INT");
+			snprintf(buf, BUFSIZ, "INTERVAL MONTH");
 			break;
 		case EC_CHAR:
 		case EC_STRING:
@@ -1072,7 +1072,7 @@ sql_create_procedure(sql_allocator *sa, const char *name, const char *mod, const
 	return res;
 }
 
-static sql_func *
+sql_func *
 sql_create_func(sql_allocator *sa, const char *name, const char *mod, const char *imp, bit semantics, bit side_effect, int fix_scale,
 				unsigned int res_scale, sql_type *fres, int nargs, ...)
 {
@@ -1275,10 +1275,11 @@ sqltypeinit( sql_allocator *sa)
 	sql_create_aggr(sa, "grouping", "", "", TRUE, INT, 1, ANY);
 	sql_create_aggr(sa, "grouping", "", "", TRUE, LNG, 1, ANY);
 #ifdef HAVE_HGE
-	sql_create_aggr(sa, "grouping", "", "", TRUE, HGE, 1, ANY);
+	if (have_hge)
+		sql_create_aggr(sa, "grouping", "", "", TRUE, HGE, 1, ANY);
 #endif
 
-	sql_create_aggr(sa, "not_unique", "sql", "not_unique", TRUE, BIT, 1, OID);
+	sql_create_aggr(sa, "not_unique", "aggr", "not_unique", TRUE, BIT, 1, OID);
 	/* well to be precise it does reduce and map */
 
 	/* functions needed for all types */
@@ -1292,9 +1293,9 @@ sqltypeinit( sql_allocator *sa)
 	sql_create_func(sa, "<", "calc", "<", FALSE, FALSE, SCALE_FIX, 0, BIT, 2, ANY, ANY);
 	sql_create_func(sa, "<=", "calc", "<=", FALSE, FALSE, SCALE_FIX, 0, BIT, 2, ANY, ANY);
 	sql_create_func(sa, "between", "calc", "between", TRUE, FALSE, SCALE_FIX, 0, BIT, 8, ANY, ANY, ANY, BIT, BIT, BIT, BIT, BIT);
-	sql_create_aggr(sa, "zero_or_one", "sql", "zero_or_one", TRUE, ANY, 1, ANY);
-	sql_create_aggr(sa, "all", "sql", "all", TRUE, ANY, 1, ANY);
-	sql_create_aggr(sa, "null", "sql", "null", TRUE, BIT, 1, ANY);
+	sql_create_aggr(sa, "zero_or_one", "aggr", "zero_or_one", TRUE, ANY, 1, ANY);
+	sql_create_aggr(sa, "all", "aggr", "all", TRUE, ANY, 1, ANY);
+	sql_create_aggr(sa, "null", "aggr", "null", TRUE, BIT, 1, ANY);
 	sql_create_func(sa, "any", "sql", "any", TRUE, FALSE, SCALE_NONE, 0, BIT, 3, BIT, BIT, BIT);
 	sql_create_func(sa, "all", "sql", "all", TRUE, FALSE, SCALE_NONE, 0, BIT, 3, BIT, BIT, BIT);
 	sql_create_aggr(sa, "anyequal", "aggr", "anyequal", TRUE, BIT, 1, ANY); /* needs 3 arguments (l,r,nil)(ugh) */
@@ -1616,7 +1617,7 @@ sqltypeinit( sql_allocator *sa)
 	sql_create_analytic(sa, "listagg", "sql", "str_group_concat", SCALE_NONE, STR, 2, STR, STR);
 
 	sql_create_func(sa, "and", "calc", "and", FALSE, FALSE, SCALE_FIX, 0, BIT, 2, BIT, BIT);
-	sql_create_func(sa, "or",  "calc",  "or", FALSE, FALSE, SCALE_FIX, 0, BIT, 2, BIT, BIT);
+	sql_create_func(sa, "or",  "calc",  "or", TRUE, FALSE, SCALE_FIX, 0, BIT, 2, BIT, BIT);
 	sql_create_func(sa, "xor", "calc", "xor", FALSE, FALSE, SCALE_FIX, 0, BIT, 2, BIT, BIT);
 	sql_create_func(sa, "not", "calc", "not", FALSE, FALSE, SCALE_FIX, 0, BIT, 1, BIT);
 
@@ -1724,6 +1725,8 @@ sqltypeinit( sql_allocator *sa)
 		sql_create_func(sa, "log", "mmath", "log", FALSE, FALSE, SCALE_FIX, 0, *t, 2, *t, *t);
 		sql_create_func(sa, "log10", "mmath", "log10", FALSE, FALSE, SCALE_FIX, 0, *t, 1, *t);
 		sql_create_func(sa, "log2", "mmath", "log2", FALSE, FALSE, SCALE_FIX, 0, *t, 1, *t);
+		sql_create_func(sa, "degrees", "mmath", "degrees", FALSE, FALSE, SCALE_FIX, 0, *t, 1, *t);
+		sql_create_func(sa, "radians", "mmath", "radians", FALSE, FALSE, SCALE_FIX, 0, *t, 1, *t);
 	}
 	sql_create_func(sa, "pi", "mmath", "pi", FALSE, FALSE, SCALE_NONE, 0, DBL, 0);
 

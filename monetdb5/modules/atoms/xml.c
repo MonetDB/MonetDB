@@ -641,9 +641,10 @@ XMLepilogue(void *ret)
 	return MAL_SUCCEED;
 }
 
-ssize_t
-XMLfromString(const char *src, size_t *len, xml *x, bool external)
+static ssize_t
+XMLfromString(const char *src, size_t *len, void **X, bool external)
 {
+	xml *x = (xml *) X;
 	if (*x){
 		GDKfree(*x);
 		*x = NULL;
@@ -670,9 +671,10 @@ XMLfromString(const char *src, size_t *len, xml *x, bool external)
 	return (ssize_t) *len - 1;
 }
 
-ssize_t
-XMLtoString(str *s, size_t *len, const char *src, bool external)
+static ssize_t
+XMLtoString(str *s, size_t *len, const void *SRC, bool external)
 {
+	const char *src = SRC;
 	size_t l;
 
 	if (strNil(src))
@@ -695,7 +697,7 @@ XMLtoString(str *s, size_t *len, const char *src, bool external)
 
 #define NO_LIBXML_FATAL "xml: MonetDB was built without libxml, but what you are trying to do requires it."
 
-ssize_t XMLfromString(const char *src, size_t *len, xml *x, bool external) {
+static ssize_t XMLfromString(const char *src, size_t *len, void **x, bool external) {
 	(void) src;
 	(void) len;
 	(void) x;
@@ -703,7 +705,7 @@ ssize_t XMLfromString(const char *src, size_t *len, xml *x, bool external) {
 	GDKerror("not implemented\n");
 	return -1;
 }
-ssize_t XMLtoString(str *s, size_t *len, const char *src, bool external) {
+ssize_t XMLtoString(str *s, size_t *len, const void *src, bool external) {
 	(void) s;
 	(void) len;
 	(void) src;
@@ -829,7 +831,7 @@ str XMLepilogue(void *ret) {
 
 #include "mel.h"
 mel_atom xml_init_atoms[] = {
- { .name="xml", .basetype="str", .fromstr=(fptr)&XMLfromString, .tostr=(fptr)&XMLtoString, },  { .cmp=NULL } 
+ { .name="xml", .basetype="str", .fromstr=XMLfromString, .tostr=XMLtoString, },  { .cmp=NULL } 
 };
 mel_func xml_init_funcs[] = {
  command("xml", "xml", XMLstr2xml, false, "Cast the string to an xml compliant string", args(1,2, arg("",xml),arg("src",str))),

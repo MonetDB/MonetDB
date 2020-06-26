@@ -686,7 +686,7 @@ IOimport(void *ret, bat *bid, str *fnme)
 			throw(MAL, "io.imports", OPERATION_FAILED "Empty file");
 		}
 #if SIZEOF_SIZE_T == SIZEOF_INT
-		if (st.st_size > ~ (size_t) 0) {
+		if (st.st_size > (off_t) ~ (size_t) 0) {
 			BBPunfix(b->batCacheid);
 			GDKfree(buf);
 			throw(MAL, "io.imports", OPERATION_FAILED "File too large");

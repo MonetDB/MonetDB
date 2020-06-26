@@ -36,7 +36,6 @@ target_link_libraries(mserver5
   monetdb5
   $<$<NOT:$<PLATFORM_ID:Windows>>:m>
   $<$<PLATFORM_ID:Windows>:${GETOPT_LIB}>
-  ${CMAKE_DL_LIBS}
   $<$<BOOL:${PCRE_FOUND}>:PCRE::PCRE>
   $<$<NOT:$<PLATFORM_ID:Windows>>:$<$<BOOL:${LibXml2_FOUND}>:LibXml2::LibXml2>>
   Threads::Threads)
@@ -64,7 +63,6 @@ target_link_libraries(shutdowntest
   monetdb5
   $<$<NOT:$<PLATFORM_ID:Windows>>:m>
   $<$<PLATFORM_ID:Windows>:${GETOPT_LIB}>
-  ${CMAKE_DL_LIBS}
   $<$<BOOL:${PCRE_FOUND}>:PCRE::PCRE>
   $<$<NOT:$<PLATFORM_ID:Windows>>:$<$<BOOL:${LibXml2_FOUND}>:LibXml2::LibXml2>>
   Threads::Threads)

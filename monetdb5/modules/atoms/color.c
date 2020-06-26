@@ -64,9 +64,10 @@ CLRhextoint(char h, char l)
 	return r;
 }
 
-ssize_t
-color_fromstr(const char *colorStr, size_t *len, color **c, bool external)
+static ssize_t
+color_fromstr(const char *colorStr, size_t *len, void **C, bool external)
 {
+	color **c = (color **) C;
 	const char *p = colorStr;
 
 	if (*len < sizeof(color) || *c == NULL) {
@@ -106,10 +107,10 @@ color_fromstr(const char *colorStr, size_t *len, color **c, bool external)
 	return (ssize_t) (p - colorStr);
 }
 
-ssize_t
-color_tostr(char **colorStr, size_t *len, const color *c, bool external)
+static ssize_t
+color_tostr(char **colorStr, size_t *len, const void *c, bool external)
 {
-	color sc = *c;
+	color sc = *(color*)c;
 
 	/* allocate and fill a new string */
 
@@ -391,14 +392,14 @@ CLRcolor(color *c, const char **val)
 {
 	size_t len = sizeof(color);
 
-	if (color_fromstr(*val, &len, &c, false) < 0)
+	if (color_fromstr(*val, &len, (void**)&c, false) < 0)
 		throw(MAL, "color.color", GDK_EXCEPTION);
 	return MAL_SUCCEED;
 }
 
 #include "mel.h"
 mel_atom color_init_atoms[] = {
- { .name="color", .basetype="int", .size=sizeof(color), .tostr=(fptr)&color_tostr, .fromstr=(fptr)&color_fromstr, },  { .cmp=NULL } 
+ { .name="color", .basetype="int", .size=sizeof(color), .tostr=color_tostr, .fromstr=color_fromstr, },  { .cmp=NULL } 
 };
 mel_func color_init_funcs[] = {
  command("color", "str", CLRstr, false, "Converts color to string ", args(1,2, arg("",str),arg("s",color))),

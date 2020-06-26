@@ -1702,7 +1702,9 @@ rel_filter(mvc *sql, sql_rel *rel, list *l, list *r, char *sname, char *filter_o
 		else
 			return sql_error(sql, ERR_GROUPBY, SQLSTATE(42000) "SELECT: cannot use non GROUP BY column in query results without an aggregate function");
 	}
-	if (exps_card(r) <= CARD_ATOM && exps_are_atoms(r)) {
+	if (!is_join(rel->op) && !is_select(rel->op))
+		return rel_select(sql->sa, rel, e);
+	if (exps_card(r) <= CARD_ATOM && (exps_are_atoms(r) || exps_have_freevar(sql, r) || exps_have_freevar(sql, l))) {
 		if (exps_card(l) == exps_card(r) || rel->processed)  /* bin compare op */
 			return rel_select(sql->sa, rel, e);
 
@@ -1729,6 +1731,8 @@ rel_filter_exp_(mvc *sql, sql_rel *rel, sql_exp *ls, sql_exp *rs, sql_exp *rs2, 
 static sql_rel *
 rel_select_push_exp_down(mvc *sql, sql_rel *rel, sql_exp *e, sql_exp *ls, sql_exp *L, sql_exp *rs, sql_exp *R, sql_exp *rs2, int f)
 {
+	if (!is_join(rel->op) && !is_select(rel->op))
+		return rel_select(sql->sa, rel, e);
 	if (rs->card <= CARD_ATOM && (exp_is_atom(rs) || exp_has_freevar(sql, rs) || exp_has_freevar(sql, ls)) &&
 	   (!rs2 || (rs2->card <= CARD_ATOM && (exp_is_atom(rs2) || exp_has_freevar(sql, rs2))))) {
 		if ((ls->card == rs->card && !rs2) || rel->processed)  /* bin compare op */
@@ -2323,10 +2327,7 @@ rel_logical_value_exp(sql_query *query, sql_rel **rel, symbol *sc, int f, exp_ki
 			return NULL;
 		if (!(rs = rel_logical_value_exp(query, rel, ro, f, ek)))
 			return NULL;
-		if (sc->token == SQL_OR)
-			return rel_binop_(sql, rel ? *rel : NULL, ls, rs, NULL, "or", card_value);
-		else
-			return rel_binop_(sql, rel ? *rel : NULL, ls, rs, NULL, "and", card_value);
+		return rel_binop_(sql, rel ? *rel : NULL, ls, rs, NULL, sc->token == SQL_OR ? "or": "and", card_value);
 	}
 	case SQL_FILTER:
 		/* [ x,..] filter [ y,..] */
@@ -2508,9 +2509,12 @@ rel_logical_value_exp(sql_query *query, sql_rel **rel, symbol *sc, int f, exp_ki
 
 		if (symmetric) {
 			sql_exp *tmp = NULL;
-			sql_subfunc *min = sql_bind_func(sql->sa, sql->session->schema, "sql_min", exp_subtype(re1), exp_subtype(re2), F_FUNC);
-			sql_subfunc *max = sql_bind_func(sql->sa, sql->session->schema, "sql_max", exp_subtype(re1), exp_subtype(re2), F_FUNC);
+			sql_subfunc *min, *max;
 
+			if (rel_convert_types(sql, rel ? *rel : NULL, rel ? *rel : NULL, &re1, &re2, 1, type_equal) < 0)
+				return NULL;
+			min = sql_bind_func(sql->sa, sql->session->schema, "sql_min", exp_subtype(re1), exp_subtype(re2), F_FUNC);
+			max = sql_bind_func(sql->sa, sql->session->schema, "sql_max", exp_subtype(re1), exp_subtype(re2), F_FUNC);
 			if (!min || !max)
 				return sql_error(sql, 02, SQLSTATE(42000) "min or max operator on types %s %s missing", exp_subtype(re1)->type->sqlname, exp_subtype(re2)->type->sqlname);
 			tmp = exp_binop(sql->sa, re1, re2, min);
@@ -2518,23 +2522,11 @@ rel_logical_value_exp(sql_query *query, sql_rel **rel, symbol *sc, int f, exp_ki
 			re1 = tmp;
 		}
 
-		if (sc->token == SQL_NOT_BETWEEN) {
-			if (!(e1 = rel_binop_(sql, rel ? *rel : NULL, le, re1, NULL, "<", card_value)))
-				return NULL;
-			if (!(e2 = rel_binop_(sql, rel ? *rel : NULL, le, re2, NULL, ">", card_value)))
-				return NULL;
-		} else {
-			if (!(e1 = rel_binop_(sql, rel ? *rel : NULL, le, re1, NULL, ">=", card_value)))
-				return NULL;
-			if (!(e2 = rel_binop_(sql, rel ? *rel : NULL, le, re2, NULL, "<=", card_value)))
-				return NULL;
-		}
-		assert(e1 && e2);
-		if (sc->token == SQL_NOT_BETWEEN) {
-			return rel_binop_(sql, rel ? *rel : NULL, e1, e2, NULL, "or", card_value);
-		} else {
-			return rel_binop_(sql, rel ? *rel : NULL, e1, e2, NULL, "and", card_value);
-		}
+		if (!(e1 = rel_binop_(sql, rel ? *rel : NULL, le, re1, NULL, sc->token == SQL_NOT_BETWEEN ? "<" : ">=", card_value)))
+			return NULL;
+		if (!(e2 = rel_binop_(sql, rel ? *rel : NULL, le, re2, NULL, sc->token == SQL_NOT_BETWEEN ? ">" : "<=", card_value)))
+			return NULL;
+		return rel_binop_(sql, rel ? *rel : NULL, e1, e2, NULL, sc->token == SQL_NOT_BETWEEN ? "or" : "and", card_value);
 	}
 	case SQL_IS_NULL:
 	case SQL_IS_NOT_NULL:
@@ -2800,11 +2792,14 @@ rel_logical_exp(sql_query *query, sql_rel *rel, symbol *sc, int f)
 			return NULL;
 
 		/* for between 3 columns we use the between operator */
-		if (symmetric && re1->card == CARD_ATOM && re2->card == CARD_ATOM) {
+		if (symmetric && (le->card == CARD_ATOM || (re1->card == CARD_ATOM && re2->card == CARD_ATOM))) {
 			sql_exp *tmp = NULL;
-			sql_subfunc *min = sql_bind_func(sql->sa, sql->session->schema, "sql_min", exp_subtype(re1), exp_subtype(re2), F_FUNC);
-			sql_subfunc *max = sql_bind_func(sql->sa, sql->session->schema, "sql_max", exp_subtype(re1), exp_subtype(re2), F_FUNC);
+			sql_subfunc *min, *max;
 
+			if (rel_convert_types(sql, rel, rel, &re1, &re2, 1, type_equal) < 0)
+				return NULL;
+			min = sql_bind_func(sql->sa, sql->session->schema, "sql_min", exp_subtype(re1), exp_subtype(re2), F_FUNC);
+			max = sql_bind_func(sql->sa, sql->session->schema, "sql_max", exp_subtype(re1), exp_subtype(re2), F_FUNC);
 			if (!min || !max)
 				return sql_error(sql, 02, SQLSTATE(42000) "min or max operator on types %s %s missing", exp_subtype(re1)->type->sqlname, exp_subtype(re2)->type->sqlname);
 			tmp = exp_binop(sql->sa, re1, re2, min);
@@ -2819,31 +2814,16 @@ rel_logical_exp(sql_query *query, sql_rel *rel, symbol *sc, int f)
 
 		if (le->card == CARD_ATOM) {
 			sql_exp *e1, *e2;
-			if (sc->token == SQL_NOT_BETWEEN) {
-				if (!(e1 = rel_binop_(sql, rel, le, re1, NULL, "<", card_value)))
-					return NULL;
-				if (!(e2 = rel_binop_(sql, rel, le, re2, NULL, ">", card_value)))
-					return NULL;
-			} else {
-				if (!(e1 = rel_binop_(sql, rel, le, re1, NULL, ">=", card_value)))
-					return NULL;
-				if (!(e2 = rel_binop_(sql, rel, le, re2, NULL, "<=", card_value)))
-					return NULL;
-			}
-			assert(e1 && e2);
-			if (sc->token == SQL_NOT_BETWEEN) {
-				e1 = rel_binop_(sql, rel, e1, e2, NULL, "or", card_value);
-			} else {
-				e1 = rel_binop_(sql, rel, e1, e2, NULL, "and", card_value);
-			}
-			if (!e1)
+			if (!(e1 = rel_binop_(sql, rel, le, re1, NULL, sc->token == SQL_NOT_BETWEEN ? "<" : ">=", card_value)))
+				return NULL;
+			if (!(e2 = rel_binop_(sql, rel, le, re2, NULL, sc->token == SQL_NOT_BETWEEN ? ">" : "<=", card_value)))
+				return NULL;
+			if (!(e1 = rel_binop_(sql, rel, e1, e2, NULL, sc->token == SQL_NOT_BETWEEN ? "or" : "and", card_value)))
 				return NULL;
 			e2 = exp_compare(sql->sa, e1, exp_atom_bool(sql->sa, 1), cmp_equal);
 			return rel_select_push_exp_down(sql, rel, e2, le, le, re1, re1, re2, f);
-		} else if (sc->token == SQL_NOT_BETWEEN) {
-			rel = rel_compare_exp_(query, rel, le, re1, re2, 3|CMP_BETWEEN|flag, 1, 0, f);
 		} else {
-			rel = rel_compare_exp_(query, rel, le, re1, re2, 3|CMP_BETWEEN|flag, 0, 0, f);
+			rel = rel_compare_exp_(query, rel, le, re1, re2, 3|CMP_BETWEEN|flag, sc->token == SQL_NOT_BETWEEN ? 1 : 0, 0, f);
 		}
 		return rel;
 	}
@@ -3759,14 +3739,14 @@ _rel_aggr(sql_query *query, sql_rel **rel, int distinct, sql_schema *s, char *an
 		else if (list_length(l) <= 63)
 			tpe = sql_bind_localtype("lng");
 #ifdef HAVE_HGE
-		else if (list_length(l) <= 127)
+		else if (have_hge && list_length(l) <= 127)
 			tpe = sql_bind_localtype("hge");
 #endif
 		else
 			return sql_error(sql, 02, SQLSTATE(42000) "SELECT: GROUPING the number of grouping columns is larger"
 								" than the maximum number of representable bits from this server (%d > %d)", list_length(l),
 #ifdef HAVE_HGE
-							 127
+							have_hge ? 127 : 63
 #else
 							 63
 #endif
@@ -4156,6 +4136,8 @@ rel_cast(sql_query *query, sql_rel **rel, symbol *se, int f)
 	}
 	if (e) 
 		e = rel_check_type(sql, tpe, rel ? *rel : NULL, e, type_cast);
+	if (e && e->type == e_convert)
+		exp_label(sql->sa, e, ++sql->label);
 	return e;
 }
 
@@ -4726,7 +4708,7 @@ calculate_window_bound(sql_query *query, sql_rel *p, tokens token, symbol *bound
 		if (!(bclass == EC_NUM || EC_INTERVAL(bclass) || bclass == EC_DEC || bclass == EC_FLT))
 			return sql_error(sql, 02, SQLSTATE(42000) "%s offset must be of a countable SQL type", bound_desc);
 		if ((frame_type == FRAME_ROWS || frame_type == FRAME_GROUPS) && bclass != EC_NUM) {
-			char *err = subtype2string(bt);
+			char *err = subtype2string2(bt);
 			if (!err)
 				return sql_error(sql, 02, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			(void) sql_error(sql, 02, SQLSTATE(42000) "Values on %s boundary on %s frame can't be %s type", bound_desc,
@@ -4744,7 +4726,7 @@ calculate_window_bound(sql_query *query, sql_rel *p, tokens token, symbol *bound
 			if (bclass != EC_DEC && iet->type->eclass == EC_DEC)
 				return sql_error(sql, 02, SQLSTATE(42000) "Values on %s boundary aren't decimals while on input are", bound_desc);
 			if (bclass != EC_SEC && iet->type->eclass == EC_TIME) {
-				char *err = subtype2string(iet);
+				char *err = subtype2string2(iet);
 				if (!err)
 					return sql_error(sql, 02, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 				(void) sql_error(sql, 02, SQLSTATE(42000) "For %s input the %s boundary must be an interval type up to the day", err, bound_desc);
@@ -4752,7 +4734,7 @@ calculate_window_bound(sql_query *query, sql_rel *p, tokens token, symbol *bound
 				return NULL;
 			}
 			if (EC_INTERVAL(bclass) && !EC_TEMP(iet->type->eclass)) {
-				char *err = subtype2string(iet);
+				char *err = subtype2string2(iet);
 				if (!err)
 					return sql_error(sql, 02, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 				(void) sql_error(sql, 02, SQLSTATE(42000) "For %s input the %s boundary must be an interval type", err, bound_desc);
@@ -5365,13 +5347,50 @@ rel_value_exp2(sql_query *query, sql_rel **rel, symbol *se, int f, exp_kind ek)
 	}
 }
 
+static int exps_has_rank(list *exps);
+
+static int
+exp_has_rank(sql_exp *e)
+{
+	switch(e->type) {
+	case e_convert:
+		return exp_has_rank(e->l);
+	case e_func:
+		if (e->r)
+			return 1;
+		/* fall through */
+	case e_aggr:
+		return exps_has_rank(e->l);
+	default:
+		return 0;
+	}
+}
+
+/* TODO create exps_has (list, fptr ) */
+static int
+exps_has_rank(list *exps)
+{
+	if (!exps || list_empty(exps))
+		return 0;
+	for(node *n = exps->h; n; n=n->next){
+		sql_exp *e = n->data;
+
+		if (exp_has_rank(e))
+			return 1;
+	}
+	return 0;
+}
+
 sql_exp *
 rel_value_exp(sql_query *query, sql_rel **rel, symbol *se, int f, exp_kind ek)
 {
+	SelectNode *sn = NULL;
 	sql_exp *e;
 	if (!se)
 		return NULL;
 
+	if (se->token == SQL_SELECT)
+		sn = (SelectNode*)se;
 	if (THRhighwater())
 		return sql_error(query->sql, 10, SQLSTATE(42000) "Query too complex: running out of stack space");
 
@@ -5379,6 +5398,26 @@ rel_value_exp(sql_query *query, sql_rel **rel, symbol *se, int f, exp_kind ek)
 	if (e && (se->token == SQL_SELECT || se->token == SQL_TABLE) && !exp_is_rel(e)) {
 		assert(*rel);
 		return rel_lastexp(query->sql, *rel);
+	}
+	if (exp_has_rel(e) && sn && !sn->from && !sn->where && (ek.card < card_set || ek.card == card_exists) && ek.type != type_relation) {
+		sql_rel *r = exp_rel_get_rel(query->sql->sa, e);
+		sql_rel *l = r->l;
+
+		if (r && is_simple_project(r->op) && l && is_simple_project(l->op) && !l->l && !exps_has_rank(r->exps) && list_length(r->exps) == 1) { /* should be a simple column or value */
+			if (list_length(r->exps) > 1) { /* Todo make sure the in handling can handle a list ( value lists), instead of just a list of relations */
+				e = exp_values(query->sql->sa, r->exps);
+			} else {
+				e = r->exps->h->data;
+				if (*rel && !exp_has_rel(e)) {
+					rel_bind_var(query->sql, *rel, e);
+					if (exp_has_freevar(query->sql, e) && is_sql_aggr(f)) {
+						sql_rel *outer = query_fetch_outer(query, exp_has_freevar(query->sql, e)-1);
+						query_outer_pop_last_used(query, exp_has_freevar(query->sql, e)-1);
+					        reset_outer(outer);
+					}
+				}
+			}
+		}
 	}
 	return e;
 }

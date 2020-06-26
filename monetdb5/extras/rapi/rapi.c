@@ -59,14 +59,17 @@ static bool RAPIEnabled(void) {
 // The R-environment should be single threaded, calling for some protective measures.
 static MT_Lock rapiLock = MT_LOCK_INITIALIZER("rapiLock");
 static bool rapiInitialized = false;
+#if 0
 static char* rtypenames[] = { "NIL", "SYM", "LIST", "CLO", "ENV", "PROM",
 		"LANG", "SPECIAL", "BUILTIN", "CHAR", "LGL", "unknown", "unknown",
 		"INT", "REAL", "CPLX", "STR", "DOT", "ANY", "VEC", "EXPR", "BCODE",
 		"EXTPTR", "WEAKREF", "RAW", "S4" };
+#endif
 
 static Client rapiClient = NULL;
 
 
+#if 0
 // helper function to translate R TYPEOF() return values to something readable
 char* rtypename(int rtypeid) {
 	if (rtypeid < 0 || rtypeid > 25) {
@@ -74,8 +77,9 @@ char* rtypename(int rtypeid) {
 	} else
 		return rtypenames[rtypeid];
 }
+#endif
 
-void writeConsoleEx(const char * buf, int buflen, int foo) {
+static void writeConsoleEx(const char * buf, int buflen, int foo) {
 	(void) buflen;
 	(void) foo;
 	(void) buf; // silence compiler
@@ -84,11 +88,11 @@ void writeConsoleEx(const char * buf, int buflen, int foo) {
 #endif
 }
 
-void writeConsole(const char * buf, int buflen) {
+static void writeConsole(const char * buf, int buflen) {
 	writeConsoleEx(buf, buflen, -42);
 }
 
-void clearRErrConsole(void) {
+static void clearRErrConsole(void) {
 	// Do nothing?
 }
 
@@ -230,16 +234,7 @@ static char *RAPIinstalladdons(void) {
 	return NULL;
 }
 
-rapi_export str RAPIevalStd(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
-							InstrPtr pci) {
-	return RAPIeval(cntxt, mb, stk, pci, 0);
-}
-rapi_export str RAPIevalAggr(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
-							 InstrPtr pci) {
-	return RAPIeval(cntxt, mb, stk, pci, 1);
-}
-
-str RAPIeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bit grouped) {
+static str RAPIeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bit grouped) {
 	sql_func * sqlfun = NULL;
 	str exprStr = *getArgReference_str(stk, pci, pci->retc + 1);
 
@@ -489,6 +484,15 @@ str RAPIeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bit groupe
 	return msg;
 }
 
+static str RAPIevalStd(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
+							InstrPtr pci) {
+	return RAPIeval(cntxt, mb, stk, pci, 0);
+}
+static str RAPIevalAggr(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
+							 InstrPtr pci) {
+	return RAPIeval(cntxt, mb, stk, pci, 1);
+}
+
 void* RAPIloopback(void *query) {
 	res_table* output = NULL;
 	char* querystr = (char*)CHAR(STRING_ELT(query, 0));
@@ -527,7 +531,7 @@ void* RAPIloopback(void *query) {
 }
 
 
-str RAPIprelude(void *ret) {
+static str RAPIprelude(void *ret) {
 	(void) ret;
 
 	if (RAPIEnabled()) {
