@@ -1976,6 +1976,7 @@ char *msab_getUUID(char **ret);
 char *msab_getUplogInfo(sabuplog *ret, const sabdb *db);
 char *msab_marchConnection(const char *host, const int port);
 char *msab_marchScenario(const char *lang);
+char *msab_pickSecret(char **generated_secret);
 char *msab_registerStarted(void);
 char *msab_registerStarting(void);
 char *msab_registerStop(void);
