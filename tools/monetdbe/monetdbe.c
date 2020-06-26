@@ -1026,7 +1026,11 @@ char*
 monetdbe_append(monetdbe_database dbhdl, const char* schema, const char* table, monetdbe_column **input /*bat *batids*/, size_t column_count)
 {
 	monetdbe_database_internal *mdbe = (monetdbe_database_internal*)dbhdl;
-	mvc *m;
+	mvc *m = NULL;
+	sql_schema *s = NULL;
+	sql_table *t = NULL;
+	size_t i, cnt = input[0]->count;
+	node *n;
 
 	MT_lock_set(&embedded_lock);
 	if ((mdbe->msg = validate_database_handle(mdbe, "monetdbe.monetdbe_append")) != MAL_SUCCEED) {
@@ -1056,9 +1060,6 @@ monetdbe_append(monetdbe_database dbhdl, const char* schema, const char* table, 
 		goto cleanup;
 	}
 
-	sql_schema *s;
-	sql_table *t;
-
 	if (schema) {
 		if (!(s = mvc_bind_schema(m, schema))) {
 			mdbe->msg = createException(MAL, "monetdbe.monetdbe_append", "Schema missing %s", schema);
@@ -1079,8 +1080,7 @@ monetdbe_append(monetdbe_database dbhdl, const char* schema, const char* table, 
 		goto cleanup;
 	}
 
-	size_t i, cnt = input[0]->count;
-	node *n;
+	cnt = input[0]->count;
 
 	for (i = 0, n = t->columns.set->h; i < column_count && n; i++, n = n->next) {
 		sql_column *c = n->data;
