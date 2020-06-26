@@ -144,7 +144,7 @@ project (
 #) t
 #where b3_increase * 2 <= b2_increase
 #order by date, time;
-% .t,	.t,	.t,	.t,	.t,	.t,	.t,	.t # table_name
+% .t,	.t,	.t,	.t,	.t,	.t,	.t,	sys.t # table_name
 % id,   open_auction_id,        date,   time,   personref,      increase,       b3_increase,    b2_increase # name
 % int,  varchar,        varchar,        varchar,        varchar,        double, double, double # type
 % 2,    13,     10,     8,      8,      24,     24,     24 # length
