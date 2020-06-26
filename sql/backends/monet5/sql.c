@@ -3622,16 +3622,70 @@ daytime_2time_daytime(daytime *res, const daytime *v, const int *digits)
 }
 
 str
-second_interval_2_daytime(daytime *res, const lng *s, const int *digits)
+second_interval_2_daytime(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	daytime d;
+	str msg = MAL_SUCCEED;
+	daytime *restrict ret = NULL;
+	int tpe = getArgType(mb, pci, 1), *digits = getArgReference_int(stk, pci, 2);
+	bool is_a_bat = false;
+	BAT *b = NULL, *res = NULL;
+	bat *r;
+	BUN q = 0;
 
-	if (*s == lng_nil) {
-		*res = daytime_nil;
-		return MAL_SUCCEED;
+	(void) cntxt;
+	is_a_bat = isaBatType(tpe);
+	if (is_a_bat) {
+		tpe = getBatType(tpe);
+		if (!(b = BATdescriptor(*getArgReference_bat(stk, pci, 1)))) {
+			msg = createException(SQL, "calc.second_interval_2_daytime", SQLSTATE(HY005) "Cannot access column descriptor");
+			goto bailout;
+		}
+		q = BATcount(b);
+		if (!(res = COLnew(b->hseqbase, TYPE_daytime, q, TRANSIENT))) {
+			msg = createException(SQL, "calc.second_interval_2_daytime", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+			goto bailout;
+		}
+		r = getArgReference_bat(stk, pci, 0);
+		ret = (daytime*) Tloc(res, 0);
+	} else {
+		ret = (daytime*) getArgReference(stk, pci, 0);
 	}
-	d = daytime_add_usec(daytime_create(0, 0, 0, 0), *s * 1000);
-	return daytime_2time_daytime(res, &d, digits);
+
+	if (is_a_bat) {
+		lng *restrict vals = (lng*) Tloc(b, 0);
+		for (BUN i = 0 ; i < q && !msg ; i++) {
+			lng next = vals[i];
+			if (is_lng_nil(next)) {
+				ret[i] = daytime_nil;
+			} else {
+				daytime d = daytime_add_usec(daytime_create(0, 0, 0, 0), next * 1000);
+				msg = daytime_2time_daytime(&(ret[i]), &d, digits);
+			}
+		}
+	} else {
+		lng next = *(lng*)getArgReference(stk, pci, 1);
+		if (is_lng_nil(next)) {
+			*ret = daytime_nil;
+		} else {
+			daytime d = daytime_add_usec(daytime_create(0, 0, 0, 0), next * 1000);
+			msg = daytime_2time_daytime(ret, &d, digits);
+		}
+	}
+
+bailout:
+	if (res && !msg) {
+		BATsetcount(res, q);
+		res->tnil = b->tnil;
+		res->tnonil = b->tnonil;
+		res->tkey = BATcount(res) <= 1;
+		res->tsorted = BATcount(res) <= 1;
+		res->trevsorted = BATcount(res) <= 1;
+		BBPkeepref(*r = res->batCacheid);
+	} else if (res)
+		BBPreclaim(res);
+	if (b)
+		BBPunfix(b->batCacheid);
+	return msg;
 }
 
 str
@@ -4229,36 +4283,81 @@ bailout:
 }
 
 str
-second_interval_daytime(lng *res, const daytime *s, const int *d, const int *sk)
+second_interval_daytime(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	int k = digits2sk(*d);
-	lng r = *(int *) s;
+	str msg = MAL_SUCCEED;
+	lng *restrict ret = NULL, multiplier = 1, divider = 1;
+	int tpe = getArgType(mb, pci, 1), k = digits2ek(*getArgReference_int(stk, pci, 2));
+	bool is_a_bat = false;
+	BAT *b = NULL, *res = NULL;
+	bat *r;
+	BUN q = 0;
 
-	(void) sk;
-	if (is_daytime_nil(*s)) {
-		*res = lng_nil;
-		return MAL_SUCCEED;
+	(void) cntxt;
+	is_a_bat = isaBatType(tpe);
+	if (is_a_bat) {
+		tpe = getBatType(tpe);
+		if (!(b = BATdescriptor(*getArgReference_bat(stk, pci, 1)))) {
+			msg = createException(SQL, "calc.second_interval_daytime", SQLSTATE(HY005) "Cannot access column descriptor");
+			goto bailout;
+		}
+		q = BATcount(b);
+		if (!(res = COLnew(b->hseqbase, TYPE_lng, q, TRANSIENT))) {
+			msg = createException(SQL, "calc.second_interval_daytime", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+			goto bailout;
+		}
+		r = getArgReference_bat(stk, pci, 0);
+		ret = (lng*) Tloc(res, 0);
+	} else {
+		ret = getArgReference_lng(stk, pci, 0);
 	}
+
 	switch (k) {
 	case isec:
 		break;
 	case imin:
-		r /= 60000;
-		r *= 60000;
+		divider *= 60000;
+		multiplier *= 60000;
 		break;
 	case ihour:
-		r /= 3600000;
-		r *= 3600000;
+		divider *= 3600000;
+		multiplier *= 3600000;
 		break;
 	case iday:
-		r /= (24 * 3600000);
-		r *= (24 * 3600000);
+		divider *= (24 * 3600000);
+		multiplier *= (24 * 3600000);
 		break;
-	default:
-		throw(ILLARG, "calc.second_interval", SQLSTATE(42000) "Illegal argument in daytime interval");
+	default: {
+		msg = createException(ILLARG, "calc.second_interval_daytime", SQLSTATE(42000) "Illegal argument in daytime interval");
+		goto bailout;
 	}
-	*res = r;
-	return MAL_SUCCEED;
+	}
+
+	if (is_a_bat) {
+		daytime *restrict vals = (daytime*) Tloc(b, 0);
+		for (BUN i = 0 ; i < q ; i++) {
+			daytime next = vals[i];
+			ret[i] = is_daytime_nil(next) ? lng_nil : (next / divider) * multiplier;
+		}
+	} else {
+		daytime next = *(daytime*)getArgReference(stk, pci, 1);
+		*ret = is_daytime_nil(next) ? lng_nil : (next / divider) * multiplier;
+	}
+
+bailout:
+	if (res && !msg) {
+		BATsetcount(res, q);
+		res->tnil = b->tnil;
+		res->tnonil = b->tnonil;
+		res->tkey = BATcount(res) <= 1;
+		res->tsorted = BATcount(res) <= 1;
+		res->trevsorted = BATcount(res) <= 1;
+		BBPkeepref(*r = res->batCacheid);
+	} else if (res)
+		BBPreclaim(res);
+	if (b)
+		BBPunfix(b->batCacheid);
+	return msg;
 }
 
 str
@@ -6339,10 +6438,14 @@ static mel_func sql_init_funcs[] = {
  pattern("sql", "drop_hash", SQLdrop_hash, true, "Drop hash indices for the given table", args(0,2, arg("sch",str),arg("tbl",str))),
  pattern("sql", "prelude", SQLprelude, false, "", noargs),
  command("sql", "epilogue", SQLepilogue, false, "", noargs),
- command("calc", "second_interval", second_interval_daytime, false, "cast daytime to a second_interval and check for overflow", args(1,4, arg("",lng),arg("v",daytime),arg("ek",int),arg("sk",int))),
- command("calc", "daytime", second_interval_2_daytime, false, "cast second_interval to a daytime and check for overflow", args(1,3, arg("",daytime),arg("v",lng),arg("d",int))),
+ pattern("calc", "second_interval", second_interval_daytime, false, "cast daytime to a second_interval and check for overflow", args(1,4, arg("",lng),arg("v",daytime),arg("ek",int),arg("sk",int))),
+ pattern("batcalc", "second_interval", second_interval_daytime, false, "cast daytime to a second_interval and check for overflow", args(1,4, batarg("",lng),batarg("v",daytime),arg("ek",int),arg("sk",int))),
+ pattern("calc", "daytime", second_interval_2_daytime, false, "cast second_interval to a daytime and check for overflow", args(1,3, arg("",daytime),arg("v",lng),arg("d",int))),
+ pattern("batcalc", "daytime", second_interval_2_daytime, false, "cast second_interval to a daytime and check for overflow", args(1,3, batarg("",daytime),batarg("v",lng),arg("d",int))),
  command("calc", "daytime", timestamp_2_daytime, false, "cast timestamp to a daytime and check for overflow", args(1,3, arg("",daytime),arg("v",timestamp),arg("d",int))),
+ command("batcalc", "daytime", battimestamp_2_daytime, false, "cast timestamp to a daytime and check for overflow", args(1,3, batarg("",daytime),batarg("v",timestamp),arg("d",int))),
  command("calc", "timestamp", date_2_timestamp, false, "cast date to a timestamp and check for overflow", args(1,3, arg("",timestamp),arg("v",date),arg("d",int))),
+ command("batcalc", "timestamp", batdate_2_timestamp, false, "cast date to a timestamp and check for overflow", args(1,3, batarg("",timestamp),batarg("v",date),arg("d",int))),
  command("calc", "index", STRindex_bte, false, "Return the offsets as an index bat", args(1,3, arg("",bte),arg("v",str),arg("u",bit))),
  command("batcalc", "index", BATSTRindex_bte, false, "Return the offsets as an index bat", args(1,3, batarg("",bte),batarg("v",str),arg("u",bit))),
  command("calc", "index", STRindex_sht, false, "Return the offsets as an index bat", args(1,3, arg("",sht),arg("v",str),arg("u",bit))),

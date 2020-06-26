@@ -252,3 +252,76 @@ batnil_ce_2time_daytime(bat *res, const bat *bid, const int *digits, const bat *
 	return batnil_2time_daytime(res, bid, digits);
 }
 
+str
+battimestamp_2_daytime(bat *res, const bat *bid, const int *digits)
+{
+	BAT *b, *dst;
+	BUN p, q;
+	char *msg = NULL;
+
+	if ((b = BATdescriptor(*bid)) == NULL) {
+		throw(SQL, "batcalc.battimestamp_2_daytime", SQLSTATE(HY005) "Cannot access column descriptor");
+	}
+	dst = COLnew(b->hseqbase, TYPE_daytime, BATcount(b), TRANSIENT);
+	if (dst == NULL) {
+		BBPunfix(b->batCacheid);
+		throw(SQL, "sql.daytime", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+	}
+	
+	const timestamp *v = (const timestamp *) Tloc(b, 0);
+	BATloop(b, p, q) {
+		daytime r;
+		msg = timestamp_2_daytime(&r, v, digits);
+		if (msg) {
+			BBPunfix(b->batCacheid);
+			BBPreclaim(dst);
+			return msg;
+		}
+		if (BUNappend(dst, &r, false) != GDK_SUCCEED) {
+			BBPunfix(b->batCacheid);
+			BBPreclaim(dst);
+			throw(SQL, "sql.daytime", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		}
+		v++;
+	}
+	BBPkeepref(*res = dst->batCacheid);
+	BBPunfix(b->batCacheid);
+	return MAL_SUCCEED;
+}
+
+str
+batdate_2_timestamp(bat *res, const bat *bid, const int *digits)
+{
+	BAT *b, *dst;
+	BUN p, q;
+	char *msg = NULL;
+
+	if ((b = BATdescriptor(*bid)) == NULL) {
+		throw(SQL, "batcalc.batdate_2_timestamp", SQLSTATE(HY005) "Cannot access column descriptor");
+	}
+	dst = COLnew(b->hseqbase, TYPE_timestamp, BATcount(b), TRANSIENT);
+	if (dst == NULL) {
+		BBPunfix(b->batCacheid);
+		throw(SQL, "sql.daytime", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+	}
+	
+	const date *v = (const date *) Tloc(b, 0);
+	BATloop(b, p, q) {
+		timestamp r;
+		msg = date_2_timestamp(&r, v, digits);
+		if (msg) {
+			BBPunfix(b->batCacheid);
+			BBPreclaim(dst);
+			return msg;
+		}
+		if (BUNappend(dst, &r, false) != GDK_SUCCEED) {
+			BBPunfix(b->batCacheid);
+			BBPreclaim(dst);
+			throw(SQL, "sql.daytime", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		}
+		v++;
+	}
+	BBPkeepref(*res = dst->batCacheid);
+	BBPunfix(b->batCacheid);
+	return MAL_SUCCEED;
+}

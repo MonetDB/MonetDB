@@ -282,7 +282,7 @@ sql5_export str SQLbat_alpha_cst(bat *res, const bat *decl, const dbl *theta);
 sql5_export str SQLcst_alpha_bat(bat *res, const dbl *decl, const bat *theta);
 sql5_export str month_interval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 sql5_export str second_interval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-sql5_export str second_interval_daytime(lng *res, const daytime *s, const int *ek, const int *sk);
+sql5_export str second_interval_daytime(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 
 #include "sql_cast.h"
 
@@ -290,9 +290,11 @@ sql5_export str checkSQLContext(Client cntxt);
 sql5_export str getSQLContext(Client cntxt, MalBlkPtr mb, mvc **c, backend **b);
 
 sql5_export void freeVariables(Client c, MalBlkPtr mb, MalStkPtr glb, int start);
-sql5_export str second_interval_2_daytime(daytime *res, const lng *s, const int *d);
+sql5_export str second_interval_2_daytime(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 sql5_export str timestamp_2_daytime(daytime *res, const timestamp *v, const int *d);
+sql5_export str battimestamp_2_daytime(bat *res, const bat *bid, const int *d);
 sql5_export str date_2_timestamp(timestamp *res, const date *v, const int *d);
+sql5_export str batdate_2_timestamp(bat *res, const bat *bid, const int *d);
 sql5_export str SQLcurrent_daytime(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 sql5_export str SQLcurrent_timestamp(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 
