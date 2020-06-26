@@ -68,7 +68,6 @@ mutils_export char *dirname(char *path);
 #define F_LOCK	1		/* lock a region for exclusive use */
 
 mutils_export int MT_lockf(char *filename, int mode);
-mutils_export pid_t MT_get_locking_pid(char *filename);
 
 mutils_export void print_trace(void);
 

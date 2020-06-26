@@ -106,14 +106,11 @@ set(PROGRAM_PERMISSIONS_DEFAULT
 
 find_program(BASH NAMES bash DOC "bash interpreter fullpath")
 
+configure_file(monetdb_config.h.in
+  ${CMAKE_CURRENT_BINARY_DIR}/monetdb_config.h)
 if(WIN32)
-  configure_file(monetdb_config_win32.h.in
-    ${CMAKE_CURRENT_BINARY_DIR}/monetdb_config.h)
   configure_file(unistd.h.in
     ${CMAKE_CURRENT_BINARY_DIR}/unistd.h)
-else()
-  configure_file(monetdb_config.h.in
-    ${CMAKE_CURRENT_BINARY_DIR}/monetdb_config.h)
 endif()
 
 add_library(monetdb_config_header
