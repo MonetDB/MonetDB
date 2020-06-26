@@ -1093,7 +1093,13 @@ monetdbe_append(monetdbe_database dbhdl, const char* schema, const char* table, 
 			mdbe->msg = createException(SQL, "monetdbe.monetdbe_append", "Cannot find type for column %zu", i);
 			goto cleanup;
 		}
-		if ((mtype >= TYPE_bit && mtype <= TYPE_lng)) {
+		if (mtype >= TYPE_bit && mtype <= 
+#ifdef HAVE_HGE
+	TYPE_hge
+#else
+	TYPE_lng
+#endif
+		) {
 			w = ATOMsize(mtype);
 			for (size_t j=0; j<cnt; j++, v+=w){
 				if (store_funcs.append_col(m->session->tr, c, v, mtype) != 0) {
