@@ -3954,7 +3954,7 @@ month_interval_str(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			const str next = BUNtail(bi, i);
 
 			if (strNil(next)) {
-				*ret = int_nil;
+				ret[i] = int_nil;
 			} else {
 				lng upcast;
 				if (interval_from_str(next, d, sk, &upcast) < 0) {
