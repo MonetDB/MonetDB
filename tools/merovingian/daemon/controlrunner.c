@@ -351,7 +351,7 @@ static void ctl_handle_client(
 					strcmp(p, "kill") == 0)
 			{
 				mtype mtype = 0;
-				pid_t pid;
+				pid_t pid = 0;
 
 				// First look for something started by ourself.
 				pthread_mutex_lock(&_mero_topdp_lock);

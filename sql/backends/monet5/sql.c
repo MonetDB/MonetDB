@@ -4096,7 +4096,7 @@ month_interval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	int k = digits2ek(*getArgReference_int(stk, pci, 2)), tpe = getArgType(mb, pci, 1);
 	bool is_a_bat = false;
 	BAT *b = NULL, *res = NULL;
-	bat *r;
+	bat *r = NULL;
 	BUN q = 0;
 
 	(void) cntxt;
@@ -4192,7 +4192,7 @@ second_interval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	int tpe = getArgType(mb, pci, 1), k = digits2ek(*getArgReference_int(stk, pci, 2)), scale = 0;
 	bool is_a_bat = false;
 	BAT *b = NULL, *res = NULL;
-	bat *r;
+	bat *r = NULL;
 	BUN q = 0;
 
 	(void) cntxt;
@@ -6323,19 +6323,19 @@ static mel_func sql_init_funcs[] = {
  command("sql", "round", sht_round_wrap, false, "round off the decimal v(d,s) to r digits behind the dot (if r < 0, before the dot)", args(1,5, arg("",sht),arg("v",sht),arg("d",int),arg("s",int),arg("r",bte))),
  command("batsql", "round", sht_bat_round_wrap, false, "round off the decimal v(d,s) to r digits behind the dot (if r < 0, before the dot)", args(1,5, batarg("",sht),batarg("v",sht),arg("d",int),arg("s",int),arg("r",bte))),
  command("calc", "second_interval", sht_dec2second_interval, false, "cast sht decimal to a second_interval", args(1,5, arg("",lng),arg("sc",int),arg("v",sht),arg("ek",int),arg("sk",int))),
- command("batcalc", "second_interval", sht_batdec2second_interval, false, "cast sht decimal to a second_interval", args(1,5, batarg("",lng),arg("sc",int),batarg("v",sht),arg("ek",int),arg("sk",int))), 
+ command("batcalc", "second_interval", sht_batdec2second_interval, false, "cast sht decimal to a second_interval", args(1,5, batarg("",lng),arg("sc",int),batarg("v",sht),arg("ek",int),arg("sk",int))),
  command("sql", "dec_round", int_dec_round_wrap, false, "round off the value v to nearests multiple of r", args(1,3, arg("",int),arg("v",int),arg("r",int))),
  command("batsql", "dec_round", int_bat_dec_round_wrap, false, "round off the value v to nearests multiple of r", args(1,3, batarg("",int),batarg("v",int),arg("r",int))),
  command("sql", "round", int_round_wrap, false, "round off the decimal v(d,s) to r digits behind the dot (if r < 0, before the dot)", args(1,5, arg("",int),arg("v",int),arg("d",int),arg("s",int),arg("r",bte))),
  command("batsql", "round", int_bat_round_wrap, false, "round off the decimal v(d,s) to r digits behind the dot (if r < 0, before the dot)", args(1,5, batarg("",int),batarg("v",int),arg("d",int),arg("s",int),arg("r",bte))),
  command("calc", "second_interval", int_dec2second_interval, false, "cast int decimal to a second_interval", args(1,5, arg("",lng),arg("sc",int),arg("v",int),arg("ek",int),arg("sk",int))),
- command("batcalc", "second_interval", int_batdec2second_interval, false, "cast int decimal to a second_interval", args(1,5, batarg("",lng),arg("sc",int),batarg("v",int),arg("ek",int),arg("sk",int))), 
+ command("batcalc", "second_interval", int_batdec2second_interval, false, "cast int decimal to a second_interval", args(1,5, batarg("",lng),arg("sc",int),batarg("v",int),arg("ek",int),arg("sk",int))),
  command("sql", "dec_round", lng_dec_round_wrap, false, "round off the value v to nearests multiple of r", args(1,3, arg("",lng),arg("v",lng),arg("r",lng))),
  command("batsql", "dec_round", lng_bat_dec_round_wrap, false, "round off the value v to nearests multiple of r", args(1,3, batarg("",lng),batarg("v",lng),arg("r",lng))),
  command("sql", "round", lng_round_wrap, false, "round off the decimal v(d,s) to r digits behind the dot (if r < 0, before the dot)", args(1,5, arg("",lng),arg("v",lng),arg("d",int),arg("s",int),arg("r",bte))),
  command("batsql", "round", lng_bat_round_wrap, false, "round off the decimal v(d,s) to r digits behind the dot (if r < 0, before the dot)", args(1,5, batarg("",lng),batarg("v",lng),arg("d",int),arg("s",int),arg("r",bte))),
  command("calc", "second_interval", lng_dec2second_interval, false, "cast lng decimal to a second_interval", args(1,5, arg("",lng),arg("sc",int),arg("v",lng),arg("ek",int),arg("sk",int))),
- command("batcalc", "second_interval", lng_batdec2second_interval, false, "cast lng decimal to a second_interval", args(1,5, batarg("",lng),arg("sc",int),batarg("v",lng),arg("ek",int),arg("sk",int))), 
+ command("batcalc", "second_interval", lng_batdec2second_interval, false, "cast lng decimal to a second_interval", args(1,5, batarg("",lng),arg("sc",int),batarg("v",lng),arg("ek",int),arg("sk",int))),
  command("sql", "dec_round", flt_dec_round_wrap, false, "round off the value v to nearests multiple of r", args(1,3, arg("",flt),arg("v",flt),arg("r",flt))),
  command("batsql", "dec_round", flt_bat_dec_round_wrap, false, "round off the value v to nearests multiple of r", args(1,3, batarg("",flt),batarg("v",flt),arg("r",flt))),
  command("sql", "round", flt_round_wrap, false, "round off the floating point v to r digits behind the dot (if r < 0, before the dot)", args(1,3, arg("",flt),arg("v",flt),arg("r",bte))),
@@ -7157,7 +7157,7 @@ static mel_func sql_init_funcs[] = {
  command("sql", "round", hge_round_wrap, false, "round off the decimal v(d,s) to r digits behind the dot (if r < 0, before the dot)", args(1,5, arg("",hge),arg("v",hge),arg("d",int),arg("s",int),arg("r",bte))),
  command("batsql", "round", hge_bat_round_wrap, false, "round off the decimal v(d,s) to r digits behind the dot (if r < 0, before the dot)", args(1,5, batarg("",hge),batarg("v",hge),arg("d",int),arg("s",int),arg("r",bte))),
  command("calc", "second_interval", hge_dec2second_interval, false, "cast hge decimal to a second_interval", args(1,5, arg("",lng),arg("sc",int),arg("v",hge),arg("ek",int),arg("sk",int))),
- command("batcalc", "second_interval", hge_batdec2second_interval, false, "cast hge decimal to a second_interval", args(1,5, batarg("",lng),arg("sc",int),batarg("v",hge),arg("ek",int),arg("sk",int))), 
+ command("batcalc", "second_interval", hge_batdec2second_interval, false, "cast hge decimal to a second_interval", args(1,5, batarg("",lng),arg("sc",int),batarg("v",hge),arg("ek",int),arg("sk",int))),
  command("calc", "hge", nil_2dec_hge, false, "cast to dec(hge) and check for overflow", args(1,4, arg("",hge),arg("v",void),arg("digits",int),arg("scale",int))),
  command("batcalc", "hge", batnil_2dec_hge, false, "cast to dec(hge) and check for overflow", args(1,4, batarg("",hge),batarg("v",void),arg("digits",int),arg("scale",int))),
  command("batcalc", "hge", batnil_ce_2dec_hge, false, "cast to dec(hge) and check for overflow", args(1,5, batarg("",hge),batarg("v",void),arg("digits",int),arg("scale",int),batarg("r",bit))),
