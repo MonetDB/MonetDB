@@ -4043,7 +4043,7 @@ second_interval_str(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		const str next = *getArgReference_str(stk, pci, 1);
 		if (strNil(next)) {
 			*ret = lng_nil;
-		} if (interval_from_str(next, d, sk, ret) < 0) {
+		} else if (interval_from_str(next, d, sk, ret) < 0) {
 			msg = createException(SQL, "calc.second_interval_str", SQLSTATE(42000) "Wrong format (%s)", next);
 			goto bailout;
 		}
