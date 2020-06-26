@@ -452,7 +452,9 @@ dec2second_interval(lng *res, const int *sc, const TYPE *dec, const int *ek, con
 
 	(void) ek;
 	(void) sk;
-	if (*sc < 3) {
+	if (ISNIL(TYPE)(*dec)) {
+		value = lng_nil;
+	} else if (*sc < 3) {
 		int d = 3 - *sc;
 		value *= scales[d];
 	} else if (*sc > 3) {

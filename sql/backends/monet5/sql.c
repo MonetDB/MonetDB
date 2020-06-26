@@ -3808,18 +3808,26 @@ month_interval_str(int *ret, const str *s, const int *d, const int *sk)
 {
 	lng res;
 
-	if (interval_from_str(*s, *d, *sk, &res) < 0)
-		throw(SQL, "calc.month_interval", SQLSTATE(42000) "Wrong format (%s)", *s);
-	assert((lng) GDK_int_min <= res && res <= (lng) GDK_int_max);
-	*ret = (int) res;
+	if (strNil(*s)) {
+		*ret = int_nil;
+	} else {
+		if (interval_from_str(*s, *d, *sk, &res) < 0)
+			throw(SQL, "calc.month_interval", SQLSTATE(42000) "Wrong format (%s)", *s);
+		assert((lng) GDK_int_min <= res && res <= (lng) GDK_int_max);
+		*ret = (int) res;
+	}
 	return MAL_SUCCEED;
 }
 
 str
 second_interval_str(lng *res, const str *s, const int *d, const int *sk)
 {
-	if (interval_from_str(*s, *d, *sk, res) < 0)
-		throw(SQL, "calc.second_interval", SQLSTATE(42000) "Wrong format (%s)", *s);
+	if (strNil(*s)) {
+		*res = lng_nil;
+	} else {
+		if (interval_from_str(*s, *d, *sk, res) < 0)
+			throw(SQL, "calc.second_interval", SQLSTATE(42000) "Wrong format (%s)", *s);
+	}
 	return MAL_SUCCEED;
 }
 

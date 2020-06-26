@@ -160,3 +160,6 @@ select greatest(null, null);
 select sql_min(null, null);
 
 select 'a' like 'a' escape 'a'; --error, like sequence ending with escape character 
+
+select cast(x as interval second) from (values ('1'), (NULL), ('100'), (NULL)) as x(x);
+select cast(x as interval month) from (values ('1'), (NULL), ('100'), (NULL)) as x(x);
