@@ -149,6 +149,7 @@ sql5_export str str_2dec_bte(bte *res, const str *val, const int *d, const int *
 sql5_export str batstr_2dec_bte(bat *res, const bat *val, const int *d, const int *sc);
 sql5_export str batstr_ce_2dec_bte(bat *res, const bat *val, const int *d, const int *sc, const bat *r);
 sql5_export str bte_dec2second_interval(lng *res, const int *sc, const bte *dec, const int *ek, const int *sk);
+sql5_export str bte_batdec2second_interval(bat *res, const int *sc, const bat *bid, const int *ek, const int *sk);
 
 sql5_export str nil_2dec_bte(bte *res, const void *val, const int *d, const int *sc);
 sql5_export str batnil_2dec_bte(bat *res, const bat *val, const int *d, const int *sc);
@@ -162,6 +163,7 @@ sql5_export str str_2dec_sht(sht *res, const str *val, const int *d, const int *
 sql5_export str batstr_2dec_sht(bat *res, const bat *val, const int *d, const int *sc);
 sql5_export str batstr_ce_2dec_sht(bat *res, const bat *val, const int *d, const int *sc, const bat *r);
 sql5_export str sht_dec2second_interval(lng *res, const int *sc, const sht *dec, const int *ek, const int *sk);
+sql5_export str sht_batdec2second_interval(bat *res, const int *sc, const bat *bid, const int *ek, const int *sk);
 
 sql5_export str nil_2dec_sht(sht *res, const void *val, const int *d, const int *sc);
 sql5_export str batnil_2dec_sht(bat *res, const bat *val, const int *d, const int *sc);
@@ -175,6 +177,7 @@ sql5_export str str_2dec_int(int *res, const str *val, const int *d, const int *
 sql5_export str batstr_2dec_int(bat *res, const bat *val, const int *d, const int *sc);
 sql5_export str batstr_ce_2dec_int(bat *res, const bat *val, const int *d, const int *sc, const bat *r);
 sql5_export str int_dec2second_interval(lng *res, const int *sc, const int *dec, const int *ek, const int *sk);
+sql5_export str int_batdec2second_interval(bat *res, const int *sc, const bat *bid, const int *ek, const int *sk);
 
 sql5_export str nil_2dec_int(int *res, const void *val, const int *d, const int *sc);
 sql5_export str batnil_2dec_int(bat *res, const bat *val, const int *d, const int *sc);
@@ -188,6 +191,7 @@ sql5_export str str_2dec_lng(lng *res, const str *val, const int *d, const int *
 sql5_export str batstr_2dec_lng(bat *res, const bat *val, const int *d, const int *sc);
 sql5_export str batstr_ce_2dec_lng(bat *res, const bat *val, const int *d, const int *sc, const bat *r);
 sql5_export str lng_dec2second_interval(lng *res, const int *sc, const lng *dec, const int *ek, const int *sk);
+sql5_export str lng_batdec2second_interval(bat *res, const int *sc, const bat *bid, const int *ek, const int *sk);
 
 sql5_export str nil_2dec_lng(lng *res, const void *val, const int *d, const int *sc);
 sql5_export str batnil_2dec_lng(bat *res, const bat *val, const int *d, const int *sc);
@@ -202,6 +206,7 @@ sql5_export str str_2dec_hge(hge *res, const str *val, const int *d, const int *
 sql5_export str batstr_2dec_hge(bat *res, const bat *val, const int *d, const int *sc);
 sql5_export str batstr_ce_2dec_hge(bat *res, const bat *val, const int *d, const int *sc, const bat *r);
 sql5_export str hge_dec2second_interval(lng *res, const int *sc, const hge *dec, const int *ek, const int *sk);
+sql5_export str hge_batdec2second_interval(bat *res, const int *sc, const bat *bid, const int *ek, const int *sk);
 
 sql5_export str nil_2dec_hge(hge *res, const void *val, const int *d, const int *sc);
 sql5_export str batnil_2dec_hge(bat *res, const bat *val, const int *d, const int *sc);
