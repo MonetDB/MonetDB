@@ -80,21 +80,23 @@ catch InvalidCredentialsException:str;  	#[48] (0)  26
 exit InvalidCredentialsException:str;   	#[51] (0)  26 
 end user.foo;                           	#[52] (0)  
 0: MALException:addUser:user 'monetdb' already exists
-[ 1@0 ]
 [ 2@0 ]
+[ 3@0	]
 #--------------------------#
 # h	t	t  # name
 # void	void	str  # type
 #--------------------------#
 [ 0@0,	0@0,	"monetdb"  ]
-[ 1@0,	1@0,	"test"  ]
-[ 2@0,	2@0,	"checkpoint"  ]
+[ 1@0,	1@0,	".snapshot"	]
+[ 2@0,	2@0,	"test"	]
+[ 3@0,	3@0,	"checkpoint"	]
 #--------------------------#
 # h	t	t  # name
 # void	void	str  # type
 #--------------------------#
 [ 0@0,	0@0,	"monetdb"  ]
-[ 1@0,	1@0,	"test"  ]
+[ 1@0,	1@0,	".snapshot"	]
+[ 2@0,	2@0,	"test"	]
 1: InvalidCredentialsException:setPassword:The administrator cannot set its own password, use changePassword instead
 3: InvalidCredentialsException:checkCredentials:invalid credentials for user 'monetdb'
 4: InvalidCredentialsException:checkCredentials:invalid credentials for user 'monetdb'
