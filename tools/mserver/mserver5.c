@@ -698,6 +698,7 @@ main(int argc, char **av)
 			exit(1);
 		}
 	}
+#if 0
 	/* make sure the authorisation BATs are loaded */
 	if ((err = AUTHinitTables(NULL)) != MAL_SUCCEED) {
 		/* don't show this as a crash */
@@ -707,6 +708,7 @@ main(int argc, char **av)
 		freeException(err);
 		exit(1);
 	}
+#endif
 
 	char *modules[16];
 	int mods = 0;
@@ -739,6 +741,7 @@ main(int argc, char **av)
 	modules[mods++] = "shp";
 #endif
 	modules[mods++] = 0;
+
 	if (mal_init(modules, 0)) {
 		/* don't show this as a crash */
 		if (!GDKinmemory())

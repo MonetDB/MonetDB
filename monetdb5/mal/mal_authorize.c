@@ -518,7 +518,11 @@ AUTHaddUser(oid *uid, Client cntxt, const char *username, const char *passwd)
 		throw(MAL, "addUser", "user '%s' already exists", username);
 
 	/* we assume the BATs are still aligned */
-	rethrow("addUser", tmp, AUTHcypherValue(&hash, passwd));
+	if (!GDKinmemory()) {
+		rethrow("addUser", tmp, AUTHcypherValue(&hash, passwd));
+	} else {
+		hash = GDKstrdup("hash");
+	}
 	/* needs force, as SQL makes a view over user */
 	if (BUNappend(user, username, true) != GDK_SUCCEED ||
 		BUNappend(pass, hash, true) != GDK_SUCCEED) {
