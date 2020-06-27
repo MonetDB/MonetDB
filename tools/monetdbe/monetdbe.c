@@ -86,6 +86,9 @@ typedef struct monetdbe_table_t {
 typedef struct {
 	Client c;
 	char *msg;
+	monetdbe_data_date date_null;
+	monetdbe_data_time time_null;
+	monetdbe_data_timestamp timestamp_null;
 } monetdbe_database_internal;
 
 typedef struct {
@@ -109,6 +112,13 @@ static MT_Lock embedded_lock = MT_LOCK_INITIALIZER("embedded_lock");
 static bool monetdbe_embedded_initialized = false;
 static char *monetdbe_embedded_url = NULL;
 static int open_dbs = 0;
+
+static void data_from_date(date d, monetdbe_data_date *ptr);
+static void data_from_time(daytime d, monetdbe_data_time *ptr);
+static void data_from_timestamp(timestamp d, monetdbe_data_timestamp *ptr);
+static timestamp timestamp_from_data(monetdbe_data_timestamp *ptr);
+static date date_from_data(monetdbe_data_date *ptr);
+static daytime time_from_data(monetdbe_data_time *ptr);
 
 static char* monetdbe_cleanup_result_internal(monetdbe_database_internal *mdbe, monetdbe_result_internal* res);
 
@@ -389,6 +399,9 @@ monetdbe_open_internal(monetdbe_database_internal *mdbe)
 cleanup:
 	if (mdbe->msg)
 		return -2;
+	data_from_date(date_nil, &mdbe->date_null);
+	data_from_time(daytime_nil, &mdbe->time_null);
+	data_from_timestamp(timestamp_nil, &mdbe->timestamp_null);
 	open_dbs++;
 	return 0;
 }
@@ -1015,13 +1028,6 @@ GENERATE_BASE_HEADERS(monetdbe_data_timestamp, timestamp);
 			bat_data->data[it] = (tpe) *val;                           \
 	}
 
-static void data_from_date(date d, monetdbe_data_date *ptr);
-static void data_from_time(daytime d, monetdbe_data_time *ptr);
-static void data_from_timestamp(timestamp d, monetdbe_data_timestamp *ptr);
-static timestamp timestamp_from_data(monetdbe_data_timestamp *ptr);
-static date date_from_data(monetdbe_data_date *ptr);
-static daytime time_from_data(monetdbe_data_time *ptr);
-
 char*
 monetdbe_append(monetdbe_database dbhdl, const char* schema, const char* table, monetdbe_column **input /*bat *batids*/, size_t column_count)
 {
@@ -1187,6 +1193,28 @@ cleanup:
 	return mdbe->msg;
 }
 
+const void *
+monetdbe_null(monetdbe_database dbhdl, monetdbe_types t)
+{
+	monetdbe_database_internal *mdbe = (monetdbe_database_internal*)dbhdl;
+	int mtype = monetdbe_type(t);
+
+	if (mtype < 0)
+		return NULL;
+
+	if ((mtype >= TYPE_bit && mtype <= TYPE_lng))
+		return ATOMnilptr(mtype);
+	else if (mtype == TYPE_str || mtype == TYPE_blob)
+		return NULL;
+	else if (TYPE_date)
+		return &mdbe->date_null;
+	else if (TYPE_daytime)
+		return &mdbe->time_null;
+	else if (TYPE_timestamp)
+		return &mdbe->timestamp_null;
+	return NULL;
+}
+
 char*
 monetdbe_result_fetch(monetdbe_result* mres, monetdbe_column** res, size_t column_index)
 {
@@ -1298,7 +1326,7 @@ monetdbe_result_fetch(monetdbe_result* mres, monetdbe_column** res, size_t colum
 		baseptr = (date *)Tloc(b, 0);
 		for (j = 0; j < bat_data->count; j++)
 			data_from_date(baseptr[j], bat_data->data + j);
-		data_from_date(date_nil, &bat_data->null_value);
+		memcpy(&bat_data->null_value, &mdbe->date_null, sizeof(monetdbe_data_date));
 	} else if (bat_type == TYPE_daytime) {
 		daytime *baseptr;
 		GENERATE_BAT_INPUT_BASE(time);
@@ -1314,7 +1342,7 @@ monetdbe_result_fetch(monetdbe_result* mres, monetdbe_column** res, size_t colum
 		baseptr = (daytime *)Tloc(b, 0);
 		for (j = 0; j < bat_data->count; j++)
 			data_from_time(baseptr[j], bat_data->data + j);
-		data_from_time(daytime_nil, &bat_data->null_value);
+		memcpy(&bat_data->null_value, &mdbe->time_null, sizeof(monetdbe_data_time));
 	} else if (bat_type == TYPE_timestamp) {
 		timestamp *baseptr;
 		GENERATE_BAT_INPUT_BASE(timestamp);
@@ -1330,7 +1358,7 @@ monetdbe_result_fetch(monetdbe_result* mres, monetdbe_column** res, size_t colum
 		baseptr = (timestamp *)Tloc(b, 0);
 		for (j = 0; j < bat_data->count; j++)
 			data_from_timestamp(baseptr[j], bat_data->data + j);
-		data_from_timestamp(timestamp_nil, &bat_data->null_value);
+		memcpy(&bat_data->null_value, &mdbe->timestamp_null, sizeof(monetdbe_data_timestamp));
 	} else if (bat_type == TYPE_blob) {
 		BATiter li;
 		BUN p = 0, q = 0;
@@ -1416,7 +1444,7 @@ cleanup:
 	return mdbe->msg;
 }
 
-void
+static void
 data_from_date(date d, monetdbe_data_date *ptr)
 {
 	ptr->day = date_day(d);
@@ -1430,7 +1458,7 @@ date_from_data(monetdbe_data_date *ptr)
 	return date_create(ptr->year, ptr->month, ptr->day);
 }
 
-void
+static void
 data_from_time(daytime d, monetdbe_data_time *ptr)
 {
 	ptr->hours = daytime_hour(d);
@@ -1445,7 +1473,7 @@ time_from_data(monetdbe_data_time *ptr)
 	return daytime_create(ptr->hours, ptr->minutes, ptr->seconds, ptr->ms * 1000);
 }
 
-void
+static void
 data_from_timestamp(timestamp d, monetdbe_data_timestamp *ptr)
 {
 	daytime tm = timestamp_daytime(d);
@@ -1468,7 +1496,7 @@ timestamp_from_data(monetdbe_data_timestamp *ptr)
 		daytime_create(ptr->time.hours, ptr->time.minutes, ptr->time.seconds, ptr->time.ms * 1000));
 }
 
-int
+static int
 date_is_null(monetdbe_data_date value)
 {
 	monetdbe_data_date null_value;
@@ -1477,7 +1505,7 @@ date_is_null(monetdbe_data_date value)
 		   value.day == null_value.day;
 }
 
-int
+static int
 time_is_null(monetdbe_data_time value)
 {
 	monetdbe_data_time null_value;
@@ -1487,19 +1515,19 @@ time_is_null(monetdbe_data_time value)
 		   value.seconds == null_value.seconds && value.ms == null_value.ms;
 }
 
-int
+static int
 timestamp_is_null(monetdbe_data_timestamp value)
 {
 	return is_timestamp_nil(timestamp_from_data(&value));
 }
 
-int
+static int
 str_is_null(char *value)
 {
 	return value == NULL;
 }
 
-int
+static int
 blob_is_null(monetdbe_data_blob value)
 {
 	return value.data == NULL;

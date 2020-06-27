@@ -2831,20 +2831,29 @@ rel_schemas(sql_query *query, symbol *s)
 	case SQL_CREATE_USER: {
 		dlist *l = s->data.lval;
 
-		ret = rel_create_user(sql->sa, l->h->data.sval,	/* user name */
+	    if (GDKembedded())
+			ret = sql_error(sql, 02, SQLSTATE(42S02) "CREATE USER: not supported in MonetDBe");
+		else
+			ret = rel_create_user(sql->sa, l->h->data.sval,	/* user name */
 				  l->h->next->data.sval,	/* password */
 				  l->h->next->next->next->next->data.i_val == SQL_PW_ENCRYPTED, /* encrypted */
 				  l->h->next->next->data.sval,	/* fullname */
 				  l->h->next->next->next->data.sval);	/* dschema */
 	} 	break;
 	case SQL_DROP_USER:
-		ret = rel_schema2(sql->sa, ddl_drop_user, s->data.sval, NULL, 0);
+		if (GDKembedded())
+		    ret = sql_error(sql, 02, SQLSTATE(42S02) "DROP USER: not supported in MonetDBe");
+		else
+			ret = rel_schema2(sql->sa, ddl_drop_user, s->data.sval, NULL, 0);
 		break;
 	case SQL_ALTER_USER: {
 		dlist *l = s->data.lval;
 		dnode *a = l->h->next->data.lval->h;
 
-		ret = rel_alter_user(sql->sa, l->h->data.sval,	/* user */
+		if (GDKembedded())
+			ret = sql_error(sql, 02, SQLSTATE(42S02) "ALTER USER: not supported in MonetDBe");
+		else
+			ret = rel_alter_user(sql->sa, l->h->data.sval,	/* user */
 				     a->data.sval,	/* passwd */
 				     a->next->next->data.i_val == SQL_PW_ENCRYPTED, /* encrypted */
 				     a->next->data.sval,	/* schema */

@@ -147,6 +147,7 @@ monetdbe_export char* monetdbe_execute(monetdbe_statement *stmt, monetdbe_result
 monetdbe_export char* monetdbe_cleanup_statement(monetdbe_database dbhdl, monetdbe_statement *stmt);
 
 monetdbe_export char* monetdbe_append(monetdbe_database dbhdl, const char* schema, const char* table, monetdbe_column **input, size_t column_count);
+monetdbe_export const void* monetdbe_null(monetdbe_database dbhdl, monetdbe_types t);
 
 monetdbe_export char* monetdbe_get_table(monetdbe_database dbhdl, monetdbe_table** table, const char* schema_name, const char* table_name);
 monetdbe_export char* monetdbe_get_columns(monetdbe_database dbhdl, const char* schema_name, const char *table_name, size_t *column_count, char ***column_names, int **column_types);
