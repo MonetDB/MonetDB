@@ -421,7 +421,7 @@ monetdbe_startup(monetdbe_database_internal *mdbe, char* dbdir, monetdbe_options
 	const char* mbedded = "MBEDDED";
 	opt *set = NULL;
 	int setlen;
-	int workers = 0, memory = 0, querytimeout = 0, sessiontimeout = 0;
+	int workers, memory, querytimeout, sessiontimeout;
 	gdk_return gdk_res;
 
 	GDKfataljumpenable = 1;
@@ -457,6 +457,11 @@ monetdbe_startup(monetdbe_database_internal *mdbe, char* dbdir, monetdbe_options
 		mdbe->msg = createException(MAL, "monetdbe.monetdbe_startup", MAL_MALLOC_FAIL);
 		goto cleanup;
 	}
+
+	workers = 0;
+	memory = 0;
+	querytimeout = 0;
+	sessiontimeout = 0;
 
 	if (opts && opts->nr_threads) {
 		if( opts->nr_threads < 0){
