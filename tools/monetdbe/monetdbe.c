@@ -421,6 +421,7 @@ monetdbe_startup(monetdbe_database_internal *mdbe, char* dbdir, monetdbe_options
 	const char* mbedded = "MBEDDED";
 	opt *set = NULL;
 	int setlen;
+	int workers = 0, memory = 0, querytimeout = 0, sessiontimeout = 0;
 	gdk_return gdk_res;
 
 	GDKfataljumpenable = 1;
@@ -450,16 +451,43 @@ monetdbe_startup(monetdbe_database_internal *mdbe, char* dbdir, monetdbe_options
 		setlen = mo_add_option(&set, setlen, opt_cmdline, "sql_optimizer", "sequential_pipe");
 	else
 		setlen = mo_add_option(&set, setlen, opt_cmdline, "sql_optimizer", "default_pipe");
+
 	if (setlen == 0) {
 		mo_free_options(set, setlen);
 		mdbe->msg = createException(MAL, "monetdbe.monetdbe_startup", MAL_MALLOC_FAIL);
 		goto cleanup;
 	}
+
 	if (opts && opts->nr_threads) {
-		GDKnr_threads = opts->nr_threads;
+		if( opts->nr_threads < 0){
+			mdbe->msg = createException(MAL, "monetdbe.monetdbe_startup", "Nr_threads should be positive");
+			goto cleanup;
+		}
+		workers = GDKnr_threads = opts->nr_threads;
 	}
 	if (opts && opts->memorylimit) {
-		GDK_vm_maxsize = (size_t) opts->memorylimit;
+		if( opts->nr_threads < 0){
+			mdbe->msg = createException(MAL, "monetdbe.monetdbe_startup", "Memorylimit should be positive");
+			goto cleanup;
+		}
+		// Memory limit is session specific
+		memory = GDK_vm_maxsize = (size_t) opts->memorylimit;
+	}
+	if (opts && opts->querytimeout) {
+		if( opts->querytimeout < 0){
+			mdbe->msg = createException(MAL, "monetdbe.monetdbe_startup", "Query timeout should be positive (in sec)");
+			goto cleanup;
+		}
+		// Query time is session specific
+		querytimeout = opts->querytimeout;
+	}
+	if (opts && opts->sessiontimeout) {
+		if( opts->sessiontimeout < 0){
+			mdbe->msg = createException(MAL, "monetdbe.monetdbe_startup", "Session timeout should be positive (in sec)");
+			goto cleanup;
+		}
+		// Query time is session specific
+		sessiontimeout = opts->querytimeout;
 	}
 
 	GDKtracer_set_adapter(mbedded); /* set the output of GDKtracer logs */
@@ -495,7 +523,7 @@ monetdbe_startup(monetdbe_database_internal *mdbe, char* dbdir, monetdbe_options
 	else
 		have_hge = 0;
 #endif
-	if ((mdbe->msg = malEmbeddedBoot()) != MAL_SUCCEED)
+	if ((mdbe->msg = malEmbeddedBoot(workers, memory, querytimeout, sessiontimeout)) != MAL_SUCCEED)
 		goto cleanup;
 
 	monetdbe_embedded_initialized = true;

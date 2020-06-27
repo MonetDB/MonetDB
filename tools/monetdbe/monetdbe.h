@@ -87,8 +87,10 @@ typedef struct {
 typedef void* monetdbe_database;
 
 typedef struct {
-	monetdbe_cnt memorylimit;
-	int nr_threads;
+	int memorylimit;  // top off the amount of RAM to be used, in MB
+	int querytimeout;  // graceful terminate query after a few seconds
+	int sessiontimeout;  // graceful terminate the session after a few seconds
+	int nr_threads;				// maximum number of worker treads, limits level of parallalism
 #ifdef HAVE_HGE
 	bool have_hge;
 #endif
