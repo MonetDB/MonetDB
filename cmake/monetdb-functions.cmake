@@ -226,3 +226,103 @@ function(assert_package_detected)
   add_test("testDetect${assert_package_variablename}Detect"
     "test_${assert_package_variablename}_detect_var")
 endfunction()
+
+function(monetdb_debian_extra_files)
+  install(FILES
+    ${CMAKE_SOURCE_DIR}/misc/packages/deb/changelog
+    ${CMAKE_SOURCE_DIR}/misc/packages/deb/copyright
+    DESTINATION
+    ${CMAKE_INSTALL_DATAROOTDIR}/doc/libmonetdb-client-dev
+    COMPONENT clientdev)
+
+  install(FILES
+    ${CMAKE_SOURCE_DIR}/misc/packages/deb/changelog
+    ${CMAKE_SOURCE_DIR}/misc/packages/deb/copyright
+    DESTINATION
+    ${CMAKE_INSTALL_DATAROOTDIR}/doc/libmonetdb-client12
+    COMPONENT client)
+
+  install(FILES
+    ${CMAKE_SOURCE_DIR}/misc/packages/deb/changelog
+    ${CMAKE_SOURCE_DIR}/misc/packages/deb/copyright
+    DESTINATION
+    ${CMAKE_INSTALL_DATAROOTDIR}/doc/libmonetdb-client-odbc
+    COMPONENT odbc)
+
+  install(FILES
+    ${CMAKE_SOURCE_DIR}/misc/packages/deb/changelog
+    ${CMAKE_SOURCE_DIR}/misc/packages/deb/copyright
+    DESTINATION
+    ${CMAKE_INSTALL_DATAROOTDIR}/doc/libmonetdb-dev
+    COMPONENT monetdb-dev)
+
+  install(FILES
+    ${CMAKE_SOURCE_DIR}/misc/packages/deb/changelog
+    ${CMAKE_SOURCE_DIR}/misc/packages/deb/copyright
+    DESTINATION
+    ${CMAKE_INSTALL_DATAROOTDIR}/doc/libmonetdb-stream-dev
+    COMPONENT streamdev)
+
+  install(FILES
+    ${CMAKE_SOURCE_DIR}/misc/packages/deb/changelog
+    ${CMAKE_SOURCE_DIR}/misc/packages/deb/copyright
+    DESTINATION
+    ${CMAKE_INSTALL_DATAROOTDIR}/doc/libmonetdb-stream13
+    COMPONENT stream)
+
+  install(FILES
+    ${CMAKE_SOURCE_DIR}/misc/packages/deb/changelog
+    ${CMAKE_SOURCE_DIR}/misc/packages/deb/copyright
+    DESTINATION
+    ${CMAKE_INSTALL_DATAROOTDIR}/doc/libmonetdb19
+    COMPONENT monetdb)
+
+  install(FILES
+    ${CMAKE_SOURCE_DIR}/misc/packages/deb/changelog
+    ${CMAKE_SOURCE_DIR}/misc/packages/deb/copyright
+    DESTINATION
+    ${CMAKE_INSTALL_DATAROOTDIR}/doc/libmonetdb-dev
+    COMPONENT monetdbdev)
+
+  install(FILES
+    ${CMAKE_SOURCE_DIR}/misc/packages/deb/changelog
+    ${CMAKE_SOURCE_DIR}/misc/packages/deb/copyright
+    DESTINATION
+    ${CMAKE_INSTALL_DATAROOTDIR}/doc/monetdb-client-testing
+    COMPONENT clienttest)
+
+  install(FILES
+    ${CMAKE_SOURCE_DIR}/misc/packages/deb/changelog
+    ${CMAKE_SOURCE_DIR}/misc/packages/deb/copyright
+    DESTINATION
+    ${CMAKE_INSTALL_DATAROOTDIR}/doc/monetdb-testing-python
+    COMPONENT pytesting)
+
+  install(FILES
+    ${CMAKE_SOURCE_DIR}/misc/packages/deb/changelog
+    ${CMAKE_SOURCE_DIR}/misc/packages/deb/copyright
+    DESTINATION
+    ${CMAKE_INSTALL_DATAROOTDIR}/doc/monetdb-testing
+    COMPONENT testing)
+
+  install(FILES
+    ${CMAKE_SOURCE_DIR}/misc/packages/deb/changelog
+    ${CMAKE_SOURCE_DIR}/misc/packages/deb/copyright
+    DESTINATION
+    ${CMAKE_INSTALL_DATAROOTDIR}/doc/monetdb-server-dev
+    COMPONENT serverdev)
+
+  install(FILES
+    ${CMAKE_SOURCE_DIR}/misc/packages/deb/changelog
+    ${CMAKE_SOURCE_DIR}/misc/packages/deb/copyright
+    DESTINATION
+    ${CMAKE_INSTALL_DATAROOTDIR}/doc/monetdb5-sql
+    COMPONENT sql)
+
+  install(FILES
+    ${CMAKE_SOURCE_DIR}/misc/packages/deb/changelog
+    ${CMAKE_SOURCE_DIR}/misc/packages/deb/copyright
+    DESTINATION
+    ${CMAKE_INSTALL_DATAROOTDIR}/doc/monetdb5-server
+    COMPONENT server)
+endfunction()
