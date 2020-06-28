@@ -226,26 +226,13 @@ sql5_export str str_2time_daytimetz(Client cntxt, MalBlkPtr mb, MalStkPtr stk, I
 sql5_export str batstr_2time_daytime(bat *res, const bat *v, const int *len);
 sql5_export str daytime_2time_daytime(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 
-sql5_export str nil_2_timestamp(timestamp *res, const void *val);
-sql5_export str batnil_2_timestamp(bat *res, const bat *val);
-sql5_export str str_2_timestamp(timestamp *res, const str *val);
-sql5_export str batstr_2_timestamp(bat *res, const bat *val);
-
 sql5_export str bat_date_trunc(bat *res, const str *scale, const bat *v);
 sql5_export str date_trunc(timestamp *res, const str *scale, const timestamp *v);
 
-sql5_export str nil_2_daytime(daytime *res, const void *val);
-sql5_export str batnil_2_daytime(bat *res, const bat *val);
-sql5_export str str_2_daytime(daytime *res, const str *val);
-sql5_export str batstr_2_daytime(bat *res, const bat *val);
-
-sql5_export str nil_2_date(date *res, const void *val);
-sql5_export str batnil_2_date(bat *res, const bat *val);
-sql5_export str batnil_ce_2_date(bat *res, const bat *val, const bat *r);
-sql5_export str str_2_date(date *res, const str *val);
+sql5_export str nil_2_date(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+sql5_export str str_2_date(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 sql5_export str batstr_2_date(bat *res, const bat *val);
 sql5_export str batstr_ce_2_date(bat *res, const bat *val, const bat *r);
-sql5_export str SQLdate_2_str(str *res, const date *val);
 
 sql5_export str str_2_blob(blob * *res, const str *val);
 sql5_export str batstr_2_blob(bat *res, const bat *val);

@@ -8,7 +8,6 @@
 
 #include "monetdb_config.h"
 #include "sql.h"
-#include "sql_scenario.h"
 #include "sql_datetime.h"
 #include "mal_instruction.h"
 
@@ -101,6 +100,18 @@ bailout:
 	return msg;
 }
 
+static inline daytime
+second_interval_2_daytime_imp(lng next,
+#ifdef HAVE_HGE
+hge shift, hge divider, hge multiplier
+#else
+lng shift, lng divider, lng multiplier
+#endif
+) {
+	daytime d = daytime_add_usec(daytime_create(0, 0, 0, 0), next * 1000);
+	return daytime_2time_daytime_imp(d, shift, divider, multiplier);
+}
+
 str
 second_interval_2_daytime(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
@@ -153,18 +164,12 @@ second_interval_2_daytime(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 				hasnil = 1;
 				ret[i] = daytime_nil;
 			} else {
-				daytime d = daytime_add_usec(daytime_create(0, 0, 0, 0), next * 1000);
-				ret[i] = daytime_2time_daytime_imp(d, shift, divider, multiplier);
+				ret[i] = second_interval_2_daytime_imp(next, shift, divider, multiplier);
 			}
 		}
 	} else {
 		lng next = *(lng*)getArgReference(stk, pci, 1);
-		if (is_lng_nil(next)) {
-			*ret = daytime_nil;
-		} else {
-			daytime d = daytime_add_usec(daytime_create(0, 0, 0, 0), next * 1000);
-			*ret = daytime_2time_daytime_imp(d, shift, divider, multiplier);
-		}
+		*ret = is_lng_nil(next) ? daytime_nil : second_interval_2_daytime_imp(next, shift, divider, multiplier);
 	}
 
 bailout:
@@ -207,6 +212,26 @@ nil_2time_daytime(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	return MAL_SUCCEED;
 }
 
+static inline str
+str_2time_daytimetz_internal_imp(daytime *ret, str next, ssize_t (*fromstr_func)(const char *, size_t *, daytime **, bool),
+#ifdef HAVE_HGE
+hge shift, hge divider, hge multiplier
+#else
+lng shift, lng divider, lng multiplier
+#endif
+)
+{
+	ssize_t pos = 0;
+	daytime *conv = NULL;
+
+	pos = fromstr_func(next, &(size_t){sizeof(daytime)}, &conv, false);
+	if (pos < (ssize_t) strlen(next) || /* includes pos < 0 */ ATOMcmp(TYPE_daytime, conv, ATOMnilptr(TYPE_daytime)) == 0)
+		return createException(SQL, "batcalc.str_2time_daytimetz", SQLSTATE(22007) "Daytime (%s) has incorrect format", next);
+	else
+		*ret = daytime_2time_daytime_imp(*conv, shift, divider, multiplier);
+	return MAL_SUCCEED;
+}
+
 static str
 str_2time_daytimetz_internal(ptr out, ptr in, int tpe, int digits, int tz)
 {
@@ -218,8 +243,7 @@ str_2time_daytimetz_internal(ptr out, ptr in, int tpe, int digits, int tz)
 	bit hasnil = 0;
 	bool is_a_bat = false;
 	bat *r = NULL;
-	size_t len = sizeof(daytime);
-	ssize_t pos = 0;
+	ssize_t (*fromstr_func)(const char *, size_t *, daytime **, bool) = tz ? daytime_tz_fromstr : daytime_fromstr;
 #ifdef HAVE_HGE
 	hge shift = 0, divider = 1, multiplier = 1;
 #else
@@ -261,16 +285,7 @@ str_2time_daytimetz_internal(ptr out, ptr in, int tpe, int digits, int tz)
 				hasnil = 1;
 				ret[i] = daytime_nil;
 			} else {
-				daytime conv = 0, *cconv = &conv;
-				if (tz)
-					pos = daytime_tz_fromstr(next, &len, &cconv, false);
-				else
-					pos = daytime_fromstr(next, &len, &cconv, false);
-				if (pos < (ssize_t) strlen(next) || /* includes pos < 0 */ ATOMcmp(TYPE_daytime, cconv, ATOMnilptr(TYPE_daytime)) == 0) {
-					msg = createException(SQL, "batcalc.str_2time_daytimetz", SQLSTATE(22007) "Daytime (%s) has incorrect format", next);
-				} else {
-					ret[i] = daytime_2time_daytime_imp(*cconv, shift, divider, multiplier);
-				}
+				msg = str_2time_daytimetz_internal_imp(&(ret[i]), next, fromstr_func, shift, divider, multiplier);
 			}
 		}
 	} else {
@@ -278,16 +293,7 @@ str_2time_daytimetz_internal(ptr out, ptr in, int tpe, int digits, int tz)
 		if (strNil(next)) {
 			*ret = daytime_nil;
 		} else {
-			daytime conv = 0, *cconv = &conv;
-			if (tz)
-				pos = daytime_tz_fromstr(next, &len, &cconv, false);
-			else
-				pos = daytime_fromstr(next, &len, &cconv, false);
-			if (pos < (ssize_t) strlen(next) || /* includes pos < 0 */ ATOMcmp(TYPE_daytime, cconv, ATOMnilptr(TYPE_daytime)) == 0) {
-				msg = createException(SQL, "batcalc.str_2time_daytimetz", SQLSTATE(22007) "Daytime (%s) has incorrect format", next);
-			} else {
-				*ret = daytime_2time_daytime_imp(*cconv, shift, divider, multiplier);
-			}
+			msg = str_2time_daytimetz_internal_imp(ret, next, fromstr_func, shift, divider, multiplier);
 		}
 	}
 
@@ -592,6 +598,26 @@ nil_2time_timestamp(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	return MAL_SUCCEED;
 }
 
+static inline str
+str_2time_timestamptz_internal_imp(timestamp *ret, str next, ssize_t (*fromstr_func)(const char *, size_t *, timestamp **, bool),
+#ifdef HAVE_HGE
+hge shift, hge divider, hge multiplier
+#else
+lng shift, lng divider, lng multiplier
+#endif
+)
+{
+	ssize_t pos = 0;
+	timestamp *conv = NULL;
+
+	pos = fromstr_func(next, &(size_t){sizeof(timestamp)}, &conv, false);
+	if (!pos || pos < (ssize_t) strlen(next) || ATOMcmp(TYPE_timestamp, conv, ATOMnilptr(TYPE_timestamp)) == 0)
+		return createException(SQL, "batcalc.str_2time_timestamptz_internal", SQLSTATE(22007) "Timestamp (%s) has incorrect format", next);
+	else
+		*ret = timestamp_2time_timestamp_imp(*conv, shift, divider, multiplier);
+	return MAL_SUCCEED;
+}
+
 static str
 str_2time_timestamptz_internal(ptr out, ptr in, int tpe, int digits, int tz)
 {
@@ -603,8 +629,7 @@ str_2time_timestamptz_internal(ptr out, ptr in, int tpe, int digits, int tz)
 	bit hasnil = 0;
 	bool is_a_bat = false;
 	bat *r = NULL;
-	size_t len = sizeof(timestamp);
-	ssize_t pos = 0;
+	ssize_t (*fromstr_func)(const char *, size_t *, timestamp **, bool) = tz ? timestamp_tz_fromstr : timestamp_fromstr;
 #ifdef HAVE_HGE
 	hge shift = 0, divider = 1, multiplier = 1;
 #else
@@ -646,16 +671,7 @@ str_2time_timestamptz_internal(ptr out, ptr in, int tpe, int digits, int tz)
 				hasnil = 1;
 				ret[i] = timestamp_nil;
 			} else {
-				timestamp conv = 0, *cconv = &conv;
-				if (tz)
-					pos = timestamp_tz_fromstr(next, &len, &cconv, false);
-				else
-					pos = timestamp_fromstr(next, &len, &cconv, false);
-				if (!pos || pos < (ssize_t) strlen(next) || ATOMcmp(TYPE_timestamp, cconv, ATOMnilptr(TYPE_timestamp)) == 0) {
-					msg = createException(SQL, "batcalc.str_2time_timestamptz_internal", SQLSTATE(22007) "Timestamp (%s) has incorrect format", next);
-				} else {
-					ret[i] = timestamp_2time_timestamp_imp(*cconv, shift, divider, multiplier);
-				}
+				msg = str_2time_timestamptz_internal_imp(&(ret[i]), next, fromstr_func, shift, divider, multiplier);
 			}
 		}
 	} else {
@@ -663,16 +679,7 @@ str_2time_timestamptz_internal(ptr out, ptr in, int tpe, int digits, int tz)
 		if (strNil(next)) {
 			*ret = timestamp_nil;
 		} else {
-			timestamp conv = 0, *cconv = &conv;
-			if (tz)
-				pos = timestamp_tz_fromstr(next, &len, &cconv, false);
-			else
-				pos = timestamp_fromstr(next, &len, &cconv, false);
-			if (!pos || pos < (ssize_t) strlen(next) || ATOMcmp(TYPE_timestamp, cconv, ATOMnilptr(TYPE_timestamp)) == 0) {
-				msg = createException(SQL, "batcalc.str_2time_timestamptz_internal", SQLSTATE(22007) "Timestamp (%s) has incorrect format", next);
-			} else {
-				*ret = timestamp_2time_timestamp_imp(*cconv, shift, divider, multiplier);
-			}
+			msg = str_2time_timestamptz_internal_imp(ret, next, fromstr_func, shift, divider, multiplier);
 		}
 	}
 
@@ -720,6 +727,17 @@ batstr_2time_timestamp(bat *res, const bat *bid, const int *digits)
 	return str_2time_timestamptz_internal((ptr) res, (ptr) bid, newBatType(TYPE_str), *digits, 0);
 }
 
+static inline str
+month_interval_str_imp(int *ret, str next, int d, int sk)
+{
+	lng upcast;
+	if (interval_from_str(next, d, sk, &upcast) < 0)
+		return createException(SQL, "batcalc.month_interval_str", SQLSTATE(42000) "Wrong format (%s)", next);
+	assert((lng) GDK_int_min <= upcast && upcast <= (lng) GDK_int_max);
+	*ret = (int) upcast;
+	return MAL_SUCCEED;
+}
+
 str
 month_interval_str(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
@@ -760,13 +778,7 @@ month_interval_str(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				ret[i] = int_nil;
 				hasnil = 1;
 			} else {
-				lng upcast;
-				if (interval_from_str(next, d, sk, &upcast) < 0) {
-					msg = createException(SQL, "batcalc.month_interval_str", SQLSTATE(42000) "Wrong format (%s)", next);
-					goto bailout;
-				}
-				assert((lng) GDK_int_min <= upcast && upcast <= (lng) GDK_int_max);
-				ret[i] = (int) upcast;
+				msg = month_interval_str_imp(&(ret[i]), next, d, sk);
 			}
 		}
 	} else {
@@ -775,13 +787,7 @@ month_interval_str(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		if (strNil(next)) {
 			*ret = int_nil;
 		} else {
-			lng upcast;
-			if (interval_from_str(next, d, sk, &upcast) < 0) {
-				msg = createException(SQL, "batcalc.month_interval_str", SQLSTATE(42000) "Wrong format (%s)", next);
-				goto bailout;
-			}
-			assert((lng) GDK_int_min <= upcast && upcast <= (lng) GDK_int_max);
-			*ret = (int) upcast;
+			msg = month_interval_str_imp(ret, next, d, sk);
 		}
 	}
 
@@ -799,6 +805,14 @@ bailout:
 	} else if (res)
 		BBPreclaim(res);
 	return msg;
+}
+
+static inline str
+second_interval_str_imp(lng *ret, str next, int d, int sk)
+{
+	if (interval_from_str(next, d, sk, ret) < 0)
+		return createException(SQL, "batcalc.second_interval_str", SQLSTATE(42000) "Wrong format (%s)", next);
+	return MAL_SUCCEED;
 }
 
 str
@@ -840,18 +854,17 @@ second_interval_str(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			if (strNil(next)) {
 				ret[i] = lng_nil;
 				hasnil = 1;
-			} else if (interval_from_str(next, d, sk, &(ret[i])) < 0) {
-				msg = createException(SQL, "batcalc.second_interval_str", SQLSTATE(42000) "Wrong format (%s)", next);
-				goto bailout;
+			} else {
+				msg = second_interval_str_imp(&(ret[i]), next, d, sk);
 			}
 		}
 	} else {
 		const str next = *getArgReference_str(stk, pci, 1);
+
 		if (strNil(next)) {
 			*ret = lng_nil;
-		} else if (interval_from_str(next, d, sk, ret) < 0) {
-			msg = createException(SQL, "batcalc.second_interval_str", SQLSTATE(42000) "Wrong format (%s)", next);
-			goto bailout;
+		} else {
+			msg = second_interval_str_imp(ret, next, d, sk);
 		}
 	}
 
@@ -1182,6 +1195,135 @@ bailout:
 }
 
 str
+nil_2_date(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	BAT *b = NULL, *res = NULL;
+	bat *r = NULL;
+
+	(void) cntxt;
+	if (isaBatType(getArgType(mb, pci, 1))) {
+		date d = date_nil;
+		if (!(b = BATdescriptor(*getArgReference_bat(stk, pci, 1))))
+			throw(SQL, "batcalc.nil_2_date", SQLSTATE(HY005) "Cannot access column descriptor");
+		res = BATconstant(b->hseqbase, TYPE_date, &d, BATcount(b), TRANSIENT);
+		BBPunfix(b->batCacheid);
+		if (!res)
+			throw(SQL, "batcalc.nil_2_date", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		r = getArgReference_bat(stk, pci, 0);
+		BBPkeepref(*r = res->batCacheid);
+	} else {
+		date *ret = (date*) getArgReference(stk, pci, 0);
+		*ret = date_nil;
+	}
+	return MAL_SUCCEED;
+}
+
+static inline str
+str_2_date_internal_imp(date *res, str next, bit ce, bit *hasnil)
+{
+	if (!ce || strNil(next)) {
+		*hasnil = 1;
+		*res = date_nil;
+	} else {
+		ptr p = NULL;
+		ssize_t pos = ATOMfromstr(TYPE_date, &p, &(size_t){sizeof(date)}, next, false);
+
+		if (pos < 0 || !p || (ATOMcmp(TYPE_date, p, ATOMnilptr(TYPE_date)) == 0)) {
+			GDKfree(p);
+			return createException(SQL, "calc.str_2_date", SQLSTATE(42000) "Conversion of string '%s' failed", next);
+		} else {
+			*res = *(date*)p;
+		}
+	}
+	return MAL_SUCCEED;
+}
+
+static str
+str_2_date_internal(ptr out, ptr in, int tpe, const bat *ce)
+{
+	str msg = MAL_SUCCEED;
+	BAT *b = NULL, *c = NULL, *res = NULL;
+	BUN q = 0;
+	date *restrict ret = NULL;
+	bit hasnil = 0;
+	bool is_a_bat = false;
+	bat *r = NULL;
+
+	is_a_bat = isaBatType(tpe);
+	if (is_a_bat) {
+		tpe = getBatType(tpe);
+		if (!(b = BATdescriptor(*(bat*) in))) {
+			msg = createException(SQL, "batcalc.batstr_2_date", SQLSTATE(HY005) "Cannot access column descriptor");
+			goto bailout;
+		}
+		if (ce && !(c = BATdescriptor(*ce))) {
+			msg = createException(SQL, "batcalc.batstr_2_date", SQLSTATE(HY005) "Cannot access column descriptor");
+			goto bailout;
+		}
+		q = BATcount(b);
+		if (!(res = COLnew(b->hseqbase, TYPE_date, q, TRANSIENT))) {
+			msg = createException(SQL, "batcalc.batstr_2_date", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+			goto bailout;
+		}
+		r = (bat*) out;
+		ret = (date*) Tloc(res, 0);
+	} else {
+		ret = (date*) out;
+	}
+
+	if (is_a_bat) {
+		BATiter it = bat_iterator(b);
+		if (c) {
+			bit *restrict cbit = Tloc(c, 0);
+			for (BUN i = 0 ; i < q && !msg; i++)
+				msg = str_2_date_internal_imp(&(ret[i]), BUNtail(it, i), cbit[i], &hasnil);
+		} else {
+			for (BUN i = 0 ; i < q && !msg; i++)
+				msg = str_2_date_internal_imp(&(ret[i]), BUNtail(it, i), true, &hasnil);
+		}
+	} else {
+		msg = str_2_date_internal_imp(ret, *(str*)in, true, &hasnil);
+	}
+
+bailout:
+	if (b)
+		BBPunfix(b->batCacheid);
+	if (c)
+		BBPunfix(c->batCacheid);
+	if (res && !msg) {
+		BATsetcount(res, q);
+		res->tnil = hasnil;
+		res->tnonil = !hasnil;
+		res->tkey = BATcount(res) <= 1;
+		res->tsorted = BATcount(res) <= 1;
+		res->trevsorted = BATcount(res) <= 1;
+		BBPkeepref(*r = res->batCacheid);
+	} else if (res)
+		BBPreclaim(res);
+	return msg;
+}
+
+str
+batstr_2_date(bat *res, const bat *bid)
+{
+	return str_2_date_internal((ptr) res, (ptr) bid, newBatType(TYPE_str), NULL);
+}
+
+str
+str_2_date(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	int tpe = getArgType(mb, pci, 1);
+	(void) cntxt;
+	return str_2_date_internal(getArgReference(stk, pci, 0), getArgReference(stk, pci, 1), tpe, NULL);
+}
+
+str
+batstr_ce_2_date(bat *res, const bat *bid, const bat *r)
+{
+	return str_2_date_internal((ptr) res, (ptr) bid, newBatType(TYPE_str), r);
+}
+
+str
 SQLcurrent_daytime(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	mvc *m = NULL;
@@ -1192,7 +1334,7 @@ SQLcurrent_daytime(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		return msg;
 
 	*res = timestamp_daytime(timestamp_add_usec(timestamp_current(),
-						    m->timezone * LL_CONSTANT(1000)));
+							 m->timezone * LL_CONSTANT(1000)));
 	return msg;
 }
 
