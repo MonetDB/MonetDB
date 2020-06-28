@@ -698,17 +698,6 @@ main(int argc, char **av)
 			exit(1);
 		}
 	}
-#if 0
-	/* make sure the authorisation BATs are loaded */
-	if ((err = AUTHinitTables(NULL)) != MAL_SUCCEED) {
-		/* don't show this as a crash */
-		if (!GDKinmemory())
-			msab_registerStop();
-		fprintf(stderr, "%s\n", err);
-		freeException(err);
-		exit(1);
-	}
-#endif
 
 	char *modules[16];
 	int mods = 0;
