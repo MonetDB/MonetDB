@@ -858,8 +858,10 @@ msab_getSingleStatus(const char *pathbuf, const char *dbname, sabdb *next)
 		snprintf(buf, sizeof(buf), "%s/%s/%s", pathbuf, dbname, SECRETFILE);
 		if ((f = fopen(buf, "r")) == NULL)
 			break;
-		if (fstat(fileno(f), &stb) < 0)
+		if (fstat(fileno(f), &stb) < 0) {
+			fclose(f);
 			break;
+		}
 		size_t len = (size_t)stb.st_size;
 		char *secret = malloc(len + 1);
 		if (!secret) {
@@ -871,6 +873,7 @@ msab_getSingleStatus(const char *pathbuf, const char *dbname, sabdb *next)
 			free(secret);
 			break;
 		}
+		fclose(f);
 		secret[len] = '\0';
 		sdb->secret = secret;
 	} while (0);
