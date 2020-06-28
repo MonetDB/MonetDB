@@ -69,7 +69,6 @@ target_link_libraries(shutdowntest
 
 install(TARGETS
   mserver5
-  shutdowntest
   RUNTIME
   DESTINATION ${CMAKE_INSTALL_BINDIR}
   COMPONENT server
@@ -81,6 +80,12 @@ install(TARGETS
   DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/monetdb
   INCLUDES DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
 
+install(TARGETS
+  shutdowntest
+  RUNTIME
+  DESTINATION ${CMAKE_INSTALL_BINDIR}
+  COMPONENT clienttest)
+
 configure_file(mserver5.1.in
   ${CMAKE_CURRENT_BINARY_DIR}/mserver5.1 @ONLY)
 
@@ -89,7 +94,6 @@ install(FILES
   DESTINATION ${CMAKE_INSTALL_MANDIR}/man1
   COMPONENT server)
 
-
 # These definitions should not be necessary. CMake should take care of
 # creating these automatically. But maybe this is not the case when
 # running mtest.
@@ -97,7 +101,13 @@ install(DIRECTORY DESTINATION
   ${CMAKE_INSTALL_DATADIR}
   COMPONENT server)
 install(DIRECTORY DESTINATION
-  ${CMAKE_INSTALL_LOCALSTATEDIR}/monetdb5/dbfarm
+  ${CMAKE_INSTALL_FULL_LOCALSTATEDIR}/monetdb5/dbfarm
+  COMPONENT server)
+
+install(FILES
+  monetdblogo.png
+  DESTINATION
+  ${CMAKE_INSTALL_DATAROOTDIR}/doc/MonetDB
   COMPONENT server)
 
 # vim: set ts=2:sw=2:et

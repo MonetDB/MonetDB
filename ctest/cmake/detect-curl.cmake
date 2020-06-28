@@ -53,7 +53,7 @@ elseif(${LINUX_DISTRO} STREQUAL "fedora")
   endif()
   if(${LINUX_DISTRO_VERSION} STREQUAL "32")
     assert_package_detected(
-      detect FALSE
+      detect TRUE
       legacyvariable HAVE_CURL
       variablename CURL_FOUND)
   endif()
