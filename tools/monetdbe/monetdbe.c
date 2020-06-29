@@ -584,6 +584,16 @@ monetdbe_close(monetdbe_database dbhdl)
 	return err;
 }
 
+char *
+monetdbe_error(monetdbe_database dbhdl)
+{
+	if (!dbhdl)
+		return NULL;
+
+	monetdbe_database_internal *mdbe = (monetdbe_database_internal*)dbhdl;
+	return mdbe->msg;
+}
+
 /* needs to be before the undef of the bool type */
 extern int dump_database(Mapi mid, stream *toConsole, bool describe, bool useInserts);
 extern int dump_table(Mapi mid, const char *schema, const char *tname, stream *toConsole, bool describe, bool foreign, bool useInserts, bool databaseDump);
