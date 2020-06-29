@@ -79,8 +79,6 @@ malEmbeddedBoot(int workerlimit, int memorylimit, int querytimeout, int sessiont
 		}
 		if ((msg = AUTHunlockVault(secretp)) != MAL_SUCCEED) {
 			/* don't show this as a crash */
-			if (!GDKinmemory())
-				msab_registerStop();
 			return msg;
 		}
 	}
