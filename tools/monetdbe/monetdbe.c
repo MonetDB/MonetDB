@@ -1132,7 +1132,7 @@ monetdbe_append(monetdbe_database dbhdl, const char* schema, const char* table, 
 			mdbe->msg = createException(SQL, "monetdbe.monetdbe_append", "Cannot find type for column %zu", i);
 			goto cleanup;
 		}
-		if (mtype >= TYPE_bit && mtype <= 
+		if (mtype >= TYPE_bit && mtype <=
 #ifdef HAVE_HGE
 	TYPE_hge
 #else
@@ -1239,11 +1239,11 @@ monetdbe_null(monetdbe_database dbhdl, monetdbe_types t)
 		return ATOMnilptr(mtype);
 	else if (mtype == TYPE_str || mtype == TYPE_blob)
 		return NULL;
-	else if (TYPE_date)
+	else if (mtype == TYPE_date)
 		return &mdbe->date_null;
-	else if (TYPE_daytime)
+	else if (mtype == TYPE_daytime)
 		return &mdbe->time_null;
-	else if (TYPE_timestamp)
+	else if (mtype == TYPE_timestamp)
 		return &mdbe->timestamp_null;
 	return NULL;
 }
