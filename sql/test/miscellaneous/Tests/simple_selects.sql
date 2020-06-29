@@ -179,3 +179,6 @@ select 'a' like 'a' escape 'a'; --error, like sequence ending with escape charac
 
 select cast(x as interval second) from (values ('1'), (NULL), ('100'), (NULL)) as x(x);
 select cast(x as interval month) from (values ('1'), (NULL), ('100'), (NULL)) as x(x);
+
+select cast(9223372036854775808 as interval month); --error value to large for a month interval
+select cast(92233720368547750 as interval second); --error, overflow in conversion for interval second

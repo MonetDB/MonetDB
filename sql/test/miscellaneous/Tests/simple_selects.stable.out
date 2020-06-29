@@ -354,8 +354,8 @@ stdout of test 'simple_selects` in directory 'sql/test/miscellaneous` itself:
 #create table x (a int GENERATED ALWAYS AS IDENTITY);
 #alter table x alter a set default 1; --ok, remove sequence
 #SELECT CAST(COUNT(*) - (SELECT m FROM myvar) AS BIGINT) FROM sequences; --the total count, cannot change
-% .%4 # table_name
-% %4 # name
+% .%3 # table_name
+% %3 # name
 % bigint # type
 % 1 # length
 [ 0	]
@@ -367,8 +367,8 @@ stdout of test 'simple_selects` in directory 'sql/test/miscellaneous` itself:
 #create table x (a int GENERATED ALWAYS AS IDENTITY);
 #alter table x alter a drop default; --ok, remove sequence
 #SELECT CAST(COUNT(*) - (SELECT m FROM myvar) AS BIGINT) FROM sequences; --the total count, cannot change
-% .%4 # table_name
-% %4 # name
+% .%3 # table_name
+% %3 # name
 % bigint # type
 % 1 # length
 [ 0	]

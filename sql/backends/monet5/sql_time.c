@@ -1104,9 +1104,7 @@ second_interval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	}
 	if (scale) {
 #ifndef TRUNCATE_NUMBERS
-		shift = scales[scale] >> 1;
-#else
-		(void) shift;
+		shift += 5*scales[scale-1];
 #endif
 		divider = scales[scale];
 	}
