@@ -1235,7 +1235,13 @@ monetdbe_null(monetdbe_database dbhdl, monetdbe_types t)
 	if (mtype < 0)
 		return NULL;
 
-	if ((mtype >= TYPE_bit && mtype <= TYPE_lng))
+	if ((mtype >= TYPE_bit && mtype <=
+#ifdef HAVE_HGE
+	TYPE_hge
+#else
+	TYPE_lng
+#endif
+			))
 		return ATOMnilptr(mtype);
 	else if (mtype == TYPE_str || mtype == TYPE_blob)
 		return NULL;
