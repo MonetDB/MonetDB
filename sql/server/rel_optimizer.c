@@ -5645,6 +5645,7 @@ rel_push_project_down(visitor *v, sql_rel *rel)
 				return l;
 			}
 			return rel;
+#if 0
 			/* keep important internal columns */
 			for (node *n = l->exps->h; n; n = n->next) {
 				sql_exp *e = n->data;
@@ -5657,6 +5658,7 @@ rel_push_project_down(visitor *v, sql_rel *rel)
 			rel_destroy(rel);
 			v->changes++;
 			return l;
+#endif
 		} else if (list_check_prop_all(rel->exps, (prop_check_func)&exp_is_useless_rename)) {
 			if (is_select(l->op)) {
 				/* push project under select (include exps used by selection) */
