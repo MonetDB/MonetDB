@@ -193,6 +193,14 @@ MAPI  = (monetdb) /var/tmp/mtest-400226/.s.monetdb.31130
 QUERY = select 'a' like 'a' escape 'a'; --error, like sequence ending with escape character 
 ERROR = !Illegal argument: (I)LIKE pattern must not end with escape character
 CODE  = 22019
+MAPI  = (monetdb) /var/tmp/mtest-107867/.s.monetdb.37815
+QUERY = select cast(9223372036854775808 as interval month); --error value to large for a month interval
+ERROR = !Value too large to fit at a month_interval
+CODE  = 22003
+MAPI  = (monetdb) /var/tmp/mtest-107867/.s.monetdb.37815
+QUERY = select cast(92233720368547750 as interval second); --error, overflow in conversion for interval second
+ERROR = !Overflow in convertion of 92233720368547750 to sec_interval
+CODE  = 22003
 
 # 17:31:38 >  
 # 17:31:38 >  "Done."

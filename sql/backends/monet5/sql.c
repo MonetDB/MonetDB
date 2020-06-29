@@ -3835,7 +3835,7 @@ str
 month_interval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	int *ret = getArgReference_int(stk, pci, 0);
-	int k = digits2ek(*getArgReference_int(stk, pci, 2)), r = 0;
+	int k = digits2ek(*getArgReference_int(stk, pci, 2)), r = 0, c;
 
 	(void) cntxt;
 	*ret = int_nil;
@@ -3855,38 +3855,49 @@ month_interval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			return MAL_SUCCEED;
 		r = stk->stk[getArg(pci, 1)].val.ival;
 		break;
-	case TYPE_lng:
+	case TYPE_lng: {
+		lng l;
 		if (is_lng_nil(stk->stk[getArg(pci, 1)].val.lval))
 			return MAL_SUCCEED;
-		r = (int) stk->stk[getArg(pci, 1)].val.lval;
-		break;
+		l = stk->stk[getArg(pci, 1)].val.lval;
+		if (l > GDK_int_max) 
+			throw(ILLARG, "calc.month_interval", SQLSTATE(22003) "Value " LLFMT " too large to fit at a month_interval", l);
+		r = (int) l;
+	} break;
 #ifdef HAVE_HGE
-	case TYPE_hge:
+	case TYPE_hge: {
+		hge h;
 		if (is_hge_nil(stk->stk[getArg(pci, 1)].val.hval))
 			return MAL_SUCCEED;
-		r = (int) stk->stk[getArg(pci, 1)].val.hval;
-		break;
+		h = stk->stk[getArg(pci, 1)].val.hval;
+		if (h > GDK_int_max)
+			throw(ILLARG, "calc.month_interval", SQLSTATE(22003) "Value too large to fit at a month_interval");
+		r = (int) h;
+	} break;
 #endif
 	default:
 		throw(ILLARG, "calc.month_interval", SQLSTATE(42000) "Illegal argument");
 	}
+	c = r;
 	switch (k) {
 	case iyear:
-		r *= 12;
+		c *= 12;
 		break;
 	case imonth:
 		break;
 	default:
 		throw(ILLARG, "calc.month_interval", SQLSTATE(42000) "Illegal argument");
 	}
-	*ret = r;
+	if (c < r)
+		throw(ILLARG, "calc.month_interval", SQLSTATE(22003) "Overflow in convertion of %d to month_interval", r);
+	*ret = c;
 	return MAL_SUCCEED;
 }
 
 str
 second_interval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	lng *ret = getArgReference_lng(stk, pci, 0), r;
+	lng *ret = getArgReference_lng(stk, pci, 0), r, c;
 	int k = digits2ek(*getArgReference_int(stk, pci, 2)), scale = 0;
 
 	(void) cntxt;
@@ -3915,38 +3926,45 @@ second_interval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		r = stk->stk[getArg(pci, 1)].val.lval;
 		break;
 #ifdef HAVE_HGE
-	case TYPE_hge:
+	case TYPE_hge: {
+		hge h;
 		if (is_hge_nil(stk->stk[getArg(pci, 1)].val.hval))
 			return MAL_SUCCEED;
-		r = (lng) stk->stk[getArg(pci, 1)].val.hval;
-		break;
+		h = stk->stk[getArg(pci, 1)].val.hval;
+		if (h > GDK_lng_max)
+			throw(ILLARG, "calc.sec_interval", SQLSTATE(22003) "Value too large to fit at a sec_interval");
+		r = (lng) h;
+	} break;
 #endif
 	default:
 		throw(ILLARG, "calc.sec_interval", SQLSTATE(42000) "Illegal argument in second interval");
 	}
+	c = r;
 	switch (k) {
 	case iday:
-		r *= 24;
+		c *= 24;
 		/* fall through */
 	case ihour:
-		r *= 60;
+		c *= 60;
 		/* fall through */
 	case imin:
-		r *= 60;
+		c *= 60;
 		/* fall through */
 	case isec:
-		r *= 1000;
+		c *= 1000;
 		break;
 	default:
 		throw(ILLARG, "calc.sec_interval", SQLSTATE(42000) "Illegal argument in second interval");
 	}
 	if (scale) {
 #ifndef TRUNCATE_NUMBERS
-		r += 5*scales[scale-1];
+		c += 5*scales[scale-1];
 #endif
-		r /= scales[scale];
+		c /= scales[scale];
 	}
-	*ret = r;
+	if (c < r)
+		throw(ILLARG, "calc.sec_interval", SQLSTATE(22003) "Overflow in convertion of " LLFMT " to sec_interval", r);
+	*ret = c;
 	return MAL_SUCCEED;
 }
 
