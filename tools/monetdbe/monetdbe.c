@@ -86,6 +86,7 @@ typedef struct monetdbe_table_t {
 typedef struct {
 	Client c;
 	char *msg;
+	monetdbe_data_blob blob_null;
 	monetdbe_data_date date_null;
 	monetdbe_data_time time_null;
 	monetdbe_data_timestamp timestamp_null;
@@ -399,6 +400,7 @@ monetdbe_open_internal(monetdbe_database_internal *mdbe)
 cleanup:
 	if (mdbe->msg)
 		return -2;
+	mdbe->blob_null.data = NULL;
 	data_from_date(date_nil, &mdbe->date_null);
 	data_from_time(daytime_nil, &mdbe->time_null);
 	data_from_timestamp(timestamp_nil, &mdbe->timestamp_null);
@@ -1253,8 +1255,10 @@ monetdbe_null(monetdbe_database dbhdl, monetdbe_types t)
 #endif
 			))
 		return ATOMnilptr(mtype);
-	else if (mtype == TYPE_str || mtype == TYPE_blob)
+	else if (mtype == TYPE_str)
 		return NULL;
+	else if (mtype == TYPE_blob)
+		return &mdbe->blob_null;
 	else if (mtype == TYPE_date)
 		return &mdbe->date_null;
 	else if (mtype == TYPE_daytime)
