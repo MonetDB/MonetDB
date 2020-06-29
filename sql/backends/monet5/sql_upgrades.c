@@ -2952,6 +2952,15 @@ sql_update_default(Client c, mvc *sql, const char *prev_schema)
 					"external name \"sql\".\"sql_variables\";\n"
 					"grant execute on function \"sys\".\"var\" to public;\n");
 
+			/* .snapshot user */
+			pos += snprintf(buf + pos, bufsize - pos,
+				"create user \".snapshot\""
+				" with encrypted password '00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000'"
+				" name 'Snapshot User'"
+				" schema sys;"
+				"grant execute on procedure sys.hot_snapshot to \".snapshot\";"
+			);
+
 			/* update system tables so that the content
 			 * looks more like what it would be if sys.var
 			 * had been defined by the C code in
