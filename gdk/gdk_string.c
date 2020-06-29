@@ -872,8 +872,8 @@ concat_strings(BAT **bnp, ValPtr pt, BAT *b, oid seqb,
 		}
 		canditer_reset(ci);
 
-		if (nils == 0) {
-			char *single_str;
+		if (nils == 0 && !empty) {
+			char *single_str = NULL;
 
 			if ((single_str = GDKmalloc(single_length + 1)) == NULL)
 				return GDK_FAIL;
@@ -1191,6 +1191,7 @@ GDKanalytical_str_group_concat(BAT *r, BAT *b, BAT *sep, BAT *s, BAT *e, const c
 	str sb, sl, single_str = NULL, next_single_str;
 	bool empty;
 	size_t separator_length = 0, next_group_length, max_group_length = 0, next_length, offset;
+	bool hasnil = 0;
 
 	assert(s && e && ((sep && !separator && BATcount(b) == BATcount(sep)) || (!sep && separator)));
 	start = (lng *) Tloc(s, 0);
@@ -1241,61 +1242,65 @@ GDKanalytical_str_group_concat(BAT *r, BAT *b, BAT *sep, BAT *s, BAT *e, const c
 			}
 		}
 
-		empty = true;
-
-		if (!single_str) { /* reuse the same buffer, resize it when needed */
-			max_group_length = next_group_length;
-			if ((single_str = GDKmalloc(max_group_length + 1)) == NULL)
+		if (empty) {
+			if ((single_str = GDKstrdup(str_nil)) == NULL)
 				goto allocation_error;
-		} else if (next_group_length > max_group_length) {
-			max_group_length = next_group_length;
-			if ((next_single_str = GDKrealloc(single_str, max_group_length + 1)) == NULL)
-				goto allocation_error;
-			single_str = next_single_str;
-		}
-
-		for (j = start[i]; j < l; j++) {
-			sb = BUNtvar(bi, (BUN) j);
-
-			if (separator) {
-				if (strNil(sb))
-					continue;
-				if (!empty) {
-					memcpy(single_str + offset, separator, separator_length);
-					offset += separator_length;
-				}
-				next_length = strlen(sb);
-				memcpy(single_str + offset, sb, next_length);
-				offset += next_length;
-				empty = false;
-			} else { /* sep case */
-				assert(sep != NULL);
-				sl = BUNtvar(bis, (BUN) j);
-
-				if (strNil(sb))
-					continue;
-				if (!empty && !strNil(sl)) {
-					next_length = strlen(sl);
-					memcpy(single_str + offset, sl, next_length);
-					offset += next_length;
-				}
-				next_length = strlen(sb);
-				memcpy(single_str + offset, sb, next_length);
-				offset += next_length;
-				empty = false;
+			hasnil = true;
+		} else {
+			empty = true;
+			if (!single_str) { /* reuse the same buffer, resize it when needed */
+				max_group_length = next_group_length;
+				if ((single_str = GDKmalloc(max_group_length + 1)) == NULL)
+					goto allocation_error;
+			} else if (next_group_length > max_group_length) {
+				max_group_length = next_group_length;
+				if ((next_single_str = GDKrealloc(single_str, max_group_length + 1)) == NULL)
+					goto allocation_error;
+				single_str = next_single_str;
 			}
-		}
 
-		single_str[offset] = '\0';
+			for (j = start[i]; j < l; j++) {
+				sb = BUNtvar(bi, (BUN) j);
+
+				if (separator) {
+					if (strNil(sb))
+						continue;
+					if (!empty) {
+						memcpy(single_str + offset, separator, separator_length);
+						offset += separator_length;
+					}
+					next_length = strlen(sb);
+					memcpy(single_str + offset, sb, next_length);
+					offset += next_length;
+					empty = false;
+				} else { /* sep case */
+					assert(sep != NULL);
+					sl = BUNtvar(bis, (BUN) j);
+
+					if (strNil(sb))
+						continue;
+					if (!empty && !strNil(sl)) {
+						next_length = strlen(sl);
+						memcpy(single_str + offset, sl, next_length);
+						offset += next_length;
+					}
+					next_length = strlen(sb);
+					memcpy(single_str + offset, sb, next_length);
+					offset += next_length;
+					empty = false;
+				}
+			}
+
+			single_str[offset] = '\0';
+		}
 		if (BUNappend(r, single_str, false) != GDK_SUCCEED)
 			goto allocation_error;
-
 	}
 
 	GDKfree(single_str);
 	BATsetcount(r, cnt);
-	r->tnonil = true;
-	r->tnil = false;
+	r->tnonil = !hasnil;
+	r->tnil = hasnil;
 	return GDK_SUCCEED;
   allocation_error:
 	GDKfree(single_str);

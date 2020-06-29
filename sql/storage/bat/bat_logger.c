@@ -129,29 +129,36 @@ tabins(void *lg, bool first, int tt, const char *nname, const char *sname, const
 	while ((cname = va_arg(va, char *)) != NULL) {
 		cval = va_arg(va, void *);
 		len = snprintf(lname, sizeof(lname), "%s_%s_%s", sname, tname, cname);
-		if (len == -1 || (size_t)len >= sizeof(lname))
+		if (len == -1 || (size_t)len >= sizeof(lname) ||
+			(b = temp_descriptor(logger_find_bat(lg, lname, 0, 0))) == NULL) {
+			va_end(va);
 			return GDK_FAIL;
-		if ((b = temp_descriptor(logger_find_bat(lg, lname, 0, 0))) == NULL)
-			return GDK_FAIL;
+		}
 		if (first) {
 			BAT *bn;
 			if ((bn = COLcopy(b, b->ttype, true, PERSISTENT)) == NULL) {
 				BBPunfix(b->batCacheid);
+				va_end(va);
 				return GDK_FAIL;
 			}
 			BBPunfix(b->batCacheid);
 			if (BATsetaccess(bn, BAT_READ) != GDK_SUCCEED ||
 			    logger_add_bat(lg, bn, lname, 0, 0) != GDK_SUCCEED) {
 				BBPunfix(bn->batCacheid);
+				va_end(va);
 				return GDK_FAIL;
 			}
 			b = bn;
 		}
 		rc = BUNappend(b, cval, true);
 		BBPunfix(b->batCacheid);
-		if (rc != GDK_SUCCEED)
+		if (rc != GDK_SUCCEED) {
+			va_end(va);
 			return rc;
+		}
 	}
+	va_end(va);
+
 	if (tt >= 0) {
 		if ((b = COLnew(0, tt, 0, PERSISTENT)) == NULL)
 			return GDK_FAIL;
@@ -352,7 +359,7 @@ bl_postversion(void *lg)
 				return GDK_FAIL;
 			}
 			const char *right_module = "aggr"; /* set module to 'aggr' */
-			BAT *update_bat = BATconstant(cands_project->hseqbase, TYPE_str, right_module, 4, TRANSIENT);
+			BAT *update_bat = BATconstant(cands_project->hseqbase, TYPE_str, right_module, BATcount(cands_project), TRANSIENT);
 			bat_destroy(cands_project);
 			if (update_bat == NULL) {
 				bat_destroy(func_mod);

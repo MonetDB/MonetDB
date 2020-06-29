@@ -24,6 +24,7 @@
 #include "snapshot.h"
 #include "stream.h"
 #include "utils/database.h"
+#include "forkmserver.h"
 
 struct dir_helper {
 	char *dir;
@@ -55,13 +56,11 @@ snapshot_database_to(char *dbname, char *dest)
 {
 	err e = NO_ERR;
 	sabdb *stats = NULL;
-	int port = -1;
 	Mapi conn = NULL;
 	MapiHdl handle = NULL;
 
-
-	/* First look up the database in our administration. */
-	e = msab_getStatus(&stats, dbname);
+	/* Start the database if necessary */
+	e = forkMserver(dbname, &stats, false);
 	if (e != NO_ERR) {
 		goto bailout;
 	}
@@ -71,21 +70,34 @@ snapshot_database_to(char *dbname, char *dest)
 		goto bailout;
 	}
 
+	if (stats->secret == NULL) {
+#if !defined(HAVE_OPENSSL) && !defined(HAVE_COMMONCRYPTO)
+		e = newErr("snapshotting only works when MonetDB has been compiled with secure crypto support");
+#else
+		e = newErr("Cannot find secret for database '%s'", dbname);
+#endif
+		goto bailout;
+	}
+
 	/* Do not overwrite random files on the system. */
 	e = validate_location(dest);
 	if (e != NO_ERR) {
 		goto bailout;
 	}
 
-	/* Connect. This is a dirty hack, making two assumptions:
-	 * 1. we're listening on localhost
-	 * 2. the database has a root user 'monetdb' with password 'monetdb'.
-	 * We'll improve this when have figured out how to authenticate.
-	 */
-	port = getConfNum(_mero_props, "port");
-	conn = mapi_connect("localhost", port, "monetdb", "monetdb", "sql", dbname);
-	if (conn == NULL || mapi_error(conn)) {
+	/* Set up the connection. Connect directly to the unix domain socket */
+	if (stats->conns == NULL || stats->conns[0].val == NULL) {
+		e = newErr("internal error: no conn");
+		goto bailout;
+	}
+	conn = mapi_mapiuri(stats->conns[0].val, ".snapshot", stats->secret, "sql");
+	if (conn == NULL || mapi_error(conn) != MOK) {
 		e = newErr("connection error: %s", mapi_error_str(conn));
+		goto bailout;
+	}
+	mapi_reconnect(conn);
+	if (mapi_error(conn) != MOK) {
+		e = newErr("connection error:: %s", mapi_error_str(conn));
 		goto bailout;
 	}
 
@@ -186,24 +198,10 @@ snapshot_restore_from(char *dbname, char *source)
 	if (e != NO_ERR)
 		goto bailout;
 
-	/* Stop the existing database, if any */
+	/* Stop the existing database, if any. Don't bother with a graceful shutdown. */
 	if (existing != NULL) {
-		/* search connection list for pid to kill */
-		pid_t pid = 0;
-		pthread_mutex_lock(&_mero_topdp_lock);
-		for (dpair dp = _mero_topdp->next; dp != NULL; dp = dp->next) {
-			if (dp->type != MERODB)
-				continue;
-			if (strcmp(dp->dbname, dbname) != 0)
-				continue;
-			// hah!
-			pid = dp->pid;
-			break;
-		}
-		pthread_mutex_unlock(&_mero_topdp_lock);
-		/* kill kill */
-		if (pid != 0) {
-			kill(pid, SIGKILL);
+		if (existing->pid != 0) {
+			kill(existing->pid, SIGKILL);
 			sleep(1); // not sure if this is needed
 		}
 		db_destroy(existing->dbname);

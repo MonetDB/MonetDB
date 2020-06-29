@@ -3973,10 +3973,11 @@ drop function pcre_replace(string, string, string, string);
 % .%1,	sys.auths,	sys.auths # table_name
 % %1,	name,	grantor # name
 % char,	varchar,	int # type
-% 9,	8,	1 # length
+% 9,	9,	1 # length
 [ "sys.auths",	"public",	0	]
 [ "sys.auths",	"sysadmin",	0	]
 [ "sys.auths",	"monetdb",	0	]
+[ "sys.auths",	".snapshot",	3	]
 #select 'schema comments', s.name, c.remark from sys.comments c, sys.schemas s where s.id = c.id order by s.name;
 % .%2,	sys.s,	sys.c # table_name
 % %2,	name,	remark # name
@@ -4011,7 +4012,8 @@ drop function pcre_replace(string, string, string, string);
 % .%4,	.u,	.u,	.s # table_name
 % %4,	name,	fullname,	name # name
 % char,	varchar,	varchar,	varchar # type
-% 16,	7,	13,	3 # length
+% 16,	9,	13,	3 # length
+[ "sys.db_user_info",	".snapshot",	"Snapshot User",	"sys"	]
 [ "sys.db_user_info",	"monetdb",	"MonetDB Admin",	"sys"	]
 #select 'function used by function', s1.name, f1.name, s2.name, f2.name, dt.dependency_type_name from sys.dependencies d left outer join sys.dependency_types dt on d.depend_type = dt.dependency_type_id, sys.functions f1, sys.functions f2, sys.schemas s1, sys.schemas s2 where d.id = f1.id and d.depend_id = f2.id and f1.schema_id = s1.id and f2.schema_id = s2.id order by s2.name, f2.name, s1.name, f1.name;
 % .%4,	sys.s1,	sys.f1,	sys.s2,	sys.f2,	.dt # table_name
@@ -4814,7 +4816,8 @@ drop function pcre_replace(string, string, string, string);
 % .%4,	sys.s,	.u # table_name
 % %4,	name,	name # name
 % char,	varchar,	varchar # type
-% 22,	3,	7 # length
+% 22,	3,	9 # length
+[ "default schema of user",	"sys",	".snapshot"	]
 [ "default schema of user",	"sys",	"monetdb"	]
 #select 'grant on table', t.name, a.name, pc.privilege_code_name, g.name, p.grantable from sys._tables t, sys.privileges p left outer join sys.auths g on p.grantor = g.id left outer join sys.privilege_codes pc on p.privileges = pc.privilege_code_id, sys.auths a where t.id = p.obj_id and p.auth_id = a.id order by t.name, a.name;
 % .%6,	sys.t,	sys.a,	.pc,	.g,	.p # table_name
@@ -4901,7 +4904,7 @@ drop function pcre_replace(string, string, string, string);
 % .%6,	sys.f,	sys.a,	.pc,	.g,	.p # table_name
 % %6,	name,	name,	privilege_code_name,	name,	grantable # name
 % char,	varchar,	varchar,	varchar,	varchar,	int # type
-% 17,	24,	6,	7,	7,	1 # length
+% 17,	24,	9,	7,	7,	1 # length
 [ "grant on function",	"abbrev",	"public",	"EXECUTE",	"monetdb",	0	]
 [ "grant on function",	"alpha",	"public",	"EXECUTE",	"monetdb",	0	]
 [ "grant on function",	"broadcast",	"public",	"EXECUTE",	"monetdb",	0	]
@@ -4989,6 +4992,7 @@ drop function pcre_replace(string, string, string, string);
 [ "grant on function",	"has_z",	"public",	"EXECUTE",	"monetdb",	0	]
 [ "grant on function",	"host",	"public",	"EXECUTE",	"monetdb",	0	]
 [ "grant on function",	"hostmask",	"public",	"EXECUTE",	"monetdb",	0	]
+[ "grant on function",	"hot_snapshot",	".snapshot",	"EXECUTE",	"monetdb",	0	]
 [ "grant on function",	"ilike",	"public",	"EXECUTE",	"monetdb",	0	]
 [ "grant on function",	"ilike",	"public",	"EXECUTE",	"monetdb",	0	]
 [ "grant on function",	"integer",	"public",	"EXECUTE",	"monetdb",	0	]

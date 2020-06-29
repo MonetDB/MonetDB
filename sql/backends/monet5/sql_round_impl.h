@@ -21,6 +21,7 @@
 #define batstr_2dec		FUN(batstr_2dec, TYPE)
 #define batstr_ce_2dec          FUN(batstr_ce_2dec, TYPE)
 #define dec2second_interval	FUN(TYPE, dec2second_interval)
+#define batdec2second_interval	FUN(TYPE, batdec2second_interval)
 
 static inline TYPE
 dec_round_body_nonil(TYPE v, TYPE r)
@@ -452,7 +453,9 @@ dec2second_interval(lng *res, const int *sc, const TYPE *dec, const int *ek, con
 
 	(void) ek;
 	(void) sk;
-	if (*sc < 3) {
+	if (ISNIL(TYPE)(*dec)) {
+		value = lng_nil;
+	} else if (*sc < 3) {
 		int d = 3 - *sc;
 		value *= scales[d];
 	} else if (*sc > 3) {
@@ -463,6 +466,80 @@ dec2second_interval(lng *res, const int *sc, const TYPE *dec, const int *ek, con
 		value /= scales[d];
 	}
 	*res = value;
+	return MAL_SUCCEED;
+}
+
+str
+batdec2second_interval(bat *res, const int *sc, const bat *bid, const int *ek, const int *sk)
+{
+	BAT *b, *dst;
+	BUN q = 0;
+	TYPE *restrict src;
+	BIG *restrict ret, multiplier = 1, divider = 1, offset = 0;
+
+	(void) ek;
+	(void) sk;
+	if ((b = BATdescriptor(*bid)) == NULL)
+		throw(SQL, "batcalc.batdec2second_interval", SQLSTATE(HY005) "Cannot access column descriptor");
+
+	q = BATcount(b);
+	if (!(dst = COLnew(b->hseqbase, TYPE_lng, q, TRANSIENT))) {
+		BBPunfix(b->batCacheid);
+		throw(SQL, "batcalc.batdec2second_interval", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+	}
+	src = Tloc(b, 0);
+	ret = Tloc(dst, 0);
+
+	if (*sc < 3) {
+		int d = 3 - *sc;
+		multiplier = scales[d];
+	} else if (*sc > 3) {
+		int d = *sc - 3;
+		lng rnd = scales[d] >> 1;
+
+		offset = rnd;
+		divider = scales[d];
+	}
+
+	if (*sc < 3) {
+		for (BUN i = 0 ; i < q ; i++) {
+			if (ISNIL(TYPE)(src[i])) {
+				ret[i] = lng_nil;
+			} else {
+				BIG next = (BIG) src[i];
+				next *= multiplier;
+				ret[i] = next;
+			}
+		}
+	} else if (*sc > 3) {
+		for (BUN i = 0 ; i < q ; i++) {
+			if (ISNIL(TYPE)(src[i])) {
+				ret[i] = lng_nil;
+			} else {
+				BIG next = (BIG) src[i];
+				next += offset;
+				next /= divider;
+				ret[i] = next;
+			}
+		}
+	} else {
+		for (BUN i = 0 ; i < q ; i++) {
+			if (ISNIL(TYPE)(src[i])) {
+				ret[i] = lng_nil;
+			} else {
+				ret[i] = (BIG) src[i];
+			}
+		}
+	}
+
+	BATsetcount(dst, q);
+	dst->tnil = b->tnil;
+	dst->tnonil = b->tnonil;
+	dst->tkey = BATcount(dst) <= 1;
+	dst->tsorted = BATcount(dst) <= 1;
+	dst->trevsorted = BATcount(dst) <= 1;
+	BBPunfix(b->batCacheid);
+	BBPkeepref(*res = dst->batCacheid);
 	return MAL_SUCCEED;
 }
 
@@ -479,3 +556,4 @@ dec2second_interval(lng *res, const int *sc, const TYPE *dec, const int *ek, con
 #undef batnil_2dec
 #undef batstr_2dec
 #undef dec2second_interval
+#undef batdec2second_interval

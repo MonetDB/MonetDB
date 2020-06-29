@@ -2845,10 +2845,10 @@ rel_schemas(sql_query *query, symbol *s)
 		dnode *a = l->h->next->data.lval->h;
 
 		ret = rel_alter_user(sql->sa, l->h->data.sval,	/* user */
-				     a->data.sval,	/* passwd */
-				     a->next->next->data.i_val == SQL_PW_ENCRYPTED, /* encrypted */
-				     a->next->data.sval,	/* schema */
-				     a->next->next->next->data.sval /* old passwd */
+			     a->data.sval,	/* passwd */
+			     a->next->next->data.i_val == SQL_PW_ENCRYPTED, /* encrypted */
+			     a->next->data.sval,	/* schema */
+			     a->next->next->next->data.sval /* old passwd */
 		    );
 	} 	break;
 	case SQL_RENAME_USER: {

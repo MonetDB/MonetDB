@@ -28,8 +28,8 @@ stdout of test 'subquery6` in directory 'sql/test/subquery` itself:
 #     WHERE ctr1.ctr_state = ctr2.ctr_state)
 #  AND col1 = ColID
 #  AND ctr1.ctr_customer_sk = TotalSales;
-% .%45 # table_name
-% %45 # name
+% .%44 # table_name
+% %44 # name
 % tinyint # type
 % 1 # length
 #SELECT (SELECT (SELECT SUM(col1)) IN (MAX(col2))) FROM another_t;
@@ -45,8 +45,8 @@ stdout of test 'subquery6` in directory 'sql/test/subquery` itself:
 % 5 # length
 [ false	]
 #SELECT CASE WHEN ColID IS NULL THEN CAST(Product_Category AS INT) ELSE TotalSales END FROM tbl_ProductSales;
-% sys.%1 # table_name
-% %1 # name
+% sys.%2 # table_name
+% %2 # name
 % int # type
 % 3 # length
 [ 200	]
@@ -62,9 +62,9 @@ stdout of test 'subquery6` in directory 'sql/test/subquery` itself:
 [ 2	]
 [ 3	]
 [ 4	]
-#SELECT SUM((SELECT col1)) FROM another_t;
-% sys.%2 # table_name
-% %2 # name
+#SELECT CAST(SUM((SELECT col1)) AS BIGINT) FROM another_t;
+% sys.%3 # table_name
+% %3 # name
 % bigint # type
 % 4 # length
 [ 1234	]
@@ -75,8 +75,8 @@ stdout of test 'subquery6` in directory 'sql/test/subquery` itself:
 % 4 # length
 [ 3702	]
 #SELECT CAST(SUM((SELECT CAST(EXISTS(SELECT col1) AS INT))) AS BIGINT) FROM another_t;
-% sys.%3 # table_name
-% %3 # name
+% sys.%4 # table_name
+% %4 # name
 % bigint # type
 % 1 # length
 [ 4	]
@@ -87,8 +87,8 @@ stdout of test 'subquery6` in directory 'sql/test/subquery` itself:
 % 4 # length
 [ 3702	]
 #SELECT CAST((SELECT SUM((SELECT col1))) AS BIGINT) FROM another_t;
-% sys.%2 # table_name
-% %2 # name
+% sys.%3 # table_name
+% %3 # name
 % bigint # type
 % 4 # length
 [ 1234	]
@@ -141,6 +141,75 @@ stdout of test 'subquery6` in directory 'sql/test/subquery` itself:
 [ 4	]
 [ 4	]
 [ 4	]
+#SELECT (SELECT 1 FROM another_t t1 WHERE t2.product_category LIKE CAST(t1.col1 AS VARCHAR(32))) FROM tbl_ProductSales t2;
+% .%2 # table_name
+% %2 # name
+% tinyint # type
+% 1 # length
+[ NULL	]
+[ NULL	]
+[ NULL	]
+[ NULL	]
+#SELECT (SELECT t2.col2 FROM another_t t2 WHERE t1.col1 BETWEEN t2.col1 AND t2.col2) FROM another_t t1;
+% .%1 # table_name
+% %1 # name
+% int # type
+% 4 # length
+[ 2	]
+[ 22	]
+[ 222	]
+[ 2222	]
+#SELECT (SELECT 1) > ANY(SELECT 1);
+% .%10 # table_name
+% %10 # name
+% boolean # type
+% 5 # length
+[ false	]
+#CREATE FUNCTION debugme() RETURNS INT
+#BEGIN
+#	DECLARE res INT;
+#	SET res = 1 > (select 9 from integers);
+#	RETURN res;
+#END;
+#DROP FUNCTION debugme;
+#SELECT i = ALL(i), i < ANY(i), i = ANY(NULL) FROM integers;
+% sys.%3,	sys.%4,	. # table_name
+% %3,	%4,	%2 # name
+% boolean,	boolean,	boolean # type
+% 5,	5,	5 # length
+[ true,	false,	NULL	]
+[ true,	false,	NULL	]
+[ true,	false,	NULL	]
+[ NULL,	NULL,	NULL	]
+#SELECT i FROM integers WHERE i = ANY(NULL);
+% sys.integers # table_name
+% i # name
+% int # type
+% 1 # length
+#CREATE FUNCTION debugme() RETURNS INT
+#BEGIN
+#	DECLARE n INT;
+#	WHILE (1 > (select 9 from integers)) do
+#		SET n = n -1;
+#	END WHILE;
+#	RETURN n;
+#END;
+#DROP FUNCTION debugme;
+#CREATE FUNCTION debugme() RETURNS INT
+#BEGIN
+#	DECLARE n INT;
+#	WHILE (1 > ALL(select 1)) do
+#		SET n = n -1;
+#	END WHILE;
+#	RETURN n;
+#END;
+#SELECT debugme(); --error, more than one row returned by a subquery used as an expression
+% .%4 # table_name
+% %4 # name
+% int # type
+% 1 # length
+[ NULL	]
+#DROP FUNCTION debugme;
 #DROP TABLE tbl_ProductSales;
 #DROP TABLE another_T;
 #DROP TABLE integers;

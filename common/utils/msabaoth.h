@@ -27,6 +27,7 @@ typedef enum {
 typedef struct Ssabdb {
 	char *dbname;            /* database name */
 	char *path;              /* path to this database */
+	pid_t pid;               /* pid, if known */
 	bool locked;             /* whether this database is under maintenance */
 	SABdbState state;        /* current database state */
 	sablist* scens;          /* scenarios available for this database */
@@ -34,6 +35,7 @@ typedef struct Ssabdb {
 	struct Ssabuplog *uplog; /* sabuplog struct for this database */
 	char *uri;               /* URI to connect to this database */
 	struct Ssabdb* next;     /* next database */
+	char *secret;            /* authentication secret for this running database */
 } sabdb;
 
 typedef struct Ssabuplog {
@@ -74,6 +76,7 @@ msab_export char *msab_wildRetreat(void);
 msab_export char *msab_registerStarting(void);
 msab_export char *msab_registerStarted(void);
 msab_export char *msab_registerStop(void);
+msab_export char *msab_pickSecret(char **generated_secret);
 msab_export char *msab_getMyStatus(sabdb** ret);
 msab_export char *msab_getStatus(sabdb** ret, char *dbname);
 msab_export void msab_freeStatus(sabdb** ret);

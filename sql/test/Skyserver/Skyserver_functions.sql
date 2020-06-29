@@ -1996,8 +1996,8 @@ BEGIN
 	    FROM Field WHERE fieldId=fiel;
 	SELECT cast(field as varchar(8)) into fieldd
 	    FROM Field WHERE fieldId=fiel;
-	SET run6   = substring('000000',1,6-length(runn)) + runn;
-	SET fieldd = substring('0000',1,4-length(fieldd)) + fieldd;
+	SET run6   = substring('000000',1,6-length(runn)) || runn;
+	SET fieldd = substring('0000',1,4-length(fieldd)) || fieldd;
 	RETURN 	 link || runn || '/' || rerunn || '/corr/' || camcoll || '/fpC-' || run6 || '-' || filter || camcoll || '-' || fieldd ||'.fit.gz';
 END;
 

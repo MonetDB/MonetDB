@@ -3477,159 +3477,6 @@ PBATSQLidentity(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
  */
 
 str
-daytime_2time_daytime(daytime *res, const daytime *v, const int *digits)
-{
-	int d = (*digits) ? *digits - 1 : 0;
-
-	/* correct fraction */
-	*res = *v;
-	if (!is_daytime_nil(*v) && d < 6) {
-#ifdef TRUNCATE_NUMBERS
-		*res = (daytime) (*res / scales[6 - d]);
-#else
-		*res = (daytime) ((*res + (scales[6 - d] >> 1)) / scales[6 - d]);
-#endif
-		*res = (daytime) (*res * scales[6 - d]);
-	}
-	return MAL_SUCCEED;
-}
-
-str
-second_interval_2_daytime(daytime *res, const lng *s, const int *digits)
-{
-	daytime d;
-
-	if (*s == lng_nil) {
-		*res = daytime_nil;
-		return MAL_SUCCEED;
-	}
-	d = daytime_add_usec(daytime_create(0, 0, 0, 0), *s * 1000);
-	return daytime_2time_daytime(res, &d, digits);
-}
-
-str
-nil_2time_daytime(daytime *res, const void *v, const int *digits)
-{
-	(void) digits;
-	(void) v;
-	*res = daytime_nil;
-	return MAL_SUCCEED;
-}
-
-str
-str_2time_daytimetz(daytime *res, const str *v, const int *digits, int *tz)
-{
-	size_t len = sizeof(daytime);
-	ssize_t pos;
-
-	if (strNil(*v)) {
-		*res = daytime_nil;
-		return MAL_SUCCEED;
-	}
-	if (*tz)
-		pos = daytime_tz_fromstr(*v, &len, &res, false);
-	else
-		pos = daytime_fromstr(*v, &len, &res, false);
-	if (pos < (ssize_t) strlen(*v) || /* includes pos < 0 */
-	    ATOMcmp(TYPE_daytime, res, ATOMnilptr(TYPE_daytime)) == 0)
-		throw(SQL, "daytime", SQLSTATE(22007) "Daytime (%s) has incorrect format", *v);
-	return daytime_2time_daytime(res, res, digits);
-}
-
-str
-str_2time_daytime(daytime *res, const str *v, const int *digits)
-{
-	int zero = 0;
-	return str_2time_daytimetz(res, v, digits, &zero);
-}
-
-str
-timestamp_2_daytime(daytime *res, const timestamp *v, const int *digits)
-{
-	int d = (*digits) ? *digits - 1 : 0;
-	daytime dt;
-
-	dt = timestamp_daytime(*v);
-
-	/* correct fraction */
-	if (!is_daytime_nil(dt) && d < 6) {
-#ifdef TRUNCATE_NUMBERS
-		dt /= scales[6 - d];
-#else
-		dt = (dt + (scales[6 - d] >> 1)) / scales[6 - d];
-#endif
-		dt *= scales[6 - d];
-	}
-	*res = dt;
-	return MAL_SUCCEED;
-}
-
-str
-date_2_timestamp(timestamp *res, const date *v, const int *digits)
-{
-	(void) digits;		/* no precision needed */
-	*res = timestamp_fromdate(*v);
-	return MAL_SUCCEED;
-}
-
-str
-timestamp_2time_timestamp(timestamp *res, const timestamp *v, const int *digits)
-{
-	int d = (*digits) ? *digits - 1 : 0;
-	date dt;
-	daytime tm;
-
-	dt = timestamp_date(*v);
-	tm = timestamp_daytime(*v);
-	/* correct fraction */
-	if (!is_daytime_nil(tm) && d < 6) {
-#ifdef TRUNCATE_NUMBERS
-		tm /= scales[6 - d];
-#else
-		tm = (tm + (scales[6 - d] >> 1)) / scales[6 - d];
-#endif
-		tm *= scales[6 - d];
-	}
-	*res = timestamp_create(dt, tm);
-	return MAL_SUCCEED;
-}
-
-str
-nil_2time_timestamp(timestamp *res, const void *v, const int *digits)
-{
-	(void) digits;
-	(void) v;
-	*res = timestamp_nil;
-	return MAL_SUCCEED;
-}
-
-str
-str_2time_timestamptz(timestamp *res, const str *v, const int *digits, int *tz)
-{
-	size_t len = sizeof(timestamp);
-	ssize_t pos;
-
-	if (strNil(*v)) {
-		*res = timestamp_nil;
-		return MAL_SUCCEED;
-	}
-	if (*tz)
-		pos = timestamp_tz_fromstr(*v, &len, &res, false);
-	else
-		pos = timestamp_fromstr(*v, &len, &res, false);
-	if (!pos || pos < (ssize_t) strlen(*v) || ATOMcmp(TYPE_timestamp, res, ATOMnilptr(TYPE_timestamp)) == 0)
-		throw(SQL, "timestamp", SQLSTATE(22007) "Timestamp (%s) has incorrect format", *v);
-	return timestamp_2time_timestamp(res, res, digits);
-}
-
-str
-str_2time_timestamp(timestamp *res, const str *v, const int *digits)
-{
-	int zero = 0;
-	return str_2time_timestamptz(res, v, digits, &zero);
-}
-
-str
 SQLcst_alpha_cst(dbl *res, const dbl *decl, const dbl *theta)
 {
 	dbl s, c1, c2;
@@ -3734,207 +3581,6 @@ SQLcst_alpha_bat(bat *res, const dbl *decl, const bat *thetabid)
 	}
 	BBPkeepref(*res = bn->batCacheid);
 	BBPunfix(b->batCacheid);
-	return msg;
-}
-
-str
-month_interval_str(int *ret, const str *s, const int *d, const int *sk)
-{
-	lng res;
-
-	if (interval_from_str(*s, *d, *sk, &res) < 0)
-		throw(SQL, "calc.month_interval", SQLSTATE(42000) "Wrong format (%s)", *s);
-	assert((lng) GDK_int_min <= res && res <= (lng) GDK_int_max);
-	*ret = (int) res;
-	return MAL_SUCCEED;
-}
-
-str
-second_interval_str(lng *res, const str *s, const int *d, const int *sk)
-{
-	if (interval_from_str(*s, *d, *sk, res) < 0)
-		throw(SQL, "calc.second_interval", SQLSTATE(42000) "Wrong format (%s)", *s);
-	return MAL_SUCCEED;
-}
-
-str
-month_interval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
-{
-	int *ret = getArgReference_int(stk, pci, 0);
-	int k = digits2ek(*getArgReference_int(stk, pci, 2)), r = 0;
-
-	(void) cntxt;
-	*ret = int_nil;
-	switch (getArgType(mb, pci, 1)) {
-	case TYPE_bte:
-		if (is_bte_nil(stk->stk[getArg(pci, 1)].val.btval))
-			return MAL_SUCCEED;
-		r = stk->stk[getArg(pci, 1)].val.btval;
-		break;
-	case TYPE_sht:
-		if (is_sht_nil(stk->stk[getArg(pci, 1)].val.shval))
-			return MAL_SUCCEED;
-		r = stk->stk[getArg(pci, 1)].val.shval;
-		break;
-	case TYPE_int:
-		if (is_int_nil(stk->stk[getArg(pci, 1)].val.ival))
-			return MAL_SUCCEED;
-		r = stk->stk[getArg(pci, 1)].val.ival;
-		break;
-	case TYPE_lng:
-		if (is_lng_nil(stk->stk[getArg(pci, 1)].val.lval))
-			return MAL_SUCCEED;
-		r = (int) stk->stk[getArg(pci, 1)].val.lval;
-		break;
-#ifdef HAVE_HGE
-	case TYPE_hge:
-		if (is_hge_nil(stk->stk[getArg(pci, 1)].val.hval))
-			return MAL_SUCCEED;
-		r = (int) stk->stk[getArg(pci, 1)].val.hval;
-		break;
-#endif
-	default:
-		throw(ILLARG, "calc.month_interval", SQLSTATE(42000) "Illegal argument");
-	}
-	switch (k) {
-	case iyear:
-		r *= 12;
-		break;
-	case imonth:
-		break;
-	default:
-		throw(ILLARG, "calc.month_interval", SQLSTATE(42000) "Illegal argument");
-	}
-	*ret = r;
-	return MAL_SUCCEED;
-}
-
-str
-second_interval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
-{
-	lng *ret = getArgReference_lng(stk, pci, 0), r;
-	int k = digits2ek(*getArgReference_int(stk, pci, 2)), scale = 0;
-
-	(void) cntxt;
-	if (pci->argc > 3)
-		scale = *getArgReference_int(stk, pci, 3);
-	*ret = lng_nil;
-	switch (getArgType(mb, pci, 1)) {
-	case TYPE_bte:
-		if (is_bte_nil(stk->stk[getArg(pci, 1)].val.btval))
-			return MAL_SUCCEED;
-		r = stk->stk[getArg(pci, 1)].val.btval;
-		break;
-	case TYPE_sht:
-		if (is_sht_nil(stk->stk[getArg(pci, 1)].val.shval))
-			return MAL_SUCCEED;
-		r = stk->stk[getArg(pci, 1)].val.shval;
-		break;
-	case TYPE_int:
-		if (is_int_nil(stk->stk[getArg(pci, 1)].val.ival))
-			return MAL_SUCCEED;
-		r = stk->stk[getArg(pci, 1)].val.ival;
-		break;
-	case TYPE_lng:
-		if (is_lng_nil(stk->stk[getArg(pci, 1)].val.lval))
-			return MAL_SUCCEED;
-		r = stk->stk[getArg(pci, 1)].val.lval;
-		break;
-#ifdef HAVE_HGE
-	case TYPE_hge:
-		if (is_hge_nil(stk->stk[getArg(pci, 1)].val.hval))
-			return MAL_SUCCEED;
-		r = (lng) stk->stk[getArg(pci, 1)].val.hval;
-		break;
-#endif
-	default:
-		throw(ILLARG, "calc.sec_interval", SQLSTATE(42000) "Illegal argument in second interval");
-	}
-	switch (k) {
-	case iday:
-		r *= 24;
-		/* fall through */
-	case ihour:
-		r *= 60;
-		/* fall through */
-	case imin:
-		r *= 60;
-		/* fall through */
-	case isec:
-		r *= 1000;
-		break;
-	default:
-		throw(ILLARG, "calc.sec_interval", SQLSTATE(42000) "Illegal argument in second interval");
-	}
-	if (scale) {
-#ifndef TRUNCATE_NUMBERS
-		r += scales[scale] >> 1;
-#endif
-		r /= scales[scale];
-	}
-	*ret = r;
-	return MAL_SUCCEED;
-}
-
-str
-second_interval_daytime(lng *res, const daytime *s, const int *d, const int *sk)
-{
-	int k = digits2sk(*d);
-	lng r = *(int *) s;
-
-	(void) sk;
-	if (is_daytime_nil(*s)) {
-		*res = lng_nil;
-		return MAL_SUCCEED;
-	}
-	switch (k) {
-	case isec:
-		break;
-	case imin:
-		r /= 60000;
-		r *= 60000;
-		break;
-	case ihour:
-		r /= 3600000;
-		r *= 3600000;
-		break;
-	case iday:
-		r /= (24 * 3600000);
-		r *= (24 * 3600000);
-		break;
-	default:
-		throw(ILLARG, "calc.second_interval", SQLSTATE(42000) "Illegal argument in daytime interval");
-	}
-	*res = r;
-	return MAL_SUCCEED;
-}
-
-str
-SQLcurrent_daytime(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
-{
-	mvc *m = NULL;
-	str msg;
-	daytime *res = getArgReference_TYPE(stk, pci, 0, daytime);
-
-	if ((msg = getSQLContext(cntxt, mb, &m, NULL)) != NULL)
-		return msg;
-
-	*res = timestamp_daytime(timestamp_add_usec(timestamp_current(),
-						    m->timezone * LL_CONSTANT(1000)));
-	return msg;
-}
-
-str
-SQLcurrent_timestamp(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
-{
-	mvc *m = NULL;
-	str msg;
-	timestamp *res = getArgReference_TYPE(stk, pci, 0, timestamp);
-
-	if ((msg = getSQLContext(cntxt, mb, &m, NULL)) != NULL)
-		return msg;
-
-	*res = timestamp_add_usec(timestamp_current(), m->timezone * LL_CONSTANT(1000));
 	return msg;
 }
 
@@ -5673,21 +5319,25 @@ static mel_func sql_init_funcs[] = {
  command("sql", "round", bte_round_wrap, false, "round off the decimal v(d,s) to r digits behind the dot (if r < 0, before the dot)", args(1,5, arg("",bte),arg("v",bte),arg("d",int),arg("s",int),arg("r",bte))),
  command("batsql", "round", bte_bat_round_wrap, false, "round off the decimal v(d,s) to r digits behind the dot (if r < 0, before the dot)", args(1,5, batarg("",bte),batarg("v",bte),arg("d",int),arg("s",int),arg("r",bte))),
  command("calc", "second_interval", bte_dec2second_interval, false, "cast bte decimal to a second_interval", args(1,5, arg("",lng),arg("sc",int),arg("v",bte),arg("ek",int),arg("sk",int))),
+ command("batcalc", "second_interval", bte_batdec2second_interval, false, "cast bte decimal to a second_interval", args(1,5, batarg("",lng),arg("sc",int),batarg("v",bte),arg("ek",int),arg("sk",int))),
  command("sql", "dec_round", sht_dec_round_wrap, false, "round off the value v to nearests multiple of r", args(1,3, arg("",sht),arg("v",sht),arg("r",sht))),
  command("batsql", "dec_round", sht_bat_dec_round_wrap, false, "round off the value v to nearests multiple of r", args(1,3, batarg("",sht),batarg("v",sht),arg("r",sht))),
  command("sql", "round", sht_round_wrap, false, "round off the decimal v(d,s) to r digits behind the dot (if r < 0, before the dot)", args(1,5, arg("",sht),arg("v",sht),arg("d",int),arg("s",int),arg("r",bte))),
  command("batsql", "round", sht_bat_round_wrap, false, "round off the decimal v(d,s) to r digits behind the dot (if r < 0, before the dot)", args(1,5, batarg("",sht),batarg("v",sht),arg("d",int),arg("s",int),arg("r",bte))),
  command("calc", "second_interval", sht_dec2second_interval, false, "cast sht decimal to a second_interval", args(1,5, arg("",lng),arg("sc",int),arg("v",sht),arg("ek",int),arg("sk",int))),
+ command("batcalc", "second_interval", sht_batdec2second_interval, false, "cast sht decimal to a second_interval", args(1,5, batarg("",lng),arg("sc",int),batarg("v",sht),arg("ek",int),arg("sk",int))),
  command("sql", "dec_round", int_dec_round_wrap, false, "round off the value v to nearests multiple of r", args(1,3, arg("",int),arg("v",int),arg("r",int))),
  command("batsql", "dec_round", int_bat_dec_round_wrap, false, "round off the value v to nearests multiple of r", args(1,3, batarg("",int),batarg("v",int),arg("r",int))),
  command("sql", "round", int_round_wrap, false, "round off the decimal v(d,s) to r digits behind the dot (if r < 0, before the dot)", args(1,5, arg("",int),arg("v",int),arg("d",int),arg("s",int),arg("r",bte))),
  command("batsql", "round", int_bat_round_wrap, false, "round off the decimal v(d,s) to r digits behind the dot (if r < 0, before the dot)", args(1,5, batarg("",int),batarg("v",int),arg("d",int),arg("s",int),arg("r",bte))),
  command("calc", "second_interval", int_dec2second_interval, false, "cast int decimal to a second_interval", args(1,5, arg("",lng),arg("sc",int),arg("v",int),arg("ek",int),arg("sk",int))),
+ command("batcalc", "second_interval", int_batdec2second_interval, false, "cast int decimal to a second_interval", args(1,5, batarg("",lng),arg("sc",int),batarg("v",int),arg("ek",int),arg("sk",int))),
  command("sql", "dec_round", lng_dec_round_wrap, false, "round off the value v to nearests multiple of r", args(1,3, arg("",lng),arg("v",lng),arg("r",lng))),
  command("batsql", "dec_round", lng_bat_dec_round_wrap, false, "round off the value v to nearests multiple of r", args(1,3, batarg("",lng),batarg("v",lng),arg("r",lng))),
  command("sql", "round", lng_round_wrap, false, "round off the decimal v(d,s) to r digits behind the dot (if r < 0, before the dot)", args(1,5, arg("",lng),arg("v",lng),arg("d",int),arg("s",int),arg("r",bte))),
  command("batsql", "round", lng_bat_round_wrap, false, "round off the decimal v(d,s) to r digits behind the dot (if r < 0, before the dot)", args(1,5, batarg("",lng),batarg("v",lng),arg("d",int),arg("s",int),arg("r",bte))),
  command("calc", "second_interval", lng_dec2second_interval, false, "cast lng decimal to a second_interval", args(1,5, arg("",lng),arg("sc",int),arg("v",lng),arg("ek",int),arg("sk",int))),
+ command("batcalc", "second_interval", lng_batdec2second_interval, false, "cast lng decimal to a second_interval", args(1,5, batarg("",lng),arg("sc",int),batarg("v",lng),arg("ek",int),arg("sk",int))),
  command("sql", "dec_round", flt_dec_round_wrap, false, "round off the value v to nearests multiple of r", args(1,3, arg("",flt),arg("v",flt),arg("r",flt))),
  command("batsql", "dec_round", flt_bat_dec_round_wrap, false, "round off the value v to nearests multiple of r", args(1,3, batarg("",flt),batarg("v",flt),arg("r",flt))),
  command("sql", "round", flt_round_wrap, false, "round off the floating point v to r digits behind the dot (if r < 0, before the dot)", args(1,3, arg("",flt),arg("v",flt),arg("r",bte))),
@@ -5725,35 +5375,34 @@ static mel_func sql_init_funcs[] = {
  command("calc", "lng", str_2dec_lng, false, "cast to dec(lng) and check for overflow", args(1,4, arg("",lng),arg("v",str),arg("digits",int),arg("scale",int))),
  command("batcalc", "lng", batstr_2dec_lng, false, "cast to dec(lng) and check for overflow", args(1,4, batarg("",lng),batarg("v",str),arg("digits",int),arg("scale",int))),
  command("batcalc", "lng", batstr_ce_2dec_lng, false, "cast to dec(lng) and check for overflow", args(1,5, batarg("",lng),batarg("v",str),arg("digits",int),arg("scale",int),batarg("r",bit))),
- command("calc", "timestamp", nil_2time_timestamp, false, "cast to timestamp and check for overflow", args(1,3, arg("",timestamp),arg("v",void),arg("digits",int))),
- command("batcalc", "timestamp", batnil_2time_timestamp, false, "cast to timestamp and check for overflow", args(1,3, batarg("",timestamp),batarg("v",oid),arg("digits",int))),
- command("batcalc", "timestamp", batnil_ce_2time_timestamp, false, "cast to timestamp and check for overflow", args(1,4, batarg("",timestamp),batarg("v",oid),arg("digits",int),batarg("r",bat))),
- command("calc", "timestamp", str_2time_timestamp, false, "cast to timestamp and check for overflow", args(1,3, arg("",timestamp),arg("v",str),arg("digits",int))),
- command("calc", "timestamp", str_2time_timestamptz, false, "cast to timestamp and check for overflow", args(1,4, arg("",timestamp),arg("v",str),arg("digits",int),arg("has_tz",int))),
- command("calc", "timestamp", timestamp_2time_timestamp, false, "cast timestamp to timestamp and check for overflow", args(1,3, arg("",timestamp),arg("v",timestamp),arg("digits",int))),
+ pattern("calc", "timestamp", nil_2time_timestamp, false, "cast to timestamp and check for overflow", args(1,3, arg("",timestamp),arg("v",void),arg("digits",int))),
+ pattern("batcalc", "timestamp", nil_2time_timestamp, false, "cast to timestamp and check for overflow", args(1,3, batarg("",timestamp),batarg("v",oid),arg("digits",int))),
+ pattern("batcalc", "timestamp", nil_2time_timestamp, false, "cast to timestamp and check for overflow", args(1,4, batarg("",timestamp),batarg("v",oid),arg("digits",int),batarg("r",bat))),
+ pattern("calc", "timestamp", str_2time_timestamp, false, "cast to timestamp and check for overflow", args(1,3, arg("",timestamp),arg("v",str),arg("digits",int))),
+ pattern("calc", "timestamp", str_2time_timestamptz, false, "cast to timestamp and check for overflow", args(1,4, arg("",timestamp),arg("v",str),arg("digits",int),arg("has_tz",int))),
+ pattern("calc", "timestamp", timestamp_2time_timestamp, false, "cast timestamp to timestamp and check for overflow", args(1,3, arg("",timestamp),arg("v",timestamp),arg("digits",int))),
  command("batcalc", "timestamp", batstr_2time_timestamp, false, "cast to timestamp and check for overflow", args(1,3, batarg("",timestamp),batarg("v",str),arg("digits",int))),
  command("batcalc", "timestamp", batstr_2time_timestamptz, false, "cast to timestamp and check for overflow", args(1,4, batarg("",timestamp),batarg("v",str),arg("digits",int),arg("has_tz",int))),
- command("batcalc", "timestamp", battimestamp_2time_timestamp, false, "cast timestamp to timestamp and check for overflow", args(1,3, batarg("",timestamp),batarg("v",timestamp),arg("digits",int))),
- command("calc", "daytime", nil_2time_daytime, false, "cast to daytime and check for overflow", args(1,3, arg("",daytime),arg("v",void),arg("digits",int))),
- command("batcalc", "daytime", batnil_2time_daytime, false, "cast to daytime and check for overflow", args(1,3, batarg("",daytime),batarg("v",oid),arg("digits",int))),
- command("batcalc", "daytime", batnil_ce_2time_daytime, false, "cast to daytime and check for overflow", args(1,4, batarg("",daytime),batarg("v",oid),arg("digits",int),batarg("r",bit))),
- command("calc", "daytime", str_2time_daytime, false, "cast to daytime and check for overflow", args(1,3, arg("",daytime),arg("v",str),arg("digits",int))),
- command("calc", "daytime", str_2time_daytimetz, false, "cast to daytime and check for overflow", args(1,4, arg("",daytime),arg("v",str),arg("digits",int),arg("has_tz",int))),
- command("calc", "daytime", daytime_2time_daytime, false, "cast daytime to daytime and check for overflow", args(1,3, arg("",daytime),arg("v",daytime),arg("digits",int))),
+ pattern("batcalc", "timestamp", timestamp_2time_timestamp, false, "cast timestamp to timestamp and check for overflow", args(1,3, batarg("",timestamp),batarg("v",timestamp),arg("digits",int))),
+ pattern("calc", "daytime", nil_2time_daytime, false, "cast to daytime and check for overflow", args(1,3, arg("",daytime),arg("v",void),arg("digits",int))),
+ pattern("batcalc", "daytime", nil_2time_daytime, false, "cast to daytime and check for overflow", args(1,3, batarg("",daytime),batarg("v",oid),arg("digits",int))),
+ pattern("batcalc", "daytime", nil_2time_daytime, false, "cast to daytime and check for overflow", args(1,4, batarg("",daytime),batarg("v",oid),arg("digits",int),batarg("r",bit))),
+ pattern("calc", "daytime", str_2time_daytime, false, "cast to daytime and check for overflow", args(1,3, arg("",daytime),arg("v",str),arg("digits",int))),
+ pattern("calc", "daytime", str_2time_daytimetz, false, "cast to daytime and check for overflow", args(1,4, arg("",daytime),arg("v",str),arg("digits",int),arg("has_tz",int))),
+ pattern("calc", "daytime", daytime_2time_daytime, false, "cast daytime to daytime and check for overflow", args(1,3, arg("",daytime),arg("v",daytime),arg("digits",int))),
  command("batcalc", "daytime", batstr_2time_daytime, false, "cast to daytime and check for overflow", args(1,3, batarg("",daytime),batarg("v",str),arg("digits",int))),
- command("batcalc", "daytime", batstr_2time_daytimetz, false, "cast to daytime and check for overflow", args(1,4, batarg("",daytime),batarg("v",str),arg("digits",int),arg("has_tz",int))),
- command("batcalc", "daytime", batdaytime_2time_daytime, false, "cast daytime to daytime and check for overflow", args(1,3, batarg("",daytime),batarg("v",daytime),arg("digits",int))),
+ pattern("batcalc", "daytime", str_2time_daytimetz, false, "cast daytime to daytime and check for overflow", args(1,3, batarg("",daytime),batarg("v",daytime),arg("digits",int))),
+ pattern("batcalc", "daytime", daytime_2time_daytime, false, "cast daytime to daytime and check for overflow", args(1,3, batarg("",daytime),batarg("v",daytime),arg("digits",int))),
  command("sql", "date_trunc", bat_date_trunc, false, "Truncate a timestamp to (millennium, century,decade,year,quarter,month,week,day,hour,minute,second, milliseconds,microseconds)", args(1,3, batarg("",timestamp),arg("scale",str),batarg("v",timestamp))),
  command("sql", "date_trunc", date_trunc, false, "Truncate a timestamp to (millennium, century,decade,year,quarter,month,week,day,hour,minute,second, milliseconds,microseconds)", args(1,3, arg("",timestamp),arg("scale",str),arg("v",timestamp))),
  pattern("sql", "current_time", SQLcurrent_daytime, false, "Get the clients current daytime", args(1,1, arg("",daytime))),
  pattern("sql", "current_timestamp", SQLcurrent_timestamp, false, "Get the clients current timestamp", args(1,1, arg("",timestamp))),
- command("calc", "date", nil_2_date, false, "cast to date", args(1,2, arg("",date),arg("v",void))),
- command("batcalc", "date", batnil_2_date, false, "cast to date", args(1,2, batarg("",date),batarg("v",oid))),
- command("batcalc", "date", batnil_ce_2_date, false, "cast to date", args(1,3, batarg("",date),batarg("v",oid),batarg("r",bit))),
- command("calc", "date", str_2_date, false, "cast to date", args(1,2, arg("",date),arg("v",str))),
+ pattern("calc", "date", nil_2_date, false, "cast to date", args(1,2, arg("",date),arg("v",void))),
+ pattern("batcalc", "date", nil_2_date, false, "cast to date", args(1,2, batarg("",date),batarg("v",oid))),
+ pattern("batcalc", "date", nil_2_date, false, "cast to date", args(1,3, batarg("",date),batarg("v",oid),batarg("r",bit))),
+ pattern("calc", "date", str_2_date, false, "cast to date", args(1,2, arg("",date),arg("v",str))),
  command("batcalc", "date", batstr_2_date, false, "cast to date", args(1,2, batarg("",date),batarg("v",str))),
  command("batcalc", "date", batstr_ce_2_date, false, "cast to date", args(1,3, batarg("",date),batarg("v",str),batarg("r",bit))),
- command("calc", "str", SQLdate_2_str, false, "cast date to str", args(1,2, arg("",str),arg("v",date))),
  command("calc", "blob", str_2_blob, false, "cast to blob", args(1,2, arg("",blob),arg("v",str))),
  command("batcalc", "blob", batstr_2_blob, false, "cast to blob", args(1,2, batarg("",blob),batarg("v",str))),
  command("batcalc", "blob", batstr_ce_2_blob, false, "cast to blob", args(1,3, batarg("",blob),batarg("v",str),batarg("r",bit))),
@@ -5763,24 +5412,38 @@ static mel_func sql_init_funcs[] = {
  pattern("batcalc", "str", SQLbatstr_cast, false, "cast to string and check for overflow", args(1,8, batarg("",str),arg("eclass",int),arg("d1",int),arg("s1",int),arg("has_tz",int),batargany("v",1),arg("digits",int),batarg("r",bit))),
  command("calc", "substring", STRsubstringTail, false, "", args(1,3, arg("",str),arg("s",str),arg("offset",int))),
  command("calc", "substring", STRsubstring, false, "", args(1,4, arg("",str),arg("s",str),arg("offset",int),arg("count",int))),
- command("calc", "month_interval", month_interval_str, false, "cast str to a month_interval and check for overflow", args(1,4, arg("",int),arg("v",str),arg("ek",int),arg("sk",int))),
- command("calc", "second_interval", second_interval_str, false, "cast str to a second_interval and check for overflow", args(1,4, arg("",lng),arg("v",str),arg("ek",int),arg("sk",int))),
+ pattern("calc", "month_interval", month_interval_str, false, "cast str to a month_interval and check for overflow", args(1,4, arg("",int),arg("v",str),arg("ek",int),arg("sk",int))),
+ pattern("batcalc", "month_interval", month_interval_str, false, "cast str to a month_interval and check for overflow", args(1,4, batarg("",int),batarg("v",str),arg("ek",int),arg("sk",int))),
+ pattern("calc", "second_interval", second_interval_str, false, "cast str to a second_interval and check for overflow", args(1,4, arg("",lng),arg("v",str),arg("ek",int),arg("sk",int))),
+ pattern("batcalc", "second_interval", second_interval_str, false, "cast str to a second_interval and check for overflow", args(1,4, batarg("",lng),batarg("v",str),arg("ek",int),arg("sk",int))),
  pattern("calc", "month_interval", month_interval, false, "cast bte to a month_interval and check for overflow", args(1,4, arg("",int),arg("v",bte),arg("ek",int),arg("sk",int))),
+ pattern("batcalc", "month_interval", month_interval, false, "cast bte to a month_interval and check for overflow", args(1,4, batarg("",int),batarg("v",bte),arg("ek",int),arg("sk",int))),
  pattern("calc", "second_interval", second_interval, false, "cast bte to a second_interval and check for overflow", args(1,4, arg("",lng),arg("v",bte),arg("ek",int),arg("sk",int))),
+ pattern("batcalc", "second_interval", second_interval, false, "cast bte to a second_interval and check for overflow", args(1,4, batarg("",lng),batarg("v",bte),arg("ek",int),arg("sk",int))),
  pattern("calc", "month_interval", month_interval, false, "cast sht to a month_interval and check for overflow", args(1,4, arg("",int),arg("v",sht),arg("ek",int),arg("sk",int))),
+ pattern("batcalc", "month_interval", month_interval, false, "cast sht to a month_interval and check for overflow", args(1,4, batarg("",int),batarg("v",sht),arg("ek",int),arg("sk",int))),
  pattern("calc", "second_interval", second_interval, false, "cast sht to a second_interval and check for overflow", args(1,4, arg("",lng),arg("v",sht),arg("ek",int),arg("sk",int))),
+ pattern("batcalc", "second_interval", second_interval, false, "cast sht to a second_interval and check for overflow", args(1,4, batarg("",lng),batarg("v",sht),arg("ek",int),arg("sk",int))),
  pattern("calc", "month_interval", month_interval, false, "cast int to a month_interval and check for overflow", args(1,4, arg("",int),arg("v",int),arg("ek",int),arg("sk",int))),
+ pattern("batcalc", "month_interval", month_interval, false, "cast int to a month_interval and check for overflow", args(1,4, batarg("",int),batarg("v",int),arg("ek",int),arg("sk",int))),
  pattern("calc", "second_interval", second_interval, false, "cast int to a second_interval and check for overflow", args(1,4, arg("",lng),arg("v",int),arg("ek",int),arg("sk",int))),
+ pattern("batcalc", "second_interval", second_interval, false, "cast int to a second_interval and check for overflow", args(1,4, batarg("",lng),batarg("v",int),arg("ek",int),arg("sk",int))),
  pattern("calc", "month_interval", month_interval, false, "cast lng to a month_interval and check for overflow", args(1,4, arg("",int),arg("v",lng),arg("ek",int),arg("sk",int))),
+ pattern("batcalc", "month_interval", month_interval, false, "cast lng to a month_interval and check for overflow", args(1,4, batarg("",int),batarg("v",lng),arg("ek",int),arg("sk",int))),
  pattern("calc", "second_interval", second_interval, false, "cast lng to a second_interval and check for overflow", args(1,4, arg("",lng),arg("v",lng),arg("ek",int),arg("sk",int))),
+ pattern("batcalc", "second_interval", second_interval, false, "cast lng to a second_interval and check for overflow", args(1,4, batarg("",lng),batarg("v",lng),arg("ek",int),arg("sk",int))),
  pattern("calc", "rowid", sql_rowid, false, "return the next rowid", args(1,4, arg("",oid),argany("v",1),arg("schema",str),arg("table",str))),
  pattern("sql", "drop_hash", SQLdrop_hash, true, "Drop hash indices for the given table", args(0,2, arg("sch",str),arg("tbl",str))),
  pattern("sql", "prelude", SQLprelude, false, "", noargs),
  command("sql", "epilogue", SQLepilogue, false, "", noargs),
- command("calc", "second_interval", second_interval_daytime, false, "cast daytime to a second_interval and check for overflow", args(1,4, arg("",lng),arg("v",daytime),arg("ek",int),arg("sk",int))),
- command("calc", "daytime", second_interval_2_daytime, false, "cast second_interval to a daytime and check for overflow", args(1,3, arg("",daytime),arg("v",lng),arg("d",int))),
- command("calc", "daytime", timestamp_2_daytime, false, "cast timestamp to a daytime and check for overflow", args(1,3, arg("",daytime),arg("v",timestamp),arg("d",int))),
- command("calc", "timestamp", date_2_timestamp, false, "cast date to a timestamp and check for overflow", args(1,3, arg("",timestamp),arg("v",date),arg("d",int))),
+ pattern("calc", "second_interval", second_interval_daytime, false, "cast daytime to a second_interval and check for overflow", args(1,4, arg("",lng),arg("v",daytime),arg("ek",int),arg("sk",int))),
+ pattern("batcalc", "second_interval", second_interval_daytime, false, "cast daytime to a second_interval and check for overflow", args(1,4, batarg("",lng),batarg("v",daytime),arg("ek",int),arg("sk",int))),
+ pattern("calc", "daytime", second_interval_2_daytime, false, "cast second_interval to a daytime and check for overflow", args(1,3, arg("",daytime),arg("v",lng),arg("d",int))),
+ pattern("batcalc", "daytime", second_interval_2_daytime, false, "cast second_interval to a daytime and check for overflow", args(1,3, batarg("",daytime),batarg("v",lng),arg("d",int))),
+ pattern("calc", "daytime", timestamp_2_daytime, false, "cast timestamp to a daytime and check for overflow", args(1,3, arg("",daytime),arg("v",timestamp),arg("d",int))),
+ pattern("batcalc", "daytime", timestamp_2_daytime, false, "cast timestamp to a daytime and check for overflow", args(1,3, batarg("",daytime),batarg("v",timestamp),arg("d",int))),
+ pattern("calc", "timestamp", date_2_timestamp, false, "cast date to a timestamp and check for overflow", args(1,3, arg("",timestamp),arg("v",date),arg("d",int))),
+ pattern("batcalc", "timestamp", date_2_timestamp, false, "cast date to a timestamp and check for overflow", args(1,3, batarg("",timestamp),batarg("v",date),arg("d",int))),
  command("calc", "index", STRindex_bte, false, "Return the offsets as an index bat", args(1,3, arg("",bte),arg("v",str),arg("u",bit))),
  command("batcalc", "index", BATSTRindex_bte, false, "Return the offsets as an index bat", args(1,3, batarg("",bte),batarg("v",str),arg("u",bit))),
  command("calc", "index", STRindex_sht, false, "Return the offsets as an index bat", args(1,3, arg("",sht),arg("v",str),arg("u",bit))),
@@ -6492,6 +6155,7 @@ static mel_func sql_init_funcs[] = {
  command("sql", "round", hge_round_wrap, false, "round off the decimal v(d,s) to r digits behind the dot (if r < 0, before the dot)", args(1,5, arg("",hge),arg("v",hge),arg("d",int),arg("s",int),arg("r",bte))),
  command("batsql", "round", hge_bat_round_wrap, false, "round off the decimal v(d,s) to r digits behind the dot (if r < 0, before the dot)", args(1,5, batarg("",hge),batarg("v",hge),arg("d",int),arg("s",int),arg("r",bte))),
  command("calc", "second_interval", hge_dec2second_interval, false, "cast hge decimal to a second_interval", args(1,5, arg("",lng),arg("sc",int),arg("v",hge),arg("ek",int),arg("sk",int))),
+ command("batcalc", "second_interval", hge_batdec2second_interval, false, "cast hge decimal to a second_interval", args(1,5, batarg("",lng),arg("sc",int),batarg("v",hge),arg("ek",int),arg("sk",int))),
  command("calc", "hge", nil_2dec_hge, false, "cast to dec(hge) and check for overflow", args(1,4, arg("",hge),arg("v",void),arg("digits",int),arg("scale",int))),
  command("batcalc", "hge", batnil_2dec_hge, false, "cast to dec(hge) and check for overflow", args(1,4, batarg("",hge),batarg("v",void),arg("digits",int),arg("scale",int))),
  command("batcalc", "hge", batnil_ce_2dec_hge, false, "cast to dec(hge) and check for overflow", args(1,5, batarg("",hge),batarg("v",void),arg("digits",int),arg("scale",int),batarg("r",bit))),
@@ -6499,7 +6163,9 @@ static mel_func sql_init_funcs[] = {
  command("batcalc", "hge", batstr_2dec_hge, false, "cast to dec(hge) and check for overflow", args(1,4, batarg("",hge),batarg("v",str),arg("digits",int),arg("scale",int))),
  command("batcalc", "hge", batstr_ce_2dec_hge, false, "cast to dec(hge) and check for overflow", args(1,5, batarg("",hge),batarg("v",str),arg("digits",int),arg("scale",int),batarg("r",bit))),
  pattern("calc", "month_interval", month_interval, false, "cast hge to a month_interval and check for overflow", args(1,4, arg("",int),arg("v",hge),arg("ek",int),arg("sk",int))),
+ pattern("batcalc", "month_interval", month_interval, false, "cast hge to a month_interval and check for overflow", args(1,4, batarg("",int),batarg("v",hge),arg("ek",int),arg("sk",int))),
  pattern("calc", "second_interval", second_interval, false, "cast hge to a second_interval and check for overflow", args(1,4, arg("",lng),arg("v",hge),arg("ek",int),arg("sk",int))),
+ pattern("batcalc", "second_interval", second_interval, false, "cast hge to a second_interval and check for overflow", args(1,4, batarg("",lng),batarg("v",hge),arg("ek",int),arg("sk",int))),
  /* sql_decimal_hge */
  command("calc", "hge", flt_num2dec_hge, false, "cast number to decimal(hge) and check for overflow", args(1,4, arg("",hge),arg("v",flt),arg("digits",int),arg("scale",int))),
  command("batcalc", "hge", batflt_num2dec_hge, false, "cast number to decimal(hge) and check for overflow", args(1,4, batarg("",hge),batarg("v",flt),arg("digits",int),arg("scale",int))),

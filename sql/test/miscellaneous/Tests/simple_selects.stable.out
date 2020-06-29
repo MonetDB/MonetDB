@@ -354,8 +354,8 @@ stdout of test 'simple_selects` in directory 'sql/test/miscellaneous` itself:
 #create table x (a int GENERATED ALWAYS AS IDENTITY);
 #alter table x alter a set default 1; --ok, remove sequence
 #SELECT CAST(COUNT(*) - (SELECT m FROM myvar) AS BIGINT) FROM sequences; --the total count, cannot change
-% .%4 # table_name
-% %4 # name
+% .%3 # table_name
+% %3 # name
 % bigint # type
 % 1 # length
 [ 0	]
@@ -367,8 +367,8 @@ stdout of test 'simple_selects` in directory 'sql/test/miscellaneous` itself:
 #create table x (a int GENERATED ALWAYS AS IDENTITY);
 #alter table x alter a drop default; --ok, remove sequence
 #SELECT CAST(COUNT(*) - (SELECT m FROM myvar) AS BIGINT) FROM sequences; --the total count, cannot change
-% .%4 # table_name
-% %4 # name
+% .%3 # table_name
+% %3 # name
 % bigint # type
 % 1 # length
 [ 0	]
@@ -415,6 +415,24 @@ stdout of test 'simple_selects` in directory 'sql/test/miscellaneous` itself:
 [ 1	]
 [ 2	]
 #rollback;
+#select cast(x as interval second) from (values ('1'), (NULL), ('100'), (NULL)) as x(x);
+% .%6 # table_name
+% %6 # name
+% sec_interval # type
+% 7 # length
+[ 1.000	]
+[ NULL	]
+[ 100.000	]
+[ NULL	]
+#select cast(x as interval month) from (values ('1'), (NULL), ('100'), (NULL)) as x(x);
+% .%6 # table_name
+% %6 # name
+% month_interval # type
+% 3 # length
+[ 1	]
+[ NULL	]
+[ 100	]
+[ NULL	]
 
 # 17:31:38 >  
 # 17:31:38 >  "Done."

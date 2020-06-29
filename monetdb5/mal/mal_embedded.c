@@ -40,13 +40,16 @@
 static bool embeddedinitialized = false;
 
 str
-malEmbeddedBoot(void)
+malEmbeddedBoot(int workerlimit, int memorylimit, int querytimeout, int sessiontimeout)
 {
 	Client c;
 	str msg = MAL_SUCCEED;
 
 	if( embeddedinitialized )
 		return MAL_SUCCEED;
+
+	if ((msg = AUTHinitTables(NULL)) != MAL_SUCCEED)
+		return msg;
 
 	if (!MCinit())
 		throw(MAL, "malEmbeddedBoot", "MAL debugger failed to start");
@@ -65,6 +68,10 @@ malEmbeddedBoot(void)
 	c = MCinitClient((oid) 0, 0, 0);
 	if(c == NULL)
 		throw(MAL, "malEmbeddedBoot", "Failed to initialize client");
+	c->workerlimit = workerlimit;
+	c->memorylimit = memorylimit;
+	c->querytimeout = querytimeout * 1000000;	// from sec to usec
+	c->sessiontimeout = sessiontimeout * 1000000;
 	c->curmodule = c->usermodule = userModule();
 	if(c->usermodule == NULL) {
 		MCcloseClient(c);
