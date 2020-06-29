@@ -5461,115 +5461,6 @@ rel_join2semijoin(mvc *sql, sql_rel *rel, int *changes)
 	return rel;
 }
 
-typedef struct {
-	sql_rel *p; /* the found join's parent */
-	sql_rel *j; /* the found join relation itself */
-} found_join;
-
-static void
-rel_find_joins(mvc *sql, sql_rel *parent, sql_rel *rel, list *l, int depth)
-{
-	if (!rel || depth == 5) /* limit to 5 relations below in the tree */
-		return;
-
-	switch (rel->op) {
-		case op_basetable:
-		case op_table:
-		case op_ddl:
-		case op_truncate:
-			break;
-		case op_join:
-		case op_left:
-		case op_right:
-		case op_full:
-		case op_semi:
-		case op_anti: {
-			found_join *fl = SA_NEW(sql->sa, found_join);
-			fl->p = parent;
-			fl->j = rel;
-			list_append(l, fl);
-
-			if (rel->l)
-				rel_find_joins(sql, rel, rel->l, l, depth + 1);
-			if (rel->r)
-				rel_find_joins(sql, rel, rel->r, l, depth + 1);
-		} break;
-		case op_union:
-		case op_inter:
-		case op_except: {
-			if (rel->l)
-				rel_find_joins(sql, rel, rel->l, l, depth + 1);
-			if (rel->r)
-				rel_find_joins(sql, rel, rel->r, l, depth + 1);
-		} break;
-		case op_groupby:
-		case op_project:
-		case op_select:
-		case op_topn:
-		case op_sample: {
-			if (rel->l)
-				rel_find_joins(sql, rel, rel->l, l, depth + 1);
-		} break;
-		case op_insert:
-		case op_update:
-		case op_delete: {
-			if (rel->r)
-				rel_find_joins(sql, rel, rel->r, l, depth + 1);
-		} break;
-	}
-}
-
-/* find identical joins in diferent branches of the relational plan and merge them together */
-static sql_rel *
-rel_merge_identical_joins(mvc *sql, sql_rel *rel, int *changes)
-{
-	if (is_joinop(rel->op) && rel->l && rel->r) {
-		list *l1 = sa_list(sql->sa), *l2 = sa_list(sql->sa);
-
-		rel_find_joins(sql, rel, rel->l, l1, 0);
-		rel_find_joins(sql, rel, rel->r, l2, 0);
-
-		if (list_length(l1) && list_length(l2)) { /* found joins on both */
-			for (node *n1 = l1->h ; n1; n1 = n1->next) {
-				found_join *f1 = (found_join*) n1->data;
-				for (node *n2 = l2->h ; n2; n2 = n2->next) {
-					found_join *f2 = (found_join*) n2->data;
-					sql_rel *j1 = f1->j, *j2 = f2->j, *j1_l = j1->l, *j1_r = j1->r, *j2_l = j2->l, *j2_r = j2->r;
-					bool sides_equal = false;
-
-					if (j1 != j2) {
-						const char *j1_ln = rel_name(j1_l), *j1_rn = rel_name(j1_r), *j2_ln = rel_name(j2_l), *j2_rn = rel_name(j2_r);
-
-						/* So far it looks on identical relations and common basetable relations */
-						if ((j1_l == j2_l || (is_basetable(j1_l->op) && is_basetable(j2_l->op) && strcmp(j1_ln, j2_ln) == 0 && j1_l->l == j2_l->l)) &&
-							(j1_r == j2_r || (is_basetable(j1_r->op) && is_basetable(j2_r->op) && strcmp(j1_rn, j2_rn) == 0 && j1_r->l == j2_r->l)))
-							sides_equal = true;
-						else if ((j1_l == j2_r || (is_basetable(j1_l->op) && is_basetable(j2_r->op) && strcmp(j1_ln, j2_rn) == 0 && j1_l->l == j2_r->l)) &&
-							(j1_r == j2_l || (is_basetable(j1_r->op) && is_basetable(j2_l->op) && strcmp(j1_rn, j2_ln) == 0 && j1_r->l == j2_l->l)))
-							sides_equal = true;
-
-						/* the left and right sides are equal */
-						if (sides_equal && exp_match_list(j1->exps, j2->exps)) {
-							sql_rel *p2 = f2->p;
-
-							if (p2->l == j2) {/* replace j2's parent join with j1 */
-								rel_destroy(p2->l);
-								p2->l = rel_dup(j1);
-							} else {
-								rel_destroy(p2->r);
-								p2->r = rel_dup(j1);
-							}
-							(*changes)++;
-							return rel;
-						}
-					}
-				}
-			}
-		}
-	}
-	return rel;
-}
-
 static sql_rel *
 rel_push_select_down_union(mvc *sql, sql_rel *rel, int *changes)
 {
@@ -9284,8 +9175,6 @@ optimize_rel(mvc *sql, sql_rel *rel, int *g_changes, int level, int value_based_
 
 		if (level <= 0)
 			rel = rel_visitor_bottomup(sql, rel, &rel_join_push_exps_down, &changes);
-
-		if (/* DISABLES CODE */ (0)) rel = rel_visitor_bottomup(sql, rel, &rel_merge_identical_joins, &e_changes);
 	}
 
 	/* Important -> Re-write semijoins after rel_join_order */
