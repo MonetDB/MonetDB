@@ -884,27 +884,63 @@ bailout:
 	return msg;
 }
 
-#define interval_loop(FUNC, TPE) \
+#define interval_loop(FUNC, TPE, FUNC_NAME, MAX_VALUE, CAST_VALIDATION, MUL_VALIDATION) \
 	do { \
 		if (is_a_bat) { \
 			TPE *restrict vals = Tloc(b, 0); \
-			for (BUN i = 0 ; i < q ; i++) \
-				FUNC(ret[i], TPE, vals[i]); \
+			for (BUN i = 0 ; i < q && !msg ; i++) \
+				FUNC(ret[i], vals[i], TPE, FUNC_NAME, MAX_VALUE, CAST_VALIDATION, MUL_VALIDATION); \
 		} else { \
 			TPE val = *(TPE*)getArgReference(stk, pci, 1); \
-			FUNC(*ret, TPE, val); \
+			FUNC(*ret, val, TPE, FUNC_NAME, MAX_VALUE, CAST_VALIDATION, MUL_VALIDATION); \
 		} \
 	} while(0)
 
-#define month_interval_convert(OUT, TPE, IN) \
+#define month_interval_convert(OUT, IN, TPE, FUNC_NAME, MAX_VALUE, CAST_VALIDATION, MUL_VALIDATION) \
 	do { \
 		if (is_##TPE##_nil(IN)) { \
 			OUT = int_nil; \
 			hasnil = 1; \
 		} else { \
-			int r = (int) IN; \
-			r *= multiplier; \
+			TPE next = IN; \
+			int cast, r; \
+			CAST_VALIDATION(TPE, FUNC_NAME, MAX_VALUE); \
+			cast = (int) next; \
+			r = cast * multiplier; \
+			MUL_VALIDATION(TPE, FUNC_NAME, MAX_VALUE); \
 			OUT = r; \
+		} \
+	} while (0)
+
+#define DO_NOTHING(TPE, FUNC_NAME, MAX_VALUE) ;
+
+#define CAST_VALIDATION(TPE, FUNC_NAME, MAX_VALUE) \
+	do { \
+		if (next > (TPE) MAX_VALUE) { \
+			size_t len = 0; \
+			char *str_val = NULL; \
+			if (BATatoms[tpe].atomToStr(&str_val, &len, &next, false) < 0) { \
+				msg = createException(SQL, "batcalc." FUNC_NAME, SQLSTATE(HY013) MAL_MALLOC_FAIL); \
+				goto bailout; \
+			} \
+			msg = createException(SQL, "batcalc." FUNC_NAME, SQLSTATE(22003) "Value %s too large to fit at a " FUNC_NAME, str_val); \
+			GDKfree(str_val); \
+			goto bailout; \
+		} \
+	} while (0)
+
+#define MUL_OVERFLOW(TPE, FUNC_NAME, MAX_VALUE) /* MAX_VALUE is ignored on this macro */ \
+	do { \
+		if (r < cast) { \
+			size_t len = 0; \
+			char *str_val = NULL; \
+			if (BATatoms[tpe].atomToStr(&str_val, &len, &cast, false) < 0) { \
+				msg = createException(SQL, "batcalc." FUNC_NAME, SQLSTATE(HY013) MAL_MALLOC_FAIL); \
+				goto bailout; \
+			} \
+			msg = createException(SQL, "batcalc." FUNC_NAME, SQLSTATE(22003) "Overflow in convertion of %s to " FUNC_NAME, str_val); \
+			GDKfree(str_val); \
+			goto bailout; \
 		} \
 	} while (0)
 
@@ -953,20 +989,20 @@ month_interval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	switch (tpe) {
 	case TYPE_bte:
-		interval_loop(month_interval_convert, bte);
+		interval_loop(month_interval_convert, bte, "month_interval", GDK_int_max, DO_NOTHING, DO_NOTHING);
 		break;
 	case TYPE_sht:
-		interval_loop(month_interval_convert, sht);
+		interval_loop(month_interval_convert, sht, "month_interval", GDK_int_max, DO_NOTHING, DO_NOTHING);
 		break;
 	case TYPE_int:
-		interval_loop(month_interval_convert, int);
+		interval_loop(month_interval_convert, int, "month_interval", GDK_int_max, DO_NOTHING, MUL_OVERFLOW);
 		break;
 	case TYPE_lng:
-		interval_loop(month_interval_convert, lng);
+		interval_loop(month_interval_convert, lng, "month_interval", GDK_int_max, CAST_VALIDATION, MUL_OVERFLOW);
 		break;
 #ifdef HAVE_HGE
 	case TYPE_hge:
-		interval_loop(month_interval_convert, hge);
+		interval_loop(month_interval_convert, hge, "month_interval", GDK_int_max, CAST_VALIDATION, MUL_OVERFLOW);
 		break;
 #endif
 	default: {
@@ -990,18 +1026,22 @@ bailout:
 	return msg;
 }
 
-#define second_interval_convert(OUT, TPE, IN) \
+#define second_interval_convert(OUT, IN, TPE, FUNC_NAME, MAX_VALUE, CAST_VALIDATION, MUL_VALIDATION) \
 	do { \
 		if (is_##TPE##_nil(IN)) { \
 			OUT = lng_nil; \
 			hasnil = 1; \
 		} else { \
-			lng r = (lng) IN; \
-			r *= multiplier; \
+			TPE next = IN; \
+			lng cast, r; \
+			CAST_VALIDATION(TPE, FUNC_NAME, MAX_VALUE); \
+			cast = (lng) next; \
+			r = cast * multiplier; \
 			if (scale) { \
 				r += shift; \
 				r /= divider; \
 			} \
+			MUL_VALIDATION(TPE, FUNC_NAME, MAX_VALUE); \
 			OUT = r; \
 		} \
 	} while (0)
@@ -1073,20 +1113,20 @@ second_interval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	switch (tpe) {
 	case TYPE_bte:
-		interval_loop(second_interval_convert, bte);
+		interval_loop(second_interval_convert, bte, "sec_interval", GDK_lng_max, DO_NOTHING, MUL_OVERFLOW);
 		break;
 	case TYPE_sht:
-		interval_loop(second_interval_convert, sht);
+		interval_loop(second_interval_convert, sht, "sec_interval", GDK_lng_max, DO_NOTHING, MUL_OVERFLOW);
 		break;
 	case TYPE_int:
-		interval_loop(second_interval_convert, int);
+		interval_loop(second_interval_convert, int, "sec_interval", GDK_lng_max, DO_NOTHING, MUL_OVERFLOW);
 		break;
 	case TYPE_lng:
-		interval_loop(second_interval_convert, lng);
+		interval_loop(second_interval_convert, lng, "sec_interval", GDK_lng_max, DO_NOTHING, MUL_OVERFLOW);
 		break;
 #ifdef HAVE_HGE
 	case TYPE_hge:
-		interval_loop(second_interval_convert, hge);
+		interval_loop(second_interval_convert, hge, "sec_interval", GDK_lng_max, CAST_VALIDATION, MUL_OVERFLOW);
 		break;
 #endif
 	default: {
