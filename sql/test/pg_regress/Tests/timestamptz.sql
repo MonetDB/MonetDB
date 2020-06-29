@@ -20,7 +20,7 @@ INSERT INTO TIMESTAMPTZ_TBL VALUES (cast((select test_current_date from test_cur
 --INSERT INTO TIMESTAMPTZ_TBL VALUES ('yesterday');
 INSERT INTO TIMESTAMPTZ_TBL VALUES (cast((select test_current_date from test_current_date) - interval '1' DAY as timestamptz));
 --INSERT INTO TIMESTAMPTZ_TBL VALUES ('tomorrow');
-INSERT INTO TIMESTAMPTZ_TBL VALUES (cast((select test_current_date from test_current_date) - interval '1' DAY as timestamp));
+INSERT INTO TIMESTAMPTZ_TBL VALUES (cast((select test_current_date from test_current_date) + interval '1' DAY as timestamp));
 
 --SELECT d1 FROM TIMESTAMPTZ_TBL;
 SELECT count(*) AS One FROM TIMESTAMPTZ_TBL WHERE d1 = cast((select test_current_date from test_current_date) as timestamptz);
