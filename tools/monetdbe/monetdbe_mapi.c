@@ -62,7 +62,8 @@ int
 mapi_fetch_row(MapiHdl hdl)
 {
 	int n = 0;
-	if (hdl && hdl->current_row < hdl->result->nrows) {
+
+	if (hdl && hdl->result && hdl->current_row < hdl->result->nrows) {
 		n = (int) ++hdl->current_row;
 	}
 	return n;

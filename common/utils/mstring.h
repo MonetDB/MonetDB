@@ -30,6 +30,11 @@ strcpy_len(char *restrict dst, const char *restrict src, size_t n)
 				return i;
 		}
 		dst[n - 1] = 0;
+/* in some versions of GCC (at least gcc (Ubuntu 7.5.0-3ubuntu1~18.04)
+ * 7.5.0), the error just can't be turned off when using
+ * --enable-strict, so we just use the (more) expensive way of getting the
+ * right answer (rescan the whole string) */
+#if !defined(__GNUC__) || __GNUC__ > 7 || (__GNUC__ == 7 && __GNUC_MINOR__ > 5)
 /* This code is correct, but GCC gives a warning in certain
  * conditions, so we disable the warning temporarily.
  * The warning happens e.g. in
@@ -44,6 +49,7 @@ GCC_Pragma("GCC diagnostic push")
 GCC_Pragma("GCC diagnostic ignored \"-Warray-bounds\"")
 		return n + strlen(src + n);
 GCC_Pragma("GCC diagnostic pop")
+#endif
 	}
 	return strlen(src);
 }

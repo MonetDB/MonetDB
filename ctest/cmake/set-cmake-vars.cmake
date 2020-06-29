@@ -9,57 +9,12 @@
 # Test for the existance of these cmake variables, the source code assumes
 # that they are set by the buildsystem.
 
-if(NOT DEFINED HAVE_CUDF)
-  message(FATAL_ERROR "variable HAVE_CUDF not defined")
-  set(DETECT "1")
-else()
-  set(DETECT "0")
-endif()
+assert_variable_exists(HAVE_CUDF)
 
-configure_file(test_cmake_var.c.in
-  ${CMAKE_CURRENT_BINARY_DIR}/test_have_cudf_var.c
-  @ONLY)
-
-add_executable(test_have_cudf_var)
-target_sources(test_have_cudf_var
-  PRIVATE
-  ${CMAKE_CURRENT_BINARY_DIR}/test_have_cudf_var.c)
-add_test(testDetectHave_cudf test_have_cudf_var)
-
-if(DEFINED HAVE_LIBR)
-  if(NOT DEFINED RHOME)
-    message(FATAL_ERROR "variable RHOME not defined")
-    set(DETECT "1")
-  else()
-    set(DETECT "0")
-  endif()
-
-  configure_file(test_cmake_var.c.in
-    ${CMAKE_CURRENT_BINARY_DIR}/test_rhome_var.c
-    @ONLY)
-
-  add_executable(test_rhome_var)
-  target_sources(test_rhome_var
-    PRIVATE
-    ${CMAKE_CURRENT_BINARY_DIR}/test_rhome_var.c)
-  add_test(testDetectRhome test_rhome_var)
+if(HAVE_LIBR)
+  assert_variable_exists(RHOME)
 endif()
 
 if(DEFINED HAVE_GETOPT_H)
-  if(NOT DEFINED HAVE_GETOPT)
-    message(FATAL_ERROR "variable HAVE_GETOPT not defined")
-    set(DETECT "1")
-  else()
-    set(DETECT "0")
-  endif()
-
-  configure_file(test_cmake_var.c.in
-    ${CMAKE_CURRENT_BINARY_DIR}/test_have_getopt1_var.c
-    @ONLY)
-
-  add_executable(test_have_getopt1_var)
-  target_sources(test_have_getopt1_var
-    PRIVATE
-    ${CMAKE_CURRENT_BINARY_DIR}/test_have_getopt1_var.c)
-  add_test(testDetectHave_getopt1 test_have_getopt1_var)
+  assert_variable_exists(HAVE_GETOPT)
 endif()

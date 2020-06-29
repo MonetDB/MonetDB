@@ -11,7 +11,7 @@
 int
 main(void)
 {
-#ifdef HAVE_CURL
+#ifdef @assert_variable_legacy_variablename@
     return @DETECT@;
 #else
     return @UNDETECT@;

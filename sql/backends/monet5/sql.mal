@@ -940,9 +940,6 @@ comment "cast to date";
 command batcalc.date( v:bat[:str], r:bat[:bit] ) :bat[:date] 
 address batstr_ce_2_date
 comment "cast to date";
-command calc.str( v:date ) :str 
-address SQLdate_2_str
-comment "cast date to str";
 
 command calc.blob( v:str ) :blob 
 address str_2_blob

@@ -19,7 +19,7 @@ set(CPACK_RPM_PACKAGE_VENDOR "MonetDB BV <info@monetdb.org>")
 set(CPACK_RPM_PACKAGE_LICENSE "MPLv2.0")
 set(CPACK_RPM_PACKAGE_GROUP "Applications/Databases")
 set(CPACK_RPM_PACKAGE_URL "https://www.monetdb.org/")
-# set(CPACK_RPM_CHANGELOG_FILE"")
+set(CPACK_RPM_CHANGELOG_FILE "${CMAKE_SOURCE_DIR}/misc/packages/rpm/changelog")
 
 set(CPACK_RPM_monetdb_PACKAGE_NAME "${CMAKE_PROJECT_NAME}")
 set(CPACK_RPM_monetdb_FILE_NAME "${CMAKE_PROJECT_NAME}-${MONETDB_VERSION}.rpm")

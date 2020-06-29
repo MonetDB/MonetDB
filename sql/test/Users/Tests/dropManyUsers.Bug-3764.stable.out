@@ -60,8 +60,9 @@ stdout of test 'dropManyUsers.Bug-3764` in directory 'sql/test/Users` itself:
 % .u,	.u,	.s # table_name
 % name,	fullname,	name # name
 % varchar,	varchar,	varchar # type
-% 7,	13,	3 # length
+% 9,	13,	3 # length
 [ "monetdb",	"MonetDB Admin",	"sys"	]
+[ ".snapshot",	"Snapshot User",	"sys"	]
 #CREATE USER user1 with password '1' name '1st user' schema newSchema;
 #CREATE USER user2 with password '2' name '2nd user' schema newSchema;
 #CREATE USER user3 with password '3' name '3rd user' schema newSchema;
@@ -70,8 +71,9 @@ stdout of test 'dropManyUsers.Bug-3764` in directory 'sql/test/Users` itself:
 % .u,	.u,	.s # table_name
 % name,	fullname,	name # name
 % varchar,	varchar,	varchar # type
-% 7,	13,	9 # length
+% 9,	13,	9 # length
 [ "monetdb",	"MonetDB Admin",	"sys"	]
+[ ".snapshot",	"Snapshot User",	"sys"	]
 [ "user1",	"1st user",	"newschema"	]
 [ "user2",	"2nd user",	"newschema"	]
 [ "user3",	"3rd user",	"newschema"	]
@@ -84,8 +86,9 @@ stdout of test 'dropManyUsers.Bug-3764` in directory 'sql/test/Users` itself:
 % .u,	.u,	.s # table_name
 % name,	fullname,	name # name
 % varchar,	varchar,	varchar # type
-% 7,	13,	3 # length
+% 9,	13,	3 # length
 [ "monetdb",	"MonetDB Admin",	"sys"	]
+[ ".snapshot",	"Snapshot User",	"sys"	]
 
 # 14:28:37 >  
 # 14:28:37 >  "Done."

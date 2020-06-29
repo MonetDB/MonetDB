@@ -34,13 +34,14 @@ Operation successful
 SELECT users.name, users.fullname, schemas.name
 	FROM users, schemas
 	WHERE users.default_schema = schemas.id;
-+---------+---------------+------+
++-----------+---------------+------+
 | name    | fullname      | name |
-+=========+===============+======+
++===========+===============+======+
 | monetdb | MonetDB Admin | sys  |
+| .snapshot | Snapshot User | sys  |
 | voc     | VOC Explorer  | sys  |
-+---------+---------------+------+
-2 rows
++-----------+---------------+------+
+3 rows
 CREATE SCHEMA "voc" AUTHORIZATION "voc";
 Operation successful
 ALTER USER "voc" SET SCHEMA "voc";
@@ -48,13 +49,14 @@ Operation successful
 SELECT users.name, users.fullname, schemas.name
 	FROM sys.users, sys.schemas
 	WHERE users.default_schema = schemas.id;
-+---------+---------------+------+
++-----------+---------------+------+
 | name    | fullname      | name |
-+=========+===============+======+
++===========+===============+======+
 | monetdb | MonetDB Admin | sys  |
+| .snapshot | Snapshot User | sys  |
 | voc     | VOC Explorer  | voc  |
-+---------+---------------+------+
-2 rows
++-----------+---------------+------+
+3 rows
 
 # 17:04:40 >  
 # 17:04:40 >  Mtimeout -timeout 60  java nl.cwi.monetdb.client.JdbcClient -e -h localhost -p 38700 -d mTests_sql_test_BugTracker -q

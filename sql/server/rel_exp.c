@@ -92,10 +92,6 @@ negate_compare( comp_type t )
 		return mark_notin;
 	case mark_notin:
 		return mark_in;
-	case mark_exists:
-		return mark_notexists;
-	case mark_notexists:
-		return mark_exists;
 
 	default:
 		return t;
@@ -159,8 +155,6 @@ exp_compare(sql_allocator *sa, sql_exp *l, sql_exp *r, int cmptype)
 	if (e == NULL)
 		return NULL;
 	e->card = MAX(l->card,r->card);
-	if (e->card == CARD_ATOM && !exp_is_atom(l))
-		e->card = CARD_AGGR;
 	e->l = l;
 	e->r = r;
 	e->flag = cmptype;
@@ -173,12 +167,10 @@ exp_compare2(sql_allocator *sa, sql_exp *l, sql_exp *r, sql_exp *f, int cmptype)
 	sql_exp *e = exp_create(sa, e_cmp);
 	if (e == NULL)
 		return NULL;
+	assert(f);
 	e->card = MAX(MAX(l->card,r->card),f->card);
-	if (e->card == CARD_ATOM && !exp_is_atom(l))
-		e->card = CARD_AGGR;
 	e->l = l;
 	e->r = r;
-	assert(f);
 	e->f = f;
 	e->flag = cmptype;
 	return e;
@@ -256,30 +248,19 @@ exp_in_func(mvc *sql, sql_exp *le, sql_exp *vals, int anyequal, int is_tuple)
 }
 
 sql_exp *
-exp_compare_func(mvc *sql, sql_exp *le, sql_exp *re, sql_exp *oe, const char *compareop, int quantifier)
+exp_compare_func(mvc *sql, sql_exp *le, sql_exp *re, const char *compareop, int quantifier)
 {
-	sql_subfunc *cmp_func = NULL;
+	sql_subfunc *cmp_func = sql_bind_func(sql->sa, NULL, compareop, exp_subtype(le), exp_subtype(le), F_FUNC);
 	sql_exp *e;
-
-	if (!oe) {
-		cmp_func = sql_bind_func(sql->sa, NULL, compareop, exp_subtype(le), exp_subtype(le), F_FUNC);
-		assert(cmp_func);
-		e = exp_binop(sql->sa, le, re, cmp_func);
-	} else {
-		list *types = sa_list(sql->sa), *args = sa_list(sql->sa);
-		append(types, exp_subtype(le));
-		append(types, exp_subtype(le));
-		append(types, exp_subtype(le));
-		append(args, le);
-		append(args, re);
-		append(args, oe);
-		cmp_func = sql_bind_func_(sql->sa, NULL, compareop, types, F_FUNC);
-		assert(cmp_func);
-		e = exp_op(sql->sa, args, cmp_func);
-	}
+ 
+	assert(cmp_func);
+	e = exp_binop(sql->sa, le, re, cmp_func);
 	if (e) {
 		e->flag = quantifier;
-		e->card = le->card;
+		if (quantifier)
+			e->card = le->card; /* At ANY and ALL operators, the cardinality on the right side is ignored */
+		else
+			e->card = MAX(le->card, re->card);
 	}
 	return e;
 }
@@ -318,8 +299,6 @@ exp_op( sql_allocator *sa, list *l, sql_subfunc *f )
 	if (e == NULL)
 		return NULL;
 	e->card = exps_card(l);
-	if (!l || list_length(l) == 0)
-		e->card = CARD_ATOM; /* unop returns a single atom */
 	e->l = l;
 	e->f = f;
 	e->semantics = f->func->semantics;
@@ -340,8 +319,6 @@ exp_rank_op( sql_allocator *sa, list *l, list *gbe, list *obe, sql_subfunc *f )
 	if (e == NULL)
 		return NULL;
 	e->card = exps_card(l);
-	if (!l || list_length(l) == 0)
-		e->card = CARD_ATOM; /* unop returns a single atom */
 	e->l = l;
 	e->r = append(append(sa_list(sa), gbe), obe);
 	e->f = f;
