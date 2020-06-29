@@ -472,8 +472,7 @@ AUTHcheckCredentials(
 	if (username[0] == '.' && master_password != NULL && master_password[0] != '\0') {
 		// first encrypt the master password as if we've just found it
 		// in the password store
-		assert(strcmp(MONETDB5_PASSWDHASH, "SHA512") == 0);
-		str encrypted = mcrypt_SHA512Sum(master_password, strlen(master_password));
+		str encrypted = mcrypt_BackendSum(master_password, strlen(master_password));
 		if (encrypted == NULL)
 			throw(MAL, "checkCredentials", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		hash = mcrypt_hashPassword(algo, encrypted, challenge);
