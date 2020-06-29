@@ -18,14 +18,14 @@ INSERT INTO TIMESTAMPTZ_TBL VALUES ((select test_now from test_now));
 --INSERT INTO TIMESTAMPTZ_TBL VALUES ('today');
 INSERT INTO TIMESTAMPTZ_TBL VALUES (cast((select test_current_date from test_current_date) as timestamptz));
 --INSERT INTO TIMESTAMPTZ_TBL VALUES ('yesterday');
-INSERT INTO TIMESTAMPTZ_TBL VALUES (cast(sql_sub((select test_current_date from test_current_date), 24*60*60.0) as timestamptz));
+INSERT INTO TIMESTAMPTZ_TBL VALUES (cast((select test_current_date from test_current_date) - interval '1' DAY as timestamptz));
 --INSERT INTO TIMESTAMPTZ_TBL VALUES ('tomorrow');
-INSERT INTO TIMESTAMPTZ_TBL VALUES (cast(sql_add((select test_current_date from test_current_date), 24*60*60.0) as timestamptz));
+INSERT INTO TIMESTAMPTZ_TBL VALUES (cast((select test_current_date from test_current_date) - interval '1' DAY as timestamp));
 
 --SELECT d1 FROM TIMESTAMPTZ_TBL;
 SELECT count(*) AS One FROM TIMESTAMPTZ_TBL WHERE d1 = cast((select test_current_date from test_current_date) as timestamptz);
-SELECT count(*) AS One FROM TIMESTAMPTZ_TBL WHERE d1 = cast(sql_add((select test_current_date from test_current_date), 24*60*60.0)as timestamptz);
-SELECT count(*) AS One FROM TIMESTAMPTZ_TBL WHERE d1 = cast(sql_sub((select test_current_date from test_current_date), 24*60*60.0)as timestamptz);
+SELECT count(*) AS One FROM TIMESTAMPTZ_TBL WHERE d1 = cast((select test_current_date from test_current_date) + interval '1' DAY as timestamp);
+SELECT count(*) AS One FROM TIMESTAMPTZ_TBL WHERE d1 = cast((select test_current_date from test_current_date) - interval '1' DAY as timestamp);
 SELECT count(*) AS None FROM TIMESTAMPTZ_TBL WHERE d1 = cast((select test_now from test_now) as timestamptz);
 
 INSERT INTO TIMESTAMPTZ_TBL VALUES ('tomorrow EST');

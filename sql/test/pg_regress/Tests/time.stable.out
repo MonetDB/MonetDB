@@ -145,50 +145,6 @@ stdout of test 'time` in directory 'sql/test/pg_regress` itself:
 [ 12:01:00.00,	0.000000	]
 [ 23:59:00.00,	0.000000	]
 [ NULL,	NULL	]
-#SELECT f1, sql_add(f1, 12*60*60.0 + 66) FROM TIME_TBL;
-% sys.time_tbl,	sys.%1 # table_name
-% f1,	%1 # name
-% time,	time # type
-% 11,	15 # length
-[ 00:00:00.00,	12:01:06.000000	]
-[ 01:00:00.00,	13:01:06.000000	]
-[ 12:00:00.00,	00:01:06.000000	]
-[ 12:01:00.00,	00:02:06.000000	]
-[ 23:59:00.00,	12:00:06.000000	]
-[ NULL,	NULL	]
-#SELECT f1, sql_add(f1, cast(2*60*60 as interval second)) FROM TIME_TBL;
-% sys.time_tbl,	sys.%2 # table_name
-% f1,	%2 # name
-% time,	time # type
-% 11,	15 # length
-[ 00:00:00.00,	02:00:00.000000	]
-[ 01:00:00.00,	03:00:00.000000	]
-[ 12:00:00.00,	14:00:00.000000	]
-[ 12:01:00.00,	14:01:00.000000	]
-[ 23:59:00.00,	01:59:00.000000	]
-[ NULL,	NULL	]
-#SELECT f1, sql_sub(f1, 12*60*60.0 + 66) FROM TIME_TBL;
-% sys.time_tbl,	sys.%1 # table_name
-% f1,	%1 # name
-% time,	time # type
-% 11,	15 # length
-[ 00:00:00.00,	11:58:54.000000	]
-[ 01:00:00.00,	12:58:54.000000	]
-[ 12:00:00.00,	23:58:54.000000	]
-[ 12:01:00.00,	23:59:54.000000	]
-[ 23:59:00.00,	11:57:54.000000	]
-[ NULL,	NULL	]
-#SELECT f1, sql_sub(f1, cast(2*60*60 as interval second)) FROM TIME_TBL;
-% sys.time_tbl,	sys.%2 # table_name
-% f1,	%2 # name
-% time,	time # type
-% 11,	15 # length
-[ 00:00:00.00,	22:00:00.000000	]
-[ 01:00:00.00,	23:00:00.000000	]
-[ 12:00:00.00,	10:00:00.000000	]
-[ 12:01:00.00,	10:01:00.000000	]
-[ 23:59:00.00,	21:59:00.000000	]
-[ NULL,	NULL	]
 #SELECT f1, sql_sub(f1, cast('23:22:21' as time)) FROM TIME_TBL;
 % sys.time_tbl,	sys.%2 # table_name
 % f1,	%2 # name

@@ -219,8 +219,8 @@ stdout of test 'column_name_lost_in_in_operator.Bug-6123` in directory 'sql/test
 #  SELECT person_id, MIN(message_id) AS message_id, creationDate
 % .messagelikes,	.messagelikes,	.messagelikes,	.messagelikes,	.messagelikes,	.messagelikes,	.messagelikes,	.messagelikes # table_name
 % person_id,	firstname,	lastname,	creationdate,	message_id,	content,	latency,	isnew # name
-% bigint,	varchar,	varchar,	timestamptz,	bigint,	varchar,	bigint,	boolean # type
-% 1,	0,	0,	29,	1,	0,	1,	5 # length
+% bigint,	varchar,	varchar,	timestamptz,	bigint,	varchar,	sec_interval,	boolean # type
+% 1,	0,	0,	29,	1,	0,	5,	5 # length
 #DROP TABLE comment_tags;
 #DROP TABLE forum_persons;
 #DROP TABLE forum_tags;

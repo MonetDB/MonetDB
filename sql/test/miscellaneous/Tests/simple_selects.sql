@@ -17,33 +17,33 @@ select 1 having true;
 select -NULL;
 
 create table x (x interval second, y interval month);
-insert into x values (1, 1);
+insert into x values (interval '1' second, interval '1' month);
 select cast(x as date) from x; --error, cannot cast
 select cast(x as time) from x;
 select cast(x as timestamp) from x; --error, cannot cast
-select cast(x as real) from x;
-select cast(x as double) from x;
-select cast(x as decimal) from x;
+select cast(x as real) from x; --error, cannot cast
+select cast(x as double) from x; --error, cannot cast
+select cast(x as decimal) from x; --error, cannot cast
 select cast(y as date) from x; --error, cannot cast
 select cast(y as time) from x; --We throw error, but PostgreSQL doesn't
 select cast(y as timestamp) from x; --error, cannot cast
-select cast(y as real) from x;
-select cast(y as double) from x;
-select cast(y as decimal) from x;
+select cast(y as real) from x; --error, cannot cast
+select cast(y as double) from x; --error, cannot cast
+select cast(y as decimal) from x; --error, cannot cast
 
 insert into x values (null, null);
 select cast(x as date) from x; --error, cannot cast
 select cast(x as time) from x;
 select cast(x as timestamp) from x; --error, cannot cast
-select cast(x as real) from x;
-select cast(x as double) from x;
-select cast(x as decimal) from x;
+select cast(x as real) from x; --error, cannot cast
+select cast(x as double) from x; --error, cannot cast
+select cast(x as decimal) from x; --error, cannot cast
 select cast(y as date) from x; --error, cannot cast
 select cast(y as time) from x; --We throw error, but PostgreSQL doesn't
 select cast(y as timestamp) from x; --error, cannot cast
-select cast(y as real) from x;
-select cast(y as double) from x;
-select cast(y as decimal) from x;
+select cast(y as real) from x; --error, cannot cast
+select cast(y as double) from x; --error, cannot cast
+select cast(y as decimal) from x; --error, cannot cast
 drop table x;
 
 create table x (x time, y date, z timestamp, w real, a double, b decimal);
@@ -54,12 +54,12 @@ select cast(y as interval second) from x; --error, cannot cast
 select cast(y as interval month) from x; --error, cannot cast
 select cast(z as interval second) from x; --error, cannot cast
 select cast(z as interval month) from x; --error, cannot cast
-select cast(w as interval second) from x;
-select cast(w as interval month) from x;
-select cast(a as interval second) from x;
-select cast(a as interval month) from x;
-select cast(b as interval second) from x;
-select cast(b as interval month) from x;
+select cast(w as interval second) from x; --error, cannot cast
+select cast(w as interval month) from x; --error, cannot cast
+select cast(a as interval second) from x; --error, cannot cast
+select cast(a as interval month) from x; --error, cannot cast
+select cast(b as interval second) from x; --error, cannot cast
+select cast(b as interval month) from x; --error, cannot cast
 drop table x;
 
 select difference('foobar', 'oobar'), difference(NULL, 'oobar'), difference('foobar', NULL), difference(NULL, NULL),
@@ -161,7 +161,8 @@ drop table myy;
 create view iambad as select * from _tables sample 10; --error, sample inside views not supported
 
 set "current_timezone" = null; --error, default global variables cannot be null
-set "current_timezone" = 11111111111111; --error, value too big
+set "current_timezone" = interval '111111111' second; --error, value too big
+set "current_timezone" = 11111111111111; --can't do it
 set "current_schema" = null; --error, default global variables cannot be null
 
 select greatest(null, null);
@@ -180,5 +181,5 @@ select 'a' like 'a' escape 'a'; --error, like sequence ending with escape charac
 select cast(x as interval second) from (values ('1'), (NULL), ('100'), (NULL)) as x(x);
 select cast(x as interval month) from (values ('1'), (NULL), ('100'), (NULL)) as x(x);
 
-select cast(9223372036854775808 as interval month); --error value to large for a month interval
+select cast(92233720368547750 as interval month); --error value to large for a month interval
 select cast(92233720368547750 as interval second); --error, overflow in conversion for interval second
