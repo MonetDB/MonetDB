@@ -77,23 +77,23 @@ stdout of test 'groupby_expressions` in directory 'sql/test/miscellaneous` itsel
 [ 2	]
 [ 3	]
 #select cast("aa"+1 as bigint) from "groupings" group by "aa"+1, "aa"+1;
-% sys.%2 # table_name
-% %2 # name
+% sys.%1 # table_name
+% %1 # name
 % bigint # type
 % 1 # length
 [ 2	]
 [ 3	]
 #select cast(("aa"+1) + ("bb"+1) as bigint) from "groupings" group by "aa"+1, "bb"+1;
-% sys.%5 # table_name
-% %5 # name
+% sys.%3 # table_name
+% %3 # name
 % bigint # type
 % 1 # length
 [ 4	]
 [ 6	]
 [ 6	]
 #select cast(("aa"+1) + ("bb"+1) as bigint) from "groupings" group by ("aa"+1) + ("bb"+1);
-% sys.%1 # table_name
-% %1 # name
+% sys.%2 # table_name
+% %2 # name
 % bigint # type
 % 1 # length
 [ 4	]
@@ -113,16 +113,16 @@ stdout of test 'groupby_expressions` in directory 'sql/test/miscellaneous` itsel
 [ 2	]
 [ 3	]
 #select cast(sum(("aa"+1) + ("bb"+2)) as bigint) from "groupings" group by "aa"+1, "bb"+2;
-% sys.%3 # table_name
-% %3 # name
+% sys.%4 # table_name
+% %4 # name
 % bigint # type
 % 1 # length
 [ 5	]
 [ 7	]
 [ 7	]
 #select cast(sum(("aa"+1) + ("bb"+2)) as bigint) from "groupings" group by ("aa"+1) + ("bb"+2);
-% sys.%2 # table_name
-% %2 # name
+% sys.%3 # table_name
+% %3 # name
 % bigint # type
 % 2 # length
 [ 5	]
@@ -163,8 +163,8 @@ stdout of test 'groupby_expressions` in directory 'sql/test/miscellaneous` itsel
 [ 2	]
 [ 20	]
 #select cast(sum("bb") as bigint) from "groupings" group by sumints("aa","bb")*sumints("aa",19);
-% sys.%2 # table_name
-% %2 # name
+% sys.%3 # table_name
+% %3 # name
 % bigint # type
 % 1 # length
 [ 1	]
@@ -252,8 +252,8 @@ stdout of test 'groupby_expressions` in directory 'sql/test/miscellaneous` itsel
 % 1 # length
 [ 3	]
 #select cast(sum("aa") as bigint), cast(sum("bb") as bigint), cast(sum("aa" + "bb") as bigint) from "groupings" group by "aa", "bb", "aa" + "bb" having sum("aa" + "bb") < 4;
-% sys.%2,	sys.%3,	sys.%4 # table_name
-% %2,	%3,	%4 # name
+% sys.%3,	sys.%5,	sys.%6 # table_name
+% %3,	%5,	%6 # name
 % bigint,	bigint,	bigint # type
 % 1,	1,	1 # length
 [ 1,	1,	2	]
@@ -272,8 +272,8 @@ stdout of test 'groupby_expressions` in directory 'sql/test/miscellaneous` itsel
 [ 2	]
 [ 4	]
 #select cast(sum("aa") + sum("bb") as bigint) from "groupings" order by sum("aa" + "bb");
-% sys.%4 # table_name
-% %4 # name
+% sys.%3 # table_name
+% %3 # name
 % bigint # type
 % 2 # length
 [ 10	]
@@ -336,8 +336,8 @@ stdout of test 'groupby_expressions` in directory 'sql/test/miscellaneous` itsel
 [ 1	]
 [ 1	]
 #select cast(sum("aa") as bigint), cast(sum("bb") as bigint), cast(sum("aa" + "bb") as bigint) from "groupings" group by "aa", "bb", "aa" + "bb" order by "aa" + "bb";
-% sys.%2,	sys.%3,	sys.%4 # table_name
-% %2,	%3,	%4 # name
+% sys.%3,	sys.%5,	sys.%6 # table_name
+% %3,	%5,	%6 # name
 % bigint,	bigint,	bigint # type
 % 1,	1,	1 # length
 [ 1,	1,	2	]
