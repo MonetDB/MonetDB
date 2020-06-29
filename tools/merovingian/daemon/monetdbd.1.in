@@ -208,6 +208,29 @@ will be hashed automatically.  Note that the only hash accepted is the
 one specified at configure time, which is @PASSWORD_BACKEND@.
 Changing this property takes effect immediately at runtime.
 .TP
+.B snapshotdir
+This property specifies where the
+.I monetdb snapshot create
+command stores its snapshots. There is no default value. If unset, no
+snapshots can be created.
+.TP
+.B snapshotcompression
+This property specifies whether database snapshots created by
+.I monetdb snapshot create
+are compressed, and if so, using which algorithm.
+The default value is
+.I .tar.lz4
+if LZ4 compression is available, or
+.I .tar
+otherwise. Other supported values are, if available,
+.IR .tar.gz ,
+.IR .tar.xz ,
+and
+.IR .tar.bz2 .
+These more efficient but much slower compression algorithms are
+usually not recommended for backups of large databases because it
+would take enormous amounts of time.
+.TP
 .B discovery
 Specifies whether neighbor discovery is to be enabled using UDP
 broadcasts or not.  The broadcasts are done on the same portnumber as
