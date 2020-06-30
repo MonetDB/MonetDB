@@ -429,6 +429,9 @@ monetdbe_shutdown_internal(void) // Call this function always inside the embedde
 	if (monetdbe_embedded_initialized) {
             malEmbeddedReset();
 		monetdbe_embedded_initialized = false;
+		if (monetdbe_embedded_url)
+			GDKfree(monetdbe_embedded_url);
+		monetdbe_embedded_url = NULL;
 	}
 }
 
@@ -550,7 +553,7 @@ monetdbe_startup(monetdbe_database_internal *mdbe, char* dbdir, monetdbe_options
 		goto cleanup;
 
 	monetdbe_embedded_initialized = true;
-	monetdbe_embedded_url = dbdir;
+	monetdbe_embedded_url = dbdir?GDKstrdup(dbdir):NULL;
 	GDKfataljumpenable = 0;
 cleanup:
 	if (mdbe->msg)
