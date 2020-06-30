@@ -880,19 +880,7 @@ push_up_project(mvc *sql, sql_rel *rel, list *ad)
 				}
 				if (r->l)
 					e = exp_rewrite(sql, r->l, e, ad);
-				if (e->type == e_atom && e->f) {
-					list *atoms = (list*)e->f;
-
-					if (list_length(atoms) > 1)
-						return sql_error(sql, 02, SQLSTATE(21000) "Cardinality violation, scalar value expected");
-					for (node *nn = atoms->h ; nn ; nn = nn->next) {
-						sql_exp *ee = (sql_exp *) nn->data;
-
-						exp_setname(sql->sa, ee, exp_relname(e), exp_name(e));
-						append(n->exps, ee);
-					}
-				} else
-					append(n->exps, e);
+				append(n->exps, e);
 			}
 			if (r->r) {
 				list *exps = r->r, *oexps = n->r = sa_list(sql->sa);
