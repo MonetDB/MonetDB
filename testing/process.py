@@ -210,7 +210,7 @@ class client(Popen):
                  server=None, port=None, dbname=None, host=None,
                  user='monetdb', passwd='monetdb', log=False,
                  interactive=None, echo=None, format=None,
-                 input=None, communicate=False, universal_newlines=True):
+                 input=None, communicate=False, text=True):
         '''Start a client process.'''
         if lang == 'mal':
             cmd = _mal_client[:]
@@ -311,7 +311,7 @@ class client(Popen):
                          stderr=stderr,
                          shell=False,
                          env=env,
-                         universal_newlines=universal_newlines)
+                         text=text)
         if stdout == PIPE:
             self.stdout = _BufferedPipe(self.stdout)
         if stderr == PIPE:
@@ -447,7 +447,7 @@ class server(Popen):
                          stdout=stdout,
                          stderr=stderr,
                          shell=False,
-                         universal_newlines=True,
+                         text=True,
                          bufsize=bufsize,
                          **kw)
         self.isserver = True
