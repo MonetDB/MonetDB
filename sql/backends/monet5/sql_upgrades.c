@@ -2773,7 +2773,6 @@ sql_update_jun2020_bam(Client c, mvc *m, const char *prev_schema)
 	return err;
 }
 
-
 #ifdef HAVE_HGE
 static str
 sql_update_jun2020_sp1_hugeint(Client c, const char *prev_schema)
@@ -2832,19 +2831,6 @@ sql_update_jun2020_sp1_hugeint(Client c, const char *prev_schema)
 #endif
 
 static str
-sql_update_semantics(Client c)
-{
-	char* update_query =
-	"update sys.functions set semantics = false where type <> 6 and func not ilike '%CREATE FUNCTION%' and name in ('length','octet_length','>','>=','<','<=','min','max','sql_min','sql_max','least','greatest','sum','prod','mod','and',\n"
-	"'xor','not','sql_mul','sql_div','sql_sub','sql_add','bit_and','bit_or','bit_xor','bit_not','left_shift','right_shift','abs','sign','scale_up','scale_down','round','power','floor','ceil','ceiling','sin','cos','tan','asin',\n"
-	"'acos','atan','sinh','cot','cosh','tanh','sqrt','exp','log','ln','log10','log2','pi','curdate','current_date','curtime','current_time','current_timestamp','localtime','localtimestamp','local_timezone','century','decade','year',\n"
-	"'quarter','month','day','dayofyear','weekofyear','dayofweek','dayofmonth','week','hour','minute','second','strings','locate','charindex','splitpart','substring','substr','truncate','concat','ascii','code','right','left','upper',\n"
-	"'ucase','lower','lcase','trim','ltrim','rtrim','lpad','rpad','insert','replace','repeat','space','char_length','character_length','soundex','qgramnormalize');";
-
-	return SQLstatementIntern(c, &update_query, "update", true, false, NULL);
-}
-
-static str
 sql_update_default_lidar(Client c)
 {
 	char *query =
@@ -2858,7 +2844,7 @@ sql_update_default_lidar(Client c)
 static str
 sql_update_default(Client c, mvc *sql, const char *prev_schema)
 {
-	size_t bufsize = 4096, pos = 0;
+	size_t bufsize = 8192, pos = 0;
 	char *err = NULL, *buf = GDKmalloc(bufsize);
 	sql_schema *sys = mvc_bind_schema(sql, "sys");
 	res_table *output;
@@ -3011,6 +2997,14 @@ sql_update_default(Client c, mvc *sql, const char *prev_schema)
 			}
 			insert_functions(sql->session->tr, mvc_bind_table(sql, sys, "functions"), functions, mvc_bind_table(sql, sys, "args"));
 
+			pos += snprintf(buf + pos, bufsize - pos,
+				"update sys.functions set semantics = false where type <> 6 and ((func not ilike '%%CREATE FUNCTION%%' and name in ('length','octet_length','>','>=','<','<=','min','max','sql_min','sql_max','least','greatest','sum','prod','mod','and',\n"
+				"'xor','not','sql_mul','sql_div','sql_sub','sql_add','bit_and','bit_or','bit_xor','bit_not','left_shift','right_shift','abs','sign','scale_up','scale_down','round','power','floor','ceil','ceiling','sin','cos','tan','asin',\n"
+				"'acos','atan','sinh','cot','cosh','tanh','sqrt','exp','log','ln','log10','log2','pi','curdate','current_date','curtime','current_time','current_timestamp','localtime','localtimestamp','local_timezone','century','decade','year',\n"
+				"'quarter','month','day','dayofyear','weekofyear','dayofweek','dayofmonth','week','hour','minute','second','strings','locate','charindex','splitpart','substring','substr','truncate','concat','ascii','code','right','left','upper',\n"
+				"'ucase','lower','lcase','trim','ltrim','rtrim','lpad','rpad','insert','replace','repeat','space','char_length','character_length','soundex','qgramnormalize','degrees','radians')) or \n"
+				"(system = true and name in ('like','ilike','str_to_date','date_to_str','str_to_time','time_to_str','str_to_timestamp','timestamp_to_str','date_trunc','epoch')));\n");
+
 			pos += snprintf(buf + pos, bufsize - pos, "set schema \"%s\";\n", prev_schema);
 			assert(pos < bufsize);
 
@@ -3021,12 +3015,6 @@ sql_update_default(Client c, mvc *sql, const char *prev_schema)
 	}
 	res_table_destroy(output);
 	GDKfree(buf);
-
-	if (err)
-		return err;
-
-	err = sql_update_semantics(c);
-
 	return err;		/* usually MAL_SUCCEED */
 }
 int
