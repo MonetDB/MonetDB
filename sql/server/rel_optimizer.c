@@ -2927,26 +2927,20 @@ exp_simplify_math( mvc *sql, sql_exp *e, int *changes)
 				(*changes)++;
 				if (f && f->func && f->func->imp && strstr(f->func->imp, "_no_nil") != NULL) {
 					exp_setname(sql->sa, re, exp_relname(e), exp_name(e));
-					if (subtype_cmp(et, exp_subtype(re)) != 0)
-						re = exp_convert(sql->sa, re, exp_subtype(re), et);
 					return re;
 				}
+				le = exp_null(sql->sa, et);
 				exp_setname(sql->sa, le, exp_relname(e), exp_name(e));
-				if (subtype_cmp(et, exp_subtype(le)) != 0)
-					le = exp_convert(sql->sa, le, exp_subtype(le), et);
 				return le;
 			}
 			if (exp_is_atom(re) && exp_is_null(sql, re)) {
 				(*changes)++;
 				if (f && f->func && f->func->imp && strstr(f->func->imp, "_no_nil") != NULL) {
 					exp_setname(sql->sa, le, exp_relname(e), exp_name(e));
-					if (subtype_cmp(et, exp_subtype(le)) != 0)
-						le = exp_convert(sql->sa, le, exp_subtype(le), et);
 					return le;
 				}
+				re = exp_null(sql->sa, et);
 				exp_setname(sql->sa, re, exp_relname(e), exp_name(e));
-				if (subtype_cmp(et, exp_subtype(re)) != 0)
-					re = exp_convert(sql->sa, re, exp_subtype(re), et);
 				return re;
 			}
 		}
@@ -2958,17 +2952,15 @@ exp_simplify_math( mvc *sql, sql_exp *e, int *changes)
 			/* 0*a = 0 */
 			if (exp_is_atom(le) && exp_is_zero(sql, le) && exp_is_atom(re) && exp_is_not_null(sql, re)) {
 				(*changes)++;
+				le = exp_zero(sql->sa, et);
 				exp_setname(sql->sa, le, exp_relname(e), exp_name(e));
-				if (subtype_cmp(et, exp_subtype(le)) != 0)
-					le = exp_convert(sql->sa, le, exp_subtype(le), et);
 				return le;
 			}
 			/* a*0 = 0 */
 			if (exp_is_atom(re) && exp_is_zero(sql, re) && exp_is_atom(le) && exp_is_not_null(sql, le)) {
 				(*changes)++;
+				re = exp_zero(sql->sa, et);
 				exp_setname(sql->sa, re, exp_relname(e), exp_name(e));
-				if (subtype_cmp(et, exp_subtype(re)) != 0)
-					re = exp_convert(sql->sa, re, exp_subtype(re), et);
 				return re;
 			}
 			/* 1*a = a

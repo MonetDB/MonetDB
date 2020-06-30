@@ -1420,7 +1420,7 @@ atom_is_false( atom *a )
 	return 0;
 }
 
-atom*
+atom *
 atom_zero_value(sql_allocator *sa, sql_subtype* tpe)
 {
 	void *ret = NULL;
@@ -1508,16 +1508,5 @@ atom_zero_value(sql_allocator *sa, sql_subtype* tpe)
 		VALset(&res->data, res->data.vtype, ret);
 	}
 
-	return res;
-}
-
-atom*
-atom_null_value(sql_allocator *sa, sql_subtype* tpe)
-{
-	atom *res = atom_create(sa);
-	if (res) {
-		res->tpe = *tpe;
-		res->isnull = 1;
-	}
 	return res;
 }

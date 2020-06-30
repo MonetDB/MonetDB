@@ -326,7 +326,7 @@ create_table_or_view(mvc *sql, char* sname, char *tname, sql_table *t, int temp)
 			}
 			r = rel_parse(sql, s, sa_message(sql->sa, "select %s;", c->def), m_deps);
 			if (!r || !is_project(r->op) || !r->exps || list_length(r->exps) != 1 ||
-				rel_check_type(sql, &c->type, r, r->exps->h->data, type_equal) == NULL) {
+				exp_check_type(sql, &c->type, r, r->exps->h->data, type_equal) == NULL) {
 				if (r)
 					rel_destroy(r);
 				sa_destroy(sql->sa);

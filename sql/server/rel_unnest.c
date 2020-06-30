@@ -2920,7 +2920,7 @@ rewrite_groupings(visitor *v, sql_rel *rel)
 						exp_setname(v->sql->sa, ne, e->alias.rname, e->alias.name);
 					} else if (e->type == e_column && !exps_find_exp(l, e) && !has_label(e)) {
 						/* do not include in the output of the group by, but add to the project as null */
-						ne = exp_atom(v->sql->sa, atom_null_value(v->sql->sa, exp_subtype(e)));
+						ne = exp_atom(v->sql->sa, atom_general(v->sql->sa, exp_subtype(e), NULL));
 						exp_setname(v->sql->sa, ne, e->alias.rname, e->alias.name);
 					} else {
 						ne = exp_ref(v->sql, e);
