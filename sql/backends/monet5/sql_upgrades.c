@@ -2754,40 +2754,6 @@ sql_update_jun2020(Client c, mvc *sql, const char *prev_schema, bool *systabfixe
 			" external name \"sql\".\"corr\";\n"
 			"GRANT EXECUTE ON WINDOW corr(INTERVAL MONTH, INTERVAL MONTH) TO PUBLIC;\n");
 
-#ifdef HAVE_HGE
-	if (have_hge) {
-		/* 39_analytics_hge.sql */
-		pos += snprintf(buf + pos, bufsize - pos,
-			"create window stddev_samp(val HUGEINT) returns DOUBLE\n"
-			" external name \"sql\".\"stdev\";\n"
-			"GRANT EXECUTE ON WINDOW stddev_samp(HUGEINT) TO PUBLIC;\n"
-			"create window stddev_pop(val HUGEINT) returns DOUBLE\n"
-			" external name \"sql\".\"stdevp\";\n"
-			"GRANT EXECUTE ON WINDOW stddev_pop(HUGEINT) TO PUBLIC;\n"
-			"create window var_samp(val HUGEINT) returns DOUBLE\n"
-			" external name \"sql\".\"variance\";\n"
-			"GRANT EXECUTE ON WINDOW var_samp(HUGEINT) TO PUBLIC;\n"
-			"create window var_pop(val HUGEINT) returns DOUBLE\n"
-			" external name \"sql\".\"variancep\";\n"
-			"GRANT EXECUTE ON WINDOW var_pop(HUGEINT) TO PUBLIC;\n"
-			"create aggregate covar_samp(e1 HUGEINT, e2 HUGEINT) returns DOUBLE\n"
-			" external name \"aggr\".\"covariance\";\n"
-			"GRANT EXECUTE ON AGGREGATE covar_samp(HUGEINT, HUGEINT) TO PUBLIC;\n"
-			"create window covar_samp(e1 HUGEINT, e2 HUGEINT) returns DOUBLE\n"
-			" external name \"sql\".\"covariance\";\n"
-			"GRANT EXECUTE ON WINDOW covar_samp(HUGEINT, HUGEINT) TO PUBLIC;\n"
-			"create aggregate covar_pop(e1 HUGEINT, e2 HUGEINT) returns DOUBLE\n"
-			" external name \"aggr\".\"covariancep\";\n"
-			"GRANT EXECUTE ON AGGREGATE covar_pop(HUGEINT, HUGEINT) TO PUBLIC;\n"
-			"create window covar_pop(e1 HUGEINT, e2 HUGEINT) returns DOUBLE\n"
-			" external name \"sql\".\"covariancep\";\n"
-			"GRANT EXECUTE ON WINDOW covar_pop(HUGEINT, HUGEINT) TO PUBLIC;\n"
-			"create window corr(e1 HUGEINT, e2 HUGEINT) returns DOUBLE\n"
-			" external name \"sql\".\"corr\";\n"
-			"GRANT EXECUTE ON WINDOW corr(HUGEINT, HUGEINT) TO PUBLIC;\n");
-	}
-#endif
-
 	pos += snprintf(buf + pos, bufsize - pos,
 		"create window sys.group_concat(str STRING) returns STRING\n"
 		" external name \"sql\".\"str_group_concat\";\n"
