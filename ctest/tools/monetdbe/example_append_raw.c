@@ -32,6 +32,8 @@ main(void)
 		error(err)
 
 	// fill the empty table with data using append
+	// it is important to match column order below with the column order of the table
+
 	// int_32
 	int32_t i1 = 42;
 	int32_t i2 = *(int32_t*)monetdbe_null(mdbe, monetdbe_int32_t);
