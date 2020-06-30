@@ -457,9 +457,16 @@ atom2sql(atom *a)
 		return res;
 	} break;
 	case EC_BLOB: {
-		char *_buf = buf;
-		size_t _bufsiz = BUFSIZ;
-		BLOBtostr(&_buf, &_bufsiz, &a->data.val.pval, true);
+		char *res;
+		blob *b = (blob*)a->data.val.pval;
+		size_t blob_size = (24 + (b->nitems * 3));
+
+		if ((res = NEW_ARRAY(char, blob_size + 8))) {
+			char *tail = stpcpy(res, "blob '");
+			ssize_t bloblen = BLOBtostr(&tail, &blob_size, b, true);
+			strcpy(res + bloblen + 6, "'");
+		}
+		return res;
 	} break;
 	case EC_MONTH:
 	case EC_SEC: {

@@ -169,11 +169,13 @@ select greatest(null, null);
 select sql_min(null, null);
 
 start transaction;
-create table tab1(col1 blob);
+create table tab1(col1 blob default blob '1122');
 insert into tab1 values('2233');
 select length(col1) from tab1;
 insert into tab1 values(null), (null), ('11'), ('2233');
 select length(col1) from tab1;
+insert into tab1 values(default);
+select col1 from tab1;
 rollback;
 
 select 'a' like 'a' escape 'a'; --error, like sequence ending with escape character 
