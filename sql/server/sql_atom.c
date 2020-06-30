@@ -10,6 +10,7 @@
 #include "sql_atom.h"
 #include "sql_string.h"
 #include "sql_decimal.h"
+#include "blob.h"
 #include "gdk_time.h"
 
 void
@@ -455,9 +456,18 @@ atom2sql(atom *a)
 		c_delete(val);
 		return res;
 	} break;
-	case EC_BLOB:
-		/* TODO atom to string */
-		break;
+	case EC_BLOB: {
+		char *res;
+		blob *b = (blob*)a->data.val.pval;
+		size_t blob_size = (24 + (b->nitems * 3));
+
+		if ((res = NEW_ARRAY(char, blob_size + 8))) {
+			char *tail = stpcpy(res, "blob '");
+			ssize_t bloblen = BLOBtostr(&tail, &blob_size, b, true);
+			strcpy(res + bloblen + 6, "'");
+		}
+		return res;
+	} break;
 	case EC_MONTH:
 	case EC_SEC: {
 		lng v;
@@ -503,13 +513,7 @@ atom2sql(atom *a)
 		case 13:	/* second */
 			break;
 		}
-		if (a->tpe.digits < 4) {
-			sprintf(buf, LLFMT, v);
-		} else {
-			lng sec = v/1000;
-			lng msec = v%1000;
-			sprintf(buf, LLFMT "." LLFMT, sec, msec);
-		}
+		sprintf(buf, "interval '" LLFMT "' %s", ec == EC_MONTH ? v : v/1000, ec == EC_MONTH ? "month" : "second");
 		break;
 	}
 	case EC_NUM:
