@@ -54,7 +54,11 @@ MAPI  = (monetdb) /var/tmp/mtest-3604/.s.monetdb.35433
 QUERY = SELECT cast('10 years -11 month -12 days +13:14' as interval second) AS "9 years...";
 ERROR = !Wrong format (10 years -11 month -12 days +13:14)
 CODE  = 42000
-MAPI  = (monetdb) /var/tmp/mtest-3604/.s.monetdb.35433
+MAPI  = (monetdb) /var/tmp/mtest-149583/.s.monetdb.38425
+QUERY = INSERT INTO INTERVAL_TBL (f1) VALUES (60 * 60 * 24 * 365 * 2014);
+ERROR = !types bigint(37,0) and sec_interval(13,0) are not equal
+CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-149583/.s.monetdb.38425
 QUERY = INSERT INTO INTERVAL_TBL (f1) VALUES ('123456789012345678');
 ERROR = !Wrong format (123456789012345678)
 CODE  = 42000
@@ -144,7 +148,19 @@ QUERY = SELECT '' AS nine, INTERVAL_TBL.* FROM INTERVAL_TBL
            WHERE INTERVAL_TBL.f1 > cast('@ 3 seconds ago' as interval second);
 ERROR = !Wrong format (@ 3 seconds ago)
 CODE  = 42000
-MAPI  = (monetdb) /var/tmp/mtest-45764/.s.monetdb.39324
+MAPI  = (monetdb) /var/tmp/mtest-149583/.s.monetdb.38425
+QUERY = select avg(f1) from interval_tbl;
+ERROR = !types sec_interval(13,0) and month_interval(32,0) are not equal for column 'f1'
+CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-149583/.s.monetdb.38425
+QUERY = select avg(cast(f1 as double)) from interval_tbl;
+ERROR = !types sec_interval(13,0) and double(53,0) are not equal for column 'f1'
+CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-149583/.s.monetdb.38425
+QUERY = select avg(cast(f1 as decimal)) from interval_tbl;
+ERROR = !types sec_interval(13,0) and decimal(18,3) are not equal for column 'f1'
+CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-149583/.s.monetdb.38425
 QUERY = select avg(cast(f1 as decimal(22,3))) from interval_tbl;
 ERROR = !Decimal(22,3) isn't supported because P=22 > 18 in: "select avg(cast(f1 as decimal(22,3)"
         !syntax error, unexpected ')' in: ")"
