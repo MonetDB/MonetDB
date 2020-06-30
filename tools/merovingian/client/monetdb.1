@@ -80,6 +80,7 @@ utility are
 .BR kill ,
 .BR profilerstart ,
 .BR profilerstop ,
+.BR snapshot ,
 .BR set ,
 .BR get ,
 .BR inherit ,
@@ -258,7 +259,7 @@ It is more common to use the
 .B stop
 command to stop a database.  It will first attempt to stop the database,
 waiting for
-.B mero_exittimeout
+.B exittimeout
 seconds and if that fails, kill the database.
 When using the
 .B start
@@ -293,6 +294,91 @@ note that a file recording the pid of the profiler is written in the log
 directory, therefore each database needs to have a different
 .B profilerlogpath
 value.
+.TP
+\fBmonetdb\fP \fBsnapshot\fP \fBcreate\fP [\fB-t\fP \fItargetfile\fP] \fIdbname\fP [\fIdbname\fP..]
+Takes a snapshot of the given databases.
+Here,
+.I dbname
+can be either the name of a single database or a pattern such as
+.I staging*
+indicating multiple databases to snapshot.
+Unless
+.B -t
+is given, the snapshots are written to files named
+.I <snapshotdir>/<dbname>_<YYYY><MM><DD>T<HH><MM>UTC<snapshotcompression>
+where
+.I snapshotdir
+is a
+.I monetdbd
+setting that has to be configured explicitly
+using
+.B monetdbd set
+and
+.I snapshotcompression
+is another
+.B monetdbd
+setting which defaults to
+.I .tar.lz4
+or
+.IR .tar .
+If
+.B -t
+is given, only a single database can be snapshotted and the snapshot
+is written to
+.IR targetfile ,
+a file on the server which must be somewhere under
+.I snapshotdir
+but which does not have to follow any particular naming convention.
+.TP
+\fBmonetdb\fP \fBsnapshot\fP \fBlist\fP [\fIdbname\fP..]
+Lists the snapshots for the given databases, or all databases if none
+is given, showing the snapshot id, the time the snapshot was taken and
+the (compressed) size of the snapshot file. Only snapshots following
+the naming convention described under
+.B monetdb snapshot create
+are listed.  The snapshot id is of the form \fIdbname\fP@\fItag\fP
+where the tags are numbers starting at 1 for the most recent snapshot
+of a database, 2 for the next most recent, etc. For clarity, the first
+snapshot for each database shows the full snapshot id (\fIdbname\fP@1) and
+older snapshots for the same database are listed just as @2, @3, etc.
+.TP
+\fBmonetdb\fP \fBsnapshot\fP \fBrestore\fP [\fB-f\fP] \fIsnapshotid\fP [\fIdbname\fP]
+Restores a database from the given snapshot, where
+.I snapshotid
+is either a path on the server or \fIname\fP@\fItag\fP as listed by
+.B monetdb snapshot
+.BR list.
+The optional
+.I dbname
+argument sets the name of the newly created database. It can be
+omitted unless
+.I snapshotid
+is a full path.
+When
+.B -f
+is given, no confirmation is asked when overwriting an existing database.
+.TP
+\fBmonetdb\fP \fBsnapshot\fP \fBdestroy\fP [\fB-f\fP] \fIname\fP@\fItag\fP..
+Delete the listed snapshots from the
+.I snapshotdir
+directory.  When
+.B -f
+is given, no confirmation is asked.
+.TP
+\fBmonetdb\fP \fBsnapshot\fP \fBdestroy\fP [\fB-f\fP] \fB-r\fP \fIN\fP \fIdbname\fP..\&
+Delete all but the
+.I N
+latest snapshots for the given databases.
+Again,
+.I dbname
+can be a pattern such as
+.I staging*
+or even
+.I *
+to work on all snapshotted databases.
+When
+.B -f
+is given, no confirmation is asked.
 .TP
 \fBget\fP <\fBall\fP | \fIproperty\fP[,\fIproperty\fP[,..]]> [\fIdatabase\fP ...]
 Prints the requested properties, or all known properties, for the given
