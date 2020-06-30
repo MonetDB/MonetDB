@@ -95,7 +95,7 @@ psm_set_exp(sql_query *query, dnode *n)
 		psm_zero_or_one(e);
 
 		level = stack_find_frame(sql, name);
-		e = rel_check_type(sql, tpe, rel, e, type_cast);
+		e = exp_check_type(sql, tpe, rel, e, type_cast);
 		if (!e)
 			return NULL;
 
@@ -135,7 +135,7 @@ psm_set_exp(sql_query *query, dnode *n)
 
 			level = stack_find_frame(sql, vname);
 			v = exp_ref(sql, v);
-			if (!(v = rel_check_type(sql, tpe, rel_val, v, type_cast)))
+			if (!(v = exp_check_type(sql, tpe, rel_val, v, type_cast)))
 				return NULL;
 			append(b, exp_set(sql->sa, vname, v, level));
 		}
@@ -447,7 +447,7 @@ rel_psm_return( sql_query *query, sql_subtype *restype, list *restypelist, symbo
 			requires_proj = true;
 		}
 	}
-	if (ek.card != card_relation && (!restype || (res = rel_check_type(sql, restype, rel, res, type_equal)) == NULL))
+	if (ek.card != card_relation && (!restype || (res = exp_check_type(sql, restype, rel, res, type_equal)) == NULL))
 		return (!restype)?sql_error(sql, 02, SQLSTATE(42000) "RETURN: return type does not match"):NULL;
 	else if (ek.card == card_relation && !rel)
 		return NULL;
@@ -479,7 +479,7 @@ rel_psm_return( sql_query *query, sql_subtype *restype, list *restypelist, symbo
 				cname = sa_strdup(sql->sa, number2name(name, sizeof(name), ++sql->label));
 			if (!isproject)
 				e = exp_ref(sql, e);
-			e = rel_check_type(sql, &ce->type, oexps_rel, e, type_equal);
+			e = exp_check_type(sql, &ce->type, oexps_rel, e, type_equal);
 			if (!e)
 				return NULL;
 			append(exps, e);
@@ -502,7 +502,7 @@ rel_psm_return( sql_query *query, sql_subtype *restype, list *restypelist, symbo
 			sql_arg *ce = m->data;
 			sql_exp *e = exp_column(sql->sa, tname, c->base.name, &c->type, CARD_MULTI, c->null, 0);
 
-			e = rel_check_type(sql, &ce->type, rel, e, type_equal);
+			e = exp_check_type(sql, &ce->type, rel, e, type_equal);
 			if (!e)
 				return NULL;
 			append(exps, e);
@@ -552,7 +552,7 @@ rel_select_into( sql_query *query, symbol *sq, exp_kind ek)
 		tpe = stack_find_type(sql, nme);
 		level = stack_find_frame(sql, nme);
 		v = exp_ref(sql, v);
-		if (!(v = rel_check_type(sql, tpe, r, v, type_equal)))
+		if (!(v = exp_check_type(sql, tpe, r, v, type_equal)))
 			return NULL;
 		v = exp_set(sql->sa, nme, v, level);
 		list_append(nl, v);
@@ -1383,7 +1383,7 @@ psm_analyze(sql_query *query, char *analyzeType, dlist *qname, dlist *columns, s
 		sql_rel *rel = NULL;
 		sample_exp = rel_value_exp(query, &rel, sample, sql_sel | sql_psm, ek);
 		psm_zero_or_one(sample_exp);
-		if (!sample_exp || !(sample_exp = rel_check_type(sql, sql_bind_localtype("lng"), NULL, sample_exp, type_cast)))
+		if (!sample_exp || !(sample_exp = exp_check_type(sql, sql_bind_localtype("lng"), NULL, sample_exp, type_cast)))
 			return NULL;
 	} else {
 		sample_exp = exp_atom_lng(sql->sa, 0);

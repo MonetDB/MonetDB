@@ -52,9 +52,9 @@ rel_xmlelement(sql_query *query, sql_rel **rel, symbol *sym, int f, exp_kind knd
 
 					sql_find_subtype(&str_type, "clob", 0, 0);
 					/* convert to string first */
-					c_st = rel_check_type(sql, &str_type, rel ? *rel : NULL, c_st, type_equal);
+					c_st = exp_check_type(sql, &str_type, rel ? *rel : NULL, c_st, type_equal);
 					/* then to xml */
-					if (!c_st || (c_st = rel_check_type(sql, &xml_type, rel ? *rel : NULL, c_st, type_equal)) == NULL)
+					if (!c_st || (c_st = exp_check_type(sql, &xml_type, rel ? *rel : NULL, c_st, type_equal)) == NULL)
 						return NULL;
 				}
 
@@ -133,9 +133,9 @@ rel_xmlforest(sql_query *query, sql_rel **rel, symbol *sym, int f, exp_kind knd)
 
 				sql_find_subtype(&str_type, "clob", 0, 0);
 				/* convert to string first */
-				c_st = rel_check_type(sql, &str_type, rel ? *rel : NULL, c_st, type_equal);
+				c_st = exp_check_type(sql, &str_type, rel ? *rel : NULL, c_st, type_equal);
 				/* then to xml */
-				if (!c_st || (c_st = rel_check_type(sql, &xml_type, rel ? *rel : NULL, c_st, type_equal)) == NULL)
+				if (!c_st || (c_st = exp_check_type(sql, &xml_type, rel ? *rel : NULL, c_st, type_equal)) == NULL)
 					return NULL;
 			}
 
@@ -261,7 +261,7 @@ rel_xmltext(sql_query *query, sql_rel **rel, symbol *sym, int f, exp_kind knd)
 		return sql_error(query->sql, 02, SQLSTATE(42000) "XML: xml type missing, probably the xml module wasn't added");
 	sql_init_subtype(&xml_type, t, 0, 0);
 	text_st = rel_value_exp(query, rel, text, f, knd);
-	if (!text_st || (text_st = rel_check_type(query->sql, &xml_type, rel ? *rel : NULL, text_st, type_equal)) == NULL)
+	if (!text_st || (text_st = exp_check_type(query->sql, &xml_type, rel ? *rel : NULL, text_st, type_equal)) == NULL)
 		return NULL;
 	return text_st;
 }

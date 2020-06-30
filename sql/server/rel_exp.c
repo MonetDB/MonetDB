@@ -497,6 +497,13 @@ exp_null(sql_allocator *sa, sql_subtype *tpe)
 	return exp_atom(sa, a);
 }
 
+sql_exp *
+exp_zero(sql_allocator *sa, sql_subtype *tpe)
+{
+	atom *a = atom_zero_value(sa, tpe);
+	return exp_atom(sa, a);
+}
+
 atom *
 exp_value(mvc *sql, sql_exp *e, atom **args, int maxarg)
 {
@@ -2624,6 +2631,205 @@ exps_reset_freevar(list *exps)
 		/*later use case per type */
 		reset_freevar(e);
 	}
+}
+
+int
+rel_set_type_param(mvc *sql, sql_subtype *type, sql_rel *rel, sql_exp *rel_exp, int upcast)
+{
+	sql_rel *r = rel;
+	int is_rel = exp_is_rel(rel_exp);
+
+	if (!type || !rel_exp || (rel_exp->type != e_atom && rel_exp->type != e_column && !is_rel))
+		return -1;
+
+	/* use largest numeric types */
+	if (upcast && type->type->eclass == EC_NUM)
+#ifdef HAVE_HGE
+		type = sql_bind_localtype(have_hge ? "hge" : "lng");
+#else
+		type = sql_bind_localtype("lng");
+#endif
+	if (upcast && type->type->eclass == EC_FLT)
+		type = sql_bind_localtype("dbl");
+
+	if (is_rel)
+		r = (sql_rel*) rel_exp->l;
+
+	if ((rel_exp->type == e_atom && (rel_exp->l || rel_exp->r || rel_exp->f)) || rel_exp->type == e_column || is_rel) {
+		/* it's not a parameter set possible parameters below */
+		const char *relname = exp_relname(rel_exp), *expname = exp_name(rel_exp);
+		if (rel_set_type_recurse(sql, type, r, &relname, &expname) < 0)
+			return -1;
+	} else if (set_type_param(sql, type, rel_exp->flag) != 0)
+		return -1;
+
+	rel_exp->tpe = *type;
+	return 0;
+}
+
+/* try to do an in-place conversion
+ *
+ * in-place conversion is only possible if the exp is a variable.
+ * This is only done to be able to map more cached queries onto the same
+ * interface.
+ */
+
+static void
+convert_atom(atom *a, sql_subtype *rt)
+{
+	if (atom_null(a)) {
+		if (a->data.vtype != rt->type->localtype) {
+			const void *p;
+
+			a->data.vtype = rt->type->localtype;
+			p = ATOMnilptr(a->data.vtype);
+			VALset(&a->data, a->data.vtype, (ptr) p);
+		}
+	}
+	a->tpe = *rt;
+}
+
+static sql_exp *
+exp_convert_inplace(mvc *sql, sql_subtype *t, sql_exp *exp)
+{
+	atom *a;
+
+	/* exclude named variables and variable lists */
+	if (exp->type != e_atom || exp->r /* named */ || exp->f /* list */ || !exp->l /* not direct atom */)
+		return NULL;
+
+	a = exp->l;
+	if (t->scale && t->type->eclass != EC_FLT)
+		return NULL;
+
+	if (a && atom_cast(sql->sa, a, t)) {
+		convert_atom(a, t);
+		exp->tpe = *t;
+		return exp;
+	}
+	return NULL;
+}
+
+sql_exp *
+exp_numeric_supertype(mvc *sql, sql_exp *e )
+{
+	sql_subtype *tp = exp_subtype(e);
+
+	if (tp->type->eclass == EC_DEC) {
+		sql_subtype *dtp = sql_bind_localtype("dbl");
+
+		return exp_check_type(sql, dtp, NULL, e, type_cast);
+	}
+	if (tp->type->eclass == EC_NUM) {
+#ifdef HAVE_HGE
+		sql_subtype *ltp = sql_bind_localtype(have_hge ? "hge" : "lng");
+#else
+		sql_subtype *ltp = sql_bind_localtype("lng");
+#endif
+
+		return exp_check_type(sql, ltp, NULL, e, type_cast);
+	}
+	return e;
+}
+
+sql_exp *
+exp_check_type(mvc *sql, sql_subtype *t, sql_rel *rel, sql_exp *exp, check_type tpe)
+{
+	int c, err = 0;
+	sql_exp* nexp = NULL;
+	sql_subtype *fromtype = exp_subtype(exp);
+
+	if ((!fromtype || !fromtype->type) && rel_set_type_param(sql, t, rel, exp, 0) == 0)
+		return exp;
+
+	/* first try cheap internal (in-place) conversions ! */
+	if ((nexp = exp_convert_inplace(sql, t, exp)) != NULL)
+		return nexp;
+
+	if (fromtype && subtype_cmp(t, fromtype) != 0) {
+		if (EC_INTERVAL(fromtype->type->eclass) && (t->type->eclass == EC_NUM || t->type->eclass == EC_POS) && t->digits < fromtype->digits) {
+			err = 1; /* conversion from interval to num depends on the number of digits */
+		} else {
+			c = sql_type_convert(fromtype->type->eclass, t->type->eclass);
+			if (!c || (c == 2 && tpe == type_set) || (c == 3 && tpe != type_cast)) {
+				err = 1;
+			} else {
+				exp = exp_convert(sql->sa, exp, fromtype, t);
+			}
+		}
+	}
+	if (err) {
+		sql_exp *res = sql_error( sql, 03, SQLSTATE(42000) "types %s(%u,%u) and %s(%u,%u) are not equal%s%s%s",
+			fromtype->type->sqlname,
+			fromtype->digits,
+			fromtype->scale,
+			t->type->sqlname,
+			t->digits,
+			t->scale,
+			(exp->type == e_column ? " for column '" : ""),
+			(exp->type == e_column ? exp_name(exp) : ""),
+			(exp->type == e_column ? "'" : "")
+		);
+		return res;
+	}
+	return exp;
+}
+
+sql_exp *
+exp_values_set_supertype(mvc *sql, sql_exp *values, sql_subtype *opt_super)
+{
+	assert(is_values(values));
+	list *vals = exp_get_values(values), *nexps;
+	sql_subtype *tpe = opt_super?opt_super:exp_subtype(vals->h->data);
+
+	if (!opt_super && tpe)
+		values->tpe = *tpe;
+
+	for (node *m = vals->h; m; m = m->next) {
+		sql_exp *e = m->data;
+		sql_subtype super, *ttpe;
+
+		/* if the expression is a parameter set its type */
+		if (tpe && e->type == e_atom && !e->l && !e->r && !e->f && !e->tpe.type) {
+			if (set_type_param(sql, tpe, e->flag) == 0)
+				e->tpe = *tpe;
+			else
+				return NULL;
+		}
+		ttpe = exp_subtype(e);
+		if (tpe && ttpe) {
+			supertype(&super, ttpe, tpe);
+			values->tpe = super;
+			tpe = &values->tpe;
+		} else {
+			tpe = ttpe;
+		}
+	}
+
+	if (tpe) {
+		/* if the expression is a parameter set its type */
+		for (node *m = vals->h; m; m = m->next) {
+			sql_exp *e = m->data;
+			if (e->type == e_atom && !e->l && !e->r && !e->f && !e->tpe.type) {
+				if (set_type_param(sql, tpe, e->flag) == 0)
+					e->tpe = *tpe;
+				else
+					return NULL;
+			}
+		}
+		values->tpe = *tpe;
+		nexps = sa_list(sql->sa);
+		for (node *m = vals->h; m; m = m->next) {
+			sql_exp *e = m->data;
+			e = exp_check_type(sql, &values->tpe, NULL, e, type_equal);
+			if (!e)
+				return NULL;
+			exp_label(sql->sa, e, ++sql->label);
+			append(nexps, e);
+		}
+		values->f = nexps;
+	}
+	return values;
 }
 
 static int

@@ -2929,7 +2929,7 @@ rewrite_groupings(mvc *sql, sql_rel *rel, int *changes)
 						exp_setname(sql->sa, ne, e->alias.rname, e->alias.name);
 					} else if (e->type == e_column && !exps_find_exp(l, e) && !has_label(e)) {
 						/* do not include in the output of the group by, but add to the project as null */
-						ne = exp_atom(sql->sa, atom_null_value(sql->sa, exp_subtype(e)));
+						ne = exp_atom(sql->sa, atom_general(sql->sa, exp_subtype(e), NULL));
 						exp_setname(sql->sa, ne, e->alias.rname, e->alias.name);
 					} else {
 						ne = exp_ref(sql, e);
