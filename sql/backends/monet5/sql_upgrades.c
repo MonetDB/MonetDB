@@ -2969,7 +2969,7 @@ sql_update_default(Client c, mvc *sql, const char *prev_schema)
 				"'acos','atan','sinh','cot','cosh','tanh','sqrt','exp','log','ln','log10','log2','pi','curdate','current_date','curtime','current_time','current_timestamp','localtime','localtimestamp','local_timezone','century','decade','year',\n"
 				"'quarter','month','day','dayofyear','weekofyear','dayofweek','dayofmonth','week','hour','minute','second','strings','locate','charindex','splitpart','substring','substr','truncate','concat','ascii','code','right','left','upper',\n"
 				"'ucase','lower','lcase','trim','ltrim','rtrim','lpad','rpad','insert','replace','repeat','space','char_length','character_length','soundex','qgramnormalize','degrees','radians')) or \n"
-				"(system = true and name in ('like','ilike','str_to_date','date_to_str','str_to_time','time_to_str','str_to_timestamp','timestamp_to_str','date_trunc','epoch')));\n");
+				"(system = true and name in ('like','ilike','str_to_date','date_to_str','str_to_time','time_to_str','str_to_timestamp','timestamp_to_str','date_trunc','epoch','reverse')));\n");
 
 			pos += snprintf(buf + pos, bufsize - pos, "set schema \"%s\";\n", prev_schema);
 			assert(pos < bufsize);
