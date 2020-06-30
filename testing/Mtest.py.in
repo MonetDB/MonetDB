@@ -1603,6 +1603,32 @@ def expandvars(path, environ = os.environ):
             i = j
     return path
 
+def coredumpctl(pid):
+    import tempfile
+    # can't use tempfile.NamedTemporaryFile because it opens the file
+    # exclusively
+    fd, name = tempfile.mkstemp(suffix='.sh')
+    fd2, name2 = tempfile.mkstemp()
+    os.close(fd2)
+    os.write(fd, b'#!/bin/sh\ngdb -nx -batch -ex "thread apply all bt" "$@" > %s\n' % name2.encode('utf-8'))
+    os.close(fd)
+    os.chmod(name, 0o700)
+    if procdebug:
+        print('Starting: coredumpctl -q --debugger=%s gdb %d' % (name, pid))
+    with process.Popen(['coredumpctl', '-q', '--debugger=%s' % name, 'gdb', str(pid)],
+                       stdout=process.PIPE,
+                       stderr=process.PIPE,
+                       text=True) as p:
+        out, err = p.communicate()
+    os.unlink(name)
+    s = []
+    for l in out.split('\n'):
+        if not l.startswith('                '):
+            s.append(l)
+    out = '\n'.join(s) + open(name2).read()
+    os.unlink(name2)
+    return out, err
+
 def returnCode(proc, f = None):
     '''Interpret the return code of a process.
     If second arg sepcified, write a message to it.'''
@@ -1635,14 +1661,8 @@ def returnCode(proc, f = None):
                 if os.path.exists('/usr/bin/coredumpctl'):
                     # wait a few seconds for the core to be dumped
                     time.sleep(10)
-                    if procdebug:
-                        print('Starting: coredumpctl -q info %d' % proc.pid)
-                    p = process.Popen(['coredumpctl', '-q' ,'info', str(proc.pid)],
-                                      stdout=process.PIPE,
-                                      stderr=process.PIPE,
-                                      text=True)
-                    out, err = p.communicate()
-                    if not err and out:
+                    out, err = coredumpctl(proc.pid)
+                    if out:
                         f.write(out)
                 f.flush()
             return 'segfault'   # Segmentation fault
@@ -1657,14 +1677,8 @@ def returnCode(proc, f = None):
                 if os.path.exists('/usr/bin/coredumpctl'):
                     # wait a few seconds for the core to be dumped
                     time.sleep(10)
-                    if procdebug:
-                        print('Starting: coredumpctl -q info %d' % proc.pid)
-                    p = process.Popen(['coredumpctl', '-q' ,'info', str(proc.pid)],
-                                      stdout=process.PIPE,
-                                      stderr=process.PIPE,
-                                      text=True)
-                    out, err = p.communicate()
-                    if not err and out:
+                    out, err = coredumpctl(proc.pid)
+                    if out:
                         f.write(out)
                 f.flush()
             return 'abort'      # Aborted
