@@ -1,1 +1,1 @@
-select 1 + null;
+select cast(1 + null as bigint);

@@ -28,9 +28,7 @@ target_link_libraries(mcutil
   mcrypt
   moptions
   mapi
-  stream
-  #$<$<BOOL:${Iconv_FOUND}>:Iconv::Iconv>)
-  )
+  stream)
 
 add_executable(mclient)
 
@@ -103,7 +101,7 @@ install(TARGETS
   msqldump
   RUNTIME
   DESTINATION ${CMAKE_INSTALL_BINDIR}
-  COMPONENT mclient
+  COMPONENT client
   LIBRARY
   DESTINATION ${CMAKE_INSTALL_LIBDIR}
   ARCHIVE

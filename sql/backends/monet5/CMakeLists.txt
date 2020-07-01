@@ -83,9 +83,9 @@ target_sources(sql
   sql_cast_impl_up_to_flt.h
   sql_round.c
   sql_round_impl.h
-  sql_bat2time.c
   sql_fround.c sql_fround_impl.h
   sql_orderidx.c sql_orderidx.h
+  sql_time.c
   wlr.c wlr.h
   sql_datetrunc.c
   sql_rank.c sql_rank.h

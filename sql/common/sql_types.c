@@ -102,11 +102,11 @@ static int convert_matrix[EC_MAX][EC_MAX] = {
 /* EC_CHAR */		{ 2, 2, 2, 1, 1, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2 },
 /* EC_STRING */		{ 2, 2, 2, 1, 1, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2 },
 /* EC_BLOB */		{ 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 },
-/* EC_POS */		{ 0, 0, 2, 1, 1, 0, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0 },
-/* EC_NUM */		{ 0, 0, 2, 1, 1, 0, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0 },
-/* EC_MONTH*/   	{ 0, 0, 0, 1, 1, 0, 1, 1, 1, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0 },
-/* EC_SEC*/     	{ 0, 0, 0, 1, 1, 0, 1, 1, 0, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0 },
-/* EC_DEC */		{ 0, 0, 0, 1, 1, 0, 1, 1, 0, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0 },
+/* EC_POS */		{ 0, 0, 2, 1, 1, 0, 1, 1, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0 },
+/* EC_NUM */		{ 0, 0, 2, 1, 1, 0, 1, 1, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0 },
+/* EC_MONTH*/		{ 0, 0, 0, 1, 1, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 },
+/* EC_SEC*/			{ 0, 0, 0, 1, 1, 0, 0, 0, 0, 1, 0, 0, 1, 1, 0, 0, 0, 0, 0 },
+/* EC_DEC */		{ 0, 0, 0, 1, 1, 0, 1, 1, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0 },
 /* EC_FLT */		{ 0, 0, 0, 1, 1, 0, 1, 1, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0 },
 /* EC_TIME */		{ 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 1, 2, 0, 0, 0, 0, 0 },
 /* EC_TIME_TZ */	{ 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0 },
@@ -1667,18 +1667,21 @@ sqltypeinit( sql_allocator *sa)
 		/* scale fixing for all numbers */
 		sql_create_func(sa, "scale_up", "calc", "*", FALSE, FALSE, SCALE_NONE, 0, *t, 2, *t, lt->type);
 		sql_create_func(sa, "scale_down", "sql", "dec_round", FALSE, FALSE, SCALE_NONE, 0, *t, 2, *t, lt->type);
-		/* numeric function on INTERVALS */
-		if (*t != MONINT && *t != SECINT){
-			sql_create_func(sa, "sql_sub", "calc", "-", FALSE, FALSE, SCALE_FIX, 0, MONINT, 2, MONINT, *t);
-			sql_create_func(sa, "sql_add", "calc", "+", FALSE, FALSE, SCALE_FIX, 0, MONINT, 2, MONINT, *t);
+		/* numeric functions on INTERVALS */
+		if (*t != MONINT && *t != SECINT) {
 			sql_create_func(sa, "sql_mul", "calc", "*", FALSE, FALSE, SCALE_MUL, 0, MONINT, 2, MONINT, *t);
 			sql_create_func(sa, "sql_div", "calc", "/", FALSE, FALSE, SCALE_DIV, 0, MONINT, 2, MONINT, *t);
-			sql_create_func(sa, "sql_sub", "calc", "-", FALSE, FALSE, SCALE_FIX, 0, SECINT, 2, SECINT, *t);
-			sql_create_func(sa, "sql_add", "calc", "+", FALSE, FALSE, SCALE_FIX, 0, SECINT, 2, SECINT, *t);
 			sql_create_func(sa, "sql_mul", "calc", "*", FALSE, FALSE, SCALE_MUL, 0, SECINT, 2, SECINT, *t);
 			sql_create_func(sa, "sql_div", "calc", "/", FALSE, FALSE, SCALE_DIV, 0, SECINT, 2, SECINT, *t);
 		}
 	}
+
+	/* numeric functions on INTERVALS */
+	for (t = dates; *t != TME; t++) {
+		sql_create_func(sa, "sql_sub", "calc", "-", FALSE, FALSE, SCALE_FIX, 0, *t, 2, *t, *t);
+		sql_create_func(sa, "sql_add", "calc", "+", FALSE, FALSE, SCALE_FIX, 0, *t, 2, *t, *t);
+	}
+
 	for (t = decimals, t++; t != floats; t++) {
 		sql_type **u;
 		for (u = numerical; u != floats; u++) {

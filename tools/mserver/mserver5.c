@@ -698,15 +698,6 @@ main(int argc, char **av)
 			exit(1);
 		}
 	}
-	/* make sure the authorisation BATs are loaded */
-	if ((err = AUTHinitTables(NULL)) != MAL_SUCCEED) {
-		/* don't show this as a crash */
-		if (!GDKinmemory())
-			msab_registerStop();
-		fprintf(stderr, "%s\n", err);
-		freeException(err);
-		exit(1);
-	}
 
 	char *modules[16];
 	int mods = 0;
@@ -739,6 +730,7 @@ main(int argc, char **av)
 	modules[mods++] = "shp";
 #endif
 	modules[mods++] = 0;
+
 	if (mal_init(modules, 0)) {
 		/* don't show this as a crash */
 		if (!GDKinmemory())
@@ -748,10 +740,18 @@ main(int argc, char **av)
 
 	emergencyBreakpoint();
 
-	if (!GDKinmemory() && (err = msab_registerStarted()) != NULL) {
-		/* throw the error at the user, but don't die */
-		fprintf(stderr, "!%s\n", err);
-		free(err);
+	if (!GDKinmemory()) {
+		char *secret = NULL;
+		if ((err = msab_pickSecret(&secret)) != NULL || (err = msab_registerStarted()) != NULL) {
+			/* throw the error at the user, but don't die */
+			fprintf(stderr, "!%s\n", err);
+			free(err);
+		}
+		if (secret) {
+			if (GDKsetenv("master_password", secret) != GDK_SUCCEED)
+				fprintf(stderr, "GSKsetenv failed\n");
+			free(secret);
+		}
 	}
 
 #ifdef SIGHUP

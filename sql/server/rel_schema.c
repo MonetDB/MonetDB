@@ -1572,17 +1572,11 @@ sql_alter_table(sql_query *query, dlist *dl, dlist *qname, symbol *te, int if_ex
 		for (node *n = nt->columns.nelm; n; n = n->next) {
 			sql_column *c = n->data;
 			if (c->def) {
-				char *d, *typestr = subtype2string2(&c->type);
-				if (!typestr)
-					return sql_error(sql, 02, SQLSTATE(HY013) MAL_MALLOC_FAIL);
-				d = sql_message("select cast(%s as %s);", c->def, typestr);
-				_DELETE(typestr);
-				e = rel_parse_val(sql, d, sql->emode, NULL);
-				_DELETE(d);
+				e = rel_parse_val(sql, sa_message(sql->sa, "select %s;", c->def), sql->emode, NULL);
 			} else {
 				e = exp_atom(sql->sa, atom_general(sql->sa, &c->type, NULL));
 			}
-			if (!e || (e = rel_check_type(sql, &c->type, r, e, type_equal)) == NULL) {
+			if (!e || (e = exp_check_type(sql, &c->type, r, e, type_equal)) == NULL) {
 				rel_destroy(r);
 				return NULL;
 			}
@@ -2845,10 +2839,10 @@ rel_schemas(sql_query *query, symbol *s)
 		dnode *a = l->h->next->data.lval->h;
 
 		ret = rel_alter_user(sql->sa, l->h->data.sval,	/* user */
-				     a->data.sval,	/* passwd */
-				     a->next->next->data.i_val == SQL_PW_ENCRYPTED, /* encrypted */
-				     a->next->data.sval,	/* schema */
-				     a->next->next->next->data.sval /* old passwd */
+			     a->data.sval,	/* passwd */
+			     a->next->next->data.i_val == SQL_PW_ENCRYPTED, /* encrypted */
+			     a->next->data.sval,	/* schema */
+			     a->next->next->next->data.sval /* old passwd */
 		    );
 	} 	break;
 	case SQL_RENAME_USER: {

@@ -2192,7 +2192,7 @@ split_join_exps(sql_rel *rel, list *joinable, list *not_joinable)
 			int left_reference = 0, right_reference = 0;
 
 			/* we can handle thetajoins, rangejoins and filter joins (like) */
-			/* ToDo how about mark_exists/not_exists and atom expressions? */
+			/* ToDo how about atom expressions? */
 			if (e->type == e_cmp) {
 				int flag = e->flag & ~CMP_BETWEEN;
 				/* check if its a select or join expression, ie use only expressions of one relation left and of the other right (than join) */
@@ -2200,17 +2200,32 @@ split_join_exps(sql_rel *rel, list *joinable, list *not_joinable)
 					/* join or select ? */
 					sql_exp *l = e->l, *r = e->r, *f = e->f;
 
-					if (l->card != CARD_ATOM) {
-						left_reference += rel_find_exp(rel->l, l) != NULL;
-						right_reference += rel_find_exp(rel->r, l) != NULL;
-					}
-					if (r->card != CARD_ATOM) {
-						left_reference += rel_find_exp(rel->l, r) != NULL;
-						right_reference += rel_find_exp(rel->r, r) != NULL;
-					}
-					if (f && f->card != CARD_ATOM) {
-						left_reference += rel_find_exp(rel->l, f) != NULL;
-						right_reference += rel_find_exp(rel->r, f) != NULL;
+					if (f) {
+						int ll = rel_find_exp(rel->l, l) != NULL;
+						int rl = rel_find_exp(rel->r, l) != NULL;
+						int lr = rel_find_exp(rel->l, r) != NULL;
+						int rr = rel_find_exp(rel->r, r) != NULL;
+						int lf = rel_find_exp(rel->l, f) != NULL;
+						int rf = rel_find_exp(rel->r, f) != NULL;
+						int nrcr1 = 0, nrcr2 = 0, nrcl1 = 0, nrcl2 = 0;
+
+						if ((ll && !rl &&
+						   ((rr && !lr) || (nrcr1 = r->card == CARD_ATOM)) &&
+						   ((rf && !lf) || (nrcr2 = f->card == CARD_ATOM)) && (nrcr1+nrcr2) <= 1) ||
+						    (rl && !ll &&
+						   ((lr && !rr) || (nrcl1 = r->card == CARD_ATOM)) &&
+						   ((lf && !rf) || (nrcl2 = f->card == CARD_ATOM)) && (nrcl1+nrcl2) <= 1)) {
+							left_reference = right_reference = 1;
+						}
+					} else {
+						if (l->card != CARD_ATOM) {
+							left_reference += rel_find_exp(rel->l, l) != NULL;
+							right_reference += rel_find_exp(rel->r, l) != NULL;
+						}
+						if (r->card != CARD_ATOM) {
+							left_reference += rel_find_exp(rel->l, r) != NULL;
+							right_reference += rel_find_exp(rel->r, r) != NULL;
+						}
 					}
 				} else if (flag == cmp_filter) {
 					list *l = e->l, *r = e->r;
@@ -2242,7 +2257,7 @@ split_join_exps(sql_rel *rel, list *joinable, list *not_joinable)
 	}
 }
 
-#define is_priority_exp(e) ((e)->type == e_cmp && (e)->flag == cmp_equal)
+#define is_equi_exp(e) ((e)->flag == cmp_equal || (e)->flag == mark_in || (e)->flag == mark_notin)
 
 static list *
 get_equi_joins_first(mvc *sql, list *exps, int *equality_only)
@@ -2251,17 +2266,18 @@ get_equi_joins_first(mvc *sql, list *exps, int *equality_only)
 
 	for( node *n = exps->h; n; n = n->next ) {
 		sql_exp *e = n->data;
-		if (is_priority_exp(e)) {
+
+		assert(e->type == e_cmp && e->flag != cmp_in && e->flag != cmp_notin && e->flag != cmp_or);
+		if (is_equi_exp(e))
 			list_append(new_exps, e);
-			*equality_only &= (e->flag == cmp_equal);
-		}
+		else
+			*equality_only = 0;
 	}
 	for( node *n = exps->h; n; n = n->next ) {
 		sql_exp *e = n->data;
-		if (!is_priority_exp(e)) {
+
+		if (!is_equi_exp(e))
 			list_append(new_exps, e);
-			*equality_only &= (e->flag == mark_in || e->flag == mark_notin);
-		}
 	}
 	return new_exps;
 }
@@ -2482,9 +2498,7 @@ rel2bin_join(backend *be, sql_rel *rel, list *refs)
 static int
 exp_is_mark(sql_exp *e)
 {
-	if (e->type == e_cmp &&
-		(e->flag == mark_in || e->flag == mark_notin ||
-		 e->flag == mark_exists || e->flag == mark_notexists))
+	if (e->type == e_cmp && (e->flag == mark_in || e->flag == mark_notin))
 		return 1;
 	return 0;
 }
@@ -4553,17 +4567,8 @@ sql_delete_set_Fkeys(backend *be, sql_key *k, stmt *ftids /* to be updated rows 
 
 		if (action == ACT_SET_DEFAULT) {
 			if (fc->c->def) {
-				stmt *sq;
-				char *msg, *typestr = subtype2string2(&fc->c->type);
-				if(!typestr)
-					return sql_error(sql, 02, SQLSTATE(HY013) MAL_MALLOC_FAIL);
-				msg = sa_message(sql->sa, "select cast(%s as %s);", fc->c->def, typestr);
-				_DELETE(typestr);
-				sq = rel_parse_value(be, msg, sql->emode);
-				if (!sq)
-					return NULL;
-				upd = sq;
-			}  else {
+				upd = rel_parse_value(be, sa_message(sql->sa, "select %s;", fc->c->def), sql->emode);
+			} else {
 				upd = stmt_atom(be, atom_general(sql->sa, &fc->c->type, NULL));
 			}
 		} else {
@@ -4616,16 +4621,7 @@ sql_update_cascade_Fkeys(backend *be, sql_key *k, stmt *utids, stmt **updates, i
 			upd = updates[c->c->colnr];
 		} else if (action == ACT_SET_DEFAULT) {
 			if (fc->c->def) {
-				stmt *sq;
-				char *msg, *typestr = subtype2string2(&fc->c->type);
-				if(!typestr)
-					return sql_error(sql, 02, SQLSTATE(HY013) MAL_MALLOC_FAIL);
-				msg = sa_message(sql->sa, "select cast(%s as %s);", fc->c->def, typestr);
-				_DELETE(typestr);
-				sq = rel_parse_value(be, msg, sql->emode);
-				if (!sq)
-					return NULL;
-				upd = sq;
+				upd = rel_parse_value(be, sa_message(sql->sa, "select %s;", fc->c->def), sql->emode);
 			} else {
 				upd = stmt_atom(be, atom_general(sql->sa, &fc->c->type, NULL));
 			}

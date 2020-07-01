@@ -47,3 +47,10 @@ include(${CMAKE_CURRENT_SOURCE_DIR}/detect-pthreadsig.cmake)
 
 include(${CMAKE_CURRENT_SOURCE_DIR}/set-dir-vars.cmake)
 include(${CMAKE_CURRENT_SOURCE_DIR}/set-cmake-vars.cmake)
+
+assert_legacy_variable_exists(
+  legacy_variablename HAVE_FITS
+  variablename CFITSIO_FOUND)
+assert_legacy_variable_exists(
+  legacy_variablename HAVE_CURL
+  variablename CURL_FOUND)
