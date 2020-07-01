@@ -84,9 +84,7 @@ GRANT EXECUTE ON FUNCTION json.text(json) TO PUBLIC;
 
 -- The remainder awaits the implementation
 
-create aggregate json.output(js json)
-returns string external name json.output;
-GRANT EXECUTE ON AGGREGATE json.output(json) TO PUBLIC;
+-- create aggregate json.output(js json) returns string external name json.output;
 
 -- create function json.object(*) returns json external name json.objectrender;
 

@@ -64,7 +64,6 @@ OPTprofilerImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 			( getFunctionId(p)== joinRef ||
 			  getFunctionId(p) == leftjoinRef ||
 			  getFunctionId(p) == thetajoinRef ||
-			  getFunctionId(p) == antijoinRef ||
 			  getFunctionId(p) == bandjoinRef ||
 			  getFunctionId(p) == rangejoinRef )){
 				getVarSTC(mb,getArg(p,0)) = getVarSTC(mb,getArg(p,p->retc));

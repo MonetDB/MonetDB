@@ -683,6 +683,7 @@ typedef struct res_table {
 	oid query_id;
 	mapi_query_t query_type;
 	int nr_cols;
+	BUN nr_rows;
 	int cur_col;
 	const char *tsep;
 	const char *rsep;

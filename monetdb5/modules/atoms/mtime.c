@@ -39,26 +39,22 @@ extern char *strptime(const char *, const char *, struct tm *);
 #endif
 
 /* interfaces callable from MAL, not used from any C code */
-mal_export str MTIMEcurrent_date(date *ret);
-mal_export str MTIMEcurrent_time(daytime *ret);
-mal_export str MTIMEcurrent_timestamp(timestamp *ret);
-mal_export str MTIMElocal_timezone_msec(lng *ret);
 
-str
+static str
 MTIMEcurrent_date(date *ret)
 {
 	*ret = timestamp_date(timestamp_current());
 	return MAL_SUCCEED;
 }
 
-str
+static str
 MTIMEcurrent_time(daytime *ret)
 {
 	*ret = timestamp_daytime(timestamp_current());
 	return MAL_SUCCEED;
 }
 
-str
+static str
 MTIMEcurrent_timestamp(timestamp *ret)
 {
 	*ret = timestamp_current();
@@ -99,9 +95,7 @@ MTIMEcurrent_timestamp(timestamp *ret)
 #define SETFLAGS	do { bn->tsorted = bn->trevsorted = n < 2; } while (0)
 #define func1(NAME, NAMEBULK, MALFUNC, INTYPE, OUTTYPE, FUNC, SETFLAGS, FUNC_CALL, DEC_SRC, DEC_OUTPUT, \
 			  INIT_SRC, INIT_OUTPUT, GET_NEXT_SRC)	\
-mal_export str NAME(OUTTYPE *ret, const INTYPE *src);					\
-mal_export str NAMEBULK(bat *ret, const bat *bid);						\
-str																		\
+static str																\
 NAME(OUTTYPE *ret, const INTYPE *src)									\
 {																		\
 	str msg = MAL_SUCCEED; 												\
@@ -110,7 +104,7 @@ NAME(OUTTYPE *ret, const INTYPE *src)									\
 	} while (0);														\
 	return msg;															\
 }																		\
-str																		\
+static str																\
 NAMEBULK(bat *ret, const bat *bid)										\
 {																		\
 	BAT *b1 = NULL, *bn = NULL;											\
@@ -155,11 +149,7 @@ bailout: 																\
 
 #define func2(NAME, NAMEBULK, MALFUNC, INTYPE1, INTYPE2, OUTTYPE, FUNC, FUNC_CALL, DEC_INPUT1, DEC_INPUT2, DEC_SRC1, DEC_SRC2, DEC_OUTPUT, \
 			 INIT_SRC1, INIT_SRC2, INIT_OUTPUT, GET_NEXT_SRC1, GET_NEXT_SRC2, APPEND_NEXT)	\
-mal_export str NAME(OUTTYPE *ret, const INTYPE1 *v1, const INTYPE2 *v2); \
-mal_export str NAMEBULK(bat *ret, const bat *bid1, const bat *bid2);	\
-mal_export str NAMEBULK##_p1(bat *ret, const DEC_INPUT1(INTYPE1, src1), const bat *bid2);	\
-mal_export str NAMEBULK##_p2(bat *ret, const bat *bid1, const DEC_INPUT2(INTYPE2, src2));	\
-str																		\
+static str																\
 NAME(OUTTYPE *ret, const INTYPE1 *v1, const INTYPE2 *v2)				\
 {																		\
 	str msg = MAL_SUCCEED; 												\
@@ -168,7 +158,7 @@ NAME(OUTTYPE *ret, const INTYPE1 *v1, const INTYPE2 *v2)				\
 	} while (0);														\
 	return msg;															\
 }																		\
-str																		\
+static str																\
 NAMEBULK(bat *ret, const bat *bid1, const bat *bid2)					\
 {																		\
 	BAT *b1 = NULL, *b2 = NULL, *bn = NULL;								\
@@ -221,7 +211,7 @@ bailout: 																\
 		BBPkeepref(*ret = bn->batCacheid);								\
 	return msg;															\
 }																		\
-str																		\
+static str																\
 NAMEBULK##_p1(bat *ret, const DEC_INPUT1(INTYPE1, src1), const bat *bid2)	\
 {																		\
 	BAT *b2 = NULL, *bn = NULL;											\
@@ -263,7 +253,7 @@ bailout: 																\
 		BBPkeepref(*ret = bn->batCacheid);								\
 	return msg;															\
 }																		\
-str																		\
+static str																\
 NAMEBULK##_p2(bat *ret, const bat *bid1, const DEC_INPUT2(INTYPE2, src2))	\
 {																		\
 	BAT *b1 = NULL, *bn = NULL;											\
@@ -695,7 +685,7 @@ local_timezone(int *isdstp)
 	return tzone;
 }
 
-str
+static str
 MTIMElocal_timezone_msec(lng *ret)
 {
 	int tzone = local_timezone(NULL);

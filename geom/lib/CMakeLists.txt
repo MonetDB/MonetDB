@@ -30,8 +30,7 @@ if(GEOS_FOUND)
 
   set_target_properties(geomlib
     PROPERTIES
-    POSITION_INDEPENDENT_CODE ON
-    PUBLIC_HEADER "${sqlserver_public_headers}")
+    POSITION_INDEPENDENT_CODE ON)
 
   target_compile_definitions(geomlib PRIVATE LIBGEOM)
 endif()

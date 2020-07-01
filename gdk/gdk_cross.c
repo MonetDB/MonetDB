@@ -18,7 +18,7 @@
 gdk_return
 BATsubcross(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr, bool max_one)
 {
-	BAT *bn1, *bn2;
+	BAT *bn1, *bn2 = NULL;
 	struct canditer ci1, ci2;
 	BUN cnt1, cnt2;
 	oid *restrict p;
@@ -33,10 +33,12 @@ BATsubcross(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr, bool max_one
 	}
 
 	bn1 = COLnew(0, TYPE_oid, cnt1 * cnt2, TRANSIENT);
-	bn2 = COLnew(0, TYPE_oid, cnt1 * cnt2, TRANSIENT);
-	if (bn1 == NULL || bn2 == NULL) {
+	if (r2p)
+		bn2 = COLnew(0, TYPE_oid, cnt1 * cnt2, TRANSIENT);
+	if (!bn1 || (r2p && !bn2)) {
 		BBPreclaim(bn1);
-		BBPreclaim(bn2);
+		if (bn2)
+			BBPreclaim(bn2);
 		return GDK_FAIL;
 	}
 	if (cnt1 > 0 && cnt2 > 0) {
@@ -55,23 +57,29 @@ BATsubcross(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr, bool max_one
 		}
 		BATtseqbase(bn1, cnt2 == 1 ? *(oid *) Tloc(bn1, 0) : oid_nil);
 
-		BATsetcount(bn2, cnt1 * cnt2);
-		bn2->tsorted = cnt1 <= 1 || cnt2 <= 1;
-		bn2->trevsorted = cnt2 <= 1;
-		bn2->tkey = cnt1 <= 1;
-		bn2->tnil = false;
-		bn2->tnonil = true;
-		p = (oid *) Tloc(bn2, 0);
-		for (i = 0; i < cnt1; i++) {
-			for (j = 0; j < cnt2; j++) {
-				*p++ = canditer_next(&ci2);
+		if (bn2) {
+			BATsetcount(bn2, cnt1 * cnt2);
+			bn2->tsorted = cnt1 <= 1 || cnt2 <= 1;
+			bn2->trevsorted = cnt2 <= 1;
+			bn2->tkey = cnt1 <= 1;
+			bn2->tnil = false;
+			bn2->tnonil = true;
+			p = (oid *) Tloc(bn2, 0);
+			for (i = 0; i < cnt1; i++) {
+				for (j = 0; j < cnt2; j++) {
+					*p++ = canditer_next(&ci2);
+				}
+				canditer_reset(&ci2);
 			}
-			canditer_reset(&ci2);
+			BATtseqbase(bn2, cnt1 == 1 ? *(oid *) Tloc(bn2, 0) : oid_nil);
 		}
-		BATtseqbase(bn2, cnt1 == 1 ? *(oid *) Tloc(bn2, 0) : oid_nil);
 	}
 	*r1p = bn1;
-	*r2p = bn2;
-	TRC_DEBUG(ALGO, "BATsubcross()=(" ALGOBATFMT "," ALGOBATFMT ")\n", ALGOBATPAR(bn1), ALGOBATPAR(bn2));
+	if (r2p)
+		*r2p = bn2;
+	if (r2p)
+		TRC_DEBUG(ALGO, "BATsubcross()=(" ALGOBATFMT "," ALGOBATFMT ")\n", ALGOBATPAR(bn1), ALGOBATPAR(bn2));
+	else
+		TRC_DEBUG(ALGO, "BATsubcross()=(" ALGOBATFMT ")\n", ALGOBATPAR(bn1));
 	return GDK_SUCCEED;
 }

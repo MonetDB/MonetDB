@@ -26,6 +26,10 @@
 #include "multiplex-funnel.h" /* multiplexInit */
 #include "forkmserver.h"
 
+#ifndef S_ISDIR
+#define S_ISDIR(mode)	(((mode) & _S_IFMT) == _S_IFDIR)
+#endif
+
 /**
  * The terminateProcess function tries to let the given mserver process
  * shut down gracefully within a given time-out.  If that fails, it

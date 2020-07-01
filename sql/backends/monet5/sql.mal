@@ -366,7 +366,7 @@ unsafe pattern importTable( sname:str, tname:str, onclient:int, fname:str... )(:
 address mvc_bin_import_table_wrap
 comment "Import a table from the files (fname)";
 
-command not_unique( b:bat[:oid]) :bit 
+command aggr.not_unique( b:bat[:oid]) :bit 
 address not_unique 
 comment "check if the tail sorted bat b doesn't have unique tail values" ;
 

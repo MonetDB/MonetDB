@@ -30,6 +30,9 @@ exps_simplify_exp(mvc *sql, list *exps, int *changes)
 
 		needed = (exp_is_true(sql, e) || exp_is_false(sql, e) || (is_compare(e->type) && e->flag == cmp_or)); 
 	}
+	/* if there's only one expression and it is false, we have to keep it */
+	if (list_length(exps) == 1 && exp_is_false(sql, exps->h->data))
+		return exps;
 	if (needed) {
 		list *nexps = sa_list(sql->sa);
 		sql->caching = 0;

@@ -127,7 +127,7 @@ static str monetdb_initialize(void) {
 	setlen = mo_builtin_settings(&set);
 	setlen = mo_add_option(&set, setlen, opt_cmdline, "gdk_dbpath", dbdir);
 
-	if (BBPaddfarm(dbdir, (1 << PERSISTENT) | (1 << TRANSIENT)) != GDK_SUCCEED) {
+	if (BBPaddfarm(dbdir, (1 << PERSISTENT) | (1 << TRANSIENT), false) != GDK_SUCCEED) {
 		retval = GDKstrdup("BBPaddfarm failed");
 		goto cleanup;
 	}

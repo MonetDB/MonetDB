@@ -344,7 +344,8 @@ symbol2string(mvc *sql, symbol *se, int expression, char **err) /**/
 			sname = sql->session->schema->base.name;
 
 		for (aux = ops; aux; aux = aux->next) nargs++;
-		inputs = GDKzalloc(nargs * sizeof(char**));
+		if (!(inputs = GDKzalloc(nargs * sizeof(char**))))
+			return NULL;
 
 		for (aux = ops; aux; aux = aux->next) {
 			if (!(inputs[i] = symbol2string(sql, aux->data.sym, expression, err))) {
@@ -480,7 +481,7 @@ symbol2string(mvc *sql, symbol *se, int expression, char **err) /**/
 		dlist *dl = se->data.lval;
 		char *val = NULL, *tpe = NULL, *res;
 
-		if (!(val = symbol2string(sql, dl->h->data.sym, expression, err)) || !(tpe = subtype2string(&dl->h->next->data.typeval))) {
+		if (!(val = symbol2string(sql, dl->h->data.sym, expression, err)) || !(tpe = subtype2string2(&dl->h->next->data.typeval))) {
 			_DELETE(val);
 			_DELETE(tpe);
 			return NULL;

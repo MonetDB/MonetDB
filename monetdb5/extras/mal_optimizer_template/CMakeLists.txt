@@ -10,8 +10,7 @@ add_library(opt_sql_append MODULE)
 
 target_sources(opt_sql_append
   PRIVATE
-  opt_sql_append.c
-  opt_sql_append.h)
+  opt_sql_append.c)
 
 target_include_directories(opt_sql_append
   PRIVATE

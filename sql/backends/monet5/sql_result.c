@@ -1060,92 +1060,94 @@ mvc_export_prepare(mvc *c, stream *out, cq *q, str w)
 	sql_subtype *t;
 	sql_rel *r = q->rel;
 
-	if (!out)
+	if(!out) 
 		return 0;
 
-	if (r && (is_topn(r->op) || is_sample(r->op)))
-		r = r->l;
-	if (r && is_project(r->op) && r->exps) {
-		unsigned int max2 = 10, max3 = 10;	/* to help calculate widths */
-		nrows += list_length(r->exps);
+	if (!GDKembedded()) {
+		if (r && (is_topn(r->op) || is_sample(r->op)))
+			r = r->l;
+		if (r && is_project(r->op) && r->exps) {
+			unsigned int max2 = 10, max3 = 10;	/* to help calculate widths */
+			nrows += list_length(r->exps);
 
-		for (n = r->exps->h; n; n = n->next) {
-			const char *name;
-			sql_exp *e = n->data;
-			size_t slen;
+			for (n = r->exps->h; n; n = n->next) {
+				const char *name;
+				sql_exp *e = n->data;
+				size_t slen;
 
-			t = exp_subtype(e);
-			slen = strlen(t->type->sqlname);
-			if (slen > len1)
-				len1 = slen;
-			while (t->digits >= max2) {
-				len2++;
-				max2 *= 10;
+				t = exp_subtype(e);
+				slen = strlen(t->type->sqlname);
+				if (slen > len1)
+					len1 = slen;
+				while (t->digits >= max2) {
+					len2++;
+					max2 *= 10;
+				}
+				while (t->scale >= max3) {
+					len3++;
+					max3 *= 10;
+				}
+				name = exp_relname(e);
+				if (!name && e->type == e_column && e->l)
+					name = e->l;
+				slen = name ? strlen(name) : 0;
+				if (slen > len5)
+					len5 = slen;
+				name = exp_name(e);
+				if (!name && e->type == e_column && e->r)
+					name = e->r;
+				slen = name ? strlen(name) : 0;
+				if (slen > len6)
+					len6 = slen;
 			}
-			while (t->scale >= max3) {
-				len3++;
-				max3 *= 10;
-			}
-			name = exp_relname(e);
-			if (!name && e->type == e_column && e->l)
-				name = e->l;
-			slen = name ? strlen(name) : 0;
-			if (slen > len5)
-				len5 = slen;
-			name = exp_name(e);
-			if (!name && e->type == e_column && e->r)
-				name = e->r;
-			slen = name ? strlen(name) : 0;
-			if (slen > len6)
-				len6 = slen;
 		}
-	}
-	/* calculate column widths */
-	if (c->params) {
-		unsigned int max2 = 10, max3 = 10;	/* to help calculate widths */
 
-		for (n = c->params->h; n; n = n->next) {
-			size_t slen;
+		/* calculate column widths */
+		if (c->params) {
+			unsigned int max2 = 10, max3 = 10;	/* to help calculate widths */
+	
+			for (n = c->params->h; n; n = n->next) {
+				size_t slen;
 
-			a = n->data;
-			t = &a->type;
-			slen = strlen(t->type->sqlname);
-			if (slen > len1)
-				len1 = slen;
-			while (t->digits >= max2) {
-				len2++;
-				max2 *= 10;
+				a = n->data;
+				t = &a->type;
+				slen = strlen(t->type->sqlname);
+				if (slen > len1)
+					len1 = slen;
+				while (t->digits >= max2) {
+					len2++;
+					max2 *= 10;
+				}
+				while (t->scale >= max3) {
+					len3++;
+					max3 *= 10;
+				}
 			}
-			while (t->scale >= max3) {
-				len3++;
-				max3 *= 10;
-			}
-
 		}
-	}
 
-	/* write header, query type: Q_PREPARE */
-	if (mnstr_printf(out, "&5 %d %d 6 %d\n"	/* TODO: add type here: r(esult) or u(pdate) */
-			 "%% .prepare,\t.prepare,\t.prepare,\t.prepare,\t.prepare,\t.prepare # table_name\n" "%% type,\tdigits,\tscale,\tschema,\ttable,\tcolumn # name\n" "%% varchar,\tint,\tint,\tstr,\tstr,\tstr # type\n" "%% %zu,\t%d,\t%d,\t"
-			 "%zu,\t%zu,\t%zu # length\n", q->id, nrows, nrows, len1, len2, len3, len4, len5, len6) < 0) {
-		return -1;
-	}
+		/* write header, query type: Q_PREPARE */
+		if (mnstr_printf(out, "&5 %d %d 6 %d\n"	/* TODO: add type here: r(esult) or u(pdate) */
+			 	"%% .prepare,\t.prepare,\t.prepare,\t.prepare,\t.prepare,\t.prepare # table_name\n" "%% type,\tdigits,\tscale,\tschema,\ttable,\tcolumn # name\n" "%% varchar,\tint,\tint,\tstr,\tstr,\tstr # type\n" "%% %zu,\t%d,\t%d,\t"
+			 	"%zu,\t%zu,\t%zu # length\n", q->id, nrows, nrows, len1, len2, len3, len4, len5, len6) < 0) {
+			return -1;
+		}
 
-	if (r && is_project(r->op) && r->exps) {
-		for (n = r->exps->h; n; n = n->next) {
-			const char *name, *rname, *schema = NULL;
-			sql_exp *e = n->data;
-
-			t = exp_subtype(e);
-			name = exp_name(e);
-			if (!name && e->type == e_column && e->r)
-				name = e->r;
-			rname = exp_relname(e);
-			if (!rname && e->type == e_column && e->l)
-				rname = e->l;
-
-			if (mnstr_printf(out, "[ \"%s\",\t%u,\t%u,\t\"%s\",\t\"%s\",\t\"%s\"\t]\n", t->type->sqlname, t->digits, t->scale, schema ? schema : "", rname ? rname : "", name ? name : "") < 0) {
-				return -1;
+		if (r && is_project(r->op) && r->exps) {
+			for (n = r->exps->h; n; n = n->next) {
+				const char *name, *rname, *schema = NULL;
+				sql_exp *e = n->data;
+	
+				t = exp_subtype(e);
+				name = exp_name(e);
+				if (!name && e->type == e_column && e->r)
+					name = e->r;
+				rname = exp_relname(e);
+				if (!rname && e->type == e_column && e->l)
+					rname = e->l;
+	
+				if (mnstr_printf(out, "[ \"%s\",\t%u,\t%u,\t\"%s\",\t\"%s\",\t\"%s\"\t]\n", t->type->sqlname, t->digits, t->scale, schema ? schema : "", rname ? rname : "", name ? name : "") < 0) {
+					return -1;
+				}
 			}
 		}
 	}
@@ -1159,7 +1161,7 @@ mvc_export_prepare(mvc *c, stream *out, cq *q, str w)
 			t = &a->type;
 
 			if (t) {
-				if (mnstr_printf(out, "[ \"%s\",\t%u,\t%u,\tNULL,\tNULL,\tNULL\t]\n", t->type->sqlname, t->digits, t->scale) < 0) {
+				if (!GDKembedded() && mnstr_printf(out, "[ \"%s\",\t%u,\t%u,\tNULL,\tNULL,\tNULL\t]\n", t->type->sqlname, t->digits, t->scale) < 0) {
 					return -1;
 				}
 				/* add to the query cache parameters */
@@ -1169,7 +1171,7 @@ mvc_export_prepare(mvc *c, stream *out, cq *q, str w)
 			}
 		}
 	}
-	if (mvc_export_warning(out, w) != 1)
+	if (!GDKembedded() && mvc_export_warning(out, w) != 1)
 		return -1;
 	return 0;
 }
@@ -2148,7 +2150,6 @@ mvc_export_head_prot10(backend *b, stream *s, int res_id, int only_header, int c
 	size_t i = 0;
 	BUN count = 0;
 	res_table *t = res_tables_find(m->results, res_id);
-	BAT *order = NULL;
 	int fres = 0;
 
 	if (!t || !s) {
@@ -2158,11 +2159,7 @@ mvc_export_head_prot10(backend *b, stream *s, int res_id, int only_header, int c
 	/* tuple count */
 	if (only_header) {
 		if (t->order) {
-			order = BBPquickdesc(t->order, false);
-			if (!order)
-				return -1;
-
-			count = BATcount(order);
+			count = t->nr_rows;
 		} else
 			count = 1;
 	}
@@ -2310,7 +2307,6 @@ mvc_export_head(backend *b, stream *s, int res_id, int only_header, int compute_
 	int i, res = 0;
 	BUN count = 0;
 	res_table *t = res_tables_find(m->results, res_id);
-	BAT *order = NULL;
 
 	if (!s || !t)
 		return 0;
@@ -2332,13 +2328,10 @@ mvc_export_head(backend *b, stream *s, int res_id, int only_header, int compute_
 	/* tuple count */
 	if (only_header) {
 		if (t->order) {
-			order = BBPquickdesc(t->order, false);
-			if (!order)
-				return -1;
-
-			count = BATcount(order);
-		} else
+			count = t->nr_rows;
+		} else {
 			count = 1;
+		}
 	}
 	m->rowcnt = count;
 	sqlvar_set_number(find_global_var(m, mvc_bind_schema(m, "sys"), "rowcnt"), m->rowcnt);
@@ -2465,7 +2458,7 @@ mvc_export_file(backend *b, stream *s, res_table *t)
 		order = BATdescriptor(t->order);
 		if (!order)
 			return -1;
-		count = BATcount(order);
+		count = t->nr_rows;
 
 		res = mvc_export_table(b, s, t, order, 0, count, "", t->tsep, t->rsep, t->ssep, t->ns);
 		BBPunfix(order->batCacheid);
@@ -2512,8 +2505,8 @@ mvc_export_result(backend *b, stream *s, int res_id, bool header, lng starttime,
 		return -1;
 
 	count = m->reply_size;
-	if (m->reply_size != -2 && (count <= 0 || count >= BATcount(order))) {
-		count = BATcount(order);
+	if (m->reply_size != -2 && (count <= 0 || count >= t->nr_rows)) {
+		count = t->nr_rows;
 		clean = 1;
 	}
 	if (json) {
@@ -2563,11 +2556,11 @@ mvc_export_chunk(backend *b, stream *s, int res_id, BUN offset, BUN nr)
 		return -1;
 	cnt = nr;
 	if (cnt == 0)
-		cnt = BATcount(order);
-	if (offset >= BATcount(order))
+		cnt = t->nr_rows;
+	if (offset >= t->nr_rows)
 		cnt = 0;
-	if (cnt == BUN_NONE || offset + cnt > BATcount(order))
-		cnt = BATcount(order) - offset;
+	if (cnt == BUN_NONE || offset + cnt > t->nr_rows)
+		cnt = t->nr_rows - offset;
 
 	if (b->client->protocol != PROTOCOL_10) {
 		/* query type: Q_BLOCK */

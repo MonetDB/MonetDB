@@ -398,7 +398,7 @@ stdout of test 'date` in directory 'sql/test/pg_regress` itself:
 [ 2040-04-10,	101	]
 [ NULL,	NULL	]
 #SELECT f1, cast(f1 as timestamp) FROM DATE_TBL;
-% sys.date_tbl,	sys.date_tbl # table_name
+% sys.date_tbl,	sys.%1 # table_name
 % f1,	f1 # name
 % date,	timestamp # type
 % 10,	26 # length

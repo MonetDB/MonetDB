@@ -61,17 +61,6 @@
 %endif
 %endif
 
-# On Fedora, the liblas library is available, and so we can require it
-# and build the lidar modules.  On RedHat Enterprise Linux and
-# derivatives (CentOS, Scientific Linux), the liblas library is only
-# available if EPEL is enabled, and then only on version 7.
-%if %{fedpkgs}
-%if %{?rhel:0}%{!?rhel:1} || 0%{?rhel} == 7
-# By default create the MonetDB-lidar package on Fedora and RHEL 7
-%bcond_without lidar
-%endif
-%endif
-
 # By default use PCRE for the implementation of the SQL LIKE and ILIKE
 # operators.  Otherwise the POSIX regex functions are used.
 %bcond_without pcre
@@ -132,10 +121,6 @@ BuildRequires: pkgconfig(cfitsio)
 %endif
 %if %{with geos}
 BuildRequires: geos-devel >= 3.4.0
-%endif
-%if %{with lidar}
-BuildRequires: liblas-devel >= 1.8.0
-BuildRequires: pkgconfig(gdal)
 %endif
 BuildRequires: pkgconfig(libcurl)
 BuildRequires: pkgconfig(liblzma)
@@ -201,6 +186,7 @@ functionality of MonetDB.
 %dir %{_includedir}/monetdb
 %{_includedir}/monetdb/gdk*.h
 %{_includedir}/monetdb/matomic.h
+%{_includedir}/monetdb/mstring.h
 %{_includedir}/monetdb/monet*.h
 %{_libdir}/libbat.so
 %{_libdir}/pkgconfig/monetdb-gdk.pc
@@ -399,28 +385,6 @@ extensions for %{name}-SQL-server5.
 %{_libdir}/monetdb5/lib_geom.so
 %endif
 
-%if %{with lidar}
-%package lidar
-Summary: MonetDB5 SQL support for working with LiDAR data
-Group: Applications/Databases
-Requires: MonetDB5-server%{?_isa} = %{version}-%{release}
-
-%description lidar
-MonetDB is a database management system that is developed from a
-main-memory perspective with use of a fully decomposed storage model,
-automatic index management, extensibility of data types and search
-accelerators.  It also has an SQL front end.
-
-This package contains support for reading and writing LiDAR data.
-
-%files lidar
-%defattr(-,root,root)
-%{_libdir}/monetdb5/autoload/*_lidar.mal
-%{_libdir}/monetdb5/createdb/*_lidar.sql
-%{_libdir}/monetdb5/lidar.mal
-%{_libdir}/monetdb5/lib_lidar.so
-%endif
-
 %if %{with rintegration}
 %package R
 Summary: Integration of MonetDB and R, allowing use of R from within SQL
@@ -565,9 +529,6 @@ exit 0
 %if %{with geos}
 %exclude %{_libdir}/monetdb5/geom.mal
 %endif
-%if %{with lidar}
-%exclude %{_libdir}/monetdb5/lidar.mal
-%endif
 %if %{with py3integration}
 %exclude %{_libdir}/monetdb5/pyapi3.mal
 %endif
@@ -582,9 +543,6 @@ exit 0
 %{_libdir}/monetdb5/*.mal
 %if %{with geos}
 %exclude %{_libdir}/monetdb5/autoload/*_geom.mal
-%endif
-%if %{with lidar}
-%exclude %{_libdir}/monetdb5/autoload/*_lidar.mal
 %endif
 %if %{with py3integration}
 %exclude %{_libdir}/monetdb5/autoload/*_pyapi3.mal
@@ -707,9 +665,6 @@ use SQL with MonetDB, you will need to install this package.
 %endif
 %if %{with geos}
 %exclude %{_libdir}/monetdb5/createdb/*_geom.sql
-%endif
-%if %{with lidar}
-%exclude %{_libdir}/monetdb5/createdb/*_lidar.sql
 %endif
 %{_libdir}/monetdb5/createdb/*.sql
 %{_libdir}/monetdb5/sql*.mal
@@ -888,7 +843,6 @@ export CFLAGS
 	--enable-fits=%{?with_fits:yes}%{!?with_fits:no} \
 	--enable-geom=%{?with_geos:yes}%{!?with_geos:no} \
 	--enable-int128=%{?with_hugeint:yes}%{!?with_hugeint:no} \
-	--enable-lidar=%{?with_lidar:yes}%{!?with_lidar:no} \
 	--enable-mapi=yes \
 	--enable-netcdf=no \
 	--enable-odbc=yes \
@@ -902,9 +856,8 @@ export CFLAGS
 	--enable-testing=yes \
 	--with-bz2=yes \
 	--with-curl=yes \
-	--with-gdal=%{?with_lidar:yes}%{!?with_lidar:no} \
+	--with-gdal=no \
 	--with-geos=%{?with_geos:yes}%{!?with_geos:no} \
-	--with-liblas=%{?with_lidar:yes}%{!?with_lidar:no} \
 	--with-libxml2=yes \
 	--with-lz4=no \
 	--with-lzma=yes \

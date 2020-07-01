@@ -22,7 +22,6 @@ typedef struct blob {
 mal_export int TYPE_blob;
 
 mal_export var_t blobsize(size_t nitems);
-mal_export ssize_t BLOBfromstr(const char *instr, size_t *l, blob **val, bool external);
-mal_export ssize_t BLOBtostr(str *tostr, size_t *l, const blob *pin, bool external);
+mal_export ssize_t BLOBtostr(str *tostr, size_t *l, const void *pin, bool external);
 
 #endif /* __BLOB_H__ */
