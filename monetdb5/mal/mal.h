@@ -143,7 +143,7 @@ typedef struct VARRECORD {
 
 /* For performance analysis we keep track of the number of calls and
  * the total time spent while executing the instruction. (See
- * mal_profiler.c) 
+ * mal_profiler.c)
  */
 
 typedef struct {

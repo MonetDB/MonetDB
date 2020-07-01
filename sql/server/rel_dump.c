@@ -68,11 +68,11 @@ cmp_print(mvc *sql, stream *fout, int cmp)
 	case mark_exists: 	r = "exists"; break;
 	case mark_notexists: 	r = "!exists"; break;
 
-	case cmp_all: 		
-	case cmp_project: 		
-	case cmp_joined: 		
-	case cmp_left: 		
-	case cmp_left_project: 		
+	case cmp_all:
+	case cmp_project:
+	case cmp_joined:
+	case cmp_left:
+	case cmp_left_project:
 				r = "inner"; break;
 	}
 	mnstr_printf(fout, " %s ", r);
@@ -188,10 +188,10 @@ exp_print(mvc *sql, stream *fout, sql_exp *e, int depth, list *refs, int comma, 
 		exps_print(sql, fout, e->l, depth, refs, alias, 1);
 		if (e->r) { /* list of optional lists */
 			list *l = e->r;
-			for(node *n = l->h; n; n = n->next) 
+			for(node *n = l->h; n; n = n->next)
 				exps_print(sql, fout, n->data, depth, refs, alias, 1);
 		}
-		if (e->flag && is_compare_func(f)) 
+		if (e->flag && is_compare_func(f))
 			mnstr_printf(fout, " %s", e->flag==1?"ANY":"ALL");
 	} 	break;
 	case e_aggr: {
@@ -211,7 +211,7 @@ exp_print(mvc *sql, stream *fout, sql_exp *e, int depth, list *refs, int comma, 
 			mnstr_printf(fout, "()");
 	} 	break;
 	case e_column:
-		if (is_freevar(e)) 
+		if (is_freevar(e))
 			mnstr_printf(fout, "!!!FREE!!! ");
 		if (e->l)
 			mnstr_printf(fout, "\"%s\".", (char*)e->l);
@@ -433,7 +433,7 @@ rel_print_(mvc *sql, stream  *fout, sql_rel *rel, int depth, list *refs, int dec
 		if (rel->r)
 			exp_print(sql, fout, rel->r, depth, refs, 1, 0);
 		if (rel->l) {
-			if (rel->flag == TRIGGER_WRAPPER) 
+			if (rel->flag == TRIGGER_WRAPPER)
 		  		mnstr_printf(fout, "rel_dump not yet implemented for trigger input");
 			else
 				rel_print_(sql, fout, rel->l, depth+1, refs, decorate);
@@ -481,7 +481,7 @@ rel_print_(mvc *sql, stream  *fout, sql_rel *rel, int depth, list *refs, int dec
 		else if (!rel->exps && rel->op == op_join)
 			r = "crossproduct";
 
-		if (is_dependent(rel)) 
+		if (is_dependent(rel))
 			mnstr_printf(fout, "dependent ");
 		if (need_distinct(rel))
 			mnstr_printf(fout, "distinct ");
@@ -557,7 +557,7 @@ rel_print_(mvc *sql, stream  *fout, sql_rel *rel, int depth, list *refs, int dec
 			sql_exp *first = (sql_exp*) rel->exps->h->data, *second = (sql_exp*) rel->exps->h->next->data;
 			int restart_sequences = ((atom*)first->l)->data.val.ival,
 				drop_action = ((atom*)second->l)->data.val.ival;
-			mnstr_printf(fout, "truncate %s identity, %s(", restart_sequences ? "restart" : "continue", 
+			mnstr_printf(fout, "truncate %s identity, %s(", restart_sequences ? "restart" : "continue",
 												   drop_action ? "cascade" : "restrict");
 		}
 
@@ -1269,7 +1269,7 @@ exp_read(mvc *sql, sql_rel *lrel, sql_rel *rrel, list *pexps, char *r, int *pos,
 			f = cmp_or;
 		}
 		break;
-	case '!': 
+	case '!':
 		f = cmp_notequal;
 		(*pos)++;
 		if (r[(*pos)] == '=') {

@@ -175,7 +175,7 @@ MALpass( Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	return MAL_SUCCEED;
 }
 
-str 
+str
 CMDregisterFunction(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	Symbol sym= NULL;
@@ -217,7 +217,7 @@ CMDevalFile(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	(void) mb;
 	(void) cntxt;
 
-	if (s == 0) 
+	if (s == 0)
 		throw(MAL, "mal.evalFile", RUNTIME_FILE_NOT_FOUND "missing file name");
 
 	if (!MT_path_absolute(s)) {
@@ -228,7 +228,7 @@ CMDevalFile(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		stpcpy(stpcpy(stpcpy(buf, monet_cwd), DIR_SEP_STR), s);
 		msg = evalFile(buf, 0);
 		GDKfree(buf);
-	} else 
+	} else
 		msg = evalFile(s, 0);
 	return msg;
 }

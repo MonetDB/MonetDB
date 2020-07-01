@@ -53,9 +53,9 @@ typedef struct {
 } monetdbe_data_blob;
 
 typedef enum  {
-	monetdbe_bool, monetdbe_int8_t, monetdbe_int16_t, monetdbe_int32_t, monetdbe_int64_t, 
+	monetdbe_bool, monetdbe_int8_t, monetdbe_int16_t, monetdbe_int32_t, monetdbe_int64_t,
 #ifdef HAVE_HGE
-	monetdbe_int128_t, 
+	monetdbe_int128_t,
 #endif
 	monetdbe_size_t, monetdbe_float, monetdbe_double,
 	monetdbe_str, monetdbe_blob,
@@ -127,7 +127,7 @@ DEFAULT_STRUCT_DEFINITION(monetdbe_data_time, time);
 DEFAULT_STRUCT_DEFINITION(monetdbe_data_timestamp, timestamp);
 // UUID, INET, XML ?
 
-monetdbe_export int   monetdbe_open(monetdbe_database *db, char *url, monetdbe_options *opts); 
+monetdbe_export int   monetdbe_open(monetdbe_database *db, char *url, monetdbe_options *opts);
 /* 0 ok, -1 (allocation failed),  -2 error in db */
 monetdbe_export int   monetdbe_close(monetdbe_database db);
 

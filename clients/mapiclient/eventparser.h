@@ -13,7 +13,7 @@
  * will collect the tomograph pages for at most 10 SQL queries
  * For each page a gnuplot file, a data file, and the event trace
  * are collected for more focussed analysis.
- * 
+ *
 */
 
 #ifndef _EVENT_PARSER_
@@ -71,7 +71,7 @@ typedef struct{
 // the break down of a profiler event message
 typedef struct  {
 	char *version;
-	char *user; 
+	char *user;
 	char *session;
 	char *function;	// name of MAL block
 	char *operator;

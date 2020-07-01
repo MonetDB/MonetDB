@@ -6,8 +6,8 @@
  * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
  */
 
-#ifndef _REL_XML_H_ 
-#define _REL_XML_H_ 
+#ifndef _REL_XML_H_
+#define _REL_XML_H_
 
 #include "rel_semantic.h"
 #include "sql_semantic.h"

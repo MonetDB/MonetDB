@@ -72,7 +72,7 @@ skipToEnd(Client cntxt)
  */
 static void
 parseError(Client cntxt, str msg)
-{	
+{
 	MalBlkPtr mb;
 	char *old, *new;
 	char buf[1028]={0};
@@ -793,7 +793,7 @@ helpInfo(Client cntxt, str *help)
 		c = currChar(cntxt);
 		if (c != '"'){
 			e = s = CURRENT(cntxt);
-			for (;*e; l++, e++) 
+			for (;*e; l++, e++)
 				if (*e == ';')
 					break;
 			*help = strCopy(cntxt, l);
@@ -1402,7 +1402,7 @@ parseFunction(Client cntxt, int kind)
 			return 0;
 		}
 		skipSpace(cntxt);
-	} 
+	}
 	/* block is terminated at the END statement */
 	helpInfo(cntxt, &curBlk->help);
 	return curBlk;

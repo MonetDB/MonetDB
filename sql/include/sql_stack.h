@@ -9,8 +9,8 @@
 #ifndef SQL_STACK_H
 #define SQL_STACK_H
 
-/* sql_stack implementation 
- * used by mvc structure for variable stack	
+/* sql_stack implementation
+ * used by mvc structure for variable stack
  * 			     trigger stack
  * 			     Multi statement stack (intermediate results)
  * 			     ....
@@ -32,7 +32,7 @@ extern void sql_stack_push(sql_stack *s, void *v);
 extern void *sql_stack_pop(sql_stack *s);
 extern void *sql_stack_peek(sql_stack *s, int pos); /* top == pos 0 */
 extern void *sql_stack_fetch(sql_stack *s, int pos); /* pos 0 is bottom of the stack */
-extern int sql_stack_top(sql_stack *s); 
+extern int sql_stack_top(sql_stack *s);
 extern int sql_stack_empty(sql_stack *s);
 
 #endif /* SQL_STACK_H */

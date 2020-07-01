@@ -38,7 +38,7 @@ mal_startup(void)
 	return 0;
 }
 
-/* all MAL related functions register themselves 
+/* all MAL related functions register themselves
 * the order in which these registrations happen is significant
 * because there may be dependencies among the definitions.
 * For example, you better know the atoms before you use them
@@ -68,8 +68,8 @@ mal_module(str name, mel_atom *atoms, mel_func *funcs)
 	mel_modules++;
 }
 
-static void 
-initModule(Client c, char *name) 
+static void
+initModule(Client c, char *name)
 {
 	if (!getName(name))
 		return;
@@ -227,9 +227,9 @@ addFunctions(mel_func *fcn){
 		sig->token = fcn->command?COMMANDsymbol:PATTERNsymbol;
 		sig->fcn = (MALfcn)fcn->imp;
 		if( fcn->unsafe)
-			mb->unsafeProp = 1; 
+			mb->unsafeProp = 1;
 		/* add the return variables */
-		if(fcn->retc == 0){ 
+		if(fcn->retc == 0){
 			int idx = newTmpVariable(mb, TYPE_void);
 			sig = pushReturn(mb, sig, idx);
 			if (sig == NULL)
@@ -302,7 +302,7 @@ makeFuncArgument(MalBlkPtr mb, mel_func_arg *a)
 	return newTmpVariable(mb, tpe);
 }
 
-int 
+int
 melFunction(bool command, char *mod, char *fcn, fptr imp, char *fname, bool unsafe, char *comment, int retc, int argc, ... )
 {
 	int i, idx;
@@ -337,9 +337,9 @@ melFunction(bool command, char *mod, char *fcn, fptr imp, char *fname, bool unsa
 	sig->token = command ? COMMANDsymbol:PATTERNsymbol;
 	sig->fcn = (MALfcn)imp;
 	if (unsafe)
-		mb->unsafeProp = 1; 
+		mb->unsafeProp = 1;
 	/* add the return variables */
-	if(retc == 0) { 
+	if(retc == 0) {
 		idx = newTmpVariable(mb, TYPE_void);
 		sig = pushReturn(mb, sig, idx);
 		if (sig == NULL)
@@ -416,7 +416,7 @@ malPrelude(Client c, int listing, int embedded)
                                	return msg;
 
 			/* skip sql should be last to startup and mapi in the embedded version */
-			if (strcmp(mel_module_name[i], "sql") == 0 || (embedded && strcmp(mel_module_name[i], "mapi") == 0)) 
+			if (strcmp(mel_module_name[i], "sql") == 0 || (embedded && strcmp(mel_module_name[i], "mapi") == 0))
 				continue;
 			if (!mel_module_inits[i])
 				initModule(c, mel_module_name[i]);
@@ -426,7 +426,7 @@ malPrelude(Client c, int listing, int embedded)
 			if (msg)
 				return msg;
 			/* skip sql should be last to startup and mapi in the embedded version */
-			if (strcmp(mel_module_name[i], "sql") == 0 || (embedded && strcmp(mel_module_name[i], "mapi") == 0)) 
+			if (strcmp(mel_module_name[i], "sql") == 0 || (embedded && strcmp(mel_module_name[i], "mapi") == 0))
 				continue;
 			initModule(c, mel_module_name[i]);
 		}
@@ -439,7 +439,7 @@ malIncludeModules(Client c, char *modules[], int listing, int embedded)
 {
 	int i;
 	str msg;
-	
+
 	for(i = 0; modules[i]; i++) {
 		/* load library */
 		if (!malLibraryEnabled(modules[i]))

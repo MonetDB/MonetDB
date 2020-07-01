@@ -64,9 +64,9 @@ static str monetdb_query(Client c, str query) {
 	mvc* m = ((backend *) c->sqlcontext)->mvc;
 	res_table* res = NULL;
 	int i;
-	retval = (*SQLstatementIntern_ptr)(c, 
-		&query, 
-		"name", 
+	retval = (*SQLstatementIntern_ptr)(c,
+		&query,
+		"name",
 		1, 0, &res);
 	(*SQLautocommit_ptr)(m);
 	if (retval != MAL_SUCCEED) {
@@ -328,7 +328,7 @@ int main(int argc, char **argv) {
 	if (retval != MAL_SUCCEED) {
 		printf("Failed first initialization: %s\n", retval);
 		return -1;
-	} 
+	}
 	c = (Client) monetdb_connect();
 	monetdb_query(c, "CREATE TABLE temporary_table(i INTEGER);");
 	monetdb_query(c, "INSERT INTO temporary_table VALUES (3), (4);");

@@ -207,7 +207,7 @@ InstrPtr
 pushEndInstruction(MalBlkPtr mb)
 {
     InstrPtr q = newInstruction(mb,NULL, NULL);
-	
+
 	assert(q);
     q->token = ENDsymbol;
     q->barrier = 0;
@@ -299,7 +299,7 @@ getOidConstant(MalBlkPtr mb, oid val)
 	return _t;
 }
 
-InstrPtr 
+InstrPtr
 pushOid(MalBlkPtr mb, InstrPtr q, oid val)
 {
 	int _t;
@@ -500,11 +500,11 @@ getStrConstant(MalBlkPtr mb, str val)
 	ValRecord cst;
 
 	cst.vtype = TYPE_str;
-	cst.val.sval = val; 
+	cst.val.sval = val;
 	cst.len = strlen(val);
 	_t= fndConstant(mb, &cst, mb->vtop);
 	if( _t < 0) {
-		if ((cst.val.sval= GDKstrdup(val)) == NULL) 
+		if ((cst.val.sval= GDKstrdup(val)) == NULL)
 			return -1;
 		_t = defConstant(mb, TYPE_str, &cst);
 	}
@@ -520,7 +520,7 @@ pushStr(MalBlkPtr mb, InstrPtr q, const char *Val)
 
 	assert(q);
 	cst.vtype= TYPE_str;
-	if ((cst.val.sval= GDKstrdup(Val)) == NULL) 
+	if ((cst.val.sval= GDKstrdup(Val)) == NULL)
 		addMalException(mb, createException(MAL, "pushStr", "Can not allocate string variable"));
 	else{
 		cst.len = strlen(cst.val.sval);

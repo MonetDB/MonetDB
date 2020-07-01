@@ -3319,8 +3319,8 @@ SQLupgrades(Client c, mvc *m)
 		freeException(err);
 		GDKfree(prev_schema);
 		return -1;
-	}		
-	
+	}
+
 	if ((err = sql_update_default(c, m, prev_schema)) != NULL) {
 		TRC_CRITICAL(SQL_PARSER, "%s\n", err);
 		freeException(err);

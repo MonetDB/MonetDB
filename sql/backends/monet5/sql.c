@@ -299,7 +299,7 @@ create_table_or_view(mvc *sql, char* sname, char *tname, sql_table *t, int temp)
 		return sql_message(SQLSTATE(3F000) "%s %s: schema '%s' doesn't exist", action, (t->query) ? "TABLE" : "VIEW", sname);
 	if (mvc_bind_table(sql, s, t->base.name)) {
 		return sql_message(SQLSTATE(42S01) "%s TABLE: name '%s' already in use", action, t->base.name);
-	} else if (temp != SQL_DECLARED_TABLE && (!mvc_schema_privs(sql, s) && !(isTempSchema(s) && temp == SQL_LOCAL_TEMP))) { 
+	} else if (temp != SQL_DECLARED_TABLE && (!mvc_schema_privs(sql, s) && !(isTempSchema(s) && temp == SQL_LOCAL_TEMP))) {
 		return sql_message(SQLSTATE(42000) "%s TABLE: insufficient privileges for user '%s' in schema '%s'", action, sqlvar_get_string(find_global_var(sql, mvc_bind_schema(sql, "sys"), "current_user")), s->base.name);
 	} else if (temp == SQL_DECLARED_TABLE && !list_empty(t->keys.set)) {
 		return sql_message(SQLSTATE(42000) "%s TABLE: '%s' cannot have constraints", action, t->base.name);
@@ -348,7 +348,7 @@ create_table_or_view(mvc *sql, char* sname, char *tname, sql_table *t, int temp)
 				sql->sa = osa;
 				if (strlen(sql->errstr) > 6 && sql->errstr[5] == '!')
 					throw(SQL, "sql.catalog", "%s", sql->errstr);
-				else 
+				else
 					throw(SQL, "sql.catalog", SQLSTATE(42000) "%s", sql->errstr);
 			}
 			id_l = rel_dependencies(sql, r);
@@ -456,7 +456,7 @@ create_table_or_view(mvc *sql, char* sname, char *tname, sql_table *t, int temp)
 		if (!r) {
 			if (strlen(sql->errstr) > 6 && sql->errstr[5] == '!')
 				throw(SQL, "sql.catalog", "%s", sql->errstr);
-			else 
+			else
 				throw(SQL, "sql.catalog", SQLSTATE(42000) "%s", sql->errstr);
 		}
 	}
@@ -464,8 +464,8 @@ create_table_or_view(mvc *sql, char* sname, char *tname, sql_table *t, int temp)
 	return MAL_SUCCEED;
 }
 
-str 
-create_table_from_emit(Client cntxt, char *sname, char *tname, sql_emit_col *columns, size_t ncols) 
+str
+create_table_from_emit(Client cntxt, char *sname, char *tname, sql_emit_col *columns, size_t ncols)
 {
 	size_t i;
 	sql_table *t;
@@ -550,7 +550,7 @@ cleanup:
 	return msg;
 }
 
-str 
+str
 append_to_table_from_emit(Client cntxt, char *sname, char *tname, sql_emit_col *columns, size_t ncols)
 {
 	size_t i;
@@ -1157,7 +1157,7 @@ mvc_bat_restart_seq(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		if (is_lng_nil(nstart)) {
 			msg = createException(SQL, "sql.restart", SQLSTATE(HY050) "Cannot (re)start sequence %s.%s with NULL", sname, seqname);
 			goto bailout;
-		}	
+		}
 		if (seq->minvalue && nstart < seq->minvalue) {
 			msg = createException(SQL, "sql.restart", SQLSTATE(HY050) "Cannot set sequence %s.%s start to a value lesser than the minimum ("LLFMT" < "LLFMT")", sname, seqname, start, seq->minvalue);
 			goto bailout;
@@ -1406,7 +1406,7 @@ mvc_insert_delta_values(mvc *m, BAT *col1, BAT *col2, BAT *col3, BAT *col4, BAT 
 		sql_column *oc = tr_find_column(gtrans, c);
 
 		if (oc) {
-			for(sql_delta *d = oc->data; d; d = d->next) 
+			for(sql_delta *d = oc->data; d; d = d->next)
 				level++;
 		}
 	}
@@ -1529,7 +1529,7 @@ mvc_delta_values(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 					for (node *nn = t->columns.set->h; nn ; nn = nn->next) {
 						c = (sql_column*) nn->data;
 
-						if ((msg=mvc_insert_delta_values(m, col1, col2, col3, col4, col5, col6, col7, 
+						if ((msg=mvc_insert_delta_values(m, col1, col2, col3, col4, col5, col6, col7,
 										 c, cleared, deletes)) != NULL)
 							goto cleanup;
 					}
@@ -2345,19 +2345,19 @@ BATleftproject(bat *Res, const bat *Col, const bat *L, const bat *R)
 		oid lp = l->tseqbase;
 		if (r->ttype == TYPE_void) {
 			oid rp = r->tseqbase;
-			for(i=0;i<cnt; i++, lp++, rp++) 
+			for(i=0;i<cnt; i++, lp++, rp++)
 				p[lp] = rp;
 		} else {
-			for(i=0;i<cnt; i++, lp++) 
+			for(i=0;i<cnt; i++, lp++)
 				p[lp] = rp[i];
 		}
 	}
 	if (r->ttype == TYPE_void) {
 		oid rp = r->tseqbase;
-		for(i=0;i<cnt; i++, rp++) 
+		for(i=0;i<cnt; i++, rp++)
 			p[lp[i]] = rp;
 	} else {
-		for(i=0;i<cnt; i++) 
+		for(i=0;i<cnt; i++)
 			p[lp[i]] = rp[i];
 	}
 	res->tsorted = false;
@@ -2430,7 +2430,7 @@ SQLtid(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (tids == NULL)
 		throw(SQL, "sql.tid", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 
-	/* V1 of the deleted list 
+	/* V1 of the deleted list
 	 * 1) in case of deletes, bind_del, order it, put into a heap(of the tids bat)
 	 * 2) in mal recognize this type of bat.
 	 * 3) if function can handle it pass along, else fall back to first diff.
@@ -2450,7 +2450,7 @@ SQLtid(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		if (ret != GDK_SUCCEED)
 			throw(MAL, "sql.tids", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 
-		/* TODO handle dense o, ie full range out of the dense tids, could be at beginning or end (reduce range of tids) 
+		/* TODO handle dense o, ie full range out of the dense tids, could be at beginning or end (reduce range of tids)
 		 * else materialize */
 		/* copy into heap */
 		ret = BATnegcands(tids, o);
@@ -3513,7 +3513,7 @@ mvc_bin_import_table_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 	return MAL_SUCCEED;
   bailout:
 	for (i = 0; i < pci->retc; i++) {
-		bat bid; 
+		bat bid;
 		if ((bid = *getArgReference_bat(stk, pci, i)) != 0) {
 			BBPrelease(bid);
 			*getArgReference_bat(stk, pci, i) = 0;
@@ -4241,7 +4241,7 @@ sql_querylog_catalog(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	msg = QLOGcatalog(t);
 	if( msg != MAL_SUCCEED)
 		return msg;
-	for (i = 0; i < 8; i++) 
+	for (i = 0; i < 8; i++)
 	if( t[i]){
 		bat id = t[i]->batCacheid;
 
@@ -4264,7 +4264,7 @@ sql_querylog_calls(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	msg = QLOGcalls(t);
 	if( msg != MAL_SUCCEED)
 		return msg;
-	for (i = 0; i < 9; i++) 
+	for (i = 0; i < 9; i++)
 	if( t[i]){
 		bat id = t[i]->batCacheid;
 
@@ -4793,7 +4793,7 @@ sql_storage(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	key = COLnew(0, TYPE_bit, 0, TRANSIENT);
 	oidx = COLnew(0, TYPE_lng, 0, TRANSIENT);
 
-	if (sch == NULL || tab == NULL || col == NULL || type == NULL || mode == NULL || loc == NULL || imprints == NULL || 
+	if (sch == NULL || tab == NULL || col == NULL || type == NULL || mode == NULL || loc == NULL || imprints == NULL ||
 	    sort == NULL || cnt == NULL || atom == NULL || size == NULL || heap == NULL || indices == NULL || phash == NULL ||
 	    revsort == NULL || key == NULL || oidx == NULL) {
 		goto bailout;
@@ -4891,7 +4891,7 @@ sql_storage(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 								if (BUNappend(atom, &w, false) != GDK_SUCCEED)
 									goto bailout;
 
-								sz = BATcount(bn) * bn->twidth; 
+								sz = BATcount(bn) * bn->twidth;
 								if (BUNappend(size, &sz, false) != GDK_SUCCEED)
 									goto bailout;
 
@@ -5352,7 +5352,7 @@ BATSTRstrings(bat *res, const bat *src)
 	return MAL_SUCCEED;
 }
 
-str 
+str
 SQLflush_log(void *ret)
 {
 	(void)ret;
@@ -5360,7 +5360,7 @@ SQLflush_log(void *ret)
 	return MAL_SUCCEED;
 }
 
-str 
+str
 SQLresume_log_flushing(void *ret)
 {
 	(void)ret;
@@ -5368,7 +5368,7 @@ SQLresume_log_flushing(void *ret)
 	return MAL_SUCCEED;
 }
 
-str 
+str
 SQLsuspend_log_flushing(void *ret)
 {
 	(void)ret;
@@ -5644,7 +5644,7 @@ bailout:
 	return msg;
 }
 
-/* input id,row-input-values 
+/* input id,row-input-values
  * for each id call function(with row-input-values) return table
  * return for each id the table, ie id (*length of table) and table results
  */
@@ -5703,7 +5703,7 @@ SQLunionfunc(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				goto finalize;
 			}
 			bi[i] = bat_iterator(input[i]);
-			cnt = BATcount(input[i]); 
+			cnt = BATcount(input[i]);
 		}
 
 		/* create result bats */
@@ -5749,7 +5749,7 @@ SQLunionfunc(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				}
 				if (!ret && ii == q->argc) {
 					BAT *fres = NULL;
-					ret = runMALsequence(cntxt, nmb, 1, nmb->stop, nstk, env /* copy result in nstk first instruction*/, q); 
+					ret = runMALsequence(cntxt, nmb, 1, nmb->stop, nstk, env /* copy result in nstk first instruction*/, q);
 
 					if (!ret) {
 						/* insert into result */

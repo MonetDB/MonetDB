@@ -338,7 +338,7 @@ DFLOWworker(void *T)
 	GDKsetbuf(t->errbuf);		/* where to leave errors */
 	t->errbuf = NULL;
 	GDKclrerr();
-		
+
 	cntxt = ATOMIC_PTR_GET(&t->cntxt);
 	if (cntxt) {
 		/* wait until we are allowed to start working */

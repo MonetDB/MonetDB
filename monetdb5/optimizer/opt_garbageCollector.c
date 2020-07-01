@@ -38,7 +38,7 @@ OPTgarbageCollectorImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, Ins
 		return 0;
 
 	limit = mb->stop;
-	
+
 
 	/* variables get their name from the position */
 	/* rename all temporaries for ease of variable table interpretation */
@@ -61,7 +61,7 @@ OPTgarbageCollectorImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, Ins
 			p = getInstrPtr(mb,i);
 			break;
 		}
-	
+
 	if( p != NULL){
 		for(  ; i > 1; i--)
 			mb->stmt[i] = mb->stmt[i-1];

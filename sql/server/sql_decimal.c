@@ -54,9 +54,9 @@ decimal_from_str(char *dec, char **end)
 
 char *
 #ifdef HAVE_HGE
-decimal_to_str(hge v, sql_subtype *t) 
+decimal_to_str(hge v, sql_subtype *t)
 #else
-decimal_to_str(lng v, sql_subtype *t) 
+decimal_to_str(lng v, sql_subtype *t)
 #endif
 {
 	char buf[64];

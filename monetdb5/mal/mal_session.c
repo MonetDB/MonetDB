@@ -131,7 +131,7 @@ MSinitClientPrg(Client cntxt, str mod, str nme)
 	if( (idx= findVariable(cntxt->curprg->def,"main")) >=0)
 		setVarType(cntxt->curprg->def, idx, TYPE_void);
 	insertSymbol(cntxt->usermodule,cntxt->curprg);
-	
+
 	if (cntxt->glb == NULL )
 		cntxt->glb = newGlobalStack(MAXGLOBALS + cntxt->curprg->def->vsize);
 	if( cntxt->glb == NULL)
@@ -713,7 +713,7 @@ MALengine(Client c)
 		/* for global stacks avoid reinitialization from this point */
 		c->glb->stkbot = prg->def->vtop;
 	}
-	
+
 	if (prg->def->errors)
 		GDKfree(prg->def->errors);
 	prg->def->errors = NULL;

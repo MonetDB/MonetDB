@@ -1258,12 +1258,12 @@ rel_select_push_exp_down(mvc *sql, sql_rel *rel, sql_exp *e)
 		if (left)
 			ne = exp_push_down(sql, e, jl, jl);
 		if (ne && ne != e) {
-			done = 1; 
+			done = 1;
 			r->l = jl = rel_select_add_exp(sql->sa, jl, ne);
 		} else if (right) {
 			ne = exp_push_down(sql, e, jr, jr);
 			if (ne && ne != e) {
-				done = 1; 
+				done = 1;
 				r->r = jr = rel_select_add_exp(sql->sa, jr, ne);
 			}
 		}
