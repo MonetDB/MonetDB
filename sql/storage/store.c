@@ -3467,6 +3467,8 @@ table_dup(sql_trans *tr, int flags, sql_table *ot, sql_schema *s)
 	 * on savepoints from tr->parent to new tr */
 	if (flags) {
 		t->base.allocated = ot->base.allocated;
+		if (ot->data)
+			(void)store_funcs.destroy_del(tr, ot);
 		t->data = ot->data;
 		ot->base.allocated = 0;
 		ot->data = NULL;
@@ -3732,8 +3734,10 @@ trans_init(sql_trans *tr, backend_stack stk, sql_trans *otr)
 
 				t->base.rtime = t->base.wtime = 0;
 				t->base.stime = pt->base.wtime;
-				if (!istmp && !t->base.allocated)
+				if (!istmp && !t->base.allocated) {
+					(void)store_funcs.destroy_del(tr, t);
 					t->data = NULL;
+				}
 				assert (istmp || !t->base.allocated);
 
 				if (pt->base.id == t->base.id) {
