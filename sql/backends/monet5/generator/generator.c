@@ -13,7 +13,6 @@
 
 #include "monetdb_config.h"
 #include "opt_prelude.h"
-#include "algebra.h"
 #include "generator.h"
 #include "gdk_time.h"
 #include <math.h>
@@ -713,7 +712,6 @@ str VLTgenerator_projection(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 	BUN cnt;
 	oid *ol =0, o= 0;
 	InstrPtr p;
-	str msg;
 
 	(void) cntxt;
 	p = findGeneratorDefinition(mb,pci,pci->argv[2]);
@@ -731,10 +729,14 @@ str VLTgenerator_projection(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 			BBPunfix(b->batCacheid);
 			throw(MAL,"generator.projection", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 		}
-		msg = ALGprojection(ret, &b->batCacheid, &bn->batCacheid);
+		BAT *bp = BATproject(b, bn);
 		BBPunfix(b->batCacheid);
 		BBPunfix(bn->batCacheid);
-		return msg;
+		if (bp == NULL)
+			throw(MAL, "generator.projection", GDK_EXCEPTION);
+		*ret = bp->batCacheid;
+		BBPkeepref(*ret);
+		return MAL_SUCCEED;
 	}
 
 	cnt = BATcount(b);
@@ -849,15 +851,25 @@ str VLTgenerator_join(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	q = findGeneratorDefinition(mb,pci,pci->argv[3]);
 
 	if (p == NULL && q == NULL) {
-		bit zero = 0;
-		return ALGjoin(getArgReference_bat(stk, pci, 0),
-			       getArgReference_bat(stk, pci, 1),
-			       getArgReference_bat(stk, pci, 2),
-			       getArgReference_bat(stk, pci, 3),
-			       NULL,  /* left candidate */
-			       NULL,  /* right candidate */
-			       &zero, /* nil_matches */
-			       NULL); /* estimate */
+		bl = BATdescriptor(*getArgReference_bat(stk, pci, 2));
+		br = BATdescriptor(*getArgReference_bat(stk, pci, 3));
+		if (bl == NULL || br == NULL) {
+			if (bl)
+				BBPunfix(bl->batCacheid);
+			if (br)
+				BBPunfix(br->batCacheid);
+			throw(MAL,"generator.join", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
+		}
+		gdk_return rc = BATjoin(&bln, &brn, bl, br, NULL, NULL, false, BUN_NONE);
+		BBPunfix(bl->batCacheid);
+		BBPunfix(br->batCacheid);
+		if (rc != GDK_SUCCEED)
+			throw(MAL,"generator.join", GDK_EXCEPTION);
+		*getArgReference_bat(stk, pci, 0) = bln->batCacheid;
+		*getArgReference_bat(stk, pci, 1) = brn->batCacheid;
+		BBPkeepref(bln->batCacheid);
+		BBPkeepref(brn->batCacheid);
+		return MAL_SUCCEED;
 	}
 
 	if( p == NULL){

@@ -4026,7 +4026,7 @@ BATrangejoin(BAT **r1p, BAT **r2p, BAT *l, BAT *rl, BAT *rh,
 	     BUN estimate)
 {
 	struct canditer lci, rci;
-	BAT *r1, *r2;
+	BAT *r1 = NULL, *r2 = NULL;
 	BUN maxsize;
 	lng t0 = 0;
 

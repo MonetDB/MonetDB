@@ -15,9 +15,9 @@ target_sources(atoms
   color.c color.h
   str.c str.h
   strptime.c
-  url.c url.h
+  url.c
   uuid.c uuid.h
-  json.c json.h
+  json.c
   mtime.c
   mtime_analytic.c
   inet.c

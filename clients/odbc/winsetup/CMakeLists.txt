@@ -17,8 +17,8 @@ target_sources(MonetODBCs
   resource.h)
 
 target_include_directories(MonetODBCs
-  PRIVATE
-  $<$<PLATFORM_ID:Windows>:${HAVE_AFXRES_H}>
+#  PRIVATE
+#  $<$<PLATFORM_ID:Windows>:${HAVE_AFXRES_H}>
   PUBLIC
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
   $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}/monetdb>)

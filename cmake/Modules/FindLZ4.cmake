@@ -39,5 +39,4 @@ if(LZ4_FOUND)
   endif()
 endif()
 
-mark_as_advanced(LZ4_INCLUDE_DIR
-  LZ4_LIBRARIES LZ4_VERSION)
+mark_as_advanced(LZ4_INCLUDE_DIR LZ4_LIBRARIES LZ4_VERSION)

@@ -45,6 +45,7 @@ include(TestBigEndian REQUIRED)
 if(WIN32)
   set(CMAKE_REQUIRED_LIBRARIES  ws2_32.lib shell32.lib advapi32.lib)
 endif()
+test_big_endian(IS_BIG_ENDIAN)
 
 # Include MonetDB specific functions
 include(monetdb-functions)
@@ -75,6 +76,10 @@ monetdb_configure_crypto()
 monetdb_configure_sizes()
 
 include(GNUInstallDirs)
+# The documentation is unclear on what is the best location to install
+# the configuration for the exported targets, especially when building
+# the packages (deb/rpm). For now set the variable to a reasonable value
+set(EXPORT_TARGET_PATH "${CMAKE_INSTALL_DATAROOTDIR}/monetdb/cmake")
 
 # Define the macro variables after configuring the install directories.
 # Some variables define additional installation settings.
@@ -127,18 +132,13 @@ install(TARGETS
 install(EXPORT monetdb_config_headerTargets
   FILE monetdb_config_headerTargets.cmake
   NAMESPACE MonetDB::
-  DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/cmake
+  DESTINATION ${EXPORT_TARGET_PATH}
   COMPONENT monetdbdev)
 
 install(FILES
   ${CMAKE_CURRENT_BINARY_DIR}/monetdb_config.h
   DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/monetdb
   COMPONENT monetdbdev)
-
-# [TODO]: install created python file
-configure_file(create_include_object.py.in
-  ${CMAKE_CURRENT_BINARY_DIR}/create_include_object.py
-  @ONLY)
 
 if(${CMAKE_SYSTEM_NAME} STREQUAL "Darwin")
   set(CMAKE_MODULE_LINKER_FLAGS "-Wl,-undefined,dynamic_lookup -Wl,-undefined,dynamic_lookup")
@@ -147,6 +147,7 @@ endif()
 add_subdirectory(common)
 add_subdirectory(clients)
 add_subdirectory(gdk)
+add_subdirectory(misc)
 add_subdirectory(monetdb5)
 add_subdirectory(sql)
 add_subdirectory(geom)
@@ -158,7 +159,7 @@ endif()
 include(CMakePackageConfigHelpers)
 configure_package_config_file(${CMAKE_CURRENT_SOURCE_DIR}/Config.cmake.in
   "${CMAKE_CURRENT_BINARY_DIR}/MonetDBConfig.cmake"
-  INSTALL_DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}/cmake)"
+  INSTALL_DESTINATION "${EXPORT_TARGET_PATH}"
   NO_SET_AND_CHECK_MACRO
   NO_CHECK_REQUIRED_COMPONENTS_MACRO)
 
@@ -169,13 +170,14 @@ write_basic_package_version_file(
 
 install(FILES
   ${CMAKE_CURRENT_BINARY_DIR}/MonetDBConfig.cmake
-  DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/cmake
+  DESTINATION ${EXPORT_TARGET_PATH}
   COMPONENT monetdbdev)
 
 include(monetdb-packages)
 
 include(CTest)
 add_subdirectory(ctest)
+add_subdirectory(documentation)
 
 if(CMAKE_SUMMARY)
   monetdb_cmake_summary()

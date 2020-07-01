@@ -147,6 +147,42 @@ stdout of test 'any_all` in directory 'sql/test/subquery` itself:
 % boolean # type
 % 5 # length
 [ NULL	]
+#SELECT '1' = ALL(SELECT NULL); -- NULL
+% .%7 # table_name
+% %7 # name
+% boolean # type
+% 5 # length
+[ NULL	]
+#SELECT '1' = ALL(SELECT '1'); -- true
+% .%7 # table_name
+% %7 # name
+% boolean # type
+% 5 # length
+[ true	]
+#SELECT '1' = ALL(SELECT '2'); -- false
+% .%7 # table_name
+% %7 # name
+% boolean # type
+% 5 # length
+[ false	]
+#SELECT time '10:00:00' = ALL(SELECT NULL); -- NULL
+% .%7 # table_name
+% %7 # name
+% boolean # type
+% 5 # length
+[ NULL	]
+#SELECT time '10:00:00' = ALL(SELECT time '10:00:00'); -- true
+% .%7 # table_name
+% %7 # name
+% boolean # type
+% 5 # length
+[ true	]
+#SELECT time '10:00:00' = ALL(SELECT time '10:00:01'); -- false
+% .%7 # table_name
+% %7 # name
+% boolean # type
+% 5 # length
+[ false	]
 #SELECT i=ANY(SELECT i FROM integers WHERE i=i1.i) FROM integers i1 ORDER BY i;
 % .%5 # table_name
 % %5 # name

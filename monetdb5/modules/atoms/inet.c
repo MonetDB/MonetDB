@@ -61,34 +61,6 @@ typedef struct _inet {
 #endif
 #define in_setnil(i) (i)->q1 = (i)->q2 = (i)->q3 = (i)->q4 = (i)->mask = (i)->filler1 = (i)->filler2 = 0; (i)->isnil = 1
 
-mal_export ssize_t INETfromString(const char *src, size_t *len, inet **retval, bool external);
-mal_export ssize_t INETtoString(str *retval, size_t *len, const inet *handle, bool external);
-mal_export int INETcompare(const inet *l, const inet *r);
-mal_export str INETnew(inet *retval, str *in);
-mal_export str INET_isnil(bit *retval, const inet *val);
-mal_export str INET_comp_EQ(bit *retval, const inet *val1, const inet *val2);
-mal_export str INET_comp_NEQ(bit *retval, const inet *val1, const inet *val2);
-mal_export str INET_comp_LT(bit *retval, const inet *val1, const inet *val2);
-mal_export str INET_comp_GT(bit *retval, const inet *val1, const inet *val2);
-mal_export str INET_comp_LE(bit *retval, const inet *val1, const inet *val2);
-mal_export str INET_comp_GE(bit *retval, const inet *val1, const inet *val2);
-mal_export str INET_comp_CW(bit *retval, const inet *val1, const inet *val2);
-mal_export str INET_comp_CWE(bit *retval, const inet *val1, const inet *val2);
-mal_export str INET_comp_CS(bit *retval, const inet *val1, const inet *val2);
-mal_export str INET_comp_CSE(bit *retval, const inet *val1, const inet *val2);
-mal_export str INETbroadcast(inet *retval, const inet *val);
-mal_export str INEThost(str *retval, const inet *val);
-mal_export str INETmasklen(int *retval, const inet *val);
-mal_export str INETsetmasklen(inet *retval, const inet *val, const int *mask);
-mal_export str INETnetmask(inet *retval, const inet *val);
-mal_export str INEThostmask(inet *retval, const inet *val);
-mal_export str INETnetwork(inet *retval, const inet *val);
-mal_export str INETtext(str *retval, const inet *val);
-mal_export str INETabbrev(str *retval, const inet *val);
-mal_export str INET_inet(inet *d, const inet *s);
-mal_export str INET_fromstr(inet *ret, str *s);
-mal_export const inet *INETnull(void);
-
 static inet inet_nil = {{{0,0,0,0,0,0,0,1}}};
 
 /**
@@ -97,9 +69,10 @@ static inet inet_nil = {{{0,0,0,0,0,0,0,1}}};
  * a pointer to a pointer for the retval!
  * Returns the number of chars read
  */
-ssize_t
-INETfromString(const char *src, size_t *len, inet **retval, bool external)
+static ssize_t
+INETfromString(const char *src, size_t *len, void **RETVAL, bool external)
 {
+	inet **retval = (inet **) RETVAL;
 	int i, last, type;
 	long parse; /* type long returned by strtol() */
 	char *endptr;
@@ -220,8 +193,8 @@ INETfromString(const char *src, size_t *len, inet **retval, bool external)
  * Warning: GDK function
  * Returns the length of the string
  */
-ssize_t
-INETtoString(str *retval, size_t *len, const inet *handle, bool external)
+static ssize_t
+INETtoString(str *retval, size_t *len, const void *handle, bool external)
 {
 	const inet *value = (const inet *)handle;
 
@@ -249,41 +222,24 @@ INETtoString(str *retval, size_t *len, const inet *handle, bool external)
  * Returns a inet, parsed from a string.  The fromStr function is used
  * to parse the string.
  */
-str
+static str
 INETnew(inet *retval, str *in)
 {
 	ssize_t pos;
 	size_t len = sizeof(inet);
 
-	pos = INETfromString(*in, &len, &retval, false);
+	pos = INETfromString(*in, &len, (void **) &retval, false);
 	if (pos < 0)
 		throw(PARSE, "inet.new", GDK_EXCEPTION);
 
 	return (MAL_SUCCEED);
 }
 
-int
-INETcompare(const inet *l, const inet *r)
-{
-	bit res = 0;
-	if (is_inet_nil(l))
-		return is_inet_nil(r) ? 0 : -1;
-	if (is_inet_nil(r))
-		return 1;
-	INET_comp_EQ(&res, l, r);
-	if (res)
-		return 0;
-	INET_comp_LT(&res, l, r);
-	if (res)
-		return -1;
-	return 1;
-}
-
 /* === Operators === */
 /**
  * Returns whether val represents a nil inet value
  */
-str
+static str
 INET_isnil(bit *retval, const inet *val)
 {
 	*retval = is_inet_nil(val);
@@ -293,7 +249,7 @@ INET_isnil(bit *retval, const inet *val)
 /**
  * Returns whether val1 and val2 are equal.
  */
-str
+static str
 INET_comp_EQ(bit *retval, const inet *val1, const inet *val2)
 {
 	if (is_inet_nil(val1) || is_inet_nil(val2)) {
@@ -311,7 +267,7 @@ INET_comp_EQ(bit *retval, const inet *val1, const inet *val2)
 /**
  * Returns whether val1 and val2 are not equal.
  */
-str
+static str
 INET_comp_NEQ(bit *retval, const inet *val1, const inet *val2)
 {
 	if (is_inet_nil(val1) || is_inet_nil(val2)) {
@@ -329,7 +285,7 @@ INET_comp_NEQ(bit *retval, const inet *val1, const inet *val2)
 /**
  * Returns whether val1 is smaller than val2.
  */
-str
+static str
 INET_comp_LT(bit *retval, const inet *val1, const inet *val2)
 {
 	if (is_inet_nil(val1) || is_inet_nil(val2)) {
@@ -361,7 +317,7 @@ INET_comp_LT(bit *retval, const inet *val1, const inet *val2)
 /**
  * Returns whether val1 is greater than val2.
  */
-str
+static str
 INET_comp_GT(bit *retval, const inet *val1, const inet *val2)
 {
 	return (INET_comp_LT(retval, val2, val1));
@@ -369,7 +325,7 @@ INET_comp_GT(bit *retval, const inet *val1, const inet *val2)
 /**
  * Returns whether val1 is smaller than or equal to val2.
  */
-str
+static str
 INET_comp_LE(bit *retval, const inet *val1, const inet *val2)
 {
 	bit ret;
@@ -384,7 +340,7 @@ INET_comp_LE(bit *retval, const inet *val1, const inet *val2)
 /**
  * Returns whether val1 is smaller than or equal to val2.
  */
-str
+static str
 INET_comp_GE(bit *retval, const inet *val1, const inet *val2)
 {
 	bit ret;
@@ -401,7 +357,7 @@ INET_comp_GE(bit *retval, const inet *val1, const inet *val2)
 /**
  * Returns whether val1 is contained within val2
  */
-str
+static str
 INET_comp_CW(bit *retval, const inet *val1, const inet *val2)
 {
 	if (is_inet_nil(val1) || is_inet_nil(val2)) {
@@ -460,7 +416,7 @@ INET_comp_CW(bit *retval, const inet *val1, const inet *val2)
 /**
  * Returns whether val1 is contained within or equal to val2
  */
-str
+static str
 INET_comp_CWE(bit *retval, const inet *val1, const inet *val2)
 {
 	bit ret;
@@ -476,7 +432,7 @@ INET_comp_CWE(bit *retval, const inet *val1, const inet *val2)
 /**
  * Returns whether val1 is contains val2
  */
-str
+static str
 INET_comp_CS(bit *retval, const inet *val1, const inet *val2)
 {
 	/* swap the input arguments and call the contained within function */
@@ -485,7 +441,7 @@ INET_comp_CS(bit *retval, const inet *val1, const inet *val2)
 /**
  * Returns whether val1 contains or is equal to val2
  */
-str
+static str
 INET_comp_CSE(bit *retval, const inet *val1, const inet *val2)
 {
 	/* swap the input arguments and call the contained within function */
@@ -493,12 +449,30 @@ INET_comp_CSE(bit *retval, const inet *val1, const inet *val2)
 }
 
 
+static int
+INETcompare(const void *L, const void *R)
+{
+	const inet *l = L, *r = R;
+	bit res = 0;
+	if (is_inet_nil(l))
+		return is_inet_nil(r) ? 0 : -1;
+	if (is_inet_nil(r))
+		return 1;
+	INET_comp_EQ(&res, l, r);
+	if (res)
+		return 0;
+	INET_comp_LT(&res, l, r);
+	if (res)
+		return -1;
+	return 1;
+}
+
 /* === Functions === */
 /**
  * Returns the broadcast address for the network the inet represents.
  * If the subnet mask is 32, the given input inet is returned.
  */
-str
+static str
 INETbroadcast(inet *retval, const inet *val)
 {
 	*retval = *val;
@@ -544,7 +518,7 @@ INETbroadcast(inet *retval, const inet *val)
  * Extract only the IP address as text.  Unlike the toString function,
  * this function never returns the netmask length.
  */
-str
+static str
 INEThost(str *retval, const inet *val)
 {
 	str ip;
@@ -565,7 +539,7 @@ INEThost(str *retval, const inet *val)
 /**
  * Extract netmask length.
  */
-str
+static str
 INETmasklen(int *retval, const inet *val)
 {
 	if (is_inet_nil(val)) {
@@ -578,7 +552,7 @@ INETmasklen(int *retval, const inet *val)
 /**
  * Set netmask length for inet value.
  */
-str
+static str
 INETsetmasklen(inet *retval, const inet *val, const int *mask)
 {
 	if (*mask < 0 || *mask > 32)
@@ -593,7 +567,7 @@ INETsetmasklen(inet *retval, const inet *val, const int *mask)
 /**
  * Construct netmask for network.
  */
-str
+static str
 INETnetmask(inet *retval, const inet *val)
 {
 	*retval = *val;
@@ -628,7 +602,7 @@ INETnetmask(inet *retval, const inet *val)
 /**
  * Construct host mask for network.
  */
-str
+static str
 INEThostmask(inet *retval, const inet *val)
 {
 	INETnetmask(retval, val);
@@ -654,7 +628,7 @@ INEThostmask(inet *retval, const inet *val)
  * is equal to 32.  This function basically zeros out values that are
  * not covered by the netmask.
  */
-str
+static str
 INETnetwork(inet *retval, const inet *val)
 {
 	*retval = *val;
@@ -691,7 +665,7 @@ INETnetwork(inet *retval, const inet *val)
  * Extract IP address and netmask length as text.  Unlike the toStr
  * function, this function always prints the netmask length.
  */
-str
+static str
 INETtext(str *retval, const inet *val)
 {
 	str ip;
@@ -716,7 +690,7 @@ INETtext(str *retval, const inet *val)
  * the value has no bits set to right of mask.  Otherwise the return of
  * this function is equal to the function text.
  */
-str
+static str
 INETabbrev(str *retval, const inet *val)
 {
 	str ip;
@@ -780,22 +754,22 @@ INETabbrev(str *retval, const inet *val)
 	}
 	return (MAL_SUCCEED);
 }
-str
+static str
 INET_inet(inet *d, const inet *s)
 {
 	*d = *s;
 	return MAL_SUCCEED;
 }
-str
+static str
 INET_fromstr(inet *ret, str *s)
 {
 	size_t len = sizeof(inet);
-	if (INETfromString(*s, &len, &ret, false) < 0)
+	if (INETfromString(*s, &len, (void **) &ret, false) < 0)
 		throw(MAL, "inet.inet",  GDK_EXCEPTION);
 	return MAL_SUCCEED;
 }
 
-const inet *
+static const void *
 INETnull(void)
 {
 	return &inet_nil;
@@ -803,7 +777,7 @@ INETnull(void)
 
 #include "mel.h"
 mel_atom inet_init_atoms[] = {
- { .name="inet", .basetype="lng", .size=sizeof(inet), .null=(fptr)&INETnull, .cmp=(fptr)&INETcompare, .fromstr=(fptr)&INETfromString, .tostr=(fptr)&INETtoString, },  { .cmp=NULL } 
+ { .name="inet", .basetype="lng", .size=sizeof(inet), .null=INETnull, .cmp=INETcompare, .fromstr=INETfromString, .tostr=INETtoString, },  { .cmp=NULL } 
 };
 mel_func inet_init_funcs[] = {
  command("inet", "new", INETnew, false, "Create an inet from a string literal", args(1,2, arg("",inet),arg("s",str))),

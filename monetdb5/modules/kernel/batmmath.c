@@ -464,25 +464,25 @@ CMDscience_bat_##FUNC(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) \
 static double
 radians(double x)
 {
-	return x * 3.14159265358979323846 / 180.0;
+	return x * (3.14159265358979323846 / 180.0);
 }
 
 static float
 radiansf(float x)
 {
-	return (float) (x * 3.14159265358979323846 / 180.0);
+	return (float) (x * (3.14159265358979323846 / 180.0));
 }
 
 static double
 degrees(double x)
 {
-	return x * 180.0 / 3.14159265358979323846;
+	return x * (180.0 / 3.14159265358979323846);
 }
 
 static float
 degreesf(float x)
 {
-	return (float) (x * 180.0 / 3.14159265358979323846);
+	return (float) (x * (180.0 / 3.14159265358979323846));
 }
 
 mal_export str CMDscience_bat_asin(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);

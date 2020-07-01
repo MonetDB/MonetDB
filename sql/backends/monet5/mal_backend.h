@@ -9,7 +9,6 @@
 #ifndef MAL_BACKEND_H
 #define MAL_BACKEND_H
 
-#include "streams.h"
 #include "mal.h"
 #include "mal_client.h"
 #include "sql_mvc.h"

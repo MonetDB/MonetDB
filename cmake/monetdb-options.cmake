@@ -18,7 +18,7 @@ else()
 endif()
 
 option(TESTING 
-  "Enable support for testing" 
+  "Enable support for testing"
   ON)
 
 cmake_dependent_option(CINTEGRATION 
@@ -96,6 +96,10 @@ option(WITH_LZMA
 option(WITH_XML2
   "Include xml2 support"
   ON)
+
+option(WITH_CMOCKA
+  "Include cmocka support"
+  OFF)
 
 option(WITH_LZ4
   "Include lz4 support"

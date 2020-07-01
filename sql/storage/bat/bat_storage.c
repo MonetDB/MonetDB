@@ -10,7 +10,6 @@
 #include "bat_storage.h"
 #include "bat_utils.h"
 #include "sql_string.h"
-#include "algebra.h"
 #include "gdk_atoms.h"
 
 #define SNAPSHOT_MINSIZE ((BUN) 1024*128)
@@ -39,6 +38,7 @@ timestamp_dbat( sql_dbat *d, int ts)
 {
 	while (d->next && d->wtime > ts) 
 		d = d->next;
+	sql_ref_inc(&d->r);
 	return d;
 }
 
@@ -812,6 +812,7 @@ dup_idx(sql_trans *tr, sql_idx *i, sql_idx *ni )
 static int
 dup_dbat( sql_trans *tr, sql_dbat *obat, sql_dbat *bat, int is_new, int temp)
 {
+	sql_ref_init(&bat->r);
 	bat->dbid = obat->dbid;
 	bat->cnt = obat->cnt;
 	bat->dname = _STRDUP(obat->dname);
@@ -1627,6 +1628,7 @@ create_del(sql_trans *tr, sql_table *t)
 			return LOG_ERR;
 		bat->wtime = t->base.wtime = t->s->base.wtime = tr->wstime;
 		t->base.allocated = 1;
+		sql_ref_init(&bat->r);
 	}
 	if (!bat->dname) {
 		bat->dname = sql_message("D_%s_%s", t->s->base.name, t->base.name);
@@ -1813,6 +1815,8 @@ log_destroy_idx(sql_trans *tr, sql_idx *i)
 static void
 _destroy_dbat(sql_dbat *bat)
 {
+	if (sql_ref_dec(&bat->r) > 0)
+		return;
 	if (bat->dname)
 		_DELETE(bat->dname);
 	if (bat->dbid)
@@ -2974,7 +2978,7 @@ snapshot_bat(sql_delta *cbat)
 	if (!cbat->ibase && cbat->cnt > SNAPSHOT_MINSIZE) {
 		BAT *ins = temp_descriptor(cbat->ibid);
 		if(ins) {
-			if (BATsave(ins) != GDK_SUCCEED) {
+			if (!GDKinmemory() && BATsave(ins) != GDK_SUCCEED) {
 				bat_destroy(ins);
 				return LOG_ERR;
 			}

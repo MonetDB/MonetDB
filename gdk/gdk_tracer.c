@@ -407,6 +407,9 @@ GDKtracer_log(const char *file, const char *func, int lineno,
 	      const char *syserr,
 	      const char *fmt, ...)
 {
+	if ((adapter_t) ATOMIC_GET(&cur_adapter) == MBEDDED)
+		return;
+
 	int bytes_written;
 	char buffer[512];	/* should be plenty big enough for a message */
 	va_list va;

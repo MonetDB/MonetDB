@@ -273,7 +273,7 @@ MSscheduleClient(str command, str challenge, bstream *fin, stream *fout, protoco
 			return;
 		}
 
-		if (!GDKinmemory()) {
+		if (!GDKinmemory() && !GDKembedded()) {
 			err = msab_getMyStatus(&stats);
 			if (err != NULL) {
 				/* this is kind of awful, but we need to get rid of this

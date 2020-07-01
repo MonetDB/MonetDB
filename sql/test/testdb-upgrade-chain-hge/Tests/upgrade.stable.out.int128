@@ -18,6 +18,7 @@ stdout of test 'upgrade` in directory 'sql/test/testdb-upgrade-chain-hge` itself
 # MonetDB/GIS module loaded
 Running database upgrade commands:
 set schema "sys";
+update sys.functions set mod = 'inspect', func = 'CREATE FUNCTION env() RETURNS TABLE( name varchar(1024), value varchar(2048)) EXTERNAL NAME inspect."getEnvironment";' where schema_id = (select id from sys.schemas where name = 'sys') and name = 'env' and type = 5;
 drop view sys.queue;
 drop function sys.queue;
 create function sys.queue()
@@ -53,7 +54,9 @@ update sys._tables set system = true where schema_id = (select id from sys.schem
 drop function "sys"."var"();
 create function "sys"."var"() returns table("schema" string, "name" string, "type" string, "value" string) external name "sql"."sql_variables";
 grant execute on function "sys"."var" to public;
-update sys.functions set system = true where schema_id = (select id from sys.schemas where name = 'sys') and name = 'var' and type = 5;
+update sys.functions set system = true, language = 2, side_effect = false where name = 'var' and schema_id = (select id from sys.schemas where name = 'sys') and type = 5;
+update sys.args set type = 'char' where func_id = (select id from sys.functions where name = 'var' and schema_id = (select id from sys.schemas where name = 'sys') and type = 5) and type = 'clob';
+update sys.privileges set grantor = 0 where obj_id = (select id from sys.functions where name = 'var' and schema_id = (select id from sys.schemas where name = 'sys') and type = 5);
 set schema "sys";
 
 # MonetDB/SQL module loaded

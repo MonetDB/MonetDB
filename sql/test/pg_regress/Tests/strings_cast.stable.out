@@ -89,7 +89,7 @@ stdout of test 'strings_cast` in directory 'sql/test/pg_regress` itself:
 #SELECT CAST('namefield' AS text) AS "text(name)";
 % . # table_name
 % text(name) # name
-% char # type
+% clob # type
 % 9 # length
 [ "namefield"	]
 #SELECT CAST(f1 AS char(10)) AS "char(text)" FROM TEXT_TBL;
