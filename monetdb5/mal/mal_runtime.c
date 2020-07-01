@@ -9,7 +9,7 @@
 /* Author(s) M.L. Kersten
  * The MAL Runtime Profiler and system queue
  * This little helper module is used to perform instruction based profiling.
- * The QRYqueue is only update at the start/finish of a query. 
+ * The QRYqueue is only update at the start/finish of a query.
  * It is also the place to keep track on the number of workers
  * The current code relies on a scan rather than a hash.
  */
@@ -41,7 +41,7 @@ mal_runtime_reset(void)
 	qtail = 0;
 }
 
-static str 
+static str
 isaSQLquery(MalBlkPtr mb){
 	int i;
 	InstrPtr p;
@@ -56,7 +56,7 @@ isaSQLquery(MalBlkPtr mb){
 
 /*
  * Manage the runtime profiling information
- * It is organized as a circular buffer, head/tail. 
+ * It is organized as a circular buffer, head/tail.
  * Elements are removed from the buffer when it becomes full.
  * This way we keep the information a little longer for inspection.
  */
@@ -135,7 +135,7 @@ runtimeProfileInit(Client cntxt, MalBlkPtr mb, MalStkPtr stk)
 
 	if ( QRYqueue == NULL){
 		addMalException(mb,"runtimeProfileInit" MAL_MALLOC_FAIL);
-		GDKfree(tmp);			
+		GDKfree(tmp);
 		MT_lock_unset(&mal_delayLock);
 		return;
 	}
@@ -160,7 +160,7 @@ runtimeProfileInit(Client cntxt, MalBlkPtr mb, MalStkPtr stk)
 		QRYqueue = (QueryQueue) GDKrealloc( QRYqueue, sizeof (struct QRYQUEUE) * qsize);
 		if ( QRYqueue == NULL){
 			addMalException(mb,"runtimeProfileInit" MAL_MALLOC_FAIL);
-			GDKfree(tmp);			
+			GDKfree(tmp);
 			MT_lock_unset(&mal_delayLock);
 			return;
 		}
@@ -173,7 +173,7 @@ runtimeProfileInit(Client cntxt, MalBlkPtr mb, MalStkPtr stk)
 	QRYqueue[qhead].mb = mb;
 	QRYqueue[qhead].tag = qtag++;
 	QRYqueue[qhead].stk = stk;				// for status pause 'p'/running '0'/ quiting 'q'
-	QRYqueue[qhead].finished = 
+	QRYqueue[qhead].finished =
 	QRYqueue[qhead].start = time(0);
 	q = isaSQLquery(mb);
 	QRYqueue[qhead].query = q? GDKstrdup(q):0;
@@ -191,7 +191,7 @@ runtimeProfileInit(Client cntxt, MalBlkPtr mb, MalStkPtr stk)
 	MT_lock_unset(&mal_delayLock);
 }
 
-/* 
+/*
  * Returning from a recursive call does not change the number of workers.
  */
 
@@ -279,7 +279,7 @@ runtimeProfileExit(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, Runt
 	pci->ticks = ticks - prof->ticks;
 	pci->totticks += pci->ticks;
 	pci->calls++;
-	
+
 	if(malProfileMode > 0 )
 		profilerEvent(cntxt, mb, stk, pci, FALSE);
 	if( cntxt->sqlprofiler )
@@ -306,8 +306,8 @@ getBatSpace(BAT *b){
 		return 0;
 	space += BATcount(b) * b->twidth;
 	if( space){
-		if( b->tvheap) space += heapinfo(b->tvheap, b->batCacheid); 
-		space += hashinfo(b->thash, b->batCacheid); 
+		if( b->tvheap) space += heapinfo(b->tvheap, b->batCacheid);
+		space += hashinfo(b->thash, b->batCacheid);
 		space += IMPSimprintsize(b);
 	}
 	return space;

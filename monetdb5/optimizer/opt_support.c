@@ -29,13 +29,13 @@ optimizerIsApplied(MalBlkPtr mb, str optname)
 	int i;
 	for( i = mb->stop; i < mb->ssize; i++){
 		p = getInstrPtr(mb,i);
-		if (p && getModuleId(p) == optimizerRef && p->token == REMsymbol && strcmp(getFunctionId(p),optname) == 0) 
+		if (p && getModuleId(p) == optimizerRef && p->token == REMsymbol && strcmp(getFunctionId(p),optname) == 0)
 			return 1;
 	}
 	return 0;
 }
 
-/* Hypothetical, optimizers may massage the plan in such a way 
+/* Hypothetical, optimizers may massage the plan in such a way
  * that multiple passes are needed.
  * However, the current SQL driven approach only expects a single
  * non-repeating pipeline of optimizer steps stored at the end of the MAL block.
@@ -69,7 +69,7 @@ optimizeMALBlock(Client cntxt, MalBlkPtr mb)
 			msg = chkFlow(mb);
 		if (!msg)
 			msg = chkDeclarations(mb);
-		if (msg) 
+		if (msg)
 			return msg;
 		if (mb->errors != MAL_SUCCEED){
 			msg = mb->errors;
@@ -94,7 +94,7 @@ optimizeMALBlock(Client cntxt, MalBlkPtr mb)
 				if (nmsg ) {
 					freeException(msg);
 					msg = nmsg;
-				} 
+				}
 				goto wrapup;
 			}
 			if (cntxt->mode == FINISHCLIENT){
@@ -146,7 +146,7 @@ MALoptimizer(Client c)
 int hasSameSignature(MalBlkPtr mb, InstrPtr p, InstrPtr q){
 	int i;
 
-	if( q->retc != p->retc || q->argc != p->argc) 
+	if( q->retc != p->retc || q->argc != p->argc)
 		return FALSE;
 	for( i=0; i < p->argc; i++)
 		if (getArgType(mb,p,i) != getArgType(mb,q,i))
@@ -305,7 +305,7 @@ hasSideEffects(MalBlkPtr mb, InstrPtr p, int strict)
 {
 	if( getFunctionId(p) == NULL) return FALSE;
 
-/* 
+/*
  * Void-returning operations have side-effects and
  * should be considered as such
  */
@@ -343,10 +343,10 @@ hasSideEffects(MalBlkPtr mb, InstrPtr p, int strict)
 		getModuleId(p) == semaRef ||
 		getModuleId(p) == alarmRef)
 		return TRUE;
-		
+
 	if( getModuleId(p) == pyapi3Ref ||
 		getModuleId(p) == pyapi3mapRef ||
-		getModuleId(p) == rapiRef || 
+		getModuleId(p) == rapiRef ||
 		getModuleId(p) == capiRef)
 		return TRUE;
 
@@ -403,7 +403,7 @@ mayhaveSideEffects(Client cntxt, MalBlkPtr mb, InstrPtr p, int strict)
 	tpe= getVarType(mb,getArg(p,0));
 	if( tpe == TYPE_void)
 		return TRUE;
-	if (getModuleId(p) != malRef || getFunctionId(p) != multiplexRef) 
+	if (getModuleId(p) != malRef || getFunctionId(p) != multiplexRef)
 		return hasSideEffects(mb, p, strict);
 	//  a manifold instruction can also have side effects.
 	//  for this to check we need the function signature, not its function address.
@@ -454,7 +454,7 @@ isBlocking(InstrPtr p)
  * and should be conservative.
  */
 
-static int 
+static int
 isOrderDepenent(InstrPtr p)
 {
 	if( getModuleId(p) != batsqlRef)
@@ -506,27 +506,27 @@ inline int isMap2Op(InstrPtr p){
 
 inline int isLikeOp(InstrPtr p){
 	return	(getModuleId(p) == batalgebraRef &&
-		(getFunctionId(p) == likeRef || 
-		 getFunctionId(p) == not_likeRef || 
+		(getFunctionId(p) == likeRef ||
+		 getFunctionId(p) == not_likeRef ||
 		 getFunctionId(p) == ilikeRef ||
 		 getFunctionId(p) == not_ilikeRef));
 }
 
-inline int 
+inline int
 isTopn(InstrPtr p)
 {
 	return ((getModuleId(p) == algebraRef && getFunctionId(p) == firstnRef) ||
 			isSlice(p));
 }
 
-inline int 
+inline int
 isSlice(InstrPtr p)
 {
 	return (getModuleId(p) == algebraRef &&
-	   (getFunctionId(p) == subsliceRef || getFunctionId(p) == sliceRef)); 
+	   (getFunctionId(p) == subsliceRef || getFunctionId(p) == sliceRef));
 }
 
-int 
+int
 isSample(InstrPtr p)
 {
 	return (getModuleId(p) == sampleRef && getFunctionId(p) == subuniformRef);
@@ -537,7 +537,7 @@ inline int isOrderby(InstrPtr p){
 		getFunctionId(p) == sortRef;
 }
 
-inline int 
+inline int
 isMatJoinOp(InstrPtr p)
 {
 	return (isSubJoin(p) || (getModuleId(p) == algebraRef &&
@@ -549,10 +549,10 @@ isMatJoinOp(InstrPtr p)
 		));
 }
 
-inline int 
+inline int
 isMatLeftJoinOp(InstrPtr p)
 {
-	return (getModuleId(p) == algebraRef && 
+	return (getModuleId(p) == algebraRef &&
 		getFunctionId(p) == leftjoinRef);
 }
 
@@ -561,8 +561,8 @@ inline int isDelta(InstrPtr p){
 			(getModuleId(p)== sqlRef && (
 				getFunctionId(p)== deltaRef ||
 				getFunctionId(p)== projectdeltaRef ||
-				getFunctionId(p)== subdeltaRef 
-			) 
+				getFunctionId(p)== subdeltaRef
+			)
 		);
 }
 
@@ -575,7 +575,7 @@ int isFragmentGroup2(InstrPtr p){
 				getFunctionId(p)== mergecandRef ||
 				getFunctionId(p)== intersectcandRef ||
 				getFunctionId(p)== diffcandRef
-			) 
+			)
 		);
 }
 
@@ -583,7 +583,7 @@ inline int isSelect(InstrPtr p)
 {
 	char *func = getFunctionId(p);
 	size_t l = func?strlen(func):0;
-	
+
 	return (l >= 6 && strcmp(func+l-6,"select") == 0);
 }
 
@@ -591,7 +591,7 @@ inline int isSubJoin(InstrPtr p)
 {
 	char *func = getFunctionId(p);
 	size_t l = func?strlen(func):0;
-	
+
 	return (l >= 7 && strcmp(func+l-7,"join") == 0);
 }
 
@@ -609,7 +609,7 @@ int isFragmentGroup(InstrPtr p){
 			))  ||
 			isSelect(p) ||
 			(getModuleId(p)== batRef && (
-				getFunctionId(p)== mirrorRef 
+				getFunctionId(p)== mirrorRef
 			));
 }
 

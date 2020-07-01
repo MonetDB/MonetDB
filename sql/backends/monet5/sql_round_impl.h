@@ -425,7 +425,7 @@ batstr_ce_2dec(bat *res, const bat *bid, const int *d, const int *sc, const bat 
 	BATloop(b, p, q) {
 		str v = (str) BUNtvar(bi, p);
 		TYPE r;
-		if (ce[p]) 
+		if (ce[p])
 			msg = str_2dec(&r, &v, d, sc);
 		else
 			r = n;

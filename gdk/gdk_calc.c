@@ -14759,7 +14759,7 @@ convert_str_any(BAT *b, int tp, void *restrict dst,
 		if (j > 0)
 			*d = mask;
 		return 0;
-					
+
 	}
 	for (BUN i = 0; i < ci->ncand; i++) {
 		oid x = canditer_next(ci) - candoff;

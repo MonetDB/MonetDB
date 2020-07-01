@@ -831,7 +831,7 @@ str XMLepilogue(void *ret) {
 
 #include "mel.h"
 mel_atom xml_init_atoms[] = {
- { .name="xml", .basetype="str", .fromstr=XMLfromString, .tostr=XMLtoString, },  { .cmp=NULL } 
+ { .name="xml", .basetype="str", .fromstr=XMLfromString, .tostr=XMLtoString, },  { .cmp=NULL }
 };
 mel_func xml_init_funcs[] = {
  command("xml", "xml", XMLstr2xml, false, "Cast the string to an xml compliant string", args(1,2, arg("",xml),arg("src",str))),

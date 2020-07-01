@@ -291,7 +291,7 @@ SQLprepareClient(Client c, int login)
 			goto bailout;
 		}
 		_DELETE(schema);
-	} 
+	}
 
 bailout:
 	/*expect SQL text first */
@@ -911,7 +911,7 @@ cachable(mvc *m, sql_rel *r)
 	if (m->type == Q_TRANS )	/* m->type == Q_SCHEMA || cachable to make sure we have trace on alter statements  */
 		return 0;
 	/* we don't store queries with a large footprint */
-	if (r && sa_size(m->sa) > MAX_QUERY) 
+	if (r && sa_size(m->sa) > MAX_QUERY)
 		return 0;
 	return 1;
 }
@@ -965,7 +965,7 @@ SQLparser(Client c)
 
 	/* sqlparse needs sql allocator to be available.  It can be NULL at
 	 * this point if this is a recursive call. */
-	if (!m->sa) 
+	if (!m->sa)
 		m->sa = sa_create();
 	if (!m->sa) {
 		c->mode = FINISHCLIENT;

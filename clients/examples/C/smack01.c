@@ -43,7 +43,7 @@ main(int argc, char **argv)
 	}
 	if (argc == 3) {
 		l = argv[2];
-		if (strcmp(argv[2], "sql") == 0) 
+		if (strcmp(argv[2], "sql") == 0)
 			lang = 1;
 		else if (strcmp(argv[2], "mal") == 0)
 			lang = 3;

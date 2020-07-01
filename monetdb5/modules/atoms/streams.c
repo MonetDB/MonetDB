@@ -214,7 +214,7 @@ bstream_read_wrapwrap(int *res, Bstream *BS, int *size)
 #include "mel.h"
 mel_atom streams_init_atoms[] = {
  { .name="streams", .basetype="ptr", },
- { .name="bstream", .basetype="ptr", },  { .cmp=NULL } 
+ { .name="bstream", .basetype="ptr", },  { .cmp=NULL }
 };
 mel_func streams_init_funcs[] = {
  command("streams", "openReadBytes", mnstr_open_rstreamwrap, true, "open a file stream for reading", args(1,2, arg("",streams),arg("filename",str))),

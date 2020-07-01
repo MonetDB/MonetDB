@@ -67,7 +67,7 @@ typedef struct mel_func {
 	     command:1,
 	     unsafe:1,
 	     retc:6,
-	     argc:6; 
+	     argc:6;
 //#ifdef NDEBUG
 	//char *comment;
 //#endif
@@ -110,7 +110,7 @@ typedef struct mel_func {
 	     command:1,
 	     unsafe:1,
 	     retc:6,
-	     argc:6; 
+	     argc:6;
 //#ifdef NDEBUG
 	//char *comment;
 //#endif

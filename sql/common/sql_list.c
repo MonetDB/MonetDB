@@ -57,10 +57,10 @@ list_new(sql_allocator *sa, fdestroy destroy)
 }
 
 static list *
-list_new_(list *l) 
+list_new_(list *l)
 {
 	list *res = NULL;
-	if (l->sa) 
+	if (l->sa)
 		res = list_new(l->sa, l->destroy);
 	else
 		res = list_create(l->destroy);
@@ -136,7 +136,7 @@ list_append(list *l, void *data)
 	MT_lock_set(&l->ht_lock);
 	if (l->ht) {
 		int key = l->ht->key(data);
-	
+
 		if (hash_add(l->ht, key, data) == NULL) {
 			MT_lock_unset(&l->ht_lock);
 			return NULL;
@@ -247,7 +247,7 @@ list_append_before(list *l, node *m, void *data)
 	MT_lock_set(&l->ht_lock);
 	if (l->ht) {
 		int key = l->ht->key(data);
-	
+
 		if (hash_add(l->ht, key, data) == NULL) {
 			MT_lock_unset(&l->ht_lock);
 			return NULL;
@@ -273,7 +273,7 @@ list_prepend(list *l, void *data)
 	MT_lock_set(&l->ht_lock);
 	if (l->ht) {
 		int key = l->ht->key(data);
-	
+
 		if (hash_add(l->ht, key, data) == NULL) {
 			MT_lock_unset(&l->ht_lock);
 			return NULL;
@@ -283,14 +283,14 @@ list_prepend(list *l, void *data)
 	return l;
 }
 
-static void 
+static void
 hash_delete(sql_hash *h, void *data)
 {
 	int key = h->key(data);
 	sql_hash_e *e, *p = h->buckets[key&(h->size-1)];
-	
+
 	e = p;
-	for (;  p && p->value != data ; p = p->chain) 
+	for (;  p && p->value != data ; p = p->chain)
 		e = p;
 	if (p && p->value == data) {
 		if (p == e)
@@ -416,7 +416,7 @@ list_find(list *l, void *key, fcmp cmp)
 			}
 		} else {
 			for (n = l->h; n; n = n->next) {
-				if (n->data == key) 
+				if (n->data == key)
 					return n;
 			}
 		}
@@ -554,7 +554,7 @@ list_select(list *l, void *key, fcmp cmp, fdup dup)
 }
 
 /* order the list based on the compare function cmp */
-list * 
+list *
 list_order(list *l, fcmp cmp, fdup dup)
 {
 	list *res = list_new_(l);
@@ -642,7 +642,7 @@ list_reduce2(list *l, freduce2 red, sql_allocator *sa)
 
 	if (n) {
 		res = n->data;
-		for (n = n->next; n; n = n->next) 
+		for (n = n->next; n; n = n->next)
 			res = red(sa, res, n->data);
 	}
 	return res;
@@ -699,7 +699,7 @@ list_merge_destroy(list *l, list *data, fdup dup)
 			n = n->next;
 		}
 	}
-	
+
 	list_destroy(data);
 
 	return l;

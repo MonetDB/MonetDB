@@ -54,8 +54,8 @@ extern void list_move_data(list *l, list *d, void *data);
 extern int list_traverse(list *l, traverse_func f, void *clientdata);
 
 /* the compare function gets one element from the list and a key from the
- * as input from the find function 
- * Returns 0 if data and key are equal 
+ * as input from the find function
+ * Returns 0 if data and key are equal
  * */
 typedef int (*fcmp) (void *data, void *key);
 typedef void *(*fcmpvalidate) (void *v1, void *v2, void *extra, int *cmp);
@@ -83,7 +83,7 @@ extern int list_cmp(list *l1, list *l2, fcmp cmp);
 extern int list_match(list *l1, list *l2, fcmp cmp);
 /* match the lists (in any order) */
 extern list *list_sort(list *l, fkeyvalue key, fdup dup);
-/* The sort function sorts the list using the key function, which 
+/* The sort function sorts the list using the key function, which
  * translates the list item values into integer keyvalues. */
 /* sometimes more complex functions are needed to compute a key, then
  * we can pass the keys via an array, to keysort */

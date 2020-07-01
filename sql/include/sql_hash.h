@@ -9,8 +9,8 @@
 #ifndef SQL_HASH_H
 #define SQL_HASH_H
 
-/* sql_hash implementation 
- * used to optimize search in expression and statement lists 
+/* sql_hash implementation
+ * used to optimize search in expression and statement lists
  */
 
 #include "sql_mem.h"

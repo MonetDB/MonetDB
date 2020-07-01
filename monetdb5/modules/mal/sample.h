@@ -19,7 +19,7 @@
 
 
 #include "mal_interpreter.h"
- 
+
 mal_export str
 SAMPLEuniform(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 

@@ -57,7 +57,7 @@ OPTremapDirect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int idx,
 			/* these two filter out unary batcalc.- with a candidate list */
 			getBatType(getArgType(mb, p, 1)) != TYPE_oid &&
 			getBatType(getArgType(mb, p, 2)) != TYPE_oid &&
-			getBatType(getArgType(mb, p, 2)) != TYPE_bit) { 
+			getBatType(getArgType(mb, p, 2)) != TYPE_bit) {
 			/* add candidate lists */
 			if (isaBatType(getArgType(mb, p, 1)))
 				p = pushNil(mb, p, TYPE_bat);
@@ -135,7 +135,7 @@ OPTremapDirect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int idx,
  * find an instruction that does not have a multiplex
  * counterpart.
  */
-static int 
+static int
 OPTmultiplexInline(Client cntxt, MalBlkPtr mb, InstrPtr p, int pc )
 {
 	MalBlkPtr mq;
@@ -148,11 +148,11 @@ OPTmultiplexInline(Client cntxt, MalBlkPtr mb, InstrPtr p, int pc )
 	str msg;
 
 
-	s= findSymbol(cntxt->usermodule, 
+	s= findSymbol(cntxt->usermodule,
 			VALget(&getVar(mb, getArg(p, retc+0))->value),
 			VALget(&getVar(mb, getArg(p, retc+1))->value));
 
-	if( s== NULL || !isSideEffectFree(s->def) || 
+	if( s== NULL || !isSideEffectFree(s->def) ||
 		getInstrPtr(s->def,0)->retc != p->retc ) {
 		return 0;
 	}
@@ -198,12 +198,12 @@ OPTmultiplexInline(Client cntxt, MalBlkPtr mb, InstrPtr p, int pc )
 		q = getInstrPtr(mq,i);
 		if (q->token == ENDsymbol)
 			break;
-		for(j=0; j<q->argc && !fnd; j++) 
+		for(j=0; j<q->argc && !fnd; j++)
 			if (upgrade[getArg(q,j)]) {
 				for(k=0; k<q->retc; k++){
 					setVarType(mq,getArg(q,j),newBatType(getArgType(mq, q, j)));
 					/* for typing */
-					clrVarFixed(mq,getArg(q,k)); 
+					clrVarFixed(mq,getArg(q,k));
 					if (!upgrade[getArg(q,k)]) {
 						upgrade[getArg(q,k)]= TRUE;
 						/* lets restart */
@@ -214,7 +214,7 @@ OPTmultiplexInline(Client cntxt, MalBlkPtr mb, InstrPtr p, int pc )
 			}
 		/* nil:type -> nil:bat[:oid,:type] */
 		if (!getModuleId(q) && q->token == ASSIGNsymbol &&
-		    q->argc == 2 && isVarConstant(mq, getArg(q,1)) && 
+		    q->argc == 2 && isVarConstant(mq, getArg(q,1)) &&
 		    upgrade[getArg(q,0)] &&
 			getArgType(mq,q,0) == TYPE_void &&
 		    !isaBatType(getArgType(mq, q, 1)) ){
@@ -255,7 +255,7 @@ OPTmultiplexInline(Client cntxt, MalBlkPtr mb, InstrPtr p, int pc )
 			break;
 		for(j=0; j<q->argc; j++)
 			if ( upgrade[getArg(q,j)]){
-				if ( blockStart(q) || 
+				if ( blockStart(q) ||
 					 q->barrier== REDOsymbol || q->barrier==LEAVEsymbol )
 					goto terminateMX;
 				if (getModuleId(q)){
@@ -308,7 +308,7 @@ OPTmultiplexInline(Client cntxt, MalBlkPtr mb, InstrPtr p, int pc )
 					q= addArgument(mq,q, getArg(q,1));
 					mq->stmt[i] = q;
 					getArg(q,1)= refbat;
-				
+
 					q->typechk = TYPE_UNKNOWN;
 					typeChecker(cntxt->usermodule,mq,q,i,TRUE);
 					if( q->typechk== TYPE_UNKNOWN)
@@ -328,7 +328,7 @@ terminateMX:
 
 		/* ugh ugh, fallback to non inline, but optimized code */
 		msg = OPTmultiplexSimple(cntxt, s->def);
-		if(msg) 
+		if(msg)
 			freeException(msg);
 		s->def->inlineProp = 0;
 		return 0;
@@ -374,7 +374,7 @@ OPTremapSwitched(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int id
 	    !isVarConstant(mb,getArg(pci,1)) &&
 	    !isVarConstant(mb,getArg(pci,2)) &&
 	    !isVarConstant(mb,getArg(pci,4)) &&
-		pci->argc != 5) 
+		pci->argc != 5)
 			return 0;
 	fcn = VALget(&getVar(mb, getArg(pci, 2))->value);
 	for(i=0;OperatorMap[i].src;i++)
@@ -436,15 +436,15 @@ OPTremapImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				}
 			} else if (OPTremapDirect(cntxt, mb, stk, p, i, scope) ||
 				OPTremapSwitched(cntxt, mb, stk, p, i, scope)) {
-				freeInstruction(p); 
+				freeInstruction(p);
 				doit++;
 			} else {
 				pushInstruction(mb, p);
 			}
-		} else if (p->argc == 4 && 
-			getModuleId(p) == aggrRef && 
+		} else if (p->argc == 4 &&
+			getModuleId(p) == aggrRef &&
 			getFunctionId(p) == avgRef) {
-			/* group aggr.avg -> aggr.sum/aggr.count */	
+			/* group aggr.avg -> aggr.sum/aggr.count */
 			InstrPtr sum, avg,t, iszero;
 			InstrPtr cnt;
 			sum = copyInstruction(p);
@@ -506,7 +506,7 @@ OPTremapImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			freeInstruction(old[i]);
 	GDKfree(old);
 
-	if (doit) 
+	if (doit)
 		msg = chkTypes(cntxt->usermodule,mb,TRUE);
     /* Defense line against incorrect plans */
     if( msg == MAL_SUCCEED && doit > 0){
