@@ -3912,13 +3912,22 @@ const_column(backend *be, stmt *val)
 stmt *
 stmt_fetch(backend *be, stmt *val)
 {
-	sql_subtype *ct = tail_type(val);
+	sql_subtype *ct;
 	MalBlkPtr mb = be->mb;
 	InstrPtr q = NULL;
-	int tt = ct->type->localtype;
+	int tt;
 
 	if (val->nr < 0)
 		return NULL;
+	/* pick from first column on a table case */
+	if (val->type == st_table) {
+		if (list_length(val->op1->op4.lval) > 1)
+			return NULL;
+		val = val->op1->op4.lval->h->data;
+	}
+	ct = tail_type(val);
+	tt = ct->type->localtype;
+
 	q = newStmt(mb, algebraRef, fetchRef);
 	if (q == NULL)
 		return NULL;
