@@ -1593,12 +1593,12 @@ GDKanalyticalprod(BAT *r, BAT *b, BAT *s, BAT *e, int tp1, int tp2)
 avg_overflow##TPE:							\
 				assert(n > 0);				\
 				if (sum >= 0) {				\
-					a = (TPE) (sum / (lng_hge) n);	\
-					rr = (BUN) (sum % (SBUN) n);	\
+					a = (TPE) (sum / n);		\
+					rr = (lng) (sum % n);		\
 				} else {				\
 					sum = -sum;			\
-					a = - (TPE) (sum / (lng_hge) n); \
-					rr = (BUN) (sum % (SBUN) n);	\
+					a = - (TPE) (sum / n);		\
+					rr = (lng) (sum % n);		\
 					if (r) {			\
 						a--;			\
 						rr = n - rr;		\
@@ -1652,7 +1652,8 @@ gdk_return
 GDKanalyticalavg(BAT *r, BAT *b, BAT *s, BAT *e, int tpe)
 {
 	bool has_nils = false;
-	BUN i = 0, cnt = BATcount(b), nils = 0, n = 0, rr = 0;
+	BUN i = 0, cnt = BATcount(b), nils = 0;
+	lng n = 0, rr = 0;
 	bool abort_on_error = true;
 	lng *restrict start, *restrict end;
 	dbl *restrict rb = (dbl *) Tloc(r, 0), curval;

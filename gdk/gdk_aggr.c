@@ -1672,7 +1672,7 @@ BATgroupavg(BAT **bnp, BAT **cntsp, BAT *b, BAT *g, BAT *e, BAT *s, int tp, bool
 	oid min, max;
 	BUN i, ngrp;
 	BUN nils = 0;
-	BUN *restrict rems = NULL;
+	lng *restrict rems = NULL;
 	lng *restrict cnts = NULL;
 	dbl *restrict dbls;
 	BAT *bn = NULL, *cn = NULL;
@@ -1744,7 +1744,7 @@ BATgroupavg(BAT **bnp, BAT **cntsp, BAT *b, BAT *g, BAT *e, BAT *s, int tp, bool
 #ifdef HAVE_HGE
 	case TYPE_hge:
 #endif
-		rems = GDKzalloc(ngrp * sizeof(BUN));
+		rems = GDKzalloc(ngrp * sizeof(lng));
 		if (rems == NULL)
 			goto alloc_fail;
 		break;
@@ -1853,6 +1853,187 @@ BATgroupavg(BAT **bnp, BAT **cntsp, BAT *b, BAT *g, BAT *e, BAT *s, int tp, bool
 	return GDK_FAIL;
 }
 
+gdk_return
+BATgroupavg3(BAT **avgp, BAT **remp, BAT **cntp, BAT *b, BAT *g, BAT *e, BAT *s, bool skip_nils)
+{
+	const char *err;
+	oid min, max;
+	BUN ngrp;
+	struct canditer ci;
+	BUN ncand;
+	BAT *bn, *rn, *cn;
+	BUN i;
+	oid o;
+
+	if ((err = BATgroupaggrinit(b, g, e, s, &min, &max, &ngrp, &ci, &ncand)) != NULL) {
+		GDKerror("%s\n", err);
+		return GDK_FAIL;
+	}
+	if (ncand == 0 || ngrp == 0) {
+		if (ngrp == 0)
+			min = 0;
+		bn = BATconstant(min, b->ttype, ATOMnilptr(b->ttype),
+				 ngrp, TRANSIENT);
+		rn = BATconstant(min, b->ttype, ATOMnilptr(b->ttype),
+				 ngrp, TRANSIENT);
+		cn = BATconstant(min, TYPE_lng, &(lng){0}, ngrp, TRANSIENT);
+		if (bn == NULL || rn == NULL || cn == NULL) {
+			BBPreclaim(bn);
+			BBPreclaim(rn);
+			BBPreclaim(cn);
+			return GDK_FAIL;
+		}
+		*avgp = bn;
+		*remp = rn;
+		*cntp = cn;
+		return GDK_SUCCEED;
+	}
+	ValRecord zero;
+	(void) VALinit(&zero, TYPE_bte, &(bte){0});
+	bn = BATconstant(min, b->ttype, VALconvert(b->ttype, &zero),
+			 ngrp, TRANSIENT);
+	rn = BATconstant(min, TYPE_lng, &(lng){0}, ngrp, TRANSIENT);
+	cn = BATconstant(min, TYPE_lng, &(lng){0}, ngrp, TRANSIENT);
+	if (bn == NULL || rn == NULL || cn == NULL) {
+		BBPreclaim(bn);
+		BBPreclaim(rn);
+		BBPreclaim(cn);
+		return GDK_FAIL;
+	}
+	lng *rems = Tloc(rn, 0);
+	lng *cnts = Tloc(cn, 0);
+	const oid *gids = g && !BATtdense(g) ? Tloc(g, 0) : NULL;
+	oid gid = ngrp == 1 && gids ? gids[0] - min : 0;
+
+	switch (ATOMbasetype(b->ttype)) {
+	case TYPE_bte: {
+		const bte *vals = Tloc(b, 0);
+		bte *avgs = Tloc(bn, 0);
+		for (i = 0; i < ncand; i++) {
+			o = canditer_next(&ci) - b->hseqbase;
+			if (ngrp > 1)
+				gid = gids ? gids[o] - min : o;
+			if (is_bte_nil(vals[o])) {
+				if (!skip_nils) {
+					avgs[gid] = bte_nil;
+					rems[gid] = lng_nil;
+					cnts[gid] = lng_nil;
+					bn->tnil = true;
+					rn->tnil = true;
+					cn->tnil = true;
+				}
+			} else if (!is_lng_nil(cnts[gid])) {
+				AVERAGE_ITER(bte, vals[o], avgs[gid], rems[gid], cnts[gid]);
+			}
+		}
+		break;
+	}
+	case TYPE_sht: {
+		const sht *vals = Tloc(b, 0);
+		sht *avgs = Tloc(bn, 0);
+		for (i = 0; i < ncand; i++) {
+			o = canditer_next(&ci) - b->hseqbase;
+			if (ngrp > 1)
+				gid = gids ? gids[o] - min : o;
+			if (is_sht_nil(vals[o])) {
+				if (!skip_nils) {
+					avgs[gid] = sht_nil;
+					rems[gid] = lng_nil;
+					cnts[gid] = lng_nil;
+					bn->tnil = true;
+					rn->tnil = true;
+					cn->tnil = true;
+				}
+			} else if (!is_lng_nil(cnts[gid])) {
+				AVERAGE_ITER(sht, vals[o], avgs[gid], rems[gid], cnts[gid]);
+			}
+		}
+		break;
+	}
+	case TYPE_int: {
+		const int *vals = Tloc(b, 0);
+		int *avgs = Tloc(bn, 0);
+		for (i = 0; i < ncand; i++) {
+			o = canditer_next(&ci) - b->hseqbase;
+			if (ngrp > 1)
+				gid = gids ? gids[o] - min : o;
+			if (is_int_nil(vals[o])) {
+				if (!skip_nils) {
+					avgs[gid] = int_nil;
+					rems[gid] = lng_nil;
+					cnts[gid] = lng_nil;
+					bn->tnil = true;
+					rn->tnil = true;
+					cn->tnil = true;
+				}
+			} else if (!is_lng_nil(cnts[gid])) {
+				AVERAGE_ITER(int, vals[o], avgs[gid], rems[gid], cnts[gid]);
+			}
+		}
+		break;
+	}
+	case TYPE_lng: {
+		const lng *vals = Tloc(b, 0);
+		lng *avgs = Tloc(bn, 0);
+		for (i = 0; i < ncand; i++) {
+			o = canditer_next(&ci) - b->hseqbase;
+			if (ngrp > 1)
+				gid = gids ? gids[o] - min : o;
+			if (is_lng_nil(vals[o])) {
+				if (!skip_nils) {
+					avgs[gid] = lng_nil;
+					rems[gid] = lng_nil;
+					cnts[gid] = lng_nil;
+					bn->tnil = true;
+					rn->tnil = true;
+					cn->tnil = true;
+				}
+			} else if (!is_lng_nil(cnts[gid])) {
+				AVERAGE_ITER(lng, vals[o], avgs[gid], rems[gid], cnts[gid]);
+			}
+		}
+		break;
+	}
+#ifdef HAVE_HGE
+	case TYPE_hge: {
+		const hge *vals = Tloc(b, 0);
+		hge *avgs = Tloc(bn, 0);
+		for (i = 0; i < ncand; i++) {
+			o = canditer_next(&ci) - b->hseqbase;
+			if (ngrp > 1)
+				gid = gids ? gids[o] - min : o;
+			if (is_hge_nil(vals[o])) {
+				if (!skip_nils) {
+					avgs[gid] = hge_nil;
+					rems[gid] = lng_nil;
+					cnts[gid] = lng_nil;
+					bn->tnil = true;
+					rn->tnil = true;
+					cn->tnil = true;
+				}
+			} else if (!is_lng_nil(cnts[gid])) {
+				AVERAGE_ITER(hge, vals[o], avgs[gid], rems[gid], cnts[gid]);
+			}
+		}
+		break;
+	}
+#endif
+	}
+	BATsetcount(bn, ngrp);
+	BATsetcount(rn, ngrp);
+	BATsetcount(cn, ngrp);
+	bn->tnonil = !bn->tnil;
+	rn->tnonil = !rn->tnil;
+	cn->tnonil = !cn->tnil;
+	bn->tkey = rn->tkey = cn->tkey = ngrp == 1;
+	bn->tsorted = rn->tsorted = cn->tsorted = ngrp == 1;
+	bn->trevsorted = rn->trevsorted = cn->trevsorted = ngrp == 1;
+	*avgp = bn;
+	*remp = rn;
+	*cntp = cn;
+	return GDK_SUCCEED;
+}
+
 #define AVERAGE_TYPE_LNG_HGE(TYPE,lng_hge)				\
 	do {								\
 		TYPE x, a;						\
@@ -1886,12 +2067,12 @@ BATgroupavg(BAT **bnp, BAT **cntsp, BAT *b, BAT *g, BAT *e, BAT *s, int tp, bool
 			/* overflow possible) */			\
 			assert(n > 0);					\
 			if (sum >= 0) {					\
-				a = (TYPE) (sum / (lng_hge) n); /* this fits */ \
-				r = (BUN) (sum % (SBUN) n);		\
+				a = (TYPE) (sum / n); /* this fits */	\
+				r = (lng) (sum % n);			\
 			} else {					\
 				sum = -sum;				\
-				a = - (TYPE) (sum / (lng_hge) n); /* this fits */ \
-				r = (BUN) (sum % (SBUN) n);		\
+				a = - (TYPE) (sum / n); /* this fits */ \
+				r = (lng) (sum % n);		\
 				if (r) {				\
 					a--;				\
 					r = n - r;			\
@@ -1936,7 +2117,8 @@ BATgroupavg(BAT **bnp, BAT **cntsp, BAT *b, BAT *g, BAT *e, BAT *s, int tp, bool
 gdk_return
 BATcalcavg(BAT *b, BAT *s, dbl *avg, BUN *vals, int scale)
 {
-	BUN n = 0, r = 0, i = 0;
+	lng n = 0, r = 0;
+	BUN i = 0;
 #ifdef HAVE_HGE
 	hge sum = 0;
 #else

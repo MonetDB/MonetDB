@@ -617,6 +617,52 @@ AGGRsubavg2scand_dbl(bat *retval1, bat *retval2, const bat *bid, const bat *gid,
 }
 
 static str
+AGGRavg3(bat *retval1, bat *retval2, bat *retval3, const bat *bid, const bat *gid, const bat *eid, const bat *sid, const bit *skip_nils)
+{
+	BAT *b, *g, *e, *s, *avgs, *cnts, *rems;
+	gdk_return rc;
+
+	b = BATdescriptor(*bid);
+	g = gid != NULL && !is_bat_nil(*gid) ? BATdescriptor(*gid) : NULL;
+	e = eid != NULL && !is_bat_nil(*eid) ? BATdescriptor(*eid) : NULL;
+	s = sid != NULL && !is_bat_nil(*sid) ? BATdescriptor(*sid) : NULL;
+
+	if (b == NULL ||
+		(gid != NULL && !is_bat_nil(*gid) && g == NULL) ||
+		(eid != NULL && !is_bat_nil(*eid) && e == NULL) ||
+		(sid != NULL && !is_bat_nil(*sid) && s == NULL)) {
+		if (b)
+			BBPunfix(b->batCacheid);
+		if (g)
+			BBPunfix(g->batCacheid);
+		if (e)
+			BBPunfix(e->batCacheid);
+		if (s)
+			BBPunfix(s->batCacheid);
+		throw(MAL, "aggr.subavg", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
+	}
+
+	rc = BATgroupavg3(&avgs, &rems, &cnts, b, g, e, s, *skip_nils);
+
+	BBPunfix(b->batCacheid);
+	if (g)
+		BBPunfix(g->batCacheid);
+	if (e)
+		BBPunfix(e->batCacheid);
+	if (s)
+		BBPunfix(s->batCacheid);
+	if (rc != GDK_SUCCEED)
+		throw(MAL, "aggr.subavg", GDK_EXCEPTION);
+	*retval1 = avgs->batCacheid;
+	BBPkeepref(avgs->batCacheid);
+	*retval2 = rems->batCacheid;
+	BBPkeepref(rems->batCacheid);
+	*retval3 = cnts->batCacheid;
+	BBPkeepref(cnts->batCacheid);
+	return MAL_SUCCEED;
+}
+
+static str
 AGGRsubstdev_dbl(bat *retval, const bat *bid, const bat *gid, const bat *eid, const bit *skip_nils, const bit *abort_on_error)
 {
 	return AGGRgrouped(retval, NULL, bid, gid, eid, NULL, *skip_nils,
@@ -1448,6 +1494,13 @@ mel_func aggr_init_funcs[] = {
  command("aggr", "subavg", AGGRsubavg1cand_dbl, false, "Grouped average aggregate with candidates list", args(1,7, batarg("",dbl),batarg("b",hge),batarg("g",oid),batargany("e",1),batarg("s",oid),arg("skip_nils",bit),arg("abort_on_error",bit))),
  command("aggr", "subavg", AGGRsubavg2_dbl, false, "Grouped average aggregate, also returns count", args(2,7, batarg("",dbl),batarg("",lng),batarg("b",hge),batarg("g",oid),batargany("e",1),arg("skip_nils",bit),arg("abort_on_error",bit))),
  command("aggr", "subavg", AGGRsubavg2cand_dbl, false, "Grouped average aggregate with candidates list, also returns count", args(2,8, batarg("",dbl),batarg("",lng),batarg("b",hge),batarg("g",oid),batargany("e",1),batarg("s",oid),arg("skip_nils",bit),arg("abort_on_error",bit))),
+ command("aggr", "subavg", AGGRavg3, false, "Grouped average aggregation", args(3,8, batarg("",bte),batarg("",lng),batarg("",lng),batarg("b",bte),batarg("g",oid),batargany("e",1),batarg("s",oid),arg("skip_nils",bit))),
+ command("aggr", "subavg", AGGRavg3, false, "Grouped average aggregation", args(3,8, batarg("",sht),batarg("",lng),batarg("",lng),batarg("b",sht),batarg("g",oid),batargany("e",1),batarg("s",oid),arg("skip_nils",bit))),
+ command("aggr", "subavg", AGGRavg3, false, "Grouped average aggregation", args(3,8, batarg("",int),batarg("",lng),batarg("",lng),batarg("b",int),batarg("g",oid),batargany("e",1),batarg("s",oid),arg("skip_nils",bit))),
+ command("aggr", "subavg", AGGRavg3, false, "Grouped average aggregation", args(3,8, batarg("",lng),batarg("",lng),batarg("",lng),batarg("b",lng),batarg("g",oid),batargany("e",1),batarg("s",oid),arg("skip_nils",bit))),
+#ifdef HAVE_HGE
+ command("aggr", "subavg", AGGRavg3, false, "Grouped average aggregation", args(3,8, batarg("",hge),batarg("",lng),batarg("",lng),batarg("b",hge),batarg("g",oid),batargany("e",1),batarg("s",oid),arg("skip_nils",bit))),
+#endif
  command("aggr", "stdev", AGGRstdev3_dbl, false, "Grouped tail standard deviation (sample/non-biased) on hge", args(1,4, batarg("",dbl),batarg("b",hge),batarg("g",oid),batargany("e",1))),
  command("aggr", "substdev", AGGRsubstdev_dbl, false, "Grouped standard deviation (sample/non-biased) aggregate", args(1,6, batarg("",dbl),batarg("b",hge),batarg("g",oid),batargany("e",1),arg("skip_nils",bit),arg("abort_on_error",bit))),
  command("aggr", "substdev", AGGRsubstdevcand_dbl, false, "Grouped standard deviation (sample/non-biased) aggregate with candidates list", args(1,7, batarg("",dbl),batarg("b",hge),batarg("g",oid),batargany("e",1),batarg("s",oid),arg("skip_nils",bit),arg("abort_on_error",bit))),
