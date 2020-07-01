@@ -169,10 +169,10 @@ stdout of test 'sqlancer02` in directory 'sql/test/SQLancer` itself:
 [ 0.819	]
 #SELECT ALL ((- (- (VAR_POP(ALL ((CAST(CAST(abs(709845242) AS INT) AS INT))%(abs(CAST((931144491) NOT IN (-587881807) AS INT))))))))^(- (+ (- (char_length(r'>])')))))), 0.5186927954967299, CAST("locate"(lower(r'[]'), rtrim(r'..ۄUH*6鉡q'), ((((-233289450)&(-476676450)))-(- (236876413)))) AS INT)
 #FROM t0 WHERE FALSE GROUP BY 1.2807753E7 HAVING MAX(ALL ((t0.c0)>=(NULL)));
-% .%11,	.%12,	.%13 # table_name
-% %11,	%12,	%13 # name
+% .%6,	.%12,	.%13 # table_name
+% %6,	%12,	%13 # name
 % decimal,	decimal,	int # type
-% 39,	19,	1 # length
+% 12,	16,	1 # length
 #ROLLBACK;
 
 # 17:04:12 >  

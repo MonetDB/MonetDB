@@ -109,6 +109,6 @@ between asymmetric (t0.c0) and (t0.c0)))) union all
 select all t0.c0 from t0 where (((((cast(0.8800821070828266368124559448915533721446990966796875 as string))like(cast(greatest(r'0.29269552476776495', r'Aṵ\tmmz\\v/p*Q2Q5') as string(667)))))and((0.7706295839241474876502024926594458520412445068359375)
 between asymmetric (t0.c0) and (t0.c0)))) is null;
 
-SELECT ALL ((- (- (VAR_POP(ALL ((CAST(CAST(abs(709845242) AS INT) AS INT))%(abs(CAST((931144491) NOT IN (-587881807) AS INT))))))))^(- (+ (- (char_length(r'>])')))))), 0.5186927954967299, CAST("locate"(lower(r'[]'), rtrim(r'..ۄUH*6鉡q'), ((((-233289450)&(-476676450)))-(- (236876413)))) AS INT)
+SELECT ALL CAST((- (- (VAR_POP(ALL ((CAST(CAST(abs(709845242) AS INT) AS INT))%(abs(CAST((931144491) NOT IN (-587881807) AS INT))))))))^(- (+ (- (char_length(r'>])'))))) as decimal(10,3)), CAST(0.5186927954967 as decimal(14,13)), CAST("locate"(lower(r'[]'), rtrim(r'..ۄUH*6鉡q'), ((((-233289450)&(-476676450)))-(- (236876413)))) AS INT)
 FROM t0 WHERE FALSE GROUP BY 1.2807753E7 HAVING MAX(ALL ((t0.c0)>=(NULL)));
 ROLLBACK;
