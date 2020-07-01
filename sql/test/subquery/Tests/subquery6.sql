@@ -174,6 +174,18 @@ END;
 SELECT debugme5(); --error, cannot fetch a single row from an empty input
 DROP FUNCTION debugme5;
 
+CREATE FUNCTION debugme6() RETURNS INT
+BEGIN
+	DECLARE n INT;
+	WHILE ((SELECT 0) = ANY(SELECT 1)) do
+		SET n = 10;
+	END WHILE;
+	RETURN n;
+END;
+SELECT debugme6();
+	--NULL
+DROP FUNCTION debugme6;
+
 DROP TABLE tbl_ProductSales;
 DROP TABLE another_T;
 DROP TABLE integers;

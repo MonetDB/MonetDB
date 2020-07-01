@@ -2118,7 +2118,7 @@ static sql_exp *
 rewrite_anyequal(mvc *sql, sql_rel *rel, sql_exp *e, int depth)
 {
 	sql_subfunc *sf;
-	if (e->type != e_func || is_ddl(rel->op))
+	if (e->type != e_func)
 		return e;
 
 	sf = e->f;
@@ -2250,6 +2250,8 @@ rewrite_anyequal(mvc *sql, sql_rel *rel, sql_exp *e, int depth)
 				if (exp_name(e))
 					exp_prop_alias(sql->sa, le, e);
 				set_processed(lsq);
+				if (depth == 1 && is_ddl(rel->op)) /* anyequal is at a ddl statment, it must be inside a relation */
+					return exp_rel(sql, lsq);
 				return le;
 			} else {
 				if (lsq)
@@ -2598,7 +2600,7 @@ static sql_exp *
 rewrite_exists(mvc *sql, sql_rel *rel, sql_exp *e, int depth)
 {
 	sql_subfunc *sf;
-	if (e->type != e_func || is_ddl(rel->op))
+	if (e->type != e_func)
 		return e;
 
 	sf = e->f;
@@ -2652,6 +2654,8 @@ rewrite_exists(mvc *sql, sql_rel *rel, sql_exp *e, int depth)
 				if (exp_name(e))
 					exp_prop_alias(sql->sa, le, e);
 				set_processed(sq);
+				if (depth == 1 && is_ddl(rel->op)) /* exists is at a ddl statment, it must be inside a relation */
+					return exp_rel(sql, sq);
 			} else { /* rewrite into semi/anti join */
 				(void)rewrite_inner(sql, rel, sq, is_exists(sf)?op_semi:op_anti);
 				return exp_atom_bool(sql->sa, 1);

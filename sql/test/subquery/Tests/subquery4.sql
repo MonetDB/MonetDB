@@ -335,8 +335,19 @@ BEGIN
 	RETURN n;
 END;
 SELECT debugme(1), debugme(2);
-	-- True False
+	-- False True
 DROP FUNCTION debugme;
+
+CREATE FUNCTION debugme2(n int) returns int
+BEGIN
+	WHILE (exists (select i from integers where i < n)) do
+		SET n = n - 1;
+	END WHILE;
+	RETURN n;
+END;
+SELECT debugme2(1), debugme2(2);
+	-- 1 1
+DROP FUNCTION debugme2;
 
 DROP FUNCTION upsme(INT);
 DROP FUNCTION evilfunction(INT);
