@@ -2600,8 +2600,12 @@ rewrite_exists(mvc *sql, sql_rel *rel, sql_exp *e, int depth)
 			sql_exp *ne = NULL, *ie = l->h->data, *le;
 			sql_rel *sq = NULL;
 
-			if (!exp_is_rel(ie)) /* already fine */
+			if (!exp_is_rel(ie)) { /* exists over a constant or a single value */
+				const char *rname = exp_relname(e), *name = exp_name(e);
+				e = exp_atom_bool(sql->sa, is_exists(sf)?1:0);
+				exp_setname(sql->sa, e, rname, name);
 				return e;
+			}
 
 			sq = exp_rel_get_rel(sql->sa, ie); /* get subquery */
 
