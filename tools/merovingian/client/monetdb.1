@@ -252,12 +252,12 @@ Starts, stops or kills the given database, or, when
 .B \-a
 is supplied, all known databases.  The
 .B kill
-command immediately sends a SIGKILL and should only be used as last
-resort for a database that doesn't respond any more.  Killing a database
-may result in (partial) data loss.
+command immediately terminates the database by sending the SIGKILL signal.
+Any data that hasn't been committed will be lost.  This command should
+only be used as last resort for a database that doesn't respond any more.
 It is more common to use the
 .B stop
-command to stop a database.  It will first attempt to stop the database,
+command to stop a database.  This will first attempt to stop the database,
 waiting for
 .B exittimeout
 seconds and if that fails, kill the database.
