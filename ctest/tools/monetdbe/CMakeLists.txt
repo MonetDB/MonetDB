@@ -48,6 +48,13 @@ target_link_libraries(example_append
     monetdbe)
 add_test(run_example_append example_append)
 
+add_executable(example_append_raw example_append_raw.c)
+target_link_libraries(example_append_raw
+  PRIVATE
+    monetdb_config_header
+    monetdbe)
+add_test(run_example_append_raw example_append_raw)
+
 add_executable(example_backup example_backup.c)
 target_link_libraries(example_backup
   PRIVATE

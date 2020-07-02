@@ -94,39 +94,15 @@ stdout of test 'timetz` in directory 'sql/test/pg_regress` itself:
 % timetz,	decimal # type
 % 17,	11 # length
 [ NULL,	NULL	]
-#SELECT f1, sql_add(f1, 12*60*60.0 + 66) FROM TIMETZ_TBL;
-% sys.timetz_tbl,	sys.%1 # table_name
-% f1,	%1 # name
-% timetz,	timetz # type
-% 17,	21 # length
-[ NULL,	NULL	]
-#SELECT f1, sql_add(f1, cast(2*60*60 as interval second)) FROM TIMETZ_TBL;
-% sys.timetz_tbl,	sys.%1 # table_name
-% f1,	%1 # name
-% timetz,	timetz # type
-% 17,	21 # length
-[ NULL,	NULL	]
-#SELECT f1, sql_sub(f1, 12*60*60.0 + 66) FROM TIMETZ_TBL;
-% sys.timetz_tbl,	sys.%1 # table_name
-% f1,	%1 # name
-% timetz,	timetz # type
-% 17,	21 # length
-[ NULL,	NULL	]
-#SELECT f1, sql_sub(f1, cast(2*60*60 as interval second)) FROM TIMETZ_TBL;
-% sys.timetz_tbl,	sys.%1 # table_name
-% f1,	%1 # name
-% timetz,	timetz # type
-% 17,	21 # length
-[ NULL,	NULL	]
 #SELECT f1, sql_sub(f1, cast('23:22:21' as timetz)) FROM TIMETZ_TBL;
-% sys.timetz_tbl,	sys.%1 # table_name
-% f1,	%1 # name
+% sys.timetz_tbl,	sys.%2 # table_name
+% f1,	%2 # name
 % timetz,	sec_interval # type
 % 17,	5 # length
 [ NULL,	NULL	]
 #SELECT f1, sql_sub(cast('23:22:21' as timetz), f1) FROM TIMETZ_TBL;
-% sys.timetz_tbl,	.%1 # table_name
-% f1,	%1 # name
+% sys.timetz_tbl,	.%2 # table_name
+% f1,	%2 # name
 % timetz,	sec_interval # type
 % 17,	5 # length
 [ NULL,	NULL	]

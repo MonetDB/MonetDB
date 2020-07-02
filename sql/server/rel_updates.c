@@ -29,13 +29,8 @@ insert_value(sql_query *query, sql_column *c, sql_rel **r, symbol *s, const char
 		return exp_atom(sql->sa, atom_general(sql->sa, &c->type, NULL));
 	} else if (s->token == SQL_DEFAULT) {
 		if (c->def) {
-			sql_exp *e;
-			char *typestr = subtype2string2(&c->type);
-			if(!typestr)
-				return sql_error(sql, 02, SQLSTATE(HY013) MAL_MALLOC_FAIL);
-			e = rel_parse_val(sql, sa_message(sql->sa, "select cast(%s as %s);", c->def, typestr), sql->emode, NULL);
-			_DELETE(typestr);
-			if (!e || (e = rel_check_type(sql, &c->type, r ? *r : NULL, e, type_equal)) == NULL)
+			sql_exp *e = rel_parse_val(sql, sa_message(sql->sa, "select %s;", c->def), sql->emode, NULL);
+			if (!e || (e = exp_check_type(sql, &c->type, r ? *r : NULL, e, type_equal)) == NULL)
 				return sql_error(sql, 02, SQLSTATE(HY005) "%s: default expression could not be evaluated", action);
 			return e;
 		} else {
@@ -47,7 +42,7 @@ insert_value(sql_query *query, sql_column *c, sql_rel **r, symbol *s, const char
 
 		if (!e)
 			return(NULL);
-		return rel_check_type(sql, &c->type, r ? *r : NULL, e, type_equal);
+		return exp_check_type(sql, &c->type, r ? *r : NULL, e, type_equal);
 	}
 }
 
@@ -317,7 +312,7 @@ rel_inserts(mvc *sql, sql_table *t, sql_rel *r, list *collist, size_t rowcount, 
 
 				if (inserts[c->colnr])
 					return sql_error(sql, 02, SQLSTATE(42000) "%s: column '%s' specified more than once", action, c->base.name);
-				if (!(inserts[c->colnr] = rel_check_type(sql, &c->type, r, e, type_equal)))
+				if (!(inserts[c->colnr] = exp_check_type(sql, &c->type, r, e, type_equal)))
 					return NULL;
 			}
 		} else {
@@ -347,13 +342,8 @@ rel_inserts(mvc *sql, sql_table *t, sql_rel *r, list *collist, size_t rowcount, 
 						sql_exp *e = NULL;
 
 						if (c->def) {
-							char *q, *typestr = subtype2string2(&c->type);
-							if(!typestr)
-								return sql_error(sql, 02, SQLSTATE(HY013) MAL_MALLOC_FAIL);
-							q = sa_message(sql->sa, "select cast(%s as %s);", c->def, typestr);
-							_DELETE(typestr);
-							e = rel_parse_val(sql, q, sql->emode, NULL);
-							if (!e || (e = rel_check_type(sql, &c->type, r, e, type_equal)) == NULL)
+							e = rel_parse_val(sql, sa_message(sql->sa, "select %s;", c->def), sql->emode, NULL);
+							if (!e || (e = exp_check_type(sql, &c->type, r, e, type_equal)) == NULL)
 								return sql_error(sql, 02, SQLSTATE(HY005) "%s: default expression could not be evaluated", action);
 						} else {
 							atom *a = atom_general(sql->sa, &c->type, NULL);
@@ -898,7 +888,7 @@ update_check_column(mvc *sql, sql_table *t, sql_column *c, sql_exp *v, sql_rel *
 {
 	if (!table_privs(sql, t, PRIV_UPDATE) && !sql_privilege(sql, sql->user_id, c->base.id, PRIV_UPDATE))
 		return sql_error(sql, 02, SQLSTATE(42000) "%s: insufficient privileges for user '%s' to update table '%s' on column '%s'", action, sqlvar_get_string(find_global_var(sql, mvc_bind_schema(sql, "sys"), "current_user")), t->base.name, cname);
-	if (!v || (v = rel_check_type(sql, &c->type, r, v, type_equal)) == NULL)
+	if (!v || (v = exp_check_type(sql, &c->type, r, v, type_equal)) == NULL)
 		return NULL;
 	return v;
 }
@@ -943,18 +933,14 @@ update_generate_assignments(sql_query *query, sql_table *t, sql_rel *r, sql_rel 
 
 			if (single && a->token == SQL_DEFAULT) {
 				char *colname = assignment->h->next->data.sval;
-				sql_column *col = mvc_bind_column(sql, t, colname);
+				sql_column *c = mvc_bind_column(sql, t, colname);
 
-				if (!col)
+				if (!c)
 					return sql_error(sql, 02, SQLSTATE(42S22) "%s: no such column '%s.%s'", action, t->base.name, colname);
-				if (col->def) {
-					char *typestr = subtype2string2(&col->type);
-					if (!typestr)
-						return sql_error(sql, 02, SQLSTATE(HY013) MAL_MALLOC_FAIL);
-					v = rel_parse_val(sql, sa_message(sql->sa, "select cast(%s as %s);", col->def, typestr), sql->emode, NULL);
-					_DELETE(typestr);
+				if (c->def) {
+					v = rel_parse_val(sql, sa_message(sql->sa, "select %s;", c->def), sql->emode, NULL);
 				} else {
-					return sql_error(sql, 02, SQLSTATE(42000) "%s: column '%s' has no valid default value", action, col->base.name);
+					return sql_error(sql, 02, SQLSTATE(42000) "%s: column '%s' has no valid default value", action, c->base.name);
 				}
 			} else if (single) {
 				v = rel_value_exp(query, &r, a, sql_sel | sql_update_set, ek);

@@ -5,31 +5,7 @@ stderr of test 'timestamptz` in directory 'sql/test/pg_regress` itself:
 # 17:11:18 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=38959" "--set" "mapi_usock=/var/tmp/mtest-1142/.s.monetdb.38959" "--set" "monet_prompt=" "--forcemito" "--set" "mal_listing=2" "--dbpath=/ufs/dinther/INSTALL/var/MonetDB/mTests_sql_test_pg_regress" "--set" "mal_listing=0"
 # 17:11:18 >  
 
-# builtin opt 	gdk_dbpath = /ufs/dinther/INSTALL/var/monetdb5/dbfarm/demo
-# builtin opt 	gdk_debug = 0
-# builtin opt 	gdk_vmtrim = no
-# builtin opt 	monet_prompt = >
-# builtin opt 	monet_daemon = no
-# builtin opt 	mapi_port = 50000
-# builtin opt 	mapi_open = false
-# builtin opt 	mapi_autosense = false
-# builtin opt 	sql_optimizer = default_pipe
-# builtin opt 	sql_debug = 0
-# cmdline opt 	gdk_nr_threads = 0
-# cmdline opt 	mapi_open = true
-# cmdline opt 	mapi_port = 38959
-# cmdline opt 	mapi_usock = /var/tmp/mtest-1142/.s.monetdb.38959
-# cmdline opt 	monet_prompt = 
-# cmdline opt 	mal_listing = 2
-# cmdline opt 	gdk_dbpath = /ufs/dinther/INSTALL/var/MonetDB/mTests_sql_test_pg_regress
-# cmdline opt 	mal_listing = 0
-# cmdline opt 	gdk_debug = 536870922
-
-# 17:11:19 >  
-# 17:11:19 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-1142" "--port=38959"
-# 17:11:19 >  
-
-MAPI  = (monetdb) /var/tmp/mtest-27483/.s.monetdb.35395
+MAPI  = (monetdb) /var/tmp/mtest-448590/.s.monetdb.32547
 QUERY = INSERT INTO TIMESTAMPTZ_TBL VALUES ('tomorrow EST');
 ERROR = !Timestamp (tomorrow EST) has incorrect format
 CODE  = 22007
@@ -455,6 +431,38 @@ CODE  = 42000
 MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = SELECT d1, second(d1) FROM TIMESTAMPTZ_TBL;
 ERROR = !syntax error, unexpected SECOND in: "select d1, second"
+CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-443247/.s.monetdb.38986
+QUERY = SELECT d1, sql_add(d1, 365*24*60*60.0) FROM TIMESTAMPTZ_TBL;
+ERROR = !SELECT: no such binary operator 'sql_add(timestamptz,decimal)'
+CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-443247/.s.monetdb.38986
+QUERY = SELECT d1, sql_add(d1, cast(365*24*60*60 as interval second)) FROM TIMESTAMPTZ_TBL;
+ERROR = !types int(26,0) and sec_interval(13,0) are not equal
+CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-443247/.s.monetdb.38986
+QUERY = SELECT d1, sql_add(d1, cast(12 as interval month)) FROM TIMESTAMPTZ_TBL;
+ERROR = !types tinyint(4,0) and month_interval(3,0) are not equal
+CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-443247/.s.monetdb.38986
+QUERY = SELECT d1, sql_add(d1, cast(-18 as interval month)) FROM TIMESTAMPTZ_TBL;
+ERROR = !types tinyint(5,0) and month_interval(3,0) are not equal
+CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-443247/.s.monetdb.38986
+QUERY = SELECT d1, sql_sub(d1, 365*24*60*60.0) FROM TIMESTAMPTZ_TBL;
+ERROR = !SELECT: no such binary operator 'sql_sub(timestamptz,decimal)'
+CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-443247/.s.monetdb.38986
+QUERY = SELECT d1, sql_sub(d1, cast(365*24*60*60 as interval second)) FROM TIMESTAMPTZ_TBL;
+ERROR = !types int(26,0) and sec_interval(13,0) are not equal
+CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-443247/.s.monetdb.38986
+QUERY = SELECT d1, sql_sub(d1, cast(12 as interval month)) FROM TIMESTAMPTZ_TBL;
+ERROR = !types tinyint(4,0) and month_interval(3,0) are not equal
+CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-443247/.s.monetdb.38986
+QUERY = SELECT d1, sql_sub(d1, cast(-18 as interval month)) FROM TIMESTAMPTZ_TBL;
+ERROR = !types tinyint(5,0) and month_interval(3,0) are not equal
 CODE  = 42000
 
 

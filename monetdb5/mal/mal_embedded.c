@@ -48,6 +48,40 @@ malEmbeddedBoot(int workerlimit, int memorylimit, int querytimeout, int sessiont
 	if( embeddedinitialized )
 		return MAL_SUCCEED;
 
+	{
+		/* unlock the vault, first see if we can find the file which
+		 * holds the secret */
+		char secret[1024];
+		char *secretp = secret;
+		FILE *secretf;
+		size_t len;
+
+		if (GDKinmemory() || GDKgetenv("monet_vault_key") == NULL) {
+			/* use a default (hard coded, non safe) key */
+			snprintf(secret, sizeof(secret), "%s", "Xas632jsi2whjds8");
+		} else {
+			if ((secretf = fopen(GDKgetenv("monet_vault_key"), "r")) == NULL) {
+				throw(MAL, "malEmbeddedBoot",
+					"unable to open vault_key_file %s: %s\n",
+					GDKgetenv("monet_vault_key"), strerror(errno));
+			}
+			len = fread(secret, 1, sizeof(secret), secretf);
+			secret[len] = '\0';
+			len = strlen(secret); /* secret can contain null-bytes */
+			if (len == 0) {
+				throw(MAL, "malEmbeddedBoot", "vault key has zero-length!\n");
+			} else if (len < 5) {
+				throw(MAL, "malEmbeddedBoot",
+					"#warning: your vault key is too short "
+					"(%zu), enlarge your vault key!\n", len);
+			}
+			fclose(secretf);
+		}
+		if ((msg = AUTHunlockVault(secretp)) != MAL_SUCCEED) {
+			/* don't show this as a crash */
+			return msg;
+		}
+	}
 	if ((msg = AUTHinitTables(NULL)) != MAL_SUCCEED)
 		return msg;
 

@@ -1247,6 +1247,7 @@ GDKunlockHome(int farmid)
 		BBPfarms[farmid].lock_file = NULL;
 		GDKfree(gdklockpath);
 	}
+	BBPfarms[farmid].dirname = NULL;
 }
 
 /*

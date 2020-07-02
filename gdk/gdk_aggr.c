@@ -432,7 +432,7 @@ dofsum(const void *restrict values, oid seqb,
 	return nils;
 
   overflow:
-	GDKerror("22003!overflow in calculation.\n");
+	GDKerror("22003!overflow in sum aggregate.\n");
   bailout:
 	for (grp = 0; grp < ngrp; grp++)
 		GDKfree(pergroup[grp].partials);
@@ -875,7 +875,7 @@ dosum(const void *restrict values, bool nonil, oid seqb,
 
   overflow:
 	GDKfree(seen);
-	GDKerror("22003!overflow in calculation.\n");
+	GDKerror("22003!overflow in sum aggregate.\n");
 	return BUN_NONE;
 }
 
@@ -1027,7 +1027,7 @@ BATsum(void *res, int tp, BAT *b, BAT *s, bool skip_nils, bool abort_on_error, b
 				else if (cnt > 0 &&
 					 GDK_flt_max / cnt < fabs(avg)) {
 					if (abort_on_error) {
-						GDKerror("22003!overflow in calculation.\n");
+						GDKerror("22003!overflow in sum aggregate.\n");
 						return GDK_FAIL;
 					}
 					*(flt *) res = flt_nil;
@@ -1040,7 +1040,7 @@ BATsum(void *res, int tp, BAT *b, BAT *s, bool skip_nils, bool abort_on_error, b
 				} else if (cnt > 0 &&
 					   GDK_dbl_max / cnt < fabs(avg)) {
 					if (abort_on_error) {
-						GDKerror("22003!overflow in calculation.\n");
+						GDKerror("22003!overflow in sum aggregate.\n");
 						return GDK_FAIL;
 					}
 					*(dbl *) res = dbl_nil;
@@ -1452,7 +1452,7 @@ doprod(const void *restrict values, oid seqb, struct canditer *restrict ci, BUN 
 
   overflow:
 	GDKfree(seen);
-	GDKerror("22003!overflow in calculation.\n");
+	GDKerror("22003!overflow in product aggregate.\n");
 	return BUN_NONE;
 }
 

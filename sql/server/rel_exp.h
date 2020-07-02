@@ -12,6 +12,7 @@
 #include "sql_relation.h"
 #include "sql_mvc.h"
 #include "sql_atom.h"
+#include "sql_semantic.h"
 
 #define new_exp_list(sa) sa_list(sa)
 #define exp2list(sa,e)   append(sa_list(sa),e)
@@ -74,6 +75,7 @@ extern sql_exp * exp_atom_clob(sql_allocator *sa, const char *s);
 extern sql_exp * exp_atom_ptr(sql_allocator *sa, void *s);
 extern sql_exp * exp_atom_ref(sql_allocator *sa, int i, sql_subtype *tpe);
 extern sql_exp * exp_null(sql_allocator *sa, sql_subtype *tpe);
+extern sql_exp * exp_zero(sql_allocator *sa, sql_subtype *tpe); /* Apply it to numeric types only obviously */
 extern sql_exp * exp_param_or_declared(sql_allocator *sa, const char *sname, const char *name, sql_subtype *tpe, int frame);
 extern atom * exp_value(mvc *sql, sql_exp *e, atom **args, int maxarg);
 extern sql_exp * exp_values(sql_allocator *sa, list *exps);
@@ -188,6 +190,11 @@ extern sql_exp *create_table_part_atom_exp(mvc *sql, sql_subtype tpe, ptr value)
 extern int exp_aggr_is_count(sql_exp *e);
 
 extern void exps_reset_freevar(list *exps);
+
+extern sql_exp *exp_check_type(mvc *sql, sql_subtype *t, sql_rel *rel, sql_exp *exp, check_type tpe);
+extern int rel_set_type_param(mvc *sql, sql_subtype *type, sql_rel *rel, sql_exp *rel_exp, int upcast);
+extern sql_exp *exp_numeric_supertype(mvc *sql, sql_exp *e);
+extern sql_exp *exp_values_set_supertype(mvc *sql, sql_exp *values, sql_subtype *opt_super);
 
 extern int rel_set_type_recurse(mvc *sql, sql_subtype *type, sql_rel *rel, const char **relname, const char **expname);
 #endif /* _REL_EXP_H_ */
