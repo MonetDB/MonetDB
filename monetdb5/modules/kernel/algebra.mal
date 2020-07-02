@@ -73,32 +73,12 @@ comment "Select all head values of the first input BAT for which the tail value
 	returned if low=nil, high=nil, and li, hi are not both 1, or anti=1.
 	Note that the output is suitable as second input for this
 	function.";
-command select(b:bat[:any_1], s:bat[:msk], low:any_1, high:any_1, li:bit, hi:bit, anti:bit) :bat[:oid]
-address ALGselect2
-comment "Select all head values of the first input BAT for which the tail value
-	is in range and for which the head value occurs in the tail of the
-	second input BAT.
-	The first input is a dense-headed BAT, the second input is a
-	dense-headed BAT with sorted tail, output is a dense-headed BAT
-	with in the tail the head value of the input BAT for which the
-	tail value is between the values low and high (inclusive if li
-	respectively hi is set).  The output BAT is sorted on the tail
-	value.  If low or high is nil, the boundary is not considered
-	(effectively - and + infinity).  If anti is set, the result is the
-	complement.  Nil values in the tail are never matched, unless
-	low=nil, high=nil, li=1, hi=1, anti=0.  All non-nil values are
-	returned if low=nil, high=nil, and li, hi are not both 1, or anti=1.
-	Note that the output is suitable as second input for this
-	function.";
 
 command select(b:bat[:any_1], low:any_1, high:any_1, li:bit, hi:bit, anti:bit, unknown:bit) :bat[:oid]
 address ALGselect1nil
 comment "With unknown set, each nil != nil";
 
 command select(b:bat[:any_1], s:bat[:oid], low:any_1, high:any_1, li:bit, hi:bit, anti:bit, unknown:bit) :bat[:oid]
-address ALGselect2nil
-comment "With unknown set, each nil != nil";
-command select(b:bat[:any_1], s:bat[:msk], low:any_1, high:any_1, li:bit, hi:bit, anti:bit, unknown:bit) :bat[:oid]
 address ALGselect2nil
 comment "With unknown set, each nil != nil";
 
@@ -111,14 +91,6 @@ comment "Select all head values for which the tail value obeys the relation
 	relationship holds.  The output BAT is sorted on the tail value.";
 
 command thetaselect(b:bat[:any_1], s:bat[:oid], val:any_1, op:str) :bat[:oid]
-address ALGthetaselect2
-comment "Select all head values of the first input BAT for which the tail value
-	obeys the relation value OP VAL and for which the head value occurs in
-	the tail of the second input BAT.
-	Input is a dense-headed BAT, output is a dense-headed BAT with in
-	the tail the head value of the input BAT for which the
-	relationship holds.  The output BAT is sorted on the tail value.";
-command thetaselect(b:bat[:any_1], s:bat[:msk], val:any_1, op:str) :bat[:oid]
 address ALGthetaselect2
 comment "Select all head values of the first input BAT for which the tail value
 	obeys the relation value OP VAL and for which the head value occurs in
@@ -185,14 +157,6 @@ comment "Returns a copy of the BAT sorted on tail values, a BAT that specifies
 		 This is a stable sort if the stable bit is set.";
 
 command unique(b:bat[:any_1], s:bat[:oid]) :bat[:oid]
-address ALGunique2
-comment "Select all unique values from the tail of the first input.
-	Input is a dense-headed BAT, the second input is a
-	dense-headed BAT with sorted tail, output is a dense-headed
-	BAT with in the tail the head value of the input BAT that was
-	selected.  The output BAT is sorted on the tail value.  The
-	second input BAT is a list of candidates.";
-command unique(b:bat[:any_1], s:bat[:msk]) :bat[:oid]
 address ALGunique2
 comment "Select all unique values from the tail of the first input.
 	Input is a dense-headed BAT, the second input is a
@@ -289,13 +253,7 @@ comment "Calculate first N values of B";
 pattern firstn(b:bat[:any], s:bat[:oid], n:lng, asc:bit, nilslast:bit, distinct:bit) :bat[:oid]
 address ALGfirstn
 comment "Calculate first N values of B with candidate list S";
-pattern firstn(b:bat[:any], s:bat[:msk], n:lng, asc:bit, nilslast:bit, distinct:bit) :bat[:oid]
-address ALGfirstn
-comment "Calculate first N values of B with candidate list S";
 pattern firstn(b:bat[:any], s:bat[:oid], g:bat[:oid], n:lng, asc:bit, nilslast:bit, distinct:bit) :bat[:oid]
-address ALGfirstn
-comment "Calculate first N values of B with candidate list S";
-pattern firstn(b:bat[:any], s:bat[:msk], g:bat[:oid], n:lng, asc:bit, nilslast:bit, distinct:bit) :bat[:oid]
 address ALGfirstn
 comment "Calculate first N values of B with candidate list S";
 pattern firstn(b:bat[:any], n:lng, asc:bit, nilslast:bit, distinct:bit) (:bat[:oid],:bat[:oid])
@@ -304,13 +262,7 @@ comment "Calculate first N values of B";
 pattern firstn(b:bat[:any], s:bat[:oid], n:lng, asc:bit, nilslast:bit, distinct:bit) (:bat[:oid],:bat[:oid])
 address ALGfirstn
 comment "Calculate first N values of B with candidate list S";
-pattern firstn(b:bat[:any], s:bat[:msk], n:lng, asc:bit, nilslast:bit, distinct:bit) (:bat[:oid],:bat[:oid])
-address ALGfirstn
-comment "Calculate first N values of B with candidate list S";
 pattern firstn(b:bat[:any], s:bat[:oid], g:bat[:oid], n:lng, asc:bit, nilslast:bit, distinct:bit) (:bat[:oid],:bat[:oid])
-address ALGfirstn
-comment "Calculate first N values of B with candidate list S";
-pattern firstn(b:bat[:any], s:bat[:msk], g:bat[:oid], n:lng, asc:bit, nilslast:bit, distinct:bit) (:bat[:oid],:bat[:oid])
 address ALGfirstn
 comment "Calculate first N values of B with candidate list S";
 

@@ -51,14 +51,8 @@ comment "append the content of u to i";
 command append( i:bat[:any_1], u:bat[:any_1], s:bat[:oid] ) :bat[:any_1]
 address BKCappend_cand_wrap
 comment "append the content of u with candidate list s to i";
-command append( i:bat[:any_1], u:bat[:any_1], s:bat[:msk] ) :bat[:any_1]
-address BKCappend_cand_wrap
-comment "append the content of u with candidate list s to i";
 
 command append( i:bat[:any_1], u:bat[:any_1], s:bat[:oid], force:bit ) :bat[:any_1]
-address BKCappend_cand_force_wrap
-comment "append the content of u with candidate list s to i";
-command append( i:bat[:any_1], u:bat[:any_1], s:bat[:msk], force:bit ) :bat[:any_1]
 address BKCappend_cand_force_wrap
 comment "append the content of u with candidate list s to i";
 

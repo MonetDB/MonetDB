@@ -80,7 +80,7 @@ static inline bool
 chkmsk(const bit *rv, const uint32_t *mrv, BUN i)
 {
 	if (rv)
-		return rv[i] == 1;
+		return rv[i] != 0;
 	if (mrv)
 		return (mrv[i / 32] & 1U << (i % 32)) != 0;
 	return true;
@@ -4007,7 +4007,7 @@ sub_##TYPE1##_##TYPE2##_##TYPE3(const TYPE1 *lft, int incr1,		\
 			oid x2 = canditer_next(ci2) - candoff2;		\
 			BUN i = x1 * incr1;				\
 			BUN j = x2 * incr2;				\
-			if (!chkmsk(rv, mrv, i) ||			\
+			if (!chkmsk(rv, mrv, k) ||			\
 			    is_##TYPE1##_nil(lft[i]) ||			\
 			    is_##TYPE2##_nil(rgt[j])) {			\
 				dst[k] = TYPE3##_nil;			\
@@ -5811,7 +5811,7 @@ mul_##TYPE1##_##TYPE2##_##TYPE3(const TYPE1 *lft, int incr1,		\
 			oid x2 = canditer_next_dense(ci2) - candoff2;	\
 			BUN i = x1 * incr1;				\
 			BUN j = x2 * incr2;				\
-			if (!chkmsk(rv, mrv, i) ||			\
+			if (!chkmsk(rv, mrv, k) ||			\
 			    is_##TYPE1##_nil(lft[i]) ||			\
 			    is_##TYPE2##_nil(rgt[j])) {			\
 				dst[k] = TYPE3##_nil;			\
@@ -5830,7 +5830,7 @@ mul_##TYPE1##_##TYPE2##_##TYPE3(const TYPE1 *lft, int incr1,		\
 			oid x2 = canditer_next(ci2) - candoff2;		\
 			BUN i = x1 * incr1;				\
 			BUN j = x2 * incr2;				\
-			if (!chkmsk(rv, mrv, i) ||			\
+			if (!chkmsk(rv, mrv, k) ||			\
 			    is_##TYPE1##_nil(lft[i]) ||			\
 			    is_##TYPE2##_nil(rgt[j])) {			\
 				dst[k] = TYPE3##_nil;			\
@@ -5868,7 +5868,7 @@ mul_##TYPE1##_##TYPE2##_##TYPE3(const TYPE1 *lft, int incr1,		\
 			oid x2 = canditer_next_dense(ci2) - candoff2;	\
 			BUN i = x1 * incr1;				\
 			BUN j = x2 * incr2;				\
-			if (!chkmsk(rv, mrv, i) ||			\
+			if (!chkmsk(rv, mrv, k) ||			\
 			    is_##TYPE1##_nil(lft[i]) ||			\
 			    is_##TYPE2##_nil(rgt[j])) {			\
 				dst[k] = TYPE3##_nil;			\
@@ -5889,7 +5889,7 @@ mul_##TYPE1##_##TYPE2##_##TYPE3(const TYPE1 *lft, int incr1,		\
 			oid x2 = canditer_next(ci2) - candoff2;		\
 			BUN i = x1 * incr1;				\
 			BUN j = x2 * incr2;				\
-			if (!chkmsk(rv, mrv, i) ||			\
+			if (!chkmsk(rv, mrv, k) ||			\
 			    is_##TYPE1##_nil(lft[i]) ||			\
 			    is_##TYPE2##_nil(rgt[j])) {			\
 				dst[k] = TYPE3##_nil;			\
@@ -5932,7 +5932,7 @@ mul_##TYPE1##_##TYPE2##_hge(const TYPE1 *lft, int incr1,		\
 			oid x2 = canditer_next_dense(ci2) - candoff2;	\
 			BUN i = x1 * incr1;				\
 			BUN j = x2 * incr2;				\
-			if (!chkmsk(rv, mrv, i) ||			\
+			if (!chkmsk(rv, mrv, k) ||			\
 			    is_##TYPE1##_nil(lft[i]) ||			\
 			    is_##TYPE2##_nil(rgt[j])) {			\
 				dst[k] = hge_nil;			\
@@ -5950,7 +5950,7 @@ mul_##TYPE1##_##TYPE2##_hge(const TYPE1 *lft, int incr1,		\
 			oid x2 = canditer_next(ci2) - candoff2;		\
 			BUN i = x1 * incr1;				\
 			BUN j = x2 * incr2;				\
-			if (!chkmsk(rv, mrv, i) ||			\
+			if (!chkmsk(rv, mrv, k) ||			\
 			    is_##TYPE1##_nil(lft[i]) ||			\
 			    is_##TYPE2##_nil(rgt[j])) {			\
 				dst[k] = hge_nil;			\
@@ -5988,7 +5988,7 @@ mul_##TYPE1##_##TYPE2##_lng(const TYPE1 *lft, int incr1,		\
 			oid x2 = canditer_next_dense(ci2) - candoff2;	\
 			BUN i = x1 * incr1;				\
 			BUN j = x2 * incr2;				\
-			if (!chkmsk(rv, mrv, i) ||			\
+			if (!chkmsk(rv, mrv, k) ||			\
 			    is_##TYPE1##_nil(lft[i]) ||			\
 			    is_##TYPE2##_nil(rgt[j])) {			\
 				dst[k] = lng_nil;			\
@@ -6006,7 +6006,7 @@ mul_##TYPE1##_##TYPE2##_lng(const TYPE1 *lft, int incr1,		\
 			oid x2 = canditer_next(ci2) - candoff2;		\
 			BUN i = x1 * incr1;				\
 			BUN j = x2 * incr2;				\
-			if (!chkmsk(rv, mrv, i) ||			\
+			if (!chkmsk(rv, mrv, k) ||			\
 			    is_##TYPE1##_nil(lft[i]) ||			\
 			    is_##TYPE2##_nil(rgt[j])) {			\
 				dst[k] = lng_nil;			\
@@ -6044,7 +6044,7 @@ mul_##TYPE1##_##TYPE2##_##TYPE3(const TYPE1 *lft, int incr1,		\
 			oid x2 = canditer_next_dense(ci2) - candoff2;	\
 			BUN i = x1 * incr1;				\
 			BUN j = x2 * incr2;				\
-			if (!chkmsk(rv, mrv, i) ||			\
+			if (!chkmsk(rv, mrv, k) ||			\
 			    is_##TYPE1##_nil(lft[i]) ||			\
 			    is_##TYPE2##_nil(rgt[j])) {			\
 				dst[k] = TYPE3##_nil;			\
@@ -6066,7 +6066,7 @@ mul_##TYPE1##_##TYPE2##_##TYPE3(const TYPE1 *lft, int incr1,		\
 			oid x2 = canditer_next(ci2) - candoff2;		\
 			BUN i = x1 * incr1;				\
 			BUN j = x2 * incr2;				\
-			if (!chkmsk(rv, mrv, i) ||			\
+			if (!chkmsk(rv, mrv, k) ||			\
 			    is_##TYPE1##_nil(lft[i]) ||			\
 			    is_##TYPE2##_nil(rgt[j])) {			\
 				dst[k] = TYPE3##_nil;			\
@@ -7887,7 +7887,7 @@ div_##TYPE1##_##TYPE2##_##TYPE3(const TYPE1 *lft, int incr1,		\
 			oid x2 = canditer_next_dense(ci2) - candoff2;	\
 			BUN i = x1 * incr1;				\
 			BUN j = x2 * incr2;				\
-			if (!chkmsk(rv, mrv, i) ||			\
+			if (!chkmsk(rv, mrv, k) ||			\
 			    is_##TYPE1##_nil(lft[i]) ||			\
 			    is_##TYPE2##_nil(rgt[j])) {			\
 				dst[k] = TYPE3##_nil;			\
@@ -7913,7 +7913,7 @@ div_##TYPE1##_##TYPE2##_##TYPE3(const TYPE1 *lft, int incr1,		\
 			oid x2 = canditer_next(ci2) - candoff2;		\
 			BUN i = x1 * incr1;				\
 			BUN j = x2 * incr2;				\
-			if (!chkmsk(rv, mrv, i) ||			\
+			if (!chkmsk(rv, mrv, k) ||			\
 			    is_##TYPE1##_nil(lft[i]) ||			\
 			    is_##TYPE2##_nil(rgt[j])) {			\
 				dst[k] = TYPE3##_nil;			\
@@ -7957,7 +7957,7 @@ div_##TYPE1##_##TYPE2##_##TYPE3(const TYPE1 *lft, int incr1,		\
 			oid x2 = canditer_next_dense(ci2) - candoff2;	\
 			BUN i = x1 * incr1;				\
 			BUN j = x2 * incr2;				\
-			if (!chkmsk(rv, mrv, i) ||			\
+			if (!chkmsk(rv, mrv, k) ||			\
 			    is_##TYPE1##_nil(lft[i]) ||			\
 			    is_##TYPE2##_nil(rgt[j])) {			\
 				dst[k] = TYPE3##_nil;			\
@@ -7989,7 +7989,7 @@ div_##TYPE1##_##TYPE2##_##TYPE3(const TYPE1 *lft, int incr1,		\
 			oid x2 = canditer_next(ci2) - candoff2;		\
 			BUN i = x1 * incr1;				\
 			BUN j = x2 * incr2;				\
-			if (!chkmsk(rv, mrv, i) ||			\
+			if (!chkmsk(rv, mrv, k) ||			\
 			    is_##TYPE1##_nil(lft[i]) ||			\
 			    is_##TYPE2##_nil(rgt[j])) {			\
 				dst[k] = TYPE3##_nil;			\
@@ -9859,7 +9859,7 @@ mod_##TYPE1##_##TYPE2##_##TYPE3(const TYPE1 *lft, int incr1,		\
 			oid x2 = canditer_next_dense(ci2) - candoff2;	\
 			BUN i = x1 * incr1;				\
 			BUN j = x2 * incr2;				\
-			if (!chkmsk(rv, mrv, i) ||			\
+			if (!chkmsk(rv, mrv, k) ||			\
 			    is_##TYPE1##_nil(lft[i]) ||			\
 			    is_##TYPE2##_nil(rgt[j])) {			\
 				dst[k] = TYPE3##_nil;			\
@@ -9879,7 +9879,7 @@ mod_##TYPE1##_##TYPE2##_##TYPE3(const TYPE1 *lft, int incr1,		\
 			oid x2 = canditer_next(ci2) - candoff2;		\
 			BUN i = x1 * incr1;				\
 			BUN j = x2 * incr2;				\
-			if (!chkmsk(rv, mrv, i) ||			\
+			if (!chkmsk(rv, mrv, k) ||			\
 			    is_##TYPE1##_nil(lft[i]) ||			\
 			    is_##TYPE2##_nil(rgt[j])) {			\
 				dst[k] = TYPE3##_nil;			\
@@ -9917,7 +9917,7 @@ mod_##TYPE1##_##TYPE2##_##TYPE3(const TYPE1 *lft, int incr1,		\
 			oid x2 = canditer_next_dense(ci2) - candoff2;	\
 			BUN i = x1 * incr1;				\
 			BUN j = x2 * incr2;				\
-			if (!chkmsk(rv, mrv, i) ||			\
+			if (!chkmsk(rv, mrv, k) ||			\
 			    is_##TYPE1##_nil(lft[i]) ||			\
 			    is_##TYPE2##_nil(rgt[j])) {			\
 				dst[k] = TYPE3##_nil;			\
@@ -9938,7 +9938,7 @@ mod_##TYPE1##_##TYPE2##_##TYPE3(const TYPE1 *lft, int incr1,		\
 			oid x2 = canditer_next(ci2) - candoff2;		\
 			BUN i = x1 * incr1;				\
 			BUN j = x2 * incr2;				\
-			if (!chkmsk(rv, mrv, i) ||			\
+			if (!chkmsk(rv, mrv, k) ||			\
 			    is_##TYPE1##_nil(lft[i]) ||			\
 			    is_##TYPE2##_nil(rgt[j])) {			\
 				dst[k] = TYPE3##_nil;			\
@@ -14432,7 +14432,7 @@ convert_##TYPE##_msk(const TYPE *restrict src, uint32_t *restrict dst,	\
 			mask = 0;					\
 			for (j = 0; j < cnt; j++) {			\
 				x = canditer_next_dense(ci) - candoff;	\
-				mask |= (uint32_t) (chkmsk(rv, mrv, i) && !is_##TYPE##_nil(src[x]) && src[x] != 0) << j; \
+				mask |= (uint32_t) (chkmsk(rv, mrv, k) && !is_##TYPE##_nil(src[x]) && src[x] != 0) << j; \
 				k++;					\
 			}						\
 			dst[i] = mask;					\
@@ -14452,7 +14452,7 @@ convert_##TYPE##_msk(const TYPE *restrict src, uint32_t *restrict dst,	\
 			mask = 0;					\
 			for (j = 0; j < cnt; j++) {			\
 				x = canditer_next(ci) - candoff;	\
-				mask |= (uint32_t) (chkmsk(rv, mrv, i) && !is_##TYPE##_nil(src[x]) && src[x] != 0) << j; \
+				mask |= (uint32_t) (chkmsk(rv, mrv, k) && !is_##TYPE##_nil(src[x]) && src[x] != 0) << j; \
 				k++;					\
 			}						\
 			dst[i] = mask;					\

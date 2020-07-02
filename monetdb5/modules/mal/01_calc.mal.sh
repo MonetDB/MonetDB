@@ -365,13 +365,7 @@ comment "Calculate aggregate ${func#*:} of B.";
 pattern ${func%:*}(b:bat[:${tp1#*:}],s:bat[:oid]) :${tp2#*:}
 address CMDBAT${func%:*}
 comment "Calculate aggregate ${func#*:} of B with candidate list.";
-pattern ${func%:*}(b:bat[:${tp1#*:}],s:bat[:msk]) :${tp2#*:}
-address CMDBAT${func%:*}
-comment "Calculate aggregate ${func#*:} of B with candidate list.";
 pattern ${func%:*}(b:bat[:${tp1#*:}],s:bat[:oid],nil_if_empty:bit) :${tp2#*:}
-address CMDBAT${func%:*}
-comment "Calculate aggregate ${func#*:} of B with candidate list.";
-pattern ${func%:*}(b:bat[:${tp1#*:}],s:bat[:msk],nil_if_empty:bit) :${tp2#*:}
 address CMDBAT${func%:*}
 comment "Calculate aggregate ${func#*:} of B with candidate list.";
 
@@ -393,13 +387,7 @@ comment "Calculate aggregate ${func#*:} of B.";
 pattern ${func%:*}(b:bat[:${tp1#*:}],s:bat[:oid]) :${tp2#*:}
 address CMDBAT${func%:*}
 comment "Calculate aggregate ${func#*:} of B with candidate list.";
-pattern ${func%:*}(b:bat[:${tp1#*:}],s:bat[:msk]) :${tp2#*:}
-address CMDBAT${func%:*}
-comment "Calculate aggregate ${func#*:} of B with candidate list.";
 pattern ${func%:*}(b:bat[:${tp1#*:}],s:bat[:oid],nil_if_empty:bit) :${tp2#*:}
-address CMDBAT${func%:*}
-comment "Calculate aggregate ${func#*:} of B with candidate list.";
-pattern ${func%:*}(b:bat[:${tp1#*:}],s:bat[:msk],nil_if_empty:bit) :${tp2#*:}
 address CMDBAT${func%:*}
 comment "Calculate aggregate ${func#*:} of B with candidate list.";
 
@@ -419,13 +407,7 @@ comment "Calculate aggregate string concatenate of B.";
 pattern str_group_concat(b:bat[:str],s:bat[:oid]) :str
 address CMDBATstr_group_concat
 comment "Calculate aggregate string concatenate of B with candidate list.";
-pattern str_group_concat(b:bat[:str],s:bat[:msk]) :str
-address CMDBATstr_group_concat
-comment "Calculate aggregate string concatenate of B with candidate list.";
 pattern str_group_concat(b:bat[:str],s:bat[:oid],nil_if_empty:bit) :str
-address CMDBATstr_group_concat
-comment "Calculate aggregate string concatenate of B with candidate list.";
-pattern str_group_concat(b:bat[:str],s:bat[:msk],nil_if_empty:bit) :str
 address CMDBATstr_group_concat
 comment "Calculate aggregate string concatenate of B with candidate list.";
 
@@ -438,13 +420,7 @@ comment "Calculate aggregate string concatenate of B with separator SEP.";
 pattern str_group_concat(b:bat[:str],sep:bat[:str],s:bat[:oid]) :str
 address CMDBATstr_group_concat
 comment "Calculate aggregate string concatenate of B with candidate list and separator SEP.";
-pattern str_group_concat(b:bat[:str],sep:bat[:str],s:bat[:msk]) :str
-address CMDBATstr_group_concat
-comment "Calculate aggregate string concatenate of B with candidate list and separator SEP.";
 pattern str_group_concat(b:bat[:str],sep:bat[:str],s:bat[:oid],nil_if_empty:bit) :str
-address CMDBATstr_group_concat
-comment "Calculate aggregate string concatenate of B with candidate list and separator SEP.";
-pattern str_group_concat(b:bat[:str],sep:bat[:str],s:bat[:msk],nil_if_empty:bit) :str
 address CMDBATstr_group_concat
 comment "Calculate aggregate string concatenate of B with candidate list and separator SEP.";
 EOF

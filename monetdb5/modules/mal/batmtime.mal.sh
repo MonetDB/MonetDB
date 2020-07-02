@@ -24,25 +24,16 @@ comment "Return B1 $op B2";
 pattern $op(b1:bat[:$tp],b2:bat[:$tp],s:bat[:oid]) :bat[:bit]
 address CMDbat${func^^}
 comment "Return B1 $op B2 with candidates list";
-pattern $op(b1:bat[:$tp],b2:bat[:$tp],s:bat[:msk]) :bat[:bit]
-address CMDbat${func^^}
-comment "Return B1 $op B2 with candidates list";
 pattern $op(b:bat[:$tp],v:$tp) :bat[:bit]
 address CMDbat${func^^}
 comment "Return B $op V";
 pattern $op(b:bat[:$tp],v:$tp,s:bat[:oid]) :bat[:bit]
 address CMDbat${func^^}
 comment "Return B $op V with candidates list";
-pattern $op(b:bat[:$tp],v:$tp,s:bat[:msk]) :bat[:bit]
-address CMDbat${func^^}
-comment "Return B $op V with candidates list";
 pattern $op(v:$tp,b:bat[:$tp]) :bat[:bit]
 address CMDbat${func^^}
 comment "Return V $op B";
 pattern $op(v:$tp,b:bat[:$tp],s:bat[:oid]) :bat[:bit]
-address CMDbat${func^^}
-comment "Return V $op B with candidates list";
-pattern $op(v:$tp,b:bat[:$tp],s:bat[:msk]) :bat[:bit]
 address CMDbat${func^^}
 comment "Return V $op B with candidates list";
 
@@ -56,25 +47,16 @@ comment "Return B1 $op B2";
 pattern $op(b1:bat[:$tp],b2:bat[:$tp],s:bat[:oid],nil_matches:bit) :bat[:bit]
 address CMDbat${func^^}
 comment "Return B1 $op B2 with candidates list";
-pattern $op(b1:bat[:$tp],b2:bat[:$tp],s:bat[:msk],nil_matches:bit) :bat[:bit]
-address CMDbat${func^^}
-comment "Return B1 $op B2 with candidates list";
 pattern $op(b:bat[:$tp],v:$tp,nil_matches:bit) :bat[:bit]
 address CMDbat${func^^}
 comment "Return B $op V";
 pattern $op(b:bat[:$tp],v:$tp,s:bat[:oid],nil_matches:bit) :bat[:bit]
 address CMDbat${func^^}
 comment "Return B $op V with candidates list";
-pattern $op(b:bat[:$tp],v:$tp,s:bat[:msk],nil_matches:bit) :bat[:bit]
-address CMDbat${func^^}
-comment "Return B $op V with candidates list";
 pattern $op(v:$tp,b:bat[:$tp],nil_matches:bit) :bat[:bit]
 address CMDbat${func^^}
 comment "Return V $op B";
 pattern $op(v:$tp,b:bat[:$tp],s:bat[:oid],nil_matches:bit) :bat[:bit]
-address CMDbat${func^^}
-comment "Return V $op B with candidates list";
-pattern $op(v:$tp,b:bat[:$tp],s:bat[:msk],nil_matches:bit) :bat[:bit]
 address CMDbat${func^^}
 comment "Return V $op B with candidates list";
 
