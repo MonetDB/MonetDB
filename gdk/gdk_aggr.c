@@ -1874,8 +1874,7 @@ BATgroupavg3(BAT **avgp, BAT **remp, BAT **cntp, BAT *b, BAT *g, BAT *e, BAT *s,
 			min = 0;
 		bn = BATconstant(min, b->ttype, ATOMnilptr(b->ttype),
 				 ngrp, TRANSIENT);
-		rn = BATconstant(min, b->ttype, ATOMnilptr(b->ttype),
-				 ngrp, TRANSIENT);
+		rn = BATconstant(min, TYPE_lng, &lng_nil, ngrp, TRANSIENT);
 		cn = BATconstant(min, TYPE_lng, &(lng){0}, ngrp, TRANSIENT);
 		if (bn == NULL || rn == NULL || cn == NULL) {
 			BBPreclaim(bn);
