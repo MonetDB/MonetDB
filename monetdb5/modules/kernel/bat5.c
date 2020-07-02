@@ -31,7 +31,9 @@
 #include "monetdb_config.h"
 #include "bat5.h"
 #include "mal_exception.h"
+#include "mal_interpreter.h"
 #include "mal_debugger.h"
+#include "gdk_time.h"
 
 /* set access mode to bat, replacing input with output */
 static BAT *
@@ -265,6 +267,135 @@ str
 BKCappend_val_wrap(bat *r, const bat *bid, const void *u)
 {
 	return BKCappend_val_force_wrap(r, bid, u, NULL);
+}
+
+#define append_bulk_imp_fixed_size(TPE) \
+	do { \
+		TPE *restrict heap; \
+		total = count + inputs; \
+		if (BATextend(b, total) != GDK_SUCCEED) { \
+			BBPunfix(b->batCacheid); \
+			throw(MAL,"bat.append_bulk", SQLSTATE(HY013) MAL_MALLOC_FAIL); \
+		} \
+		heap = Tloc(b, count); \
+		for (int i = 3, args = pci->argc; i < args; i++, j++) { \
+			TPE val = *(TPE*) getArgReference(stk,pci,i); \
+			new_nil |= is_##TPE##_nil(val); \
+			heap[j] = val; \
+		} \
+	} while (0)
+
+str
+BKCappend_bulk_force_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	bat *r = getArgReference_bat(stk, pci, 0), *bid = getArgReference_bat(stk, pci, 1);
+	bit force = *getArgReference_bit(stk, pci, 2), new_nil = 0;
+	BAT *b, *c;
+	BUN inputs = (BUN)(pci->argc - 3), count = 0, total = 0, j = 0;
+
+	(void) cntxt;
+	if ((b = BATdescriptor(*bid)) == NULL)
+		throw(MAL, "bat.append_bulk", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
+
+	if (inputs > 0) {
+		u_int8_t storage = ATOMstorage(b->ttype);
+		count = BATcount(b);
+
+		if ((c = setaccess(b, BAT_WRITE)) == NULL) {
+			BBPunfix(b->batCacheid);
+			throw(MAL, "bat.append_bulk", OPERATION_FAILED);
+		}
+		b = c;
+
+		if (isaBatType(getArgType(mb, pci, 3))) { /* use BATappend for the bulk case */
+			gdk_return rt;
+			for (int i = 3, args = pci->argc; i < args; i++) {
+				BAT *d = BATdescriptor(*getArgReference_bat(stk, pci, i));
+				if (!d) {
+					BBPunfix(b->batCacheid);
+					throw(MAL, "bat.append_bulk", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
+				}
+				rt = BATappend(b, d, NULL, force);
+				BBPunfix(d->batCacheid);
+				if (rt != GDK_SUCCEED) {
+					BBPunfix(b->batCacheid);
+					throw(MAL,"bat.append_bulk", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+				}
+			}
+		} else if (b->ttype < TYPE_str && storage == b->ttype) {
+			switch (b->ttype) {
+			case TYPE_bit:
+				append_bulk_imp_fixed_size(bit);
+				break;
+			case TYPE_bte:
+				append_bulk_imp_fixed_size(bte);
+				break;
+			case TYPE_sht:
+				append_bulk_imp_fixed_size(sht);
+				break;
+			case TYPE_int:
+				append_bulk_imp_fixed_size(int);
+				break;
+			case TYPE_lng:
+				append_bulk_imp_fixed_size(lng);
+				break;
+			case TYPE_oid:
+				append_bulk_imp_fixed_size(oid);
+				break;
+			case TYPE_flt:
+				append_bulk_imp_fixed_size(flt);
+				break;
+			case TYPE_dbl:
+				append_bulk_imp_fixed_size(dbl);
+				break;
+			case TYPE_date:
+				append_bulk_imp_fixed_size(date);
+				break;
+			case TYPE_daytime:
+				append_bulk_imp_fixed_size(daytime);
+				break;
+			case TYPE_timestamp:
+				append_bulk_imp_fixed_size(timestamp);
+				break;
+#ifdef HAVE_HGE
+			case TYPE_hge:
+				append_bulk_imp_fixed_size(hge);
+				break;
+#endif
+			default:
+				assert(0);
+			}
+			BATsetcount(b, total);
+			if (count == 0) {
+				b->tnil = new_nil;
+				b->tnonil = !new_nil;
+			} else {
+				b->tnil |= new_nil;
+				b->tnonil &= ~new_nil;
+			}
+			b->tkey = BATcount(b) <= 1;
+			b->tsorted = BATcount(b) <= 1;
+			b->trevsorted = BATcount(b) <= 1;
+		} else { /* non fixed size, use the conventional way */
+			total = count + inputs;
+			if (BATextend(b, total) != GDK_SUCCEED) {
+				BBPunfix(b->batCacheid);
+				throw(MAL,"bat.append_bulk", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+			}
+			for (int i = 3, args = pci->argc; i < args; i++) {
+				ptr u = getArgReference(stk,pci,i);
+				if (storage >= TYPE_str)
+					u = (ptr) *(str *) u;
+				if (BUNappend(b, u, force) != GDK_SUCCEED) {
+					BBPunfix(b->batCacheid);
+					throw(MAL,"bat.append_bulk", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+				}
+			}
+		}
+	}
+
+	BBPkeepref(*r = b->batCacheid);
+	return MAL_SUCCEED;
 }
 
 str
@@ -1202,6 +1333,8 @@ mel_func bat5_init_funcs[] = {
  command("bat", "append", BKCappend_cand_wrap, false, "append the content of u with candidate list s to i", args(1,4, batargany("",1),batargany("i",1),batargany("u",1),batarg("s",oid))),
  command("bat", "append", BKCappend_cand_force_wrap, false, "append the content of u with candidate list s to i", args(1,5, batargany("",1),batargany("i",1),batargany("u",1),batarg("s",oid),arg("force",bit))),
  command("bat", "append", BKCappend_val_force_wrap, false, "append the value u to i", args(1,4, batargany("",1),batargany("i",1),argany("u",1),arg("force",bit))),
+ pattern("bat", "appendBulk", BKCappend_bulk_force_wrap, false, "append the arguments ins to i", args(1,4, batargany("",1), batargany("i",1),arg("force",bit),varargany("ins",1))),
+ pattern("bat", "appendBulk", BKCappend_bulk_force_wrap, false, "append the arguments ins to i", args(1,4, batargany("",1), batargany("i",1),arg("force",bit),batvarargany("ins",1))),
  command("bat", "attach", BKCattach, false, "Returns a new BAT with dense head and tail of the given type and uses\nthe given file to initialize the tail. The file will be owned by the\nserver.", args(1,3, batargany("",1),arg("tt",int),arg("heapfile",str))),
  command("bat", "densebat", BKCdensebat, false, "Creates a new [void,void] BAT of size 'sz'.", args(1,2, batarg("",oid),arg("sz",lng))),
  command("bat", "info", BKCinfo, false, "Produce a table containing information about a BAT in [attribute,value] format. \nIt contains all properties of the BAT record. ", args(2,3, batarg("",str),batarg("",str),batargany("b",1))),

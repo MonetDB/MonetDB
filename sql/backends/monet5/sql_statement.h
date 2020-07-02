@@ -69,6 +69,7 @@ typedef enum stmt_type {
 
 	st_export,
 	st_append,
+	st_append_bulk,
 	st_table_clear,
 	st_exception,
 	st_trans,
@@ -152,6 +153,7 @@ extern stmt *stmt_update_idx(backend *be, sql_idx *i, stmt *tids, stmt *upd);
 extern stmt *stmt_delete(backend *be, sql_table *t, stmt *b);
 
 extern stmt *stmt_append(backend *be, stmt *c, stmt *values);
+extern stmt *stmt_append_bulk(backend *be, stmt *c, list *l);
 extern stmt *stmt_table_clear(backend *be, sql_table *t);
 
 extern stmt *stmt_export(backend *be, stmt *t, const char *sep, const char *rsep, const char *ssep, const char *null_string, int onclient, stmt *file);

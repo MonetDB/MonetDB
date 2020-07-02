@@ -40,6 +40,7 @@ str alter_userRef;
 str alter_viewRef;
 str andRef;
 str appendidxRef;
+str appendBulkRef;
 str appendRef;
 str arrayRef;
 str assertRef;
@@ -346,6 +347,7 @@ void optimizerInit(void)
 	alter_viewRef = putName("alter_view");
 	andRef = putName("and");
 	appendidxRef = putName("append_idxbat");
+	appendBulkRef = putName("appendBulk");
 	appendRef = putName("append");
 	arrayRef = putName("array");
 	assertRef = putName("assert");

@@ -2781,6 +2781,39 @@ stmt_append(backend *be, stmt *c, stmt *a)
 }
 
 stmt *
+stmt_append_bulk(backend *be, stmt *c, list *l)
+{
+	MalBlkPtr mb = be->mb;
+	InstrPtr q = NULL;
+
+	if (c->nr < 0)
+		return NULL;
+
+	q = newStmtArgs(mb, batRef, appendBulkRef, list_length(l) + 3);
+	q = pushArgument(mb, q, c->nr);
+	q = pushBit(mb, q, TRUE);
+	for (node *n = l->h ; n ; n = n->next) {
+		stmt *a = n->data;
+		q = pushArgument(mb, q, a->nr);
+	}
+	if (q) {
+		stmt *s = stmt_create(be->mvc->sa, st_append_bulk);
+		if(!s) {
+			freeInstruction(q);
+			return NULL;
+		}
+		s->op1 = c;
+		s->op4.lval = l;
+		s->nrcols = c->nrcols;
+		s->key = c->key;
+		s->nr = getDestVar(q);
+		s->q = q;
+		return s;
+	}
+	return NULL;
+}
+
+stmt *
 stmt_table_clear(backend *be, sql_table *t)
 {
 	MalBlkPtr mb = be->mb;
@@ -3420,6 +3453,7 @@ tail_type(stmt *st)
 		case st_tinter:
 			return sql_bind_localtype("oid");
 		case st_append:
+		case st_append_bulk:
 		case st_alias:
 		case st_gen_group:
 		case st_order:
@@ -3558,6 +3592,7 @@ _column_name(sql_allocator *sa, stmt *st)
 	case st_group:
 	case st_result:
 	case st_append:
+	case st_append_bulk:
 	case st_gen_group:
 	case st_semijoin:
 	case st_uselect:
@@ -3626,6 +3661,7 @@ schema_name(sql_allocator *sa, stmt *st)
 	case st_group:
 	case st_result:
 	case st_append:
+	case st_append_bulk:
 	case st_gen_group:
 	case st_uselect:
 	case st_uselect2:

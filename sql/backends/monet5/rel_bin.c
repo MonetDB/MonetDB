@@ -282,12 +282,11 @@ row2cols(backend *be, stmt *sub)
 static stmt*
 distinct_value_list(backend *be, list *vals, stmt ** last_null_value)
 {
-	node *n;
+	list *l = sa_list(be->mvc->sa);
 	stmt *s;
 
 	/* create bat append values */
-	s = stmt_temp(be, exp_subtype(vals->h->data));
-	for( n = vals->h; n; n = n->next) {
+	for (node *n = vals->h; n; n = n->next) {
 		sql_exp *e = n->data;
 		stmt *i = exp_bin(be, e, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0, 0);
 
@@ -297,9 +296,9 @@ distinct_value_list(backend *be, list *vals, stmt ** last_null_value)
 		if (!i)
 			return NULL;
 
-		s = stmt_append(be, s, i);
+		list_append(l, i);
 	}
-
+	s = stmt_append_bulk(be, stmt_temp(be, exp_subtype(vals->h->data)), l);
 	/* Probably faster to filter out the values directly in the underlying list of atoms.
 	   But for now use groupby to filter out duplicate values. */
 	stmt* groupby = stmt_group(be, s, NULL, NULL, NULL, 1);
@@ -473,15 +472,14 @@ handle_in_exps(backend *be, sql_exp *ce, list *nl, stmt *left, stmt *right, stmt
 static stmt *
 value_list(backend *be, list *vals, stmt *left, stmt *sel)
 {
-	node *n;
-	stmt *s;
 	sql_subtype *type = exp_subtype(vals->h->data);
+	list *l;
 
 	if (!type)
 		return sql_error(be->mvc, 02, SQLSTATE(42000) "Could not infer the type of a value list column");
 	/* create bat append values */
-	s = stmt_temp(be, type);
-	for( n = vals->h; n; n = n->next) {
+	l = sa_list(be->mvc->sa);
+	for (node *n = vals->h; n; n = n->next) {
 		sql_exp *e = n->data;
 		stmt *i = exp_bin(be, e, left, NULL, NULL, NULL, NULL, sel, NULL, 0, 0);
 
@@ -490,9 +488,9 @@ value_list(backend *be, list *vals, stmt *left, stmt *sel)
 
 		if (list_length(vals) == 1)
 			return i;
-		s = stmt_append(be, s, i);
+		list_append(l, i);
 	}
-	return s;
+	return stmt_append_bulk(be, stmt_temp(be, type), l);
 }
 
 static stmt *
