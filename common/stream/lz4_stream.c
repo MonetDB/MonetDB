@@ -216,7 +216,7 @@ setup_compression(stream *inner, pump_state *state, int level)
 	// caused by input of that size.
 
 	// The required size depends on the preferences so we set those first.
-	inner_state->compression_prefs = (LZ4F_preferences_t)LZ4F_INIT_PREFERENCES;
+	memset(&inner_state->compression_prefs, 0, sizeof(inner_state->compression_prefs));
 	inner_state->compression_prefs.compressionLevel = level;
 
 	// Set up a buffer that can hold the largest output block plus the initial
