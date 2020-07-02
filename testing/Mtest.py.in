@@ -1472,7 +1472,7 @@ def ApproveOutput (env, TST) :
             f = openutf8(patch + '.0', 'w')
             proc = process.Popen(['diff', '-Bb', '-I^[#=]', '-I^MAPI *=', '-U0',
                                   stableOUTPUT, testOUTPUT],
-                                 stdout = f, universal_newlines = True)
+                                 stdout=f, text=True)
             proc.wait()
             f.close()
             if os.path.getsize(patch + ".0"):
@@ -1516,12 +1516,12 @@ def ApproveOutput (env, TST) :
                 if not verbose:
                     patchcmd.append('--quiet')
                 proc = process.Popen(patchcmd + [stableOUTPUT, patch + '.1'],
-                                     universal_newlines = True)
+                                     text=True)
                 proc.wait()
                 f = openutf8(patch, 'w')
                 proc = process.Popen(['diff', '-u', stableOUTPUT + '.ORG',
                                       stableOUTPUT],
-                                     stdout = f, universal_newlines = True)
+                                     stdout=f, text=True)
                 proc.wait()
                 f.close()
                 remove(stableOUTPUT + ".ORG")
@@ -1541,7 +1541,7 @@ def ApproveOutput (env, TST) :
                         elif f != thefile and test.match(f):
                             remove(os.path.join(dir or os.curdir, f + '.rej'))
                             remove(os.path.join(dir or os.curdir, f + '.orig'))
-                            proc = process.Popen(patchcmd + ['--forward', os.path.join(dir or os.curdir, f)], stdin = openutf8(patch), universal_newlines = True)
+                            proc = process.Popen(patchcmd + ['--forward', os.path.join(dir or os.curdir, f)], stdin=openutf8(patch), text=True)
                             proc.wait()
                             if os.path.exists(os.path.join(dir or os.curdir, f + '.rej')):
                                 list.append(f)
@@ -1600,6 +1600,32 @@ def expandvars(path, environ = os.environ):
             i = j
     return path
 
+def coredumpctl(pid):
+    import tempfile
+    # can't use tempfile.NamedTemporaryFile because it opens the file
+    # exclusively
+    fd, name = tempfile.mkstemp(suffix='.sh')
+    fd2, name2 = tempfile.mkstemp()
+    os.close(fd2)
+    os.write(fd, b'#!/bin/sh\ngdb -nx -batch -ex "thread apply all bt" "$@" > %s\n' % name2.encode('utf-8'))
+    os.close(fd)
+    os.chmod(name, 0o700)
+    if procdebug:
+        print('Starting: coredumpctl -q --debugger=%s gdb %d' % (name, pid))
+    with process.Popen(['coredumpctl', '-q', '--debugger=%s' % name, 'gdb', str(pid)],
+                       stdout=process.PIPE,
+                       stderr=process.PIPE,
+                       text=True) as p:
+        out, err = p.communicate()
+    os.unlink(name)
+    s = []
+    for l in out.split('\n'):
+        if not l.startswith('                '):
+            s.append(l)
+    out = '\n'.join(s) + open(name2).read()
+    os.unlink(name2)
+    return out, err
+
 def returnCode(proc, f = None):
     '''Interpret the return code of a process.
     If second arg sepcified, write a message to it.'''
@@ -1632,14 +1658,8 @@ def returnCode(proc, f = None):
                 if os.path.exists('/usr/bin/coredumpctl'):
                     # wait a few seconds for the core to be dumped
                     time.sleep(10)
-                    if procdebug:
-                        print('Starting: coredumpctl -q info %d' % proc.pid)
-                    p = process.Popen(['coredumpctl', '-q' ,'info', str(proc.pid)],
-                                      stdout = process.PIPE,
-                                      stderr = process.PIPE,
-                                      universal_newlines = True)
-                    out, err = p.communicate()
-                    if not err and out:
+                    out, err = coredumpctl(proc.pid)
+                    if out:
                         f.write(out)
                 f.flush()
             return 'segfault'   # Segmentation fault
@@ -1654,14 +1674,8 @@ def returnCode(proc, f = None):
                 if os.path.exists('/usr/bin/coredumpctl'):
                     # wait a few seconds for the core to be dumped
                     time.sleep(10)
-                    if procdebug:
-                        print('Starting: coredumpctl -q info %d' % proc.pid)
-                    p = process.Popen(['coredumpctl', '-q' ,'info', str(proc.pid)],
-                                      stdout = process.PIPE,
-                                      stderr = process.PIPE,
-                                      universal_newlines = True)
-                    out, err = p.communicate()
-                    if not err and out:
+                    out, err = coredumpctl(proc.pid)
+                    if out:
                         f.write(out)
                 f.flush()
             return 'abort'      # Aborted
@@ -1697,8 +1711,8 @@ def GetBitsAndModsAndThreads(env) :
     if procdebug:
         print('GetBitsAndModsAndThreads: starting process "%s" (inpipe, outpipe, errpipe)\n' % '" "'.join(cmd))
     setpgrp = True
-    proc = process.Popen(cmd, stdin = process.PIPE, stdout = process.PIPE,
-                         stderr = process.PIPE, universal_newlines = True)
+    proc = process.Popen(cmd, stdin=process.PIPE, stdout=process.PIPE,
+                         stderr=process.PIPE, text=True)
     proc.killed = False
     proc.onechild = True
     t = Timer(float(par['TIMEOUT']), killProc, args = [proc, proc.stderr, cmd])
@@ -1717,7 +1731,7 @@ def GetBitsAndModsAndThreads(env) :
             if procdebug:
                 print('GetBitsAndModsAndThreads: starting process "%s" (inpipe, outpipe, errpipe)\n' % '" "'.join(cmd))
             clnt = process.Popen(cmd, stdin=process.PIPE, stdout=process.PIPE,
-                                 stderr=process.PIPE, universal_newlines=True)
+                                 stderr=process.PIPE, text=True)
             input = '''\
                 c := mdb.modules();
                 modsid := algebra.unique(c);
@@ -2417,9 +2431,9 @@ def RunTest(env, TST, BusyPorts, COND, oktests, length, all_tests, pSrvr) :
             if procdebug:
                 print('RunTest: starting process "%s"\n' % '" "'.join(cmd))
             setpgrp = True
-            proc = process.Popen(cmd, stdout = process.PIPE,
-                                 stderr = process.PIPE,
-                                 universal_newlines = True)
+            proc = process.Popen(cmd, stdout=process.PIPE,
+                                 stderr=process.PIPE,
+                                 text=True)
             proc.killed = False
             proc.onechild = False
             t = Timer(float(par['TIMEOUT']), killProc, args = [proc])
@@ -2453,7 +2467,7 @@ def RunTest(env, TST, BusyPorts, COND, oktests, length, all_tests, pSrvr) :
                         '-U%s' % par['CONTEXT'],
                         '%s%s.FILTERED' % (TST, STABLEout),
                         '%s.test.out.FILTERED' % TST])
-            proc = process.Popen(cmd, universal_newlines = True)
+            proc = process.Popen(cmd, text=True)
             proc.wait()
 
         diff_html = openutf8('%s.err.diff.html' % TST,"w")
@@ -2486,9 +2500,9 @@ def RunTest(env, TST, BusyPorts, COND, oktests, length, all_tests, pSrvr) :
             if procdebug:
                 print('RunTest: starting process "%s"\n' % '" "'.join(cmd))
             setpgrp = True
-            proc = process.Popen(cmd, stdout = process.PIPE,
-                                 stderr = process.PIPE,
-                                 universal_newlines = True)
+            proc = process.Popen(cmd, stdout=process.PIPE,
+                                 stderr=process.PIPE,
+                                 text=True)
             proc.killed = False
             proc.onechild = False
             t = Timer(float(par['TIMEOUT']), killProc, args = [proc])
@@ -2522,7 +2536,7 @@ def RunTest(env, TST, BusyPorts, COND, oktests, length, all_tests, pSrvr) :
                         '-U%s' % par['CONTEXT'],
                         '%s%s.FILTERED' % (TST, STABLEerr),
                         '%s.test.err.FILTERED' % TST])
-            proc = process.Popen(cmd, universal_newlines = True)
+            proc = process.Popen(cmd, text=True)
             proc.wait()
 
         FailedOut, FailedErr = CategorizeResult(TST, max(sockerr, errcode), outmissing, errmissing)
@@ -2708,8 +2722,8 @@ def getkids():
     # return a dictionary with process IDs as key and a list of child
     # processes as value
     p = process.Popen(['ps', '-lu', os.getenv('USER')],
-                      stdout = process.PIPE, stderr = process.PIPE,
-                      universal_newlines = True)
+                      stdout=process.PIPE, stderr=process.PIPE,
+                      text=True)
     out, err = p.communicate()
     if err:
         return {}
@@ -2793,14 +2807,14 @@ def killProc(proc, outfile = None, cmd = None):
         if cdb:
             p = process.Popen([cdb, '-pv', '-p', str(proc.pid),
                                '-y', '%scache*;srv*http://msdl.microsoft.com/download/symbols' % sym, '-lines', '-c', '~*kP;!locks;q'],
-                              stdout = process.PIPE, universal_newlines = True)
+                              stdout=process.PIPE, text=True)
             out, err = p.communicate()
         else:
             out = ''
     else:
         try:
-            p = process.Popen(['pstack', str(proc.pid)], stdout = process.PIPE,
-                              universal_newlines = True)
+            p = process.Popen(['pstack', str(proc.pid)], stdout=process.PIPE,
+                              text=True)
             try:
                 # pstack (gdb) sometimes hangs when trying to get the
                 # stack trace: kill it mercilessly if it does
@@ -2828,8 +2842,8 @@ def killProc(proc, outfile = None, cmd = None):
         if procdebug:
             print('killProc: starting process "taskkill" "/F" "/T" "/PID" "%s"\n' % str(proc.pid))
         p = process.Popen(['taskkill','/F','/T','/PID',str(proc.pid)],
-                          stdout = process.PIPE, stderr = process.PIPE,
-                          universal_newlines = True)
+                          stdout=process.PIPE, stderr=process.PIPE,
+                          text=True)
         out, err = p.communicate()
         if procdebug:
             print('killProc: process exited "taskkill" "/F" "/T" "/PID" "%s" (%s)\n' % (str(proc.pid), proc.returncode))
@@ -2883,11 +2897,11 @@ class ServerClass:
                 pass
         if os.name == "nt":
             proc = process.Popen(self.cmd, stdin=open(os.devnull), stdout=self.outfile,
-                                 stderr=self.errfile, universal_newlines=True,
+                                 stderr=self.errfile, text=True,
                                  creationflags=process.CREATE_NEW_PROCESS_GROUP)
         else:
             proc = process.Popen(self.cmd, stdin=open(os.devnull), stdout=self.outfile,
-                                 stderr=self.errfile, universal_newlines=True)
+                                 stderr=self.errfile, text=True)
         # maybe buffer output as it comes to avoid deadlock
         if self.outfile == process.PIPE:
             proc.stdout = process._BufferedPipe(proc.stdout)
@@ -2951,8 +2965,8 @@ def RunIt(cmd, onechild, TestIn, TestOut, TestErr, TimeOut) :
     if procdebug:
         print('RunIt: starting process "%s"\n' % '" "'.join(cmd))
     setpgrp = True
-    proc = process.Popen(cmd, stdin = TestIn, stdout = TestOut,
-                         stderr = TestErr, universal_newlines = True)
+    proc = process.Popen(cmd, stdin=TestIn, stdout=TestOut,
+                         stderr=TestErr, text=True)
     proc.killed = False
     proc.onechild = onechild
     t = Timer(TimeOut, killProc, args = [proc, TestErr, cmd])
@@ -3297,8 +3311,8 @@ def Check(command, input) :
     if procdebug:
         print('Check: starting process "%s" (inpipe,outpipe,errpipe)\n' % '" "'.join(command))
     setpgrp = True
-    proc = process.Popen(command, stdin = process.PIPE, stdout = process.PIPE,
-                         stderr = process.PIPE, universal_newlines = True)
+    proc = process.Popen(command, stdin=process.PIPE, stdout=process.PIPE,
+                         stderr=process.PIPE, text=True)
     proc.killed = False
     proc.onechild = True
     t = Timer(float(par['TIMEOUT']), killProc, args = [proc])
@@ -3502,9 +3516,9 @@ if os.name == "nt":
     r = re.compile('^Microsoft Windows (.*)\[Version ([0-9]+\.[0-9]+)([^\[0-9].*)\]$')
     if procdebug:
         print('starting process "cmd" "/c" "ver" (inpipe,outpipe)\n')
-    proc = process.Popen('cmd /c ver', stdin = process.PIPE,
-                         stdout = process.PIPE, stderr = process.PIPE,
-                         universal_newlines = True)
+    proc = process.Popen('cmd /c ver', stdin=process.PIPE,
+                         stdout=process.PIPE, stderr=process.PIPE,
+                         text=True)
     qOut, qErr = proc.communicate()
     if procdebug:
         print('process exited "cmd" "/c" "ver" (%s)\n' % proc.returncode)
@@ -3664,8 +3678,8 @@ def main(argv) :
         r_noecho = '--no-echo'
         if CheckExec('R'):
             proc = process.Popen(['R', '--version'],
-                                 stdout = process.PIPE, stderr = process.PIPE,
-                                 universal_newlines = True)
+                                 stdout=process.PIPE, stderr=process.PIPE,
+                                 text=True)
             r_out, r_err = proc.communicate()
             res = re.search(r'R version (?P<major>\d+)\.', r_out)
             if res is not None and int(res.group('major')) < 4:
@@ -3673,8 +3687,8 @@ def main(argv) :
             if CONDITIONALS['HAVE_LIBR']:
                 proc = process.Popen(['R', r_noecho, '--no-save', '--no-restore',
                                       '-e', 'print(Sys.getenv("R_LIBS_USER"))'],
-                                     stdout = process.PIPE, stderr = process.PIPE,
-                                     universal_newlines = True)
+                                     stdout=process.PIPE, stderr=process.PIPE,
+                                     text=True)
                 r_out, r_err = proc.communicate()
                 res = re.search(r'\[\d+\] "(?P<dir>.*)"', r_out)
                 if res is not None:
@@ -3852,7 +3866,7 @@ def main(argv) :
     if CheckExec('python'):
         proc = process.Popen(['python', '-c', 'import sys; print(sys.version[:1])'],
                              stdout=process.PIPE, stderr=process.PIPE,
-                             universal_newlines=True)
+                             text=True)
         pyout, pyerr = proc.communicate()
         if proc.returncode == 0 and pyout:
             python_version = pyout.strip()
@@ -3866,7 +3880,7 @@ def main(argv) :
             try:
                 proc = process.Popen([py3, '-c', 'import pymonetdb'],
                                      stdout=process.PIPE, stderr=process.PIPE,
-                                     universal_newlines=True)
+                                     text=True)
                 pyout, pyerr = proc.communicate()
                 if proc.returncode == 0:
                     CONDITIONALS['HAVE_PY3MONETDB'] = '#'
@@ -3891,13 +3905,13 @@ def main(argv) :
     if 'PYTHON3' in os.environ:
         proc = process.Popen([os.environ['PYTHON3'], '-c', 'import scipy'],
                              stdout=process.PIPE, stderr=process.PIPE,
-                             universal_newlines=True)
+                             text=True)
         pyout, pyerr = proc.communicate()
         if proc.returncode == 0:
             CONDITIONALS['HAVE_LIBSCIPY3'] = '#'
         # proc = process.Popen([os.environ['PYTHON3'], '-c', 'import pandas'],
         #                      stdout=process.PIPE, stderr=process.PIPE,
-        #                      universal_newlines=True)
+        #                      text=True)
         # pyout, pyerr = proc.communicate()
         # if proc.returncode == 0:
         #     CONDITIONALS['HAVE_LIBPANDAS3'] = '#'
@@ -3905,8 +3919,8 @@ def main(argv) :
         CONDITIONALS['HAVE_DATA_PATH'] = '#'
     if CheckExec('perl'):
         proc = process.Popen(['perl', '-e', 'use MonetDB::CLI::MapiPP; use DBI;'],
-                             stdout = process.PIPE, stderr = process.PIPE,
-                             universal_newlines = True)
+                             stdout=process.PIPE, stderr=process.PIPE,
+                             text=True)
         perl_out, perl_err = proc.communicate()
         if proc.returncode == 0:
             CONDITIONALS['HAVE_PERL'] = '#'
@@ -3918,8 +3932,8 @@ def main(argv) :
             phpcmd.extend(['-d', 'include_path=%s' % os.environ['PHP_INCPATH']])
         phpcmd.extend(['-r', "require 'monetdb/php_monetdb.php';"])
         proc = process.Popen(phpcmd,
-                             stdout = process.PIPE, stderr = process.PIPE,
-                             universal_newlines = True)
+                             stdout=process.PIPE, stderr=process.PIPE,
+                             text=True)
         php_out, php_err = proc.communicate()
         if proc.returncode == 0:
             CONDITIONALS['HAVE_PHP'] = '#'
@@ -3928,8 +3942,8 @@ def main(argv) :
     if CheckExec('ruby'):
         # also check ruby version; we require >= 1.9 for "require_relative"
         proc = process.Popen(['ruby', '--version'],
-                             stdout = process.PIPE, stderr = process.PIPE,
-                             universal_newlines = True)
+                             stdout=process.PIPE, stderr=process.PIPE,
+                             text=True)
         ruby_out, ruby_err = proc.communicate()
         ruby_reg = re.compile("^[^ ]* ([0-9]+)\.([0-9]+)[^0-9].*$", re.MULTILINE)
         ruby_ver = ruby_reg.match(ruby_out)
@@ -3937,8 +3951,8 @@ def main(argv) :
            100 * int(ruby_ver.group(1)) + int(ruby_ver.group(2)) >= 109:
             # now check whether the monetdb-ruby gem is available
             proc = process.Popen(['ruby', '-e', "require 'MonetDB'"],
-                                 stdout = process.PIPE, stderr = process.PIPE,
-                                 universal_newlines = True)
+                                 stdout=process.PIPE, stderr=process.PIPE,
+                                 text=True)
             ruby_out, ruby_err = proc.communicate()
             if proc.returncode == 0:
                 CONDITIONALS['HAVE_RUBY'] = '#'
@@ -4012,8 +4026,8 @@ def main(argv) :
     try:
         os.chdir(TSTSRCBASE)
         proc = process.Popen(['hg', 'root'],
-                             stdout = process.PIPE, stderr = process.PIPE,
-                             universal_newlines = True)
+                             stdout=process.PIPE, stderr=process.PIPE,
+                             text=True)
         out, err = proc.communicate()
         if proc.returncode == 0:
             CONDITIONALS['MERCURIAL'] = '#' # True
@@ -4154,8 +4168,8 @@ def main(argv) :
     if REV is None:             # no --revision option: try to find out
         try:
             proc = process.Popen(['hg', 'id', '-i'],
-                                 stdout = process.PIPE,
-                                 universal_newlines = True)
+                                 stdout=process.PIPE,
+                                 text=True)
             out, err = proc.communicate()
             if proc.returncode == 0:
                 REV = out.strip()

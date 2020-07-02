@@ -173,8 +173,8 @@ stdout of test 'subquery6` in directory 'sql/test/subquery` itself:
 #END;
 #DROP FUNCTION debugme;
 #SELECT i = ALL(i), i < ANY(i), i = ANY(NULL) FROM integers;
-% sys.%3,	sys.%4,	. # table_name
-% %3,	%4,	%2 # name
+% sys.%3,	sys.%4,	.%5 # table_name
+% %3,	%4,	%5 # name
 % boolean,	boolean,	boolean # type
 % 5,	5,	5 # length
 [ true,	false,	NULL	]

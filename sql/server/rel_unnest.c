@@ -1569,8 +1569,19 @@ rewrite_inner(mvc *sql, sql_rel *rel, sql_rel *inner, operator_type op)
 static sql_exp *
 rewrite_exp_rel(visitor *v, sql_rel *rel, sql_exp *e, int depth)
 {
-	(void)depth;
-	if (exp_has_rel(e) && !is_ddl(rel->op)) {
+	if (exp_is_rel(e) && is_ddl(rel->op) && rel->flag == ddl_psm) {
+		sql_rel *inner = exp_rel_get_rel(v->sql->sa, e);
+		if (is_single(inner)) {
+			/* use a dummy projection for the single join */
+			sql_rel *nrel = rel_project(v->sql->sa, NULL, append(sa_list(v->sql->sa), exp_atom_bool(v->sql->sa, 1)));
+
+			if (!rewrite_inner(v->sql, nrel, inner, depth?op_left:op_join))
+				return NULL;
+			/* has to apply recursively */
+			if (!(e->l = rel_exp_visitor_bottomup(v, nrel, &rewrite_exp_rel)))
+				return NULL;
+		}
+	} else if (exp_has_rel(e) && !is_ddl(rel->op)) {
 		sql_exp *ne = rewrite_inner(v->sql, rel, exp_rel_get_rel(v->sql->sa, e), depth?op_left:op_join);
 
 		if (!ne)
@@ -1586,9 +1597,6 @@ rewrite_exp_rel(visitor *v, sql_rel *rel, sql_exp *e, int depth)
 			e = exp_rel_update_exp(v->sql, e);
 		}
 	}
-	if (exp_is_rel(e) && is_ddl(rel->op))
-		if (!(e->l = rel_exp_visitor_bottomup(v, e->l, &rewrite_exp_rel)))
-			return NULL;
 	return e;
 }
 
@@ -2104,7 +2112,7 @@ static sql_exp *
 rewrite_anyequal(mvc *sql, sql_rel *rel, sql_exp *e, int depth)
 {
 	sql_subfunc *sf;
-	if (e->type != e_func || is_ddl(rel->op))
+	if (e->type != e_func)
 		return e;
 
 	sf = e->f;
@@ -2236,6 +2244,8 @@ rewrite_anyequal(mvc *sql, sql_rel *rel, sql_exp *e, int depth)
 				if (exp_name(e))
 					exp_prop_alias(sql->sa, le, e);
 				set_processed(lsq);
+				if (depth == 1 && is_ddl(rel->op)) /* anyequal is at a ddl statment, it must be inside a relation */
+					return exp_rel(sql, lsq);
 				return le;
 			} else {
 				if (lsq)
@@ -2584,7 +2594,7 @@ static sql_exp *
 rewrite_exists(visitor *v, sql_rel *rel, sql_exp *e, int depth)
 {
 	sql_subfunc *sf;
-	if (e->type != e_func || is_ddl(rel->op))
+	if (e->type != e_func)
 		return e;
 
 	sf = e->f;
@@ -2595,8 +2605,12 @@ rewrite_exists(visitor *v, sql_rel *rel, sql_exp *e, int depth)
 			sql_exp *ne = NULL, *ie = l->h->data, *le;
 			sql_rel *sq = NULL;
 
-			if (!exp_is_rel(ie)) /* already fine */
+			if (!exp_is_rel(ie)) { /* exists over a constant or a single value */
+				const char *rname = exp_relname(e), *name = exp_name(e);
+				e = exp_atom_bool(v->sql->sa, is_exists(sf)?1:0);
+				exp_setname(v->sql->sa, e, rname, name);
 				return e;
+			}
 
 			sq = exp_rel_get_rel(v->sql->sa, ie); /* get subquery */
 
@@ -2637,6 +2651,8 @@ rewrite_exists(visitor *v, sql_rel *rel, sql_exp *e, int depth)
 				if (exp_name(e))
 					exp_prop_alias(v->sql->sa, le, e);
 				set_processed(sq);
+				if (depth == 1 && is_ddl(rel->op)) /* exists is at a ddl statment, it must be inside a relation */
+					return exp_rel(v->sql, sq);
 			} else { /* rewrite into semi/anti join */
 				(void)rewrite_inner(v->sql, rel, sq, is_exists(sf)?op_semi:op_anti);
 				return exp_atom_bool(v->sql->sa, 1);

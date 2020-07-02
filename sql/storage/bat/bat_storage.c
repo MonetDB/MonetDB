@@ -958,6 +958,39 @@ delta_delete_val( sql_dbat *bat, oid rid )
 	return LOG_OK;
 }
 
+static void
+_destroy_dbat(sql_dbat *bat)
+{
+	assert(bat->r.refcnt == 0);
+	if (bat->dname)
+		_DELETE(bat->dname);
+	if (bat->dbid)
+		temp_destroy(bat->dbid);
+	if (bat->cached) {
+		bat_destroy(bat->cached);
+		bat->cached = NULL;
+	}
+	bat->dbid = 0;
+	bat->dname = NULL;
+	_DELETE(bat);
+}
+
+static int
+destroy_dbat(sql_trans *tr, sql_dbat *bat)
+{
+	sql_dbat *n;
+
+	(void)tr;
+	while(bat) {
+		n = bat->next;
+		if (sql_ref_dec(&bat->r) > 0)
+			return LOG_OK;
+		_destroy_dbat(bat);
+		bat = n;
+	}
+	return LOG_OK;
+}
+
 static int
 bind_del_data(sql_trans *tr, sql_table *t)
 {
@@ -966,9 +999,12 @@ bind_del_data(sql_trans *tr, sql_table *t)
 		sql_dbat *bat = ZNEW(sql_dbat), *obat;
 		if(!bat)
 			return LOG_ERR;
+		if (t->data)
+			destroy_dbat(tr, t->data);
 		t->data = bat;
 		obat = timestamp_dbat(ot->data, t->base.stime);
 		dup_dbat(tr, obat, bat, isNew(ot), isTempTable(t));
+		destroy_dbat(tr, obat);
 		t->base.allocated = 1;
 	}
 	return LOG_OK;
@@ -1812,38 +1848,6 @@ log_destroy_idx(sql_trans *tr, sql_idx *i)
 	return LOG_OK;
 }
 
-static void
-_destroy_dbat(sql_dbat *bat)
-{
-	if (sql_ref_dec(&bat->r) > 0)
-		return;
-	if (bat->dname)
-		_DELETE(bat->dname);
-	if (bat->dbid)
-		temp_destroy(bat->dbid);
-	if (bat->cached) {
-		bat_destroy(bat->cached);
-		bat->cached = NULL;
-	}
-	bat->dbid = 0;
-	bat->dname = NULL;
-	_DELETE(bat);
-}
-
-static int
-destroy_dbat(sql_trans *tr, sql_dbat *bat)
-{
-	sql_dbat *n;
-
-	(void)tr;
-	while(bat) {
-		n = bat->next;
-		_destroy_dbat(bat);
-		bat = n;
-	}
-	return LOG_OK;
-}
-
 static int
 cleanup(void)
 {
@@ -1885,9 +1889,9 @@ delayed_destroy_dbat(sql_dbat *b)
 
 	if (!n)
 		return LOG_OK;
+	MT_lock_set(&destroy_lock);
 	while(n->next)
 		n = n->next;
-	MT_lock_set(&destroy_lock);
 	n->next = tobe_destroyed_dbat;
 	tobe_destroyed_dbat = b;
 	MT_lock_unset(&destroy_lock);
@@ -1899,7 +1903,7 @@ destroy_del(sql_trans *tr, sql_table *t)
 {
 	int ok = LOG_OK;
 
-	if (t->data && t->base.allocated) {
+	if (t->data /* && t->base.allocated */) {
 		t->base.allocated = 0;
 		ok = destroy_dbat(tr, t->data);
 	}
@@ -2700,8 +2704,11 @@ update_table(sql_trans *tr, sql_table *ft, sql_table *tt)
 			assert(tt->data);
 			if (tr_merge_dbat(tr, tt->data) != LOG_OK)
 				ok = LOG_ERR;
+			if (ft->data)
+				destroy_del(tr, ft);
 			ft->data = NULL;
 		} else if (ft->data) {
+			assert(!tt->data);
 			tt->data = ft->data;
 			tt->base.allocated = 1;
 			ft->data = NULL;
