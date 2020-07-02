@@ -62,7 +62,7 @@ write_callback(char *buffer, size_t size, size_t nitems, void *userp)
 		size_t maxsize;
 
 		maxsize = (c->usesize + size + BLOCK_CURL - 1) & ~(BLOCK_CURL - 1);
-		b = realloc(c->buffer, c->maxsize);
+		b = realloc(c->buffer, maxsize);
 		if (b == NULL)
 			return 0;	/* indicate failure to library */
 		c->buffer = b;
