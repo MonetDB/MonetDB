@@ -1572,8 +1572,20 @@ static sql_exp *
 rewrite_exp_rel(mvc *sql, sql_rel *rel, sql_exp *e, int depth, int *changes)
 {
 	(void)changes;
-	(void)depth;
-	if (exp_has_rel(e) && !is_ddl(rel->op)) {
+
+	if (exp_is_rel(e) && is_ddl(rel->op) && rel->flag == ddl_psm) {
+		sql_rel *inner = exp_rel_get_rel(sql->sa, e);
+		if (is_single(inner)) {
+			/* use a dummy projection for the single join */
+			sql_rel *nrel = rel_project(sql->sa, NULL, append(sa_list(sql->sa), exp_atom_bool(sql->sa, 1)));
+
+			if (!rewrite_inner(sql, nrel, inner, depth?op_left:op_join))
+				return NULL;
+			/* has to apply recursively */
+			if (!(e->l = rel_exp_visitor_bottomup(sql, nrel, &rewrite_exp_rel, changes)))
+				return NULL;
+		}
+	} else if (exp_has_rel(e) && !is_ddl(rel->op)) {
 		sql_exp *ne = rewrite_inner(sql, rel, exp_rel_get_rel(sql->sa, e), depth?op_left:op_join);
 
 		if (!ne)
@@ -1588,10 +1600,7 @@ rewrite_exp_rel(mvc *sql, sql_rel *rel, sql_exp *e, int depth, int *changes)
 		} else {
 			e = exp_rel_update_exp(sql, e);
 		}
-	}
-	if (exp_is_rel(e) && is_ddl(rel->op))
-		if (!(e->l = rel_exp_visitor_bottomup(sql, e->l, &rewrite_exp_rel, changes)))
-			return NULL;
+	} 
 	return e;
 }
 
@@ -2109,7 +2118,7 @@ static sql_exp *
 rewrite_anyequal(mvc *sql, sql_rel *rel, sql_exp *e, int depth)
 {
 	sql_subfunc *sf;
-	if (e->type != e_func || is_ddl(rel->op))
+	if (e->type != e_func)
 		return e;
 
 	sf = e->f;
@@ -2241,6 +2250,8 @@ rewrite_anyequal(mvc *sql, sql_rel *rel, sql_exp *e, int depth)
 				if (exp_name(e))
 					exp_prop_alias(sql->sa, le, e);
 				set_processed(lsq);
+				if (depth == 1 && is_ddl(rel->op)) /* anyequal is at a ddl statment, it must be inside a relation */
+					return exp_rel(sql, lsq);
 				return le;
 			} else {
 				if (lsq)
@@ -2589,7 +2600,7 @@ static sql_exp *
 rewrite_exists(mvc *sql, sql_rel *rel, sql_exp *e, int depth)
 {
 	sql_subfunc *sf;
-	if (e->type != e_func || is_ddl(rel->op))
+	if (e->type != e_func)
 		return e;
 
 	sf = e->f;
@@ -2647,6 +2658,8 @@ rewrite_exists(mvc *sql, sql_rel *rel, sql_exp *e, int depth)
 				if (exp_name(e))
 					exp_prop_alias(sql->sa, le, e);
 				set_processed(sq);
+				if (depth == 1 && is_ddl(rel->op)) /* exists is at a ddl statment, it must be inside a relation */
+					return exp_rel(sql, sq);
 			} else { /* rewrite into semi/anti join */
 				(void)rewrite_inner(sql, rel, sq, is_exists(sf)?op_semi:op_anti);
 				return exp_atom_bool(sql->sa, 1);

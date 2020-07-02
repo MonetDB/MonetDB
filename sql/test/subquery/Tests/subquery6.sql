@@ -133,7 +133,7 @@ SELECT i = ALL(i), i < ANY(i), i = ANY(NULL) FROM integers;
 SELECT i FROM integers WHERE i = ANY(NULL);
 	--empty
 
-CREATE FUNCTION debugme() RETURNS INT
+CREATE FUNCTION debugme2() RETURNS INT
 BEGIN
 	DECLARE n INT;
 	WHILE (1 > (select 9 from integers)) do
@@ -141,10 +141,10 @@ BEGIN
 	END WHILE;
 	RETURN n;
 END;
-SELECT debugme(); --error, more than one row returned by a subquery used as an expression
-DROP FUNCTION debugme;
+SELECT debugme2(); --error, more than one row returned by a subquery used as an expression
+DROP FUNCTION debugme2;
 
-CREATE FUNCTION debugme() RETURNS INT
+CREATE FUNCTION debugme3() RETURNS INT
 BEGIN
 	DECLARE n INT;
 	WHILE (1 > ALL(select 1)) do
@@ -152,38 +152,39 @@ BEGIN
 	END WHILE;
 	RETURN n;
 END;
-SELECT debugme();
+SELECT debugme3();
 	--NULL
-DROP FUNCTION debugme;
-
-CREATE FUNCTION debugme(input int) RETURNS BOOLEAN
-BEGIN
-	DECLARE n BOOLEAN;
-	SET n = exists (select i from integers where i < input);
-	RETURN n;
-END;
-SELECT debugme(1), debugme(2);
-	-- True False
-DROP FUNCTION debugme;
-
-CREATE FUNCTION debugme3() RETURNS BOOLEAN
-BEGIN
-	DECLARE n BOOLEAN;
-	SET n = (select true union all select false);
-	RETURN n;
-END;
-SELECT debugme3(); --error, more than one row returned by a subquery used as an expression
 DROP FUNCTION debugme3;
 
 CREATE FUNCTION debugme4() RETURNS BOOLEAN
 BEGIN
 	DECLARE n BOOLEAN;
+	SET n = (select true union all select false);
+	RETURN n;
+END;
+SELECT debugme4(); --error, more than one row returned by a subquery used as an expression
+DROP FUNCTION debugme4;
+
+CREATE FUNCTION debugme5() RETURNS BOOLEAN
+BEGIN
+	DECLARE n BOOLEAN;
 	SET n = (select 1 where null);
 	RETURN n;
 END;
-SELECT debugme4();
-	-- NULL
-DROP FUNCTION debugme4;
+SELECT debugme5(); --error, cannot fetch a single row from an empty input
+DROP FUNCTION debugme5;
+
+CREATE FUNCTION debugme6() RETURNS INT
+BEGIN
+	DECLARE n INT;
+	WHILE ((SELECT 0) = ANY(SELECT 1)) do
+		SET n = 10;
+	END WHILE;
+	RETURN n;
+END;
+SELECT debugme6();
+	--NULL
+DROP FUNCTION debugme6;
 
 DROP TABLE tbl_ProductSales;
 DROP TABLE another_T;
