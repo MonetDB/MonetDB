@@ -2,6 +2,7 @@
 
 import locale
 import os
+import pipes
 import re
 import subprocess
 import sys
@@ -79,7 +80,16 @@ with MonetDBD(farmdir, set_snapdir=False) as m:
     print(first_words)
     assert first_words == ['name', 'bar@1', 'foo1@1', '@2', 'foo2@1', '@2']
 
-    header('RESTORE OVER')
+    header('RESTORE OVER EXISTING')
     m.run_monetdb('snapshot', 'restore', '-f', 'foo2@1', 'bar', output=True)
     out = m.run_mclient('-s', 'select * from t', '-fcsv', output=True, db='bar')
-    assert(out.strip() == 'foo2')
+    assert out.strip() == 'foo2'
+
+    header('CUSTOM FILENAME')
+    custom_name = os.path.join(m.snapdir, 'snap.tar')
+    qcustom_name = pipes.quote(custom_name)
+    m.run_monetdb('snapshot', 'create', '-t', qcustom_name, 'foo1')
+    assert os.path.exists(custom_name)
+    m.run_monetdb('snapshot', 'restore', qcustom_name, 'foo99', output=True)
+    out = m.run_mclient('-s', 'select * from t', '-fcsv', output=True, db='foo99')
+    assert out.strip() == 'foo1'
