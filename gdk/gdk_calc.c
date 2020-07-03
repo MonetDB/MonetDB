@@ -998,9 +998,6 @@ BATcalcisnil_implementation(BAT *b, BAT *s, BAT *r, bool notnil)
 	dst = (bit *) Tloc(bn, 0);
 
 	switch (ATOMbasetype(b->ttype)) {
-	case TYPE_bit:
-		ISNIL_TYPE(bit, notnil);
-		break;
 	case TYPE_bte:
 		ISNIL_TYPE(bte, notnil);
 		break;
