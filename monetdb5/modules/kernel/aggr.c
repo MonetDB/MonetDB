@@ -1502,6 +1502,22 @@ mel_func aggr_init_funcs[] = {
  command("aggr", "str_group_concat", AGGRstr_group_concat_sep, false, "Grouped string tail concat with custom separator", args(1,5, batarg("",str),batarg("b",str),batarg("sep",str),batarg("g",oid),batargany("e",1))),
  command("aggr", "substr_group_concat", AGGRsubstr_group_concat_sep, false, "Grouped string concat with custom separator", args(1,7, batarg("",str),batarg("b",str),batarg("sep",str),batarg("g",oid),batargany("e",1),arg("skip_nils",bit),arg("abort_on_error",bit))),
  command("aggr", "substr_group_concat", AGGRsubstr_group_concatcand_sep, false, "Grouped string concat with candidates list with custom separator", args(1,8, batarg("",str),batarg("b",str),batarg("sep",str),batarg("g",oid),batargany("e",1),batarg("s",oid),arg("skip_nils",bit),arg("abort_on_error",bit))),
+
+ command("aggr", "subavg", AGGRavg3, false, "Grouped average aggregation", args(3,8, batarg("",bte),batarg("",lng),batarg("",lng),batarg("b",bte),batarg("g",oid),batargany("e",1),batarg("s",oid),arg("skip_nils",bit))),
+ command("aggr", "subavg", AGGRavg3, false, "Grouped average aggregation", args(3,8, batarg("",sht),batarg("",lng),batarg("",lng),batarg("b",sht),batarg("g",oid),batargany("e",1),batarg("s",oid),arg("skip_nils",bit))),
+ command("aggr", "subavg", AGGRavg3, false, "Grouped average aggregation", args(3,8, batarg("",int),batarg("",lng),batarg("",lng),batarg("b",int),batarg("g",oid),batargany("e",1),batarg("s",oid),arg("skip_nils",bit))),
+ command("aggr", "subavg", AGGRavg3, false, "Grouped average aggregation", args(3,8, batarg("",lng),batarg("",lng),batarg("",lng),batarg("b",lng),batarg("g",oid),batargany("e",1),batarg("s",oid),arg("skip_nils",bit))),
+#ifdef HAVE_HGE
+ command("aggr", "subavg", AGGRavg3, false, "Grouped average aggregation", args(3,8, batarg("",hge),batarg("",lng),batarg("",lng),batarg("b",hge),batarg("g",oid),batargany("e",1),batarg("s",oid),arg("skip_nils",bit))),
+#endif
+ command("aggr", "subavg", AGGRavg3comb, false, "Grouped average aggregation combiner", args(1,7, batarg("",bte),batarg("b",bte),batarg("r",lng),batarg("c",lng),batarg("g",oid),batargany("e",1),arg("skip_nils",bit))),
+ command("aggr", "subavg", AGGRavg3comb, false, "Grouped average aggregation combiner", args(1,7, batarg("",sht),batarg("b",sht),batarg("r",lng),batarg("c",lng),batarg("g",oid),batargany("e",1),arg("skip_nils",bit))),
+ command("aggr", "subavg", AGGRavg3comb, false, "Grouped average aggregation combiner", args(1,7, batarg("",int),batarg("b",int),batarg("r",lng),batarg("c",lng),batarg("g",oid),batargany("e",1),arg("skip_nils",bit))),
+ command("aggr", "subavg", AGGRavg3comb, false, "Grouped average aggregation combiner", args(1,7, batarg("",lng),batarg("b",lng),batarg("r",lng),batarg("c",lng),batarg("g",oid),batargany("e",1),arg("skip_nils",bit))),
+#ifdef HAVE_HGE
+ command("aggr", "subavg", AGGRavg3comb, false, "Grouped average aggregation combiner", args(1,7, batarg("",hge),batarg("b",hge),batarg("r",lng),batarg("c",lng),batarg("g",oid),batargany("e",1),arg("skip_nils",bit))),
+#endif
+
 #ifdef HAVE_HGE
  command("aggr", "sum", AGGRsum3_hge, false, "Grouped tail sum on bte", args(1,4, batarg("",hge),batarg("b",bte),batarg("g",oid),batargany("e",1))),
  command("aggr", "subsum", AGGRsubsum_hge, false, "Grouped sum aggregate", args(1,6, batarg("",hge),batarg("b",bte),batarg("g",oid),batargany("e",1),arg("skip_nils",bit),arg("abort_on_error",bit))),
@@ -1539,20 +1555,6 @@ mel_func aggr_init_funcs[] = {
  command("aggr", "subavg", AGGRsubavg1cand_dbl, false, "Grouped average aggregate with candidates list", args(1,7, batarg("",dbl),batarg("b",hge),batarg("g",oid),batargany("e",1),batarg("s",oid),arg("skip_nils",bit),arg("abort_on_error",bit))),
  command("aggr", "subavg", AGGRsubavg2_dbl, false, "Grouped average aggregate, also returns count", args(2,7, batarg("",dbl),batarg("",lng),batarg("b",hge),batarg("g",oid),batargany("e",1),arg("skip_nils",bit),arg("abort_on_error",bit))),
  command("aggr", "subavg", AGGRsubavg2cand_dbl, false, "Grouped average aggregate with candidates list, also returns count", args(2,8, batarg("",dbl),batarg("",lng),batarg("b",hge),batarg("g",oid),batargany("e",1),batarg("s",oid),arg("skip_nils",bit),arg("abort_on_error",bit))),
- command("aggr", "subavg", AGGRavg3, false, "Grouped average aggregation", args(3,8, batarg("",bte),batarg("",lng),batarg("",lng),batarg("b",bte),batarg("g",oid),batargany("e",1),batarg("s",oid),arg("skip_nils",bit))),
- command("aggr", "subavg", AGGRavg3, false, "Grouped average aggregation", args(3,8, batarg("",sht),batarg("",lng),batarg("",lng),batarg("b",sht),batarg("g",oid),batargany("e",1),batarg("s",oid),arg("skip_nils",bit))),
- command("aggr", "subavg", AGGRavg3, false, "Grouped average aggregation", args(3,8, batarg("",int),batarg("",lng),batarg("",lng),batarg("b",int),batarg("g",oid),batargany("e",1),batarg("s",oid),arg("skip_nils",bit))),
- command("aggr", "subavg", AGGRavg3, false, "Grouped average aggregation", args(3,8, batarg("",lng),batarg("",lng),batarg("",lng),batarg("b",lng),batarg("g",oid),batargany("e",1),batarg("s",oid),arg("skip_nils",bit))),
-#ifdef HAVE_HGE
- command("aggr", "subavg", AGGRavg3, false, "Grouped average aggregation", args(3,8, batarg("",hge),batarg("",lng),batarg("",lng),batarg("b",hge),batarg("g",oid),batargany("e",1),batarg("s",oid),arg("skip_nils",bit))),
-#endif
- command("aggr", "subavg", AGGRavg3comb, false, "Grouped average aggregation combiner", args(1,7, batarg("",bte),batarg("b",bte),batarg("r",lng),batarg("c",lng),batarg("g",oid),batargany("e",1),arg("skip_nils",bit))),
- command("aggr", "subavg", AGGRavg3comb, false, "Grouped average aggregation combiner", args(1,7, batarg("",sht),batarg("b",sht),batarg("r",lng),batarg("c",lng),batarg("g",oid),batargany("e",1),arg("skip_nils",bit))),
- command("aggr", "subavg", AGGRavg3comb, false, "Grouped average aggregation combiner", args(1,7, batarg("",int),batarg("b",int),batarg("r",lng),batarg("c",lng),batarg("g",oid),batargany("e",1),arg("skip_nils",bit))),
- command("aggr", "subavg", AGGRavg3comb, false, "Grouped average aggregation combiner", args(1,7, batarg("",lng),batarg("b",lng),batarg("r",lng),batarg("c",lng),batarg("g",oid),batargany("e",1),arg("skip_nils",bit))),
-#ifdef HAVE_HGE
- command("aggr", "subavg", AGGRavg3comb, false, "Grouped average aggregation combiner", args(1,7, batarg("",hge),batarg("b",hge),batarg("r",lng),batarg("c",lng),batarg("g",oid),batargany("e",1),arg("skip_nils",bit))),
-#endif
  command("aggr", "stdev", AGGRstdev3_dbl, false, "Grouped tail standard deviation (sample/non-biased) on hge", args(1,4, batarg("",dbl),batarg("b",hge),batarg("g",oid),batargany("e",1))),
  command("aggr", "substdev", AGGRsubstdev_dbl, false, "Grouped standard deviation (sample/non-biased) aggregate", args(1,6, batarg("",dbl),batarg("b",hge),batarg("g",oid),batargany("e",1),arg("skip_nils",bit),arg("abort_on_error",bit))),
  command("aggr", "substdev", AGGRsubstdevcand_dbl, false, "Grouped standard deviation (sample/non-biased) aggregate with candidates list", args(1,7, batarg("",dbl),batarg("b",hge),batarg("g",oid),batargany("e",1),batarg("s",oid),arg("skip_nils",bit),arg("abort_on_error",bit))),

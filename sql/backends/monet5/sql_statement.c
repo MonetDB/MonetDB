@@ -3294,6 +3294,7 @@ stmt_aggr(backend *be, stmt *op1, stmt *grp, stmt *ext, sql_subfunc *op, int red
 	bool complex_aggr = false;
 	bool abort_on_error;
 	int *stmt_nr = NULL;
+	int avg = 0;
 
 	if (op1->nr < 0)
 		return NULL;
@@ -3302,9 +3303,13 @@ stmt_aggr(backend *be, stmt *op1, stmt *grp, stmt *ext, sql_subfunc *op, int red
 	mod = op->func->mod;
 	aggrfunc = op->func->imp;
 
-	if (strcmp(aggrfunc, "avg") == 0 || strcmp(aggrfunc, "sum") == 0 || strcmp(aggrfunc, "prod") == 0
+	if (strcmp(aggrfunc, "avg") == 0)
+		avg = 1;
+	if (avg || strcmp(aggrfunc, "sum") == 0 || strcmp(aggrfunc, "prod") == 0
 		|| strcmp(aggrfunc, "str_group_concat") == 0)
 		complex_aggr = true;
+	if (restype == TYPE_dbl)
+		avg = 0;
 	/* some "sub" aggregates have an extra argument "abort_on_error" */
 	abort_on_error = complex_aggr || strncmp(aggrfunc, "stdev", 5) == 0 || strncmp(aggrfunc, "variance", 8) == 0 ||
 					strncmp(aggrfunc, "covariance", 10) == 0 || strncmp(aggrfunc, "corr", 4) == 0;
@@ -3315,7 +3320,7 @@ stmt_aggr(backend *be, stmt *op1, stmt *grp, stmt *ext, sql_subfunc *op, int red
 			return NULL;
 		stpcpy(stpcpy(aggrF, "sub"), aggrfunc);
 		aggrfunc = aggrF;
-		if (grp->nr < 0 || ext->nr < 0)
+		if (grp && (grp->nr < 0 || ext->nr < 0))
 			return NULL;
 
 		q = newStmt(mb, mod, aggrfunc);
@@ -3323,6 +3328,10 @@ stmt_aggr(backend *be, stmt *op1, stmt *grp, stmt *ext, sql_subfunc *op, int red
 			return NULL;
 		setVarType(mb, getArg(q, 0), newBatType(restype));
 		setVarUDFtype(mb, getArg(q, 0));
+		if (avg) { /* for avg also return rest and count */
+			q = pushReturn(mb, q, newTmpVariable(mb, newBatType(TYPE_lng)));
+			q = pushReturn(mb, q, newTmpVariable(mb, newBatType(TYPE_lng)));
+		}
 	} else {
 		q = newStmt(mb, mod, aggrfunc);
 		if (q == NULL)
@@ -3330,6 +3339,12 @@ stmt_aggr(backend *be, stmt *op1, stmt *grp, stmt *ext, sql_subfunc *op, int red
 		if (complex_aggr) {
 			setVarType(mb, getArg(q, 0), restype);
 			setVarUDFtype(mb, getArg(q, 0));
+			if (avg) { /* for avg also return rest and count */
+				q = pushReturn(mb, q, newTmpVariable(mb, TYPE_lng));
+				setVarUDFtype(mb, getArg(q, 1));
+				q = pushReturn(mb, q, newTmpVariable(mb, TYPE_lng));
+				setVarUDFtype(mb, getArg(q, 1));
+			}
 		}
 	}
 
@@ -3369,15 +3384,20 @@ stmt_aggr(backend *be, stmt *op1, stmt *grp, stmt *ext, sql_subfunc *op, int red
 	if (grp) {
 		q = pushArgument(mb, q, grp->nr);
 		q = pushArgument(mb, q, ext->nr);
+		if (avg) /* push nil candidates */
+			q = pushNil(mb, q, TYPE_bat);
 		if (q == NULL)
 			return NULL;
 		q = pushBit(mb, q, no_nil);
-		if (abort_on_error)
+		if (!avg && abort_on_error)
 			q = pushBit(mb, q, TRUE);
 	} else if (no_nil && strncmp(aggrfunc, "count", 5) == 0) {
 		q = pushBit(mb, q, no_nil);
 	} else if (!nil_if_empty && strncmp(aggrfunc, "sum", 3) == 0) {
 		q = pushBit(mb, q, FALSE);
+	} else if (avg) { /* push candidates */
+		q = pushNil(mb, q, TYPE_bat);
+		q = pushBit(mb, q, no_nil);
 	}
 	if (q) {
 		stmt *s = stmt_create(be->mvc->sa, st_aggr);

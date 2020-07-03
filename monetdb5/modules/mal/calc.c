@@ -764,6 +764,134 @@ CMDBATprod(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	return CMDBATsumprod(mb, stk, pci, BATprod, "aggr.prod");
 }
 
+#define arg_type(stk, pci, k) ((stk)->stk[pci->argv[k]].vtype)
+
+static str
+CMDBATavg3(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	ValPtr ret = &stk->stk[getArg(pci, 0)];
+	lng *rest = NULL, *cnt = NULL;
+	bat *bid, *sid;
+	bit *skip_nils;
+	BAT *b = NULL, *s = NULL, *avgs, *cnts, *rems;
+
+	gdk_return rc;
+	(void)cntxt;
+	(void)mb;
+
+	/* optional results rest and count */
+	if (arg_type(stk, pci, 1) == TYPE_lng)
+		rest = getArgReference_lng(stk, pci, 1);
+	if (arg_type(stk, pci, 2) == TYPE_lng)
+		rest = getArgReference_lng(stk, pci, 2);
+	bid = getArgReference_bat(stk, pci, 3);
+	sid = getArgReference_bat(stk, pci, 4);
+	skip_nils = getArgReference_bit(stk, pci, 5);
+	b = BATdescriptor(*bid);
+	s = sid != NULL && !is_bat_nil(*sid) ? BATdescriptor(*sid) : NULL;
+	if (b == NULL ||
+		(sid != NULL && !is_bat_nil(*sid) && s == NULL)) {
+		if (b)
+			BBPunfix(b->batCacheid);
+		throw(MAL, "aggr.avg", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
+	}
+	rc = BATgroupavg3(&avgs, &rems, &cnts, b, NULL, NULL, s, *skip_nils);
+	if (avgs && BATcount(avgs) == 1) {
+		/* only type bte, sht, int, lng and hge */
+		ptr res = VALget(ret);
+
+		if (avgs->ttype == TYPE_bte) {
+			*(bte*)res = *(bte*) Tloc(avgs, 0);
+		} else if (avgs->ttype == TYPE_sht) {
+			*(sht*)res = *(sht*) Tloc(avgs, 0);
+		} else if (avgs->ttype == TYPE_int) {
+			*(int*)res = *(int*) Tloc(avgs, 0);
+		} else if (avgs->ttype == TYPE_lng) {
+			*(lng*)res = *(lng*) Tloc(avgs, 0);
+#ifdef HAVE_HGE
+		} else if (avgs->ttype == TYPE_hge) {
+			*(hge*)res = *(hge*) Tloc(avgs, 0);
+#endif
+		}
+		if (rest)
+			*rest = *(lng*) Tloc(rems, 0);
+		if (cnt)
+			*cnt = *(lng*) Tloc(cnts, 0);
+	} else {
+		VALset(ret, ret->vtype, (ptr)ATOMnilptr(ret->vtype));
+		if (rest)
+			*rest = lng_nil;
+		if (cnt)
+			*cnt = lng_nil;
+	}
+	if (avgs)
+		BBPunfix(avgs->batCacheid);
+	if (rems)
+		BBPunfix(rems->batCacheid);
+	if (cnts)
+		BBPunfix(cnts->batCacheid);
+	BBPunfix(b->batCacheid);
+	if (s)
+		BBPunfix(s->batCacheid);
+	if (rc != GDK_SUCCEED)
+		return mythrow(MAL, "aggr.avg", OPERATION_FAILED);
+	return MAL_SUCCEED;
+}
+
+static str
+CMDBATavg3comb(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	ValPtr ret = &stk->stk[getArg(pci, 0)];
+	BAT *b = NULL, *r = NULL, *c = NULL, *avgs;
+	bat *bid = getArgReference_bat(stk, pci, 1);
+	bat *rid = getArgReference_bat(stk, pci, 2);
+	bat *cid = getArgReference_bat(stk, pci, 3);
+
+	(void)cntxt;
+	(void)mb;
+
+	b = BATdescriptor(*bid);
+	r = BATdescriptor(*rid);
+	c = BATdescriptor(*cid);
+	if (b == NULL || r == NULL || c == NULL) {
+		if (b)
+			BBPunfix(b->batCacheid);
+		if (r)
+			BBPunfix(r->batCacheid);
+		if (c)
+			BBPunfix(c->batCacheid);
+		throw(MAL, "aggr.avg", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
+	}
+	avgs = BATgroupavg3combine(b, r, c, NULL, NULL, TRUE);
+	if (avgs && BATcount(avgs) == 1) {
+		/* only type bte, sht, int, lng and hge */
+		ptr res = VALget(ret);
+
+		if (avgs->ttype == TYPE_bte) {
+			*(bte*)res = *(bte*) Tloc(avgs, 0);
+		} else if (avgs->ttype == TYPE_sht) {
+			*(sht*)res = *(sht*) Tloc(avgs, 0);
+		} else if (avgs->ttype == TYPE_int) {
+			*(int*)res = *(int*) Tloc(avgs, 0);
+		} else if (avgs->ttype == TYPE_lng) {
+			*(lng*)res = *(lng*) Tloc(avgs, 0);
+#ifdef HAVE_HGE
+		} else if (avgs->ttype == TYPE_hge) {
+			*(hge*)res = *(hge*) Tloc(avgs, 0);
+#endif
+		}
+	} else {
+		VALset(ret, ret->vtype, (ptr)ATOMnilptr(ret->vtype));
+	}
+	if (avgs)
+		BBPunfix(avgs->batCacheid);
+	BBPunfix(b->batCacheid);
+	BBPunfix(r->batCacheid);
+	BBPunfix(c->batCacheid);
+	if (avgs == NULL)
+		throw(MAL, "aggr.avg", GDK_EXCEPTION);
+	return MAL_SUCCEED;
+}
 
 str
 CMDBATstr_group_concat(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
@@ -1488,6 +1616,23 @@ mel_func calc_init_funcs[] = {
  pattern("aggr", "prod", CMDBATprod, false, "Calculate aggregate product of B with candidate list.", args(1,3, arg("",dbl),batarg("b",hge),batarg("s",oid))),
  pattern("aggr", "prod", CMDBATprod, false, "Calculate aggregate product of B with candidate list.", args(1,4, arg("",dbl),batarg("b",hge),batarg("s",oid),arg("nil_if_empty",bit))),
 #endif
+
+ pattern("aggr", "avg", CMDBATavg3, false, "Calculate aggregate average of B.", args(3,6, arg("",bte),arg("",lng),arg("",lng),batarg("b",bte),batarg("s",oid),arg("skip_nils",bit))),
+ pattern("aggr", "avg", CMDBATavg3, false, "Calculate aggregate average of B.", args(3,6, arg("",sht),arg("",lng),arg("",lng),batarg("b",sht),batarg("s",oid),arg("skip_nils",bit))),
+ pattern("aggr", "avg", CMDBATavg3, false, "Calculate aggregate average of B.", args(3,6, arg("",int),arg("",lng),arg("",lng),batarg("b",int),batarg("s",oid),arg("skip_nils",bit))),
+ pattern("aggr", "avg", CMDBATavg3, false, "Calculate aggregate average of B.", args(3,6, arg("",lng),arg("",lng),arg("",lng),batarg("b",lng),batarg("s",oid),arg("skip_nils",bit))),
+#ifdef HAVE_HGE
+ pattern("aggr", "avg", CMDBATavg3, false, "Calculate aggregate average of B.", args(3,6, arg("",hge),arg("",lng),arg("",lng),batarg("b",hge),batarg("s",oid),arg("skip_nils",bit))),
+#endif
+
+ pattern("aggr", "avg", CMDBATavg3comb, false, "Average aggregation combiner.", args(1,4, arg("",bte),batarg("b",bte),batarg("r",lng),batarg("c",lng))),
+ pattern("aggr", "avg", CMDBATavg3comb, false, "Average aggregation combiner.", args(1,4, arg("",sht),batarg("b",sht),batarg("r",lng),batarg("c",lng))),
+ pattern("aggr", "avg", CMDBATavg3comb, false, "Average aggregation combiner.", args(1,4, arg("",int),batarg("b",int),batarg("r",lng),batarg("c",lng))),
+ pattern("aggr", "avg", CMDBATavg3comb, false, "Average aggregation combiner.", args(1,4, arg("",lng),batarg("b",lng),batarg("r",lng),batarg("c",lng))),
+#ifdef HAVE_HGE
+ pattern("aggr", "avg", CMDBATavg3comb, false, "Average aggregation combiner.", args(1,4, arg("",hge),batarg("b",hge),batarg("r",lng),batarg("c",lng))),
+#endif
+
  /* calc ops from json */
  pattern("calc", "==", CMDvarEQ, false, "Return V1 == V2", args(1,3, arg("",bit),arg("l",json),arg("r",json))),
  pattern("calc", "==", CMDvarEQ, false, "Return V1 == V2", args(1,4, arg("",bit),arg("l",json),arg("r",json),arg("nil_matches",bit))),

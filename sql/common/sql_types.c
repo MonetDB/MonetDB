@@ -413,7 +413,7 @@ subtype2string(sql_subtype *t)
 }
 
 char *
-subtype2string2(sql_subtype *tpe) //distinguish char(n), decimal(n,m) from other SQL types
+subtype2string2(sql_subtype *tpe) /* distinguish char(n), decimal(n,m) from other SQL types */
 {
 	char buf[BUFSIZ];
 
@@ -1225,7 +1225,7 @@ sqltypeinit( sql_allocator *sa)
 	sql_create_func(sa, "octet_length", "blob", "nitems", FALSE, FALSE, SCALE_NONE, 0, INT, 1, BLOB);
 
 	if (geomcatalogfix_get() != NULL) {
-		// the geom module is loaded
+		/* the geom module is loaded */
 		GEOM = *t++ = sql_create_type(sa, "GEOMETRY", 0, SCALE_NONE, 0, EC_GEOM, "wkb");
 		/*POINT =*/ //*t++ = sql_create_type(sa, "POINT", 0, SCALE_FIX, 0, EC_GEOM, "wkb");
 		*t++ = sql_create_type(sa, "GEOMETRYA", 0, SCALE_NONE, 0, EC_EXTERNAL, "wkba");
@@ -1397,8 +1397,23 @@ sqltypeinit( sql_allocator *sa)
 #endif
 	sql_create_aggr(sa, "avg", "aggr", "avg", TRUE, DBL, 1, FLT);
 
-	sql_create_aggr(sa, "avg", "aggr", "avg", TRUE, DBL, 1, MONINT);
-	//sql_create_aggr(sa, "avg", "aggr", "avg", DBL, 1, SECINTL);
+	t = decimals; /* BTE */
+	sql_create_aggr(sa, "avg", "aggr", "avg", TRUE, *(t), 1, *(t));
+	t++; /* SHT */
+	sql_create_aggr(sa, "avg", "aggr", "avg", TRUE, *(t), 1, *(t));
+	t++; /* INT */
+	sql_create_aggr(sa, "avg", "aggr", "avg", TRUE, *(t), 1, *(t));
+	t++; /* LNG */
+	sql_create_aggr(sa, "avg", "aggr", "avg", TRUE, *(t), 1, *(t));
+#ifdef HAVE_HGE
+	if (have_hge) {
+		t++; /* HGE */
+		sql_create_aggr(sa, "avg", "aggr", "avg", TRUE, *(t), 1, *(t));
+	}
+#endif
+
+	sql_create_aggr(sa, "avg", "aggr", "avg", TRUE, MONINT, 1, MONINT);
+	sql_create_aggr(sa, "avg", "aggr", "avg", TRUE, SECINT, 1, SECINT);
 
 	sql_create_aggr(sa, "count_no_nil", "aggr", "count_no_nil", TRUE, LNG, 0);
 	sql_create_aggr(sa, "count", "aggr", "count", TRUE, LNG, 1, ANY);
@@ -1505,7 +1520,7 @@ sqltypeinit( sql_allocator *sa)
 		sql_create_analytic(sa, "lead", "sql", "lead", SCALE_NONE, ANY, 5, ANY, HGE, ANY, BIT, BIT);
 #endif
 
-	//these analytic functions support frames
+	/* these analytic functions support frames */
 	sql_create_analytic(sa, "first_value", "sql", "first_value", SCALE_NONE, ANY, 1, ANY);
 	sql_create_analytic(sa, "last_value", "sql", "last_value", SCALE_NONE, ANY, 1, ANY);
 
@@ -1522,7 +1537,7 @@ sqltypeinit( sql_allocator *sa)
 	sql_create_analytic(sa, "min", "sql", "min", SCALE_NONE, ANY, 1, ANY);
 	sql_create_analytic(sa, "max", "sql", "max", SCALE_NONE, ANY, 1, ANY);
 
-	//analytical sum for numerical and decimals
+	/* analytical sum for numerical and decimals */
 	sql_create_analytic(sa, "sum", "sql", "sum", SCALE_NONE, LargestINT, 1, BTE);
 	sql_create_analytic(sa, "sum", "sql", "sum", SCALE_NONE, LargestINT, 1, SHT);
 	sql_create_analytic(sa, "sum", "sql", "sum", SCALE_NONE, LargestINT, 1, INT);
@@ -1532,22 +1547,22 @@ sqltypeinit( sql_allocator *sa)
 		sql_create_analytic(sa, "sum", "sql", "sum", SCALE_NONE, LargestINT, 1, HGE);
 #endif
 
-	t = decimals; // BTE
+	t = decimals; /* BTE */
 	sql_create_analytic(sa, "sum", "sql", "sum", SCALE_NONE, LargestDEC, 1, *(t));
-	t++; // SHT
+	t++; /* SHT */
 	sql_create_analytic(sa, "sum", "sql", "sum", SCALE_NONE, LargestDEC, 1, *(t));
-	t++; // INT
+	t++; /* INT */
 	sql_create_analytic(sa, "sum", "sql", "sum", SCALE_NONE, LargestDEC, 1, *(t));
-	t++; // LNG
+	t++; /* LNG */
 	sql_create_analytic(sa, "sum", "sql", "sum", SCALE_NONE, LargestDEC, 1, *(t));
 #ifdef HAVE_HGE
 	if (have_hge) {
-		t++; // HGE
+		t++; /* HGE */
 		sql_create_analytic(sa, "sum", "sql", "sum", SCALE_NONE, LargestDEC, 1, *(t));
 	}
 #endif
 
-	//analytical product for numerical and decimals
+	/* analytical product for numerical and decimals */
 	sql_create_analytic(sa, "prod", "sql", "prod", SCALE_NONE, LargestINT, 1, BTE);
 	sql_create_analytic(sa, "prod", "sql", "prod", SCALE_NONE, LargestINT, 1, SHT);
 	sql_create_analytic(sa, "prod", "sql", "prod", SCALE_NONE, LargestINT, 1, INT);
@@ -1559,17 +1574,17 @@ sqltypeinit( sql_allocator *sa)
 
 #if 0
 	/* prod for decimals introduce errors in the output scales */
-	t = decimals; // BTE
+	t = decimals; /* BTE */
 	sql_create_analytic(sa, "prod", "sql", "prod", SCALE_NONE, LargestDEC, 1, *(t));
-	t++; // SHT
+	t++; /* SHT */
 	sql_create_analytic(sa, "prod", "sql", "prod", SCALE_NONE, LargestDEC, 1, *(t));
-	t++; // INT
+	t++; /* INT */
 	sql_create_analytic(sa, "prod", "sql", "prod", SCALE_NONE, LargestDEC, 1, *(t));
-	t++; // LNG
+	t++; /* LNG */
 	sql_create_analytic(sa, "prod", "sql", "prod", SCALE_NONE, LargestDEC, 1, *(t));
 #ifdef HAVE_HGE
 	if (have_hge) {
-		t++; // HGE
+		t++; /* HGE */
 		sql_create_analytic(sa, "prod", "sql", "prod", SCALE_NONE, LargestDEC, 1, *(t));
 	}
 #endif
@@ -1593,8 +1608,8 @@ sqltypeinit( sql_allocator *sa)
 		sql_create_analytic(sa, "avg", "sql", "avg", SCALE_NONE, DBL, 1, HGE);
 #endif
 
-	sql_create_analytic(sa, "avg", "sql", "avg", SCALE_NONE, DBL, 1, MONINT);
-	//sql_create_analytic(sa, "avg", "sql", "avg", SCALE_NONE, DBL, 1, SECINT);
+	sql_create_analytic(sa, "avg", "sql", "avg", SCALE_NONE, MONINT, 1, MONINT);
+	sql_create_analytic(sa, "avg", "sql", "avg", SCALE_NONE, SECINT, 1, SECINT);
 
 #if 0
 	t = decimals; // BTE
