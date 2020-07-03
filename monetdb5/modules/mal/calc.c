@@ -783,7 +783,7 @@ CMDBATavg3(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (arg_type(stk, pci, 1) == TYPE_lng)
 		rest = getArgReference_lng(stk, pci, 1);
 	if (arg_type(stk, pci, 2) == TYPE_lng)
-		rest = getArgReference_lng(stk, pci, 2);
+		cnt = getArgReference_lng(stk, pci, 2);
 	bid = getArgReference_bat(stk, pci, 3);
 	sid = getArgReference_bat(stk, pci, 4);
 	skip_nils = getArgReference_bit(stk, pci, 5);
@@ -799,6 +799,7 @@ CMDBATavg3(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (avgs && BATcount(avgs) == 1) {
 		/* only type bte, sht, int, lng and hge */
 		ptr res = VALget(ret);
+		lng xcnt = 0;
 
 		if (avgs->ttype == TYPE_bte) {
 			*(bte*)res = *(bte*) Tloc(avgs, 0);
@@ -813,10 +814,12 @@ CMDBATavg3(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			*(hge*)res = *(hge*) Tloc(avgs, 0);
 #endif
 		}
+		if (cnt)
+			xcnt = *cnt = *(lng*) Tloc(cnts, 0);
 		if (rest)
 			*rest = *(lng*) Tloc(rems, 0);
-		if (cnt)
-			*cnt = *(lng*) Tloc(cnts, 0);
+		if (xcnt == 0)
+			VALset(ret, ret->vtype, (ptr)ATOMnilptr(ret->vtype));
 	} else {
 		VALset(ret, ret->vtype, (ptr)ATOMnilptr(ret->vtype));
 		if (rest)
