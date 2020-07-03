@@ -2285,6 +2285,18 @@ rel_visitor_bottomup(mvc *sql, sql_rel *rel, rel_rewrite_fptr rel_rewriter, int 
 	return rel_visitor(sql, rel, rel_rewriter, changes, false);
 }
 
+list *
+exps_exp_visitor_topdown(mvc *sql, sql_rel *rel, list *exps, int depth, exp_rewrite_fptr exp_rewriter, int *changes)
+{
+	return exps_exp_visitor(sql, rel, exps, depth, exp_rewriter, changes, true);
+}
+
+list *
+exps_exp_visitor_bottomup(mvc *sql, sql_rel *rel, list *exps, int depth, exp_rewrite_fptr exp_rewriter, int *changes)
+{
+	return exps_exp_visitor(sql, rel, exps, depth, exp_rewriter, changes, false);
+}
+
 static sql_exp *
 exp_check_has_analytics(mvc *sql, sql_rel *rel, sql_exp *e, int depth, int *changes)
 {
@@ -2302,7 +2314,6 @@ int
 exps_have_analytics(mvc *sql, list *exps)
 {
 	int changes = 0;
-    (void)exps_exp_visitor(sql, NULL, exps, 0, &exp_check_has_analytics, &changes, 1);
+	(void)exps_exp_visitor_topdown(sql, NULL, exps, 0, &exp_check_has_analytics, &changes);
 	return changes;
 }
-

@@ -2668,12 +2668,13 @@ rel_logical_exp(sql_query *query, sql_rel *rel, symbol *sc, int f)
 	{
 		sql_exp *le = rel_value_exp(query, &rel, sc->data.sym, f, ek), *ls = le;
 
-		if (!le)
-			return NULL;
-		if (!(le = rel_unop_(sql, rel, le, NULL, "isnull", card_value)))
-			return NULL;
-		set_has_no_nil(le);
-		le = exp_compare(sql->sa, le, exp_atom_bool(sql->sa, (sc->token == SQL_IS_NULL) ? 1 : 0), cmp_equal);
+ 		if (!le)
+ 			return NULL;
+		le = exp_compare(sql->sa, le, exp_atom(sql->sa, atom_general(sql->sa, exp_subtype(le), NULL)), cmp_equal);
+		if (sc->token == SQL_IS_NOT_NULL)
+			set_anti(le);
+ 		set_has_no_nil(le);
+		set_semantics(le);
 		return push_select_exp(sql, rel, le, ls);
 	}
 	case SQL_NOT: {
