@@ -10,6 +10,9 @@
 create procedure sys.hot_snapshot(tarfile string)
 	external name sql.hot_snapshot;
 
+create procedure sys.hot_snapshot(tarfile string, onserver bool)
+	external name sql.hot_snapshot;
+
 -- We intentionally don't GRANT EXECUTE ON sys.hot_snapshot TO PUBLIC!
 
 -- We do however create a special user which is (only) allowed to
@@ -20,5 +23,6 @@ create user ".snapshot"
 	name 'Snapshot User'
 	schema sys;
 
-grant execute on procedure sys.hot_snapshot to ".snapshot";
+grant execute on procedure sys.hot_snapshot(string) to ".snapshot";
+grant execute on procedure sys.hot_snapshot(string, bool) to ".snapshot";
 

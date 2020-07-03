@@ -5020,6 +5020,86 @@ SQLhot_snapshot(void *ret, const str *tarfile_arg)
 }
 
 str
+SQLhot_snapshot_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	char *filename;
+	bool onserver;
+	char *msg = MAL_SUCCEED;
+	char buf[80];
+	mvc *mvc;
+	ssize_t sz;
+	stream *s;
+	stream *cb = NULL;
+	lng result;
+
+	filename = *getArgReference_str(stk, pci, 1);
+	onserver = *getArgReference_bit(stk, pci, 2);
+
+	if (onserver) {
+		lng result = store_hot_snapshot(filename);
+		if (result)
+			return MAL_SUCCEED;
+		else
+			throw(SQL, "sql.hot_snapshot", GDK_EXCEPTION);
+	}
+
+	msg = getSQLContext(cntxt, mb, &mvc, NULL);
+	if (msg)
+		return msg;
+
+	// sync with client, copy pasted from mvc_export_table_wrap
+	while (!mvc->scanner.rs->eof)
+		bstream_next(mvc->scanner.rs);
+
+	// The snapshot code flushes from time to time.
+	// Use a callback stream to suppress those.
+	s = mvc->scanner.ws;
+	cb = callback_stream(
+		/* private */ s,
+		/* read */    NULL,
+		/* write */   (void*)mnstr_write,
+		/* close */   NULL,
+		/* destroy */ NULL,
+		"snapshot-callback"
+	);
+	if (!cb)
+		throw(SQL, "sql.hot_snapshot", GDK_EXCEPTION);
+
+	// tell client to open file, copy pasted from mvc_export_table_wrap
+	mnstr_write(s, PROMPT3, sizeof(PROMPT3) - 1, 1);
+	mnstr_printf(s, "w %s\n", filename);
+	mnstr_flush(s);
+	if ((sz = mnstr_readline(mvc->scanner.rs->s, buf, sizeof(buf))) > 1) {
+		/* non-empty line indicates failure on client */
+		msg = createException(IO, "streams.open", "%s", buf);
+		/* deal with ridiculously long response from client */
+		while (buf[sz - 1] != '\n' &&
+				(sz = mnstr_readline(mvc->scanner.rs->s, buf, sizeof(buf))) > 0)
+			;
+		goto end;
+	}
+
+	// client is waiting for data now, send it.
+	result = store_hot_snapshot_to_stream(cb);
+	if (result)
+		msg = MAL_SUCCEED;
+	else
+		msg = createException(SQL, "sql.hot_snapshot", GDK_EXCEPTION);
+	mnstr_destroy(cb);
+
+	// tell client no more data, also copy pasted from mvc_export_table_wrap
+	mnstr_flush(s);
+	if ((sz = mnstr_readline(mvc->scanner.rs->s, buf, sizeof(buf))) > 1) {
+		msg = createException(IO, "streams.open", "%s", buf);
+	}
+	while (sz > 0)
+		sz = mnstr_readline(mvc->scanner.rs->s, buf, sizeof(buf));
+
+end:
+	return msg;
+}
+
+str
 SQLsession_prepared_statements(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	BAT *sessionid, *user, *statementid, *statement, *created;
@@ -5476,6 +5556,7 @@ static mel_func sql_init_funcs[] = {
  command("sql", "hot_snapshot", SQLhot_snapshot, true, "Write db snapshot to the given tar(.gz) file", args(1,2, arg("",void),arg("tarfile",str))),
  command("sql", "resume_log_flushing", SQLresume_log_flushing, true, "Resume WAL log flushing", args(1,1, arg("",void))),
  command("sql", "suspend_log_flushing", SQLsuspend_log_flushing, true, "Suspend WAL log flushing", args(1,1, arg("",void))),
+ pattern("sql", "hot_snapshot", SQLhot_snapshot_wrap, true, "Write db snapshot to the given tar(.gz/.lz4/.bz/.xz) file on either server or client", args(1,3, arg("",void),arg("tarfile", str),arg("onserver",bit))),
  pattern("sql", "assert", SQLassert, false, "Generate an exception when b==true", args(1,3, arg("",void),arg("b",bit),arg("msg",str))),
  pattern("sql", "assert", SQLassertInt, false, "Generate an exception when b!=0", args(1,3, arg("",void),arg("b",int),arg("msg",str))),
  pattern("sql", "assert", SQLassertLng, false, "Generate an exception when b!=0", args(1,3, arg("",void),arg("b",lng),arg("msg",str))),
