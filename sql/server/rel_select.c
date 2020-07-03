@@ -2356,12 +2356,7 @@ rel_logical_value_exp(sql_query *query, sql_rel **rel, symbol *sc, int f, exp_ki
 
 		if (!le)
 			return NULL;
-		le = rel_unop_(sql, rel ? *rel : NULL, le, NULL, "isnull", card_value);
-		if (!le)
-			return NULL;
-		set_has_no_nil(le);
-		if (sc->token != SQL_IS_NULL)
-			le = rel_unop_(sql, rel ? *rel : NULL, le, NULL, "not", card_value);
+		le = rel_unop_(sql, rel ? *rel : NULL, le, NULL, sc->token == SQL_IS_NULL ? "isnull" : "isnotnull", card_value);
 		if (!le)
 			return NULL;
 		set_has_no_nil(le);
@@ -3789,13 +3784,8 @@ rel_case(sql_query *query, sql_rel **rel, tokens token, symbol *opt_cond, dlist 
 			cond = rel_value_exp(query, rel, dn->data.sym, f, ek);
 
 			if (cond) {
-				sql_exp *le;
-
 				result = exp_ref_save(sql, cond);
-				if (!(le = rel_unop_(sql, rel ? *rel : NULL, cond, NULL, "isnull", card_value)))
-					return NULL;
-				set_has_no_nil(le);
-				if (!(cond = rel_unop_(sql, rel ? *rel : NULL, le, NULL, "not", card_value)))
+				if (!(cond = rel_unop_(sql, rel ? *rel : NULL, cond, NULL, "isnotnull", card_value)))
 					return NULL;
 				set_has_no_nil(cond);
 			}
@@ -3839,13 +3829,8 @@ rel_case(sql_query *query, sql_rel **rel, tokens token, symbol *opt_cond, dlist 
 			cond = rel_value_exp(query, rel, dn->data.sym, f, ek);
 
 			if (cond) {
-				sql_exp *le;
-
 				result = exp_ref_save(sql, cond);
-				if (!(le = rel_unop_(sql, rel ? *rel : NULL, cond, NULL, "isnull", card_value)))
-					return NULL;
-				set_has_no_nil(le);
-				if (!(cond = rel_unop_(sql, rel ? *rel : NULL, le, NULL, "not", card_value)))
+				if (!(cond = rel_unop_(sql, rel ? *rel : NULL, cond, NULL, "isnotnull", card_value)))
 					return NULL;
 				set_has_no_nil(cond);
 			}

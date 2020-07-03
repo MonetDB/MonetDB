@@ -995,6 +995,8 @@ stdout of test 'systemfunctions` in directory 'sql/test/sys-schema` itself:
 [ "sys",	"isaurl",	1,	"clob",	""	]
 [ "sys",	"isauuid",	0,	"boolean",	"create function sys.isauuid(s string)\nreturns boolean external name uuid.\"isaUUID\";"	]
 [ "sys",	"isauuid",	1,	"clob",	""	]
+[ "sys",	"isnotnull",	0,	"boolean",	"isnotnil"	]
+[ "sys",	"isnotnull",	1,	"any",	""	]
 [ "sys",	"isnull",	0,	"boolean",	"isnil"	]
 [ "sys",	"isnull",	1,	"any",	""	]
 [ "sys",	"lag",	0,	"any",	"lag"	]

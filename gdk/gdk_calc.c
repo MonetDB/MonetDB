@@ -982,12 +982,12 @@ BATcalcisnil_implementation(BAT *b, BAT *s, BAT *r, bool notnil)
 	}
 
 	if (b->tnonil || BATtdense(b)) {
-		return BATconstant(ci.hseq, TYPE_bit, &(bit){0},
+		return BATconstant(ci.hseq, TYPE_bit, &(bit){notnil},
 				   ncand, TRANSIENT);
 	} else if (b->ttype == TYPE_void) {
 		/* non-nil handled above */
 		assert(is_oid_nil(b->tseqbase));
-		return BATconstant(ci.hseq, TYPE_bit, &(bit){1},
+		return BATconstant(ci.hseq, TYPE_bit, &(bit){!notnil},
 				   ncand, TRANSIENT);
 	}
 
@@ -998,6 +998,9 @@ BATcalcisnil_implementation(BAT *b, BAT *s, BAT *r, bool notnil)
 	dst = (bit *) Tloc(bn, 0);
 
 	switch (ATOMbasetype(b->ttype)) {
+	case TYPE_bit:
+		ISNIL_TYPE(bit, notnil);
+		break;
 	case TYPE_bte:
 		ISNIL_TYPE(bte, notnil);
 		break;
@@ -1039,9 +1042,14 @@ BATcalcisnil_implementation(BAT *b, BAT *s, BAT *r, bool notnil)
 
 	/* If b sorted, all nils are at the start, i.e. bn starts with
 	 * 1's and ends with 0's, hence bn is revsorted.  Similarly
-	 * for revsorted. */
-	bn->tsorted = b->trevsorted;
-	bn->trevsorted = b->tsorted;
+	 * for revsorted. At the notnil case, these properties remain the same */
+	if (notnil) {
+		bn->tsorted = b->tsorted;
+		bn->trevsorted = b->trevsorted;
+	} else {
+		bn->tsorted = b->trevsorted;
+		bn->trevsorted = b->tsorted;
+	}
 	bn->tnil = nils != 0;
 	bn->tnonil = nils == 0;
 	bn->tkey = ncand <= 1;
