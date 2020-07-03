@@ -499,7 +499,8 @@ monetdbe_startup(monetdbe_database_internal *mdbe, char* dbdir, monetdbe_options
 			goto cleanup;
 		}
 		// Memory limit is session specific
-		memory = GDK_vm_maxsize = (size_t) opts->memorylimit;
+		memory = (size_t) opts->memorylimit;
+		GDK_vm_maxsize = (size_t) memory << 20; /* convert from MiB to bytes */
 	}
 	if (opts && opts->querytimeout) {
 		if( opts->querytimeout < 0){
