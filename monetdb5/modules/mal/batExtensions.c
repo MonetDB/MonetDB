@@ -223,7 +223,7 @@ CMDBATappend_bulk(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		throw(MAL, "bat.append_bulk", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 
 	if (inputs > 0) {
-		u_int8_t storage = ATOMstorage(b->ttype);
+		uint8_t storage = ATOMstorage(b->ttype);
 		count = BATcount(b);
 
 		if (isaBatType(getArgType(mb, pci, 3))) { /* use BATappend for the bulk case */
