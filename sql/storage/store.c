@@ -2713,9 +2713,68 @@ static str pick_tmp_name(str filename)
 }
 
 extern lng
-store_hot_snapshot(str tarfile)
+store_hot_snapshot_to_stream(stream *tar_stream)
 {
 	int locked = 0;
+	lng result = 0;
+	buffer *plan_buf = NULL;
+	stream *plan_stream = NULL;
+	gdk_return r;
+
+	if (!logger_funcs.get_snapshot_files) {
+		GDKerror("backend does not support hot snapshots");
+		goto end;
+	}
+
+	plan_buf = buffer_create(64 * 1024);
+	if (!plan_buf) {
+		GDKerror("Failed to allocate plan buffer");
+		goto end;
+	}
+	plan_stream = buffer_wastream(plan_buf, "write_snapshot_plan");
+	if (!plan_stream) {
+		GDKerror("Failed to allocate buffer stream");
+		goto end;
+	}
+
+	MT_lock_set(&bs_lock);
+	locked = 1;
+	wait_until_flusher_idle();
+	if (GDKexiting())
+		goto end;
+
+	r = logger_funcs.get_snapshot_files(plan_stream);
+	if (r != GDK_SUCCEED)
+		goto end; // should already have set a GDK error
+	close_stream(plan_stream);
+	plan_stream = NULL;
+	r = hot_snapshot_write_tar(tar_stream, GDKgetenv("gdk_dbname"), buffer_get_buf(plan_buf));
+	if (r != GDK_SUCCEED)
+		goto end;
+
+	// the original idea was to return a sort of sequence number of the
+	// database that identifies exactly which version has been snapshotted
+	// but no such number is available:
+	// logger_functions.read_last_transaction_id is not implemented
+	// anywhere.
+	//
+	// So we return a random positive integer instead.
+	result = 42;
+
+end:
+	if (locked)
+		MT_lock_unset(&bs_lock);
+	if (plan_stream)
+		close_stream(plan_stream);
+	if (plan_buf)
+		buffer_destroy(plan_buf);
+	return result;
+}
+
+
+extern lng
+store_hot_snapshot(str tarfile)
+{
 	lng result = 0;
 	struct stat st = {0};
 	char *tmppath = NULL;
@@ -2725,7 +2784,6 @@ store_hot_snapshot(str tarfile)
 	stream *tar_stream = NULL;
 	buffer *plan_buf = NULL;
 	stream *plan_stream = NULL;
-	gdk_return r;
 
 	if (!logger_funcs.get_snapshot_files) {
 		GDKerror("backend does not support hot snapshots");
@@ -2783,7 +2841,8 @@ store_hot_snapshot(str tarfile)
 		goto end;
 	}
 
-	// Fsync the directory. Postgres believes this is necessary for durability.
+	// Fsync the directory beforehand too.
+	// Postgres believes this is necessary for durability.
 	if (fsync(dir_fd) < 0) {
 		GDKsyserror("First fsync on %s failed", dirpath);
 		goto end;
@@ -2792,31 +2851,8 @@ store_hot_snapshot(str tarfile)
 	(void)dirpath;
 #endif
 
-
-	plan_buf = buffer_create(64 * 1024);
-	if (!plan_buf) {
-		GDKerror("Failed to allocate plan buffer");
-		goto end;
-	}
-	plan_stream = buffer_wastream(plan_buf, "write_snapshot_plan");
-	if (!plan_stream) {
-		GDKerror("Failed to allocate buffer stream");
-		goto end;
-	}
-
-	MT_lock_set(&bs_lock);
-	locked = 1;
-	wait_until_flusher_idle();
-	if (GDKexiting())
-		goto end;
-
-	r = logger_funcs.get_snapshot_files(plan_stream);
-	if (r != GDK_SUCCEED)
-		goto end; // should already have set a GDK error
-	close_stream(plan_stream);
-	plan_stream = NULL;
-	r = hot_snapshot_write_tar(tar_stream, GDKgetenv("gdk_dbname"), buffer_get_buf(plan_buf));
-	if (r != GDK_SUCCEED)
+	result = store_hot_snapshot_to_stream(tar_stream);
+	if (result == 0)
 		goto end;
 
 	// Now sync and atomically rename the temp file to the real file,
@@ -2836,21 +2872,10 @@ store_hot_snapshot(str tarfile)
 		goto end;
 	}
 #endif
-	// the original idea was to return a sort of sequence number of the
-	// database that identifies exactly which version has been snapshotted
-	// but no such number is available:
-	// logger_functions.read_last_transaction_id is not implemented
-	// anywhere.
-	//
-	// So we return a random positive integer instead.
-	result = 42;
-
 end:
 	GDKfree(dirpath);
 	if (dir_fd >= 0)
 		close(dir_fd);
-	if (locked)
-		MT_lock_unset(&bs_lock);
 	if (tar_stream)
 		close_stream(tar_stream);
 	if (plan_stream)

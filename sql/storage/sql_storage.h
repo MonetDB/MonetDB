@@ -383,6 +383,7 @@ extern void store_flush_log(void);
 extern void store_suspend_log(void);
 extern void store_resume_log(void);
 extern lng store_hot_snapshot(str tarfile);
+extern lng store_hot_snapshot_to_stream(stream *s);
 
 extern void store_manager(void);
 extern void idle_manager(void);
