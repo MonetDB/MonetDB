@@ -1950,7 +1950,7 @@ BATgroupavg3(BAT **avgp, BAT **remp, BAT **cntp, BAT *b, BAT *g, BAT *e, BAT *s,
 						rems[i] -= cnts[i];
 					}
 				} else {
-					if (rems[i] >= cnts[i]/2) {
+					if (2*rems[i] >= cnts[i]) {
 						avgs[i]++;
 						rems[i] -= cnts[i];
 					}
@@ -1998,7 +1998,7 @@ BATgroupavg3(BAT **avgp, BAT **remp, BAT **cntp, BAT *b, BAT *g, BAT *e, BAT *s,
 						rems[i] -= cnts[i];
 					}
 				} else {
-					if (rems[i] >= cnts[i]/2) {
+					if (2*rems[i] >= cnts[i]) {
 						avgs[i]++;
 						rems[i] -= cnts[i];
 					}
@@ -2046,7 +2046,7 @@ BATgroupavg3(BAT **avgp, BAT **remp, BAT **cntp, BAT *b, BAT *g, BAT *e, BAT *s,
 						rems[i] -= cnts[i];
 					}
 				} else {
-					if (rems[i] >= cnts[i]/2) {
+					if (2*rems[i] >= cnts[i]) {
 						avgs[i]++;
 						rems[i] -= cnts[i];
 					}
@@ -2094,7 +2094,7 @@ BATgroupavg3(BAT **avgp, BAT **remp, BAT **cntp, BAT *b, BAT *g, BAT *e, BAT *s,
 						rems[i] -= cnts[i];
 					}
 				} else {
-					if (rems[i] >= cnts[i]/2) {
+					if (2*rems[i] >= cnts[i]) {
 						avgs[i]++;
 						rems[i] -= cnts[i];
 					}
@@ -2143,7 +2143,7 @@ BATgroupavg3(BAT **avgp, BAT **remp, BAT **cntp, BAT *b, BAT *g, BAT *e, BAT *s,
 						rems[i] -= cnts[i];
 					}
 				} else {
-					if (rems[i] >= cnts[i]/2) {
+					if (2*rems[i] >= cnts[i]) {
 						avgs[i]++;
 						rems[i] -= cnts[i];
 					}
@@ -2564,7 +2564,7 @@ BATgroupavg3combine(BAT *avg, BAT *rem, BAT *cnt, BAT *g, BAT *e, bool skip_nils
 					if (rems[i] > cnts[i]/2)
 						avgs[i]++;
 				} else {
-					if (rems[i] >= cnts[i]/2)
+					if (2*rems[i] >= cnts[i])
 						avgs[i]++;
 				}
 			}
@@ -2605,7 +2605,7 @@ BATgroupavg3combine(BAT *avg, BAT *rem, BAT *cnt, BAT *g, BAT *e, bool skip_nils
 					if (rems[i] > cnts[i]/2)
 						avgs[i]++;
 				} else {
-					if (rems[i] >= cnts[i]/2)
+					if (2*rems[i] >= cnts[i])
 						avgs[i]++;
 				}
 			}
@@ -2646,7 +2646,7 @@ BATgroupavg3combine(BAT *avg, BAT *rem, BAT *cnt, BAT *g, BAT *e, bool skip_nils
 					if (rems[i] > cnts[i]/2)
 						avgs[i]++;
 				} else {
-					if (rems[i] >= cnts[i]/2)
+					if (2*rems[i] >= cnts[i])
 						avgs[i]++;
 				}
 			}
@@ -2687,7 +2687,7 @@ BATgroupavg3combine(BAT *avg, BAT *rem, BAT *cnt, BAT *g, BAT *e, bool skip_nils
 					if (rems[i] > cnts[i]/2)
 						avgs[i]++;
 				} else {
-					if (rems[i] >= cnts[i]/2)
+					if (2*rems[i] >= cnts[i])
 						avgs[i]++;
 				}
 			}
@@ -2729,7 +2729,7 @@ BATgroupavg3combine(BAT *avg, BAT *rem, BAT *cnt, BAT *g, BAT *e, bool skip_nils
 					if (rems[i] > cnts[i]/2)
 						avgs[i]++;
 				} else {
-					if (rems[i] >= cnts[i]/2)
+					if (2*rems[i] >= cnts[i])
 						avgs[i]++;
 				}
 			}
