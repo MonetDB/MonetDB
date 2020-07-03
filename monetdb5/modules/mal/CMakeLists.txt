@@ -13,7 +13,7 @@ target_sources(malmodules
   language.c language.h
   bbp.c bbp.h
   profiler.c profiler.h
-  batExtensions.c batExtensions.h
+  batExtensions.c
   orderidx.c orderidx.h
   inspect.c inspect.h
   manual.c manual.h

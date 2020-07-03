@@ -708,7 +708,6 @@ str BATPCREnotilike2(bat *ret, const bat *b, const str *pat);
 str BATPCREnotlike(bat *ret, const bat *b, const str *pat, const str *esc);
 str BATPCREnotlike2(bat *ret, const bat *b, const str *pat);
 str BATinfo(BAT **key, BAT **val, const bat bid);
-str BKCappend_bulk_force_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 str BKCappend_cand_force_wrap(bat *r, const bat *bid, const bat *uid, const bat *sid, const bit *force);
 str BKCappend_cand_wrap(bat *r, const bat *bid, const bat *uid, const bat *sid);
 str BKCappend_force_wrap(bat *r, const bat *bid, const bat *uid, const bit *force);

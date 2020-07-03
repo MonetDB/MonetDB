@@ -10,7 +10,6 @@
 #define _BAT_H_
 
 #include "mal.h"
-#include "mal_client.h"
 #include "gdk.h"
 
 mal_export str BKCnewBAT(bat *res, const int *tt, const BUN *cap, role_t role);
@@ -26,7 +25,6 @@ mal_export str BKCappend_cand_wrap(bat *r, const bat *bid, const bat *uid, const
 mal_export str BKCappend_cand_force_wrap(bat *r, const bat *bid, const bat *uid, const bat *sid, const bit *force);
 mal_export str BKCappend_val_wrap(bat *r, const bat *bid, const void *u);
 mal_export str BKCappend_val_force_wrap(bat *r, const bat *bid, const void *u, const bit *force);
-mal_export str BKCappend_bulk_force_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 mal_export str BKCbun_inplace(bat *r, const bat *bid, const oid *id, const void *t);
 mal_export str BKCbat_inplace(bat *r, const bat *bid, const bat *rid, const bat *uid);
 mal_export str BKCbun_inplace_force(bat *r, const bat *bid, const oid *id, const void *t, const bit *force);
