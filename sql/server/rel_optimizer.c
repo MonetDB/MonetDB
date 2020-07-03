@@ -3866,26 +3866,13 @@ exps_merge_select_rse( mvc *sql, list *l, list *r )
 	return nexps;
 }
 
-static sql_exp * exp_merge_project_rse( mvc *sql, sql_exp *e);
-static list *
-exps_merge_project_rse( mvc *sql, list *exps)
-{
-	node *n;
-	list *nexps = NULL;
-
- 	nexps = new_exp_list(sql->sa);
-	for (n = exps->h; n; n = n->next) {
-		sql_exp *e = n->data;
-
-		e = exp_merge_project_rse(sql, e);
-		append(nexps, e);
-	}
-	return nexps;
-}
-
 static sql_exp *
-exp_merge_project_rse( mvc *sql, sql_exp *e)
+exp_merge_project_rse(visitor *v, sql_rel *rel, sql_exp *e, int depth)
 {
+	mvc *sql = v->sql;
+
+	(void) depth;
+	(void) rel;
 	if (is_func(e->type) && e->l) {
 		list *fexps = e->l;
 		sql_subfunc *f = e->f;
@@ -3929,15 +3916,6 @@ exp_merge_project_rse( mvc *sql, sql_exp *e)
 					}
 				}
 			}
-		} else {
-			e->l = exps_merge_project_rse(sql, fexps);
-		}
-	} else if (is_convert(e->type)) {
-		sql_exp *n = exp_merge_project_rse(sql, e->l);
-		if (n && n != e->l) {
-			n = exp_convert(sql->sa, n, exp_fromtype(e), exp_totype(e));
-			exp_setname(sql->sa, n, exp_relname(e), exp_name(e));
-			return n;
 		}
 	}
 	return e;
@@ -3979,7 +3957,7 @@ rel_merge_rse(visitor *v, sql_rel *rel)
 	}
 	/* the project case of rse */
 	if (is_project(rel->op) && rel->exps)
-		rel->exps = exps_merge_project_rse(v->sql, rel->exps);
+		rel->exps = exps_exp_visitor_bottomup(v, rel, rel->exps, 0, &exp_merge_project_rse);
 	return rel;
 }
 
@@ -9340,8 +9318,7 @@ optimize_rel(mvc *sql, sql_rel *rel, int *g_changes, int level, int value_based_
 		rel = rel_visitor_topdown(&v, rel, &rel_split_outerjoin);
 
 	if (gp.cnt[op_select] || gp.cnt[op_project])
-		if (level == 1) /* only once */
-			rel = rel_visitor_bottomup(&v, rel, &rel_merge_rse);
+		rel = rel_visitor_bottomup(&v, rel, &rel_merge_rse);
 
 	if (gp.cnt[op_select] && gp.cnt[op_join] && /* DISABLES CODE */ (0))
 		rel = rel_visitor_topdown(&v, rel, &rel_push_select_down_join);
