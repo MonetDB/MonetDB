@@ -3565,7 +3565,7 @@ STRsplitpart(str *res, str *haystack, str *needle, int *field)
 {
 	size_t len;
 	int f = *field;
-	char *p;
+	char *p = NULL;
 	const char *s = *haystack;
 	const char *s2 = *needle;
 
@@ -3581,10 +3581,11 @@ STRsplitpart(str *res, str *haystack, str *needle, int *field)
 	}
 
 	len = strlen(s2);
-
-	while ((p = strstr(s, s2)) != NULL && f > 1) {
-		s = p + len;
-		f--;
+	if (len) {
+		while ((p = strstr(s, s2)) != NULL && f > 1) {
+			s = p + len;
+			f--;
+		}
 	}
 
 	if (f != 1) {

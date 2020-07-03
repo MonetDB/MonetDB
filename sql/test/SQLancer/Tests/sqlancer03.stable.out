@@ -1,0 +1,18 @@
+stdout of test 'sqlancer03` in directory 'sql/test/SQLancer` itself:
+
+
+# 17:14:16 >  
+# 17:14:16 >  "mclient" "-lsql" "-ftest" "-tnone" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-439482" "--port=37916"
+# 17:14:16 >  
+
+#select splitpart(r'%Fz晟2墁', '', 1), splitpart(r'%Fz晟2墁', r'', 2), splitpart(r'%Fz晟2墁', r'', 1271186887);
+% .%2,	.%3,	.%4 # table_name
+% %2,	%3,	%4 # name
+% clob,	clob,	varchar # type
+% 9,	0,	0 # length
+[ "%Fz晟2墁",	"",	""	]
+
+# 17:14:16 >  
+# 17:14:16 >  "Done."
+# 17:14:16 >  
+
