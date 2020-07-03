@@ -2054,7 +2054,8 @@ static inline BIGINT
 multdiv(BIGINT a, uint64_t b, uint64_t c, uint64_t *rem)
 {
 	static BIGINT const base = ((BIGINT)1)<<(sizeof(BIGINT)*4);
-	static BIGINT const maxdiv = (base-1)*base + (base-1);
+//	static BIGINT const maxdiv = (base-1)*base + (base-1);
+	static BIGINT const maxdiv = ~(BIGINT)0;
 
 	// First get the easy thing
 	BIGINT res = (a/c) * b + (a%c) * (b/c);
