@@ -2033,7 +2033,7 @@ batcalc_init(void)
 	for (int f=0; f<2; f++) {
 	  int *tp1, *tp2;
 	  for(tp1 = integer; tp1 < floats && !err; tp1++) {
-	    for(tp2 = integer; tp < floats && !err; tp2++) {
+	    for(tp2 = integer; tp2 < floats && !err; tp2++) {
 		mel_func_arg ret = { .type = *tp1, .isbat =1 };
 		mel_func_arg arg1 = { .type = *tp1, .isbat =1 };
 		mel_func_arg arg2 = { .type = *tp2, .isbat =1 };
@@ -2198,7 +2198,7 @@ batcalc_init(void)
 
 	  int *tp1, *tp2;
 	  for(tp1 = integer; tp1 < floats && !err; tp1++) {
-	    for(tp2 = integer; tp < floats && !err; tp2++) {
+	    for(tp2 = integer; tp2 < floats && !err; tp2++) {
 		if (*tp1 == *tp2)
 			continue;
 		mel_func_arg ret = { .type = TYPE_bit, .isbat =1 };
@@ -2278,7 +2278,7 @@ batcalc_init(void)
 		err += melFunction(false, "batcalc", cmp.op, cmp.fcn, cmp.fname, false, cmp.comment_v_, 1, 5, ret, varg, arg, cand, condexec);
 	}
 	for(tp1 = integer; tp1 < extra && !err; tp1++) {
-	    for(tp2 = integer; tp < extra && !err; tp2++) {
+	    for(tp2 = integer; tp2 < extra && !err; tp2++) {
 		mel_func_arg ret = { .type = TYPE_bte, .isbat =1 };
 		mel_func_arg arg1 = { .type = *tp1, .isbat =1 };
 		mel_func_arg arg2 = { .type = *tp2, .isbat =1 };
