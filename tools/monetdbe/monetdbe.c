@@ -1248,6 +1248,8 @@ monetdbe_append(monetdbe_database dbhdl, const char* schema, const char* table, 
 					mdbe->msg = createException(SQL, "monetdbe.monetdbe_append", "Cannot append values");
 					goto cleanup;
 				}
+				if (b && b != (blob*)nil)
+					GDKfree(b);
 			}
 		}
 	}
@@ -1308,10 +1310,6 @@ monetdbe_result_fetch(monetdbe_result* mres, monetdbe_column** res, size_t colum
 
 	if ((mdbe->msg = getSQLContext(c, NULL, &m, NULL)) != MAL_SUCCEED)
 		goto cleanup;
-	/*
-	if ((mdbe->msg = SQLtrans(m)) != MAL_SUCCEED)
-		goto cleanup;
-		*/
 	if (!res) {
 		mdbe->msg = createException(MAL, "monetdbe.monetdbe_result_fetch", "Parameter res is NULL");
 		goto cleanup;
