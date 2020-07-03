@@ -1063,34 +1063,34 @@ GENERATE_BASE_HEADERS(monetdbe_data_date, date);
 GENERATE_BASE_HEADERS(monetdbe_data_time, time);
 GENERATE_BASE_HEADERS(monetdbe_data_timestamp, timestamp);
 
-#define GENERATE_BAT_INPUT_BASE(tpe)                                               \
-	monetdbe_column_##tpe *bat_data = GDKzalloc(sizeof(monetdbe_column_##tpe));  \
-	if (!bat_data) {                                                           \
+#define GENERATE_BAT_INPUT_BASE(tpe)									\
+	monetdbe_column_##tpe *bat_data = GDKzalloc(sizeof(monetdbe_column_##tpe));	\
+	if (!bat_data) {													\
 		mdbe->msg = createException(MAL, "monetdbe.monetdbe_result_fetch", MAL_MALLOC_FAIL); \
-		goto cleanup;                                                      \
-	}                                                                          \
-	bat_data->type = monetdbe_##tpe;                                           \
-	bat_data->is_null = tpe##_is_null;                                         \
-	if (sqltpe->type->radix == 10) bat_data->scale = pow(10, sqltpe->scale);   \
+		goto cleanup;													\
+	}																	\
+	bat_data->type = monetdbe_##tpe;									\
+	bat_data->is_null = tpe##_is_null;									\
+	if (sqltpe->type->radix == 10) bat_data->scale = pow(10, sqltpe->scale); \
 	column_result = (monetdbe_column*) bat_data;
 
-#define GENERATE_BAT_INPUT(b, tpe, tpe_name, mtype)                                \
-	{                                                                          \
-		GENERATE_BAT_INPUT_BASE(tpe_name);                            	   \
-		bat_data->count = mres->nrows;                                     \
-		bat_data->null_value = mtype##_nil;                                \
-		if (bat_data->count) {                                             \
+#define GENERATE_BAT_INPUT(b, tpe, tpe_name, mtype)						\
+	{																	\
+		GENERATE_BAT_INPUT_BASE(tpe_name);								\
+		bat_data->count = (size_t) mres->nrows;							\
+		bat_data->null_value = mtype##_nil;								\
+		if (bat_data->count) {											\
 			bat_data->data = GDKzalloc(bat_data->count * sizeof(bat_data->null_value)); \
-			if (!bat_data->data) {                                     \
+			if (!bat_data->data) {										\
 				mdbe->msg = createException(MAL, "monetdbe.monetdbe_result_fetch", MAL_MALLOC_FAIL); \
-				goto cleanup;                                      \
-			}                                                          \
-		}                                                                  \
-		size_t it = 0;                                                     \
-		mtype* val = (mtype*)Tloc(b, 0);                                   \
-		/* bat is dense, materialize it */                                 \
-		for (it = 0; it < bat_data->count; it++, val++)                    \
-			bat_data->data[it] = (tpe) *val;                           \
+				goto cleanup;											\
+			}															\
+		}																\
+		size_t it = 0;													\
+		mtype* val = (mtype*)Tloc(b, 0);								\
+		/* bat is dense, materialize it */								\
+		for (it = 0; it < bat_data->count; it++, val++)					\
+			bat_data->data[it] = (tpe) *val;							\
 	}
 
 char*
@@ -1359,7 +1359,7 @@ monetdbe_result_fetch(monetdbe_result* mres, monetdbe_column** res, size_t colum
 		BATiter li;
 		BUN p = 0, q = 0;
 		GENERATE_BAT_INPUT_BASE(str);
-		bat_data->count = mres->nrows;
+		bat_data->count = (size_t) mres->nrows;
 		if (bat_data->count) {
 			bat_data->data = GDKzalloc(sizeof(char *) * bat_data->count);
 			bat_data->null_value = NULL;
@@ -1387,7 +1387,7 @@ monetdbe_result_fetch(monetdbe_result* mres, monetdbe_column** res, size_t colum
 	} else if (bat_type == TYPE_date) {
 		date *baseptr;
 		GENERATE_BAT_INPUT_BASE(date);
-		bat_data->count = mres->nrows;
+		bat_data->count = (size_t) mres->nrows;
 		if (bat_data->count) {
 			bat_data->data = GDKmalloc(sizeof(bat_data->null_value) * bat_data->count);
 			if (!bat_data->data) {
@@ -1403,7 +1403,7 @@ monetdbe_result_fetch(monetdbe_result* mres, monetdbe_column** res, size_t colum
 	} else if (bat_type == TYPE_daytime) {
 		daytime *baseptr;
 		GENERATE_BAT_INPUT_BASE(time);
-		bat_data->count = mres->nrows;
+		bat_data->count = (size_t) mres->nrows;
 		if (bat_data->count) {
 			bat_data->data = GDKmalloc(sizeof(bat_data->null_value) * bat_data->count);
 			if (!bat_data->data) {
@@ -1419,7 +1419,7 @@ monetdbe_result_fetch(monetdbe_result* mres, monetdbe_column** res, size_t colum
 	} else if (bat_type == TYPE_timestamp) {
 		timestamp *baseptr;
 		GENERATE_BAT_INPUT_BASE(timestamp);
-		bat_data->count = mres->nrows;
+		bat_data->count = (size_t) mres->nrows;
 		if (bat_data->count) {
 			bat_data->data = GDKmalloc(sizeof(bat_data->null_value) * bat_data->count);
 			if (!bat_data->data) {
@@ -1436,7 +1436,7 @@ monetdbe_result_fetch(monetdbe_result* mres, monetdbe_column** res, size_t colum
 		BATiter li;
 		BUN p = 0, q = 0;
 		GENERATE_BAT_INPUT_BASE(blob);
-		bat_data->count = mres->nrows;
+		bat_data->count = (size_t) mres->nrows;
 		if (bat_data->count) {
 			bat_data->data = GDKmalloc(sizeof(monetdbe_data_blob) * bat_data->count);
 			if (!bat_data->data) {
@@ -1471,7 +1471,7 @@ monetdbe_result_fetch(monetdbe_result* mres, monetdbe_column** res, size_t colum
 		BATiter li;
 		BUN p = 0, q = 0;
 		GENERATE_BAT_INPUT_BASE(str);
-		bat_data->count = mres->nrows;
+		bat_data->count = (size_t) mres->nrows;
 		if (bat_data->count) {
 			bat_data->null_value = NULL;
 			bat_data->data = GDKzalloc(sizeof(char *) * bat_data->count);
