@@ -256,6 +256,7 @@ typedef enum mnstr_errors {
 stream_export stream *callback_stream(
 	void *restrict priv,
 	ssize_t (*read)(void *restrict priv, void *restrict buf, size_t elmsize, size_t cnt),
+	ssize_t (*write)(void *restrict priv, const void *restrict buf, size_t elmsize, size_t cnt),
 	void (*close)(void *priv),
 	void (*destroy)(void *priv),
 	const char *restrict name);
