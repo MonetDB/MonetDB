@@ -187,8 +187,8 @@ stdout of test 'simple_selects` in directory 'sql/test/miscellaneous` itself:
 #       "hash"(null);
 % .%1,	.%2,	.%6,	.%7,	.%10,	.%11,	.%12,	.%13 # table_name
 % %1,	%2,	%6,	%7,	%10,	%11,	%12,	%13 # name
-% double,	double,	int,	int,	int,	int,	int,	bigint # type
-% 24,	24,	1,	1,	1,	1,	1,	1 # length
+% double,	sec_interval,	int,	int,	int,	int,	int,	bigint # type
+% 24,	5,	1,	1,	1,	1,	1,	1 # length
 [ 10,	NULL,	2,	NULL,	NULL,	NULL,	NULL,	NULL	]
 #select substring('abc' from 1 for null);
 % .%2 # table_name

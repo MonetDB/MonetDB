@@ -174,6 +174,21 @@ stdout of test 'sqlancer02` in directory 'sql/test/SQLancer` itself:
 % decimal,	decimal,	int # type
 % 12,	16,	1 # length
 #ROLLBACK;
+#START TRANSACTION;
+#CREATE TABLE "sys"."t0" (
+#	"c0" CHAR(451),
+#	"c1" DOUBLE        NOT NULL DEFAULT 0.49024308,
+#	"c2" CHARACTER LARGE OBJECT,
+#	CONSTRAINT "t0_c1_pkey" PRIMARY KEY ("c1"),
+#	CONSTRAINT "t0_c1_unique" UNIQUE ("c1")
+#);
+#COPY 4 RECORDS INTO "sys"."t0" FROM stdin USING DELIMITERS E'\t',E'\n','"';
+#NULL	0.36945874012955704	NULL
+#"u"	20	"Q\\"
+#"EjgaDfV\t6m)Qvw0'%cW#\015*]h "	0.944146436872532	""
+#"M"	0.7309075439656509	NULL
+[ 4	]
+#ROLLBACK;
 
 # 17:04:12 >  
 # 17:04:12 >  "Done."

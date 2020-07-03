@@ -82,13 +82,13 @@ stdout of test 'median_stdev` in directory 'sql/test` itself:
 #GROUP BY R.groupID ORDER by R.groupID;
 % sys.r,	sys. # table_name
 % groupid,	medianvalue # name
-% int,	double # type
-% 1,	24 # length
-[ 1,	6	]
-[ 2,	5	]
-[ 3,	34.5	]
-[ 4,	18	]
-[ 5,	0	]
+% int,	decimal # type
+% 1,	40 # length
+[ 1,	6.00	]
+[ 2,	5.00	]
+[ 3,	34.50	]
+[ 4,	18.00	]
+[ 5,	0.00	]
 #SELECT R.groupID, sqrt(SUM((R.n-G.a)*(R.n-G.a))/count(*)) AS stdev
 #FROM
 #(    SELECT GroupID, NumValue as n

@@ -36,7 +36,7 @@ ERROR = !types uuid(0,0) and sec_interval(13,0) are not equal for column 'u'
 CODE  = 42000
 MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = SELECT AVG(u) AS sumu FROM testUUID;
-ERROR = !types uuid(0,0) and month_interval(32,0) are not equal for column 'u'
+ERROR = !types uuid(0,0) and sec_interval(13,0) are not equal for column 'u'
 CODE  = 42000
 
 
