@@ -7493,18 +7493,27 @@ rel_simplify_predicates(mvc *sql, sql_rel *rel, sql_exp *e, int depth, int *chan
 						e->l = ie;
 					} else if (is_atom(r->type) && r->l) { /* direct literal */
 						atom *a = r->l;
-						int flag = a->data.val.bval;
 
-						assert(list_length(args) == 1);
-						l = args->h->data;
-						if (exp_subtype(l)) {
-							r = exp_atom(sql->sa, atom_general(sql->sa, exp_subtype(l), NULL));
-							e = exp_compare(sql->sa, l, r, e->flag);
-							if (e && !flag)
-								set_anti(e);
-							if (e)
-								set_semantics(e);
+						if (a->isnull) {
+							if (is_semantics(e)) /* isnull(x) = NULL -> false, isnull(x) <> NULL -> true */
+								e = exp_atom_bool(sql->sa, e->flag == cmp_notequal);
+							else /* always NULL */
+								e = exp_null(sql->sa, sql_bind_localtype("bit"));
 							(*changes)++;
+							return e;
+						} else {
+							int flag = a->data.val.bval;
+							assert(list_length(args) == 1);
+							l = args->h->data;
+							if (exp_subtype(l)) {
+								r = exp_atom(sql->sa, atom_general(sql->sa, exp_subtype(l), NULL));
+								e = exp_compare(sql->sa, l, r, e->flag);
+								if (e && !flag)
+									set_anti(e);
+								if (e)
+									set_semantics(e);
+								(*changes)++;
+							}
 						}
 					}
 				} else if (!f->func->s && is_not_func(f)) {
