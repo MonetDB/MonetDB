@@ -1932,6 +1932,32 @@ BATgroupavg3(BAT **avgp, BAT **remp, BAT **cntp, BAT *b, BAT *g, BAT *e, BAT *s,
 				AVERAGE_ITER(bte, vals[o], avgs[gid], rems[gid], cnts[gid]);
 			}
 		}
+		for (i = 0; i < ngrp; i++) {
+			if (cnts[i] == 0) {
+				avgs[i] = bte_nil;
+				bn->tnil = true;
+			} else
+#ifdef TRUNCATE_NUMBERS
+			if (!is_bte_nil(avgs[i]) && rems[i] > 0 && avgs[i] < 0) {
+				avgs[i]++;
+				rems[i] -= cnts[i];
+			}
+#else
+			if (!is_bte_nil(avgs[i]) && rems[i] > 0) {
+				if (avgs[i] < 0) {
+					if (rems[i] > cnts[i]/2) {
+						avgs[i]++;
+						rems[i] -= cnts[i];
+					}
+				} else {
+					if (rems[i] >= cnts[i]/2) {
+						avgs[i]++;
+						rems[i] -= cnts[i];
+					}
+				}
+			}
+#endif
+		}
 		break;
 	}
 	case TYPE_sht: {
@@ -1953,6 +1979,32 @@ BATgroupavg3(BAT **avgp, BAT **remp, BAT **cntp, BAT *b, BAT *g, BAT *e, BAT *s,
 			} else if (!is_lng_nil(cnts[gid])) {
 				AVERAGE_ITER(sht, vals[o], avgs[gid], rems[gid], cnts[gid]);
 			}
+		}
+		for (i = 0; i < ngrp; i++) {
+			if (cnts[i] == 0) {
+				avgs[i] = sht_nil;
+				bn->tnil = true;
+			} else
+#ifdef TRUNCATE_NUMBERS
+			if (!is_sht_nil(avgs[i]) && rems[i] > 0 && avgs[i] < 0) {
+				avgs[i]++;
+				rems[i] -= cnts[i];
+			}
+#else
+			if (!is_sht_nil(avgs[i]) && rems[i] > 0) {
+				if (avgs[i] < 0) {
+					if (rems[i] > cnts[i]/2) {
+						avgs[i]++;
+						rems[i] -= cnts[i];
+					}
+				} else {
+					if (rems[i] >= cnts[i]/2) {
+						avgs[i]++;
+						rems[i] -= cnts[i];
+					}
+				}
+			}
+#endif
 		}
 		break;
 	}
@@ -1976,6 +2028,32 @@ BATgroupavg3(BAT **avgp, BAT **remp, BAT **cntp, BAT *b, BAT *g, BAT *e, BAT *s,
 				AVERAGE_ITER(int, vals[o], avgs[gid], rems[gid], cnts[gid]);
 			}
 		}
+		for (i = 0; i < ngrp; i++) {
+			if (cnts[i] == 0) {
+				avgs[i] = int_nil;
+				bn->tnil = true;
+			} else
+#ifdef TRUNCATE_NUMBERS
+			if (!is_int_nil(avgs[i]) && rems[i] > 0 && avgs[i] < 0) {
+				avgs[i]++;
+				rems[i] -= cnts[i];
+			}
+#else
+			if (!is_int_nil(avgs[i]) && rems[i] > 0) {
+				if (avgs[i] < 0) {
+					if (rems[i] > cnts[i]/2) {
+						avgs[i]++;
+						rems[i] -= cnts[i];
+					}
+				} else {
+					if (rems[i] >= cnts[i]/2) {
+						avgs[i]++;
+						rems[i] -= cnts[i];
+					}
+				}
+			}
+#endif
+		}
 		break;
 	}
 	case TYPE_lng: {
@@ -1997,6 +2075,32 @@ BATgroupavg3(BAT **avgp, BAT **remp, BAT **cntp, BAT *b, BAT *g, BAT *e, BAT *s,
 			} else if (!is_lng_nil(cnts[gid])) {
 				AVERAGE_ITER(lng, vals[o], avgs[gid], rems[gid], cnts[gid]);
 			}
+		}
+		for (i = 0; i < ngrp; i++) {
+			if (cnts[i] == 0) {
+				avgs[i] = lng_nil;
+				bn->tnil = true;
+			} else
+#ifdef TRUNCATE_NUMBERS
+			if (!is_lng_nil(avgs[i]) && rems[i] > 0 && avgs[i] < 0) {
+				avgs[i]++;
+				rems[i] -= cnts[i];
+			}
+#else
+			if (!is_lng_nil(avgs[i]) && rems[i] > 0) {
+				if (avgs[i] < 0) {
+					if (rems[i] > cnts[i]/2) {
+						avgs[i]++;
+						rems[i] -= cnts[i];
+					}
+				} else {
+					if (rems[i] >= cnts[i]/2) {
+						avgs[i]++;
+						rems[i] -= cnts[i];
+					}
+				}
+			}
+#endif
 		}
 		break;
 	}
@@ -2020,6 +2124,32 @@ BATgroupavg3(BAT **avgp, BAT **remp, BAT **cntp, BAT *b, BAT *g, BAT *e, BAT *s,
 			} else if (!is_lng_nil(cnts[gid])) {
 				AVERAGE_ITER(hge, vals[o], avgs[gid], rems[gid], cnts[gid]);
 			}
+		}
+		for (i = 0; i < ngrp; i++) {
+			if (cnts[i] == 0) {
+				avgs[i] = hge_nil;
+				bn->tnil = true;
+			} else
+#ifdef TRUNCATE_NUMBERS
+			if (!is_hge_nil(avgs[i]) && rems[i] > 0 && avgs[i] < 0) {
+				avgs[i]++;
+				rems[i] -= cnts[i];
+			}
+#else
+			if (!is_hge_nil(avgs[i]) && rems[i] > 0) {
+				if (avgs[i] < 0) {
+					if (rems[i] > cnts[i]/2) {
+						avgs[i]++;
+						rems[i] -= cnts[i];
+					}
+				} else {
+					if (rems[i] >= cnts[i]/2) {
+						avgs[i]++;
+						rems[i] -= cnts[i];
+					}
+				}
+			}
+#endif
 		}
 		break;
 	}
@@ -2132,6 +2262,10 @@ combine_averages_bte(bte *avgp, lng *remp, lng *cntp,
 {
 	lng cnt = cnt1 + cnt2;
 
+	if (rem2 < 0) {
+		avg2--;
+		rem2 += cnt2;
+	}
 	*cntp = cnt;
 	lng v = avg1 * cnt1 + rem1 + avg2 * cnt2 + rem2;
 	bte a = (bte) (v / cnt);
@@ -2151,6 +2285,10 @@ combine_averages_sht(sht *avgp, lng *remp, lng *cntp,
 {
 	lng cnt = cnt1 + cnt2;
 
+	if (rem2 < 0) {
+		avg2--;
+		rem2 += cnt2;
+	}
 	*cntp = cnt;
 	lng v = avg1 * cnt1 + rem1 + avg2 * cnt2 + rem2;
 	sht a = (sht) (v / cnt);
@@ -2171,6 +2309,10 @@ combine_averages_int(int *avgp, lng *remp, lng *cntp,
 {
 	lng cnt = cnt1 + cnt2;
 
+	if (rem2 < 0) {
+		avg2--;
+		rem2 += cnt2;
+	}
 	*cntp = cnt;
 #ifdef HAVE_HGE
 	hge v = avg1 * cnt1 + rem1 + avg2 * cnt2 + rem2;
@@ -2183,6 +2325,10 @@ combine_averages_int(int *avgp, lng *remp, lng *cntp,
 	*avgp = a;
 	*remp = (lng) v;
 #else
+	if (cnt1 == 0) {
+		avg1 = 0;
+		rem1 = 0;
+	}
 	lng rem = rem1 + rem2;
 	lng v;
 	uint64_t r;
@@ -2228,6 +2374,10 @@ combine_averages_lng(lng *avgp, lng *remp, lng *cntp,
 {
 	lng cnt = cnt1 + cnt2;
 
+	if (rem2 < 0) {
+		avg2--;
+		rem2 += cnt2;
+	}
 	*cntp = cnt;
 #ifdef HAVE_HGE
 	hge v = avg1 * cnt1 + rem1 + avg2 * cnt2 + rem2;
@@ -2240,6 +2390,10 @@ combine_averages_lng(lng *avgp, lng *remp, lng *cntp,
 	*avgp = a;
 	*remp = (lng) v;
 #else
+	if (cnt1 == 0) {
+		avg1 = 0;
+		rem1 = 0;
+	}
 	lng rem = rem1 + rem2;
 	lng v;
 	uint64_t r;
@@ -2284,6 +2438,14 @@ combine_averages_hge(hge *avgp, lng *remp, lng *cntp,
 		     hge avg1, lng rem1, lng cnt1,
 		     hge avg2, lng rem2, lng cnt2)
 {
+	if (cnt1 == 0) {
+		avg1 = 0;
+		rem1 = 0;
+	}
+	if (rem2 < 0) {
+		avg2--;
+		rem2 += cnt2;
+	}
 	lng cnt = cnt1 + cnt2;
 	lng rem = rem1 + rem2;
 	hge v;
@@ -2389,6 +2551,10 @@ BATgroupavg3combine(BAT *avg, BAT *rem, BAT *cnt, BAT *g, BAT *e, bool skip_nils
 			}
 		}
 		for (i = 0; i < ngrp; i++) {
+			if (cnts[i] == 0) {
+				avgs[i] = bte_nil;
+				bn->tnil = true;
+			} else
 #ifdef TRUNCATE_NUMBERS
 			if (!is_bte_nil(avgs[i]) && rems[i] > 0 && avgs[i] < 0)
 				avgs[i]++;
@@ -2426,6 +2592,10 @@ BATgroupavg3combine(BAT *avg, BAT *rem, BAT *cnt, BAT *g, BAT *e, bool skip_nils
 			}
 		}
 		for (i = 0; i < ngrp; i++) {
+			if (cnts[i] == 0) {
+				avgs[i] = sht_nil;
+				bn->tnil = true;
+			} else
 #ifdef TRUNCATE_NUMBERS
 			if (!is_sht_nil(avgs[i]) && rems[i] > 0 && avgs[i] < 0)
 				avgs[i]++;
@@ -2463,6 +2633,10 @@ BATgroupavg3combine(BAT *avg, BAT *rem, BAT *cnt, BAT *g, BAT *e, bool skip_nils
 			}
 		}
 		for (i = 0; i < ngrp; i++) {
+			if (cnts[i] == 0) {
+				avgs[i] = int_nil;
+				bn->tnil = true;
+			} else
 #ifdef TRUNCATE_NUMBERS
 			if (!is_int_nil(avgs[i]) && rems[i] > 0 && avgs[i] < 0)
 				avgs[i]++;
@@ -2500,6 +2674,10 @@ BATgroupavg3combine(BAT *avg, BAT *rem, BAT *cnt, BAT *g, BAT *e, bool skip_nils
 			}
 		}
 		for (i = 0; i < ngrp; i++) {
+			if (cnts[i] == 0) {
+				avgs[i] = lng_nil;
+				bn->tnil = true;
+			} else
 #ifdef TRUNCATE_NUMBERS
 			if (!is_lng_nil(avgs[i]) && rems[i] > 0 && avgs[i] < 0)
 				avgs[i]++;
@@ -2538,6 +2716,10 @@ BATgroupavg3combine(BAT *avg, BAT *rem, BAT *cnt, BAT *g, BAT *e, bool skip_nils
 			}
 		}
 		for (i = 0; i < ngrp; i++) {
+			if (cnts[i] == 0) {
+				avgs[i] = hge_nil;
+				bn->tnil = true;
+			} else
 #ifdef TRUNCATE_NUMBERS
 			if (!is_hge_nil(avgs[i]) && rems[i] > 0 && avgs[i] < 0)
 				avgs[i]++;
