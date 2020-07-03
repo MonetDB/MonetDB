@@ -2700,7 +2700,7 @@ BATcalcavg(BAT *b, BAT *s, dbl *avg, BUN *vals, int scale)
 	if (scale != 0 && !is_dbl_nil(*avg))
 		*avg *= pow(10.0, (double) scale);
 	if (vals)
-		*vals = n;
+		*vals = (BUN) n;
 	return GDK_SUCCEED;
 }
 
