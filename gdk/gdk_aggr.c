@@ -1945,7 +1945,7 @@ BATgroupavg3(BAT **avgp, BAT **remp, BAT **cntp, BAT *b, BAT *g, BAT *e, BAT *s,
 #else
 			if (!is_bte_nil(avgs[i]) && rems[i] > 0) {
 				if (avgs[i] < 0) {
-					if (rems[i] > cnts[i]/2) {
+					if (2*rems[i] > cnts[i]) {
 						avgs[i]++;
 						rems[i] -= cnts[i];
 					}
@@ -1993,7 +1993,7 @@ BATgroupavg3(BAT **avgp, BAT **remp, BAT **cntp, BAT *b, BAT *g, BAT *e, BAT *s,
 #else
 			if (!is_sht_nil(avgs[i]) && rems[i] > 0) {
 				if (avgs[i] < 0) {
-					if (rems[i] > cnts[i]/2) {
+					if (2*rems[i] > cnts[i]) {
 						avgs[i]++;
 						rems[i] -= cnts[i];
 					}
@@ -2041,7 +2041,7 @@ BATgroupavg3(BAT **avgp, BAT **remp, BAT **cntp, BAT *b, BAT *g, BAT *e, BAT *s,
 #else
 			if (!is_int_nil(avgs[i]) && rems[i] > 0) {
 				if (avgs[i] < 0) {
-					if (rems[i] > cnts[i]/2) {
+					if (2*rems[i] > cnts[i]) {
 						avgs[i]++;
 						rems[i] -= cnts[i];
 					}
@@ -2089,7 +2089,7 @@ BATgroupavg3(BAT **avgp, BAT **remp, BAT **cntp, BAT *b, BAT *g, BAT *e, BAT *s,
 #else
 			if (!is_lng_nil(avgs[i]) && rems[i] > 0) {
 				if (avgs[i] < 0) {
-					if (rems[i] > cnts[i]/2) {
+					if (2*rems[i] > cnts[i]) {
 						avgs[i]++;
 						rems[i] -= cnts[i];
 					}
@@ -2138,7 +2138,7 @@ BATgroupavg3(BAT **avgp, BAT **remp, BAT **cntp, BAT *b, BAT *g, BAT *e, BAT *s,
 #else
 			if (!is_hge_nil(avgs[i]) && rems[i] > 0) {
 				if (avgs[i] < 0) {
-					if (rems[i] > cnts[i]/2) {
+					if (2*rems[i] > cnts[i]) {
 						avgs[i]++;
 						rems[i] -= cnts[i];
 					}
@@ -2561,7 +2561,7 @@ BATgroupavg3combine(BAT *avg, BAT *rem, BAT *cnt, BAT *g, BAT *e, bool skip_nils
 #else
 			if (!is_bte_nil(avgs[i]) && rems[i] > 0) {
 				if (avgs[i] < 0) {
-					if (rems[i] > cnts[i]/2)
+					if (2*rems[i] > cnts[i])
 						avgs[i]++;
 				} else {
 					if (2*rems[i] >= cnts[i])
@@ -2602,7 +2602,7 @@ BATgroupavg3combine(BAT *avg, BAT *rem, BAT *cnt, BAT *g, BAT *e, bool skip_nils
 #else
 			if (!is_sht_nil(avgs[i]) && rems[i] > 0) {
 				if (avgs[i] < 0) {
-					if (rems[i] > cnts[i]/2)
+					if (2*rems[i] > cnts[i])
 						avgs[i]++;
 				} else {
 					if (2*rems[i] >= cnts[i])
@@ -2643,7 +2643,7 @@ BATgroupavg3combine(BAT *avg, BAT *rem, BAT *cnt, BAT *g, BAT *e, bool skip_nils
 #else
 			if (!is_int_nil(avgs[i]) && rems[i] > 0) {
 				if (avgs[i] < 0) {
-					if (rems[i] > cnts[i]/2)
+					if (2*rems[i] > cnts[i])
 						avgs[i]++;
 				} else {
 					if (2*rems[i] >= cnts[i])
@@ -2684,7 +2684,7 @@ BATgroupavg3combine(BAT *avg, BAT *rem, BAT *cnt, BAT *g, BAT *e, bool skip_nils
 #else
 			if (!is_lng_nil(avgs[i]) && rems[i] > 0) {
 				if (avgs[i] < 0) {
-					if (rems[i] > cnts[i]/2)
+					if (2*rems[i] > cnts[i])
 						avgs[i]++;
 				} else {
 					if (2*rems[i] >= cnts[i])
@@ -2726,7 +2726,7 @@ BATgroupavg3combine(BAT *avg, BAT *rem, BAT *cnt, BAT *g, BAT *e, bool skip_nils
 #else
 			if (!is_hge_nil(avgs[i]) && rems[i] > 0) {
 				if (avgs[i] < 0) {
-					if (rems[i] > cnts[i]/2)
+					if (2*rems[i] > cnts[i])
 						avgs[i]++;
 				} else {
 					if (2*rems[i] >= cnts[i])
