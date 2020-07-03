@@ -1326,6 +1326,8 @@ mat_group_aggr(MalBlkPtr mb, InstrPtr p, mat_t *mat, int b, int g, int e)
 			getArg(q,q->argc-1) = getArg(q,q->argc-2);
 			getArg(q,q->argc-2) = getArg(q,q->argc-3);
 		} else if (isAvg) {
+			getArg(q,1) = newTmpVariable(mb, tp2);
+			getArg(q,2) = newTmpVariable(mb, tp2);
 			off = 2;
 		}
 		getArg(q,1+off) = getArg(mat[b].mi,k);
