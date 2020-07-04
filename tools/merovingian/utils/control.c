@@ -308,7 +308,7 @@ char* control_send(
 				} else
 #endif
 				{
-					(void)phash;
+					(void)phash; (void)algos;
 					snprintf(sbuf, sizeof(sbuf), "cannot connect: "
 							"monetdbd server requires unknown hash: %s", shash);
 					close_stream(fdout);
