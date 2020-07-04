@@ -780,7 +780,7 @@ monetdbe_prepare(monetdbe_database dbhdl, char* query, monetdbe_statement **stmt
 		cq *q = qc_find(m->qc, prepare_id);
 
 		if (q && stmt_internal) {
-			Symbol s = (Symbol)q->f->imp;
+			Symbol s = findSymbolInModule(mdbe->c->usermodule, q->f->imp);
 			InstrPtr p = s->def->stmt[0];
 			stmt_internal->mdbe = mdbe;
 			stmt_internal->q = q;
@@ -820,8 +820,8 @@ monetdbe_bind(monetdbe_statement *stmt, void *data, size_t i)
 	/* TODO !data treat as NULL value (add nil mask) ? */
 	if (i > stmt->nparam)
 		return createException(MAL, "monetdbe.monetdbe_bind", "Parameter %zu not bound to a value", i);
-	node *n = list_fetch(stmt_internal->q->f->ops, i);
-	sql_arg *a = n->data;
+	sql_arg *a = (sql_arg*)list_fetch(stmt_internal->q->f->ops, i);
+	assert(a);
 	stmt_internal->data[i].vtype = a->type.type->localtype;
 	/* TODO handle conversion from NULL and special types */
 	VALset(&stmt_internal->data[i], a->type.type->localtype, data);
