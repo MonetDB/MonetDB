@@ -1013,7 +1013,7 @@ exp_bin(backend *be, sql_exp *e, stmt *left, stmt *right, stmt *grp, stmt *ext, 
 
 		/* mark use of join indices */
 		if (right && find_prop(e->p, PROP_JOINIDX) != NULL)
-			sql->opt_stats[0]++;
+			be->join_idx++;
 
 		if (!l) {
 			l = exp_bin(be, e->l, left, NULL, grp, ext, cnt, sel, NULL, depth+1, 0);
@@ -2269,7 +2269,7 @@ rel2bin_join(backend *be, sql_rel *rel, list *refs)
 			jexps = get_equi_joins_first(sql, jexps, &equality_only);
 			/* generate a relational join (releqjoin) which does a multi attribute (equi) join */
 			for( en = jexps->h; en; en = en->next ) {
-				int join_idx = sql->opt_stats[0];
+				int join_idx = be->join_idx;
 				sql_exp *e = en->data;
 				stmt *s = NULL;
 				prop *p;
@@ -2297,7 +2297,7 @@ rel2bin_join(backend *be, sql_rel *rel, list *refs)
 					assert(sql->session->status == -10); /* Stack overflow errors shouldn't terminate the server */
 					return NULL;
 				}
-				if (join_idx != sql->opt_stats[0])
+				if (join_idx != be->join_idx)
 					idx = 1;
 				assert(s->type == st_join || s->type == st_join2 || s->type == st_joinN);
 				if (!join)
@@ -2569,7 +2569,7 @@ rel2bin_semijoin(backend *be, sql_rel *rel, list *refs)
 			right = subrel_project(be, right, refs, rel->r);
 
 			for( en = jexps->h; en; en = en->next ) {
-				int join_idx = sql->opt_stats[0];
+				int join_idx = be->join_idx;
 				sql_exp *e = en->data;
 				stmt *s = NULL;
 
@@ -2614,7 +2614,7 @@ rel2bin_semijoin(backend *be, sql_rel *rel, list *refs)
 					assert(sql->session->status == -10); /* Stack overflow errors shouldn't terminate the server */
 					return NULL;
 				}
-				if (join_idx != sql->opt_stats[0])
+				if (join_idx != be->join_idx)
 					idx = 1;
 				/* stop on first non equality join */
 				if (!join) {
@@ -6054,6 +6054,7 @@ output_rel_bin(backend *be, sql_rel *rel )
 	mapi_query_t sqltype = sql->type;
 	stmt *s;
 
+	be->join_idx = 0;
 	if (refs == NULL)
 		return NULL;
 	s = subrel_bin(be, rel, refs);

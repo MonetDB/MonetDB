@@ -46,6 +46,7 @@ typedef struct backend {
 	int 	mvc_var;
 	int 	cur_append;
 	int	vtop;		/* top of the variable stack before the current function */
+	int 	join_idx;	/* number of index joins (used in rel_bin) */
 	cq 	*q;		/* pointer to the cached query */
 } backend;
 

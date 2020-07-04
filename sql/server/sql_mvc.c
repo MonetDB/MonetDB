@@ -792,7 +792,6 @@ mvc_release(mvc *m, const char *name)
 mvc *
 mvc_create(int clientid, int debug, bstream *rs, stream *ws)
 {
-	int i;
 	mvc *m;
 
  	m = ZNEW(mvc);
@@ -847,8 +846,6 @@ mvc_create(int clientid, int debug, bstream *rs, stream *ws)
 	m->label = 0;
 	m->remote = 0;
 	m->cascade_action = NULL;
-	for(i=0;i<MAXSTATS;i++)
-		m->opt_stats[i] = 0;
 
 	store_lock();
 	m->session = sql_session_create(1 /*autocommit on*/);
@@ -873,7 +870,7 @@ mvc_create(int clientid, int debug, bstream *rs, stream *ws)
 int
 mvc_reset(mvc *m, bstream *rs, stream *ws, int debug)
 {
-	int i, res = 1, reset;
+	int res = 1, reset;
 	sql_trans *tr;
 
 	TRC_DEBUG(SQL_TRANS, "MVC reset\n");
@@ -922,9 +919,6 @@ mvc_reset(mvc *m, bstream *rs, stream *ws, int debug)
 	m->remote = 0;
 	m->cascade_action = NULL;
 	m->type = Q_PARSE;
-
-	for(i=0;i<MAXSTATS;i++)
-		m->opt_stats[i] = 0;
 
 	m->result_id = 0;
 	m->results = NULL;

@@ -145,7 +145,6 @@ typedef struct mvc {
 	lng last_id;
 	lng rowcnt;
 	int no_mitosis;		/* run query without mitosis */
-	int opt_stats[MAXSTATS];/* keep statistics about optimizer rewrites */
 	int remote;
 
 	int result_id;

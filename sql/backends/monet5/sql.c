@@ -192,6 +192,17 @@ checkSQLContext(Client cntxt)
 	return MAL_SUCCEED;
 }
 
+static str
+getBackendContext(Client cntxt, backend **be)
+{
+	str msg;
+
+	if ((msg = checkSQLContext(cntxt)) != MAL_SUCCEED)
+		return msg;
+	*be = (backend *) cntxt->sqlcontext;
+	return MAL_SUCCEED;
+}
+
 str
 getSQLContext(Client cntxt, MalBlkPtr mb, mvc **c, backend **b)
 {
@@ -805,7 +816,7 @@ mvc_logfile(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 str
 mvc_next_value(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	mvc *m = NULL;
+	backend *be = NULL;
 	str msg;
 	sql_schema *s;
 	sql_sequence *seq;
@@ -813,20 +824,19 @@ mvc_next_value(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	const char *sname = *getArgReference_str(stk, pci, 1);
 	const char *seqname = *getArgReference_str(stk, pci, 2);
 
-	if ((msg = getSQLContext(cntxt, mb, &m, NULL)) != NULL)
+	(void)mb;
+	if ((msg = getBackendContext(cntxt, &be)) != NULL)
 		return msg;
-	if ((msg = checkSQLContext(cntxt)) != NULL)
-		return msg;
-	if (!(s = mvc_bind_schema(m, sname)))
+	if (!(s = mvc_bind_schema(be->mvc, sname)))
 		throw(SQL, "sql.next_value", SQLSTATE(3F000) "Cannot find the schema %s", sname);
-	if (!mvc_schema_privs(m, s))
-		throw(SQL, "sql.next_value", SQLSTATE(42000) "Access denied for %s to schema '%s'", sqlvar_get_string(find_global_var(m, mvc_bind_schema(m, "sys"), "current_user")), s->base.name);
+	if (!mvc_schema_privs(be->mvc, s))
+		throw(SQL, "sql.next_value", SQLSTATE(42000) "Access denied for %s to schema '%s'", sqlvar_get_string(find_global_var(be->mvc, mvc_bind_schema(be->mvc, "sys"), "current_user")), s->base.name);
 	if (!(seq = find_sql_sequence(s, seqname)))
 		throw(SQL, "sql.next_value", SQLSTATE(HY050) "Failed to fetch sequence %s.%s", sname, seqname);
 
 	if (seq_next_value(seq, res)) {
-		m->last_id = *res;
-		sqlvar_set_number(find_global_var(m, mvc_bind_schema(m, "sys"), "last_id"), m->last_id);
+		be->mvc->last_id = *res;
+		sqlvar_set_number(find_global_var(be->mvc, mvc_bind_schema(be->mvc, "sys"), "last_id"), be->mvc->last_id);
 		return MAL_SUCCEED;
 	}
 	throw(SQL, "sql.next_value", SQLSTATE(42000) "Error in fetching next value for sequence %s.%s", sname, seqname);
@@ -3732,17 +3742,17 @@ dump_cache(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 str
 dump_opt_stats(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	mvc *m = NULL;
+	backend *be;
 	str msg;
 	int cnt;
 	BAT *rewrite, *count;
 	bat *rrewrite = getArgReference_bat(stk, pci, 0);
 	bat *rcount = getArgReference_bat(stk, pci, 1);
 
-	if ((msg = getSQLContext(cntxt, mb, &m, NULL)) != NULL ||
-	    (msg = checkSQLContext(cntxt)) != NULL)
+	(void)mb;
+	if ((msg = getBackendContext(cntxt, &be)) != NULL)
 		return msg;
-	cnt = m->qc->id;
+	cnt = be->mvc->qc->id;
 	rewrite = COLnew(0, TYPE_str, cnt, TRANSIENT);
 	count = COLnew(0, TYPE_int, cnt, TRANSIENT);
 	if (rewrite == NULL || count == NULL) {
@@ -3752,7 +3762,7 @@ dump_opt_stats(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	}
 
 	if (BUNappend(rewrite, "joinidx", false) != GDK_SUCCEED ||
-	    BUNappend(count, &m->opt_stats[0], false) != GDK_SUCCEED) {
+	    BUNappend(count, &be->join_idx, false) != GDK_SUCCEED) {
 		BBPreclaim(rewrite);
 		BBPreclaim(count);
 		throw(SQL, "sql.optstats", SQLSTATE(HY013) MAL_MALLOC_FAIL);
