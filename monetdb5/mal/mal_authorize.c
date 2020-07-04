@@ -392,7 +392,7 @@ AUTHinitTables(const char *passwd) {
 		pw = mcrypt_BackendSum(passwd, strlen(passwd));
 		if(!pw && !GDKembedded())
 			throw(MAL, "initTables", SQLSTATE(42000) "Crypt backend hash not found");
-		else
+		else if (GDKembedded())
 			pw = strdup(passwd);
 		msg = AUTHaddUser(&uid, NULL, "monetdb", pw);
 		free(pw);
