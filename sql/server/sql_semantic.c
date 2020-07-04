@@ -33,48 +33,6 @@
  * !SQL  <informative message, reserved for ...rows affected>
  */
 
-atom *
-sql_add_arg(mvc *sql, atom *v)
-{
-	atom** new_args;
-	int next_size = sql->argmax;
-
-	if (sql->argc == (1<<16)-1)
-		sql->caching = 0;
-	if (sql->caching && sql->argc == next_size) {
-		next_size *= 2;
-		new_args = RENEW_ARRAY(atom*,sql->args,next_size);
-		if(new_args) {
-			sql->args = new_args;
-			sql->argmax = next_size;
-		} else
-			return NULL;
-	}
-	sql->args[sql->argc++] = v;
-	return v;
-}
-
-atom *
-sql_set_arg(mvc *sql, int nr, atom *v)
-{
-	atom** new_args;
-	int next_size = sql->argmax;
-	if (nr >= next_size) {
-		next_size *= 2;
-		if (nr >= next_size)
-			next_size = nr*2;
-		new_args = RENEW_ARRAY(atom*,sql->args,next_size);
-		if(new_args) {
-			sql->args = new_args;
-			sql->argmax = next_size;
-		} else
-			return NULL;
-	}
-	if (sql->argc < nr+1)
-		sql->argc = nr+1;
-	sql->args[nr] = v;
-	return v;
-}
 
 void
 sql_add_param(mvc *sql, const char *name, sql_subtype *st)
@@ -125,24 +83,10 @@ sql_bind_paramnr(mvc *sql, int nr)
 	return NULL;
 }
 
-atom *
-sql_bind_arg(mvc *sql, int nr)
-{
-	if (nr < sql->argc)
-		return sql->args[nr];
-	return NULL;
-}
-
 void
 sql_destroy_params(mvc *sql)
 {
 	sql->params = NULL;
-}
-
-void
-sql_destroy_args(mvc *sql)
-{
-	sql->argc = 0;
 }
 
 sql_schema *
@@ -451,10 +395,7 @@ symbol2string(mvc *sql, symbol *se, int expression, char **err) /**/
 		/* can only be variables */
 		dlist *l = se->data.lval;
 		assert(l->h->type != type_lng);
-		if (dlist_length(l) == 1 && l->h->type == type_int) {
-			atom *a = sql_bind_arg(sql, l->h->data.i_val);
-			return atom2sql(a);
-		} else if (expression && dlist_length(l) == 1 && l->h->type == type_string) {
+		if (expression && dlist_length(l) == 1 && l->h->type == type_string) {
 			/* when compiling an expression, a column of a table might be present in the symbol, so we need this case */
 			const char *op = l->h->data.sval;
 			char *res;

@@ -121,11 +121,6 @@ sql_symbol2relation(mvc *sql, symbol *sym)
 {
 	sql_rel *rel;
 	sql_query *query = query_create(sql);
-	int top = sql->topframes;
-
-	/* On explain and plan modes, drop declared variables after generating the AST */
-	if (((sql->emod & mod_explain) || (sql->emode != m_normal && sql->emode != m_execute)) && !stack_push_frame(sql, NULL))
-		return sql_error(sql, 02, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 
 	rel = rel_semantic(query, sym);
 	if (rel)
@@ -137,9 +132,6 @@ sql_symbol2relation(mvc *sql, symbol *sym)
 	if (rel && (rel_no_mitosis(rel) || rel_need_distinct_query(rel)))
 		sql->no_mitosis = 1;
 
-	/* On explain and plan modes, drop declared variables after generating the AST */
-	if ((sql->emod & mod_explain) || (sql->emode != m_normal && sql->emode != m_execute))
-		stack_pop_until(sql, top);
 	return rel;
 }
 
@@ -152,7 +144,6 @@ int
 sqlcleanup(mvc *c, int err)
 {
 	sql_destroy_params(c);
-	sql_destroy_args(c);
 
 	if ((c->emod & mod_locked) == mod_locked) {
 		/* here we should commit the transaction */
@@ -3723,13 +3714,11 @@ dump_cache(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	}
 
 	for (q = m->qc->q; q; q = q->next) {
-		if (!q->prepared) {
-			if (BUNappend(query, q->codestring, false) != GDK_SUCCEED ||
-			    BUNappend(count, &q->count, false) != GDK_SUCCEED) {
-				BBPunfix(query->batCacheid);
-				BBPunfix(count->batCacheid);
-				throw(SQL, "sql.dumpcache", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-			}
+		if (BUNappend(query, q->f->query, false) != GDK_SUCCEED ||
+		    BUNappend(count, &q->count, false) != GDK_SUCCEED) {
+			BBPunfix(query->batCacheid);
+			BBPunfix(count->batCacheid);
+			throw(SQL, "sql.dumpcache", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		}
 	}
 	*rquery = query->batCacheid;
@@ -5132,35 +5121,33 @@ SQLsession_prepared_statements(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrP
 	}
 
 	for (q = sql->qc->q; q; q = q->next) {
-		if (q->prepared) {
-			gdk_return bun_res;
-			if (BUNappend(sessionid, &(cntxt->idx), false) != GDK_SUCCEED) {
-				msg = createException(SQL, "sql.session_prepared_statements", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-				goto bailout;
-			}
+		gdk_return bun_res;
+		if (BUNappend(sessionid, &(cntxt->idx), false) != GDK_SUCCEED) {
+			msg = createException(SQL, "sql.session_prepared_statements", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+			goto bailout;
+		}
 
-			msg = AUTHgetUsername(&usr, cntxt);
-			if (msg != MAL_SUCCEED)
-				goto bailout;
-			bun_res = BUNappend(user, usr, false);
-			GDKfree(usr);
-			if (bun_res != GDK_SUCCEED) {
-				msg = createException(SQL, "sql.session_prepared_statements", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-				goto bailout;
-			}
+		msg = AUTHgetUsername(&usr, cntxt);
+		if (msg != MAL_SUCCEED)
+			goto bailout;
+		bun_res = BUNappend(user, usr, false);
+		GDKfree(usr);
+		if (bun_res != GDK_SUCCEED) {
+			msg = createException(SQL, "sql.session_prepared_statements", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+			goto bailout;
+		}
 
-			if (BUNappend(statementid, &(q->id), false) != GDK_SUCCEED) {
-				msg = createException(SQL, "sql.session_prepared_statements", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-				goto bailout;
-			}
-			if (BUNappend(statement, q->codestring, false) != GDK_SUCCEED) {
-				msg = createException(SQL, "sql.session_prepared_statements", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-				goto bailout;
-			}
-			if (BUNappend(created, &(q->created), false) != GDK_SUCCEED) {
-				msg = createException(SQL, "sql.session_prepared_statements", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-				goto bailout;
-			}
+		if (BUNappend(statementid, &(q->id), false) != GDK_SUCCEED) {
+			msg = createException(SQL, "sql.session_prepared_statements", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+			goto bailout;
+		}
+		if (BUNappend(statement, q->f->query, false) != GDK_SUCCEED) {
+			msg = createException(SQL, "sql.session_prepared_statements", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+			goto bailout;
+		}
+		if (BUNappend(created, &(q->created), false) != GDK_SUCCEED) {
+			msg = createException(SQL, "sql.session_prepared_statements", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+			goto bailout;
 		}
 	}
 
@@ -5222,109 +5209,108 @@ SQLsession_prepared_statements_args(Client cntxt, MalBlkPtr mb, MalStkPtr stk, I
 	}
 
 	for (q = sql->qc->q; q; q = q->next) {
-		if (q->prepared) {
-			sql_rel *r = q->rel;
-			int arg_number = 0;
-			bte inout = ARG_OUT;
+		sql_rel *r = q->rel;
+		int arg_number = 0;
+		bte inout = ARG_OUT;
 
-			if (r && (is_topn(r->op) || is_sample(r->op)))
-				r = r->l;
+		if (r && (is_topn(r->op) || is_sample(r->op)))
+			r = r->l;
 
-			if (r && is_project(r->op) && r->exps) {
-				for (node *n = r->exps->h; n; n = n->next, arg_number++) {
-					sql_exp *e = n->data;
-					sql_subtype *t = exp_subtype(e);
-					const char *name = exp_name(e), *rname = exp_relname(e), *rschema = ATOMnilptr(TYPE_str);
+		if (r && is_project(r->op) && r->exps) {
+			for (node *n = r->exps->h; n; n = n->next, arg_number++) {
+				sql_exp *e = n->data;
+				sql_subtype *t = exp_subtype(e);
+				const char *name = exp_name(e), *rname = exp_relname(e), *rschema = ATOMnilptr(TYPE_str);
 
-					if (!name && e->type == e_column && e->r)
-						name = e->r;
-					if (!name)
-						name = ATOMnilptr(TYPE_str);
-					if (!rname && e->type == e_column && e->l)
-						rname = e->l;
-					if (!rname)
-						rname = ATOMnilptr(TYPE_str);
+				if (!name && e->type == e_column && e->r)
+					name = e->r;
+				if (!name)
+					name = ATOMnilptr(TYPE_str);
+				if (!rname && e->type == e_column && e->l)
+					rname = e->l;
+				if (!rname)
+					rname = ATOMnilptr(TYPE_str);
 
-					if (BUNappend(statementid, &(q->id), false) != GDK_SUCCEED) {
-						msg = createException(SQL, "sql.session_prepared_statements_args", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-						goto bailout;
-					}
-					if (BUNappend(type, t->type->sqlname, false) != GDK_SUCCEED) {
-						msg = createException(SQL, "sql.session_prepared_statements_args", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-						goto bailout;
-					}
-					if (BUNappend(digits, &t->digits, false) != GDK_SUCCEED) {
-						msg = createException(SQL, "sql.session_prepared_statements_args", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-						goto bailout;
-					}
-					if (BUNappend(scale, &t->scale, false) != GDK_SUCCEED) {
-						msg = createException(SQL, "sql.session_prepared_statements_args", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-						goto bailout;
-					}
-					if (BUNappend(isinout, &inout, false) != GDK_SUCCEED) {
-						msg = createException(SQL, "sql.session_prepared_statements_args", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-						goto bailout;
-					}
-					if (BUNappend(number, &arg_number, false) != GDK_SUCCEED) {
-						msg = createException(SQL, "sql.session_prepared_statements_args", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-						goto bailout;
-					}
-					if (BUNappend(schema, rschema, false) != GDK_SUCCEED) {
-						msg = createException(SQL, "sql.session_prepared_statements_args", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-						goto bailout;
-					}
-					if (BUNappend(table, rname, false) != GDK_SUCCEED) {
-						msg = createException(SQL, "sql.session_prepared_statements_args", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-						goto bailout;
-					}
-					if (BUNappend(column, name, false) != GDK_SUCCEED) {
-						msg = createException(SQL, "sql.session_prepared_statements_args", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-						goto bailout;
-					}
+				if (BUNappend(statementid, &(q->id), false) != GDK_SUCCEED) {
+					msg = createException(SQL, "sql.session_prepared_statements_args", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+					goto bailout;
+				}
+				if (BUNappend(type, t->type->sqlname, false) != GDK_SUCCEED) {
+					msg = createException(SQL, "sql.session_prepared_statements_args", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+					goto bailout;
+				}
+				if (BUNappend(digits, &t->digits, false) != GDK_SUCCEED) {
+					msg = createException(SQL, "sql.session_prepared_statements_args", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+					goto bailout;
+				}
+				if (BUNappend(scale, &t->scale, false) != GDK_SUCCEED) {
+					msg = createException(SQL, "sql.session_prepared_statements_args", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+					goto bailout;
+				}
+				if (BUNappend(isinout, &inout, false) != GDK_SUCCEED) {
+					msg = createException(SQL, "sql.session_prepared_statements_args", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+					goto bailout;
+				}
+				if (BUNappend(number, &arg_number, false) != GDK_SUCCEED) {
+					msg = createException(SQL, "sql.session_prepared_statements_args", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+					goto bailout;
+				}
+				if (BUNappend(schema, rschema, false) != GDK_SUCCEED) {
+					msg = createException(SQL, "sql.session_prepared_statements_args", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+					goto bailout;
+				}
+				if (BUNappend(table, rname, false) != GDK_SUCCEED) {
+					msg = createException(SQL, "sql.session_prepared_statements_args", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+					goto bailout;
+				}
+				if (BUNappend(column, name, false) != GDK_SUCCEED) {
+					msg = createException(SQL, "sql.session_prepared_statements_args", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+					goto bailout;
 				}
 			}
+		}
 
-			if (q->params) {
-				inout = ARG_IN;
-				for (int i = 0; i < q->paramlen; i++, arg_number++) {
-					sql_subtype t = q->params[i];
+		if (q->f->ops) {
+			inout = ARG_IN;
+			for (node *n = q->f->ops->h; n; n=n->next, arg_number++) {
+				sql_arg *a = n->data;
+				sql_subtype *t = &a->type;
 
-					if (BUNappend(statementid, &(q->id), false) != GDK_SUCCEED) {
-						msg = createException(SQL, "sql.session_prepared_statements_args", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-						goto bailout;
-					}
-					if (BUNappend(type, t.type->sqlname, false) != GDK_SUCCEED) {
-						msg = createException(SQL, "sql.session_prepared_statements_args", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-						goto bailout;
-					}
-					if (BUNappend(digits, &(t.digits), false) != GDK_SUCCEED) {
-						msg = createException(SQL, "sql.session_prepared_statements_args", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-						goto bailout;
-					}
-					if (BUNappend(scale, &(t.scale), false) != GDK_SUCCEED) {
-						msg = createException(SQL, "sql.session_prepared_statements_args", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-						goto bailout;
-					}
-					if (BUNappend(isinout, &inout, false) != GDK_SUCCEED) {
-						msg = createException(SQL, "sql.session_prepared_statements_args", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-						goto bailout;
-					}
-					if (BUNappend(number, &arg_number, false) != GDK_SUCCEED) {
-						msg = createException(SQL, "sql.session_prepared_statements_args", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-						goto bailout;
-					}
-					if (BUNappend(schema, ATOMnilptr(TYPE_str), false) != GDK_SUCCEED) {
-						msg = createException(SQL, "sql.session_prepared_statements_args", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-						goto bailout;
-					}
-					if (BUNappend(table, ATOMnilptr(TYPE_str), false) != GDK_SUCCEED) {
-						msg = createException(SQL, "sql.session_prepared_statements_args", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-						goto bailout;
-					}
-					if (BUNappend(column, ATOMnilptr(TYPE_str), false) != GDK_SUCCEED) {
-						msg = createException(SQL, "sql.session_prepared_statements_args", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-						goto bailout;
-					}
+				if (BUNappend(statementid, &(q->id), false) != GDK_SUCCEED) {
+					msg = createException(SQL, "sql.session_prepared_statements_args", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+					goto bailout;
+				}
+				if (BUNappend(type, t->type->sqlname, false) != GDK_SUCCEED) {
+					msg = createException(SQL, "sql.session_prepared_statements_args", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+					goto bailout;
+				}
+				if (BUNappend(digits, &(t->digits), false) != GDK_SUCCEED) {
+					msg = createException(SQL, "sql.session_prepared_statements_args", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+					goto bailout;
+				}
+				if (BUNappend(scale, &(t->scale), false) != GDK_SUCCEED) {
+					msg = createException(SQL, "sql.session_prepared_statements_args", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+					goto bailout;
+				}
+				if (BUNappend(isinout, &inout, false) != GDK_SUCCEED) {
+					msg = createException(SQL, "sql.session_prepared_statements_args", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+					goto bailout;
+				}
+				if (BUNappend(number, &arg_number, false) != GDK_SUCCEED) {
+					msg = createException(SQL, "sql.session_prepared_statements_args", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+					goto bailout;
+				}
+				if (BUNappend(schema, ATOMnilptr(TYPE_str), false) != GDK_SUCCEED) {
+					msg = createException(SQL, "sql.session_prepared_statements_args", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+					goto bailout;
+				}
+				if (BUNappend(table, ATOMnilptr(TYPE_str), false) != GDK_SUCCEED) {
+					msg = createException(SQL, "sql.session_prepared_statements_args", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+					goto bailout;
+				}
+				if (BUNappend(column, ATOMnilptr(TYPE_str), false) != GDK_SUCCEED) {
+					msg = createException(SQL, "sql.session_prepared_statements_args", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+					goto bailout;
 				}
 			}
 		}

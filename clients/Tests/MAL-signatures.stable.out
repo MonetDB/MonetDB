@@ -12812,7 +12812,6 @@ stdout of test 'MAL-signatures` in directory 'clients` itself:
 [ "url",	"url",	"command url.url(X_1:str):url ",	"URLnew;",	""	]
 [ "url",	"url",	"command url.url(X_1:url):url ",	"URLnoop;",	""	]
 [ "user",	"main",	"function user.main():void;",	"",	""	]
-[ "user",	"s2_0",	"function user.s2_0():void;",	"",	""	]
 [ "uuid",	"isaUUID",	"command uuid.isaUUID(X_1:str):bit ",	"UUIDisaUUID;",	""	]
 [ "uuid",	"new",	"unsafe command uuid.new():uuid ",	"UUIDgenerateUuid;",	""	]
 [ "uuid",	"new",	"unsafe command uuid.new(X_1:int):uuid ",	"UUIDgenerateUuidInt;",	""	]

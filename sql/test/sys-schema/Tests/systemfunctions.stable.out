@@ -868,6 +868,8 @@ stdout of test 'systemfunctions` in directory 'sql/test/sys-schema` itself:
 [ "sys",	"hostmask",	0,	"inet",	"create function \"hostmask\" (p inet) returns inet\nexternal name inet.\"hostmask\";"	]
 [ "sys",	"hostmask",	1,	"inet",	""	]
 [ "sys",	"hot_snapshot",	0,	"clob",	"create procedure sys.hot_snapshot(tarfile string)\nexternal name sql.hot_snapshot;"	]
+[ "sys",	"hot_snapshot",	0,	"clob",	"create procedure sys.hot_snapshot(tarfile string, onserver bool)\nexternal name sql.hot_snapshot;"	]
+[ "sys",	"hot_snapshot",	1,	"boolean",	""	]
 [ "sys",	"hour",	0,	"int",	"hours"	]
 [ "sys",	"hour",	1,	"time",	""	]
 [ "sys",	"hour",	0,	"int",	"hours"	]

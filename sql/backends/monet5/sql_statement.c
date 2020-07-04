@@ -418,17 +418,13 @@ stmt_varnr(backend *be, int nr, sql_subtype *t)
 {
 	MalBlkPtr mb = be->mb;
 	InstrPtr q = newAssignment(mb);
+	char buf[IDLENGTH];
 
 	if (!q)
 		return NULL;
-	if (be->mvc->argc && be->mvc->args[nr]->varid >= 0) {
-		q = pushArgument(mb, q, be->mvc->args[nr]->varid);
-	} else {
-		char buf[IDLENGTH];
 
-		(void) snprintf(buf, sizeof(buf), "A%d", nr);
-		q = pushArgumentId(mb, q, buf);
-	}
+	(void) snprintf(buf, sizeof(buf), "A%d", nr);
+	q = pushArgumentId(mb, q, buf);
 	if (q) {
 		stmt *s = stmt_create(be->mvc->sa, st_var);
 		if (s == NULL) {

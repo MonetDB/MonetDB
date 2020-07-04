@@ -51,7 +51,6 @@ init_global_variables(mvc *sql)
 
 	sql_find_subtype(&ctype, "int", 0, 0);
 	SQLglobal(sname, "debug", &sql->debug);
-	SQLglobal(sname, "cache", &sql->cache);
 
 	sql_find_subtype(&ctype,  "varchar", 1024, 0);
 	SQLglobal(sname, "current_schema", sname);

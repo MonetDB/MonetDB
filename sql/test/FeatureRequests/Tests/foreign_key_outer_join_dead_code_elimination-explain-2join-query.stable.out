@@ -32,13 +32,13 @@ stdout of test 'foreign_key_outer_join_dead_code_elimination-explain-2join-query
 % mal # name
 % clob # type
 % 183 # length
-function user.s4_0():void;
-    X_1:void := querylog.define("explain select count(*) from fk left outer join pk1 on fk.fk1 = pk1.pk1 left outer join pk2 on fk.fk2 = pk2.pk2;":str, "sequential_pipe":str, 16:int);
+function user.main():void;
+    X_1:void := querylog.define("explain select count(*) from fk left outer join pk1 on fk.fk1 = pk1.pk1 left outer join pk2 on fk.fk2 = pk2.pk2;":str, "sequential_pipe":str, 15:int);
     X_4:int := sql.mvc();
     C_5:bat[:oid] := sql.tid(X_4:int, "sys":str, "fk":str);
     X_23:lng := aggr.count(C_5:bat[:oid]);
     sql.resultSet(".%5":str, "%5":str, "bigint":str, 64:int, 0:int, 7:int, X_23:lng);
-end user.s4_0;
+end user.main;
 #inline               actions= 0 time=1 usec 
 #remap                actions= 0 time=1 usec 
 #costmodel            actions= 1 time=0 usec 
@@ -70,8 +70,8 @@ end user.s4_0;
 % mal # name
 % clob # type
 % 189 # length
-function user.s6_0():void;
-    X_1:void := querylog.define("explain select id from fk left outer join pk1 on fk.fk1 = pk1.pk1 left outer join pk2 on fk.fk2 = pk2.pk2 order by id;":str, "sequential_pipe":str, 22:int);
+function user.main():void;
+    X_1:void := querylog.define("explain select id from fk left outer join pk1 on fk.fk1 = pk1.pk1 left outer join pk2 on fk.fk2 = pk2.pk2 order by id;":str, "sequential_pipe":str, 21:int);
     X_30:bat[:str] := bat.pack("sys.fk":str);
     X_31:bat[:str] := bat.pack("id":str);
     X_32:bat[:str] := bat.pack("int":str);
@@ -84,8 +84,8 @@ function user.s6_0():void;
     (X_23:bat[:int], X_24:bat[:oid]) := algebra.sort(X_22:bat[:int], false:bit, false:bit, false:bit);
     X_28:bat[:int] := algebra.projection(X_24:bat[:oid], X_22:bat[:int]);
     sql.resultSet(X_30:bat[:str], X_31:bat[:str], X_32:bat[:str], X_33:bat[:int], X_34:bat[:int], X_28:bat[:int]);
-end user.s6_0;
-#inline               actions= 0 time=0 usec 
+end user.main;
+#inline               actions= 0 time=1 usec 
 #remap                actions= 0 time=1 usec 
 #costmodel            actions= 1 time=1 usec 
 #coercion             actions= 0 time=1 usec 
@@ -116,8 +116,8 @@ end user.s6_0;
 % mal # name
 % clob # type
 % 194 # length
-function user.s8_0():void;
-    X_1:void := querylog.define("explain select id , v1 from fk left outer join pk1 on fk.fk1 = pk1.pk1 left outer join pk2 on fk.fk2 = pk2.pk2 order by id;":str, "sequential_pipe":str, 64:int);
+function user.main():void;
+    X_1:void := querylog.define("explain select id , v1 from fk left outer join pk1 on fk.fk1 = pk1.pk1 left outer join pk2 on fk.fk2 = pk2.pk2 order by id;":str, "sequential_pipe":str, 63:int);
     X_54:bat[:int] := bat.new(nil:int);
     X_4:int := sql.mvc();
     C_5:bat[:oid] := sql.tid(X_4:int, "sys":str, "fk":str);
@@ -151,7 +151,7 @@ function user.s8_0():void;
     X_81:bat[:int] := algebra.projection(X_79:bat[:oid], X_59:bat[:int]);
     X_82:bat[:int] := algebra.projection(X_79:bat[:oid], X_71:bat[:int]);
     sql.resultSet(X_84:bat[:str], X_85:bat[:str], X_86:bat[:str], X_87:bat[:int], X_88:bat[:int], X_81:bat[:int], X_82:bat[:int]);
-end user.s8_0;
+end user.main;
 #inline               actions= 0 time=1 usec 
 #remap                actions= 0 time=2 usec 
 #costmodel            actions= 1 time=1 usec 
@@ -183,8 +183,8 @@ end user.s8_0;
 % mal # name
 % clob # type
 % 195 # length
-function user.s10_0():void;
-    X_1:void := querylog.define("explain select id , v2 from fk left outer join pk1 on fk.fk1 = pk1.pk1 left outer join pk2 on fk.fk2 = pk2.pk2 order by id;":str, "sequential_pipe":str, 105:int);
+function user.main():void;
+    X_1:void := querylog.define("explain select id , v2 from fk left outer join pk1 on fk.fk1 = pk1.pk1 left outer join pk2 on fk.fk2 = pk2.pk2 order by id;":str, "sequential_pipe":str, 104:int);
     X_49:bat[:int] := bat.new(nil:int);
     X_4:int := sql.mvc();
     C_5:bat[:oid] := sql.tid(X_4:int, "sys":str, "fk":str);
@@ -238,13 +238,14 @@ function user.s10_0():void;
     X_135:bat[:int] := algebra.projection(X_131:bat[:oid], X_101:bat[:int]);
     X_136:bat[:int] := algebra.projection(X_131:bat[:oid], X_123:bat[:int]);
     sql.resultSet(X_138:bat[:str], X_139:bat[:str], X_140:bat[:str], X_141:bat[:int], X_142:bat[:int], X_135:bat[:int], X_136:bat[:int]);
-end user.s10_0;
-#inline               actions= 0 time=1 usec 
-#remap                actions= 0 time=2 usec 
-#costmodel            actions= 1 time=1 usec 
-#coercion             actions= 2 time=6 usec 
-#evaluate             actions= 0 time=7 usec 
-#emptybind            actions= 2 time=8 usec 
+end user.main;
+#inline               actions= 0 time=2 usec 
+#remap                actions= 0 time=3 usec 
+#costmodel            actions= 1 time=2 usec 
+#coercion             actions= 3 time=9 usec 
+#aliases              actions= 3 time=11 usec 
+#evaluate             actions= 0 time=10 usec 
+#emptybind            actions= 4 time=14 usec 
 #pushselect           actions= 0 time=2 usec 
 #aliases              actions= 2 time=26 usec 
 #mergetable           actions= 0 time=52 usec 

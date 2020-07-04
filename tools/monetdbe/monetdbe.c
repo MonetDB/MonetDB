@@ -300,7 +300,6 @@ monetdbe_query_internal(monetdbe_database_internal *mdbe, char* query, monetdbe_
 	m->user_id = m->role_id = USER_MONETDB;
 	m->errstr[0] = '\0';
 	m->params = NULL;
-	m->argc = 0;
 	m->sym = NULL;
 	m->label = 0;
 	m->no_mitosis = 0;
@@ -329,9 +328,7 @@ monetdbe_query_internal(monetdbe_database_internal *mdbe, char* query, monetdbe_
 			mdbe->msg = createException(MAL, "monetdbe.monetdbe_query_internal", MAL_MALLOC_FAIL);
 			goto cleanup;
 		}
-		if (m->emode == m_execute)
-			res_internal->type = (m->results) ? Q_TABLE : Q_UPDATE;
-		else if (m->emode & m_prepare)
+		if (m->emode & m_prepare)
 			res_internal->type = Q_PREPARE;
 		else
 			res_internal->type = (m->results) ? m->results->query_type : m->type;
@@ -783,22 +780,25 @@ monetdbe_prepare(monetdbe_database dbhdl, char* query, monetdbe_statement **stmt
 		cq *q = qc_find(m->qc, prepare_id);
 
 		if (q && stmt_internal) {
-			Symbol s = (Symbol)q->code;
+			Symbol s = (Symbol)q->f->imp;
 			InstrPtr p = s->def->stmt[0];
 			stmt_internal->mdbe = mdbe;
 			stmt_internal->q = q;
 			stmt_internal->retc = p->retc;
-			stmt_internal->res.nparam = q->paramlen;
-			stmt_internal->data = (ValRecord*)GDKzalloc(sizeof(ValRecord) * q->paramlen);
-			stmt_internal->args = (ValPtr*)GDKmalloc(sizeof(ValPtr) * (q->paramlen + stmt_internal->retc));
-			stmt_internal->res.type = (monetdbe_types*)GDKmalloc(sizeof(monetdbe_types)*q->paramlen);
+			stmt_internal->res.nparam = list_length(q->f->ops);
+			stmt_internal->data = (ValRecord*)GDKzalloc(sizeof(ValRecord) * stmt_internal->res.nparam);
+			stmt_internal->args = (ValPtr*)GDKmalloc(sizeof(ValPtr) * (list_length(q->f->ops) + stmt_internal->retc));
+			stmt_internal->res.type = (monetdbe_types*)GDKmalloc(sizeof(monetdbe_types)* stmt_internal->res.nparam);
 			if (!stmt_internal->res.type || !stmt_internal->data || !stmt_internal->args) {
 				if (stmt_internal->data)
 					GDKfree(stmt_internal->data);
 				mdbe->msg = createException(MAL, "monetdbe.monetdbe_prepare", "Could not setup prepared statement");
 			} else {
-				for (int i = 0; i<q->paramlen; i++) {
-					stmt_internal->res.type[i] = embedded_type(q->params[i].type->localtype);
+				int i = 0;
+				for (node *n = q->f->ops->h; n; n = n->next, i++) {
+					sql_arg *a = n->data;
+					sql_subtype *t = &a->type;
+					stmt_internal->res.type[i] = embedded_type(t->type->localtype);
 					stmt_internal->args[i+stmt_internal->retc] = &stmt_internal->data[i];
 				}
 			}
@@ -820,9 +820,11 @@ monetdbe_bind(monetdbe_statement *stmt, void *data, size_t i)
 	/* TODO !data treat as NULL value (add nil mask) ? */
 	if (i > stmt->nparam)
 		return createException(MAL, "monetdbe.monetdbe_bind", "Parameter %zu not bound to a value", i);
-	stmt_internal->data[i].vtype = stmt_internal->q->params[i].type->localtype;
+	node *n = list_fetch(stmt_internal->q->f->ops, i);
+	sql_arg *a = n->data;
+	stmt_internal->data[i].vtype = a->type.type->localtype;
 	/* TODO handle conversion from NULL and special types */
-	VALset(&stmt_internal->data[i], stmt_internal->q->params[i].type->localtype, data);
+	VALset(&stmt_internal->data[i], a->type.type->localtype, data);
 	return MAL_SUCCEED;
 }
 
@@ -833,19 +835,19 @@ monetdbe_execute(monetdbe_statement *stmt, monetdbe_result **result, monetdbe_cn
 	monetdbe_stmt_internal *stmt_internal = (monetdbe_stmt_internal*)stmt;
 	mvc *m = ((backend *) stmt_internal->mdbe->c->sqlcontext)->mvc;
 	monetdbe_database_internal *mdbe = stmt_internal->mdbe;
-	cq *q = stmt_internal->q;
+	//cq *q = stmt_internal->q;
 
 	if ((mdbe->msg = SQLtrans(m)) != MAL_SUCCEED)
 		return mdbe->msg;
 
 	/* check if all inputs are bound */
-	for(int i = 0; i<q->paramlen; i++){
+	for(int i = 0; i< list_length(stmt_internal->q->f->ops); i++){
 		if (!stmt_internal->data[i].vtype)
 			return createException(MAL, "monetdbe.monetdbe_execute", "Parameter %d not bound to a value", i);
 	}
-	MalStkPtr glb = (MalStkPtr) (q->stk);
-	Symbol s = (Symbol)q->code;
-	mdbe->msg = callMAL(mdbe->c, s->def, &glb, stmt_internal->args, 0);
+	//MalStkPtr glb = (MalStkPtr) (q->stk);
+	//Symbol s = (Symbol)q->code;
+	//mdbe->msg = callMAL(mdbe->c, s->def, &glb, stmt_internal->args, 0);
 
 	if (!m->results && m->rowcnt >= 0 && affected_rows)
 		*affected_rows = m->rowcnt;

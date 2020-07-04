@@ -524,16 +524,9 @@ scanner_query_processed(struct scanner *s)
 	}
 	/*assert(s->rs->pos <= s->rs->len);*/
 	s->yycur = 0;
-	s->key = 0;		/* keep a hash key of the query */
 	s->started = 0;
 	s->as = 0;
 	s->schema = NULL;
-}
-
-void
-scanner_reset_key(struct scanner *s)
-{
-	s->key = 0;
 }
 
 static int
@@ -1405,9 +1398,6 @@ sqllex(YYSTYPE * yylval, void *parm)
 	if (lc->log)
 		mnstr_write(lc->log, lc->rs->buf+pos, lc->rs->pos + lc->yycur - pos, 1);
 
-	/* Don't include literals in the calculation of the key */
-	if (token != STRING && token != USTRING && token != sqlINT && token != OIDNUM && token != INTNUM && token != APPROXNUM && token != sqlNULL)
-		lc->key ^= token;
 	lc->started += (token != EOF);
 	return token;
 }

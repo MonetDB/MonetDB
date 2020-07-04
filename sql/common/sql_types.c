@@ -505,6 +505,8 @@ sql_func_imp(sql_func *f)
 char *
 sql_func_mod(sql_func *f)
 {
+	if (!f->mod)
+		return "";
 	return f->mod;
 }
 

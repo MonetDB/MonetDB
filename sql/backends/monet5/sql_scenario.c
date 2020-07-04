@@ -68,24 +68,10 @@ static const char *sqlinit = NULL;
 static MT_Lock sql_contextLock = MT_LOCK_INITIALIZER("sql_contextLock");
 
 static void
-monet5_freestack(int clientid, backend_stack stk)
-{
-	MalStkPtr p = (ptr) stk;
-
-	(void) clientid;
-	if (p != NULL)
-		freeStack(p);
-}
-
-static void
-monet5_freecode(int clientid, backend_code code, backend_stack stk, int nr, char *name)
+monet5_freecode(int clientid, char *name)
 {
 	str msg;
 
-	(void) code;
-	(void) stk;
-	(void) nr;
-	(void) clientid;
 	msg = SQLCacheRemove(MCgetClient(clientid), name);
 	if (msg)
 		freeException(msg);	/* do something with error? */
@@ -363,7 +349,6 @@ SQLinit(Client c)
 	}
 
 	be_funcs = (backend_functions) {
-		.fstack = &monet5_freestack,
 		.fcode = &monet5_freecode,
 		.fresolve_function = &monet5_resolve_function,
 	};
@@ -589,7 +574,6 @@ SQLautocommit(mvc *m)
 str
 SQLtrans(mvc *m)
 {
-	m->caching = m->cache;
 	if (!m->session->tr->active) {
 		sql_session *s;
 
@@ -895,33 +879,6 @@ SQLreader(Client c)
 
 #define MAX_QUERY 	(64*1024*1024)
 
-static int
-caching(mvc *m)
-{
-	return m->caching;
-}
-
-static int
-cachable(mvc *m, sql_rel *r)
-{
-	if (m->emode == m_prepare)	/* prepared plans are always cached */
-		return 1;
-	if (m->emode == m_plan)		/* we plan to display without execution */
-		return 0;
-	if (m->type == Q_TRANS )	/* m->type == Q_SCHEMA || cachable to make sure we have trace on alter statements  */
-		return 0;
-	/* we don't store queries with a large footprint */
-	if (r && sa_size(m->sa) > MAX_QUERY)
-		return 0;
-	return 1;
-}
-
-/*
- * The core part of the SQL interface, parse the query and
- * store away the template (non)optimized code in the query cache
- * and the MAL module
- */
-
 str
 SQLparser(Client c)
 {
@@ -1083,30 +1040,22 @@ SQLparser(Client c)
 	 * produce code.
 	 */
 	be->q = NULL;
-	q = query_cleaned(QUERY(m->scanner));
 	m->query = q;
+	q = query_cleaned(QUERY(m->scanner));
 
 	if (q == NULL) {
 		err = 1;
 		msg = createException(PARSE, "SQLparser", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-	} else if (m->emode == m_execute || m->emode == m_deallocate) {
-		if (m->emode == m_execute) {
-			assert(m->sym->data.lval->h->type == type_int);
-			preparedid = m->sym->data.lval->h->data.i_val;
+	} else if (m->emode == m_deallocate) {
+		AtomNode *an = (AtomNode *) m->sym;
+		assert(m->sym->type == type_symbol && an->a->data.vtype == TYPE_int);
+		preparedid = an->a->data.val.ival;
 
-			assert(preparedid >= 0);
+		if (preparedid > -1) /* The -1 case represents the deallocate the entire query cache */
 			be->q = qc_find(m->qc, preparedid);
-		} else { /* m_deallocate case */
-			AtomNode *an = (AtomNode *) m->sym;
-			assert(m->sym->type == type_symbol && an->a->data.vtype == TYPE_int);
-			preparedid = an->a->data.val.ival;
-
-			if (preparedid > -1) /* The -1 case represents the deallocate the entire query cache */
-				be->q = qc_find(m->qc, preparedid);
-		}
 
 		if (preparedid > -1) {
-			const char *mode = (m->emode == m_execute) ? "EXEC" : "DEALLOC";
+			const char *mode = "DEALLOC";
 			if (!be->q) {
 				err = -1;
 				msg = createException(SQL, mode, SQLSTATE(07003) "No prepared statement with id: %d\n", preparedid);
@@ -1114,22 +1063,11 @@ SQLparser(Client c)
 				msg = handle_error(m, pstatus, msg);
 				sqlcleanup(m, err);
 				goto finalize;
-			} else if (!be->q->prepared) {
-				err = -1;
-				msg = createException(SQL, mode, SQLSTATE(07005) "Given handle id is not for a prepared statement: %d\n", preparedid);
-				*m->errstr = 0;
-				msg = handle_error(m, pstatus, msg);
-				sqlcleanup(m, err);
-				goto finalize;
 			}
 		}
 
-		m->type = (m->emode == m_execute) ? be->q->type : Q_SCHEMA; /* TODO DEALLOCATE statements don't fit for Q_SCHEMA */
+		m->type = Q_SCHEMA; /* TODO DEALLOCATE statements don't fit for Q_SCHEMA */
 		scanner_query_processed(&(m->scanner));
-	} else if (caching(m) && cachable(m, NULL) && m->emode != m_prepare && (be->q = qc_match(m->qc, m, m->sym, m->args, m->argc, m->scanner.key ^ m->session->schema->base.id)) != NULL) {
-		/* query template was found in the query cache */
-		scanner_query_processed(&(m->scanner));
-		m->no_mitosis = be->q->no_mitosis;
 	} else {
 		sql_rel *r = sql_symbol2relation(m, m->sym);
 
@@ -1144,55 +1082,52 @@ SQLparser(Client c)
 			goto finalize;
 		}
 
-		if ((!caching(m) || !cachable(m, r)) && m->emode != m_prepare) {
-			/* Query template should not be cached */
+		if (m->emode != m_prepare) {
 			scanner_query_processed(&(m->scanner));
 
 			err = 0;
-			if (backend_callinline(be, c) < 0 ||
-			    backend_dumpstmt(be, c->curprg->def, r, 1, 0, q) < 0)
+			setVarType(c->curprg->def, 0, 0);
+			if (backend_dumpstmt(be, c->curprg->def, r, 1, 0, q) < 0)
 				err = 1;
-			else opt = 1;
+			else
+				opt = 1;
 		} else {
-			/* Add the query tree to the SQL query cache
-			 * and bake a MAL program for it. */
-			char *q_copy = GDKstrdup(q), qname[IDLENGTH];
+			char *q_copy = GDKstrdup(q);
 
 			be->q = NULL;
-			(void) snprintf(qname, IDLENGTH, "%c%d_%d", (m->emode == m_prepare?'p':'s'), m->qc->id++, m->qc->clientid);
 			if (!q_copy) {
 				err = 1;
 				msg = createException(PARSE, "SQLparser", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			} else {
 				be->q = qc_insert(m->qc, m->sa,	/* the allocator */
 						  r,	/* keep relational query */
-						  qname, /* its MAL name */
 						  m->sym,	/* the sql symbol tree */
-						  m->args,	/* the argument list */
-						  m->argc, m->scanner.key ^ m->session->schema->base.id,	/* the statement hash key */
+						  m->params,	/* the argument list */
 						  m->type,	/* the type of the statement */
 						  q_copy,
-						  m->no_mitosis,
-						  m->emode == m_prepare);
+						  m->no_mitosis);
 			}
 			if (!be->q) {
 				err = 1;
 				msg = createException(PARSE, "SQLparser", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			}
 			scanner_query_processed(&(m->scanner));
-			be->q->code = (backend_code) backend_dumpproc(be, c, be->q, r);
-			if (!be->q->code)
-				err = 1;
-			be->q->stk = 0;
+			if (be->q) {
+				if (backend_dumpproc(be, c, be->q, r) == NULL)
+					err = 1;
+			}
 
 			/* passed over to query cache, used during dumpproc */
 			m->sa = NULL;
 			m->sym = NULL;
+			m->params = NULL;
 			/* register name in the namespace */
-			be->q->name = putName(be->q->name);
-			if (!be->q->name) {
-				err = 1;
-				msg = createException(PARSE, "SQLparser", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+			if (be->q) {
+				be->q->name = putName(be->q->name);
+				if (!be->q->name) {
+					err = 1;
+					msg = createException(PARSE, "SQLparser", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+				}
 			}
 		}
 	}
@@ -1205,21 +1140,16 @@ SQLparser(Client c)
 			if (be->q) {
 				qc_delete(m->qc, be->q);
 			} else {
-				qc_clean(m->qc, true);
+				qc_clean(m->qc);
 			}
 			/* For deallocate statements just export a simple output */
 			if (!GDKembedded())
 				err = mvc_export_operation(be, c->fdout, "", c->curprg->def->starttime, c->curprg->def->optimize);
 		} else if (be->q) {
-			if (m->emode == m_prepare) {
-				/* For prepared queries, return a table with result set structure*/
-				/* optimize the code block and rename it */
-				err = mvc_export_prepare(m, c->fdout, be->q, "");
-			} else if (m->emode == m_execute || m->emode == m_normal || m->emode == m_plan) {
-				/* call procedure generation (only in cache mode) */
-				if (backend_call(be, c, be->q) < 0)
-					err = 3;
-			}
+			assert(m->emode == m_prepare);
+			/* For prepared queries, return a table with result set structure*/
+			/* optimize the code block and rename it */
+			err = mvc_export_prepare(m, c->fdout, be->q, "");
 		}
 
 		if (!err) {

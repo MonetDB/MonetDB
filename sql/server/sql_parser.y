@@ -13,7 +13,7 @@
 #include "sql_symbol.h"
 #include "sql_datetime.h"
 #include "sql_decimal.h"	/* for decimal_from_str() */
-#include "sql_semantic.h"	/* for sql_add_param() & sql_add_arg() */
+#include "sql_semantic.h"	/* for sql_add_param() */
 #include "sql_env.h"
 #include "rel_sequence.h"	/* for sql_next_seq_name() */
 #ifdef HAVE_HGE
@@ -720,7 +720,6 @@ sqlstmt:
  | prepare 		{
 		  	  m->emode = m_prepare; 
 			  m->scanner.as = m->scanner.yycur; 
-			  m->scanner.key = 0;
 			}
 	sql SCOLON 	{
 			  if (m->sym) {
@@ -734,7 +733,6 @@ sqlstmt:
  | SQL_PLAN 		{
 		  	  m->emode = m_plan;
 			  m->scanner.as = m->scanner.yycur; 
-			  m->scanner.key = 0;
 			}
 	sql SCOLON 	{
 			  if (m->sym) {
@@ -749,7 +747,6 @@ sqlstmt:
  | SQL_EXPLAIN 		{
 		  	  m->emod |= mod_explain;
 			  m->scanner.as = m->scanner.yycur; 
-			  m->scanner.key = 0;
 			}
    sql SCOLON 		{
 			  if (m->sym) {
@@ -768,13 +765,11 @@ sqlstmt:
 			  }
 		  	  m->emod |= mod_debug;
 			  m->scanner.as = m->scanner.yycur; 
-			  m->scanner.key = 0;
 			}
    sqlstmt		{ $$ = $3; YYACCEPT; }
  | SQL_TRACE 		{
 		  	  m->emod |= mod_trace;
 			  m->scanner.as = m->scanner.yycur; 
-			  m->scanner.key = 0;
 			}
    sqlstmt		{ $$ = $3; YYACCEPT; }
  | exec SCOLON		{ m->sym = $$ = $1; YYACCEPT; }
@@ -3049,24 +3044,7 @@ value_commalist:
  ;
 
 null:
-   sqlNULL
-	 { 
-	  if (m->emode == m_normal && m->caching) {
-		/* replace by argument */
-		atom *a = atom_general(SA, sql_bind_localtype("void"), NULL);
-
-		if(!sql_add_arg( m, a)) {
-			char *msg = sql_message(SQLSTATE(HY013) "allocation failure");
-			yyerror(m, msg);
-			_DELETE(msg);
-			YYABORT;
-		}
-		$$ = _symbol_create_list( SQL_IDENT,
-			append_int(L(), m->argc-1));
-	   } else {
-		$$ = _symbol_create(SQL_NULL, NULL );
-	   }
-	}
+   sqlNULL 		{ $$ = _symbol_create(SQL_NULL, NULL ); }
  ;
 
 insert_atom:
@@ -3970,16 +3948,6 @@ simple_scalar_exp:
 			{ 
  			  $$ = NULL;
 			  assert(($2->token != SQL_COLUMN && $2->token != SQL_IDENT) || $2->data.lval->h->type != type_lng);
-			  if (($2->token == SQL_COLUMN || $2->token == SQL_IDENT) && $2->data.lval->h->type == type_int) {
-				atom *a = sql_bind_arg(m, $2->data.lval->h->data.i_val);
-				if (!atom_neg(a)) {
-					$$ = $2;
-				} else {
-					yyerror(m, SQLSTATE(22003) "value too large or not a number");
-					$$ = NULL;
-					YYABORT;
-				}
-			  } 
 			  if (!$$) {
 				dlist *l = L();
 			  	append_list(l, 
@@ -4319,25 +4287,10 @@ opt_alias_name:
 atom:
     literal
 	{ 
-	  if (m->emode == m_normal && m->caching) {
-		/* replace by argument */
-		AtomNode *an = (AtomNode*)$1;
-
-		if(!sql_add_arg( m, an->a)) {
-			char *msg = sql_message(SQLSTATE(HY013) "allocation failure");
-			yyerror(m, msg);
-			_DELETE(msg);
-			YYABORT;
-		}
-		an->a = NULL;
-		$$ = _symbol_create_list( SQL_IDENT,
-			append_int(L(), m->argc-1));
-	  } else {
 		AtomNode *an = (AtomNode*)$1;
 		atom *a = an->a; 
 		an->a = atom_dup(SA, a); 
 		$$ = $1;
-	  }
 	}
  ;
 
@@ -5706,9 +5659,7 @@ string:
 
 exec:
      execute exec_ref
-		{
-		  m->emode = m_execute;
-		  $$ = $2; }
+		{ $$ = _symbol_create_symbol(SQL_CALL, $2); }
  ;
 
 dealloc_ref:

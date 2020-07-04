@@ -252,7 +252,7 @@ exp_compare_func(mvc *sql, sql_exp *le, sql_exp *re, const char *compareop, int 
 {
 	sql_subfunc *cmp_func = sql_bind_func(sql->sa, NULL, compareop, exp_subtype(le), exp_subtype(le), F_FUNC);
 	sql_exp *e;
- 
+
 	assert(cmp_func);
 	e = exp_binop(sql->sa, le, re, cmp_func);
 	if (e) {
@@ -506,7 +506,7 @@ exp_zero(sql_allocator *sa, sql_subtype *tpe)
 }
 
 atom *
-exp_value(mvc *sql, sql_exp *e, atom **args, int maxarg)
+exp_value(mvc *sql, sql_exp *e)
 {
 	if (!e || e->type != e_atom)
 		return NULL;
@@ -522,8 +522,6 @@ exp_value(mvc *sql, sql_exp *e, atom **args, int maxarg)
 		if (e->flag == 0 && (var = find_global_var(sql, s, vname->name))) /* global variable */
 			return &(var->var);
 		return NULL;
-	} else if (sql->emode == m_normal && e->flag < (unsigned) maxarg) { /* do not get the value in the prepared case */
-		return args[e->flag];
 	}
 	return NULL;
 }
@@ -1647,22 +1645,17 @@ rel_find_exp( sql_rel *rel, sql_exp *e)
 }
 
 int
-exp_is_true(mvc *sql, sql_exp *e)
+exp_is_true(sql_exp *e)
 {
-	if (e->type == e_atom) {
-		if (e->l) {
-			return atom_is_true(e->l);
-		} else if(sql->emode == m_normal && (unsigned) sql->argc > e->flag && EC_BOOLEAN(exp_subtype(e)->type->eclass)) {
-			return atom_is_true(sql->args[e->flag]);
-		}
-	}
+	if (e->type == e_atom && e->l)
+		return atom_is_true(e->l);
 	if (e->type == e_cmp && e->flag == cmp_equal)
-		return (exp_is_true(sql, e->l) && exp_is_true(sql, e->r) && exp_match_exp(e->l, e->r));
+		return (exp_is_true(e->l) && exp_is_true(e->r) && exp_match_exp(e->l, e->r));
 	return 0;
 }
 
 static inline bool
-exp_is_cmp_exp_is_false(mvc *sql, sql_exp* e) {
+exp_is_cmp_exp_is_false(sql_exp* e) {
     assert(e->type == e_cmp);
     assert(e->semantics && (e->flag == cmp_equal || e->flag == cmp_notequal));
     assert(e->f == NULL);
@@ -1674,48 +1667,48 @@ exp_is_cmp_exp_is_false(mvc *sql, sql_exp* e) {
      * Other cases in is-semantics are unspecified.
      */
     if (e->flag == cmp_equal && !e->anti) {
-        return ((exp_is_null(sql, l) && exp_is_not_null(sql, r)) || (exp_is_not_null(sql, l) && exp_is_null(sql, r)));
+        return ((exp_is_null(l) && exp_is_not_null(r)) || (exp_is_not_null(l) && exp_is_null(r)));
     }
     if (((e->flag == cmp_notequal) && !e->anti) || ((e->flag == cmp_equal) && e->anti) ) {
-        return ((exp_is_null(sql, l) && exp_is_null(sql, r)) || (exp_is_not_null(sql, l) && exp_is_not_null(sql, r)));
+        return ((exp_is_null(l) && exp_is_null(r)) || (exp_is_not_null(l) && exp_is_not_null(r)));
     }
 
     return false;
 }
 
 static inline bool
-exp_single_bound_cmp_exp_is_false(mvc *sql, sql_exp* e) {
+exp_single_bound_cmp_exp_is_false(sql_exp* e) {
     assert(e->type == e_cmp);
     sql_exp* l = e->l;
     sql_exp* r = e->r;
     assert(e->f == NULL);
     assert (l && r);
 
-    return exp_is_null(sql, l) || exp_is_null(sql, r);
+    return exp_is_null(l) || exp_is_null(r);
 }
 
 static inline bool
-exp_two_sided_bound_cmp_exp_is_false(mvc *sql, sql_exp* e) {
+exp_two_sided_bound_cmp_exp_is_false(sql_exp* e) {
     assert(e->type == e_cmp);
     sql_exp* v = e->l;
     sql_exp* l = e->r;
     sql_exp* h = e->r;
     assert (v && l && h);
 
-    return exp_is_null(sql, l) || exp_is_null(sql, v) || exp_is_null(sql, h);
+    return exp_is_null(l) || exp_is_null(v) || exp_is_null(h);
 }
 
 static inline bool
-exp_regular_cmp_exp_is_false(mvc *sql, sql_exp* e) {
+exp_regular_cmp_exp_is_false(sql_exp* e) {
     assert(e->type == e_cmp);
 
-    if (e->semantics)   return exp_is_cmp_exp_is_false(sql, e);
-    if (e -> f)         return exp_two_sided_bound_cmp_exp_is_false(sql, e);
-    else                return exp_single_bound_cmp_exp_is_false(sql, e);
+    if (e->semantics)   return exp_is_cmp_exp_is_false(e);
+    if (e -> f)         return exp_two_sided_bound_cmp_exp_is_false(e);
+    else                return exp_single_bound_cmp_exp_is_false(e);
 }
 
 static inline bool
-exp_or_exp_is_false(mvc *sql, sql_exp* e) {
+exp_or_exp_is_false(sql_exp* e) {
     assert(e->type == e_cmp && e->flag == cmp_or);
 
 	list* left = e->l;
@@ -1723,7 +1716,7 @@ exp_or_exp_is_false(mvc *sql, sql_exp* e) {
 
 	bool left_is_false = false;
 	for(node* n = left->h; n; n=n->next) {
-		if (exp_is_false(sql, n->data)) {
+		if (exp_is_false(n->data)) {
 			left_is_false=true;
 			break;
 		}
@@ -1734,7 +1727,7 @@ exp_or_exp_is_false(mvc *sql, sql_exp* e) {
 	}
 
 	for(node* n = right->h; n; n=n->next) {
-		if (exp_is_false(sql, n->data)) {
+		if (exp_is_false(n->data)) {
 			return true;
 		}
 	}
@@ -1743,7 +1736,7 @@ exp_or_exp_is_false(mvc *sql, sql_exp* e) {
 }
 
 static inline bool
-exp_cmp_exp_is_false(mvc *sql, sql_exp* e) {
+exp_cmp_exp_is_false(sql_exp* e) {
     assert(e->type == e_cmp);
 
     switch (e->flag) {
@@ -1753,72 +1746,52 @@ exp_cmp_exp_is_false(mvc *sql, sql_exp* e) {
     case cmp_lt:
     case cmp_equal:
     case cmp_notequal:
-        return exp_regular_cmp_exp_is_false(sql, e);
+        return exp_regular_cmp_exp_is_false(e);
     case cmp_or:
-        return exp_or_exp_is_false(sql, e);
+        return exp_or_exp_is_false(e);
     default:
         return false;
 	}
 }
 
 int
-exp_is_false(mvc *sql, sql_exp *e)
+exp_is_false(sql_exp *e)
 {
-	if (e->type == e_atom) {
-		if (e->l) {
-			return atom_is_false(e->l);
-		} else if(sql->emode == m_normal && (unsigned) sql->argc > e->flag && EC_BOOLEAN(exp_subtype(e)->type->eclass)) {
-			return atom_is_false(sql->args[e->flag]);
-		}
-	}
-	else if (e->type == e_cmp) {
-		return exp_cmp_exp_is_false(sql, e);
-	}
-
+	if (e->type == e_atom && e->l)
+		return atom_is_false(e->l);
+	else if (e->type == e_cmp)
+		return exp_cmp_exp_is_false(e);
 	return 0;
 }
 
 int
-exp_is_zero(mvc *sql, sql_exp *e)
+exp_is_zero(sql_exp *e)
 {
-	if (e->type == e_atom) {
-		if (e->l) {
-			return atom_is_zero(e->l);
-		} else if(sql->emode == m_normal && (unsigned) sql->argc > e->flag && EC_COMPUTE(exp_subtype(e)->type->eclass)) {
-			return atom_is_zero(sql->args[e->flag]);
-		}
-	}
+	if (e->type == e_atom && e->l)
+		return atom_is_zero(e->l);
 	return 0;
 }
 
 int
-exp_is_not_null(mvc *sql, sql_exp *e)
+exp_is_not_null(sql_exp *e)
 {
-	if (e->type == e_atom) {
-		if (e->l) {
-			return !(atom_null(e->l));
-		} else if(sql->emode == m_normal && (unsigned) sql->argc > e->flag && EC_COMPUTE(exp_subtype(e)->type->eclass)) {
-			return !atom_null(sql->args[e->flag]);
-		}
-	}
+	if (e->type == e_atom && e->l)
+		return !(atom_null(e->l));
 	return 0;
 }
 
 int
-exp_is_null(mvc *sql, sql_exp *e )
+exp_is_null(sql_exp *e )
 {
 	switch (e->type) {
 	case e_atom:
 		if (e->f) /* values list */
 			return 0;
-		if (e->l) {
+		if (e->l)
 			return (atom_null(e->l));
-		} else if (sql->emode == m_normal && (unsigned) sql->argc > e->flag) {
-			return atom_null(sql->args[e->flag]);
-		}
 		return 0;
 	case e_convert:
-		return exp_is_null(sql, e->l);
+		return exp_is_null(e->l);
 	case e_func:
 		if (!e->semantics && e->l) {
 			/* This is a call to a function with no-nil semantics.
@@ -1827,7 +1800,7 @@ exp_is_null(mvc *sql, sql_exp *e )
 			list* l = e->l;
 			for(node* n = l->h; n; n=n->next) {
 				sql_exp* p = n->data;
-				if (exp_is_null(sql, p)) {
+				if (exp_is_null(p)) {
 					return true;
 				}
 			}
@@ -2574,7 +2547,7 @@ atom *
 exp_flatten(mvc *sql, sql_exp *e)
 {
 	if (e->type == e_atom) {
-		atom *v =  exp_value(sql, e, sql->args, sql->argc);
+		atom *v =  exp_value(sql, e);
 
 		if (v)
 			return atom_dup(sql->sa, v);

@@ -38,7 +38,6 @@ rel_parse(mvc *m, sql_schema *s, char *query, char emode)
 
 	m->qc = NULL;
 
-	m->caching = 0;
 	m->emode = emode;
 	if (s)
 		m->session->schema = s;
@@ -69,8 +68,6 @@ rel_parse(mvc *m, sql_schema *s, char *query, char emode)
 	bstream_next(m->scanner.rs);
 
 	m->params = NULL;
-	/*m->args = NULL;*/
-	m->argc = 0;
 	m->sym = NULL;
 	m->errstr[0] = '\0';
 	/* via views we give access to protected objects */

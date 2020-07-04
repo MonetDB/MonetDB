@@ -129,11 +129,7 @@ generate_partition_limits(sql_query *query, sql_rel **r, symbol *s, sql_subtype 
 	mvc *sql = query->sql;
 	if (!s) {
 		return NULL;
-	} else if (s->token == SQL_NULL ||
-		   (!nilok &&
-		    s->token == SQL_IDENT &&
-		    s->data.lval->h->type == type_int &&
-		    sql->args[s->data.lval->h->data.i_val]->isnull)) {
+	} else if (s->token == SQL_NULL && !nilok) {
 		return sql_error(sql, 02, SQLSTATE(42000) "ALTER TABLE: range bound cannot be null");
 	} else if (s->token == SQL_MINVALUE) {
 		atom *amin = atom_general(sql->sa, &tpe, NULL);
@@ -273,7 +269,6 @@ static sql_rel *
 propagate_validation_to_upper_tables(sql_query* query, sql_table *mt, sql_table *pt, sql_rel *rel)
 {
 	mvc *sql = query->sql;
-	sql->caching = 0;
 	for (sql_table *prev = mt, *it = prev->p ; it && prev ; prev = it, it = it->p) {
 		sql_part *spt = find_sql_part(it, prev->base.name);
 		if (spt) {
@@ -1037,7 +1032,6 @@ rel_propagate(sql_query *query, sql_rel *rel, int *changes)
 		if (t->p && (isRangePartitionTable(t->p) || isListPartitionTable(t->p)) && !find_prop(l->p, PROP_USED)) {
 			isSubtable = true;
 			if (is_insert(rel->op)) { //insertion directly to sub-table (must do validation)
-				sql->caching = 0;
 				rel = rel_subtable_insert(query, rel, t, changes);
 				propagate = rel->l;
 			}
@@ -1045,18 +1039,15 @@ rel_propagate(sql_query *query, sql_rel *rel, int *changes)
 		if (isMergeTable(t)) {
 			assert(list_length(t->members.set) > 0);
 			if (is_delete(propagate->op) || is_truncate(propagate->op)) { //propagate deletions to the partitions
-				sql->caching = 0;
 				rel = rel_propagate_delete(sql, rel, t, changes);
 			} else if (isRangePartitionTable(t) || isListPartitionTable(t)) {
 				if (is_insert(propagate->op)) { //on inserts create a selection for each partition
-					sql->caching = 0;
 					if (isSubtable) {
 						rel->l = rel_propagate_insert(query, propagate, t, changes);
 					} else {
 						rel = rel_propagate_insert(query, rel, t, changes);
 					}
 				} else if (is_update(propagate->op)) { //for updates propagate like in deletions
-					sql->caching = 0;
 					rel = rel_propagate_update(sql, rel, t, changes);
 				} else {
 					assert(0);

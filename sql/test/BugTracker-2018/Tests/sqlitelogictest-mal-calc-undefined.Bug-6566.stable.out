@@ -35,8 +35,8 @@ stdout of test 'sqlitelogictest-mal-calc-undefined.Bug-6566` in directory 'sql/t
 [ NULL	]
 [ NULL	]
 #SELECT ALL - CAST ( col1 * - 16 * + CAST ( NULL AS INTEGER ) AS BIGINT ) FROM tab0 cor0;
-% .%1 # table_name
-% %1 # name
+% .%2 # table_name
+% %2 # name
 % bigint # type
 % 1 # length
 [ NULL	]

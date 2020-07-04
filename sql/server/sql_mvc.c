@@ -160,8 +160,6 @@ mvc_init(int debug, store_type store, int ro, int su, backend_stack stk)
 		return -1;
 	}
 
-	/* disable caching */
-	m->caching = 0;
 	/* disable size header */
 	m->sizeheader = false;
 
@@ -468,22 +466,22 @@ mvc_trans(mvc *m)
 {
 	int schema_changed = 0, err = m->session->status;
 	assert(!m->session->tr->active);	/* can only start a new transaction */
+
 	store_lock();
 	TRC_INFO(SQL_TRANS, "Starting transaction\n");
 	schema_changed = sql_trans_begin(m->session);
-	if (m->qc && (schema_changed || m->qc->nr > m->cache || err)){
+	if (m->qc && (schema_changed || err)){
 		if (schema_changed || err) {
 			int seqnr = m->qc->id;
 			if (m->qc)
 				qc_destroy(m->qc);
+			/* TODO Change into recreate all */
 			m->qc = qc_create(m->clientid, seqnr);
 			if (!m->qc) {
 				sql_trans_end(m->session, 0);
 				store_unlock();
 				return -1;
 			}
-		} else { /* clean all but the prepared statements */
-			qc_clean(m->qc, false);
 		}
 	}
 	store_unlock();
@@ -603,9 +601,6 @@ mvc_commit(mvc *m, int chain, const char *name, bool enabling_auto_commit)
 			return msg;
 		}
 		m->type = Q_TRANS;
-		if (m->qc) /* clean query cache, protect against concurrent access on the hash tables (when functions already exists, concurrent mal will
-build up the hash (not copied in the trans dup)) */
-			qc_clean(m->qc, false);
 		m->session->schema = find_sql_schema(m->session->tr, m->session->schema_name);
 		TRC_INFO(SQL_TRANS, "Savepoint commit '%s' done\n", name);
 		return msg;
@@ -700,8 +695,6 @@ mvc_rollback(mvc *m, int chain, const char *name, bool disabling_auto_commit)
 	store_lock();
 	sql_trans *tr = m->session->tr;
 	assert(m->session->tr && m->session->tr->active);	/* only abort an active transaction */
-	if (m->qc)
-		qc_clean(m->qc, false);
 	if (name && name[0] != '\0') {
 		while (tr && (!tr->name || strcmp(tr->name, name) != 0))
 			tr = tr->parent;
@@ -826,12 +819,9 @@ mvc_create(int clientid, backend_stack stk, int debug, bstream *rs, stream *ws)
 	m->frame = 0;
 
 	m->use_views = false;
-	m->argmax = MAXPARAMS;
-	m->args = NEW_ARRAY(atom*, m->argmax);
-	if (!m->frames || !m->args) {
+	if (!m->frames) {
 		qc_destroy(m->qc);
 		_DELETE(m->frames);
-		_DELETE(m->args);
 		_DELETE(m);
 		return NULL;
 	}
@@ -839,11 +829,9 @@ mvc_create(int clientid, backend_stack stk, int debug, bstream *rs, stream *ws)
 		qc_destroy(m->qc);
 		list_destroy(m->global_vars);
 		_DELETE(m->frames);
-		_DELETE(m->args);
 		_DELETE(m);
 		return NULL;
 	}
-	m->argc = 0;
 	m->sym = NULL;
 
 	m->Topt = 0;
@@ -855,8 +843,6 @@ mvc_create(int clientid, backend_stack stk, int debug, bstream *rs, stream *ws)
 	m->emod = mod_none;
 	m->reply_size = 100;
 	m->debug = debug;
-	m->cache = DEFAULT_CACHESIZE;
-	m->caching = m->cache;
 
 	m->label = 0;
 	m->remote = 0;
@@ -871,7 +857,6 @@ mvc_create(int clientid, backend_stack stk, int debug, bstream *rs, stream *ws)
 		qc_destroy(m->qc);
 		list_destroy(m->global_vars);
 		_DELETE(m->frames);
-		_DELETE(m->args);
 		_DELETE(m);
 		return NULL;
 	}
@@ -917,7 +902,6 @@ mvc_reset(mvc *m, bstream *rs, stream *ws, int debug)
 	/* reset frames to the set of global variables */
 	stack_pop_until(m, 0);
 	m->frame = 0;
-	m->argc = 0;
 	m->sym = NULL;
 
 	m->Topt = 0;
@@ -933,10 +917,6 @@ mvc_reset(mvc *m, bstream *rs, stream *ws, int debug)
 	if (m->debug != debug)
 		sqlvar_set_number(find_global_var(m, mvc_bind_schema(m, "sys"), "debug"), debug);
 	m->debug = debug;
-	if (m->cache != DEFAULT_CACHESIZE)
-		sqlvar_set_number(find_global_var(m, mvc_bind_schema(m, "sys"), "cache"), DEFAULT_CACHESIZE);
-	m->cache = DEFAULT_CACHESIZE;
-	m->caching = m->cache;
 
 	m->label = 0;
 	m->remote = 0;
@@ -985,9 +965,7 @@ mvc_destroy(mvc *m)
 		qc_destroy(m->qc);
 	m->qc = NULL;
 
-	_DELETE(m->args);
 	_DELETE(m->query);
-	m->args = NULL;
 	_DELETE(m);
 }
 
@@ -1776,17 +1754,7 @@ _symbol_cmp(mvc *sql, symbol *s1, symbol *s2)
 				return -1;
 			return strcmp(s1->data.sval, s2->data.sval);
 		case type_list: {
-			if (s1->token == SQL_IDENT) {
-				atom *at1, *at2;
-
-				if (s2->token != SQL_IDENT)
-					return -1;
-				at1 = sql_bind_arg(sql, s1->data.lval->h->data.i_val);
-				at2 = sql_bind_arg(sql, s2->data.lval->h->data.i_val);
-				return atom_cmp(at1, at2);
-			} else {
 				return dlist_cmp(sql, s1->data.lval, s2->data.lval);
-			}
 		}
 		case type_type:
 			return subtype_cmp(&s1->data.typeval, &s2->data.typeval);

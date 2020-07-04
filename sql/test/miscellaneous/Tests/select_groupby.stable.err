@@ -42,8 +42,8 @@ QUERY = SELECT "'col26'" FROM "myschema"."mytable2" WHERE
         LIMIT 1001 OFFSET 0; --error, from the condition "'col9'"='', it fails to covert '' to date
 ERROR = !Conversion of string '' failed
 CODE  = 42000
-MAPI  = (monetdb) /var/tmp/mtest-329283/.s.monetdb.38369
-QUERY = exec 31 (); --error, from the condition "'col9'"='', it fails to covert '' to date
+MAPI  = (monetdb) /var/tmp/mtest-3187108/.s.monetdb.30091
+QUERY = exec  4 (); --error, from the condition "'col9'"='', it fails to covert '' to date
 ERROR = !Conversion of string '' failed
 CODE  = 42000
 

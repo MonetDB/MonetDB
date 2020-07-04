@@ -463,7 +463,7 @@ column_options(sql_query *query, dlist *opt_list, sql_schema *ss, sql_table *t, 
 						sql_exp *e = rel_logical_value_exp(query, NULL, sym, sql_sel, ek);
 
 						if (e && is_atom(e->type)) {
-							atom *a = exp_value(sql, e, sql->args, sql->argc);
+							atom *a = exp_value(sql, e);
 
 							if (atom_null(a)) {
 								mvc_default(sql, cs, NULL);

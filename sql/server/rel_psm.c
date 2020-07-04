@@ -1586,8 +1586,8 @@ rel_psm(sql_query *query, symbol *s)
 	case SQL_DECLARE:
 		return sql_error(sql, 02, SQLSTATE(42000) "Variables cannot be declared on the global scope");
 	case SQL_CALL:
-		ret = rel_psm_stmt(sql->sa, rel_psm_call(query, s->data.sym));
 		sql->type = Q_UPDATE;
+		ret = rel_psm_stmt(sql->sa, rel_psm_call(query, s->data.sym));
 		break;
 	case SQL_CREATE_TABLE_LOADER:
 	{

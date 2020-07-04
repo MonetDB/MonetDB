@@ -47,16 +47,16 @@ stdout of test 'udf-reverse` in directory 'sql/backends/monet5/UDF/udf` itself:
 % mal # name
 % clob # type
 % 108 # length
-function user.s4_0():void;
-    X_2:void := querylog.define("explain select reverse(\\'MonetDB\\');":str, "sequential_pipe":str, 8:int);
+function user.main():void;
+    X_1:void := querylog.define("explain select reverse(\\'MonetDB\\');":str, "sequential_pipe":str, 7:int);
     X_9:str := udf.reverse("MonetDB":str);
     sql.resultSet(".%2":str, "%2":str, "clob":str, 0:int, 0:int, 4:int, X_9:str);
-end user.s4_0;
-#inline               actions= 0 time=1 usec 
-#remap                actions= 0 time=0 usec 
-#costmodel            actions= 1 time=0 usec 
-#coercion             actions= 0 time=0 usec 
-#aliases              actions= 1 time=2 usec 
+end user.main;
+#inline               actions= 0 time=0 usec 
+#remap                actions= 0 time=1 usec 
+#costmodel            actions= 1 time=1 usec 
+#coercion             actions= 2 time=3 usec 
+#aliases              actions= 2 time=2 usec 
 #evaluate             actions= 0 time=2 usec 
 #emptybind            actions= 0 time=1 usec 
 #pushselect           actions= 0 time=1 usec 
@@ -106,8 +106,8 @@ end user.s4_0;
 % mal # name
 % clob # type
 % 114 # length
-function user.s16_0():void;
-    X_1:void := querylog.define("explain select reverse(x) from udf_reverse;":str, "sequential_pipe":str, 21:int);
+function user.main():void;
+    X_1:void := querylog.define("explain select reverse(x) from udf_reverse;":str, "sequential_pipe":str, 20:int);
     X_27:bat[:str] := bat.pack("sys.%1":str);
     X_28:bat[:str] := bat.pack("%1":str);
     X_29:bat[:str] := bat.pack("clob":str);
@@ -118,7 +118,7 @@ function user.s16_0():void;
     X_22:bat[:str] := algebra.projection(C_5:bat[:oid], X_17:bat[:str]);
     X_23:bat[:str] := batudf.reverse(X_22:bat[:str]);
     sql.resultSet(X_27:bat[:str], X_28:bat[:str], X_29:bat[:str], X_30:bat[:int], X_30:bat[:int], X_23:bat[:str]);
-end user.s16_0;
+end user.main;
 #inline               actions= 0 time=1 usec 
 #remap                actions= 1 time=5 usec 
 #costmodel            actions= 1 time=1 usec 

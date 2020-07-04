@@ -37,14 +37,6 @@ typedef enum {
 	type_cast	/* also truncate */
 } check_type;
 
-/* literals in the parser are kept outside of the abstract syntax tree
-   in the arg array, this to allow for more reuse of cached queries */
-
-extern atom *sql_add_arg(mvc *sql, atom *v);
-extern atom *sql_set_arg(mvc *sql, int nr, atom *v);
-extern atom *sql_bind_arg(mvc *sql, int nr);
-extern void sql_destroy_args(mvc *sql);		/* used in backend */
-
 /* SQL's parameters '?' (in prepare statements) and parameters of sql
  * functions and procedures are kept in the param list.  */
 

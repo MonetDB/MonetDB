@@ -1083,18 +1083,18 @@ exp_read(mvc *sql, sql_rel *lrel, sql_rel *rrel, list *pexps, char *r, int *pos,
 	}
 
 	if (!exp && b != e) { /* simple ident */
-		var_cname = b;
-		if (b[0] == 'A' && isdigit((unsigned char) b[1])) {
-			char *e2;
-			int nr = strtol(b+1,&e2,10);
-
-			if (e == e2 && nr < sql->argc) {
-				atom *a = sql->args[nr];
-
-				exp = exp_atom_ref(sql->sa, nr, &a->tpe);
+		/*
+		if (!exp) {
+			old = *e;
+			*e = 0;
+			if (stack_find_var(sql, b)) {
+				sql_subtype *tpe = stack_find_type(sql, b);
+				int frame = stack_find_frame(sql, b);
+				exp = exp_param(sql->sa, sa_strdup(sql->sa, b), tpe, frame);
 			}
-			assert(exp);
+			*e = old;
 		}
+		*/
 		if (!exp && lrel) {
 			int amb = 0;
 

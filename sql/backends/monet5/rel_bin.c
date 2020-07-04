@@ -290,7 +290,7 @@ distinct_value_list(backend *be, list *vals, stmt ** last_null_value)
 		sql_exp *e = n->data;
 		stmt *i = exp_bin(be, e, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0, 0);
 
-		if (exp_is_null(be->mvc, e))
+		if (exp_is_null(e))
 			*last_null_value = i;
 
 		if (!i)
@@ -1124,7 +1124,7 @@ exp_bin(backend *be, sql_exp *e, stmt *left, stmt *right, stmt *grp, stmt *ext, 
 							tail_type(l), tail_type(l), F_FUNC);
 					assert(f);
 					if (is_semantics(e)) {
-						if (exp_is_null(sql, e->l) && exp_is_null(sql, e->r)) {
+						if (exp_is_null(e->l) && exp_is_null(e->r)) {
 							s = stmt_bool(be, !is_anti(e));
 						} else {
 							list *args = sa_list(sql->sa);
@@ -1261,45 +1261,6 @@ check_table_types(backend *be, list *types, stmt *s, check_type tpe)
 }
 #endif
 
-static void
-sql_convert_arg(mvc *sql, int nr, sql_subtype *rt)
-{
-	atom *a = sql_bind_arg(sql, nr);
-
-	if (atom_null(a)) {
-		if (a->data.vtype != rt->type->localtype) {
-			a->data.vtype = rt->type->localtype;
-			VALset(&a->data, a->data.vtype, (ptr) ATOMnilptr(a->data.vtype));
-		}
-	}
-	a->tpe = *rt;
-}
-
-/* try to do an inplace convertion
- *
- * inplace conversion is only possible if the s is an variable.
- * This is only done to be able to map more cached queries onto the same
- * interface.
- */
-static stmt *
-inplace_convert(backend *be, sql_subtype *ct, stmt *s)
-{
-	atom *a;
-
-	/* exclude named variables */
-	if (s->type != st_var || (s->op1 && s->op1->op4.aval->data.val.sval) ||
-		(ct->scale && ct->type->eclass != EC_FLT))
-		return s;
-
-	a = sql_bind_arg(be->mvc, s->flag);
-	if (atom_cast(be->mvc->sa, a, ct)) {
-		stmt *r = stmt_varnr(be, s->flag, ct);
-		sql_convert_arg(be->mvc, s->flag, ct);
-		return r;
-	}
-	return s;
-}
-
 static int
 stmt_set_type_param(mvc *sql, sql_subtype *type, stmt *param)
 {
@@ -1329,10 +1290,6 @@ check_types(backend *be, sql_subtype *ct, stmt *s, check_type tpe)
 	} else if (!st) {
 		return sql_error(sql, 02, SQLSTATE(42000) "statement has no type information");
 	}
-
-	/* first try cheap internal (inplace) convertions ! */
-	s = inplace_convert(be, ct, s);
-	t = st = tail_type(s);
 
 	/* check if the types are the same */
 	if (t && subtype_cmp(t, ct) != 0) {
@@ -1409,7 +1366,6 @@ rel_parse_value(backend *be, char *query, char emode)
 
 	m->qc = NULL;
 
-	m->caching = 0;
 	m->emode = emode;
 	b = (buffer*)GDKmalloc(sizeof(buffer));
 	n = GDKmalloc(len + 1 + 1);
@@ -1437,8 +1393,6 @@ rel_parse_value(backend *be, char *query, char emode)
 	bstream_next(m->scanner.rs);
 
 	m->params = NULL;
-	/*m->args = NULL;*/
-	m->argc = 0;
 	m->sym = NULL;
 	m->errstr[0] = '\0';
 
@@ -1695,17 +1649,6 @@ exp2bin_args(backend *be, sql_exp *e, list *args)
 			}
 			if (!list_find(args, nme, (fcmp)&alias_cmp)) {
 				stmt *s = stmt_var(be, vname->sname, vname->name, &e->tpe, 0, 0);
-
-				s = stmt_alias(be, s, NULL, sa_strdup(sql->sa, nme));
-				list_append(args, s);
-			}
-		} else {
-			char nme[16];
-
-			snprintf(nme, sizeof(nme), "A%u", e->flag);
-			if (!list_find(args, nme, (fcmp)&alias_cmp)) {
-				atom *a = sql->args[e->flag];
-				stmt *s = stmt_varnr(be, e->flag, &a->tpe);
 
 				s = stmt_alias(be, s, NULL, sa_strdup(sql->sa, nme));
 				list_append(args, s);
@@ -3133,11 +3076,11 @@ sql_reorder(backend *be, stmt *order, stmt *s)
 }
 
 static sql_exp*
-topn_limit(mvc *sql, sql_rel *rel)
+topn_limit(sql_rel *rel)
 {
 	if (rel->exps) {
 		sql_exp *limit = rel->exps->h->data;
-		if (exp_is_null(sql, limit)) /* If the limit is NULL, ignore the value */
+		if (exp_is_null(limit)) /* If the limit is NULL, ignore the value */
 			return NULL;
 		return limit;
 	}
@@ -3165,7 +3108,7 @@ rel2bin_project(backend *be, sql_rel *rel, list *refs, sql_rel *topn)
 	stmt *l = NULL;
 
 	if (topn) {
-		sql_exp *le = topn_limit(sql, topn);
+		sql_exp *le = topn_limit(topn);
 		sql_exp *oe = topn_offset(topn);
 
 		if (!le) { /* Don't push only offset */
@@ -3522,7 +3465,7 @@ rel2bin_topn(backend *be, sql_rel *rel, list *refs)
 	if (!sub)
 		return NULL;
 
-	le = topn_limit(sql, rel);
+	le = topn_limit(rel);
 	oe = topn_offset(rel);
 
 	n = sub->op4.lval->h;
@@ -3631,7 +3574,6 @@ sql_parse(backend *be, sql_allocator *sa, const char *query, char mode)
 
 	m->qc = NULL;
 
-	m->caching = 0;
 	m->emode = mode;
 	be->depth++;
 
@@ -3674,7 +3616,6 @@ sql_parse(backend *be, sql_allocator *sa, const char *query, char mode)
 	bstream_next(m->scanner.rs);
 
 	m->params = NULL;
-	m->argc = 0;
 	m->sym = NULL;
 	m->errstr[0] = '\0';
 	m->errstr[ERRSIZE-1] = '\0';

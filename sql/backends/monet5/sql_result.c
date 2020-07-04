@@ -1052,7 +1052,7 @@ int
 mvc_export_prepare(mvc *c, stream *out, cq *q, str w)
 {
 	node *n;
-	int nparam = c->params ? list_length(c->params) : 0;
+	int nparam = q->f->ops ? list_length(q->f->ops) : 0;
 	int nrows = nparam;
 	size_t len1 = 0, len4 = 0, len5 = 0, len6 = 0;	/* column widths */
 	int len2 = 1, len3 = 1;
@@ -1060,6 +1060,7 @@ mvc_export_prepare(mvc *c, stream *out, cq *q, str w)
 	sql_subtype *t;
 	sql_rel *r = q->rel;
 
+	(void)c;
 	if(!out)
 		return 0;
 
@@ -1103,10 +1104,10 @@ mvc_export_prepare(mvc *c, stream *out, cq *q, str w)
 		}
 
 		/* calculate column widths */
-		if (c->params) {
+		if (q->f->ops) {
 			unsigned int max2 = 10, max3 = 10;	/* to help calculate widths */
 
-			for (n = c->params->h; n; n = n->next) {
+			for (n = q->f->ops->h; n; n = n->next) {
 				size_t slen;
 
 				a = n->data;
@@ -1151,12 +1152,10 @@ mvc_export_prepare(mvc *c, stream *out, cq *q, str w)
 			}
 		}
 	}
-	if (c->params) {
+	if (q->f->ops) {
 		int i;
 
-		q->paramlen = nparam;
-		q->params = SA_NEW_ARRAY(q->sa, sql_subtype, nrows);
-		for (n = c->params->h, i = 0; n; n = n->next, i++) {
+		for (n = q->f->ops->h, i = 0; n; n = n->next, i++) {
 			a = n->data;
 			t = &a->type;
 
@@ -1164,8 +1163,6 @@ mvc_export_prepare(mvc *c, stream *out, cq *q, str w)
 				if (!GDKembedded() && mnstr_printf(out, "[ \"%s\",\t%u,\t%u,\tNULL,\tNULL,\tNULL\t]\n", t->type->sqlname, t->digits, t->scale) < 0) {
 					return -1;
 				}
-				/* add to the query cache parameters */
-				q->params[i] = *t;
 			} else {
 				return -1;
 			}

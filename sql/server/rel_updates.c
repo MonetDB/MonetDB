@@ -1558,7 +1558,6 @@ copyfrom(sql_query *query, dlist *qname, dlist *columns, dlist *files, dlist *he
 			store_lock();
 		}
 		sql->emod |= mod_locked;
-		sql->caching = 0; 	/* do not cache this query */
 	}
 
 	collist = check_table_columns(sql, t, columns, "COPY INTO", tname);
@@ -1902,7 +1901,6 @@ rel_parse_val(mvc *m, char *query, char emode, sql_rel *from)
 
 	m->qc = NULL;
 
-	m->caching = 0;
 	m->emode = emode;
 	b = (buffer*)GDKmalloc(sizeof(buffer));
 	n = GDKmalloc(len + 1 + 1);
@@ -1930,8 +1928,6 @@ rel_parse_val(mvc *m, char *query, char emode, sql_rel *from)
 	bstream_next(m->scanner.rs);
 
 	m->params = NULL;
-	/*m->args = NULL;*/
-	m->argc = 0;
 	m->sym = NULL;
 	m->errstr[0] = '\0';
 	/* via views we give access to protected objects */

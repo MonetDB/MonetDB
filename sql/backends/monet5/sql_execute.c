@@ -192,101 +192,11 @@ SQLsetTrace(Client cntxt, MalBlkPtr mb)
 	return msg;
 }
 
-/*
- * Execution of the SQL program is delegated to the MALengine.
- * Different cases should be distinguished. The default is to
- * hand over the MAL block derived by the parser for execution.
- * However, when we received an Execute call, we make a shortcut
- * and prepare the stack for immediate execution
- */
 static str
-SQLexecutePrepared(Client c, backend *be, MalBlkPtr mb)
-{
-	mvc *m = be->mvc;
-	int argc, parc;
-	ValPtr *argv, argvbuffer[MAXARG], v;
-	ValRecord *argrec, argrecbuffer[MAXARG];
-	MalStkPtr glb;
-	InstrPtr pci;
-	int i;
-	str ret;
-	cq *q= be->q;
-
-	pci = getInstrPtr(mb, 0);
-	if (pci->argc >= MAXARG){
-		argv = (ValPtr *) GDKmalloc(sizeof(ValPtr) * pci->argc);
-		if( argv == NULL)
-			throw(SQL,"sql.prepare",SQLSTATE(HY013) MAL_MALLOC_FAIL);
-	} else
-		argv = argvbuffer;
-
-	if (pci->retc >= MAXARG){
-		argrec = (ValRecord *) GDKmalloc(sizeof(ValRecord) * pci->retc);
-		if( argrec == NULL){
-			if( argv != argvbuffer)
-				GDKfree(argv);
-			throw(SQL,"sql.prepare",SQLSTATE(HY013) MAL_MALLOC_FAIL);
-		}
-	} else
-		argrec = argrecbuffer;
-
-	/* prepare the target variables */
-	for (i = 0; i < pci->retc; i++) {
-		argv[i] = argrec + i;
-		argv[i]->vtype = getVarGDKType(mb, i);
-	}
-
-	argc = m->argc;
-	parc = q->paramlen;
-
-	if (argc != parc) {
-		if (pci->argc >= MAXARG && argv != argvbuffer)
-			GDKfree(argv);
-		if (pci->retc >= MAXARG && argrec != argrecbuffer)
-			GDKfree(argrec);
-		throw(SQL, "sql.prepare", SQLSTATE(07001) "EXEC: wrong number of arguments for prepared statement: %d, expected %d", argc, parc);
-	} else {
-		for (i = 0; i < m->argc; i++) {
-			atom *arg = m->args[i];
-			sql_subtype *pt = q->params + i;
-
-			if (!atom_cast(m->sa, arg, pt)) {
-				/*sql_error(c, 003, buf); */
-				if (pci->argc >= MAXARG && argv != argvbuffer)
-					GDKfree(argv);
-				if (pci->retc >= MAXARG && argrec != argrecbuffer)
-					GDKfree(argrec);
-				throw(SQL, "sql.prepare", SQLSTATE(07001) "EXEC: wrong type for argument %d of " "prepared statement: %s, expected %s", i + 1, atom_type(arg)->type->sqlname, pt->type->sqlname);
-			}
-			argv[pci->retc + i] = &arg->data;
-		}
-	}
-	glb = (MalStkPtr) (q->stk);
-	ret = callMAL(c, mb, &glb, argv, (m->emod & mod_debug ? 'n' : 0));
-	/* cleanup the arguments */
-	for (i = pci->retc; i < pci->argc; i++) {
-		garbageElement(c, v = &glb->stk[pci->argv[i]]);
-		v->vtype = TYPE_int;
-		v->val.ival = int_nil;
-	}
-	q->stk = (backend_stack) glb; /* save garbageCollected stack */
-	if (glb && SQLdebug & 1)
-		printStack(GDKstdout, mb, glb);
-	if (pci->argc >= MAXARG && argv != argvbuffer)
-		GDKfree(argv);
-	if (pci->retc >= MAXARG && argrec != argrecbuffer)
-		GDKfree(argrec);
-	return ret;
-}
-
-static str
-SQLrun(Client c, backend *be, mvc *m)
+SQLrun(Client c, mvc *m)
 {
 	str msg= MAL_SUCCEED;
-	MalBlkPtr mc = 0, mb=c->curprg->def;
-	InstrPtr p=0;
-	int i,j, retc;
-	ValPtr val;
+	MalBlkPtr mb=c->curprg->def;
 
 	if (*m->errstr){
 		if (strlen(m->errstr) > 6 && m->errstr[5] == '!')
@@ -296,8 +206,6 @@ SQLrun(Client c, backend *be, mvc *m)
 		*m->errstr=0;
 		return msg;
 	}
-	if (m->emode == m_execute && be->q->paramlen != m->argc)
-		throw(SQL, "sql.prepare", SQLSTATE(42000) "EXEC called with wrong number of arguments: expected %d, got %d", be->q->paramlen, m->argc);
 	MT_thread_setworking(m->query);
 	// locate and inline the query template instruction
 	mb = copyMalBlk(c->curprg->def);
@@ -308,49 +216,6 @@ SQLrun(Client c, backend *be, mvc *m)
 	mb->history = c->curprg->def->history;
 	c->curprg->def->history = 0;
 
-	/* only consider a re-optimization when we are dealing with query templates */
-	for ( i= 1; i < mb->stop;i++){
-		p = getInstrPtr(mb,i);
-		if( getFunctionId(p) &&  qc_isapreparedquerytemplate(getFunctionId(p) ) ){
-			msg = SQLexecutePrepared(c, be, p->blk);
-			freeMalBlk(mb);
-			MT_thread_setworking(NULL);
-			return msg;
-		}
-		if( getFunctionId(p) &&  p->blk && qc_isaquerytemplate(getFunctionId(p)) ) {
-			mc = copyMalBlk(p->blk);
-			if (!mc) {
-				freeMalBlk(mb);
-				MT_thread_setworking(NULL);
-				throw(SQL, "sql.prepare", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-			}
-			retc = p->retc;
-			freeMalBlk(mb); // TODO can be factored out
-			mb = mc;
-			// declare the argument values as a constant
-			// We use the knowledge that the arguments are first on the stack
-			for (j = 0; j < m->argc; j++) {
-				sql_subtype *pt = be->q->params + j;
-				atom *arg = m->args[j];
-
-				if (!atom_cast(m->sa, arg, pt)) {
-					freeMalBlk(mb);
-					MT_thread_setworking(NULL);
-					throw(SQL, "sql.prepare", SQLSTATE(07001) "EXEC: wrong type for argument %d of " "query template : %s, expected %s", i + 1, atom_type(arg)->type->sqlname, pt->type->sqlname);
-				}
-				val= (ValPtr) &arg->data;
-				if (VALcopy(&mb->var[j+retc].value, val) == NULL){
-					freeMalBlk(mb);
-					MT_thread_setworking(NULL);
-					throw(MAL, "sql.prepare", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-				}
-				setVarConstant(mb, j+retc);
-				setVarFixed(mb, j+retc);
-			}
-			mb->stmt[0]->argc = 1;
-			break;
-		}
-	}
 	// JIT optimize the SQL query using all current information
 	// This include template constants, BAT sizes.
 	if( m->emod & mod_debug)
@@ -388,8 +253,8 @@ SQLrun(Client c, backend *be, mvc *m)
 				stopTrace(c);
 			}
 		} else {
-				c->idle = 0;
-				c->lastcmd = time(0);
+			c->idle = 0;
+			c->lastcmd = time(0);
 			msg = runMAL(c, mb, 0, 0);
 		}
 	}
@@ -509,7 +374,6 @@ SQLstatementIntern(Client c, str *expr, str nme, bit execute, bit output, res_ta
 	sql->depth++;
 	// and do it again
 	m->qc = NULL;
-	m->caching = 0;
 	m->user_id = m->role_id = USER_MONETDB;
 	if (result)
 		m->reply_size = -2; /* do not clean up result tables */
@@ -549,7 +413,6 @@ SQLstatementIntern(Client c, str *expr, str nme, bit execute, bit output, res_ta
 	bstream_next(m->scanner.rs);
 
 	m->params = NULL;
-	m->argc = 0;
 	m->session->auto_commit = 0;
 	if (!m->sa)
 		m->sa = sa_create();
@@ -629,8 +492,8 @@ SQLstatementIntern(Client c, str *expr, str nme, bit execute, bit output, res_ta
 		printFunction(c->fdout, c->curprg->def, 0, LIST_MAL_NAME | LIST_MAL_VALUE  |  LIST_MAL_MAPI);
 #endif
 		be->depth++;
-		if (backend_callinline(be, c) < 0 ||
-		    backend_dumpstmt(be, c->curprg->def, r, 1, 1, NULL) < 0)
+		setVarType(c->curprg->def, 0, 0);
+		if (backend_dumpstmt(be, c->curprg->def, r, 1, 1, NULL) < 0)
 			err = 1;
 		be->depth--;
 #ifdef _SQL_COMPILE
@@ -666,7 +529,7 @@ SQLstatementIntern(Client c, str *expr, str nme, bit execute, bit output, res_ta
 			sql->out = NULL;	/* no output stream */
 		be->depth++;
 		if (execute)
-			msg = SQLrun(c,be,m);
+			msg = SQLrun(c,m);
 		be->depth--;
 		MSresetInstructions(c->curprg->def, oldstop);
 		freeVariables(c, c->curprg->def, NULL, oldvtop);
@@ -765,11 +628,11 @@ SQLengineIntern(Client c, backend *be)
 	if (MALcommentsOnly(c->curprg->def))
 		msg = MAL_SUCCEED;
 	else
-		msg = SQLrun(c,be,m);
+		msg = SQLrun(c,m);
 
 cleanup_engine:
 	if (m->type == Q_SCHEMA && m->qc != NULL)
-		qc_clean(m->qc, false);
+		qc_clean(m->qc);
 	if (msg) {
 		/* don't print exception decoration, just the message */
 /*
@@ -846,8 +709,8 @@ RAstatement(Client c, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		}
 
 		/* generate MAL code, ignoring any code generation error */
-		if (backend_callinline(b, c) < 0 ||
-		    backend_dumpstmt(b, c->curprg->def, rel, 1, 1, NULL) < 0) {
+		setVarType(c->curprg->def, 0, 0);
+		if (backend_dumpstmt(b, c->curprg->def, rel, 1, 1, NULL) < 0) {
 			msg = createException(SQL,"RAstatement","Program contains errors"); // TODO: use macro definition.
 		} else {
 			SQLaddQueryToCache(c);
@@ -855,7 +718,7 @@ RAstatement(Client c, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		}
 		rel_destroy(rel);
 		if( msg == MAL_SUCCEED)
-			msg = SQLrun(c,b,m);
+			msg = SQLrun(c,m);
 		if (!msg) {
 			resetMalBlk(c->curprg->def, oldstop);
 			freeVariables(c, c->curprg->def, NULL, oldvtop);
@@ -921,7 +784,9 @@ RAstatement2(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		char *p = strchr(++sig, (int)' ');
 		int d,s,nr = -1;
 		sql_subtype t;
-		atom *a;
+		//atom *a;
+
+		assert(0);
 
 		*p++ = 0;
 		/* vnme can be name or number */
@@ -940,18 +805,18 @@ RAstatement2(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		s = strtol(p, &p, 10);
 
 		sql_find_subtype(&t, tnme, d, s);
-		a = atom_general(m->sa, &t, NULL);
-		a->isnull = 0; // disable NULL value optimizations ugh
+		//a = atom_general(m->sa, &t, NULL);
+		//a->isnull = 0; // disable NULL value optimizations ugh
 		/* the argument list may have holes and maybe out of order, ie
 		 * don't use sql_add_arg, but special numbered version
 		 * sql_set_arg(m, a, nr);
 		 * */
 		if (nr >= 0) {
 			append(ops, exp_atom_ref(m->sa, nr, &t));
-			if (!sql_set_arg(m, nr, a)) {
-				sqlcleanup(m, 0);
-				return createException(SQL,"RAstatement2",SQLSTATE(HY013) MAL_MALLOC_FAIL);
-			}
+			//if (!sql_set_arg(m, nr, a)) {
+			//	sqlcleanup(m, 0);
+			//	return createException(SQL,"RAstatement2",SQLSTATE(HY013) MAL_MALLOC_FAIL);
+			//}
 		} else {
 			if (!push_global_var(m, "sys", vnme+1, &t)) {
 				sqlcleanup(m, 0);

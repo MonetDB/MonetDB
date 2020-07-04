@@ -77,7 +77,7 @@ extern sql_exp * exp_atom_ref(sql_allocator *sa, int i, sql_subtype *tpe);
 extern sql_exp * exp_null(sql_allocator *sa, sql_subtype *tpe);
 extern sql_exp * exp_zero(sql_allocator *sa, sql_subtype *tpe); /* Apply it to numeric types only obviously */
 extern sql_exp * exp_param_or_declared(sql_allocator *sa, const char *sname, const char *name, sql_subtype *tpe, int frame);
-extern atom * exp_value(mvc *sql, sql_exp *e, atom **args, int maxarg);
+extern atom * exp_value(mvc *sql, sql_exp *e);
 extern sql_exp * exp_values(sql_allocator *sa, list *exps);
 extern list * exp_get_values(sql_exp *e); /* get expression list from the values expression */
 extern list * exp_types(sql_allocator *sa, list *exps);
@@ -143,11 +143,11 @@ extern int exp_is_join(sql_exp *e, list *rels);
 extern int exp_is_eqjoin(sql_exp *e);
 extern int exp_is_join_exp(sql_exp *e);
 extern int exp_is_atom(sql_exp *e);
-extern int exp_is_true(mvc *sql, sql_exp *e);
-extern int exp_is_false(mvc *sql, sql_exp *e);
-extern int exp_is_zero(mvc *sql, sql_exp *e);
-extern int exp_is_not_null(mvc *sql, sql_exp *e);
-extern int exp_is_null(mvc *sql, sql_exp *e);
+extern int exp_is_true(sql_exp *e);
+extern int exp_is_false(sql_exp *e);
+extern int exp_is_zero(sql_exp *e);
+extern int exp_is_not_null(sql_exp *e);
+extern int exp_is_null(sql_exp *e);
 extern int exp_is_rel(sql_exp *e);
 extern int exp_has_rel(sql_exp *e);
 extern int exps_have_rel_exp(list *exps);

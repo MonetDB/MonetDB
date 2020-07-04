@@ -44,10 +44,10 @@ stdout of test 'and-power.Bug-3013` in directory 'sql/test/BugTracker-2011` itse
 # 14:12:27 >  
 
 #select bit_and(1, power(2, 1));
-% . # table_name
-% %1 # name
-% tinyint # type
-% 1 # length
+% .%2 # table_name
+% %2 # name
+% decimal # type
+% 39 # length
 [ 0	]
 
 # 14:12:27 >  

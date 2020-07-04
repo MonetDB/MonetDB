@@ -51,9 +51,8 @@
 /* different query execution modes (emode) */
 #define m_normal 	0
 #define m_deallocate 1
-#define m_execute 	2
-#define m_prepare 	3
-#define m_plan 		4
+#define m_prepare 	2
+#define m_plan 		3
 
 /* special modes for function/procedure and view instantiation and
    dependency generation */
@@ -111,38 +110,29 @@ typedef struct mvc {
 	char errstr[ERRSIZE];
 
 	sql_allocator *sa;
-	struct qc *qc;
-	int clientid;		/* id of the owner */
+
 	struct scanner scanner;
 
-	list *params; /* Parameters for SQL functions and prepared statements */
-	list *global_vars; /* SQL declared variables on the global scope */
+	list *params;
 	sql_func *forward;	/* forward definitions for recursive functions */
+	list *global_vars; /* SQL declared variables on the global scope */
 	sql_frame **frames;	/* stack of frames with variables */
 	int topframes;
 	int sizeframes;
 	int frame;
-	bool use_views;
-	atom **args;
-	int argc;
-	int argmax;
 	struct symbol *sym;
-	int no_mitosis;		/* run query without mitosis */
 
+	bool use_views;
+	struct qc *qc;
+	int clientid;		/* id of the owner */
+
+	/* session variables */
 	sqlid user_id;
 	sqlid role_id;
-	lng last_id;
-	lng rowcnt;
-
-	/* current session variables */
 	int timezone;		/* milliseconds west of UTC */
-	int cache;		/* some queries should not be cached ! */
-	int caching;		/* cache current query ? */
 	int reply_size;		/* reply size */
-	bool sizeheader;	/* print size header in result set */
 	int debug;
 
-	lng Topt;		/* timer for optimizer phase */
 	char emode;		/* execution mode */
 	char emod;		/* execution modifier */
 
@@ -150,14 +140,20 @@ typedef struct mvc {
 
 	mapi_query_t type;	/* query type */
 	unsigned int label;	/* numbers for relational projection labels */
-	int remote;
 	list *cascade_action;  /* protection against recursive cascade actions */
 
+	lng last_id;
+	lng rowcnt;
+	int no_mitosis;		/* run query without mitosis */
 	int opt_stats[MAXSTATS];/* keep statistics about optimizer rewrites */
+	int remote;
 
 	int result_id;
 	res_table *results;
 	char *query;		/* string, identify whatever we're working on */
+
+	bool sizeheader;	/* print size header in result set */
+	lng Topt;		/* timer for optimizer phase */
 } mvc;
 
 extern sql_table *mvc_init_create_view(mvc *sql, sql_schema *s, const char *name, const char *query);
