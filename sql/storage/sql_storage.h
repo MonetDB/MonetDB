@@ -375,7 +375,7 @@ extern res_table *res_tables_remove(res_table *results, res_table *t);
 sql_export void res_tables_destroy(res_table *results);
 extern res_table *res_tables_find(res_table *results, int res_id);
 
-extern int store_init(int debug, store_type store, int readonly, int singleuser, backend_stack stk);
+extern int store_init(int debug, store_type store, int readonly, int singleuser);
 extern void store_exit(void);
 
 extern int store_apply_deltas(bool locked);
@@ -392,7 +392,7 @@ extern void store_lock(void);
 extern void store_unlock(void);
 extern sqlid store_next_oid(void);
 
-extern sql_trans *sql_trans_create(backend_stack stk, sql_trans *parent, const char *name, bool try_spare);
+extern sql_trans *sql_trans_create(sql_trans *parent, const char *name, bool try_spare);
 extern sql_trans *sql_trans_destroy(sql_trans *tr, bool try_spare);
 extern bool sql_trans_validate(sql_trans *tr);
 extern int sql_trans_commit(sql_trans *tr);
@@ -463,7 +463,7 @@ extern sql_sequence *sql_trans_alter_sequence(sql_trans *tr, sql_sequence *seq, 
 extern sql_sequence *sql_trans_sequence_restart(sql_trans *tr, sql_sequence *seq, lng start);
 extern sql_sequence *sql_trans_seqbulk_restart(sql_trans *tr, seqbulk *sb, lng start);
 
-extern sql_session * sql_session_create(backend_stack stk, int autocommit);
+extern sql_session * sql_session_create(int autocommit);
 extern void sql_session_destroy(sql_session *s);
 extern int sql_session_reset(sql_session *s, int autocommit);
 extern int sql_trans_begin(sql_session *s);

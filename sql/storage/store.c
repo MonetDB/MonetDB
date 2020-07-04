@@ -1351,7 +1351,7 @@ load_schema(sql_trans *tr, sqlid id, oid rid)
 }
 
 static sql_trans *
-create_trans(sql_allocator *sa, backend_stack stk)
+create_trans(sql_allocator *sa)
 {
 	sql_trans *t = ZNEW(sql_trans);
 
@@ -1367,7 +1367,6 @@ create_trans(sql_allocator *sa, backend_stack stk)
 	t->status = 0;
 
 	t->parent = NULL;
-	t->stk = stk;
 
 	cs_new(&t->schemas, t->sa, (fdestroy) &schema_destroy);
 	return t;
@@ -1824,7 +1823,7 @@ store_schema_number(void)
 }
 
 static int
-store_load(backend_stack stk) {
+store_load(void) {
 	int first;
 
 	sql_allocator *sa;
@@ -1850,7 +1849,7 @@ store_load(backend_stack stk) {
 	if (!sequences_init())
 		return -1;
 	ATOMIC_SET(&transactions, 0);
-	gtrans = tr = create_trans(sa, stk);
+	gtrans = tr = create_trans(sa);
 	if (!gtrans)
 		return -1;
 
@@ -1860,7 +1859,7 @@ store_load(backend_stack stk) {
 		/* cannot initialize database in readonly mode */
 		if (store_readonly)
 			return -1;
-		tr = sql_trans_create(stk, NULL, NULL, true);
+		tr = sql_trans_create(NULL, NULL, true);
 		if (!tr) {
 			TRC_CRITICAL(SQL_STORE, "Failed to start a transaction while loading the storage\n");
 			return -1;
@@ -2057,7 +2056,7 @@ store_load(backend_stack stk) {
 }
 
 int
-store_init(int debug, store_type store, int readonly, int singleuser, backend_stack stk)
+store_init(int debug, store_type store, int readonly, int singleuser)
 {
 	int v = 1;
 
@@ -2090,7 +2089,7 @@ store_init(int debug, store_type store, int readonly, int singleuser, backend_st
 
 	/* create the initial store structure or re-load previous data */
 	MT_lock_unset(&bs_lock);
-	return store_load(stk);
+	return store_load();
 }
 
 static int
@@ -2273,7 +2272,7 @@ store_exit(void)
 	store_initialized=0;
 }
 
-static sql_trans * trans_init(sql_trans *tr, backend_stack stk, sql_trans *otr);
+static sql_trans * trans_init(sql_trans *tr, sql_trans *otr);
 
 /* call locked! */
 int
@@ -2299,9 +2298,9 @@ store_apply_deltas(bool not_locked)
 	}
 
 	if (gtrans->sa->nr > 2*new_trans_size && !(ATOMIC_GET(&nr_sessions)) /* only save when there are no dependencies on the gtrans */) {
-		sql_trans *ntrans = sql_trans_create(gtrans->stk, gtrans, NULL, false);
+		sql_trans *ntrans = sql_trans_create(gtrans, NULL, false);
 
-		trans_init(ntrans, ntrans->stk, gtrans);
+		trans_init(ntrans, gtrans);
 		if (spares > 0)
 			destroy_spare_transactions();
 		trans_reset_parent(ntrans);
@@ -2409,7 +2408,7 @@ idle_manager(void)
 			continue;
 		}
 
-		s = sql_session_create(gtrans->stk, 0);
+		s = sql_session_create(0);
 		if (!s) {
 			MT_lock_unset(&bs_lock);
 			continue;
@@ -3739,7 +3738,7 @@ schema_dup(sql_trans *tr, int flags, sql_schema *os, sql_trans *o)
 }
 
 static void
-_trans_init(sql_trans *tr, backend_stack stk, sql_trans *otr)
+_trans_init(sql_trans *tr, sql_trans *otr)
 {
 	tr->wtime = tr->rtime = 0;
 	tr->stime = otr->wtime;
@@ -3750,15 +3749,14 @@ _trans_init(sql_trans *tr, backend_stack stk, sql_trans *otr)
 
 	tr->schema_number = store_schema_number();
 	tr->parent = otr;
-	tr->stk = stk;
 }
 
 static sql_trans *
-trans_init(sql_trans *tr, backend_stack stk, sql_trans *otr)
+trans_init(sql_trans *tr, sql_trans *otr)
 {
 	node *m,*n;
 
-	_trans_init(tr, stk, otr);
+	_trans_init(tr, otr);
 
 	for (m = otr->schemas.set->h, n = tr->schemas.set->h; m && n; m = m->next, n = n->next ) {
 		sql_schema *ps = m->data; /* parent transactions schema */
@@ -3877,7 +3875,7 @@ trans_init(sql_trans *tr, backend_stack stk, sql_trans *otr)
 }
 
 static sql_trans *
-trans_dup(backend_stack stk, sql_trans *ot, const char *newname)
+trans_dup(sql_trans *ot, const char *newname)
 {
 	node *n;
 	sql_trans *t = ZNEW(sql_trans);
@@ -3890,7 +3888,7 @@ trans_dup(backend_stack stk, sql_trans *ot, const char *newname)
 		_DELETE(t);
 		return NULL;
 	}
-	_trans_init(t, stk, ot);
+	_trans_init(t, ot);
 
 	cs_new(&t->schemas, t->sa, (fdestroy) &schema_destroy);
 
@@ -4975,7 +4973,7 @@ reset_trans(sql_trans *tr, sql_trans *ptr)
 }
 
 sql_trans *
-sql_trans_create(backend_stack stk, sql_trans *parent, const char *name, bool try_spare)
+sql_trans_create(sql_trans *parent, const char *name, bool try_spare)
 {
 	sql_trans *tr = NULL;
 
@@ -4984,7 +4982,7 @@ sql_trans_create(backend_stack stk, sql_trans *parent, const char *name, bool tr
 			tr = spare_trans[--spares];
 			TRC_DEBUG(SQL_STORE, "Reuse transaction: %p - Spares: %d\n", tr, spares);
 		} else {
-			tr = trans_dup(stk, (parent) ? parent : gtrans, name);
+			tr = trans_dup((parent) ? parent : gtrans, name);
 			TRC_DEBUG(SQL_STORE, "New transaction: %p\n", tr);
 			if (tr)
 				(void) ATOMIC_INC(&transactions);
@@ -7453,7 +7451,7 @@ sql_trans_seqbulk_restart(sql_trans *tr, seqbulk *sb, lng start)
 }
 
 sql_session *
-sql_session_create(backend_stack stk, int ac)
+sql_session_create(int ac)
 {
 	sql_session *s;
 
@@ -7463,14 +7461,13 @@ sql_session_create(backend_stack stk, int ac)
 	s = ZNEW(sql_session);
 	if (!s)
 		return NULL;
-	s->tr = sql_trans_create(s->stk, NULL, NULL, true);
+	s->tr = sql_trans_create(NULL, NULL, true);
 	if (!s->tr) {
 		_DELETE(s);
 		return NULL;
 	}
 	s->schema_name = NULL;
 	s->tr->active = 0;
-	s->stk = stk;
 	if (!sql_session_reset(s, ac)) {
 		sql_trans_destroy(s->tr, true);
 		_DELETE(s);
@@ -7568,13 +7565,13 @@ sql_trans_begin(sql_session *s)
 			store_schema_number() != snr)) {
 		if (!list_empty(tr->moved_tables)) {
 			sql_trans_destroy(tr, false);
-			s->tr = tr = sql_trans_create(s->stk, NULL, NULL, false);
+			s->tr = tr = sql_trans_create(NULL, NULL, false);
 		} else {
 			reset_trans(tr, gtrans);
 		}
 	}
 	if (tr->parent == gtrans)
-		tr = trans_init(tr, tr->stk, tr->parent);
+		tr = trans_init(tr, tr->parent);
 	tr->active = 1;
 	s->schema = find_sql_schema(tr, s->schema_name);
 	s->tr = tr;
