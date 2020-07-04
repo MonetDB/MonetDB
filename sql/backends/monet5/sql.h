@@ -53,8 +53,8 @@
 #include "bat/bat_storage.h"
 #include "bat/bat_utils.h"
 
-extern int sqlcleanup(mvc *c, int err);
-extern sql_rel *sql_symbol2relation(mvc *m, symbol *sym);
+extern int sqlcleanup(backend *be, int err);
+extern sql_rel *sql_symbol2relation(backend *be, symbol *sym);
 
 extern BAT *mvc_bind(mvc *m, const char *sname, const char *tname, const char *cname, int access);
 extern BAT *mvc_bind_idxbat(mvc *m, const char *sname, const char *tname, const char *iname, int access);

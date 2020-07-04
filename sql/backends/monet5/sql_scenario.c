@@ -218,20 +218,6 @@ SQLepilogue(void *ret)
 	return MAL_SUCCEED;
 }
 
-static const char *
-SQLgetquery(Client c)
-{
-	if (c) {
-		backend *be = c->sqlcontext;
-		if (be) {
-			mvc *m = be->mvc;
-			if (m)
-				return m->query;
-		}
-	}
-	return NULL;
-}
-
 static char*
 SQLprepareClient(Client c, int login)
 {
@@ -239,7 +225,6 @@ SQLprepareClient(Client c, int login)
 	backend *be = NULL;
 	str msg = MAL_SUCCEED;
 
-	c->getquery = SQLgetquery;
 	if (c->sqlcontext == 0) {
 		m = mvc_create(c->idx, SQLdebug, c->fdin, c->fdout);
 		if (m == NULL) {
@@ -311,8 +296,8 @@ SQLresetClient(Client c)
 		if (m->session->tr->active)
 			other = mvc_rollback(m, 0, NULL, false);
 
-		res_tables_destroy(m->results);
-		m->results = NULL;
+		res_tables_destroy(be->results);
+		be->results = NULL;
 
 		mvc_destroy(m);
 		backend_destroy(be);
@@ -491,7 +476,7 @@ SQLinit(Client c)
 	if (msg) {
 		msg = handle_error(m, 0, msg);
 		*m->errstr = 0;
-		sqlcleanup(m, mvc_status(m));
+		sqlcleanup(be, mvc_status(m));
 	}
 
 	other = SQLresetClient(c);
@@ -890,7 +875,10 @@ SQLparser(Client c)
 	int oldvtop, oldstop;
 	int pstatus = 0;
 	int err = 0, opt = 0, preparedid = -1;
-	char *q = NULL;
+
+	/* clean up old stuff */
+	GDKfree(c->query);		/* may be NULL */
+	c->query = NULL;
 
 	be = (backend *) c->sqlcontext;
 	if (be == 0) {
@@ -906,12 +894,6 @@ SQLparser(Client c)
 	be->vtop = oldvtop;
 	m = be->mvc;
 	m->type = Q_PARSE;
-	m->Topt = 0;
-	/* clean up old stuff */
-	q = m->query;
-	m->query = NULL;
-	GDKfree(q);		/* may be NULL */
-
 	if (be->language != 'X') {
 		if ((msg = SQLtrans(m)) != MAL_SUCCEED) {
 			c->mode = FINISHCLIENT;
@@ -952,9 +934,9 @@ SQLparser(Client c)
 			res_table *t;
 
 			v = (int) strtol(in->buf + in->pos + 6, NULL, 0);
-			t = res_tables_find(m->results, v);
+			t = res_tables_find(be->results, v);
 			if (t)
-				m->results = res_tables_remove(m->results, t);
+				be->results = res_tables_remove(be->results, t);
 			in->pos = in->len;	/* HACK: should use parsed length */
 			return MAL_SUCCEED;
 		}
@@ -997,7 +979,7 @@ SQLparser(Client c)
 		}
 		if (strncmp(in->buf + in->pos, "sizeheader", 10) == 0) {
 			v = (int) strtol(in->buf + in->pos + 10, NULL, 10);
-			m->sizeheader = v != 0;
+			be->sizeheader = v != 0;
 			in->pos = in->len;	/* HACK: should use parsed length */
 			return MAL_SUCCEED;
 		}
@@ -1029,7 +1011,7 @@ SQLparser(Client c)
 		}
 		if (m->sym)
 			msg = handle_error(m, pstatus, msg);
-		sqlcleanup(m, err);
+		sqlcleanup(be, err);
 		goto finalize;
 	}
 	assert(m->session->schema);
@@ -1040,10 +1022,9 @@ SQLparser(Client c)
 	 * produce code.
 	 */
 	be->q = NULL;
-	m->query = q;
-	q = query_cleaned(QUERY(m->scanner));
+	c->query = query_cleaned(QUERY(m->scanner));
 
-	if (q == NULL) {
+	if (c->query == NULL) {
 		err = 1;
 		msg = createException(PARSE, "SQLparser", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	} else if (m->emode == m_deallocate) {
@@ -1061,7 +1042,7 @@ SQLparser(Client c)
 				msg = createException(SQL, mode, SQLSTATE(07003) "No prepared statement with id: %d\n", preparedid);
 				*m->errstr = 0;
 				msg = handle_error(m, pstatus, msg);
-				sqlcleanup(m, err);
+				sqlcleanup(be, err);
 				goto finalize;
 			}
 		}
@@ -1069,7 +1050,7 @@ SQLparser(Client c)
 		m->type = Q_SCHEMA; /* TODO DEALLOCATE statements don't fit for Q_SCHEMA */
 		scanner_query_processed(&(m->scanner));
 	} else {
-		sql_rel *r = sql_symbol2relation(m, m->sym);
+		sql_rel *r = sql_symbol2relation(be, m->sym);
 
 		if (!r || (err = mvc_status(m) && m->type != Q_TRANS && *m->errstr)) {
 			if (strlen(m->errstr) > 6 && m->errstr[5] == '!')
@@ -1078,7 +1059,7 @@ SQLparser(Client c)
 				msg = createException(PARSE, "SQLparser", SQLSTATE(42000) "%s", m->errstr);
 			*m->errstr = 0;
 			msg = handle_error(m, pstatus, msg);
-			sqlcleanup(m, err);
+			sqlcleanup(be, err);
 			goto finalize;
 		}
 
@@ -1087,12 +1068,12 @@ SQLparser(Client c)
 
 			err = 0;
 			setVarType(c->curprg->def, 0, 0);
-			if (backend_dumpstmt(be, c->curprg->def, r, 1, 0, q) < 0)
+			if (backend_dumpstmt(be, c->curprg->def, r, 1, 0, c->query) < 0)
 				err = 1;
 			else
 				opt = 1;
 		} else {
-			char *q_copy = GDKstrdup(q);
+			char *q_copy = GDKstrdup(c->query);
 
 			be->q = NULL;
 			if (!q_copy) {
@@ -1105,7 +1086,7 @@ SQLparser(Client c)
 						  m->params,	/* the argument list */
 						  m->type,	/* the type of the statement */
 						  q_copy,
-						  m->no_mitosis);
+						  be->no_mitosis);
 			}
 			if (!be->q) {
 				err = 1;
@@ -1163,7 +1144,7 @@ SQLparser(Client c)
 				msg = SQLoptimizeQuery(c, c->curprg->def);
 
 				if (msg != MAL_SUCCEED) {
-					sqlcleanup(m, err);
+					sqlcleanup(be, err);
 					goto finalize;
 				}
 			}
@@ -1192,10 +1173,9 @@ SQLparser(Client c)
 	}
 finalize:
 	if (msg) {
-		sqlcleanup(m, 0);
-		q = m->query;
-		m->query = NULL;
-		GDKfree(q);
+		sqlcleanup(be, 0);
+		GDKfree(c->query);
+		c->query = NULL;
 	}
 	return msg;
 }

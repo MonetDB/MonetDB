@@ -85,7 +85,6 @@ rel_parse(mvc *m, sql_schema *s, char *query, char emode)
 	m->sym = NULL;
 	o.frames = m->frames;	/* may have been realloc'ed */
 	o.sizeframes = m->sizeframes;
-	o.query = m->query;
 	if (m->session->status || m->errstr[0]) {
 		int status = m->session->status;
 

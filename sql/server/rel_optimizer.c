@@ -9451,13 +9451,11 @@ rel_keep_renames(mvc *sql, sql_rel *rel)
 sql_rel *
 rel_optimizer(mvc *sql, sql_rel *rel, int value_based_opt)
 {
-	lng Tbegin = GDKusec();
 	int level = 0, changes = 1;
 
 	rel = rel_keep_renames(sql, rel);
 	for( ;rel && level < 20 && changes; level++)
 		rel = optimize_rel(sql, rel, &changes, level, value_based_opt);
-	sql->Topt += GDKusec() - Tbegin;
 	return rel;
 }
 

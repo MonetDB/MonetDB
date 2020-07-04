@@ -867,7 +867,7 @@ exp_bin(backend *be, sql_exp *e, stmt *left, stmt *right, stmt *grp, stmt *ext, 
 			print_stmtlist(sql->sa, left);
 			print_stmtlist(sql->sa, right);
 			if (!s) {
-				TRC_ERROR(SQL_EXECUTION, "Query: '%s'\n", sql->query);
+				TRC_ERROR(SQL_EXECUTION, "Query: '%s'\n", be->client->query);
 			}
 			assert(s);
 			return NULL;
@@ -1039,7 +1039,7 @@ exp_bin(backend *be, sql_exp *e, stmt *left, stmt *right, stmt *grp, stmt *ext, 
  			r2 = exp_bin(be, re2, left, right, grp, ext, cnt, sel, NULL, depth+1, 0);
 
 		if (!l || !r || (re2 && !r2)) {
-			TRC_ERROR(SQL_EXECUTION, "Query: '%s'\n", sql->query);
+			TRC_ERROR(SQL_EXECUTION, "Query: '%s'\n", be->client->query);
 			return NULL;
 		}
 
@@ -1417,7 +1417,6 @@ rel_parse_value(backend *be, char *query, char emode)
 	m->sym = NULL;
 	o.frames = m->frames;	/* may have been realloc'ed */
 	o.sizeframes = m->sizeframes;
-	o.query = m->query;
 	if (m->session->status || m->errstr[0]) {
 		int status = m->session->status;
 
@@ -1909,7 +1908,7 @@ rel2bin_table(backend *be, sql_rel *rel, list *refs)
 		char name[16], *nme;
 		sql_rel *fr;
 
-		nme = number2name(name, sizeof(name), ++sql->remote);
+		nme = number2name(name, sizeof(name), ++be->remote);
 
 		l = rel2bin_args(be, rel->l, sa_list(sql->sa));
 		if (!l)
@@ -3661,7 +3660,6 @@ sql_parse(backend *be, sql_allocator *sa, const char *query, char mode)
 		sql_frame **frames = m->frames;
 		/* cascade list maybe removed */
 		list *cascade_action = m->cascade_action;
-		char *mquery = m->query;
 
 		strcpy(o->errstr, m->errstr);
 		*m = *o;
@@ -3672,7 +3670,6 @@ sql_parse(backend *be, sql_allocator *sa, const char *query, char mode)
 		m->frames = frames;
 		m->session->status = status;
 		m->cascade_action = cascade_action;
-		m->query = mquery;
 	}
 	_DELETE(o);
 	return sq;

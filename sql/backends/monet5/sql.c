@@ -117,21 +117,23 @@ rel_need_distinct_query(sql_rel *rel)
 }
 
 sql_rel *
-sql_symbol2relation(mvc *sql, symbol *sym)
+sql_symbol2relation(backend *be, symbol *sym)
 {
 	sql_rel *rel;
-	sql_query *query = query_create(sql);
+	sql_query *query = query_create(be->mvc);
+	lng Tbegin;
 
 	rel = rel_semantic(query, sym);
+	Tbegin = GDKusec();
 	if (rel)
-		rel = sql_processrelation(sql, rel, 1);
+		rel = sql_processrelation(be->mvc, rel, 1);
 	if (rel)
-		rel = rel_distribute(sql, rel);
+		rel = rel_distribute(be->mvc, rel);
 	if (rel)
-		rel = rel_partition(sql, rel);
+		rel = rel_partition(be->mvc, rel);
 	if (rel && (rel_no_mitosis(rel) || rel_need_distinct_query(rel)))
-		sql->no_mitosis = 1;
-
+		be->no_mitosis = 1;
+	be->reloptimizer += GDKusec() - Tbegin;
 	return rel;
 }
 
@@ -141,33 +143,33 @@ sql_symbol2relation(mvc *sql, symbol *sym)
  * the transaction as well, e.g. commit or rollback.
  */
 int
-sqlcleanup(mvc *c, int err)
+sqlcleanup(backend *be, int err)
 {
-	sql_destroy_params(c);
+	sql_destroy_params(be->mvc);
 
-	if ((c->emod & mod_locked) == mod_locked) {
+	if ((be->mvc->emod & mod_locked) == mod_locked) {
 		/* here we should commit the transaction */
 		if (!err) {
-			sql_trans_commit(c->session->tr);
+			sql_trans_commit(be->mvc->session->tr);
 			/* write changes to disk */
-			sql_trans_end(c->session, 1);
+			sql_trans_end(be->mvc->session, 1);
 			store_apply_deltas(true);
-			sql_trans_begin(c->session);
+			sql_trans_begin(be->mvc->session);
 		}
 		store_unlock();
-		c->emod = 0;
+		be->mvc->emod = 0;
 	}
 	/* some statements dynamically disable caching */
-	c->sym = NULL;
-	if (c->sa)
-		c->sa = sa_reset(c->sa);
+	be->mvc->sym = NULL;
+	if (be->mvc->sa)
+		be->mvc->sa = sa_reset(be->mvc->sa);
 	if (err >0)
-		c->session->status = -err;
+		be->mvc->session->status = -err;
 	if (err <0)
-		c->session->status = err;
-	c->label = 0;
-	c->no_mitosis = 0;
-	scanner_query_processed(&(c->scanner));
+		be->mvc->session->status = err;
+	be->mvc->label = 0;
+	be->no_mitosis = 0;
+	scanner_query_processed(&(be->mvc->scanner));
 	return err;
 }
 
@@ -835,8 +837,8 @@ mvc_next_value(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		throw(SQL, "sql.next_value", SQLSTATE(HY050) "Failed to fetch sequence %s.%s", sname, seqname);
 
 	if (seq_next_value(seq, res)) {
-		be->mvc->last_id = *res;
-		sqlvar_set_number(find_global_var(be->mvc, mvc_bind_schema(be->mvc, "sys"), "last_id"), be->mvc->last_id);
+		be->last_id = *res;
+		sqlvar_set_number(find_global_var(be->mvc, mvc_bind_schema(be->mvc, "sys"), "last_id"), be->last_id);
 		return MAL_SUCCEED;
 	}
 	throw(SQL, "sql.next_value", SQLSTATE(42000) "Error in fetching next value for sequence %s.%s", sname, seqname);
@@ -2479,18 +2481,16 @@ mvc_result_set_wrap( Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	int *digits, *scaledigits;
 	oid o = 0;
 	BATiter itertbl,iteratr,itertpe;
-	mvc *m = NULL;
+	backend *be = NULL;
 	BAT *b, *tbl, *atr, *tpe,*len,*scale;
 
-	if ((msg = getSQLContext(cntxt, mb, &m, NULL)) != NULL)
-		return msg;
-	if ((msg = checkSQLContext(cntxt)) != NULL)
+	if ((msg = getBackendContext(cntxt, &be)) != NULL)
 		return msg;
 	bid = *getArgReference_bat(stk,pci,6);
 	b = BATdescriptor(bid);
 	if ( b == NULL)
 		throw(MAL,"sql.resultset", SQLSTATE(HY005) "Cannot access column descriptor");
-	res = *res_id = mvc_result_table(m, mb->tag, pci->argc - (pci->retc + 5), Q_TABLE, b);
+	res = *res_id = mvc_result_table(be, mb->tag, pci->argc - (pci->retc + 5), Q_TABLE, b);
 	if (res < 0)
 		msg = createException(SQL, "sql.resultSet", SQLSTATE(45000) "Result table construction failed");
 	BBPunfix(b->batCacheid);
@@ -2517,7 +2517,7 @@ mvc_result_set_wrap( Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		b = BATdescriptor(bid);
 		if ( b == NULL)
 			msg= createException(MAL,"sql.resultset",SQLSTATE(HY005) "Cannot access column descriptor ");
-		else if (mvc_result_column(m, tblname, colname, tpename, *digits++, *scaledigits++, b))
+		else if (mvc_result_column(be, tblname, colname, tpename, *digits++, *scaledigits++, b))
 			msg = createException(SQL, "sql.resultset", SQLSTATE(42000) "Cannot access column descriptor %s.%s",tblname,colname);
 		if( b)
 			BBPunfix(bid);
@@ -2561,6 +2561,7 @@ mvc_export_table_wrap( Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	int *digits, *scaledigits;
 	oid o = 0;
 	BATiter itertbl,iteratr,itertpe;
+	backend *be;
 	mvc *m = NULL;
 	BAT *order = NULL, *b = NULL, *tbl = NULL, *atr = NULL, *tpe = NULL,*len = NULL,*scale = NULL;
 	res_table *t = NULL;
@@ -2570,8 +2571,9 @@ mvc_export_table_wrap( Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	(void) format;
 
-	if ((msg = getSQLContext(cntxt, mb, &m, NULL)) != NULL)
+	if ((msg = getBackendContext(cntxt, &be)) != NULL)
 		return msg;
+	m = be->mvc;
 
 	if (onclient && !cntxt->filetrans) {
 		throw(MAL, "sql.resultSet", "cannot transfer files to client");
@@ -2581,8 +2583,8 @@ mvc_export_table_wrap( Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	order = BATdescriptor(bid);
 	if ( order == NULL)
 		throw(MAL,"sql.resultset", SQLSTATE(HY005) "Cannot access column descriptor");
-	res = *res_id = mvc_result_table(m, mb->tag, pci->argc - (pci->retc + 12), Q_TABLE, order);
-	t = m->results;
+	res = *res_id = mvc_result_table(be, mb->tag, pci->argc - (pci->retc + 12), Q_TABLE, order);
+	t = be->results;
 	if (res < 0){
 		msg = createException(SQL, "sql.resultSet", SQLSTATE(45000) "Result set construction failed");
 		goto wrapup_result_set1;
@@ -2615,7 +2617,7 @@ mvc_export_table_wrap( Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		b = BATdescriptor(bid);
 		if ( b == NULL)
 			msg= createException(MAL,"sql.resultset",SQLSTATE(HY005) "Cannot access column descriptor");
-		else if (mvc_result_column(m, tblname, colname, tpename, *digits++, *scaledigits++, b))
+		else if (mvc_result_column(be, tblname, colname, tpename, *digits++, *scaledigits++, b))
 			msg = createException(SQL, "sql.resultset", SQLSTATE(42000) "Cannot access column descriptor %s.%s",tblname,colname);
 		if( b)
 			BBPunfix(bid);
@@ -2689,16 +2691,14 @@ mvc_row_result_wrap( Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	int *digits, *scaledigits;
 	oid o = 0;
 	BATiter itertbl,iteratr,itertpe;
-	mvc *m = NULL;
+	backend *be = NULL;
 	ptr v;
 	int mtype;
 	BAT  *tbl, *atr, *tpe,*len,*scale;
 
-	if ((msg = getSQLContext(cntxt, mb, &m, NULL)) != NULL)
+	if ((msg = getBackendContext(cntxt, &be)) != NULL)
 		return msg;
-	if ((msg = checkSQLContext(cntxt)) != NULL)
-		return msg;
-	res = *res_id = mvc_result_table(m, mb->tag, pci->argc - (pci->retc + 5), Q_TABLE, NULL);
+	res = *res_id = mvc_result_table(be, mb->tag, pci->argc - (pci->retc + 5), Q_TABLE, NULL);
 	if (res < 0)
 		throw(SQL, "sql.resultset", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 
@@ -2725,7 +2725,7 @@ mvc_row_result_wrap( Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		mtype = getArgType(mb, pci, i);
 		if (ATOMextern(mtype))
 			v = *(ptr *) v;
-		if (mvc_result_value(m, tblname, colname, tpename, *digits++, *scaledigits++, v, mtype))
+		if (mvc_result_value(be, tblname, colname, tpename, *digits++, *scaledigits++, v, mtype))
 			throw(SQL, "sql.rsColumn", SQLSTATE(45000) "Result set construction failed");
 	}
 	if (mvc_export_result(cntxt->sqlcontext, cntxt->fdout, res, true, mb->starttime, mb->optimize))
@@ -2765,6 +2765,7 @@ mvc_export_row_wrap( Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	int *digits, *scaledigits;
 	oid o = 0;
 	BATiter itertbl,iteratr,itertpe;
+	backend *be;
 	mvc *m = NULL;
 	res_table *t = NULL;
 	ptr v;
@@ -2775,17 +2776,16 @@ mvc_export_row_wrap( Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	ssize_t sz;
 
 	(void) format;
-	if ((msg = getSQLContext(cntxt, mb, &m, NULL)) != NULL)
+	if ((msg = getBackendContext(cntxt, &be)) != NULL)
 		return msg;
-	if ((msg = checkSQLContext(cntxt)) != NULL)
-		return msg;
+	m = be->mvc;
 	if (onclient && !cntxt->filetrans) {
 		throw(MAL, "sql.resultSet", "cannot transfer files to client");
 	}
 
-	res = *res_id = mvc_result_table(m, mb->tag, pci->argc - (pci->retc + 12), Q_TABLE, NULL);
+	res = *res_id = mvc_result_table(be, mb->tag, pci->argc - (pci->retc + 12), Q_TABLE, NULL);
 
-	t = m->results;
+	t = be->results;
 	if (res < 0){
 		msg = createException(SQL, "sql.resultSet", SQLSTATE(45000) "Result set construction failed");
 		goto wrapup_result_set;
@@ -2819,7 +2819,7 @@ mvc_export_row_wrap( Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		mtype = getArgType(mb, pci, i);
 		if (ATOMextern(mtype))
 			v = *(ptr *) v;
-		if (mvc_result_value(m, tblname, colname, tpename, *digits++, *scaledigits++, v, mtype))
+		if (mvc_result_value(be, tblname, colname, tpename, *digits++, *scaledigits++, v, mtype))
 			throw(SQL, "sql.rsColumn", SQLSTATE(45000) "Result set construction failed");
 	}
 	/* now select the file channel */
@@ -2879,7 +2879,7 @@ mvc_table_result_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	str res = MAL_SUCCEED;
 	BAT *order;
-	mvc *m = NULL;
+	backend *be = NULL;
 	str msg;
 	int *res_id;
 	int nr_cols;
@@ -2894,14 +2894,12 @@ mvc_table_result_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	qtype = (mapi_query_t) *getArgReference_int(stk, pci, 2);
 	order_bid = *getArgReference_bat(stk, pci, 3);
 
-	if ((msg = getSQLContext(cntxt, mb, &m, NULL)) != NULL)
-		return msg;
-	if ((msg = checkSQLContext(cntxt)) != NULL)
+	if ((msg = getBackendContext(cntxt, &be)) != NULL)
 		return msg;
 	if ((order = BATdescriptor(order_bid)) == NULL) {
 		throw(SQL, "sql.resultSet", SQLSTATE(HY005) "Cannot access column descriptor");
 	}
-	*res_id = mvc_result_table(m, mb->tag, nr_cols, qtype, order);
+	*res_id = mvc_result_table(be, mb->tag, nr_cols, qtype, order);
 	if (*res_id < 0)
 		res = createException(SQL, "sql.resultSet", SQLSTATE(45000) "Result set construction failed");
 	BBPunfix(order->batCacheid);
@@ -3036,24 +3034,23 @@ mvc_scalar_value_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	ptr p = getArgReference(stk, pci, 7);
 	int mtype = getArgType(mb, pci, 7);
 	str msg;
-	backend *b = NULL;
+	backend *be = NULL;
 	int res_id;
 	(void) mb;		/* NOT USED */
-	if ((msg = checkSQLContext(cntxt)) != NULL)
+	if ((msg = getBackendContext(cntxt, &be)) != NULL)
 		return msg;
-	b = cntxt->sqlcontext;
 	if (ATOMextern(mtype))
 		p = *(ptr *) p;
 
 	// scalar values are single-column result sets
-	if ((res_id = mvc_result_table(b->mvc, mb->tag, 1, Q_TABLE, NULL)) < 0)
+	if ((res_id = mvc_result_table(be, mb->tag, 1, Q_TABLE, NULL)) < 0)
 		throw(SQL, "sql.exportValue", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-	if (mvc_result_value(b->mvc, tn, cn, type, digits, scale, p, mtype))
+	if (mvc_result_value(be, tn, cn, type, digits, scale, p, mtype))
 		throw(SQL, "sql.exportValue", SQLSTATE(45000) "Result set construction failed");
-	if (b->output_format == OFMT_NONE) {
+	if (be->output_format == OFMT_NONE) {
 		return MAL_SUCCEED;
 	}
-	if (mvc_export_result(b, b->out, res_id, true, mb->starttime, mb->optimize) < 0) {
+	if (mvc_export_result(be, be->out, res_id, true, mb->starttime, mb->optimize) < 0) {
 		throw(SQL, "sql.exportValue", SQLSTATE(45000) "Result set construction failed");
 	}
 	mb->starttime = 0;

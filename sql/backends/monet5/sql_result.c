@@ -1411,7 +1411,7 @@ mvc_export_row(backend *b, stream *s, res_table *t, const char *btag, const char
 	_DELETE(buf);
 	if (ok)
 		ok = (mnstr_write(s, rsep, rseplen, 1) == 1);
-	m->results = res_tables_remove(m->results, t);
+	b->results = res_tables_remove(b->results, t);
 	return (ok) ? 0 : -1;
 }
 
@@ -2109,14 +2109,14 @@ mvc_export_affrows(backend *b, stream *s, lng val, str w, oid query_id, lng star
 	if (!s)
 		return 0;
 
-	m->rowcnt = val;
-	sqlvar_set_number(find_global_var(m, mvc_bind_schema(m, "sys"), "rowcnt"), m->rowcnt);
+	b->rowcnt = val;
+	sqlvar_set_number(find_global_var(m, mvc_bind_schema(m, "sys"), "rowcnt"), b->rowcnt);
 	if(GDKembedded())
 		return 0;
 	if (mnstr_write(s, "&2 ", 3, 1) != 1 ||
 	    !mvc_send_lng(s, val) ||
 	    mnstr_write(s, " ", 1, 1) != 1 ||
-	    !mvc_send_lng(s, m->last_id) ||
+	    !mvc_send_lng(s, b->last_id) ||
 	    mnstr_write(s, " ", 1, 1) != 1 ||
 	    !mvc_send_lng(s, (lng) query_id) ||
 	    mnstr_write(s, " ", 1, 1) != 1 ||
@@ -2124,7 +2124,7 @@ mvc_export_affrows(backend *b, stream *s, lng val, str w, oid query_id, lng star
 	    mnstr_write(s, " ", 1, 1) != 1 ||
 	    !mvc_send_lng(s, maloptimizer) ||
 	    mnstr_write(s, " ", 1, 1) != 1 ||
-	    !mvc_send_lng(s, m->Topt) ||
+	    !mvc_send_lng(s, b->reloptimizer) ||
 	    mnstr_write(s, "\n", 1, 1) != 1)
 		return -1;
 	if (mvc_export_warning(s, w) != 1)
@@ -2146,7 +2146,7 @@ mvc_export_head_prot10(backend *b, stream *s, int res_id, int only_header, int c
 	mvc *m = b->mvc;
 	size_t i = 0;
 	BUN count = 0;
-	res_table *t = res_tables_find(m->results, res_id);
+	res_table *t = res_tables_find(b->results, res_id);
 	int fres = 0;
 
 	if (!t || !s) {
@@ -2160,7 +2160,7 @@ mvc_export_head_prot10(backend *b, stream *s, int res_id, int only_header, int c
 		} else
 			count = 1;
 	}
-	m->rowcnt = count;
+	b->rowcnt = count;
 
 	// protocol 10 result sets start with "*\n" followed by the binary data:
 	// [tableid][queryid][rowcount][colcount][timezone]
@@ -2303,7 +2303,7 @@ mvc_export_head(backend *b, stream *s, int res_id, int only_header, int compute_
 	mvc *m = b->mvc;
 	int i, res = 0;
 	BUN count = 0;
-	res_table *t = res_tables_find(m->results, res_id);
+	res_table *t = res_tables_find(b->results, res_id);
 
 	if (!s || !t)
 		return 0;
@@ -2330,8 +2330,8 @@ mvc_export_head(backend *b, stream *s, int res_id, int only_header, int compute_
 			count = 1;
 		}
 	}
-	m->rowcnt = count;
-	sqlvar_set_number(find_global_var(m, mvc_bind_schema(m, "sys"), "rowcnt"), m->rowcnt);
+	b->rowcnt = count;
+	sqlvar_set_number(find_global_var(m, mvc_bind_schema(m, "sys"), "rowcnt"), b->rowcnt);
 	if (!mvc_send_lng(s, (lng) count) || mnstr_write(s, " ", 1, 1) != 1)
 		return -1;
 
@@ -2355,7 +2355,7 @@ mvc_export_head(backend *b, stream *s, int res_id, int only_header, int compute_
 	if (mnstr_write(s, " ", 1, 1) != 1 || !mvc_send_lng(s, maloptimizer))
 		return -1;
 
-	if (mnstr_write(s, " ", 1, 1) != 1 || !mvc_send_lng(s, m->Topt))
+	if (mnstr_write(s, " ", 1, 1) != 1 || !mvc_send_lng(s, b->reloptimizer))
 		return -1;
 
 	if (mnstr_write(s, "\n% ", 3, 1) != 1)
@@ -2424,7 +2424,7 @@ mvc_export_head(backend *b, stream *s, int res_id, int only_header, int compute_
 		if (mnstr_write(s, " # length\n", 10, 1) != 1)
 			return -1;
 	}
-	if (m->sizeheader) {
+	if (b->sizeheader) {
 		if (mnstr_write(s, "% ", 2, 1) != 1)
 			return -1;
 		for (i = 0; i < t->nr_cols; i++) {
@@ -2444,7 +2444,6 @@ mvc_export_head(backend *b, stream *s, int res_id, int only_header, int compute_
 static int
 mvc_export_file(backend *b, stream *s, res_table *t)
 {
-	mvc *m = b->mvc;
 	int res = 0;
 	BUN count;
 	BAT *order = NULL;
@@ -2459,7 +2458,7 @@ mvc_export_file(backend *b, stream *s, res_table *t)
 
 		res = mvc_export_table(b, s, t, order, 0, count, "", t->tsep, t->rsep, t->ssep, t->ns);
 		BBPunfix(order->batCacheid);
-		m->results = res_tables_remove(m->results, t);
+		b->results = res_tables_remove(b->results, t);
 	}
 	return res;
 }
@@ -2470,7 +2469,7 @@ mvc_export_result(backend *b, stream *s, int res_id, bool header, lng starttime,
 	mvc *m = b->mvc;
 	int clean = 0, res = 0;
 	BUN count;
-	res_table *t = res_tables_find(m->results, res_id);
+	res_table *t = res_tables_find(b->results, res_id);
 	BAT *order = NULL;
 	int json = (b->output_format == OFMT_JSON);
 
@@ -2528,7 +2527,7 @@ mvc_export_result(backend *b, stream *s, int res_id, bool header, lng starttime,
 	}
 	BBPunfix(order->batCacheid);
 	if (clean)
-		m->results = res_tables_remove(m->results, t);
+		b->results = res_tables_remove(b->results, t);
 
 	if (res > 0)
 		res = mvc_export_warning(s, "");
@@ -2539,9 +2538,8 @@ mvc_export_result(backend *b, stream *s, int res_id, bool header, lng starttime,
 int
 mvc_export_chunk(backend *b, stream *s, int res_id, BUN offset, BUN nr)
 {
-	mvc *m = b->mvc;
 	int res = 0;
-	res_table *t = res_tables_find(m->results, res_id);
+	res_table *t = res_tables_find(b->results, res_id);
 	BAT *order = NULL;
 	BUN cnt;
 
@@ -2591,10 +2589,10 @@ mvc_export_chunk(backend *b, stream *s, int res_id, BUN offset, BUN nr)
 
 
 int
-mvc_result_table(mvc *m, oid query_id, int nr_cols, mapi_query_t type, BAT *order)
+mvc_result_table(backend *be, oid query_id, int nr_cols, mapi_query_t type, BAT *order)
 {
-	res_table *t = res_table_create(m->session->tr, m->result_id++, query_id, nr_cols, type, m->results, order);
-	m->results = t;
+	res_table *t = res_table_create(be->mvc->session->tr, be->result_id++, query_id, nr_cols, type, be->results, order);
+	be->results = t;
 	if(t)
 		return t->id;
 	else
@@ -2602,15 +2600,15 @@ mvc_result_table(mvc *m, oid query_id, int nr_cols, mapi_query_t type, BAT *orde
 }
 
 int
-mvc_result_column(mvc *m, char *tn, char *name, char *typename, int digits, int scale, BAT *b)
+mvc_result_column(backend *be, char *tn, char *name, char *typename, int digits, int scale, BAT *b)
 {
 	/* return 0 on success, non-zero on failure */
-	return res_col_create(m->session->tr, m->results, tn, name, typename, digits, scale, TYPE_bat, b) == NULL;
+	return res_col_create(be->mvc->session->tr, be->results, tn, name, typename, digits, scale, TYPE_bat, b) == NULL;
 }
 
 int
-mvc_result_value(mvc *m, const char *tn, const char *name, const char *typename, int digits, int scale, ptr *p, int mtype)
+mvc_result_value(backend *be, const char *tn, const char *name, const char *typename, int digits, int scale, ptr *p, int mtype)
 {
 	/* return 0 on success, non-zero on failure */
-	return res_col_create(m->session->tr, m->results, tn, name, typename, digits, scale, mtype, p) == NULL;
+	return res_col_create(be->mvc->session->tr, be->results, tn, name, typename, digits, scale, mtype, p) == NULL;
 }

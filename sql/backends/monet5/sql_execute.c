@@ -206,7 +206,7 @@ SQLrun(Client c, mvc *m)
 		*m->errstr=0;
 		return msg;
 	}
-	MT_thread_setworking(m->query);
+	MT_thread_setworking(c->query);
 	// locate and inline the query template instruction
 	mb = copyMalBlk(c->curprg->def);
 	if (!mb) {
@@ -319,7 +319,7 @@ SQLstatementIntern(Client c, str *expr, str nme, bit execute, bit output, res_ta
 	sql_frame **frames;
 	list *global_vars;
 	buffer *b = NULL;
-	char *n = NULL, *mquery;
+	char *n = NULL;
 	bstream *bs = NULL;
 	stream *buf = NULL;
 	str msg = MAL_SUCCEED;
@@ -448,7 +448,7 @@ SQLstatementIntern(Client c, str *expr, str nme, bit execute, bit output, res_ta
 					msg = createException(PARSE, "SQLparser", SQLSTATE(42000) "%s", m->errstr);
 				*m->errstr = 0;
 			}
-			sqlcleanup(m, err);
+			sqlcleanup(sql, err);
 			execute = 0;
 			if (!err)
 				continue;
@@ -467,7 +467,7 @@ SQLstatementIntern(Client c, str *expr, str nme, bit execute, bit output, res_ta
 		}
 		oldvtop = c->curprg->def->vtop;
 		oldstop = c->curprg->def->stop;
-		r = sql_symbol2relation(m, m->sym);
+		r = sql_symbol2relation(sql, m->sym);
 #ifdef _SQL_COMPILE
 		mnstr_printf(c->fdout, "#SQLstatement:\n");
 #endif
@@ -479,7 +479,7 @@ SQLstatementIntern(Client c, str *expr, str nme, bit execute, bit output, res_ta
 					msg = createException(PARSE, "SQLparser", SQLSTATE(42000) "%s", m->errstr);
 			*m->errstr=0;
 			msg = handle_error(m, status, msg);
-			sqlcleanup(m, err);
+			sqlcleanup(sql, err);
 			/* restore the state */
 			MSresetInstructions(c->curprg->def, oldstop);
 			freeVariables(c, c->curprg->def, c->glb, oldvtop);
@@ -533,22 +533,22 @@ SQLstatementIntern(Client c, str *expr, str nme, bit execute, bit output, res_ta
 		be->depth--;
 		MSresetInstructions(c->curprg->def, oldstop);
 		freeVariables(c, c->curprg->def, NULL, oldvtop);
-		sqlcleanup(m, 0);
+		sqlcleanup(sql, 0);
 		if (!execute)
 			goto endofcompile;
 #ifdef _SQL_COMPILE
 		mnstr_printf(c->fdout, "#parse/execute result %d\n", err);
 #endif
 	}
-	if (m->results) {
+	if (sql->results) {
 		if (result) { /* return all results sets */
-			*result = m->results;
+			*result = sql->results;
 		} else {
-			if (m->results == o->results)
-				o->results = NULL;
-			res_tables_destroy(m->results);
+			if (sql->results == be->results)
+				be->results = NULL;
+			res_tables_destroy(sql->results);
 		}
-		m->results = NULL;
+		sql->results = NULL;
 	}
 /*
  * We are done; a MAL procedure resides in the cache.
@@ -573,7 +573,6 @@ endofcompile:
 	sizeframes = m->sizeframes;
 	topframes = m->topframes;
 	frames = m->frames;
-	mquery = m->query;
 	*m = *o;
 	_DELETE(o);
 	m->label = label;
@@ -583,7 +582,6 @@ endofcompile:
 	m->frames = frames;
 	m->session->status = status;
 	m->session->auto_commit = ac;
-	m->query = mquery;
 	if (inited)
 		SQLresetClient(c);
 	return msg;
@@ -597,7 +595,8 @@ SQLengineIntern(Client c, backend *be)
 	mvc *m = be->mvc;
 
 	if (oldlang == 'X') {	/* return directly from X-commands */
-		sqlcleanup(be->mvc, 0);
+		sqlcleanup(be, 0);
+		c->query = NULL;
 		return MAL_SUCCEED;
 	}
 
@@ -612,7 +611,8 @@ SQLengineIntern(Client c, backend *be)
 			}
 			goto cleanup_engine;
 		}
-		sqlcleanup(be->mvc, 0);
+		sqlcleanup(be, 0);
+		c->query = NULL;
 		return MAL_SUCCEED;
 	}
 
@@ -654,7 +654,7 @@ cleanup_engine:
 		qc_delete(m->qc, be->q);
 	}
 	be->q = NULL;
-	sqlcleanup(be->mvc, (!msg) ? 0 : -1);
+	sqlcleanup(be, (!msg) ? 0 : -1);
 	MSresetInstructions(c->curprg->def, 1);
 	freeVariables(c, c->curprg->def, NULL, be->vtop);
 	be->language = oldlang;
@@ -767,7 +767,7 @@ RAstatement2(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (!m->sa)
 		m->sa = sa_create();
 	if (!m->sa) {
-		sqlcleanup(m, 0);
+		sqlcleanup(be, 0);
 		return createException(SQL,"RAstatement2",SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
 
@@ -775,7 +775,7 @@ RAstatement2(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	snprintf(buf, BUFSIZ, "%s %s", sig, expr);
 
 	if (!stack_push_frame(m, NULL)) {
-		sqlcleanup(m, 0);
+		sqlcleanup(be, 0);
 		return createException(SQL,"RAstatement2",SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
 	ops = sa_list(m->sa);
@@ -797,7 +797,7 @@ RAstatement2(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		*p++ = 0;
 		tnme = sa_strdup(m->sa, tnme);
 		if (!tnme) {
-			sqlcleanup(m, 0);
+			sqlcleanup(be, 0);
 			return createException(SQL,"RAstatement2",SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		}
 		d = strtol(p, &p, 10);
@@ -814,12 +814,12 @@ RAstatement2(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		if (nr >= 0) {
 			append(ops, exp_atom_ref(m->sa, nr, &t));
 			//if (!sql_set_arg(m, nr, a)) {
-			//	sqlcleanup(m, 0);
+			//	sqlcleanup(be, 0);
 			//	return createException(SQL,"RAstatement2",SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			//}
 		} else {
 			if (!push_global_var(m, "sys", vnme+1, &t)) {
-				sqlcleanup(m, 0);
+				sqlcleanup(be, 0);
 				return createException(SQL,"RAstatement2",SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			}
 			append(ops, exp_var(m->sa, NULL, sa_strdup(m->sa, vnme+1), &t, 0));
@@ -867,6 +867,6 @@ RAstatement2(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (!msg && monet5_create_relational_function(m, mod, nme, rel, NULL, ops, 0) < 0)
 		msg = createException(SQL, "RAstatement2", "%s", m->errstr);
 	rel_destroy(rel);
-	sqlcleanup(m, 0);
+	sqlcleanup(be, 0);
 	return msg;
 }

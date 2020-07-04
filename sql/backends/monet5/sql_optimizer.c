@@ -186,7 +186,7 @@ addOptimizers(Client c, MalBlkPtr mb, char *pipe, int prepare)
 		return msg;
 	}
 	mb->keephistory |= be->mvc->emod & mod_debug;
-	if (be->mvc->no_mitosis) {
+	if (be->no_mitosis) {
 		for (i = mb->stop - 1; i > 0; i--) {
 			q = getInstrPtr(mb, i);
 			if (q->token == ENDsymbol)

@@ -104,8 +104,6 @@ typedef struct sql_frame {
 	int frame_number;
 } sql_frame;
 
-#define MAXSTATS 8
-
 typedef struct mvc {
 	char errstr[ERRSIZE];
 
@@ -138,21 +136,12 @@ typedef struct mvc {
 
 	sql_session *session;
 
+	/* per query context */
 	mapi_query_t type;	/* query type */
+
+	/* during query needed flags */
 	unsigned int label;	/* numbers for relational projection labels */
 	list *cascade_action;  /* protection against recursive cascade actions */
-
-	lng last_id;
-	lng rowcnt;
-	int no_mitosis;		/* run query without mitosis */
-	int remote;
-
-	int result_id;
-	res_table *results;
-	char *query;		/* string, identify whatever we're working on */
-
-	bool sizeheader;	/* print size header in result set */
-	lng Topt;		/* timer for optimizer phase */
 } mvc;
 
 extern sql_table *mvc_init_create_view(mvc *sql, sql_schema *s, const char *name, const char *query);

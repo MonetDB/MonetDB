@@ -297,12 +297,12 @@ monetdbe_query_internal(monetdbe_database_internal *mdbe, char* query, monetdbe_
 	assert(language);
 	b->language = language;
 	b->output_format = OFMT_NONE;
+	b->no_mitosis = 0;
 	m->user_id = m->role_id = USER_MONETDB;
 	m->errstr[0] = '\0';
 	m->params = NULL;
 	m->sym = NULL;
 	m->label = 0;
-	m->no_mitosis = 0;
 	if (m->sa)
 		m->sa = sa_reset(m->sa);
 	m->scanner.mode = LINE_N;
@@ -320,8 +320,8 @@ monetdbe_query_internal(monetdbe_database_internal *mdbe, char* query, monetdbe_
 	c->fdout = NULL;
 	if ((mdbe->msg = SQLengine(c)) != MAL_SUCCEED)
 		goto cleanup;
-	if (!m->results && m->rowcnt >= 0 && affected_rows)
-		*affected_rows = m->rowcnt;
+	if (!b->results && b->rowcnt >= 0 && affected_rows)
+		*affected_rows = b->rowcnt;
 
 	if (result) {
 		if (!(res_internal = GDKzalloc(sizeof(monetdbe_result_internal)))) {
@@ -331,18 +331,18 @@ monetdbe_query_internal(monetdbe_database_internal *mdbe, char* query, monetdbe_
 		if (m->emode & m_prepare)
 			res_internal->type = Q_PREPARE;
 		else
-			res_internal->type = (m->results) ? m->results->query_type : m->type;
-		res_internal->res.last_id = m->last_id;
+			res_internal->type = (b->results) ? b->results->query_type : m->type;
+		res_internal->res.last_id = b->last_id;
 		res_internal->mdbe = mdbe;
 		*result = (monetdbe_result*) res_internal;
 		m->reply_size = -2; /* do not clean up result tables */
 
-		if (m->results) {
-			res_internal->res.ncols = (size_t) m->results->nr_cols;
-			res_internal->monetdbe_resultset = m->results;
-			if (m->results->nr_cols > 0)
-				res_internal->res.nrows = m->results->nr_rows;
-			m->results = NULL;
+		if (b->results) {
+			res_internal->res.ncols = (size_t) b->results->nr_cols;
+			res_internal->monetdbe_resultset = b->results;
+			if (b->results->nr_cols > 0)
+				res_internal->res.nrows = b->results->nr_rows;
+			b->results = NULL;
 			res_internal->converted_columns = GDKzalloc(sizeof(monetdbe_column*) * res_internal->res.ncols);
 			if (!res_internal->converted_columns) {
 				mdbe->msg = createException(MAL, "monetdbe.monetdbe_query_internal", MAL_MALLOC_FAIL);
@@ -833,7 +833,8 @@ monetdbe_execute(monetdbe_statement *stmt, monetdbe_result **result, monetdbe_cn
 {
 	monetdbe_result_internal *res_internal = NULL;
 	monetdbe_stmt_internal *stmt_internal = (monetdbe_stmt_internal*)stmt;
-	mvc *m = ((backend *) stmt_internal->mdbe->c->sqlcontext)->mvc;
+	backend *b = (backend *) stmt_internal->mdbe->c->sqlcontext;
+	mvc *m = b->mvc;
 	monetdbe_database_internal *mdbe = stmt_internal->mdbe;
 	//cq *q = stmt_internal->q;
 
@@ -849,26 +850,26 @@ monetdbe_execute(monetdbe_statement *stmt, monetdbe_result **result, monetdbe_cn
 	//Symbol s = (Symbol)q->code;
 	//mdbe->msg = callMAL(mdbe->c, s->def, &glb, stmt_internal->args, 0);
 
-	if (!m->results && m->rowcnt >= 0 && affected_rows)
-		*affected_rows = m->rowcnt;
+	if (!b->results && b->rowcnt >= 0 && affected_rows)
+		*affected_rows = b->rowcnt;
 
 	if (result) {
 		if (!(res_internal = GDKzalloc(sizeof(monetdbe_result_internal)))) {
 			mdbe->msg = createException(MAL, "monetdbe.monetdbe_query_internal", MAL_MALLOC_FAIL);
 			goto cleanup;
 		}
-		res_internal->type = (m->results) ? Q_TABLE : Q_UPDATE;
-		res_internal->res.last_id = m->last_id;
+		res_internal->type = (b->results) ? Q_TABLE : Q_UPDATE;
+		res_internal->res.last_id = b->last_id;
 		res_internal->mdbe = stmt_internal->mdbe;
 		*result = (monetdbe_result*) res_internal;
 		m->reply_size = -2; /* do not clean up result tables */
 
-		if (m->results) {
-			res_internal->res.ncols = (size_t) m->results->nr_cols;
-			res_internal->monetdbe_resultset = m->results;
-			if (m->results->nr_cols > 0)
-				res_internal->res.nrows = m->results->nr_rows;
-			m->results = NULL;
+		if (b->results) {
+			res_internal->res.ncols = (size_t) b->results->nr_cols;
+			res_internal->monetdbe_resultset = b->results;
+			if (b->results->nr_cols > 0)
+				res_internal->res.nrows = b->results->nr_rows;
+			b->results = NULL;
 			res_internal->converted_columns = GDKzalloc(sizeof(monetdbe_column*) * res_internal->res.ncols);
 			if (!res_internal->converted_columns) {
 				mdbe->msg = createException(MAL, "monetdbe.monetdbe_query_internal", MAL_MALLOC_FAIL);

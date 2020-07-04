@@ -160,9 +160,6 @@ mvc_init(int debug, store_type store, int ro, int su)
 		return -1;
 	}
 
-	/* disable size header */
-	m->sizeheader = false;
-
 	if (first || catalog_version) {
 		sqlid tid = 0, cid = 0;
 		struct view_t tview[10] = {
@@ -638,9 +635,7 @@ mvc_commit(mvc *m, int chain, const char *name, bool enabling_auto_commit)
 			return msg;
 		}
 		TRC_INFO(SQL_TRANS,
-			"Commit done (no changes)%s%.200s\n",
-			m->query ? ", query: " : "",
-			m->query ? m->query : "");
+			"Commit done (no changes)\n");
 		return msg;
 	}
 
@@ -678,9 +673,7 @@ mvc_commit(mvc *m, int chain, const char *name, bool enabling_auto_commit)
 	store_unlock();
 	m->type = Q_TRANS;
 	TRC_INFO(SQL_TRANS,
-		"Commit done%s%.200s\n",
-		m->query ? ", query: " : "",
-		m->query ? m->query : "");
+		"Commit done\n");
 	return msg;
 }
 
@@ -737,11 +730,9 @@ mvc_rollback(mvc *m, int chain, const char *name, bool disabling_auto_commit)
 	}
 	m->type = Q_TRANS;
 	TRC_INFO(SQL_TRANS,
-		"Commit%s%s rolled back%s%s%.200s\n",
+		"Commit%s%s rolled back%s\n",
 		name ? " " : "", name ? name : "",
-		tr->wtime == 0 ? " (no changes)" : "",
-		m->query ? ", query: " : "",
-		m->query ? m->query : "");
+		tr->wtime == 0 ? " (no changes)" : "");
 	return msg;
 }
 
@@ -833,8 +824,7 @@ mvc_create(int clientid, int debug, bstream *rs, stream *ws)
 	}
 	m->sym = NULL;
 
-	m->Topt = 0;
-	m->rowcnt = m->last_id = m->role_id = m->user_id = -1;
+	m->role_id = m->user_id = -1;
 	m->timezone = 0;
 	m->clientid = clientid;
 
@@ -844,7 +834,6 @@ mvc_create(int clientid, int debug, bstream *rs, stream *ws)
 	m->debug = debug;
 
 	m->label = 0;
-	m->remote = 0;
 	m->cascade_action = NULL;
 
 	store_lock();
@@ -859,9 +848,6 @@ mvc_create(int clientid, int debug, bstream *rs, stream *ws)
 	}
 
 	m->type = Q_PARSE;
-
-	m->result_id = 0;
-	m->results = NULL;
 
 	scanner_init(&m->scanner, rs, ws);
 	return m;
@@ -901,8 +887,7 @@ mvc_reset(mvc *m, bstream *rs, stream *ws, int debug)
 	m->frame = 0;
 	m->sym = NULL;
 
-	m->Topt = 0;
-	m->rowcnt = m->last_id = m->role_id = m->user_id = -1;
+	m->role_id = m->user_id = -1;
 	m->emode = m_normal;
 	m->emod = mod_none;
 	if (m->reply_size != 100)
@@ -916,12 +901,8 @@ mvc_reset(mvc *m, bstream *rs, stream *ws, int debug)
 	m->debug = debug;
 
 	m->label = 0;
-	m->remote = 0;
 	m->cascade_action = NULL;
 	m->type = Q_PARSE;
-
-	m->result_id = 0;
-	m->results = NULL;
 
 	scanner_init(&m->scanner, rs, ws);
 	return res;
@@ -959,7 +940,6 @@ mvc_destroy(mvc *m)
 		qc_destroy(m->qc);
 	m->qc = NULL;
 
-	_DELETE(m->query);
 	_DELETE(m);
 }
 

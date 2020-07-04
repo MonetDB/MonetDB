@@ -67,8 +67,8 @@ init_global_variables(mvc *sql)
 	SQLglobal(sname, "current_timezone", &sec);
 
 	sql_find_subtype(&ctype, "bigint", 0, 0);
-	SQLglobal(sname, "last_id", &sql->last_id);
-	SQLglobal(sname, "rowcnt", &sql->rowcnt);
+	SQLglobal(sname, "last_id", &sec);
+	SQLglobal(sname, "rowcnt", &sec);
 
 	/* Use hash lookup for global variables. With 9 variables in total it's worth to hash instead of */
 	if (!(sql->global_vars->ht = hash_new(NULL, list_length(sql->global_vars), (fkeyvalue)&var_key)))
