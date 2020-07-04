@@ -213,7 +213,7 @@ char* control_send(
 #endif
 					NULL
 				};
-				char **algs = algsv;
+				(void)algsv;
 
 				/* buf at this point looks like
 				 * "challenge:servertype:protover:algos:endian:hash:" */
@@ -308,13 +308,14 @@ char* control_send(
 				} else
 #endif
 				{
+					(void)phash;
 					snprintf(sbuf, sizeof(sbuf), "cannot connect: "
 							"monetdbd server requires unknown hash: %s", shash);
 					close_stream(fdout);
 					close_stream(fdin);
 					return(strdup(sbuf));
 				}
-
+#if defined(HAVE_RIPEMD160_UPDATE) || defined(HAVE_SHA512_UPDATE) || defined(HAVE_SHA384_UPDATE) || defined(HAVE_SHA256_UPDATE) || defined(HAVE_SHA224_UPDATE) || defined(HAVE_SHA1_UPDATE)
 				if (!phash) {
 					snprintf(sbuf, sizeof(sbuf), "cannot connect: "
 							"allocation failure while establishing connection");
@@ -325,6 +326,7 @@ char* control_send(
 
 				/* now hash the password hash with the provided
 				 * challenge */
+				char **algs = algsv;
 				for (; *algs != NULL; algs++) {
 					/* TODO: make this actually obey the separation by
 					 * commas, and only allow full matches */
@@ -349,6 +351,7 @@ char* control_send(
 					close_stream(fdin);
 					return(strdup(sbuf));
 				}
+#endif
 			}
 		}
 
