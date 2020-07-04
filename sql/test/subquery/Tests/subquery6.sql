@@ -63,6 +63,12 @@ SELECT ColID FROM tbl_ProductSales WHERE CASE WHEN ColID IS NULL THEN CAST(Produ
 	-- 3
 	-- 4
 
+SELECT COALESCE(ColID, CAST(Product_Category AS INT)) FROM tbl_ProductSales;
+	-- 1
+	-- 2
+	-- 3
+	-- 4
+
 SELECT CAST(SUM((SELECT col1)) AS BIGINT) FROM another_t;
 	-- 1234
 

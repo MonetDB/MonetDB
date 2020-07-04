@@ -582,8 +582,26 @@ end user.s32_0;
 #deadcode             actions= 0 time=14 usec 
 #postfix              actions= 0 time=8 usec 
 #wlc                  actions= 0 time=1 usec 
-#garbagecollector     actions= 1 time=57 usec 
-#total                actions=29 time=579 usec 
+#garbagecollector     actions= 1 time=64 usec 
+#total                actions=29 time=621 usec 
+#PLAN SELECT 1 FROM another_t WHERE (col1 >= 1 AND col1 <= 2) OR col2 IS NULL;
+% .plan # table_name
+% rel # name
+% clob # type
+% 98 # length
+project (
+| select (
+| | table(sys.another_t) [ "another_t"."col1", "another_t"."col2" ] COUNT 
+| ) [ (int "1" <= "another_t"."col1" <= int "2" BETWEEN ) or ("another_t"."col2" * = int "NULL") ]
+) [ tinyint "1" ]
+#PLAN SELECT (col1 >= 1 AND col1 <= 2) OR col2 IS NULL FROM another_t;
+% .plan # table_name
+% rel # name
+% clob # type
+% 187 # length
+project (
+| table(sys.another_t) [ "another_t"."col1", "another_t"."col2" ] COUNT 
+) [ sys.or(sys.between("another_t"."col1", int "1", int "2", boolean "false", boolean "true", boolean "true", boolean "false", boolean "false"), sys.isnull("another_t"."col2") NOT NULL) ]
 #rollback;
 
 # 11:57:38 >  

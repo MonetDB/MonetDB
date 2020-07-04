@@ -62,6 +62,15 @@ stdout of test 'subquery6` in directory 'sql/test/subquery` itself:
 [ 2	]
 [ 3	]
 [ 4	]
+#SELECT COALESCE(ColID, CAST(Product_Category AS INT)) FROM tbl_ProductSales;
+% sys.%2 # table_name
+% %2 # name
+% int # type
+% 1 # length
+[ 1	]
+[ 2	]
+[ 3	]
+[ 4	]
 #SELECT CAST(SUM((SELECT col1)) AS BIGINT) FROM another_t;
 % sys.%3 # table_name
 % %3 # name
@@ -75,7 +84,7 @@ stdout of test 'subquery6` in directory 'sql/test/subquery` itself:
 % 4 # length
 [ 3702	]
 #SELECT CAST(SUM((SELECT CAST(EXISTS(SELECT col1) AS INT))) AS BIGINT) FROM another_t;
-% sys.%4 # table_name
+% .%4 # table_name
 % %4 # name
 % bigint # type
 % 1 # length
