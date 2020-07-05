@@ -69,7 +69,7 @@ end user.main;
 % .explain # table_name
 % mal # name
 % clob # type
-% 114 # length
+% 126 # length
 function user.main():void;
     X_1:void := querylog.define("explain select id from v0 order by id;":str, "sequential_pipe":str, 21:int);
     X_30:bat[:str] := bat.pack("sys.v0":str);

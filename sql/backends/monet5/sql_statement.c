@@ -1274,7 +1274,7 @@ stmt *
 stmt_atom(backend *be, atom *a)
 {
 	MalBlkPtr mb = be->mb;
-	InstrPtr q = newStmt(mb, calcRef, atom_type(a)->type->base.name);
+	InstrPtr q = EC_TEMP_FRAC(atom_type(a)->type->eclass) ? newStmt(mb, calcRef, atom_type(a)->type->base.name) : newAssignment(mb);
 
 	if (!q)
 		return NULL;
@@ -1282,11 +1282,10 @@ stmt_atom(backend *be, atom *a)
 		q = pushNil(mb, q, atom_type(a)->type->localtype);
 	} else {
 		int k;
-		if((k = constantAtom(be, mb, a)) == -1) {
+		if ((k = constantAtom(be, mb, a)) == -1) {
 			freeInstruction(q);
 			return NULL;
 		}
-
 		q = pushArgument(mb, q, k);
 	}
 	/* digits of the result timestamp/daytime */
