@@ -2489,5 +2489,9 @@ cleanup:
    	newComment(mb,buf);
 	if( actions > 0)
 		addtoMalBlkHistory(mb);
+	if( bailout){
+		snprintf(buf,256,"Merge table bailout");
+		newComment(mb,buf);
+	}
 	return msg;
 }

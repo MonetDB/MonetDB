@@ -80,13 +80,13 @@ OPTgarbageCollectorImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, Ins
 		p->typechk = TYPE_UNKNOWN;
 		/* Set the program counter to ease profiling */
 		p->pc = i;
-		for( j=0; j< p->retc; j++)
 		if ( i > 0 && getModuleId(p) != languageRef && getModuleId(p) != querylogRef && getModuleId(p) != sqlRef && !p->barrier)
-			used[getArg(p,j)] = i;
-		for( ; j< p->argc; j++)
+			for( j=0; j< p->retc; j++)
+				used[getArg(p,j)] = i;
 		if ( getModuleId(p) != languageRef && getFunctionId(p) != passRef){
-			used[getArg(p,j)] = 0;
-		}
+			for(j= p->retc ; j< p->argc; j++)
+				used[getArg(p,j)] = 0;
+			}
 		if ( p->token == ENDsymbol)
 			break;
 	}
