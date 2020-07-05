@@ -481,7 +481,6 @@ column_options(sql_query *query, dlist *opt_list, sql_schema *ss, sql_table *t, 
 						return SQL_ERR;
 					} else {
 						mvc_default(sql, cs, r);
-						_DELETE(r);
 					}
 				} 	break;
 				case SQL_NOT_NULL:
