@@ -266,13 +266,12 @@ bootstrap_partition_expression(mvc *sql, sql_allocator *rsa, sql_table *mt, int 
 	sql_ec = mt->part.pexp->type.type->eclass;
 	if (!(sql_ec == EC_BIT || EC_VARCHAR(sql_ec) || EC_TEMP(sql_ec) || sql_ec == EC_POS || sql_ec == EC_NUM ||
 		 EC_INTERVAL(sql_ec)|| sql_ec == EC_DEC || sql_ec == EC_BLOB)) {
-		char *err = sql_subtype_string(&(mt->part.pexp->type));
+		char *err = sql_subtype_string(sql->ta, &(mt->part.pexp->type));
 		if (!err) {
 			throw(SQL, "sql.partition", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		} else {
 			msg = createException(SQL, "sql.partition",
 								  SQLSTATE(42000) "Column type %s not supported for the expression return value", err);
-			GDKfree(err);
 		}
 	}
 

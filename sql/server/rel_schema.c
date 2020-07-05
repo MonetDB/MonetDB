@@ -797,11 +797,9 @@ table_element(sql_query *query, symbol *s, sql_schema *ss, sql_table *t, int alt
 		r = symbol2string(sql, sym, 0, &err);
 		if (!r) {
 			(void) sql_error(sql, 02, SQLSTATE(42000) "%s: incorrect default value '%s'\n", action, err?err:"");
-			if (err) _DELETE(err);
 			return SQL_ERR;
 		}
 		mvc_default(sql, c, r);
-		_DELETE(r);
 	}
 	break;
 	case SQL_STORAGE:
@@ -971,12 +969,11 @@ create_partition_definition(mvc *sql, sql_table *t, symbol *partition_def)
 			sql_ec = t->part.pcol->type.type->eclass;
 			if (!(sql_ec == EC_BIT || EC_VARCHAR(sql_ec) || EC_TEMP(sql_ec) || sql_ec == EC_POS || sql_ec == EC_NUM ||
 				 EC_INTERVAL(sql_ec)|| sql_ec == EC_DEC || sql_ec == EC_BLOB)) {
-				err = sql_subtype_string(&(t->part.pcol->type));
+				err = sql_subtype_string(sql->ta, &(t->part.pcol->type));
 				if (!err) {
 					sql_error(sql, 02, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 				} else {
 					sql_error(sql, 02, SQLSTATE(42000) "CREATE MERGE TABLE: column type %s not yet supported for the partition column", err);
-					GDKfree(err);
 				}
 				return SQL_ERR;
 			}
@@ -984,13 +981,11 @@ create_partition_definition(mvc *sql, sql_table *t, symbol *partition_def)
 			char *query = symbol2string(sql, list2->h->data.sym, 1, &err);
 			if (!query) {
 				(void) sql_error(sql, 02, SQLSTATE(42000) "CREATE MERGE TABLE: error compiling expression '%s'", err?err:"");
-				if (err) _DELETE(err);
 				return SQL_ERR;
 			}
 			t->part.pexp = SA_ZNEW(sql->sa, sql_expression);
-			t->part.pexp->exp = sa_strdup(sql->sa, query);
+			t->part.pexp->exp = query;
 			t->part.pexp->type = *sql_bind_localtype("void");
-			_DELETE(query);
 		}
 	}
 	return SQL_OK;

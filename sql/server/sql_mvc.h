@@ -107,7 +107,7 @@ typedef struct sql_frame {
 typedef struct mvc {
 	char errstr[ERRSIZE];
 
-	sql_allocator *sa;
+	sql_allocator *sa, *ta, *pa;
 
 	struct scanner scanner;
 
@@ -145,12 +145,12 @@ typedef struct mvc {
 } mvc;
 
 extern sql_table *mvc_init_create_view(mvc *sql, sql_schema *s, const char *name, const char *query);
-extern int mvc_init(int debug, store_type store, int ro, int su);
+extern int mvc_init(sql_allocator *pa, int debug, store_type store, int ro, int su);
 extern void mvc_exit(void);
 extern void mvc_logmanager(void);
 extern void mvc_idlemanager(void);
 
-extern mvc *mvc_create(int clientid, int debug, bstream *rs, stream *ws);
+extern mvc *mvc_create(sql_allocator *pa, int clientid, int debug, bstream *rs, stream *ws);
 extern int mvc_reset(mvc *m, bstream *rs, stream *ws, int debug);
 extern void mvc_destroy(mvc *c);
 

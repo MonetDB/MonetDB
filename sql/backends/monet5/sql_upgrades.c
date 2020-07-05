@@ -1656,7 +1656,7 @@ sql_update_nov2019_missing_dependencies(Client c, mvc *sql)
 	if (buf == NULL)
 		throw(SQL, __func__, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 
-	if (!(sql->sa = sa_create())) {
+	if (!(sql->sa = sa_create(sql->pa))) {
 		err = createException(SQL, "sql.catalog", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		goto bailout;
 	}

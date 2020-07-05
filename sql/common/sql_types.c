@@ -281,21 +281,6 @@ sql_bind_subtype(sql_allocator *sa, const char *name, unsigned int digits, unsig
 	return res;
 }
 
-char *
-sql_subtype_string(sql_subtype *t)
-{
-	char buf[BUFSIZ];
-
-	if (t->digits && t->scale)
-		snprintf(buf, BUFSIZ, "%s(%u,%u)", t->type->sqlname, t->digits, t->scale);
-	else if (t->digits && t->type->radix != 2)
-		snprintf(buf, BUFSIZ, "%s(%u)", t->type->sqlname, t->digits);
-
-	else
-		snprintf(buf, BUFSIZ, "%s", t->type->sqlname);
-	return _STRDUP(buf);
-}
-
 sql_subtype *
 sql_bind_localtype(const char *name)
 {
@@ -395,25 +380,21 @@ is_subtypeof(sql_subtype *sub, sql_subtype *super)
 }
 
 char *
-subtype2string(sql_subtype *t)
+sql_subtype_string(sql_allocator *sa, sql_subtype *t)
 {
 	char buf[BUFSIZ];
 
-	if (t->digits > 0) {
-		if (t->scale > 0)
-			snprintf(buf, BUFSIZ, "%s(%u,%u)",
-				t->type->sqlname, t->digits, t->scale);
-		else
-			snprintf(buf, BUFSIZ, "%s(%u)",
-				t->type->sqlname, t->digits);
-	} else {
+	if (t->digits && t->scale)
+		snprintf(buf, BUFSIZ, "%s(%u,%u)", t->type->sqlname, t->digits, t->scale);
+	else if (t->digits && t->type->radix != 2)
+		snprintf(buf, BUFSIZ, "%s(%u)", t->type->sqlname, t->digits);
+	else
 		snprintf(buf, BUFSIZ, "%s", t->type->sqlname);
-	}
-	return _STRDUP(buf);
+	return sa_strdup(sa, buf);
 }
 
 char *
-subtype2string2(sql_subtype *tpe) /* distinguish char(n), decimal(n,m) from other SQL types */
+subtype2string2(sql_allocator *sa, sql_subtype *tpe) /* distinguish char(n), decimal(n,m) from other SQL types */
 {
 	char buf[BUFSIZ];
 
@@ -427,11 +408,11 @@ subtype2string2(sql_subtype *tpe) /* distinguish char(n), decimal(n,m) from othe
 		case EC_CHAR:
 		case EC_STRING:
 		case EC_DEC:
-			return subtype2string(tpe);
+			return sql_subtype_string(sa, tpe);
 		default:
 			snprintf(buf, BUFSIZ, "%s", tpe->type->sqlname);
 	}
-	return _STRDUP(buf);
+	return sa_strdup(sa, buf);
 }
 
 int

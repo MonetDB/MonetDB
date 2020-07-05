@@ -49,7 +49,7 @@ extern atom *atom_dup( sql_allocator *sa, atom *a);
 extern int atom_cast(sql_allocator *sa, atom *a, sql_subtype *tp);
 
 extern char *atom2string(sql_allocator *sa, atom *a);
-extern char *atom2sql(atom *a);
+extern char *atom2sql(sql_allocator *sa, atom *a);
 extern sql_subtype *atom_type(atom *a);
 extern void atom_set_type(atom *a, sql_subtype *t);
 

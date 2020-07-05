@@ -890,19 +890,15 @@ rel_create_func(sql_query *query, dlist *qname, dlist *params, symbol *res, dlis
 				node *n;
 
 				for (n = type_list->h; n; n = n->next) {
-					char *tpe =  subtype2string((sql_subtype *) n->data);
+					char *tpe =  sql_subtype_string(sql->ta, (sql_subtype *) n->data);
 
 					if (arg_list) {
-						char *t = arg_list;
-						arg_list = sql_message("%s, %s", arg_list, tpe);
-						_DELETE(t);
-						_DELETE(tpe);
+						arg_list = sa_message(sql->ta, "%s, %s", arg_list, tpe);
 					} else {
 						arg_list = tpe;
 					}
 				}
 				(void)sql_error(sql, 02, SQLSTATE(42000) "CREATE %s: name '%s' (%s) already in use", F, fname, arg_list ? arg_list : "");
-				_DELETE(arg_list);
 				list_destroy(type_list);
 				return NULL;
 			} else {
@@ -1116,13 +1112,10 @@ resolve_func( mvc *sql, sql_schema *s, const char *name, dlist *typelist, sql_ft
 
 			if (type_list->cnt > 0) {
 				for (n = type_list->h; n; n = n->next) {
-					char *tpe =  subtype2string((sql_subtype *) n->data);
+					char *tpe =  sql_subtype_string(sql->ta, (sql_subtype *) n->data);
 
 					if (arg_list) {
-						char *t = arg_list;
-						arg_list = sql_message("%s, %s", arg_list, tpe);
-						_DELETE(tpe);
-						_DELETE(t);
+						arg_list = sa_message(sql->ta, "%s, %s", arg_list, tpe);
 					} else {
 						arg_list = tpe;
 					}
@@ -1131,7 +1124,6 @@ resolve_func( mvc *sql, sql_schema *s, const char *name, dlist *typelist, sql_ft
 				list_destroy(type_list);
 				if(!if_exists)
 					e = sql_error(sql, 02, SQLSTATE(42000) "%s %s: no such %s '%s' (%s)", op, F, fn, name, arg_list);
-				_DELETE(arg_list);
 				return e;
 			}
 			list_destroy(list_func);

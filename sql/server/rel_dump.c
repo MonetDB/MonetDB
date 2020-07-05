@@ -99,13 +99,12 @@ exp_print(mvc *sql, stream *fout, sql_exp *e, int depth, list *refs, int comma, 
 		} else if (e->flag & PSM_VAR) {
 			// todo output table def (from e->f)
 			const char *rname = exp_relname(e);
-			char *type_str = e->f ? NULL : sql_subtype_string(exp_subtype(e));
+			char *type_str = e->f ? NULL : sql_subtype_string(sql->ta, exp_subtype(e));
 			int level = GET_PSM_LEVEL(e->flag);
 			mnstr_printf(fout, "declare ");
 			if (rname)
 				mnstr_printf(fout, "\"%s\".", rname);
 			mnstr_printf(fout, "\"%s\" %s FRAME %d ", exp_name(e), type_str ? type_str : "", level);
-			_DELETE(type_str);
 			alias = 0;
 		} else if (e->flag & PSM_RETURN) {
 			int level = GET_PSM_LEVEL(e->flag);
@@ -133,11 +132,10 @@ exp_print(mvc *sql, stream *fout, sql_exp *e, int depth, list *refs, int comma, 
 	 	break;
 	}
 	case e_convert: {
-		char *to_type = sql_subtype_string(exp_subtype(e));
+		char *to_type = sql_subtype_string(sql->ta, exp_subtype(e));
 		mnstr_printf(fout, "%s[", to_type);
 		exp_print(sql, fout, e->l, depth, refs, 0, 0);
 		mnstr_printf(fout, "]");
-		_DELETE(to_type);
 	 	break;
 	}
 	case e_atom: {
@@ -151,7 +149,7 @@ exp_print(mvc *sql, stream *fout, sql_exp *e, int depth, list *refs, int comma, 
 					isReplicaTable(t)?"replica table":"table",
 					t->base.name);
 			} else {
-				char *t = sql_subtype_string(atom_type(a));
+				char *t = sql_subtype_string(sql->ta, atom_type(a));
 				if (a->isnull)
 					mnstr_printf(fout, "%s \"NULL\"", t);
 				else {
@@ -162,7 +160,6 @@ exp_print(mvc *sql, stream *fout, sql_exp *e, int depth, list *refs, int comma, 
 						mnstr_printf(fout, "%s \"%s\"", t, s);
 					GDKfree(s);
 				}
-				_DELETE(t);
 			}
 		} else { /* variables */
 			if (e->r) { /* named parameters and declared variables */
@@ -285,9 +282,8 @@ exp_print(mvc *sql, stream *fout, sql_exp *e, int depth, list *refs, int comma, 
 		char *pv;
 
 		for (; p; p = p->p) {
-			pv = propvalue2string(p);
+			pv = propvalue2string(sql->ta, p);
 			mnstr_printf(fout, " %s %s", propkind2string(p), pv);
-			GDKfree(pv);
 		}
 	}
 	if (exp_name(e) && alias) {
@@ -588,9 +584,8 @@ rel_print_(mvc *sql, stream  *fout, sql_rel *rel, int depth, list *refs, int dec
 		char *pv;
 
 		for (; p; p = p->p) {
-			pv = propvalue2string(p);
+			pv = propvalue2string(sql->ta, p);
 			mnstr_printf(fout, " %s %s", propkind2string(p), pv);
-			GDKfree(pv);
 		}
 	}
 	//mnstr_printf(fout, " %p ", rel);

@@ -415,7 +415,7 @@ SQLstatementIntern(Client c, str *expr, str nme, bit execute, bit output, res_ta
 	m->params = NULL;
 	m->session->auto_commit = 0;
 	if (!m->sa)
-		m->sa = sa_create();
+		m->sa = sa_create(m->pa);
 	if (!m->sa) {
 		msg = createException(SQL,"sql.statement",SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		goto endofcompile;
@@ -430,7 +430,7 @@ SQLstatementIntern(Client c, str *expr, str nme, bit execute, bit output, res_ta
 		sql_rel *r;
 
 		if (!m->sa)
-			m->sa = sa_create();
+			m->sa = sa_create(m->pa);
 		if (!m->sa) {
 			msg = createException(PARSE, "SQLparser",SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			goto endofcompile;
@@ -691,7 +691,7 @@ RAstatement(Client c, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if ((msg = SQLtrans(m)) != MAL_SUCCEED)
 		return msg;
 	if (!m->sa)
-		m->sa = sa_create();
+		m->sa = sa_create(m->pa);
 	if (!m->sa)
 		return createException(SQL,"RAstatement",SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	refs = sa_list(m->sa);
@@ -765,7 +765,7 @@ RAstatement2(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if ((msg = SQLtrans(m)) != MAL_SUCCEED)
 		return msg;
 	if (!m->sa)
-		m->sa = sa_create();
+		m->sa = sa_create(m->pa);
 	if (!m->sa) {
 		sqlcleanup(be, 0);
 		return createException(SQL,"RAstatement2",SQLSTATE(HY013) MAL_MALLOC_FAIL);
@@ -853,13 +853,12 @@ RAstatement2(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			for (node *n = rel->exps->h, *m = types_list->h ; n && m && !msg ; n = n->next, m = m->next) {
 				sql_exp *e = (sql_exp *) n->data;
 				sql_subtype *t = exp_subtype(e);
-				str got = subtype2string(t), expected = (str) m->data;
+				str got = sql_subtype_string(be->mvc->ta, t), expected = (str) m->data;
 
 				if (!got)
 					msg = createException(SQL, "RAstatement2", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 				else if (strcmp(expected, got) != 0)
 					msg = createException(SQL, "RAstatement2", SQLSTATE(42000) "Parameter %d has wrong SQL type, expected %s, but got %s instead", i, expected, got);
-				GDKfree(got);
 				i++;
 			}
 		}

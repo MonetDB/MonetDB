@@ -54,9 +54,9 @@ decimal_from_str(char *dec, char **end)
 
 char *
 #ifdef HAVE_HGE
-decimal_to_str(hge v, sql_subtype *t)
+decimal_to_str(sql_allocator *sa, hge v, sql_subtype *t)
 #else
-decimal_to_str(lng v, sql_subtype *t)
+decimal_to_str(sql_allocator *sa, lng v, sql_subtype *t)
 #endif
 {
 	char buf[64];
@@ -82,6 +82,6 @@ decimal_to_str(lng v, sql_subtype *t)
 	if (neg)
 		buf[cur--] = '-';
 	assert(cur >= -1);
-	return _STRDUP(buf+cur+1);
+	return sa_strdup(sa, buf+cur+1);
 }
 

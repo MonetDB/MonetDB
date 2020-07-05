@@ -480,7 +480,7 @@ _create_relational_remote(mvc *m, const char *mod, const char *name, sql_rel *re
 	for (n = r->exps->h; n; n = n->next) { /* Send SQL types of the projection's expressions */
 		sql_exp *e = n->data;
 		sql_subtype *t = exp_subtype(e);
-		str next = subtype2string(t);
+		str next = sql_subtype_string(m->ta, t);
 
 		if (!next) {
 			GDKfree(buf);
@@ -490,7 +490,6 @@ _create_relational_remote(mvc *m, const char *mod, const char *name, sql_rel *re
 		if ((nr + 100) > len) {
 			char *tmp = GDKrealloc(buf, len*=2);
 			if (tmp == NULL) {
-				GDKfree(next);
 				GDKfree(buf);
 				buf = NULL;
 				break;
@@ -499,8 +498,8 @@ _create_relational_remote(mvc *m, const char *mod, const char *name, sql_rel *re
 		}
 
 		nr += snprintf(buf+nr, len-nr, "%s%s", next, n->next?"%":"");
-		GDKfree(next);
 	}
+	sa_reset(m->ta);
 	if (buf) {
 		o = newFcnCall(curBlk, remoteRef, putRef);
 		o = pushArgument(curBlk, o, q);
@@ -720,12 +719,11 @@ backend_dumpstmt(backend *be, MalBlkPtr mb, sql_rel *r, int top, int add_end, co
 		}
 		setVarType(mb, getArg(q, 0), TYPE_void);
 		setVarUDFtype(mb, getArg(q, 0));
-		if (!(escaped_q = sql_escape_str((char*) query))) {
+		if (!(escaped_q = sql_escape_str(m->ta, (char*) query))) {
 			sql_error(m, 001, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			return -1;
 		}
 		q = pushStr(mb, q, escaped_q);
-		GDKfree(escaped_q);
 		if (q == NULL) {
 			sql_error(m, 001, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			return -1;
@@ -1060,7 +1058,7 @@ mal_function_find_implementation_address(mvc *m, sql_func *f)
 	}
 	if (s)
 		m->session->schema = s;
-	if (!(m->sa = sa_create())) {
+	if (!(m->sa = sa_create(NULL))) {
 		(void) sql_error(o, 02, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		goto bailout;
 	}

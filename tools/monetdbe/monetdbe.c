@@ -403,9 +403,13 @@ monetdbe_open_internal(monetdbe_database_internal *mdbe)
 	    (mdbe->msg = getSQLContext(mdbe->c, NULL, &m, NULL)) != MAL_SUCCEED)
 		goto cleanup;
 	m->session->auto_commit = 1;
+	if (!m->pa)
+		m->pa = sa_create(NULL);
 	if (!m->sa)
-		m->sa = sa_create();
-	if (!m->sa) {
+		m->sa = sa_create(m->pa);
+	if (!m->ta)
+		m->ta = sa_create(m->pa);
+	if (!m->pa || !m->sa || !m->ta) {
 		mdbe->msg = createException(SQL, "monetdbe.monetdbe_open_internal", MAL_MALLOC_FAIL);
 		goto cleanup;
 	}

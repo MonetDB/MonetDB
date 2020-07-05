@@ -226,7 +226,7 @@ SQLprepareClient(Client c, int login)
 	str msg = MAL_SUCCEED;
 
 	if (c->sqlcontext == 0) {
-		m = mvc_create(c->idx, SQLdebug, c->fdin, c->fdout);
+		m = mvc_create(sa_create(NULL), c->idx, SQLdebug, c->fdin, c->fdout);
 		if (m == NULL) {
 			msg = createException(SQL,"sql.initClient", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			goto bailout;
@@ -345,7 +345,7 @@ SQLinit(Client c)
 		SQLdebug |= 64;
 	if (readonly)
 		SQLdebug |= 32;
-	if ((SQLnewcatalog = mvc_init(SQLdebug, GDKinmemory() ? store_mem : store_bat, readonly, single_user)) < 0) {
+	if ((SQLnewcatalog = mvc_init(sa_create(NULL), SQLdebug, GDKinmemory() ? store_mem : store_bat, readonly, single_user)) < 0) {
 		MT_lock_unset(&sql_contextLock);
 		throw(SQL, "SQLinit", SQLSTATE(42000) "Catalogue initialization failed");
 	}
@@ -453,7 +453,7 @@ SQLinit(Client c)
 			TRC_INFO(SQL_PARSER, "%s\n", msg);
 	} else {		/* handle upgrades */
 		if (!m->sa)
-			m->sa = sa_create();
+			m->sa = sa_create(m->pa);
 		if (!m->sa) {
 			msg = createException(MAL, "createdb", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		} else if (maybeupgrade) {
@@ -905,10 +905,15 @@ SQLparser(Client c)
 	/* sqlparse needs sql allocator to be available.  It can be NULL at
 	 * this point if this is a recursive call. */
 	if (!m->sa)
-		m->sa = sa_create();
+		m->sa = sa_create(m->pa);
 	if (!m->sa) {
 		c->mode = FINISHCLIENT;
 		throw(SQL, "SQLparser", SQLSTATE(HY013) MAL_MALLOC_FAIL " for SQL allocator");
+	}
+	if (eb_savepoint(&m->sa->eb)) {
+		sa_reset(m->sa);
+
+		throw(SQL, "SQLparser", SQLSTATE(HY001) MAL_MALLOC_FAIL " for SQL allocator");
 	}
 
 	m->emode = m_normal;
@@ -1073,7 +1078,7 @@ SQLparser(Client c)
 			else
 				opt = 1;
 		} else {
-			char *q_copy = GDKstrdup(c->query);
+			char *q_copy = sa_strdup(m->sa, c->query);
 
 			be->q = NULL;
 			if (!q_copy) {

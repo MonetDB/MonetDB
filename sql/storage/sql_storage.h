@@ -375,7 +375,7 @@ extern res_table *res_tables_remove(res_table *results, res_table *t);
 sql_export void res_tables_destroy(res_table *results);
 extern res_table *res_tables_find(res_table *results, int res_id);
 
-extern int store_init(int debug, store_type store, int readonly, int singleuser);
+extern int store_init(sql_allocator *pa, int debug, store_type store, int readonly, int singleuser);
 extern void store_exit(void);
 
 extern int store_apply_deltas(bool locked);

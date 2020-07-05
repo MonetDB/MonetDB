@@ -161,6 +161,8 @@ sqlcleanup(backend *be, int err)
 	}
 	/* some statements dynamically disable caching */
 	be->mvc->sym = NULL;
+	if (be->mvc->ta)
+		be->mvc->ta = sa_reset(be->mvc->ta);
 	if (be->mvc->sa)
 		be->mvc->sa = sa_reset(be->mvc->sa);
 	if (err >0)
@@ -310,7 +312,7 @@ create_table_or_view(mvc *sql, char* sname, char *tname, sql_table *t, int temp)
 	}
 
 	osa = sql->sa;
-	sql->sa = NULL;
+	sql->sa = sql->ta;
 
 	nt = sql_trans_create_table(sql->session->tr, s, tname, t->query, t->type, t->system, temp, t->commit_action,
 								t->sz, t->properties);
@@ -323,17 +325,13 @@ create_table_or_view(mvc *sql, char* sname, char *tname, sql_table *t, int temp)
 			sql_rel *r = NULL;
 			list *id_l;
 
-			sql->sa = sa_create();
-			if (!sql->sa) {
-				sql->sa = osa;
-				throw(SQL, "sql.catalog",SQLSTATE(HY013) MAL_MALLOC_FAIL);
-			}
-			r = rel_parse(sql, s, sa_message(sql->sa, "select %s;", c->def), m_deps);
+			sql->sa = sql->ta;
+			r = rel_parse(sql, s, sa_message(sql->ta, "select %s;", c->def), m_deps);
 			if (!r || !is_project(r->op) || !r->exps || list_length(r->exps) != 1 ||
 				exp_check_type(sql, &c->type, r, r->exps->h->data, type_equal) == NULL) {
 				if (r)
 					rel_destroy(r);
-				sa_destroy(sql->sa);
+				sa_reset(sql->ta);
 				sql->sa = osa;
 				if (strlen(sql->errstr) > 6 && sql->errstr[5] == '!')
 					throw(SQL, "sql.catalog", "%s", sql->errstr);
@@ -343,8 +341,7 @@ create_table_or_view(mvc *sql, char* sname, char *tname, sql_table *t, int temp)
 			id_l = rel_dependencies(sql, r);
 			mvc_create_dependencies(sql, id_l, nt->base.id, FUNC_DEPENDENCY);
 			rel_destroy(r);
-			sa_destroy(sql->sa);
-			sql->sa = NULL;
+			sa_reset(sql->sa);
 		}
 	}
 
@@ -352,6 +349,7 @@ create_table_or_view(mvc *sql, char* sname, char *tname, sql_table *t, int temp)
 		sql_column *c = n->data, *copied = mvc_copy_column(sql, nt, c);
 
 		if (copied == NULL) {
+			sa_reset(sql->ta);
 			sql->sa = osa;
 			throw(SQL, "sql.catalog", SQLSTATE(42000) "CREATE TABLE: %s_%s_%s conflicts", s->base.name, t->base.name, c->base.name);
 		}
@@ -362,16 +360,8 @@ create_table_or_view(mvc *sql, char* sname, char *tname, sql_table *t, int temp)
 		char *err = NULL;
 
 		nt->part.pexp->exp = sa_strdup(sql->session->tr->sa, t->part.pexp->exp);
-
-		sql->sa = sa_create();
-		if (!sql->sa) {
-			sql->sa = osa;
-			throw(SQL, "sql.catalog",SQLSTATE(HY013) MAL_MALLOC_FAIL);
-		}
-
 		err = bootstrap_partition_expression(sql, sql->session->tr->sa, nt, 1);
-		sa_destroy(sql->sa);
-		sql->sa = NULL;
+		sa_reset(sql->ta);
 		if (err) {
 			sql->sa = osa;
 			return err;
@@ -397,15 +387,8 @@ create_table_or_view(mvc *sql, char* sname, char *tname, sql_table *t, int temp)
 			sql_key *k = n->data;
 			char *err = NULL;
 
-			sql->sa = sa_create();
-			if(!sql->sa) {
-				sql->sa = osa;
-				throw(SQL, "sql.catalog",SQLSTATE(HY013) MAL_MALLOC_FAIL);
-			}
-
 			err = sql_partition_validate_key(sql, nt, k, "CREATE");
-			sa_destroy(sql->sa);
-			sql->sa = NULL;
+			sa_reset(sql->ta);
 			if (err) {
 				sql->sa = osa;
 				return err;
@@ -429,11 +412,6 @@ create_table_or_view(mvc *sql, char* sname, char *tname, sql_table *t, int temp)
 	if (nt->query && isView(nt)) {
 		sql_rel *r = NULL;
 
-		sql->sa = sa_create();
-		if (!sql->sa) {
-			sql->sa = osa;
-			throw(SQL, "sql.catalog",SQLSTATE(HY013) MAL_MALLOC_FAIL);
-		}
 		r = rel_parse(sql, s, nt->query, m_deps);
 		if (r)
 			r = sql_processrelation(sql, r, 0);
@@ -441,8 +419,9 @@ create_table_or_view(mvc *sql, char* sname, char *tname, sql_table *t, int temp)
 			list *id_l = rel_dependencies(sql, r);
 			mvc_create_dependencies(sql, id_l, nt->base.id, VIEW_DEPENDENCY);
 		}
-		sa_destroy(sql->sa);
+		sa_reset(sql->ta);
 		if (!r) {
+			sql->sa = osa;
 			if (strlen(sql->errstr) > 6 && sql->errstr[5] == '!')
 				throw(SQL, "sql.catalog", "%s", sql->errstr);
 			else
@@ -468,7 +447,7 @@ create_table_from_emit(Client cntxt, char *sname, char *tname, sql_emit_col *col
 		return msg;
 
 	/* for some reason we don't have an allocator here, so make one */
-	if (!(sql->sa = sa_create())) {
+	if (!(sql->sa = sa_create(sql->pa))) {
 		msg = sql_error(sql, 02, SQLSTATE(HY013) "CREATE TABLE: %s", MAL_MALLOC_FAIL);
 		goto cleanup;
 	}
@@ -554,7 +533,7 @@ append_to_table_from_emit(Client cntxt, char *sname, char *tname, sql_emit_col *
 		return msg;
 
 	/* for some reason we don't have an allocator here, so make one */
-	if (!(sql->sa = sa_create())) {
+	if (!(sql->sa = sa_create(sql->pa))) {
 		msg = sql_error(sql, 02, SQLSTATE(HY013) "APPEND TABLE: %s", MAL_MALLOC_FAIL);
 		goto cleanup;
 	}

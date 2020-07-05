@@ -22,12 +22,12 @@ typedef struct cq {
 	mapi_query_t type;	/* sql_query_t: Q_PARSE,Q_SCHEMA,.. */
 	sql_allocator *sa;	/* the symbols are allocated from this sa */
 	sql_rel *rel;		/* relational query */
-	symbol *s;		/* the SQL parse tree */
-	int id;			/* cache identity */
-	char *name;		/* name of cache query */
+	symbol *s;			/* the SQL parse tree */
+	int id;				/* cache identity */
+	char *name;			/* name of cached query */
 	int no_mitosis;		/* run query without mitosis */
-	int count;		/* number of times the query is matched */
-	timestamp created; /* when the query was created */
+	int count;			/* number of times the query is matched */
+	timestamp created;	/* when the query was created */
 	sql_func *f;
 } cq;
 
@@ -38,7 +38,7 @@ typedef struct qc {
 	cq *q;
 } qc;
 
-extern qc *qc_create(int clientid, int seqnr);
+extern qc *qc_create(sql_allocator *sa, int clientid, int seqnr);
 extern void qc_clean(qc *cache);
 extern void qc_destroy(qc *cache);
 sql_export cq *qc_find(qc *cache, int id);

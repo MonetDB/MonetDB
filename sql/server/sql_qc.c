@@ -15,9 +15,9 @@
 #include "gdk_time.h"
 
 qc *
-qc_create(int clientid, int seqnr)
+qc_create(sql_allocator *sa, int clientid, int seqnr)
 {
-	qc *r = MNEW(qc);
+	qc *r = SA_ZNEW(sa, qc);
 	if (!r)
 		return NULL;
 	*r = (qc) {
@@ -32,8 +32,6 @@ cq_delete(int clientid, cq *q)
 {
 	if (q->name)
 		backend_freecode(clientid, q->name);
-	if (q->f->query)
-		_DELETE(q->f->query);
 	/* q, params and name are allocated using sa, ie need to be delete last */
 	if (q->sa)
 		sa_destroy(q->sa);
@@ -82,7 +80,6 @@ qc_destroy(qc *cache)
 		cq_delete(cache->clientid, q);
 		cache->nr--;
 	}
-	_DELETE(cache);
 }
 
 cq *

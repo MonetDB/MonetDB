@@ -1823,7 +1823,7 @@ store_schema_number(void)
 }
 
 static int
-store_load(void) {
+store_load(sql_allocator *pa) {
 	int first;
 
 	sql_allocator *sa;
@@ -1834,8 +1834,8 @@ store_load(void) {
 	lng lng_store_oid;
 	sqlid id = 0;
 
-	store_sa = sa_create();
-	sa = sa_create();
+	store_sa = sa_create(pa);
+	sa = sa_create(pa);
 	if (!sa || !store_sa)
 		return -1;
 
@@ -1853,6 +1853,7 @@ store_load(void) {
 	if (!gtrans)
 		return -1;
 
+	/* for now use malloc and free */
 	active_sessions = list_create(NULL);
 
 	if (first) {
@@ -2056,7 +2057,7 @@ store_load(void) {
 }
 
 int
-store_init(int debug, store_type store, int readonly, int singleuser)
+store_init(sql_allocator *pa, int debug, store_type store, int readonly, int singleuser)
 {
 	int v = 1;
 
@@ -2089,7 +2090,7 @@ store_init(int debug, store_type store, int readonly, int singleuser)
 
 	/* create the initial store structure or re-load previous data */
 	MT_lock_unset(&bs_lock);
-	return store_load();
+	return store_load(pa);
 }
 
 static int
@@ -3883,7 +3884,7 @@ trans_dup(sql_trans *ot, const char *newname)
 	if (!t)
 		return NULL;
 
-	t->sa = sa_create();
+	t->sa = sa_create(NULL);
 	if (!t->sa) {
 		_DELETE(t);
 		return NULL;

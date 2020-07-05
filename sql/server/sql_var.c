@@ -22,9 +22,6 @@ destroy_sql_var(void *data)
 	sql_var *svar = (sql_var*) data;
 	VALclear(&(svar->var.data));
 	svar->var.data.vtype = 0;
-	_DELETE(svar->sname);
-	_DELETE(svar->name);
-	_DELETE(svar);
 }
 
 #define SQLglobal(sname, name, val) \
@@ -88,17 +85,14 @@ init_global_variables(mvc *sql)
 sql_var*
 push_global_var(mvc *sql, const char *sname, const char *name, sql_subtype *type)
 {
-	sql_var *svar = ZNEW(sql_var);
+	sql_var *svar = SA_ZNEW(sql->pa, sql_var);
 
 	if (!svar)
 		return NULL;
-	if (!(svar->name = _STRDUP(name))) {
-		_DELETE(svar);
+	if (!(svar->name = sa_strdup(sql->pa, name))) {
 		return NULL;
 	}
-	if (!(svar->sname = _STRDUP(sname))) {
-		_DELETE(svar->name);
-		_DELETE(svar);
+	if (!(svar->sname = sa_strdup(sql->pa, sname))) {
 		return NULL;
 	}
 	atom_init(&(svar->var));
@@ -108,9 +102,6 @@ push_global_var(mvc *sql, const char *sname, const char *name, sql_subtype *type
 		svar->var.tpe = *type;
 	}
 	if (!list_append(sql->global_vars, svar)) {
-		_DELETE(svar->name);
-		_DELETE(svar->sname);
-		_DELETE(svar);
 		return NULL;
 	}
 	return svar;
@@ -121,12 +112,11 @@ frame_push_var(mvc *sql, const char *name, sql_subtype *type)
 {
 	assert(sql->topframes > 0);
 	sql_frame *f = sql->frames[sql->topframes - 1];
-	sql_var *svar = ZNEW(sql_var);
+	sql_var *svar = SA_ZNEW(sql->pa, sql_var);
 
 	if (!svar)
 		return NULL;
-	if (!(svar->name = _STRDUP(name))) {
-		_DELETE(svar);
+	if (!(svar->name = sa_strdup(sql->pa, name))) {
 		return NULL;
 	}
 	atom_init(&(svar->var));
@@ -136,23 +126,12 @@ frame_push_var(mvc *sql, const char *name, sql_subtype *type)
 		svar->var.tpe = *type;
 	}
 	if (!f->vars && !(f->vars = list_create(destroy_sql_var))) {
-		_DELETE(svar->name);
-		_DELETE(svar);
 		return NULL;
 	}
 	if (!list_append(f->vars, svar)) {
-		_DELETE(svar->name);
-		_DELETE(svar);
 		return NULL;
 	}
 	return svar;
-}
-
-static void
-destroy_sql_local_table(void *data)
-{
-	sql_local_table *slt = (sql_local_table*) data;
-	_DELETE(slt);
 }
 
 sql_local_table*
@@ -160,14 +139,13 @@ frame_push_table(mvc *sql, sql_table *t)
 {
 	assert(sql->topframes > 0);
 	sql_frame *f = sql->frames[sql->topframes - 1];
-	sql_local_table *slt = ZNEW(sql_local_table);
+	sql_local_table *slt = SA_ZNEW(sql->pa, sql_local_table);
 
 	if (!slt)
 		return NULL;
 	slt->table = t;
 	t->s = NULL;
-	if (!f->tables && !(f->tables = list_create(destroy_sql_local_table))) {
-		_DELETE(slt);
+	if (!f->tables && !(f->tables = list_create(NULL))) {
 		return NULL;
 	}
 	if (!list_append(f->tables, slt)) {
@@ -182,8 +160,6 @@ destroy_sql_rel_view(void *data)
 {
 	sql_rel_view *srv = (sql_rel_view*) data;
 	rel_destroy(srv->rel_view);
-	_DELETE(srv->name);
-	_DELETE(srv);
 }
 
 sql_rel_view*
@@ -191,34 +167,21 @@ stack_push_rel_view(mvc *sql, const char *name, sql_rel *var)
 {
 	assert(sql->topframes > 0);
 	sql_frame *f = sql->frames[sql->topframes - 1];
-	sql_rel_view *srv = ZNEW(sql_rel_view);
+	sql_rel_view *srv = SA_ZNEW(sql->pa, sql_rel_view);
 
 	if (!srv)
 		return NULL;
-	if (!(srv->name = _STRDUP(name))) {
-		_DELETE(srv);
+	if (!(srv->name = sa_strdup(sql->pa, name))) {
 		return NULL;
 	}
 	srv->rel_view = var;
 	if (!f->rel_views && !(f->rel_views = list_create(destroy_sql_rel_view))) {
-		_DELETE(srv->name);
-		_DELETE(srv);
 		return NULL;
 	}
 	if (!list_append(f->rel_views, srv)) {
-		_DELETE(srv->name);
-		_DELETE(srv);
 		return NULL;
 	}
 	return srv;
-}
-
-static void
-destroy_sql_window_definition(void *data)
-{
-	sql_window_definition *swd = (sql_window_definition*) data;
-	_DELETE(swd->name);
-	_DELETE(swd);
 }
 
 sql_window_definition*
@@ -226,34 +189,22 @@ frame_push_window_def(mvc *sql, const char *name, dlist *wdef)
 {
 	assert(sql->topframes > 0);
 	sql_frame *f = sql->frames[sql->topframes - 1];
-	sql_window_definition *swd = ZNEW(sql_window_definition);
+	sql_window_definition *swd = SA_ZNEW(sql->pa, sql_window_definition);
 
 	if (!swd)
 		return NULL;
-	if (!(swd->name = _STRDUP(name))) {
-		_DELETE(swd);
+	if (!(swd->name = sa_strdup(sql->pa, name))) {
 		return NULL;
 	}
 	swd->wdef = wdef;
 	swd->visited = false;
-	if (!f->windows && !(f->windows = list_create(destroy_sql_window_definition))) {
-		_DELETE(swd->name);
-		_DELETE(swd);
+	if (!f->windows && !(f->windows = list_create(NULL))) {
 		return NULL;
 	}
 	if (!list_append(f->windows, swd)) {
-		_DELETE(swd->name);
-		_DELETE(swd);
 		return NULL;
 	}
 	return swd;
-}
-
-static void
-destroy_sql_groupby_expression(void *data)
-{
-	sql_groupby_expression *sge = (sql_groupby_expression*) data;
-	_DELETE(sge);
 }
 
 sql_groupby_expression*
@@ -261,19 +212,17 @@ frame_push_groupby_expression(mvc *sql, symbol *def, sql_exp *exp)
 {
 	assert(sql->topframes > 0);
 	sql_frame *f = sql->frames[sql->topframes - 1];
-	sql_groupby_expression *sge = ZNEW(sql_groupby_expression);
+	sql_groupby_expression *sge = SA_ZNEW(sql->pa, sql_groupby_expression);
 
 	if (!sge)
 		return NULL;
 	sge->sdef = def;
 	sge->token = def->token;
 	sge->exp = exp;
-	if (!f->group_expressions && !(f->group_expressions = list_create(destroy_sql_groupby_expression))) {
-		_DELETE(sge);
+	if (!f->group_expressions && !(f->group_expressions = list_create(NULL))) {
 		return NULL;
 	}
 	if (!list_append(f->group_expressions, sge)) {
-		_DELETE(sge);
 		return NULL;
 	}
 	return sge;
@@ -380,19 +329,18 @@ sql_frame*
 stack_push_frame(mvc *sql, const char *name)
 {
 	sql_frame *v, **nvars;
-	int nextsize = sql->sizeframes;
+	int osize = sql->sizeframes, nextsize = osize;
 
 	if (sql->topframes == nextsize) {
 		nextsize <<= 1;
-		if (!(nvars = RENEW_ARRAY(sql_frame*, sql->frames, nextsize)))
+		if (!(nvars = SA_RENEW_ARRAY(sql->pa, sql_frame*, sql->frames, nextsize, osize)))
 			return NULL;
 		sql->frames = nvars;
 		sql->sizeframes = nextsize;
 	}
-	if (!(v = ZNEW(sql_frame)))
+	if (!(v = SA_ZNEW(sql->pa, sql_frame)))
 		return NULL;
-	if (name && !(v->name = _STRDUP(name))) {
-		_DELETE(v);
+	if (name && !(v->name = sa_strdup(sql->pa, name))) {
 		return NULL;
 	}
 	v->frame_number = ++sql->frame; /* The frame number for varialbes on the stack start on level 1 */
@@ -408,8 +356,6 @@ clear_frame(mvc *sql, sql_frame *frame)
 	list_destroy(frame->tables);
 	list_destroy(frame->rel_views);
 	list_destroy(frame->vars);
-	_DELETE(frame->name);
-	_DELETE(frame);
 	sql->frame--;
 }
 

@@ -33,12 +33,14 @@ sql_ref_dec(sql_ref *r)
 
 #define SA_BLOCK (64*1024)
 
-sql_allocator *sa_create(void)
+sql_allocator *sa_create(sql_allocator *pa)
 {
 	sql_allocator *sa = MNEW(sql_allocator);
 	if (sa == NULL) {
 		return NULL;
 	}
+	eb_init(&sa->eb);
+	sa->pa = pa;
 	sa->size = 64;
 	sa->nr = 1;
 	sa->blks = NEW_ARRAY(char*,sa->size);
@@ -88,15 +90,19 @@ void *sa_alloc( sql_allocator *sa, size_t sz )
 	sz = round16(sz);
 	if (sz > (SA_BLOCK-sa->used)) {
 		r = GDKmalloc(sz > SA_BLOCK ? sz : SA_BLOCK);
-		if (r == NULL)
+		if (r == NULL) {
+			if (sa->eb.enabled)
+				eb_error(&sa->eb, "out of memory", 1000);
 			return NULL;
+		}
 		if (sa->nr >= sa->size) {
 			char **tmp;
 			sa->size *=2;
 			tmp = RENEW_ARRAY(char*,sa->blks,sa->size);
 			if (tmp == NULL) {
 				sa->size /= 2; /* undo */
-				GDKfree(r);
+				if (sa->eb.enabled)
+					eb_error(&sa->eb, "out of memory", 1000);
 				return NULL;
 			}
 			sa->blks = tmp;

@@ -905,7 +905,7 @@ mvc_import_table(Client cntxt, BAT ***bats, mvc *m, bstream *bs, sql_table *t, c
 			fmt[i].sep = (n->next) ? sep : rsep;
 			fmt[i].rsep = rsep;
 			fmt[i].seplen = _strlen(fmt[i].sep);
-			fmt[i].type = sql_subtype_string(&col->type);
+			fmt[i].type = sql_subtype_string(m->ta, &col->type);
 			fmt[i].adt = ATOMindex(col->type.type->base.name);
 			fmt[i].tostr = &_ASCIIadt_toStr;
 			fmt[i].frstr = &_ASCIIadt_frStr;
@@ -914,11 +914,9 @@ mvc_import_table(Client cntxt, BAT ***bats, mvc *m, bstream *bs, sql_table *t, c
 			fmt[i].data = GDKzalloc(fmt[i].len);
 			if(fmt[i].data == NULL || fmt[i].type == NULL) {
 				for (j = 0; j < i; j++) {
-					GDKfree(fmt[j].type);
 					GDKfree(fmt[j].data);
 					BBPunfix(fmt[j].c->batCacheid);
 				}
-				GDKfree(fmt[i].type);
 				GDKfree(fmt[i].data);
 				sql_error(m, 500, SQLSTATE(HY013) "failed to allocate space for column");
 				return NULL;
@@ -943,11 +941,9 @@ mvc_import_table(Client cntxt, BAT ***bats, mvc *m, bstream *bs, sql_table *t, c
 				BAT *b = store_funcs.bind_col(m->session->tr, col, RDONLY);
 				if (b == NULL) {
 					for (j = 0; j < i; j++) {
-						GDKfree(fmt[j].type);
 						GDKfree(fmt[j].data);
 						BBPunfix(fmt[j].c->batCacheid);
 					}
-					GDKfree(fmt[i].type);
 					GDKfree(fmt[i].data);
 					sql_error(m, 500, "failed to bind to table column");
 					return NULL;
@@ -960,7 +956,6 @@ mvc_import_table(Client cntxt, BAT ***bats, mvc *m, bstream *bs, sql_table *t, c
 				if (sz > 0 && BATcapacity(b) < (BUN) sz) {
 					if (BATextend(fmt[i].c, (BUN) sz) != GDK_SUCCEED) {
 						for (j = 0; j <= i; j++) {
-							GDKfree(fmt[j].type);
 							GDKfree(fmt[j].data);
 							BBPunfix(fmt[j].c->batCacheid);
 						}

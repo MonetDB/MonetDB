@@ -4564,12 +4564,12 @@ calculate_window_bound(sql_query *query, sql_rel *p, tokens token, symbol *bound
 		if (!(bclass == EC_NUM || EC_INTERVAL(bclass) || bclass == EC_DEC || bclass == EC_FLT))
 			return sql_error(sql, 02, SQLSTATE(42000) "%s offset must be of a countable SQL type", bound_desc);
 		if ((frame_type == FRAME_ROWS || frame_type == FRAME_GROUPS) && bclass != EC_NUM) {
-			char *err = subtype2string2(bt);
+			char *err = subtype2string2(sql->ta, bt);
 			if (!err)
 				return sql_error(sql, 02, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			(void) sql_error(sql, 02, SQLSTATE(42000) "Values on %s boundary on %s frame can't be %s type", bound_desc,
 							 (frame_type == FRAME_ROWS) ? "rows":"groups", err);
-			_DELETE(err);
+			sa_reset(sql->ta);
 			return NULL;
 		}
 		if (frame_type == FRAME_RANGE) {
@@ -4582,19 +4582,19 @@ calculate_window_bound(sql_query *query, sql_rel *p, tokens token, symbol *bound
 			if (bclass != EC_DEC && iet->type->eclass == EC_DEC)
 				return sql_error(sql, 02, SQLSTATE(42000) "Values on %s boundary aren't decimals while on input are", bound_desc);
 			if (bclass != EC_SEC && iet->type->eclass == EC_TIME) {
-				char *err = subtype2string2(iet);
+				char *err = subtype2string2(sql->ta, iet);
 				if (!err)
 					return sql_error(sql, 02, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 				(void) sql_error(sql, 02, SQLSTATE(42000) "For %s input the %s boundary must be an interval type up to the day", err, bound_desc);
-				_DELETE(err);
+				sa_reset(sql->ta);
 				return NULL;
 			}
 			if (EC_INTERVAL(bclass) && !EC_TEMP(iet->type->eclass)) {
-				char *err = subtype2string2(iet);
+				char *err = subtype2string2(sql->ta, iet);
 				if (!err)
 					return sql_error(sql, 02, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 				(void) sql_error(sql, 02, SQLSTATE(42000) "For %s input the %s boundary must be an interval type", err, bound_desc);
-				_DELETE(err);
+				sa_reset(sql->ta);
 				return NULL;
 			}
 		}
@@ -4646,19 +4646,16 @@ get_window_clauses(mvc *sql, char* ident, symbol **partition_by_clause, symbol *
 }
 
 static char*
-window_function_arg_types_2str(list* types, int N)
+window_function_arg_types_2str(mvc *sql, list* types, int N)
 {
 	char *arg_list = NULL;
 	int i = 0;
 
 	for (node *n = types->h; n && i < N; n = n->next) {
-		char *tpe = subtype2string((sql_subtype *) n->data);
+		char *tpe = sql_subtype_string(sql->ta, (sql_subtype *) n->data);
 
 		if (arg_list) {
-			char *t = arg_list;
-			arg_list = sql_message("%s, %s", arg_list, tpe);
-			_DELETE(t);
-			_DELETE(tpe);
+			arg_list = sa_message(sql->ta, "%s, %s", arg_list, tpe);
 		} else {
 			arg_list = tpe;
 		}
@@ -5060,15 +5057,13 @@ rel_rankop(sql_query *query, sql_rel **rel, symbol *se, int f)
 			if (wf && list_length(nexps))
 				fargs = nexps;
 			else {
-				char *arg_list = nfargs ? window_function_arg_types_2str(types, nfargs) : NULL;
+				char *arg_list = nfargs ? window_function_arg_types_2str(sql, types, nfargs) : NULL;
 				sql_error(sql, 02, SQLSTATE(42000) "SELECT: window function '%s(%s)' not found", aname, arg_list ? arg_list : "");
-				_DELETE(arg_list);
 				return NULL;
 			}
 		} else {
-			char *arg_list = nfargs ? window_function_arg_types_2str(types, nfargs) : NULL;
+			char *arg_list = nfargs ? window_function_arg_types_2str(sql, types, nfargs) : NULL;
 			sql_error(sql, 02, SQLSTATE(42000) "SELECT: window function '%s(%s)' not found", aname, arg_list ? arg_list : "");
-			_DELETE(arg_list);
 			return NULL;
 		}
 	}

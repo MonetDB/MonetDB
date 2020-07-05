@@ -108,10 +108,10 @@ sql_strdup(char *s)
 }
 
 char *
-sql_escape_str(char *s)
+sql_escape_str(sql_allocator *sa, char *s)
 {
 	size_t l = strlen(s);
-	char *res, *r = NEW_ARRAY(char, (l * 2) + 1);
+	char *res, *r = SA_NEW_ARRAY(sa, char, (l * 2) + 1);
 
 	res = r;
 	if (res) {
@@ -127,10 +127,10 @@ sql_escape_str(char *s)
 }
 
 const char *
-sql_escape_ident(const char *s)
+sql_escape_ident(sql_allocator *sa, const char *s)
 {
 	size_t l = strlen(s);
-	char *res, *r = NEW_ARRAY(char, (l * 2) + 1);
+	char *res, *r = SA_NEW_ARRAY(sa, char, (l * 2) + 1);
 
 	res = r;
 	if (res) {

@@ -429,7 +429,7 @@ atom2string(sql_allocator *sa, atom *a)
 }
 
 char *
-atom2sql(atom *a)
+atom2sql(sql_allocator *sa, atom *a)
 {
 	sql_class ec = a->tpe.type->eclass;
 	char buf[BUFSIZ];
@@ -437,23 +437,22 @@ atom2sql(atom *a)
 	if (a->data.vtype == TYPE_str && EC_INTERVAL(ec))
 		ec = EC_STRING;
 	if (a->isnull)
-		return _STRDUP("NULL");
+		return "NULL";
 	switch (ec) {
 	case EC_BIT:
 		assert( a->data.vtype == TYPE_bit);
 		if (a->data.val.btval)
-			return _STRDUP("true");
-		return _STRDUP("false");
+			return "true";
+		return "false";
 	case EC_CHAR:
 	case EC_STRING: {
 		char *val, *res;
 		assert(a->data.vtype == TYPE_str && a->data.val.sval);
 
-		if (!(val = sql_escape_str(a->data.val.sval)))
+		if (!(val = sql_escape_str(sa, a->data.val.sval)))
 			return NULL;
-		if ((res = NEW_ARRAY(char, strlen(val) + 3)))
+		if ((res = SA_NEW_ARRAY(sa, char, strlen(val) + 3)))
 			stpcpy(stpcpy(stpcpy(res, "'"), val), "'");
-		c_delete(val);
 		return res;
 	} break;
 	case EC_BLOB: {
@@ -461,7 +460,7 @@ atom2sql(atom *a)
 		blob *b = (blob*)a->data.val.pval;
 		size_t blob_size = (24 + (b->nitems * 3));
 
-		if ((res = NEW_ARRAY(char, blob_size + 8))) {
+		if ((res = SA_NEW_ARRAY(sa, char, blob_size + 8))) {
 			char *tail = stpcpy(res, "blob '");
 			ssize_t bloblen = BLOBtostr(&tail, &blob_size, b, true);
 			strcpy(res + bloblen + 6, "'");
@@ -558,7 +557,7 @@ atom2sql(atom *a)
 		case TYPE_bte: v = a->data.val.btval; break;
 		default: break;
 		}
-		return decimal_to_str(v, &a->tpe);
+		return decimal_to_str(sa, v, &a->tpe);
 	}
 	case EC_FLT:
 		if (a->data.vtype == TYPE_dbl)
@@ -570,18 +569,14 @@ atom2sql(atom *a)
 	case EC_DATE:
 	case EC_TIMESTAMP:
 		if (a->data.vtype == TYPE_str) {
-			char *val1 = sql_escape_str(a->tpe.type->sqlname), *val2 = sql_escape_str(a->data.val.sval), *res;
+			char *val1 = sql_escape_str(sa, a->tpe.type->sqlname), *val2 = sql_escape_str(sa, a->data.val.sval), *res;
 
 			if (!val1 || !val2) {
-				c_delete(val1);
-				c_delete(val2);
 				return NULL;
 			}
 
-			if ((res = NEW_ARRAY(char, strlen(val1) + strlen(val2) + 4)))
+			if ((res = SA_NEW_ARRAY(sa, char, strlen(val1) + strlen(val2) + 4)))
 				stpcpy(stpcpy(stpcpy(stpcpy(res, val1)," '"), val2), "'");
-			c_delete(val1);
-			c_delete(val2);
 			return res;
 		} else {
 			snprintf(buf, BUFSIZ, "atom2sql(TYPE_%d) not implemented", a->data.vtype);
@@ -590,7 +585,7 @@ atom2sql(atom *a)
 	default:
 		snprintf(buf, BUFSIZ, "atom2sql(TYPE_%d) not implemented", a->data.vtype);
 	}
-	return _STRDUP(buf);
+	return sa_strdup(sa, buf);
 }
 
 sql_subtype *
@@ -1138,10 +1133,9 @@ atom_cast(sql_allocator *sa, atom *a, sql_subtype *tp)
 				default:
 					return 0;
 				}
-				s = decimal_to_str(dec, at);
+				s = decimal_to_str(sa, dec, at);
 				len = sizeof(double);
 				res = ATOMfromstr(TYPE_dbl, &p, &len, s, false);
-				GDKfree(s);
 				if (res < 0)
 					return 0;
 			}

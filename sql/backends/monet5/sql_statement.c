@@ -2348,13 +2348,13 @@ dump_export_header(mvc *sql, MalBlkPtr mb, list *l, int file, const char * forma
 		const char *tn = (tname) ? tname : _empty;
 		const char *sn = (sname) ? sname : _empty;
 		const char *cn = column_name(sql->sa, c);
-		const char *ntn = sql_escape_ident(tn);
-		const char *nsn = sql_escape_ident(sn);
+		const char *ntn = sql_escape_ident(sql->ta, tn);
+		const char *nsn = sql_escape_ident(sql->ta, sn);
 		size_t fqtnl;
 		char *fqtn = NULL;
 
 		if (ntn && nsn && (fqtnl = strlen(ntn) + 1 + strlen(nsn) + 1) ){
-			fqtn = NEW_ARRAY(char, fqtnl);
+			fqtn = SA_NEW_ARRAY(sql->ta, char, fqtnl);
 			if(fqtn) {
 				snprintf(fqtn, fqtnl, "%s.%s", nsn, ntn);
 				metaInfo(tblPtr, Str, fqtn);
@@ -2363,16 +2363,14 @@ dump_export_header(mvc *sql, MalBlkPtr mb, list *l, int file, const char * forma
 				metaInfo(lenPtr, Int, t->digits);
 				metaInfo(scalePtr, Int, t->scale);
 				list = pushArgument(mb, list, c->nr);
-				_DELETE(fqtn);
 			} else
 				error = true;
 		} else
 			error = true;
-		c_delete(ntn);
-		c_delete(nsn);
 		if(error)
 			return -1;
 	}
+	sa_reset(sql->ta);
 	ret = getArg(list,0);
 	pushInstruction(mb,list);
 	return ret;
@@ -2617,13 +2615,13 @@ dump_header(mvc *sql, MalBlkPtr mb, stmt *s, list *l)
 		const char *tn = (tname) ? tname : _empty;
 		const char *sn = (sname) ? sname : _empty;
 		const char *cn = column_name(sql->sa, c);
-		const char *ntn = sql_escape_ident(tn);
-		const char *nsn = sql_escape_ident(sn);
+		const char *ntn = sql_escape_ident(sql->ta, tn);
+		const char *nsn = sql_escape_ident(sql->ta, sn);
 		size_t fqtnl;
 		char *fqtn = NULL;
 
 		if (ntn && nsn && (fqtnl = strlen(ntn) + 1 + strlen(nsn) + 1) ){
-			fqtn = NEW_ARRAY(char, fqtnl);
+			fqtn = SA_NEW_ARRAY(sql->ta, char, fqtnl);
 			if(fqtn) {
 				snprintf(fqtn, fqtnl, "%s.%s", nsn, ntn);
 				metaInfo(tblPtr,Str,fqtn);
@@ -2632,16 +2630,14 @@ dump_header(mvc *sql, MalBlkPtr mb, stmt *s, list *l)
 				metaInfo(lenPtr,Int,t->digits);
 				metaInfo(scalePtr,Int,t->scale);
 				list = pushArgument(mb,list,c->nr);
-				_DELETE(fqtn);
 			} else
 				error = true;
 		} else
 			error = true;
-		c_delete(ntn);
-		c_delete(nsn);
 		if (error)
 			return NULL;
 	}
+	sa_reset(sql->ta);
 	pushInstruction(mb,list);
 	return list;
 }
@@ -2670,14 +2666,14 @@ stmt_output(backend *be, stmt *lst)
 		const char *tn = (tname) ? tname : _empty;
 		const char *sn = (sname) ? sname : _empty;
 		const char *cn = column_name(be->mvc->sa, c);
-		const char *ntn = sql_escape_ident(tn);
-		const char *nsn = sql_escape_ident(sn);
+		const char *ntn = sql_escape_ident(be->mvc->ta, tn);
+		const char *nsn = sql_escape_ident(be->mvc->ta, sn);
 		size_t fqtnl;
 		char *fqtn = NULL;
 
 		if(ntn && nsn) {
 			fqtnl = strlen(ntn) + 1 + strlen(nsn) + 1;
-			fqtn = NEW_ARRAY(char, fqtnl);
+			fqtn = SA_NEW_ARRAY(be->mvc->ta, char, fqtnl);
 			if(fqtn) {
 				ok = 1;
 				snprintf(fqtn, fqtnl, "%s.%s", nsn, ntn);
@@ -2695,9 +2691,7 @@ stmt_output(backend *be, stmt *lst)
 				}
 			}
 		}
-		c_delete(ntn);
-		c_delete(nsn);
-		_DELETE(fqtn);
+		sa_reset(be->mvc->ta);
 		if(!ok)
 			return NULL;
 	} else {
