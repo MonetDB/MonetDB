@@ -35,11 +35,11 @@ if(WITH_PCRE)
 endif()
 
 if(WITH_CRYPTO)
-	if(${CMAKE_SYSTEM_NAME} STREQUAL "Darwin" AND ${CMAKE_HOST_SYSTEM_VERSION} VERSION_LESS "19.0.0")
-  	find_package(CommonCrypto)
-	else()
-  	find_package(OpenSSL)
-	endif()
+  if(${CMAKE_SYSTEM_NAME} STREQUAL "Darwin" AND ${CMAKE_HOST_SYSTEM_VERSION} VERSION_LESS "19.0.0")
+    find_package(CommonCrypto)
+  else()
+    find_package(OpenSSL)
+  endif()
 endif()
 
 if(WITH_BZ2)
@@ -56,9 +56,9 @@ endif()
 
 if(WITH_LZ4)
   find_package(LZ4)
-	if (LZ4_FOUND AND LZ4_VERSION VERSION_LESS "1.8.0")
-					unset(LZ4_FOUND)
-	endif()
+  if (LZ4_FOUND AND LZ4_VERSION VERSION_LESS "1.8.0")
+    unset(LZ4_FOUND)
+  endif()
 endif()
 
 if(WITH_PROJ)
@@ -131,5 +131,6 @@ if(RINTEGRATION)
 endif()
 
 find_package(Sphinx)
+find_package(Createrepo)
 
 # vim: set ts=2:sw=2:et
