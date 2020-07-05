@@ -395,8 +395,8 @@ stdout of test 'subquery4` in directory 'sql/test/subquery` itself:
 % 1 # length
 [ 1	]
 #SELECT upsme(1);
-% .%14 # table_name
-% %14 # name
+% .%2 # table_name
+% %2 # name
 % int # type
 % 1 # length
 [ 1	]
@@ -408,8 +408,8 @@ stdout of test 'subquery4` in directory 'sql/test/subquery` itself:
 % 1 # length
 [ 1	]
 #SELECT upsme(1);
-% .%5 # table_name
-% %5 # name
+% .%2 # table_name
+% %2 # name
 % int # type
 % 1 # length
 [ 1	]
@@ -420,8 +420,8 @@ stdout of test 'subquery4` in directory 'sql/test/subquery` itself:
 #	RETURN n;
 #END;
 #SELECT debugme(1), debugme(2);
-% .%3,	.%4 # table_name
-% %3,	%4 # name
+% .%4,	.%5 # table_name
+% %4,	%5 # name
 % boolean,	boolean # type
 % 5,	5 # length
 [ false,	true	]
@@ -434,8 +434,8 @@ stdout of test 'subquery4` in directory 'sql/test/subquery` itself:
 #	RETURN n;
 #END;
 #SELECT debugme2(1), debugme2(2);
-% .%3,	.%4 # table_name
-% %3,	%4 # name
+% .%4,	.%5 # table_name
+% %4,	%5 # name
 % int,	int # type
 % 1,	1 # length
 [ 1,	1	]
