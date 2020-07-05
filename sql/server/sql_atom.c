@@ -326,7 +326,6 @@ atom_general(sql_allocator *sa, sql_subtype *tpe, const char *val)
 
 			/* no result or nil means error (SQL has NULL not nil) */
 			if (res < 0 || !p || ATOMcmp(type, p, ATOMnilptr(type)) == 0) {
-				/*_DELETE(val);*/
 				if (p)
 					GDKfree(p);
 				return NULL;
@@ -345,7 +344,6 @@ atom_general(sql_allocator *sa, sql_subtype *tpe, const char *val)
 				a->data.val.lval *= d;
 			}
 			GDKfree(p);
-			/*_DELETE(val);*/
 		}
 	} else {
 		VALset(&a->data, a->data.vtype, (ptr) ATOMnilptr(a->data.vtype));

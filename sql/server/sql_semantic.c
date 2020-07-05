@@ -325,8 +325,6 @@ _symbol2string(mvc *sql, symbol *se, int expression, char **err) /**/
 		if ((res = NEW_ARRAY(char, strlen(sname) + strlen(op) + strlen(l) + strlen(r) + 9)))
 			stpcpy(stpcpy(stpcpy(stpcpy(stpcpy(stpcpy(stpcpy(stpcpy(stpcpy(res, "\""), sname), "\".\""), op), "\"("), l), ","), r), ")");
 
-		_DELETE(l);
-		_DELETE(r);
 		return res;
 	} break;
 	case SQL_OP: {

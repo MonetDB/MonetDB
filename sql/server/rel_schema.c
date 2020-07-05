@@ -477,7 +477,6 @@ column_options(sql_query *query, dlist *opt_list, sql_schema *ss, sql_table *t, 
 					r = symbol2string(sql, s->data.sym, 0, &err);
 					if (!r) {
 						(void) sql_error(sql, 02, SQLSTATE(42000) "Incorrect default value '%s'\n", err?err:"");
-						if (err) _DELETE(err);
 						return SQL_ERR;
 					} else {
 						mvc_default(sql, cs, r);

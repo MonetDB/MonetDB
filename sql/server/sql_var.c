@@ -145,13 +145,10 @@ frame_push_table(mvc *sql, sql_table *t)
 		return NULL;
 	slt->table = t;
 	t->s = NULL;
-	if (!f->tables && !(f->tables = list_create(NULL))) {
+	if (!f->tables && !(f->tables = list_create(NULL)))
 		return NULL;
-	}
-	if (!list_append(f->tables, slt)) {
-		_DELETE(slt);
+	if (!list_append(f->tables, slt))
 		return NULL;
-	}
 	return slt;
 }
 
