@@ -127,5 +127,5 @@ NULL	0.36945874012955704	NULL
 "EjgaDfV\t6m)Qvw0'%cW#\015*]h "	0.944146436872532	""
 "M"	0.7309075439656509	NULL
 
-UPDATE t0 SET c2 = r'' WHERE (((length(r'-1474806813'))>>(((patindex(t0.c0, t0.c2))+(CAST(2131293036 AS INT)))))) NOT IN (0.21471945711648477, t0.c1, t0.c1, ((CAST(((-1593438153)*(2069478567)) AS INT))/(1542678144)));
+UPDATE t0 SET c2 = r'' WHERE (((length(r'-14'))>>(((patindex(t0.c0, t0.c2))+(CAST(2 AS INT)))))) NOT IN (0.2, t0.c1, t0.c1, ((CAST(((-1)*(2)) AS INT))/(2)));
 ROLLBACK;
