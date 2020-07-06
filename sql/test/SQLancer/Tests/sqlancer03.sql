@@ -91,20 +91,20 @@ CREATE TABLE "sys"."t0" (
 	CONSTRAINT "t0_c2_pkey" PRIMARY KEY ("c2"),
 	CONSTRAINT "t0_c0_c1_unique" UNIQUE ("c0", "c1")
 );
-INSERT INTO "sys"."t0" VALUES (NULL, true, 10);
-INSERT INTO "sys"."t0" VALUES (NULL, false, 11);
-INSERT INTO "sys"."t0" VALUES (true, NULL, 12);
-INSERT INTO "sys"."t0" VALUES (NULL, false, 13);
-INSERT INTO "sys"."t0" VALUES (NULL, true, 14);
-INSERT INTO "sys"."t0" VALUES (true, false, 15);
-INSERT INTO "sys"."t0" VALUES (NULL, true, 16);
-INSERT INTO "sys"."t0" VALUES (true, true, 17);
-INSERT INTO "sys"."t0" VALUES (NULL, true, 18);
-INSERT INTO "sys"."t0" VALUES (NULL, false, 19);
-INSERT INTO "sys"."t0" VALUES (true, NULL, 20);
-INSERT INTO "sys"."t0" VALUES (true, NULL, 21);
-INSERT INTO "sys"."t0" VALUES (NULL, NULL, 22);
-INSERT INTO "sys"."t0" VALUES (false, true, 23);
+INSERT INTO "sys"."t0" VALUES (NULL, true, 10),
+ (NULL, false, 11),
+ (true, NULL, 12),
+ (NULL, false, 13),
+ (NULL, true, 14),
+ (true, false, 15),
+ (NULL, true, 16),
+ (true, true, 17),
+ (NULL, true, 18),
+ (NULL, false, 19),
+ (true, NULL, 20),
+ (true, NULL, 21),
+ (NULL, NULL, 22),
+ (false, true, 23);
 TRUNCATE t0;
 
 -- The following copy into shouldn't trigger a constrain violation error (it's the same insert above)
