@@ -30,6 +30,7 @@ SQLgetColumnSize(sql_trans *tr, sql_column *c, int access)
 {
 	lng size = 0;
 	BAT *b;
+	store_lock();
 	switch(access){
 	case 0:
 		b= store_funcs.bind_col(tr, c, RDONLY);
@@ -57,6 +58,7 @@ SQLgetColumnSize(sql_trans *tr, sql_column *c, int access)
 			BBPunfix(b->batCacheid);
 		}
 	}
+	store_unlock();
 	return size;
 }
 
