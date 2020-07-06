@@ -125,6 +125,7 @@ suffixrules = {
     '.xs':   ('/*',    ' */', ' * ',  ''),
     '.y':    ('/*',    ' */', ' * ',  ''),
     # we also match some complete filenames
+    'CMakeLists.txt': ('#[[', '#]]', '# ', ''),
     'Makefile': ('', '', '# ', ''),
     '.merovingian_properties.in': ('', '', '# ', ''),
     'configure.ag': ('', '', 'dnl ', ''),
@@ -177,7 +178,11 @@ def addlicense(file, pre = None, post = None, start = None, end = None, verbose 
     except IOError:
         print('Cannot create temp file %s.new' % file, file=sys.stderr)
         return
-    data = f.read()
+    try:
+        data = f.read()
+    except UnicodeError:
+        print('UnicodeError in file %s' % file, file=sys.stderr)
+        return
     if PERL_COPYRIGHT in data:
         notice = PERL_COPYRIGHT
     elif COPYRIGHT_NOTICE in data:
@@ -282,7 +287,11 @@ def dellicense(file, pre = None, post = None, start = None, end = None, verbose 
     except IOError:
         print('Cannot create temp file %s.new' % file, file=sys.stderr)
         return
-    data = f.read()
+    try:
+        data = f.read()
+    except UnicodeError:
+        print('UnicodeError in file %s' % file, file=sys.stderr)
+        return
     if PERL_COPYRIGHT in data:
         notice = PERL_COPYRIGHT
     elif COPYRIGHT_NOTICE in data:

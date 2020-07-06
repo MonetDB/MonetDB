@@ -6,7 +6,6 @@
  * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
  */
 
-
 #include "monetdb_config.h"
 #include "rel_distribute.h"
 #include "rel_rel.h"
