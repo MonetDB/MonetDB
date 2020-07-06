@@ -1084,7 +1084,7 @@ count_col(sql_trans *tr, sql_column *c, int all)
 		sql_column *oc = tr_find_column(tr->parent, c);
 		c->data = timestamp_delta(oc->data, c->base.stime);
 	}
-        b = c->data;
+	b = c->data;
 	if (!b)
 		return 1;
 	if (all)
@@ -1890,8 +1890,11 @@ delayed_destroy_dbat(sql_dbat *b)
 	if (!n)
 		return LOG_OK;
 	MT_lock_set(&destroy_lock);
-	while(n->next)
+	assert(n->r.refcnt == 1);
+	while(n->next) {
+		assert(n->r.refcnt == 1);
 		n = n->next;
+	}
 	n->next = tobe_destroyed_dbat;
 	tobe_destroyed_dbat = b;
 	MT_lock_unset(&destroy_lock);
@@ -2676,6 +2679,7 @@ update_table(sql_trans *tr, sql_table *ft, sql_table *tt)
 			if (!tt->data)
 				tt->base.allocated = ft->base.allocated;
 			ft->data = NULL;
+			assert(!b->next);
 			b->next = tt->data;
 			tt->data = b;
 
@@ -2729,6 +2733,7 @@ update_table(sql_trans *tr, sql_table *ft, sql_table *tt)
 				if (!oc->data)
 					oc->base.allocated = cc->base.allocated;
 				cc->data = NULL;
+				assert(!b->next);
 				b->next = oc->data;
 				oc->data = b;
 				tr_handle_snapshot(tr, b);
@@ -2817,6 +2822,7 @@ update_table(sql_trans *tr, sql_table *ft, sql_table *tt)
 					if (!oi->data)
 						oi->base.allocated = ci->base.allocated;
 					ci->data = NULL;
+					assert(!b->next);
 					b->next = oi->data;
 					oi->data = b;
 					tr_handle_snapshot(tr, b);
@@ -2871,6 +2877,7 @@ update_table(sql_trans *tr, sql_table *ft, sql_table *tt)
 	if (ft->data)
 		destroy_del(tr, ft);
 	ft->base.allocated = 0;
+	ft->data = NULL;
 	return ok;
 }
 
