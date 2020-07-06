@@ -1098,23 +1098,7 @@ exp_bin(backend *be, sql_exp *e, stmt *left, stmt *right, stmt *grp, stmt *ext, 
 						s = stmt_unop(be, s, a);
 						s->cand = cand;
 					}
-#if 0
-				} else if (((e->flag&3) != 3) /* both sides closed use between implementation */ && l->nrcols > 0 && r->nrcols > 0 && r2->nrcols > 0) {
-					s = stmt_uselect(be, l, r, range2lcompare(e->flag),
-					    stmt_uselect(be, l, r2, range2rcompare(e->flag), sel, is_anti(e), 0), is_anti(e), 0);
-#endif
 				} else {
-					/* done in stmt_uselect2
-					if (sel && ((l->cand && l->nrcols) || (r->cand && r->nrcols) || (r2->cand && r->nrcols))) {
-						if (!l->cand && l->nrcols)
-							l = stmt_project(be, sel, l);
-						if (!r->cand && r->nrcols)
-							r = stmt_project(be, sel, r);
-						if (!r2->cand && r2->nrcols)
-							r2 = stmt_project(be, sel, r2);
-						sel = NULL;
-					}
-					*/
 					if (l->nrcols == 0)
 						l = stmt_const(be, bin_first_column(be, left), l);
 					s = stmt_uselect2(be, l, r, r2, (comp_type)e->flag, sel, is_anti(e));
