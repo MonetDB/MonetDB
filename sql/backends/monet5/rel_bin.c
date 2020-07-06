@@ -1085,10 +1085,18 @@ exp_bin(backend *be, sql_exp *e, stmt *left, stmt *right, stmt *grp, stmt *ext, 
 						s = stmt_binop(be,
 							stmt_binop(be, l, r, lf),
 							stmt_binop(be, l, r2, rf), a);
+						if (l->cand)
+							s->cand = l->cand;
+						if (r->cand)
+							s->cand = r->cand;
+						if (r2->cand)
+							s->cand = r2->cand;
 					}
 					if (is_anti(e)) {
+						stmt *cand = s->cand;
 						sql_subfunc *a = sql_bind_func(sql->sa, sql->session->schema, "not", bt, NULL, F_FUNC);
 						s = stmt_unop(be, s, a);
+						s->cand = cand;
 					}
 #if 0
 				} else if (((e->flag&3) != 3) /* both sides closed use between implementation */ && l->nrcols > 0 && r->nrcols > 0 && r2->nrcols > 0) {
@@ -1096,6 +1104,7 @@ exp_bin(backend *be, sql_exp *e, stmt *left, stmt *right, stmt *grp, stmt *ext, 
 					    stmt_uselect(be, l, r2, range2rcompare(e->flag), sel, is_anti(e), 0), is_anti(e), 0);
 #endif
 				} else {
+					/* done in stmt_uselect2
 					if (sel && ((l->cand && l->nrcols) || (r->cand && r->nrcols) || (r2->cand && r->nrcols))) {
 						if (!l->cand && l->nrcols)
 							l = stmt_project(be, sel, l);
@@ -1105,6 +1114,7 @@ exp_bin(backend *be, sql_exp *e, stmt *left, stmt *right, stmt *grp, stmt *ext, 
 							r2 = stmt_project(be, sel, r2);
 						sel = NULL;
 					}
+					*/
 					if (l->nrcols == 0)
 						l = stmt_const(be, bin_first_column(be, left), l);
 					s = stmt_uselect2(be, l, r, r2, (comp_type)e->flag, sel, is_anti(e));
@@ -1118,6 +1128,10 @@ exp_bin(backend *be, sql_exp *e, stmt *left, stmt *right, stmt *grp, stmt *ext, 
 					sql_subfunc *f = sql_bind_func(sql->sa, sql->session->schema, in_flag?"=":"<>", tail_type(l), tail_type(l), F_FUNC);
 					assert(f);
 					s = stmt_binop(be, l, r, f);
+					if (l->cand)
+						s->cand = l->cand;
+					if (r->cand)
+						s->cand = r->cand;
 				} else if (!reduce || (l->nrcols == 0 && r->nrcols == 0)) {
 					sql_subfunc *f = sql_bind_func(sql->sa, sql->session->schema,
 							compare_func((comp_type)e->flag, is_anti(e)),
@@ -1137,6 +1151,10 @@ exp_bin(backend *be, sql_exp *e, stmt *left, stmt *right, stmt *grp, stmt *ext, 
 					} else {
 						s = stmt_binop(be, l, r, f);
 					}
+					if (l->cand)
+						s->cand = l->cand;
+					if (r->cand)
+						s->cand = r->cand;
 				} else {
 					/* this can still be a join (as relational algebra and single value subquery results still means joins */
 					s = stmt_uselect(be, l, r, (comp_type)e->flag, sel, is_anti(e), is_semantics(e));
