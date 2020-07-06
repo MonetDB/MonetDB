@@ -194,19 +194,42 @@ CMDBATimprintsize(lng *ret, bat *bid)
 	return MAL_SUCCEED;
 }
 
-#define append_bulk_imp_fixed_size(TPE) \
+#define append_bulk_imp_fixed_size(TPE, UNION_VAL) \
 	do { \
+		ValRecord *stack = stk->stk; \
+		int *argv = pci->argv; \
 		TPE *restrict heap; \
-		total = count + inputs; \
+		total = number_existing + inputs; \
 		if (BATextend(b, total) != GDK_SUCCEED) { \
 			BBPunfix(b->batCacheid); \
 			throw(MAL,"bat.append_bulk", SQLSTATE(HY013) MAL_MALLOC_FAIL); \
 		} \
-		heap = Tloc(b, count); \
-		for (int i = 3, args = pci->argc; i < args; i++, j++) { \
-			TPE val = *(TPE*) getArgReference(stk,pci,i); \
-			new_nil |= is_##TPE##_nil(val); \
-			heap[j] = val; \
+		heap = (TPE*) Tloc(b, number_existing); \
+		if (!b->tsorted && !b->trevsorted) { \
+			for (int i = 3, args = pci->argc; i < args; i++) { \
+				TPE next = stack[argv[i]].val.UNION_VAL; \
+				new_nil |= is_##TPE##_nil(next); \
+				heap[j++] = next; \
+			} \
+		} else { \
+			bool sorted = b->tsorted, revsorted = b->trevsorted; \
+			TPE prev = stack[argv[3]].val.UNION_VAL; \
+			new_nil |= is_##TPE##_nil(prev); \
+			if (number_existing) { \
+				TPE last = *(TPE*) Tloc(b, number_existing - 1); \
+				sorted &= prev >= last; \
+				revsorted &= prev <= last; \
+			} \
+			heap[j++] = prev; \
+			for (int i = 4, args = pci->argc; i < args; i++) { \
+				TPE next = stack[argv[i]].val.UNION_VAL; \
+				new_nil |= is_##TPE##_nil(next); \
+				sorted &= next >= prev; \
+				revsorted &= next <= prev; \
+				heap[j++] = prev = next; \
+			} \
+			b->tsorted &= sorted; \
+			b->trevsorted &= revsorted; \
 		} \
 	} while (0)
 
@@ -216,7 +239,7 @@ CMDBATappend_bulk(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	bat *r = getArgReference_bat(stk, pci, 0), *bid = getArgReference_bat(stk, pci, 1);
 	bit force = *getArgReference_bit(stk, pci, 2), new_nil = 0;
 	BAT *b;
-	BUN inputs = (BUN)(pci->argc - 3), count = 0, total = 0, j = 0;
+	BUN inputs = (BUN)(pci->argc - 3), number_existing = 0, total = 0, j = 0;
 
 	(void) cntxt;
 	if ((b = BATdescriptor(*bid)) == NULL)
@@ -224,7 +247,7 @@ CMDBATappend_bulk(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	if (inputs > 0) {
 		uint8_t storage = ATOMstorage(b->ttype);
-		count = BATcount(b);
+		number_existing = BATcount(b);
 
 		if (isaBatType(getArgType(mb, pci, 3))) { /* use BATappend for the bulk case */
 			gdk_return rt;
@@ -244,48 +267,40 @@ CMDBATappend_bulk(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		} else if (b->ttype < TYPE_str && storage == b->ttype) {
 			switch (b->ttype) {
 			case TYPE_bit:
-				append_bulk_imp_fixed_size(bit);
-				break;
 			case TYPE_bte:
-				append_bulk_imp_fixed_size(bte);
+				append_bulk_imp_fixed_size(bte, btval);
 				break;
 			case TYPE_sht:
-				append_bulk_imp_fixed_size(sht);
-				break;
-			case TYPE_int:
-				append_bulk_imp_fixed_size(int);
-				break;
-			case TYPE_lng:
-				append_bulk_imp_fixed_size(lng);
-				break;
-			case TYPE_oid:
-				append_bulk_imp_fixed_size(oid);
-				break;
-			case TYPE_flt:
-				append_bulk_imp_fixed_size(flt);
-				break;
-			case TYPE_dbl:
-				append_bulk_imp_fixed_size(dbl);
+				append_bulk_imp_fixed_size(sht, shval);
 				break;
 			case TYPE_date:
-				append_bulk_imp_fixed_size(date);
+			case TYPE_int:
+				append_bulk_imp_fixed_size(int, ival);
 				break;
 			case TYPE_daytime:
-				append_bulk_imp_fixed_size(daytime);
-				break;
 			case TYPE_timestamp:
-				append_bulk_imp_fixed_size(timestamp);
+			case TYPE_lng:
+				append_bulk_imp_fixed_size(lng, lval);
+				break;
+			case TYPE_oid:
+				append_bulk_imp_fixed_size(oid, oval);
+				break;
+			case TYPE_flt:
+				append_bulk_imp_fixed_size(flt, fval);
+				break;
+			case TYPE_dbl:
+				append_bulk_imp_fixed_size(dbl, dval);
 				break;
 #ifdef HAVE_HGE
 			case TYPE_hge:
-				append_bulk_imp_fixed_size(hge);
+				append_bulk_imp_fixed_size(hge, hval);
 				break;
 #endif
 			default:
 				assert(0);
 			}
 			BATsetcount(b, total);
-			if (count == 0) {
+			if (number_existing == 0) {
 				b->tnil = new_nil;
 				b->tnonil = !new_nil;
 			} else {
@@ -293,10 +308,8 @@ CMDBATappend_bulk(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				b->tnonil &= ~new_nil;
 			}
 			b->tkey = BATcount(b) <= 1;
-			b->tsorted = BATcount(b) <= 1;
-			b->trevsorted = BATcount(b) <= 1;
 		} else { /* non fixed size, use the conventional way */
-			total = count + inputs;
+			total = number_existing + inputs;
 			if (BATextend(b, total) != GDK_SUCCEED) {
 				BBPunfix(b->batCacheid);
 				throw(MAL,"bat.append_bulk", SQLSTATE(HY013) MAL_MALLOC_FAIL);
