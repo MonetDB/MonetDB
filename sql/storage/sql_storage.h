@@ -48,6 +48,8 @@ extern int store_initialized;
 /* relational interface */
 typedef oid (*column_find_row_fptr)(sql_trans *tr, sql_column *c, const void *value, ...);
 typedef void *(*column_find_value_fptr)(sql_trans *tr, sql_column *c, oid rid);
+typedef sqlid (*column_find_sqlid_fptr)(sql_trans *tr, sql_column *c, oid rid);
+typedef int (*column_find_int_fptr)(sql_trans *tr, sql_column *c, oid rid);
 typedef int (*column_update_value_fptr)(sql_trans *tr, sql_column *c, oid rid, void *value);
 typedef int (*table_insert_fptr)(sql_trans *tr, sql_table *t, ...);
 typedef int (*table_delete_fptr)(sql_trans *tr, sql_table *t, oid rid);
@@ -93,6 +95,8 @@ typedef void (*subrids_destroy_fptr)(subrids *r);
 typedef struct table_functions {
 	column_find_row_fptr column_find_row;
 	column_find_value_fptr column_find_value;
+	column_find_sqlid_fptr column_find_sqlid;
+	column_find_int_fptr column_find_int;
 	column_update_value_fptr column_update_value;
 	table_insert_fptr table_insert;
 	table_delete_fptr table_delete;
