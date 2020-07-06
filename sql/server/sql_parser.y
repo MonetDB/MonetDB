@@ -6394,7 +6394,7 @@ sqlformaterror(mvc * sql, _In_z_ _Printf_format_string_ const char *format, ...)
 		/* default: Syntax error or access rule violation */
 		sqlstate = SQLSTATE(42000);
 	}
-	assert(sql->scanner.errstr == NULL);
+	//assert(sql->scanner.errstr == NULL);
 	if (sql->errstr[0] == '\0') {
 		if (sqlstate)
 			len += snprintf(sql->errstr+len, ERRSIZE-1-len, "%s", sqlstate);
