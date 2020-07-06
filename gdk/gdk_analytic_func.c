@@ -66,10 +66,7 @@ GDKanalyticaldiff(BAT *r, BAT *b, BAT *p, int tpe)
 	BUN i, cnt = BATcount(b);
 	bit *restrict rb = (bit *) Tloc(r, 0), *restrict np = p ? (bit *) Tloc(p, 0) : NULL;
 
-	switch (tpe) {
-	case TYPE_bit:
-		ANALYTICAL_DIFF_IMP(bit);
-		break;
+	switch (ATOMbasetype(tpe)) {
 	case TYPE_bte:
 		ANALYTICAL_DIFF_IMP(bte);
 		break;
@@ -299,10 +296,7 @@ GDKanalyticalfirst(BAT *r, BAT *b, BAT *s, BAT *e, int tpe)
 	start = (lng *) Tloc(s, 0);
 	end = (lng *) Tloc(e, 0);
 
-	switch (tpe) {
-	case TYPE_bit:
-		ANALYTICAL_FIRST_IMP(bit);
-		break;
+	switch (ATOMbasetype(tpe)) {
 	case TYPE_bte:
 		ANALYTICAL_FIRST_IMP(bte);
 		break;
@@ -371,10 +365,7 @@ GDKanalyticallast(BAT *r, BAT *b, BAT *s, BAT *e, int tpe)
 	start = (lng *) Tloc(s, 0);
 	end = (lng *) Tloc(e, 0);
 
-	switch (tpe) {
-	case TYPE_bit:
-		ANALYTICAL_LAST_IMP(bit);
-		break;
+	switch (ATOMbasetype(tpe)) {
 	case TYPE_bte:
 		ANALYTICAL_LAST_IMP(bte);
 		break;
@@ -543,10 +534,7 @@ GDKanalyticalnthvalue(BAT *r, BAT *b, BAT *s, BAT *e, BAT *l, const void *restri
 		default:
 			goto nosupport;
 		}
-		switch (tp1) {
-		case TYPE_bit:
-			ANALYTICAL_NTHVALUE_IMP_SINGLE_FIXED(bit);
-			break;
+		switch (ATOMbasetype(tp1)) {
 		case TYPE_bte:
 			ANALYTICAL_NTHVALUE_IMP_SINGLE_FIXED(bte);
 			break;
@@ -589,10 +577,7 @@ GDKanalyticalnthvalue(BAT *r, BAT *b, BAT *s, BAT *e, BAT *l, const void *restri
 		}
 		}
 	} else {
-		switch (tp1) {
-		case TYPE_bit:
-			ANALYTICAL_NTHVALUE_CALC_FIXED(bit);
-			break;
+		switch (ATOMbasetype(tp1)) {
 		case TYPE_bte:
 			ANALYTICAL_NTHVALUE_CALC_FIXED(bte);
 			break;
@@ -721,10 +706,7 @@ GDKanalyticallag(BAT *r, BAT *b, BAT *p, BUN lag, const void *restrict default_v
 
 	assert(default_value);
 
-	switch (tpe) {
-	case TYPE_bit:
-		ANALYTICAL_LAG_IMP(bit);
-		break;
+	switch (ATOMbasetype(tpe)) {
 	case TYPE_bte:
 		ANALYTICAL_LAG_IMP(bte);
 		break;
@@ -864,10 +846,7 @@ GDKanalyticallead(BAT *r, BAT *b, BAT *p, BUN lead, const void *restrict default
 
 	assert(default_value);
 
-	switch (tpe) {
-	case TYPE_bit:
-		ANALYTICAL_LEAD_IMP(bit);
-		break;
+	switch (ATOMbasetype(tpe)) {
 	case TYPE_bte:
 		ANALYTICAL_LEAD_IMP(bte);
 		break;
@@ -972,10 +951,7 @@ GDKanalytical##OP(BAT *r, BAT *b, BAT *s, BAT *e, int tpe)		\
 	start = (lng*)Tloc(s, 0);					\
 	end = (lng*)Tloc(e, 0);						\
 									\
-	switch (tpe) {							\
-	case TYPE_bit:							\
-		ANALYTICAL_MIN_MAX_CALC(bit, IMP);			\
-		break;							\
+	switch (ATOMbasetype(tpe)) {				\
 	case TYPE_bte:							\
 		ANALYTICAL_MIN_MAX_CALC(bte, IMP);			\
 		break;							\
@@ -1068,10 +1044,7 @@ GDKanalyticalcount(BAT *r, BAT *b, BAT *s, BAT *e, const bit *restrict ignore_ni
 		for (; i < cnt; i++, rb++)
 			*rb = (end[i] > start[i]) ? (end[i] - start[i]) : 0;
 	} else {
-		switch (tpe) {
-		case TYPE_bit:
-			ANALYTICAL_COUNT_NO_NIL_FIXED_SIZE_IMP(bit);
-			break;
+		switch (ATOMbasetype(tpe)) {
 		case TYPE_bte:
 			ANALYTICAL_COUNT_NO_NIL_FIXED_SIZE_IMP(bte);
 			break;
