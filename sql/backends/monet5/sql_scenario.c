@@ -226,7 +226,12 @@ SQLprepareClient(Client c, int login)
 	str msg = MAL_SUCCEED;
 
 	if (c->sqlcontext == 0) {
-		m = mvc_create(sa_create(NULL), c->idx, SQLdebug, c->fdin, c->fdout);
+		sql_allocator *sa = sa_create(NULL);
+		if (sa == NULL) {
+			msg = createException(SQL,"sql.initClient", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+			goto bailout;
+		}
+		m = mvc_create(sa, c->idx, SQLdebug, c->fdin, c->fdout);
 		if (m == NULL) {
 			msg = createException(SQL,"sql.initClient", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			goto bailout;
@@ -265,8 +270,9 @@ SQLprepareClient(Client c, int login)
 	}
 
 bailout:
-	/*expect SQL text first */
-	be->language = 'S';
+	/* expect SQL text first */
+	if (be)
+		be->language = 'S';
 	/* Set state, this indicates an initialized client scenario */
 	c->state[MAL_SCENARIO_READER] = c;
 	c->state[MAL_SCENARIO_PARSER] = c;
@@ -325,6 +331,7 @@ SQLinit(Client c)
 	static int maybeupgrade = 1;
 	backend *be = NULL;
 	mvc *m = NULL;
+	sql_allocator *sa = NULL;
 
 	MT_lock_set(&sql_contextLock);
 
@@ -345,7 +352,12 @@ SQLinit(Client c)
 		SQLdebug |= 64;
 	if (readonly)
 		SQLdebug |= 32;
-	if ((SQLnewcatalog = mvc_init(sa_create(NULL), SQLdebug, GDKinmemory() ? store_mem : store_bat, readonly, single_user)) < 0) {
+
+	if (!(sa = sa_create(NULL))) {
+		MT_lock_unset(&sql_contextLock);
+		throw(SQL,"sql.init",SQLSTATE(HY013) MAL_MALLOC_FAIL);
+	}
+	if ((SQLnewcatalog = mvc_init(sa, SQLdebug, GDKinmemory() ? store_mem : store_bat, readonly, single_user)) < 0) {
 		MT_lock_unset(&sql_contextLock);
 		throw(SQL, "SQLinit", SQLSTATE(42000) "Catalogue initialization failed");
 	}
