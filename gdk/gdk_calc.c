@@ -13202,9 +13202,6 @@ BATcalcbetweenbatcst(BAT *b, BAT *lo, const ValRecord *hi, BAT *s, BAT *slo, BAT
 	BATcheck(b, NULL);
 	BATcheck(lo, NULL);
 
-	if (checkbats(b, lo, __func__) != GDK_SUCCEED)
-		return NULL;
-
 	if (ATOMbasetype(b->ttype) != ATOMbasetype(hi->vtype)) {
 		GDKerror("incompatible input types.\n");
 		return NULL;
