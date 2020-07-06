@@ -65,3 +65,62 @@ COPY 29 RECORDS INTO "sys"."t0" FROM stdin USING DELIMITERS E'\t',E'\n','"';
 select "insert"('屁{珙', 1, 1, '1'), "insert"('屁{珙', 1, 1, '抔'), "insert"('屁抔珙', 1, 1, 'ಜ'), "insert"('a', 0, 1, 'ಜ'), "insert"('a', 0, 0, 'ಜ');
 select "insert"('屁{珙', 1, 1, '1'), "insert"('屁{珙', 1, 1, '抔'), "insert"('屁抔珙', 1, 1, 'ಜ') from t0;
 ROLLBACK;
+
+CREATE TABLE t0(c0 boolean, c1 boolean, c2 serial, UNIQUE(c0, c1)); -- Bug 6920
+INSERT INTO t0(c1) VALUES((0.5968066098520423) NOT  BETWEEN SYMMETRIC (CAST(length(upper(r'z')) AS INT)) AND (1347145665)), (FALSE);
+INSERT INTO t0(c0) VALUES(TRUE);
+INSERT INTO t0(c1) VALUES(FALSE), (TRUE);
+INSERT INTO t0(c2, c0, c1) VALUES(1347145665, (ltrim(lower(r'K'), ((upper(r'296348087'))||(- (1582370739))))) IS NOT NULL, (((lower(r'ö
+eg#K,纗HSJw!{cOw⇒l/l!B*H'))||(((CAST(0.12411368110083143 AS INT))+(-1795901173))))) IN (lower(CAST(TRUE AS STRING)))), (-1795901173, NULL, (0.9575114678279173) NOT IN (2.96348087E8, 0.5010777753365665)), (1922411524, TRUE, (0.5020325273627405) NOT IN (-1388966352, 1163825182));
+INSERT INTO t0(c1) VALUES(TRUE);
+INSERT INTO t0(c1, c2) VALUES(FALSE, 623585248);
+INSERT INTO t0(c0) VALUES(NOT (NOT ((((-1388966352)*(-984145454))) NOT IN (0.7356286)))), (FALSE);
+INSERT INTO t0(c0) VALUES(TRUE);
+INSERT INTO t0(c2) VALUES(-1235619315);
+DELETE FROM t0 WHERE (t0.c0) = FALSE;
+INSERT INTO t0(c1, c0, c2) VALUES(TRUE, ((+ (- (1580722914)))>(charindex(CAST(0.347536126443453330381316845887340605258941650390625 AS STRING), ((CAST(TRUE AS STRING(771)))||(0.2182260714120349831546263885684311389923095703125)), length(r'd')))), -1819817735);
+UPDATE t0 SET c2 = DEFAULT WHERE ((((t0.c1)OR(CAST(t0.c2 AS BOOLEAN))))OR((CAST(0.6873694879073857 AS DECIMAL)) NOT IN (0.10021624439224552371996423971722833812236785888671875)));
+SELECT t0.c0 FROM t0 WHERE ((CAST(t0.c2 AS INT)) NOT  BETWEEN ASYMMETRIC (abs(t0.c2)) AND (((t0.c2)/(t0.c2)))) NOT  BETWEEN ASYMMETRIC (t0.c0) AND ((t0.c2) NOT IN (t0.c2));
+DROP TABLE t0;
+
+CREATE TABLE "sys"."t0" (
+	"c0" BOOLEAN,
+	"c1" BOOLEAN,
+	"c2" INTEGER,
+	CONSTRAINT "t0_c2_pkey" PRIMARY KEY ("c2"),
+	CONSTRAINT "t0_c0_c1_unique" UNIQUE ("c0", "c1")
+);
+INSERT INTO "sys"."t0" VALUES (NULL, true, 10);
+INSERT INTO "sys"."t0" VALUES (NULL, false, 11);
+INSERT INTO "sys"."t0" VALUES (true, NULL, 12);
+INSERT INTO "sys"."t0" VALUES (NULL, false, 13);
+INSERT INTO "sys"."t0" VALUES (NULL, true, 14);
+INSERT INTO "sys"."t0" VALUES (true, false, 15);
+INSERT INTO "sys"."t0" VALUES (NULL, true, 16);
+INSERT INTO "sys"."t0" VALUES (true, true, 17);
+INSERT INTO "sys"."t0" VALUES (NULL, true, 18);
+INSERT INTO "sys"."t0" VALUES (NULL, false, 19);
+INSERT INTO "sys"."t0" VALUES (true, NULL, 20);
+INSERT INTO "sys"."t0" VALUES (true, NULL, 21);
+INSERT INTO "sys"."t0" VALUES (NULL, NULL, 22);
+INSERT INTO "sys"."t0" VALUES (false, true, 23);
+TRUNCATE t0;
+
+-- The following copy into shouldn't trigger a constrain violation error (it's the same insert above)
+COPY 14 RECORDS INTO "sys"."t0" FROM stdin USING DELIMITERS E'\t',E'\n','"';
+NULL	true	10
+NULL	false	11
+true	NULL	12
+NULL	false	13
+NULL	true	14
+true	false	15
+NULL	true	16
+true	true	17
+NULL	true	18
+NULL	false	19
+true	NULL	20
+true	NULL	21
+NULL	NULL	22
+false	true	23
+
+DROP TABLE t0;
