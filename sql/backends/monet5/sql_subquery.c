@@ -156,10 +156,7 @@ SQLall(ptr ret, const bat *bid)
 		oid p = oid_nil;
 		memcpy(ret, &p, sizeof(oid));
 	} else {
-		switch (b->ttype) {
-		case TYPE_bit:
-			SQLall_imp(bit);
-			break;
+		switch (ATOMbasetype(b->ttype)) {
 		case TYPE_bte:
 			SQLall_imp(bte);
 			break;
@@ -295,10 +292,7 @@ SQLnil(bit *ret, const bat *bid)
 	if (BATcount(b) > 0) {
 		BUN o = BUNlast(b);
 
-		switch (b->ttype) {
-		case TYPE_bit:
-			SQLnil_imp(bit);
-			break;
+		switch (ATOMbasetype(b->ttype)) {
 		case TYPE_bte:
 			SQLnil_imp(bte);
 			break;
@@ -630,10 +624,7 @@ SQLanyequal(bit *ret, const bat *bid1, const bat *bid2)
 	if (BATcount(r) > 0) {
 		BUN o = BUNlast(r);
 
-		switch (l->ttype) {
-		case TYPE_bit:
-			SQLanyequal_or_not_imp(bit, TRUE);
-			break;
+		switch (ATOMbasetype(l->ttype)) {
 		case TYPE_bte:
 			SQLanyequal_or_not_imp(bte, TRUE);
 			break;
@@ -826,10 +817,7 @@ SQLallnotequal(bit *ret, const bat *bid1, const bat *bid2)
 	if (BATcount(r) > 0) {
 		BUN o = BUNlast(r);
 
-		switch (l->ttype) {
-		case TYPE_bit:
-			SQLanyequal_or_not_imp(bit, FALSE);
-			break;
+		switch (ATOMbasetype(l->ttype)) {
 		case TYPE_bte:
 			SQLanyequal_or_not_imp(bte, FALSE);
 			break;
