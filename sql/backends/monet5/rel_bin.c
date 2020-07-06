@@ -3809,13 +3809,26 @@ insert_check_ukey(backend *be, list *inserts, sql_key *k, stmt *idx_inserts)
 		if ((!idx_inserts && ins->nrcols) || (idx_inserts && idx_inserts->nrcols)) {	/* insert columns not atoms */
 			sql_subfunc *or = sql_bind_func_result(sql->sa, sql->session->schema, "or", F_FUNC, bt, 2, bt, bt);
 			stmt *orderby_ids = NULL, *orderby_grp = NULL;
+			stmt *sel = NULL;
 
+			/* remove any nils as in stmt_order NULL = NULL, instead of NULL != NULL */
+			if ((k->type == ukey) && stmt_has_null(col)) {
+
+				for (m = k->columns->h; m; m = m->next) {
+					sql_kc *c = m->data;
+					stmt *cs = list_fetch(inserts, c->c->colnr);
+
+					sel = stmt_selectnonil(be, cs, sel);
+				}
+			}
 			/* implementation uses sort key check */
 			for (m = k->columns->h; m; m = m->next) {
 				sql_kc *c = m->data;
 				stmt *orderby;
 				stmt *cs = list_fetch(inserts, c->c->colnr);
 
+				if (sel)
+					cs = stmt_project(be, sel, cs);
 				if (orderby_grp)
 					orderby = stmt_reorder(be, cs, 1, 0, orderby_ids, orderby_grp);
 				else
