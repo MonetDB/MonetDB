@@ -620,7 +620,7 @@ scanner_getc(struct scanner *lc)
 	int c, m, n, mask;
 
 	if (scanner_read_more(lc, 1) == EOF) {
-		lc->errstr = SQLSTATE(42000) "end of input stream";
+		//lc->errstr = SQLSTATE(42000) "end of input stream";
 		return EOF;
 	}
 	lc->errstr = NULL;
