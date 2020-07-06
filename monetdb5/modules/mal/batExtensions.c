@@ -194,8 +194,10 @@ CMDBATimprintsize(lng *ret, bat *bid)
 	return MAL_SUCCEED;
 }
 
-#define append_bulk_imp_fixed_size(TPE) \
+#define append_bulk_imp_fixed_size(TPE, UNION_VAL) \
 	do { \
+		ValRecord *stack = stk->stk; \
+		int *argv = pci->argv; \
 		TPE *restrict heap; \
 		total = number_existing + inputs; \
 		if (BATextend(b, total) != GDK_SUCCEED) { \
@@ -205,13 +207,13 @@ CMDBATimprintsize(lng *ret, bat *bid)
 		heap = (TPE*) Tloc(b, number_existing); \
 		if (!b->tsorted && !b->trevsorted) { \
 			for (int i = 3, args = pci->argc; i < args; i++) { \
-				TPE next = *(TPE*) getArgReference(stk,pci,i); \
+				TPE next = stack[argv[i]].val.UNION_VAL; \
 				new_nil |= is_##TPE##_nil(next); \
 				heap[j++] = next; \
 			} \
 		} else { \
 			bool sorted = b->tsorted, revsorted = b->trevsorted; \
-			TPE prev = *(TPE*) getArgReference(stk,pci,3); \
+			TPE prev = stack[argv[3]].val.UNION_VAL; \
 			new_nil |= is_##TPE##_nil(prev); \
 			if (number_existing) { \
 				TPE last = *(TPE*) Tloc(b, number_existing - 1); \
@@ -220,7 +222,7 @@ CMDBATimprintsize(lng *ret, bat *bid)
 			} \
 			heap[j++] = prev; \
 			for (int i = 4, args = pci->argc; i < args; i++) { \
-				TPE next = *(TPE*) getArgReference(stk,pci,i); \
+				TPE next = stack[argv[i]].val.UNION_VAL; \
 				new_nil |= is_##TPE##_nil(next); \
 				sorted &= next >= prev; \
 				revsorted &= next <= prev; \
@@ -266,32 +268,32 @@ CMDBATappend_bulk(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			switch (b->ttype) {
 			case TYPE_bit:
 			case TYPE_bte:
-				append_bulk_imp_fixed_size(bte);
+				append_bulk_imp_fixed_size(bte, btval);
 				break;
 			case TYPE_sht:
-				append_bulk_imp_fixed_size(sht);
+				append_bulk_imp_fixed_size(sht, shval);
 				break;
 			case TYPE_date:
 			case TYPE_int:
-				append_bulk_imp_fixed_size(int);
+				append_bulk_imp_fixed_size(int, ival);
 				break;
 			case TYPE_daytime:
 			case TYPE_timestamp:
 			case TYPE_lng:
-				append_bulk_imp_fixed_size(lng);
+				append_bulk_imp_fixed_size(lng, lval);
 				break;
 			case TYPE_oid:
-				append_bulk_imp_fixed_size(oid);
+				append_bulk_imp_fixed_size(oid, oval);
 				break;
 			case TYPE_flt:
-				append_bulk_imp_fixed_size(flt);
+				append_bulk_imp_fixed_size(flt, fval);
 				break;
 			case TYPE_dbl:
-				append_bulk_imp_fixed_size(dbl);
+				append_bulk_imp_fixed_size(dbl, dval);
 				break;
 #ifdef HAVE_HGE
 			case TYPE_hge:
-				append_bulk_imp_fixed_size(hge);
+				append_bulk_imp_fixed_size(hge, hval);
 				break;
 #endif
 			default:
