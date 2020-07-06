@@ -1247,13 +1247,6 @@ JSONplaintext(char **r, size_t *l, size_t *ilen, JSON *jt, int idx, str sep, siz
 }
 
 static str
-JSONjson2text(str *ret, json *js)
-{
-	char *sep = " ";
-	return JSONjson2textSeparator(ret, js, &sep);
-}
-
-static str
 JSONjson2textSeparator(str *ret, json *js, str *sep)
 {
 	JSON *jt;
@@ -1278,6 +1271,13 @@ JSONjson2textSeparator(str *ret, json *js, str *sep)
 	*ret = s;
 	JSONfree(jt);
 	return MAL_SUCCEED;
+}
+
+static str
+JSONjson2text(str *ret, json *js)
+{
+	char *sep = " ";
+	return JSONjson2textSeparator(ret, js, &sep);
 }
 
 static str
