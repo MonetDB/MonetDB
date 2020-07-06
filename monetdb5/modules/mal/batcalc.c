@@ -1107,6 +1107,7 @@ CMDbatBETWEEN(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	tp = getArgType(mb, pci, 4);
 	if (tp == TYPE_bat || isaBatType(tp)) {
 		bid = *getArgReference_bat(stk, pci, 4);
+		has_cand = true;
 		if (!is_bat_nil(bid)) {
 			s = BATdescriptor(bid);
 			if (s == NULL)
@@ -1115,8 +1116,7 @@ CMDbatBETWEEN(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				r = s;
 				s = NULL;
 				has_cand = false;
-			} else
-				has_cand = true;
+			}
 		}
 		bc++;
 	}
