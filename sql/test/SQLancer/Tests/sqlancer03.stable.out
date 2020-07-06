@@ -186,8 +186,39 @@ stdout of test 'sqlancer03` in directory 'sql/test/SQLancer` itself:
 #	CONSTRAINT "t0_c2_pkey" PRIMARY KEY ("c2"),
 #	CONSTRAINT "t0_c0_c1_unique" UNIQUE ("c0", "c1")
 #);
+#INSERT INTO "sys"."t0" VALUES (NULL, true, 10),
+# (NULL, false, 11),
+# (true, NULL, 12),
+# (NULL, false, 13),
+# (NULL, true, 14),
+# (true, false, 15),
+# (NULL, true, 16),
+# (true, true, 17),
+# (NULL, true, 18),
+# (NULL, false, 19),
+# (true, NULL, 20),
+# (true, NULL, 21),
+# (NULL, NULL, 22),
+# (false, true, 23);
+[ 14	]
 #TRUNCATE t0;
-[ 0	]
+[ 14	]
+#COPY 14 RECORDS INTO "sys"."t0" FROM stdin USING DELIMITERS E'\t',E'\n','"';
+#NULL	true	10
+#NULL	false	11
+#true	NULL	12
+#NULL	false	13
+#NULL	true	14
+#true	false	15
+#NULL	true	16
+#true	true	17
+#NULL	true	18
+#NULL	false	19
+#true	NULL	20
+#true	NULL	21
+#NULL	NULL	22
+#false	true	23
+[ 14	]
 #DROP TABLE t0;
 
 # 17:14:16 >  
