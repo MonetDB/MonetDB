@@ -42,16 +42,20 @@ stdout of test '85` in directory 'sql/benchmarks/tpcds` itself:
 #  AND d_year = 2000
 #  AND cd1.cd_demo_sk = wr_refunded_cdemo_sk
 #  AND cd2.cd_demo_sk = wr_returning_cdemo_sk
-% sys.%5,	sys.%1,	sys.%2,	sys.%3 # table_name
-% %5,	%1,	%2,	%3 # name
-% clob,	double,	double,	double # type
-% 20,	24,	24,	24 # length
+% sys.%21,	sys.%15,	sys.%16,	sys.%17 # table_name
+% %21,	%15,	%16,	%17 # name
+% clob,	double,	decimal,	decimal # type
+% 20,	24,	11,	11 # length
 [ "Gift exchange",	76,	464.36,	8.62	]
 [ "Not the product that",	70,	876.67,	46.67	]
 [ "Parts missing",	7,	129.42,	38.65	]
 [ "reason 23",	47,	734.61,	6.17	]
-[ "reason 25",	5,	48.94,	53.145	]
-[ "reason 28",	8,	306.2,	37.06	]
+[ "reason 25",	5,	48.94,	53.15	]
+[ "reason 28",	8,	306.20,	37.06	]
+
+# 11:37:36 >  
+# 11:37:36 >  "Done."
+# 11:37:36 >  
 
 # 18:29:58 >  
 # 18:29:58 >  "Done."

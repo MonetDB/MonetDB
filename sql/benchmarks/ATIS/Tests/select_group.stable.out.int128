@@ -71,15 +71,15 @@ stdout of test 'select_group` in directory 'sql/benchmarks/ATIS` itself:
 #select avg(engines) from aircraft;
 % sys.%1 # table_name
 % %1 # name
-% double # type
-% 24 # length
-[ 2.059259259	]
+% decimal # type
+% 3 # length
+[ 2	]
 #select avg(engines) from aircraft where engines>0;
 % sys.%1 # table_name
 % %1 # name
-% double # type
-% 24 # length
-[ 2.376068376	]
+% decimal # type
+% 3 # length
+[ 2	]
 #select count(*),min(pay_load),max(pay_load) from aircraft where pay_load>0;
 % sys.%1,	sys.%2,	sys.%3 # table_name
 % %1,	%2,	%3 # name
@@ -119,9 +119,9 @@ stdout of test 'select_group` in directory 'sql/benchmarks/ATIS` itself:
 #SELECT from_airport,to_airport,avg(time_elapsed) FROM flight WHERE from_airport='ATL' AND to_airport='BOS' group by from_airport,to_airport;
 % sys.flight,	sys.flight,	sys.%1 # table_name
 % from_airport,	to_airport,	%1 # name
-% char,	char,	double # type
-% 3,	3,	24 # length
-[ "ATL",	"BOS",	154.3684211	]
+% char,	char,	decimal # type
+% 3,	3,	5 # length
+[ "ATL",	"BOS",	154	]
 #select city_code, avg(ground_fare) from ground_service where ground_fare<>0 group by city_code;
 % sys.ground_service,	sys.%1 # table_name
 % city_code,	%1 # name
@@ -156,7 +156,7 @@ stdout of test 'select_group` in directory 'sql/benchmarks/ATIS` itself:
 [ 3,	"BBWI"	]
 [ 1,	""	]
 #select category,count(*) as totalnr from aircraft where engines=2 group by category having count(*)>4 order by category;
-% sys.aircraft,	sys.%1 # table_name
+% sys.aircraft,	sys. # table_name
 % category,	totalnr # name
 % char,	bigint # type
 % 10,	2 # length
