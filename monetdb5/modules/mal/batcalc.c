@@ -1076,7 +1076,7 @@ CMDbatBETWEEN(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	bat bid;
 	BAT *bn, *b = NULL, *lo = NULL, *hi = NULL, *s = NULL, *slo = NULL, *shi = NULL, *r = NULL;
-	int tp1, tp2, tp3;
+	int tp1, tp2, tp3, tp;
 	int bc = 0;					/* number of extra BAT arguments */
 	bool symmetric, linc, hinc, nils_false, anti, has_cand = false;
 
@@ -1104,7 +1104,8 @@ CMDbatBETWEEN(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		if (hi == NULL)
 			goto bailout;
 	}
-	if (isaBatType(getArgType(mb, pci, 4))) {
+	tp = getArgType(mb, pci, 4);
+	if (tp == TYPE_bat || isaBatType(tp)) {
 		bid = *getArgReference_bat(stk, pci, 4);
 		if (!is_bat_nil(bid)) {
 			s = BATdescriptor(bid);
@@ -1120,7 +1121,8 @@ CMDbatBETWEEN(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		bc++;
 	}
 	if (has_cand && lo) {
-		if (isaBatType(getArgType(mb, pci, 4 + bc))) {
+		tp = getArgType(mb, pci, 4 + bc);
+		if (tp == TYPE_bat || isaBatType(tp)) {
 			bid = *getArgReference_bat(stk, pci, 4 + bc);
 			if (!is_bat_nil(bid)) {
 				slo = BATdescriptor(bid);
@@ -1138,7 +1140,8 @@ CMDbatBETWEEN(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		}
 	}
 	if (has_cand && hi) {
-		if (!isaBatType(getArgType(mb, pci, 4 + bc)))
+		tp = getArgType(mb, pci, 4 + bc);
+		if (tp != TYPE_bat && !isaBatType(tp))
 			goto bailout;
 		bid = *getArgReference_bat(stk, pci, 4 + bc);
 		shi = BATdescriptor(bid);
@@ -1146,7 +1149,8 @@ CMDbatBETWEEN(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			goto bailout;
 		bc++;
 	}
-	if (r == NULL && isaBatType(getArgType(mb, pci, 4 + bc))) {
+	tp = getArgType(mb, pci, 4 + bc);
+	if (r == NULL && (tp == TYPE_bat || isaBatType(tp))) {
 		bid = *getArgReference_bat(stk, pci, 4 + bc);
 		if (!is_bat_nil(bid)) {
 			r = BATdescriptor(bid);
