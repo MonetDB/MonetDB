@@ -12,7 +12,7 @@ from monetdbd import MonetDBD
 
 # MonetDBD.VERBOSE = True
 
-gdk_farmdir = os.environ.get('GDK_FARMDIR') or '/tmp'
+gdk_farmdir = os.environ.get('TSTTRGDIR') or '/tmp/'
 farmdir = os.path.join(gdk_farmdir, 'monetdbd-test')
 
 def header(*args, **opts):
@@ -23,7 +23,7 @@ def header(*args, **opts):
 
 header('CREATE FARM')
 
-# test that .napshotdir is not set by default
+# test that .snapshotdir is not set by default
 with MonetDBD(farmdir, set_snapdir=False) as m:
 
     header('CHECK SNAPDIR NOT SET')
@@ -93,3 +93,5 @@ with MonetDBD(farmdir, set_snapdir=False) as m:
     m.run_monetdb('snapshot', 'restore', qcustom_name, 'foo99', output=True)
     out = m.run_mclient('-s', 'select * from t', '-fcsv', output=True, db='foo99')
     assert out.strip() == 'foo1'
+
+    header('DONE')

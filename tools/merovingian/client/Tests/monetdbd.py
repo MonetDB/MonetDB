@@ -99,8 +99,10 @@ class MonetDBD:
 
     def __exit__(self, exc_type, exc_val, exc_tb):
         if self.proc:
+            self.run_monetdb('stop', '-a')
             self.proc.terminate()
         if exc_type == None:
             # clean exit
-            self.remove_dir()
+            if not self.keep:
+                self.remove_dir()
         return False # do not suppress any exceptions

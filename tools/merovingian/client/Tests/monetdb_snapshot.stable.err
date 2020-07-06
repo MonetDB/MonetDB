@@ -18,6 +18,7 @@ snapshot: Snapshot target file not allowed because no 'snapshotdir' has been con
 -   SNAPSHOT MULTI
 -   RESTORE OVER EXISTING
 -   CUSTOM FILENAME
+-   DONE
 
 # 15:32:48 >  
 # 15:32:48 >  "Done."
