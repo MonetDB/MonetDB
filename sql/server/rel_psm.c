@@ -991,9 +991,8 @@ rel_create_func(sql_query *query, dlist *qname, dlist *params, symbol *res, dlis
 			sql_schema *os = cur_schema(sql);
 
 			if (create) { /* needed for recursive functions */
-				q = query_cleaned(q);
+				q = query_cleaned(sql->ta, q);
 				sql->forward = f = mvc_create_func(sql, sql->sa, s, fname, l, restype, type, lang, "user", q, q, FALSE, vararg, FALSE);
-				GDKfree(q);
 			}
 			sql->session->schema = s;
 			b = sequential_block(query, (ra)?&ra->type:NULL, ra?NULL:restype, body, NULL, is_func);
@@ -1020,22 +1019,18 @@ rel_create_func(sql_query *query, dlist *qname, dlist *params, symbol *res, dlis
 				return NULL;
 			sql->params = NULL;
 			if (create) {
-				q = query_cleaned(q);
+				q = query_cleaned(sql->ta, q);
 				f = mvc_create_func(sql, sql->sa, s, fname, l, restype, type, lang, fmod, fnme, q, FALSE, vararg, FALSE);
-				GDKfree(q);
 			} else if (!sf) {
 				return sql_error(sql, 01, SQLSTATE(42000) "CREATE %s: external name %s.%s not bound (%s.%s)", F, fmod, fnme, s->base.name, fname );
 			} else {
 				sql_func *f = sf->func;
 				if (!f->mod || strcmp(f->mod, fmod))
-					f->mod = _STRDUP(fmod);
+					f->mod = (f->sa)?sa_strdup(f->sa, fmod):sa_strdup(sql->pa, fmod);
 				if (!f->imp || strcmp(f->imp, fnme))
-					f->imp = (f->sa)?sa_strdup(f->sa, fnme):_STRDUP(fnme);
-				if (!f->mod || !f->imp) {
-					_DELETE(f->mod);
-					_DELETE(f->imp);
+					f->imp = (f->sa)?sa_strdup(f->sa, fnme):sa_strdup(sql->pa, fnme);
+				if (!f->mod || !f->imp)
 					return sql_error(sql, 02, SQLSTATE(HY013) "CREATE %s: could not allocate space", F);
-				}
 				f->sql = 0; /* native */
 				f->lang = FUNC_LANG_INT;
 			}
@@ -1321,12 +1316,11 @@ create_trigger(sql_query *query, dlist *qname, int time, symbol *trigger_event, 
 			default:
 				return sql_error(sql, 02, SQLSTATE(42000) "%s TRIGGER: invalid event: %s", base, token2string(trigger_event->token));
 		}
-		orientation = triggered_action->h->data.i_val;
-		q = query_cleaned(QUERY(sql->scanner));
 
 		assert(triggered_action->h->type == type_int);
+		orientation = triggered_action->h->data.i_val;
+		q = query_cleaned(sql->ta, QUERY(sql->scanner));
 		r = rel_create_trigger(sql, t->s->base.name, t->base.name, triggername, time, orientation, event, old_name, new_name, condition, q);
-		GDKfree(q);
 		return r;
 	}
 

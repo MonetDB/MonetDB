@@ -888,10 +888,7 @@ SQLparser(Client c)
 	int pstatus = 0;
 	int err = 0, opt, preparedid = -1;
 
-	/* clean up old stuff */
-	GDKfree(c->query);		/* may be NULL */
 	c->query = NULL;
-
 	be = (backend *) c->sqlcontext;
 	if (be == 0) {
 		/* leave a message in the log */
@@ -1040,7 +1037,7 @@ SQLparser(Client c)
 	 * produce code.
 	 */
 	be->q = NULL;
-	c->query = query_cleaned(QUERY(m->scanner));
+	c->query = query_cleaned(m->sa, QUERY(m->scanner));
 
 	if (c->query == NULL) {
 		err = 1;
@@ -1192,7 +1189,6 @@ SQLparser(Client c)
 finalize:
 	if (msg) {
 		sqlcleanup(be, 0);
-		GDKfree(c->query);
 		c->query = NULL;
 	}
 	return msg;

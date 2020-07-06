@@ -28,14 +28,14 @@
 #endif
 
 char *
-query_cleaned(const char *query)
+query_cleaned(sql_allocator *sa, const char *query)
 {
 	char *q, *r;
 	int quote = 0;		/* inside quotes ('..', "..", {..}) */
 	bool bs = false;		/* seen a backslash in a quoted string */
 	bool incomment1 = false;	/* inside traditional C style comment */
 	bool incomment2 = false;	/* inside comment starting with --  */
-	r = GDKmalloc(strlen(query) + 1);
+	r = SA_NEW_ARRAY(sa, char, strlen(query) + 1);
 	if(!r)
 		return NULL;
 
