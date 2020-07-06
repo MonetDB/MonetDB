@@ -1213,39 +1213,21 @@ JSONplaintext(char **r, size_t *l, size_t *ilen, JSON *jt, int idx, str sep, siz
 str
 JSONjson2text(str *ret, json *js)
 {
-	JSON *jt;
-	size_t l, ilen;
-	str s;
-
-	jt = JSONparse(*js);
-
-	CHECK_JSON(jt);
-	ilen = l = strlen(*js) + 1;
-	s = GDKmalloc(l);
-	if(s == NULL) {
-		JSONfree(jt);
-		throw(MAL,"json2txt", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-	}
-	s = JSONplaintext(&s, &l, &ilen, jt, 0, " ", 1);
-	s -= ilen - l;
-	l = strlen(s);
-	if (l)
-		s[l - 1] = 0;
-	*ret = s;
-	JSONfree(jt);
-	return MAL_SUCCEED;
+	char *sep = " ";
+	return JSONjson2textSeparator(ret, js, &sep);
 }
 
 str
 JSONjson2textSeparator(str *ret, json *js, str *sep)
 {
 	JSON *jt;
-	size_t l, ilen, sep_len = strlen(*sep);
+	size_t l, ilen, sep_len;
 	str s;
 
 	jt = JSONparse(*js);
 
 	CHECK_JSON(jt);
+	sep_len = strlen(*sep);
 	ilen = l = strlen(*js) + 1;
 	s = GDKmalloc(l);
 	if(s == NULL) {
