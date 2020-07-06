@@ -1144,7 +1144,7 @@ CMDbatBETWEEN(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		if (tp != TYPE_bat && !isaBatType(tp))
 			goto bailout;
 		bid = *getArgReference_bat(stk, pci, 4 + bc);
-		if (is_bat_nil(bid)) {
+		if (!is_bat_nil(bid)) {
 			shi = BATdescriptor(bid);
 			if (shi == NULL)
 				goto bailout;
