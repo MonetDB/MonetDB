@@ -85,50 +85,39 @@ def main():
             func(filename[:-1], pre=pre, post=post, start=start, end=end, verbose=verbose)
 
 suffixrules = {
-    # suffix:(pre,     post,  start,  end)
-    '.ac':   ('',      '',    'dnl ', ''),
-    '.ag':   ('',      '',    '# ',   ''),
-    '.am':   ('',      '',    '# ',   ''),
-    '.bash': ('',      '',    '# ',   ''),
-    '.bat':  ('',      '',    '@REM ',''),
-    '.brg':  ('/*',    ' */', ' * ',  ''),
-    '.c':    ('/*',    ' */', ' * ',  ''),
-    '.cc':   ('',      '',    '// ',  ''),
-    '.cf':   ('',      '',    '# ',   ''),
-    '.cpp':  ('',      '',    '// ',  ''),
-    '.el':   ('',      '',    '; ',   ''),
-    '.h':    ('/*',    ' */', ' * ',  ''),
-    '.hs':   ('',      '',    '-- ',  ''),
-    '.html': ('<!--',  '-->', '',     ''),
-    '.i':    ('',      '',    '// ',  ''),
-    '.java': ('/*',    ' */', ' * ',  ''),
-    '.l':    ('/*',    ' */', ' * ',  ''),
-    '.m4':   ('',      '',    'dnl ', ''),
-    '.mal':  ('',      '',    '# ',   ''),
-    '.mil':  ('',      '',    '# ',   ''),
-    '.mk':   ('',      '',    '# ',   ''),
-    '.msc':  ('',      '',    '# ',   ''),
-    '.php':  ('<?php', '?>',  '# ',   ''),
-    '.pc':   ('',      '',    '# ',   ''),
-    '.pl':   ('',      '',    '# ',   ''),
-    '.pm':   ('',      '',    '# ',   ''),
-    '.py':   ('',      '',    '# ',   ''),
-    '.R':    ('',      '',    '# ',   ''),
-    '.rb':   ('',      '',    '# ',   ''),
-    '.rc':   ('',      '',    '// ',  ''),
-    '.rst':  ('',      '',    '.. ',  ''),
-    '.sh':   ('',      '',    '# ',   ''),
-    '.sql':  ('',      '',    '-- ',  ''),
-    '.t':    ('',      '',    '# ',   ''),
-    '.xml':  ('<!--',  '-->', '',     ''),
-    '.xq':   ('(:',    ':)',  '',     ''),
-    '.xs':   ('/*',    ' */', ' * ',  ''),
-    '.y':    ('/*',    ' */', ' * ',  ''),
+    # suffix: (pre,     post,  start,  end)
+    '.bash':  ('',      '',    '# ',   ''), # shell script
+    '.bat':   ('',      '',    '@REM ',''), # Windows cmd batch script
+    '.c':     ('/*',    ' */', ' * ',  ''), # C source
+    '.cc':    ('',      '',    '// ',  ''), # C++ source
+    '.cmake': ('#[[',   '#]]', '# ',   ''), # CMake source
+    '.cpp':   ('',      '',    '// ',  ''), # C++ source
+    '.el':    ('',      '',    '; ',   ''), # Emacs Lisp
+    '.fc':    ('',      '',    '# ',   ''), # SELinux file context
+    '.h':     ('/*',    ' */', ' * ',  ''), # C header file
+    '.hs':    ('',      '',    '-- ',  ''), # Haskell source
+    '.html':  ('<!--',  '-->', '',     ''), # HTML source
+    '.java':  ('/*',    ' */', ' * ',  ''), # Java source
+    '.l':     ('/*',    ' */', ' * ',  ''), # (f)lex source
+    '.mal':   ('',      '',    '# ',   ''), # MonetDB Assembly Language
+    '.php':   ('<?php', '?>',  '# ',   ''), # PHP source
+    '.pl':    ('',      '',    '# ',   ''), # Perl source
+    '.pm':    ('',      '',    '# ',   ''), # Perl module source
+    '.py':    ('',      '',    '# ',   ''), # Python source
+    '.R':     ('',      '',    '# ',   ''), # R source
+    '.rb':    ('',      '',    '# ',   ''), # Ruby source
+    '.rc':    ('',      '',    '// ',  ''), # Windows resource file
+    '.rst':   ('',      '',    '.. ',  ''), # reStructured Text
+    '.sh':    ('',      '',    '# ',   ''), # shell script
+    '.sql':   ('',      '',    '-- ',  ''), # SQL source
+    '.t':     ('',      '',    '# ',   ''), # Perl test
+    '.te':    ('',      '',    '# ',   ''), # SELinux
+    '.xml':   ('<!--',  '-->', '',     ''), # XML source
+    '.y':     ('/*',    ' */', ' * ',  ''), # yacc (bison) source
     # we also match some complete filenames
     'CMakeLists.txt': ('#[[', '#]]', '# ', ''),
     'Makefile': ('', '', '# ', ''),
-    '.merovingian_properties.in': ('', '', '# ', ''),
-    'configure.ag': ('', '', 'dnl ', ''),
+    '.merovingian_properties': ('', '', '# ', ''),
     'copyright': ('', '', '', ''),
     'license.txt': ('', '', '', ''),
     }
@@ -136,7 +125,9 @@ suffixrules = {
 def getcomments(file, pre = None, post = None, start = None, end = None):
     ext = ''
     if pre is None and post is None and start is None and end is None:
-        if os.path.basename(file) in suffixrules:
+        if file.endswith('.in') and os.path.basename(file[:-3]) in suffixrules:
+            ext = os.path.basename(file)
+        elif os.path.basename(file) in suffixrules:
             ext = os.path.basename(file)
         else:
             root, ext = os.path.splitext(file)
