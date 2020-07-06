@@ -1564,7 +1564,7 @@ sql_alter_table(sql_query *query, dlist *dl, dlist *qname, symbol *te, int if_ex
 		for (node *n = nt->columns.nelm; n; n = n->next) {
 			sql_column *c = n->data;
 			if (c->def) {
-				e = rel_parse_val(sql, sa_message(sql->sa, "select %s;", c->def), sql->emode, NULL);
+				e = rel_parse_val(sql, c->def, &c->type, sql->emode, NULL);
 			} else {
 				e = exp_atom(sql->sa, atom_general(sql->sa, &c->type, NULL));
 			}

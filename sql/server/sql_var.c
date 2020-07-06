@@ -568,11 +568,11 @@ sqlvar_set_string(sql_var *var, const char *val)
 		ValRecord *v = &a->data;
 
 		if (v->val.sval)
-			_DELETE(v->val.sval);
+			GDKfree(v->val.sval);
 		v->val.sval = new_val;
 		return new_val;
 	} else if (new_val) {
-		_DELETE(new_val);
+		GDKfree(new_val);
 	}
 	return NULL;
 }

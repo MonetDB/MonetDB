@@ -419,7 +419,7 @@ atom2string(sql_allocator *sa, atom *a)
 			snprintf(buf, BUFSIZ, "atom2string(TYPE_%d) not implemented", a->data.vtype);
 		} else {
 			 char *r = sa_strdup(sa, p);
-			 _DELETE(p);
+			 GDKfree(p);
 			 return r;
 		}
 	}
