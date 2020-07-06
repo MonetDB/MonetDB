@@ -1078,7 +1078,7 @@ CMDbatBETWEEN(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	BAT *bn, *b = NULL, *lo = NULL, *hi = NULL, *s = NULL, *slo = NULL, *shi = NULL, *r = NULL;
 	int tp1, tp2, tp3;
 	int bc = 0;					/* number of extra BAT arguments */
-	bool symmetric, linc, hinc, nils_false, anti;
+	bool symmetric, linc, hinc, nils_false, anti, has_cand = false;
 
 	(void) cntxt;
 	(void) mb;
@@ -1106,25 +1106,38 @@ CMDbatBETWEEN(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	}
 	if (isaBatType(getArgType(mb, pci, 4))) {
 		bid = *getArgReference_bat(stk, pci, 4);
-		s = BATdescriptor(bid);
-		if (s == NULL)
-			goto bailout;
-		if (s->ttype == TYPE_bit) {
-			r = s;
-			s = NULL;
+		if (!is_bat_nil(bid)) {
+			s = BATdescriptor(bid);
+			if (s == NULL)
+				goto bailout;
+			if (s->ttype == TYPE_bit) {
+				r = s;
+				s = NULL;
+				has_cand = false;
+			} else
+				has_cand = true;
 		}
 		bc++;
 	}
-	if (s != NULL && lo) {
-		if (!isaBatType(getArgType(mb, pci, 4 + bc)))
-			goto bailout;
-		bid = *getArgReference_bat(stk, pci, 4 + bc);
-		slo = BATdescriptor(bid);
-		if (slo == NULL)
-			goto bailout;
-		bc++;
+	if (has_cand && lo) {
+		if (isaBatType(getArgType(mb, pci, 4 + bc))) {
+			bid = *getArgReference_bat(stk, pci, 4 + bc);
+			if (!is_bat_nil(bid)) {
+				slo = BATdescriptor(bid);
+				if (slo == NULL)
+					goto bailout;
+			}
+			bc++;
+		} else {
+			if (s == NULL) {
+				/* apparently the extra bat was a NIL conditional
+				 * execution bat */
+				has_cand = false;
+			} else
+				goto bailout;
+		}
 	}
-	if (s != NULL && hi) {
+	if (has_cand && hi) {
 		if (!isaBatType(getArgType(mb, pci, 4 + bc)))
 			goto bailout;
 		bid = *getArgReference_bat(stk, pci, 4 + bc);
@@ -1135,11 +1148,13 @@ CMDbatBETWEEN(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	}
 	if (r == NULL && isaBatType(getArgType(mb, pci, 4 + bc))) {
 		bid = *getArgReference_bat(stk, pci, 4 + bc);
-		r = BATdescriptor(bid);
-		if (r == NULL)
-			goto bailout;
-		if (r->ttype != TYPE_bit)
-			goto bailout;
+		if (!is_bat_nil(bid)) {
+			r = BATdescriptor(bid);
+			if (r == NULL)
+				goto bailout;
+			if (r->ttype != TYPE_bit)
+				goto bailout;
+		}
 		bc++;
 	}
 
