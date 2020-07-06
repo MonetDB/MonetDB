@@ -824,7 +824,7 @@ monetdbe_bind(monetdbe_statement *stmt, void *data, size_t i)
 	/* TODO !data treat as NULL value (add nil mask) ? */
 	if (i > stmt->nparam)
 		return createException(MAL, "monetdbe.monetdbe_bind", "Parameter %zu not bound to a value", i);
-	sql_arg *a = (sql_arg*)list_fetch(stmt_internal->q->f->ops, i);
+	sql_arg *a = (sql_arg*)list_fetch(stmt_internal->q->f->ops, (int) i);
 	assert(a);
 	stmt_internal->data[i].vtype = a->type.type->localtype;
 	/* TODO handle conversion from NULL and special types */
