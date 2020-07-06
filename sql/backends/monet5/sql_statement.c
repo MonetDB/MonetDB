@@ -1633,14 +1633,18 @@ select2_join2(backend *be, stmt *op1, stmt *op2, stmt *op3, int cmp, stmt *sub, 
 				p = pushNil(mb, p, TYPE_bat);
 			else if (op1->nrcols)
 				p = pushArgument(mb, p, sub->nr);
-			if (op2->cand)
-				p = pushNil(mb, p, TYPE_bat);
-			else if (op2->nrcols)
-				p = pushArgument(mb, p, sub->nr);
-			if (op3->cand)
-				p = pushNil(mb, p, TYPE_bat);
-			else if (op3->nrcols)
-				p = pushArgument(mb, p, sub->nr);
+			if (op2->nrcols) {
+				if (op2->cand)
+					p = pushNil(mb, p, TYPE_bat);
+				else if (op2->nrcols)
+					p = pushArgument(mb, p, sub->nr);
+			}
+			if (op2->nrcols) {
+				if (op3->cand)
+					p = pushNil(mb, p, TYPE_bat);
+				else if (op3->nrcols)
+					p = pushArgument(mb, p, sub->nr);
+			}
 			sub = NULL;
 		}
 
