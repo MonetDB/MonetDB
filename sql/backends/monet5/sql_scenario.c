@@ -874,7 +874,7 @@ SQLparser(Client c)
 	mvc *m;
 	int oldvtop, oldstop;
 	int pstatus = 0;
-	int err = 0, opt = 0, preparedid = -1;
+	int err = 0, opt, preparedid = -1;
 
 	/* clean up old stuff */
 	GDKfree(c->query);		/* may be NULL */
@@ -915,6 +915,7 @@ SQLparser(Client c)
 
 		throw(SQL, "SQLparser", SQLSTATE(HY001) MAL_MALLOC_FAIL " for SQL allocator");
 	}
+	opt = 0;
 
 	m->emode = m_normal;
 	m->emod = mod_none;
