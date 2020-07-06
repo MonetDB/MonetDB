@@ -125,6 +125,7 @@ suffixrules = {
     '.xs':   ('/*',    ' */', ' * ',  ''),
     '.y':    ('/*',    ' */', ' * ',  ''),
     # we also match some complete filenames
+    'CMakeLists.txt': ('#[[', '#]]', '# ', ''),
     'Makefile': ('', '', '# ', ''),
     '.merovingian_properties.in': ('', '', '# ', ''),
     'configure.ag': ('', '', 'dnl ', ''),
