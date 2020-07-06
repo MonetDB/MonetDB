@@ -1187,7 +1187,7 @@ JSONplaintext(char **r, size_t *l, size_t *ilen, JSON *jt, int idx, str sep, siz
 		break;
 	default:
 		if (*l < jt->elm[idx].valuelen + sep_len + 1) {
-			unsigned int offset = *ilen - *l;
+			size_t offset = *ilen - *l;
 			char *p = *r - offset;
 			*ilen *= 2;
 			*r = GDKrealloc(p, *ilen);
