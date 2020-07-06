@@ -1085,7 +1085,7 @@ count_col(sql_trans *tr, sql_column *c, int all)
 		sql_column *oc = tr_find_column(tr->parent, c);
 		c->data = timestamp_delta(oc->data, c->base.stime);
 	}
-        b = c->data;
+    b = c->data;
 	if (!b)
 		return 1;
 	if (all)
