@@ -1826,6 +1826,7 @@ stmt_uselect2(backend *be, stmt *op1, stmt *op2, stmt *op3, int cmp, stmt *sub, 
 		s->nr = getDestVar(q);
 		s->q = q;
 		s->cand = sub;
+		s->reduce = reduce;
 		return s;
 	}
 	return NULL;
@@ -2254,6 +2255,7 @@ stmt_join2(backend *be, stmt *l, stmt *ra, stmt *rb, int cmp, int anti, int swap
 		s->nrcols = 2;
 		s->nr = getDestVar(q);
 		s->q = q;
+		s->reduce = 1;
 		return s;
 	}
 	return NULL;
@@ -3511,15 +3513,18 @@ tail_type(stmt *st)
 		case st_const:
 			st = st->op2;
 			continue;
-		case st_semijoin:
 		case st_uselect:
-		case st_uselect2:
+		case st_semijoin:
 		case st_limit:
 		case st_limit2:
 		case st_sample:
 		case st_tunion:
 		case st_tdiff:
 		case st_tinter:
+			return sql_bind_localtype("oid");
+		case st_uselect2:
+			if (!st->reduce)
+				return sql_bind_localtype("bit");
 			return sql_bind_localtype("oid");
 		case st_append:
 		case st_append_bulk:

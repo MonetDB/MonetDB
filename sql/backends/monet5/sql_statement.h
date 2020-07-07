@@ -112,10 +112,12 @@ typedef struct stmt {
 	struct stmt *op3;
 	stmtdata op4;		/* only op4 will hold other types */
 
-	char nrcols;
-	char key;		/* key (aka all values are unique) */ // TODO make this thing a bool
-	char aggr;		/* aggregated */
-	char partition;		/* selected as mitosis candidate */
+	unsigned int
+	 nrcols:2,
+	 key:1,			/* key (aka all values are unique) */ // TODO make this thing a bool
+	 aggr:1,		/* aggregated */
+	 partition:1,	/* selected as mitosis candidate */
+	 reduce:1;		/* used to reduce number of rows (also for joins) */
 
 	struct stmt *cand;	/* optional candidate list */
 
