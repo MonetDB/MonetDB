@@ -9122,7 +9122,8 @@ optimize_rel(mvc *sql, sql_rel *rel, int *g_changes, int level, int value_based_
 		rel = rel_visitor_topdown(sql, rel, &rel_split_outerjoin, &changes);
 
 	if (gp.cnt[op_select] || gp.cnt[op_project])
-		rel = rel_visitor_bottomup(sql, rel, &rel_merge_rse, &changes);
+		if (level == 1) /* only once */
+			rel = rel_visitor_bottomup(sql, rel, &rel_merge_rse, &changes);
 
 	if (gp.cnt[op_select] && gp.cnt[op_join] && /* DISABLES CODE */ (0))
 		rel = rel_visitor_topdown(sql, rel, &rel_push_select_down_join, &changes);
