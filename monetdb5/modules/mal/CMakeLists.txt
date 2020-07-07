@@ -10,7 +10,7 @@ add_library(malmodules OBJECT)
 
 target_sources(malmodules
   PRIVATE
-  language.c language.h
+  language.c
   bbp.c bbp.h
   profiler.c profiler.h
   batExtensions.c
