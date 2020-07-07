@@ -1449,6 +1449,9 @@ exp_push_single_func_down(visitor *v, sql_rel *rel, sql_rel *l, sql_rel *r, sql_
 		}
 	} break;
 	case e_convert:
+		if ((e->l = exp_push_single_func_down(v, rel, l, r, e->l)) == NULL)
+			return NULL;
+		break;
 	case e_aggr:
 	case e_func: {
 		int must = 0, mustl = 0, mustr = 0;
@@ -3753,6 +3756,7 @@ rel_project_cse(visitor *v, sql_rel *rel)
 						sql_exp *ne = exp_alias(v->sql->sa, exp_relname(e1), exp_name(e1), exp_relname(e2), exp_name(e2), exp_subtype(e2), e2->card, has_nil(e2), is_intern(e1));
 
 						ne = exp_propagate(v->sql->sa, ne, e1);
+						exp_setname(v->sql->sa, ne, exp_relname(e1), exp_name(e1));
 						e1 = ne;
 						break;
 					}

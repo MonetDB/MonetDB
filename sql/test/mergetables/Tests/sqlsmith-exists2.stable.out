@@ -159,8 +159,8 @@ stdout of test 'sqlsmith-exists2` in directory 'sql/test/mergetables` itself:
 # 1)
 # and (ref_4.i is not null))))
 # on (ref_1.bb is null);
-% .%27 # table_name
-% %27 # name
+% .%26 # table_name
+% %26 # name
 % tinyint # type
 % 1 # length
 #select
@@ -434,6 +434,44 @@ stdout of test 'sqlsmith-exists2` in directory 'sql/test/mergetables` itself:
 % c0,	c1,	c2,	c3,	c4 # name
 % int,	int,	int,	int,	int # type
 % 1,	1,	1,	1,	1 # length
+#WITH ss_items AS
+#  (SELECT 1 item_id,
+#          1 ss_item_rev
+#   FROM another_T,
+#        LongTable
+#   WHERE another_T.col1 = LongTable.col1),
+#     cs_items AS
+#  (SELECT 1 item_id,
+#          1 cs_item_rev
+#   FROM tab0,
+#        LongTable
+#   WHERE tab0.col1 = LongTable.col1),
+#     ws_items AS
+#  (SELECT 1 item_id,
+#          1 ws_item_rev
+#   FROM tbl_ProductSales,
+#        LongTable
+#   WHERE tbl_ProductSales.col1 = LongTable.col1)
+#SELECT ss_items.item_id,
+#       ss_item_rev,
+#       ss_item_rev/((ss_item_rev+cs_item_rev+ws_item_rev)/3) * 100 ss_dev,
+% .ss_items,	.ss_items,	.,	.cs_items,	.,	.ws_items,	.,	. # table_name
+% item_id,	ss_item_rev,	ss_dev,	cs_item_rev,	cs_dev,	ws_item_rev,	ws_dev,	average # name
+% tinyint,	tinyint,	int,	tinyint,	int,	tinyint,	int,	smallint # type
+% 1,	1,	3,	1,	3,	1,	3,	1 # length
+[ 1,	1,	100,	1,	100,	1,	100,	1	]
+[ 1,	1,	100,	1,	100,	1,	100,	1	]
+#create table myitem (i_current_price decimal(7,2));
+#SELECT 1 FROM myitem WHERE i_current_price BETWEEN 64 AND 64 + 10 AND i_current_price BETWEEN 64 + 1 AND 64 + 15;
+% .%52 # table_name
+% %52 # name
+% tinyint # type
+% 1 # length
+#SELECT 1 FROM tab0 WHERE col0 BETWEEN 64 AND 64 + 10 AND col0 BETWEEN 64 + 1 AND 64 + 15;
+% .%2 # table_name
+% %2 # name
+% tinyint # type
+% 1 # length
 #ROLLBACK;
 
 # 22:12:15 >  
