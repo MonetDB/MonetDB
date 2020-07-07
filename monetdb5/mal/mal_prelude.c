@@ -163,11 +163,13 @@ makeArgument(MalBlkPtr mb, mel_arg *a, int *idx)
 {
 	int tpe = TYPE_any;//, l;
 
+	if (
 #ifdef MEL_STR
-	if (!a->type[0]) {
+		!a->type[0]
 #else
-	if (a->type == TYPE_any) {
+		a->type == TYPE_any
 #endif
+		) {
 		if (a->isbat)
 			tpe = newBatType(tpe);
 		if (a->nr > 0)

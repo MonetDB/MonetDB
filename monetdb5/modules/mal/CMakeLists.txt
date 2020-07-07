@@ -10,7 +10,7 @@ add_library(malmodules OBJECT)
 
 target_sources(malmodules
   PRIVATE
-  language.c language.h
+  language.c
   bbp.c bbp.h
   profiler.c profiler.h
   batExtensions.c
@@ -24,7 +24,7 @@ target_sources(malmodules
   clients.c clients.h
   factories.c factories.h
   groupby.c groupby.h
-  mdb.c mdb.h
+  mdb.c
   pcre.c
   mat.c mat.h
   transaction.c

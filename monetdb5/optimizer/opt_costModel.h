@@ -10,7 +10,6 @@
 #define _OPT_COSTMODEL_H_
 
 #include "mal.h"
-#include <math.h>
 #include "mal_interpreter.h"
 #include "opt_support.h"
 #include "opt_prelude.h"

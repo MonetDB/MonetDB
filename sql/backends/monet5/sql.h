@@ -38,7 +38,6 @@
 
 #include "tablet.h"
 #include "gdk_time.h"
-#include <math.h>
 #include "blob.h"
 #include "mkey.h"
 #include "str.h"

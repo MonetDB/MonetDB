@@ -198,18 +198,19 @@ CMDBATimprintsize(lng *ret, bat *bid)
 	do { \
 		ValRecord *stack = stk->stk; \
 		int *argv = pci->argv; \
-		TPE *restrict heap; \
 		total = number_existing + inputs; \
 		if (BATextend(b, total) != GDK_SUCCEED) { \
 			BBPunfix(b->batCacheid); \
 			throw(MAL,"bat.append_bulk", SQLSTATE(HY013) MAL_MALLOC_FAIL); \
 		} \
-		heap = (TPE*) Tloc(b, number_existing); \
 		if (!b->tsorted && !b->trevsorted) { \
 			for (int i = 3, args = pci->argc; i < args; i++) { \
 				TPE next = stack[argv[i]].val.UNION_VAL; \
 				new_nil |= is_##TPE##_nil(next); \
-				heap[j++] = next; \
+				if (BUNappend(b, &next, force) != GDK_SUCCEED) { \
+					BBPunfix(b->batCacheid); \
+					throw(MAL,"bat.append_bulk", SQLSTATE(HY013) MAL_MALLOC_FAIL); \
+				} \
 			} \
 		} else { \
 			bool sorted = b->tsorted, revsorted = b->trevsorted; \
@@ -220,13 +221,19 @@ CMDBATimprintsize(lng *ret, bat *bid)
 				sorted &= prev >= last; \
 				revsorted &= prev <= last; \
 			} \
-			heap[j++] = prev; \
+			if (BUNappend(b, &prev, force) != GDK_SUCCEED) { \
+				BBPunfix(b->batCacheid); \
+				throw(MAL,"bat.append_bulk", SQLSTATE(HY013) MAL_MALLOC_FAIL); \
+			} \
 			for (int i = 4, args = pci->argc; i < args; i++) { \
 				TPE next = stack[argv[i]].val.UNION_VAL; \
 				new_nil |= is_##TPE##_nil(next); \
 				sorted &= next >= prev; \
 				revsorted &= next <= prev; \
-				heap[j++] = prev = next; \
+				if (BUNappend(b, &next, force) != GDK_SUCCEED) { \
+					BBPunfix(b->batCacheid); \
+					throw(MAL,"bat.append_bulk", SQLSTATE(HY013) MAL_MALLOC_FAIL); \
+				} \
 			} \
 			b->tsorted &= sorted; \
 			b->trevsorted &= revsorted; \
@@ -239,7 +246,7 @@ CMDBATappend_bulk(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	bat *r = getArgReference_bat(stk, pci, 0), *bid = getArgReference_bat(stk, pci, 1);
 	bit force = *getArgReference_bit(stk, pci, 2), new_nil = 0;
 	BAT *b;
-	BUN inputs = (BUN)(pci->argc - 3), number_existing = 0, total = 0, j = 0;
+	BUN inputs = (BUN)(pci->argc - 3), number_existing = 0, total = 0;
 
 	(void) cntxt;
 	if ((b = BATdescriptor(*bid)) == NULL)

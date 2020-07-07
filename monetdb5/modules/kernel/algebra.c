@@ -39,7 +39,6 @@
 
 #include "monetdb_config.h"
 #include "algebra.h"
-#include <math.h>
 
 /*
  * Command Implementations in C
