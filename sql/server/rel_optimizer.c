@@ -1586,6 +1586,9 @@ exp_push_single_func_down(mvc *sql, sql_rel *rel, sql_rel *l, sql_rel *r, sql_ex
 		}
 	} break;
 	case e_convert:
+		if ((e->l = exp_push_single_func_down(sql, rel, l, r, e->l, changes)) == NULL)
+			return NULL;
+		break;
 	case e_aggr:
 	case e_func: {
 		int must = 0, mustl = 0, mustr = 0;

@@ -554,4 +554,9 @@ ORDER BY ss_items.item_id,
          ss_item_rev
 LIMIT 100;
 
+create table myitem (i_current_price decimal(7,2));
+SELECT 1 FROM myitem WHERE i_current_price BETWEEN 64 AND 64 + 10 AND i_current_price BETWEEN 64 + 1 AND 64 + 15;
+
+SELECT 1 FROM tab0 WHERE col0 BETWEEN 64 AND 64 + 10 AND col0 BETWEEN 64 + 1 AND 64 + 15;
+
 ROLLBACK;

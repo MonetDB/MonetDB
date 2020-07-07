@@ -133,23 +133,23 @@ end user.s20_0;
 % clob # type
 % 175 # length
 function user.s22_0():void;
-    X_4:void := querylog.define("explain select 1 from another_t t1 inner join another_t t2 on t1.col1 between t2.col1 - 1 and t2.col1 + 1;":str, "default_pipe":str, 35:int);
-    X_49:bat[:str] := bat.pack(".%12":str);
-    X_50:bat[:str] := bat.pack("%12":str);
-    X_51:bat[:str] := bat.pack("tinyint":str);
-    X_52:bat[:int] := bat.pack(1:int);
-    X_53:bat[:int] := bat.pack(0:int);
+    X_4:void := querylog.define("explain select 1 from another_t t1 inner join another_t t2 on t1.col1 between t2.col1 - 1 and t2.col1 + 1;":str, "default_pipe":str, 34:int);
+    X_48:bat[:str] := bat.pack(".%11":str);
+    X_49:bat[:str] := bat.pack("%11":str);
+    X_50:bat[:str] := bat.pack("tinyint":str);
+    X_51:bat[:int] := bat.pack(1:int);
+    X_52:bat[:int] := bat.pack(0:int);
     X_7:int := sql.mvc();
     C_8:bat[:oid] := sql.tid(X_7:int, "sys":str, "another_t":str);
     X_14:bat[:int] := sql.bind(X_7:int, "sys":str, "another_t":str, "col1":str, 0:int);
     X_15:bat[:int] := algebra.projection(C_8:bat[:oid], X_14:bat[:int]);
-    X_16:bat[:lng] := batcalc.lng(X_15:bat[:int]);
-    X_24:bat[:lng] := batcalc.-(X_16:bat[:lng], 1:lng, nil:BAT);
-    X_30:bat[:lng] := batcalc.+(X_16:bat[:lng], 1:lng, nil:BAT);
-    (X_32:bat[:oid], X_33:bat[:oid]) := algebra.rangejoin(X_16:bat[:lng], X_24:bat[:lng], X_30:bat[:lng], nil:BAT, nil:BAT, true:bit, true:bit, false:bit, false:bit, nil:lng);
+    X_20:bat[:lng] := batcalc.lng(X_15:bat[:int]);
+    X_23:bat[:lng] := batcalc.-(X_20:bat[:lng], 1:lng, nil:BAT);
+    X_29:bat[:lng] := batcalc.+(X_20:bat[:lng], 1:lng, nil:BAT);
+    (X_32:bat[:oid], X_33:bat[:oid]) := algebra.rangejoin(X_20:bat[:lng], X_23:bat[:lng], X_29:bat[:lng], nil:BAT, nil:BAT, true:bit, true:bit, false:bit, false:bit, nil:lng);
     X_41:bat[:int] := algebra.projection(X_32:bat[:oid], X_15:bat[:int]);
-    X_47:bat[:bte] := algebra.project(X_41:bat[:int], 1:bte);
-    sql.resultSet(X_49:bat[:str], X_50:bat[:str], X_51:bat[:str], X_52:bat[:int], X_53:bat[:int], X_47:bat[:bte]);
+    X_46:bat[:bte] := algebra.project(X_41:bat[:int], 1:bte);
+    sql.resultSet(X_48:bat[:str], X_49:bat[:str], X_50:bat[:str], X_51:bat[:int], X_52:bat[:int], X_46:bat[:bte]);
 end user.s22_0;
 #inline               actions= 0 time=2 usec 
 #remap                actions= 2 time=53 usec 
