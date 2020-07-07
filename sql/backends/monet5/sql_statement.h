@@ -82,6 +82,7 @@ typedef enum stmt_type {
 	st_delete,
 
 	st_group,
+	st_unique,
 	st_convert,
 	st_Nop,
 	st_func,
@@ -199,6 +200,7 @@ extern stmt *stmt_list(backend *be, list *l);
 extern void stmt_set_nrcols(stmt *s);
 
 extern stmt *stmt_group(backend *be, stmt *op1, stmt *grp, stmt *ext, stmt *cnt, int done);
+extern stmt *stmt_unique(backend *be, stmt *op1);
 
 /* raise exception incase the condition (cond) holds, continue with stmt res */
 extern stmt *stmt_exception(backend *be, stmt *cond, const char *errstr, int errcode);

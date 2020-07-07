@@ -193,7 +193,7 @@ addOptimizers(Client c, MalBlkPtr mb, char *pipe, int prepare)
 			q = getInstrPtr(mb, i);
 			if (q->token == ENDsymbol)
 				break;
-			if (getFunctionId(q) == mitosisRef || getFunctionId(q) == dataflowRef)
+			if (getFunctionId(q) == mitosisRef)
 				q->token = REMsymbol;	/* they are ignored */
 		}
 	}

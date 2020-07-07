@@ -827,9 +827,13 @@ exp_bin(backend *be, sql_exp *e, stmt *left, stmt *right, stmt *grp, stmt *ext, 
 				if (!as)
 					return NULL;
 				if (need_distinct(e)){
-					stmt *g = stmt_group(be, as, grp, ext, cnt, 1);
-					stmt *next = stmt_result(be, g, 1);
-
+					stmt *next = NULL;
+					if (grp) {
+						stmt *g = stmt_group(be, as, grp, ext, cnt, 1);
+						next = stmt_result(be, g, 1);
+					} else {
+						next = stmt_unique(be, as);
+					}
 					as = stmt_project(be, next, as);
 					if (grp)
 						grp = stmt_project(be, next, grp);

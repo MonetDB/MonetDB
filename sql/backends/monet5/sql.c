@@ -96,20 +96,13 @@ rel_need_distinct_query(sql_rel *rel)
 
 	while (!need_distinct && rel && is_simple_project(rel->op))
 		rel = rel->l;
-	if (!need_distinct && rel && is_groupby(rel->op) && rel->exps) {
-		node *n, *m;
-		for (n = rel->exps->h; n && !need_distinct; n = n->next) {
+	if (!need_distinct && rel && is_groupby(rel->op) && rel->exps && !rel->r) {
+		for (node *n = rel->exps->h; n && !need_distinct; n = n->next) {
 			sql_exp *e = n->data;
 			if (e->type == e_aggr) {
-				list *l = e->l;
 
-				if (l)
-					for (m = l->h; m && !need_distinct; m = m->next) {
-						sql_exp *a = m->data;
-
-						if (need_distinct(a))
-							need_distinct = 1;
-					}
+				if (need_distinct(e))
+					need_distinct = 1;
 			}
 		}
 	}

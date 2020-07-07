@@ -269,6 +269,37 @@ stmt_group(backend *be, stmt *s, stmt *grp, stmt *ext, stmt *cnt, int done)
 }
 
 stmt *
+stmt_unique(backend *be, stmt *s)
+{
+	MalBlkPtr mb = be->mb;
+	InstrPtr q = NULL;
+
+	if (s->nr < 0)
+		return NULL;
+
+	q = newStmt(mb, algebraRef, uniqueRef);
+	if(!q)
+		return NULL;
+
+	q = pushArgument(mb, q, s->nr);
+	if (q) {
+		stmt *ns = stmt_create(be->mvc->sa, st_unique);
+		if (ns == NULL) {
+			freeInstruction(q);
+			return NULL;
+		}
+
+		ns->op1 = s;
+		ns->nrcols = s->nrcols;
+		ns->key = 1;
+		ns->q = q;
+		ns->nr = getDestVar(q);
+		return ns;
+	}
+	return NULL;
+}
+
+stmt *
 stmt_none(backend *be)
 {
 	return stmt_create(be->mvc->sa, st_none);

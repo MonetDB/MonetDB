@@ -34,6 +34,7 @@ stdout of test 'duplicates-not-eliminated-long-CASE-stmt.Bug-6697` in directory 
 % 1023 # length
 function user.main():void;
     X_1:void := querylog.define("explain select sys.timestamp_to_str(case when task0.\"sys_created_on\" >= \\'1999-10-31 09:00:00\\' and task0.\"sys_created_on\" < \\'2000-04-02 10:00:00\\' then task0.\"sys_created_on\" + interval \\'-28800\\' second when task0.\"sys_created_on\" >= \\'2000-04-02 10:00:00\\' and task0.\"sys_created_on\" < \\'2000-10-29 09:00:00\\' then task0.\"sys_created_on\" + interval \\'-25200\\' second when task0.\"sys_created_on\" >= \\'2000-10-29 09:00:00\\' and task0.\"sys_created_on\" < \\'2001-04-01 10:00:00\\' then task0.\"sys_created_on\" + interval \\'-28800\\' second when task0.\"sys_created_on\" >= \\'2001-04-01 10:00:00\\' and task0.\"sys_created_on\" < \\'2001-10-28 09:00:00\\' then task0.\"sys_created_on\" + interval \\'-25200\\' second when task0.\"sys_created_on\" >= \\'2001-10-28 09:00:00\\' and task0.\"sys_created_on\" < \\'2002-04-07 10:00:00\\' then task0.\"sys_created_on\" + interval \\'-28800\\' second when task0.\"sys_created_on\" >= \\'2002-04-07 10:00:00\\' and t
+barrier X_1047:bit := language.dataflow();
     X_892:bat[:str] := bat.pack("sys.":str);
     X_893:bat[:str] := bat.pack("yearref":str);
     X_894:bat[:str] := bat.pack("clob":str);
@@ -135,6 +136,10 @@ function user.main():void;
     X_882:bat[:timestamp] := batcalc.ifthenelse(X_53:bat[:bit], X_58:bat[:timestamp], X_880:bat[:timestamp]);
     X_883:bat[:timestamp] := batcalc.timestamp(X_882:bat[:timestamp], 7:int);
     X_888:bat[:str] := batmtime.timestamp_to_str(X_883:bat[:timestamp], "%Y":str);
+    language.pass(X_45:bat[:timestamp]);
+    language.pass(X_74:bat[:timestamp]);
+    language.pass(X_58:bat[:timestamp]);
+exit X_1047:bit;
     sql.resultSet(X_892:bat[:str], X_893:bat[:str], X_894:bat[:str], X_895:bat[:int], X_895:bat[:int], X_888:bat[:str]);
 end user.main;
 # optimizer.mitosis()
