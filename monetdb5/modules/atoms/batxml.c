@@ -1426,7 +1426,7 @@ AGGRsubxmlcand(bat *retval, const bat *bid, const bat *gid, const bat *eid, cons
 			BBPunfix(e->batCacheid);
 		throw(MAL, "aggr.subxml", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 	}
-	if (sid) {
+	if (sid && !is_bat_nil(*sid)) {
 		s = BATdescriptor(*sid);
 		if (s == NULL) {
 			BBPunfix(b->batCacheid);

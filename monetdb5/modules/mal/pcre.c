@@ -2110,7 +2110,7 @@ PCRElikeselect2(bat *ret, const bat *bid, const bat *sid, const str *pat, const 
 	if ((b = BATdescriptor(*bid)) == NULL) {
 		throw(MAL, "algebra.likeselect", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 	}
-	if (sid && !is_bat_nil(*sid) && *sid && (s = BATdescriptor(*sid)) == NULL) {
+	if (sid && !is_bat_nil(*sid) && (s = BATdescriptor(*sid)) == NULL) {
 		BBPunfix(b->batCacheid);
 		throw(MAL, "algebra.likeselect", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 	}
