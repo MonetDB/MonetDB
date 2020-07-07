@@ -697,7 +697,7 @@ ALGfirstn(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		throw(MAL, "algebra.firstn", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 	if (pci->argc - pci->retc > 5) {
 		sid = *getArgReference_bat(stk, pci, pci->retc + 1);
-		if ((s = BATdescriptor(sid)) == NULL) {
+		if (!is_bat_nil(sid) && (s = BATdescriptor(sid)) == NULL) {
 			BBPunfix(bid);
 			throw(MAL, "algebra.firstn", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 		}

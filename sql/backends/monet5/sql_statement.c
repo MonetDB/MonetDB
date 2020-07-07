@@ -1632,11 +1632,32 @@ select2_join2(backend *be, stmt *op1, stmt *op2, stmt *op3, int cmp, stmt *sub, 
 
 		if (op2->nr < 0 || op3->nr < 0)
 			return NULL;
-
 		p = newStmt(mb, batcalcRef, betweenRef);
 		p = pushArgument(mb, p, l);
 		p = pushArgument(mb, p, op2->nr);
 		p = pushArgument(mb, p, op3->nr);
+
+		/* cands */
+		if (op1->cand || op2->cand || op3->cand) { /* some already handled the previous selection */
+			if (op1->cand && op1->nrcols)
+				p = pushNil(mb, p, TYPE_bat);
+			else if (op1->nrcols)
+				p = pushArgument(mb, p, sub->nr);
+			if (op2->nrcols) {
+				if (op2->cand)
+					p = pushNil(mb, p, TYPE_bat);
+				else if (op2->nrcols)
+					p = pushArgument(mb, p, sub->nr);
+			}
+			if (op3->nrcols) {
+				if (op3->cand)
+					p = pushNil(mb, p, TYPE_bat);
+				else if (op3->nrcols)
+					p = pushArgument(mb, p, sub->nr);
+			}
+			sub = NULL;
+		}
+
 		p = pushBit(mb, p, (cmp & CMP_SYMMETRIC) != 0); /* symmetric */
 		p = pushBit(mb, p, (cmp & 1) != 0);	    /* lo inclusive */
 		p = pushBit(mb, p, (cmp & 2) != 0);	    /* hi inclusive */

@@ -1085,26 +1085,20 @@ exp_bin(backend *be, sql_exp *e, stmt *left, stmt *right, stmt *grp, stmt *ext, 
 						s = stmt_binop(be,
 							stmt_binop(be, l, r, lf),
 							stmt_binop(be, l, r2, rf), a);
+						if (l->cand)
+							s->cand = l->cand;
+						if (r->cand)
+							s->cand = r->cand;
+						if (r2->cand)
+							s->cand = r2->cand;
 					}
 					if (is_anti(e)) {
+						stmt *cand = s->cand;
 						sql_subfunc *a = sql_bind_func(sql->sa, sql->session->schema, "not", bt, NULL, F_FUNC);
 						s = stmt_unop(be, s, a);
+						s->cand = cand;
 					}
-#if 0
-				} else if (((e->flag&3) != 3) /* both sides closed use between implementation */ && l->nrcols > 0 && r->nrcols > 0 && r2->nrcols > 0) {
-					s = stmt_uselect(be, l, r, range2lcompare(e->flag),
-					    stmt_uselect(be, l, r2, range2rcompare(e->flag), sel, is_anti(e), 0), is_anti(e), 0);
-#endif
 				} else {
-					if (sel && ((l->cand && l->nrcols) || (r->cand && r->nrcols) || (r2->cand && r->nrcols))) {
-						if (!l->cand && l->nrcols)
-							l = stmt_project(be, sel, l);
-						if (!r->cand && r->nrcols)
-							r = stmt_project(be, sel, r);
-						if (!r2->cand && r2->nrcols)
-							r2 = stmt_project(be, sel, r2);
-						sel = NULL;
-					}
 					if (l->nrcols == 0)
 						l = stmt_const(be, bin_first_column(be, left), l);
 					s = stmt_uselect2(be, l, r, r2, (comp_type)e->flag, sel, is_anti(e));
@@ -1118,6 +1112,10 @@ exp_bin(backend *be, sql_exp *e, stmt *left, stmt *right, stmt *grp, stmt *ext, 
 					sql_subfunc *f = sql_bind_func(sql->sa, sql->session->schema, in_flag?"=":"<>", tail_type(l), tail_type(l), F_FUNC);
 					assert(f);
 					s = stmt_binop(be, l, r, f);
+					if (l->cand)
+						s->cand = l->cand;
+					if (r->cand)
+						s->cand = r->cand;
 				} else if (!reduce || (l->nrcols == 0 && r->nrcols == 0)) {
 					sql_subfunc *f = sql_bind_func(sql->sa, sql->session->schema,
 							compare_func((comp_type)e->flag, is_anti(e)),
@@ -1137,6 +1135,10 @@ exp_bin(backend *be, sql_exp *e, stmt *left, stmt *right, stmt *grp, stmt *ext, 
 					} else {
 						s = stmt_binop(be, l, r, f);
 					}
+					if (l->cand)
+						s->cand = l->cand;
+					if (r->cand)
+						s->cand = r->cand;
 				} else {
 					/* this can still be a join (as relational algebra and single value subquery results still means joins */
 					s = stmt_uselect(be, l, r, (comp_type)e->flag, sel, is_anti(e), is_semantics(e));
@@ -3802,13 +3804,26 @@ insert_check_ukey(backend *be, list *inserts, sql_key *k, stmt *idx_inserts)
 		if ((!idx_inserts && ins->nrcols) || (idx_inserts && idx_inserts->nrcols)) {	/* insert columns not atoms */
 			sql_subfunc *or = sql_bind_func_result(sql->sa, sql->session->schema, "or", F_FUNC, bt, 2, bt, bt);
 			stmt *orderby_ids = NULL, *orderby_grp = NULL;
+			stmt *sel = NULL;
 
+			/* remove any nils as in stmt_order NULL = NULL, instead of NULL != NULL */
+			if ((k->type == ukey) && stmt_has_null(col)) {
+
+				for (m = k->columns->h; m; m = m->next) {
+					sql_kc *c = m->data;
+					stmt *cs = list_fetch(inserts, c->c->colnr);
+
+					sel = stmt_selectnonil(be, cs, sel);
+				}
+			}
 			/* implementation uses sort key check */
 			for (m = k->columns->h; m; m = m->next) {
 				sql_kc *c = m->data;
 				stmt *orderby;
 				stmt *cs = list_fetch(inserts, c->c->colnr);
 
+				if (sel)
+					cs = stmt_project(be, sel, cs);
 				if (orderby_grp)
 					orderby = stmt_reorder(be, cs, 1, 0, orderby_ids, orderby_grp);
 				else

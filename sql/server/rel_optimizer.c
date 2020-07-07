@@ -3003,7 +3003,7 @@ exp_simplify_math( mvc *sql, sql_exp *e, int *changes)
 				return e;
 			}
 			/* change a*a into pow(a,2), later change pow(a,2) back into a*a */
-			if (exp_equal(le, re)==0 && exp_subtype(le)->type->eclass == EC_FLT) {
+			if (/* DISABLES CODE */ (0) && exp_equal(le, re)==0 && exp_subtype(le)->type->eclass == EC_FLT) {
 				/* pow */
 				list *l;
 				sql_exp *ne;

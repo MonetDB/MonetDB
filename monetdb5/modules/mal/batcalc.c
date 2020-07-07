@@ -1076,9 +1076,9 @@ CMDbatBETWEEN(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	bat bid;
 	BAT *bn, *b = NULL, *lo = NULL, *hi = NULL, *s = NULL, *slo = NULL, *shi = NULL, *r = NULL;
-	int tp1, tp2, tp3;
+	int tp1, tp2, tp3, tp;
 	int bc = 0;					/* number of extra BAT arguments */
-	bool symmetric, linc, hinc, nils_false, anti;
+	bool symmetric, linc, hinc, nils_false, anti, has_cand = false;
 
 	(void) cntxt;
 	(void) mb;
@@ -1104,42 +1104,63 @@ CMDbatBETWEEN(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		if (hi == NULL)
 			goto bailout;
 	}
-	if (isaBatType(getArgType(mb, pci, 4))) {
+	tp = getArgType(mb, pci, 4);
+	if (tp == TYPE_bat || isaBatType(tp)) {
 		bid = *getArgReference_bat(stk, pci, 4);
-		s = BATdescriptor(bid);
-		if (s == NULL)
-			goto bailout;
-		if (s->ttype == TYPE_bit) {
-			r = s;
-			s = NULL;
+		has_cand = true;
+		if (!is_bat_nil(bid)) {
+			s = BATdescriptor(bid);
+			if (s == NULL)
+				goto bailout;
+			if (s->ttype == TYPE_bit) {
+				r = s;
+				s = NULL;
+				has_cand = false;
+			}
 		}
 		bc++;
 	}
-	if (s != NULL && lo) {
-		if (!isaBatType(getArgType(mb, pci, 4 + bc)))
+	if (has_cand && lo) {
+		tp = getArgType(mb, pci, 4 + bc);
+		if (tp == TYPE_bat || isaBatType(tp)) {
+			bid = *getArgReference_bat(stk, pci, 4 + bc);
+			if (!is_bat_nil(bid)) {
+				slo = BATdescriptor(bid);
+				if (slo == NULL)
+					goto bailout;
+			}
+			bc++;
+		} else {
+			if (s == NULL) {
+				/* apparently the extra bat was a NIL conditional
+				 * execution bat */
+				has_cand = false;
+			} else
+				goto bailout;
+		}
+	}
+	if (has_cand && hi) {
+		tp = getArgType(mb, pci, 4 + bc);
+		if (tp != TYPE_bat && !isaBatType(tp))
 			goto bailout;
 		bid = *getArgReference_bat(stk, pci, 4 + bc);
-		slo = BATdescriptor(bid);
-		if (slo == NULL)
-			goto bailout;
+		if (!is_bat_nil(bid)) {
+			shi = BATdescriptor(bid);
+			if (shi == NULL)
+				goto bailout;
+		}
 		bc++;
 	}
-	if (s != NULL && hi) {
-		if (!isaBatType(getArgType(mb, pci, 4 + bc)))
-			goto bailout;
+	tp = getArgType(mb, pci, 4 + bc);
+	if (r == NULL && (tp == TYPE_bat || isaBatType(tp))) {
 		bid = *getArgReference_bat(stk, pci, 4 + bc);
-		shi = BATdescriptor(bid);
-		if (shi == NULL)
-			goto bailout;
-		bc++;
-	}
-	if (r == NULL && isaBatType(getArgType(mb, pci, 4 + bc))) {
-		bid = *getArgReference_bat(stk, pci, 4 + bc);
-		r = BATdescriptor(bid);
-		if (r == NULL)
-			goto bailout;
-		if (r->ttype != TYPE_bit)
-			goto bailout;
+		if (!is_bat_nil(bid)) {
+			r = BATdescriptor(bid);
+			if (r == NULL)
+				goto bailout;
+			if (r->ttype != TYPE_bit)
+				goto bailout;
+		}
 		bc++;
 	}
 
@@ -2540,6 +2561,15 @@ static mel_func batcalc_init_funcs[] = {
  pattern("batcalc", "between", CMDbatBETWEEN, false, "B between V1 and V2 (or vice versa) with candidate list", args(1,11, batarg("",bit),batargany("b",1),argany("v1",1),batargany("v2",1),batarg("s",oid),batarg("s2",oid),arg("sym",bit),arg("linc",bit),arg("hinc",bit),arg("nils_false",bit),arg("anti",bit))),
  pattern("batcalc", "between", CMDbatBETWEEN, false, "B between V1 and V2 (or vice versa)", args(1,9, batarg("",bit),batargany("b",1),argany("v1",1),argany("v2",1),arg("sym",bit),arg("linc",bit),arg("hinc",bit),arg("nils_false",bit),arg("anti",bit))),
  pattern("batcalc", "between", CMDbatBETWEEN, false, "B between V1 and V2 (or vice versa) with candidate list", args(1,10, batarg("",bit),batargany("b",1),argany("v1",1),argany("v2",1),batarg("s",oid),arg("sym",bit),arg("linc",bit),arg("hinc",bit),arg("nils_false",bit),arg("anti",bit))),
+
+ pattern("batcalc", "between", CMDbatBETWEEN, false, "B between V1 and V2 (or vice versa)", args(1,10, batarg("",bit),batargany("b",1),batargany("v1",1),batargany("v2",1),batarg("ce",bit),arg("sym",bit),arg("linc",bit),arg("hinc",bit),arg("nils_false",bit),arg("anti",bit))),
+ pattern("batcalc", "between", CMDbatBETWEEN, false, "B between V1 and V2 (or vice versa) with candidate list", args(1,13, batarg("",bit),batargany("b",1),batargany("v1",1),batargany("v2",1),batarg("s",oid),batarg("s1",oid),batarg("s2",oid),batarg("ce",bit),arg("sym",bit),arg("linc",bit),arg("hinc",bit),arg("nils_false",bit),arg("anti",bit))),
+ pattern("batcalc", "between", CMDbatBETWEEN, false, "B between V1 and V2 (or vice versa)", args(1,10, batarg("",bit),batargany("b",1),batargany("v1",1),argany("v2",1),batarg("ce",bit),arg("sym",bit),arg("linc",bit),arg("hinc",bit),arg("nils_false",bit),arg("anti",bit))),
+ pattern("batcalc", "between", CMDbatBETWEEN, false, "B between V1 and V2 (or vice versa) with candidate list", args(1,12, batarg("",bit),batargany("b",1),batargany("v1",1),argany("v2",1),batarg("s",oid),batarg("s1",oid),batarg("ce",bit),arg("sym",bit),arg("linc",bit),arg("hinc",bit),arg("nils_false",bit),arg("anti",bit))),
+ pattern("batcalc", "between", CMDbatBETWEEN, false, "B between V1 and V2 (or vice versa)", args(1,10, batarg("",bit),batargany("b",1),argany("v1",1),batargany("v2",1),batarg("ce",bit),arg("sym",bit),arg("linc",bit),arg("hinc",bit),arg("nils_false",bit),arg("anti",bit))),
+ pattern("batcalc", "between", CMDbatBETWEEN, false, "B between V1 and V2 (or vice versa) with candidate list", args(1,12, batarg("",bit),batargany("b",1),argany("v1",1),batargany("v2",1),batarg("s",oid),batarg("s2",oid),batarg("ce",bit),arg("sym",bit),arg("linc",bit),arg("hinc",bit),arg("nils_false",bit),arg("anti",bit))),
+ pattern("batcalc", "between", CMDbatBETWEEN, false, "B between V1 and V2 (or vice versa)", args(1,10, batarg("",bit),batargany("b",1),argany("v1",1),argany("v2",1),batarg("ce",bit),arg("sym",bit),arg("linc",bit),arg("hinc",bit),arg("nils_false",bit),arg("anti",bit))),
+ pattern("batcalc", "between", CMDbatBETWEEN, false, "B between V1 and V2 (or vice versa) with candidate list", args(1,11, batarg("",bit),batargany("b",1),argany("v1",1),argany("v2",1),batarg("s",oid),batarg("ce",bit),arg("sym",bit),arg("linc",bit),arg("hinc",bit),arg("nils_false",bit),arg("anti",bit))),
 
  pattern("aggr", "avg", CMDcalcavg, false, "Gives the avg of all tail values", args(1,2, arg("",dbl),batargany("b",2))),
  pattern("aggr", "avg", CMDcalcavg, false, "Gives the avg of all tail values", args(1,3, arg("",dbl),batargany("b",2),arg("scale",int))),

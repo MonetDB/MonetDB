@@ -726,7 +726,7 @@ CMDBATsumprod(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 			nil_if_empty = * getArgReference_bit(stk, pci, 2);
 		} else {
 			bat sid = * getArgReference_bat(stk, pci, 2);
-			if ((s = BATdescriptor(sid)) == NULL) {
+			if (!is_bat_nil(sid) && (s = BATdescriptor(sid)) == NULL) {
 				BBPunfix(b->batCacheid);
 				throw(MAL, func, SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 			}
@@ -931,7 +931,7 @@ CMDBATstr_group_concat(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		} else {
 			if (next_argument == 3) {
 				bat sid = *getArgReference_bat(stk, pci, next_argument);
-				if ((s = BATdescriptor(sid)) == NULL) {
+				if (!is_bat_nil(sid) && (s = BATdescriptor(sid)) == NULL) {
 					BBPunfix(b->batCacheid);
 					BBPunfix(sep->batCacheid);
 					throw(MAL, "aggr.str_group_concat", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
