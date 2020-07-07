@@ -3894,25 +3894,12 @@ exp_merge_project_rse(visitor *v, sql_rel *rel, sql_exp *e, int depth)
 				if (((strcmp(lf->func->base.name, ">=") == 0 || strcmp(lf->func->base.name, ">") == 0) && list_length(lfexps) == 2) &&
 				    ((strcmp(rf->func->base.name, "<=") == 0 || strcmp(rf->func->base.name, "<") == 0) && list_length(rfexps) == 2)
 				    && exp_equal(list_fetch(lfexps,0), list_fetch(rfexps,0)) == 0) {
-					sql_exp *ce = list_fetch(lfexps, 0);
-					list *types, *ops = sa_list(sql->sa);
-					sql_subfunc *between;
-
-					append(ops, ce);
-					append(ops, list_fetch(lfexps, 1));
-					append(ops, list_fetch(rfexps, 1));
-					append(ops, exp_atom_bool(sql->sa, 0)); /* non symetrical */
-					append(ops, exp_atom_bool(sql->sa, lf->func->base.name[1] == '=')); /* left inclusive */
-					append(ops, exp_atom_bool(sql->sa, rf->func->base.name[1] == '=')); /* right exclusive */
-					append(ops, exp_atom_bool(sql->sa, 0)); /* nils_false */
-					append(ops, exp_atom_bool(sql->sa, 0)); /* anti */
-
-					types = exp_types(sql->sa, ops);
-					/* convert into between */
-					between = sql_bind_func_(sql->sa, mvc_bind_schema(sql, "sys"), "between", types, F_FUNC);
-					if (between) {
-						sql_exp *ne = exp_op(sql->sa, ops, between);
-
+					sql_exp *ne = exp_compare2(sql->sa,
+							list_fetch(lfexps, 0),
+							list_fetch(lfexps, 1),
+							list_fetch(rfexps, 1),
+							compare_funcs2range(lf->func->base.name, rf->func->base.name));
+					if (ne) {
 						exp_setname(sql->sa, ne, exp_relname(e), exp_name(e));
 						e = ne;
 					}

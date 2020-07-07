@@ -1612,7 +1612,8 @@ argumentZero(MalBlkPtr mb, int tpe)
 
 
 static InstrPtr
-select2_join2(backend *be, stmt *op1, stmt *op2, stmt *op3, int cmp, stmt *sub, int anti, int swapped, int type)
+select2_join2(backend *be, stmt *op1, stmt *op2, stmt *op3, int cmp, stmt *sub, int anti, int swapped, int type, int
+		reduce)
 {
 	MalBlkPtr mb = be->mb;
 	InstrPtr p, q;
@@ -1622,18 +1623,23 @@ select2_join2(backend *be, stmt *op1, stmt *op2, stmt *op3, int cmp, stmt *sub, 
 	if (op1->nr < 0 && (sub && sub->nr < 0))
 		return NULL;
 	l = op1->nr;
-	if (((cmp & CMP_BETWEEN && cmp & CMP_SYMMETRIC) || (cmp & CMP_BETWEEN && anti) || op2->nrcols > 0 || op3->nrcols > 0) && (type == st_uselect2)) {
+	if (((cmp & CMP_BETWEEN && cmp & CMP_SYMMETRIC) || (cmp & CMP_BETWEEN && anti) || op2->nrcols > 0 || op3->nrcols > 0 || !reduce) && (type == st_uselect2)) {
 		int k;
+		int nrcols = (op1->nrcols || op2->nrcols || op3->nrcols);
 
 		if (op2->nr < 0 || op3->nr < 0)
 			return NULL;
-		p = newStmt(mb, batcalcRef, betweenRef);
+
+		if (nrcols)
+			p = newStmt(mb, batcalcRef, betweenRef);
+		else
+			p = newStmt(mb, calcRef, betweenRef);
 		p = pushArgument(mb, p, l);
 		p = pushArgument(mb, p, op2->nr);
 		p = pushArgument(mb, p, op3->nr);
 
 		/* cands */
-		if (op1->cand || op2->cand || op3->cand) { /* some already handled the previous selection */
+		if ((sub && !reduce) || op1->cand || op2->cand || op3->cand) { /* some already handled the previous selection */
 			if (op1->cand && op1->nrcols)
 				p = pushNil(mb, p, TYPE_bat);
 			else if (op1->nrcols)
@@ -1658,6 +1664,8 @@ select2_join2(backend *be, stmt *op1, stmt *op2, stmt *op3, int cmp, stmt *sub, 
 		p = pushBit(mb, p, (cmp & 2) != 0);	    /* hi inclusive */
 		p = pushBit(mb, p, FALSE);		    /* nils_false */
 		p = pushBit(mb, p, (anti)?TRUE:FALSE);	    /* anti */
+		if (!reduce)
+			return p;
 		k = getDestVar(p);
 
 		q = newStmt(mb, algebraRef, selectRef);
@@ -1767,9 +1775,9 @@ select2_join2(backend *be, stmt *op1, stmt *op2, stmt *op3, int cmp, stmt *sub, 
 }
 
 stmt *
-stmt_uselect2(backend *be, stmt *op1, stmt *op2, stmt *op3, int cmp, stmt *sub, int anti)
+stmt_uselect2(backend *be, stmt *op1, stmt *op2, stmt *op3, int cmp, stmt *sub, int anti, int reduce)
 {
-	InstrPtr q = select2_join2(be, op1, op2, op3, cmp, sub, anti, 0, st_uselect2);
+	InstrPtr q = select2_join2(be, op1, op2, op3, cmp, sub, anti, 0, st_uselect2, reduce);
 
 	if (q) {
 		stmt *s = stmt_create(be->mvc->sa, st_uselect2);
@@ -2204,7 +2212,7 @@ stmt_left_project(backend *be, stmt *op1, stmt *op2, stmt *op3)
 stmt *
 stmt_join2(backend *be, stmt *l, stmt *ra, stmt *rb, int cmp, int anti, int swapped)
 {
-	InstrPtr q = select2_join2(be, l, ra, rb, cmp, NULL, anti, swapped, st_join2);
+	InstrPtr q = select2_join2(be, l, ra, rb, cmp, NULL, anti, swapped, st_join2, 1/*reduce semantics*/);
 	if (q) {
 		stmt *s = stmt_create(be->mvc->sa, st_join2);
 

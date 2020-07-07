@@ -51,8 +51,8 @@ stdout of test 'sqlancer02` in directory 'sql/test/SQLancer` itself:
 #select i between symmetric cast(1 as decimal) and cast(2 as double) from integers;
 % sys.%2 # table_name
 % %2 # name
-% boolean # type
-% 5 # length
+% oid # type
+% 22 # length
 [ true	]
 [ true	]
 [ false	]

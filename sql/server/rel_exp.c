@@ -135,6 +135,22 @@ compare2range( int l, int r )
 	return -1;
 }
 
+int
+compare_funcs2range(const char *l_op, const char *r_op)
+{
+	assert(l_op[0] == '>' && r_op[0] == '<');
+	if (!l_op[1] && !r_op[1])
+		return 0;
+	if (!l_op[1] && r_op[1] == '=')
+		return 2;
+	if (l_op[1] == '=' && !r_op[1])
+		return 1;
+	if (l_op[1] == '=' && r_op[1] == '=')
+		return 3;
+	assert(0);
+	return 0;
+}
+
 static sql_exp *
 exp_create(sql_allocator *sa, int type)
 {
@@ -2267,7 +2283,7 @@ exps_bind_column2( list *exps, const char *rname, const char *cname )
 				for (; he; he = he->chain) {
 					sql_exp *e = he->value;
 
-					if (e && is_column(e->type) && e->alias.name && e->alias.rname && strcmp(e->alias.name, cname) == 0 && strcmp(e->alias.rname, rname) == 0) {
+					if (e && e->alias.name && e->alias.rname && strcmp(e->alias.name, cname) == 0 && strcmp(e->alias.rname, rname) == 0) {
 						MT_lock_unset(&exps->ht_lock);
 						return e;
 					}
@@ -2280,7 +2296,7 @@ exps_bind_column2( list *exps, const char *rname, const char *cname )
 		for (en = exps->h; en; en = en->next ) {
 			sql_exp *e = en->data;
 
-			if (e && is_column(e->type) && e->alias.name && e->alias.rname && strcmp(e->alias.name, cname) == 0 && strcmp(e->alias.rname, rname) == 0)
+			if (e && e->alias.name && e->alias.rname && strcmp(e->alias.name, cname) == 0 && strcmp(e->alias.rname, rname) == 0)
 				return e;
 		}
 	}

@@ -36,7 +36,7 @@ stmt_selectnil( backend *be, stmt *col)
 {
 	sql_subtype *t = tail_type(col);
 	stmt *n = stmt_atom(be, atom_general(be->mvc->sa, t, NULL));
-	stmt *nn = stmt_uselect2(be, col, n, n, 3, NULL, 0);
+	stmt *nn = stmt_uselect2(be, col, n, n, 3, NULL, 0, 1);
 	return nn;
 }
 
@@ -312,7 +312,7 @@ stmt_selectnonil( backend *be, stmt *col, stmt *s )
 {
 	sql_subtype *t = tail_type(col);
 	stmt *n = stmt_atom(be, atom_general(be->mvc->sa, t, NULL));
-	stmt *nn = stmt_uselect2(be, col, n, n, 3, s, 1);
+	stmt *nn = stmt_uselect2(be, col, n, n, 3, s, 1, 1);
 	return nn;
 }
 
@@ -1065,44 +1065,11 @@ exp_bin(backend *be, sql_exp *e, stmt *left, stmt *right, stmt *grp, stmt *ext, 
 				s = stmt_join(be, l, r, is_anti(e), (comp_type)e->flag, is_semantics(e), false);
 			}
 		} else {
-			if (r2) {
-				if (!reduce || (l->nrcols == 0 && r->nrcols == 0 && r2->nrcols == 0)) {
-					sql_subtype *bt = sql_bind_localtype("bit");
-					sql_subfunc *lf = sql_bind_func(sql->sa, sql->session->schema,
-							compare_func(range2lcompare(e->flag), 0),
-							tail_type(l), tail_type(r), F_FUNC);
-					sql_subfunc *rf = sql_bind_func(sql->sa, sql->session->schema,
-							compare_func(range2rcompare(e->flag), 0),
-							tail_type(l), tail_type(r), F_FUNC);
-					sql_subfunc *a = sql_bind_func(sql->sa, sql->session->schema,
-							"and", bt, bt, F_FUNC);
-
-					if (is_atom(re->type) && re->l && atom_null((atom*)re->l) &&
-					    is_atom(re2->type) && re2->l && atom_null((atom*)re2->l)) {
-						assert(0); // old hack is gone ...
-					} else {
-						assert(lf && rf && a);
-						s = stmt_binop(be,
-							stmt_binop(be, l, r, lf),
-							stmt_binop(be, l, r2, rf), a);
-						if (l->cand)
-							s->cand = l->cand;
-						if (r->cand)
-							s->cand = r->cand;
-						if (r2->cand)
-							s->cand = r2->cand;
-					}
-					if (is_anti(e)) {
-						stmt *cand = s->cand;
-						sql_subfunc *a = sql_bind_func(sql->sa, sql->session->schema, "not", bt, NULL, F_FUNC);
-						s = stmt_unop(be, s, a);
-						s->cand = cand;
-					}
-				} else {
-					if (l->nrcols == 0)
-						l = stmt_const(be, bin_first_column(be, left), l);
-					s = stmt_uselect2(be, l, r, r2, (comp_type)e->flag, sel, is_anti(e));
-				}
+			if (r2) { /* handle all cases in stmt_uselect,
+						 reducing, non reducing, scalar etc */
+				if (l->nrcols == 0)
+					l = stmt_const(be, bin_first_column(be, left), l);
+				s = stmt_uselect2(be, l, r, r2, (comp_type)e->flag, sel, is_anti(e), reduce);
 			} else {
 				/* value compare or select */
 				if ((!reduce || (l->nrcols == 0 && r->nrcols == 0)) && (e->flag == mark_in || e->flag == mark_notin)) {
