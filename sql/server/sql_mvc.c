@@ -775,6 +775,7 @@ mvc_create(sql_allocator *pa, int clientid, int debug, bstream *rs, stream *ws)
 {
 	mvc *m;
 
+	assert(pa);
  	m = SA_ZNEW(pa, mvc);
 	if (!m)
 		return NULL;
