@@ -148,11 +148,7 @@ QUERY = SELECT '' AS nine, INTERVAL_TBL.* FROM INTERVAL_TBL
            WHERE INTERVAL_TBL.f1 > cast('@ 3 seconds ago' as interval second);
 ERROR = !Wrong format (@ 3 seconds ago)
 CODE  = 42000
-MAPI  = (monetdb) /var/tmp/mtest-149583/.s.monetdb.38425
-QUERY = select avg(f1) from interval_tbl;
-ERROR = !types sec_interval(13,0) and month_interval(32,0) are not equal for column 'f1'
-CODE  = 42000
-MAPI  = (monetdb) /var/tmp/mtest-149583/.s.monetdb.38425
+MAPI  = (monetdb) /var/tmp/mtest-104746/.s.monetdb.34848
 QUERY = select avg(cast(f1 as double)) from interval_tbl;
 ERROR = !types sec_interval(13,0) and double(53,0) are not equal for column 'f1'
 CODE  = 42000

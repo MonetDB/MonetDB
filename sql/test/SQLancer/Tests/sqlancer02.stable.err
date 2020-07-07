@@ -22,10 +22,6 @@ QUERY = SELECT AVG(ALL ((((CAST(((+ (-12))/(sql_min(-12, -67))) AS INT))+(abs(((
         GROUP BY 0.1, 0.7, 0.2, + (+ (- (length(r'q')))), greatest(upper(upper(r'623865997')), trim(replace(r'vAd(Lup}Z', r'-1774953973', r'0.4235712099498189'), substr(r'', -19)));
 ERROR = !division by zero.
 CODE  = 22012
-MAPI  = (monetdb) /var/tmp/mtest-429287/.s.monetdb.37889
-QUERY = UPDATE t0 SET c2 = r'' WHERE (((length(r'-1474806813'))>>(((patindex(t0.c0, t0.c2))+(CAST(2131293036 AS INT)))))) NOT IN (0.21471945711648477, t0.c1, t0.c1, ((CAST(((-1593438153)*(2069478567)) AS INT))/(1542678144)));
-ERROR = !overflow in conversion of -3297586105473566751 to int.
-CODE  = 22003
 
 # 17:04:12 >  
 # 17:04:12 >  "Done."

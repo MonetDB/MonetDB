@@ -83,7 +83,7 @@ stdout of test 'median_stdev` in directory 'sql/test` itself:
 % sys.r,	sys. # table_name
 % groupid,	medianvalue # name
 % int,	decimal # type
-% 1,	40 # length
+% 1,	12 # length
 [ 1,	6.00	]
 [ 2,	5.00	]
 [ 3,	34.50	]

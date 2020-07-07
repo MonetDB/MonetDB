@@ -188,6 +188,8 @@ stdout of test 'sqlancer02` in directory 'sql/test/SQLancer` itself:
 #"EjgaDfV\t6m)Qvw0'%cW#\015*]h "	0.944146436872532	""
 #"M"	0.7309075439656509	NULL
 [ 4	]
+#UPDATE t0 SET c2 = r'' WHERE (((length(r'-14'))>>(((patindex(t0.c0, t0.c2))+(CAST(2 AS INT)))))) NOT IN (0.2, t0.c1, t0.c1, ((CAST(((-1)*(2)) AS INT))/(2)));
+[ 2	]
 #ROLLBACK;
 
 # 17:04:12 >  
