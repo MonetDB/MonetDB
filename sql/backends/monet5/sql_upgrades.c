@@ -2909,8 +2909,8 @@ sql_update_default(Client c, mvc *sql, const char *prev_schema)
 				"create user \".snapshot\""
 				" with encrypted password '00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000'"
 				" name 'Snapshot User'"
-				" schema sys;"
-				"grant execute on procedure sys.hot_snapshot to \".snapshot\";"
+				" schema sys;\n"
+				"grant execute on procedure sys.hot_snapshot to \".snapshot\";\n"
 			);
 
 			/* update system tables so that the content
