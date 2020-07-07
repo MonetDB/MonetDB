@@ -145,8 +145,11 @@ typedef struct mvc {
 } mvc;
 
 extern sql_table *mvc_init_create_view(mvc *sql, sql_schema *s, const char *name, const char *query);
+
+/* should return structure */
 extern int mvc_init(sql_allocator *pa, int debug, store_type store, int ro, int su);
 extern void mvc_exit(void);
+
 extern void mvc_logmanager(void);
 extern void mvc_idlemanager(void);
 

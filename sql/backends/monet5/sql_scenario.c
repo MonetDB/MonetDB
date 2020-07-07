@@ -291,6 +291,7 @@ SQLresetClient(Client c)
 	if (c->sqlcontext == NULL)
 		throw(SQL, "SQLexitClient", SQLSTATE(42000) "MVC catalogue not available");
 	if (c->sqlcontext) {
+		sql_allocator *pa = NULL;
 		backend *be = c->sqlcontext;
 		mvc *m = be->mvc;
 
@@ -305,11 +306,13 @@ SQLresetClient(Client c)
 		res_tables_destroy(be->results);
 		be->results = NULL;
 
+		pa = m->pa;
 		mvc_destroy(m);
 		backend_destroy(be);
 		c->state[MAL_SCENARIO_OPTIMIZE] = NULL;
 		c->state[MAL_SCENARIO_PARSER] = NULL;
 		c->sqlcontext = NULL;
+		sa_destroy(pa);
 	}
 	c->state[MAL_SCENARIO_READER] = NULL;
 	if (other && !msg)

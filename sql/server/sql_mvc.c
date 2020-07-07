@@ -115,6 +115,7 @@ mvc_fix_depend(mvc *m, sql_column *depids, struct view_t *v, int n)
 	}
 }
 
+static sql_allocator *store_allocator = NULL;
 int
 mvc_init(sql_allocator *pa, int debug, store_type store, int ro, int su)
 {
@@ -124,6 +125,7 @@ mvc_init(sql_allocator *pa, int debug, store_type store, int ro, int su)
 	mvc *m;
 	str msg;
 
+	store_allocator = pa;
 	TRC_DEBUG(SQL_TRANS, "Initialization\n");
 	keyword_init();
 	if(scanner_init_keywords() != 0) {
@@ -389,6 +391,7 @@ mvc_exit(void)
 	TRC_DEBUG(SQL_TRANS, "MVC exit\n");
 	store_exit();
 	keyword_exit();
+	sa_destroy(store_allocator);
 }
 
 void
@@ -807,6 +810,7 @@ mvc_create(sql_allocator *pa, int clientid, int debug, bstream *rs, stream *ws)
 	}
 	if (init_global_variables(m) < 0) {
 		qc_destroy(m->qc);
+		list_destroy(m->global_vars);
 		return NULL;
 	}
 	m->sym = NULL;
@@ -828,6 +832,7 @@ mvc_create(sql_allocator *pa, int clientid, int debug, bstream *rs, stream *ws)
 	store_unlock();
 	if (!m->session) {
 		qc_destroy(m->qc);
+		list_destroy(m->global_vars);
 		return NULL;
 	}
 
@@ -911,6 +916,7 @@ mvc_destroy(mvc *m)
 	sql_session_destroy(m->session);
 	store_unlock();
 
+	list_destroy(m->global_vars);
 	stack_pop_until(m, 0);
 
 	if (m->scanner.log) /* close and destroy stream */

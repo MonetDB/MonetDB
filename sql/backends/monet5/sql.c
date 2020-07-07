@@ -440,6 +440,7 @@ create_table_from_emit(Client cntxt, char *sname, char *tname, sql_emit_col *col
 		return msg;
 
 	/* for some reason we don't have an allocator here, so make one */
+	assert(!sql->sa);
 	if (!(sql->sa = sa_create(sql->pa))) {
 		msg = sql_error(sql, 02, SQLSTATE(HY013) "CREATE TABLE: %s", MAL_MALLOC_FAIL);
 		goto cleanup;
@@ -526,6 +527,7 @@ append_to_table_from_emit(Client cntxt, char *sname, char *tname, sql_emit_col *
 		return msg;
 
 	/* for some reason we don't have an allocator here, so make one */
+	assert(!sql->sa);
 	if (!(sql->sa = sa_create(sql->pa))) {
 		msg = sql_error(sql, 02, SQLSTATE(HY013) "APPEND TABLE: %s", MAL_MALLOC_FAIL);
 		goto cleanup;
