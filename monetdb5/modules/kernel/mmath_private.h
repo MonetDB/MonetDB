@@ -10,3 +10,17 @@
  * argument as base */
 extern double logbs(double, double);
 extern float logbsf(float, float);
+
+/* backup definitions of some useful constants */
+#ifndef FE_INVALID
+#define FE_INVALID			0
+#endif
+#ifndef FE_DIVBYZERO
+#define FE_DIVBYZERO		0
+#endif
+#ifndef FE_OVERFLOW
+#define FE_OVERFLOW			0
+#endif
+#ifndef M_PI
+#define M_PI 3.14159265358979323846
+#endif
