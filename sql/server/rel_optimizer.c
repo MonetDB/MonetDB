@@ -5550,28 +5550,56 @@ rel_push_project_down_union(mvc *sql, sql_rel *rel, int *changes)
 	return rel;
 }
 
+static int
+sql_class_base_score(sql_subtype *t)
+{
+	switch (t->type->eclass) {
+		case EC_BIT:
+			return 149;
+		case EC_NUM:
+		case EC_MONTH:
+		case EC_POS:
+			return 150 - (int) t->type->digits;
+		case EC_DEC:
+		case EC_SEC:
+			return 150 - digits2bits(t->type->digits);
+		case EC_DATE:
+			return 150 - 32;
+		case EC_TIME:
+		case EC_TIME_TZ:
+		case EC_TIMESTAMP:
+		case EC_TIMESTAMP_TZ:
+			return 150 - 64;
+		case EC_FLT: /* floating points are more expensive to compute, give them lower priority */
+			return 75 - (int) t->type->digits;
+		case EC_ANY:
+			return 10;
+		default:
+			return 0;
+	}
+}
+
 /* Compute the efficiency of using this expression early in a group by list */
 static int
-score_gbe( mvc *sql, sql_rel *rel, sql_exp *e)
+score_gbe(mvc *sql, sql_rel *rel, sql_exp *e)
 {
-	int res = 10;
+	int res = 0;
 	sql_subtype *t = exp_subtype(e);
 	sql_column *c = NULL;
 
 	/* can we find out if the underlying table is sorted */
-	if ( (c = exp_find_column(rel, e, -2)) != NULL) {
-		if (mvc_is_sorted (sql, c))
-			res += 500;
-	}
+	if ((c = exp_find_column(rel, e, -2)) && mvc_is_sorted(sql, c))
+		res += 600;
+	if (find_prop(e->p, PROP_SORTIDX)) /* has sort index */
+		res += 400;
+	if (find_prop(e->p, PROP_HASHCOL)) /* distinct columns */
+		res += 300;
+	if (find_prop(e->p, PROP_HASHIDX)) /* has hash index */
+		res += 200;
 
-	/* is the column selective */
-
-	/* prefer the shorter var types over the longer onces */
-	if (!EC_FIXED(t->type->eclass) && t->digits)
-		res -= t->digits;
-	/* smallest type first */
-	if (EC_FIXED(t->type->eclass))
-		res -= t->type->eclass;
+	/* prefer the shorter var types over the longer ones */
+	if (EC_BACKEND_FIXED(t->type->eclass))
+		res += sql_class_base_score(t); /* smaller the type, better */
 	return res;
 }
 
@@ -5581,7 +5609,7 @@ rel_groupby_order(mvc *sql, sql_rel *rel, int *changes)
 {
 	list *gbe = rel->r;
 
-	(void)*changes;
+	(void)changes;
 	if (is_groupby(rel->op) && list_length(gbe) > 1 && list_length(gbe)<9) {
 		node *n;
 		int i, *scores = GDKzalloc(list_length(gbe) * sizeof(int));
@@ -7312,12 +7340,28 @@ rel_use_index(mvc *sql, sql_rel *rel, int *changes)
 }
 
 static int
-score_se( mvc *sql, sql_rel *rel, sql_exp *e)
+score_se_base(mvc *sql, sql_rel *rel, sql_exp *e)
+{
+	int res = 0;
+	sql_subtype *t = exp_subtype(e);
+	sql_column *c = NULL;
+
+	/* can we find out if the underlying table is sorted */
+	if ((c = exp_find_column(rel, e, -2)) && mvc_is_sorted(sql, c))
+		res += 600;
+
+	/* prefer the shorter var types over the longer ones */
+	if (EC_BACKEND_FIXED(t->type->eclass))
+		res += sql_class_base_score(t); /* smaller the type, better */
+	return res;
+}
+
+static int
+score_se(mvc *sql, sql_rel *rel, sql_exp *e)
 {
 	int score = 0;
-	if (e->type == e_cmp && !is_complex_exp(e->flag)) {
-		score += score_gbe(sql, rel, e->l);
-	}
+	if (e->type == e_cmp && !is_complex_exp(e->flag))
+		score += score_se_base(sql, rel, e->l);
 	score += exp_keyvalue(e);
 	return score;
 }
