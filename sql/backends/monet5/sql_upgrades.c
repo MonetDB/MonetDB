@@ -2913,6 +2913,13 @@ sql_update_default(Client c, mvc *sql, const char *prev_schema)
 				"grant execute on procedure sys.hot_snapshot to \".snapshot\";\n"
 			);
 
+			/* additional snapshot function */
+			pos += snprintf(buf + pos, bufsize - pos,
+					"create procedure sys.hot_snapshot(tarfile string, onserver bool)\n"
+					" external name sql.hot_snapshot;\n"
+					"update sys.functions set system = true where system <> true and schema_id = (select id from sys.schemas where name = 'sys')"
+					" and name in ('hot_snapshot') and type = %d;\n", (int) F_PROC);
+
 			/* update system tables so that the content
 			 * looks more like what it would be if sys.var
 			 * had been defined by the C code in
