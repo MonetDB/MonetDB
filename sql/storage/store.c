@@ -675,6 +675,7 @@ load_column(sql_trans *tr, sql_table *t, oid rid)
 		store_funcs.create_col(tr, c);
 	c->sorted = sql_trans_is_sorted(tr, c);
 	c->dcount = 0;
+	c->base.stime = c->base.wtime = tr->wstime;
 	TRC_DEBUG(SQL_STORE, "Load column: %s\n", c->base.name);
 	return c;
 }
@@ -851,6 +852,7 @@ load_table(sql_trans *tr, sql_schema *s, sqlid tid, subrids *nrs)
 	t->cleared = 0;
 	v = table_funcs.column_find_value(tr, find_sql_column(tables, "access"),rid);
 	t->access = *(sht*)v;	_DELETE(v);
+	t->base.stime = t->base.wtime = tr->wstime;
 
 	t->pkey = NULL;
 	t->s = s;
@@ -1588,6 +1590,7 @@ bootstrap_create_column(sql_trans *tr, sql_table *t, char *name, char *sqltype, 
 	col->unique = 0;
 	col->storage_type = NULL;
 	cs_add(&t->columns, col, TR_NEW);
+	col->base.wtime = col->t->base.wtime = col->t->s->base.wtime = tr->wtime = tr->wstime;
 
 	if (isTable(col->t))
 		store_funcs.create_col(tr, col);
@@ -1772,6 +1775,7 @@ bootstrap_create_table(sql_trans *tr, sql_schema *s, char *name)
 	t->base.flags = s->base.flags;
 	t->query = NULL;
 	t->s = s;
+	t->base.wtime = t->s->base.wtime = tr->wtime = tr->wstime;
 	cs_add(&s->tables, t, TR_NEW);
 
 	if (isTable(t))
@@ -1809,7 +1813,7 @@ bootstrap_create_schema(sql_trans *tr, char *name, sqlid auth_id, int owner)
 	s->keys = list_new(tr->sa, (fdestroy) NULL);
 	s->idxs = list_new(tr->sa, (fdestroy) NULL);
 	s->triggers = list_new(tr->sa, (fdestroy) NULL);
-
+	s->base.wtime = tr->wtime = tr->wstime;
 	cs_add(&tr->schemas, s, TR_NEW);
 
 	tr->schema_updates ++;
@@ -1850,6 +1854,7 @@ store_load(sql_allocator *pa) {
 		return -1;
 	ATOMIC_SET(&transactions, 0);
 	gtrans = tr = create_trans(sa);
+	gtrans->stime = timestamp();
 	if (!gtrans)
 		return -1;
 
@@ -1866,6 +1871,7 @@ store_load(sql_allocator *pa) {
 			return -1;
 		}
 	} else {
+		tr->active = 1;
 		if (!(store_oids = GDKzalloc(300 * sizeof(sqlid)))) { /* 150 suffices */
 			TRC_CRITICAL(SQL_STORE, "Allocation failure while loading the storage\n");
 			return -1;
@@ -2029,6 +2035,7 @@ store_load(sql_allocator *pa) {
 		}
 		sql_trans_destroy(tr, true);
 	} else {
+		tr->active = 0;
 		GDKqsort(store_oids, NULL, NULL, nstore_oids, sizeof(sqlid), 0, TYPE_int, false, false);
 		store_oid = store_oids[nstore_oids - 1] + 1;
 	}
@@ -2040,12 +2047,14 @@ store_load(sql_allocator *pa) {
 		store_oid = prev_oid;
 
 	/* load remaining schemas, tables, columns etc */
+	tr->active = 1;
 	if (!first && !load_trans(gtrans, id)) {
 		GDKfree(store_oids);
 		store_oids = NULL;
 		nstore_oids = 0;
 		return -1;
 	}
+	tr->active = 0;
 	store_initialized = 1;
 	GDKfree(store_oids);
 	store_oids = NULL;
@@ -3086,6 +3095,7 @@ idx_dup(sql_trans *tr, int flags, sql_idx * i, sql_table *t)
 		ni->base.allocated = i->base.allocated;
 		ni->data = i->data;
 		i->base.allocated = 0;
+		ni->base.wtime = i->base.wtime;
 		i->data = NULL;
 	} else
 	if ((isNew(i) && newFlagSet(flags) && tr->parent == gtrans) ||
@@ -3309,6 +3319,7 @@ column_dup(sql_trans *tr, int flags, sql_column *oc, sql_table *t)
 		c->base.allocated = oc->base.allocated;
 		c->data = oc->data;
 		oc->base.allocated = 0;
+		c->base.wtime = oc->base.wtime;
 		oc->data = NULL;
 	} else
 	if ((isNew(oc) && newFlagSet(flags) && tr->parent == gtrans) ||
@@ -3513,6 +3524,7 @@ table_dup(sql_trans *tr, int flags, sql_table *ot, sql_schema *s)
 	if (flags) {
 		assert(t->data == NULL);
 		t->base.allocated = ot->base.allocated;
+		t->base.wtime = ot->base.wtime;
 		t->data = ot->data;
 		ot->base.allocated = 0;
 		ot->data = NULL;
@@ -3780,9 +3792,8 @@ trans_init(sql_trans *tr, sql_trans *otr)
 
 				t->base.rtime = t->base.wtime = 0;
 				t->base.stime = pt->base.wtime;
+//				assert(t->base.stime > 0 || !isTable(t));
 				if (!istmp && !t->base.allocated) {
-					if (t->data)
-						(void)store_funcs.destroy_del(tr, t);
 					t->data = NULL;
 				}
 				assert (istmp || !t->base.allocated);
