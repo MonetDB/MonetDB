@@ -136,6 +136,8 @@ typedef size_t MT_Id;		/* thread number. will not be zero */
 enum MT_thr_detach { MT_THR_JOINABLE, MT_THR_DETACHED };
 #define MT_NAME_LEN	32	/* length of thread/semaphore/etc. names */
 
+#define UNKNOWN_THREAD "unknown thread"
+
 gdk_export bool MT_thread_init(void);
 gdk_export int MT_create_thread(MT_Id *t, void (*function) (void *),
 				void *arg, enum MT_thr_detach d,
@@ -146,6 +148,8 @@ gdk_export void MT_thread_setdata(void *data);
 gdk_export void MT_exiting_thread(void);
 gdk_export MT_Id MT_getpid(void);
 gdk_export int MT_join_thread(MT_Id t);
+gdk_export int MT_declare_external_thread(const char *threadname);
+gdk_export void MT_undeclare_external_thread(void);
 
 #if SIZEOF_VOID_P == 4
 /* "limited" stack size on 32-bit systems */

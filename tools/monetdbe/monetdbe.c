@@ -247,6 +247,15 @@ monetdbe_query_internal(monetdbe_database_internal *mdbe, char* query, monetdbe_
 	bstream *old_bstream = NULL;
 	stream *fdout = c->fdout;
 
+	bool is_external_thread = (strcmp(MT_thread_getname(), UNKNOWN_THREAD) == 0);
+
+	if (is_external_thread) {
+		char thread_name[MT_NAME_LEN];
+		sprintf(thread_name, "external_%d", c->idx);
+
+		MT_declare_external_thread(thread_name);
+	}
+
 	if (result)
 		*result = NULL;
 
@@ -360,7 +369,14 @@ cleanup:
 		bstream_destroy(c->fdin);
 		c->fdin = old_bstream;
 	}
-	return commit_action(m, mdbe, result, res_internal);
+
+	char* msg = commit_action(m, mdbe, result, res_internal);
+
+	if (is_external_thread) {
+		MT_undeclare_external_thread();
+	}
+
+	return msg;
 }
 
 static int
