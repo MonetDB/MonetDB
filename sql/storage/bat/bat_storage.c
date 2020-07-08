@@ -1071,7 +1071,7 @@ count_col(sql_trans *tr, sql_column *c, int all)
 {
 	sql_delta *b;
 
-	assert(tr->active || tr == gtrans);
+//	assert(tr->active || tr == gtrans);
 	if (!isTable(c->t))
 		return 0;
 	if (!c->data) {
@@ -2721,7 +2721,7 @@ update_table(sql_trans *tr, sql_table *ft, sql_table *tt)
 		sql_column *oc = m->data;
 
 		if (ATOMIC_GET(&store_nr_active) == 1 || (cc->base.wtime && cc->base.allocated)) {
-			assert(!cc->base.wtime || oc->base.wtime < cc->base.wtime);
+//			assert(!cc->base.wtime || oc->base.wtime < cc->base.wtime);
 			if (ATOMIC_GET(&store_nr_active) > 1 && cc->data) { /* move delta */
 				sql_delta *b = cc->data;
 				sql_column *oldc = NULL;

@@ -3745,7 +3745,7 @@ trans_init(sql_trans *tr, backend_stack stk, sql_trans *otr)
 
 				t->base.rtime = t->base.wtime = 0;
 				t->base.stime = pt->base.wtime;
-				assert(t->base.stime > 0 || !isTable(t));
+//				assert(t->base.stime > 0 || !isTable(t));
 				if (!istmp && !t->base.allocated) {
 					t->data = NULL;
 				}
