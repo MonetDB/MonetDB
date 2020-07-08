@@ -344,3 +344,11 @@ exp_push_down(mvc *sql, sql_exp *e, sql_rel *f, sql_rel *t)
 {
 	return _exp_push_down(sql, e, f, t);
 }
+
+sql_rel *
+rewrite_reset_used(visitor *v, sql_rel *rel)
+{
+	(void) v;
+	rel->used = 0;
+	return rel;
+}
