@@ -3912,12 +3912,11 @@ exps_merge_select_rse( mvc *sql, list *l, list *r )
 }
 
 static sql_exp *
-exp_merge_project_rse(mvc *sql, sql_rel *rel, sql_exp *e, int depth, int *changes)
+rel_merge_project_rse(mvc *sql, sql_rel *rel, sql_exp *e, int depth, int *changes)
 {
-	(void) changes;
 	(void) depth;
-	(void) rel;
-	if (is_func(e->type) && e->l) {
+
+	if (is_simple_project(rel->op) && is_func(e->type) && e->l) {
 		list *fexps = e->l;
 		sql_subfunc *f = e->f;
 
@@ -3958,6 +3957,7 @@ exp_merge_project_rse(mvc *sql, sql_rel *rel, sql_exp *e, int depth, int *change
 						exp_setname(sql->sa, ne, exp_relname(e), exp_name(e));
 						e = ne;
 					}
+					(*changes)++;
 				}
 			}
 		}
@@ -3978,12 +3978,12 @@ exp_merge_project_rse(mvc *sql, sql_rel *rel, sql_exp *e, int depth, int *change
  *     	 y > 1 and y < 20
  * */
 static sql_rel *
-rel_merge_rse(mvc *sql, sql_rel *rel, int *changes)
+rel_merge_select_rse(mvc *sql, sql_rel *rel, int *changes)
 {
 	/* only execute once per select */
-	(void)*changes;
+	(void)changes;
 
-	if ((is_select(rel->op) || is_join(rel->op) || is_semi(rel->op)) && rel->exps) {
+	if ((is_select(rel->op) || is_join(rel->op) || is_semi(rel->op)) && rel->exps && !rel->used) {
 		node *n, *o;
 		list *nexps = new_exp_list(sql->sa);
 
@@ -3997,13 +3997,11 @@ rel_merge_rse(mvc *sql, sql_rel *rel, int *changes)
 					append(nexps, o->data);
 			}
 		}
-		if (list_length(nexps))
-		       for (o = nexps->h; o; o = o->next)
+		if (!list_empty(nexps))
+			for (o = nexps->h; o; o = o->next)
 				append(rel->exps, o->data);
+		rel->used = 1;
 	}
-	/* the project case of rse */
-	if (is_project(rel->op) && rel->exps)
-		rel->exps = exps_exp_visitor_bottomup(sql, rel, rel->exps, 0, &exp_merge_project_rse, changes);
 	return rel;
 }
 
@@ -9121,9 +9119,16 @@ optimize_rel(mvc *sql, sql_rel *rel, int *g_changes, int level, int value_based_
 	if ((gp.cnt[op_left] || gp.cnt[op_right] || gp.cnt[op_full]) && /* DISABLES CODE */ (0))
 		rel = rel_visitor_topdown(sql, rel, &rel_split_outerjoin, &changes);
 
-	if (gp.cnt[op_select] || gp.cnt[op_project])
-		if (level == 1) /* only once */
-			rel = rel_visitor_bottomup(sql, rel, &rel_merge_rse, &changes);
+	if ((gp.cnt[op_join] ||
+		gp.cnt[op_left] || gp.cnt[op_right] || gp.cnt[op_full] ||
+		gp.cnt[op_semi] || gp.cnt[op_anti] ||
+		gp.cnt[op_select]) && level == 1) { /* only once */
+			rel = rel_visitor_bottomup(sql, rel, &rel_merge_select_rse, &changes);
+			rel = rel_visitor_bottomup(sql, rel, &rewrite_reset_used, &changes); /* reset used flag, used by rel_merge_select_rse */
+		}
+
+	if (gp.cnt[op_project])
+		rel = rel_exp_visitor_bottomup(sql, rel, &rel_merge_project_rse, &changes);
 
 	if (gp.cnt[op_select] && gp.cnt[op_join] && /* DISABLES CODE */ (0))
 		rel = rel_visitor_topdown(sql, rel, &rel_push_select_down_join, &changes);

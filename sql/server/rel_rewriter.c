@@ -210,3 +210,12 @@ rel_remove_empty_select(mvc *sql, sql_rel *rel, int *changes)
 		rel->exps = NULL; /* crossproduct */
 	return rel;
 }
+
+sql_rel *
+rewrite_reset_used(mvc *sql, sql_rel *rel, int *changes)
+{
+	(void) sql;
+	(void) changes;
+	rel->used = 0;
+	return rel;
+}

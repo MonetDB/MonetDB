@@ -3201,6 +3201,7 @@ rel_unnest(mvc *sql, sql_rel *rel)
 		rel = rel_visitor_bottomup(sql, rel, &rel_remove_empty_select, &changes);
 	rel = rel_visitor_bottomup(sql, rel, &_rel_unnest, &changes);
 	rel = rel_visitor_bottomup(sql, rel, &rewrite_fix_count, &changes);	/* fix count inside a left join (adds a project (if (cnt IS null) then (0) else (cnt)) */
+	rel = rel_visitor_bottomup(sql, rel, &rewrite_reset_used, &changes); /* rewrite_fix_count uses 'used' property from sql_rel, reset it after it's done */
 	rel = rel_visitor_bottomup(sql, rel, &rewrite_remove_xp, &changes);	/* remove crossproducts with project [ atom ] */
 	rel = rel_visitor_bottomup(sql, rel, &rewrite_groupings, &changes);	/* transform group combinations into union of group relations */
 	rel = rel_visitor_bottomup(sql, rel, &rewrite_empty_project, &changes);
