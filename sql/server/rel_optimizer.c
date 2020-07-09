@@ -4633,6 +4633,42 @@ rel_push_select_down_join(visitor *v, sql_rel *rel)
 	return rel;
 }
 
+static bool
+find_simple_projection_for_join2semi(sql_rel *rel)
+{
+	if (is_project(rel->op) && list_length(rel->exps) == 1) {
+		sql_exp *e = rel->exps->h->data;
+
+		if (rel->card < CARD_AGGR) /* const or groupby without group by exps */
+			return true;
+		/* a single group by column in the projection list from a group by relation is guaranteed to be unique, but not an aggregate */
+		if (e->type == e_column) {
+			sql_rel *res = NULL;
+			sql_exp *found = NULL;
+
+			if (is_groupby(rel->op) || need_distinct(rel) || find_prop(e->p, PROP_HASHCOL))
+				return true;
+
+			found = rel_find_exp_and_corresponding_rel(rel->l, e, &res); /* grouping column on inner relation */
+			if (found) {
+				if (find_prop(found->p, PROP_HASHCOL)) /* primary key always unique */
+					return true;
+				if (found->type == e_column && found->card <= CARD_AGGR) {
+					if (!(is_groupby(res->op) || need_distinct(res)) && list_length(res->exps) != 1)
+						return false;
+					for (node *n = res->exps->h ; n ; n = n->next) { /* must be the single column in the group by expression list */
+						sql_exp *e = n->data;
+						if (e != found && e->type == e_column)
+							return false;
+					}
+					return true;
+				}
+			}
+		}
+	}
+	return false;
+}
+
 /*
  * Push {semi}joins down, pushes the joins through group by expressions.
  * When the join is on the group by columns, we can push the joins left
@@ -4657,7 +4693,7 @@ rel_push_join_down(visitor *v, sql_rel *rel)
 		if (gb->op == op_project)
 			gb = gb->l;
 
-		if (is_basetable(rell->op) || rel_is_ref(rell))
+		if (rel_is_ref(rell) || !find_simple_projection_for_join2semi(rell))
 			return rel;
 
 		exps = rel->exps;
@@ -5242,42 +5278,6 @@ rel_remove_empty_join(visitor *v, sql_rel *rel)
 	return rel;
 }
 
-static inline bool
-find_simple_projection_for_join2semi(sql_rel *rel)
-{
-	if (is_project(rel->op) && list_length(rel->exps) == 1) {
-		sql_exp *e = rel->exps->h->data;
-
-		if (rel->card < CARD_AGGR) /* const or groupby without group by exps */
-			return true;
-		/* a single group by column in the projection list from a group by relation is guaranteed to be unique, but not an aggregate */
-		if (e->type == e_column) {
-			sql_rel *res = NULL;
-			sql_exp *found = NULL;
-
-			if (is_groupby(rel->op) || need_distinct(rel) || find_prop(e->p, PROP_HASHCOL))
-				return true;
-
-			found = rel_find_exp_and_corresponding_rel(rel->l, e, &res); /* grouping column on inner relation */
-			if (found) {
-				if (find_prop(found->p, PROP_HASHCOL)) /* primary key always unique */
-					return true;
-				if (found->type == e_column && found->card <= CARD_AGGR) {
-					if (!(is_groupby(res->op) || need_distinct(res)) && list_length(res->exps) != 1)
-						return false;
-					for (node *n = res->exps->h ; n ; n = n->next) { /* must be the single column in the group by expression list */
-						sql_exp *e = n->data;
-						if (e != found && e->type == e_column)
-							return false;
-					}
-					return true;
-				}
-			}
-		}
-	}
-	return false;
-}
-
 static sql_rel *
 find_candidate_join2semi(sql_rel *rel, bool *swap)
 {
@@ -5604,28 +5604,52 @@ rel_push_project_down_union(visitor *v, sql_rel *rel)
 	return rel;
 }
 
+static int
+sql_class_base_score(sql_subtype *t)
+{
+	switch (ATOMstorage(t->type->localtype)) {
+		case TYPE_bte:
+			return 150 - 8;
+		case TYPE_sht:
+			return 150 - 16;
+		case TYPE_int:
+			return 150 - 32;
+		case TYPE_void:
+		case TYPE_lng:
+			return 150 - 64;
+#ifdef HAVE_HGE
+		case TYPE_hge:
+			return 150 - have_hge ? 128 : 64;
+#endif
+		case TYPE_flt:
+			return 75 - 24;
+		case TYPE_dbl:
+			return 75 - 53;
+		default: /* strings and blobs don't get any points here */
+			return 0;
+	}
+}
+
 /* Compute the efficiency of using this expression early in a group by list */
 static int
-score_gbe( mvc *sql, sql_rel *rel, sql_exp *e)
+score_gbe(mvc *sql, sql_rel *rel, sql_exp *e)
 {
-	int res = 10;
+	int res = 0;
 	sql_subtype *t = exp_subtype(e);
 	sql_column *c = NULL;
 
 	/* can we find out if the underlying table is sorted */
-	if ( (c = exp_find_column(rel, e, -2)) != NULL) {
-		if (mvc_is_sorted (sql, c))
-			res += 500;
-	}
+	if ((c = exp_find_column(rel, e, -2)) && mvc_is_sorted(sql, c))
+		res += 600;
+	if (find_prop(e->p, PROP_SORTIDX)) /* has sort index */
+		res += 400;
+	if (find_prop(e->p, PROP_HASHCOL)) /* distinct columns */
+		res += 300;
+	if (find_prop(e->p, PROP_HASHIDX)) /* has hash index */
+		res += 200;
 
-	/* is the column selective */
-
-	/* prefer the shorter var types over the longer onces */
-	if (!EC_FIXED(t->type->eclass) && t->digits)
-		res -= t->digits;
-	/* smallest type first */
-	if (EC_FIXED(t->type->eclass))
-		res -= t->type->eclass;
+	/* prefer the shorter var types over the longer ones */
+	res += sql_class_base_score(t); /* smaller the type, better */
 	return res;
 }
 
@@ -7364,11 +7388,40 @@ rel_use_index(visitor *v, sql_rel *rel)
 }
 
 static int
-score_se( mvc *sql, sql_rel *rel, sql_exp *e)
+score_se_base(mvc *sql, sql_rel *rel, sql_exp *e)
+{
+	int res = 0;
+	sql_subtype *t = exp_subtype(e);
+	sql_column *c = NULL;
+
+	/* can we find out if the underlying table is sorted */
+	if ((c = exp_find_column(rel, e, -2)) && mvc_is_sorted(sql, c))
+		res += 600;
+
+	/* prefer the shorter var types over the longer ones */
+	res += sql_class_base_score(t); /* smaller the type, better */
+	return res;
+}
+
+static int
+score_se(mvc *sql, sql_rel *rel, sql_exp *e)
 {
 	int score = 0;
 	if (e->type == e_cmp && !is_complex_exp(e->flag)) {
-		score += score_gbe(sql, rel, e->l);
+		sql_exp *l = e->l;
+
+		while (l->type == e_cmp) { /* go through nested comparisons */
+			sql_exp *ll;
+
+			if (l->flag == cmp_filter || l->flag == cmp_or)
+				ll = ((list*)l->l)->h->data;
+			else
+				ll = l->l;
+			if (ll->type != e_cmp)
+				break;
+			l = ll;
+		}
+		score += score_se_base(sql, rel, l);
 	}
 	score += exp_keyvalue(e);
 	return score;
