@@ -862,18 +862,11 @@ fixdatebats(void)
 			}
 			fclose(fp);
 		}
-		/* The date type is not known in GDK when reading the BBP */
-		if (b->ttype < 0) {
-			const char *anme;
-
-			/* as yet unknown tail column type */
-			anme = ATOMunknown_name(b->ttype);
-			/* known string types */
-			if ((strcmp(anme, "date") == 0 ||
-			     strcmp(anme, "timestamp") == 0 ||
-			     strcmp(anme, "daytime") == 0) &&
-			    fixdateheap(b, anme) != GDK_SUCCEED)
-				return GDK_FAIL;
+		if ((b->ttype == TYPE_date ||
+		     b->ttype == TYPE_timestamp ||
+		     b->ttype == TYPE_daytime) &&
+		    fixdateheap(b, ATOMname(b->ttype)) != GDK_SUCCEED) {
+			return GDK_FAIL;
 		}
 	}
 	return GDK_SUCCEED;
