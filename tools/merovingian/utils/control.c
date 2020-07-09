@@ -531,6 +531,60 @@ char* control_send(
 	return(NULL);
 }
 
+
+/* Sends command for database to merovingian listening at host and port.
+ * If host is a path, and port is -1, a UNIX socket connection for host
+ * is opened.  The response of merovingian is returned as a malloced
+ * string.  If wait is set to a non-zero value, this function will only
+ * return after it has seen an EOF from the server.  This is useful with
+ * multi-line responses, but can lock up for single line responses where
+ * the server allows pipelining (and hence doesn't close the
+ * connection).
+ */
+char* control_send_callback(
+		char** ret,
+		char* host,
+		int port,
+		char* database,
+		char* command,
+		void (*callback)(char *data, size_t size, void *cb_private),
+		void *cb_private,
+		char* pass)
+{
+	char *msg = NULL;
+	struct control_state control_state = {0};
+	struct control_state *control = &control_state;
+	char buf[8192];
+	ssize_t nread;
+
+	*ret = NULL;		/* gets overwritten in case of success */
+
+	msg = control_setup(control, host, port, database, command, pass);
+	if (msg != NULL)
+		return msg;
+
+	assert(control->fdin);
+	stream *bs = block_stream(control->fdin);
+	while ((nread = mnstr_read(bs, buf, 1, sizeof(buf))) > 0) {
+		callback(buf, (size_t)nread, cb_private);
+	}
+	if (mnstr_errnr(bs))
+		msg = mnstr_error(bs);
+	mnstr_destroy(bs);
+
+	if (msg)
+		return msg;
+
+	if (control->fdin != NULL) {
+		close_stream(control->fdin);
+		close_stream(control->fdout);
+	} else {
+		closesocket(control->sock);
+	}
+
+	return(NULL);
+}
+
 /**
  * Returns a hash for pass and salt, to use when logging in on a remote
  * merovingian.  The result is a malloced string.
