@@ -125,3 +125,20 @@ NULL	NULL	22
 false	true	23
 
 DROP TABLE t0;
+
+START TRANSACTION;
+CREATE TABLE "sys"."t0" (
+	"c0" DECIMAL(18,3) NOT NULL DEFAULT cast(cast("sys"."sql_sub"("sys"."sql_neg"(1933820187),"sys"."charindex"(cast(0.235784 as clob(182)),"sys"."concat"('rt\\b&oOT',1174691962),"sys"."locate"('!oLqvKg恺','!G+tZ9\'A\'LZ*滻mW^',1174691962))) as int) as decimal(18,3)),
+	"c1" DECIMAL(18,3),
+	"c2" CHARACTER LARGE OBJECT,
+	CONSTRAINT "t0_c0_pkey" PRIMARY KEY ("c0"),
+	CONSTRAINT "t0_c0_unique" UNIQUE ("c0"),
+	CONSTRAINT "t0_c2_unique" UNIQUE ("c2"),
+	CONSTRAINT "t0_c0_c2_c1_unique" UNIQUE ("c0", "c2", "c1")
+);
+COMMENT ON COLUMN "sys"."t0"."c2" IS 'vi';
+COPY 1 RECORDS INTO "sys"."t0" FROM stdin USING DELIMITERS E'\t',E'\n','"';
+-1933820187.000	NULL	"-1554387152"
+
+select t0.c0 from t0 where not (true) union all select all t0.c0 from t0 where not (not (true)) union all select t0.c0 from t0 where (not (true)) is null;
+ROLLBACK;
