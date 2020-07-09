@@ -2107,9 +2107,17 @@ negate_symbol_tree(mvc *sql, symbol *sc)
 	case SQL_IS_NOT_NULL:
 		sc->token = SQL_IS_NULL;
 		break;
-	case SQL_NOT: /* nested NOTs eliminate each other */
-		memmove(sc, sc->data.sym, sizeof(symbol));
-		break;
+	case SQL_NOT: { /* nested NOTs eliminate each other */
+		if (sc->data.sym->token == SQL_ATOM) {
+			AtomNode *an = (AtomNode*) sc->data.sym;
+			memmove(sc, an, sizeof(AtomNode));
+		} else if (sc->data.sym->token == SQL_SELECT) {
+			SelectNode *sn = (SelectNode*) sc->data.sym;
+			memmove(sc, sn, sizeof(SelectNode));
+		} else {
+			memmove(sc, sc->data.sym, sizeof(symbol));
+		}
+	} break;
 	case SQL_COMPARE: {
 		dnode *cmp_n = sc->data.lval->h;
 		comp_type neg_cmp_type = negate_compare(compare_str2type(cmp_n->next->data.sval)); /* negate the comparator */
@@ -2122,8 +2130,7 @@ negate_symbol_tree(mvc *sql, symbol *sc)
 		negate_symbol_tree(sql, sc->data.lval->h->data.sym);
 		negate_symbol_tree(sql, sc->data.lval->h->next->data.sym);
 		sc->token = sc->token == SQL_AND ? SQL_OR : SQL_AND;
-		break;
-	}
+	} break;
 	default:
 		break;
 	}
