@@ -8,31 +8,30 @@ import pymonetdb
 import hashlib
 import re
 import sys
-import getopt
+import argparse
 
-port = 50000
-db = 'demo'
-hostname = 'localhost'
-defsorting = 'rowsort'
-hashlimit = 10
-opts, args = getopt.getopt(sys.argv[1:], '', ['host=', 'port=', 'database=', 'sort=', 'hashlimit='])
-for o, a in opts:
-    if o == '--host':
-        hostname = a
-    elif o == '--port':
-        port = int(a)
-    elif o == '--database':
-        db = a
-    elif o == '--sort':
-        if a in ('nosort', 'valuesort', 'rowsort'):
-            defsorting = a
-        else:
-            print('unknown sort option', out=sys.stderr)
-            sys.exit(1)
-    elif o == '--hashlimit':
-        hashlimit = int(a)
+parser = argparse.ArgumentParser(description='Create a Sqllogictest')
+parser.add_argument('--host', action='store', default='localhost',
+                    help='hostname where the server runs')
+parser.add_argument('--port', action='store', type=int, default=50000,
+                    help='port the server listens on')
+parser.add_argument('--database', action='store', default='demo',
+                    help='name of the database')
+parser.add_argument('--sort', action='store', default='rowsort',
+                    choices=['nosort','rowsort','valuesort'],
+                    help='how to sort the values')
+parser.add_argument('--hashlimit', action='store', type=int, default=10,
+                    help='hash limit')
+parser.add_argument('--results', action='store', type=argparse.FileType('w'),
+                    help='file to store results of queries')
+opts = parser.parse_args()
 
-dbh = pymonetdb.connect(username='monetdb', password='monetdb', hostname=hostname, port=port, database=db, autocommit=True)
+dbh = pymonetdb.connect(username='monetdb',
+                        password='monetdb',
+                        hostname=opts.host,
+                        port=opts.port,
+                        database=opts.database,
+                        autocommit=True)
 crs = dbh.cursor()
 
 def convertresult(columns, data):
@@ -101,14 +100,24 @@ while True:
                         args += 'R'
                     else:
                         args += 'T'
-                if 'order by' in query or 'ORDER BY' in query:
-                    sorting = 'nosort'
-                else:
-                    sorting = defsorting
+                sorting = opts.sort
                 print('query {} {}'.format(args, sorting))
                 print(query)
                 print('----')
                 data = crs.fetchall()
+                if opts.results:
+                    for row in data:
+                        print(*row, sep='|', file=opts.results)
+                        # sep='[ '
+                        # for col in row:
+                        #     if isinstance(col, float):
+                        #         print(sep, '%.10g' % col, sep='', end='', file=opts.results)
+                        #     elif isinstance(col, str):
+                        #         print(sep, '"', col, '"', sep='', end='', file=opts.results)
+                        #     else:
+                        #         print(sep, col, sep='', end='', file=opts.results)
+                        #     sep = ',\t'
+                        # print('\t]', file=opts.results)
                 data = convertresult(args, data)
                 nvalues = len(args) * len(data)
                 if sorting == 'valuesort':
@@ -120,7 +129,7 @@ while True:
                     data = [ndata]
                 elif sorting == 'rowsort':
                     data.sort()
-                if nvalues < hashlimit:
+                if nvalues < opts.hashlimit:
                     for row in data:
                         for col in row:
                             print(col)
