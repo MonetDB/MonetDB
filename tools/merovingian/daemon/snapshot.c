@@ -97,7 +97,7 @@ snapshot_database_to(char *dbname, char *dest)
 	}
 	mapi_reconnect(conn);
 	if (mapi_error(conn) != MOK) {
-		e = newErr("connection error:: %s", mapi_error_str(conn));
+		e = newErr("connection error: %s", mapi_error_str(conn));
 		goto bailout;
 	}
 
