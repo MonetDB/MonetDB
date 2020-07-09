@@ -563,17 +563,31 @@ char* control_send_callback(
 	if (msg != NULL)
 		return msg;
 
-	assert(control->fdin);
-	stream *bs = block_stream(control->fdin);
-	while ((nread = mnstr_read(bs, buf, 1, sizeof(buf))) > 0) {
-		callback(buf, (size_t)nread, cb_private);
-	}
-	if (mnstr_errnr(bs))
-		msg = mnstr_error(bs);
-	mnstr_destroy(bs);
+	assert(!control->fdin); // not sure under which circumstances it would exist.
+	// in any case, we have to mirror the code path in controlrunner.c, which
+	// likewise only works if fdin/fdout are not set.
+
+	stream *wrapper = NULL;
+	stream *bs = NULL;
+	do {
+		wrapper = socket_rstream(control->sock, "sockwrapper");
+		if (!wrapper)
+			break;
+		bs = block_stream(wrapper);
+		if (!bs)
+			break;
+		while ((nread = mnstr_read(bs, buf, 1, sizeof(buf))) > 0) {
+			callback(buf, (size_t)nread, cb_private);
+		}
+		if (mnstr_errnr(bs))
+			msg = mnstr_error(bs);
+	} while (0);
+	mnstr_destroy(bs); // implies mnstr_destroy(wrapper)
 
 	if (msg)
 		return msg;
+
+	msg = control_receive_wait(ret, control);
 
 	if (control->fdin != NULL) {
 		close_stream(control->fdin);
@@ -582,7 +596,7 @@ char* control_send_callback(
 		closesocket(control->sock);
 	}
 
-	return(NULL);
+	return msg;
 }
 
 /**

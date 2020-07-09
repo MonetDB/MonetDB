@@ -2289,11 +2289,17 @@ end:
 	free(hitlist);
 }
 
+static void
+command_snapshot_stream_cb(char *buf, size_t count, void *private) {
+	FILE *f = (FILE*)private;
+	fwrite(buf, 1, count, f);
+}
 
 static void
 command_snapshot_stream(int argc, char *argv[])
 {
 	char *msg;
+	char *out = NULL;
 
 	if (argc != 2) {
 		command_help(argc + 2, &argv[-2]);
@@ -2312,9 +2318,27 @@ command_snapshot_stream(int argc, char *argv[])
 		fprintf(stderr, "snapshot: database '%s' not found\n", dbname);
 		exit(2);
 	}
+	msab_freeStatus(&stats);
 
-	fprintf(stderr, "snapshot: stream not implemented yet\n");
-	exit(3);
+	char *merocmd = "snapshot stream";
+
+	msg = control_send_callback(
+			&out, mero_host, mero_port, dbname,
+			merocmd, command_snapshot_stream_cb, stdout,
+			mero_pass);
+	if (msg) {
+		fprintf(stderr, "snapshot: database '%s': %s\n", dbname, msg);
+		exit(2);
+	}
+	if (out == NULL) {
+		fprintf(stderr, "snapshot: database '%s': unknown error\n", dbname);
+		exit(2);
+	}
+	if (strcmp(out, "OK") != 0) {
+		fprintf(stderr, "snapshot: database '%s': %s\n", dbname, out);
+		exit(2);
+	}
+	free(out);
 }
 
 static void
