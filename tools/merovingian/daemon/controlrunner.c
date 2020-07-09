@@ -769,9 +769,7 @@ static void ctl_handle_client(
 						bs = block_stream(wrapper);
 						if (!bs)
 							break;
-						for (int ii = 0; ii < 10000; ii++)
-							mnstr_printf(bs, "%d ", ii);
-						mnstr_printf(bs, "\n");
+						e = snapshot_database_stream(q, bs);
 						mnstr_flush(bs);
 					} while (0);
 					mnstr_destroy(bs); // implies mnstr_destroy(wrapper);
