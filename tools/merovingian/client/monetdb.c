@@ -2306,6 +2306,11 @@ command_snapshot_stream(int argc, char *argv[])
 		exit(1);
 	}
 
+	if (isatty(fileno(stdout))) {
+		fprintf(stderr, "Refusing to write binary data to tty\n");
+		exit(2);
+	}
+
 	char *dbname = argv[1];
 	sabdb *stats = NULL;
 	msg = MEROgetStatus(&stats, dbname);
