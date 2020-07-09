@@ -5553,28 +5553,25 @@ rel_push_project_down_union(mvc *sql, sql_rel *rel, int *changes)
 static int
 sql_class_base_score(sql_subtype *t)
 {
-	switch (t->type->eclass) {
-		case EC_BIT:
-			return 149;
-		case EC_NUM:
-		case EC_MONTH:
-		case EC_POS:
-			return 150 - (int) t->type->digits;
-		case EC_DEC:
-		case EC_SEC:
-			return 150 - digits2bits(t->type->digits);
-		case EC_DATE:
+	switch (ATOMstorage(t->type->localtype)) {
+		case TYPE_bte:
+			return 150 - 8;
+		case TYPE_sht:
+			return 150 - 16;
+		case TYPE_int:
 			return 150 - 32;
-		case EC_TIME:
-		case EC_TIME_TZ:
-		case EC_TIMESTAMP:
-		case EC_TIMESTAMP_TZ:
+		case TYPE_void:
+		case TYPE_lng:
 			return 150 - 64;
-		case EC_FLT: /* floating points are more expensive to compute, give them lower priority */
-			return 75 - (int) t->type->digits;
-		case EC_ANY:
-			return 10;
-		default:
+#ifdef HAVE_HGE
+		case TYPE_hge:
+			return 150 - have_hge ? 128 : 64;
+#endif
+		case TYPE_flt:
+			return 75 - 24;
+		case TYPE_dbl:
+			return 75 - 53;
+		default: /* strings and blobs don't get any points here */
 			return 0;
 	}
 }
@@ -7358,8 +7355,22 @@ static int
 score_se(mvc *sql, sql_rel *rel, sql_exp *e)
 {
 	int score = 0;
-	if (e->type == e_cmp && !is_complex_exp(e->flag))
-		score += score_se_base(sql, rel, e->l);
+	if (e->type == e_cmp && !is_complex_exp(e->flag)) {
+		sql_exp *l = e->l;
+
+		while (l->type == e_cmp) { /* go through nested comparisons */
+			sql_exp *ll;
+
+			if (l->flag == cmp_filter || l->flag == cmp_or)
+				ll = ((list*)l->l)->h->data;
+			else
+				ll = l->l;
+			if (ll->type != e_cmp)
+				break;
+			l = ll;
+		}
+		score += score_se_base(sql, rel, l);
+	}
 	score += exp_keyvalue(e);
 	return score;
 }
