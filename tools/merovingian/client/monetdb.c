@@ -200,6 +200,9 @@ command_help(int argc, char *argv[])
 			printf("Options:\n");
 			printf("  -f  Do not ask for confirmation\n");
 			printf("  -r  Number of snapshots to retain.\n");
+		} else if (argc > 2 && strcmp(argv[2], "stream") == 0) {
+			printf("Usage: monetdb snapshot stream <dbname>\n");
+			printf("  Write a snapshot of database <dbname> to standard out.\n");
 		} else {
 			printf("Usage: monetdb <create|list|restore|destroy> [arguments]\n");
 			printf("  Manage database snapshots\n");
@@ -2286,6 +2289,34 @@ end:
 	free(hitlist);
 }
 
+
+static void
+command_snapshot_stream(int argc, char *argv[])
+{
+	char *msg;
+
+	if (argc != 2) {
+		command_help(argc + 2, &argv[-2]);
+		exit(1);
+	}
+
+	char *dbname = argv[1];
+	sabdb *stats = NULL;
+	msg = MEROgetStatus(&stats, dbname);
+	if (msg) {
+		fprintf(stderr, "snapshot: %s\n", msg);
+		free(msg);
+		exit(2);
+	}
+	if (!stats) {
+		fprintf(stderr, "snapshot: database '%s' not found\n", dbname);
+		exit(2);
+	}
+
+	fprintf(stderr, "snapshot: stream not implemented yet\n");
+	exit(3);
+}
+
 static void
 command_snapshot(int argc, char *argv[])
 {
@@ -2309,6 +2340,8 @@ command_snapshot(int argc, char *argv[])
 		command_snapshot_restore(argc - 1, &argv[1]);
 	} else if (strcmp(argv[1], "destroy") == 0) {
 		command_snapshot_destroy(argc - 1, &argv[1]);
+	} else if (strcmp(argv[1], "stream") == 0) {
+		command_snapshot_stream(argc - 1, &argv[1]);
 	} else {
 		/* print help message for this command */
 		command_help(argc - 1, &argv[1]);
