@@ -133,7 +133,14 @@ class SQLLogic:
         data = self.crs.fetchall()
         if self.res is not None:
             for row in data:
-                print(*row, sep='|', file=self.res)
+                sep=''
+                for col in row:
+                    if col is None:
+                        print(sep, 'NULL', sep='', end='', file=self.res)
+                    else:
+                        print(sep, col, sep='', end='', file=self.res)
+                    sep = '|'
+                print('', file=self.res)
         data = self.convertresult(query, columns, data)
         if data is None:
             return

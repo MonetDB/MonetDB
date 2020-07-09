@@ -107,17 +107,14 @@ while True:
                 data = crs.fetchall()
                 if opts.results:
                     for row in data:
-                        print(*row, sep='|', file=opts.results)
-                        # sep='[ '
-                        # for col in row:
-                        #     if isinstance(col, float):
-                        #         print(sep, '%.10g' % col, sep='', end='', file=opts.results)
-                        #     elif isinstance(col, str):
-                        #         print(sep, '"', col, '"', sep='', end='', file=opts.results)
-                        #     else:
-                        #         print(sep, col, sep='', end='', file=opts.results)
-                        #     sep = ',\t'
-                        # print('\t]', file=opts.results)
+                        sep=''
+                        for col in row:
+                            if col is None:
+                                print(sep, 'NULL', sep='', end='', file=opts.results)
+                            else:
+                                print(sep, col, sep='', end='', file=opts.results)
+                            sep = '|'
+                        print('', file=opts.results)
                 data = convertresult(args, data)
                 nvalues = len(args) * len(data)
                 if sorting == 'valuesort':
