@@ -1985,7 +1985,7 @@ OPTmergetableImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 			int input = getArg(p, p->retc); /* argument one is first input */
 
 			if (group_input[input]) {
-				TRC_WARNING(MAL_OPTIMIZER, "Mergetable bailout on group input reuse in group statement\n");
+				TRC_INFO(MAL_OPTIMIZER, "Mergetable bailout on group input reuse in group statement\n");
 				bailout = 1;
 			}
 
