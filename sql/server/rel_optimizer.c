@@ -1526,8 +1526,11 @@ exp_needs_push_down(sql_exp *e)
 	case e_convert:
 		return exp_needs_push_down(e->l);
 	case e_aggr:
-	case e_func:
+	case e_func: {
+		if (!e->l || exps_are_atoms(e->l))
+			return 0;
 		return 1;
+	} break;
 	case e_column:
 	case e_atom:
 	default:
@@ -1594,6 +1597,8 @@ exp_push_single_func_down(mvc *sql, sql_rel *rel, sql_rel *l, sql_rel *r, sql_ex
 		int must = 0, mustl = 0, mustr = 0;
 
 		if (exp_unsafe(e, 0))
+			return e;
+		if (!e->l || exps_are_atoms(e->l))
 			return e;
 		if ((is_joinop(rel->op) && ((can_push_func(e, l, &mustl) && mustl) || (can_push_func(e, r, &mustr) && mustr))) ||
 			(is_select(rel->op) && can_push_func(e, l, &must) && must)) {
