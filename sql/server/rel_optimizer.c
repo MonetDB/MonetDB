@@ -7606,7 +7606,7 @@ rel_simplify_predicates(mvc *sql, sql_rel *rel, sql_exp *e, int depth, int *chan
 				}
 			} else if (is_atom(l->type) && is_atom(r->type) && !is_semantics(e)) {
 				if (exp_is_null(sql, l) || exp_is_null(sql, r)) {
-					e = exp_null(sql->sa, exp_subtype(l));
+					e = exp_null(sql->sa, sql_bind_localtype("bit"));
 					(*changes)++;
 				} else if (l->l && r->l) {
 					int res = atom_cmp(l->l, r->l);
