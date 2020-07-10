@@ -563,27 +563,38 @@ char* control_send_callback(
 	if (msg != NULL)
 		return msg;
 
-	assert(!control->fdin); // not sure under which circumstances it would exist.
-	// in any case, we have to mirror the code path in controlrunner.c, which
-	// likewise only works if fdin/fdout are not set.
-
 	stream *wrapper = NULL;
 	stream *bs = NULL;
+	stream *s = NULL;  // aliases either bs or control->fdin
+
 	do {
-		wrapper = socket_rstream(control->sock, "sockwrapper");
-		if (!wrapper)
-			break;
-		bs = block_stream(wrapper);
-		if (!bs)
-			break;
-		while ((nread = mnstr_read(bs, buf, 1, sizeof(buf))) > 0) {
+		if (control->fdin) {
+			assert(isa_block_stream(control->fdin));
+			s = control->fdin;
+		} else {
+			wrapper = socket_rstream(control->sock, "sockwrapper");
+			if (!wrapper) {
+				msg = strdup("could not wrap socket");
+				break;
+			}
+			bs = block_stream(wrapper);
+			if (!bs) {
+				msg = strdup("could not wrap block stream");
+				break;
+			}
+			wrapper = NULL; // it will be cleaned up when bs is cleaned up
+			s = bs;
+		}
+		while ((nread = mnstr_read(s, buf, 1, sizeof(buf))) > 0) {
 			callback(buf, (size_t)nread, cb_private);
 		}
-		if (mnstr_errnr(bs))
-			msg = mnstr_error(bs);
+		if (mnstr_errnr(s))
+			msg = mnstr_error(s);
 	} while (0);
-	mnstr_destroy(bs); // implies mnstr_destroy(wrapper)
-
+	if (bs)
+		mnstr_destroy(bs);
+	if (wrapper)
+		mnstr_destroy(wrapper);
 	if (msg)
 		return msg;
 

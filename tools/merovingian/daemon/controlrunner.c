@@ -756,24 +756,39 @@ static void ctl_handle_client(
 			} else if (strcmp(p, "snapshot stream") == 0) {
 
 				Mfprintf(_mero_ctlout, "Start streaming snapshot of database '%s'\n", q);
-				if (fout != NULL)
-					e = newErr("internal error: did not expect fout to be non-NULL");
-				else {
-					stream *wrapper = NULL;
-					stream *bs = NULL;
-					do {
-						e = NULL;
+
+				stream *wrapper = NULL;
+				stream *bs = NULL;
+				stream *s = NULL; // aliases either bs or fout
+				do {
+					if (fout) {
+						if (!isa_block_stream(fout)) {
+							e = newErr("internal error: expected fout to be a block stream");
+							break;
+						}
+						s = fout;
+					} else {
 						wrapper = socket_wstream(msgsock, "sockwrapper");
-						if (!wrapper)
+						if (!wrapper) {
+							e = newErr("internal error: could not create sock wrapper");
 							break;
+						}
 						bs = block_stream(wrapper);
-						if (!bs)
+						if (!bs) {
+							e = newErr("internal error: could not wrap block_stream");
 							break;
-						e = snapshot_database_stream(q, bs);
-						mnstr_flush(bs);
-					} while (0);
-					mnstr_destroy(bs); // implies mnstr_destroy(wrapper);
-				}
+						}
+						wrapper = NULL; // will be cleanup through bs
+						s = bs;
+						//
+					}
+					e = snapshot_database_stream(q, s);
+					mnstr_flush(s);
+				} while (0);
+				if (bs)
+					mnstr_destroy(bs);
+				if (wrapper)
+					mnstr_destroy(wrapper);
 				if (e != NULL) {
 					Mfprintf(_mero_ctlerr, "%s: streaming snapshot database '%s' failed: %s",
 						origin, q, getErrMsg(e));
