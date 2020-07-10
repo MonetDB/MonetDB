@@ -200,11 +200,11 @@ command_help(int argc, char *argv[])
 			printf("Options:\n");
 			printf("  -f  Do not ask for confirmation\n");
 			printf("  -r  Number of snapshots to retain.\n");
-		} else if (argc > 2 && strcmp(argv[2], "stream") == 0) {
-			printf("Usage: monetdb snapshot stream <dbname>\n");
+		} else if (argc > 2 && strcmp(argv[2], "write") == 0) {
+			printf("Usage: monetdb snapshot write <dbname>\n");
 			printf("  Write a snapshot of database <dbname> to standard out.\n");
 		} else {
-			printf("Usage: monetdb <create|list|restore|destroy> [arguments]\n");
+			printf("Usage: monetdb <create|list|restore|destroy|write> [arguments]\n");
 			printf("  Manage database snapshots\n");
 		}
 	} else {
@@ -2290,13 +2290,13 @@ end:
 }
 
 static void
-command_snapshot_stream_cb(char *buf, size_t count, void *private) {
+command_snapshot_write_cb(char *buf, size_t count, void *private) {
 	FILE *f = (FILE*)private;
 	fwrite(buf, 1, count, f);
 }
 
 static void
-command_snapshot_stream(int argc, char *argv[])
+command_snapshot_write(int argc, char *argv[])
 {
 	char *msg;
 	char *out = NULL;
@@ -2329,7 +2329,7 @@ command_snapshot_stream(int argc, char *argv[])
 
 	msg = control_send_callback(
 			&out, mero_host, mero_port, dbname,
-			merocmd, command_snapshot_stream_cb, stdout,
+			merocmd, command_snapshot_write_cb, stdout,
 			mero_pass);
 	if (msg) {
 		fprintf(stderr, "snapshot: database '%s': %s\n", dbname, msg);
@@ -2369,8 +2369,8 @@ command_snapshot(int argc, char *argv[])
 		command_snapshot_restore(argc - 1, &argv[1]);
 	} else if (strcmp(argv[1], "destroy") == 0) {
 		command_snapshot_destroy(argc - 1, &argv[1]);
-	} else if (strcmp(argv[1], "stream") == 0) {
-		command_snapshot_stream(argc - 1, &argv[1]);
+	} else if (strcmp(argv[1], "write") == 0) {
+		command_snapshot_write(argc - 1, &argv[1]);
 	} else {
 		/* print help message for this command */
 		command_help(argc - 1, &argv[1]);
