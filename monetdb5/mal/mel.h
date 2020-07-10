@@ -19,7 +19,7 @@
 
 typedef void* (*fptr)(void*);
 
-typedef struct mel_atom {
+typedef struct __attribute__((__designated_init__)) mel_atom {
 	char name[14];
 	char basetype[14];
 	int size;
@@ -59,7 +59,7 @@ typedef struct mel_atom {
 #define batargany(n,a) 		{ /*.name=n,*/ .isbat=true, .nr=a, }
 #define batvarargany(n,a) 	{ /*.name=n,*/ .isbat=true, .vargs=true, .nr=a, }
 
-typedef struct mel_arg {
+typedef struct __attribute__((__designated_init__)) mel_arg {
 	//char *name;
 	char type[15];
 	uint8_t isbat:1,
@@ -67,7 +67,7 @@ typedef struct mel_arg {
 		nr:4;
 } mel_arg;
 
-typedef struct mel_func {
+typedef struct __attribute__((__designated_init__)) mel_func {
 	char mod[14];
 	char fcn[30];
 	char *cname;
@@ -103,14 +103,14 @@ typedef struct mel_func {
 #define batargany(n,a) 		{ /*.name=n,*/ .isbat=true, .nr=a, .type=TYPE_any }
 #define batvarargany(n,a) 	{ /*.name=n,*/ .isbat=true, .vargs=true, .nr=a, .type=TYPE_any }
 
-typedef struct mel_arg {
+typedef struct __attribute__((__designated_init__)) mel_arg {
 	uint16_t type:8,
 		nr:4,
 		isbat:1,
 		vargs:1;
 } mel_arg;
 
-typedef struct mel_func {
+typedef struct __attribute__((__designated_init__)) mel_func {
 	char mod[14];
 	char fcn[30];
 	uint16_t command:1,
@@ -128,7 +128,7 @@ typedef struct mel_func {
 
 typedef str(*mel_init)(void);
 
-typedef struct mel_func_arg {
+typedef struct __attribute__((__designated_init__)) mel_func_arg {
 	uint16_t type:8,
 		nr:4,
 		isbat:1,
@@ -139,7 +139,7 @@ typedef struct mel_func_arg {
 int melFunction(bool command, char *mod, char *fcn, fptr imp, char *fname, bool unsafe, char *comment, int retc, int argc, ...);
 
 #ifdef SPECS
-typedef struct mal_spec{
+typedef struct __attribute__((__designated_init__)) mal_spec{
 	fptr imp;
 	char *mal;
 } mal_spec;
