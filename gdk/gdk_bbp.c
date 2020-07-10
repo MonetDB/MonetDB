@@ -414,6 +414,12 @@ fixfltheap(BAT *b)
 		bnme = nme;
 	sprintf(filename, "BACKUP%c%s", DIR_SEP, bnme);
 
+	/* we don't maintain index structures */
+	HASHdestroy(b);
+	IMPSdestroy(b);
+	OIDXdestroy(b);
+	PROPdestroy(b);
+
 	/* make backup of heap */
 	if (GDKmove(b->theap.farmid, srcdir, bnme, "tail", BAKDIR, bnme, "tail") != GDK_SUCCEED) {
 		GDKfree(srcdir);
@@ -704,6 +710,12 @@ fixdateheap(BAT *b, const char *anme)
 	else
 		bnme = nme;
 	sprintf(filename, "BACKUP%c%s", DIR_SEP, bnme);
+
+	/* we don't maintain index structures */
+	HASHdestroy(b);
+	IMPSdestroy(b);
+	OIDXdestroy(b);
+	PROPdestroy(b);
 
 	/* make backup of heap */
 	if (GDKmove(b->theap.farmid, srcdir, bnme, "tail", BAKDIR, bnme, "tail") != GDK_SUCCEED) {
