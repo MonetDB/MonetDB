@@ -213,6 +213,7 @@ table_reset_parent(sql_table *t, sql_trans *tr)
 			if (i->po)
 				idx_destroy(i->po);
 			i->po = NULL;
+			i->base.wtime = 1;
 		}
 	}
 	assert(t->idxs.dset == NULL);
@@ -225,13 +226,16 @@ table_reset_parent(sql_table *t, sql_trans *tr)
 			if (c->po)
 				column_destroy(c->po);
 			c->po = NULL;
+			c->base.wtime = 1;
 		}
 	}
 	assert(t->columns.dset == NULL);
 	if (p)
 		table_destroy(p);
-	if (isTable(t))
+	if (isTable(t)) {
 		assert(t->base.allocated);
+	    t->base.wtime = 1;
+	}
 }
 
 void
@@ -1851,6 +1855,7 @@ store_load(backend_stack stk) {
 		if (store_readonly)
 			return -1;
 		tr = sql_trans_create(stk, NULL, NULL, true);
+		tr->active = 1;
 		if (!tr) {
 			TRC_CRITICAL(SQL_STORE, "Failed to start a transaction while loading the storage\n");
 			return -1;
