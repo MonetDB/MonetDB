@@ -62,19 +62,19 @@ typedef struct mel_atom {
 typedef struct mel_arg {
 	//char *name;
 	char type[15];
-	bool isbat:1,
-		vargs:1;
-	uint8_t nr:4;
+	uint8_t isbat:1,
+		vargs:1,
+		nr:4;
 } mel_arg;
 
 typedef struct mel_func {
 	char mod[14];
 	char fcn[30];
 	char *cname;
-	bool command:1,
-		unsafe:1;
-	uint16_t retc:6,
-	     argc:6;
+	uint16_t command:1,
+		unsafe:1,
+		retc:6,
+		argc:6;
 //#ifdef NDEBUG
 	//char *comment;
 //#endif
@@ -104,18 +104,18 @@ typedef struct mel_func {
 #define batvarargany(n,a) 	{ /*.name=n,*/ .isbat=true, .vargs=true, .nr=a, .type=TYPE_any }
 
 typedef struct mel_arg {
-	unsigned short type:8,
-		nr:4;
-	bool isbat:1,
+	uint16_t type:8,
+		nr:4,
+		isbat:1,
 		vargs:1;
 } mel_arg;
 
 typedef struct mel_func {
 	char mod[14];
 	char fcn[30];
-	bool command:1,
-		unsafe:1;
-	unsigned short retc:6,
+	uint16_t command:1,
+		unsafe:1,
+		retc:6,
 		argc:6;
 //#ifdef NDEBUG
 	//char *comment;
@@ -129,9 +129,9 @@ typedef struct mel_func {
 typedef str(*mel_init)(void);
 
 typedef struct mel_func_arg {
-	unsigned short type:8,
-		nr:4;
-	bool isbat:1,
+	uint16_t type:8,
+		nr:4,
+		isbat:1,
 		vargs:1;
 } mel_func_arg;
 
