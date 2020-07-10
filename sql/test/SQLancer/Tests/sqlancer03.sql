@@ -142,3 +142,9 @@ COPY 1 RECORDS INTO "sys"."t0" FROM stdin USING DELIMITERS E'\t',E'\n','"';
 
 select t0.c0 from t0 where not (true) union all select all t0.c0 from t0 where not (not (true)) union all select t0.c0 from t0 where (not (true)) is null;
 ROLLBACK;
+
+START TRANSACTION;
+create table t0 (a int, b int);
+insert into t0 values (1,1), (2,2);
+select min(t0.a), pi() from t0 group by t0.b;
+ROLLBACK;

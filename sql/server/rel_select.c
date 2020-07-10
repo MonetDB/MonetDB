@@ -2787,14 +2787,6 @@ rel_op(sql_query *query, sql_rel **rel, symbol *se, int f, exp_kind ek )
 		return sql_error(sql, 02, SQLSTATE(3F000) "SELECT: no such schema '%s'", sname);
 
 	sf = find_func(sql, s, fname, 0, F_AGGR, NULL);
-	if (!sf && *rel && (*rel)->card == CARD_AGGR) {
-		if (is_sql_having(f) || is_sql_orderby(f))
-			return NULL;
-		/* reset error */
-		sql->session->status = 0;
-		sql->errstr[0] = '\0';
-		return sql_error(sql, 02, SQLSTATE(42000) "SELECT: no such aggregate '%s'", fname);
-	}
 	if (sf)
 		return _rel_aggr(query, rel, 0, s, fname, NULL, f);
 	return rel_op_(sql, s, fname, ek);
