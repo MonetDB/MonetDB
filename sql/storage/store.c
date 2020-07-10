@@ -1869,6 +1869,7 @@ store_load(void) {
 		if (store_readonly)
 			return -1;
 		tr = sql_trans_create(backend_stk, NULL, NULL, true);
+		tr->active = 1;
 		if (!tr) {
 			fprintf(stderr, "Failure to start a transaction while loading the storage\n");
 			return -1;
