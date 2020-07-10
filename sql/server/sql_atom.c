@@ -1337,7 +1337,7 @@ atom_is_zero(atom *a)
 {
 	if (a->isnull)
 		return 0;
-	switch (a->tpe.type->localtype) {
+	switch (ATOMstorage(a->tpe.type->localtype)) {
 	case TYPE_bte:
 		return a->data.val.btval == 0;
 	case TYPE_sht:
@@ -1355,9 +1355,8 @@ atom_is_zero(atom *a)
 	case TYPE_dbl:
 		return a->data.val.dval == 0;
 	default:
-		break;
+		return 0;
 	}
-	return 0;
 }
 
 int
@@ -1365,9 +1364,7 @@ atom_is_true(atom *a)
 {
 	if (a->isnull)
 		return 0;
-	switch (a->tpe.type->localtype) {
-	case TYPE_bit:
-		return a->data.val.btval != 0;
+	switch (ATOMstorage(a->tpe.type->localtype)) {
 	case TYPE_bte:
 		return a->data.val.btval != 0;
 	case TYPE_sht:
@@ -1384,20 +1381,19 @@ atom_is_true(atom *a)
 		return a->data.val.fval != 0;
 	case TYPE_dbl:
 		return a->data.val.dval != 0;
+	case TYPE_str:
+		return strcmp(a->data.val.sval, "") != 0;
 	default:
-		break;
+		return 0;
 	}
-	return 0;
 }
 
 int
-atom_is_false( atom *a )
+atom_is_false(atom *a)
 {
 	if (a->isnull)
 		return 0;
-	switch(a->tpe.type->localtype) {
-	case TYPE_bit:
-		return a->data.val.btval == 0;
+	switch (ATOMstorage(a->tpe.type->localtype)) {
 	case TYPE_bte:
 		return a->data.val.btval == 0;
 	case TYPE_sht:
@@ -1414,10 +1410,11 @@ atom_is_false( atom *a )
 		return a->data.val.fval == 0;
 	case TYPE_dbl:
 		return a->data.val.dval == 0;
+	case TYPE_str:
+		return strcmp(a->data.val.sval, "") == 0;
 	default:
-		break;
+		return 0;
 	}
-	return 0;
 }
 
 atom *
@@ -1426,79 +1423,43 @@ atom_zero_value(sql_allocator *sa, sql_subtype* tpe)
 	void *ret = NULL;
 	atom *res = NULL;
 
+	bte bval = 0;
+	sht sval = 0;
+	int ival = 0;
+	lng lval = 0;
 #ifdef HAVE_HGE
 	hge hval = 0;
 #endif
-	lng lval = 0;
-	int ival = 0;
-	sht sval = 0;
-	bte bbval = 0;
-	bit bval = 0;
 	flt fval = 0;
 	dbl dval = 0;
 
-	switch (tpe->type->eclass) {
-		case EC_BIT:
-		{
-			ret = &bval;
-			break;
-		}
-		case EC_POS:
-		case EC_NUM:
-		case EC_DEC:
-		case EC_SEC:
-		case EC_MONTH:
-			switch (tpe->type->localtype) {
+	switch (ATOMstorage(tpe->type->localtype)) {
+	case TYPE_bte:
+		ret = &bval;
+		break;
+	case TYPE_sht:
+		ret = &sval;
+		break;
+	case TYPE_int:
+		ret = &ival;
+		break;
+	case TYPE_lng:
+		ret = &lval;
+		break;
 #ifdef HAVE_HGE
-				case TYPE_hge:
-				{
-					ret = &hval;
-					break;
-				}
+	case TYPE_hge:
+		ret = &hval;
+		break;
 #endif
-				case TYPE_lng:
-				{
-					ret = &lval;
-					break;
-				}
-				case TYPE_int:
-				{
-					ret = &ival;
-					break;
-				}
-				case TYPE_sht:
-				{
-					ret = &sval;
-					break;
-				}
-				case TYPE_bte:
-				{
-					ret = &bbval;
-					break;
-				}
-				default:
-					break;
-			}
-			break;
-		case EC_FLT:
-			switch (tpe->type->localtype) {
-				case TYPE_flt:
-				{
-					ret = &fval;
-					break;
-				}
-				case TYPE_dbl:
-				{
-					ret = &dval;
-					break;
-				}
-				default:
-					break;
-			}
-			break;
-		default:
-			break;
-	} //no support for strings and blobs zero value
+	case TYPE_flt:
+		ret = &fval;
+		break;
+	case TYPE_dbl:
+		ret = &dval;
+		break;
+	default: /* no support for strings and blobs zero value */
+		break;
+	}
 
 	if (ret != NULL) {
 		res = atom_create(sa);
