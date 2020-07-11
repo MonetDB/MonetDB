@@ -8705,52 +8705,38 @@ find_col_exp( list *exps, sql_exp *e)
 }
 
 static int
-exp_range_overlap( mvc *sql, sql_exp *e, char *min, char *max, atom *emin, atom *emax)
+exp_range_overlap(mvc *sql, sql_exp *e, char *min, char *max, atom *emin, atom *emax)
 {
 	sql_subtype *t = exp_subtype(e);
+	int localtype = t->type->localtype;
 
-	if (!min || !max || !emin || !emax)
+	if (!min || !max || !emin || !emax || strNil(min) || strNil(max) || emin->isnull || emax->isnull || !ATOMlinear(localtype))
 		return 0;
 
-	if (strNil(min))
+	switch (ATOMstorage(localtype)) {
+	case TYPE_bte:
+	case TYPE_sht:
+	case TYPE_int:
+	case TYPE_lng:
+#ifdef HAVE_HGE
+	case TYPE_hge:
+#endif
+	case TYPE_flt:
+	case TYPE_dbl:
+	case TYPE_str: {
+		atom *cmin, *cmax;
+
+#ifdef HAVE_HGE
+		if (localtype == TYPE_hge && !have_hge)
+			return 0;
+#endif
+		cmin = atom_general(sql->sa, t, min);
+		cmax = atom_general(sql->sa, t, max);
+		if (VALcmp(&(emax->data), &(cmin->data)) < 0 || VALcmp(&(emin->data), &(cmax->data)) > 0)
+			return 0;
+	} break;
+	default:
 		return 0;
-	if (strNil(max))
-		return 0;
-
-	if (t->type->localtype == TYPE_dbl) {
-		atom *cmin = atom_general(sql->sa, t, min);
-		atom *cmax = atom_general(sql->sa, t, max);
-
-		if (emax->d < cmin->data.val.dval || emin->d > cmax->data.val.dval)
-			return 0;
-	}
-	if (t->type->localtype == TYPE_bte) {
-		atom *cmin = atom_general(sql->sa, t, min);
-		atom *cmax = atom_general(sql->sa, t, max);
-
-		if (emax->data.val.btval < cmin->data.val.btval || emin->data.val.btval > cmax->data.val.btval)
-			return 0;
-	}
-	if (t->type->localtype == TYPE_sht) {
-		atom *cmin = atom_general(sql->sa, t, min);
-		atom *cmax = atom_general(sql->sa, t, max);
-
-		if (emax->data.val.shval < cmin->data.val.shval || emin->data.val.shval > cmax->data.val.shval)
-			return 0;
-	}
-	if (t->type->localtype == TYPE_int || t->type->localtype == TYPE_date) {
-		atom *cmin = atom_general(sql->sa, t, min);
-		atom *cmax = atom_general(sql->sa, t, max);
-
-		if (emax->data.val.ival < cmin->data.val.ival || emin->data.val.ival > cmax->data.val.ival)
-			return 0;
-	}
-	if (t->type->localtype == TYPE_lng || t->type->localtype == TYPE_timestamp) {
-		atom *cmin = atom_general(sql->sa, t, min);
-		atom *cmax = atom_general(sql->sa, t, max);
-
-		if (emax->data.val.lval < cmin->data.val.lval || emin->data.val.lval > cmax->data.val.lval)
-			return 0;
 	}
 	return 1;
 }
