@@ -5107,7 +5107,9 @@ rel_value_exp2(sql_query *query, sql_rel **rel, symbol *se, int f, exp_kind ek)
 		return sql_error(sql, 10, SQLSTATE(42000) "Query too complex: running out of stack space");
 
 	if (rel && *rel && (*rel)->card == CARD_AGGR) { /* group by expression case, handle it before */
-		sql_exp *exp = stack_get_groupby_expression(sql, se);
+		sql_exp *exp = NULL;
+		if (!is_sql_aggr(f))
+			exp = stack_get_groupby_expression(sql, se);
 		if (sql->errstr[0] != '\0')
 			return NULL;
 		if (exp) {
