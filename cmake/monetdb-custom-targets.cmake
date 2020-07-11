@@ -30,15 +30,25 @@ else()
     ${CMAKE_COMMAND} -E echo 'Target not available because \"createrepo\" was not found.')
 endif()
 
-add_custom_target(create-rpm-packages
-  COMMAND
-  ${CMAKE_CPACK_COMMAND} -G RPM
-  WORKING_DIRECTORY ${CMAKE_BINARY_DIR})
+if(RPMBUILD_FOUND)
+  add_custom_target(create-rpm-packages
+    COMMAND
+    ${CMAKE_CPACK_COMMAND} -G RPM
+    WORKING_DIRECTORY ${CMAKE_BINARY_DIR})
 
-add_custom_target(create-source-rpm-packages
-  COMMAND
-  ${CMAKE_CPACK_COMMAND} --config CPackSourceConfig.cmake -G RPM
-  WORKING_DIRECTORY ${CMAKE_BINARY_DIR})
+  add_custom_target(create-source-rpm-packages
+    COMMAND
+    ${CMAKE_CPACK_COMMAND} --config CPackSourceConfig.cmake -G RPM
+    WORKING_DIRECTORY ${CMAKE_BINARY_DIR})
+else()
+  add_custom_target(create-rpm-packages
+    COMMAND
+    ${CMAKE_COMMAND} -E echo 'Target not available because \"rpmbuild\" was not found.')
+
+  add_custom_target(create-source-rpm-packages
+    COMMAND
+    ${CMAKE_COMMAND} -E echo 'Target not available because \"rpmbuild\" was not found.')
+endif()
 
 add_custom_target(create-rpm-distro
   COMMAND
@@ -52,3 +62,23 @@ add_custom_target(create-rpm-distro
   COMMAND
   ${CMAKE_COMMAND} -E copy_directory "${CMAKE_BINARY_DIR}/repodata" "${CMAKE_BINARY_DIR}/distro/repodata/"
   WORKING_DIRECTORY ${CMAKE_BINARY_DIR})
+
+if(DPKGBUILDPACKAGE_FOUND)
+  add_custom_target(create-deb-packages
+    COMMAND
+    ${CMAKE_CPACK_COMMAND} -G DEB
+    WORKING_DIRECTORY ${CMAKE_BINARY_DIR})
+
+  add_custom_target(create-source-deb-packages
+    COMMAND
+    ${CMAKE_CPACK_COMMAND} --config CPackSourceConfig.cmake -G DEB
+    WORKING_DIRECTORY ${CMAKE_BINARY_DIR})
+else()
+  add_custom_target(create-deb-packages
+    COMMAND
+    ${CMAKE_COMMAND} -E echo 'Target not available because \"dpkg-buildpackage\" was not found.')
+
+  add_custom_target(create-source-deb-packages
+    COMMAND
+    ${CMAKE_COMMAND} -E echo 'Target not available because \"dpkg-buildpackage\" was not found.')
+endif()

@@ -110,5 +110,9 @@ endif()
 
 find_package(Sphinx)
 find_package(Createrepo)
+find_package(Rpmbuild)
+find_package(DpkgBuildpackage)
+find_package(Reprepro)
+find_package(Semodule)
 
 # vim: set ts=2:sw=2:et
