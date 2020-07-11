@@ -1855,18 +1855,17 @@ store_load(backend_stack stk) {
 		if (store_readonly)
 			return -1;
 		tr = sql_trans_create(stk, NULL, NULL, true);
-		tr->active = 1;
 		if (!tr) {
 			TRC_CRITICAL(SQL_STORE, "Failed to start a transaction while loading the storage\n");
 			return -1;
 		}
 	} else {
-		tr->active = 1;
 		if (!(store_oids = GDKzalloc(300 * sizeof(sqlid)))) { /* 150 suffices */
 			TRC_CRITICAL(SQL_STORE, "Allocation failure while loading the storage\n");
 			return -1;
 		}
 	}
+	tr->active = 1;
 
 	s = bootstrap_create_schema(tr, "sys", ROLE_SYSADMIN, USER_MONETDB);
 	if (!first)
