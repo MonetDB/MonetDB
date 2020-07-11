@@ -9,13 +9,13 @@
 if (${LINUX_DISTRO} STREQUAL "debian")
   if(${LINUX_DISTRO_VERSION} STREQUAL "9")
     assert_package_detected(
-      detect FALSE
+      detect TRUE
       legacyvariable HAVE_LIBLZMA
       variablename LIBLZMA_FOUND)
   endif()
   if(${LINUX_DISTRO_VERSION} STREQUAL "10")
     assert_package_detected(
-      detect FALSE
+      detect TRUE
       legacyvariable HAVE_LIBLZMA
       variablename LIBLZMA_FOUND)
   endif()

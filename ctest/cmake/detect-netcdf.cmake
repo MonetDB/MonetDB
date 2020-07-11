@@ -6,26 +6,16 @@
 # Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
 #]]
 
-include(os_release_info)
-
-if(${CMAKE_SYSTEM_NAME} STREQUAL "Linux")
-  get_os_release_info(LINUX_DISTRO LINUX_DISTRO_VERSION)
-endif()
-
-if(${CMAKE_SYSTEM_NAME} STREQUAL "Linux")
-  get_os_release_info(LINUX_DISTRO LINUX_DISTRO_VERSION)
-endif()
-
 if (${LINUX_DISTRO} STREQUAL "debian")
   if(${LINUX_DISTRO_VERSION} STREQUAL "9")
     assert_package_detected(
-      detect FALSE
+      detect TRUE
       legacyvariable HAVE_NETCDF
       variablename NETCDF_FOUND)
   endif()
   if(${LINUX_DISTRO_VERSION} STREQUAL "10")
     assert_package_detected(
-      detect FALSE
+      detect TRUE
       legacyvariable HAVE_NETCDF
       variablename NETCDF_FOUND)
   endif()
