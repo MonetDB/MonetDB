@@ -3796,13 +3796,13 @@ insert_check_ukey(backend *be, list *inserts, sql_key *k, stmt *idx_inserts)
 			stmt *sel = NULL;
 
 			/* remove any nils as in stmt_order NULL = NULL, instead of NULL != NULL */
-			if ((k->type == ukey) && stmt_has_null(col)) {
-
+			if (k->type == ukey) {
 				for (m = k->columns->h; m; m = m->next) {
 					sql_kc *c = m->data;
 					stmt *cs = list_fetch(inserts, c->c->colnr);
 
-					sel = stmt_selectnonil(be, cs, sel);
+				   	if (stmt_has_null(cs))
+						sel = stmt_selectnonil(be, cs, sel);
 				}
 			}
 			/* implementation uses sort key check */
