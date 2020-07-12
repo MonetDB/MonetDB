@@ -1600,7 +1600,7 @@ rewrite_exp_rel(mvc *sql, sql_rel *rel, sql_exp *e, int depth, int *changes)
 		} else {
 			e = exp_rel_update_exp(sql, e);
 		}
-	} 
+	}
 	return e;
 }
 
@@ -2122,6 +2122,8 @@ rewrite_anyequal(mvc *sql, sql_rel *rel, sql_exp *e, int depth)
 		return e;
 
 	sf = e->f;
+	if (is_ddl(rel->op))
+		return e;
 	if (is_anyequal_func(sf) && !list_empty(e->l)) {
 		list *l = e->l;
 
