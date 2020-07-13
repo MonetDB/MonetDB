@@ -5814,18 +5814,17 @@ score_gbe(mvc *sql, sql_rel *rel, sql_exp *e)
 static sql_rel *
 rel_groupby_order(visitor *v, sql_rel *rel)
 {
-	list *gbe = rel->r;
-	int ngbe = list_length(gbe), i, *scores = NULL;
+	int *scores = NULL;
 	sql_exp **exps = NULL;
 
-	if (is_groupby(rel->op) && ngbe > 1) {
+	if (is_groupby(rel->op) && list_length(rel->r) > 1) {
 		node *n;
-		scores = GDKzalloc(ngbe * sizeof(int));
+		list *gbe = rel->r;
+		int i, ngbe = list_length(gbe);
+		scores = GDKmalloc(ngbe * sizeof(int));
 		exps = GDKmalloc(ngbe * sizeof(sql_exp*));
 
 		if (scores && exps) {
-			list *nexps = sa_list(v->sql->sa);
-
 			/* first sorting step, give priority for integers and sorted columns */
 			for (i = 0, n = gbe->h; n; i++, n = n->next) {
 				exps[i] = n->data;
@@ -5846,9 +5845,8 @@ rel_groupby_order(visitor *v, sql_rel *rel)
 				GDKqsort(scores + i, exps + i, NULL, ngbe - i, sizeof(int), sizeof(void *), TYPE_int, false, true);
 			}
 
-			for (i = 0 ; i < ngbe ; i++)
-				list_append(nexps, exps[i]);
-			rel->r = nexps;
+			for (i = 0, n = gbe->h; n; i++, n = n->next)
+				n->data = exps[i];
 		}
 	}
 
