@@ -28,8 +28,8 @@ stdout of test 'subquery6` in directory 'sql/test/subquery` itself:
 #     WHERE ctr1.ctr_state = ctr2.ctr_state)
 #  AND col1 = ColID
 #  AND ctr1.ctr_customer_sk = TotalSales;
-% .%44 # table_name
-% %44 # name
+% .%45 # table_name
+% %45 # name
 % tinyint # type
 % 1 # length
 #SELECT (SELECT (SELECT SUM(col1)) IN (MAX(col2))) FROM another_t;
@@ -75,7 +75,7 @@ stdout of test 'subquery6` in directory 'sql/test/subquery` itself:
 % 4 # length
 [ 3702	]
 #SELECT CAST(SUM((SELECT CAST(EXISTS(SELECT col1) AS INT))) AS BIGINT) FROM another_t;
-% sys.%4 # table_name
+% .%4 # table_name
 % %4 # name
 % bigint # type
 % 1 # length
@@ -209,7 +209,36 @@ stdout of test 'subquery6` in directory 'sql/test/subquery` itself:
 % int # type
 % 1 # length
 [ NULL	]
-#DROP FUNCTION debugme;
+#DROP FUNCTION debugme3;
+#CREATE FUNCTION debugme4() RETURNS BOOLEAN
+#BEGIN
+#	DECLARE n BOOLEAN;
+#	SET n = (select true union all select false);
+#	RETURN n;
+#END;
+#DROP FUNCTION debugme4;
+#CREATE FUNCTION debugme5() RETURNS BOOLEAN
+#BEGIN
+#	DECLARE n BOOLEAN;
+#	SET n = (select 1 where null);
+#	RETURN n;
+#END;
+#DROP FUNCTION debugme5;
+#CREATE FUNCTION debugme6() RETURNS INT
+#BEGIN
+#	DECLARE n INT;
+#	WHILE ((SELECT 0) = ANY(SELECT 1)) do
+#		SET n = 10;
+#	END WHILE;
+#	RETURN n;
+#END;
+#SELECT debugme6();
+% .%6 # table_name
+% %6 # name
+% int # type
+% 1 # length
+[ NULL	]
+#DROP FUNCTION debugme6;
 #DROP TABLE tbl_ProductSales;
 #DROP TABLE another_T;
 #DROP TABLE integers;

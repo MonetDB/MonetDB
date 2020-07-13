@@ -687,16 +687,16 @@ exp_alias_or_copy( mvc *sql, const char *tname, const char *cname, sql_rel *orel
 		tname = exp_relname(old);
 
 	if (!cname && exp_name(old) && has_label(old)) {
-		ne = exp_column(sql->sa, exp_relname(old), exp_name(old), exp_subtype(old), orel?orel->card:CARD_ATOM, has_nil(old), is_intern(old));
+		ne = exp_column(sql->sa, exp_relname(old), exp_name(old), exp_subtype(old), orel && old->card != CARD_ATOM?orel->card:CARD_ATOM, has_nil(old), is_intern(old));
 		return exp_propagate(sql->sa, ne, old);
 	} else if (!cname) {
 		exp_label(sql->sa, old, ++sql->label);
-		ne = exp_column(sql->sa, exp_relname(old), exp_name(old), exp_subtype(old), orel?orel->card:CARD_ATOM, has_nil(old), is_intern(old));
+		ne = exp_column(sql->sa, exp_relname(old), exp_name(old), exp_subtype(old), orel && old->card != CARD_ATOM?orel->card:CARD_ATOM, has_nil(old), is_intern(old));
 		return exp_propagate(sql->sa, ne, old);
 	} else if (cname && !old->alias.name) {
 		exp_setname(sql->sa, old, tname, cname);
 	}
-	ne = exp_column(sql->sa, tname, cname, exp_subtype(old), orel?orel->card:CARD_ATOM, has_nil(old), is_intern(old));
+	ne = exp_column(sql->sa, tname, cname, exp_subtype(old), orel && old->card != CARD_ATOM?orel->card:CARD_ATOM, has_nil(old), is_intern(old));
 	return exp_propagate(sql->sa, ne, old);
 }
 
@@ -1589,7 +1589,7 @@ rel_find_exp_and_corresponding_rel_( sql_rel *rel, sql_exp *e, sql_rel **res)
 }
 
 sql_exp *
-rel_find_exp_and_corresponding_rel(sql_rel *rel, sql_exp *e, sql_rel **res)
+rel_find_exp_and_corresponding_rel(sql_rel *rel, sql_exp *e, sql_rel **res, bool *under_join)
 {
 	sql_exp *ne = rel_find_exp_and_corresponding_rel_(rel, e, res);
 
@@ -1599,9 +1599,11 @@ rel_find_exp_and_corresponding_rel(sql_rel *rel, sql_exp *e, sql_rel **res)
 		case op_right:
 		case op_full:
 		case op_join:
-			ne = rel_find_exp_and_corresponding_rel(rel->l, e, res);
+			ne = rel_find_exp_and_corresponding_rel(rel->l, e, res, under_join);
 			if (!ne)
-				ne = rel_find_exp_and_corresponding_rel(rel->r, e, res);
+				ne = rel_find_exp_and_corresponding_rel(rel->r, e, res, under_join);
+			if (ne && under_join)
+				*under_join = true;
 			break;
 		case op_table:
 			if (rel->exps && e->type == e_column && e->l && exps_bind_column2(rel->exps, e->l, e->r))
@@ -1614,7 +1616,7 @@ rel_find_exp_and_corresponding_rel(sql_rel *rel, sql_exp *e, sql_rel **res)
 		case op_inter:
 		{
 			if (rel->l)
-				ne = rel_find_exp_and_corresponding_rel(rel->l, e, res);
+				ne = rel_find_exp_and_corresponding_rel(rel->l, e, res, under_join);
 			else if (rel->exps && e->l) {
 				ne = exps_bind_column2(rel->exps, e->l, e->r);
 				if (ne && res)
@@ -1634,7 +1636,9 @@ rel_find_exp_and_corresponding_rel(sql_rel *rel, sql_exp *e, sql_rel **res)
 			break;
 		default:
 			if (!is_project(rel->op) && rel->l)
-				ne = rel_find_exp_and_corresponding_rel(rel->l, e, res);
+				ne = rel_find_exp_and_corresponding_rel(rel->l, e, res, under_join);
+			if (ne && (rel->op == op_semi || rel->op == op_anti) && under_join)
+				*under_join = true;
 		}
 	}
 	return ne;
@@ -1643,7 +1647,7 @@ rel_find_exp_and_corresponding_rel(sql_rel *rel, sql_exp *e, sql_rel **res)
 sql_exp *
 rel_find_exp( sql_rel *rel, sql_exp *e)
 {
-	return rel_find_exp_and_corresponding_rel(rel, e, NULL);
+	return rel_find_exp_and_corresponding_rel(rel, e, NULL, NULL);
 }
 
 int
