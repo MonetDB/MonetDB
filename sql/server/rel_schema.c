@@ -463,7 +463,7 @@ column_options(sql_query *query, dlist *opt_list, sql_schema *ss, sql_table *t, 
 						sql_exp *e = rel_logical_value_exp(query, NULL, sym, sql_sel, ek);
 
 						if (e && is_atom(e->type)) {
-							atom *a = exp_value(sql, e, sql->args, sql->argc);
+							atom *a = exp_value(sql, e);
 
 							if (atom_null(a)) {
 								mvc_default(sql, cs, NULL);
@@ -477,11 +477,9 @@ column_options(sql_query *query, dlist *opt_list, sql_schema *ss, sql_table *t, 
 					r = symbol2string(sql, s->data.sym, 0, &err);
 					if (!r) {
 						(void) sql_error(sql, 02, SQLSTATE(42000) "Incorrect default value '%s'\n", err?err:"");
-						if (err) _DELETE(err);
 						return SQL_ERR;
 					} else {
 						mvc_default(sql, cs, r);
-						_DELETE(r);
 					}
 				} 	break;
 				case SQL_NOT_NULL:
@@ -797,11 +795,9 @@ table_element(sql_query *query, symbol *s, sql_schema *ss, sql_table *t, int alt
 		r = symbol2string(sql, sym, 0, &err);
 		if (!r) {
 			(void) sql_error(sql, 02, SQLSTATE(42000) "%s: incorrect default value '%s'\n", action, err?err:"");
-			if (err) _DELETE(err);
 			return SQL_ERR;
 		}
 		mvc_default(sql, c, r);
-		_DELETE(r);
 	}
 	break;
 	case SQL_STORAGE:
@@ -971,12 +967,11 @@ create_partition_definition(mvc *sql, sql_table *t, symbol *partition_def)
 			sql_ec = t->part.pcol->type.type->eclass;
 			if (!(sql_ec == EC_BIT || EC_VARCHAR(sql_ec) || EC_TEMP(sql_ec) || sql_ec == EC_POS || sql_ec == EC_NUM ||
 				 EC_INTERVAL(sql_ec)|| sql_ec == EC_DEC || sql_ec == EC_BLOB)) {
-				err = sql_subtype_string(&(t->part.pcol->type));
+				err = sql_subtype_string(sql->ta, &(t->part.pcol->type));
 				if (!err) {
 					sql_error(sql, 02, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 				} else {
 					sql_error(sql, 02, SQLSTATE(42000) "CREATE MERGE TABLE: column type %s not yet supported for the partition column", err);
-					GDKfree(err);
 				}
 				return SQL_ERR;
 			}
@@ -984,13 +979,11 @@ create_partition_definition(mvc *sql, sql_table *t, symbol *partition_def)
 			char *query = symbol2string(sql, list2->h->data.sym, 1, &err);
 			if (!query) {
 				(void) sql_error(sql, 02, SQLSTATE(42000) "CREATE MERGE TABLE: error compiling expression '%s'", err?err:"");
-				if (err) _DELETE(err);
 				return SQL_ERR;
 			}
 			t->part.pexp = SA_ZNEW(sql->sa, sql_expression);
-			t->part.pexp->exp = sa_strdup(sql->sa, query);
+			t->part.pexp->exp = query;
 			t->part.pexp->type = *sql_bind_localtype("void");
-			_DELETE(query);
 		}
 	}
 	return SQL_OK;
@@ -1192,9 +1185,8 @@ rel_create_view(sql_query *query, sql_schema *ss, dlist *qname, dlist *column_sp
 		}
 
 		if (create) {
-			q = query_cleaned(q);
+			q = query_cleaned(sql->ta, q);
 			t = mvc_create_view(sql, s, name, SQL_DECLARED_TABLE, q, 0);
-			GDKfree(q);
 			if (as_subquery(sql, t, tt_view, sq, column_spec, "CREATE VIEW") != 0) {
 				rel_destroy(sq);
 				return NULL;
@@ -1572,17 +1564,11 @@ sql_alter_table(sql_query *query, dlist *dl, dlist *qname, symbol *te, int if_ex
 		for (node *n = nt->columns.nelm; n; n = n->next) {
 			sql_column *c = n->data;
 			if (c->def) {
-				char *d, *typestr = subtype2string2(&c->type);
-				if (!typestr)
-					return sql_error(sql, 02, SQLSTATE(HY013) MAL_MALLOC_FAIL);
-				d = sql_message("select cast(%s as %s);", c->def, typestr);
-				_DELETE(typestr);
-				e = rel_parse_val(sql, d, sql->emode, NULL);
-				_DELETE(d);
+				e = rel_parse_val(sql, c->def, &c->type, sql->emode, NULL);
 			} else {
 				e = exp_atom(sql->sa, atom_general(sql->sa, &c->type, NULL));
 			}
-			if (!e || (e = rel_check_type(sql, &c->type, r, e, type_equal)) == NULL) {
+			if (!e || (e = exp_check_type(sql, &c->type, r, e, type_equal)) == NULL) {
 				rel_destroy(r);
 				return NULL;
 			}
@@ -2845,10 +2831,10 @@ rel_schemas(sql_query *query, symbol *s)
 		dnode *a = l->h->next->data.lval->h;
 
 		ret = rel_alter_user(sql->sa, l->h->data.sval,	/* user */
-				     a->data.sval,	/* passwd */
-				     a->next->next->data.i_val == SQL_PW_ENCRYPTED, /* encrypted */
-				     a->next->data.sval,	/* schema */
-				     a->next->next->next->data.sval /* old passwd */
+			     a->data.sval,	/* passwd */
+			     a->next->next->data.i_val == SQL_PW_ENCRYPTED, /* encrypted */
+			     a->next->data.sval,	/* schema */
+			     a->next->next->next->data.sval /* old passwd */
 		    );
 	} 	break;
 	case SQL_RENAME_USER: {

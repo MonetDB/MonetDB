@@ -1087,6 +1087,10 @@ GDKreset(int status)
 				}
 				if (!skip)
 					GDKunlockHome(farmid);
+				if (BBPfarms[farmid].dirname) {
+					GDKfree((char*)BBPfarms[farmid].dirname);
+					BBPfarms[farmid].dirname = NULL;
+				}
 			}
 		}
 

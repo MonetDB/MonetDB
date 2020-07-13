@@ -52,6 +52,15 @@ function(MT_checkCompilerFlag Flag)
   endif()
 endfunction()
 
+function(add_option_if_available Flag)
+  string(REGEX REPLACE "[-/=,]" "" FLAG_TEST "${Flag}")
+  check_c_compiler_flag(${Flag} ${FLAG_TEST}_FOUND)
+  set(ISFOUND "${${FLAG_TEST}_FOUND}}")
+  if(ISFOUND)
+    add_compile_options("${Flag}")
+  endif()
+endfunction()
+
 function(create_include_object)
   cmake_parse_arguments(
     create_prefix
@@ -108,6 +117,7 @@ function(monetdb_cmake_summary)
   message(STATUS "Summary of cmake configuration of MonetDB")
   message(STATUS "-----------------------------------------")
   message(STATUS "System is big endian: ${IS_BIG_ENDIAN}")
+  message(STATUS "Toolchain file: ${CMAKE_TOOLCHAIN_FILE}")
   if(${CMAKE_VERSION} VERSION_LESS "3.14.0")
     message(STATUS "NumPy include dirs: ${NUMPY_INCLUDE_DIRS}")
   else()
@@ -142,7 +152,194 @@ function(monetdb_cmake_summary)
   message(STATUS "Netcdf library: ${NETCDF_FOUND}")
   message(STATUS "Readline library: ${READLINE_FOUND}")
   message(STATUS "R library: ${LIBR_FOUND}")
+  message(STATUS "ODBC: ${ODBC_FOUND}")
   message(STATUS "Sphinx: ${SPHINX_FOUND}")
+  message(STATUS "Createrepo: ${CREATEREPO_FOUND}")
+  message(STATUS "Rpmbuild: ${RPMBUILD_FOUND}")
+  message(STATUS "Dpkg-buildpackage: ${DPKGBUILDPACKAGE_FOUND}")
+  message(STATUS "Reprepro: ${REPREPRO_FOUND}")
+  message(STATUS "Semodule: ${SEMODULE_FOUND}")
+  message(STATUS "flags: ${CMAKE_C_FLAGS}")
   message(STATUS "-----------------------------------------")
   message(STATUS "")
+endfunction()
+
+# CMake function to test if a variable exists in the cmake code.
+function(assert_variable_exists assert_variable_variablename)
+  if(NOT ${assert_variable_variablename})
+    message(FATAL_ERROR "variable ${assert_variable_variablename} not defined")
+    set(DETECT "1")
+  else()
+    set(DETECT "0")
+  endif()
+
+  configure_file(test_cmake_var.c.in
+    "${CMAKE_CURRENT_BINARY_DIR}/test_${assert_variable_variablename}_var.c"
+    @ONLY)
+
+  add_executable("test_${assert_variable_variablename}_var")
+  target_sources("test_${assert_variable_variablename}_var"
+    PRIVATE
+    "${CMAKE_CURRENT_BINARY_DIR}/test_${assert_variable_variablename}_var.c")
+  add_test("testDetect${assert_variable_variablename}" "test_${assert_variable_variablename}_var")
+endfunction()
+
+# CMake function to test if a cmake variable has a corresponding
+# legacy variable defined in the monetdb_config.h header file.
+function(assert_legacy_variable_exists)
+  cmake_parse_arguments(
+    assert_variable
+    "dummy"
+    "variablename;legacy_variablename"
+    ""
+    ${ARGN})
+  if(${${assert_variable_variablename}})
+    set(DETECT "0")
+    set(UNDETECT "1")
+  else()
+    set(DETECT "1")
+    set(UNDETECT "0")
+  endif()
+  configure_file(test_detect_legacy_var.c.in
+    "${CMAKE_CURRENT_BINARY_DIR}/test_${assert_variable_legacy_variablename}_legacy_var.c"
+    @ONLY)
+  add_executable("test_${assert_variable_legacy_variablename}_legacy_var")
+  target_sources("test_${assert_variable_legacy_variablename}_legacy_var"
+    PRIVATE
+    "${CMAKE_CURRENT_BINARY_DIR}/test_${assert_variable_legacy_variablename}_legacy_var.c")
+  target_link_libraries("test_${assert_variable_legacy_variablename}_legacy_var"
+  PRIVATE
+  monetdb_config_header)
+  add_test("testDetect${assert_variable_legacy_variablename}Legacy"
+    "test_${assert_variable_legacy_variablename}_legacy_var")
+endfunction()
+
+# CMake function to test if the package detection gave the
+# expected result.
+function(assert_package_detected)
+  cmake_parse_arguments(
+    assert_package
+    "dummy"
+    "variablename;legacyvariable;detect"
+    ""
+    ${ARGN})
+  if(${assert_package_detect})
+    set(DETECT "0")
+    set(UNDETECT "1")
+  else()
+    set(DETECT "1")
+    set(UNDETECT "0")
+  endif()
+  configure_file(test_package_detect.c.in
+    "${CMAKE_CURRENT_BINARY_DIR}/test_${assert_package_variablename}_detect_var.c"
+    @ONLY)
+  add_executable("test_${assert_package_variablename}_detect_var")
+  target_sources("test_${assert_package_variablename}_detect_var"
+    PRIVATE
+    "${CMAKE_CURRENT_BINARY_DIR}/test_${assert_package_variablename}_detect_var.c")
+  target_link_libraries("test_${assert_package_variablename}_detect_var"
+  PRIVATE
+  monetdb_config_header)
+  add_test("testDetect${assert_package_variablename}Detect"
+    "test_${assert_package_variablename}_detect_var")
+endfunction()
+
+function(monetdb_debian_extra_files)
+  install(FILES
+    ${CMAKE_SOURCE_DIR}/misc/packages/deb/changelog
+    ${CMAKE_SOURCE_DIR}/misc/packages/deb/copyright
+    DESTINATION
+    ${CMAKE_INSTALL_DATAROOTDIR}/doc/libmonetdb-client-dev
+    COMPONENT clientdev)
+
+  install(FILES
+    ${CMAKE_SOURCE_DIR}/misc/packages/deb/changelog
+    ${CMAKE_SOURCE_DIR}/misc/packages/deb/copyright
+    DESTINATION
+    ${CMAKE_INSTALL_DATAROOTDIR}/doc/libmonetdb-client12
+    COMPONENT client)
+
+  install(FILES
+    ${CMAKE_SOURCE_DIR}/misc/packages/deb/changelog
+    ${CMAKE_SOURCE_DIR}/misc/packages/deb/copyright
+    DESTINATION
+    ${CMAKE_INSTALL_DATAROOTDIR}/doc/libmonetdb-client-odbc
+    COMPONENT odbc)
+
+  install(FILES
+    ${CMAKE_SOURCE_DIR}/misc/packages/deb/changelog
+    ${CMAKE_SOURCE_DIR}/misc/packages/deb/copyright
+    DESTINATION
+    ${CMAKE_INSTALL_DATAROOTDIR}/doc/libmonetdb-dev
+    COMPONENT monetdb-dev)
+
+  install(FILES
+    ${CMAKE_SOURCE_DIR}/misc/packages/deb/changelog
+    ${CMAKE_SOURCE_DIR}/misc/packages/deb/copyright
+    DESTINATION
+    ${CMAKE_INSTALL_DATAROOTDIR}/doc/libmonetdb-stream-dev
+    COMPONENT streamdev)
+
+  install(FILES
+    ${CMAKE_SOURCE_DIR}/misc/packages/deb/changelog
+    ${CMAKE_SOURCE_DIR}/misc/packages/deb/copyright
+    DESTINATION
+    ${CMAKE_INSTALL_DATAROOTDIR}/doc/libmonetdb-stream13
+    COMPONENT stream)
+
+  install(FILES
+    ${CMAKE_SOURCE_DIR}/misc/packages/deb/changelog
+    ${CMAKE_SOURCE_DIR}/misc/packages/deb/copyright
+    DESTINATION
+    ${CMAKE_INSTALL_DATAROOTDIR}/doc/libmonetdb19
+    COMPONENT monetdb)
+
+  install(FILES
+    ${CMAKE_SOURCE_DIR}/misc/packages/deb/changelog
+    ${CMAKE_SOURCE_DIR}/misc/packages/deb/copyright
+    DESTINATION
+    ${CMAKE_INSTALL_DATAROOTDIR}/doc/libmonetdb-dev
+    COMPONENT monetdbdev)
+
+  install(FILES
+    ${CMAKE_SOURCE_DIR}/misc/packages/deb/changelog
+    ${CMAKE_SOURCE_DIR}/misc/packages/deb/copyright
+    DESTINATION
+    ${CMAKE_INSTALL_DATAROOTDIR}/doc/monetdb-client-testing
+    COMPONENT clienttest)
+
+  install(FILES
+    ${CMAKE_SOURCE_DIR}/misc/packages/deb/changelog
+    ${CMAKE_SOURCE_DIR}/misc/packages/deb/copyright
+    DESTINATION
+    ${CMAKE_INSTALL_DATAROOTDIR}/doc/monetdb-testing-python
+    COMPONENT pytesting)
+
+  install(FILES
+    ${CMAKE_SOURCE_DIR}/misc/packages/deb/changelog
+    ${CMAKE_SOURCE_DIR}/misc/packages/deb/copyright
+    DESTINATION
+    ${CMAKE_INSTALL_DATAROOTDIR}/doc/monetdb-testing
+    COMPONENT testing)
+
+  install(FILES
+    ${CMAKE_SOURCE_DIR}/misc/packages/deb/changelog
+    ${CMAKE_SOURCE_DIR}/misc/packages/deb/copyright
+    DESTINATION
+    ${CMAKE_INSTALL_DATAROOTDIR}/doc/monetdb-server-dev
+    COMPONENT serverdev)
+
+  install(FILES
+    ${CMAKE_SOURCE_DIR}/misc/packages/deb/changelog
+    ${CMAKE_SOURCE_DIR}/misc/packages/deb/copyright
+    DESTINATION
+    ${CMAKE_INSTALL_DATAROOTDIR}/doc/monetdb5-sql
+    COMPONENT sql)
+
+  install(FILES
+    ${CMAKE_SOURCE_DIR}/misc/packages/deb/changelog
+    ${CMAKE_SOURCE_DIR}/misc/packages/deb/copyright
+    DESTINATION
+    ${CMAKE_INSTALL_DATAROOTDIR}/doc/monetdb5-server
+    COMPONENT server)
 endfunction()

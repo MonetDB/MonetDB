@@ -16,14 +16,14 @@ stdout of test 'declared_tables` in directory 'sql/test/miscellaneous` itself:
 #    RETURN SELECT a FROM z;
 #END;
 #SELECT testtruncate();
-% . # table_name
-% %1 # name
+% .%6 # table_name
+% %6 # name
 % int # type
 % 1 # length
 [ NULL	]
 #SELECT testtruncate();
-% . # table_name
-% %1 # name
+% .%6 # table_name
+% %6 # name
 % int # type
 % 1 # length
 [ NULL	]

@@ -10,21 +10,61 @@
 #ifndef MT_SEEN_MONETDB_CONFIG_H
 #define MT_SEEN_MONETDB_CONFIG_H 1
 
+#ifdef _MSC_VER
+
+#if _MSC_VER < 1900
+#error Versions bellow Visual Studio 2015 are no longer supported
+#endif
+
+/* Prevent pollution through excessive inclusion of include files by Windows.h. */
+#ifndef WIN32_LEAN_AND_MEAN
+#define WIN32_LEAN_AND_MEAN 1
+#endif
+
+/* Visual Studio 8 has deprecated lots of stuff: suppress warnings */
+#ifndef _CRT_SECURE_NO_DEPRECATE
+#define _CRT_SECURE_NO_DEPRECATE 1
+#endif
+
+#endif
+
+#include <stdlib.h>
+#if defined(_MSC_VER) && defined(_DEBUG) && defined(_CRTDBG_MAP_ALLOC)
+/* In this case, malloc and friends are redefined in crtdbg.h to debug
+ * versions.  We need to include stdlib.h first or else we get
+ * conflicting declarations. */
+#include <crtdbg.h>
+#endif
+
 #cmakedefine HAVE_SYS_TYPES_H 1
 #ifdef HAVE_SYS_TYPES_H
 # include <sys/types.h>
 #endif
 
-/* C99 standard includes */
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <stddef.h>
-#include <errno.h>
-#include <stdarg.h>
-#include <inttypes.h>
-#include <stdbool.h>
+/* standard C-99 include files */
 #include <assert.h>
+#include <errno.h>
+#include <inttypes.h>
+#include <stdarg.h>
+#include <stdbool.h>
+#include <stddef.h>
+#include <stdio.h>
+#include <string.h>
+
+#ifdef _MSC_VER
+
+/* Windows include files */
+#include <process.h>
+#include <windows.h>
+#include <ws2tcpip.h>
+
+/* indicate to sqltypes.h that windows.h has already been included and
+   that it doesn't have to define Windows constants */
+#define ALREADY_HAVE_WINDOWS_TYPE 1
+
+#define NATIVE_WIN32 1
+
+#endif /* _MSC_VER */
 
 // Section: monetdb configure defines
 #cmakedefine HAVE_DISPATCH_DISPATCH_H 1
@@ -77,6 +117,7 @@
 #cmakedefine HAVE_DISPATCH_SEMAPHORE_CREATE 1
 #cmakedefine HAVE_FALLOCATE 1
 #cmakedefine HAVE_FCNTL 1
+#cmakedefine HAVE_F_GETLK 1
 #cmakedefine HAVE_FORK 1
 #cmakedefine HAVE_FSYNC 1
 #cmakedefine HAVE_FTIME 1
@@ -155,10 +196,17 @@
 #cmakedefine HAVE_GETADDRINFO 1
 #cmakedefine HAVE_CUDF 1
 
+#ifdef _MSC_VER
+#define DIR_SEP '\\'
+#define PATH_SEP ';'
+#define DIR_SEP_STR "\\"
+#define SO_PREFIX ""
+#else
 #cmakedefine DIR_SEP '@DIR_SEP@'
 #cmakedefine PATH_SEP '@PATH_SEP@'
 #cmakedefine DIR_SEP_STR "@DIR_SEP_STR@"
 #cmakedefine SO_PREFIX "@SO_PREFIX@"
+#endif
 #cmakedefine SO_EXT "@SO_EXT@"
 
 #cmakedefine BINDIR "@BINDIR@"
@@ -187,6 +235,7 @@
 #define VERSION "@MONETDB_VERSION@"
 #define PACKAGE_VERSION "@MONETDB_VERSION@"
 #define PACKAGE_NAME "MonetDB"
+#define PACKAGE_STRING PACKAGE_NAME " " PACKAGE_VERSION
 
 /* Host identifier */
 #cmakedefine HOST "@HOST@"
@@ -242,6 +291,9 @@
 #ifndef ssize_t
 #cmakedefine ssize_t @ssize_t@
 #endif
+#ifndef pid_t
+#cmakedefine pid_t @pid_t@
+#endif
 
 /* The size of `__int128', as computed by sizeof. */
 #cmakedefine SIZEOF___INT128 @SIZEOF___INT128@
@@ -252,7 +304,7 @@
 /* The size of `__uint128_t', as computed by sizeof. */
 #cmakedefine SIZEOF___UINT128_T @SIZEOF___UINT128_T@
 
-#if defined(SIZEOF___INT128)
+#ifdef SIZEOF___INT128
 typedef __int128 hge;
 typedef unsigned __int128 uhge;
 #define HAVE_HGE 1
@@ -266,20 +318,83 @@ typedef __uint128_t uhge;
 
 // End Section: monetdb configure sizes
 
+/* Does your compiler support `__attribute__' extension? */
+#if !defined(__GNUC__) && !defined(__clang__) && !defined(__attribute__)
+#define __attribute__(a)
+#endif
+
 #ifndef static_assert
 /* static_assert is a C11 feature, defined in assert.h which also exists
  * in many other compilers we ignore it if the compiler doesn't support it */
 #define static_assert(expr, mesg)	((void) 0)
 #endif
 
-#cmakedefine HAVE_SOCKLEN_T 1
-#ifndef SOCKET
-#define SOCKET int
+#ifdef _MSC_VER
+
+#define strdup(s)	_strdup(s)
+
+#ifndef strcasecmp
+#define strcasecmp(x,y) _stricmp(x,y)
 #endif
 
-#ifndef closesocket
+/* Define to 1 if you have the `strncasecmp' function. */
+#define HAVE_STRNCASECMP 1
+#ifndef strncasecmp
+#define strncasecmp(x,y,z) _strnicmp(x,y,z)
+#endif
+
+#include <sys/stat.h>
+#ifdef lstat
+#undef lstat
+#endif
+#define lstat _stat64
+#ifdef stat
+#undef stat
+#endif
+#define stat _stat64
+#ifdef fstat
+#undef fstat
+#endif
+#define fstat _fstat64
+
+static inline char *
+stpcpy(char *restrict dst, const char *restrict src)
+{
+	size_t i;
+	for (i = 0; src[i]; i++)
+		dst[i] = src[i];
+	dst[i] = 0;
+	return dst + i;
+}
+
+/* Define to 1 if the system has the type `socklen_t'. */
+#define HAVE_SOCKLEN_T 1
+/* type used by connect */
+#define socklen_t int
+#define strtok_r(t,d,c) strtok_s(t,d,c)
+
+#define HAVE_GETOPT_LONG 1
+
+/* there is something very similar to localtime_r on Windows: */
+#define HAVE_LOCALTIME_R 1
+#define localtime_r(tp,tm)	localtime_s(tm,tp)
+#define HAVE_GMTIME_R 1
+#define gmtime_r(tp,tm)         (gmtime_s(tm,tp) == 0 ? (tm) : NULL)
+
+/* Define if you have ctime_r(time_t*,char *buf,size_t s) */
+#define HAVE_CTIME_R 1
+#define HAVE_CTIME_R3 1
+/* there is something very similar to ctime_r on Windows: */
+#define ctime_r(t,b,s)  (ctime_s(b,s,t) ? NULL : (b))
+
+#endif	/* _MSC_VER */
+
+#cmakedefine HAVE_SOCKLEN_T 1
+#ifndef _MSC_VER
+#define SOCKET int
 #define closesocket close
 #endif
+
 #ifndef _In_z_
 #define _In_z_
 #endif
@@ -287,8 +402,21 @@ typedef __uint128_t uhge;
 #define _Printf_format_string_
 #endif
 
+#ifdef _MSC_VER
+#define _LIB_STARTUP_FUNC_(f,q) \
+        static void f(void); \
+        __declspec(allocate(".CRT$XCU")) void (*f##_)(void) = f; \
+        __pragma(comment(linker,"/include:" q #f "_")) \
+        static void f(void)
+#ifdef _WIN64
+        #define LIB_STARTUP_FUNC(f) _LIB_STARTUP_FUNC_(f,"")
+#else
+        #define LIB_STARTUP_FUNC(f) _LIB_STARTUP_FUNC_(f,"_")
+#endif
+#else
 #define LIB_STARTUP_FUNC(f) \
         static void f(void) __attribute__((constructor)); \
         static void f(void)
+#endif
 
 #endif /* MT_SEEN_MONETDB_CONFIG_H */

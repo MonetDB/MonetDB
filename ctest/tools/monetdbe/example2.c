@@ -19,9 +19,14 @@ main(void)
 	char* err = NULL;
 	monetdbe_database mdbe = NULL;
 	monetdbe_result* result = NULL;
+#ifdef HAVE_HGE
+    monetdbe_options opts = { .have_hge = 1 };
+#else
+    monetdbe_options opts = { 0 };
+#endif
 
 	// second argument is a string for the db directory or NULL for in-memory mode
-	if (monetdbe_open(&mdbe, NULL, NULL))
+	if (monetdbe_open(&mdbe, NULL, &opts))
 		error("Failed to open database")
 	if ((err = monetdbe_query(mdbe, "CREATE TABLE test (b bool, t tinyint, s smallint, x integer, l bigint, "
 #ifdef HAVE_HGE

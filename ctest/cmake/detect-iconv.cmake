@@ -8,61 +8,68 @@
 
 if (${LINUX_DISTRO} STREQUAL "debian")
   if(${LINUX_DISTRO_VERSION} STREQUAL "9")
-    set(DETECT "0")
-    set(UNDETECT "1")
+    assert_package_detected(
+      detect TRUE
+      legacyvariable HAVE_ICONV
+      variablename Iconv_FOUND)
   endif()
   if(${LINUX_DISTRO_VERSION} STREQUAL "10")
-    set(DETECT "0")
-    set(UNDETECT "1")
+    assert_package_detected(
+      detect TRUE
+      legacyvariable HAVE_ICONV
+      variablename Iconv_FOUND)
   endif()
 elseif (${LINUX_DISTRO} STREQUAL "ubuntu")
   if(${LINUX_DISTRO_VERSION} STREQUAL "18")
-    set(DETECT "1")
-    set(UNDETECT "0")
+    assert_package_detected(
+      detect FALSE
+      legacyvariable HAVE_ICONV
+      variablename Iconv_FOUND)
   endif()
   if(${LINUX_DISTRO_VERSION} STREQUAL "19")
-    set(DETECT "1")
-    set(UNDETECT "0")
+    assert_package_detected(
+      detect FALSE
+      legacyvariable HAVE_ICONV
+      variablename Iconv_FOUND)
   endif()
   if(${LINUX_DISTRO_VERSION} STREQUAL "20")
-    set(DETECT "1")
-    set(UNDETECT "0")
+    assert_package_detected(
+      detect TRUE
+      legacyvariable HAVE_ICONV
+      variablename Iconv_FOUND)
   endif()
 elseif(${LINUX_DISTRO} STREQUAL "fedora")
   if(${LINUX_DISTRO_VERSION} STREQUAL "30")
-    set(DETECT "0")
-    set(UNDETECT "1")
+    assert_package_detected(
+      detect TRUE
+      legacyvariable HAVE_ICONV
+      variablename Iconv_FOUND)
   endif()
   if(${LINUX_DISTRO_VERSION} STREQUAL "31")
-    set(DETECT "0")
-    set(UNDETECT "1")
+    assert_package_detected(
+      detect TRUE
+      legacyvariable HAVE_ICONV
+      variablename Iconv_FOUND)
   endif()
   if(${LINUX_DISTRO_VERSION} STREQUAL "32")
-    set(DETECT "0")
-    set(UNDETECT "1")
+    assert_package_detected(
+      detect TRUE
+      legacyvariable HAVE_ICONV
+      variablename Iconv_FOUND)
   endif()
 elseif(${LINUX_DISTRO} STREQUAL "centos")
   if(${LINUX_DISTRO_VERSION} VERSION_LESS "8") # version 7
-    set(DETECT "0")
-    set(UNDETECT "1")
+    assert_package_detected(
+      detect TRUE
+      legacyvariable HAVE_ICONV
+      variablename Iconv_FOUND)
   elseif(${LINUX_DISTRO_VERSION} VERSION_LESS "9") # version 8
-    set(DETECT "0")
-    set(UNDETECT "1")
+    assert_package_detected(
+      detect TRUE
+      legacyvariable HAVE_ICONV
+      variablename Iconv_FOUND)
   endif()
 else()
   message(ERROR "Linux distro: ${LINUX_DISTRO} not known")
   message(ERROR "Linux distro version: ${LINUX_DISTRO_VERSION} not known")
 endif()
-
-configure_file(test_detect_iconv.c.in
-  ${CMAKE_CURRENT_BINARY_DIR}/test_detect_iconv.c
-  @ONLY)
-
-add_executable(test_detect_iconv)
-target_sources(test_detect_iconv
-  PRIVATE
-  ${CMAKE_CURRENT_BINARY_DIR}/test_detect_iconv.c)
-target_link_libraries(test_detect_iconv
-  PRIVATE
-  monetdb_config_header)
-add_test(testDetectIconv test_detect_iconv)

@@ -164,15 +164,13 @@ typedef enum comp_type {
 
 	mark_in = 10,			/* mark joins */
 	mark_notin = 11,
-	mark_exists = 12,
-	mark_notexists = 13,
 
 	/* The followin cmp_* are only used within stmt (not sql_exp) */
-	cmp_all = 14,			/* special case for crossproducts */
-	cmp_project = 15,		/* special case for projection joins */
-	cmp_joined = 16, 		/* special case already joined */
-	cmp_left = 17,			/* special case equi join, keep left order */
-	cmp_left_project = 18		/* last step of outer join */
+	cmp_all = 12,			/* special case for crossproducts */
+	cmp_project = 13,		/* special case for projection joins */
+	cmp_joined = 14, 		/* special case already joined */
+	cmp_left = 15,			/* special case equi join, keep left order */
+	cmp_left_project = 16		/* last step of outer join */
 } comp_type;
 
 /* for ranges we keep the requirment for symmetric */
@@ -307,9 +305,9 @@ typedef enum sql_class {
 #define EC_COMPUTE(e)		(e==EC_NUM||e==EC_FLT)
 #define EC_BOOLEAN(e)		(e==EC_BIT||e==EC_NUM||e==EC_FLT)
 #define EC_TEMP_TZ(e)		(e==EC_TIME_TZ||e==EC_TIMESTAMP_TZ)
-#define EC_TEMP(e)		(e==EC_TIME||e==EC_DATE||e==EC_TIMESTAMP||EC_TEMP_TZ(e))
+#define EC_TEMP(e)			(e==EC_TIME||e==EC_DATE||e==EC_TIMESTAMP||EC_TEMP_TZ(e))
 #define EC_TEMP_FRAC(e)		(e==EC_TIME||e==EC_TIMESTAMP||EC_TEMP_TZ(e))
-#define EC_FIXED(e)		(e==EC_BIT||e==EC_CHAR||e==EC_POS||e==EC_NUM||EC_INTERVAL(e)||e==EC_DEC||EC_TEMP(e))
+#define EC_BACKEND_FIXED(e)	(EC_NUMBER(e)||e==EC_BIT||EC_TEMP(e))
 
 typedef struct sql_type {
 	sql_base base;

@@ -102,11 +102,11 @@ static int convert_matrix[EC_MAX][EC_MAX] = {
 /* EC_CHAR */		{ 2, 2, 2, 1, 1, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2 },
 /* EC_STRING */		{ 2, 2, 2, 1, 1, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2 },
 /* EC_BLOB */		{ 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 },
-/* EC_POS */		{ 0, 0, 2, 1, 1, 0, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0 },
-/* EC_NUM */		{ 0, 0, 2, 1, 1, 0, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0 },
-/* EC_MONTH*/   	{ 0, 0, 0, 1, 1, 0, 1, 1, 1, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0 },
-/* EC_SEC*/     	{ 0, 0, 0, 1, 1, 0, 1, 1, 0, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0 },
-/* EC_DEC */		{ 0, 0, 0, 1, 1, 0, 1, 1, 0, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0 },
+/* EC_POS */		{ 0, 0, 2, 1, 1, 0, 1, 1, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0 },
+/* EC_NUM */		{ 0, 0, 2, 1, 1, 0, 1, 1, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0 },
+/* EC_MONTH*/		{ 0, 0, 0, 1, 1, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 },
+/* EC_SEC*/			{ 0, 0, 0, 1, 1, 0, 0, 0, 0, 1, 0, 0, 1, 1, 0, 0, 0, 0, 0 },
+/* EC_DEC */		{ 0, 0, 0, 1, 1, 0, 1, 1, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0 },
 /* EC_FLT */		{ 0, 0, 0, 1, 1, 0, 1, 1, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0 },
 /* EC_TIME */		{ 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 1, 2, 0, 0, 0, 0, 0 },
 /* EC_TIME_TZ */	{ 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0 },
@@ -281,21 +281,6 @@ sql_bind_subtype(sql_allocator *sa, const char *name, unsigned int digits, unsig
 	return res;
 }
 
-char *
-sql_subtype_string(sql_subtype *t)
-{
-	char buf[BUFSIZ];
-
-	if (t->digits && t->scale)
-		snprintf(buf, BUFSIZ, "%s(%u,%u)", t->type->sqlname, t->digits, t->scale);
-	else if (t->digits && t->type->radix != 2)
-		snprintf(buf, BUFSIZ, "%s(%u)", t->type->sqlname, t->digits);
-
-	else
-		snprintf(buf, BUFSIZ, "%s", t->type->sqlname);
-	return _STRDUP(buf);
-}
-
 sql_subtype *
 sql_bind_localtype(const char *name)
 {
@@ -395,25 +380,21 @@ is_subtypeof(sql_subtype *sub, sql_subtype *super)
 }
 
 char *
-subtype2string(sql_subtype *t)
+sql_subtype_string(sql_allocator *sa, sql_subtype *t)
 {
 	char buf[BUFSIZ];
 
-	if (t->digits > 0) {
-		if (t->scale > 0)
-			snprintf(buf, BUFSIZ, "%s(%u,%u)",
-				t->type->sqlname, t->digits, t->scale);
-		else
-			snprintf(buf, BUFSIZ, "%s(%u)",
-				t->type->sqlname, t->digits);
-	} else {
+	if (t->digits && t->scale)
+		snprintf(buf, BUFSIZ, "%s(%u,%u)", t->type->sqlname, t->digits, t->scale);
+	else if (t->digits && t->type->radix != 2)
+		snprintf(buf, BUFSIZ, "%s(%u)", t->type->sqlname, t->digits);
+	else
 		snprintf(buf, BUFSIZ, "%s", t->type->sqlname);
-	}
-	return _STRDUP(buf);
+	return sa_strdup(sa, buf);
 }
 
 char *
-subtype2string2(sql_subtype *tpe) //distinguish char(n), decimal(n,m) from other SQL types
+subtype2string2(sql_allocator *sa, sql_subtype *tpe) /* distinguish char(n), decimal(n,m) from other SQL types */
 {
 	char buf[BUFSIZ];
 
@@ -427,11 +408,11 @@ subtype2string2(sql_subtype *tpe) //distinguish char(n), decimal(n,m) from other
 		case EC_CHAR:
 		case EC_STRING:
 		case EC_DEC:
-			return subtype2string(tpe);
+			return sql_subtype_string(sa, tpe);
 		default:
 			snprintf(buf, BUFSIZ, "%s", tpe->type->sqlname);
 	}
-	return _STRDUP(buf);
+	return sa_strdup(sa, buf);
 }
 
 int
@@ -505,6 +486,8 @@ sql_func_imp(sql_func *f)
 char *
 sql_func_mod(sql_func *f)
 {
+	if (!f->mod)
+		return "";
 	return f->mod;
 }
 
@@ -604,7 +587,7 @@ sql_dup_subfunc(sql_allocator *sa, sql_func *f, list *ops, sql_subtype *member)
 				sql_arg *s = m->data;
 
 				if (s->type.type->eclass == EC_ANY) {
-					if (!st)
+					if (!st || st->type->eclass == EC_ANY) /* if input parameter is ANY, skip validation */
 						st = tn->data;
 					else if (subtype_cmp(st, tn->data))
 						return NULL;
@@ -1225,7 +1208,7 @@ sqltypeinit( sql_allocator *sa)
 	sql_create_func(sa, "octet_length", "blob", "nitems", FALSE, FALSE, SCALE_NONE, 0, INT, 1, BLOB);
 
 	if (geomcatalogfix_get() != NULL) {
-		// the geom module is loaded
+		/* the geom module is loaded */
 		GEOM = *t++ = sql_create_type(sa, "GEOMETRY", 0, SCALE_NONE, 0, EC_GEOM, "wkb");
 		/*POINT =*/ //*t++ = sql_create_type(sa, "POINT", 0, SCALE_FIX, 0, EC_GEOM, "wkb");
 		*t++ = sql_create_type(sa, "GEOMETRYA", 0, SCALE_NONE, 0, EC_EXTERNAL, "wkba");
@@ -1288,6 +1271,7 @@ sqltypeinit( sql_allocator *sa)
 	sql_create_func(sa, "=", "calc", "=", TRUE, FALSE, SCALE_FIX, 0, BIT, 2, ANY, ANY);
 	sql_create_func(sa, "<>", "calc", "!=", TRUE, FALSE, SCALE_FIX, 0, BIT, 2, ANY, ANY);
 	sql_create_func(sa, "isnull", "calc", "isnil", TRUE, FALSE, SCALE_FIX, 0, BIT, 1, ANY);
+	sql_create_func(sa, "isnotnull", "calc", "isnotnil", TRUE, FALSE, SCALE_FIX, 0, BIT, 1, ANY);
 	sql_create_func(sa, ">", "calc", ">", FALSE, FALSE, SCALE_FIX, 0, BIT, 2, ANY, ANY);
 	sql_create_func(sa, ">=", "calc", ">=", FALSE, FALSE, SCALE_FIX, 0, BIT, 2, ANY, ANY);
 	sql_create_func(sa, "<", "calc", "<", FALSE, FALSE, SCALE_FIX, 0, BIT, 2, ANY, ANY);
@@ -1396,8 +1380,23 @@ sqltypeinit( sql_allocator *sa)
 #endif
 	sql_create_aggr(sa, "avg", "aggr", "avg", TRUE, DBL, 1, FLT);
 
-	sql_create_aggr(sa, "avg", "aggr", "avg", TRUE, DBL, 1, MONINT);
-	//sql_create_aggr(sa, "avg", "aggr", "avg", DBL, 1, SECINTL);
+	t = decimals; /* BTE */
+	sql_create_aggr(sa, "avg", "aggr", "avg", TRUE, *(t), 1, *(t));
+	t++; /* SHT */
+	sql_create_aggr(sa, "avg", "aggr", "avg", TRUE, *(t), 1, *(t));
+	t++; /* INT */
+	sql_create_aggr(sa, "avg", "aggr", "avg", TRUE, *(t), 1, *(t));
+	t++; /* LNG */
+	sql_create_aggr(sa, "avg", "aggr", "avg", TRUE, *(t), 1, *(t));
+#ifdef HAVE_HGE
+	if (have_hge) {
+		t++; /* HGE */
+		sql_create_aggr(sa, "avg", "aggr", "avg", TRUE, *(t), 1, *(t));
+	}
+#endif
+
+	sql_create_aggr(sa, "avg", "aggr", "avg", TRUE, MONINT, 1, MONINT);
+	sql_create_aggr(sa, "avg", "aggr", "avg", TRUE, SECINT, 1, SECINT);
 
 	sql_create_aggr(sa, "count_no_nil", "aggr", "count_no_nil", TRUE, LNG, 0);
 	sql_create_aggr(sa, "count", "aggr", "count", TRUE, LNG, 1, ANY);
@@ -1504,7 +1503,7 @@ sqltypeinit( sql_allocator *sa)
 		sql_create_analytic(sa, "lead", "sql", "lead", SCALE_NONE, ANY, 5, ANY, HGE, ANY, BIT, BIT);
 #endif
 
-	//these analytic functions support frames
+	/* these analytic functions support frames */
 	sql_create_analytic(sa, "first_value", "sql", "first_value", SCALE_NONE, ANY, 1, ANY);
 	sql_create_analytic(sa, "last_value", "sql", "last_value", SCALE_NONE, ANY, 1, ANY);
 
@@ -1521,7 +1520,7 @@ sqltypeinit( sql_allocator *sa)
 	sql_create_analytic(sa, "min", "sql", "min", SCALE_NONE, ANY, 1, ANY);
 	sql_create_analytic(sa, "max", "sql", "max", SCALE_NONE, ANY, 1, ANY);
 
-	//analytical sum for numerical and decimals
+	/* analytical sum for numerical and decimals */
 	sql_create_analytic(sa, "sum", "sql", "sum", SCALE_NONE, LargestINT, 1, BTE);
 	sql_create_analytic(sa, "sum", "sql", "sum", SCALE_NONE, LargestINT, 1, SHT);
 	sql_create_analytic(sa, "sum", "sql", "sum", SCALE_NONE, LargestINT, 1, INT);
@@ -1531,22 +1530,22 @@ sqltypeinit( sql_allocator *sa)
 		sql_create_analytic(sa, "sum", "sql", "sum", SCALE_NONE, LargestINT, 1, HGE);
 #endif
 
-	t = decimals; // BTE
+	t = decimals; /* BTE */
 	sql_create_analytic(sa, "sum", "sql", "sum", SCALE_NONE, LargestDEC, 1, *(t));
-	t++; // SHT
+	t++; /* SHT */
 	sql_create_analytic(sa, "sum", "sql", "sum", SCALE_NONE, LargestDEC, 1, *(t));
-	t++; // INT
+	t++; /* INT */
 	sql_create_analytic(sa, "sum", "sql", "sum", SCALE_NONE, LargestDEC, 1, *(t));
-	t++; // LNG
+	t++; /* LNG */
 	sql_create_analytic(sa, "sum", "sql", "sum", SCALE_NONE, LargestDEC, 1, *(t));
 #ifdef HAVE_HGE
 	if (have_hge) {
-		t++; // HGE
+		t++; /* HGE */
 		sql_create_analytic(sa, "sum", "sql", "sum", SCALE_NONE, LargestDEC, 1, *(t));
 	}
 #endif
 
-	//analytical product for numerical and decimals
+	/* analytical product for numerical and decimals */
 	sql_create_analytic(sa, "prod", "sql", "prod", SCALE_NONE, LargestINT, 1, BTE);
 	sql_create_analytic(sa, "prod", "sql", "prod", SCALE_NONE, LargestINT, 1, SHT);
 	sql_create_analytic(sa, "prod", "sql", "prod", SCALE_NONE, LargestINT, 1, INT);
@@ -1558,17 +1557,17 @@ sqltypeinit( sql_allocator *sa)
 
 #if 0
 	/* prod for decimals introduce errors in the output scales */
-	t = decimals; // BTE
+	t = decimals; /* BTE */
 	sql_create_analytic(sa, "prod", "sql", "prod", SCALE_NONE, LargestDEC, 1, *(t));
-	t++; // SHT
+	t++; /* SHT */
 	sql_create_analytic(sa, "prod", "sql", "prod", SCALE_NONE, LargestDEC, 1, *(t));
-	t++; // INT
+	t++; /* INT */
 	sql_create_analytic(sa, "prod", "sql", "prod", SCALE_NONE, LargestDEC, 1, *(t));
-	t++; // LNG
+	t++; /* LNG */
 	sql_create_analytic(sa, "prod", "sql", "prod", SCALE_NONE, LargestDEC, 1, *(t));
 #ifdef HAVE_HGE
 	if (have_hge) {
-		t++; // HGE
+		t++; /* HGE */
 		sql_create_analytic(sa, "prod", "sql", "prod", SCALE_NONE, LargestDEC, 1, *(t));
 	}
 #endif
@@ -1592,8 +1591,8 @@ sqltypeinit( sql_allocator *sa)
 		sql_create_analytic(sa, "avg", "sql", "avg", SCALE_NONE, DBL, 1, HGE);
 #endif
 
-	sql_create_analytic(sa, "avg", "sql", "avg", SCALE_NONE, DBL, 1, MONINT);
-	//sql_create_analytic(sa, "avg", "sql", "avg", SCALE_NONE, DBL, 1, SECINT);
+	sql_create_analytic(sa, "avg", "sql", "avg", SCALE_NONE, MONINT, 1, MONINT);
+	sql_create_analytic(sa, "avg", "sql", "avg", SCALE_NONE, SECINT, 1, SECINT);
 
 #if 0
 	t = decimals; // BTE
@@ -1667,18 +1666,15 @@ sqltypeinit( sql_allocator *sa)
 		/* scale fixing for all numbers */
 		sql_create_func(sa, "scale_up", "calc", "*", FALSE, FALSE, SCALE_NONE, 0, *t, 2, *t, lt->type);
 		sql_create_func(sa, "scale_down", "sql", "dec_round", FALSE, FALSE, SCALE_NONE, 0, *t, 2, *t, lt->type);
-		/* numeric function on INTERVALS */
-		if (*t != MONINT && *t != SECINT){
-			sql_create_func(sa, "sql_sub", "calc", "-", FALSE, FALSE, SCALE_FIX, 0, MONINT, 2, MONINT, *t);
-			sql_create_func(sa, "sql_add", "calc", "+", FALSE, FALSE, SCALE_FIX, 0, MONINT, 2, MONINT, *t);
+		/* numeric functions on INTERVALS */
+		if (t < dates) {
 			sql_create_func(sa, "sql_mul", "calc", "*", FALSE, FALSE, SCALE_MUL, 0, MONINT, 2, MONINT, *t);
 			sql_create_func(sa, "sql_div", "calc", "/", FALSE, FALSE, SCALE_DIV, 0, MONINT, 2, MONINT, *t);
-			sql_create_func(sa, "sql_sub", "calc", "-", FALSE, FALSE, SCALE_FIX, 0, SECINT, 2, SECINT, *t);
-			sql_create_func(sa, "sql_add", "calc", "+", FALSE, FALSE, SCALE_FIX, 0, SECINT, 2, SECINT, *t);
 			sql_create_func(sa, "sql_mul", "calc", "*", FALSE, FALSE, SCALE_MUL, 0, SECINT, 2, SECINT, *t);
 			sql_create_func(sa, "sql_div", "calc", "/", FALSE, FALSE, SCALE_DIV, 0, SECINT, 2, SECINT, *t);
 		}
 	}
+
 	for (t = decimals, t++; t != floats; t++) {
 		sql_type **u;
 		for (u = numerical; u != floats; u++) {

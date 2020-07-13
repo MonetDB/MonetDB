@@ -11,7 +11,7 @@
 int
 main(void)
 {
-#ifdef HAVE_FITS
+#ifdef @assert_package_legacyvariable@
     return @DETECT@;
 #else
     return @UNDETECT@;

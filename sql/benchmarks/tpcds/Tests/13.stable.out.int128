@@ -39,15 +39,15 @@ stdout of test '13` in directory 'sql/benchmarks/tpcds` itself:
 #                         AND cd_demo_sk = ss_cdemo_sk
 #                         AND cd_marital_status = 'M'
 #                         AND cd_education_status = 'Advanced Degree'
-% sys.%1,	sys.%2,	sys.%3,	sys.%4 # table_name
-% %1,	%2,	%3,	%4 # name
-% double,	double,	double,	decimal # type
-% 24,	24,	24,	40 # length
-[ 31,	2551.863333,	2365.943333,	14195.66	]
+% sys.%15,	sys.%16,	sys.%17,	sys.%20 # table_name
+% %15,	%16,	%17,	%20 # name
+% double,	decimal,	decimal,	decimal # type
+% 24,	11,	11,	40 # length
+[ 31,	2551.86,	2365.94,	14195.66	]
 
-# 18:31:47 >  
-# 18:31:47 >  "Done."
-# 18:31:47 >  
+# 11:36:57 >  
+# 11:36:57 >  "Done."
+# 11:36:57 >  
 
 # 18:29:57 >  
 # 18:29:57 >  "Done."

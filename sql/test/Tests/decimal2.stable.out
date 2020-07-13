@@ -69,7 +69,7 @@ stdout of test 'decimal2` in directory 'sql/test` itself:
 % .%2 # table_name
 % %2 # name
 % decimal # type
-% 3 # length
+% 2 # length
 [ 0	]
 
 # 20:26:51 >  

@@ -13,8 +13,7 @@
 #include "sql_catalog.h"
 #include "sql_relation.h"
 
-typedef void (*freestack_fptr) (int clientid, backend_stack stk);
-typedef void (*freecode_fptr) (int clientid, backend_code code, backend_stack stk, int nr, char *name);
+typedef void (*freecode_fptr) (int clientid, char *name);
 
 typedef char *(*create_user_fptr) (ptr mvc, char *user, char *passwd, char enc, char *fullname, sqlid schema_id, sqlid grantor_id);
 typedef int  (*drop_user_fptr) (ptr mvc, char *user);
@@ -29,7 +28,6 @@ typedef int  (*resolve_function) (ptr mvc, sql_func *f);
 
 /* backing struct for this interface */
 typedef struct _backend_functions {
-	freestack_fptr fstack;
 	freecode_fptr fcode;
 	create_user_fptr fcuser;
 	drop_user_fptr fduser;
@@ -42,8 +40,7 @@ typedef struct _backend_functions {
 	resolve_function fresolve_function;
 } backend_functions;
 
-extern void backend_freestack(int clientid, backend_stack stk);
-extern void backend_freecode(int clientid, backend_code code, backend_stack stk, int nr, char *name);
+extern void backend_freecode(int clientid, char *name);
 
 extern char *backend_create_user(ptr mvc, char *user, char *passwd, char enc, char *fullname, sqlid defschemid, sqlid grantor);
 extern int  backend_drop_user(ptr mvc, char *user);

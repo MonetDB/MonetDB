@@ -13,6 +13,7 @@
 				   the dependent code into sql_mvc */
 #include "sql_privileges.h"
 #include "sql_env.h"
+#include "sql_qc.h"
 #include "rel_rel.h"
 #include "rel_exp.h"
 #include "rel_xml.h"
@@ -439,40 +440,6 @@ score_func( sql_subfunc *sf, list *tl)
 	return score;
 }
 
-static int
-rel_set_type_param(mvc *sql, sql_subtype *type, sql_rel *rel, sql_exp *rel_exp, int upcast)
-{
-	sql_rel *r = rel;
-	int is_rel = exp_is_rel(rel_exp);
-
-	if (!type || !rel_exp || (rel_exp->type != e_atom && rel_exp->type != e_column && !is_rel))
-		return -1;
-
-	/* use largest numeric types */
-	if (upcast && type->type->eclass == EC_NUM)
-#ifdef HAVE_HGE
-		type = sql_bind_localtype(have_hge ? "hge" : "lng");
-#else
-		type = sql_bind_localtype("lng");
-#endif
-	if (upcast && type->type->eclass == EC_FLT)
-		type = sql_bind_localtype("dbl");
-
-	if (is_rel)
-		r = (sql_rel*) rel_exp->l;
-
-	if ((rel_exp->type == e_atom && (rel_exp->l || rel_exp->r || rel_exp->f)) || rel_exp->type == e_column || is_rel) {
-		/* it's not a parameter set possible parameters below */
-		const char *relname = exp_relname(rel_exp), *expname = exp_name(rel_exp);
-		if (rel_set_type_recurse(sql, type, r, &relname, &expname) < 0)
-			return -1;
-	} else if (set_type_param(sql, type, rel_exp->flag) != 0)
-		return -1;
-
-	rel_exp->tpe = *type;
-	return 0;
-}
-
 static sql_exp *
 find_table_function_type(mvc *sql, sql_schema *s, char *fname, list *exps, list *tl, sql_ftype type, sql_subfunc **sf)
 {
@@ -534,7 +501,7 @@ find_table_function_type(mvc *sql, sql_schema *s, char *fname, list *exps, list 
 
 				if (a->type.type->eclass == EC_ANY && atp)
 					ntp = sql_create_subtype(sql->sa, atp->type, atp->digits, atp->scale);
-				e = rel_check_type(sql, ntp, NULL, e, type_equal);
+				e = exp_check_type(sql, ntp, NULL, e, type_equal);
 				if (!e) {
 					nexps = NULL;
 					break;
@@ -687,63 +654,6 @@ rel_op_(mvc *sql, sql_schema *s, char *fname, exp_kind ek)
 }
 
 static sql_exp*
-exp_values_set_supertype(mvc *sql, sql_exp *values, sql_exp *opt_le)
-{
-	assert(is_values(values));
-	list *vals = exp_get_values(values), *nexps;
-	sql_subtype *tpe = opt_le?exp_subtype(opt_le):exp_subtype(vals->h->data);
-
-	if (!opt_le && tpe)
-		values->tpe = *tpe;
-
-	for (node *m = vals->h; m; m = m->next) {
-		sql_exp *e = m->data;
-		sql_subtype super, *ttpe;
-
-		/* if the expression is a parameter set its type */
-		if (tpe && e->type == e_atom && !e->l && !e->r && !e->f && !e->tpe.type) {
-			if (set_type_param(sql, tpe, e->flag) == 0)
-				e->tpe = *tpe;
-			else
-				return NULL;
-		}
-		ttpe = exp_subtype(e);
-		if (tpe && ttpe) {
-			supertype(&super, ttpe, tpe);
-			values->tpe = super;
-			tpe = &values->tpe;
-		} else {
-			tpe = ttpe;
-		}
-	}
-
-	if (tpe) {
-		/* if the expression is a parameter set its type */
-		for (node *m = vals->h; m; m = m->next) {
-			sql_exp *e = m->data;
-			if (e->type == e_atom && !e->l && !e->r && !e->f && !e->tpe.type) {
-				if (set_type_param(sql, tpe, e->flag) == 0)
-					e->tpe = *tpe;
-				else
-					return NULL;
-			}
-		}
-		values->tpe = *tpe;
-		nexps = sa_list(sql->sa);
-		for (node *m = vals->h; m; m = m->next) {
-			sql_exp *e = m->data;
-			e = rel_check_type(sql, &values->tpe, NULL, e, type_equal);
-			if (!e)
-				return NULL;
-			exp_label(sql->sa, e, ++sql->label);
-			append(nexps, e);
-		}
-		values->f = nexps;
-	}
-	return values;
-}
-
-static sql_exp*
 exp_tuples_set_supertype(mvc *sql, list *tuple_values, sql_exp *tuples)
 {
 	assert(is_values(tuples));
@@ -799,7 +709,7 @@ exp_tuples_set_supertype(mvc *sql, list *tuple_values, sql_exp *tuples)
 		for(n = tuple_relation->exps->h, i = 0; n; n = n->next, i++) {
 			sql_exp *e = n->data;
 
-			e = rel_check_type(sql, types+i, NULL, e, type_equal);
+			e = exp_check_type(sql, types+i, NULL, e, type_equal);
 			if (!e)
 				return NULL;
 			exp_label(sql->sa, e, ++sql->label);
@@ -842,7 +752,7 @@ tuples_check_types(mvc *sql, list *tuple_values, sql_exp *tuples)
 
 		if (rel_binop_check_types(sql, NULL, le, re, 0) < 0)
 			return NULL;
-		if ((le = rel_check_type(sql, exp_subtype(re), NULL, le, type_equal)) == NULL)
+		if ((le = exp_check_type(sql, exp_subtype(re), NULL, le, type_equal)) == NULL)
 			return NULL;
 		append(nvalues, le);
 	}
@@ -1137,28 +1047,7 @@ rel_column_ref(sql_query *query, sql_rel **rel, symbol *column_r, int f)
 	assert((column_r->token == SQL_COLUMN || column_r->token == SQL_IDENT) && column_r->type == type_list);
 	l = column_r->data.lval;
 
-	if (dlist_length(l) == 1 && l->h->type == type_int) {
-		int nr = l->h->data.i_val;
-		atom *a;
-		if ((a = sql_bind_arg(sql, nr)) != NULL) {
-			if (EC_TEMP_FRAC(atom_type(a)->type->eclass)) {
-				/* fix fraction */
-				sql_subtype *st = atom_type(a), t;
-				int digits = st->digits;
-				sql_exp *e;
-
-				sql_find_subtype(&t, st->type->sqlname, digits, 0);
-
-				st->digits = 3;
-				e = exp_atom_ref(sql->sa, nr, st);
-
-				return exp_convert(sql->sa, e, st, &t);
-			} else {
-				return exp_atom_ref(sql->sa, nr, atom_type(a));
-			}
-		}
-		return NULL;
-	} else if (dlist_length(l) == 1) {
+	if (dlist_length(l) == 1) {
 		const char *name = l->h->data.sval;
 
 		if (!exp && inner)
@@ -1390,112 +1279,23 @@ exp_fix_scale(mvc *sql, sql_subtype *ct, sql_exp *e, int both, int always)
 	return e;
 }
 
-/* try to do an in-place conversion
- *
- * in-place conversion is only possible if the exp is a variable.
- * This is only done to be able to map more cached queries onto the same
- * interface.
- */
-
-static void
-convert_atom(atom *a, sql_subtype *rt)
+static sql_subtype*
+largest_numeric_type(sql_subtype *res, int ec)
 {
-	if (atom_null(a)) {
-		if (a->data.vtype != rt->type->localtype) {
-			const void *p;
-
-			a->data.vtype = rt->type->localtype;
-			p = ATOMnilptr(a->data.vtype);
-			VALset(&a->data, a->data.vtype, (ptr) p);
-		}
-	}
-	a->tpe = *rt;
-}
-
-static sql_exp *
-exp_convert_inplace(mvc *sql, sql_subtype *t, sql_exp *exp)
-{
-	atom *a;
-
-	/* exclude named variables and variable lists */
-	if (exp->type != e_atom || exp->r /* named */ || exp->f /* list */ || !exp->l /* not direct atom */)
-		return NULL;
-
-	a = exp->l;
-	if (t->scale && t->type->eclass != EC_FLT)
-		return NULL;
-
-	if (a && atom_cast(sql->sa, a, t)) {
-		convert_atom(a, t);
-		exp->tpe = *t;
-		return exp;
-	}
-	return NULL;
-}
-
-static sql_exp *
-rel_numeric_supertype(mvc *sql, sql_exp *e )
-{
-	sql_subtype *tp = exp_subtype(e);
-
-	if (tp->type->eclass == EC_DEC) {
-		sql_subtype *dtp = sql_bind_localtype("dbl");
-
-		return rel_check_type(sql, dtp, NULL, e, type_cast);
-	}
-	if (tp->type->eclass == EC_NUM) {
+	if (ec == EC_NUM) {
 #ifdef HAVE_HGE
-		sql_subtype *ltp = sql_bind_localtype(have_hge ? "hge" : "lng");
+		*res = *sql_bind_localtype(have_hge ? "hge" : "lng");
 #else
-		sql_subtype *ltp = sql_bind_localtype("lng");
+		*res = *sql_bind_localtype("lng");
 #endif
-
-		return rel_check_type(sql, ltp, NULL, e, type_cast);
-	}
-	return e;
-}
-
-sql_exp *
-rel_check_type(mvc *sql, sql_subtype *t, sql_rel *rel, sql_exp *exp, check_type tpe)
-{
-	int c, err = 0;
-	sql_exp* nexp = NULL;
-	sql_subtype *fromtype = exp_subtype(exp);
-
-	if ((!fromtype || !fromtype->type) && rel_set_type_param(sql, t, rel, exp, 0) == 0)
-		return exp;
-
-	/* first try cheap internal (in-place) conversions ! */
-	if ((nexp = exp_convert_inplace(sql, t, exp)) != NULL)
-		return nexp;
-
-	if (fromtype && subtype_cmp(t, fromtype) != 0) {
-		if (EC_INTERVAL(fromtype->type->eclass) && (t->type->eclass == EC_NUM || t->type->eclass == EC_POS) && t->digits < fromtype->digits) {
-			err = 1; /* conversion from interval to num depends on the number of digits */
-		} else {
-			c = sql_type_convert(fromtype->type->eclass, t->type->eclass);
-			if (!c || (c == 2 && tpe == type_set) || (c == 3 && tpe != type_cast)) {
-				err = 1;
-			} else {
-				exp = exp_convert(sql->sa, exp, fromtype, t);
-			}
-		}
-	}
-	if (err) {
-		sql_exp *res = sql_error( sql, 03, SQLSTATE(42000) "types %s(%u,%u) and %s(%u,%u) are not equal%s%s%s",
-			fromtype->type->sqlname,
-			fromtype->digits,
-			fromtype->scale,
-			t->type->sqlname,
-			t->digits,
-			t->scale,
-			(exp->type == e_column ? " for column '" : ""),
-			(exp->type == e_column ? exp_name(exp) : ""),
-			(exp->type == e_column ? "'" : "")
-		);
 		return res;
 	}
-	return exp;
+	if (ec == EC_DEC && sql_find_subtype(res, "decimal", 38, 0)) {
+		/* we don't know the precision nor scale ie we use a double */
+		*res = *sql_bind_localtype("dbl");
+		return res;
+	}
+	return NULL;
 }
 
 static sql_exp *
@@ -1534,7 +1334,7 @@ exp_scale_algebra(mvc *sql, sql_subfunc *f, sql_rel *rel, sql_exp *l, sql_exp *r
 		}
 
 		sql_find_subtype(&nlt, lt->type->sqlname, digL, scaleL);
-		l = rel_check_type( sql, &nlt, rel, l, type_equal);
+		l = exp_check_type( sql, &nlt, rel, l, type_equal);
 
 		sql_find_subtype(res, lt->type->sqlname, digits, scale);
 	}
@@ -1568,16 +1368,16 @@ rel_convert_types(mvc *sql, sql_rel *ll, sql_rel *rr, sql_exp **L, sql_exp **R, 
 			supertype(&super, r, i);
 			if (scale_fixing) {
 				/* convert ls to super type */
-				ls = rel_check_type(sql, &super, ll, ls, tpe);
+				ls = exp_check_type(sql, &super, ll, ls, tpe);
 				/* convert rs to super type */
-				rs = rel_check_type(sql, &super, rr, rs, tpe);
+				rs = exp_check_type(sql, &super, rr, rs, tpe);
 			} else {
 				/* convert ls to super type */
 				super.scale = lt->scale;
-				ls = rel_check_type(sql, &super, ll, ls, tpe);
+				ls = exp_check_type(sql, &super, ll, ls, tpe);
 				/* convert rs to super type */
 				super.scale = rt->scale;
-				rs = rel_check_type(sql, &super, rr, rs, tpe);
+				rs = exp_check_type(sql, &super, rr, rs, tpe);
 			}
 		}
 		*L = ls;
@@ -1665,7 +1465,7 @@ rel_filter(mvc *sql, sql_rel *rel, list *l, list *r, char *sname, char *filter_o
 			sql_arg *a = m->data;
 			sql_exp *e = n->data;
 
-			e = rel_check_type(sql, &a->type, rel, e, type_equal);
+			e = exp_check_type(sql, &a->type, rel, e, type_equal);
 			if (!e)
 				return NULL;
 			list_append(nexps, e);
@@ -1676,7 +1476,7 @@ rel_filter(mvc *sql, sql_rel *rel, list *l, list *r, char *sname, char *filter_o
 			sql_arg *a = m->data;
 			sql_exp *e = n->data;
 
-			e = rel_check_type(sql, &a->type, rel, e, type_equal);
+			e = exp_check_type(sql, &a->type, rel, e, type_equal);
 			if (!e)
 				return NULL;
 			list_append(nexps, e);
@@ -1759,7 +1559,7 @@ rel_compare_exp_(sql_query *query, sql_rel *rel, sql_exp *ls, sql_exp *rs, sql_e
 		} else {
 			if (rel_binop_check_types(sql, rel, ls, rs, 0) < 0)
 				return NULL;
-			e = exp_compare_func(sql, ls, rs, rs2, compare_func((comp_type)type, quantifier?0:anti), quantifier);
+			e = exp_compare_func(sql, ls, rs, compare_func((comp_type)type, quantifier?0:anti), quantifier);
 			if (anti && quantifier)
 				if (!(e = rel_unop_(sql, NULL, e, NULL, "not", card_value)))
 					return NULL;
@@ -1782,8 +1582,8 @@ rel_compare_exp_(sql_query *query, sql_rel *rel, sql_exp *ls, sql_exp *rs, sql_e
 			return NULL;
 		e = exp_compare(sql->sa, ls, rs, type);
 	} else {
-		if ((rs = rel_check_type(sql, exp_subtype(ls), rel, rs, type_equal)) == NULL ||
-	   	    (rs2 && (rs2 = rel_check_type(sql, exp_subtype(ls), rel, rs2, type_equal)) == NULL))
+		if ((rs = exp_check_type(sql, exp_subtype(ls), rel, rs, type_equal)) == NULL ||
+	   	    (rs2 && (rs2 = exp_check_type(sql, exp_subtype(ls), rel, rs2, type_equal)) == NULL))
 			return NULL;
 		e = exp_compare2(sql->sa, ls, rs, rs2, type);
 	}
@@ -1916,16 +1716,13 @@ rel_compare(sql_query *query, sql_rel *rel, symbol *sc, symbol *lo, symbol *ro, 
 }
 
 static sql_exp*
-_rel_nop(mvc *sql, sql_schema *s, char *fname, list *tl, sql_rel *rel, list *exps, sql_subtype *obj_type, int nr_args,
-		 exp_kind ek)
+_rel_nop(mvc *sql, sql_schema *s, char *fname, list *tl, sql_rel *rel, list *exps, exp_kind ek)
 {
 	sql_subfunc *f = NULL;
 	int table_func = (ek.card == card_relation);
 	sql_ftype type = (ek.card == card_loader)?F_LOADER:((ek.card == card_none)?F_PROC:
 		   ((ek.card == card_relation)?F_UNION:F_FUNC));
 
-	(void)nr_args;
-	(void)obj_type;
 	f = bind_func_(sql, s, fname, tl, type);
 	if (f) {
 		return exp_op(sql->sa, exps, f);
@@ -1982,7 +1779,7 @@ _rel_nop(mvc *sql, sql_schema *s, char *fname, list *tl, sql_rel *rel, list *exp
 
 				if (a->type.type->eclass == EC_ANY && atp)
 					ntp = sql_create_subtype(sql->sa, atp->type, atp->digits, atp->scale);
-				e = rel_check_type(sql, ntp, rel, e, type_equal);
+				e = exp_check_type(sql, ntp, rel, e, type_equal);
 				if (!e) {
 					nexps = NULL;
 					break;
@@ -2156,7 +1953,7 @@ rel_in_value_exp(sql_query *query, sql_rel **rel, symbol *sc, int f)
 		} else { /* if it's not a tuple, enforce coersion on the type for every element on the list */
 			sql_subtype super;
 
-			if (!(values = exp_values_set_supertype(sql, values, le)))
+			if (!(values = exp_values_set_supertype(sql, values, exp_subtype(le))))
 				return NULL;
 			if (rel_binop_check_types(sql, rel ? *rel : NULL, le, values, 0) < 0)
 				return NULL;
@@ -2171,14 +1968,14 @@ rel_in_value_exp(sql_query *query, sql_rel **rel, symbol *sc, int f)
 					e = exp_compare(sql->sa, le, first, (sc->token == SQL_IN) ? cmp_equal : cmp_notequal);
 				} else { /* use cmp_in instead of anyequal for n simple expressions */
 					for (node *n = vals->h ; n ; n = n->next)
-						if ((n->data = rel_check_type(sql, &super, rel ? *rel : NULL, n->data, type_equal)) == NULL)
+						if ((n->data = exp_check_type(sql, &super, rel ? *rel : NULL, n->data, type_equal)) == NULL)
 							return NULL;
-					if ((le = rel_check_type(sql, &super, rel ? *rel : NULL, le, type_equal)) == NULL)
+					if ((le = exp_check_type(sql, &super, rel ? *rel : NULL, le, type_equal)) == NULL)
 						return NULL;
 					e = exp_in(sql->sa, le, vals, (sc->token == SQL_IN) ? cmp_in : cmp_notin);
 				}
 			}
-			if (!e && (le = rel_check_type(sql, &super, rel ? *rel : NULL, le, type_equal)) == NULL)
+			if (!e && (le = exp_check_type(sql, &super, rel ? *rel : NULL, le, type_equal)) == NULL)
 				return NULL;
 		}
 		if (!e)
@@ -2282,9 +2079,17 @@ negate_symbol_tree(mvc *sql, symbol *sc)
 	case SQL_IS_NOT_NULL:
 		sc->token = SQL_IS_NULL;
 		break;
-	case SQL_NOT: /* nested NOTs eliminate each other */
-		memmove(sc, sc->data.sym, sizeof(symbol));
-		break;
+	case SQL_NOT: { /* nested NOTs eliminate each other */
+		if (sc->data.sym->token == SQL_ATOM) {
+			AtomNode *an = (AtomNode*) sc->data.sym;
+			memmove(sc, an, sizeof(AtomNode));
+		} else if (sc->data.sym->token == SQL_SELECT) {
+			SelectNode *sn = (SelectNode*) sc->data.sym;
+			memmove(sc, sn, sizeof(SelectNode));
+		} else {
+			memmove(sc, sc->data.sym, sizeof(symbol));
+		}
+	} break;
 	case SQL_COMPARE: {
 		dnode *cmp_n = sc->data.lval->h;
 		comp_type neg_cmp_type = negate_compare(compare_str2type(cmp_n->next->data.sval)); /* negate the comparator */
@@ -2297,8 +2102,7 @@ negate_symbol_tree(mvc *sql, symbol *sc)
 		negate_symbol_tree(sql, sc->data.lval->h->data.sym);
 		negate_symbol_tree(sql, sc->data.lval->h->next->data.sym);
 		sc->token = sc->token == SQL_AND ? SQL_OR : SQL_AND;
-		break;
-	}
+	} break;
 	default:
 		break;
 	}
@@ -2369,7 +2173,7 @@ rel_logical_value_exp(sql_query *query, sql_rel **rel, symbol *sc, int f, exp_ki
 			append(tl, exp_subtype(e));
 		}
 		/* find the predicate filter function */
-		return _rel_nop(sql, s, fname, tl, rel ? *rel : NULL, exps, obj_type, list_length(exps), ek);
+		return _rel_nop(sql, s, fname, tl, rel ? *rel : NULL, exps, ek);
 	}
 	case SQL_COMPARE:
 	{
@@ -2423,7 +2227,7 @@ rel_logical_value_exp(sql_query *query, sql_rel **rel, symbol *sc, int f, exp_ki
 
 		if (rel_binop_check_types(sql, rel ? *rel : NULL, ls, rs, 0) < 0)
 			return NULL;
-		ls = exp_compare_func(sql, ls, rs, NULL, compare_func(compare_str2type(compare_op), quantifier?0:need_not), quantifier);
+		ls = exp_compare_func(sql, ls, rs, compare_func(compare_str2type(compare_op), quantifier?0:need_not), quantifier);
 		if (need_not && quantifier)
 			ls = rel_unop_(sql, NULL, ls, NULL, "not", card_value);
 		return ls;
@@ -2460,7 +2264,7 @@ rel_logical_value_exp(sql_query *query, sql_rel **rel, symbol *sc, int f, exp_ki
 		re = rel_value_exp(query, rel, lo, f, ek);
 		if (!re)
 			return NULL;
-		if ((re = rel_check_type(sql, st, rel ? *rel : NULL, re, type_equal)) == NULL)
+		if ((re = exp_check_type(sql, st, rel ? *rel : NULL, re, type_equal)) == NULL)
 			return sql_error(sql, 02, SQLSTATE(42000) "LIKE: wrong type, should be string");
 		/* Do we need to escape ? */
 		if (dlist_length(ro->data.lval) == 2) {
@@ -2536,12 +2340,7 @@ rel_logical_value_exp(sql_query *query, sql_rel **rel, symbol *sc, int f, exp_ki
 
 		if (!le)
 			return NULL;
-		le = rel_unop_(sql, rel ? *rel : NULL, le, NULL, "isnull", card_value);
-		if (!le)
-			return NULL;
-		set_has_no_nil(le);
-		if (sc->token != SQL_IS_NULL)
-			le = rel_unop_(sql, rel ? *rel : NULL, le, NULL, "not", card_value);
+		le = rel_unop_(sql, rel ? *rel : NULL, le, NULL, sc->token == SQL_IS_NULL ? "isnull" : "isnotnull", card_value);
 		if (!le)
 			return NULL;
 		set_has_no_nil(le);
@@ -2595,7 +2394,7 @@ rel_logical_value_exp(sql_query *query, sql_rel **rel, symbol *sc, int f, exp_ki
 		if (!le)
 			return NULL;
 		sql_find_subtype(&bt, "boolean", 0, 0);
-		if ((le = rel_check_type(sql, &bt, rel ? *rel : NULL, le, type_equal)) == NULL)
+		if ((le = exp_check_type(sql, &bt, rel ? *rel : NULL, le, type_equal)) == NULL)
 			return NULL;
 		return rel_binop_(sql, rel ? *rel : NULL, le, exp_atom_bool(sql->sa, 1), NULL, "=", 0);
 	}
@@ -2747,9 +2546,9 @@ rel_logical_exp(sql_query *query, sql_rel *rel, symbol *sc, int f)
 		re = rel_value_exp(query, &rel, ro, f, ek);
 		if (!re)
 			return NULL;
-		if ((re = rel_check_type(sql, st, rel, re, type_equal)) == NULL)
+		if ((re = exp_check_type(sql, st, rel, re, type_equal)) == NULL)
 			return sql_error(sql, 02, SQLSTATE(42000) "LIKE: wrong type, should be string");
-		if ((le = rel_check_type(sql, st, rel, le, type_equal)) == NULL)
+		if ((le = exp_check_type(sql, st, rel, le, type_equal)) == NULL)
 			return sql_error(sql, 02, SQLSTATE(42000) "LIKE: wrong type, should be string");
 		return rel_filter_exp_(sql, rel, le, re, ee, (insensitive ? "ilike" : "like"), anti, f);
 	}
@@ -2835,10 +2634,11 @@ rel_logical_exp(sql_query *query, sql_rel *rel, symbol *sc, int f)
 
 		if (!le)
 			return NULL;
-		if (!(le = rel_unop_(sql, rel, le, NULL, "isnull", card_value)))
-			return NULL;
+		le = exp_compare(sql->sa, le, exp_atom(sql->sa, atom_general(sql->sa, exp_subtype(le), NULL)), cmp_equal);
+		if (sc->token == SQL_IS_NOT_NULL)
+			set_anti(le);
 		set_has_no_nil(le);
-		le = exp_compare(sql->sa, le, exp_atom_bool(sql->sa, (sc->token == SQL_IS_NULL) ? 1 : 0), cmp_equal);
+		set_semantics(le);
 		return rel_select_push_exp_down(sql, rel, le, le->l, le->l, le->r, le->r, NULL, f);
 	}
 	case SQL_NOT: {
@@ -2870,7 +2670,7 @@ rel_logical_exp(sql_query *query, sql_rel *rel, symbol *sc, int f)
 			sql_subtype bt;
 
 			sql_find_subtype(&bt, "boolean", 0, 0);
-			e = rel_check_type(sql, &bt, rel, e, type_equal);
+			e = exp_check_type(sql, &bt, rel, e, type_equal);
 		}
 		if (!e || or != rel)
 			return NULL;
@@ -2897,7 +2697,7 @@ rel_logical_exp(sql_query *query, sql_rel *rel, symbol *sc, int f)
 			sql_subtype bt;
 
 			sql_find_subtype(&bt, "boolean", 0, 0);
-			le = rel_check_type(sql, &bt, rel, le, type_equal);
+			le = exp_check_type(sql, &bt, rel, le, type_equal);
 			if (!le)
 				return NULL;
 			le = exp_compare(sql->sa, le, exp_atom_bool(sql->sa, 1), cmp_equal);
@@ -2916,7 +2716,7 @@ rel_logical_exp(sql_query *query, sql_rel *rel, symbol *sc, int f)
 		if (!le)
 			return NULL;
 		sql_find_subtype(&bt, "boolean", 0, 0);
-		if (!(le = rel_check_type(sql, &bt, rel, le, type_equal)))
+		if (!(le = exp_check_type(sql, &bt, rel, le, type_equal)))
 			return NULL;
 		le = exp_compare(sql->sa, le, exp_atom_bool(sql->sa, 1), cmp_equal);
 		return rel_select_push_exp_down(sql, rel, le, le->l, le->l, le->r, le->r, NULL, f);
@@ -2942,14 +2742,6 @@ rel_op(sql_query *query, sql_rel **rel, symbol *se, int f, exp_kind ek )
 		return sql_error(sql, 02, SQLSTATE(3F000) "SELECT: no such schema '%s'", sname);
 
 	sf = find_func(sql, s, fname, 0, F_AGGR, NULL);
-	if (!sf && *rel && (*rel)->card == CARD_AGGR) {
-		if (is_sql_having(f) || is_sql_orderby(f))
-			return NULL;
-		/* reset error */
-		sql->session->status = 0;
-		sql->errstr[0] = '\0';
-		return sql_error(sql, 02, SQLSTATE(42000) "SELECT: no such aggregate '%s'", fname);
-	}
 	if (sf)
 		return _rel_aggr(query, rel, 0, s, fname, NULL, f);
 	return rel_op_(sql, s, fname, ek);
@@ -3005,7 +2797,7 @@ rel_unop_(mvc *sql, sql_rel *rel, sql_exp *e, sql_schema *s, char *fname, int ca
 			if (!f->func->vararg) {
 				sql_arg *a = f->func->ops->h->data;
 
-				e = rel_check_type(sql, &a->type, rel, e, type_equal);
+				e = exp_check_type(sql, &a->type, rel, e, type_equal);
 			}
 			if (e)
 				break;
@@ -3068,6 +2860,10 @@ rel_unop(sql_query *query, sql_rel **rel, symbol *se, int f, exp_kind ek)
 
 #define is_addition(fname) (strcmp(fname, "sql_add") == 0)
 #define is_subtraction(fname) (strcmp(fname, "sql_sub") == 0)
+#define is_multiplication(fname) (strcmp(fname, "sql_mul") == 0)
+#define is_division(fname) (strcmp(fname, "sql_div") == 0)
+
+#define is_numeric_dyadic_func(fname) (is_addition(fname) || is_subtraction(fname) || is_multiplication(fname) || is_division(fname))
 
 sql_exp *
 rel_binop_(mvc *sql, sql_rel *rel, sql_exp *l, sql_exp *r, sql_schema *s, char *fname, int card)
@@ -3108,9 +2904,9 @@ rel_binop_(mvc *sql, sql_rel *rel, sql_exp *l, sql_exp *r, sql_schema *s, char *
 		sql_subtype ntp;
 
 		sql_find_numeric(&ntp, t1->type->localtype, t1->digits+1);
-		l = rel_check_type(sql, &ntp, rel, l, type_equal);
+		l = exp_check_type(sql, &ntp, rel, l, type_equal);
 		sql_find_numeric(&ntp, t2->type->localtype, t2->digits+1);
-		r = rel_check_type(sql, &ntp, rel, r, type_equal);
+		r = exp_check_type(sql, &ntp, rel, r, type_equal);
 		t1 = exp_subtype(l);
 		t2 = exp_subtype(r);
 	}
@@ -3126,6 +2922,31 @@ rel_binop_(mvc *sql, sql_rel *rel, sql_exp *l, sql_exp *r, sql_schema *s, char *
 			res = l;
 			l = r;
 			r = res;
+		}
+	}
+	if (!f) {
+		if (is_numeric_dyadic_func(fname)) {
+			if (EC_NUMBER(t1->type->eclass) && !EC_NUMBER(t2->type->eclass)) {
+				sql_subtype tp;
+				if (!largest_numeric_type(&tp, t1->type->eclass))
+					tp = *t1; /* for float and interval fall back too the same as left */
+				r = exp_check_type(sql, &tp, rel, r, type_equal);
+				if (!r)
+					return NULL;
+				t2 = exp_subtype(r);
+			} else if (!EC_NUMBER(t1->type->eclass) && !EC_TEMP(t1->type->eclass) && EC_NUMBER(t2->type->eclass)) {
+				sql_subtype tp;
+				if (!largest_numeric_type(&tp, t2->type->eclass))
+					tp = *t2; /* for float and interval fall back too the same as right */
+				l = exp_check_type(sql, &tp, rel, l, type_equal);
+				if (!l)
+					return NULL;
+				t1 = exp_subtype(l);
+			} else if (!EC_NUMBER(t1->type->eclass) && !EC_TEMP(t1->type->eclass) && !EC_NUMBER(t2->type->eclass)) {
+				return sql_error(sql, 02, SQLSTATE(42000) "SELECT: no such binary operator '%s(%s,%s)'", fname,
+					exp_subtype(l)->type->sqlname,
+					exp_subtype(r)->type->sqlname);
+			}
 		}
 	}
 	if (f && check_card(card,f)) {
@@ -3166,12 +2987,12 @@ rel_binop_(mvc *sql, sql_rel *rel, sql_exp *l, sql_exp *r, sql_schema *s, char *
 
 			if (t1->type->eclass == EC_ANY && t2->type->eclass == EC_ANY) {
 				sql_subtype *s = sql_bind_localtype("str");
-				l = rel_check_type(sql, s, rel, l, type_equal);
-				r = rel_check_type(sql, s, rel, r, type_equal);
+				l = exp_check_type(sql, s, rel, l, type_equal);
+				r = exp_check_type(sql, s, rel, r, type_equal);
 			} else if (t1->type->eclass == EC_ANY) {
-				l = rel_check_type(sql, t2, rel, l, type_equal);
+				l = exp_check_type(sql, t2, rel, l, type_equal);
 			} else {
-				r = rel_check_type(sql, t1, rel, r, type_equal);
+				r = exp_check_type(sql, t1, rel, r, type_equal);
 			}
 			if (l && r)
 				return exp_binop(sql->sa, l, r, f);
@@ -3202,9 +3023,9 @@ rel_binop_(mvc *sql, sql_rel *rel, sql_exp *l, sql_exp *r, sql_schema *s, char *
 				if (!check_card(card,f))
 					continue;
 
-				l = rel_check_type(sql, &a->type, rel, l, type_equal);
+				l = exp_check_type(sql, &a->type, rel, l, type_equal);
 				a = m->next->data;
-				r = rel_check_type(sql, &a->type, rel, r, type_equal);
+				r = exp_check_type(sql, &a->type, rel, r, type_equal);
 				if (l && r)
 					return exp_binop(sql->sa, l, r, f);
 
@@ -3258,9 +3079,9 @@ rel_binop_(mvc *sql, sql_rel *rel, sql_exp *l, sql_exp *r, sql_schema *s, char *
 			node *m = f->func->ops->h;
 			sql_arg *a = m->data;
 
-			l = rel_check_type(sql, &a->type, rel, l, type_equal);
+			l = exp_check_type(sql, &a->type, rel, l, type_equal);
 			a = m->next->data;
-			r = rel_check_type(sql, &a->type, rel, r, type_equal);
+			r = exp_check_type(sql, &a->type, rel, r, type_equal);
 			if (l && r)
 				return exp_binop(sql->sa, l, r, f);
 		}
@@ -3277,9 +3098,9 @@ rel_binop_(mvc *sql, sql_rel *rel, sql_exp *l, sql_exp *r, sql_schema *s, char *
 				node *m = f->func->ops->h;
 				sql_arg *a = m->data;
 
-				l = rel_check_type(sql, &a->type, rel, l, type_equal);
+				l = exp_check_type(sql, &a->type, rel, l, type_equal);
 				a = m->next->data;
-				r = rel_check_type(sql, &a->type, rel, r, type_equal);
+				r = exp_check_type(sql, &a->type, rel, r, type_equal);
 			}
 			if (l && r)
 				return exp_binop(sql->sa, l, r, f);
@@ -3349,43 +3170,85 @@ rel_nop_(mvc *sql, sql_rel *rel, sql_exp *a1, sql_exp *a2, sql_exp *a3, sql_exp 
 }
 
 static sql_exp *
-rel_nop(sql_query *query, sql_rel **rel, symbol *se, int f, exp_kind ek)
+rel_nop(sql_query *query, sql_rel **rel, symbol *se, int fs, exp_kind ek)
 {
 	mvc *sql = query->sql;
+	int nr_args = 0;
 	dnode *l = se->data.lval->h;
-	int nr_args = dlist_length(l->next->next->data.lval);
-	dnode *ops = l->next->next->data.lval->h;
-	list *exps = new_exp_list(sql->sa);
-	list *tl = sa_list(sql->sa);
+	dnode *ops = l->next->next->data.lval?l->next->next->data.lval->h:NULL;
+	list *exps = sa_list(sql->sa), *tl = sa_list(sql->sa);
 	sql_subfunc *sf = NULL;
-	sql_subtype *obj_type = NULL;
-	char *fname = qname_schema_object(l->data.lval);
-	char *sname = qname_schema(l->data.lval);
 	sql_schema *s = cur_schema(sql);
 	exp_kind iek = {type_value, card_column, FALSE};
+	int err = 0;
+
+	for (; ops; ops = ops->next, nr_args++) {
+		sql_exp *e = rel_value_exp(query, rel, ops->data.sym, fs, iek);
+		sql_subtype *tpe;
+
+		if (!e)
+			err = 1;
+		append(exps, e);
+		if (e) {
+			tpe = exp_subtype(e);
+			append(tl, tpe);
+		}
+	}
+	if (l->type == type_int) {
+		/* exec nr (ops)*/
+		int nr = l->data.i_val;
+		cq *q = qc_find(sql->qc, nr);
+
+		if (q) {
+			node *n, *m;
+			list *nexps = new_exp_list(sql->sa);
+			sql_func *f = q->f;
+
+			tl = sa_list(sql->sa);
+			if (list_length(f->ops) != list_length(exps))
+				return sql_error(sql, 02, SQLSTATE(42000) "EXEC called with wrong number of arguments: expected %d, got %d", list_length(f->ops), list_length(exps));
+			if (exps->h && f->ops) {
+				for (n = exps->h, m = f->ops->h; n && m; n = n->next, m = m->next) {
+					sql_arg *a = m->data;
+					sql_exp *e = n->data;
+					sql_subtype *ntp = &a->type;
+
+					e = exp_check_type(sql, ntp, NULL, e, type_equal);
+					if (!e) {
+						nexps = NULL;
+						break;
+					}
+					append(nexps, e);
+					append(tl, exp_subtype(e));
+				}
+			}
+			sql->type = q->type;
+			if (nexps)
+				return exp_op(sql->sa, nexps, sql_dup_subfunc(sql->sa, f, tl, NULL));
+		} else {
+			return sql_error(sql, 02, SQLSTATE(42000) "EXEC: PREPARED Statement missing '%d'", nr);
+		}
+	}
+	char *fname = qname_schema_object(l->data.lval);
+	char *sname = qname_schema(l->data.lval);
 
 	if (sname && !(s = mvc_bind_schema(sql, sname)))
 		return sql_error(sql, 02, SQLSTATE(3F000) "SELECT: no such schema '%s'", sname);
 
+	/* first try aggregate */
 	sf = find_func(sql, s, fname, nr_args, F_AGGR, NULL);
-	if (sf) /* We have to pas the arguments properly, so skip call to rel_aggr */
-		return _rel_aggr(query, rel, l->next->data.i_val, s, fname, l->next->next->data.lval->h, f);
 
-	for (nr_args = 0; ops; ops = ops->next, nr_args++) {
-		sql_exp *e = rel_value_exp(query, rel, ops->data.sym, f|sql_farg, iek);
-		sql_subtype *tpe;
-
-		if (!e)
-			return NULL;
-		append(exps, e);
-		if (e) {
-			tpe = exp_subtype(e);
-			if (!nr_args)
-				obj_type = tpe;
-			append(tl, tpe);
+	if (sf) { /* We have to pas the arguments properly, so skip call to rel_aggr */
+		if (err) {
+			/* reset error */
+			sql->session->status = 0;
+			sql->errstr[0] = '\0';
 		}
+		return _rel_aggr(query, rel, l->next->data.i_val, s, fname, l->next->next->data.lval->h, fs);
 	}
-	return _rel_nop(sql, s, fname, tl, rel ? *rel : NULL, exps, obj_type, nr_args, ek);
+	if (err)
+		return NULL;
+	return _rel_nop(sql, s, fname, tl, rel ? *rel : NULL, exps, ek);
 }
 
 static sql_exp *
@@ -3437,9 +3300,9 @@ _rel_aggr(sql_query *query, sql_rel **rel, int distinct, sql_schema *s, char *an
 			if (uaname)
 				GDKfree(uaname);
 			return e;
-		} else if (is_sql_update_set(f) || is_sql_psm_set(f)) {
+		} else if (is_sql_update_set(f) || is_sql_psm(f)) {
 			char *uaname = GDKmalloc(strlen(aname) + 1);
-			sql_exp *e = sql_error(sql, 02, SQLSTATE(42000) "%s: aggregate functions not allowed in SET clause (use subquery)",
+			sql_exp *e = sql_error(sql, 02, SQLSTATE(42000) "%s: aggregate functions not allowed in SET, WHILE, IF, ELSE, CASE, WHEN, RETURN, ANALYZE clauses (use subquery)",
 						uaname ? toUpperCopy(uaname, aname) : aname);
 			if (uaname)
 				GDKfree(uaname);
@@ -3603,8 +3466,8 @@ _rel_aggr(sql_query *query, sql_rel **rel, int distinct, sql_schema *s, char *an
 				return sql_error(sql, 05, SQLSTATE(42000) "SELECT: aggregate function calls cannot be nested");
 			if (is_sql_values(sql_state))
 				return sql_error(sql, 05, SQLSTATE(42000) "SELECT: aggregate functions not allowed on an unique value");
-			if (is_sql_update_set(sql_state) || is_sql_psm_set(f))
-				return sql_error(sql, 05, SQLSTATE(42000) "SELECT: aggregate functions not allowed in SET clause");
+			if (is_sql_update_set(sql_state) || is_sql_psm(f))
+				return sql_error(sql, 05, SQLSTATE(42000) "SELECT: aggregate functions not allowed in SET, WHILE, IF, ELSE, CASE, WHEN, RETURN, ANALYZE clauses");
 			if (is_sql_join(sql_state))
 				return sql_error(sql, 05, SQLSTATE(42000) "SELECT: aggregate functions not allowed in JOIN conditions");
 			if (is_sql_where(sql_state))
@@ -3770,7 +3633,7 @@ _rel_aggr(sql_query *query, sql_rel **rel, int distinct, sql_schema *s, char *an
 					sql_arg *arg = op->data;
 					sql_exp *e = n->data;
 
-					e = rel_check_type(sql, &arg->type, *rel, e, type_equal); /* rel is a valid pointer */
+					e = exp_check_type(sql, &arg->type, *rel, e, type_equal); /* rel is a valid pointer */
 					if (!e)
 						a = NULL;
 					list_append(nexps, e);
@@ -3816,7 +3679,7 @@ _rel_aggr(sql_query *query, sql_rel **rel, int distinct, sql_schema *s, char *an
 			sql_exp *e = n->data;
 
 			/* cast up, for now just dec to double */
-			e = rel_numeric_supertype(sql, e);
+			e = exp_numeric_supertype(sql, e);
 			if (!e)
 				break;
 			list_append(nexps, e);
@@ -3836,7 +3699,7 @@ _rel_aggr(sql_query *query, sql_rel **rel, int distinct, sql_schema *s, char *an
 					sql_arg *arg = op->data;
 					sql_exp *e = n->data;
 
-					e = rel_check_type(sql, &arg->type, *rel, e, type_equal); /* rel is a valid pointer */
+					e = exp_check_type(sql, &arg->type, *rel, e, type_equal); /* rel is a valid pointer */
 					if (!e)
 						a = NULL;
 					list_append(nexps, e);
@@ -3940,13 +3803,8 @@ rel_case(sql_query *query, sql_rel **rel, tokens token, symbol *opt_cond, dlist 
 			cond = rel_value_exp(query, rel, dn->data.sym, f, ek);
 
 			if (cond) {
-				sql_exp *le;
-
 				result = exp_ref_save(sql, cond);
-				if (!(le = rel_unop_(sql, rel ? *rel : NULL, cond, NULL, "isnull", card_value)))
-					return NULL;
-				set_has_no_nil(le);
-				if (!(cond = rel_unop_(sql, rel ? *rel : NULL, le, NULL, "not", card_value)))
+				if (!(cond = rel_unop_(sql, rel ? *rel : NULL, cond, NULL, "isnotnull", card_value)))
 					return NULL;
 				set_has_no_nil(cond);
 			}
@@ -3990,13 +3848,8 @@ rel_case(sql_query *query, sql_rel **rel, tokens token, symbol *opt_cond, dlist 
 			cond = rel_value_exp(query, rel, dn->data.sym, f, ek);
 
 			if (cond) {
-				sql_exp *le;
-
 				result = exp_ref_save(sql, cond);
-				if (!(le = rel_unop_(sql, rel ? *rel : NULL, cond, NULL, "isnull", card_value)))
-					return NULL;
-				set_has_no_nil(le);
-				if (!(cond = rel_unop_(sql, rel ? *rel : NULL, le, NULL, "not", card_value)))
+				if (!(cond = rel_unop_(sql, rel ? *rel : NULL, cond, NULL, "isnotnull", card_value)))
 					return NULL;
 				set_has_no_nil(cond);
 			}
@@ -4052,7 +3905,7 @@ rel_case(sql_query *query, sql_rel **rel, tokens token, symbol *opt_cond, dlist 
 		if (restype->type->localtype == TYPE_void) /* NULL */
 			restype = sql_bind_localtype("str");
 
-		if (!result || !(result = rel_check_type(sql, restype, rel ? *rel : NULL, result, type_equal)))
+		if (!result || !(result = exp_check_type(sql, restype, rel ? *rel : NULL, result, type_equal)))
 			return NULL;
 		res = result;
 
@@ -4070,10 +3923,10 @@ rel_case(sql_query *query, sql_rel **rel, tokens token, symbol *opt_cond, dlist 
 		sql_exp *cond = n->data;
 		sql_exp *result = m->data;
 
-		if (!(result = rel_check_type(sql, restype, rel ? *rel : NULL, result, type_equal)))
+		if (!(result = exp_check_type(sql, restype, rel ? *rel : NULL, result, type_equal)))
 			return NULL;
 
-		if (!(cond = rel_check_type(sql, &bt, rel ? *rel : NULL, cond, type_equal)))
+		if (!(cond = exp_check_type(sql, &bt, rel ? *rel : NULL, cond, type_equal)))
 			return NULL;
 
 		if (!cond || !result || !res)
@@ -4135,7 +3988,7 @@ rel_cast(sql_query *query, sql_rel **rel, symbol *se, int f)
 		}
 	}
 	if (e)
-		e = rel_check_type(sql, tpe, rel ? *rel : NULL, e, type_cast);
+		e = exp_check_type(sql, tpe, rel ? *rel : NULL, e, type_cast);
 	if (e && e->type == e_convert)
 		exp_label(sql->sa, e, ++sql->label);
 	return e;
@@ -4538,16 +4391,13 @@ rel_order_by(sql_query *query, sql_rel **R, symbol *orderby, int f)
 					/* integer atom on the stack */
 					if (!is_sql_window(f) && e->type == e_atom &&
 					    tpe->type->eclass == EC_NUM) {
-						atom *a = e->l?e->l:sql->args[e->flag];
+						atom *a = e->l;
 						int nr = (int)atom_get_int(a);
 
 						e = exps_get_exp(rel->exps, nr);
 						if (!e)
 							return sql_error(sql, 02, SQLSTATE(42000) "SELECT: the order by column number (%d) is not in the number of projections range (%d)", nr, list_length(rel->exps));
 						e = exp_ref(sql, e);
-						/* do not cache this query */
-						if (e)
-							scanner_reset_key(&sql->scanner);
 					}
 				} else if (e && exp_card(e) > rel->card) {
 					if (exp_name(e))
@@ -4689,12 +4539,8 @@ calculate_window_bound(sql_query *query, sql_rel *p, tokens token, symbol *bound
 		iet = exp_subtype(ie);
 
 		assert(token == SQL_PRECEDING || token == SQL_FOLLOWING);
-		if (bound->token == SQL_NULL ||
-		    (bound->token == SQL_IDENT &&
-		     bound->data.lval->h->type == type_int &&
-		     sql->args[bound->data.lval->h->data.i_val]->isnull)) {
+		if (bound->token == SQL_NULL)
 			return sql_error(sql, 02, SQLSTATE(42000) "%s offset must not be NULL", bound_desc);
-		}
 		res = rel_value_exp2(query, &p, bound, f, ek);
 		if (!res)
 			return NULL;
@@ -4708,12 +4554,12 @@ calculate_window_bound(sql_query *query, sql_rel *p, tokens token, symbol *bound
 		if (!(bclass == EC_NUM || EC_INTERVAL(bclass) || bclass == EC_DEC || bclass == EC_FLT))
 			return sql_error(sql, 02, SQLSTATE(42000) "%s offset must be of a countable SQL type", bound_desc);
 		if ((frame_type == FRAME_ROWS || frame_type == FRAME_GROUPS) && bclass != EC_NUM) {
-			char *err = subtype2string2(bt);
+			char *err = subtype2string2(sql->ta, bt);
 			if (!err)
 				return sql_error(sql, 02, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			(void) sql_error(sql, 02, SQLSTATE(42000) "Values on %s boundary on %s frame can't be %s type", bound_desc,
 							 (frame_type == FRAME_ROWS) ? "rows":"groups", err);
-			_DELETE(err);
+			sa_reset(sql->ta);
 			return NULL;
 		}
 		if (frame_type == FRAME_RANGE) {
@@ -4726,19 +4572,19 @@ calculate_window_bound(sql_query *query, sql_rel *p, tokens token, symbol *bound
 			if (bclass != EC_DEC && iet->type->eclass == EC_DEC)
 				return sql_error(sql, 02, SQLSTATE(42000) "Values on %s boundary aren't decimals while on input are", bound_desc);
 			if (bclass != EC_SEC && iet->type->eclass == EC_TIME) {
-				char *err = subtype2string2(iet);
+				char *err = subtype2string2(sql->ta, iet);
 				if (!err)
 					return sql_error(sql, 02, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 				(void) sql_error(sql, 02, SQLSTATE(42000) "For %s input the %s boundary must be an interval type up to the day", err, bound_desc);
-				_DELETE(err);
+				sa_reset(sql->ta);
 				return NULL;
 			}
 			if (EC_INTERVAL(bclass) && !EC_TEMP(iet->type->eclass)) {
-				char *err = subtype2string2(iet);
+				char *err = subtype2string2(sql->ta, iet);
 				if (!err)
 					return sql_error(sql, 02, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 				(void) sql_error(sql, 02, SQLSTATE(42000) "For %s input the %s boundary must be an interval type", err, bound_desc);
-				_DELETE(err);
+				sa_reset(sql->ta);
 				return NULL;
 			}
 		}
@@ -4790,19 +4636,16 @@ get_window_clauses(mvc *sql, char* ident, symbol **partition_by_clause, symbol *
 }
 
 static char*
-window_function_arg_types_2str(list* types, int N)
+window_function_arg_types_2str(mvc *sql, list* types, int N)
 {
 	char *arg_list = NULL;
 	int i = 0;
 
 	for (node *n = types->h; n && i < N; n = n->next) {
-		char *tpe = subtype2string((sql_subtype *) n->data);
+		char *tpe = sql_subtype_string(sql->ta, (sql_subtype *) n->data);
 
 		if (arg_list) {
-			char *t = arg_list;
-			arg_list = sql_message("%s, %s", arg_list, tpe);
-			_DELETE(t);
-			_DELETE(tpe);
+			arg_list = sa_message(sql->ta, "%s, %s", arg_list, tpe);
 		} else {
 			arg_list = tpe;
 		}
@@ -4874,9 +4717,9 @@ rel_rankop(sql_query *query, sql_rel **rel, symbol *se, int f)
 	is_nth_value = !strcmp(aname, "nth_value");
 	supports_frames = window_function->token != SQL_RANK || is_nth_value || !strcmp(aname, "first_value") || !strcmp(aname, "last_value");
 
-	if (is_sql_update_set(f) || is_sql_psm_set(f) || is_sql_values(f) || is_sql_join(f) || is_sql_where(f) || is_sql_groupby(f) || is_sql_having(f) || is_psm_call(f) || is_sql_from(f)) {
+	if (is_sql_update_set(f) || is_sql_psm(f) || is_sql_values(f) || is_sql_join(f) || is_sql_where(f) || is_sql_groupby(f) || is_sql_having(f) || is_psm_call(f) || is_sql_from(f)) {
 		char *uaname = GDKmalloc(strlen(aname) + 1);
-		const char *clause = is_sql_update_set(f)||is_sql_psm_set(f)?"in SET clause (use subquery)":is_sql_values(f)?"on an unique value":
+		const char *clause = is_sql_update_set(f)||is_sql_psm(f)?"in SET, WHILE, IF, ELSE, CASE, WHEN, RETURN, ANALYZE clauses (use subquery)":is_sql_values(f)?"on an unique value":
 							 is_sql_join(f)?"in JOIN conditions":is_sql_where(f)?"in WHERE clause":is_sql_groupby(f)?"in GROUP BY clause":
 							 is_psm_call(f)?"in CALL":is_sql_from(f)?"in functions in FROM":"in HAVING clause";
 		(void) sql_error(sql, 02, SQLSTATE(42000) "%s: window function '%s' not allowed %s",
@@ -4964,7 +4807,7 @@ rel_rankop(sql_query *query, sql_rel **rel, symbol *se, int f)
 					in = exp_convert(sql->sa, in, empty, bte);
 				if ((is_lag || is_lead) && nfargs == 2) { /* lag and lead 3rd arg must have same type as 1st arg */
 					sql_exp *first = (sql_exp*) fargs->h->data;
-					if (!(in = rel_check_type(sql, exp_subtype(first), p, in, type_equal)))
+					if (!(in = exp_check_type(sql, exp_subtype(first), p, in, type_equal)))
 						return NULL;
 				}
 				if (!in)
@@ -5194,7 +5037,7 @@ rel_rankop(sql_query *query, sql_rel **rel, symbol *se, int f)
 				sql_arg *arg = op->data;
 				sql_exp *e = n->data;
 
-				e = rel_check_type(sql, &arg->type, NULL, e, type_equal);
+				e = exp_check_type(sql, &arg->type, NULL, e, type_equal);
 				if (!e) {
 					wf = NULL;
 					break;
@@ -5204,15 +5047,13 @@ rel_rankop(sql_query *query, sql_rel **rel, symbol *se, int f)
 			if (wf && list_length(nexps))
 				fargs = nexps;
 			else {
-				char *arg_list = nfargs ? window_function_arg_types_2str(types, nfargs) : NULL;
+				char *arg_list = nfargs ? window_function_arg_types_2str(sql, types, nfargs) : NULL;
 				sql_error(sql, 02, SQLSTATE(42000) "SELECT: window function '%s(%s)' not found", aname, arg_list ? arg_list : "");
-				_DELETE(arg_list);
 				return NULL;
 			}
 		} else {
-			char *arg_list = nfargs ? window_function_arg_types_2str(types, nfargs) : NULL;
+			char *arg_list = nfargs ? window_function_arg_types_2str(sql, types, nfargs) : NULL;
 			sql_error(sql, 02, SQLSTATE(42000) "SELECT: window function '%s(%s)' not found", aname, arg_list ? arg_list : "");
-			_DELETE(arg_list);
 			return NULL;
 		}
 	}
@@ -5241,7 +5082,9 @@ rel_value_exp2(sql_query *query, sql_rel **rel, symbol *se, int f, exp_kind ek)
 		return sql_error(sql, 10, SQLSTATE(42000) "Query too complex: running out of stack space");
 
 	if (rel && *rel && (*rel)->card == CARD_AGGR) { /* group by expression case, handle it before */
-		sql_exp *exp = frame_get_groupby_expression(sql, se);
+		sql_exp *exp = NULL;
+		if (!is_sql_aggr(f))
+			exp = frame_get_groupby_expression(sql, se);
 		if (sql->errstr[0] != '\0')
 			return NULL;
 		if (exp) {
@@ -5304,7 +5147,7 @@ rel_value_exp2(sql_query *query, sql_rel **rel, symbol *se, int f, exp_kind ek)
 			return NULL;
 		if (ek.type == type_value && ek.card <= card_set && is_project(r->op) && list_length(r->exps) > 1)
 			return sql_error(sql, 02, SQLSTATE(42000) "SELECT: subquery must return only one column");
-		if (list_length(r->exps) == 1 && !is_sql_psm_set(f)) /* for now don't rename multi attribute results */
+		if (list_length(r->exps) == 1 && !is_sql_psm(f)) /* for now don't rename multi attribute results */
 			r = rel_zero_or_one(sql, r, ek);
 		return exp_rel(sql, r);
 	}
@@ -5603,7 +5446,7 @@ rel_having_limits_nodes(sql_query *query, sql_rel *rel, SelectNode *sn, exp_kind
 		if (sn->limit) {
 			sql_exp *l = rel_value_exp(query, NULL, sn->limit, 0, ek);
 
-			if (!l || !(l=rel_check_type(sql, lng, NULL, l, type_equal)))
+			if (!l || !(l=exp_check_type(sql, lng, NULL, l, type_equal)))
 				return NULL;
 			if ((ek.card != card_relation && sn->limit) &&
 				(ek.card == card_value && sn->limit)) {
@@ -5612,10 +5455,10 @@ rel_having_limits_nodes(sql_query *query, sql_rel *rel, SelectNode *sn, exp_kind
 			}
 			list_append(exps, l);
 		} else
-			list_append(exps, exp_atom(sql->sa, atom_null_value(sql->sa, lng)));
+			list_append(exps, exp_atom(sql->sa, atom_general(sql->sa, lng, NULL)));
 		if (sn->offset) {
 			sql_exp *o = rel_value_exp( query, NULL, sn->offset, 0, ek);
-			if (!o || !(o=rel_check_type(sql, lng, NULL, o, type_equal)))
+			if (!o || !(o=exp_check_type(sql, lng, NULL, o, type_equal)))
 				return NULL;
 			list_append(exps, o);
 		}
@@ -5638,7 +5481,7 @@ rel_having_limits_nodes(sql_query *query, sql_rel *rel, SelectNode *sn, exp_kind
 		}
 		if (sn->seed) {
 			sql_exp *e = rel_value_exp(query, NULL, sn->seed, 0, ek);
-			if (!e || !(e=rel_check_type(sql, sql_bind_localtype("int"), NULL, e, type_equal)))
+			if (!e || !(e=exp_check_type(sql, sql_bind_localtype("int"), NULL, e, type_equal)))
 				return NULL;
 			list_append(exps, e);
 		}
@@ -5912,8 +5755,7 @@ rel_setquery_(sql_query *query, sql_rel *l, sql_rel *r, dlist *cols, int op )
 		rel = rel_setop(sql->sa, l, r, (operator_type)op);
 	}
 	if (rel) {
-		rel->exps = rel_projections(sql, rel, NULL, 0, 1);
-		rel->nrcols = list_length(rel->exps);
+		rel_setop_set_exps(sql, rel, rel_projections(sql, rel, NULL, 0, 1));
 		set_processed(rel);
 	}
 	return rel;

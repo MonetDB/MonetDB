@@ -72,6 +72,9 @@ getAddress(str modname, str fcnname)
 	int idx=0;
 	static int prev= -1;
 
+	if ((adr = findFunctionImplementation(fcnname)) != NULL)
+		return adr;
+
 	/* First try the last module loaded */
 	if( prev >= 0 && strcmp(filesLoaded[prev].modname, modname) == 0){ /* test if just pointer compare could work */
 		adr = (MALfcn) dlsym(filesLoaded[prev].handle, fcnname);

@@ -36,12 +36,12 @@ QUERY = prepare select * from test.share_daily_history
         on source.id=share_daily_history.id and source.timeid=share_daily_history.timeid; --error
 ERROR = !Could not determine type for argument number 2
 CODE  = 42000
-MAPI  = (monetdb) /var/tmp/mtest-14400/.s.monetdb.37618
-QUERY = exec 13(); --error
+MAPI  = (monetdb) /var/tmp/mtest-3187108/.s.monetdb.30091
+QUERY = exec  3(); --error
 ERROR = !EXEC called with wrong number of arguments: expected 1, got 0
 CODE  = 42000
-MAPI  = (monetdb) /var/tmp/mtest-14400/.s.monetdb.37618
-QUERY = exec 15(1); --error
+MAPI  = (monetdb) /var/tmp/mtest-3187108/.s.monetdb.30091
+QUERY = exec  4(1); --error
 ERROR = !EXEC called with wrong number of arguments: expected 0, got 1
 CODE  = 42000
 

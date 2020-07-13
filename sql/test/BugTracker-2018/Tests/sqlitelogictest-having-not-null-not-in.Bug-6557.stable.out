@@ -40,14 +40,14 @@ stdout of test 'sqlitelogictest-having-not-null-not-in.Bug-6557` in directory 's
 [ 26,	0,	79	]
 [ 43,	81,	24	]
 #SELECT CAST(SUM(col0) AS BIGINT) FROM tab0 WHERE + + col0 BETWEEN NULL AND + col2;
-% sys.%1 # table_name
-% %1 # name
+% sys.%2 # table_name
+% %2 # name
 % bigint # type
 % 1 # length
 [ NULL	]
 #SELECT CAST(SUM(col0) AS BIGINT) FROM tab0 WHERE + + col0 NOT BETWEEN NULL AND + col2;
-% sys.%1 # table_name
-% %1 # name
+% sys.%2 # table_name
+% %2 # name
 % bigint # type
 % 3 # length
 [ 126	]
@@ -58,8 +58,8 @@ stdout of test 'sqlitelogictest-having-not-null-not-in.Bug-6557` in directory 's
 % 1 # length
 [ 0	]
 #SELECT CAST(- COUNT(*) * - - 61 + + + ( + COUNT(*) ) AS BIGINT) FROM tab0 WHERE NOT col0 + + 10 BETWEEN NULL AND NULL;
-% sys.%4 # table_name
-% %4 # name
+% sys.%3 # table_name
+% %3 # name
 % bigint # type
 % 1 # length
 [ 0	]

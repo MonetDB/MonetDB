@@ -31,7 +31,7 @@ stdout of test 'drop_not_null_on_pkey.Bug-6189` in directory 'sql/test/BugTracke
 CREATE TABLE "sys"."PKeyNotNull" (
 	"PK_COL1" VARCHAR(4)    NOT NULL,
 	"PK_COL2" VARCHAR(4)    NOT NULL,
-	"DataCol" INTEGER,
+	"DataCol" INTEGER       DEFAULT NULL,
 	CONSTRAINT "PKeyNotNull_PK_COL1_PK_COL2_pkey" PRIMARY KEY ("PK_COL1", "PK_COL2")
 );
 #SELECT * FROM "PKeyNotNull";
@@ -48,7 +48,7 @@ CREATE TABLE "sys"."PKeyNotNull" (
 CREATE TABLE "sys"."PKeyImplicitNotNull" (
 	"PK_COL1" VARCHAR(4)    NOT NULL,
 	"PK_COL2" VARCHAR(4)    NOT NULL,
-	"DataCol" INTEGER,
+	"DataCol" INTEGER       DEFAULT NULL,
 	CONSTRAINT "PKeyImplicitNotNull_PK_COL1_PK_COL2_pkey" PRIMARY KEY ("PK_COL1", "PK_COL2")
 );
 #SELECT * FROM "PKeyImplicitNotNull";

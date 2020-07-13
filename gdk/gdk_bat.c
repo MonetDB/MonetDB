@@ -2317,6 +2317,8 @@ BATassertProps(BAT *b)
 			BATloop(b, p, q) {
 				valp = BUNtail(bi, p);
 				bool isnil = cmpf(valp, nilp) == 0;
+				assert(b->ttype != TYPE_flt || !isinf(*(flt*)valp));
+				assert(b->ttype != TYPE_dbl || !isinf(*(dbl*)valp));
 				if (maxval && !isnil) {
 					cmp = cmpf(maxval, valp);
 					assert(cmp >= 0);
@@ -2396,6 +2398,8 @@ BATassertProps(BAT *b)
 				BUN prb;
 				valp = BUNtail(bi, p);
 				bool isnil = cmpf(valp, nilp) == 0;
+				assert(b->ttype != TYPE_flt || !isinf(*(flt*)valp));
+				assert(b->ttype != TYPE_dbl || !isinf(*(dbl*)valp));
 				if (maxval && !isnil) {
 					cmp = cmpf(maxval, valp);
 					assert(cmp >= 0);

@@ -82,7 +82,7 @@ large-number-operation-strange-results.Bug-2929
 inet-casts.Bug-3205
 fixed_limit_for_prepare.Bug-3208
 exp_bin_assertion.Bug-3209
-querycache.Bug-3212
+#querycache.Bug-3212
 url_script_test.Bug-2972
 huge_insert.Bug-2803
 huge_table_update.Bug-2803

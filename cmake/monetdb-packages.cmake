@@ -6,6 +6,8 @@
 # Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
 #]]
 
+include(os_release_info)
+
 set(CPACK_SOURCE_GENERATOR "TGZ;ZIP")
 set(CPACK_GENERATOR "TGZ;ZIP")
 
@@ -16,5 +18,13 @@ list (APPEND CPACK_SOURCE_IGNORE_FILES "benchmarks")
 
 include(monetdb-deb-packages)
 include(monetdb-rpm-packages)
+
+if(${CMAKE_SYSTEM_NAME} STREQUAL "Linux")
+  get_os_release_info(LINUX_DISTRO LINUX_DISTRO_VERSION)
+
+  if (${LINUX_DISTRO} STREQUAL "debian")
+    monetdb_debian_extra_files()
+  endif()
+endif()
 
 include(CPack)

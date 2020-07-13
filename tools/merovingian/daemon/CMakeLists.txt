@@ -66,12 +66,12 @@ install(FILES
 
 install(DIRECTORY
   DESTINATION
-  ${CMAKE_INSTALL_SYSCONFDIR}/tmpfiles.d
+  ${CMAKE_INSTALL_FULL_SYSCONFDIR}/tmpfiles.d
   COMPONENT sql)
 
 install(FILES
   ${CMAKE_SOURCE_DIR}/buildtools/conf/monetdbd.conf
-  DESTINATION ${CMAKE_INSTALL_SYSCONFDIR}/tmpfiles.d
+  DESTINATION ${CMAKE_INSTALL_FULL_SYSCONFDIR}/tmpfiles.d
   COMPONENT sql)
 
 add_subdirectory(config)
