@@ -52,6 +52,15 @@ function(MT_checkCompilerFlag Flag)
   endif()
 endfunction()
 
+function(add_option_if_available Flag)
+  string(REGEX REPLACE "[-/=,]" "" FLAG_TEST "${Flag}")
+  check_c_compiler_flag(${Flag} ${FLAG_TEST}_FOUND)
+  set(ISFOUND "${${FLAG_TEST}_FOUND}}")
+  if(ISFOUND)
+    add_compile_options("${Flag}")
+  endif()
+endfunction()
+
 function(create_include_object)
   cmake_parse_arguments(
     create_prefix
@@ -150,6 +159,7 @@ function(monetdb_cmake_summary)
   message(STATUS "Dpkg-buildpackage: ${DPKGBUILDPACKAGE_FOUND}")
   message(STATUS "Reprepro: ${REPREPRO_FOUND}")
   message(STATUS "Semodule: ${SEMODULE_FOUND}")
+  message(STATUS "flags: ${CMAKE_C_FLAGS}")
   message(STATUS "-----------------------------------------")
   message(STATUS "")
 endfunction()
