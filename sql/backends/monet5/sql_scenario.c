@@ -1310,10 +1310,13 @@ SQLparser(Client c)
 				msg = SQLoptimizeQuery(c, c->curprg->def);
 
 				if (msg != MAL_SUCCEED) {
+					str other = c->curprg->def->errors;
 					c->curprg->def->errors = 0;
 					MSresetInstructions(c->curprg->def, oldstop);
 					freeVariables(c, c->curprg->def, NULL, oldvtop);
 					sqlcleanup(m, err);
+					if (other != msg)
+						freeException(other);
 					goto finalize;
 				}
 			}
