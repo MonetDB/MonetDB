@@ -1,0 +1,12 @@
+# create a simple MSK using integers
+
+cnd := bat.new(:oid);
+bat.append(cnd,1@0:oid);
+bat.append(cnd,1@0:oid);
+bat.append(cnd,0@0:oid);
+bat.append(cnd,1@0:oid);
+
+bv2:= bat.new(:msk);
+bat.append(bv2,cnd);
+
+io.print(bv2);
