@@ -104,22 +104,37 @@ if isatty:
                     left, top, right, bottom, maxx, maxy) = struct.unpack("hhhhHhhhhhh", csbi.raw)
                     return wattr
                 reset = get_csbi_attributes(handle)
-                def prred(str, write = sys.stdout.write, scta = ctypes.windll.kernel32.SetConsoleTextAttribute):
+                def prred(str,
+                          write=sys.stdout.write,
+                          flush=sys.stdout.flush,
+                          scta=ctypes.windll.kernel32.SetConsoleTextAttribute):
                     try:
+                        flush()
                         scta(handle, 0x4)
                         write(str)
+                        flush()
                     finally:
                         scta(handle, reset)
-                def prgreen(str, write = sys.stdout.write, scta = ctypes.windll.kernel32.SetConsoleTextAttribute):
+                def prgreen(str,
+                            write=sys.stdout.write,
+                            flush=sys.stdout.flush,
+                            scta=ctypes.windll.kernel32.SetConsoleTextAttribute):
                     try:
+                        flush()
                         scta(handle, 0x2)
                         write(str)
+                        flush()
                     finally:
                         scta(handle, reset)
-                def prpurple(str, write = sys.stdout.write, scta = ctypes.windll.kernel32.SetConsoleTextAttribute):
+                def prpurple(str,
+                             write=sys.stdout.write,
+                             flush=sys.stdout.flush,
+                             scta=ctypes.windll.kernel32.SetConsoleTextAttribute):
                     try:
+                        flush()
                         scta(handle, 0x5)
                         write(str)
+                        flush()
                     finally:
                         scta(handle, reset)
 
