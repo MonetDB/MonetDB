@@ -4191,8 +4191,7 @@ rel_push_aggr_down(mvc *sql, sql_rel *rel, int *changes)
 		}
 
 		u = rel_setop(sql->sa, ul, ur, op_union);
-		u->exps = rel_projections(sql, ul, NULL, 1, 1);
-		u->nrcols = list_length(u->exps);
+		rel_setop_set_exps(sql, u, rel_projections(sql, ul, NULL, 1, 1));
 		set_processed(u);
 
 		if (rel->r) {
@@ -4709,12 +4708,13 @@ find_simple_projection_for_join2semi(sql_rel *rel)
 		if (e->type == e_column) {
 			sql_rel *res = NULL;
 			sql_exp *found = NULL;
+			bool underjoin = false;
 
 			if (is_groupby(rel->op) || need_distinct(rel) || find_prop(e->p, PROP_HASHCOL))
 				return true;
 
-			found = rel_find_exp_and_corresponding_rel(rel->l, e, &res); /* grouping column on inner relation */
-			if (found) {
+			found = rel_find_exp_and_corresponding_rel(rel->l, e, &res, &underjoin); /* grouping column on inner relation */
+			if (found && !underjoin) {
 				if (find_prop(found->p, PROP_HASHCOL)) /* primary key always unique */
 					return true;
 				if (found->type == e_column && found->card <= CARD_AGGR) {
@@ -5589,6 +5589,8 @@ score_gbe(mvc *sql, sql_rel *rel, sql_exp *e)
 	sql_subtype *t = exp_subtype(e);
 	sql_column *c = NULL;
 
+	if (e->card == CARD_ATOM) /* constants are trivial to group */
+		res += 1000;
 	/* can we find out if the underlying table is sorted */
 	if ((c = exp_find_column(rel, e, -2)) && mvc_is_sorted(sql, c))
 		res += 600;
@@ -8525,8 +8527,7 @@ rel_split_outerjoin(mvc *sql, sql_rel *rel, int *changes)
 			add_nulls( sql, nr, r);
 			exps = rel_projections(sql, nl, NULL, 1, 1);
 			nl = rel_setop(sql->sa, nl, nr, op_union);
-			nl->exps = exps;
-			nr->nrcols = list_length(exps);
+			rel_setop_set_exps(sql, nl, exps);
 			set_processed(nl);
 		}
 		if (rel->op == op_right || rel->op == op_full) {
@@ -8545,8 +8546,7 @@ rel_split_outerjoin(mvc *sql, sql_rel *rel, int *changes)
 				(fdup)NULL);
 			exps = rel_projections(sql, nl, NULL, 1, 1);
 			nl = rel_setop(sql->sa, nl, nr, op_union);
-			nl->exps = exps;
-			nl->nrcols = list_length(exps);
+			rel_setop_set_exps(sql, nl, exps);
 			set_processed(nl);
 		}
 
@@ -8949,7 +8949,7 @@ rel_merge_table_rewrite(mvc *sql, sql_rel *rel, int *changes)
 							sql_rel *l = n->data;
 							sql_rel *r = n->next->data;
 							nrel = rel_setop(sql->sa, l, r, op_union);
-							rel_set_exps(nrel, rel_projections(sql, rel, NULL, 1, 1));
+							rel_setop_set_exps(sql, nrel, rel_projections(sql, rel, NULL, 1, 1));
 							set_processed(nrel);
 							append(ntables, nrel);
 						}

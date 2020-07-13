@@ -5773,8 +5773,7 @@ rel_setquery_(sql_query *query, sql_rel *l, sql_rel *r, dlist *cols, int op )
 		rel = rel_setop(sql->sa, l, r, (operator_type)op);
 	}
 	if (rel) {
-		rel->exps = rel_projections(sql, rel, NULL, 0, 1);
-		rel->nrcols = list_length(rel->exps);
+		rel_setop_set_exps(sql, rel, rel_projections(sql, rel, NULL, 0, 1));
 		set_processed(rel);
 	}
 	return rel;

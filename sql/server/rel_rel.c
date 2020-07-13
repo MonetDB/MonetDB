@@ -484,15 +484,9 @@ rel_setop(sql_allocator *sa, sql_rel *l, sql_rel *r, operator_type setop)
 	rel->r = r;
 	rel->op = setop;
 	rel->exps = NULL;
-	if (setop == op_union) {
-		rel->card = CARD_MULTI;
-	} else {
-		rel->card = l->card;
-	}
-	if (l && r) {
-		assert(l->nrcols == r->nrcols);
-		rel->nrcols = l->nrcols;
-	}
+	rel->card = is_union(setop) ? CARD_MULTI : l->card;
+	assert(l->nrcols == r->nrcols);
+	rel->nrcols = l->nrcols;
 	return rel;
 }
 
@@ -520,6 +514,28 @@ rel_setop_check_types(mvc *sql, sql_rel *l, sql_rel *r, list *ls, list *rs, oper
 	set_processed(l);
 	set_processed(r);
 	return rel_setop(sql->sa, l, r, op);
+}
+
+void
+rel_setop_set_exps(mvc *sql, sql_rel *rel, list *exps)
+{
+	sql_rel *l = rel->l, *r = rel->r;
+	list *lexps = l->exps, *rexps = r->exps;
+
+	if (!is_project(l->op))
+		lexps = rel_projections(sql, l, NULL, 0, 1);
+	if (!is_project(r->op))
+		rexps = rel_projections(sql, r, NULL, 0, 1);
+
+	assert(is_set(rel->op) && list_length(lexps) == list_length(rexps) && list_length(exps) == list_length(lexps));
+
+	for (node *n = exps->h, *m = lexps->h, *o = rexps->h ; m && m && o ; n = n->next, m = m->next,o = o->next) {
+		sql_exp *e = n->data, *f = m->data, *g = o->data;
+
+		e->card = is_union(rel->op) ? MAX(f->card, g->card) : f->card;
+	}
+	rel->nrcols = l->nrcols;
+	rel->exps = exps;
 }
 
 sql_rel *
@@ -922,7 +938,7 @@ rel_groupby(mvc *sql, sql_rel *l, list *groupbyexps )
 			sql_exp *e = en->data, *ne;
 
 			/* after the group by the cardinality reduces */
-			e->card = rel->card;
+			e->card = MIN(e->card, rel->card); /* if the column is an atom, the cardinality should not change */
 			ne = exp_ref(sql, e);
 			ne = exp_propagate(sql->sa, ne, e);
 			append(aggrs, ne);
