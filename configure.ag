@@ -1923,11 +1923,7 @@ AS_CASE([$have_lidar],
 	LIBLAS_VERSION_REQUIRED_MIN=1.8.0
 	PKG_CHECK_MODULES([LIBLAS],
 		[liblas >= $LIBLAS_VERSION_REQUIRED_MIN],
-		[have_liblas=yes
-		# work around bug in Fedora 32's liblas-devel-1.8.1-7
-		LIBLAS_CFLAGS=`AS_ECHO(["$LIBLAS_CFLAGS"]) | sed 's|-Iinclude|-I/usr/include|'`
-		LIBLAS_LIBS=`AS_ECHO(["$LIBLAS_LIBS"]) | sed 's|-Llib|-L/usr/lib|'`
-		],
+		[have_liblas=yes],
 		[
 		LIBLAS_CONFIG=''
 		# locate liblas-config
