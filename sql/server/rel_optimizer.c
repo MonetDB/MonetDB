@@ -1652,7 +1652,6 @@ rel_push_count_down(visitor *v, sql_rel *rel)
 	return rel;
 }
 
-
 static sql_rel *
 rel_simplify_project_fk_join(mvc *sql, sql_rel *r, list *pexps, int *changes)
 {
@@ -3685,7 +3684,6 @@ merge_notequal(mvc *sql, list *exps, int *changes)
 
 	return nexps;
 }
-
 
 static sql_rel *
 rel_select_cse(visitor *v, sql_rel *rel)
