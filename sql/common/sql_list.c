@@ -373,6 +373,16 @@ list_move_data(list *s, list *d, void *data)
 }
 
 int
+list_check_prop_all(list *l, prop_check_func f)
+{
+	int res = 1;
+	if (l)
+		for (node *n = l->h; n; n = n->next)
+			res &= f(n->data);
+	return res;
+}
+
+int
 list_traverse(list *l, traverse_func f, void *clientdata)
 {
 	int res = 0, seqnr = 0;
