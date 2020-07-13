@@ -1,0 +1,9 @@
+# create a simple MSK using integers
+
+bv1:= bat.new(:msk);
+bat.append(bv1,1:msk);
+bat.append(bv1,1:msk);
+bat.append(bv1,0:msk);
+bat.append(bv1,1:msk);
+
+io.print(bv1);
