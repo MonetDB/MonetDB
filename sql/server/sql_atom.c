@@ -19,8 +19,6 @@ atom_init( atom *a )
 	a->isnull = 1;
 	a->data.vtype = 0;
 	a->tpe.type = NULL;
-	a->d = 0;
-	a->varid = 0;
 }
 
 static atom *
@@ -32,8 +30,6 @@ atom_create( sql_allocator *sa )
 		return NULL;
 	*a = (atom) {
 		.data = (ValRecord) {.vtype = TYPE_void,},
-		.d = dbl_nil,
-		.varid = -1,
 	};
 	return a;
 }
@@ -94,7 +90,7 @@ atom_int( sql_allocator *sa, sql_subtype *tpe,
 )
 {
 	if (tpe->type->eclass == EC_FLT) {
-		return atom_float(sa, tpe, (double) val);
+		return atom_float(sa, tpe, (dbl) val);
 	} else {
 		atom *a = atom_create(sa);
 		if(!a)
@@ -127,7 +123,6 @@ atom_int( sql_allocator *sa, sql_subtype *tpe,
 		default:
 			assert(0);
 		}
-		a->d = (dbl) val;
 		a->data.len = 0;
 		return a;
 	}
@@ -173,20 +168,15 @@ atom_get_int(atom *a)
 	return r;
 }
 
-
 atom *
 atom_dec(sql_allocator *sa, sql_subtype *tpe,
 #ifdef HAVE_HGE
-	hge val,
+	hge val)
 #else
-	lng val,
+	lng val)
 #endif
-	double dval)
 {
-	atom *a = atom_int(sa, tpe, val);
-	if (a)
-		a -> d = dval;
-	return a;
+	return atom_int(sa, tpe, val);
 }
 
 atom *
@@ -210,7 +200,7 @@ atom_string(sql_allocator *sa, sql_subtype *tpe, const char *val)
 }
 
 atom *
-atom_float(sql_allocator *sa, sql_subtype *tpe, double val)
+atom_float(sql_allocator *sa, sql_subtype *tpe, dbl val)
 {
 	atom *a = atom_create(sa);
 	if(!a)
@@ -1099,16 +1089,13 @@ atom_cast(sql_allocator *sa, atom *a, sql_subtype *tp)
 		if ((at->type->eclass == EC_DEC ||
 		     at->type->eclass == EC_NUM) &&
 		    tp->type->eclass == EC_FLT) {
-			if (is_dbl_nil(a->d)) {
-				ptr p = &a->d;
+			if (!VALisnil(&a->data)) {
 				char *s;
 #ifdef HAVE_HGE
 				hge dec = 0;
 #else
 				lng dec = 0;
 #endif
-				size_t len = 0;
-				ssize_t res = 0;
 				/* cast decimals to doubles */
 				switch (at->type->localtype) {
 				case TYPE_bte:
@@ -1132,17 +1119,21 @@ atom_cast(sql_allocator *sa, atom *a, sql_subtype *tp)
 					return 0;
 				}
 				s = decimal_to_str(sa, dec, at);
-				len = sizeof(double);
-				res = ATOMfromstr(TYPE_dbl, &p, &len, s, false);
-				if (res < 0)
+				if (s) {
+					int tpe = tp->type->localtype;
+					size_t len = (tpe == TYPE_dbl) ? sizeof(dbl) : sizeof(flt);
+					ssize_t res;
+					ptr p;
+
+					if (tpe == TYPE_dbl)
+						p = &(a->data.val.dval);
+					else
+						p = &(a->data.val.fval);
+					if ((res = ATOMfromstr(tpe, &p, &len, s, false)) < 0)
+						return 0;
+				} else {
 					return 0;
-			}
-			if (tp->type->localtype == TYPE_dbl)
-				a->data.val.dval = a->d;
-			else {
-				if ((dbl) GDK_flt_min > a->d || a->d > (dbl) GDK_flt_max)
-					return 0;
-				a->data.val.fval = (flt) a->d;
+				}
 			}
 			a->tpe = *tp;
 			a->data.vtype = tp->type->localtype;
@@ -1188,11 +1179,6 @@ atom_neg(atom *a)
 	if (VARcalcnegate(&dst, &a->data) != GDK_SUCCEED)
 		return -1;
 	a->data = dst;
-	dst.vtype = TYPE_dbl;
-	dst.val.dval = a->d;
-	if (VARcalcnegate(&dst, &dst) != GDK_SUCCEED)
-		return -1;
-	a->d = dst.val.dval;
 	return 0;
 }
 
@@ -1226,11 +1212,8 @@ atom_add(atom *a1, atom *a2)
 	if (VARcalcadd(&dst, &a1->data, &a2->data, 1) != GDK_SUCCEED)
 		return NULL;
 	a1->data = dst;
-	dst.vtype = TYPE_dbl;
 	if (a1->isnull || a2->isnull)
 		a1->isnull = 1;
-	if (VARconvert(&dst, &a1->data, 1, 0, 0, 0) == GDK_SUCCEED)
-		a1->d = dst.val.dval;
 	return a1;
 }
 
@@ -1254,11 +1237,8 @@ atom_sub(atom *a1, atom *a2)
 	     a1->tpe.digits < a2->tpe.digits))
 		a1 = a2;
 	a1->data = dst;
-	dst.vtype = TYPE_dbl;
 	if (a1->isnull || a2->isnull)
 		a1->isnull = 1;
-	if (VARconvert(&dst, &a1->data, 1, 0, 0, 0) == GDK_SUCCEED)
-		a1->d = dst.val.dval;
 	return a1;
 }
 
@@ -1269,22 +1249,6 @@ atom_mul(atom *a1, atom *a2)
 
 	if (!EC_COMPUTE(a1->tpe.type->eclass))
 		return NULL;
-	if (a1->tpe.type->localtype == TYPE_dbl ||
-	    a2->tpe.type->localtype == TYPE_dbl) {
-		ValRecord v1, v2;
-		dst.vtype = v1.vtype = v2.vtype = TYPE_dbl;
-		v1.val.dval = a1->d;
-		v2.val.dval = a2->d;
-		if (a1->isnull)
-			return a1;
-		if (a2->isnull)
-			return a2;
-		if (VARcalcmul(&dst, &v1, &v2, 1) != GDK_SUCCEED)
-			return NULL;
-		a1->data.vtype = TYPE_dbl;
-		a1->d = a1->data.val.dval = dst.val.dval;
-		return a1;
-	}
 	if (a1->tpe.type->localtype < a2->tpe.type->localtype ||
 	    (a1->tpe.type->localtype == a2->tpe.type->localtype &&
 	     a1->tpe.digits < a2->tpe.digits)) {
@@ -1300,9 +1264,6 @@ atom_mul(atom *a1, atom *a2)
 	if (VARcalcmul(&dst, &a1->data, &a2->data, 1) != GDK_SUCCEED)
 		return NULL;
 	a1->data = dst;
-	dst.vtype = TYPE_dbl;
-	if (VARconvert(&dst, &a1->data, 1, 0, 0, 0) == GDK_SUCCEED)
-		a1->d = dst.val.dval;
 	a1->tpe.digits += a2->tpe.digits;
 	return a1;
 }
@@ -1318,9 +1279,6 @@ atom_inc(atom *a)
 	if (VARcalcincr(&dst, &a->data, 1) != GDK_SUCCEED)
 		return -1;
 	a->data = dst;
-	dst.vtype = TYPE_dbl;
-	if (VARconvert(&dst, &a->data, 1, 0, 0, 0) == GDK_SUCCEED)
-		a->d = dst.val.dval;
 	return 0;
 }
 

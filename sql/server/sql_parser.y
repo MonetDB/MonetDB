@@ -4709,7 +4709,6 @@ literal:
 		  if (digits <= 0)
 			digits = 1;
 		  if (digits <= MAX_DEC_DIGITS) {
-		  	double val = strtod($1,NULL);
 #ifdef HAVE_HGE
 		  	hge value = decimal_from_str(s, NULL);
 #else
@@ -4719,7 +4718,7 @@ literal:
 		  	if (*s == '+' || *s == '-')
 				digits --;
 		  	sql_find_subtype(&t, "decimal", digits, scale );
-		  	$$ = _newAtomNode( atom_dec(SA, &t, value, val));
+		  	$$ = _newAtomNode( atom_dec(SA, &t, value));
 		   } else {
 			char *p = $1;
 			double val;
