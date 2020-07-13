@@ -4133,8 +4133,7 @@ rel_push_aggr_down(visitor *v, sql_rel *rel)
 		}
 
 		u = rel_setop(v->sql->sa, ul, ur, op_union);
-		u->exps = rel_projections(v->sql, ul, NULL, 1, 1);
-		u->nrcols = list_length(u->exps);
+		rel_setop_set_exps(v->sql, u, rel_projections(v->sql, ul, NULL, 1, 1));
 		set_processed(u);
 
 		if (rel->r) {
@@ -4650,12 +4649,13 @@ find_simple_projection_for_join2semi(sql_rel *rel)
 		if (e->type == e_column) {
 			sql_rel *res = NULL;
 			sql_exp *found = NULL;
+			bool underjoin = false;
 
 			if (is_groupby(rel->op) || need_distinct(rel) || find_prop(e->p, PROP_HASHCOL))
 				return true;
 
-			found = rel_find_exp_and_corresponding_rel(rel->l, e, &res); /* grouping column on inner relation */
-			if (found) {
+			found = rel_find_exp_and_corresponding_rel(rel->l, e, &res, &underjoin); /* grouping column on inner relation */
+			if (found && !underjoin) {
 				if (find_prop(found->p, PROP_HASHCOL)) /* primary key always unique */
 					return true;
 				if (found->type == e_column && found->card <= CARD_AGGR) {
@@ -5643,6 +5643,8 @@ score_gbe(mvc *sql, sql_rel *rel, sql_exp *e)
 	sql_subtype *t = exp_subtype(e);
 	sql_column *c = NULL;
 
+	if (e->card == CARD_ATOM) /* constants are trivial to group */
+		res += 1000;
 	/* can we find out if the underlying table is sorted */
 	if ((c = exp_find_column(rel, e, -2)) && mvc_is_sorted(sql, c))
 		res += 600;
@@ -8547,8 +8549,7 @@ rel_split_outerjoin(visitor *v, sql_rel *rel)
 			add_nulls( v->sql, nr, r);
 			exps = rel_projections(v->sql, nl, NULL, 1, 1);
 			nl = rel_setop(v->sql->sa, nl, nr, op_union);
-			nl->exps = exps;
-			nr->nrcols = list_length(exps);
+			rel_setop_set_exps(v->sql, nl, exps);
 			set_processed(nl);
 		}
 		if (rel->op == op_right || rel->op == op_full) {
@@ -8567,8 +8568,7 @@ rel_split_outerjoin(visitor *v, sql_rel *rel)
 				(fdup)NULL);
 			exps = rel_projections(v->sql, nl, NULL, 1, 1);
 			nl = rel_setop(v->sql->sa, nl, nr, op_union);
-			nl->exps = exps;
-			nl->nrcols = list_length(exps);
+			rel_setop_set_exps(v->sql, nl, exps);
 			set_processed(nl);
 		}
 
@@ -8726,52 +8726,38 @@ find_col_exp( list *exps, sql_exp *e)
 }
 
 static int
-exp_range_overlap( mvc *sql, sql_exp *e, char *min, char *max, atom *emin, atom *emax)
+exp_range_overlap(mvc *sql, sql_exp *e, char *min, char *max, atom *emin, atom *emax)
 {
 	sql_subtype *t = exp_subtype(e);
+	int localtype = t->type->localtype;
 
-	if (!min || !max || !emin || !emax)
+	if (!min || !max || !emin || !emax || strNil(min) || strNil(max) || emin->isnull || emax->isnull || !ATOMlinear(localtype))
 		return 0;
 
-	if (strNil(min))
+	switch (ATOMstorage(localtype)) {
+	case TYPE_bte:
+	case TYPE_sht:
+	case TYPE_int:
+	case TYPE_lng:
+#ifdef HAVE_HGE
+	case TYPE_hge:
+#endif
+	case TYPE_flt:
+	case TYPE_dbl:
+	case TYPE_str: {
+		atom *cmin, *cmax;
+
+#ifdef HAVE_HGE
+		if (localtype == TYPE_hge && !have_hge)
+			return 0;
+#endif
+		cmin = atom_general(sql->sa, t, min);
+		cmax = atom_general(sql->sa, t, max);
+		if (VALcmp(&(emax->data), &(cmin->data)) < 0 || VALcmp(&(emin->data), &(cmax->data)) > 0)
+			return 0;
+	} break;
+	default:
 		return 0;
-	if (strNil(max))
-		return 0;
-
-	if (t->type->localtype == TYPE_dbl) {
-		atom *cmin = atom_general(sql->sa, t, min);
-		atom *cmax = atom_general(sql->sa, t, max);
-
-		if (emax->d < cmin->data.val.dval || emin->d > cmax->data.val.dval)
-			return 0;
-	}
-	if (t->type->localtype == TYPE_bte) {
-		atom *cmin = atom_general(sql->sa, t, min);
-		atom *cmax = atom_general(sql->sa, t, max);
-
-		if (emax->data.val.btval < cmin->data.val.btval || emin->data.val.btval > cmax->data.val.btval)
-			return 0;
-	}
-	if (t->type->localtype == TYPE_sht) {
-		atom *cmin = atom_general(sql->sa, t, min);
-		atom *cmax = atom_general(sql->sa, t, max);
-
-		if (emax->data.val.shval < cmin->data.val.shval || emin->data.val.shval > cmax->data.val.shval)
-			return 0;
-	}
-	if (t->type->localtype == TYPE_int || t->type->localtype == TYPE_date) {
-		atom *cmin = atom_general(sql->sa, t, min);
-		atom *cmax = atom_general(sql->sa, t, max);
-
-		if (emax->data.val.ival < cmin->data.val.ival || emin->data.val.ival > cmax->data.val.ival)
-			return 0;
-	}
-	if (t->type->localtype == TYPE_lng || t->type->localtype == TYPE_timestamp) {
-		atom *cmin = atom_general(sql->sa, t, min);
-		atom *cmax = atom_general(sql->sa, t, max);
-
-		if (emax->data.val.lval < cmin->data.val.lval || emin->data.val.lval > cmax->data.val.lval)
-			return 0;
 	}
 	return 1;
 }
@@ -8982,7 +8968,7 @@ rel_merge_table_rewrite(visitor *v, sql_rel *rel)
 							sql_rel *l = n->data;
 							sql_rel *r = n->next->data;
 							nrel = rel_setop(v->sql->sa, l, r, op_union);
-							rel_set_exps(nrel, rel_projections(v->sql, rel, NULL, 1, 1));
+							rel_setop_set_exps(v->sql, nrel, rel_projections(v->sql, rel, NULL, 1, 1));
 							set_processed(nrel);
 							append(ntables, nrel);
 						}

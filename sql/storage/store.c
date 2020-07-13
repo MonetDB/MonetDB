@@ -213,6 +213,7 @@ table_reset_parent(sql_table *t, sql_trans *tr)
 			if (i->po)
 				idx_destroy(i->po);
 			i->po = NULL;
+			i->base.wtime = 1;
 		}
 	}
 	assert(t->idxs.dset == NULL);
@@ -225,13 +226,16 @@ table_reset_parent(sql_table *t, sql_trans *tr)
 			if (c->po)
 				column_destroy(c->po);
 			c->po = NULL;
+			c->base.wtime = 1;
 		}
 	}
 	assert(t->columns.dset == NULL);
 	if (p)
 		table_destroy(p);
-	if (isTable(t))
+	if (isTable(t)) {
 		assert(t->base.allocated);
+	    t->base.wtime = 1;
+	}
 }
 
 void
@@ -1871,12 +1875,12 @@ store_load(sql_allocator *pa) {
 			return -1;
 		}
 	} else {
-		tr->active = 1;
 		if (!(store_oids = GDKzalloc(300 * sizeof(sqlid)))) { /* 150 suffices */
 			TRC_CRITICAL(SQL_STORE, "Allocation failure while loading the storage\n");
 			return -1;
 		}
 	}
+	tr->active = 1;
 
 	s = bootstrap_create_schema(tr, "sys", ROLE_SYSADMIN, USER_MONETDB);
 	if (!first)

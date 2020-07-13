@@ -1327,7 +1327,7 @@ atom_inc(atom *a)
 int
 atom_is_zero(atom *a)
 {
-	if (a->isnull)
+	if (a->isnull || !ATOMlinear(a->tpe.type->localtype))
 		return 0;
 	switch (ATOMstorage(a->tpe.type->localtype)) {
 	case TYPE_bte:
@@ -1414,6 +1414,7 @@ atom_zero_value(sql_allocator *sa, sql_subtype* tpe)
 {
 	void *ret = NULL;
 	atom *res = NULL;
+	int localtype = tpe->type->localtype;
 
 	bte bval = 0;
 	sht sval = 0;
@@ -1425,39 +1426,41 @@ atom_zero_value(sql_allocator *sa, sql_subtype* tpe)
 	flt fval = 0;
 	dbl dval = 0;
 
-	switch (ATOMstorage(tpe->type->localtype)) {
-	case TYPE_bte:
-		ret = &bval;
-		break;
-	case TYPE_sht:
-		ret = &sval;
-		break;
-	case TYPE_int:
-		ret = &ival;
-		break;
-	case TYPE_lng:
-		ret = &lval;
-		break;
+	if (ATOMlinear(localtype)) {
+		switch (ATOMstorage(localtype)) {
+		case TYPE_bte:
+			ret = &bval;
+			break;
+		case TYPE_sht:
+			ret = &sval;
+			break;
+		case TYPE_int:
+			ret = &ival;
+			break;
+		case TYPE_lng:
+			ret = &lval;
+			break;
 #ifdef HAVE_HGE
-	case TYPE_hge:
-		ret = &hval;
-		break;
+		case TYPE_hge:
+			ret = &hval;
+			break;
 #endif
-	case TYPE_flt:
-		ret = &fval;
-		break;
-	case TYPE_dbl:
-		ret = &dval;
-		break;
-	default: /* no support for strings and blobs zero value */
-		break;
+		case TYPE_flt:
+			ret = &fval;
+			break;
+		case TYPE_dbl:
+			ret = &dval;
+			break;
+		default: /* no support for strings and blobs zero value */
+			break;
+		}
 	}
 
 	if (ret != NULL) {
 		res = atom_create(sa);
 		res->tpe = *tpe;
 		res->isnull = 0;
-		res->data.vtype = tpe->type->localtype;
+		res->data.vtype = localtype;
 		VALset(&res->data, res->data.vtype, ret);
 	}
 

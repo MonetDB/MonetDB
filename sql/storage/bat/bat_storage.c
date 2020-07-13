@@ -1070,7 +1070,7 @@ count_col(sql_trans *tr, sql_column *c, int all)
 {
 	sql_delta *b;
 
-//	assert(tr->active || tr == gtrans);
+	assert(tr->active || tr == gtrans);
 	if (!isTable(c->t))
 		return 0;
 	if (!c->data) {
@@ -1469,7 +1469,6 @@ create_col(sql_trans *tr, sql_column *c)
 	}
 
 	if (!isNew(c) && !isTempTable(c->t)){
-		//c->base.wtime = 0;
 		return load_bat(bat, type, c->t->bootstrap?0:LOG_COL, c->base.id);
 	} else if (bat && bat->ibid && !isTempTable(c->t)) {
 		return new_persistent_bat(tr, c->data, c->t->sz);
@@ -1569,7 +1568,6 @@ create_idx(sql_trans *tr, sql_idx *ni)
 	}
 
 	if (!isNew(ni) && !isTempTable(ni->t)){
-		//ni->base.wtime = 0;
 		return load_bat(bat, type, ni->t->bootstrap?0:LOG_IDX, ni->base.id);
 	} else if (bat && bat->ibid && !isTempTable(ni->t)) {
 		return new_persistent_bat( tr, ni->data, ni->t->sz);
@@ -1676,7 +1674,6 @@ create_del(sql_trans *tr, sql_table *t)
 		log_bid bid = logger_find_bat(bat_logger, bat->dname, t->bootstrap?0:LOG_TAB, t->base.id);
 
 		if (bid) {
-			//t->base.wtime = 0;
 			return load_dbat(bat, bid);
 		}
 		ok = LOG_ERR;
@@ -2720,7 +2717,7 @@ update_table(sql_trans *tr, sql_table *ft, sql_table *tt)
 		sql_column *oc = m->data;
 
 		if (ATOMIC_GET(&store_nr_active) == 1 || (cc->base.wtime && cc->base.allocated)) {
-//			assert(!cc->base.wtime || oc->base.wtime < cc->base.wtime);
+			assert(!cc->base.wtime || oc->base.wtime < cc->base.wtime || (oc->base.wtime == cc->base.wtime && oc->base.allocated /* alter */));
 			if (ATOMIC_GET(&store_nr_active) > 1 && cc->data) { /* move delta */
 				sql_delta *b = cc->data;
 				sql_column *oldc = NULL;
