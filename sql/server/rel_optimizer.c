@@ -5815,16 +5815,45 @@ static sql_rel *
 rel_groupby_order(visitor *v, sql_rel *rel)
 {
 	list *gbe = rel->r;
+	int ngbe = list_length(gbe), i, *scores = NULL;
+	sql_exp **exps = NULL;
 
-	if (is_groupby(rel->op) && list_length(gbe) > 1 && list_length(gbe)<9) {
+	if (is_groupby(rel->op) && ngbe > 1) {
 		node *n;
-		int i, *scores = GDKzalloc(list_length(gbe) * sizeof(int));
+		scores = GDKzalloc(ngbe * sizeof(int));
+		exps = GDKmalloc(ngbe * sizeof(sql_exp*));
 
-		for (i = 0, n = gbe->h; n; i++, n = n->next)
-			scores[i] = score_gbe(v->sql, rel, n->data);
-		rel->r = list_keysort(gbe, scores, (fdup)NULL);
-		GDKfree(scores);
+		if (scores && exps) {
+			list *nexps = sa_list(v->sql->sa);
+
+			/* first sorting step, give priority for integers and sorted columns */
+			for (i = 0, n = gbe->h; n; i++, n = n->next) {
+				exps[i] = n->data;
+				scores[i] = score_gbe(v->sql, rel, exps[i]);
+			}
+			GDKqsort(scores, exps, NULL, ngbe, sizeof(int), sizeof(void *), TYPE_int, true, true);
+
+			/* second sorting step, give priority to strings with lower number of digits */
+			for (i = ngbe - 1; i && !scores[i]; i--); /* find epressions with no score from the first round */
+			if (scores[i])
+				i++;
+			if (ngbe - i > 1) {
+				for (int j = i; j < ngbe; j++) {
+					sql_subtype *t = exp_subtype(exps[j]);
+					scores[j] = t->digits;
+				}
+				/* the less number of digits the better, order ascending */
+				GDKqsort(scores + i, exps + i, NULL, ngbe - i, sizeof(int), sizeof(void *), TYPE_int, false, true);
+			}
+
+			for (i = 0 ; i < ngbe ; i++)
+				list_append(nexps, exps[i]);
+			rel->r = nexps;
+		}
 	}
+
+	GDKfree(scores);
+	GDKfree(exps);
 	return rel;
 }
 
