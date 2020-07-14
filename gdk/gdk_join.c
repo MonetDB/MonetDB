@@ -3056,8 +3056,101 @@ fetchjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr,
 	return GDK_SUCCEED;
 }
 
+static BAT *
+bitmaskjoin(BAT *l, BAT *r,
+	    struct canditer *restrict lci, struct canditer *restrict rci,
+	    bool only_misses,
+	    const char *reason, lng t0)
+{
+	BAT *r1;
+	const oid *rp = BATtdense(r) ? NULL : Tloc(r, 0);
+	size_t nmsk = (lci->ncand + 31) / 32;
+	uint32_t *mask = GDKzalloc(nmsk * sizeof(uint32_t));
+	BUN cnt = 0;
 
-/* Make the implementation choices for various left joins. */
+	if (mask == NULL)
+		return NULL;
+
+	for (BUN n = 0; n < rci->ncand; n++) {
+		oid o = canditer_next(rci) - r->hseqbase;
+		if (rp) {
+			o = rp[o];
+			if (is_oid_nil(o))
+				continue;
+		} else {
+			o = o - r->hseqbase + r->tseqbase;
+		}
+		o += l->hseqbase;
+		if (o < lci->seq + l->tseqbase)
+			continue;
+		o -= lci->seq + l->tseqbase;
+		if (o >= lci->ncand)
+			continue;
+		if ((mask[o >> 5] & (1U << (o & 0x1F))) == 0) {
+			cnt++;
+			mask[o >> 5] |= 1U << (o & 0x1F);
+		}
+	}
+	if (only_misses)
+		cnt = lci->ncand - cnt;
+	if (cnt == 0 || cnt == lci->ncand) {
+		GDKfree(mask);
+		if (cnt == 0)
+			return BATdense(0, 0, 0);
+		return BATdense(0, lci->seq, lci->ncand);
+	}
+	r1 = COLnew(0, TYPE_oid, cnt, TRANSIENT);
+	if (r1 != NULL) {
+		oid *r1p = Tloc(r1, 0);
+
+		r1->tkey = true;
+		r1->tnil = false;
+		r1->tnonil = true;
+		r1->tsorted = true;
+		r1->trevsorted = cnt <= 1;
+		if (only_misses) {
+			/* set the bits for unused values at the
+			 * end so that we don't need special
+			 * code in the loop */
+			if (lci->ncand & 0x1F)
+				mask[nmsk - 1] |= ~0U << (lci->ncand & 0x1F);
+			for (size_t i = 0; i < nmsk; i++)
+				if (mask[i] != ~0U)
+					for (uint32_t j = 0; j < 32; j++)
+						if ((mask[i] & (1U << j)) == 0)
+							*r1p++ = i * 32 + j + lci->seq;
+		} else {
+			for (size_t i = 0; i < nmsk; i++)
+				if (mask[i] != 0U)
+					for (uint32_t j = 0; j < 32; j++)
+						if ((mask[i] & (1U << j)) != 0)
+							*r1p++ = i * 32 + j + lci->seq;
+		}
+		BATsetcount(r1, cnt);
+		assert((BUN) (r1p - (oid*) Tloc(r1, 0)) == BATcount(r1));
+
+		TRC_DEBUG(ALGO, "l=" ALGOBATFMT ","
+			  "r=" ALGOBATFMT ",sl=" ALGOOPTBATFMT ","
+			  "sr=" ALGOOPTBATFMT ",only_misses=%s; %s "
+			  "-> " ALGOBATFMT " (" LLFMT "usec)\n",
+			  ALGOBATPAR(l), ALGOBATPAR(r),
+			  ALGOOPTBATPAR(lci->s), ALGOOPTBATPAR(rci->s),
+			  only_misses ? "true" : "false",
+			  reason,
+			  ALGOBATPAR(r1),
+			  GDKusec() - t0);
+	}
+	GDKfree(mask);
+	return r1;
+}
+
+/* Make the implementation choices for various left joins.
+ * nil_matches: nil is an ordinary value that can match;
+ * nil_on_miss: outer join: fill in a nil value in case of no match;
+ * semi: semi join: return one of potentially more than one matches;
+ * only_misses: difference: list rows without match on the right;
+ * not_in: for implementing NOT IN: if nil on right then there are no matches;
+ * max_one: error if there is more than one match. */
 static gdk_return
 leftjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr,
 	 bool nil_matches, bool nil_on_miss, bool semi, bool only_misses,
@@ -3135,6 +3228,15 @@ leftjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr,
 		   && (BATordered(r) || BATordered_rev(r))) {
 		assert(ATOMtype(l->ttype) == TYPE_oid); /* tdense */
 		return fetchjoin(r1p, r2p, l, r, sl, sr, &lci, &rci, func, t0);
+	} else if (BATtdense(l)
+		   && lci.tpe == cand_dense
+		   && r2p == NULL
+		   && (semi || only_misses)
+		   && !nil_on_miss
+		   && !not_in
+		   && !max_one) {
+		*r1p = bitmaskjoin(l, r, &lci, &rci, only_misses, func, t0);
+		return *r1p == NULL ? GDK_FAIL : GDK_SUCCEED;
 	} else if ((BATordered(r) || BATordered_rev(r))
 		   && (BATordered(l)
 		       || BATordered_rev(l)

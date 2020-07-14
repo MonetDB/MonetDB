@@ -446,12 +446,12 @@ atom2sql(sql_allocator *sa, atom *a)
 	case EC_BLOB: {
 		char *res;
 		blob *b = (blob*)a->data.val.pval;
-		size_t blob_size = (24 + (b->nitems * 3));
+		size_t blobstr_size = b->nitems * 2 + 1;
 
-		if ((res = SA_NEW_ARRAY(sa, char, blob_size + 8))) {
+		if ((res = SA_NEW_ARRAY(sa, char, blobstr_size + 8))) {
 			char *tail = stpcpy(res, "blob '");
-			ssize_t bloblen = BLOBtostr(&tail, &blob_size, b, true);
-			strcpy(res + bloblen + 6, "'");
+			ssize_t blobstr_offset = BLOBtostr(&tail, &blobstr_size, b, true);
+			strcpy(res + blobstr_offset + 6, "'");
 		}
 		return res;
 	} break;

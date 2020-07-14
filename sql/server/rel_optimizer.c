@@ -5608,8 +5608,10 @@ rel_push_project_down_union(visitor *v, sql_rel *rel)
 }
 
 static int
-sql_class_base_score(sql_subtype *t)
+sql_class_base_score(mvc *sql, sql_column *c, sql_subtype *t, bool equality_based)
 {
+	int de;
+
 	switch (ATOMstorage(t->type->localtype)) {
 		case TYPE_bte:
 			return 150 - 8;
@@ -5628,8 +5630,12 @@ sql_class_base_score(sql_subtype *t)
 			return 75 - 24;
 		case TYPE_dbl:
 			return 75 - 53;
-		default: /* strings and blobs don't get any points here */
+		default: {
+			if (equality_based && c && (de = sql_trans_is_duplicate_eliminated(sql->session->tr, c)))
+				return 150 - de * 8;
+			/* strings and blobs not duplicate eliminated don't get any points here */
 			return 0;
+		}
 	}
 }
 
@@ -5644,17 +5650,17 @@ score_gbe(mvc *sql, sql_rel *rel, sql_exp *e)
 	if (e->card == CARD_ATOM) /* constants are trivial to group */
 		res += 1000;
 	/* can we find out if the underlying table is sorted */
-	if ((c = exp_find_column(rel, e, -2)) && mvc_is_sorted(sql, c))
-		res += 600;
-	if (find_prop(e->p, PROP_SORTIDX)) /* has sort index */
-		res += 400;
 	if (find_prop(e->p, PROP_HASHCOL)) /* distinct columns */
+		res += 600;
+	if ((c = exp_find_column(rel, e, -2)) && mvc_is_sorted(sql, c))
+		res += 500;
+	if (find_prop(e->p, PROP_SORTIDX)) /* has sort index */
 		res += 300;
 	if (find_prop(e->p, PROP_HASHIDX)) /* has hash index */
 		res += 200;
 
 	/* prefer the shorter var types over the longer ones */
-	res += sql_class_base_score(t); /* smaller the type, better */
+	res += sql_class_base_score(sql, c, t, true); /* smaller the type, better */
 	return res;
 }
 
@@ -5662,17 +5668,44 @@ score_gbe(mvc *sql, sql_rel *rel, sql_exp *e)
 static sql_rel *
 rel_groupby_order(visitor *v, sql_rel *rel)
 {
-	list *gbe = rel->r;
+	int *scores = NULL;
+	sql_exp **exps = NULL;
 
-	if (is_groupby(rel->op) && list_length(gbe) > 1 && list_length(gbe)<9) {
+	if (is_groupby(rel->op) && list_length(rel->r) > 1) {
 		node *n;
-		int i, *scores = GDKzalloc(list_length(gbe) * sizeof(int));
+		list *gbe = rel->r;
+		int i, ngbe = list_length(gbe);
+		scores = GDKmalloc(ngbe * sizeof(int));
+		exps = GDKmalloc(ngbe * sizeof(sql_exp*));
 
-		for (i = 0, n = gbe->h; n; i++, n = n->next)
-			scores[i] = score_gbe(v->sql, rel, n->data);
-		rel->r = list_keysort(gbe, scores, (fdup)NULL);
-		GDKfree(scores);
+		if (scores && exps) {
+			/* first sorting step, give priority for integers and sorted columns */
+			for (i = 0, n = gbe->h; n; i++, n = n->next) {
+				exps[i] = n->data;
+				scores[i] = score_gbe(v->sql, rel, exps[i]);
+			}
+			GDKqsort(scores, exps, NULL, ngbe, sizeof(int), sizeof(void *), TYPE_int, true, true);
+
+			/* second sorting step, give priority to strings with lower number of digits */
+			for (i = ngbe - 1; i && !scores[i]; i--); /* find epressions with no score from the first round */
+			if (scores[i])
+				i++;
+			if (ngbe - i > 1) {
+				for (int j = i; j < ngbe; j++) {
+					sql_subtype *t = exp_subtype(exps[j]);
+					scores[j] = t->digits;
+				}
+				/* the less number of digits the better, order ascending */
+				GDKqsort(scores + i, exps + i, NULL, ngbe - i, sizeof(int), sizeof(void *), TYPE_int, false, true);
+			}
+
+			for (i = 0, n = gbe->h; n; i++, n = n->next)
+				n->data = exps[i];
+		}
 	}
+
+	GDKfree(scores);
+	GDKfree(exps);
 	return rel;
 }
 
@@ -7402,9 +7435,11 @@ score_se_base(mvc *sql, sql_rel *rel, sql_exp *e)
 	/* can we find out if the underlying table is sorted */
 	if ((c = exp_find_column(rel, e, -2)) && mvc_is_sorted(sql, c))
 		res += 600;
+	if (find_prop(e->p, PROP_SORTIDX)) /* has sort index */
+		res += 400;
 
 	/* prefer the shorter var types over the longer ones */
-	res += sql_class_base_score(t); /* smaller the type, better */
+	res += sql_class_base_score(sql, c, t, is_equality_or_inequality_exp(e->flag)); /* smaller the type, better */
 	return res;
 }
 
@@ -8659,7 +8694,7 @@ rel_add_dicts(visitor *v, sql_rel *rel)
 			if (!is_func(e->type) && oname[0] != '%') {
 				sql_column *c = find_sql_column(t, oname);
 
-				if (EC_VARCHAR(c->type.type->eclass) && (de = store_funcs.double_elim_col(v->sql->session->tr, c)) != 0) {
+				if ((de = sql_trans_is_duplicate_eliminated(v->sql->session->tr, c)) != 0) {
 					int nr = ++v->sql->label;
 					char name[16], *nme;
 					sql_rel *vt = rel_dicttable(v->sql, c, rname, de);
