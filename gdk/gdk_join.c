@@ -3073,9 +3073,13 @@ bitmaskjoin(BAT *l, BAT *r,
 
 	for (BUN n = 0; n < rci->ncand; n++) {
 		oid o = canditer_next(rci) - r->hseqbase;
-		o = rp ? rp[o] : o - r->hseqbase + r->tseqbase;
-		if (is_oid_nil(o))
-			continue;
+		if (rp) {
+			o = rp[o];
+			if (is_oid_nil(o))
+				continue;
+		} else {
+			o = o - r->hseqbase + r->tseqbase;
+		}
 		o += l->hseqbase;
 		if (o < lci->seq + l->tseqbase)
 			continue;
@@ -3087,47 +3091,43 @@ bitmaskjoin(BAT *l, BAT *r,
 			mask[o >> 5] |= 1U << (o & 0x1F);
 		}
 	}
+	if (only_misses)
+		cnt = lci->ncand - cnt;
 	if (cnt == 0 || cnt == lci->ncand) {
 		GDKfree(mask);
-		if (cnt == (only_misses ? lci->ncand : 0))
+		if (cnt == 0)
 			return BATdense(0, 0, 0);
-		assert(cnt == (only_misses ? 0 : lci->ncand));
 		return BATdense(0, lci->seq, lci->ncand);
 	}
-	if (only_misses)
-		r1 = COLnew(0, TYPE_oid, lci->ncand - cnt, TRANSIENT);
-	else
-		r1 = COLnew(0, TYPE_oid, cnt, TRANSIENT);
+	r1 = COLnew(0, TYPE_oid, cnt, TRANSIENT);
 	if (r1 != NULL) {
+		oid *r1p = Tloc(r1, 0);
+
 		r1->tkey = true;
 		r1->tnil = false;
 		r1->tnonil = true;
 		r1->tsorted = true;
-		if (only_misses ? cnt < lci->ncand : cnt > 0) {
-			oid *r1p = Tloc(r1, 0);
-			if (only_misses) {
-				/* set the bits for unused values at the
-				 * end so that we don't need special
-				 * code in the loop */
-				if (lci->ncand & 0x1F)
-					mask[nmsk - 1] |= ~0U << (lci->ncand & 0x1F);
-				for (size_t i = 0; i < nmsk; i++)
-					if (mask[i] != ~0U)
-						for (uint32_t j = 0; j < 32; j++)
-							if ((mask[i] & (1U << j)) == 0)
-								*r1p++ = i * 32 + j + lci->seq;
-				BATsetcount(r1, lci->ncand - cnt);
-			} else {
-				for (size_t i = 0; i < nmsk; i++)
-					if (mask[i] != 0U)
-						for (uint32_t j = 0; j < 32; j++)
-							if ((mask[i] & (1U << j)) != 0)
-								*r1p++ = i * 32 + j + lci->seq;
-				BATsetcount(r1, cnt);
-			}
-			assert((BUN) (r1p - (oid*) Tloc(r1, 0)) == BATcount(r1));
+		r1->trevsorted = cnt <= 1;
+		if (only_misses) {
+			/* set the bits for unused values at the
+			 * end so that we don't need special
+			 * code in the loop */
+			if (lci->ncand & 0x1F)
+				mask[nmsk - 1] |= ~0U << (lci->ncand & 0x1F);
+			for (size_t i = 0; i < nmsk; i++)
+				if (mask[i] != ~0U)
+					for (uint32_t j = 0; j < 32; j++)
+						if ((mask[i] & (1U << j)) == 0)
+							*r1p++ = i * 32 + j + lci->seq;
+		} else {
+			for (size_t i = 0; i < nmsk; i++)
+				if (mask[i] != 0U)
+					for (uint32_t j = 0; j < 32; j++)
+						if ((mask[i] & (1U << j)) != 0)
+							*r1p++ = i * 32 + j + lci->seq;
 		}
-		r1->trevsorted = r1->batCount <= 1;
+		BATsetcount(r1, cnt);
+		assert((BUN) (r1p - (oid*) Tloc(r1, 0)) == BATcount(r1));
 
 		TRC_DEBUG(ALGO, "l=" ALGOBATFMT ","
 			  "r=" ALGOBATFMT ",sl=" ALGOOPTBATFMT ","
