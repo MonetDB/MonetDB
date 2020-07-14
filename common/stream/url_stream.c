@@ -27,6 +27,7 @@ struct curl_data {
 	size_t usesize;		/* end of used data */
 	size_t offset;		/* start of unread data */
 	int running;		/* whether still transferring */
+	char errbuf[CURL_ERROR_SIZE]; /* a place for error messages */
 };
 
 #define BLOCK_CURL	((size_t) 1 << 16)
@@ -151,6 +152,7 @@ open_urlstream(const char *url)
 	}
 	*c = (struct curl_data) {
 		.running = 1,
+		.errbuf = {0},
 	};
 	if ((s = create_stream(url)) == NULL) {
 		free(c);
@@ -171,11 +173,16 @@ open_urlstream(const char *url)
 	curl_easy_setopt(c->handle, CURLOPT_WRITEDATA, s);
 	curl_easy_setopt(c->handle, CURLOPT_VERBOSE, 0);
 	curl_easy_setopt(c->handle, CURLOPT_NOSIGNAL, 1);
+	curl_easy_setopt(c->handle, CURLOPT_FAILONERROR, 1);
+	curl_easy_setopt(c->handle, CURLOPT_ERRORBUFFER, c->errbuf);
 	curl_easy_setopt(c->handle, CURLOPT_WRITEFUNCTION, write_callback);
 	CURLcode ret = curl_easy_perform(c->handle);
 	if (ret != CURLE_OK) {
+		if (strlen(c->errbuf) > 0)
+			mnstr_set_open_error(url, 0, "%s", c->errbuf);
+		else
+			mnstr_set_open_error(url, 0, "curl_easy_perform: %s", curl_easy_strerror(ret));
 		curl_destroy(s);
-		mnstr_set_open_error(url, 0, "curl_easy_perform: %s", curl_easy_strerror(ret));
 		return NULL;
 	}
 	curl_easy_cleanup(c->handle);

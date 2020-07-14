@@ -35,11 +35,18 @@ class Handler(http.server.BaseHTTPRequestHandler):
             self.end_headers()
             self.wfile.write(b'a' * 40 * 1024)
         elif self.path == '/sleep':
+            # used to test if subprocess timeout= option works
             time.sleep(60)
             self.send_response(http.HTTPStatus.OK)
             self.send_header('Content-Type', 'text/plain')
             self.end_headers()
             self.wfile.write(b"now i'm well rested")
+        elif self.path == '/xyzzy':
+            msg = 'A hollow voice says "Fool."\n'
+            self.send_response(http.HTTPStatus.NOT_FOUND, msg)
+            self.send_header('Content-Type', 'text/plain')
+            self.end_headers()
+            self.wfile.write(bytes(msg, 'ascii'))
         else:
             self.send_response(http.HTTPStatus.NOT_FOUND)
             self.send_header('Content-Type', 'text/plain')
@@ -64,7 +71,7 @@ def streamcat(suffix):
     cmd = ['streamcat', 'read', u, 'urlstream']
     print(f'FETCHING {suffix}')
     PIPE = subprocess.PIPE
-    p = subprocess.run(cmd, check=False, stdout=PIPE, stderr=PIPE)
+    p = subprocess.run(cmd, check=False, stdout=PIPE, stderr=PIPE, timeout=10)
     return (p.returncode, p.stdout, p.stderr)
 
 
@@ -78,3 +85,12 @@ assert code == 0
 assert out == 40 * 1024 * b'a'
 assert err == b''
 
+# Are we able to time out?
+# (code, out, err) = streamcat('/sleep')
+
+(code, out, err) = streamcat('/xyzzy')
+assert code != 0
+assert b'hollow voice' in err
+
+if __name__ == "__main__":
+    input('banana>')
