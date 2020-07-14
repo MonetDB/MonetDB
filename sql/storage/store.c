@@ -4985,6 +4985,12 @@ reset_trans(sql_trans *tr, sql_trans *ptr)
 {
 	int res = reset_changeset(tr, &tr->schemas, &ptr->schemas, (sql_base *)tr->parent, (resetf) &reset_schema, (dupfunc) &schema_dup);
 	TRC_DEBUG(SQL_STORE, "Reset transaction: %d\n", tr->wtime);
+
+	for (node *n = tr->schemas.set->h; n; n = n->next) { /* Set table members */
+		sql_schema *s = n->data;
+
+		set_members(&s->tables);
+	}
 	return res;
 }
 
