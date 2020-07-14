@@ -3063,7 +3063,6 @@ bitmaskjoin(BAT *l, BAT *r,
 	    const char *reason, lng t0)
 {
 	BAT *r1;
-	const oid *rp = BATtdense(r) ? NULL : Tloc(r, 0);
 	size_t nmsk = (lci->ncand + 31) / 32;
 	uint32_t *mask = GDKzalloc(nmsk * sizeof(uint32_t));
 	BUN cnt = 0;
@@ -3073,13 +3072,9 @@ bitmaskjoin(BAT *l, BAT *r,
 
 	for (BUN n = 0; n < rci->ncand; n++) {
 		oid o = canditer_next(rci) - r->hseqbase;
-		if (rp) {
-			o = rp[o];
-			if (is_oid_nil(o))
-				continue;
-		} else {
-			o = o - r->hseqbase + r->tseqbase;
-		}
+		o = BUNtoid(r, o);
+		if (is_oid_nil(o))
+			continue;
 		o += l->hseqbase;
 		if (o < lci->seq + l->tseqbase)
 			continue;
