@@ -1716,16 +1716,13 @@ rel_compare(sql_query *query, sql_rel *rel, symbol *sc, symbol *lo, symbol *ro, 
 }
 
 static sql_exp*
-_rel_nop(mvc *sql, sql_schema *s, char *fname, list *tl, sql_rel *rel, list *exps, sql_subtype *obj_type, int nr_args,
-		 exp_kind ek)
+_rel_nop(mvc *sql, sql_schema *s, char *fname, list *tl, sql_rel *rel, list *exps, exp_kind ek)
 {
 	sql_subfunc *f = NULL;
 	int table_func = (ek.card == card_relation);
 	sql_ftype type = (ek.card == card_loader)?F_LOADER:((ek.card == card_none)?F_PROC:
 		   ((ek.card == card_relation)?F_UNION:F_FUNC));
 
-	(void)nr_args;
-	(void)obj_type;
 	f = bind_func_(sql, s, fname, tl, type);
 	if (f) {
 		return exp_op(sql->sa, exps, f);
@@ -2082,9 +2079,17 @@ negate_symbol_tree(mvc *sql, symbol *sc)
 	case SQL_IS_NOT_NULL:
 		sc->token = SQL_IS_NULL;
 		break;
-	case SQL_NOT: /* nested NOTs eliminate each other */
-		memmove(sc, sc->data.sym, sizeof(symbol));
-		break;
+	case SQL_NOT: { /* nested NOTs eliminate each other */
+		if (sc->data.sym->token == SQL_ATOM) {
+			AtomNode *an = (AtomNode*) sc->data.sym;
+			memmove(sc, an, sizeof(AtomNode));
+		} else if (sc->data.sym->token == SQL_SELECT) {
+			SelectNode *sn = (SelectNode*) sc->data.sym;
+			memmove(sc, sn, sizeof(SelectNode));
+		} else {
+			memmove(sc, sc->data.sym, sizeof(symbol));
+		}
+	} break;
 	case SQL_COMPARE: {
 		dnode *cmp_n = sc->data.lval->h;
 		comp_type neg_cmp_type = negate_compare(compare_str2type(cmp_n->next->data.sval)); /* negate the comparator */
@@ -2097,8 +2102,7 @@ negate_symbol_tree(mvc *sql, symbol *sc)
 		negate_symbol_tree(sql, sc->data.lval->h->data.sym);
 		negate_symbol_tree(sql, sc->data.lval->h->next->data.sym);
 		sc->token = sc->token == SQL_AND ? SQL_OR : SQL_AND;
-		break;
-	}
+	} break;
 	default:
 		break;
 	}
@@ -2169,7 +2173,7 @@ rel_logical_value_exp(sql_query *query, sql_rel **rel, symbol *sc, int f, exp_ki
 			append(tl, exp_subtype(e));
 		}
 		/* find the predicate filter function */
-		return _rel_nop(sql, s, fname, tl, rel ? *rel : NULL, exps, obj_type, list_length(exps), ek);
+		return _rel_nop(sql, s, fname, tl, rel ? *rel : NULL, exps, ek);
 	}
 	case SQL_COMPARE:
 	{
@@ -2738,14 +2742,6 @@ rel_op(sql_query *query, sql_rel **rel, symbol *se, int f, exp_kind ek )
 		return sql_error(sql, 02, SQLSTATE(3F000) "SELECT: no such schema '%s'", sname);
 
 	sf = find_func(sql, s, fname, 0, F_AGGR, NULL);
-	if (!sf && *rel && (*rel)->card == CARD_AGGR) {
-		if (is_sql_having(f) || is_sql_orderby(f))
-			return NULL;
-		/* reset error */
-		sql->session->status = 0;
-		sql->errstr[0] = '\0';
-		return sql_error(sql, 02, SQLSTATE(42000) "SELECT: no such aggregate '%s'", fname);
-	}
 	if (sf)
 		return _rel_aggr(query, rel, 0, s, fname, NULL, f);
 	return rel_op_(sql, s, fname, ek);
@@ -3180,10 +3176,8 @@ rel_nop(sql_query *query, sql_rel **rel, symbol *se, int fs, exp_kind ek)
 	int nr_args = 0;
 	dnode *l = se->data.lval->h;
 	dnode *ops = l->next->next->data.lval?l->next->next->data.lval->h:NULL;
-	list *exps = new_exp_list(sql->sa);
-	list *tl = sa_list(sql->sa);
+	list *exps = sa_list(sql->sa), *tl = sa_list(sql->sa);
 	sql_subfunc *sf = NULL;
-	sql_subtype *obj_type = NULL;
 	sql_schema *s = cur_schema(sql);
 	exp_kind iek = {type_value, card_column, FALSE};
 	int err = 0;
@@ -3197,8 +3191,6 @@ rel_nop(sql_query *query, sql_rel **rel, symbol *se, int fs, exp_kind ek)
 		append(exps, e);
 		if (e) {
 			tpe = exp_subtype(e);
-			if (!nr_args)
-				obj_type = tpe;
 			append(tl, tpe);
 		}
 	}
@@ -3209,7 +3201,7 @@ rel_nop(sql_query *query, sql_rel **rel, symbol *se, int fs, exp_kind ek)
 
 		if (q) {
 			node *n, *m;
-	       		list *nexps = new_exp_list(sql->sa);
+			list *nexps = new_exp_list(sql->sa);
 			sql_func *f = q->f;
 
 			tl = sa_list(sql->sa);
@@ -3256,10 +3248,8 @@ rel_nop(sql_query *query, sql_rel **rel, symbol *se, int fs, exp_kind ek)
 	}
 	if (err)
 		return NULL;
-	return _rel_nop(sql, s, fname, tl, rel ? *rel : NULL, exps, obj_type, nr_args, ek);
+	return _rel_nop(sql, s, fname, tl, rel ? *rel : NULL, exps, ek);
 }
-
-
 
 static sql_exp *
 _rel_aggr(sql_query *query, sql_rel **rel, int distinct, sql_schema *s, char *aname, dnode *args, int f)
@@ -5092,7 +5082,9 @@ rel_value_exp2(sql_query *query, sql_rel **rel, symbol *se, int f, exp_kind ek)
 		return sql_error(sql, 10, SQLSTATE(42000) "Query too complex: running out of stack space");
 
 	if (rel && *rel && (*rel)->card == CARD_AGGR) { /* group by expression case, handle it before */
-		sql_exp *exp = frame_get_groupby_expression(sql, se);
+		sql_exp *exp = NULL;
+		if (!is_sql_aggr(f))
+			exp = frame_get_groupby_expression(sql, se);
 		if (sql->errstr[0] != '\0')
 			return NULL;
 		if (exp) {
@@ -5763,8 +5755,7 @@ rel_setquery_(sql_query *query, sql_rel *l, sql_rel *r, dlist *cols, int op )
 		rel = rel_setop(sql->sa, l, r, (operator_type)op);
 	}
 	if (rel) {
-		rel->exps = rel_projections(sql, rel, NULL, 0, 1);
-		rel->nrcols = list_length(rel->exps);
+		rel_setop_set_exps(sql, rel, rel_projections(sql, rel, NULL, 0, 1));
 		set_processed(rel);
 	}
 	return rel;

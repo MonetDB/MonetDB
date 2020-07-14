@@ -15,7 +15,7 @@ if (${LINUX_DISTRO} STREQUAL "debian")
   endif()
   if(${LINUX_DISTRO_VERSION} STREQUAL "10")
     assert_package_detected(
-      detect FALSE
+      detect TRUE
       legacyvariable HAVE_LIBLZ4
       variablename LZ4_FOUND)
   endif()

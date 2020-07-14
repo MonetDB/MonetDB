@@ -17,6 +17,15 @@ char* control_send(
 		char* command,
 		char wait,
 		char* pass);
+char* control_send_callback(
+		char** ret,
+		char* host,
+		int port,
+		char* database,
+		char* command,
+		void (*callback)(char *data, size_t size, void *cb_private),
+		void *cb_private,
+		char* pass);
 char* control_hash(char *pass, char *salt);
 char *control_ping(char *host, int port, char *pass);
 

@@ -6,23 +6,26 @@
 # LZ4_VERSION	- LZ4_VERSION if found
 # LZ4_FOUND	- True if lz4 found.
 
-find_path(LZ4_INCLUDE_DIR NAMES lz4.h)
+include(FindPackageHandleStandardArgs)
 
+find_path(LZ4_INCLUDE_DIR NAMES lz4.h)
 find_library(LZ4_LIBRARIES NAMES lz4)
 
-include(FindPackageHandleStandardArgs)
-find_package_handle_standard_args(LZ4
-  DEFAULT_MSG
-  LZ4_LIBRARIES
-  LZ4_INCLUDE_DIR)
-
-if(LZ4_FOUND)
+if(LZ4_INCLUDE_DIR AND EXISTS "${LZ4_INCLUDE_DIR}/lz4.h")
   file(STRINGS "${LZ4_INCLUDE_DIR}/lz4.h" LZ4_VERSION_LINES REGEX "#define[ \t]+LZ4_VERSION_(MAJOR|MINOR|RELEASE)")
   string(REGEX REPLACE ".*LZ4_VERSION_MAJOR *\([0-9]*\).*" "\\1" LZ4_VERSION_MAJOR "${LZ4_VERSION_LINES}")
   string(REGEX REPLACE ".*LZ4_VERSION_MINOR *\([0-9]*\).*" "\\1" LZ4_VERSION_MINOR "${LZ4_VERSION_LINES}")
   string(REGEX REPLACE ".*LZ4_VERSION_RELEASE *\([0-9]*\).*" "\\1" LZ4_VERSION_RELEASE "${LZ4_VERSION_LINES}")
   set(LZ4_VERSION "${LZ4_VERSION_MAJOR}.${LZ4_VERSION_MINOR}.${LZ4_VERSION_RELEASE}")
+endif()
 
+find_package_handle_standard_args(LZ4
+  REQUIRED_VARS
+  LZ4_LIBRARIES
+  LZ4_INCLUDE_DIR
+  VERSION_VAR LZ4_VERSION)
+
+if(LZ4_FOUND)
   if(NOT TARGET LZ4::LZ4 AND
       (EXISTS "${LZ4_LIBRARIES}"))
     add_library(LZ4::LZ4 UNKNOWN IMPORTED)

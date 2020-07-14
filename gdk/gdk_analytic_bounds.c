@@ -548,10 +548,7 @@
 
 #define ANALYTICAL_WINDOW_BOUNDS_BRANCHES_GROUPS(IMP, LIMIT, TPE)	\
 	do {								\
-		switch (tp1) {						\
-		case TYPE_bit:						\
-			ANALYTICAL_WINDOW_BOUNDS_CALC_FIXED(bit, ANALYTICAL_WINDOW_BOUNDS_FIXED_GROUPS##IMP, LIMIT, TPE); \
-			break;						\
+		switch (ATOMbasetype(tp1)) {	\
 		case TYPE_bte:						\
 			ANALYTICAL_WINDOW_BOUNDS_CALC_FIXED(bte, ANALYTICAL_WINDOW_BOUNDS_FIXED_GROUPS##IMP, LIMIT, TPE); \
 			break;						\

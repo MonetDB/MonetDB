@@ -2913,6 +2913,13 @@ sql_update_default(Client c, mvc *sql, const char *prev_schema)
 				"grant execute on procedure sys.hot_snapshot to \".snapshot\";\n"
 			);
 
+			/* additional snapshot function */
+			pos += snprintf(buf + pos, bufsize - pos,
+					"create procedure sys.hot_snapshot(tarfile string, onserver bool)\n"
+					" external name sql.hot_snapshot;\n"
+					"update sys.functions set system = true where system <> true and schema_id = (select id from sys.schemas where name = 'sys')"
+					" and name in ('hot_snapshot') and type = %d;\n", (int) F_PROC);
+
 			/* update system tables so that the content
 			 * looks more like what it would be if sys.var
 			 * had been defined by the C code in
@@ -2949,17 +2956,6 @@ sql_update_default(Client c, mvc *sql, const char *prev_schema)
 				sql_subtype *next = flt_types[i];
 				list_append(functions, sql_create_func(sql->sa, "degrees", "mmath", "degrees", FALSE, FALSE, SCALE_FIX, 0, next->type, 1, next->type));
 				list_append(functions, sql_create_func(sql->sa, "radians", "mmath", "radians", FALSE, FALSE, SCALE_FIX, 0, next->type, 1, next->type));
-			}
-
-			/* Adding 'sql_sub' and 'sql_add' between interval types only */
-			sql_subtype sec, month;
-			sql_find_subtype(&sec, "sec_interval", 13, SCALE_FIX);
-			sql_find_subtype(&month, "month_interval", 32, 0);
-			sql_subtype *interval_types[2] = {&sec, &month};
-			for (int i = 0; i < 2; i++) {
-				sql_subtype *next = interval_types[i];
-				list_append(functions, sql_create_func(sql->sa, "sql_sub", "calc", "-", FALSE, FALSE, SCALE_FIX, 0, next->type, 2, next->type, next->type));
-				list_append(functions, sql_create_func(sql->sa, "sql_add", "calc", "+", FALSE, FALSE, SCALE_FIX, 0, next->type, 2, next->type, next->type));
 			}
 			insert_functions(sql->session->tr, mvc_bind_table(sql, sys, "functions"), functions, mvc_bind_table(sql, sys, "args"));
 

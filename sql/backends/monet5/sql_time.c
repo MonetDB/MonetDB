@@ -210,13 +210,12 @@ lng shift, lng divider, lng multiplier
 )
 {
 	ssize_t pos = 0;
-	daytime *conv = NULL;
+	daytime dt = 0, *conv = &dt;
 
 	pos = fromstr_func(next, &(size_t){sizeof(daytime)}, &conv, false);
 	if (pos < (ssize_t) strlen(next) || /* includes pos < 0 */ ATOMcmp(TYPE_daytime, conv, ATOMnilptr(TYPE_daytime)) == 0)
-		return createException(SQL, "batcalc.str_2time_daytimetz", SQLSTATE(22007) "Daytime (%s) has incorrect format", next);
-	else
-		*ret = daytime_2time_daytime_imp(*conv, shift, divider, multiplier);
+		return createException(SQL, "batcalc.str_2time_daytimetz", SQLSTATE(22007) "Daytime '%s' has incorrect format", next);
+	*ret = daytime_2time_daytime_imp(*conv, shift, divider, multiplier);
 	return MAL_SUCCEED;
 }
 
@@ -577,13 +576,12 @@ lng shift, lng divider, lng multiplier
 )
 {
 	ssize_t pos = 0;
-	timestamp *conv = NULL;
+	timestamp tp = 0, *conv = &tp;
 
 	pos = fromstr_func(next, &(size_t){sizeof(timestamp)}, &conv, false);
 	if (!pos || pos < (ssize_t) strlen(next) || ATOMcmp(TYPE_timestamp, conv, ATOMnilptr(TYPE_timestamp)) == 0)
-		return createException(SQL, "batcalc.str_2time_timestamptz_internal", SQLSTATE(22007) "Timestamp (%s) has incorrect format", next);
-	else
-		*ret = timestamp_2time_timestamp_imp(*conv, shift, divider, multiplier);
+		return createException(SQL, "batcalc.str_2time_timestamptz_internal", SQLSTATE(22007) "Timestamp '%s' has incorrect format", next);
+	*ret = timestamp_2time_timestamp_imp(*conv, shift, divider, multiplier);
 	return MAL_SUCCEED;
 }
 
@@ -1204,21 +1202,19 @@ nil_2_date(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 }
 
 static inline str
-str_2_date_internal_imp(date *res, str next, bit ce, bit *hasnil)
+str_2_date_internal_imp(date *ret, str next, bit ce, bit *hasnil)
 {
 	if (!ce || strNil(next)) {
 		*hasnil = 1;
-		*res = date_nil;
+		*ret = date_nil;
 	} else {
-		ptr p = NULL;
-		ssize_t pos = ATOMfromstr(TYPE_date, &p, &(size_t){sizeof(date)}, next, false);
+		ssize_t pos = 0;
+		date dt = 0, *conv = &dt;
 
-		if (pos < 0 || !p || (ATOMcmp(TYPE_date, p, ATOMnilptr(TYPE_date)) == 0)) {
-			GDKfree(p);
-			return createException(SQL, "calc.str_2_date", SQLSTATE(42000) "Conversion of string '%s' failed", next);
-		} else {
-			*res = *(date*)p;
-		}
+		pos = date_fromstr(next, &(size_t){sizeof(date)}, &conv, false);
+		if (pos < (ssize_t) strlen(next) || /* includes pos < 0 */ ATOMcmp(TYPE_date, conv, ATOMnilptr(TYPE_date)) == 0)
+			return createException(SQL, "batcalc.str_2_date", SQLSTATE(22007) "Date '%s' has incorrect format", next);
+		*ret = *conv;
 	}
 	return MAL_SUCCEED;
 }

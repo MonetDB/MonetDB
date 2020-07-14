@@ -439,27 +439,14 @@ create_table_from_emit(Client cntxt, char *sname, char *tname, sql_emit_col *col
 	if ((msg = checkSQLContext(cntxt)) != NULL)
 		return msg;
 
-	/* for some reason we don't have an allocator here, so make one */
-	assert(!sql->sa);
-	if (!(sql->sa = sa_create(sql->pa))) {
-		msg = sql_error(sql, 02, SQLSTATE(HY013) "CREATE TABLE: %s", MAL_MALLOC_FAIL);
-		goto cleanup;
-	}
-
 	if (!sname)
 		sname = "sys";
-	if (!(s = mvc_bind_schema(sql, sname))) {
-		msg = sql_error(sql, 02, SQLSTATE(3F000) "CREATE TABLE: no such schema '%s'", sname);
-		goto cleanup;
-	}
-	if (!mvc_schema_privs(sql, s)) {
-		msg = sql_error(sql, 02, SQLSTATE(42000) "CREATE TABLE: Access denied for %s to schema '%s'", sqlvar_get_string(find_global_var(sql, mvc_bind_schema(sql, "sys"), "current_user")), s->base.name);
-		goto cleanup;
-	}
-	if (!(t = mvc_create_table(sql, s, tname, tt_table, 0, SQL_DECLARED_TABLE, CA_COMMIT, -1, 0))) {
-		msg = sql_error(sql, 02, SQLSTATE(3F000) "CREATE TABLE: could not create table '%s'", tname);
-		goto cleanup;
-	}
+	if (!(s = mvc_bind_schema(sql, sname)))
+		return sql_error(sql, 02, SQLSTATE(3F000) "CREATE TABLE: no such schema '%s'", sname);
+	if (!mvc_schema_privs(sql, s))
+		return sql_error(sql, 02, SQLSTATE(42000) "CREATE TABLE: Access denied for %s to schema '%s'", sqlvar_get_string(find_global_var(sql, mvc_bind_schema(sql, "sys"), "current_user")), s->base.name);
+	if (!(t = mvc_create_table(sql, s, tname, tt_table, 0, SQL_DECLARED_TABLE, CA_COMMIT, -1, 0)))
+		return sql_error(sql, 02, SQLSTATE(3F000) "CREATE TABLE: could not create table '%s'", tname);
 
 	for (i = 0; i < ncols; i++) {
 		BAT *b = columns[i].b;
@@ -471,44 +458,30 @@ create_table_from_emit(Client cntxt, char *sname, char *tname, sql_emit_col *col
 			sql_find_subtype(&tpe, "clob", 0, 0);
 		else {
 			sql_subtype *t = sql_bind_localtype(atoname);
-			if (!t) {
-				msg = sql_error(sql, 02, SQLSTATE(3F000) "CREATE TABLE: could not find type for column");
-				goto cleanup;
-			}
+			if (!t)
+				return sql_error(sql, 02, SQLSTATE(3F000) "CREATE TABLE: could not find type for column");
 			tpe = *t;
 		}
 
-		if (columns[i].name && columns[i].name[0] == '%') {
-			msg = sql_error(sql, 02, SQLSTATE(42000) "CREATE TABLE: generated labels not allowed in column names, use an alias instead");
-			goto cleanup;
-		} else if (!(col = mvc_create_column(sql, t, columns[i].name, &tpe))) {
-			msg = sql_error(sql, 02, SQLSTATE(3F000) "CREATE TABLE: could not create column %s", columns[i].name);
-			goto cleanup;
-		}
+		if (columns[i].name && columns[i].name[0] == '%')
+			return sql_error(sql, 02, SQLSTATE(42000) "CREATE TABLE: generated labels not allowed in column names, use an alias instead");
+		if (!(col = mvc_create_column(sql, t, columns[i].name, &tpe)))
+			return sql_error(sql, 02, SQLSTATE(3F000) "CREATE TABLE: could not create column %s", columns[i].name);
 	}
 	if ((msg = create_table_or_view(sql, sname, t->base.name, t, 0)) != MAL_SUCCEED)
-		goto cleanup;
-	if (!(t = mvc_bind_table(sql, s, tname))) {
-		msg = sql_error(sql, 02, SQLSTATE(3F000) "CREATE TABLE: could not bind table %s", tname);
-		goto cleanup;
-	}
+		return msg;
+	if (!(t = mvc_bind_table(sql, s, tname)))
+		return sql_error(sql, 02, SQLSTATE(3F000) "CREATE TABLE: could not bind table %s", tname);
 	for (i = 0; i < ncols; i++) {
 		BAT *b = columns[i].b;
 		sql_column *col = NULL;
 
-		if (!(col = mvc_bind_column(sql, t, columns[i].name))) {
-			msg = sql_error(sql, 02, SQLSTATE(3F000) "CREATE TABLE: could not bind column %s", columns[i].name);
-			goto cleanup;
-		}
+		if (!(col = mvc_bind_column(sql, t, columns[i].name)))
+			return sql_error(sql, 02, SQLSTATE(3F000) "CREATE TABLE: could not bind column %s", columns[i].name);
 		if ((msg = mvc_append_column(sql->session->tr, col, b)) != MAL_SUCCEED)
-			goto cleanup;
+			return msg;
 	}
 
-cleanup:
-	if(sql->sa) {
-		sa_destroy(sql->sa);
-		sql->sa = NULL;
-	}
 	return msg;
 }
 
@@ -526,40 +499,22 @@ append_to_table_from_emit(Client cntxt, char *sname, char *tname, sql_emit_col *
 	if ((msg = checkSQLContext(cntxt)) != NULL)
 		return msg;
 
-	/* for some reason we don't have an allocator here, so make one */
-	assert(!sql->sa);
-	if (!(sql->sa = sa_create(sql->pa))) {
-		msg = sql_error(sql, 02, SQLSTATE(HY013) "APPEND TABLE: %s", MAL_MALLOC_FAIL);
-		goto cleanup;
-	}
-
 	if (!sname)
 		sname = "sys";
-	if (!(s = mvc_bind_schema(sql, sname))) {
-		msg = sql_error(sql, 02, SQLSTATE(3F000) "APPEND TABLE: no such schema '%s'", sname);
-		goto cleanup;
-	}
-	if (!(t = mvc_bind_table(sql, s, tname))) {
-		msg = sql_error(sql, 02, SQLSTATE(3F000) "APPEND TABLE: could not bind table %s", tname);
-		goto cleanup;
-	}
+	if (!(s = mvc_bind_schema(sql, sname)))
+		return sql_error(sql, 02, SQLSTATE(3F000) "APPEND TABLE: no such schema '%s'", sname);
+	if (!(t = mvc_bind_table(sql, s, tname)))
+		return sql_error(sql, 02, SQLSTATE(3F000) "APPEND TABLE: could not bind table %s", tname);
 	for (i = 0; i < ncols; i++) {
 		BAT *b = columns[i].b;
 		sql_column *col = NULL;
 
-		if (!(col = mvc_bind_column(sql,t, columns[i].name))) {
-			msg = sql_error(sql, 02, SQLSTATE(3F000) "APPEND TABLE: could not bind column %s", columns[i].name);
-			goto cleanup;
-		}
+		if (!(col = mvc_bind_column(sql, t, columns[i].name)))
+			return sql_error(sql, 02, SQLSTATE(3F000) "APPEND TABLE: could not bind column %s", columns[i].name);
 		if ((msg = mvc_append_column(sql->session->tr, col, b)) != MAL_SUCCEED)
-			goto cleanup;
+			return msg;
 	}
 
-cleanup:
-	if(sql->sa) {
-		sa_destroy(sql->sa);
-		sql->sa = NULL;
-	}
 	return msg;
 }
 
