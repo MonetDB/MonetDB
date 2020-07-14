@@ -1,9 +1,17 @@
-# create a simple MSK using integers
+# MSK bats are bitvectors. 
+# The length depends on the min/max index
+# Access beyond those raise an error
 
 bv2:= bat.new(:msk);
-bat.append(bv2,1@0:oid);
-bat.append(bv2,1@0:oid);
-bat.append(bv2,0@0:oid);
-bat.append(bv2,1@0:oid);
+bat.setbit(bv2,1);
+bat.setbit(bv2,3);
+bat.setbit(bv2,5);
+bat.setbit(bv2,7);
 
+# should produce 1,0,1,0,1,0,1
+io.print(bv2);
+
+
+bat.clrbit(bv2,3)
+# should produce 1,0,0,0,1,0,1
 io.print(bv2);

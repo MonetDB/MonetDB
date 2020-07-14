@@ -1,4 +1,4 @@
-# create a simple MSK using integers
+# create a simple MSK BAT  using integers
 
 bv1:= bat.new(:msk);
 bat.append(bv1,1:msk);
@@ -7,3 +7,6 @@ bat.append(bv1,0:msk);
 bat.append(bv1,1:msk);
 
 io.print(bv1);
+
+f:= algebra.select(bv1, nil:bat[:oid], 0, 0, true, true, false);
+io.print(f);

@@ -1,12 +1,19 @@
-# create a simple MSK using integers
+# The msk vector are intended to represent candidate lists
 
-cnd := bat.new(:oid);
-bat.append(cnd,1@0:oid);
-bat.append(cnd,1@0:oid);
-bat.append(cnd,0@0:oid);
-bat.append(cnd,1@0:oid);
+b := bat.new(:int);
+bat.append(b,1);
+bat.append(b,3);
+bat.append(b,5);
+bat.append(b,0);
+bat.append(b,1);
 
-bv2:= bat.new(:msk);
-bat.append(bv2,cnd);
-
+bv2:bat[:msk]:= bat.mask(b);
+# should produce (1,1,1,1,1)
 io.print(bv2);
+
+cnd:bat[:msk] := algebra.select(bv2, nil:bat[:oid], 0, 2, true, true, false);
+# should produce (1,0,0,1,1)
+io.print(cnd);
+
+prj:bat[:int]:= bat.project(bv2, cnd);
+io.print(prj);
