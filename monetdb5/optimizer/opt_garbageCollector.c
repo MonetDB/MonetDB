@@ -25,12 +25,13 @@
 str
 OPTgarbageCollectorImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	int i, limit;
+	int i, j, limit, vlimit;
 	InstrPtr p;
 	int actions = 0;
-	char buf[256];
+	char buf[1024];
 	lng usec = GDKusec();
 	str msg = MAL_SUCCEED;
+	int *used;
 
 	(void) pci;
 	(void) stk;
@@ -70,6 +71,8 @@ OPTgarbageCollectorImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, Ins
 	}
 
 	// Actual garbage collection stuff, just mark them for re-assessment
+	vlimit = mb->vtop;
+	used = (int *) GDKzalloc(vlimit * sizeof(int));
 	p = NULL;
 	for (i = 0; i < limit; i++) {
 		p = getInstrPtr(mb, i);
@@ -77,13 +80,33 @@ OPTgarbageCollectorImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, Ins
 		p->typechk = TYPE_UNKNOWN;
 		/* Set the program counter to ease profiling */
 		p->pc = i;
+		if ( i > 0 && getModuleId(p) != languageRef && getModuleId(p) != querylogRef && getModuleId(p) != sqlRef && !p->barrier)
+			for( j=0; j< p->retc; j++)
+				used[getArg(p,j)] = i;
+		if ( getModuleId(p) != languageRef && getFunctionId(p) != passRef){
+			for(j= p->retc ; j< p->argc; j++)
+				used[getArg(p,j)] = 0;
+			}
 		if ( p->token == ENDsymbol)
 			break;
 	}
+
 	/* A good MAL plan should end with an END instruction */
 	if( p && p->token != ENDsymbol){
 		throw(MAL, "optimizer.garbagecollector", SQLSTATE(42000) "Incorrect MAL plan encountered");
 	}
+	/* Leave a message behind when we have created variables and not used them */
+	for(i=0; i< vlimit; i++)
+	if( used[i]){
+		p = getInstrPtr(mb, used[i]);
+		if( p){
+			str msg = instruction2str(mb, NULL, p, LIST_MAL_ALL);
+			snprintf(buf,1024,"Unused variable %s: %s", getVarName(mb, i), msg);
+			newComment(mb,buf);
+			GDKfree(msg);
+		}
+	}
+	GDKfree(used);
 	getInstrPtr(mb,0)->gc |= GARBAGECONTROL;
 
 	/* leave a consistent scope admin behind */

@@ -32,7 +32,7 @@ rel_generate_anti_expression(mvc *sql, sql_rel **anti_rel, sql_table *mt, sql_ta
 		res = exp_ref(sql, res);
 	} else if (isPartitionedByExpressionTable(mt)) {
 		*anti_rel = rel_project(sql->sa, *anti_rel, NULL);
-		if (!(res = rel_parse_val(sql, sa_message(sql->sa, "select %s;", mt->part.pexp->exp), sql->emode, (*anti_rel)->l)))
+		if (!(res = rel_parse_val(sql, mt->part.pexp->exp, NULL, sql->emode, (*anti_rel)->l)))
 			return NULL;
 	} else {
 		assert(0);
@@ -98,7 +98,7 @@ rel_generate_anti_insert_expression(mvc *sql, sql_rel **anti_rel, sql_table *t)
 		res = list_fetch((*anti_rel)->exps, colr);
 	} else if (isPartitionedByExpressionTable(t)) {
 		*anti_rel = rel_project(sql->sa, *anti_rel, rel_projections(sql, *anti_rel, NULL, 1, 1));
-		if (!(res = rel_parse_val(sql, sa_message(sql->sa, "select %s;", t->part.pexp->exp), sql->emode, (*anti_rel)->l)))
+		if (!(res = rel_parse_val(sql, t->part.pexp->exp, NULL, sql->emode, (*anti_rel)->l)))
 			return NULL;
 		exp_label(sql->sa, res, ++sql->label);
 		append((*anti_rel)->exps, res);
@@ -129,31 +129,25 @@ generate_partition_limits(sql_query *query, sql_rel **r, symbol *s, sql_subtype 
 	mvc *sql = query->sql;
 	if (!s) {
 		return NULL;
-	} else if (s->token == SQL_NULL ||
-		   (!nilok &&
-		    s->token == SQL_IDENT &&
-		    s->data.lval->h->type == type_int &&
-		    sql->args[s->data.lval->h->data.i_val]->isnull)) {
+	} else if (s->token == SQL_NULL && !nilok) {
 		return sql_error(sql, 02, SQLSTATE(42000) "ALTER TABLE: range bound cannot be null");
 	} else if (s->token == SQL_MINVALUE) {
 		atom *amin = atom_general(sql->sa, &tpe, NULL);
 		if (!amin) {
-			char *err = sql_subtype_string(&tpe);
+			char *err = sql_subtype_string(sql->ta, &tpe);
 			if (!err)
 				return sql_error(sql, 02, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			sql_error(sql, 02, SQLSTATE(42000) "ALTER TABLE: absolute minimum value not available for %s type", err);
-			GDKfree(err);
 			return NULL;
 		}
 		return exp_atom(sql->sa, amin);
 	} else if (s->token == SQL_MAXVALUE) {
 		atom *amax = atom_general(sql->sa, &tpe, NULL);
 		if (!amax) {
-			char *err = sql_subtype_string(&tpe);
+			char *err = sql_subtype_string(sql->ta, &tpe);
 			if (!err)
 				return sql_error(sql, 02, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			sql_error(sql, 02, SQLSTATE(42000) "ALTER TABLE: absolute maximum value not available for %s type", err);
-			GDKfree(err);
 			return NULL;
 		}
 		return exp_atom(sql->sa, amax);
@@ -273,7 +267,6 @@ static sql_rel *
 propagate_validation_to_upper_tables(sql_query* query, sql_table *mt, sql_table *pt, sql_rel *rel)
 {
 	mvc *sql = query->sql;
-	sql->caching = 0;
 	for (sql_table *prev = mt, *it = prev->p ; it && prev ; prev = it, it = it->p) {
 		sql_part *spt = find_sql_part(it, prev->base.name);
 		if (spt) {
@@ -1037,7 +1030,6 @@ rel_propagate(sql_query *query, sql_rel *rel, int *changes)
 		if (t->p && (isRangePartitionTable(t->p) || isListPartitionTable(t->p)) && !find_prop(l->p, PROP_USED)) {
 			isSubtable = true;
 			if (is_insert(rel->op)) { //insertion directly to sub-table (must do validation)
-				sql->caching = 0;
 				rel = rel_subtable_insert(query, rel, t, changes);
 				propagate = rel->l;
 			}
@@ -1045,18 +1037,15 @@ rel_propagate(sql_query *query, sql_rel *rel, int *changes)
 		if (isMergeTable(t)) {
 			assert(list_length(t->members.set) > 0);
 			if (is_delete(propagate->op) || is_truncate(propagate->op)) { //propagate deletions to the partitions
-				sql->caching = 0;
 				rel = rel_propagate_delete(sql, rel, t, changes);
 			} else if (isRangePartitionTable(t) || isListPartitionTable(t)) {
 				if (is_insert(propagate->op)) { //on inserts create a selection for each partition
-					sql->caching = 0;
 					if (isSubtable) {
 						rel->l = rel_propagate_insert(query, propagate, t, changes);
 					} else {
 						rel = rel_propagate_insert(query, rel, t, changes);
 					}
 				} else if (is_update(propagate->op)) { //for updates propagate like in deletions
-					sql->caching = 0;
 					rel = rel_propagate_update(sql, rel, t, changes);
 				} else {
 					assert(0);

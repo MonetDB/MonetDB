@@ -30,6 +30,7 @@ extern comp_type negate_compare( comp_type t );
 extern comp_type range2lcompare( int r );
 extern comp_type range2rcompare( int r );
 extern int compare2range( int l, int r );
+extern int compare_funcs2range(const char *l, const char *r);
 
 extern sql_exp *exp_compare(sql_allocator *sa, sql_exp *l, sql_exp *r, int cmptype);
 extern sql_exp *exp_compare2(sql_allocator *sa, sql_exp *l, sql_exp *r, sql_exp *f, int cmptype);
@@ -77,7 +78,7 @@ extern sql_exp * exp_atom_ref(sql_allocator *sa, int i, sql_subtype *tpe);
 extern sql_exp * exp_null(sql_allocator *sa, sql_subtype *tpe);
 extern sql_exp * exp_zero(sql_allocator *sa, sql_subtype *tpe); /* Apply it to numeric types only obviously */
 extern sql_exp * exp_param_or_declared(sql_allocator *sa, const char *sname, const char *name, sql_subtype *tpe, int frame);
-extern atom * exp_value(mvc *sql, sql_exp *e, atom **args, int maxarg);
+extern atom * exp_value(mvc *sql, sql_exp *e);
 extern sql_exp * exp_values(sql_allocator *sa, list *exps);
 extern list * exp_get_values(sql_exp *e); /* get expression list from the values expression */
 extern list * exp_types(sql_allocator *sa, list *exps);
@@ -125,7 +126,7 @@ extern unsigned int exp_card(sql_exp *e);
 extern const char *exp_find_rel_name(sql_exp *e);
 
 extern sql_exp *rel_find_exp( sql_rel *rel, sql_exp *e);
-extern sql_exp *rel_find_exp_and_corresponding_rel(sql_rel *rel, sql_exp *e, sql_rel **res);
+extern sql_exp *rel_find_exp_and_corresponding_rel(sql_rel *rel, sql_exp *e, sql_rel **res, bool *under_join);
 
 extern int exp_cmp( sql_exp *e1, sql_exp *e2);
 extern int exp_equal( sql_exp *e1, sql_exp *e2);
@@ -143,11 +144,11 @@ extern int exp_is_join(sql_exp *e, list *rels);
 extern int exp_is_eqjoin(sql_exp *e);
 extern int exp_is_join_exp(sql_exp *e);
 extern int exp_is_atom(sql_exp *e);
-extern int exp_is_true(mvc *sql, sql_exp *e);
-extern int exp_is_false(mvc *sql, sql_exp *e);
-extern int exp_is_zero(mvc *sql, sql_exp *e);
-extern int exp_is_not_null(mvc *sql, sql_exp *e);
-extern int exp_is_null(mvc *sql, sql_exp *e);
+extern int exp_is_true(sql_exp *e);
+extern int exp_is_false(sql_exp *e);
+extern int exp_is_zero(sql_exp *e);
+extern int exp_is_not_null(sql_exp *e);
+extern int exp_is_null(sql_exp *e);
 extern int exp_is_rel(sql_exp *e);
 extern int exp_has_rel(sql_exp *e);
 extern int exps_have_rel_exp(list *exps);

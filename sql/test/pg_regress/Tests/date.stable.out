@@ -545,8 +545,8 @@ stdout of test 'date` in directory 'sql/test/pg_regress` itself:
 [ 2040-04-10,	0.000000	]
 [ NULL,	NULL	]
 #SELECT f1, sql_sub(f1, cast('2001-12-12' as date)) FROM DATE_TBL;
-% sys.date_tbl,	sys.%2 # table_name
-% f1,	%2 # name
+% sys.date_tbl,	sys.%1 # table_name
+% f1,	%1 # name
 % date,	int # type
 % 10,	6 # length
 [ 1957-04-09,	-16318	]
@@ -566,8 +566,8 @@ stdout of test 'date` in directory 'sql/test/pg_regress` itself:
 [ 2040-04-10,	13999	]
 [ NULL,	NULL	]
 #SELECT f1, sql_sub(cast('2001-12-12' as date), f1) FROM DATE_TBL;
-% sys.date_tbl,	.%2 # table_name
-% f1,	%2 # name
+% sys.date_tbl,	.%1 # table_name
+% f1,	%1 # name
 % date,	int # type
 % 10,	6 # length
 [ 1957-04-09,	16318	]

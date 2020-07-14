@@ -178,9 +178,12 @@ typedef enum comp_type {
 #define CMP_BETWEEN 16
 
 #define is_theta_exp(e) ((e) == cmp_gt || (e) == cmp_gte || (e) == cmp_lte ||\
-		         (e) == cmp_lt || (e) == cmp_equal || (e) == cmp_notequal)
+						 (e) == cmp_lt || (e) == cmp_equal || (e) == cmp_notequal)
 
 #define is_complex_exp(et) ((et) == cmp_or || (et) == cmp_in || (et) == cmp_notin || (et) == cmp_filter)
+
+#define is_equality_or_inequality_exp(et) ((et) == cmp_equal || (et) == cmp_notequal || (et) == cmp_in || \
+							 			   (et) == cmp_notin || (et) == mark_in || (et) == mark_notin)
 
 typedef enum commit_action_t {
 	CA_COMMIT, 	/* commit rows, only for persistent tables */
@@ -305,9 +308,9 @@ typedef enum sql_class {
 #define EC_COMPUTE(e)		(e==EC_NUM||e==EC_FLT)
 #define EC_BOOLEAN(e)		(e==EC_BIT||e==EC_NUM||e==EC_FLT)
 #define EC_TEMP_TZ(e)		(e==EC_TIME_TZ||e==EC_TIMESTAMP_TZ)
-#define EC_TEMP(e)		(e==EC_TIME||e==EC_DATE||e==EC_TIMESTAMP||EC_TEMP_TZ(e))
+#define EC_TEMP(e)			(e==EC_TIME||e==EC_DATE||e==EC_TIMESTAMP||EC_TEMP_TZ(e))
 #define EC_TEMP_FRAC(e)		(e==EC_TIME||e==EC_TIMESTAMP||EC_TEMP_TZ(e))
-#define EC_FIXED(e)		(e==EC_BIT||e==EC_CHAR||e==EC_POS||e==EC_NUM||EC_INTERVAL(e)||e==EC_DEC||EC_TEMP(e))
+#define EC_BACKEND_FIXED(e)	(EC_NUMBER(e)||e==EC_BIT||EC_TEMP(e))
 
 typedef struct sql_type {
 	sql_base base;

@@ -31,7 +31,31 @@
  */
 
 #define MODULE_HASH_SIZE 1024
-Module moduleIndex[MODULE_HASH_SIZE] = { NULL };
+static Module moduleIndex[MODULE_HASH_SIZE] = { NULL };
+
+MALfcn
+findFunctionImplementation(const char *cname)
+{
+	for (int i = 0; i < MODULE_HASH_SIZE; i++) {
+		if (moduleIndex[i] != NULL && moduleIndex[i]->space != NULL) {
+			for (int j = 0; j < MAXSCOPE; j++) {
+				Symbol s;
+				if ((s = moduleIndex[i]->space[j]) != NULL) {
+					do {
+						if (strcmp(s->def->binding, cname) == 0 &&
+							s->def &&
+							s->def->stmt &&
+							s->def->stmt[0] &&
+							s->def->stmt[0]->fcn) {
+							return s->def->stmt[0]->fcn;
+						}
+					} while ((s = s->peer) != NULL);
+				}
+			}
+		}
+	}
+	return NULL;
+}
 
 BAT *
 getModules(void)

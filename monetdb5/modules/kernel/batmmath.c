@@ -8,20 +8,10 @@
 
 #include "monetdb_config.h"
 #include "gdk.h"
-#include <math.h>
 #include <fenv.h>
 #include "mal_exception.h"
 #include "mal_interpreter.h"
 #include "mmath_private.h"
-#ifndef FE_INVALID
-#define FE_INVALID			0
-#endif
-#ifndef FE_DIVBYZERO
-#define FE_DIVBYZERO		0
-#endif
-#ifndef FE_OVERFLOW
-#define FE_OVERFLOW			0
-#endif
 
 static inline bool
 chkmsk(const bit *rv, const uint32_t *mrv, BUN i)
@@ -430,7 +420,7 @@ CMDscienceBINARY(MalStkPtr stk, InstrPtr pci,
 }
 
 #define scienceImpl(FUNC)												\
-str																		\
+static str																\
 CMDscience_bat_##FUNC(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) \
 {																		\
 	(void) cntxt;														\
@@ -440,7 +430,7 @@ CMDscience_bat_##FUNC(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) \
 }
 
 #define scienceBinaryImpl(FUNC)											\
-str																		\
+static str																\
 CMDscience_bat_##FUNC(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) \
 {																		\
 	(void) cntxt;														\
@@ -450,7 +440,7 @@ CMDscience_bat_##FUNC(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) \
 }
 
 #define scienceNotImpl(FUNC)											\
-str																		\
+static str																\
 CMDscience_bat_##FUNC(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) \
 {																		\
 	(void) cntxt;														\
@@ -464,55 +454,26 @@ CMDscience_bat_##FUNC(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) \
 static double
 radians(double x)
 {
-	return x * (3.14159265358979323846 / 180.0);
+	return x * (M_PI / 180.0);
 }
 
 static float
 radiansf(float x)
 {
-	return (float) (x * (3.14159265358979323846 / 180.0));
+	return (float) (x * (M_PI / 180.0));
 }
 
 static double
 degrees(double x)
 {
-	return x * (180.0 / 3.14159265358979323846);
+	return x * (180.0 / M_PI);
 }
 
 static float
 degreesf(float x)
 {
-	return (float) (x * (180.0 / 3.14159265358979323846));
+	return (float) (x * (180.0 / M_PI));
 }
-
-mal_export str CMDscience_bat_asin(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-mal_export str CMDscience_bat_acos(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-mal_export str CMDscience_bat_atan(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-mal_export str CMDscience_bat_cos(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-mal_export str CMDscience_bat_sin(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-mal_export str CMDscience_bat_tan(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-mal_export str CMDscience_bat_cosh(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-mal_export str CMDscience_bat_sinh(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-mal_export str CMDscience_bat_tanh(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-mal_export str CMDscience_bat_radians(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-mal_export str CMDscience_bat_degrees(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-mal_export str CMDscience_bat_exp(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-mal_export str CMDscience_bat_log(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-mal_export str CMDscience_bat_log10(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-mal_export str CMDscience_bat_log2(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-mal_export str CMDscience_bat_sqrt(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-#ifdef HAVE_CBRT
-mal_export str CMDscience_bat_cbrt(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-#else
-mal_export str CMDscience_bat_cbrt(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-#endif
-mal_export str CMDscience_bat_ceil(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-mal_export str CMDscience_bat_fabs(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-mal_export str CMDscience_bat_floor(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-
-mal_export str CMDscience_bat_atan2(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-mal_export str CMDscience_bat_pow(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-mal_export str CMDscience_bat_logbs(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 
 scienceImpl(asin)
 scienceImpl(acos)

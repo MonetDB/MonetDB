@@ -89,8 +89,6 @@ TABLETdestroy_format(Tablet *as)
 			BBPunfix(fmt[p].c->batCacheid);
 		if (fmt[p].data)
 			GDKfree(fmt[p].data);
-		if (fmt[p].type)
-			GDKfree(fmt[p].type);
 	}
 	GDKfree(fmt);
 }

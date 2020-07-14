@@ -29,7 +29,7 @@ insert_value(sql_query *query, sql_column *c, sql_rel **r, symbol *s, const char
 		return exp_atom(sql->sa, atom_general(sql->sa, &c->type, NULL));
 	} else if (s->token == SQL_DEFAULT) {
 		if (c->def) {
-			sql_exp *e = rel_parse_val(sql, sa_message(sql->sa, "select %s;", c->def), sql->emode, NULL);
+			sql_exp *e = rel_parse_val(sql, c->def, &c->type, sql->emode, NULL);
 			if (!e || (e = exp_check_type(sql, &c->type, r ? *r : NULL, e, type_equal)) == NULL)
 				return sql_error(sql, 02, SQLSTATE(HY005) "%s: default expression could not be evaluated", action);
 			return e;
@@ -205,7 +205,7 @@ rel_insert_join_idx(mvc *sql, const char* alias, sql_idx *i, sql_rel *inserts)
 	if (need_nulls) {
 		rel_destroy(ins);
 		rt = inserts->r = rel_setop(sql->sa, _nlls, nnlls, op_union );
-		rt->exps = rel_projections(sql, nnlls, NULL, 1, 1);
+		rel_setop_set_exps(sql, rt, rel_projections(sql, nnlls, NULL, 1, 1));
 		set_processed(rt);
 	} else {
 		inserts->r = nnlls;
@@ -342,7 +342,7 @@ rel_inserts(mvc *sql, sql_table *t, sql_rel *r, list *collist, size_t rowcount, 
 						sql_exp *e = NULL;
 
 						if (c->def) {
-							e = rel_parse_val(sql, sa_message(sql->sa, "select %s;", c->def), sql->emode, NULL);
+							e = rel_parse_val(sql, c->def, &c->type, sql->emode, NULL);
 							if (!e || (e = exp_check_type(sql, &c->type, r, e, type_equal)) == NULL)
 								return sql_error(sql, 02, SQLSTATE(HY005) "%s: default expression could not be evaluated", action);
 						} else {
@@ -795,7 +795,7 @@ rel_update_join_idx(mvc *sql, const char* alias, sql_idx *i, sql_rel *updates)
 	if (need_nulls) {
 		rel_destroy(ups);
 		rt = updates->r = rel_setop(sql->sa, _nlls, nnlls, op_union );
-		rt->exps = rel_projections(sql, nnlls, NULL, 1, 1);
+		rel_setop_set_exps(sql, rt, rel_projections(sql, nnlls, NULL, 1, 1));
 		set_processed(rt);
 	} else {
 		updates->r = nnlls;
@@ -938,7 +938,7 @@ update_generate_assignments(sql_query *query, sql_table *t, sql_rel *r, sql_rel 
 				if (!c)
 					return sql_error(sql, 02, SQLSTATE(42S22) "%s: no such column '%s.%s'", action, t->base.name, colname);
 				if (c->def) {
-					v = rel_parse_val(sql, sa_message(sql->sa, "select %s;", c->def), sql->emode, NULL);
+					v = rel_parse_val(sql, c->def, &c->type, sql->emode, NULL);
 				} else {
 					return sql_error(sql, 02, SQLSTATE(42000) "%s: column '%s' has no valid default value", action, c->base.name);
 				}
@@ -1558,7 +1558,6 @@ copyfrom(sql_query *query, dlist *qname, dlist *columns, dlist *files, dlist *he
 			store_lock();
 		}
 		sql->emod |= mod_locked;
-		sql->caching = 0; 	/* do not cache this query */
 	}
 
 	collist = check_table_columns(sql, t, columns, "COPY INTO", tname);
@@ -1889,7 +1888,7 @@ copyto(sql_query *query, symbol *sq, const char *filename, dlist *seps, const ch
 }
 
 sql_exp *
-rel_parse_val(mvc *m, char *query, char emode, sql_rel *from)
+rel_parse_val(mvc *m, char *query, sql_subtype *tpe, char emode, sql_rel *from)
 {
 	mvc o = *m;
 	sql_exp *e = NULL;
@@ -1902,16 +1901,16 @@ rel_parse_val(mvc *m, char *query, char emode, sql_rel *from)
 
 	m->qc = NULL;
 
-	m->caching = 0;
 	m->emode = emode;
 	b = (buffer*)GDKmalloc(sizeof(buffer));
+	len += 8; /* add 'select ;' */
 	n = GDKmalloc(len + 1 + 1);
 	if(!b || !n) {
 		GDKfree(b);
 		GDKfree(n);
 		return NULL;
 	}
-	snprintf(n, len + 2, "%s\n", query);
+	snprintf(n, len + 2, "select %s;\n", query);
 	query = n;
 	len++;
 	buffer_init(b, query, len);
@@ -1930,8 +1929,6 @@ rel_parse_val(mvc *m, char *query, char emode, sql_rel *from)
 	bstream_next(m->scanner.rs);
 
 	m->params = NULL;
-	/*m->args = NULL;*/
-	m->argc = 0;
 	m->sym = NULL;
 	m->errstr[0] = '\0';
 	/* via views we give access to protected objects */
@@ -1947,6 +1944,8 @@ rel_parse_val(mvc *m, char *query, char emode, sql_rel *from)
 			symbol* sq = sn->selection->h->data.sym->data.lval->h->data.sym;
 			sql_query *query = query_create(m);
 			e = rel_value_exp2(query, &r, sq, sql_sel | sql_values, ek);
+			if (e && tpe)
+				e = exp_check_type(m, tpe, from, e, type_cast);
 		}
 	}
 	GDKfree(query);
@@ -1956,7 +1955,6 @@ rel_parse_val(mvc *m, char *query, char emode, sql_rel *from)
 	m->sym = NULL;
 	o.frames = m->frames;	/* may have been realloc'ed */
 	o.sizeframes = m->sizeframes;
-	o.query = m->query;
 	if (m->session->status || m->errstr[0]) {
 		int status = m->session->status;
 

@@ -11,7 +11,7 @@ add_library(kernel OBJECT)
 target_sources(kernel
   PRIVATE
   alarm.c
-  mmath.c mmath.h mmath_private.h
+  mmath.c mmath_private.h
   bat5.c
   algebra.c algebra.h
   status.c status.h

@@ -37,13 +37,13 @@ stdout of test '28` in directory 'sql/benchmarks/tpcds` itself:
 #          count(ss_list_price) B2_CNT,
 % .b1,	.b1,	.b1,	.b2,	.b2,	.b2,	.b3,	.b3,	.b3,	.b4,	.b4,	.b4,	.b5,	.b5,	.b5,	.b6,	.b6,	.b6 # table_name
 % b1_lp,	b1_cnt,	b1_cntd,	b2_lp,	b2_cnt,	b2_cntd,	b3_lp,	b3_cnt,	b3_cntd,	b4_lp,	b4_cnt,	b4_cntd,	b5_lp,	b5_cnt,	b5_cntd,	b6_lp,	b6_cnt,	b6_cntd # name
-% double,	bigint,	bigint,	double,	bigint,	bigint,	double,	bigint,	bigint,	double,	bigint,	bigint,	double,	bigint,	bigint,	double,	bigint,	bigint # type
-% 24,	5,	4,	24,	5,	4,	24,	5,	4,	24,	5,	4,	24,	5,	4,	24,	5,	4 # length
-[ 77.717478,	36142,	9210,	69.50266326,	35250,	6592,	134.0115135,	27875,	9741,	82.55277417,	31422,	7678,	61.82604958,	36100,	8664,	39.27955568,	29776,	5210	]
+% decimal,	bigint,	bigint,	decimal,	bigint,	bigint,	decimal,	bigint,	bigint,	decimal,	bigint,	bigint,	decimal,	bigint,	bigint,	decimal,	bigint,	bigint # type
+% 11,	5,	4,	11,	5,	4,	11,	5,	4,	11,	5,	4,	11,	5,	4,	11,	5,	4 # length
+[ 77.72,	36142,	9210,	69.50,	35250,	6592,	134.01,	27875,	9741,	82.55,	31422,	7678,	61.83,	36100,	8664,	39.28,	29776,	5210	]
 
-# 18:32:06 >  
-# 18:32:06 >  "Done."
-# 18:32:06 >  
+# 11:37:07 >  
+# 11:37:07 >  "Done."
+# 11:37:07 >  
 
 # 18:29:57 >  
 # 18:29:57 >  "Done."

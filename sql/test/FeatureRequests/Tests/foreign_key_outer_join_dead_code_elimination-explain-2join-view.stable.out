@@ -32,14 +32,14 @@ stdout of test 'foreign_key_outer_join_dead_code_elimination-explain-2join-view`
 % mal # name
 % clob # type
 % 103 # length
-function user.s4_0():void;
-    X_1:void := querylog.define("explain select count(*) from v2;":str, "sequential_pipe":str, 16:int);
+function user.main():void;
+    X_1:void := querylog.define("explain select count(*) from v2;":str, "sequential_pipe":str, 15:int);
     X_4:int := sql.mvc();
     C_5:bat[:oid] := sql.tid(X_4:int, "sys":str, "fk":str);
     X_23:lng := aggr.count(C_5:bat[:oid]);
     sql.resultSet(".%6":str, "%6":str, "bigint":str, 64:int, 0:int, 7:int, X_23:lng);
-end user.s4_0;
-#inline               actions= 0 time=1 usec 
+end user.main;
+#inline               actions= 0 time=0 usec 
 #remap                actions= 0 time=1 usec 
 #costmodel            actions= 1 time=1 usec 
 #coercion             actions= 0 time=1 usec 
@@ -69,9 +69,9 @@ end user.s4_0;
 % .explain # table_name
 % mal # name
 % clob # type
-% 114 # length
-function user.s6_0():void;
-    X_1:void := querylog.define("explain select id from v2 order by id;":str, "sequential_pipe":str, 22:int);
+% 126 # length
+function user.main():void;
+    X_1:void := querylog.define("explain select id from v2 order by id;":str, "sequential_pipe":str, 21:int);
     X_30:bat[:str] := bat.pack("sys.v2":str);
     X_31:bat[:str] := bat.pack("id":str);
     X_32:bat[:str] := bat.pack("int":str);
@@ -84,7 +84,7 @@ function user.s6_0():void;
     (X_23:bat[:int], X_24:bat[:oid]) := algebra.sort(X_22:bat[:int], false:bit, false:bit, false:bit);
     X_28:bat[:int] := algebra.projection(X_24:bat[:oid], X_22:bat[:int]);
     sql.resultSet(X_30:bat[:str], X_31:bat[:str], X_32:bat[:str], X_33:bat[:int], X_34:bat[:int], X_28:bat[:int]);
-end user.s6_0;
+end user.main;
 #inline               actions= 0 time=1 usec 
 #remap                actions= 0 time=1 usec 
 #costmodel            actions= 1 time=0 usec 
@@ -116,8 +116,8 @@ end user.s6_0;
 % mal # name
 % clob # type
 % 137 # length
-function user.s8_0():void;
-    X_1:void := querylog.define("explain select id , v2 from v2 order by id;":str, "sequential_pipe":str, 105:int);
+function user.main():void;
+    X_1:void := querylog.define("explain select id , v2 from v2 order by id;":str, "sequential_pipe":str, 104:int);
     X_49:bat[:int] := bat.new(nil:int);
     X_4:int := sql.mvc();
     C_5:bat[:oid] := sql.tid(X_4:int, "sys":str, "fk":str);
@@ -171,7 +171,7 @@ function user.s8_0():void;
     X_135:bat[:int] := algebra.projection(X_131:bat[:oid], X_101:bat[:int]);
     X_136:bat[:int] := algebra.projection(X_131:bat[:oid], X_123:bat[:int]);
     sql.resultSet(X_138:bat[:str], X_139:bat[:str], X_140:bat[:str], X_141:bat[:int], X_142:bat[:int], X_135:bat[:int], X_136:bat[:int]);
-end user.s8_0;
+end user.main;
 #inline               actions= 0 time=1 usec 
 #remap                actions= 0 time=2 usec 
 #costmodel            actions= 1 time=1 usec 
