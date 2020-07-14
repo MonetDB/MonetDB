@@ -303,7 +303,7 @@ VIEWreset(BAT *b)
 				goto bailout;
 			th->farmid = BBPselectfarm(b->batRole, b->ttype, varheap);
 			strconcat_len(th->filename, sizeof(th->filename),
-				      nme, ".tail", NULL);
+				      nme, ".theap", NULL);
 			if (ATOMheap(b->ttype, th, cnt) != GDK_SUCCEED)
 				goto bailout;
 		}
@@ -366,7 +366,7 @@ VIEWreset(BAT *b)
 		b->batCapacity = cnt;
 
 		/* insert all of v in b, and quit */
-		if (BATappend(b, v, NULL, false) != GDK_SUCCEED)
+		if (BATappend2(b, v, NULL, false, false) != GDK_SUCCEED)
 			goto bailout;
 		BBPreclaim(v);
 	}
