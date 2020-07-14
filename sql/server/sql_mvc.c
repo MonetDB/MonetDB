@@ -1628,6 +1628,13 @@ mvc_is_sorted(mvc *m, sql_column *col)
 	return sql_trans_is_sorted(m->session->tr, col);
 }
 
+int
+mvc_is_duplicate_eliminated(mvc *m, sql_column *col)
+{
+	TRC_DEBUG(SQL_TRANS, "Is duplicate eliminated: %s\n", col->base.name);
+	return sql_trans_is_duplicate_eliminated(m->session->tr, col);
+}
+
 /* variable management */
 static sql_var*
 stack_set(mvc *sql, int var, const char *name, sql_subtype *type, sql_rel *rel, sql_table *t, dlist *wdef, sql_groupby_expression *exp, int view, int frame)

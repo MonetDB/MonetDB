@@ -178,9 +178,12 @@ typedef enum comp_type {
 #define CMP_BETWEEN 16
 
 #define is_theta_exp(e) ((e) == cmp_gt || (e) == cmp_gte || (e) == cmp_lte ||\
-		         (e) == cmp_lt || (e) == cmp_equal || (e) == cmp_notequal)
+						 (e) == cmp_lt || (e) == cmp_equal || (e) == cmp_notequal)
 
 #define is_complex_exp(et) ((et) == cmp_or || (et) == cmp_in || (et) == cmp_notin || (et) == cmp_filter)
+
+#define is_equality_or_inequality_exp(et) ((et) == cmp_equal || (et) == cmp_notequal || (et) == cmp_in || \
+							 			   (et) == cmp_notin || (et) == mark_in || (et) == mark_notin)
 
 typedef enum commit_action_t {
 	CA_COMMIT, 	/* commit rows, only for persistent tables */

@@ -5760,8 +5760,10 @@ rel_push_project_down_union(visitor *v, sql_rel *rel)
 }
 
 static int
-sql_class_base_score(sql_subtype *t)
+sql_class_base_score(mvc *sql, sql_column *c, sql_subtype *t, bool equality_based)
 {
+	int de;
+
 	switch (ATOMstorage(t->type->localtype)) {
 		case TYPE_bte:
 			return 150 - 8;
@@ -5780,8 +5782,12 @@ sql_class_base_score(sql_subtype *t)
 			return 75 - 24;
 		case TYPE_dbl:
 			return 75 - 53;
-		default: /* strings and blobs don't get any points here */
+		default: {
+			if (equality_based && c && (de = sql_trans_is_duplicate_eliminated(sql->session->tr, c)))
+				return 150 - de * 8;
+			/* strings and blobs not duplicate eliminated don't get any points here */
 			return 0;
+		}
 	}
 }
 
@@ -5796,17 +5802,17 @@ score_gbe(mvc *sql, sql_rel *rel, sql_exp *e)
 	if (e->card == CARD_ATOM) /* constants are trivial to group */
 		res += 1000;
 	/* can we find out if the underlying table is sorted */
-	if ((c = exp_find_column(rel, e, -2)) && mvc_is_sorted(sql, c))
-		res += 600;
-	if (find_prop(e->p, PROP_SORTIDX)) /* has sort index */
-		res += 400;
 	if (find_prop(e->p, PROP_HASHCOL)) /* distinct columns */
+		res += 600;
+	if ((c = exp_find_column(rel, e, -2)) && mvc_is_sorted(sql, c))
+		res += 500;
+	if (find_prop(e->p, PROP_SORTIDX)) /* has sort index */
 		res += 300;
 	if (find_prop(e->p, PROP_HASHIDX)) /* has hash index */
 		res += 200;
 
 	/* prefer the shorter var types over the longer ones */
-	res += sql_class_base_score(t); /* smaller the type, better */
+	res += sql_class_base_score(sql, c, t, true); /* smaller the type, better */
 	return res;
 }
 
@@ -7581,9 +7587,11 @@ score_se_base(mvc *sql, sql_rel *rel, sql_exp *e)
 	/* can we find out if the underlying table is sorted */
 	if ((c = exp_find_column(rel, e, -2)) && mvc_is_sorted(sql, c))
 		res += 600;
+	if (find_prop(e->p, PROP_SORTIDX)) /* has sort index */
+		res += 400;
 
 	/* prefer the shorter var types over the longer ones */
-	res += sql_class_base_score(t); /* smaller the type, better */
+	res += sql_class_base_score(sql, c, t, is_equality_or_inequality_exp(e->flag)); /* smaller the type, better */
 	return res;
 }
 
@@ -8858,7 +8866,7 @@ rel_add_dicts(visitor *v, sql_rel *rel)
 			if (!is_func(e->type) && oname[0] != '%') {
 				sql_column *c = find_sql_column(t, oname);
 
-				if (EC_VARCHAR(c->type.type->eclass) && (de = store_funcs.double_elim_col(v->sql->session->tr, c)) != 0) {
+				if ((de = sql_trans_is_duplicate_eliminated(v->sql->session->tr, c)) != 0) {
 					int nr = ++v->sql->label;
 					char name[16], *nme;
 					sql_rel *vt = rel_dicttable(v->sql, c, rname, de);
