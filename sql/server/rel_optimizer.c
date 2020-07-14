@@ -9347,12 +9347,12 @@ optimize_rel(mvc *sql, sql_rel *rel, int *g_changes, int level, int value_based_
 	if ((gp.cnt[op_select] || gp.cnt[op_left] || gp.cnt[op_right] || gp.cnt[op_full] ||
 		 gp.cnt[op_join] || gp.cnt[op_semi] || gp.cnt[op_anti]) && level <= 1)
 		if (value_based_opt)
-			rel = rel_exp_visitor_bottomup(&v, rel, &rel_simplify_predicates);
+			rel = rel_exp_visitor_bottomup(&v, rel, &rel_simplify_predicates, false);
 
 	if ((gp.cnt[op_project] || gp.cnt[op_groupby] ||
 		 gp.cnt[op_union] || gp.cnt[op_inter] || gp.cnt[op_except]) && level <= 1)
 		if (value_based_opt)
-			rel = rel_exp_visitor_bottomup(&v, rel, &rel_simplify_ifthenelse);
+			rel = rel_exp_visitor_bottomup(&v, rel, &rel_simplify_ifthenelse, false);
 
 	/* join's/crossproducts between a relation and a constant (row).
 	 * could be rewritten
@@ -9399,7 +9399,7 @@ optimize_rel(mvc *sql, sql_rel *rel, int *g_changes, int level, int value_based_
 		}
 
 	if (gp.cnt[op_project])
-		rel = rel_exp_visitor_bottomup(&v, rel, &rel_merge_project_rse);
+		rel = rel_exp_visitor_bottomup(&v, rel, &rel_merge_project_rse, false);
 
 	if (gp.cnt[op_select] && gp.cnt[op_join] && /* DISABLES CODE */ (0))
 		rel = rel_visitor_topdown(&v, rel, &rel_push_select_down_join);
