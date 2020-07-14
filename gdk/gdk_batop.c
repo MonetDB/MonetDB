@@ -54,7 +54,7 @@ unshare_string_heap(BAT *b)
 #endif
 
 static gdk_return
-insert_string_bat(BAT *b, BAT *n, BAT *s, bool force)
+insert_string_bat(BAT *b, BAT *n, BAT *s, bool force, bool mayshare)
 {
 	BATiter ni;		/* iterator */
 	size_t toff = ~(size_t) 0;	/* tail offset */
@@ -104,7 +104,8 @@ insert_string_bat(BAT *b, BAT *n, BAT *s, bool force)
 			/* if cand != NULL, there is no wholesale
 			 * copying of n's offset heap, but we may
 			 * still be able to share the string heap */
-			if (b->batCount == 0 &&
+			if (mayshare &&
+			    b->batCount == 0 &&
 			    b->tvheap != n->tvheap &&
 			    cand == NULL) {
 				if (b->tvheap->parentid != bid) {
@@ -420,7 +421,7 @@ insert_string_bat(BAT *b, BAT *n, BAT *s, bool force)
 }
 
 static gdk_return
-append_varsized_bat(BAT *b, BAT *n, BAT *s)
+append_varsized_bat(BAT *b, BAT *n, BAT *s, bool mayshare)
 {
 	BATiter ni;
 	BUN start, end, cnt, r;
@@ -437,7 +438,8 @@ append_varsized_bat(BAT *b, BAT *n, BAT *s)
 	cnt = cand ? (BUN) (candend - cand) : end - start;
 	if (cnt == 0)
 		return GDK_SUCCEED;
-	if (BATcount(b) == 0 &&
+	if (mayshare &&
+	    BATcount(b) == 0 &&
 	    b->batRole == TRANSIENT &&
 	    n->batRestricted == BAT_READ &&
 	    b->tvheap != n->tvheap) {
@@ -527,7 +529,7 @@ append_varsized_bat(BAT *b, BAT *n, BAT *s)
  * list s) to BAT b.  If b is empty, b will get the seqbase of s if it
  * was passed in, and else the seqbase of n. */
 gdk_return
-BATappend(BAT *b, BAT *n, BAT *s, bool force)
+BATappend2(BAT *b, BAT *n, BAT *s, bool force, bool mayshare)
 {
 	BUN start, end, cnt;
 	BUN r;
@@ -757,13 +759,13 @@ BATappend(BAT *b, BAT *n, BAT *s, bool force)
 		b->tnil |= n->tnil && cnt == BATcount(n);
 	}
 	if (b->ttype == TYPE_str) {
-		if (insert_string_bat(b, n, s, force) != GDK_SUCCEED) {
+		if (insert_string_bat(b, n, s, force, mayshare) != GDK_SUCCEED) {
 			if (b->tunique)
 				BBPunfix(s->batCacheid);
 			return GDK_FAIL;
 		}
 	} else if (ATOMvarsized(b->ttype)) {
-		if (append_varsized_bat(b, n, s) != GDK_SUCCEED) {
+		if (append_varsized_bat(b, n, s, mayshare) != GDK_SUCCEED) {
 			if (b->tunique)
 				BBPunfix(s->batCacheid);
 			return GDK_FAIL;
@@ -811,6 +813,12 @@ BATappend(BAT *b, BAT *n, BAT *s, bool force)
 	if (b->tunique)
 		BBPunfix(s->batCacheid);
 	return GDK_FAIL;
+}
+
+gdk_return
+BATappend(BAT *b, BAT *n, BAT *s, bool force)
+{
+	return BATappend2(b, n, s, force, true);
 }
 
 gdk_return
