@@ -23,6 +23,7 @@ struct cbstream {
 	void (*destroy)(void *);
 	void (*close)(void *);
 	ssize_t (*read)(void *, void *, size_t, size_t);
+	ssize_t (*write)(void *, const void *, size_t, size_t);
 };
 
 static void
@@ -54,15 +55,27 @@ cb_read(stream *restrict s, void *restrict buf, size_t elmsize, size_t cnt)
 	return cb->read(cb->private, buf, elmsize, cnt);
 }
 
+static ssize_t
+cb_write(stream *restrict s, const void *restrict buf, size_t elmsize, size_t cnt)
+{
+	struct cbstream *cb = s->stream_data.p;
+
+	return cb->write(cb->private, buf, elmsize, cnt);
+}
+
 stream *
 callback_stream(void *restrict private,
 		ssize_t (*read)(void *restrict private, void *restrict buf, size_t elmsize, size_t cnt),
+		ssize_t (*write)(void *restrict private, const void *restrict buf, size_t elmsize, size_t cnt),
 		void (*close)(void *private),
 		void (*destroy)(void *private),
 		const char *restrict name)
 {
 	stream *s;
 	struct cbstream *cb;
+
+	if ((write && read) || (!write && !read))
+		return NULL;
 
 	s = create_stream(name);
 	if (s == NULL)
@@ -77,10 +90,13 @@ callback_stream(void *restrict private,
 		.private = private,
 		.destroy = destroy,
 		.read = read,
+		.write = write,
 		.close = close,
 	};
+	s->readonly = (read != NULL);
 	s->stream_data.p = cb;
-	s->read = cb_read;
+	s->read = read ? cb_read : NULL;
+	s->write = write ? cb_write : NULL;
 	s->destroy = cb_destroy;
 	s->close = cb_close;
 	return s;

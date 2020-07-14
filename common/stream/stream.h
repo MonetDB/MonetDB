@@ -262,13 +262,14 @@ stream_export void bstream_destroy(bstream *s); // all over
 stream_export ssize_t bstream_read(bstream *s, size_t size); // tablet.c, tokenizer.c
 stream_export ssize_t bstream_next(bstream *s); // all over
 
-/* Callback stream is a read-only stream where the read function is
+/* Callback stream is a stream where the read and write functions are
  * provided by the caller.  close and destroy are also provided.  The
  * private pointer is passed on to the callback functions when they
  * are invoked. */
 stream_export stream *callback_stream(
 	void *restrict priv,
 	ssize_t (*read)(void *restrict priv, void *restrict buf, size_t elmsize, size_t cnt),
+	ssize_t (*write)(void *restrict priv, const void *restrict buf, size_t elmsize, size_t cnt),
 	void (*close)(void *priv),
 	void (*destroy)(void *priv),
 	const char *restrict name); // used in mclient.c, for readline
