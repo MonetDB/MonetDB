@@ -1,6 +1,13 @@
-/* All this used to be at the top of stream.c. Much of it is probably
- * only used in a single file, we'll prune it down later on.
+/*
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0.  If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ *
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
  */
+
+// All this used to be at the top of stream.c. Much of it is probably
+// only used in a single file, we'll prune it down later on.
 
 
 /* #define STREAM_DEBUG 1  */
