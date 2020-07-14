@@ -16,7 +16,9 @@ Welcome to MonetDB's documentation!
    monetdbe/examples
    monetdbe/installation
    monetdbe/monetdbe_api
+   source/intro
    source/build
+   source/windowsbuild
    source/build-fedora
    source/build-debian
    source/clients

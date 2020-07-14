@@ -49,8 +49,8 @@ stdout of test 'sqlancer02` in directory 'sql/test/SQLancer` itself:
 #INSERT INTO integers VALUES (1), (2), (3), (NULL);
 [ 4	]
 #select i between symmetric cast(1 as decimal) and cast(2 as double) from integers;
-% sys.%3 # table_name
-% %3 # name
+% sys.%2 # table_name
+% %2 # name
 % boolean # type
 % 5 # length
 [ true	]
@@ -173,6 +173,23 @@ stdout of test 'sqlancer02` in directory 'sql/test/SQLancer` itself:
 % %6,	%12,	%13 # name
 % decimal,	decimal,	int # type
 % 12,	16,	1 # length
+#ROLLBACK;
+#START TRANSACTION;
+#CREATE TABLE "sys"."t0" (
+#	"c0" CHAR(451),
+#	"c1" DOUBLE        NOT NULL DEFAULT 0.49024308,
+#	"c2" CHARACTER LARGE OBJECT,
+#	CONSTRAINT "t0_c1_pkey" PRIMARY KEY ("c1"),
+#	CONSTRAINT "t0_c1_unique" UNIQUE ("c1")
+#);
+#COPY 4 RECORDS INTO "sys"."t0" FROM stdin USING DELIMITERS E'\t',E'\n','"';
+#NULL	0.36945874012955704	NULL
+#"u"	20	"Q\\"
+#"EjgaDfV\t6m)Qvw0'%cW#\015*]h "	0.944146436872532	""
+#"M"	0.7309075439656509	NULL
+[ 4	]
+#UPDATE t0 SET c2 = r'' WHERE (((length(r'-14'))>>(((patindex(t0.c0, t0.c2))+(CAST(2 AS INT)))))) NOT IN (0.2, t0.c1, t0.c1, ((CAST(((-1)*(2)) AS INT))/(2)));
+[ 2	]
 #ROLLBACK;
 
 # 17:04:12 >  

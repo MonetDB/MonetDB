@@ -11,7 +11,7 @@
 
 # statement (ok|error)
 # query (I|T|R)+ (nosort|rowsort|valuesort)? [arg]
-#       I: integer; T: text (string); R: float
+#       I: integer; T: text (string); R: real (decimal)
 #       nosort: do not sort
 #       rowsort: sort rows
 #       valuesort: sort individual values
@@ -33,6 +33,7 @@ class SQLLogic:
         self.dbh = None
         self.crs = None
         self.out = out
+        self.res = None
 
     def connect(self, username='monetdb', password='monetdb',
                 hostname='localhost', port=None, database='demo'):
@@ -55,7 +56,7 @@ class SQLLogic:
     def drop(self):
         self.crs.execute('select name from tables where not system')
         for row in self.crs.fetchall():
-            self.crs.execute('drop table %s cascade' % row[0])
+            self.crs.execute('drop table "%s" cascade' % row[0])
 
     def exec_statement(self, statement, expectok):
         if skipidx.search(statement) is not None:
@@ -130,6 +131,16 @@ class SQLLogic:
             self.query_error(query, 'received {} rows, expected {} rows'.format(self.crs.rowcount, nresult // len(columns)))
             return
         data = self.crs.fetchall()
+        if self.res is not None:
+            for row in data:
+                sep=''
+                for col in row:
+                    if col is None:
+                        print(sep, 'NULL', sep='', end='', file=self.res)
+                    else:
+                        print(sep, col, sep='', end='', file=self.res)
+                    sep = '|'
+                print('', file=self.res)
         data = self.convertresult(query, columns, data)
         if data is None:
             return
@@ -259,16 +270,23 @@ if __name__ == '__main__':
                         help='port the server listens on')
     parser.add_argument('--database', action='store', default='demo',
                         help='name of the database')
+    parser.add_argument('--nodrop', action='store_true',
+                        help='do not drop tables at start of test')
     parser.add_argument('--verbose', action='store_true',
                         help='be a bit more verbose')
+    parser.add_argument('--results', action='store',
+                        type=argparse.FileType('w'),
+                        help='file to store results of queries')
     parser.add_argument('tests', nargs='*', help='tests to be run')
     opts = parser.parse_args()
     args = opts.tests
     sql = SQLLogic()
+    sql.res = opts.results
     sql.connect(hostname=opts.host, port=opts.port, database=opts.database)
     for test in args:
         try:
-            sql.drop()
+            if not opts.nodrop:
+                sql.drop()
             if opts.verbose:
                 print('now testing {}'. format(test))
             try:

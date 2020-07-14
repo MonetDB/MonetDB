@@ -8,8 +8,6 @@
 
 # For now these tests only work on special docker containers.
 
-#project(MonetDB-unittest LANGUAGES C)
-
 include(os_release_info)
 
 if(${CMAKE_SYSTEM_NAME} STREQUAL "Linux")

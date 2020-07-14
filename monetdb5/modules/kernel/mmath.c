@@ -18,22 +18,14 @@
  * a new BAT. This to save the expensive copying.
  */
 #include "monetdb_config.h"
-#include "mmath.h"
+#include "mal.h"
+#include "mal_exception.h"
 #include <fenv.h>
 #include "mmath_private.h"
-#ifndef FE_INVALID
-#define FE_INVALID			0
-#endif
-#ifndef FE_DIVBYZERO
-#define FE_DIVBYZERO		0
-#endif
-#ifndef FE_OVERFLOW
-#define FE_OVERFLOW			0
-#endif
 
 #define cot(x)				(1 / tan(x))
-#define radians(x)			((x) * (3.14159265358979323846 / 180.0))
-#define degrees(x)			((x) * (180.0 / 3.14159265358979323846))
+#define radians(x)			((x) * (M_PI / 180.0))
+#define degrees(x)			((x) * (180.0 / M_PI))
 
 double
 logbs(double x, double base)
@@ -48,7 +40,7 @@ logbsf(float x, float base)
 }
 
 #define unopbaseM5(NAME, FUNC, TYPE)								\
-str																	\
+static str															\
 MATHunary##NAME##TYPE(TYPE *res , const TYPE *a)					\
 {																	\
 	if (is_##TYPE##_nil(*a)) {										\
@@ -83,7 +75,7 @@ MATHunary##NAME##TYPE(TYPE *res , const TYPE *a)					\
 	unopbaseM5(NAME, FUNC, flt)
 
 #define binopbaseM5(NAME, FUNC, TYPE)								\
-str																	\
+static str															\
 MATHbinary##NAME##TYPE(TYPE *res, const TYPE *a, const TYPE *b)		\
 {																	\
 	if (is_##TYPE##_nil(*a) || is_##TYPE##_nil(*b)) {				\
@@ -114,14 +106,14 @@ MATHbinary##NAME##TYPE(TYPE *res, const TYPE *a, const TYPE *b)		\
 }
 
 #define unopM5NOT(NAME, FUNC)									\
-str																\
+static str														\
 MATHunary##NAME##dbl(dbl *res , const dbl *a)					\
 {																\
 	(void)res;	\
 	(void)a;	\
 	throw(MAL, "mmath." #FUNC, SQLSTATE(0A000) PROGRAM_NYI);	\
 }																\
-str																\
+static str														\
 MATHunary##NAME##flt(flt *res , const flt *a)					\
 {																\
 	(void)res;	\
@@ -134,7 +126,7 @@ MATHunary##NAME##flt(flt *res , const flt *a)					\
   binopbaseM5(NAME, FUNC, flt)
 
 #define roundM5(TYPE)											\
-str																\
+static str														\
 MATHbinary_ROUND##TYPE(TYPE *res, const TYPE *x, const int *y)	\
 {																\
 	if (is_##TYPE##_nil(*x) || is_int_nil(*y)) {				\
@@ -192,7 +184,7 @@ unopM5NOT(_CBRT,cbrt)
 unopM5(_CEIL,ceil)
 unopM5(_FLOOR,floor)
 
-str
+static str
 MATHunary_FABSdbl(dbl *res , const dbl *a)
 {
 	*res = is_dbl_nil(*a) ? dbl_nil : fabs(*a);
@@ -202,7 +194,7 @@ MATHunary_FABSdbl(dbl *res , const dbl *a)
 roundM5(dbl)
 roundM5(flt)
 
-str
+static str
 MATHunary_ISNAN(bit *res, const dbl *a)
 {
 	if (is_dbl_nil(*a)) {
@@ -213,7 +205,7 @@ MATHunary_ISNAN(bit *res, const dbl *a)
 	return MAL_SUCCEED;
 }
 
-str
+static str
 MATHunary_ISINF(int *res, const dbl *a)
 {
 	if (is_dbl_nil(*a)) {
@@ -228,7 +220,7 @@ MATHunary_ISINF(int *res, const dbl *a)
 	return MAL_SUCCEED;
 }
 
-str
+static str
 MATHunary_FINITE(bit *res, const dbl *a)
 {
 	if (is_dbl_nil(*a)) {
@@ -246,7 +238,7 @@ static random_state_engine mmath_rse;
 /* serialize access to state */
 static MT_Lock mmath_rse_lock = MT_LOCK_INITIALIZER("mmath_rse_lock");
 
-str
+static str
 MATHprelude(void *ret)
 {
 	(void) ret;
@@ -254,7 +246,7 @@ MATHprelude(void *ret)
 	return MAL_SUCCEED;
 }
 
-str
+static str
 MATHrandint(int *res)
 {
 #ifdef STATIC_CODE_ANALYSIS
@@ -267,7 +259,7 @@ MATHrandint(int *res)
 	return MAL_SUCCEED;
 }
 
-str
+static str
 MATHrandintarg(int *res, const int *dummy)
 {
 	(void) dummy;
@@ -281,7 +273,7 @@ MATHrandintarg(int *res, const int *dummy)
 	return MAL_SUCCEED;
 }
 
-str
+static str
 MATHsrandint(void *ret, const int *seed)
 {
 	(void) ret;
@@ -291,7 +283,7 @@ MATHsrandint(void *ret, const int *seed)
 	return MAL_SUCCEED;
 }
 
-str
+static str
 MATHsqlrandint(int *res, const int *seed)
 {
 #ifdef STATIC_CODE_ANALYSIS
@@ -306,10 +298,10 @@ MATHsqlrandint(int *res, const int *seed)
 	return MAL_SUCCEED;
 }
 
-str
+static str
 MATHpi(dbl *pi)
 {
-	*pi = 3.14159265358979323846;
+	*pi = M_PI;
 	return MAL_SUCCEED;
 }
 

@@ -112,3 +112,20 @@ between asymmetric (t0.c0) and (t0.c0)))) is null;
 SELECT ALL CAST((- (- (VAR_POP(ALL ((CAST(CAST(abs(709845242) AS INT) AS INT))%(abs(CAST((931144491) NOT IN (-587881807) AS INT))))))))^(- (+ (- (char_length(r'>])'))))) as decimal(10,3)), CAST(0.5186927954967 as decimal(14,13)), CAST("locate"(lower(r'[]'), rtrim(r'..ۄUH*6鉡q'), ((((-233289450)&(-476676450)))-(- (236876413)))) AS INT)
 FROM t0 WHERE FALSE GROUP BY 1.2807753E7 HAVING MAX(ALL ((t0.c0)>=(NULL)));
 ROLLBACK;
+
+START TRANSACTION;
+CREATE TABLE "sys"."t0" (
+	"c0" CHAR(451),
+	"c1" DOUBLE        NOT NULL DEFAULT 0.49024308,
+	"c2" CHARACTER LARGE OBJECT,
+	CONSTRAINT "t0_c1_pkey" PRIMARY KEY ("c1"),
+	CONSTRAINT "t0_c1_unique" UNIQUE ("c1")
+);
+COPY 4 RECORDS INTO "sys"."t0" FROM stdin USING DELIMITERS E'\t',E'\n','"';
+NULL	0.36945874012955704	NULL
+"u"	20	"Q\\"
+"EjgaDfV\t6m)Qvw0'%cW#\015*]h "	0.944146436872532	""
+"M"	0.7309075439656509	NULL
+
+UPDATE t0 SET c2 = r'' WHERE (((length(r'-14'))>>(((patindex(t0.c0, t0.c2))+(CAST(2 AS INT)))))) NOT IN (0.2, t0.c1, t0.c1, ((CAST(((-1)*(2)) AS INT))/(2)));
+ROLLBACK;

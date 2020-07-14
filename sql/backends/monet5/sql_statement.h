@@ -69,6 +69,7 @@ typedef enum stmt_type {
 
 	st_export,
 	st_append,
+	st_append_bulk,
 	st_table_clear,
 	st_exception,
 	st_trans,
@@ -81,6 +82,7 @@ typedef enum stmt_type {
 	st_delete,
 
 	st_group,
+	st_unique,
 	st_convert,
 	st_Nop,
 	st_func,
@@ -110,10 +112,12 @@ typedef struct stmt {
 	struct stmt *op3;
 	stmtdata op4;		/* only op4 will hold other types */
 
-	char nrcols;
-	char key;		/* key (aka all values are unique) */ // TODO make this thing a bool
-	char aggr;		/* aggregated */
-	char partition;		/* selected as mitosis candidate */
+	unsigned int
+	 nrcols:2,
+	 key:1,			/* key (aka all values are unique) */ // TODO make this thing a bool
+	 aggr:1,		/* aggregated */
+	 partition:1,	/* selected as mitosis candidate */
+	 reduce:1;		/* used to reduce number of rows (also for joins) */
 
 	struct stmt *cand;	/* optional candidate list */
 
@@ -152,6 +156,7 @@ extern stmt *stmt_update_idx(backend *be, sql_idx *i, stmt *tids, stmt *upd);
 extern stmt *stmt_delete(backend *be, sql_table *t, stmt *b);
 
 extern stmt *stmt_append(backend *be, stmt *c, stmt *values);
+extern stmt *stmt_append_bulk(backend *be, stmt *c, list *l);
 extern stmt *stmt_table_clear(backend *be, sql_table *t);
 
 extern stmt *stmt_export(backend *be, stmt *t, const char *sep, const char *rsep, const char *ssep, const char *null_string, int onclient, stmt *file);
@@ -174,7 +179,7 @@ extern stmt *stmt_uselect(backend *be, stmt *op1, stmt *op2, comp_type cmptype, 
        2 ==   l <= x <  h
        3 ==   l <= x <= h
        */
-extern stmt *stmt_uselect2(backend *be, stmt *op1, stmt *op2, stmt *op3, int cmp, stmt *sub, int anti);
+extern stmt *stmt_uselect2(backend *be, stmt *op1, stmt *op2, stmt *op3, int cmp, stmt *sub, int anti, int reduce);
 extern stmt *stmt_genselect(backend *be, stmt *lops, stmt *rops, sql_subfunc *f, stmt *sub, int anti);
 
 extern stmt *stmt_tunion(backend *be, stmt *op1, stmt *op2);
@@ -197,6 +202,7 @@ extern stmt *stmt_list(backend *be, list *l);
 extern void stmt_set_nrcols(stmt *s);
 
 extern stmt *stmt_group(backend *be, stmt *op1, stmt *grp, stmt *ext, stmt *cnt, int done);
+extern stmt *stmt_unique(backend *be, stmt *op1);
 
 /* raise exception incase the condition (cond) holds, continue with stmt res */
 extern stmt *stmt_exception(backend *be, stmt *cond, const char *errstr, int errcode);

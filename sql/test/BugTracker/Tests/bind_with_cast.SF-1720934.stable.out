@@ -29,8 +29,13 @@ stdout of test 'bind_with_cast.SF-1720934` in directory 'sql/test/BugTracker` it
 % 3,	3,	1,	0,	12,	2 # length
 [ "int",	32,	0,	"",	"data_1mto10m",	"id"	]
 [ "int",	32,	0,	NULL,	NULL,	NULL	]
+#exec  0('100');
+% sys.data_1mto10m # table_name
+% id # name
+% int # type
+% 1 # length
 
-# 12:37:58 >  
-# 12:37:58 >  "Done."
-# 12:37:58 >  
+# 10:47:04 >  
+# 10:47:04 >  "Done."
+# 10:47:04 >  
 

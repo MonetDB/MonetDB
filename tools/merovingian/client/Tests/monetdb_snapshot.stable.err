@@ -7,7 +7,7 @@ stderr of test 'monetdb_snapshot` in directory 'tools/merovingian/client` itself
 
 -   CREATE FARM
 -   CHECK SNAPDIR NOT SET
--   CREATE WITHOUT SNAPDIR
+-   CREATE
 snapshot: Snapshot target file not allowed because no 'snapshotdir' has been configured
 -   SET SNAPDIR
 -   CREATE
@@ -16,7 +16,9 @@ snapshot: Snapshot target file not allowed because no 'snapshotdir' has been con
 -   DESTROY
 -   CHECK
 -   SNAPSHOT MULTI
--   RESTORE OVER
+-   RESTORE OVER EXISTING
+-   CUSTOM FILENAME
+-   DONE
 
 # 15:32:48 >  
 # 15:32:48 >  "Done."

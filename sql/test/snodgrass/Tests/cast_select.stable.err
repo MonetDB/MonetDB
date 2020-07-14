@@ -60,7 +60,7 @@ ERROR = !types sec_interval(13,0) and bigint(64,0) are not equal
 CODE  = 42000
 MAPI  = (monetdb) /var/tmp/mtest-581659/.s.monetdb.31481
 QUERY = SELECT CAST(CAST(INTERVAL '2064:00:00' HOUR TO SECOND AS INTERVAL SECOND) AS BIGINT) = 7430400; --error, not possible
-ERROR = !types sec_interval(10,0) and bigint(64,0) are not equal
+ERROR = !types sec_interval(13,0) and bigint(64,0) are not equal
 CODE  = 42000
 
 # 12:02:15 >  

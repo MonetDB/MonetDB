@@ -25,7 +25,7 @@ SELECT median(groupID) FROM sampleData;  -- should return 2
 SELECT groupID, median(numValue) FROM sampleData GROUP BY groupID ORDER BY groupId;  -- should return (6, 5, 17, 18,  0)
 
 
-SELECT R.groupID, AVG(1.0*R.numValue) AS medianValue
+SELECT R.groupID, CAST(AVG(1.0*R.numValue) AS DECIMAL(10,2)) AS medianValue
 FROM
 (    SELECT GroupID, numValue, ROW_NUMBER() OVER(PARTITION BY groupID ORDER BY NumValue) AS rowno
     FROM sampleData

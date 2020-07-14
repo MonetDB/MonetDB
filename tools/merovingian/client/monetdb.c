@@ -200,8 +200,11 @@ command_help(int argc, char *argv[])
 			printf("Options:\n");
 			printf("  -f  Do not ask for confirmation\n");
 			printf("  -r  Number of snapshots to retain.\n");
+		} else if (argc > 2 && strcmp(argv[2], "write") == 0) {
+			printf("Usage: monetdb snapshot write <dbname>\n");
+			printf("  Write a snapshot of database <dbname> to standard out.\n");
 		} else {
-			printf("Usage: monetdb <create|list|restore|destroy> [arguments]\n");
+			printf("Usage: monetdb <create|list|restore|destroy|write> [arguments]\n");
 			printf("  Manage database snapshots\n");
 		}
 	} else {
@@ -2287,6 +2290,63 @@ end:
 }
 
 static void
+command_snapshot_write_cb(char *buf, size_t count, void *private) {
+	FILE *f = (FILE*)private;
+	fwrite(buf, 1, count, f);
+}
+
+static void
+command_snapshot_write(int argc, char *argv[])
+{
+	char *msg;
+	char *out = NULL;
+
+	if (argc != 2) {
+		command_help(argc + 2, &argv[-2]);
+		exit(1);
+	}
+
+	if (isatty(fileno(stdout))) {
+		fprintf(stderr, "Refusing to write binary data to tty\n");
+		exit(2);
+	}
+
+	char *dbname = argv[1];
+	sabdb *stats = NULL;
+	msg = MEROgetStatus(&stats, dbname);
+	if (msg) {
+		fprintf(stderr, "snapshot: %s\n", msg);
+		free(msg);
+		exit(2);
+	}
+	if (!stats) {
+		fprintf(stderr, "snapshot: database '%s' not found\n", dbname);
+		exit(2);
+	}
+	msab_freeStatus(&stats);
+
+	char *merocmd = "snapshot stream";
+
+	msg = control_send_callback(
+			&out, mero_host, mero_port, dbname,
+			merocmd, command_snapshot_write_cb, stdout,
+			mero_pass);
+	if (msg) {
+		fprintf(stderr, "snapshot: database '%s': %s\n", dbname, msg);
+		exit(2);
+	}
+	if (out == NULL) {
+		fprintf(stderr, "snapshot: database '%s': unknown error\n", dbname);
+		exit(2);
+	}
+	if (strcmp(out, "OK") != 0) {
+		fprintf(stderr, "snapshot: database '%s': %s\n", dbname, out);
+		exit(2);
+	}
+	free(out);
+}
+
+static void
 command_snapshot(int argc, char *argv[])
 {
 	if (argc <= 1) {
@@ -2309,6 +2369,8 @@ command_snapshot(int argc, char *argv[])
 		command_snapshot_restore(argc - 1, &argv[1]);
 	} else if (strcmp(argv[1], "destroy") == 0) {
 		command_snapshot_destroy(argc - 1, &argv[1]);
+	} else if (strcmp(argv[1], "write") == 0) {
+		command_snapshot_write(argc - 1, &argv[1]);
 	} else {
 		/* print help message for this command */
 		command_help(argc - 1, &argv[1]);

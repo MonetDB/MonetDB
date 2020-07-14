@@ -44,8 +44,8 @@ stdout of test 'cast_select` in directory 'sql/test/snodgrass` itself:
 # 17:38:29 >  
 
 #SELECT CAST('1996-02-24' AS  DATE) = DATE  '1996-02-24';
-% .%3 # table_name
-% %3 # name
+% .%2 # table_name
+% %2 # name
 % boolean # type
 % 5 # length
 [ true	]
@@ -56,14 +56,14 @@ stdout of test 'cast_select` in directory 'sql/test/snodgrass` itself:
 % 5 # length
 [ true	]
 #SELECT CAST( TIME '12:34:56.123' AS TIME(6) ) = TIME '12:34:56.123000';
-% .%3 # table_name
-% %3 # name
+% .%2 # table_name
+% %2 # name
 % boolean # type
 % 5 # length
 [ true	]
 #SELECT CAST( TIME '12:34:56.123' AS TIME(1) ) = TIME '12:34:56.1';
-% .%3 # table_name
-% %3 # name
+% .%2 # table_name
+% %2 # name
 % boolean # type
 % 5 # length
 [ true	]

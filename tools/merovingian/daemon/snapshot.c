@@ -47,9 +47,98 @@ const char *VALID_EXTENSIONS[] = {
 		NULL
 };
 
+static char*
+snapshot_database_stream_helper(
+	void *priv, const char *filename,
+	 const void *data, size_t size)
+{
+	if (size == 0)
+		return NULL;
+
+	(void)filename;
+	stream **ss = (stream**)priv;
+	stream *s = *ss;
+	if (!s)
+		return newErr("attempted another write after failure");
+	ssize_t nwritten = mnstr_write(s, data, 1, size);
+	if (nwritten != (ssize_t)size) {
+		*ss = NULL;
+		return newErr("putfile write failed");
+	}
+
+	return NULL;
+}
+
+err
+snapshot_database_stream(char *dbname, stream *s)
+{
+	err e = NO_ERR;
+	sabdb *stats = NULL;
+	Mapi conn = NULL;
+	MapiHdl handle = NULL;
+	stream *ss = s;
+
+	/* Start the database if necessary */
+	e = forkMserver(dbname, &stats, false);
+	if (e != NO_ERR) {
+		goto bailout;
+	}
+
+	if (!stats) {
+		e = newErr("No such database: '%s'", dbname);
+		goto bailout;
+	}
+
+	if (stats->secret == NULL) {
+#if !defined(HAVE_OPENSSL) && !defined(HAVE_COMMONCRYPTO)
+		e = newErr("snapshotting only works when MonetDB has been compiled with secure crypto support");
+#else
+		e = newErr("Cannot find secret for database '%s'", dbname);
+#endif
+		goto bailout;
+	}
+
+	/* Set up the connection. Connect directly to the unix domain socket */
+	if (stats->conns == NULL || stats->conns[0].val == NULL) {
+		e = newErr("internal error: no conn");
+		goto bailout;
+	}
+	conn = mapi_mapiuri(stats->conns[0].val, ".snapshot", stats->secret, "sql");
+	if (conn == NULL || mapi_error(conn) != MOK) {
+		e = newErr("connection error: %s", mapi_error_str(conn));
+		goto bailout;
+	}
+	mapi_reconnect(conn);
+	if (mapi_error(conn) != MOK) {
+		e = newErr("connection error: %s", mapi_error_str(conn));
+		goto bailout;
+	}
+
+	mapi_setfilecallback(conn, NULL, snapshot_database_stream_helper, &ss);
+
+	handle = mapi_prepare(conn, "CALL sys.hot_snapshot('/root/dummy', 0)");
+	if (handle == NULL || mapi_error(conn)) {
+		e = newErr("prepare failed: %s", mapi_error_str(conn));
+		goto bailout;
+	}
+	if (mapi_execute(handle) != MOK) {
+		e = newErr("internal error: execute failed: %s", mapi_result_error(handle));
+		goto bailout;
+	}
+
+	/* everything seems ok. Leave e == NO_ERR */
+bailout:
+	if (handle != NULL)
+		mapi_close_handle(handle);
+	if (conn != NULL)
+		mapi_destroy(conn);
+	if (stats != NULL)
+		msab_freeStatus(&stats);
+	return e;
+}
+
 
 /* Create a snapshot of database dbname to file dest.
- * TODO: Make it work for databases without monetdb/monetdb root account.
  */
 err
 snapshot_database_to(char *dbname, char *dest)
@@ -97,7 +186,7 @@ snapshot_database_to(char *dbname, char *dest)
 	}
 	mapi_reconnect(conn);
 	if (mapi_error(conn) != MOK) {
-		e = newErr("connection error:: %s", mapi_error_str(conn));
+		e = newErr("connection error: %s", mapi_error_str(conn));
 		goto bailout;
 	}
 

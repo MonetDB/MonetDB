@@ -51,7 +51,6 @@ init_global_variables(mvc *sql)
 
 	sql_find_subtype(&ctype, "int", 0, 0);
 	SQLglobal(sname, "debug", &sql->debug);
-	SQLglobal(sname, "cache", &sql->cache);
 
 	sql_find_subtype(&ctype,  "varchar", 1024, 0);
 	SQLglobal(sname, "current_schema", sname);
@@ -68,8 +67,8 @@ init_global_variables(mvc *sql)
 	SQLglobal(sname, "current_timezone", &sec);
 
 	sql_find_subtype(&ctype, "bigint", 0, 0);
-	SQLglobal(sname, "last_id", &sql->last_id);
-	SQLglobal(sname, "rowcnt", &sql->rowcnt);
+	SQLglobal(sname, "last_id", &sec);
+	SQLglobal(sname, "rowcnt", &sec);
 
 	/* Use hash lookup for global variables. With 9 variables in total it's worth to hash instead of */
 	if (!(sql->global_vars->ht = hash_new(NULL, list_length(sql->global_vars), (fkeyvalue)&var_key)))
@@ -370,10 +369,6 @@ sqlvar_set(sql_var *var, ValRecord *v)
 	if (VALcopy(&(var->var.data), v) == NULL)
 		return NULL;
 	var->var.isnull = VALisnil(v);
-	if (v->vtype == TYPE_flt)
-		var->var.d = v->val.fval;
-	else if (v->vtype == TYPE_dbl)
-		var->var.d = v->val.dval;
 	return &(var->var);
 }
 
@@ -381,11 +376,11 @@ sql_frame*
 stack_push_frame(mvc *sql, const char *name)
 {
 	sql_frame *v, **nvars;
-	int nextsize = sql->sizeframes;
+	int osize = sql->sizeframes, nextsize = osize;
 
 	if (sql->topframes == nextsize) {
 		nextsize <<= 1;
-		if (!(nvars = RENEW_ARRAY(sql_frame*, sql->frames, nextsize)))
+		if (!(nvars = SA_RENEW_ARRAY(sql->pa, sql_frame*, sql->frames, nextsize, osize)))
 			return NULL;
 		sql->frames = nvars;
 		sql->sizeframes = nextsize;

@@ -53,18 +53,10 @@ mvc_init_create_view(mvc *m, sql_schema *s, const char *name, const char *query)
 	if (t) {
 		char *buf;
 		sql_rel *r = NULL;
-		sql_allocator *old_sa = m->sa;
 
-		if (!(m->sa = sa_create())) {
-			t = NULL;
+		if (!(buf = sa_strdup(m->ta, t->query))) {
 			(void) sql_error(m, 02, SQLSTATE(HY013) MAL_MALLOC_FAIL);
-			goto bailout;
-		}
-
-		if (!(buf = sa_strdup(m->sa, t->query))) {
-			t = NULL;
-			(void) sql_error(m, 02, SQLSTATE(HY013) MAL_MALLOC_FAIL);
-			goto bailout;
+			return NULL;
 		}
 
 		r = rel_parse(m, s, buf, m_deps);
@@ -74,11 +66,8 @@ mvc_init_create_view(mvc *m, sql_schema *s, const char *name, const char *query)
 			list *id_l = rel_dependencies(m, r);
 			mvc_create_dependencies(m, id_l, t->base.id, VIEW_DEPENDENCY);
 		}
+		sa_reset(m->ta);
 		assert(r);
-bailout:
-		if (m->sa)
-			sa_destroy(m->sa);
-		m->sa = old_sa;
 	}
 	return t;
 }
@@ -126,8 +115,9 @@ mvc_fix_depend(mvc *m, sql_column *depids, struct view_t *v, int n)
 	}
 }
 
+static sql_allocator *store_allocator = NULL;
 int
-mvc_init(int debug, store_type store, int ro, int su, backend_stack stk)
+mvc_init(sql_allocator *pa, int debug, store_type store, int ro, int su)
 {
 	int first = 0;
 	sql_schema *s;
@@ -135,6 +125,7 @@ mvc_init(int debug, store_type store, int ro, int su, backend_stack stk)
 	mvc *m;
 	str msg;
 
+	store_allocator = pa;
 	TRC_DEBUG(SQL_TRANS, "Initialization\n");
 	keyword_init();
 	if(scanner_init_keywords() != 0) {
@@ -142,28 +133,24 @@ mvc_init(int debug, store_type store, int ro, int su, backend_stack stk)
 		return -1;
 	}
 
-	if ((first = store_init(debug, store, ro, su, stk)) < 0) {
+	if ((first = store_init(pa, debug, store, ro, su)) < 0) {
 		TRC_CRITICAL(SQL_TRANS, "Unable to create system tables\n");
 		return -1;
 	}
 
-	m = mvc_create(0, stk, 0, NULL, NULL);
+	m = mvc_create(pa, 0, 0, NULL, NULL);
 	if (!m) {
 		TRC_CRITICAL(SQL_TRANS, "Malloc failure\n");
 		return -1;
 	}
 
-	m->sa = sa_create();
+	assert(m->sa == NULL);
+	m->sa = sa_create(m->pa);
 	if (!m->sa) {
 		mvc_destroy(m);
 		TRC_CRITICAL(SQL_TRANS, "Malloc failure\n");
 		return -1;
 	}
-
-	/* disable caching */
-	m->caching = 0;
-	/* disable size header */
-	m->sizeheader = false;
 
 	if (first || catalog_version) {
 		sqlid tid = 0, cid = 0;
@@ -404,6 +391,7 @@ mvc_exit(void)
 	TRC_DEBUG(SQL_TRANS, "MVC exit\n");
 	store_exit();
 	keyword_exit();
+	sa_destroy(store_allocator);
 }
 
 void
@@ -468,22 +456,22 @@ mvc_trans(mvc *m)
 {
 	int schema_changed = 0, err = m->session->status;
 	assert(!m->session->tr->active);	/* can only start a new transaction */
+
 	store_lock();
 	TRC_INFO(SQL_TRANS, "Starting transaction\n");
 	schema_changed = sql_trans_begin(m->session);
-	if (m->qc && (schema_changed || m->qc->nr > m->cache || err)){
+	if (m->qc && (schema_changed || err)){
 		if (schema_changed || err) {
 			int seqnr = m->qc->id;
 			if (m->qc)
 				qc_destroy(m->qc);
-			m->qc = qc_create(m->clientid, seqnr);
+			/* TODO Change into recreate all */
+			m->qc = qc_create(m->pa, m->clientid, seqnr);
 			if (!m->qc) {
 				sql_trans_end(m->session, 0);
 				store_unlock();
 				return -1;
 			}
-		} else { /* clean all but the prepared statements */
-			qc_clean(m->qc, false);
 		}
 	}
 	store_unlock();
@@ -587,7 +575,7 @@ mvc_commit(mvc *m, int chain, const char *name, bool enabling_auto_commit)
 		sql_trans *tr = m->session->tr;
 		TRC_DEBUG(SQL_TRANS, "Savepoint\n");
 		store_lock();
-		m->session->tr = sql_trans_create(m->session->stk, tr, name, true);
+		m->session->tr = sql_trans_create(tr, name, true);
 		if (!m->session->tr) {
 			store_unlock();
 			msg = createException(SQL, "sql.commit", SQLSTATE(HY013) "%s allocation failure while committing the transaction, will ROLLBACK instead", operation);
@@ -603,9 +591,6 @@ mvc_commit(mvc *m, int chain, const char *name, bool enabling_auto_commit)
 			return msg;
 		}
 		m->type = Q_TRANS;
-		if (m->qc) /* clean query cache, protect against concurrent access on the hash tables (when functions already exists, concurrent mal will
-build up the hash (not copied in the trans dup)) */
-			qc_clean(m->qc, false);
 		m->session->schema = find_sql_schema(m->session->tr, m->session->schema_name);
 		TRC_INFO(SQL_TRANS, "Savepoint commit '%s' done\n", name);
 		return msg;
@@ -643,9 +628,7 @@ build up the hash (not copied in the trans dup)) */
 			return msg;
 		}
 		TRC_INFO(SQL_TRANS,
-			"Commit done (no changes)%s%.200s\n",
-			m->query ? ", query: " : "",
-			m->query ? m->query : "");
+			"Commit done (no changes)\n");
 		return msg;
 	}
 
@@ -683,9 +666,7 @@ build up the hash (not copied in the trans dup)) */
 	store_unlock();
 	m->type = Q_TRANS;
 	TRC_INFO(SQL_TRANS,
-		"Commit done%s%.200s\n",
-		m->query ? ", query: " : "",
-		m->query ? m->query : "");
+		"Commit done\n");
 	return msg;
 }
 
@@ -700,8 +681,6 @@ mvc_rollback(mvc *m, int chain, const char *name, bool disabling_auto_commit)
 	store_lock();
 	sql_trans *tr = m->session->tr;
 	assert(m->session->tr && m->session->tr->active);	/* only abort an active transaction */
-	if (m->qc)
-		qc_clean(m->qc, false);
 	if (name && name[0] != '\0') {
 		while (tr && (!tr->name || strcmp(tr->name, name) != 0))
 			tr = tr->parent;
@@ -744,11 +723,9 @@ mvc_rollback(mvc *m, int chain, const char *name, bool disabling_auto_commit)
 	}
 	m->type = Q_TRANS;
 	TRC_INFO(SQL_TRANS,
-		"Commit%s%s rolled back%s%s%.200s\n",
+		"Commit%s%s rolled back%s\n",
 		name ? " " : "", name ? name : "",
-		tr->wtime == 0 ? " (no changes)" : "",
-		m->query ? ", query: " : "",
-		m->query ? m->query : "");
+		tr->wtime == 0 ? " (no changes)" : "");
 	return msg;
 }
 
@@ -797,12 +774,12 @@ mvc_release(mvc *m, const char *name)
 }
 
 mvc *
-mvc_create(int clientid, backend_stack stk, int debug, bstream *rs, stream *ws)
+mvc_create(sql_allocator *pa, int clientid, int debug, bstream *rs, stream *ws)
 {
-	int i;
 	mvc *m;
 
- 	m = ZNEW(mvc);
+	assert(pa);
+ 	m = SA_ZNEW(pa, mvc);
 	if (!m)
 		return NULL;
 
@@ -812,42 +789,33 @@ mvc_create(int clientid, backend_stack stk, int debug, bstream *rs, stream *ws)
 	/* if an error exceeds the buffer we don't want garbage at the end */
 	m->errstr[ERRSIZE-1] = '\0';
 
-	m->qc = qc_create(clientid, 0);
+	m->qc = qc_create(pa, clientid, 0);
 	if (!m->qc) {
-		_DELETE(m);
 		return NULL;
 	}
+	m->pa = pa;
 	m->sa = NULL;
+	m->ta = sa_create(m->pa);
 
 	m->params = NULL;
 	m->sizeframes = MAXPARAMS;
-	m->frames = NEW_ARRAY(sql_frame*, m->sizeframes);
+	m->frames = SA_NEW_ARRAY(pa, sql_frame*, m->sizeframes);
 	m->topframes = 0;
 	m->frame = 0;
 
 	m->use_views = false;
-	m->argmax = MAXPARAMS;
-	m->args = NEW_ARRAY(atom*, m->argmax);
-	if (!m->frames || !m->args) {
+	if (!m->frames) {
 		qc_destroy(m->qc);
-		_DELETE(m->frames);
-		_DELETE(m->args);
-		_DELETE(m);
 		return NULL;
 	}
 	if (init_global_variables(m) < 0) {
 		qc_destroy(m->qc);
 		list_destroy(m->global_vars);
-		_DELETE(m->frames);
-		_DELETE(m->args);
-		_DELETE(m);
 		return NULL;
 	}
-	m->argc = 0;
 	m->sym = NULL;
 
-	m->Topt = 0;
-	m->rowcnt = m->last_id = m->role_id = m->user_id = -1;
+	m->role_id = m->user_id = -1;
 	m->timezone = 0;
 	m->clientid = clientid;
 
@@ -855,31 +823,20 @@ mvc_create(int clientid, backend_stack stk, int debug, bstream *rs, stream *ws)
 	m->emod = mod_none;
 	m->reply_size = 100;
 	m->debug = debug;
-	m->cache = DEFAULT_CACHESIZE;
-	m->caching = m->cache;
 
 	m->label = 0;
-	m->remote = 0;
 	m->cascade_action = NULL;
-	for(i=0;i<MAXSTATS;i++)
-		m->opt_stats[i] = 0;
 
 	store_lock();
-	m->session = sql_session_create(stk, 1 /*autocommit on*/);
+	m->session = sql_session_create(1 /*autocommit on*/);
 	store_unlock();
 	if (!m->session) {
 		qc_destroy(m->qc);
 		list_destroy(m->global_vars);
-		_DELETE(m->frames);
-		_DELETE(m->args);
-		_DELETE(m);
 		return NULL;
 	}
 
 	m->type = Q_PARSE;
-
-	m->result_id = 0;
-	m->results = NULL;
 
 	scanner_init(&m->scanner, rs, ws);
 	return m;
@@ -888,7 +845,7 @@ mvc_create(int clientid, backend_stack stk, int debug, bstream *rs, stream *ws)
 int
 mvc_reset(mvc *m, bstream *rs, stream *ws, int debug)
 {
-	int i, res = 1, reset;
+	int res = 1, reset;
 	sql_trans *tr;
 
 	TRC_DEBUG(SQL_TRANS, "MVC reset\n");
@@ -907,9 +864,10 @@ mvc_reset(mvc *m, bstream *rs, stream *ws, int debug)
 	if (m->sa)
 		m->sa = sa_reset(m->sa);
 	else
-		m->sa = sa_create();
+		m->sa = sa_create(m->pa);
 	if(!m->sa)
 		res = 0;
+	m->ta = sa_reset(m->ta);
 
 	m->errstr[0] = '\0';
 
@@ -917,11 +875,9 @@ mvc_reset(mvc *m, bstream *rs, stream *ws, int debug)
 	/* reset frames to the set of global variables */
 	stack_pop_until(m, 0);
 	m->frame = 0;
-	m->argc = 0;
 	m->sym = NULL;
 
-	m->Topt = 0;
-	m->rowcnt = m->last_id = m->role_id = m->user_id = -1;
+	m->role_id = m->user_id = -1;
 	m->emode = m_normal;
 	m->emod = mod_none;
 	if (m->reply_size != 100)
@@ -933,21 +889,10 @@ mvc_reset(mvc *m, bstream *rs, stream *ws, int debug)
 	if (m->debug != debug)
 		sqlvar_set_number(find_global_var(m, mvc_bind_schema(m, "sys"), "debug"), debug);
 	m->debug = debug;
-	if (m->cache != DEFAULT_CACHESIZE)
-		sqlvar_set_number(find_global_var(m, mvc_bind_schema(m, "sys"), "cache"), DEFAULT_CACHESIZE);
-	m->cache = DEFAULT_CACHESIZE;
-	m->caching = m->cache;
 
 	m->label = 0;
-	m->remote = 0;
 	m->cascade_action = NULL;
 	m->type = Q_PARSE;
-
-	for(i=0;i<MAXSTATS;i++)
-		m->opt_stats[i] = 0;
-
-	m->result_id = 0;
-	m->results = NULL;
 
 	scanner_init(&m->scanner, rs, ws);
 	return res;
@@ -973,22 +918,15 @@ mvc_destroy(mvc *m)
 
 	list_destroy(m->global_vars);
 	stack_pop_until(m, 0);
-	_DELETE(m->frames);
 
 	if (m->scanner.log) /* close and destroy stream */
 		close_stream(m->scanner.log);
 
-	if (m->sa)
-		sa_destroy(m->sa);
 	m->sa = NULL;
+	m->ta = NULL;
 	if (m->qc)
 		qc_destroy(m->qc);
 	m->qc = NULL;
-
-	_DELETE(m->args);
-	_DELETE(m->query);
-	m->args = NULL;
-	_DELETE(m);
 }
 
 sql_type *
@@ -1428,25 +1366,16 @@ mvc_drop_table(mvc *m, sql_schema *s, sql_table *t, int drop_action)
 
 	if (isRemote(t)) {
 		str AUTHres;
-		sql_allocator *sa = m->sa;
 
-		m->sa = sa_create();
-		if (!m->sa)
+		char *qualified_name = sa_strconcat(m->ta, sa_strconcat(m->ta, t->s->base.name, "."), t->base.name);
+		if (!qualified_name)
 			throw(SQL, "sql.mvc_drop_table", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-		char *qualified_name = sa_strconcat(m->sa, sa_strconcat(m->sa, t->s->base.name, "."), t->base.name);
-		if (!qualified_name) {
-			sa_destroy(m->sa);
-			m->sa = sa;
-			throw(SQL, "sql.mvc_drop_table", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-		}
-
 		AUTHres = AUTHdeleteRemoteTableCredentials(qualified_name);
-		sa_destroy(m->sa);
-		m->sa = sa;
-
+		sa_reset(m->ta);
 		if(AUTHres != MAL_SUCCEED)
 			return AUTHres;
 	}
+
 	if (sql_trans_drop_table(m->session->tr, s, t->base.id, drop_action ? DROP_CASCADE_START : DROP_RESTRICT))
 		throw(SQL, "sql.mvc_drop_table", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	return MAL_SUCCEED;
@@ -1776,17 +1705,7 @@ _symbol_cmp(mvc *sql, symbol *s1, symbol *s2)
 				return -1;
 			return strcmp(s1->data.sval, s2->data.sval);
 		case type_list: {
-			if (s1->token == SQL_IDENT) {
-				atom *at1, *at2;
-
-				if (s2->token != SQL_IDENT)
-					return -1;
-				at1 = sql_bind_arg(sql, s1->data.lval->h->data.i_val);
-				at2 = sql_bind_arg(sql, s2->data.lval->h->data.i_val);
-				return atom_cmp(at1, at2);
-			} else {
 				return dlist_cmp(sql, s1->data.lval, s2->data.lval);
-			}
 		}
 		case type_type:
 			return subtype_cmp(&s1->data.typeval, &s2->data.typeval);

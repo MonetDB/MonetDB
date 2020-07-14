@@ -28,14 +28,13 @@ exps_simplify_exp(visitor *v, list *exps)
 	for (node *n=exps->h; n && !needed; n = n->next) {
 		sql_exp *e = n->data;
 
-		needed = (exp_is_true(v->sql, e) || exp_is_false(v->sql, e) || (is_compare(e->type) && e->flag == cmp_or));
+		needed = (exp_is_true(e) || exp_is_false(e) || (is_compare(e->type) && e->flag == cmp_or));
 	}
 	/* if there's only one expression and it is false, we have to keep it */
-	if (list_length(exps) == 1 && exp_is_false(v->sql, exps->h->data))
+	if (list_length(exps) == 1 && exp_is_false(exps->h->data))
 		return exps;
 	if (needed) {
 		list *nexps = sa_list(v->sql->sa);
-		v->sql->caching = 0;
 		for (node *n=exps->h; n; n = n->next) {
 			sql_exp *e = n->data;
 
@@ -48,10 +47,10 @@ exps_simplify_exp(visitor *v, list *exps)
 				if (list_length(l) == 1) {
 					sql_exp *ie = l->h->data;
 
-					if (exp_is_true(v->sql, ie)) {
+					if (exp_is_true(ie)) {
 						v->changes++;
 						continue;
-					} else if (exp_is_false(v->sql, ie)) {
+					} else if (exp_is_false(ie)) {
 						v->changes++;
 						nexps = list_merge(nexps, r, (fdup)NULL);
 						continue;
@@ -63,10 +62,10 @@ exps_simplify_exp(visitor *v, list *exps)
 				if (list_length(r) == 1) {
 					sql_exp *ie = r->h->data;
 
-					if (exp_is_true(v->sql, ie)) {
+					if (exp_is_true(ie)) {
 						v->changes++;
 						continue;
-					} else if (exp_is_false(v->sql, ie)) {
+					} else if (exp_is_false(ie)) {
 						nexps = list_merge(nexps, l, (fdup)NULL);
 						v->changes++;
 						continue;
@@ -77,11 +76,11 @@ exps_simplify_exp(visitor *v, list *exps)
 				}
 			}
 			/* TRUE and X -> X */
-			if (exp_is_true(v->sql, e)) {
+			if (exp_is_true(e)) {
 				v->changes++;
 				continue;
 			/* FALSE and X -> FALSE */
-			} else if (exp_is_false(v->sql, e)) {
+			} else if (exp_is_false(e)) {
 				v->changes++;
 				return append(sa_list(v->sql->sa), e);
 			} else {
@@ -138,14 +137,13 @@ rewrite_simplify_exp(visitor *v, sql_rel *rel, sql_exp *e, int depth)
 			list *l = e->l = exps_simplify_exp(v, e->l);
 			list *r = e->r = exps_simplify_exp(v, e->r);
 
-			v->sql->caching = 0;
 			if (list_length(l) == 1) {
 				sql_exp *ie = l->h->data;
 
-				if (exp_is_true(v->sql, ie)) {
+				if (exp_is_true(ie)) {
 					v->changes++;
 					return ie;
-				} else if (exp_is_false(v->sql, ie) && list_length(r) == 1) {
+				} else if (exp_is_false(ie) && list_length(r) == 1) {
 					v->changes++;
 					return r->h->data;
 				}
@@ -156,10 +154,10 @@ rewrite_simplify_exp(visitor *v, sql_rel *rel, sql_exp *e, int depth)
 			if (list_length(r) == 1) {
 				sql_exp *ie = r->h->data;
 
-				if (exp_is_true(v->sql, ie)) {
+				if (exp_is_true(ie)) {
 					v->changes++;
 					return ie;
-				} else if (exp_is_false(v->sql, ie) && list_length(l) == 1) {
+				} else if (exp_is_false(ie) && list_length(l) == 1) {
 					v->changes++;
 					return l->h->data;
 				}
@@ -343,4 +341,12 @@ sql_exp *
 exp_push_down(mvc *sql, sql_exp *e, sql_rel *f, sql_rel *t)
 {
 	return _exp_push_down(sql, e, f, t);
+}
+
+sql_rel *
+rewrite_reset_used(visitor *v, sql_rel *rel)
+{
+	(void) v;
+	rel->used = 0;
+	return rel;
 }

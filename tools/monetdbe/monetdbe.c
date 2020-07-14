@@ -297,13 +297,12 @@ monetdbe_query_internal(monetdbe_database_internal *mdbe, char* query, monetdbe_
 	assert(language);
 	b->language = language;
 	b->output_format = OFMT_NONE;
+	b->no_mitosis = 0;
 	m->user_id = m->role_id = USER_MONETDB;
 	m->errstr[0] = '\0';
 	m->params = NULL;
-	m->argc = 0;
 	m->sym = NULL;
 	m->label = 0;
-	m->no_mitosis = 0;
 	if (m->sa)
 		m->sa = sa_reset(m->sa);
 	m->scanner.mode = LINE_N;
@@ -321,31 +320,29 @@ monetdbe_query_internal(monetdbe_database_internal *mdbe, char* query, monetdbe_
 	c->fdout = NULL;
 	if ((mdbe->msg = SQLengine(c)) != MAL_SUCCEED)
 		goto cleanup;
-	if (!m->results && m->rowcnt >= 0 && affected_rows)
-		*affected_rows = m->rowcnt;
+	if (!b->results && b->rowcnt >= 0 && affected_rows)
+		*affected_rows = b->rowcnt;
 
 	if (result) {
 		if (!(res_internal = GDKzalloc(sizeof(monetdbe_result_internal)))) {
 			mdbe->msg = createException(MAL, "monetdbe.monetdbe_query_internal", MAL_MALLOC_FAIL);
 			goto cleanup;
 		}
-		if (m->emode == m_execute)
-			res_internal->type = (m->results) ? Q_TABLE : Q_UPDATE;
-		else if (m->emode & m_prepare)
+		if (m->emode & m_prepare)
 			res_internal->type = Q_PREPARE;
 		else
-			res_internal->type = (m->results) ? m->results->query_type : m->type;
-		res_internal->res.last_id = m->last_id;
+			res_internal->type = (b->results) ? b->results->query_type : m->type;
+		res_internal->res.last_id = b->last_id;
 		res_internal->mdbe = mdbe;
 		*result = (monetdbe_result*) res_internal;
 		m->reply_size = -2; /* do not clean up result tables */
 
-		if (m->results) {
-			res_internal->res.ncols = (size_t) m->results->nr_cols;
-			res_internal->monetdbe_resultset = m->results;
-			if (m->results->nr_cols > 0)
-				res_internal->res.nrows = m->results->nr_rows;
-			m->results = NULL;
+		if (b->results) {
+			res_internal->res.ncols = (size_t) b->results->nr_cols;
+			res_internal->monetdbe_resultset = b->results;
+			if (b->results->nr_cols > 0)
+				res_internal->res.nrows = b->results->nr_rows;
+			b->results = NULL;
 			res_internal->converted_columns = GDKzalloc(sizeof(monetdbe_column*) * res_internal->res.ncols);
 			if (!res_internal->converted_columns) {
 				mdbe->msg = createException(MAL, "monetdbe.monetdbe_query_internal", MAL_MALLOC_FAIL);
@@ -406,9 +403,13 @@ monetdbe_open_internal(monetdbe_database_internal *mdbe)
 	    (mdbe->msg = getSQLContext(mdbe->c, NULL, &m, NULL)) != MAL_SUCCEED)
 		goto cleanup;
 	m->session->auto_commit = 1;
+	if (!m->pa)
+		m->pa = sa_create(NULL);
 	if (!m->sa)
-		m->sa = sa_create();
-	if (!m->sa) {
+		m->sa = sa_create(m->pa);
+	if (!m->ta)
+		m->ta = sa_create(m->pa);
+	if (!m->pa || !m->sa || !m->ta) {
 		mdbe->msg = createException(SQL, "monetdbe.monetdbe_open_internal", MAL_MALLOC_FAIL);
 		goto cleanup;
 	}
@@ -499,7 +500,8 @@ monetdbe_startup(monetdbe_database_internal *mdbe, char* dbdir, monetdbe_options
 			goto cleanup;
 		}
 		// Memory limit is session specific
-		memory = GDK_vm_maxsize = (size_t) opts->memorylimit;
+		memory = (size_t) opts->memorylimit;
+		GDK_vm_maxsize = (size_t) memory << 20; /* convert from MiB to bytes */
 	}
 	if (opts && opts->querytimeout) {
 		if( opts->querytimeout < 0){
@@ -782,22 +784,25 @@ monetdbe_prepare(monetdbe_database dbhdl, char* query, monetdbe_statement **stmt
 		cq *q = qc_find(m->qc, prepare_id);
 
 		if (q && stmt_internal) {
-			Symbol s = (Symbol)q->code;
+			Symbol s = findSymbolInModule(mdbe->c->usermodule, q->f->imp);
 			InstrPtr p = s->def->stmt[0];
 			stmt_internal->mdbe = mdbe;
 			stmt_internal->q = q;
 			stmt_internal->retc = p->retc;
-			stmt_internal->res.nparam = q->paramlen;
-			stmt_internal->data = (ValRecord*)GDKzalloc(sizeof(ValRecord) * q->paramlen);
-			stmt_internal->args = (ValPtr*)GDKmalloc(sizeof(ValPtr) * (q->paramlen + stmt_internal->retc));
-			stmt_internal->res.type = (monetdbe_types*)GDKmalloc(sizeof(monetdbe_types)*q->paramlen);
+			stmt_internal->res.nparam = list_length(q->f->ops);
+			stmt_internal->data = (ValRecord*)GDKzalloc(sizeof(ValRecord) * stmt_internal->res.nparam);
+			stmt_internal->args = (ValPtr*)GDKmalloc(sizeof(ValPtr) * (list_length(q->f->ops) + stmt_internal->retc));
+			stmt_internal->res.type = (monetdbe_types*)GDKmalloc(sizeof(monetdbe_types)* stmt_internal->res.nparam);
 			if (!stmt_internal->res.type || !stmt_internal->data || !stmt_internal->args) {
 				if (stmt_internal->data)
 					GDKfree(stmt_internal->data);
 				mdbe->msg = createException(MAL, "monetdbe.monetdbe_prepare", "Could not setup prepared statement");
 			} else {
-				for (int i = 0; i<q->paramlen; i++) {
-					stmt_internal->res.type[i] = embedded_type(q->params[i].type->localtype);
+				int i = 0;
+				for (node *n = q->f->ops->h; n; n = n->next, i++) {
+					sql_arg *a = n->data;
+					sql_subtype *t = &a->type;
+					stmt_internal->res.type[i] = embedded_type(t->type->localtype);
 					stmt_internal->args[i+stmt_internal->retc] = &stmt_internal->data[i];
 				}
 			}
@@ -819,9 +824,11 @@ monetdbe_bind(monetdbe_statement *stmt, void *data, size_t i)
 	/* TODO !data treat as NULL value (add nil mask) ? */
 	if (i > stmt->nparam)
 		return createException(MAL, "monetdbe.monetdbe_bind", "Parameter %zu not bound to a value", i);
-	stmt_internal->data[i].vtype = stmt_internal->q->params[i].type->localtype;
+	sql_arg *a = (sql_arg*)list_fetch(stmt_internal->q->f->ops, (int) i);
+	assert(a);
+	stmt_internal->data[i].vtype = a->type.type->localtype;
 	/* TODO handle conversion from NULL and special types */
-	VALset(&stmt_internal->data[i], stmt_internal->q->params[i].type->localtype, data);
+	VALset(&stmt_internal->data[i], a->type.type->localtype, data);
 	return MAL_SUCCEED;
 }
 
@@ -830,42 +837,43 @@ monetdbe_execute(monetdbe_statement *stmt, monetdbe_result **result, monetdbe_cn
 {
 	monetdbe_result_internal *res_internal = NULL;
 	monetdbe_stmt_internal *stmt_internal = (monetdbe_stmt_internal*)stmt;
-	mvc *m = ((backend *) stmt_internal->mdbe->c->sqlcontext)->mvc;
+	backend *b = (backend *) stmt_internal->mdbe->c->sqlcontext;
+	mvc *m = b->mvc;
 	monetdbe_database_internal *mdbe = stmt_internal->mdbe;
-	cq *q = stmt_internal->q;
+	//cq *q = stmt_internal->q;
 
 	if ((mdbe->msg = SQLtrans(m)) != MAL_SUCCEED)
 		return mdbe->msg;
 
 	/* check if all inputs are bound */
-	for(int i = 0; i<q->paramlen; i++){
+	for(int i = 0; i< list_length(stmt_internal->q->f->ops); i++){
 		if (!stmt_internal->data[i].vtype)
 			return createException(MAL, "monetdbe.monetdbe_execute", "Parameter %d not bound to a value", i);
 	}
-	MalStkPtr glb = (MalStkPtr) (q->stk);
-	Symbol s = (Symbol)q->code;
-	mdbe->msg = callMAL(mdbe->c, s->def, &glb, stmt_internal->args, 0);
+	//MalStkPtr glb = (MalStkPtr) (q->stk);
+	//Symbol s = (Symbol)q->code;
+	//mdbe->msg = callMAL(mdbe->c, s->def, &glb, stmt_internal->args, 0);
 
-	if (!m->results && m->rowcnt >= 0 && affected_rows)
-		*affected_rows = m->rowcnt;
+	if (!b->results && b->rowcnt >= 0 && affected_rows)
+		*affected_rows = b->rowcnt;
 
 	if (result) {
 		if (!(res_internal = GDKzalloc(sizeof(monetdbe_result_internal)))) {
 			mdbe->msg = createException(MAL, "monetdbe.monetdbe_query_internal", MAL_MALLOC_FAIL);
 			goto cleanup;
 		}
-		res_internal->type = (m->results) ? Q_TABLE : Q_UPDATE;
-		res_internal->res.last_id = m->last_id;
+		res_internal->type = (b->results) ? Q_TABLE : Q_UPDATE;
+		res_internal->res.last_id = b->last_id;
 		res_internal->mdbe = stmt_internal->mdbe;
 		*result = (monetdbe_result*) res_internal;
 		m->reply_size = -2; /* do not clean up result tables */
 
-		if (m->results) {
-			res_internal->res.ncols = (size_t) m->results->nr_cols;
-			res_internal->monetdbe_resultset = m->results;
-			if (m->results->nr_cols > 0)
-				res_internal->res.nrows = m->results->nr_rows;
-			m->results = NULL;
+		if (b->results) {
+			res_internal->res.ncols = (size_t) b->results->nr_cols;
+			res_internal->monetdbe_resultset = b->results;
+			if (b->results->nr_cols > 0)
+				res_internal->res.nrows = b->results->nr_rows;
+			b->results = NULL;
 			res_internal->converted_columns = GDKzalloc(sizeof(monetdbe_column*) * res_internal->res.ncols);
 			if (!res_internal->converted_columns) {
 				mdbe->msg = createException(MAL, "monetdbe.monetdbe_query_internal", MAL_MALLOC_FAIL);
@@ -1062,34 +1070,34 @@ GENERATE_BASE_HEADERS(monetdbe_data_date, date);
 GENERATE_BASE_HEADERS(monetdbe_data_time, time);
 GENERATE_BASE_HEADERS(monetdbe_data_timestamp, timestamp);
 
-#define GENERATE_BAT_INPUT_BASE(tpe)                                               \
-	monetdbe_column_##tpe *bat_data = GDKzalloc(sizeof(monetdbe_column_##tpe));  \
-	if (!bat_data) {                                                           \
+#define GENERATE_BAT_INPUT_BASE(tpe)									\
+	monetdbe_column_##tpe *bat_data = GDKzalloc(sizeof(monetdbe_column_##tpe));	\
+	if (!bat_data) {													\
 		mdbe->msg = createException(MAL, "monetdbe.monetdbe_result_fetch", MAL_MALLOC_FAIL); \
-		goto cleanup;                                                      \
-	}                                                                          \
-	bat_data->type = monetdbe_##tpe;                                           \
-	bat_data->is_null = tpe##_is_null;                                         \
-	if (sqltpe->type->radix == 10) bat_data->scale = pow(10, sqltpe->scale);   \
+		goto cleanup;													\
+	}																	\
+	bat_data->type = monetdbe_##tpe;									\
+	bat_data->is_null = tpe##_is_null;									\
+	if (sqltpe->type->radix == 10) bat_data->scale = pow(10, sqltpe->scale); \
 	column_result = (monetdbe_column*) bat_data;
 
-#define GENERATE_BAT_INPUT(b, tpe, tpe_name, mtype)                                \
-	{                                                                          \
-		GENERATE_BAT_INPUT_BASE(tpe_name);                            	   \
-		bat_data->count = mres->nrows;                                     \
-		bat_data->null_value = mtype##_nil;                                \
-		if (bat_data->count) {                                             \
+#define GENERATE_BAT_INPUT(b, tpe, tpe_name, mtype)						\
+	{																	\
+		GENERATE_BAT_INPUT_BASE(tpe_name);								\
+		bat_data->count = (size_t) mres->nrows;							\
+		bat_data->null_value = mtype##_nil;								\
+		if (bat_data->count) {											\
 			bat_data->data = GDKzalloc(bat_data->count * sizeof(bat_data->null_value)); \
-			if (!bat_data->data) {                                     \
+			if (!bat_data->data) {										\
 				mdbe->msg = createException(MAL, "monetdbe.monetdbe_result_fetch", MAL_MALLOC_FAIL); \
-				goto cleanup;                                      \
-			}                                                          \
-		}                                                                  \
-		size_t it = 0;                                                     \
-		mtype* val = (mtype*)Tloc(b, 0);                                   \
-		/* bat is dense, materialize it */                                 \
-		for (it = 0; it < bat_data->count; it++, val++)                    \
-			bat_data->data[it] = (tpe) *val;                           \
+				goto cleanup;											\
+			}															\
+		}																\
+		size_t it = 0;													\
+		mtype* val = (mtype*)Tloc(b, 0);								\
+		/* bat is dense, materialize it */								\
+		for (it = 0; it < bat_data->count; it++, val++)					\
+			bat_data->data[it] = (tpe) *val;							\
 	}
 
 char*
@@ -1248,6 +1256,8 @@ monetdbe_append(monetdbe_database dbhdl, const char* schema, const char* table, 
 					mdbe->msg = createException(SQL, "monetdbe.monetdbe_append", "Cannot append values");
 					goto cleanup;
 				}
+				if (b && b != (blob*)nil)
+					GDKfree(b);
 			}
 		}
 	}
@@ -1308,10 +1318,6 @@ monetdbe_result_fetch(monetdbe_result* mres, monetdbe_column** res, size_t colum
 
 	if ((mdbe->msg = getSQLContext(c, NULL, &m, NULL)) != MAL_SUCCEED)
 		goto cleanup;
-	/*
-	if ((mdbe->msg = SQLtrans(m)) != MAL_SUCCEED)
-		goto cleanup;
-		*/
 	if (!res) {
 		mdbe->msg = createException(MAL, "monetdbe.monetdbe_result_fetch", "Parameter res is NULL");
 		goto cleanup;
@@ -1360,7 +1366,7 @@ monetdbe_result_fetch(monetdbe_result* mres, monetdbe_column** res, size_t colum
 		BATiter li;
 		BUN p = 0, q = 0;
 		GENERATE_BAT_INPUT_BASE(str);
-		bat_data->count = mres->nrows;
+		bat_data->count = (size_t) mres->nrows;
 		if (bat_data->count) {
 			bat_data->data = GDKzalloc(sizeof(char *) * bat_data->count);
 			bat_data->null_value = NULL;
@@ -1388,7 +1394,7 @@ monetdbe_result_fetch(monetdbe_result* mres, monetdbe_column** res, size_t colum
 	} else if (bat_type == TYPE_date) {
 		date *baseptr;
 		GENERATE_BAT_INPUT_BASE(date);
-		bat_data->count = mres->nrows;
+		bat_data->count = (size_t) mres->nrows;
 		if (bat_data->count) {
 			bat_data->data = GDKmalloc(sizeof(bat_data->null_value) * bat_data->count);
 			if (!bat_data->data) {
@@ -1404,7 +1410,7 @@ monetdbe_result_fetch(monetdbe_result* mres, monetdbe_column** res, size_t colum
 	} else if (bat_type == TYPE_daytime) {
 		daytime *baseptr;
 		GENERATE_BAT_INPUT_BASE(time);
-		bat_data->count = mres->nrows;
+		bat_data->count = (size_t) mres->nrows;
 		if (bat_data->count) {
 			bat_data->data = GDKmalloc(sizeof(bat_data->null_value) * bat_data->count);
 			if (!bat_data->data) {
@@ -1420,7 +1426,7 @@ monetdbe_result_fetch(monetdbe_result* mres, monetdbe_column** res, size_t colum
 	} else if (bat_type == TYPE_timestamp) {
 		timestamp *baseptr;
 		GENERATE_BAT_INPUT_BASE(timestamp);
-		bat_data->count = mres->nrows;
+		bat_data->count = (size_t) mres->nrows;
 		if (bat_data->count) {
 			bat_data->data = GDKmalloc(sizeof(bat_data->null_value) * bat_data->count);
 			if (!bat_data->data) {
@@ -1437,7 +1443,7 @@ monetdbe_result_fetch(monetdbe_result* mres, monetdbe_column** res, size_t colum
 		BATiter li;
 		BUN p = 0, q = 0;
 		GENERATE_BAT_INPUT_BASE(blob);
-		bat_data->count = mres->nrows;
+		bat_data->count = (size_t) mres->nrows;
 		if (bat_data->count) {
 			bat_data->data = GDKmalloc(sizeof(monetdbe_data_blob) * bat_data->count);
 			if (!bat_data->data) {
@@ -1472,7 +1478,7 @@ monetdbe_result_fetch(monetdbe_result* mres, monetdbe_column** res, size_t colum
 		BATiter li;
 		BUN p = 0, q = 0;
 		GENERATE_BAT_INPUT_BASE(str);
-		bat_data->count = mres->nrows;
+		bat_data->count = (size_t) mres->nrows;
 		if (bat_data->count) {
 			bat_data->null_value = NULL;
 			bat_data->data = GDKzalloc(sizeof(char *) * bat_data->count);

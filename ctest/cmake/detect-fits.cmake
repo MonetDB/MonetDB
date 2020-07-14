@@ -13,7 +13,7 @@ endif()
 if (${LINUX_DISTRO} STREQUAL "debian")
   if(${LINUX_DISTRO_VERSION} STREQUAL "9")
     assert_package_detected(
-      detect FALSE
+      detect TRUE
       legacyvariable HAVE_FITS
       variablename CFITSIO_FOUND)
   endif()
