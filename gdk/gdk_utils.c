@@ -759,6 +759,8 @@ GDKinit(opt *set, int setlen)
 	static_assert(sizeof(hge) == SIZEOF_HGE,
 		      "error in configure: bad value for SIZEOF_HGE");
 #endif
+		static_assert(sizeof(dbl) == SIZEOF_DOUBLE,
+		      "error in configure: bad value for SIZEOF_DOUBLE");
 	static_assert(sizeof(oid) == SIZEOF_OID,
 		      "error in configure: bad value for SIZEOF_OID");
 	static_assert(sizeof(void *) == SIZEOF_VOID_P,
