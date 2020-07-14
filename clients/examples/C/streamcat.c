@@ -17,6 +17,8 @@ const char *USAGE =
 	"Usage:\n"
 	"    streamcat read    [-o FILE] FILE R_OPENER [R_WRAPPER..]\n"
 	"    streamcat write   [-i FILE] FILE W_OPENER [W_WRAPPER..]\n"
+	"    streamcat bstream -i (FILE | -)\n"
+	"    streamcat bstream -o (FILE | -) [-a ADDITIONAL_TEXT] FILE...\n"
 	"Options:\n"
 	"    -o FILE             use FILE instead of stdout\n"
 	"    -i FILE             use FILE instead of stdin\n"
@@ -40,6 +42,8 @@ const char *USAGE =
 
 static int cmd_read(char *argv[]);
 static int cmd_write(char *argv[]);
+static int cmd_bstream(char *argv[]);
+
 typedef stream *(*opener_fun)(char *filename);
 
 static stream *opener_rstream(char *filename);
@@ -96,6 +100,8 @@ main(int argc, char *argv[])
 		return cmd_read(argv+1);
 	else if (strcmp(argv[1], "write") == 0)
 		return cmd_write(argv+1);
+	else if (strcmp(argv[1], "bstream") == 0)
+		return cmd_bstream(argv+1);
 	else
 		croak(1, "Unknown subcommand '%s'", argv[1]);
 }
@@ -439,4 +445,104 @@ wrapper_autocompression(stream *s, char *level_parm)
 			croak(1, "invalid compression level: %s", level_parm);
 	}
 	return compressed_stream(s, level);
+}
+
+static
+int cmd_bstream(char *argv[])
+{
+	char **arg = &argv[1];
+	char *inout_filename = NULL;
+	bool dump;
+	char *additional = NULL;
+	stream *s = NULL;
+	stream *bs = NULL;
+
+	// Parse the flags
+	while (*arg && arg[0][0] == '-') {
+		switch (arg[0][1]) {
+			case 'a':
+				if (!*++arg || arg[0][0] == '-')
+					croak(1, "-a requires argument");
+				additional = *arg++;
+				break;
+			case 'i':
+				if (!*++arg)
+					croak(1, "-i requires argument");
+				inout_filename = *arg++;
+				dump = true;
+				break;
+			case 'o':
+				if (!*++arg)
+					croak(1, "-o requires argument");
+				inout_filename = *arg++;
+				dump = false;
+				break;
+			default:
+				croak(1, "unknown opion: %s", *arg);
+				break;
+		}
+	}
+	if (!inout_filename)
+		croak(1, "either -i or -o is required");
+	if (dump && additional)
+		croak(1, "-a is only applicable in combination with -o");
+
+	// Open the stream
+	if (dump) {
+		FILE *f;
+		if (strcmp(inout_filename, "-") == 0) {
+			f = stdin;
+#ifdef _MSC_VER
+			_setmode(_fileno(f), O_BINARY);
+#endif
+		} else {
+			f = fopen(inout_filename, "rb");  // notice! binary input file
+		}
+		if (!f)
+			croak(2, "can't open file '%s': %s", inout_filename, strerror(errno));
+		s = file_rstream(f, true, inout_filename);
+		if (!s)
+			croak(2, "can't convert FILE '%s' to stream: %s", inout_filename, mnstr_peek_error(NULL));
+	} else {
+		FILE *f;
+		if (strcmp(inout_filename, "-") == 0) {
+			f = stdout;
+		} else {
+			f = fopen(inout_filename, "w"); // notice! ascii output file
+		}
+		if (!f)
+			croak(2, "can't open file '%s': %s", inout_filename, strerror(errno));
+		s = file_wstream(f, true, inout_filename);
+		if (!s)
+			croak(2, "can't convert FILE '%s' to stream: %s", inout_filename, mnstr_peek_error(NULL));
+	}
+
+	// Construct the bstream
+	bs = block_stream(s);
+	if (!bs)
+		croak(2, "can't construct bstream: %s", mnstr_peek_error(NULL));
+
+	if (dump) {
+		// char buf[8192];
+		// int size;
+		// while (!bs->eof);
+	} else {
+		while (*arg) {
+			char *filename = *arg++;
+			FILE *f = fopen(filename, "r");
+			if (!f)
+				croak(2, "could not open '%s': %s", filename, strerror(errno));
+			copy_file_to_stream(f, bs, 42);
+			fclose(f);
+			mnstr_flush(bs);
+		}
+		mnstr_destroy(bs);
+		if (additional) {
+			mnstr_printf(s, "%s", additional);
+		}
+		mnstr_close(s);
+	}
+
+
+	return 0;
 }
