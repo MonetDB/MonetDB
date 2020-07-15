@@ -1578,7 +1578,7 @@ rewrite_exp_rel(visitor *v, sql_rel *rel, sql_exp *e, int depth)
 			if (!rewrite_inner(v->sql, nrel, inner, depth?op_left:op_join))
 				return NULL;
 			/* has to apply recursively */
-			if (!(e->l = rel_exp_visitor_bottomup(v, nrel, &rewrite_exp_rel)))
+			if (!(e->l = rel_exp_visitor_bottomup(v, nrel, &rewrite_exp_rel, true)))
 				return NULL;
 		}
 	} else if (exp_has_rel(e) && !is_ddl(rel->op)) {
@@ -3156,7 +3156,7 @@ rel_unnest(mvc *sql, sql_rel *rel)
 
 	rel = rel_visitor_topdown(&v, rel, &rel_reset_subquery);
 	v.changes = 0;
-	rel = rel_exp_visitor_bottomup(&v, rel, &rewrite_simplify_exp);
+	rel = rel_exp_visitor_bottomup(&v, rel, &rewrite_simplify_exp, false);
 	rel = rel_visitor_bottomup(&v, rel, &rewrite_simplify);
 	rel = rel_visitor_bottomup(&v, rel, &rewrite_or_exp);
 	/* at rel_select.c explicit cross-products generate empty selects, if these are not used, they can be removed now */
@@ -3164,18 +3164,18 @@ rel_unnest(mvc *sql, sql_rel *rel)
 	rel = rel_visitor_bottomup(&v, rel, &rewrite_split_select_exps); /* has to run before rewrite_complex */
 
 	rel = rel_visitor_bottomup(&v, rel, &rewrite_aggregates);
-	rel = rel_exp_visitor_bottomup(&v, rel, &rewrite_rank);
+	rel = rel_exp_visitor_bottomup(&v, rel, &rewrite_rank, false);
 	rel = rel_visitor_bottomup(&v, rel, &rewrite_outer2inner_union);
 
 	// remove empty project/groupby !
 	rel = rel_visitor_bottomup(&v, rel, &rewrite_empty_project);
-	rel = rel_exp_visitor_bottomup(&v, rel, &rewrite_complex);
+	rel = rel_exp_visitor_bottomup(&v, rel, &rewrite_complex, true);
 
-	rel = rel_exp_visitor_bottomup(&v, rel, &rewrite_ifthenelse);	/* add isnull handling */
-	rel = rel_exp_visitor_bottomup(&v, rel, &reset_exp_used);	/* reset used flag from ifthenelse re-writer, so it can be used again by the rel_dce optimizer */
+	rel = rel_exp_visitor_bottomup(&v, rel, &rewrite_ifthenelse, false);	/* add isnull handling */
+	rel = rel_exp_visitor_bottomup(&v, rel, &reset_exp_used, false);	/* reset used flag from ifthenelse re-writer, so it can be used again by the rel_dce optimizer */
 
 	rel = rel_visitor_bottomup(&v, rel, &rewrite_values);
-	rel = rel_exp_visitor_bottomup(&v, rel, &rewrite_exp_rel);
+	rel = rel_exp_visitor_bottomup(&v, rel, &rewrite_exp_rel, true);
 	rel = rel_visitor_bottomup(&v, rel, &rewrite_join2semi);	/* where possible convert anyequal functions into marks */
 	if (v.changes > 0)
 		rel = rel_visitor_bottomup(&v, rel, &rel_remove_empty_select);
@@ -3192,6 +3192,6 @@ rel_unnest(mvc *sql, sql_rel *rel)
 	rel = rel_visitor_bottomup(&v, rel, &rewrite_groupings);	/* transform group combinations into union of group relations */
 	rel = rel_visitor_bottomup(&v, rel, &rewrite_empty_project);
 	// needed again!
-	rel = rel_exp_visitor_bottomup(&v, rel, &exp_reset_card_and_freevar);
+	rel = rel_exp_visitor_bottomup(&v, rel, &exp_reset_card_and_freevar, false);
 	return rel;
 }
