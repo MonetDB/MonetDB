@@ -1425,7 +1425,7 @@ stmt_genselect(backend *be, stmt *lops, stmt *rops, sql_subfunc *f, stmt *sub, i
 		s->op2 = rops;
 		s->op3 = sub;
 		s->flag = cmp_filter;
-		s->nrcols = (lops->nrcols == 2) ? 2 : 1;
+		s->nrcols = lops->nrcols;
 		s->nr = getDestVar(q);
 		s->q = q;
 		s->cand = sub;
@@ -1582,7 +1582,7 @@ stmt_uselect(backend *be, stmt *op1, stmt *op2, comp_type cmptype, stmt *sub, in
 		s->op2 = op2;
 		s->op3 = sub;
 		s->flag = cmptype;
-		s->nrcols = (op1->nrcols == 2) ? 2 : 1;
+		s->nrcols = op1->nrcols;
 		s->nr = getDestVar(q);
 		s->q = q;
 		s->cand = sub;
@@ -1822,7 +1822,7 @@ stmt_uselect2(backend *be, stmt *op1, stmt *op2, stmt *op3, int cmp, stmt *sub, 
 		s->op3 = op3;
 		s->op4.stval = sub;
 		s->flag = cmp;
-		s->nrcols = (op1->nrcols == 2) ? 2 : 1;
+		s->nrcols = op1->nrcols;
 		s->nr = getDestVar(q);
 		s->q = q;
 		s->cand = sub;
