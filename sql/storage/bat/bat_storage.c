@@ -1241,7 +1241,7 @@ sorted_col(sql_trans *tr, sql_column *col)
 		BAT *b = bind_col(tr, col, QUICK);
 
 		if (b)
-			sorted = BATtordered(b);
+			sorted = BATtordered(b) || BATtrevordered(b);
 	}
 	return sorted;
 }
