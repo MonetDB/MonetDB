@@ -7627,15 +7627,29 @@ score_se(mvc *sql, sql_rel *rel, sql_exp *e)
 static sql_rel *
 rel_select_order(visitor *v, sql_rel *rel)
 {
-	if (is_select(rel->op) && rel->exps && list_length(rel->exps)>1) {
-		int i, *scores = GDKzalloc(list_length(rel->exps) * sizeof(int));
-		node *n;
+	int *scores = NULL;
+	sql_exp **exps = NULL;
 
-		for (i = 0, n = rel->exps->h; n; i++, n = n->next)
-			scores[i] = score_se(v->sql, rel, n->data);
-		rel->exps = list_keysort(rel->exps, scores, (fdup)NULL);
-		GDKfree(scores);
+	if (is_select(rel->op) && list_length(rel->exps) > 1) {
+		node *n;
+		int i, nexps = list_length(rel->exps);
+		scores = GDKmalloc(nexps * sizeof(int));
+		exps = GDKmalloc(nexps * sizeof(sql_exp*));
+
+		if (scores && exps) {
+			for (i = 0, n = rel->exps->h; n; i++, n = n->next) {
+				exps[i] = n->data;
+				scores[i] = score_se(v->sql, rel, n->data);
+			}
+			GDKqsort(scores, exps, NULL, nexps, sizeof(int), sizeof(void *), TYPE_int, true, true);
+
+			for (i = 0, n = rel->exps->h; n; i++, n = n->next)
+				n->data = exps[i];
+		}
 	}
+
+	GDKfree(scores);
+	GDKfree(exps);
 	return rel;
 }
 
