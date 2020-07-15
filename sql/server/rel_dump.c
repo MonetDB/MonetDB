@@ -69,7 +69,6 @@ cmp_print(mvc *sql, stream *fout, int cmp)
 	case cmp_all:
 	case cmp_project:
 	case cmp_joined:
-	case cmp_left:
 	case cmp_left_project:
 				r = "inner"; break;
 	}

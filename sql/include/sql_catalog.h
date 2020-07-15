@@ -169,8 +169,7 @@ typedef enum comp_type {
 	cmp_all = 12,			/* special case for crossproducts */
 	cmp_project = 13,		/* special case for projection joins */
 	cmp_joined = 14, 		/* special case already joined */
-	cmp_left = 15,			/* special case equi join, keep left order */
-	cmp_left_project = 16		/* last step of outer join */
+	cmp_left_project = 15	/* last step of outer join */
 } comp_type;
 
 /* for ranges we keep the requirment for symmetric */
