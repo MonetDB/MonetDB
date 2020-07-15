@@ -97,7 +97,7 @@ single project (
 | ) [ "o"."open_auction_id" NOT NULL * = "%32"."%32" NOT NULL ]
 ) [ "o"."id" NOT NULL HASHCOL , "o"."open_auction_id" NOT NULL, "o"."initial" NOT NULL, "o"."reserve" NOT NULL, "o"."aktuell" NOT NULL, "o"."privacy" NOT NULL, "o"."itemref" NOT NULL, "o"."seller" NOT NULL, "o"."quantity" NOT NULL, "o"."type" NOT NULL, "o"."start" NOT NULL, "o"."ende" NOT NULL, "o"."%TID%" NOT NULL, "b"."id" NOT NULL HASHCOL , "b"."open_auction_id" NOT NULL, "b"."date" NOT NULL, "b"."time" NOT NULL, "b"."personref" NOT NULL, "b"."increase" NOT NULL, "b"."%TID%" NOT NULL, "b3"."increase" NOT NULL as "%2"."%2" ]
 project (
-| select (
+| single select (
 | | single join (
 | | | & REF 2 ,
 | | | project (
