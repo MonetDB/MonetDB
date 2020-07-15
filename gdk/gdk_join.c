@@ -3063,7 +3063,6 @@ bitmaskjoin(BAT *l, BAT *r,
 	    const char *reason, lng t0)
 {
 	BAT *r1;
-	const oid *rp = BATtdense(r) ? NULL : Tloc(r, 0);
 	size_t nmsk = (lci->ncand + 31) / 32;
 	uint32_t *mask = GDKzalloc(nmsk * sizeof(uint32_t));
 	BUN cnt = 0;
@@ -3073,13 +3072,9 @@ bitmaskjoin(BAT *l, BAT *r,
 
 	for (BUN n = 0; n < rci->ncand; n++) {
 		oid o = canditer_next(rci) - r->hseqbase;
-		if (rp) {
-			o = rp[o];
-			if (is_oid_nil(o))
-				continue;
-		} else {
-			o = o - r->hseqbase + r->tseqbase;
-		}
+		o = BUNtoid(r, o);
+		if (is_oid_nil(o))
+			continue;
 		o += l->hseqbase;
 		if (o < lci->seq + l->tseqbase)
 			continue;
@@ -3362,39 +3357,58 @@ leftjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr,
 				BBPunfix(sr->batCacheid);
 			if (rc != GDK_SUCCEED)
 				return rc;
+			if (r2p == NULL) {
+				BBPunfix(r2->batCacheid);
+				r2 = NULL;
+			}
 			if (semi)
 				r1->tkey = true;
-			BAT *ob;
-			rc = BATsort(&tmp, r2p ? &ob : NULL, NULL,
-				     r1, NULL, NULL, false, false, false);
-			BBPunfix(r1->batCacheid);
-			if (rc != GDK_SUCCEED) {
-				BBPunfix(r2->batCacheid);
-				return rc;
-			}
-			*r1p = r1 = tmp;
-			if (r2p) {
-				tmp = BATproject(ob, r2);
-				BBPunfix(r2->batCacheid);
-				BBPunfix(ob->batCacheid);
-				if (tmp == NULL) {
-					BBPunfix(r1->batCacheid);
-					return GDK_FAIL;
+			if (!VIEWtparent(r1) &&
+			    r1->ttype == TYPE_oid &&
+			    BBP_refs(r1->batCacheid) == 1 &&
+			    (r2 == NULL ||
+			     (!VIEWtparent(r2) &&
+			      BBP_refs(r2->batCacheid) == 1 &&
+			      r2->ttype == TYPE_oid))) {
+				/* in-place sort if we can */
+				if (r2) {
+					GDKqsort(r1->theap.base, r2->theap.base,
+						 NULL, r1->batCount, r1->twidth,
+						 r2->twidth, TYPE_oid, false,
+						 false);
+					r2->tsorted = false;
+					r2->trevsorted = false;
+					*r2p = r2;
+				} else {
+					GDKqsort(r1->theap.base, NULL, NULL,
+						 r1->batCount, r1->twidth, 0,
+						 TYPE_oid, false, false);
 				}
-				*r2p = tmp;
+				r1->tsorted = true;
+				r1->trevsorted = false;
+				*r1p = r1;
+			} else {
+				BAT *ob;
+				rc = BATsort(&tmp, r2p ? &ob : NULL, NULL,
+					     r1, NULL, NULL, false, false, false);
+				BBPunfix(r1->batCacheid);
+				if (rc != GDK_SUCCEED) {
+					if (r2)
+						BBPunfix(r2->batCacheid);
+					return rc;
+				}
+				*r1p = r1 = tmp;
+				if (r2p) {
+					tmp = BATproject(ob, r2);
+					BBPunfix(r2->batCacheid);
+					BBPunfix(ob->batCacheid);
+					if (tmp == NULL) {
+						BBPunfix(r1->batCacheid);
+						return GDK_FAIL;
+					}
+					*r2p = tmp;
+				}
 			}
-#if 0
-#ifndef NDEBUG
-			BAT *x1;
-			canditer_reset(&lci);
-			canditer_reset(&rci);
-			hashjoin(&x1, NULL, l, r, &lci, &rci, nil_matches, false, false, false, false, false, estimate, t0, false, rhash, prhash, func);
-			assert(x1->batCount == r1->batCount);
-			for (BUN x = 0; x < x1->batCount; x++)
-				assert(BUNtoid(r1, x) == BUNtoid(x1, x));
-			BBPunfix(x1->batCacheid);
-#endif
-#endif
 			return GDK_SUCCEED;
 		}
 	}

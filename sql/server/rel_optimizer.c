@@ -5510,7 +5510,12 @@ rel_push_project_down(visitor *v, sql_rel *rel)
 			return l;
 #endif
 		} else if (list_check_prop_all(rel->exps, (prop_check_func)&exp_is_useless_rename)) {
-			if (is_select(l->op)) {
+			if (is_simple_project(l->op) && list_length(l->exps) == list_length(rel->exps)) {
+				rel->l = NULL;
+				rel_destroy(rel);
+				v->changes++;
+				return l;
+			} else if (is_select(l->op)) {
 				/* push project under select (include exps used by selection) */
 				l->l = rel_project(v->sql->sa, l->l, rel_projections(v->sql, l, NULL, 1, 1));
 				l->l = rel_push_project_down(v, l->l);
@@ -5639,20 +5644,20 @@ sql_class_base_score(mvc *sql, sql_column *c, sql_subtype *t, bool equality_base
 	}
 }
 
-/* Compute the efficiency of using this expression early in a group by list */
+/* Compute the efficiency of using this expression earl	y in a group by list */
 static int
 score_gbe(mvc *sql, sql_rel *rel, sql_exp *e)
 {
 	int res = 0;
 	sql_subtype *t = exp_subtype(e);
-	sql_column *c = NULL;
+	sql_column *c = exp_find_column(rel, e, -2);
 
 	if (e->card == CARD_ATOM) /* constants are trivial to group */
 		res += 1000;
 	/* can we find out if the underlying table is sorted */
-	if (find_prop(e->p, PROP_HASHCOL)) /* distinct columns */
-		res += 600;
-	if ((c = exp_find_column(rel, e, -2)) && mvc_is_sorted(sql, c))
+	if (find_prop(e->p, PROP_HASHCOL) || (c && mvc_is_unique(sql, c))) /* distinct columns */
+		res += 700;
+	if (c && mvc_is_sorted(sql, c))
 		res += 500;
 	if (find_prop(e->p, PROP_SORTIDX)) /* has sort index */
 		res += 300;
@@ -7470,15 +7475,29 @@ score_se(mvc *sql, sql_rel *rel, sql_exp *e)
 static sql_rel *
 rel_select_order(visitor *v, sql_rel *rel)
 {
-	if (is_select(rel->op) && rel->exps && list_length(rel->exps)>1) {
-		int i, *scores = GDKzalloc(list_length(rel->exps) * sizeof(int));
-		node *n;
+	int *scores = NULL;
+	sql_exp **exps = NULL;
 
-		for (i = 0, n = rel->exps->h; n; i++, n = n->next)
-			scores[i] = score_se(v->sql, rel, n->data);
-		rel->exps = list_keysort(rel->exps, scores, (fdup)NULL);
-		GDKfree(scores);
+	if (is_select(rel->op) && list_length(rel->exps) > 1) {
+		node *n;
+		int i, nexps = list_length(rel->exps);
+		scores = GDKmalloc(nexps * sizeof(int));
+		exps = GDKmalloc(nexps * sizeof(sql_exp*));
+
+		if (scores && exps) {
+			for (i = 0, n = rel->exps->h; n; i++, n = n->next) {
+				exps[i] = n->data;
+				scores[i] = score_se(v->sql, rel, n->data);
+			}
+			GDKqsort(scores, exps, NULL, nexps, sizeof(int), sizeof(void *), TYPE_int, true, true);
+
+			for (i = 0, n = rel->exps->h; n; i++, n = n->next)
+				n->data = exps[i];
+		}
 	}
+
+	GDKfree(scores);
+	GDKfree(exps);
 	return rel;
 }
 
@@ -9322,12 +9341,12 @@ optimize_rel(mvc *sql, sql_rel *rel, int *g_changes, int level, int value_based_
 	if ((gp.cnt[op_select] || gp.cnt[op_left] || gp.cnt[op_right] || gp.cnt[op_full] ||
 		 gp.cnt[op_join] || gp.cnt[op_semi] || gp.cnt[op_anti]) && level <= 1)
 		if (value_based_opt)
-			rel = rel_exp_visitor_bottomup(&v, rel, &rel_simplify_predicates);
+			rel = rel_exp_visitor_bottomup(&v, rel, &rel_simplify_predicates, false);
 
 	if ((gp.cnt[op_project] || gp.cnt[op_groupby] ||
 		 gp.cnt[op_union] || gp.cnt[op_inter] || gp.cnt[op_except]) && level <= 1)
 		if (value_based_opt)
-			rel = rel_exp_visitor_bottomup(&v, rel, &rel_simplify_ifthenelse);
+			rel = rel_exp_visitor_bottomup(&v, rel, &rel_simplify_ifthenelse, false);
 
 	/* join's/crossproducts between a relation and a constant (row).
 	 * could be rewritten
@@ -9374,7 +9393,7 @@ optimize_rel(mvc *sql, sql_rel *rel, int *g_changes, int level, int value_based_
 		}
 
 	if (gp.cnt[op_project])
-		rel = rel_exp_visitor_bottomup(&v, rel, &rel_merge_project_rse);
+		rel = rel_exp_visitor_bottomup(&v, rel, &rel_merge_project_rse, false);
 
 	if (gp.cnt[op_select] && gp.cnt[op_join] && /* DISABLES CODE */ (0))
 		rel = rel_visitor_topdown(&v, rel, &rel_push_select_down_join);
