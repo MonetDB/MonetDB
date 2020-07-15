@@ -1811,6 +1811,7 @@ stmt_uselect2(backend *be, stmt *op1, stmt *op2, stmt *op3, int cmp, stmt *sub, 
 	InstrPtr q = select2_join2(be, op1, op2, op3, cmp, sub, anti, 0, st_uselect2, reduce);
 
 	if (q) {
+		int nrcols = (op1->nrcols || op2->nrcols || op3->nrcols);
 		stmt *s = stmt_create(be->mvc->sa, st_uselect2);
 		if (s == NULL) {
 			freeInstruction(q);
@@ -1822,7 +1823,7 @@ stmt_uselect2(backend *be, stmt *op1, stmt *op2, stmt *op3, int cmp, stmt *sub, 
 		s->op3 = op3;
 		s->op4.stval = sub;
 		s->flag = cmp;
-		s->nrcols = (op1->nrcols == 2) ? 2 : 1;
+		s->nrcols = (!nrcols)?0:(op1->nrcols == 2) ? 2 : 1;
 		s->nr = getDestVar(q);
 		s->q = q;
 		s->cand = sub;
