@@ -218,6 +218,7 @@ ROLLBACK;
 
 START TRANSACTION;
 CREATE TABLE t0(c0 INT);
+insert into t0(c0) values (1 between 2 and 3);
 insert into t0(c0) values(13), (((cast((0.1) between symmetric (0.2) and (0.3) as int))%(length(upper(r'u鋔wsD30pYi&ᴮ*2*W쉉t+詫sD^#cjX{'))))), (cast(cast(cast(0.12 as int) as string(646)) as int));
 
 SELECT COUNT(t0.c0 = t0.c0 OR 1 BETWEEN ASYMMETRIC 1 AND 1) FROM t0;
