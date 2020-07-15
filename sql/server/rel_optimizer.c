@@ -5662,7 +5662,12 @@ rel_push_project_down(visitor *v, sql_rel *rel)
 			return l;
 #endif
 		} else if (list_check_prop_all(rel->exps, (prop_check_func)&exp_is_useless_rename)) {
-			if (is_select(l->op)) {
+			if (is_simple_project(l->op) && list_length(l->exps) == list_length(rel->exps)) {
+				rel->l = NULL;
+				rel_destroy(rel);
+				v->changes++;
+				return l;
+			} else if (is_select(l->op)) {
 				/* push project under select (include exps used by selection) */
 				l->l = rel_project(v->sql->sa, l->l, rel_projections(v->sql, l, NULL, 1, 1));
 				l->l = rel_push_project_down(v, l->l);
