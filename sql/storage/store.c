@@ -4612,13 +4612,18 @@ validate_tables(sql_schema *s, sql_schema *os)
 	if (cs_size(&s->tables))
 		for (n = s->tables.set->h; n; n = n->next) {
 			sql_table *t = n->data;
-			sql_table *ot;
+			sql_table *ot = NULL;
 
 			if (!t->base.wtime && !t->base.rtime)
 				continue;
 
- 			ot = find_sql_table(os, t->base.name);
-			if (ot && isKindOfTable(ot) && isKindOfTable(t) && !isDeclaredTable(ot) && !isDeclaredTable(t)) {
+			o =	list_find_base_id(os->tables.set, t->base.id);
+			if (o)
+				ot = o->data;
+			if (!ot && os->tables.dset && list_find_base_id(os->tables.dset, t->base.id) != NULL) {
+				/* dropped table */
+				return 0;
+			} else if (ot && isKindOfTable(ot) && isKindOfTable(t) && !isDeclaredTable(ot) && !isDeclaredTable(t)) {
 				if ((t->base.wtime && (t->base.wtime < ot->base.rtime || t->base.wtime < ot->base.wtime)) ||
 				    (t->base.rtime && (t->base.rtime < ot->base.wtime)))
 					return 0;
@@ -4877,7 +4882,8 @@ reset_table(sql_trans *tr, sql_table *ft, sql_table *pft)
 		ft->access = pft->access;
 		if (pft->p) {
 			ft->p = find_sql_table(ft->s, pft->p->base.name);
-			assert(isMergeTable(ft->p) || isReplicaTable(ft->p));
+			//the parent (merge or replica table) maybe created later!
+			//assert(isMergeTable(ft->p) || isReplicaTable(ft->p));
 		} else
 			ft->p = NULL;
 
@@ -4986,6 +4992,12 @@ reset_trans(sql_trans *tr, sql_trans *ptr)
 {
 	int res = reset_changeset(tr, &tr->schemas, &ptr->schemas, (sql_base *)tr->parent, (resetf) &reset_schema, (dupfunc) &schema_dup);
 	TRC_DEBUG(SQL_STORE, "Reset transaction: %d\n", tr->wtime);
+
+	for (node *n = tr->schemas.set->h; n; n = n->next) { /* Set table members */
+		sql_schema *s = n->data;
+
+		set_members(&s->tables);
+	}
 	return res;
 }
 
