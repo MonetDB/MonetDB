@@ -283,7 +283,15 @@
 #cmakedefine SIZEOF_DOUBLE @SIZEOF_DOUBLE@
 #cmakedefine SIZEOF_WCHAR_T @SIZEOF_WCHAR_T@
 
+#ifdef _MSC_VER
+#ifdef _WIN64
+#define LENP_OR_POINTER_T SQLLEN *
+#else
+#define LENP_OR_POINTER_T SQLPOINTER
+#endif
+#else
 #cmakedefine LENP_OR_POINTER_T @LENP_OR_POINTER_T@
+#endif
 #cmakedefine SIZEOF_SQLWCHAR @SIZEOF_SQLWCHAR@
 
 #cmakedefine WORDS_BIGENDIAN @HAVE_WORDS_BIGENDIAN@

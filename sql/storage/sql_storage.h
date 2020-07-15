@@ -248,6 +248,7 @@ typedef struct store_functions {
 	count_idx_fptr count_idx;
 	dcount_col_fptr dcount_col;
 	prop_col_fptr sorted_col;
+	prop_col_fptr unique_col;
 	prop_col_fptr double_elim_col; /* varsize col with double elimination */
 
 	create_col_fptr create_col;
@@ -441,6 +442,7 @@ extern sql_column *sql_trans_alter_null(sql_trans *tr, sql_column *col, int isnu
 extern sql_column *sql_trans_alter_default(sql_trans *tr, sql_column *col, char *val);
 extern sql_column *sql_trans_alter_storage(sql_trans *tr, sql_column *col, char *storage);
 extern int sql_trans_is_sorted(sql_trans *tr, sql_column *col);
+extern int sql_trans_is_unique(sql_trans *tr, sql_column *col);
 extern int sql_trans_is_duplicate_eliminated(sql_trans *tr, sql_column *col);
 extern size_t sql_trans_dist_count(sql_trans *tr, sql_column *col);
 extern int sql_trans_ranges(sql_trans *tr, sql_column *col, char **min, char **max);

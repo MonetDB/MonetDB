@@ -54,7 +54,7 @@ monetdbe_type(monetdbe_types t) {
 	}
 }
 
-static int
+static monetdbe_types
 embedded_type(int t) {
 	switch(t) {
 	case TYPE_bit: return monetdbe_bool;
@@ -75,7 +75,7 @@ embedded_type(int t) {
 	default:
 	  	if (t==TYPE_blob)
 			return monetdbe_blob;
-		return -1;
+		return monetdbe_type_unknown;
 	}
 }
 

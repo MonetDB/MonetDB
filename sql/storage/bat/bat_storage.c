@@ -1240,9 +1240,30 @@ sorted_col(sql_trans *tr, sql_column *col)
 		BAT *b = bind_col(tr, col, QUICK);
 
 		if (b)
-			sorted = BATtordered(b);
+			sorted = BATtordered(b) || BATtrevordered(b);
 	}
 	return sorted;
+}
+
+static int
+unique_col(sql_trans *tr, sql_column *col)
+{
+	int distinct = 0;
+
+	assert(tr->active || tr == gtrans);
+	if (!isTable(col->t) || !col->t->s)
+		return 0;
+	/* fallback to central bat */
+	if (tr && tr->parent && !col->data && col->po)
+		col = col->po;
+
+	if (col && col->data) {
+		BAT *b = bind_col(tr, col, QUICK);
+
+		if (b)
+			distinct = b->tkey;
+	}
+	return distinct;
 }
 
 static int
@@ -3101,6 +3122,7 @@ bat_storage_init( store_functions *sf)
 	sf->count_idx = (count_idx_fptr)&count_idx;
 	sf->dcount_col = (dcount_col_fptr)&dcount_col;
 	sf->sorted_col = (prop_col_fptr)&sorted_col;
+	sf->unique_col = (prop_col_fptr)&unique_col;
 	sf->double_elim_col = (prop_col_fptr)&double_elim_col;
 
 	sf->create_col = (create_col_fptr)&create_col;
