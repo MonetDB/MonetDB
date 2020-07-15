@@ -4616,8 +4616,27 @@ validate_tables(sql_schema *s, sql_schema *os)
 			if (!t->base.wtime && !t->base.rtime)
 				continue;
 
- 			ot = find_sql_table(os, t->base.name);
-			if (ot && isKindOfTable(ot) && isKindOfTable(t) && !isDeclaredTable(ot) && !isDeclaredTable(t)) {
+ 			ot = find_sql_table_id(os, t->base.id);
+
+			if (!ot) {
+				// table might be deleted search the set of deleted tables.
+				if (!os->tables.dset) {
+					// table must have been created in this transaction.
+					continue;
+				}
+
+				for (o = os->tables.dset->h; o; o = o->next) {
+					ot = o->data;
+					if (t->base.id == ot->base.id) {
+
+						/* We may have accessed a table wich has been removed by a previous committed transaction.
+						 * If this is the case, we have to invalidate this transaction.
+						 */
+						return 0;
+					}
+				}
+			}
+			else if (isKindOfTable(ot) && isKindOfTable(t) && !isDeclaredTable(ot) && !isDeclaredTable(t)) {
 				if ((t->base.wtime && (t->base.wtime < ot->base.rtime || t->base.wtime < ot->base.wtime)) ||
 				    (t->base.rtime && (t->base.rtime < ot->base.wtime)))
 					return 0;
