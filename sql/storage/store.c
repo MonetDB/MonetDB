@@ -6719,6 +6719,14 @@ sql_trans_is_sorted( sql_trans *tr, sql_column *col )
 }
 
 int
+sql_trans_is_unique( sql_trans *tr, sql_column *col )
+{
+	if (col && isTable(col->t) && store_funcs.unique_col && store_funcs.unique_col(tr, col))
+		return 1;
+	return 0;
+}
+
+int
 sql_trans_is_duplicate_eliminated( sql_trans *tr, sql_column *col )
 {
 	if (col && isTable(col->t) && EC_VARCHAR(col->type.type->eclass) && store_funcs.double_elim_col)

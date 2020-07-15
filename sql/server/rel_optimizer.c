@@ -5791,20 +5791,20 @@ sql_class_base_score(mvc *sql, sql_column *c, sql_subtype *t, bool equality_base
 	}
 }
 
-/* Compute the efficiency of using this expression early in a group by list */
+/* Compute the efficiency of using this expression earl	y in a group by list */
 static int
 score_gbe(mvc *sql, sql_rel *rel, sql_exp *e)
 {
 	int res = 0;
 	sql_subtype *t = exp_subtype(e);
-	sql_column *c = NULL;
+	sql_column *c = exp_find_column(rel, e, -2);
 
 	if (e->card == CARD_ATOM) /* constants are trivial to group */
 		res += 1000;
 	/* can we find out if the underlying table is sorted */
-	if (find_prop(e->p, PROP_HASHCOL)) /* distinct columns */
-		res += 600;
-	if ((c = exp_find_column(rel, e, -2)) && mvc_is_sorted(sql, c))
+	if (find_prop(e->p, PROP_HASHCOL) || (c && mvc_is_unique(sql, c))) /* distinct columns */
+		res += 700;
+	if (c && mvc_is_sorted(sql, c))
 		res += 500;
 	if (find_prop(e->p, PROP_SORTIDX)) /* has sort index */
 		res += 300;
