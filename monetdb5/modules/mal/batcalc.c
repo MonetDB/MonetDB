@@ -74,6 +74,8 @@ CMDbatUNARY(MalStkPtr stk, InstrPtr pci,
 	BBPunfix(b->batCacheid);
 	if (s)
 		BBPunfix(s->batCacheid);
+	if (r)
+		BBPunfix(r->batCacheid);
 	if (bn == NULL) {
 		return mythrow(MAL, malfunc, OPERATION_FAILED);
 	}
@@ -122,6 +124,8 @@ CMDbatUNARY1(MalStkPtr stk, InstrPtr pci, bool abort_on_error,
 	BBPunfix(b->batCacheid);
 	if (s)
 		BBPunfix(s->batCacheid);
+	if (r)
+		BBPunfix(r->batCacheid);
 	if (bn == NULL) {
 		return mythrow(MAL, malfunc, OPERATION_FAILED);
 	}
@@ -1309,6 +1313,8 @@ CMDconvertbat(MalStkPtr stk, InstrPtr pci, int tp, bool abort_on_error)
 	BBPunfix(b->batCacheid);
 	if (s)
 		BBPunfix(s->batCacheid);
+	if (r)
+		BBPunfix(r->batCacheid);
 	if (bn == NULL) {
 		char buf[20];
 		snprintf(buf, sizeof(buf), "batcalc.%s", ATOMname(tp));
