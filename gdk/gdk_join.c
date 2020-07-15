@@ -3372,29 +3372,6 @@ leftjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr,
 					BBPunfix(r2->batCacheid);
 				return rc;
 			}
-			*r1p = r1 = tmp;
-			if (r2p) {
-				tmp = BATproject(ob, r2);
-				BBPunfix(r2->batCacheid);
-				BBPunfix(ob->batCacheid);
-				if (tmp == NULL) {
-					BBPunfix(r1->batCacheid);
-					return GDK_FAIL;
-				}
-				*r2p = tmp;
-			}
-#if 0
-#ifndef NDEBUG
-			BAT *x1;
-			canditer_reset(&lci);
-			canditer_reset(&rci);
-			hashjoin(&x1, NULL, l, r, &lci, &rci, nil_matches, false, false, false, false, false, estimate, t0, false, rhash, prhash, func);
-			assert(x1->batCount == r1->batCount);
-			for (BUN x = 0; x < x1->batCount; x++)
-				assert(BUNtoid(r1, x) == BUNtoid(x1, x));
-			BBPunfix(x1->batCacheid);
-#endif
-#endif
 			return GDK_SUCCEED;
 		}
 	}
