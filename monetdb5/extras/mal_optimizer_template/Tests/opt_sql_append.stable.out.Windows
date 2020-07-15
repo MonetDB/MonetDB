@@ -179,7 +179,7 @@ function user.main():void;
     X_40:lng := aggr.count(X_28:bat[:int]);
     X_38:int := sql.append(X_35:int, "sys":str, "ttt":str, "c":str, X_28:bat[:int]);
     sql.affectedRows(X_38:int, X_40:lng);
-end user.s24_0;
+end user.main;
 #inline               actions= 0 time=0 usec 
 #remap                actions= 0 time=0 usec 
 #costmodel            actions= 1 time=0 usec 

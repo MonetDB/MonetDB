@@ -2935,7 +2935,7 @@ UTF8_assert(const char *s)
 #define UTF8_assert(s)		((void) 0)
 #endif
 
-str
+static str
 strPrelude(void *ret)
 {
 	(void) ret;
@@ -2984,7 +2984,7 @@ strPrelude(void *ret)
 	throw(MAL, "str.prelude", GDK_EXCEPTION);
 }
 
-str
+static str
 strEpilogue(void *ret)
 {
 	(void) ret;
@@ -3287,7 +3287,7 @@ convertCase(BAT *from, BAT *to, str *res, const char *src, const char *malfunc)
 /*
  * The SQL like function return a boolean
  */
-static int
+static bool
 STRlike(const char *s, const char *pat, const char *esc)
 {
 	const char *t, *p;
@@ -3297,7 +3297,7 @@ STRlike(const char *s, const char *pat, const char *esc)
 		if (esc && *p == *esc) {
 			p++;
 			if (*p != *t)
-				return FALSE;
+				return false;
 			t++;
 		} else if (*p == '_')
 			t++;
@@ -3306,34 +3306,40 @@ STRlike(const char *s, const char *pat, const char *esc)
 			while (*p == '%')
 				p++;
 			if (*p == 0)
-				return TRUE;	/* tail is acceptable */
+				return true;	/* tail is acceptable */
 			for (; *p && *t; t++)
 				if (STRlike(t, p, esc))
-					return TRUE;
+					return true;
 			if (*p == 0 && *t == 0)
-				return TRUE;
-			return FALSE;
+				return true;
+			return false;
 		} else if (*p == *t)
 			t++;
 		else
-			return FALSE;
+			return false;
 	}
 	if (*p == '%' && *(p + 1) == 0)
-		return TRUE;
+		return true;
 	return *t == 0 && *p == 0;
 }
 
 str
 STRlikewrap(bit *ret, const str *s, const str *pat, const str *esc)
 {
-	*ret = STRlike(*s, *pat, *esc);
+	if (strNil(*s) || strNil(*pat) || strNil(*esc))
+		*ret = bit_nil;
+	else
+		*ret = (bit) STRlike(*s, *pat, *esc);
 	return MAL_SUCCEED;
 }
 
 str
 STRlikewrap2(bit *ret, const str *s, const str *pat)
 {
-	*ret = STRlike(*s, *pat, NULL);
+	if (strNil(*s) || strNil(*pat))
+		*ret = bit_nil;
+	else
+		*ret = (bit) STRlike(*s, *pat, NULL);
 	return MAL_SUCCEED;
 }
 

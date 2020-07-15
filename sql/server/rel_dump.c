@@ -69,7 +69,6 @@ cmp_print(mvc *sql, stream *fout, int cmp)
 	case cmp_all:
 	case cmp_project:
 	case cmp_joined:
-	case cmp_left:
 	case cmp_left_project:
 				r = "inner"; break;
 	}
@@ -1805,7 +1804,7 @@ rel_read(mvc *sql, char *r, int *pos, list *refs)
 		if (!(exps = read_exps(sql, NULL, NULL, NULL, r, pos, '[', 0)))
 			return NULL;
 		rel = rel_setop(sql->sa, lrel, rrel, j);
-		rel->exps = exps;
+		rel_setop_set_exps(sql, rel, exps);
 		if (rel_set_types(sql, rel) < 0)
 			return sql_error(sql, -1, SQLSTATE(42000) "Setop: number of expressions don't match\n");
 		set_processed(rel);

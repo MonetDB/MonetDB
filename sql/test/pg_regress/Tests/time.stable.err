@@ -31,19 +31,19 @@ stderr of test 'time` in directory 'sql/test/pg_regress` itself:
 
 MAPI  = (monetdb) /var/tmp/mtest-27483/.s.monetdb.35395
 QUERY = INSERT INTO TIME_TBL VALUES ('02:03 PST');
-ERROR = !Daytime (02:03 PST) has incorrect format
+ERROR = !Daytime '02:03 PST' has incorrect format
 CODE  = 22007
 MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = INSERT INTO TIME_TBL VALUES ('11:59 EDT');
-ERROR = !Daytime (11:59 EDT) has incorrect format
+ERROR = !Daytime '11:59 EDT' has incorrect format
 CODE  = 22007
 MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = INSERT INTO TIME_TBL VALUES ('11:59:59.99 AM');
-ERROR = !Daytime (11:59:59.99 AM) has incorrect format
+ERROR = !Daytime '11:59:59.99 AM' has incorrect format
 CODE  = 22007
 MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = INSERT INTO TIME_TBL VALUES ('11:59:59.99 PM');
-ERROR = !Daytime (11:59:59.99 PM) has incorrect format
+ERROR = !Daytime '11:59:59.99 PM' has incorrect format
 CODE  = 22007
 MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = SELECT f1, f1 + time '00:01' AS "Illegal" FROM TIME_TBL;

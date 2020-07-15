@@ -55,10 +55,7 @@ if(WITH_ZLIB)
 endif()
 
 if(WITH_LZ4)
-  find_package(LZ4)
-  if (LZ4_FOUND AND LZ4_VERSION VERSION_LESS "1.8.0")
-    unset(LZ4_FOUND)
-  endif()
+  find_package(LZ4 1.8.0)
 endif()
 
 if(WITH_PROJ)
@@ -113,5 +110,9 @@ endif()
 
 find_package(Sphinx)
 find_package(Createrepo)
+find_package(Rpmbuild)
+find_package(DpkgBuildpackage)
+find_package(Reprepro)
+find_package(Semodule)
 
 # vim: set ts=2:sw=2:et

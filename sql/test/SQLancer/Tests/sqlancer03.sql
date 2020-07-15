@@ -127,8 +127,99 @@ false	true	23
 DROP TABLE t0;
 
 START TRANSACTION;
+CREATE TABLE "sys"."t0" (
+	"c0" DECIMAL(18,3) NOT NULL DEFAULT cast(cast("sys"."sql_sub"("sys"."sql_neg"(1933820187),"sys"."charindex"(cast(0.235784 as clob(182)),"sys"."concat"('rt\\b&oOT',1174691962),"sys"."locate"('!oLqvKg恺','!G+tZ9\'A\'LZ*滻mW^',1174691962))) as int) as decimal(18,3)),
+	"c1" DECIMAL(18,3),
+	"c2" CHARACTER LARGE OBJECT,
+	CONSTRAINT "t0_c0_pkey" PRIMARY KEY ("c0"),
+	CONSTRAINT "t0_c0_unique" UNIQUE ("c0"),
+	CONSTRAINT "t0_c2_unique" UNIQUE ("c2"),
+	CONSTRAINT "t0_c0_c2_c1_unique" UNIQUE ("c0", "c2", "c1")
+);
+COMMENT ON COLUMN "sys"."t0"."c2" IS 'vi';
+COPY 1 RECORDS INTO "sys"."t0" FROM stdin USING DELIMITERS E'\t',E'\n','"';
+-1933820187.000	NULL	"-1554387152"
+
+select t0.c0 from t0 where not (true) union all select all t0.c0 from t0 where not (not (true)) union all select t0.c0 from t0 where (not (true)) is null;
+ROLLBACK;
+
+START TRANSACTION;
+create table t0 (a int, b int);
+insert into t0 values (1,1), (2,2);
+select min(t0.a), pi() from t0 group by t0.b;
+
+SELECT 1 FROM t0 WHERE DATE '1970-01-01' = NULL;
+SELECT 1 FROM t0 WHERE NULL IN (DATE '1970-01-01');
+SELECT ALL DATE '1970-01-01', CAST(COUNT(ALL TIMESTAMP '1970-01-01 01:06:52') AS INT) FROM t0 WHERE (NULL) NOT IN (DATE '1970-01-01') GROUP BY ((CAST(0.6 AS STRING))||(0.75)), INTERVAL '-13' SECOND;
+ROLLBACK;
+
+START TRANSACTION; -- Bug 6924
+CREATE TABLE "sys"."t0" ("a" INTEGER, "b" INTEGER NOT NULL, CONSTRAINT "t0_a_b_unique" UNIQUE ("a","b"));
+--This copy into must succeed 
+COPY 39 RECORDS INTO "sys"."t0" FROM stdin USING DELIMITERS E'\t',E'\n','"';
+-88162543	18
+-88162543	20
+-15649686	-544149211
+-88162543	1544983640
+NULL	-22365094
+NULL	1606640302
+NULL	-2022118335
+-706411503	-1573662742
+-88162543	117340240
+NULL	14
+1724946985	-1967779742
+NULL	-1500350327
+NULL	-174249097
+-88162543	29
+-88162543	42
+10	0
+NULL	1861748843
+NULL	-1709541615
+NULL	-143945879
+NULL	1
+NULL	1158178587
+-88162543	14
+-846070788	0
+-88162543	1242658499
+1149990738	-106077877
+NULL	-70926511
+NULL	138623502
+NULL	-1613851459
+NULL	-724706022
+NULL	1259669628
+NULL	0
+NULL	-297079149
+1545824064	16
+NULL	0
+NULL	1526452554
+NULL	1813972190
+NULL	-30
+NULL	-1536805627
+NULL	1602659226
+
+SELECT 1 FROM t0 GROUP BY 1, 2 HAVING MAX(TRUE);
+
+SELECT ALL COUNT(ALL DATE '1970-01-02'), ((rtrim(CAST(0.4 AS STRING), trim(r'W', r'1')))||(lower(CAST(((r'3')||(INTERVAL '4' MONTH)) AS STRING)))) FROM t0 WHERE ((t0.b)<=(t0.a)) GROUP BY 0.1, TRUE HAVING MAX(ALL TRUE)
+UNION ALL
+SELECT COUNT(ALL DATE '1970-01-02'), ((rtrim(CAST(0.4 AS STRING), trim(r'W', r'1')))||(lower(CAST(((r'3')||(INTERVAL '4' MONTH)) AS STRING)))) FROM t0 WHERE ((t0.b)<=(t0.a)) GROUP BY 0.1, TRUE HAVING NOT (MAX(ALL TRUE))
+UNION ALL
+SELECT ALL COUNT(ALL DATE '1970-01-02'), ((rtrim(CAST(0.4 AS STRING), trim(r'W', r'1')))||(lower(CAST(((r'3')||(INTERVAL '4' MONTH)) AS STRING)))) FROM t0 WHERE ((t0.b)<=(t0.a)) GROUP BY 0.1, TRUE HAVING (MAX(ALL TRUE)) IS NULL;
+ROLLBACK;
+
+START TRANSACTION;
 CREATE TABLE t0 (c0 BOOLEAN);
+create view v1(c0, c1, c2, c3) as (select 1, lower('1'), 1, cot(1) from t0);
+SELECT v1.c0 FROM v1 WHERE v1.c1 LIKE v1.c1 AND v1.c3 BETWEEN v1.c3 AND v1.c3 = TRUE;
+
 create view v0(c0, c1, c2, c3) as (select distinct 0.1, ((lower((((('&')||(2)))||(0.1))))||((('-1')||(abs(cast(r'Br' as int)))))), 0.1, cot(((((- (((2)&(3))))+(abs(4))))*(- (cast(cast(5 as string) as int))))) from t0);
 SELECT v0.c0 FROM v0 WHERE NOT (NOT (((((((((NOT (((v0.c1)LIKE(v0.c1))))AND(((v0.c2)>=(v0.c0)))))AND(((v0.c3) BETWEEN SYMMETRIC (v0.c3) AND (v0.c3)) = TRUE)))AND
 ((((v0.c1)||(((v0.c0)<(v0.c0))))) BETWEEN SYMMETRIC (v0.c1) AND (v0.c1))))AND((0.2) BETWEEN SYMMETRIC (v0.c0) AND (v0.c0)))));
+ROLLBACK;
+
+START TRANSACTION;
+CREATE TABLE t0(c0 INT);
+insert into t0(c0) values(13), (((cast((0.1) between symmetric (0.2) and (0.3) as int))%(length(upper(r'u鋔wsD30pYi&ᴮ*2*W쉉t+詫sD^#cjX{'))))), (cast(cast(cast(0.12 as int) as string(646)) as int));
+
+SELECT COUNT(t0.c0 = t0.c0 OR 1 BETWEEN ASYMMETRIC 1 AND 1) FROM t0;
+SELECT 0.9, COUNT(ALL (((((((CAST(TRUE AS INT))-(t0.c0)))=(t0.c0))) = TRUE)OR((CAST(char_length(r'H') AS INT)) BETWEEN ASYMMETRIC (CAST(-1.3 AS INT)) AND (+ (length(r'0')))))), 0.3 FROM t0 GROUP BY 0.5, 0.4;
 ROLLBACK;

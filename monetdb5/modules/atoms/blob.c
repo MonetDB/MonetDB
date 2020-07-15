@@ -248,7 +248,7 @@ BLOBtostr(str *tostr, size_t *l, const void *P, bool external)
 	if (is_blob_nil(p))
 		expectedlen = external ? 4 : 2;
 	else
-		expectedlen = 24 + (p->nitems * 3);
+		expectedlen = p->nitems * 2 + 1;
 	if (*l < expectedlen || *tostr == NULL) {
 		GDKfree(*tostr);
 		*tostr = GDKmalloc(expectedlen);

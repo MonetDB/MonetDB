@@ -1667,18 +1667,12 @@ sqltypeinit( sql_allocator *sa)
 		sql_create_func(sa, "scale_up", "calc", "*", FALSE, FALSE, SCALE_NONE, 0, *t, 2, *t, lt->type);
 		sql_create_func(sa, "scale_down", "sql", "dec_round", FALSE, FALSE, SCALE_NONE, 0, *t, 2, *t, lt->type);
 		/* numeric functions on INTERVALS */
-		if (*t != MONINT && *t != SECINT) {
+		if (t < dates) {
 			sql_create_func(sa, "sql_mul", "calc", "*", FALSE, FALSE, SCALE_MUL, 0, MONINT, 2, MONINT, *t);
 			sql_create_func(sa, "sql_div", "calc", "/", FALSE, FALSE, SCALE_DIV, 0, MONINT, 2, MONINT, *t);
 			sql_create_func(sa, "sql_mul", "calc", "*", FALSE, FALSE, SCALE_MUL, 0, SECINT, 2, SECINT, *t);
 			sql_create_func(sa, "sql_div", "calc", "/", FALSE, FALSE, SCALE_DIV, 0, SECINT, 2, SECINT, *t);
 		}
-	}
-
-	/* numeric functions on INTERVALS */
-	for (t = dates; *t != TME; t++) {
-		sql_create_func(sa, "sql_sub", "calc", "-", FALSE, FALSE, SCALE_FIX, 0, *t, 2, *t, *t);
-		sql_create_func(sa, "sql_add", "calc", "+", FALSE, FALSE, SCALE_FIX, 0, *t, 2, *t, *t);
 	}
 
 	for (t = decimals, t++; t != floats; t++) {

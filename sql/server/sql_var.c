@@ -369,10 +369,6 @@ sqlvar_set(sql_var *var, ValRecord *v)
 	if (VALcopy(&(var->var.data), v) == NULL)
 		return NULL;
 	var->var.isnull = VALisnil(v);
-	if (v->vtype == TYPE_flt)
-		var->var.d = v->val.fval;
-	else if (v->vtype == TYPE_dbl)
-		var->var.d = v->val.dval;
 	return &(var->var);
 }
 

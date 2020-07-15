@@ -322,7 +322,7 @@ _symbol2string(mvc *sql, symbol *se, int expression, char **err) /**/
 		if (!(l = _symbol2string(sql, lst->next->next->data.sym, expression, err)) || !(r = _symbol2string(sql, lst->next->next->next->data.sym, expression, err)))
 			return NULL;
 
-		if ((res = NEW_ARRAY(char, strlen(sname) + strlen(op) + strlen(l) + strlen(r) + 9)))
+		if ((res = SA_NEW_ARRAY(sql->ta, char, strlen(sname) + strlen(op) + strlen(l) + strlen(r) + 9)))
 			stpcpy(stpcpy(stpcpy(stpcpy(stpcpy(stpcpy(stpcpy(stpcpy(stpcpy(res, "\""), sname), "\".\""), op), "\"("), l), ","), r), ")");
 
 		return res;
@@ -419,7 +419,7 @@ _symbol2string(mvc *sql, symbol *se, int expression, char **err) /**/
 	default: {
 		const char *msg = "SQL feature not yet available for expressions and default values: ";
 		char *tok_str = token2string(se->token);
-		if ((*err = NEW_ARRAY(char, strlen(msg) + strlen(tok_str) + 1)))
+		if ((*err = SA_NEW_ARRAY(sql->ta, char, strlen(msg) + strlen(tok_str) + 1)))
 			stpcpy(stpcpy(*err, msg), tok_str);
 	}
 	}

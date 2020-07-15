@@ -432,7 +432,7 @@ handle_in_exps(backend *be, sql_exp *ce, list *nl, stmt *left, stmt *right, stmt
 			s = stmt_project(be, stmt_selectnonil(be, s, NULL), s);
 		}
 
-		s = stmt_join(be, c, s, in, cmp_left, 0, false);
+		s = stmt_join(be, c, s, in, cmp_equal, 1, 0, false);
 		s = stmt_result(be, s, 0);
 
 		if (!in) {
@@ -1064,9 +1064,9 @@ exp_bin(backend *be, sql_exp *e, stmt *left, stmt *right, stmt *grp, stmt *ext, 
 			if (r2) {
 				s = stmt_join2(be, l, r, r2, (comp_type)e->flag, is_anti(e), swapped);
 			} else if (swapped) {
-				s = stmt_join(be, r, l, is_anti(e), swap_compare((comp_type)e->flag), is_semantics(e), false);
+				s = stmt_join(be, r, l, is_anti(e), swap_compare((comp_type)e->flag), 0, is_semantics(e), false);
 			} else {
-				s = stmt_join(be, l, r, is_anti(e), (comp_type)e->flag, is_semantics(e), false);
+				s = stmt_join(be, l, r, is_anti(e), (comp_type)e->flag, 0, is_semantics(e), false);
 			}
 		} else {
 			if (r2) { /* handle all cases in stmt_uselect,
@@ -1991,9 +1991,9 @@ rel2bin_hash_lookup(backend *be, sql_rel *rel, stmt *left, stmt *right, sql_idx 
 	}
 	if (h && h->nrcols) {
 		if (!swap_rel) {
-			return stmt_join(be, idx, h, 0, cmp_equal, semantics, false);
+			return stmt_join(be, idx, h, 0, cmp_equal, 0, semantics, false);
 		} else {
-			return stmt_join(be, h, idx, 0, cmp_equal, semantics, false);
+			return stmt_join(be, h, idx, 0, cmp_equal, 0, semantics, false);
 		}
 	} else {
 		return stmt_uselect(be, idx, h, cmp_equal, NULL, 0, semantics);
@@ -2043,9 +2043,7 @@ releqjoin( backend *be, list *l1, list *l2, list *exps, int used_hash, comp_type
 			e = n3->data;
 			is_semantics = is_semantics(e);
 		}
-		r =  stmt_join(be, l, r, 0, cmp_op, is_semantics, false);
-		if (need_left)
-			r->flag = cmp_left;
+		r =  stmt_join(be, l, r, 0, cmp_op, need_left, is_semantics, false);
 		return r;
 	}
 	if (used_hash) {
@@ -2054,14 +2052,12 @@ releqjoin( backend *be, list *l1, list *l2, list *exps, int used_hash, comp_type
 		n1 = n1->next;
 		n2 = n2->next;
 		n3 = n3?n3->next:NULL;
-		res = stmt_join(be, l, r, 0, cmp_op, 1, false);
+		res = stmt_join(be, l, r, 0, cmp_op, need_left, 1, false);
 	} else { /* need hash */
 		l = join_hash_key(be, l1);
 		r = join_hash_key(be, l2);
-		res = stmt_join(be, l, r, 0, cmp_op, 1, false);
+		res = stmt_join(be, l, r, 0, cmp_op, need_left, 1, false);
 	}
-	if (need_left)
-		res->flag = cmp_left;
 	l = stmt_result(be, res, 0);
 	r = stmt_result(be, res, 1);
 	for (; n1 && n2; n1 = n1->next, n2 = n2->next, n3 = n3?n3->next:NULL) {
@@ -2092,7 +2088,7 @@ releqjoin( backend *be, list *l1, list *l2, list *exps, int used_hash, comp_type
 		l = stmt_project(be, cmp, l );
 		r = stmt_project(be, cmp, r );
 	}
-	res = stmt_join(be, l, r, 0, cmp_joined, 0, false);
+	res = stmt_join(be, l, r, 0, cmp_joined, 0, 0, false);
 	return res;
 }
 
@@ -2228,7 +2224,7 @@ rel2bin_join(backend *be, sql_rel *rel, list *refs)
 		if (list_empty(jexps)) { /* cross product and continue after project */
 			stmt *l = bin_first_column(be, left);
 			stmt *r = bin_first_column(be, right);
-			join = stmt_join(be, l, r, 0, cmp_all, 0, false);
+			join = stmt_join(be, l, r, 0, cmp_all, 0, 0, false);
 		}
 
 		if (join) {
@@ -2284,17 +2280,15 @@ rel2bin_join(backend *be, sql_rel *rel, list *refs)
 			}
 			if (list_length(lje) > 1) {
 				join = releqjoin(be, lje, rje, exps, used_hash, cmp_equal, need_left, 0);
-			} else if (!join) {
+			} else if (!join || need_left) {
 				sql_exp *e = exps->h->data;
-				join = stmt_join(be, lje->h->data, rje->h->data, 0, cmp_equal, is_semantics(e), false);
-				if (need_left)
-					join->flag = cmp_left;
+				join = stmt_join(be, lje->h->data, rje->h->data, 0, cmp_equal, need_left, is_semantics(e), false);
 			}
 		}
 	} else {
 		stmt *l = bin_first_column(be, left);
 		stmt *r = bin_first_column(be, right);
-		join = stmt_join(be, l, r, 0, cmp_all, 0, rel->single);
+		join = stmt_join(be, l, r, 0, cmp_all, 0, 0, rel->single);
 	}
 	jl = stmt_result(be, join, 0);
 	jr = stmt_result(be, join, 1);
@@ -2523,7 +2517,7 @@ rel2bin_semijoin(backend *be, sql_rel *rel, list *refs)
 			right = subrel_project(be, right, refs, rel->r);
 			stmt *l = bin_first_column(be, left);
 			stmt *r = bin_first_column(be, right);
-			join = stmt_join(be, l, r, 0, cmp_all, 0, false);
+			join = stmt_join(be, l, r, 0, cmp_all, 0, 0, false);
 			lcand = left->cand;
 		}
 
@@ -2551,7 +2545,7 @@ rel2bin_semijoin(backend *be, sql_rel *rel, list *refs)
 					if (!join && !list_length(lje)) {
 						stmt *l = bin_first_column(be, left);
 						stmt *r = bin_first_column(be, right);
-						join = stmt_join(be, l, r, 0, cmp_all, 0, false);
+						join = stmt_join(be, l, r, 0, cmp_all, 0, 0, false);
 					}
 					break;
 				}
@@ -2577,7 +2571,7 @@ rel2bin_semijoin(backend *be, sql_rel *rel, list *refs)
 
 					if (!l || !r)
 						return NULL;
-					s = stmt_join_cand(be, column(be, l), column(be, r), left->cand, NULL/*right->cand*/, e->anti, (comp_type) e->flag, is_semantics(e), false);
+					s = stmt_join_cand(be, column(be, l), column(be, r), left->cand, NULL/*right->cand*/, e->anti, (comp_type) e->flag, 0, is_semantics(e), false);
 					lcand = left->cand;
 				} else {
 					s = exp_bin(be, e, left, right, NULL, NULL, NULL, NULL, NULL, 0, 1);
@@ -2611,18 +2605,18 @@ rel2bin_semijoin(backend *be, sql_rel *rel, list *refs)
 				join = releqjoin(be, lje, rje, exps, 0 /* no hash used */, cmp_equal, 0, 0);
 			} else if (!join && list_length(lje) == list_length(rje) && list_length(lje)) {
 				sql_exp *e = exps->h->data;
-				join = stmt_join(be, lje->h->data, rje->h->data, 0, cmp_equal, is_semantics(e), false);
+				join = stmt_join(be, lje->h->data, rje->h->data, 0, cmp_equal, 0, is_semantics(e), false);
 			} else if (!join) {
 				stmt *l = bin_first_column(be, left);
 				stmt *r = bin_first_column(be, right);
-				join = stmt_join(be, l, r, 0, cmp_all, 0, false);
+				join = stmt_join(be, l, r, 0, cmp_all, 0, 0, false);
 			}
 		}
 	} else {
 		right = subrel_project(be, right, refs, rel->r);
 		stmt *l = bin_first_column(be, left);
 		stmt *r = bin_first_column(be, right);
-		join = stmt_join(be, l, r, 0, cmp_all, 0, false);
+		join = stmt_join(be, l, r, 0, cmp_all, 0, 0, false);
 		lcand = left->cand;
 	}
 	jl = stmt_result(be, join, 0);
@@ -3716,13 +3710,13 @@ insert_check_ukey(backend *be, list *inserts, sql_key *k, stmt *idx_inserts)
 			stmt *sel = NULL;
 
 			/* remove any nils as in stmt_order NULL = NULL, instead of NULL != NULL */
-			if ((k->type == ukey) && stmt_has_null(col)) {
-
+			if (k->type == ukey) {
 				for (m = k->columns->h; m; m = m->next) {
 					sql_kc *c = m->data;
 					stmt *cs = list_fetch(inserts, c->c->colnr);
 
-					sel = stmt_selectnonil(be, cs, sel);
+				   	if (stmt_has_null(cs))
+						sel = stmt_selectnonil(be, cs, sel);
 				}
 			}
 			/* implementation uses sort key check */
@@ -3766,7 +3760,7 @@ insert_check_ukey(backend *be, list *inserts, sql_key *k, stmt *idx_inserts)
 			s = stmt_project(be, nn, s);
 		}
 		if (h->nrcols) {
-			s = stmt_join(be, s, h, 0, cmp_equal, 0, false);
+			s = stmt_join(be, s, h, 0, cmp_equal, 0, 0, false);
 			/* s should be empty */
 			s = stmt_result(be, s, 0);
 			s = stmt_aggr(be, s, NULL, NULL, cnt, 1, 0, 1);
@@ -4187,7 +4181,7 @@ update_check_ukey(backend *be, stmt **updates, sql_key *k, stmt *tids, stmt *idx
 
 				/* join groups with extend to retrieve all oid's of the original
 				 * bat that belong to a group with Cnt >1 */
-				g = stmt_join(be, grp, ext, 0, cmp_equal, 0, false);
+				g = stmt_join(be, grp, ext, 0, cmp_equal, 0, 0, false);
 				cand = stmt_result(be, g, 0);
 				grp = stmt_project(be, cand, grp);
 			}
@@ -4260,7 +4254,7 @@ update_check_ukey(backend *be, stmt **updates, sql_key *k, stmt *tids, stmt *idx
 
 			h = updates[c->c->colnr];
 			o = stmt_col(be, c->c, nu_tids, nu_tids->partition);
-			s = stmt_join(be, o, h, 0, cmp_equal, 0, false);
+			s = stmt_join(be, o, h, 0, cmp_equal, 0, 0, false);
 			s = stmt_result(be, s, 0);
 			s = stmt_binop(be, stmt_aggr(be, s, NULL, NULL, cnt, 1, 0, 1), stmt_atom_lng(be, 0), ne);
 		}
@@ -4424,7 +4418,7 @@ join_updated_pkey(backend *be, sql_key * k, stmt *tids, stmt **updates)
 	fdels = stmt_tid(be, k->idx->t, 0);
 	rows = stmt_idx(be, k->idx, fdels, fdels->partition);
 
-	rows = stmt_join(be, rows, tids, 0, cmp_equal, 0, false); /* join over the join index */
+	rows = stmt_join(be, rows, tids, 0, cmp_equal, 0, 0, false); /* join over the join index */
 	rows = stmt_result(be, rows, 0);
 
 	for (m = k->idx->columns->h, o = rk->columns->h; m && o; m = m->next, o = o->next) {
@@ -4526,7 +4520,7 @@ sql_update_cascade_Fkeys(backend *be, sql_key *k, stmt *utids, stmt **updates, i
 	ftids = stmt_tid(be, k->idx->t, 0);
 	rows = stmt_idx(be, k->idx, ftids, ftids->partition);
 
-	rows = stmt_join(be, rows, utids, 0, cmp_equal, 0, false); /* join over the join index */
+	rows = stmt_join(be, rows, utids, 0, cmp_equal, 0, 0, false); /* join over the join index */
 	upd_ids = stmt_result(be, rows, 1);
 	rows = stmt_result(be, rows, 0);
 	rows = stmt_project(be, rows, ftids);
@@ -5159,7 +5153,7 @@ sql_delete_ukey(backend *be, stmt *utids /* deleted tids from ukey table */, sql
 
 			tids = stmt_tid(be, fk->idx->t, 0);
 			s = stmt_idx(be, fk->idx, tids, tids->partition);
-			s = stmt_join(be, s, utids, 0, cmp_equal, 0, false); /* join over the join index */
+			s = stmt_join(be, s, utids, 0, cmp_equal, 0, 0, false); /* join over the join index */
 			s = stmt_result(be, s, 0);
 			tids = stmt_project(be, s, tids);
 			if(cascade) { /* for truncate statements with the cascade option */
