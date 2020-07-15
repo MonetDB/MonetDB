@@ -132,7 +132,7 @@ bind_uidx(sql_trans *tr, sql_idx * i, int access)
 		i->t->data = timestamp_dbat(ot->data, i->t->base.stime);
 	}
 	assert(tr != gtrans);
-	i->base.rtime = i->t->base.rtime = i->t->s->base.rtime = tr->rtime = tr->stime;
+	i->base.rtime = i->t->base.rtime = i->t->s->base.rtime = tr->stime;
 	u = delta_bind_ubat(i->data, access, (oid_index(i->type))?TYPE_oid:TYPE_lng);
 	return u;
 }
@@ -220,7 +220,7 @@ bind_col(sql_trans *tr, sql_column *c, int access)
 		return bind_ucol(tr, c, access);
 	assert(access == QUICK || tr != gtrans);
 	if (tr && access != QUICK)
-		c->base.rtime = c->t->base.rtime = c->t->s->base.rtime = tr->rtime = tr->stime;
+		c->base.rtime = c->t->base.rtime = c->t->s->base.rtime = tr->stime;
 	return delta_bind_bat( c->data, access, isTemp(c));
 }
 
@@ -238,7 +238,7 @@ bind_idx(sql_trans *tr, sql_idx * i, int access)
 		return bind_uidx(tr, i, access);
 	assert(access == QUICK || tr != gtrans);
 	if (tr && access != QUICK)
-		i->base.rtime = i->t->base.rtime = i->t->s->base.rtime = tr->rtime = tr->stime;
+		i->base.rtime = i->t->base.rtime = i->t->s->base.rtime = tr->stime;
 	return delta_bind_bat( i->data, access, isTemp(i));
 }
 
@@ -623,7 +623,7 @@ update_col(sql_trans *tr, sql_column *c, void *tids, void *upd, int tpe)
 	bat = c->data;
 	bat->wtime = c->base.wtime = c->t->base.wtime = c->t->s->base.wtime = tr->wtime = tr->wstime;
 	assert(tr != gtrans);
-	c->base.rtime = c->t->base.rtime = c->t->s->base.rtime = tr->rtime = tr->stime;
+	c->base.rtime = c->t->base.rtime = c->t->s->base.rtime = tr->stime;
 	if (tpe == TYPE_bat)
 		return delta_update_bat(bat, tids, upd, isNew(c));
 	else
@@ -663,7 +663,7 @@ update_idx(sql_trans *tr, sql_idx * i, void *tids, void *upd, int tpe)
 	bat = i->data;
 	bat->wtime = i->base.wtime = i->t->base.wtime = i->t->s->base.wtime = tr->wtime = tr->wstime;
 	assert(tr != gtrans);
-	i->base.rtime = i->t->base.rtime = i->t->s->base.rtime = tr->rtime = tr->stime;
+	i->base.rtime = i->t->base.rtime = i->t->s->base.rtime = tr->stime;
 	if (tpe == TYPE_bat)
 		return delta_update_bat(bat, tids, upd, isNew(i));
 	else

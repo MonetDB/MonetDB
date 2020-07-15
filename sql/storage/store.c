@@ -1366,7 +1366,7 @@ create_trans(sql_allocator *sa)
 
 	t->sa = sa;
 	t->name = NULL;
-	t->wtime = t->rtime = 0;
+	t->wtime = 0;
 	t->stime = 0;
 	t->wstime = timestamp();
 	t->schema_updates = 0;
@@ -3757,7 +3757,7 @@ schema_dup(sql_trans *tr, int flags, sql_schema *os, sql_trans *o)
 static void
 _trans_init(sql_trans *tr, sql_trans *otr)
 {
-	tr->wtime = tr->rtime = 0;
+	tr->wtime = 0;
 	tr->stime = otr->wtime;
 	tr->wstime = timestamp();
 	tr->schema_updates = 0;
