@@ -3357,6 +3357,10 @@ leftjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr,
 				BBPunfix(sr->batCacheid);
 			if (rc != GDK_SUCCEED)
 				return rc;
+			if (r2p == NULL) {
+				BBPunfix(r2->batCacheid);
+				r2 = NULL;
+			}
 			if (semi)
 				r1->tkey = true;
 			BAT *ob;
@@ -3364,7 +3368,8 @@ leftjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr,
 				     r1, NULL, NULL, false, false, false);
 			BBPunfix(r1->batCacheid);
 			if (rc != GDK_SUCCEED) {
-				BBPunfix(r2->batCacheid);
+				if (r2)
+					BBPunfix(r2->batCacheid);
 				return rc;
 			}
 			*r1p = r1 = tmp;
