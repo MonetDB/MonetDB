@@ -214,6 +214,11 @@ SELECT ALL t0.c0 FROM t0 WHERE (((t0.c0)<>(t0.c0))) IS NULL;
 	--NULL
 ROLLBACK;
 
+START TRANSACTION;
+CREATE TEMPORARY TABLE t0(c0 integer AUTO_INCREMENT UNIQUE NOT NULL, c1 FLOAT DEFAULT (0.9323624));
+select t0.c0 from t0 where -t0.c0 <= 1 and t0.c0 between t0.c0 and -t0.c0;
+ROLLBACK;
+
 START TRANSACTION; -- Bug 6924
 CREATE TABLE "sys"."t0" ("a" INTEGER, "b" INTEGER NOT NULL, CONSTRAINT "t0_a_b_unique" UNIQUE ("a","b"));
 --This copy into must succeed 
