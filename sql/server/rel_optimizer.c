@@ -1876,6 +1876,11 @@ rel_simplify_count_fk_join(mvc *sql, sql_rel *r, list *gexps, int *changes)
 	if (oce->l) /* we only handle COUNT(*) */
 		return r;
 
+	/* primary side must be a full table */
+	if ((fk_left && (!is_left(r->op) && !is_full(r->op)) && !is_basetable(rr->op)) ||
+	    (!fk_left && (!is_right(r->op) && !is_full(r->op)) && !is_basetable(rl->op)))
+		return r;
+
 	if (fk_left && is_join(rl->op) && !rel_is_ref(rl)) {
 		rl = rel_simplify_count_fk_join(sql, rl, gexps, changes);
 		r->l = rl;
@@ -1884,10 +1889,6 @@ rel_simplify_count_fk_join(mvc *sql, sql_rel *r, list *gexps, int *changes)
 		rr = rel_simplify_count_fk_join(sql, rr, gexps, changes);
 		r->r = rr;
 	}
-	/* primary side must be a full table */
-	if ((fk_left && (!is_left(r->op) && !is_full(r->op)) && !is_basetable(rr->op)) ||
-	    (!fk_left && (!is_right(r->op) && !is_full(r->op)) && !is_basetable(rl->op)))
-		return r;
 
 	(*changes)++;
 	/* rewrite, ie remove pkey side */
