@@ -597,7 +597,7 @@ atom2sql(atom *a, int timezone)
 				sprintf(str, "%u", a->tpe.digits);
 				n = stpcpy(stpcpy(stpcpy(n, " ("), str), ")");
 			}
-			if (ec == EC_TIME_TZ)
+			if (ec == EC_TIMESTAMP_TZ)
 				stpcpy(n, " WITH TIME ZONE");
 		} break;
 		default:
