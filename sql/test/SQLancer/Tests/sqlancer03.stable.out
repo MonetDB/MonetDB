@@ -365,6 +365,14 @@ stdout of test 'sqlancer03` in directory 'sql/test/SQLancer` itself:
 [ NULL	]
 [ NULL	]
 #ROLLBACK;
+#START TRANSACTION;
+#CREATE TEMPORARY TABLE t0(c0 integer AUTO_INCREMENT UNIQUE NOT NULL, c1 FLOAT DEFAULT (0.9323624));
+#select t0.c0 from t0 where -t0.c0 <= 1 and t0.c0 between t0.c0 and -t0.c0;
+% tmp.t0 # table_name
+% c0 # name
+% int # type
+% 1 # length
+#ROLLBACK;
 #START TRANSACTION; -- Bug 6924
 #CREATE TABLE "sys"."t0" ("a" INTEGER, "b" INTEGER NOT NULL, CONSTRAINT "t0_a_b_unique" UNIQUE ("a","b"));
 #COPY 39 RECORDS INTO "sys"."t0" FROM stdin USING DELIMITERS E'\t',E'\n','"';
