@@ -38,6 +38,7 @@ unshare_string_heap(BAT *b)
 			return GDK_FAIL;
 		}
 		BBPunshare(b->tvheap->parentid);
+		BBPunfix(b->tvheap->parentid);
 		b->tvheap = h;
 	}
 	return GDK_SUCCEED;
@@ -110,6 +111,7 @@ insert_string_bat(BAT *b, BAT *n, BAT *s, bool force, bool mayshare)
 			    cand == NULL) {
 				if (b->tvheap->parentid != bid) {
 					BBPunshare(b->tvheap->parentid);
+					BBPunfix(b->tvheap->parentid);
 				} else {
 					HEAPfree(b->tvheap, true);
 					GDKfree(b->tvheap);
@@ -448,6 +450,7 @@ append_varsized_bat(BAT *b, BAT *n, BAT *s, bool mayshare)
 		 * to n's */
 		if (b->tvheap->parentid != b->batCacheid) {
 			BBPunshare(b->tvheap->parentid);
+			BBPunfix(b->tvheap->parentid);
 		} else {
 			HEAPfree(b->tvheap, true);
 			GDKfree(b->tvheap);
@@ -493,6 +496,7 @@ append_varsized_bat(BAT *b, BAT *n, BAT *s, bool mayshare)
 			return GDK_FAIL;
 		}
 		BBPunshare(b->tvheap->parentid);
+		BBPunfix(b->tvheap->parentid);
 		b->tvheap = h;
 	}
 	/* copy data from n to b */

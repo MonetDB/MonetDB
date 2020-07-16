@@ -129,10 +129,14 @@ VIEWcreate(oid seq, BAT *b)
 	/* Order OID index */
 	bn->torderidx = NULL;
 	if (BBPcacheit(bn, true) != GDK_SUCCEED) {	/* enter in BBP */
-		if (tp)
+		if (tp) {
 			BBPunshare(tp);
-		if (bn->tvheap)
+			BBPunfix(tp);
+		}
+		if (bn->tvheap) {
 			BBPunshare(bn->tvheap->parentid);
+			BBPunfix(bn->tvheap->parentid);
+		}
 		MT_lock_destroy(&bn->batIdxLock);
 		GDKfree(bn);
 		return NULL;
