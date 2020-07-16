@@ -576,30 +576,21 @@ atom2sql(atom *a, int timezone)
 
 		switch (ec) {
 		case EC_TIME:
-		case EC_TIME_TZ: {
-			char *n = stpcpy(val1, "TIME");
+		case EC_TIME_TZ:
+		case EC_TIMESTAMP:
+		case EC_TIMESTAMP_TZ: {
+			char *n = stpcpy(val1, (ec == EC_TIME || ec == EC_TIME_TZ) ? "TIME" : "TIMESTAMP");
 			if (a->tpe.digits) {
 				char str[16];
 				sprintf(str, "%u", a->tpe.digits);
 				n = stpcpy(stpcpy(stpcpy(n, " ("), str), ")");
 			}
-			if (ec == EC_TIME_TZ)
+			if (ec == EC_TIME_TZ || ec == EC_TIMESTAMP_TZ)
 				stpcpy(n, " WITH TIME ZONE");
 		} break;
 		case EC_DATE:
 			strcpy(val1, "DATE");
 		break;
-		case EC_TIMESTAMP:
-		case EC_TIMESTAMP_TZ: {
-			char *n = stpcpy(val1, "TIMESTAMP");
-			if (a->tpe.digits) {
-				char str[16];
-				sprintf(str, "%u", a->tpe.digits);
-				n = stpcpy(stpcpy(stpcpy(n, " ("), str), ")");
-			}
-			if (ec == EC_TIMESTAMP_TZ)
-				stpcpy(n, " WITH TIME ZONE");
-		} break;
 		default:
 			assert(0);
 		}
