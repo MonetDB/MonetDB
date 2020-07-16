@@ -1855,13 +1855,12 @@ store_load(void) {
 
 	if (!sequences_init())
 		return -1;
-	ATOMIC_SET(&transactions, 0);
+	transactions = 0;
 	gtrans = tr = create_trans(sa, backend_stk);
 	gtrans->stime = timestamp();
 	if (!gtrans)
 		return -1;
 
-	transactions = 0;
 	active_sessions = list_create(NULL);//sa_list(sa);
 
 	if (first) {
