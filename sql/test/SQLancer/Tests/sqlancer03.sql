@@ -160,6 +160,38 @@ insert into t0 values (default, default, default);
 select a,b,c from t0;
 ROLLBACK;
 
+START TRANSACTION; -- Bug 6926
+CREATE TABLE "sys"."t0" (
+	"c0" TIME,
+	"c1" CHARACTER LARGE OBJECT NOT NULL,
+	CONSTRAINT "t0_c1_pkey" PRIMARY KEY ("c1"),
+	CONSTRAINT "t0_c1_unique" UNIQUE ("c1")
+);
+COPY 14 RECORDS INTO "sys"."t0" FROM stdin USING DELIMITERS E'\t',E'\n','"';
+19:29:38	""
+05:51:00	"#B"
+NULL	".n"
+NULL	"0.0"
+20:29:28	"-601098762"
+20:59:23	")TD)Dnö"
+22:09:19	"aaJ즳#B!sJNG㡩"
+09:10:09	"W"
+23:43:33	"k"
+15:43:27	"-0.0"
+20:02:19	"0.7126186870446843"
+05:23:53	"1498390845"
+00:17:15	"{"
+06:51:52	"41230238"
+
+SELECT t0.c0 FROM t0 WHERE ((t0.c0)<>(t0.c0));
+	--empty
+SELECT t0.c0 FROM t0 WHERE NOT (((t0.c0)<>(t0.c0)));
+	--12 tuples (all rows except ones with c0 null)
+SELECT t0.c0 FROM t0 WHERE (((t0.c0)<>(t0.c0))) IS NULL;
+	--NULL
+	--NULL
+ROLLBACK;
+
 START TRANSACTION; -- Bug 6924
 CREATE TABLE "sys"."t0" ("a" INTEGER, "b" INTEGER NOT NULL, CONSTRAINT "t0_a_b_unique" UNIQUE ("a","b"));
 --This copy into must succeed 
