@@ -211,7 +211,10 @@ CREATE TABLE t0 (c0 BOOLEAN);
 create view v1(c0, c1, c2, c3) as (select 1, lower('1'), 1, cot(1) from t0);
 SELECT v1.c0 FROM v1 WHERE v1.c1 LIKE v1.c1 AND v1.c3 BETWEEN v1.c3 AND v1.c3 = TRUE;
 
-create view v0(c0, c1, c2, c3) as (select distinct 0.1, ((lower((((('&')||(2)))||(0.1))))||((('-1')||(abs(cast(r'Br' as int)))))), 0.1, cot(((((- (((2)&(3))))+(abs(4))))*(- (cast(cast(5 as string) as int))))) from t0);
+create view v2(c0, c1, c3) as (select distinct 1, lower('1'), cot(1) from t0);
+SELECT v2.c0 FROM v2 WHERE v2.c1 = '1' AND v2.c3 BETWEEN v2.c3 AND v2.c3;
+
+create view v0(c0, c1, c2, c3) as (select distinct 0.1, ((lower((((('&')||(2)))||(0.1))))||((('-1')||(abs(cast(r'1' as int)))))), 0.1, cot(((((- (((2)&(3))))+(abs(4))))*(- (cast(cast(5 as string) as int))))) from t0);
 SELECT v0.c0 FROM v0 WHERE NOT (NOT (((((((((NOT (((v0.c1)LIKE(v0.c1))))AND(((v0.c2)>=(v0.c0)))))AND(((v0.c3) BETWEEN SYMMETRIC (v0.c3) AND (v0.c3)) = TRUE)))AND
 ((((v0.c1)||(((v0.c0)<(v0.c0))))) BETWEEN SYMMETRIC (v0.c1) AND (v0.c1))))AND((0.2) BETWEEN SYMMETRIC (v0.c0) AND (v0.c0)))));
 ROLLBACK;

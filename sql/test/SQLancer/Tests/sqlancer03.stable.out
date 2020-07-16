@@ -43,8 +43,8 @@ stdout of test 'sqlancer03` in directory 'sql/test/SQLancer` itself:
 #CREATE TABLE "sys"."t0" ("c0" BOOLEAN NOT NULL,"c1" BIGINT,CONSTRAINT "t0_c0_pkey" PRIMARY KEY ("c0"),CONSTRAINT "t0_c0_unique" UNIQUE ("c0"));
 #create view v0(c0, c1, c2) as (select all 2.020551048E9, 0.16688174, 0.3732000026221729 from t0 where t0.c0) with check option;
 #SELECT sql_min(sql_max(NULL, ''), '') FROM v0 LEFT OUTER JOIN t0 ON true;
-% .%12 # table_name
-% %12 # name
+% .%14 # table_name
+% %14 # name
 % char # type
 % 0 # length
 #SELECT sql_min(sql_max(NULL, ''), '');
@@ -55,8 +55,8 @@ stdout of test 'sqlancer03` in directory 'sql/test/SQLancer` itself:
 [ NULL	]
 #SELECT ALL length(upper(MIN(ALL CAST(((trim(CAST(r'' AS STRING(659)), CAST(r'o3%+i]抔DCöf▟nßOpNbybಜ7' AS STRING)))||(sql_min(sql_max(NULL, r''), splitpart(r'x', r',7+.', t0.c1)))) AS STRING(151))))), 0.4179268710155164 
 #FROM v0 LEFT OUTER JOIN t0 ON NOT (t0.c0) WHERE t0.c0 GROUP BY 0.3584962, CAST(t0.c1 AS STRING(601)), t0.c1;
-% .%24,	.%25 # table_name
-% %24,	%25 # name
+% .%30,	.%31 # table_name
+% %30,	%31 # name
 % int,	decimal # type
 % 1,	19 # length
 #ROLLBACK;
@@ -306,6 +306,47 @@ stdout of test 'sqlancer03` in directory 'sql/test/SQLancer` itself:
 % bigint,	varchar # type
 % 1,	5 # length
 [ 6,	"0.434"	]
+#ROLLBACK;
+#START TRANSACTION;
+#CREATE TABLE t0 (c0 BOOLEAN);
+#create view v1(c0, c1, c2, c3) as (select 1, lower('1'), 1, cot(1) from t0);
+#SELECT v1.c0 FROM v1 WHERE v1.c1 LIKE v1.c1 AND v1.c3 BETWEEN v1.c3 AND v1.c3 = TRUE;
+% .v1 # table_name
+% c0 # name
+% tinyint # type
+% 1 # length
+#create view v2(c0, c1, c3) as (select distinct 1, lower('1'), cot(1) from t0);
+#SELECT v2.c0 FROM v2 WHERE v2.c1 = '1' AND v2.c3 BETWEEN v2.c3 AND v2.c3;
+% .v2 # table_name
+% c0 # name
+% tinyint # type
+% 1 # length
+#create view v0(c0, c1, c2, c3) as (select distinct 0.1, ((lower((((('&')||(2)))||(0.1))))||((('-1')||(abs(cast(r'1' as int)))))), 0.1, cot(((((- (((2)&(3))))+(abs(4))))*(- (cast(cast(5 as string) as int))))) from t0);
+#SELECT v0.c0 FROM v0 WHERE NOT (NOT (((((((((NOT (((v0.c1)LIKE(v0.c1))))AND(((v0.c2)>=(v0.c0)))))AND(((v0.c3) BETWEEN SYMMETRIC (v0.c3) AND (v0.c3)) = TRUE)))AND
+#((((v0.c1)||(((v0.c0)<(v0.c0))))) BETWEEN SYMMETRIC (v0.c1) AND (v0.c1))))AND((0.2) BETWEEN SYMMETRIC (v0.c0) AND (v0.c0)))));
+% .v0 # table_name
+% c0 # name
+% decimal # type
+% 4 # length
+#ROLLBACK;
+#START TRANSACTION;
+#CREATE TABLE t0(c0 INT);
+#insert into t0(c0) values (1 between 2 and 3);
+[ 1	]
+#insert into t0(c0) values(13), (((cast((0.1) between symmetric (0.2) and (0.3) as int))%(length(upper(r'u鋔wsD30pYi&ᴮ*2*W쉉t+詫sD^#cjX{'))))), (cast(cast(cast(0.12 as int) as string(646)) as int));
+[ 3	]
+#SELECT COUNT(t0.c0 = t0.c0 OR 1 BETWEEN ASYMMETRIC 1 AND 1) FROM t0;
+% sys.%1 # table_name
+% %1 # name
+% bigint # type
+% 1 # length
+[ 4	]
+#SELECT 0.9, COUNT(ALL (((((((CAST(TRUE AS INT))-(t0.c0)))=(t0.c0))) = TRUE)OR((CAST(char_length(r'H') AS INT)) BETWEEN ASYMMETRIC (CAST(-1.3 AS INT)) AND (+ (length(r'0')))))), 0.3 FROM t0 GROUP BY 0.5, 0.4;
+% .%13,	.%5,	.%14 # table_name
+% %13,	%5,	%14 # name
+% decimal,	bigint,	decimal # type
+% 4,	1,	4 # length
+[ 0.9,	4,	0.3	]
 #ROLLBACK;
 
 # 17:14:16 >  
