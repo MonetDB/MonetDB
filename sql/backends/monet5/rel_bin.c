@@ -2306,7 +2306,7 @@ rel2bin_join(backend *be, sql_rel *rel, list *refs)
 		}
 
 		if (join) {
-			en = rel->exps->h;
+			en = jexps->h;
 		} else {
 			list *lje = sa_list(sql->sa), *rje = sa_list(sql->sa), *exps = sa_list(sql->sa);
 			int used_hash = 0, idx = 0,  equality_only = 1;
@@ -2600,7 +2600,7 @@ rel2bin_semijoin(backend *be, sql_rel *rel, list *refs)
 		}
 
 		if (join) {
-			en = rel->exps->h;
+			en = jexps->h;
 		} else {
 			list *lje = sa_list(sql->sa), *rje = sa_list(sql->sa), *exps = sa_list(sql->sa);
 			int idx = 0, equality_only = 1;
