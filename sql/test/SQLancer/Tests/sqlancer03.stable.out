@@ -325,6 +325,46 @@ stdout of test 'sqlancer03` in directory 'sql/test/SQLancer` itself:
 [ NULL	]
 [ NULL	]
 #ROLLBACK;
+#START TRANSACTION; -- Bug 6926
+#CREATE TABLE t0(c0 TIME, c1 VARCHAR(1000) DEFAULT (upper(CAST((('')||(DATE '1970-01-19')) AS VARCHAR(152)))) PRIMARY KEY UNIQUE NULL);
+#INSERT INTO t0(c0, c1) VALUES(TIME '19:29:38', '');
+[ 1	]
+#INSERT INTO t0(c1, c0) VALUES(CAST(TIME '06:50:34' AS VARCHAR(256)), TIME '01:39:55');
+[ 1	]
+#INSERT INTO t0(c1, c0) VALUES(CAST(0.6 AS VARCHAR(411)), TIME '22:07:22'), ('#B', TIME '05:51:00'), (((((CAST('434' AS VARCHAR(849)))||(0.4)))||(TIME '04:05:28')), TIME '06:50:34');
+[ 3	]
+#INSERT INTO t0(c1) VALUES(CAST(INTERVAL '42' SECOND AS VARCHAR(102)));
+[ 1	]
+#INSERT INTO t0(c0, c1) VALUES(TIME '16:29:13', 'J'), (TIME '05:57:44', '49䄎y_}');
+[ 2	]
+#INSERT INTO t0(c1, c0) VALUES('2', TIME '07:15:50'), (CAST(TIME '16:29:13' AS VARCHAR(1000)), TIME '03:00:56');
+[ 2	]
+#INSERT INTO t0(c1) VALUES('O큑LSGAM||Z赐'), ('.n');
+[ 2	]
+#INSERT INTO t0(c1, c0) VALUES('c蠷웵', TIME '04:59:13');
+[ 1	]
+#INSERT INTO t0(c1) VALUES('0.0');
+[ 1	]
+#INSERT INTO t0(c0, c1) VALUES(TIME '20:29:28', '-343'), (TIME '01:19:51', 'j'), (TIME '11:37:23', ((((((((CAST(DATE '1970-01-23' AS VARCHAR(849)))||(INTERVAL '23' MONTH)))||(INTERVAL '-535' SECOND)))||(lower((('鮥*Qß4')||(DATE '1970-01-01'))))))||(0.4)));
+[ 3	]
+#INSERT INTO t0(c0, c1) VALUES(TIME '02:38:14', lower(CAST(INTERVAL '342' SECOND AS VARCHAR(1000)))), (TIME '23:43:33', '64');
+[ 2	]
+#DELETE FROM t0 WHERE ((((1 IS NOT NULL)AND(FALSE)))OR(((CAST(0.3 AS VARCHAR(836)))<(upper(t0.c1)))));
+[ 14	]
+#INSERT INTO t0(c0, c1) VALUES(TIME '20:59:23', ')TD)Dnö'), (TIME '22:09:19', 'aaJ즳#B!sJNG㡩');
+[ 2	]
+#INSERT INTO t0(c0, c1) VALUES(TIME '20:02:19', CAST(0.1 AS VARCHAR(927)));
+[ 1	]
+#INSERT INTO t0(c0, c1) VALUES(TIME '00:17:15', '{'), (TIME '06:51:52', CAST(4.1230238E7 AS VARCHAR(459)));
+[ 2	]
+#SELECT ALL t0.c0 FROM t0 WHERE (((t0.c0)<>(t0.c0))) IS NULL;
+% sys.t0 # table_name
+% c0 # name
+% time # type
+% 8 # length
+[ NULL	]
+[ NULL	]
+#ROLLBACK;
 #START TRANSACTION; -- Bug 6924
 #CREATE TABLE "sys"."t0" ("a" INTEGER, "b" INTEGER NOT NULL, CONSTRAINT "t0_a_b_unique" UNIQUE ("a","b"));
 #COPY 39 RECORDS INTO "sys"."t0" FROM stdin USING DELIMITERS E'\t',E'\n','"';
