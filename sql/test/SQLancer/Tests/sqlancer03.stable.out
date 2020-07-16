@@ -43,8 +43,8 @@ stdout of test 'sqlancer03` in directory 'sql/test/SQLancer` itself:
 #CREATE TABLE "sys"."t0" ("c0" BOOLEAN NOT NULL,"c1" BIGINT,CONSTRAINT "t0_c0_pkey" PRIMARY KEY ("c0"),CONSTRAINT "t0_c0_unique" UNIQUE ("c0"));
 #create view v0(c0, c1, c2) as (select all 2.020551048E9, 0.16688174, 0.3732000026221729 from t0 where t0.c0) with check option;
 #SELECT sql_min(sql_max(NULL, ''), '') FROM v0 LEFT OUTER JOIN t0 ON true;
-% .%12 # table_name
-% %12 # name
+% .%14 # table_name
+% %14 # name
 % char # type
 % 0 # length
 #SELECT sql_min(sql_max(NULL, ''), '');
@@ -55,8 +55,8 @@ stdout of test 'sqlancer03` in directory 'sql/test/SQLancer` itself:
 [ NULL	]
 #SELECT ALL length(upper(MIN(ALL CAST(((trim(CAST(r'' AS STRING(659)), CAST(r'o3%+i]抔DCöf▟nßOpNbybಜ7' AS STRING)))||(sql_min(sql_max(NULL, r''), splitpart(r'x', r',7+.', t0.c1)))) AS STRING(151))))), 0.4179268710155164 
 #FROM v0 LEFT OUTER JOIN t0 ON NOT (t0.c0) WHERE t0.c0 GROUP BY 0.3584962, CAST(t0.c1 AS STRING(601)), t0.c1;
-% .%24,	.%25 # table_name
-% %24,	%25 # name
+% .%31,	.%32 # table_name
+% %31,	%32 # name
 % int,	decimal # type
 % 1,	19 # length
 #ROLLBACK;
@@ -257,6 +257,20 @@ stdout of test 'sqlancer03` in directory 'sql/test/SQLancer` itself:
 % %11,	%7 # name
 % date,	int # type
 % 10,	1 # length
+#ROLLBACK;
+#START TRANSACTION;
+#create table t0 (a time default time '10:15:32', b date default date '2010-01-31', c timestamp default timestamp '1980-11-04 08:49:25');
+#insert into t0;
+[ 1	]
+#insert into t0 values (default, default, default);
+[ 1	]
+#select a,b,c from t0;
+% sys.t0,	sys.t0,	sys.t0 # table_name
+% a,	b,	c # name
+% time,	date,	timestamp # type
+% 8,	10,	26 # length
+[ 10:15:32,	2010-01-31,	1980-11-04 08:49:25.000000	]
+[ 10:15:32,	2010-01-31,	1980-11-04 08:49:25.000000	]
 #ROLLBACK;
 #START TRANSACTION; -- Bug 6924
 #CREATE TABLE "sys"."t0" ("a" INTEGER, "b" INTEGER NOT NULL, CONSTRAINT "t0_a_b_unique" UNIQUE ("a","b"));

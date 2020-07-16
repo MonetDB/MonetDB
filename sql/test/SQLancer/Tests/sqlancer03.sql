@@ -153,6 +153,13 @@ SELECT 1 FROM t0 WHERE NULL IN (DATE '1970-01-01');
 SELECT ALL DATE '1970-01-01', CAST(COUNT(ALL TIMESTAMP '1970-01-01 01:06:52') AS INT) FROM t0 WHERE (NULL) NOT IN (DATE '1970-01-01') GROUP BY ((CAST(0.6 AS STRING))||(0.75)), INTERVAL '-13' SECOND;
 ROLLBACK;
 
+START TRANSACTION;
+create table t0 (a time default time '10:15:32', b date default date '2010-01-31', c timestamp default timestamp '1980-11-04 08:49:25');
+insert into t0;
+insert into t0 values (default, default, default);
+select a,b,c from t0;
+ROLLBACK;
+
 START TRANSACTION; -- Bug 6924
 CREATE TABLE "sys"."t0" ("a" INTEGER, "b" INTEGER NOT NULL, CONSTRAINT "t0_a_b_unique" UNIQUE ("a","b"));
 --This copy into must succeed 
