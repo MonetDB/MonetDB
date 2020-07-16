@@ -1491,6 +1491,8 @@ stmt_uselect(backend *be, stmt *op1, stmt *op2, comp_type cmptype, stmt *sub, in
 			q = pushArgument(mb, q, l);
 			if (sub && !op1->cand)
 				q = pushArgument(mb, q, sub->nr);
+			else
+				sub = NULL;
 			q = pushArgument(mb, q, r);
 			q = pushArgument(mb, q, r);
 			q = pushBit(mb, q, TRUE);
