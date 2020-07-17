@@ -239,6 +239,20 @@ UNION ALL SELECT SUM(ALL 0.97) as agg0 FROM t0 CROSS JOIN t1 WHERE NOT (((((t1.c
 UNION ALL SELECT SUM(ALL 0.97) as agg0 FROM t0 CROSS JOIN t1 WHERE (((((t1.c1)AND(t1.c1)))AND(((t0.c0)>(t0.c0))))) IS NULL) as asdf;
 ROLLBACK;
 
+START TRANSACTION; --Bug 6928
+CREATE TABLE "sys"."t0" ("c0" DECIMAL(18,3) DEFAULT 0.968720);
+COPY 5 RECORDS INTO "sys"."t0" FROM stdin USING DELIMITERS E'\t',E'\n','"';
+0.938
+0.958
+0.877
+0.550
+0.916
+
+select coalesce(1 = true, t0.c0 > 0) from t0;
+select count(all coalesce ((case coalesce (((r'Mk|8''Fx#S4ᬊ')||(time '07:11:45')), ((r'')||(interval '-87' second))) when case cast(t0.c0 as double) when sql_max(r'', null) 
+then ((12)/(23)) end then cast("truncate"(r'bgmV\n[E!Ld}+ᅲ?^䋖9}z8j09뗓', 54) as boolean) else (coalesce (true, true, r'1', true)) = false end) = true, (t0.c0) not in (t0.c0))) from t0;
+ROLLBACK;
+
 START TRANSACTION; -- Bug 6924
 CREATE TABLE "sys"."t0" ("a" INTEGER, "b" INTEGER NOT NULL, CONSTRAINT "t0_a_b_unique" UNIQUE ("a","b"));
 --This copy into must succeed 
