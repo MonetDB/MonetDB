@@ -1377,7 +1377,7 @@ _exp_push_down(mvc *sql, sql_exp *e, sql_rel *f, sql_rel *t)
 			e = exp_propagate(sql->sa, e, oe);
 		/* if the upper exp was an alias, keep this */
 		if (e && exp_relname(ne))
-			exp_setname(sql->sa, e, exp_relname(ne), exp_name(ne));
+			exp_prop_alias(sql->sa, e, ne);
 		return e;
 	case e_cmp:
 		if (e->flag == cmp_or || e->flag == cmp_filter) {
@@ -1736,14 +1736,11 @@ rel_push_count_down(visitor *v, sql_rel *rel)
 		sql_rel *cp;			/* Cross Product */
 		sql_subfunc *mult;
 		list *args;
-		const char *rname = NULL, *name = NULL;
 		sql_rel *srel;
 
 		oce = rel->exps->h->data;
 		if (oce->l) /* we only handle COUNT(*) */
 			return rel;
-		rname = exp_relname(oce);
-		name  = exp_name(oce);
 
 		args = new_exp_list(v->sql->sa);
 		srel = r->l;
@@ -1776,7 +1773,8 @@ rel_push_count_down(visitor *v, sql_rel *rel)
 		cp = rel_crossproduct(v->sql->sa, gbl, gbr, op_join);
 
 		nce = exp_op(v->sql->sa, args, mult);
-		exp_setname(v->sql->sa, nce, rname, name );
+		if (exp_name(oce))
+			exp_prop_alias(v->sql->sa, nce, oce);
 
 		rel_destroy(rel);
 		rel = rel_project(v->sql->sa, cp, append(new_exp_list(v->sql->sa), nce));
@@ -2985,7 +2983,8 @@ rel_merge_projects(visitor *v, sql_rel *rel)
 			}
 			*/
 			if (ne) {
-				exp_setname(v->sql->sa, ne, exp_relname(e), exp_name(e));
+				if (exp_name(e))
+					exp_prop_alias(v->sql->sa, ne, e);
 				list_append(rel->exps, ne);
 			} else {
 				all = 0;
@@ -3001,7 +3000,8 @@ rel_merge_projects(visitor *v, sql_rel *rel)
 
 					ne = exp_push_down_prj(v->sql, e, prj, prj->l);
 					if (ne) {
-						exp_setname(v->sql->sa, ne, exp_relname(e), exp_name(e));
+						if (exp_name(e))
+							exp_prop_alias(v->sql->sa, ne, e);
 						list_append(nr, ne);
 					} else {
 						all = 0;
@@ -4537,7 +4537,8 @@ rel_push_groupby_down(visitor *v, sql_rel *rel)
 					if (exp_refers(ge, a)) {
 						sql_exp *sc = jr->exps->t->data;
 						sql_exp *e = exp_ref(v->sql, sc);
-						exp_setname(v->sql->sa, e, exp_relname(a), exp_name(a));
+						if (exp_name(a))
+							exp_prop_alias(v->sql->sa, e, a);
 						a = e;
 					}
 					append(npexps, a);
@@ -4549,7 +4550,8 @@ rel_push_groupby_down(visitor *v, sql_rel *rel)
 
 					if (exp_match_exp(a, ge) || exp_refers(ge, a)) {
 						a = exp_ref(v->sql, ne);
-						exp_setname(v->sql->sa, a, exp_relname(ne), exp_name(ne));
+						if (exp_name(ne))
+							exp_prop_alias(v->sql->sa, a, ne);
 						m->data = a;
 					}
 				}
@@ -4557,12 +4559,14 @@ rel_push_groupby_down(visitor *v, sql_rel *rel)
 				/* change alias pe, ie project out the index  */
 				pe->l = (void*)exp_relname(ne);
 				pe->r = (void*)exp_name(ne);
-				exp_setname(v->sql->sa, pe, exp_relname(ne), exp_name(ne));
+				if (exp_name(ne))
+					exp_prop_alias(v->sql->sa, pe, ne);
 
 				/* change alias ge */
 				ge->l = (void*)exp_relname(pe);
 				ge->r = (void*)exp_name(pe);
-				exp_setname(v->sql->sa, ge, exp_relname(pe), exp_name(pe));
+				if (exp_name(pe))
+					exp_prop_alias(v->sql->sa, ge, pe);
 
 				/* zap both project and groupby name hash tables (as we changed names above) */
 				rel->exps->ht = NULL;
@@ -8937,8 +8941,6 @@ rel_add_dicts(visitor *v, sql_rel *rel)
 				sql_rel *vt = n->data;
 				sql_exp *ic = n->next->data, *vti = NULL, *vtv;
 				sql_exp *c = n->next->next->data, *cmp;
-				const char *rname = exp_relname(c)?exp_relname(c):c->l;
-				const char *oname = c->r;
 
 				rel = rel_crossproduct(v->sql->sa, rel, vt, op_join);
 				vti = vt->exps->h->data;
@@ -8949,7 +8951,8 @@ rel_add_dicts(visitor *v, sql_rel *rel)
 				rel_join_add_exp( v->sql->sa, rel, cmp);
 
 				vtv = exp_ref(v->sql, vtv);
-				exp_setname(v->sql->sa, vtv, rname, oname);
+				if (exp_name(c))
+					exp_prop_alias(v->sql->sa, vtv, c);
 				append(pexps, vtv);
 			}
 			rel = rel_project(v->sql->sa, rel, pexps);
