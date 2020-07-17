@@ -254,6 +254,12 @@ select count(all coalesce ((case coalesce (((r'Mk|8''Fx#S4ᬊ')||(time '07:11:45
 then ((12)/(23)) end then cast("truncate"(r'1', 54) as boolean) else (coalesce (true, true, r'1', true)) = false end) = true, (t0.c0) not in (t0.c0))) from t0;
 ROLLBACK;
 
+START TRANSACTION; --Bug 6929
+CREATE TEMPORARY TABLE IF NOT EXISTS t0(c0 TIMESTAMP) ON COMMIT PRESERVE ROWS;
+SELECT CAST(SUM(COALESCE(0.67, dayofmonth(t0.c0))) AS BIGINT) FROM t0;
+SELECT ALL CAST(SUM(ALL COALESCE (CAST(0.67090863 AS REAL), dayofmonth(t0.c0))) AS BIGINT) FROM t0;
+ROLLBACK;
+
 START TRANSACTION; -- Bug 6924
 CREATE TABLE "sys"."t0" ("a" INTEGER, "b" INTEGER NOT NULL, CONSTRAINT "t0_a_b_unique" UNIQUE ("a","b"));
 --This copy into must succeed 
