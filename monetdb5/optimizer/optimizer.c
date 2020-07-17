@@ -153,6 +153,8 @@ static mel_func optimizer_init_funcs[] = {
  pattern("optimizer", "wlc", OPTwrapper, false, "Inject the workload capture-replay primitives.", args(1,3, arg("",str),arg("mod",str),arg("fcn",str))),
  pattern("optimizer", "postfix", OPTwrapper, false, "", args(1,1, arg("",str))),
  pattern("optimizer", "postfix", OPTwrapper, false, "Postfix the plan,e.g. pushing projections", args(1,3, arg("",str),arg("mod",str),arg("fcn",str))),
+ pattern("optimizer", "mask", OPTwrapper, false, "", args(1,1, arg("",str))),
+ pattern("optimizer", "mask", OPTwrapper, false, "Manipulate the MSK objects", args(1,3, arg("",str),arg("mod",str),arg("fcn",str))),
  { .imp=NULL }
 };
 #include "mal_import.h"
