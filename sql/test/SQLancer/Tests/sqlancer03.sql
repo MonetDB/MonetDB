@@ -214,6 +214,61 @@ SELECT ALL t0.c0 FROM t0 WHERE (((t0.c0)<>(t0.c0))) IS NULL;
 	--NULL
 ROLLBACK;
 
+START TRANSACTION;
+CREATE TEMPORARY TABLE t0(c0 integer AUTO_INCREMENT UNIQUE NOT NULL, c1 FLOAT DEFAULT (0.9323624));
+select t0.c0 from t0 where -t0.c0 <= 1 and t0.c0 between t0.c0 and -t0.c0;
+ROLLBACK;
+
+START TRANSACTION; --Bug 6927
+CREATE TABLE "sys"."t0" ("c0" CHARACTER LARGE OBJECT NOT NULL,CONSTRAINT "t0_c0_pkey" PRIMARY KEY ("c0"),CONSTRAINT "t0_c0_unique" UNIQUE ("c0"),CONSTRAINT "t0_c0_unique" UNIQUE ("c0"));
+COPY 5 RECORDS INTO "sys"."t0" FROM stdin USING DELIMITERS E'\t',E'\n','"';
+"1970-01-19"
+"0.9940522485469018"
+"Sn"
+""
+",骭2T*h[99#஺M\nBCϹ㦚X"
+
+CREATE TABLE "sys"."t1" ("c0" CHARACTER LARGE OBJECT,"c1" BOOLEAN NOT NULL,CONSTRAINT "t1_c1_unique" UNIQUE ("c1"));
+COPY 2 RECORDS INTO "sys"."t1" FROM stdin USING DELIMITERS E'\t',E'\n','"';
+"*"	true
+"Xh{%LTF"	false
+
+SELECT 1 FROM t0 CROSS JOIN t1 WHERE (t1.c1 AND (t0.c0 > t0.c0)) IS NULL;
+SELECT cast(SUM(agg0) as decimal(10,2)) FROM (SELECT ALL SUM(ALL 0.97) as agg0 FROM t0 CROSS JOIN t1 WHERE ((((t1.c1)AND(t1.c1)))AND(((t0.c0)>(t0.c0)))) 
+UNION ALL SELECT SUM(ALL 0.97) as agg0 FROM t0 CROSS JOIN t1 WHERE NOT (((((t1.c1)AND(t1.c1)))AND(((t0.c0)>(t0.c0))))) 
+UNION ALL SELECT SUM(ALL 0.97) as agg0 FROM t0 CROSS JOIN t1 WHERE (((((t1.c1)AND(t1.c1)))AND(((t0.c0)>(t0.c0))))) IS NULL) as asdf;
+ROLLBACK;
+
+START TRANSACTION; --Bug 6928
+CREATE TABLE "sys"."t0" ("c0" DECIMAL(18,3) DEFAULT 0.968720);
+COPY 5 RECORDS INTO "sys"."t0" FROM stdin USING DELIMITERS E'\t',E'\n','"';
+0.938
+0.958
+0.877
+0.550
+0.916
+
+select coalesce(1 = true, false);
+select coalesce(1 = true, t0.c0 > 0) from t0;
+select count(all coalesce ((case coalesce (((r'Mk|8''Fx#S4ᬊ')||(time '07:11:45')), ((r'')||(interval '-87' second))) when case cast(t0.c0 as double) when sql_max(r'', null) 
+then ((12)/(23)) end then cast("truncate"(r'1', 54) as boolean) else (coalesce (true, true, r'1', true)) = false end) = true, (t0.c0) not in (t0.c0))) from t0;
+ROLLBACK;
+
+START TRANSACTION; --Bug 6929
+CREATE TEMPORARY TABLE IF NOT EXISTS t0(c0 TIMESTAMP) ON COMMIT PRESERVE ROWS;
+SELECT COALESCE(1, dayofmonth(t0.c0)) FROM t0;
+SELECT CAST(SUM(COALESCE(0.67, dayofmonth(t0.c0))) AS BIGINT) FROM t0;
+SELECT ALL CAST(SUM(ALL COALESCE (CAST(0.67090863 AS REAL), dayofmonth(t0.c0))) AS BIGINT) FROM t0;
+ROLLBACK;
+
+START TRANSACTION; --Bug 6930
+CREATE TABLE t0(c0 VARCHAR(319) NOT NULL, c1 TIME, c2 TIMESTAMP PRIMARY KEY UNIQUE NULL, UNIQUE(c0, c2, c1));
+CREATE TABLE t1(c0 CHARACTER LARGE OBJECT,c1 DATE);
+select t1.c0 from t1 join t0 on coalesce(trim(t0.c0), 1) like t0.c0;
+select all t1.c0 from t1 right outer join t0 on ((coalesce (t1.c0, trim(t0.c0), "insert"(splitpart(t0.c0, t0.c0, -618693953), - (-382400246), coalesce (1840724133, 1854087569, 1686971701, 576180091), t1.c0), 
+cast(abs(0.160418955416609) as string), cast(coalesce (greatest(interval '-1022285655' second, interval '-1047501443' second), interval '641174375' second, sql_max(interval '-1539884267' second, interval '-685917930' second)) as string)))not ilike(t0.c0));
+ROLLBACK;
+
 START TRANSACTION; -- Bug 6924
 CREATE TABLE "sys"."t0" ("a" INTEGER, "b" INTEGER NOT NULL, CONSTRAINT "t0_a_b_unique" UNIQUE ("a","b"));
 --This copy into must succeed 
