@@ -248,9 +248,10 @@ COPY 5 RECORDS INTO "sys"."t0" FROM stdin USING DELIMITERS E'\t',E'\n','"';
 0.550
 0.916
 
+select coalesce(1 = true, false);
 select coalesce(1 = true, t0.c0 > 0) from t0;
 select count(all coalesce ((case coalesce (((r'Mk|8''Fx#S4ᬊ')||(time '07:11:45')), ((r'')||(interval '-87' second))) when case cast(t0.c0 as double) when sql_max(r'', null) 
-then ((12)/(23)) end then cast("truncate"(r'bgmV\n[E!Ld}+ᅲ?^䋖9}z8j09뗓', 54) as boolean) else (coalesce (true, true, r'1', true)) = false end) = true, (t0.c0) not in (t0.c0))) from t0;
+then ((12)/(23)) end then cast("truncate"(r'1', 54) as boolean) else (coalesce (true, true, r'1', true)) = false end) = true, (t0.c0) not in (t0.c0))) from t0;
 ROLLBACK;
 
 START TRANSACTION; -- Bug 6924

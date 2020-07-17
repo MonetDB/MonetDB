@@ -846,6 +846,7 @@ exp_setalias(sql_exp *e, const char *rname, const char *name )
 void
 exp_prop_alias(sql_allocator *sa, sql_exp *e, sql_exp *oe )
 {
+	e->ref = oe->ref;
 	if (oe->alias.name == NULL && exp_has_rel(oe)) {
 		sql_rel *r = exp_rel_get_rel(sa, oe);
 		if (!is_project(r->op))
