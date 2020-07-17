@@ -261,6 +261,14 @@ SELECT CAST(SUM(COALESCE(0.67, dayofmonth(t0.c0))) AS BIGINT) FROM t0;
 SELECT ALL CAST(SUM(ALL COALESCE (CAST(0.67090863 AS REAL), dayofmonth(t0.c0))) AS BIGINT) FROM t0;
 ROLLBACK;
 
+START TRANSACTION; --Bug 6930
+CREATE TABLE t0(c0 VARCHAR(319) NOT NULL, c1 TIME, c2 TIMESTAMP PRIMARY KEY UNIQUE NULL, UNIQUE(c0, c2, c1));
+CREATE TABLE t1(c0 CHARACTER LARGE OBJECT,c1 DATE);
+select t1.c0 from t1 join t0 on coalesce(trim(t0.c0), 1) like t0.c0;
+select all t1.c0 from t1 right outer join t0 on ((coalesce (t1.c0, trim(t0.c0), "insert"(splitpart(t0.c0, t0.c0, -618693953), - (-382400246), coalesce (1840724133, 1854087569, 1686971701, 576180091), t1.c0), 
+cast(abs(0.160418955416609) as string), cast(coalesce (greatest(interval '-1022285655' second, interval '-1047501443' second), interval '641174375' second, sql_max(interval '-1539884267' second, interval '-685917930' second)) as string)))not ilike(t0.c0));
+ROLLBACK;
+
 START TRANSACTION; -- Bug 6924
 CREATE TABLE "sys"."t0" ("a" INTEGER, "b" INTEGER NOT NULL, CONSTRAINT "t0_a_b_unique" UNIQUE ("a","b"));
 --This copy into must succeed 
