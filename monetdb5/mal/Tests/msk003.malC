@@ -1,4 +1,4 @@
-# The msk vector are intended to represent candidate lists
+# Let's explore what happens when we want to support :bat[:msk] vectors
 
 b := bat.new(:int);
 bat.append(b,1);
@@ -11,9 +11,14 @@ bv2:bat[:msk]:= bat.mask(b);
 # should produce (1,1,1,1,1)
 io.print(bv2);
 
-cnd:bat[:msk] := algebra.select(bv2, nil:bat[:oid], 0, 2, true, true, false);
+sel:bat[:msk] := algebra.select(bv2, nil:bat[:oid], 0, 2, true, true, false);
 # should produce (1,0,0,1,1)
-io.print(cnd);
+io.print(sel);
 
-prj:bat[:int]:= bat.project(bv2, cnd);
-io.print(prj);
+prj:bat[:int]:= bat.project(sel, cnd);
+io.print(prj); #produce (1,0,1)
+
+neg:bat[:msk] := bat.not(bv2);
+io.print(neg); # (0,1,1)
+
+od:bat[:oid]:= bat.umask(bv2); #produces a candidate list

@@ -213,6 +213,6 @@ malids
 # tracer00 Output is call dependent
 
 # The new msk type0
-msk000
-msk001
+# msk000 Scalar operations are second priority
+# msk001 Incremental BAT construction is second priority
 msk002
