@@ -1164,12 +1164,11 @@ rel_safe_project(mvc *sql, sql_rel *rel)
 	assert(!list_empty(rel->exps));
 	for(node *n = rel->exps->h; n; n=n->next) {
 		sql_exp *e = n->data, *ne;
-		const char *cname = exp_name(e);
-		const char *rname = exp_relname(e);
 
 		n->data = e = exp_label(sql->sa, e, ++sql->label);
 		ne = exp_ref(sql, e);
-		exp_setname(sql->sa, ne, rname, cname);
+		if (exp_name(e))
+			exp_prop_alias(sql->sa, ne, e);
 		append(nexps, ne);
 	}
 	list_hash_clear(rel->exps);

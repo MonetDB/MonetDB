@@ -3070,21 +3070,25 @@ exp_simplify_math( mvc *sql, sql_exp *e, int *changes)
 			if (exp_is_atom(le) && exp_is_null(sql, le)) {
 				(*changes)++;
 				if (f && f->func && f->func->imp && strstr(f->func->imp, "_no_nil") != NULL) {
-					exp_setname(sql->sa, re, exp_relname(e), exp_name(e));
+					if (exp_name(e))
+						exp_prop_alias(sql->sa, re, e);
 					return re;
 				}
 				le = exp_null(sql->sa, et);
-				exp_setname(sql->sa, le, exp_relname(e), exp_name(e));
+				if (exp_name(e))
+					exp_prop_alias(sql->sa, le, e);
 				return le;
 			}
 			if (exp_is_atom(re) && exp_is_null(sql, re)) {
 				(*changes)++;
 				if (f && f->func && f->func->imp && strstr(f->func->imp, "_no_nil") != NULL) {
-					exp_setname(sql->sa, le, exp_relname(e), exp_name(e));
+					if (exp_name(e))
+						exp_prop_alias(sql->sa, le, e);
 					return le;
 				}
 				re = exp_null(sql->sa, et);
-				exp_setname(sql->sa, re, exp_relname(e), exp_name(e));
+				if (exp_name(e))
+					exp_prop_alias(sql->sa, re, e);
 				return re;
 			}
 		}
@@ -3097,27 +3101,31 @@ exp_simplify_math( mvc *sql, sql_exp *e, int *changes)
 			if (exp_is_atom(le) && exp_is_zero(sql, le) && exp_is_atom(re) && exp_is_not_null(sql, re)) {
 				(*changes)++;
 				le = exp_zero(sql->sa, et);
-				exp_setname(sql->sa, le, exp_relname(e), exp_name(e));
+				if (exp_name(e))
+					exp_prop_alias(sql->sa, le, e);
 				return le;
 			}
 			/* a*0 = 0 */
 			if (exp_is_atom(re) && exp_is_zero(sql, re) && exp_is_atom(le) && exp_is_not_null(sql, le)) {
 				(*changes)++;
 				re = exp_zero(sql->sa, et);
-				exp_setname(sql->sa, re, exp_relname(e), exp_name(e));
+				if (exp_name(e))
+					exp_prop_alias(sql->sa, re, e);
 				return re;
 			}
 			/* 1*a = a
 			if (exp_is_atom(le) && exp_is_one(sql, le)) {
 				(*changes)++;
-				exp_setname(sql->sa, re, exp_relname(e), exp_name(e));
+				if (exp_name(e))
+					exp_prop_alias(sql->sa, re, e);
 				return re;
 			}
 			*/
 			/* a*1 = a
 			if (exp_is_atom(re) && exp_is_one(sql, re)) {
 				(*changes)++;
-				exp_setname(sql->sa, le, exp_relname(e), exp_name(e));
+				if (exp_name(e))
+					exp_prop_alias(sql->sa, le, e);
 				return le;
 			}
 			*/
@@ -3132,7 +3140,8 @@ exp_simplify_math( mvc *sql, sql_exp *e, int *changes)
 					if (a && atom_cast(sql->sa, a, exp_subtype(e))) {
 						sql_exp *ne = exp_atom(sql->sa, a);
 						(*changes)++;
-						exp_setname(sql->sa, ne, exp_relname(e), exp_name(e));
+						if (exp_name(e))
+							exp_prop_alias(sql->sa, ne, e);
 						return ne;
 					}
 				}
@@ -3162,7 +3171,8 @@ exp_simplify_math( mvc *sql, sql_exp *e, int *changes)
 				append(l, re);
 				(*changes)++;
 				ne = exp_op(sql->sa, l, pow);
-				exp_setname(sql->sa, ne, exp_relname(e), exp_name(e));
+				if (exp_name(e))
+					exp_prop_alias(sql->sa, ne, e);
 				return ne;
 			}
 			/* change a*pow(a,n) or pow(a,n)*a into pow(a,n+1) */
@@ -3176,7 +3186,8 @@ exp_simplify_math( mvc *sql, sql_exp *e, int *changes)
 					if (exp_equal(re, lle)==0) {
 						if (atom_inc(exp_value(sql, lre, sql->args, sql->argc))) {
 							(*changes)++;
-							exp_setname(sql->sa, le, exp_relname(e), exp_name(e));
+							if (exp_name(e))
+								exp_prop_alias(sql->sa, le, e);
 							return le;
 						}
 					}
@@ -3211,12 +3222,14 @@ exp_simplify_math( mvc *sql, sql_exp *e, int *changes)
 			sql_exp *re = l->h->next->data;
 			if (exp_is_atom(le) && exp_is_zero(sql, le)) {
 				(*changes)++;
-				exp_setname(sql->sa, re, exp_relname(e), exp_name(e));
+				if (exp_name(e))
+					exp_prop_alias(sql->sa, re, e);
 				return re;
 			}
 			if (exp_is_atom(re) && exp_is_zero(sql, re)) {
 				(*changes)++;
-				exp_setname(sql->sa, le, exp_relname(e), exp_name(e));
+				if (exp_name(e))
+					exp_prop_alias(sql->sa, le, e);
 				return le;
 			}
 			if (exp_is_atom(le) && exp_is_atom(re)) {
@@ -3229,7 +3242,8 @@ exp_simplify_math( mvc *sql, sql_exp *e, int *changes)
 					if (a) {
 						sql_exp *ne = exp_atom(sql->sa, a);
 						(*changes)++;
-						exp_setname(sql->sa, ne, exp_relname(e), exp_name(e));
+						if (exp_name(e))
+							exp_prop_alias(sql->sa, ne, e);
 						return ne;
 					}
 				}
@@ -3297,7 +3311,8 @@ exp_simplify_math( mvc *sql, sql_exp *e, int *changes)
 					if (a) {
 						sql_exp *ne = exp_atom(sql->sa, a);
 						(*changes)++;
-						exp_setname(sql->sa, ne, exp_relname(e), exp_name(e));
+						if (exp_name(e))
+							exp_prop_alias(sql->sa, ne, e);
 						return ne;
 					}
 				}
@@ -3315,7 +3330,8 @@ exp_simplify_math( mvc *sql, sql_exp *e, int *changes)
 				}
 				ne = exp_atom(sql->sa, a);
 				(*changes)++;
-				exp_setname(sql->sa, ne, exp_relname(e), exp_name(e));
+				if (exp_name(e))
+					exp_prop_alias(sql->sa, ne, e);
 				return ne;
 			}
 			if (is_func(le->type)) {
@@ -3326,7 +3342,8 @@ exp_simplify_math( mvc *sql, sql_exp *e, int *changes)
 					sql_exp *lre = ll->h->next->data;
 					if (exp_equal(re, lre) == 0) {
 						/* (x+a)-a = x*/
-						exp_setname(sql->sa, lle, exp_relname(e), exp_name(e));
+						if (exp_name(e))
+							exp_prop_alias(sql->sa, lle, e);
 						(*changes)++;
 						return lle;
 					}
@@ -4054,7 +4071,8 @@ rel_merge_project_rse(visitor *v, sql_rel *rel, sql_exp *e, int depth)
 					if (between) {
 						sql_exp *ne = exp_op(v->sql->sa, ops, between);
 
-						exp_setname(v->sql->sa, ne, exp_relname(e), exp_name(e));
+						if (exp_name(e))
+							exp_prop_alias(v->sql->sa, ne, e);
 						e = ne;
 					}
 					v->changes++;
@@ -7899,12 +7917,14 @@ rel_simplify_ifthenelse(visitor *v, sql_rel *rel, sql_exp *e, int depth)
 
 			if (exp_is_true(v->sql, ie)) { /* ifthenelse(true, x, y) -> x */
 				sql_exp *res = args->h->next->data;
-				exp_setname(v->sql->sa, res, exp_relname(e), exp_name(e));
+				if (exp_name(e))
+					exp_prop_alias(v->sql->sa, res, e);
 				v->changes++;
 				return res;
 			} else if (exp_is_false(v->sql, ie) || exp_is_null(v->sql, ie)) { /* ifthenelse(false or null, x, y) -> y */
 				sql_exp *res = args->h->next->next->data;
-				exp_setname(v->sql->sa, res, exp_relname(e), exp_name(e));
+				if (exp_name(e))
+					exp_prop_alias(v->sql->sa, res, e);
 				v->changes++;
 				return res;
 			}
@@ -8733,7 +8753,8 @@ add_nulls(mvc *sql, sql_rel *rel, sql_rel *r)
 		sql_exp *e = n->data, *ne;
 
 		ne = exp_atom(sql->sa, atom_general(sql->sa, exp_subtype(e), NULL));
-		exp_setname(sql->sa, ne, exp_relname(e), exp_name(e));
+		if (exp_name(e))
+			exp_prop_alias(sql->sa, ne, e);
 		append(rel->exps, ne);
 	}
 }
