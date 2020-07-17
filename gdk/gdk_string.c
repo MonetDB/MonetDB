@@ -258,7 +258,7 @@ strPut(Heap *h, var_t *dst, const char *v)
 				if ((v[i] & 0xC0) != 0x80 ||
 				    (m != 0 && (v[i] & m) == 0)) {
 				  badutf8:
-					GDKerror("strPut: incorrectly encoded UTF-8");
+					GDKerror("strPut: incorrectly encoded UTF-8: '%s'", v);
 					return 0;
 				}
 				m = 0;
