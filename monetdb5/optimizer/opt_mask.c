@@ -15,7 +15,7 @@
 str
 OPTmaskImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	int i, k, se,limit, slimit;
+	int i, k, limit, slimit;
 	InstrPtr p=0, q=0, *old= mb->stmt;
 	int actions = 0;
 	int *varused=0;
@@ -49,11 +49,13 @@ OPTmaskImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		pushInstruction(mb, p);
 
 		if ( getModuleId(p) == algebraRef && (getFunctionId(p) == selectRef || getFunctionId(p) == thetaselectRef)){
-			k = getArg(p,0);
-			q = newInstruction(mb, batRef, umaskRef);
-			setDestVar(q, newTmpVariable(mb, newBatType(TYPE_msk)));
-			getArg(p,0) = getArg(q,0);
-			setArgType(mb, q, 0, newBatType(TYPE_msk));
+			k=  getArg(p,0);
+			// setDestVar(p, newTmpVariable(mb, newBatType(TYPE_msk))); TODO
+			setDestVar(p, newTmpVariable(mb, newBatType(TYPE_oid)));
+			setModuleId(p, maskRef);
+
+			q = newInstruction(mb, maskRef, umaskRef);
+			getArg(q,0) = k;
 			q= pushArgument(mb, q, getArg(p,0));
 			pushInstruction(mb,q);
 			actions ++;

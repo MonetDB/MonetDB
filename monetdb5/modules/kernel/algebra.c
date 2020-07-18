@@ -1463,7 +1463,7 @@ MSKselect2(bat *result, const bat *bid, const bat *sid, const void *low, const v
 static str
 MSKselect2nil(bat *result, const bat *bid, const bat *sid, const void *low, const void *high, const bit *li, const bit *hi, const bit *anti, const bit *unknown)
 {
-	ALGselect2nil(result, bid, sid, low, high, li, hi, anti, unknown);
+	return ALGselect2nil(result, bid, sid, low, high, li, hi, anti, unknown);
 }
 
 static str
@@ -1514,6 +1514,7 @@ mel_func algebra_init_funcs[] = {
  command("algebra", "thetaselect", ALGthetaselect2, false, "Select all head values of the first input BAT for which the tail value\nobeys the relation value OP VAL and for which the head value occurs in\nthe tail of the second input BAT.\nInput is a dense-headed BAT, output is a dense-headed BAT with in\nthe tail the head value of the input BAT for which the\nrelationship holds.  The output BAT is sorted on the tail value.", args(1,5, batarg("",oid),batargany("b",1),batarg("s",oid),argany("val",1),arg("op",str))),
  command("algebra", "selectNotNil", ALGselectNotNil, false, "Select all not-nil values", args(1,2, batargany("",2),batargany("b",2))),
 
+ // Convert result to a :msk TODO
   command("mask", "select", MSKselect1, false, "Select all head values for which the tail value is in range.\nInput is a dense-headed BAT, output is a dense-headed BAT with in\nthe tail the head value of the input BAT for which the tail value\nis between the values low and high (inclusive if li respectively\nhi is set).  The output BAT is sorted on the tail value.  If low\nor high is nil, the boundary is not considered (effectively - and\n+ infinity).  If anti is set, the result is the complement.  Nil\nvalues in the tail are never matched, unless low=nil, high=nil,\nli=1, hi=1, anti=0.  All non-nil values are returned if low=nil,\nhigh=nil, and li, hi are not both 1, or anti=1.\nNote that the output is suitable as second input for the other\nversion of this function.", args(1,7, batarg("",oid),batargany("b",1),argany("low",1),argany("high",1),arg("li",bit),arg("hi",bit),arg("anti",bit))),
  command("mask", "select", MSKselect2, false, "Select all head values of the first input BAT for which the tail value\nis in range and for which the head value occurs in the tail of the\nsecond input BAT.\nThe first input is a dense-headed BAT, the second input is a\ndense-headed BAT with sorted tail, output is a dense-headed BAT\nwith in the tail the head value of the input BAT for which the\ntail value is between the values low and high (inclusive if li\nrespectively hi is set).  The output BAT is sorted on the tail\nvalue.  If low or high is nil, the boundary is not considered\n(effectively - and + infinity).  If anti is set, the result is the\ncomplement.  Nil values in the tail are never matched, unless\nlow=nil, high=nil, li=1, hi=1, anti=0.  All non-nil values are\nreturned if low=nil, high=nil, and li, hi are not both 1, or anti=1.\nNote that the output is suitable as second input for this\nfunction.", args(1,8, batarg("",oid),batargany("b",1),batarg("s",oid),argany("low",1),argany("high",1),arg("li",bit),arg("hi",bit),arg("anti",bit))),
  command("mask", "select", MSKselect1nil, false, "With unknown set, each nil != nil", args(1,8, batarg("",oid),batargany("b",1),argany("low",1),argany("high",1),arg("li",bit),arg("hi",bit),arg("anti",bit),arg("unknown",bit))),
