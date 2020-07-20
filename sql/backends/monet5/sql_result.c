@@ -34,14 +34,14 @@
 
 #define normal_int_SWAP(i) (((0x000000ff&(i))<<24) | ((0x0000ff00&(i))<<8) | \
 			    ((0x00ff0000&(i))>>8)  | ((0xff000000&(i))>>24))
-#define long_long_SWAP(l)				\
-		((((lng)normal_int_SWAP(l))<<32) |	\
+#define long_long_SWAP(l)						\
+		((((lng)normal_int_SWAP(l))<<32) |		\
 		 (0xffffffff&normal_int_SWAP(l>>32)))
 #endif
 
 #ifdef HAVE_HGE
-#define huge_int_SWAP(h)					\
-		((((hge)long_long_SWAP(h))<<64) |		\
+#define huge_int_SWAP(h)								\
+		((((hge)long_long_SWAP(h))<<64) |				\
 		 (0xffffffffffffffff&long_long_SWAP(h>>64)))
 #endif
 
@@ -50,58 +50,58 @@ mnstr_swap_lng(stream *s, lng lngval) {
 	return mnstr_get_swapbytes(s) ? long_long_SWAP(lngval) : lngval;
 }
 
-#define DEC_TOSTR(TYPE)							\
-	do {								\
-		char buf[64];						\
-		TYPE v = *(const TYPE *) a;				\
-		int scale = (int) (ptrdiff_t) extra;			\
-		int cur = 63, i, done = 0;				\
-		int neg = v < 0;					\
-		ssize_t l;						\
-		if (is_##TYPE##_nil(v)) {				\
-			if (*len < 5){					\
-				if (*Buf)				\
-					GDKfree(*Buf);			\
-				*len = 5;				\
-				*Buf = GDKzalloc(*len);			\
-				if (*Buf == NULL) {			\
-					return -1;			\
-				}					\
-			}						\
-			strcpy(*Buf, "NULL");				\
-			return 4;					\
-		}							\
-		if (v<0)						\
-			v = -v;						\
-		buf[cur--] = 0;						\
-		if (scale){						\
-			for (i=0; i<scale; i++) {			\
+#define DEC_TOSTR(TYPE)								\
+	do {											\
+		char buf[64];								\
+		TYPE v = *(const TYPE *) a;					\
+		int scale = (int) (ptrdiff_t) extra;		\
+		int cur = 63, i, done = 0;					\
+		int neg = v < 0;							\
+		ssize_t l;									\
+		if (is_##TYPE##_nil(v)) {					\
+			if (*len < 5){							\
+				if (*Buf)							\
+					GDKfree(*Buf);					\
+				*len = 5;							\
+				*Buf = GDKzalloc(*len);				\
+				if (*Buf == NULL) {					\
+					return -1;						\
+				}									\
+			}										\
+			strcpy(*Buf, "NULL");					\
+			return 4;								\
+		}											\
+		if (v<0)									\
+			v = -v;									\
+		buf[cur--] = 0;								\
+		if (scale){									\
+			for (i=0; i<scale; i++) {				\
 				buf[cur--] = (char) (v%10 + '0');	\
-				v /= 10;				\
-			}						\
-			buf[cur--] = '.';				\
-		}							\
-		while (v) {						\
+				v /= 10;							\
+			}										\
+			buf[cur--] = '.';						\
+		}											\
+		while (v) {									\
 			buf[cur--] = (char ) (v%10 + '0');		\
-			v /= 10;					\
-			done = 1;					\
-		}							\
-		if (!done)						\
-			buf[cur--] = '0';				\
-		if (neg)						\
-			buf[cur--] = '-';				\
-		l = (64-cur-1);						\
-		if ((ssize_t) *len < l){				\
-			if (*Buf)					\
-				GDKfree(*Buf);				\
-			*len = (size_t) l+1;				\
-			*Buf = GDKzalloc(*len);				\
-			if (*Buf == NULL) {				\
-				return -1;				\
-			}						\
-		}							\
-		strcpy(*Buf, buf+cur+1);				\
-		return l-1;						\
+			v /= 10;								\
+			done = 1;								\
+		}											\
+		if (!done)									\
+			buf[cur--] = '0';						\
+		if (neg)									\
+			buf[cur--] = '-';						\
+		l = (64-cur-1);								\
+		if ((ssize_t) *len < l){					\
+			if (*Buf)								\
+				GDKfree(*Buf);						\
+			*len = (size_t) l+1;					\
+			*Buf = GDKzalloc(*len);					\
+			if (*Buf == NULL) {						\
+				return -1;							\
+			}										\
+		}											\
+		strcpy(*Buf, buf+cur+1);					\
+		return l-1;									\
 	} while (0)
 
 static ssize_t
