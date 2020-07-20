@@ -38,7 +38,6 @@ rel_parse(mvc *m, sql_schema *s, char *query, char emode)
 
 	m->qc = NULL;
 
-	m->caching = 0;
 	m->emode = emode;
 	if (s)
 		m->session->schema = s;
@@ -65,12 +64,10 @@ rel_parse(mvc *m, sql_schema *s, char *query, char emode)
 		return NULL;
 	}
 	scanner_init( &m->scanner, bs, NULL);
-	m->scanner.mode = LINE_1; 
+	m->scanner.mode = LINE_1;
 	bstream_next(m->scanner.rs);
 
 	m->params = NULL;
-	/*m->args = NULL;*/
-	m->argc = 0;
 	m->sym = NULL;
 	m->errstr[0] = '\0';
 	/* via views we give access to protected objects */
@@ -88,7 +85,6 @@ rel_parse(mvc *m, sql_schema *s, char *query, char emode)
 	m->sym = NULL;
 	o.frames = m->frames;	/* may have been realloc'ed */
 	o.sizeframes = m->sizeframes;
-	o.query = m->query;
 	if (m->session->status || m->errstr[0]) {
 		int status = m->session->status;
 
@@ -107,7 +103,7 @@ rel_parse(mvc *m, sql_schema *s, char *query, char emode)
 	return rel;
 }
 
-sql_rel * 
+sql_rel *
 rel_semantic(sql_query *query, symbol *s)
 {
 	mvc *sql = query->sql;
@@ -171,7 +167,7 @@ rel_semantic(sql_query *query, symbol *s)
 	case SQL_DECLARE:
 	case SQL_CALL:
 	case SQL_SET:
-	
+
 	case SQL_CREATE_TABLE_LOADER:
 
 	case SQL_CREATE_TRIGGER:
@@ -222,7 +218,7 @@ rel_semantic(sql_query *query, symbol *s)
 		symbol *sym = d->data.sym;
 		sql_rel *r = rel_semantic(query, sym);
 
-		if (!r) 
+		if (!r)
 			return NULL;
 		return r;
 	}

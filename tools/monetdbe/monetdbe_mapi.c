@@ -1,3 +1,10 @@
+/*
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0.  If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ *
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
+ */
 
 #include "monetdb_config.h"
 #include "stream.h"
@@ -15,7 +22,7 @@ mapi_error(Mapi mid)
 	return MOK;
 }
 
-MapiHdl 
+MapiHdl
 mapi_query(Mapi mid, const char *query)
 {
 	MapiHdl mh = (MapiHdl)MAPIalloc(sizeof(struct MapiStatement));
@@ -58,11 +65,12 @@ mapi_close_handle(MapiHdl hdl)
 	return MOK;
 }
 
-int 
+int
 mapi_fetch_row(MapiHdl hdl)
 {
 	int n = 0;
-	if (hdl && hdl->current_row < hdl->result->nrows) {
+
+	if (hdl && hdl->result && hdl->current_row < hdl->result->nrows) {
 		n = (int) ++hdl->current_row;
 	}
 	return n;
@@ -198,7 +206,7 @@ mapi_get_type(MapiHdl hdl, int fnr)
 	return NULL;
 }
 
-MapiMsg 
+MapiMsg
 mapi_seek_row(MapiHdl hdl, int64_t rowne, int whence)
 {
 	if (hdl && rowne == 0 && whence == MAPI_SEEK_SET) {
@@ -207,7 +215,7 @@ mapi_seek_row(MapiHdl hdl, int64_t rowne, int whence)
 	return MOK;
 }
 
-int64_t 
+int64_t
 mapi_get_row_count(MapiHdl hdl)
 {
 	if (hdl) {
@@ -216,8 +224,8 @@ mapi_get_row_count(MapiHdl hdl)
 	return 0;
 }
 
-int64_t 
-mapi_rows_affected(MapiHdl hdl) 
+int64_t
+mapi_rows_affected(MapiHdl hdl)
 {
 	if (hdl) {
 		if (hdl->result)
@@ -227,7 +235,7 @@ mapi_rows_affected(MapiHdl hdl)
 	return 0;
 }
 
-int 
+int
 mapi_get_field_count(MapiHdl hdl)
 {
 	if (hdl) {

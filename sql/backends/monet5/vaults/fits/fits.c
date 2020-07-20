@@ -543,7 +543,7 @@ str FITSexportTable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		}
 	}
 
-	 
+
 	// print all the times that were needed to export each one of the columns
 	if (texportboolean > 0)		TRC_DEBUG(FITS, "%d Boolean\tcolumn(s) exported in %d ms\n", boolcols, texportboolean);
 	if (texportchar > 0)		TRC_DEBUG(FITS, "%d Char\t\tcolumn(s) exported in %d ms\n", charcols, texportchar);

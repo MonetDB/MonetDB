@@ -168,7 +168,7 @@ BLOBput(Heap *h, var_t *bun, const void *VAL)
 	return *bun;
 }
 
-static inline int 
+static inline int
 blob_nitems(blob *b)
 {
 	if (is_blob_nil(b))
@@ -199,7 +199,7 @@ BLOBnitems_bulk(bat *ret, const bat *bid)
 	}
 	n = BATcount(b);
 	if ((bn = COLnew(b->hseqbase, TYPE_int, n, TRANSIENT)) == NULL) {
-		msg = createException(MAL, "blob.nitems_bulk", SQLSTATE(HY013) MAL_MALLOC_FAIL); 
+		msg = createException(MAL, "blob.nitems_bulk", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		goto bailout;
 	}
 	dst = Tloc(bn, 0);
@@ -248,7 +248,7 @@ BLOBtostr(str *tostr, size_t *l, const void *P, bool external)
 	if (is_blob_nil(p))
 		expectedlen = external ? 4 : 2;
 	else
-		expectedlen = 24 + (p->nitems * 3);
+		expectedlen = p->nitems * 2 + 1;
 	if (*l < expectedlen || *tostr == NULL) {
 		GDKfree(*tostr);
 		*tostr = GDKmalloc(expectedlen);
@@ -397,7 +397,7 @@ BLOBblob_fromstr(blob **b, const char **s)
 
 #include "mel.h"
 static mel_atom blob_init_atoms[] = {
- { .name="blob", .tostr=BLOBtostr, .fromstr=BLOBfromstr, .cmp=BLOBcmp, .hash=BLOBhash, .null=BLOBnull, .read=BLOBread, .write=BLOBwrite, .put=BLOBput, .del=BLOBdel, .length=BLOBlength, .heap=BLOBheap, },  { .cmp=NULL } 
+ { .name="blob", .tostr=BLOBtostr, .fromstr=BLOBfromstr, .cmp=BLOBcmp, .hash=BLOBhash, .null=BLOBnull, .read=BLOBread, .write=BLOBwrite, .put=BLOBput, .del=BLOBdel, .length=BLOBlength, .heap=BLOBheap, },  { .cmp=NULL }
 };
 static mel_func blob_init_funcs[] = {
  command("blob", "blob", BLOBblob_blob, false, "Noop routine.", args(1,2, arg("",blob),arg("s",blob))),

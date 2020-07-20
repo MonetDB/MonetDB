@@ -77,8 +77,8 @@ stdout of test 'crash_function_returning_sample.Bug-6291` in directory 'sql/test
 #SELECT avg(v) FROM amostra('2011-01-01', 'DF');
 % .%4 # table_name
 % %4 # name
-% double # type
-% 24 # length
+% decimal # type
+% 11 # length
 [ 123.45	]
 #DROP FUNCTION amostra;
 #DROP TABLE payments;

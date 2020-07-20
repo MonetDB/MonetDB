@@ -617,6 +617,97 @@ AGGRsubavg2scand_dbl(bat *retval1, bat *retval2, const bat *bid, const bat *gid,
 }
 
 static str
+AGGRavg3(bat *retval1, bat *retval2, bat *retval3, const bat *bid, const bat *gid, const bat *eid, const bat *sid, const bit *skip_nils)
+{
+	BAT *b, *g, *e, *s, *avgs, *cnts, *rems;
+	gdk_return rc;
+
+	b = BATdescriptor(*bid);
+	g = gid != NULL && !is_bat_nil(*gid) ? BATdescriptor(*gid) : NULL;
+	e = eid != NULL && !is_bat_nil(*eid) ? BATdescriptor(*eid) : NULL;
+	s = sid != NULL && !is_bat_nil(*sid) ? BATdescriptor(*sid) : NULL;
+
+	if (b == NULL ||
+		(gid != NULL && !is_bat_nil(*gid) && g == NULL) ||
+		(eid != NULL && !is_bat_nil(*eid) && e == NULL) ||
+		(sid != NULL && !is_bat_nil(*sid) && s == NULL)) {
+		if (b)
+			BBPunfix(b->batCacheid);
+		if (g)
+			BBPunfix(g->batCacheid);
+		if (e)
+			BBPunfix(e->batCacheid);
+		if (s)
+			BBPunfix(s->batCacheid);
+		throw(MAL, "aggr.subavg", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
+	}
+
+	rc = BATgroupavg3(&avgs, &rems, &cnts, b, g, e, s, *skip_nils);
+
+	BBPunfix(b->batCacheid);
+	if (g)
+		BBPunfix(g->batCacheid);
+	if (e)
+		BBPunfix(e->batCacheid);
+	if (s)
+		BBPunfix(s->batCacheid);
+	if (rc != GDK_SUCCEED)
+		throw(MAL, "aggr.subavg", GDK_EXCEPTION);
+	*retval1 = avgs->batCacheid;
+	BBPkeepref(avgs->batCacheid);
+	*retval2 = rems->batCacheid;
+	BBPkeepref(rems->batCacheid);
+	*retval3 = cnts->batCacheid;
+	BBPkeepref(cnts->batCacheid);
+	return MAL_SUCCEED;
+}
+
+static str
+AGGRavg3comb(bat *retval1, const bat *bid, const bat *rid, const bat *cid, const bat *gid, const bat *eid, const bit *skip_nils)
+{
+	BAT *b, *r, *c, *g, *e, *bn;
+
+	b = BATdescriptor(*bid);
+	r = BATdescriptor(*rid);
+	c = BATdescriptor(*cid);
+	g = gid != NULL && !is_bat_nil(*gid) ? BATdescriptor(*gid) : NULL;
+	e = eid != NULL && !is_bat_nil(*eid) ? BATdescriptor(*eid) : NULL;
+
+	if (b == NULL ||
+		r == NULL ||
+		c == NULL ||
+		(gid != NULL && !is_bat_nil(*gid) && g == NULL) ||
+		(eid != NULL && !is_bat_nil(*eid) && e == NULL)) {
+		if (b)
+			BBPunfix(b->batCacheid);
+		if (r)
+			BBPunfix(r->batCacheid);
+		if (c)
+			BBPunfix(c->batCacheid);
+		if (g)
+			BBPunfix(g->batCacheid);
+		if (e)
+			BBPunfix(e->batCacheid);
+		throw(MAL, "aggr.subavg", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
+	}
+
+	bn = BATgroupavg3combine(b, r, c, g, e, *skip_nils);
+
+	BBPunfix(b->batCacheid);
+	BBPunfix(r->batCacheid);
+	BBPunfix(c->batCacheid);
+	if (g)
+		BBPunfix(g->batCacheid);
+	if (e)
+		BBPunfix(e->batCacheid);
+	if (bn == NULL)
+		throw(MAL, "aggr.subavg", GDK_EXCEPTION);
+	*retval1 = bn->batCacheid;
+	BBPkeepref(bn->batCacheid);
+	return MAL_SUCCEED;
+}
+
+static str
 AGGRsubstdev_dbl(bat *retval, const bat *bid, const bat *gid, const bat *eid, const bit *skip_nils, const bit *abort_on_error)
 {
 	return AGGRgrouped(retval, NULL, bid, gid, eid, NULL, *skip_nils,
@@ -984,7 +1075,7 @@ AGGRsubstr_group_concatcand_sep(bat *retval, const bat *bid, const bat *sep, con
 }
 
 static str
-AGGRgrouped2(bat *retval, const bat *bid1, const bat *bid2, const bat *gid, const bat *eid, const bat *sid, bool skip_nils, bool abort_on_error, 
+AGGRgrouped2(bat *retval, const bat *bid1, const bat *bid2, const bat *gid, const bat *eid, const bat *sid, bool skip_nils, bool abort_on_error,
 			 int tp, BAT *(*func)(BAT *, BAT *, BAT *, BAT *, BAT *, int tp, bool skip_nils, bool abort_on_error),
 			 const char *malfunc)
 {
@@ -1411,6 +1502,22 @@ mel_func aggr_init_funcs[] = {
  command("aggr", "str_group_concat", AGGRstr_group_concat_sep, false, "Grouped string tail concat with custom separator", args(1,5, batarg("",str),batarg("b",str),batarg("sep",str),batarg("g",oid),batargany("e",1))),
  command("aggr", "substr_group_concat", AGGRsubstr_group_concat_sep, false, "Grouped string concat with custom separator", args(1,7, batarg("",str),batarg("b",str),batarg("sep",str),batarg("g",oid),batargany("e",1),arg("skip_nils",bit),arg("abort_on_error",bit))),
  command("aggr", "substr_group_concat", AGGRsubstr_group_concatcand_sep, false, "Grouped string concat with candidates list with custom separator", args(1,8, batarg("",str),batarg("b",str),batarg("sep",str),batarg("g",oid),batargany("e",1),batarg("s",oid),arg("skip_nils",bit),arg("abort_on_error",bit))),
+
+ command("aggr", "subavg", AGGRavg3, false, "Grouped average aggregation", args(3,8, batarg("",bte),batarg("",lng),batarg("",lng),batarg("b",bte),batarg("g",oid),batargany("e",1),batarg("s",oid),arg("skip_nils",bit))),
+ command("aggr", "subavg", AGGRavg3, false, "Grouped average aggregation", args(3,8, batarg("",sht),batarg("",lng),batarg("",lng),batarg("b",sht),batarg("g",oid),batargany("e",1),batarg("s",oid),arg("skip_nils",bit))),
+ command("aggr", "subavg", AGGRavg3, false, "Grouped average aggregation", args(3,8, batarg("",int),batarg("",lng),batarg("",lng),batarg("b",int),batarg("g",oid),batargany("e",1),batarg("s",oid),arg("skip_nils",bit))),
+ command("aggr", "subavg", AGGRavg3, false, "Grouped average aggregation", args(3,8, batarg("",lng),batarg("",lng),batarg("",lng),batarg("b",lng),batarg("g",oid),batargany("e",1),batarg("s",oid),arg("skip_nils",bit))),
+#ifdef HAVE_HGE
+ command("aggr", "subavg", AGGRavg3, false, "Grouped average aggregation", args(3,8, batarg("",hge),batarg("",lng),batarg("",lng),batarg("b",hge),batarg("g",oid),batargany("e",1),batarg("s",oid),arg("skip_nils",bit))),
+#endif
+ command("aggr", "subavg", AGGRavg3comb, false, "Grouped average aggregation combiner", args(1,7, batarg("",bte),batarg("b",bte),batarg("r",lng),batarg("c",lng),batarg("g",oid),batargany("e",1),arg("skip_nils",bit))),
+ command("aggr", "subavg", AGGRavg3comb, false, "Grouped average aggregation combiner", args(1,7, batarg("",sht),batarg("b",sht),batarg("r",lng),batarg("c",lng),batarg("g",oid),batargany("e",1),arg("skip_nils",bit))),
+ command("aggr", "subavg", AGGRavg3comb, false, "Grouped average aggregation combiner", args(1,7, batarg("",int),batarg("b",int),batarg("r",lng),batarg("c",lng),batarg("g",oid),batargany("e",1),arg("skip_nils",bit))),
+ command("aggr", "subavg", AGGRavg3comb, false, "Grouped average aggregation combiner", args(1,7, batarg("",lng),batarg("b",lng),batarg("r",lng),batarg("c",lng),batarg("g",oid),batargany("e",1),arg("skip_nils",bit))),
+#ifdef HAVE_HGE
+ command("aggr", "subavg", AGGRavg3comb, false, "Grouped average aggregation combiner", args(1,7, batarg("",hge),batarg("b",hge),batarg("r",lng),batarg("c",lng),batarg("g",oid),batargany("e",1),arg("skip_nils",bit))),
+#endif
+
 #ifdef HAVE_HGE
  command("aggr", "sum", AGGRsum3_hge, false, "Grouped tail sum on bte", args(1,4, batarg("",hge),batarg("b",bte),batarg("g",oid),batargany("e",1))),
  command("aggr", "subsum", AGGRsubsum_hge, false, "Grouped sum aggregate", args(1,6, batarg("",hge),batarg("b",bte),batarg("g",oid),batargany("e",1),arg("skip_nils",bit),arg("abort_on_error",bit))),

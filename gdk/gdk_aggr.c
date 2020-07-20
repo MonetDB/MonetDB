@@ -10,7 +10,6 @@
 #include "gdk.h"
 #include "gdk_private.h"
 #include "gdk_calc_private.h"
-#include <math.h>
 
 /* grouped aggregates
  *
@@ -432,7 +431,7 @@ dofsum(const void *restrict values, oid seqb,
 	return nils;
 
   overflow:
-	GDKerror("22003!overflow in calculation.\n");
+	GDKerror("22003!overflow in sum aggregate.\n");
   bailout:
 	for (grp = 0; grp < ngrp; grp++)
 		GDKfree(pergroup[grp].partials);
@@ -875,7 +874,7 @@ dosum(const void *restrict values, bool nonil, oid seqb,
 
   overflow:
 	GDKfree(seen);
-	GDKerror("22003!overflow in calculation.\n");
+	GDKerror("22003!overflow in sum aggregate.\n");
 	return BUN_NONE;
 }
 
@@ -1027,7 +1026,7 @@ BATsum(void *res, int tp, BAT *b, BAT *s, bool skip_nils, bool abort_on_error, b
 				else if (cnt > 0 &&
 					 GDK_flt_max / cnt < fabs(avg)) {
 					if (abort_on_error) {
-						GDKerror("22003!overflow in calculation.\n");
+						GDKerror("22003!overflow in sum aggregate.\n");
 						return GDK_FAIL;
 					}
 					*(flt *) res = flt_nil;
@@ -1040,7 +1039,7 @@ BATsum(void *res, int tp, BAT *b, BAT *s, bool skip_nils, bool abort_on_error, b
 				} else if (cnt > 0 &&
 					   GDK_dbl_max / cnt < fabs(avg)) {
 					if (abort_on_error) {
-						GDKerror("22003!overflow in calculation.\n");
+						GDKerror("22003!overflow in sum aggregate.\n");
 						return GDK_FAIL;
 					}
 					*(dbl *) res = dbl_nil;
@@ -1452,7 +1451,7 @@ doprod(const void *restrict values, oid seqb, struct canditer *restrict ci, BUN 
 
   overflow:
 	GDKfree(seen);
-	GDKerror("22003!overflow in calculation.\n");
+	GDKerror("22003!overflow in product aggregate.\n");
 	return BUN_NONE;
 }
 
@@ -1672,7 +1671,7 @@ BATgroupavg(BAT **bnp, BAT **cntsp, BAT *b, BAT *g, BAT *e, BAT *s, int tp, bool
 	oid min, max;
 	BUN i, ngrp;
 	BUN nils = 0;
-	BUN *restrict rems = NULL;
+	lng *restrict rems = NULL;
 	lng *restrict cnts = NULL;
 	dbl *restrict dbls;
 	BAT *bn = NULL, *cn = NULL;
@@ -1744,7 +1743,7 @@ BATgroupavg(BAT **bnp, BAT **cntsp, BAT *b, BAT *g, BAT *e, BAT *s, int tp, bool
 #ifdef HAVE_HGE
 	case TYPE_hge:
 #endif
-		rems = GDKzalloc(ngrp * sizeof(BUN));
+		rems = GDKzalloc(ngrp * sizeof(lng));
 		if (rems == NULL)
 			goto alloc_fail;
 		break;
@@ -1853,6 +1852,902 @@ BATgroupavg(BAT **bnp, BAT **cntsp, BAT *b, BAT *g, BAT *e, BAT *s, int tp, bool
 	return GDK_FAIL;
 }
 
+/* An exact numeric average of a bunch of values consists of three parts: the
+ * average rounded down (towards minus infinity), the number of values that
+ * participated in the calculation, and the remainder.  The remainder is in the
+ * range 0 (inclusive) to count (not inclusive).  BATgroupavg3 calculates these
+ * values for each given group.  The function below, BATgroupavg3combine,
+ * combines averages calculated this way to correct, rounded or truncated
+ * towards zero (depending on the symbol TRUNCATE_NUMBERS) averages. */
+gdk_return
+BATgroupavg3(BAT **avgp, BAT **remp, BAT **cntp, BAT *b, BAT *g, BAT *e, BAT *s, bool skip_nils)
+{
+	const char *err;
+	oid min, max;
+	BUN ngrp;
+	struct canditer ci;
+	BUN ncand;
+	BAT *bn, *rn, *cn;
+	BUN i;
+	oid o;
+
+	if ((err = BATgroupaggrinit(b, g, e, s, &min, &max, &ngrp, &ci, &ncand)) != NULL) {
+		GDKerror("%s\n", err);
+		return GDK_FAIL;
+	}
+	if (ncand == 0 || ngrp == 0) {
+		if (ngrp == 0)
+			min = 0;
+		bn = BATconstant(min, b->ttype, ATOMnilptr(b->ttype),
+				 ngrp, TRANSIENT);
+		rn = BATconstant(min, TYPE_lng, &lng_nil, ngrp, TRANSIENT);
+		cn = BATconstant(min, TYPE_lng, &(lng){0}, ngrp, TRANSIENT);
+		if (bn == NULL || rn == NULL || cn == NULL) {
+			BBPreclaim(bn);
+			BBPreclaim(rn);
+			BBPreclaim(cn);
+			return GDK_FAIL;
+		}
+		*avgp = bn;
+		*remp = rn;
+		*cntp = cn;
+		return GDK_SUCCEED;
+	}
+	ValRecord zero;
+	(void) VALinit(&zero, TYPE_bte, &(bte){0});
+	bn = BATconstant(min, b->ttype, VALconvert(b->ttype, &zero),
+			 ngrp, TRANSIENT);
+	rn = BATconstant(min, TYPE_lng, &(lng){0}, ngrp, TRANSIENT);
+	cn = BATconstant(min, TYPE_lng, &(lng){0}, ngrp, TRANSIENT);
+	if (bn == NULL || rn == NULL || cn == NULL) {
+		BBPreclaim(bn);
+		BBPreclaim(rn);
+		BBPreclaim(cn);
+		return GDK_FAIL;
+	}
+	lng *rems = Tloc(rn, 0);
+	lng *cnts = Tloc(cn, 0);
+	const oid *gids = g && !BATtdense(g) ? Tloc(g, 0) : NULL;
+	oid gid = ngrp == 1 && gids ? gids[0] - min : 0;
+
+	switch (ATOMbasetype(b->ttype)) {
+	case TYPE_bte: {
+		const bte *vals = Tloc(b, 0);
+		bte *avgs = Tloc(bn, 0);
+		for (i = 0; i < ncand; i++) {
+			o = canditer_next(&ci) - b->hseqbase;
+			if (ngrp > 1)
+				gid = gids ? gids[o] - min : o;
+			if (is_bte_nil(vals[o])) {
+				if (!skip_nils) {
+					avgs[gid] = bte_nil;
+					rems[gid] = lng_nil;
+					cnts[gid] = lng_nil;
+					bn->tnil = true;
+					rn->tnil = true;
+					cn->tnil = true;
+				}
+			} else if (!is_lng_nil(cnts[gid])) {
+				AVERAGE_ITER(bte, vals[o], avgs[gid], rems[gid], cnts[gid]);
+			}
+		}
+		for (i = 0; i < ngrp; i++) {
+			if (cnts[i] == 0) {
+				avgs[i] = bte_nil;
+				bn->tnil = true;
+			} else
+#ifdef TRUNCATE_NUMBERS
+			if (!is_bte_nil(avgs[i]) && rems[i] > 0 && avgs[i] < 0) {
+				avgs[i]++;
+				rems[i] -= cnts[i];
+			}
+#else
+			if (!is_bte_nil(avgs[i]) && rems[i] > 0) {
+				if (avgs[i] < 0) {
+					if (2*rems[i] > cnts[i]) {
+						avgs[i]++;
+						rems[i] -= cnts[i];
+					}
+				} else {
+					if (2*rems[i] >= cnts[i]) {
+						avgs[i]++;
+						rems[i] -= cnts[i];
+					}
+				}
+			}
+#endif
+		}
+		break;
+	}
+	case TYPE_sht: {
+		const sht *vals = Tloc(b, 0);
+		sht *avgs = Tloc(bn, 0);
+		for (i = 0; i < ncand; i++) {
+			o = canditer_next(&ci) - b->hseqbase;
+			if (ngrp > 1)
+				gid = gids ? gids[o] - min : o;
+			if (is_sht_nil(vals[o])) {
+				if (!skip_nils) {
+					avgs[gid] = sht_nil;
+					rems[gid] = lng_nil;
+					cnts[gid] = lng_nil;
+					bn->tnil = true;
+					rn->tnil = true;
+					cn->tnil = true;
+				}
+			} else if (!is_lng_nil(cnts[gid])) {
+				AVERAGE_ITER(sht, vals[o], avgs[gid], rems[gid], cnts[gid]);
+			}
+		}
+		for (i = 0; i < ngrp; i++) {
+			if (cnts[i] == 0) {
+				avgs[i] = sht_nil;
+				bn->tnil = true;
+			} else
+#ifdef TRUNCATE_NUMBERS
+			if (!is_sht_nil(avgs[i]) && rems[i] > 0 && avgs[i] < 0) {
+				avgs[i]++;
+				rems[i] -= cnts[i];
+			}
+#else
+			if (!is_sht_nil(avgs[i]) && rems[i] > 0) {
+				if (avgs[i] < 0) {
+					if (2*rems[i] > cnts[i]) {
+						avgs[i]++;
+						rems[i] -= cnts[i];
+					}
+				} else {
+					if (2*rems[i] >= cnts[i]) {
+						avgs[i]++;
+						rems[i] -= cnts[i];
+					}
+				}
+			}
+#endif
+		}
+		break;
+	}
+	case TYPE_int: {
+		const int *vals = Tloc(b, 0);
+		int *avgs = Tloc(bn, 0);
+		for (i = 0; i < ncand; i++) {
+			o = canditer_next(&ci) - b->hseqbase;
+			if (ngrp > 1)
+				gid = gids ? gids[o] - min : o;
+			if (is_int_nil(vals[o])) {
+				if (!skip_nils) {
+					avgs[gid] = int_nil;
+					rems[gid] = lng_nil;
+					cnts[gid] = lng_nil;
+					bn->tnil = true;
+					rn->tnil = true;
+					cn->tnil = true;
+				}
+			} else if (!is_lng_nil(cnts[gid])) {
+				AVERAGE_ITER(int, vals[o], avgs[gid], rems[gid], cnts[gid]);
+			}
+		}
+		for (i = 0; i < ngrp; i++) {
+			if (cnts[i] == 0) {
+				avgs[i] = int_nil;
+				bn->tnil = true;
+			} else
+#ifdef TRUNCATE_NUMBERS
+			if (!is_int_nil(avgs[i]) && rems[i] > 0 && avgs[i] < 0) {
+				avgs[i]++;
+				rems[i] -= cnts[i];
+			}
+#else
+			if (!is_int_nil(avgs[i]) && rems[i] > 0) {
+				if (avgs[i] < 0) {
+					if (2*rems[i] > cnts[i]) {
+						avgs[i]++;
+						rems[i] -= cnts[i];
+					}
+				} else {
+					if (2*rems[i] >= cnts[i]) {
+						avgs[i]++;
+						rems[i] -= cnts[i];
+					}
+				}
+			}
+#endif
+		}
+		break;
+	}
+	case TYPE_lng: {
+		const lng *vals = Tloc(b, 0);
+		lng *avgs = Tloc(bn, 0);
+		for (i = 0; i < ncand; i++) {
+			o = canditer_next(&ci) - b->hseqbase;
+			if (ngrp > 1)
+				gid = gids ? gids[o] - min : o;
+			if (is_lng_nil(vals[o])) {
+				if (!skip_nils) {
+					avgs[gid] = lng_nil;
+					rems[gid] = lng_nil;
+					cnts[gid] = lng_nil;
+					bn->tnil = true;
+					rn->tnil = true;
+					cn->tnil = true;
+				}
+			} else if (!is_lng_nil(cnts[gid])) {
+				AVERAGE_ITER(lng, vals[o], avgs[gid], rems[gid], cnts[gid]);
+			}
+		}
+		for (i = 0; i < ngrp; i++) {
+			if (cnts[i] == 0) {
+				avgs[i] = lng_nil;
+				bn->tnil = true;
+			} else
+#ifdef TRUNCATE_NUMBERS
+			if (!is_lng_nil(avgs[i]) && rems[i] > 0 && avgs[i] < 0) {
+				avgs[i]++;
+				rems[i] -= cnts[i];
+			}
+#else
+			if (!is_lng_nil(avgs[i]) && rems[i] > 0) {
+				if (avgs[i] < 0) {
+					if (2*rems[i] > cnts[i]) {
+						avgs[i]++;
+						rems[i] -= cnts[i];
+					}
+				} else {
+					if (2*rems[i] >= cnts[i]) {
+						avgs[i]++;
+						rems[i] -= cnts[i];
+					}
+				}
+			}
+#endif
+		}
+		break;
+	}
+#ifdef HAVE_HGE
+	case TYPE_hge: {
+		const hge *vals = Tloc(b, 0);
+		hge *avgs = Tloc(bn, 0);
+		for (i = 0; i < ncand; i++) {
+			o = canditer_next(&ci) - b->hseqbase;
+			if (ngrp > 1)
+				gid = gids ? gids[o] - min : o;
+			if (is_hge_nil(vals[o])) {
+				if (!skip_nils) {
+					avgs[gid] = hge_nil;
+					rems[gid] = lng_nil;
+					cnts[gid] = lng_nil;
+					bn->tnil = true;
+					rn->tnil = true;
+					cn->tnil = true;
+				}
+			} else if (!is_lng_nil(cnts[gid])) {
+				AVERAGE_ITER(hge, vals[o], avgs[gid], rems[gid], cnts[gid]);
+			}
+		}
+		for (i = 0; i < ngrp; i++) {
+			if (cnts[i] == 0) {
+				avgs[i] = hge_nil;
+				bn->tnil = true;
+			} else
+#ifdef TRUNCATE_NUMBERS
+			if (!is_hge_nil(avgs[i]) && rems[i] > 0 && avgs[i] < 0) {
+				avgs[i]++;
+				rems[i] -= cnts[i];
+			}
+#else
+			if (!is_hge_nil(avgs[i]) && rems[i] > 0) {
+				if (avgs[i] < 0) {
+					if (2*rems[i] > cnts[i]) {
+						avgs[i]++;
+						rems[i] -= cnts[i];
+					}
+				} else {
+					if (2*rems[i] >= cnts[i]) {
+						avgs[i]++;
+						rems[i] -= cnts[i];
+					}
+				}
+			}
+#endif
+		}
+		break;
+	}
+#endif
+	}
+	BATsetcount(bn, ngrp);
+	BATsetcount(rn, ngrp);
+	BATsetcount(cn, ngrp);
+	bn->tnonil = !bn->tnil;
+	rn->tnonil = !rn->tnil;
+	cn->tnonil = !cn->tnil;
+	bn->tkey = rn->tkey = cn->tkey = ngrp == 1;
+	bn->tsorted = rn->tsorted = cn->tsorted = ngrp == 1;
+	bn->trevsorted = rn->trevsorted = cn->trevsorted = ngrp == 1;
+	*avgp = bn;
+	*remp = rn;
+	*cntp = cn;
+	return GDK_SUCCEED;
+}
+
+#ifdef HAVE_HGE
+#define BIGINT uhge
+#else
+#define BIGINT uint64_t
+#endif
+/* calculate the values (a*b)/c and (a*b)%c but without causing overflow
+ *
+ * this function is from https://stackoverflow.com/a/8757419, only with the
+ * slight addition of returning the remainder and changing the first argument
+ * and return value to BIGINT */
+static inline BIGINT
+multdiv(BIGINT a, uint64_t b, uint64_t c, uint64_t *rem)
+{
+	static BIGINT const base = ((BIGINT)1)<<(sizeof(BIGINT)*4);
+//	static BIGINT const maxdiv = (base-1)*base + (base-1);
+	static BIGINT const maxdiv = ~(BIGINT)0;
+
+	// First get the easy thing
+	BIGINT res = (a/c) * b + (a%c) * (b/c);
+	a %= c;
+	b %= c;
+	// Are we done?
+	if (a == 0 || b == 0) {
+		*rem = 0;
+		return res;
+	}
+	// Is it easy to compute what remain to be added?
+	if (c < base) {
+		*rem = (uint64_t) ((a*b)%c);
+		return res + (a*b/c);
+	}
+	// Now 0 < a < c, 0 < b < c, c >= 1ULL
+	// Normalize
+	BIGINT norm = maxdiv/c;
+	BIGINT cbig = c * norm;	// orig: c *= norm; and below cbig was plain c
+	a *= norm;
+	// split into 2 digits
+	BIGINT ah = a / base, al = a % base;
+	BIGINT bh = b / base, bl = b % base;
+	BIGINT ch = cbig / base, cl = cbig % base;
+	// compute the product
+	BIGINT p0 = al*bl;
+	BIGINT p1 = p0 / base + al*bh;
+	p0 %= base;
+	BIGINT p2 = p1 / base + ah*bh;
+	p1 = (p1 % base) + ah * bl;
+	p2 += p1 / base;
+	p1 %= base;
+	// p2 holds 2 digits, p1 and p0 one
+
+	// first digit is easy, not null only in case of overflow
+	//BIGINT q2 = p2 / cbig;
+	p2 = p2 % cbig;
+
+	// second digit, estimate
+	BIGINT q1 = p2 / ch;
+	// and now adjust
+	BIGINT rhat = p2 % ch;
+	// the loop can be unrolled, it will be executed at most twice for
+	// even bases -- three times for odd one -- due to the normalisation above
+	while (q1 >= base || (rhat < base && q1*cl > rhat*base+p1)) {
+		q1--;
+		rhat += ch;
+	}
+	// subtract
+	p1 = ((p2 % base) * base + p1) - q1 * cl;
+	p2 = (p2 / base * base + p1 / base) - q1 * ch;
+	p1 = p1 % base + (p2 % base) * base;
+
+	// now p1 hold 2 digits, p0 one and p2 is to be ignored
+	BIGINT q0 = p1 / ch;
+	rhat = p1 % ch;
+	while (q0 >= base || (rhat < base && q0*cl > rhat*base+p0)) {
+		q0--;
+		rhat += ch;
+	}
+	// subtract
+	p0 = ((p1 % base) * base + p0) - q0 * cl;
+	p1 = (p1 / base * base + p0 / base) - q0 * ch;
+	p0 = p0 % base + (p1 % base) * base;
+
+	*rem = p0 / norm;
+	return res + q0 + q1 * base; // + q2 *base*base
+}
+
+static inline void
+combine_averages_bte(bte *avgp, lng *remp, lng *cntp,
+		     bte avg1, lng rem1, lng cnt1,
+		     bte avg2, lng rem2, lng cnt2)
+{
+	lng cnt = cnt1 + cnt2;
+
+	if (rem2 < 0) {
+		avg2--;
+		rem2 += cnt2;
+	}
+	*cntp = cnt;
+	lng v = avg1 * cnt1 + rem1 + avg2 * cnt2 + rem2;
+	bte a = (bte) (v / cnt);
+	v %= cnt;
+	if (v < 0) {
+		a--;
+		v += cnt;
+	}
+	*avgp = a;
+	*remp = v;
+}
+
+static inline void
+combine_averages_sht(sht *avgp, lng *remp, lng *cntp,
+		     sht avg1, lng rem1, lng cnt1,
+		     sht avg2, lng rem2, lng cnt2)
+{
+	lng cnt = cnt1 + cnt2;
+
+	if (rem2 < 0) {
+		avg2--;
+		rem2 += cnt2;
+	}
+	*cntp = cnt;
+	lng v = avg1 * cnt1 + rem1 + avg2 * cnt2 + rem2;
+	sht a = (sht) (v / cnt);
+	v %= cnt;
+	if (v < 0) {
+		a--;
+		v += cnt;
+	}
+	*avgp = a;
+	*remp = v;
+}
+
+
+static inline void
+combine_averages_int(int *avgp, lng *remp, lng *cntp,
+		     int avg1, lng rem1, lng cnt1,
+		     int avg2, lng rem2, lng cnt2)
+{
+	lng cnt = cnt1 + cnt2;
+
+	if (rem2 < 0) {
+		avg2--;
+		rem2 += cnt2;
+	}
+	*cntp = cnt;
+#ifdef HAVE_HGE
+	hge v = avg1 * cnt1 + rem1 + avg2 * cnt2 + rem2;
+	int a = (int) (v / cnt);
+	v %= cnt;
+	if (v < 0) {
+		a--;
+		v += cnt;
+	}
+	*avgp = a;
+	*remp = (lng) v;
+#else
+	if (cnt1 == 0) {
+		avg1 = 0;
+		rem1 = 0;
+	}
+	lng rem = rem1 + rem2;
+	lng v;
+	uint64_t r;
+	if (avg1 < 0) {
+		avg1 = (int) multdiv((uint64_t) -avg1, cnt1, cnt, &r);
+		if (r > 0) {
+			avg1 = -avg1 - 1;
+			r = cnt - r;
+		} else {
+			avg1 = -avg1;
+		}
+	} else {
+		avg1 = (int) multdiv((uint64_t) avg1, cnt1, cnt, &r);
+	}
+	v = avg1;
+	rem += r;
+	if (avg2 < 0) {
+		avg2 = (int) multdiv((uint64_t) -avg2, cnt2, cnt, &r);
+		if (r > 0) {
+			avg2 = -avg2 - 1;
+			r = cnt - r;
+		} else {
+			avg2 = -avg2;
+		}
+	} else {
+		avg2 = (int) multdiv((uint64_t) avg2, cnt2, cnt, &r);
+	}
+	v += avg2;
+	rem += r;
+	while (rem >= cnt) { /* max twice */
+		v++;
+		rem -= cnt;
+	}
+	*avgp = (int) v;
+	*remp = rem;
+#endif
+}
+
+static inline void
+combine_averages_lng(lng *avgp, lng *remp, lng *cntp,
+		     lng avg1, lng rem1, lng cnt1,
+		     lng avg2, lng rem2, lng cnt2)
+{
+	lng cnt = cnt1 + cnt2;
+
+	if (rem2 < 0) {
+		avg2--;
+		rem2 += cnt2;
+	}
+	*cntp = cnt;
+#ifdef HAVE_HGE
+	hge v = avg1 * cnt1 + rem1 + avg2 * cnt2 + rem2;
+	lng a = (lng) (v / cnt);
+	v %= cnt;
+	if (v < 0) {
+		a--;
+		v += cnt;
+	}
+	*avgp = a;
+	*remp = (lng) v;
+#else
+	if (cnt1 == 0) {
+		avg1 = 0;
+		rem1 = 0;
+	}
+	lng rem = rem1 + rem2;
+	lng v;
+	uint64_t r;
+	if (avg1 < 0) {
+		avg1 = (lng) multdiv((uint64_t) -avg1, cnt1, cnt, &r);
+		if (r > 0) {
+			avg1 = -avg1 - 1;
+			r = cnt - r;
+		} else {
+			avg1 = -avg1;
+		}
+	} else {
+		avg1 = (lng) multdiv((uint64_t) avg1, cnt1, cnt, &r);
+	}
+	v = avg1;
+	rem += r;
+	if (avg2 < 0) {
+		avg2 = (lng) multdiv((uint64_t) -avg2, cnt2, cnt, &r);
+		if (r > 0) {
+			avg2 = -avg2 - 1;
+			r = cnt - r;
+		} else {
+			avg2 = -avg2;
+		}
+	} else {
+		avg2 = (lng) multdiv((uint64_t) avg2, cnt2, cnt, &r);
+	}
+	v += avg2;
+	rem += r;
+	while (rem >= cnt) { /* max twice */
+		v++;
+		rem -= cnt;
+	}
+	*avgp = v;
+	*remp = rem;
+#endif
+}
+
+#ifdef HAVE_HGE
+static inline void
+combine_averages_hge(hge *avgp, lng *remp, lng *cntp,
+		     hge avg1, lng rem1, lng cnt1,
+		     hge avg2, lng rem2, lng cnt2)
+{
+	if (cnt1 == 0) {
+		avg1 = 0;
+		rem1 = 0;
+	}
+	if (rem2 < 0) {
+		avg2--;
+		rem2 += cnt2;
+	}
+	lng cnt = cnt1 + cnt2;
+	lng rem = rem1 + rem2;
+	hge v;
+	uint64_t r;
+
+	*cntp = cnt;
+	if (avg1 < 0) {
+		avg1 = (hge) multdiv((uhge) -avg1, cnt1, cnt, &r);
+		if (r > 0) {
+			avg1 = -avg1 - 1;
+			r = cnt - r;
+		} else {
+			avg1 = -avg1;
+		}
+	} else {
+		avg1 = (hge) multdiv((uhge) avg1, cnt1, cnt, &r);
+	}
+	v = avg1;
+	rem += r;
+	if (avg2 < 0) {
+		avg2 = (hge) multdiv((uhge) -avg2, cnt2, cnt, &r);
+		if (r > 0) {
+			avg2 = -avg2 - 1;
+			r = cnt - r;
+		} else {
+			avg2 = -avg2;
+		}
+	} else {
+		avg2 = (hge) multdiv((uhge) avg2, cnt2, cnt, &r);
+	}
+	v += avg2;
+	rem += r;
+	while (rem >= cnt) { /* max twice */
+		v++;
+		rem -= cnt;
+	}
+	*avgp = v;
+	*remp = rem;
+}
+#endif
+
+BAT *
+BATgroupavg3combine(BAT *avg, BAT *rem, BAT *cnt, BAT *g, BAT *e, bool skip_nils)
+{
+	const char *err;
+	oid min, max;
+	BUN ngrp;
+	struct canditer ci;
+	BUN i, ncand;
+	BAT *bn, *rn, *cn;
+
+	if ((err = BATgroupaggrinit(avg, g, e, NULL, &min, &max, &ngrp, &ci, &ncand)) != NULL) {
+		GDKerror("%s\n", err);
+		return NULL;
+	}
+	assert(ci.tpe == cand_dense);
+	if (BATcount(avg) != BATcount(rem) || BATcount(avg) != BATcount(cnt)) {
+		GDKerror("input bats not aligned");
+		return NULL;
+	}
+	if (ncand == 0 || ngrp == 0) {
+		return BATconstant(ngrp == 0 ? 0 : min, avg->ttype,
+				   ATOMnilptr(avg->ttype), ngrp, TRANSIENT);
+	}
+	ValRecord zero;
+	(void) VALinit(&zero, TYPE_bte, &(bte){0});
+	bn = BATconstant(min, avg->ttype, VALconvert(avg->ttype, &zero),
+			 ngrp, TRANSIENT);
+	/* rn and cn are temporary storage of intermediates */
+	rn = BATconstant(min, TYPE_lng, &(lng){0}, ngrp, TRANSIENT);
+	cn = BATconstant(min, TYPE_lng, &(lng){0}, ngrp, TRANSIENT);
+	if (bn == NULL || rn == NULL || cn == NULL) {
+		BBPreclaim(bn);
+		BBPreclaim(rn);
+		BBPreclaim(cn);
+		return NULL;
+	}
+	lng *rems = Tloc(rn, 0);
+	lng *cnts = Tloc(cn, 0);
+	const lng *orems = Tloc(rem, 0);
+	const lng *ocnts = Tloc(cnt, 0);
+	const oid *gids = g && !BATtdense(g) ? Tloc(g, 0) : NULL;
+	oid gid = ngrp == 1 && gids ? gids[0] - min : 0;
+
+	switch (ATOMbasetype(avg->ttype)) {
+	case TYPE_bte: {
+		const bte *vals = Tloc(avg, 0);
+		bte *avgs = Tloc(bn, 0);
+		for (i = 0; i < ncand; i++) {
+			if (ngrp > 1)
+				gid = gids ? gids[i] - min : i;
+			if (is_bte_nil(vals[i])) {
+				if (!skip_nils) {
+					avgs[gid] = bte_nil;
+					bn->tnil = true;
+				}
+			} else if (!is_bte_nil(avgs[gid])) {
+				combine_averages_bte(&avgs[gid], &rems[gid],
+						     &cnts[gid], avgs[gid],
+						     rems[gid], cnts[gid],
+						     vals[i], orems[i],
+						     ocnts[i]);
+			}
+		}
+		for (i = 0; i < ngrp; i++) {
+			if (cnts[i] == 0) {
+				avgs[i] = bte_nil;
+				bn->tnil = true;
+			} else
+#ifdef TRUNCATE_NUMBERS
+			if (!is_bte_nil(avgs[i]) && rems[i] > 0 && avgs[i] < 0)
+				avgs[i]++;
+#else
+			if (!is_bte_nil(avgs[i]) && rems[i] > 0) {
+				if (avgs[i] < 0) {
+					if (2*rems[i] > cnts[i])
+						avgs[i]++;
+				} else {
+					if (2*rems[i] >= cnts[i])
+						avgs[i]++;
+				}
+			}
+#endif
+		}
+		break;
+	}
+	case TYPE_sht: {
+		const sht *vals = Tloc(avg, 0);
+		sht *avgs = Tloc(bn, 0);
+		for (i = 0; i < ncand; i++) {
+			if (ngrp > 1)
+				gid = gids ? gids[i] - min : i;
+			if (is_sht_nil(vals[i])) {
+				if (!skip_nils) {
+					avgs[gid] = sht_nil;
+					bn->tnil = true;
+				}
+			} else if (!is_sht_nil(avgs[gid])) {
+				combine_averages_sht(&avgs[gid], &rems[gid],
+						     &cnts[gid], avgs[gid],
+						     rems[gid], cnts[gid],
+						     vals[i], orems[i],
+						     ocnts[i]);
+			}
+		}
+		for (i = 0; i < ngrp; i++) {
+			if (cnts[i] == 0) {
+				avgs[i] = sht_nil;
+				bn->tnil = true;
+			} else
+#ifdef TRUNCATE_NUMBERS
+			if (!is_sht_nil(avgs[i]) && rems[i] > 0 && avgs[i] < 0)
+				avgs[i]++;
+#else
+			if (!is_sht_nil(avgs[i]) && rems[i] > 0) {
+				if (avgs[i] < 0) {
+					if (2*rems[i] > cnts[i])
+						avgs[i]++;
+				} else {
+					if (2*rems[i] >= cnts[i])
+						avgs[i]++;
+				}
+			}
+#endif
+		}
+		break;
+	}
+	case TYPE_int: {
+		const int *vals = Tloc(avg, 0);
+		int *avgs = Tloc(bn, 0);
+		for (i = 0; i < ncand; i++) {
+			if (ngrp > 1)
+				gid = gids ? gids[i] - min : i;
+			if (is_int_nil(vals[i])) {
+				if (!skip_nils) {
+					avgs[gid] = int_nil;
+					bn->tnil = true;
+				}
+			} else if (!is_int_nil(avgs[gid])) {
+				combine_averages_int(&avgs[gid], &rems[gid],
+						     &cnts[gid], avgs[gid],
+						     rems[gid], cnts[gid],
+						     vals[i], orems[i],
+						     ocnts[i]);
+			}
+		}
+		for (i = 0; i < ngrp; i++) {
+			if (cnts[i] == 0) {
+				avgs[i] = int_nil;
+				bn->tnil = true;
+			} else
+#ifdef TRUNCATE_NUMBERS
+			if (!is_int_nil(avgs[i]) && rems[i] > 0 && avgs[i] < 0)
+				avgs[i]++;
+#else
+			if (!is_int_nil(avgs[i]) && rems[i] > 0) {
+				if (avgs[i] < 0) {
+					if (2*rems[i] > cnts[i])
+						avgs[i]++;
+				} else {
+					if (2*rems[i] >= cnts[i])
+						avgs[i]++;
+				}
+			}
+#endif
+		}
+		break;
+	}
+	case TYPE_lng: {
+		const lng *vals = Tloc(avg, 0);
+		lng *avgs = Tloc(bn, 0);
+		for (i = 0; i < ncand; i++) {
+			if (ngrp > 1)
+				gid = gids ? gids[i] - min : i;
+			if (is_lng_nil(vals[i])) {
+				if (!skip_nils) {
+					avgs[gid] = lng_nil;
+					bn->tnil = true;
+				}
+			} else if (!is_lng_nil(avgs[gid])) {
+				combine_averages_lng(&avgs[gid], &rems[gid],
+						     &cnts[gid], avgs[gid],
+						     rems[gid], cnts[gid],
+						     vals[i], orems[i],
+						     ocnts[i]);
+			}
+		}
+		for (i = 0; i < ngrp; i++) {
+			if (cnts[i] == 0) {
+				avgs[i] = lng_nil;
+				bn->tnil = true;
+			} else
+#ifdef TRUNCATE_NUMBERS
+			if (!is_lng_nil(avgs[i]) && rems[i] > 0 && avgs[i] < 0)
+				avgs[i]++;
+#else
+			if (!is_lng_nil(avgs[i]) && rems[i] > 0) {
+				if (avgs[i] < 0) {
+					if (2*rems[i] > cnts[i])
+						avgs[i]++;
+				} else {
+					if (2*rems[i] >= cnts[i])
+						avgs[i]++;
+				}
+			}
+#endif
+		}
+		break;
+	}
+#ifdef HAVE_HGE
+	case TYPE_hge: {
+		const hge *vals = Tloc(avg, 0);
+		hge *avgs = Tloc(bn, 0);
+		for (i = 0; i < ncand; i++) {
+			if (ngrp > 1)
+				gid = gids ? gids[i] - min : i;
+			if (is_hge_nil(vals[i])) {
+				if (!skip_nils) {
+					avgs[gid] = hge_nil;
+					bn->tnil = true;
+				}
+			} else if (!is_hge_nil(avgs[gid])) {
+				combine_averages_hge(&avgs[gid], &rems[gid],
+						     &cnts[gid], avgs[gid],
+						     rems[gid], cnts[gid],
+						     vals[i], orems[i],
+						     ocnts[i]);
+			}
+		}
+		for (i = 0; i < ngrp; i++) {
+			if (cnts[i] == 0) {
+				avgs[i] = hge_nil;
+				bn->tnil = true;
+			} else
+#ifdef TRUNCATE_NUMBERS
+			if (!is_hge_nil(avgs[i]) && rems[i] > 0 && avgs[i] < 0)
+				avgs[i]++;
+#else
+			if (!is_hge_nil(avgs[i]) && rems[i] > 0) {
+				if (avgs[i] < 0) {
+					if (2*rems[i] > cnts[i])
+						avgs[i]++;
+				} else {
+					if (2*rems[i] >= cnts[i])
+						avgs[i]++;
+				}
+			}
+#endif
+		}
+		break;
+	}
+#endif
+	}
+	BBPreclaim(rn);
+	BBPreclaim(cn);
+	BATsetcount(bn, ngrp);
+	bn->tnonil = !bn->tnil;
+	bn->tkey = ngrp == 1;
+	bn->tsorted = ngrp == 1;
+	bn->trevsorted = ngrp == 1;
+	return bn;
+}
+
 #define AVERAGE_TYPE_LNG_HGE(TYPE,lng_hge)				\
 	do {								\
 		TYPE x, a;						\
@@ -1886,12 +2781,12 @@ BATgroupavg(BAT **bnp, BAT **cntsp, BAT *b, BAT *g, BAT *e, BAT *s, int tp, bool
 			/* overflow possible) */			\
 			assert(n > 0);					\
 			if (sum >= 0) {					\
-				a = (TYPE) (sum / (lng_hge) n); /* this fits */ \
-				r = (BUN) (sum % (SBUN) n);		\
+				a = (TYPE) (sum / n); /* this fits */	\
+				r = (lng) (sum % n);			\
 			} else {					\
 				sum = -sum;				\
-				a = - (TYPE) (sum / (lng_hge) n); /* this fits */ \
-				r = (BUN) (sum % (SBUN) n);		\
+				a = - (TYPE) (sum / n); /* this fits */ \
+				r = (lng) (sum % n);		\
 				if (r) {				\
 					a--;				\
 					r = n - r;			\
@@ -1936,7 +2831,8 @@ BATgroupavg(BAT **bnp, BAT **cntsp, BAT *b, BAT *g, BAT *e, BAT *s, int tp, bool
 gdk_return
 BATcalcavg(BAT *b, BAT *s, dbl *avg, BUN *vals, int scale)
 {
-	BUN n = 0, r = 0, i = 0;
+	lng n = 0, r = 0;
+	BUN i = 0;
 #ifdef HAVE_HGE
 	hge sum = 0;
 #else
@@ -1985,7 +2881,7 @@ BATcalcavg(BAT *b, BAT *s, dbl *avg, BUN *vals, int scale)
 	if (scale != 0 && !is_dbl_nil(*avg))
 		*avg *= pow(10.0, (double) scale);
 	if (vals)
-		*vals = n;
+		*vals = (BUN) n;
 	return GDK_SUCCEED;
 }
 
@@ -3392,7 +4288,7 @@ BATcalccorrelation(BAT *b1, BAT *b2)
 	}
 	if (n != 0 && down1 != 0 && down2 != 0)
 		aux = (up / n) / (sqrt(down1 / n) * sqrt(down2 / n));
-	else 
+	else
 		aux = dbl_nil;
 	TRC_DEBUG(ALGO, "b1=" ALGOBATFMT ",b2=" ALGOBATFMT " (" LLFMT " usec)\n",
 		  ALGOBATPAR(b1), ALGOBATPAR(b2), GDKusec() - t0);

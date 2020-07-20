@@ -25,6 +25,8 @@
 #include <fcntl.h>
 
 #include "monet_options.h"
+#include "stream.h"
+#include "stream_socket.h"
 #include "msabaoth.h"
 #include "mcrypt.h"
 #include "utils/utils.h"
@@ -160,7 +162,7 @@ control_authorise(
 		stream *fout)
 {
 	char *pwd;
-	
+
 	if (getConfNum(_mero_props, "control") == 0 ||
 			getConfVal(_mero_props, "passphrase") == NULL)
 	{
@@ -350,66 +352,77 @@ static void ctl_handle_client(
 			} else if (strcmp(p, "stop") == 0 ||
 					strcmp(p, "kill") == 0)
 			{
-				dpair dp;
-				/* we need to find the right dpair, that is we
-				 * sort of assume the control signal is right */
+				mtype mtype = 0;
+				pid_t pid = 0;
+
+				// First look for something started by ourself.
 				pthread_mutex_lock(&_mero_topdp_lock);
-				dp = _mero_topdp->next; /* don't need the console/log */
-				while (dp != NULL) {
-					if (dp->type == MERODB && strcmp(dp->dbname, q) == 0) {
-						if (dp->pid <= 0) {
-							dp = NULL;
-							/* unlock happens below */
-							break;
-						}
-						if (strcmp(p, "stop") == 0) {
-							mtype type = dp->type;
-							pthread_mutex_unlock(&_mero_topdp_lock);
-							/* Try to shutdown the profiler before the DB.
-							 * If we are unable to shutdown the profiler, we
-							 * should still try to shutdown the server. In
-							 * other words: ignore any errors that shutdown_profiler
-							 * may have encountered.
-							 */
-							if ((e = shutdown_profiler(dp->dbname, &stats)) != NULL) {
-								free(e);
-							} else if (stats != NULL)
-								msab_freeStatus(&stats);
-							pthread_mutex_lock(&dp->fork_lock);
-							terminateProcess(dp, type);
-							pthread_mutex_unlock(&dp->fork_lock);
-							Mfprintf(_mero_ctlout, "%s: stopped "
-									"database '%s'\n", origin, q);
-						} else {
-							kill(dp->pid, SIGKILL);
-							pthread_mutex_unlock(&_mero_topdp_lock);
-							Mfprintf(_mero_ctlout, "%s: killed "
-									"database '%s'\n", origin, q);
-						}
-						len = snprintf(buf2, sizeof(buf2), "OK\n");
-						send_client("=");
-						break;
-					} else if (dp->type == MEROFUN && strcmp(dp->dbname, q) == 0) {
-						/* multiplexDestroy needs topdp lock to remove itself */
-						char *dbname = strdup(dp->dbname);
-						pthread_mutex_unlock(&_mero_topdp_lock);
-						multiplexDestroy(dbname);
-						free(dbname);
-						len = snprintf(buf2, sizeof(buf2), "OK\n");
-						send_client("=");
+				dpair dp = _mero_topdp->next;  /* don't need the console/log */
+				for (; dp != NULL; dp = dp->next)
+					if (strcmp(dp->dbname, q) == 0) {
+						mtype = dp->type;
+						pid = dp->pid;
 						break;
 					}
-
-					dp = dp->next;
+				pthread_mutex_unlock(&_mero_topdp_lock);
+				// after releasing the lock we can no longer access *dp but
+				// checking dp's nullity is fine.
+				if (dp != NULL && mtype == MEROFUN) {
+					multiplexDestroy(q);
+					len = snprintf(buf2, sizeof(buf2), "OK\n");
+					send_client("=");
+					break;
 				}
+
+				// it wasn't started by us but maybe it was already there
 				if (dp == NULL) {
-					pthread_mutex_unlock(&_mero_topdp_lock);
+					if ((e = msab_getStatus(&stats, q)) != NULL) {
+						len = snprintf(buf2, sizeof(buf2),
+								"internal error, please review the logs\n");
+						send_client("!");
+						Mfprintf(_mero_ctlerr, "%s: start: msab_getStatus: "
+								"%s\n", origin, e);
+						freeErr(e);
+						continue;
+					}
+					if (stats != NULL) {
+						pid = stats->pid;
+						mtype = MERODB;
+						msab_freeStatus(&stats);
+					}
+				}
+				// At this point pid may have been set from a dpair or from msab_getStatus()
+				if (pid <= 0) {
 					Mfprintf(_mero_ctlerr, "%s: received stop signal for "
 							"non running database: %s\n", origin, q);
 					len = snprintf(buf2, sizeof(buf2),
 							"database is not running: %s\n", q);
 					send_client("!");
+					break;
 				}
+
+				// Kill it appropriately
+				if (strcmp(p, "stop") == 0) {
+					/* make an attempt to shut down the profiler first. */
+					if ((e = shutdown_profiler(q, &stats)) != NULL) {
+						free(e);
+					} else if (stats != NULL)
+						msab_freeStatus(&stats);
+					/* then kill it */
+					if (dp)
+						pthread_mutex_lock(&dp->fork_lock);
+					terminateProcess(q, pid, mtype);
+					if (dp)
+						pthread_mutex_unlock(&dp->fork_lock);
+					Mfprintf(_mero_ctlout, "%s: stopped "
+							"database '%s'\n", origin, q);
+				} else {
+					kill(pid, SIGKILL);
+					Mfprintf(_mero_ctlout, "%s: killed "
+							"database '%s'\n", origin, q);
+				}
+				len = snprintf(buf2, sizeof(buf2), "OK\n");
+				send_client("=");
 			} else if (strcmp(p, "create") == 0 ||
 					strncmp(p, "create password=", strlen("create password=")) == 0) {
 				err e;
@@ -740,6 +753,55 @@ static void ctl_handle_client(
 					}
 					free(dest);
 				}
+			} else if (strcmp(p, "snapshot stream") == 0) {
+
+				Mfprintf(_mero_ctlout, "Start streaming snapshot of database '%s'\n", q);
+
+				stream *wrapper = NULL;
+				stream *bs = NULL;
+				stream *s = NULL; // aliases either bs or fout
+				do {
+					if (fout) {
+						if (!isa_block_stream(fout)) {
+							e = newErr("internal error: expected fout to be a block stream");
+							break;
+						}
+						s = fout;
+					} else {
+						wrapper = socket_wstream(msgsock, "sockwrapper");
+						if (!wrapper) {
+							e = newErr("internal error: could not create sock wrapper");
+							break;
+						}
+						bs = block_stream(wrapper);
+						if (!bs) {
+							e = newErr("internal error: could not wrap block_stream");
+							break;
+						}
+						wrapper = NULL; // will be cleanup through bs
+						s = bs;
+						//
+					}
+					e = snapshot_database_stream(q, s);
+					mnstr_flush(s);
+				} while (0);
+				if (bs)
+					mnstr_destroy(bs);
+				if (wrapper)
+					mnstr_destroy(wrapper);
+				if (e != NULL) {
+					Mfprintf(_mero_ctlerr, "%s: streaming snapshot database '%s' failed: %s",
+						origin, q, getErrMsg(e));
+					len = snprintf(buf2, sizeof(buf2), "%s\n", getErrMsg(e));
+					send_client("!");
+					freeErr(e);
+				} else {
+					len = snprintf(buf2, sizeof(buf2), "OK\n");
+					send_client("=");
+					Mfprintf(_mero_ctlout, "%s: completed streaming snapshot of database '%s'\n",
+						origin, q);
+				}
+				break;
 			} else if (strncmp(p, "snapshot restore adhoc ", strlen("snapshot restore adhoc ")) == 0) {
 				char *source = p + strlen("snapshot restore adhoc ");
 				Mfprintf(_mero_ctlout, "Start restore snapshot of database '%s' from file '%s'\n", q, source);

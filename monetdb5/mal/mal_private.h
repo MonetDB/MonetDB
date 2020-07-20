@@ -65,6 +65,8 @@ int getBarrierEnvelop(MalBlkPtr mb)
 	__attribute__((__visibility__("hidden")));
 void listFunction(stream *fd, MalBlkPtr mb, MalStkPtr stk, int flg, int first, int step)
 	__attribute__((__visibility__("hidden")));
+MALfcn findFunctionImplementation(const char *cname)
+	__attribute__((__visibility__("hidden")));
 
 /* mal_linker.h */
 char *MSP_locate_script(const char *mod_name)

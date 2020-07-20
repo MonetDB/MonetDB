@@ -45,7 +45,7 @@ OPToltpImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	old= mb->stmt;
 	limit= mb->stop;
 	slimit = mb->ssize;
-	
+
 	// We use a fake collection of objects to speed up the checking later.
 	OLTPclear(wlocks);
 	OLTPclear(rlocks);
@@ -75,7 +75,7 @@ OPToltpImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			updates++;
 		}
 	}
-	
+
 	if( updates == 0)
 		return 0;
 
@@ -86,7 +86,7 @@ OPToltpImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	for( i = 0; i< MAXOLTPLOCKS; i++)
 	if( wlocks[i])
 		lcks = pushInt(mb, lcks, i);
-	else 
+	else
 	if( rlocks[i])
 		lcks = pushInt(mb, lcks, -i);
 
@@ -122,7 +122,7 @@ OPToltpImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			pushInstruction(mb,q);
 		}
 		pushInstruction(mb,p);
-	} 
+	}
 	for(; i<slimit; i++)
 		if( old[i])
 			freeInstruction(old[i]);

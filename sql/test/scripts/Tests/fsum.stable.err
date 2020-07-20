@@ -29,59 +29,59 @@ stderr of test 'fsum` in directory 'sql/test/scripts` itself:
 
 MAPI  = (monetdb) /var/tmp/mtest-23556/.s.monetdb.36044
 QUERY = select sum(val) from t where gid = 14;
-ERROR = !overflow in calculation.
+ERROR = !overflow in sum aggregate.
 CODE  = 22003
 MAPI  = (monetdb) /var/tmp/mtest-21571/.s.monetdb.31912
 QUERY = select sum(val) from t where gid = 20;
-ERROR = !overflow in calculation.
+ERROR = !overflow in sum aggregate.
 CODE  = 22003
 MAPI  = (monetdb) /var/tmp/mtest-21571/.s.monetdb.31912
 QUERY = select sum(val) from t where gid = 21;
-ERROR = !overflow in calculation.
+ERROR = !overflow in sum aggregate.
 CODE  = 22003
 MAPI  = (monetdb) /var/tmp/mtest-24476/.s.monetdb.36041
 QUERY = select sum(val) from t where gid = 24;
-ERROR = !overflow in calculation.
+ERROR = !overflow in sum aggregate.
 CODE  = 22003
 MAPI  = (monetdb) /var/tmp/mtest-21571/.s.monetdb.31912
 QUERY = select sum(val) from t where gid = 25;
-ERROR = !overflow in calculation.
+ERROR = !overflow in sum aggregate.
 CODE  = 22003
 MAPI  = (monetdb) /var/tmp/mtest-21571/.s.monetdb.31912
 QUERY = select sum(val) from t where gid = 26;
-ERROR = !overflow in calculation.
+ERROR = !overflow in sum aggregate.
 CODE  = 22003
 MAPI  = (monetdb) /var/tmp/mtest-21571/.s.monetdb.31912
 QUERY = select sum(val) from t where gid = 27;
-ERROR = !overflow in calculation.
+ERROR = !overflow in sum aggregate.
 CODE  = 22003
 MAPI  = (monetdb) /var/tmp/mtest-21571/.s.monetdb.31912
 QUERY = select sum(val) from t where gid = 28;
-ERROR = !overflow in calculation.
+ERROR = !overflow in sum aggregate.
 CODE  = 22003
 MAPI  = (monetdb) /var/tmp/mtest-21571/.s.monetdb.31912
 QUERY = select sum(val) from t where gid = 29;
-ERROR = !overflow in calculation.
+ERROR = !overflow in sum aggregate.
 CODE  = 22003
 MAPI  = (monetdb) /var/tmp/mtest-21571/.s.monetdb.31912
 QUERY = select sum(val) from t where gid = 30;
-ERROR = !overflow in calculation.
+ERROR = !overflow in sum aggregate.
 CODE  = 22003
 MAPI  = (monetdb) /var/tmp/mtest-21571/.s.monetdb.31912
 QUERY = select sum(val) from t where gid = 32;
-ERROR = !overflow in calculation.
+ERROR = !overflow in sum aggregate.
 CODE  = 22003
 MAPI  = (monetdb) /var/tmp/mtest-21571/.s.monetdb.31912
 QUERY = select sum(val) from t where gid = 34;
-ERROR = !overflow in calculation.
+ERROR = !overflow in sum aggregate.
 CODE  = 22003
 MAPI  = (monetdb) /var/tmp/mtest-24476/.s.monetdb.36041
 QUERY = select sum(val) from t where gid = 36;
-ERROR = !overflow in calculation.
+ERROR = !overflow in sum aggregate.
 CODE  = 22003
 MAPI  = (monetdb) /var/tmp/mtest-24476/.s.monetdb.36041
 QUERY = select sum(val) from t where gid = 38;
-ERROR = !overflow in calculation.
+ERROR = !overflow in sum aggregate.
 CODE  = 22003
 
 # 10:54:43 >  

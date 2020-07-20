@@ -37,7 +37,20 @@
  */
 
 #include "monetdb_config.h"
-#include "mdb.h"
+#include "gdk.h"
+#include "mutils.h"
+#include <time.h>
+#include <sys/types.h>
+#ifdef HAVE_DIRENT_H
+#include <dirent.h>
+#endif
+#include "mal_resolve.h"
+#include "mal_linker.h"
+#include "mal_client.h"
+#include "mal_exception.h"
+#include "mal_debugger.h"
+#include "mal_interpreter.h"
+#include "mal_namespace.h"
 #include "mal_authorize.h"
 #include "mal_function.h"
 
@@ -60,7 +73,7 @@ pseudo(bat *ret, BAT *b, const char *X1, const char *X2, const char *X3) {
 	return 0;
 }
 
-str
+static str
 MDBstart(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 {
 	Client c;
@@ -85,7 +98,7 @@ MDBstart(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	return MAL_SUCCEED;
 }
 
-str
+static str
 MDBstartFactory(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 {
 	(void) cntxt;
@@ -95,7 +108,7 @@ MDBstartFactory(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 		throw(MAL, "mdb.start", SQLSTATE(0A000) PROGRAM_NYI);
 }
 
-str
+static str
 MDBstop(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 {
 	stk->cmd = 0;
@@ -118,7 +131,7 @@ MDBtraceFlag(Client cntxt, MalStkPtr stk, int b)
 	}
 }
 
-str
+static str
 MDBsetTrace(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 {
 	int b;
@@ -130,7 +143,7 @@ MDBsetTrace(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	return MAL_SUCCEED;
 }
 
-str
+static str
 MDBgetVMsize(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 {
 	lng *ret = getArgReference_lng(stk, p, 0);
@@ -142,7 +155,7 @@ MDBgetVMsize(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 }
 
 /* Set the max VM in MBs */
-str
+static str
 MDBsetVMsize(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 {
 	lng *ret = getArgReference_lng(stk, p, 0);
@@ -155,7 +168,7 @@ MDBsetVMsize(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	return MAL_SUCCEED;
 }
 
-str
+static str
 MDBsetVarTrace(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 {
 	str v;
@@ -168,7 +181,7 @@ MDBsetVarTrace(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	return MAL_SUCCEED;
 }
 
-str
+static str
 MDBgetDebug(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 {
 	int *ret = getArgReference_int(stk,p,0);
@@ -181,7 +194,7 @@ MDBgetDebug(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	return MAL_SUCCEED;
 }
 
-str
+static str
 MDBsetDebug(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 {
 	int *ret = getArgReference_int(stk,p,0);
@@ -201,7 +214,7 @@ MDBsetDebug(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	if (BUNappend(flg, (void*) NME, false) != GDK_SUCCEED) goto bailout;\
 	if (BUNappend(val, &state, false) != GDK_SUCCEED) goto bailout;
 
-str
+static str
 MDBgetDebugFlags(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 {
 	bat *f = getArgReference_bat(stk,p,0);
@@ -274,7 +287,7 @@ MDBsetDebugStr_(int *ret, str *flg)
 	return MAL_SUCCEED;
 }
 
-str
+static str
 MDBsetDebugStr(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 {
 	str *flg = (str*) getArgReference(stk, p, 1);
@@ -285,7 +298,7 @@ MDBsetDebugStr(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	return MDBsetDebugStr_(ret, flg);
 }
 
-str
+static str
 MDBsetCatch(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 {
 	int b;
@@ -296,7 +309,7 @@ MDBsetCatch(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	return MAL_SUCCEED;
 }
 
-str
+static str
 MDBinspect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 {
 	str modnme;
@@ -336,7 +349,7 @@ getStkDepth(MalStkPtr s)
 	return i;
 }
 
-str
+static str
 MDBStkDepth(Client cntxt, MalBlkPtr mb, MalStkPtr s, InstrPtr p)
 {
 	int *ret = getArgReference_int(s, p, 0);
@@ -375,7 +388,7 @@ MDBgetFrame(BAT *b, BAT *bn, MalBlkPtr mb, MalStkPtr s, int depth, const char *n
 	return MAL_SUCCEED;
 }
 
-str
+static str
 MDBgetStackFrame(Client cntxt, MalBlkPtr m, MalStkPtr s, InstrPtr p)
 {
 	bat *ret = getArgReference_bat(s, p, 0);
@@ -408,7 +421,7 @@ MDBgetStackFrame(Client cntxt, MalBlkPtr m, MalStkPtr s, InstrPtr p)
 	return MAL_SUCCEED;
 }
 
-str
+static str
 MDBgetStackFrameN(Client cntxt, MalBlkPtr m, MalStkPtr s, InstrPtr p)
 {
 	int n;
@@ -449,7 +462,7 @@ MDBgetStackFrameN(Client cntxt, MalBlkPtr m, MalStkPtr s, InstrPtr p)
 	return MAL_SUCCEED;
 }
 
-str
+static str
 MDBStkTrace(Client cntxt, MalBlkPtr m, MalStkPtr s, InstrPtr p)
 {
 	BAT *b, *bn;
@@ -543,7 +556,7 @@ MDBStkTrace(Client cntxt, MalBlkPtr m, MalStkPtr s, InstrPtr p)
 /*
  * Display routines
  */
-str
+static str
 MDBlist(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 {
 	(void) p;
@@ -552,7 +565,7 @@ MDBlist(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	return MAL_SUCCEED;
 }
 
-str
+static str
 MDBlistMapi(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 {
 	(void) p;
@@ -561,7 +574,7 @@ MDBlistMapi(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	return MAL_SUCCEED;
 }
 
-str
+static str
 MDBlist3(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 {
 	str modnme = *getArgReference_str(stk, p, 1);
@@ -576,7 +589,7 @@ MDBlist3(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	return MAL_SUCCEED;
 }
 
-str
+static str
 MDBlistDetail(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 {
 	(void) p;
@@ -585,7 +598,7 @@ MDBlistDetail(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	return MAL_SUCCEED;
 }
 
-str
+static str
 MDBlist3Detail(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 {
 	str modnme = *getArgReference_str(stk, p, 1);
@@ -600,7 +613,7 @@ MDBlist3Detail(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	return NULL;
 }
 
-str
+static str
 MDBvar(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 {
 	(void) p;
@@ -609,7 +622,7 @@ MDBvar(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	return MAL_SUCCEED;
 }
 
-str
+static str
 MDBvar3(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 {
 	str modnme = *getArgReference_str(stk, p, 1);
@@ -628,7 +641,7 @@ MDBvar3(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
  * It is illustrative to dump the code when you
  * have encountered an error.
  */
-str
+static str
 MDBgetDefinition(Client cntxt, MalBlkPtr m, MalStkPtr stk, InstrPtr p)
 {
 	int i;
@@ -660,7 +673,7 @@ MDBgetDefinition(Client cntxt, MalBlkPtr m, MalStkPtr stk, InstrPtr p)
 	return MAL_SUCCEED;
 }
 
-str
+static str
 MDBgetExceptionVariable(str *ret, str *msg)
 {
 	str tail;
@@ -677,7 +690,7 @@ MDBgetExceptionVariable(str *ret, str *msg)
 	return MAL_SUCCEED;
 }
 
-str
+static str
 MDBgetExceptionContext(str *ret, str *msg)
 {
 	str tail, tail2;
@@ -697,7 +710,7 @@ MDBgetExceptionContext(str *ret, str *msg)
 	return MAL_SUCCEED;
 }
 
-str
+static str
 MDBgetExceptionReason(str *ret, str *msg)
 {
 	str tail;
@@ -715,13 +728,13 @@ MDBgetExceptionReason(str *ret, str *msg)
 	return MAL_SUCCEED;
 }
 
-str MDBdump(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
+static str MDBdump(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	(void) cntxt;
 	mdbDump(cntxt,mb,stk,pci);
 	return MAL_SUCCEED;
 }
 
-str
+static str
 MDBdummy(int *ret)
 {
 	(void) ret;
@@ -729,7 +742,7 @@ MDBdummy(int *ret)
 }
 
 
-str
+static str
 CMDmodules(bat *bid)
 {
 	BAT *b = getModules();
@@ -774,6 +787,7 @@ mel_func mdb_init_funcs[] = {
  pattern("mdb", "getStackTrace", MDBStkTrace, false, "", args(2,2, batarg("",int),batarg("",str))),
  pattern("mdb", "dump", MDBdump, false, "Dump instruction, stacktrace, and stack", noargs),
  pattern("mdb", "getDefinition", MDBgetDefinition, false, "Returns a string representation of the current function \nwith typing information attached", args(1,1, batarg("",str))),
+ command("mdb", "#dummy", MDBdummy, false, "Dummy function for testing", args(1,1, arg("",void))),
  { .imp=NULL }
 };
 #include "mal_import.h"

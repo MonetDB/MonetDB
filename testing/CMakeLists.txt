@@ -134,7 +134,7 @@ if(PYTHON3_LIBDIR)
     exportutils.py
     malcheck.py
     sqllogictest.py
-    DESTINATION ${CMAKE_INSTALL_PREFIX}/${PYTHON3_LIBDIR}/MonetDBtesting
+    DESTINATION ${PYTHON3_LIBDIR}/MonetDBtesting
     COMPONENT pytesting)
 endif()
 

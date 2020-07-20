@@ -13,26 +13,26 @@
  *
  * The role of Merovingian within the MonetDB suite is to act as a smart
  * proxy, with capabilities to start mserver5s when necessary.
- * 
+ *
  * Since some people appear to have trouble pronouncing or remembering
  * its name, one can also refer to Merovingian as Mero or its name for
  * dummies: monetdbd.  In any case, people having difficulties here
  * should watch The Matrix once more.
- * 
+ *
  * Most of Merovingian's decisions are based on information provided by
  * Sabaoth.  Sabaoth is a file-system based administration shared
  * between all mserver5s in the same farm on a local machine.  It keeps
  * track of how mserver5s can be reached, with which scenarios, and what
  * the crashcounter of each server is.
- * 
+ *
  * Merovingian will fork off an mserver5 whenever a client requests a
  * database which is not running yet.  Sabaoth will assure Merovingian
  * can find already running or previously forked mserver5s.
- * 
+ *
  * While Merovingian currently just starts a database on the fly when a
  * client asks for it, in the future, Merovingian can decide to only
  * start a database if the crashlog information maintained by Sabaoth
- * shows that the mserver5 doesn't behave badly.  For example 
+ * shows that the mserver5 doesn't behave badly.  For example
  * Merovingian can refuse to start a database if it has crashed a
  * number of times over a recent period.  Note that to date, no such
  * thing has been implemented as the need for it has not arisen yet.
@@ -318,7 +318,7 @@ doTerminateProcess(void *p)
 {
 	dpair dp = p;
 	pthread_mutex_lock(&dp->fork_lock);
-	terminateProcess(dp, dp->type);
+	terminateProcess(dp->dbname, dp->pid, dp->type);
 	pthread_mutex_unlock(&dp->fork_lock);
 	return NULL;
 }
@@ -1017,7 +1017,7 @@ main(int argc, char *argv[])
 			MERO_EXIT(1);
 		}
 
-		/* start neighbour discovery and notification thread */ 
+		/* start neighbour discovery and notification thread */
 		if (discsock >= 0 && (thret = pthread_create(&dtid, NULL,
 					discoveryRunner, (void *)&discsock)) != 0)
 		{

@@ -25,13 +25,37 @@
 /*
  * Definition of a new module may interfere with concurrent actions.
  * A jump table is mainted to provide a quick start in the module
- * table to find the correct one. 
+ * table to find the correct one.
  *
  * All modules are persistent during a server session
  */
 
 #define MODULE_HASH_SIZE 1024
-Module moduleIndex[MODULE_HASH_SIZE] = { NULL };
+static Module moduleIndex[MODULE_HASH_SIZE] = { NULL };
+
+MALfcn
+findFunctionImplementation(const char *cname)
+{
+	for (int i = 0; i < MODULE_HASH_SIZE; i++) {
+		if (moduleIndex[i] != NULL && moduleIndex[i]->space != NULL) {
+			for (int j = 0; j < MAXSCOPE; j++) {
+				Symbol s;
+				if ((s = moduleIndex[i]->space[j]) != NULL) {
+					do {
+						if (strcmp(s->def->binding, cname) == 0 &&
+							s->def &&
+							s->def->stmt &&
+							s->def->stmt[0] &&
+							s->def->stmt[0]->fcn) {
+							return s->def->stmt[0]->fcn;
+						}
+					} while ((s = s->peer) != NULL);
+				}
+			}
+		}
+	}
+	return NULL;
+}
 
 BAT *
 getModules(void)
@@ -188,7 +212,7 @@ Module globalModule(str nme)
 	return cur;
 }
 
-/* Every client record has a private module name 'user' 
+/* Every client record has a private module name 'user'
  * for keeping around non-shared functions */
 Module userModule(void){
 	Module cur;
@@ -226,7 +250,7 @@ static void freeSubScope(Module scope)
 	int i;
 	Symbol s;
 
-	if (scope->space == NULL) 
+	if (scope->space == NULL)
 		return;
 	for(i = 0; i < MAXSCOPE; i++) {
 		if( scope->space[i]){
@@ -243,7 +267,7 @@ void freeModule(Module m)
 {
 	Symbol s;
 
-	if (m == NULL) 
+	if (m == NULL)
 		return;
 	if ((s = findSymbolInModule(m, "epilogue")) != NULL) {
 		InstrPtr pci = getInstrPtr(s->def,0);
@@ -255,7 +279,7 @@ void freeModule(Module m)
 			(void)ret;
 		}
 	}
-	freeSubScope(m);	
+	freeSubScope(m);
 	if (strcmp(m->name, "user")) {
 		clrModuleIndex(m);
 	}
@@ -363,7 +387,7 @@ Module findModule(Module scope, str name){
 
 /*
  * The routine findSymbolInModule starts at a MAL scope level and searches
- * an element amongst the peers. 
+ * an element amongst the peers.
  *
  * In principal, external variables are subject to synchronization actions
  * to avoid concurrency conflicts. This also implies, that any parallel

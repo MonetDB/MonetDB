@@ -46,7 +46,7 @@ delta_cands(sql_trans *tr, sql_table *t)
 		t->data = timestamp_dbat(ot->data, tr->stime);
 	}
 	d = t->data;
-	if (!store_initialized && d->cached) 
+	if (!store_initialized && d->cached)
 		return temp_descriptor(d->cached->batCacheid);
 	tids = _delta_cands(tr, t);
 	if (!store_initialized && !d->cached) /* only cache during catalog loading */
@@ -67,16 +67,16 @@ delta_full_bat_( sql_column *c, sql_delta *bat, int temp)
 
 	if (!i)
 		return NULL;
-	r = i; 
-	if (temp) 
+	r = i;
+	if (temp)
 		return r;
 	b = temp_descriptor(bat->bid);
 	if (!b) {
 		b = i;
 	} else {
 		if (BATcount(i)) {
-			r = COLcopy(b, b->ttype, true, TRANSIENT); 
-			bat_destroy(b); 
+			r = COLcopy(b, b->ttype, true, TRANSIENT);
+			bat_destroy(b);
 			if (r == NULL) {
 				bat_destroy(i);
 				return NULL;
@@ -89,15 +89,15 @@ delta_full_bat_( sql_column *c, sql_delta *bat, int temp)
 			}
 			needcopy = 0;
 		}
-		bat_destroy(i); 
+		bat_destroy(i);
 	}
 	if (bat->uibid && bat->ucnt) {
 		ui = temp_descriptor(bat->uibid);
 		uv = temp_descriptor(bat->uvbid);
 		if (ui && BATcount(ui)) {
 			if (needcopy) {
-				r = COLcopy(b, b->ttype, true, TRANSIENT); 
-				bat_destroy(b); 
+				r = COLcopy(b, b->ttype, true, TRANSIENT);
+				bat_destroy(b);
 				b = r;
 				if(b == NULL) {
 					bat_destroy(ui);
@@ -112,11 +112,11 @@ delta_full_bat_( sql_column *c, sql_delta *bat, int temp)
 				return NULL;
 			}
 		}
-		bat_destroy(ui); 
-		bat_destroy(uv); 
+		bat_destroy(ui);
+		bat_destroy(uv);
 	}
 	(void)c;
-	if (!store_initialized && !bat->cached) 
+	if (!store_initialized && !bat->cached)
 		bat->cached = b;
 	return b;
 }
@@ -124,7 +124,7 @@ delta_full_bat_( sql_column *c, sql_delta *bat, int temp)
 static BAT *
 delta_full_bat( sql_column *c, sql_delta *bat, int temp)
 {
-	if (!store_initialized && bat->cached) 
+	if (!store_initialized && bat->cached)
 		return bat->cached;
 	return delta_full_bat_( c, bat, temp);
 }
@@ -227,6 +227,52 @@ column_find_value(sql_trans *tr, sql_column *c, oid rid)
 	return res;
 }
 
+static sqlid
+column_find_sqlid(sql_trans *tr, sql_column *c, oid rid)
+{
+	BUN q = BUN_NONE;
+	BAT *b;
+	sqlid res = -1;
+
+	b = full_column(tr, c);
+	if (b) {
+		if (rid < b->hseqbase || rid >= b->hseqbase + BATcount(b))
+			q = BUN_NONE;
+		else
+			q = rid - b->hseqbase;
+	}
+	if (q != BUN_NONE) {
+		BATiter bi = bat_iterator(b);
+
+		res = *(sqlid*)BUNtail(bi, q);
+	}
+	full_destroy(c, b);
+	return res;
+}
+
+static sqlid
+column_find_int(sql_trans *tr, sql_column *c, oid rid)
+{
+	BUN q = BUN_NONE;
+	BAT *b;
+	int res = -1;
+
+	b = full_column(tr, c);
+	if (b) {
+		if (rid < b->hseqbase || rid >= b->hseqbase + BATcount(b))
+			q = BUN_NONE;
+		else
+			q = rid - b->hseqbase;
+	}
+	if (q != BUN_NONE) {
+		BATiter bi = bat_iterator(b);
+
+		res = *(int*)BUNtail(bi, q);
+	}
+	full_destroy(c, b);
+	return res;
+}
+
 static int
 column_update_value(sql_trans *tr, sql_column *c, oid rid, void *value)
 {
@@ -259,7 +305,7 @@ table_insert(sql_trans *tr, sql_table *t, ...)
 	}
 	va_end(va);
 	if (n) {
-		// This part of the code should never get reached  
+		// This part of the code should never get reached
 		TRC_ERROR(SQL_STORE, "Called table_insert(%s) with wrong number of args (%d,%d)\n", t->base.name, list_length(t->columns.set), cnt);
 		assert(0);
 		return LOG_ERR;
@@ -321,7 +367,7 @@ rids_select( sql_trans *tr, sql_column *key, const void *key_value_low, const vo
 		while ((key = va_arg(va, sql_column *)) != NULL) {
 			kvl = va_arg(va, void *);
 			kvh = va_arg(va, void *);
-	
+
 			b = full_column(tr, key);
 			if (!kvl)
 				kvl = ATOMnilptr(b->ttype);
@@ -370,7 +416,7 @@ rids_orderby(sql_trans *tr, rids *r, sql_column *orderby_col)
 
 
 /* return table rids from result of rids_select, return (oid_nil) when done */
-static oid 
+static oid
 rids_next(rids *r)
 {
 	if (r->cur < BATcount((BAT *) r->data)) {
@@ -380,7 +426,7 @@ rids_next(rids *r)
 }
 
 /* clean up the resources taken by the result of rids_select */
-static void 
+static void
 rids_destroy(rids *r)
 {
 	bat_destroy(r->data);
@@ -399,7 +445,7 @@ rids_join(sql_trans *tr, rids *l, sql_column *lc, rids *r, sql_column *rc)
 {
 	BAT *lcb, *rcb, *s = NULL, *d = NULL;
 	gdk_return ret;
-	
+
 	lcb = full_column(tr, lc);
 	rcb = full_column(tr, rc);
 	ret = BATjoin(&s, &d, lcb, rcb, l->data, r->data, false, BATcount(lcb));
@@ -652,12 +698,14 @@ bat_table_init( table_functions *tf )
 {
 	tf->column_find_row = column_find_row;
 	tf->column_find_value = column_find_value;
+	tf->column_find_sqlid = column_find_sqlid;
+	tf->column_find_int = column_find_int;
 
 	tf->column_update_value = column_update_value;
 	tf->table_insert = table_insert;
 	tf->table_delete = table_delete;
 	tf->table_vacuum = table_vacuum;
-	
+
 	tf->rids_select = rids_select;
 	tf->rids_orderby = rids_orderby;
 	tf->rids_join = rids_join;

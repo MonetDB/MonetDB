@@ -33,24 +33,28 @@ sql_ref_dec(sql_ref *r)
 
 #define SA_BLOCK (64*1024)
 
-sql_allocator *sa_create(void)
+sql_allocator *sa_create(sql_allocator *pa)
 {
-	sql_allocator *sa = MNEW(sql_allocator);
-	if (sa == NULL) {
+	sql_allocator *sa = (pa)?SA_NEW(pa, sql_allocator):MNEW(sql_allocator);
+	if (sa == NULL)
 		return NULL;
-	}
+	eb_init(&sa->eb);
+	sa->pa = pa;
 	sa->size = 64;
 	sa->nr = 1;
-	sa->blks = NEW_ARRAY(char*,sa->size);
+	sa->blks = pa?SA_NEW_ARRAY(pa, char*, sa->size):NEW_ARRAY(char*, sa->size);
 	if (sa->blks == NULL) {
-		_DELETE(sa);
+		if (!pa)
+			_DELETE(sa);
 		return NULL;
 	}
-	sa->blks[0] = NEW_ARRAY(char,SA_BLOCK);
+	sa->blks[0] = pa?SA_NEW_ARRAY(pa, char, SA_BLOCK):NEW_ARRAY(char, SA_BLOCK);
 	sa->usedmem = SA_BLOCK;
 	if (sa->blks[0] == NULL) {
-		_DELETE(sa->blks);
-		_DELETE(sa);
+		if (!pa)
+			_DELETE(sa->blks);
+		if (!pa)
+			_DELETE(sa);
 		return NULL;
 	}
 	sa->used = 0;
@@ -62,7 +66,8 @@ sql_allocator *sa_reset( sql_allocator *sa )
 	size_t i ;
 
 	for (i = 1; i<sa->nr; i++) {
-		_DELETE(sa->blks[i]);
+		if (!sa->pa)
+			_DELETE(sa->blks[i]);
 	}
 	sa->nr = 1;
 	sa->used = 0;
@@ -87,16 +92,27 @@ void *sa_alloc( sql_allocator *sa, size_t sz )
 	char *r;
 	sz = round16(sz);
 	if (sz > (SA_BLOCK-sa->used)) {
-		r = GDKmalloc(sz > SA_BLOCK ? sz : SA_BLOCK);
-		if (r == NULL)
+		if (sa->pa)
+			r = SA_NEW_ARRAY(sa->pa,char,(sz > SA_BLOCK ? sz : SA_BLOCK));
+	    else
+			r = GDKmalloc(sz > SA_BLOCK ? sz : SA_BLOCK);
+		if (r == NULL) {
+			if (sa->eb.enabled)
+				eb_error(&sa->eb, "out of memory", 1000);
 			return NULL;
+		}
 		if (sa->nr >= sa->size) {
 			char **tmp;
+			size_t osz = sa->size;
 			sa->size *=2;
-			tmp = RENEW_ARRAY(char*,sa->blks,sa->size);
+			if (sa->pa)
+				tmp = SA_RENEW_ARRAY(sa->pa, char*, sa->blks, sa->size, osz);
+			else
+				tmp = RENEW_ARRAY(char*, sa->blks, sa->size);
 			if (tmp == NULL) {
 				sa->size /= 2; /* undo */
-				GDKfree(r);
+				if (sa->eb.enabled)
+					eb_error(&sa->eb, "out of memory", 1000);
 				return NULL;
 			}
 			sa->blks = tmp;
@@ -127,13 +143,14 @@ void *sa_zalloc( sql_allocator *sa, size_t sz )
 	if (r)
 		memset(r, 0, sz);
 	return r;
-}	
+}
 
-void sa_destroy( sql_allocator *sa ) 
+void sa_destroy( sql_allocator *sa )
 {
-	size_t i ;
+	if (sa->pa)
+		return;
 
-	for (i = 0; i<sa->nr; i++) {
+	for (size_t i = 0; i<sa->nr; i++) {
 		GDKfree(sa->blks[i]);
 	}
 	GDKfree(sa->blks);
@@ -141,20 +158,20 @@ void sa_destroy( sql_allocator *sa )
 }
 
 #undef sa_strndup
-char *sa_strndup( sql_allocator *sa, const char *s, size_t l) 
-{ 
-	char *r = sa_alloc(sa, l+1); 
+char *sa_strndup( sql_allocator *sa, const char *s, size_t l)
+{
+	char *r = sa_alloc(sa, l+1);
 
 	if (r) {
-		memcpy(r, s, l); 
-		r[l] = 0; 
+		memcpy(r, s, l);
+		r[l] = 0;
 	}
-	return r; 
+	return r;
 }
 
 #undef sa_strdup
-char *sa_strdup( sql_allocator *sa, const char *s ) 
-{ 
+char *sa_strdup( sql_allocator *sa, const char *s )
+{
 	return sa_strndup( sa, s, strlen(s));
 }
 
@@ -164,7 +181,7 @@ char *sa_strconcat( sql_allocator *sa, const char *s1, const char *s2 )
 	size_t l2 = strlen(s2);
 	char *r = sa_alloc(sa, l1+l2+1);
 
-	if (l1) 
+	if (l1)
 		memcpy(r, s1, l1);
 	if (l2)
 		memcpy(r+l1, s2, l2);
@@ -178,7 +195,7 @@ size_t sa_size( sql_allocator *sa )
 }
 
 void
-c_delete( const void *p ) 
+c_delete( const void *p )
 {
 	void *xp = (void*)p;
 

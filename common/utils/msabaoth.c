@@ -38,6 +38,20 @@
 #define close _close
 #define unlink _unlink
 #define fdopen _fdopen
+#define fileno _fileno
+#endif
+
+#ifdef HAVE_OPENSSL
+#include <openssl/rand.h>		/* RAND_bytes */
+#else
+#ifdef HAVE_COMMONCRYPTO
+#include <CommonCrypto/CommonCrypto.h>
+#include <CommonCrypto/CommonRandom.h>
+#endif
+#endif
+
+#ifndef O_CLOEXEC
+#define O_CLOEXEC 0
 #endif
 
 /** the directory where the databases are (aka dbfarm) */
@@ -556,6 +570,89 @@ msab_registerStop(void)
 	return(NULL);
 }
 
+#define SECRETFILE ".secret"
+#define SECRET_LENGTH (32)
+char *
+msab_pickSecret(char **generated_secret)
+{
+	unsigned char bin_secret[SECRET_LENGTH / 2];
+	char *secret;
+	char pathbuf[FILENAME_MAX];
+	char *e;
+
+	if ((e = getDBPath(pathbuf, sizeof(pathbuf), SECRETFILE)) != NULL)
+		return e;
+
+	// delete existing so we can recreate with appropriate permissions
+	if (remove(pathbuf) < 0 && errno != ENOENT) {
+		char err[FILENAME_MAX + 512];
+		snprintf(err, sizeof(err), "unable to remove '%s': %s",
+			pathbuf, strerror(errno));
+		return strdup(err);
+	}
+
+	secret = malloc(SECRET_LENGTH + 1);
+	secret[SECRET_LENGTH] = '\0';
+
+#ifdef HAVE_OPENSSL
+	if (RAND_bytes(bin_secret, SECRET_LENGTH / 2) != 1) {
+		free(secret);
+		return strdup("RAND_bytes failed");
+	}
+#else
+#ifdef HAVE_COMMONCRYPTO
+	if (CCRandomGenerateBytes(bin_secret, SECRET_LENGTH / 2) != kCCSuccess) {
+		free(secret);
+		return strdup("CCRandomGenerateBytes failed");
+	}
+#else
+	(void)bin_secret;
+	if (generated_secret)
+	// do not return an error, just continue without a secret
+		*generated_secret = NULL;
+	return NULL;
+#endif
+#endif
+#if defined(HAVE_OPENSSL) || defined(HAVE_COMMONCRYPTO)
+	int fd;
+	FILE *f;
+	for (size_t i = 0; i < SECRET_LENGTH / 2; i++) {
+		snprintf(
+			secret + 2 * i, 3,
+			"%02x",
+			bin_secret[i]
+		);
+	}
+
+	if ((fd = open(pathbuf, O_CREAT | O_WRONLY | O_CLOEXEC, S_IRUSR | S_IWUSR)) == -1) {
+		char err[512];
+		snprintf(err, sizeof(err), "unable to open '%s': %s",
+				pathbuf, strerror(errno));
+		return strdup(err);
+	}
+	if ((f = fdopen(fd, "w")) == NULL) {
+		char err[512];
+		snprintf(err, sizeof(err), "unable to open '%s': %s",
+				pathbuf, strerror(errno));
+		close(fd);
+		(void)remove(pathbuf);
+		return strdup(err);
+	}
+	if (fwrite(secret, 1, SECRET_LENGTH, f) < SECRET_LENGTH || fclose(f) < 0) {
+		char err[512];
+		snprintf(err, sizeof(err), "cannot write secret: %s",
+				strerror(errno));
+		fclose(f);
+		(void)remove(pathbuf);
+		return strdup(err);
+	}
+
+	if (generated_secret)
+		*generated_secret = (char*)secret;
+	return NULL;
+#endif
+}
+
 /**
  * Returns the status as NULL terminated sabdb struct list for the
  * current database.  Since the current database should always exist,
@@ -577,6 +674,37 @@ msab_getMyStatus(sabdb** ret)
 
 #define MAINTENANCEFILE ".maintenance"
 
+/* returns pid of the process holding the gdk lock, or 0 if that is not possible.
+ * 'not possible' could be for a variety of reasons.
+ */
+static pid_t
+MT_get_locking_pid(const char *filename)
+{
+#if !defined(HAVE_FCNTL) || !defined(HAVE_F_GETLK)
+	(void)filename;
+	return 0;
+#else
+	int fd;
+	struct flock fl = {
+		.l_type = F_WRLCK,
+		.l_whence = SEEK_SET,
+		.l_start = 4,
+		.l_len = 1,
+	};
+	pid_t pid = 0;
+
+	fd = open(filename, O_RDONLY | O_CLOEXEC, 0);
+	if (fd < 0)
+		return 0;
+
+	if (fcntl(fd, F_GETLK, &fl) == 0)
+		pid = fl.l_pid;
+
+	close(fd);
+	return pid;
+#endif
+}
+
 static sabdb *
 msab_getSingleStatus(const char *pathbuf, const char *dbname, sabdb *next)
 {
@@ -597,12 +725,14 @@ msab_getSingleStatus(const char *pathbuf, const char *dbname, sabdb *next)
 	sdb = malloc(sizeof(sabdb));
 	sdb->uplog = NULL;
 	sdb->uri = NULL;
+	sdb->secret = NULL;
 	sdb->next = next;
 
 	/* store the database name */
 	snprintf(buf, sizeof(buf), "%s/%s", pathbuf, dbname);
 	sdb->path = strdup(buf);
 	sdb->dbname = sdb->path + strlen(sdb->path) - strlen(dbname);
+	sdb->pid = 0;
 
 
 	/* check the state of the server by looking at its gdk lock:
@@ -648,8 +778,9 @@ msab_getSingleStatus(const char *pathbuf, const char *dbname, sabdb *next)
 		 */
 		sdb->state = SABdbInactive;
 	} else if (fd == -1) {
-		/* file is locked, so mserver is running, see if the database
-		 * has finished starting */
+		/* file is locked, so mserver is running. can we find it? */
+		sdb->pid = MT_get_locking_pid(buf);
+		/* see if the database has finished starting */
 		snprintf(buf, sizeof(buf), "%s/%s/%s", pathbuf, dbname, STARTEDFILE);
 		if (stat(buf, &statbuf) == -1) {
 			sdb->state = SABdbStarting;
@@ -722,6 +853,32 @@ msab_getSingleStatus(const char *pathbuf, const char *dbname, sabdb *next)
 		(void)fclose(f);
 	}
 
+	// read the secret
+	do {
+		struct stat stb;
+		snprintf(buf, sizeof(buf), "%s/%s/%s", pathbuf, dbname, SECRETFILE);
+		if ((f = fopen(buf, "r")) == NULL)
+			break;
+		if (fstat(fileno(f), &stb) < 0) {
+			fclose(f);
+			break;
+		}
+		size_t len = (size_t)stb.st_size;
+		char *secret = malloc(len + 1);
+		if (!secret) {
+			fclose(f);
+			break;
+		}
+		if (fread(secret, 1, len, f) != len) {
+			fclose(f);
+			free(secret);
+			break;
+		}
+		fclose(f);
+		secret[len] = '\0';
+		sdb->secret = secret;
+	} while (0);
+
 	return sdb;
 }
 
@@ -792,12 +949,10 @@ msab_freeStatus(sabdb** ret)
 
 	p = *ret;
 	while (p != NULL) {
-		if (p->path != NULL)
-			free(p->path);
-		if (p->uri != NULL)
-			free(p->uri);
-		if (p->uplog != NULL)
-			free(p->uplog);
+		free(p->path);
+		free(p->uri);
+		free(p->secret);
+		free(p->uplog);
 		r = p->scens;
 		while (r != NULL) {
 			if (r->val != NULL)
@@ -841,7 +996,7 @@ msab_getUplogInfo(sabuplog *ret, const sabdb *db)
 		*ret = *db->uplog;
 		return(NULL);
 	}
-		
+
 	memset(avg10, 0, sizeof(int) * 10);
 	memset(avg30, 0, sizeof(int) * 30);
 
@@ -866,7 +1021,7 @@ msab_getUplogInfo(sabuplog *ret, const sabdb *db)
 						ret->lastcrash = start;
 					memmove(&avg10[0], &avg10[1], sizeof(int) * 9);
 					memmove(&avg30[0], &avg30[1], sizeof(int) * 29);
-					avg10[9] = avg30[29] = ret->crashavg1 = 
+					avg10[9] = avg30[29] = ret->crashavg1 =
 						(start != 0);
 					*p = '\0';
 					ret->laststart = start = (time_t)atol(data);
@@ -1006,19 +1161,19 @@ msab_deserialise(sabdb **ret, char *sdb)
 
 	lasts = sdb;
 	if ((p = strchr(lasts, ':')) == NULL) {
-		snprintf(buf, sizeof(buf), 
+		snprintf(buf, sizeof(buf),
 				"string does not contain a magic: %s", lasts);
 		return(strdup(buf));
 	}
 	*p++ = '\0';
 	if (strcmp(lasts, "sabdb") != 0) {
-		snprintf(buf, sizeof(buf), 
+		snprintf(buf, sizeof(buf),
 				"string is not a sabdb struct: %s", lasts);
 		return(strdup(buf));
 	}
 	lasts = p;
 	if ((p = strchr(p, ':')) == NULL) {
-		snprintf(buf, sizeof(buf), 
+		snprintf(buf, sizeof(buf),
 				"string does not contain a version number: %s", lasts);
 		return(strdup(buf));
 	}
@@ -1037,14 +1192,14 @@ msab_deserialise(sabdb **ret, char *sdb)
 		 * ignore the path information (and set uri to "<unknown>".  The
 		 * SABdbStarting state never occurs. */
 	} else if (strcmp(lasts, SABDBVER) != 0) {
-		snprintf(buf, sizeof(buf), 
+		snprintf(buf, sizeof(buf),
 				"string has unsupported version: %s", lasts);
 		return(strdup(buf));
 	}
 	protover = lasts[0];
 	lasts = p;
 	if ((p = strchr(p, ',')) == NULL) {
-		snprintf(buf, sizeof(buf), 
+		snprintf(buf, sizeof(buf),
 				"string does not contain %s: %s",
 				protover == '1' ? "path" : "dbname", lasts);
 		return(strdup(buf));
@@ -1056,7 +1211,7 @@ msab_deserialise(sabdb **ret, char *sdb)
 	} else {
 		lasts = p;
 		if ((p = strchr(p, ',')) == NULL) {
-			snprintf(buf, sizeof(buf), 
+			snprintf(buf, sizeof(buf),
 					"string does not contain uri: %s", lasts);
 			return(strdup(buf));
 		}
@@ -1065,7 +1220,7 @@ msab_deserialise(sabdb **ret, char *sdb)
 	}
 	lasts = p;
 	if ((p = strchr(p, ',')) == NULL) {
-		snprintf(buf, sizeof(buf), 
+		snprintf(buf, sizeof(buf),
 				"string does not contain locked state: %s", lasts);
 		return(strdup(buf));
 	}
@@ -1073,7 +1228,7 @@ msab_deserialise(sabdb **ret, char *sdb)
 	locked = atoi(lasts);
 	lasts = p;
 	if ((p = strchr(p, ',')) == NULL) {
-		snprintf(buf, sizeof(buf), 
+		snprintf(buf, sizeof(buf),
 				"string does not contain state: %s", lasts);
 		return(strdup(buf));
 	}
@@ -1081,7 +1236,7 @@ msab_deserialise(sabdb **ret, char *sdb)
 	state = atoi(lasts);
 	lasts = p;
 	if ((p = strchr(p, ',')) == NULL) {
-		snprintf(buf, sizeof(buf), 
+		snprintf(buf, sizeof(buf),
 				"string does not contain scenarios: %s", lasts);
 		return(strdup(buf));
 	}
@@ -1090,7 +1245,7 @@ msab_deserialise(sabdb **ret, char *sdb)
 	lasts = p;
 	if (protover == '1') {
 		if ((p = strchr(p, ',')) == NULL) {
-			snprintf(buf, sizeof(buf), 
+			snprintf(buf, sizeof(buf),
 					"string does not contain connections: %s", lasts);
 			return(strdup(buf));
 		}
@@ -1103,7 +1258,7 @@ msab_deserialise(sabdb **ret, char *sdb)
 
 	if ((p = strchr(p, ',')) == NULL) {
 		free(u);
-		snprintf(buf, sizeof(buf), 
+		snprintf(buf, sizeof(buf),
 				"string does not contain startcounter: %s", lasts);
 		return(strdup(buf));
 	}
@@ -1112,7 +1267,7 @@ msab_deserialise(sabdb **ret, char *sdb)
 	lasts = p;
 	if ((p = strchr(p, ',')) == NULL) {
 		free(u);
-		snprintf(buf, sizeof(buf), 
+		snprintf(buf, sizeof(buf),
 				"string does not contain stopcounter: %s", lasts);
 		return(strdup(buf));
 	}
@@ -1121,7 +1276,7 @@ msab_deserialise(sabdb **ret, char *sdb)
 	lasts = p;
 	if ((p = strchr(p, ',')) == NULL) {
 		free(u);
-		snprintf(buf, sizeof(buf), 
+		snprintf(buf, sizeof(buf),
 				"string does not contain crashcounter: %s", lasts);
 		return(strdup(buf));
 	}
@@ -1130,7 +1285,7 @@ msab_deserialise(sabdb **ret, char *sdb)
 	lasts = p;
 	if ((p = strchr(p, ',')) == NULL) {
 		free(u);
-		snprintf(buf, sizeof(buf), 
+		snprintf(buf, sizeof(buf),
 				"string does not contain avguptime: %s", lasts);
 		return(strdup(buf));
 	}
@@ -1139,7 +1294,7 @@ msab_deserialise(sabdb **ret, char *sdb)
 	lasts = p;
 	if ((p = strchr(p, ',')) == NULL) {
 		free(u);
-		snprintf(buf, sizeof(buf), 
+		snprintf(buf, sizeof(buf),
 				"string does not contain maxuptime: %s", lasts);
 		return(strdup(buf));
 	}
@@ -1148,7 +1303,7 @@ msab_deserialise(sabdb **ret, char *sdb)
 	lasts = p;
 	if ((p = strchr(p, ',')) == NULL) {
 		free(u);
-		snprintf(buf, sizeof(buf), 
+		snprintf(buf, sizeof(buf),
 				"string does not contain minuptime: %s", lasts);
 		return(strdup(buf));
 	}
@@ -1157,7 +1312,7 @@ msab_deserialise(sabdb **ret, char *sdb)
 	lasts = p;
 	if ((p = strchr(p, ',')) == NULL) {
 		free(u);
-		snprintf(buf, sizeof(buf), 
+		snprintf(buf, sizeof(buf),
 				"string does not contain lastcrash: %s", lasts);
 		return(strdup(buf));
 	}
@@ -1166,7 +1321,7 @@ msab_deserialise(sabdb **ret, char *sdb)
 	lasts = p;
 	if ((p = strchr(p, ',')) == NULL) {
 		free(u);
-		snprintf(buf, sizeof(buf), 
+		snprintf(buf, sizeof(buf),
 				"string does not contain laststart: %s", lasts);
 		return(strdup(buf));
 	}
@@ -1176,7 +1331,7 @@ msab_deserialise(sabdb **ret, char *sdb)
 	if (protover != '1') {
 		if ((p = strchr(p, ',')) == NULL) {
 			free(u);
-			snprintf(buf, sizeof(buf), 
+			snprintf(buf, sizeof(buf),
 					"string does not contain laststop: %s", lasts);
 			return(strdup(buf));
 		}
@@ -1188,7 +1343,7 @@ msab_deserialise(sabdb **ret, char *sdb)
 	}
 	if ((p = strchr(p, ',')) == NULL) {
 		free(u);
-		snprintf(buf, sizeof(buf), 
+		snprintf(buf, sizeof(buf),
 				"string does not contain crashavg1: %s", lasts);
 		return(strdup(buf));
 	}
@@ -1197,7 +1352,7 @@ msab_deserialise(sabdb **ret, char *sdb)
 	lasts = p;
 	if ((p = strchr(p, ',')) == NULL) {
 		free(u);
-		snprintf(buf, sizeof(buf), 
+		snprintf(buf, sizeof(buf),
 				"string does not contain crashavg10: %s", lasts);
 		return(strdup(buf));
 	}
@@ -1206,7 +1361,7 @@ msab_deserialise(sabdb **ret, char *sdb)
 	lasts = p;
 	if ((p = strchr(p, ',')) != NULL) {
 		free(u);
-		snprintf(buf, sizeof(buf), 
+		snprintf(buf, sizeof(buf),
 				"string contains additional garbage after crashavg30: %s",
 				p);
 		return(strdup(buf));
@@ -1229,8 +1384,10 @@ msab_deserialise(sabdb **ret, char *sdb)
 	/* msab_freeStatus() actually relies on this trick */
 	s->path = s->dbname = strdup(dbname);
 	s->uri = strdup(uri);
+	s->secret = NULL;
 	s->locked = locked;
 	s->state = (SABdbState)state;
+	s->pid = 0;
 	if (strlen(scens) == 0) {
 		s->scens = NULL;
 	} else {

@@ -28,7 +28,21 @@ select group_concat(a, 8) from testmore;
 select group_concat(a, b) from testmore;
 select group_concat(b, a) from testmore;
 
+select group_concat('😀', '😁') as "😃" from (values (1),(2),(3), (NULL)) v;
 select group_concat('😀', '😁') over () as "😃" from (values (1),(2),(3), (NULL)) v;
+
+select group_concat(null) || 'a';
+select group_concat(null) || 'a' from testmore;
+select group_concat(null) over () || 'a';
+select group_concat(null) over () || 'a' from testmore;
+
+select group_concat('') || 'a' where false;
+select group_concat('') over () || 'a' where false;
+
+select group_concat('');
+select group_concat('') from testmore;
+select group_concat('') over () from testmore;
+select group_concat('', '') over () from testmore;
 
 /* listagg is the SQL standard name of group_concat */
 select listagg(a) from testmore;

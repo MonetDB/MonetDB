@@ -43,9 +43,7 @@ project (
 % clob # type
 % 69 # length
 project (
-| project (
-| | table(sys.fk) [ "fk"."id" NOT NULL HASHCOL  ] COUNT 
-| ) [ "fk"."id" NOT NULL HASHCOL  ]
+| table(sys.fk) [ "fk"."id" NOT NULL HASHCOL  ] COUNT 
 ) [ "fk"."id" NOT NULL HASHCOL  ] [ "fk"."id" ASC NOT NULL HASHCOL  ]
 
 # 01:44:33 >  

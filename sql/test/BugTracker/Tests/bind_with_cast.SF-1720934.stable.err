@@ -24,16 +24,7 @@ stderr of test 'bind_with_cast.SF-1720934` in directory 'sql/test/BugTracker` it
 # cmdline opt 	embedded_r = yes
 # cmdline opt 	gdk_debug = 536870922
 
-# 21:37:05 >  
-# 21:37:05 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-6542" "--port=31466"
-# 21:37:05 >  
-
-MAPI  = (monetdb) /var/tmp/mtest-6542/.s.monetdb.31466
-QUERY = exec  5('100');
-ERROR = !Wrong type for argument 1 of function call: char, expected int
-CODE  = 42000
-
-# 21:37:05 >  
-# 21:37:05 >  "Done."
-# 21:37:05 >  
+# 10:47:04 >  
+# 10:47:04 >  "Done."
+# 10:47:04 >  
 

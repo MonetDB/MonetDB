@@ -35,6 +35,21 @@
 	}  } while (0)
 
 
+static int
+withoutMitosis(MalBlkPtr mb)
+{
+	InstrPtr p;
+
+	for(int i = mb->stop-1; i>=0; i--) {
+		p = mb->stmt[i];
+		if (p->token == ENDsymbol)
+			break;
+		if (getFunctionId(p) == mitosisRef)
+			return (p->token == REMsymbol);
+    }
+	return 0;
+}
+
 str
 OPTemptybindImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
@@ -47,6 +62,7 @@ OPTemptybindImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
 	str sch,tbl;
 	int etop= 0, esize= 256;
 	str msg = MAL_SUCCEED;
+	int no_mitosis = withoutMitosis(mb);
 
 	(void) stk;
 	(void) cntxt;
@@ -55,11 +71,11 @@ OPTemptybindImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
 	//if ( optimizerIsApplied(mb,"emptybind") )
 		//return 0;
 	// use an instruction reference table to keep
-	
+
 	for( i=0; i< mb->stop; i++)
 		if( getFunctionId(getInstrPtr(mb,i)) == emptybindRef || getFunctionId(getInstrPtr(mb,i)) == emptybindidxRef)
 			extras += getInstrPtr(mb,i)->argc;
-	if( extras == 0)
+	if (extras == 0)
 		goto wrapup;
 
 	// track of where 'emptybind' results are produced
@@ -74,7 +90,7 @@ OPTemptybindImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
 		return 0;
 	}
 
-	if ( newMalBlkStmt(mb, mb->ssize) < 0) {
+	if (newMalBlkStmt(mb, mb->ssize) < 0) {
 		GDKfree(empty);
 		GDKfree(updated);
 		throw(MAL,"optimizer.emptybind", SQLSTATE(HY013) MAL_MALLOC_FAIL);
@@ -95,12 +111,12 @@ OPTemptybindImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
 
  		/*
  		 * The bulk of the intelligence lies in inspecting calling
- 		 * sequences to filter and replace results 
+ 		 * sequences to filter and replace results
  		 */
 		if ( getModuleId(p) == batRef && getFunctionId(p) == newRef){
 			empty[getArg(p,0)] = i;
 			continue;
-		} 
+		}
 
 		// any of these instructions leave a non-empty BAT behind
 		if(p && getModuleId(p) == sqlRef && isUpdateInstruction(p)){
@@ -116,7 +132,7 @@ OPTemptybindImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
 			updated[etop++]= p;
 		}
 
-		/* restore the naming, dropping the runtime property 'empty' 
+		/* restore the naming, dropping the runtime property 'empty'
 		 * Keep the bind operation, because it is cheap, rather focus on their re-use
 		 */
 
@@ -127,7 +143,7 @@ OPTemptybindImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
 			if( p->retc == 2){
 				empty[getArg(p,1)] = i;
 			}
-			// replace the call into a empty bat creation unless the table was updated already in the same query 
+			// replace the call into a empty bat creation unless the table was updated already in the same query
 			sch = getVarConstant(mb,getArg(p,2  + (p->retc==2))).val.sval;
 			tbl = getVarConstant(mb,getArg(p,3  + (p->retc==2))).val.sval;
 			for(j= 0; j< etop; j++){
@@ -159,7 +175,7 @@ OPTemptybindImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
 			setFunctionId(p,bindidxRef);
 			p->typechk= TYPE_UNKNOWN;
 			empty[getArg(p,0)] = i;
-			// replace the call into a empty bat creation unless the table was updated already in the same query 
+			// replace the call into a empty bat creation unless the table was updated already in the same query
 			sch = getVarConstant(mb,getArg(p,2  + (p->retc==2))).val.sval;
 			tbl = getVarConstant(mb,getArg(p,3  + (p->retc==2))).val.sval;
 			for(j= 0; j< etop; j++){
@@ -185,14 +201,26 @@ OPTemptybindImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
 		}
 
 		// delta operations without updates+ insert can be replaced by an assignment
-		if (getModuleId(p)== sqlRef && getFunctionId(p) == deltaRef  && p->argc ==5){
-			if( empty[getArg(p,2)] && empty[getArg(p,3)] && empty[getArg(p,4)] ){
+		if (getModuleId(p)== sqlRef && getFunctionId(p) == deltaRef  && p->argc == 5){
+			if (empty[getArg(p,2)] && empty[getArg(p,3)] && empty[getArg(p,4)]){
 				actions++;
 				clrFunction(p);
 				p->argc = 2;
-				if ( empty[getArg(p,1)] ){
+				if (empty[getArg(p,1)])
 					empty[getArg(p,0)] = i;
-				}
+				continue;
+			}
+		}
+		// delta operations without updates can be replaced by an pack of base and inserts
+		if (getModuleId(p)== sqlRef && getFunctionId(p) == deltaRef  && p->argc == 5){
+			if (no_mitosis && empty[getArg(p,2)] && empty[getArg(p,3)]){
+				actions++;
+				clrFunction(p);
+				setModuleId(p,matRef);
+				setFunctionId(p,packRef);
+				p->argc = 3;
+				getArg(p, 2) = getArg(p, 4);
+				p->typechk= TYPE_UNKNOWN;
 			}
 			continue;
 		}
@@ -230,17 +258,16 @@ OPTemptybindImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
 		if (getModuleId(p)== batRef && isUpdateInstruction(p)){
 			if( empty[getArg(p,1)] && empty[getArg(p,2)]){
 				emptyresult(0);
-			} else
-			if( empty[getArg(p,2)]){
+			} else if (empty[getArg(p,2)]){
 				actions++;
-				clrFunction(p);	
+				clrFunction(p);
 				p->argc = 2;
 			}
 		}
 	}
 
 	for(; i<slimit; i++)
-		if( old[i])
+		if (old[i])
 			freeInstruction(old[i]);
 	GDKfree(old);
 	GDKfree(empty);

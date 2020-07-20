@@ -25,17 +25,7 @@ stderr of test 'prepare_stmt.Bug-2533.Bug-2534` in directory 'sql/test/BugTracke
 # cmdline opt 	embedded_py = true
 # cmdline opt 	gdk_debug = 536870922
 
-# 23:36:34 >  
-# 23:36:34 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-7551" "--port=35003"
-# 23:36:34 >  
-
-MAPI  = (monetdb) /var/tmp/mtest-7551/.s.monetdb.35003
-QUERY = exec  3(2.3);
-ERROR = !Wrong type for argument 1 of function call: decimal, expected bigint
-CODE  = 42000
-
-
-# 23:36:35 >  
-# 23:36:35 >  "Done."
-# 23:36:35 >  
+# 10:48:01 >  
+# 10:48:01 >  "Done."
+# 10:48:01 >  
 

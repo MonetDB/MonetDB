@@ -12,7 +12,7 @@
 #include "sql_string.h"
 #include "mal_exception.h"
 
-/* 
+/*
  * some string functions.
  */
 
@@ -85,7 +85,7 @@ strip_extra_zeros(char *s)
 		;
 	res = s;
 	/* find end, and strip extra 0's */
-	for (; *s; s++) ;	
+	for (; *s; s++) ;
 	s--;
 	for (; *s && *s == '0' && s[-1] == '0'; s--)
 		;
@@ -108,10 +108,10 @@ sql_strdup(char *s)
 }
 
 char *
-sql_escape_str(char *s)
+sql_escape_str(sql_allocator *sa, char *s)
 {
 	size_t l = strlen(s);
-	char *res, *r = NEW_ARRAY(char, (l * 2) + 1);
+	char *res, *r = SA_NEW_ARRAY(sa, char, (l * 2) + 1);
 
 	res = r;
 	if (res) {
@@ -127,10 +127,10 @@ sql_escape_str(char *s)
 }
 
 const char *
-sql_escape_ident(const char *s)
+sql_escape_ident(sql_allocator *sa, const char *s)
 {
 	size_t l = strlen(s);
-	char *res, *r = NEW_ARRAY(char, (l * 2) + 1);
+	char *res, *r = SA_NEW_ARRAY(sa, char, (l * 2) + 1);
 
 	res = r;
 	if (res) {
@@ -151,7 +151,7 @@ char *sql_message( const char *format, ... )
 	va_list	ap;
 
 	va_start (ap,format);
-	(void) vsnprintf( buf, BUFSIZ, format, ap); 
+	(void) vsnprintf( buf, BUFSIZ, format, ap);
 	va_end (ap);
 	return GDKstrdup(buf);
 }
@@ -162,7 +162,7 @@ char *sa_message( sql_allocator *sa, const char *format, ... )
 	va_list	ap;
 
 	va_start (ap,format);
-	(void) vsnprintf( buf, BUFSIZ, format, ap); 
+	(void) vsnprintf( buf, BUFSIZ, format, ap);
 	va_end (ap);
 	return sa_strdup(sa, buf);
 }

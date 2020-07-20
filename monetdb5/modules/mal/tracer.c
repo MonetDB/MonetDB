@@ -4,19 +4,20 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
  * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
- * 
- * 
- * GDKtracer exposes routines where an occuring failure should reach the 
- * client immediately. For that reason, GDKtracer reports those errors 
+ */
+
+/*
+ * GDKtracer exposes routines where an occuring failure should reach the
+ * client immediately. For that reason, GDKtracer reports those errors
  * directly to the stream.
- * 
+ *
  */
 
 #include "monetdb_config.h"
 #include "tracer.h"
 
 
-str 
+str
 TRACERflush_buffer(void *ret)
 {
     (void) ret;
@@ -32,7 +33,7 @@ TRACERset_component_level(void *ret, str *comp_id, str *lvl_id)
     if (GDKtracer_set_component_level(*comp_id, *lvl_id) != GDK_SUCCEED)
         throw(MAL, __FUNCTION__, ILLEGAL_ARGUMENT);
 
-    return MAL_SUCCEED; 
+    return MAL_SUCCEED;
 }
 
 
@@ -54,7 +55,7 @@ TRACERset_layer_level(void *ret, str *layer_id, str *lvl_id)
     if (GDKtracer_set_layer_level(*layer_id, *lvl_id) != GDK_SUCCEED)
         throw(MAL, __FUNCTION__, ILLEGAL_ARGUMENT"\n");
 
-    return MAL_SUCCEED; 
+    return MAL_SUCCEED;
 }
 
 

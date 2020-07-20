@@ -10,7 +10,7 @@
  * A master can be replicated by taking a binary copy of the 'bat' directory
  * when in quiescent mode or a more formal snapshot..
  * Alternatively you start with an empty database.
- * 
+ *
  * The wlc log records written are numbered 0.. wlc_tag - 1
  * The replicator copies all of them unto and including wlc_limit.
  * This leads to the wlr_tag from -1 .. wlc_limit, wlr_tag,..., INT64_MAX
@@ -111,7 +111,7 @@ WLRgetConfig(void){
 			}
 			s = strchr(wlr_error, (int) '\n');
 			if ( s) *s = 0;
-		} 
+		}
 	}
 bailout:
 	fclose(fd);
@@ -234,7 +234,7 @@ WLRprocessBatch(Client cntxt)
 
 	c = MCforkClient(cntxt);
 	if( c == 0)
-		throw(MAL, "wlr.batch", "Could not create user for WLR process\n"); 
+		throw(MAL, "wlr.batch", "Could not create user for WLR process\n");
 	c->promptlength = 0;
 	c->listing = 0;
 	c->fdout = open_wastream(".wlr");
@@ -306,7 +306,7 @@ WLRprocessBatch(Client cntxt)
 		do{
 			parseMAL(c, c->curprg, 1, 1, NULL);
 
-			mb = c->curprg->def; 
+			mb = c->curprg->def;
 			if( mb->errors){
 				msg = mb->errors;
 				mb->errors = NULL;
@@ -343,7 +343,7 @@ WLRprocessBatch(Client cntxt)
 					/* stop execution of the transactions if your reached the limit */
 					cleanup();
 					break;
-				} 
+				}
 			}
 			// only re-execute successful transactions.
 			if ( getModuleId(q) == wlrRef && getFunctionId(q) ==commitRef  && (tag > wlr_tag || ( wlr_timelimit[0] && strcmp(tag_read, wlr_timelimit) > 0))){
@@ -418,7 +418,7 @@ WLRprocessBatch(Client cntxt)
 		if ( wlr_tag == wlr_limit)
 			break;
 	}
-	
+
 	close_stream(c->fdout);
 	SQLexitClient(c);
 	MCcloseClient(c);
@@ -455,7 +455,7 @@ WLRprocessScheduler(void *arg)
 		freeException(msg);
 		return;
 	}
-	
+
 	assert(wlr_master[0]);
 	if (!(cntxt = MCinitClient(MAL_ADMIN, NULL,NULL))) {
 		snprintf(wlr_error, BUFSIZ, "Failed to init WLR scheduler client");
@@ -488,7 +488,7 @@ WLRprocessScheduler(void *arg)
 			MT_thread_setworking("sleeping");
 			if (compare >= 0 && duration >100)
 				MT_sleep_ms(duration);
-		} 
+		}
 		for( ; duration > 0  && wlr_state != WLR_STOP; duration -= 200){
 			if ( wlr_tag + 1 == wlc_tag || wlr_tag >= wlr_limit || wlr_limit == -1){
 				MT_thread_setworking("sleeping");
@@ -521,7 +521,7 @@ WLRprocessScheduler(void *arg)
 // which can accept exceptions
 str
 WLRmaster(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
-{	
+{
 	int len;
 	str msg = MAL_SUCCEED;
 
@@ -550,7 +550,7 @@ WLRreplicate(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	if( wlr_thread)
 		throw(MAL, "sql.replicate", "WLR thread already running, stop it before continueing");
-		
+
 	msg = WLRgetConfig();
 	if( msg != MAL_SUCCEED)
 		return msg;
@@ -626,7 +626,7 @@ WLRtransaction(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	}
 	for( i = mb->stop-1; cntxt->wlc_kind == 0 && i > 1; i--){
 		p = getInstrPtr(mb,i);
-		if( getModuleId(p) == wlrRef && getFunctionId(p)== commitRef) 
+		if( getModuleId(p) == wlrRef && getFunctionId(p)== commitRef)
 			cntxt->wlc_kind = WLC_COMMIT;
 		if( getModuleId(p) == wlrRef && getFunctionId(p)== rollbackRef)
 			cntxt->wlc_kind = WLC_ROLLBACK;
@@ -643,7 +643,7 @@ WLRstart(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	(void) mb;
 	(void) stk;
 	(void) pci;
-	
+
 	// time the consolidation process in the background
 	if (MT_create_thread(&wlr_thread, WLRprocessScheduler, (void*) NULL,
 						 MT_THR_DETACHED, "WLRprocessSched") < 0) {
@@ -776,7 +776,7 @@ WLRquery(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
  */
 str
 WLRaccept(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
-{	
+{
 	(void) cntxt;
 	(void) pci;
 	(void) stk;
@@ -787,7 +787,7 @@ WLRaccept(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 str
 WLRcommit(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
-{	
+{
 	(void) cntxt;
 	(void) pci;
 	(void) stk;
@@ -797,7 +797,7 @@ WLRcommit(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 str
 WLRrollback(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
-{	
+{
 	(void) cntxt;
 	(void) pci;
 	(void) stk;
@@ -807,7 +807,7 @@ WLRrollback(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 str
 WLRaction(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
-{	
+{
 	(void) cntxt;
 	(void) pci;
 	(void) stk;

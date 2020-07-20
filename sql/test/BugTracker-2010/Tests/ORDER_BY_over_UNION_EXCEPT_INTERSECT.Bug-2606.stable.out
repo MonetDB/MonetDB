@@ -60,22 +60,18 @@ stdout of test 'ORDER_BY_over_UNION_EXCEPT_INTERSECT.Bug-2606` in directory 'sql
 % .plan # table_name
 % rel # name
 % clob # type
-% 53 # length
+% 51 # length
 project (
 | project (
 | | distinct union (
 | | | project (
 | | | | group by (
-| | | | | project (
-| | | | | | table(sys.t2606a) [ "t2606a"."a" ] COUNT 
-| | | | | ) [ "t2606a"."a" ]
+| | | | | table(sys.t2606a) [ "t2606a"."a" ] COUNT 
 | | | | ) [ "t2606a"."a" ] [ "t2606a"."a" ]
 | | | ) [ "t2606a"."a" as "%3"."a" ],
 | | | project (
 | | | | group by (
-| | | | | project (
-| | | | | | table(sys.t2606b) [ "t2606b"."a" ] COUNT 
-| | | | | ) [ "t2606b"."a" ]
+| | | | | table(sys.t2606b) [ "t2606b"."a" ] COUNT 
 | | | | ) [ "t2606b"."a" ] [ "t2606b"."a" ]
 | | | ) [ "t2606b"."a" as "%4"."a" ]
 | | ) [ "%3"."a" as "%7"."a" ]
@@ -99,22 +95,18 @@ project (
 % .plan # table_name
 % rel # name
 % clob # type
-% 53 # length
+% 51 # length
 project (
 | project (
 | | distinct union (
 | | | project (
 | | | | group by (
-| | | | | project (
-| | | | | | table(sys.t2606a) [ "t2606a"."a" ] COUNT 
-| | | | | ) [ "t2606a"."a" ]
+| | | | | table(sys.t2606a) [ "t2606a"."a" ] COUNT 
 | | | | ) [ "t2606a"."a" ] [ "t2606a"."a" ]
 | | | ) [ "t2606a"."a" as "%3"."a" ],
 | | | project (
 | | | | group by (
-| | | | | project (
-| | | | | | table(sys.t2606b) [ "t2606b"."a" ] COUNT 
-| | | | | ) [ "t2606b"."a" ]
+| | | | | table(sys.t2606b) [ "t2606b"."a" ] COUNT 
 | | | | ) [ "t2606b"."a" ] [ "t2606b"."a" ]
 | | | ) [ "t2606b"."a" as "%4"."a" ]
 | | ) [ "%3"."a" as "%7"."a" ]
@@ -138,22 +130,18 @@ project (
 % .plan # table_name
 % rel # name
 % clob # type
-% 53 # length
+% 51 # length
 project (
 | project (
 | | distinct union (
 | | | project (
 | | | | group by (
-| | | | | project (
-| | | | | | table(sys.t2606a) [ "t2606a"."a" ] COUNT 
-| | | | | ) [ "t2606a"."a" ]
+| | | | | table(sys.t2606a) [ "t2606a"."a" ] COUNT 
 | | | | ) [ "t2606a"."a" ] [ "t2606a"."a" ]
 | | | ) [ "t2606a"."a" as "%3"."a" ],
 | | | project (
 | | | | group by (
-| | | | | project (
-| | | | | | table(sys.t2606b) [ "t2606b"."a" ] COUNT 
-| | | | | ) [ "t2606b"."a" ]
+| | | | | table(sys.t2606b) [ "t2606b"."a" ] COUNT 
 | | | | ) [ "t2606b"."a" ] [ "t2606b"."a" ]
 | | | ) [ "t2606b"."a" as "%4"."a" ]
 | | ) [ "%3"."a" as "%7"."a" ]
@@ -327,22 +315,18 @@ project (
 % .plan # table_name
 % rel # name
 % clob # type
-% 53 # length
+% 51 # length
 project (
 | project (
 | | distinct union (
 | | | project (
 | | | | group by (
-| | | | | project (
-| | | | | | table(sys.t2606a) [ "t2606a"."a" ] COUNT 
-| | | | | ) [ "t2606a"."a" ]
+| | | | | table(sys.t2606a) [ "t2606a"."a" ] COUNT 
 | | | | ) [ "t2606a"."a" ] [ "t2606a"."a" ]
 | | | ) [ "t2606a"."a" as "%3"."a" ],
 | | | project (
 | | | | group by (
-| | | | | project (
-| | | | | | table(sys.t2606b) [ "t2606b"."a" ] COUNT 
-| | | | | ) [ "t2606b"."a" ]
+| | | | | table(sys.t2606b) [ "t2606b"."a" ] COUNT 
 | | | | ) [ "t2606b"."a" ] [ "t2606b"."a" ]
 | | | ) [ "t2606b"."a" as "%4"."a" ]
 | | ) [ "%3"."a" as "t"."a" ]

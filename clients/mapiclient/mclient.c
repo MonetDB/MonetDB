@@ -2237,7 +2237,7 @@ doFile(Mapi mid, stream *fp, bool useinserts, bool interactive, int save_history
 		init_readline(mid, language, save_history);
 		rl.s = fp;
 		rl.buf = NULL;
-		if ((fp = callback_stream(&rl, myread, NULL, mydestroy, mnstr_name(fp))) == NULL) {
+		if ((fp = callback_stream(&rl, myread, NULL, NULL, mydestroy, mnstr_name(fp))) == NULL) {
 			fprintf(stderr,"Malloc for doFile failed");
 			exit(2);
 		}
@@ -2505,7 +2505,7 @@ doFile(Mapi mid, stream *fp, bool useinserts, bool interactive, int save_history
 #endif
 					} else {
 						/* get all object names in current schema */
-						char *with_clause = 
+						char *with_clause =
 							", describe_all_objects AS (\n"
 							"  SELECT s.name AS sname,\n"
 							"      t.name,\n"

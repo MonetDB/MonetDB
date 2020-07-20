@@ -1656,7 +1656,7 @@ sql_update_nov2019_missing_dependencies(Client c, mvc *sql)
 	if (buf == NULL)
 		throw(SQL, __func__, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 
-	if (!(sql->sa = sa_create())) {
+	if (!(sql->sa = sa_create(sql->pa))) {
 		err = createException(SQL, "sql.catalog", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		goto bailout;
 	}
@@ -2560,40 +2560,6 @@ sql_update_jun2020(Client c, mvc *sql, const char *prev_schema, bool *systabfixe
 			" external name \"sql\".\"corr\";\n"
 			"GRANT EXECUTE ON WINDOW corr(INTERVAL MONTH, INTERVAL MONTH) TO PUBLIC;\n");
 
-#ifdef HAVE_HGE
-	if (have_hge) {
-		/* 39_analytics_hge.sql */
-		pos += snprintf(buf + pos, bufsize - pos,
-			"create window stddev_samp(val HUGEINT) returns DOUBLE\n"
-			" external name \"sql\".\"stdev\";\n"
-			"GRANT EXECUTE ON WINDOW stddev_samp(HUGEINT) TO PUBLIC;\n"
-			"create window stddev_pop(val HUGEINT) returns DOUBLE\n"
-			" external name \"sql\".\"stdevp\";\n"
-			"GRANT EXECUTE ON WINDOW stddev_pop(HUGEINT) TO PUBLIC;\n"
-			"create window var_samp(val HUGEINT) returns DOUBLE\n"
-			" external name \"sql\".\"variance\";\n"
-			"GRANT EXECUTE ON WINDOW var_samp(HUGEINT) TO PUBLIC;\n"
-			"create window var_pop(val HUGEINT) returns DOUBLE\n"
-			" external name \"sql\".\"variancep\";\n"
-			"GRANT EXECUTE ON WINDOW var_pop(HUGEINT) TO PUBLIC;\n"
-			"create aggregate covar_samp(e1 HUGEINT, e2 HUGEINT) returns DOUBLE\n"
-			" external name \"aggr\".\"covariance\";\n"
-			"GRANT EXECUTE ON AGGREGATE covar_samp(HUGEINT, HUGEINT) TO PUBLIC;\n"
-			"create window covar_samp(e1 HUGEINT, e2 HUGEINT) returns DOUBLE\n"
-			" external name \"sql\".\"covariance\";\n"
-			"GRANT EXECUTE ON WINDOW covar_samp(HUGEINT, HUGEINT) TO PUBLIC;\n"
-			"create aggregate covar_pop(e1 HUGEINT, e2 HUGEINT) returns DOUBLE\n"
-			" external name \"aggr\".\"covariancep\";\n"
-			"GRANT EXECUTE ON AGGREGATE covar_pop(HUGEINT, HUGEINT) TO PUBLIC;\n"
-			"create window covar_pop(e1 HUGEINT, e2 HUGEINT) returns DOUBLE\n"
-			" external name \"sql\".\"covariancep\";\n"
-			"GRANT EXECUTE ON WINDOW covar_pop(HUGEINT, HUGEINT) TO PUBLIC;\n"
-			"create window corr(e1 HUGEINT, e2 HUGEINT) returns DOUBLE\n"
-			" external name \"sql\".\"corr\";\n"
-			"GRANT EXECUTE ON WINDOW corr(HUGEINT, HUGEINT) TO PUBLIC;\n");
-	}
-#endif
-
 	pos += snprintf(buf + pos, bufsize - pos,
 		"create window sys.group_concat(str STRING) returns STRING\n"
 		" external name \"sql\".\"str_group_concat\";\n"
@@ -2785,7 +2751,6 @@ sql_update_jun2020_bam(Client c, mvc *m, const char *prev_schema)
 	return err;
 }
 
-
 #ifdef HAVE_HGE
 static str
 sql_update_jun2020_sp1_hugeint(Client c, const char *prev_schema)
@@ -2844,19 +2809,6 @@ sql_update_jun2020_sp1_hugeint(Client c, const char *prev_schema)
 #endif
 
 static str
-sql_update_semantics(Client c)
-{
-	char* update_query =
-	"update sys.functions set semantics = false where type <> 6 and func not ilike '%CREATE FUNCTION%' and name in ('length','octet_length','>','>=','<','<=','min','max','sql_min','sql_max','least','greatest','sum','prod','mod','and',\n"
-	"'xor','not','sql_mul','sql_div','sql_sub','sql_add','bit_and','bit_or','bit_xor','bit_not','left_shift','right_shift','abs','sign','scale_up','scale_down','round','power','floor','ceil','ceiling','sin','cos','tan','asin',\n"
-	"'acos','atan','sinh','cot','cosh','tanh','sqrt','exp','log','ln','log10','log2','pi','curdate','current_date','curtime','current_time','current_timestamp','localtime','localtimestamp','local_timezone','century','decade','year',\n"
-	"'quarter','month','day','dayofyear','weekofyear','dayofweek','dayofmonth','week','hour','minute','second','strings','locate','charindex','splitpart','substring','substr','truncate','concat','ascii','code','right','left','upper',\n"
-	"'ucase','lower','lcase','trim','ltrim','rtrim','lpad','rpad','insert','replace','repeat','space','char_length','character_length','soundex','qgramnormalize');";
-
-	return SQLstatementIntern(c, &update_query, "update", true, false, NULL);
-}
-
-static str
 sql_update_default_lidar(Client c)
 {
 	char *query =
@@ -2870,7 +2822,7 @@ sql_update_default_lidar(Client c)
 static str
 sql_update_default(Client c, mvc *sql, const char *prev_schema)
 {
-	size_t bufsize = 4096, pos = 0;
+	size_t bufsize = 8192, pos = 0;
 	char *err = NULL, *buf = GDKmalloc(bufsize);
 	sql_schema *sys = mvc_bind_schema(sql, "sys");
 	res_table *output;
@@ -2964,6 +2916,22 @@ sql_update_default(Client c, mvc *sql, const char *prev_schema)
 					"external name \"sql\".\"sql_variables\";\n"
 					"grant execute on function \"sys\".\"var\" to public;\n");
 
+			/* .snapshot user */
+			pos += snprintf(buf + pos, bufsize - pos,
+				"create user \".snapshot\""
+				" with encrypted password '00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000'"
+				" name 'Snapshot User'"
+				" schema sys;\n"
+				"grant execute on procedure sys.hot_snapshot to \".snapshot\";\n"
+			);
+
+			/* additional snapshot function */
+			pos += snprintf(buf + pos, bufsize - pos,
+					"create procedure sys.hot_snapshot(tarfile string, onserver bool)\n"
+					" external name sql.hot_snapshot;\n"
+					"update sys.functions set system = true where system <> true and schema_id = (select id from sys.schemas where name = 'sys')"
+					" and name in ('hot_snapshot') and type = %d;\n", (int) F_PROC);
+
 			/* update system tables so that the content
 			 * looks more like what it would be if sys.var
 			 * had been defined by the C code in
@@ -2983,19 +2951,33 @@ sql_update_default(Client c, mvc *sql, const char *prev_schema)
 					"DROP FUNCTION \"sys\".\"getcontent\"(url);\n"
 					"DROP AGGREGATE \"json\".\"output\"(json);\n");
 
-			/* Move sys.degrees and sys.radians to sql_types.c definitions */
+			/* Move sys.degrees and sys.radians to sql_types.c definitions (I did this at the bat_logger) Remove the obsolete entries at privileges table */
 			pos += snprintf(buf + pos, bufsize - pos,
-					"delete from args where args.id in (select args.id from args left join functions on args.func_id = functions.id where args.name in ('r', 'd') and functions.id is null);\n"
 					"delete from privileges where obj_id in (select obj_id from privileges left join functions on privileges.obj_id = functions.id where functions.id is null and privileges.obj_id not in ((SELECT tables.id from tables), 0));\n");
+			/* Remove sql_add and sql_sub between interval and numeric types */
+			pos += snprintf(buf + pos, bufsize - pos,
+					"delete from functions where name in ('sql_sub','sql_add') and func in ('+','-') and id in (select func_id from args where name = 'res_0' and type in ('sec_interval','month_interval'));\n");
+			/* Remove arguments with no function correspondent */
+			pos += snprintf(buf + pos, bufsize - pos,
+					"delete from args where id in (select args.id from args left join functions on args.func_id = functions.id where functions.id is null);\n");
 
-			sql_subtype *types[2] = {sql_bind_localtype("flt"), sql_bind_localtype("dbl")};
 			list *functions = sa_list(sql->sa);
+			/* Adding fixed versions of degrees and radians functions */
+			sql_subtype *flt_types[2] = {sql_bind_localtype("flt"), sql_bind_localtype("dbl")};
 			for (int i = 0; i < 2; i++) {
-				sql_subtype *next = types[i];
+				sql_subtype *next = flt_types[i];
 				list_append(functions, sql_create_func(sql->sa, "degrees", "mmath", "degrees", FALSE, FALSE, SCALE_FIX, 0, next->type, 1, next->type));
 				list_append(functions, sql_create_func(sql->sa, "radians", "mmath", "radians", FALSE, FALSE, SCALE_FIX, 0, next->type, 1, next->type));
 			}
 			insert_functions(sql->session->tr, mvc_bind_table(sql, sys, "functions"), functions, mvc_bind_table(sql, sys, "args"));
+
+			pos += snprintf(buf + pos, bufsize - pos,
+				"update sys.functions set semantics = false where type <> 6 and ((func not ilike '%%CREATE FUNCTION%%' and name in ('length','octet_length','>','>=','<','<=','min','max','sql_min','sql_max','least','greatest','sum','prod','mod','and',\n"
+				"'xor','not','sql_mul','sql_div','sql_sub','sql_add','bit_and','bit_or','bit_xor','bit_not','left_shift','right_shift','abs','sign','scale_up','scale_down','round','power','floor','ceil','ceiling','sin','cos','tan','asin',\n"
+				"'acos','atan','sinh','cot','cosh','tanh','sqrt','exp','log','ln','log10','log2','pi','curdate','current_date','curtime','current_time','current_timestamp','localtime','localtimestamp','local_timezone','century','decade','year',\n"
+				"'quarter','month','day','dayofyear','weekofyear','dayofweek','dayofmonth','week','hour','minute','second','strings','locate','charindex','splitpart','substring','substr','truncate','concat','ascii','code','right','left','upper',\n"
+				"'ucase','lower','lcase','trim','ltrim','rtrim','lpad','rpad','insert','replace','repeat','space','char_length','character_length','soundex','qgramnormalize','degrees','radians')) or \n"
+				"(system = true and name in ('like','ilike','str_to_date','date_to_str','str_to_time','time_to_str','str_to_timestamp','timestamp_to_str','date_trunc','epoch','reverse')));\n");
 
 			pos += snprintf(buf + pos, bufsize - pos, "set schema \"%s\";\n", prev_schema);
 			assert(pos < bufsize);
@@ -3007,12 +2989,6 @@ sql_update_default(Client c, mvc *sql, const char *prev_schema)
 	}
 	res_table_destroy(output);
 	GDKfree(buf);
-
-	if (err)
-		return err;
-
-	err = sql_update_semantics(c);
-
 	return err;		/* usually MAL_SUCCEED */
 }
 int
@@ -3331,8 +3307,8 @@ SQLupgrades(Client c, mvc *m)
 		freeException(err);
 		GDKfree(prev_schema);
 		return -1;
-	}		
-	
+	}
+
 	if ((err = sql_update_default(c, m, prev_schema)) != NULL) {
 		TRC_CRITICAL(SQL_PARSER, "%s\n", err);
 		freeException(err);

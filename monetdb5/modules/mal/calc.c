@@ -8,10 +8,8 @@
 
 #include "monetdb_config.h"
 #include "gdk.h"
-#include <math.h>
 #include "mal_exception.h"
 #include "mal_interpreter.h"
-#include "calc.h"
 
 static str
 mythrow(enum malexception type, const char *fcn, const char *msg)
@@ -36,7 +34,7 @@ mythrow(enum malexception type, const char *fcn, const char *msg)
 }
 
 
-str
+static str
 CMDvarSUBsignal(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	(void) cntxt;
@@ -48,7 +46,7 @@ CMDvarSUBsignal(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 }
 
 
-str
+static str
 CMDvarSUB(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	(void) cntxt;
@@ -60,7 +58,7 @@ CMDvarSUB(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 }
 
 
-str
+static str
 CMDvarADDsignal(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	(void) cntxt;
@@ -72,7 +70,7 @@ CMDvarADDsignal(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 }
 
 
-str
+static str
 CMDvarADD(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	(void) cntxt;
@@ -84,7 +82,7 @@ CMDvarADD(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 }
 
 
-str
+static str
 CMDvarADDstr(str *ret, str *s1, str *s2)
 {
 	str s;
@@ -106,7 +104,7 @@ CMDvarADDstr(str *ret, str *s1, str *s2)
 }
 
 
-str
+static str
 CMDvarADDstrint(str *ret, str *s1, int *i)
 {
 	str s;
@@ -128,7 +126,7 @@ CMDvarADDstrint(str *ret, str *s1, int *i)
 }
 
 
-str
+static str
 CMDvarMULsignal(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	(void) cntxt;
@@ -140,7 +138,7 @@ CMDvarMULsignal(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 }
 
 
-str
+static str
 CMDvarMUL(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	(void) cntxt;
@@ -152,7 +150,7 @@ CMDvarMUL(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 }
 
 
-str
+static str
 CMDvarDIVsignal(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	(void) cntxt;
@@ -164,7 +162,7 @@ CMDvarDIVsignal(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 }
 
 
-str
+static str
 CMDvarDIV(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	(void) cntxt;
@@ -176,7 +174,7 @@ CMDvarDIV(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 }
 
 
-str
+static str
 CMDvarMODsignal(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	(void) cntxt;
@@ -188,7 +186,7 @@ CMDvarMODsignal(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 }
 
 
-str
+static str
 CMDvarMOD(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	(void) cntxt;
@@ -200,7 +198,7 @@ CMDvarMOD(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 }
 
 
-str
+static str
 CMDvarLSHsignal(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	(void) cntxt;
@@ -212,7 +210,7 @@ CMDvarLSHsignal(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 }
 
 
-str
+static str
 CMDvarLSH(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	(void) cntxt;
@@ -224,7 +222,7 @@ CMDvarLSH(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 }
 
 
-str
+static str
 CMDvarRSHsignal(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	(void) cntxt;
@@ -236,7 +234,7 @@ CMDvarRSHsignal(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 }
 
 
-str
+static str
 CMDvarRSH(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	(void) cntxt;
@@ -248,7 +246,7 @@ CMDvarRSH(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 }
 
 
-str
+static str
 CMDvarAND(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	(void) cntxt;
@@ -260,7 +258,7 @@ CMDvarAND(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 }
 
 
-str
+static str
 CMDvarOR(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	(void) cntxt;
@@ -272,7 +270,7 @@ CMDvarOR(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 }
 
 
-str
+static str
 CMDvarXOR(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	(void) cntxt;
@@ -284,7 +282,7 @@ CMDvarXOR(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 }
 
 
-str
+static str
 CMDvarLT(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	(void) cntxt;
@@ -296,7 +294,7 @@ CMDvarLT(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 }
 
 
-str
+static str
 CMDvarLE(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	(void) cntxt;
@@ -308,7 +306,7 @@ CMDvarLE(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 }
 
 
-str
+static str
 CMDvarGT(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	(void) cntxt;
@@ -320,7 +318,7 @@ CMDvarGT(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 }
 
 
-str
+static str
 CMDvarGE(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	(void) cntxt;
@@ -332,7 +330,7 @@ CMDvarGE(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 }
 
 
-str
+static str
 CMDvarEQ(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	(void) cntxt;
@@ -348,7 +346,7 @@ CMDvarEQ(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 }
 
 
-str
+static str
 CMDvarNE(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	(void) cntxt;
@@ -364,7 +362,7 @@ CMDvarNE(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 }
 
 
-str
+static str
 CMDvarCMP(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	(void) cntxt;
@@ -376,7 +374,7 @@ CMDvarCMP(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 }
 
 
-str
+static str
 CMDvarBETWEEN(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	(void) cntxt;
@@ -386,15 +384,15 @@ CMDvarBETWEEN(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	symmetric = *getArgReference_bit(stk, pci, 4);
 	linc = *getArgReference_bit(stk, pci, 5);
 	hinc = *getArgReference_bit(stk, pci, 6);
-	nils_false = *getArgReference_bit(stk, pci, 6);
-	anti = *getArgReference_bit(stk, pci, 7);
+	nils_false = *getArgReference_bit(stk, pci, 7);
+	anti = *getArgReference_bit(stk, pci, 8);
 	if (VARcalcbetween(&stk->stk[getArg(pci, 0)], &stk->stk[getArg(pci, 1)], &stk->stk[getArg(pci, 2)], &stk->stk[getArg(pci, 3)], symmetric, linc, hinc, nils_false, anti) != GDK_SUCCEED)
 		return mythrow(MAL, "calc.between", OPERATION_FAILED);
 	return MAL_SUCCEED;
 }
 
 
-str
+static str
 CMDstrlength(int *ret, str *v)
 {
 	size_t l = strlen(*v);
@@ -406,7 +404,7 @@ CMDstrlength(int *ret, str *v)
 }
 
 
-str
+static str
 CMDvarCONVERT(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	char buf[20];
@@ -422,7 +420,7 @@ CMDvarCONVERT(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 }
 
 
-str
+static str
 CMDvarCONVERTptr(ptr *ret, ptr *v)
 {
 	*ret = *v;
@@ -430,7 +428,7 @@ CMDvarCONVERTptr(ptr *ret, ptr *v)
 }
 
 
-str
+static str
 CMDvarISZERO(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	char buf[20];
@@ -446,7 +444,7 @@ CMDvarISZERO(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 }
 
 
-str
+static str
 CMDvarISNIL(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	char buf[20];
@@ -462,7 +460,7 @@ CMDvarISNIL(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 }
 
 
-str
+static str
 CMDvarISNOTNIL(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	char buf[20];
@@ -478,7 +476,7 @@ CMDvarISNOTNIL(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 }
 
 
-str
+static str
 CMDvarNOT(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	char buf[20];
@@ -494,7 +492,7 @@ CMDvarNOT(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 }
 
 
-str
+static str
 CMDvarABS(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	char buf[20];
@@ -510,7 +508,7 @@ CMDvarABS(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 }
 
 
-str
+static str
 CMDvarSIGN(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	char buf[20];
@@ -526,7 +524,7 @@ CMDvarSIGN(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 }
 
 
-str
+static str
 CMDvarNEG(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	char buf[20];
@@ -542,7 +540,7 @@ CMDvarNEG(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 }
 
 
-str
+static str
 CMDvarINCRsignal(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	char buf[20];
@@ -558,7 +556,7 @@ CMDvarINCRsignal(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 }
 
 
-str
+static str
 CMDvarDECRsignal(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	char buf[20];
@@ -574,7 +572,7 @@ CMDvarDECRsignal(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 }
 
 
-str
+static str
 CALCswitchbit(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	ptr p;
@@ -605,7 +603,7 @@ CALCswitchbit(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 }
 
 
-str
+static str
 CALCmin(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	int t = getArgType(mb, pci, 1);
@@ -631,7 +629,7 @@ CALCmin(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 }
 
 
-str
+static str
 CALCmin_no_nil(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	int t = getArgType(mb, pci, 1);
@@ -656,7 +654,7 @@ CALCmin_no_nil(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 }
 
 
-str
+static str
 CALCmax(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	int t = getArgType(mb, pci, 1);
@@ -682,7 +680,7 @@ CALCmax(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 }
 
 
-str
+static str
 CALCmax_no_nil(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	int t = getArgType(mb, pci, 1);
@@ -726,7 +724,7 @@ CMDBATsumprod(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 			nil_if_empty = * getArgReference_bit(stk, pci, 2);
 		} else {
 			bat sid = * getArgReference_bat(stk, pci, 2);
-			if ((s = BATdescriptor(sid)) == NULL) {
+			if (!is_bat_nil(sid) && (s = BATdescriptor(sid)) == NULL) {
 				BBPunfix(b->batCacheid);
 				throw(MAL, func, SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 			}
@@ -747,7 +745,7 @@ CMDBATsumprod(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 }
 
 
-str
+static str
 CMDBATsum(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	(void) cntxt;
@@ -756,7 +754,7 @@ CMDBATsum(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 }
 
 
-str
+static str
 CMDBATprod(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	(void) cntxt;
@@ -764,8 +762,139 @@ CMDBATprod(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	return CMDBATsumprod(mb, stk, pci, BATprod, "aggr.prod");
 }
 
+#define arg_type(stk, pci, k) ((stk)->stk[pci->argv[k]].vtype)
 
-str
+static str
+CMDBATavg3(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	ValPtr ret = &stk->stk[getArg(pci, 0)];
+	lng *rest = NULL, *cnt = NULL;
+	bat *bid, *sid;
+	bit *skip_nils;
+	BAT *b = NULL, *s = NULL, *avgs, *cnts, *rems;
+
+	gdk_return rc;
+	(void)cntxt;
+	(void)mb;
+
+	/* optional results rest and count */
+	if (arg_type(stk, pci, 1) == TYPE_lng)
+		rest = getArgReference_lng(stk, pci, 1);
+	if (arg_type(stk, pci, 2) == TYPE_lng)
+		cnt = getArgReference_lng(stk, pci, 2);
+	bid = getArgReference_bat(stk, pci, 3);
+	sid = getArgReference_bat(stk, pci, 4);
+	skip_nils = getArgReference_bit(stk, pci, 5);
+	b = BATdescriptor(*bid);
+	s = sid != NULL && !is_bat_nil(*sid) ? BATdescriptor(*sid) : NULL;
+	if (b == NULL ||
+		(sid != NULL && !is_bat_nil(*sid) && s == NULL)) {
+		if (b)
+			BBPunfix(b->batCacheid);
+		throw(MAL, "aggr.avg", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
+	}
+	rc = BATgroupavg3(&avgs, &rems, &cnts, b, NULL, NULL, s, *skip_nils);
+	if (avgs && BATcount(avgs) == 1) {
+		/* only type bte, sht, int, lng and hge */
+		ptr res = VALget(ret);
+		lng xcnt = 0;
+
+		if (avgs->ttype == TYPE_bte) {
+			*(bte*)res = *(bte*) Tloc(avgs, 0);
+		} else if (avgs->ttype == TYPE_sht) {
+			*(sht*)res = *(sht*) Tloc(avgs, 0);
+		} else if (avgs->ttype == TYPE_int) {
+			*(int*)res = *(int*) Tloc(avgs, 0);
+		} else if (avgs->ttype == TYPE_lng) {
+			*(lng*)res = *(lng*) Tloc(avgs, 0);
+#ifdef HAVE_HGE
+		} else if (avgs->ttype == TYPE_hge) {
+			*(hge*)res = *(hge*) Tloc(avgs, 0);
+#endif
+		}
+		if (cnt)
+			xcnt = *cnt = *(lng*) Tloc(cnts, 0);
+		if (rest)
+			*rest = *(lng*) Tloc(rems, 0);
+		if (xcnt == 0)
+			VALset(ret, ret->vtype, (ptr)ATOMnilptr(ret->vtype));
+	} else {
+		VALset(ret, ret->vtype, (ptr)ATOMnilptr(ret->vtype));
+		if (rest)
+			*rest = lng_nil;
+		if (cnt)
+			*cnt = lng_nil;
+	}
+	if (avgs)
+		BBPunfix(avgs->batCacheid);
+	if (rems)
+		BBPunfix(rems->batCacheid);
+	if (cnts)
+		BBPunfix(cnts->batCacheid);
+	BBPunfix(b->batCacheid);
+	if (s)
+		BBPunfix(s->batCacheid);
+	if (rc != GDK_SUCCEED)
+		return mythrow(MAL, "aggr.avg", OPERATION_FAILED);
+	return MAL_SUCCEED;
+}
+
+static str
+CMDBATavg3comb(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	ValPtr ret = &stk->stk[getArg(pci, 0)];
+	BAT *b = NULL, *r = NULL, *c = NULL, *avgs;
+	bat *bid = getArgReference_bat(stk, pci, 1);
+	bat *rid = getArgReference_bat(stk, pci, 2);
+	bat *cid = getArgReference_bat(stk, pci, 3);
+
+	(void)cntxt;
+	(void)mb;
+
+	b = BATdescriptor(*bid);
+	r = BATdescriptor(*rid);
+	c = BATdescriptor(*cid);
+	if (b == NULL || r == NULL || c == NULL) {
+		if (b)
+			BBPunfix(b->batCacheid);
+		if (r)
+			BBPunfix(r->batCacheid);
+		if (c)
+			BBPunfix(c->batCacheid);
+		throw(MAL, "aggr.avg", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
+	}
+	avgs = BATgroupavg3combine(b, r, c, NULL, NULL, TRUE);
+	if (avgs && BATcount(avgs) == 1) {
+		/* only type bte, sht, int, lng and hge */
+		ptr res = VALget(ret);
+
+		if (avgs->ttype == TYPE_bte) {
+			*(bte*)res = *(bte*) Tloc(avgs, 0);
+		} else if (avgs->ttype == TYPE_sht) {
+			*(sht*)res = *(sht*) Tloc(avgs, 0);
+		} else if (avgs->ttype == TYPE_int) {
+			*(int*)res = *(int*) Tloc(avgs, 0);
+		} else if (avgs->ttype == TYPE_lng) {
+			*(lng*)res = *(lng*) Tloc(avgs, 0);
+#ifdef HAVE_HGE
+		} else if (avgs->ttype == TYPE_hge) {
+			*(hge*)res = *(hge*) Tloc(avgs, 0);
+#endif
+		}
+	} else {
+		VALset(ret, ret->vtype, (ptr)ATOMnilptr(ret->vtype));
+	}
+	if (avgs)
+		BBPunfix(avgs->batCacheid);
+	BBPunfix(b->batCacheid);
+	BBPunfix(r->batCacheid);
+	BBPunfix(c->batCacheid);
+	if (avgs == NULL)
+		throw(MAL, "aggr.avg", GDK_EXCEPTION);
+	return MAL_SUCCEED;
+}
+
+static str
 CMDBATstr_group_concat(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	ValPtr ret = &stk->stk[getArg(pci, 0)];
@@ -800,7 +929,7 @@ CMDBATstr_group_concat(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		} else {
 			if (next_argument == 3) {
 				bat sid = *getArgReference_bat(stk, pci, next_argument);
-				if ((s = BATdescriptor(sid)) == NULL) {
+				if (!is_bat_nil(sid) && (s = BATdescriptor(sid)) == NULL) {
 					BBPunfix(b->batCacheid);
 					BBPunfix(sep->batCacheid);
 					throw(MAL, "aggr.str_group_concat", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
@@ -1488,6 +1617,23 @@ mel_func calc_init_funcs[] = {
  pattern("aggr", "prod", CMDBATprod, false, "Calculate aggregate product of B with candidate list.", args(1,3, arg("",dbl),batarg("b",hge),batarg("s",oid))),
  pattern("aggr", "prod", CMDBATprod, false, "Calculate aggregate product of B with candidate list.", args(1,4, arg("",dbl),batarg("b",hge),batarg("s",oid),arg("nil_if_empty",bit))),
 #endif
+
+ pattern("aggr", "avg", CMDBATavg3, false, "Calculate aggregate average of B.", args(3,6, arg("",bte),arg("",lng),arg("",lng),batarg("b",bte),batarg("s",oid),arg("skip_nils",bit))),
+ pattern("aggr", "avg", CMDBATavg3, false, "Calculate aggregate average of B.", args(3,6, arg("",sht),arg("",lng),arg("",lng),batarg("b",sht),batarg("s",oid),arg("skip_nils",bit))),
+ pattern("aggr", "avg", CMDBATavg3, false, "Calculate aggregate average of B.", args(3,6, arg("",int),arg("",lng),arg("",lng),batarg("b",int),batarg("s",oid),arg("skip_nils",bit))),
+ pattern("aggr", "avg", CMDBATavg3, false, "Calculate aggregate average of B.", args(3,6, arg("",lng),arg("",lng),arg("",lng),batarg("b",lng),batarg("s",oid),arg("skip_nils",bit))),
+#ifdef HAVE_HGE
+ pattern("aggr", "avg", CMDBATavg3, false, "Calculate aggregate average of B.", args(3,6, arg("",hge),arg("",lng),arg("",lng),batarg("b",hge),batarg("s",oid),arg("skip_nils",bit))),
+#endif
+
+ pattern("aggr", "avg", CMDBATavg3comb, false, "Average aggregation combiner.", args(1,4, arg("",bte),batarg("b",bte),batarg("r",lng),batarg("c",lng))),
+ pattern("aggr", "avg", CMDBATavg3comb, false, "Average aggregation combiner.", args(1,4, arg("",sht),batarg("b",sht),batarg("r",lng),batarg("c",lng))),
+ pattern("aggr", "avg", CMDBATavg3comb, false, "Average aggregation combiner.", args(1,4, arg("",int),batarg("b",int),batarg("r",lng),batarg("c",lng))),
+ pattern("aggr", "avg", CMDBATavg3comb, false, "Average aggregation combiner.", args(1,4, arg("",lng),batarg("b",lng),batarg("r",lng),batarg("c",lng))),
+#ifdef HAVE_HGE
+ pattern("aggr", "avg", CMDBATavg3comb, false, "Average aggregation combiner.", args(1,4, arg("",hge),batarg("b",hge),batarg("r",lng),batarg("c",lng))),
+#endif
+
  /* calc ops from json */
  pattern("calc", "==", CMDvarEQ, false, "Return V1 == V2", args(1,3, arg("",bit),arg("l",json),arg("r",json))),
  pattern("calc", "==", CMDvarEQ, false, "Return V1 == V2", args(1,4, arg("",bit),arg("l",json),arg("r",json),arg("nil_matches",bit))),
@@ -3033,7 +3179,7 @@ mel_func calc_init_funcs[] = {
  pattern("aggr", "str_group_concat", CMDBATstr_group_concat, false, "Calculate aggregate string concatenate of B with separator SEP.", args(1,4, arg("",str),batarg("b",str),batarg("sep",str),arg("nil_if_empty",bit))),
  pattern("aggr", "str_group_concat", CMDBATstr_group_concat, false, "Calculate aggregate string concatenate of B with candidate list and separator SEP.", args(1,4, arg("",str),batarg("b",str),batarg("sep",str),batarg("s",oid))),
  pattern("aggr", "str_group_concat", CMDBATstr_group_concat, false, "Calculate aggregate string concatenate of B with candidate list and separator SEP.", args(1,5, arg("",str),batarg("b",str),batarg("sep",str),batarg("s",oid),arg("nil_if_empty",bit))),
- //from sql 
+ //from sql
  pattern("aggr", "anyequal", CMDvarEQ, false, "", args(1,3, arg("",bit),argany("l",1),argany("r",1))),
  pattern("aggr", "not_anyequal", CMDvarNE, false, "", args(1,3, arg("",bit),argany("l",1),argany("r",1))),
  { .imp=NULL }

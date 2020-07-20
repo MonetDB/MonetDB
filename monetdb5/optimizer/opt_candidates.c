@@ -35,9 +35,9 @@ OPTcandidatesImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 					setVarCList(mb,getArg(p,j));
 		}
 		if( getModuleId(p) == sqlRef){
-			if(getFunctionId(p) == tidRef) 
+			if(getFunctionId(p) == tidRef)
 				setVarCList(mb,getArg(p,0));
-			else if(getFunctionId(p) == subdeltaRef) 
+			else if(getFunctionId(p) == subdeltaRef)
 				setVarCList(mb,getArg(p,0));
 		}
 		else if( getModuleId(p) == algebraRef ){

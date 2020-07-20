@@ -156,10 +156,7 @@ SQLall(ptr ret, const bat *bid)
 		oid p = oid_nil;
 		memcpy(ret, &p, sizeof(oid));
 	} else {
-		switch (b->ttype) {
-		case TYPE_bit:
-			SQLall_imp(bit);
-			break;
+		switch (ATOMbasetype(b->ttype)) {
 		case TYPE_bte:
 			SQLall_imp(bte);
 			break;
@@ -200,7 +197,7 @@ SQLall(ptr ret, const bat *bid)
 					}
 					for (; q < c; q++) {
 						const void *pp = BUNtail(bi, q);
-						if (ocmp(p, pp) != 0 && ocmp(n, pp) != 0) { /* values != and not nil */ 
+						if (ocmp(p, pp) != 0 && ocmp(n, pp) != 0) { /* values != and not nil */
 							p = n;
 							break;
 						}
@@ -295,10 +292,7 @@ SQLnil(bit *ret, const bat *bid)
 	if (BATcount(b) > 0) {
 		BUN o = BUNlast(b);
 
-		switch (b->ttype) {
-		case TYPE_bit:
-			SQLnil_imp(bit);
-			break;
+		switch (ATOMbasetype(b->ttype)) {
 		case TYPE_bte:
 			SQLnil_imp(bte);
 			break;
@@ -502,12 +496,12 @@ all_cmp(const bit cmp, const bit nl, const bit nr)
 		return FALSE;
 	else if (nl == TRUE || nr == TRUE)
 		return bit_nil;
-	else 
+	else
 		return cmp;
 	return TRUE;
 }
 
-str 
+str
 SQLall_cmp(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	bat *ret = isaBatType(getArgType(mb, pci, 0)) ? getArgReference_bat(stk, pci, 0) : NULL;
@@ -630,10 +624,7 @@ SQLanyequal(bit *ret, const bat *bid1, const bat *bid2)
 	if (BATcount(r) > 0) {
 		BUN o = BUNlast(r);
 
-		switch (l->ttype) {
-		case TYPE_bit:
-			SQLanyequal_or_not_imp(bit, TRUE);
-			break;
+		switch (ATOMbasetype(l->ttype)) {
 		case TYPE_bte:
 			SQLanyequal_or_not_imp(bte, TRUE);
 			break;
@@ -826,10 +817,7 @@ SQLallnotequal(bit *ret, const bat *bid1, const bat *bid2)
 	if (BATcount(r) > 0) {
 		BUN o = BUNlast(r);
 
-		switch (l->ttype) {
-		case TYPE_bit:
-			SQLanyequal_or_not_imp(bit, FALSE);
-			break;
+		switch (ATOMbasetype(l->ttype)) {
 		case TYPE_bte:
 			SQLanyequal_or_not_imp(bte, FALSE);
 			break;

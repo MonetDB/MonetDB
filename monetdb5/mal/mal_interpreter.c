@@ -237,7 +237,7 @@ str malCommandCall(MalStkPtr stk, InstrPtr pci)
 			lhs->val.pval = 0;\
 			lhs->len = 0;\
 		}\
-	} 
+	}
 
 int
 isNotUsedIn(InstrPtr p, int start, int a)
@@ -431,7 +431,7 @@ callMAL(Client cntxt, MalBlkPtr mb, MalStkPtr *env, ValPtr argv[], char debug)
 	default:
 		throw(MAL, "mal.interpreter", RUNTIME_UNKNOWN_INSTRUCTION);
 	}
-	if (stk) 
+	if (stk)
 		garbageCollector(cntxt, mb, stk, TRUE);
 	if ( ret == MAL_SUCCEED && cntxt->querytimeout && mb->starttime && GDKusec()- mb->starttime > cntxt->querytimeout)
 		throw(MAL, "mal.interpreter", SQLSTATE(HYT00) RUNTIME_QRY_TIMEOUT);
@@ -507,7 +507,7 @@ str runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 			if ( garbage != garbages) GDKfree(garbage);
 			throw(MAL, "mal.interpreter", SQLSTATE(HYT00) RUNTIME_SESSION_TIMEOUT);
 		}
-	} 
+	}
 	stkpc = startpc;
 	exceptionVar = -1;
 
@@ -562,7 +562,7 @@ str runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 				/* if still the same, replace lastprint with current
 				 * time and print the query */
 				if (ATOMIC_CAS(&cntxt->lastprint, &lp, t)) {
-					const char *q = cntxt->getquery ? cntxt->getquery(cntxt) : NULL;
+					const char *q = cntxt->query ? cntxt->query : NULL;
 					TRC_INFO(MAL_SERVER, "%s: query already running "LLFMT"s: %.200s\n",
 							cntxt->mythread->name,
 							(lng) (time(0) - cntxt->lastcmd),
@@ -591,7 +591,7 @@ str runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 		 * garbage collected are identified. In the post-execution
 		 * phase they are removed.
 		 */
-		for (i = 0; i < pci->retc; i++) 
+		for (i = 0; i < pci->retc; i++)
 			backup[i] = stk->stk[getArg(pci, i)];
 
 		if (garbageControl(pci)) {
@@ -818,7 +818,7 @@ str runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 			continue;
 		runtimeProfileExit(cntxt, mb, stk, pci, &runtimeProfile);
 		/* check for strong debugging after each MAL statement */
-		/* when we find a timeout situation, then the result is already known 
+		/* when we find a timeout situation, then the result is already known
 		 * and assigned,  the backup version is not removed*/
 		if ( pci->token != FACcall && ret== MAL_SUCCEED) {
 			for (i = 0; i < pci->retc; i++) {
@@ -1197,7 +1197,7 @@ str runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 					/* reset the clock */
 					runtimeProfileExit(cntxt, mb, stk, pp, &runtimeProfile);
 					runtimeProfileExit(cntxt, mb, stk, getInstrPtr(mb,0), &runtimeProfileFunction);
-				} 
+				}
 			}
 			stkpc = mb->stop;
 			continue;

@@ -98,7 +98,7 @@ mal_export void mal_reset(void);
 #define LIST_MAL_FLOW   128       /* output MAL dataflow dependencies */
 #define LIST_MAL_CALL  (LIST_MAL_NAME | LIST_MAL_VALUE )
 #define LIST_MAL_DEBUG (LIST_MAL_NAME | LIST_MAL_VALUE | LIST_MAL_TYPE | LIST_MAL_PROPS | LIST_MAL_FLOW)
-#define LIST_MAL_ALL   (LIST_MAL_NAME | LIST_MAL_VALUE | LIST_MAL_TYPE | LIST_MAL_PROPS | LIST_MAL_MAPI)
+#define LIST_MAL_ALL   (LIST_MAL_NAME | LIST_MAL_VALUE | LIST_MAL_TYPE | LIST_MAL_MAPI)
 
 /* type check status is kept around to improve type checking efficiency */
 #define TYPE_ERROR      -1
@@ -143,7 +143,7 @@ typedef struct VARRECORD {
 
 /* For performance analysis we keep track of the number of calls and
  * the total time spent while executing the instruction. (See
- * mal_profiler.c) 
+ * mal_profiler.c)
  */
 
 typedef struct {

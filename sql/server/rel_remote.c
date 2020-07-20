@@ -45,7 +45,7 @@ mapiuri_valid( const char *uri)
 	}
 	if (*p != '/')
 		return 0;
-	p++; 
+	p++;
 	/* now find at most 2 '/'s, with some string inbetween */
 	for(; *p; p++, l++) {
 		if (*p == '/') {
@@ -76,7 +76,7 @@ mapiuri_uri( const char *uri, sql_allocator *sa)
 	e = strchr(p+1, '/');
 	if (e)
 		return sa_strndup(sa, b, e - b);
-	else 
+	else
 		return sa_strdup(sa, b);
 }
 

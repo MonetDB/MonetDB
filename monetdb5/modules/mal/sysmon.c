@@ -340,7 +340,7 @@ SYSMONstop(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		if( i == qsize){
 			i = 0;
 			if( i == qhead)
-				break;	
+				break;
 		}
 		if( (lng) QRYqueue[i].tag == tag && cntxt->user == MAL_ADMIN && QRYqueue[i].stk){
 			QRYqueue[i].stk->status = 'q';

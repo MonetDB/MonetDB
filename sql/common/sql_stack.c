@@ -12,6 +12,7 @@
 sql_stack *
 sql_stack_new(sql_allocator *sa, int size)
 {
+	assert(sa);
 	sql_stack *s = SA_NEW(sa, sql_stack);
 	if (s == NULL)
 		return NULL;
@@ -22,13 +23,13 @@ sql_stack_new(sql_allocator *sa, int size)
 		.values = SA_NEW_ARRAY(sa, void*, size),
 	};
 	if (s->values == NULL) {
-		_DELETE(s);
+		//_DELETE(s);
 		return NULL;
 	}
 	return s;
 }
 
-void 
+void
 sql_stack_push(sql_stack *s, void *v)
 {
 	if (s->top >= s->size) {

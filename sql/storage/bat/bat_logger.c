@@ -154,29 +154,36 @@ tabins(void *lg, bool first, int tt, const char *nname, const char *sname, const
 	while ((cname = va_arg(va, char *)) != NULL) {
 		cval = va_arg(va, void *);
 		len = snprintf(lname, sizeof(lname), "%s_%s_%s", sname, tname, cname);
-		if (len == -1 || (size_t)len >= sizeof(lname))
+		if (len == -1 || (size_t)len >= sizeof(lname) ||
+			(b = temp_descriptor(logger_find_bat(lg, lname, 0, 0))) == NULL) {
+			va_end(va);
 			return GDK_FAIL;
-		if ((b = temp_descriptor(logger_find_bat(lg, lname, 0, 0))) == NULL)
-			return GDK_FAIL;
+		}
 		if (first) {
 			BAT *bn;
 			if ((bn = COLcopy(b, b->ttype, true, PERSISTENT)) == NULL) {
 				BBPunfix(b->batCacheid);
+				va_end(va);
 				return GDK_FAIL;
 			}
 			BBPunfix(b->batCacheid);
 			if (BATsetaccess(bn, BAT_READ) != GDK_SUCCEED ||
 			    logger_add_bat(lg, bn, lname, 0, 0) != GDK_SUCCEED) {
 				BBPunfix(bn->batCacheid);
+				va_end(va);
 				return GDK_FAIL;
 			}
 			b = bn;
 		}
 		rc = BUNappend(b, cval, true);
 		BBPunfix(b->batCacheid);
-		if (rc != GDK_SUCCEED)
+		if (rc != GDK_SUCCEED) {
+			va_end(va);
 			return rc;
+		}
 	}
+	va_end(va);
+
 	if (tt >= 0) {
 		if ((b = COLnew(0, tt, 0, PERSISTENT)) == NULL)
 			return GDK_FAIL;
@@ -998,7 +1005,7 @@ bl_postversion(void *lg)
 				return GDK_FAIL;
 			}
 			const char *right_module = "aggr"; /* set module to 'aggr' */
-			BAT *update_bat = BATconstant(cands_project->hseqbase, TYPE_str, right_module, 4, TRANSIENT);
+			BAT *update_bat = BATconstant(cands_project->hseqbase, TYPE_str, right_module, BATcount(cands_project), TRANSIENT);
 			bat_destroy(cands_project);
 			if (update_bat == NULL) {
 				bat_destroy(func_mod);
@@ -1021,7 +1028,7 @@ bl_postversion(void *lg)
 	return GDK_SUCCEED;
 }
 
-static int 
+static int
 bl_create(int debug, const char *logdir, int cat_version)
 {
 	if (bat_logger)
@@ -1032,7 +1039,7 @@ bl_create(int debug, const char *logdir, int cat_version)
 	return LOG_ERR;
 }
 
-static void 
+static void
 bl_destroy(void)
 {
 	logger *l = bat_logger;
@@ -1048,7 +1055,7 @@ bl_destroy(void)
 	}
 }
 
-static int 
+static int
 bl_restart(void)
 {
 	if (bat_logger)
@@ -1073,11 +1080,11 @@ bl_with_ids(void)
 
 static int
 bl_changes(void)
-{	
+{
 	return (int) MIN(logger_changes(bat_logger), GDK_int_max);
 }
 
-static int 
+static int
 bl_get_sequence(int seq, lng *id)
 {
 	return logger_sequence(bat_logger, seq, id);
@@ -1098,19 +1105,19 @@ bl_log_needs_update(void)
 	return !bat_logger->with_ids;
 }
 
-static int 
+static int
 bl_tstart(void)
 {
 	return log_tstart(bat_logger) == GDK_SUCCEED ? LOG_OK : LOG_ERR;
 }
 
-static int 
+static int
 bl_tend(void)
 {
 	return log_tend(bat_logger) == GDK_SUCCEED ? LOG_OK : LOG_ERR;
 }
 
-static int 
+static int
 bl_sequence(int seq, lng id)
 {
 	return log_sequence(bat_logger, seq, id) == GDK_SUCCEED ? LOG_OK : LOG_ERR;
@@ -1128,16 +1135,20 @@ bl_find_table_value(const char *tabnam, const char *tab, const void *val, ...)
 		b = temp_descriptor(logger_find_bat(bat_logger, tab, 0, 0));
 		if (b == NULL) {
 			bat_destroy(s);
+			va_end(va);
 			return NULL;
 		}
 		BAT *t = BATselect(b, s, val, val, 1, 1, 0);
 		bat_destroy(b);
 		bat_destroy(s);
-		if (t == NULL)
+		if (t == NULL) {
+			va_end(va);
 			return NULL;
+		}
 		s = t;
 		if (BATcount(s) == 0) {
 			bat_destroy(s);
+			va_end(va);
 			return NULL;
 		}
 	} while ((tab = va_arg(va, const char *)) != NULL &&
@@ -1386,9 +1397,9 @@ snapshot_bats(stream *plan, const char *db_dir)
 		goto end;
 	}
 	if (gdk_version != 061042U) {
-		// If this version number has changed, the structure of BBP.dir 
+		// If this version number has changed, the structure of BBP.dir
 		// may have changed. Update this whole function to take this
-		// into account. 
+		// into account.
 		// Note: when startup has completed BBP.dir is guaranteed
 		// to the latest format so we don't have to support any older
 		// formats in this function.
@@ -1449,7 +1460,7 @@ snapshot_bats(stream *plan, const char *db_dir)
 					goto end;
 				/* fallthrough */
 			case 2:
-				// no tail? 
+				// no tail?
 				break;
 		}
 	}

@@ -16,6 +16,15 @@
 #include "rel_updates.h"
 #include "sql_privileges.h"
 
+#define psm_zero_or_one(exp) \
+	do { \
+		if (exp && exp->card > CARD_AGGR) { \
+			sql_subfunc *zero_or_one = sql_bind_func(sql->sa, sql->session->schema, "zero_or_one", exp_subtype(exp), NULL, F_AGGR); \
+			assert(zero_or_one); \
+			exp = exp_aggr1(sql->sa, exp, zero_or_one, 0, 0, CARD_ATOM, has_nil(exp)); \
+		} \
+	} while(0)
+
 static list *sequential_block(sql_query *query, sql_subtype *restype, list *restypelist, dlist *blk, char *opt_name, int is_func);
 
 sql_rel *
@@ -48,7 +57,7 @@ rel_psm_stmt(sql_allocator *sa, sql_exp *e)
 	return NULL;
 }
 
-/* vname can be 
+/* vname can be
 	- 'parameter of the function' (ie in the param list)
 	- local variable, declared earlier
 	- global variable, also declared earlier
@@ -94,15 +103,11 @@ psm_set_exp(sql_query *query, dnode *n)
 
 		if (!resolve_variable_on_scope(sql, s, sname, vname, &var, &a, &tpe, &level, "SET"))
 			return NULL;
-		if (!(e = rel_value_exp2(query, &rel, val, sql_sel | sql_psm_set, ek)))
+		if (!(e = rel_value_exp2(query, &rel, val, sql_sel | sql_psm, ek)))
 			return NULL;
-		if (e->card > CARD_AGGR) {
-			sql_subfunc *zero_or_one = sql_bind_func(sql->sa, sql->session->schema, "zero_or_one", exp_subtype(e), NULL, F_AGGR);
-			assert(zero_or_one);
-			e = exp_aggr1(sql->sa, e, zero_or_one, 0, 0, CARD_ATOM, has_nil(e));
-		}
+		psm_zero_or_one(e);
 
-		if (!(e = rel_check_type(sql, tpe, rel, e, type_cast)))
+		if (!(e = exp_check_type(sql, tpe, rel, e, type_cast)))
 			return NULL;
 		res = exp_set(sql->sa, var && var->sname ? sa_strdup(sql->sa, var->sname) : NULL, sa_strdup(sql->sa, vname), e, level);
 	} else { /* multi assignment */
@@ -140,7 +145,7 @@ psm_set_exp(sql_query *query, dnode *n)
 				return NULL;
 
 			v = exp_ref(sql, v);
-			if (!(v = rel_check_type(sql, tpe, rel_val, v, type_cast)))
+			if (!(v = exp_check_type(sql, tpe, rel_val, v, type_cast)))
 				return NULL;
 			append(b, exp_set(sql->sa, var && var->sname ? sa_strdup(sql->sa, var->sname) : NULL, sa_strdup(sql->sa, vname), v, level));
 		}
@@ -215,7 +220,7 @@ rel_psm_declare_table(sql_query *query, dnode *n)
 
 	assert(n->next->next->next->type == type_int);
 	rel = rel_create_table(query, SQL_DECLARED_TABLE, sname, name, false, n->next->next->data.sym,
-						   n->next->next->next->data.i_val, NULL, NULL, NULL, false, NULL, 
+						   n->next->next->next->data.i_val, NULL, NULL, NULL, false, NULL,
 						   n->next->next->next->next->next->next->data.i_val);
 
 	if (!rel)
@@ -235,34 +240,34 @@ rel_psm_declare_table(sql_query *query, dnode *n)
 }
 
 /* [ label: ]
-   while (cond) do 
+   while (cond) do
 	statement_list
    end [ label ]
    currently we only parse the labels, they cannot be used as there is no
 
    support for LEAVE and ITERATE (sql multi-level break and continue)
  */
-static sql_exp * 
+static sql_exp *
 rel_psm_while_do( sql_query *query, sql_subtype *res, list *restypelist, dnode *w, int is_func )
 {
 	mvc *sql = query->sql;
 	if (!w)
 		return NULL;
-	if (w->type == type_symbol) { 
+	if (w->type == type_symbol) {
 		sql_exp *cond;
 		list *whilestmts;
 		dnode *n = w;
 		sql_rel *rel = NULL;
 		exp_kind ek = {type_value, card_value, FALSE};
 
-		cond = rel_logical_value_exp(query, &rel, n->data.sym, sql_sel, ek); 
+		cond = rel_logical_value_exp(query, &rel, n->data.sym, sql_sel | sql_psm, ek);
+		psm_zero_or_one(cond);
 		n = n->next;
 		whilestmts = sequential_block(query, res, restypelist, n->data.lval, n->next->data.sval, is_func);
 
-		if (sql->session->status || !cond || !whilestmts) 
+		if (sql->session->status || !cond || !whilestmts)
 			return NULL;
 
-		assert(!rel);
 		return exp_while( sql->sa, cond, whilestmts );
 	}
 	return NULL;
@@ -273,13 +278,13 @@ rel_psm_while_do( sql_query *query, sql_subtype *res, list *restypelist, dnode *
    [ else statement_list ]
    end if
  */
-static list * 
+static list *
 psm_if_then_else( sql_query *query, sql_subtype *res, list *restypelist, dnode *elseif, int is_func)
 {
 	mvc *sql = query->sql;
 	if (!elseif)
 		return NULL;
-	assert(elseif->type == type_symbol); 
+	assert(elseif->type == type_symbol);
 	if (elseif->data.sym && elseif->data.sym->token == SQL_IF) {
 		sql_exp *cond;
 		list *ifstmts, *elsestmts;
@@ -287,16 +292,16 @@ psm_if_then_else( sql_query *query, sql_subtype *res, list *restypelist, dnode *
 		sql_rel *rel = NULL;
 		exp_kind ek = {type_value, card_value, FALSE};
 
-		cond = rel_logical_value_exp(query, &rel, n->data.sym, sql_sel, ek); 
+		cond = rel_logical_value_exp(query, &rel, n->data.sym, sql_sel | sql_psm, ek);
+		psm_zero_or_one(cond);
 		n = n->next;
 		ifstmts = sequential_block(query, res, restypelist, n->data.lval, NULL, is_func);
 		n = n->next;
 		elsestmts = psm_if_then_else( query, res, restypelist, n, is_func);
 
-		if (sql->session->status || !cond || !ifstmts) 
+		if (sql->session->status || !cond || !ifstmts)
 			return NULL;
 
-		assert(!rel);
 		return append(sa_list(sql->sa), exp_if( sql->sa, cond, ifstmts, elsestmts));
 	} else { /* else */
 		symbol *e = elseif->data.sym;
@@ -307,7 +312,7 @@ psm_if_then_else( sql_query *query, sql_subtype *res, list *restypelist, dnode *
 	}
 }
 
-static sql_exp * 
+static sql_exp *
 rel_psm_if_then_else( sql_query *query, sql_subtype *res, list *restypelist, dnode *elseif, int is_func)
 {
 	mvc *sql = query->sql;
@@ -320,15 +325,15 @@ rel_psm_if_then_else( sql_query *query, sql_subtype *res, list *restypelist, dno
 		sql_rel *rel = NULL;
 		exp_kind ek = {type_value, card_value, FALSE};
 
-		cond = rel_logical_value_exp(query, &rel, n->data.sym, sql_sel, ek); 
+		cond = rel_logical_value_exp(query, &rel, n->data.sym, sql_sel | sql_psm, ek);
+		psm_zero_or_one(cond);
 		n = n->next;
 		ifstmts = sequential_block(query, res, restypelist, n->data.lval, NULL, is_func);
 		n = n->next;
 		elsestmts = psm_if_then_else( query, res, restypelist, n, is_func);
-		if (sql->session->status || !cond || !ifstmts) 
+		if (sql->session->status || !cond || !ifstmts)
 			return NULL;
 
-		assert(!rel);
 		return exp_if( sql->sa, cond, ifstmts, elsestmts);
 	}
 	return NULL;
@@ -348,7 +353,7 @@ rel_psm_if_then_else( sql_query *query, sql_subtype *res, list *restypelist, dno
 	[ ELSE statements ]
 	END CASE
  */
-static list * 
+static list *
 rel_psm_case( sql_query *query, sql_subtype *res, list *restypelist, dnode *case_when, int is_func )
 {
 	mvc *sql = query->sql;
@@ -366,30 +371,28 @@ rel_psm_case( sql_query *query, sql_subtype *res, list *restypelist, dnode *case
 		list *else_stmt = NULL;
 		sql_rel *rel = NULL;
 		exp_kind ek = {type_value, card_value, FALSE};
-		sql_exp *v = rel_value_exp(query, &rel, case_value, sql_sel, ek);
+		sql_exp *v = rel_value_exp(query, &rel, case_value, sql_sel | sql_psm, ek);
 
+		psm_zero_or_one(v);
 		if (!v)
 			return NULL;
-		if (rel)
-			return sql_error(sql, 02, SQLSTATE(42000) "CASE: No SELECT statements allowed within the CASE condition");
-		if (else_statements) {
-			if (!(else_stmt = sequential_block(query, res, restypelist, else_statements, NULL, is_func)))
-				return NULL;
-		}
+		if (else_statements && !(else_stmt = sequential_block(query, res, restypelist, else_statements, NULL, is_func)))
+			return NULL;
+
 		n = when_statements->h;
 		while(n) {
 			dnode *m = n->data.sym->data.lval->h;
-			sql_exp *cond=0, *when_value = rel_value_exp(query, &rel, m->data.sym, sql_sel, ek);
+			sql_exp *cond=0, *when_value = rel_value_exp(query, &rel, m->data.sym, sql_sel | sql_psm, ek);
 			list *if_stmts = NULL;
 			sql_exp *case_stmt = NULL;
 
-			if (!when_value || rel ||
+			psm_zero_or_one(when_value);
+			if (!when_value ||
 			   (cond = rel_binop_(sql, rel, v, when_value, NULL, "=", card_value)) == NULL ||
 			   (if_stmts = sequential_block(query, res, restypelist, m->next->data.lval, NULL, is_func)) == NULL ) {
-				if (rel)
-					return sql_error(sql, 02, SQLSTATE(42000) "CASE: No SELECT statements allowed within the CASE condition");
 				return NULL;
 			}
+			psm_zero_or_one(cond);
 			case_stmt = exp_if(sql->sa, cond, if_stmts, NULL);
 			list_append(case_stmts, case_stmt);
 			n = n->next;
@@ -397,30 +400,28 @@ rel_psm_case( sql_query *query, sql_subtype *res, list *restypelist, dnode *case
 		if (else_stmt)
 			list_merge(case_stmts, else_stmt, NULL);
 		return case_stmts;
-	} else { 
+	} else {
 		/* case 2 */
 		dnode *n = case_when;
 		dlist *whenlist = n->data.lval;
 		dlist *else_statements = n->next->data.lval;
 		list *else_stmt = NULL;
 
-		if (else_statements) {
-			if (!(else_stmt = sequential_block(query, res, restypelist, else_statements, NULL, is_func)))
-				return NULL;
-		}
+		if (else_statements && !(else_stmt = sequential_block(query, res, restypelist, else_statements, NULL, is_func)))
+			return NULL;
+
 		n = whenlist->h;
 		while(n) {
 			dnode *m = n->data.sym->data.lval->h;
 			sql_rel *rel = NULL;
 			exp_kind ek = {type_value, card_value, FALSE};
-			sql_exp *cond = rel_logical_value_exp(query, &rel, m->data.sym, sql_sel, ek);
+			sql_exp *cond = rel_logical_value_exp(query, &rel, m->data.sym, sql_sel | sql_psm, ek);
 			list *if_stmts = NULL;
 			sql_exp *case_stmt = NULL;
 
-			if (!cond || rel ||
+			psm_zero_or_one(cond);
+			if (!cond ||
 			   (if_stmts = sequential_block(query, res, restypelist, m->next->data.lval, NULL, is_func)) == NULL ) {
-				if (rel)
-					return sql_error(sql, 02, SQLSTATE(42000) "CASE: No SELECT statements allowed within the CASE condition");
 				return NULL;
 			}
 			case_stmt = exp_if(sql->sa, cond, if_stmts, NULL);
@@ -435,7 +436,7 @@ rel_psm_case( sql_query *query, sql_subtype *res, list *restypelist, dnode *case
 
 /* return val;
  */
-static list * 
+static list *
 rel_psm_return( sql_query *query, sql_subtype *restype, list *restypelist, symbol *return_sym )
 {
 	mvc *sql = query->sql;
@@ -491,7 +492,7 @@ rel_psm_return( sql_query *query, sql_subtype *restype, list *restypelist, symbo
 		}
 	}
 
-	if (ek.card != card_relation && (!restype || (res = rel_check_type(sql, restype, rel, res, type_equal)) == NULL))
+	if (ek.card != card_relation && (!restype || (res = exp_check_type(sql, restype, rel, res, type_equal)) == NULL))
 		return (!restype)?sql_error(sql, 02, SQLSTATE(42000) "RETURN: return type does not match"):NULL;
 	else if (ek.card == card_relation && !rel)
 		return NULL;
@@ -523,7 +524,7 @@ rel_psm_return( sql_query *query, sql_subtype *restype, list *restypelist, symbo
 				cname = sa_strdup(sql->sa, number2name(name, sizeof(name), ++sql->label));
 			if (!isproject)
 				e = exp_ref(sql, e);
-			e = rel_check_type(sql, &ce->type, oexps_rel, e, type_equal);
+			e = exp_check_type(sql, &ce->type, oexps_rel, e, type_equal);
 			if (!e)
 				return NULL;
 			append(exps, e);
@@ -546,7 +547,7 @@ rel_psm_return( sql_query *query, sql_subtype *restype, list *restypelist, symbo
 			sql_arg *ce = m->data;
 			sql_exp *e = exp_column(sql->sa, tname, c->base.name, &c->type, CARD_MULTI, c->null, 0);
 
-			e = rel_check_type(sql, &ce->type, rel, e, type_equal);
+			e = exp_check_type(sql, &ce->type, rel, e, type_equal);
 			if (!e)
 				return NULL;
 			append(exps, e);
@@ -555,7 +556,7 @@ rel_psm_return( sql_query *query, sql_subtype *restype, list *restypelist, symbo
 		res = exp_rel(sql, rel);
 	}
 	append(l, res = exp_return(sql->sa, res, stack_nr_of_declared_tables(sql)));
-	if (ek.card != card_relation) 
+	if (ek.card != card_relation)
 		res->card = CARD_ATOM;
 	else
 		res->card = CARD_MULTI;
@@ -576,7 +577,7 @@ rel_select_into( sql_query *query, symbol *sq, exp_kind ek)
 	/* SELECT ... INTO var_list */
 	sn->into = NULL;
 	r = rel_subquery(query, NULL, sq, ek);
-	if (!r) 
+	if (!r)
 		return NULL;
 	if (!is_project(r->op))
 		return sql_error(sql, 02, SQLSTATE(42000) "SELECT INTO: The subquery is not a projection");
@@ -603,7 +604,7 @@ rel_select_into( sql_query *query, symbol *sq, exp_kind ek)
 			return NULL;
 
 		v = exp_ref(sql, v);
-		if (!(v = rel_check_type(sql, tpe, r, v, type_equal)))
+		if (!(v = exp_check_type(sql, tpe, r, v, type_equal)))
 			return NULL;
 		v = exp_set(sql->sa, var && var->sname ? sa_strdup(sql->sa, var->sname) : NULL, sa_strdup(sql->sa, vname), v, level);
 		list_append(nl, v);
@@ -624,12 +625,12 @@ rel_select_with_into(sql_query *query, symbol *sq)
 static int has_return( list *l );
 
 static int
-exp_has_return(sql_exp *e) 
+exp_has_return(sql_exp *e)
 {
 	if (e->type == e_psm) {
-		if (e->flag & PSM_RETURN) 
+		if (e->flag & PSM_RETURN)
 			return 1;
-		if (e->flag & PSM_IF) 
+		if (e->flag & PSM_IF)
 			return has_return(e->r) && (!e->f || has_return(e->f));
 	}
 	return 0;
@@ -642,7 +643,7 @@ has_return( list *l )
 	sql_exp *e = n->data;
 
 	/* last statment of sequential block */
-	if (exp_has_return(e)) 
+	if (exp_has_return(e))
 		return 1;
 	return 0;
 }
@@ -676,7 +677,7 @@ sequential_block(sql_query *query, sql_subtype *restype, list *restypelist, dlis
 			reslist = rel_psm_declare(sql, s->data.lval->h);
 			break;
 		case SQL_DECLARE_TABLE:
-		case SQL_CREATE_TABLE: 
+		case SQL_CREATE_TABLE:
 			res = rel_psm_declare_table(query, s->data.lval->h);
 			break;
 		case SQL_WHILE:
@@ -697,7 +698,7 @@ sequential_block(sql_query *query, sql_subtype *restype, list *restypelist, dlis
 				res = sql_error(sql, 01, SQLSTATE(42000) "Return statement in the procedure body");
 			else {
 				/* should be last statement of a sequential_block */
-				if (n->next) { 
+				if (n->next) {
 					res = sql_error(sql, 01, SQLSTATE(42000) "Statement after return");
 				} else {
 					res = NULL;
@@ -741,7 +742,7 @@ sequential_block(sql_query *query, sql_subtype *restype, list *restypelist, dlis
 }
 
 static int
-arg_cmp(void *A, void *N) 
+arg_cmp(void *A, void *N)
 {
 	sql_arg *a = A;
 	char *name = N;
@@ -749,7 +750,7 @@ arg_cmp(void *A, void *N)
 }
 
 static list *
-result_type(mvc *sql, symbol *res) 
+result_type(mvc *sql, symbol *res)
 {
 	if (res->token == SQL_TYPE) {
 		sql_subtype *st = &res->data.lval->h->data.typeval;
@@ -781,18 +782,18 @@ create_type_list(mvc *sql, dlist *params, int param)
 	sql_subtype *par_subtype;
 	list * type_list = sa_list(sql->sa);
 	dnode * n = NULL;
-	
+
 	if (params) {
 		for (n = params->h; n; n = n->next) {
 			dnode *an = n;
-	
+
 			if (param) {
 				an = n->data.lval->h;
 				par_subtype = &an->next->data.typeval;
 				if (par_subtype && !par_subtype->type) /* var arg */
 					return type_list;
 				list_append(type_list, par_subtype);
-			} else { 
+			} else {
 				par_subtype = &an->data.typeval;
 				list_prepend(type_list, par_subtype);
 			}
@@ -887,21 +888,17 @@ rel_create_func(sql_query *query, dlist *qname, dlist *params, symbol *res, dlis
 			if (params) {
 				char *arg_list = NULL;
 				node *n;
-				
+
 				for (n = type_list->h; n; n = n->next) {
-					char *tpe =  subtype2string((sql_subtype *) n->data);
-					
+					char *tpe =  sql_subtype_string(sql->ta, (sql_subtype *) n->data);
+
 					if (arg_list) {
-						char *t = arg_list;
-						arg_list = sql_message("%s, %s", arg_list, tpe);
-						_DELETE(t);
-						_DELETE(tpe);
+						arg_list = sa_message(sql->ta, "%s, %s", arg_list, tpe);
 					} else {
 						arg_list = tpe;
 					}
 				}
 				(void)sql_error(sql, 02, SQLSTATE(42000) "CREATE %s: name '%s' (%s) already in use", F, fname, arg_list ? arg_list : "");
-				_DELETE(arg_list);
 				list_destroy(type_list);
 				return NULL;
 			} else {
@@ -994,9 +991,8 @@ rel_create_func(sql_query *query, dlist *qname, dlist *params, symbol *res, dlis
 			sql_schema *os = cur_schema(sql);
 
 			if (create) { /* needed for recursive functions */
-				q = query_cleaned(q);
+				q = query_cleaned(sql->ta, q);
 				sql->forward = f = mvc_create_func(sql, sql->sa, s, fname, l, restype, type, lang, "user", q, q, FALSE, vararg, FALSE);
-				GDKfree(q);
 			}
 			sql->session->schema = s;
 			b = sequential_block(query, (ra)?&ra->type:NULL, ra?NULL:restype, body, NULL, is_func);
@@ -1023,22 +1019,18 @@ rel_create_func(sql_query *query, dlist *qname, dlist *params, symbol *res, dlis
 				return NULL;
 			sql->params = NULL;
 			if (create) {
-				q = query_cleaned(q);
+				q = query_cleaned(sql->ta, q);
 				f = mvc_create_func(sql, sql->sa, s, fname, l, restype, type, lang, fmod, fnme, q, FALSE, vararg, FALSE);
-				GDKfree(q);
 			} else if (!sf) {
 				return sql_error(sql, 01, SQLSTATE(42000) "CREATE %s: external name %s.%s not bound (%s.%s)", F, fmod, fnme, s->base.name, fname );
 			} else {
 				sql_func *f = sf->func;
 				if (!f->mod || strcmp(f->mod, fmod))
-					f->mod = _STRDUP(fmod);
-				if (!f->imp || strcmp(f->imp, fnme)) 
-					f->imp = (f->sa)?sa_strdup(f->sa, fnme):_STRDUP(fnme);
-				if (!f->mod || !f->imp) {
-					_DELETE(f->mod);
-					_DELETE(f->imp);
+					f->mod = (f->sa)?sa_strdup(f->sa, fmod):sa_strdup(sql->pa, fmod);
+				if (!f->imp || strcmp(f->imp, fnme))
+					f->imp = (f->sa)?sa_strdup(f->sa, fnme):sa_strdup(sql->pa, fnme);
+				if (!f->mod || !f->imp)
 					return sql_error(sql, 02, SQLSTATE(HY013) "CREATE %s: could not allocate space", F);
-				}
 				f->sql = 0; /* native */
 				f->lang = FUNC_LANG_INT;
 			}
@@ -1097,7 +1089,7 @@ resolve_func( mvc *sql, sql_schema *s, const char *name, dlist *typelist, sql_ft
 			func = sub_func->func;
 	} else {
 		list_func = schema_bind_func(sql, s, name, type);
-		if (!list_func && type == F_FUNC) 
+		if (!list_func && type == F_FUNC)
 			list_func = schema_bind_func(sql,s,name, F_UNION);
 		if (list_func && list_func->cnt > 1) {
 			list_destroy(list_func);
@@ -1112,16 +1104,13 @@ resolve_func( mvc *sql, sql_schema *s, const char *name, dlist *typelist, sql_ft
 		if (typelist) {
 			char *arg_list = NULL;
 			node *n;
-			
+
 			if (type_list->cnt > 0) {
 				for (n = type_list->h; n; n = n->next) {
-					char *tpe =  subtype2string((sql_subtype *) n->data);
-				
+					char *tpe =  sql_subtype_string(sql->ta, (sql_subtype *) n->data);
+
 					if (arg_list) {
-						char *t = arg_list;
-						arg_list = sql_message("%s, %s", arg_list, tpe);
-						_DELETE(tpe);
-						_DELETE(t);
+						arg_list = sa_message(sql->ta, "%s, %s", arg_list, tpe);
 					} else {
 						arg_list = tpe;
 					}
@@ -1130,7 +1119,6 @@ resolve_func( mvc *sql, sql_schema *s, const char *name, dlist *typelist, sql_ft
 				list_destroy(type_list);
 				if(!if_exists)
 					e = sql_error(sql, 02, SQLSTATE(42000) "%s %s: no such %s '%s' (%s)", op, F, fn, name, arg_list);
-				_DELETE(arg_list);
 				return e;
 			}
 			list_destroy(list_func);
@@ -1154,7 +1142,7 @@ resolve_func( mvc *sql, sql_schema *s, const char *name, dlist *typelist, sql_ft
 	return func;
 }
 
-static sql_rel* 
+static sql_rel*
 rel_drop_func(mvc *sql, dlist *qname, dlist *typelist, int drop_action, sql_ftype type, int if_exists)
 {
 	const char *name = qname_schema_object(qname);
@@ -1183,7 +1171,7 @@ rel_drop_func(mvc *sql, dlist *qname, dlist *typelist, int drop_action, sql_ftyp
 	return sql_error(sql, 02, SQLSTATE(42000) "DROP %s: %s %s not found", F, fn, name);
 }
 
-static sql_rel* 
+static sql_rel*
 rel_drop_all_func(mvc *sql, dlist *qname, int drop_action, sql_ftype type)
 {
 	const char *name = qname_schema_object(qname);
@@ -1200,7 +1188,7 @@ rel_drop_all_func(mvc *sql, dlist *qname, int drop_action, sql_ftype type)
 		return sql_error(sql, 02, SQLSTATE(42000) "DROP ALL %s: insufficient privileges for user '%s' in schema '%s'", F, sqlvar_get_string(find_global_var(sql, mvc_bind_schema(sql, "sys"), "current_user")), s->base.name);
 
 	list_func = schema_bind_func(sql, s, name, type);
-	if (!list_func) 
+	if (!list_func)
 		return sql_error(sql, 02, SQLSTATE(3F000) "DROP ALL %s: no such %s '%s'", F, fn, name);
 	list_destroy(list_func);
 	return rel_drop_function(sql->sa, s->base.name, name, -1, type, drop_action);
@@ -1328,12 +1316,11 @@ create_trigger(sql_query *query, dlist *qname, int time, symbol *trigger_event, 
 			default:
 				return sql_error(sql, 02, SQLSTATE(42000) "%s TRIGGER: invalid event: %s", base, token2string(trigger_event->token));
 		}
-		orientation = triggered_action->h->data.i_val;
-		q = query_cleaned(QUERY(sql->scanner));
 
 		assert(triggered_action->h->type == type_int);
+		orientation = triggered_action->h->data.i_val;
+		q = query_cleaned(sql->ta, QUERY(sql->scanner));
 		r = rel_create_trigger(sql, t->s->base.name, t->base.name, triggername, time, orientation, event, old_name, new_name, condition, q);
-		GDKfree(q);
 		return r;
 	}
 
@@ -1354,7 +1341,7 @@ create_trigger(sql_query *query, dlist *qname, int time, symbol *trigger_event, 
 	if (condition) {
 		sql_rel *rel = NULL;
 
-		if (new_name) /* in case of updates same relations is available via both names */ 
+		if (new_name) /* in case of updates same relations is available via both names */
 			rel = stack_find_rel_view(sql, new_name);
 		if (!rel && old_name)
 			rel = stack_find_rel_view(sql, old_name);
@@ -1428,7 +1415,7 @@ drop_trigger(mvc *sql, dlist *qname, int if_exists)
 		return sql_error(sql, 02, SQLSTATE(3F000) "DROP TRIGGER: no such schema '%s'", sname);
 	}
 
-	if (!mvc_schema_privs(sql, ss)) 
+	if (!mvc_schema_privs(sql, ss))
 		return sql_error(sql, 02, SQLSTATE(3F000) "DROP TRIGGER: access denied for %s to schema '%s'", sqlvar_get_string(find_global_var(sql, mvc_bind_schema(sql, "sys"), "current_user")), ss->base.name);
 	return rel_drop_trigger(sql, ss->base.name, tname, if_exists);
 }
@@ -1447,8 +1434,10 @@ psm_analyze(sql_query *query, char *analyzeType, dlist *qname, dlist *columns, s
 	append(exps, mm_exp = exp_atom_int(sql->sa, minmax));
 	append(tl, exp_subtype(mm_exp));
 	if (sample) {
-		sample_exp = rel_value_exp(query, NULL, sample, 0, ek);
-		if (!sample_exp || !(sample_exp = rel_check_type(sql, sql_bind_localtype("lng"), NULL, sample_exp, type_cast)))
+		sql_rel *rel = NULL;
+		sample_exp = rel_value_exp(query, &rel, sample, sql_sel | sql_psm, ek);
+		psm_zero_or_one(sample_exp);
+		if (!sample_exp || !(sample_exp = exp_check_type(sql, sql_bind_localtype("lng"), NULL, sample_exp, type_cast)))
 			return NULL;
 	} else {
 		sample_exp = exp_atom_lng(sql->sa, 0);
@@ -1566,9 +1555,9 @@ rel_psm(sql_query *query, symbol *s)
 		int all = l->h->next->next->next->next->data.i_val;
 		int drop_action = l->h->next->next->next->next->next->data.i_val;
 
-		if (STORE_READONLY) 
+		if (STORE_READONLY)
 			return sql_error(sql, 06, SQLSTATE(42000) "Schema statements cannot be executed on a readonly database.");
-			
+
 		if (all)
 			ret = rel_drop_all_func(sql, qname, drop_action, type);
 		else
@@ -1583,8 +1572,8 @@ rel_psm(sql_query *query, symbol *s)
 	case SQL_DECLARE:
 		return sql_error(sql, 02, SQLSTATE(42000) "Variables cannot be declared on the global scope");
 	case SQL_CALL:
-		ret = rel_psm_stmt(sql->sa, rel_psm_call(query, s->data.sym));
 		sql->type = Q_UPDATE;
+		ret = rel_psm_stmt(sql->sa, rel_psm_call(query, s->data.sym));
 		break;
 	case SQL_CREATE_TABLE_LOADER:
 	{

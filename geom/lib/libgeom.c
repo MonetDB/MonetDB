@@ -16,8 +16,6 @@
 #include "monetdb_config.h"
 #include "libgeom.h"
 
-#include <math.h>
-
 static void __attribute__((__format__(__printf__, 1, 2)))
 geomerror(_In_z_ _Printf_format_string_ const char *fmt, ...)
 {
@@ -63,7 +61,7 @@ int
 getMbrGeos(mbr *res, const GEOSGeom geosGeometry)
 {
 	GEOSGeom envelope;
-	//int coordinatesNum  = 0; 
+	//int coordinatesNum  = 0;
 	double xmin = 0, ymin = 0, xmax = 0, ymax = 0;
 
 	if (!geosGeometry || (envelope = GEOSEnvelope(geosGeometry)) == NULL)

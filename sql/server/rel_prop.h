@@ -9,7 +9,7 @@
 #ifndef _REL_PROP_H_
 #define _REL_PROP_H_
 
-typedef enum rel_prop { 
+typedef enum rel_prop {
 	PROP_COUNT,
 	PROP_JOINIDX,   /* could use join idx */
 	PROP_HASHIDX,   /* is hash idx */
@@ -33,6 +33,6 @@ extern prop * prop_copy( sql_allocator *sa, prop *p);
 extern prop * prop_remove( prop *plist, prop *p);
 extern prop * find_prop( prop *p, rel_prop kind);
 extern const char * propkind2string( prop *p);
-extern char * propvalue2string( prop *p);
+extern char * propvalue2string(sql_allocator *sa, prop *p);
 
 #endif /* _REL_PROP_H_ */

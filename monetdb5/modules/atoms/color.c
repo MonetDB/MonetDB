@@ -33,7 +33,6 @@
 #include "monetdb_config.h"
 #include "mal.h"
 #include "mal_exception.h"
-#include <math.h>
 #include "color.h"
 
 /*
@@ -399,7 +398,7 @@ CLRcolor(color *c, const char **val)
 
 #include "mel.h"
 mel_atom color_init_atoms[] = {
- { .name="color", .basetype="int", .size=sizeof(color), .tostr=color_tostr, .fromstr=color_fromstr, },  { .cmp=NULL } 
+ { .name="color", .basetype="int", .size=sizeof(color), .tostr=color_tostr, .fromstr=color_fromstr, },  { .cmp=NULL }
 };
 mel_func color_init_funcs[] = {
  command("color", "str", CLRstr, false, "Converts color to string ", args(1,2, arg("",str),arg("s",color))),

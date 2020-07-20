@@ -59,13 +59,13 @@ stdout of test 'timestamp` in directory 'sql/test/pg_regress` itself:
 [ 1	]
 #INSERT INTO TIMESTAMP_TBL VALUES ((select test_now from test_now));
 [ 1	]
-#INSERT INTO TIMESTAMP_TBL VALUES (current_timestamp);
+#INSERT INTO TIMESTAMP_TBL VALUES (cast((select test_now from test_now) as timestamp));
 [ 1	]
-#INSERT INTO TIMESTAMP_TBL VALUES (cast(current_date as timestamp));
+#INSERT INTO TIMESTAMP_TBL VALUES (cast((select test_current_date from test_current_date) as timestamp));
 [ 1	]
-#INSERT INTO TIMESTAMP_TBL VALUES (cast(sql_sub(current_date, 24*60*60.0) as timestamp));
+#INSERT INTO TIMESTAMP_TBL VALUES (cast((select test_current_date from test_current_date) - interval '1' DAY as timestamp));
 [ 1	]
-#INSERT INTO TIMESTAMP_TBL VALUES (cast(sql_add(current_date, 24*60*60.0) as timestamp));
+#INSERT INTO TIMESTAMP_TBL VALUES (cast((select test_current_date from test_current_date) + interval '1' DAY as timestamp));
 [ 1	]
 #SELECT count(*) AS One FROM TIMESTAMP_TBL WHERE d1 = cast((select test_current_date from test_current_date) as timestamp);
 % . # table_name
@@ -73,18 +73,18 @@ stdout of test 'timestamp` in directory 'sql/test/pg_regress` itself:
 % bigint # type
 % 1 # length
 [ 1 ]
-#SELECT count(*) AS One FROM TIMESTAMP_TBL WHERE d1 = cast(sql_add((select test_current_date from test_current_date) , 24*60*60.0) as timestamp);
+#SELECT count(*) AS One FROM TIMESTAMP_TBL WHERE d1 = cast((select test_current_date from test_current_date) + interval '1' DAY as timestamp);
 % . # table_name
 % one # name
 % bigint # type
 % 1 # length
 [ 1	]
-#SELECT count(*) AS One FROM TIMESTAMP_TBL WHERE d1 = cast(sql_sub((select test_current_date from test_current_date) , 24*60*60.0) as timestamp);
+#SELECT count(*) AS One FROM TIMESTAMP_TBL WHERE d1 = cast((select test_current_date from test_current_date) - interval '1' DAY as timestamp);
 % . # table_name
 % one # name
 % bigint # type
 % 1 # length
-[ 1 ]
+[ 1	]
 #SELECT count(*) AS None FROM TIMESTAMP_TBL WHERE d1 = cast((select test_now from test_now) as timestamp);
 % . # table_name
 % none # name
@@ -486,113 +486,9 @@ stdout of test 'timestamp` in directory 'sql/test/pg_regress` itself:
 [ 2001-09-22 18:19:20.00,	20.000000	]
 [ 1997-02-11 01:32:01.00,	1.000000	]
 [ NULL,	NULL	]
-#SELECT d1, sql_add(d1, 365*24*60*60.0) FROM TIMESTAMP_TBL;
-% sys.timestamp_tbl,	sys.%1 # table_name
-% d1,	%1 # name
-% timestamp,	timestamp # type
-% 22,	26 # length
-[ 1997-01-02 00:00:00.00,	1998-01-02 00:00:00.000000	]
-[ 1997-01-02 03:04:05.00,	1998-01-02 03:04:05.000000	]
-[ 1997-02-11 01:32:01.00,	1998-02-11 01:32:01.000000	]
-[ 1997-02-11 01:32:01.00,	1998-02-11 01:32:01.000000	]
-[ 1997-06-11 00:32:01.00,	1998-06-11 00:32:01.000000	]
-[ 2001-09-22 18:19:20.00,	2002-09-22 18:19:20.000000	]
-[ 1997-02-11 01:32:01.00,	1998-02-11 01:32:01.000000	]
-[ NULL,	NULL	]
-#SELECT d1, sql_add(d1, cast(365*24*60*60 as interval second)) FROM TIMESTAMP_TBL;
-% sys.timestamp_tbl,	sys.%1 # table_name
-% d1,	%1 # name
-% timestamp,	timestamp # type
-% 22,	26 # length
-[ 1997-01-02 00:00:00.00,	1998-01-02 00:00:00.000000	]
-[ 1997-01-02 03:04:05.00,	1998-01-02 03:04:05.000000	]
-[ 1997-02-11 01:32:01.00,	1998-02-11 01:32:01.000000	]
-[ 1997-02-11 01:32:01.00,	1998-02-11 01:32:01.000000	]
-[ 1997-06-11 00:32:01.00,	1998-06-11 00:32:01.000000	]
-[ 2001-09-22 18:19:20.00,	2002-09-22 18:19:20.000000	]
-[ 1997-02-11 01:32:01.00,	1998-02-11 01:32:01.000000	]
-[ NULL,	NULL	]
-#SELECT d1, sql_add(d1, cast(12 as interval month)) FROM TIMESTAMP_TBL;
-% sys.timestamp_tbl,	sys.%1 # table_name
-% d1,	%1 # name
-% timestamp,	timestamp # type
-% 22,	26 # length
-[ 1997-01-02 00:00:00.00,	1998-01-02 00:00:00.000000	]
-[ 1997-01-02 03:04:05.00,	1998-01-02 03:04:05.000000	]
-[ 1997-02-11 01:32:01.00,	1998-02-11 01:32:01.000000	]
-[ 1997-02-11 01:32:01.00,	1998-02-11 01:32:01.000000	]
-[ 1997-06-11 00:32:01.00,	1998-06-11 00:32:01.000000	]
-[ 2001-09-22 18:19:20.00,	2002-09-22 18:19:20.000000	]
-[ 1997-02-11 01:32:01.00,	1998-02-11 01:32:01.000000	]
-[ NULL,	NULL	]
-#SELECT d1, sql_add(d1, cast(-18 as interval month)) FROM TIMESTAMP_TBL;
-% sys.timestamp_tbl,	sys.%1 # table_name
-% d1,	%1 # name
-% timestamp,	timestamp # type
-% 22,	26 # length
-[ 1997-01-02 00:00:00.00,	1995-07-02 00:00:00.000000	]
-[ 1997-01-02 03:04:05.00,	1995-07-02 03:04:05.000000	]
-[ 1997-02-11 01:32:01.00,	1995-08-11 01:32:01.000000	]
-[ 1997-02-11 01:32:01.00,	1995-08-11 01:32:01.000000	]
-[ 1997-06-11 00:32:01.00,	1995-12-11 00:32:01.000000	]
-[ 2001-09-22 18:19:20.00,	2000-03-22 18:19:20.000000	]
-[ 1997-02-11 01:32:01.00,	1995-08-11 01:32:01.000000	]
-[ NULL,	NULL	]
-#SELECT d1, sql_sub(d1, 365*24*60*60.0) FROM TIMESTAMP_TBL;
-% sys.timestamp_tbl,	sys.%1 # table_name
-% d1,	%1 # name
-% timestamp,	timestamp # type
-% 22,	26 # length
-[ 1997-01-02 00:00:00.00,	1996-01-03 00:00:00.000000	]
-[ 1997-01-02 03:04:05.00,	1996-01-03 03:04:05.000000	]
-[ 1997-02-11 01:32:01.00,	1996-02-12 01:32:01.000000	]
-[ 1997-02-11 01:32:01.00,	1996-02-12 01:32:01.000000	]
-[ 1997-06-11 00:32:01.00,	1996-06-11 00:32:01.000000	]
-[ 2001-09-22 18:19:20.00,	2000-09-22 18:19:20.000000	]
-[ 1997-02-11 01:32:01.00,	1996-02-12 01:32:01.000000	]
-[ NULL,	NULL	]
-#SELECT d1, sql_sub(d1, cast(365*24*60*60 as interval second)) FROM TIMESTAMP_TBL;
-% sys.timestamp_tbl,	sys.%1 # table_name
-% d1,	%1 # name
-% timestamp,	timestamp # type
-% 22,	26 # length
-[ 1997-01-02 00:00:00.00,	1996-01-03 00:00:00.000000	]
-[ 1997-01-02 03:04:05.00,	1996-01-03 03:04:05.000000	]
-[ 1997-02-11 01:32:01.00,	1996-02-12 01:32:01.000000	]
-[ 1997-02-11 01:32:01.00,	1996-02-12 01:32:01.000000	]
-[ 1997-06-11 00:32:01.00,	1996-06-11 00:32:01.000000	]
-[ 2001-09-22 18:19:20.00,	2000-09-22 18:19:20.000000	]
-[ 1997-02-11 01:32:01.00,	1996-02-12 01:32:01.000000	]
-[ NULL,	NULL	]
-#SELECT d1, sql_sub(d1, cast(12 as interval month)) FROM TIMESTAMP_TBL;
-% sys.timestamp_tbl,	sys.%1 # table_name
-% d1,	%1 # name
-% timestamp,	timestamp # type
-% 22,	26 # length
-[ 1997-01-02 00:00:00.00,	1996-01-02 00:00:00.000000	]
-[ 1997-01-02 03:04:05.00,	1996-01-02 03:04:05.000000	]
-[ 1997-02-11 01:32:01.00,	1996-02-11 01:32:01.000000	]
-[ 1997-02-11 01:32:01.00,	1996-02-11 01:32:01.000000	]
-[ 1997-06-11 00:32:01.00,	1996-06-11 00:32:01.000000	]
-[ 2001-09-22 18:19:20.00,	2000-09-22 18:19:20.000000	]
-[ 1997-02-11 01:32:01.00,	1996-02-11 01:32:01.000000	]
-[ NULL,	NULL	]
-#SELECT d1, sql_sub(d1, cast(-18 as interval month)) FROM TIMESTAMP_TBL;
-% sys.timestamp_tbl,	sys.%1 # table_name
-% d1,	%1 # name
-% timestamp,	timestamp # type
-% 22,	26 # length
-[ 1997-01-02 00:00:00.00,	1998-07-02 00:00:00.000000	]
-[ 1997-01-02 03:04:05.00,	1998-07-02 03:04:05.000000	]
-[ 1997-02-11 01:32:01.00,	1998-08-11 01:32:01.000000	]
-[ 1997-02-11 01:32:01.00,	1998-08-11 01:32:01.000000	]
-[ 1997-06-11 00:32:01.00,	1998-12-11 00:32:01.000000	]
-[ 2001-09-22 18:19:20.00,	2003-03-22 18:19:20.000000	]
-[ 1997-02-11 01:32:01.00,	1998-08-11 01:32:01.000000	]
-[ NULL,	NULL	]
 #SELECT d1, sql_sub(d1, cast('2001-12-12 23:22:21' as timestamp)) FROM TIMESTAMP_TBL;
-% sys.timestamp_tbl,	sys.%1 # table_name
-% d1,	%1 # name
+% sys.timestamp_tbl,	sys.%2 # table_name
+% d1,	%2 # name
 % timestamp,	sec_interval # type
 % 22,	14 # length
 [ 1997-01-02 00:00:00.00,	-156036141.000	]
@@ -604,8 +500,8 @@ stdout of test 'timestamp` in directory 'sql/test/pg_regress` itself:
 [ 1997-02-11 01:32:01.00,	-152574620.000	]
 [ NULL,	NULL	]
 #SELECT d1, sql_sub(cast('2001-12-12 23:22:21' as timestamp), d1) FROM TIMESTAMP_TBL;
-% sys.timestamp_tbl,	.%1 # table_name
-% d1,	%1 # name
+% sys.timestamp_tbl,	.%2 # table_name
+% d1,	%2 # name
 % timestamp,	sec_interval # type
 % 22,	13 # length
 [ 1997-01-02 00:00:00.00,	156036141.000	]

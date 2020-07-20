@@ -41,13 +41,13 @@ stdout of test '09` in directory 'sql/benchmarks/tpcds` itself:
 #                  (SELECT count(*)
 % .,	.,	.,	.,	. # table_name
 % bucket1,	bucket2,	bucket3,	bucket4,	bucket5 # name
-% double,	double,	double,	double,	double # type
-% 24,	24,	24,	24,	24 # length
-[ 39.64541318,	115.8981375,	191.6347131,	267.1879997,	341.986915	]
+% decimal,	decimal,	decimal,	decimal,	decimal # type
+% 11,	11,	11,	11,	11 # length
+[ 39.65,	115.90,	191.63,	267.19,	341.99	]
 
-# 18:31:43 >  
-# 18:31:43 >  "Done."
-# 18:31:43 >  
+# 11:36:53 >  
+# 11:36:53 >  "Done."
+# 11:36:53 >  
 
 # 18:29:57 >  
 # 18:29:57 >  "Done."

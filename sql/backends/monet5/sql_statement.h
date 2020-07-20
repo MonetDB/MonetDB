@@ -69,6 +69,7 @@ typedef enum stmt_type {
 
 	st_export,
 	st_append,
+	st_append_bulk,
 	st_table_clear,
 	st_exception,
 	st_trans,
@@ -81,6 +82,7 @@ typedef enum stmt_type {
 	st_delete,
 
 	st_group,
+	st_unique,
 	st_convert,
 	st_Nop,
 	st_func,
@@ -110,10 +112,12 @@ typedef struct stmt {
 	struct stmt *op3;
 	stmtdata op4;		/* only op4 will hold other types */
 
-	char nrcols;
-	char key;		/* key (aka all values are unique) */ // TODO make this thing a bool
-	char aggr;		/* aggregated */
-	char partition;		/* selected as mitosis candidate */
+	unsigned int
+	 nrcols:2,
+	 key:1,			/* key (aka all values are unique) */ // TODO make this thing a bool
+	 aggr:1,		/* aggregated */
+	 partition:1,	/* selected as mitosis candidate */
+	 reduce:1;		/* used to reduce number of rows (also for joins) */
 
 	struct stmt *cand;	/* optional candidate list */
 
@@ -152,6 +156,7 @@ extern stmt *stmt_update_idx(backend *be, sql_idx *i, stmt *tids, stmt *upd);
 extern stmt *stmt_delete(backend *be, sql_table *t, stmt *b);
 
 extern stmt *stmt_append(backend *be, stmt *c, stmt *values);
+extern stmt *stmt_append_bulk(backend *be, stmt *c, list *l);
 extern stmt *stmt_table_clear(backend *be, sql_table *t);
 
 extern stmt *stmt_export(backend *be, stmt *t, const char *sep, const char *rsep, const char *ssep, const char *null_string, int onclient, stmt *file);
@@ -174,7 +179,7 @@ extern stmt *stmt_uselect(backend *be, stmt *op1, stmt *op2, comp_type cmptype, 
        2 ==   l <= x <  h
        3 ==   l <= x <= h
        */
-extern stmt *stmt_uselect2(backend *be, stmt *op1, stmt *op2, stmt *op3, int cmp, stmt *sub, int anti);
+extern stmt *stmt_uselect2(backend *be, stmt *op1, stmt *op2, stmt *op3, int cmp, stmt *sub, int anti, int reduce);
 extern stmt *stmt_genselect(backend *be, stmt *lops, stmt *rops, sql_subfunc *f, stmt *sub, int anti);
 
 extern stmt *stmt_tunion(backend *be, stmt *op1, stmt *op2);
@@ -182,12 +187,12 @@ extern stmt *stmt_tdiff(backend *be, stmt *op1, stmt *op2, stmt *lcand);
 extern stmt *stmt_tdiff2(backend *be, stmt *op1, stmt *op2, stmt *lcand);
 extern stmt *stmt_tinter(backend *be, stmt *op1, stmt *op2, bool single);
 
-extern stmt *stmt_join(backend *be, stmt *op1, stmt *op2, int anti, comp_type cmptype, int is_semantics, bool single);
+extern stmt *stmt_join(backend *be, stmt *op1, stmt *op2, int anti, comp_type cmptype, int need_left, int is_semantics, bool single);
 extern stmt *stmt_join2(backend *be, stmt *l, stmt *ra, stmt *rb, int cmp, int anti, int swapped);
 /* generic join operator, with a left and right statement list */
 extern stmt *stmt_genjoin(backend *be, stmt *l, stmt *r, sql_subfunc *op, int anti, int swapped);
 extern stmt *stmt_semijoin(backend *be, stmt *l, stmt *r, stmt *lcand, stmt *rcand, int is_semantics, bool single);
-extern stmt *stmt_join_cand(backend *be, stmt *l, stmt *r, stmt *lcand, stmt *rcand, int anti, comp_type cmptype, int is_semantics, bool single);
+extern stmt *stmt_join_cand(backend *be, stmt *l, stmt *r, stmt *lcand, stmt *rcand, int anti, comp_type cmptype, int need_left, int is_semantics, bool single);
 
 extern stmt *stmt_project(backend *be, stmt *op1, stmt *op2);
 extern stmt *stmt_project_delta(backend *be, stmt *col, stmt *upd, stmt *ins);
@@ -197,6 +202,7 @@ extern stmt *stmt_list(backend *be, list *l);
 extern void stmt_set_nrcols(stmt *s);
 
 extern stmt *stmt_group(backend *be, stmt *op1, stmt *grp, stmt *ext, stmt *cnt, int done);
+extern stmt *stmt_unique(backend *be, stmt *op1);
 
 /* raise exception incase the condition (cond) holds, continue with stmt res */
 extern stmt *stmt_exception(backend *be, stmt *cond, const char *errstr, int errcode);
@@ -207,12 +213,12 @@ extern stmt *stmt_gen_group(backend *be, stmt *gids, stmt *cnts);	/* given a gid
 extern stmt *stmt_mirror(backend *be, stmt *s);
 extern stmt *stmt_result(backend *be, stmt *s, int nr);
 
-/* 
+/*
  * distinct: compute topn on unique groups
  * dir:      direction of the ordering, ie 1 Ascending, 0 decending
- * last:     intermediate step or last step 
+ * last:     intermediate step or last step
  * order:    is order important or not (firstn vs slice)
- */ 
+ */
 extern stmt *stmt_limit(backend *sa, stmt *c, stmt *piv, stmt *gid, stmt *offset, stmt *limit, int distinct, int dir, int nullslast, int last, int order);
 extern stmt *stmt_sample(backend *be, stmt *s, stmt *sample, stmt *seed);
 extern stmt *stmt_order(backend *be, stmt *s, int direction, int nullslast);

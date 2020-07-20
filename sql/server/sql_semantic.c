@@ -23,8 +23,8 @@
 #include "rel_unnest.h"
 #include "rel_optimizer.h"
 
-/* 
- * For debugging purposes we need to be able to convert sql-tokens to 
+/*
+ * For debugging purposes we need to be able to convert sql-tokens to
  * a string representation.
  *
  * !SQL ERROR <sqlerrno> : <details>
@@ -33,48 +33,6 @@
  * !SQL  <informative message, reserved for ...rows affected>
  */
 
-atom *
-sql_add_arg(mvc *sql, atom *v)
-{
-	atom** new_args;
-	int next_size = sql->argmax;
-
-	if (sql->argc == (1<<16)-1)
-		sql->caching = 0;
-	if (sql->caching && sql->argc == next_size) {
-		next_size *= 2;
-		new_args = RENEW_ARRAY(atom*,sql->args,next_size);
-		if(new_args) {
-			sql->args = new_args;
-			sql->argmax = next_size;
-		} else
-			return NULL;
-	}
-	sql->args[sql->argc++] = v;
-	return v;
-}
-
-atom *
-sql_set_arg(mvc *sql, int nr, atom *v)
-{
-	atom** new_args;
-	int next_size = sql->argmax;
-	if (nr >= next_size) {
-		next_size *= 2;
-		if (nr >= next_size)
-			next_size = nr*2;
-		new_args = RENEW_ARRAY(atom*,sql->args,next_size);
-		if(new_args) {
-			sql->args = new_args;
-			sql->argmax = next_size;
-		} else
-			return NULL;
-	}
-	if (sql->argc < nr+1)
-		sql->argc = nr+1;
-	sql->args[nr] = v;
-	return v;
-}
 
 void
 sql_add_param(mvc *sql, const char *name, sql_subtype *st)
@@ -86,7 +44,7 @@ sql_add_param(mvc *sql, const char *name, sql_subtype *st)
 	if (st && st->type)
 		a->type = *st;
 	a->inout = ARG_IN;
-	if (name && strcmp(name, "*") == 0) 
+	if (name && strcmp(name, "*") == 0)
 		a->type = *sql_bind_localtype("int");
 	if (!sql->params)
 		sql->params = sa_list(sql->sa);
@@ -102,7 +60,7 @@ sql_bind_param(mvc *sql, const char *name)
 		for (n = sql->params->h; n; n = n->next) {
 			sql_arg *a = n->data;
 
-			if (a->name && strcmp(a->name, name) == 0) 
+			if (a->name && strcmp(a->name, name) == 0)
 				return a;
 		}
 	}
@@ -116,7 +74,7 @@ sql_bind_paramnr(mvc *sql, int nr)
 	node *n;
 
 	if (sql->params && nr < list_length(sql->params)) {
-		for (n = sql->params->h, i=0; n && i<nr; n = n->next, i++) 
+		for (n = sql->params->h, i=0; n && i<nr; n = n->next, i++)
 			;
 
 		if (n)
@@ -125,24 +83,10 @@ sql_bind_paramnr(mvc *sql, int nr)
 	return NULL;
 }
 
-atom *
-sql_bind_arg(mvc *sql, int nr)
-{
-	if (nr < sql->argc)
-		return sql->args[nr];
-	return NULL;
-}
-
 void
 sql_destroy_params(mvc *sql)
 {
 	sql->params = NULL;
-}
-
-void
-sql_destroy_args(mvc *sql)
-{
-	sql->argc = 0;
 }
 
 sql_schema *
@@ -172,7 +116,7 @@ find_table_on_scope(mvc *sql, sql_schema **s, const char *sname, const char *tna
 		}
 	}
 	if (!t) /* then a table from the provided schema */
-		t = mvc_bind_table(sql, *s, tname); 
+		t = mvc_bind_table(sql, *s, tname);
 	return t;
 }
 
@@ -220,7 +164,7 @@ set_type_param(mvc *sql, sql_subtype *type, int nr)
 {
 	sql_arg *a = sql_bind_paramnr(sql, nr);
 
-	if (!a) 
+	if (!a)
 		return -1;
 	a->type = *type;
 	return 0;
@@ -239,7 +183,7 @@ supertype(sql_subtype *super, sql_subtype *r, sql_subtype *i)
 	sql_subtype lsuper;
 
 	lsuper = *r;
-	if (i->type->base.id > r->type->base.id || 
+	if (i->type->base.id > r->type->base.id ||
 	    (EC_VARCHAR(i->type->eclass) && !EC_VARCHAR(r->type->eclass))) {
 		lsuper = *i;
 		radix = i->type->radix;
@@ -247,7 +191,7 @@ supertype(sql_subtype *super, sql_subtype *r, sql_subtype *i)
 	}
 	if (!lsuper.type->localtype)
 		tpe = "smallint";
-	/* 
+	/*
 	 * In case of different radix we should change one.
 	 */
 	if (i->type->radix != r->type->radix) {
@@ -278,7 +222,7 @@ supertype(sql_subtype *super, sql_subtype *r, sql_subtype *i)
 }
 
 char *
-toUpperCopy(char *dest, const char *src) 
+toUpperCopy(char *dest, const char *src)
 {
 	size_t i, len;
 
@@ -290,12 +234,14 @@ toUpperCopy(char *dest, const char *src)
 	len = _strlen(src);
 	for (i = 0; i < len; i++)
 		dest[i] = (char)toupper((int)src[i]);
-	
+
 	dest[i] = '\0';
 	return(dest);
 }
 
-char *
+static char * _symbol2string(mvc *sql, symbol *se, int expression, char **err);
+
+static char *
 dlist2string(mvc *sql, dlist *l, int expression, char **err)
 {
 	char *b = NULL;
@@ -305,20 +251,16 @@ dlist2string(mvc *sql, dlist *l, int expression, char **err)
 		char *s = NULL;
 
 		if (n->type == type_string && n->data.sval)
-			s = _STRDUP(n->data.sval);
+			s = sa_strdup(sql->ta, n->data.sval);
 		else if (n->type == type_symbol)
-			s = symbol2string(sql, n->data.sym, expression, err);
+			s = _symbol2string(sql, n->data.sym, expression, err);
 
-		if (!s) {
-			_DELETE(b);
+		if (!s)
 			return NULL;
-		}
 		if (b) {
-			char *o = NEW_ARRAY(char, strlen(b) + strlen(s) + 2);
+			char *o = SA_NEW_ARRAY(sql->ta, char, strlen(b) + strlen(s) + 2);
 			if (o)
 				stpcpy(stpcpy(stpcpy(o, b), "."), s);
-			_DELETE(b);
-			_DELETE(s);
 			b = o;
 			if (b == NULL)
 				return NULL;
@@ -330,8 +272,9 @@ dlist2string(mvc *sql, dlist *l, int expression, char **err)
 }
 
 char *
-symbol2string(mvc *sql, symbol *se, int expression, char **err) /**/
+_symbol2string(mvc *sql, symbol *se, int expression, char **err) /**/
 {
+	/* inner symbol2string uses the temporary allocator */
 	switch (se->token) {
 	case SQL_NOP: {
 		dnode *lst = se->data.lval->h, *ops = lst->next->next->data.lval->h, *aux;
@@ -343,22 +286,20 @@ symbol2string(mvc *sql, symbol *se, int expression, char **err) /**/
 		if (!sname)
 			sname = sql->session->schema->base.name;
 
-		for (aux = ops; aux; aux = aux->next) nargs++;
-		if (!(inputs = GDKzalloc(nargs * sizeof(char**))))
+		for (aux = ops; aux; aux = aux->next)
+			nargs++;
+		if (!(inputs = SA_ZNEW_ARRAY(sql->ta, char*, nargs)))
 			return NULL;
 
 		for (aux = ops; aux; aux = aux->next) {
-			if (!(inputs[i] = symbol2string(sql, aux->data.sym, expression, err))) {
-				for (int j = 0; j < i; j++)
-					GDKfree(inputs[j]);
-				GDKfree(inputs);
+			if (!(inputs[i] = _symbol2string(sql, aux->data.sym, expression, err))) {
 				return NULL;
 			}
 			inputs_length += strlen(inputs[i]);
 			i++;
 		}
 
-		if ((res = NEW_ARRAY(char, strlen(sname) + strlen(op) + inputs_length + 6 + (nargs - 1 /* commas */) + 2))) {
+		if ((res = SA_NEW_ARRAY(sql->ta, char, strlen(sname) + strlen(op) + inputs_length + 6 + (nargs - 1 /* commas */) + 2))) {
 			char *concat = stpcpy(stpcpy(stpcpy(stpcpy(stpcpy(res, "\""), sname), "\".\""), op), "\"(");
 			i = 0;
 			for (aux = ops; aux; aux = aux->next) {
@@ -369,10 +310,6 @@ symbol2string(mvc *sql, symbol *se, int expression, char **err) /**/
 			}
 			concat = stpcpy(concat, ")");
 		}
-
-		for (int j = 0; j < nargs; j++)
-			GDKfree(inputs[j]);
-		GDKfree(inputs);
 		return res;
 	} break;
 	case SQL_BINOP: {
@@ -382,17 +319,12 @@ symbol2string(mvc *sql, symbol *se, int expression, char **err) /**/
 
 		if (!sname)
 			sname = sql->session->schema->base.name;
-		if (!(l = symbol2string(sql, lst->next->next->data.sym, expression, err)) || !(r = symbol2string(sql, lst->next->next->next->data.sym, expression, err))) {
-			_DELETE(l);
-			_DELETE(r);
+		if (!(l = _symbol2string(sql, lst->next->next->data.sym, expression, err)) || !(r = _symbol2string(sql, lst->next->next->next->data.sym, expression, err)))
 			return NULL;
-		}
 
-		if ((res = NEW_ARRAY(char, strlen(sname) + strlen(op) + strlen(l) + strlen(r) + 9)))
+		if ((res = SA_NEW_ARRAY(sql->ta, char, strlen(sname) + strlen(op) + strlen(l) + strlen(r) + 9)))
 			stpcpy(stpcpy(stpcpy(stpcpy(stpcpy(stpcpy(stpcpy(stpcpy(stpcpy(res, "\""), sname), "\".\""), op), "\"("), l), ","), r), ")");
 
-		_DELETE(l);
-		_DELETE(r);
 		return res;
 	} break;
 	case SQL_OP: {
@@ -403,7 +335,7 @@ symbol2string(mvc *sql, symbol *se, int expression, char **err) /**/
 		if (!sname)
 			sname = sql->session->schema->base.name;
 
-		if ((res = NEW_ARRAY(char, strlen(sname) + strlen(op) + 8)))
+		if ((res = SA_NEW_ARRAY(sql->ta, char, strlen(sname) + strlen(op) + 8)))
 			stpcpy(stpcpy(stpcpy(stpcpy(stpcpy(res, "\""), sname), "\".\""), op), "\"()");
 
 		return res;
@@ -411,29 +343,28 @@ symbol2string(mvc *sql, symbol *se, int expression, char **err) /**/
 	case SQL_UNOP: {
 		dnode *lst = se->data.lval->h;
 		const char *op = qname_schema_object(lst->data.lval), *sname = qname_schema(lst->data.lval);
-		char *l = symbol2string(sql, lst->next->next->data.sym, expression, err), *res;
+		char *l = _symbol2string(sql, lst->next->next->data.sym, expression, err), *res;
 
 		if (!sname)
 			sname = sql->session->schema->base.name;
 		if (!l)
 			return NULL;
 
-		if ((res = NEW_ARRAY(char, strlen(sname) + strlen(op) + strlen(l) + 8)))
+		if ((res = SA_NEW_ARRAY(sql->ta, char, strlen(sname) + strlen(op) + strlen(l) + 8)))
 			stpcpy(stpcpy(stpcpy(stpcpy(stpcpy(stpcpy(stpcpy(res, "\""), sname), "\".\""), op), "\"("), l), ")");
 
-		_DELETE(l);
 		return res;
 	}
 	case SQL_PARAMETER:
-		return _STRDUP("?");
+		return sa_strdup(sql->ta, "?");
 	case SQL_NULL:
-		return _STRDUP("NULL");
+		return sa_strdup(sql->ta, "NULL");
 	case SQL_ATOM:{
 		AtomNode *an = (AtomNode *) se;
-		if (an && an->a) 
-			return atom2sql(an->a);
+		if (an && an->a)
+			return atom2sql(sql->ta, an->a, sql->timezone);
 		else
-			return _STRDUP("NULL");
+			return sa_strdup(sql->ta, "NULL");
 	}
 	case SQL_NEXT: {
 		const char *seq = qname_schema_object(se->data.lval), *sname = qname_schema(se->data.lval);
@@ -442,7 +373,7 @@ symbol2string(mvc *sql, symbol *se, int expression, char **err) /**/
 		if (!sname)
 			sname = sql->session->schema->base.name;
 
-		if ((res = NEW_ARRAY(char, strlen("next value for \"") + strlen(sname) + strlen(seq) + 5)))
+		if ((res = SA_NEW_ARRAY(sql->ta, char, strlen("next value for \"") + strlen(sname) + strlen(seq) + 5)))
 			stpcpy(stpcpy(stpcpy(stpcpy(stpcpy(res, "next value for \""), sname), "\".\""), seq), "\"");
 		return res;
 	}	break;
@@ -451,15 +382,12 @@ symbol2string(mvc *sql, symbol *se, int expression, char **err) /**/
 		/* can only be variables */
 		dlist *l = se->data.lval;
 		assert(l->h->type != type_lng);
-		if (dlist_length(l) == 1 && l->h->type == type_int) {
-			atom *a = sql_bind_arg(sql, l->h->data.i_val);
-			return atom2sql(a);
-		} else if (expression && dlist_length(l) == 1 && l->h->type == type_string) {
+		if (expression && dlist_length(l) == 1 && l->h->type == type_string) {
 			/* when compiling an expression, a column of a table might be present in the symbol, so we need this case */
 			const char *op = l->h->data.sval;
 			char *res;
 
-			if ((res = NEW_ARRAY(char, strlen(op) + 3)))
+			if ((res = SA_NEW_ARRAY(sql->ta, char, strlen(op) + 3)))
 				stpcpy(stpcpy(stpcpy(res, "\""), op), "\"");
 			return res;
 		} else if (expression && dlist_length(l) == 2 && l->h->type == type_string && l->h->next->type == type_string) {
@@ -467,7 +395,7 @@ symbol2string(mvc *sql, symbol *se, int expression, char **err) /**/
 
 			if (!first || !second)
 				return NULL;
-			if ((res = NEW_ARRAY(char, strlen(first) + strlen(second) + 6)))
+			if ((res = SA_NEW_ARRAY(sql->ta, char, strlen(first) + strlen(second) + 6)))
 				stpcpy(stpcpy(stpcpy(stpcpy(stpcpy(res, "\""), first), "\".\""), second), "\"");
 			return res;
 		} else {
@@ -481,23 +409,32 @@ symbol2string(mvc *sql, symbol *se, int expression, char **err) /**/
 		dlist *dl = se->data.lval;
 		char *val = NULL, *tpe = NULL, *res;
 
-		if (!(val = symbol2string(sql, dl->h->data.sym, expression, err)) || !(tpe = subtype2string2(&dl->h->next->data.typeval))) {
-			_DELETE(val);
-			_DELETE(tpe);
+		if (!(val = _symbol2string(sql, dl->h->data.sym, expression, err)) || !(tpe = subtype2string2(sql->ta, &dl->h->next->data.typeval))) {
 			return NULL;
 		}
-		if ((res = NEW_ARRAY(char, strlen(val) + strlen(tpe) + 11)))
+		if ((res = SA_NEW_ARRAY(sql->ta, char, strlen(val) + strlen(tpe) + 11)))
 			stpcpy(stpcpy(stpcpy(stpcpy(stpcpy(res, "cast("), val), " as "), tpe), ")");
-		_DELETE(val);
-		_DELETE(tpe);
 		return res;
 	}
 	default: {
 		const char *msg = "SQL feature not yet available for expressions and default values: ";
 		char *tok_str = token2string(se->token);
-		if ((*err = NEW_ARRAY(char, strlen(msg) + strlen(tok_str) + 1)))
+		if ((*err = SA_NEW_ARRAY(sql->ta, char, strlen(msg) + strlen(tok_str) + 1)))
 			stpcpy(stpcpy(*err, msg), tok_str);
 	}
 	}
 	return NULL;
+}
+
+char *
+symbol2string(mvc *sql, symbol *se, int expression, char **err)
+{
+	char *res = _symbol2string(sql, se, expression, err);
+
+	if (res)
+		res = sa_strdup(sql->sa, res);
+	if (*err)
+		*err = sa_strdup(sql->sa, *err);
+	sa_reset(sql->ta);
+	return res;
 }

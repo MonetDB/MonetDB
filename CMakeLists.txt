@@ -34,6 +34,7 @@ set(CMAKE_FIND_FRAMEWORK LAST)
 set(CMAKE_FIND_APPBUNDLE LAST)
 
 include(CheckCSourceCompiles REQUIRED)
+include(CheckCCompilerFlag REQUIRED)
 include(CheckIncludeFile REQUIRED)
 include(CMakePushCheckState REQUIRED)
 include(CheckStructHasMember REQUIRED)
@@ -52,6 +53,8 @@ include(monetdb-functions)
 include(monetdb-findpackages)
 include(monetdb-toolchain)
 monetdb_default_toolchain()
+#monetdb_default_compiler_options()
+
 
 include(monetdb-defines)
 monetdb_hg_revision()
@@ -106,14 +109,11 @@ set(PROGRAM_PERMISSIONS_DEFAULT
 
 find_program(BASH NAMES bash DOC "bash interpreter fullpath")
 
+configure_file(monetdb_config.h.in
+  ${CMAKE_CURRENT_BINARY_DIR}/monetdb_config.h)
 if(WIN32)
-  configure_file(monetdb_config_win32.h.in
-    ${CMAKE_CURRENT_BINARY_DIR}/monetdb_config.h)
   configure_file(unistd.h.in
     ${CMAKE_CURRENT_BINARY_DIR}/unistd.h)
-else()
-  configure_file(monetdb_config.h.in
-    ${CMAKE_CURRENT_BINARY_DIR}/monetdb_config.h)
 endif()
 
 add_library(monetdb_config_header

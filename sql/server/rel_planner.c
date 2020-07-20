@@ -52,7 +52,7 @@ memo_find(list *memo, const char *name)
 	sql_hash_e *he;
 
 	MT_lock_set(&memo->ht_lock);
-	he = memo->ht->buckets[key&(memo->ht->size-1)]; 
+	he = memo->ht->buckets[key&(memo->ht->size-1)];
 	for (; he; he = he->chain) {
 		memoitem *mi = he->value;
 
@@ -94,11 +94,11 @@ memoitem_create( list *memo, sql_allocator *sa, const char *lname, const char *r
 	const char *name = lname;
 	memoitem *mi;
 
-	if (level > 1) 
+	if (level > 1)
 		name = merge_names(sa, lname, rname);
 	if (memo_find(memo, name))
 		return NULL;
-       	mi = SA_NEW(sa, memoitem); 
+       	mi = SA_NEW(sa, memoitem);
 	mi->name = sa_strdup(sa, name);
 	mi->joins = (rname)?sa_list(sa):NULL;
 	mi->done = (rname)?0:1;
@@ -152,7 +152,7 @@ rel_getwidth(mvc *sql, sql_rel *rel)
 		if (t && isTable(t))
 			return 4*list_length(rel->exps);
 		return 0;
-	}	
+	}
 	case op_select:
 		if (rel->l)
 			return rel_getwidth(sql, rel->l);
@@ -180,10 +180,10 @@ exp_getdcount( mvc *sql, sql_rel *r , sql_exp *e, lng count)
 				return dcount;
 		}
 		return count;
-	} 
+	}
 	case e_cmp:
 		assert(0);
-	
+
 
 	case e_convert:
 		if (e->l)
@@ -206,10 +206,10 @@ exp_getranges( mvc *sql, sql_rel *r , sql_exp *e, char **min, char **max)
 		/* find col */
 		sql_rel *bt = NULL;
 		sql_column *c = name_find_column(r, e->l, e->r, -1, &bt);
-		if (c) 
+		if (c)
 			return sql_trans_ranges(sql->session->tr, c, min, max);
 		return 0;
-	} 
+	}
 	case e_cmp:
 		assert(0);
 
@@ -227,10 +227,10 @@ exp_getranges( mvc *sql, sql_rel *r , sql_exp *e, char **min, char **max)
 }
 
 static atom *
-exp_getatom( mvc *sql, sql_exp *e, atom *m) 
+exp_getatom( mvc *sql, sql_exp *e, atom *m)
 {
 	if (is_atom(e->type))
-		return exp_value(sql, e, sql->args, sql->argc);
+		return exp_value(sql, e);
 	else if (e->type == e_convert)
 		return exp_getatom(sql, e->l, m);
 	else if (e->type == e_func) {
@@ -261,9 +261,9 @@ exp_getrange_sel( mvc *sql, sql_rel *r, sql_exp *e, char *min, char *max)
 	emin = amin = atom_general(sql->sa, t, min);
 	emax = amax = atom_general(sql->sa, t, max);
 
-	if (e->f || e->flag == cmp_gt || e->flag == cmp_gte) 
+	if (e->f || e->flag == cmp_gt || e->flag == cmp_gte)
 		emin = exp_getatom(sql, e->r, amin);
-	if (e->f || e->flag == cmp_lt || e->flag == cmp_lte) 
+	if (e->f || e->flag == cmp_lt || e->flag == cmp_lte)
 		emax = (e->f)?exp_getatom(sql, e->f, amax):
 			exp_getatom(sql, e->r, amax);
 
@@ -320,7 +320,7 @@ rel_exp_selectivity(mvc *sql, sql_rel *r, sql_exp *e, lng count)
 		case cmp_filter:
 			sel = 0.01;
 			break;
-		case cmp_in: 
+		case cmp_in:
 		case cmp_notin: {
 			list *l = e->r;
 			sel = (dbl) list_length(l) / dcount;
@@ -355,7 +355,7 @@ rel_join_exp_selectivity(mvc *sql, sql_rel *l, sql_rel *r, sql_exp *e, lng lcoun
 	switch(e->type) {
 	case e_cmp:
 		switch (e->flag) {
-		case cmp_equal: 
+		case cmp_equal:
 			sel = (lcount/(dbl)ldcount)*(rcount/(dbl)rdcount);
 			break;
 		case cmp_notequal: {
@@ -374,7 +374,7 @@ rel_join_exp_selectivity(mvc *sql, sql_rel *l, sql_rel *r, sql_exp *e, lng lcoun
 		case cmp_filter:
 			sel = 0.1;
 			break;
-		case cmp_in: 
+		case cmp_in:
 		case cmp_notin: {
 			lng cnt = lcount*rcount;
 			list *l = e->r;
@@ -397,13 +397,13 @@ rel_join_exp_selectivity(mvc *sql, sql_rel *l, sql_rel *r, sql_exp *e, lng lcoun
 
 
 static dbl
-rel_exps_selectivity(mvc *sql, sql_rel *rel, list *exps, lng count) 
+rel_exps_selectivity(mvc *sql, sql_rel *rel, list *exps, lng count)
 {
 	node *n;
 	dbl sel = 1.0;
 	if (!exps->h)
 		return 1.0;
-	for(n=exps->h; n; n = n->next) { 
+	for(n=exps->h; n; n = n->next) {
 		dbl nsel = rel_exp_selectivity(sql, rel, n->data, count);
 
 		sel *= nsel;
@@ -412,7 +412,7 @@ rel_exps_selectivity(mvc *sql, sql_rel *rel, list *exps, lng count)
 }
 
 /* need real values, ie
- * point select on pkey -> 1 value -> selectivity count 
+ * point select on pkey -> 1 value -> selectivity count
  */
 
 static dbl
@@ -496,10 +496,10 @@ static int
 memoitem_has( memoitem *mi, const char *name)
 {
 	if (mi->level > 1) {
-		memojoin *mj = mi->joins->h->data; 
+		memojoin *mj = mi->joins->h->data;
 
 		return (memoitem_has(mj->l, name) ||
-		        memoitem_has(mj->r, name)); 
+		        memoitem_has(mj->r, name));
 	} else {
 		return strcmp(mi->name, name) == 0;
 	}
@@ -565,14 +565,14 @@ memo_add_attr(list *memo, mvc *sql, list *rels, list *jes)
 		for (n = memo->h; n; n = n->next) {
 			memoitem *mi = n->data;
 
-			if (mi->level == l) 
+			if (mi->level == l)
 				memoitem_add_attr( memo, sql, mi, rels, jes, l+1);
 		}
 	}
 }
 
 /* Rule 1: Commutativity A join B -> B join A */
-static int 
+static int
 memoitem_apply_r1(memoitem *mi, sql_allocator *sa)
 {
 	int changes = 0;
@@ -600,11 +600,11 @@ memoitem_apply_r1(memoitem *mi, sql_allocator *sa)
 			changes ++;
 		}
 	}
-	return changes; 
+	return changes;
 }
 
 /* Rule 2: Right Associativity (A join B) join C -> A join (B join C) */
-static int 
+static int
 memoitem_apply_r2(memoitem *mi, sql_allocator *sa, list *memo)
 {
 	int changes = 0;
@@ -627,7 +627,7 @@ memoitem_apply_r2(memoitem *mi, sql_allocator *sa, list *memo)
 				if ((r = memo_find(memo, name))) {
 					memojoin *mjn = SA_ZNEW(sa, memojoin);
 
-					mjn->l = mjl->l; 
+					mjn->l = mjl->l;
 					mjn->r = r;
 					mjn->rules = 2;
 					mjn->cost = 0;
@@ -642,11 +642,11 @@ memoitem_apply_r2(memoitem *mi, sql_allocator *sa, list *memo)
 				mj->rules = 2;
 		}
 	}
-	return changes; 
+	return changes;
 }
 
-/* Rule 4: Exchange (A join B) join (C join D) -> (A join C) join (B join D) 
-static int 
+/* Rule 4: Exchange (A join B) join (C join D) -> (A join C) join (B join D)
+static int
 memoitem_apply_r4(memoitem *mi, sql_allocator *sa, list *memo)
 {
 	int changes = 0;
@@ -668,7 +668,7 @@ memoitem_apply_r4(memoitem *mi, sql_allocator *sa, list *memo)
 				if ((r = memo_find(memo, name))) {
 					memojoin *mjn = SA_ZNEW(sa, memojoin);
 
-					mjn->l = mjl->l; 
+					mjn->l = mjl->l;
 					mjn->r = r;
 					mjn->rules = 2;
 					mjn->cost = 0;
@@ -682,12 +682,12 @@ memoitem_apply_r4(memoitem *mi, sql_allocator *sa, list *memo)
 				mj->rules = 2;
 		}
 	}
-	return changes; 
+	return changes;
 }
  * */
 
 static void
-memo_apply_rules(list *memo, sql_allocator *sa, int len) 
+memo_apply_rules(list *memo, sql_allocator *sa, int len)
 {
 	int level;
 	node *n;
@@ -700,12 +700,12 @@ memo_apply_rules(list *memo, sql_allocator *sa, int len)
 			for ( n = memo->h; n; n = n->next) {
 				int changes = 0;
 				memoitem *mi = n->data;
-		
+
 				if (!mi->done && mi->level == level) {
 					changes += memoitem_apply_r1(mi, sa);
 					changes += memoitem_apply_r2(mi, sa, memo);
 					//changes += memoitem_apply_r4(mi, sa, memo);
-		
+
 					if (!changes)
 						mi->done = 1;
 				}
@@ -765,8 +765,8 @@ memo_locate_exps( list *memo )
 							prop = p_fkey;
 						mj->prop = prop;
 						if (prop == p_fkey) {
-							sql_rel *l = find_one_rel(mi->rels, e->l); 
-							sql_rel *f = find_one_rel(mj->l->rels, e->l); 
+							sql_rel *l = find_one_rel(mi->rels, e->l);
+							sql_rel *f = find_one_rel(mj->l->rels, e->l);
 							if (!l)
 								continue;
 							if (f != l) /* we dislike swapped pkey/fkey joins */
@@ -780,7 +780,7 @@ memo_locate_exps( list *memo )
 }
 
 static void
-memo_compute_cost(list *memo) 
+memo_compute_cost(list *memo)
 {
 	node *n, *m;
 
@@ -805,18 +805,18 @@ memo_compute_cost(list *memo)
 				//ncost += ocnt * MIN(mj->l->width, mj->r->width);
 				width = (mj->l->count < mj->r->count)?mj->l->width:mj->r->width;
 				ncost += (mincnt * width * 1 ) + ocnt * (mj->l->width + mj->r->width) * 1;
-				assert(mj->l->cost > 0 && mj->r->cost > 0); 
+				assert(mj->l->cost > 0 && mj->r->cost > 0);
 				ncost += mj->l->cost; /* add cost of left */
 				ncost += mj->r->cost; /* add cost of right */
 
 				width = mj->l->width + mj->r->width;
 				mj->cost = ncost;
 
-				if (cnt == 0) 
+				if (cnt == 0)
 					cnt = ocnt;
 				cnt = MIN(cnt,ocnt);
 
-				if (cost == 0) 
+				if (cost == 0)
 					cost = ncost;
 				cost = MIN(cost,ncost);
 			}
@@ -899,9 +899,9 @@ memo_select_plan( mvc *sql, list *memo, memoitem *mi, list *sdje, list *exps)
 	if (mi->level >= 2) {
 		memojoin *mj = find_cheapest(mi->joins);
 		sql_rel *top;
-	
-		top = rel_crossproduct(sql->sa, 
-			memo_select_plan(sql, memo, mj->l, sdje, exps), 
+
+		top = rel_crossproduct(sql->sa,
+			memo_select_plan(sql, memo, mj->l, sdje, exps),
 			memo_select_plan(sql, memo, mj->r, sdje, exps),
 			op_join);
 		if (mi->level == 2) {

@@ -49,10 +49,19 @@ MT_Lock     mal_oltpLock = MT_LOCK_INITIALIZER("mal_oltpLock");
  * Initialization of the MAL context
  */
 
-int mal_init(char *modules[], int embedded){
+int
+mal_init(char *modules[], int embedded)
+{
 /* Any error encountered here terminates the process
  * with a message sent to stderr
  */
+	str err;
+
+	if ((err = AUTHinitTables(NULL)) != MAL_SUCCEED) {
+		freeException(err);
+		return -1;
+	}
+
 	if (!MCinit())
 		return -1;
 #ifndef NDEBUG
@@ -64,7 +73,8 @@ int mal_init(char *modules[], int embedded){
 	initNamespace();
 	initParser();
 	initHeartbeat();
-	str err = malBootstrap(modules, embedded);
+
+	err = malBootstrap(modules, embedded);
 	if (err != MAL_SUCCEED) {
 		mal_client_reset();
 #ifndef NDEBUG
@@ -83,7 +93,7 @@ int mal_init(char *modules[], int embedded){
  * This seemingly superflous action is necessary to simplify analyis of
  * memory leakage problems later ons and to allow an embedded server to
  * restart the server properly.
- * 
+ *
  * It is the responsibility of the enclosing application to finish/cease all
  * activity first.
  * This function should be called after you have issued sql_reset();

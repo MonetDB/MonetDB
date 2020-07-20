@@ -47,16 +47,16 @@ stdout of test '01` in directory 'sql/benchmarks/tpch` itself:
 #order by
 #	l_returnflag,
 #	l_linestatus;
-% sys.lineitem,	sys.lineitem,	sys.%1,	sys.%2,	sys.%3,	sys.%4,	sys.%5,	sys.%6,	sys.%7,	sys.%10 # table_name
+% sys.lineitem,	sys.lineitem,	sys.,	sys.,	sys.,	sys.,	sys.,	sys.,	sys.,	sys. # table_name
 % l_returnflag,	l_linestatus,	sum_qty,	sum_base_price,	sum_disc_price,	sum_charge,	avg_qty,	avg_price,	avg_disc,	count_order # name
-% char,	char,	decimal,	decimal,	decimal,	decimal,	double,	double,	double,	bigint # type
-% 1,	1,	20,	20,	20,	20,	24,	24,	24,	5 # length
-[ "A",	"F",	380456.00,	532348211.65,	505822441.4861,	526165934.000839,	25.57515461,	35785.70931,	0.05008133907,	14876	]
-[ "N",	"F",	8971.00,	12384801.37,	11798257.2080,	12282485.056933,	25.77873563,	35588.50968,	0.04775862069,	348	]
-[ "N",	"O",	742802.00,	1041502841.45,	989737518.6346,	1029418531.523350,	25.45498783,	35691.12921,	0.04993111956,	29181	]
-[ "R",	"F",	381449.00,	534594445.35,	507996454.4067,	528524219.358903,	25.59716817,	35874.00653,	0.04982753993,	14902	]
+% char,	char,	decimal,	decimal,	decimal,	decimal,	decimal,	decimal,	decimal,	bigint # type
+% 1,	1,	20,	20,	20,	20,	20,	20,	20,	5 # length
+[ "A",	"F",	380456.00,	532348211.65,	505822441.4861,	526165934.000839,	25.58,	35785.71,	0.05,	14876	]
+[ "N",	"F",	8971.00,	12384801.37,	11798257.2080,	12282485.056933,	25.78,	35588.51,	0.05,	348	]
+[ "N",	"O",	742802.00,	1041502841.45,	989737518.6346,	1029418531.523350,	25.45,	35691.13,	0.05,	29181	]
+[ "R",	"F",	381449.00,	534594445.35,	507996454.4067,	528524219.358903,	25.60,	35874.01,	0.05,	14902	]
 
-# 09:17:12 >  
-# 09:17:12 >  Done.
-# 09:17:12 >  
+# 12:34:41 >  
+# 12:34:41 >  "Done."
+# 12:34:41 >  
 

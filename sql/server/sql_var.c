@@ -51,7 +51,6 @@ init_global_variables(mvc *sql)
 
 	sql_find_subtype(&ctype, "int", 0, 0);
 	SQLglobal(sname, "debug", &sql->debug);
-	SQLglobal(sname, "cache", &sql->cache);
 
 	sql_find_subtype(&ctype,  "varchar", 1024, 0);
 	SQLglobal(sname, "current_schema", sname);
@@ -68,8 +67,8 @@ init_global_variables(mvc *sql)
 	SQLglobal(sname, "current_timezone", &sec);
 
 	sql_find_subtype(&ctype, "bigint", 0, 0);
-	SQLglobal(sname, "last_id", &sql->last_id);
-	SQLglobal(sname, "rowcnt", &sql->rowcnt);
+	SQLglobal(sname, "last_id", &sec);
+	SQLglobal(sname, "rowcnt", &sec);
 
 	/* Use hash lookup for global variables. With 9 variables in total it's worth to hash instead of */
 	if (!(sql->global_vars->ht = hash_new(NULL, list_length(sql->global_vars), (fkeyvalue)&var_key)))
@@ -370,10 +369,6 @@ sqlvar_set(sql_var *var, ValRecord *v)
 	if (VALcopy(&(var->var.data), v) == NULL)
 		return NULL;
 	var->var.isnull = VALisnil(v);
-	if (v->vtype == TYPE_flt)
-		var->var.d = v->val.fval;
-	else if (v->vtype == TYPE_dbl)
-		var->var.d = v->val.dval;
 	return &(var->var);
 }
 
@@ -381,11 +376,11 @@ sql_frame*
 stack_push_frame(mvc *sql, const char *name)
 {
 	sql_frame *v, **nvars;
-	int nextsize = sql->sizeframes;
+	int osize = sql->sizeframes, nextsize = osize;
 
 	if (sql->topframes == nextsize) {
 		nextsize <<= 1;
-		if (!(nvars = RENEW_ARRAY(sql_frame*, sql->frames, nextsize)))
+		if (!(nvars = SA_RENEW_ARRAY(sql->pa, sql_frame*, sql->frames, nextsize, osize)))
 			return NULL;
 		sql->frames = nvars;
 		sql->sizeframes = nextsize;
@@ -415,7 +410,7 @@ clear_frame(mvc *sql, sql_frame *frame)
 }
 
 void
-stack_pop_until(mvc *sql, int frame) 
+stack_pop_until(mvc *sql, int frame)
 {
 	while (sql->topframes > frame) {
 		assert(sql->topframes >= 0);
@@ -521,7 +516,7 @@ frame_find_rel_view(mvc *sql, const char *name)
 	return NULL;
 }
 
-void 
+void
 stack_update_rel_view(mvc *sql, const char *name, sql_rel *view)
 {
 	for (int i = sql->topframes-1; i >= 0; i--) {
@@ -557,7 +552,7 @@ find_global_var(mvc *sql, sql_schema *s, const char *name)
 	return NULL;
 }
 
-int 
+int
 frame_find_var(mvc *sql, const char *name)
 {
 	assert(sql->topframes > 0);
@@ -657,21 +652,21 @@ sqlvar_set_number(sql_var *var, lng val)
 	if (a != NULL) {
 		ValRecord *v = &a->data;
 #ifdef HAVE_HGE
-		if (v->vtype == TYPE_hge) 
+		if (v->vtype == TYPE_hge)
 			v->val.hval = val;
 #endif
-		if (v->vtype == TYPE_lng) 
+		if (v->vtype == TYPE_lng)
 			v->val.lval = val;
-		if (v->vtype == TYPE_int) 
+		if (v->vtype == TYPE_int)
 			v->val.lval = (int) val;
-		if (v->vtype == TYPE_sht) 
+		if (v->vtype == TYPE_sht)
 			v->val.lval = (sht) val;
-		if (v->vtype == TYPE_bte) 
+		if (v->vtype == TYPE_bte)
 			v->val.lval = (bte) val;
 		if (v->vtype == TYPE_bit) {
 			if (val)
 				v->val.btval = 1;
-			else 
+			else
 				v->val.btval = 0;
 		}
 	}
@@ -682,22 +677,22 @@ hge
 #else
 lng
 #endif
-val_get_number(ValRecord *v) 
+val_get_number(ValRecord *v)
 {
 	if (v != NULL) {
 #ifdef HAVE_HGE
-		if (v->vtype == TYPE_hge) 
+		if (v->vtype == TYPE_hge)
 			return v->val.hval;
 #endif
-		if (v->vtype == TYPE_lng) 
+		if (v->vtype == TYPE_lng)
 			return v->val.lval;
-		if (v->vtype == TYPE_int) 
+		if (v->vtype == TYPE_int)
 			return v->val.ival;
-		if (v->vtype == TYPE_sht) 
+		if (v->vtype == TYPE_sht)
 			return v->val.shval;
-		if (v->vtype == TYPE_bte) 
+		if (v->vtype == TYPE_bte)
 			return v->val.btval;
-		if (v->vtype == TYPE_bit) 
+		if (v->vtype == TYPE_bit)
 			if (v->val.btval)
 				return 1;
 		return 0;

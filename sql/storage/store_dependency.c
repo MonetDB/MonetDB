@@ -17,7 +17,7 @@ list_find_func_id(list *ids, sqlid id)
 		sql_func * f = n->data;
 		if (f->base.id == id)
 			return id;
-		else 
+		else
 			n = n->next;
 	}
 	return 0;
@@ -47,9 +47,9 @@ sql_trans_drop_dependencies(sql_trans* tr, sqlid depend_id)
 	sql_table* deps = find_sql_table(s, "dependencies");
 	sql_column * dep_dep_id = find_sql_column(deps, "depend_id");
 	rids *rs;
-	
+
 	rs = table_funcs.rids_select(tr, dep_dep_id, &depend_id, &depend_id, NULL);
-	for (rid = table_funcs.rids_next(rs); !is_oid_nil(rid); rid = table_funcs.rids_next(rs)) 
+	for (rid = table_funcs.rids_next(rs); !is_oid_nil(rid); rid = table_funcs.rids_next(rs))
 		table_funcs.table_delete(tr, deps, rid);
 	table_funcs.rids_destroy(rs);
 }
@@ -66,9 +66,9 @@ sql_trans_drop_dependency(sql_trans* tr, sqlid obj_id, sqlid depend_id, sql_depe
 	sql_column *dep_dep_type = find_sql_column(deps, "depend_type");
 	sht dtype = (sht) depend_type;
 	rids *rs;
-	
+
 	rs = table_funcs.rids_select(tr, dep_obj_id, &obj_id, &obj_id, dep_dep_id, &depend_id, &depend_id, dep_dep_type, &dtype, &dtype, NULL);
-	for (rid = table_funcs.rids_next(rs); !is_oid_nil(rid); rid = table_funcs.rids_next(rs)) 
+	for (rid = table_funcs.rids_next(rs); !is_oid_nil(rid); rid = table_funcs.rids_next(rs))
 		table_funcs.table_delete(tr, deps, rid);
 	table_funcs.rids_destroy(rs);
 }
@@ -78,10 +78,10 @@ list*
 sql_trans_get_dependencies(sql_trans* tr, sqlid id, sql_dependency depend_type, list * ignore_ids)
 {
 	void *v;
-	sql_schema *s = find_sql_schema(tr, "sys");	
+	sql_schema *s = find_sql_schema(tr, "sys");
 	sql_table *deps = find_sql_table(s, "dependencies");
 	sql_column *dep_id, *dep_dep_id, *dep_dep_type, *tri_id, *table_id;
-	list *dep_list = list_create((fdestroy) GDKfree); 
+	list *dep_list = list_create((fdestroy) GDKfree);
 	oid rid;
 	rids *rs;
 
@@ -95,7 +95,7 @@ sql_trans_get_dependencies(sql_trans* tr, sqlid id, sql_dependency depend_type, 
 	rs = table_funcs.rids_select(tr, dep_id, &id, &id, NULL);
 	for (rid = table_funcs.rids_next(rs); !is_oid_nil(rid); rid = table_funcs.rids_next(rs)){
 		v = table_funcs.column_find_value(tr, dep_dep_id, rid);
-		id = *(sqlid*)v;		
+		id = *(sqlid*)v;
 		if (!(ignore_ids  && list_find_func_id(ignore_ids, id))) {
 			list_append(dep_list, v);
 			v = table_funcs.column_find_value(tr, dep_dep_type, rid);
@@ -140,14 +140,14 @@ sql_trans_get_dependency_type(sql_trans *tr, sqlid id, sql_dependency depend_typ
 	sql_column *dep_id, *dep_dep_id, *dep_dep_type;
 	sht dtype = (sht) depend_type;
 
-	s = find_sql_schema(tr, "sys");	
+	s = find_sql_schema(tr, "sys");
 	dep = find_sql_table(s, "dependencies");
 	dep_id = find_sql_column(dep, "id");
 	dep_dep_id = find_sql_column(dep, "depend_id");
 	dep_dep_type = find_sql_column(dep, "depend_type");
 
 	rid = table_funcs.column_find_row(tr, dep_id, &id, dep_dep_type, &dtype, NULL);
-	if (!is_oid_nil(rid)) {	
+	if (!is_oid_nil(rid)) {
 		int r, *v = table_funcs.column_find_value(tr, dep_dep_id, rid);
 
 		r = *v;
@@ -168,14 +168,14 @@ sql_trans_check_dependency(sql_trans *tr, sqlid id, sqlid depend_id, sql_depende
 	sql_column *dep_id, *dep_dep_id, *dep_dep_type;
 	sht dtype = (sht) depend_type;
 
-	s = find_sql_schema(tr, "sys");	
+	s = find_sql_schema(tr, "sys");
 	dep = find_sql_table(s, "dependencies");
 	dep_id = find_sql_column(dep, "id");
 	dep_dep_id = find_sql_column(dep, "depend_id");
 	dep_dep_type = find_sql_column(dep, "depend_type");
 
 	rid = table_funcs.column_find_row(tr, dep_id, &id, dep_dep_id, &depend_id, dep_dep_type, &dtype, NULL);
-	if (!is_oid_nil(rid))	
+	if (!is_oid_nil(rid))
 		return 1;
 	else return 0;
 }

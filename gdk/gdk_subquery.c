@@ -88,10 +88,7 @@ BATall_grp(BAT *l, BAT *g, BAT *e, BAT *s)
 		else
 			gids = (const oid *) Tloc(g, 0);
 
-		switch (l->ttype) {
-		case TYPE_bit:
-			SQLall_grp_imp(bit);
-			break;
+		switch (ATOMbasetype(l->ttype)) {
 		case TYPE_bte:
 			SQLall_grp_imp(bte);
 			break;
@@ -240,10 +237,7 @@ BATnil_grp(BAT *l, BAT *g, BAT *e, BAT *s)
 		else
 			gids = (const oid *) Tloc(g, 0);
 
-		switch (l->ttype) {
-		case TYPE_bit:
-			SQLnil_grp_imp(bit);
-			break;
+		switch (ATOMbasetype(l->ttype)) {
 		case TYPE_bte:
 			SQLnil_grp_imp(bte);
 			break;
@@ -275,7 +269,7 @@ BATnil_grp(BAT *l, BAT *g, BAT *e, BAT *s)
 			while (ncand > 0) {
 				ncand--;
 				i = canditer_next(&ci) - l->hseqbase;
-				if (gids == NULL ||	
+				if (gids == NULL ||
 					(gids[i] >= min && gids[i] <= max)) {
 					if (gids)
 						gid = gids[i] - min;
@@ -375,10 +369,7 @@ BATanyequal_grp(BAT *l, BAT *r, BAT *g, BAT *e, BAT *s)
 		else
 			gids = (const oid *) Tloc(g, 0);
 
-		switch (l->ttype) {
-		case TYPE_bit:
-			SQLanyequal_or_not_grp_imp(bit, TRUE);
-			break;
+		switch (ATOMbasetype(l->ttype)) {
 		case TYPE_bte:
 			SQLanyequal_or_not_grp_imp(bte, TRUE);
 			break;
@@ -410,7 +401,7 @@ BATanyequal_grp(BAT *l, BAT *r, BAT *g, BAT *e, BAT *s)
 			while (ncand > 0) {
 				ncand--;
 				i = canditer_next(&ci) - l->hseqbase;
-				if (gids == NULL ||	
+				if (gids == NULL ||
 					(gids[i] >= min && gids[i] <= max)) {
 					if (gids)
 						gid = gids[i] - min;
@@ -491,10 +482,7 @@ BATallnotequal_grp(BAT *l, BAT *r, BAT *g, BAT *e, BAT *s)
 		else
 			gids = (const oid *) Tloc(g, 0);
 
-		switch (l->ttype) {
-		case TYPE_bit:
-			SQLanyequal_or_not_grp_imp(bit, FALSE);
-			break;
+		switch (ATOMbasetype(l->ttype)) {
 		case TYPE_bte:
 			SQLanyequal_or_not_grp_imp(bte, FALSE);
 			break;
@@ -526,7 +514,7 @@ BATallnotequal_grp(BAT *l, BAT *r, BAT *g, BAT *e, BAT *s)
 			while (ncand > 0) {
 				ncand--;
 				i = canditer_next(&ci) - l->hseqbase;
-				if (gids == NULL ||	
+				if (gids == NULL ||
 					(gids[i] >= min && gids[i] <= max)) {
 					if (gids)
 						gid = gids[i] - min;
@@ -636,10 +624,7 @@ BATanyequal_grp2(BAT *l, BAT *r, BAT *rid, BAT *g, BAT *e, BAT *s)
 		else
 			gids = (const oid *) Tloc(g, 0);
 
-		switch (l->ttype) {
-		case TYPE_bit:
-			SQLanyequal_or_not_grp2_imp(bit, TRUE, FALSE);
-			break;
+		switch (ATOMbasetype(l->ttype)) {
 		case TYPE_bte:
 			SQLanyequal_or_not_grp2_imp(bte, TRUE, FALSE);
 			break;
@@ -689,7 +674,7 @@ BATanyequal_grp2(BAT *l, BAT *r, BAT *rid, BAT *g, BAT *e, BAT *s)
 								hasnil = 1;
 							} else if (ocmp(lv, rv) == 0)
 								ret[gid] = TRUE;
-						} 
+						}
 					}
 				}
 			}
@@ -758,10 +743,7 @@ BATallnotequal_grp2(BAT *l, BAT *r, BAT *rid, BAT *g, BAT *e, BAT *s)
 		else
 			gids = (const oid *) Tloc(g, 0);
 
-		switch (l->ttype) {
-		case TYPE_bit:
-			SQLanyequal_or_not_grp2_imp(bit, FALSE, TRUE);
-			break;
+		switch (ATOMbasetype(l->ttype)) {
 		case TYPE_bte:
 			SQLanyequal_or_not_grp2_imp(bte, FALSE, TRUE);
 			break;
@@ -811,7 +793,7 @@ BATallnotequal_grp2(BAT *l, BAT *r, BAT *rid, BAT *g, BAT *e, BAT *s)
 								hasnil = 1;
 							} else if (ocmp(lv, rv) == 0)
 								ret[gid] = FALSE;
-						} 
+						}
 					}
 				}
 			}

@@ -24,9 +24,15 @@
  */
 
 #include "monetdb_config.h"
-#include "language.h"
+#include "mal.h"
+#include "mal_module.h"
+#include "mal_session.h"
+#include "mal_resolve.h"
+#include "mal_client.h"
+#include "mal_interpreter.h"
+#include "mal_dataflow.h"
 
-str
+static str
 CMDraise(str *ret, str *msg)
 {
 	str res;
@@ -39,21 +45,21 @@ CMDraise(str *ret, str *msg)
 	return res;
 }
 
-str
+static str
 MALassertBit(void *ret, bit *val, str *msg){
 	(void) ret;
 	if( *val == 0 || is_bit_nil(*val))
 		throw(MAL, "mal.assert", "%s", *msg);
 	return MAL_SUCCEED;
 }
-str
+static str
 MALassertInt(void *ret, int *val, str *msg){
 	(void) ret;
 	if( *val == 0 || is_int_nil(*val))
 		throw(MAL, "mal.assert", "%s", *msg);
 	return MAL_SUCCEED;
 }
-str
+static str
 MALassertLng(void *ret, lng *val, str *msg){
 	(void) ret;
 	if( *val == 0 || is_lng_nil(*val))
@@ -61,7 +67,7 @@ MALassertLng(void *ret, lng *val, str *msg){
 	return MAL_SUCCEED;
 }
 #ifdef HAVE_HGE
-str
+static str
 MALassertHge(void *ret, hge *val, str *msg){
 	(void) ret;
 	if( *val == 0 || is_hge_nil(*val))
@@ -69,21 +75,21 @@ MALassertHge(void *ret, hge *val, str *msg){
 	return MAL_SUCCEED;
 }
 #endif
-str
+static str
 MALassertSht(void *ret, sht *val, str *msg){
 	(void) ret;
 	if( *val == 0 || is_sht_nil(*val))
 		throw(MAL, "mal.assert", "%s", *msg);
 	return MAL_SUCCEED;
 }
-str
+static str
 MALassertOid(void *ret, oid *val, str *msg){
 	(void) ret;
 	if( is_oid_nil(*val))
 		throw(MAL, "mal.assert", "%s", *msg);
 	return MAL_SUCCEED;
 }
-str
+static str
 MALassertStr(void *ret, str *val, str *msg){
 	(void) ret;
 	if( *val == str_nil)
@@ -91,7 +97,7 @@ MALassertStr(void *ret, str *val, str *msg){
 	return MAL_SUCCEED;
 }
 
-str
+static str
 MALassertTriple(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
 	(void) cntxt;
 	(void) mb;
@@ -112,7 +118,7 @@ MALassertTriple(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
  *
  * Input redirectionrs
  */
-str
+static str
 CMDcallString(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	str *s;
@@ -124,7 +130,7 @@ CMDcallString(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	return callString(cntxt, *s, FALSE);
 }
 
-str
+static str
 CMDcallFunction(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	str mod = *getArgReference_str(stk,pci,1);
@@ -139,7 +145,7 @@ CMDcallFunction(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	return callString(cntxt, buf, FALSE);
 }
 
-str
+static str
 MALstartDataflow( Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	bit *ret = getArgReference_bit(stk,pci,0);
@@ -155,7 +161,7 @@ MALstartDataflow( Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
  * Garbage collection over variables can be postponed by grouping
  * all dependent ones in a single sink() instruction.
  */
-str
+static str
 MALgarbagesink( Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	(void) cntxt;
@@ -165,7 +171,7 @@ MALgarbagesink( Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	return MAL_SUCCEED;
 }
 
-str
+static str
 MALpass( Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	(void) cntxt;
@@ -175,7 +181,7 @@ MALpass( Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	return MAL_SUCCEED;
 }
 
-str 
+static str
 CMDregisterFunction(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	Symbol sym= NULL;
@@ -209,7 +215,7 @@ CMDregisterFunction(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	}
 	return msg;
 }
-str
+static str
 CMDevalFile(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	str s = *getArgReference_str(stk,pci,1);
@@ -217,7 +223,7 @@ CMDevalFile(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	(void) mb;
 	(void) cntxt;
 
-	if (s == 0) 
+	if (s == 0)
 		throw(MAL, "mal.evalFile", RUNTIME_FILE_NOT_FOUND "missing file name");
 
 	if (!MT_path_absolute(s)) {
@@ -228,7 +234,7 @@ CMDevalFile(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		stpcpy(stpcpy(stpcpy(buf, monet_cwd), DIR_SEP_STR), s);
 		msg = evalFile(buf, 0);
 		GDKfree(buf);
-	} else 
+	} else
 		msg = evalFile(s, 0);
 	return msg;
 }
@@ -236,7 +242,7 @@ CMDevalFile(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
  * Calling a BAT is simply translated into a concatenation of
  * all the unquoted strings and then passing it to the callEval.
  */
-str
+static str
 CMDcallBAT(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	(void) cntxt;

@@ -138,7 +138,7 @@ rel_find_table_columns(mvc* sql, sql_rel* rel, sql_table *t, list *cols)
 			if (rel->r)
 				rel_find_table_columns(sql, rel->r, t, cols);
 			break;
-		case op_ddl: 
+		case op_ddl:
 			if (rel->flag == ddl_output || rel->flag == ddl_create_seq || rel->flag == ddl_alter_seq || rel->flag == ddl_alter_table || rel->flag == ddl_create_table || rel->flag == ddl_create_view) {
 				if (rel->l)
 					rel_find_table_columns(sql, rel->l, t, cols);
@@ -248,7 +248,7 @@ bootstrap_partition_expression(mvc *sql, sql_allocator *rsa, sql_table *mt, int 
 
 	r = rel_basetable(sql, mt, mt->base.name);
 	query = mt->part.pexp->exp;
-	if ((exp = rel_parse_val(sql, sa_message(sql->sa, "select %s;", query), sql->emode, r)) == NULL) {
+	if ((exp = rel_parse_val(sql, query, NULL, sql->emode, r)) == NULL) {
 		if (*sql->errstr) {
 			if (strlen(sql->errstr) > 6 && sql->errstr[5] == '!')
 				throw(SQL, "sql.partition", "%s", sql->errstr);
@@ -266,13 +266,12 @@ bootstrap_partition_expression(mvc *sql, sql_allocator *rsa, sql_table *mt, int 
 	sql_ec = mt->part.pexp->type.type->eclass;
 	if (!(sql_ec == EC_BIT || EC_VARCHAR(sql_ec) || EC_TEMP(sql_ec) || sql_ec == EC_POS || sql_ec == EC_NUM ||
 		 EC_INTERVAL(sql_ec)|| sql_ec == EC_DEC || sql_ec == EC_BLOB)) {
-		char *err = sql_subtype_string(&(mt->part.pexp->type));
+		char *err = sql_subtype_string(sql->ta, &(mt->part.pexp->type));
 		if (!err) {
 			throw(SQL, "sql.partition", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		} else {
 			msg = createException(SQL, "sql.partition",
 								  SQLSTATE(42000) "Column type %s not supported for the expression return value", err);
-			GDKfree(err);
 		}
 	}
 

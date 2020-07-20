@@ -24,7 +24,7 @@ enum clientmode {
 
 /*
  * The prompt structure is designed to simplify recognition of the
- * language framework for interaction. For access through an API we 
+ * language framework for interaction. For access through an API we
  * assume the prompt is an ASCII string surrounded by a \001 character. This
  * simplifies recognition.  The information between the prompt brackets
  * can be used to pass the mode to the front-end. Moreover, the prompt
@@ -39,7 +39,7 @@ typedef struct CLIENT_INPUT {
 	size_t              yycur;
 	int                 listing;
 	char                *prompt;
-	struct CLIENT_INPUT *next;    
+	struct CLIENT_INPUT *next;
 } ClientInput;
 
 typedef struct CLIENT {
@@ -72,7 +72,7 @@ typedef struct CLIENT {
 
 	time_t  login;  	/* Time when this session started */
 	lng 	session;	/* usec since start of server */
-	time_t  idle;		/* Time when the session became idle */  
+	time_t  idle;		/* Time when the session became idle */
 
 	/*
 	 * For program debugging and performance trace we keep the actual resource claims.
@@ -80,7 +80,7 @@ typedef struct CLIENT {
 	time_t  lastcmd;	/* set when query is received */
 
 	/* The user can request a TRACE SQL statement, calling for collecting the events locally */
-	BAT *profticks;				
+	BAT *profticks;
 	BAT *profstmt;
 
 	ATOMIC_TYPE	lastprint;	/* when we last printed the query, to be depricated */
@@ -101,7 +101,7 @@ typedef struct CLIENT {
 	 * input, (2) also demonstrates the MAL internal structure, (4) adds
 	 * the type information.
 	 */
-	int  listing;        
+	int  listing;
 	str prompt;         /* acknowledge prompt */
 	size_t promptlength;
 	ClientInput *bak;   /* used for recursive script and string execution */
@@ -133,7 +133,7 @@ typedef struct CLIENT {
 	MT_Sema 	s;	    /* sema to (de)activate thread */
 	Thread      	mythread;
 	str     	errbuf;     /* location of GDK exceptions */
-	struct CLIENT   *father;    
+	struct CLIENT   *father;
 	/*
 	 * Each client has a private entry point into the namespace and
 	 * object space (the global variables).  Moreover, the parser needs
@@ -168,7 +168,7 @@ typedef struct CLIENT {
 	int wlc_kind;	// used by master to characterise the compound transaction
 	MalBlkPtr wlc;
 
-	/*	
+	/*
 	 *	Errors during copy into are collected in a user specific column set
 	 */
 	BAT *error_row;
@@ -179,7 +179,7 @@ typedef struct CLIENT {
 	size_t blocksize;
 	protocol_version protocol;
 	bool filetrans;			/* whether the client can read files for us */
-	const char *(*getquery)(struct CLIENT *);
+	char *query;			/* string, identify whatever we're working on */
 } *Client, ClientRec;
 
 mal_export int MAL_MAXCLIENTS;

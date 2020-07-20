@@ -10,6 +10,7 @@
 #include "sql_atom.h"
 #include "sql_string.h"
 #include "sql_decimal.h"
+#include "blob.h"
 #include "gdk_time.h"
 
 void
@@ -18,8 +19,6 @@ atom_init( atom *a )
 	a->isnull = 1;
 	a->data.vtype = 0;
 	a->tpe.type = NULL;
-	a->d = 0;
-	a->varid = 0;
 }
 
 static atom *
@@ -31,8 +30,6 @@ atom_create( sql_allocator *sa )
 		return NULL;
 	*a = (atom) {
 		.data = (ValRecord) {.vtype = TYPE_void,},
-		.d = dbl_nil,
-		.varid = -1,
 	};
 	return a;
 }
@@ -74,7 +71,7 @@ atom_bool( sql_allocator *sa, sql_subtype *tpe, bit val)
 	atom *a = atom_create(sa);
 	if(!a)
 		return NULL;
-	
+
 	a->isnull = 0;
 	a->tpe = *tpe;
 	a->data.vtype = tpe->type->localtype;
@@ -93,7 +90,7 @@ atom_int( sql_allocator *sa, sql_subtype *tpe,
 )
 {
 	if (tpe->type->eclass == EC_FLT) {
-		return atom_float(sa, tpe, (double) val);
+		return atom_float(sa, tpe, (dbl) val);
 	} else {
 		atom *a = atom_create(sa);
 		if(!a)
@@ -126,7 +123,6 @@ atom_int( sql_allocator *sa, sql_subtype *tpe,
 		default:
 			assert(0);
 		}
-		a->d = (dbl) val;
 		a->data.len = 0;
 		return a;
 	}
@@ -172,20 +168,15 @@ atom_get_int(atom *a)
 	return r;
 }
 
-
 atom *
 atom_dec(sql_allocator *sa, sql_subtype *tpe,
 #ifdef HAVE_HGE
-	hge val,
+	hge val)
 #else
-	lng val,
+	lng val)
 #endif
-	double dval)
 {
-	atom *a = atom_int(sa, tpe, val);
-	if (a) 
-		a -> d = dval;
-	return a;
+	return atom_int(sa, tpe, val);
 }
 
 atom *
@@ -209,7 +200,7 @@ atom_string(sql_allocator *sa, sql_subtype *tpe, const char *val)
 }
 
 atom *
-atom_float(sql_allocator *sa, sql_subtype *tpe, double val)
+atom_float(sql_allocator *sa, sql_subtype *tpe, dbl val)
 {
 	atom *a = atom_create(sa);
 	if(!a)
@@ -325,7 +316,6 @@ atom_general(sql_allocator *sa, sql_subtype *tpe, const char *val)
 
 			/* no result or nil means error (SQL has NULL not nil) */
 			if (res < 0 || !p || ATOMcmp(type, p, ATOMnilptr(type)) == 0) {
-				/*_DELETE(val);*/
 				if (p)
 					GDKfree(p);
 				return NULL;
@@ -344,9 +334,8 @@ atom_general(sql_allocator *sa, sql_subtype *tpe, const char *val)
 				a->data.val.lval *= d;
 			}
 			GDKfree(p);
-			/*_DELETE(val);*/
 		}
-	} else { 
+	} else {
 		VALset(&a->data, a->data.vtype, (ptr) ATOMnilptr(a->data.vtype));
 		a->isnull = 1;
 	}
@@ -375,7 +364,7 @@ atom2string(sql_allocator *sa, atom *a)
 
 	if (a->isnull)
 		return sa_strdup(sa, "NULL");
-	switch (a->data.vtype) { 
+	switch (a->data.vtype) {
 #ifdef HAVE_HGE
 	case TYPE_hge:
 	{	char *_buf = buf;
@@ -420,7 +409,7 @@ atom2string(sql_allocator *sa, atom *a)
 			snprintf(buf, BUFSIZ, "atom2string(TYPE_%d) not implemented", a->data.vtype);
 		} else {
 			 char *r = sa_strdup(sa, p);
-			 _DELETE(p);
+			 GDKfree(p);
 			 return r;
 		}
 	}
@@ -428,7 +417,7 @@ atom2string(sql_allocator *sa, atom *a)
 }
 
 char *
-atom2sql(atom *a)
+atom2sql(sql_allocator *sa, atom *a, int timezone)
 {
 	sql_class ec = a->tpe.type->eclass;
 	char buf[BUFSIZ];
@@ -436,29 +425,37 @@ atom2sql(atom *a)
 	if (a->data.vtype == TYPE_str && EC_INTERVAL(ec))
 		ec = EC_STRING;
 	if (a->isnull)
-		return _STRDUP("NULL");
+		return "NULL";
 	switch (ec) {
 	case EC_BIT:
 		assert( a->data.vtype == TYPE_bit);
 		if (a->data.val.btval)
-			return _STRDUP("true");
-		return _STRDUP("false");
+			return "true";
+		return "false";
 	case EC_CHAR:
 	case EC_STRING: {
 		char *val, *res;
 		assert(a->data.vtype == TYPE_str && a->data.val.sval);
 
-		if (!(val = sql_escape_str(a->data.val.sval)))
+		if (!(val = sql_escape_str(sa, a->data.val.sval)))
 			return NULL;
-		if ((res = NEW_ARRAY(char, strlen(val) + 3)))
+		if ((res = SA_NEW_ARRAY(sa, char, strlen(val) + 3)))
 			stpcpy(stpcpy(stpcpy(res, "'"), val), "'");
-		c_delete(val);
 		return res;
 	} break;
-	case EC_BLOB:
-		/* TODO atom to string */
-		break;
-	case EC_MONTH: 
+	case EC_BLOB: {
+		char *res;
+		blob *b = (blob*)a->data.val.pval;
+		size_t blobstr_size = b->nitems * 2 + 1;
+
+		if ((res = SA_NEW_ARRAY(sa, char, blobstr_size + 8))) {
+			char *tail = stpcpy(res, "blob '");
+			ssize_t blobstr_offset = BLOBtostr(&tail, &blobstr_size, b, true);
+			strcpy(res + blobstr_offset + 6, "'");
+		}
+		return res;
+	} break;
+	case EC_MONTH:
 	case EC_SEC: {
 		lng v;
 		switch (a->data.vtype) {
@@ -503,13 +500,7 @@ atom2sql(atom *a)
 		case 13:	/* second */
 			break;
 		}
-		if (a->tpe.digits < 4) {
-			sprintf(buf, LLFMT, v);
-		} else {
-			lng sec = v/1000;
-			lng msec = v%1000;
-			sprintf(buf, LLFMT "." LLFMT, sec, msec);
-		}
+		sprintf(buf, "interval '" LLFMT "' %s", ec == EC_MONTH ? v : v/1000, ec == EC_MONTH ? "month" : "second");
 		break;
 	}
 	case EC_NUM:
@@ -554,7 +545,7 @@ atom2sql(atom *a)
 		case TYPE_bte: v = a->data.val.btval; break;
 		default: break;
 		}
-		return decimal_to_str(v, &a->tpe);
+		return decimal_to_str(sa, v, &a->tpe);
 	}
 	case EC_FLT:
 		if (a->data.vtype == TYPE_dbl)
@@ -563,30 +554,105 @@ atom2sql(atom *a)
 			sprintf(buf, "%f", a->data.val.fval);
 		break;
 	case EC_TIME:
+	case EC_TIME_TZ:
 	case EC_DATE:
 	case EC_TIMESTAMP:
-		if (a->data.vtype == TYPE_str) {
-			char *val1 = sql_escape_str(a->tpe.type->sqlname), *val2 = sql_escape_str(a->data.val.sval), *res;
+	case EC_TIMESTAMP_TZ: {
+		char val1[64], sbuf[64], *val2 = sbuf, *res;
+		size_t len = sizeof(sbuf);
 
-			if (!val1 || !val2) {
-				c_delete(val1);
-				c_delete(val2);
-				return NULL;
+		switch (ec) {
+		case EC_TIME:
+		case EC_TIME_TZ:
+		case EC_TIMESTAMP:
+		case EC_TIMESTAMP_TZ: {
+			char *n = stpcpy(val1, (ec == EC_TIME || ec == EC_TIME_TZ) ? "TIME" : "TIMESTAMP");
+			if (a->tpe.digits) {
+				char str[16];
+				sprintf(str, "%u", a->tpe.digits);
+				n = stpcpy(stpcpy(stpcpy(n, " ("), str), ")");
 			}
-				
-			if ((res = NEW_ARRAY(char, strlen(val1) + strlen(val2) + 4)))
-				stpcpy(stpcpy(stpcpy(stpcpy(res, val1)," '"), val2), "'");
-			c_delete(val1);
-			c_delete(val2);
-			return res;
-		} else {
-			snprintf(buf, BUFSIZ, "atom2sql(TYPE_%d) not implemented", a->data.vtype);
-		}
+			if (ec == EC_TIME_TZ || ec == EC_TIMESTAMP_TZ)
+				stpcpy(n, " WITH TIME ZONE");
+		} break;
+		case EC_DATE:
+			strcpy(val1, "DATE");
 		break;
+		default:
+			assert(0);
+		}
+
+		switch (ec) {
+		case EC_TIME:
+		case EC_TIME_TZ: {
+			daytime dt = a->data.val.lval;
+			int digits = a->tpe.digits ? a->tpe.digits - 1 : 0;
+			char *s = val2;
+			ssize_t lens;
+
+			if (ec == EC_TIME_TZ)
+				dt = daytime_add_usec_modulo(dt, timezone * 1000);
+			if ((lens = daytime_precision_tostr(&s, &len, dt, digits, true)) < 0)
+				assert(0);
+
+			if (ec == EC_TIME_TZ) {
+				lng timezone_hours = llabs(timezone / 60000);
+				char *end = sbuf + sizeof(sbuf) - 1;
+
+				s += lens;
+				snprintf(s, end - s, "%c%02d:%02d", (timezone >= 0) ? '+' : '-', (int) (timezone_hours / 60), (int) (timezone_hours % 60));
+			}
+		} break;
+		case EC_DATE: {
+			date dt = a->data.val.ival;
+			if (date_tostr(&val2, &len, &dt, false) < 0)
+				assert(0);
+		} break;
+		case EC_TIMESTAMP:
+		case EC_TIMESTAMP_TZ: {
+			timestamp ts = a->data.val.lval;
+			int digits = a->tpe.digits ? a->tpe.digits - 1 : 0;
+			char *s = val2;
+			size_t nlen;
+			ssize_t lens;
+			date days;
+			daytime usecs;
+
+			if (ec == EC_TIMESTAMP_TZ)
+				ts = timestamp_add_usec(ts, timezone * 1000);
+			days = timestamp_date(ts);
+			if ((lens = date_tostr(&s, &len, &days, true)) < 0)
+				assert(0);
+
+			s += lens;
+			*s++ = ' ';
+			nlen = len - lens - 1;
+			assert(nlen < len);
+
+			usecs = timestamp_daytime(ts);
+			if ((lens = daytime_precision_tostr(&s, &nlen, usecs, digits, true)) < 0)
+				assert(0);
+
+			if (ec == EC_TIMESTAMP_TZ) {
+				lng timezone_hours = llabs(timezone / 60000);
+				char *end = sbuf + sizeof(sbuf) - 1;
+
+				s += lens;
+				snprintf(s, end - s, "%c%02d:%02d", (timezone >= 0) ? '+' : '-', (int) (timezone_hours / 60), (int) (timezone_hours % 60));
+			}
+		} break;
+		default:
+			assert(0);
+		}
+
+		if ((res = SA_NEW_ARRAY(sa, char, strlen(val1) + strlen(val2) + 4)))
+			stpcpy(stpcpy(stpcpy(stpcpy(res, val1)," '"), val2), "'");
+		return res;
+	} break;
 	default:
 		snprintf(buf, BUFSIZ, "atom2sql(TYPE_%d) not implemented", a->data.vtype);
 	}
-	return _STRDUP(buf);
+	return sa_strdup(sa, buf);
 }
 
 sql_subtype *
@@ -610,13 +676,13 @@ atom_dup(sql_allocator *sa, atom *a)
 
 	*r = *a;
 	r->tpe = a->tpe;
-	if (!a->isnull) 
+	if (!a->isnull)
 		SA_VALcopy(sa, &r->data, &a->data);
 	return r;
 }
 
 unsigned int
-atom_num_digits( atom *a ) 
+atom_num_digits( atom *a )
 {
 #ifdef HAVE_HGE
 	hge v = 0;
@@ -653,16 +719,16 @@ atom_num_digits( atom *a )
 }
 
 /* cast atom a to type tp (success == 1, fail == 0) */
-int 
-atom_cast(sql_allocator *sa, atom *a, sql_subtype *tp) 
+int
+atom_cast(sql_allocator *sa, atom *a, sql_subtype *tp)
 {
 	sql_subtype *at = &a->tpe;
 
 	if (!a->isnull) {
-		if (subtype_cmp(at, tp) == 0) 
+		if (subtype_cmp(at, tp) == 0)
 			return 1;
 		/* need to do a cast, start simple is atom type a subtype of tp */
-		if ((at->type->eclass == tp->type->eclass || 
+		if ((at->type->eclass == tp->type->eclass ||
 		    (EC_VARCHAR(at->type->eclass) && EC_VARCHAR(tp->type->eclass))) &&
 		    at->type->localtype == tp->type->localtype &&
 		   (EC_TEMP(tp->type->eclass) || !tp->digits|| at->digits <= tp->digits) &&
@@ -675,11 +741,11 @@ atom_cast(sql_allocator *sa, atom *a, sql_subtype *tp)
 			/* cast numerics */
 			switch ( tp->type->localtype) {
 			case TYPE_bte:
-				if (at->type->localtype != TYPE_bte) 
+				if (at->type->localtype != TYPE_bte)
 					return 0;
 				break;
 			case TYPE_sht:
-				if (at->type->localtype == TYPE_bte) 
+				if (at->type->localtype == TYPE_bte)
 					a->data.val.shval = a->data.val.btval;
 				else if (at->type->localtype != TYPE_sht)
 					return 0;
@@ -688,37 +754,37 @@ atom_cast(sql_allocator *sa, atom *a, sql_subtype *tp)
 #if SIZEOF_OID == SIZEOF_INT
 			case TYPE_oid:
 #endif
-				if (at->type->localtype == TYPE_bte) 
+				if (at->type->localtype == TYPE_bte)
 					a->data.val.ival = a->data.val.btval;
-				else if (at->type->localtype == TYPE_sht) 
+				else if (at->type->localtype == TYPE_sht)
 					a->data.val.ival = a->data.val.shval;
-				else if (at->type->localtype != TYPE_int) 
+				else if (at->type->localtype != TYPE_int)
 					return 0;
 				break;
 			case TYPE_lng:
 #if SIZEOF_OID == SIZEOF_LNG
 			case TYPE_oid:
 #endif
-				if (at->type->localtype == TYPE_bte) 
+				if (at->type->localtype == TYPE_bte)
 					a->data.val.lval = a->data.val.btval;
-				else if (at->type->localtype == TYPE_sht) 
+				else if (at->type->localtype == TYPE_sht)
 					a->data.val.lval = a->data.val.shval;
-				else if (at->type->localtype == TYPE_int) 
+				else if (at->type->localtype == TYPE_int)
 					a->data.val.lval = a->data.val.ival;
-				else if (at->type->localtype != TYPE_lng) 
+				else if (at->type->localtype != TYPE_lng)
 					return 0;
 				break;
 #ifdef HAVE_HGE
 			case TYPE_hge:
-				if (at->type->localtype == TYPE_bte) 
+				if (at->type->localtype == TYPE_bte)
 					a->data.val.hval = a->data.val.btval;
-				else if (at->type->localtype == TYPE_sht) 
+				else if (at->type->localtype == TYPE_sht)
 					a->data.val.hval = a->data.val.shval;
-				else if (at->type->localtype == TYPE_int) 
+				else if (at->type->localtype == TYPE_int)
 					a->data.val.hval = a->data.val.ival;
-				else if (at->type->localtype == TYPE_lng) 
+				else if (at->type->localtype == TYPE_lng)
 					a->data.val.hval = a->data.val.lval;
-				else if (at->type->localtype != TYPE_hge) 
+				else if (at->type->localtype != TYPE_hge)
 					return 0;
 				break;
 #endif
@@ -741,50 +807,50 @@ atom_cast(sql_allocator *sa, atom *a, sql_subtype *tp)
 			/* cast numerics */
 			switch (tp->type->localtype) {
 			case TYPE_bte:
-				if (at->type->localtype != TYPE_bte) 
+				if (at->type->localtype != TYPE_bte)
 					return 0;
 				break;
 			case TYPE_sht:
-				if (at->type->localtype == TYPE_bte) 
+				if (at->type->localtype == TYPE_bte)
 					a->data.val.shval = a->data.val.btval;
-				else if (at->type->localtype != TYPE_sht) 
+				else if (at->type->localtype != TYPE_sht)
 					return 0;
 				break;
 			case TYPE_int:
 #if SIZEOF_OID == SIZEOF_INT
 			case TYPE_oid:
 #endif
-				if (at->type->localtype == TYPE_bte) 
+				if (at->type->localtype == TYPE_bte)
 					a->data.val.ival = a->data.val.btval;
-				else if (at->type->localtype == TYPE_sht) 
+				else if (at->type->localtype == TYPE_sht)
 					a->data.val.ival = a->data.val.shval;
-				else if (at->type->localtype != TYPE_int) 
+				else if (at->type->localtype != TYPE_int)
 					return 0;
 				break;
 			case TYPE_lng:
 #if SIZEOF_OID == SIZEOF_LNG
 			case TYPE_oid:
 #endif
-				if (at->type->localtype == TYPE_bte) 
+				if (at->type->localtype == TYPE_bte)
 					a->data.val.lval = a->data.val.btval;
-				else if (at->type->localtype == TYPE_sht) 
+				else if (at->type->localtype == TYPE_sht)
 					a->data.val.lval = a->data.val.shval;
-				else if (at->type->localtype == TYPE_int) 
+				else if (at->type->localtype == TYPE_int)
 					a->data.val.lval = a->data.val.ival;
-				else if (at->type->localtype != TYPE_lng) 
+				else if (at->type->localtype != TYPE_lng)
 					return 0;
 				break;
 #ifdef HAVE_HGE
 			case TYPE_hge:
-				if (at->type->localtype == TYPE_bte) 
+				if (at->type->localtype == TYPE_bte)
 					a->data.val.hval = a->data.val.btval;
-				else if (at->type->localtype == TYPE_sht) 
+				else if (at->type->localtype == TYPE_sht)
 					a->data.val.hval = a->data.val.shval;
-				else if (at->type->localtype == TYPE_int) 
+				else if (at->type->localtype == TYPE_int)
 					a->data.val.hval = a->data.val.ival;
-				else if (at->type->localtype == TYPE_lng) 
+				else if (at->type->localtype == TYPE_lng)
 					a->data.val.hval = a->data.val.lval;
-				else if (at->type->localtype != TYPE_hge) 
+				else if (at->type->localtype != TYPE_hge)
 					return 0;
 				break;
 #endif
@@ -909,7 +975,7 @@ atom_cast(sql_allocator *sa, atom *a, sql_subtype *tp)
 		/* truncating decimals */
 		if (at->type->eclass == EC_DEC && tp->type->eclass == EC_DEC &&
 		    at->type->localtype >= tp->type->localtype &&
-		    at->digits >= tp->digits && 
+		    at->digits >= tp->digits &&
 			(at->digits - tp->digits) == (at->scale - tp->scale)) {
 #ifdef HAVE_HGE
 			hge mul = 1, rnd = 0, val = 0;
@@ -999,50 +1065,50 @@ atom_cast(sql_allocator *sa, atom *a, sql_subtype *tp)
 			/* cast numerics */
 			switch (tp->type->localtype) {
 			case TYPE_bte:
-				if (at->type->localtype != TYPE_bte) 
+				if (at->type->localtype != TYPE_bte)
 					return 0;
 				break;
 			case TYPE_sht:
-				if (at->type->localtype == TYPE_bte) 
+				if (at->type->localtype == TYPE_bte)
 					a->data.val.shval = a->data.val.btval;
-				else if (at->type->localtype != TYPE_sht) 
+				else if (at->type->localtype != TYPE_sht)
 					return 0;
 				break;
 			case TYPE_int:
 #if SIZEOF_OID == SIZEOF_INT
 			case TYPE_oid:
 #endif
-				if (at->type->localtype == TYPE_bte) 
+				if (at->type->localtype == TYPE_bte)
 					a->data.val.ival = a->data.val.btval;
-				else if (at->type->localtype == TYPE_sht) 
+				else if (at->type->localtype == TYPE_sht)
 					a->data.val.ival = a->data.val.shval;
-				else if (at->type->localtype != TYPE_int) 
+				else if (at->type->localtype != TYPE_int)
 					return 0;
 				break;
 			case TYPE_lng:
 #if SIZEOF_OID == SIZEOF_LNG
 			case TYPE_oid:
 #endif
-				if (at->type->localtype == TYPE_bte) 
+				if (at->type->localtype == TYPE_bte)
 					a->data.val.lval = a->data.val.btval;
-				else if (at->type->localtype == TYPE_sht) 
+				else if (at->type->localtype == TYPE_sht)
 					a->data.val.lval = a->data.val.shval;
-				else if (at->type->localtype == TYPE_int) 
+				else if (at->type->localtype == TYPE_int)
 					a->data.val.lval = a->data.val.ival;
-				else if (at->type->localtype != TYPE_lng) 
+				else if (at->type->localtype != TYPE_lng)
 					return 0;
 				break;
 #ifdef HAVE_HGE
 			case TYPE_hge:
-				if (at->type->localtype == TYPE_bte) 
+				if (at->type->localtype == TYPE_bte)
 					a->data.val.hval = a->data.val.btval;
-				else if (at->type->localtype == TYPE_sht) 
+				else if (at->type->localtype == TYPE_sht)
 					a->data.val.hval = a->data.val.shval;
-				else if (at->type->localtype == TYPE_int) 
+				else if (at->type->localtype == TYPE_int)
 					a->data.val.hval = a->data.val.ival;
-				else if (at->type->localtype == TYPE_lng) 
+				else if (at->type->localtype == TYPE_lng)
 					a->data.val.hval = a->data.val.lval;
-				else if (at->type->localtype != TYPE_hge) 
+				else if (at->type->localtype != TYPE_hge)
 					return 0;
 				break;
 #endif
@@ -1099,19 +1165,16 @@ atom_cast(sql_allocator *sa, atom *a, sql_subtype *tp)
 #endif
 			return 1;
 		}
-		if ((at->type->eclass == EC_DEC || 
-		     at->type->eclass == EC_NUM) && 
+		if ((at->type->eclass == EC_DEC ||
+		     at->type->eclass == EC_NUM) &&
 		    tp->type->eclass == EC_FLT) {
-			if (is_dbl_nil(a->d)) {
-				ptr p = &a->d;
+			if (!VALisnil(&a->data)) {
 				char *s;
 #ifdef HAVE_HGE
 				hge dec = 0;
 #else
 				lng dec = 0;
 #endif
-				size_t len = 0;
-				ssize_t res = 0;
 				/* cast decimals to doubles */
 				switch (at->type->localtype) {
 				case TYPE_bte:
@@ -1134,19 +1197,22 @@ atom_cast(sql_allocator *sa, atom *a, sql_subtype *tp)
 				default:
 					return 0;
 				}
-				s = decimal_to_str(dec, at);
-				len = sizeof(double);
-				res = ATOMfromstr(TYPE_dbl, &p, &len, s, false);
-				GDKfree(s);
-				if (res < 0)
+				s = decimal_to_str(sa, dec, at);
+				if (s) {
+					int tpe = tp->type->localtype;
+					size_t len = (tpe == TYPE_dbl) ? sizeof(dbl) : sizeof(flt);
+					ssize_t res;
+					ptr p;
+
+					if (tpe == TYPE_dbl)
+						p = &(a->data.val.dval);
+					else
+						p = &(a->data.val.fval);
+					if ((res = ATOMfromstr(tpe, &p, &len, s, false)) < 0)
+						return 0;
+				} else {
 					return 0;
-			}
-			if (tp->type->localtype == TYPE_dbl)
-				a->data.val.dval = a->d;
-			else {
-				if ((dbl) GDK_flt_min > a->d || a->d > (dbl) GDK_flt_max)
-					return 0;
-				a->data.val.fval = (flt) a->d;
+				}
 			}
 			a->tpe = *tp;
 			a->data.vtype = tp->type->localtype;
@@ -1172,7 +1238,7 @@ atom_cast(sql_allocator *sa, atom *a, sql_subtype *tp)
 			SA_VALcopy(sa, &a->data, &a->data);
 			GDKfree(p);
 			return 1;
-		}	
+		}
 	} else {
 		a->tpe = *tp;
 		a->data.vtype = tp->type->localtype;
@@ -1181,7 +1247,7 @@ atom_cast(sql_allocator *sa, atom *a, sql_subtype *tp)
 	return 0;
 }
 
-int 
+int
 atom_neg(atom *a)
 {
 	ValRecord dst;
@@ -1192,18 +1258,13 @@ atom_neg(atom *a)
 	if (VARcalcnegate(&dst, &a->data) != GDK_SUCCEED)
 		return -1;
 	a->data = dst;
-	dst.vtype = TYPE_dbl;
-	dst.val.dval = a->d;
-	if (VARcalcnegate(&dst, &dst) != GDK_SUCCEED)
-		return -1;
-	a->d = dst.val.dval;
 	return 0;
 }
 
-int 
+int
 atom_cmp(atom *a1, atom *a2)
 {
-	if ( a1->tpe.type->localtype != a2->tpe.type->localtype) 
+	if ( a1->tpe.type->localtype != a2->tpe.type->localtype)
 		return -1;
 	if ( a1->isnull != a2->isnull)
 		return -1;
@@ -1212,7 +1273,7 @@ atom_cmp(atom *a1, atom *a2)
 	return VALcmp(&a1->data, &a2->data);
 }
 
-atom * 
+atom *
 atom_add(atom *a1, atom *a2)
 {
 	ValRecord dst;
@@ -1230,15 +1291,12 @@ atom_add(atom *a1, atom *a2)
 	if (VARcalcadd(&dst, &a1->data, &a2->data, 1) != GDK_SUCCEED)
 		return NULL;
 	a1->data = dst;
-	dst.vtype = TYPE_dbl;
 	if (a1->isnull || a2->isnull)
 		a1->isnull = 1;
-	if (VARconvert(&dst, &a1->data, 1, 0, 0, 0) == GDK_SUCCEED)
-		a1->d = dst.val.dval;
 	return a1;
 }
 
-atom * 
+atom *
 atom_sub(atom *a1, atom *a2)
 {
 	ValRecord dst;
@@ -1258,37 +1316,18 @@ atom_sub(atom *a1, atom *a2)
 	     a1->tpe.digits < a2->tpe.digits))
 		a1 = a2;
 	a1->data = dst;
-	dst.vtype = TYPE_dbl;
-	if (a1->isnull || a2->isnull) 
+	if (a1->isnull || a2->isnull)
 		a1->isnull = 1;
-	if (VARconvert(&dst, &a1->data, 1, 0, 0, 0) == GDK_SUCCEED)
-		a1->d = dst.val.dval;
 	return a1;
 }
 
-atom * 
+atom *
 atom_mul(atom *a1, atom *a2)
 {
 	ValRecord dst;
 
 	if (!EC_COMPUTE(a1->tpe.type->eclass))
 		return NULL;
-	if (a1->tpe.type->localtype == TYPE_dbl ||
-	    a2->tpe.type->localtype == TYPE_dbl) {
-		ValRecord v1, v2;
-		dst.vtype = v1.vtype = v2.vtype = TYPE_dbl;
-		v1.val.dval = a1->d;
-		v2.val.dval = a2->d;
-		if (a1->isnull)
-			return a1;
-		if (a2->isnull)
-			return a2;
-		if (VARcalcmul(&dst, &v1, &v2, 1) != GDK_SUCCEED)
-			return NULL;
-		a1->data.vtype = TYPE_dbl;
-		a1->d = a1->data.val.dval = dst.val.dval;
-		return a1;
-	}
 	if (a1->tpe.type->localtype < a2->tpe.type->localtype ||
 	    (a1->tpe.type->localtype == a2->tpe.type->localtype &&
 	     a1->tpe.digits < a2->tpe.digits)) {
@@ -1304,9 +1343,6 @@ atom_mul(atom *a1, atom *a2)
 	if (VARcalcmul(&dst, &a1->data, &a2->data, 1) != GDK_SUCCEED)
 		return NULL;
 	a1->data = dst;
-	dst.vtype = TYPE_dbl;
-	if (VARconvert(&dst, &a1->data, 1, 0, 0, 0) == GDK_SUCCEED)
-		a1->d = dst.val.dval;
 	a1->tpe.digits += a2->tpe.digits;
 	return a1;
 }
@@ -1322,18 +1358,15 @@ atom_inc(atom *a)
 	if (VARcalcincr(&dst, &a->data, 1) != GDK_SUCCEED)
 		return -1;
 	a->data = dst;
-	dst.vtype = TYPE_dbl;
-	if (VARconvert(&dst, &a->data, 1, 0, 0, 0) == GDK_SUCCEED)
-		a->d = dst.val.dval;
 	return 0;
 }
 
 int
 atom_is_zero(atom *a)
 {
-	if (a->isnull)
+	if (a->isnull || !ATOMlinear(a->tpe.type->localtype))
 		return 0;
-	switch (a->tpe.type->localtype) {
+	switch (ATOMstorage(a->tpe.type->localtype)) {
 	case TYPE_bte:
 		return a->data.val.btval == 0;
 	case TYPE_sht:
@@ -1351,9 +1384,8 @@ atom_is_zero(atom *a)
 	case TYPE_dbl:
 		return a->data.val.dval == 0;
 	default:
-		break;
+		return 0;
 	}
-	return 0;
 }
 
 int
@@ -1361,9 +1393,7 @@ atom_is_true(atom *a)
 {
 	if (a->isnull)
 		return 0;
-	switch (a->tpe.type->localtype) {
-	case TYPE_bit:
-		return a->data.val.btval != 0;
+	switch (ATOMstorage(a->tpe.type->localtype)) {
 	case TYPE_bte:
 		return a->data.val.btval != 0;
 	case TYPE_sht:
@@ -1380,20 +1410,19 @@ atom_is_true(atom *a)
 		return a->data.val.fval != 0;
 	case TYPE_dbl:
 		return a->data.val.dval != 0;
+	case TYPE_str:
+		return strcmp(a->data.val.sval, "") != 0;
 	default:
-		break;
+		return 0;
 	}
-	return 0;
 }
 
 int
-atom_is_false( atom *a )
+atom_is_false(atom *a)
 {
 	if (a->isnull)
 		return 0;
-	switch(a->tpe.type->localtype) {
-	case TYPE_bit:
-		return a->data.val.btval == 0;
+	switch (ATOMstorage(a->tpe.type->localtype)) {
 	case TYPE_bte:
 		return a->data.val.btval == 0;
 	case TYPE_sht:
@@ -1410,110 +1439,67 @@ atom_is_false( atom *a )
 		return a->data.val.fval == 0;
 	case TYPE_dbl:
 		return a->data.val.dval == 0;
+	case TYPE_str:
+		return strcmp(a->data.val.sval, "") == 0;
 	default:
-		break;
+		return 0;
 	}
-	return 0;
 }
 
-atom*
+atom *
 atom_zero_value(sql_allocator *sa, sql_subtype* tpe)
 {
 	void *ret = NULL;
 	atom *res = NULL;
+	int localtype = tpe->type->localtype;
 
+	bte bval = 0;
+	sht sval = 0;
+	int ival = 0;
+	lng lval = 0;
 #ifdef HAVE_HGE
 	hge hval = 0;
 #endif
-	lng lval = 0;
-	int ival = 0;
-	sht sval = 0;
-	bte bbval = 0;
-	bit bval = 0;
 	flt fval = 0;
 	dbl dval = 0;
 
-	switch (tpe->type->eclass) {
-		case EC_BIT:
-		{
+	if (ATOMlinear(localtype)) {
+		switch (ATOMstorage(localtype)) {
+		case TYPE_bte:
 			ret = &bval;
 			break;
-		}
-		case EC_POS:
-		case EC_NUM:
-		case EC_DEC:
-		case EC_SEC:
-		case EC_MONTH:
-			switch (tpe->type->localtype) {
+		case TYPE_sht:
+			ret = &sval;
+			break;
+		case TYPE_int:
+			ret = &ival;
+			break;
+		case TYPE_lng:
+			ret = &lval;
+			break;
 #ifdef HAVE_HGE
-				case TYPE_hge:
-				{
-					ret = &hval;
-					break;
-				}
+		case TYPE_hge:
+			ret = &hval;
+			break;
 #endif
-				case TYPE_lng:
-				{
-					ret = &lval;
-					break;
-				}
-				case TYPE_int:
-				{
-					ret = &ival;
-					break;
-				}
-				case TYPE_sht:
-				{
-					ret = &sval;
-					break;
-				}
-				case TYPE_bte:
-				{
-					ret = &bbval;
-					break;
-				}
-				default:
-					break;
-			}
+		case TYPE_flt:
+			ret = &fval;
 			break;
-		case EC_FLT:
-			switch (tpe->type->localtype) {
-				case TYPE_flt:
-				{
-					ret = &fval;
-					break;
-				}
-				case TYPE_dbl:
-				{
-					ret = &dval;
-					break;
-				}
-				default:
-					break;
-			}
+		case TYPE_dbl:
+			ret = &dval;
 			break;
-		default:
+		default: /* no support for strings and blobs zero value */
 			break;
-	} //no support for strings and blobs zero value
+		}
+	}
 
 	if (ret != NULL) {
 		res = atom_create(sa);
 		res->tpe = *tpe;
 		res->isnull = 0;
-		res->data.vtype = tpe->type->localtype;
+		res->data.vtype = localtype;
 		VALset(&res->data, res->data.vtype, ret);
 	}
 
-	return res;
-}
-
-atom*
-atom_null_value(sql_allocator *sa, sql_subtype* tpe)
-{
-	atom *res = atom_create(sa);
-	if (res) {
-		res->tpe = *tpe;
-		res->isnull = 1;
-	}
 	return res;
 }

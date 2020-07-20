@@ -1,3 +1,10 @@
+/*
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0.  If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ *
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
+ */
 
 #include "monetdb_config.h"
 #include "stream.h"
@@ -13,7 +20,7 @@ extern int dump_database(Mapi mid, stream *toConsole, bool describe, bool useIns
 #define error(msg) {fprintf(stderr, "Failure: %s\n", msg); return -1;}
 
 int
-main(void) 
+main(void)
 {
 	char* err = NULL;
 	Mapi mid = (Mapi)malloc(sizeof(struct MapiStruct));

@@ -44,7 +44,7 @@ parse_interval_qualifier(mvc *sql, struct dlist *pers, int *sk, int *ek, int *sp
 	return 1;
 }
 
-lng 
+lng
 qualifier2multiplier( int sk )
 {
 	lng mul = 1;
@@ -83,11 +83,11 @@ parse_interval_(mvc *sql, lng sign, char *str, int sk, int ek, int sp, int ep, l
 	lng mul;
 
 	if (*str == '-') {
-		sign *= -1; 
+		sign *= -1;
 		str++;
 	}
 	mul = sign;
-		
+
 	switch (sk) {
 	case iyear:
 		mul *= 12;
@@ -128,9 +128,9 @@ parse_interval_(mvc *sql, lng sign, char *str, int sk, int ek, int sp, int ep, l
 			msec = strtol(n+1, &nn, 10);
 			if (msec && nn) {
 				ptrdiff_t d = nn-(n+1);
-				for( ;d<3; d++) 
+				for( ;d<3; d++)
 					msec *= 10;
-				for( ;d>3; d--) 
+				for( ;d>3; d--)
 					msec /= 10;
 				n = nn;
 			}
@@ -187,11 +187,11 @@ parse_interval(mvc *sql, lng sign, char *str, int sk, int ek, int sp, int ep, ln
 	lng mul;
 
 	if (*str == '-') {
-		sign *= -1; 
+		sign *= -1;
 		str++;
 	}
 	mul = sign;
-		
+
 	switch (sk) {
 	case iyear:
 		mul *= 12;
@@ -231,9 +231,9 @@ parse_interval(mvc *sql, lng sign, char *str, int sk, int ek, int sp, int ep, ln
 			msec = strtol(n+1, &nn, 10);
 			if (msec && nn) {
 				ptrdiff_t d = nn-(n+1);
-				for( ;d<3; d++) 
+				for( ;d<3; d++)
 					msec *= 10;
-				for( ;d>3; d--) 
+				for( ;d>3; d--)
 					msec /= 10;
 				n = nn;
 			}
@@ -310,14 +310,14 @@ int inttype2digits( int sk, int ek )
 {
 	switch(sk) {
 	case iyear:
-		if(ek == iyear) 
+		if(ek == iyear)
 			return 1;
 		return 2;
 	case imonth:
 		return 3;
 	case iday:
 		switch(ek) {
-		case iday: 
+		case iday:
 			return 4;
 		case ihour:
 			return 5;
@@ -336,7 +336,7 @@ int inttype2digits( int sk, int ek )
 			return 10;
 		}
 	case imin:
-		if(ek == imin) 
+		if(ek == imin)
 			return 11;
 		return 12;
 	case isec:
@@ -348,7 +348,7 @@ int inttype2digits( int sk, int ek )
 int digits2sk( int digits)
 {
 	int sk = iyear;
-	
+
 	if (digits > 2)
 		sk = imonth;
 	if (digits > 3)
@@ -365,7 +365,7 @@ int digits2sk( int digits)
 int digits2ek( int digits)
 {
 	int ek = iyear;
-	
+
 	if (digits == 2 || digits == 3)
 		ek = imonth;
 	if (digits == 4)
