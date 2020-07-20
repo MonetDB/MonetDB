@@ -1444,6 +1444,7 @@ sql_update_apr2019(Client c, mvc *sql, const char *prev_schema)
 	pos += snprintf(buf + pos, bufsize - pos,
 			"update sys._columns set type_digits = 1048576 where name = 'query' and table_id in (select id from sys._tables t where t.name = 'tables' and t.schema_id in (select id from sys.schemas s where s.name = 'sys'));\n");
 
+	pos += snprintf(buf + pos, bufsize - pos, "commit;\n");
 	pos += snprintf(buf + pos, bufsize - pos, "set schema \"%s\";\n", prev_schema);
 
 	assert(pos < bufsize);
