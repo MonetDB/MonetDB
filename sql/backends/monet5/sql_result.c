@@ -581,64 +581,59 @@ bat_max_hgelength(BAT *b)
 }
 #endif
 
-#define DEC_FRSTR(X)							\
-	do {								\
-		sql_column *col = c->extra;				\
-		sql_subtype *t = &col->type;				\
-									\
-		unsigned int i, neg = 0;				\
-		X *r;							\
-		X res = 0;						\
-		while(isspace((unsigned char) *s))			\
-			s++;						\
-		if (*s == '-'){						\
-			neg = 1;					\
-			s++;						\
-		} else if (*s == '+'){					\
-			neg = 0;					\
-			s++;						\
-		}							\
+#define DEC_FRSTR(X)													\
+	do {																\
+		sql_column *col = c->extra;										\
+		sql_subtype *t = &col->type;									\
+		unsigned int scale = t->scale;									\
+		unsigned int i;													\
+		bool neg = false;												\
+		X *r;															\
+		X res = 0;														\
+		while(isspace((unsigned char) *s))								\
+			s++;														\
+		if (*s == '-'){													\
+			neg = true;													\
+			s++;														\
+		} else if (*s == '+'){											\
+			s++;														\
+		}																\
 		for (i = 0; *s && *s != '.' && ((res == 0 && *s == '0') || i < t->digits - t->scale); s++) { \
-			if (!*s || !isdigit((unsigned char) *s))		\
-				return NULL;				\
-			res *= 10;					\
-			res += (*s-'0');				\
-			if (res)					\
-				i++;					\
-		}							\
-		if (!*s && t->scale) {					\
-			for( i = 0; i < t->scale; i++) {		\
-				res *= 10;				\
-			}						\
-		}							\
-		while(isspace((unsigned char) *s))			\
-			s++;						\
-		if (*s) {						\
-			if (*s != '.')					\
-				return NULL;				\
-			s++;						\
-			for (i = 0; *s && isdigit((unsigned char) *s) && i < t->scale; i++, s++) { \
-				res *= 10;				\
-				res += *s - '0';			\
-			}						\
-			while(isspace((unsigned char) *s))		\
-				s++;					\
-			for (; i < t->scale; i++) {			\
-				res *= 10;				\
-			}						\
-		}							\
-		if (*s)							\
-			return NULL;					\
-		r = c->data;						\
-		if (r == NULL &&					\
-		    (r = GDKzalloc(sizeof(X))) == NULL)			\
-			return NULL;					\
-		c->data = r;						\
-		if (neg)						\
-			*r = -res;					\
-		else							\
-			*r = res;					\
-		return (void *) r;					\
+			if (!isdigit((unsigned char) *s))							\
+				break;													\
+			res *= 10;													\
+			res += (*s-'0');											\
+			if (res)													\
+				i++;													\
+		}																\
+		if (*s == '.') {												\
+			s++;														\
+			while (*s && isdigit((unsigned char) *s) && scale > 0) {	\
+				res *= 10;												\
+				res += *s++ - '0';										\
+				scale--;												\
+			}															\
+			while(*s && isdigit((unsigned char) *s))					\
+				s++;													\
+		}																\
+		while(*s && isspace((unsigned char) *s))						\
+			s++;														\
+		while (scale > 0) {												\
+			res *= 10;													\
+			scale--;													\
+		}																\
+		if (*s)															\
+			return NULL;												\
+		r = c->data;													\
+		if (r == NULL &&												\
+		    (r = GDKzalloc(sizeof(X))) == NULL)							\
+			return NULL;												\
+		c->data = r;													\
+		if (neg)														\
+			*r = -res;													\
+		else															\
+			*r = res;													\
+		return (void *) r;												\
 	} while (0)
 
 static void *
