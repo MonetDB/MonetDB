@@ -44,10 +44,16 @@ MAPI  = (monetdb) /var/tmp/mtest-215859/.s.monetdb.36103
 QUERY = SELECT debugme(); --error, more than one row returned by a subquery used as an expression
 ERROR = !Cardinality violation, scalar value expected
 CODE  = 21000
-MAPI  = (monetdb) /var/tmp/mtest-215859/.s.monetdb.36103
-QUERY = SELECT debugme(); --error, more than one row returned by a subquery used as an expression
+MAPI  = (monetdb) /var/tmp/mtest-184851/.s.monetdb.32392
+QUERY = SELECT debugme2(); --error, more than one row returned by a subquery used as an expression
 ERROR = !Cardinality violation, scalar value expected
 CODE  = 21000
+MAPI  = (monetdb) /var/tmp/mtest-184851/.s.monetdb.32392
+QUERY = SELECT debugme4(); --error, more than one row returned by a subquery used as an expression
+ERROR = !GDK reported error: BATsubcross: more than one match
+MAPI  = (monetdb) /var/tmp/mtest-184851/.s.monetdb.32392
+QUERY = SELECT debugme5(); --error, cannot fetch a single row from an empty input
+ERROR = !Illegal argument: cannot fetch a single row from an empty input
 
 # 11:45:43 >  
 # 11:45:43 >  "Done."

@@ -519,6 +519,12 @@ fixdateheap(BAT *b, const char *anme)
 		bnme = nme;
 	sprintf(filename, "BACKUP%c%s", DIR_SEP, bnme);
 
+	/* we don't maintain index structures */
+	HASHdestroy(b);
+	IMPSdestroy(b);
+	OIDXdestroy(b);
+	PROPdestroy(b);
+
 	/* make backup of heap */
 	if (GDKmove(b->theap->farmid, srcdir, bnme, "tail", BAKDIR, bnme, "tail") != GDK_SUCCEED) {
 		GDKfree(srcdir);
@@ -676,18 +682,11 @@ fixdatebats(void)
 			}
 			fclose(fp);
 		}
-		/* The date type is not known in GDK when reading the BBP */
-		if (b->ttype < 0) {
-			const char *anme;
-
-			/* as yet unknown tail column type */
-			anme = ATOMunknown_name(b->ttype);
-			/* known string types */
-			if ((strcmp(anme, "date") == 0 ||
-			     strcmp(anme, "timestamp") == 0 ||
-			     strcmp(anme, "daytime") == 0) &&
-			    fixdateheap(b, anme) != GDK_SUCCEED)
-				return GDK_FAIL;
+		if ((b->ttype == TYPE_date ||
+		     b->ttype == TYPE_timestamp ||
+		     b->ttype == TYPE_daytime) &&
+		    fixdateheap(b, ATOMname(b->ttype)) != GDK_SUCCEED) {
+			return GDK_FAIL;
 		}
 	}
 	return GDK_SUCCEED;

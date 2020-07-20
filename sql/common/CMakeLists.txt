@@ -21,6 +21,7 @@ target_sources(sqlcommon
   sql_string.c
   sql_backend.h
   sql_string.h
+  exception_buffer.c
   PUBLIC
   ${CMAKE_CURRENT_SOURCE_DIR}/sql_types.h)
 

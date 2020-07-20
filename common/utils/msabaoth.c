@@ -579,8 +579,6 @@ msab_pickSecret(char **generated_secret)
 	char *secret;
 	char pathbuf[FILENAME_MAX];
 	char *e;
-	int fd;
-	FILE *f;
 
 	if ((e = getDBPath(pathbuf, sizeof(pathbuf), SECRETFILE)) != NULL)
 		return e;
@@ -615,7 +613,9 @@ msab_pickSecret(char **generated_secret)
 	return NULL;
 #endif
 #endif
-
+#if defined(HAVE_OPENSSL) || defined(HAVE_COMMONCRYPTO)
+	int fd;
+	FILE *f;
 	for (size_t i = 0; i < SECRET_LENGTH / 2; i++) {
 		snprintf(
 			secret + 2 * i, 3,
@@ -650,6 +650,7 @@ msab_pickSecret(char **generated_secret)
 	if (generated_secret)
 		*generated_secret = (char*)secret;
 	return NULL;
+#endif
 }
 
 /**

@@ -135,3 +135,66 @@ set(CPACK_RPM_selinux_PACKAGE_SUMMARY "SELinux policy files for MonetDB")
 set(CPACK_RPM_selinux_PACKAGE_ARCHITECTURE "noarch")
 set(CPACK_RPM_selinux_PACKAGE_REQUIRES_POST "MonetDB5-server%{?_isa} = %{version}-%{release}, %{name}-SQL-server5%{?_isa} = %{version}-%{release}, /usr/sbin/semodule, /sbin/restorecon, /sbin/fixfiles")
 set(CPACK_RPM_selinux_PACKAGE_REQUIRES_POSTUN "MonetDB5-server%{?_isa} = %{version}-%{release}, %{name}-SQL-server5%{?_isa} = %{version}-%{release}, /usr/sbin/semodule, /sbin/restorecon, /sbin/fixfiles")
+
+# Determine the build requires settings for the source build
+# This add buildsrequirement based on the packages that are
+# found on the machine that generates the packages. This might
+# not be what we want when distributing the source rpm, so we
+# might change this, or add the option to generate one based
+# on the cmake options.
+set(buildrequireslist
+  "gcc"
+  "bison"
+  "/usr/bin/python3")
+
+# RHEL >= 7, and all current Fedora
+LIST(APPEND buildrequireslist
+  "/usr/lib/rpm/macros.d/macros.systemd"
+  "checkpolicy"
+  "selinux-policy-devel"
+  "hardlink")
+
+if(BZIP2_FOUND)
+  LIST(APPEND buildrequireslist "bzip2-devel")
+endif()
+
+if(CFITSIO_FOUND)
+  LIST(APPEND buildrequireslist "pkgconfig(cfitsio)")
+endif()
+
+if(GEOS_FOUND)
+  LIST(APPEND buildrequireslist "geos-devel > 3.4.0")
+endif()
+
+if(CURL_FOUND)
+  LIST(APPEND buildrequireslist "pkgconfig(libcurl)")
+endif()
+
+if(LIBLZMA_FOUND)
+  LIST(APPEND buildrequireslist "pkgconfig(liblzma)")
+endif()
+
+if(READLINE_FOUND)
+  LIST(APPEND buildrequireslist "readline-devel")
+endif()
+
+if(ODBC_FOUND)
+  LIST(APPEND buildrequireslist "unixODBC-devel")
+endif()
+
+if(ZLIB_FOUND)
+  LIST(APPEND buildrequireslist "pkgconfig(zlib)")
+endif()
+
+if(PY3INTEGRATION)
+  LIST(APPEND buildrequireslist "python3-devel >= 3.5")
+  LIST(APPEND buildrequireslist "python3-numpy")
+endif()
+
+if(LIBR_FOUND)
+  LIST(APPEND buildrequireslist "R-core-devel")
+endif()
+
+LIST(JOIN buildrequireslist ", " buildrequires)
+
+set(CPACK_RPM_BUILDREQUIRES ${buildrequires})

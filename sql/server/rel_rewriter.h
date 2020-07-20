@@ -11,15 +11,18 @@
 
 #include "sql_relation.h"
 #include "sql_mvc.h"
+#include "rel_rel.h"
 
 #define is_ifthenelse_func(sf) (strcmp((sf)->func->base.name, "ifthenelse") == 0)
 #define is_isnull_func(sf) (strcmp((sf)->func->base.name, "isnull") == 0)
 #define is_not_func(sf) (strcmp((sf)->func->base.name, "not") == 0)
 
-extern sql_exp *rewrite_simplify_exp(mvc *sql, sql_rel *rel, sql_exp *e, int depth, int *changes);
-extern sql_rel *rewrite_simplify(mvc *sql, sql_rel *rel, int *changes);
-extern sql_rel *rel_remove_empty_select(mvc *sql, sql_rel *rel, int *changes);
+extern sql_exp *rewrite_simplify_exp(visitor *v, sql_rel *rel, sql_exp *e, int depth);
+extern sql_rel *rewrite_simplify(visitor *v, sql_rel *rel);
+extern sql_rel *rel_remove_empty_select(visitor *v, sql_rel *rel);
 
 extern sql_exp *exp_push_down(mvc *sql, sql_exp *e, sql_rel *f, sql_rel *t);
+
+extern sql_rel *rewrite_reset_used(visitor *v, sql_rel *rel);
 
 #endif /*_REL_REWRITER_H_*/

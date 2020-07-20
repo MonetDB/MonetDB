@@ -34,6 +34,7 @@ set(CMAKE_FIND_FRAMEWORK LAST)
 set(CMAKE_FIND_APPBUNDLE LAST)
 
 include(CheckCSourceCompiles REQUIRED)
+include(CheckCCompilerFlag REQUIRED)
 include(CheckIncludeFile REQUIRED)
 include(CMakePushCheckState REQUIRED)
 include(CheckStructHasMember REQUIRED)
@@ -52,6 +53,8 @@ include(monetdb-functions)
 include(monetdb-findpackages)
 include(monetdb-toolchain)
 monetdb_default_toolchain()
+#monetdb_default_compiler_options()
+
 
 include(monetdb-defines)
 monetdb_hg_revision()

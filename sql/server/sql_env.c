@@ -50,7 +50,7 @@ str
 sql_update_var(mvc *m, sql_schema *s, const char *name, ValPtr ptr)
 {
 	if (strcmp(s->base.name, "sys") == 0) {
-		if (strcmp(name, "debug") == 0 || strcmp(name, "current_timezone") == 0 || strcmp(name, "cache") == 0) {
+		if (strcmp(name, "debug") == 0 || strcmp(name, "current_timezone") == 0) {
 			VAR_UPCAST sgn = val_get_number(ptr);
 
 			if (VALisnil(ptr))
@@ -64,8 +64,6 @@ sql_update_var(mvc *m, sql_schema *s, const char *name, ValPtr ptr)
 				m->debug = (int) sgn;
 			else if (strcmp(name, "current_timezone") == 0)
 				m->timezone = (int) sgn;
-			else if (strcmp(name, "cache") == 0)
-				m->cache = (int) sgn;
 		} else if (strcmp(name, "current_schema") == 0 || strcmp(name, "current_role") == 0) {
 			if (VALisnil(ptr))
 				throw(SQL,"sql.update_var", SQLSTATE(42000) "Variable '%s.%s' cannot be NULL\n", s->base.name, name);

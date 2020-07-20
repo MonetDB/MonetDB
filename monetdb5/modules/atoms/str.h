@@ -13,8 +13,6 @@
 #include "mal_exception.h"
 #include <ctype.h>
 
-mal_export str strPrelude(void *ret);
-mal_export str strEpilogue(void *ret);
 mal_export str STRtostr(str *res, const str *src);
 mal_export str STRConcat(str *res, const str *val1, const str *val2);
 mal_export str STRLength(int *res, const str *arg1);

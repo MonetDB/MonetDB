@@ -216,6 +216,52 @@ column_find_value(sql_trans *tr, sql_column *c, oid rid)
 	return res;
 }
 
+static sqlid
+column_find_sqlid(sql_trans *tr, sql_column *c, oid rid)
+{
+	BUN q = BUN_NONE;
+	BAT *b;
+	sqlid res = -1;
+
+	b = full_column(tr, c);
+	if (b) {
+		if (rid < b->hseqbase || rid >= b->hseqbase + BATcount(b))
+			q = BUN_NONE;
+		else
+			q = rid - b->hseqbase;
+	}
+	if (q != BUN_NONE) {
+		BATiter bi = bat_iterator(b);
+
+		res = *(sqlid*)BUNtail(bi, q);
+	}
+	full_destroy(c, b);
+	return res;
+}
+
+static sqlid
+column_find_int(sql_trans *tr, sql_column *c, oid rid)
+{
+	BUN q = BUN_NONE;
+	BAT *b;
+	int res = -1;
+
+	b = full_column(tr, c);
+	if (b) {
+		if (rid < b->hseqbase || rid >= b->hseqbase + BATcount(b))
+			q = BUN_NONE;
+		else
+			q = rid - b->hseqbase;
+	}
+	if (q != BUN_NONE) {
+		BATiter bi = bat_iterator(b);
+
+		res = *(int*)BUNtail(bi, q);
+	}
+	full_destroy(c, b);
+	return res;
+}
+
 static int
 column_update_value(sql_trans *tr, sql_column *c, oid rid, void *value)
 {
@@ -646,6 +692,8 @@ bat_table_init( table_functions *tf )
 {
 	tf->column_find_row = column_find_row;
 	tf->column_find_value = column_find_value;
+	tf->column_find_sqlid = column_find_sqlid;
+	tf->column_find_int = column_find_int;
 
 	tf->column_update_value = column_update_value;
 	tf->table_insert = table_insert;

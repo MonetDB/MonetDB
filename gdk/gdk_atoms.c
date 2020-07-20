@@ -24,7 +24,6 @@
 #include "gdk.h"
 #include "gdk_time.h"
 #include "gdk_private.h"
-#include <math.h>
 
 /* the *Cmp functions return a value less than zero if the first
  * argument is less than the second; they return zero if the two

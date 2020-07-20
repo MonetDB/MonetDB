@@ -1,3 +1,11 @@
+/*
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0.  If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ *
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
+ */
+
 #ifndef _MEL_H_
 #define _MEL_H_
 
@@ -11,7 +19,7 @@
 
 typedef void* (*fptr)(void*);
 
-typedef struct mel_atom {
+typedef struct __attribute__((__designated_init__)) mel_atom {
 	char name[14];
 	char basetype[14];
 	int size;
@@ -43,31 +51,30 @@ typedef struct mel_atom {
 #define noargs		    NULL, .retc=0, .argc=0
 
 #define arg(n,t) 		{ /*.name=n,*/ .type=# t }
-#define vararg(n,t) 		{ /*.name=n,*/ .type=# t, .vargs=1 }
-#define batarg(n,t) 		{ /*.name=n,*/ .type=# t, .isbat=1 }
-#define batvararg(n,t) 		{ /*.name=n,*/ .type=# t, .isbat=1, .vargs=1 }
+#define vararg(n,t) 		{ /*.name=n,*/ .type=# t, .vargs=true }
+#define batarg(n,t) 		{ /*.name=n,*/ .type=# t, .isbat=true }
+#define batvararg(n,t) 		{ /*.name=n,*/ .type=# t, .isbat=true, .vargs=true }
 #define argany(n,a) 		{ /*.name=n,*/ .nr=a, }
-#define varargany(n,a) 		{ /*.name=n,*/ .nr=a, .vargs=1, }
-#define batargany(n,a) 		{ /*.name=n,*/ .isbat=1, .nr=a, }
-#define batvarargany(n,a) 	{ /*.name=n,*/ .isbat=1, .vargs=1, .nr=a, }
+#define varargany(n,a) 		{ /*.name=n,*/ .nr=a, .vargs=true, }
+#define batargany(n,a) 		{ /*.name=n,*/ .isbat=true, .nr=a, }
+#define batvarargany(n,a) 	{ /*.name=n,*/ .isbat=true, .vargs=true, .nr=a, }
 
-typedef struct mel_arg {
+typedef struct __attribute__((__designated_init__)) mel_arg {
 	//char *name;
 	char type[15];
-	char isbat:1,
-	     vargs:1,
-	     nr:4;
+	uint8_t isbat:1,
+		vargs:1,
+		nr:4;
 } mel_arg;
 
-typedef struct mel_func {
+typedef struct __attribute__((__designated_init__)) mel_func {
 	char mod[14];
 	char fcn[30];
 	char *cname;
-	short
-	     command:1,
-	     unsafe:1,
-	     retc:6,
-	     argc:6;
+	uint16_t command:1,
+		unsafe:1,
+		retc:6,
+		argc:6;
 //#ifdef NDEBUG
 	//char *comment;
 //#endif
@@ -88,29 +95,28 @@ typedef struct mel_func {
 #define args(RETC,ARGC,...) {__VA_ARGS__}, .retc=RETC, .argc=ARGC
 
 #define arg(n,t) 		{ /*.name=n,*/ .type=TYPE_##t }
-#define vararg(n,t) 		{ /*.name=n,*/ .type=TYPE_##t, .vargs=1 }
-#define batarg(n,t) 		{ /*.name=n,*/ .type=TYPE_##t, .isbat=1 }
-#define batvararg(n,t) 		{ /*.name=n,*/ .type=TYPE_##t, .isbat=1, .vargs=1 }
+#define vararg(n,t) 		{ /*.name=n,*/ .type=TYPE_##t, .vargs=true }
+#define batarg(n,t) 		{ /*.name=n,*/ .type=TYPE_##t, .isbat=true }
+#define batvararg(n,t) 		{ /*.name=n,*/ .type=TYPE_##t, .isbat=true, .vargs=true }
 #define argany(n,a) 		{ /*.name=n,*/ .nr=a, .type=TYPE_any }
-#define varargany(n,a) 		{ /*.name=n,*/ .nr=a, .vargs=1, .type=TYPE_any }
-#define batargany(n,a) 		{ /*.name=n,*/ .isbat=1, .nr=a, .type=TYPE_any }
-#define batvarargany(n,a) 	{ /*.name=n,*/ .isbat=1, .vargs=1, .nr=a, .type=TYPE_any }
+#define varargany(n,a) 		{ /*.name=n,*/ .nr=a, .vargs=true, .type=TYPE_any }
+#define batargany(n,a) 		{ /*.name=n,*/ .isbat=true, .nr=a, .type=TYPE_any }
+#define batvarargany(n,a) 	{ /*.name=n,*/ .isbat=true, .vargs=true, .nr=a, .type=TYPE_any }
 
-typedef struct mel_arg {
-	unsigned short  type:8,
-			isbat:1,
-	     		vargs:1,
-	     		nr:4;
+typedef struct __attribute__((__designated_init__)) mel_arg {
+	uint16_t type:8,
+		nr:4,
+		isbat:1,
+		vargs:1;
 } mel_arg;
 
-typedef struct mel_func {
+typedef struct __attribute__((__designated_init__)) mel_func {
 	char mod[14];
 	char fcn[30];
-	short
-	     command:1,
-	     unsafe:1,
-	     retc:6,
-	     argc:6;
+	uint16_t command:1,
+		unsafe:1,
+		retc:6,
+		argc:6;
 //#ifdef NDEBUG
 	//char *comment;
 //#endif
@@ -122,18 +128,18 @@ typedef struct mel_func {
 
 typedef str(*mel_init)(void);
 
-typedef struct mel_func_arg {
-	unsigned short  type:8,
-		 	isbat:1,
-	     		vargs:1,
-	     		nr:4;
+typedef struct __attribute__((__designated_init__)) mel_func_arg {
+	uint16_t type:8,
+		nr:4,
+		isbat:1,
+		vargs:1;
 } mel_func_arg;
 
 /* var arg of arguments of type mel_func_arg */
 int melFunction(bool command, char *mod, char *fcn, fptr imp, char *fname, bool unsafe, char *comment, int retc, int argc, ...);
 
 #ifdef SPECS
-typedef struct mal_spec{
+typedef struct __attribute__((__designated_init__)) mal_spec{
 	fptr imp;
 	char *mal;
 } mal_spec;

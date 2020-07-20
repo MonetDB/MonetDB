@@ -61,6 +61,8 @@ MANUALcreateOverview(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			for (j = 0; j < MAXSCOPE; j++) {
 				if (s->space[j]) {
 					for (t = s->space[j]; t != NULL; t = t->peer) {
+						if (t->def->stmt[0]->fcnname[0] == '#')
+							continue;
 						(void) fcnDefinition(t->def, getInstrPtr(t->def, 0), buf, TRUE, buf, sizeof(buf));
 						tt = strstr(buf, "address ");
 						if (tt) {

@@ -77,6 +77,7 @@ extern sql_rel *rel_inplace_groupby(sql_rel *rel, sql_rel *l, list *groupbyexps,
 extern int rel_convert_types(mvc *sql, sql_rel *ll, sql_rel *rr, sql_exp **L, sql_exp **R, int scale_fixing, check_type tpe);
 extern sql_rel *rel_setop(sql_allocator *sa, sql_rel *l, sql_rel *r, operator_type setop);
 extern sql_rel *rel_setop_check_types(mvc *sql, sql_rel *l, sql_rel *r, list *ls, list *rs, operator_type op);
+extern void rel_setop_set_exps(mvc *sql, sql_rel *rel, list *exps);
 extern sql_rel *rel_crossproduct(sql_allocator *sa, sql_rel *l, sql_rel *r, operator_type join);
 
 /* in case e is an constant and rel is a simple project of only e, free rel */
@@ -124,14 +125,24 @@ extern sql_rel *rel_zero_or_one(mvc *sql, sql_rel *rel, exp_kind ek);
 extern list *rel_dependencies(mvc *sql, sql_rel *r);
 extern sql_exp * exps_find_match_exp(list *l, sql_exp *e);
 
-typedef sql_exp *(*exp_rewrite_fptr)(mvc *sql, sql_rel *rel, sql_exp *e, int depth /* depth of the nested expression */, int *changes);
-extern sql_rel *rel_exp_visitor_topdown(mvc *sql, sql_rel *rel, exp_rewrite_fptr exp_rewriter, int *changes);
-extern sql_rel *rel_exp_visitor_bottomup(mvc *sql, sql_rel *rel, exp_rewrite_fptr exp_rewriter, int *changes);
+typedef struct visitor {
+	int changes;
+	int depth;		/* depth of the current relation */
+	sql_rel *parent;
+	mvc *sql;
+} visitor;
 
-typedef sql_rel *(*rel_rewrite_fptr)(mvc *sql, sql_rel *rel, int *changes);
-extern sql_rel *rel_visitor_topdown(mvc *sql, sql_rel *rel, rel_rewrite_fptr rel_rewriter, int *changes);
-extern sql_rel *rel_visitor_bottomup(mvc *sql, sql_rel *rel, rel_rewrite_fptr rel_rewriter, int *changes);
+typedef sql_exp *(*exp_rewrite_fptr)(visitor *v, sql_rel *rel, sql_exp *e, int depth /* depth of the nested expression */);
+extern sql_rel *rel_exp_visitor_topdown(visitor *v, sql_rel *rel, exp_rewrite_fptr exp_rewriter, bool relations_topdown);
+extern sql_rel *rel_exp_visitor_bottomup(visitor *v, sql_rel *rel, exp_rewrite_fptr exp_rewriter, bool relations_topdown);
+
+extern list *exps_exp_visitor_topdown(visitor *v, sql_rel *rel, list *exps, int depth, exp_rewrite_fptr exp_rewriter, bool relations_topdown);
+extern list *exps_exp_visitor_bottomup(visitor *v, sql_rel *rel, list *exps, int depth, exp_rewrite_fptr exp_rewriter, bool relations_topdown);
 
 extern int exps_have_analytics(mvc *sql, list *exps);
+
+typedef sql_rel *(*rel_rewrite_fptr)(visitor *v, sql_rel *rel);
+extern sql_rel *rel_visitor_topdown(visitor *v, sql_rel *rel, rel_rewrite_fptr rel_rewriter);
+extern sql_rel *rel_visitor_bottomup(visitor *v, sql_rel *rel, rel_rewrite_fptr rel_rewriter);
 
 #endif /* _REL_REL_H_ */

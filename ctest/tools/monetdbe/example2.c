@@ -22,7 +22,7 @@ main(void)
 #ifdef HAVE_HGE
     monetdbe_options opts = { .have_hge = 1 };
 #else
-    monetdbe_options opts = { };
+    monetdbe_options opts = { 0 };
 #endif
 
 	// second argument is a string for the db directory or NULL for in-memory mode

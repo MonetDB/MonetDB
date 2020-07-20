@@ -14,6 +14,14 @@ MAPI  = (monetdb) /var/tmp/mtest-27483/.s.monetdb.35395
 QUERY = select interval '1' year = interval '12' second;
 ERROR = !types month_interval(1,0) and sec_interval(13,0) are not equal
 CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-524170/.s.monetdb.38467
+QUERY = select cast( 1 as interval year ); --error
+ERROR = !types tinyint(1,0) and month_interval(1,0) are not equal
+CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-524170/.s.monetdb.38467
+QUERY = select cast( 1 as interval day ); --error
+ERROR = !types tinyint(1,0) and sec_interval(4,0) are not equal
+CODE  = 42000
 
 # 14:19:19 >  
 # 14:19:19 >  Done.

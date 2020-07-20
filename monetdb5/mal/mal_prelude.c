@@ -10,7 +10,7 @@
  * This module takes the statically defined modules, atoms, commands and patterns
  * and populate the internal structures.
  *
-*/
+ */
 
 #include "monetdb_config.h"
 #include "mal_import.h"
@@ -39,10 +39,10 @@ mal_startup(void)
 }
 
 /* all MAL related functions register themselves
-* the order in which these registrations happen is significant
-* because there may be dependencies among the definitions.
-* For example, you better know the atoms before you use them
-*/
+ * the order in which these registrations happen is significant
+ * because there may be dependencies among the definitions.
+ * For example, you better know the atoms before you use them
+ */
 
 void
 mal_module2(str name, mel_atom *atoms, mel_func *funcs, mel_init initfunc, const char *code)
@@ -80,16 +80,16 @@ initModule(Client c, char *name)
 		if (s) {
 			InstrPtr pci = getInstrPtr(s->def, 0);
 
-               		if (pci && pci->token == COMMANDsymbol && pci->argc == 1) {
-                       		int ret = 0;
+			if (pci && pci->token == COMMANDsymbol && pci->argc == 1) {
+				int ret = 0;
 
-                       		assert(pci->fcn != NULL);
-                       		(*pci->fcn)(&ret);
-                       		(void)ret;
-               		} else if (pci && pci->token == PATTERNsymbol) {
-                       		assert(pci->fcn != NULL);
-                       		(*pci->fcn)(c, NULL, NULL, NULL);
-               		}
+				assert(pci->fcn != NULL);
+				(*pci->fcn)(&ret);
+				(void)ret;
+			} else if (pci && pci->token == PATTERNsymbol) {
+				assert(pci->fcn != NULL);
+				(*pci->fcn)(c, NULL, NULL, NULL);
+			}
 		}
 	}
 }
@@ -163,11 +163,13 @@ makeArgument(MalBlkPtr mb, mel_arg *a, int *idx)
 {
 	int tpe = TYPE_any;//, l;
 
+	if (
 #ifdef MEL_STR
-	if (!a->type[0]) {
+		!a->type[0]
 #else
-	if (a->type == TYPE_any) {
+		a->type == TYPE_any
 #endif
+		) {
 		if (a->isbat)
 			tpe = newBatType(tpe);
 		if (a->nr > 0)
@@ -182,14 +184,14 @@ makeArgument(MalBlkPtr mb, mel_arg *a, int *idx)
 			tpe = newBatType(tpe);
 	}
 	/*
-	if (a->name){
-		*idx = findVariableLength(mb, a->name, l = strlen(a->name));
-		if( *idx != -1)
-			throw(LOADER, "addFunctions", "Duplicate argument name %s", a->name);
-		*idx = newVariable(mb, a->name, l, tpe);
-	} else
+	  if (a->name){
+	  *idx = findVariableLength(mb, a->name, l = strlen(a->name));
+	  if( *idx != -1)
+	  throw(LOADER, "addFunctions", "Duplicate argument name %s", a->name);
+	  *idx = newVariable(mb, a->name, l, tpe);
+	  } else
 	*/
-		*idx = newTmpVariable(mb, tpe);
+	*idx = newTmpVariable(mb, tpe);
 	return MAL_SUCCEED;
 }
 
@@ -249,11 +251,11 @@ addFunctions(mel_func *fcn){
 			if (a->nr > 0) {
 				if (a->isbat)
 					tpe = newBatType(tpe);
-                		setPolymorphic(sig, tpe, TRUE);
+				setPolymorphic(sig, tpe, TRUE);
 			}
 			if (a->vargs) {
-        			sig->varargs |= VARRETS;
-                		setPolymorphic(sig, TYPE_any, TRUE);
+				sig->varargs |= VARRETS;
+				setPolymorphic(sig, TYPE_any, TRUE);
 			}
 		}
 		/* add the arguments */
@@ -270,11 +272,11 @@ addFunctions(mel_func *fcn){
 			if (a->nr > 0) {
 				if (a->isbat)
 					tpe = newBatType(tpe);
-                		setPolymorphic(sig, tpe, TRUE);
+				setPolymorphic(sig, tpe, TRUE);
 			}
 			if (a->vargs) {
-        			sig->varargs |= VARARGS;
-                		setPolymorphic(sig, TYPE_any, TRUE);
+				sig->varargs |= VARARGS;
+				setPolymorphic(sig, TYPE_any, TRUE);
 			}
 		}
 		assert(sig->retc > 0);
@@ -356,11 +358,11 @@ melFunction(bool command, char *mod, char *fcn, fptr imp, char *fname, bool unsa
 		if (a.nr > 0) {
 			if (a.isbat)
 				tpe = newBatType(tpe);
-               		setPolymorphic(sig, tpe, TRUE);
+			setPolymorphic(sig, tpe, TRUE);
 		}
 		if (a.vargs) {
-        		sig->varargs |= VARRETS;
-               		setPolymorphic(sig, TYPE_any, TRUE);
+			sig->varargs |= VARRETS;
+			setPolymorphic(sig, TYPE_any, TRUE);
 		}
 	}
 	/* add the arguments */
@@ -374,11 +376,11 @@ melFunction(bool command, char *mod, char *fcn, fptr imp, char *fname, bool unsa
 		if (a.nr > 0) {
 			if (a.isbat)
 				tpe = newBatType(tpe);
-                	setPolymorphic(sig, tpe, TRUE);
+			setPolymorphic(sig, tpe, TRUE);
 		}
 		if (a.vargs) {
-        		sig->varargs |= VARARGS;
-                	setPolymorphic(sig, TYPE_any, TRUE);
+			sig->varargs |= VARARGS;
+			setPolymorphic(sig, TYPE_any, TRUE);
 		}
 	}
 	assert(sig->retc > 0);
@@ -412,8 +414,8 @@ malPrelude(Client c, int listing, int embedded)
 			msg = addFunctions(mel_module_funcs[i]);
 			if (!msg && mel_module_code[i]) /* some modules may also have some function definitions */
 				msg = malIncludeString(c, mel_module_name[i], (str)mel_module_code[i], listing, NULL);
-                       	if (msg)
-                               	return msg;
+			if (msg)
+				return msg;
 
 			/* skip sql should be last to startup and mapi in the embedded version */
 			if (strcmp(mel_module_name[i], "sql") == 0 || (embedded && strcmp(mel_module_name[i], "mapi") == 0))

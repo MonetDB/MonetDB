@@ -69,7 +69,6 @@ cmp_print(mvc *sql, stream *fout, int cmp)
 	case cmp_all:
 	case cmp_project:
 	case cmp_joined:
-	case cmp_left:
 	case cmp_left_project:
 				r = "inner"; break;
 	}
@@ -99,13 +98,12 @@ exp_print(mvc *sql, stream *fout, sql_exp *e, int depth, list *refs, int comma, 
 		} else if (e->flag & PSM_VAR) {
 			// todo output table def (from e->f)
 			const char *rname = exp_relname(e);
-			char *type_str = e->f ? NULL : sql_subtype_string(exp_subtype(e));
+			char *type_str = e->f ? NULL : sql_subtype_string(sql->ta, exp_subtype(e));
 			int level = GET_PSM_LEVEL(e->flag);
 			mnstr_printf(fout, "declare ");
 			if (rname)
 				mnstr_printf(fout, "\"%s\".", rname);
 			mnstr_printf(fout, "\"%s\" %s FRAME %d ", exp_name(e), type_str ? type_str : "", level);
-			_DELETE(type_str);
 			alias = 0;
 		} else if (e->flag & PSM_RETURN) {
 			int level = GET_PSM_LEVEL(e->flag);
@@ -133,11 +131,10 @@ exp_print(mvc *sql, stream *fout, sql_exp *e, int depth, list *refs, int comma, 
 	 	break;
 	}
 	case e_convert: {
-		char *to_type = sql_subtype_string(exp_subtype(e));
+		char *to_type = sql_subtype_string(sql->ta, exp_subtype(e));
 		mnstr_printf(fout, "%s[", to_type);
 		exp_print(sql, fout, e->l, depth, refs, 0, 0);
 		mnstr_printf(fout, "]");
-		_DELETE(to_type);
 	 	break;
 	}
 	case e_atom: {
@@ -151,7 +148,7 @@ exp_print(mvc *sql, stream *fout, sql_exp *e, int depth, list *refs, int comma, 
 					isReplicaTable(t)?"replica table":"table",
 					t->base.name);
 			} else {
-				char *t = sql_subtype_string(atom_type(a));
+				char *t = sql_subtype_string(sql->ta, atom_type(a));
 				if (a->isnull)
 					mnstr_printf(fout, "%s \"NULL\"", t);
 				else {
@@ -162,7 +159,6 @@ exp_print(mvc *sql, stream *fout, sql_exp *e, int depth, list *refs, int comma, 
 						mnstr_printf(fout, "%s \"%s\"", t, s);
 					GDKfree(s);
 				}
-				_DELETE(t);
 			}
 		} else { /* variables */
 			if (e->r) { /* named parameters and declared variables */
@@ -285,9 +281,8 @@ exp_print(mvc *sql, stream *fout, sql_exp *e, int depth, list *refs, int comma, 
 		char *pv;
 
 		for (; p; p = p->p) {
-			pv = propvalue2string(p);
+			pv = propvalue2string(sql->ta, p);
 			mnstr_printf(fout, " %s %s", propkind2string(p), pv);
-			GDKfree(pv);
 		}
 	}
 	if (exp_name(e) && alias) {
@@ -588,9 +583,8 @@ rel_print_(mvc *sql, stream  *fout, sql_rel *rel, int depth, list *refs, int dec
 		char *pv;
 
 		for (; p; p = p->p) {
-			pv = propvalue2string(p);
+			pv = propvalue2string(sql->ta, p);
 			mnstr_printf(fout, " %s %s", propkind2string(p), pv);
-			GDKfree(pv);
 		}
 	}
 	//mnstr_printf(fout, " %p ", rel);
@@ -1083,18 +1077,18 @@ exp_read(mvc *sql, sql_rel *lrel, sql_rel *rrel, list *pexps, char *r, int *pos,
 	}
 
 	if (!exp && b != e) { /* simple ident */
-		var_cname = b;
-		if (b[0] == 'A' && isdigit((unsigned char) b[1])) {
-			char *e2;
-			int nr = strtol(b+1,&e2,10);
-
-			if (e == e2 && nr < sql->argc) {
-				atom *a = sql->args[nr];
-
-				exp = exp_atom_ref(sql->sa, nr, &a->tpe);
+		/*
+		if (!exp) {
+			old = *e;
+			*e = 0;
+			if (stack_find_var(sql, b)) {
+				sql_subtype *tpe = stack_find_type(sql, b);
+				int frame = stack_find_frame(sql, b);
+				exp = exp_param(sql->sa, sa_strdup(sql->sa, b), tpe, frame);
 			}
-			assert(exp);
+			*e = old;
 		}
+		*/
 		if (!exp && lrel) {
 			int amb = 0;
 
@@ -1810,7 +1804,7 @@ rel_read(mvc *sql, char *r, int *pos, list *refs)
 		if (!(exps = read_exps(sql, NULL, NULL, NULL, r, pos, '[', 0)))
 			return NULL;
 		rel = rel_setop(sql->sa, lrel, rrel, j);
-		rel->exps = exps;
+		rel_setop_set_exps(sql, rel, exps);
 		if (rel_set_types(sql, rel) < 0)
 			return sql_error(sql, -1, SQLSTATE(42000) "Setop: number of expressions don't match\n");
 		set_processed(rel);

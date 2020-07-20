@@ -11,9 +11,7 @@ if(LIBR_FOUND)
 
   target_sources(rapi
     PRIVATE
-    rapi.c
-    rapi.h
-    converters.c.h)
+    rapi.c)
 
   target_include_directories(rapi
     PRIVATE

@@ -69,8 +69,8 @@ static void query_table_test(void **state) {
 
 	assert_int_equal((int) result->ncols, 2);
 
-	assert_true(CHECK_COLUMN(result, 0, int16_t, {{4}}));
-	assert_true(CHECK_COLUMN(result, 1, int32_t, {{60}}));
+	assert_true(CHECK_COLUMN(result, 0, int16_t, 4));
+	assert_true(CHECK_COLUMN(result, 1, int32_t, 60));
 
 	err = monetdbe_cleanup_result(mdbe, result);
 
@@ -91,14 +91,14 @@ static void query_table_test2(void **state) {
 
 	int a;
 
-	assert_true(CHECK_COLUMN(result, 0, int16_t, {{(a=3,a+1)}, {6}, {5}, Null}));
-	assert_true(CHECK_COLUMN(result, 1, int32_t, {{40}, {60}, {50}, Null}));
-	assert_true(CHECK_COLUMN(result, 2, int64_t, {{400}, {600}, {500}, Null}));
-	assert_true(CHECK_COLUMN(result, 3, str, {{"aaa"}, {"ccc"}, {"bbb"}, Null}));
-	assert_true(CHECK_COLUMN(result, 4, blob, {{{3, "\xaa\xaa\xaa"}}, {{3, "\xcc\xcc\xcc"}}, {{3, "\xbb\xbb\xbb"}}, Null}));
-	assert_true(CHECK_COLUMN(result, 5, date, {{{17, 6, 2020}}, {{17, 6, 2022}}, {{17, 6, 2021}}, Null}));
-	assert_true(CHECK_COLUMN(result, 6, time, {{{0, 0, 0, 12}}, {{0, 0, 0, 14}}, {{0, 0, 0, 13}}, Null}));
-	assert_true(CHECK_COLUMN(result, 7, timestamp, {{{{17, 6, 2020}, {0, 0, 0, 12}}}, {{{17, 6, 2022}, {0, 0, 0, 14}}}, {{{17, 6, 2021}, {0, 0, 0, 13}}}, Null}));
+	assert_true(CHECK_COLUMN(result, 0, int16_t, a=4, 6, 5, Null));
+	assert_true(CHECK_COLUMN(result, 1, int32_t, 40, 60, 50, Null));
+	assert_true(CHECK_COLUMN(result, 2, int64_t, 400, 600, 500, Null));
+	assert_true(CHECK_COLUMN(result, 3, str, "aaa", "ccc", "bbb", Null));
+	assert_true(CHECK_COLUMN(result, 4, blob, (3, "\xaa\xaa\xaa"), (3, "\xcc\xcc\xcc"), (3, "\xbb\xbb\xbb"), Null));
+	assert_true(CHECK_COLUMN(result, 5, date, (17, 6, 2020), (17, 6, 2022), (17, 6, 2021), Null));
+	assert_true(CHECK_COLUMN(result, 6, time, (0, 0, 0, 12), (0, 0, 0, 14), (0, 0, 0, 13), Null));
+	assert_true(CHECK_COLUMN(result, 7, timestamp, ((17, 6, 2020), (0, 0, 0, 12)), ((17, 6, 2022), (0, 0, 0, 14)), ((17, 6, 2021), (0, 0, 0, 13)), Null));
 
 	err = monetdbe_cleanup_result(mdbe, result);
 

@@ -25,6 +25,8 @@
 #include <fcntl.h>
 
 #include "monet_options.h"
+#include "stream.h"
+#include "stream_socket.h"
 #include "msabaoth.h"
 #include "mcrypt.h"
 #include "utils/utils.h"
@@ -751,6 +753,55 @@ static void ctl_handle_client(
 					}
 					free(dest);
 				}
+			} else if (strcmp(p, "snapshot stream") == 0) {
+
+				Mfprintf(_mero_ctlout, "Start streaming snapshot of database '%s'\n", q);
+
+				stream *wrapper = NULL;
+				stream *bs = NULL;
+				stream *s = NULL; // aliases either bs or fout
+				do {
+					if (fout) {
+						if (!isa_block_stream(fout)) {
+							e = newErr("internal error: expected fout to be a block stream");
+							break;
+						}
+						s = fout;
+					} else {
+						wrapper = socket_wstream(msgsock, "sockwrapper");
+						if (!wrapper) {
+							e = newErr("internal error: could not create sock wrapper");
+							break;
+						}
+						bs = block_stream(wrapper);
+						if (!bs) {
+							e = newErr("internal error: could not wrap block_stream");
+							break;
+						}
+						wrapper = NULL; // will be cleanup through bs
+						s = bs;
+						//
+					}
+					e = snapshot_database_stream(q, s);
+					mnstr_flush(s);
+				} while (0);
+				if (bs)
+					mnstr_destroy(bs);
+				if (wrapper)
+					mnstr_destroy(wrapper);
+				if (e != NULL) {
+					Mfprintf(_mero_ctlerr, "%s: streaming snapshot database '%s' failed: %s",
+						origin, q, getErrMsg(e));
+					len = snprintf(buf2, sizeof(buf2), "%s\n", getErrMsg(e));
+					send_client("!");
+					freeErr(e);
+				} else {
+					len = snprintf(buf2, sizeof(buf2), "OK\n");
+					send_client("=");
+					Mfprintf(_mero_ctlout, "%s: completed streaming snapshot of database '%s'\n",
+						origin, q);
+				}
+				break;
 			} else if (strncmp(p, "snapshot restore adhoc ", strlen("snapshot restore adhoc ")) == 0) {
 				char *source = p + strlen("snapshot restore adhoc ");
 				Mfprintf(_mero_ctlout, "Start restore snapshot of database '%s' from file '%s'\n", q, source);

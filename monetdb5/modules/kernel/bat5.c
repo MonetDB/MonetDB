@@ -201,7 +201,7 @@ BKCappend_cand_force_wrap(bat *r, const bat *bid, const bat *uid, const bat *sid
 		BBPunfix(b->batCacheid);
 		throw(MAL, "bat.append", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 	}
-	if (sid && *sid && (s = BATdescriptor(*sid)) == NULL) {
+	if (sid && !is_bat_nil(*sid) && (s = BATdescriptor(*sid)) == NULL) {
 		BBPunfix(b->batCacheid);
 		BBPunfix(u->batCacheid);
 		throw(MAL, "bat.append", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);

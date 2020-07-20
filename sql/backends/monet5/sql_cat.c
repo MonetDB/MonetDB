@@ -472,7 +472,7 @@ create_trigger(mvc *sql, char *sname, char *tname, char *triggername, int time, 
 		sql_rel *r = NULL;
 		sql_allocator *sa = sql->sa;
 
-		sql->sa = sa_create();
+		sql->sa = sa_create(sql->pa);
 		if (!sql->sa)
 			throw(SQL, "sql.catalog",SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		buf = sa_strdup(sql->sa, query);
@@ -805,7 +805,7 @@ create_func(mvc *sql, char *sname, char *fname, sql_func *f)
 		sql_allocator *sa = sql->sa;
 
 		assert(nf->query);
-		if (!(sql->sa = sa_create()))
+		if (!(sql->sa = sa_create(sql->pa)))
 			throw(SQL, "sql.create_func", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		if (!(buf = sa_strdup(sql->sa, nf->query)))
 			throw(SQL, "sql.create_func", SQLSTATE(HY013) MAL_MALLOC_FAIL);

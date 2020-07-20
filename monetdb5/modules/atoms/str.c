@@ -2935,7 +2935,7 @@ UTF8_assert(const char *s)
 #define UTF8_assert(s)		((void) 0)
 #endif
 
-str
+static str
 strPrelude(void *ret)
 {
 	(void) ret;
@@ -2984,7 +2984,7 @@ strPrelude(void *ret)
 	throw(MAL, "str.prelude", GDK_EXCEPTION);
 }
 
-str
+static str
 strEpilogue(void *ret)
 {
 	(void) ret;
@@ -3156,6 +3156,59 @@ UTF8_strtail(const char *s, int pos)
 	return (str) s;
 }
 
+static inline str
+UTF8_strncpy(char *restrict dst, const char *restrict s, int n)
+{
+	UTF8_assert(s);
+	while (*s && n) {
+		if ((*s & 0xF8) == 0xF0) {
+			/* 4 byte UTF-8 sequence */
+			*dst++ = *s++;
+			*dst++ = *s++;
+			*dst++ = *s++;
+			*dst++ = *s++;
+		} else if ((*s & 0xF0) == 0xE0) {
+			/* 3 byte UTF-8 sequence */
+			*dst++ = *s++;
+			*dst++ = *s++;
+			*dst++ = *s++;
+		} else if ((*s & 0xE0) == 0xC0) {
+			/* 2 byte UTF-8 sequence */
+			*dst++ = *s++;
+			*dst++ = *s++;
+		} else {
+			/* 1 byte UTF-8 "sequence" */
+			*dst++ = *s++;
+		}
+		n--;
+	}
+	*dst = '\0';
+	return dst;
+}
+
+static inline str
+UTF8_offset(char *restrict s, int n)
+{
+	UTF8_assert(s);
+	while (*s && n) {
+		if ((*s & 0xF8) == 0xF0) {
+			/* 4 byte UTF-8 sequence */
+			s += 4;
+		} else if ((*s & 0xF0) == 0xE0) {
+			/* 3 byte UTF-8 sequence */
+			s += 3;
+		} else if ((*s & 0xE0) == 0xC0) {
+			/* 2 byte UTF-8 sequence */
+			s += 2;
+		} else {
+			/* 1 byte UTF-8 "sequence" */
+			s++;
+		}
+		n--;
+	}
+	return s;
+}
+
 static str
 convertCase(BAT *from, BAT *to, str *res, const char *src, const char *malfunc)
 {
@@ -3237,7 +3290,7 @@ convertCase(BAT *from, BAT *to, str *res, const char *src, const char *malfunc)
 /*
  * The SQL like function return a boolean
  */
-static int
+static bool
 STRlike(const char *s, const char *pat, const char *esc)
 {
 	const char *t, *p;
@@ -3247,7 +3300,7 @@ STRlike(const char *s, const char *pat, const char *esc)
 		if (esc && *p == *esc) {
 			p++;
 			if (*p != *t)
-				return FALSE;
+				return false;
 			t++;
 		} else if (*p == '_')
 			t++;
@@ -3256,34 +3309,40 @@ STRlike(const char *s, const char *pat, const char *esc)
 			while (*p == '%')
 				p++;
 			if (*p == 0)
-				return TRUE;	/* tail is acceptable */
+				return true;	/* tail is acceptable */
 			for (; *p && *t; t++)
 				if (STRlike(t, p, esc))
-					return TRUE;
+					return true;
 			if (*p == 0 && *t == 0)
-				return TRUE;
-			return FALSE;
+				return true;
+			return false;
 		} else if (*p == *t)
 			t++;
 		else
-			return FALSE;
+			return false;
 	}
 	if (*p == '%' && *(p + 1) == 0)
-		return TRUE;
+		return true;
 	return *t == 0 && *p == 0;
 }
 
 str
 STRlikewrap(bit *ret, const str *s, const str *pat, const str *esc)
 {
-	*ret = STRlike(*s, *pat, *esc);
+	if (strNil(*s) || strNil(*pat) || strNil(*esc))
+		*ret = bit_nil;
+	else
+		*ret = (bit) STRlike(*s, *pat, *esc);
 	return MAL_SUCCEED;
 }
 
 str
 STRlikewrap2(bit *ret, const str *s, const str *pat)
 {
-	*ret = STRlike(*s, *pat, NULL);
+	if (strNil(*s) || strNil(*pat))
+		*ret = bit_nil;
+	else
+		*ret = (bit) STRlike(*s, *pat, NULL);
 	return MAL_SUCCEED;
 }
 
@@ -3568,7 +3627,7 @@ STRsplitpart(str *res, str *haystack, str *needle, int *field)
 {
 	size_t len;
 	int f = *field;
-	char *p;
+	char *p = NULL;
 	const char *s = *haystack;
 	const char *s2 = *needle;
 
@@ -3584,10 +3643,11 @@ STRsplitpart(str *res, str *haystack, str *needle, int *field)
 	}
 
 	len = strlen(s2);
-
-	while ((p = strstr(s, s2)) != NULL && f > 1) {
-		s = p + len;
-		f--;
+	if (len) {
+		while ((p = strstr(s, s2)) != NULL && f > 1) {
+			s = p + len;
+			f--;
+		}
 	}
 
 	if (f != 1) {
@@ -4122,20 +4182,18 @@ STRlocate(int *ret, const str *needle, const str *haystack)
 }
 
 str
-STRinsert(str *ret, const str *s, const int *start, const int *l, const str *s2)
+STRinsert(str *ret, const str *input, const int *start, const int *nchars, const str *input2)
 {
-	str v;
-	int strt = *start;
-	if (strNil(*s) || strNil(*s2) || is_int_nil(*start) || is_int_nil(*l)) {
+	str v, s = *input, s2 = *input2;
+	int strt = *start, l = *nchars;
+
+	if (strNil(s) || strNil(s2) || is_int_nil(strt) || is_int_nil(l)) {
 		if ((*ret = GDKstrdup(str_nil)) == NULL)
 			throw(MAL, "str.insert", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	} else {
-		size_t l1 = strlen(*s);
-		size_t l2 = strlen(*s2);
+		size_t l1 = UTF8_strlen(s);
 
-		if (l1 + l2 + 1 >= INT_MAX)
-			throw(MAL, "str.insert", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-		if (*l < 0)
+		if (l < 0)
 			throw(MAL, "str.insert", SQLSTATE(42000) "The number of characters for insert function must be non negative");
 		if (strt < 0) {
 			if ((size_t) -strt <= l1)
@@ -4145,15 +4203,14 @@ STRinsert(str *ret, const str *s, const int *start, const int *l, const str *s2)
 		}
 		if ((size_t) strt > l1)
 			strt = (int) l1;
-		v = *ret = GDKmalloc(strlen(*s) + strlen(*s2) + 1);
+		v = *ret = GDKmalloc(strlen(s) + strlen(s2) + 1);
 		if (v == NULL)
 			throw(MAL, "str.insert", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		if (strt > 0)
-			strncpy(v, *s, strt);
-		v[strt] = 0;
-		strcpy(v + strt, *s2);
-		if (strt + *l < (int) l1)
-			strcat(v, *s + strt + *l);
+			v = UTF8_strncpy(v, s, strt);
+		strcpy(v, s2);
+		if (strt + l < (int) l1)
+			strcat(v, UTF8_offset(s, strt + l));
 	}
 	return MAL_SUCCEED;
 }

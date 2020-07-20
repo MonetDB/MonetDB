@@ -390,8 +390,12 @@ AUTHinitTables(const char *passwd) {
 		if (passwd == NULL)
 			passwd = "monetdb";	/* default password */
 		pw = mcrypt_BackendSum(passwd, strlen(passwd));
-		if(!pw)
-			throw(MAL, "initTables", SQLSTATE(42000) "Crypt backend hash not found");
+		if(!pw) {
+			if (!GDKembedded())
+				throw(MAL, "initTables", SQLSTATE(42000) "Crypt backend hash not found");
+			else
+				pw = strdup(passwd);
+		}
 		msg = AUTHaddUser(&uid, NULL, "monetdb", pw);
 		free(pw);
 		if (msg)
@@ -472,8 +476,7 @@ AUTHcheckCredentials(
 	if (username[0] == '.' && master_password != NULL && master_password[0] != '\0') {
 		// first encrypt the master password as if we've just found it
 		// in the password store
-		assert(strcmp(MONETDB5_PASSWDHASH, "SHA512") == 0);
-		str encrypted = mcrypt_SHA512Sum(master_password, strlen(master_password));
+		str encrypted = mcrypt_BackendSum(master_password, strlen(master_password));
 		if (encrypted == NULL)
 			throw(MAL, "checkCredentials", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		hash = mcrypt_hashPassword(algo, encrypted, challenge);
@@ -990,6 +993,8 @@ AUTHverifyPassword(const char *passwd)
 
 	return(MAL_SUCCEED);
 #else
+	if (GDKembedded())
+		return(MAL_SUCCEED);
 	(void) passwd;
 	throw(MAL, "verifyPassword", "Unknown backend hash algorithm: %s",
 		  MONETDB5_PASSWDHASH);

@@ -13,10 +13,10 @@
 #include "gdk_atoms.h"
 
 static MT_Lock segs_lock = MT_LOCK_INITIALIZER("segs_lock");
-static MT_Lock destroy_lock = MT_LOCK_INITIALIZER("destroy_lock");
 #define NR_TABLE_LOCKS 64
 static MT_Lock table_locks[NR_TABLE_LOCKS]; /* set of locks to protect table changes (claim) */
 
+static MT_Lock destroy_lock = MT_LOCK_INITIALIZER("destroy_lock");
 storage *tobe_destroyed_dbat = NULL;
 sql_delta *tobe_destroyed_delta = NULL;
 

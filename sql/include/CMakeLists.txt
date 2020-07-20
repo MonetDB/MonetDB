@@ -13,7 +13,8 @@ set(sqlinclude_public_headers
   sql_list.h
   sql_mem.h
   sql_relation.h
-  sql_stack.h)
+  sql_stack.h
+  exception_buffer.h)
 
 add_library(sqlinclude INTERFACE)
 

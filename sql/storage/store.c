@@ -201,6 +201,7 @@ table_reset_parent(sql_table *t, sql_trans *tr)
 			if (i->po)
 				idx_destroy(i->po);
 			i->po = NULL;
+			i->base.wtime = 1;
 		}
 	}
 	assert(t->idxs.dset == NULL);
@@ -213,13 +214,16 @@ table_reset_parent(sql_table *t, sql_trans *tr)
 			if (c->po)
 				column_destroy(c->po);
 			c->po = NULL;
+			c->base.wtime = 1;
 		}
 	}
 	assert(t->columns.dset == NULL);
 	if (p)
 		table_destroy(p);
-	if (isTable(t))
+	if (isTable(t)) {
 		assert(t->base.allocated);
+	    t->base.wtime = 1;
+	}
 }
 
 void
@@ -663,6 +667,7 @@ load_column(sql_trans *tr, sql_table *t, oid rid)
 		store_funcs.create_col(tr, c);
 	c->sorted = sql_trans_is_sorted(tr, c);
 	c->dcount = 0;
+	c->base.stime = c->base.wtime = tr->wstime;
 	TRC_DEBUG(SQL_STORE, "Load column: %s\n", c->base.name);
 	return c;
 }
@@ -839,6 +844,7 @@ load_table(sql_trans *tr, sql_schema *s, sqlid tid, subrids *nrs)
 	t->cleared = 0;
 	v = table_funcs.column_find_value(tr, find_sql_column(tables, "access"),rid);
 	t->access = *(sht*)v;	_DELETE(v);
+	t->base.stime = t->base.wtime = tr->wstime;
 
 	t->pkey = NULL;
 	t->s = s;
@@ -1339,7 +1345,7 @@ load_schema(sql_trans *tr, oid rid)
 }
 
 static sql_trans *
-create_trans(sql_allocator *sa, backend_stack stk)
+create_trans(sql_allocator *sa)
 {
 	sql_trans *t = ZNEW(sql_trans);
 
@@ -1355,7 +1361,6 @@ create_trans(sql_allocator *sa, backend_stack stk)
 	t->status = 0;
 
 	t->parent = NULL;
-	t->stk = stk;
 
 	cs_new(&t->schemas, t->sa, (fdestroy) &schema_destroy);
 	return t;
@@ -1532,6 +1537,7 @@ bootstrap_create_column(sql_trans *tr, sql_table *t, char *name, sqlid id, char 
 	col->unique = 0;
 	col->storage_type = NULL;
 	cs_add(&t->columns, col, TR_NEW);
+	col->base.wtime = col->t->base.wtime = col->t->s->base.wtime = tr->wtime = tr->wstime;
 
 	if (isTable(col->t))
 		store_funcs.create_col(tr, col);
@@ -1712,6 +1718,7 @@ bootstrap_create_table(sql_trans *tr, sql_schema *s, char *name, sqlid id)
 	t->base.flags = s->base.flags;
 	t->query = NULL;
 	t->s = s;
+	t->base.wtime = t->s->base.wtime = tr->wtime = tr->wstime;
 	cs_add(&s->tables, t, TR_NEW);
 
 	if (isTable(t))
@@ -1744,6 +1751,7 @@ bootstrap_create_schema(sql_trans *tr, char *name, sqlid id, sqlid auth_id, int 
 	s->keys = list_new(tr->sa, (fdestroy) NULL);
 	s->idxs = list_new(tr->sa, (fdestroy) NULL);
 	s->triggers = list_new(tr->sa, (fdestroy) NULL);
+	s->base.wtime = tr->wtime = tr->wstime;
 
 	cs_add(&tr->schemas, s, TR_NEW);
 
@@ -1758,7 +1766,7 @@ store_schema_number(void)
 }
 
 static int
-store_load(backend_stack stk) {
+store_load(sql_allocator *pa) {
 	int first;
 
 	sql_allocator *sa;
@@ -1769,8 +1777,8 @@ store_load(backend_stack stk) {
 	lng lng_store_oid;
 
 	store_oid = 0;
-	store_sa = sa_create();
-	sa = sa_create();
+	store_sa = sa_create(pa);
+	sa = sa_create(pa);
 	if (!sa || !store_sa)
 		return -1;
 
@@ -1785,22 +1793,25 @@ store_load(backend_stack stk) {
 	if (!sequences_init())
 		return -1;
 	ATOMIC_SET(&transactions, 0);
-	gtrans = tr = create_trans(sa, stk);
+	gtrans = tr = create_trans(sa);
+	gtrans->stime = timestamp();
 	if (!gtrans)
 		return -1;
 
+	/* for now use malloc and free */
 	active_sessions = list_create(NULL);
 
 	if (first) {
 		/* cannot initialize database in readonly mode */
 		if (store_readonly)
 			return -1;
-		tr = sql_trans_create(stk, NULL, NULL, true);
+		tr = sql_trans_create(NULL, NULL, true);
 		if (!tr) {
 			TRC_CRITICAL(SQL_STORE, "Failed to start a transaction while loading the storage\n");
 			return -1;
 		}
 	}
+	tr->active = 1;
 
 	s = bootstrap_create_schema(tr, "sys", 2000, ROLE_SYSADMIN, USER_MONETDB);
 	if (!first)
@@ -2013,6 +2024,7 @@ store_load(backend_stack stk) {
 		store_oid = prev_oid;
 
 	/* load remaining schemas, tables, columns etc */
+	tr->active = 1;
 	if (!first && !load_trans(gtrans)) {
 		return -1;
 	}
@@ -2021,7 +2033,7 @@ store_load(backend_stack stk) {
 }
 
 int
-store_init(int debug, store_type store, int readonly, int singleuser, backend_stack stk)
+store_init(sql_allocator *pa, int debug, store_type store, int readonly, int singleuser)
 {
 	int v = 1;
 
@@ -2056,7 +2068,7 @@ store_init(int debug, store_type store, int readonly, int singleuser, backend_st
 	/* create the initial store structure or re-load previous data */
 	MT_lock_unset(&bs_lock);
 	MT_lock_unset(&flush_lock);
-	return store_load(stk);
+	return store_load(pa);
 }
 
 void
@@ -2095,8 +2107,8 @@ store_exit(void)
 }
 
 
-sql_trans *sql_trans_create(backend_stack stk, sql_trans *parent, const char *name, bool try_spare);
-static sql_trans * trans_init(sql_trans *tr, backend_stack stk, sql_trans *otr);
+sql_trans *sql_trans_create(sql_trans *parent, const char *name, bool try_spare);
+static sql_trans * trans_init(sql_trans *tr, sql_trans *otr);
 
 /* call locked! */
 static int
@@ -2112,9 +2124,9 @@ store_apply_deltas(void)
 
 	res = logger_funcs.flush();
 	if (/* DISABLES CODE */ (0) && /*gtrans->sa->nr > 40 &&*/ !(ATOMIC_GET(&nr_sessions)) /* only save when there are no dependencies on the gtrans */) { /* TODO need better estimate */
-		sql_trans *ntrans = sql_trans_create(gtrans->stk, gtrans, NULL, false);
+		sql_trans *ntrans = sql_trans_create(gtrans, NULL, false);
 
-		trans_init(ntrans, ntrans->stk, gtrans);
+		trans_init(ntrans, gtrans);
 		if (spares > 0)
 			destroy_spare_transactions();
 		trans_reset_parent(ntrans);
@@ -2492,9 +2504,67 @@ static str pick_tmp_name(str filename)
 }
 
 extern lng
-store_hot_snapshot(str tarfile)
+store_hot_snapshot_to_stream(stream *tar_stream)
 {
 	int locked = 0;
+	lng result = 0;
+	buffer *plan_buf = NULL;
+	stream *plan_stream = NULL;
+	gdk_return r;
+
+	if (!logger_funcs.get_snapshot_files) {
+		GDKerror("backend does not support hot snapshots");
+		goto end;
+	}
+
+	plan_buf = buffer_create(64 * 1024);
+	if (!plan_buf) {
+		GDKerror("Failed to allocate plan buffer");
+		goto end;
+	}
+	plan_stream = buffer_wastream(plan_buf, "write_snapshot_plan");
+	if (!plan_stream) {
+		GDKerror("Failed to allocate buffer stream");
+		goto end;
+	}
+
+	MT_lock_set(&bs_lock);
+	locked = 1;
+	if (GDKexiting())
+		goto end;
+
+	r = logger_funcs.get_snapshot_files(plan_stream);
+	if (r != GDK_SUCCEED)
+		goto end; // should already have set a GDK error
+	close_stream(plan_stream);
+	plan_stream = NULL;
+	r = hot_snapshot_write_tar(tar_stream, GDKgetenv("gdk_dbname"), buffer_get_buf(plan_buf));
+	if (r != GDK_SUCCEED)
+		goto end;
+
+	// the original idea was to return a sort of sequence number of the
+	// database that identifies exactly which version has been snapshotted
+	// but no such number is available:
+	// logger_functions.read_last_transaction_id is not implemented
+	// anywhere.
+	//
+	// So we return a random positive integer instead.
+	result = 42;
+
+end:
+	if (locked)
+		MT_lock_unset(&bs_lock);
+	if (plan_stream)
+		close_stream(plan_stream);
+	if (plan_buf)
+		buffer_destroy(plan_buf);
+	return result;
+}
+
+
+extern lng
+store_hot_snapshot(str tarfile)
+{
 	lng result = 0;
 	struct stat st = {0};
 	char *tmppath = NULL;
@@ -2504,7 +2574,6 @@ store_hot_snapshot(str tarfile)
 	stream *tar_stream = NULL;
 	buffer *plan_buf = NULL;
 	stream *plan_stream = NULL;
-	gdk_return r;
 
 	if (!logger_funcs.get_snapshot_files) {
 		GDKerror("backend does not support hot snapshots");
@@ -2562,7 +2631,8 @@ store_hot_snapshot(str tarfile)
 		goto end;
 	}
 
-	// Fsync the directory. Postgres believes this is necessary for durability.
+	// Fsync the directory beforehand too.
+	// Postgres believes this is necessary for durability.
 	if (fsync(dir_fd) < 0) {
 		GDKsyserror("First fsync on %s failed", dirpath);
 		goto end;
@@ -2571,30 +2641,8 @@ store_hot_snapshot(str tarfile)
 	(void)dirpath;
 #endif
 
-
-	plan_buf = buffer_create(64 * 1024);
-	if (!plan_buf) {
-		GDKerror("Failed to allocate plan buffer");
-		goto end;
-	}
-	plan_stream = buffer_wastream(plan_buf, "write_snapshot_plan");
-	if (!plan_stream) {
-		GDKerror("Failed to allocate buffer stream");
-		goto end;
-	}
-
-	MT_lock_set(&flush_lock);
-	locked = 1;
-	if (GDKexiting())
-		goto end;
-
-	r = logger_funcs.get_snapshot_files(plan_stream);
-	if (r != GDK_SUCCEED)
-		goto end; // should already have set a GDK error
-	close_stream(plan_stream);
-	plan_stream = NULL;
-	r = hot_snapshot_write_tar(tar_stream, GDKgetenv("gdk_dbname"), buffer_get_buf(plan_buf));
-	if (r != GDK_SUCCEED)
+	result = store_hot_snapshot_to_stream(tar_stream);
+	if (result == 0)
 		goto end;
 
 	// Now sync and atomically rename the temp file to the real file,
@@ -2614,21 +2662,10 @@ store_hot_snapshot(str tarfile)
 		goto end;
 	}
 #endif
-	// the original idea was to return a sort of sequence number of the
-	// database that identifies exactly which version has been snapshotted
-	// but no such number is available:
-	// logger_functions.read_last_transaction_id is not implemented
-	// anywhere.
-	//
-	// So we return a random positive integer instead.
-	result = 42;
-
 end:
 	GDKfree(dirpath);
 	if (dir_fd >= 0)
 		close(dir_fd);
-	if (locked)
-		MT_lock_unset(&flush_lock);
 	if (tar_stream)
 		close_stream(tar_stream);
 	if (plan_stream)
@@ -2839,6 +2876,7 @@ idx_dup(sql_trans *tr, int flags, sql_idx * i, sql_table *t)
 		ni->base.allocated = i->base.allocated;
 		ni->data = i->data;
 		i->base.allocated = 0;
+		ni->base.wtime = i->base.wtime;
 		i->data = NULL;
 	} else
 	if ((isNew(i) && newFlagSet(flags) && tr->parent == gtrans) ||
@@ -3062,6 +3100,7 @@ column_dup(sql_trans *tr, int flags, sql_column *oc, sql_table *t)
 		c->base.allocated = oc->base.allocated;
 		c->data = oc->data;
 		oc->base.allocated = 0;
+		c->base.wtime = oc->base.wtime;
 		oc->data = NULL;
 	} else
 	if ((isNew(oc) && newFlagSet(flags) && tr->parent == gtrans) ||
@@ -3264,7 +3303,9 @@ table_dup(sql_trans *tr, int flags, sql_table *ot, sql_schema *s)
 	/* Needs copy when committing (ie from tr to gtrans) and
 	 * on savepoints from tr->parent to new tr */
 	if (flags) {
+		assert(t->data == NULL);
 		t->base.allocated = ot->base.allocated;
+		t->base.wtime = ot->base.wtime;
 		t->data = ot->data;
 		ot->base.allocated = 0;
 		ot->data = NULL;
@@ -3491,7 +3532,7 @@ schema_dup(sql_trans *tr, int flags, sql_schema *os, sql_trans *o)
 }
 
 static void
-_trans_init(sql_trans *tr, backend_stack stk, sql_trans *otr)
+_trans_init(sql_trans *tr, sql_trans *otr)
 {
 	tr->wtime = tr->rtime = tr->atime = 0;
 	tr->stime = (otr->wtime>otr->atime?otr->wtime:otr->atime);
@@ -3502,15 +3543,14 @@ _trans_init(sql_trans *tr, backend_stack stk, sql_trans *otr)
 
 	tr->schema_number = store_schema_number();
 	tr->parent = otr;
-	tr->stk = stk;
 }
 
 static sql_trans *
-trans_init(sql_trans *tr, backend_stack stk, sql_trans *otr)
+trans_init(sql_trans *tr, sql_trans *otr)
 {
 	node *m,*n;
 
-	_trans_init(tr, stk, otr);
+	_trans_init(tr, otr);
 
 	for (m = otr->schemas.set->h, n = tr->schemas.set->h; m && n; m = m->next, n = n->next ) {
 		sql_schema *ps = m->data; /* parent transactions schema */
@@ -3626,7 +3666,7 @@ trans_init(sql_trans *tr, backend_stack stk, sql_trans *otr)
 }
 
 static sql_trans *
-trans_dup(backend_stack stk, sql_trans *ot, const char *newname)
+trans_dup(sql_trans *ot, const char *newname)
 {
 	node *n;
 	sql_trans *t = ZNEW(sql_trans);
@@ -3634,12 +3674,12 @@ trans_dup(backend_stack stk, sql_trans *ot, const char *newname)
 	if (!t)
 		return NULL;
 
-	t->sa = sa_create();
+	t->sa = sa_create(NULL);
 	if (!t->sa) {
 		_DELETE(t);
 		return NULL;
 	}
-	_trans_init(t, stk, ot);
+	_trans_init(t, ot);
 
 	cs_new(&t->schemas, t->sa, (fdestroy) &schema_destroy);
 
@@ -3655,13 +3695,6 @@ trans_dup(backend_stack stk, sql_trans *ot, const char *newname)
 		}
 		if (ot == gtrans)
 			ot->schemas.nelm = NULL;
-#if 0
-		for (n = t->schemas.set->h; n; n = n->next) { /* Set table members */
-			sql_schema *s = n->data;
-
-			set_members(&s->tables);
-		}
-#endif
 	}
 	new_trans_size = t->sa->nr;
 	return t;
@@ -4351,13 +4384,18 @@ validate_tables(sql_schema *s, sql_schema *os)
 	if (cs_size(&s->tables))
 		for (n = s->tables.set->h; n; n = n->next) {
 			sql_table *t = n->data;
-			sql_table *ot;
+			sql_table *ot = NULL;
 
 			if (!t->base.wtime && !t->base.rtime && !t->base.atime)
 				continue;
 
- 			ot = find_sql_table(os, t->base.name);
-			if (ot && isKindOfTable(ot) && isKindOfTable(t)) {
+			o =	list_find_base_id(os->tables.set, t->base.id);
+			if (o)
+				ot = o->data;
+			if (!ot && os->tables.dset && list_find_base_id(os->tables.dset, t->base.id) != NULL) {
+				/* dropped table */
+				return 0;
+			} else if (ot && isKindOfTable(ot) && isKindOfTable(t) && !isDeclaredTable(ot) && !isDeclaredTable(t)) {
 				if ((t->base.wtime && (t->base.wtime < ot->base.rtime || t->base.wtime < ot->base.wtime)) ||
 				    (t->base.rtime && (t->base.rtime < ot->base.wtime)))
 					return 0;
@@ -4616,7 +4654,8 @@ reset_table(sql_trans *tr, sql_table *ft, sql_table *pft)
 		ft->access = pft->access;
 		if (pft->p) {
 			ft->p = find_sql_table(ft->s, pft->p->base.name);
-	//		assert(isMergeTable(ft->p) || isReplicaTable(ft->p));
+			//the parent (merge or replica table) maybe created later!
+			//assert(isMergeTable(ft->p) || isReplicaTable(ft->p));
 		} else
 			ft->p = NULL;
 
@@ -4735,7 +4774,7 @@ reset_trans(sql_trans *tr, sql_trans *ptr)
 }
 
 sql_trans *
-sql_trans_create(backend_stack stk, sql_trans *parent, const char *name, bool try_spare)
+sql_trans_create(sql_trans *parent, const char *name, bool try_spare)
 {
 	sql_trans *tr = NULL;
 
@@ -4744,7 +4783,7 @@ sql_trans_create(backend_stack stk, sql_trans *parent, const char *name, bool tr
 			tr = spare_trans[--spares];
 			TRC_DEBUG(SQL_STORE, "Reuse transaction: %p - Spares: %d\n", tr, spares);
 		} else {
-			tr = trans_dup(stk, (parent) ? parent : gtrans, name);
+			tr = trans_dup((parent) ? parent : gtrans, name);
 			TRC_DEBUG(SQL_STORE, "New transaction: %p\n", tr);
 			if (tr)
 				(void) ATOMIC_INC(&transactions);
@@ -6445,6 +6484,22 @@ sql_trans_is_sorted( sql_trans *tr, sql_column *col )
 	return 0;
 }
 
+int
+sql_trans_is_unique( sql_trans *tr, sql_column *col )
+{
+	if (col && isTable(col->t) && store_funcs.unique_col && store_funcs.unique_col(tr, col))
+		return 1;
+	return 0;
+}
+
+int
+sql_trans_is_duplicate_eliminated( sql_trans *tr, sql_column *col )
+{
+	if (col && isTable(col->t) && EC_VARCHAR(col->type.type->eclass) && store_funcs.double_elim_col)
+		return store_funcs.double_elim_col(tr, col);
+	return 0;
+}
+
 size_t
 sql_trans_dist_count( sql_trans *tr, sql_column *col )
 {
@@ -6849,7 +6904,7 @@ sql_trans_create_ic(sql_trans *tr, sql_idx * i, sql_column *c)
 	/* should we switch to oph_idx ? */
 #if 0
 	if (i->type == hash_idx && list_length(i->columns) == 1 &&
-	    store_funcs.count_col(tr, ic->c, 0) && store_funcs.sorted_col(tr, ic->c)) {
+	    store_funcs.count_col(tr, ic->c) && store_funcs.sorted_col(tr, ic->c)) {
 		sql_table *sysidx = find_sql_table(syss, "idxs");
 		sql_column *sysidxid = find_sql_column(sysidx, "id");
 		sql_column *sysidxtype = find_sql_column(sysidx, "type");
@@ -7145,7 +7200,7 @@ sql_trans_seqbulk_restart(sql_trans *tr, seqbulk *sb, lng start)
 }
 
 sql_session *
-sql_session_create(backend_stack stk, int ac )
+sql_session_create(int ac )
 {
 	sql_session *s;
 
@@ -7155,14 +7210,13 @@ sql_session_create(backend_stack stk, int ac )
 	s = ZNEW(sql_session);
 	if (!s)
 		return NULL;
-	s->tr = sql_trans_create(s->stk, NULL, NULL, true);
+	s->tr = sql_trans_create(NULL, NULL, true);
 	if (!s->tr) {
 		_DELETE(s);
 		return NULL;
 	}
 	s->schema_name = NULL;
 	s->tr->active = 0;
-	s->stk = stk;
 	if (!sql_session_reset(s, ac)) {
 		sql_trans_destroy(s->tr, true);
 		_DELETE(s);
@@ -7260,13 +7314,13 @@ sql_trans_begin(sql_session *s)
 			store_schema_number() != snr)) {
 		if (!list_empty(tr->moved_tables)) {
 			sql_trans_destroy(tr, false);
-			s->tr = tr = sql_trans_create(s->stk, NULL, NULL, false);
+			s->tr = tr = sql_trans_create(NULL, NULL, false);
 		} else {
 			reset_trans(tr, gtrans);
 		}
 	}
 	if (tr->parent == gtrans)
-		tr = trans_init(tr, tr->stk, tr->parent);
+		tr = trans_init(tr, tr->parent);
 	tr->active = 1;
 	s->schema = find_sql_schema(tr, s->schema_name);
 	s->tr = tr;

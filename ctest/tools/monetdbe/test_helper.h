@@ -1,3 +1,10 @@
+/*
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0.  If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ *
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
+ */
 
 #include "monetdbe.h"
 
@@ -27,7 +34,7 @@ TYPE_DEFTEST_TPE(timestamp, monetdbe_data_timestamp);
 
 #define GET_ACTUAL_TPE(TPE_ID) ACTUAL_TPE_monetdb_##TPE_ID
 
-#define Null  {._is_null = 1}
+#define Null  ._is_null = 1
 
 monetdbe_export bool check_column_bool      (monetdbe_result* result, size_t column_index, size_t expected_nr_column_entries, TEST_TPE_ID(int8_t) expected_column[]);
 monetdbe_export bool check_column_int8_t    (monetdbe_result* result, size_t column_index, size_t expected_nr_column_entries, TEST_TPE_ID(int8_t)* expected_column);
@@ -54,10 +61,45 @@ monetdbe_export bool check_column_timestamp (monetdbe_result* result, size_t col
 #define check_column_BIGGEST_INTEGER_TPE check_column_int64_t
 #endif
 
+
+#define _CONCAT(A, B) A##B
+#define CONCAT(A, B) _CONCAT(A, B)
+
+#define EVAL(...)  EVAL1(EVAL1(EVAL1(__VA_ARGS__)))
+#define EVAL1(...) EVAL2(EVAL2(EVAL2(__VA_ARGS__)))
+#define EVAL2(...) EVAL3(EVAL3(EVAL3(__VA_ARGS__)))
+#define EVAL3(...) EVAL4(EVAL4(EVAL4(__VA_ARGS__)))
+#define EVAL4(...) EVAL5(EVAL5(EVAL5(__VA_ARGS__)))
+#define EVAL5(...) __VA_ARGS__
+
+#define EMPTY()
+
+#define DETECTCALL(...) ,
+#define _THIRD(_1, _2, _3, ...) _3
+
+#define SECOND(...) SECOND_I(__VA_ARGS__,,)
+#define SECOND_I(A,B,...) B
+#define SHIFT_IN_ZERO , 0
+#define ONE_OR_MANY_UTILITY(...) ONE_OR_MANY_UTILITY_I(__VA_ARGS__, SHIFT_IN_ZERO, X)
+#define ONE_OR_MANY_UTILITY_I(A,B,...) B
+#define ONE_OR_MANY(...) SECOND(ONE_OR_MANY_UTILITY(__VA_ARGS__), 1)
+
+#define _STRUCT0(V) _THIRD EMPTY() (DETECTCALL V, STRUCT EMPTY() V, V,)
+#define _STRUCT1(V, ...) _THIRD EMPTY() (DETECTCALL V, STRUCT EMPTY() V, V,), _STRUCT EMPTY() (__VA_ARGS__)
+#define STRUCT(...) {_STRUCT EMPTY() (__VA_ARGS__)}
+#define _STRUCT(...)  CONCAT( _STRUCT,ONE_OR_MANY(__VA_ARGS__))EMPTY()(__VA_ARGS__)
+
+#define _COLUMN0(V) ELEMENT(V)
+#define _COLUMN1(V, ...) ELEMENT(V), _COLUMN EMPTY() (__VA_ARGS__)
+#define _COLUMN(...)  CONCAT( _COLUMN,ONE_OR_MANY(__VA_ARGS__))EMPTY()(__VA_ARGS__)
+#define COLUMN(...) {EVAL(_COLUMN (__VA_ARGS__))}
+
+#define ELEMENT(V) { _THIRD EMPTY() (DETECTCALL V, STRUCT EMPTY() V, V) }
+
 #define CHECK_COLUMN(result, column_index, TPE, ...) \
 check_column_##TPE ( \
     result, \
     column_index, \
-    sizeof((TEST_TPE_ID(TPE)[]) __VA_ARGS__) /sizeof(((TEST_TPE_ID(TPE)[]) __VA_ARGS__)[0]), \
-    (TEST_TPE_ID(TPE)[]) __VA_ARGS__)
+    sizeof((TEST_TPE_ID(TPE)[]) COLUMN(__VA_ARGS__)) /sizeof(((TEST_TPE_ID(TPE)[]) COLUMN(__VA_ARGS__))[0]), \
+    (TEST_TPE_ID(TPE)[]) COLUMN(__VA_ARGS__))
 

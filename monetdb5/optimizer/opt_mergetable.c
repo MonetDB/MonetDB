@@ -1037,11 +1037,11 @@ mat_joinNxM(Client cntxt, MalBlkPtr mb, InstrPtr p, matlist_t *ml, int args)
 
 
 static char *
-aggr_phase2(char *aggr)
+aggr_phase2(char *aggr, int type_dbl)
 {
-	if (aggr == countRef || aggr == count_no_nilRef || aggr == avgRef)
+	if (aggr == countRef || aggr == count_no_nilRef || (aggr == avgRef && type_dbl))
 		return sumRef;
-	if (aggr == subcountRef || aggr == subavgRef)
+	if (aggr == subcountRef || (aggr == subavgRef && type_dbl))
 		return subsumRef;
 	/* min/max/sum/prod and unique are fine */
 	return aggr;
@@ -1053,26 +1053,33 @@ mat_aggr(MalBlkPtr mb, InstrPtr p, mat_t *mat, int m)
 	int tp = getArgType(mb,p,0), k, tp2 = TYPE_lng, i;
 	int battp = (getModuleId(p)==aggrRef)?newBatType(tp):tp, battp2 = 0;
 	int isAvg = (getFunctionId(p) == avgRef);
-	InstrPtr r = NULL, s = NULL, q = NULL, u = NULL;
+	InstrPtr r = NULL, s = NULL, q = NULL, u = NULL, v = NULL;
 
 	/* we pack the partitial result */
 	r = newInstruction(mb, matRef, packRef);
 	getArg(r,0) = newTmpVariable(mb, battp);
 
-	if (isAvg) { /* counts */
+	if (isAvg) { /* remainders or counts */
 		battp2 = newBatType( tp2);
 		u = newInstruction(mb, matRef, packRef);
 		getArg(u,0) = newTmpVariable(mb, battp2);
 	}
+	if (isAvg && tp != TYPE_dbl) { /* counts */
+		battp2 = newBatType( tp2);
+		v = newInstruction(mb, matRef, packRef);
+		getArg(v,0) = newTmpVariable(mb, battp2);
+	}
 	for(k=1; k< mat[m].mi->argc; k++) {
 		q = newInstruction(mb, NULL, NULL);
-		if (isAvg)
+		if (isAvg && tp == TYPE_dbl)
 			setModuleId(q,batcalcRef);
 		else
 			setModuleId(q,getModuleId(p));
 		setFunctionId(q,getFunctionId(p));
 		getArg(q,0) = newTmpVariable(mb, tp);
 		if (isAvg)
+			q = pushReturn(mb, q, newTmpVariable(mb, tp2));
+		if (isAvg && tp != TYPE_dbl)
 			q = pushReturn(mb, q, newTmpVariable(mb, tp2));
 		q = addArgument(mb,q,getArg(mat[m].mi,k));
 		for (i = q->argc; i<p->argc; i++)
@@ -1082,10 +1089,14 @@ mat_aggr(MalBlkPtr mb, InstrPtr p, mat_t *mat, int m)
 		r = addArgument(mb,r,getArg(q,0));
 		if (isAvg)
 			u = addArgument(mb,u,getArg(q,1));
+		if (isAvg && tp != TYPE_dbl)
+			v = addArgument(mb,v,getArg(q,2));
 	}
 	pushInstruction(mb,r);
 	if (isAvg)
 		pushInstruction(mb, u);
+	if (isAvg && tp != TYPE_dbl)
+		pushInstruction(mb, v);
 
 	/* Filter empty partitions */
 	if (getModuleId(p) == aggrRef && !isAvg) {
@@ -1097,7 +1108,7 @@ mat_aggr(MalBlkPtr mb, InstrPtr p, mat_t *mat, int m)
 	}
 
 	/* for avg we do sum (avg*(count/sumcount) ) */
-	if (isAvg) {
+	if (isAvg && tp == TYPE_dbl) {
 		InstrPtr v,w,x,y,cond;
 
 		/* lng w = sum counts */
@@ -1154,9 +1165,13 @@ mat_aggr(MalBlkPtr mb, InstrPtr p, mat_t *mat, int m)
 		r = s;
 	}
 
-	s = newInstruction(mb, getModuleId(p), aggr_phase2(getFunctionId(p)));
+	s = newInstruction(mb, getModuleId(p), aggr_phase2(getFunctionId(p), tp == TYPE_dbl));
 	getArg(s,0) = getArg(p,0);
 	s = addArgument(mb, s, getArg(r,0));
+	if (isAvg && tp != TYPE_dbl) {
+		s = addArgument(mb, s, getArg(u,0));
+		s = addArgument(mb, s, getArg(v,0));
+	}
 	pushInstruction(mb, s);
 }
 
@@ -1245,17 +1260,17 @@ mat_group_project(MalBlkPtr mb, InstrPtr p, matlist_t *ml, int e, int a)
 static int
 mat_group_aggr(MalBlkPtr mb, InstrPtr p, mat_t *mat, int b, int g, int e)
 {
-	int tp = getArgType(mb,p,0), k, tp2 = 0;
-	char *aggr2 = aggr_phase2(getFunctionId(p));
+	int tp = getArgType(mb,p,0), k, tp2 = 0, tpe = getBatType(tp);
+	char *aggr2 = aggr_phase2(getFunctionId(p), tpe == TYPE_dbl);
 	int isAvg = (getFunctionId(p) == subavgRef);
-	InstrPtr ai1 = newInstruction(mb, matRef, packRef), ai10 = NULL, ai2;
+	InstrPtr ai1 = newInstruction(mb, matRef, packRef), ai10 = NULL, ai11 = NULL, ai2;
 
 	if(!ai1)
 		return -1;
 
 	getArg(ai1,0) = newTmpVariable(mb, tp);
 
-	if (isAvg) { /* counts */
+	if (isAvg) { /* remainders or counts */
 		tp2 = newBatType(TYPE_lng);
 		ai10 = newInstruction(mb, matRef, packRef);
 		if(!ai10) {
@@ -1264,8 +1279,19 @@ mat_group_aggr(MalBlkPtr mb, InstrPtr p, mat_t *mat, int b, int g, int e)
 		}
 		getArg(ai10,0) = newTmpVariable(mb, tp2);
 	}
+	if (isAvg && tpe != TYPE_dbl) { /* counts */
+		tp2 = newBatType(TYPE_lng);
+		ai11 = newInstruction(mb, matRef, packRef);
+		if(!ai11) {
+			freeInstruction(ai1);
+			freeInstruction(ai10);
+			return -1;
+		}
+		getArg(ai11,0) = newTmpVariable(mb, tp2);
+	}
 
 	for(k=1; k<mat[b].mi->argc; k++) {
+		int off = 0;
 		InstrPtr q = copyInstruction(p);
 		if(!q) {
 			freeInstruction(ai1);
@@ -1274,29 +1300,38 @@ mat_group_aggr(MalBlkPtr mb, InstrPtr p, mat_t *mat, int b, int g, int e)
 		}
 
 		getArg(q,0) = newTmpVariable(mb, tp);
-		if (isAvg) {
+		if (isAvg && tpe == TYPE_dbl) {
+			off = 1;
 			getArg(q,1) = newTmpVariable(mb, tp2);
 			q = addArgument(mb, q, getArg(q,1)); /* push at end, create space */
 			q->retc = 2;
 			getArg(q,q->argc-1) = getArg(q,q->argc-2);
 			getArg(q,q->argc-2) = getArg(q,q->argc-3);
+		} else if (isAvg) {
+			getArg(q,1) = newTmpVariable(mb, tp2);
+			getArg(q,2) = newTmpVariable(mb, tp2);
+			off = 2;
 		}
-		getArg(q,1+isAvg) = getArg(mat[b].mi,k);
-		getArg(q,2+isAvg) = getArg(mat[g].mi,k);
-		getArg(q,3+isAvg) = getArg(mat[e].mi,k);
+		getArg(q,1+off) = getArg(mat[b].mi,k);
+		getArg(q,2+off) = getArg(mat[g].mi,k);
+		getArg(q,3+off) = getArg(mat[e].mi,k);
 		pushInstruction(mb,q);
 
 		/* pack the result into a mat */
 		ai1 = addArgument(mb,ai1,getArg(q,0));
 		if (isAvg)
 			ai10 = addArgument(mb,ai10,getArg(q,1));
+		if (isAvg && tpe != TYPE_dbl)
+			ai11 = addArgument(mb,ai11,getArg(q,2));
 	}
 	pushInstruction(mb, ai1);
 	if (isAvg)
 		pushInstruction(mb, ai10);
+	if (isAvg && tpe != TYPE_dbl)
+		pushInstruction(mb, ai11);
 
 	/* for avg we do sum (avg*(count/sumcount) ) */
-	if (isAvg) {
+	if (isAvg && tpe == TYPE_dbl) {
 		InstrPtr r,s,v,w, cond;
 
 		/* lng s = sum counts */
@@ -1359,11 +1394,19 @@ mat_group_aggr(MalBlkPtr mb, InstrPtr p, mat_t *mat, int b, int g, int e)
 	}
  	ai2 = newInstruction(mb, aggrRef, aggr2);
 	getArg(ai2,0) = getArg(p,0);
+	if (isAvg && tpe != TYPE_dbl) {
+		getArg(ai2,1) = getArg(p,1);
+		getArg(ai2,2) = getArg(p,2);
+	}
 	ai2 = addArgument(mb, ai2, getArg(ai1, 0));
+	if (isAvg && tpe != TYPE_dbl) {
+		ai2 = addArgument(mb, ai2, getArg(ai10, 0));
+		ai2 = addArgument(mb, ai2, getArg(ai11, 0));
+	}
 	ai2 = addArgument(mb, ai2, mat[g].mv);
 	ai2 = addArgument(mb, ai2, mat[e].mv);
 	ai2 = pushBit(mb, ai2, 1); /* skip nils */
-	if (getFunctionId(p) != subminRef && getFunctionId(p) != submaxRef)
+	if (getFunctionId(p) != subminRef && getFunctionId(p) != submaxRef && !(isAvg && tpe != TYPE_dbl))
 		ai2 = pushBit(mb, ai2, 1);
 	pushInstruction(mb, ai2);
 	return 0;
@@ -1924,7 +1967,7 @@ OPTmergetableImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 			int input = getArg(p, p->retc); /* argument one is first input */
 
 			if (group_input[input]) {
-				TRC_WARNING(MAL_OPTIMIZER, "Mergetable bailout on group input reuse in group statement\n");
+				TRC_INFO(MAL_OPTIMIZER, "Mergetable bailout on group input reuse in group statement\n");
 				bailout = 1;
 			}
 
@@ -2080,7 +2123,7 @@ OPTmergetableImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 			 getFunctionId(p)== avgRef ||
 			 getFunctionId(p)== sumRef ||
 			 getFunctionId(p) == prodRef))) &&
-			(m=is_a_mat(getArg(p,1), &ml)) >= 0) {
+			(m=is_a_mat(getArg(p,p->retc+0), &ml)) >= 0) {
 			mat_aggr(mb, p, ml.v, m);
 			actions++;
 			continue;
@@ -2155,9 +2198,9 @@ OPTmergetableImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 		    getFunctionId(p) == subavgRef ||
 		    getFunctionId(p) == subsumRef ||
 		    getFunctionId(p) == subprodRef) &&
-		   ((m=is_a_mat(getArg(p,1), &ml)) >= 0) &&
-		   ((n=is_a_mat(getArg(p,2), &ml)) >= 0) &&
-		   ((o=is_a_mat(getArg(p,3), &ml)) >= 0)) {
+		   ((m=is_a_mat(getArg(p,p->retc+0), &ml)) >= 0) &&
+		   ((n=is_a_mat(getArg(p,p->retc+1), &ml)) >= 0) &&
+		   ((o=is_a_mat(getArg(p,p->retc+2), &ml)) >= 0)) {
 			if(mat_group_aggr(mb, p, ml.v, m, n, o)) {
 				msg = createException(MAL,"optimizer.mergetable",SQLSTATE(HY013) MAL_MALLOC_FAIL);
 				goto cleanup;
@@ -2427,5 +2470,9 @@ cleanup:
    	newComment(mb,buf);
 	if( actions > 0)
 		addtoMalBlkHistory(mb);
+	if( bailout){
+		snprintf(buf,256,"Merge table bailout");
+		newComment(mb,buf);
+	}
 	return msg;
 }

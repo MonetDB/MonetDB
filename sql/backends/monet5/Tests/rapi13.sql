@@ -17,12 +17,12 @@ copy 5 records into streams from stdin;
 2015-06-03 15:11:17.000000|2|"45AC45"|52.12491|6.03063|3.6e+04
 
 # three return columns works
-CREATE FUNCTION working_test(stt string, tss bigint, lat double, lon double, alt double) returns table (i int, j int, k int) language R {
+CREATE FUNCTION working_test(stt string, tss interval second, lat double, lon double, alt double) returns table (i int, j int, k int) language R {
 	return(data.frame(1:10, 1:10, 1:10))
 };
 
 # but four does not? something to do with the amount of return columns?
-CREATE FUNCTION broken_test(stt string, tss bigint, lat double, lon double, alt double) returns table (i int, j int, k int, l int) language R {
+CREATE FUNCTION broken_test(stt string, tss interval second, lat double, lon double, alt double) returns table (i int, j int, k int, l int) language R {
 	return(data.frame(1:10, 1:10, 1:10, 1:10))
 };
 
