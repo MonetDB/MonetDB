@@ -53,7 +53,7 @@ extern int	backend_alter_user(ptr mvc, str user, str passwd, char enc, sqlid sch
 extern int	backend_rename_user(ptr mvc, str olduser, str newuser);
 extern void*	backend_schema_user_dependencies(ptr trans, sqlid schema_id);
 extern int	backend_resolve_function(ptr trans, sql_func *f);
-extern int	backend_has_module(ptr trans, char *name);
+extern int	backend_has_module(ptr M, char *name);
 
 extern backend_functions be_funcs;
 

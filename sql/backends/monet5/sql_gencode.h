@@ -19,6 +19,7 @@
 
 sql5_export Symbol backend_dumpproc(backend *be, Client c, cq *q, sql_rel *r);
 sql5_export int backend_dumpstmt(backend *be, MalBlkPtr mb, sql_rel *r, int top, int addend, const char *query);
+sql5_export int monet5_has_module(ptr M, char *module);
 sql5_export int monet5_resolve_function(ptr M, sql_func *f);
 sql5_export int backend_create_func(backend *be, sql_func *f, list *restypes, list *ops);
 extern int backend_create_subfunc(backend *be, sql_subfunc *f, list *ops);

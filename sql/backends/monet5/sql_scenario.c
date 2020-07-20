@@ -346,6 +346,7 @@ SQLinit(Client c)
 	be_funcs = (backend_functions) {
 		.fcode = &monet5_freecode,
 		.fresolve_function = &monet5_resolve_function,
+		.fhas_module_function = &monet5_has_module,
 	};
 	monet5_user_init(&be_funcs);
 
