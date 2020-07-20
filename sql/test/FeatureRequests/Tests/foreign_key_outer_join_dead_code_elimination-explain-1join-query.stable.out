@@ -32,13 +32,13 @@ stdout of test 'foreign_key_outer_join_dead_code_elimination-explain-1join-query
 % mal # name
 % clob # type
 % 143 # length
-function user.s4_0():void;
-    X_1:void := querylog.define("explain select count(*) from fk left outer join pk1 on fk.fk1 = pk1.pk1;":str, "sequential_pipe":str, 14:int);
+function user.main():void;
+    X_1:void := querylog.define("explain select count(*) from fk left outer join pk1 on fk.fk1 = pk1.pk1;":str, "sequential_pipe":str, 13:int);
     X_4:int := sql.mvc();
     C_5:bat[:oid] := sql.tid(X_4:int, "sys":str, "fk":str);
     X_20:lng := aggr.count(C_5:bat[:oid]);
     sql.resultSet(".%3":str, "%3":str, "bigint":str, 64:int, 0:int, 7:int, X_20:lng);
-end user.s4_0;
+end user.main;
 #inline               actions= 0 time=0 usec 
 #remap                actions= 0 time=0 usec 
 #costmodel            actions= 1 time=0 usec 
@@ -70,8 +70,8 @@ end user.s4_0;
 % mal # name
 % clob # type
 % 149 # length
-function user.s6_0():void;
-    X_1:void := querylog.define("explain select id from fk left outer join pk1 on fk.fk1 = pk1.pk1 order by id;":str, "sequential_pipe":str, 20:int);
+function user.main():void;
+    X_1:void := querylog.define("explain select id from fk left outer join pk1 on fk.fk1 = pk1.pk1 order by id;":str, "sequential_pipe":str, 19:int);
     X_27:bat[:str] := bat.pack("sys.fk":str);
     X_28:bat[:str] := bat.pack("id":str);
     X_29:bat[:str] := bat.pack("int":str);
@@ -84,8 +84,8 @@ function user.s6_0():void;
     (X_20:bat[:int], X_21:bat[:oid]) := algebra.sort(X_19:bat[:int], false:bit, false:bit, false:bit);
     X_25:bat[:int] := algebra.projection(X_21:bat[:oid], X_19:bat[:int]);
     sql.resultSet(X_27:bat[:str], X_28:bat[:str], X_29:bat[:str], X_30:bat[:int], X_31:bat[:int], X_25:bat[:int]);
-end user.s6_0;
-#inline               actions= 0 time=0 usec 
+end user.main;
+#inline               actions= 0 time=1 usec 
 #remap                actions= 0 time=1 usec 
 #costmodel            actions= 1 time=1 usec 
 #coercion             actions= 0 time=1 usec 
@@ -116,8 +116,8 @@ end user.s6_0;
 % mal # name
 % clob # type
 % 154 # length
-function user.s8_0():void;
-    X_1:void := querylog.define("explain select id , v1 from fk left outer join pk1 on fk.fk1 = pk1.pk1 order by id;":str, "sequential_pipe":str, 59:int);
+function user.main():void;
+    X_1:void := querylog.define("explain select id , v1 from fk left outer join pk1 on fk.fk1 = pk1.pk1 order by id;":str, "sequential_pipe":str, 58:int);
     X_48:bat[:int] := bat.new(nil:int);
     X_4:int := sql.mvc();
     C_5:bat[:oid] := sql.tid(X_4:int, "sys":str, "fk":str);
@@ -150,7 +150,7 @@ function user.s8_0():void;
     X_75:bat[:int] := algebra.projection(X_73:bat[:oid], X_53:bat[:int]);
     X_76:bat[:int] := algebra.projection(X_73:bat[:oid], X_65:bat[:int]);
     sql.resultSet(X_78:bat[:str], X_79:bat[:str], X_80:bat[:str], X_81:bat[:int], X_82:bat[:int], X_75:bat[:int], X_76:bat[:int]);
-end user.s8_0;
+end user.main;
 #inline               actions= 0 time=1 usec 
 #remap                actions= 0 time=2 usec 
 #costmodel            actions= 1 time=1 usec 
@@ -182,8 +182,8 @@ end user.s8_0;
 % mal # name
 % clob # type
 % 154 # length
-function user.s10_0():void;
-    X_1:void := querylog.define("explain select id , v2 from fk left outer join pk2 on fk.fk2 = pk2.pk2 order by id;":str, "sequential_pipe":str, 59:int);
+function user.main():void;
+    X_1:void := querylog.define("explain select id , v2 from fk left outer join pk2 on fk.fk2 = pk2.pk2 order by id;":str, "sequential_pipe":str, 58:int);
     X_48:bat[:int] := bat.new(nil:int);
     X_4:int := sql.mvc();
     C_5:bat[:oid] := sql.tid(X_4:int, "sys":str, "fk":str);
@@ -216,7 +216,7 @@ function user.s10_0():void;
     X_75:bat[:int] := algebra.projection(X_73:bat[:oid], X_53:bat[:int]);
     X_76:bat[:int] := algebra.projection(X_73:bat[:oid], X_65:bat[:int]);
     sql.resultSet(X_78:bat[:str], X_79:bat[:str], X_80:bat[:str], X_81:bat[:int], X_82:bat[:int], X_75:bat[:int], X_76:bat[:int]);
-end user.s10_0;
+end user.main;
 #inline               actions= 0 time=1 usec 
 #remap                actions= 0 time=1 usec 
 #costmodel            actions= 1 time=1 usec 

@@ -151,8 +151,8 @@ stdout of test 'groupby_error` in directory 'sql/test/miscellaneous` itself:
 % bigint # type
 % 1 # length
 #SELECT NOT ( NOT + - CAST ( NULL AS INTEGER ) NOT IN ( col0 / CAST ( col2 AS INTEGER ) - + col1 ) ) FROM tab0 AS cor0;
-% .%4 # table_name
-% %4 # name
+% .%3 # table_name
+% %3 # name
 % boolean # type
 % 5 # length
 [ NULL	]
@@ -165,7 +165,7 @@ stdout of test 'groupby_error` in directory 'sql/test/miscellaneous` itself:
 % 112 # length
 group by (
 | table(sys.tab0) [ "tab0"."col0", "tab0"."col1", "tab0"."col2" ] COUNT 
-) [ "tab0"."col2", "tab0"."col0", "tab0"."col1" ] [ "tab0"."col0", "tab0"."col1", "tab0"."col2", "tab0"."col0" ]
+) [ "tab0"."col0", "tab0"."col1", "tab0"."col2" ] [ "tab0"."col0", "tab0"."col1", "tab0"."col2", "tab0"."col0" ]
 #SELECT DISTINCT col0, col1, col2, col0 FROM tab0;
 % sys.tab0,	sys.tab0,	sys.tab0,	sys.tab0 # table_name
 % col0,	col1,	col2,	col0 # name
@@ -218,8 +218,8 @@ project (
 % int,	int,	int # type
 % 1,	1,	1 # length
 #SELECT CAST(+ col2 * col2 AS BIGINT) FROM tab2 AS cor0 WHERE NOT - CAST ( NULL AS INTEGER ) <> - - col1 AND NOT NULL NOT BETWEEN ( NULL ) AND - 91 - - + 27 * + col2;
-% sys.%2 # table_name
-% %2 # name
+% sys.%1 # table_name
+% %1 # name
 % bigint # type
 % 1 # length
 #SELECT + 2 FROM tab0 AS cor0 WHERE NOT - 29 IS NULL OR NOT NULL IS NULL AND NOT NULL BETWEEN + col1 - + 60 AND + 37 * + col1 + + col0;
@@ -440,15 +440,15 @@ project (
 % 2,	3 # length
 [ 87,	-37	]
 #SELECT DISTINCT CAST(- CAST ( CASE 81 WHEN 48 - - 3 / - - 47 - - CAST ( NULL AS INTEGER ) THEN NULL WHEN COUNT ( * ) THEN + - 91 + + 43 ELSE + - 0 END AS INTEGER ) AS BIGINT) AS col0, CAST(- 27 * + 43 AS BIGINT);
-% .,	.%5 # table_name
-% col0,	%5 # name
+% .,	.%4 # table_name
+% col0,	%4 # name
 % bigint,	bigint # type
 % 1,	5 # length
 [ 0,	-1161	]
 #SELECT DISTINCT CAST(66 * - + CAST ( - - COUNT ( * ) AS INTEGER ) * 54 * + CASE 68 WHEN - 56 * + CAST ( NULL AS INTEGER ) + + + 47 THEN 
 #- 83 ELSE + 59 + - COUNT ( * ) - 26 * ( 59 ) * 11 - - + COUNT ( * ) * - 73 END + + COUNT ( * ) / + ( 86 + 19 * 90 ) AS BIGINT);
-% .%7 # table_name
-% %7 # name
+% .%6 # table_name
+% %6 # name
 % bigint # type
 % 8 # length
 [ 60192396	]

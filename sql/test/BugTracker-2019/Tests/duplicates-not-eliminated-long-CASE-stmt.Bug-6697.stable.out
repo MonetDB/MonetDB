@@ -32,122 +32,128 @@ stdout of test 'duplicates-not-eliminated-long-CASE-stmt.Bug-6697` in directory 
 % mal # name
 % clob # type
 % 1023 # length
-function user.s4_0():void;
-    X_142:void := querylog.define("explain select sys.timestamp_to_str(case when task0.\"sys_created_on\" >= \\'1999-10-31 09:00:00\\' and task0.\"sys_created_on\" < \\'2000-04-02 10:00:00\\' then task0.\"sys_created_on\" + interval \\'-28800\\' second when task0.\"sys_created_on\" >= \\'2000-04-02 10:00:00\\' and task0.\"sys_created_on\" < \\'2000-10-29 09:00:00\\' then task0.\"sys_created_on\" + interval \\'-25200\\' second when task0.\"sys_created_on\" >= \\'2000-10-29 09:00:00\\' and task0.\"sys_created_on\" < \\'2001-04-01 10:00:00\\' then task0.\"sys_created_on\" + interval \\'-28800\\' second when task0.\"sys_created_on\" >= \\'2001-04-01 10:00:00\\' and task0.\"sys_created_on\" < \\'2001-10-28 09:00:00\\' then task0.\"sys_created_on\" + interval \\'-25200\\' second when task0.\"sys_created_on\" >= \\'2001-10-28 09:00:00\\' and task0.\"sys_created_on\" < \\'2002-04-07 10:00:00\\' then task0.\"sys_created_on\" + interval \\'-28800\\' second when task0.\"sys_created_on\" >= \\'2002-04-07 10:00:00\\' and
-    X_1246:bat[:str] := bat.pack("sys.":str);
-    X_1247:bat[:str] := bat.pack("yearref":str);
-    X_1248:bat[:str] := bat.pack("clob":str);
-    X_1249:bat[:int] := bat.pack(0:int);
-    X_184:bat[:timestamp] := bat.new(nil:timestamp);
-    X_196:bat[:bit] := batcalc.between(X_184:bat[:timestamp], "1999-10-31 09:00:00.000000":timestamp, "2000-04-02 10:00:00.000000":timestamp, false:bit, true:bit, false:bit, false:bit, false:bit);
-    X_200:bat[:timestamp] := batmtime.timestamp_add_msec_interval(X_184:bat[:timestamp], -28800000:lng);
-    X_215:bat[:bit] := batcalc.between(X_184:bat[:timestamp], "2000-04-02 10:00:00.000000":timestamp, "2000-10-29 09:00:00.000000":timestamp, false:bit, true:bit, false:bit, false:bit, false:bit);
-    X_219:bat[:timestamp] := batmtime.timestamp_add_msec_interval(X_184:bat[:timestamp], -25200000:lng);
-    X_233:bat[:bit] := batcalc.between(X_184:bat[:timestamp], "2000-10-29 09:00:00.000000":timestamp, "2001-04-01 10:00:00.000000":timestamp, false:bit, true:bit, false:bit, false:bit, false:bit);
-    X_254:bat[:bit] := batcalc.between(X_184:bat[:timestamp], "2001-04-01 10:00:00.000000":timestamp, "2001-10-28 09:00:00.000000":timestamp, false:bit, true:bit, false:bit, false:bit, false:bit);
-    X_272:bat[:bit] := batcalc.between(X_184:bat[:timestamp], "2001-10-28 09:00:00.000000":timestamp, "2002-04-07 10:00:00.000000":timestamp, false:bit, true:bit, false:bit, false:bit, false:bit);
-    X_293:bat[:bit] := batcalc.between(X_184:bat[:timestamp], "2002-04-07 10:00:00.000000":timestamp, "2002-10-27 09:00:00.000000":timestamp, false:bit, true:bit, false:bit, false:bit, false:bit);
-    X_311:bat[:bit] := batcalc.between(X_184:bat[:timestamp], "2002-10-27 09:00:00.000000":timestamp, "2003-04-06 10:00:00.000000":timestamp, false:bit, true:bit, false:bit, false:bit, false:bit);
-    X_332:bat[:bit] := batcalc.between(X_184:bat[:timestamp], "2003-04-06 10:00:00.000000":timestamp, "2003-10-26 09:00:00.000000":timestamp, false:bit, true:bit, false:bit, false:bit, false:bit);
-    X_350:bat[:bit] := batcalc.between(X_184:bat[:timestamp], "2003-10-26 09:00:00.000000":timestamp, "2004-04-04 10:00:00.000000":timestamp, false:bit, true:bit, false:bit, false:bit, false:bit);
-    X_371:bat[:bit] := batcalc.between(X_184:bat[:timestamp], "2004-04-04 10:00:00.000000":timestamp, "2004-10-31 09:00:00.000000":timestamp, false:bit, true:bit, false:bit, false:bit, false:bit);
-    X_389:bat[:bit] := batcalc.between(X_184:bat[:timestamp], "2004-10-31 09:00:00.000000":timestamp, "2005-04-03 10:00:00.000000":timestamp, false:bit, true:bit, false:bit, false:bit, false:bit);
-    X_410:bat[:bit] := batcalc.between(X_184:bat[:timestamp], "2005-04-03 10:00:00.000000":timestamp, "2005-10-30 09:00:00.000000":timestamp, false:bit, true:bit, false:bit, false:bit, false:bit);
-    X_428:bat[:bit] := batcalc.between(X_184:bat[:timestamp], "2005-10-30 09:00:00.000000":timestamp, "2006-04-02 10:00:00.000000":timestamp, false:bit, true:bit, false:bit, false:bit, false:bit);
-    X_449:bat[:bit] := batcalc.between(X_184:bat[:timestamp], "2006-04-02 10:00:00.000000":timestamp, "2006-10-29 09:00:00.000000":timestamp, false:bit, true:bit, false:bit, false:bit, false:bit);
-    X_467:bat[:bit] := batcalc.between(X_184:bat[:timestamp], "2006-10-29 09:00:00.000000":timestamp, "2007-03-11 10:00:00.000000":timestamp, false:bit, true:bit, false:bit, false:bit, false:bit);
-    X_488:bat[:bit] := batcalc.between(X_184:bat[:timestamp], "2007-03-11 10:00:00.000000":timestamp, "2007-11-04 09:00:00.000000":timestamp, false:bit, true:bit, false:bit, false:bit, false:bit);
-    X_506:bat[:bit] := batcalc.between(X_184:bat[:timestamp], "2007-11-04 09:00:00.000000":timestamp, "2008-03-09 10:00:00.000000":timestamp, false:bit, true:bit, false:bit, false:bit, false:bit);
-    X_527:bat[:bit] := batcalc.between(X_184:bat[:timestamp], "2008-03-09 10:00:00.000000":timestamp, "2008-11-02 09:00:00.000000":timestamp, false:bit, true:bit, false:bit, false:bit, false:bit);
-    X_545:bat[:bit] := batcalc.between(X_184:bat[:timestamp], "2008-11-02 09:00:00.000000":timestamp, "2009-03-08 10:00:00.000000":timestamp, false:bit, true:bit, false:bit, false:bit, false:bit);
-    X_566:bat[:bit] := batcalc.between(X_184:bat[:timestamp], "2009-03-08 10:00:00.000000":timestamp, "2009-11-01 09:00:00.000000":timestamp, false:bit, true:bit, false:bit, false:bit, false:bit);
-    X_584:bat[:bit] := batcalc.between(X_184:bat[:timestamp], "2009-11-01 09:00:00.000000":timestamp, "2010-03-14 10:00:00.000000":timestamp, false:bit, true:bit, false:bit, false:bit, false:bit);
-    X_605:bat[:bit] := batcalc.between(X_184:bat[:timestamp], "2010-03-14 10:00:00.000000":timestamp, "2010-11-07 09:00:00.000000":timestamp, false:bit, true:bit, false:bit, false:bit, false:bit);
-    X_623:bat[:bit] := batcalc.between(X_184:bat[:timestamp], "2010-11-07 09:00:00.000000":timestamp, "2011-03-13 10:00:00.000000":timestamp, false:bit, true:bit, false:bit, false:bit, false:bit);
-    X_644:bat[:bit] := batcalc.between(X_184:bat[:timestamp], "2011-03-13 10:00:00.000000":timestamp, "2011-11-06 09:00:00.000000":timestamp, false:bit, true:bit, false:bit, false:bit, false:bit);
-    X_662:bat[:bit] := batcalc.between(X_184:bat[:timestamp], "2011-11-06 09:00:00.000000":timestamp, "2012-03-11 10:00:00.000000":timestamp, false:bit, true:bit, false:bit, false:bit, false:bit);
-    X_683:bat[:bit] := batcalc.between(X_184:bat[:timestamp], "2012-03-11 10:00:00.000000":timestamp, "2012-11-04 09:00:00.000000":timestamp, false:bit, true:bit, false:bit, false:bit, false:bit);
-    X_701:bat[:bit] := batcalc.between(X_184:bat[:timestamp], "2012-11-04 09:00:00.000000":timestamp, "2013-03-10 10:00:00.000000":timestamp, false:bit, true:bit, false:bit, false:bit, false:bit);
-    X_722:bat[:bit] := batcalc.between(X_184:bat[:timestamp], "2013-03-10 10:00:00.000000":timestamp, "2013-11-03 09:00:00.000000":timestamp, false:bit, true:bit, false:bit, false:bit, false:bit);
-    X_740:bat[:bit] := batcalc.between(X_184:bat[:timestamp], "2013-11-03 09:00:00.000000":timestamp, "2014-03-09 10:00:00.000000":timestamp, false:bit, true:bit, false:bit, false:bit, false:bit);
-    X_761:bat[:bit] := batcalc.between(X_184:bat[:timestamp], "2014-03-09 10:00:00.000000":timestamp, "2014-11-02 09:00:00.000000":timestamp, false:bit, true:bit, false:bit, false:bit, false:bit);
-    X_779:bat[:bit] := batcalc.between(X_184:bat[:timestamp], "2014-11-02 09:00:00.000000":timestamp, "2015-03-08 10:00:00.000000":timestamp, false:bit, true:bit, false:bit, false:bit, false:bit);
-    X_800:bat[:bit] := batcalc.between(X_184:bat[:timestamp], "2015-03-08 10:00:00.000000":timestamp, "2015-11-01 09:00:00.000000":timestamp, false:bit, true:bit, false:bit, false:bit, false:bit);
-    X_818:bat[:bit] := batcalc.between(X_184:bat[:timestamp], "2015-11-01 09:00:00.000000":timestamp, "2016-03-13 10:00:00.000000":timestamp, false:bit, true:bit, false:bit, false:bit, false:bit);
-    X_839:bat[:bit] := batcalc.between(X_184:bat[:timestamp], "2016-03-13 10:00:00.000000":timestamp, "2016-11-06 09:00:00.000000":timestamp, false:bit, true:bit, false:bit, false:bit, false:bit);
-    X_857:bat[:bit] := batcalc.between(X_184:bat[:timestamp], "2016-11-06 09:00:00.000000":timestamp, "2017-03-12 10:00:00.000000":timestamp, false:bit, true:bit, false:bit, false:bit, false:bit);
-    X_878:bat[:bit] := batcalc.between(X_184:bat[:timestamp], "2017-03-12 10:00:00.000000":timestamp, "2017-11-05 09:00:00.000000":timestamp, false:bit, true:bit, false:bit, false:bit, false:bit);
-    X_896:bat[:bit] := batcalc.between(X_184:bat[:timestamp], "2017-11-05 09:00:00.000000":timestamp, "2018-03-11 10:00:00.000000":timestamp, false:bit, true:bit, false:bit, false:bit, false:bit);
-    X_917:bat[:bit] := batcalc.between(X_184:bat[:timestamp], "2018-03-11 10:00:00.000000":timestamp, "2018-11-04 09:00:00.000000":timestamp, false:bit, true:bit, false:bit, false:bit, false:bit);
-    X_935:bat[:bit] := batcalc.between(X_184:bat[:timestamp], "2018-11-04 09:00:00.000000":timestamp, "2019-03-10 10:00:00.000000":timestamp, false:bit, true:bit, false:bit, false:bit, false:bit);
-    X_956:bat[:bit] := batcalc.between(X_184:bat[:timestamp], "2019-03-10 10:00:00.000000":timestamp, "2019-11-03 09:00:00.000000":timestamp, false:bit, true:bit, false:bit, false:bit, false:bit);
-    X_974:bat[:bit] := batcalc.between(X_184:bat[:timestamp], "2019-11-03 09:00:00.000000":timestamp, "2020-03-08 10:00:00.000000":timestamp, false:bit, true:bit, false:bit, false:bit, false:bit);
-    X_995:bat[:bit] := batcalc.between(X_184:bat[:timestamp], "2020-03-08 10:00:00.000000":timestamp, "2020-11-01 09:00:00.000000":timestamp, false:bit, true:bit, false:bit, false:bit, false:bit);
-    X_1013:bat[:bit] := batcalc.between(X_184:bat[:timestamp], "2020-11-01 09:00:00.000000":timestamp, "2021-03-14 10:00:00.000000":timestamp, false:bit, true:bit, false:bit, false:bit, false:bit);
-    X_1034:bat[:bit] := batcalc.between(X_184:bat[:timestamp], "2021-03-14 10:00:00.000000":timestamp, "2021-11-07 09:00:00.000000":timestamp, false:bit, true:bit, false:bit, false:bit, false:bit);
-    X_1052:bat[:bit] := batcalc.between(X_184:bat[:timestamp], "2021-11-07 09:00:00.000000":timestamp, "2022-03-13 10:00:00.000000":timestamp, false:bit, true:bit, false:bit, false:bit, false:bit);
-    X_1073:bat[:bit] := batcalc.between(X_184:bat[:timestamp], "2022-03-13 10:00:00.000000":timestamp, "2022-11-06 09:00:00.000000":timestamp, false:bit, true:bit, false:bit, false:bit, false:bit);
-    X_1084:bat[:timestamp] := batcalc.ifthenelse(X_1073:bat[:bit], X_219:bat[:timestamp], X_200:bat[:timestamp]);
-    X_1089:bat[:timestamp] := batcalc.ifthenelse(X_1052:bat[:bit], X_200:bat[:timestamp], X_1084:bat[:timestamp]);
-    X_1092:bat[:timestamp] := batcalc.ifthenelse(X_1034:bat[:bit], X_219:bat[:timestamp], X_1089:bat[:timestamp]);
-    X_1096:bat[:timestamp] := batcalc.ifthenelse(X_1013:bat[:bit], X_200:bat[:timestamp], X_1092:bat[:timestamp]);
-    X_1099:bat[:timestamp] := batcalc.ifthenelse(X_995:bat[:bit], X_219:bat[:timestamp], X_1096:bat[:timestamp]);
-    X_1102:bat[:timestamp] := batcalc.ifthenelse(X_974:bat[:bit], X_200:bat[:timestamp], X_1099:bat[:timestamp]);
-    X_1105:bat[:timestamp] := batcalc.ifthenelse(X_956:bat[:bit], X_219:bat[:timestamp], X_1102:bat[:timestamp]);
-    X_1109:bat[:timestamp] := batcalc.ifthenelse(X_935:bat[:bit], X_200:bat[:timestamp], X_1105:bat[:timestamp]);
-    X_1112:bat[:timestamp] := batcalc.ifthenelse(X_917:bat[:bit], X_219:bat[:timestamp], X_1109:bat[:timestamp]);
-    X_1115:bat[:timestamp] := batcalc.ifthenelse(X_896:bat[:bit], X_200:bat[:timestamp], X_1112:bat[:timestamp]);
-    X_1118:bat[:timestamp] := batcalc.ifthenelse(X_878:bat[:bit], X_219:bat[:timestamp], X_1115:bat[:timestamp]);
-    X_1123:bat[:timestamp] := batcalc.ifthenelse(X_857:bat[:bit], X_200:bat[:timestamp], X_1118:bat[:timestamp]);
-    X_1126:bat[:timestamp] := batcalc.ifthenelse(X_839:bat[:bit], X_219:bat[:timestamp], X_1123:bat[:timestamp]);
-    X_1130:bat[:timestamp] := batcalc.ifthenelse(X_818:bat[:bit], X_200:bat[:timestamp], X_1126:bat[:timestamp]);
-    X_1133:bat[:timestamp] := batcalc.ifthenelse(X_800:bat[:bit], X_219:bat[:timestamp], X_1130:bat[:timestamp]);
-    X_1136:bat[:timestamp] := batcalc.ifthenelse(X_779:bat[:bit], X_200:bat[:timestamp], X_1133:bat[:timestamp]);
-    X_1139:bat[:timestamp] := batcalc.ifthenelse(X_761:bat[:bit], X_219:bat[:timestamp], X_1136:bat[:timestamp]);
-    X_1143:bat[:timestamp] := batcalc.ifthenelse(X_740:bat[:bit], X_200:bat[:timestamp], X_1139:bat[:timestamp]);
-    X_1146:bat[:timestamp] := batcalc.ifthenelse(X_722:bat[:bit], X_219:bat[:timestamp], X_1143:bat[:timestamp]);
-    X_1149:bat[:timestamp] := batcalc.ifthenelse(X_701:bat[:bit], X_200:bat[:timestamp], X_1146:bat[:timestamp]);
-    X_1152:bat[:timestamp] := batcalc.ifthenelse(X_683:bat[:bit], X_219:bat[:timestamp], X_1149:bat[:timestamp]);
-    X_1157:bat[:timestamp] := batcalc.ifthenelse(X_662:bat[:bit], X_200:bat[:timestamp], X_1152:bat[:timestamp]);
-    X_1160:bat[:timestamp] := batcalc.ifthenelse(X_644:bat[:bit], X_219:bat[:timestamp], X_1157:bat[:timestamp]);
-    X_1164:bat[:timestamp] := batcalc.ifthenelse(X_623:bat[:bit], X_200:bat[:timestamp], X_1160:bat[:timestamp]);
-    X_1167:bat[:timestamp] := batcalc.ifthenelse(X_605:bat[:bit], X_219:bat[:timestamp], X_1164:bat[:timestamp]);
-    X_1170:bat[:timestamp] := batcalc.ifthenelse(X_584:bat[:bit], X_200:bat[:timestamp], X_1167:bat[:timestamp]);
-    X_1173:bat[:timestamp] := batcalc.ifthenelse(X_566:bat[:bit], X_219:bat[:timestamp], X_1170:bat[:timestamp]);
-    X_1177:bat[:timestamp] := batcalc.ifthenelse(X_545:bat[:bit], X_200:bat[:timestamp], X_1173:bat[:timestamp]);
-    X_1180:bat[:timestamp] := batcalc.ifthenelse(X_527:bat[:bit], X_219:bat[:timestamp], X_1177:bat[:timestamp]);
-    X_1183:bat[:timestamp] := batcalc.ifthenelse(X_506:bat[:bit], X_200:bat[:timestamp], X_1180:bat[:timestamp]);
-    X_1186:bat[:timestamp] := batcalc.ifthenelse(X_488:bat[:bit], X_219:bat[:timestamp], X_1183:bat[:timestamp]);
-    X_1191:bat[:timestamp] := batcalc.ifthenelse(X_467:bat[:bit], X_200:bat[:timestamp], X_1186:bat[:timestamp]);
-    X_1194:bat[:timestamp] := batcalc.ifthenelse(X_449:bat[:bit], X_219:bat[:timestamp], X_1191:bat[:timestamp]);
-    X_1198:bat[:timestamp] := batcalc.ifthenelse(X_428:bat[:bit], X_200:bat[:timestamp], X_1194:bat[:timestamp]);
-    X_1201:bat[:timestamp] := batcalc.ifthenelse(X_410:bat[:bit], X_219:bat[:timestamp], X_1198:bat[:timestamp]);
-    X_1204:bat[:timestamp] := batcalc.ifthenelse(X_389:bat[:bit], X_200:bat[:timestamp], X_1201:bat[:timestamp]);
-    X_1207:bat[:timestamp] := batcalc.ifthenelse(X_371:bat[:bit], X_219:bat[:timestamp], X_1204:bat[:timestamp]);
-    X_1211:bat[:timestamp] := batcalc.ifthenelse(X_350:bat[:bit], X_200:bat[:timestamp], X_1207:bat[:timestamp]);
-    X_1214:bat[:timestamp] := batcalc.ifthenelse(X_332:bat[:bit], X_219:bat[:timestamp], X_1211:bat[:timestamp]);
-    X_1217:bat[:timestamp] := batcalc.ifthenelse(X_311:bat[:bit], X_200:bat[:timestamp], X_1214:bat[:timestamp]);
-    X_1220:bat[:timestamp] := batcalc.ifthenelse(X_293:bat[:bit], X_219:bat[:timestamp], X_1217:bat[:timestamp]);
-    X_1225:bat[:timestamp] := batcalc.ifthenelse(X_272:bat[:bit], X_200:bat[:timestamp], X_1220:bat[:timestamp]);
-    X_1228:bat[:timestamp] := batcalc.ifthenelse(X_254:bat[:bit], X_219:bat[:timestamp], X_1225:bat[:timestamp]);
-    X_1232:bat[:timestamp] := batcalc.ifthenelse(X_233:bat[:bit], X_200:bat[:timestamp], X_1228:bat[:timestamp]);
-    X_1235:bat[:timestamp] := batcalc.ifthenelse(X_215:bat[:bit], X_219:bat[:timestamp], X_1232:bat[:timestamp]);
-    X_1237:bat[:timestamp] := batcalc.ifthenelse(X_196:bat[:bit], X_200:bat[:timestamp], X_1235:bat[:timestamp]);
-    X_1238:bat[:timestamp] := batcalc.timestamp(X_1237:bat[:timestamp], 7:int);
-    X_1242:bat[:str] := batmtime.timestamp_to_str(X_1238:bat[:timestamp], "%Y":str);
-    sql.resultSet(X_1246:bat[:str], X_1247:bat[:str], X_1248:bat[:str], X_1249:bat[:int], X_1249:bat[:int], X_1242:bat[:str]);
-end user.s4_0;
-#inline               actions= 0 time=24 usec 
-#remap                actions=230 time=419 usec 
-#costmodel            actions= 1 time=12 usec 
-#coercion             actions=416 time=78 usec 
-#aliases              actions=649 time=118 usec 
-#evaluate             actions=185 time=356 usec 
-#emptybind            actions=11 time=51 usec 
-#pushselect           actions= 0 time=18 usec 
-#aliases              actions=188 time=68 usec 
-#mergetable           actions= 0 time=164 usec 
-#deadcode             actions=18 time=48 usec 
+function user.main():void;
+    X_1:void := querylog.define("explain select sys.timestamp_to_str(case when task0.\"sys_created_on\" >= \\'1999-10-31 09:00:00\\' and task0.\"sys_created_on\" < \\'2000-04-02 10:00:00\\' then task0.\"sys_created_on\" + interval \\'-28800\\' second when task0.\"sys_created_on\" >= \\'2000-04-02 10:00:00\\' and task0.\"sys_created_on\" < \\'2000-10-29 09:00:00\\' then task0.\"sys_created_on\" + interval \\'-25200\\' second when task0.\"sys_created_on\" >= \\'2000-10-29 09:00:00\\' and task0.\"sys_created_on\" < \\'2001-04-01 10:00:00\\' then task0.\"sys_created_on\" + interval \\'-28800\\' second when task0.\"sys_created_on\" >= \\'2001-04-01 10:00:00\\' and task0.\"sys_created_on\" < \\'2001-10-28 09:00:00\\' then task0.\"sys_created_on\" + interval \\'-25200\\' second when task0.\"sys_created_on\" >= \\'2001-10-28 09:00:00\\' and task0.\"sys_created_on\" < \\'2002-04-07 10:00:00\\' then task0.\"sys_created_on\" + interval \\'-28800\\' second when task0.\"sys_created_on\" >= \\'2002-04-07 10:00:00\\' and t
+barrier X_1042:bit := language.dataflow();
+    X_887:bat[:str] := bat.pack("sys.":str);
+    X_888:bat[:str] := bat.pack("yearref":str);
+    X_889:bat[:str] := bat.pack("clob":str);
+    X_890:bat[:int] := bat.pack(0:int);
+    X_40:bat[:timestamp] := bat.new(nil:timestamp);
+    X_48:bat[:bit] := batcalc.between(X_40:bat[:timestamp], "1999-10-31 09:00:00.000000":timestamp, "2000-04-02 10:00:00.000000":timestamp, false:bit, true:bit, false:bit, false:bit, false:bit);
+    X_53:bat[:timestamp] := batmtime.timestamp_add_msec_interval(X_40:bat[:timestamp], -28800000:lng);
+    X_64:bat[:bit] := batcalc.between(X_40:bat[:timestamp], "2000-04-02 10:00:00.000000":timestamp, "2000-10-29 09:00:00.000000":timestamp, false:bit, true:bit, false:bit, false:bit, false:bit);
+    X_69:bat[:timestamp] := batmtime.timestamp_add_msec_interval(X_40:bat[:timestamp], -25200000:lng);
+    X_78:bat[:bit] := batcalc.between(X_40:bat[:timestamp], "2000-10-29 09:00:00.000000":timestamp, "2001-04-01 10:00:00.000000":timestamp, false:bit, true:bit, false:bit, false:bit, false:bit);
+    X_90:bat[:bit] := batcalc.between(X_40:bat[:timestamp], "2001-04-01 10:00:00.000000":timestamp, "2001-10-28 09:00:00.000000":timestamp, false:bit, true:bit, false:bit, false:bit, false:bit);
+    X_108:bat[:bit] := batcalc.between(X_40:bat[:timestamp], "2001-10-28 09:00:00.000000":timestamp, "2002-04-07 10:00:00.000000":timestamp, false:bit, true:bit, false:bit, false:bit, false:bit);
+    X_121:bat[:bit] := batcalc.between(X_40:bat[:timestamp], "2002-04-07 10:00:00.000000":timestamp, "2002-10-27 09:00:00.000000":timestamp, false:bit, true:bit, false:bit, false:bit, false:bit);
+    X_135:bat[:bit] := batcalc.between(X_40:bat[:timestamp], "2002-10-27 09:00:00.000000":timestamp, "2003-04-06 10:00:00.000000":timestamp, false:bit, true:bit, false:bit, false:bit, false:bit);
+    X_153:bat[:bit] := batcalc.between(X_40:bat[:timestamp], "2003-04-06 10:00:00.000000":timestamp, "2003-10-26 09:00:00.000000":timestamp, false:bit, true:bit, false:bit, false:bit, false:bit);
+    X_164:bat[:bit] := batcalc.between(X_40:bat[:timestamp], "2003-10-26 09:00:00.000000":timestamp, "2004-04-04 10:00:00.000000":timestamp, false:bit, true:bit, false:bit, false:bit, false:bit);
+    X_179:bat[:bit] := batcalc.between(X_40:bat[:timestamp], "2004-04-04 10:00:00.000000":timestamp, "2004-10-31 09:00:00.000000":timestamp, false:bit, true:bit, false:bit, false:bit, false:bit);
+    X_197:bat[:bit] := batcalc.between(X_40:bat[:timestamp], "2004-10-31 09:00:00.000000":timestamp, "2005-04-03 10:00:00.000000":timestamp, false:bit, true:bit, false:bit, false:bit, false:bit);
+    X_212:bat[:bit] := batcalc.between(X_40:bat[:timestamp], "2005-04-03 10:00:00.000000":timestamp, "2005-10-30 09:00:00.000000":timestamp, false:bit, true:bit, false:bit, false:bit, false:bit);
+    X_223:bat[:bit] := batcalc.between(X_40:bat[:timestamp], "2005-10-30 09:00:00.000000":timestamp, "2006-04-02 10:00:00.000000":timestamp, false:bit, true:bit, false:bit, false:bit, false:bit);
+    X_241:bat[:bit] := batcalc.between(X_40:bat[:timestamp], "2006-04-02 10:00:00.000000":timestamp, "2006-10-29 09:00:00.000000":timestamp, false:bit, true:bit, false:bit, false:bit, false:bit);
+    X_255:bat[:bit] := batcalc.between(X_40:bat[:timestamp], "2006-10-29 09:00:00.000000":timestamp, "2007-03-11 10:00:00.000000":timestamp, false:bit, true:bit, false:bit, false:bit, false:bit);
+    X_267:bat[:bit] := batcalc.between(X_40:bat[:timestamp], "2007-03-11 10:00:00.000000":timestamp, "2007-11-04 09:00:00.000000":timestamp, false:bit, true:bit, false:bit, false:bit, false:bit);
+    X_286:bat[:bit] := batcalc.between(X_40:bat[:timestamp], "2007-11-04 09:00:00.000000":timestamp, "2008-03-09 10:00:00.000000":timestamp, false:bit, true:bit, false:bit, false:bit, false:bit);
+    X_298:bat[:bit] := batcalc.between(X_40:bat[:timestamp], "2008-03-09 10:00:00.000000":timestamp, "2008-11-02 09:00:00.000000":timestamp, false:bit, true:bit, false:bit, false:bit, false:bit);
+    X_311:bat[:bit] := batcalc.between(X_40:bat[:timestamp], "2008-11-02 09:00:00.000000":timestamp, "2009-03-08 10:00:00.000000":timestamp, false:bit, true:bit, false:bit, false:bit, false:bit);
+    X_330:bat[:bit] := batcalc.between(X_40:bat[:timestamp], "2009-03-08 10:00:00.000000":timestamp, "2009-11-01 09:00:00.000000":timestamp, false:bit, true:bit, false:bit, false:bit, false:bit);
+    X_344:bat[:bit] := batcalc.between(X_40:bat[:timestamp], "2009-11-01 09:00:00.000000":timestamp, "2010-03-14 10:00:00.000000":timestamp, false:bit, true:bit, false:bit, false:bit, false:bit);
+    X_356:bat[:bit] := batcalc.between(X_40:bat[:timestamp], "2010-03-14 10:00:00.000000":timestamp, "2010-11-07 09:00:00.000000":timestamp, false:bit, true:bit, false:bit, false:bit, false:bit);
+    X_373:bat[:bit] := batcalc.between(X_40:bat[:timestamp], "2010-11-07 09:00:00.000000":timestamp, "2011-03-13 10:00:00.000000":timestamp, false:bit, true:bit, false:bit, false:bit, false:bit);
+    X_387:bat[:bit] := batcalc.between(X_40:bat[:timestamp], "2011-03-13 10:00:00.000000":timestamp, "2011-11-06 09:00:00.000000":timestamp, false:bit, true:bit, false:bit, false:bit, false:bit);
+    X_400:bat[:bit] := batcalc.between(X_40:bat[:timestamp], "2011-11-06 09:00:00.000000":timestamp, "2012-03-11 10:00:00.000000":timestamp, false:bit, true:bit, false:bit, false:bit, false:bit);
+    X_418:bat[:bit] := batcalc.between(X_40:bat[:timestamp], "2012-03-11 10:00:00.000000":timestamp, "2012-11-04 09:00:00.000000":timestamp, false:bit, true:bit, false:bit, false:bit, false:bit);
+    X_431:bat[:bit] := batcalc.between(X_40:bat[:timestamp], "2012-11-04 09:00:00.000000":timestamp, "2013-03-10 10:00:00.000000":timestamp, false:bit, true:bit, false:bit, false:bit, false:bit);
+    X_443:bat[:bit] := batcalc.between(X_40:bat[:timestamp], "2013-03-10 10:00:00.000000":timestamp, "2013-11-03 09:00:00.000000":timestamp, false:bit, true:bit, false:bit, false:bit, false:bit);
+    X_462:bat[:bit] := batcalc.between(X_40:bat[:timestamp], "2013-11-03 09:00:00.000000":timestamp, "2014-03-09 10:00:00.000000":timestamp, false:bit, true:bit, false:bit, false:bit, false:bit);
+    X_476:bat[:bit] := batcalc.between(X_40:bat[:timestamp], "2014-03-09 10:00:00.000000":timestamp, "2014-11-02 09:00:00.000000":timestamp, false:bit, true:bit, false:bit, false:bit, false:bit);
+    X_488:bat[:bit] := batcalc.between(X_40:bat[:timestamp], "2014-11-02 09:00:00.000000":timestamp, "2015-03-08 10:00:00.000000":timestamp, false:bit, true:bit, false:bit, false:bit, false:bit);
+    X_506:bat[:bit] := batcalc.between(X_40:bat[:timestamp], "2015-03-08 10:00:00.000000":timestamp, "2015-11-01 09:00:00.000000":timestamp, false:bit, true:bit, false:bit, false:bit, false:bit);
+    X_520:bat[:bit] := batcalc.between(X_40:bat[:timestamp], "2015-11-01 09:00:00.000000":timestamp, "2016-03-13 10:00:00.000000":timestamp, false:bit, true:bit, false:bit, false:bit, false:bit);
+    X_532:bat[:bit] := batcalc.between(X_40:bat[:timestamp], "2016-03-13 10:00:00.000000":timestamp, "2016-11-06 09:00:00.000000":timestamp, false:bit, true:bit, false:bit, false:bit, false:bit);
+    X_550:bat[:bit] := batcalc.between(X_40:bat[:timestamp], "2016-11-06 09:00:00.000000":timestamp, "2017-03-12 10:00:00.000000":timestamp, false:bit, true:bit, false:bit, false:bit, false:bit);
+    X_563:bat[:bit] := batcalc.between(X_40:bat[:timestamp], "2017-03-12 10:00:00.000000":timestamp, "2017-11-05 09:00:00.000000":timestamp, false:bit, true:bit, false:bit, false:bit, false:bit);
+    X_576:bat[:bit] := batcalc.between(X_40:bat[:timestamp], "2017-11-05 09:00:00.000000":timestamp, "2018-03-11 10:00:00.000000":timestamp, false:bit, true:bit, false:bit, false:bit, false:bit);
+    X_595:bat[:bit] := batcalc.between(X_40:bat[:timestamp], "2018-03-11 10:00:00.000000":timestamp, "2018-11-04 09:00:00.000000":timestamp, false:bit, true:bit, false:bit, false:bit, false:bit);
+    X_609:bat[:bit] := batcalc.between(X_40:bat[:timestamp], "2018-11-04 09:00:00.000000":timestamp, "2019-03-10 10:00:00.000000":timestamp, false:bit, true:bit, false:bit, false:bit, false:bit);
+    X_620:bat[:bit] := batcalc.between(X_40:bat[:timestamp], "2019-03-10 10:00:00.000000":timestamp, "2019-11-03 09:00:00.000000":timestamp, false:bit, true:bit, false:bit, false:bit, false:bit);
+    X_638:bat[:bit] := batcalc.between(X_40:bat[:timestamp], "2019-11-03 09:00:00.000000":timestamp, "2020-03-08 10:00:00.000000":timestamp, false:bit, true:bit, false:bit, false:bit, false:bit);
+    X_652:bat[:bit] := batcalc.between(X_40:bat[:timestamp], "2020-03-08 10:00:00.000000":timestamp, "2020-11-01 09:00:00.000000":timestamp, false:bit, true:bit, false:bit, false:bit, false:bit);
+    X_665:bat[:bit] := batcalc.between(X_40:bat[:timestamp], "2020-11-01 09:00:00.000000":timestamp, "2021-03-14 10:00:00.000000":timestamp, false:bit, true:bit, false:bit, false:bit, false:bit);
+    X_683:bat[:bit] := batcalc.between(X_40:bat[:timestamp], "2021-03-14 10:00:00.000000":timestamp, "2021-11-07 09:00:00.000000":timestamp, false:bit, true:bit, false:bit, false:bit, false:bit);
+    X_695:bat[:bit] := batcalc.between(X_40:bat[:timestamp], "2021-11-07 09:00:00.000000":timestamp, "2022-03-13 10:00:00.000000":timestamp, false:bit, true:bit, false:bit, false:bit, false:bit);
+    X_708:bat[:bit] := batcalc.between(X_40:bat[:timestamp], "2022-03-13 10:00:00.000000":timestamp, "2022-11-06 09:00:00.000000":timestamp, false:bit, true:bit, false:bit, false:bit, false:bit);
+    X_725:bat[:timestamp] := batcalc.ifthenelse(X_708:bat[:bit], X_69:bat[:timestamp], X_53:bat[:timestamp]);
+    X_729:bat[:timestamp] := batcalc.ifthenelse(X_695:bat[:bit], X_53:bat[:timestamp], X_725:bat[:timestamp]);
+    X_733:bat[:timestamp] := batcalc.ifthenelse(X_683:bat[:bit], X_69:bat[:timestamp], X_729:bat[:timestamp]);
+    X_736:bat[:timestamp] := batcalc.ifthenelse(X_665:bat[:bit], X_53:bat[:timestamp], X_733:bat[:timestamp]);
+    X_739:bat[:timestamp] := batcalc.ifthenelse(X_652:bat[:bit], X_69:bat[:timestamp], X_736:bat[:timestamp]);
+    X_742:bat[:timestamp] := batcalc.ifthenelse(X_638:bat[:bit], X_53:bat[:timestamp], X_739:bat[:timestamp]);
+    X_746:bat[:timestamp] := batcalc.ifthenelse(X_620:bat[:bit], X_69:bat[:timestamp], X_742:bat[:timestamp]);
+    X_749:bat[:timestamp] := batcalc.ifthenelse(X_609:bat[:bit], X_53:bat[:timestamp], X_746:bat[:timestamp]);
+    X_752:bat[:timestamp] := batcalc.ifthenelse(X_595:bat[:bit], X_69:bat[:timestamp], X_749:bat[:timestamp]);
+    X_756:bat[:timestamp] := batcalc.ifthenelse(X_576:bat[:bit], X_53:bat[:timestamp], X_752:bat[:timestamp]);
+    X_759:bat[:timestamp] := batcalc.ifthenelse(X_563:bat[:bit], X_69:bat[:timestamp], X_756:bat[:timestamp]);
+    X_764:bat[:timestamp] := batcalc.ifthenelse(X_550:bat[:bit], X_53:bat[:timestamp], X_759:bat[:timestamp]);
+    X_767:bat[:timestamp] := batcalc.ifthenelse(X_532:bat[:bit], X_69:bat[:timestamp], X_764:bat[:timestamp]);
+    X_770:bat[:timestamp] := batcalc.ifthenelse(X_520:bat[:bit], X_53:bat[:timestamp], X_767:bat[:timestamp]);
+    X_773:bat[:timestamp] := batcalc.ifthenelse(X_506:bat[:bit], X_69:bat[:timestamp], X_770:bat[:timestamp]);
+    X_776:bat[:timestamp] := batcalc.ifthenelse(X_488:bat[:bit], X_53:bat[:timestamp], X_773:bat[:timestamp]);
+    X_780:bat[:timestamp] := batcalc.ifthenelse(X_476:bat[:bit], X_69:bat[:timestamp], X_776:bat[:timestamp]);
+    X_783:bat[:timestamp] := batcalc.ifthenelse(X_462:bat[:bit], X_53:bat[:timestamp], X_780:bat[:timestamp]);
+    X_786:bat[:timestamp] := batcalc.ifthenelse(X_443:bat[:bit], X_69:bat[:timestamp], X_783:bat[:timestamp]);
+    X_790:bat[:timestamp] := batcalc.ifthenelse(X_431:bat[:bit], X_53:bat[:timestamp], X_786:bat[:timestamp]);
+    X_793:bat[:timestamp] := batcalc.ifthenelse(X_418:bat[:bit], X_69:bat[:timestamp], X_790:bat[:timestamp]);
+    X_798:bat[:timestamp] := batcalc.ifthenelse(X_400:bat[:bit], X_53:bat[:timestamp], X_793:bat[:timestamp]);
+    X_801:bat[:timestamp] := batcalc.ifthenelse(X_387:bat[:bit], X_69:bat[:timestamp], X_798:bat[:timestamp]);
+    X_804:bat[:timestamp] := batcalc.ifthenelse(X_373:bat[:bit], X_53:bat[:timestamp], X_801:bat[:timestamp]);
+    X_807:bat[:timestamp] := batcalc.ifthenelse(X_356:bat[:bit], X_69:bat[:timestamp], X_804:bat[:timestamp]);
+    X_810:bat[:timestamp] := batcalc.ifthenelse(X_344:bat[:bit], X_53:bat[:timestamp], X_807:bat[:timestamp]);
+    X_814:bat[:timestamp] := batcalc.ifthenelse(X_330:bat[:bit], X_69:bat[:timestamp], X_810:bat[:timestamp]);
+    X_817:bat[:timestamp] := batcalc.ifthenelse(X_311:bat[:bit], X_53:bat[:timestamp], X_814:bat[:timestamp]);
+    X_820:bat[:timestamp] := batcalc.ifthenelse(X_298:bat[:bit], X_69:bat[:timestamp], X_817:bat[:timestamp]);
+    X_824:bat[:timestamp] := batcalc.ifthenelse(X_286:bat[:bit], X_53:bat[:timestamp], X_820:bat[:timestamp]);
+    X_827:bat[:timestamp] := batcalc.ifthenelse(X_267:bat[:bit], X_69:bat[:timestamp], X_824:bat[:timestamp]);
+    X_832:bat[:timestamp] := batcalc.ifthenelse(X_255:bat[:bit], X_53:bat[:timestamp], X_827:bat[:timestamp]);
+    X_835:bat[:timestamp] := batcalc.ifthenelse(X_241:bat[:bit], X_69:bat[:timestamp], X_832:bat[:timestamp]);
+    X_838:bat[:timestamp] := batcalc.ifthenelse(X_223:bat[:bit], X_53:bat[:timestamp], X_835:bat[:timestamp]);
+    X_841:bat[:timestamp] := batcalc.ifthenelse(X_212:bat[:bit], X_69:bat[:timestamp], X_838:bat[:timestamp]);
+    X_844:bat[:timestamp] := batcalc.ifthenelse(X_197:bat[:bit], X_53:bat[:timestamp], X_841:bat[:timestamp]);
+    X_848:bat[:timestamp] := batcalc.ifthenelse(X_179:bat[:bit], X_69:bat[:timestamp], X_844:bat[:timestamp]);
+    X_851:bat[:timestamp] := batcalc.ifthenelse(X_164:bat[:bit], X_53:bat[:timestamp], X_848:bat[:timestamp]);
+    X_854:bat[:timestamp] := batcalc.ifthenelse(X_153:bat[:bit], X_69:bat[:timestamp], X_851:bat[:timestamp]);
+    X_858:bat[:timestamp] := batcalc.ifthenelse(X_135:bat[:bit], X_53:bat[:timestamp], X_854:bat[:timestamp]);
+    X_861:bat[:timestamp] := batcalc.ifthenelse(X_121:bat[:bit], X_69:bat[:timestamp], X_858:bat[:timestamp]);
+    X_866:bat[:timestamp] := batcalc.ifthenelse(X_108:bat[:bit], X_53:bat[:timestamp], X_861:bat[:timestamp]);
+    X_869:bat[:timestamp] := batcalc.ifthenelse(X_90:bat[:bit], X_69:bat[:timestamp], X_866:bat[:timestamp]);
+    X_872:bat[:timestamp] := batcalc.ifthenelse(X_78:bat[:bit], X_53:bat[:timestamp], X_869:bat[:timestamp]);
+    X_875:bat[:timestamp] := batcalc.ifthenelse(X_64:bat[:bit], X_69:bat[:timestamp], X_872:bat[:timestamp]);
+    X_877:bat[:timestamp] := batcalc.ifthenelse(X_48:bat[:bit], X_53:bat[:timestamp], X_875:bat[:timestamp]);
+    X_878:bat[:timestamp] := batcalc.timestamp(X_877:bat[:timestamp], 7:int);
+    X_883:bat[:str] := batmtime.timestamp_to_str(X_878:bat[:timestamp], "%Y":str);
+    language.pass(X_40:bat[:timestamp]);
+    language.pass(X_69:bat[:timestamp]);
+    language.pass(X_53:bat[:timestamp]);
+exit X_1042:bit;
+    sql.resultSet(X_887:bat[:str], X_888:bat[:str], X_889:bat[:str], X_890:bat[:int], X_890:bat[:int], X_883:bat[:str]);
+end user.main;
+# optimizer.mitosis()
+#inline               actions= 0 time=37 usec 
+#remap                actions=322 time=444 usec 
+#costmodel            actions= 1 time=8 usec 
+#coercion             actions= 0 time=9 usec 
+#aliases              actions=142 time=54 usec 
+#evaluate             actions=92 time=244 usec 
+#emptybind            actions= 9 time=45 usec 
+#pushselect           actions= 0 time=40 usec 
+#aliases              actions=96 time=74 usec 
+#mergetable           actions= 0 time=379 usec 
+#deadcode             actions=241 time=60 usec 
 #aliases              actions= 0 time=1 usec 
 #constants            actions=317 time=93 usec 
 #commonTerms          actions=91 time=187 usec 

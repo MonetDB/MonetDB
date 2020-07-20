@@ -67,51 +67,51 @@ stdout of test 'crash_after_oidx_on_sys_statistics.Bug-6251` in directory 'sql/t
 % sys.statistics,	sys.statistics,	sys.statistics,	sys.statistics,	sys.statistics,	sys.statistics,	sys.statistics,	sys.statistics # table_name
 % type,	width,	sample,	count,	unique,	nils,	sorted,	revsorted # name
 % clob,	int,	bigint,	bigint,	bigint,	bigint,	boolean,	boolean # type
-% 7,	1,	1,	1,	1,	1,	5,	5 # length
+% 7,	1,	2,	2,	1,	1,	5,	5 # length
 [ "int",	4,	0,	0,	0,	0,	true,	true	]
-[ "clob",	1,	0,	0,	0,	0,	true,	true	]
-[ "int",	4,	0,	0,	0,	0,	true,	true	]
-[ "bigint",	8,	0,	0,	0,	0,	true,	true	]
-[ "bigint",	8,	0,	0,	0,	0,	true,	true	]
-[ "bigint",	8,	0,	0,	0,	0,	true,	true	]
-[ "bigint",	8,	0,	0,	0,	0,	true,	true	]
-[ "clob",	1,	0,	0,	0,	0,	true,	true	]
-[ "clob",	1,	0,	0,	0,	0,	true,	true	]
-[ "boolean",	1,	0,	0,	0,	0,	true,	true	]
-[ "boolean",	1,	0,	0,	0,	0,	true,	true	]
-#SELECT /*column_id,*/ type, width, /*stamp,*/ "sample", count, "unique", nils, /*minval,*/ /*maxval,*/ sorted, revsorted FROM sys.statistics ORDER BY column_id;
+[ "clob",	1,	1,	1,	1,	0,	true,	true	]
+[ "int",	4,	2,	2,	2,	0,	false,	true	]
+[ "bigint",	8,	4,	4,	4,	0,	true,	false	]
+[ "bigint",	8,	5,	5,	5,	0,	true,	false	]
+[ "bigint",	8,	6,	6,	6,	0,	true,	false	]
+[ "bigint",	8,	7,	7,	1,	0,	true,	true	]
+[ "clob",	1,	8,	8,	5,	1,	false,	false	]
+[ "clob",	1,	9,	9,	7,	1,	false,	false	]
+[ "boolean",	1,	10,	10,	2,	0,	false,	false	]
+[ "boolean",	1,	11,	11,	2,	0,	false,	false	]
+#SELECT /*column_id,*/ "type", width, /*stamp,*/ "sample", "count", "unique", nils, /*minval,*/ /*maxval,*/ sorted, revsorted FROM sys.statistics WHERE "type" <> 'timestamp' ORDER BY column_id;
 % sys.statistics,	sys.statistics,	sys.statistics,	sys.statistics,	sys.statistics,	sys.statistics,	sys.statistics,	sys.statistics # table_name
 % type,	width,	sample,	count,	unique,	nils,	sorted,	revsorted # name
 % clob,	int,	bigint,	bigint,	bigint,	bigint,	boolean,	boolean # type
-% 7,	1,	2,	2,	2,	2,	5,	5 # length
+% 7,	1,	2,	2,	2,	1,	5,	5 # length
 [ "int",	4,	12,	12,	12,	0,	true,	false	]
-[ "clob",	1,	12,	12,	5,	0,	false,	false	]
-[ "int",	4,	12,	12,	3,	0,	false,	false	]
-[ "bigint",	8,	12,	12,	1,	0,	true,	true	]
-[ "bigint",	8,	12,	12,	1,	0,	true,	true	]
-[ "bigint",	8,	12,	12,	1,	0,	true,	true	]
-[ "bigint",	8,	12,	12,	1,	0,	true,	true	]
-[ "clob",	1,	12,	12,	1,	12,	true,	true	]
-[ "clob",	1,	12,	12,	1,	12,	true,	true	]
-[ "boolean",	1,	12,	12,	1,	0,	true,	true	]
-[ "boolean",	1,	12,	12,	1,	0,	true,	true	]
+[ "clob",	1,	13,	13,	5,	0,	false,	false	]
+[ "int",	4,	14,	14,	3,	0,	false,	false	]
+[ "bigint",	8,	16,	16,	16,	0,	true,	false	]
+[ "bigint",	8,	17,	17,	17,	0,	true,	false	]
+[ "bigint",	8,	18,	18,	12,	0,	false,	false	]
+[ "bigint",	8,	19,	19,	2,	0,	false,	false	]
+[ "clob",	1,	20,	20,	8,	1,	false,	false	]
+[ "clob",	2,	21,	21,	16,	1,	false,	false	]
+[ "boolean",	1,	22,	22,	2,	0,	false,	false	]
+[ "boolean",	1,	23,	23,	2,	0,	false,	false	]
 #CREATE ORDERED INDEX stat_oidx ON sys.statistics (width);
 #SELECT /*column_id,*/ type, width, /*stamp,*/ "sample", count, "unique", nils, /*minval,*/ /*maxval,*/ sorted, revsorted FROM sys.statistics ORDER BY column_id;
 % sys.statistics,	sys.statistics,	sys.statistics,	sys.statistics,	sys.statistics,	sys.statistics,	sys.statistics,	sys.statistics # table_name
 % type,	width,	sample,	count,	unique,	nils,	sorted,	revsorted # name
 % clob,	int,	bigint,	bigint,	bigint,	bigint,	boolean,	boolean # type
-% 7,	1,	2,	2,	2,	2,	5,	5 # length
+% 7,	1,	2,	2,	2,	1,	5,	5 # length
 [ "int",	4,	12,	12,	12,	0,	true,	false	]
-[ "clob",	1,	12,	12,	5,	0,	false,	false	]
-[ "int",	4,	12,	12,	3,	0,	false,	false	]
-[ "bigint",	8,	12,	12,	1,	0,	true,	true	]
-[ "bigint",	8,	12,	12,	1,	0,	true,	true	]
-[ "bigint",	8,	12,	12,	1,	0,	true,	true	]
-[ "bigint",	8,	12,	12,	1,	0,	true,	true	]
-[ "clob",	1,	12,	12,	1,	12,	true,	true	]
-[ "clob",	1,	12,	12,	1,	12,	true,	true	]
-[ "boolean",	1,	12,	12,	1,	0,	true,	true	]
-[ "boolean",	1,	12,	12,	1,	0,	true,	true	]
+[ "clob",	1,	13,	13,	5,	0,	false,	false	]
+[ "int",	4,	14,	14,	3,	0,	false,	false	]
+[ "bigint",	8,	16,	16,	16,	0,	true,	false	]
+[ "bigint",	8,	17,	17,	17,	0,	true,	false	]
+[ "bigint",	8,	18,	18,	12,	0,	false,	false	]
+[ "bigint",	8,	19,	19,	2,	0,	false,	false	]
+[ "clob",	1,	20,	20,	8,	1,	false,	false	]
+[ "clob",	2,	21,	21,	16,	1,	false,	false	]
+[ "boolean",	1,	22,	22,	2,	0,	false,	false	]
+[ "boolean",	1,	23,	23,	2,	0,	false,	false	]
 #DELETE FROM sys.statistics;
 [ 12	]
 

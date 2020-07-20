@@ -47,11 +47,11 @@ stdout of test 'udf-reverse` in directory 'sql/backends/monet5/UDF/udf` itself:
 % mal # name
 % clob # type
 % 108 # length
-function user.s4_0():void;
-    X_2:void := querylog.define("explain select reverse(\\'MonetDB\\');":str, "sequential_pipe":str, 8:int);
+function user.main():void;
+    X_1:void := querylog.define("explain select reverse(\\'MonetDB\\');":str, "sequential_pipe":str, 7:int);
     X_9:str := udf.reverse("MonetDB":str);
     sql.resultSet(".%2":str, "%2":str, "clob":str, 0:int, 0:int, 4:int, X_9:str);
-end user.s4_0;
+end user.main;
 #inline               actions= 0 time=1 usec 
 #remap                actions= 0 time=0 usec 
 #costmodel            actions= 1 time=0 usec 
@@ -106,8 +106,8 @@ end user.s4_0;
 % mal # name
 % clob # type
 % 114 # length
-function user.s16_0():void;
-    X_1:void := querylog.define("explain select reverse(x) from udf_reverse;":str, "sequential_pipe":str, 19:int);
+function user.main():void;
+    X_1:void := querylog.define("explain select reverse(x) from udf_reverse;":str, "sequential_pipe":str, 18:int);
     X_24:bat[:str] := bat.pack("sys.%1":str);
     X_25:bat[:str] := bat.pack("%1":str);
     X_26:bat[:str] := bat.pack("clob":str);
@@ -118,7 +118,7 @@ function user.s16_0():void;
     X_19:bat[:str] := algebra.projection(C_5:bat[:oid], X_15:bat[:str]);
     X_20:bat[:str] := batudf.reverse(X_19:bat[:str]);
     sql.resultSet(X_24:bat[:str], X_25:bat[:str], X_26:bat[:str], X_27:bat[:int], X_27:bat[:int], X_20:bat[:str]);
-end user.s16_0;
+end user.main;
 #inline               actions= 0 time=1 usec 
 #remap                actions= 1 time=5 usec 
 #costmodel            actions= 1 time=1 usec 
