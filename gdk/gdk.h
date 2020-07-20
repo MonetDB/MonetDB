@@ -710,9 +710,9 @@ typedef struct {
 /* assert that atom width is power of 2, i.e., width == 1<<shift */
 #define assert_shift_width(shift,width) assert(((shift) == 0 && (width) == 0) || ((unsigned)1<<(shift)) == (unsigned)(width))
 
-#define GDKLIBRARY_BLOB_SORT	061040U /* blob compare changed */
-#define GDKLIBRARY_OLDDATE	061041U /* the representation of times changed */
-#define GDKLIBRARY		061042U
+#define GDKLIBRARY_BLOB_SORT	061040U /* first in Mar2018: blob compare changed */
+#define GDKLIBRARY_OLDDATE	061041U /* first in Apr2019: time/date in old format */
+#define GDKLIBRARY		061042U /* first in Nov2019 */
 
 typedef struct BAT {
 	/* static bat properties */
