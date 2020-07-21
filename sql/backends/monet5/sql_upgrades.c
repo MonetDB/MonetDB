@@ -260,27 +260,6 @@ sql_update_hugeint(Client c, mvc *sql, const char *prev_schema, bool *systabfixe
 #endif
 
 static str
-sql_update_gsl(Client c, const char *prev_schema)
-{
-	size_t bufsize = 1024, pos = 0;
-	char *buf = GDKmalloc(bufsize), *err = NULL;
-
-	if (buf == NULL)
-		throw(SQL, __func__, SQLSTATE(HY013) MAL_MALLOC_FAIL);
-	pos += snprintf(buf + pos, bufsize - pos,
-			"set schema \"sys\";\n"
-			"drop function sys.chi2prob(double, double);\n");
-
-	pos += snprintf(buf + pos, bufsize - pos, "set schema \"%s\";\n", prev_schema);
-	assert(pos < bufsize);
-
-	printf("Running database upgrade commands:\n%s\n", buf);
-	err = SQLstatementIntern(c, &buf, "update", true, false, NULL);
-	GDKfree(buf);
-	return err;		/* usually MAL_SUCCEED */
-}
-
-static str
 sql_drop_functions_dependencies_Xs_on_Ys(Client c, const char *prev_schema)
 {
 	size_t bufsize = 1600, pos = 0;
@@ -396,6 +375,7 @@ sql_update_apr2019(Client c, mvc *sql, const char *prev_schema)
 	pos += snprintf(buf + pos, bufsize - pos,
 			"update sys._columns set type_digits = 1048576 where name = 'query' and table_id in (select id from sys._tables t where t.name = 'tables' and t.schema_id in (select id from sys.schemas s where s.name = 'sys'));\n");
 
+	pos += snprintf(buf + pos, bufsize - pos, "commit;\n");
 	pos += snprintf(buf + pos, bufsize - pos, "set schema \"%s\";\n", prev_schema);
 
 	assert(pos < bufsize);
@@ -2112,18 +2092,140 @@ sql_update_default(Client c, mvc *sql, const char *prev_schema)
 			sql_subtype *flt_types[2] = {sql_bind_localtype("flt"), sql_bind_localtype("dbl")};
 			for (int i = 0; i < 2; i++) {
 				sql_subtype *next = flt_types[i];
+				/*	TODO: This is BAD: its redundantly is trying to add duplicate function definitions to the global funcs list instead of updating the functions table.
+				 *	But it just ends up corrupting the global funcs list because it is using the wrong sql allocator.
+				 */
 				list_append(functions, sql_create_func(sql->sa, "degrees", "mmath", "degrees", FALSE, FALSE, SCALE_FIX, 0, next->type, 1, next->type));
 				list_append(functions, sql_create_func(sql->sa, "radians", "mmath", "radians", FALSE, FALSE, SCALE_FIX, 0, next->type, 1, next->type));
 			}
+
 			insert_functions(sql->session->tr, mvc_bind_table(sql, sys, "functions"), functions, mvc_bind_table(sql, sys, "args"));
 
 			pos += snprintf(buf + pos, bufsize - pos,
-				"update sys.functions set semantics = false where type <> 6 and ((func not ilike '%%CREATE FUNCTION%%' and name in ('length','octet_length','>','>=','<','<=','min','max','sql_min','sql_max','least','greatest','sum','prod','mod','and',\n"
-				"'xor','not','sql_mul','sql_div','sql_sub','sql_add','bit_and','bit_or','bit_xor','bit_not','left_shift','right_shift','abs','sign','scale_up','scale_down','round','power','floor','ceil','ceiling','sin','cos','tan','asin',\n"
-				"'acos','atan','sinh','cot','cosh','tanh','sqrt','exp','log','ln','log10','log2','pi','curdate','current_date','curtime','current_time','current_timestamp','localtime','localtimestamp','local_timezone','century','decade','year',\n"
-				"'quarter','month','day','dayofyear','weekofyear','dayofweek','dayofmonth','week','hour','minute','second','strings','locate','charindex','splitpart','substring','substr','truncate','concat','ascii','code','right','left','upper',\n"
-				"'ucase','lower','lcase','trim','ltrim','rtrim','lpad','rpad','insert','replace','repeat','space','char_length','character_length','soundex','qgramnormalize','degrees','radians')) or \n"
-				"(system = true and name in ('like','ilike','str_to_date','date_to_str','str_to_time','time_to_str','str_to_timestamp','timestamp_to_str','date_trunc','epoch','reverse')));\n");
+				"UPDATE sys.functions set semantics = false WHERE (name, func) IN (VALUES \n"
+					"('length', 'nitems'),\n"
+					"('octet_length', 'nitems'),\n"
+					"('>', '>'),\n"
+					"('>=', '>='),\n"
+					"('<', '<'),\n"
+					"('<=', '<='),\n"
+					"('min', 'min'),\n"
+					"('max', 'max'),\n"
+					"('sql_min', 'min'),\n"
+					"('sql_max', 'max'),\n"
+					"('least', 'min_no_nil'),\n"
+					"('greatest', 'max_no_nil'),\n"
+					"('sum', 'sum'),\n"
+					"('prod', 'prod'),\n"
+					"('mod', '%%'),\n"
+					"('and', 'and'),\n"
+					"('xor', 'xor'),\n"
+					"('not', 'not'),\n"
+					"('sql_mul', '*'),\n"
+					"('sql_div', '/'),\n"
+					"('sql_sub', '-'),\n"
+					"('sql_add', '+'),\n"
+					"('bit_and', 'and'),\n"
+					"('bit_or', 'or'),\n"
+					"('bit_xor', 'xor'),\n"
+					"('bit_not', 'not'),\n"
+					"('left_shift', '<<'),\n"
+					"('right_shift', '>>'),\n"
+					"('abs', 'abs'),\n"
+					"('sign', 'sign'),\n"
+					"('scale_up', '*'),\n"
+					"('scale_down', 'dec_round'),\n"
+					"('round', 'round'),\n"
+					"('power', 'pow'),\n"
+					"('floor', 'floor'),\n"
+					"('ceil', 'ceil'),\n"
+					"('ceiling', 'ceil'),\n"
+					"('sin', 'sin'),\n"
+					"('cos', 'cos'),\n"
+					"('tan', 'tan'),\n"
+					"('asin', 'asin'),\n"
+					"('acos', 'acos'),\n"
+					"('atan', 'atan'),\n"
+					"('atan', 'atan2'),\n"
+					"('sinh', 'sinh'),\n"
+					"('cot', 'cot'),\n"
+					"('cosh', 'cosh'),\n"
+					"('tanh', 'tanh'),\n"
+					"('sqrt', 'sqrt'),\n"
+					"('exp', 'exp'),\n"
+					"('log', 'log'),\n"
+					"('ln', 'log'),\n"
+					"('log10', 'log10'),\n"
+					"('log2', 'log2'),\n"
+					"('degrees', 'degrees'),\n"
+					"('radians', 'radians'),\n"
+					"('pi', 'pi'),\n"
+					"('curdate', 'current_date'),\n"
+					"('current_date', 'current_date'),\n"
+					"('curtime', 'current_time'),\n"
+					"('current_time', 'current_time'),\n"
+					"('current_timestamp', 'current_timestamp'),\n"
+					"('localtime', 'current_time'),\n"
+					"('localtimestamp', 'current_timestamp'),\n"
+					"('sql_sub', 'diff'),\n"
+					"('sql_sub', 'date_sub_msec_interval'),\n"
+					"('sql_sub', 'date_sub_month_interval'),\n"
+					"('sql_sub', 'time_sub_msec_interval'),\n"
+					"('sql_sub', 'timestamp_sub_msec_interval'),\n"
+					"('sql_sub', 'timestamp_sub_month_interval'),\n"
+					"('sql_add', 'date_add_msec_interval'),\n"
+					"('sql_add', 'addmonths'),\n"
+					"('sql_add', 'timestamp_add_msec_interval'),\n"
+					"('sql_add', 'timestamp_add_month_interval'),\n"
+					"('sql_add', 'time_add_msec_interval'),\n"
+					"('local_timezone', 'local_timezone'),\n"
+					"('century', 'century'),\n"
+					"('decade', 'decade'),\n"
+					"('year', 'year'),\n"
+					"('quarter', 'quarter'),\n"
+					"('month', 'month'),\n"
+					"('day', 'day'),\n"
+					"('dayofyear', 'dayofyear'),\n"
+					"('weekofyear', 'weekofyear'),\n"
+					"('dayofweek', 'dayofweek'),\n"
+					"('dayofmonth', 'day'),\n"
+					"('week', 'weekofyear'),\n"
+					"('hour', 'hours'),\n"
+					"('minute', 'minutes'),\n"
+					"('second', 'sql_seconds'),\n"
+					"('second', 'seconds'),\n"
+					"('strings', 'strings'),\n"
+					"('locate', 'locate'),\n"
+					"('charindex', 'locate'),\n"
+					"('splitpart', 'splitpart'),\n"
+					"('substring', 'substring'),\n"
+					"('substr', 'substring'),\n"
+					"('truncate', 'stringleft'),\n"
+					"('concat', '+'),\n"
+					"('ascii', 'ascii'),\n"
+					"('code', 'unicode'),\n"
+					"('length', 'length'),\n"
+					"('right', 'stringright'),\n"
+					"('left', 'stringleft'),\n"
+					"('upper', 'toUpper'),\n"
+					"('ucase', 'toUpper'),\n"
+					"('lower', 'toLower'),\n"
+					"('lcase', 'toLower'),\n"
+					"('trim', 'trim'),\n"
+					"('ltrim', 'ltrim'),\n"
+					"('rtrim', 'rtrim'),\n"
+					"('lpad', 'lpad'),\n"
+					"('rpad', 'rpad'),\n"
+					"('insert', 'insert'),\n"
+					"('replace', 'replace'),\n"
+					"('repeat', 'repeat'),\n"
+					"('space', 'space'),\n"
+					"('char_length', 'length'),\n"
+					"('character_length', 'length'),\n"
+					"('octet_length', 'nbytes'),\n"
+					"('soundex', 'soundex'),\n"
+					"('qgramnormalize', 'qgramnormalize')\n"
+					");\n");
 
 			pos += snprintf(buf + pos, bufsize - pos, "set schema \"%s\";\n", prev_schema);
 			assert(pos < bufsize);
@@ -2174,22 +2276,6 @@ SQLupgrades(Client c, mvc *m)
 		table_funcs.table_insert(m->session->tr, privs, &f->func->base.id, &pub, &p, &zero, &zero);
 	}
 
-	/* temporarily use variable `err' to check existence of MAL
-	 * module gsl */
-	if ((((err = getName("gsl")) == NULL || getModule(err) == NULL))) {
-		/* no MAL module gsl, check for SQL function sys.chi2prob */
-		sql_find_subtype(&tp, "double", 0, 0);
-		if (sql_bind_func(m->sa, s, "chi2prob", &tp, &tp, F_FUNC)) {
-			/* sys.chi2prob exists, but there is no
-			 * implementation */
-			if ((err = sql_update_gsl(c, prev_schema)) != NULL) {
-				TRC_CRITICAL(SQL_PARSER, "%s\n", err);
-				freeException(err);
-				GDKfree(prev_schema);
-				return -1;
-			}
-		}
-	}
 
 	if (sql_bind_func(m->sa, s, "dependencies_schemas_on_users", NULL, NULL, F_UNION)
 	 && sql_bind_func(m->sa, s, "dependencies_owners_on_schemas", NULL, NULL, F_UNION)

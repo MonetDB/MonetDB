@@ -1078,7 +1078,6 @@ BBPheader(FILE *fp, int *lineno)
 		return 0;
 	}
 	if (bbpversion != GDKLIBRARY &&
-	    bbpversion != GDKLIBRARY_NOINFO &&
 	    bbpversion != GDKLIBRARY_OLDDATE &&
 	    bbpversion != GDKLIBRARY_BLOB_SORT) {
 		TRC_CRITICAL(GDK, "incompatible BBP version: expected 0%o, got 0%o. "
