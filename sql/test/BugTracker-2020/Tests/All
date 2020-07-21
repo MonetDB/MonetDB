@@ -12,3 +12,4 @@ url-nulls.Bug-6845
 HAVE_PYMONETDB?global_table_propagation.Bug-6846
 ilike-matches.Bug-6864
 select-and.Bug-6878
+copy-decimal-with-space.Bug-6917
