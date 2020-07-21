@@ -2299,6 +2299,9 @@ sql_update_default(Client c, mvc *sql, const char *prev_schema)
 			sql_subtype *flt_types[2] = {sql_bind_localtype("flt"), sql_bind_localtype("dbl")};
 			for (int i = 0; i < 2; i++) {
 				sql_subtype *next = flt_types[i];
+				/*	TODO: This is BAD: its redundantly is trying to add duplicate function definitions to the global funcs list instead of updating the functions table.
+				 *	But it just ends up corrupting the global funcs list because it is using the wrong sql allocator.
+				 */
 				list_append(functions, sql_create_func(sql->sa, "degrees", "mmath", "degrees", FALSE, FALSE, SCALE_FIX, 0, next->type, 1, next->type));
 				list_append(functions, sql_create_func(sql->sa, "radians", "mmath", "radians", FALSE, FALSE, SCALE_FIX, 0, next->type, 1, next->type));
 			}
