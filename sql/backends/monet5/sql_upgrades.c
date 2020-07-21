@@ -2254,13 +2254,20 @@ sql_update_default(Client c, mvc *sql, const char *prev_schema, bool *systabfixe
 					"external name \"sql\".\"sql_variables\";\n"
 					"grant execute on function \"sys\".\"var\" to public;\n");
 
+			pos += snprintf(buf + pos, bufsize - pos,
+					"create procedure sys.hot_snapshot(tarfile string, onserver bool)\n"
+					"external name sql.hot_snapshot;\n"
+					"update sys.functions set system = true where system <> true and schema_id = (select id from sys.schemas where name = 'sys')"
+					" and name in ('hot_snapshot') and type = %d;\n",
+					(int) F_PROC);
 			/* .snapshot user */
 			pos += snprintf(buf + pos, bufsize - pos,
-				"create user \".snapshot\""
-				" with encrypted password '00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000'"
-				" name 'Snapshot User'"
-				" schema sys;"
-				"grant execute on procedure sys.hot_snapshot to \".snapshot\";"
+				"create user \".snapshot\"\n"
+				" with encrypted password '00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000'\n"
+				" name 'Snapshot User'\n"
+				" schema sys;\n"
+				"grant execute on procedure sys.hot_snapshot(string) to \".snapshot\";\n"
+				"grant execute on procedure sys.hot_snapshot(string, bool) to \".snapshot\";\n"
 			);
 
 			/* update system tables so that the content
@@ -2416,7 +2423,8 @@ sql_update_default(Client c, mvc *sql, const char *prev_schema, bool *systabfixe
 					"('octet_length', 'nbytes'),\n"
 					"('soundex', 'soundex'),\n"
 					"('qgramnormalize', 'qgramnormalize')\n"
-					");\n");
+					") and type <> %d;\n",
+					F_ANALYTIC);
 
 			pos += snprintf(buf + pos, bufsize - pos, "set schema \"%s\";\n", prev_schema);
 			assert(pos < bufsize);
