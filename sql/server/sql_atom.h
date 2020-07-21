@@ -38,6 +38,7 @@ extern atom *atom_dec( sql_allocator *sa, sql_subtype *tpe, hge val, double dval
 extern atom *atom_dec( sql_allocator *sa, sql_subtype *tpe, lng val, double dval);
 #endif
 extern atom *atom_ptr( sql_allocator *sa, sql_subtype *tpe, void *v);
+extern atom *atom_general_ptr( sql_allocator *sa, sql_subtype *tpe, void *v);
 
 extern int atom_neg( atom *a );
 extern unsigned int atom_num_digits( atom *a );
