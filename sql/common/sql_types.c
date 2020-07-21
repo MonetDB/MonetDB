@@ -1055,7 +1055,7 @@ sql_create_procedure(sql_allocator *sa, const char *name, const char *mod, const
 	return res;
 }
 
-sql_func *
+static sql_func *
 sql_create_func(sql_allocator *sa, const char *name, const char *mod, const char *imp, bit semantics, bit side_effect, int fix_scale,
 				unsigned int res_scale, sql_type *fres, int nargs, ...)
 {

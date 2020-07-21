@@ -356,6 +356,27 @@ atom_ptr( sql_allocator *sa, sql_subtype *tpe, void *v)
 	return a;
 }
 
+atom *
+atom_general_ptr( sql_allocator *sa, sql_subtype *tpe, void *v)
+{
+	atom *a = SA_ZNEW(sa, atom);
+
+	a->tpe = *tpe;
+	a->data.vtype = tpe->type->localtype;
+	if (ATOMstorage(a->data.vtype) == TYPE_str) {
+		if (strNil((char*)v)) {
+			VALset(&a->data, a->data.vtype, (ptr) ATOMnilptr(a->data.vtype));
+		} else {
+			a->data.val.sval = sa_strdup(sa, v);
+			a->data.len = strlen(a->data.val.sval);
+		}
+	} else {
+		VALset(&a->data, a->data.vtype, v);
+	}
+	a->isnull = VALisnil(&a->data);
+	return a;
+}
+
 char *
 atom2string(sql_allocator *sa, atom *a)
 {
@@ -1218,7 +1239,7 @@ atom_cast(sql_allocator *sa, atom *a, sql_subtype *tp)
 			a->data.vtype = tp->type->localtype;
 			return 1;
 		}
-		if (at->type->eclass == EC_CHAR && tp->type->eclass == EC_DATE){
+		if (EC_VARCHAR(at->type->eclass) && (tp->type->eclass == EC_DATE || EC_TEMP_NOFRAC(tp->type->eclass))){
 			int type = tp->type->localtype;
 			ssize_t res = 0;
 			ptr p = NULL;
