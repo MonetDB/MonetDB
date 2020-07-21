@@ -1539,7 +1539,7 @@ insert_args(sql_trans *tr, sql_table *sysarg, list *args, sqlid funcid, const ch
 	}
 }
 
-void
+static void
 insert_functions(sql_trans *tr, sql_table *sysfunc, list *funcs_list, sql_table *sysarg)
 {
 	for (node *n = funcs_list->h; n; n = n->next) {
@@ -4879,7 +4879,9 @@ reset_table(sql_trans *tr, sql_table *ft, sql_table *pft)
 		ft->access = pft->access;
 		if (pft->p) {
 			ft->p = find_sql_table(ft->s, pft->p->base.name);
-			assert(isMergeTable(ft->p) || isReplicaTable(ft->p));
+			//Check if this assert can be removed definitely.
+			//the parent (merge or replica table) maybe created later!
+			//assert(isMergeTable(ft->p) || isReplicaTable(ft->p));
 		} else
 			ft->p = NULL;
 
@@ -6823,6 +6825,8 @@ sql_trans_dist_count( sql_trans *tr, sql_column *col )
 int
 sql_trans_ranges( sql_trans *tr, sql_column *col, char **min, char **max )
 {
+	*min = NULL;
+	*max = NULL;
 	if (col && isTable(col->t)) {
 		/* get from statistics */
 		sql_schema *sys = find_sql_schema(tr, "sys");

@@ -1425,7 +1425,7 @@ stmt_genselect(backend *be, stmt *lops, stmt *rops, sql_subfunc *f, stmt *sub, i
 		s->op2 = rops;
 		s->op3 = sub;
 		s->flag = cmp_filter;
-		s->nrcols = (lops->nrcols == 2) ? 2 : 1;
+		s->nrcols = lops->nrcols;
 		s->nr = getDestVar(q);
 		s->q = q;
 		s->cand = sub;
@@ -1527,6 +1527,8 @@ stmt_uselect(backend *be, stmt *op1, stmt *op2, comp_type cmptype, stmt *sub, in
 			q = pushArgument(mb, q, l);
 			if (sub && !op1->cand)
 				q = pushArgument(mb, q, sub->nr);
+			else
+				sub = NULL;
 			q = pushArgument(mb, q, r);
 			q = pushArgument(mb, q, r);
 			q = pushBit(mb, q, TRUE);
@@ -1582,7 +1584,7 @@ stmt_uselect(backend *be, stmt *op1, stmt *op2, comp_type cmptype, stmt *sub, in
 		s->op2 = op2;
 		s->op3 = sub;
 		s->flag = cmptype;
-		s->nrcols = (op1->nrcols == 2) ? 2 : 1;
+		s->nrcols = op1->nrcols;
 		s->nr = getDestVar(q);
 		s->q = q;
 		s->cand = sub;
@@ -1822,7 +1824,7 @@ stmt_uselect2(backend *be, stmt *op1, stmt *op2, stmt *op3, int cmp, stmt *sub, 
 		s->op3 = op3;
 		s->op4.stval = sub;
 		s->flag = cmp;
-		s->nrcols = (op1->nrcols == 2) ? 2 : 1;
+		s->nrcols = op1->nrcols;
 		s->nr = getDestVar(q);
 		s->q = q;
 		s->cand = sub;
@@ -3081,7 +3083,7 @@ stmt_convert(backend *be, stmt *v, sql_subtype *f, sql_subtype *t, stmt *cond)
 			q = pushInt(mb, q, f->scale);
 */			//q = pushInt(mb, q, ((ValRecord)((atom*)(be->mvc)->args[1])->data).val.ival);
 	}
-	if (cond && v->nrcols && f->type->eclass != EC_DEC && !EC_TEMP_FRAC(t->type->eclass) && !EC_INTERVAL(t->type->eclass))
+	if (cond && v->nrcols && f->type->eclass != EC_DEC && !EC_TEMP(t->type->eclass) && !EC_INTERVAL(t->type->eclass))
 		q = pushArgument(mb, q, cond->nr);
 	if (q) {
 		stmt *s = stmt_create(be->mvc->sa, st_convert);
