@@ -2153,7 +2153,7 @@ sql_update_default_lidar(Client c)
 }
 
 static str
-sql_update_default(Client c, mvc *sql, const char *prev_schema)
+sql_update_default(Client c, mvc *sql, const char *prev_schema, bool *systabfixed)
 {
 	size_t bufsize = 8192, pos = 0;
 	char *err = NULL, *buf = GDKmalloc(bufsize);
@@ -2176,6 +2176,11 @@ sql_update_default(Client c, mvc *sql, const char *prev_schema)
 	if (b) {
 		BATiter bi = bat_iterator(b);
 		if (BATcount(b) > 0 && strcmp(BUNtail(bi, 0), "progress") == 0) {
+			if (!*systabfixed &&
+				(err = sql_fix_system_tables(c, sql, prev_schema)) != NULL)
+				return err;
+			*systabfixed = true;
+
 			pos = 0;
 			pos += snprintf(buf + pos, bufsize - pos,
 					"set schema \"sys\";\n");
@@ -2286,16 +2291,6 @@ sql_update_default(Client c, mvc *sql, const char *prev_schema)
 			/* Remove arguments with no function correspondent */
 			pos += snprintf(buf + pos, bufsize - pos,
 					"delete from args where id in (select args.id from args left join functions on args.func_id = functions.id where functions.id is null);\n");
-
-			list *functions = sa_list(sql->sa);
-			/* Adding fixed versions of degrees and radians functions */
-			sql_subtype *flt_types[2] = {sql_bind_localtype("flt"), sql_bind_localtype("dbl")};
-			for (int i = 0; i < 2; i++) {
-				sql_subtype *next = flt_types[i];
-				list_append(functions, sql_create_func(sql->sa, "degrees", "mmath", "degrees", FALSE, FALSE, SCALE_FIX, 0, next->type, 1, next->type));
-				list_append(functions, sql_create_func(sql->sa, "radians", "mmath", "radians", FALSE, FALSE, SCALE_FIX, 0, next->type, 1, next->type));
-			}
-			insert_functions(sql->session->tr, mvc_bind_table(sql, sys, "functions"), functions, mvc_bind_table(sql, sys, "args"));
 
 			pos += snprintf(buf + pos, bufsize - pos,
 				"update sys.functions set semantics = false where type <> 6 and ((func not ilike '%%CREATE FUNCTION%%' and name in ('length','octet_length','>','>=','<','<=','min','max','sql_min','sql_max','least','greatest','sum','prod','mod','and',\n"
@@ -2548,7 +2543,7 @@ SQLupgrades(Client c, mvc *m)
 		return -1;
 	}
 
-	if ((err = sql_update_default(c, m, prev_schema)) != NULL) {
+	if ((err = sql_update_default(c, m, prev_schema, &systabfixed)) != NULL) {
 		TRC_CRITICAL(SQL_PARSER, "%s\n", err);
 		freeException(err);
 		GDKfree(prev_schema);
