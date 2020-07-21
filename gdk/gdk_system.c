@@ -878,7 +878,8 @@ MT_join_thread(MT_Id t)
 int
 MT_kill_thread(MT_Id t)
 {
-	#ifdef HAVE_PTHREAD_KILL
+	assert(t > 1);
+#ifdef HAVE_PTHREAD_KILL
 	struct posthread *p;
 
 	join_threads();
