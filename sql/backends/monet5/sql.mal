@@ -577,37 +577,6 @@ address QLOGenableThreshold;
 unsafe command querylog_disable()
 address QLOGdisable;
 
-pattern sysmon_queue()(tag:bat[:lng], sessionid:bat[:int], user:bat[:str], started:bat[:timestamp], 
-status:bat[:str], query:bat[:str], finished:bat[:timestamp], workers:bat[:int], memory:bat[:int])
-address SYSMONqueue;
-
-unsafe pattern sysmon_pause(tag:bte)
-address SYSMONpause;
-unsafe pattern sysmon_pause(tag:sht)
-address SYSMONpause;
-unsafe pattern sysmon_pause(tag:int)
-address SYSMONpause;
-unsafe pattern sysmon_pause(tag:lng)
-address SYSMONpause;
-
-unsafe pattern sysmon_resume(tag:bte)
-address SYSMONresume;
-unsafe pattern sysmon_resume(tag:sht)
-address SYSMONresume;
-unsafe pattern sysmon_resume(tag:int)
-address SYSMONresume;
-unsafe pattern sysmon_resume(tag:lng)
-address SYSMONresume;
-
-unsafe pattern sysmon_stop(tag:bte)
-address SYSMONstop;
-unsafe pattern sysmon_stop(tag:sht)
-address SYSMONstop;
-unsafe pattern sysmon_stop(tag:int)
-address SYSMONstop;
-unsafe pattern sysmon_stop(tag:lng)
-address SYSMONstop;
-
 pattern prepared_statements()(sessionid:bat[:int], user:bat[:str], statementid:bat[:int], statement:bat[:str], created:bat[:timestamp])
 address SQLsession_prepared_statements
 comment "Available prepared statements in the current session";
