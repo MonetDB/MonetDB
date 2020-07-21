@@ -152,8 +152,6 @@ gdk_export void MT_thread_setdata(void *data);
 gdk_export void MT_exiting_thread(void);
 gdk_export MT_Id MT_getpid(void);
 gdk_export int MT_join_thread(MT_Id t);
-gdk_export int MT_declare_external_thread(const char *threadname);
-gdk_export void MT_undeclare_external_thread(void);
 
 #if SIZEOF_VOID_P == 4
 /* "limited" stack size on 32-bit systems */

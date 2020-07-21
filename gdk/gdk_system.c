@@ -415,32 +415,6 @@ MT_create_thread_data(struct winthread** w, enum MT_thr_detach d, const char *th
 	return 0;
 }
 
-int MT_declare_external_thread(const char *threadname) {
-	int ret;
-	struct winthread* w;
-	if ((ret = MT_create_thread_data(&w, MT_THR_DETACHED, threadname)) != 0) return ret;
-
-	if (TlsSetValue(threadslot, w) == 0) {
-		GDKwinerror("Setting thread-local value failed");
-		TlsFree(threadslot);
-		threadslot = TLS_OUT_OF_INDEXES;
-		return -1;
-	}
-
-	return 0;
-}
-
-void MT_undeclare_external_thread(void) {
-	struct winthread* w = TlsGetValue(threadslot);
-	free(w);
-
-	if (TlsSetValue(threadslot, NULL) == 0) {
-		GDKwinerror(ret, "Unsetting thread-local value failed");
-		TlsFree(threadslot);
-		threadslot = TLS_OUT_OF_INDEXES;
-	}
-}
-
 int
 MT_create_thread(MT_Id *t, void (*f) (void *), void *arg, enum MT_thr_detach d, const char *threadname)
 {
@@ -802,29 +776,6 @@ MT_create_thread_data(struct posthread** p, enum MT_thr_detach d, const char *th
 	pthread_mutex_unlock(&posthread_lock);
 
 	return 0;
-}
-
-int MT_declare_external_thread(const char *threadname) {
-	int ret;
-	struct posthread* p;
-	if ((ret = MT_create_thread_data(&p, MT_THR_DETACHED, threadname)) != 0) return ret;
-
-	if ((ret = pthread_setspecific(threadkey, p)) != 0) {
-		GDKsyserr(ret, "Setting specific value failed");
-		return -1;
-	}
-
-	return 0;
-}
-
-void MT_undeclare_external_thread(void) {
-	struct posthread* p = pthread_getspecific(threadkey);
-	free(p);
-
-	int ret;
-	if ((ret = pthread_setspecific(threadkey, NULL)) != 0) {
-		GDKsyserr(ret, "Unsetting thread-local value failed");
-	}
 }
 
 int
