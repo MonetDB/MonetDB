@@ -5784,8 +5784,6 @@ update sys.privileges set grantor = 0 where obj_id = (select id from sys.functio
 DROP FUNCTION "sys"."getcontent"(url);
 DROP AGGREGATE "json"."output"(json);
 delete from privileges where obj_id in (select obj_id from privileges left join functions on privileges.obj_id = functions.id where functions.id is null and privileges.obj_id not in ((SELECT tables.id from tables), 0));
-delete from functions where name in ('sql_sub','sql_add') and func in ('+','-') and id in (select func_id from args where name = 'res_0' and type in ('sec_interval','month_interval'));
-delete from args where id in (select args.id from args left join functions on args.func_id = functions.id where functions.id is null);
 UPDATE sys.functions set semantics = false WHERE (name, func) IN (VALUES 
 ('length', 'nitems'),
 ('octet_length', 'nitems'),

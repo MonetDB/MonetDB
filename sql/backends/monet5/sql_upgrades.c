@@ -2292,13 +2292,6 @@ sql_update_oscar(Client c, mvc *sql, const char *prev_schema, bool *systabfixed)
 			/* Move sys.degrees and sys.radians to sql_types.c definitions (I did this at the bat_logger) Remove the obsolete entries at privileges table */
 			pos += snprintf(buf + pos, bufsize - pos,
 					"delete from privileges where obj_id in (select obj_id from privileges left join functions on privileges.obj_id = functions.id where functions.id is null and privileges.obj_id not in ((SELECT tables.id from tables), 0));\n");
-			/* Remove sql_add and sql_sub between interval and numeric types */
-			pos += snprintf(buf + pos, bufsize - pos,
-					"delete from functions where name in ('sql_sub','sql_add') and func in ('+','-') and id in (select func_id from args where name = 'res_0' and type in ('sec_interval','month_interval'));\n");
-			/* Remove arguments with no function correspondent */
-			pos += snprintf(buf + pos, bufsize - pos,
-					"delete from args where id in (select args.id from args left join functions on args.func_id = functions.id where functions.id is null);\n");
-
 			pos += snprintf(buf + pos, bufsize - pos,
 				"UPDATE sys.functions set semantics = false WHERE (name, func) IN (VALUES \n"
 					"('length', 'nitems'),\n"
