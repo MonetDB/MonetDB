@@ -283,7 +283,7 @@ bind_col(sql_trans *tr, sql_column *c, int access)
 		c->data = timestamp_delta(oc->data, c->base.stime);
 	}
 	if (tr && access != QUICK)
-		c->base.rtime = c->t->base.rtime = c->t->s->base.rtime = tr->rtime = tr->stime;
+		c->base.rtime = c->t->base.rtime = c->t->s->base.rtime = tr->stime;
 	sql_delta *s = c->data;
 	if (access == RD_UPD_ID || access == RD_UPD_VAL) {
 		return cs_bind_ubat( &s->cs, access, c->type.type->localtype);
@@ -304,7 +304,7 @@ bind_idx(sql_trans *tr, sql_idx * i, int access)
 		i->data = timestamp_delta(oi->data, i->base.stime);
 	}
 	if (tr && access != QUICK)
-		i->base.rtime = i->t->base.rtime = i->t->s->base.rtime = tr->rtime = tr->stime;
+		i->base.rtime = i->t->base.rtime = i->t->s->base.rtime = tr->stime;
 	sql_delta *s = i->data;
 	if (access == RD_UPD_ID || access == RD_UPD_VAL) {
 		return cs_bind_ubat( &s->cs, access, (oid_index(i->type))?TYPE_oid:TYPE_lng);
@@ -326,7 +326,7 @@ bind_del(sql_trans *tr, sql_table *t, int access)
 		t->data = timestamp_dbat(ot->data, t->base.stime);
 	}
 	if (tr && access != QUICK)
-		t->base.rtime = t->s->base.rtime = tr->rtime = tr->stime;
+		t->base.rtime = t->s->base.rtime = tr->stime;
 	storage *s = t->data;
 	if (access == RD_UPD_ID || access == RD_UPD_VAL) {
 		return cs_bind_ubat( &s->cs, access, TYPE_bit);
@@ -513,7 +513,7 @@ update_col(sql_trans *tr, sql_column *c, void *tids, void *upd, int tpe)
 	bat = c->data;
 	bat->cs.wtime = c->base.wtime = c->t->base.wtime = c->t->s->base.wtime = tr->wtime = tr->wstime;
 	assert(tr != gtrans);
-	c->base.rtime = c->t->base.rtime = c->t->s->base.rtime = tr->rtime = tr->stime;
+	c->base.rtime = c->t->base.rtime = c->t->s->base.rtime = tr->stime;
 	if (tpe == TYPE_bat)
 		return delta_update_bat(bat, tids, upd, isNew(c));
 	else
@@ -553,7 +553,7 @@ update_idx(sql_trans *tr, sql_idx * i, void *tids, void *upd, int tpe)
 	bat = i->data;
 	bat->cs.wtime = i->base.wtime = i->t->base.wtime = i->t->s->base.wtime = tr->wtime = tr->wstime;
 	assert(tr != gtrans);
-	i->base.rtime = i->t->base.rtime = i->t->s->base.rtime = tr->rtime = tr->stime;
+	i->base.rtime = i->t->base.rtime = i->t->s->base.rtime = tr->stime;
 	if (tpe == TYPE_bat)
 		return delta_update_bat(bat, tids, upd, isNew(i));
 	else
@@ -1030,6 +1030,7 @@ sorted_col(sql_trans *tr, sql_column *col)
 {
 	int sorted = 0;
 
+	assert(tr->active || tr == gtrans);
 	if (!isTable(col->t) || !col->t->s)
 		return 0;
 	/* fallback to central bat */
@@ -1040,9 +1041,30 @@ sorted_col(sql_trans *tr, sql_column *col)
 		BAT *b = bind_col(tr, col, QUICK);
 
 		if (b)
-			sorted = BATtordered(b);
+			sorted = BATtordered(b) || BATtrevordered(b);
 	}
 	return sorted;
+}
+
+static int
+unique_col(sql_trans *tr, sql_column *col)
+{
+	int distinct = 0;
+
+	assert(tr->active || tr == gtrans);
+	if (!isTable(col->t) || !col->t->s)
+		return 0;
+	/* fallback to central bat */
+	if (tr && tr->parent && !col->data && col->po)
+		col = col->po;
+
+	if (col && col->data) {
+		BAT *b = bind_col(tr, col, QUICK);
+
+		if (b)
+			distinct = b->tkey;
+	}
+	return distinct;
 }
 
 static int
@@ -1050,6 +1072,7 @@ double_elim_col(sql_trans *tr, sql_column *col)
 {
 	int de = 0;
 
+	assert(tr->active || tr == gtrans);
 	if (!isTable(col->t) || !col->t->s)
 		return 0;
 	/* fallback to central bat */
@@ -2281,11 +2304,16 @@ bat_storage_init( store_functions *sf)
 	sf->count_idx = (count_idx_fptr)&count_idx;
 	sf->dcount_col = (dcount_col_fptr)&dcount_col;
 	sf->sorted_col = (prop_col_fptr)&sorted_col;
+	sf->unique_col = (prop_col_fptr)&unique_col;
 	sf->double_elim_col = (prop_col_fptr)&double_elim_col;
 
 	sf->create_col = (create_col_fptr)&create_col;
 	sf->create_idx = (create_idx_fptr)&create_idx;
 	sf->create_del = (create_del_fptr)&create_del;
+
+	sf->log_create_col = (create_col_fptr)&log_create_col;
+	sf->log_create_idx = (create_idx_fptr)&log_create_idx;
+	sf->log_create_del = (create_del_fptr)&log_create_del;
 
 	sf->dup_col = (dup_col_fptr)&dup_col;
 	sf->dup_idx = (dup_idx_fptr)&dup_idx;
@@ -2295,17 +2323,13 @@ bat_storage_init( store_functions *sf)
 	sf->destroy_idx = (destroy_idx_fptr)&destroy_idx;
 	sf->destroy_del = (destroy_del_fptr)&destroy_del;
 
-	sf->log_create_col = (create_col_fptr)&log_create_col;
-	sf->log_create_idx = (create_idx_fptr)&log_create_idx;
-	sf->log_create_del = (create_del_fptr)&log_create_del;
-
 	sf->log_destroy_col = (destroy_col_fptr)&log_destroy_col;
 	sf->log_destroy_idx = (destroy_idx_fptr)&log_destroy_idx;
 	sf->log_destroy_del = (destroy_del_fptr)&log_destroy_del;
 
 	sf->clear_table = (clear_table_fptr)&clear_table;
-	sf->log_table = (update_table_fptr)&log_table;
 	sf->update_table = (update_table_fptr)&update_table;
+	sf->log_table = (update_table_fptr)&log_table;
 	sf->gtrans_minmax = (gtrans_update_fptr)&minmax;
 
 	sf->cleanup = (cleanup_fptr)&cleanup;

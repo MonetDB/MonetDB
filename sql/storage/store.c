@@ -1354,7 +1354,7 @@ create_trans(sql_allocator *sa)
 
 	t->sa = sa;
 	t->name = NULL;
-	t->wtime = t->rtime = t->atime = 0;
+	t->wtime = t->atime = 0;
 	t->stime = 0;
 	t->wstime = timestamp();
 	t->schema_updates = 0;
@@ -1752,7 +1752,6 @@ bootstrap_create_schema(sql_trans *tr, char *name, sqlid id, sqlid auth_id, int 
 	s->idxs = list_new(tr->sa, (fdestroy) NULL);
 	s->triggers = list_new(tr->sa, (fdestroy) NULL);
 	s->base.wtime = tr->wtime = tr->wstime;
-
 	cs_add(&tr->schemas, s, TR_NEW);
 
 	tr->schema_updates ++;
@@ -1775,8 +1774,8 @@ store_load(sql_allocator *pa) {
 	sql_schema *s;
 
 	lng lng_store_oid;
-
 	store_oid = 0;
+
 	store_sa = sa_create(pa);
 	sa = sa_create(pa);
 	if (!sa || !store_sa)
@@ -3534,7 +3533,7 @@ schema_dup(sql_trans *tr, int flags, sql_schema *os, sql_trans *o)
 static void
 _trans_init(sql_trans *tr, sql_trans *otr)
 {
-	tr->wtime = tr->rtime = tr->atime = 0;
+	tr->wtime = tr->atime = 0;
 	tr->stime = (otr->wtime>otr->atime?otr->wtime:otr->atime);
 	tr->wstime = timestamp();
 	tr->schema_updates = 0;

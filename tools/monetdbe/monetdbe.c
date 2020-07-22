@@ -360,7 +360,10 @@ cleanup:
 		bstream_destroy(c->fdin);
 		c->fdin = old_bstream;
 	}
-	return commit_action(m, mdbe, result, res_internal);
+
+	char* msg = commit_action(m, mdbe, result, res_internal);
+
+	return msg;
 }
 
 static int
@@ -427,7 +430,7 @@ cleanup:
 static void
 monetdbe_shutdown_internal(void) // Call this function always inside the embedded_lock
 {
-	if (monetdbe_embedded_initialized) {
+	if (monetdbe_embedded_initialized && (open_dbs == 0)) {
             malEmbeddedReset();
 		monetdbe_embedded_initialized = false;
 		if (monetdbe_embedded_url)
@@ -628,12 +631,12 @@ monetdbe_dump_database(monetdbe_database dbhdl, const char *filename)
 		return NULL;
 
 	monetdbe_database_internal *mdbe = (monetdbe_database_internal*)dbhdl;
-	MT_lock_set(&embedded_lock);
+	
 	if ((mdbe->msg = validate_database_handle(mdbe, "embedded.monetdbe_dump_database")) != MAL_SUCCEED) {
-		MT_lock_unset(&embedded_lock);
+		
 		return mdbe->msg;
 	}
-	MT_lock_unset(&embedded_lock);
+	
 	struct MapiStruct mid = { .mdbe = mdbe };
 
 	/* open file stream */
@@ -657,12 +660,12 @@ monetdbe_dump_table(monetdbe_database dbhdl, const char *sname, const char *tnam
 		return NULL;
 
 	monetdbe_database_internal *mdbe = (monetdbe_database_internal*)dbhdl;
-	MT_lock_set(&embedded_lock);
+	
 	if ((mdbe->msg = validate_database_handle(mdbe, "embedded.monetdbe_dump_table")) != MAL_SUCCEED) {
-		MT_lock_unset(&embedded_lock);
+		
 		return mdbe->msg;
 	}
-	MT_lock_unset(&embedded_lock);
+	
 	struct MapiStruct mid = { .mdbe = mdbe };
 
 	/* open file stream */
@@ -686,9 +689,9 @@ monetdbe_get_autocommit(monetdbe_database dbhdl, int* result)
 		return NULL;
 
 	monetdbe_database_internal *mdbe = (monetdbe_database_internal*)dbhdl;
-	MT_lock_set(&embedded_lock);
+	
 	if ((mdbe->msg = validate_database_handle(mdbe, "monetdbe.monetdbe_get_autocommit")) != MAL_SUCCEED) {
-		MT_lock_unset(&embedded_lock);
+		
 		return mdbe->msg;
 	}
 
@@ -698,7 +701,7 @@ monetdbe_get_autocommit(monetdbe_database dbhdl, int* result)
 		mvc *m = ((backend *) mdbe->c->sqlcontext)->mvc;
 		*result = m->session->auto_commit;
 	}
-	MT_lock_unset(&embedded_lock);
+	
 	return mdbe->msg;
 }
 
@@ -709,9 +712,9 @@ monetdbe_set_autocommit(monetdbe_database dbhdl, int value)
 		return NULL;
 
 	monetdbe_database_internal *mdbe = (monetdbe_database_internal*)dbhdl;
-	MT_lock_set(&embedded_lock);
+	
 	if (!validate_database_handle_noerror(mdbe)) {
-		MT_lock_unset(&embedded_lock);
+		
 		return 0;
 	}
 
@@ -727,7 +730,7 @@ monetdbe_set_autocommit(monetdbe_database dbhdl, int value)
 			mdbe->msg = mvc_rollback(m, 0, NULL, true);
 		}
 	}
-	MT_lock_unset(&embedded_lock);
+	
 	return mdbe->msg;
 }
 
@@ -737,9 +740,9 @@ monetdbe_in_transaction(monetdbe_database dbhdl)
 	if (!dbhdl)
 		return 0;
 	monetdbe_database_internal *mdbe = (monetdbe_database_internal*)dbhdl;
-	MT_lock_set(&embedded_lock);
+	
 	if (!validate_database_handle_noerror(mdbe)) {
-		MT_lock_unset(&embedded_lock);
+		
 		return 0;
 	}
 
@@ -748,7 +751,7 @@ monetdbe_in_transaction(monetdbe_database dbhdl)
 
 	if (m->session->tr)
 		result = m->session->tr->active;
-	MT_lock_unset(&embedded_lock);
+	
 	return result;
 }
 
@@ -758,9 +761,9 @@ monetdbe_query(monetdbe_database dbhdl, char* query, monetdbe_result** result, m
 	if (!dbhdl)
 		return NULL;
 	monetdbe_database_internal *mdbe = (monetdbe_database_internal*)dbhdl;
-	MT_lock_set(&embedded_lock);
+	
 	mdbe->msg = monetdbe_query_internal(mdbe, query, result, affected_rows, NULL, 'S');
-	MT_lock_unset(&embedded_lock);
+	
 	return mdbe->msg;
 }
 
@@ -772,7 +775,7 @@ monetdbe_prepare(monetdbe_database dbhdl, char* query, monetdbe_statement **stmt
 	monetdbe_database_internal *mdbe = (monetdbe_database_internal*)dbhdl;
 
 	int prepare_id = 0;
-	MT_lock_set(&embedded_lock);
+	
 	if (!stmt)
 		mdbe->msg = createException(MAL, "monetdbe.monetdbe_prepare", "Parameter stmt is NULL");
 	else {
@@ -812,7 +815,7 @@ monetdbe_prepare(monetdbe_database dbhdl, char* query, monetdbe_statement **stmt
 		else if (stmt_internal)
 			GDKfree(stmt_internal);
 	}
-	MT_lock_unset(&embedded_lock);
+	
 	return mdbe->msg;
 }
 
@@ -910,13 +913,13 @@ monetdbe_cleanup_result(monetdbe_database dbhdl, monetdbe_result* result)
 	monetdbe_database_internal *mdbe = (monetdbe_database_internal*)dbhdl;
 	monetdbe_result_internal* res = (monetdbe_result_internal *) result;
 
-	MT_lock_set(&embedded_lock);
+	
 	if (!result) {
 		mdbe->msg = createException(MAL, "monetdbe.monetdbe_cleanup_result_internal", "Parameter result is NULL");
 	} else {
 		mdbe->msg = monetdbe_cleanup_result_internal(mdbe, res);
 	}
-	MT_lock_unset(&embedded_lock);
+	
 	return mdbe->msg;
 }
 
@@ -927,9 +930,9 @@ monetdbe_get_table(monetdbe_database dbhdl, monetdbe_table** table, const char* 
 	mvc *m;
 	sql_schema *s;
 
-	MT_lock_set(&embedded_lock);
+	
 	if ((mdbe->msg = validate_database_handle(mdbe, "monetdbe.monetdbe_get_table")) != MAL_SUCCEED) {
-		MT_lock_unset(&embedded_lock);
+		
 		return mdbe->msg;
 	}
 
@@ -956,7 +959,7 @@ monetdbe_get_table(monetdbe_database dbhdl, monetdbe_table** table, const char* 
 
 cleanup:
 	mdbe->msg = commit_action(m, mdbe, NULL, NULL);
-	MT_lock_unset(&embedded_lock);
+	
 	return mdbe->msg;
 }
 
@@ -971,9 +974,9 @@ monetdbe_get_columns(monetdbe_database dbhdl, const char* schema_name, const cha
 	int columns;
 	node *n;
 
-	MT_lock_set(&embedded_lock);
+	
 	if ((mdbe->msg = validate_database_handle(mdbe, "monetdbe.monetdbe_get_columns")) != MAL_SUCCEED) {
-		MT_lock_unset(&embedded_lock);
+		
 		return mdbe->msg;
 	}
 
@@ -1035,7 +1038,7 @@ monetdbe_get_columns(monetdbe_database dbhdl, const char* schema_name, const cha
 
 cleanup:
 	mdbe->msg = commit_action(m, mdbe, NULL, NULL);
-	MT_lock_unset(&embedded_lock);
+	
 	return mdbe->msg;
 }
 
@@ -1110,9 +1113,9 @@ monetdbe_append(monetdbe_database dbhdl, const char* schema, const char* table, 
 	size_t i, cnt;
 	node *n;
 
-	MT_lock_set(&embedded_lock);
+	
 	if ((mdbe->msg = validate_database_handle(mdbe, "monetdbe.monetdbe_append")) != MAL_SUCCEED) {
-		MT_lock_unset(&embedded_lock);
+		
 		return mdbe->msg;
 	}
 
@@ -1264,7 +1267,7 @@ monetdbe_append(monetdbe_database dbhdl, const char* schema, const char* table, 
 	}
 cleanup:
 	mdbe->msg = commit_action(m, mdbe, NULL, NULL);
-	MT_lock_unset(&embedded_lock);
+	
 	return mdbe->msg;
 }
 
@@ -1311,9 +1314,9 @@ monetdbe_result_fetch(monetdbe_result* mres, monetdbe_column** res, size_t colum
 	monetdbe_database_internal *mdbe = result->mdbe;
 	Client c = mdbe->c;
 
-	MT_lock_set(&embedded_lock);
+	
 	if ((mdbe->msg = validate_database_handle(mdbe, "monetdbe.monetdbe_result_fetch")) != MAL_SUCCEED) {
-		MT_lock_unset(&embedded_lock);
+		
 		return mdbe->msg;
 	}
 
@@ -1330,7 +1333,7 @@ monetdbe_result_fetch(monetdbe_result* mres, monetdbe_column** res, size_t colum
 	// check if we have the column converted already
 	if (result->converted_columns[column_index]) {
 		*res = result->converted_columns[column_index];
-		MT_lock_unset(&embedded_lock);
+		
 		return MAL_SUCCEED;
 	}
 
@@ -1521,7 +1524,7 @@ cleanup:
 		*res = result->converted_columns[column_index];
 	}
 	mdbe->msg = commit_action(m, mdbe, NULL, NULL);
-	MT_lock_unset(&embedded_lock);
+	
 	return mdbe->msg;
 }
 
