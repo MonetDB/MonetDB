@@ -644,7 +644,7 @@ monetdbe_dump_database(monetdbe_database dbhdl, const char *filename)
 		}
 		close_stream(fd);
 	} else {
-		mdbe->msg = createException(MAL, "embedded.monetdbe_dump_database", "Unable too open file %s", filename);
+		mdbe->msg = createException(MAL, "embedded.monetdbe_dump_database", "Unable to open file %s", filename);
 	}
 	return mdbe->msg;
 }
@@ -673,7 +673,7 @@ monetdbe_dump_table(monetdbe_database dbhdl, const char *sname, const char *tnam
 		}
 		close_stream(fd);
 	} else {
-		mdbe->msg = createException(MAL, "embedded.monetdbe_dump_table", "Unable too open file %s", filename);
+		mdbe->msg = createException(MAL, "embedded.monetdbe_dump_table", "Unable to open file %s", filename);
 	}
 	return mdbe->msg;
 }
