@@ -2142,7 +2142,7 @@ sql_update_jun2020_sp1_hugeint(Client c, const char *prev_schema)
 #endif
 
 static str
-sql_update_default_lidar(Client c)
+sql_update_oscar_lidar(Client c)
 {
 	char *query =
 		"drop procedure sys.lidarattach(string);\n"
@@ -2153,7 +2153,7 @@ sql_update_default_lidar(Client c)
 }
 
 static str
-sql_update_default(Client c, mvc *sql, const char *prev_schema, bool *systabfixed)
+sql_update_oscar(Client c, mvc *sql, const char *prev_schema, bool *systabfixed)
 {
 	size_t bufsize = 8192, pos = 0;
 	char *err = NULL, *buf = GDKmalloc(bufsize);
@@ -2662,14 +2662,14 @@ SQLupgrades(Client c, mvc *m)
 
 	sql_find_subtype(&tp, "varchar", 0, 0);
 	if (sql_bind_func(m->sa, s, "lidarattach", &tp, NULL, F_PROC) &&
-	    (err = sql_update_default_lidar(c)) != NULL) {
+	    (err = sql_update_oscar_lidar(c)) != NULL) {
 		TRC_CRITICAL(SQL_PARSER, "%s\n", err);
 		freeException(err);
 		GDKfree(prev_schema);
 		return -1;
 	}
 
-	if ((err = sql_update_default(c, m, prev_schema, &systabfixed)) != NULL) {
+	if ((err = sql_update_oscar(c, m, prev_schema, &systabfixed)) != NULL) {
 		TRC_CRITICAL(SQL_PARSER, "%s\n", err);
 		freeException(err);
 		GDKfree(prev_schema);
