@@ -386,47 +386,36 @@ join_detached_threads(void)
 	LeaveCriticalSection(&winthread_cs);
 }
 
-static int
-MT_create_thread_data(struct winthread** w, enum MT_thr_detach d, const char *threadname) {
-
-	if (threadname == NULL) {
-		TRC_CRITICAL(GDK, "Thread must have a name\n");
-		return -1;
-	}
-	if (strlen(threadname) >= sizeof((*w)->threadname)) {
-		TRC_CRITICAL(GDK, "Thread's name is too large\n");
-		return -1;
-	}
-
-	if ((*w = malloc(sizeof(struct winthread))) == NULL) {
-		GDKsyserror("Cannot allocate memory\n");
-		return -1;
-	}
-	**w = (struct winthread) {
-		.func = NULL,
-		.data = NULL,
-		.waiting = false,
-		.detached = (d == MT_THR_DETACHED),
-	};
-	ATOMIC_INIT(&(*w)->exited, 0);
-
-	strcpy_len((*w)->threadname, threadname, sizeof((*w)->threadname));
-
-	return 0;
-}
-
 int
 MT_create_thread(MT_Id *t, void (*f) (void *), void *arg, enum MT_thr_detach d, const char *threadname)
 {
 	struct winthread *w;
 
 	join_threads();
+	if (threadname == NULL) {
+		TRC_CRITICAL(GDK, "Thread must have a name\n");
+		return -1;
+	}
+	if (strlen(threadname) >= sizeof(w->threadname)) {
+		TRC_CRITICAL(GDK, "Thread's name is too large\n");
+		return -1;
+	}
 
-	if (MT_create_thread_data(&w, d, threadname)) return -1;
+	w = malloc(sizeof(*w));
+	if (w == NULL) {
+		GDKsyserror("Cannot allocate memory\n");
+		return -1;
+	}
 
-	w->func = f;
-	w->data = arg;
-
+	*w = (struct winthread) {
+		.func = f,
+		.data = arg,
+		.waiting = false,
+		.detached = (d == MT_THR_DETACHED),
+	};
+	ATOMIC_INIT(&w->exited, 0);
+	strcpy_len(w->threadname, threadname, sizeof(w->threadname));
+	TRC_DEBUG(THRD, "Create thread \"%s\"\n", threadname);
 	EnterCriticalSection(&winthread_cs);
 	w->hdl = CreateThread(NULL, THREAD_STACK_SIZE, thread_starter, w,
 			      0, &w->tid);
@@ -745,39 +734,6 @@ join_detached_threads(void)
 	pthread_mutex_unlock(&posthread_lock);
 }
 
-static int
-MT_create_thread_data(struct posthread** p, enum MT_thr_detach d, const char *threadname) {
-	;
-
-	if (threadname == NULL) {
-		TRC_CRITICAL(GDK, "Thread must have a name\n");
-		return -1;
-	}
-	if (strlen(threadname) >= sizeof((*p)->threadname)) {
-		TRC_CRITICAL(GDK, "Thread's name is too large\n");
-		return -1;
-	}
-
-	if ((*p = malloc(sizeof(struct posthread))) == NULL) {
-		GDKsyserror("Cannot allocate memory\n");
-		return -1;
-	}
-	**p = (struct posthread) {
-		.func = NULL,
-		.data = NULL,
-		.waiting = false,
-		.detached = (d == MT_THR_DETACHED),
-	};
-	ATOMIC_INIT(&(*p)->exited, 0);
-
-	strcpy_len((*p)->threadname, threadname, sizeof((*p)->threadname));
-	pthread_mutex_lock(&posthread_lock);
-	(*p)->mtid = ++MT_thread_id;
-	pthread_mutex_unlock(&posthread_lock);
-
-	return 0;
-}
-
 int
 MT_create_thread(MT_Id *t, void (*f) (void *), void *arg, enum MT_thr_detach d, const char *threadname)
 {
@@ -786,7 +742,14 @@ MT_create_thread(MT_Id *t, void (*f) (void *), void *arg, enum MT_thr_detach d, 
 	struct posthread *p;
 
 	join_threads();
-
+	if (threadname == NULL) {
+		TRC_CRITICAL(GDK, "Thread must have a name\n");
+		return -1;
+	}
+	if (strlen(threadname) >= sizeof(p->threadname)) {
+		TRC_CRITICAL(GDK, "Thread's name is too large\n");
+		return -1;
+	}
 	if ((ret = pthread_attr_init(&attr)) != 0) {
 		GDKsyserr(ret, "Cannot init pthread attr");
 		return -1;
@@ -796,12 +759,21 @@ MT_create_thread(MT_Id *t, void (*f) (void *), void *arg, enum MT_thr_detach d, 
 		pthread_attr_destroy(&attr);
 		return -1;
 	}
+	p = malloc(sizeof(struct posthread));
+	if (p == NULL) {
+		GDKsyserror("Cannot allocate memory\n");
+		pthread_attr_destroy(&attr);
+		return -1;
+	}
+	*p = (struct posthread) {
+		.func = f,
+		.data = arg,
+		.waiting = false,
+		.detached = (d == MT_THR_DETACHED),
+	};
+	ATOMIC_INIT(&p->exited, 0);
 
-	if (MT_create_thread_data(&p, d, threadname)) return -1;
-
-	p->func = f;
-	p->data = arg;
-
+	strcpy_len(p->threadname, threadname, sizeof(p->threadname));
 #ifdef HAVE_PTHREAD_SIGMASK
 	sigset_t new_mask, orig_mask;
 	(void) sigfillset(&new_mask);
@@ -810,8 +782,8 @@ MT_create_thread(MT_Id *t, void (*f) (void *), void *arg, enum MT_thr_detach d, 
 	TRC_DEBUG(THRD, "Create thread \"%s\"\n", threadname);
 	/* protect posthreads during thread creation and only add to
 	 * it after the thread was created successfully */
-	*t = p->mtid;
 	pthread_mutex_lock(&posthread_lock);
+	*t = p->mtid = ++MT_thread_id;
 	ret = pthread_create(&p->tid, &attr, thread_starter, p);
 	if (ret != 0) {
 		GDKsyserr(ret, "Cannot start thread");
