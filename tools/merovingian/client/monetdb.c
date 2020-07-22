@@ -1510,6 +1510,7 @@ command_get(int argc, char *argv[])
 		free(value);
 	msab_freeStatus(&orig);
 	free(props);
+	freeConfFile(defprops);
 	free(defprops);
 	return fails > 0;
 }

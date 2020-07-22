@@ -15,3 +15,4 @@ shop
 jsonvalidity.Bug-3753
 jsonkeyarray.Bug-6858
 jsontext.Bug-6859
+jsonnumber.Bug-6932

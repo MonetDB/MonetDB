@@ -1058,7 +1058,7 @@ GDKreset(int status)
 		for (Thread t = GDKthreads; t < GDKthreads + THREADS; t++) {
 			MT_Id victim;
 			if ((victim = (MT_Id) ATOMIC_GET(&t->pid)) != 0) {
-				if (victim != pid) {
+				if (pid && victim != pid) {
 					int e;
 
 					killed = true;
@@ -1360,7 +1360,10 @@ GDKusec(void)
 	return (lng) (f.QuadPart / 10);
 #elif defined(HAVE_CLOCK_GETTIME)
 	struct timespec ts;
-	clock_gettime(CLOCK_REALTIME, &ts);
+#ifdef CLOCK_REALTIME_COARSE
+	if (clock_gettime(CLOCK_REALTIME_COARSE, &ts) < 0)
+#endif
+		(void) clock_gettime(CLOCK_REALTIME, &ts);
 	return (lng) (ts.tv_sec * LL_CONSTANT(1000000) + ts.tv_nsec / 1000);
 #elif defined(HAVE_GETTIMEOFDAY)
 	struct timeval tv;

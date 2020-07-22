@@ -1578,7 +1578,7 @@ rewrite_exp_rel(visitor *v, sql_rel *rel, sql_exp *e, int depth)
 			if (!rewrite_inner(v->sql, nrel, inner, depth?op_left:op_join))
 				return NULL;
 			/* has to apply recursively */
-			if (!(e->l = rel_exp_visitor_bottomup(v, nrel, &rewrite_exp_rel)))
+			if (!(e->l = rel_exp_visitor_bottomup(v, nrel, &rewrite_exp_rel, true)))
 				return NULL;
 		}
 	} else if (exp_has_rel(e) && !is_ddl(rel->op)) {
@@ -2606,10 +2606,10 @@ rewrite_exists(visitor *v, sql_rel *rel, sql_exp *e, int depth)
 			sql_rel *sq = NULL;
 
 			if (!exp_is_rel(ie)) { /* exists over a constant or a single value */
-				const char *rname = exp_relname(e), *name = exp_name(e);
-				e = exp_atom_bool(v->sql->sa, is_exists(sf)?1:0);
-				exp_setname(v->sql->sa, e, rname, name);
-				return e;
+				le = exp_atom_bool(v->sql->sa, is_exists(sf)?1:0);
+				if (exp_name(e))
+					exp_prop_alias(v->sql->sa, le, e);
+				return le;
 			}
 
 			sq = exp_rel_get_rel(v->sql->sa, ie); /* get subquery */
@@ -2836,7 +2836,6 @@ rewrite_fix_count(visitor *v, sql_rel *rel)
 				sql_exp *e = n->data, *ne;
 
 				if (exp_is_count(e, r)) {
-					const char *rname = exp_relname(e), *name = exp_name(e);
 					/* rewrite count in subquery */
 					list *args, *targs;
 					sql_subfunc *isnil = sql_bind_func(v->sql->sa, NULL, "isnull", exp_subtype(e), NULL, F_FUNC), *ifthen;
@@ -2853,9 +2852,10 @@ rewrite_fix_count(visitor *v, sql_rel *rel)
 					append(args, ne);
 					append(args, exp_atom(v->sql->sa, atom_zero_value(v->sql->sa, exp_subtype(e))));
 					append(args, e);
-					e = exp_op(v->sql->sa, args, ifthen);
-					exp_setname(v->sql->sa, e, rname, name);
-					n->data = e;
+					ne = exp_op(v->sql->sa, args, ifthen);
+					if (exp_name(e))
+						exp_prop_alias(v->sql->sa, ne, e);
+					n->data = ne;
 				}
 			}
 			if (rel_changes) { /* add project */
@@ -2933,11 +2933,13 @@ rewrite_groupings(visitor *v, sql_rel *rel)
 						}
 
 						ne = exp_atom(v->sql->sa, a);
-						exp_setname(v->sql->sa, ne, e->alias.rname, e->alias.name);
+						if (exp_name(e))
+							exp_prop_alias(v->sql->sa, ne, e);
 					} else if (e->type == e_column && !exps_find_exp(l, e) && !has_label(e)) {
 						/* do not include in the output of the group by, but add to the project as null */
 						ne = exp_atom(v->sql->sa, atom_general(v->sql->sa, exp_subtype(e), NULL));
-						exp_setname(v->sql->sa, ne, e->alias.rname, e->alias.name);
+						if (exp_name(e))
+							exp_prop_alias(v->sql->sa, ne, e);
 					} else {
 						ne = exp_ref(v->sql, e);
 						append(exps, e);
@@ -2984,7 +2986,8 @@ rewrite_groupings(visitor *v, sql_rel *rel)
 
 					if (e->type == e_aggr && !agr->func->s && !strcmp(agr->func->base.name, "grouping")) {
 						ne = exp_atom(v->sql->sa, atom_int(v->sql->sa, bt, 0));
-						exp_setname(v->sql->sa, ne, e->alias.rname, e->alias.name);
+						if (exp_name(e))
+							exp_prop_alias(v->sql->sa, ne, e);
 					} else {
 						ne = exp_ref(v->sql, e);
 						append(exps, e);
@@ -3156,7 +3159,7 @@ rel_unnest(mvc *sql, sql_rel *rel)
 
 	rel = rel_visitor_topdown(&v, rel, &rel_reset_subquery);
 	v.changes = 0;
-	rel = rel_exp_visitor_bottomup(&v, rel, &rewrite_simplify_exp);
+	rel = rel_exp_visitor_bottomup(&v, rel, &rewrite_simplify_exp, false);
 	rel = rel_visitor_bottomup(&v, rel, &rewrite_simplify);
 	rel = rel_visitor_bottomup(&v, rel, &rewrite_or_exp);
 	/* at rel_select.c explicit cross-products generate empty selects, if these are not used, they can be removed now */
@@ -3164,18 +3167,18 @@ rel_unnest(mvc *sql, sql_rel *rel)
 	rel = rel_visitor_bottomup(&v, rel, &rewrite_split_select_exps); /* has to run before rewrite_complex */
 
 	rel = rel_visitor_bottomup(&v, rel, &rewrite_aggregates);
-	rel = rel_exp_visitor_bottomup(&v, rel, &rewrite_rank);
+	rel = rel_exp_visitor_bottomup(&v, rel, &rewrite_rank, false);
 	rel = rel_visitor_bottomup(&v, rel, &rewrite_outer2inner_union);
 
 	// remove empty project/groupby !
 	rel = rel_visitor_bottomup(&v, rel, &rewrite_empty_project);
-	rel = rel_exp_visitor_bottomup(&v, rel, &rewrite_complex);
+	rel = rel_exp_visitor_bottomup(&v, rel, &rewrite_complex, true);
 
-	rel = rel_exp_visitor_bottomup(&v, rel, &rewrite_ifthenelse);	/* add isnull handling */
-	rel = rel_exp_visitor_bottomup(&v, rel, &reset_exp_used);	/* reset used flag from ifthenelse re-writer, so it can be used again by the rel_dce optimizer */
+	rel = rel_exp_visitor_bottomup(&v, rel, &rewrite_ifthenelse, false);	/* add isnull handling */
+	rel = rel_exp_visitor_bottomup(&v, rel, &reset_exp_used, false);	/* reset used flag from ifthenelse re-writer, so it can be used again by the rel_dce optimizer */
 
 	rel = rel_visitor_bottomup(&v, rel, &rewrite_values);
-	rel = rel_exp_visitor_bottomup(&v, rel, &rewrite_exp_rel);
+	rel = rel_exp_visitor_bottomup(&v, rel, &rewrite_exp_rel, true);
 	rel = rel_visitor_bottomup(&v, rel, &rewrite_join2semi);	/* where possible convert anyequal functions into marks */
 	if (v.changes > 0)
 		rel = rel_visitor_bottomup(&v, rel, &rel_remove_empty_select);
@@ -3192,6 +3195,6 @@ rel_unnest(mvc *sql, sql_rel *rel)
 	rel = rel_visitor_bottomup(&v, rel, &rewrite_groupings);	/* transform group combinations into union of group relations */
 	rel = rel_visitor_bottomup(&v, rel, &rewrite_empty_project);
 	// needed again!
-	rel = rel_exp_visitor_bottomup(&v, rel, &exp_reset_card_and_freevar);
+	rel = rel_exp_visitor_bottomup(&v, rel, &exp_reset_card_and_freevar, false);
 	return rel;
 }

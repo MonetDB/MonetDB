@@ -74,13 +74,13 @@ stdout of test 'timestamp` in directory 'sql/test/pg_regress` itself:
 % 1 # length
 [ 1 ]
 #SELECT count(*) AS One FROM TIMESTAMP_TBL WHERE d1 = cast((select test_current_date from test_current_date) + interval '1' DAY as timestamp);
-% sys. # table_name
+% . # table_name
 % one # name
 % bigint # type
 % 1 # length
 [ 1	]
 #SELECT count(*) AS One FROM TIMESTAMP_TBL WHERE d1 = cast((select test_current_date from test_current_date) - interval '1' DAY as timestamp);
-% sys. # table_name
+% . # table_name
 % one # name
 % bigint # type
 % 1 # length

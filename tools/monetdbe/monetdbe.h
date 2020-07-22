@@ -59,7 +59,10 @@ typedef enum  {
 #endif
 	monetdbe_size_t, monetdbe_float, monetdbe_double,
 	monetdbe_str, monetdbe_blob,
-	monetdbe_date, monetdbe_time, monetdbe_timestamp
+	monetdbe_date, monetdbe_time, monetdbe_timestamp,
+
+	// should be last:
+	monetdbe_type_unknown
 } monetdbe_types;
 
 typedef struct {
