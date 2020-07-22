@@ -1325,86 +1325,12 @@ sql_Nop_(backend *be, const char *fname, stmt *a1, stmt *a2, stmt *a3, stmt *a4)
 }
 
 static stmt *
-rel_parse_value(backend *be, char *query, char emode)
+parse_value(backend *be, char *query, sql_subtype *tpe, char emode)
 {
-	mvc *m = be->mvc;
-	mvc o = *m;
-	stmt *s = NULL;
-	buffer *b;
-	char *n;
-	size_t len = _strlen(query);
-	exp_kind ek = {type_value, card_value, FALSE};
-	stream *sr;
-	bstream *bs;
-
-	m->qc = NULL;
-
-	m->emode = emode;
-	b = (buffer*)GDKmalloc(sizeof(buffer));
-	n = GDKmalloc(len + 1 + 1);
-	if (b == NULL || n == NULL) {
-		GDKfree(b);
-		GDKfree(n);
-		return sql_error(m, 02, SQLSTATE(HY013) MAL_MALLOC_FAIL);
-	}
-	snprintf(n, len + 2, "%s\n", query);
-	query = n;
-	len++;
-	buffer_init(b, query, len);
-	sr = buffer_rastream(b, "sqlstatement");
-	if (sr == NULL) {
-		buffer_destroy(b);
-		return sql_error(m, 02, SQLSTATE(HY013) MAL_MALLOC_FAIL);
-	}
-	bs = bstream_create(sr, b->len);
-	if(bs == NULL) {
-		buffer_destroy(b);
-		return sql_error(m, 02, SQLSTATE(HY013) MAL_MALLOC_FAIL);
-	}
-	scanner_init(&m->scanner, bs, NULL);
-	m->scanner.mode = LINE_1;
-	bstream_next(m->scanner.rs);
-
-	m->params = NULL;
-	m->sym = NULL;
-	m->errstr[0] = '\0';
-
-	(void) sqlparse(m);	/* blindly ignore errors */
-
-	/* get out the single value as we don't want an enclosing projection! */
-	if (m->sym->token == SQL_SELECT) {
-		SelectNode *sn = (SelectNode *)m->sym;
-		if (sn->selection->h->data.sym->token == SQL_COLUMN || sn->selection->h->data.sym->token == SQL_IDENT) {
-			sql_rel *rel = NULL;
-			sql_query *query = query_create(m);
-			sql_exp *e = rel_value_exp2(query, &rel, sn->selection->h->data.sym->data.lval->h->data.sym, sql_sel | sql_values, ek);
-
-			if (!rel)
-				s = exp_bin(be, e, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0, 0);
-		}
-	}
-	GDKfree(query);
-	GDKfree(b);
-	bstream_destroy(m->scanner.rs);
-
-	m->sym = NULL;
-	o.frames = m->frames;	/* may have been realloc'ed */
-	o.sizeframes = m->sizeframes;
-	if (m->session->status || m->errstr[0]) {
-		int status = m->session->status;
-
-		strcpy(o.errstr, m->errstr);
-		*m = o;
-		m->session->status = status;
-	} else {
-		unsigned int label = m->label;
-
-		while (m->topframes > o.topframes)
-			clear_frame(m, m->frames[--m->topframes]);
-		*m = o;
-		m->label = label;
-	}
-	return s;
+	sql_exp *e = rel_parse_val(be->mvc, query, tpe, emode, NULL);
+	if (e)
+		return exp_bin(be, e, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0, 0);
+	return sql_error(be->mvc, 02, SQLSTATE(HY001) MAL_MALLOC_FAIL);
 }
 
 static stmt *
@@ -3518,127 +3444,14 @@ rel2bin_sample(backend *be, sql_rel *rel, list *refs)
 	return sub;
 }
 
-stmt *
-sql_parse(backend *be, sql_allocator *sa, const char *query, char mode)
+static stmt *
+sql_parse(backend *be, const char *query, char mode)
 {
-	mvc *m = be->mvc;
-	mvc *o = NULL;
+	sql_rel *r = rel_parse(be->mvc, be->mvc->session->schema, (char*)query, mode);
 	stmt *sq = NULL;
-	buffer *b;
-	char *nquery;
-	size_t len = _strlen(query);
-	stream *buf;
-	bstream * bst;
 
- 	if (THRhighwater())
-		return sql_error(m, 10, SQLSTATE(42000) "Query too complex: running out of stack space");
-
-	o = MNEW(mvc);
-	if (!o)
-		return NULL;
-	*o = *m;
-
-	m->qc = NULL;
-
-	m->emode = mode;
-	be->depth++;
-
-	b = (buffer*)GDKmalloc(sizeof(buffer));
-	if (b == 0) {
-		*m = *o;
-		GDKfree(o);
-		return sql_error(m, 02, SQLSTATE(HY013) MAL_MALLOC_FAIL);
-	}
-	nquery = GDKmalloc(len + 1 + 1);
-	if (nquery == 0) {
-		*m = *o;
-		GDKfree(o);
-		GDKfree(b);
-		return sql_error(m, 02, SQLSTATE(HY013) MAL_MALLOC_FAIL);
-	}
-	snprintf(nquery, len + 2, "%s\n", query);
-	len++;
-	buffer_init(b, nquery, len);
-	buf = buffer_rastream(b, "sqlstatement");
-	if(buf == NULL) {
-		*m = *o;
-		GDKfree(o);
-		GDKfree(b);
-		GDKfree(nquery);
-		be->depth--;
-		return sql_error(m, 02, SQLSTATE(HY013) MAL_MALLOC_FAIL);
-	}
-	if((bst = bstream_create(buf, b->len)) == NULL) {
-		close_stream(buf);
-		*m = *o;
-		GDKfree(o);
-		GDKfree(b);
-		GDKfree(nquery);
-		be->depth--;
-		return sql_error(m, 02, SQLSTATE(HY013) MAL_MALLOC_FAIL);
-	}
-	scanner_init( &m->scanner, bst, NULL);
-	m->scanner.mode = LINE_1;
-	bstream_next(m->scanner.rs);
-
-	m->params = NULL;
-	m->sym = NULL;
-	m->errstr[0] = '\0';
-	m->errstr[ERRSIZE-1] = '\0';
-
-	/* create private allocator */
-	m->sa = (sa)?sa:sa_create(NULL);
-	if (!m->sa) {
-		bstream_destroy(bst);
-		*m = *o;
-		GDKfree(o);
-		GDKfree(b);
-		GDKfree(nquery);
-		be->depth--;
-		return sql_error(m, 02, SQLSTATE(HY013) MAL_MALLOC_FAIL);
-	}
-
-	if (sqlparse(m) || !m->sym) {
-		/* oops an error */
-		snprintf(m->errstr, ERRSIZE, "An error occurred when executing "
-				"internal query: %s", nquery);
-	} else {
-		sql_query *query = query_create(m);
-		sql_rel *r = rel_semantic(query, m->sym);
-
-		if (r)
-			r = sql_processrelation(m, r, 1);
-		if (r)
-			sq = rel_bin(be, r);
-	}
-
-	GDKfree(nquery);
-	GDKfree(b);
-	bstream_destroy(m->scanner.rs);
-	be->depth--;
-	if (m->sa && m->sa != sa)
-		sa_destroy(m->sa);
-	m->sym = NULL;
-	{
-		unsigned int label = m->label;
-		int status = m->session->status;
-		list *global_vars = m->global_vars;
-		int sizeframes = m->sizeframes, topframes = m->topframes;
-		sql_frame **frames = m->frames;
-		/* cascade list maybe removed */
-		list *cascade_action = m->cascade_action;
-
-		strcpy(o->errstr, m->errstr);
-		*m = *o;
-		m->label = label;
-		m->global_vars = global_vars;
-		m->sizeframes = sizeframes;
-		m->topframes = topframes;
-		m->frames = frames;
-		m->session->status = status;
-		m->cascade_action = cascade_action;
-	}
-	_DELETE(o);
+	if (r && (r = rel_unnest(be->mvc ,r)) != NULL && (r = rel_optimizer(be->mvc , r, 1)) != NULL)
+		sq = rel_bin(be, r);
 	return sq;
 }
 
@@ -3906,7 +3719,7 @@ sql_insert_triggers(backend *be, sql_table *t, stmt **updates, int time)
 				stack_pop_frame(sql);
 				return 0;
 			}
-			if (!sql_parse(be, sql->sa, trigger->statement, m_instantiate)) {
+			if (!sql_parse(be, trigger->statement, m_instantiate)) {
 				stack_pop_frame(sql);
 				return 0;
 			}
@@ -4483,7 +4296,10 @@ sql_delete_set_Fkeys(backend *be, sql_key *k, stmt *ftids /* to be updated rows 
 
 		if (action == ACT_SET_DEFAULT) {
 			if (fc->c->def) {
-				upd = rel_parse_value(be, sa_message(sql->sa, "select %s;", fc->c->def), sql->emode);
+				stmt *sq = parse_value(be, fc->c->def, &fc->c->type, sql->emode);
+				if (!sq)
+					return NULL;
+				upd = sq;
 			} else {
 				upd = stmt_atom(be, atom_general(sql->sa, &fc->c->type, NULL));
 			}
@@ -4537,7 +4353,10 @@ sql_update_cascade_Fkeys(backend *be, sql_key *k, stmt *utids, stmt **updates, i
 			upd = updates[c->c->colnr];
 		} else if (action == ACT_SET_DEFAULT) {
 			if (fc->c->def) {
-				upd = rel_parse_value(be, sa_message(sql->sa, "select %s;", fc->c->def), sql->emode);
+				stmt *sq = parse_value(be, fc->c->def, &fc->c->type, sql->emode);
+				if (!sq)
+					return NULL;
+				upd = sq;
 			} else {
 				upd = stmt_atom(be, atom_general(sql->sa, &fc->c->type, NULL));
 			}
@@ -4842,7 +4661,7 @@ sql_update_triggers(backend *be, sql_table *t, stmt *tids, stmt **updates, int t
 				return 0;
 			}
 
-			if (!sql_parse(be, sql->sa, trigger->statement, m_instantiate)) {
+			if (!sql_parse(be, trigger->statement, m_instantiate)) {
 				stack_pop_frame(sql);
 				return 0;
 			}
@@ -5115,7 +4934,7 @@ sql_delete_triggers(backend *be, sql_table *t, stmt *tids, int time, int firing_
 				return 0;
 			}
 
-			if (!sql_parse(be, sql->sa, trigger->statement, m_instantiate)) {
+			if (!sql_parse(be, trigger->statement, m_instantiate)) {
 				stack_pop_frame(sql);
 				return 0;
 			}
