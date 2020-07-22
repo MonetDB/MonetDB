@@ -613,8 +613,6 @@ bat_max_hgelength(BAT *b)
 				res += *s++ - '0';										\
 				scale--;												\
 			}															\
-			while(*s && isdigit((unsigned char) *s))					\
-				s++;													\
 		}																\
 		while(*s && isspace((unsigned char) *s))						\
 			s++;														\
