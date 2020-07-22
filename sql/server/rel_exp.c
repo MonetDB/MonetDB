@@ -1702,7 +1702,7 @@ exp_two_sided_bound_cmp_exp_is_false(mvc *sql, sql_exp* e) {
     assert(e->type == e_cmp);
     sql_exp* v = e->l;
     sql_exp* l = e->r;
-    sql_exp* h = e->r;
+    sql_exp* h = e->f;
     assert (v && l && h);
 
     return exp_is_null(sql, l) || exp_is_null(sql, v) || exp_is_null(sql, h);
