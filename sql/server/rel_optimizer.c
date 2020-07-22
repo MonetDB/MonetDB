@@ -5283,7 +5283,7 @@ rel_remove_empty_join(visitor *v, sql_rel *rel)
 static bool
 find_projection_for_join2semi(sql_rel *rel)
 {
-	if (is_simple_project(rel->op) || is_groupby(rel->op)) {
+	if (is_project(rel->op) && !is_union(rel->op)) {
 		if (rel->card < CARD_AGGR) /* const or groupby without group by exps */
 			return true;
 
