@@ -5019,9 +5019,6 @@ create user ".snapshot"
  schema sys;
 grant execute on procedure sys.hot_snapshot(string) to ".snapshot";
 grant execute on procedure sys.hot_snapshot(string, bool) to ".snapshot";
-create procedure sys.hot_snapshot(tarfile string, onserver bool)
- external name sql.hot_snapshot;
-update sys.functions set system = true where system <> true and schema_id = (select id from sys.schemas where name = 'sys') and name in ('hot_snapshot') and type = 2;
 update sys.functions set system = true, language = 2, side_effect = false where name = 'var' and schema_id = (select id from sys.schemas where name = 'sys') and type = 5;
 update sys.args set type = 'char' where func_id = (select id from sys.functions where name = 'var' and schema_id = (select id from sys.schemas where name = 'sys') and type = 5) and type = 'clob';
 update sys.privileges set grantor = 0 where obj_id = (select id from sys.functions where name = 'var' and schema_id = (select id from sys.schemas where name = 'sys') and type = 5);
