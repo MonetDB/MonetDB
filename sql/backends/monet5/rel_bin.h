@@ -15,6 +15,4 @@
 
 extern stmt *output_rel_bin(backend *be, sql_rel *rel);
 
-extern stmt *sql_parse(backend *be, sql_allocator *sa, const char *query, char mode);
-
 #endif /*_REL_BIN_H_*/

@@ -318,6 +318,7 @@ atom_general(sql_allocator *sa, sql_subtype *tpe, const char *val)
 			if (res < 0 || !p || ATOMcmp(type, p, ATOMnilptr(type)) == 0) {
 				if (p)
 					GDKfree(p);
+				GDKclrerr();
 				return NULL;
 			}
 			VALset(&a->data, a->data.vtype, p);
@@ -1229,8 +1230,10 @@ atom_cast(sql_allocator *sa, atom *a, sql_subtype *tp)
 						p = &(a->data.val.dval);
 					else
 						p = &(a->data.val.fval);
-					if ((res = ATOMfromstr(tpe, &p, &len, s, false)) < 0)
+					if ((res = ATOMfromstr(tpe, &p, &len, s, false)) < 0) {
+						GDKclrerr();
 						return 0;
+					}
 				} else {
 					return 0;
 				}
@@ -1251,6 +1254,7 @@ atom_cast(sql_allocator *sa, atom *a, sql_subtype *tp)
 			    ATOMcmp(type, p, ATOMnilptr(type)) == 0) {
 				GDKfree(p);
 				a->data.len = strlen(a->data.val.sval);
+				GDKclrerr();
 				return 0;
 			}
 			a->tpe = *tp;

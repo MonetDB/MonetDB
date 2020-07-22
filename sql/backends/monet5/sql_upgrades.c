@@ -2063,13 +2063,6 @@ sql_update_oscar(Client c, mvc *sql, const char *prev_schema, bool *systabfixed)
 				"grant execute on procedure sys.hot_snapshot(string, bool) to \".snapshot\";\n"
 			);
 
-			/* additional snapshot function */
-			pos += snprintf(buf + pos, bufsize - pos,
-					"create procedure sys.hot_snapshot(tarfile string, onserver bool)\n"
-					" external name sql.hot_snapshot;\n"
-					"update sys.functions set system = true where system <> true and schema_id = (select id from sys.schemas where name = 'sys')"
-					" and name in ('hot_snapshot') and type = %d;\n", (int) F_PROC);
-
 			/* update system tables so that the content
 			 * looks more like what it would be if sys.var
 			 * had been defined by the C code in
@@ -2231,6 +2224,66 @@ sql_update_oscar(Client c, mvc *sql, const char *prev_schema, bool *systabfixed)
 	GDKfree(buf);
 	return err;		/* usually MAL_SUCCEED */
 }
+
+static str
+sql_update_default(Client c, mvc *sql, const char *prev_schema)
+{
+	size_t bufsize = 3000, pos = 0;
+	char *buf, *err;
+	sql_schema *s = mvc_bind_schema(sql, "sys");
+	sql_table *t;
+	res_table *output;
+	BAT *b;
+
+	if ((buf = GDKmalloc(bufsize)) == NULL)
+		throw(SQL, __func__, SQLSTATE(HY013) MAL_MALLOC_FAIL);
+
+	/* if view sys.var_values mentions the query cache ('cache') we need
+	   to update */
+	pos += snprintf(buf + pos, bufsize - pos,
+					"select id from sys._tables where name = 'var_values' and query like '%%''cache''%%' and schema_id = (select id from sys.schemas where name = 'sys');\n");
+	err = SQLstatementIntern(c, &buf, "update", true, false, &output);
+	if (err) {
+		GDKfree(buf);
+		return err;
+	}
+	b = BATdescriptor(output->cols[0].b);
+	if (b) {
+		if (BATcount(b) > 0) {
+			pos = 0;
+			pos += snprintf(buf + pos, bufsize - pos, "set schema sys;\n");
+
+			/* 51_sys_schema_extensions.sql */
+			t = mvc_bind_table(sql, s, "var_values");
+			t->system = 0;	/* make it non-system else the drop view will fail */
+			pos += snprintf(buf + pos, bufsize - pos,
+							"DROP VIEW sys.var_values;\n"
+							"CREATE VIEW sys.var_values (var_name, value) AS\n"
+							"SELECT 'current_role', current_role UNION ALL\n"
+							"SELECT 'current_schema', current_schema UNION ALL\n"
+							"SELECT 'current_timezone', current_timezone UNION ALL\n"
+							"SELECT 'current_user', current_user UNION ALL\n"
+							"SELECT 'debug', debug UNION ALL\n"
+							"SELECT 'last_id', last_id UNION ALL\n"
+							"SELECT 'optimizer', optimizer UNION ALL\n"
+							"SELECT 'pi', pi() UNION ALL\n"
+							"SELECT 'rowcnt', rowcnt;\n"
+							"UPDATE sys._tables SET system = true WHERE name = 'var_values' AND schema_id = (SELECT id FROM sys.schemas WHERE name = 'sys');\n"
+							"GRANT SELECT ON sys.var_values TO PUBLIC;\n");
+
+			pos += snprintf(buf + pos, bufsize - pos, "set schema \"%s\";\n", prev_schema);
+
+			assert(pos < bufsize);
+			printf("Running database upgrade commands:\n%s\n", buf);
+			err = SQLstatementIntern(c, &buf, "update", true, false, NULL);
+		}
+		BBPunfix(b->batCacheid);
+	}
+	res_table_destroy(output);
+	GDKfree(buf);
+	return err;		/* usually MAL_SUCCEED */
+}
+
 int
 SQLupgrades(Client c, mvc *m)
 {
@@ -2419,6 +2472,13 @@ SQLupgrades(Client c, mvc *m)
 	}
 
 	if ((err = sql_update_oscar(c, m, prev_schema, &systabfixed)) != NULL) {
+		TRC_CRITICAL(SQL_PARSER, "%s\n", err);
+		freeException(err);
+		GDKfree(prev_schema);
+		return -1;
+	}
+
+	if ((err = sql_update_default(c, m, prev_schema)) != NULL) {
 		TRC_CRITICAL(SQL_PARSER, "%s\n", err);
 		freeException(err);
 		GDKfree(prev_schema);
