@@ -240,7 +240,6 @@ typedef struct sql_trans {
 	char *name;
 	int stime;		/* start of transaction */
 	int wstime;		/* first write transaction time stamp */
-	int rtime;		/* timestamp of latest read performed in transaction*/
 	int wtime;		/* timestamp of latest write performed in transaction*/
 	int schema_number;	/* schema timestamp */
 	int schema_updates;	/* set on schema changes */
@@ -309,6 +308,7 @@ typedef enum sql_class {
 #define EC_TEMP_TZ(e)		(e==EC_TIME_TZ||e==EC_TIMESTAMP_TZ)
 #define EC_TEMP(e)			(e==EC_TIME||e==EC_DATE||e==EC_TIMESTAMP||EC_TEMP_TZ(e))
 #define EC_TEMP_FRAC(e)		(e==EC_TIME||e==EC_TIMESTAMP||EC_TEMP_TZ(e))
+#define EC_TEMP_NOFRAC(e)	(e==EC_TIME||e==EC_TIMESTAMP)
 #define EC_BACKEND_FIXED(e)	(EC_NUMBER(e)||e==EC_BIT||EC_TEMP(e))
 
 typedef struct sql_type {

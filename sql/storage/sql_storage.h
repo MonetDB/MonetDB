@@ -511,7 +511,4 @@ extern sql_part *sql_trans_copy_part(sql_trans *tr, sql_table *t, sql_part *pt);
 extern void sql_trans_drop_any_comment(sql_trans *tr, sqlid id);
 extern void sql_trans_drop_obj_priv(sql_trans *tr, sqlid obj_id);
 
-/* This function should be used in exceptional cases such as dealing with tricky upgrades! */
-extern void insert_functions(sql_trans *tr, sql_table *sysfunc, list *funcs_list, sql_table *sysarg);
-
 #endif /*SQL_STORAGE_H */

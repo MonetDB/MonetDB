@@ -246,7 +246,7 @@ const char *
 MT_thread_getname(void)
 {
 	struct winthread *w = TlsGetValue(threadslot);
-	return w ? w->threadname : "unknown thread";
+	return w ? w->threadname : UNKNOWN_THREAD;
 }
 
 void
@@ -579,7 +579,7 @@ MT_thread_getname(void)
 	struct posthread *p;
 
 	p = pthread_getspecific(threadkey);
-	return p ? p->threadname : "unknown thread";
+	return p ? p->threadname : UNKNOWN_THREAD;
 }
 
 void
@@ -694,9 +694,9 @@ join_threads(void)
 				p->waiting = true;
 				pthread_mutex_unlock(&posthread_lock);
 				TRC_DEBUG(THRD, "Join thread \"%s\"\n", p->threadname);
-				self->joinwait = p;
+				if (self) self->joinwait = p;
 				pthread_join(p->tid, NULL);
-				self->joinwait = NULL;
+				if (self) self->joinwait = NULL;
 				rm_posthread(p);
 				waited = true;
 				pthread_mutex_lock(&posthread_lock);
@@ -721,9 +721,9 @@ join_detached_threads(void)
 				p->waiting = true;
 				pthread_mutex_unlock(&posthread_lock);
 				TRC_DEBUG(THRD, "Join thread \"%s\"\n", p->threadname);
-				self->joinwait = p;
+				if (self) self->joinwait = p;
 				pthread_join(p->tid, NULL);
-				self->joinwait = NULL;
+				if (self) self->joinwait = NULL;
 				rm_posthread(p);
 				waited = true;
 				pthread_mutex_lock(&posthread_lock);
@@ -836,9 +836,9 @@ MT_join_thread(MT_Id t)
 		return -1;
 	TRC_DEBUG(THRD, "Join thread \"%s\"\n", p->threadname);
 	struct posthread *self = pthread_getspecific(threadkey);
-	self->joinwait = p;
+	if (self) self->joinwait = p;
 	ret = pthread_join(p->tid, NULL);
-	self->joinwait = NULL;
+	if (self) self->joinwait = NULL;
 	if (ret != 0) {
 		GDKsyserr(ret, "Joining thread failed");
 		return -1;
