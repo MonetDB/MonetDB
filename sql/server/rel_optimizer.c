@@ -4810,43 +4810,6 @@ rel_push_select_down_join(visitor *v, sql_rel *rel)
 	return rel;
 }
 
-static bool
-find_simple_projection_for_join2semi(sql_rel *rel)
-{
-	if (is_project(rel->op) && list_length(rel->exps) == 1) {
-		sql_exp *e = rel->exps->h->data;
-
-		if (rel->card < CARD_AGGR) /* const or groupby without group by exps */
-			return true;
-		/* a single group by column in the projection list from a group by relation is guaranteed to be unique, but not an aggregate */
-		if (e->type == e_column) {
-			sql_rel *res = NULL;
-			sql_exp *found = NULL;
-			bool underjoin = false;
-
-			if (is_groupby(rel->op) || need_distinct(rel) || find_prop(e->p, PROP_HASHCOL))
-				return true;
-
-			found = rel_find_exp_and_corresponding_rel(rel->l, e, &res, &underjoin); /* grouping column on inner relation */
-			if (found && !underjoin) {
-				if (find_prop(found->p, PROP_HASHCOL)) /* primary key always unique */
-					return true;
-				if (found->type == e_column && found->card <= CARD_AGGR) {
-					if (!(is_groupby(res->op) || need_distinct(res)) && list_length(res->exps) != 1)
-						return false;
-					for (node *n = res->exps->h ; n ; n = n->next) { /* must be the single column in the group by expression list */
-						sql_exp *e = n->data;
-						if (e != found && e->type == e_column)
-							return false;
-					}
-					return true;
-				}
-			}
-		}
-	}
-	return false;
-}
-
 /*
  * Push {semi}joins down, pushes the joins through group by expressions.
  * When the join is on the group by columns, we can push the joins left
@@ -4865,13 +4828,13 @@ rel_push_join_down(visitor *v, sql_rel *rel)
 {
 	list *exps = NULL;
 
-	if (!rel_is_ref(rel) && ((is_join(rel->op) || is_semi(rel->op)) && rel->l && rel->exps)) {
+	if (!rel_is_ref(rel) && ((is_left(rel->op) || rel->op == op_join || is_semi(rel->op)) && rel->l && rel->exps)) {
 		sql_rel *gb = rel->r, *ogb = gb, *l = NULL, *rell = rel->l;
 
 		if (gb->op == op_project)
 			gb = gb->l;
 
-		if (rel_is_ref(rell) || !find_simple_projection_for_join2semi(rell))
+		if (rel_is_ref(rell))
 			return rel;
 
 		exps = rel->exps;
@@ -5454,6 +5417,43 @@ rel_remove_empty_join(visitor *v, sql_rel *rel)
 			return NULL;
 	}
 	return rel;
+}
+
+static bool
+find_simple_projection_for_join2semi(sql_rel *rel)
+{
+	if (is_project(rel->op) && list_length(rel->exps) == 1) {
+		sql_exp *e = rel->exps->h->data;
+
+		if (rel->card < CARD_AGGR) /* const or groupby without group by exps */
+			return true;
+		/* a single group by column in the projection list from a group by relation is guaranteed to be unique, but not an aggregate */
+		if (e->type == e_column) {
+			sql_rel *res = NULL;
+			sql_exp *found = NULL;
+			bool underjoin = false;
+
+			if (is_groupby(rel->op) || need_distinct(rel) || find_prop(e->p, PROP_HASHCOL))
+				return true;
+
+			found = rel_find_exp_and_corresponding_rel(rel->l, e, &res, &underjoin); /* grouping column on inner relation */
+			if (found && !underjoin) {
+				if (find_prop(found->p, PROP_HASHCOL)) /* primary key always unique */
+					return true;
+				if (found->type == e_column && found->card <= CARD_AGGR) {
+					if (!(is_groupby(res->op) || need_distinct(res)) && list_length(res->exps) != 1)
+						return false;
+					for (node *n = res->exps->h ; n ; n = n->next) { /* must be the single column in the group by expression list */
+						sql_exp *e = n->data;
+						if (e != found && e->type == e_column)
+							return false;
+					}
+					return true;
+				}
+			}
+		}
+	}
+	return false;
 }
 
 static sql_rel *
