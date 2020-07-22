@@ -5285,7 +5285,7 @@ rel_remove_empty_join(visitor *v, sql_rel *rel)
 static bool
 find_simple_projection_for_join2semi(sql_rel *rel)
 {
-	if (is_project(rel->op) && list_length(rel->exps) == 1) {
+	if (is_project(rel->op) && !is_union(rel->op) && list_length(rel->exps) == 1) {
 		sql_exp *e = rel->exps->h->data;
 
 		if (rel->card < CARD_AGGR) /* const or groupby without group by exps */
