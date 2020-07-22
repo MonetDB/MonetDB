@@ -2173,6 +2173,8 @@ stmt_project_join(backend *be, stmt *op1, stmt *op2, stmt *ins)
 stmt *
 stmt_project(backend *be, stmt *op1, stmt *op2)
 {
+	if (!op2->nrcols)
+		return stmt_const(be, op1, op2);
 	InstrPtr q = stmt_project_join(be, op1, op2, NULL);
 	if (q) {
 		stmt *s = stmt_create(be->mvc->sa, st_join);
