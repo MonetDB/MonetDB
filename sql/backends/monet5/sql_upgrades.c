@@ -1935,7 +1935,7 @@ sql_update_jun2020_sp1_hugeint(Client c, const char *prev_schema)
 #endif
 
 static str
-sql_update_default_lidar(Client c)
+sql_update_oscar_lidar(Client c)
 {
 	char *query =
 		"drop procedure sys.lidarattach(string);\n"
@@ -1946,7 +1946,7 @@ sql_update_default_lidar(Client c)
 }
 
 static str
-sql_update_default(Client c, mvc *sql, const char *prev_schema, bool *systabfixed)
+sql_update_oscar(Client c, mvc *sql, const char *prev_schema, bool *systabfixed)
 {
 	size_t bufsize = 8192, pos = 0;
 	char *err = NULL, *buf = GDKmalloc(bufsize);
@@ -2047,13 +2047,20 @@ sql_update_default(Client c, mvc *sql, const char *prev_schema, bool *systabfixe
 					"external name \"sql\".\"sql_variables\";\n"
 					"grant execute on function \"sys\".\"var\" to public;\n");
 
+			pos += snprintf(buf + pos, bufsize - pos,
+					"create procedure sys.hot_snapshot(tarfile string, onserver bool)\n"
+					"external name sql.hot_snapshot;\n"
+					"update sys.functions set system = true where system <> true and schema_id = (select id from sys.schemas where name = 'sys')"
+					" and name in ('hot_snapshot') and type = %d;\n",
+					(int) F_PROC);
 			/* .snapshot user */
 			pos += snprintf(buf + pos, bufsize - pos,
-				"create user \".snapshot\""
-				" with encrypted password '00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000'"
-				" name 'Snapshot User'"
+				"create user \".snapshot\"\n"
+				" with encrypted password '00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000'\n"
+				" name 'Snapshot User'\n"
 				" schema sys;\n"
-				"grant execute on procedure sys.hot_snapshot to \".snapshot\";\n"
+				"grant execute on procedure sys.hot_snapshot(string) to \".snapshot\";\n"
+				"grant execute on procedure sys.hot_snapshot(string, bool) to \".snapshot\";\n"
 			);
 
 			/* additional snapshot function */
@@ -2085,13 +2092,6 @@ sql_update_default(Client c, mvc *sql, const char *prev_schema, bool *systabfixe
 			/* Move sys.degrees and sys.radians to sql_types.c definitions (I did this at the bat_logger) Remove the obsolete entries at privileges table */
 			pos += snprintf(buf + pos, bufsize - pos,
 					"delete from privileges where obj_id in (select obj_id from privileges left join functions on privileges.obj_id = functions.id where functions.id is null and privileges.obj_id not in ((SELECT tables.id from tables), 0));\n");
-			/* Remove sql_add and sql_sub between interval and numeric types */
-			pos += snprintf(buf + pos, bufsize - pos,
-					"delete from functions where name in ('sql_sub','sql_add') and func in ('+','-') and id in (select func_id from args where name = 'res_0' and type in ('sec_interval','month_interval'));\n");
-			/* Remove arguments with no function correspondent */
-			pos += snprintf(buf + pos, bufsize - pos,
-					"delete from args where id in (select args.id from args left join functions on args.func_id = functions.id where functions.id is null);\n");
-
 			pos += snprintf(buf + pos, bufsize - pos,
 				"UPDATE sys.functions set semantics = false WHERE (name, func) IN (VALUES \n"
 					"('length', 'nitems'),\n"
@@ -2216,7 +2216,8 @@ sql_update_default(Client c, mvc *sql, const char *prev_schema, bool *systabfixe
 					"('octet_length', 'nbytes'),\n"
 					"('soundex', 'soundex'),\n"
 					"('qgramnormalize', 'qgramnormalize')\n"
-					");\n");
+					") and type <> %d;\n",
+					F_ANALYTIC);
 
 			pos += snprintf(buf + pos, bufsize - pos, "set schema \"%s\";\n", prev_schema);
 			assert(pos < bufsize);
@@ -2410,14 +2411,14 @@ SQLupgrades(Client c, mvc *m)
 
 	sql_find_subtype(&tp, "varchar", 0, 0);
 	if (sql_bind_func(m->sa, s, "lidarattach", &tp, NULL, F_PROC) &&
-	    (err = sql_update_default_lidar(c)) != NULL) {
+	    (err = sql_update_oscar_lidar(c)) != NULL) {
 		TRC_CRITICAL(SQL_PARSER, "%s\n", err);
 		freeException(err);
 		GDKfree(prev_schema);
 		return -1;
 	}
 
-	if ((err = sql_update_default(c, m, prev_schema, &systabfixed)) != NULL) {
+	if ((err = sql_update_oscar(c, m, prev_schema, &systabfixed)) != NULL) {
 		TRC_CRITICAL(SQL_PARSER, "%s\n", err);
 		freeException(err);
 		GDKfree(prev_schema);
