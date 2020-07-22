@@ -1366,7 +1366,7 @@ create_trans(sql_allocator *sa)
 
 	t->sa = sa;
 	t->name = NULL;
-	t->wtime = t->rtime = 0;
+	t->wtime = 0;
 	t->stime = 0;
 	t->wstime = timestamp();
 	t->schema_updates = 0;
@@ -3757,7 +3757,7 @@ schema_dup(sql_trans *tr, int flags, sql_schema *os, sql_trans *o)
 static void
 _trans_init(sql_trans *tr, sql_trans *otr)
 {
-	tr->wtime = tr->rtime = 0;
+	tr->wtime = 0;
 	tr->stime = otr->wtime;
 	tr->wstime = timestamp();
 	tr->schema_updates = 0;
@@ -4611,14 +4611,12 @@ validate_tables(sql_schema *s, sql_schema *os)
 	if (cs_size(&s->tables))
 		for (n = s->tables.set->h; n; n = n->next) {
 			sql_table *t = n->data;
-			sql_table *ot = NULL;
 
 			if (!t->base.wtime && !t->base.rtime)
 				continue;
 
-			o =	list_find_base_id(os->tables.set, t->base.id);
-			if (o)
-				ot = o->data;
+			sql_table *ot = find_sql_table_id(os, t->base.id);
+
 			if (!ot && os->tables.dset && list_find_base_id(os->tables.dset, t->base.id) != NULL) {
 				/* dropped table */
 				return 0;
@@ -4881,6 +4879,7 @@ reset_table(sql_trans *tr, sql_table *ft, sql_table *pft)
 		ft->access = pft->access;
 		if (pft->p) {
 			ft->p = find_sql_table(ft->s, pft->p->base.name);
+			//Check if this assert can be removed definitely.
 			//the parent (merge or replica table) maybe created later!
 			//assert(isMergeTable(ft->p) || isReplicaTable(ft->p));
 		} else

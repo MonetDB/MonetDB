@@ -240,7 +240,6 @@ typedef struct sql_trans {
 	char *name;
 	int stime;		/* start of transaction */
 	int wstime;		/* first write transaction time stamp */
-	int rtime;		/* timestamp of latest read performed in transaction*/
 	int wtime;		/* timestamp of latest write performed in transaction*/
 	int schema_number;	/* schema timestamp */
 	int schema_updates;	/* set on schema changes */
