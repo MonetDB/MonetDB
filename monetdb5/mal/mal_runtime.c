@@ -27,30 +27,71 @@
 
 
 QueryQueue QRYqueue = NULL;
-UserStats  USRstats;
-lng        usize = 0;
-
 size_t qsize = 0, qhead = 0, qtail = 0;
 static oid qtag= 1;		// A unique query identifier
 
-static
-str
-updateUserStats(Client cntxt, lng ticks, time_t started, time_t finished, str query)
+UserStats  USRstats = NULL;
+size_t usrstatscnt = 0;
+
+static void
+clearUSRstats(size_t idx)
 {
-	int idx = (int) cntxt->idx;
+	USRstats[idx].user= 0;
+	USRstats[idx].username = 0;
+	USRstats[idx].querycount = 0;
+	USRstats[idx].totalticks = 0;
+	USRstats[idx].started = 0;
+	USRstats[idx].finished = 0;
+	USRstats[idx].maxticks = 0;
+	USRstats[idx].maxquery = 0;
+}
 
-	if(idx > MAL_MAXCLIENTS){
+/*
+ * Find the index of the given 'user' in USRstats.
+ * For a new 'user' return a new free slot.
+ * If USRstats is full, extend it.
+ */
+static
+size_t 
+getUSRstatsIdx(MalBlkPtr mb, oid user)
+{
+	size_t i = 0;
+	UserStats tmp = NULL;
+
+	for (i = 0; i < usrstatscnt; i++)
+		/* The array is dense, so we either find the user or an empty slot. */
+		if (USRstats[i].user == user || USRstats[i].username == NULL)
+			return i;
+
+	/* expand USRstats */
+	tmp = (UserStats) GDKrealloc(USRstats, sizeof (struct USERSTAT) * (size_t) (usrstatscnt += MAL_MAXCLIENTS));
+	if (tmp == NULL) {
+		/* It's not a fatal error if we can't extend USRstats.
+		 * We don't want to affect existing USRstats. */
+		addMalException(mb,"getUSRstatsIdx" MAL_MALLOC_FAIL);
+		return (size_t) -1;
+	}
+	USRstats = tmp;
+	for ( ; i < usrstatscnt; i++)
+		clearUSRstats(i);
+	return usrstatscnt - MAL_MAXCLIENTS;
+}
+
+static
+void
+updateUserStats(Client cntxt, MalBlkPtr mb, lng ticks, time_t started, time_t finished, str query)
+{
+	size_t idx = getUSRstatsIdx(mb, cntxt->user);
+
+	if (idx == (size_t) -1) {
+		addMalException(mb, "updateUserStats" "Failed to get an entry in user statistics");
+		return;
 	}
 
-	if(usize == 0){
-		USRstats = (UserStats) GDKzalloc( sizeof (struct USERSTAT) * (size_t) (usize= MAL_MAXCLIENTS));
+	if (USRstats[idx].username == NULL) {
+		USRstats[idx].user = cntxt->user;
+		USRstats[idx].username = GDKstrdup(cntxt->username);
 	}
-	if(idx > usize){
-		USRstats = (UserStats) GDKrealloc( USRstats, sizeof (struct USERSTAT) * (size_t) (usize += MAL_MAXCLIENTS));
-	}
-	if( USRstats == NULL){
-	}
-	USRstats[idx].username= strdup(cntxt->username);
 	USRstats[idx].querycount++;
 	USRstats[idx].totalticks += ticks;
 	if( ticks > USRstats[idx].maxticks && query){
@@ -59,9 +100,26 @@ updateUserStats(Client cntxt, lng ticks, time_t started, time_t finished, str qu
 		USRstats[idx].maxticks = ticks;
 		if( USRstats[idx].maxquery)
 			GDKfree(USRstats[idx].maxquery);
-		USRstats[idx].maxquery= strdup(query);
+		USRstats[idx].maxquery= GDKstrdup(query);
 	}
-	return MAL_SUCCEED;
+}
+
+void
+dropUSRstats(void)
+{
+	size_t i;
+	MT_lock_set(&mal_delayLock);
+	for(i = 0; i < usrstatscnt; i++){
+		if(USRstats[i].username)
+			GDKfree(USRstats[i].username);
+		if( USRstats[i].maxquery)
+			GDKfree(USRstats[i].maxquery);
+		clearUSRstats(i); // FIXME: not needed since it's freed below
+	}
+	GDKfree(USRstats);
+	USRstats = NULL;
+	// FIXME: shouldn't reset usrstatscnt?
+	MT_lock_unset(&mal_delayLock);
 }
 
 void
@@ -73,6 +131,10 @@ mal_runtime_reset(void)
 	qtag= 1;
 	qhead = 0;
 	qtail = 0;
+
+	GDKfree(USRstats); // FIXME: where should we free the contents of USRstats?
+	USRstats = NULL;
+	usrstatscnt = 0;
 }
 
 static str
@@ -148,7 +210,7 @@ dropQRYqueue(void)
 			GDKfree(QRYqueue[i].query);
 		if(QRYqueue[i].username)
 			GDKfree(QRYqueue[i].username);
-		clearQRYqueue(i);
+		clearQRYqueue(i); // FIXME: not needed since it's freed below?
 	}
 	GDKfree(QRYqueue);
 	QRYqueue = NULL;
@@ -163,6 +225,18 @@ runtimeProfileInit(Client cntxt, MalBlkPtr mb, MalStkPtr stk)
 	QueryQueue tmp;
 
 	MT_lock_set(&mal_delayLock);
+
+	// FIXME: is this the correct init function to initiate this?
+	if(USRstats == NULL){ // FIXME: isn't USRstats always NULL here?
+		usrstatscnt = MAL_MAXCLIENTS;
+		USRstats = (UserStats) GDKzalloc( sizeof (struct USERSTAT) * usrstatscnt);
+	}
+	if(USRstats == NULL) {
+		addMalException(mb,"runtimeProfileInit" MAL_MALLOC_FAIL);
+		MT_lock_unset(&mal_delayLock);
+		return;
+	}
+
 	tmp = QRYqueue;
 	if ( QRYqueue == NULL)
 		QRYqueue = (QueryQueue) GDKzalloc( sizeof (struct QRYQUEUE) * (qsize= 8)); /* for testing */
@@ -194,7 +268,7 @@ runtimeProfileInit(Client cntxt, MalBlkPtr mb, MalStkPtr stk)
 		QRYqueue = (QueryQueue) GDKrealloc( QRYqueue, sizeof (struct QRYQUEUE) * qsize);
 		if ( QRYqueue == NULL){
 			addMalException(mb,"runtimeProfileInit" MAL_MALLOC_FAIL);
-			GDKfree(tmp);
+			GDKfree(tmp); // FIXME: shouldn't we free the contents of 'tmp'?
 			MT_lock_unset(&mal_delayLock);
 			return;
 		}
@@ -235,9 +309,6 @@ runtimeProfileFinish(Client cntxt, MalBlkPtr mb, MalStkPtr stk)
 {
 	size_t i;
 
-	(void) cntxt;
-	(void) mb;
-
 	MT_lock_set(&mal_delayLock);
 	i=qtail;
 	while (i != qhead){
@@ -248,12 +319,12 @@ runtimeProfileFinish(Client cntxt, MalBlkPtr mb, MalStkPtr stk)
 				mb->tag = stk->tag;
 				break;
 			}
-			updateUserStats(cntxt, QRYqueue[i].ticks, QRYqueue[i].start, QRYqueue[i].finished, QRYqueue[i].query);
 			QRYqueue[i].status = "finished";
 			QRYqueue[i].finished = time(0);
 			QRYqueue[i].cntxt = 0;
 			QRYqueue[i].stk = 0;
 			QRYqueue[i].mb = 0;
+			updateUserStats(cntxt, mb, QRYqueue[i].ticks, QRYqueue[i].start, QRYqueue[i].finished, QRYqueue[i].query);
 			// assume that the user is now idle
 			cntxt->idle = time(0);
 			break;

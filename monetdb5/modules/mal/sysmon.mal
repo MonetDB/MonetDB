@@ -40,6 +40,6 @@ pattern queue()(tag:bat[:lng], sessionid:bat[:int], user:bat[:str], started:bat[
 status:bat[:str], query:bat[:str], finished:bat[:timestamp], workers:bat[:int], memory:bat[:int])
 address SYSMONqueue;
 
-pattern statistics()(usr:bat[:str], qrycnt:bat[:lng], totalticks:bat[:lng], started:bat[:timestamp],
-finished:bat[:timestamp], maxqry:bat[:str], maxticks:bat[:lng])
+pattern user_statistics()(username:bat[:str], querycount:bat[:lng], totalticks:bat[:lng], started:bat[:timestamp],
+finished:bat[:timestamp], maxticks:bat[:lng], maxquery:bat[:str])
 address SYSMONstatistics;

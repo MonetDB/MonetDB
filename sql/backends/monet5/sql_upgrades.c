@@ -1667,10 +1667,10 @@ sql_update_jun2020(Client c, mvc *sql, const char *prev_schema, bool *systabfixe
 				"totalticks bigint,\n"
 				"started timestamp,\n"
 				"finished timestamp,\n"
-				"maxquery string,\n"
-				"maxticks bigint\n"
+				"maxticks bigint,\n"
+				"maxquery string\n"
 			")\n"
-			"external name sql.sysmon_statistics;\n"
+			"external name sysmon.user_statistics;\n"
 	);
 
 	pos += snprintf(buf + pos, bufsize - pos,

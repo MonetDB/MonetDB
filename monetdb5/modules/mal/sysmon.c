@@ -20,110 +20,110 @@
 str
 SYSMONstatistics(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	BAT *user, *querycount, *totalticks, *started, *finished, *query, *maxticks;
+	BAT *user, *querycount, *totalticks, *started, *finished, *maxquery, *maxticks;
 	bat *u = getArgReference_bat(stk,pci,0);
 	bat *c = getArgReference_bat(stk,pci,1);
 	bat *t = getArgReference_bat(stk,pci,2);
 	bat *s = getArgReference_bat(stk,pci,3);
 	bat *f = getArgReference_bat(stk,pci,4);
-	bat *q = getArgReference_bat(stk,pci,5);
-	bat *m = getArgReference_bat(stk,pci,6);
-	lng i;
-	int sz;
+	bat *m = getArgReference_bat(stk,pci,5);
+	bat *q = getArgReference_bat(stk,pci,6);
+	size_t i;
 	timestamp tsn;
 	str msg = MAL_SUCCEED;
 
-	(void) cntxt;
 	(void) mb;
-	sz = MAL_MAXCLIENTS; // reserve space for all possible clients.
-	user = COLnew(0, TYPE_str, sz, TRANSIENT);
-	querycount = COLnew(0, TYPE_lng, sz, TRANSIENT);
-	totalticks = COLnew(0, TYPE_lng, sz, TRANSIENT);
-	started = COLnew(0, TYPE_timestamp, sz, TRANSIENT);
-	finished = COLnew(0, TYPE_timestamp, sz, TRANSIENT);
-	query = COLnew(0, TYPE_str, sz, TRANSIENT);
-	maxticks = COLnew(0, TYPE_lng, sz, TRANSIENT);
-	if ( user == NULL || querycount == NULL || totalticks == NULL || started == NULL || finished == NULL || query == NULL || maxticks == NULL){
+	user = COLnew(0, TYPE_str, usrstatscnt, TRANSIENT);
+	querycount = COLnew(0, TYPE_lng, usrstatscnt, TRANSIENT);
+	totalticks = COLnew(0, TYPE_lng, usrstatscnt, TRANSIENT);
+	started = COLnew(0, TYPE_timestamp, usrstatscnt, TRANSIENT);
+	finished = COLnew(0, TYPE_timestamp, usrstatscnt, TRANSIENT);
+	maxticks = COLnew(0, TYPE_lng, usrstatscnt, TRANSIENT);
+	maxquery = COLnew(0, TYPE_str, usrstatscnt, TRANSIENT);
+	if (user == NULL || querycount == NULL || totalticks == NULL || started == NULL || finished == NULL || maxquery == NULL || maxticks == NULL){
 		BBPreclaim(user);
 		BBPreclaim(started);
 		BBPreclaim(querycount);
 		BBPreclaim(totalticks);
 		BBPreclaim(finished);
-		BBPreclaim(query);
 		BBPreclaim(maxticks);
-		throw(MAL, "SYSMONqueue", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		BBPreclaim(maxquery);
+		throw(MAL, "SYSMONstatistics", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
 
 	MT_lock_set(&mal_delayLock);
-	for ( i = 0; i < MAL_MAXCLIENTS; i++)
-		if( USRstats[i].querycount && cntxt->user == MAL_ADMIN ){
+	// FIXME: what if there are multiple users with ADMIN privilege?
+	for (i = 0 && cntxt->user == MAL_ADMIN; i < usrstatscnt; i++) {
+		/* We can stop at the first empty entry */
+		if (USRstats[i].username == NULL) break;
 
-			if (BUNappend(user, USRstats[i].username, false) != GDK_SUCCEED) {
-				msg = createException(MAL, "SYSMONqueue", "Username issue");
-				goto bailout;
-			}
-
-			if( USRstats[i].maxquery == 0){
-				if (BUNappend(query, "none", false) != GDK_SUCCEED ){
-					msg = createException(MAL, "SYSMONqueue", "Maxquery issue 1");
-					goto bailout;
-				}
-			}else {
-				if (BUNappend(query, USRstats[i].maxquery, false) != GDK_SUCCEED ){
-					msg = createException(MAL, "SYSMONqueue", "Maxquery issue 2");
-					goto bailout;
-				}
-			}
-
-			/* convert number of seconds into a timestamp */
-			tsn = timestamp_fromtime(USRstats[i].started);
-			if (is_timestamp_nil(tsn)) {
-				msg = createException(MAL, "SYSMONqueue", SQLSTATE(22003) "cannot convert time");
-				goto bailout;
-			}
-			if (BUNappend(started, &tsn, false) != GDK_SUCCEED){
-				msg = createException(MAL, "SYSMONqueue", "Started");
-				goto bailout;
-			}
-
-			tsn = timestamp_fromtime(USRstats[i].finished);
-			if (is_timestamp_nil(tsn)) {
-				msg = createException(MAL, "SYSMONqueue", SQLSTATE(22003) "cannot convert time");
-				goto bailout;
-			}
-			if (BUNappend(finished, &tsn, false) != GDK_SUCCEED){
-				msg = createException(MAL, "SYSMONqueue", "Finished");
-				goto bailout;
-			}
-			if (BUNappend(querycount, &USRstats[i].querycount, false) != GDK_SUCCEED){
-				msg = createException(MAL, "SYSMONqueue", "querycount");
-				goto bailout;
-			}
-			if (BUNappend(totalticks, &USRstats[i].totalticks, false) != GDK_SUCCEED){
-				msg = createException(MAL, "SYSMONqueue", "totalticks");
-				goto bailout;
-			}
-
+		if (BUNappend(user, USRstats[i].username, false) != GDK_SUCCEED) {
+			msg = createException(MAL, "SYSMONstatistics", "Failed to append 'user'");
+			goto bailout;
 		}
+		if (BUNappend(querycount, &USRstats[i].querycount, false) != GDK_SUCCEED){
+			msg = createException(MAL, "SYSMONstatistics", "Failed to append 'querycount'");
+			goto bailout;
+		}
+		if (BUNappend(totalticks, &USRstats[i].totalticks, false) != GDK_SUCCEED){
+			msg = createException(MAL, "SYSMONstatistics", "Failed to append 'totalticks'");
+			goto bailout;
+		}
+		/* convert number of seconds into a timestamp */
+		tsn = timestamp_fromtime(USRstats[i].started);
+		if (is_timestamp_nil(tsn)) {
+			msg = createException(MAL, "SYSMONstatistics", SQLSTATE(22003) "failed to convert start time");
+			goto bailout;
+		}
+		if (BUNappend(started, &tsn, false) != GDK_SUCCEED){
+			msg = createException(MAL, "SYSMONstatistics", "Failed to append 'started'");
+			goto bailout;
+		}
+
+		tsn = timestamp_fromtime(USRstats[i].finished);
+		if (is_timestamp_nil(tsn)) {
+			msg = createException(MAL, "SYSMONstatistics", SQLSTATE(22003) "failed to convert finish time");
+			goto bailout;
+		}
+		if (BUNappend(finished, &tsn, false) != GDK_SUCCEED){
+			msg = createException(MAL, "SYSMONstatistics", "Failed to append 'finished'");
+			goto bailout;
+		}
+		if (BUNappend(maxticks, &USRstats[i].maxticks, false) != GDK_SUCCEED){
+			msg = createException(MAL, "SYSMONstatistics", "Failed to append 'maxticks'");
+			goto bailout;
+		}
+		if( USRstats[i].maxquery == 0){
+			if (BUNappend(maxquery, "none", false) != GDK_SUCCEED ){
+				msg = createException(MAL, "SYSMONstatistics", "Failed to append 'maxquery' 1");
+				goto bailout;
+			}
+		}else {
+			if (BUNappend(maxquery, USRstats[i].maxquery, false) != GDK_SUCCEED ){
+				msg = createException(MAL, "SYSMONstatistics", "Failed to append 'maxquery' 2");
+				goto bailout;
+			}
+		}
+	}
 	MT_lock_unset(&mal_delayLock);
-	BBPkeepref( *u =user->batCacheid);
-	BBPkeepref( *c =querycount->batCacheid);
-	BBPkeepref( *t =totalticks->batCacheid);
-	BBPkeepref( *q =query->batCacheid);
-	BBPkeepref( *s =started->batCacheid);
-	BBPkeepref( *f =finished->batCacheid);
-	BBPkeepref( *m =maxticks->batCacheid);
+	BBPkeepref(*u = user->batCacheid);
+	BBPkeepref(*c = querycount->batCacheid);
+	BBPkeepref(*t = totalticks->batCacheid);
+	BBPkeepref(*s = started->batCacheid);
+	BBPkeepref(*f = finished->batCacheid);
+	BBPkeepref(*m = maxticks->batCacheid);
+	BBPkeepref(*q = maxquery->batCacheid);
 	return MAL_SUCCEED;
 
 bailout:
 	MT_lock_unset(&mal_delayLock);
 	BBPunfix(user->batCacheid);
-	BBPunfix(started->batCacheid);
 	BBPunfix(querycount->batCacheid);
 	BBPunfix(totalticks->batCacheid);
+	BBPunfix(started->batCacheid);
 	BBPunfix(finished->batCacheid);
-	BBPunfix(query->batCacheid);
 	BBPunfix(maxticks->batCacheid);
+	BBPunfix(maxquery->batCacheid);
 	return msg;
 }
 
@@ -363,7 +363,8 @@ mel_func sysmon_init_funcs[] = {
  pattern("sysmon", "stop", SYSMONstop, false, "Stop a single query a.s.a.p.", args(0,1, arg("id",sht))),
  pattern("sysmon", "stop", SYSMONstop, false, "Stop a single query a.s.a.p.", args(0,1, arg("id",int))),
  pattern("sysmon", "stop", SYSMONstop, false, "Stop a single query a.s.a.p.", args(0,1, arg("id",lng))),
- pattern("sysmon", "queue", SYSMONqueue, false, "", args(9,9, batarg("tag",lng),batarg("sessionid",int),batarg("user",str),batarg("started",timestamp),batarg("status",str),batarg("query",str),batarg("finished",timestamp),batarg("workers",int),batarg("memory",int))),
+ pattern("sysmon", "queue", SYSMONqueue, false, "A queue of queries that are currently being executed or recently finished", args(9,9, batarg("tag",lng),batarg("sessionid",int),batarg("user",str),batarg("started",timestamp),batarg("status",str),batarg("query",str),batarg("finished",timestamp),batarg("workers",int),batarg("memory",int))),
+ pattern("sysmon", "user_statistics", SYSMONstatistics, false, "", args(7,7, batarg("user",str),batarg("querycount",lng),batarg("totalticks",lng),batarg("started",timestamp),batarg("finished",timestamp),batarg("maxticks",lng),batarg("maxquery",str))),
  { .imp=NULL }
 };
 #include "mal_import.h"

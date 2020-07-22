@@ -103,6 +103,7 @@ void mal_reset(void)
 	GDKprepareExit();
 	MCstopClients(0);
 	dropQRYqueue();
+	dropUSRstats();
 	setHeartbeat(-1);
 	stopProfiler(0);
 	AUTHreset();

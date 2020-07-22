@@ -43,20 +43,22 @@ mal_export size_t qhead, qtail, qsize;
 
 /* We keep a few statistics per user to identify unexpected behavior */
 typedef struct USERSTAT{
+	oid user;       /* user id in the auth administration */
 	str username;
-	int querycount;
+	lng querycount;
 	lng totalticks;
 	time_t started;
 	time_t finished;
 	lng maxticks;
 	str maxquery;
 } *UserStats;
+mal_export size_t usrstatscnt;
 
 typedef struct WORKINGSET{
 	Client		cntxt;
-    MalBlkPtr   mb;
-    MalStkPtr   stk;
-    InstrPtr    pci;
+	MalBlkPtr   mb;
+	MalStkPtr   stk;
+	InstrPtr    pci;
 } Workingset;
 
 mal_export Workingset workingset[THREADS];
@@ -66,6 +68,7 @@ mal_export void runtimeProfileFinish(Client cntxt, MalBlkPtr mb, MalStkPtr stk);
 mal_export void runtimeProfileBegin(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, RuntimeProfile prof);
 mal_export void runtimeProfileExit(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, RuntimeProfile prof);
 mal_export void dropQRYqueue(void);
+mal_export void dropUSRstats(void);
 mal_export lng getVolume(MalStkPtr stk, InstrPtr pci, int rd);
 mal_export lng getBatSpace(BAT *b);
 

@@ -44,8 +44,8 @@ returns table(
 	totalticks bigint,
 	started timestamp,
 	finished timestamp,
-	maxquery string,
-	maxticks bigint
+	maxticks bigint,
+	maxquery string
 )
-external name sql.user_statistics;
+external name sysmon.user_statistics;
 
