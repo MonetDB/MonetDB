@@ -1157,6 +1157,11 @@ SQLparser(Client c)
 
 				if (msg != MAL_SUCCEED) {
 					str other = c->curprg->def->errors;
+					/* In debugging mode you may want to assess what went wrong in the optimizers*/
+#ifndef NDEBUG
+					if( m->emod & mod_debug)
+						runMALDebugger(c, c->curprg->def);
+#endif
 					c->curprg->def->errors = 0;
 					MSresetInstructions(c->curprg->def, oldstop);
 					freeVariables(c, c->curprg->def, NULL, oldvtop);
