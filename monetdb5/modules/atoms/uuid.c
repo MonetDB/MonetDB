@@ -164,6 +164,8 @@ UUIDfromString(const char *svalue, size_t *len, void **RETVAL, bool external)
 		s++;
 		j++;
 	}
+	if (*s != 0)
+		goto bailout;
 	**retval = u;
 	return (ssize_t) (s - svalue);
 

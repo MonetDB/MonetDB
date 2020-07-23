@@ -83,11 +83,6 @@ def main():
     print(r'        <FileSearch Id="CheckFile2" Name="gdk.h"/>')
     print(r'      </DirectorySearch>')
     print(r'    </Property>')
-    print(r'    <Property Id="GEOMEXISTS">')
-    print(r'      <DirectorySearch Id="CheckFileDir3" Path="[INSTALLDIR]\lib\monetdb5" Depth="0">')
-    print(r'        <FileSearch Id="CheckFile3" Name="geom.mal"/>')
-    print(r'      </DirectorySearch>')
-    print(r'    </Property>')
     print(r'    <Property Id="PYAPI3EXISTS">')
     print(r'      <DirectorySearch Id="CheckFileDir5" Path="[INSTALLDIR]" Depth="0">')
     print(r'        <FileSearch Id="CheckFile5" Name="pyapi_locatepython3.bat"/>')
@@ -172,33 +167,16 @@ def main():
     print(r'            </Directory>')
     print(r'            <Directory Id="lib" Name="lib">')
     print(r'              <Directory Id="monetdb5" Name="monetdb5">')
-    print(r'                <Directory Id="autoload" Name="autoload">')
-    id = comp(features, id, 18,
-              [r'lib\monetdb5\autoload\{}'.format(x) for x in sorted(filter(lambda x: x.endswith('.mal') and ('geom' not in x) and ('pyapi' not in x) and ('opt_sql_append' not in x), os.listdir(os.path.join(sys.argv[3], 'lib', 'monetdb5', 'autoload'))))])
-    id = comp(geom, id, 18,
-              [r'lib\monetdb5\autoload\{}'.format(x) for x in sorted(filter(lambda x: x.endswith('.mal') and ('geom' in x), os.listdir(os.path.join(sys.argv[3], 'lib', 'monetdb5', 'autoload'))))])
-    id = comp(pyapi3, id, 18,
-              [r'lib\monetdb5\autoload\{}'.format(x) for x in sorted(filter(lambda x: x.endswith('_pyapi3.mal'), os.listdir(os.path.join(sys.argv[3], 'lib', 'monetdb5', 'autoload'))))])
-    print(r'                </Directory>')
-    print(r'                <Directory Id="createdb" Name="createdb">')
-    id = comp(features, id, 18,
-              [r'lib\monetdb5\createdb\{}'.format(x) for x in sorted(filter(lambda x: x.endswith('.sql') and ('geom' not in x), os.listdir(os.path.join(sys.argv[3], 'lib', 'monetdb5', 'createdb'))))])
-    id = comp(geom, id, 18,
-              [r'lib\monetdb5\createdb\{}'.format(x) for x in sorted(filter(lambda x: x.endswith('.sql') and ('geom' in x), os.listdir(os.path.join(sys.argv[3], 'lib', 'monetdb5', 'createdb'))))])
-    print(r'                </Directory>')
     id = comp(features, id, 16,
-              [r'lib\monetdb5\{}'.format(x) for x in sorted(filter(lambda x: x.endswith('.mal') and ('geom' not in x) and ('pyapi' not in x) and ('opt_sql_append' not in x), os.listdir(os.path.join(sys.argv[3], 'lib', 'monetdb5'))))])
+              [r'lib\monetdb5\microbenchmark.mal'])
     id = comp(features, id, 16,
               [r'lib\monetdb5\{}'.format(x) for x in sorted(filter(lambda x: x.startswith('lib_') and x.endswith('.dll') and ('geom' not in x) and ('pyapi' not in x) and ('opt_sql_append' not in x), os.listdir(os.path.join(sys.argv[3], 'lib', 'monetdb5'))))])
     id = comp(debug, id, 16,
               [r'lib\monetdb5\{}'.format(x) for x in sorted(filter(lambda x: x.startswith('lib_') and x.endswith('.pdb') and ('geom' not in x) and ('opt_sql_append' not in x), os.listdir(os.path.join(sys.argv[3], 'lib', 'monetdb5'))))])
     id = comp(geom, id, 16,
-              [r'lib\monetdb5\{}'.format(x) for x in sorted(filter(lambda x: x.endswith('.mal') and ('geom' in x), os.listdir(os.path.join(sys.argv[3], 'lib', 'monetdb5'))))])
-    id = comp(geom, id, 16,
               [r'lib\monetdb5\{}'.format(x) for x in sorted(filter(lambda x: x.startswith('lib_') and (x.endswith('.dll') or x.endswith('.pdb')) and ('geom' in x), os.listdir(os.path.join(sys.argv[3], 'lib', 'monetdb5'))))])
     id = comp(pyapi3, id, 16,
-              [r'lib\monetdb5\pyapi3.mal',
-               r'lib\monetdb5\lib_pyapi3.dll'])
+              [r'lib\monetdb5\lib_pyapi3.dll'])
     print(r'              </Directory>')
     id = comp(extend, id, 14,
               [r'lib\libbat.lib',

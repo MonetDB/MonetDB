@@ -422,12 +422,6 @@ SQLinit(Client c)
 		maybeupgrade = 0;
 
 		for (int i = 0; i < sql_modules && !msg; i++) {
-#ifdef HAVE_HGE
-			if (!have_hge) {
-				if (strstr(sql_module_name[i], "_hge"))
-					continue;
-			}
-#endif
 			char *createdb_inline = (char*)sql_module_code[i];
 
 			msg = SQLstatementIntern(c, &createdb_inline, "sql.init", TRUE, FALSE, NULL);

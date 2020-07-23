@@ -1,3 +1,13 @@
+monetdb (11.37.11) unstable; urgency=low
+
+  * Rebuilt.
+  * BZ#6917: Decimal parsing fails
+  * BZ#6932: Syntax error while parsing JSON numbers with exponent
+  * BZ#6934: sys.isauuid() returns wrong answer for some invalid uuid
+    strings
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Thu, 23 Jul 2020 09:10:48 +0200
+
 monetdb (11.37.9) unstable; urgency=low
 
   * Rebuilt.
