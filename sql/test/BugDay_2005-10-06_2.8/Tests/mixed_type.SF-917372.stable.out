@@ -1,32 +1,14 @@
 stdout of test 'mixed_type.SF-917372` in directory 'sql/test/BugDay_2005-10-06_2.8` itself:
 
 
-# 18:31:51 >  
-# 18:31:51 >   mserver5 "--config=/ufs/niels/scratch/monetdb/Linux-x86_64/etc/monetdb5.conf" --debug=10 --set gdk_nr_threads=4 --set "monet_mod_path=/ufs/niels/scratch/monetdb/Linux-x86_64/lib/MonetDB5:/ufs/niels/scratch/monetdb/Linux-x86_64/lib/MonetDB5/lib:/ufs/niels/scratch/monetdb/Linux-x86_64/lib/MonetDB5/bin" --set "gdk_dbfarm=/ufs/niels/scratch/monetdb/Linux-x86_64/var/MonetDB5/dbfarm" --set "sql_logdir=/ufs/niels/scratch/monetdb/Linux-x86_64/var/MonetDB5/sql_logs"  --set mapi_open=true --set xrpc_open=true --set mapi_port=38592 --set xrpc_port=45862 --set monet_prompt= --trace  "--dbname=mTests_src_test_BugDay_2005-10-06_2.8" --set mal_listing=0 "--dbinit= include sql;" ; echo ; echo Over..
-# 18:31:51 >  
+# 14:04:34 >  
+# 14:04:34 >  "mclient" "-lsql" "-ftest" "-tnone" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-390464" "--port=31391"
+# 14:04:34 >  
 
-# MonetDB server v5.9.0, based on kernel v1.27.0
-# Serving database 'mTests_src_test_BugDay_2005-10-06_2.8', using 4 threads
-# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs dynamically linked
-# Copyright (c) 1993-July 2008 CWI.
-# Copyright (c) August 2008- MonetDB B.V., all rights reserved
-# Visit http://monetdb.cwi.nl/ for further information
-# Listening for connection requests on mapi:monetdb://alf.ins.cwi.nl:38592/
-# MonetDB/SQL module v2.27.0 loaded
-
-#function user.main():void;
-#    clients.quit();
-#end main;
-
-
-# 11:50:16 >  
-# 11:50:16 >  Mtimeout -timeout 60 MapiClient -lsql -umonetdb -Pmonetdb --host=localhost --port=35781  < mixed_type.SF-917372.sql
-# 11:50:16 >  
-
-#select true+1;
-% . # table_name
+#select cast(true+1 as bigint);
+% .%1 # table_name
 % %1 # name
-% hugeint # type
+% bigint # type
 % 1 # length
 [ 2	]
 

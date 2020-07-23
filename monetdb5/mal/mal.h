@@ -50,10 +50,6 @@ mal_export char     monet_cwd[FILENAME_MAX];
 mal_export char 	monet_characteristics[4096];
 mal_export stream	*maleventstream;
 
-#ifdef HAVE_HGE
-mal_export int have_hge;
-#endif
-
 /*
    See gdk/gdk.h for the definition of all debug masks.
    See `man mserver5` or tools/mserver/mserver5.1
@@ -98,7 +94,7 @@ mal_export void mal_reset(void);
 #define LIST_MAL_FLOW   128       /* output MAL dataflow dependencies */
 #define LIST_MAL_CALL  (LIST_MAL_NAME | LIST_MAL_VALUE )
 #define LIST_MAL_DEBUG (LIST_MAL_NAME | LIST_MAL_VALUE | LIST_MAL_TYPE | LIST_MAL_PROPS | LIST_MAL_FLOW)
-#define LIST_MAL_ALL   (LIST_MAL_NAME | LIST_MAL_VALUE | LIST_MAL_TYPE | LIST_MAL_PROPS | LIST_MAL_MAPI)
+#define LIST_MAL_ALL   (LIST_MAL_NAME | LIST_MAL_VALUE | LIST_MAL_TYPE | LIST_MAL_MAPI)
 
 /* type check status is kept around to improve type checking efficiency */
 #define TYPE_ERROR      -1

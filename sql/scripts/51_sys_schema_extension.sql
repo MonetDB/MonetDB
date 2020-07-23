@@ -472,7 +472,6 @@ GRANT SELECT ON sys.roles TO PUBLIC;
 
 -- Utility view to list the standard variables (as defined in sys.var()) and their run-time value
 CREATE VIEW sys.var_values (var_name, value) AS
-SELECT 'cache' AS var_name, convert(cache, varchar(10)) AS value UNION ALL
 SELECT 'current_role', current_role UNION ALL
 SELECT 'current_schema', current_schema UNION ALL
 SELECT 'current_timezone', current_timezone UNION ALL

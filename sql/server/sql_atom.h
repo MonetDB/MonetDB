@@ -16,8 +16,6 @@ typedef struct atom {
 	int isnull;
 	sql_subtype tpe;
 	ValRecord data;
-	dbl d;
-	int varid;/* used during code generation only */
 } atom;
 
 #define atom_null(a) (((atom*)a)->isnull)
@@ -29,15 +27,16 @@ extern atom *atom_int( sql_allocator *sa, sql_subtype *tpe, hge val);
 #else
 extern atom *atom_int( sql_allocator *sa, sql_subtype *tpe, lng val);
 #endif
-extern atom *atom_float( sql_allocator *sa, sql_subtype *tpe, double val);
+extern atom *atom_float( sql_allocator *sa, sql_subtype *tpe, dbl val);
 extern atom *atom_string( sql_allocator *sa, sql_subtype *tpe, const char *val);
 extern atom *atom_general( sql_allocator *sa, sql_subtype *tpe, const char *val);
 #ifdef HAVE_HGE
-extern atom *atom_dec( sql_allocator *sa, sql_subtype *tpe, hge val, double dval);
+extern atom *atom_dec( sql_allocator *sa, sql_subtype *tpe, hge val);
 #else
-extern atom *atom_dec( sql_allocator *sa, sql_subtype *tpe, lng val, double dval);
+extern atom *atom_dec( sql_allocator *sa, sql_subtype *tpe, lng val);
 #endif
 extern atom *atom_ptr( sql_allocator *sa, sql_subtype *tpe, void *v);
+extern atom *atom_general_ptr( sql_allocator *sa, sql_subtype *tpe, void *v);
 
 extern int atom_neg( atom *a );
 extern unsigned int atom_num_digits( atom *a );
@@ -49,7 +48,7 @@ extern atom *atom_dup( sql_allocator *sa, atom *a);
 extern int atom_cast(sql_allocator *sa, atom *a, sql_subtype *tp);
 
 extern char *atom2string(sql_allocator *sa, atom *a);
-extern char *atom2sql(atom *a);
+extern char *atom2sql(sql_allocator *sa, atom *a, int timezone);
 extern sql_subtype *atom_type(atom *a);
 extern void atom_set_type(atom *a, sql_subtype *t);
 
@@ -75,8 +74,7 @@ extern hge scales[39];
 extern lng scales[19];
 #endif
 
-extern atom* atom_zero_value(sql_allocator *sa, sql_subtype* tpe);
-extern atom* atom_null_value(sql_allocator *sa, sql_subtype* tpe);
+extern atom *atom_zero_value(sql_allocator *sa, sql_subtype* tpe);
 
 #endif /* _SQL_ATOM_H_ */
 

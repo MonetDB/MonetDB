@@ -51,9 +51,8 @@
 /* different query execution modes (emode) */
 #define m_normal 	0
 #define m_deallocate 1
-#define m_execute 	2
-#define m_prepare 	3
-#define m_plan 		4
+#define m_prepare 	2
+#define m_plan 		3
 
 /* special modes for function/procedure and view instantiation and
    dependency generation */
@@ -105,68 +104,56 @@ typedef struct sql_frame {
 	int frame_number;
 } sql_frame;
 
-#define MAXSTATS 8
-
 typedef struct mvc {
 	char errstr[ERRSIZE];
 
-	sql_allocator *sa;
-	struct qc *qc;
-	int clientid;		/* id of the owner */
+	sql_allocator *sa, *ta, *pa;
+
 	struct scanner scanner;
 
-	list *params; /* Parameters for SQL functions and prepared statements */
-	list *global_vars; /* SQL declared variables on the global scope */
+	list *params;
 	sql_func *forward;	/* forward definitions for recursive functions */
+	list *global_vars; /* SQL declared variables on the global scope */
 	sql_frame **frames;	/* stack of frames with variables */
 	int topframes;
 	int sizeframes;
 	int frame;
-	bool use_views;
-	atom **args;
-	int argc;
-	int argmax;
 	struct symbol *sym;
-	int no_mitosis;		/* run query without mitosis */
 
+	bool use_views;
+	struct qc *qc;
+	int clientid;		/* id of the owner */
+
+	/* session variables */
 	sqlid user_id;
 	sqlid role_id;
-	lng last_id;
-	lng rowcnt;
-
-	/* current session variables */
 	int timezone;		/* milliseconds west of UTC */
-	int cache;		/* some queries should not be cached ! */
-	int caching;		/* cache current query ? */
 	int reply_size;		/* reply size */
-	bool sizeheader;	/* print size header in result set */
 	int debug;
 
-	lng Topt;		/* timer for optimizer phase */
 	char emode;		/* execution mode */
 	char emod;		/* execution modifier */
 
 	sql_session *session;
 
+	/* per query context */
 	mapi_query_t type;	/* query type */
+
+	/* during query needed flags */
 	unsigned int label;	/* numbers for relational projection labels */
-	int remote;
 	list *cascade_action;  /* protection against recursive cascade actions */
-
-	int opt_stats[MAXSTATS];/* keep statistics about optimizer rewrites */
-
-	int result_id;
-	res_table *results;
-	char *query;		/* string, identify whatever we're working on */
 } mvc;
 
 extern sql_table *mvc_init_create_view(mvc *sql, sql_schema *s, const char *name, const char *query);
-extern int mvc_init(int debug, store_type store, int ro, int su, backend_stack stk);
+
+/* should return structure */
+extern int mvc_init(sql_allocator *pa, int debug, store_type store, int ro, int su);
 extern void mvc_exit(void);
+
 extern void mvc_logmanager(void);
 extern void mvc_idlemanager(void);
 
-extern mvc *mvc_create(int clientid, backend_stack stk, int debug, bstream *rs, stream *ws);
+extern mvc *mvc_create(sql_allocator *pa, int clientid, int debug, bstream *rs, stream *ws);
 extern int mvc_reset(mvc *m, bstream *rs, stream *ws, int debug);
 extern void mvc_destroy(mvc *c);
 
@@ -226,6 +213,8 @@ extern sql_column *mvc_drop_default(mvc *c, sql_column *col);
 extern sql_column *mvc_storage(mvc *c, sql_column *col, char *storage);
 extern sql_table * mvc_access(mvc *m, sql_table *t, sht access);
 extern int mvc_is_sorted(mvc *c, sql_column *col);
+extern int mvc_is_unique(mvc *m, sql_column *col);
+extern int mvc_is_duplicate_eliminated(mvc *c, sql_column *col);
 
 extern sql_ukey *mvc_create_ukey(mvc *m, sql_table *t, const char *kname, key_type kt);
 extern sql_key *mvc_create_ukey_done(mvc *m, sql_key *k);

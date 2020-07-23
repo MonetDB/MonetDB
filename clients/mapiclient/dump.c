@@ -2304,6 +2304,7 @@ dump_database(Mapi mid, stream *toConsole, bool describe, bool useInserts)
 		     "sys.schemas s "
 		"WHERE ui.default_schema = s.id "
 		  "AND ui.name <> 'monetdb' "
+		  "AND ui.name <> '.snapshot' "
 		"ORDER BY ui.name";
 	const char *roles =
 		"SELECT name "

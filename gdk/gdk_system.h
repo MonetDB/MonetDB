@@ -34,6 +34,7 @@
 #define __has_attribute__alloc_size__ 1
 #define __has_attribute__cold__ 1
 #define __has_attribute__format__ 1
+#define __has_attribute__designated_init__ 0
 #define __has_attribute__malloc__ 1
 #define __has_attribute__nonstring__ 0
 #define __has_attribute__noreturn__ 1
@@ -64,6 +65,9 @@
 #endif
 #if !__has_attribute(__pure__)
 #define __pure__
+#endif
+#if !__has_attribute(__designated_init__)
+#define __designated_init__
 #endif
 /* these are used in some *private.h files */
 #if !__has_attribute(__visibility__)
@@ -135,6 +139,8 @@ typedef size_t MT_Id;		/* thread number. will not be zero */
 
 enum MT_thr_detach { MT_THR_JOINABLE, MT_THR_DETACHED };
 #define MT_NAME_LEN	32	/* length of thread/semaphore/etc. names */
+
+#define UNKNOWN_THREAD "unknown thread"
 
 gdk_export bool MT_thread_init(void);
 gdk_export int MT_create_thread(MT_Id *t, void (*function) (void *),

@@ -6,7 +6,7 @@ stderr of test 'remote-table-non-existent-column.Bug-6750` in directory 'sql/tes
 # 10:42:19 >  
 
 (mapi:monetdb://monetdb@localhost/node1) Identifier tab1.col2 doesn't exist
-(mapi:monetdb://monetdb@localhost/node1) Parameter 1 has wrong SQL type, expected double(53), but got tinyint(8) instead
+(mapi:monetdb://monetdb@localhost/node1) Parameter 1 has wrong SQL type, expected double, but got tinyint instead
 (mapi:monetdb://monetdb@localhost/node1) Merge tables not supported under remote connections
 # builtin opt 	gdk_dbpath = /home/ferreira/repositories/MonetDB-default/BUILD/var/monetdb5/dbfarm/demo
 # builtin opt 	mapi_port = 50000

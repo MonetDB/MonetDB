@@ -32,7 +32,7 @@ rel_generate_anti_expression(mvc *sql, sql_rel **anti_rel, sql_table *mt, sql_ta
 		res = exp_ref(sql, res);
 	} else if (isPartitionedByExpressionTable(mt)) {
 		*anti_rel = rel_project(sql->sa, *anti_rel, NULL);
-		if (!(res = rel_parse_val(sql, sa_message(sql->sa, "select %s;", mt->part.pexp->exp), sql->emode, (*anti_rel)->l)))
+		if (!(res = rel_parse_val(sql, mt->part.pexp->exp, NULL, sql->emode, (*anti_rel)->l)))
 			return NULL;
 	} else {
 		assert(0);
@@ -98,7 +98,7 @@ rel_generate_anti_insert_expression(mvc *sql, sql_rel **anti_rel, sql_table *t)
 		res = list_fetch((*anti_rel)->exps, colr);
 	} else if (isPartitionedByExpressionTable(t)) {
 		*anti_rel = rel_project(sql->sa, *anti_rel, rel_projections(sql, *anti_rel, NULL, 1, 1));
-		if (!(res = rel_parse_val(sql, sa_message(sql->sa, "select %s;", t->part.pexp->exp), sql->emode, (*anti_rel)->l)))
+		if (!(res = rel_parse_val(sql, t->part.pexp->exp, NULL, sql->emode, (*anti_rel)->l)))
 			return NULL;
 		exp_label(sql->sa, res, ++sql->label);
 		append((*anti_rel)->exps, res);
@@ -129,31 +129,25 @@ generate_partition_limits(sql_query *query, sql_rel **r, symbol *s, sql_subtype 
 	mvc *sql = query->sql;
 	if (!s) {
 		return NULL;
-	} else if (s->token == SQL_NULL ||
-		   (!nilok &&
-		    s->token == SQL_IDENT &&
-		    s->data.lval->h->type == type_int &&
-		    sql->args[s->data.lval->h->data.i_val]->isnull)) {
+	} else if (s->token == SQL_NULL && !nilok) {
 		return sql_error(sql, 02, SQLSTATE(42000) "ALTER TABLE: range bound cannot be null");
 	} else if (s->token == SQL_MINVALUE) {
 		atom *amin = atom_general(sql->sa, &tpe, NULL);
 		if (!amin) {
-			char *err = sql_subtype_string(&tpe);
+			char *err = sql_subtype_string(sql->ta, &tpe);
 			if (!err)
 				return sql_error(sql, 02, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			sql_error(sql, 02, SQLSTATE(42000) "ALTER TABLE: absolute minimum value not available for %s type", err);
-			GDKfree(err);
 			return NULL;
 		}
 		return exp_atom(sql->sa, amin);
 	} else if (s->token == SQL_MAXVALUE) {
 		atom *amax = atom_general(sql->sa, &tpe, NULL);
 		if (!amax) {
-			char *err = sql_subtype_string(&tpe);
+			char *err = sql_subtype_string(sql->ta, &tpe);
 			if (!err)
 				return sql_error(sql, 02, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			sql_error(sql, 02, SQLSTATE(42000) "ALTER TABLE: absolute maximum value not available for %s type", err);
-			GDKfree(err);
 			return NULL;
 		}
 		return exp_atom(sql->sa, amax);
@@ -163,7 +157,7 @@ generate_partition_limits(sql_query *query, sql_rel **r, symbol *s, sql_subtype 
 
 		if (!e)
 			return NULL;
-		return rel_check_type(sql, &tpe, r ? *r : NULL, e, type_equal);
+		return exp_check_type(sql, &tpe, r ? *r : NULL, e, type_equal);
 	}
 }
 
@@ -189,12 +183,12 @@ create_range_partition_anti_rel(sql_query* query, sql_table *mt, sql_table *pt, 
 			sql_exp *range1, *range2;
 
 			e1 = exp_copy(sql, pmin);
-			if (subtype_cmp(exp_subtype(pmin), &tpe) != 0)
-				e1 = exp_convert(sql->sa, e1, exp_subtype(e1), &tpe);
+			if (!(e1 = exp_check_type(sql, &tpe, NULL, e1, type_equal)))
+				return NULL;
 
 			e2 = exp_copy(sql, pmax);
-			if (subtype_cmp(exp_subtype(e2), &tpe) != 0)
-				e2 = exp_convert(sql->sa, e2, exp_subtype(e2), &tpe);
+			if (!(e2 = exp_check_type(sql, &tpe, NULL, e2, type_equal)))
+				return NULL;
 
 			range1 = exp_compare(sql->sa, exp_copy(sql, anti_le), e1, 3);
 			range2 = exp_compare(sql->sa, exp_copy(sql, anti_le), e2, 1);
@@ -273,7 +267,6 @@ static sql_rel *
 propagate_validation_to_upper_tables(sql_query* query, sql_table *mt, sql_table *pt, sql_rel *rel)
 {
 	mvc *sql = query->sql;
-	sql->caching = 0;
 	for (sql_table *prev = mt, *it = prev->p ; it && prev ; prev = it, it = it->p) {
 		sql_part *spt = find_sql_part(it, prev->base.name);
 		if (spt) {
@@ -285,8 +278,8 @@ propagate_validation_to_upper_tables(sql_query* query, sql_table *mt, sql_table 
 				bool found_all = false;
 
 				if (atomcmp(spt->part.range.minvalue, nil) != 0 && atomcmp(spt->part.range.maxvalue, nil) != 0) {
-					e1 = create_table_part_atom_exp(sql, spt->tpe, spt->part.range.minvalue);
-					e2 = create_table_part_atom_exp(sql, spt->tpe, spt->part.range.maxvalue);
+					e1 = exp_atom(sql->sa, atom_general_ptr(sql->sa, &spt->tpe, spt->part.range.minvalue));
+					e2 = exp_atom(sql->sa, atom_general_ptr(sql->sa, &spt->tpe, spt->part.range.maxvalue));
 				} else {
 					assert(spt->with_nills);
 					found_all = is_bit_nil(spt->with_nills);
@@ -297,7 +290,7 @@ propagate_validation_to_upper_tables(sql_query* query, sql_table *mt, sql_table 
 				list *exps = new_exp_list(sql->sa);
 				for (node *n = spt->part.values->h ; n ; n = n->next) {
 					sql_part_value *next = (sql_part_value*) n->data;
-					sql_exp *e1 = create_table_part_atom_exp(sql, spt->tpe, next->value);
+					sql_exp *e1 = exp_atom(sql->sa, atom_general_ptr(sql->sa, &spt->tpe, next->value));
 					list_append(exps, e1);
 				}
 				rel = rel_list(sql->sa, rel, create_list_partition_anti_rel(query, it, pt, spt->with_nills, exps));
@@ -351,7 +344,7 @@ rel_alter_table_add_partition_range(sql_query* query, sql_table *mt, sql_table *
 	}
 	append(exps, pmin);
 	append(exps, pmax);
-	append(exps, is_bit_nil(with_nills) ? exp_atom(sql->sa, atom_null_value(sql->sa, sql_bind_localtype("bit"))) : exp_atom_bool(sql->sa, with_nills));
+	append(exps, is_bit_nil(with_nills) ? exp_atom(sql->sa, atom_general(sql->sa, sql_bind_localtype("bit"), NULL)) : exp_atom_bool(sql->sa, with_nills));
 	append(exps, exp_atom_int(sql->sa, update));
 	rel_psm->l = NULL;
 	rel_psm->r = NULL;
@@ -377,8 +370,9 @@ rel_alter_table_add_partition_list(sql_query *query, sql_table *mt, sql_table *p
 {
 	mvc *sql = query->sql;
 	sql_rel *rel_psm = rel_create(sql->sa), *res;
-	list *exps = new_exp_list(sql->sa), *anti_exps = new_exp_list(sql->sa), *lvals = new_exp_list(sql->sa);
+	list *exps = new_exp_list(sql->sa), *lvals = new_exp_list(sql->sa);
 	sql_subtype tpe;
+	sql_exp *converted_values = NULL;
 
 	if (!rel_psm || !exps)
 		return NULL;
@@ -389,15 +383,19 @@ rel_alter_table_add_partition_list(sql_query *query, sql_table *mt, sql_table *p
 		for (dnode *dn = values->h; dn ; dn = dn->next) { /* parse the atoms and generate the expressions */
 			symbol* next = dn->data.sym;
 			sql_exp *pnext = generate_partition_limits(query, &rel_psm, next, tpe, true);
-			if (subtype_cmp(exp_subtype(pnext), &tpe) != 0)
-				pnext = exp_convert(sql->sa, pnext, exp_subtype(pnext), &tpe);
 
 			if (next->token == SQL_NULL)
 				return sql_error(sql, 02, SQLSTATE(42000) "ALTER TABLE: a list value cannot be null");
 			append(lvals, pnext);
-			append(anti_exps, exp_copy(sql, pnext));
 		}
 	}
+
+	converted_values = exp_values(sql->sa, lvals);
+	if (!(converted_values = exp_values_set_supertype(sql, converted_values, &tpe)))
+		return NULL;
+	for (node *n = ((list*)converted_values->f)->h ; n ; n = n->next)
+		if (!(n->data = exp_check_type(sql, &tpe, NULL, n->data, type_equal)))
+			return NULL;
 
 	//generate the psm statement
 	append(exps, exp_atom_clob(sql->sa, sname));
@@ -413,11 +411,11 @@ rel_alter_table_add_partition_list(sql_query *query, sql_table *mt, sql_table *p
 	rel_psm->r = NULL;
 	rel_psm->op = op_ddl;
 	rel_psm->flag = ddl_alter_table_add_list_partition;
-	rel_psm->exps = list_merge(exps, lvals, (fdup)NULL);
+	rel_psm->exps = list_merge(exps, converted_values->f, (fdup)NULL);
 	rel_psm->card = CARD_MULTI;
 	rel_psm->nrcols = 0;
 
-	res = create_list_partition_anti_rel(query, mt, pt, with_nills, anti_exps);
+	res = create_list_partition_anti_rel(query, mt, pt, with_nills, exps_copy(sql, (list*)converted_values->f));
 	res->l = rel_psm;
 
 	return propagate_validation_to_upper_tables(query, mt, pt, res);
@@ -711,8 +709,8 @@ rel_generate_subinserts(sql_query *query, sql_rel *rel, sql_table *t, int *chang
 
 			if (atomcmp(pt->part.range.minvalue, nil) != 0 || atomcmp(pt->part.range.maxvalue, nil) != 0) {
 				sql_exp *e1, *e2;
-				e1 = create_table_part_atom_exp(sql, pt->tpe, pt->part.range.minvalue);
-				e2 = create_table_part_atom_exp(sql, pt->tpe, pt->part.range.maxvalue);
+				e1 = exp_atom(sql->sa, atom_general_ptr(sql->sa, &pt->tpe, pt->part.range.minvalue));
+				e2 = exp_atom(sql->sa, atom_general_ptr(sql->sa, &pt->tpe, pt->part.range.maxvalue));
 				range = exp_compare2(sql->sa, le, e1, e2, cmp_gte|CMP_BETWEEN);
 				full_range = range;
 			} else {
@@ -754,7 +752,7 @@ rel_generate_subinserts(sql_query *query, sql_rel *rel, sql_table *t, int *chang
 				list *exps = new_exp_list(sql->sa);
 				for (node *nn = pt->part.values->h ; nn ; nn = nn->next) {
 					sql_part_value *next = (sql_part_value*) nn->data;
-					sql_exp *e1 = create_table_part_atom_exp(sql, pt->tpe, next->value);
+					sql_exp *e1 = exp_atom(sql->sa, atom_general_ptr(sql->sa, &pt->tpe, next->value));
 					list_append(exps, e1);
 					list_append(anti_exps, exp_copy(sql, e1));
 				}
@@ -943,16 +941,16 @@ rel_subtable_insert(sql_query *query, sql_rel *rel, sql_table *t, int *changes)
 					anti_exp = exp_compare(sql->sa, anti_nils, exp_atom_bool(sql->sa, 0), cmp_equal);
 				}
 			} else {
-				sql_exp *e2 = create_table_part_atom_exp(sql, pt->tpe, pt->part.range.maxvalue);
+				sql_exp *e2 = exp_atom(sql->sa, atom_general_ptr(sql->sa, &pt->tpe, pt->part.range.maxvalue));
 				anti_exp = exp_compare(sql->sa, exp_copy(sql, anti_le), e2, cmp_gte);
 			}
 		} else {
 			if (atomcmp(pt->part.range.maxvalue, nil) == 0) {
-				sql_exp *e1 = create_table_part_atom_exp(sql, pt->tpe, pt->part.range.minvalue);
+				sql_exp *e1 = exp_atom(sql->sa, atom_general_ptr(sql->sa, &pt->tpe, pt->part.range.minvalue));
 				anti_exp = exp_compare(sql->sa, exp_copy(sql, anti_le), e1, cmp_lt);
 			} else {
-				sql_exp *e1 = create_table_part_atom_exp(sql, pt->tpe, pt->part.range.minvalue),
-					*e2 = create_table_part_atom_exp(sql, pt->tpe, pt->part.range.maxvalue),
+				sql_exp *e1 = exp_atom(sql->sa, atom_general_ptr(sql->sa, &pt->tpe, pt->part.range.minvalue)),
+					*e2 = exp_atom(sql->sa, atom_general_ptr(sql->sa, &pt->tpe, pt->part.range.maxvalue)),
 					*range1 = exp_compare(sql->sa, exp_copy(sql, anti_le), e1, cmp_lt),
 					*range2 = exp_compare(sql->sa, exp_copy(sql, anti_le), e2, cmp_gte);
 				anti_exp = exp_or(sql->sa, list_append(new_exp_list(sql->sa), range1),
@@ -973,7 +971,7 @@ rel_subtable_insert(sql_query *query, sql_rel *rel, sql_table *t, int *changes)
 		if (list_length(pt->part.values)) { /* if the partition holds non-null values */
 			for (node *n = pt->part.values->h ; n ; n = n->next) {
 				sql_part_value *next = (sql_part_value*) n->data;
-				sql_exp *e1 = create_table_part_atom_exp(sql, pt->tpe, next->value);
+				sql_exp *e1 = exp_atom(sql->sa, atom_general_ptr(sql->sa, &pt->tpe, next->value));
 				list_append(anti_exps, exp_copy(sql, e1));
 			}
 			anti_exp = exp_in(sql->sa, exp_copy(sql, anti_le), anti_exps, cmp_notin);
@@ -1032,7 +1030,6 @@ rel_propagate(sql_query *query, sql_rel *rel, int *changes)
 		if (t->p && (isRangePartitionTable(t->p) || isListPartitionTable(t->p)) && !find_prop(l->p, PROP_USED)) {
 			isSubtable = true;
 			if (is_insert(rel->op)) { //insertion directly to sub-table (must do validation)
-				sql->caching = 0;
 				rel = rel_subtable_insert(query, rel, t, changes);
 				propagate = rel->l;
 			}
@@ -1040,18 +1037,15 @@ rel_propagate(sql_query *query, sql_rel *rel, int *changes)
 		if (isMergeTable(t)) {
 			assert(list_length(t->members.set) > 0);
 			if (is_delete(propagate->op) || is_truncate(propagate->op)) { //propagate deletions to the partitions
-				sql->caching = 0;
 				rel = rel_propagate_delete(sql, rel, t, changes);
 			} else if (isRangePartitionTable(t) || isListPartitionTable(t)) {
 				if (is_insert(propagate->op)) { //on inserts create a selection for each partition
-					sql->caching = 0;
 					if (isSubtable) {
 						rel->l = rel_propagate_insert(query, propagate, t, changes);
 					} else {
 						rel = rel_propagate_insert(query, rel, t, changes);
 					}
 				} else if (is_update(propagate->op)) { //for updates propagate like in deletions
-					sql->caching = 0;
 					rel = rel_propagate_update(sql, rel, t, changes);
 				} else {
 					assert(0);

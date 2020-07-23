@@ -2716,12 +2716,14 @@ mapi_reconnect(Mapi mid)
 			} else
 #endif
 			{
+				(void)pwdhash;
 				snprintf(buf, sizeof(buf), "server requires unknown hash '%.100s'",
 						serverhash);
 				close_connection(mid);
 				return mapi_setError(mid, buf, __func__, MERROR);
 			}
 
+#if defined(HAVE_RIPEMD160_UPDATE) || defined(HAVE_SHA512_UPDATE) || defined(HAVE_SHA384_UPDATE) || defined(HAVE_SHA256_UPDATE) || defined(HAVE_SHA224_UPDATE) || defined(HAVE_SHA1_UPDATE)
 			if (pwdhash == NULL) {
 				snprintf(buf, sizeof(buf), "allocation failure or unknown hash '%.100s'",
 						serverhash);
@@ -2733,6 +2735,7 @@ mapi_reconnect(Mapi mid)
 			mid->password = malloc(1 + strlen(pwdhash) + 1);
 			sprintf(mid->password, "\1%s", pwdhash);
 			free(pwdhash);
+#endif
 		}
 
 		p = mid->password + 1;

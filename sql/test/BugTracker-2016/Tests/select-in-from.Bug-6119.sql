@@ -34,13 +34,13 @@ ALTER TABLE persons ADD FOREIGN KEY(place_id) REFERENCES places(id);
 
 WITH
 params AS (
-  SELECT id, countryX, countryY, startDate, startDate + CAST (duration AS INTERVAL DAY) AS endDate FROM (
+  SELECT id, countryX, countryY, startDate, startDate + duration AS endDate FROM (
     SELECT
       4398046512167 AS id,
       'United_Kingdom' AS countryX,
       'United_States' AS countryY,
       CAST('2011-11-05' AS TIMESTAMP(3)) AS startDate,
-      365 AS duration
+      INTERVAL '365' DAY AS duration
   ) AS tmp
 ),
 countries AS (

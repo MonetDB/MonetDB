@@ -129,10 +129,14 @@ VIEWcreate(oid seq, BAT *b)
 	/* Order OID index */
 	bn->torderidx = NULL;
 	if (BBPcacheit(bn, true) != GDK_SUCCEED) {	/* enter in BBP */
-		if (tp)
+		if (tp) {
 			BBPunshare(tp);
-		if (bn->tvheap)
+			BBPunfix(tp);
+		}
+		if (bn->tvheap) {
 			BBPunshare(bn->tvheap->parentid);
+			BBPunfix(bn->tvheap->parentid);
+		}
 		MT_lock_destroy(&bn->batIdxLock);
 		GDKfree(bn);
 		return NULL;
@@ -303,7 +307,7 @@ VIEWreset(BAT *b)
 				goto bailout;
 			th->farmid = BBPselectfarm(b->batRole, b->ttype, varheap);
 			strconcat_len(th->filename, sizeof(th->filename),
-				      nme, ".tail", NULL);
+				      nme, ".theap", NULL);
 			if (ATOMheap(b->ttype, th, cnt) != GDK_SUCCEED)
 				goto bailout;
 		}
@@ -366,7 +370,7 @@ VIEWreset(BAT *b)
 		b->batCapacity = cnt;
 
 		/* insert all of v in b, and quit */
-		if (BATappend(b, v, NULL, false) != GDK_SUCCEED)
+		if (BATappend2(b, v, NULL, false, false) != GDK_SUCCEED)
 			goto bailout;
 		BBPreclaim(v);
 	}

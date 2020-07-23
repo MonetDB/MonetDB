@@ -38,14 +38,14 @@ extern sql_subtype *sql_bind_subtype(sql_allocator *sa, const char *name, unsign
 extern sql_subtype *sql_bind_localtype(const char *name);
 extern sql_subtype *sql_create_subtype(sql_allocator *sa, sql_type *t, unsigned int s, unsigned int d);
 extern void sql_init_subtype(sql_subtype *res, sql_type *t, unsigned int digits, unsigned int scale);
-extern char *sql_subtype_string(sql_subtype *t);
 
 extern int type_cmp(sql_type *t1, sql_type *t2);
 extern int subtype_cmp(sql_subtype *t1, sql_subtype *t2);
 extern int arg_subtype_cmp(sql_arg *a, sql_subtype *t);
 extern int is_subtype(sql_subtype *t1, sql_subtype *t2);
-extern char *subtype2string(sql_subtype *t);
-extern char *subtype2string2(sql_subtype *tpe);
+
+extern char *sql_subtype_string(sql_allocator *sa, sql_subtype *t);
+extern char *subtype2string2(sql_allocator *sa, sql_subtype *tpe);
 
 extern sql_arg *sql_create_arg(sql_allocator *sa, const char *name, sql_subtype *t, char inout);
 
@@ -67,9 +67,5 @@ extern char *sql_func_mod(sql_func *f);
 extern int is_sqlfunc(sql_func *f);
 
 extern void types_init(sql_allocator *sa);
-
-/* This function should be used in exceptional cases such as dealing with tricky upgrades! */
-extern sql_func *sql_create_func(sql_allocator *sa, const char *name, const char *mod, const char *imp, bit semantics, bit side_effect, int fix_scale,
-								 unsigned int res_scale, sql_type *fres, int nargs, ...);
 
 #endif /* SQL_TYPES_H */

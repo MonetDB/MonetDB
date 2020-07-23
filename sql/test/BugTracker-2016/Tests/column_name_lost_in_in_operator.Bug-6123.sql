@@ -237,7 +237,7 @@ messageLikes AS (
          l.creationDate,
          m.id AS message_id,
          m.content,
-         CAST (l.creationDate - m.creationDate AS BIGINT) / 60000 AS latency,
+         (l.creationDate - m.creationDate) / 60000 AS latency,
          (p.id IN (SELECT * FROM myfriends)) IS NULL AS isNew
   FROM likes l, messages m, persons p
   WHERE l.message_id = m.id

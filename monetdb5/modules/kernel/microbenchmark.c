@@ -17,7 +17,6 @@
  */
 #include "monetdb_config.h"
 #include "mal.h"
-#include <math.h>
 #include "mal_exception.h"
 #include "microbenchmark.h"
 

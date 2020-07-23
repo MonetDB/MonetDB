@@ -705,7 +705,7 @@ static ssize_t XMLfromString(const char *src, size_t *len, void **x, bool extern
 	GDKerror("not implemented\n");
 	return -1;
 }
-ssize_t XMLtoString(str *s, size_t *len, const void *src, bool external) {
+static ssize_t XMLtoString(str *s, size_t *len, const void *src, bool external) {
 	(void) s;
 	(void) len;
 	(void) src;

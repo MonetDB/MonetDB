@@ -225,11 +225,11 @@ ALTER TABLE tagclass_inheritance ADD FOREIGN KEY(superclass_id) REFERENCES tagcl
 WITH
 params AS (
   /* subtract 1 to endDate to have a closed interval for the BETWEEN operator */
-  SELECT id, startDate, startDate + CAST (duration -1 AS INTERVAL DAY) AS endDate FROM (
+  SELECT id, startDate, startDate + duration - interval '1' day AS endDate FROM (
     SELECT
       4398046512167 AS id,
       CAST('2011-11-05' AS TIMESTAMP(3)) AS startDate,
-      365 AS duration
+      INTERVAL '365' DAY AS duration
   ) AS tmp ),
 friends1 AS (
   SELECT dst AS id FROM friends WHERE src = (SELECT id FROM params)

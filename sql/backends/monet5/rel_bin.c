@@ -36,7 +36,7 @@ stmt_selectnil( backend *be, stmt *col)
 {
 	sql_subtype *t = tail_type(col);
 	stmt *n = stmt_atom(be, atom_general(be->mvc->sa, t, NULL));
-	stmt *nn = stmt_uselect2(be, col, n, n, 3, NULL, 0);
+	stmt *nn = stmt_uselect2(be, col, n, n, 3, NULL, 0, 1);
 	return nn;
 }
 
@@ -282,24 +282,23 @@ row2cols(backend *be, stmt *sub)
 static stmt*
 distinct_value_list(backend *be, list *vals, stmt ** last_null_value)
 {
-	node *n;
+	list *l = sa_list(be->mvc->sa);
 	stmt *s;
 
 	/* create bat append values */
-	s = stmt_temp(be, exp_subtype(vals->h->data));
-	for( n = vals->h; n; n = n->next) {
+	for (node *n = vals->h; n; n = n->next) {
 		sql_exp *e = n->data;
 		stmt *i = exp_bin(be, e, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0, 0);
 
-		if (exp_is_null(be->mvc, e))
+		if (exp_is_null(e))
 			*last_null_value = i;
 
 		if (!i)
 			return NULL;
 
-		s = stmt_append(be, s, i);
+		list_append(l, i);
 	}
-
+	s = stmt_append_bulk(be, stmt_temp(be, exp_subtype(vals->h->data)), l);
 	/* Probably faster to filter out the values directly in the underlying list of atoms.
 	   But for now use groupby to filter out duplicate values. */
 	stmt* groupby = stmt_group(be, s, NULL, NULL, NULL, 1);
@@ -313,7 +312,7 @@ stmt_selectnonil( backend *be, stmt *col, stmt *s )
 {
 	sql_subtype *t = tail_type(col);
 	stmt *n = stmt_atom(be, atom_general(be->mvc->sa, t, NULL));
-	stmt *nn = stmt_uselect2(be, col, n, n, 3, s, 1);
+	stmt *nn = stmt_uselect2(be, col, n, n, 3, s, 1, 1);
 	return nn;
 }
 
@@ -433,7 +432,7 @@ handle_in_exps(backend *be, sql_exp *ce, list *nl, stmt *left, stmt *right, stmt
 			s = stmt_project(be, stmt_selectnonil(be, s, NULL), s);
 		}
 
-		s = stmt_join(be, c, s, in, cmp_left, 0, false);
+		s = stmt_join(be, c, s, in, cmp_equal, 1, 0, false);
 		s = stmt_result(be, s, 0);
 
 		if (!in) {
@@ -473,15 +472,14 @@ handle_in_exps(backend *be, sql_exp *ce, list *nl, stmt *left, stmt *right, stmt
 static stmt *
 value_list(backend *be, list *vals, stmt *left, stmt *sel)
 {
-	node *n;
-	stmt *s;
 	sql_subtype *type = exp_subtype(vals->h->data);
+	list *l;
 
 	if (!type)
 		return sql_error(be->mvc, 02, SQLSTATE(42000) "Could not infer the type of a value list column");
 	/* create bat append values */
-	s = stmt_temp(be, type);
-	for( n = vals->h; n; n = n->next) {
+	l = sa_list(be->mvc->sa);
+	for (node *n = vals->h; n; n = n->next) {
 		sql_exp *e = n->data;
 		stmt *i = exp_bin(be, e, left, NULL, NULL, NULL, NULL, sel, NULL, 0, 0);
 
@@ -490,9 +488,9 @@ value_list(backend *be, list *vals, stmt *left, stmt *sel)
 
 		if (list_length(vals) == 1)
 			return i;
-		s = stmt_append(be, s, i);
+		list_append(l, i);
 	}
-	return s;
+	return stmt_append_bulk(be, stmt_temp(be, type), l);
 }
 
 static stmt *
@@ -531,6 +529,92 @@ exp_count_no_nil_arg( sql_exp *e, stmt *ext, sql_exp *ae, stmt *as )
 		}
 	}
 	return as;
+}
+
+static stmt *
+exp_bin_or(backend *be, sql_exp *e, stmt *left, stmt *right, stmt *grp, stmt *ext, stmt *cnt, stmt *sel, int depth, bool reduce)
+{
+	sql_subtype *bt = sql_bind_localtype("bit");
+	list *l = e->l;
+	node *n;
+	stmt *sel1 = NULL, *sel2 = NULL, *s = NULL;
+	int anti = is_anti(e);
+
+	sel1 = sel;
+	sel2 = sel;
+	for( n = l->h; n; n = n->next ) {
+		sql_exp *c = n->data;
+		stmt *sin = (sel1 && sel1->nrcols)?sel1:NULL;
+
+		/* propagate the anti flag */
+		if (anti)
+			set_anti(c);
+		s = exp_bin(be, c, left, right, grp, ext, cnt, sin, NULL, depth, reduce);
+		if (!s)
+			return s;
+
+		if (!sin && sel1 && sel1->nrcols == 0 && s->nrcols == 0) {
+			sql_subfunc *f = sql_bind_func(be->mvc->sa, be->mvc->session->schema, anti?"or":"and", bt, bt, F_FUNC);
+			assert(f);
+			s = stmt_binop(be, sel1, s, f);
+		} else if (sel1 && (sel1->nrcols == 0 || s->nrcols == 0)) {
+			stmt *predicate = bin_first_column(be, left);
+
+			predicate = stmt_const(be, predicate, stmt_bool(be, 1));
+			if (s->nrcols == 0)
+				s = stmt_uselect(be, predicate, s, cmp_equal, sel1, anti, is_semantics(c));
+			else
+				s = stmt_uselect(be, predicate, sel1, cmp_equal, s, anti, is_semantics(c));
+		}
+		sel1 = s;
+	}
+	l = e->r;
+	for( n = l->h; n; n = n->next ) {
+		sql_exp *c = n->data;
+		stmt *sin = (sel2 && sel2->nrcols)?sel2:NULL;
+
+		/* propagate the anti flag */
+		if (anti)
+			set_anti(c);
+		s = exp_bin(be, c, left, right, grp, ext, cnt, sin, NULL, depth, reduce);
+		if (!s)
+			return s;
+
+		if (!sin && sel2 && sel2->nrcols == 0 && s->nrcols == 0) {
+			sql_subfunc *f = sql_bind_func(be->mvc->sa, be->mvc->session->schema, anti?"or":"and", bt, bt, F_FUNC);
+			assert(f);
+			s = stmt_binop(be, sel2, s, f);
+		} else if (sel2 && (sel2->nrcols == 0 || s->nrcols == 0)) {
+			stmt *predicate = bin_first_column(be, left);
+
+			predicate = stmt_const(be, predicate, stmt_bool(be, 1));
+			if (s->nrcols == 0)
+				s = stmt_uselect(be, predicate, s, cmp_equal, sel2, anti, 0);
+			else
+				s = stmt_uselect(be, predicate, sel2, cmp_equal, s, anti, 0);
+		}
+		sel2 = s;
+	}
+	if (sel1->nrcols == 0 && sel2->nrcols == 0) {
+		sql_subfunc *f = sql_bind_func(be->mvc->sa, be->mvc->session->schema, anti?"and":"or", bt, bt, F_FUNC);
+		assert(f);
+		return stmt_binop(be, sel1, sel2, f);
+	}
+	if (sel1->nrcols == 0) {
+		stmt *predicate = bin_first_column(be, left);
+
+		predicate = stmt_const(be, predicate, stmt_bool(be, 1));
+		sel1 = stmt_uselect(be, predicate, sel1, cmp_equal, NULL, 0/*anti*/, 0);
+	}
+	if (sel2->nrcols == 0) {
+		stmt *predicate = bin_first_column(be, left);
+
+		predicate = stmt_const(be, predicate, stmt_bool(be, 1));
+		sel2 = stmt_uselect(be, predicate, sel2, cmp_equal, NULL, 0/*anti*/, 0);
+	}
+	if (anti)
+		return stmt_project(be, stmt_tinter(be, sel1, sel2, false), sel1);
+	return stmt_tunion(be, sel1, sel2);
 }
 
 stmt *
@@ -829,9 +913,13 @@ exp_bin(backend *be, sql_exp *e, stmt *left, stmt *right, stmt *grp, stmt *ext, 
 				if (!as)
 					return NULL;
 				if (need_distinct(e)){
-					stmt *g = stmt_group(be, as, grp, ext, cnt, 1);
-					stmt *next = stmt_result(be, g, 1);
-
+					stmt *next = NULL;
+					if (grp) {
+						stmt *g = stmt_group(be, as, grp, ext, cnt, 1);
+						next = stmt_result(be, g, 1);
+					} else {
+						next = stmt_unique(be, as);
+					}
 					as = stmt_project(be, next, as);
 					if (grp)
 						grp = stmt_project(be, next, grp);
@@ -869,7 +957,7 @@ exp_bin(backend *be, sql_exp *e, stmt *left, stmt *right, stmt *grp, stmt *ext, 
 			print_stmtlist(sql->sa, left);
 			print_stmtlist(sql->sa, right);
 			if (!s) {
-				TRC_ERROR(SQL_EXECUTION, "Query: '%s'\n", sql->query);
+				TRC_ERROR(SQL_EXECUTION, "Query: '%s'\n", be->client->query);
 			}
 			assert(s);
 			return NULL;
@@ -926,96 +1014,15 @@ exp_bin(backend *be, sql_exp *e, stmt *left, stmt *right, stmt *grp, stmt *ext, 
 		if (e->flag == cmp_in || e->flag == cmp_notin) {
 			return handle_in_exps(be, e->l, e->r, left, right, grp, ext, cnt, sel, (e->flag == cmp_in), 0, depth, reduce);
 		}
-		if (e->flag == cmp_or && (!right || right->nrcols == 1)) {
-			sql_subtype *bt = sql_bind_localtype("bit");
-			list *l = e->l;
-			node *n;
-			stmt *sel1 = NULL, *sel2 = NULL;
-			int anti = is_anti(e);
-
-			sel1 = sel;
-			sel2 = sel;
-			for( n = l->h; n; n = n->next ) {
-				sql_exp *c = n->data;
-				stmt *sin = (sel1 && sel1->nrcols)?sel1:NULL;
-
-				/* propagate the anti flag */
-				if (anti)
-					set_anti(c);
-				s = exp_bin(be, c, left, right, grp, ext, cnt, sin, NULL, depth, reduce);
-				if (!s)
-					return s;
-
-				if (!sin && sel1 && sel1->nrcols == 0 && s->nrcols == 0) {
-					sql_subfunc *f = sql_bind_func(sql->sa, sql->session->schema, anti?"or":"and", bt, bt, F_FUNC);
-					assert(f);
-					s = stmt_binop(be, sel1, s, f);
-				} else if (sel1 && (sel1->nrcols == 0 || s->nrcols == 0)) {
-					stmt *predicate = bin_first_column(be, left);
-
-					predicate = stmt_const(be, predicate, stmt_bool(be, 1));
-					if (s->nrcols == 0)
-						s = stmt_uselect(be, predicate, s, cmp_equal, sel1, anti, is_semantics(c));
-					else
-						s = stmt_uselect(be, predicate, sel1, cmp_equal, s, anti, is_semantics(c));
-				}
-				sel1 = s;
-			}
-			l = e->r;
-			for( n = l->h; n; n = n->next ) {
-				sql_exp *c = n->data;
-				stmt *sin = (sel2 && sel2->nrcols)?sel2:NULL;
-
-				/* propagate the anti flag */
-				if (anti)
-					set_anti(c);
-				s = exp_bin(be, c, left, right, grp, ext, cnt, sin, NULL, depth, reduce);
-				if (!s)
-					return s;
-
-				if (!sin && sel2 && sel2->nrcols == 0 && s->nrcols == 0) {
-					sql_subfunc *f = sql_bind_func(sql->sa, sql->session->schema, anti?"or":"and", bt, bt, F_FUNC);
-					assert(f);
-					s = stmt_binop(be, sel2, s, f);
-				} else if (sel2 && (sel2->nrcols == 0 || s->nrcols == 0)) {
-					stmt *predicate = bin_first_column(be, left);
-
-					predicate = stmt_const(be, predicate, stmt_bool(be, 1));
-					if (s->nrcols == 0)
-						s = stmt_uselect(be, predicate, s, cmp_equal, sel2, anti, 0);
-					else
-						s = stmt_uselect(be, predicate, sel2, cmp_equal, s, anti, 0);
-				}
-				sel2 = s;
-			}
-			if (sel1->nrcols == 0 && sel2->nrcols == 0) {
-				sql_subfunc *f = sql_bind_func(sql->sa, sql->session->schema, anti?"and":"or", bt, bt, F_FUNC);
-				assert(f);
-				return stmt_binop(be, sel1, sel2, f);
-			}
-			if (sel1->nrcols == 0) {
-				stmt *predicate = bin_first_column(be, left);
-
-				predicate = stmt_const(be, predicate, stmt_bool(be, 1));
-				sel1 = stmt_uselect(be, predicate, sel1, cmp_equal, NULL, 0/*anti*/, 0);
-			}
-			if (sel2->nrcols == 0) {
-				stmt *predicate = bin_first_column(be, left);
-
-				predicate = stmt_const(be, predicate, stmt_bool(be, 1));
-				sel2 = stmt_uselect(be, predicate, sel2, cmp_equal, NULL, 0/*anti*/, 0);
-			}
-			if (anti)
-				return stmt_project(be, stmt_tinter(be, sel1, sel2, false), sel1);
-			return stmt_tunion(be, sel1, sel2);
-		}
+		if (e->flag == cmp_or && (!right || right->nrcols == 1))
+			return exp_bin_or(be, e, left, right, grp, ext, cnt, sel, depth, reduce);
 		if (e->flag == cmp_or && right) {  /* join */
 			assert(0);
 		}
 
 		/* mark use of join indices */
 		if (right && find_prop(e->p, PROP_JOINIDX) != NULL)
-			sql->opt_stats[0]++;
+			be->join_idx++;
 
 		if (!l) {
 			l = exp_bin(be, e->l, left, NULL, grp, ext, cnt, sel, NULL, depth+1, 0);
@@ -1041,7 +1048,7 @@ exp_bin(backend *be, sql_exp *e, stmt *left, stmt *right, stmt *grp, stmt *ext, 
  			r2 = exp_bin(be, re2, left, right, grp, ext, cnt, sel, NULL, depth+1, 0);
 
 		if (!l || !r || (re2 && !r2)) {
-			TRC_ERROR(SQL_EXECUTION, "Query: '%s'\n", sql->query);
+			TRC_ERROR(SQL_EXECUTION, "Query: '%s'\n", be->client->query);
 			return NULL;
 		}
 
@@ -1052,7 +1059,7 @@ exp_bin(backend *be, sql_exp *e, stmt *left, stmt *right, stmt *grp, stmt *ext, 
 		    (re2 && re2->card > CARD_ATOM))) {
 		    */
 		(void)is_select;
-		if (left && right) {
+		if (reduce && left && right) {
 			if (l->nrcols == 0)
 				l = stmt_const(be, bin_first_column(be, swapped?right:left), l);
 			if (r->nrcols == 0)
@@ -1062,55 +1069,16 @@ exp_bin(backend *be, sql_exp *e, stmt *left, stmt *right, stmt *grp, stmt *ext, 
 			if (r2) {
 				s = stmt_join2(be, l, r, r2, (comp_type)e->flag, is_anti(e), swapped);
 			} else if (swapped) {
-				s = stmt_join(be, r, l, is_anti(e), swap_compare((comp_type)e->flag), is_semantics(e), false);
+				s = stmt_join(be, r, l, is_anti(e), swap_compare((comp_type)e->flag), 0, is_semantics(e), false);
 			} else {
-				s = stmt_join(be, l, r, is_anti(e), (comp_type)e->flag, is_semantics(e), false);
+				s = stmt_join(be, l, r, is_anti(e), (comp_type)e->flag, 0, is_semantics(e), false);
 			}
 		} else {
-			if (r2) {
-				if (!reduce || (l->nrcols == 0 && r->nrcols == 0 && r2->nrcols == 0)) {
-					sql_subtype *bt = sql_bind_localtype("bit");
-					sql_subfunc *lf = sql_bind_func(sql->sa, sql->session->schema,
-							compare_func(range2lcompare(e->flag), 0),
-							tail_type(l), tail_type(r), F_FUNC);
-					sql_subfunc *rf = sql_bind_func(sql->sa, sql->session->schema,
-							compare_func(range2rcompare(e->flag), 0),
-							tail_type(l), tail_type(r), F_FUNC);
-					sql_subfunc *a = sql_bind_func(sql->sa, sql->session->schema,
-							"and", bt, bt, F_FUNC);
-
-					if (is_atom(re->type) && re->l && atom_null((atom*)re->l) &&
-					    is_atom(re2->type) && re2->l && atom_null((atom*)re2->l)) {
-						assert(0); // old hack is gone ...
-					} else {
-						assert(lf && rf && a);
-						s = stmt_binop(be,
-							stmt_binop(be, l, r, lf),
-							stmt_binop(be, l, r2, rf), a);
-					}
-					if (is_anti(e)) {
-						sql_subfunc *a = sql_bind_func(sql->sa, sql->session->schema, "not", bt, NULL, F_FUNC);
-						s = stmt_unop(be, s, a);
-					}
-#if 0
-				} else if (((e->flag&3) != 3) /* both sides closed use between implementation */ && l->nrcols > 0 && r->nrcols > 0 && r2->nrcols > 0) {
-					s = stmt_uselect(be, l, r, range2lcompare(e->flag),
-					    stmt_uselect(be, l, r2, range2rcompare(e->flag), sel, is_anti(e), 0), is_anti(e), 0);
-#endif
-				} else {
-					if (sel && ((l->cand && l->nrcols) || (r->cand && r->nrcols) || (r2->cand && r->nrcols))) {
-						if (!l->cand && l->nrcols)
-							l = stmt_project(be, sel, l);
-						if (!r->cand && r->nrcols)
-							r = stmt_project(be, sel, r);
-						if (!r2->cand && r2->nrcols)
-							r2 = stmt_project(be, sel, r2);
-						sel = NULL;
-					}
-					if (l->nrcols == 0)
-						l = stmt_const(be, bin_first_column(be, left), l);
-					s = stmt_uselect2(be, l, r, r2, (comp_type)e->flag, sel, is_anti(e));
-				}
+			if (r2) { /* handle all cases in stmt_uselect,
+						 reducing, non reducing, scalar etc */
+				if (l->nrcols == 0 && left)
+					l = stmt_const(be, bin_first_column(be, left), l);
+				s = stmt_uselect2(be, l, r, r2, (comp_type)e->flag, sel, is_anti(e), reduce);
 			} else {
 				/* value compare or select */
 				if ((!reduce || (l->nrcols == 0 && r->nrcols == 0)) && (e->flag == mark_in || e->flag == mark_notin)) {
@@ -1120,13 +1088,17 @@ exp_bin(backend *be, sql_exp *e, stmt *left, stmt *right, stmt *grp, stmt *ext, 
 					sql_subfunc *f = sql_bind_func(sql->sa, sql->session->schema, in_flag?"=":"<>", tail_type(l), tail_type(l), F_FUNC);
 					assert(f);
 					s = stmt_binop(be, l, r, f);
+					if (l->cand)
+						s->cand = l->cand;
+					if (r->cand)
+						s->cand = r->cand;
 				} else if (!reduce || (l->nrcols == 0 && r->nrcols == 0)) {
 					sql_subfunc *f = sql_bind_func(sql->sa, sql->session->schema,
 							compare_func((comp_type)e->flag, is_anti(e)),
 							tail_type(l), tail_type(l), F_FUNC);
 					assert(f);
 					if (is_semantics(e)) {
-						if (exp_is_null(sql, e->l) && exp_is_null(sql, e->r)) {
+						if (exp_is_null(e->l) && exp_is_null(e->r)) {
 							s = stmt_bool(be, !is_anti(e));
 						} else {
 							list *args = sa_list(sql->sa);
@@ -1139,6 +1111,10 @@ exp_bin(backend *be, sql_exp *e, stmt *left, stmt *right, stmt *grp, stmt *ext, 
 					} else {
 						s = stmt_binop(be, l, r, f);
 					}
+					if (l->cand)
+						s->cand = l->cand;
+					if (r->cand)
+						s->cand = r->cand;
 				} else {
 					/* this can still be a join (as relational algebra and single value subquery results still means joins */
 					s = stmt_uselect(be, l, r, (comp_type)e->flag, sel, is_anti(e), is_semantics(e));
@@ -1263,45 +1239,6 @@ check_table_types(backend *be, list *types, stmt *s, check_type tpe)
 }
 #endif
 
-static void
-sql_convert_arg(mvc *sql, int nr, sql_subtype *rt)
-{
-	atom *a = sql_bind_arg(sql, nr);
-
-	if (atom_null(a)) {
-		if (a->data.vtype != rt->type->localtype) {
-			a->data.vtype = rt->type->localtype;
-			VALset(&a->data, a->data.vtype, (ptr) ATOMnilptr(a->data.vtype));
-		}
-	}
-	a->tpe = *rt;
-}
-
-/* try to do an inplace convertion
- *
- * inplace conversion is only possible if the s is an variable.
- * This is only done to be able to map more cached queries onto the same
- * interface.
- */
-static stmt *
-inplace_convert(backend *be, sql_subtype *ct, stmt *s)
-{
-	atom *a;
-
-	/* exclude named variables */
-	if (s->type != st_var || (s->op1 && s->op1->op4.aval->data.val.sval) ||
-		(ct->scale && ct->type->eclass != EC_FLT))
-		return s;
-
-	a = sql_bind_arg(be->mvc, s->flag);
-	if (atom_cast(be->mvc->sa, a, ct)) {
-		stmt *r = stmt_varnr(be, s->flag, ct);
-		sql_convert_arg(be->mvc, s->flag, ct);
-		return r;
-	}
-	return s;
-}
-
 static int
 stmt_set_type_param(mvc *sql, sql_subtype *type, stmt *param)
 {
@@ -1331,10 +1268,6 @@ check_types(backend *be, sql_subtype *ct, stmt *s, check_type tpe)
 	} else if (!st) {
 		return sql_error(sql, 02, SQLSTATE(42000) "statement has no type information");
 	}
-
-	/* first try cheap internal (inplace) convertions ! */
-	s = inplace_convert(be, ct, s);
-	t = st = tail_type(s);
 
 	/* check if the types are the same */
 	if (t && subtype_cmp(t, ct) != 0) {
@@ -1397,90 +1330,12 @@ sql_Nop_(backend *be, const char *fname, stmt *a1, stmt *a2, stmt *a3, stmt *a4)
 }
 
 static stmt *
-rel_parse_value(backend *be, char *query, char emode)
+parse_value(backend *be, char *query, sql_subtype *tpe, char emode)
 {
-	mvc *m = be->mvc;
-	mvc o = *m;
-	stmt *s = NULL;
-	buffer *b;
-	char *n;
-	size_t len = _strlen(query);
-	exp_kind ek = {type_value, card_value, FALSE};
-	stream *sr;
-	bstream *bs;
-
-	m->qc = NULL;
-
-	m->caching = 0;
-	m->emode = emode;
-	b = (buffer*)GDKmalloc(sizeof(buffer));
-	n = GDKmalloc(len + 1 + 1);
-	if (b == NULL || n == NULL) {
-		GDKfree(b);
-		GDKfree(n);
-		return sql_error(m, 02, SQLSTATE(HY013) MAL_MALLOC_FAIL);
-	}
-	snprintf(n, len + 2, "%s\n", query);
-	query = n;
-	len++;
-	buffer_init(b, query, len);
-	sr = buffer_rastream(b, "sqlstatement");
-	if (sr == NULL) {
-		buffer_destroy(b);
-		return sql_error(m, 02, SQLSTATE(HY013) MAL_MALLOC_FAIL);
-	}
-	bs = bstream_create(sr, b->len);
-	if(bs == NULL) {
-		buffer_destroy(b);
-		return sql_error(m, 02, SQLSTATE(HY013) MAL_MALLOC_FAIL);
-	}
-	scanner_init(&m->scanner, bs, NULL);
-	m->scanner.mode = LINE_1;
-	bstream_next(m->scanner.rs);
-
-	m->params = NULL;
-	/*m->args = NULL;*/
-	m->argc = 0;
-	m->sym = NULL;
-	m->errstr[0] = '\0';
-
-	(void) sqlparse(m);	/* blindly ignore errors */
-
-	/* get out the single value as we don't want an enclosing projection! */
-	if (m->sym->token == SQL_SELECT) {
-		SelectNode *sn = (SelectNode *)m->sym;
-		if (sn->selection->h->data.sym->token == SQL_COLUMN || sn->selection->h->data.sym->token == SQL_IDENT) {
-			sql_rel *rel = NULL;
-			sql_query *query = query_create(m);
-			sql_exp *e = rel_value_exp2(query, &rel, sn->selection->h->data.sym->data.lval->h->data.sym, sql_sel | sql_values, ek);
-
-			if (!rel)
-				s = exp_bin(be, e, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0, 0);
-		}
-	}
-	GDKfree(query);
-	GDKfree(b);
-	bstream_destroy(m->scanner.rs);
-
-	m->sym = NULL;
-	o.frames = m->frames;	/* may have been realloc'ed */
-	o.sizeframes = m->sizeframes;
-	o.query = m->query;
-	if (m->session->status || m->errstr[0]) {
-		int status = m->session->status;
-
-		strcpy(o.errstr, m->errstr);
-		*m = o;
-		m->session->status = status;
-	} else {
-		unsigned int label = m->label;
-
-		while (m->topframes > o.topframes)
-			clear_frame(m, m->frames[--m->topframes]);
-		*m = o;
-		m->label = label;
-	}
-	return s;
+	sql_exp *e = rel_parse_val(be->mvc, query, tpe, emode, NULL);
+	if (e)
+		return exp_bin(be, e, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0, 0);
+	return sql_error(be->mvc, 02, SQLSTATE(HY001) MAL_MALLOC_FAIL);
 }
 
 static stmt *
@@ -1697,17 +1552,6 @@ exp2bin_args(backend *be, sql_exp *e, list *args)
 			}
 			if (!list_find(args, nme, (fcmp)&alias_cmp)) {
 				stmt *s = stmt_var(be, vname->sname, vname->name, &e->tpe, 0, 0);
-
-				s = stmt_alias(be, s, NULL, sa_strdup(sql->sa, nme));
-				list_append(args, s);
-			}
-		} else {
-			char nme[16];
-
-			snprintf(nme, sizeof(nme), "A%u", e->flag);
-			if (!list_find(args, nme, (fcmp)&alias_cmp)) {
-				atom *a = sql->args[e->flag];
-				stmt *s = stmt_varnr(be, e->flag, &a->tpe);
 
 				s = stmt_alias(be, s, NULL, sa_strdup(sql->sa, nme));
 				list_append(args, s);
@@ -1968,7 +1812,7 @@ rel2bin_table(backend *be, sql_rel *rel, list *refs)
 		char name[16], *nme;
 		sql_rel *fr;
 
-		nme = number2name(name, sizeof(name), ++sql->remote);
+		nme = number2name(name, sizeof(name), ++be->remote);
 
 		l = rel2bin_args(be, rel->l, sa_list(sql->sa));
 		if (!l)
@@ -2078,9 +1922,9 @@ rel2bin_hash_lookup(backend *be, sql_rel *rel, stmt *left, stmt *right, sql_idx 
 	}
 	if (h && h->nrcols) {
 		if (!swap_rel) {
-			return stmt_join(be, idx, h, 0, cmp_equal, semantics, false);
+			return stmt_join(be, idx, h, 0, cmp_equal, 0, semantics, false);
 		} else {
-			return stmt_join(be, h, idx, 0, cmp_equal, semantics, false);
+			return stmt_join(be, h, idx, 0, cmp_equal, 0, semantics, false);
 		}
 	} else {
 		return stmt_uselect(be, idx, h, cmp_equal, NULL, 0, semantics);
@@ -2114,7 +1958,7 @@ join_hash_key( backend *be, list *l )
 }
 
 static stmt *
-releqjoin( backend *be, list *l1, list *l2, list *exps, int used_hash, comp_type cmp_op, int need_left, int is_semantics )
+releqjoin( backend *be, list *l1, list *l2, list *exps, int used_hash, int need_left, int is_semantics )
 {
 	mvc *sql = be->mvc;
 	node *n1 = l1->h, *n2 = l2->h, *n3 = NULL;
@@ -2130,9 +1974,7 @@ releqjoin( backend *be, list *l1, list *l2, list *exps, int used_hash, comp_type
 			e = n3->data;
 			is_semantics = is_semantics(e);
 		}
-		r =  stmt_join(be, l, r, 0, cmp_op, is_semantics, false);
-		if (need_left)
-			r->flag = cmp_left;
+		r =  stmt_join(be, l, r, 0, cmp_equal, need_left, is_semantics, false);
 		return r;
 	}
 	if (used_hash) {
@@ -2141,14 +1983,12 @@ releqjoin( backend *be, list *l1, list *l2, list *exps, int used_hash, comp_type
 		n1 = n1->next;
 		n2 = n2->next;
 		n3 = n3?n3->next:NULL;
-		res = stmt_join(be, l, r, 0, cmp_op, 1, false);
+		res = stmt_join(be, l, r, 0, cmp_equal, need_left, 1, false);
 	} else { /* need hash */
 		l = join_hash_key(be, l1);
 		r = join_hash_key(be, l2);
-		res = stmt_join(be, l, r, 0, cmp_op, 1, false);
+		res = stmt_join(be, l, r, 0, cmp_equal, need_left, 1, false);
 	}
-	if (need_left)
-		res->flag = cmp_left;
 	l = stmt_result(be, res, 0);
 	r = stmt_result(be, res, 1);
 	for (; n1 && n2; n1 = n1->next, n2 = n2->next, n3 = n3?n3->next:NULL) {
@@ -2179,7 +2019,7 @@ releqjoin( backend *be, list *l1, list *l2, list *exps, int used_hash, comp_type
 		l = stmt_project(be, cmp, l );
 		r = stmt_project(be, cmp, r );
 	}
-	res = stmt_join(be, l, r, 0, cmp_joined, 0, false);
+	res = stmt_join(be, l, r, 0, cmp_joined, 0, 0, false);
 	return res;
 }
 
@@ -2192,7 +2032,7 @@ split_join_exps(sql_rel *rel, list *joinable, list *not_joinable)
 			int left_reference = 0, right_reference = 0;
 
 			/* we can handle thetajoins, rangejoins and filter joins (like) */
-			/* ToDo how about mark_exists/not_exists and atom expressions? */
+			/* ToDo how about atom expressions? */
 			if (e->type == e_cmp) {
 				int flag = e->flag & ~CMP_BETWEEN;
 				/* check if its a select or join expression, ie use only expressions of one relation left and of the other right (than join) */
@@ -2200,17 +2040,32 @@ split_join_exps(sql_rel *rel, list *joinable, list *not_joinable)
 					/* join or select ? */
 					sql_exp *l = e->l, *r = e->r, *f = e->f;
 
-					if (l->card != CARD_ATOM) {
-						left_reference += rel_find_exp(rel->l, l) != NULL;
-						right_reference += rel_find_exp(rel->r, l) != NULL;
-					}
-					if (r->card != CARD_ATOM) {
-						left_reference += rel_find_exp(rel->l, r) != NULL;
-						right_reference += rel_find_exp(rel->r, r) != NULL;
-					}
-					if (f && f->card != CARD_ATOM) {
-						left_reference += rel_find_exp(rel->l, f) != NULL;
-						right_reference += rel_find_exp(rel->r, f) != NULL;
+					if (f) {
+						int ll = rel_find_exp(rel->l, l) != NULL;
+						int rl = rel_find_exp(rel->r, l) != NULL;
+						int lr = rel_find_exp(rel->l, r) != NULL;
+						int rr = rel_find_exp(rel->r, r) != NULL;
+						int lf = rel_find_exp(rel->l, f) != NULL;
+						int rf = rel_find_exp(rel->r, f) != NULL;
+						int nrcr1 = 0, nrcr2 = 0, nrcl1 = 0, nrcl2 = 0;
+
+						if ((ll && !rl &&
+						   ((rr && !lr) || (nrcr1 = r->card == CARD_ATOM)) &&
+						   ((rf && !lf) || (nrcr2 = f->card == CARD_ATOM)) && (nrcr1+nrcr2) <= 1) ||
+						    (rl && !ll &&
+						   ((lr && !rr) || (nrcl1 = r->card == CARD_ATOM)) &&
+						   ((lf && !rf) || (nrcl2 = f->card == CARD_ATOM)) && (nrcl1+nrcl2) <= 1)) {
+							left_reference = right_reference = 1;
+						}
+					} else {
+						if (l->card != CARD_ATOM) {
+							left_reference += rel_find_exp(rel->l, l) != NULL;
+							right_reference += rel_find_exp(rel->r, l) != NULL;
+						}
+						if (r->card != CARD_ATOM) {
+							left_reference += rel_find_exp(rel->l, r) != NULL;
+							right_reference += rel_find_exp(rel->r, r) != NULL;
+						}
 					}
 				} else if (flag == cmp_filter) {
 					list *l = e->l, *r = e->r;
@@ -2242,7 +2097,7 @@ split_join_exps(sql_rel *rel, list *joinable, list *not_joinable)
 	}
 }
 
-#define is_priority_exp(e) ((e)->type == e_cmp && (e)->flag == cmp_equal)
+#define is_equi_exp(e) ((e)->flag == cmp_equal || (e)->flag == mark_in || (e)->flag == mark_notin)
 
 static list *
 get_equi_joins_first(mvc *sql, list *exps, int *equality_only)
@@ -2251,17 +2106,18 @@ get_equi_joins_first(mvc *sql, list *exps, int *equality_only)
 
 	for( node *n = exps->h; n; n = n->next ) {
 		sql_exp *e = n->data;
-		if (is_priority_exp(e)) {
+
+		assert(e->type == e_cmp && e->flag != cmp_in && e->flag != cmp_notin && e->flag != cmp_or);
+		if (is_equi_exp(e))
 			list_append(new_exps, e);
-			*equality_only &= (e->flag == cmp_equal);
-		}
+		else
+			*equality_only = 0;
 	}
 	for( node *n = exps->h; n; n = n->next ) {
 		sql_exp *e = n->data;
-		if (!is_priority_exp(e)) {
+
+		if (!is_equi_exp(e))
 			list_append(new_exps, e);
-			*equality_only &= (e->flag == mark_in || e->flag == mark_notin);
-		}
 	}
 	return new_exps;
 }
@@ -2299,11 +2155,11 @@ rel2bin_join(backend *be, sql_rel *rel, list *refs)
 		if (list_empty(jexps)) { /* cross product and continue after project */
 			stmt *l = bin_first_column(be, left);
 			stmt *r = bin_first_column(be, right);
-			join = stmt_join(be, l, r, 0, cmp_all, 0, false);
+			join = stmt_join(be, l, r, 0, cmp_all, 0, 0, false);
 		}
 
 		if (join) {
-			en = rel->exps->h;
+			en = jexps->h;
 		} else {
 			list *lje = sa_list(sql->sa), *rje = sa_list(sql->sa), *exps = sa_list(sql->sa);
 			int used_hash = 0, idx = 0, equality_only = 1;
@@ -2312,7 +2168,7 @@ rel2bin_join(backend *be, sql_rel *rel, list *refs)
 			jexps = get_equi_joins_first(sql, jexps, &equality_only);
 			/* generate a relational join (releqjoin) which does a multi attribute (equi) join */
 			for( en = jexps->h; en; en = en->next ) {
-				int join_idx = sql->opt_stats[0];
+				int join_idx = be->join_idx;
 				sql_exp *e = en->data;
 				stmt *s = NULL;
 				prop *p;
@@ -2340,7 +2196,7 @@ rel2bin_join(backend *be, sql_rel *rel, list *refs)
 					assert(sql->session->status == -10); /* Stack overflow errors shouldn't terminate the server */
 					return NULL;
 				}
-				if (join_idx != sql->opt_stats[0])
+				if (join_idx != be->join_idx)
 					idx = 1;
 				assert(s->type == st_join || s->type == st_join2 || s->type == st_joinN);
 				if (!join)
@@ -2354,18 +2210,16 @@ rel2bin_join(backend *be, sql_rel *rel, list *refs)
 				list_append(exps, e);
 			}
 			if (list_length(lje) > 1) {
-				join = releqjoin(be, lje, rje, exps, used_hash, cmp_equal, need_left, 0);
-			} else if (!join) {
+				join = releqjoin(be, lje, rje, exps, used_hash, need_left, 0);
+			} else if (!join || need_left) {
 				sql_exp *e = exps->h->data;
-				join = stmt_join(be, lje->h->data, rje->h->data, 0, cmp_equal, is_semantics(e), false);
-				if (need_left)
-					join->flag = cmp_left;
+				join = stmt_join(be, lje->h->data, rje->h->data, 0, cmp_equal, need_left, is_semantics(e), false);
 			}
 		}
 	} else {
 		stmt *l = bin_first_column(be, left);
 		stmt *r = bin_first_column(be, right);
-		join = stmt_join(be, l, r, 0, cmp_all, 0, rel->single);
+		join = stmt_join(be, l, r, 0, cmp_all, 0, 0, rel->single);
 	}
 	jl = stmt_result(be, join, 0);
 	jr = stmt_result(be, join, 1);
@@ -2482,9 +2336,7 @@ rel2bin_join(backend *be, sql_rel *rel, list *refs)
 static int
 exp_is_mark(sql_exp *e)
 {
-	if (e->type == e_cmp &&
-		(e->flag == mark_in || e->flag == mark_notin ||
-		 e->flag == mark_exists || e->flag == mark_notexists))
+	if (e->type == e_cmp && (e->flag == mark_in || e->flag == mark_notin))
 		return 1;
 	return 0;
 }
@@ -2596,12 +2448,12 @@ rel2bin_semijoin(backend *be, sql_rel *rel, list *refs)
 			right = subrel_project(be, right, refs, rel->r);
 			stmt *l = bin_first_column(be, left);
 			stmt *r = bin_first_column(be, right);
-			join = stmt_join(be, l, r, 0, cmp_all, 0, false);
+			join = stmt_join(be, l, r, 0, cmp_all, 0, 0, false);
 			lcand = left->cand;
 		}
 
 		if (join) {
-			en = rel->exps->h;
+			en = jexps->h;
 		} else {
 			list *lje = sa_list(sql->sa), *rje = sa_list(sql->sa), *exps = sa_list(sql->sa);
 			int idx = 0, equality_only = 1;
@@ -2614,7 +2466,7 @@ rel2bin_semijoin(backend *be, sql_rel *rel, list *refs)
 			right = subrel_project(be, right, refs, rel->r);
 
 			for( en = jexps->h; en; en = en->next ) {
-				int join_idx = sql->opt_stats[0];
+				int join_idx = be->join_idx;
 				sql_exp *e = en->data;
 				stmt *s = NULL;
 
@@ -2624,7 +2476,7 @@ rel2bin_semijoin(backend *be, sql_rel *rel, list *refs)
 					if (!join && !list_length(lje)) {
 						stmt *l = bin_first_column(be, left);
 						stmt *r = bin_first_column(be, right);
-						join = stmt_join(be, l, r, 0, cmp_all, 0, false);
+						join = stmt_join(be, l, r, 0, cmp_all, 0, 0, false);
 					}
 					break;
 				}
@@ -2650,7 +2502,7 @@ rel2bin_semijoin(backend *be, sql_rel *rel, list *refs)
 
 					if (!l || !r)
 						return NULL;
-					s = stmt_join_cand(be, column(be, l), column(be, r), left->cand, NULL/*right->cand*/, e->anti, (comp_type) e->flag, is_semantics(e), false);
+					s = stmt_join_cand(be, column(be, l), column(be, r), left->cand, NULL/*right->cand*/, e->anti, (comp_type) e->flag, 0, is_semantics(e), false);
 					lcand = left->cand;
 				} else {
 					s = exp_bin(be, e, left, right, NULL, NULL, NULL, NULL, NULL, 0, 1);
@@ -2659,7 +2511,7 @@ rel2bin_semijoin(backend *be, sql_rel *rel, list *refs)
 					assert(sql->session->status == -10); /* Stack overflow errors shouldn't terminate the server */
 					return NULL;
 				}
-				if (join_idx != sql->opt_stats[0])
+				if (join_idx != be->join_idx)
 					idx = 1;
 				/* stop on first non equality join */
 				if (!join) {
@@ -2681,21 +2533,21 @@ rel2bin_semijoin(backend *be, sql_rel *rel, list *refs)
 				}
 			}
 			if (list_length(lje) > 1) {
-				join = releqjoin(be, lje, rje, exps, 0 /* no hash used */, cmp_equal, 0, 0);
+				join = releqjoin(be, lje, rje, exps, 0 /* use hash */, 0, 0);
 			} else if (!join && list_length(lje) == list_length(rje) && list_length(lje)) {
 				sql_exp *e = exps->h->data;
-				join = stmt_join(be, lje->h->data, rje->h->data, 0, cmp_equal, is_semantics(e), false);
+				join = stmt_join(be, lje->h->data, rje->h->data, 0, cmp_equal, 0, is_semantics(e), false);
 			} else if (!join) {
 				stmt *l = bin_first_column(be, left);
 				stmt *r = bin_first_column(be, right);
-				join = stmt_join(be, l, r, 0, cmp_all, 0, false);
+				join = stmt_join(be, l, r, 0, cmp_all, 0, 0, false);
 			}
 		}
 	} else {
 		right = subrel_project(be, right, refs, rel->r);
 		stmt *l = bin_first_column(be, left);
 		stmt *r = bin_first_column(be, right);
-		join = stmt_join(be, l, r, 0, cmp_all, 0, false);
+		join = stmt_join(be, l, r, 0, cmp_all, 0, 0, false);
 		lcand = left->cand;
 	}
 	jl = stmt_result(be, join, 0);
@@ -2958,7 +2810,7 @@ rel2bin_except(backend *be, sql_rel *rel, list *refs)
 		list_append(lje, l);
 		list_append(rje, r);
 	}
-	s = releqjoin(be, lje, rje, NULL, 1 /* cannot use hash */, cmp_equal, 0, 1 /*is_semantics*/);
+	s = releqjoin(be, lje, rje, NULL, 0 /* use hash */, 0, 1 /*is_semantics*/);
 	lm = stmt_result(be, s, 0);
 	rm = stmt_result(be, s, 1);
 
@@ -3069,7 +2921,7 @@ rel2bin_inter(backend *be, sql_rel *rel, list *refs)
 		list_append(lje, l);
 		list_append(rje, r);
 	}
-	s = releqjoin(be, lje, rje, NULL, 1 /* cannot use hash */, cmp_equal, 0, 1 /* is_semantics */);
+	s = releqjoin(be, lje, rje, NULL, 0 /* use hash */, 0, 1 /* is_semantics */);
 	lm = stmt_result(be, s, 0);
 	rm = stmt_result(be, s, 1);
 
@@ -3121,11 +2973,11 @@ sql_reorder(backend *be, stmt *order, stmt *s)
 }
 
 static sql_exp*
-topn_limit(mvc *sql, sql_rel *rel)
+topn_limit(sql_rel *rel)
 {
 	if (rel->exps) {
 		sql_exp *limit = rel->exps->h->data;
-		if (exp_is_null(sql, limit)) /* If the limit is NULL, ignore the value */
+		if (exp_is_null(limit)) /* If the limit is NULL, ignore the value */
 			return NULL;
 		return limit;
 	}
@@ -3153,7 +3005,7 @@ rel2bin_project(backend *be, sql_rel *rel, list *refs, sql_rel *topn)
 	stmt *l = NULL;
 
 	if (topn) {
-		sql_exp *le = topn_limit(sql, topn);
+		sql_exp *le = topn_limit(topn);
 		sql_exp *oe = topn_offset(topn);
 
 		if (!le) { /* Don't push only offset */
@@ -3510,7 +3362,7 @@ rel2bin_topn(backend *be, sql_rel *rel, list *refs)
 	if (!sub)
 		return NULL;
 
-	le = topn_limit(sql, rel);
+	le = topn_limit(rel);
 	oe = topn_offset(rel);
 
 	n = sub->op4.lval->h;
@@ -3597,131 +3449,14 @@ rel2bin_sample(backend *be, sql_rel *rel, list *refs)
 	return sub;
 }
 
-stmt *
-sql_parse(backend *be, sql_allocator *sa, const char *query, char mode)
+static stmt *
+sql_parse(backend *be, const char *query, char mode)
 {
-	mvc *m = be->mvc;
-	mvc *o = NULL;
+	sql_rel *r = rel_parse(be->mvc, be->mvc->session->schema, (char*)query, mode);
 	stmt *sq = NULL;
-	buffer *b;
-	char *nquery;
-	size_t len = _strlen(query);
-	stream *buf;
-	bstream * bst;
 
- 	if (THRhighwater())
-		return sql_error(m, 10, SQLSTATE(42000) "Query too complex: running out of stack space");
-
-	o = MNEW(mvc);
-	if (!o)
-		return NULL;
-	*o = *m;
-
-	m->qc = NULL;
-
-	m->caching = 0;
-	m->emode = mode;
-	be->depth++;
-
-	b = (buffer*)GDKmalloc(sizeof(buffer));
-	if (b == 0) {
-		*m = *o;
-		GDKfree(o);
-		return sql_error(m, 02, SQLSTATE(HY013) MAL_MALLOC_FAIL);
-	}
-	nquery = GDKmalloc(len + 1 + 1);
-	if (nquery == 0) {
-		*m = *o;
-		GDKfree(o);
-		GDKfree(b);
-		return sql_error(m, 02, SQLSTATE(HY013) MAL_MALLOC_FAIL);
-	}
-	snprintf(nquery, len + 2, "%s\n", query);
-	len++;
-	buffer_init(b, nquery, len);
-	buf = buffer_rastream(b, "sqlstatement");
-	if(buf == NULL) {
-		*m = *o;
-		GDKfree(o);
-		GDKfree(b);
-		GDKfree(nquery);
-		be->depth--;
-		return sql_error(m, 02, SQLSTATE(HY013) MAL_MALLOC_FAIL);
-	}
-	if((bst = bstream_create(buf, b->len)) == NULL) {
-		close_stream(buf);
-		*m = *o;
-		GDKfree(o);
-		GDKfree(b);
-		GDKfree(nquery);
-		be->depth--;
-		return sql_error(m, 02, SQLSTATE(HY013) MAL_MALLOC_FAIL);
-	}
-	scanner_init( &m->scanner, bst, NULL);
-	m->scanner.mode = LINE_1;
-	bstream_next(m->scanner.rs);
-
-	m->params = NULL;
-	m->argc = 0;
-	m->sym = NULL;
-	m->errstr[0] = '\0';
-	m->errstr[ERRSIZE-1] = '\0';
-
-	/* create private allocator */
-	m->sa = (sa)?sa:sa_create();
-	if (!m->sa) {
-		bstream_destroy(bst);
-		*m = *o;
-		GDKfree(o);
-		GDKfree(b);
-		GDKfree(nquery);
-		be->depth--;
-		return sql_error(m, 02, SQLSTATE(HY013) MAL_MALLOC_FAIL);
-	}
-
-	if (sqlparse(m) || !m->sym) {
-		/* oops an error */
-		snprintf(m->errstr, ERRSIZE, "An error occurred when executing "
-				"internal query: %s", nquery);
-	} else {
-		sql_query *query = query_create(m);
-		sql_rel *r = rel_semantic(query, m->sym);
-
-		if (r)
-			r = sql_processrelation(m, r, 1);
-		if (r)
-			sq = rel_bin(be, r);
-	}
-
-	GDKfree(nquery);
-	GDKfree(b);
-	bstream_destroy(m->scanner.rs);
-	be->depth--;
-	if (m->sa && m->sa != sa)
-		sa_destroy(m->sa);
-	m->sym = NULL;
-	{
-		unsigned int label = m->label;
-		int status = m->session->status;
-		list *global_vars = m->global_vars;
-		int sizeframes = m->sizeframes, topframes = m->topframes;
-		sql_frame **frames = m->frames;
-		/* cascade list maybe removed */
-		list *cascade_action = m->cascade_action;
-		char *mquery = m->query;
-
-		strcpy(o->errstr, m->errstr);
-		*m = *o;
-		m->label = label;
-		m->global_vars = global_vars;
-		m->sizeframes = sizeframes;
-		m->topframes = topframes;
-		m->frames = frames;
-		m->session->status = status;
-		m->cascade_action = cascade_action;
-		m->query = mquery;
-	}
-	_DELETE(o);
+	if (r && (r = rel_unnest(be->mvc ,r)) != NULL && (r = rel_optimizer(be->mvc , r, 1)) != NULL)
+		sq = rel_bin(be, r);
 	return sq;
 }
 
@@ -3781,7 +3516,7 @@ insert_check_ukey(backend *be, list *inserts, sql_key *k, stmt *idx_inserts)
 				list_append(lje, col);
 				list_append(rje, cs);
 			}
-			s = releqjoin(be, lje, rje, NULL, 1 /* hash used */, cmp_equal, 0, 0);
+			s = releqjoin(be, lje, rje, NULL, 1 /* hash used */, 0, 0);
 			s = stmt_result(be, s, 0);
 		}
 		s = stmt_binop(be, stmt_aggr(be, s, NULL, NULL, cnt, 1, 0, 1), stmt_atom_lng(be, 0), ne);
@@ -3790,13 +3525,26 @@ insert_check_ukey(backend *be, list *inserts, sql_key *k, stmt *idx_inserts)
 		if ((!idx_inserts && ins->nrcols) || (idx_inserts && idx_inserts->nrcols)) {	/* insert columns not atoms */
 			sql_subfunc *or = sql_bind_func_result(sql->sa, sql->session->schema, "or", F_FUNC, bt, 2, bt, bt);
 			stmt *orderby_ids = NULL, *orderby_grp = NULL;
+			stmt *sel = NULL;
 
+			/* remove any nils as in stmt_order NULL = NULL, instead of NULL != NULL */
+			if (k->type == ukey) {
+				for (m = k->columns->h; m; m = m->next) {
+					sql_kc *c = m->data;
+					stmt *cs = list_fetch(inserts, c->c->colnr);
+
+				   	if (stmt_has_null(cs))
+						sel = stmt_selectnonil(be, cs, sel);
+				}
+			}
 			/* implementation uses sort key check */
 			for (m = k->columns->h; m; m = m->next) {
 				sql_kc *c = m->data;
 				stmt *orderby;
 				stmt *cs = list_fetch(inserts, c->c->colnr);
 
+				if (sel)
+					cs = stmt_project(be, sel, cs);
 				if (orderby_grp)
 					orderby = stmt_reorder(be, cs, 1, 0, orderby_ids, orderby_grp);
 				else
@@ -3830,7 +3578,7 @@ insert_check_ukey(backend *be, list *inserts, sql_key *k, stmt *idx_inserts)
 			s = stmt_project(be, nn, s);
 		}
 		if (h->nrcols) {
-			s = stmt_join(be, s, h, 0, cmp_equal, 0, false);
+			s = stmt_join(be, s, h, 0, cmp_equal, 0, 0, false);
 			/* s should be empty */
 			s = stmt_result(be, s, 0);
 			s = stmt_aggr(be, s, NULL, NULL, cnt, 1, 0, 1);
@@ -3976,7 +3724,7 @@ sql_insert_triggers(backend *be, sql_table *t, stmt **updates, int time)
 				stack_pop_frame(sql);
 				return 0;
 			}
-			if (!sql_parse(be, sql->sa, trigger->statement, m_instantiate)) {
+			if (!sql_parse(be, trigger->statement, m_instantiate)) {
 				stack_pop_frame(sql);
 				return 0;
 			}
@@ -4221,7 +3969,7 @@ update_check_ukey(backend *be, stmt **updates, sql_key *k, stmt *tids, stmt *idx
 				list_append(lje, stmt_col(be, c->c, nu_tids, nu_tids->partition));
 				list_append(rje, upd);
 			}
-			s = releqjoin(be, lje, rje, NULL, 1 /* hash used */, cmp_equal, 0, 0);
+			s = releqjoin(be, lje, rje, NULL, 1 /* hash used */, 0, 0);
 			s = stmt_result(be, s, 0);
 			s = stmt_binop(be, stmt_aggr(be, s, NULL, NULL, cnt, 1, 0, 1), stmt_atom_lng(be, 0), ne);
 		}
@@ -4251,7 +3999,7 @@ update_check_ukey(backend *be, stmt **updates, sql_key *k, stmt *tids, stmt *idx
 
 				/* join groups with extend to retrieve all oid's of the original
 				 * bat that belong to a group with Cnt >1 */
-				g = stmt_join(be, grp, ext, 0, cmp_equal, 0, false);
+				g = stmt_join(be, grp, ext, 0, cmp_equal, 0, 0, false);
 				cand = stmt_result(be, g, 0);
 				grp = stmt_project(be, cand, grp);
 			}
@@ -4324,7 +4072,7 @@ update_check_ukey(backend *be, stmt **updates, sql_key *k, stmt *tids, stmt *idx
 
 			h = updates[c->c->colnr];
 			o = stmt_col(be, c->c, nu_tids, nu_tids->partition);
-			s = stmt_join(be, o, h, 0, cmp_equal, 0, false);
+			s = stmt_join(be, o, h, 0, cmp_equal, 0, 0, false);
 			s = stmt_result(be, s, 0);
 			s = stmt_binop(be, stmt_aggr(be, s, NULL, NULL, cnt, 1, 0, 1), stmt_atom_lng(be, 0), ne);
 		}
@@ -4488,7 +4236,7 @@ join_updated_pkey(backend *be, sql_key * k, stmt *tids, stmt **updates)
 	fdels = stmt_tid(be, k->idx->t, 0);
 	rows = stmt_idx(be, k->idx, fdels, fdels->partition);
 
-	rows = stmt_join(be, rows, tids, 0, cmp_equal, 0, false); /* join over the join index */
+	rows = stmt_join(be, rows, tids, 0, cmp_equal, 0, 0, false); /* join over the join index */
 	rows = stmt_result(be, rows, 0);
 
 	for (m = k->idx->columns->h, o = rk->columns->h; m && o; m = m->next, o = o->next) {
@@ -4515,7 +4263,7 @@ join_updated_pkey(backend *be, sql_key * k, stmt *tids, stmt **updates)
 		list_append(lje, upd);
 		list_append(rje, col);
 	}
-	s = releqjoin(be, lje, rje, NULL, 1 /* hash used */, cmp_equal, 0, 0);
+	s = releqjoin(be, lje, rje, NULL, 1 /* hash used */, 0, 0);
 	s = stmt_result(be, s, 0);
 
 	/* add missing nulls */
@@ -4553,17 +4301,11 @@ sql_delete_set_Fkeys(backend *be, sql_key *k, stmt *ftids /* to be updated rows 
 
 		if (action == ACT_SET_DEFAULT) {
 			if (fc->c->def) {
-				stmt *sq;
-				char *msg, *typestr = subtype2string2(&fc->c->type);
-				if(!typestr)
-					return sql_error(sql, 02, SQLSTATE(HY013) MAL_MALLOC_FAIL);
-				msg = sa_message(sql->sa, "select cast(%s as %s);", fc->c->def, typestr);
-				_DELETE(typestr);
-				sq = rel_parse_value(be, msg, sql->emode);
+				stmt *sq = parse_value(be, fc->c->def, &fc->c->type, sql->emode);
 				if (!sq)
 					return NULL;
 				upd = sq;
-			}  else {
+			} else {
 				upd = stmt_atom(be, atom_general(sql->sa, &fc->c->type, NULL));
 			}
 		} else {
@@ -4599,7 +4341,7 @@ sql_update_cascade_Fkeys(backend *be, sql_key *k, stmt *utids, stmt **updates, i
 	ftids = stmt_tid(be, k->idx->t, 0);
 	rows = stmt_idx(be, k->idx, ftids, ftids->partition);
 
-	rows = stmt_join(be, rows, utids, 0, cmp_equal, 0, false); /* join over the join index */
+	rows = stmt_join(be, rows, utids, 0, cmp_equal, 0, 0, false); /* join over the join index */
 	upd_ids = stmt_result(be, rows, 1);
 	rows = stmt_result(be, rows, 0);
 	rows = stmt_project(be, rows, ftids);
@@ -4616,13 +4358,7 @@ sql_update_cascade_Fkeys(backend *be, sql_key *k, stmt *utids, stmt **updates, i
 			upd = updates[c->c->colnr];
 		} else if (action == ACT_SET_DEFAULT) {
 			if (fc->c->def) {
-				stmt *sq;
-				char *msg, *typestr = subtype2string2(&fc->c->type);
-				if(!typestr)
-					return sql_error(sql, 02, SQLSTATE(HY013) MAL_MALLOC_FAIL);
-				msg = sa_message(sql->sa, "select cast(%s as %s);", fc->c->def, typestr);
-				_DELETE(typestr);
-				sq = rel_parse_value(be, msg, sql->emode);
+				stmt *sq = parse_value(be, fc->c->def, &fc->c->type, sql->emode);
 				if (!sq)
 					return NULL;
 				upd = sq;
@@ -4781,7 +4517,7 @@ join_idx_update(backend *be, sql_idx * i, stmt *ftids, stmt **updates, int updco
 		list_append(lje, check_types(be, &rc->c->type, upd, type_equal));
 		list_append(rje, stmt_col(be, rc->c, ptids, ptids->partition));
 	}
-	s = releqjoin(be, lje, rje, NULL, 0 /* use hash */, cmp_equal, 0, 0);
+	s = releqjoin(be, lje, rje, NULL, 0 /* use hash */, 0, 0);
 	l = stmt_result(be, s, 0);
 	r = stmt_result(be, s, 1);
 	r = stmt_project(be, r, ptids);
@@ -4930,7 +4666,7 @@ sql_update_triggers(backend *be, sql_table *t, stmt *tids, stmt **updates, int t
 				return 0;
 			}
 
-			if (!sql_parse(be, sql->sa, trigger->statement, m_instantiate)) {
+			if (!sql_parse(be, trigger->statement, m_instantiate)) {
 				stack_pop_frame(sql);
 				return 0;
 			}
@@ -5203,7 +4939,7 @@ sql_delete_triggers(backend *be, sql_table *t, stmt *tids, int time, int firing_
 				return 0;
 			}
 
-			if (!sql_parse(be, sql->sa, trigger->statement, m_instantiate)) {
+			if (!sql_parse(be, trigger->statement, m_instantiate)) {
 				stack_pop_frame(sql);
 				return 0;
 			}
@@ -5241,7 +4977,7 @@ sql_delete_ukey(backend *be, stmt *utids /* deleted tids from ukey table */, sql
 
 			tids = stmt_tid(be, fk->idx->t, 0);
 			s = stmt_idx(be, fk->idx, tids, tids->partition);
-			s = stmt_join(be, s, utids, 0, cmp_equal, 0, false); /* join over the join index */
+			s = stmt_join(be, s, utids, 0, cmp_equal, 0, 0, false); /* join over the join index */
 			s = stmt_result(be, s, 0);
 			tids = stmt_project(be, s, tids);
 			if(cascade) { /* for truncate statements with the cascade option */
@@ -5431,7 +5167,7 @@ check_for_foreign_key_references(mvc *sql, struct tablelist* list, struct tablel
 									found = 1;
 							}
 							if (!found) {
-								if ((new_node = MNEW(struct tablelist)) == NULL) {
+								if ((new_node = SA_NEW(sql->ta, struct tablelist)) == NULL) {
 									sql_error(sql, 02, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 									*error = 1;
 									return;
@@ -5465,7 +5201,7 @@ sql_truncate(backend *be, sql_table *t, int restart_sequences, int cascade)
 	sql_trans *tr = sql->session->tr;
 	node *n = NULL;
 	int error = 0;
-	struct tablelist* new_list = MNEW(struct tablelist), *list_node, *aux;
+	struct tablelist* new_list = SA_NEW(sql->ta, struct tablelist), *list_node;
 
 	if (!new_list) {
 		sql_error(sql, 02, SQLSTATE(HY013) MAL_MALLOC_FAIL);
@@ -5487,7 +5223,7 @@ sql_truncate(backend *be, sql_table *t, int restart_sequences, int cascade)
 			for (n = next->columns.set->h; n; n = n->next) {
 				col = n->data;
 				if (col->def && (seq_pos = strstr(col->def, next_value_for))) {
-					seq_name = _STRDUP(seq_pos + (strlen(next_value_for) - strlen("seq_")));
+					seq_name = sa_strdup(sql->ta, seq_pos + (strlen(next_value_for) - strlen("seq_")));
 					if (!seq_name) {
 						sql_error(sql, 02, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 						error = 1;
@@ -5504,7 +5240,6 @@ sql_truncate(backend *be, sql_table *t, int restart_sequences, int cascade)
 						seq->base.wtime = sche->base.wtime = tr->wtime = tr->wstime;
 						tr->schema_updates++;
 					}
-					_DELETE(seq_name);
 				}
 			}
 		}
@@ -5559,12 +5294,7 @@ sql_truncate(backend *be, sql_table *t, int restart_sequences, int cascade)
 	}
 
 finalize:
-	for (list_node = new_list; list_node;) {
-		aux = list_node->next;
-		_DELETE(list_node);
-		list_node = aux;
-	}
-
+	sa_reset(sql->ta);
 	if (error)
 		return NULL;
 	return ret;
@@ -6119,6 +5849,7 @@ output_rel_bin(backend *be, sql_rel *rel )
 	mapi_query_t sqltype = sql->type;
 	stmt *s;
 
+	be->join_idx = 0;
 	if (refs == NULL)
 		return NULL;
 	s = subrel_bin(be, rel, refs);

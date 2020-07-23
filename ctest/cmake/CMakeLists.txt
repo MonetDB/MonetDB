@@ -8,8 +8,6 @@
 
 # For now these tests only work on special docker containers.
 
-#project(MonetDB-unittest LANGUAGES C)
-
 include(os_release_info)
 
 if(${CMAKE_SYSTEM_NAME} STREQUAL "Linux")
@@ -47,3 +45,10 @@ include(${CMAKE_CURRENT_SOURCE_DIR}/detect-pthreadsig.cmake)
 
 include(${CMAKE_CURRENT_SOURCE_DIR}/set-dir-vars.cmake)
 include(${CMAKE_CURRENT_SOURCE_DIR}/set-cmake-vars.cmake)
+
+assert_legacy_variable_exists(
+  legacy_variablename HAVE_FITS
+  variablename CFITSIO_FOUND)
+assert_legacy_variable_exists(
+  legacy_variablename HAVE_CURL
+  variablename CURL_FOUND)

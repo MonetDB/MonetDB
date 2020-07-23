@@ -38,7 +38,6 @@ timestamp_dbat( sql_dbat *d, int ts)
 {
 	while (d->next && d->wtime > ts)
 		d = d->next;
-	sql_ref_inc(&d->r);
 	return d;
 }
 
@@ -133,7 +132,7 @@ bind_uidx(sql_trans *tr, sql_idx * i, int access)
 		i->t->data = timestamp_dbat(ot->data, i->t->base.stime);
 	}
 	assert(tr != gtrans);
-	i->base.rtime = i->t->base.rtime = i->t->s->base.rtime = tr->rtime = tr->stime;
+	i->base.rtime = i->t->base.rtime = i->t->s->base.rtime = tr->stime;
 	u = delta_bind_ubat(i->data, access, (oid_index(i->type))?TYPE_oid:TYPE_lng);
 	return u;
 }
@@ -221,7 +220,7 @@ bind_col(sql_trans *tr, sql_column *c, int access)
 		return bind_ucol(tr, c, access);
 	assert(access == QUICK || tr != gtrans);
 	if (tr && access != QUICK)
-		c->base.rtime = c->t->base.rtime = c->t->s->base.rtime = tr->rtime = tr->stime;
+		c->base.rtime = c->t->base.rtime = c->t->s->base.rtime = tr->stime;
 	return delta_bind_bat( c->data, access, isTemp(c));
 }
 
@@ -239,7 +238,7 @@ bind_idx(sql_trans *tr, sql_idx * i, int access)
 		return bind_uidx(tr, i, access);
 	assert(access == QUICK || tr != gtrans);
 	if (tr && access != QUICK)
-		i->base.rtime = i->t->base.rtime = i->t->s->base.rtime = tr->rtime = tr->stime;
+		i->base.rtime = i->t->base.rtime = i->t->s->base.rtime = tr->stime;
 	return delta_bind_bat( i->data, access, isTemp(i));
 }
 
@@ -624,7 +623,7 @@ update_col(sql_trans *tr, sql_column *c, void *tids, void *upd, int tpe)
 	bat = c->data;
 	bat->wtime = c->base.wtime = c->t->base.wtime = c->t->s->base.wtime = tr->wtime = tr->wstime;
 	assert(tr != gtrans);
-	c->base.rtime = c->t->base.rtime = c->t->s->base.rtime = tr->rtime = tr->stime;
+	c->base.rtime = c->t->base.rtime = c->t->s->base.rtime = tr->stime;
 	if (tpe == TYPE_bat)
 		return delta_update_bat(bat, tids, upd, isNew(c));
 	else
@@ -664,7 +663,7 @@ update_idx(sql_trans *tr, sql_idx * i, void *tids, void *upd, int tpe)
 	bat = i->data;
 	bat->wtime = i->base.wtime = i->t->base.wtime = i->t->s->base.wtime = tr->wtime = tr->wstime;
 	assert(tr != gtrans);
-	i->base.rtime = i->t->base.rtime = i->t->s->base.rtime = tr->rtime = tr->stime;
+	i->base.rtime = i->t->base.rtime = i->t->s->base.rtime = tr->stime;
 	if (tpe == TYPE_bat)
 		return delta_update_bat(bat, tids, upd, isNew(i));
 	else
@@ -812,7 +811,6 @@ dup_idx(sql_trans *tr, sql_idx *i, sql_idx *ni )
 static int
 dup_dbat( sql_trans *tr, sql_dbat *obat, sql_dbat *bat, int is_new, int temp)
 {
-	sql_ref_init(&bat->r);
 	bat->dbid = obat->dbid;
 	bat->cnt = obat->cnt;
 	bat->dname = _STRDUP(obat->dname);
@@ -958,6 +956,36 @@ delta_delete_val( sql_dbat *bat, oid rid )
 	return LOG_OK;
 }
 
+static void
+_destroy_dbat(sql_dbat *bat)
+{
+	if (bat->dname)
+		_DELETE(bat->dname);
+	if (bat->dbid)
+		temp_destroy(bat->dbid);
+	if (bat->cached) {
+		bat_destroy(bat->cached);
+		bat->cached = NULL;
+	}
+	bat->dbid = 0;
+	bat->dname = NULL;
+	_DELETE(bat);
+}
+
+static int
+destroy_dbat(sql_trans *tr, sql_dbat *bat)
+{
+	sql_dbat *n;
+
+	(void)tr;
+	while(bat) {
+		n = bat->next;
+		_destroy_dbat(bat);
+		bat = n;
+	}
+	return LOG_OK;
+}
+
 static int
 bind_del_data(sql_trans *tr, sql_table *t)
 {
@@ -1042,13 +1070,14 @@ count_col(sql_trans *tr, sql_column *c, int all)
 {
 	sql_delta *b;
 
+	assert(tr->active || tr == gtrans);
 	if (!isTable(c->t))
 		return 0;
 	if (!c->data) {
 		sql_column *oc = tr_find_column(tr->parent, c);
 		c->data = timestamp_delta(oc->data, c->base.stime);
 	}
-        b = c->data;
+	b = c->data;
 	if (!b)
 		return 1;
 	if (all)
@@ -1062,6 +1091,7 @@ dcount_col(sql_trans *tr, sql_column *c)
 {
 	sql_delta *b;
 
+	assert(tr->active || tr == gtrans);
 	if (!isTable(c->t))
 		return 0;
 	if (!c->data) {
@@ -1097,6 +1127,7 @@ count_idx(sql_trans *tr, sql_idx *i, int all)
 {
 	sql_delta *b;
 
+	assert(tr->active || tr == gtrans);
 	if (!isTable(i->t) || (hash_index(i->type) && list_length(i->columns) <= 1) || !idx_has_column(i->type))
 		return 0;
 	if (!i->data) {
@@ -1117,6 +1148,7 @@ count_del(sql_trans *tr, sql_table *t)
 {
 	sql_dbat *d;
 
+	assert(tr->active || tr == gtrans);
 	if (!isTable(t))
 		return 0;
 	if (!t->data) {
@@ -1134,6 +1166,7 @@ count_col_upd(sql_trans *tr, sql_column *c)
 {
 	sql_delta *b;
 
+	assert(tr->active || tr == gtrans);
 	assert (isTable(c->t)) ;
 	if (!c->data) {
 		sql_column *oc = tr_find_column(tr->parent, c);
@@ -1150,6 +1183,7 @@ count_idx_upd(sql_trans *tr, sql_idx *i)
 {
 	sql_delta *b;
 
+	assert(tr->active || tr == gtrans);
 	if (!isTable(i->t) || (hash_index(i->type) && list_length(i->columns) <= 1) || !idx_has_column(i->type))
 		return 0;
 	if (!i->data) {
@@ -1168,6 +1202,7 @@ count_upd(sql_trans *tr, sql_table *t)
 {
 	node *n;
 
+	assert(tr->active || tr == gtrans);
 	if (!isTable(t))
 		return 0;
 
@@ -1194,6 +1229,7 @@ sorted_col(sql_trans *tr, sql_column *col)
 {
 	int sorted = 0;
 
+	assert(tr->active || tr == gtrans);
 	if (!isTable(col->t) || !col->t->s)
 		return 0;
 	/* fallback to central bat */
@@ -1204,9 +1240,30 @@ sorted_col(sql_trans *tr, sql_column *col)
 		BAT *b = bind_col(tr, col, QUICK);
 
 		if (b)
-			sorted = BATtordered(b);
+			sorted = BATtordered(b) || BATtrevordered(b);
 	}
 	return sorted;
+}
+
+static int
+unique_col(sql_trans *tr, sql_column *col)
+{
+	int distinct = 0;
+
+	assert(tr->active || tr == gtrans);
+	if (!isTable(col->t) || !col->t->s)
+		return 0;
+	/* fallback to central bat */
+	if (tr && tr->parent && !col->data && col->po)
+		col = col->po;
+
+	if (col && col->data) {
+		BAT *b = bind_col(tr, col, QUICK);
+
+		if (b)
+			distinct = b->tkey;
+	}
+	return distinct;
 }
 
 static int
@@ -1214,6 +1271,7 @@ double_elim_col(sql_trans *tr, sql_column *col)
 {
 	int de = 0;
 
+	assert(tr->active || tr == gtrans);
 	if (!isTable(col->t) || !col->t->s)
 		return 0;
 	/* fallback to central bat */
@@ -1432,7 +1490,6 @@ create_col(sql_trans *tr, sql_column *c)
 	}
 
 	if (!isNew(c) && !isTempTable(c->t)){
-		c->base.wtime = 0;
 		return load_bat(bat, type, c->t->bootstrap?0:LOG_COL, c->base.id);
 	} else if (bat && bat->ibid && !isTempTable(c->t)) {
 		return new_persistent_bat(tr, c->data, c->t->sz);
@@ -1532,7 +1589,6 @@ create_idx(sql_trans *tr, sql_idx *ni)
 	}
 
 	if (!isNew(ni) && !isTempTable(ni->t)){
-		ni->base.wtime = 0;
 		return load_bat(bat, type, ni->t->bootstrap?0:LOG_IDX, ni->base.id);
 	} else if (bat && bat->ibid && !isTempTable(ni->t)) {
 		return new_persistent_bat( tr, ni->data, ni->t->sz);
@@ -1628,7 +1684,6 @@ create_del(sql_trans *tr, sql_table *t)
 			return LOG_ERR;
 		bat->wtime = t->base.wtime = t->s->base.wtime = tr->wstime;
 		t->base.allocated = 1;
-		sql_ref_init(&bat->r);
 	}
 	if (!bat->dname) {
 		bat->dname = sql_message("D_%s_%s", t->s->base.name, t->base.name);
@@ -1640,7 +1695,6 @@ create_del(sql_trans *tr, sql_table *t)
 		log_bid bid = logger_find_bat(bat_logger, bat->dname, t->bootstrap?0:LOG_TAB, t->base.id);
 
 		if (bid) {
-			t->base.wtime = 0;
 			return load_dbat(bat, bid);
 		}
 		ok = LOG_ERR;
@@ -1812,38 +1866,6 @@ log_destroy_idx(sql_trans *tr, sql_idx *i)
 	return LOG_OK;
 }
 
-static void
-_destroy_dbat(sql_dbat *bat)
-{
-	if (sql_ref_dec(&bat->r) > 0)
-		return;
-	if (bat->dname)
-		_DELETE(bat->dname);
-	if (bat->dbid)
-		temp_destroy(bat->dbid);
-	if (bat->cached) {
-		bat_destroy(bat->cached);
-		bat->cached = NULL;
-	}
-	bat->dbid = 0;
-	bat->dname = NULL;
-	_DELETE(bat);
-}
-
-static int
-destroy_dbat(sql_trans *tr, sql_dbat *bat)
-{
-	sql_dbat *n;
-
-	(void)tr;
-	while(bat) {
-		n = bat->next;
-		_destroy_dbat(bat);
-		bat = n;
-	}
-	return LOG_OK;
-}
-
 static int
 cleanup(void)
 {
@@ -1885,9 +1907,9 @@ delayed_destroy_dbat(sql_dbat *b)
 
 	if (!n)
 		return LOG_OK;
+	MT_lock_set(&destroy_lock);
 	while(n->next)
 		n = n->next;
-	MT_lock_set(&destroy_lock);
 	n->next = tobe_destroyed_dbat;
 	tobe_destroyed_dbat = b;
 	MT_lock_unset(&destroy_lock);
@@ -2672,6 +2694,7 @@ update_table(sql_trans *tr, sql_table *ft, sql_table *tt)
 			if (!tt->data)
 				tt->base.allocated = ft->base.allocated;
 			ft->data = NULL;
+			assert(!b->next);
 			b->next = tt->data;
 			tt->data = b;
 
@@ -2702,6 +2725,7 @@ update_table(sql_trans *tr, sql_table *ft, sql_table *tt)
 				ok = LOG_ERR;
 			ft->data = NULL;
 		} else if (ft->data) {
+			assert(!tt->data);
 			tt->data = ft->data;
 			tt->base.allocated = 1;
 			ft->data = NULL;
@@ -2714,7 +2738,7 @@ update_table(sql_trans *tr, sql_table *ft, sql_table *tt)
 		sql_column *oc = m->data;
 
 		if (ATOMIC_GET(&store_nr_active) == 1 || (cc->base.wtime && cc->base.allocated)) {
-			assert(!cc->base.wtime || oc->base.wtime < cc->base.wtime);
+			assert(!cc->base.wtime || oc->base.wtime < cc->base.wtime || (oc->base.wtime == cc->base.wtime && oc->base.allocated /* alter */));
 			if (ATOMIC_GET(&store_nr_active) > 1 && cc->data) { /* move delta */
 				sql_delta *b = cc->data;
 				sql_column *oldc = NULL;
@@ -2722,6 +2746,7 @@ update_table(sql_trans *tr, sql_table *ft, sql_table *tt)
 				if (!oc->data)
 					oc->base.allocated = cc->base.allocated;
 				cc->data = NULL;
+				assert(!b->next);
 				b->next = oc->data;
 				oc->data = b;
 				tr_handle_snapshot(tr, b);
@@ -2810,6 +2835,7 @@ update_table(sql_trans *tr, sql_table *ft, sql_table *tt)
 					if (!oi->data)
 						oi->base.allocated = ci->base.allocated;
 					ci->data = NULL;
+					assert(!b->next);
 					b->next = oi->data;
 					oi->data = b;
 					tr_handle_snapshot(tr, b);
@@ -2864,6 +2890,7 @@ update_table(sql_trans *tr, sql_table *ft, sql_table *tt)
 	if (ft->data)
 		destroy_del(tr, ft);
 	ft->base.allocated = 0;
+	ft->data = NULL;
 	return ok;
 }
 
@@ -3095,6 +3122,7 @@ bat_storage_init( store_functions *sf)
 	sf->count_idx = (count_idx_fptr)&count_idx;
 	sf->dcount_col = (dcount_col_fptr)&dcount_col;
 	sf->sorted_col = (prop_col_fptr)&sorted_col;
+	sf->unique_col = (prop_col_fptr)&unique_col;
 	sf->double_elim_col = (prop_col_fptr)&double_elim_col;
 
 	sf->create_col = (create_col_fptr)&create_col;

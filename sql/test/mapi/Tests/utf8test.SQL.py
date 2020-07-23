@@ -5,10 +5,10 @@ try:
 except ImportError:
     import process
 
-def client(args, universal_newlines = True):
+def client(args, text=True):
     with process.client('sql', args=args,
                          stdout=process.PIPE, stderr=process.PIPE,
-                         universal_newlines=universal_newlines) as clt:
+                         text=text) as clt:
         return clt.communicate()
 
 def printit(file, string):
@@ -37,7 +37,7 @@ out, err = client(['-Eutf-8', '-fsql', '-s', 'select * from utf8test'])
 printit(sys.stdout, out)
 printit(sys.stderr, err)
 out, err = client(['-fraw', '-Eiso-8859-1', '-s', 'select * from utf8test'],
-                  universal_newlines = False)
+                  text=False)
 out = out.decode('iso-8859-1')
 err = err.decode('iso-8859-1')
 if sys.version_info[0] == 2:
@@ -46,7 +46,7 @@ if sys.version_info[0] == 2:
 printit(sys.stdout, out)
 printit(sys.stderr, err)
 out, err = client(['-fsql', '-Eiso-8859-1', '-s', 'select * from utf8test'],
-                  universal_newlines = False)
+                  text=False)
 out = out.decode('iso-8859-1')
 err = err.decode('iso-8859-1')
 if sys.version_info[0] == 2:
@@ -55,7 +55,7 @@ if sys.version_info[0] == 2:
 printit(sys.stdout, out)
 printit(sys.stderr, err)
 out, err = client(['-fraw', '-Eus-ascii', '-s', 'select * from utf8test'],
-                  universal_newlines = False)
+                  text=False)
 out = out.decode('us-ascii')
 err = err.decode('us-ascii')
 if sys.version_info[0] == 2:
@@ -64,7 +64,7 @@ if sys.version_info[0] == 2:
 printit(sys.stdout, out)
 printit(sys.stderr, err)
 out, err = client(['-fsql', '-Eus-ascii', '-s', 'select * from utf8test'],
-                  universal_newlines = False)
+                  text=False)
 out = out.decode('us-ascii')
 err = err.decode('us-ascii')
 if sys.version_info[0] == 2:

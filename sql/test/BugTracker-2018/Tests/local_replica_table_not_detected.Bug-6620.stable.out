@@ -31,18 +31,14 @@ union (
 | | crossproduct (
 | | | table(sys.s2) [ "s2"."i" as "reps"."i", "s2"."%TID%" NOT NULL as "reps"."%TID%" ],
 | | | table (
-| | | | project (
-| | | | | REMOTE(sys.t1) [ "t1"."s" as "mrgt"."s" ] COUNT 
-| | | | ) [ "mrgt"."s" ] REMOTE sys.t1
+| | | | REMOTE(sys.t1) [ "t1"."s" as "mrgt"."s" ] REMOTE sys.t1 COUNT 
 | | | ) [ "mrgt"."s" ]
 | | ) [  ]
 | ) [ "reps"."i", "mrgt"."s" ],
 | project (
 | | crossproduct (
 | | | table(sys.s2) [ "s2"."i" as "reps"."i", "s2"."%TID%" NOT NULL as "reps"."%TID%" ],
-| | | project (
-| | | | table(sys.t2) [ "t2"."s" as "mrgt"."s" ] COUNT 
-| | | ) [ "mrgt"."s" ]
+| | | table(sys.t2) [ "t2"."s" as "mrgt"."s" ] COUNT 
 | | ) [  ]
 | ) [ "reps"."i", "mrgt"."s" ]
 ) [ "reps"."i", "mrgt"."s" ]

@@ -32,6 +32,7 @@ typedef struct list {
 } list;
 
 typedef int (*traverse_func) (void *clientdata, int seqnr, void *data);
+typedef int (*prop_check_func) (void *data);
 
 extern list *list_create(fdestroy destroy);
 sql_export list *sa_list(sql_allocator *sa);
@@ -53,6 +54,8 @@ extern void list_move_data(list *l, list *d, void *data);
 
 extern int list_traverse(list *l, traverse_func f, void *clientdata);
 
+extern int list_check_prop_all(list *l, prop_check_func f);
+
 /* the compare function gets one element from the list and a key from the
  * as input from the find function
  * Returns 0 if data and key are equal
@@ -71,7 +74,7 @@ extern void *list_append_with_validate(list *l, void *data, fvalidate cmp);
 extern void *list_append_sorted(list *l, void *data, void *extra, fcmpvalidate cmp);
 extern node *list_find(list *l, void *key, fcmp cmp);
 extern int  list_position(list *l, void *val);
-extern void *list_fetch(list *l, int pos);
+sql_export void *list_fetch(list *l, int pos);
 extern list *list_select(list *l, void *key, fcmp cmp, fdup dup);
 extern list *list_order(list *l, fcmp cmp, fdup dup);
 extern list *list_distinct(list *l, fcmp cmp, fdup dup);

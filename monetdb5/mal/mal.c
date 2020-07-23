@@ -17,10 +17,6 @@ stream *maleventstream = 0;
 /* The compile time debugging flags are turned into bit masks, akin to GDK */
 lng MALdebug;
 
-#ifdef HAVE_HGE
-int have_hge = 1;
-#endif
-
 #include "mal_stack.h"
 #include "mal_linker.h"
 #include "mal_authorize.h"
@@ -49,10 +45,19 @@ MT_Lock     mal_oltpLock = MT_LOCK_INITIALIZER("mal_oltpLock");
  * Initialization of the MAL context
  */
 
-int mal_init(char *modules[], int embedded){
+int
+mal_init(char *modules[], int embedded)
+{
 /* Any error encountered here terminates the process
  * with a message sent to stderr
  */
+	str err;
+
+	if ((err = AUTHinitTables(NULL)) != MAL_SUCCEED) {
+		freeException(err);
+		return -1;
+	}
+
 	if (!MCinit())
 		return -1;
 #ifndef NDEBUG
@@ -64,7 +69,8 @@ int mal_init(char *modules[], int embedded){
 	initNamespace();
 	initParser();
 	initHeartbeat();
-	str err = malBootstrap(modules, embedded);
+
+	err = malBootstrap(modules, embedded);
 	if (err != MAL_SUCCEED) {
 		mal_client_reset();
 #ifndef NDEBUG

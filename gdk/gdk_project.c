@@ -542,7 +542,8 @@ BATprojectchain(BAT **bats)
 		};
 		allnil |= b->ttype == TYPE_void && is_oid_nil(b->tseqbase);
 		issorted &= b->tsorted;
-		nonil &= b->tnonil;
+		if (bats[n + 1])
+			nonil &= b->tnonil;
 		if (b->tnonil && b->tkey && b->tsorted &&
 		    ATOMtype(b->ttype) == TYPE_oid) {
 			canditer_init(&ba[n].ci, NULL, b);
@@ -634,7 +635,7 @@ BATprojectchain(BAT **bats)
 		}
 		if (stringtrick) {
 			bn->tnil = false;
-			bn->tnonil = nonil;
+			bn->tnonil = b->tnonil;
 			bn->tkey = false;
 			BBPshare(b->tvheap->parentid);
 			bn->tvheap = b->tvheap;
@@ -683,7 +684,7 @@ BATprojectchain(BAT **bats)
 	BATsetcount(bn, ba[0].cnt);
 	bn->tsorted = (ba[0].cnt <= 1) | issorted;
 	bn->trevsorted = ba[0].cnt <= 1;
-	bn->tnonil = nonil;
+	bn->tnonil = nonil & b->tnonil;
 	bn->tseqbase = oid_nil;
 	GDKfree(ba);
 	TRC_DEBUG(ALGO, "with %d bats: " ALGOOPTBATFMT " " LLFMT " usec\n",

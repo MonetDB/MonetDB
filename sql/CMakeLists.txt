@@ -12,3 +12,10 @@ add_subdirectory(include)
 add_subdirectory(scripts)
 add_subdirectory(server)
 add_subdirectory(storage)
+
+install(FILES
+  dump-restore.html
+  dump-restore.txt
+  DESTINATION
+  ${CMAKE_INSTALL_DATAROOTDIR}/doc/MonetDB-SQL
+  COMPONENT sql)

@@ -10,7 +10,6 @@
 #include "gdk.h"
 #include "gdk_private.h"
 #include "gdk_calc_private.h"
-#include <math.h>
 
 /* Define symbol FULL_IMPLEMENTATION to get implementations for all
  * sensible output types for +, -, *, /.  Without the symbol, all
@@ -982,12 +981,12 @@ BATcalcisnil_implementation(BAT *b, BAT *s, BAT *r, bool notnil)
 	}
 
 	if (b->tnonil || BATtdense(b)) {
-		return BATconstant(ci.hseq, TYPE_bit, &(bit){0},
+		return BATconstant(ci.hseq, TYPE_bit, &(bit){notnil},
 				   ncand, TRANSIENT);
 	} else if (b->ttype == TYPE_void) {
 		/* non-nil handled above */
 		assert(is_oid_nil(b->tseqbase));
-		return BATconstant(ci.hseq, TYPE_bit, &(bit){1},
+		return BATconstant(ci.hseq, TYPE_bit, &(bit){!notnil},
 				   ncand, TRANSIENT);
 	}
 
@@ -1039,9 +1038,14 @@ BATcalcisnil_implementation(BAT *b, BAT *s, BAT *r, bool notnil)
 
 	/* If b sorted, all nils are at the start, i.e. bn starts with
 	 * 1's and ends with 0's, hence bn is revsorted.  Similarly
-	 * for revsorted. */
-	bn->tsorted = b->trevsorted;
-	bn->trevsorted = b->tsorted;
+	 * for revsorted. At the notnil case, these properties remain the same */
+	if (notnil) {
+		bn->tsorted = b->tsorted;
+		bn->trevsorted = b->trevsorted;
+	} else {
+		bn->tsorted = b->trevsorted;
+		bn->trevsorted = b->tsorted;
+	}
 	bn->tnil = nils != 0;
 	bn->tnonil = nils == 0;
 	bn->tkey = ncand <= 1;
@@ -13201,9 +13205,6 @@ BATcalcbetweenbatcst(BAT *b, BAT *lo, const ValRecord *hi, BAT *s, BAT *slo, BAT
 
 	BATcheck(b, NULL);
 	BATcheck(lo, NULL);
-
-	if (checkbats(b, lo, __func__) != GDK_SUCCEED)
-		return NULL;
 
 	if (ATOMbasetype(b->ttype) != ATOMbasetype(hi->vtype)) {
 		GDKerror("incompatible input types.\n");

@@ -399,7 +399,7 @@ stdout of test 'date` in directory 'sql/test/pg_regress` itself:
 [ NULL,	NULL	]
 #SELECT f1, cast(f1 as timestamp) FROM DATE_TBL;
 % sys.date_tbl,	sys.%1 # table_name
-% f1,	f1 # name
+% f1,	%1 # name
 % date,	timestamp # type
 % 10,	26 # length
 [ 1957-04-09,	1957-04-09 00:00:00.000000	]
@@ -419,8 +419,8 @@ stdout of test 'date` in directory 'sql/test/pg_regress` itself:
 [ 2040-04-10,	2040-04-10 00:00:00.000000	]
 [ NULL,	NULL	]
 #SELECT f1, "hour"(cast(f1 as timestamp)) FROM DATE_TBL;
-% sys.date_tbl,	sys.%1 # table_name
-% f1,	%1 # name
+% sys.date_tbl,	sys.%2 # table_name
+% f1,	%2 # name
 % date,	int # type
 % 10,	1 # length
 [ 1957-04-09,	0	]
@@ -440,8 +440,8 @@ stdout of test 'date` in directory 'sql/test/pg_regress` itself:
 [ 2040-04-10,	0	]
 [ NULL,	NULL	]
 #SELECT f1, "minute"(cast(f1 as timestamp)) FROM DATE_TBL;
-% sys.date_tbl,	sys.%1 # table_name
-% f1,	%1 # name
+% sys.date_tbl,	sys.%2 # table_name
+% f1,	%2 # name
 % date,	int # type
 % 10,	1 # length
 [ 1957-04-09,	0	]
@@ -461,8 +461,8 @@ stdout of test 'date` in directory 'sql/test/pg_regress` itself:
 [ 2040-04-10,	0	]
 [ NULL,	NULL	]
 #SELECT f1, "second"(cast(f1 as timestamp)) FROM DATE_TBL;
-% sys.date_tbl,	sys.%1 # table_name
-% f1,	%1 # name
+% sys.date_tbl,	sys.%2 # table_name
+% f1,	%2 # name
 % date,	decimal # type
 % 10,	11 # length
 [ 1957-04-09,	0.000000	]
@@ -482,8 +482,8 @@ stdout of test 'date` in directory 'sql/test/pg_regress` itself:
 [ 2040-04-10,	0.000000	]
 [ NULL,	NULL	]
 #SELECT f1, extract(hour from cast(f1 as timestamp)) FROM DATE_TBL;
-% sys.date_tbl,	sys.%1 # table_name
-% f1,	%1 # name
+% sys.date_tbl,	sys.%2 # table_name
+% f1,	%2 # name
 % date,	int # type
 % 10,	1 # length
 [ 1957-04-09,	0	]
@@ -503,8 +503,8 @@ stdout of test 'date` in directory 'sql/test/pg_regress` itself:
 [ 2040-04-10,	0	]
 [ NULL,	NULL	]
 #SELECT f1, extract(minute from cast(f1 as timestamp)) FROM DATE_TBL;
-% sys.date_tbl,	sys.%1 # table_name
-% f1,	%1 # name
+% sys.date_tbl,	sys.%2 # table_name
+% f1,	%2 # name
 % date,	int # type
 % 10,	1 # length
 [ 1957-04-09,	0	]
@@ -524,8 +524,8 @@ stdout of test 'date` in directory 'sql/test/pg_regress` itself:
 [ 2040-04-10,	0	]
 [ NULL,	NULL	]
 #SELECT f1, extract(second from cast(f1 as timestamp)) FROM DATE_TBL;
-% sys.date_tbl,	sys.%1 # table_name
-% f1,	%1 # name
+% sys.date_tbl,	sys.%2 # table_name
+% f1,	%2 # name
 % date,	decimal # type
 % 10,	11 # length
 [ 1957-04-09,	0.000000	]
@@ -544,215 +544,47 @@ stdout of test 'date` in directory 'sql/test/pg_regress` itself:
 [ 2039-04-09,	0.000000	]
 [ 2040-04-10,	0.000000	]
 [ NULL,	NULL	]
-#SELECT f1, sql_add(f1, 365*24*60*60.0) FROM DATE_TBL;
-% sys.date_tbl,	sys.%1 # table_name
-% f1,	%1 # name
-% date,	date # type
-% 10,	10 # length
-[ 1957-04-09,	1958-04-09	]
-[ 1957-06-13,	1958-06-13	]
-[ 1996-02-28,	1997-02-27	]
-[ 1996-02-29,	1997-02-28	]
-[ 1996-03-01,	1997-03-01	]
-[ 1996-03-02,	1997-03-02	]
-[ 1997-02-28,	1998-02-28	]
-[ 1997-03-01,	1998-03-01	]
-[ 1997-03-02,	1998-03-02	]
-[ 2000-04-01,	2001-04-01	]
-[ 2000-04-02,	2001-04-02	]
-[ 2000-04-03,	2001-04-03	]
-[ 2038-04-08,	2039-04-08	]
-[ 2039-04-09,	2040-04-08	]
-[ 2040-04-10,	2041-04-10	]
-[ NULL,	NULL	]
-#SELECT f1, sql_add(f1, cast(365*24*60*60 as interval second)) FROM DATE_TBL;
-% sys.date_tbl,	sys.%1 # table_name
-% f1,	%1 # name
-% date,	date # type
-% 10,	10 # length
-[ 1957-04-09,	1958-04-09	]
-[ 1957-06-13,	1958-06-13	]
-[ 1996-02-28,	1997-02-27	]
-[ 1996-02-29,	1997-02-28	]
-[ 1996-03-01,	1997-03-01	]
-[ 1996-03-02,	1997-03-02	]
-[ 1997-02-28,	1998-02-28	]
-[ 1997-03-01,	1998-03-01	]
-[ 1997-03-02,	1998-03-02	]
-[ 2000-04-01,	2001-04-01	]
-[ 2000-04-02,	2001-04-02	]
-[ 2000-04-03,	2001-04-03	]
-[ 2038-04-08,	2039-04-08	]
-[ 2039-04-09,	2040-04-08	]
-[ 2040-04-10,	2041-04-10	]
-[ NULL,	NULL	]
-#SELECT f1, sql_add(f1, cast(12 as interval month)) FROM DATE_TBL;
-% sys.date_tbl,	sys.%1 # table_name
-% f1,	%1 # name
-% date,	date # type
-% 10,	10 # length
-[ 1957-04-09,	1958-04-09	]
-[ 1957-06-13,	1958-06-13	]
-[ 1996-02-28,	1997-02-28	]
-[ 1996-02-29,	1997-03-01	]
-[ 1996-03-01,	1997-03-01	]
-[ 1996-03-02,	1997-03-02	]
-[ 1997-02-28,	1998-02-28	]
-[ 1997-03-01,	1998-03-01	]
-[ 1997-03-02,	1998-03-02	]
-[ 2000-04-01,	2001-04-01	]
-[ 2000-04-02,	2001-04-02	]
-[ 2000-04-03,	2001-04-03	]
-[ 2038-04-08,	2039-04-08	]
-[ 2039-04-09,	2040-04-09	]
-[ 2040-04-10,	2041-04-10	]
-[ NULL,	NULL	]
-#SELECT f1, sql_add(f1, cast(-18 as interval month)) FROM DATE_TBL;
-% sys.date_tbl,	sys.%1 # table_name
-% f1,	%1 # name
-% date,	date # type
-% 10,	10 # length
-[ 1957-04-09,	1955-10-09	]
-[ 1957-06-13,	1955-12-13	]
-[ 1996-02-28,	1994-08-28	]
-[ 1996-02-29,	1994-08-29	]
-[ 1996-03-01,	1994-09-01	]
-[ 1996-03-02,	1994-09-02	]
-[ 1997-02-28,	1995-08-28	]
-[ 1997-03-01,	1995-09-01	]
-[ 1997-03-02,	1995-09-02	]
-[ 2000-04-01,	1998-10-01	]
-[ 2000-04-02,	1998-10-02	]
-[ 2000-04-03,	1998-10-03	]
-[ 2038-04-08,	2036-10-08	]
-[ 2039-04-09,	2037-10-09	]
-[ 2040-04-10,	2038-10-10	]
-[ NULL,	NULL	]
-#SELECT f1, sql_sub(f1, 365*24*60*60.0) FROM DATE_TBL;
-% sys.date_tbl,	sys.%1 # table_name
-% f1,	%1 # name
-% date,	date # type
-% 10,	10 # length
-[ 1957-04-09,	1956-04-09	]
-[ 1957-06-13,	1956-06-13	]
-[ 1996-02-28,	1995-02-28	]
-[ 1996-02-29,	1995-03-01	]
-[ 1996-03-01,	1995-03-02	]
-[ 1996-03-02,	1995-03-03	]
-[ 1997-02-28,	1996-02-29	]
-[ 1997-03-01,	1996-03-01	]
-[ 1997-03-02,	1996-03-02	]
-[ 2000-04-01,	1999-04-02	]
-[ 2000-04-02,	1999-04-03	]
-[ 2000-04-03,	1999-04-04	]
-[ 2038-04-08,	2037-04-08	]
-[ 2039-04-09,	2038-04-09	]
-[ 2040-04-10,	2039-04-11	]
-[ NULL,	NULL	]
-#SELECT f1, sql_sub(f1, cast(365*24*60*60 as interval second)) FROM DATE_TBL;
-% sys.date_tbl,	sys.%1 # table_name
-% f1,	%1 # name
-% date,	date # type
-% 10,	10 # length
-[ 1957-04-09,	1956-04-09	]
-[ 1957-06-13,	1956-06-13	]
-[ 1996-02-28,	1995-02-28	]
-[ 1996-02-29,	1995-03-01	]
-[ 1996-03-01,	1995-03-02	]
-[ 1996-03-02,	1995-03-03	]
-[ 1997-02-28,	1996-02-29	]
-[ 1997-03-01,	1996-03-01	]
-[ 1997-03-02,	1996-03-02	]
-[ 2000-04-01,	1999-04-02	]
-[ 2000-04-02,	1999-04-03	]
-[ 2000-04-03,	1999-04-04	]
-[ 2038-04-08,	2037-04-08	]
-[ 2039-04-09,	2038-04-09	]
-[ 2040-04-10,	2039-04-11	]
-[ NULL,	NULL	]
-#SELECT f1, sql_sub(f1, cast(12 as interval month)) FROM DATE_TBL;
-% sys.date_tbl,	sys.%1 # table_name
-% f1,	%1 # name
-% date,	date # type
-% 10,	10 # length
-[ 1957-04-09,	1956-04-09	]
-[ 1957-06-13,	1956-06-13	]
-[ 1996-02-28,	1995-02-28	]
-[ 1996-02-29,	1995-03-01	]
-[ 1996-03-01,	1995-03-01	]
-[ 1996-03-02,	1995-03-02	]
-[ 1997-02-28,	1996-02-28	]
-[ 1997-03-01,	1996-03-01	]
-[ 1997-03-02,	1996-03-02	]
-[ 2000-04-01,	1999-04-01	]
-[ 2000-04-02,	1999-04-02	]
-[ 2000-04-03,	1999-04-03	]
-[ 2038-04-08,	2037-04-08	]
-[ 2039-04-09,	2038-04-09	]
-[ 2040-04-10,	2039-04-10	]
-[ NULL,	NULL	]
-#SELECT f1, sql_sub(f1, cast(-18 as interval month)) FROM DATE_TBL;
-% sys.date_tbl,	sys.%1 # table_name
-% f1,	%1 # name
-% date,	date # type
-% 10,	10 # length
-[ 1957-04-09,	1958-10-09	]
-[ 1957-06-13,	1958-12-13	]
-[ 1996-02-28,	1997-08-28	]
-[ 1996-02-29,	1997-08-29	]
-[ 1996-03-01,	1997-09-01	]
-[ 1996-03-02,	1997-09-02	]
-[ 1997-02-28,	1998-08-28	]
-[ 1997-03-01,	1998-09-01	]
-[ 1997-03-02,	1998-09-02	]
-[ 2000-04-01,	2001-10-01	]
-[ 2000-04-02,	2001-10-02	]
-[ 2000-04-03,	2001-10-03	]
-[ 2038-04-08,	2039-10-08	]
-[ 2039-04-09,	2040-10-09	]
-[ 2040-04-10,	2041-10-10	]
-[ NULL,	NULL	]
 #SELECT f1, sql_sub(f1, cast('2001-12-12' as date)) FROM DATE_TBL;
 % sys.date_tbl,	sys.%1 # table_name
 % f1,	%1 # name
-% date,	day_interval # type
-% 10,	7 # length
-[ 1957-04-09,	-16.318	]
-[ 1957-06-13,	-16.253	]
-[ 1996-02-28,	-2.114	]
-[ 1996-02-29,	-2.113	]
-[ 1996-03-01,	-2.112	]
-[ 1996-03-02,	-2.111	]
-[ 1997-02-28,	-1.748	]
-[ 1997-03-01,	-1.747	]
-[ 1997-03-02,	-1.746	]
-[ 2000-04-01,	-0.620	]
-[ 2000-04-02,	-0.619	]
-[ 2000-04-03,	-0.618	]
-[ 2038-04-08,	13.266	]
-[ 2039-04-09,	13.632	]
-[ 2040-04-10,	13.999	]
+% date,	int # type
+% 10,	6 # length
+[ 1957-04-09,	-16318	]
+[ 1957-06-13,	-16253	]
+[ 1996-02-28,	-2114	]
+[ 1996-02-29,	-2113	]
+[ 1996-03-01,	-2112	]
+[ 1996-03-02,	-2111	]
+[ 1997-02-28,	-1748	]
+[ 1997-03-01,	-1747	]
+[ 1997-03-02,	-1746	]
+[ 2000-04-01,	-620	]
+[ 2000-04-02,	-619	]
+[ 2000-04-03,	-618	]
+[ 2038-04-08,	13266	]
+[ 2039-04-09,	13632	]
+[ 2040-04-10,	13999	]
 [ NULL,	NULL	]
 #SELECT f1, sql_sub(cast('2001-12-12' as date), f1) FROM DATE_TBL;
 % sys.date_tbl,	.%1 # table_name
 % f1,	%1 # name
-% date,	day_interval # type
-% 10,	7 # length
-[ 1957-04-09,	16.318	]
-[ 1957-06-13,	16.253	]
-[ 1996-02-28,	2.114	]
-[ 1996-02-29,	2.113	]
-[ 1996-03-01,	2.112	]
-[ 1996-03-02,	2.111	]
-[ 1997-02-28,	1.748	]
-[ 1997-03-01,	1.747	]
-[ 1997-03-02,	1.746	]
-[ 2000-04-01,	0.620	]
-[ 2000-04-02,	0.619	]
-[ 2000-04-03,	0.618	]
-[ 2038-04-08,	-13.266	]
-[ 2039-04-09,	-13.632	]
-[ 2040-04-10,	-13.999	]
+% date,	int # type
+% 10,	6 # length
+[ 1957-04-09,	16318	]
+[ 1957-06-13,	16253	]
+[ 1996-02-28,	2114	]
+[ 1996-02-29,	2113	]
+[ 1996-03-01,	2112	]
+[ 1996-03-02,	2111	]
+[ 1997-02-28,	1748	]
+[ 1997-03-01,	1747	]
+[ 1997-03-02,	1746	]
+[ 2000-04-01,	620	]
+[ 2000-04-02,	619	]
+[ 2000-04-03,	618	]
+[ 2038-04-08,	-13266	]
+[ 2039-04-09,	-13632	]
+[ 2040-04-10,	-13999	]
 [ NULL,	NULL	]
 #SELECT date 'January 8, 1999';
 % .%2 # table_name
@@ -1099,60 +931,24 @@ stdout of test 'date` in directory 'sql/test/pg_regress` itself:
 #SELECT f1 - date '2000-01-01' AS "Days From 2K" FROM DATE_TBL;
 % sys. # table_name
 % "Days From 2K" # name
-% day_interval # type
-% 7 # length
-[ -15.607	]
-[ -15.542	]
-[ -1.403	]
-[ -1.402	]
-[ -1.401	]
-[ -1.400	]
-[ -1.037	]
-[ -1.036	]
-[ -1.035	]
-[ 0.091	]
-[ 0.092	]
-[ 0.093	]
-[ 13.977	]
-[ 14.343	]
-[ 14.710	]
+% int # type
+% 6 # length
+[ -15607 ]
+[ -15542 ]
+[ -1403 ]
+[ -1402 ]
+[ -1401 ]
+[ -1400 ]
+[ -1037 ]
+[ -1036 ]
+[ -1035 ]
+[ 91 ]
+[ 92 ]
+[ 93 ]
+[ 13977 ]
+[ 14343 ]
+[ 14710 ]
 [ NULL	]
-#SELECT sql_sub(current_date, 24*60*60.0) - current_date AS "One day";
-% . # table_name
-% "One day" # name
-% day_interval # type
-% 5 # length
-[ -0.001	]
-#SELECT current_date - sql_add(current_date, 24*60*60.0) AS "One day";
-% . # table_name
-% "One day" # name
-% day_interval # type
-% 5 # length
-[ -0.001	]
-#SELECT sql_sub(current_date, 24*60*60.0) - sql_add(current_date, 24*60*60.0) AS "Two days";
-% . # table_name
-% "Two days" # name
-% day_interval # type
-% 5 # length
-[ -0.002	]
-#SELECT sql_add(current_date, 24*60*60.0) - current_date AS "One day";
-% . # table_name
-% "One day" # name
-% day_interval # type
-% 5 # length
-[ 0.001	]
-#SELECT current_date - sql_sub(current_date, 24*60*60.0) AS "One day";
-% . # table_name
-% "One day" # name
-% day_interval # type
-% 5 # length
-[ 0.001	]
-#SELECT sql_add(current_date, 24*60*60.0) - sql_sub(current_date, 24*60*60.0) AS "Two days";
-% . # table_name
-% "Two days" # name
-% day_interval # type
-% 5 # length
-[ 0.002	]
 #SELECT EXTRACT(CENTURY FROM DATE '0101-12-31 BC'); -- -2
 % .%2 # table_name
 % %2 # name

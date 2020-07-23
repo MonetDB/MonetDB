@@ -48,6 +48,8 @@ extern int store_initialized;
 /* relational interface */
 typedef oid (*column_find_row_fptr)(sql_trans *tr, sql_column *c, const void *value, ...);
 typedef void *(*column_find_value_fptr)(sql_trans *tr, sql_column *c, oid rid);
+typedef sqlid (*column_find_sqlid_fptr)(sql_trans *tr, sql_column *c, oid rid);
+typedef int (*column_find_int_fptr)(sql_trans *tr, sql_column *c, oid rid);
 typedef int (*column_update_value_fptr)(sql_trans *tr, sql_column *c, oid rid, void *value);
 typedef int (*table_insert_fptr)(sql_trans *tr, sql_table *t, ...);
 typedef int (*table_delete_fptr)(sql_trans *tr, sql_table *t, oid rid);
@@ -93,6 +95,8 @@ typedef void (*subrids_destroy_fptr)(subrids *r);
 typedef struct table_functions {
 	column_find_row_fptr column_find_row;
 	column_find_value_fptr column_find_value;
+	column_find_sqlid_fptr column_find_sqlid;
+	column_find_int_fptr column_find_int;
 	column_update_value_fptr column_update_value;
 	table_insert_fptr table_insert;
 	table_delete_fptr table_delete;
@@ -244,6 +248,7 @@ typedef struct store_functions {
 	count_idx_fptr count_idx;
 	dcount_col_fptr dcount_col;
 	prop_col_fptr sorted_col;
+	prop_col_fptr unique_col;
 	prop_col_fptr double_elim_col; /* varsize col with double elimination */
 
 	create_col_fptr create_col;
@@ -375,7 +380,7 @@ extern res_table *res_tables_remove(res_table *results, res_table *t);
 sql_export void res_tables_destroy(res_table *results);
 extern res_table *res_tables_find(res_table *results, int res_id);
 
-extern int store_init(int debug, store_type store, int readonly, int singleuser, backend_stack stk);
+extern int store_init(sql_allocator *pa, int debug, store_type store, int readonly, int singleuser);
 extern void store_exit(void);
 
 extern int store_apply_deltas(bool locked);
@@ -383,6 +388,7 @@ extern void store_flush_log(void);
 extern void store_suspend_log(void);
 extern void store_resume_log(void);
 extern lng store_hot_snapshot(str tarfile);
+extern lng store_hot_snapshot_to_stream(stream *s);
 
 extern void store_manager(void);
 extern void idle_manager(void);
@@ -391,7 +397,7 @@ extern void store_lock(void);
 extern void store_unlock(void);
 extern sqlid store_next_oid(void);
 
-extern sql_trans *sql_trans_create(backend_stack stk, sql_trans *parent, const char *name, bool try_spare);
+extern sql_trans *sql_trans_create(sql_trans *parent, const char *name, bool try_spare);
 extern sql_trans *sql_trans_destroy(sql_trans *tr, bool try_spare);
 extern bool sql_trans_validate(sql_trans *tr);
 extern int sql_trans_commit(sql_trans *tr);
@@ -436,6 +442,8 @@ extern sql_column *sql_trans_alter_null(sql_trans *tr, sql_column *col, int isnu
 extern sql_column *sql_trans_alter_default(sql_trans *tr, sql_column *col, char *val);
 extern sql_column *sql_trans_alter_storage(sql_trans *tr, sql_column *col, char *storage);
 extern int sql_trans_is_sorted(sql_trans *tr, sql_column *col);
+extern int sql_trans_is_unique(sql_trans *tr, sql_column *col);
+extern int sql_trans_is_duplicate_eliminated(sql_trans *tr, sql_column *col);
 extern size_t sql_trans_dist_count(sql_trans *tr, sql_column *col);
 extern int sql_trans_ranges(sql_trans *tr, sql_column *col, char **min, char **max);
 
@@ -462,7 +470,7 @@ extern sql_sequence *sql_trans_alter_sequence(sql_trans *tr, sql_sequence *seq, 
 extern sql_sequence *sql_trans_sequence_restart(sql_trans *tr, sql_sequence *seq, lng start);
 extern sql_sequence *sql_trans_seqbulk_restart(sql_trans *tr, seqbulk *sb, lng start);
 
-extern sql_session * sql_session_create(backend_stack stk, int autocommit);
+extern sql_session * sql_session_create(int autocommit);
 extern void sql_session_destroy(sql_session *s);
 extern int sql_session_reset(sql_session *s, int autocommit);
 extern int sql_trans_begin(sql_session *s);
@@ -502,8 +510,5 @@ extern sql_part *sql_trans_copy_part(sql_trans *tr, sql_table *t, sql_part *pt);
 
 extern void sql_trans_drop_any_comment(sql_trans *tr, sqlid id);
 extern void sql_trans_drop_obj_priv(sql_trans *tr, sqlid obj_id);
-
-/* This function should be used in exceptional cases such as dealing with tricky upgrades! */
-extern void insert_functions(sql_trans *tr, sql_table *sysfunc, list *funcs_list, sql_table *sysarg);
 
 #endif /*SQL_STORAGE_H */

@@ -66,10 +66,7 @@ GDKanalyticaldiff(BAT *r, BAT *b, BAT *p, int tpe)
 	BUN i, cnt = BATcount(b);
 	bit *restrict rb = (bit *) Tloc(r, 0), *restrict np = p ? (bit *) Tloc(p, 0) : NULL;
 
-	switch (tpe) {
-	case TYPE_bit:
-		ANALYTICAL_DIFF_IMP(bit);
-		break;
+	switch (ATOMbasetype(tpe)) {
 	case TYPE_bte:
 		ANALYTICAL_DIFF_IMP(bte);
 		break;
@@ -299,10 +296,7 @@ GDKanalyticalfirst(BAT *r, BAT *b, BAT *s, BAT *e, int tpe)
 	start = (lng *) Tloc(s, 0);
 	end = (lng *) Tloc(e, 0);
 
-	switch (tpe) {
-	case TYPE_bit:
-		ANALYTICAL_FIRST_IMP(bit);
-		break;
+	switch (ATOMbasetype(tpe)) {
 	case TYPE_bte:
 		ANALYTICAL_FIRST_IMP(bte);
 		break;
@@ -371,10 +365,7 @@ GDKanalyticallast(BAT *r, BAT *b, BAT *s, BAT *e, int tpe)
 	start = (lng *) Tloc(s, 0);
 	end = (lng *) Tloc(e, 0);
 
-	switch (tpe) {
-	case TYPE_bit:
-		ANALYTICAL_LAST_IMP(bit);
-		break;
+	switch (ATOMbasetype(tpe)) {
 	case TYPE_bte:
 		ANALYTICAL_LAST_IMP(bte);
 		break;
@@ -543,10 +534,7 @@ GDKanalyticalnthvalue(BAT *r, BAT *b, BAT *s, BAT *e, BAT *l, const void *restri
 		default:
 			goto nosupport;
 		}
-		switch (tp1) {
-		case TYPE_bit:
-			ANALYTICAL_NTHVALUE_IMP_SINGLE_FIXED(bit);
-			break;
+		switch (ATOMbasetype(tp1)) {
 		case TYPE_bte:
 			ANALYTICAL_NTHVALUE_IMP_SINGLE_FIXED(bte);
 			break;
@@ -589,10 +577,7 @@ GDKanalyticalnthvalue(BAT *r, BAT *b, BAT *s, BAT *e, BAT *l, const void *restri
 		}
 		}
 	} else {
-		switch (tp1) {
-		case TYPE_bit:
-			ANALYTICAL_NTHVALUE_CALC_FIXED(bit);
-			break;
+		switch (ATOMbasetype(tp1)) {
 		case TYPE_bte:
 			ANALYTICAL_NTHVALUE_CALC_FIXED(bte);
 			break;
@@ -721,10 +706,7 @@ GDKanalyticallag(BAT *r, BAT *b, BAT *p, BUN lag, const void *restrict default_v
 
 	assert(default_value);
 
-	switch (tpe) {
-	case TYPE_bit:
-		ANALYTICAL_LAG_IMP(bit);
-		break;
+	switch (ATOMbasetype(tpe)) {
 	case TYPE_bte:
 		ANALYTICAL_LAG_IMP(bte);
 		break;
@@ -864,10 +846,7 @@ GDKanalyticallead(BAT *r, BAT *b, BAT *p, BUN lead, const void *restrict default
 
 	assert(default_value);
 
-	switch (tpe) {
-	case TYPE_bit:
-		ANALYTICAL_LEAD_IMP(bit);
-		break;
+	switch (ATOMbasetype(tpe)) {
 	case TYPE_bte:
 		ANALYTICAL_LEAD_IMP(bte);
 		break;
@@ -972,10 +951,7 @@ GDKanalytical##OP(BAT *r, BAT *b, BAT *s, BAT *e, int tpe)		\
 	start = (lng*)Tloc(s, 0);					\
 	end = (lng*)Tloc(e, 0);						\
 									\
-	switch (tpe) {							\
-	case TYPE_bit:							\
-		ANALYTICAL_MIN_MAX_CALC(bit, IMP);			\
-		break;							\
+	switch (ATOMbasetype(tpe)) {				\
 	case TYPE_bte:							\
 		ANALYTICAL_MIN_MAX_CALC(bte, IMP);			\
 		break;							\
@@ -1068,10 +1044,7 @@ GDKanalyticalcount(BAT *r, BAT *b, BAT *s, BAT *e, const bit *restrict ignore_ni
 		for (; i < cnt; i++, rb++)
 			*rb = (end[i] > start[i]) ? (end[i] - start[i]) : 0;
 	} else {
-		switch (tpe) {
-		case TYPE_bit:
-			ANALYTICAL_COUNT_NO_NIL_FIXED_SIZE_IMP(bit);
-			break;
+		switch (ATOMbasetype(tpe)) {
 		case TYPE_bte:
 			ANALYTICAL_COUNT_NO_NIL_FIXED_SIZE_IMP(bte);
 			break;
@@ -1593,12 +1566,12 @@ GDKanalyticalprod(BAT *r, BAT *b, BAT *s, BAT *e, int tp1, int tp2)
 avg_overflow##TPE:							\
 				assert(n > 0);				\
 				if (sum >= 0) {				\
-					a = (TPE) (sum / (lng_hge) n);	\
-					rr = (BUN) (sum % (SBUN) n);	\
+					a = (TPE) (sum / n);		\
+					rr = (lng) (sum % n);		\
 				} else {				\
 					sum = -sum;			\
-					a = - (TPE) (sum / (lng_hge) n); \
-					rr = (BUN) (sum % (SBUN) n);	\
+					a = - (TPE) (sum / n);		\
+					rr = (lng) (sum % n);		\
 					if (r) {			\
 						a--;			\
 						rr = n - rr;		\
@@ -1652,7 +1625,8 @@ gdk_return
 GDKanalyticalavg(BAT *r, BAT *b, BAT *s, BAT *e, int tpe)
 {
 	bool has_nils = false;
-	BUN i = 0, cnt = BATcount(b), nils = 0, n = 0, rr = 0;
+	BUN i = 0, cnt = BATcount(b), nils = 0;
+	lng n = 0, rr = 0;
 	bool abort_on_error = true;
 	lng *restrict start, *restrict end;
 	dbl *restrict rb = (dbl *) Tloc(r, 0), curval;
@@ -1691,7 +1665,97 @@ GDKanalyticalavg(BAT *r, BAT *b, BAT *s, BAT *e, int tpe)
 		ANALYTICAL_AVERAGE_CALC_FP(dbl);
 		break;
 	default:
-		GDKerror("average of type %s unsupported.\n", ATOMname(tpe));
+		GDKerror("average of type %s to dbl unsupported.\n", ATOMname(tpe));
+		return GDK_FAIL;
+	}
+	BATsetcount(r, cnt);
+	r->tnonil = !has_nils;
+	r->tnil = has_nils;
+	return GDK_SUCCEED;
+}
+
+#ifdef TRUNCATE_NUMBERS
+#define ANALYTICAL_AVERAGE_INT_CALC_FINALIZE(avg, rem, ncnt) \
+	do {
+		if (rem > 0 && avg < 0) { \
+			avg++; \
+			rem -= ncnt; \
+		}
+	} while(0)
+#else
+#define ANALYTICAL_AVERAGE_INT_CALC_FINALIZE(avg, rem, ncnt) \
+	do { \
+		if (rem > 0) { \
+			if (avg < 0) { \
+				if (2*rem > ncnt) { \
+					avg++; \
+					rem -= ncnt; \
+				} \
+			} else { \
+				if (2*rem >= ncnt) { \
+					avg++; \
+					rem -= ncnt; \
+				} \
+			} \
+		} \
+	} while(0)
+#endif
+
+#define ANALYTICAL_AVERAGE_INT_CALC(TPE)			\
+	do {								\
+		TPE *bp = (TPE*)Tloc(b, 0), *restrict rb = (TPE *) Tloc(r, 0), *bs, *be, v, avg = 0;	\
+		for (; i < cnt; i++) {				\
+			bs = bp + start[i];				\
+			be = bp + end[i];				\
+			for (; bs < be; bs++) {				\
+				v = *bs;				\
+				if (!is_##TPE##_nil(v))	\
+					AVERAGE_ITER(TPE, v, avg, rem, ncnt); \
+			}	\
+			if (ncnt == 0) {	\
+				has_nils = true; \
+				rb[i] = TPE##_nil; \
+			} else { \
+				ANALYTICAL_AVERAGE_INT_CALC_FINALIZE(avg, rem, ncnt); \
+				rb[i] = avg; \
+			} \
+			rem = 0; \
+			ncnt = 0; \
+			avg = 0; \
+		}	\
+	} while (0)
+
+gdk_return
+GDKanalyticalavginteger(BAT *r, BAT *b, BAT *s, BAT *e, int tpe)
+{
+	bool has_nils = false;
+	BUN i = 0, cnt = BATcount(b);
+	lng *restrict start, *restrict end, rem = 0, ncnt = 0;
+
+	assert(s && e);
+	start = (lng *) Tloc(s, 0);
+	end = (lng *) Tloc(e, 0);
+
+	switch (tpe) {
+	case TYPE_bte:
+		ANALYTICAL_AVERAGE_INT_CALC(bte);
+		break;
+	case TYPE_sht:
+		ANALYTICAL_AVERAGE_INT_CALC(sht);
+		break;
+	case TYPE_int:
+		ANALYTICAL_AVERAGE_INT_CALC(int);
+		break;
+	case TYPE_lng:
+		ANALYTICAL_AVERAGE_INT_CALC(lng);
+		break;
+#ifdef HAVE_HGE
+	case TYPE_hge:
+		ANALYTICAL_AVERAGE_INT_CALC(hge);
+		break;
+#endif
+	default:
+		GDKerror("average of type %s to %s unsupported.\n", ATOMname(tpe), ATOMname(tpe));
 		return GDK_FAIL;
 	}
 	BATsetcount(r, cnt);

@@ -38,7 +38,6 @@ rel_parse(mvc *m, sql_schema *s, char *query, char emode)
 
 	m->qc = NULL;
 
-	m->caching = 0;
 	m->emode = emode;
 	if (s)
 		m->session->schema = s;
@@ -69,8 +68,6 @@ rel_parse(mvc *m, sql_schema *s, char *query, char emode)
 	bstream_next(m->scanner.rs);
 
 	m->params = NULL;
-	/*m->args = NULL;*/
-	m->argc = 0;
 	m->sym = NULL;
 	m->errstr[0] = '\0';
 	/* via views we give access to protected objects */
@@ -88,7 +85,6 @@ rel_parse(mvc *m, sql_schema *s, char *query, char emode)
 	m->sym = NULL;
 	o.frames = m->frames;	/* may have been realloc'ed */
 	o.sizeframes = m->sizeframes;
-	o.query = m->query;
 	if (m->session->status || m->errstr[0]) {
 		int status = m->session->status;
 
@@ -103,6 +99,27 @@ rel_parse(mvc *m, sql_schema *s, char *query, char emode)
 		*m = o;
 		m->label = label;
 	}
+#if 0
+	{
+		unsigned int label = m->label;
+		int status = m->session->status;
+		list *global_vars = m->global_vars;
+		int sizeframes = m->sizeframes, topframes = m->topframes;
+		sql_frame **frames = m->frames;
+		/* cascade list maybe removed */
+		list *cascade_action = m->cascade_action;
+
+		strcpy(o->errstr, m->errstr);
+		*m = *o;
+		m->label = label;
+		m->global_vars = global_vars;
+		m->sizeframes = sizeframes;
+		m->topframes = topframes;
+		m->frames = frames;
+		m->session->status = status;
+		m->cascade_action = cascade_action;
+	}
+#endif
 	m->session->schema = c;
 	return rel;
 }

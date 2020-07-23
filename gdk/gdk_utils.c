@@ -767,6 +767,8 @@ GDKinit(opt *set, int setlen, int embedded)
 	static_assert(sizeof(hge) == SIZEOF_HGE,
 		      "error in configure: bad value for SIZEOF_HGE");
 #endif
+	static_assert(sizeof(dbl) == SIZEOF_DOUBLE,
+		      "error in configure: bad value for SIZEOF_DOUBLE");
 	static_assert(sizeof(oid) == SIZEOF_OID,
 		      "error in configure: bad value for SIZEOF_OID");
 	static_assert(sizeof(void *) == SIZEOF_VOID_P,
@@ -1056,7 +1058,7 @@ GDKreset(int status)
 		for (Thread t = GDKthreads; t < GDKthreads + THREADS; t++) {
 			MT_Id victim;
 			if ((victim = (MT_Id) ATOMIC_GET(&t->pid)) != 0) {
-				if (victim != pid) {
+				if (pid && victim != pid) {
 					int e;
 
 					killed = true;
@@ -1087,6 +1089,10 @@ GDKreset(int status)
 				}
 				if (!skip)
 					GDKunlockHome(farmid);
+				if (BBPfarms[farmid].dirname) {
+					GDKfree((char*)BBPfarms[farmid].dirname);
+					BBPfarms[farmid].dirname = NULL;
+				}
 			}
 		}
 
@@ -1354,7 +1360,10 @@ GDKusec(void)
 	return (lng) (f.QuadPart / 10);
 #elif defined(HAVE_CLOCK_GETTIME)
 	struct timespec ts;
-	clock_gettime(CLOCK_REALTIME, &ts);
+#ifdef CLOCK_REALTIME_COARSE
+	if (clock_gettime(CLOCK_REALTIME_COARSE, &ts) < 0)
+#endif
+		(void) clock_gettime(CLOCK_REALTIME, &ts);
 	return (lng) (ts.tv_sec * LL_CONSTANT(1000000) + ts.tv_nsec / 1000);
 #elif defined(HAVE_GETTIMEOFDAY)
 	struct timeval tv;

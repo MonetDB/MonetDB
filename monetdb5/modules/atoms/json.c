@@ -874,14 +874,12 @@ JSONnumberParser(const char *j, const char **next)
 
 	if (!JSONfractionParser(j, next)) {
 		*next = j;
-		return MAL_SUCCEED;
 	}
 
 	j = *next;
 
 	if (!JSONexponentParser(j, next)) {
 		*next = j;
-		return MAL_SUCCEED;
 	}
 	return MAL_SUCCEED;
 }
@@ -1178,104 +1176,106 @@ JSONfilter(json *ret, json *js, str *expr)
 // The json string should be valid
 
 static char *
-JSONplaintext(char *r, size_t *l, JSON *jt, int idx, char sep)
+JSONplaintext(char **r, size_t *l, size_t *ilen, JSON *jt, int idx, str sep, size_t sep_len)
 {
 	int i;
-	size_t j;
+	unsigned int j, k;
 
 	switch (jt->elm[idx].kind) {
 	case JSON_OBJECT:
 		for (i = jt->elm[idx].next; i; i = jt->elm[i].next)
 			if (jt->elm[i].child)
-				r = JSONplaintext(r, l, jt, jt->elm[i].child, sep);
+				*r = JSONplaintext(r, l, ilen, jt, jt->elm[i].child, sep, sep_len);
 		break;
 	case JSON_ARRAY:
 		for (i = jt->elm[idx].next; i; i = jt->elm[i].next)
-			r = JSONplaintext(r, l, jt, i, sep);
+			*r = JSONplaintext(r, l, ilen, jt, i, sep, sep_len);
 		break;
 	case JSON_ELEMENT:
 	case JSON_VALUE:
 		if (jt->elm[idx].child)
-			r = JSONplaintext(r, l, jt, jt->elm[idx].child, sep);
+			*r = JSONplaintext(r, l, ilen, jt, jt->elm[idx].child, sep, sep_len);
 		break;
-	case JSON_STRING:
-		for (j = 1; *l > 1 && j < jt->elm[idx].valuelen - 1; j++) {
+		case JSON_STRING:
+		// Make sure there is enough space for the value plus the separator plus the NULL byte
+		if (*l < jt->elm[idx].valuelen - 2 + sep_len + 1) {
+			char *p = *r - *ilen + *l;
+			*ilen *= 2;
+			*r = GDKrealloc(p, *ilen);
+			*r += *l;
+			*l = *ilen - *l;
+		}
+		for (j = 1; j < jt->elm[idx].valuelen - 1; j++) {
 			if (jt->elm[idx].value[j] == '\\')
-				*r = jt->elm[idx].value[++j];
+				**r = jt->elm[idx].value[++j];
 			else
-				*r = jt->elm[idx].value[j];
-			r++;
+				**r = jt->elm[idx].value[j];
+			(*r)++;
 			(*l)--;
 		}
-		if (*l > 1 && sep) {
-			*r++ = sep;
-			(*l)--;
+		for(k = 0; k < sep_len; k++) {
+			**r = *(sep + k);
+			(*r)++;
 		}
+		(*l) -= k;
 		break;
 	default:
-		for (j = 0; *l > 1 && j < jt->elm[idx].valuelen; j++) {
-			*r = jt->elm[idx].value[j];
-			r++;
+		if (*l < jt->elm[idx].valuelen + sep_len + 1) {
+			size_t offset = *ilen - *l;
+			char *p = *r - offset;
+			*ilen *= 2;
+			*r = GDKrealloc(p, *ilen);
+			*r += offset;
+			*l = *ilen - offset;
+		}
+		for (j = 0; j < jt->elm[idx].valuelen; j++) {
+			**r = jt->elm[idx].value[j];
+			(*r)++;
 			(*l)--;
 		}
-		if (*l > 1 && sep) {
-			*r++ = sep;
-			(*l)--;
+		for(k = 0; k < sep_len; k++) {
+			**r = *(sep + k);
+			(*r)++;
 		}
+		(*l) -= k;
 	}
 	assert(*l > 0);
-	*r = 0;
-	return r;
-}
-
-static str
-JSONjson2text(str *ret, json *js)
-{
-	JSON *jt;
-	size_t l;
-	str s;
-
-	jt = JSONparse(*js);
-
-	CHECK_JSON(jt);
-	l = strlen(*js) + 1;
-	s = GDKmalloc(l);
-	if(s == NULL) {
-		JSONfree(jt);
-		throw(MAL,"json2txt", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-	}
-	JSONplaintext(s, &l, jt, 0, ' ');
-	l = strlen(s);
-	if (l)
-		s[l - 1] = 0;
-	*ret = s;
-	JSONfree(jt);
-	return MAL_SUCCEED;
+	**r = 0;
+	return *r;
 }
 
 static str
 JSONjson2textSeparator(str *ret, json *js, str *sep)
 {
 	JSON *jt;
-	size_t l;
+	size_t l, ilen, sep_len;
 	str s;
 
 	jt = JSONparse(*js);
 
 	CHECK_JSON(jt);
-	l = strlen(*js) + 1;
+	sep_len = strlen(*sep);
+	ilen = l = strlen(*js) + 1;
 	s = GDKmalloc(l);
 	if(s == NULL) {
 		JSONfree(jt);
 		throw(MAL,"json2txt", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
-	JSONplaintext(s, &l, jt, 0, **sep);
+	s = JSONplaintext(&s, &l, &ilen, jt, 0, *sep, sep_len);
+	s -= ilen - l;
 	l = strlen(s);
-	if (l && **sep)
-		s[l - 1] = 0;
+	if (l && sep_len)
+		s[l - sep_len] = 0;
 	*ret = s;
 	JSONfree(jt);
 	return MAL_SUCCEED;
+}
+
+static str
+JSONjson2text(str *ret, json *js)
+{
+	char *sep = " ";
+	return JSONjson2textSeparator(ret, js, &sep);
 }
 
 static str
