@@ -1570,24 +1570,24 @@ sqltypeinit( sql_allocator *sa)
 	sql_create_analytic(sa, "avg", "sql", "avg", SCALE_NONE, DBL, 1, HGE);
 #endif
 
+	sql_create_analytic(sa, "avg", "sql", "avg", SCALE_NONE, DBL, 1, FLT);
+
+	t = decimals; /* BTE */
+	sql_create_analytic(sa, "avg", "sql", "avg", SCALE_NONE, *(t), 1, *(t));
+	t++; /* SHT */
+	sql_create_analytic(sa, "avg", "sql", "avg", SCALE_NONE, *(t), 1, *(t));
+	t++; /* INT */
+	sql_create_analytic(sa, "avg", "sql", "avg", SCALE_NONE, *(t), 1, *(t));
+	t++; /* LNG */
+	sql_create_analytic(sa, "avg", "sql", "avg", SCALE_NONE, *(t), 1, *(t));
+#ifdef HAVE_HGE
+	t++; /* HGE */
+	sql_create_analytic(sa, "avg", "sql", "avg", SCALE_NONE, *(t), 1, *(t));
+#endif
+
 	sql_create_analytic(sa, "avg", "sql", "avg", SCALE_NONE, MONINT, 1, MONINT);
 	sql_create_analytic(sa, "avg", "sql", "avg", SCALE_NONE, SECINT, 1, SECINT);
 
-#if 0
-	t = decimals; // BTE
-	sql_create_analytic(sa, "avg", "sql", "avg", SCALE_NONE, DBL, 1, *(t));
-	t++; // SHT
-	sql_create_analytic(sa, "avg", "sql", "avg", SCALE_NONE, DBL, 1, *(t));
-	t++; // INT
-	sql_create_analytic(sa, "avg", "sql", "avg", SCALE_NONE, DBL, 1, *(t));
-	t++; // LNG
-	sql_create_analytic(sa, "avg", "sql", "avg", SCALE_NONE, DBL, 1, *(t));
-#ifdef HAVE_HGE
-	t++; // HGE
-	sql_create_analytic(sa, "avg", "sql", "avg", SCALE_NONE, DBL, 1, *(t));
-#endif
-#endif
-	sql_create_analytic(sa, "avg", "sql", "avg", SCALE_NONE, DBL, 1, FLT);
 
 	sql_create_analytic(sa, "listagg", "sql", "str_group_concat", SCALE_NONE, STR, 1, STR);
 	sql_create_analytic(sa, "listagg", "sql", "str_group_concat", SCALE_NONE, STR, 2, STR, STR);

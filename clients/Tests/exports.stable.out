@@ -239,6 +239,7 @@ gdk_return GDKanalytical_str_group_concat(BAT *r, BAT *b, BAT *sep, BAT *s, BAT 
 gdk_return GDKanalytical_variance_pop(BAT *r, BAT *b, BAT *s, BAT *e, int tpe);
 gdk_return GDKanalytical_variance_samp(BAT *r, BAT *b, BAT *s, BAT *e, int tpe);
 gdk_return GDKanalyticalavg(BAT *r, BAT *b, BAT *s, BAT *e, int tpe);
+gdk_return GDKanalyticalavginteger(BAT *r, BAT *b, BAT *s, BAT *e, int tpe);
 gdk_return GDKanalyticalcount(BAT *r, BAT *b, BAT *s, BAT *e, const bit *restrict ignore_nils, int tpe);
 gdk_return GDKanalyticaldiff(BAT *r, BAT *b, BAT *p, int tpe);
 gdk_return GDKanalyticalfirst(BAT *r, BAT *b, BAT *s, BAT *e, int tpe);
