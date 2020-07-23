@@ -379,9 +379,6 @@ extensions for %{name}-SQL-server5.
 
 %files geom-MonetDB5
 %defattr(-,root,root)
-%{_libdir}/monetdb5/autoload/*_geom.mal
-%{_libdir}/monetdb5/createdb/*_geom.sql
-%{_libdir}/monetdb5/geom.mal
 %{_libdir}/monetdb5/lib_geom.so
 %endif
 
@@ -406,8 +403,7 @@ install it.
 
 %files R
 %defattr(-,root,root)
-%{_libdir}/monetdb5/rapi.*
-%{_libdir}/monetdb5/autoload/*_rapi.mal
+%{_libdir}/monetdb5/rapi.R
 %{_libdir}/monetdb5/lib_rapi.so
 %endif
 
@@ -432,8 +428,6 @@ install it.
 
 %files python3
 %defattr(-,root,root)
-%{_libdir}/monetdb5/pyapi3.*
-%{_libdir}/monetdb5/autoload/*_pyapi3.mal
 %{_libdir}/monetdb5/lib_pyapi3.so
 %endif
 
@@ -454,9 +448,6 @@ format.
 
 %files cfitsio
 %defattr(-,root,root)
-%{_libdir}/monetdb5/fits.mal
-%{_libdir}/monetdb5/autoload/*_fits.mal
-%{_libdir}/monetdb5/createdb/*_fits.sql
 %{_libdir}/monetdb5/lib_fits.so
 %endif
 
@@ -524,32 +515,6 @@ exit 0
 %{_libdir}/libmonetdb5.so.*
 %dir %{_libdir}/monetdb5
 %dir %{_libdir}/monetdb5/autoload
-%if %{with fits}
-%exclude %{_libdir}/monetdb5/fits.mal
-%exclude %{_libdir}/monetdb5/autoload/*_fits.mal
-%endif
-%if %{with geos}
-%exclude %{_libdir}/monetdb5/geom.mal
-%endif
-%if %{with py3integration}
-%exclude %{_libdir}/monetdb5/pyapi3.mal
-%endif
-%if %{with rintegration}
-%exclude %{_libdir}/monetdb5/rapi.mal
-%endif
-%exclude %{_libdir}/monetdb5/sql*.mal
-%{_libdir}/monetdb5/*.mal
-%if %{with geos}
-%exclude %{_libdir}/monetdb5/autoload/*_geom.mal
-%endif
-%if %{with py3integration}
-%exclude %{_libdir}/monetdb5/autoload/*_pyapi3.mal
-%endif
-%if %{with rintegration}
-%exclude %{_libdir}/monetdb5/autoload/*_rapi.mal
-%endif
-%exclude %{_libdir}/monetdb5/autoload/??_sql*.mal
-%{_libdir}/monetdb5/autoload/*.mal
 %{_libdir}/monetdb5/lib_capi.so
 %{_libdir}/monetdb5/lib_generator.so
 %{_libdir}/monetdb5/lib_udf.so
@@ -634,17 +599,8 @@ use SQL with MonetDB, you will need to install this package.
 %config(noreplace) %attr(664,monetdb,monetdb) %{_localstatedir}/monetdb5/dbfarm/.merovingian_properties
 %verify(not mtime) %attr(664,monetdb,monetdb) %{_localstatedir}/monetdb5/dbfarm/.merovingian_lock
 %config(noreplace) %attr(644,root,root) %{_sysconfdir}/logrotate.d/monetdbd
-%{_libdir}/monetdb5/autoload/??_sql.mal
 %{_libdir}/monetdb5/lib_sql.so
 %dir %{_libdir}/monetdb5/createdb
-%if %{with fits}
-%exclude %{_libdir}/monetdb5/createdb/*_fits.sql
-%endif
-%if %{with geos}
-%exclude %{_libdir}/monetdb5/createdb/*_geom.sql
-%endif
-%{_libdir}/monetdb5/createdb/*.sql
-%{_libdir}/monetdb5/sql*.mal
 %doc %{_mandir}/man1/monetdb.1.gz
 %doc %{_mandir}/man1/monetdbd.1.gz
 %dir %{_datadir}/doc/MonetDB-SQL
@@ -863,9 +819,7 @@ install -d -m 0775 %{buildroot}%{_rundir}/monetdb
 # .la files
 rm -f %{buildroot}%{_libdir}/*.la
 rm -f %{buildroot}%{_libdir}/monetdb5/*.la
-rm -f %{buildroot}%{_libdir}/monetdb5/opt_sql_append.mal
 rm -f %{buildroot}%{_libdir}/monetdb5/lib_opt_sql_append.so
-rm -f %{buildroot}%{_libdir}/monetdb5/autoload/??_opt_sql_append.mal
 
 %if %{?rhel:0}%{!?rhel:1} || 0%{?rhel} >= 7
 for selinuxvariant in %{selinux_variants}
