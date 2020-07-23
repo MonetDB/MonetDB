@@ -1621,7 +1621,7 @@ sqltypeinit( sql_allocator *sa)
 	sql_create_func(sa, "not", "calc", "not", FALSE, FALSE, SCALE_FIX, 0, BIT, 1, BIT);
 
 	/* allow smaller types for arguments of mul/div */
-	for (t = numerical, t++; t != decimals; t++) {
+	for (t = numerical, t++; t != floats; t++) {
 		sql_type **u;
 		for (u = numerical, u++; u != decimals; u++) {
 			if (t != u && (*t)->localtype >  (*u)->localtype) {

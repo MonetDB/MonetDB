@@ -213,7 +213,7 @@ lng shift, lng divider, lng multiplier
 	daytime dt = 0, *conv = &dt;
 
 	pos = fromstr_func(next, &(size_t){sizeof(daytime)}, &conv, false);
-	if (pos < (ssize_t) strlen(next) || /* includes pos < 0 */ ATOMcmp(TYPE_daytime, conv, ATOMnilptr(TYPE_daytime)) == 0)
+	if (pos < (ssize_t) strlen(next) || /* includes pos < 0 */ is_daytime_nil(*conv))
 		return createException(SQL, "batcalc.str_2time_daytimetz", SQLSTATE(22007) "Daytime '%s' has incorrect format", next);
 	*ret = daytime_2time_daytime_imp(*conv, shift, divider, multiplier);
 	return MAL_SUCCEED;
@@ -579,7 +579,7 @@ lng shift, lng divider, lng multiplier
 	timestamp tp = 0, *conv = &tp;
 
 	pos = fromstr_func(next, &(size_t){sizeof(timestamp)}, &conv, false);
-	if (!pos || pos < (ssize_t) strlen(next) || ATOMcmp(TYPE_timestamp, conv, ATOMnilptr(TYPE_timestamp)) == 0)
+	if (pos < (ssize_t) strlen(next) || /* includes pos < 0 */ is_timestamp_nil(*conv))
 		return createException(SQL, "batcalc.str_2time_timestamptz_internal", SQLSTATE(22007) "Timestamp '%s' has incorrect format", next);
 	*ret = timestamp_2time_timestamp_imp(*conv, shift, divider, multiplier);
 	return MAL_SUCCEED;
@@ -1212,7 +1212,7 @@ str_2_date_internal_imp(date *ret, str next, bit ce, bit *hasnil)
 		date dt = 0, *conv = &dt;
 
 		pos = date_fromstr(next, &(size_t){sizeof(date)}, &conv, false);
-		if (pos < (ssize_t) strlen(next) || /* includes pos < 0 */ ATOMcmp(TYPE_date, conv, ATOMnilptr(TYPE_date)) == 0)
+		if (pos < (ssize_t) strlen(next) || /* includes pos < 0 */ is_date_nil(*conv))
 			return createException(SQL, "batcalc.str_2_date", SQLSTATE(22007) "Date '%s' has incorrect format", next);
 		*ret = *conv;
 	}
