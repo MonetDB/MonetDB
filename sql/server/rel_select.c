@@ -23,9 +23,6 @@
 #include "rel_unnest.h"
 #include "rel_remote.h"
 #include "rel_sequence.h"
-#ifdef HAVE_HGE
-#include "mal.h"		/* for have_hge */
-#endif
 
 #define VALUE_FUNC(f) (f->func->type == F_FUNC || f->func->type == F_FILT)
 #define check_card(card,f) ((card == card_none && !f->res) || (CARD_VALUE(card) && f->res && VALUE_FUNC(f)) || card == card_loader || (card == card_relation && f->func->type == F_UNION))
@@ -1304,7 +1301,7 @@ largest_numeric_type(sql_subtype *res, int ec)
 {
 	if (ec == EC_NUM) {
 #ifdef HAVE_HGE
-		*res = *sql_bind_localtype(have_hge ? "hge" : "lng");
+		*res = *sql_bind_localtype("hge");
 #else
 		*res = *sql_bind_localtype("lng");
 #endif
@@ -1339,19 +1336,16 @@ exp_scale_algebra(mvc *sql, sql_subfunc *f, sql_rel *rel, sql_exp *l, sql_exp *r
 
 		/* HACK alert: digits should be less than max */
 #ifdef HAVE_HGE
-		if (have_hge) {
-			if (res->type->radix == 10 && digits > 39)
-				digits = 39;
-			if (res->type->radix == 2 && digits > 128)
-				digits = 128;
-		} else
+		if (res->type->radix == 10 && digits > 39)
+			digits = 39;
+		if (res->type->radix == 2 && digits > 128)
+			digits = 128;
+#else
+		if (res->type->radix == 10 && digits > 19)
+			digits = 19;
+		if (res->type->radix == 2 && digits > 64)
+			digits = 64;
 #endif
-		{
-			if (res->type->radix == 10 && digits > 19)
-				digits = 19;
-			if (res->type->radix == 2 && digits > 64)
-				digits = 64;
-		}
 
 		sql_find_subtype(&nlt, lt->type->sqlname, digL, scaleL);
 		l = exp_check_type( sql, &nlt, rel, l, type_equal);
@@ -3583,14 +3577,14 @@ _rel_aggr(sql_query *query, sql_rel **rel, int distinct, sql_schema *s, char *an
 		else if (list_length(l) <= 63)
 			tpe = sql_bind_localtype("lng");
 #ifdef HAVE_HGE
-		else if (have_hge && list_length(l) <= 127)
+		else if (list_length(l) <= 127)
 			tpe = sql_bind_localtype("hge");
 #endif
 		else
 			return sql_error(sql, 02, SQLSTATE(42000) "SELECT: GROUPING the number of grouping columns is larger"
 								" than the maximum number of representable bits from this server (%d > %d)", list_length(l),
 #ifdef HAVE_HGE
-							have_hge ? 127 : 63
+							127
 #else
 							 63
 #endif

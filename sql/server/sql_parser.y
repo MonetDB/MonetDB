@@ -16,9 +16,6 @@
 #include "sql_semantic.h"	/* for sql_add_param() & sql_add_arg() */
 #include "sql_env.h"
 #include "rel_sequence.h"	/* for sql_next_seq_name() */
-#ifdef HAVE_HGE
-#include "mal.h"		/* for have_hge */
-#endif
 
 #include <unistd.h>
 #include <string.h>
@@ -52,8 +49,8 @@
 #define SET_M(info)(info = info | 0x01)
 
 #ifdef HAVE_HGE
-#define MAX_DEC_DIGITS (have_hge ? 38 : 18)
-#define MAX_HEX_DIGITS (have_hge ? 32 : 16)
+#define MAX_DEC_DIGITS 38
+#define MAX_HEX_DIGITS 32
 #else
 #define MAX_DEC_DIGITS 18
 #define MAX_HEX_DIGITS 16
@@ -4638,7 +4635,7 @@ literal:
 			else if (res <= GDK_lng_max)
 				sql_find_subtype(&t, "bigint", 64, 0 );
 #ifdef HAVE_HGE
-			else if (res <= GDK_hge_max && have_hge)
+			else if (res <= GDK_hge_max)
 				sql_find_subtype(&t, "hugeint", 128, 0 );
 #endif
 			else
@@ -4730,7 +4727,7 @@ literal:
 		    else if (value >= GDK_lng_min && value <= GDK_lng_max)
 		  	  sql_find_subtype(&t, "bigint", bits, 0 );
 #ifdef HAVE_HGE
-		    else if (value >= GDK_hge_min && value <= GDK_hge_max && have_hge)
+		    else if (value >= GDK_hge_min && value <= GDK_hge_max)
 		  	  sql_find_subtype(&t, "hugeint", bits, 0 );
 #endif
 		    else

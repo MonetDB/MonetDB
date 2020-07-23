@@ -544,12 +544,6 @@ monetdbe_startup(monetdbe_database_internal *mdbe, char* dbdir, monetdbe_options
 		mdbe->msg = createException(MAL, "monetdbe.monetdbe_startup", "GDKinit() failed");
 		goto cleanup;
 	}
-#ifdef HAVE_HGE
-	if (opts && opts->have_hge)
-		have_hge = 1;
-	else
-		have_hge = 0;
-#endif
 	if ((mdbe->msg = malEmbeddedBoot(workers, memory, querytimeout, sessiontimeout)) != MAL_SUCCEED)
 		goto cleanup;
 

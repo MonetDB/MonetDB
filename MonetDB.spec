@@ -7,7 +7,7 @@
 # The --with OPTION and --without OPTION arguments can be passed on
 # the commandline of both rpmbuild and mock.
 
-# On 64 bit architectures we build "hugeint" packages.
+# On 64 bit architectures compile with 128 bit integer support.
 %if "%{?_lib}" == "lib64"
 %bcond_without hugeint
 %endif
@@ -465,10 +465,12 @@ Summary: MonetDB - Monet Database Management System
 Group: Applications/Databases
 Requires(pre): shadow-utils
 Requires: %{name}-client%{?_isa} = %{version}-%{release}
+Obsoletes: MonetDB5-server-hugeint < 11.38.0
+%if %{with hugeint}
+Provides: MonetDB5-server-hugeint%{?_isa} = %{version}-%{release}
+%endif
 %if (0%{?fedora} >= 22)
 Recommends: %{name}-SQL-server5%{?_isa} = %{version}-%{release}
-%if %{with hugeint}
-Recommends: MonetDB5-server-hugeint%{?_isa} = %{version}-%{release}
 %endif
 Suggests: %{name}-client%{?_isa} = %{version}-%{release}
 %endif
@@ -536,10 +538,6 @@ exit 0
 %exclude %{_libdir}/monetdb5/rapi.mal
 %endif
 %exclude %{_libdir}/monetdb5/sql*.mal
-%if %{with hugeint}
-%exclude %{_libdir}/monetdb5/*_hge.mal
-%exclude %{_libdir}/monetdb5/autoload/*_hge.mal
-%endif
 %{_libdir}/monetdb5/*.mal
 %if %{with geos}
 %exclude %{_libdir}/monetdb5/autoload/*_geom.mal
@@ -559,28 +557,6 @@ exit 0
 %dir %{_datadir}/doc/MonetDB
 %docdir %{_datadir}/doc/MonetDB
 %{_datadir}/doc/MonetDB/*
-
-%if %{with hugeint}
-%package -n MonetDB5-server-hugeint
-Summary: MonetDB - 128-bit integer support for MonetDB5-server
-Group: Applications/Databases
-Requires: MonetDB5-server%{?_isa}
-
-%description -n MonetDB5-server-hugeint
-MonetDB is a database management system that is developed from a
-main-memory perspective with use of a fully decomposed storage model,
-automatic index management, extensibility of data types and search
-accelerators.  It also has an SQL front end.
-
-This package provides HUGEINT (128-bit integer) support for the
-MonetDB5-server component.
-
-%files -n MonetDB5-server-hugeint
-%exclude %{_libdir}/monetdb5/sql*_hge.mal
-%{_libdir}/monetdb5/*_hge.mal
-%exclude %{_libdir}/monetdb5/autoload/??_sql_hge.mal
-%{_libdir}/monetdb5/autoload/*_hge.mal
-%endif
 
 %package -n MonetDB5-server-devel
 Summary: MonetDB development files
@@ -608,10 +584,11 @@ used from the MAL level.
 Summary: MonetDB5 SQL server modules
 Group: Applications/Databases
 Requires(pre): MonetDB5-server%{?_isa} = %{version}-%{release}
-%if (0%{?fedora} >= 22)
+Obsoletes: %{name}-SQL-server5-hugeint < 11.38.0
 %if %{with hugeint}
-Recommends: %{name}-SQL-server5-hugeint%{?_isa} = %{version}-%{release}
+Provides: %{name}-SQL-server5-hugeint%{?_isa} = %{version}-%{release}
 %endif
+%if (0%{?fedora} >= 22)
 Suggests: %{name}-client%{?_isa} = %{version}-%{release}
 %endif
 %if %{?rhel:0}%{!?rhel:1} || 0%{?rhel} >= 7
@@ -668,38 +645,11 @@ use SQL with MonetDB, you will need to install this package.
 %endif
 %{_libdir}/monetdb5/createdb/*.sql
 %{_libdir}/monetdb5/sql*.mal
-%if %{with hugeint}
-%exclude %{_libdir}/monetdb5/createdb/*_hge.sql
-%exclude %{_libdir}/monetdb5/sql*_hge.mal
-%endif
 %doc %{_mandir}/man1/monetdb.1.gz
 %doc %{_mandir}/man1/monetdbd.1.gz
 %dir %{_datadir}/doc/MonetDB-SQL
 %docdir %{_datadir}/doc/MonetDB-SQL
 %{_datadir}/doc/MonetDB-SQL/*
-
-%if %{with hugeint}
-%package SQL-server5-hugeint
-Summary: MonetDB5 128 bit integer (hugeint) support for SQL
-Group: Applications/Databases
-Requires: MonetDB5-server-hugeint%{?_isa} = %{version}-%{release}
-Requires: MonetDB-SQL-server5%{?_isa} = %{version}-%{release}
-
-%description SQL-server5-hugeint
-MonetDB is a database management system that is developed from a
-main-memory perspective with use of a fully decomposed storage model,
-automatic index management, extensibility of data types and search
-accelerators.  It also has an SQL front end.
-
-This package provides HUGEINT (128-bit integer) support for the SQL
-front end of MonetDB.
-
-%files SQL-server5-hugeint
-%defattr(-,root,root)
-%{_libdir}/monetdb5/autoload/??_sql_hge.mal
-%{_libdir}/monetdb5/createdb/*_hge.sql
-%{_libdir}/monetdb5/sql*_hge.mal
-%endif
 
 %package testing
 Summary: MonetDB - Monet Database Management System

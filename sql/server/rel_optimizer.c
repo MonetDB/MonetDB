@@ -16,9 +16,6 @@
 #include "rel_propagate.h"
 #include "rel_rewriter.h"
 #include "sql_mvc.h"
-#ifdef HAVE_HGE
-#include "mal.h"		/* for have_hge */
-#endif
 #include "gdk_time.h"
 
 typedef struct global_props {
@@ -5667,7 +5664,7 @@ sql_class_base_score(mvc *sql, sql_column *c, sql_subtype *t, bool equality_base
 			return 150 - 64;
 #ifdef HAVE_HGE
 		case TYPE_hge:
-			return 150 - have_hge ? 128 : 64;
+			return 150 - 128;
 #endif
 		case TYPE_flt:
 			return 75 - 24;
@@ -8387,7 +8384,7 @@ rel_reduce_casts(visitor *v, sql_rel *rel)
 								}
 								append(args, re);
 #ifdef HAVE_HGE
-								append(args, have_hge ? exp_atom_hge(v->sql->sa, val) : exp_atom_lng(v->sql->sa, (lng) val));
+								append(args, exp_atom_hge(v->sql->sa, val));
 #else
 								append(args, exp_atom_lng(v->sql->sa, val));
 #endif
@@ -9775,4 +9772,3 @@ rel_optimizer(mvc *sql, sql_rel *rel, int value_based_opt)
 	sql->Topt += GDKusec() - Tbegin;
 	return rel;
 }
-

@@ -50,10 +50,6 @@ mal_export char     monet_cwd[FILENAME_MAX];
 mal_export char 	monet_characteristics[4096];
 mal_export stream	*maleventstream;
 
-#ifdef HAVE_HGE
-mal_export int have_hge;
-#endif
-
 /*
    See gdk/gdk.h for the definition of all debug masks.
    See `man mserver5` or tools/mserver/mserver5.1

@@ -15,9 +15,6 @@
 #include "rel_unnest.h"
 #include "rel_optimizer.h"
 #include "rel_distribute.h"
-#ifdef HAVE_HGE
-#include "mal.h"		/* for have_hge */
-#endif
 
 comp_type
 compare_str2type(const char *compare_op)
@@ -250,7 +247,7 @@ exp_compare_func(mvc *sql, sql_exp *le, sql_exp *re, const char *compareop, int 
 {
 	sql_subfunc *cmp_func = sql_bind_func(sql->sa, NULL, compareop, exp_subtype(le), exp_subtype(le), F_FUNC);
 	sql_exp *e;
- 
+
 	assert(cmp_func);
 	e = exp_binop(sql->sa, le, re, cmp_func);
 	if (e) {
@@ -418,7 +415,7 @@ exp_atom_lng(sql_allocator *sa, lng i)
 	sql_subtype it;
 
 #ifdef HAVE_HGE
-	sql_find_subtype(&it, "bigint", have_hge ? 18 : 19, 0);
+	sql_find_subtype(&it, "bigint", 18, 0);
 #else
 	sql_find_subtype(&it, "bigint", 19, 0);
 #endif
@@ -2624,25 +2621,21 @@ exp_sum_scales(sql_subfunc *f, sql_exp *l, sql_exp *r)
 
 		/* HACK alert: digits should be less than max */
 #ifdef HAVE_HGE
-		if (have_hge) {
-			if (ares->type.type->radix == 10 && res->digits > 39)
-				res->digits = 39;
-			if (ares->type.type->radix == 2 && res->digits > 128)
-				res->digits = 128;
-		} else
+		if (ares->type.type->radix == 10 && res->digits > 39)
+			res->digits = 39;
+		if (ares->type.type->radix == 2 && res->digits > 128)
+			res->digits = 128;
+#else
+		if (ares->type.type->radix == 10 && res->digits > 19)
+			res->digits = 19;
+		if (ares->type.type->radix == 2 && res->digits > 64)
+			res->digits = 64;
 #endif
-		{
-
-			if (ares->type.type->radix == 10 && res->digits > 19)
-				res->digits = 19;
-			if (ares->type.type->radix == 2 && res->digits > 64)
-				res->digits = 64;
-		}
 
 		/* numeric types are fixed length */
 		if (ares->type.type->eclass == EC_NUM) {
 #ifdef HAVE_HGE
-			if (have_hge && ares->type.type->localtype == TYPE_hge && res->digits == 128)
+			if (ares->type.type->localtype == TYPE_hge && res->digits == 128)
 				t = *sql_bind_localtype("hge");
 			else
 #endif
@@ -2690,7 +2683,7 @@ rel_set_type_param(mvc *sql, sql_subtype *type, sql_rel *rel, sql_exp *rel_exp, 
 	/* use largest numeric types */
 	if (upcast && type->type->eclass == EC_NUM)
 #ifdef HAVE_HGE
-		type = sql_bind_localtype(have_hge ? "hge" : "lng");
+		type = sql_bind_localtype("hge");
 #else
 		type = sql_bind_localtype("lng");
 #endif
@@ -2767,7 +2760,7 @@ exp_numeric_supertype(mvc *sql, sql_exp *e )
 	}
 	if (tp->type->eclass == EC_NUM) {
 #ifdef HAVE_HGE
-		sql_subtype *ltp = sql_bind_localtype(have_hge ? "hge" : "lng");
+		sql_subtype *ltp = sql_bind_localtype("hge");
 #else
 		sql_subtype *ltp = sql_bind_localtype("lng");
 #endif
