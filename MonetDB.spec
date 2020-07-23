@@ -985,6 +985,13 @@ fi
 %postun -p /sbin/ldconfig
 
 %changelog
+* Thu Jul 23 2020 Sjoerd Mullender <sjoerd@acm.org> - 11.37.11-20200723
+- Rebuilt.
+- BZ#6917: Decimal parsing fails
+- BZ#6932: Syntax error while parsing JSON numbers with exponent
+- BZ#6934: sys.isauuid() returns wrong answer for some invalid uuid
+  strings
+
 * Mon Jul 20 2020 Sjoerd Mullender <sjoerd@acm.org> - 11.37.9-20200720
 - Rebuilt.
 - BZ#6844: sys.getUser('https://me:pw@www.monetdb.org/Doc') does not
