@@ -5750,7 +5750,7 @@ sql_class_base_score(mvc *sql, sql_column *c, sql_subtype *t, bool equality_base
 			return 150 - 64;
 #ifdef HAVE_HGE
 		case TYPE_hge:
-			return 150 - have_hge ? 128 : 64;
+			return 150 - (have_hge ? 128 : 64);
 #endif
 		case TYPE_flt:
 			return 75 - 24;
