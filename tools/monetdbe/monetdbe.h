@@ -94,9 +94,6 @@ typedef struct {
 	int querytimeout;  // graceful terminate query after a few seconds
 	int sessiontimeout;  // graceful terminate the session after a few seconds
 	int nr_threads;				// maximum number of worker treads, limits level of parallalism
-#ifdef HAVE_HGE
-	bool have_hge;
-#endif
 } monetdbe_options;
 
 #define DEFAULT_STRUCT_DEFINITION(ctype, typename)         \

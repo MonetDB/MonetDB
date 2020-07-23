@@ -28655,57 +28655,57 @@ address CMDbatBETWEEN
 comment "B between V1 and V2 (or vice versa)";
 pattern between(b:bat[:any_1],v1:bat[:any_1],v2:bat[:any_1],s:bat[:oid],s1:bat[:oid],s2:bat[:oid],sym:bit,linc:bit,hinc:bit,nils_false:bit,anti:bit) :bat[:bit]
 address CMDbatBETWEEN
-comment "B between V1 and V2 (or vice versa) with candidate list";
+comment "B between V1 and V2 (or vice versa) with candidates list";
 pattern between(b:bat[:any_1],v1:bat[:any_1],v2:any_1,sym:bit,linc:bit,hinc:bit,nils_false:bit,anti:bit) :bat[:bit]
 address CMDbatBETWEEN
 comment "B between V1 and V2 (or vice versa)";
 pattern between(b:bat[:any_1],v1:bat[:any_1],v2:any_1,s:bat[:oid],s1:bat[:oid],sym:bit,linc:bit,hinc:bit,nils_false:bit,anti:bit) :bat[:bit]
 address CMDbatBETWEEN
-comment "B between V1 and V2 (or vice versa) with candidate list";
+comment "B between V1 and V2 (or vice versa) with candidates list";
 pattern between(b:bat[:any_1],v1:any_1,v2:bat[:any_1],sym:bit,linc:bit,hinc:bit,nils_false:bit,anti:bit) :bat[:bit]
 address CMDbatBETWEEN
 comment "B between V1 and V2 (or vice versa)";
 pattern between(b:bat[:any_1],v1:any_1,v2:bat[:any_1],s:bat[:oid],s2:bat[:oid],sym:bit,linc:bit,hinc:bit,nils_false:bit,anti:bit) :bat[:bit]
 address CMDbatBETWEEN
-comment "B between V1 and V2 (or vice versa) with candidate list";
+comment "B between V1 and V2 (or vice versa) with candidates list";
 pattern between(b:bat[:any_1],v1:any_1,v2:any_1,sym:bit,linc:bit,hinc:bit,nils_false:bit,anti:bit) :bat[:bit]
 address CMDbatBETWEEN
 comment "B between V1 and V2 (or vice versa)";
 pattern between(b:bat[:any_1],v1:any_1,v2:any_1,s:bat[:oid],sym:bit,linc:bit,hinc:bit,nils_false:bit,anti:bit) :bat[:bit]
 address CMDbatBETWEEN
-comment "B between V1 and V2 (or vice versa) with candidate list";
+comment "B between V1 and V2 (or vice versa) with candidates list";
 pattern between(b:bat[:any_1],v1:bat[:any_1],v2:bat[:any_1],r:bat[:bit],sym:bit,linc:bit,hinc:bit,nils_false:bit,anti:bit) :bat[:bit]
 address CMDbatBETWEEN
 comment "B between V1 and V2 (or vice versa) with conditional execution bat";
 pattern between(b:bat[:any_1],v1:bat[:any_1],v2:bat[:any_1],s:bat[:oid],s1:bat[:oid],s2:bat[:oid],r:bat[:bit],sym:bit,linc:bit,hinc:bit,nils_false:bit,anti:bit) :bat[:bit]
 address CMDbatBETWEEN
-comment "B between V1 and V2 (or vice versa) with candidate list and conditional execution bat";
+comment "B between V1 and V2 (or vice versa) with candidates list and conditional execution bat";
 pattern between(b:bat[:any_1],v1:bat[:any_1],v2:any_1,r:bat[:bit],sym:bit,linc:bit,hinc:bit,nils_false:bit,anti:bit) :bat[:bit]
 address CMDbatBETWEEN
 comment "B between V1 and V2 (or vice versa) with conditional execution bat";
 pattern between(b:bat[:any_1],v1:bat[:any_1],v2:any_1,s:bat[:oid],s1:bat[:oid],r:bat[:bit],sym:bit,linc:bit,hinc:bit,nils_false:bit,anti:bit) :bat[:bit]
 address CMDbatBETWEEN
-comment "B between V1 and V2 (or vice versa) with candidate list and conditional execution bat";
+comment "B between V1 and V2 (or vice versa) with candidates list and conditional execution bat";
 pattern between(b:bat[:any_1],v1:any_1,v2:bat[:any_1],r:bat[:bit],sym:bit,linc:bit,hinc:bit,nils_false:bit,anti:bit) :bat[:bit]
 address CMDbatBETWEEN
 comment "B between V1 and V2 (or vice versa) with conditional execution bat";
 pattern between(b:bat[:any_1],v1:any_1,v2:bat[:any_1],s:bat[:oid],s2:bat[:oid],r:bat[:bit],sym:bit,linc:bit,hinc:bit,nils_false:bit,anti:bit) :bat[:bit]
 address CMDbatBETWEEN
-comment "B between V1 and V2 (or vice versa) with candidate list and conditional execution bat";
+comment "B between V1 and V2 (or vice versa) with candidates list and conditional execution bat";
 pattern between(b:bat[:any_1],v1:any_1,v2:any_1,r:bat[:bit],sym:bit,linc:bit,hinc:bit,nils_false:bit,anti:bit) :bat[:bit]
 address CMDbatBETWEEN
 comment "B between V1 and V2 (or vice versa) with conditional execution bat";
 pattern between(b:bat[:any_1],v1:any_1,v2:any_1,s:bat[:oid],r:bat[:bit],sym:bit,linc:bit,hinc:bit,nils_false:bit,anti:bit) :bat[:bit]
 address CMDbatBETWEEN
-comment "B between V1 and V2 (or vice versa) with candidate list and conditional execution bat";
+comment "B between V1 and V2 (or vice versa) with candidates list and conditional execution bat";
 
 
 pattern avg(b:bat[:bte]) :dbl
 address CMDcalcavg
-comment "average of non-nil values of B with candidates list";
+comment "average of non-nil values of B";
 pattern avg(b:bat[:bte],s:bat[:oid]) :dbl
 address CMDcalcavg
-comment "average of non-nil values of B";
+comment "average of non-nil values of B with candidates list";
 pattern avg(b:bat[:bte]) (:dbl, :lng)
 address CMDcalcavg
 comment "average and number of non-nil values of B";
@@ -28727,10 +28727,10 @@ comment "average and number of non-nil values of B with candidates list";
 
 pattern avg(b:bat[:sht]) :dbl
 address CMDcalcavg
-comment "average of non-nil values of B with candidates list";
+comment "average of non-nil values of B";
 pattern avg(b:bat[:sht],s:bat[:oid]) :dbl
 address CMDcalcavg
-comment "average of non-nil values of B";
+comment "average of non-nil values of B with candidates list";
 pattern avg(b:bat[:sht]) (:dbl, :lng)
 address CMDcalcavg
 comment "average and number of non-nil values of B";
@@ -28752,10 +28752,10 @@ comment "average and number of non-nil values of B with candidates list";
 
 pattern avg(b:bat[:int]) :dbl
 address CMDcalcavg
-comment "average of non-nil values of B with candidates list";
+comment "average of non-nil values of B";
 pattern avg(b:bat[:int],s:bat[:oid]) :dbl
 address CMDcalcavg
-comment "average of non-nil values of B";
+comment "average of non-nil values of B with candidates list";
 pattern avg(b:bat[:int]) (:dbl, :lng)
 address CMDcalcavg
 comment "average and number of non-nil values of B";
@@ -28777,10 +28777,10 @@ comment "average and number of non-nil values of B with candidates list";
 
 pattern avg(b:bat[:lng]) :dbl
 address CMDcalcavg
-comment "average of non-nil values of B with candidates list";
+comment "average of non-nil values of B";
 pattern avg(b:bat[:lng],s:bat[:oid]) :dbl
 address CMDcalcavg
-comment "average of non-nil values of B";
+comment "average of non-nil values of B with candidates list";
 pattern avg(b:bat[:lng]) (:dbl, :lng)
 address CMDcalcavg
 comment "average and number of non-nil values of B";
@@ -28802,10 +28802,10 @@ comment "average and number of non-nil values of B with candidates list";
 
 pattern avg(b:bat[:flt]) :dbl
 address CMDcalcavg
-comment "average of non-nil values of B with candidates list";
+comment "average of non-nil values of B";
 pattern avg(b:bat[:flt],s:bat[:oid]) :dbl
 address CMDcalcavg
-comment "average of non-nil values of B";
+comment "average of non-nil values of B with candidates list";
 pattern avg(b:bat[:flt]) (:dbl, :lng)
 address CMDcalcavg
 comment "average and number of non-nil values of B";
@@ -28827,10 +28827,10 @@ comment "average and number of non-nil values of B with candidates list";
 
 pattern avg(b:bat[:dbl]) :dbl
 address CMDcalcavg
-comment "average of non-nil values of B with candidates list";
+comment "average of non-nil values of B";
 pattern avg(b:bat[:dbl],s:bat[:oid]) :dbl
 address CMDcalcavg
-comment "average of non-nil values of B";
+comment "average of non-nil values of B with candidates list";
 pattern avg(b:bat[:dbl]) (:dbl, :lng)
 address CMDcalcavg
 comment "average and number of non-nil values of B";
