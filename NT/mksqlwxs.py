@@ -168,6 +168,8 @@ def main():
     print(r'            <Directory Id="lib" Name="lib">')
     print(r'              <Directory Id="monetdb5" Name="monetdb5">')
     id = comp(features, id, 16,
+              [r'lib\monetdb5\microbenchmark.mal'])
+    id = comp(features, id, 16,
               [r'lib\monetdb5\{}'.format(x) for x in sorted(filter(lambda x: x.startswith('lib_') and x.endswith('.dll') and ('geom' not in x) and ('pyapi' not in x) and ('opt_sql_append' not in x), os.listdir(os.path.join(sys.argv[3], 'lib', 'monetdb5'))))])
     id = comp(debug, id, 16,
               [r'lib\monetdb5\{}'.format(x) for x in sorted(filter(lambda x: x.startswith('lib_') and x.endswith('.pdb') and ('geom' not in x) and ('opt_sql_append' not in x), os.listdir(os.path.join(sys.argv[3], 'lib', 'monetdb5'))))])

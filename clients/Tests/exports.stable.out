@@ -1486,7 +1486,6 @@ int hasSameArguments(MalBlkPtr mb, InstrPtr p, InstrPtr q);
 int hasSameSignature(MalBlkPtr mb, InstrPtr p, InstrPtr q);
 int hasSideEffects(MalBlkPtr mb, InstrPtr p, int strict);
 str hashRef;
-int have_hge;
 str hgeRef;
 str identityRef;
 str ifthenelseRef;

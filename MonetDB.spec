@@ -514,7 +514,7 @@ exit 0
 %exclude %{_bindir}/stethoscope
 %{_libdir}/libmonetdb5.so.*
 %dir %{_libdir}/monetdb5
-%dir %{_libdir}/monetdb5/autoload
+%{_libdir}/monetdb5/microbenchmark.mal
 %{_libdir}/monetdb5/lib_capi.so
 %{_libdir}/monetdb5/lib_generator.so
 %{_libdir}/monetdb5/lib_udf.so
@@ -600,7 +600,6 @@ use SQL with MonetDB, you will need to install this package.
 %verify(not mtime) %attr(664,monetdb,monetdb) %{_localstatedir}/monetdb5/dbfarm/.merovingian_lock
 %config(noreplace) %attr(644,root,root) %{_sysconfdir}/logrotate.d/monetdbd
 %{_libdir}/monetdb5/lib_sql.so
-%dir %{_libdir}/monetdb5/createdb
 %doc %{_mandir}/man1/monetdb.1.gz
 %doc %{_mandir}/man1/monetdbd.1.gz
 %dir %{_datadir}/doc/MonetDB-SQL
