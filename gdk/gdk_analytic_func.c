@@ -1677,25 +1677,19 @@ GDKanalyticalavg(BAT *r, BAT *b, BAT *s, BAT *e, int tpe)
 #ifdef TRUNCATE_NUMBERS
 #define ANALYTICAL_AVERAGE_INT_CALC_FINALIZE(avg, rem, ncnt) \
 	do {
-		if (rem > 0 && avg < 0) { \
+		if (rem > 0 && avg < 0) \
 			avg++; \
-			rem -= ncnt; \
-		}
 	} while(0)
 #else
 #define ANALYTICAL_AVERAGE_INT_CALC_FINALIZE(avg, rem, ncnt) \
 	do { \
 		if (rem > 0) { \
 			if (avg < 0) { \
-				if (2*rem > ncnt) { \
+				if (2*rem > ncnt) \
 					avg++; \
-					rem -= ncnt; \
-				} \
 			} else { \
-				if (2*rem >= ncnt) { \
+				if (2*rem >= ncnt) \
 					avg++; \
-					rem -= ncnt; \
-				} \
 			} \
 		} \
 	} while(0)
