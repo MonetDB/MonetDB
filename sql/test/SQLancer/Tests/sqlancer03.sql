@@ -280,6 +280,32 @@ COPY 4 RECORDS INTO "sys"."t1" FROM stdin USING DELIMITERS E'\t',E'\n','"';
 select all sum(all cast("concat"(cast("month"(t1.c0) as string), r'1313451898') as interval month)) from t1;
 ROLLBACK;
 
+START TRANSACTION; -- Unknown barrier type error
+CREATE TABLE "sys"."t0" ("c0" INTEGER);
+COPY 13 RECORDS INTO "sys"."t0" FROM stdin USING DELIMITERS E'\t',E'\n','"';
+-952561247
+668236378
+-2045848771
+-1790523044
+-1543588024
+-1750414901
+1790114978
+-274432932
+874627516
+-452950065
+303960197
+1
+20
+
+create view v0(c0, c1, c2, c3) as (
+	select distinct cast(case time '03:52:21' when time '05:04:36' then r'0.2' end as date), 
+	coalesce (t0.c0, length(coalesce (r't%QB', replace(r' ,yO_5G刵i稶bDßᶏ''', r'0.8', r'-1e500')))), interval '1' month, timestamp '1970-01-16 13:47:20' from t0) with check option;
+select v0.c0 from v0 join t0 on (0.3) not in 
+(least(cast(t0.c0 as decimal), 
+case least(time '19:32:57', time '16:10:04') when coalesce (time '22:25:53', time '00:14:31', time '18:12:09', time '01:59:38') 
+then sql_min(0.7, 0.03) else 0.3 end), coalesce (case - (t0.c0) when cast(v0.c2 as real) then abs(0.4) else 0.5 end, cast(t0.c0 as decimal)));
+ROLLBACK;
+
 START TRANSACTION; -- Bug 6924
 CREATE TABLE "sys"."t0" ("a" INTEGER, "b" INTEGER NOT NULL, CONSTRAINT "t0_a_b_unique" UNIQUE ("a","b"));
 --This copy into must succeed 
