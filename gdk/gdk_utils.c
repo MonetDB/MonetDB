@@ -1089,6 +1089,10 @@ GDKreset(int status)
 				}
 				if (!skip)
 					GDKunlockHome(farmid);
+				if (BBPfarms[farmid].dirname) {
+					GDKfree((char*)BBPfarms[farmid].dirname);
+					BBPfarms[farmid].dirname = NULL;
+				}
 			}
 		}
 
@@ -1249,7 +1253,6 @@ GDKunlockHome(int farmid)
 		BBPfarms[farmid].lock_file = NULL;
 		GDKfree(gdklockpath);
 	}
-	BBPfarms[farmid].dirname = NULL;
 }
 
 /*
