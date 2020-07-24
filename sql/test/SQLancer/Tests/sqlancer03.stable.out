@@ -469,6 +469,15 @@ stdout of test 'sqlancer03` in directory 'sql/test/SQLancer` itself:
 % clob # type
 % 0 # length
 #ROLLBACK;
+#START TRANSACTION;
+#CREATE TABLE "sys"."t1" ("c0" TIMESTAMP);
+#COPY 4 RECORDS INTO "sys"."t1" FROM stdin USING DELIMITERS E'\t',E'\n','"';
+#"1970-01-14 14:26:27.000000"
+#"1970-01-18 02:50:56.000000"
+#"1970-01-06 21:36:37.000000"
+#"1970-01-14 01:01:12.000000"
+[ 4	]
+#ROLLBACK;
 #START TRANSACTION; -- Bug 6924
 #CREATE TABLE "sys"."t0" ("a" INTEGER, "b" INTEGER NOT NULL, CONSTRAINT "t0_a_b_unique" UNIQUE ("a","b"));
 #COPY 39 RECORDS INTO "sys"."t0" FROM stdin USING DELIMITERS E'\t',E'\n','"';
