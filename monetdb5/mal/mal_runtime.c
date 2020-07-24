@@ -115,18 +115,17 @@ runtimeProfileInit(Client cntxt, MalBlkPtr mb, MalStkPtr stk)
 {
 	size_t i, paused = 0;
 	str q;
-	QueryQueue tmp;
+	QueryQueue tmp = NULL;
 
 	MT_lock_set(&mal_delayLock);
-	tmp = QRYqueue;
-	if ( QRYqueue == NULL)
+	if ( QRYqueue == NULL) {
 		QRYqueue = (QueryQueue) GDKzalloc( sizeof (struct QRYQUEUE) * (qsize= 8)); /* for testing */
 
-	if ( QRYqueue == NULL){
-		addMalException(mb,"runtimeProfileInit" MAL_MALLOC_FAIL);
-		GDKfree(tmp);
-		MT_lock_unset(&mal_delayLock);
-		return;
+		if ( QRYqueue == NULL){
+			addMalException(mb,"runtimeProfileInit" MAL_MALLOC_FAIL);
+			MT_lock_unset(&mal_delayLock);
+			return;
+		}
 	}
 	// check for recursive call, which does not change the number of workers
 	i=qtail;
@@ -146,13 +145,13 @@ runtimeProfileInit(Client cntxt, MalBlkPtr mb, MalStkPtr stk)
 	assert(qhead < qsize);
 	if( (int) (qsize - paused) < MAL_MAXCLIENTS){
 		qsize += MAL_MAXCLIENTS;
-		QRYqueue = (QueryQueue) GDKrealloc( QRYqueue, sizeof (struct QRYQUEUE) * qsize);
-		if ( QRYqueue == NULL){
+		tmp = (QueryQueue) GDKrealloc( QRYqueue, sizeof (struct QRYQUEUE) * qsize);
+		if ( tmp == NULL){
 			addMalException(mb,"runtimeProfileInit" MAL_MALLOC_FAIL);
-			GDKfree(tmp);
 			MT_lock_unset(&mal_delayLock);
 			return;
 		}
+		QRYqueue = tmp;
 		for(i = qsize - MAL_MAXCLIENTS; i < qsize; i++)
 			clearQRYqueue(i);
 	}
