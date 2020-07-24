@@ -104,6 +104,9 @@ updateUserStats(Client cntxt, MalBlkPtr mb, lng ticks, time_t started, time_t fi
 	}
 }
 
+/*
+ * Free up the whole USRstats before mserver5 exits.
+ */
 static void
 dropUSRstats(void)
 {
@@ -114,11 +117,10 @@ dropUSRstats(void)
 			GDKfree(USRstats[i].username);
 		if( USRstats[i].maxquery)
 			GDKfree(USRstats[i].maxquery);
-		clearUSRstats(i); // FIXME: not needed since it's freed below
+		clearUSRstats(i);
 	}
 	GDKfree(USRstats);
 	USRstats = NULL;
-	// FIXME: shouldn't reset usrstatscnt?
 	MT_lock_unset(&mal_delayLock);
 }
 
@@ -208,15 +210,14 @@ runtimeProfileInit(Client cntxt, MalBlkPtr mb, MalStkPtr stk)
 
 	MT_lock_set(&mal_delayLock);
 
-	// FIXME: is this the correct init function to initiate this?
-	if(USRstats == NULL){ // FIXME: isn't USRstats always NULL here?
+	if(USRstats == NULL){
 		usrstatscnt = MAL_MAXCLIENTS;
 		USRstats = (UserStats) GDKzalloc( sizeof (struct USERSTAT) * usrstatscnt);
-	}
-	if(USRstats == NULL) {
-		addMalException(mb,"runtimeProfileInit" MAL_MALLOC_FAIL);
-		MT_lock_unset(&mal_delayLock);
-		return;
+		if(USRstats == NULL) {
+			addMalException(mb,"runtimeProfileInit" MAL_MALLOC_FAIL);
+			MT_lock_unset(&mal_delayLock);
+			return;
+		}
 	}
 
 	tmp = QRYqueue;
