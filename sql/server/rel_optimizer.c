@@ -3067,6 +3067,11 @@ exp_simplify_math( mvc *sql, sql_exp *e, int *changes)
 			 * min_no_nil or max_no_nil), in which case we
 			 * ignore the NULL and return the other
 			 * value */
+
+			/* for both nullif and coalesce don't rewrite the NULL handling */
+			if (f && f->func && f->func->imp && strcmp(f->func->imp, "internal") == 0)
+				return e;
+
 			if (exp_is_atom(le) && exp_is_null(sql, le)) {
 				(*changes)++;
 				if (f && f->func && f->func->imp && strstr(f->func->imp, "_no_nil") != NULL) {

@@ -1314,6 +1314,8 @@ sqltypeinit( sql_allocator *sa)
 	sql_create_func(sa, "least", "calc", "min_no_nil", FALSE, SCALE_FIX, 0, ANY, 2, ANY, ANY);
 	sql_create_func(sa, "greatest", "calc", "max_no_nil", FALSE, SCALE_FIX, 0, ANY, 2, ANY, ANY);
 	sql_create_func(sa, "ifthenelse", "calc", "ifthenelse", FALSE, SCALE_FIX, 0, ANY, 3, BIT, ANY, ANY);
+	sql_create_func(sa, "nullif", "sql", "internal", FALSE, SCALE_FIX, 0, ANY, 2, ANY, ANY);
+	sql_create_func(sa, "coalesce", "sql", "internal", FALSE, SCALE_FIX, 0, ANY, 2, ANY, ANY);
 
 	/* sum for numerical and decimals */
 	sql_create_aggr(sa, "sum", "aggr", "sum", LargestINT, 1, BTE);
