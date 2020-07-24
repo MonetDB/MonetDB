@@ -1058,7 +1058,7 @@ GDKreset(int status)
 		for (Thread t = GDKthreads; t < GDKthreads + THREADS; t++) {
 			MT_Id victim;
 			if ((victim = (MT_Id) ATOMIC_GET(&t->pid)) != 0) {
-				if (victim != pid) {
+				if (pid && victim != pid) {
 					int e;
 
 					killed = true;

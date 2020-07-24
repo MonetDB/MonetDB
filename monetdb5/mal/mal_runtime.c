@@ -104,7 +104,7 @@ updateUserStats(Client cntxt, MalBlkPtr mb, lng ticks, time_t started, time_t fi
 	}
 }
 
-void
+static void
 dropUSRstats(void)
 {
 	size_t i;
@@ -120,21 +120,6 @@ dropUSRstats(void)
 	USRstats = NULL;
 	// FIXME: shouldn't reset usrstatscnt?
 	MT_lock_unset(&mal_delayLock);
-}
-
-void
-mal_runtime_reset(void)
-{
-	GDKfree(QRYqueue);
-	QRYqueue = NULL;
-	qsize = 0;
-	qtag= 1;
-	qhead = 0;
-	qtail = 0;
-
-	GDKfree(USRstats); // FIXME: where should we free the contents of USRstats?
-	USRstats = NULL;
-	usrstatscnt = 0;
 }
 
 static str
@@ -189,28 +174,25 @@ advanceQRYqueue(void)
 	if( s){
 		/* don;t wipe them when they are still running, prepared, or paused */
 		/* The upper layer has assured there is at least one slot available */
-		if(QRYqueue[qhead].status == 0 || (QRYqueue[qhead].status[0] != 'r' && QRYqueue[qhead].status[0] != 'p')){
+		if(QRYqueue[qhead].status != 0 && (QRYqueue[qhead].status[0] == 'r' || QRYqueue[qhead].status[0] == 'p')){
 			advanceQRYqueue();
 			return;
 		}
 		GDKfree(s);
-		if(QRYqueue[qhead].username)
-			GDKfree(QRYqueue[qhead].username);
+		GDKfree(QRYqueue[qhead].username);
 		clearQRYqueue(qhead);
 	}
 }
 
-void
+static void
 dropQRYqueue(void)
 {
 	size_t i;
 	MT_lock_set(&mal_delayLock);
 	for(i = 0; i < qsize; i++){
-		if( QRYqueue[i].query)
-			GDKfree(QRYqueue[i].query);
-		if(QRYqueue[i].username)
-			GDKfree(QRYqueue[i].username);
-		clearQRYqueue(i); // FIXME: not needed since it's freed below?
+		GDKfree(QRYqueue[i].query);
+		GDKfree(QRYqueue[i].username);
+		clearQRYqueue(i);
 	}
 	GDKfree(QRYqueue);
 	QRYqueue = NULL;
@@ -222,7 +204,7 @@ runtimeProfileInit(Client cntxt, MalBlkPtr mb, MalStkPtr stk)
 {
 	size_t i, paused = 0;
 	str q;
-	QueryQueue tmp;
+	QueryQueue tmp = NULL;
 
 	MT_lock_set(&mal_delayLock);
 
@@ -238,14 +220,14 @@ runtimeProfileInit(Client cntxt, MalBlkPtr mb, MalStkPtr stk)
 	}
 
 	tmp = QRYqueue;
-	if ( QRYqueue == NULL)
+	if ( QRYqueue == NULL) {
 		QRYqueue = (QueryQueue) GDKzalloc( sizeof (struct QRYQUEUE) * (qsize= 8)); /* for testing */
 
-	if ( QRYqueue == NULL){
-		addMalException(mb,"runtimeProfileInit" MAL_MALLOC_FAIL);
-		GDKfree(tmp);
-		MT_lock_unset(&mal_delayLock);
-		return;
+		if ( QRYqueue == NULL){
+			addMalException(mb,"runtimeProfileInit" MAL_MALLOC_FAIL);
+			MT_lock_unset(&mal_delayLock);
+			return;
+		}
 	}
 	// check for recursive call, which does not change the number of workers
 	i=qtail;
@@ -265,13 +247,13 @@ runtimeProfileInit(Client cntxt, MalBlkPtr mb, MalStkPtr stk)
 	assert(qhead < qsize);
 	if( qsize - paused < (size_t) MAL_MAXCLIENTS){
 		qsize += MAL_MAXCLIENTS;
-		QRYqueue = (QueryQueue) GDKrealloc( QRYqueue, sizeof (struct QRYQUEUE) * qsize);
-		if ( QRYqueue == NULL){
+		tmp = (QueryQueue) GDKrealloc( QRYqueue, sizeof (struct QRYQUEUE) * qsize);
+		if ( tmp == NULL){
 			addMalException(mb,"runtimeProfileInit" MAL_MALLOC_FAIL);
-			GDKfree(tmp); // FIXME: shouldn't we free the contents of 'tmp'?
 			MT_lock_unset(&mal_delayLock);
 			return;
 		}
+		QRYqueue = tmp;
 		for(i = qsize - MAL_MAXCLIENTS; i < qsize; i++)
 			clearQRYqueue(i);
 	}
@@ -285,10 +267,9 @@ runtimeProfileInit(Client cntxt, MalBlkPtr mb, MalStkPtr stk)
 	QRYqueue[qhead].start = time(0);
 	q = isaSQLquery(mb);
 	QRYqueue[qhead].query = q? GDKstrdup(q):0;
-	if(QRYqueue[qhead].username)
-		GDKfree(QRYqueue[qhead].username);
+	GDKfree(QRYqueue[qhead].username);
 	if (!GDKembedded())
-		AUTHgetUsername(&QRYqueue[qhead].username, cntxt);
+		QRYqueue[qhead].username = GDKstrdup(cntxt->username);
 	QRYqueue[qhead].idx = cntxt->idx;
 	QRYqueue[qhead].memory = (int) (stk->memory / LL_CONSTANT(1048576)); /* Convert to MB */
 	QRYqueue[qhead].workers = (int) stk->workers;
@@ -334,6 +315,20 @@ runtimeProfileFinish(Client cntxt, MalBlkPtr mb, MalStkPtr stk)
 			i = 0;
 	}
 	MT_lock_unset(&mal_delayLock);
+}
+
+/* Used by mal_reset to do the grand final clean up of this area before MonetDB exits */
+void
+mal_runtime_reset(void)
+{
+	dropQRYqueue();
+	qsize = 0;
+	qtag= 1;
+	qhead = 0;
+	qtail = 0;
+
+	dropUSRstats();
+	usrstatscnt = 0;
 }
 
 /*

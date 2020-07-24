@@ -16,9 +16,6 @@
 #include "rel_propagate.h"
 #include "rel_rewriter.h"
 #include "sql_mvc.h"
-#ifdef HAVE_HGE
-#include "mal.h"		/* for have_hge */
-#endif
 #include "gdk_time.h"
 
 typedef struct global_props {
@@ -4038,6 +4035,19 @@ exps_uses_exp(list *exps, sql_exp *e)
 	return list_exps_uses_exp(exps, exp_relname(e), exp_name(e));
 }
 
+static bool
+exps_uses_any(list *exps, list *l)
+{
+	bool uses_any = false;
+
+	for (node *n = l->h; n && !uses_any; n = n->next) {
+		sql_exp *e = n->data;
+		uses_any |= list_exps_uses_exp(exps, exp_relname(e), exp_name(e)) != NULL;
+	}
+
+	return uses_any;
+}
+
 /*
  * Rewrite aggregations over union all.
  *	groupby ([ union all (a, b) ], [gbe], [ count, sum ] )
@@ -4658,43 +4668,6 @@ rel_push_select_down_join(visitor *v, sql_rel *rel)
 	return rel;
 }
 
-static bool
-find_simple_projection_for_join2semi(sql_rel *rel)
-{
-	if (is_project(rel->op) && list_length(rel->exps) == 1) {
-		sql_exp *e = rel->exps->h->data;
-
-		if (rel->card < CARD_AGGR) /* const or groupby without group by exps */
-			return true;
-		/* a single group by column in the projection list from a group by relation is guaranteed to be unique, but not an aggregate */
-		if (e->type == e_column) {
-			sql_rel *res = NULL;
-			sql_exp *found = NULL;
-			bool underjoin = false;
-
-			if (is_groupby(rel->op) || need_distinct(rel) || find_prop(e->p, PROP_HASHCOL))
-				return true;
-
-			found = rel_find_exp_and_corresponding_rel(rel->l, e, &res, &underjoin); /* grouping column on inner relation */
-			if (found && !underjoin) {
-				if (find_prop(found->p, PROP_HASHCOL)) /* primary key always unique */
-					return true;
-				if (found->type == e_column && found->card <= CARD_AGGR) {
-					if (!(is_groupby(res->op) || need_distinct(res)) && list_length(res->exps) != 1)
-						return false;
-					for (node *n = res->exps->h ; n ; n = n->next) { /* must be the single column in the group by expression list */
-						sql_exp *e = n->data;
-						if (e != found && e->type == e_column)
-							return false;
-					}
-					return true;
-				}
-			}
-		}
-	}
-	return false;
-}
-
 /*
  * Push {semi}joins down, pushes the joins through group by expressions.
  * When the join is on the group by columns, we can push the joins left
@@ -4713,13 +4686,13 @@ rel_push_join_down(visitor *v, sql_rel *rel)
 {
 	list *exps = NULL;
 
-	if (!rel_is_ref(rel) && ((is_join(rel->op) || is_semi(rel->op)) && rel->l && rel->exps)) {
+	if (!rel_is_ref(rel) && ((is_left(rel->op) || rel->op == op_join || is_semi(rel->op)) && rel->l && rel->exps)) {
 		sql_rel *gb = rel->r, *ogb = gb, *l = NULL, *rell = rel->l;
 
 		if (gb->op == op_project)
 			gb = gb->l;
 
-		if (rel_is_ref(rell) || !find_simple_projection_for_join2semi(rell))
+		if (rel_is_ref(rell))
 			return rel;
 
 		exps = rel->exps;
@@ -5304,6 +5277,56 @@ rel_remove_empty_join(visitor *v, sql_rel *rel)
 	return rel;
 }
 
+static bool
+find_projection_for_join2semi(sql_rel *rel)
+{
+	if (is_project(rel->op) && !is_union(rel->op)) {
+		if (rel->card < CARD_AGGR) /* const or groupby without group by exps */
+			return true;
+
+		if (is_groupby(rel->op)) { /* if just groupby columns are projected, it will be distinct */
+			bool all_groupby_columns = true;
+
+			if (list_empty(rel->r)) /* global aggregate */
+				return true;
+			for (node *n = rel->exps->h; n && all_groupby_columns; n = n->next) {
+				sql_exp *e = n->data;
+				all_groupby_columns &= (e->type == e_column && (find_prop(e->p, PROP_HASHCOL) || exps_find_exp(rel->r, e)));
+			}
+			if (all_groupby_columns)
+				return true;
+		}
+		if (list_length(rel->exps) == 1) {
+			sql_exp *e = rel->exps->h->data;
+			/* a single group by column in the projection list from a group by relation is guaranteed to be unique, but not an aggregate */
+			if (e->type == e_column) {
+				sql_rel *res = NULL;
+				sql_exp *found = NULL;
+				bool underjoin = false;
+
+				if (is_groupby(rel->op) || need_distinct(rel) || find_prop(e->p, PROP_HASHCOL))
+					return true;
+
+				if ((found = rel_find_exp_and_corresponding_rel(rel->l, e, &res, &underjoin)) && !underjoin) { /* grouping column on inner relation */
+					if (find_prop(found->p, PROP_HASHCOL)) /* primary key always unique */
+						return true;
+					if (found->type == e_column && found->card <= CARD_AGGR) {
+						if (!(is_groupby(res->op) || need_distinct(res)) && list_length(res->exps) != 1)
+							return false;
+						for (node *n = res->exps->h ; n ; n = n->next) { /* must be the single column in the group by expression list */
+							sql_exp *e = n->data;
+							if (e != found && e->type == e_column)
+								return false;
+						}
+						return true;
+					}
+				}
+			}
+		}
+	}
+	return false;
+}
+
 static sql_rel *
 find_candidate_join2semi(sql_rel *rel, bool *swap)
 {
@@ -5313,11 +5336,11 @@ find_candidate_join2semi(sql_rel *rel, bool *swap)
 	if (rel->op == op_join && rel->exps) {
 		sql_rel *l = rel->l, *r = rel->r;
 
-		if (find_simple_projection_for_join2semi(r)) {
+		if (find_projection_for_join2semi(r)) {
 			*swap = false;
 			return rel;
 		}
-		if (find_simple_projection_for_join2semi(l)) {
+		if (find_projection_for_join2semi(l)) {
 			*swap = true;
 			return rel;
 		}
@@ -5335,37 +5358,37 @@ find_candidate_join2semi(sql_rel *rel, bool *swap)
 }
 
 static int
-subrel_uses_exp_outside_subrel(sql_rel *rel, sql_exp *e, sql_rel *c)
+subrel_uses_exp_outside_subrel(sql_rel *rel, list *l, sql_rel *c)
 {
 	if (rel == c)
 		return 0;
 	/* for subrel only expect joins (later possibly selects) */
 	if (is_join(rel->op) || is_semi(rel->op)) {
-		if (exps_uses_exp(rel->exps, e))
+		if (exps_uses_any(rel->exps, l))
 			return 1;
-		if (subrel_uses_exp_outside_subrel(rel->l, e, c) ||
-		    subrel_uses_exp_outside_subrel(rel->r, e, c))
+		if (subrel_uses_exp_outside_subrel(rel->l, l, c) ||
+		    subrel_uses_exp_outside_subrel(rel->r, l, c))
 			return 1;
 	}
 	if (is_topn(rel->op) || is_sample(rel->op))
-		return subrel_uses_exp_outside_subrel(rel->l, e, c);
+		return subrel_uses_exp_outside_subrel(rel->l, l, c);
 	return 0;
 }
 
 static int
-rel_uses_exp_outside_subrel(sql_rel *rel, sql_exp *e, sql_rel *c)
+rel_uses_exp_outside_subrel(sql_rel *rel, list *l, sql_rel *c)
 {
 	/* for now we only expect sub relations of type project, selects (rel) or join/semi */
 	if (is_simple_project(rel->op) || is_groupby(rel->op) || is_select(rel->op)) {
-		if (!list_empty(rel->exps) && exps_uses_exp(rel->exps, e))
+		if (!list_empty(rel->exps) && exps_uses_any(rel->exps, l))
 			return 1;
-		if ((is_simple_project(rel->op) || is_groupby(rel->op)) && !list_empty(rel->r) && exps_uses_exp(rel->r, e))
+		if ((is_simple_project(rel->op) || is_groupby(rel->op)) && !list_empty(rel->r) && exps_uses_any(rel->r, l))
 			return 1;
 		if (rel->l)
-			return subrel_uses_exp_outside_subrel(rel->l, e, c);
+			return subrel_uses_exp_outside_subrel(rel->l, l, c);
 	}
 	if (is_topn(rel->op) || is_sample(rel->op))
-		return subrel_uses_exp_outside_subrel(rel->l, e, c);
+		return subrel_uses_exp_outside_subrel(rel->l, l, c);
 	return 1;
 }
 
@@ -5378,12 +5401,11 @@ rel_join2semijoin(visitor *v, sql_rel *rel)
 		sql_rel *c = find_candidate_join2semi(l, &swap);
 
 		if (c) {
-			/* 'p' is a project and only has one result */
+			/* 'p' is a project */
 			sql_rel *p = swap ? c->l : c->r;
-			sql_exp *re = p->exps->h->data;
 
 			/* now we need to check if ce is only used at the level of c */
-			if (!rel_uses_exp_outside_subrel(rel, re, c)) {
+			if (!rel_uses_exp_outside_subrel(rel, p->exps, c)) {
 				c->op = op_semi;
 				if (swap) {
 					sql_rel *tmp = c->r;
@@ -5652,7 +5674,7 @@ sql_class_base_score(mvc *sql, sql_column *c, sql_subtype *t, bool equality_base
 			return 150 - 64;
 #ifdef HAVE_HGE
 		case TYPE_hge:
-			return 150 - have_hge ? 128 : 64;
+			return 150 - 128;
 #endif
 		case TYPE_flt:
 			return 75 - 24;
@@ -8352,7 +8374,7 @@ rel_reduce_casts(visitor *v, sql_rel *rel)
 								}
 								append(args, re);
 #ifdef HAVE_HGE
-								append(args, have_hge ? exp_atom_hge(v->sql->sa, val) : exp_atom_lng(v->sql->sa, (lng) val));
+								append(args, exp_atom_hge(v->sql->sa, val));
 #else
 								append(args, exp_atom_lng(v->sql->sa, val));
 #endif
@@ -9734,4 +9756,3 @@ rel_optimizer(mvc *sql, sql_rel *rel, int value_based_opt)
 		rel = optimize_rel(sql, rel, &changes, level, value_based_opt);
 	return rel;
 }
-

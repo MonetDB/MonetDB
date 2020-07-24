@@ -20,9 +20,6 @@
 #include "monetdb_config.h"
 #include "sql_types.h"
 #include "sql_keyword.h"	/* for keyword_exists(), keywords_insert(), init_keywords(), exit_keywords() */
-#ifdef HAVE_HGE
-#include "mal.h"		/* for have_hge */
-#endif
 #include "gdk_geomlogger.h"	/* for geomcatalogfix_get */
 
 list *aliases = NULL;
@@ -51,7 +48,7 @@ int digits2bits(int digits)
 	else if (digits < 17)
 		return 51;
 #ifdef HAVE_HGE
-	else if (digits < 19 || !have_hge)
+	else if (digits < 19)
 		return 64;
 	return 128;
 #else
@@ -82,7 +79,7 @@ int bits2digits(int bits)
 	else if (bits <= 32)
 		return 10;
 #ifdef HAVE_HGE
-	else if (bits <= 64 || !have_hge)
+	else if (bits <= 64)
 		return 19;
 	return 39;
 #else
@@ -166,8 +163,7 @@ localtypes_cmp(int nlt, int olt)
 		nlt = TYPE_dbl;
 #ifdef HAVE_HGE
 	} else if (nlt == TYPE_bte || nlt == TYPE_sht || nlt == TYPE_int || nlt == TYPE_lng || nlt == TYPE_hge) {
-		assert(have_hge || nlt != TYPE_hge);
-		nlt = have_hge ? TYPE_hge : TYPE_lng;
+		nlt = TYPE_hge;
 #else
 	} else if (nlt == TYPE_bte || nlt == TYPE_sht || nlt == TYPE_int || nlt == TYPE_lng) {
 		nlt = TYPE_lng;
@@ -185,17 +181,14 @@ sql_find_numeric(sql_subtype *r, int localtype, unsigned int digits)
 		localtype = TYPE_dbl;
 	} else {
 #ifdef HAVE_HGE
-		if (have_hge) {
-			localtype = TYPE_hge;
-			if (digits >= 128)
-				digits = 127;
-		} else
+		localtype = TYPE_hge;
+		if (digits >= 128)
+			digits = 127;
+#else
+		localtype = TYPE_lng;
+		if (digits >= 64)
+			digits = 63;
 #endif
-		{
-			localtype = TYPE_lng;
-			if (digits >= 64)
-				digits = 63;
-		}
 	}
 
 	for (n = types->h; n; n = n->next) {
@@ -1161,10 +1154,8 @@ sqltypeinit( sql_allocator *sa)
 	LargestINT =
 	LNG = *t++ = sql_create_type(sa, "BIGINT",   64, SCALE_FIX, 2, EC_NUM, "lng");
 #ifdef HAVE_HGE
-	if (have_hge) {
-		LargestINT =
+	LargestINT =
 		HGE = *t++ = sql_create_type(sa, "HUGEINT",  128, SCALE_FIX, 2, EC_NUM, "hge");
-	}
 #endif
 
 	decimals = t;
@@ -1177,10 +1168,8 @@ sqltypeinit( sql_allocator *sa)
 	LargestDEC =
 	*t++ = sql_create_type(sa, "DECIMAL", 18, SCALE_FIX, 10, EC_DEC, "lng");
 #ifdef HAVE_HGE
-	if (have_hge) {
-		LargestDEC =
+	LargestDEC =
 		*t++ = sql_create_type(sa, "DECIMAL", 38, SCALE_FIX, 10, EC_DEC, "hge");
-	}
 #endif
 
 	/* float(n) (n indicates precision of at least n digits) */
@@ -1258,8 +1247,7 @@ sqltypeinit( sql_allocator *sa)
 	sql_create_aggr(sa, "grouping", "", "", TRUE, INT, 1, ANY);
 	sql_create_aggr(sa, "grouping", "", "", TRUE, LNG, 1, ANY);
 #ifdef HAVE_HGE
-	if (have_hge)
-		sql_create_aggr(sa, "grouping", "", "", TRUE, HGE, 1, ANY);
+	sql_create_aggr(sa, "grouping", "", "", TRUE, HGE, 1, ANY);
 #endif
 
 	sql_create_aggr(sa, "not_unique", "aggr", "not_unique", TRUE, BIT, 1, OID);
@@ -1309,8 +1297,7 @@ sqltypeinit( sql_allocator *sa)
 	sql_create_aggr(sa, "sum", "aggr", "sum", FALSE, LargestINT, 1, INT);
 	//sql_create_aggr(sa, "sum", "aggr", "sum", LargestINT, 1, LNG, LargestINT);
 #ifdef HAVE_HGE
-	if (have_hge)
-		sql_create_aggr(sa, "sum", "aggr", "sum", FALSE, LargestINT, 1, HGE);
+	sql_create_aggr(sa, "sum", "aggr", "sum", FALSE, LargestINT, 1, HGE);
 #endif
 	sql_create_aggr(sa, "sum", "aggr", "sum", FALSE, LNG, 1, LNG);
 
@@ -1323,10 +1310,8 @@ sqltypeinit( sql_allocator *sa)
 	t++; /* LNG */
 	sql_create_aggr(sa, "sum", "aggr", "sum", FALSE, LargestDEC, 1, *(t));
 #ifdef HAVE_HGE
-	if (have_hge) {
-		t++; /* HGE */
-		sql_create_aggr(sa, "sum", "aggr", "sum", FALSE, LargestDEC, 1, *(t));
-	}
+	t++; /* HGE */
+	sql_create_aggr(sa, "sum", "aggr", "sum", FALSE, LargestDEC, 1, *(t));
 #endif
 
 	/* prod for numerical and decimals */
@@ -1335,8 +1320,7 @@ sqltypeinit( sql_allocator *sa)
 	sql_create_aggr(sa, "prod", "aggr", "prod", FALSE, LargestINT, 1, INT);
 	sql_create_aggr(sa, "prod", "aggr", "prod", FALSE, LargestINT, 1, LNG);
 #ifdef HAVE_HGE
-	if (have_hge)
-		sql_create_aggr(sa, "prod", "aggr", "prod", FALSE, LargestINT, 1, HGE);
+	sql_create_aggr(sa, "prod", "aggr", "prod", FALSE, LargestINT, 1, HGE);
 #endif
 
 #if 0
@@ -1350,10 +1334,8 @@ sqltypeinit( sql_allocator *sa)
 	t++; /* LNG */
 	sql_create_aggr(sa, "prod", "aggr", "prod", TRUE, LargestDEC, 1, *(t));
 #ifdef HAVE_HGE
-	if (have_hge) {
-		t++; /* HGE */
-		sql_create_aggr(sa, "prod", "aggr", "prod", TRUE, LargestDEC, 1, *(t));
-	}
+	t++; /* HGE */
+	sql_create_aggr(sa, "prod", "aggr", "prod", TRUE, LargestDEC, 1, *(t));
 #endif
 #endif
 
@@ -1375,8 +1357,7 @@ sqltypeinit( sql_allocator *sa)
 	sql_create_aggr(sa, "avg", "aggr", "avg", TRUE, DBL, 1, INT);
 	sql_create_aggr(sa, "avg", "aggr", "avg", TRUE, DBL, 1, LNG);
 #ifdef HAVE_HGE
-	if (have_hge)
-		sql_create_aggr(sa, "avg", "aggr", "avg", TRUE, DBL, 1, HGE);
+	sql_create_aggr(sa, "avg", "aggr", "avg", TRUE, DBL, 1, HGE);
 #endif
 	sql_create_aggr(sa, "avg", "aggr", "avg", TRUE, DBL, 1, FLT);
 
@@ -1389,10 +1370,8 @@ sqltypeinit( sql_allocator *sa)
 	t++; /* LNG */
 	sql_create_aggr(sa, "avg", "aggr", "avg", TRUE, *(t), 1, *(t));
 #ifdef HAVE_HGE
-	if (have_hge) {
-		t++; /* HGE */
-		sql_create_aggr(sa, "avg", "aggr", "avg", TRUE, *(t), 1, *(t));
-	}
+	t++; /* HGE */
+	sql_create_aggr(sa, "avg", "aggr", "avg", TRUE, *(t), 1, *(t));
 #endif
 
 	sql_create_aggr(sa, "avg", "aggr", "avg", TRUE, MONINT, 1, MONINT);
@@ -1421,10 +1400,8 @@ sqltypeinit( sql_allocator *sa)
 	sql_create_analytic(sa, "window_bound", "sql", "window_bound", SCALE_NONE, LNG, 5, ANY, INT, INT, INT, DBL);
 	sql_create_analytic(sa, "window_bound", "sql", "window_bound", SCALE_NONE, LNG, 6, BIT, ANY, INT, INT, INT, DBL);
 #ifdef HAVE_HGE
-	if (have_hge) {
-		sql_create_analytic(sa, "window_bound", "sql", "window_bound", SCALE_NONE, LNG, 5, ANY, INT, INT, INT, HGE);
-		sql_create_analytic(sa, "window_bound", "sql", "window_bound", SCALE_NONE, LNG, 6, BIT, ANY, INT, INT, INT, HGE);
-	}
+	sql_create_analytic(sa, "window_bound", "sql", "window_bound", SCALE_NONE, LNG, 5, ANY, INT, INT, INT, HGE);
+	sql_create_analytic(sa, "window_bound", "sql", "window_bound", SCALE_NONE, LNG, 6, BIT, ANY, INT, INT, INT, HGE);
 #endif
 
 	t = decimals; /* BTE */
@@ -1440,11 +1417,9 @@ sqltypeinit( sql_allocator *sa)
 	sql_create_analytic(sa, "window_bound", "sql", "window_bound", SCALE_NONE, LNG, 5, ANY, INT, INT, INT, *(t));
 	sql_create_analytic(sa, "window_bound", "sql", "window_bound", SCALE_NONE, LNG, 6, BIT, ANY, INT, INT, INT, *(t));
 #ifdef HAVE_HGE
-	if (have_hge) {
-		t++; /* HGE */
-		sql_create_analytic(sa, "window_bound", "sql", "window_bound", SCALE_NONE, LNG, 5, ANY, INT, INT, INT, *(t));
-		sql_create_analytic(sa, "window_bound", "sql", "window_bound", SCALE_NONE, LNG, 6, BIT, ANY, INT, INT, INT, *(t));
-	}
+	t++; /* HGE */
+	sql_create_analytic(sa, "window_bound", "sql", "window_bound", SCALE_NONE, LNG, 5, ANY, INT, INT, INT, *(t));
+	sql_create_analytic(sa, "window_bound", "sql", "window_bound", SCALE_NONE, LNG, 6, BIT, ANY, INT, INT, INT, *(t));
 #endif
 
 	sql_create_analytic(sa, "window_bound", "sql", "window_bound", SCALE_NONE, LNG, 5, ANY, INT, INT, INT, MONINT);
@@ -1463,8 +1438,7 @@ sqltypeinit( sql_allocator *sa)
 	sql_create_analytic(sa, "ntile", "sql", "ntile", SCALE_NONE, INT, 4, ANY, INT, BIT, BIT);
 	sql_create_analytic(sa, "ntile", "sql", "ntile", SCALE_NONE, LNG, 4, ANY, LNG, BIT, BIT);
 #ifdef HAVE_HGE
-	if (have_hge)
-		sql_create_analytic(sa, "ntile", "sql", "ntile", SCALE_NONE, HGE, 4, ANY, HGE, BIT, BIT);
+	sql_create_analytic(sa, "ntile", "sql", "ntile", SCALE_NONE, HGE, 4, ANY, HGE, BIT, BIT);
 #endif
 
 	sql_create_analytic(sa, "lag", "sql", "lag", SCALE_NONE, ANY, 3, ANY, BIT, BIT);
@@ -1473,16 +1447,14 @@ sqltypeinit( sql_allocator *sa)
 	sql_create_analytic(sa, "lag", "sql", "lag", SCALE_NONE, ANY, 4, ANY, INT, BIT, BIT);
 	sql_create_analytic(sa, "lag", "sql", "lag", SCALE_NONE, ANY, 4, ANY, LNG, BIT, BIT);
 #ifdef HAVE_HGE
-	if (have_hge)
-		sql_create_analytic(sa, "lag", "sql", "lag", SCALE_NONE, ANY, 4, ANY, HGE, BIT, BIT);
+	sql_create_analytic(sa, "lag", "sql", "lag", SCALE_NONE, ANY, 4, ANY, HGE, BIT, BIT);
 #endif
 	sql_create_analytic(sa, "lag", "sql", "lag", SCALE_NONE, ANY, 5, ANY, BTE, ANY, BIT, BIT);
 	sql_create_analytic(sa, "lag", "sql", "lag", SCALE_NONE, ANY, 5, ANY, SHT, ANY, BIT, BIT);
 	sql_create_analytic(sa, "lag", "sql", "lag", SCALE_NONE, ANY, 5, ANY, INT, ANY, BIT, BIT);
 	sql_create_analytic(sa, "lag", "sql", "lag", SCALE_NONE, ANY, 5, ANY, LNG, ANY, BIT, BIT);
 #ifdef HAVE_HGE
-	if (have_hge)
-		sql_create_analytic(sa, "lag", "sql", "lag", SCALE_NONE, ANY, 5, ANY, HGE, ANY, BIT, BIT);
+	sql_create_analytic(sa, "lag", "sql", "lag", SCALE_NONE, ANY, 5, ANY, HGE, ANY, BIT, BIT);
 #endif
 
 	sql_create_analytic(sa, "lead", "sql", "lead", SCALE_NONE, ANY, 3, ANY, BIT, BIT);
@@ -1491,16 +1463,14 @@ sqltypeinit( sql_allocator *sa)
 	sql_create_analytic(sa, "lead", "sql", "lead", SCALE_NONE, ANY, 4, ANY, INT, BIT, BIT);
 	sql_create_analytic(sa, "lead", "sql", "lead", SCALE_NONE, ANY, 4, ANY, LNG, BIT, BIT);
 #ifdef HAVE_HGE
-	if (have_hge)
-		sql_create_analytic(sa, "lead", "sql", "lead", SCALE_NONE, ANY, 4, ANY, HGE, BIT, BIT);
+	sql_create_analytic(sa, "lead", "sql", "lead", SCALE_NONE, ANY, 4, ANY, HGE, BIT, BIT);
 #endif
 	sql_create_analytic(sa, "lead", "sql", "lead", SCALE_NONE, ANY, 5, ANY, BTE, ANY, BIT, BIT);
 	sql_create_analytic(sa, "lead", "sql", "lead", SCALE_NONE, ANY, 5, ANY, SHT, ANY, BIT, BIT);
 	sql_create_analytic(sa, "lead", "sql", "lead", SCALE_NONE, ANY, 5, ANY, INT, ANY, BIT, BIT);
 	sql_create_analytic(sa, "lead", "sql", "lead", SCALE_NONE, ANY, 5, ANY, LNG, ANY, BIT, BIT);
 #ifdef HAVE_HGE
-	if (have_hge)
-		sql_create_analytic(sa, "lead", "sql", "lead", SCALE_NONE, ANY, 5, ANY, HGE, ANY, BIT, BIT);
+	sql_create_analytic(sa, "lead", "sql", "lead", SCALE_NONE, ANY, 5, ANY, HGE, ANY, BIT, BIT);
 #endif
 
 	/* these analytic functions support frames */
@@ -1512,8 +1482,7 @@ sqltypeinit( sql_allocator *sa)
 	sql_create_analytic(sa, "nth_value", "sql", "nth_value", SCALE_NONE, ANY, 2, ANY, INT);
 	sql_create_analytic(sa, "nth_value", "sql", "nth_value", SCALE_NONE, ANY, 2, ANY, LNG);
 #ifdef HAVE_HGE
-	if (have_hge)
-		sql_create_analytic(sa, "nth_value", "sql", "nth_value", SCALE_NONE, ANY, 2, ANY, HGE);
+	sql_create_analytic(sa, "nth_value", "sql", "nth_value", SCALE_NONE, ANY, 2, ANY, HGE);
 #endif
 
 	sql_create_analytic(sa, "count", "sql", "count", SCALE_NONE, LNG, 2, ANY, BIT);
@@ -1526,8 +1495,7 @@ sqltypeinit( sql_allocator *sa)
 	sql_create_analytic(sa, "sum", "sql", "sum", SCALE_NONE, LargestINT, 1, INT);
 	sql_create_analytic(sa, "sum", "sql", "sum", SCALE_NONE, LargestINT, 1, LNG);
 #ifdef HAVE_HGE
-	if (have_hge)
-		sql_create_analytic(sa, "sum", "sql", "sum", SCALE_NONE, LargestINT, 1, HGE);
+	sql_create_analytic(sa, "sum", "sql", "sum", SCALE_NONE, LargestINT, 1, HGE);
 #endif
 
 	t = decimals; /* BTE */
@@ -1539,10 +1507,8 @@ sqltypeinit( sql_allocator *sa)
 	t++; /* LNG */
 	sql_create_analytic(sa, "sum", "sql", "sum", SCALE_NONE, LargestDEC, 1, *(t));
 #ifdef HAVE_HGE
-	if (have_hge) {
-		t++; /* HGE */
-		sql_create_analytic(sa, "sum", "sql", "sum", SCALE_NONE, LargestDEC, 1, *(t));
-	}
+	t++; /* HGE */
+	sql_create_analytic(sa, "sum", "sql", "sum", SCALE_NONE, LargestDEC, 1, *(t));
 #endif
 
 	/* analytical product for numerical and decimals */
@@ -1551,8 +1517,7 @@ sqltypeinit( sql_allocator *sa)
 	sql_create_analytic(sa, "prod", "sql", "prod", SCALE_NONE, LargestINT, 1, INT);
 	sql_create_analytic(sa, "prod", "sql", "prod", SCALE_NONE, LargestINT, 1, LNG);
 #ifdef HAVE_HGE
-	if (have_hge)
-		sql_create_analytic(sa, "prod", "sql", "prod", SCALE_NONE, LargestINT, 1, HGE);
+	sql_create_analytic(sa, "prod", "sql", "prod", SCALE_NONE, LargestINT, 1, HGE);
 #endif
 
 #if 0
@@ -1566,10 +1531,8 @@ sqltypeinit( sql_allocator *sa)
 	t++; /* LNG */
 	sql_create_analytic(sa, "prod", "sql", "prod", SCALE_NONE, LargestDEC, 1, *(t));
 #ifdef HAVE_HGE
-	if (have_hge) {
-		t++; /* HGE */
-		sql_create_analytic(sa, "prod", "sql", "prod", SCALE_NONE, LargestDEC, 1, *(t));
-	}
+	t++; /* HGE */
+	sql_create_analytic(sa, "prod", "sql", "prod", SCALE_NONE, LargestDEC, 1, *(t));
 #endif
 #endif
 
@@ -1587,30 +1550,27 @@ sqltypeinit( sql_allocator *sa)
 	sql_create_analytic(sa, "avg", "sql", "avg", SCALE_NONE, DBL, 1, INT);
 	sql_create_analytic(sa, "avg", "sql", "avg", SCALE_NONE, DBL, 1, LNG);
 #ifdef HAVE_HGE
-	if (have_hge)
-		sql_create_analytic(sa, "avg", "sql", "avg", SCALE_NONE, DBL, 1, HGE);
+	sql_create_analytic(sa, "avg", "sql", "avg", SCALE_NONE, DBL, 1, HGE);
+#endif
+
+	sql_create_analytic(sa, "avg", "sql", "avg", SCALE_NONE, DBL, 1, FLT);
+
+	t = decimals; /* BTE */
+	sql_create_analytic(sa, "avg", "sql", "avg", SCALE_NONE, *(t), 1, *(t));
+	t++; /* SHT */
+	sql_create_analytic(sa, "avg", "sql", "avg", SCALE_NONE, *(t), 1, *(t));
+	t++; /* INT */
+	sql_create_analytic(sa, "avg", "sql", "avg", SCALE_NONE, *(t), 1, *(t));
+	t++; /* LNG */
+	sql_create_analytic(sa, "avg", "sql", "avg", SCALE_NONE, *(t), 1, *(t));
+#ifdef HAVE_HGE
+	t++; /* HGE */
+	sql_create_analytic(sa, "avg", "sql", "avg", SCALE_NONE, *(t), 1, *(t));
 #endif
 
 	sql_create_analytic(sa, "avg", "sql", "avg", SCALE_NONE, MONINT, 1, MONINT);
 	sql_create_analytic(sa, "avg", "sql", "avg", SCALE_NONE, SECINT, 1, SECINT);
 
-#if 0
-	t = decimals; // BTE
-	sql_create_analytic(sa, "avg", "sql", "avg", SCALE_NONE, DBL, 1, *(t));
-	t++; // SHT
-	sql_create_analytic(sa, "avg", "sql", "avg", SCALE_NONE, DBL, 1, *(t));
-	t++; // INT
-	sql_create_analytic(sa, "avg", "sql", "avg", SCALE_NONE, DBL, 1, *(t));
-	t++; // LNG
-	sql_create_analytic(sa, "avg", "sql", "avg", SCALE_NONE, DBL, 1, *(t));
-#ifdef HAVE_HGE
-	if (have_hge) {
-		t++; // HGE
-		sql_create_analytic(sa, "avg", "sql", "avg", SCALE_NONE, DBL, 1, *(t));
-	}
-#endif
-#endif
-	sql_create_analytic(sa, "avg", "sql", "avg", SCALE_NONE, DBL, 1, FLT);
 
 	sql_create_analytic(sa, "listagg", "sql", "str_group_concat", SCALE_NONE, STR, 1, STR);
 	sql_create_analytic(sa, "listagg", "sql", "str_group_concat", SCALE_NONE, STR, 2, STR, STR);
@@ -1621,7 +1581,7 @@ sqltypeinit( sql_allocator *sa)
 	sql_create_func(sa, "not", "calc", "not", FALSE, FALSE, SCALE_FIX, 0, BIT, 1, BIT);
 
 	/* allow smaller types for arguments of mul/div */
-	for (t = numerical, t++; t != decimals; t++) {
+	for (t = numerical, t++; t != floats; t++) {
 		sql_type **u;
 		for (u = numerical, u++; u != decimals; u++) {
 			if (t != u && (*t)->localtype >  (*u)->localtype) {
