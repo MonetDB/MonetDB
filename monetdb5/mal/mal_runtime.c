@@ -87,8 +87,7 @@ advanceQRYqueue(void)
 			return;
 		}
 		GDKfree(s);
-		if(QRYqueue[qhead].username)
-			GDKfree(QRYqueue[qhead].username);
+		GDKfree(QRYqueue[qhead].username);
 		clearQRYqueue(qhead);
 	}
 }
@@ -99,10 +98,8 @@ dropQRYqueue(void)
 	size_t i;
 	MT_lock_set(&mal_delayLock);
 	for(i = 0; i < qsize; i++){
-		if( QRYqueue[i].query)
-			GDKfree(QRYqueue[i].query);
-		if(QRYqueue[i].username)
-			GDKfree(QRYqueue[i].username);
+		GDKfree(QRYqueue[i].query);
+		GDKfree(QRYqueue[i].username);
 		clearQRYqueue(i);
 	}
 	GDKfree(QRYqueue);
@@ -165,10 +162,9 @@ runtimeProfileInit(Client cntxt, MalBlkPtr mb, MalStkPtr stk)
 	QRYqueue[qhead].start = time(0);
 	q = isaSQLquery(mb);
 	QRYqueue[qhead].query = q? GDKstrdup(q):0;
-	if(QRYqueue[qhead].username)
-		GDKfree(QRYqueue[qhead].username);
+	GDKfree(QRYqueue[qhead].username);
 	if (!GDKembedded())
-		AUTHgetUsername(&QRYqueue[qhead].username, cntxt);
+		QRYqueue[qhead].username = GDKstrdup(cntxt->username);
 	QRYqueue[qhead].idx = cntxt->idx;
 	QRYqueue[qhead].memory = (int) (stk->memory / LL_CONSTANT(1048576)); /* Convert to MB */
 	QRYqueue[qhead].workers = (int) stk->workers;
@@ -189,7 +185,6 @@ runtimeProfileFinish(Client cntxt, MalBlkPtr mb, MalStkPtr stk)
 	size_t i;
 
 	(void) cntxt;
-	(void) mb;
 
 	MT_lock_set(&mal_delayLock);
 	i=qtail;
