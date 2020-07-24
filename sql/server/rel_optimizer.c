@@ -2968,20 +2968,6 @@ rel_merge_projects(visitor *v, sql_rel *rel)
 				all = 0;
 				break;
 			}
-			/*
-			if (ne && ne->type == e_column) {
-				sql_exp *nne = NULL;
-
-				if (ne->l)
-					nne = exps_bind_column2(rel->exps, ne->l, ne->r);
-				if (!nne && !ne->l)
-					nne = exps_bind_column(rel->exps, ne->r, NULL, 1);
-				if (nne && ne != nne && nne != e) {
-					all = 0;
-					break;
-				}
-			}
-			*/
 			if (ne) {
 				if (exp_name(e))
 					exp_prop_alias(v->sql->sa, ne, e);
@@ -4622,7 +4608,7 @@ rel_push_select_down(visitor *v, sql_rel *rel)
 
 	/* merge 2 selects */
 	r = rel->l;
-	if (is_select(rel->op) && r && r->exps && is_select(r->op) && !(rel_is_ref(r))) {
+	if (is_select(rel->op) && r && r->exps && is_select(r->op) && !(rel_is_ref(r)) && !exps_have_func(rel->exps)) {
 		(void)list_merge(r->exps, rel->exps, (fdup)NULL);
 		rel->l = NULL;
 		rel_destroy(rel);
@@ -6820,7 +6806,7 @@ exp_mark_used(sql_rel *subrel, sql_exp *e, int local_proj)
 		break;
 	}
 	if (ne && e != ne) {
-		if (!local_proj || (has_label(ne) || (ne->alias.rname && ne->alias.rname[0] == '%')))
+		if (!local_proj || (has_label(ne) || (ne->alias.rname && ne->alias.rname[0] == '%')) || (subrel->l && !rel_find_exp(subrel->l, e)))
 			ne->used = 1;
 		return ne->used;
 	}

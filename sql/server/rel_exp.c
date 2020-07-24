@@ -252,7 +252,7 @@ exp_compare_func(mvc *sql, sql_exp *le, sql_exp *re, const char *compareop, int 
 {
 	sql_subfunc *cmp_func = sql_bind_func(sql->sa, NULL, compareop, exp_subtype(le), exp_subtype(le), F_FUNC);
 	sql_exp *e;
- 
+
 	assert(cmp_func);
 	e = exp_binop(sql->sa, le, re, cmp_func);
 	if (e) {
@@ -1789,6 +1789,20 @@ exps_have_rel_exp( list *exps)
 		sql_exp *e = n->data;
 
 		if (exp_has_rel(e))
+			return 1;
+	}
+	return 0;
+}
+
+int
+exps_have_func(list *exps)
+{
+	if (list_empty(exps))
+		return 0;
+	for(node *n=exps->h; n; n=n->next) {
+		sql_exp *e = n->data;
+
+		if (exp_has_func(e))
 			return 1;
 	}
 	return 0;
