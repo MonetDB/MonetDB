@@ -3154,7 +3154,7 @@ stmt_Nop(backend *be, stmt *ops, sql_subfunc *f)
 
 		nrcols = e1->nrcols>e2->nrcols ? e1->nrcols:e2->nrcols;
 		/* nrcols */
-		//coalesce(e1,e2) -> ifthenelse(not(isnil(e1)),e1,e2)
+		//coalesce(e1,e2) -> ifthenelse(isnil(e1),e2,e1)
 		if (strcmp(f->func->base.name, "coalesce") == 0) {
 			str mod = (!nrcols)?calcRef:batcalcRef;
 			q = newStmt(mb, e1->nrcols?mod:calcRef, "isnotnil");
@@ -3163,8 +3163,8 @@ stmt_Nop(backend *be, stmt *ops, sql_subfunc *f)
 
 			q = newStmt(mb, mod, "ifthenelse");
 			q = pushArgument(mb, q, nr);
-			q = pushArgument(mb, q, e1->nr);
 			q = pushArgument(mb, q, e2->nr);
+			q = pushArgument(mb, q, e1->nr);
 		}
 		//nullif(e1,e2) -> ifthenelse(e1==e2),NULL,e1)
 		if (strcmp(f->func->base.name, "nullif") == 0) {
