@@ -30,17 +30,6 @@ QueryQueue QRYqueue = NULL;
 size_t qsize = 0, qhead = 0, qtail = 0;
 static oid qtag= 1;		// A unique query identifier
 
-void
-mal_runtime_reset(void)
-{
-	GDKfree(QRYqueue);
-	QRYqueue = NULL;
-	qsize = 0;
-	qtag= 1;
-	qhead = 0;
-	qtail = 0;
-}
-
 static str
 isaSQLquery(MalBlkPtr mb){
 	int i;
@@ -104,7 +93,7 @@ advanceQRYqueue(void)
 	}
 }
 
-void
+static void
 dropQRYqueue(void)
 {
 	size_t i;
@@ -227,6 +216,17 @@ runtimeProfileFinish(Client cntxt, MalBlkPtr mb, MalStkPtr stk)
 			i = 0;
 	}
 	MT_lock_unset(&mal_delayLock);
+}
+
+/* Used by mal_reset to do the grand final clean up of this area before MonetDB exits */
+void
+mal_runtime_reset(void)
+{
+	dropQRYqueue();
+	qsize = 0;
+	qtag= 1;
+	qhead = 0;
+	qtail = 0;
 }
 
 /*
