@@ -1921,6 +1921,20 @@ exps_have_rel_exp( list *exps)
 	return 0;
 }
 
+int
+exps_have_func(list *exps)
+{
+	if (list_empty(exps))
+		return 0;
+	for(node *n=exps->h; n; n=n->next) {
+		sql_exp *e = n->data;
+
+		if (exp_has_func(e))
+			return 1;
+	}
+	return 0;
+}
+
 static sql_rel *
 exps_rel_get_rel(sql_allocator *sa, list *exps )
 {

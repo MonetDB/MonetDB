@@ -117,7 +117,7 @@ stdout of test 'column_alias_in_where_clause.Bug-3947` in directory 'sql/test/Bu
 % .t1,	sys.t1,	sys.t1 # table_name
 % CAT,	A,	C # name
 % char,	int,	varchar # type
-% 1,	1,	0 # length
+% 0,	1,	0 # length
 #SELECT * FROM (SELECT cast(null as char(1)) AS "CAT", a AS "A", c AS "C" FROM t_alias) T1 WHERE "CAT" IS NULL;
 % .t1,	sys.t1,	sys.t1 # table_name
 % CAT,	A,	C # name
@@ -136,7 +136,7 @@ stdout of test 'column_alias_in_where_clause.Bug-3947` in directory 'sql/test/Bu
 % .t1,	sys.t1,	sys.t1 # table_name
 % CAT,	A,	C # name
 % char,	int,	varchar # type
-% 1,	1,	0 # length
+% 0,	1,	0 # length
 #SELECT a AS "A", b AS "B", c AS "C" FROM t_alias ORDER BY "C", "A", "B";
 % sys.,	sys.,	sys. # table_name
 % A,	B,	C # name

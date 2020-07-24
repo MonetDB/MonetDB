@@ -159,8 +159,8 @@ stdout of test 'sqlsmith-exists2` in directory 'sql/test/mergetables` itself:
 # 1)
 # and (ref_4.i is not null))))
 # on (ref_1.bb is null);
-% .%26 # table_name
-% %26 # name
+% .%31 # table_name
+% %31 # name
 % tinyint # type
 % 1 # length
 #select
@@ -190,8 +190,8 @@ stdout of test 'sqlsmith-exists2` in directory 'sql/test/mergetables` itself:
 #  on (true)
 #  on (exists (select ref_5.col0, ref_8.col2))
 #  on (true);
-% .%44 # table_name
-% %44 # name
+% .%46 # table_name
+% %46 # name
 % tinyint # type
 % 1 # length
 [ 1	]
@@ -463,8 +463,8 @@ stdout of test 'sqlsmith-exists2` in directory 'sql/test/mergetables` itself:
 [ 1,	1,	100,	1,	100,	1,	100,	1	]
 #create table myitem (i_current_price decimal(7,2));
 #SELECT 1 FROM myitem WHERE i_current_price BETWEEN 64 AND 64 + 10 AND i_current_price BETWEEN 64 + 1 AND 64 + 15;
-% .%52 # table_name
-% %52 # name
+% .%2 # table_name
+% %2 # name
 % tinyint # type
 % 1 # length
 #SELECT 1 FROM tab0 WHERE col0 BETWEEN 64 AND 64 + 10 AND col0 BETWEEN 64 + 1 AND 64 + 15;
@@ -472,6 +472,39 @@ stdout of test 'sqlsmith-exists2` in directory 'sql/test/mergetables` itself:
 % %2 # name
 % tinyint # type
 % 1 # length
+#select 
+# subq_0.c6 as c0, 
+# subq_0.c5 as c1, 
+# 38 as c2 from 
+# (select 
+# case when ref_0.i is not null then ref_0.i else ref_0.i end
+# as c0, 
+# ref_0.i as c1, 
+# ref_0.i as c2, 
+# ref_0.i as c3, 
+# ref_0.i as c4, 
+# ref_0.i as c5, 
+# ref_0.i as c6, 
+# ref_0.i as c7, 
+# ref_0.i as c8, 
+# case when ref_0.i is not null then ref_0.i else ref_0.i end
+# as c9
+# from 
+# integers as ref_0
+# where (exists (
+# select 
+# ref_1.col4 as c0, 
+# 28 as c1, 
+# ref_1.col2 as c2, 
+# ref_1.col3 as c3, 
+# 71 as c4
+# from 
+# tbl_productsales as ref_1
+% .,	.,	. # table_name
+% c0,	c1,	c2 # name
+% int,	int,	tinyint # type
+% 1,	1,	2 # length
+[ NULL,	NULL,	38	]
 #ROLLBACK;
 
 # 22:12:15 >  
