@@ -3072,7 +3072,7 @@ stmt_Nop(backend *be, stmt *ops, sql_subfunc *f)
 
 	/* handle coalesce and nullif */
 	if (list_length(ops->op4.lval) == 2 &&
-		f->func->mod && strcmp(f->func->mod, "sql") == 0 && f->func->imp && strcmp(f->func->imp, "internal") == 0) {
+		f->func->mod && strcmp(f->func->mod, "") == 0 && f->func->imp && strcmp(f->func->imp, "") == 0) {
 		stmt *e1 = ops->op4.lval->h->data;
 		stmt *e2 = ops->op4.lval->h->next->data;
 		int nrcols = 0;

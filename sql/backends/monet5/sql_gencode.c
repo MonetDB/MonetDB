@@ -1005,16 +1005,9 @@ monet5_resolve_function(ptr M, sql_func *f)
 	int clientID = *(int*) M;
 	str mname = getName(f->mod), fname = getName(f->imp);
 
-	/* sql.internal doesn't exist */
-	if (!fname && mname == sqlRef && f->imp && strcmp(f->imp, "internal") == 0)
-		return 1;
-
 	if (!mname || !fname)
 		return 0;
 
-	/* sql.internal doesn't exist */
-	if (strcmp(mname, "sql") == 0 && strcmp(fname,"internal") == 0)
-		return 1;
 	/* Some SQL functions MAL mapping such as count(*) aggregate, the number of arguments don't match */
 	if (mname == calcRef && fname == getName("="))
 		return 1;

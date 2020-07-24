@@ -3069,7 +3069,7 @@ exp_simplify_math( mvc *sql, sql_exp *e, int *changes)
 			 * value */
 
 			/* for both nullif and coalesce don't rewrite the NULL handling */
-			if (f && f->func && f->func->imp && strcmp(f->func->imp, "internal") == 0)
+			if (f && f->func && f->func->imp && strcmp(f->func->imp, "") == 0)
 				return e;
 
 			if (exp_is_atom(le) && exp_is_null(sql, le)) {
