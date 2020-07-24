@@ -1373,7 +1373,6 @@ str diffcandRef;
 str differenceRef;
 str disconnectRef;
 str divRef;
-void dropQRYqueue(void);
 str drop_constraintRef;
 str drop_functionRef;
 str drop_indexRef;
