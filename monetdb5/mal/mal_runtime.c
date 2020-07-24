@@ -93,7 +93,7 @@ advanceQRYqueue(void)
 	if( s){
 		/* don;t wipe them when they are still running, prepared, or paused */
 		/* The upper layer has assured there is at least one slot available */
-		if(QRYqueue[qhead].status != 0 || (QRYqueue[qhead].status[0] == 'r' && QRYqueue[qhead].status[0] == 'p')){
+		if(QRYqueue[qhead].status != 0 && (QRYqueue[qhead].status[0] == 'r' || QRYqueue[qhead].status[0] == 'p')){
 			advanceQRYqueue();
 			return;
 		}
