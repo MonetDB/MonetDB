@@ -20,7 +20,7 @@ ERROR = !types tinyint(1,0) and month_interval(1,0) are not equal
 CODE  = 42000
 MAPI  = (monetdb) /var/tmp/mtest-524170/.s.monetdb.38467
 QUERY = select cast( 1 as interval day ); --error
-ERROR = !types tinyint(1,0) and sec_interval(4,0) are not equal
+ERROR = !types tinyint(1,0) and day_interval(4,0) are not equal
 CODE  = 42000
 
 # 14:19:19 >  
