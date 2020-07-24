@@ -3157,7 +3157,7 @@ stmt_Nop(backend *be, stmt *ops, sql_subfunc *f)
 		//coalesce(e1,e2) -> ifthenelse(isnil(e1),e2,e1)
 		if (strcmp(f->func->base.name, "coalesce") == 0) {
 			str mod = (!nrcols)?calcRef:batcalcRef;
-			q = newStmt(mb, e1->nrcols?mod:calcRef, "isnotnil");
+			q = newStmt(mb, e1->nrcols?mod:calcRef, "isnil");
 			q = pushArgument(mb, q, e1->nr);
 			int nr = getDestVar(q);
 
