@@ -221,7 +221,7 @@ runtimeProfileInit(Client cntxt, MalBlkPtr mb, MalStkPtr stk)
 
 	tmp = QRYqueue;
 	if ( QRYqueue == NULL) {
-		QRYqueue = (QueryQueue) GDKzalloc( sizeof (struct QRYQUEUE) * (qsize= 8)); /* for testing */
+		QRYqueue = (QueryQueue) GDKzalloc( sizeof (struct QRYQUEUE) * (qsize= MAL_MAXCLIENTS));
 
 		if ( QRYqueue == NULL){
 			addMalException(mb,"runtimeProfileInit" MAL_MALLOC_FAIL);
