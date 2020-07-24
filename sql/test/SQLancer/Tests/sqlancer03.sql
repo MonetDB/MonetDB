@@ -269,6 +269,17 @@ select all t1.c0 from t1 right outer join t0 on ((coalesce (t1.c0, trim(t0.c0), 
 cast(abs(0.160418955416609) as string), cast(coalesce (greatest(interval '-1022285655' second, interval '-1047501443' second), interval '641174375' second, sql_max(interval '-1539884267' second, interval '-685917930' second)) as string)))not ilike(t0.c0));
 ROLLBACK;
 
+START TRANSACTION;
+CREATE TABLE "sys"."t1" ("c0" TIMESTAMP);
+COPY 4 RECORDS INTO "sys"."t1" FROM stdin USING DELIMITERS E'\t',E'\n','"';
+"1970-01-14 14:26:27.000000"
+"1970-01-18 02:50:56.000000"
+"1970-01-06 21:36:37.000000"
+"1970-01-14 01:01:12.000000"
+
+select all sum(all cast("concat"(cast("month"(t1.c0) as string), r'1313451898') as interval month)) from t1;
+ROLLBACK;
+
 START TRANSACTION; -- Bug 6924
 CREATE TABLE "sys"."t0" ("a" INTEGER, "b" INTEGER NOT NULL, CONSTRAINT "t0_a_b_unique" UNIQUE ("a","b"));
 --This copy into must succeed 
