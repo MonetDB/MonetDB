@@ -237,8 +237,8 @@ end user.main;
 % 174 # length
 function user.main():void;
     X_1:void := querylog.define("explain select 1 from another_t t1 inner join another_t t2 on t1.col1 between t2.col1 - 1 and t2.col1 + 1;":str, "default_pipe":str, 31:int);
-    X_45:bat[:str] := bat.pack(".%15":str);
-    X_46:bat[:str] := bat.pack("%15":str);
+    X_45:bat[:str] := bat.pack(".%13":str);
+    X_46:bat[:str] := bat.pack("%13":str);
     X_47:bat[:str] := bat.pack("tinyint":str);
     X_48:bat[:int] := bat.pack(1:int);
     X_49:bat[:int] := bat.pack(0:int);

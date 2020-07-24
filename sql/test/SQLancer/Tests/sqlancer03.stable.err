@@ -5,6 +5,10 @@ stderr of test 'sqlancer03` in directory 'sql/test/SQLancer` itself:
 # 17:14:16 >  "mclient" "-lsql" "-ftest" "-tnone" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-439482" "--port=37916"
 # 17:14:16 >  
 
+MAPI  = (monetdb) /var/tmp/mtest-279965/.s.monetdb.34039
+QUERY = select all sum(all cast("concat"(cast("month"(t1.c0) as string), r'1313451898') as interval month)) from t1;
+ERROR = !Wrong format (11313451898)
+CODE  = 42000
 
 # 17:14:16 >  
 # 17:14:16 >  "Done."

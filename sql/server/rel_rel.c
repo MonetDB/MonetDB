@@ -38,10 +38,13 @@ project_unsafe(sql_rel *rel, int allow_identity)
 	if (!sub || (sub && sub->op == op_ddl))
 		return 1;
 	for(n = rel->exps->h; n; n = n->next) {
-		sql_exp *e = n->data;
+		sql_exp *e = n->data, *ne;
 
 		/* aggr func in project ! */
 		if (exp_unsafe(e, allow_identity))
+			return 1;
+		ne = rel_find_exp(rel, e);
+		if (ne && ne != e) /* no self referencing */
 			return 1;
 	}
 	return 0;

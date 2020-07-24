@@ -2829,20 +2829,6 @@ rel_merge_projects(visitor *v, sql_rel *rel)
 				all = 0;
 				break;
 			}
-			/*
-			if (ne && ne->type == e_column) {
-				sql_exp *nne = NULL;
-
-				if (ne->l)
-					nne = exps_bind_column2(rel->exps, ne->l, ne->r);
-				if (!nne && !ne->l)
-					nne = exps_bind_column(rel->exps, ne->r, NULL, 1);
-				if (nne && ne != nne && nne != e) {
-					all = 0;
-					break;
-				}
-			}
-			*/
 			if (ne) {
 				if (exp_name(e))
 					exp_prop_alias(v->sql->sa, ne, e);
@@ -2928,6 +2914,11 @@ exp_simplify_math( mvc *sql, sql_exp *e, int *changes)
 			 * min_no_nil or max_no_nil), in which case we
 			 * ignore the NULL and return the other
 			 * value */
+
+			/* for both nullif and coalesce don't rewrite the NULL handling */
+			if (f && f->func && f->func->imp && strcmp(f->func->imp, "") == 0)
+				return e;
+
 			if (exp_is_atom(le) && exp_is_null(le)) {
 				(*changes)++;
 				if (f && f->func && f->func->imp && strstr(f->func->imp, "_no_nil") != NULL) {
@@ -4475,7 +4466,7 @@ rel_push_select_down(visitor *v, sql_rel *rel)
 
 	/* merge 2 selects */
 	r = rel->l;
-	if (is_select(rel->op) && r && r->exps && is_select(r->op) && !(rel_is_ref(r))) {
+	if (is_select(rel->op) && r && r->exps && is_select(r->op) && !(rel_is_ref(r)) && !exps_have_func(rel->exps)) {
 		(void)list_merge(r->exps, rel->exps, (fdup)NULL);
 		rel->l = NULL;
 		rel_destroy(rel);
@@ -5530,7 +5521,7 @@ rel_push_project_down(visitor *v, sql_rel *rel)
 
 		if (rel_is_ref(l))
 			return rel;
-		if (is_basetable(l->op)) {
+		if (is_base(l->op)) {
 			if (list_check_prop_all(rel->exps, (prop_check_func)&exp_is_useless_rename)) {
 				/* TODO reduce list (those in the project + internal) */
 				rel->l = NULL;
@@ -6685,7 +6676,7 @@ exp_mark_used(sql_rel *subrel, sql_exp *e, int local_proj)
 		break;
 	}
 	if (ne && e != ne) {
-		if (!local_proj || (has_label(ne) || (ne->alias.rname && ne->alias.rname[0] == '%')))
+		if (!local_proj || (has_label(ne) || (ne->alias.rname && ne->alias.rname[0] == '%')) || (subrel->l && !rel_find_exp(subrel->l, e)))
 			ne->used = 1;
 		return ne->used;
 	}
