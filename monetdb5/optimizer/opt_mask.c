@@ -15,8 +15,8 @@
 str
 OPTmaskImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	int i, k, limit, slimit;
-	InstrPtr p=0, q=0, *old= mb->stmt;
+	int i, j, k, limit, slimit;
+	InstrPtr p=0, q=0, r=0, *old= mb->stmt;
 	int actions = 0;
 	int *varused=0;
 	char buf[256];
@@ -46,19 +46,34 @@ OPTmaskImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		p = old[i];
 		if( p == 0)
 			continue; //left behind by others?
+		for(j=p->retc; j< p->argc; j++){
+			k =  getArg(p,j);
+			if(varused[k]) {
+				// we should actually postpone its reconstruction to JIT
+				r = newInstruction(mb, maskRef, umaskRef);
+				getArg(r,0) = k;
+				r= pushArgument(mb, r, varused[k]);
+				pushInstruction(mb,r);
+				varused[k] = 0;
+			}
+		}
 		pushInstruction(mb, p);
 
 		if ( getModuleId(p) == algebraRef && (getFunctionId(p) == selectRef || getFunctionId(p) == thetaselectRef)){
 			k=  getArg(p,0);
-			// setDestVar(p, newTmpVariable(mb, newBatType(TYPE_msk))); TODO
 			setDestVar(p, newTmpVariable(mb, newBatType(TYPE_oid)));
-			setModuleId(p, maskRef);
+			setVarFixed(mb,getArg(p,0));
+			// setDestVar(p, newTmpVariable(mb, newBatType(TYPE_msk))); TODO
+			// setModuleId(p, maskRef);
 
-			q = newInstruction(mb, maskRef, umaskRef);
-			getArg(q,0) = k;
+			// Inject a dummy pair, just based on :oid for now and later to be switched to :msk
+			q = newInstruction(mb, maskRef, maskRef);
+			setDestVar(q, newTmpVariable(mb, newBatType(TYPE_oid)));
+			setVarFixed(mb,getArg(q,0));
 			q= pushArgument(mb, q, getArg(p,0));
 			pushInstruction(mb,q);
-			actions ++;
+			varused[k] = getArg(q,0);
+			actions++;	
 		} 
 	}
 
