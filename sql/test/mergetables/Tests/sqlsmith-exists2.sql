@@ -519,4 +519,91 @@ where (case when exists (
  and (subq_0.c3 is null);
   -- empty
 
+WITH ss_items AS
+  (SELECT 1 item_id,
+          1 ss_item_rev
+   FROM another_T,
+        LongTable
+   WHERE another_T.col1 = LongTable.col1),
+     cs_items AS
+  (SELECT 1 item_id,
+          1 cs_item_rev
+   FROM tab0,
+        LongTable
+   WHERE tab0.col1 = LongTable.col1),
+     ws_items AS
+  (SELECT 1 item_id,
+          1 ws_item_rev
+   FROM tbl_ProductSales,
+        LongTable
+   WHERE tbl_ProductSales.col1 = LongTable.col1)
+SELECT ss_items.item_id,
+       ss_item_rev,
+       ss_item_rev/((ss_item_rev+cs_item_rev+ws_item_rev)/3) * 100 ss_dev,
+       cs_item_rev,
+       cs_item_rev/((ss_item_rev+cs_item_rev+ws_item_rev)/3) * 100 cs_dev,
+       ws_item_rev,
+       ws_item_rev/((ss_item_rev+cs_item_rev+ws_item_rev)/3) * 100 ws_dev,
+       (ss_item_rev+cs_item_rev+ws_item_rev)/3 average
+FROM ss_items,
+     cs_items,
+     ws_items
+WHERE ss_items.item_id=cs_items.item_id
+  AND ss_items.item_id=ws_items.item_id
+ORDER BY ss_items.item_id,
+         ss_item_rev
+LIMIT 100;
+
+create table myitem (i_current_price decimal(7,2));
+SELECT 1 FROM myitem WHERE i_current_price BETWEEN 64 AND 64 + 10 AND i_current_price BETWEEN 64 + 1 AND 64 + 15;
+
+SELECT 1 FROM tab0 WHERE col0 BETWEEN 64 AND 64 + 10 AND col0 BETWEEN 64 + 1 AND 64 + 15;
+
+select 
+ subq_0.c6 as c0, 
+ subq_0.c5 as c1, 
+ 38 as c2 from 
+ (select 
+ case when ref_0.i is not null then ref_0.i else ref_0.i end
+ as c0, 
+ ref_0.i as c1, 
+ ref_0.i as c2, 
+ ref_0.i as c3, 
+ ref_0.i as c4, 
+ ref_0.i as c5, 
+ ref_0.i as c6, 
+ ref_0.i as c7, 
+ ref_0.i as c8, 
+ case when ref_0.i is not null then ref_0.i else ref_0.i end
+ as c9
+ from 
+ integers as ref_0
+ where (exists (
+ select 
+ ref_1.col4 as c0, 
+ 28 as c1, 
+ ref_1.col2 as c2, 
+ ref_1.col3 as c3, 
+ 71 as c4
+ from 
+ tbl_productsales as ref_1
+ where false)) 
+ or ((ref_0.i is null) 
+ or ((ref_0.i is not null) 
+ or (exists (
+ select 
+ ref_2.col1 as c0
+ from 
+ tbl_productsales as ref_2
+ where (((false) 
+ and (true)) 
+ and ((ref_2.col3 is null) 
+ and ((false) 
+ and (true)))) 
+ and (ref_0.i is not null)))))
+ limit 77) as subq_0 where case when (subq_0.c5 is null) 
+ or (subq_0.c9 is not null) then subq_0.c2 else subq_0.c2 end
+ is null limit 71;
+ -- NULL NULL 38
+
 ROLLBACK;

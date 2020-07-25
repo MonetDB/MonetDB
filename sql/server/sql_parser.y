@@ -184,7 +184,6 @@ int yydebug=1;
 %type <sym>
 	add_table_element
 	aggr_or_window_ref
-	all_or_any_predicate
 	alter_statement
 	alter_table_element
 	and_exp
@@ -525,8 +524,9 @@ int yydebug=1;
 
 %type <i_val>
 	_transaction_mode_list
-	any_all_some
 	check_identity
+	cycles_set
+	database_object
 	datetime_field
 	dealloc_ref
 	document_or_content
@@ -540,12 +540,7 @@ int yydebug=1;
 	join_type
 	non_second_datetime_field
 	nonzero
-	stream_window_set
-	stream_window_update
-	stream_stride_set
-	stream_stride_update
-	database_object
-	cycles_set
+	opt_any_all_some
 	opt_bounds
 	opt_column
 	opt_encrypted
@@ -572,6 +567,10 @@ int yydebug=1;
 	ref_on_update
 	row_or_statement
 	serial_or_bigserial
+	stream_stride_set
+	stream_stride_update
+	stream_window_set
+	stream_window_update
 	subgeometry_type
 	time_precision
 	timestamp_precision
@@ -3742,7 +3741,6 @@ predicate:
  |  like_predicate
  |  test_for_null
  |  in_predicate
- |  all_or_any_predicate
  |  existence_test
  |  filter_exp
  |  scalar_exp
@@ -3753,20 +3751,31 @@ pred_exp:
  |  predicate	 { $$ = $1; }
  ;
 
+opt_any_all_some:
+    		{ $$ = -1; }
+ |  ANY		{ $$ = 0; }
+ |  SOME	{ $$ = 0; }
+ |  ALL		{ $$ = 1; }
+ ;
+
 comparison_predicate:
-    pred_exp COMPARISON pred_exp
+    pred_exp COMPARISON opt_any_all_some pred_exp
 		{ dlist *l = L();
 
 		  append_symbol(l, $1);
 		  append_string(l, $2);
-		  append_symbol(l, $3);
+		  append_symbol(l, $4);
+		  if ($3 > -1)
+		     append_int(l, $3);
 		  $$ = _symbol_create_list(SQL_COMPARE, l ); }
- |  pred_exp '=' pred_exp
+ |  pred_exp '=' opt_any_all_some pred_exp
 		{ dlist *l = L();
 
 		  append_symbol(l, $1);
 		  append_string(l, sa_strdup(SA, "="));
-		  append_symbol(l, $3);
+		  append_symbol(l, $4);
+		  if ($3 > -1)
+		     append_int(l, $3);
 		  $$ = _symbol_create_list(SQL_COMPARE, l ); }
  ;
 
@@ -3881,29 +3890,7 @@ pred_exp_list:
 			{ $$ = append_symbol( $1, $3); }
  ;
 
-all_or_any_predicate:
-    pred_exp COMPARISON any_all_some subquery
 
-		{ dlist *l = L();
-		  append_symbol(l, $1);
-		  append_string(l, $2);
-		  append_symbol(l, $4);
-		  append_int(l, $3);
-		  $$ = _symbol_create_list(SQL_COMPARE, l ); }
- |  pred_exp '=' any_all_some pred_exp
-		{ dlist *l = L();
-		  append_symbol(l, $1);
-		  append_string(l, sa_strdup(SA, "="));
-		  append_symbol(l, $4);
-		  append_int(l, $3);
-		  $$ = _symbol_create_list(SQL_COMPARE, l ); }
- ;
-
-any_all_some:
-    ANY		{ $$ = 0; }
- |  SOME	{ $$ = 0; }
- |  ALL		{ $$ = 1; }
- ;
 
 existence_test:
     EXISTS subquery 	{ $$ = _symbol_create_symbol( SQL_EXISTS, $2 ); }

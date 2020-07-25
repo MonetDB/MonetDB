@@ -603,7 +603,7 @@ sql_dup_subfunc(sql_allocator *sa, sql_func *f, list *ops, sql_subtype *member)
 				sql_arg *s = m->data;
 
 				if (s->type.type->eclass == EC_ANY) {
-					if (!st)
+					if (!st || st->type->eclass == EC_ANY) /* if input parameter is ANY, skip validation */
 						st = tn->data;
 					else if (subtype_cmp(st, tn->data))
 						return NULL;
@@ -1314,6 +1314,9 @@ sqltypeinit( sql_allocator *sa)
 	sql_create_func(sa, "least", "calc", "min_no_nil", FALSE, SCALE_FIX, 0, ANY, 2, ANY, ANY);
 	sql_create_func(sa, "greatest", "calc", "max_no_nil", FALSE, SCALE_FIX, 0, ANY, 2, ANY, ANY);
 	sql_create_func(sa, "ifthenelse", "calc", "ifthenelse", FALSE, SCALE_FIX, 0, ANY, 3, BIT, ANY, ANY);
+	/* nullif and coalesce don't have a backend implementation */
+	sql_create_func(sa, "nullif", "", "", FALSE, SCALE_FIX, 0, ANY, 2, ANY, ANY);
+	sql_create_func(sa, "coalesce", "", "", FALSE, SCALE_FIX, 0, ANY, 2, ANY, ANY);
 
 	/* sum for numerical and decimals */
 	sql_create_aggr(sa, "sum", "aggr", "sum", LargestINT, 1, BTE);

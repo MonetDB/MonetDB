@@ -631,7 +631,7 @@
 #define PACKAGE_URL "https://www.monetdb.org/"
 
 /* Define to the version of this package. */
-#define PACKAGE_VERSION "11.37.8"
+#define PACKAGE_VERSION "11.37.12"
 
 /* Path separator */
 #define PATH_SEP ';'
@@ -644,6 +644,9 @@
 
 /* The size of `char', as computed by sizeof. */
 #define SIZEOF_CHAR 1
+
+/* The size of `double', as computed by sizeof. */
+#define SIZEOF_DOUBLE 8
 
 /* The size of `int', as computed by sizeof. */
 #define SIZEOF_INT 4

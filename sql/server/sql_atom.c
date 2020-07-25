@@ -10,6 +10,7 @@
 #include "sql_atom.h"
 #include "sql_string.h"
 #include "sql_decimal.h"
+#include "blob.h"
 #include "gdk_time.h"
 
 void
@@ -328,6 +329,7 @@ atom_general(sql_allocator *sa, sql_subtype *tpe, const char *val)
 				/*_DELETE(val);*/
 				if (p)
 					GDKfree(p);
+				GDKclrerr();
 				return NULL;
 			}
 			VALset(&a->data, a->data.vtype, p);
@@ -428,7 +430,7 @@ atom2string(sql_allocator *sa, atom *a)
 }
 
 char *
-atom2sql(atom *a)
+atom2sql(atom *a, int timezone)
 {
 	sql_class ec = a->tpe.type->eclass;
 	char buf[BUFSIZ];
@@ -455,9 +457,18 @@ atom2sql(atom *a)
 		c_delete(val);
 		return res;
 	} break;
-	case EC_BLOB:
-		/* TODO atom to string */
-		break;
+	case EC_BLOB: {
+		char *res;
+		blob *b = (blob*)a->data.val.pval;
+		size_t blobstr_size = b->nitems * 2 + 1;
+
+		if ((res = NEW_ARRAY(char, blobstr_size + 8))) {
+			char *tail = stpcpy(res, "blob '");
+			ssize_t blobstr_offset = BLOBtostr(&tail, &blobstr_size, b, true);
+			strcpy(res + blobstr_offset + 6, "'");
+		}
+		return res;
+	} break;
 	case EC_MONTH:
 	case EC_SEC: {
 		lng v;
@@ -503,13 +514,7 @@ atom2sql(atom *a)
 		case 13:	/* second */
 			break;
 		}
-		if (a->tpe.digits < 4) {
-			sprintf(buf, LLFMT, v);
-		} else {
-			lng sec = v/1000;
-			lng msec = v%1000;
-			sprintf(buf, LLFMT "." LLFMT, sec, msec);
-		}
+		sprintf(buf, "interval '" LLFMT "' %s", ec == EC_MONTH ? v : v/1000, ec == EC_MONTH ? "month" : "second");
 		break;
 	}
 	case EC_NUM:
@@ -563,26 +568,101 @@ atom2sql(atom *a)
 			sprintf(buf, "%f", a->data.val.fval);
 		break;
 	case EC_TIME:
+	case EC_TIME_TZ:
 	case EC_DATE:
 	case EC_TIMESTAMP:
-		if (a->data.vtype == TYPE_str) {
-			char *val1 = sql_escape_str(a->tpe.type->sqlname), *val2 = sql_escape_str(a->data.val.sval), *res;
+	case EC_TIMESTAMP_TZ: {
+		char val1[64], sbuf[64], *val2 = sbuf, *res;
+		size_t len = sizeof(sbuf);
 
-			if (!val1 || !val2) {
-				c_delete(val1);
-				c_delete(val2);
-				return NULL;
+		switch (ec) {
+		case EC_TIME:
+		case EC_TIME_TZ:
+		case EC_TIMESTAMP:
+		case EC_TIMESTAMP_TZ: {
+			char *n = stpcpy(val1, (ec == EC_TIME || ec == EC_TIME_TZ) ? "TIME" : "TIMESTAMP");
+			if (a->tpe.digits) {
+				char str[16];
+				sprintf(str, "%u", a->tpe.digits);
+				n = stpcpy(stpcpy(stpcpy(n, " ("), str), ")");
 			}
-
-			if ((res = NEW_ARRAY(char, strlen(val1) + strlen(val2) + 4)))
-				stpcpy(stpcpy(stpcpy(stpcpy(res, val1)," '"), val2), "'");
-			c_delete(val1);
-			c_delete(val2);
-			return res;
-		} else {
-			snprintf(buf, BUFSIZ, "atom2sql(TYPE_%d) not implemented", a->data.vtype);
-		}
+			if (ec == EC_TIME_TZ || ec == EC_TIMESTAMP_TZ)
+				stpcpy(n, " WITH TIME ZONE");
+		} break;
+		case EC_DATE:
+			strcpy(val1, "DATE");
 		break;
+		default:
+			assert(0);
+		}
+
+		switch (ec) {
+		case EC_TIME:
+		case EC_TIME_TZ: {
+			daytime dt = a->data.val.lval;
+			int digits = a->tpe.digits ? a->tpe.digits - 1 : 0;
+			char *s = val2;
+			ssize_t lens;
+
+			if (ec == EC_TIME_TZ)
+				dt = daytime_add_usec_modulo(dt, timezone * 1000);
+			if ((lens = daytime_precision_tostr(&s, &len, dt, digits, true)) < 0)
+				assert(0);
+
+			if (ec == EC_TIME_TZ) {
+				lng timezone_hours = llabs(timezone / 60000);
+				char *end = sbuf + sizeof(sbuf) - 1;
+
+				s += lens;
+				snprintf(s, end - s, "%c%02d:%02d", (timezone >= 0) ? '+' : '-', (int) (timezone_hours / 60), (int) (timezone_hours % 60));
+			}
+		} break;
+		case EC_DATE: {
+			date dt = a->data.val.ival;
+			if (date_tostr(&val2, &len, &dt, false) < 0)
+				assert(0);
+		} break;
+		case EC_TIMESTAMP:
+		case EC_TIMESTAMP_TZ: {
+			timestamp ts = a->data.val.lval;
+			int digits = a->tpe.digits ? a->tpe.digits - 1 : 0;
+			char *s = val2;
+			size_t nlen;
+			ssize_t lens;
+			date days;
+			daytime usecs;
+
+			if (ec == EC_TIMESTAMP_TZ)
+				ts = timestamp_add_usec(ts, timezone * 1000);
+			days = timestamp_date(ts);
+			if ((lens = date_tostr(&s, &len, &days, true)) < 0)
+				assert(0);
+
+			s += lens;
+			*s++ = ' ';
+			nlen = len - lens - 1;
+			assert(nlen < len);
+
+			usecs = timestamp_daytime(ts);
+			if ((lens = daytime_precision_tostr(&s, &nlen, usecs, digits, true)) < 0)
+				assert(0);
+
+			if (ec == EC_TIMESTAMP_TZ) {
+				lng timezone_hours = llabs(timezone / 60000);
+				char *end = sbuf + sizeof(sbuf) - 1;
+
+				s += lens;
+				snprintf(s, end - s, "%c%02d:%02d", (timezone >= 0) ? '+' : '-', (int) (timezone_hours / 60), (int) (timezone_hours % 60));
+			}
+		} break;
+		default:
+			assert(0);
+		}
+
+		if ((res = NEW_ARRAY(char, strlen(val1) + strlen(val2) + 4)))
+			stpcpy(stpcpy(stpcpy(stpcpy(res, val1)," '"), val2), "'");
+		return res;
+	} break;
 	default:
 		snprintf(buf, BUFSIZ, "atom2sql(TYPE_%d) not implemented", a->data.vtype);
 	}
@@ -1138,8 +1218,10 @@ atom_cast(sql_allocator *sa, atom *a, sql_subtype *tp)
 				len = sizeof(double);
 				res = ATOMfromstr(TYPE_dbl, &p, &len, s, false);
 				GDKfree(s);
-				if (res < 0)
+				if (res < 0) {
+					GDKclrerr();
 					return 0;
+				}
 			}
 			if (tp->type->localtype == TYPE_dbl)
 				a->data.val.dval = a->d;
@@ -1164,6 +1246,7 @@ atom_cast(sql_allocator *sa, atom *a, sql_subtype *tp)
 			    ATOMcmp(type, p, ATOMnilptr(type)) == 0) {
 				GDKfree(p);
 				a->data.len = strlen(a->data.val.sval);
+				GDKclrerr();
 				return 0;
 			}
 			a->tpe = *tp;
@@ -1331,9 +1414,9 @@ atom_inc(atom *a)
 int
 atom_is_zero(atom *a)
 {
-	if (a->isnull)
+	if (a->isnull || !ATOMlinear(a->tpe.type->localtype))
 		return 0;
-	switch (a->tpe.type->localtype) {
+	switch (ATOMstorage(a->tpe.type->localtype)) {
 	case TYPE_bte:
 		return a->data.val.btval == 0;
 	case TYPE_sht:
@@ -1351,9 +1434,8 @@ atom_is_zero(atom *a)
 	case TYPE_dbl:
 		return a->data.val.dval == 0;
 	default:
-		break;
+		return 0;
 	}
-	return 0;
 }
 
 int
@@ -1361,9 +1443,7 @@ atom_is_true(atom *a)
 {
 	if (a->isnull)
 		return 0;
-	switch (a->tpe.type->localtype) {
-	case TYPE_bit:
-		return a->data.val.btval != 0;
+	switch (ATOMstorage(a->tpe.type->localtype)) {
 	case TYPE_bte:
 		return a->data.val.btval != 0;
 	case TYPE_sht:
@@ -1380,20 +1460,19 @@ atom_is_true(atom *a)
 		return a->data.val.fval != 0;
 	case TYPE_dbl:
 		return a->data.val.dval != 0;
+	case TYPE_str:
+		return strcmp(a->data.val.sval, "") != 0;
 	default:
-		break;
+		return 0;
 	}
-	return 0;
 }
 
 int
-atom_is_false( atom *a )
+atom_is_false(atom *a)
 {
 	if (a->isnull)
 		return 0;
-	switch(a->tpe.type->localtype) {
-	case TYPE_bit:
-		return a->data.val.btval == 0;
+	switch (ATOMstorage(a->tpe.type->localtype)) {
 	case TYPE_bte:
 		return a->data.val.btval == 0;
 	case TYPE_sht:
@@ -1410,110 +1489,67 @@ atom_is_false( atom *a )
 		return a->data.val.fval == 0;
 	case TYPE_dbl:
 		return a->data.val.dval == 0;
+	case TYPE_str:
+		return strcmp(a->data.val.sval, "") == 0;
 	default:
-		break;
+		return 0;
 	}
-	return 0;
 }
 
-atom*
+atom *
 atom_zero_value(sql_allocator *sa, sql_subtype* tpe)
 {
 	void *ret = NULL;
 	atom *res = NULL;
+	int localtype = tpe->type->localtype;
 
+	bte bval = 0;
+	sht sval = 0;
+	int ival = 0;
+	lng lval = 0;
 #ifdef HAVE_HGE
 	hge hval = 0;
 #endif
-	lng lval = 0;
-	int ival = 0;
-	sht sval = 0;
-	bte bbval = 0;
-	bit bval = 0;
 	flt fval = 0;
 	dbl dval = 0;
 
-	switch (tpe->type->eclass) {
-		case EC_BIT:
-		{
+	if (ATOMlinear(localtype)) {
+		switch (ATOMstorage(localtype)) {
+		case TYPE_bte:
 			ret = &bval;
 			break;
-		}
-		case EC_POS:
-		case EC_NUM:
-		case EC_DEC:
-		case EC_SEC:
-		case EC_MONTH:
-			switch (tpe->type->localtype) {
+		case TYPE_sht:
+			ret = &sval;
+			break;
+		case TYPE_int:
+			ret = &ival;
+			break;
+		case TYPE_lng:
+			ret = &lval;
+			break;
 #ifdef HAVE_HGE
-				case TYPE_hge:
-				{
-					ret = &hval;
-					break;
-				}
+		case TYPE_hge:
+			ret = &hval;
+			break;
 #endif
-				case TYPE_lng:
-				{
-					ret = &lval;
-					break;
-				}
-				case TYPE_int:
-				{
-					ret = &ival;
-					break;
-				}
-				case TYPE_sht:
-				{
-					ret = &sval;
-					break;
-				}
-				case TYPE_bte:
-				{
-					ret = &bbval;
-					break;
-				}
-				default:
-					break;
-			}
+		case TYPE_flt:
+			ret = &fval;
 			break;
-		case EC_FLT:
-			switch (tpe->type->localtype) {
-				case TYPE_flt:
-				{
-					ret = &fval;
-					break;
-				}
-				case TYPE_dbl:
-				{
-					ret = &dval;
-					break;
-				}
-				default:
-					break;
-			}
+		case TYPE_dbl:
+			ret = &dval;
 			break;
-		default:
+		default: /* no support for strings and blobs zero value */
 			break;
-	} //no support for strings and blobs zero value
+		}
+	}
 
 	if (ret != NULL) {
 		res = atom_create(sa);
 		res->tpe = *tpe;
 		res->isnull = 0;
-		res->data.vtype = tpe->type->localtype;
+		res->data.vtype = localtype;
 		VALset(&res->data, res->data.vtype, ret);
 	}
 
-	return res;
-}
-
-atom*
-atom_null_value(sql_allocator *sa, sql_subtype* tpe)
-{
-	atom *res = atom_create(sa);
-	if (res) {
-		res->tpe = *tpe;
-		res->isnull = 1;
-	}
 	return res;
 }

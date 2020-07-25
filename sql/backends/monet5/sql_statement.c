@@ -1491,6 +1491,8 @@ stmt_uselect(backend *be, stmt *op1, stmt *op2, comp_type cmptype, stmt *sub, in
 			q = pushArgument(mb, q, l);
 			if (sub && !op1->cand)
 				q = pushArgument(mb, q, sub->nr);
+			else
+				sub = NULL;
 			q = pushArgument(mb, q, r);
 			q = pushArgument(mb, q, r);
 			q = pushBit(mb, q, TRUE);
@@ -1622,11 +1624,32 @@ select2_join2(backend *be, stmt *op1, stmt *op2, stmt *op3, int cmp, stmt *sub, 
 
 		if (op2->nr < 0 || op3->nr < 0)
 			return NULL;
-
 		p = newStmt(mb, batcalcRef, betweenRef);
 		p = pushArgument(mb, p, l);
 		p = pushArgument(mb, p, op2->nr);
 		p = pushArgument(mb, p, op3->nr);
+
+		/* cands */
+		if (op1->cand || op2->cand || op3->cand) { /* some already handled the previous selection */
+			if (op1->cand && op1->nrcols)
+				p = pushNil(mb, p, TYPE_bat);
+			else if (op1->nrcols)
+				p = pushArgument(mb, p, sub->nr);
+			if (op2->nrcols) {
+				if (op2->cand)
+					p = pushNil(mb, p, TYPE_bat);
+				else if (op2->nrcols)
+					p = pushArgument(mb, p, sub->nr);
+			}
+			if (op3->nrcols) {
+				if (op3->cand)
+					p = pushNil(mb, p, TYPE_bat);
+				else if (op3->nrcols)
+					p = pushArgument(mb, p, sub->nr);
+			}
+			sub = NULL;
+		}
+
 		p = pushBit(mb, p, (cmp & CMP_SYMMETRIC) != 0); /* symmetric */
 		p = pushBit(mb, p, (cmp & 1) != 0);	    /* lo inclusive */
 		p = pushBit(mb, p, (cmp & 2) != 0);	    /* hi inclusive */
@@ -1903,16 +1926,15 @@ stmt_tinter(backend *be, stmt *op1, stmt *op2, bool single)
 }
 
 stmt *
-stmt_join_cand(backend *be, stmt *op1, stmt *op2, stmt *lcand, stmt *rcand, int anti, comp_type cmptype, int is_semantics, bool single)
+stmt_join_cand(backend *be, stmt *op1, stmt *op2, stmt *lcand, stmt *rcand, int anti, comp_type cmptype, int need_left, int is_semantics, bool single)
 {
 	MalBlkPtr mb = be->mb;
 	InstrPtr q = NULL;
-	int left = (cmptype == cmp_left);
 	const char *sjt = joinRef;
 
 	(void)anti;
 
-	if (left) {
+	if (need_left) {
 		cmptype = cmp_equal;
 		sjt = leftjoinRef;
 	}
@@ -2022,9 +2044,9 @@ stmt_join_cand(backend *be, stmt *op1, stmt *op2, stmt *lcand, stmt *rcand, int 
 }
 
 stmt *
-stmt_join(backend *be, stmt *l, stmt *r, int anti, comp_type cmptype, int is_semantics, bool single)
+stmt_join(backend *be, stmt *l, stmt *r, int anti, comp_type cmptype, int need_left, int is_semantics, bool single)
 {
-	return stmt_join_cand(be, l, r, NULL, NULL, anti, cmptype, is_semantics, single);
+	return stmt_join_cand(be, l, r, NULL, NULL, anti, cmptype, need_left, is_semantics, single);
 }
 
 stmt *
@@ -2992,7 +3014,7 @@ stmt_convert(backend *be, stmt *v, sql_subtype *f, sql_subtype *t, stmt *cond)
 			q = pushInt(mb, q, f->scale);
 */			//q = pushInt(mb, q, ((ValRecord)((atom*)(be->mvc)->args[1])->data).val.ival);
 	}
-	if (cond && v->nrcols && f->type->eclass != EC_DEC && !EC_TEMP_FRAC(t->type->eclass) && !EC_INTERVAL(t->type->eclass))
+	if (cond && v->nrcols && f->type->eclass != EC_DEC && !EC_TEMP(t->type->eclass) && !EC_INTERVAL(t->type->eclass))
 		q = pushArgument(mb, q, cond->nr);
 	if (q) {
 		stmt *s = stmt_create(be->mvc->sa, st_convert);
@@ -3052,77 +3074,116 @@ stmt_Nop(backend *be, stmt *ops, sql_subfunc *f)
 		}
 	}
 
-	if (backend_create_subfunc(be, f, ops->op4.lval) < 0)
-		return NULL;
-	mod = sql_func_mod(f->func);
-	fimp = sql_func_imp(f->func);
-	if (o && o->nrcols > 0 && f->func->type != F_LOADER && f->func->type != F_PROC) {
-		sql_subtype *res = f->res->h->data;
-		fimp = convertMultiplexFcn(fimp);
-		q = NULL;
-		if (strcmp(fimp, "rotate_xor_hash") == 0 &&
-		    strcmp(mod, calcRef) == 0 &&
-		    (q = newStmt(mb, mkeyRef, bulk_rotate_xor_hashRef)) == NULL)
+	/* handle coalesce and nullif */
+	if (list_length(ops->op4.lval) == 2 &&
+		f->func->mod && strcmp(f->func->mod, "") == 0 && f->func->imp && strcmp(f->func->imp, "") == 0) {
+		stmt *e1 = ops->op4.lval->h->data;
+		stmt *e2 = ops->op4.lval->h->next->data;
+		int nrcols = 0;
+
+		nrcols = e1->nrcols>e2->nrcols ? e1->nrcols:e2->nrcols;
+		/* nrcols */
+		//coalesce(e1,e2) -> ifthenelse(isnil(e1),e2,e1)
+		if (strcmp(f->func->base.name, "coalesce") == 0) {
+			str mod = (!nrcols)?calcRef:batcalcRef;
+			q = newStmt(mb, e1->nrcols?mod:calcRef, "isnil");
+			q = pushArgument(mb, q, e1->nr);
+			int nr = getDestVar(q);
+
+			q = newStmt(mb, mod, "ifthenelse");
+			q = pushArgument(mb, q, nr);
+			q = pushArgument(mb, q, e2->nr);
+			q = pushArgument(mb, q, e1->nr);
+		}
+		//nullif(e1,e2) -> ifthenelse(e1==e2),NULL,e1)
+		if (strcmp(f->func->base.name, "nullif") == 0) {
+			str mod = (!nrcols)?calcRef:batcalcRef;
+			sql_subtype *t = tail_type(e1);
+			int tt = t->type->localtype;
+			q = newStmt(mb, mod, "==");
+			q = pushArgument(mb, q, e1->nr);
+			q = pushArgument(mb, q, e2->nr);
+			int nr = getDestVar(q);
+
+			q = newStmt(mb, mod, "ifthenelse");
+			q = pushArgument(mb, q, nr);
+			q = pushNil(mb, q, tt);
+			q = pushArgument(mb, q, e1->nr);
+		}
+	}
+	if (!q) {
+		if (backend_create_subfunc(be, f, ops->op4.lval) < 0)
 			return NULL;
-		if (!q) {
-			if (f->func->type == F_UNION)
-				q = newStmt(mb, batmalRef, multiplexRef);
-			else
-				q = newStmt(mb, malRef, multiplexRef);
-			if (q == NULL)
-				return NULL;
-			setVarType(mb, getArg(q, 0), newBatType(res->type->localtype));
-			setVarUDFtype(mb, getArg(q, 0));
-			q = pushStr(mb, q, mod);
-			q = pushStr(mb, q, fimp);
-		} else {
-			setVarType(mb, getArg(q, 0), newBatType(res->type->localtype));
-			setVarUDFtype(mb, getArg(q, 0));
-		}
-	} else {
-		fimp = convertOperator(fimp);
-		q = newStmt(mb, mod, fimp);
-
-		if (f->res && list_length(f->res)) {
+		mod = sql_func_mod(f->func);
+		fimp = sql_func_imp(f->func);
+		if (o && o->nrcols > 0 && f->func->type != F_LOADER && f->func->type != F_PROC) {
 			sql_subtype *res = f->res->h->data;
+			fimp = convertMultiplexFcn(fimp);
+			q = NULL;
+			if (strcmp(fimp, "rotate_xor_hash") == 0 &&
+				strcmp(mod, calcRef) == 0 &&
+				(q = newStmt(mb, mkeyRef, bulk_rotate_xor_hashRef)) == NULL)
+				return NULL;
+			if (!q) {
+				if (f->func->type == F_UNION)
+					q = newStmt(mb, batmalRef, multiplexRef);
+				else
+					q = newStmt(mb, malRef, multiplexRef);
+				if (q == NULL)
+					return NULL;
+				setVarType(mb, getArg(q, 0), newBatType(res->type->localtype));
+				setVarUDFtype(mb, getArg(q, 0));
+				q = pushStr(mb, q, mod);
+				q = pushStr(mb, q, fimp);
+			} else {
+				setVarType(mb, getArg(q, 0), newBatType(res->type->localtype));
+				setVarUDFtype(mb, getArg(q, 0));
+			}
+		} else {
+			fimp = convertOperator(fimp);
+			q = newStmt(mb, mod, fimp);
 
-			setVarType(mb, getArg(q, 0), res->type->localtype);
-			setVarUDFtype(mb, getArg(q, 0));
+			if (f->res && list_length(f->res)) {
+				sql_subtype *res = f->res->h->data;
+
+				setVarType(mb, getArg(q, 0), res->type->localtype);
+				setVarUDFtype(mb, getArg(q, 0));
+			}
 		}
-	}
-	if (LANG_EXT(f->func->lang))
-		q = pushPtr(mb, q, f);
-	if (f->func->lang == FUNC_LANG_C) {
-		q = pushBit(mb, q, 0);
-	} else if (f->func->lang == FUNC_LANG_CPP) {
-		q = pushBit(mb, q, 1);
-	}
-	if (f->func->lang == FUNC_LANG_R || f->func->lang >= FUNC_LANG_PY ||
-		f->func->lang == FUNC_LANG_C || f->func->lang == FUNC_LANG_CPP) {
-		q = pushStr(mb, q, f->func->query);
-	}
-	/* first dynamic output of copy* functions */
-	if (f->func->type == F_UNION || (f->func->type == F_LOADER && f->res != NULL))
-		q = table_func_create_result(mb, q, f->func, f->res);
-	if (list_length(ops->op4.lval))
-		tpe = tail_type(ops->op4.lval->h->data);
-	if (strcmp(fimp, "round") == 0 && tpe && tpe->type->eclass == EC_DEC)
-		special = 1;
-
-	for (n = ops->op4.lval->h; n; n = n->next) {
-		stmt *op = n->data;
-
-		if (!op)
-			q = pushNil(mb, q, TYPE_bat);
-		else
-			q = pushArgument(mb, q, op->nr);
-		if (op && special) {
-			q = pushInt(mb, q, tpe->digits);
-			setVarUDFtype(mb, getArg(q, q->argc-1));
-			q = pushInt(mb, q, tpe->scale);
-			setVarUDFtype(mb, getArg(q, q->argc-1));
+		if (LANG_EXT(f->func->lang))
+			q = pushPtr(mb, q, f);
+		if (f->func->lang == FUNC_LANG_C) {
+			q = pushBit(mb, q, 0);
+		} else if (f->func->lang == FUNC_LANG_CPP) {
+			q = pushBit(mb, q, 1);
 		}
-		special = 0;
+		if (f->func->lang == FUNC_LANG_R || f->func->lang >= FUNC_LANG_PY ||
+			f->func->lang == FUNC_LANG_C || f->func->lang == FUNC_LANG_CPP) {
+			q = pushStr(mb, q, f->func->query);
+		}
+		/* first dynamic output of copy* functions */
+		if (f->func->type == F_UNION || (f->func->type == F_LOADER && f->res != NULL))
+			q = table_func_create_result(mb, q, f->func, f->res);
+		if (list_length(ops->op4.lval))
+			tpe = tail_type(ops->op4.lval->h->data);
+		if (strcmp(fimp, "round") == 0 && tpe && tpe->type->eclass == EC_DEC)
+			special = 1;
+
+		for (n = ops->op4.lval->h; n; n = n->next) {
+			stmt *op = n->data;
+
+			if (!op)
+				q = pushNil(mb, q, TYPE_bat);
+			else
+				q = pushArgument(mb, q, op->nr);
+			if (op && special) {
+				q = pushInt(mb, q, tpe->digits);
+				setVarUDFtype(mb, getArg(q, q->argc-1));
+				q = pushInt(mb, q, tpe->scale);
+				setVarUDFtype(mb, getArg(q, q->argc-1));
+			}
+			special = 0;
+		}
 	}
 
 	if (q) {
@@ -3916,13 +3977,22 @@ const_column(backend *be, stmt *val)
 stmt *
 stmt_fetch(backend *be, stmt *val)
 {
-	sql_subtype *ct = tail_type(val);
+	sql_subtype *ct;
 	MalBlkPtr mb = be->mb;
 	InstrPtr q = NULL;
-	int tt = ct->type->localtype;
+	int tt;
 
 	if (val->nr < 0)
 		return NULL;
+	/* pick from first column on a table case */
+	if (val->type == st_table) {
+		if (list_length(val->op1->op4.lval) > 1)
+			return NULL;
+		val = val->op1->op4.lval->h->data;
+	}
+	ct = tail_type(val);
+	tt = ct->type->localtype;
+
 	q = newStmt(mb, algebraRef, fetchRef);
 	if (q == NULL)
 		return NULL;

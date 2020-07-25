@@ -36,22 +36,18 @@ nil_2_timestamp(timestamp *res, const void *val)
 str
 str_2_timestamp(timestamp *res, const str *val)
 {
-	ptr p = NULL;
-	size_t len = 0;
-	ssize_t e;
-	char buf[BUFSIZ];
+	ssize_t pos = 0;
+	timestamp tp = 0, *conv = &tp;
+	str buf = *val;
 
-	e = ATOMfromstr(TYPE_timestamp, &p, &len, *val, false);
-	if (e < 0 || !p || (ATOMcmp(TYPE_timestamp, p, ATOMnilptr(TYPE_timestamp)) == 0 && ATOMcmp(TYPE_str, *val, ATOMnilptr(TYPE_str)) != 0)) {
-		if (p)
-			GDKfree(p);
-		snprintf(buf, BUFSIZ, "Conversion of string '%s' failed", *val? *val:"");
-		throw(SQL, "timestamp", SQLSTATE(42000) "%s", buf);
-	}
-	*res = *(timestamp *) p;
-	if (!ATOMextern(TYPE_timestamp)) {
-		if (p)
-			GDKfree(p);
+	if (strNil(buf)) {
+		*res = timestamp_nil;
+	} else {
+		pos = timestamp_fromstr(buf, &(size_t){sizeof(timestamp)}, &conv, false);
+		if (pos < (ssize_t) strlen(buf) || /* includes pos < 0 */ ATOMcmp(TYPE_timestamp, conv, ATOMnilptr(TYPE_timestamp)) == 0)
+			return createException(SQL, "calc.str_2_date", SQLSTATE(22007) "Timestamp '%s' has incorrect format", buf);
+		else
+			*res = *conv;
 	}
 	return MAL_SUCCEED;
 }
@@ -130,22 +126,18 @@ nil_2_daytime(daytime *res, const void *val)
 str
 str_2_daytime(daytime *res, const str *val)
 {
-	ptr p = NULL;
-	size_t len = 0;
-	ssize_t e;
-	char buf[BUFSIZ];
+	ssize_t pos = 0;
+	daytime dt = 0, *conv = &dt;
+	str buf = *val;
 
-	e = ATOMfromstr(TYPE_daytime, &p, &len, *val, false);
-	if (e < 0 || !p || (ATOMcmp(TYPE_daytime, p, ATOMnilptr(TYPE_daytime)) == 0 && ATOMcmp(TYPE_str, *val, ATOMnilptr(TYPE_str)) != 0)) {
-		if (p)
-			GDKfree(p);
-		snprintf(buf, BUFSIZ, "Conversion of string '%s' failed", *val? *val:"");
-		throw(SQL, "daytime", SQLSTATE(42000) "%s", buf);
-	}
-	*res = *(daytime *) p;
-	if (!ATOMextern(TYPE_daytime)) {
-		if (p)
-			GDKfree(p);
+	if (strNil(buf)) {
+		*res = daytime_nil;
+	} else {
+		pos = daytime_fromstr(buf, &(size_t){sizeof(daytime)}, &conv, false);
+		if (pos < (ssize_t) strlen(buf) || /* includes pos < 0 */ ATOMcmp(TYPE_daytime, conv, ATOMnilptr(TYPE_daytime)) == 0)
+			return createException(SQL, "calc.str_2_date", SQLSTATE(22007) "Time '%s' has incorrect format", buf);
+		else
+			*res = *conv;
 	}
 	return MAL_SUCCEED;
 }
@@ -225,22 +217,18 @@ nil_2_date(date *res, const void *val)
 str
 str_2_date(date *res, const str *val)
 {
-	ptr p = NULL;
-	size_t len = 0;
-	ssize_t e;
-	char buf[BUFSIZ];
+	ssize_t pos = 0;
+	date dt = 0, *conv = &dt;
+	str buf = *val;
 
-	e = ATOMfromstr(TYPE_date, &p, &len, *val, false);
-	if (e < 0 || !p || (ATOMcmp(TYPE_date, p, ATOMnilptr(TYPE_date)) == 0 && ATOMcmp(TYPE_str, *val, ATOMnilptr(TYPE_str)) != 0)) {
-		if (p)
-			GDKfree(p);
-		snprintf(buf, BUFSIZ, "Conversion of string '%s' failed", *val? *val:"");
-		throw(SQL, "date", SQLSTATE(42000) "%s", buf);
-	}
-	*res = *(date *) p;
-	if (!ATOMextern(TYPE_date)) {
-		if (p)
-			GDKfree(p);
+	if (strNil(buf)) {
+		*res = date_nil;
+	} else {
+		pos = date_fromstr(buf, &(size_t){sizeof(date)}, &conv, false);
+		if (pos < (ssize_t) strlen(buf) || /* includes pos < 0 */ ATOMcmp(TYPE_date, conv, ATOMnilptr(TYPE_date)) == 0)
+			return createException(SQL, "calc.str_2_date", SQLSTATE(22007) "Date '%s' has incorrect format", buf);
+		else
+			*res = *conv;
 	}
 	return MAL_SUCCEED;
 }

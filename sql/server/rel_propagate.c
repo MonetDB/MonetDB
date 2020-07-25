@@ -163,7 +163,7 @@ generate_partition_limits(sql_query *query, sql_rel **r, symbol *s, sql_subtype 
 
 		if (!e)
 			return NULL;
-		return rel_check_type(sql, &tpe, r ? *r : NULL, e, type_equal);
+		return exp_check_type(sql, &tpe, r ? *r : NULL, e, type_equal);
 	}
 }
 
@@ -189,12 +189,12 @@ create_range_partition_anti_rel(sql_query* query, sql_table *mt, sql_table *pt, 
 			sql_exp *range1, *range2;
 
 			e1 = exp_copy(sql, pmin);
-			if (subtype_cmp(exp_subtype(pmin), &tpe) != 0)
-				e1 = exp_convert(sql->sa, e1, exp_subtype(e1), &tpe);
+			if (!(e1 = exp_check_type(sql, &tpe, NULL, e1, type_equal)))
+				return NULL;
 
 			e2 = exp_copy(sql, pmax);
-			if (subtype_cmp(exp_subtype(e2), &tpe) != 0)
-				e2 = exp_convert(sql->sa, e2, exp_subtype(e2), &tpe);
+			if (!(e2 = exp_check_type(sql, &tpe, NULL, e2, type_equal)))
+				return NULL;
 
 			range1 = exp_compare(sql->sa, exp_copy(sql, anti_le), e1, 3);
 			range2 = exp_compare(sql->sa, exp_copy(sql, anti_le), e2, 1);
@@ -351,7 +351,7 @@ rel_alter_table_add_partition_range(sql_query* query, sql_table *mt, sql_table *
 	}
 	append(exps, pmin);
 	append(exps, pmax);
-	append(exps, is_bit_nil(with_nills) ? exp_atom(sql->sa, atom_null_value(sql->sa, sql_bind_localtype("bit"))) : exp_atom_bool(sql->sa, with_nills));
+	append(exps, is_bit_nil(with_nills) ? exp_atom(sql->sa, atom_general(sql->sa, sql_bind_localtype("bit"), NULL)) : exp_atom_bool(sql->sa, with_nills));
 	append(exps, exp_atom_int(sql->sa, update));
 	rel_psm->l = NULL;
 	rel_psm->r = NULL;
@@ -377,8 +377,9 @@ rel_alter_table_add_partition_list(sql_query *query, sql_table *mt, sql_table *p
 {
 	mvc *sql = query->sql;
 	sql_rel *rel_psm = rel_create(sql->sa), *res;
-	list *exps = new_exp_list(sql->sa), *anti_exps = new_exp_list(sql->sa), *lvals = new_exp_list(sql->sa);
+	list *exps = new_exp_list(sql->sa), *lvals = new_exp_list(sql->sa);
 	sql_subtype tpe;
+	sql_exp *converted_values = NULL;
 
 	if (!rel_psm || !exps)
 		return NULL;
@@ -389,15 +390,19 @@ rel_alter_table_add_partition_list(sql_query *query, sql_table *mt, sql_table *p
 		for (dnode *dn = values->h; dn ; dn = dn->next) { /* parse the atoms and generate the expressions */
 			symbol* next = dn->data.sym;
 			sql_exp *pnext = generate_partition_limits(query, &rel_psm, next, tpe, true);
-			if (subtype_cmp(exp_subtype(pnext), &tpe) != 0)
-				pnext = exp_convert(sql->sa, pnext, exp_subtype(pnext), &tpe);
 
 			if (next->token == SQL_NULL)
 				return sql_error(sql, 02, SQLSTATE(42000) "ALTER TABLE: a list value cannot be null");
 			append(lvals, pnext);
-			append(anti_exps, exp_copy(sql, pnext));
 		}
 	}
+
+	converted_values = exp_values(sql->sa, lvals);
+	if (!(converted_values = exp_values_set_supertype(sql, converted_values, &tpe)))
+		return NULL;
+	for (node *n = ((list*)converted_values->f)->h ; n ; n = n->next)
+		if (!(n->data = exp_check_type(sql, &tpe, NULL, n->data, type_equal)))
+			return NULL;
 
 	//generate the psm statement
 	append(exps, exp_atom_clob(sql->sa, sname));
@@ -413,11 +418,11 @@ rel_alter_table_add_partition_list(sql_query *query, sql_table *mt, sql_table *p
 	rel_psm->r = NULL;
 	rel_psm->op = op_ddl;
 	rel_psm->flag = ddl_alter_table_add_list_partition;
-	rel_psm->exps = list_merge(exps, lvals, (fdup)NULL);
+	rel_psm->exps = list_merge(exps, converted_values->f, (fdup)NULL);
 	rel_psm->card = CARD_MULTI;
 	rel_psm->nrcols = 0;
 
-	res = create_list_partition_anti_rel(query, mt, pt, with_nills, anti_exps);
+	res = create_list_partition_anti_rel(query, mt, pt, with_nills, exps_copy(sql, (list*)converted_values->f));
 	res->l = rel_psm;
 
 	return propagate_validation_to_upper_tables(query, mt, pt, res);

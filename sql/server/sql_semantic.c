@@ -412,7 +412,7 @@ symbol2string(mvc *sql, symbol *se, int expression, char **err) /**/
 	case SQL_ATOM:{
 		AtomNode *an = (AtomNode *) se;
 		if (an && an->a)
-			return atom2sql(an->a);
+			return atom2sql(an->a, sql->timezone);
 		else
 			return _STRDUP("NULL");
 	}
@@ -434,7 +434,7 @@ symbol2string(mvc *sql, symbol *se, int expression, char **err) /**/
 		assert(l->h->type != type_lng);
 		if (dlist_length(l) == 1 && l->h->type == type_int) {
 			atom *a = sql_bind_arg(sql, l->h->data.i_val);
-			return atom2sql(a);
+			return atom2sql(a, sql->timezone);
 		} else if (expression && dlist_length(l) == 1 && l->h->type == type_string) {
 			/* when compiling an expression, a column of a table might be present in the symbol, so we need this case */
 			const char *op = l->h->data.sval;

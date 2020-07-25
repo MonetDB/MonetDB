@@ -296,6 +296,8 @@ str_2dec(TYPE *res, const str *val, const int *d, const int *sc)
 	if (scale < *sc) {
 		/* the current scale is too small, increase it by adding 0's */
 		int dff = *sc - scale;	/* CANNOT be 0! */
+		if (dff >= MAX_SCALE)
+			throw(SQL, STRING(TYPE), SQLSTATE(42000) "Rounding of decimal (%s) doesn't fit format (%d.%d)", *val, *d, *sc);
 
 		value *= scales[dff];
 		scale += dff;
@@ -304,6 +306,10 @@ str_2dec(TYPE *res, const str *val, const int *d, const int *sc)
 		/* the current scale is too big, decrease it by correctly rounding */
 		/* we should round properly, and check for overflow (res >= 10^digits+scale) */
 		int dff = scale - *sc;	/* CANNOT be 0 */
+
+		if (dff >= MAX_SCALE)
+			throw(SQL, STRING(TYPE), SQLSTATE(42000) "Rounding of decimal (%s) doesn't fit format (%d.%d)", *val, *d, *sc);
+
 		BIG rnd = scales[dff] >> 1;
 
 		if (value > 0)
@@ -452,7 +458,9 @@ dec2second_interval(lng *res, const int *sc, const TYPE *dec, const int *ek, con
 
 	(void) ek;
 	(void) sk;
-	if (*sc < 3) {
+	if (ISNIL(TYPE)(*dec)) {
+		value = lng_nil;
+	} else if (*sc < 3) {
 		int d = 3 - *sc;
 		value *= scales[d];
 	} else if (*sc > 3) {

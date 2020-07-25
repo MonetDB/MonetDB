@@ -4,8 +4,9 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
  * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
- *
- *
+ */
+
+/*
  * GDKtracer exposes routines where an occuring failure should reach the
  * client immediately. For that reason, GDKtracer reports those errors
  * directly to the stream.

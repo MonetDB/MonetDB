@@ -1,3 +1,83 @@
+monetdb (11.37.11) unstable; urgency=low
+
+  * Rebuilt.
+  * BZ#6917: Decimal parsing fails
+  * BZ#6932: Syntax error while parsing JSON numbers with exponent
+  * BZ#6934: sys.isauuid() returns wrong answer for some invalid uuid
+    strings
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Thu, 23 Jul 2020 09:10:48 +0200
+
+monetdb (11.37.9) unstable; urgency=low
+
+  * Rebuilt.
+  * BZ#6844: sys.getUser('https://me:pw@www.monetdb.org/Doc') does not
+    return the user: me
+  * BZ#6845: the url sys.get...(url) functions do not allow null as
+    a parameter
+  * BZ#6858: json.keyarray(json '{ "":0 }') fails with error: Could not
+    allocate space
+  * BZ#6859: only first character of the separator string in json.text(js
+    json, sep string) is used
+  * BZ#6873: sys.hot_snapshot() creates incomplete snapshots if the
+    write-ahead log is very large
+  * BZ#6876: tar files created by sys.hot_snapshot() produce warnings on
+    some implementations of tar
+  * BZ#6877: MonetDB produces malformed LZ4 files
+  * BZ#6878: SQL Connection Error when running SELECT queries containing
+    AND command
+  * BZ#6880: Left fuzzy queries are much slower than other fuzzy queries.
+  * BZ#6882: cgroups limits no longer respected?
+  * BZ#6883: SQLancer crash on delete query
+  * BZ#6884: SQLancer generates query with unclear error message
+  * BZ#6885: SQLancer causes assertion error on UTF8_strlen
+  * BZ#6886: SQLancer alter table add unique gives strange error message
+  * BZ#6887: SQLancer crash on complex query
+  * BZ#6888: SQLancer crash on cross join on view
+  * BZ#6889: SQLancer crash on long query
+  * BZ#6892: SQLancer crash on query with HAVING
+  * BZ#6893: SQLancer inner join reporting GDK error
+  * BZ#6894: SQLancer crash on rtrim function
+  * BZ#6895: SQLancer causing 'algebra.select' undefined error
+  * BZ#6896: SQLancer algebra.select' undefined 2
+  * BZ#6897: SQLancer distinct aggregate with error on group by constant
+  * BZ#6898: SQLancer crash on join query
+  * BZ#6899: SQLancer TLP query with wrong results
+  * BZ#6900: SQLancer generated SIGFPE
+  * BZ#6901: SQLancer TLP query with wrong results 2
+  * BZ#6902: SQLancer query: batcalc.between undefined
+  * BZ#6903: SQLancer calc.abs undefined
+  * BZ#6904: SQLancer aggr.subavg undefined
+  * BZ#6905: SQLancer TLP query with wrong results 3
+  * BZ#6906: SQLancer crash on complex join
+  * BZ#6907: SQLancer algebra.select undefined
+  * BZ#6908: SQLancer inputs not the same size
+  * BZ#6909: SQLancer query with wrong results
+  * BZ#6911: SQLancer query: 'calc.bit' undefined
+  * BZ#6918: SQLancer query compilation error
+  * BZ#6919: SQLancer insert function doesn't handle utf-8 strings
+  * BZ#6920: SQLancer project_bte: does not match always
+  * BZ#6922: Timestamp columns not migrated to new format
+  * BZ#6923: Imprints data files for timestamp BAT not migrated to the
+    new format
+  * BZ#6924: SQLancer query copy on unique pair of columns fails and
+    complex query with GDK error
+  * BZ#6925: Count string rows in union of string tables leaks (RSS) memory
+  * BZ#6926: SQLancer query with wrong results
+  * BZ#6927: SQLancer inputs not the same size
+  * BZ#6928: SQLancer crash on coalesce
+  * BZ#6929: SQLancer calc.date undefined
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Mon, 20 Jul 2020 09:33:05 +0200
+
+monetdb (11.37.9) unstable; urgency=low
+
+  * gdk: Hash buckets come in variable widths.  But if a BAT grows long enough so
+    that the BAT indexes that are stored in the buckets don't fit anymore,
+    the buckets need to be widened.  This is now fixed.
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Tue, 9 Jun 2020 09:33:05 +0200
+
 monetdb (11.37.7) unstable; urgency=low
 
   * Rebuilt.

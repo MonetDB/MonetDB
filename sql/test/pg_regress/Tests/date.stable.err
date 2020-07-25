@@ -31,9 +31,9 @@ stderr of test 'date` in directory 'sql/test/pg_regress` itself:
 
 MAPI  = (monetdb) /var/tmp/mtest-27483/.s.monetdb.35395
 QUERY = INSERT INTO DATE_TBL VALUES ('1997-02-29');
-ERROR = !Conversion of string '1997-02-29' failed
-CODE  = 42000
-MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
+ERROR = !Date '1997-02-29' has incorrect format
+CODE  = 22007
+MAPI  = (monetdb) /var/tmp/mtest-321902/.s.monetdb.33075
 QUERY = SELECT f1, day(f1) FROM DATE_TBL;
 ERROR = !syntax error, unexpected DAY in: "select f1, day"
 CODE  = 42000

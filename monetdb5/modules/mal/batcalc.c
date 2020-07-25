@@ -74,6 +74,8 @@ CMDbatUNARY(MalStkPtr stk, InstrPtr pci,
 	BBPunfix(b->batCacheid);
 	if (s)
 		BBPunfix(s->batCacheid);
+	if (r)
+		BBPunfix(r->batCacheid);
 	if (bn == NULL) {
 		return mythrow(MAL, malfunc, OPERATION_FAILED);
 	}
@@ -122,6 +124,8 @@ CMDbatUNARY1(MalStkPtr stk, InstrPtr pci, bool abort_on_error,
 	BBPunfix(b->batCacheid);
 	if (s)
 		BBPunfix(s->batCacheid);
+	if (r)
+		BBPunfix(r->batCacheid);
 	if (bn == NULL) {
 		return mythrow(MAL, malfunc, OPERATION_FAILED);
 	}
@@ -1076,9 +1080,9 @@ CMDbatBETWEEN(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	bat bid;
 	BAT *bn, *b = NULL, *lo = NULL, *hi = NULL, *s = NULL, *slo = NULL, *shi = NULL, *r = NULL;
-	int tp1, tp2, tp3;
+	int tp1, tp2, tp3, tp;
 	int bc = 0;					/* number of extra BAT arguments */
-	bool symmetric, linc, hinc, nils_false, anti;
+	bool symmetric, linc, hinc, nils_false, anti, has_cand = false;
 
 	(void) cntxt;
 	(void) mb;
@@ -1104,42 +1108,63 @@ CMDbatBETWEEN(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		if (hi == NULL)
 			goto bailout;
 	}
-	if (isaBatType(getArgType(mb, pci, 4))) {
+	tp = getArgType(mb, pci, 4);
+	if (tp == TYPE_bat || isaBatType(tp)) {
 		bid = *getArgReference_bat(stk, pci, 4);
-		s = BATdescriptor(bid);
-		if (s == NULL)
-			goto bailout;
-		if (s->ttype == TYPE_bit) {
-			r = s;
-			s = NULL;
+		has_cand = true;
+		if (!is_bat_nil(bid)) {
+			s = BATdescriptor(bid);
+			if (s == NULL)
+				goto bailout;
+			if (s->ttype == TYPE_bit) {
+				r = s;
+				s = NULL;
+				has_cand = false;
+			}
 		}
 		bc++;
 	}
-	if (s != NULL && lo) {
-		if (!isaBatType(getArgType(mb, pci, 4 + bc)))
+	if (has_cand && lo) {
+		tp = getArgType(mb, pci, 4 + bc);
+		if (tp == TYPE_bat || isaBatType(tp)) {
+			bid = *getArgReference_bat(stk, pci, 4 + bc);
+			if (!is_bat_nil(bid)) {
+				slo = BATdescriptor(bid);
+				if (slo == NULL)
+					goto bailout;
+			}
+			bc++;
+		} else {
+			if (s == NULL) {
+				/* apparently the extra bat was a NIL conditional
+				 * execution bat */
+				has_cand = false;
+			} else
+				goto bailout;
+		}
+	}
+	if (has_cand && hi) {
+		tp = getArgType(mb, pci, 4 + bc);
+		if (tp != TYPE_bat && !isaBatType(tp))
 			goto bailout;
 		bid = *getArgReference_bat(stk, pci, 4 + bc);
-		slo = BATdescriptor(bid);
-		if (slo == NULL)
-			goto bailout;
+		if (!is_bat_nil(bid)) {
+			shi = BATdescriptor(bid);
+			if (shi == NULL)
+				goto bailout;
+		}
 		bc++;
 	}
-	if (s != NULL && hi) {
-		if (!isaBatType(getArgType(mb, pci, 4 + bc)))
-			goto bailout;
+	tp = getArgType(mb, pci, 4 + bc);
+	if (r == NULL && (tp == TYPE_bat || isaBatType(tp))) {
 		bid = *getArgReference_bat(stk, pci, 4 + bc);
-		shi = BATdescriptor(bid);
-		if (shi == NULL)
-			goto bailout;
-		bc++;
-	}
-	if (r == NULL && isaBatType(getArgType(mb, pci, 4 + bc))) {
-		bid = *getArgReference_bat(stk, pci, 4 + bc);
-		r = BATdescriptor(bid);
-		if (r == NULL)
-			goto bailout;
-		if (r->ttype != TYPE_bit)
-			goto bailout;
+		if (!is_bat_nil(bid)) {
+			r = BATdescriptor(bid);
+			if (r == NULL)
+				goto bailout;
+			if (r->ttype != TYPE_bit)
+				goto bailout;
+		}
 		bc++;
 	}
 
@@ -1288,6 +1313,8 @@ CMDconvertbat(MalStkPtr stk, InstrPtr pci, int tp, bool abort_on_error)
 	BBPunfix(b->batCacheid);
 	if (s)
 		BBPunfix(s->batCacheid);
+	if (r)
+		BBPunfix(r->batCacheid);
 	if (bn == NULL) {
 		char buf[20];
 		snprintf(buf, sizeof(buf), "batcalc.%s", ATOMname(tp));

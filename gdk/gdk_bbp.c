@@ -386,210 +386,6 @@ static gdk_return BBPrecover(int farmid);
 static gdk_return BBPrecover_subdir(void);
 static bool BBPdiskscan(const char *, size_t);
 
-#ifdef GDKLIBRARY_NIL_NAN
-static gdk_return
-fixfltheap(BAT *b)
-{
-	long_str filename;
-	Heap h1;		/* old heap */
-	Heap h2;		/* new heap */
-	const char *nme, *bnme;
-	char *srcdir;
-	BUN i;
-	bool nofix = true;
-
-	nme = BBP_physical(b->batCacheid);
-	srcdir = GDKfilepath(NOFARM, BATDIR, nme, NULL);
-	if (srcdir == NULL) {
-		TRC_CRITICAL(GDK, "GDKfilepath failed\n");
-		return GDK_FAIL;
-	}
-	char *s;
-	if ((s = strrchr(srcdir, DIR_SEP)) != NULL)
-		*s = 0;
-
-	if ((bnme = strrchr(nme, DIR_SEP)) != NULL)
-		bnme++;
-	else
-		bnme = nme;
-	sprintf(filename, "BACKUP%c%s", DIR_SEP, bnme);
-
-	/* make backup of heap */
-	if (GDKmove(b->theap.farmid, srcdir, bnme, "tail", BAKDIR, bnme, "tail") != GDK_SUCCEED) {
-		GDKfree(srcdir);
-		TRC_CRITICAL(GDK, "cannot make backup of %s.tail\n", nme);
-		return GDK_FAIL;
-	}
-	/* load old heap */
-	h1 = b->theap;
-	strconcat_len(h1.filename, sizeof(h1.filename),
-		      filename, ".tail", NULL);
-	h1.base = NULL;
-	h1.dirty = false;
-	if (HEAPload(&h1, filename, "tail", false) != GDK_SUCCEED) {
-		GDKfree(srcdir);
-		TRC_CRITICAL(GDK, "loading old tail heap "
-			     "for BAT %d failed\n", b->batCacheid);
-		return GDK_FAIL;
-	}
-
-	/* create new heap */
-	h2 = b->theap;
-	strconcat_len(h2.filename, sizeof(h2.filename), nme, ".tail", NULL);
-	if (HEAPalloc(&h2, b->batCapacity, b->twidth) != GDK_SUCCEED) {
-		GDKfree(srcdir);
-		HEAPfree(&h1, false);
-		TRC_CRITICAL(GDK, "allocating new tail heap "
-			     "for BAT %d failed\n", b->batCacheid);
-		return GDK_FAIL;
-	}
-	h2.dirty = true;
-	h2.free = h1.free;
-
-	switch (b->ttype) {
-	case TYPE_flt: {
-		const flt *restrict o = (const flt *) h1.base;
-		flt *restrict n = (flt *) h2.base;
-
-		for (i = 0; i < b->batCount; i++) {
-			if (o[i] == GDK_flt_min) {
-				b->tnil = true;
-				n[i] = flt_nil;
-				nofix = false;
-			} else {
-				n[i] = o[i];
-			}
-		}
-		break;
-	}
-	case TYPE_dbl: {
-		const dbl *restrict o = (const dbl *) h1.base;
-		dbl *restrict n = (dbl *) h2.base;
-
-		for (i = 0; i < b->batCount; i++) {
-			if (o[i] == GDK_dbl_min) {
-				b->tnil = true;
-				n[i] = dbl_nil;
-				nofix = false;
-			} else {
-				n[i] = o[i];
-			}
-		}
-		break;
-	}
-	default: {
-		struct mbr {
-			float xmin, ymin, xmax, ymax;
-		};
-		const struct mbr *restrict o = (const struct mbr *) h1.base;
-		struct mbr *restrict n = (struct mbr *) h2.base;
-
-		assert(strcmp(ATOMunknown_name(b->ttype), "mbr") == 0);
-		assert(b->twidth == 4 * sizeof(flt));
-
-		for (i = 0; i < b->batCount; i++) {
-			if (o[i].xmin == GDK_flt_min ||
-			    o[i].xmax == GDK_flt_min ||
-			    o[i].ymin == GDK_flt_min ||
-			    o[i].ymax == GDK_flt_min) {
-				b->tnil = true;
-				n[i].xmin = n[i].xmax = n[i].ymin = n[i].ymax = flt_nil;
-				nofix = false;
-			} else {
-				n[i] = o[i];
-			}
-		}
-		break;
-	}
-	}
-
-	/* cleanup */
-	HEAPfree(&h1, false);
-	if (nofix) {
-		/* didn't fix anything, move backup back */
-		HEAPfree(&h2, true);
-		if (GDKmove(b->theap.farmid, BAKDIR, bnme, "tail", srcdir, bnme, "tail") != GDK_SUCCEED) {
-			GDKfree(srcdir);
-			TRC_CRITICAL(GDK, "cannot restore backup of %s.tail\n", nme);
-			return GDK_FAIL;
-		}
-	} else {
-		/* heap was fixed */
-		b->batDirtydesc = true;
-		if (HEAPsave(&h2, nme, "tail", true) != GDK_SUCCEED) {
-			HEAPfree(&h2, false);
-			GDKfree(srcdir);
-			TRC_CRITICAL(GDK, "saving heap failed\n");
-			return GDK_FAIL;
-		}
-		HEAPfree(&h2, false);
-		b->theap = h2;
-	}
-	GDKfree(srcdir);
-	return GDK_SUCCEED;
-}
-
-static gdk_return
-fixfloatbats(void)
-{
-	bat bid;
-	BAT *b;
-	char filename[FILENAME_MAX];
-	FILE *fp;
-	size_t len;
-	int written;
-
-	for (bid = 1; bid < (bat) ATOMIC_GET(&BBPsize); bid++) {
-		if ((b = BBP_desc(bid)) == NULL) {
-			/* not a valid BAT */
-			continue;
-		}
-		if (BBP_logical(bid) &&
-		    (len = strlen(BBP_logical(bid))) > 12 &&
-		    strcmp(BBP_logical(bid) + len - 12, "_catalog_nme") == 0) {
-			/* this is one of the files used by the
-			 * logger.  We need to communicate to the
-			 * logger that it also needs to do a
-			 * conversion.  That is done by creating a
-			 * file here based on the name of this BAT. */
-			written = snprintf(filename, sizeof(filename),
-					   "%s/%.*s_nil-nan-convert",
-					   BBPfarms[0].dirname,
-					   (int) (len - 12), BBP_logical(bid));
-			if (written == -1 || written >= FILENAME_MAX) {
-				TRC_CRITICAL(GDK, "cannot create file %s has a very large pathname\n",
-					     filename);
-				return GDK_FAIL;
-			}
-			fp = fopen(filename, "w");
-			if (fp == NULL) {
-				GDKsyserror("cannot create file %s\n",
-					    filename);
-				return GDK_FAIL;
-			}
-			fclose(fp);
-		}
-		if (b->batCount == 0 || b->tnonil) {
-			/*  no NILs to convert */
-			continue;
-		}
-		if (b->ttype < 0) {
-			const char *anme;
-
-			/* as yet unknown tail column type */
-			anme = ATOMunknown_name(b->ttype);
-			/* known string types */
-			if (strcmp(anme, "mbr") != 0)
-				continue;
-		} else if (b->ttype != TYPE_flt && b->ttype != TYPE_dbl)
-			continue;
-		if (fixfltheap(b) != GDK_SUCCEED)
-			return GDK_FAIL;
-	}
-	return GDK_SUCCEED;
-}
-#endif
-
 #ifdef GDKLIBRARY_OLDDATE
 #define leapyear(y)		((y) % 4 == 0 && ((y) % 100 != 0 || (y) % 400 == 0))
 #define YEARDAYS(y)		(leapyear(y) ? 366 : 365)
@@ -704,6 +500,12 @@ fixdateheap(BAT *b, const char *anme)
 	else
 		bnme = nme;
 	sprintf(filename, "BACKUP%c%s", DIR_SEP, bnme);
+
+	/* we don't maintain index structures */
+	HASHdestroy(b);
+	IMPSdestroy(b);
+	OIDXdestroy(b);
+	PROPdestroy(b);
 
 	/* make backup of heap */
 	if (GDKmove(b->theap.farmid, srcdir, bnme, "tail", BAKDIR, bnme, "tail") != GDK_SUCCEED) {
@@ -862,18 +664,11 @@ fixdatebats(void)
 			}
 			fclose(fp);
 		}
-		/* The date type is not known in GDK when reading the BBP */
-		if (b->ttype < 0) {
-			const char *anme;
-
-			/* as yet unknown tail column type */
-			anme = ATOMunknown_name(b->ttype);
-			/* known string types */
-			if ((strcmp(anme, "date") == 0 ||
-			     strcmp(anme, "timestamp") == 0 ||
-			     strcmp(anme, "daytime") == 0) &&
-			    fixdateheap(b, anme) != GDK_SUCCEED)
-				return GDK_FAIL;
+		if ((b->ttype == TYPE_date ||
+		     b->ttype == TYPE_timestamp ||
+		     b->ttype == TYPE_daytime) &&
+		    fixdateheap(b, ATOMname(b->ttype)) != GDK_SUCCEED) {
+			return GDK_FAIL;
 		}
 	}
 	return GDK_SUCCEED;
@@ -893,7 +688,6 @@ heapinit(BAT *b, const char *buf, int *hashash, unsigned bbpversion, bat bid, co
 	uint64_t nosorted;
 	uint64_t norevsorted;
 	uint64_t base;
-	uint64_t align;
 	uint64_t free;
 	uint64_t size;
 	uint16_t storage;
@@ -902,17 +696,7 @@ heapinit(BAT *b, const char *buf, int *hashash, unsigned bbpversion, bat bid, co
 	(void) bbpversion;	/* could be used to implement compatibility */
 
 	norevsorted = 0; /* default for first case */
-	if (bbpversion <= GDKLIBRARY_TALIGN ?
-	    sscanf(buf,
-		   " %32s %" SCNu16 " %" SCNu16 " %" SCNu16 " %" SCNu64
-		   " %" SCNu64 " %" SCNu64 " %" SCNu64 " %" SCNu64
-		   " %" SCNu64 " %" SCNu64 " %" SCNu64 " %" SCNu16
-		   "%n",
-		   type, &width, &var, &properties, &nokey0,
-		   &nokey1, &nosorted, &norevsorted, &base,
-		   &align, &free, &size, &storage,
-		   &n) < 13 :
-	    sscanf(buf,
+	if (sscanf(buf,
 		   " %10s %" SCNu16 " %" SCNu16 " %" SCNu16 " %" SCNu64
 		   " %" SCNu64 " %" SCNu64 " %" SCNu64 " %" SCNu64
 		   " %" SCNu64 " %" SCNu64 " %" SCNu16
@@ -1273,9 +1057,7 @@ BBPheader(FILE *fp, int *lineno)
 	}
 	if (bbpversion != GDKLIBRARY &&
 	    bbpversion != GDKLIBRARY_OLDDATE &&
-	    bbpversion != GDKLIBRARY_BLOB_SORT &&
-	    bbpversion != GDKLIBRARY_NIL_NAN &&
-	    bbpversion != GDKLIBRARY_TALIGN) {
+	    bbpversion != GDKLIBRARY_BLOB_SORT) {
 		TRC_CRITICAL(GDK, "incompatible BBP version: expected 0%o, got 0%o. "
 			     "This database was probably created by a %s version of MonetDB.",
 			     GDKLIBRARY, bbpversion,
@@ -1308,18 +1090,6 @@ BBPheader(FILE *fp, int *lineno)
 		return 0;
 	}
 	++*lineno;
-#ifdef GDKLIBRARY_TALIGN
-	char *s;
-	if ((s = strstr(buf, "BBPsize")) != NULL) {
-		if (sscanf(s, "BBPsize=%d", &sz) != 1) {
-			TRC_CRITICAL(GDK, "no BBPsize value found\n");
-			return 0;
-		}
-		sz = (int) (sz * BATMARGIN);
-		if (sz > (bat) ATOMIC_GET(&BBPsize))
-			ATOMIC_SET(&BBPsize, sz);
-	}
-#else
 	if (sscanf(buf, "BBPsize=%d", &sz) != 1) {
 		TRC_CRITICAL(GDK, "no BBPsize value found\n");
 		return 0;
@@ -1327,7 +1097,6 @@ BBPheader(FILE *fp, int *lineno)
 	sz = (int) (sz * BATMARGIN);
 	if (sz > (bat) ATOMIC_GET(&BBPsize))
 		ATOMIC_SET(&BBPsize, sz);
-#endif
 	assert(bbpversion != 0);
 	return bbpversion;
 }
@@ -1567,11 +1336,6 @@ BBPinit(void)
 		}
 	}
 
-#ifdef GDKLIBRARY_NIL_NAN
-	if (bbpversion <= GDKLIBRARY_NIL_NAN)
-		if (fixfloatbats() != GDK_SUCCEED)
-			return GDK_FAIL;
-#endif
 #ifdef GDKLIBRARY_OLDDATE
 	if (bbpversion <= GDKLIBRARY_OLDDATE)
 		if (fixdatebats() != GDK_SUCCEED)

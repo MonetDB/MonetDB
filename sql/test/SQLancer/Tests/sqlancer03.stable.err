@@ -1,0 +1,20 @@
+stderr of test 'sqlancer03` in directory 'sql/test/SQLancer` itself:
+
+
+# 17:14:16 >  
+# 17:14:16 >  "mclient" "-lsql" "-ftest" "-tnone" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-439482" "--port=37916"
+# 17:14:16 >  
+
+MAPI  = (monetdb) /var/tmp/mtest-279965/.s.monetdb.34039
+QUERY = select all sum(all cast("concat"(cast("month"(t1.c0) as string), r'1313451898') as interval month)) from t1;
+ERROR = !Wrong format (11313451898)
+CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-3257403/.s.monetdb.37811
+QUERY = select cast(group_concat(all r'0.5787210717348131') as decimal) from t0 group by - (abs(- (- (1061572565)))), least(t0.c0, least(cast(cast(0.09300166 as int) as interval month), t0.c0));
+ERROR = !Rounding of decimal (0.5787210717348131,0.5787210717348131,0.5787210717348131,0.5787210717348131,0.5787210717348131,0.5787210717348131,0.5787210717348131,0.5787210717348131,0.5787210717348131,0.5787210717348131,0.5787210717348131,0.5787210717348131,0.5787210717348131) doesn't fit format (18.3)
+CODE  = 42000
+
+# 17:14:16 >  
+# 17:14:16 >  "Done."
+# 17:14:16 >  
+

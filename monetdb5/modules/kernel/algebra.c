@@ -659,7 +659,7 @@ ALGfirstn(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		throw(MAL, "algebra.firstn", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 	if (pci->argc - pci->retc > 5) {
 		sid = *getArgReference_bat(stk, pci, pci->retc + 1);
-		if ((s = BATdescriptor(sid)) == NULL) {
+		if (!is_bat_nil(sid) && (s = BATdescriptor(sid)) == NULL) {
 			BBPunfix(bid);
 			throw(MAL, "algebra.firstn", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 		}
@@ -1138,9 +1138,17 @@ ALGfetch(ptr ret, const bat *bid, const lng *pos)
 	if ((b = BATdescriptor(*bid)) == NULL) {
 		throw(MAL, "algebra.fetch", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 	}
-	if ((*pos < (lng) 0) || (*pos >= (lng) BUNlast(b))) {
+	if (*pos < (lng) 0) {
 		BBPunfix(b->batCacheid);
-		throw(MAL, "algebra.fetch", ILLEGAL_ARGUMENT " Idx out of range\n");
+		throw(MAL, "algebra.fetch", ILLEGAL_ARGUMENT ": row index to fetch must be non negative\n");
+	}
+	if (BATcount(b) == 0) {
+		BBPunfix(b->batCacheid);
+		throw(MAL, "algebra.fetch", ILLEGAL_ARGUMENT ": cannot fetch a single row from an empty input\n");
+	}
+	if (*pos >= (lng) BUNlast(b)) {
+		BBPunfix(b->batCacheid);
+		throw(MAL, "algebra.fetch", ILLEGAL_ARGUMENT ": row index to fetch is out of range\n");
 	}
 	msg = doALGfetch(ret, b, (BUN) *pos);
 	BBPunfix(b->batCacheid);

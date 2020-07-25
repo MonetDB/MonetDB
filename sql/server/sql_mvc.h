@@ -231,6 +231,8 @@ extern sql_column *mvc_storage(mvc *c, sql_column *col, char *storage);
 extern sql_table * mvc_access(mvc *m, sql_table *t, sht access);
 extern sql_table * mvc_alter_stream_table(mvc *m, sql_table *t, int operation, int value);
 extern int mvc_is_sorted(mvc *c, sql_column *col);
+extern int mvc_is_unique(mvc *m, sql_column *col);
+extern int mvc_is_duplicate_eliminated(mvc *c, sql_column *col);
 
 extern sql_ukey *mvc_create_ukey(mvc *m, sql_table *t, const char *kname, key_type kt);
 extern sql_key *mvc_create_ukey_done(mvc *m, sql_key *k);

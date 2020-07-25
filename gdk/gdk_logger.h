@@ -46,10 +46,6 @@ typedef struct logger {
 	int tid;
 	bool with_ids;
 	bool inmemory;
-#ifdef GDKLIBRARY_NIL_NAN
-	/* convert old style floating point NIL values to NaN */
-	bool convert_nil_nan;
-#endif
 #ifdef GDKLIBRARY_OLDDATE
 	/* convert old date values to new */
 	bool convert_date;
