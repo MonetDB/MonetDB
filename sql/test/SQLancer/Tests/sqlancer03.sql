@@ -340,6 +340,22 @@ COPY 19 RECORDS INTO "sys"."t0" FROM stdin USING DELIMITERS E'\t',E'\n','"';
 select cast(group_concat(all r'0.5787210717348131') as decimal) from t0 group by - (abs(- (- (1061572565)))), least(t0.c0, least(cast(cast(0.09300166 as int) as interval month), t0.c0));
 ROLLBACK;
 
+START TRANSACTION;
+CREATE TABLE "sys"."t0" ("c0" DECIMAL(18,3));
+COMMENT ON COLUMN "sys"."t0"."c0" IS 'jc~\006}ℵH{\015﻿^aBPxpf+sP';
+COPY 8 RECORDS INTO "sys"."t0" FROM stdin USING DELIMITERS E'\t',E'\n','"';
+0.626
+0.634
+0.133
+0.244
+19.000
+0.455
+0.715
+0.369
+
+SELECT ALL CASE t0.c0 WHEN VAR_POP(ALL t0.c0) THEN (t0.c0) BETWEEN SYMMETRIC (t0.c0) AND (t0.c0) END FROM t0 GROUP BY t0.c0;
+ROLLBACK;
+
 START TRANSACTION; -- Bug 6924
 CREATE TABLE "sys"."t0" ("a" INTEGER, "b" INTEGER NOT NULL, CONSTRAINT "t0_a_b_unique" UNIQUE ("a","b"));
 --This copy into must succeed 
