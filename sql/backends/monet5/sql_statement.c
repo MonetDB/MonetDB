@@ -1645,15 +1645,16 @@ argumentZero(MalBlkPtr mb, int tpe)
 
 
 static InstrPtr
-select2_join2(backend *be, stmt *op1, stmt *op2, stmt *op3, int cmp, stmt *sub, int anti, int swapped, int type, int
+select2_join2(backend *be, stmt *op1, stmt *op2, stmt *op3, int cmp, stmt **Sub, int anti, int swapped, int type, int
 		reduce)
 {
 	MalBlkPtr mb = be->mb;
 	InstrPtr p, q;
 	int l;
 	const char *cmd = (type == st_uselect2) ? selectRef : rangejoinRef;
+	stmt *sub = (Sub)?*Sub:NULL;
 
-	if (op1->nr < 0 && (sub && sub->nr < 0))
+	if (op1->nr < 0 || (sub && sub->nr < 0))
 		return NULL;
 	l = op1->nr;
 	if (((cmp & CMP_BETWEEN && cmp & CMP_SYMMETRIC) || (cmp & CMP_BETWEEN && anti) || op2->nrcols > 0 || op3->nrcols > 0 || !reduce) && (type == st_uselect2)) {
@@ -1741,16 +1742,25 @@ select2_join2(backend *be, stmt *op1, stmt *op2, stmt *op3, int cmp, stmt *sub, 
 		int r1 = op2->nr;
 		int r2 = op3->nr;
 		int rs = 0;
-		/*
-		if (!rs) {
-			r1 = op2->nr;
-			r2 = op3->nr;
-		}
-		*/
 		q = newStmt(mb, algebraRef, cmd);
 		if (type == st_join2)
 			q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
 		q = pushArgument(mb, q, l);
+		if (sub) {
+			int cand = op1->cand || op2->cand || op3->cand;
+			if (cand) {
+				if (op1->nrcols && !op1->cand) {
+					assert(0);
+				}
+				if (op2->nrcols && !op2->cand) {
+					assert(0);
+				}
+				if (op3->nrcols && !op3->cand) {
+					assert(0);
+				}
+				sub = NULL;
+			}
+		}
 		if (sub) /* only for uselect2 */
 			q = pushArgument(mb, q, sub->nr);
 		if (rs) {
@@ -1804,13 +1814,16 @@ select2_join2(backend *be, stmt *op1, stmt *op2, stmt *op3, int cmp, stmt *sub, 
 			q = r;
 		}
 	}
+	if (Sub)
+		*Sub = sub;
 	return q;
 }
 
 stmt *
 stmt_uselect2(backend *be, stmt *op1, stmt *op2, stmt *op3, int cmp, stmt *sub, int anti, int reduce)
 {
-	InstrPtr q = select2_join2(be, op1, op2, op3, cmp, sub, anti, 0, st_uselect2, reduce);
+	stmt *sel = sub;
+	InstrPtr q = select2_join2(be, op1, op2, op3, cmp, &sub, anti, 0, st_uselect2, reduce);
 
 	if (q) {
 		stmt *s = stmt_create(be->mvc->sa, st_uselect2);
@@ -1829,6 +1842,8 @@ stmt_uselect2(backend *be, stmt *op1, stmt *op2, stmt *op3, int cmp, stmt *sub, 
 		s->q = q;
 		s->cand = sub;
 		s->reduce = reduce;
+		if (!sub && sel) /* project back the old ids */
+			return stmt_project(be, s, sel);
 		return s;
 	}
 	return NULL;
@@ -2868,6 +2883,39 @@ stmt_append_bulk(backend *be, stmt *c, list *l)
 }
 
 stmt *
+stmt_replace(backend *be, stmt *r, stmt *id, stmt *val)
+{
+	MalBlkPtr mb = be->mb;
+	InstrPtr q = NULL;
+
+	if (r->nr < 0)
+		return NULL;
+
+	q = newStmt(mb, batRef, replaceRef);
+	q = pushArgument(mb, q, r->nr);
+	q = pushArgument(mb, q, id->nr);
+	q = pushArgument(mb, q, val->nr);
+	q = pushBit(mb, q, TRUE); /* forced */
+	if (q) {
+		stmt *s = stmt_create(be->mvc->sa, st_replace);
+		if(!s) {
+			freeInstruction(q);
+			return NULL;
+		}
+		s->op1 = r;
+		s->op2 = id;
+		s->op3 = val;
+		s->nrcols = r->nrcols;
+		s->key = r->key;
+		s->nr = getDestVar(q);
+		s->q = q;
+		s->cand = r->cand;
+		return s;
+	}
+	return NULL;
+}
+
+stmt *
 stmt_table_clear(backend *be, sql_table *t)
 {
 	MalBlkPtr mb = be->mb;
@@ -2984,7 +3032,7 @@ tail_set_type(stmt *st, sql_subtype *t)
 }
 
 stmt *
-stmt_convert(backend *be, stmt *v, sql_subtype *f, sql_subtype *t, stmt *cond)
+stmt_convert(backend *be, stmt *v, sql_subtype *f, sql_subtype *t)
 {
 	MalBlkPtr mb = be->mb;
 	InstrPtr q = NULL;
@@ -3085,8 +3133,6 @@ stmt_convert(backend *be, stmt *v, sql_subtype *f, sql_subtype *t, stmt *cond)
 			q = pushInt(mb, q, f->scale);
 */			//q = pushInt(mb, q, ((ValRecord)((atom*)(be->mvc)->args[1])->data).val.ival);
 	}
-	if (cond && v->nrcols && f->type->eclass != EC_DEC && !EC_TEMP(t->type->eclass) && !EC_INTERVAL(t->type->eclass))
-		q = pushArgument(mb, q, cond->nr);
 	if (q) {
 		stmt *s = stmt_create(be->mvc->sa, st_convert);
 		if(!s) {
@@ -3094,7 +3140,6 @@ stmt_convert(backend *be, stmt *v, sql_subtype *f, sql_subtype *t, stmt *cond)
 			return NULL;
 		}
 		s->op1 = v;
-		s->op2 = cond;
 		s->nrcols = 0;	/* function without arguments returns single value */
 		s->key = v->key;
 		s->nrcols = v->nrcols;
@@ -3570,6 +3615,7 @@ tail_type(stmt *st)
 			return sql_bind_localtype("oid");
 		case st_append:
 		case st_append_bulk:
+		case st_replace:
 		case st_alias:
 		case st_gen_group:
 		case st_order:
@@ -3709,6 +3755,7 @@ _column_name(sql_allocator *sa, stmt *st)
 	case st_result:
 	case st_append:
 	case st_append_bulk:
+	case st_replace:
 	case st_gen_group:
 	case st_semijoin:
 	case st_uselect:
@@ -3778,6 +3825,7 @@ schema_name(sql_allocator *sa, stmt *st)
 	case st_result:
 	case st_append:
 	case st_append_bulk:
+	case st_replace:
 	case st_gen_group:
 	case st_uselect:
 	case st_uselect2:

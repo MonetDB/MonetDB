@@ -618,7 +618,7 @@ exp_bin_or(backend *be, sql_exp *e, stmt *left, stmt *right, stmt *grp, stmt *ex
 }
 
 stmt *
-exp_bin(backend *be, sql_exp *e, stmt *left, stmt *right, stmt *grp, stmt *ext, stmt *cnt, stmt *sel, stmt *cond, int depth, int reduce)
+exp_bin(backend *be, sql_exp *e, stmt *left, stmt *right, stmt *grp, stmt *ext, stmt *cnt, stmt *sel, stmt *cond /*result of conditional execution */, int depth, int reduce)
 {
 	mvc *sql = be->mvc;
 	stmt *s = NULL;
@@ -748,10 +748,13 @@ exp_bin(backend *be, sql_exp *e, stmt *left, stmt *right, stmt *grp, stmt *ext, 
 		}
 		if (!l)
 			return NULL;
-		if (cond && !cond->nrcols && l->nrcols)
-			cond = stmt_const(be, l, cond);
 
-		s = stmt_convert(be, l, from, to, cond);
+		/* TODO with candidates */
+		if (l->nrcols && sel && l->cand != sel) {
+			l = stmt_project(be, sel, l);
+			l->cand = sel;
+		}
+		s = stmt_convert(be, l, from, to);
 		s->cand = l->cand;
 	} 	break;
 	case e_func: {
@@ -759,8 +762,10 @@ exp_bin(backend *be, sql_exp *e, stmt *left, stmt *right, stmt *grp, stmt *ext, 
 		list *l = sa_list(sql->sa), *exps = e->l;
 		sql_subfunc *f = e->f;
 		stmt *rows = NULL, *cond_execution = NULL;
+		stmt *cond_exec_res = NULL, *isel = sel, *ocond = cond;
 		char name[16], *nme = NULL;
 		int nrcands = 0, push_cands = 0;
+		sql_exp *fe = e;
 
 		if (f->func->side_effect && left) {
 			if (!exps || list_empty(exps))
@@ -774,23 +779,28 @@ exp_bin(backend *be, sql_exp *e, stmt *left, stmt *right, stmt *grp, stmt *ext, 
 		}
 		assert(!e->r);
 		if (exps) {
-			int nrcols = 0;
+			int nrcols = 0, single_value = (fe->card <= CARD_ATOM);
 			int push_cond_exec = 0, coalesce = 0;
-			stmt *ncond = NULL, *ocond = cond;
+			stmt *ncond = NULL;
 
-			if (sel && strcmp(sql_func_mod(f->func), "calc") == 0 && strcmp(sql_func_imp(f->func), "ifthenelse") != 0)
+			if (sel &&
+					(strcmp(sql_func_mod(f->func), "calc") == 0 ||
+					 strcmp(sql_func_mod(f->func), "mmath") == 0))
 				push_cands = 1;
 			if (strcmp(sql_func_mod(f->func), "calc") == 0 && strcmp(sql_func_imp(f->func), "ifthenelse") == 0)
 				push_cond_exec = 1;
 			if (strcmp(sql_func_mod(f->func), "") == 0 && strcmp(sql_func_imp(f->func), "") == 0 && strcmp(f->func->base.name, "coalesce") == 0)
 				coalesce = 1;
+			push_cands = push_cands && !(push_cond_exec || coalesce);
 
 			assert(list_length(exps) == list_length(f->func->ops) || f->func->type == F_ANALYTIC || f->func->type == F_LOADER || f->func->vararg || f->func->varres);
 			for (en = exps->h; en; en = en->next) {
 				sql_exp *e = en->data;
 				stmt *es;
+				//int recursive_ce = (e && e->type == e_func && (strcmp(sql_func_imp(((sql_subfunc*)e->f)->func), "ifthenelse") == 0 || strcmp(((sql_subfunc*)e->f)->func->base.name, "coalesce") == 0));
 
-				es = exp_bin(be, e, left, right, grp, ext, cnt, (push_cands)?sel:NULL, (!push_cond_exec || ncond)?cond:NULL, depth+1, 0);
+				/* for conditional execution we pass an adapted sel-vector */
+				es = exp_bin(be, e, left, right, grp, ext, cnt, (push_cands||cond_exec_res)?sel:NULL, (!cond_exec_res && ncond && single_value)?cond:(en!=exps->h)?cond_exec_res:NULL, depth+1, 0);
 
 				if (!es)
 					return NULL;
@@ -811,41 +821,103 @@ exp_bin(backend *be, sql_exp *e, stmt *left, stmt *right, stmt *grp, stmt *ext, 
 
 				if (push_cands && es->nrcols)
 					nrcands++;
-				if (coalesce && en->next) {
-					sql_subfunc *a = sql_bind_func(sql->sa, sql->session->schema, "isnull", tail_type(es), NULL, F_FUNC);
-					ncond = stmt_unop(be, es, a);
+
+				if (!cond_exec_res && (coalesce || push_cond_exec) && !single_value) { /* create result */
 					if (ocond) {
-						sql_subtype *bt = sql_bind_localtype("bit");
-						sql_subfunc *a = sql_bind_func(sql->sa, sql->session->schema, "and", bt, bt, F_FUNC);
-						cond = stmt_binop(be, ocond, ncond, a);
+						cond_exec_res = ocond;
+						/*
+					} else if (es->type == st_replace && !(push_cond_exec && recursive_ce)) {
+						assert(0);
+						cond_exec_res = es;
+						*/
 					} else {
-						cond = ncond;
+						stmt *l = bin_first_column(be, left);
+						/*
+						if (isel && l)
+							l = stmt_project(be, isel, l);
+							*/
+						cond_exec_res = stmt_const(be, l, stmt_atom(be, atom_general(sql->sa, exp_subtype(fe), NULL)));
+						/*
+						if (isel)
+							cond_exec_res->cand = isel;
+							*/
 					}
 				}
-				if (push_cond_exec && ncond) { /* handled then part */
+				if (cond_exec_res && (coalesce || en != exps->h)) {
+					if (es->type == st_replace && !(coalesce && en->next)) {
+						cond_exec_res = es;
+						if (coalesce) {
+							sql_subfunc *a = sql_bind_func(sql->sa, sql->session->schema, "isnotnull", tail_type(es), NULL, F_FUNC);
+							ncond = stmt_unop(be, es, a);
+						}
+					} else {
+						stmt *val = es;
+						stmt *pos = sel;
+
+						if (coalesce && en->next) {
+							sql_subfunc *a = sql_bind_func(sql->sa, sql->session->schema, "isnotnull", tail_type(es), NULL, F_FUNC);
+							ncond = stmt_unop(be, es, a);
+							if (ncond->nrcols == 0) {
+								stmt *l = bin_first_column(be, left);
+								if (isel && l)
+									l = stmt_project(be, isel, l);
+								ncond = stmt_const(be, l, ncond);
+								if (isel)
+									ncond->cand = isel;
+							}
+							sel = pos = stmt_uselect(be, ncond, stmt_bool(be, 1), cmp_equal, isel, 0/*anti*/, 0);
+							val = stmt_project(be, pos, es);
+							val->cand = pos;
+						}
+						if (val->nrcols == 0)
+							val = stmt_const(be, pos, val);
+						else if (val->cand != sel)
+							val = stmt_project(be, sel, val);
+						cond_exec_res = stmt_replace(be, cond_exec_res, pos, val);
+						/*
+						if (isel)
+							cond_exec_res->cand = isel;
+							*/
+					}
+				}
+				if ((push_cond_exec || coalesce) && ncond && en->next) { /* handled then part */
 					sql_subtype *bt = sql_bind_localtype("bit");
 					sql_subfunc *a = sql_bind_func(sql->sa, sql->session->schema, "not", bt, NULL, F_FUNC);
 					ncond = stmt_unop(be, ncond, a);
-					if (ocond) {
-						sql_subtype *bt = sql_bind_localtype("bit");
-						sql_subfunc *a = sql_bind_func(sql->sa, sql->session->schema, "and", bt, bt, F_FUNC);
-						cond = stmt_binop(be, ocond, ncond, a);
-					} else {
-						cond = ncond;
+					if (!coalesce) {
+						sql_subfunc *isnull = sql_bind_func(sql->sa, sql->session->schema, "isnull", bt, NULL, F_FUNC);
+						sql_subfunc *or = sql_bind_func(be->mvc->sa, NULL, "or", bt, bt, F_FUNC);
+						ncond = stmt_binop(be, ncond, stmt_unop(be, ncond, isnull), or);
+					}
+					if (single_value) {
+						if (ocond) {
+							sql_subtype *bt = sql_bind_localtype("bit");
+							sql_subfunc *a = sql_bind_func(sql->sa, sql->session->schema, "and", bt, bt, F_FUNC);
+							cond = stmt_binop(be, ocond, ncond, a);
+						} else {
+							cond = ncond;
+						}
 					}
 				}
 				if (push_cond_exec && !ncond) {
 					ncond = es;
-					if (ocond) {
-						sql_subtype *bt = sql_bind_localtype("bit");
-						sql_subfunc *a = sql_bind_func(sql->sa, sql->session->schema, "and", bt, bt, F_FUNC);
-						cond = stmt_binop(be, ocond, ncond, a);
-					} else {
-						cond = ncond;
+					if (single_value) {
+						if (ocond) {
+							sql_subtype *bt = sql_bind_localtype("bit");
+							sql_subfunc *a = sql_bind_func(sql->sa, sql->session->schema, "and", bt, bt, F_FUNC);
+							cond = stmt_binop(be, ocond, ncond, a);
+						} else {
+							cond = ncond;
+						}
 					}
 				}
+
+				if (ncond && en->next && !single_value) {
+					if (!ncond->nrcols)
+						ncond = stmt_const(be, bin_first_column(be, left), ncond);
+					sel = stmt_uselect(be, ncond, stmt_bool(be, 1), cmp_equal, isel, 0/*anti*/, 0);
+				}
 			}
-			//if (sel && strcmp(sql_func_mod(f->func), "calc") == 0 && nrcols && strcmp(sql_func_imp(f->func), "ifthenelse") != 0) {
 			if (push_cands) {
 				if (strcmp(sql_func_imp(f->func), "and") != 0 && strcmp(sql_func_imp(f->func), "or") != 0) {
 					int i;
@@ -854,7 +926,7 @@ exp_bin(backend *be, sql_exp *e, stmt *left, stmt *right, stmt *grp, stmt *ext, 
 						/* if handled use bat nil */
 						if (s->nrcols) { /* only for cols not values */
 							i++;
-							if (s->cand)
+							if (s->cand && s->cand == isel)
 								list_append(l, NULL);
 							else
 								list_append(l,sel);
@@ -862,12 +934,13 @@ exp_bin(backend *be, sql_exp *e, stmt *left, stmt *right, stmt *grp, stmt *ext, 
 					}
 				}
 			}
-			/* conditional execution passed to (bat)calc.operator */
+			/* conditional execution passed to (bat)calc.operator
 			if (ocond && !push_cond_exec && nrcols && strcmp(sql_func_mod(f->func), "calc") == 0) {
 				if (!ocond->nrcols)
 					ocond = stmt_const(be, bin_first_column(be, left), ocond);
 				list_append(l, ocond);
 			}
+			 * */
 			/* single value conditional execution done below */
 			if (ocond && !ocond->nrcols && !push_cond_exec && !nrcols && strcmp(sql_func_mod(f->func), "calc") == 0) {
 				sql_subtype *bt = sql_bind_localtype("bit");
@@ -884,14 +957,16 @@ exp_bin(backend *be, sql_exp *e, stmt *left, stmt *right, stmt *grp, stmt *ext, 
 			/* if_barrier ... */
 			cond_execution = stmt_cond(be, cond_execution, NULL, 0, 0);
 		}
-		if (f->func->rel)
+		if (cond_exec_res)
+			s = cond_exec_res;
+		else if (f->func->rel)
 			s = stmt_func(be, stmt_list(be, l), sa_strdup(sql->sa, f->func->base.name), f->func->rel, (f->func->type == F_UNION));
 		else
 			s = stmt_Nop(be, stmt_list(be, l), e->f);
 		if (!s)
 			return NULL;
-		if (s && sel && push_cands)
-			s->cand = sel;
+		if (s && isel && push_cands && s->nrcols)
+			s->cand = isel;
 		if (cond_execution) {
 			/* var_x = s */
 			(void)stmt_assign(be, NULL, nme, s, 2);
@@ -1295,7 +1370,7 @@ check_types(backend *be, sql_subtype *ct, stmt *s, check_type tpe)
 			if (!c || (c == 2 && tpe == type_set) || (c == 3 && tpe != type_cast)) {
 				s = NULL;
 			} else {
-				s = stmt_convert(be, s, st, ct, NULL);
+				s = stmt_convert(be, s, st, ct);
 			}
 		}
 	}
@@ -3239,7 +3314,7 @@ rel2bin_select(backend *be, sql_rel *rel, list *refs)
 			if (e->type != e_cmp) {
 				sql_subtype *bt = sql_bind_localtype("bit");
 
-				s = stmt_convert(be, s, exp_subtype(e), bt, NULL);
+				s = stmt_convert(be, s, exp_subtype(e), bt);
 			}
 			sel = stmt_uselect(be, predicate, s, cmp_equal, sel, 0, 0);
 		} else if (e->type != e_cmp) {
