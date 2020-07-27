@@ -2899,51 +2899,47 @@ exp_simplify_math( mvc *sql, sql_exp *e, int *changes)
 		if (list_length(l) < 1)
 			return e;
 
-		le = l->h->data;
-		if (!exp_subtype(le) || (!EC_COMPUTE(exp_subtype(le)->type->eclass) && exp_subtype(le)->type->eclass != EC_DEC))
-			return e;
+		/* if the function has no null semantics we can return NULL if one of the arguments is NULL */
+		if (!f->func->semantics && f->func->type != F_PROC) {
+			for (node *n = l->h ; n ; n = n->next) {
+				sql_exp *arg = n->data;
 
-		if (!f->func->s && list_length(l) == 2) {
+				if (exp_is_atom(arg) && exp_is_null(sql, arg)) {
+					sql_exp *ne = exp_null(sql->sa, exp_subtype(e));
+					(*changes)++;
+					if (exp_name(e))
+						exp_prop_alias(sql->sa, ne, e);
+					return ne;
+				}
+			}
+		}
+		if (!f->func->s && list_length(l) == 2 && strstr(f->func->imp, "_no_nil") != NULL) {
 			sql_exp *le = l->h->data;
 			sql_exp *re = l->h->next->data;
-			sql_subtype *et = exp_subtype(e);
 
-			/* if one argument is NULL, return it, EXCEPT
-			 * if "_no_nil" is in the name of the
+			/* if "_no_nil" is in the name of the
 			 * implementation function (currently either
 			 * min_no_nil or max_no_nil), in which case we
-			 * ignore the NULL and return the other
-			 * value */
-
-			/* for both nullif and coalesce don't rewrite the NULL handling */
-			if (f && f->func && f->func->imp && strcmp(f->func->imp, "") == 0)
-				return e;
+			 * ignore the NULL and return the other value */
 
 			if (exp_is_atom(le) && exp_is_null(sql, le)) {
 				(*changes)++;
-				if (f && f->func && f->func->imp && strstr(f->func->imp, "_no_nil") != NULL) {
-					if (exp_name(e))
-						exp_prop_alias(sql->sa, re, e);
-					return re;
-				}
-				le = exp_null(sql->sa, et);
-				if (exp_name(e))
-					exp_prop_alias(sql->sa, le, e);
-				return le;
-			}
-			if (exp_is_atom(re) && exp_is_null(sql, re)) {
-				(*changes)++;
-				if (f && f->func && f->func->imp && strstr(f->func->imp, "_no_nil") != NULL) {
-					if (exp_name(e))
-						exp_prop_alias(sql->sa, le, e);
-					return le;
-				}
-				re = exp_null(sql->sa, et);
 				if (exp_name(e))
 					exp_prop_alias(sql->sa, re, e);
 				return re;
 			}
+			if (exp_is_atom(re) && exp_is_null(sql, re)) {
+				(*changes)++;
+				if (exp_name(e))
+					exp_prop_alias(sql->sa, le, e);
+				return le;
+			}
 		}
+
+		le = l->h->data;
+		if (!EC_COMPUTE(exp_subtype(le)->type->eclass) && exp_subtype(le)->type->eclass != EC_DEC)
+			return e;
+
 		if (!f->func->s && !strcmp(f->func->base.name, "sql_mul") && list_length(l) == 2) {
 			sql_exp *le = l->h->data;
 			sql_exp *re = l->h->next->data;
