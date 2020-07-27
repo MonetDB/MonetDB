@@ -299,7 +299,7 @@ COPY 13 RECORDS INTO "sys"."t0" FROM stdin USING DELIMITERS E'\t',E'\n','"';
 
 create view v0(c0, c1, c2, c3) as (
 	select distinct cast(case time '03:52:21' when time '05:04:36' then r'0.2' end as date), 
-	coalesce (t0.c0, length(coalesce (r't%QB', replace(r' ,yO_5G刵i稶bDßᶏ''', r'0.8', r'-1e500')))), interval '1' month, timestamp '1970-01-16 13:47:20' from t0) with check option;
+	coalesce (t0.c0, length(coalesce (r't%QB', replace(r' ,yO_5G刵i稶bDßᶏ''', r'0.8', r'-1e500')))), 1, timestamp '1970-01-16 13:47:20' from t0) with check option;
 select v0.c0 from v0 join t0 on (0.3) not in 
 (least(cast(t0.c0 as decimal), 
 case least(time '19:32:57', time '16:10:04') when coalesce (time '22:25:53', time '00:14:31', time '18:12:09', time '01:59:38') 
@@ -308,7 +308,7 @@ ROLLBACK;
 
 START TRANSACTION; --SIGFPE
 CREATE TABLE "sys"."t0" (
-	"c0" INTERVAL MONTH NOT NULL,
+	"c0" BIGINT NOT NULL,
 	"c1" DOUBLE        NOT NULL,
 	"c2" INTERVAL SECOND,
 	CONSTRAINT "t0_c0_pkey" PRIMARY KEY ("c0"),
@@ -337,7 +337,7 @@ COPY 19 RECORDS INTO "sys"."t0" FROM stdin USING DELIMITERS E'\t',E'\n','"';
 -1710710010	-90593292	-1255979722.000
 1844355385	0.6101178479960011	1733503642.000
 
-select cast(group_concat(all r'0.5787210717348131') as decimal) from t0 group by - (abs(- (- (1061572565)))), least(t0.c0, least(cast(cast(0.09300166 as int) as interval month), t0.c0));
+select cast(group_concat(all r'0.5787210717348131') as decimal) from t0 group by - (abs(- (- (1061572565)))), least(t0.c0, least(cast(0.09300166 as int), t0.c0));
 ROLLBACK;
 
 START TRANSACTION; -- Bug 6924
