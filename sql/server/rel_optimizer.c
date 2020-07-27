@@ -1965,18 +1965,15 @@ rel_simplify_fk_joins(visitor *v, sql_rel *rel)
 static list *
 sum_limit_offset(mvc *sql, sql_rel *rel)
 {
-	list *nexps = new_exp_list(sql->sa);
-	sql_subtype *lng = sql_bind_localtype("lng");
-	sql_subfunc *add;
-
 	/* for sample we always propagate */
 	if (is_sample(rel->op))
 		return exps_copy(sql, rel->exps);
 	/* if the expression list only consists of a limit expression, we copy it */
 	if (list_length(rel->exps) == 1 && rel->exps->h->data)
-		return append(nexps, rel->exps->h->data);
-	add = sql_bind_func_result(sql->sa, sql->session->schema, "sql_add", F_FUNC, lng, 2, lng, lng);
-	return append(nexps, exp_op(sql->sa, rel->exps, add));
+		return list_append(sa_list(sql->sa), rel->exps->h->data);
+	sql_subtype *lng = sql_bind_localtype("lng");
+	sql_subfunc *add = sql_bind_func_result(sql->sa, sql->session->schema, "sql_add", F_FUNC, lng, 2, lng, lng);
+	return list_append(sa_list(sql->sa), exp_op(sql->sa, rel->exps, add));
 }
 
 static int
