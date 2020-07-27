@@ -151,6 +151,7 @@ macro(monetdb_macro_variables)
 
   if(PY3INTEGRATION)
     set(HAVE_LIBPY3 "${Python3_NumPy_FOUND}")
+    set(PY3VER "${Python3_VERSION_MINOR}")
   else()
     message(STATUS "Disable Py3integration, because required NumPy is missing")
   endif()
