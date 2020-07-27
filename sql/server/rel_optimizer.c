@@ -1957,18 +1957,20 @@ rel_simplify_fk_joins(visitor *v, sql_rel *rel)
  */
 
 static list *
-sum_limit_offset(mvc *sql, list *exps )
+sum_limit_offset(mvc *sql, sql_rel *rel)
 {
 	list *nexps = new_exp_list(sql->sa);
 	sql_subtype *lng = sql_bind_localtype("lng");
 	sql_subfunc *add;
 
-	/* if the expression list only consists of a limit expression,
-	 * we copy it */
-	if (list_length(exps) == 1 && exps->h->data)
-		return append(nexps, exps->h->data);
+	/* for sample we always propagate */
+	if (is_sample(rel->op))
+		return exps_copy(sql, rel->exps);
+	/* if the expression list only consists of a limit expression, we copy it */
+	if (list_length(rel->exps) == 1 && rel->exps->h->data)
+		return append(nexps, rel->exps->h->data);
 	add = sql_bind_func_result(sql->sa, sql->session->schema, "sql_add", F_FUNC, lng, 2, lng, lng);
-	return append(nexps, exp_op(sql->sa, exps, add));
+	return append(nexps, exp_op(sql->sa, rel->exps, add));
 }
 
 static int
@@ -2050,11 +2052,9 @@ rel_rename_exps( mvc *sql, list *exps1, list *exps2)
 static sql_rel *
 rel_push_topn_and_sample_down(visitor *v, sql_rel *rel)
 {
-	sql_rel *rl, *r = rel->l;
+	sql_rel *rp = NULL, *r = rel->l;
 
 	if ((is_topn(rel->op) || is_sample(rel->op)) && topn_sample_save_exps(rel->exps)) {
-		sql_rel *rp = NULL;
-		operator_type relation_type = is_topn(rel->op) ? op_topn : op_sample;
 		sql_rel *(*func) (sql_allocator *, sql_rel *, list *) = is_topn(rel->op) ? rel_topn : rel_sample;
 
 		/* nested topN relations */
@@ -2101,11 +2101,10 @@ rel_push_topn_and_sample_down(visitor *v, sql_rel *rel)
 			}
 		}
 
-		if (r && is_simple_project(r->op) && need_distinct(r))
+		if (r && need_distinct(r))
 			return rel;
 
 		/* push topn/sample under projections */
-
 		if (!rel_is_ref(rel) && r && is_simple_project(r->op) && !need_distinct(r) && !rel_is_ref(r) && r->l && !r->r) {
 			sql_rel *x = r, *px = x;
 
@@ -2113,7 +2112,10 @@ rel_push_topn_and_sample_down(visitor *v, sql_rel *rel)
 				px = x;
 				x = x->l;
 			}
-
+			/* only push topn once */
+			if (x && x->op == rel->op)
+				return rel;
+	
 			rel->l = x;
 			px->l = rel;
 			rel = r;
@@ -2121,9 +2123,8 @@ rel_push_topn_and_sample_down(visitor *v, sql_rel *rel)
 			return rel;
 		}
 
-		/* duplicate topn/sample direct under union */
-
-		if (r && r->exps && is_union(r->op) && !rel_is_ref(r) && r->l) {
+		/* duplicate topn/sample direct under union or crossproduct */
+		if (r && !rel_is_ref(r) && r->l && r->r && ((is_union(r->op) && r->exps) || (r->op == op_join && list_empty(r->exps)))) {
 			sql_rel *u = r, *x;
 			sql_rel *ul = u->l;
 			sql_rel *ur = u->r;
@@ -2132,21 +2133,22 @@ rel_push_topn_and_sample_down(visitor *v, sql_rel *rel)
 			x = ul;
 			while (is_simple_project(x->op) && x->l)
 				x = x->l;
-			if (x && x->op == relation_type)
+			if (x && x->op == rel->op)
 				return rel;
 			x = ur;
 			while (is_simple_project(x->op) && x->l)
 				x = x->l;
-			if (x && x->op == relation_type)
+			if (x && x->op == rel->op)
 				return rel;
 
-			ul = func(v->sql->sa, ul, sum_limit_offset(v->sql, rel->exps));
-			ur = func(v->sql->sa, ur, sum_limit_offset(v->sql, rel->exps));
+			ul = func(v->sql->sa, ul, sum_limit_offset(v->sql, rel));
+			ur = func(v->sql->sa, ur, sum_limit_offset(v->sql, rel));
 			u->l = ul;
 			u->r = ur;
 			v->changes++;
 			return rel;
 		}
+
 		/* duplicate topn/sample + [ project-order ] under union */
 		if (r)
 			rp = r->l;
@@ -2160,12 +2162,12 @@ rel_push_topn_and_sample_down(visitor *v, sql_rel *rel)
 			x = ul;
 			while (is_simple_project(x->op) && x->l)
 				x = x->l;
-			if (x && x->op == relation_type)
+			if (x && x->op == rel->op)
 				return rel;
 			x = ur;
 			while (is_simple_project(x->op) && x->l)
 				x = x->l;
-			if (x && x->op == relation_type)
+			if (x && x->op == rel->op)
 				return rel;
 
 			if (list_length(ul->exps) > list_length(r->exps))
@@ -2189,7 +2191,7 @@ rel_push_topn_and_sample_down(visitor *v, sql_rel *rel)
 				ul->exps = list_merge(ul->exps, exps_copy(v->sql, r->r), NULL);
 			ul->nrcols = list_length(ul->exps);
 			ul->r = exps_copy(v->sql, r->r);
-			ul = func(v->sql->sa, ul, sum_limit_offset(v->sql, rel->exps));
+			ul = func(v->sql->sa, ul, sum_limit_offset(v->sql, rel));
 
 			ur = rel_project(v->sql->sa, ur, NULL);
 			ur->exps = exps_copy(v->sql, r->exps);
@@ -2198,7 +2200,7 @@ rel_push_topn_and_sample_down(visitor *v, sql_rel *rel)
 				ur->exps = list_merge(ur->exps, exps_copy(v->sql, r->r), NULL);
 			ur->nrcols = list_length(ur->exps);
 			ur->r = exps_copy(v->sql, r->r);
-			ur = func(v->sql->sa, ur, sum_limit_offset(v->sql, rel->exps));
+			ur = func(v->sql->sa, ur, sum_limit_offset(v->sql, rel));
 
 			u = rel_setop(v->sql->sa, ul, ur, op_union);
 			u->exps = exps_alias(v->sql, r->exps);
@@ -2228,29 +2230,6 @@ rel_push_topn_and_sample_down(visitor *v, sql_rel *rel)
 			v->changes++;
 			return rel;
 		}
-
-		/* pass through projections */
-		while (r && is_project(r->op) && !need_distinct(r) &&
-			!rel_is_ref(r) &&
-			!r->r && (rl = r->l) != NULL && is_project(rl->op)) {
-			/* ensure there is no order by */
-			if (!r->r) {
-				r = r->l;
-			} else {
-				r = NULL;
-			}
-		}
-		if (r && r != rel && is_simple_project(r->op) && !rel_is_ref(r) && !r->r && r->l)
-			r = func(v->sql->sa, r, sum_limit_offset(v->sql, rel->exps));
-
-		/* push topn/sample under crossproduct */
-		if (r && !r->exps && r->op == op_join && !rel_is_ref(r) &&
-		    ((sql_rel *)r->l)->op != relation_type && ((sql_rel *)r->r)->op != relation_type) {
-			r->l = func(v->sql->sa, r->l, sum_limit_offset(v->sql, rel->exps));
-			r->r = func(v->sql->sa, r->r, sum_limit_offset(v->sql, rel->exps));
-			v->changes++;
-			return rel;
-		}
 /* TODO */
 #if 0
 		/* duplicate topn/sample + [ project-order ] under join on independend always matching joins */
@@ -2258,10 +2237,10 @@ rel_push_topn_and_sample_down(visitor *v, sql_rel *rel)
 			rp = r->l;
 		if (r && r->exps && is_simple_project(r->op) && !(rel_is_ref(r)) && r->r && r->l &&
 		    rp->op == op_join && rp->exps && rp->exps->h && ((prop*)((sql_exp*)rp->exps->h->data)->p)->kind == PROP_FETCH &&
-		    ((sql_rel *)rp->l)->op != relation_type && ((sql_rel *)rp->r)->op != relation_type) {
+		    ((sql_rel *)rp->l)->op != rel->op && ((sql_rel *)rp->r)->op != rel->op) {
 			/* TODO check if order by columns are independend of join conditions */
-			r->l = func(v->sql->sa, r->l, sum_limit_offset(v->sql, rel->exps));
-			r->r = func(v->sql->sa, r->r, sum_limit_offset(v->sql, rel->exps));
+			r->l = func(v->sql->sa, r->l, sum_limit_offset(v->sql, rel));
+			r->r = func(v->sql->sa, r->r, sum_limit_offset(v->sql, rel));
 			v->changes++;
 			return rel;
 		}
