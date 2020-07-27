@@ -6,10 +6,4 @@
 # Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
 #]]
 
-add_subdirectory(mapiclient)
-add_subdirectory(mapilib)
-add_subdirectory(odbc)
-add_subdirectory(examples)
-if(WIN32)
-  add_subdirectory(NT)
-endif()
+add_subdirectory(conf)

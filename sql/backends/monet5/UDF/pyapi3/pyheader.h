@@ -77,28 +77,6 @@
 #define PythonUnicodeType Py_UNICODE
 #define PYFUNCNAME(name) PYAPI3##name
 
-#if defined(WIN32)
-// On Windows we need to dynamically load any SQL functions we use
-// For embedded, this is not necessary because we create one large shared object
-#define CREATE_SQL_FUNCTION_PTR(retval, fcnname)                               \
-	typedef retval (*fcnname##_ptr_tpe)();                                     \
-	fcnname##_ptr_tpe fcnname##_ptr = NULL;
-
-#define LOAD_SQL_FUNCTION_PTR(fcnname)                                         \
-	fcnname##_ptr =                                                            \
-		(fcnname##_ptr_tpe)getAddress(#fcnname);       \
-	if (fcnname##_ptr == NULL) {                                               \
-		msg = createException(MAL, "pyapi3.eval", SQLSTATE(PY000) "Failed to load function %s", \
-							  #fcnname);                                       \
-	}
-#else
-#define CREATE_SQL_FUNCTION_PTR(retval, fcnname)                               \
-	typedef retval (*fcnname##_ptr_tpe)();                                     \
-	fcnname##_ptr_tpe fcnname##_ptr = (fcnname##_ptr_tpe)fcnname;
-
-#define LOAD_SQL_FUNCTION_PTR(fcnname) (void)fcnname
-#endif
-
 #define utf8string_minlength 256
 
 #endif /* _PYHEADER_H_ */

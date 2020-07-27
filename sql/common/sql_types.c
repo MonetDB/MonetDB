@@ -1256,15 +1256,15 @@ sqltypeinit( sql_allocator *sa)
 	/* functions needed for all types */
 	sql_create_func(sa, "hash", "mkey", "hash", TRUE, FALSE, SCALE_FIX, 0, LNG, 1, ANY);
 	sql_create_func(sa, "rotate_xor_hash", "calc", "rotate_xor_hash", TRUE, FALSE, SCALE_NONE, 0, LNG, 3, LNG, INT, ANY);
-	sql_create_func(sa, "=", "calc", "=", TRUE, FALSE, SCALE_FIX, 0, BIT, 2, ANY, ANY);
-	sql_create_func(sa, "<>", "calc", "!=", TRUE, FALSE, SCALE_FIX, 0, BIT, 2, ANY, ANY);
+	sql_create_func(sa, "=", "calc", "=", FALSE, FALSE, SCALE_FIX, 0, BIT, 2, ANY, ANY);
+	sql_create_func(sa, "<>", "calc", "!=", FALSE, FALSE, SCALE_FIX, 0, BIT, 2, ANY, ANY);
 	sql_create_func(sa, "isnull", "calc", "isnil", TRUE, FALSE, SCALE_FIX, 0, BIT, 1, ANY);
 	sql_create_func(sa, "isnotnull", "calc", "isnotnil", TRUE, FALSE, SCALE_FIX, 0, BIT, 1, ANY);
 	sql_create_func(sa, ">", "calc", ">", FALSE, FALSE, SCALE_FIX, 0, BIT, 2, ANY, ANY);
 	sql_create_func(sa, ">=", "calc", ">=", FALSE, FALSE, SCALE_FIX, 0, BIT, 2, ANY, ANY);
 	sql_create_func(sa, "<", "calc", "<", FALSE, FALSE, SCALE_FIX, 0, BIT, 2, ANY, ANY);
 	sql_create_func(sa, "<=", "calc", "<=", FALSE, FALSE, SCALE_FIX, 0, BIT, 2, ANY, ANY);
-	sql_create_func(sa, "between", "calc", "between", TRUE, FALSE, SCALE_FIX, 0, BIT, 8, ANY, ANY, ANY, BIT, BIT, BIT, BIT, BIT);
+	sql_create_func(sa, "between", "calc", "between", FALSE, FALSE, SCALE_FIX, 0, BIT, 8, ANY, ANY, ANY, BIT, BIT, BIT, BIT, BIT);
 	sql_create_aggr(sa, "zero_or_one", "aggr", "zero_or_one", TRUE, ANY, 1, ANY);
 	sql_create_aggr(sa, "all", "aggr", "all", TRUE, ANY, 1, ANY);
 	sql_create_aggr(sa, "null", "aggr", "null", TRUE, BIT, 1, ANY);
@@ -1287,8 +1287,8 @@ sqltypeinit( sql_allocator *sa)
 	sql_create_aggr(sa, "max", "aggr", "max", FALSE, ANY, 1, ANY);
 	sql_create_func(sa, "sql_min", "calc", "min", FALSE, FALSE, SCALE_FIX, 0, ANY, 2, ANY, ANY);
 	sql_create_func(sa, "sql_max", "calc", "max", FALSE, FALSE, SCALE_FIX, 0, ANY, 2, ANY, ANY);
-	sql_create_func(sa, "least", "calc", "min_no_nil", FALSE, FALSE, SCALE_FIX, 0, ANY, 2, ANY, ANY);
-	sql_create_func(sa, "greatest", "calc", "max_no_nil", FALSE, FALSE, SCALE_FIX, 0, ANY, 2, ANY, ANY);
+	sql_create_func(sa, "least", "calc", "min_no_nil", TRUE, FALSE, SCALE_FIX, 0, ANY, 2, ANY, ANY);
+	sql_create_func(sa, "greatest", "calc", "max_no_nil", TRUE, FALSE, SCALE_FIX, 0, ANY, 2, ANY, ANY);
 	sql_create_func(sa, "ifthenelse", "calc", "ifthenelse", TRUE, FALSE, SCALE_FIX, 0, ANY, 3, BIT, ANY, ANY);
 	/* nullif and coalesce don't have a backend implementation */
 	sql_create_func(sa, "nullif", "", "", TRUE, FALSE, SCALE_FIX, 0, ANY, 2, ANY, ANY);
@@ -1329,16 +1329,16 @@ sqltypeinit( sql_allocator *sa)
 #if 0
 	/* prod for decimals introduce errors in the output scales */
 	t = decimals; /* BTE */
-	sql_create_aggr(sa, "prod", "aggr", "prod", TRUE, LargestDEC, 1, *(t));
+	sql_create_aggr(sa, "prod", "aggr", "prod", FALSE, LargestDEC, 1, *(t));
 	t++; /* SHT */
-	sql_create_aggr(sa, "prod", "aggr", "prod", TRUE, LargestDEC, 1, *(t));
+	sql_create_aggr(sa, "prod", "aggr", "prod", FALSE, LargestDEC, 1, *(t));
 	t++; /* INT */
-	sql_create_aggr(sa, "prod", "aggr", "prod", TRUE, LargestDEC, 1, *(t));
+	sql_create_aggr(sa, "prod", "aggr", "prod", FALSE, LargestDEC, 1, *(t));
 	t++; /* LNG */
-	sql_create_aggr(sa, "prod", "aggr", "prod", TRUE, LargestDEC, 1, *(t));
+	sql_create_aggr(sa, "prod", "aggr", "prod", FALSE, LargestDEC, 1, *(t));
 #ifdef HAVE_HGE
 	t++; /* HGE */
-	sql_create_aggr(sa, "prod", "aggr", "prod", TRUE, LargestDEC, 1, *(t));
+	sql_create_aggr(sa, "prod", "aggr", "prod", FALSE, LargestDEC, 1, *(t));
 #endif
 #endif
 
@@ -1354,31 +1354,31 @@ sqltypeinit( sql_allocator *sa)
 	sql_create_aggr(sa, "sum", "aggr", "sum", FALSE, SECINT, 1, SECINT);
 	/* do DBL first so that it is chosen as cast destination for
 	 * unknown types */
-	sql_create_aggr(sa, "avg", "aggr", "avg", TRUE, DBL, 1, DBL);
-	sql_create_aggr(sa, "avg", "aggr", "avg", TRUE, DBL, 1, BTE);
-	sql_create_aggr(sa, "avg", "aggr", "avg", TRUE, DBL, 1, SHT);
-	sql_create_aggr(sa, "avg", "aggr", "avg", TRUE, DBL, 1, INT);
-	sql_create_aggr(sa, "avg", "aggr", "avg", TRUE, DBL, 1, LNG);
+	sql_create_aggr(sa, "avg", "aggr", "avg", FALSE, DBL, 1, DBL);
+	sql_create_aggr(sa, "avg", "aggr", "avg", FALSE, DBL, 1, BTE);
+	sql_create_aggr(sa, "avg", "aggr", "avg", FALSE, DBL, 1, SHT);
+	sql_create_aggr(sa, "avg", "aggr", "avg", FALSE, DBL, 1, INT);
+	sql_create_aggr(sa, "avg", "aggr", "avg", FALSE, DBL, 1, LNG);
 #ifdef HAVE_HGE
-	sql_create_aggr(sa, "avg", "aggr", "avg", TRUE, DBL, 1, HGE);
+	sql_create_aggr(sa, "avg", "aggr", "avg", FALSE, DBL, 1, HGE);
 #endif
-	sql_create_aggr(sa, "avg", "aggr", "avg", TRUE, DBL, 1, FLT);
+	sql_create_aggr(sa, "avg", "aggr", "avg", FALSE, DBL, 1, FLT);
 
 	t = decimals; /* BTE */
-	sql_create_aggr(sa, "avg", "aggr", "avg", TRUE, *(t), 1, *(t));
+	sql_create_aggr(sa, "avg", "aggr", "avg", FALSE, *(t), 1, *(t));
 	t++; /* SHT */
-	sql_create_aggr(sa, "avg", "aggr", "avg", TRUE, *(t), 1, *(t));
+	sql_create_aggr(sa, "avg", "aggr", "avg", FALSE, *(t), 1, *(t));
 	t++; /* INT */
-	sql_create_aggr(sa, "avg", "aggr", "avg", TRUE, *(t), 1, *(t));
+	sql_create_aggr(sa, "avg", "aggr", "avg", FALSE, *(t), 1, *(t));
 	t++; /* LNG */
-	sql_create_aggr(sa, "avg", "aggr", "avg", TRUE, *(t), 1, *(t));
+	sql_create_aggr(sa, "avg", "aggr", "avg", FALSE, *(t), 1, *(t));
 #ifdef HAVE_HGE
 	t++; /* HGE */
-	sql_create_aggr(sa, "avg", "aggr", "avg", TRUE, *(t), 1, *(t));
+	sql_create_aggr(sa, "avg", "aggr", "avg", FALSE, *(t), 1, *(t));
 #endif
 
-	sql_create_aggr(sa, "avg", "aggr", "avg", TRUE, MONINT, 1, MONINT);
-	sql_create_aggr(sa, "avg", "aggr", "avg", TRUE, SECINT, 1, SECINT);
+	sql_create_aggr(sa, "avg", "aggr", "avg", FALSE, MONINT, 1, MONINT);
+	sql_create_aggr(sa, "avg", "aggr", "avg", FALSE, SECINT, 1, SECINT);
 
 	sql_create_aggr(sa, "count_no_nil", "aggr", "count_no_nil", TRUE, LNG, 0);
 	sql_create_aggr(sa, "count", "aggr", "count", TRUE, LNG, 1, ANY);
@@ -1574,11 +1574,10 @@ sqltypeinit( sql_allocator *sa)
 	sql_create_analytic(sa, "avg", "sql", "avg", SCALE_NONE, MONINT, 1, MONINT);
 	sql_create_analytic(sa, "avg", "sql", "avg", SCALE_NONE, SECINT, 1, SECINT);
 
-
 	sql_create_analytic(sa, "listagg", "sql", "str_group_concat", SCALE_NONE, STR, 1, STR);
 	sql_create_analytic(sa, "listagg", "sql", "str_group_concat", SCALE_NONE, STR, 2, STR, STR);
 
-	sql_create_func(sa, "and", "calc", "and", FALSE, FALSE, SCALE_FIX, 0, BIT, 2, BIT, BIT);
+	sql_create_func(sa, "and", "calc", "and", TRUE, FALSE, SCALE_FIX, 0, BIT, 2, BIT, BIT);
 	sql_create_func(sa, "or",  "calc",  "or", TRUE, FALSE, SCALE_FIX, 0, BIT, 2, BIT, BIT);
 	sql_create_func(sa, "xor", "calc", "xor", FALSE, FALSE, SCALE_FIX, 0, BIT, 2, BIT, BIT);
 	sql_create_func(sa, "not", "calc", "not", FALSE, FALSE, SCALE_FIX, 0, BIT, 1, BIT);
@@ -1623,7 +1622,7 @@ sqltypeinit( sql_allocator *sa)
 			sql_create_func(sa, "left_shift", "calc", "<<", FALSE, FALSE, SCALE_FIX, 0, *t, 2, *t, INT);
 			sql_create_func(sa, "right_shift", "calc", ">>", FALSE, FALSE, SCALE_FIX, 0, *t, 2, *t, INT);
 		}
-		sql_create_func(sa, "sql_neg", "calc", "-", TRUE, FALSE, INOUT, 0, *t, 1, *t);
+		sql_create_func(sa, "sql_neg", "calc", "-", FALSE, FALSE, INOUT, 0, *t, 1, *t);
 		sql_create_func(sa, "abs", "calc", "abs", FALSE, FALSE, SCALE_FIX, 0, *t, 1, *t);
 		sql_create_func(sa, "sign", "calc", "sign", FALSE, FALSE, SCALE_NONE, 0, BTE, 1, *t);
 		/* scale fixing for all numbers */
@@ -1797,12 +1796,12 @@ sqltypeinit( sql_allocator *sa)
 		sql_create_func(sa, "ilike", "algebra", "ilike", FALSE, SCALE_NONE, 0, BIT, 2, *t, *t);
 		sql_create_func3(sa, "ilike", "algebra", "ilike", FALSE, SCALE_NONE, 0, BIT, 3, *t, *t, *t);
 		*/
-		sql_create_func(sa, "not_like", "algebra", "not_like", TRUE, FALSE, SCALE_NONE, 0, BIT, 2, *t, *t);
-		sql_create_func(sa, "not_like", "algebra", "not_like", TRUE, FALSE, SCALE_NONE, 0, BIT, 3, *t, *t, *t);
-		sql_create_func(sa, "not_ilike", "algebra", "not_ilike", TRUE, FALSE, SCALE_NONE, 0, BIT, 2, *t, *t);
-		sql_create_func(sa, "not_ilike", "algebra", "not_ilike", TRUE, FALSE, SCALE_NONE, 0, BIT, 3, *t, *t, *t);
+		sql_create_func(sa, "not_like", "algebra", "not_like", FALSE, FALSE, SCALE_NONE, 0, BIT, 2, *t, *t);
+		sql_create_func(sa, "not_like", "algebra", "not_like", FALSE, FALSE, SCALE_NONE, 0, BIT, 3, *t, *t, *t);
+		sql_create_func(sa, "not_ilike", "algebra", "not_ilike", FALSE, FALSE, SCALE_NONE, 0, BIT, 2, *t, *t);
+		sql_create_func(sa, "not_ilike", "algebra", "not_ilike", FALSE, FALSE, SCALE_NONE, 0, BIT, 3, *t, *t, *t);
 
-		sql_create_func(sa, "patindex", "pcre", "patindex", TRUE, FALSE, SCALE_NONE, 0, INT, 2, *t, *t);
+		sql_create_func(sa, "patindex", "pcre", "patindex", FALSE, FALSE, SCALE_NONE, 0, INT, 2, *t, *t);
 		sql_create_func(sa, "truncate", "str", "stringleft", FALSE, FALSE, SCALE_NONE, 0, *t, 2, *t, INT);
 		sql_create_func(sa, "concat", "calc", "+", FALSE, FALSE, DIGITS_ADD, 0, *t, 2, *t, *t);
 		sql_create_func(sa, "ascii", "str", "ascii", FALSE, FALSE, SCALE_NONE, 0, INT, 1, *t);

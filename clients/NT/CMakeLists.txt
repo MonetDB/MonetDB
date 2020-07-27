@@ -6,10 +6,12 @@
 # Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
 #]]
 
-add_subdirectory(mapiclient)
-add_subdirectory(mapilib)
-add_subdirectory(odbc)
-add_subdirectory(examples)
 if(WIN32)
-  add_subdirectory(NT)
+  install(FILES
+    mclient.bat
+    msqldump.bat
+    DESTINATION ${CMAKE_INSTALL_PREFIX}
+    COMPONENT server)
 endif()
+
+# vim: set ts=2:sw=2:et
