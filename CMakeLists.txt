@@ -55,7 +55,6 @@ include(monetdb-toolchain)
 monetdb_default_toolchain()
 #monetdb_default_compiler_options()
 
-
 include(monetdb-defines)
 monetdb_hg_revision()
 

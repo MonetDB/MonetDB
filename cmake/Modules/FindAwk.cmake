@@ -6,5 +6,15 @@
 # Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
 #]]
 
-add_subdirectory(python)
-add_subdirectory(selinux)
+find_program(AWK_EXECUTABLE NAMES awk
+  DOC "awk"
+)
+
+include(FindPackageHandleStandardArgs)
+
+find_package_handle_standard_args(Awk
+  DEFAULT_MSG
+  AWK_EXECUTABLE
+)
+
+mark_as_advanced(AWK_EXECUTABLE)
