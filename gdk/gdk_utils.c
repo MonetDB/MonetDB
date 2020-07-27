@@ -1587,12 +1587,6 @@ THRcreate(void (*f) (void *), void *arg, enum MT_thr_detach d, const char *name)
 	len = snprintf(semname, sizeof(semname), "THRcreate%" PRIu64, (uint64_t) ATOMIC_INC(&ctr));
 	if (len == -1 || len > (int) sizeof(semname)) {
 		IODEBUG fprintf(stderr, "#THRcreate: semaphore name is too large\n");
-		GDKerror("THRcreate: semaphore name is too large\n");
-		GDKfree(t);
-		GDKfree(s->name);
-		s->name = NULL;
-		ATOMIC_SET(&s->pid, 0); /* deallocate */
-		return 0;
 	}
 	MT_sema_init(&t->sem, 0, semname);
 	if (MT_create_thread(&pid, THRstarter, t, d, name) != 0) {
