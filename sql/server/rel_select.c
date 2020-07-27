@@ -1082,7 +1082,7 @@ rel_column_ref(sql_query *query, sql_rel **rel, symbol *column_r, int f)
 				if (is_groupby(outer->op) && !is_sql_aggr(f)) {
 					exp = rel_groupby_add_aggr(sql, outer, exp);
 					exp->card = CARD_ATOM;
-				} else if (is_groupby(outer->op) && is_sql_aggr(f) && exps_find_match_exp(outer->exps, exp))
+				} else if (is_groupby(outer->op) && is_sql_aggr(f) && exps_any_match(outer->exps, exp))
 					exp = exp_ref(sql, exp);
 				else
 					exp->card = CARD_ATOM;
@@ -1154,7 +1154,7 @@ rel_column_ref(sql_query *query, sql_rel **rel, symbol *column_r, int f)
 				if (is_groupby(outer->op) && !is_sql_aggr(f)) {
 					exp = rel_groupby_add_aggr(sql, outer, exp);
 					exp->card = CARD_ATOM;
-				} else if (is_groupby(outer->op) && is_sql_aggr(f) && exps_find_match_exp(outer->exps, exp))
+				} else if (is_groupby(outer->op) && is_sql_aggr(f) && exps_any_match(outer->exps, exp))
 					exp = exp_ref(sql, exp);
 				else
 					exp->card = CARD_ATOM;
@@ -3763,7 +3763,7 @@ rel_aggr(sql_query *query, sql_rel **rel, symbol *se, int f)
 }
 
 static sql_exp *
-rel_case(sql_query *query, sql_rel **rel, tokens token, symbol *opt_cond, dlist *when_search_list, symbol *opt_else, int f)
+rel_case(sql_query *query, sql_rel **rel, symbol *opt_cond, dlist *when_search_list, symbol *opt_else, int f)
 {
 	mvc *sql = query->sql;
 	sql_subtype *tpe = NULL;
@@ -3776,97 +3776,26 @@ rel_case(sql_query *query, sql_rel **rel, tokens token, symbol *opt_cond, dlist 
 	exp_kind ek = {type_value, card_column, FALSE};
 
 	sql_find_subtype(&bt, "boolean", 0, 0);
-	if (dn) {
+	for (dn = when_search_list->h; dn; dn = dn->next) {
 		sql_exp *cond = NULL, *result = NULL;
+		dlist *when = dn->data.sym->data.lval;
 
-		/* NULLIF(e1,e2) == CASE WHEN e1=e2 THEN NULL ELSE e1 END */
-		if (token == SQL_NULLIF) {
-			sql_exp *e1, *e2;
+		if (opt_cond) {
+			sql_exp *l, *r;
 
-			if (!(e1 = rel_value_exp(query, rel, dn->data.sym, f, ek)))
+			if (!(l = rel_value_exp(query, rel, opt_cond, f, ek)))
 				return NULL;
-			if (!(e2 = rel_value_exp(query, rel, dn->next->data.sym, f, ek)))
+			if (!(r = rel_value_exp(query, rel, when->h->data.sym, f, ek)))
 				return NULL;
-
-			cond = rel_binop_(sql, rel ? *rel : NULL, e1, e2, NULL, "=", card_value);
-			result = exp_null(sql->sa, exp_subtype(e1));
-			else_exp = exp_ref_save(sql, e1);	/* ELSE case */
-			/* COALESCE(e1,e2) == CASE WHEN e1
-			   IS NOT NULL THEN e1 ELSE e2 END */
-		} else if (token == SQL_COALESCE) {
-			cond = rel_value_exp(query, rel, dn->data.sym, f, ek);
-
-			if (cond) {
-				result = exp_ref_save(sql, cond);
-				if (!(cond = rel_unop_(sql, rel ? *rel : NULL, cond, NULL, "isnotnull", card_value)))
-					return NULL;
-				set_has_no_nil(cond);
-			}
+			if (rel_convert_types(sql, rel ? *rel : NULL, rel ? *rel : NULL, &l, &r, 1, type_equal) < 0)
+				return NULL;
+			cond = rel_binop_(sql, rel ? *rel : NULL, l, r, NULL, "=", card_value);
 		} else {
-			dlist *when = dn->data.sym->data.lval;
-
-			if (opt_cond) {
-				sql_exp *l, *r;
-
-				if (!(l = rel_value_exp(query, rel, opt_cond, f, ek)))
-					return NULL;
-				if (!(r = rel_value_exp(query, rel, when->h->data.sym, f, ek)))
-					return NULL;
-				if (rel_convert_types(sql, rel ? *rel : NULL, rel ? *rel : NULL, &l, &r, 1, type_equal) < 0)
-					return NULL;
-				cond = rel_binop_(sql, rel ? *rel : NULL, l, r, NULL, "=", card_value);
-			} else {
-				cond = rel_logical_value_exp(query, rel, when->h->data.sym, f, ek);
-			}
-			if (!cond)
-				return NULL;
-			result = rel_value_exp(query, rel, when->h->next->data.sym, f, ek);
+			cond = rel_logical_value_exp(query, rel, when->h->data.sym, f, ek);
 		}
-		if (!cond || !result)
+		if (!cond)
 			return NULL;
-		list_prepend(conds, cond);
-		list_prepend(results, result);
-
-		restype = exp_subtype(result);
-
-		if (token == SQL_NULLIF)
-			dn = NULL;
-		else
-			dn = dn->next;
-	}
-	/* for COALESCE we skip the last (else part) */
-	for (; dn && (token != SQL_COALESCE || dn->next); dn = dn->next) {
-		sql_exp *cond = NULL, *result = NULL;
-
-		if (token == SQL_COALESCE) {
-			cond = rel_value_exp(query, rel, dn->data.sym, f, ek);
-
-			if (cond) {
-				result = exp_ref_save(sql, cond);
-				if (!(cond = rel_unop_(sql, rel ? *rel : NULL, cond, NULL, "isnotnull", card_value)))
-					return NULL;
-				set_has_no_nil(cond);
-			}
-		} else {
-			dlist *when = dn->data.sym->data.lval;
-
-			if (opt_cond) {
-				sql_exp *l, *r;
-
-				if (!(l = rel_value_exp(query, rel, opt_cond, f, ek)))
-					return NULL;
-				if (!(r = rel_value_exp(query, rel, when->h->data.sym, f, ek)))
-					return NULL;
-				if (rel_convert_types(sql, rel ? *rel : NULL, rel ? *rel : NULL, &l, &r, 1, type_equal) < 0)
-					return NULL;
-				cond = rel_binop_(sql, rel ? *rel : NULL, l, r, NULL, "=", card_value);
-			} else {
-				cond = rel_logical_value_exp(query, rel, when->h->data.sym, f, ek);
-			}
-			if (!cond)
-				return NULL;
-			result = rel_value_exp(query, rel, when->h->next->data.sym, f, ek);
-		}
+		result = rel_value_exp(query, rel, when->h->next->data.sym, f, ek);
 		if (!cond || !result)
 			return NULL;
 		list_prepend(conds, cond);
@@ -3935,27 +3864,67 @@ rel_case(sql_query *query, sql_rel **rel, tokens token, symbol *opt_cond, dlist 
 }
 
 static sql_exp *
+rel_complex_case(sql_query *query, sql_rel **rel, dlist *case_args, int f, str func)
+{
+	exp_kind ek = {type_value, card_column, FALSE};
+	list *args = sa_list(query->sql->sa);
+	sql_subtype *restype = NULL, rtype;
+
+	/* generate nested func calls */
+	for(dnode *dn = case_args->h; dn; dn = dn->next) {
+		sql_exp *a = rel_value_exp(query, rel, dn->data.sym, f, ek);
+		if (!a)
+			return NULL;
+		append(args, a);
+		/* all arguments should have the same type */
+		sql_subtype *tpe = exp_subtype(a);
+		if (tpe && restype) {
+			supertype(&rtype, restype, tpe);
+			restype = &rtype;
+		} else if (tpe) {
+			restype = tpe;
+		}
+	}
+	if (!restype)
+		return sql_error(query->sql, 02, SQLSTATE(42000) "Result type missing");
+
+	sql_exp *cur = NULL;
+	for (node *n = args->h; n; n = n->next) {
+		sql_exp *a = n->data;
+
+		if (!(a = exp_check_type(query->sql, restype, rel ? *rel : NULL, a, type_equal)))
+			return NULL;
+		if (!cur)
+			cur = a;
+		else {
+			cur = rel_binop_(query->sql, NULL, cur, a, NULL, func, card_value);
+			if (!cur)
+				return NULL;
+		}
+	}
+	return cur;
+}
+
+static sql_exp *
 rel_case_exp(sql_query *query, sql_rel **rel, symbol *se, int f)
 {
 	dlist *l = se->data.lval;
 
 	if (se->token == SQL_COALESCE) {
-		symbol *opt_else = l->t->data.sym;
-
-		return rel_case(query, rel, se->token, NULL, l, opt_else, f);
+		return rel_complex_case(query, rel, l, f, "coalesce");
 	} else if (se->token == SQL_NULLIF) {
-		return rel_case(query, rel, se->token, NULL, l, NULL, f);
+		return rel_complex_case(query, rel, l, f, "nullif");
 	} else if (l->h->type == type_list) {
 		dlist *when_search_list = l->h->data.lval;
 		symbol *opt_else = l->h->next->data.sym;
 
-		return rel_case(query, rel, SQL_CASE, NULL, when_search_list, opt_else, f);
+		return rel_case(query, rel, NULL, when_search_list, opt_else, f);
 	} else {
 		symbol *scalar_exp = l->h->data.sym;
 		dlist *when_value_list = l->h->next->data.lval;
 		symbol *opt_else = l->h->next->next->data.sym;
 
-		return rel_case(query, rel, SQL_CASE, scalar_exp, when_value_list, opt_else, f);
+		return rel_case(query, rel, scalar_exp, when_value_list, opt_else, f);
 	}
 }
 

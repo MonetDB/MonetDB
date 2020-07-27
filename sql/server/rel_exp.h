@@ -152,6 +152,7 @@ extern int exp_is_null(sql_exp *e);
 extern int exp_is_rel(sql_exp *e);
 extern int exp_has_rel(sql_exp *e);
 extern int exps_have_rel_exp(list *exps);
+extern int exps_have_func(list *exps);
 extern sql_rel *exp_rel_get_rel(sql_allocator *sa, sql_exp *e);
 extern sql_exp *exp_rel_update_exp(mvc *sql, sql_exp *e);
 extern sql_exp *exp_rel_label(mvc *sql, sql_exp *e);

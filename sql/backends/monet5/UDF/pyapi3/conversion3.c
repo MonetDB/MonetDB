@@ -15,18 +15,6 @@
 #include "blob.h"
 #include "gdk_interprocess.h"
 
-CREATE_SQL_FUNCTION_PTR(str, batbte_dec2_dbl);
-CREATE_SQL_FUNCTION_PTR(str, batsht_dec2_dbl);
-CREATE_SQL_FUNCTION_PTR(str, batint_dec2_dbl);
-CREATE_SQL_FUNCTION_PTR(str, batlng_dec2_dbl);
-#ifdef HAVE_HGE
-CREATE_SQL_FUNCTION_PTR(str, bathge_dec2_dbl);
-#endif
-CREATE_SQL_FUNCTION_PTR(str, batstr_2time_timestamp);
-CREATE_SQL_FUNCTION_PTR(str, batstr_2time_daytime);
-CREATE_SQL_FUNCTION_PTR(str, batstr_2_date);
-CREATE_SQL_FUNCTION_PTR(str, batdbl_num2dec_lng);
-
 //! Wrapper to get eclass of SQL type
 int GetSQLType(sql_subtype *sql_subtype);
 
@@ -1127,20 +1115,20 @@ str ConvertFromSQLType(BAT *b, sql_subtype *sql_subtype, BAT **ret_bat,
 		// numeric field and convert the one it's actually stored in
 		switch (bat_type) {
 			case TYPE_bte:
-				res = (*batbte_dec2_dbl_ptr)(&result, &hpos, &b->batCacheid);
+				res = batbte_dec2_dbl(&result, &hpos, &b->batCacheid);
 				break;
 			case TYPE_sht:
-				res = (*batsht_dec2_dbl_ptr)(&result, &hpos, &b->batCacheid);
+				res = batsht_dec2_dbl(&result, &hpos, &b->batCacheid);
 				break;
 			case TYPE_int:
-				res = (*batint_dec2_dbl_ptr)(&result, &hpos, &b->batCacheid);
+				res = batint_dec2_dbl(&result, &hpos, &b->batCacheid);
 				break;
 			case TYPE_lng:
-				res = (*batlng_dec2_dbl_ptr)(&result, &hpos, &b->batCacheid);
+				res = batlng_dec2_dbl(&result, &hpos, &b->batCacheid);
 				break;
 #ifdef HAVE_HGE
 			case TYPE_hge:
-				res = (*bathge_dec2_dbl_ptr)(&result, &hpos, &b->batCacheid);
+				res = bathge_dec2_dbl(&result, &hpos, &b->batCacheid);
 				break;
 #endif
 			default:
@@ -1172,19 +1160,17 @@ str ConvertToSQLType(Client cntxt, BAT *b, sql_subtype *sql_subtype,
 
 	switch (sql_subtype->type->eclass) {
 		case EC_TIMESTAMP:
-			res = (*batstr_2time_timestamp_ptr)(&result_bat, &b->batCacheid,
-												&digits);
+			res = batstr_2time_timestamp(&result_bat, &b->batCacheid, &digits);
 			break;
 		case EC_TIME:
-			res = (*batstr_2time_daytime_ptr)(&result_bat, &b->batCacheid,
-											  &digits);
+			res = batstr_2time_daytime(&result_bat, &b->batCacheid, &digits);
 			break;
 		case EC_DATE:
-			res = (*batstr_2_date_ptr)(&result_bat, &b->batCacheid);
+			res = batstr_2_date(&result_bat, &b->batCacheid);
 			break;
 		case EC_DEC:
-			res = (*batdbl_num2dec_lng_ptr)(&result_bat, &b->batCacheid,
-											&digits, &scale);
+			res = batdbl_num2dec_lng(&result_bat, &b->batCacheid,
+									 &digits, &scale);
 			break;
 		default:
 			return createException(
@@ -1242,16 +1228,5 @@ str _conversion_init(void)
 	str msg = MAL_SUCCEED;
 	conversion_import_array();
 
-	LOAD_SQL_FUNCTION_PTR(batbte_dec2_dbl);
-	LOAD_SQL_FUNCTION_PTR(batsht_dec2_dbl);
-	LOAD_SQL_FUNCTION_PTR(batint_dec2_dbl);
-	LOAD_SQL_FUNCTION_PTR(batlng_dec2_dbl);
-#ifdef HAVE_HGE
-	LOAD_SQL_FUNCTION_PTR(bathge_dec2_dbl);
-#endif
-	LOAD_SQL_FUNCTION_PTR(batstr_2time_timestamp);
-	LOAD_SQL_FUNCTION_PTR(batstr_2time_daytime);
-	LOAD_SQL_FUNCTION_PTR(batstr_2_date);
-	LOAD_SQL_FUNCTION_PTR(batdbl_num2dec_lng);
 	return msg;
 }

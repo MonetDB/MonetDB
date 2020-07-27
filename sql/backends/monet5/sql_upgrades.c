@@ -1933,6 +1933,31 @@ sql_update_jun2020_sp1_hugeint(Client c, const char *prev_schema)
 #endif
 
 static str
+sql_update_jun2020_sp2(Client c, mvc *sql, const char *prev_schema, bool *systabfixed)
+{
+	/* we need to update the system tables, but only if we haven't done
+	 * so already, and if we are actually upgrading the database */
+	if (*systabfixed)
+		return MAL_SUCCEED;		/* already done */
+
+	char *buf = "select id from sys.functions where name = 'nullif' and schema_id = (select id from sys.schemas where name = 'sys');\n";
+	res_table *output;
+	char *err = SQLstatementIntern(c, &buf, "update", 1, 0, &output);
+	if (err == NULL) {
+		BAT *b = BATdescriptor(output->cols[0].b);
+		if (b) {
+			if (BATcount(b) == 0) {
+				err = sql_fix_system_tables(c, sql, prev_schema);
+				*systabfixed = true;
+			}
+			BBPunfix(b->batCacheid);
+		}
+		res_table_destroy(output);
+	}
+	return err;
+}
+
+static str
 sql_update_oscar_lidar(Client c)
 {
 	char *query =
@@ -2453,6 +2478,13 @@ SQLupgrades(Client c, mvc *m)
 		return -1;
 	}
 #endif
+
+	if ((err = sql_update_jun2020_sp2(c, m, prev_schema, &systabfixed)) != NULL) {
+		TRC_CRITICAL(SQL_PARSER, "%s\n", err);
+		freeException(err);
+		GDKfree(prev_schema);
+		return -1;
+	}
 
 	sql_find_subtype(&tp, "varchar", 0, 0);
 	if (sql_bind_func(m->sa, s, "lidarattach", &tp, NULL, F_PROC) &&
