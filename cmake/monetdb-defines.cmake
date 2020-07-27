@@ -293,12 +293,6 @@ macro(monetdb_configure_sizes)
   check_type_size(double SIZEOF_DOUBLE LANGUAGE C)
   check_type_size(wchar_t SIZEOF_WCHAR_T LANGUAGE C)
   check_type_size(socklen_t HAVE_SOCKLEN_T LANGUAGE C)
-  check_type_size(pid_t SIZEOF_PID_T LANGUAGE C)
-  if(NOT HAVE_SIZEOF_PID_T)
-    # Set a default value
-    set(pid_t "int")
-    set(SIZEOF_PID_T ${CMAKE_SIZEOF_INT})
-  endif()
 
   if(INT128)
     cmake_push_check_state()
