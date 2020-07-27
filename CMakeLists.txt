@@ -152,6 +152,7 @@ add_subdirectory(tools)
 if(TESTING)
   add_subdirectory(testing)
 endif()
+add_subdirectory(buildtools)
 
 include(CMakePackageConfigHelpers)
 configure_package_config_file(${CMAKE_CURRENT_SOURCE_DIR}/Config.cmake.in
