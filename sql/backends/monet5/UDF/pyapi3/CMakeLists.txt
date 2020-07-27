@@ -46,6 +46,7 @@ if(HAVE_LIBPY3)
     PRIVATE
     Python3::Python
     $<$<VERSION_GREATER_EQUAL:${CMAKE_VERSION},3.14.0>:Python3::NumPy>
+    sql
     mutils
     stream
     gdk
