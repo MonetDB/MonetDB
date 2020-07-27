@@ -5661,53 +5661,8 @@ rel_push_project_down(visitor *v, sql_rel *rel)
 				return l;
 			}
 			return rel;
-#if 0
-			/* keep important internal columns */
-			for (node *n = l->exps->h; n; n = n->next) {
-				sql_exp *e = n->data;
-
-				if (is_intern(e))
-					append(rel->exps, e);
-			}
-			l->exps = rel->exps;
-			rel->l = NULL;
-			rel_destroy(rel);
-			v->changes++;
-			return l;
-#endif
 		} else if (list_check_prop_all(rel->exps, (prop_check_func)&exp_is_useless_rename)) {
-			if (is_simple_project(l->op) && list_length(l->exps) == list_length(rel->exps)) {
-				rel->l = NULL;
-				rel_destroy(rel);
-				v->changes++;
-				return l;
-			} else if (is_select(l->op)) {
-				/* push project under select (include exps used by selection) */
-				l->l = rel_project(v->sql->sa, l->l, rel_projections(v->sql, l, NULL, 1, 1));
-				l->l = rel_push_project_down(v, l->l);
-				rel->l = NULL;
-				rel_destroy(rel);
-				v->changes++;
-				return l;
-			} else if (is_join(l->op)) {
-				/* for each exp add to left or right project under join */
-				sql_rel *ll = l->l, *lr = l->r;
-				list *lexps = sa_list(v->sql->sa), *rexps = sa_list(v->sql->sa);
-
-				list *exps = rel_projections(v->sql, l, NULL, 1, 1); /* include exps used by join exps */
-				for(node *n = exps->h; n; n = n->next) {
-					sql_exp *e = n->data;
-					if ((exp_relname(e) && exp_name(e) && rel_bind_column2(v->sql, ll, exp_relname(e), exp_name(e), 0)) ||
-						(!exp_relname(e) && exp_name(e) && rel_bind_column(v->sql, ll, exp_name(e), 0, 1))) {
-						append(lexps, e);
-					} else {
-						append(rexps, e);
-					}
-				}
-				l->l = rel_project(v->sql->sa, ll, lexps);
-				l->l = rel_push_project_down(v, l->l);
-				l->r = rel_project(v->sql->sa, lr, rexps);
-				l->r = rel_push_project_down(v, l->r);
+			if ((is_project(l->op) && list_length(l->exps) == list_length(rel->exps)) || is_select(l->op) || is_join(l->op) || is_topn(l->op) || is_sample(l->op)) {
 				rel->l = NULL;
 				rel_destroy(rel);
 				v->changes++;
