@@ -75,7 +75,7 @@ static struct PIPELINES {
 	 "optimizer.deadcode();"
 	 "optimizer.aliases();"
 	 "optimizer.constants();"
-	 //"optimizer.commonTerms();"
+	 "optimizer.commonTerms();"
 	 "optimizer.projectionpath();"
 	 "optimizer.deadcode();"
 	 "optimizer.reorder();"
