@@ -9529,7 +9529,6 @@ rel_optimizer(mvc *sql, sql_rel *rel, int value_based_opt)
 	rel = rel_keep_renames(sql, rel);
 	for( ;rel && level < 20 && changes; level++)
 		rel = optimize_rel(sql, rel, &changes, level, value_based_opt);
-	assert(level < 20);
 	sql->Topt += GDKusec() - Tbegin;
 	return rel;
 }
