@@ -822,25 +822,13 @@ exp_bin(backend *be, sql_exp *e, stmt *left, stmt *right, stmt *grp, stmt *ext, 
 				if (push_cands && es->nrcols)
 					nrcands++;
 
-				if (!cond_exec_res && (coalesce || push_cond_exec) && !single_value) { /* create result */
+				/* create result */
+				if (!cond_exec_res && (coalesce || push_cond_exec) && !single_value) {
 					if (ocond) {
 						cond_exec_res = ocond;
-						/*
-					} else if (es->type == st_replace && !(push_cond_exec && recursive_ce)) {
-						assert(0);
-						cond_exec_res = es;
-						*/
 					} else {
 						stmt *l = bin_first_column(be, left);
-						/*
-						if (isel && l)
-							l = stmt_project(be, isel, l);
-							*/
 						cond_exec_res = stmt_const(be, l, stmt_atom(be, atom_general(sql->sa, exp_subtype(fe), NULL)));
-						/*
-						if (isel)
-							cond_exec_res->cand = isel;
-							*/
 					}
 				}
 				if (cond_exec_res && (coalesce || en != exps->h)) {
@@ -874,10 +862,6 @@ exp_bin(backend *be, sql_exp *e, stmt *left, stmt *right, stmt *grp, stmt *ext, 
 						else if (val->cand != sel)
 							val = stmt_project(be, sel, val);
 						cond_exec_res = stmt_replace(be, cond_exec_res, pos, val);
-						/*
-						if (isel)
-							cond_exec_res->cand = isel;
-							*/
 					}
 				}
 				if ((push_cond_exec || coalesce) && ncond && en->next) { /* handled then part */
