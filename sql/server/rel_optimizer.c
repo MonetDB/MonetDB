@@ -1648,8 +1648,13 @@ rel_push_func_down(visitor *v, sql_rel *rel)
 				rel->r = r = rel_project(v->sql->sa, r, rel_projections(v->sql, r, NULL, 1, 1));
 			}
  			nrel = rel_project(v->sql->sa, rel, rel_projections(v->sql, rel, NULL, 1, 1));
-			if (!(exps = exps_push_single_func_down(v, rel, l, r, exps)))
+
+			int old_changes = v->changes;
+			v->changes = 0;
+			if (!(exps = exps_push_single_func_down(v, rel, l, r, exps))) {
+				v->changes = old_changes;
 				return NULL;
+			}
 			if (v->changes) {
 				rel = nrel;
 			} else {
@@ -1658,6 +1663,7 @@ rel_push_func_down(visitor *v, sql_rel *rel)
 				if (is_joinop(rel->op) && r != or)
 					rel->r = or;
 			}
+			v->changes += old_changes;
 		}
 	}
 	if (rel->op == op_project && rel->l && rel->exps) {
@@ -9523,6 +9529,7 @@ rel_optimizer(mvc *sql, sql_rel *rel, int value_based_opt)
 	rel = rel_keep_renames(sql, rel);
 	for( ;rel && level < 20 && changes; level++)
 		rel = optimize_rel(sql, rel, &changes, level, value_based_opt);
+	assert(level < 20);
 	sql->Topt += GDKusec() - Tbegin;
 	return rel;
 }
