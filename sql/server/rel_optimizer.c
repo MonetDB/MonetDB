@@ -1630,6 +1630,7 @@ rel_push_func_down(visitor *v, sql_rel *rel)
 			sql_rel *nrel;
 			sql_rel *l = rel->l, *ol = l;
 			sql_rel *r = rel->r, *or = r;
+			visitor nv = { .sql = v->sql, .parent = v->parent };
 
 			/* we need a full projection, group by's and unions cannot be extended
  			 * with more expressions */
@@ -1649,13 +1650,9 @@ rel_push_func_down(visitor *v, sql_rel *rel)
 			}
  			nrel = rel_project(v->sql->sa, rel, rel_projections(v->sql, rel, NULL, 1, 1));
 
-			int old_changes = v->changes;
-			v->changes = 0;
-			if (!(exps = exps_push_single_func_down(v, rel, l, r, exps))) {
-				v->changes = old_changes;
+			if (!(exps = exps_push_single_func_down(&nv, rel, l, r, exps)))
 				return NULL;
-			}
-			if (v->changes) {
+			if (nv.changes) {
 				rel = nrel;
 			} else {
 				if (l != ol)
@@ -1663,7 +1660,7 @@ rel_push_func_down(visitor *v, sql_rel *rel)
 				if (is_joinop(rel->op) && r != or)
 					rel->r = or;
 			}
-			v->changes += old_changes;
+			v->changes += nv.changes;
 		}
 	}
 	if (rel->op == op_project && rel->l && rel->exps) {
