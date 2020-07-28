@@ -48,7 +48,7 @@ BSKTlocate(str sch, str tbl)
 		return 0;
 	for (i = 1; i < bsktTop; i++)
 		if (baskets[i].table && baskets[i].table->s && strcmp(sch, baskets[i].table->s->base.name) == 0 &&
-			baskets[i].table && strcmp(tbl, baskets[i].table->base.name) == 0)
+			strcmp(tbl, baskets[i].table->base.name) == 0)
 			return i;
 	return 0;
 }
