@@ -2886,6 +2886,12 @@ rewrite_groupings(visitor *v, sql_rel *rel)
 				list *l = (list*) n->data, *exps = sa_list(v->sql->sa), *pexps = sa_list(v->sql->sa);
 
 				l = list_flaten(l);
+				for (node *m = l->h ; m ; m = m->next) {
+					sql_exp *e = m->data;
+					/* be carefull with aliases on grouping columns */
+					m->data = exp_alias_or_copy(v->sql, exp_relname(e), exp_name(e), rel, e); 
+				}
+
 				nrel = rel_groupby(v->sql, unions ? rel_dup(rel->l) : rel->l, l);
 
 				for (node *m = rel->exps->h ; m ; m = m->next) {
