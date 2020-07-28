@@ -3167,34 +3167,33 @@ static sql_exp *
 rel_nop(sql_query *query, sql_rel **rel, symbol *se, int fs, exp_kind ek)
 {
 	mvc *sql = query->sql;
-	int nr_args = 0;
+	int nr_args = 0, err = 0;
 	dnode *l = se->data.lval->h;
 	dnode *ops = l->next->next->data.lval?l->next->next->data.lval->h:NULL;
 	list *exps = sa_list(sql->sa), *tl = sa_list(sql->sa);
 	sql_subfunc *sf = NULL;
 	sql_schema *s = cur_schema(sql);
 	exp_kind iek = {type_value, card_column, FALSE};
-	int err = 0;
 
 	for (; ops; ops = ops->next, nr_args++) {
-		sql_exp *e = rel_value_exp(query, rel, ops->data.sym, fs, iek);
-		sql_subtype *tpe;
-
-		if (!e)
-			err = 1;
-		append(exps, e);
-		if (e) {
-			tpe = exp_subtype(e);
-			append(tl, tpe);
+		if (!err) { /* we need the nr_args count at the end, but if an error is found, stop calling rel_value_exp */
+			sql_exp *e = rel_value_exp(query, rel, ops->data.sym, fs, iek);
+			if (!e) {
+				err = 1;
+				continue;
+			}
+			append(exps, e);
+			append(tl, exp_subtype(e));
 		}
 	}
 	if (l->type == type_int) {
 		/* exec nr (ops)*/
 		int nr = l->data.i_val;
-		cq *q = qc_find(sql->qc, nr);
+		cq *q;
 
-		if (q) {
-			node *n, *m;
+		if (err)
+			return NULL;
+		if ((q = qc_find(sql->qc, nr))) {
 			list *nexps = new_exp_list(sql->sa);
 			sql_func *f = q->f;
 
@@ -3202,7 +3201,7 @@ rel_nop(sql_query *query, sql_rel **rel, symbol *se, int fs, exp_kind ek)
 			if (list_length(f->ops) != list_length(exps))
 				return sql_error(sql, 02, SQLSTATE(42000) "EXEC called with wrong number of arguments: expected %d, got %d", list_length(f->ops), list_length(exps));
 			if (exps->h && f->ops) {
-				for (n = exps->h, m = f->ops->h; n && m; n = n->next, m = m->next) {
+				for (node *n = exps->h, *m = f->ops->h; n && m; n = n->next, m = m->next) {
 					sql_arg *a = m->data;
 					sql_exp *e = n->data;
 					sql_subtype *ntp = &a->type;
@@ -3219,6 +3218,7 @@ rel_nop(sql_query *query, sql_rel **rel, symbol *se, int fs, exp_kind ek)
 			sql->type = q->type;
 			if (nexps)
 				return exp_op(sql->sa, nexps, sql_dup_subfunc(sql->sa, f, tl, NULL));
+			return NULL;
 		} else {
 			return sql_error(sql, 02, SQLSTATE(42000) "EXEC: PREPARED Statement missing '%d'", nr);
 		}
@@ -3231,7 +3231,6 @@ rel_nop(sql_query *query, sql_rel **rel, symbol *se, int fs, exp_kind ek)
 
 	/* first try aggregate */
 	sf = find_func(sql, s, fname, nr_args, F_AGGR, NULL);
-
 	if (sf) { /* We have to pas the arguments properly, so skip call to rel_aggr */
 		if (err) {
 			/* reset error */
