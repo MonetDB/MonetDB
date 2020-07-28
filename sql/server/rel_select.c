@@ -3748,40 +3748,39 @@ rel_case(sql_query *query, sql_rel **rel, symbol *opt_cond, dlist *when_search_l
 {
 	mvc *sql = query->sql;
 	sql_subtype *tpe = NULL;
-	list *conds = new_exp_list(sql->sa);
-	list *results = new_exp_list(sql->sa);
-	dnode *dn = when_search_list->h;
-	sql_subtype *restype = NULL, rtype, bt;
-	sql_exp *res = NULL, *else_exp = NULL;
-	node *n, *m;
+	list *conds = new_exp_list(sql->sa), *results = new_exp_list(sql->sa);
+	sql_subtype *restype = NULL, *condtype = NULL, ctype, rtype, bt;
+	sql_exp *res = NULL, *opt_cond_exp = NULL;
 	exp_kind ek = {type_value, card_column, FALSE};
 
-	sql_find_subtype(&bt, "boolean", 0, 0);
-	for (dn = when_search_list->h; dn; dn = dn->next) {
+	if (opt_cond) {
+		if (!(opt_cond_exp = rel_value_exp(query, rel, opt_cond, f, ek)))
+			return NULL;
+		condtype = exp_subtype(opt_cond_exp);
+	}
+
+	for (dnode *dn = when_search_list->h; dn; dn = dn->next) {
 		sql_exp *cond = NULL, *result = NULL;
 		dlist *when = dn->data.sym->data.lval;
 
-		if (opt_cond) {
-			sql_exp *l, *r;
-
-			if (!(l = rel_value_exp(query, rel, opt_cond, f, ek)))
-				return NULL;
-			if (!(r = rel_value_exp(query, rel, when->h->data.sym, f, ek)))
-				return NULL;
-			if (rel_convert_types(sql, rel ? *rel : NULL, rel ? *rel : NULL, &l, &r, 1, type_equal) < 0)
-				return NULL;
-			cond = rel_binop_(sql, rel ? *rel : NULL, l, r, NULL, "=", card_value);
-		} else {
+		if (opt_cond)
+			cond = rel_value_exp(query, rel, when->h->data.sym, f, ek);
+		else
 			cond = rel_logical_value_exp(query, rel, when->h->data.sym, f, ek);
-		}
 		if (!cond)
 			return NULL;
-		result = rel_value_exp(query, rel, when->h->next->data.sym, f, ek);
-		if (!cond || !result)
-			return NULL;
 		list_prepend(conds, cond);
-		list_prepend(results, result);
+		tpe = exp_subtype(cond);
+		if (tpe && condtype) {
+			supertype(&ctype, condtype, tpe);
+			condtype = &ctype;
+		} else if (tpe) {
+			condtype = tpe;
+		}
 
+		if (!(result = rel_value_exp(query, rel, when->h->next->data.sym, f, ek)))
+			return NULL;
+		list_prepend(results, result);
 		tpe = exp_subtype(result);
 		if (tpe && restype) {
 			supertype(&rtype, restype, tpe);
@@ -3790,13 +3789,11 @@ rel_case(sql_query *query, sql_rel **rel, symbol *opt_cond, dlist *when_search_l
 			restype = tpe;
 		}
 	}
-	if (opt_else || else_exp) {
-		sql_exp *result = else_exp;
-
-		if (!result && !(result = rel_value_exp(query, rel, opt_else, f, ek)))
+	if (opt_else) {
+		if (!(res = rel_value_exp(query, rel, opt_else, f, ek)))
 			return NULL;
 
-		tpe = exp_subtype(result);
+		tpe = exp_subtype(res);
 		if (tpe && restype) {
 			supertype(&rtype, restype, tpe);
 			restype = &rtype;
@@ -3809,11 +3806,7 @@ rel_case(sql_query *query, sql_rel **rel, symbol *opt_cond, dlist *when_search_l
 		if (restype->type->localtype == TYPE_void) /* NULL */
 			restype = sql_bind_localtype("str");
 
-		if (!result || !(result = exp_check_type(sql, restype, rel ? *rel : NULL, result, type_equal)))
-			return NULL;
-		res = result;
-
-		if (!res)
+		if (!(res = exp_check_type(sql, restype, rel ? *rel : NULL, res, type_equal)))
 			return NULL;
 	} else {
 		if (!restype)
@@ -3823,20 +3816,28 @@ rel_case(sql_query *query, sql_rel **rel, symbol *opt_cond, dlist *when_search_l
 		res = exp_null(sql->sa, restype);
 	}
 
-	for (n = conds->h, m = results->h; n && m; n = n->next, m = m->next) {
+	if (!condtype)
+		return sql_error(sql, 02, SQLSTATE(42000) "Condition type missing");
+	if (condtype->type->localtype == TYPE_void) /* NULL */
+		condtype = sql_bind_localtype("str");
+	if (opt_cond_exp && !(opt_cond_exp = exp_check_type(sql, condtype, rel ? *rel : NULL, opt_cond_exp, type_equal)))
+		return NULL;
+	sql_find_subtype(&bt, "boolean", 0, 0);
+	for (node *n = conds->h, *m = results->h; n && m; n = n->next, m = m->next) {
 		sql_exp *cond = n->data;
 		sql_exp *result = m->data;
 
 		if (!(result = exp_check_type(sql, restype, rel ? *rel : NULL, result, type_equal)))
 			return NULL;
 
+		if (!(cond = exp_check_type(sql, condtype, rel ? *rel : NULL, cond, type_equal)))
+			return NULL;
+		if (opt_cond_exp && !(cond = rel_binop_(sql, rel ? *rel : NULL, n == conds->h ? opt_cond_exp : exp_copy(sql, opt_cond_exp), cond, NULL, "=", card_value)))
+			return NULL;
 		if (!(cond = exp_check_type(sql, &bt, rel ? *rel : NULL, cond, type_equal)))
 			return NULL;
 
-		if (!cond || !result || !res)
-			return NULL;
-		res = rel_nop_(sql, rel ? *rel : NULL, cond, result, res, NULL, NULL, "ifthenelse", card_value);
-		if (!res)
+		if (!(res = rel_nop_(sql, rel ? *rel : NULL, cond, result, res, NULL, NULL, "ifthenelse", card_value)))
 			return NULL;
 		/* ugh overwrite res type */
 		((sql_subfunc*)res->f)->res->h->data = sql_create_subtype(sql->sa, restype->type, restype->digits, restype->scale);

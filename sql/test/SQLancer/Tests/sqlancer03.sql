@@ -250,7 +250,7 @@ COPY 5 RECORDS INTO "sys"."t0" FROM stdin USING DELIMITERS E'\t',E'\n','"';
 
 select coalesce(1 = true, false);
 select coalesce(1 = true, t0.c0 > 0) from t0;
-select count(all coalesce ((case coalesce (((r'Mk|8''Fx#S4ᬊ')||(time '07:11:45')), ((r'')||(interval '-87' second))) when case cast(t0.c0 as double) when sql_max(r'', null) 
+select count(all coalesce ((case coalesce (1, 2) when case cast(t0.c0 as double) when sql_max(r'', null) 
 then ((12)/(23)) end then cast("truncate"(r'1', 54) as boolean) else (coalesce (true, true, r'1', true)) = false end) = true, (t0.c0) not in (t0.c0))) from t0;
 ROLLBACK;
 
@@ -354,6 +354,33 @@ COPY 8 RECORDS INTO "sys"."t0" FROM stdin USING DELIMITERS E'\t',E'\n','"';
 0.369
 
 SELECT ALL CASE t0.c0 WHEN VAR_POP(ALL t0.c0) THEN (t0.c0) BETWEEN SYMMETRIC (t0.c0) AND (t0.c0) END FROM t0 GROUP BY t0.c0;
+ROLLBACK;
+
+START TRANSACTION;
+CREATE TABLE "sys"."t0" ("c0" INT);
+COPY 8 RECORDS INTO "sys"."t0" FROM stdin USING DELIMITERS E'\t',E'\n','"';
+62183
+-2658
+-1258
+40690
+-198
+12260
+-1827
+-604
+
+CREATE TABLE "sys"."t1" ("c0" INT);
+COPY 7 RECORDS INTO "sys"."t1" FROM stdin USING DELIMITERS E'\t',E'\n','"';
+4440
+4440
+4440
+4440
+14228
+-4740
+NULL
+
+SELECT CASE TIMESTAMP '1970-01-02 23:16:17' WHEN DATE '1970-01-12' THEN 1 END;
+SELECT TIME '08:16:10' FROM t1 JOIN t0 ON (t1.c0) NOT BETWEEN SYMMETRIC (t1.c0) AND (charindex(CAST(TIME '04:39:29' AS STRING), CASE COALESCE (TIMESTAMP '1970-01-02 23:16:17', TIMESTAMP '1970-01-02 23:07:33') 
+WHEN COALESCE (DATE '1970-01-12', DATE '1970-01-02', DATE '1970-01-02') THEN COALESCE (r'/6望', r'hr?r3QDF*OD%6癰if}䃒5') END, t0.c0)) GROUP BY t1.c0;
 ROLLBACK;
 
 START TRANSACTION; -- Bug 6924
