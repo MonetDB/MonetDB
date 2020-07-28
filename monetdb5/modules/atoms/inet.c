@@ -37,26 +37,18 @@ typedef struct _inet {
 	/* use a union to force alignment compatible with lng */
 	union {
 		struct {
-			unsigned char _q1;
-			unsigned char _q2;
-			unsigned char _q3;
-			unsigned char _q4;
-			unsigned char _mask;
-			unsigned char _filler1;
-			unsigned char _filler2;
-			unsigned char _isnil;
-		} s;
+			unsigned char q1;
+			unsigned char q2;
+			unsigned char q3;
+			unsigned char q4;
+			unsigned char mask;
+			unsigned char filler1;
+			unsigned char filler2;
+			unsigned char isnil;
+		};
 		lng alignment;
-	} u;
+	};
 } inet;
-#define q1	u.s._q1
-#define q2	u.s._q2
-#define q3	u.s._q3
-#define q4	u.s._q4
-#define mask	u.s._mask
-#define filler1	u.s._filler1
-#define filler2	u.s._filler2
-#define isnil	u.s._isnil
 
 #ifdef WORDS_BIGENDIAN
 /* HACK ALERT: once upon a time, lng_nil was used as inet_nil, but on
@@ -375,18 +367,18 @@ INET_comp_CW(bit *retval, const inet *val1, const inet *val2)
 		 * be contained within */
 		*retval = 0;
 	} else {
-		unsigned int msk;
+		unsigned int mask;
 		unsigned char m[4];
 
 		if (val2->mask > 0)
-			msk = ~0U << (32 - val2->mask);
+			mask = ~0U << (32 - val2->mask);
 		else
-			msk = 0;
+			mask = 0;
 
-		m[0] = (msk >> 24) & 0xFF;
-		m[1] = (msk >> 16) & 0xFF;
-		m[2] = (msk >> 8) & 0xFF;
-		m[3] = msk & 0xFF;
+		m[0] = (mask >> 24) & 0xFF;
+		m[1] = (mask >> 16) & 0xFF;
+		m[2] = (mask >> 8) & 0xFF;
+		m[3] = mask & 0xFF;
 
 		/* all operations here are done byte based, to avoid byte sex
 		 * problems */
@@ -485,19 +477,19 @@ INETbroadcast(inet *retval, const inet *val)
 {
 	*retval = *val;
 	if (!is_inet_nil(val) && val->mask != 32) {
-		unsigned int msk;
+		unsigned int mask;
 		unsigned char m[4];
 
 		if (val->mask > 0)
-			msk = ~0U << (32 - val->mask);
+			mask = ~0U << (32 - val->mask);
 		else
-			msk = 0;
+			mask = 0;
 
-		msk = ~msk;			/* invert the mask */
-		m[0] = (msk >> 24) & 0xFF;
-		m[1] = (msk >> 16) & 0xFF;
-		m[2] = (msk >> 8) & 0xFF;
-		m[3] = msk & 0xFF;
+		mask = ~mask;			/* invert the mask */
+		m[0] = (mask >> 24) & 0xFF;
+		m[1] = (mask >> 16) & 0xFF;
+		m[2] = (mask >> 8) & 0xFF;
+		m[3] = mask & 0xFF;
 
 	/*
 		TRC_DEBUG(MAL_SERVER,
@@ -561,14 +553,14 @@ INETmasklen(int *retval, const inet *val)
  * Set netmask length for inet value.
  */
 static str
-INETsetmasklen(inet *retval, const inet *val, const int *msk)
+INETsetmasklen(inet *retval, const inet *val, const int *mask)
 {
-	if (*msk < 0 || *msk > 32)
-		throw(ILLARG, "inet.setmask", "Illegal netmask length value: %d", *msk);
+	if (*mask < 0 || *mask > 32)
+		throw(ILLARG, "inet.setmask", "Illegal netmask length value: %d", *mask);
 
 	*retval = *val;
 	if (!is_inet_nil(val))
-		retval->mask = *msk;
+		retval->mask = *mask;
 
 	return (MAL_SUCCEED);
 }
@@ -580,18 +572,18 @@ INETnetmask(inet *retval, const inet *val)
 {
 	*retval = *val;
 	if (!is_inet_nil(val)) {
-		unsigned int msk;
+		unsigned int mask;
 		unsigned char m[4];
 
 		if (val->mask > 0)
-			msk = ~0U << (32 - val->mask);
+			mask = ~0U << (32 - val->mask);
 		else
-			msk = 0;
+			mask = 0;
 
-		m[0] = (msk >> 24) & 0xFF;
-		m[1] = (msk >> 16) & 0xFF;
-		m[2] = (msk >> 8) & 0xFF;
-		m[3] = msk & 0xFF;
+		m[0] = (mask >> 24) & 0xFF;
+		m[1] = (mask >> 16) & 0xFF;
+		m[2] = (mask >> 8) & 0xFF;
+		m[3] = mask & 0xFF;
 
 		retval->q1 = m[0];
 		retval->q2 = m[1];
@@ -641,18 +633,18 @@ INETnetwork(inet *retval, const inet *val)
 {
 	*retval = *val;
 	if (!is_inet_nil(val)) {
-		unsigned int msk;
+		unsigned int mask;
 		unsigned char m[4];
 
 		if (val->mask > 0)
-			msk = ~0U << (32 - val->mask);
+			mask = ~0U << (32 - val->mask);
 		else
-			msk = 0;
+			mask = 0;
 
-		m[0] = (msk >> 24) & 0xFF;
-		m[1] = (msk >> 16) & 0xFF;
-		m[2] = (msk >> 8) & 0xFF;
-		m[3] = msk & 0xFF;
+		m[0] = (mask >> 24) & 0xFF;
+		m[1] = (mask >> 16) & 0xFF;
+		m[2] = (mask >> 8) & 0xFF;
+		m[3] = mask & 0xFF;
 
 		retval->q1 &= m[0];
 		retval->q2 &= m[1];
@@ -708,27 +700,27 @@ INETabbrev(str *retval, const inet *val)
 		if (*retval == NULL)
 			throw(MAL, "inet.abbrev", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	} else {
-		unsigned int msk;
+		unsigned int mask;
 		unsigned char m[4];
 
 		if (val->mask > 0)
-			msk = ~0U << (32 - val->mask);
+			mask = ~0U << (32 - val->mask);
 		else
-			msk = 0;
-		msk = ~msk;			/* invert the mask */
+			mask = 0;
+		mask = ~mask;			/* invert the mask */
 
-		m[0] = (msk >> 24) & 0xFF;
-		m[1] = (msk >> 16) & 0xFF;
-		m[2] = (msk >> 8) & 0xFF;
-		m[3] = msk & 0xFF;
+		m[0] = (mask >> 24) & 0xFF;
+		m[1] = (mask >> 16) & 0xFF;
+		m[2] = (mask >> 8) & 0xFF;
+		m[3] = mask & 0xFF;
 
 		if ((val->q1 & m[0]) != 0 ||
 			(val->q2 & m[1]) != 0 ||
 			(val->q3 & m[2]) != 0 ||
 			(val->q4 & m[3]) != 0) {
-			msk = 32;
+			mask = 32;
 		} else {
-			msk = val->mask;
+			mask = val->mask;
 		}
 
 		/* example: (hex notation)
@@ -743,16 +735,16 @@ INETabbrev(str *retval, const inet *val)
 		if (ip == NULL)
 			throw(MAL, "inet.abbrev", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 
-		if (msk > 24) {
+		if (mask > 24) {
 			snprintf(ip, sizeof(char) * 20, "%d.%d.%d.%d/%d",
 					 val->q1, val->q2, val->q3, val->q4, val->mask);
-		} else if (msk > 16) {
+		} else if (mask > 16) {
 			snprintf(ip, sizeof(char) * 20, "%d.%d.%d/%d",
 					 val->q1, val->q2, val->q3, val->mask);
-		} else if (msk > 8) {
+		} else if (mask > 8) {
 			snprintf(ip, sizeof(char) * 20, "%d.%d/%d",
 					 val->q1, val->q2, val->mask);
-		} else if (msk > 0) {
+		} else if (mask > 0) {
 			snprintf(ip, sizeof(char) * 20, "%d/%d", val->q1, val->mask);
 		} else {
 			snprintf(ip, sizeof(char) * 20, "/0");

@@ -13,6 +13,16 @@
 #include "mal_interpreter.h"
 #include "mmath_private.h"
 
+static inline bool
+chkmsk(const bit *rv, const uint32_t *mrv, BUN i)
+{
+	if (rv)
+		return rv[i] != 0;
+	if (mrv)
+		return (mrv[i / 32] & 1U << (i % 32)) != 0;
+	return true;
+}
+
 static str
 CMDscienceUNARY(MalStkPtr stk, InstrPtr pci,
 				float (*ffunc)(float), double (*dfunc)(double),
@@ -21,6 +31,7 @@ CMDscienceUNARY(MalStkPtr stk, InstrPtr pci,
 	bat bid;
 	BAT *bn, *b, *s = NULL, *r = NULL;
 	const bit *rv;
+	const uint32_t *mrv;
 	struct canditer ci;
 	oid x;
 	BUN i;
@@ -73,7 +84,8 @@ CMDscienceUNARY(MalStkPtr stk, InstrPtr pci,
 		goto doreturn;
 	}
 
-	rv = r ? Tloc(r, 0) : NULL;
+	rv = r && r->ttype == TYPE_bit ? Tloc(r, 0) : NULL;
+	mrv = r && r->ttype == TYPE_msk ? Tloc(r, 0) : NULL;
 
 	errno = 0;
 	feclearexcept(FE_ALL_EXCEPT);
@@ -83,7 +95,7 @@ CMDscienceUNARY(MalStkPtr stk, InstrPtr pci,
 		flt *restrict fdst = (flt *) Tloc(bn, 0);
 		for (i = 0; i < ci.ncand; i++) {
 			x = canditer_next(&ci) - b->hseqbase;
-			if ((rv != NULL && !rv[i]) || is_flt_nil(fsrc[x])) {
+			if (!chkmsk(rv, mrv, i) || is_flt_nil(fsrc[x])) {
 				fdst[i] = flt_nil;
 				nils++;
 			} else {
@@ -97,7 +109,7 @@ CMDscienceUNARY(MalStkPtr stk, InstrPtr pci,
 		dbl *restrict ddst = (dbl *) Tloc(bn, 0);
 		for (i = 0; i < ci.ncand; i++) {
 			x = canditer_next(&ci) - b->hseqbase;
-			if ((rv != NULL && !rv[i]) || is_dbl_nil(dsrc[x])) {
+			if (!chkmsk(rv, mrv, i) || is_dbl_nil(dsrc[x])) {
 				ddst[i] = dbl_nil;
 				nils++;
 			} else {
@@ -152,6 +164,7 @@ CMDscienceBINARY(MalStkPtr stk, InstrPtr pci,
 	int tp1, tp2;
 	struct canditer ci1 = (struct canditer){0}, ci2 = (struct canditer){0};
 	const bit *rv;
+	const uint32_t *mrv;
 	oid x1, x2;
 	BUN i;
 	BUN nils = 0;
@@ -249,7 +262,8 @@ CMDscienceBINARY(MalStkPtr stk, InstrPtr pci,
 		goto doreturn;
 	}
 
-	rv = r ? Tloc(r, 0) : NULL;
+	rv = r && r->ttype == TYPE_bit ? Tloc(r, 0) : NULL;
+	mrv = r && r->ttype == TYPE_msk ? Tloc(r, 0) : NULL;
 
 	errno = 0;
 	feclearexcept(FE_ALL_EXCEPT);
@@ -262,7 +276,7 @@ CMDscienceBINARY(MalStkPtr stk, InstrPtr pci,
 			for (i = 0; i < ci1.ncand; i++) {
 				x1 = canditer_next(&ci1) - b1->hseqbase;
 				x2 = canditer_next(&ci2) - b2->hseqbase;
-				if ((rv != NULL && !rv[i]) ||
+				if (!chkmsk(rv, mrv, i) ||
 					is_flt_nil(fsrc1[x1]) ||
 					is_flt_nil(fsrc2[x2])) {
 					fdst[i] = flt_nil;
@@ -277,7 +291,7 @@ CMDscienceBINARY(MalStkPtr stk, InstrPtr pci,
 			flt *restrict fdst = (flt *) Tloc(bn, 0);
 			for (i = 0; i < ci1.ncand; i++) {
 				x1 = canditer_next(&ci1) - b1->hseqbase;
-				if ((rv != NULL && !rv[i]) ||
+				if (!chkmsk(rv, mrv, i) ||
 					is_flt_nil(fsrc1[x1])) {
 					fdst[i] = flt_nil;
 					nils++;
@@ -291,7 +305,7 @@ CMDscienceBINARY(MalStkPtr stk, InstrPtr pci,
 			flt *restrict fdst = (flt *) Tloc(bn, 0);
 			for (i = 0; i < ci2.ncand; i++) {
 				x2 = canditer_next(&ci2) - b2->hseqbase;
-				if ((rv != NULL && !rv[i]) ||
+				if (!chkmsk(rv, mrv, i) ||
 					is_flt_nil(fsrc2[x2])) {
 					fdst[i] = flt_nil;
 					nils++;
@@ -309,7 +323,7 @@ CMDscienceBINARY(MalStkPtr stk, InstrPtr pci,
 			for (i = 0; i < ci1.ncand; i++) {
 				x1 = canditer_next(&ci1) - b1->hseqbase;
 				x2 = canditer_next(&ci2) - b2->hseqbase;
-				if ((rv != NULL && !rv[i]) ||
+				if (!chkmsk(rv, mrv, i) ||
 					is_dbl_nil(dsrc1[x1]) ||
 					is_dbl_nil(dsrc2[x2])) {
 					ddst[i] = dbl_nil;
@@ -324,7 +338,7 @@ CMDscienceBINARY(MalStkPtr stk, InstrPtr pci,
 			dbl *restrict ddst = (dbl *) Tloc(bn, 0);
 			for (i = 0; i < ci1.ncand; i++) {
 				x1 = canditer_next(&ci1) - b1->hseqbase;
-				if ((rv != NULL && !rv[i]) ||
+				if (!chkmsk(rv, mrv, i) ||
 					is_dbl_nil(dsrc1[x1])) {
 					ddst[i] = dbl_nil;
 					nils++;
@@ -338,7 +352,7 @@ CMDscienceBINARY(MalStkPtr stk, InstrPtr pci,
 			dbl *restrict ddst = (dbl *) Tloc(bn, 0);
 			for (i = 0; i < ci2.ncand; i++) {
 				x2 = canditer_next(&ci2) - b2->hseqbase;
-				if ((rv != NULL && !rv[i]) ||
+				if (!chkmsk(rv, mrv, i) ||
 					is_dbl_nil(dsrc2[x2])) {
 					ddst[i] = dbl_nil;
 					nils++;
@@ -494,212 +508,316 @@ scienceBinaryImpl(logbs)
 mel_func batmmath_init_funcs[] = {
  pattern("batmmath", "asin", CMDscience_bat_asin, false, "", args(1,2, batarg("",dbl),batarg("x",dbl))),
  pattern("batmmath", "asin", CMDscience_bat_asin, false, "", args(1,3, batarg("",dbl),batarg("x",dbl),batarg("r",bit))),
+ pattern("batmmath", "asin", CMDscience_bat_asin, false, "", args(1,3, batarg("",dbl),batarg("x",dbl),batarg("r",msk))),
  pattern("batmmath", "asin", CMDscience_bat_asin, false, "", args(1,3, batarg("",dbl),batarg("x",dbl),batarg("s",oid))),
  pattern("batmmath", "asin", CMDscience_bat_asin, false, "", args(1,4, batarg("",dbl),batarg("x",dbl),batarg("s",oid),batarg("r",bit))),
+ pattern("batmmath", "asin", CMDscience_bat_asin, false, "", args(1,4, batarg("",dbl),batarg("x",dbl),batarg("s",oid),batarg("r",msk))),
  pattern("batmmath", "asin", CMDscience_bat_asin, false, "", args(1,2, batarg("",flt),batarg("x",flt))),
  pattern("batmmath", "asin", CMDscience_bat_asin, false, "", args(1,3, batarg("",flt),batarg("x",flt),batarg("r",bit))),
+ pattern("batmmath", "asin", CMDscience_bat_asin, false, "", args(1,3, batarg("",flt),batarg("x",flt),batarg("r",msk))),
  pattern("batmmath", "asin", CMDscience_bat_asin, false, "", args(1,3, batarg("",flt),batarg("x",flt),batarg("s",oid))),
  pattern("batmmath", "asin", CMDscience_bat_asin, false, "", args(1,4, batarg("",flt),batarg("x",flt),batarg("s",oid),batarg("r",bit))),
+ pattern("batmmath", "asin", CMDscience_bat_asin, false, "", args(1,4, batarg("",flt),batarg("x",flt),batarg("s",oid),batarg("r",msk))),
  pattern("batmmath", "acos", CMDscience_bat_acos, false, "", args(1,2, batarg("",dbl),batarg("x",dbl))),
  pattern("batmmath", "acos", CMDscience_bat_acos, false, "", args(1,3, batarg("",dbl),batarg("x",dbl),batarg("r",bit))),
+ pattern("batmmath", "acos", CMDscience_bat_acos, false, "", args(1,3, batarg("",dbl),batarg("x",dbl),batarg("r",msk))),
  pattern("batmmath", "acos", CMDscience_bat_acos, false, "", args(1,3, batarg("",dbl),batarg("x",dbl),batarg("s",oid))),
  pattern("batmmath", "acos", CMDscience_bat_acos, false, "", args(1,4, batarg("",dbl),batarg("x",dbl),batarg("s",oid),batarg("r",bit))),
+ pattern("batmmath", "acos", CMDscience_bat_acos, false, "", args(1,4, batarg("",dbl),batarg("x",dbl),batarg("s",oid),batarg("r",msk))),
  pattern("batmmath", "acos", CMDscience_bat_acos, false, "", args(1,2, batarg("",flt),batarg("x",flt))),
  pattern("batmmath", "acos", CMDscience_bat_acos, false, "", args(1,3, batarg("",flt),batarg("x",flt),batarg("r",bit))),
+ pattern("batmmath", "acos", CMDscience_bat_acos, false, "", args(1,3, batarg("",flt),batarg("x",flt),batarg("r",msk))),
  pattern("batmmath", "acos", CMDscience_bat_acos, false, "", args(1,3, batarg("",flt),batarg("x",flt),batarg("s",oid))),
  pattern("batmmath", "acos", CMDscience_bat_acos, false, "", args(1,4, batarg("",flt),batarg("x",flt),batarg("s",oid),batarg("r",bit))),
+ pattern("batmmath", "acos", CMDscience_bat_acos, false, "", args(1,4, batarg("",flt),batarg("x",flt),batarg("s",oid),batarg("r",msk))),
  pattern("batmmath", "atan", CMDscience_bat_atan, false, "", args(1,2, batarg("",dbl),batarg("x",dbl))),
  pattern("batmmath", "atan", CMDscience_bat_atan, false, "", args(1,3, batarg("",dbl),batarg("x",dbl),batarg("r",bit))),
+ pattern("batmmath", "atan", CMDscience_bat_atan, false, "", args(1,3, batarg("",dbl),batarg("x",dbl),batarg("r",msk))),
  pattern("batmmath", "atan", CMDscience_bat_atan, false, "", args(1,3, batarg("",dbl),batarg("x",dbl),batarg("s",oid))),
  pattern("batmmath", "atan", CMDscience_bat_atan, false, "", args(1,4, batarg("",dbl),batarg("x",dbl),batarg("s",oid),batarg("r",bit))),
+ pattern("batmmath", "atan", CMDscience_bat_atan, false, "", args(1,4, batarg("",dbl),batarg("x",dbl),batarg("s",oid),batarg("r",msk))),
  pattern("batmmath", "atan", CMDscience_bat_atan, false, "", args(1,2, batarg("",flt),batarg("x",flt))),
  pattern("batmmath", "atan", CMDscience_bat_atan, false, "", args(1,3, batarg("",flt),batarg("x",flt),batarg("r",bit))),
+ pattern("batmmath", "atan", CMDscience_bat_atan, false, "", args(1,3, batarg("",flt),batarg("x",flt),batarg("r",msk))),
  pattern("batmmath", "atan", CMDscience_bat_atan, false, "", args(1,3, batarg("",flt),batarg("x",flt),batarg("s",oid))),
  pattern("batmmath", "atan", CMDscience_bat_atan, false, "", args(1,4, batarg("",flt),batarg("x",flt),batarg("s",oid),batarg("r",bit))),
+ pattern("batmmath", "atan", CMDscience_bat_atan, false, "", args(1,4, batarg("",flt),batarg("x",flt),batarg("s",oid),batarg("r",msk))),
  pattern("batmmath", "cos", CMDscience_bat_cos, false, "", args(1,2, batarg("",dbl),batarg("x",dbl))),
  pattern("batmmath", "cos", CMDscience_bat_cos, false, "", args(1,3, batarg("",dbl),batarg("x",dbl),batarg("r",bit))),
+ pattern("batmmath", "cos", CMDscience_bat_cos, false, "", args(1,3, batarg("",dbl),batarg("x",dbl),batarg("r",msk))),
  pattern("batmmath", "cos", CMDscience_bat_cos, false, "", args(1,3, batarg("",dbl),batarg("x",dbl),batarg("s",oid))),
  pattern("batmmath", "cos", CMDscience_bat_cos, false, "", args(1,4, batarg("",dbl),batarg("x",dbl),batarg("s",oid),batarg("r",bit))),
+ pattern("batmmath", "cos", CMDscience_bat_cos, false, "", args(1,4, batarg("",dbl),batarg("x",dbl),batarg("s",oid),batarg("r",msk))),
  pattern("batmmath", "cos", CMDscience_bat_cos, false, "", args(1,2, batarg("",flt),batarg("x",flt))),
  pattern("batmmath", "cos", CMDscience_bat_cos, false, "", args(1,3, batarg("",flt),batarg("x",flt),batarg("r",bit))),
+ pattern("batmmath", "cos", CMDscience_bat_cos, false, "", args(1,3, batarg("",flt),batarg("x",flt),batarg("r",msk))),
  pattern("batmmath", "cos", CMDscience_bat_cos, false, "", args(1,3, batarg("",flt),batarg("x",flt),batarg("s",oid))),
  pattern("batmmath", "cos", CMDscience_bat_cos, false, "", args(1,4, batarg("",flt),batarg("x",flt),batarg("s",oid),batarg("r",bit))),
+ pattern("batmmath", "cos", CMDscience_bat_cos, false, "", args(1,4, batarg("",flt),batarg("x",flt),batarg("s",oid),batarg("r",msk))),
  pattern("batmmath", "sin", CMDscience_bat_sin, false, "", args(1,2, batarg("",dbl),batarg("x",dbl))),
  pattern("batmmath", "sin", CMDscience_bat_sin, false, "", args(1,3, batarg("",dbl),batarg("x",dbl),batarg("r",bit))),
+ pattern("batmmath", "sin", CMDscience_bat_sin, false, "", args(1,3, batarg("",dbl),batarg("x",dbl),batarg("r",msk))),
  pattern("batmmath", "sin", CMDscience_bat_sin, false, "", args(1,3, batarg("",dbl),batarg("x",dbl),batarg("s",oid))),
  pattern("batmmath", "sin", CMDscience_bat_sin, false, "", args(1,4, batarg("",dbl),batarg("x",dbl),batarg("s",oid),batarg("r",bit))),
+ pattern("batmmath", "sin", CMDscience_bat_sin, false, "", args(1,4, batarg("",dbl),batarg("x",dbl),batarg("s",oid),batarg("r",msk))),
  pattern("batmmath", "sin", CMDscience_bat_sin, false, "", args(1,2, batarg("",flt),batarg("x",flt))),
  pattern("batmmath", "sin", CMDscience_bat_sin, false, "", args(1,3, batarg("",flt),batarg("x",flt),batarg("r",bit))),
+ pattern("batmmath", "sin", CMDscience_bat_sin, false, "", args(1,3, batarg("",flt),batarg("x",flt),batarg("r",msk))),
  pattern("batmmath", "sin", CMDscience_bat_sin, false, "", args(1,3, batarg("",flt),batarg("x",flt),batarg("s",oid))),
  pattern("batmmath", "sin", CMDscience_bat_sin, false, "", args(1,4, batarg("",flt),batarg("x",flt),batarg("s",oid),batarg("r",bit))),
+ pattern("batmmath", "sin", CMDscience_bat_sin, false, "", args(1,4, batarg("",flt),batarg("x",flt),batarg("s",oid),batarg("r",msk))),
  pattern("batmmath", "tan", CMDscience_bat_tan, false, "", args(1,2, batarg("",dbl),batarg("x",dbl))),
  pattern("batmmath", "tan", CMDscience_bat_tan, false, "", args(1,3, batarg("",dbl),batarg("x",dbl),batarg("r",bit))),
+ pattern("batmmath", "tan", CMDscience_bat_tan, false, "", args(1,3, batarg("",dbl),batarg("x",dbl),batarg("r",msk))),
  pattern("batmmath", "tan", CMDscience_bat_tan, false, "", args(1,3, batarg("",dbl),batarg("x",dbl),batarg("s",oid))),
  pattern("batmmath", "tan", CMDscience_bat_tan, false, "", args(1,4, batarg("",dbl),batarg("x",dbl),batarg("s",oid),batarg("r",bit))),
+ pattern("batmmath", "tan", CMDscience_bat_tan, false, "", args(1,4, batarg("",dbl),batarg("x",dbl),batarg("s",oid),batarg("r",msk))),
  pattern("batmmath", "tan", CMDscience_bat_tan, false, "", args(1,2, batarg("",flt),batarg("x",flt))),
  pattern("batmmath", "tan", CMDscience_bat_tan, false, "", args(1,3, batarg("",flt),batarg("x",flt),batarg("r",bit))),
+ pattern("batmmath", "tan", CMDscience_bat_tan, false, "", args(1,3, batarg("",flt),batarg("x",flt),batarg("r",msk))),
  pattern("batmmath", "tan", CMDscience_bat_tan, false, "", args(1,3, batarg("",flt),batarg("x",flt),batarg("s",oid))),
  pattern("batmmath", "tan", CMDscience_bat_tan, false, "", args(1,4, batarg("",flt),batarg("x",flt),batarg("s",oid),batarg("r",bit))),
+ pattern("batmmath", "tan", CMDscience_bat_tan, false, "", args(1,4, batarg("",flt),batarg("x",flt),batarg("s",oid),batarg("r",msk))),
  pattern("batmmath", "cosh", CMDscience_bat_cosh, false, "", args(1,2, batarg("",dbl),batarg("x",dbl))),
  pattern("batmmath", "cosh", CMDscience_bat_cosh, false, "", args(1,3, batarg("",dbl),batarg("x",dbl),batarg("r",bit))),
+ pattern("batmmath", "cosh", CMDscience_bat_cosh, false, "", args(1,3, batarg("",dbl),batarg("x",dbl),batarg("r",msk))),
  pattern("batmmath", "cosh", CMDscience_bat_cosh, false, "", args(1,3, batarg("",dbl),batarg("x",dbl),batarg("s",oid))),
  pattern("batmmath", "cosh", CMDscience_bat_cosh, false, "", args(1,4, batarg("",dbl),batarg("x",dbl),batarg("s",oid),batarg("r",bit))),
+ pattern("batmmath", "cosh", CMDscience_bat_cosh, false, "", args(1,4, batarg("",dbl),batarg("x",dbl),batarg("s",oid),batarg("r",msk))),
  pattern("batmmath", "cosh", CMDscience_bat_cosh, false, "", args(1,2, batarg("",flt),batarg("x",flt))),
  pattern("batmmath", "cosh", CMDscience_bat_cosh, false, "", args(1,3, batarg("",flt),batarg("x",flt),batarg("r",bit))),
+ pattern("batmmath", "cosh", CMDscience_bat_cosh, false, "", args(1,3, batarg("",flt),batarg("x",flt),batarg("r",msk))),
  pattern("batmmath", "cosh", CMDscience_bat_cosh, false, "", args(1,3, batarg("",flt),batarg("x",flt),batarg("s",oid))),
  pattern("batmmath", "cosh", CMDscience_bat_cosh, false, "", args(1,4, batarg("",flt),batarg("x",flt),batarg("s",oid),batarg("r",bit))),
+ pattern("batmmath", "cosh", CMDscience_bat_cosh, false, "", args(1,4, batarg("",flt),batarg("x",flt),batarg("s",oid),batarg("r",msk))),
  pattern("batmmath", "sinh", CMDscience_bat_sinh, false, "", args(1,2, batarg("",dbl),batarg("x",dbl))),
  pattern("batmmath", "sinh", CMDscience_bat_sinh, false, "", args(1,3, batarg("",dbl),batarg("x",dbl),batarg("r",bit))),
+ pattern("batmmath", "sinh", CMDscience_bat_sinh, false, "", args(1,3, batarg("",dbl),batarg("x",dbl),batarg("r",msk))),
  pattern("batmmath", "sinh", CMDscience_bat_sinh, false, "", args(1,3, batarg("",dbl),batarg("x",dbl),batarg("s",oid))),
  pattern("batmmath", "sinh", CMDscience_bat_sinh, false, "", args(1,4, batarg("",dbl),batarg("x",dbl),batarg("s",oid),batarg("r",bit))),
+ pattern("batmmath", "sinh", CMDscience_bat_sinh, false, "", args(1,4, batarg("",dbl),batarg("x",dbl),batarg("s",oid),batarg("r",msk))),
  pattern("batmmath", "sinh", CMDscience_bat_sinh, false, "", args(1,2, batarg("",flt),batarg("x",flt))),
  pattern("batmmath", "sinh", CMDscience_bat_sinh, false, "", args(1,3, batarg("",flt),batarg("x",flt),batarg("r",bit))),
+ pattern("batmmath", "sinh", CMDscience_bat_sinh, false, "", args(1,3, batarg("",flt),batarg("x",flt),batarg("r",msk))),
  pattern("batmmath", "sinh", CMDscience_bat_sinh, false, "", args(1,3, batarg("",flt),batarg("x",flt),batarg("s",oid))),
  pattern("batmmath", "sinh", CMDscience_bat_sinh, false, "", args(1,4, batarg("",flt),batarg("x",flt),batarg("s",oid),batarg("r",bit))),
+ pattern("batmmath", "sinh", CMDscience_bat_sinh, false, "", args(1,4, batarg("",flt),batarg("x",flt),batarg("s",oid),batarg("r",msk))),
  pattern("batmmath", "tanh", CMDscience_bat_tanh, false, "", args(1,2, batarg("",dbl),batarg("x",dbl))),
  pattern("batmmath", "tanh", CMDscience_bat_tanh, false, "", args(1,3, batarg("",dbl),batarg("x",dbl),batarg("r",bit))),
+ pattern("batmmath", "tanh", CMDscience_bat_tanh, false, "", args(1,3, batarg("",dbl),batarg("x",dbl),batarg("r",msk))),
  pattern("batmmath", "tanh", CMDscience_bat_tanh, false, "", args(1,3, batarg("",dbl),batarg("x",dbl),batarg("s",oid))),
  pattern("batmmath", "tanh", CMDscience_bat_tanh, false, "", args(1,4, batarg("",dbl),batarg("x",dbl),batarg("s",oid),batarg("r",bit))),
+ pattern("batmmath", "tanh", CMDscience_bat_tanh, false, "", args(1,4, batarg("",dbl),batarg("x",dbl),batarg("s",oid),batarg("r",msk))),
  pattern("batmmath", "tanh", CMDscience_bat_tanh, false, "", args(1,2, batarg("",flt),batarg("x",flt))),
  pattern("batmmath", "tanh", CMDscience_bat_tanh, false, "", args(1,3, batarg("",flt),batarg("x",flt),batarg("r",bit))),
+ pattern("batmmath", "tanh", CMDscience_bat_tanh, false, "", args(1,3, batarg("",flt),batarg("x",flt),batarg("r",msk))),
  pattern("batmmath", "tanh", CMDscience_bat_tanh, false, "", args(1,3, batarg("",flt),batarg("x",flt),batarg("s",oid))),
  pattern("batmmath", "tanh", CMDscience_bat_tanh, false, "", args(1,4, batarg("",flt),batarg("x",flt),batarg("s",oid),batarg("r",bit))),
+ pattern("batmmath", "tanh", CMDscience_bat_tanh, false, "", args(1,4, batarg("",flt),batarg("x",flt),batarg("s",oid),batarg("r",msk))),
  pattern("batmmath", "radians", CMDscience_bat_radians, false, "", args(1,2, batarg("",dbl),batarg("x",dbl))),
  pattern("batmmath", "radians", CMDscience_bat_radians, false, "", args(1,3, batarg("",dbl),batarg("x",dbl),batarg("r",bit))),
+ pattern("batmmath", "radians", CMDscience_bat_radians, false, "", args(1,3, batarg("",dbl),batarg("x",dbl),batarg("r",msk))),
  pattern("batmmath", "radians", CMDscience_bat_radians, false, "", args(1,3, batarg("",dbl),batarg("x",dbl),batarg("s",oid))),
  pattern("batmmath", "radians", CMDscience_bat_radians, false, "", args(1,4, batarg("",dbl),batarg("x",dbl),batarg("s",oid),batarg("r",bit))),
+ pattern("batmmath", "radians", CMDscience_bat_radians, false, "", args(1,4, batarg("",dbl),batarg("x",dbl),batarg("s",oid),batarg("r",msk))),
  pattern("batmmath", "radians", CMDscience_bat_radians, false, "", args(1,2, batarg("",flt),batarg("x",flt))),
  pattern("batmmath", "radians", CMDscience_bat_radians, false, "", args(1,3, batarg("",flt),batarg("x",flt),batarg("r",bit))),
+ pattern("batmmath", "radians", CMDscience_bat_radians, false, "", args(1,3, batarg("",flt),batarg("x",flt),batarg("r",msk))),
  pattern("batmmath", "radians", CMDscience_bat_radians, false, "", args(1,3, batarg("",flt),batarg("x",flt),batarg("s",oid))),
  pattern("batmmath", "radians", CMDscience_bat_radians, false, "", args(1,4, batarg("",flt),batarg("x",flt),batarg("s",oid),batarg("r",bit))),
+ pattern("batmmath", "radians", CMDscience_bat_radians, false, "", args(1,4, batarg("",flt),batarg("x",flt),batarg("s",oid),batarg("r",msk))),
  pattern("batmmath", "degrees", CMDscience_bat_degrees, false, "", args(1,2, batarg("",dbl),batarg("x",dbl))),
  pattern("batmmath", "degrees", CMDscience_bat_degrees, false, "", args(1,3, batarg("",dbl),batarg("x",dbl),batarg("r",bit))),
+ pattern("batmmath", "degrees", CMDscience_bat_degrees, false, "", args(1,3, batarg("",dbl),batarg("x",dbl),batarg("r",msk))),
  pattern("batmmath", "degrees", CMDscience_bat_degrees, false, "", args(1,3, batarg("",dbl),batarg("x",dbl),batarg("s",oid))),
  pattern("batmmath", "degrees", CMDscience_bat_degrees, false, "", args(1,4, batarg("",dbl),batarg("x",dbl),batarg("s",oid),batarg("r",bit))),
+ pattern("batmmath", "degrees", CMDscience_bat_degrees, false, "", args(1,4, batarg("",dbl),batarg("x",dbl),batarg("s",oid),batarg("r",msk))),
  pattern("batmmath", "degrees", CMDscience_bat_degrees, false, "", args(1,2, batarg("",flt),batarg("x",flt))),
  pattern("batmmath", "degrees", CMDscience_bat_degrees, false, "", args(1,3, batarg("",flt),batarg("x",flt),batarg("r",bit))),
+ pattern("batmmath", "degrees", CMDscience_bat_degrees, false, "", args(1,3, batarg("",flt),batarg("x",flt),batarg("r",msk))),
  pattern("batmmath", "degrees", CMDscience_bat_degrees, false, "", args(1,3, batarg("",flt),batarg("x",flt),batarg("s",oid))),
  pattern("batmmath", "degrees", CMDscience_bat_degrees, false, "", args(1,4, batarg("",flt),batarg("x",flt),batarg("s",oid),batarg("r",bit))),
+ pattern("batmmath", "degrees", CMDscience_bat_degrees, false, "", args(1,4, batarg("",flt),batarg("x",flt),batarg("s",oid),batarg("r",msk))),
  pattern("batmmath", "exp", CMDscience_bat_exp, false, "", args(1,2, batarg("",dbl),batarg("x",dbl))),
  pattern("batmmath", "exp", CMDscience_bat_exp, false, "", args(1,3, batarg("",dbl),batarg("x",dbl),batarg("r",bit))),
+ pattern("batmmath", "exp", CMDscience_bat_exp, false, "", args(1,3, batarg("",dbl),batarg("x",dbl),batarg("r",msk))),
  pattern("batmmath", "exp", CMDscience_bat_exp, false, "", args(1,3, batarg("",dbl),batarg("x",dbl),batarg("s",oid))),
  pattern("batmmath", "exp", CMDscience_bat_exp, false, "", args(1,4, batarg("",dbl),batarg("x",dbl),batarg("s",oid),batarg("r",bit))),
+ pattern("batmmath", "exp", CMDscience_bat_exp, false, "", args(1,4, batarg("",dbl),batarg("x",dbl),batarg("s",oid),batarg("r",msk))),
  pattern("batmmath", "exp", CMDscience_bat_exp, false, "", args(1,2, batarg("",flt),batarg("x",flt))),
  pattern("batmmath", "exp", CMDscience_bat_exp, false, "", args(1,3, batarg("",flt),batarg("x",flt),batarg("r",bit))),
+ pattern("batmmath", "exp", CMDscience_bat_exp, false, "", args(1,3, batarg("",flt),batarg("x",flt),batarg("r",msk))),
  pattern("batmmath", "exp", CMDscience_bat_exp, false, "", args(1,3, batarg("",flt),batarg("x",flt),batarg("s",oid))),
  pattern("batmmath", "exp", CMDscience_bat_exp, false, "", args(1,4, batarg("",flt),batarg("x",flt),batarg("s",oid),batarg("r",bit))),
+ pattern("batmmath", "exp", CMDscience_bat_exp, false, "", args(1,4, batarg("",flt),batarg("x",flt),batarg("s",oid),batarg("r",msk))),
  pattern("batmmath", "log", CMDscience_bat_log, false, "", args(1,2, batarg("",dbl),batarg("x",dbl))),
  pattern("batmmath", "log", CMDscience_bat_log, false, "", args(1,3, batarg("",dbl),batarg("x",dbl),batarg("r",bit))),
+ pattern("batmmath", "log", CMDscience_bat_log, false, "", args(1,3, batarg("",dbl),batarg("x",dbl),batarg("r",msk))),
  pattern("batmmath", "log", CMDscience_bat_log, false, "", args(1,3, batarg("",dbl),batarg("x",dbl),batarg("s",oid))),
  pattern("batmmath", "log", CMDscience_bat_log, false, "", args(1,4, batarg("",dbl),batarg("x",dbl),batarg("s",oid),batarg("r",bit))),
+ pattern("batmmath", "log", CMDscience_bat_log, false, "", args(1,4, batarg("",dbl),batarg("x",dbl),batarg("s",oid),batarg("r",msk))),
  pattern("batmmath", "log", CMDscience_bat_log, false, "", args(1,2, batarg("",flt),batarg("x",flt))),
  pattern("batmmath", "log", CMDscience_bat_log, false, "", args(1,3, batarg("",flt),batarg("x",flt),batarg("r",bit))),
+ pattern("batmmath", "log", CMDscience_bat_log, false, "", args(1,3, batarg("",flt),batarg("x",flt),batarg("r",msk))),
  pattern("batmmath", "log", CMDscience_bat_log, false, "", args(1,3, batarg("",flt),batarg("x",flt),batarg("s",oid))),
  pattern("batmmath", "log", CMDscience_bat_log, false, "", args(1,4, batarg("",flt),batarg("x",flt),batarg("s",oid),batarg("r",bit))),
+ pattern("batmmath", "log", CMDscience_bat_log, false, "", args(1,4, batarg("",flt),batarg("x",flt),batarg("s",oid),batarg("r",msk))),
  pattern("batmmath", "log10", CMDscience_bat_log10, false, "", args(1,2, batarg("",dbl),batarg("x",dbl))),
  pattern("batmmath", "log10", CMDscience_bat_log10, false, "", args(1,3, batarg("",dbl),batarg("x",dbl),batarg("r",bit))),
+ pattern("batmmath", "log10", CMDscience_bat_log10, false, "", args(1,3, batarg("",dbl),batarg("x",dbl),batarg("r",msk))),
  pattern("batmmath", "log10", CMDscience_bat_log10, false, "", args(1,3, batarg("",dbl),batarg("x",dbl),batarg("s",oid))),
  pattern("batmmath", "log10", CMDscience_bat_log10, false, "", args(1,4, batarg("",dbl),batarg("x",dbl),batarg("s",oid),batarg("r",bit))),
+ pattern("batmmath", "log10", CMDscience_bat_log10, false, "", args(1,4, batarg("",dbl),batarg("x",dbl),batarg("s",oid),batarg("r",msk))),
  pattern("batmmath", "log10", CMDscience_bat_log10, false, "", args(1,2, batarg("",flt),batarg("x",flt))),
  pattern("batmmath", "log10", CMDscience_bat_log10, false, "", args(1,3, batarg("",flt),batarg("x",flt),batarg("r",bit))),
+ pattern("batmmath", "log10", CMDscience_bat_log10, false, "", args(1,3, batarg("",flt),batarg("x",flt),batarg("r",msk))),
  pattern("batmmath", "log10", CMDscience_bat_log10, false, "", args(1,3, batarg("",flt),batarg("x",flt),batarg("s",oid))),
  pattern("batmmath", "log10", CMDscience_bat_log10, false, "", args(1,4, batarg("",flt),batarg("x",flt),batarg("s",oid),batarg("r",bit))),
+ pattern("batmmath", "log10", CMDscience_bat_log10, false, "", args(1,4, batarg("",flt),batarg("x",flt),batarg("s",oid),batarg("r",msk))),
  pattern("batmmath", "log2", CMDscience_bat_log2, false, "", args(1,2, batarg("",dbl),batarg("x",dbl))),
  pattern("batmmath", "log2", CMDscience_bat_log2, false, "", args(1,3, batarg("",dbl),batarg("x",dbl),batarg("r",bit))),
+ pattern("batmmath", "log2", CMDscience_bat_log2, false, "", args(1,3, batarg("",dbl),batarg("x",dbl),batarg("r",msk))),
  pattern("batmmath", "log2", CMDscience_bat_log2, false, "", args(1,3, batarg("",dbl),batarg("x",dbl),batarg("s",oid))),
  pattern("batmmath", "log2", CMDscience_bat_log2, false, "", args(1,4, batarg("",dbl),batarg("x",dbl),batarg("s",oid),batarg("r",bit))),
+ pattern("batmmath", "log2", CMDscience_bat_log2, false, "", args(1,4, batarg("",dbl),batarg("x",dbl),batarg("s",oid),batarg("r",msk))),
  pattern("batmmath", "log2", CMDscience_bat_log2, false, "", args(1,2, batarg("",flt),batarg("x",flt))),
  pattern("batmmath", "log2", CMDscience_bat_log2, false, "", args(1,3, batarg("",flt),batarg("x",flt),batarg("r",bit))),
+ pattern("batmmath", "log2", CMDscience_bat_log2, false, "", args(1,3, batarg("",flt),batarg("x",flt),batarg("r",msk))),
  pattern("batmmath", "log2", CMDscience_bat_log2, false, "", args(1,3, batarg("",flt),batarg("x",flt),batarg("s",oid))),
  pattern("batmmath", "log2", CMDscience_bat_log2, false, "", args(1,4, batarg("",flt),batarg("x",flt),batarg("s",oid),batarg("r",bit))),
+ pattern("batmmath", "log2", CMDscience_bat_log2, false, "", args(1,4, batarg("",flt),batarg("x",flt),batarg("s",oid),batarg("r",msk))),
  pattern("batmmath", "log", CMDscience_bat_logbs, false, "", args(1,3, batarg("",dbl),batarg("x",dbl),arg("y",dbl))),
  pattern("batmmath", "log", CMDscience_bat_logbs, false, "", args(1,4, batarg("",dbl),batarg("x",dbl),arg("y",dbl),batarg("r",bit))),
+ pattern("batmmath", "log", CMDscience_bat_logbs, false, "", args(1,4, batarg("",dbl),batarg("x",dbl),arg("y",dbl),batarg("r",msk))),
  pattern("batmmath", "log", CMDscience_bat_logbs, false, "", args(1,4, batarg("",dbl),batarg("x",dbl),arg("y",dbl),batarg("s",oid))),
  pattern("batmmath", "log", CMDscience_bat_logbs, false, "", args(1,5, batarg("",dbl),batarg("x",dbl),arg("y",dbl),batarg("s",oid),batarg("r",bit))),
+ pattern("batmmath", "log", CMDscience_bat_logbs, false, "", args(1,5, batarg("",dbl),batarg("x",dbl),arg("y",dbl),batarg("s",oid),batarg("r",msk))),
  pattern("batmmath", "log", CMDscience_bat_logbs, false, "", args(1,3, batarg("",flt),batarg("x",flt),arg("y",flt))),
  pattern("batmmath", "log", CMDscience_bat_logbs, false, "", args(1,4, batarg("",flt),batarg("x",flt),arg("y",flt),batarg("r",bit))),
+ pattern("batmmath", "log", CMDscience_bat_logbs, false, "", args(1,4, batarg("",flt),batarg("x",flt),arg("y",flt),batarg("r",msk))),
  pattern("batmmath", "log", CMDscience_bat_logbs, false, "", args(1,4, batarg("",flt),batarg("x",flt),arg("y",flt),batarg("s",oid))),
  pattern("batmmath", "log", CMDscience_bat_logbs, false, "", args(1,5, batarg("",flt),batarg("x",flt),arg("y",flt),batarg("s",oid),batarg("r",bit))),
+ pattern("batmmath", "log", CMDscience_bat_logbs, false, "", args(1,5, batarg("",flt),batarg("x",flt),arg("y",flt),batarg("s",oid),batarg("r",msk))),
  pattern("batmmath", "log", CMDscience_bat_logbs, false, "", args(1,3, batarg("",dbl),arg("x",dbl),batarg("y",dbl))),
  pattern("batmmath", "log", CMDscience_bat_logbs, false, "", args(1,4, batarg("",dbl),arg("x",dbl),batarg("y",dbl),batarg("r",bit))),
+ pattern("batmmath", "log", CMDscience_bat_logbs, false, "", args(1,4, batarg("",dbl),arg("x",dbl),batarg("y",dbl),batarg("r",msk))),
  pattern("batmmath", "log", CMDscience_bat_logbs, false, "", args(1,4, batarg("",dbl),arg("x",dbl),batarg("y",dbl),batarg("s",oid))),
  pattern("batmmath", "log", CMDscience_bat_logbs, false, "", args(1,5, batarg("",dbl),arg("x",dbl),batarg("y",dbl),batarg("s",oid),batarg("r",bit))),
+ pattern("batmmath", "log", CMDscience_bat_logbs, false, "", args(1,5, batarg("",dbl),arg("x",dbl),batarg("y",dbl),batarg("s",oid),batarg("r",msk))),
  pattern("batmmath", "log", CMDscience_bat_logbs, false, "", args(1,3, batarg("",flt),arg("x",flt),batarg("y",flt))),
  pattern("batmmath", "log", CMDscience_bat_logbs, false, "", args(1,4, batarg("",flt),arg("x",flt),batarg("y",flt),batarg("r",bit))),
+ pattern("batmmath", "log", CMDscience_bat_logbs, false, "", args(1,4, batarg("",flt),arg("x",flt),batarg("y",flt),batarg("r",msk))),
  pattern("batmmath", "log", CMDscience_bat_logbs, false, "", args(1,4, batarg("",flt),arg("x",flt),batarg("y",flt),batarg("s",oid))),
  pattern("batmmath", "log", CMDscience_bat_logbs, false, "", args(1,5, batarg("",flt),arg("x",flt),batarg("y",flt),batarg("s",oid),batarg("r",bit))),
+ pattern("batmmath", "log", CMDscience_bat_logbs, false, "", args(1,5, batarg("",flt),arg("x",flt),batarg("y",flt),batarg("s",oid),batarg("r",msk))),
  pattern("batmmath", "sqrt", CMDscience_bat_sqrt, false, "", args(1,2, batarg("",dbl),batarg("x",dbl))),
  pattern("batmmath", "sqrt", CMDscience_bat_sqrt, false, "", args(1,3, batarg("",dbl),batarg("x",dbl),batarg("r",bit))),
+ pattern("batmmath", "sqrt", CMDscience_bat_sqrt, false, "", args(1,3, batarg("",dbl),batarg("x",dbl),batarg("r",msk))),
  pattern("batmmath", "sqrt", CMDscience_bat_sqrt, false, "", args(1,3, batarg("",dbl),batarg("x",dbl),batarg("s",oid))),
  pattern("batmmath", "sqrt", CMDscience_bat_sqrt, false, "", args(1,4, batarg("",dbl),batarg("x",dbl),batarg("s",oid),batarg("r",bit))),
+ pattern("batmmath", "sqrt", CMDscience_bat_sqrt, false, "", args(1,4, batarg("",dbl),batarg("x",dbl),batarg("s",oid),batarg("r",msk))),
  pattern("batmmath", "sqrt", CMDscience_bat_sqrt, false, "", args(1,2, batarg("",flt),batarg("x",flt))),
  pattern("batmmath", "sqrt", CMDscience_bat_sqrt, false, "", args(1,3, batarg("",flt),batarg("x",flt),batarg("r",bit))),
+ pattern("batmmath", "sqrt", CMDscience_bat_sqrt, false, "", args(1,3, batarg("",flt),batarg("x",flt),batarg("r",msk))),
  pattern("batmmath", "sqrt", CMDscience_bat_sqrt, false, "", args(1,3, batarg("",flt),batarg("x",flt),batarg("s",oid))),
  pattern("batmmath", "sqrt", CMDscience_bat_sqrt, false, "", args(1,4, batarg("",flt),batarg("x",flt),batarg("s",oid),batarg("r",bit))),
+ pattern("batmmath", "sqrt", CMDscience_bat_sqrt, false, "", args(1,4, batarg("",flt),batarg("x",flt),batarg("s",oid),batarg("r",msk))),
  pattern("batmmath", "cbrt", CMDscience_bat_cbrt, false, "", args(1,2, batarg("",dbl),batarg("x",dbl))),
  pattern("batmmath", "cbrt", CMDscience_bat_cbrt, false, "", args(1,3, batarg("",dbl),batarg("x",dbl),batarg("r",bit))),
+ pattern("batmmath", "cbrt", CMDscience_bat_cbrt, false, "", args(1,3, batarg("",dbl),batarg("x",dbl),batarg("r",msk))),
  pattern("batmmath", "cbrt", CMDscience_bat_cbrt, false, "", args(1,3, batarg("",dbl),batarg("x",dbl),batarg("s",oid))),
  pattern("batmmath", "cbrt", CMDscience_bat_cbrt, false, "", args(1,4, batarg("",dbl),batarg("x",dbl),batarg("s",oid),batarg("r",bit))),
+ pattern("batmmath", "cbrt", CMDscience_bat_cbrt, false, "", args(1,4, batarg("",dbl),batarg("x",dbl),batarg("s",oid),batarg("r",msk))),
  pattern("batmmath", "cbrt", CMDscience_bat_cbrt, false, "", args(1,2, batarg("",flt),batarg("x",flt))),
  pattern("batmmath", "cbrt", CMDscience_bat_cbrt, false, "", args(1,3, batarg("",flt),batarg("x",flt),batarg("r",bit))),
+ pattern("batmmath", "cbrt", CMDscience_bat_cbrt, false, "", args(1,3, batarg("",flt),batarg("x",flt),batarg("r",msk))),
  pattern("batmmath", "cbrt", CMDscience_bat_cbrt, false, "", args(1,3, batarg("",flt),batarg("x",flt),batarg("s",oid))),
  pattern("batmmath", "cbrt", CMDscience_bat_cbrt, false, "", args(1,4, batarg("",flt),batarg("x",flt),batarg("s",oid),batarg("r",bit))),
+ pattern("batmmath", "cbrt", CMDscience_bat_cbrt, false, "", args(1,4, batarg("",flt),batarg("x",flt),batarg("s",oid),batarg("r",msk))),
  pattern("batmmath", "ceil", CMDscience_bat_ceil, false, "", args(1,2, batarg("",dbl),batarg("x",dbl))),
  pattern("batmmath", "ceil", CMDscience_bat_ceil, false, "", args(1,3, batarg("",dbl),batarg("x",dbl),batarg("r",bit))),
+ pattern("batmmath", "ceil", CMDscience_bat_ceil, false, "", args(1,3, batarg("",dbl),batarg("x",dbl),batarg("r",msk))),
  pattern("batmmath", "ceil", CMDscience_bat_ceil, false, "", args(1,3, batarg("",dbl),batarg("x",dbl),batarg("s",oid))),
  pattern("batmmath", "ceil", CMDscience_bat_ceil, false, "", args(1,4, batarg("",dbl),batarg("x",dbl),batarg("s",oid),batarg("r",bit))),
+ pattern("batmmath", "ceil", CMDscience_bat_ceil, false, "", args(1,4, batarg("",dbl),batarg("x",dbl),batarg("s",oid),batarg("r",msk))),
  pattern("batmmath", "ceil", CMDscience_bat_ceil, false, "", args(1,2, batarg("",flt),batarg("x",flt))),
  pattern("batmmath", "ceil", CMDscience_bat_ceil, false, "", args(1,3, batarg("",flt),batarg("x",flt),batarg("r",bit))),
+ pattern("batmmath", "ceil", CMDscience_bat_ceil, false, "", args(1,3, batarg("",flt),batarg("x",flt),batarg("r",msk))),
  pattern("batmmath", "ceil", CMDscience_bat_ceil, false, "", args(1,3, batarg("",flt),batarg("x",flt),batarg("s",oid))),
  pattern("batmmath", "ceil", CMDscience_bat_ceil, false, "", args(1,4, batarg("",flt),batarg("x",flt),batarg("s",oid),batarg("r",bit))),
+ pattern("batmmath", "ceil", CMDscience_bat_ceil, false, "", args(1,4, batarg("",flt),batarg("x",flt),batarg("s",oid),batarg("r",msk))),
  pattern("batmmath", "fabs", CMDscience_bat_fabs, false, "", args(1,2, batarg("",dbl),batarg("x",dbl))),
  pattern("batmmath", "fabs", CMDscience_bat_fabs, false, "", args(1,3, batarg("",dbl),batarg("x",dbl),batarg("r",bit))),
+ pattern("batmmath", "fabs", CMDscience_bat_fabs, false, "", args(1,3, batarg("",dbl),batarg("x",dbl),batarg("r",msk))),
  pattern("batmmath", "fabs", CMDscience_bat_fabs, false, "", args(1,3, batarg("",dbl),batarg("x",dbl),batarg("s",oid))),
  pattern("batmmath", "fabs", CMDscience_bat_fabs, false, "", args(1,4, batarg("",dbl),batarg("x",dbl),batarg("s",oid),batarg("r",bit))),
+ pattern("batmmath", "fabs", CMDscience_bat_fabs, false, "", args(1,4, batarg("",dbl),batarg("x",dbl),batarg("s",oid),batarg("r",msk))),
  pattern("batmmath", "fabs", CMDscience_bat_fabs, false, "", args(1,2, batarg("",flt),batarg("x",flt))),
  pattern("batmmath", "fabs", CMDscience_bat_fabs, false, "", args(1,3, batarg("",flt),batarg("x",flt),batarg("r",bit))),
+ pattern("batmmath", "fabs", CMDscience_bat_fabs, false, "", args(1,3, batarg("",flt),batarg("x",flt),batarg("r",msk))),
  pattern("batmmath", "fabs", CMDscience_bat_fabs, false, "", args(1,3, batarg("",flt),batarg("x",flt),batarg("s",oid))),
  pattern("batmmath", "fabs", CMDscience_bat_fabs, false, "", args(1,4, batarg("",flt),batarg("x",flt),batarg("s",oid),batarg("r",bit))),
+ pattern("batmmath", "fabs", CMDscience_bat_fabs, false, "", args(1,4, batarg("",flt),batarg("x",flt),batarg("s",oid),batarg("r",msk))),
  pattern("batmmath", "floor", CMDscience_bat_floor, false, "", args(1,2, batarg("",dbl),batarg("x",dbl))),
  pattern("batmmath", "floor", CMDscience_bat_floor, false, "", args(1,3, batarg("",dbl),batarg("x",dbl),batarg("r",bit))),
+ pattern("batmmath", "floor", CMDscience_bat_floor, false, "", args(1,3, batarg("",dbl),batarg("x",dbl),batarg("r",msk))),
  pattern("batmmath", "floor", CMDscience_bat_floor, false, "", args(1,3, batarg("",dbl),batarg("x",dbl),batarg("s",oid))),
  pattern("batmmath", "floor", CMDscience_bat_floor, false, "", args(1,4, batarg("",dbl),batarg("x",dbl),batarg("s",oid),batarg("r",bit))),
+ pattern("batmmath", "floor", CMDscience_bat_floor, false, "", args(1,4, batarg("",dbl),batarg("x",dbl),batarg("s",oid),batarg("r",msk))),
  pattern("batmmath", "floor", CMDscience_bat_floor, false, "", args(1,2, batarg("",flt),batarg("x",flt))),
  pattern("batmmath", "floor", CMDscience_bat_floor, false, "", args(1,3, batarg("",flt),batarg("x",flt),batarg("r",bit))),
+ pattern("batmmath", "floor", CMDscience_bat_floor, false, "", args(1,3, batarg("",flt),batarg("x",flt),batarg("r",msk))),
  pattern("batmmath", "floor", CMDscience_bat_floor, false, "", args(1,3, batarg("",flt),batarg("x",flt),batarg("s",oid))),
  pattern("batmmath", "floor", CMDscience_bat_floor, false, "", args(1,4, batarg("",flt),batarg("x",flt),batarg("s",oid),batarg("r",bit))),
+ pattern("batmmath", "floor", CMDscience_bat_floor, false, "", args(1,4, batarg("",flt),batarg("x",flt),batarg("s",oid),batarg("r",msk))),
  pattern("batmmath", "atan2", CMDscience_bat_atan2, false, "", args(1,3, batarg("",dbl),batarg("x",dbl),arg("y",dbl))),
  pattern("batmmath", "atan2", CMDscience_bat_atan2, false, "", args(1,4, batarg("",dbl),batarg("x",dbl),arg("y",dbl),batarg("r",bit))),
+ pattern("batmmath", "atan2", CMDscience_bat_atan2, false, "", args(1,4, batarg("",dbl),batarg("x",dbl),arg("y",dbl),batarg("r",msk))),
  pattern("batmmath", "atan2", CMDscience_bat_atan2, false, "", args(1,4, batarg("",dbl),batarg("x",dbl),arg("y",dbl),batarg("s",oid))),
  pattern("batmmath", "atan2", CMDscience_bat_atan2, false, "", args(1,5, batarg("",dbl),batarg("x",dbl),arg("y",dbl),batarg("s",oid),batarg("r",bit))),
+ pattern("batmmath", "atan2", CMDscience_bat_atan2, false, "", args(1,5, batarg("",dbl),batarg("x",dbl),arg("y",dbl),batarg("s",oid),batarg("r",msk))),
  pattern("batmmath", "atan2", CMDscience_bat_atan2, false, "", args(1,3, batarg("",flt),batarg("x",flt),arg("y",flt))),
  pattern("batmmath", "atan2", CMDscience_bat_atan2, false, "", args(1,4, batarg("",flt),batarg("x",flt),arg("y",flt),batarg("r",bit))),
+ pattern("batmmath", "atan2", CMDscience_bat_atan2, false, "", args(1,4, batarg("",flt),batarg("x",flt),arg("y",flt),batarg("r",msk))),
  pattern("batmmath", "atan2", CMDscience_bat_atan2, false, "", args(1,4, batarg("",flt),batarg("x",flt),arg("y",flt),batarg("s",oid))),
  pattern("batmmath", "atan2", CMDscience_bat_atan2, false, "", args(1,5, batarg("",flt),batarg("x",flt),arg("y",flt),batarg("s",oid),batarg("r",bit))),
+ pattern("batmmath", "atan2", CMDscience_bat_atan2, false, "", args(1,5, batarg("",flt),batarg("x",flt),arg("y",flt),batarg("s",oid),batarg("r",msk))),
  pattern("batmmath", "atan2", CMDscience_bat_atan2, false, "", args(1,3, batarg("",dbl),arg("x",dbl),batarg("y",dbl))),
  pattern("batmmath", "atan2", CMDscience_bat_atan2, false, "", args(1,4, batarg("",dbl),arg("x",dbl),batarg("y",dbl),batarg("r",bit))),
+ pattern("batmmath", "atan2", CMDscience_bat_atan2, false, "", args(1,4, batarg("",dbl),arg("x",dbl),batarg("y",dbl),batarg("r",msk))),
  pattern("batmmath", "atan2", CMDscience_bat_atan2, false, "", args(1,4, batarg("",dbl),arg("x",dbl),batarg("y",dbl),batarg("s",oid))),
  pattern("batmmath", "atan2", CMDscience_bat_atan2, false, "", args(1,5, batarg("",dbl),arg("x",dbl),batarg("y",dbl),batarg("s",oid),batarg("r",bit))),
+ pattern("batmmath", "atan2", CMDscience_bat_atan2, false, "", args(1,5, batarg("",dbl),arg("x",dbl),batarg("y",dbl),batarg("s",oid),batarg("r",msk))),
  pattern("batmmath", "atan2", CMDscience_bat_atan2, false, "", args(1,3, batarg("",flt),arg("x",flt),batarg("y",flt))),
  pattern("batmmath", "atan2", CMDscience_bat_atan2, false, "", args(1,4, batarg("",flt),arg("x",flt),batarg("y",flt),batarg("r",bit))),
+ pattern("batmmath", "atan2", CMDscience_bat_atan2, false, "", args(1,4, batarg("",flt),arg("x",flt),batarg("y",flt),batarg("r",msk))),
  pattern("batmmath", "atan2", CMDscience_bat_atan2, false, "", args(1,4, batarg("",flt),arg("x",flt),batarg("y",flt),batarg("s",oid))),
  pattern("batmmath", "atan2", CMDscience_bat_atan2, false, "", args(1,5, batarg("",flt),arg("x",flt),batarg("y",flt),batarg("s",oid),batarg("r",bit))),
+ pattern("batmmath", "atan2", CMDscience_bat_atan2, false, "", args(1,5, batarg("",flt),arg("x",flt),batarg("y",flt),batarg("s",oid),batarg("r",msk))),
  pattern("batmmath", "pow", CMDscience_bat_pow, false, "", args(1,3, batarg("",dbl),batarg("x",dbl),arg("y",dbl))),
  pattern("batmmath", "pow", CMDscience_bat_pow, false, "", args(1,4, batarg("",dbl),batarg("x",dbl),arg("y",dbl),batarg("r",bit))),
+ pattern("batmmath", "pow", CMDscience_bat_pow, false, "", args(1,4, batarg("",dbl),batarg("x",dbl),arg("y",dbl),batarg("r",msk))),
  pattern("batmmath", "pow", CMDscience_bat_pow, false, "", args(1,4, batarg("",dbl),batarg("x",dbl),arg("y",dbl),batarg("s",oid))),
  pattern("batmmath", "pow", CMDscience_bat_pow, false, "", args(1,5, batarg("",dbl),batarg("x",dbl),arg("y",dbl),batarg("s",oid),batarg("r",bit))),
+ pattern("batmmath", "pow", CMDscience_bat_pow, false, "", args(1,5, batarg("",dbl),batarg("x",dbl),arg("y",dbl),batarg("s",oid),batarg("r",msk))),
  pattern("batmmath", "pow", CMDscience_bat_pow, false, "", args(1,3, batarg("",flt),batarg("x",flt),arg("y",flt))),
  pattern("batmmath", "pow", CMDscience_bat_pow, false, "", args(1,4, batarg("",flt),batarg("x",flt),arg("y",flt),batarg("r",bit))),
+ pattern("batmmath", "pow", CMDscience_bat_pow, false, "", args(1,4, batarg("",flt),batarg("x",flt),arg("y",flt),batarg("r",msk))),
  pattern("batmmath", "pow", CMDscience_bat_pow, false, "", args(1,4, batarg("",flt),batarg("x",flt),arg("y",flt),batarg("s",oid))),
  pattern("batmmath", "pow", CMDscience_bat_pow, false, "", args(1,5, batarg("",flt),batarg("x",flt),arg("y",flt),batarg("s",oid),batarg("r",bit))),
+ pattern("batmmath", "pow", CMDscience_bat_pow, false, "", args(1,5, batarg("",flt),batarg("x",flt),arg("y",flt),batarg("s",oid),batarg("r",msk))),
  pattern("batmmath", "pow", CMDscience_bat_pow, false, "", args(1,3, batarg("",dbl),arg("x",dbl),batarg("y",dbl))),
  pattern("batmmath", "pow", CMDscience_bat_pow, false, "", args(1,4, batarg("",dbl),arg("x",dbl),batarg("y",dbl),batarg("r",bit))),
+ pattern("batmmath", "pow", CMDscience_bat_pow, false, "", args(1,4, batarg("",dbl),arg("x",dbl),batarg("y",dbl),batarg("r",msk))),
  pattern("batmmath", "pow", CMDscience_bat_pow, false, "", args(1,4, batarg("",dbl),arg("x",dbl),batarg("y",dbl),batarg("s",oid))),
  pattern("batmmath", "pow", CMDscience_bat_pow, false, "", args(1,5, batarg("",dbl),arg("x",dbl),batarg("y",dbl),batarg("s",oid),batarg("r",bit))),
+ pattern("batmmath", "pow", CMDscience_bat_pow, false, "", args(1,5, batarg("",dbl),arg("x",dbl),batarg("y",dbl),batarg("s",oid),batarg("r",msk))),
  pattern("batmmath", "pow", CMDscience_bat_pow, false, "", args(1,3, batarg("",flt),arg("x",flt),batarg("y",flt))),
  pattern("batmmath", "pow", CMDscience_bat_pow, false, "", args(1,4, batarg("",flt),arg("x",flt),batarg("y",flt),batarg("r",bit))),
+ pattern("batmmath", "pow", CMDscience_bat_pow, false, "", args(1,4, batarg("",flt),arg("x",flt),batarg("y",flt),batarg("r",msk))),
  pattern("batmmath", "pow", CMDscience_bat_pow, false, "", args(1,4, batarg("",flt),arg("x",flt),batarg("y",flt),batarg("s",oid))),
  pattern("batmmath", "pow", CMDscience_bat_pow, false, "", args(1,5, batarg("",flt),arg("x",flt),batarg("y",flt),batarg("s",oid),batarg("r",bit))),
+ pattern("batmmath", "pow", CMDscience_bat_pow, false, "", args(1,5, batarg("",flt),arg("x",flt),batarg("y",flt),batarg("s",oid),batarg("r",msk))),
  { .imp=NULL }
 };
 #include "mal_import.h"

@@ -1470,26 +1470,26 @@ BATselect(BAT *b, BAT *s, const void *tl, const void *th,
 			if (b->tsorted) {
 				BUN first = SORTfndlast(b, nil);
 				/* match: [first..low) + [high..last) */
-				bn = canditer_slice2(&ci,
-						     canditer_search(&ci, first + b->hseqbase, true),
-						     canditer_search(&ci, low + b->hseqbase, true),
-						     canditer_search(&ci, high + b->hseqbase, true),
-						     ci.ncand);
+				bn = canditer_slice2val(&ci,
+							first + b->hseqbase,
+							low + b->hseqbase,
+							high + b->hseqbase,
+							oid_nil);
 			} else {
 				BUN last = SORTfndfirst(b, nil);
 				/* match: [first..low) + [high..last) */
-				bn = canditer_slice2(&ci,
-						     0,
-						     canditer_search(&ci, low + b->hseqbase, true),
-						     canditer_search(&ci, high + b->hseqbase, true),
-						     canditer_search(&ci, last + b->hseqbase, true));
+				bn = canditer_slice2val(&ci,
+							oid_nil,
+							low + b->hseqbase,
+							high + b->hseqbase,
+							last + b->hseqbase);
 			}
 		} else {
 			if (b->tsorted || b->trevsorted) {
 				/* match: [low..high) */
-				bn = canditer_slice(&ci,
-						    canditer_search(&ci, low + b->hseqbase, true),
-						    canditer_search(&ci, high + b->hseqbase, true));
+				bn = canditer_sliceval(&ci,
+						       low + b->hseqbase,
+						       high + b->hseqbase);
 			} else {
 				BUN i;
 				BUN cnt = 0;

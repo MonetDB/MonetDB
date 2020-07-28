@@ -1,0 +1,12 @@
+stdout of test 'msk002` in directory 'monetdb5/mal` itself:
+
+
+# 12:40:01 >  
+# 12:40:01 >  "mclient" "-lmal" "-ftest" "-tnone" "-Eutf-8" "--host=/var/tmp/mtest-4031653" "--port=31360"
+# 12:40:01 >  
+Need to be provided
+
+# 12:40:01 >  
+# 12:40:01 >  "Done."
+# 12:40:01 >  
+

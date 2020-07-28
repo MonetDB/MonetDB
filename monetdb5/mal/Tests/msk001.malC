@@ -1,0 +1,20 @@
+# create a simple MSK BAT by appending values
+# The MSK should behave like any other BAT although it only holds values from {0,1}
+
+bv1:= bat.new(:msk);
+bat.append(bv1,1:msk);
+bat.append(bv1,1:msk);
+bat.append(bv1,0:msk);
+bat.append(bv1,1:msk);
+
+io.print(bv1); # this should produce (1,1,0,1)
+
+# select all elements that are not set
+cnd:bat[:oid]:= algebra.select(bv1, nil:bat[:oid], 0, 0, true, true, false);
+
+io.print(f); # returns 2@0:oid
+
+# select operations can also return a MASK
+m:bat[:msk]:= algebra.select(bv1, nil:bat[:oid], 0, 0, true, true, false);
+
+io.print(m); # produce 0,0,1

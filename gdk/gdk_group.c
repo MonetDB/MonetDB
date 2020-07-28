@@ -607,10 +607,8 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 
 	if (cnt == 0) {
 		hseqb = 0;
-	} else if (s) {
-		hseqb = s->hseqbase + ci.offset;
 	} else {
-		hseqb = b->hseqbase;
+		hseqb = ci.seq;
 	}
 	if (b->tkey || cnt <= 1 || (g && (g->tkey || BATtdense(g)))) {
 		/* grouping is trivial: 1 element per group */

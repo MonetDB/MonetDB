@@ -505,6 +505,170 @@ append_varsized_bat(BAT *b, BAT *n, struct canditer *ci, bool mayshare)
 	return GDK_SUCCEED;
 }
 
+static gdk_return
+append_msk_bat(BAT *b, BAT *n, struct canditer *ci)
+{
+	uint32_t boff = b->batCount % 32;
+	uint32_t *bp = (uint32_t *) b->theap->base + b->batCount / 32;
+
+	if (ci->ncand == 0)
+		return GDK_SUCCEED;
+	if (ci->tpe == cand_dense) {
+		uint32_t *np;
+		uint32_t noff, mask;
+		BUN cnt;
+		noff = (ci->seq - n->tseqbase) % 32;
+		cnt = ci->ncand;
+		np = (uint32_t *) n->theap->base + (ci->seq - n->tseqbase) / 32;
+		b->batCount += cnt;
+		if (boff == noff) {
+			/* words of b and n are aligned, so we don't
+			 * need to shift bits around */
+			if (boff + cnt <= 32) {
+				/* all new bits within one word */
+				if (cnt == 32) {
+					*bp = *np;
+				} else {
+					mask = ((1U << cnt) - 1) << boff;
+					*bp &= ~mask;
+					*bp |= *np & mask;
+				}
+				return GDK_SUCCEED;
+			}
+			/* multiple words of b are affected */
+			if (boff != 0) {
+				/* first fill up the rest of the first
+				 * word */
+				mask = ~0U << boff;
+				*bp &= ~mask;
+				*bp++ |= *np++ & mask;
+				cnt -= 32 - boff;
+			}
+			if (cnt >= 32) {
+				/* copy an integral number of words fast */
+				BUN nw = cnt / 32;
+				memcpy(bp, np, nw);
+				bp += nw;
+				np += nw;
+				cnt %= 32;
+			}
+			if (cnt > 0) {
+				/* do the left over bits */
+				mask = (1U << cnt) - 1;
+				*bp = *np & mask;
+			}
+		} else if (boff > noff) {
+			if (boff + cnt <= 32) {
+				/* we only need to copy bits from a
+				 * single word of n to a single word
+				 * of b */
+				/* boff > 0, so cnt < 32, hence the
+				 * shift is ok */
+				mask = (1U << cnt) - 1;
+				*bp &= ~(mask << boff);
+				*bp |= (*np & (mask << noff)) << (boff - noff);
+				return GDK_SUCCEED;
+			}
+			/* first fill the rest of the last partial
+			 * word of b, so that's 32-boff bits */
+			mask = (1U << (32 - boff)) - 1;
+			*bp &= ~(mask << boff);
+			*bp++ |= (*np & (mask << noff)) << (boff - noff);
+			cnt -= 32 - boff;
+
+			/* set boff and noff to the amount we need to
+			 * shift bits in consecutive words of n around
+			 * to fit into the next word of b; set mask to
+			 * the mask of the bottom bits of n that fit
+			 * in a word of b (and the complement are the
+			 * top bits that go to another word of b) */
+			boff -= noff;
+			noff = 32 - boff;
+			mask = (1U << noff) - 1;
+			while (cnt >= 32) {
+				*bp = (*np++ & ~mask) >> noff;
+				*bp++ |= (*np & mask) << boff;
+				cnt -= 32;
+			}
+			if (cnt > noff) {
+				/* the last bits come from two words
+				 * in n */
+				*bp = (*np++ & ~mask) >> noff;
+				cnt -= noff;
+				mask = (1U << cnt) - 1;
+				*bp++ |= (*np & mask) << boff;
+			} else if (cnt > 0) {
+				/* the last bits come from a single
+				 * word in n */
+				mask = ((1U << cnt) - 1) << noff;
+				*bp = (*np & mask) >> noff;
+			}
+		} else {
+			/* boff < noff */
+			if (noff + cnt <= 32) {
+				/* only need part of the first word of n */
+				mask = (1U << cnt) - 1;
+				*bp &= ~(mask << boff);
+				*bp |= (*np & (mask << noff)) >> (noff - boff);
+				return GDK_SUCCEED;
+			}
+			if (boff + cnt <= 32) {
+				/* only need to fill a single word of
+				 * b, but from two of n */
+				if (cnt < 32)
+					*bp &= ~(((1U << cnt) - 1) << boff);
+				else
+					*bp = 0;
+				mask = ~((1U << noff) - 1);
+				*bp |= (*np++ & mask) >> (noff - boff);
+				cnt -= 32 - noff;
+				mask = (1U << cnt) - 1;
+				*bp |= (*np & mask) << (32 - noff);
+				return GDK_SUCCEED;
+			}
+			if (boff > 0) {
+				/* fill the rest of the first word of b */
+				cnt -= 32 - boff;
+				*bp &= (1U << boff) - 1;
+				mask = ~((1U << noff) - 1);
+				noff -= boff;
+				boff = 32 - noff;
+				*bp |= (*np++ & mask) >> noff;
+				*bp |= (*np & ((1U << noff) - 1)) << boff;
+			} else {
+				boff = 32 - noff;
+			}
+			mask = (1U << noff) - 1;
+			while (cnt >= 32) {
+				*bp = (*np++ & ~mask) >> noff;
+				*bp++ |= (*np & mask) << boff;
+				cnt -= 32;
+			}
+			if (cnt > 0) {
+				*bp = (*np++ & ~mask) >> noff;
+				if (cnt > noff)
+					*bp++ |= (*np & mask) << boff;
+			}
+		}
+		return GDK_SUCCEED;
+	} else {
+		oid o;
+		uint32_t v = boff > 0 ? *bp & ((1U << boff) - 1) : 0;
+		do {
+			for (uint32_t i = boff; i < 32; i++) {
+				o = canditer_next(ci);
+				if (is_oid_nil(o))
+					break;
+				v |= (uint32_t) mskGetVal(n, o - n->hseqbase) << i;
+			}
+			*bp++ = v;
+			v = 0;
+			boff = 0;
+		} while (!is_oid_nil(o));
+	}
+	return GDK_SUCCEED;
+}
+
 /* Append the contents of BAT n (subject to the optional candidate
  * list s) to BAT b.  If b is empty, b will get the seqbase of s if it
  * was passed in, and else the seqbase of n. */
@@ -693,6 +857,10 @@ BATappend2(BAT *b, BAT *n, BAT *s, bool force, bool mayshare)
 		if (append_varsized_bat(b, n, &ci, mayshare) != GDK_SUCCEED) {
 			return GDK_FAIL;
 		}
+	} else if (ATOMstorage(b->ttype) == TYPE_msk) {
+		if (append_msk_bat(b, n, &ci) != GDK_SUCCEED) {
+			return GDK_FAIL;
+		}
 	} else {
 		if (cnt > BATcapacity(b) - BATcount(b)) {
 			/* if needed space exceeds a normal growth
@@ -796,9 +964,20 @@ BATdel(BAT *b, BAT *d)
 		if (BATtdense(b) && BATmaterialize(b) != GDK_SUCCEED)
 			return GDK_FAIL;
 		if (o + c < b->hseqbase + BATcount(b)) {
-			memmove(Tloc(b, o - b->hseqbase),
-				Tloc(b, o + c - b->hseqbase),
-				Tsize(b) * (BATcount(b) - (o + c - b->hseqbase)));
+			o -= b->hseqbase;
+			if (ATOMstorage(b->ttype) == TYPE_msk) {
+				BUN n = BATcount(b) - (o + c);
+				/* not very efficient, but first see
+				 * how much this is used */
+				for (BUN i = 0; i < n; i++)
+					mskSetVal(b, o + i,
+						  mskGetVal(b, o + c + i));
+			} else {
+				memmove(Tloc(b, o),
+					Tloc(b, o + c),
+					Tsize(b) * (BATcount(b) - (o + c)));
+			}
+			// o += b->hseqbase; // if this were to be used again
 		}
 		b->batCount -= c;
 	} else {
@@ -806,7 +985,8 @@ BATdel(BAT *b, BAT *d)
 		const oid *s;
 		BUN c = BATcount(d);
 		BUN nd = 0;
-		char *p;
+		BUN pos;
+		char *p = NULL;
 
 		if (o[c - 1] <= b->hseqbase)
 			return GDK_SUCCEED;
@@ -821,7 +1001,9 @@ BATdel(BAT *b, BAT *d)
 		if (BATtdense(b) && BATmaterialize(b) != GDK_SUCCEED)
 			return GDK_FAIL;
 		s = o;
-		p = Tloc(b, *o - b->hseqbase);
+		pos = *o - b->hseqbase;
+		if (ATOMstorage(b->ttype) != TYPE_msk)
+			p = Tloc(b, pos);
 		while (c > 0 && *o < b->hseqbase + BATcount(b)) {
 			size_t n;
 			if (unfix)
@@ -838,11 +1020,23 @@ BATdel(BAT *b, BAT *d)
 			else
 				n = 0;
 			if (n > 0) {
-				n *= Tsize(b);
-				memmove(p,
-					Tloc(b, o[-1] + 1 - b->hseqbase),
-					n);
-				p += n;
+				if (ATOMstorage(b->ttype) == TYPE_msk) {
+					BUN opos = o[-1] + 1 - b->hseqbase;
+					/* not very efficient, but
+					 * first see how much this is
+					 * used */
+					for (BUN i = 0; i < n; i++) {
+						mskSetVal(b, pos + i,
+							  mskGetVal(b, opos + i));
+					}
+					pos += n;
+				} else {
+					n *= Tsize(b);
+					memmove(p,
+						Tloc(b, o[-1] + 1 - b->hseqbase),
+						n);
+					p += n;
+				}
 				s = o;
 			}
 		}
@@ -1111,6 +1305,22 @@ BATreplace(BAT *b, BAT *p, BAT *n, bool force)
 				BATtseqbase(b, n->tseqbase);
 			}
 		}
+	} else if (ATOMstorage(b->ttype) == TYPE_msk) {
+		for (BUN i = 0, j = BATcount(p); i < j; i++) {
+			oid updid = BUNtoid(p, i);
+
+			if (updid < b->hseqbase || updid >= hseqend) {
+				GDKerror("id out of range\n");
+				return GDK_FAIL;
+			}
+			updid -= b->hseqbase;
+			if (!force && updid < b->batInserted) {
+				GDKerror("updating committed value\n");
+				return GDK_FAIL;
+			}
+
+			mskSetVal(b, updid, mskGetVal(n, i));
+		}
 	} else {
 		for (BUN i = 0, j = BATcount(p); i < j; i++) {
 			oid updid = BUNtoid(p, i);
@@ -1224,7 +1434,7 @@ BATreplace(BAT *b, BAT *p, BAT *n, bool force)
  * preserve void-columns (in this case, the seqbase has to be
  * recomputed in the result).
  *
- * NOTE new semantics, the selected range is excluding the high value.
+ * The selected range is excluding the high value.
  */
 BAT *
 BATslice(BAT *b, BUN l, BUN h)
@@ -1254,7 +1464,24 @@ BATslice(BAT *b, BUN l, BUN h)
 	}
 	/* If the source BAT is readonly, then we can obtain a VIEW
 	 * that just reuses the memory of the source. */
-	if (b->batRestricted == BAT_READ &&
+	if (ATOMstorage(b->ttype) == TYPE_msk) {
+		/* forget about slices for bit masks: we can't deal
+		 * with difference in alignment, so we'll just make a
+		 * copy */
+		bn = COLnew((oid) (b->hseqbase + low), b->ttype, h - l, TRANSIENT);
+		/* we use BATappend with a candidate list to easily
+		 * copy the part of b that we need */
+		BAT *s = BATdense(0, (oid) (b->hseqbase + low), h - l);
+		if (bn == NULL ||
+		    s == NULL ||
+		    BATappend(bn, b, s, false) != GDK_SUCCEED) {
+			BBPreclaim(bn);
+			BBPreclaim(s);
+			return NULL;
+		}
+		BBPunfix(s->batCacheid);
+		goto doreturn;
+	} else if (b->batRestricted == BAT_READ &&
 	    (!VIEWtparent(b) ||
 	     BBP_cache(VIEWtparent(b))->batRestricted == BAT_READ)) {
 		bn = VIEWcreate(b->hseqbase + low, b);
@@ -1361,6 +1588,12 @@ BATkeyed(BAT *b)
 		return BATtdense(b) || BATcount(b) <= 1;
 	if (BATcount(b) <= 1)
 		return true;
+	if (ATOMstorage(b->ttype) == TYPE_msk) {
+		if (BATcount(b) > 2)
+			return false;
+		/* there are exactly two values */
+		return mskGetVal(b, 0) != mskGetVal(b, 1);
+	}
 	if (b->twidth < SIZEOF_BUN &&
 	    BATcount(b) > (BUN) 1 << (8 * b->twidth)) {
 		/* more rows than possible bit combinations in the atom */
@@ -1489,7 +1722,7 @@ BATordered(BAT *b)
 
 	if (b->ttype == TYPE_void || b->tsorted)
 		return true;
-	if (b->tnosorted > 0)
+	if (b->tnosorted > 0 || !ATOMlinear(b->ttype))
 		return false;
 
 	/* In order that multiple threads don't scan the same BAT at
@@ -1576,7 +1809,7 @@ BATordered_rev(BAT *b)
 {
 	lng t0 = GDKusec();
 
-	if (b == NULL)
+	if (b == NULL || !ATOMlinear(b->ttype))
 		return false;
 	if (BATcount(b) <= 1 || b->trevsorted)
 		return true;
@@ -2136,9 +2369,14 @@ BATconstant(oid hseq, int tailtype, const void *v, BUN n, role_t role)
 			v = &oid_nil;
 			BATtseqbase(bn, oid_nil);
 			break;
+		case TYPE_msk:
+			if (*(msk*)v)
+				memset(p, 0xFF, (n + 7) / 8);
+			else
+				memset(p, 0x00, (n + 7) / 8);
+			break;
 		case TYPE_bte:
-			for (i = 0; i < n; i++)
-				((bte *) p)[i] = *(bte *) v;
+			memset(p, *(bte*)v, n);
 			break;
 		case TYPE_sht:
 			for (i = 0; i < n; i++)
@@ -2192,10 +2430,9 @@ BATconstant(oid hseq, int tailtype, const void *v, BUN n, role_t role)
 			break;
 		}
 		bn->theap->dirty = true;
-		bn->tnil = n >= 1 && (*ATOMcompare(tailtype))(v, ATOMnilptr(tailtype)) == 0;
+		bn->tnil = n >= 1 && ATOMnilptr(tailtype) && (*ATOMcompare(tailtype))(v, ATOMnilptr(tailtype)) == 0;
 		BATsetcount(bn, n);
-		bn->tsorted = true;
-		bn->trevsorted = true;
+		bn->tsorted = bn->trevsorted = ATOMlinear(tailtype);
 		bn->tnonil = !bn->tnil;
 		bn->tkey = BATcount(bn) <= 1;
 	}
@@ -2359,6 +2596,9 @@ BATcount_no_nil(BAT *b)
 	case TYPE_void:
 		cnt = n * BATtdense(b);
 		break;
+	case TYPE_msk:
+		cnt = n;
+		break;
 	case TYPE_bte:
 		for (i = 0; i < n; i++)
 			cnt += !is_bte_nil(((const bte *) p)[i]);
@@ -2415,7 +2655,9 @@ BATcount_no_nil(BAT *b)
 	default:
 		nil = ATOMnilptr(t);
 		cmp = ATOMcompare(t);
-		if (b->tvarsized) {
+		if (nil == NULL) {
+			cnt = n;
+		} else if (b->tvarsized) {
 			base = b->tvheap->base;
 			for (i = 0; i < n; i++)
 				cnt += (*cmp)(nil, base + ((const var_t *) p)[i]) != 0;

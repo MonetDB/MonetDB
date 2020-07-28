@@ -359,24 +359,49 @@ log_read_updates(logger *lg, trans *tr, logformat *l, log_id id, lng offset)
 					BBPreclaim(r);
 				return LOG_ERR;
 			}
-			for (; res == LOG_OK && nr > 0; nr--) {
-				void *t = rt(tv, lg->input_log, 1);
-
-				if (t == NULL) {
-					/* see if failure was due to
-					 * malloc or something less
-					 * serious (in the current
-					 * context) */
-					if (strstr(GDKerrbuf, "alloc") == NULL)
-						res = LOG_EOF;
+			if (tpe == TYPE_msk) {
+				if (r) {
+					if (mnstr_readIntArray(lg->input_log, Tloc(r, 0), (size_t) ((nr + 31) / 32)))
+						BATsetcount(r, (BUN) nr);
 					else
 						res = LOG_ERR;
-					break;
+				} else {
+					for (lng i = 0; i < nr; i += 32) {
+						int v;
+						switch (mnstr_readInt(lg->input_log, &v)) {
+						case 1:
+							continue;
+						case 0:
+							res = LOG_EOF;
+							break;
+						default:
+							res = LOG_ERR;
+							break;
+						}
+						break;
+					}
 				}
-				if (r && BUNappend(r, t, true) != GDK_SUCCEED)
-					res = LOG_ERR;
-				if (t != tv)
-					GDKfree(t);
+			} else {
+				for (; res == LOG_OK && nr > 0; nr--) {
+					void *t = rt(tv, lg->input_log, 1);
+
+					if (t == NULL) {
+						/* see if failure was due to
+						 * malloc or something less
+						 * serious (in the current
+						 * context) */
+						if (strstr(GDKerrbuf, "alloc") == NULL)
+							res = LOG_EOF;
+						else
+							res = LOG_ERR;
+						if (t != tv)
+							GDKfree(t);
+					}
+					if (r && BUNappend(r, t, true) != GDK_SUCCEED)
+						res = LOG_ERR;
+					if (t != tv)
+						GDKfree(t);
+				}
 			}
 		} else {
 			void *(*rh) (ptr, stream *, size_t) = BATatoms[TYPE_oid].atomRead;
@@ -391,19 +416,43 @@ log_read_updates(logger *lg, trans *tr, logformat *l, log_id id, lng offset)
 					res = LOG_ERR;
 			}
 			nr = pnr;
-			for (; res == LOG_OK && nr > 0; nr--) {
-				void *t = rt(tv, lg->input_log, 1);
-
-				if (t == NULL) {
-					if (strstr(GDKerrbuf, "malloc") == NULL)
-						res = LOG_EOF;
+			if (tpe == TYPE_msk) {
+				if (r) {
+					if (mnstr_readIntArray(lg->input_log, Tloc(r, 0), (size_t) ((nr + 31) / 32)))
+						BATsetcount(r, (BUN) nr);
 					else
 						res = LOG_ERR;
+				} else {
+					for (lng i = 0; i < nr; i += 32) {
+						int v;
+						switch (mnstr_readInt(lg->input_log, &v)) {
+						case 1:
+							continue;
+						case 0:
+							res = LOG_EOF;
+							break;
+						default:
+							res = LOG_ERR;
+							break;
+						}
+						break;
+					}
 				}
-				if ((r && BUNappend(r, t, true) != GDK_SUCCEED))
-					res = LOG_ERR;
-				if (t != tv)
-					GDKfree(t);
+			} else {
+				for (; res == LOG_OK && nr > 0; nr--) {
+					void *t = rt(tv, lg->input_log, 1);
+
+					if (t == NULL) {
+						if (strstr(GDKerrbuf, "malloc") == NULL)
+							res = LOG_EOF;
+						else
+							res = LOG_ERR;
+					}
+					if ((r && BUNappend(r, t, true) != GDK_SUCCEED))
+						res = LOG_ERR;
+					if (t != tv)
+						GDKfree(t);
+				}
 			}
 			GDKfree(hv);
 		}
@@ -1950,7 +1999,22 @@ internal_log_bat(logger *lg, BAT *b, log_id id, lng offset, lng cnt, int sliced)
 	/* if offset is just for the log, but BAT is already sliced, reset offset */
 	if (sliced)
 		offset = 0;
-	if (b->ttype < TYPE_str && !isVIEW(b)) {
+	if (b->ttype == TYPE_msk) {
+		if (offset % 32 == 0) {
+			if (!mnstr_writeIntArray(lg->output_log, Tloc(b, offset / 32), (size_t) ((nr + 31) / 32)))
+				ok = GDK_FAIL;
+		} else {
+			for (lng i = 0; i < nr; i += 32) {
+				uint32_t v = 0;
+				for (int j = 0; j < 32 && i + j < nr; j++)
+					v |= (uint32_t) mskGetVal(b, offset + i + j) << j;
+				if (!mnstr_writeInt(lg->output_log, (int) v)) {
+					ok = GDK_FAIL;
+					break;
+				}
+			}
+		}
+	} else if (b->ttype < TYPE_str && !isVIEW(b)) {
 		const void *t = BUNtail(bi, (BUN)offset);
 
 		ok = wt(t, lg->output_log, (size_t)nr);
@@ -2088,10 +2152,15 @@ log_delta(logger *lg, BAT *uid, BAT *uval, log_id id)
 
 		ok = wh(&id, lg->output_log, 1);
 	}
-	for (p = 0; p < BUNlast(uid) && ok == GDK_SUCCEED; p++) {
-		const void *val = BUNtail(vi, p);
+	if (uval->ttype == TYPE_msk) {
+		if (!mnstr_writeIntArray(lg->output_log, Tloc(uval, 0), (BUNlast(uval) + 31) / 32))
+			ok = GDK_FAIL;
+	} else {
+		for (p = 0; p < BUNlast(uid) && ok == GDK_SUCCEED; p++) {
+			const void *val = BUNtail(vi, p);
 
-		ok = wt(val, lg->output_log, 1);
+			ok = wt(val, lg->output_log, 1);
+		}
 	}
 
 	if (lg->debug & 1)
@@ -2356,4 +2425,3 @@ log_tstart(logger *lg)
 		fprintf(stderr, "#log_tstart %d\n", lg->tid);
 	return log_write_format(lg, &l);
 }
-

@@ -1,0 +1,75 @@
+# scalar tests for msk-type
+# the msk type only know true/false, nil is mapped to false
+
+function foo();
+t := true:msk;
+io.print(t);
+f := false:msk;
+io.print(f);
+n := nil:msk;
+io.print(n);
+
+# Coercions should be chosen carefully
+# One way is to align it with 0/1
+ti:msk := 1:msk;
+io.print(ti);
+fi:msk := 0:msk;
+io.print(fi);
+
+tl:= 1:lng;
+fl:= 0:lng;
+t:msk := tl:msk;
+io.print(t);
+f:msk := fl:msk;
+io.print(f);
+
+tsv:= 1:sht;
+fsv:= 0:bit;
+t:msk := tsv:msk;
+io.print(t);
+f:msk := fsv:msk;
+io.print(f);
+
+tbv:= 1:bit;
+fbv:= 0:bit;
+t:msk := tbv:msk;
+io.print(t);
+f:msk := fbv:msk;
+io.print(f);
+
+tfv:= 1:flt;
+ffv:= 0:flt;
+t:msk := calc.msk(tfv);
+io.print(t);
+f:msk := calc.msk(ffv);
+io.print(f);
+
+# perhaps case incensitive
+t:msk := "t":msk;
+io.print(t);
+f:msk := "f":msk;
+io.print(f);
+
+t:msk := "T":msk;
+io.print(t);
+f:msk := "F":msk;
+io.print(f);
+
+t:msk := "true":msk;
+io.print(t);
+f:msk := "false":msk;
+io.print(f);
+end foo;
+
+# the following examples all should cause errors
+function error1();
+n:msk := nil:msk;
+end error1;
+
+function error2();
+n:msk := calc.msk(nil);
+end error2;
+
+foo();
+error1();
+error2();

@@ -1554,7 +1554,7 @@ mvc_export_table_prot10(backend *b, stream *s, res_table *t, BAT *order, BUN off
 						void *element = (void*) BUNtail(iterators[i], crow);
 						const char* str;
 						if (convert_to_string) {
-							if (BATatoms[mtype].atomCmp(element, BATatoms[mtype].atomNull) == 0) {
+							if (BATatoms[mtype].atomNull && BATatoms[mtype].atomCmp(element, BATatoms[mtype].atomNull) == 0) {
 								str = str_nil;
 							} else {
 								if (BATatoms[mtype].atomToStr(&result, &length, element, false) < 0) {
