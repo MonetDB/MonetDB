@@ -555,25 +555,37 @@ log_read_updates(logger *lg, trans *tr, logformat *l, char *name, int tpe, oid i
 			BATtseqbase(r, 0);
 
 		if (ht == TYPE_void && l->flag == LOG_INSERT) {
-			lng nr = l->nr;
-			for (; res == LOG_OK && nr > 0; nr--) {
-				void *t = rt(tv, lg->log, 1);
-
-				if (t == NULL) {
-					/* see if failure was due to
-					 * malloc or something less
-					 * serious (in the current
-					 * context) */
-					if (strstr(GDKerrbuf, "alloc") == NULL)
-						res = LOG_EOF;
-					else
-						res = LOG_ERR;
-					break;
-				}
-				if (BUNappend(r, t, true) != GDK_SUCCEED)
+			if (tt == TYPE_msk) {
+				r->tkey = false;
+				r->tsorted = false;
+				r->tnosorted = false;
+				r->tnonil = true;
+				r->tnil = false;
+				if (mnstr_readIntArray(lg->log, Tloc(r, 0), (size_t) ((l->nr + 31) / 32)))
+					BATsetcount(r, (BUN) l->nr);
+				else
 					res = LOG_ERR;
-				if (t != tv)
-					GDKfree(t);
+			} else {
+				lng nr = l->nr;
+				for (; res == LOG_OK && nr > 0; nr--) {
+					void *t = rt(tv, lg->log, 1);
+
+					if (t == NULL) {
+						/* see if failure was due to
+						 * malloc or something less
+						 * serious (in the current
+						 * context) */
+						if (strstr(GDKerrbuf, "alloc") == NULL)
+							res = LOG_EOF;
+						else
+							res = LOG_ERR;
+						break;
+					}
+					if (BUNappend(r, t, true) != GDK_SUCCEED)
+						res = LOG_ERR;
+					if (t != tv)
+						GDKfree(t);
+				}
 			}
 		} else {
 			void *(*rh) (ptr, stream *, size_t) = ht == TYPE_void ? BATatoms[TYPE_oid].atomRead : BATatoms[ht].atomRead;
@@ -628,19 +640,31 @@ log_read_updates(logger *lg, trans *tr, logformat *l, char *name, int tpe, oid i
 							res = LOG_ERR;
 					}
 				}
-				nr = l->nr;
-				for (; res == LOG_OK && nr > 0; nr--) {
-					void *t = rt(tv, lg->log, 1);
-
-					if (t == NULL) {
-						if (strstr(GDKerrbuf, "malloc") == NULL)
-							res = LOG_EOF;
-						else
-							res = LOG_ERR;
-					} else if (BUNappend(r, t, true) != GDK_SUCCEED)
+				if (tt == TYPE_msk) {
+					r->tkey = false;
+					r->tsorted = false;
+					r->tnosorted = false;
+					r->tnonil = true;
+					r->tnil = false;
+					if (mnstr_readIntArray(lg->log, Tloc(r, 0), (size_t) ((l->nr + 31) / 32)))
+						BATsetcount(r, (BUN) l->nr);
+					else
 						res = LOG_ERR;
-					if (t != tv)
-						GDKfree(t);
+				} else {
+					nr = l->nr;
+					for (; res == LOG_OK && nr > 0; nr--) {
+						void *t = rt(tv, lg->log, 1);
+
+						if (t == NULL) {
+							if (strstr(GDKerrbuf, "malloc") == NULL)
+								res = LOG_EOF;
+							else
+								res = LOG_ERR;
+						} else if (BUNappend(r, t, true) != GDK_SUCCEED)
+							res = LOG_ERR;
+						if (t != tv)
+							GDKfree(t);
+					}
 				}
 			}
 			GDKfree(hv);
@@ -2839,7 +2863,9 @@ log_delta(logger *lg, BAT *uid, BAT *uval, const char *name, char tpe, oid id)
 			}
 
 			if (ok == GDK_SUCCEED) {
-				if (uval->ttype > TYPE_void && uval->ttype < TYPE_str && !isVIEW(uval)) {
+				if (uval->ttype == TYPE_msk) {
+					ok = mnstr_writeIntArray(lg->log, Tloc(uval, 0), (l.nr + 31) / 32) ? GDK_SUCCEED : GDK_FAIL;
+				} else if (uval->ttype > TYPE_void && uval->ttype < TYPE_str && !isVIEW(uval)) {
 					const void *val = BUNtail(vi, 0);
 					ok = wt(val, lg->log, (size_t)l.nr);
 				} else {
@@ -2884,9 +2910,21 @@ log_bat(logger *lg, BAT *b, const char *name, char tpe, oid id)
 		    (tpe ? log_write_id(lg, tpe, id) : log_write_string(lg, name)) != GDK_SUCCEED)
 			return GDK_FAIL;
 
-		if (b->ttype > TYPE_void &&
-		    b->ttype < TYPE_str &&
-		    !isVIEW(b)) {
+		if (b->ttype == TYPE_msk) {
+			for (BUN i = b->batInserted;
+			     ok == GDK_SUCCEED && i < b->batCount;
+			     i += 32) {
+				uint32_t v = 0;
+				for (BUN j = 0;
+				     j < 32 && i + j < b->batCount;
+				     j++)
+					v |= (uint32_t) mskGetVal(b, i + j) << j;
+				if (!mnstr_writeInt(lg->log, (int) v))
+					ok = GDK_FAIL;
+			}
+		} else if (b->ttype > TYPE_void &&
+			   b->ttype < TYPE_str &&
+			   !isVIEW(b)) {
 			const void *t = BUNtail(bi, b->batInserted);
 
 			ok = wt(t, lg->log, (size_t)l.nr);

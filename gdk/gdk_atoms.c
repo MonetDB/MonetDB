@@ -898,6 +898,30 @@ TYPE##Write(const TYPE *a, stream *s, size_t cnt)			\
 		GDK_SUCCEED : GDK_FAIL;					\
 }
 
+static gdk_return
+mskWrite(const msk *a, stream *s, size_t cnt)
+{
+	if (cnt == 0)
+		return GDK_SUCCEED;
+	if (cnt == 1)
+		return mnstr_writeBte(s, (int8_t) *a) ? GDK_SUCCEED : GDK_FAIL;
+	return GDK_FAIL;
+}
+
+static void *
+mskRead(msk *a, stream *s, size_t cnt)
+{
+	int8_t v;
+	if (cnt != 1)
+		return NULL;
+	if (mnstr_readBte(s, &v) != 1)
+		return NULL;
+	if (a == NULL && (a = GDKmalloc(1)) == NULL)
+		return NULL;
+	*a = v != 0;
+	return a;
+}
+
 atom_io(bat, Int, int)
 atom_io(bit, Bte, bte)
 
@@ -1250,8 +1274,8 @@ atomDesc BATatoms[MAXATOMS] = {
 		.size = 1,	/* really 1/8 */
 		.atomFromStr = (ssize_t (*)(const char *, size_t *, void **, bool)) mskFromStr,
 		.atomToStr = (ssize_t (*)(char **, size_t *, const void *, bool)) mskToStr,
-//		.atomRead = (void *(*)(void *, stream *, size_t)) mskRead,
-//		.atomWrite = (gdk_return (*)(const void *, stream *, size_t)) mskWrite,
+		.atomRead = (void *(*)(void *, stream *, size_t)) mskRead,
+		.atomWrite = (gdk_return (*)(const void *, stream *, size_t)) mskWrite,
 		.atomCmp = (int (*)(const void *, const void *)) mskCmp,
 	},
 	[TYPE_bte] = {
