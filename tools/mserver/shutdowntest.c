@@ -24,22 +24,6 @@
 
 static char* dbdir = NULL;
 
-#define CREATE_SQL_FUNCTION_PTR(retval, fcnname)     \
-   typedef retval (*fcnname##_ptr_tpe)();            \
-   fcnname##_ptr_tpe fcnname##_ptr = NULL;
-
-#define LOAD_SQL_FUNCTION_PTR(fcnname)                                             \
-    fcnname##_ptr = (fcnname##_ptr_tpe) getAddress(getName("sql"), #fcnname); \
-    if (fcnname##_ptr == NULL) {                                                           \
-        retval = #fcnname;  \
-    }
-
-CREATE_SQL_FUNCTION_PTR(int,SQLautocommit);
-CREATE_SQL_FUNCTION_PTR(str,SQLexitClient);
-CREATE_SQL_FUNCTION_PTR(str,SQLinitClient);
-CREATE_SQL_FUNCTION_PTR(str,SQLstatementIntern);
-CREATE_SQL_FUNCTION_PTR(void,SQLdestroyResult);
-
 static int monetdb_initialized = 0;
 
 static void* monetdb_connect(void) {
@@ -52,7 +36,7 @@ static void* monetdb_connect(void) {
 		return NULL;
 	}
 	conn->curmodule = conn->usermodule = userModule();
-	if ((*SQLinitClient_ptr)(conn) != MAL_SUCCEED) {
+	if (SQLinitClient(conn) != MAL_SUCCEED) {
 		return NULL;
 	}
 	((backend *) conn->sqlcontext)->mvc->session->auto_commit = 1;
@@ -64,11 +48,11 @@ static str monetdb_query(Client c, str query) {
 	mvc* m = ((backend *) c->sqlcontext)->mvc;
 	res_table* res = NULL;
 	int i;
-	retval = (*SQLstatementIntern_ptr)(c,
+	retval = SQLstatementIntern(c,
 		&query,
 		"name",
 		1, 0, &res);
-	(*SQLautocommit_ptr)(m);
+	SQLautocommit(m);
 	if (retval != MAL_SUCCEED) {
 		printf("Failed to execute SQL query: %s\n", query);
 		freeException(retval);
@@ -82,7 +66,7 @@ static str monetdb_query(Client c, str query) {
 			printf("%s", res->cols[i].name);
 			printf(i + 1 == res->nr_cols ? ")\n" : ",");
 		}
-		(*SQLdestroyResult_ptr)(res);
+		SQLdestroyResult(res);
 	}
 	return MAL_SUCCEED;
 }
@@ -91,7 +75,7 @@ static void monetdb_disconnect(void* conn) {
 	if (!MCvalid((Client) conn)) {
 		return;
 	}
-	(*SQLexitClient_ptr)((Client) conn);
+	SQLexitClient((Client) conn);
 	MCcloseClient((Client) conn);
 }
 
@@ -277,12 +261,6 @@ static str monetdb_initialize(void) {
 		goto cleanup;
 	}
 	GDKfataljumpenable = 0;
-
-	LOAD_SQL_FUNCTION_PTR(SQLautocommit);
-	LOAD_SQL_FUNCTION_PTR(SQLexitClient);
-	LOAD_SQL_FUNCTION_PTR(SQLinitClient);
-	LOAD_SQL_FUNCTION_PTR(SQLstatementIntern);
-	LOAD_SQL_FUNCTION_PTR(SQLdestroyResult);
 
 	if (retval != MAL_SUCCEED) {
 		printf("Failed to load SQL function: %s\n", retval);
