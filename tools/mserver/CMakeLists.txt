@@ -56,6 +56,7 @@ target_link_libraries(shutdowntest
   monetdb_config_header
   matomic
   moptions
+  sql
   mutils
   mcrypt
   gdk

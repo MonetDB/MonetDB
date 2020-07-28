@@ -37,7 +37,7 @@ SYSMONqueue(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	(void) cntxt;
 	(void) mb;
-	sz = MAL_MAXCLIENTS;	// reserve space for all possible clients.
+	sz = qsize;	// reserve space for all tuples in QRYqueue
 	tag = COLnew(0, TYPE_lng, sz, TRANSIENT);
 	sessionid = COLnew(0, TYPE_int, sz, TRANSIENT);
 	user = COLnew(0, TYPE_str, sz, TRANSIENT);

@@ -35634,25 +35634,25 @@ address CMDbatBETWEEN
 comment "B between V1 and V2 (or vice versa)";
 pattern between(b:bat[:any_1],v1:bat[:any_1],v2:bat[:any_1],s:bat[:oid],s1:bat[:oid],s2:bat[:oid],sym:bit,linc:bit,hinc:bit,nils_false:bit,anti:bit) :bat[:bit]
 address CMDbatBETWEEN
-comment "B between V1 and V2 (or vice versa) with candidate list";
+comment "B between V1 and V2 (or vice versa) with candidates list";
 pattern between(b:bat[:any_1],v1:bat[:any_1],v2:any_1,sym:bit,linc:bit,hinc:bit,nils_false:bit,anti:bit) :bat[:bit]
 address CMDbatBETWEEN
 comment "B between V1 and V2 (or vice versa)";
 pattern between(b:bat[:any_1],v1:bat[:any_1],v2:any_1,s:bat[:oid],s1:bat[:oid],sym:bit,linc:bit,hinc:bit,nils_false:bit,anti:bit) :bat[:bit]
 address CMDbatBETWEEN
-comment "B between V1 and V2 (or vice versa) with candidate list";
+comment "B between V1 and V2 (or vice versa) with candidates list";
 pattern between(b:bat[:any_1],v1:any_1,v2:bat[:any_1],sym:bit,linc:bit,hinc:bit,nils_false:bit,anti:bit) :bat[:bit]
 address CMDbatBETWEEN
 comment "B between V1 and V2 (or vice versa)";
 pattern between(b:bat[:any_1],v1:any_1,v2:bat[:any_1],s:bat[:oid],s2:bat[:oid],sym:bit,linc:bit,hinc:bit,nils_false:bit,anti:bit) :bat[:bit]
 address CMDbatBETWEEN
-comment "B between V1 and V2 (or vice versa) with candidate list";
+comment "B between V1 and V2 (or vice versa) with candidates list";
 pattern between(b:bat[:any_1],v1:any_1,v2:any_1,sym:bit,linc:bit,hinc:bit,nils_false:bit,anti:bit) :bat[:bit]
 address CMDbatBETWEEN
 comment "B between V1 and V2 (or vice versa)";
 pattern between(b:bat[:any_1],v1:any_1,v2:any_1,s:bat[:oid],sym:bit,linc:bit,hinc:bit,nils_false:bit,anti:bit) :bat[:bit]
 address CMDbatBETWEEN
-comment "B between V1 and V2 (or vice versa) with candidate list";
+comment "B between V1 and V2 (or vice versa) with candidates list";
 pattern between(b:bat[:any_1],v1:bat[:any_1],v2:bat[:any_1],r:bat[:bit],sym:bit,linc:bit,hinc:bit,nils_false:bit,anti:bit) :bat[:bit]
 address CMDbatBETWEEN
 comment "B between V1 and V2 (or vice versa) with conditional execution bat"
@@ -35661,10 +35661,10 @@ address CMDbatBETWEEN
 comment "B between V1 and V2 (or vice versa) with conditional execution bat";
 pattern between(b:bat[:any_1],v1:bat[:any_1],v2:bat[:any_1],s:bat[:oid],s1:bat[:oid],s2:bat[:oid],r:bat[:bit],sym:bit,linc:bit,hinc:bit,nils_false:bit,anti:bit) :bat[:bit]
 address CMDbatBETWEEN
-comment "B between V1 and V2 (or vice versa) with candidate list and conditional execution bat"
+comment "B between V1 and V2 (or vice versa) with candidates list and conditional execution bat"
 pattern between(b:bat[:any_1],v1:bat[:any_1],v2:bat[:any_1],s:bat[:oid],s1:bat[:oid],s2:bat[:oid],r:bat[:msk],sym:bit,linc:bit,hinc:bit,nils_false:bit,anti:bit) :bat[:bit]
 address CMDbatBETWEEN
-comment "B between V1 and V2 (or vice versa) with candidate list and conditional execution bat";
+comment "B between V1 and V2 (or vice versa) with candidates list and conditional execution bat";
 pattern between(b:bat[:any_1],v1:bat[:any_1],v2:any_1,r:bat[:bit],sym:bit,linc:bit,hinc:bit,nils_false:bit,anti:bit) :bat[:bit]
 address CMDbatBETWEEN
 comment "B between V1 and V2 (or vice versa) with conditional execution bat"
@@ -35673,10 +35673,10 @@ address CMDbatBETWEEN
 comment "B between V1 and V2 (or vice versa) with conditional execution bat";
 pattern between(b:bat[:any_1],v1:bat[:any_1],v2:any_1,s:bat[:oid],s1:bat[:oid],r:bat[:bit],sym:bit,linc:bit,hinc:bit,nils_false:bit,anti:bit) :bat[:bit]
 address CMDbatBETWEEN
-comment "B between V1 and V2 (or vice versa) with candidate list and conditional execution bat"
+comment "B between V1 and V2 (or vice versa) with candidates list and conditional execution bat"
 pattern between(b:bat[:any_1],v1:bat[:any_1],v2:any_1,s:bat[:oid],s1:bat[:oid],r:bat[:msk],sym:bit,linc:bit,hinc:bit,nils_false:bit,anti:bit) :bat[:bit]
 address CMDbatBETWEEN
-comment "B between V1 and V2 (or vice versa) with candidate list and conditional execution bat";
+comment "B between V1 and V2 (or vice versa) with candidates list and conditional execution bat";
 pattern between(b:bat[:any_1],v1:any_1,v2:bat[:any_1],r:bat[:bit],sym:bit,linc:bit,hinc:bit,nils_false:bit,anti:bit) :bat[:bit]
 address CMDbatBETWEEN
 comment "B between V1 and V2 (or vice versa) with conditional execution bat"
@@ -35685,10 +35685,10 @@ address CMDbatBETWEEN
 comment "B between V1 and V2 (or vice versa) with conditional execution bat";
 pattern between(b:bat[:any_1],v1:any_1,v2:bat[:any_1],s:bat[:oid],s2:bat[:oid],r:bat[:bit],sym:bit,linc:bit,hinc:bit,nils_false:bit,anti:bit) :bat[:bit]
 address CMDbatBETWEEN
-comment "B between V1 and V2 (or vice versa) with candidate list and conditional execution bat"
+comment "B between V1 and V2 (or vice versa) with candidates list and conditional execution bat"
 pattern between(b:bat[:any_1],v1:any_1,v2:bat[:any_1],s:bat[:oid],s2:bat[:oid],r:bat[:msk],sym:bit,linc:bit,hinc:bit,nils_false:bit,anti:bit) :bat[:bit]
 address CMDbatBETWEEN
-comment "B between V1 and V2 (or vice versa) with candidate list and conditional execution bat";
+comment "B between V1 and V2 (or vice versa) with candidates list and conditional execution bat";
 pattern between(b:bat[:any_1],v1:any_1,v2:any_1,r:bat[:bit],sym:bit,linc:bit,hinc:bit,nils_false:bit,anti:bit) :bat[:bit]
 address CMDbatBETWEEN
 comment "B between V1 and V2 (or vice versa) with conditional execution bat"
@@ -35697,10 +35697,10 @@ address CMDbatBETWEEN
 comment "B between V1 and V2 (or vice versa) with conditional execution bat";
 pattern between(b:bat[:any_1],v1:any_1,v2:any_1,s:bat[:oid],r:bat[:bit],sym:bit,linc:bit,hinc:bit,nils_false:bit,anti:bit) :bat[:bit]
 address CMDbatBETWEEN
-comment "B between V1 and V2 (or vice versa) with candidate list and conditional execution bat"
+comment "B between V1 and V2 (or vice versa) with candidates list and conditional execution bat"
 pattern between(b:bat[:any_1],v1:any_1,v2:any_1,s:bat[:oid],r:bat[:msk],sym:bit,linc:bit,hinc:bit,nils_false:bit,anti:bit) :bat[:bit]
 address CMDbatBETWEEN
-comment "B between V1 and V2 (or vice versa) with candidate list and conditional execution bat";
+comment "B between V1 and V2 (or vice versa) with candidates list and conditional execution bat";
 
 
 pattern avg(b:bat[:bte]) :dbl

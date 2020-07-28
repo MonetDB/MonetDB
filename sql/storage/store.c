@@ -3660,6 +3660,7 @@ func_dup(sql_trans *tr, int flags, sql_func *of, sql_schema *s)
 	f->ops = list_new(sa, of->ops->destroy);
 	f->fix_scale = of->fix_scale;
 	f->system = of->system;
+	f->semantics = of->semantics;
 	for (n=of->ops->h; n; n = n->next)
 		list_append(f->ops, arg_dup(newFlagSet(flags)?tr->parent:tr, s, n->data));
 	if (of->res) {
@@ -4779,7 +4780,7 @@ reset_func(sql_trans *tr, sql_func *ff, sql_func *pff)
 		ff->res = pff->res;
 		ff->fix_scale = pff->fix_scale;
 		ff->system = pff->system;
-		ff->ops = pff->ops;
+		ff->semantics = pff->semantics;
 		ff->s = find_sql_schema(tr, pff->s->base.name);
 		ff->sa = tr->sa;
 	}

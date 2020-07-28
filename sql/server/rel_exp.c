@@ -15,9 +15,6 @@
 #include "rel_unnest.h"
 #include "rel_optimizer.h"
 #include "rel_distribute.h"
-#ifdef HAVE_HGE
-#include "mal.h"		/* for have_hge */
-#endif
 
 comp_type
 compare_str2type(const char *compare_op)
@@ -434,7 +431,7 @@ exp_atom_lng(sql_allocator *sa, lng i)
 	sql_subtype it;
 
 #ifdef HAVE_HGE
-	sql_find_subtype(&it, "bigint", have_hge ? 18 : 19, 0);
+	sql_find_subtype(&it, "bigint", 18, 0);
 #else
 	sql_find_subtype(&it, "bigint", 19, 0);
 #endif
@@ -1711,7 +1708,7 @@ exp_two_sided_bound_cmp_exp_is_false(sql_exp* e) {
     assert(e->type == e_cmp);
     sql_exp* v = e->l;
     sql_exp* l = e->r;
-    sql_exp* h = e->r;
+    sql_exp* h = e->f;
     assert (v && l && h);
 
     return exp_is_null(l) || exp_is_null(v) || exp_is_null(h);
@@ -2071,19 +2068,22 @@ exps_are_atoms( list *exps)
 	return atoms;
 }
 
-static int
-exps_has_func( list *exps)
+int
+exps_have_func(list *exps)
 {
-	node *n;
-	int has_func = 0;
+	if (list_empty(exps))
+		return 0;
+	for(node *n=exps->h; n; n=n->next) {
+		sql_exp *e = n->data;
 
-	for(n=exps->h; n && !has_func; n=n->next)
-		has_func |= exp_has_func(n->data);
-	return has_func;
+		if (exp_has_func(e))
+			return 1;
+	}
+	return 0;
 }
 
 int
-exp_has_func( sql_exp *e )
+exp_has_func(sql_exp *e)
 {
 	if (!e)
 		return 0;
@@ -2096,13 +2096,13 @@ exp_has_func( sql_exp *e )
 		return 1;
 	case e_aggr:
 		if (e->l)
-			return exps_has_func(e->l);
+			return exps_have_func(e->l);
 		return 0;
 	case e_cmp:
 		if (e->flag == cmp_or || e->flag == cmp_filter) {
-			return (exps_has_func(e->l) || exps_has_func(e->r));
+			return (exps_have_func(e->l) || exps_have_func(e->r));
 		} else if (e->flag == cmp_in || e->flag == cmp_notin) {
-			return (exp_has_func(e->l) || exps_has_func(e->r));
+			return (exp_has_func(e->l) || exps_have_func(e->r));
 		} else {
 			return (exp_has_func(e->l) || exp_has_func(e->r) ||
 					(e->f && exp_has_func(e->f)));
@@ -2613,25 +2613,21 @@ exp_sum_scales(sql_subfunc *f, sql_exp *l, sql_exp *r)
 
 		/* HACK alert: digits should be less than max */
 #ifdef HAVE_HGE
-		if (have_hge) {
-			if (ares->type.type->radix == 10 && res->digits > 39)
-				res->digits = 39;
-			if (ares->type.type->radix == 2 && res->digits > 128)
-				res->digits = 128;
-		} else
+		if (ares->type.type->radix == 10 && res->digits > 39)
+			res->digits = 39;
+		if (ares->type.type->radix == 2 && res->digits > 128)
+			res->digits = 128;
+#else
+		if (ares->type.type->radix == 10 && res->digits > 19)
+			res->digits = 19;
+		if (ares->type.type->radix == 2 && res->digits > 64)
+			res->digits = 64;
 #endif
-		{
-
-			if (ares->type.type->radix == 10 && res->digits > 19)
-				res->digits = 19;
-			if (ares->type.type->radix == 2 && res->digits > 64)
-				res->digits = 64;
-		}
 
 		/* numeric types are fixed length */
 		if (ares->type.type->eclass == EC_NUM) {
 #ifdef HAVE_HGE
-			if (have_hge && ares->type.type->localtype == TYPE_hge && res->digits == 128)
+			if (ares->type.type->localtype == TYPE_hge && res->digits == 128)
 				t = *sql_bind_localtype("hge");
 			else
 #endif
@@ -2679,7 +2675,7 @@ rel_set_type_param(mvc *sql, sql_subtype *type, sql_rel *rel, sql_exp *rel_exp, 
 	/* use largest numeric types */
 	if (upcast && type->type->eclass == EC_NUM)
 #ifdef HAVE_HGE
-		type = sql_bind_localtype(have_hge ? "hge" : "lng");
+		type = sql_bind_localtype("hge");
 #else
 		type = sql_bind_localtype("lng");
 #endif
@@ -2756,7 +2752,7 @@ exp_numeric_supertype(mvc *sql, sql_exp *e )
 	}
 	if (tp->type->eclass == EC_NUM) {
 #ifdef HAVE_HGE
-		sql_subtype *ltp = sql_bind_localtype(have_hge ? "hge" : "lng");
+		sql_subtype *ltp = sql_bind_localtype("hge");
 #else
 		sql_subtype *ltp = sql_bind_localtype("lng");
 #endif

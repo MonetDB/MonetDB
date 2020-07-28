@@ -4,7 +4,7 @@
 #
 # Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
 
-# python mksqlwxs.py VERSION makedefs.txt PREFIX > PREFIX/MonetDB5-SQL-Installer.wxs
+# python mksqlwxs.py VERSION BITS PREFIX > PREFIX/MonetDB5-SQL-Installer.wxs
 # "c:\Program Files (x86)\WiX Toolset v3.10\bin\candle.exe" -nologo -arch x64/x86 PREFIX/MonetDB5-SQL-Installer.wxs
 # "c:\Program Files (x86)\WiX Toolset v3.10\bin\light.exe" -nologo -sice:ICE03 -sice:ICE60 -sice:ICE82 -ext WixUIExtension PREFIX/MonetDB5-SQL-Installer.wixobj
 
@@ -36,21 +36,19 @@ def comp(features, id, depth, files, name=None, args=None, sid=None, vital=None)
 
 def main():
     if len(sys.argv) != 4:
-        print(r'Usage: mksqlwxs.py version makedefs.txt installdir')
+        print(r'Usage: mksqlwxs.py version bits installdir')
         return 1
-    makedefs = {}
-    for line in open(sys.argv[2]):
-        key, val = line.strip().split('=', 1)
-        makedefs[key] = val
-    if makedefs['bits'] == '64':
+    if sys.argv[2] == '64':
         folder = r'ProgramFiles64Folder'
         arch = 'x64'
         libcrypto = '-x64'
+        vcpkg = r'C:\vcpkg\installed\x64-windows\{}'
     else:
         folder = r'ProgramFilesFolder'
         arch = 'x86'
         libcrypto = ''
-    vs = os.getenv('vs')        # inherited from TestTools\common.bat
+        vcpkg = r'C:\vcpkg\installed\x86-windows\{}'
+    vs = '2019'
     features = []
     extend = []
     debug = []
@@ -83,11 +81,6 @@ def main():
     print(r'        <FileSearch Id="CheckFile2" Name="gdk.h"/>')
     print(r'      </DirectorySearch>')
     print(r'    </Property>')
-    print(r'    <Property Id="GEOMEXISTS">')
-    print(r'      <DirectorySearch Id="CheckFileDir3" Path="[INSTALLDIR]\lib\monetdb5" Depth="0">')
-    print(r'        <FileSearch Id="CheckFile3" Name="geom.mal"/>')
-    print(r'      </DirectorySearch>')
-    print(r'    </Property>')
     print(r'    <Property Id="PYAPI3EXISTS">')
     print(r'      <DirectorySearch Id="CheckFileDir5" Path="[INSTALLDIR]" Depth="0">')
     print(r'        <FileSearch Id="CheckFile5" Name="pyapi_locatepython3.bat"/>')
@@ -109,7 +102,7 @@ def main():
     print(r'    <Property Id="ARPPRODUCTICON" Value="monetdb.ico"/>')
     print(r'    <Media Id="1" Cabinet="monetdb.cab" EmbedCab="yes"/>')
     print(r'    <Directory Id="TARGETDIR" Name="SourceDir">')
-    msvc = r'C:\Program Files (x86)\Microsoft Visual Studio\20{}\Community\VC\Redist\MSVC'.format(vs)
+    msvc = r'C:\Program Files (x86)\Microsoft Visual Studio\{}\Community\VC\Redist\MSVC'.format(vs)
     d = sorted(os.listdir(msvc))[-1]
     msm = '_CRT_{}.msm'.format(arch)
     for f in sorted(os.listdir(os.path.join(msvc, d, 'MergeModules'))):
@@ -131,29 +124,27 @@ def main():
               [r'bin\mclient.exe',
                r'bin\mserver5.exe',
                r'bin\msqldump.exe',
-               r'bin\stethoscope.exe',
-               r'lib\libbat.dll',
-               r'lib\libmapi.dll',
-               r'lib\libmonetdb5.dll',
-               r'lib\libstream.dll',
-               r'{}\bin\iconv-2.dll'.format(makedefs['LIBICONV']),
-               r'{}\bin\libbz2.dll'.format(makedefs['LIBBZIP2']),
-               r'{}\bin\libcrypto-1_1{}.dll'.format(makedefs['LIBOPENSSL'], libcrypto),
-               r'{}\bin\libxml2.dll'.format(makedefs['LIBXML2']),
-               r'{}\bin\pcre.dll'.format(makedefs['LIBPCRE']),
-               r'{}\bin\zlib1.dll'.format(makedefs['LIBZLIB'])])
-    id = comp(debug, id, 14,
-              [r'bin\mclient.pdb',
-               r'bin\mserver5.pdb',
-               r'bin\msqldump.pdb',
-               r'bin\stethoscope.pdb',
-               r'lib\libbat.pdb',
-               r'lib\libmapi.pdb',
-               r'lib\libmonetdb5.pdb',
-               r'lib\libstream.pdb'])
+               r'bin\gdk.dll',
+               r'bin\mapi.dll',
+               r'bin\monetdb5.dll',
+               r'bin\stream.dll',
+               vcpkg.format(r'bin\libiconv.dll'),
+               vcpkg.format(r'bin\bz2.dll'),
+               vcpkg.format(r'bin\libcrypto-1_1{}.dll'.format(libcrypto)),
+               vcpkg.format(r'bin\libxml2.dll'),
+               vcpkg.format(r'bin\pcre.dll'),
+               vcpkg.format(r'bin\zlib1.dll')])
+    # id = comp(debug, id, 14,
+    #           [r'bin\mclient.pdb',
+    #            r'bin\mserver5.pdb',
+    #            r'bin\msqldump.pdb',
+    #            r'lib\libbat.pdb',
+    #            r'lib\libmapi.pdb',
+    #            r'lib\libmonetdb5.pdb',
+    #            r'lib\libstream.pdb'])
     id = comp(geom, id, 14,
-              [r'{}\bin\geos_c.dll'.format(makedefs['LIBGEOS']),
-               r'{}\bin\geos.dll'.format(makedefs['LIBGEOS'])])
+              [vcpkg.format(r'bin\geos_c.dll'),
+               vcpkg.format(r'bin\geos.dll')])
     print(r'            </Directory>')
     print(r'            <Directory Id="etc" Name="etc">')
     id = comp(features, id, 14, [r'etc\.monetdb'])
@@ -172,45 +163,28 @@ def main():
     print(r'            </Directory>')
     print(r'            <Directory Id="lib" Name="lib">')
     print(r'              <Directory Id="monetdb5" Name="monetdb5">')
-    print(r'                <Directory Id="autoload" Name="autoload">')
-    id = comp(features, id, 18,
-              [r'lib\monetdb5\autoload\{}'.format(x) for x in sorted(filter(lambda x: x.endswith('.mal') and ('geom' not in x) and ('pyapi' not in x) and ('opt_sql_append' not in x), os.listdir(os.path.join(sys.argv[3], 'lib', 'monetdb5', 'autoload'))))])
-    id = comp(geom, id, 18,
-              [r'lib\monetdb5\autoload\{}'.format(x) for x in sorted(filter(lambda x: x.endswith('.mal') and ('geom' in x), os.listdir(os.path.join(sys.argv[3], 'lib', 'monetdb5', 'autoload'))))])
-    id = comp(pyapi3, id, 18,
-              [r'lib\monetdb5\autoload\{}'.format(x) for x in sorted(filter(lambda x: x.endswith('_pyapi3.mal'), os.listdir(os.path.join(sys.argv[3], 'lib', 'monetdb5', 'autoload'))))])
-    print(r'                </Directory>')
-    print(r'                <Directory Id="createdb" Name="createdb">')
-    id = comp(features, id, 18,
-              [r'lib\monetdb5\createdb\{}'.format(x) for x in sorted(filter(lambda x: x.endswith('.sql') and ('geom' not in x), os.listdir(os.path.join(sys.argv[3], 'lib', 'monetdb5', 'createdb'))))])
-    id = comp(geom, id, 18,
-              [r'lib\monetdb5\createdb\{}'.format(x) for x in sorted(filter(lambda x: x.endswith('.sql') and ('geom' in x), os.listdir(os.path.join(sys.argv[3], 'lib', 'monetdb5', 'createdb'))))])
-    print(r'                </Directory>')
     id = comp(features, id, 16,
-              [r'lib\monetdb5\{}'.format(x) for x in sorted(filter(lambda x: x.endswith('.mal') and ('geom' not in x) and ('pyapi' not in x) and ('opt_sql_append' not in x), os.listdir(os.path.join(sys.argv[3], 'lib', 'monetdb5'))))])
+              [r'lib\monetdb5\microbenchmark.mal'])
     id = comp(features, id, 16,
               [r'lib\monetdb5\{}'.format(x) for x in sorted(filter(lambda x: x.startswith('lib_') and x.endswith('.dll') and ('geom' not in x) and ('pyapi' not in x) and ('opt_sql_append' not in x), os.listdir(os.path.join(sys.argv[3], 'lib', 'monetdb5'))))])
     id = comp(debug, id, 16,
               [r'lib\monetdb5\{}'.format(x) for x in sorted(filter(lambda x: x.startswith('lib_') and x.endswith('.pdb') and ('geom' not in x) and ('opt_sql_append' not in x), os.listdir(os.path.join(sys.argv[3], 'lib', 'monetdb5'))))])
     id = comp(geom, id, 16,
-              [r'lib\monetdb5\{}'.format(x) for x in sorted(filter(lambda x: x.endswith('.mal') and ('geom' in x), os.listdir(os.path.join(sys.argv[3], 'lib', 'monetdb5'))))])
-    id = comp(geom, id, 16,
               [r'lib\monetdb5\{}'.format(x) for x in sorted(filter(lambda x: x.startswith('lib_') and (x.endswith('.dll') or x.endswith('.pdb')) and ('geom' in x), os.listdir(os.path.join(sys.argv[3], 'lib', 'monetdb5'))))])
     id = comp(pyapi3, id, 16,
-              [r'lib\monetdb5\pyapi3.mal',
-               r'lib\monetdb5\lib_pyapi3.dll'])
+              [r'lib\monetdb5\_pyapi3.dll'])
     print(r'              </Directory>')
     id = comp(extend, id, 14,
-              [r'lib\libbat.lib',
-               r'lib\libmapi.lib',
-               r'lib\libmonetdb5.lib',
-               r'lib\libstream.lib',
-               r'{}\lib\iconv.dll.lib'.format(makedefs['LIBICONV']),
-               r'{}\lib\libbz2.lib'.format(makedefs['LIBBZIP2']),
-               r'{}\lib\libcrypto.lib'.format(makedefs['LIBOPENSSL']),
-               r'{}\lib\libxml2.lib'.format(makedefs['LIBXML2']),
-               r'{}\lib\pcre.lib'.format(makedefs['LIBPCRE']),
-               r'{}\lib\zdll.lib'.format(makedefs['LIBZLIB'])])
+              [r'lib\gdk.lib',
+               r'lib\mapi.lib',
+               r'lib\monetdb5.lib',
+               r'lib\stream.lib',
+               vcpkg.format(r'lib\libiconv.lib'),
+               vcpkg.format(r'lib\bz2.lib'),
+               vcpkg.format(r'lib\libcrypto.lib'),
+               vcpkg.format(r'lib\libxml2.lib'),
+               vcpkg.format(r'lib\pcre.lib'),
+               vcpkg.format(r'lib\zlib.lib')])
     print(r'            </Directory>')
     print(r'            <Directory Id="share" Name="share">')
     print(r'              <Directory Id="doc" Name="doc">')
@@ -229,8 +203,7 @@ def main():
     id = comp(features, id, 12,
               [r'license.rtf',
                r'M5server.bat',
-               r'msqldump.bat',
-               r'stethoscope.bat'])
+               r'msqldump.bat'])
     id = comp(pyapi3, id, 12,
               [r'pyapi_locatepython3.bat'])
     id = comp(features, id, 12,

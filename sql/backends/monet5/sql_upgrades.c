@@ -1212,15 +1212,13 @@ sql_update_nov2019(Client c, mvc *sql, const char *prev_schema, bool *systabfixe
 			" external name \"aggr\".\"quantile_avg\";\n"
 			"GRANT EXECUTE ON AGGREGATE quantile_avg(DOUBLE, DOUBLE) TO PUBLIC;\n");
 #ifdef HAVE_HGE
-	if (have_hge) {
-		pos += snprintf(buf + pos, bufsize - pos,
+	pos += snprintf(buf + pos, bufsize - pos,
 				"create aggregate median_avg(val HUGEINT) returns DOUBLE\n"
 				" external name \"aggr\".\"median_avg\";\n"
 				"GRANT EXECUTE ON AGGREGATE median_avg(HUGEINT) TO PUBLIC;\n"
 				"create aggregate quantile_avg(val HUGEINT, q DOUBLE) returns DOUBLE\n"
 				" external name \"aggr\".\"quantile_avg\";\n"
 				"GRANT EXECUTE ON AGGREGATE quantile_avg(HUGEINT, DOUBLE) TO PUBLIC;\n");
-	}
 #endif
 	/* 60/61_wlcr signatures migrations */
 	pos += snprintf(buf + pos, bufsize - pos,
@@ -2142,6 +2140,31 @@ sql_update_jun2020_sp1_hugeint(Client c, const char *prev_schema)
 #endif
 
 static str
+sql_update_jun2020_sp2(Client c, mvc *sql, const char *prev_schema, bool *systabfixed)
+{
+	/* we need to update the system tables, but only if we haven't done
+	 * so already, and if we are actually upgrading the database */
+	if (*systabfixed)
+		return MAL_SUCCEED;		/* already done */
+
+	char *buf = "select id from sys.functions where name = 'nullif' and schema_id = (select id from sys.schemas where name = 'sys');\n";
+	res_table *output;
+	char *err = SQLstatementIntern(c, &buf, "update", 1, 0, &output);
+	if (err == NULL) {
+		BAT *b = BATdescriptor(output->cols[0].b);
+		if (b) {
+			if (BATcount(b) == 0) {
+				err = sql_fix_system_tables(c, sql, prev_schema);
+				*systabfixed = true;
+			}
+			BBPunfix(b->batCacheid);
+		}
+		res_table_destroy(output);
+	}
+	return err;
+}
+
+static str
 sql_update_oscar_lidar(Client c)
 {
 	char *query =
@@ -2507,15 +2530,13 @@ SQLupgrades(Client c, mvc *m)
 	}
 
 #ifdef HAVE_HGE
-	if (have_hge) {
-		sql_find_subtype(&tp, "hugeint", 0, 0);
-		if (!sql_bind_func(m->sa, s, "var_pop", &tp, NULL, F_AGGR)) {
-			if ((err = sql_update_hugeint(c, m, prev_schema, &systabfixed)) != NULL) {
-				TRC_CRITICAL(SQL_PARSER, "%s\n", err);
-				freeException(err);
-				GDKfree(prev_schema);
-				return -1;
-			}
+	sql_find_subtype(&tp, "hugeint", 0, 0);
+	if (!sql_bind_func(m->sa, s, "var_pop", &tp, NULL, F_AGGR)) {
+		if ((err = sql_update_hugeint(c, m, prev_schema, &systabfixed)) != NULL) {
+			TRC_CRITICAL(SQL_PARSER, "%s\n", err);
+			freeException(err);
+			GDKfree(prev_schema);
+			return -1;
 		}
 	}
 #endif
@@ -2671,15 +2692,13 @@ SQLupgrades(Client c, mvc *m)
 	}
 
 #ifdef HAVE_HGE
-	if (have_hge) {
-		sql_find_subtype(&tp, "hugeint", 0, 0);
-		if (!sql_bind_func(m->sa, s, "median_avg", &tp, NULL, F_AGGR)) {
-			if ((err = sql_update_nov2019_sp1_hugeint(c, m, prev_schema, &systabfixed)) != NULL) {
-				TRC_CRITICAL(SQL_PARSER, "%s\n", err);
-				freeException(err);
-				GDKfree(prev_schema);
-				return -1;
-			}
+	sql_find_subtype(&tp, "hugeint", 0, 0);
+	if (!sql_bind_func(m->sa, s, "median_avg", &tp, NULL, F_AGGR)) {
+		if ((err = sql_update_nov2019_sp1_hugeint(c, m, prev_schema, &systabfixed)) != NULL) {
+			TRC_CRITICAL(SQL_PARSER, "%s\n", err);
+			freeException(err);
+			GDKfree(prev_schema);
+			return -1;
 		}
 	}
 #endif
@@ -2701,17 +2720,22 @@ SQLupgrades(Client c, mvc *m)
 	}
 
 #ifdef HAVE_HGE
-	if (have_hge) {
-		sql_find_subtype(&tp, "hugeint", 0, 0);
-		if (!sql_bind_func(m->sa, s, "covar_pop", &tp, &tp, F_AGGR) &&
-		    (err = sql_update_jun2020_sp1_hugeint(c, prev_schema)) != NULL) {
-			TRC_CRITICAL(SQL_PARSER, "%s\n", err);
-			freeException(err);
-			GDKfree(prev_schema);
-			return -1;
-		}
+	sql_find_subtype(&tp, "hugeint", 0, 0);
+	if (!sql_bind_func(m->sa, s, "covar_pop", &tp, &tp, F_AGGR) &&
+		(err = sql_update_jun2020_sp1_hugeint(c, prev_schema)) != NULL) {
+		TRC_CRITICAL(SQL_PARSER, "%s\n", err);
+		freeException(err);
+		GDKfree(prev_schema);
+		return -1;
 	}
 #endif
+
+	if ((err = sql_update_jun2020_sp2(c, m, prev_schema, &systabfixed)) != NULL) {
+		TRC_CRITICAL(SQL_PARSER, "%s\n", err);
+		freeException(err);
+		GDKfree(prev_schema);
+		return -1;
+	}
 
 	sql_find_subtype(&tp, "varchar", 0, 0);
 	if (sql_bind_func(m->sa, s, "lidarattach", &tp, NULL, F_PROC) &&

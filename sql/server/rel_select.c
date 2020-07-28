@@ -24,9 +24,6 @@
 #include "rel_unnest.h"
 #include "rel_remote.h"
 #include "rel_sequence.h"
-#ifdef HAVE_HGE
-#include "mal.h"		/* for have_hge */
-#endif
 
 #define VALUE_FUNC(f) (f->func->type == F_FUNC || f->func->type == F_FILT)
 #define check_card(card,f) ((card == card_none && !f->res) || (CARD_VALUE(card) && f->res && VALUE_FUNC(f)) || card == card_loader || (card == card_relation && f->func->type == F_UNION))
@@ -1085,7 +1082,7 @@ rel_column_ref(sql_query *query, sql_rel **rel, symbol *column_r, int f)
 				if (is_groupby(outer->op) && !is_sql_aggr(f)) {
 					exp = rel_groupby_add_aggr(sql, outer, exp);
 					exp->card = CARD_ATOM;
-				} else if (is_groupby(outer->op) && is_sql_aggr(f) && exps_find_match_exp(outer->exps, exp))
+				} else if (is_groupby(outer->op) && is_sql_aggr(f) && exps_any_match(outer->exps, exp))
 					exp = exp_ref(sql, exp);
 				else
 					exp->card = CARD_ATOM;
@@ -1157,7 +1154,7 @@ rel_column_ref(sql_query *query, sql_rel **rel, symbol *column_r, int f)
 				if (is_groupby(outer->op) && !is_sql_aggr(f)) {
 					exp = rel_groupby_add_aggr(sql, outer, exp);
 					exp->card = CARD_ATOM;
-				} else if (is_groupby(outer->op) && is_sql_aggr(f) && exps_find_match_exp(outer->exps, exp))
+				} else if (is_groupby(outer->op) && is_sql_aggr(f) && exps_any_match(outer->exps, exp))
 					exp = exp_ref(sql, exp);
 				else
 					exp->card = CARD_ATOM;
@@ -1284,7 +1281,7 @@ largest_numeric_type(sql_subtype *res, int ec)
 {
 	if (ec == EC_NUM) {
 #ifdef HAVE_HGE
-		*res = *sql_bind_localtype(have_hge ? "hge" : "lng");
+		*res = *sql_bind_localtype("hge");
 #else
 		*res = *sql_bind_localtype("lng");
 #endif
@@ -1319,19 +1316,16 @@ exp_scale_algebra(mvc *sql, sql_subfunc *f, sql_rel *rel, sql_exp *l, sql_exp *r
 
 		/* HACK alert: digits should be less than max */
 #ifdef HAVE_HGE
-		if (have_hge) {
-			if (res->type->radix == 10 && digits > 39)
-				digits = 39;
-			if (res->type->radix == 2 && digits > 128)
-				digits = 128;
-		} else
+		if (res->type->radix == 10 && digits > 39)
+			digits = 39;
+		if (res->type->radix == 2 && digits > 128)
+			digits = 128;
+#else
+		if (res->type->radix == 10 && digits > 19)
+			digits = 19;
+		if (res->type->radix == 2 && digits > 64)
+			digits = 64;
 #endif
-		{
-			if (res->type->radix == 10 && digits > 19)
-				digits = 19;
-			if (res->type->radix == 2 && digits > 64)
-				digits = 64;
-		}
 
 		sql_find_subtype(&nlt, lt->type->sqlname, digL, scaleL);
 		l = exp_check_type( sql, &nlt, rel, l, type_equal);
@@ -3602,14 +3596,14 @@ _rel_aggr(sql_query *query, sql_rel **rel, int distinct, sql_schema *s, char *an
 		else if (list_length(l) <= 63)
 			tpe = sql_bind_localtype("lng");
 #ifdef HAVE_HGE
-		else if (have_hge && list_length(l) <= 127)
+		else if (list_length(l) <= 127)
 			tpe = sql_bind_localtype("hge");
 #endif
 		else
 			return sql_error(sql, 02, SQLSTATE(42000) "SELECT: GROUPING the number of grouping columns is larger"
 								" than the maximum number of representable bits from this server (%d > %d)", list_length(l),
 #ifdef HAVE_HGE
-							have_hge ? 127 : 63
+							127
 #else
 							 63
 #endif
@@ -3769,115 +3763,43 @@ rel_aggr(sql_query *query, sql_rel **rel, symbol *se, int f)
 }
 
 static sql_exp *
-rel_case(sql_query *query, sql_rel **rel, tokens token, symbol *opt_cond, dlist *when_search_list, symbol *opt_else, int f)
+rel_case(sql_query *query, sql_rel **rel, symbol *opt_cond, dlist *when_search_list, symbol *opt_else, int f)
 {
 	mvc *sql = query->sql;
 	sql_subtype *tpe = NULL;
-	list *conds = new_exp_list(sql->sa);
-	list *results = new_exp_list(sql->sa);
-	dnode *dn = when_search_list->h;
-	sql_subtype *restype = NULL, rtype, bt;
-	sql_exp *res = NULL, *else_exp = NULL;
-	node *n, *m;
+	list *conds = new_exp_list(sql->sa), *results = new_exp_list(sql->sa);
+	sql_subtype *restype = NULL, *condtype = NULL, ctype, rtype, bt;
+	sql_exp *res = NULL, *opt_cond_exp = NULL;
 	exp_kind ek = {type_value, card_column, FALSE};
 
-	sql_find_subtype(&bt, "boolean", 0, 0);
-	if (dn) {
-		sql_exp *cond = NULL, *result = NULL;
-
-		/* NULLIF(e1,e2) == CASE WHEN e1=e2 THEN NULL ELSE e1 END */
-		if (token == SQL_NULLIF) {
-			sql_exp *e1, *e2;
-
-			if (!(e1 = rel_value_exp(query, rel, dn->data.sym, f, ek)))
-				return NULL;
-			if (!(e2 = rel_value_exp(query, rel, dn->next->data.sym, f, ek)))
-				return NULL;
-
-			cond = rel_binop_(sql, rel ? *rel : NULL, e1, e2, NULL, "=", card_value);
-			result = exp_null(sql->sa, exp_subtype(e1));
-			else_exp = exp_ref_save(sql, e1);	/* ELSE case */
-			/* COALESCE(e1,e2) == CASE WHEN e1
-			   IS NOT NULL THEN e1 ELSE e2 END */
-		} else if (token == SQL_COALESCE) {
-			cond = rel_value_exp(query, rel, dn->data.sym, f, ek);
-
-			if (cond) {
-				result = exp_ref_save(sql, cond);
-				if (!(cond = rel_unop_(sql, rel ? *rel : NULL, cond, NULL, "isnotnull", card_value)))
-					return NULL;
-				set_has_no_nil(cond);
-			}
-		} else {
-			dlist *when = dn->data.sym->data.lval;
-
-			if (opt_cond) {
-				sql_exp *l, *r;
-
-				if (!(l = rel_value_exp(query, rel, opt_cond, f, ek)))
-					return NULL;
-				if (!(r = rel_value_exp(query, rel, when->h->data.sym, f, ek)))
-					return NULL;
-				if (rel_convert_types(sql, rel ? *rel : NULL, rel ? *rel : NULL, &l, &r, 1, type_equal) < 0)
-					return NULL;
-				cond = rel_binop_(sql, rel ? *rel : NULL, l, r, NULL, "=", card_value);
-			} else {
-				cond = rel_logical_value_exp(query, rel, when->h->data.sym, f, ek);
-			}
-			if (!cond)
-				return NULL;
-			result = rel_value_exp(query, rel, when->h->next->data.sym, f, ek);
-		}
-		if (!cond || !result)
+	if (opt_cond) {
+		if (!(opt_cond_exp = rel_value_exp(query, rel, opt_cond, f, ek)))
 			return NULL;
-		list_prepend(conds, cond);
-		list_prepend(results, result);
-
-		restype = exp_subtype(result);
-
-		if (token == SQL_NULLIF)
-			dn = NULL;
-		else
-			dn = dn->next;
+		condtype = exp_subtype(opt_cond_exp);
 	}
-	/* for COALESCE we skip the last (else part) */
-	for (; dn && (token != SQL_COALESCE || dn->next); dn = dn->next) {
+
+	for (dnode *dn = when_search_list->h; dn; dn = dn->next) {
 		sql_exp *cond = NULL, *result = NULL;
+		dlist *when = dn->data.sym->data.lval;
 
-		if (token == SQL_COALESCE) {
-			cond = rel_value_exp(query, rel, dn->data.sym, f, ek);
-
-			if (cond) {
-				result = exp_ref_save(sql, cond);
-				if (!(cond = rel_unop_(sql, rel ? *rel : NULL, cond, NULL, "isnotnull", card_value)))
-					return NULL;
-				set_has_no_nil(cond);
-			}
-		} else {
-			dlist *when = dn->data.sym->data.lval;
-
-			if (opt_cond) {
-				sql_exp *l, *r;
-
-				if (!(l = rel_value_exp(query, rel, opt_cond, f, ek)))
-					return NULL;
-				if (!(r = rel_value_exp(query, rel, when->h->data.sym, f, ek)))
-					return NULL;
-				if (rel_convert_types(sql, rel ? *rel : NULL, rel ? *rel : NULL, &l, &r, 1, type_equal) < 0)
-					return NULL;
-				cond = rel_binop_(sql, rel ? *rel : NULL, l, r, NULL, "=", card_value);
-			} else {
-				cond = rel_logical_value_exp(query, rel, when->h->data.sym, f, ek);
-			}
-			if (!cond)
-				return NULL;
-			result = rel_value_exp(query, rel, when->h->next->data.sym, f, ek);
-		}
-		if (!cond || !result)
+		if (opt_cond)
+			cond = rel_value_exp(query, rel, when->h->data.sym, f, ek);
+		else
+			cond = rel_logical_value_exp(query, rel, when->h->data.sym, f, ek);
+		if (!cond)
 			return NULL;
 		list_prepend(conds, cond);
-		list_prepend(results, result);
+		tpe = exp_subtype(cond);
+		if (tpe && condtype) {
+			supertype(&ctype, condtype, tpe);
+			condtype = &ctype;
+		} else if (tpe) {
+			condtype = tpe;
+		}
 
+		if (!(result = rel_value_exp(query, rel, when->h->next->data.sym, f, ek)))
+			return NULL;
+		list_prepend(results, result);
 		tpe = exp_subtype(result);
 		if (tpe && restype) {
 			supertype(&rtype, restype, tpe);
@@ -3886,13 +3808,11 @@ rel_case(sql_query *query, sql_rel **rel, tokens token, symbol *opt_cond, dlist 
 			restype = tpe;
 		}
 	}
-	if (opt_else || else_exp) {
-		sql_exp *result = else_exp;
-
-		if (!result && !(result = rel_value_exp(query, rel, opt_else, f, ek)))
+	if (opt_else) {
+		if (!(res = rel_value_exp(query, rel, opt_else, f, ek)))
 			return NULL;
 
-		tpe = exp_subtype(result);
+		tpe = exp_subtype(res);
 		if (tpe && restype) {
 			supertype(&rtype, restype, tpe);
 			restype = &rtype;
@@ -3905,11 +3825,7 @@ rel_case(sql_query *query, sql_rel **rel, tokens token, symbol *opt_cond, dlist 
 		if (restype->type->localtype == TYPE_void) /* NULL */
 			restype = sql_bind_localtype("str");
 
-		if (!result || !(result = exp_check_type(sql, restype, rel ? *rel : NULL, result, type_equal)))
-			return NULL;
-		res = result;
-
-		if (!res)
+		if (!(res = exp_check_type(sql, restype, rel ? *rel : NULL, res, type_equal)))
 			return NULL;
 	} else {
 		if (!restype)
@@ -3919,20 +3835,28 @@ rel_case(sql_query *query, sql_rel **rel, tokens token, symbol *opt_cond, dlist 
 		res = exp_null(sql->sa, restype);
 	}
 
-	for (n = conds->h, m = results->h; n && m; n = n->next, m = m->next) {
+	if (!condtype)
+		return sql_error(sql, 02, SQLSTATE(42000) "Condition type missing");
+	if (condtype->type->localtype == TYPE_void) /* NULL */
+		condtype = sql_bind_localtype("str");
+	if (opt_cond_exp && !(opt_cond_exp = exp_check_type(sql, condtype, rel ? *rel : NULL, opt_cond_exp, type_equal)))
+		return NULL;
+	sql_find_subtype(&bt, "boolean", 0, 0);
+	for (node *n = conds->h, *m = results->h; n && m; n = n->next, m = m->next) {
 		sql_exp *cond = n->data;
 		sql_exp *result = m->data;
 
 		if (!(result = exp_check_type(sql, restype, rel ? *rel : NULL, result, type_equal)))
 			return NULL;
 
+		if (!(cond = exp_check_type(sql, condtype, rel ? *rel : NULL, cond, type_equal)))
+			return NULL;
+		if (opt_cond_exp && !(cond = rel_binop_(sql, rel ? *rel : NULL, n == conds->h ? opt_cond_exp : exp_copy(sql, opt_cond_exp), cond, NULL, "=", card_value)))
+			return NULL;
 		if (!(cond = exp_check_type(sql, &bt, rel ? *rel : NULL, cond, type_equal)))
 			return NULL;
 
-		if (!cond || !result || !res)
-			return NULL;
-		res = rel_nop_(sql, rel ? *rel : NULL, cond, result, res, NULL, NULL, "ifthenelse", card_value);
-		if (!res)
+		if (!(res = rel_nop_(sql, rel ? *rel : NULL, cond, result, res, NULL, NULL, "ifthenelse", card_value)))
 			return NULL;
 		/* ugh overwrite res type */
 		((sql_subfunc*)res->f)->res->h->data = sql_create_subtype(sql->sa, restype->type, restype->digits, restype->scale);
@@ -3941,27 +3865,67 @@ rel_case(sql_query *query, sql_rel **rel, tokens token, symbol *opt_cond, dlist 
 }
 
 static sql_exp *
+rel_complex_case(sql_query *query, sql_rel **rel, dlist *case_args, int f, str func)
+{
+	exp_kind ek = {type_value, card_column, FALSE};
+	list *args = sa_list(query->sql->sa);
+	sql_subtype *restype = NULL, rtype;
+
+	/* generate nested func calls */
+	for(dnode *dn = case_args->h; dn; dn = dn->next) {
+		sql_exp *a = rel_value_exp(query, rel, dn->data.sym, f, ek);
+		if (!a)
+			return NULL;
+		append(args, a);
+		/* all arguments should have the same type */
+		sql_subtype *tpe = exp_subtype(a);
+		if (tpe && restype) {
+			supertype(&rtype, restype, tpe);
+			restype = &rtype;
+		} else if (tpe) {
+			restype = tpe;
+		}
+	}
+	if (!restype)
+		return sql_error(query->sql, 02, SQLSTATE(42000) "Result type missing");
+
+	sql_exp *cur = NULL;
+	for (node *n = args->h; n; n = n->next) {
+		sql_exp *a = n->data;
+
+		if (!(a = exp_check_type(query->sql, restype, rel ? *rel : NULL, a, type_equal)))
+			return NULL;
+		if (!cur)
+			cur = a;
+		else {
+			cur = rel_binop_(query->sql, NULL, cur, a, NULL, func, card_value);
+			if (!cur)
+				return NULL;
+		}
+	}
+	return cur;
+}
+
+static sql_exp *
 rel_case_exp(sql_query *query, sql_rel **rel, symbol *se, int f)
 {
 	dlist *l = se->data.lval;
 
 	if (se->token == SQL_COALESCE) {
-		symbol *opt_else = l->t->data.sym;
-
-		return rel_case(query, rel, se->token, NULL, l, opt_else, f);
+		return rel_complex_case(query, rel, l, f, "coalesce");
 	} else if (se->token == SQL_NULLIF) {
-		return rel_case(query, rel, se->token, NULL, l, NULL, f);
+		return rel_complex_case(query, rel, l, f, "nullif");
 	} else if (l->h->type == type_list) {
 		dlist *when_search_list = l->h->data.lval;
 		symbol *opt_else = l->h->next->data.sym;
 
-		return rel_case(query, rel, SQL_CASE, NULL, when_search_list, opt_else, f);
+		return rel_case(query, rel, NULL, when_search_list, opt_else, f);
 	} else {
 		symbol *scalar_exp = l->h->data.sym;
 		dlist *when_value_list = l->h->next->data.lval;
 		symbol *opt_else = l->h->next->next->data.sym;
 
-		return rel_case(query, rel, SQL_CASE, scalar_exp, when_value_list, opt_else, f);
+		return rel_case(query, rel, scalar_exp, when_value_list, opt_else, f);
 	}
 }
 

@@ -1365,10 +1365,6 @@ parseCommandPattern(Client cntxt, int kind, MALfcn address)
 		curInstr->fcn = address;
        }
 	helpInfo(cntxt, &curBlk->help);
-#ifdef HAVE_HGE
-	if (!have_hge)
-		have_hge = strcmp(modnme, "calc") == 0 && strcmp(getFunctionId(curInstr), "hge") == 0;
-#endif
 	return curBlk;
 }
 

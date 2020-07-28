@@ -775,13 +775,15 @@ exp_bin(backend *be, sql_exp *e, stmt *left, stmt *right, stmt *grp, stmt *ext, 
 		assert(!e->r);
 		if (exps) {
 			int nrcols = 0;
-			int push_cond_exec = 0;
+			int push_cond_exec = 0, coalesce = 0;
 			stmt *ncond = NULL, *ocond = cond;
 
 			if (sel && strcmp(sql_func_mod(f->func), "calc") == 0 && strcmp(sql_func_imp(f->func), "ifthenelse") != 0)
 				push_cands = 1;
-                        if (strcmp(sql_func_mod(f->func), "calc") == 0 && strcmp(sql_func_imp(f->func), "ifthenelse") == 0)
+			if (strcmp(sql_func_mod(f->func), "calc") == 0 && strcmp(sql_func_imp(f->func), "ifthenelse") == 0)
 				push_cond_exec = 1;
+			if (strcmp(sql_func_mod(f->func), "") == 0 && strcmp(sql_func_imp(f->func), "") == 0 && strcmp(f->func->base.name, "coalesce") == 0)
+				coalesce = 1;
 
 			assert(list_length(exps) == list_length(f->func->ops) || f->func->type == F_ANALYTIC || f->func->type == F_LOADER || f->func->vararg || f->func->varres);
 			for (en = exps->h; en; en = en->next) {
@@ -809,6 +811,17 @@ exp_bin(backend *be, sql_exp *e, stmt *left, stmt *right, stmt *grp, stmt *ext, 
 
 				if (push_cands && es->nrcols)
 					nrcands++;
+				if (coalesce && en->next) {
+					sql_subfunc *a = sql_bind_func(sql->sa, sql->session->schema, "isnull", tail_type(es), NULL, F_FUNC);
+					ncond = stmt_unop(be, es, a);
+					if (ocond) {
+						sql_subtype *bt = sql_bind_localtype("bit");
+						sql_subfunc *a = sql_bind_func(sql->sa, sql->session->schema, "and", bt, bt, F_FUNC);
+						cond = stmt_binop(be, ocond, ncond, a);
+					} else {
+						cond = ncond;
+					}
+				}
 				if (push_cond_exec && ncond) { /* handled then part */
 					sql_subtype *bt = sql_bind_localtype("bit");
 					sql_subfunc *a = sql_bind_func(sql->sa, sql->session->schema, "not", bt, NULL, F_FUNC);
@@ -856,7 +869,7 @@ exp_bin(backend *be, sql_exp *e, stmt *left, stmt *right, stmt *grp, stmt *ext, 
 				list_append(l, ocond);
 			}
 			/* single value conditional execution done below */
-			if (ocond && !push_cond_exec && !nrcols && strcmp(sql_func_mod(f->func), "calc") == 0) {
+			if (ocond && !ocond->nrcols && !push_cond_exec && !nrcols && strcmp(sql_func_mod(f->func), "calc") == 0) {
 				sql_subtype *bt = sql_bind_localtype("bit");
 				sql_subfunc *isnull = sql_bind_func(be->mvc->sa, NULL, "isnull", bt, NULL, F_FUNC);
 				sql_subfunc *or = sql_bind_func(be->mvc->sa, NULL, "or", bt, bt, F_FUNC);

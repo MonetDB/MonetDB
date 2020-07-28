@@ -30,17 +30,6 @@ QueryQueue QRYqueue = NULL;
 size_t qsize = 0, qhead = 0, qtail = 0;
 static oid qtag= 1;		// A unique query identifier
 
-void
-mal_runtime_reset(void)
-{
-	GDKfree(QRYqueue);
-	QRYqueue = NULL;
-	qsize = 0;
-	qtag= 1;
-	qhead = 0;
-	qtail = 0;
-}
-
 static str
 isaSQLquery(MalBlkPtr mb){
 	int i;
@@ -93,27 +82,24 @@ advanceQRYqueue(void)
 	if( s){
 		/* don;t wipe them when they are still running, prepared, or paused */
 		/* The upper layer has assured there is at least one slot available */
-		if(QRYqueue[qhead].status == 0 || (QRYqueue[qhead].status[0] != 'r' && QRYqueue[qhead].status[0] != 'p')){
+		if(QRYqueue[qhead].status != 0 && (QRYqueue[qhead].status[0] == 'r' || QRYqueue[qhead].status[0] == 'p')){
 			advanceQRYqueue();
 			return;
 		}
 		GDKfree(s);
-		if(QRYqueue[qhead].username)
-			GDKfree(QRYqueue[qhead].username);
+		GDKfree(QRYqueue[qhead].username);
 		clearQRYqueue(qhead);
 	}
 }
 
-void
+static void
 dropQRYqueue(void)
 {
 	size_t i;
 	MT_lock_set(&mal_delayLock);
 	for(i = 0; i < qsize; i++){
-		if( QRYqueue[i].query)
-			GDKfree(QRYqueue[i].query);
-		if(QRYqueue[i].username)
-			GDKfree(QRYqueue[i].username);
+		GDKfree(QRYqueue[i].query);
+		GDKfree(QRYqueue[i].username);
 		clearQRYqueue(i);
 	}
 	GDKfree(QRYqueue);
@@ -121,23 +107,23 @@ dropQRYqueue(void)
 	MT_lock_unset(&mal_delayLock);
 }
 
+/* At the start of every MAL block or SQL query */
 void
 runtimeProfileInit(Client cntxt, MalBlkPtr mb, MalStkPtr stk)
 {
 	size_t i, paused = 0;
 	str q;
-	QueryQueue tmp;
+	QueryQueue tmp = NULL;
 
 	MT_lock_set(&mal_delayLock);
-	tmp = QRYqueue;
-	if ( QRYqueue == NULL)
-		QRYqueue = (QueryQueue) GDKzalloc( sizeof (struct QRYQUEUE) * (qsize= 8)); /* for testing */
+	if ( QRYqueue == NULL) {
+		QRYqueue = (QueryQueue) GDKzalloc( sizeof (struct QRYQUEUE) * (qsize= MAL_MAXCLIENTS));
 
-	if ( QRYqueue == NULL){
-		addMalException(mb,"runtimeProfileInit" MAL_MALLOC_FAIL);
-		GDKfree(tmp);
-		MT_lock_unset(&mal_delayLock);
-		return;
+		if ( QRYqueue == NULL){
+			addMalException(mb,"runtimeProfileInit" MAL_MALLOC_FAIL);
+			MT_lock_unset(&mal_delayLock);
+			return;
+		}
 	}
 	// check for recursive call, which does not change the number of workers
 	i=qtail;
@@ -157,13 +143,13 @@ runtimeProfileInit(Client cntxt, MalBlkPtr mb, MalStkPtr stk)
 	assert(qhead < qsize);
 	if( (int) (qsize - paused) < MAL_MAXCLIENTS){
 		qsize += MAL_MAXCLIENTS;
-		QRYqueue = (QueryQueue) GDKrealloc( QRYqueue, sizeof (struct QRYQUEUE) * qsize);
-		if ( QRYqueue == NULL){
+		tmp = (QueryQueue) GDKrealloc( QRYqueue, sizeof (struct QRYQUEUE) * qsize);
+		if ( tmp == NULL){
 			addMalException(mb,"runtimeProfileInit" MAL_MALLOC_FAIL);
-			GDKfree(tmp);
 			MT_lock_unset(&mal_delayLock);
 			return;
 		}
+		QRYqueue = tmp;
 		for(i = qsize - MAL_MAXCLIENTS; i < qsize; i++)
 			clearQRYqueue(i);
 	}
@@ -177,10 +163,9 @@ runtimeProfileInit(Client cntxt, MalBlkPtr mb, MalStkPtr stk)
 	QRYqueue[qhead].start = time(0);
 	q = isaSQLquery(mb);
 	QRYqueue[qhead].query = q? GDKstrdup(q):0;
-	if(QRYqueue[qhead].username)
-		GDKfree(QRYqueue[qhead].username);
+	GDKfree(QRYqueue[qhead].username);
 	if (!GDKembedded())
-		AUTHgetUsername(&QRYqueue[qhead].username, cntxt);
+		QRYqueue[qhead].username = GDKstrdup(cntxt->username);
 	QRYqueue[qhead].idx = cntxt->idx;
 	QRYqueue[qhead].memory = (int) (stk->memory / LL_CONSTANT(1048576)); /* Convert to MB */
 	QRYqueue[qhead].workers = (int) stk->workers;
@@ -192,16 +177,16 @@ runtimeProfileInit(Client cntxt, MalBlkPtr mb, MalStkPtr stk)
 }
 
 /*
+ * At the end of every MAL block or SQL query.
+ *
  * Returning from a recursive call does not change the number of workers.
  */
-
 void
 runtimeProfileFinish(Client cntxt, MalBlkPtr mb, MalStkPtr stk)
 {
 	size_t i;
 
 	(void) cntxt;
-	(void) mb;
 
 	MT_lock_set(&mal_delayLock);
 	i=qtail;
@@ -229,6 +214,17 @@ runtimeProfileFinish(Client cntxt, MalBlkPtr mb, MalStkPtr stk)
 	MT_lock_unset(&mal_delayLock);
 }
 
+/* Used by mal_reset to do the grand final clean up of this area before MonetDB exits */
+void
+mal_runtime_reset(void)
+{
+	dropQRYqueue();
+	qsize = 0;
+	qtag= 1;
+	qhead = 0;
+	qtail = 0;
+}
+
 /*
  * Each MAL instruction is executed by a single thread, which means we can
  * keep a simple working set around to make Stethscope attachement easy.
@@ -236,6 +232,7 @@ runtimeProfileFinish(Client cntxt, MalBlkPtr mb, MalStkPtr stk)
  */
 Workingset workingset[THREADS];
 
+/* At the start of each MAL stmt */
 void
 runtimeProfileBegin(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, RuntimeProfile prof)
 {
@@ -259,6 +256,7 @@ runtimeProfileBegin(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, Run
 		profilerEvent(cntxt, mb, stk, pci, TRUE);
 }
 
+/* At the end of each MAL stmt */
 void
 runtimeProfileExit(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, RuntimeProfile prof)
 {
