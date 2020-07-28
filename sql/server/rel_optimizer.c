@@ -1491,6 +1491,7 @@ rel_push_func_down(visitor *v, sql_rel *rel)
 			sql_rel *nrel;
 			sql_rel *l = rel->l, *ol = l;
 			sql_rel *r = rel->r, *or = r;
+			visitor nv = { .sql = v->sql, .parent = v->parent };
 
 			/* we need a full projection, group by's and unions cannot be extended
  			 * with more expressions */
@@ -1510,13 +1511,9 @@ rel_push_func_down(visitor *v, sql_rel *rel)
 			}
  			nrel = rel_project(v->sql->sa, rel, rel_projections(v->sql, rel, NULL, 1, 1));
 
-			int old_changes = v->changes;
-			v->changes = 0;
-			if (!(exps = exps_push_single_func_down(v, rel, l, r, exps))) {
-				v->changes = old_changes;
+			if (!(exps = exps_push_single_func_down(&nv, rel, l, r, exps)))
 				return NULL;
-			}
-			if (v->changes) {
+			if (nv.changes) {
 				rel = nrel;
 			} else {
 				if (l != ol)
@@ -1524,7 +1521,7 @@ rel_push_func_down(visitor *v, sql_rel *rel)
 				if (is_joinop(rel->op) && r != or)
 					rel->r = or;
 			}
-			v->changes += old_changes;
+			v->changes += nv.changes;
 		}
 	}
 	if (rel->op == op_project && rel->l && rel->exps) {
@@ -1826,18 +1823,15 @@ rel_simplify_fk_joins(visitor *v, sql_rel *rel)
 static list *
 sum_limit_offset(mvc *sql, sql_rel *rel)
 {
-	list *nexps = new_exp_list(sql->sa);
-	sql_subtype *lng = sql_bind_localtype("lng");
-	sql_subfunc *add;
-
 	/* for sample we always propagate */
 	if (is_sample(rel->op))
 		return exps_copy(sql, rel->exps);
 	/* if the expression list only consists of a limit expression, we copy it */
 	if (list_length(rel->exps) == 1 && rel->exps->h->data)
-		return append(nexps, rel->exps->h->data);
-	add = sql_bind_func_result(sql->sa, sql->session->schema, "sql_add", F_FUNC, lng, 2, lng, lng);
-	return append(nexps, exp_op(sql->sa, rel->exps, add));
+		return list_append(sa_list(sql->sa), rel->exps->h->data);
+	sql_subtype *lng = sql_bind_localtype("lng");
+	sql_subfunc *add = sql_bind_func_result(sql->sa, sql->session->schema, "sql_add", F_FUNC, lng, 2, lng, lng);
+	return list_append(sa_list(sql->sa), exp_op(sql->sa, rel->exps, add));
 }
 
 static int
@@ -1968,7 +1962,7 @@ rel_push_topn_and_sample_down(visitor *v, sql_rel *rel)
 			}
 		}
 
-		if (r && need_distinct(r))
+		if (r && is_simple_project(r->op) && need_distinct(r))
 			return rel;
 
 		/* push topn/sample under projections */
@@ -1995,24 +1989,28 @@ rel_push_topn_and_sample_down(visitor *v, sql_rel *rel)
 			sql_rel *u = r, *x;
 			sql_rel *ul = u->l;
 			sql_rel *ur = u->r;
+			bool changed = false;
 
-			/* only push topn once */
 			x = ul;
-			while (is_simple_project(x->op) && x->l)
+			while (is_simple_project(x->op) && !need_distinct(x) && !rel_is_ref(x) && x->l && !x->r)
 				x = x->l;
-			if (x && x->op == rel->op)
-				return rel;
-			x = ur;
-			while (is_simple_project(x->op) && x->l)
-				x = x->l;
-			if (x && x->op == rel->op)
-				return rel;
+			if (x && x->op != rel->op) { /* only push topn once */
+				ul = func(v->sql->sa, ul, sum_limit_offset(v->sql, rel));
+				u->l = ul;
+				changed = true;
+			}
 
-			ul = func(v->sql->sa, ul, sum_limit_offset(v->sql, rel));
-			ur = func(v->sql->sa, ur, sum_limit_offset(v->sql, rel));
-			u->l = ul;
-			u->r = ur;
-			v->changes++;
+			x = ur;
+			while (is_simple_project(x->op) && !need_distinct(x) && !rel_is_ref(x) && x->l && !x->r)
+				x = x->l;
+			if (x && x->op != rel->op) { /* only push topn once */
+				ur = func(v->sql->sa, ur, sum_limit_offset(v->sql, rel));
+				u->r = ur;
+				changed = true;
+			}
+
+			if (changed)
+				v->changes++;
 			return rel;
 		}
 
@@ -2027,12 +2025,12 @@ rel_push_topn_and_sample_down(visitor *v, sql_rel *rel)
 
 			/* only push topn/sample once */
 			x = ul;
-			while (is_simple_project(x->op) && x->l)
+			while (is_simple_project(x->op) && !need_distinct(x) && !rel_is_ref(x) && x->l && !x->r)
 				x = x->l;
 			if (x && x->op == rel->op)
 				return rel;
 			x = ur;
-			while (is_simple_project(x->op) && x->l)
+			while (is_simple_project(x->op) && !need_distinct(x) && !rel_is_ref(x) && x->l && !x->r)
 				x = x->l;
 			if (x && x->op == rel->op)
 				return rel;
