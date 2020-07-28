@@ -2104,7 +2104,7 @@ rel_push_topn_and_sample_down(visitor *v, sql_rel *rel)
 			}
 		}
 
-		if (r && need_distinct(r))
+		if (r && is_simple_project(r->op) && need_distinct(r))
 			return rel;
 
 		/* push topn/sample under projections */
@@ -2131,24 +2131,28 @@ rel_push_topn_and_sample_down(visitor *v, sql_rel *rel)
 			sql_rel *u = r, *x;
 			sql_rel *ul = u->l;
 			sql_rel *ur = u->r;
+			bool changed = false;
 
-			/* only push topn once */
 			x = ul;
-			while (is_simple_project(x->op) && x->l)
+			while (is_simple_project(x->op) && !need_distinct(x) && !rel_is_ref(x) && x->l && !x->r)
 				x = x->l;
-			if (x && x->op == rel->op)
-				return rel;
-			x = ur;
-			while (is_simple_project(x->op) && x->l)
-				x = x->l;
-			if (x && x->op == rel->op)
-				return rel;
+			if (x && x->op != rel->op) { /* only push topn once */
+				ul = func(v->sql->sa, ul, sum_limit_offset(v->sql, rel));
+				u->l = ul;
+				changed = true;
+			}
 
-			ul = func(v->sql->sa, ul, sum_limit_offset(v->sql, rel));
-			ur = func(v->sql->sa, ur, sum_limit_offset(v->sql, rel));
-			u->l = ul;
-			u->r = ur;
-			v->changes++;
+			x = ur;
+			while (is_simple_project(x->op) && !need_distinct(x) && !rel_is_ref(x) && x->l && !x->r)
+				x = x->l;
+			if (x && x->op != rel->op) { /* only push topn once */
+				ur = func(v->sql->sa, ur, sum_limit_offset(v->sql, rel));
+				u->r = ur;
+				changed = true;
+			}
+
+			if (changed)
+				v->changes++;
 			return rel;
 		}
 
@@ -2163,12 +2167,12 @@ rel_push_topn_and_sample_down(visitor *v, sql_rel *rel)
 
 			/* only push topn/sample once */
 			x = ul;
-			while (is_simple_project(x->op) && x->l)
+			while (is_simple_project(x->op) && !need_distinct(x) && !rel_is_ref(x) && x->l && !x->r)
 				x = x->l;
 			if (x && x->op == rel->op)
 				return rel;
 			x = ur;
-			while (is_simple_project(x->op) && x->l)
+			while (is_simple_project(x->op) && !need_distinct(x) && !rel_is_ref(x) && x->l && !x->r)
 				x = x->l;
 			if (x && x->op == rel->op)
 				return rel;
