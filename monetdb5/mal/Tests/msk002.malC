@@ -1,0 +1,40 @@
+# MSK bats are dynamically sized bitvectors. 
+# The length depends on the bits being set and starts with index 0.
+# All bits beyond the last one set are considered 0
+# This allows for bitvectors produced in select() to be cut off and still  to be used where appropriate  in set operations
+
+bv2:= bat.new(:msk);
+bat.setbit(bv2,1:msk);
+bat.setbit(bv2,3:msk);
+bat.setbit(bv2,5:msk);
+bat.setbit(bv2,7:msk);
+bat.setbit(bv2,6:msk);
+
+io.print(bv2); # should produce 0,1,0,1,0,1,1,1
+
+cnt = bat.length(bv1);
+io.print(cnt);  #  MSK bat has 8 elements, the position of the last bit set
+
+scnt = aggr.count(bv1, 1);
+io.print(scnt);  #  MSK bat has 5 elements set to 1
+
+bat.clrbit(bv2,3)
+io.print(bv2); # should produce 0,1,0,0,0,1,1,1
+
+# MSK bats come with set operations, their underlying size should be the same
+bv3:= bat.new(:msk);
+bat.setbit(bv2,1);
+bat.setbit(bv2,2);
+bat.setbit(bv2,5);
+
+x:= batcalc.and(bv2, bv3);	# bv3 is implictly extended with 0 to reach 8 elements
+io.print(x) # should produce 0,1,0,0,1
+
+y:= batcalc.or(bv2, bv3);
+io.print(y) # should produce 0,1,1,1,0,1,1,1
+
+z:= batcalc.not(bv2);
+io.print(z) # should produce 1,0,0,0,1 
+# The negation stops as the last false reported.
+
+u:bat[:msk] := bat.newmask(8:int, 1:int); #create mask of length 8 and set it to 1.

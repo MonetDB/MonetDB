@@ -1499,7 +1499,11 @@ CMDifthen(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			}
 		}
 	} else {
-		bit v = *getArgReference_bit(stk, pci, 1);
+		bit v;
+		if (tp0 == TYPE_msk)
+			v = (bit) *getArgReference_msk(stk, pci, 1);
+		else
+			v = *getArgReference_bit(stk, pci, 1);
 		if (is_bit_nil(v)) {
 			if (b1 != NULL)
 				bn = BATconstant(b1->hseqbase, b1->ttype, ATOMnilptr(b1->ttype), BATcount(b1), TRANSIENT);
@@ -1561,7 +1565,8 @@ batcalc_init(void)
 	specials[cur++] = TYPE_str;
 
 	mel_func_arg cand = { .type = TYPE_oid, .isbat=1 };
-	mel_func_arg condexec = { .type = TYPE_bit, .isbat=1 };
+	mel_func_arg condexecbit = { .type = TYPE_bit, .isbat=1 };
+	mel_func_arg condexecmsk = { .type = TYPE_msk, .isbat=1 };
 
 	int err=0;
 	/* for all numeric types, use reverse order */
@@ -1571,8 +1576,10 @@ batcalc_init(void)
 
 		err += melFunction(false, "batcalc", "iszero", (fptr)&CMDbatISZERO, "CMDbatISZERO", false, "Unary check for zero over the tail of the bat", 1, 2, ret, arg);
 		err += melFunction(false, "batcalc", "iszero", (fptr)&CMDbatISZERO, "CMDbatISZERO", false, "Unary check for zero over the tail of the bat with candidates list", 1, 3, ret, arg, cand);
-		err += melFunction(false, "batcalc", "iszero", (fptr)&CMDbatISZERO, "CMDbatISZERO", false, "Unary check for zero over the tail of the bat", 1, 3, ret, arg, condexec);
-		err += melFunction(false, "batcalc", "iszero", (fptr)&CMDbatISZERO, "CMDbatISZERO", false, "Unary check for zero over the tail of the bat with candidates list", 1, 4, ret, arg, cand, condexec);
+		err += melFunction(false, "batcalc", "iszero", (fptr)&CMDbatISZERO, "CMDbatISZERO", false, "Unary check for zero over the tail of the bat", 1, 3, ret, arg, condexecbit);
+		err += melFunction(false, "batcalc", "iszero", (fptr)&CMDbatISZERO, "CMDbatISZERO", false, "Unary check for zero over the tail of the bat", 1, 3, ret, arg, condexecmsk);
+		err += melFunction(false, "batcalc", "iszero", (fptr)&CMDbatISZERO, "CMDbatISZERO", false, "Unary check for zero over the tail of the bat with candidates list", 1, 4, ret, arg, cand, condexecbit);
+		err += melFunction(false, "batcalc", "iszero", (fptr)&CMDbatISZERO, "CMDbatISZERO", false, "Unary check for zero over the tail of the bat with candidates list", 1, 4, ret, arg, cand, condexecmsk);
 	}
 	for(tp = types; tp < extra && !err; tp++) { /* bit + numeric */
 		mel_func_arg ret = { .type = *tp, .isbat =1 };
@@ -1580,8 +1587,10 @@ batcalc_init(void)
 
 		err += melFunction(false, "batcalc", "not", (fptr)&CMDbatNOT, "CMDbatNOT", false, "Unary bitwise not over the tail of the bat", 1, 2, ret, arg);
 		err += melFunction(false, "batcalc", "not", (fptr)&CMDbatNOT, "CMDbatNOT", false, "Unary bitwise not over the tail of the bat with candidates list", 1, 3, ret, arg, cand);
-		err += melFunction(false, "batcalc", "not", (fptr)&CMDbatNOT, "CMDbatNOT", false, "Unary bitwise not over the tail of the bat", 1, 3, ret, arg, condexec);
-		err += melFunction(false, "batcalc", "not", (fptr)&CMDbatNOT, "CMDbatNOT", false, "Unary bitwise not over the tail of the bat with candidates list", 1, 4, ret, arg, cand, condexec);
+		err += melFunction(false, "batcalc", "not", (fptr)&CMDbatNOT, "CMDbatNOT", false, "Unary bitwise not over the tail of the bat", 1, 3, ret, arg, condexecbit);
+		err += melFunction(false, "batcalc", "not", (fptr)&CMDbatNOT, "CMDbatNOT", false, "Unary bitwise not over the tail of the bat", 1, 3, ret, arg, condexecmsk);
+		err += melFunction(false, "batcalc", "not", (fptr)&CMDbatNOT, "CMDbatNOT", false, "Unary bitwise not over the tail of the bat with candidates list", 1, 4, ret, arg, cand, condexecbit);
+		err += melFunction(false, "batcalc", "not", (fptr)&CMDbatNOT, "CMDbatNOT", false, "Unary bitwise not over the tail of the bat with candidates list", 1, 4, ret, arg, cand, condexecmsk);
 	}
 	for(tp = integer; tp < extra && !err; tp++) {
 		mel_func_arg ret = { .type = TYPE_bte, .isbat =1 };
@@ -1589,8 +1598,10 @@ batcalc_init(void)
 
 		err += melFunction(false, "batcalc", "sign", (fptr)&CMDbatSIGN, "CMDbatSIGN", false, "Unary sign (-1,0,1) over the tail of the bat", 1, 2, ret, arg);
 		err += melFunction(false, "batcalc", "sign", (fptr)&CMDbatSIGN, "CMDbatSIGN", false, "Unary sign (-1,0,1) over the tail of the bat with candidates list", 1, 3, ret, arg, cand);
-		err += melFunction(false, "batcalc", "sign", (fptr)&CMDbatSIGN, "CMDbatSIGN", false, "Unary sign (-1,0,1) over the tail of the bat", 1, 3, ret, arg, condexec);
-		err += melFunction(false, "batcalc", "sign", (fptr)&CMDbatSIGN, "CMDbatSIGN", false, "Unary sign (-1,0,1) over the tail of the bat with candidates list", 1, 4, ret, arg, cand, condexec);
+		err += melFunction(false, "batcalc", "sign", (fptr)&CMDbatSIGN, "CMDbatSIGN", false, "Unary sign (-1,0,1) over the tail of the bat", 1, 3, ret, arg, condexecbit);
+		err += melFunction(false, "batcalc", "sign", (fptr)&CMDbatSIGN, "CMDbatSIGN", false, "Unary sign (-1,0,1) over the tail of the bat", 1, 3, ret, arg, condexecmsk);
+		err += melFunction(false, "batcalc", "sign", (fptr)&CMDbatSIGN, "CMDbatSIGN", false, "Unary sign (-1,0,1) over the tail of the bat with candidates list", 1, 4, ret, arg, cand, condexecbit);
+		err += melFunction(false, "batcalc", "sign", (fptr)&CMDbatSIGN, "CMDbatSIGN", false, "Unary sign (-1,0,1) over the tail of the bat with candidates list", 1, 4, ret, arg, cand, condexecmsk);
 	}
 	for(tp = integer; tp < extra && !err; tp++) {
 		mel_func_arg ret = { .type = *tp, .isbat =1 };
@@ -1598,23 +1609,31 @@ batcalc_init(void)
 
 		err += melFunction(false, "batcalc", "abs", (fptr)&CMDbatABS, "CMDbatABS", false, "Unary abs over the tail of the bat", 1, 2, ret, arg);
 		err += melFunction(false, "batcalc", "abs", (fptr)&CMDbatABS, "CMDbatABS", false, "Unary abs over the tail of the bat with candidates list", 1, 3, ret, arg, cand);
-		err += melFunction(false, "batcalc", "abs", (fptr)&CMDbatABS, "CMDbatABS", false, "Unary abs over the tail of the bat", 1, 3, ret, arg, condexec);
-		err += melFunction(false, "batcalc", "abs", (fptr)&CMDbatABS, "CMDbatABS", false, "Unary abs over the tail of the bat with candidates list", 1, 4, ret, arg, cand, condexec);
+		err += melFunction(false, "batcalc", "abs", (fptr)&CMDbatABS, "CMDbatABS", false, "Unary abs over the tail of the bat", 1, 3, ret, arg, condexecbit);
+		err += melFunction(false, "batcalc", "abs", (fptr)&CMDbatABS, "CMDbatABS", false, "Unary abs over the tail of the bat", 1, 3, ret, arg, condexecmsk);
+		err += melFunction(false, "batcalc", "abs", (fptr)&CMDbatABS, "CMDbatABS", false, "Unary abs over the tail of the bat with candidates list", 1, 4, ret, arg, cand, condexecbit);
+		err += melFunction(false, "batcalc", "abs", (fptr)&CMDbatABS, "CMDbatABS", false, "Unary abs over the tail of the bat with candidates list", 1, 4, ret, arg, cand, condexecmsk);
 
 		err += melFunction(false, "batcalc", "-", (fptr)&CMDbatNEG, "CMDbatNEG", false, "Unary neg over the tail of the bat", 1, 2, ret, arg);
 		err += melFunction(false, "batcalc", "-", (fptr)&CMDbatNEG, "CMDbatNEG", false, "Unary neg over the tail of the bat with candidates list", 1, 3, ret, arg, cand);
-		err += melFunction(false, "batcalc", "-", (fptr)&CMDbatNEG, "CMDbatNEG", false, "Unary neg over the tail of the bat", 1, 3, ret, arg, condexec);
-		err += melFunction(false, "batcalc", "-", (fptr)&CMDbatNEG, "CMDbatNEG", false, "Unary neg over the tail of the bat with candidates list", 1, 4, ret, arg, cand, condexec);
+		err += melFunction(false, "batcalc", "-", (fptr)&CMDbatNEG, "CMDbatNEG", false, "Unary neg over the tail of the bat", 1, 3, ret, arg, condexecbit);
+		err += melFunction(false, "batcalc", "-", (fptr)&CMDbatNEG, "CMDbatNEG", false, "Unary neg over the tail of the bat", 1, 3, ret, arg, condexecmsk);
+		err += melFunction(false, "batcalc", "-", (fptr)&CMDbatNEG, "CMDbatNEG", false, "Unary neg over the tail of the bat with candidates list", 1, 4, ret, arg, cand, condexecbit);
+		err += melFunction(false, "batcalc", "-", (fptr)&CMDbatNEG, "CMDbatNEG", false, "Unary neg over the tail of the bat with candidates list", 1, 4, ret, arg, cand, condexecmsk);
 
 		err += melFunction(false, "batcalc", "++", (fptr)&CMDbatINCR, "CMDbatINCR", false, "Unary increment over the tail of the bat", 1, 2, ret, arg);
 		err += melFunction(false, "batcalc", "++", (fptr)&CMDbatINCR, "CMDbatINCR", false, "Unary increment over the tail of the bat with candidates list", 1, 3, ret, arg, cand);
-		err += melFunction(false, "batcalc", "++", (fptr)&CMDbatINCR, "CMDbatINCR", false, "Unary increment over the tail of the bat", 1, 3, ret, arg, condexec);
-		err += melFunction(false, "batcalc", "++", (fptr)&CMDbatINCR, "CMDbatINCR", false, "Unary increment over the tail of the bat with candidates list", 1, 4, ret, arg, cand, condexec);
+		err += melFunction(false, "batcalc", "++", (fptr)&CMDbatINCR, "CMDbatINCR", false, "Unary increment over the tail of the bat", 1, 3, ret, arg, condexecbit);
+		err += melFunction(false, "batcalc", "++", (fptr)&CMDbatINCR, "CMDbatINCR", false, "Unary increment over the tail of the bat", 1, 3, ret, arg, condexecmsk);
+		err += melFunction(false, "batcalc", "++", (fptr)&CMDbatINCR, "CMDbatINCR", false, "Unary increment over the tail of the bat with candidates list", 1, 4, ret, arg, cand, condexecbit);
+		err += melFunction(false, "batcalc", "++", (fptr)&CMDbatINCR, "CMDbatINCR", false, "Unary increment over the tail of the bat with candidates list", 1, 4, ret, arg, cand, condexecmsk);
 
 		err += melFunction(false, "batcalc", "--", (fptr)&CMDbatDECR, "CMDbatDECR", false, "Unary decrement over the tail of the bat", 1, 2, ret, arg);
 		err += melFunction(false, "batcalc", "--", (fptr)&CMDbatDECR, "CMDbatDECR", false, "Unary decrement over the tail of the bat with candidates list", 1, 3, ret, arg, cand);
-		err += melFunction(false, "batcalc", "--", (fptr)&CMDbatDECR, "CMDbatDECR", false, "Unary decrement over the tail of the bat", 1, 3, ret, arg, condexec);
-		err += melFunction(false, "batcalc", "--", (fptr)&CMDbatDECR, "CMDbatDECR", false, "Unary decrement over the tail of the bat with candidates list", 1, 4, ret, arg, cand, condexec);
+		err += melFunction(false, "batcalc", "--", (fptr)&CMDbatDECR, "CMDbatDECR", false, "Unary decrement over the tail of the bat", 1, 3, ret, arg, condexecbit);
+		err += melFunction(false, "batcalc", "--", (fptr)&CMDbatDECR, "CMDbatDECR", false, "Unary decrement over the tail of the bat", 1, 3, ret, arg, condexecmsk);
+		err += melFunction(false, "batcalc", "--", (fptr)&CMDbatDECR, "CMDbatDECR", false, "Unary decrement over the tail of the bat with candidates list", 1, 4, ret, arg, cand, condexecbit);
+		err += melFunction(false, "batcalc", "--", (fptr)&CMDbatDECR, "CMDbatDECR", false, "Unary decrement over the tail of the bat with candidates list", 1, 4, ret, arg, cand, condexecmsk);
 	}
 	/* possibly add the min/max + _no_nil */
 	/* binops on numeric types */
@@ -1713,19 +1732,28 @@ batcalc_init(void)
 		  err += melFunction(false, "batcalc", funcs[f].op_ne, funcs[f].fcn_ne, funcs[f].fname_ne, false, funcs[f].comment_v_ne, 1, 4, ret, arg1, varg2, cand);
 		  err += melFunction(false, "batcalc", funcs[f].op, funcs[f].fcn, funcs[f].fname, false, funcs[f].comment_v_, 1, 4, ret, varg1, arg2, cand);
 		  err += melFunction(false, "batcalc", funcs[f].op_ne, funcs[f].fcn_ne, funcs[f].fname_ne, false, funcs[f].comment_v__ne, 1, 4, ret, varg1, arg2, cand);
-		  err += melFunction(false, "batcalc", funcs[f].op, funcs[f].fcn, funcs[f].fname, false, funcs[f].comment, 1, 6, ret, arg1, arg2, cand, cand, condexec);
-		  err += melFunction(false, "batcalc", funcs[f].op_ne, funcs[f].fcn_ne, funcs[f].fname_ne, false, funcs[f].comment_ne, 1, 6, ret, arg1, arg2, cand, cand, condexec);
-		  err += melFunction(false, "batcalc", funcs[f].op, funcs[f].fcn, funcs[f].fname, false, funcs[f].comment_v, 1, 5, ret, arg1, varg2, cand, condexec);
-		  err += melFunction(false, "batcalc", funcs[f].op_ne, funcs[f].fcn_ne, funcs[f].fname_ne, false, funcs[f].comment_v_ne, 1, 5, ret, arg1, varg2, cand, condexec);
-		  err += melFunction(false, "batcalc", funcs[f].op, funcs[f].fcn, funcs[f].fname, false, funcs[f].comment_v_, 1, 5, ret, varg1, arg2, cand, condexec);
-		  err += melFunction(false, "batcalc", funcs[f].op_ne, funcs[f].fcn_ne, funcs[f].fname_ne, false, funcs[f].comment_v__ne, 1, 5, ret, varg1, arg2, cand, condexec);
+		  err += melFunction(false, "batcalc", funcs[f].op, funcs[f].fcn, funcs[f].fname, false, funcs[f].comment, 1, 6, ret, arg1, arg2, cand, cand, condexecbit);
+		  err += melFunction(false, "batcalc", funcs[f].op, funcs[f].fcn, funcs[f].fname, false, funcs[f].comment, 1, 6, ret, arg1, arg2, cand, cand, condexecmsk);
+		  err += melFunction(false, "batcalc", funcs[f].op_ne, funcs[f].fcn_ne, funcs[f].fname_ne, false, funcs[f].comment_ne, 1, 6, ret, arg1, arg2, cand, cand, condexecbit);
+		  err += melFunction(false, "batcalc", funcs[f].op_ne, funcs[f].fcn_ne, funcs[f].fname_ne, false, funcs[f].comment_ne, 1, 6, ret, arg1, arg2, cand, cand, condexecmsk);
+		  err += melFunction(false, "batcalc", funcs[f].op, funcs[f].fcn, funcs[f].fname, false, funcs[f].comment_v, 1, 5, ret, arg1, varg2, cand, condexecbit);
+		  err += melFunction(false, "batcalc", funcs[f].op, funcs[f].fcn, funcs[f].fname, false, funcs[f].comment_v, 1, 5, ret, arg1, varg2, cand, condexecmsk);
+		  err += melFunction(false, "batcalc", funcs[f].op_ne, funcs[f].fcn_ne, funcs[f].fname_ne, false, funcs[f].comment_v_ne, 1, 5, ret, arg1, varg2, cand, condexecbit);
+		  err += melFunction(false, "batcalc", funcs[f].op_ne, funcs[f].fcn_ne, funcs[f].fname_ne, false, funcs[f].comment_v_ne, 1, 5, ret, arg1, varg2, cand, condexecmsk);
+		  err += melFunction(false, "batcalc", funcs[f].op, funcs[f].fcn, funcs[f].fname, false, funcs[f].comment_v_, 1, 5, ret, varg1, arg2, cand, condexecbit);
+		  err += melFunction(false, "batcalc", funcs[f].op, funcs[f].fcn, funcs[f].fname, false, funcs[f].comment_v_, 1, 5, ret, varg1, arg2, cand, condexecmsk);
+		  err += melFunction(false, "batcalc", funcs[f].op_ne, funcs[f].fcn_ne, funcs[f].fname_ne, false, funcs[f].comment_v__ne, 1, 5, ret, varg1, arg2, cand, condexecbit);
+		  err += melFunction(false, "batcalc", funcs[f].op_ne, funcs[f].fcn_ne, funcs[f].fname_ne, false, funcs[f].comment_v__ne, 1, 5, ret, varg1, arg2, cand, condexecmsk);
 		} else {
 		  err += melFunction(false, "batcalc", funcs[f].op, funcs[f].fcn_el, funcs[f].fname_el, false, funcs[f].comment_el, 1, 5, ret, arg1, arg2, cand, cand);
 		  err += melFunction(false, "batcalc", funcs[f].op, funcs[f].fcn_el, funcs[f].fname_el, false, funcs[f].comment_el_v, 1, 4, ret, arg1, varg2, cand);
 		  err += melFunction(false, "batcalc", funcs[f].op, funcs[f].fcn_el, funcs[f].fname_el, false, funcs[f].comment_el_v_, 1, 4, ret, varg1, arg2, cand);
-		  err += melFunction(false, "batcalc", funcs[f].op, funcs[f].fcn_el, funcs[f].fname_el, false, funcs[f].comment_el, 1, 6, ret, arg1, arg2, cand, cand, condexec);
-		  err += melFunction(false, "batcalc", funcs[f].op, funcs[f].fcn_el, funcs[f].fname_el, false, funcs[f].comment_el_v, 1, 5, ret, arg1, varg2, cand, condexec);
-		  err += melFunction(false, "batcalc", funcs[f].op, funcs[f].fcn_el, funcs[f].fname_el, false, funcs[f].comment_el_v_, 1, 5, ret, varg1, arg2, cand, condexec);
+		  err += melFunction(false, "batcalc", funcs[f].op, funcs[f].fcn_el, funcs[f].fname_el, false, funcs[f].comment_el, 1, 6, ret, arg1, arg2, cand, cand, condexecbit);
+		  err += melFunction(false, "batcalc", funcs[f].op, funcs[f].fcn_el, funcs[f].fname_el, false, funcs[f].comment_el, 1, 6, ret, arg1, arg2, cand, cand, condexecmsk);
+		  err += melFunction(false, "batcalc", funcs[f].op, funcs[f].fcn_el, funcs[f].fname_el, false, funcs[f].comment_el_v, 1, 5, ret, arg1, varg2, cand, condexecbit);
+		  err += melFunction(false, "batcalc", funcs[f].op, funcs[f].fcn_el, funcs[f].fname_el, false, funcs[f].comment_el_v, 1, 5, ret, arg1, varg2, cand, condexecmsk);
+		  err += melFunction(false, "batcalc", funcs[f].op, funcs[f].fcn_el, funcs[f].fname_el, false, funcs[f].comment_el_v_, 1, 5, ret, varg1, arg2, cand, condexecbit);
+		  err += melFunction(false, "batcalc", funcs[f].op, funcs[f].fcn_el, funcs[f].fname_el, false, funcs[f].comment_el_v_, 1, 5, ret, varg1, arg2, cand, condexecmsk);
 		}
 	      }
 	    }
@@ -1779,12 +1807,18 @@ batcalc_init(void)
 		err += melFunction(false, "batcalc", div.op_ne, div.fcn_ne, div.fname_ne, false, div.comment_v_ne, 1, 4, ret, arg1, varg2, cand);
 		err += melFunction(false, "batcalc", div.op, div.fcn, div.fname, false, div.comment_v_, 1, 4, ret, varg1, arg2, cand);
 		err += melFunction(false, "batcalc", div.op_ne, div.fcn_ne, div.fname_ne, false, div.comment_v__ne, 1, 4, ret, varg1, arg2, cand);
-		err += melFunction(false, "batcalc", div.op, div.fcn, div.fname, false, div.comment, 1, 6, ret, arg1, arg2, cand, cand, condexec);
-		err += melFunction(false, "batcalc", div.op_ne, div.fcn_ne, div.fname_ne, false, div.comment_ne, 1, 6, ret, arg1, arg2, cand, cand, condexec);
-		err += melFunction(false, "batcalc", div.op, div.fcn, div.fname, false, div.comment_v, 1, 5, ret, arg1, varg2, cand, condexec);
-		err += melFunction(false, "batcalc", div.op_ne, div.fcn_ne, div.fname_ne, false, div.comment_v_ne, 1, 5, ret, arg1, varg2, cand, condexec);
-		err += melFunction(false, "batcalc", div.op, div.fcn, div.fname, false, div.comment_v_, 1, 5, ret, varg1, arg2, cand, condexec);
-		err += melFunction(false, "batcalc", div.op_ne, div.fcn_ne, div.fname_ne, false, div.comment_v__ne, 1, 5, ret, varg1, arg2, cand, condexec);
+		err += melFunction(false, "batcalc", div.op, div.fcn, div.fname, false, div.comment, 1, 6, ret, arg1, arg2, cand, cand, condexecbit);
+		err += melFunction(false, "batcalc", div.op, div.fcn, div.fname, false, div.comment, 1, 6, ret, arg1, arg2, cand, cand, condexecmsk);
+		err += melFunction(false, "batcalc", div.op_ne, div.fcn_ne, div.fname_ne, false, div.comment_ne, 1, 6, ret, arg1, arg2, cand, cand, condexecbit);
+		err += melFunction(false, "batcalc", div.op_ne, div.fcn_ne, div.fname_ne, false, div.comment_ne, 1, 6, ret, arg1, arg2, cand, cand, condexecmsk);
+		err += melFunction(false, "batcalc", div.op, div.fcn, div.fname, false, div.comment_v, 1, 5, ret, arg1, varg2, cand, condexecbit);
+		err += melFunction(false, "batcalc", div.op, div.fcn, div.fname, false, div.comment_v, 1, 5, ret, arg1, varg2, cand, condexecmsk);
+		err += melFunction(false, "batcalc", div.op_ne, div.fcn_ne, div.fname_ne, false, div.comment_v_ne, 1, 5, ret, arg1, varg2, cand, condexecbit);
+		err += melFunction(false, "batcalc", div.op_ne, div.fcn_ne, div.fname_ne, false, div.comment_v_ne, 1, 5, ret, arg1, varg2, cand, condexecmsk);
+		err += melFunction(false, "batcalc", div.op, div.fcn, div.fname, false, div.comment_v_, 1, 5, ret, varg1, arg2, cand, condexecbit);
+		err += melFunction(false, "batcalc", div.op, div.fcn, div.fname, false, div.comment_v_, 1, 5, ret, varg1, arg2, cand, condexecmsk);
+		err += melFunction(false, "batcalc", div.op_ne, div.fcn_ne, div.fname_ne, false, div.comment_v__ne, 1, 5, ret, varg1, arg2, cand, condexecbit);
+		err += melFunction(false, "batcalc", div.op_ne, div.fcn_ne, div.fname_ne, false, div.comment_v__ne, 1, 5, ret, varg1, arg2, cand, condexecmsk);
 	      }
 	    }
 	}
@@ -1838,12 +1872,18 @@ batcalc_init(void)
 		err += melFunction(false, "batcalc", mods.op_ne, mods.fcn_ne, mods.fname_ne, false, mods.comment_v_ne, 1, 4, ret, arg1, varg2, cand);
 		err += melFunction(false, "batcalc", mods.op, mods.fcn, mods.fname, false, mods.comment_v_, 1, 4, ret, varg1, arg2, cand);
 		err += melFunction(false, "batcalc", mods.op_ne, mods.fcn_ne, mods.fname_ne, false, mods.comment_v__ne, 1, 4, ret, varg1, arg2, cand);
-		err += melFunction(false, "batcalc", mods.op, mods.fcn, mods.fname, false, mods.comment, 1, 6, ret, arg1, arg2, cand, cand, condexec);
-		err += melFunction(false, "batcalc", mods.op_ne, mods.fcn_ne, mods.fname_ne, false, mods.comment_ne, 1, 6, ret, arg1, arg2, cand, cand, condexec);
-		err += melFunction(false, "batcalc", mods.op, mods.fcn, mods.fname, false, mods.comment_v, 1, 5, ret, arg1, varg2, cand, condexec);
-		err += melFunction(false, "batcalc", mods.op_ne, mods.fcn_ne, mods.fname_ne, false, mods.comment_v_ne, 1, 5, ret, arg1, varg2, cand, condexec);
-		err += melFunction(false, "batcalc", mods.op, mods.fcn, mods.fname, false, mods.comment_v_, 1, 5, ret, varg1, arg2, cand, condexec);
-		err += melFunction(false, "batcalc", mods.op_ne, mods.fcn_ne, mods.fname_ne, false, mods.comment_v__ne, 1, 5, ret, varg1, arg2, cand, condexec);
+		err += melFunction(false, "batcalc", mods.op, mods.fcn, mods.fname, false, mods.comment, 1, 6, ret, arg1, arg2, cand, cand, condexecbit);
+		err += melFunction(false, "batcalc", mods.op, mods.fcn, mods.fname, false, mods.comment, 1, 6, ret, arg1, arg2, cand, cand, condexecmsk);
+		err += melFunction(false, "batcalc", mods.op_ne, mods.fcn_ne, mods.fname_ne, false, mods.comment_ne, 1, 6, ret, arg1, arg2, cand, cand, condexecbit);
+		err += melFunction(false, "batcalc", mods.op_ne, mods.fcn_ne, mods.fname_ne, false, mods.comment_ne, 1, 6, ret, arg1, arg2, cand, cand, condexecmsk);
+		err += melFunction(false, "batcalc", mods.op, mods.fcn, mods.fname, false, mods.comment_v, 1, 5, ret, arg1, varg2, cand, condexecbit);
+		err += melFunction(false, "batcalc", mods.op, mods.fcn, mods.fname, false, mods.comment_v, 1, 5, ret, arg1, varg2, cand, condexecmsk);
+		err += melFunction(false, "batcalc", mods.op_ne, mods.fcn_ne, mods.fname_ne, false, mods.comment_v_ne, 1, 5, ret, arg1, varg2, cand, condexecbit);
+		err += melFunction(false, "batcalc", mods.op_ne, mods.fcn_ne, mods.fname_ne, false, mods.comment_v_ne, 1, 5, ret, arg1, varg2, cand, condexecmsk);
+		err += melFunction(false, "batcalc", mods.op, mods.fcn, mods.fname, false, mods.comment_v_, 1, 5, ret, varg1, arg2, cand, condexecbit);
+		err += melFunction(false, "batcalc", mods.op, mods.fcn, mods.fname, false, mods.comment_v_, 1, 5, ret, varg1, arg2, cand, condexecmsk);
+		err += melFunction(false, "batcalc", mods.op_ne, mods.fcn_ne, mods.fname_ne, false, mods.comment_v__ne, 1, 5, ret, varg1, arg2, cand, condexecbit);
+		err += melFunction(false, "batcalc", mods.op_ne, mods.fcn_ne, mods.fname_ne, false, mods.comment_v__ne, 1, 5, ret, varg1, arg2, cand, condexecmsk);
 	      }
 	    }
 	}
@@ -1890,12 +1930,18 @@ batcalc_init(void)
 		err += melFunction(false, "batcalc", logops[f].op, logops[f].fcn, logops[f].fname, false, logops[f].comment_v, 1, 4, ret, arg, varg, cand);
 		err += melFunction(false, "batcalc", logops[f].op, logops[f].fcn, logops[f].fname, false, logops[f].comment_v_, 1, 3, ret, varg, arg);
 		err += melFunction(false, "batcalc", logops[f].op, logops[f].fcn, logops[f].fname, false, logops[f].comment_v_, 1, 4, ret, varg, arg, cand);
-		err += melFunction(false, "batcalc", logops[f].op, logops[f].fcn, logops[f].fname, false, logops[f].comment, 1, 4, ret, arg, arg, condexec);
-		err += melFunction(false, "batcalc", logops[f].op, logops[f].fcn, logops[f].fname, false, logops[f].comment, 1, 6, ret, arg, arg, cand, cand, condexec);
-		err += melFunction(false, "batcalc", logops[f].op, logops[f].fcn, logops[f].fname, false, logops[f].comment_v, 1, 4, ret, arg, varg, condexec);
-		err += melFunction(false, "batcalc", logops[f].op, logops[f].fcn, logops[f].fname, false, logops[f].comment_v, 1, 5, ret, arg, varg, cand, condexec);
-		err += melFunction(false, "batcalc", logops[f].op, logops[f].fcn, logops[f].fname, false, logops[f].comment_v_, 1, 4, ret, varg, arg, condexec);
-		err += melFunction(false, "batcalc", logops[f].op, logops[f].fcn, logops[f].fname, false, logops[f].comment_v_, 1, 5, ret, varg, arg, cand, condexec);
+		err += melFunction(false, "batcalc", logops[f].op, logops[f].fcn, logops[f].fname, false, logops[f].comment, 1, 4, ret, arg, arg, condexecbit);
+		err += melFunction(false, "batcalc", logops[f].op, logops[f].fcn, logops[f].fname, false, logops[f].comment, 1, 4, ret, arg, arg, condexecmsk);
+		err += melFunction(false, "batcalc", logops[f].op, logops[f].fcn, logops[f].fname, false, logops[f].comment, 1, 6, ret, arg, arg, cand, cand, condexecbit);
+		err += melFunction(false, "batcalc", logops[f].op, logops[f].fcn, logops[f].fname, false, logops[f].comment, 1, 6, ret, arg, arg, cand, cand, condexecmsk);
+		err += melFunction(false, "batcalc", logops[f].op, logops[f].fcn, logops[f].fname, false, logops[f].comment_v, 1, 4, ret, arg, varg, condexecbit);
+		err += melFunction(false, "batcalc", logops[f].op, logops[f].fcn, logops[f].fname, false, logops[f].comment_v, 1, 4, ret, arg, varg, condexecmsk);
+		err += melFunction(false, "batcalc", logops[f].op, logops[f].fcn, logops[f].fname, false, logops[f].comment_v, 1, 5, ret, arg, varg, cand, condexecbit);
+		err += melFunction(false, "batcalc", logops[f].op, logops[f].fcn, logops[f].fname, false, logops[f].comment_v, 1, 5, ret, arg, varg, cand, condexecmsk);
+		err += melFunction(false, "batcalc", logops[f].op, logops[f].fcn, logops[f].fname, false, logops[f].comment_v_, 1, 4, ret, varg, arg, condexecbit);
+		err += melFunction(false, "batcalc", logops[f].op, logops[f].fcn, logops[f].fname, false, logops[f].comment_v_, 1, 4, ret, varg, arg, condexecmsk);
+		err += melFunction(false, "batcalc", logops[f].op, logops[f].fcn, logops[f].fname, false, logops[f].comment_v_, 1, 5, ret, varg, arg, cand, condexecbit);
+		err += melFunction(false, "batcalc", logops[f].op, logops[f].fcn, logops[f].fname, false, logops[f].comment_v_, 1, 5, ret, varg, arg, cand, condexecmsk);
 	  }
 	}
 	struct {
@@ -1963,18 +2009,30 @@ batcalc_init(void)
 		err += melFunction(false, "batcalc", shifts[f].op_ne, shifts[f].fcn_ne, shifts[f].fname_ne, false, shifts[f].comment_ne_v_, 1, 3, ret, varg1, arg2);
 		err += melFunction(false, "batcalc", shifts[f].op_ne, shifts[f].fcn_ne, shifts[f].fname_ne, false, shifts[f].comment_ne_v_, 1, 4, ret, varg1, arg2, cand);
 
-		err += melFunction(false, "batcalc", shifts[f].op, shifts[f].fcn, shifts[f].fname, false, shifts[f].comment, 1, 4, ret, arg1, arg2, condexec);
-		err += melFunction(false, "batcalc", shifts[f].op, shifts[f].fcn, shifts[f].fname, false, shifts[f].comment, 1, 6, ret, arg1, arg2, cand, cand, condexec);
-		err += melFunction(false, "batcalc", shifts[f].op_ne, shifts[f].fcn_ne, shifts[f].fname_ne, false, shifts[f].comment_ne, 1, 4, ret, arg1, arg2, condexec);
-		err += melFunction(false, "batcalc", shifts[f].op_ne, shifts[f].fcn_ne, shifts[f].fname_ne, false, shifts[f].comment_ne, 1, 6, ret, arg1, arg2, cand, cand, condexec);
-		err += melFunction(false, "batcalc", shifts[f].op, shifts[f].fcn, shifts[f].fname, false, shifts[f].comment_v, 1, 4, ret, arg1, varg2, condexec);
-		err += melFunction(false, "batcalc", shifts[f].op, shifts[f].fcn, shifts[f].fname, false, shifts[f].comment_v, 1, 5, ret, arg1, varg2, cand, condexec);
-		err += melFunction(false, "batcalc", shifts[f].op_ne, shifts[f].fcn_ne, shifts[f].fname_ne, false, shifts[f].comment_ne_v, 1, 4, ret, arg1, varg2, condexec);
-		err += melFunction(false, "batcalc", shifts[f].op_ne, shifts[f].fcn_ne, shifts[f].fname_ne, false, shifts[f].comment_ne_v, 1, 5, ret, arg1, varg2, cand, condexec);
-		err += melFunction(false, "batcalc", shifts[f].op, shifts[f].fcn, shifts[f].fname, false, shifts[f].comment_v_, 1, 4, ret, varg1, arg2, condexec);
-		err += melFunction(false, "batcalc", shifts[f].op, shifts[f].fcn, shifts[f].fname, false, shifts[f].comment_v_, 1, 5, ret, varg1, arg2, cand, condexec);
-		err += melFunction(false, "batcalc", shifts[f].op_ne, shifts[f].fcn_ne, shifts[f].fname_ne, false, shifts[f].comment_ne_v_, 1, 4, ret, varg1, arg2, condexec);
-		err += melFunction(false, "batcalc", shifts[f].op_ne, shifts[f].fcn_ne, shifts[f].fname_ne, false, shifts[f].comment_ne_v_, 1, 5, ret, varg1, arg2, cand, condexec);
+		err += melFunction(false, "batcalc", shifts[f].op, shifts[f].fcn, shifts[f].fname, false, shifts[f].comment, 1, 4, ret, arg1, arg2, condexecbit);
+		err += melFunction(false, "batcalc", shifts[f].op, shifts[f].fcn, shifts[f].fname, false, shifts[f].comment, 1, 4, ret, arg1, arg2, condexecmsk);
+		err += melFunction(false, "batcalc", shifts[f].op, shifts[f].fcn, shifts[f].fname, false, shifts[f].comment, 1, 6, ret, arg1, arg2, cand, cand, condexecbit);
+		err += melFunction(false, "batcalc", shifts[f].op, shifts[f].fcn, shifts[f].fname, false, shifts[f].comment, 1, 6, ret, arg1, arg2, cand, cand, condexecmsk);
+		err += melFunction(false, "batcalc", shifts[f].op_ne, shifts[f].fcn_ne, shifts[f].fname_ne, false, shifts[f].comment_ne, 1, 4, ret, arg1, arg2, condexecbit);
+		err += melFunction(false, "batcalc", shifts[f].op_ne, shifts[f].fcn_ne, shifts[f].fname_ne, false, shifts[f].comment_ne, 1, 4, ret, arg1, arg2, condexecmsk);
+		err += melFunction(false, "batcalc", shifts[f].op_ne, shifts[f].fcn_ne, shifts[f].fname_ne, false, shifts[f].comment_ne, 1, 6, ret, arg1, arg2, cand, cand, condexecbit);
+		err += melFunction(false, "batcalc", shifts[f].op_ne, shifts[f].fcn_ne, shifts[f].fname_ne, false, shifts[f].comment_ne, 1, 6, ret, arg1, arg2, cand, cand, condexecmsk);
+		err += melFunction(false, "batcalc", shifts[f].op, shifts[f].fcn, shifts[f].fname, false, shifts[f].comment_v, 1, 4, ret, arg1, varg2, condexecbit);
+		err += melFunction(false, "batcalc", shifts[f].op, shifts[f].fcn, shifts[f].fname, false, shifts[f].comment_v, 1, 4, ret, arg1, varg2, condexecmsk);
+		err += melFunction(false, "batcalc", shifts[f].op, shifts[f].fcn, shifts[f].fname, false, shifts[f].comment_v, 1, 5, ret, arg1, varg2, cand, condexecbit);
+		err += melFunction(false, "batcalc", shifts[f].op, shifts[f].fcn, shifts[f].fname, false, shifts[f].comment_v, 1, 5, ret, arg1, varg2, cand, condexecmsk);
+		err += melFunction(false, "batcalc", shifts[f].op_ne, shifts[f].fcn_ne, shifts[f].fname_ne, false, shifts[f].comment_ne_v, 1, 4, ret, arg1, varg2, condexecbit);
+		err += melFunction(false, "batcalc", shifts[f].op_ne, shifts[f].fcn_ne, shifts[f].fname_ne, false, shifts[f].comment_ne_v, 1, 4, ret, arg1, varg2, condexecmsk);
+		err += melFunction(false, "batcalc", shifts[f].op_ne, shifts[f].fcn_ne, shifts[f].fname_ne, false, shifts[f].comment_ne_v, 1, 5, ret, arg1, varg2, cand, condexecbit);
+		err += melFunction(false, "batcalc", shifts[f].op_ne, shifts[f].fcn_ne, shifts[f].fname_ne, false, shifts[f].comment_ne_v, 1, 5, ret, arg1, varg2, cand, condexecmsk);
+		err += melFunction(false, "batcalc", shifts[f].op, shifts[f].fcn, shifts[f].fname, false, shifts[f].comment_v_, 1, 4, ret, varg1, arg2, condexecbit);
+		err += melFunction(false, "batcalc", shifts[f].op, shifts[f].fcn, shifts[f].fname, false, shifts[f].comment_v_, 1, 4, ret, varg1, arg2, condexecmsk);
+		err += melFunction(false, "batcalc", shifts[f].op, shifts[f].fcn, shifts[f].fname, false, shifts[f].comment_v_, 1, 5, ret, varg1, arg2, cand, condexecbit);
+		err += melFunction(false, "batcalc", shifts[f].op, shifts[f].fcn, shifts[f].fname, false, shifts[f].comment_v_, 1, 5, ret, varg1, arg2, cand, condexecmsk);
+		err += melFunction(false, "batcalc", shifts[f].op_ne, shifts[f].fcn_ne, shifts[f].fname_ne, false, shifts[f].comment_ne_v_, 1, 4, ret, varg1, arg2, condexecbit);
+		err += melFunction(false, "batcalc", shifts[f].op_ne, shifts[f].fcn_ne, shifts[f].fname_ne, false, shifts[f].comment_ne_v_, 1, 4, ret, varg1, arg2, condexecmsk);
+		err += melFunction(false, "batcalc", shifts[f].op_ne, shifts[f].fcn_ne, shifts[f].fname_ne, false, shifts[f].comment_ne_v_, 1, 5, ret, varg1, arg2, cand, condexecbit);
+		err += melFunction(false, "batcalc", shifts[f].op_ne, shifts[f].fcn_ne, shifts[f].fname_ne, false, shifts[f].comment_ne_v_, 1, 5, ret, varg1, arg2, cand, condexecmsk);
 	    }
 	  }
 	}
@@ -2044,12 +2102,18 @@ batcalc_init(void)
 	  err += melFunction(false, "batcalc", cmps[f].op, cmps[f].fcn, cmps[f].fname, false, cmps[f].comment_v_, 1, 3, ret, varg, arg);
 	  err += melFunction(false, "batcalc", cmps[f].op, cmps[f].fcn, cmps[f].fname, false, cmps[f].comment_v_, 1, 4, ret, varg, arg, cand);
 
-	  err += melFunction(false, "batcalc", cmps[f].op, cmps[f].fcn, cmps[f].fname, false, cmps[f].comment, 1, 4, ret, arg, arg, condexec);
-	  err += melFunction(false, "batcalc", cmps[f].op, cmps[f].fcn, cmps[f].fname, false, cmps[f].comment, 1, 6, ret, arg, arg, cand, cand, condexec);
-	  err += melFunction(false, "batcalc", cmps[f].op, cmps[f].fcn, cmps[f].fname, false, cmps[f].comment_v, 1, 4, ret, arg, varg, condexec);
-	  err += melFunction(false, "batcalc", cmps[f].op, cmps[f].fcn, cmps[f].fname, false, cmps[f].comment_v, 1, 5, ret, arg, varg, cand, condexec);
-	  err += melFunction(false, "batcalc", cmps[f].op, cmps[f].fcn, cmps[f].fname, false, cmps[f].comment_v_, 1, 4, ret, varg, arg, condexec);
-	  err += melFunction(false, "batcalc", cmps[f].op, cmps[f].fcn, cmps[f].fname, false, cmps[f].comment_v_, 1, 5, ret, varg, arg, cand, condexec);
+	  err += melFunction(false, "batcalc", cmps[f].op, cmps[f].fcn, cmps[f].fname, false, cmps[f].comment, 1, 4, ret, arg, arg, condexecbit);
+	  err += melFunction(false, "batcalc", cmps[f].op, cmps[f].fcn, cmps[f].fname, false, cmps[f].comment, 1, 4, ret, arg, arg, condexecmsk);
+	  err += melFunction(false, "batcalc", cmps[f].op, cmps[f].fcn, cmps[f].fname, false, cmps[f].comment, 1, 6, ret, arg, arg, cand, cand, condexecbit);
+	  err += melFunction(false, "batcalc", cmps[f].op, cmps[f].fcn, cmps[f].fname, false, cmps[f].comment, 1, 6, ret, arg, arg, cand, cand, condexecmsk);
+	  err += melFunction(false, "batcalc", cmps[f].op, cmps[f].fcn, cmps[f].fname, false, cmps[f].comment_v, 1, 4, ret, arg, varg, condexecbit);
+	  err += melFunction(false, "batcalc", cmps[f].op, cmps[f].fcn, cmps[f].fname, false, cmps[f].comment_v, 1, 4, ret, arg, varg, condexecmsk);
+	  err += melFunction(false, "batcalc", cmps[f].op, cmps[f].fcn, cmps[f].fname, false, cmps[f].comment_v, 1, 5, ret, arg, varg, cand, condexecbit);
+	  err += melFunction(false, "batcalc", cmps[f].op, cmps[f].fcn, cmps[f].fname, false, cmps[f].comment_v, 1, 5, ret, arg, varg, cand, condexecmsk);
+	  err += melFunction(false, "batcalc", cmps[f].op, cmps[f].fcn, cmps[f].fname, false, cmps[f].comment_v_, 1, 4, ret, varg, arg, condexecbit);
+	  err += melFunction(false, "batcalc", cmps[f].op, cmps[f].fcn, cmps[f].fname, false, cmps[f].comment_v_, 1, 4, ret, varg, arg, condexecmsk);
+	  err += melFunction(false, "batcalc", cmps[f].op, cmps[f].fcn, cmps[f].fname, false, cmps[f].comment_v_, 1, 5, ret, varg, arg, cand, condexecbit);
+	  err += melFunction(false, "batcalc", cmps[f].op, cmps[f].fcn, cmps[f].fname, false, cmps[f].comment_v_, 1, 5, ret, varg, arg, cand, condexecmsk);
 
 	  if (strcmp(cmps[f].op,"==")==0 || strcmp(cmps[f].op,"!=")==0) {
 		mel_func_arg nil_matches = { .type = TYPE_bit };
@@ -2060,12 +2124,18 @@ batcalc_init(void)
 	  	err += melFunction(false, "batcalc", cmps[f].op, cmps[f].fcn, cmps[f].fname, false, cmps[f].comment_v_, 1, 4, ret, varg, arg, nil_matches);
 	  	err += melFunction(false, "batcalc", cmps[f].op, cmps[f].fcn, cmps[f].fname, false, cmps[f].comment_v_, 1, 5, ret, varg, arg, cand, nil_matches);
 
-	  	err += melFunction(false, "batcalc", cmps[f].op, cmps[f].fcn, cmps[f].fname, false, cmps[f].comment, 1, 5, ret, arg, arg, condexec, nil_matches);
-	  	err += melFunction(false, "batcalc", cmps[f].op, cmps[f].fcn, cmps[f].fname, false, cmps[f].comment, 1, 7, ret, arg, arg, cand, cand, condexec, nil_matches);
-	  	err += melFunction(false, "batcalc", cmps[f].op, cmps[f].fcn, cmps[f].fname, false, cmps[f].comment_v, 1, 5, ret, arg, varg, condexec, nil_matches);
-	  	err += melFunction(false, "batcalc", cmps[f].op, cmps[f].fcn, cmps[f].fname, false, cmps[f].comment_v, 1, 6, ret, arg, varg, cand, condexec, nil_matches);
-	  	err += melFunction(false, "batcalc", cmps[f].op, cmps[f].fcn, cmps[f].fname, false, cmps[f].comment_v_, 1, 5, ret, varg, arg, condexec, nil_matches);
-	  	err += melFunction(false, "batcalc", cmps[f].op, cmps[f].fcn, cmps[f].fname, false, cmps[f].comment_v_, 1, 6, ret, varg, arg, cand, condexec, nil_matches);
+	  	err += melFunction(false, "batcalc", cmps[f].op, cmps[f].fcn, cmps[f].fname, false, cmps[f].comment, 1, 5, ret, arg, arg, condexecbit, nil_matches);
+	  	err += melFunction(false, "batcalc", cmps[f].op, cmps[f].fcn, cmps[f].fname, false, cmps[f].comment, 1, 5, ret, arg, arg, condexecmsk, nil_matches);
+	  	err += melFunction(false, "batcalc", cmps[f].op, cmps[f].fcn, cmps[f].fname, false, cmps[f].comment, 1, 7, ret, arg, arg, cand, cand, condexecbit, nil_matches);
+	  	err += melFunction(false, "batcalc", cmps[f].op, cmps[f].fcn, cmps[f].fname, false, cmps[f].comment, 1, 7, ret, arg, arg, cand, cand, condexecmsk, nil_matches);
+	  	err += melFunction(false, "batcalc", cmps[f].op, cmps[f].fcn, cmps[f].fname, false, cmps[f].comment_v, 1, 5, ret, arg, varg, condexecbit, nil_matches);
+	  	err += melFunction(false, "batcalc", cmps[f].op, cmps[f].fcn, cmps[f].fname, false, cmps[f].comment_v, 1, 5, ret, arg, varg, condexecmsk, nil_matches);
+	  	err += melFunction(false, "batcalc", cmps[f].op, cmps[f].fcn, cmps[f].fname, false, cmps[f].comment_v, 1, 6, ret, arg, varg, cand, condexecbit, nil_matches);
+	  	err += melFunction(false, "batcalc", cmps[f].op, cmps[f].fcn, cmps[f].fname, false, cmps[f].comment_v, 1, 6, ret, arg, varg, cand, condexecmsk, nil_matches);
+	  	err += melFunction(false, "batcalc", cmps[f].op, cmps[f].fcn, cmps[f].fname, false, cmps[f].comment_v_, 1, 5, ret, varg, arg, condexecbit, nil_matches);
+	  	err += melFunction(false, "batcalc", cmps[f].op, cmps[f].fcn, cmps[f].fname, false, cmps[f].comment_v_, 1, 5, ret, varg, arg, condexecmsk, nil_matches);
+	  	err += melFunction(false, "batcalc", cmps[f].op, cmps[f].fcn, cmps[f].fname, false, cmps[f].comment_v_, 1, 6, ret, varg, arg, cand, condexecbit, nil_matches);
+	  	err += melFunction(false, "batcalc", cmps[f].op, cmps[f].fcn, cmps[f].fname, false, cmps[f].comment_v_, 1, 6, ret, varg, arg, cand, condexecmsk, nil_matches);
 	  }
 
 	  /* uuid, json and mtime (date, daytime, timestamp */
@@ -2081,12 +2151,18 @@ batcalc_init(void)
 	     err += melFunction(false, "batcalc", cmps[f].op, cmps[f].fcn, cmps[f].fname, false, cmps[f].comment_v_, 1, 3, ret, varg, arg);
 	     err += melFunction(false, "batcalc", cmps[f].op, cmps[f].fcn, cmps[f].fname, false, cmps[f].comment_v_, 1, 4, ret, varg, arg, cand);
 
- 	     err += melFunction(false, "batcalc", cmps[f].op, cmps[f].fcn, cmps[f].fname, false, cmps[f].comment, 1, 4, ret, arg, arg, condexec);
-	     err += melFunction(false, "batcalc", cmps[f].op, cmps[f].fcn, cmps[f].fname, false, cmps[f].comment, 1, 6, ret, arg, arg, cand, cand, condexec);
-	     err += melFunction(false, "batcalc", cmps[f].op, cmps[f].fcn, cmps[f].fname, false, cmps[f].comment_v, 1, 4, ret, arg, varg, condexec);
-	     err += melFunction(false, "batcalc", cmps[f].op, cmps[f].fcn, cmps[f].fname, false, cmps[f].comment_v, 1, 5, ret, arg, varg, cand, condexec);
-	     err += melFunction(false, "batcalc", cmps[f].op, cmps[f].fcn, cmps[f].fname, false, cmps[f].comment_v_, 1, 4, ret, varg, arg, condexec);
-	     err += melFunction(false, "batcalc", cmps[f].op, cmps[f].fcn, cmps[f].fname, false, cmps[f].comment_v_, 1, 5, ret, varg, arg, cand, condexec);
+ 	     err += melFunction(false, "batcalc", cmps[f].op, cmps[f].fcn, cmps[f].fname, false, cmps[f].comment, 1, 4, ret, arg, arg, condexecbit);
+ 	     err += melFunction(false, "batcalc", cmps[f].op, cmps[f].fcn, cmps[f].fname, false, cmps[f].comment, 1, 4, ret, arg, arg, condexecmsk);
+	     err += melFunction(false, "batcalc", cmps[f].op, cmps[f].fcn, cmps[f].fname, false, cmps[f].comment, 1, 6, ret, arg, arg, cand, cand, condexecbit);
+	     err += melFunction(false, "batcalc", cmps[f].op, cmps[f].fcn, cmps[f].fname, false, cmps[f].comment, 1, 6, ret, arg, arg, cand, cand, condexecmsk);
+	     err += melFunction(false, "batcalc", cmps[f].op, cmps[f].fcn, cmps[f].fname, false, cmps[f].comment_v, 1, 4, ret, arg, varg, condexecbit);
+	     err += melFunction(false, "batcalc", cmps[f].op, cmps[f].fcn, cmps[f].fname, false, cmps[f].comment_v, 1, 4, ret, arg, varg, condexecmsk);
+	     err += melFunction(false, "batcalc", cmps[f].op, cmps[f].fcn, cmps[f].fname, false, cmps[f].comment_v, 1, 5, ret, arg, varg, cand, condexecbit);
+	     err += melFunction(false, "batcalc", cmps[f].op, cmps[f].fcn, cmps[f].fname, false, cmps[f].comment_v, 1, 5, ret, arg, varg, cand, condexecmsk);
+	     err += melFunction(false, "batcalc", cmps[f].op, cmps[f].fcn, cmps[f].fname, false, cmps[f].comment_v_, 1, 4, ret, varg, arg, condexecbit);
+	     err += melFunction(false, "batcalc", cmps[f].op, cmps[f].fcn, cmps[f].fname, false, cmps[f].comment_v_, 1, 4, ret, varg, arg, condexecmsk);
+	     err += melFunction(false, "batcalc", cmps[f].op, cmps[f].fcn, cmps[f].fname, false, cmps[f].comment_v_, 1, 5, ret, varg, arg, cand, condexecbit);
+	     err += melFunction(false, "batcalc", cmps[f].op, cmps[f].fcn, cmps[f].fname, false, cmps[f].comment_v_, 1, 5, ret, varg, arg, cand, condexecmsk);
 
 	     if (strcmp(cmps[f].op,"==")==0 || strcmp(cmps[f].op,"!=")==0) {
 		mel_func_arg nil_matches = { .type = TYPE_bit };
@@ -2097,12 +2173,18 @@ batcalc_init(void)
 	  	err += melFunction(false, "batcalc", cmps[f].op, cmps[f].fcn, cmps[f].fname, false, cmps[f].comment_v_, 1, 4, ret, varg, arg, nil_matches);
 	  	err += melFunction(false, "batcalc", cmps[f].op, cmps[f].fcn, cmps[f].fname, false, cmps[f].comment_v_, 1, 5, ret, varg, arg, cand, nil_matches);
 
-	  	err += melFunction(false, "batcalc", cmps[f].op, cmps[f].fcn, cmps[f].fname, false, cmps[f].comment, 1, 5, ret, arg, arg, condexec, nil_matches);
-	  	err += melFunction(false, "batcalc", cmps[f].op, cmps[f].fcn, cmps[f].fname, false, cmps[f].comment, 1, 7, ret, arg, arg, cand, cand, condexec, nil_matches);
-	  	err += melFunction(false, "batcalc", cmps[f].op, cmps[f].fcn, cmps[f].fname, false, cmps[f].comment_v, 1, 5, ret, arg, varg, condexec, nil_matches);
-	  	err += melFunction(false, "batcalc", cmps[f].op, cmps[f].fcn, cmps[f].fname, false, cmps[f].comment_v, 1, 6, ret, arg, varg, cand, condexec, nil_matches);
-	  	err += melFunction(false, "batcalc", cmps[f].op, cmps[f].fcn, cmps[f].fname, false, cmps[f].comment_v_, 1, 5, ret, varg, arg, condexec, nil_matches);
-	  	err += melFunction(false, "batcalc", cmps[f].op, cmps[f].fcn, cmps[f].fname, false, cmps[f].comment_v_, 1, 6, ret, varg, arg, cand, condexec, nil_matches);
+	  	err += melFunction(false, "batcalc", cmps[f].op, cmps[f].fcn, cmps[f].fname, false, cmps[f].comment, 1, 5, ret, arg, arg, condexecbit, nil_matches);
+	  	err += melFunction(false, "batcalc", cmps[f].op, cmps[f].fcn, cmps[f].fname, false, cmps[f].comment, 1, 5, ret, arg, arg, condexecmsk, nil_matches);
+	  	err += melFunction(false, "batcalc", cmps[f].op, cmps[f].fcn, cmps[f].fname, false, cmps[f].comment, 1, 7, ret, arg, arg, cand, cand, condexecbit, nil_matches);
+	  	err += melFunction(false, "batcalc", cmps[f].op, cmps[f].fcn, cmps[f].fname, false, cmps[f].comment, 1, 7, ret, arg, arg, cand, cand, condexecmsk, nil_matches);
+	  	err += melFunction(false, "batcalc", cmps[f].op, cmps[f].fcn, cmps[f].fname, false, cmps[f].comment_v, 1, 5, ret, arg, varg, condexecbit, nil_matches);
+	  	err += melFunction(false, "batcalc", cmps[f].op, cmps[f].fcn, cmps[f].fname, false, cmps[f].comment_v, 1, 5, ret, arg, varg, condexecmsk, nil_matches);
+	  	err += melFunction(false, "batcalc", cmps[f].op, cmps[f].fcn, cmps[f].fname, false, cmps[f].comment_v, 1, 6, ret, arg, varg, cand, condexecbit, nil_matches);
+	  	err += melFunction(false, "batcalc", cmps[f].op, cmps[f].fcn, cmps[f].fname, false, cmps[f].comment_v, 1, 6, ret, arg, varg, cand, condexecmsk, nil_matches);
+	  	err += melFunction(false, "batcalc", cmps[f].op, cmps[f].fcn, cmps[f].fname, false, cmps[f].comment_v_, 1, 5, ret, varg, arg, condexecbit, nil_matches);
+	  	err += melFunction(false, "batcalc", cmps[f].op, cmps[f].fcn, cmps[f].fname, false, cmps[f].comment_v_, 1, 5, ret, varg, arg, condexecmsk, nil_matches);
+	  	err += melFunction(false, "batcalc", cmps[f].op, cmps[f].fcn, cmps[f].fname, false, cmps[f].comment_v_, 1, 6, ret, varg, arg, cand, condexecbit, nil_matches);
+	  	err += melFunction(false, "batcalc", cmps[f].op, cmps[f].fcn, cmps[f].fname, false, cmps[f].comment_v_, 1, 6, ret, varg, arg, cand, condexecmsk, nil_matches);
 	     }
 	  }
 
@@ -2124,12 +2206,18 @@ batcalc_init(void)
 		err += melFunction(false, "batcalc", cmps[f].op, cmps[f].fcn, cmps[f].fname, false, cmps[f].comment_v_, 1, 3, ret, varg1, arg2);
 		err += melFunction(false, "batcalc", cmps[f].op, cmps[f].fcn, cmps[f].fname, false, cmps[f].comment_v_, 1, 4, ret, varg1, arg2, cand);
 
-		err += melFunction(false, "batcalc", cmps[f].op, cmps[f].fcn, cmps[f].fname, false, cmps[f].comment, 1, 4, ret, arg1, arg2, condexec);
-		err += melFunction(false, "batcalc", cmps[f].op, cmps[f].fcn, cmps[f].fname, false, cmps[f].comment, 1, 6, ret, arg1, arg2, cand, cand, condexec);
-		err += melFunction(false, "batcalc", cmps[f].op, cmps[f].fcn, cmps[f].fname, false, cmps[f].comment_v, 1, 4, ret, arg1, varg2, condexec);
-		err += melFunction(false, "batcalc", cmps[f].op, cmps[f].fcn, cmps[f].fname, false, cmps[f].comment_v, 1, 5, ret, arg1, varg2, cand, condexec);
-		err += melFunction(false, "batcalc", cmps[f].op, cmps[f].fcn, cmps[f].fname, false, cmps[f].comment_v_, 1, 4, ret, varg1, arg2, condexec);
-		err += melFunction(false, "batcalc", cmps[f].op, cmps[f].fcn, cmps[f].fname, false, cmps[f].comment_v_, 1, 5, ret, varg1, arg2, cand, condexec);
+		err += melFunction(false, "batcalc", cmps[f].op, cmps[f].fcn, cmps[f].fname, false, cmps[f].comment, 1, 4, ret, arg1, arg2, condexecbit);
+		err += melFunction(false, "batcalc", cmps[f].op, cmps[f].fcn, cmps[f].fname, false, cmps[f].comment, 1, 4, ret, arg1, arg2, condexecmsk);
+		err += melFunction(false, "batcalc", cmps[f].op, cmps[f].fcn, cmps[f].fname, false, cmps[f].comment, 1, 6, ret, arg1, arg2, cand, cand, condexecbit);
+		err += melFunction(false, "batcalc", cmps[f].op, cmps[f].fcn, cmps[f].fname, false, cmps[f].comment, 1, 6, ret, arg1, arg2, cand, cand, condexecmsk);
+		err += melFunction(false, "batcalc", cmps[f].op, cmps[f].fcn, cmps[f].fname, false, cmps[f].comment_v, 1, 4, ret, arg1, varg2, condexecbit);
+		err += melFunction(false, "batcalc", cmps[f].op, cmps[f].fcn, cmps[f].fname, false, cmps[f].comment_v, 1, 4, ret, arg1, varg2, condexecmsk);
+		err += melFunction(false, "batcalc", cmps[f].op, cmps[f].fcn, cmps[f].fname, false, cmps[f].comment_v, 1, 5, ret, arg1, varg2, cand, condexecbit);
+		err += melFunction(false, "batcalc", cmps[f].op, cmps[f].fcn, cmps[f].fname, false, cmps[f].comment_v, 1, 5, ret, arg1, varg2, cand, condexecmsk);
+		err += melFunction(false, "batcalc", cmps[f].op, cmps[f].fcn, cmps[f].fname, false, cmps[f].comment_v_, 1, 4, ret, varg1, arg2, condexecbit);
+		err += melFunction(false, "batcalc", cmps[f].op, cmps[f].fcn, cmps[f].fname, false, cmps[f].comment_v_, 1, 4, ret, varg1, arg2, condexecmsk);
+		err += melFunction(false, "batcalc", cmps[f].op, cmps[f].fcn, cmps[f].fname, false, cmps[f].comment_v_, 1, 5, ret, varg1, arg2, cand, condexecbit);
+		err += melFunction(false, "batcalc", cmps[f].op, cmps[f].fcn, cmps[f].fname, false, cmps[f].comment_v_, 1, 5, ret, varg1, arg2, cand, condexecmsk);
 
 	  	if (strcmp(cmps[f].op,"==")==0 || strcmp(cmps[f].op,"!=")==0) {
 			mel_func_arg nil_matches = { .type = TYPE_bit };
@@ -2141,12 +2229,18 @@ batcalc_init(void)
 			err += melFunction(false, "batcalc", cmps[f].op, cmps[f].fcn, cmps[f].fname, false, cmps[f].comment_v_, 1, 3, ret, varg1, arg2, nil_matches);
 			err += melFunction(false, "batcalc", cmps[f].op, cmps[f].fcn, cmps[f].fname, false, cmps[f].comment_v_, 1, 4, ret, varg1, arg2, cand, nil_matches);
 
-			err += melFunction(false, "batcalc", cmps[f].op, cmps[f].fcn, cmps[f].fname, false, cmps[f].comment, 1, 4, ret, arg1, arg2, condexec, nil_matches);
-			err += melFunction(false, "batcalc", cmps[f].op, cmps[f].fcn, cmps[f].fname, false, cmps[f].comment, 1, 6, ret, arg1, arg2, cand, cand, condexec, nil_matches);
-			err += melFunction(false, "batcalc", cmps[f].op, cmps[f].fcn, cmps[f].fname, false, cmps[f].comment_v, 1, 4, ret, arg1, varg2, condexec, nil_matches);
-			err += melFunction(false, "batcalc", cmps[f].op, cmps[f].fcn, cmps[f].fname, false, cmps[f].comment_v, 1, 5, ret, arg1, varg2, cand, condexec, nil_matches);
-			err += melFunction(false, "batcalc", cmps[f].op, cmps[f].fcn, cmps[f].fname, false, cmps[f].comment_v_, 1, 4, ret, varg1, arg2, condexec, nil_matches);
-			err += melFunction(false, "batcalc", cmps[f].op, cmps[f].fcn, cmps[f].fname, false, cmps[f].comment_v_, 1, 5, ret, varg1, arg2, cand, condexec, nil_matches);
+			err += melFunction(false, "batcalc", cmps[f].op, cmps[f].fcn, cmps[f].fname, false, cmps[f].comment, 1, 4, ret, arg1, arg2, condexecbit, nil_matches);
+			err += melFunction(false, "batcalc", cmps[f].op, cmps[f].fcn, cmps[f].fname, false, cmps[f].comment, 1, 4, ret, arg1, arg2, condexecmsk, nil_matches);
+			err += melFunction(false, "batcalc", cmps[f].op, cmps[f].fcn, cmps[f].fname, false, cmps[f].comment, 1, 6, ret, arg1, arg2, cand, cand, condexecbit, nil_matches);
+			err += melFunction(false, "batcalc", cmps[f].op, cmps[f].fcn, cmps[f].fname, false, cmps[f].comment, 1, 6, ret, arg1, arg2, cand, cand, condexecmsk, nil_matches);
+			err += melFunction(false, "batcalc", cmps[f].op, cmps[f].fcn, cmps[f].fname, false, cmps[f].comment_v, 1, 4, ret, arg1, varg2, condexecbit, nil_matches);
+			err += melFunction(false, "batcalc", cmps[f].op, cmps[f].fcn, cmps[f].fname, false, cmps[f].comment_v, 1, 4, ret, arg1, varg2, condexecmsk, nil_matches);
+			err += melFunction(false, "batcalc", cmps[f].op, cmps[f].fcn, cmps[f].fname, false, cmps[f].comment_v, 1, 5, ret, arg1, varg2, cand, condexecbit, nil_matches);
+			err += melFunction(false, "batcalc", cmps[f].op, cmps[f].fcn, cmps[f].fname, false, cmps[f].comment_v, 1, 5, ret, arg1, varg2, cand, condexecmsk, nil_matches);
+			err += melFunction(false, "batcalc", cmps[f].op, cmps[f].fcn, cmps[f].fname, false, cmps[f].comment_v_, 1, 4, ret, varg1, arg2, condexecbit, nil_matches);
+			err += melFunction(false, "batcalc", cmps[f].op, cmps[f].fcn, cmps[f].fname, false, cmps[f].comment_v_, 1, 4, ret, varg1, arg2, condexecmsk, nil_matches);
+			err += melFunction(false, "batcalc", cmps[f].op, cmps[f].fcn, cmps[f].fname, false, cmps[f].comment_v_, 1, 5, ret, varg1, arg2, cand, condexecbit, nil_matches);
+			err += melFunction(false, "batcalc", cmps[f].op, cmps[f].fcn, cmps[f].fname, false, cmps[f].comment_v_, 1, 5, ret, varg1, arg2, cand, condexecmsk, nil_matches);
 		}
 	    }
 	  }
@@ -2180,12 +2274,18 @@ batcalc_init(void)
 		err += melFunction(false, "batcalc", cmp.op, cmp.fcn, cmp.fname, false, cmp.comment_v_, 1, 3, ret, varg, arg);
 		err += melFunction(false, "batcalc", cmp.op, cmp.fcn, cmp.fname, false, cmp.comment_v_, 1, 4, ret, varg, arg, cand);
 
-		err += melFunction(false, "batcalc", cmp.op, cmp.fcn, cmp.fname, false, cmp.comment, 1, 4, ret, arg, arg, condexec);
-		err += melFunction(false, "batcalc", cmp.op, cmp.fcn, cmp.fname, false, cmp.comment, 1, 6, ret, arg, arg, cand, cand, condexec);
-		err += melFunction(false, "batcalc", cmp.op, cmp.fcn, cmp.fname, false, cmp.comment_v, 1, 4, ret, arg, varg, condexec);
-		err += melFunction(false, "batcalc", cmp.op, cmp.fcn, cmp.fname, false, cmp.comment_v, 1, 5, ret, arg, varg, cand, condexec);
-		err += melFunction(false, "batcalc", cmp.op, cmp.fcn, cmp.fname, false, cmp.comment_v_, 1, 4, ret, varg, arg, condexec);
-		err += melFunction(false, "batcalc", cmp.op, cmp.fcn, cmp.fname, false, cmp.comment_v_, 1, 5, ret, varg, arg, cand, condexec);
+		err += melFunction(false, "batcalc", cmp.op, cmp.fcn, cmp.fname, false, cmp.comment, 1, 4, ret, arg, arg, condexecbit);
+		err += melFunction(false, "batcalc", cmp.op, cmp.fcn, cmp.fname, false, cmp.comment, 1, 4, ret, arg, arg, condexecmsk);
+		err += melFunction(false, "batcalc", cmp.op, cmp.fcn, cmp.fname, false, cmp.comment, 1, 6, ret, arg, arg, cand, cand, condexecbit);
+		err += melFunction(false, "batcalc", cmp.op, cmp.fcn, cmp.fname, false, cmp.comment, 1, 6, ret, arg, arg, cand, cand, condexecmsk);
+		err += melFunction(false, "batcalc", cmp.op, cmp.fcn, cmp.fname, false, cmp.comment_v, 1, 4, ret, arg, varg, condexecbit);
+		err += melFunction(false, "batcalc", cmp.op, cmp.fcn, cmp.fname, false, cmp.comment_v, 1, 4, ret, arg, varg, condexecmsk);
+		err += melFunction(false, "batcalc", cmp.op, cmp.fcn, cmp.fname, false, cmp.comment_v, 1, 5, ret, arg, varg, cand, condexecbit);
+		err += melFunction(false, "batcalc", cmp.op, cmp.fcn, cmp.fname, false, cmp.comment_v, 1, 5, ret, arg, varg, cand, condexecmsk);
+		err += melFunction(false, "batcalc", cmp.op, cmp.fcn, cmp.fname, false, cmp.comment_v_, 1, 4, ret, varg, arg, condexecbit);
+		err += melFunction(false, "batcalc", cmp.op, cmp.fcn, cmp.fname, false, cmp.comment_v_, 1, 4, ret, varg, arg, condexecmsk);
+		err += melFunction(false, "batcalc", cmp.op, cmp.fcn, cmp.fname, false, cmp.comment_v_, 1, 5, ret, varg, arg, cand, condexecbit);
+		err += melFunction(false, "batcalc", cmp.op, cmp.fcn, cmp.fname, false, cmp.comment_v_, 1, 5, ret, varg, arg, cand, condexecmsk);
 	}
 	for(tp1 = integer; tp1 < extra && !err; tp1++) {
 	    for(tp2 = integer; tp2 < extra && !err; tp2++) {
@@ -2202,12 +2302,18 @@ batcalc_init(void)
 		err += melFunction(false, "batcalc", cmp.op, cmp.fcn, cmp.fname, false, cmp.comment_v_, 1, 3, ret, varg1, arg2);
 		err += melFunction(false, "batcalc", cmp.op, cmp.fcn, cmp.fname, false, cmp.comment_v_, 1, 4, ret, varg1, arg2, cand);
 
-		err += melFunction(false, "batcalc", cmp.op, cmp.fcn, cmp.fname, false, cmp.comment, 1, 4, ret, arg1, arg2, condexec);
-		err += melFunction(false, "batcalc", cmp.op, cmp.fcn, cmp.fname, false, cmp.comment, 1, 6, ret, arg1, arg2, cand, cand, condexec);
-		err += melFunction(false, "batcalc", cmp.op, cmp.fcn, cmp.fname, false, cmp.comment_v, 1, 4, ret, arg1, varg2, condexec);
-		err += melFunction(false, "batcalc", cmp.op, cmp.fcn, cmp.fname, false, cmp.comment_v, 1, 5, ret, arg1, varg2, cand, condexec);
-		err += melFunction(false, "batcalc", cmp.op, cmp.fcn, cmp.fname, false, cmp.comment_v_, 1, 4, ret, varg1, arg2, condexec);
-		err += melFunction(false, "batcalc", cmp.op, cmp.fcn, cmp.fname, false, cmp.comment_v_, 1, 5, ret, varg1, arg2, cand, condexec);
+		err += melFunction(false, "batcalc", cmp.op, cmp.fcn, cmp.fname, false, cmp.comment, 1, 4, ret, arg1, arg2, condexecbit);
+		err += melFunction(false, "batcalc", cmp.op, cmp.fcn, cmp.fname, false, cmp.comment, 1, 4, ret, arg1, arg2, condexecmsk);
+		err += melFunction(false, "batcalc", cmp.op, cmp.fcn, cmp.fname, false, cmp.comment, 1, 6, ret, arg1, arg2, cand, cand, condexecbit);
+		err += melFunction(false, "batcalc", cmp.op, cmp.fcn, cmp.fname, false, cmp.comment, 1, 6, ret, arg1, arg2, cand, cand, condexecmsk);
+		err += melFunction(false, "batcalc", cmp.op, cmp.fcn, cmp.fname, false, cmp.comment_v, 1, 4, ret, arg1, varg2, condexecbit);
+		err += melFunction(false, "batcalc", cmp.op, cmp.fcn, cmp.fname, false, cmp.comment_v, 1, 4, ret, arg1, varg2, condexecmsk);
+		err += melFunction(false, "batcalc", cmp.op, cmp.fcn, cmp.fname, false, cmp.comment_v, 1, 5, ret, arg1, varg2, cand, condexecbit);
+		err += melFunction(false, "batcalc", cmp.op, cmp.fcn, cmp.fname, false, cmp.comment_v, 1, 5, ret, arg1, varg2, cand, condexecmsk);
+		err += melFunction(false, "batcalc", cmp.op, cmp.fcn, cmp.fname, false, cmp.comment_v_, 1, 4, ret, varg1, arg2, condexecbit);
+		err += melFunction(false, "batcalc", cmp.op, cmp.fcn, cmp.fname, false, cmp.comment_v_, 1, 4, ret, varg1, arg2, condexecmsk);
+		err += melFunction(false, "batcalc", cmp.op, cmp.fcn, cmp.fname, false, cmp.comment_v_, 1, 5, ret, varg1, arg2, cand, condexecbit);
+		err += melFunction(false, "batcalc", cmp.op, cmp.fcn, cmp.fname, false, cmp.comment_v_, 1, 5, ret, varg1, arg2, cand, condexecmsk);
 	    }
 	}
 	for(tp = integer; tp < extra && !err; tp++) {
@@ -2335,10 +2441,14 @@ batcalc_init(void)
 			err += melFunction(false, "batcalc", typeops[t].name_ne, typeops[t].fcn_ne, typeops[t].fname_ne, false, "", 1, 2, ret, arg);
 			err += melFunction(false, "batcalc", typeops[t].name_ne, typeops[t].fcn_ne, typeops[t].fname_ne, false, "", 1, 3, ret, arg, cand);
 
-			err += melFunction(false, "batcalc", typeops[t].name, typeops[t].fcn, typeops[t].fname, false, "", 1, 3, ret, arg, condexec);
-			err += melFunction(false, "batcalc", typeops[t].name, typeops[t].fcn, typeops[t].fname, false, "", 1, 4, ret, arg, cand, condexec);
-			err += melFunction(false, "batcalc", typeops[t].name_ne, typeops[t].fcn_ne, typeops[t].fname_ne, false, "", 1, 3, ret, arg, condexec);
-			err += melFunction(false, "batcalc", typeops[t].name_ne, typeops[t].fcn_ne, typeops[t].fname_ne, false, "", 1, 4, ret, arg, cand, condexec);
+			err += melFunction(false, "batcalc", typeops[t].name, typeops[t].fcn, typeops[t].fname, false, "", 1, 3, ret, arg, condexecbit);
+			err += melFunction(false, "batcalc", typeops[t].name, typeops[t].fcn, typeops[t].fname, false, "", 1, 3, ret, arg, condexecmsk);
+			err += melFunction(false, "batcalc", typeops[t].name, typeops[t].fcn, typeops[t].fname, false, "", 1, 4, ret, arg, cand, condexecbit);
+			err += melFunction(false, "batcalc", typeops[t].name, typeops[t].fcn, typeops[t].fname, false, "", 1, 4, ret, arg, cand, condexecmsk);
+			err += melFunction(false, "batcalc", typeops[t].name_ne, typeops[t].fcn_ne, typeops[t].fname_ne, false, "", 1, 3, ret, arg, condexecbit);
+			err += melFunction(false, "batcalc", typeops[t].name_ne, typeops[t].fcn_ne, typeops[t].fname_ne, false, "", 1, 3, ret, arg, condexecmsk);
+			err += melFunction(false, "batcalc", typeops[t].name_ne, typeops[t].fcn_ne, typeops[t].fname_ne, false, "", 1, 4, ret, arg, cand, condexecbit);
+			err += melFunction(false, "batcalc", typeops[t].name_ne, typeops[t].fcn_ne, typeops[t].fname_ne, false, "", 1, 4, ret, arg, cand, condexecmsk);
 		} else {
 		    for(int p = 0; p<typeopslen; p++) {
 			mel_func_arg ret = { .type = typeops[t].type, .isbat =1 };
@@ -2349,10 +2459,14 @@ batcalc_init(void)
 			err += melFunction(false, "batcalc", typeops[t].name_ne, typeops[t].fcn_ne, typeops[t].fname_ne, false, "", 1, 2, ret, arg);
 			err += melFunction(false, "batcalc", typeops[t].name_ne, typeops[t].fcn_ne, typeops[t].fname_ne, false, "", 1, 3, ret, arg, cand);
 
-			err += melFunction(false, "batcalc", typeops[t].name, typeops[t].fcn, typeops[t].fname, false, "", 1, 3, ret, arg, condexec);
-			err += melFunction(false, "batcalc", typeops[t].name, typeops[t].fcn, typeops[t].fname, false, "", 1, 4, ret, arg, cand, condexec);
-			err += melFunction(false, "batcalc", typeops[t].name_ne, typeops[t].fcn_ne, typeops[t].fname_ne, false, "", 1, 3, ret, arg, condexec);
-			err += melFunction(false, "batcalc", typeops[t].name_ne, typeops[t].fcn_ne, typeops[t].fname_ne, false, "", 1, 4, ret, arg, cand, condexec);
+			err += melFunction(false, "batcalc", typeops[t].name, typeops[t].fcn, typeops[t].fname, false, "", 1, 3, ret, arg, condexecbit);
+			err += melFunction(false, "batcalc", typeops[t].name, typeops[t].fcn, typeops[t].fname, false, "", 1, 3, ret, arg, condexecmsk);
+			err += melFunction(false, "batcalc", typeops[t].name, typeops[t].fcn, typeops[t].fname, false, "", 1, 4, ret, arg, cand, condexecbit);
+			err += melFunction(false, "batcalc", typeops[t].name, typeops[t].fcn, typeops[t].fname, false, "", 1, 4, ret, arg, cand, condexecmsk);
+			err += melFunction(false, "batcalc", typeops[t].name_ne, typeops[t].fcn_ne, typeops[t].fname_ne, false, "", 1, 3, ret, arg, condexecbit);
+			err += melFunction(false, "batcalc", typeops[t].name_ne, typeops[t].fcn_ne, typeops[t].fname_ne, false, "", 1, 3, ret, arg, condexecmsk);
+			err += melFunction(false, "batcalc", typeops[t].name_ne, typeops[t].fcn_ne, typeops[t].fname_ne, false, "", 1, 4, ret, arg, cand, condexecbit);
+			err += melFunction(false, "batcalc", typeops[t].name_ne, typeops[t].fcn_ne, typeops[t].fname_ne, false, "", 1, 4, ret, arg, cand, condexecmsk);
 		    }
 		}
 	}
@@ -2364,11 +2478,15 @@ static mel_func batcalc_init_funcs[] = {
  pattern("batcalc", "isnil", CMDbatISNIL, false, "Unary check for nil over the tail of the bat", args(1,2, batarg("",bit),batargany("b",0))),
  pattern("batcalc", "isnil", CMDbatISNIL, false, "Unary check for nil over the tail of the bat with candidates list", args(1,3, batarg("",bit),batargany("b",0),batarg("s",oid))),
  pattern("batcalc", "isnil", CMDbatISNIL, false, "Unary check for nil over the tail of the bat", args(1,3, batarg("",bit),batargany("b",0),batarg("r",bit))),
+ pattern("batcalc", "isnil", CMDbatISNIL, false, "Unary check for nil over the tail of the bat", args(1,3, batarg("",bit),batargany("b",0),batarg("r",msk))),
  pattern("batcalc", "isnil", CMDbatISNIL, false, "Unary check for nil over the tail of the bat with candidates list", args(1,4, batarg("",bit),batargany("b",0),batarg("s",oid),batarg("r",bit))),
+ pattern("batcalc", "isnil", CMDbatISNIL, false, "Unary check for nil over the tail of the bat with candidates list", args(1,4, batarg("",bit),batargany("b",0),batarg("s",oid),batarg("r",msk))),
  pattern("batcalc", "isnotnil", CMDbatISNOTNIL, false, "Unary check for notnil over the tail of the bat", args(1,2, batarg("",bit),batargany("b",0))),
  pattern("batcalc", "isnotnil", CMDbatISNOTNIL, false, "Unary check for notnil over the tail of the bat with candidates list", args(1,3, batarg("",bit),batargany("b",0),batarg("s",oid))),
  pattern("batcalc", "isnotnil", CMDbatISNOTNIL, false, "Unary check for notnil over the tail of the bat", args(1,3, batarg("",bit),batargany("b",0),batarg("r",bit))),
+ pattern("batcalc", "isnotnil", CMDbatISNOTNIL, false, "Unary check for notnil over the tail of the bat", args(1,3, batarg("",bit),batargany("b",0),batarg("r",msk))),
  pattern("batcalc", "isnotnil", CMDbatISNOTNIL, false, "Unary check for notnil over the tail of the bat with candidates list", args(1,4, batarg("",bit),batargany("b",0),batarg("s",oid),batarg("r",bit))),
+ pattern("batcalc", "isnotnil", CMDbatISNOTNIL, false, "Unary check for notnil over the tail of the bat with candidates list", args(1,4, batarg("",bit),batargany("b",0),batarg("s",oid),batarg("r",msk))),
  pattern("batcalc", "min", CMDbatMIN, false, "Return bat with minimum value of each pair of inputs", args(1,3, batargany("",1),batargany("b1",1),batargany("b2",1))),
  pattern("batcalc", "min", CMDbatMIN, false, "Return bat with minimum value of each pair of inputs", args(1,5, batargany("",1),batargany("b1",1),batargany("b2",1),batarg("s1",oid),batarg("s2",oid))),
  pattern("batcalc", "min", CMDbatMIN, false, "Return bat with minimum value of each pair of inputs", args(1,3, batargany("",1),batargany("b",1),argany("v",1))),
@@ -2376,11 +2494,17 @@ static mel_func batcalc_init_funcs[] = {
  pattern("batcalc", "min", CMDbatMIN, false, "Return bat with minimum value of each pair of inputs", args(1,3, batargany("",1),argany("v",1),batargany("b",1))),
  pattern("batcalc", "min", CMDbatMIN, false, "Return bat with minimum value of each pair of inputs", args(1,4, batargany("",1),argany("v",1),batargany("b",1),batarg("s",oid))),
  pattern("batcalc", "min", CMDbatMIN, false, "Return bat with minimum value of each pair of inputs", args(1,4, batargany("",1),batargany("b1",1),batargany("b2",1),batarg("r",bit))),
+ pattern("batcalc", "min", CMDbatMIN, false, "Return bat with minimum value of each pair of inputs", args(1,4, batargany("",1),batargany("b1",1),batargany("b2",1),batarg("r",msk))),
  pattern("batcalc", "min", CMDbatMIN, false, "Return bat with minimum value of each pair of inputs", args(1,6, batargany("",1),batargany("b1",1),batargany("b2",1),batarg("s1",oid),batarg("s2",oid),batarg("r",bit))),
+ pattern("batcalc", "min", CMDbatMIN, false, "Return bat with minimum value of each pair of inputs", args(1,6, batargany("",1),batargany("b1",1),batargany("b2",1),batarg("s1",oid),batarg("s2",oid),batarg("r",msk))),
  pattern("batcalc", "min", CMDbatMIN, false, "Return bat with minimum value of each pair of inputs", args(1,4, batargany("",1),batargany("b",1),argany("v",1),batarg("r",bit))),
+ pattern("batcalc", "min", CMDbatMIN, false, "Return bat with minimum value of each pair of inputs", args(1,4, batargany("",1),batargany("b",1),argany("v",1),batarg("r",msk))),
  pattern("batcalc", "min", CMDbatMIN, false, "Return bat with minimum value of each pair of inputs", args(1,5, batargany("",1),batargany("b",1),argany("v",1),batarg("s",oid),batarg("r",bit))),
+ pattern("batcalc", "min", CMDbatMIN, false, "Return bat with minimum value of each pair of inputs", args(1,5, batargany("",1),batargany("b",1),argany("v",1),batarg("s",oid),batarg("r",msk))),
  pattern("batcalc", "min", CMDbatMIN, false, "Return bat with minimum value of each pair of inputs", args(1,4, batargany("",1),argany("v",1),batargany("b",1),batarg("r",bit))),
+ pattern("batcalc", "min", CMDbatMIN, false, "Return bat with minimum value of each pair of inputs", args(1,4, batargany("",1),argany("v",1),batargany("b",1),batarg("r",msk))),
  pattern("batcalc", "min", CMDbatMIN, false, "Return bat with minimum value of each pair of inputs", args(1,5, batargany("",1),argany("v",1),batargany("b",1),batarg("s",oid),batarg("r",bit))),
+ pattern("batcalc", "min", CMDbatMIN, false, "Return bat with minimum value of each pair of inputs", args(1,5, batargany("",1),argany("v",1),batargany("b",1),batarg("s",oid),batarg("r",msk))),
  pattern("batcalc", "min_no_nil", CMDbatMIN_no_nil, false, "Return bat with minimum value of each pair of inputs, ignoring nil values", args(1,3, batargany("",1),batargany("b1",1),batargany("b2",1))),
  pattern("batcalc", "min_no_nil", CMDbatMIN_no_nil, false, "Return bat with minimum value of each pair of inputs, ignoring nil values", args(1,5, batargany("",1),batargany("b1",1),batargany("b2",1),batarg("s1",oid),batarg("s2",oid))),
  pattern("batcalc", "min_no_nil", CMDbatMIN_no_nil, false, "Return bat with minimum value of each pair of inputs, ignoring nil values", args(1,3, batargany("",1),batargany("b",1),argany("v",1))),
@@ -2388,11 +2512,17 @@ static mel_func batcalc_init_funcs[] = {
  pattern("batcalc", "min_no_nil", CMDbatMIN_no_nil, false, "Return bat with minimum value of each pair of inputs, ignoring nil values", args(1,3, batargany("",1),argany("v",1),batargany("b",1))),
  pattern("batcalc", "min_no_nil", CMDbatMIN_no_nil, false, "Return bat with minimum value of each pair of inputs, ignoring nil values", args(1,4, batargany("",1),argany("v",1),batargany("b",1),batarg("s",oid))),
  pattern("batcalc", "min_no_nil", CMDbatMIN_no_nil, false, "Return bat with minimum value of each pair of inputs, ignoring nil values", args(1,4, batargany("",1),batargany("b1",1),batargany("b2",1),batarg("r",bit))),
+ pattern("batcalc", "min_no_nil", CMDbatMIN_no_nil, false, "Return bat with minimum value of each pair of inputs, ignoring nil values", args(1,4, batargany("",1),batargany("b1",1),batargany("b2",1),batarg("r",msk))),
  pattern("batcalc", "min_no_nil", CMDbatMIN_no_nil, false, "Return bat with minimum value of each pair of inputs, ignoring nil values", args(1,6, batargany("",1),batargany("b1",1),batargany("b2",1),batarg("s1",oid),batarg("s2",oid),batarg("r",bit))),
+ pattern("batcalc", "min_no_nil", CMDbatMIN_no_nil, false, "Return bat with minimum value of each pair of inputs, ignoring nil values", args(1,6, batargany("",1),batargany("b1",1),batargany("b2",1),batarg("s1",oid),batarg("s2",oid),batarg("r",msk))),
  pattern("batcalc", "min_no_nil", CMDbatMIN_no_nil, false, "Return bat with minimum value of each pair of inputs, ignoring nil values", args(1,4, batargany("",1),batargany("b",1),argany("v",1),batarg("r",bit))),
+ pattern("batcalc", "min_no_nil", CMDbatMIN_no_nil, false, "Return bat with minimum value of each pair of inputs, ignoring nil values", args(1,4, batargany("",1),batargany("b",1),argany("v",1),batarg("r",msk))),
  pattern("batcalc", "min_no_nil", CMDbatMIN_no_nil, false, "Return bat with minimum value of each pair of inputs, ignoring nil values", args(1,5, batargany("",1),batargany("b",1),argany("v",1),batarg("s",oid),batarg("r",bit))),
+ pattern("batcalc", "min_no_nil", CMDbatMIN_no_nil, false, "Return bat with minimum value of each pair of inputs, ignoring nil values", args(1,5, batargany("",1),batargany("b",1),argany("v",1),batarg("s",oid),batarg("r",msk))),
  pattern("batcalc", "min_no_nil", CMDbatMIN_no_nil, false, "Return bat with minimum value of each pair of inputs, ignoring nil values", args(1,4, batargany("",1),argany("v",1),batargany("b",1),batarg("r",bit))),
+ pattern("batcalc", "min_no_nil", CMDbatMIN_no_nil, false, "Return bat with minimum value of each pair of inputs, ignoring nil values", args(1,4, batargany("",1),argany("v",1),batargany("b",1),batarg("r",msk))),
  pattern("batcalc", "min_no_nil", CMDbatMIN_no_nil, false, "Return bat with minimum value of each pair of inputs, ignoring nil values", args(1,5, batargany("",1),argany("v",1),batargany("b",1),batarg("s",oid),batarg("r",bit))),
+ pattern("batcalc", "min_no_nil", CMDbatMIN_no_nil, false, "Return bat with minimum value of each pair of inputs, ignoring nil values", args(1,5, batargany("",1),argany("v",1),batargany("b",1),batarg("s",oid),batarg("r",msk))),
  pattern("batcalc", "max", CMDbatMAX, false, "Return bat with maximum value of each pair of inputs", args(1,3, batargany("",1),batargany("b1",1),batargany("b2",1))),
  pattern("batcalc", "max", CMDbatMAX, false, "Return bat with maximum value of each pair of inputs", args(1,5, batargany("",1),batargany("b1",1),batargany("b2",1),batarg("s1",oid),batarg("s2",oid))),
  pattern("batcalc", "max", CMDbatMAX, false, "Return bat with maximum value of each pair of inputs", args(1,3, batargany("",1),batargany("b",1),argany("v",1))),
@@ -2400,11 +2530,17 @@ static mel_func batcalc_init_funcs[] = {
  pattern("batcalc", "max", CMDbatMAX, false, "Return bat with maximum value of each pair of inputs", args(1,3, batargany("",1),argany("v",1),batargany("b",1))),
  pattern("batcalc", "max", CMDbatMAX, false, "Return bat with maximum value of each pair of inputs", args(1,4, batargany("",1),argany("v",1),batargany("b",1),batarg("s",oid))),
  pattern("batcalc", "max", CMDbatMAX, false, "Return bat with maximum value of each pair of inputs", args(1,4, batargany("",1),batargany("b1",1),batargany("b2",1),batarg("r",bit))),
+ pattern("batcalc", "max", CMDbatMAX, false, "Return bat with maximum value of each pair of inputs", args(1,4, batargany("",1),batargany("b1",1),batargany("b2",1),batarg("r",msk))),
  pattern("batcalc", "max", CMDbatMAX, false, "Return bat with maximum value of each pair of inputs", args(1,6, batargany("",1),batargany("b1",1),batargany("b2",1),batarg("s1",oid),batarg("s2",oid),batarg("r",bit))),
+ pattern("batcalc", "max", CMDbatMAX, false, "Return bat with maximum value of each pair of inputs", args(1,6, batargany("",1),batargany("b1",1),batargany("b2",1),batarg("s1",oid),batarg("s2",oid),batarg("r",msk))),
  pattern("batcalc", "max", CMDbatMAX, false, "Return bat with maximum value of each pair of inputs", args(1,4, batargany("",1),batargany("b",1),argany("v",1),batarg("r",bit))),
+ pattern("batcalc", "max", CMDbatMAX, false, "Return bat with maximum value of each pair of inputs", args(1,4, batargany("",1),batargany("b",1),argany("v",1),batarg("r",msk))),
  pattern("batcalc", "max", CMDbatMAX, false, "Return bat with maximum value of each pair of inputs", args(1,5, batargany("",1),batargany("b",1),argany("v",1),batarg("s",oid),batarg("r",bit))),
+ pattern("batcalc", "max", CMDbatMAX, false, "Return bat with maximum value of each pair of inputs", args(1,5, batargany("",1),batargany("b",1),argany("v",1),batarg("s",oid),batarg("r",msk))),
  pattern("batcalc", "max", CMDbatMAX, false, "Return bat with maximum value of each pair of inputs", args(1,4, batargany("",1),argany("v",1),batargany("b",1),batarg("r",bit))),
+ pattern("batcalc", "max", CMDbatMAX, false, "Return bat with maximum value of each pair of inputs", args(1,4, batargany("",1),argany("v",1),batargany("b",1),batarg("r",msk))),
  pattern("batcalc", "max", CMDbatMAX, false, "Return bat with maximum value of each pair of inputs", args(1,5, batargany("",1),argany("v",1),batargany("b",1),batarg("s",oid),batarg("r",bit))),
+ pattern("batcalc", "max", CMDbatMAX, false, "Return bat with maximum value of each pair of inputs", args(1,5, batargany("",1),argany("v",1),batargany("b",1),batarg("s",oid),batarg("r",msk))),
  pattern("batcalc", "max_no_nil", CMDbatMAX_no_nil, false, "Return bat with maximum value of each pair of inputs, ignoring nil values", args(1,3, batargany("",1),batargany("b1",1),batargany("b2",1))),
  pattern("batcalc", "max_no_nil", CMDbatMAX_no_nil, false, "Return bat with maximum value of each pair of inputs, ignoring nil values", args(1,5, batargany("",1),batargany("b1",1),batargany("b2",1),batarg("s1",oid),batarg("s2",oid))),
  pattern("batcalc", "max_no_nil", CMDbatMAX_no_nil, false, "Return bat with maximum value of each pair of inputs, ignoring nil values", args(1,3, batargany("",1),batargany("b",1),argany("v",1))),
@@ -2412,27 +2548,40 @@ static mel_func batcalc_init_funcs[] = {
  pattern("batcalc", "max_no_nil", CMDbatMAX_no_nil, false, "Return bat with maximum value of each pair of inputs, ignoring nil values", args(1,3, batargany("",1),argany("v",1),batargany("b",1))),
  pattern("batcalc", "max_no_nil", CMDbatMAX_no_nil, false, "Return bat with maximum value of each pair of inputs, ignoring nil values", args(1,4, batargany("",1),argany("v",1),batargany("b",1),batarg("s",oid))),
  pattern("batcalc", "max_no_nil", CMDbatMAX_no_nil, false, "Return bat with maximum value of each pair of inputs, ignoring nil values", args(1,4, batargany("",1),batargany("b1",1),batargany("b2",1),batarg("r",bit))),
+ pattern("batcalc", "max_no_nil", CMDbatMAX_no_nil, false, "Return bat with maximum value of each pair of inputs, ignoring nil values", args(1,4, batargany("",1),batargany("b1",1),batargany("b2",1),batarg("r",msk))),
  pattern("batcalc", "max_no_nil", CMDbatMAX_no_nil, false, "Return bat with maximum value of each pair of inputs, ignoring nil values", args(1,6, batargany("",1),batargany("b1",1),batargany("b2",1),batarg("s1",oid),batarg("s2",oid),batarg("r",bit))),
+ pattern("batcalc", "max_no_nil", CMDbatMAX_no_nil, false, "Return bat with maximum value of each pair of inputs, ignoring nil values", args(1,6, batargany("",1),batargany("b1",1),batargany("b2",1),batarg("s1",oid),batarg("s2",oid),batarg("r",msk))),
  pattern("batcalc", "max_no_nil", CMDbatMAX_no_nil, false, "Return bat with maximum value of each pair of inputs, ignoring nil values", args(1,4, batargany("",1),batargany("b",1),argany("v",1),batarg("r",bit))),
+ pattern("batcalc", "max_no_nil", CMDbatMAX_no_nil, false, "Return bat with maximum value of each pair of inputs, ignoring nil values", args(1,4, batargany("",1),batargany("b",1),argany("v",1),batarg("r",msk))),
  pattern("batcalc", "max_no_nil", CMDbatMAX_no_nil, false, "Return bat with maximum value of each pair of inputs, ignoring nil values", args(1,5, batargany("",1),batargany("b",1),argany("v",1),batarg("s",oid),batarg("r",bit))),
+ pattern("batcalc", "max_no_nil", CMDbatMAX_no_nil, false, "Return bat with maximum value of each pair of inputs, ignoring nil values", args(1,5, batargany("",1),batargany("b",1),argany("v",1),batarg("s",oid),batarg("r",msk))),
  pattern("batcalc", "max_no_nil", CMDbatMAX_no_nil, false, "Return bat with maximum value of each pair of inputs, ignoring nil values", args(1,4, batargany("",1),argany("v",1),batargany("b",1),batarg("r",bit))),
+ pattern("batcalc", "max_no_nil", CMDbatMAX_no_nil, false, "Return bat with maximum value of each pair of inputs, ignoring nil values", args(1,4, batargany("",1),argany("v",1),batargany("b",1),batarg("r",msk))),
  pattern("batcalc", "max_no_nil", CMDbatMAX_no_nil, false, "Return bat with maximum value of each pair of inputs, ignoring nil values", args(1,5, batargany("",1),argany("v",1),batargany("b",1),batarg("s",oid),batarg("r",bit))),
+ pattern("batcalc", "max_no_nil", CMDbatMAX_no_nil, false, "Return bat with maximum value of each pair of inputs, ignoring nil values", args(1,5, batargany("",1),argany("v",1),batargany("b",1),batarg("s",oid),batarg("r",msk))),
 
  pattern("batcalc", "+", CMDbatADD, false, "Return concatenation of B1 and B2 with candidates list", args(1,5, batarg("",str),batarg("b1",str),batarg("b2",str),batarg("s1",oid),batarg("s2",oid))),
  pattern("batcalc", "+", CMDbatADD, false, "Return concatenation of B and V with candidates list", args(1,4, batarg("",str),batarg("b",str),arg("v",str),batarg("s",oid))),
  pattern("batcalc", "+", CMDbatADD, false, "Return concatenation of V and B with candidates list", args(1,4, batarg("",str),arg("v",str),batarg("b",str),batarg("s",oid))),
  pattern("batcalc", "+", CMDbatADD, false, "Return concatenation of B1 and B2 with candidates list", args(1,6, batarg("",str),batarg("b1",str),batarg("b2",str),batarg("s1",oid),batarg("s2",oid),batarg("r",bit))),
+ pattern("batcalc", "+", CMDbatADD, false, "Return concatenation of B1 and B2 with candidates list", args(1,6, batarg("",str),batarg("b1",str),batarg("b2",str),batarg("s1",oid),batarg("s2",oid),batarg("r",msk))),
  pattern("batcalc", "+", CMDbatADD, false, "Return concatenation of B and V with candidates list", args(1,5, batarg("",str),batarg("b",str),arg("v",str),batarg("s",oid),batarg("r",bit))),
+ pattern("batcalc", "+", CMDbatADD, false, "Return concatenation of B and V with candidates list", args(1,5, batarg("",str),batarg("b",str),arg("v",str),batarg("s",oid),batarg("r",msk))),
  pattern("batcalc", "+", CMDbatADD, false, "Return concatenation of V and B with candidates list", args(1,5, batarg("",str),arg("v",str),batarg("b",str),batarg("s",oid),batarg("r",bit))),
+ pattern("batcalc", "+", CMDbatADD, false, "Return concatenation of V and B with candidates list", args(1,5, batarg("",str),arg("v",str),batarg("b",str),batarg("s",oid),batarg("r",msk))),
 
  pattern("batmmath", "fmod", CMDbatMODsignal, false, "", args(1,3, batarg("",dbl),batarg("x",dbl),arg("y",dbl))),
  pattern("batmmath", "fmod", CMDbatMODsignal, false, "", args(1,4, batarg("",dbl),batarg("x",dbl),arg("y",dbl),batarg("r",bit))),
+ pattern("batmmath", "fmod", CMDbatMODsignal, false, "", args(1,4, batarg("",dbl),batarg("x",dbl),arg("y",dbl),batarg("r",msk))),
  pattern("batmmath", "fmod", CMDbatMODsignal, false, "", args(1,4, batarg("",dbl),batarg("x",dbl),arg("y",dbl),batarg("s",oid))),
  pattern("batmmath", "fmod", CMDbatMODsignal, false, "", args(1,5, batarg("",dbl),batarg("x",dbl),arg("y",dbl),batarg("s",oid),batarg("r",bit))),
+ pattern("batmmath", "fmod", CMDbatMODsignal, false, "", args(1,5, batarg("",dbl),batarg("x",dbl),arg("y",dbl),batarg("s",oid),batarg("r",msk))),
  pattern("batmmath", "fmod", CMDbatMODsignal, false, "", args(1,3, batarg("",flt),batarg("x",flt),arg("y",flt))),
  pattern("batmmath", "fmod", CMDbatMODsignal, false, "", args(1,4, batarg("",flt),batarg("x",flt),arg("y",flt),batarg("r",bit))),
+ pattern("batmmath", "fmod", CMDbatMODsignal, false, "", args(1,4, batarg("",flt),batarg("x",flt),arg("y",flt),batarg("r",msk))),
  pattern("batmmath", "fmod", CMDbatMODsignal, false, "", args(1,4, batarg("",flt),batarg("x",flt),arg("y",flt),batarg("s",oid))),
  pattern("batmmath", "fmod", CMDbatMODsignal, false, "", args(1,5, batarg("",flt),batarg("x",flt),arg("y",flt),batarg("s",oid),batarg("r",bit))),
+ pattern("batmmath", "fmod", CMDbatMODsignal, false, "", args(1,5, batarg("",flt),batarg("x",flt),arg("y",flt),batarg("s",oid),batarg("r",msk))),
 
  pattern("batcalc", "between", CMDbatBETWEEN, false, "B between V1 and V2 (or vice versa)", args(1,9, batarg("",bit),batargany("b",1),batargany("v1",1),batargany("v2",1),arg("sym",bit),arg("linc",bit),arg("hinc",bit),arg("nils_false",bit),arg("anti",bit))),
  pattern("batcalc", "between", CMDbatBETWEEN, false, "B between V1 and V2 (or vice versa) with candidates list", args(1,12, batarg("",bit),batargany("b",1),batargany("v1",1),batargany("v2",1),batarg("s",oid),batarg("s1",oid),batarg("s2",oid),arg("sym",bit),arg("linc",bit),arg("hinc",bit),arg("nils_false",bit),arg("anti",bit))),
@@ -2443,14 +2592,22 @@ static mel_func batcalc_init_funcs[] = {
  pattern("batcalc", "between", CMDbatBETWEEN, false, "B between V1 and V2 (or vice versa)", args(1,9, batarg("",bit),batargany("b",1),argany("v1",1),argany("v2",1),arg("sym",bit),arg("linc",bit),arg("hinc",bit),arg("nils_false",bit),arg("anti",bit))),
  pattern("batcalc", "between", CMDbatBETWEEN, false, "B between V1 and V2 (or vice versa) with candidates list", args(1,10, batarg("",bit),batargany("b",1),argany("v1",1),argany("v2",1),batarg("s",oid),arg("sym",bit),arg("linc",bit),arg("hinc",bit),arg("nils_false",bit),arg("anti",bit))),
 
- pattern("batcalc", "between", CMDbatBETWEEN, false, "B between V1 and V2 (or vice versa)", args(1,10, batarg("",bit),batargany("b",1),batargany("v1",1),batargany("v2",1),batarg("ce",bit),arg("sym",bit),arg("linc",bit),arg("hinc",bit),arg("nils_false",bit),arg("anti",bit))),
- pattern("batcalc", "between", CMDbatBETWEEN, false, "B between V1 and V2 (or vice versa) with candidates list", args(1,13, batarg("",bit),batargany("b",1),batargany("v1",1),batargany("v2",1),batarg("s",oid),batarg("s1",oid),batarg("s2",oid),batarg("ce",bit),arg("sym",bit),arg("linc",bit),arg("hinc",bit),arg("nils_false",bit),arg("anti",bit))),
- pattern("batcalc", "between", CMDbatBETWEEN, false, "B between V1 and V2 (or vice versa)", args(1,10, batarg("",bit),batargany("b",1),batargany("v1",1),argany("v2",1),batarg("ce",bit),arg("sym",bit),arg("linc",bit),arg("hinc",bit),arg("nils_false",bit),arg("anti",bit))),
- pattern("batcalc", "between", CMDbatBETWEEN, false, "B between V1 and V2 (or vice versa) with candidates list", args(1,12, batarg("",bit),batargany("b",1),batargany("v1",1),argany("v2",1),batarg("s",oid),batarg("s1",oid),batarg("ce",bit),arg("sym",bit),arg("linc",bit),arg("hinc",bit),arg("nils_false",bit),arg("anti",bit))),
- pattern("batcalc", "between", CMDbatBETWEEN, false, "B between V1 and V2 (or vice versa)", args(1,10, batarg("",bit),batargany("b",1),argany("v1",1),batargany("v2",1),batarg("ce",bit),arg("sym",bit),arg("linc",bit),arg("hinc",bit),arg("nils_false",bit),arg("anti",bit))),
- pattern("batcalc", "between", CMDbatBETWEEN, false, "B between V1 and V2 (or vice versa) with candidates list", args(1,12, batarg("",bit),batargany("b",1),argany("v1",1),batargany("v2",1),batarg("s",oid),batarg("s2",oid),batarg("ce",bit),arg("sym",bit),arg("linc",bit),arg("hinc",bit),arg("nils_false",bit),arg("anti",bit))),
- pattern("batcalc", "between", CMDbatBETWEEN, false, "B between V1 and V2 (or vice versa)", args(1,10, batarg("",bit),batargany("b",1),argany("v1",1),argany("v2",1),batarg("ce",bit),arg("sym",bit),arg("linc",bit),arg("hinc",bit),arg("nils_false",bit),arg("anti",bit))),
- pattern("batcalc", "between", CMDbatBETWEEN, false, "B between V1 and V2 (or vice versa) with candidates list", args(1,11, batarg("",bit),batargany("b",1),argany("v1",1),argany("v2",1),batarg("s",oid),batarg("ce",bit),arg("sym",bit),arg("linc",bit),arg("hinc",bit),arg("nils_false",bit),arg("anti",bit))),
+ pattern("batcalc", "between", CMDbatBETWEEN, false, "B between V1 and V2 (or vice versa) with conditional execution bat", args(1,10, batarg("",bit),batargany("b",1),batargany("v1",1),batargany("v2",1),batarg("r",bit),arg("sym",bit),arg("linc",bit),arg("hinc",bit),arg("nils_false",bit),arg("anti",bit))),
+ pattern("batcalc", "between", CMDbatBETWEEN, false, "B between V1 and V2 (or vice versa) with conditional execution bat", args(1,10, batarg("",bit),batargany("b",1),batargany("v1",1),batargany("v2",1),batarg("r",msk),arg("sym",bit),arg("linc",bit),arg("hinc",bit),arg("nils_false",bit),arg("anti",bit))),
+ pattern("batcalc", "between", CMDbatBETWEEN, false, "B between V1 and V2 (or vice versa) with candidates list and conditional execution bat", args(1,13, batarg("",bit),batargany("b",1),batargany("v1",1),batargany("v2",1),batarg("s",oid),batarg("s1",oid),batarg("s2",oid),batarg("r",bit),arg("sym",bit),arg("linc",bit),arg("hinc",bit),arg("nils_false",bit),arg("anti",bit))),
+ pattern("batcalc", "between", CMDbatBETWEEN, false, "B between V1 and V2 (or vice versa) with candidates list and conditional execution bat", args(1,13, batarg("",bit),batargany("b",1),batargany("v1",1),batargany("v2",1),batarg("s",oid),batarg("s1",oid),batarg("s2",oid),batarg("r",msk),arg("sym",bit),arg("linc",bit),arg("hinc",bit),arg("nils_false",bit),arg("anti",bit))),
+ pattern("batcalc", "between", CMDbatBETWEEN, false, "B between V1 and V2 (or vice versa) with conditional execution bat", args(1,10, batarg("",bit),batargany("b",1),batargany("v1",1),argany("v2",1),batarg("r",bit),arg("sym",bit),arg("linc",bit),arg("hinc",bit),arg("nils_false",bit),arg("anti",bit))),
+ pattern("batcalc", "between", CMDbatBETWEEN, false, "B between V1 and V2 (or vice versa) with conditional execution bat", args(1,10, batarg("",bit),batargany("b",1),batargany("v1",1),argany("v2",1),batarg("r",msk),arg("sym",bit),arg("linc",bit),arg("hinc",bit),arg("nils_false",bit),arg("anti",bit))),
+ pattern("batcalc", "between", CMDbatBETWEEN, false, "B between V1 and V2 (or vice versa) with candidates list and conditional execution bat", args(1,12, batarg("",bit),batargany("b",1),batargany("v1",1),argany("v2",1),batarg("s",oid),batarg("s1",oid),batarg("r",bit),arg("sym",bit),arg("linc",bit),arg("hinc",bit),arg("nils_false",bit),arg("anti",bit))),
+ pattern("batcalc", "between", CMDbatBETWEEN, false, "B between V1 and V2 (or vice versa) with candidates list and conditional execution bat", args(1,12, batarg("",bit),batargany("b",1),batargany("v1",1),argany("v2",1),batarg("s",oid),batarg("s1",oid),batarg("r",msk),arg("sym",bit),arg("linc",bit),arg("hinc",bit),arg("nils_false",bit),arg("anti",bit))),
+ pattern("batcalc", "between", CMDbatBETWEEN, false, "B between V1 and V2 (or vice versa) with conditional execution bat", args(1,10, batarg("",bit),batargany("b",1),argany("v1",1),batargany("v2",1),batarg("r",bit),arg("sym",bit),arg("linc",bit),arg("hinc",bit),arg("nils_false",bit),arg("anti",bit))),
+ pattern("batcalc", "between", CMDbatBETWEEN, false, "B between V1 and V2 (or vice versa) with conditional execution bat", args(1,10, batarg("",bit),batargany("b",1),argany("v1",1),batargany("v2",1),batarg("r",msk),arg("sym",bit),arg("linc",bit),arg("hinc",bit),arg("nils_false",bit),arg("anti",bit))),
+ pattern("batcalc", "between", CMDbatBETWEEN, false, "B between V1 and V2 (or vice versa) with candidates list and conditional execution bat", args(1,12, batarg("",bit),batargany("b",1),argany("v1",1),batargany("v2",1),batarg("s",oid),batarg("s2",oid),batarg("r",bit),arg("sym",bit),arg("linc",bit),arg("hinc",bit),arg("nils_false",bit),arg("anti",bit))),
+ pattern("batcalc", "between", CMDbatBETWEEN, false, "B between V1 and V2 (or vice versa) with candidates list and conditional execution bat", args(1,12, batarg("",bit),batargany("b",1),argany("v1",1),batargany("v2",1),batarg("s",oid),batarg("s2",oid),batarg("r",msk),arg("sym",bit),arg("linc",bit),arg("hinc",bit),arg("nils_false",bit),arg("anti",bit))),
+ pattern("batcalc", "between", CMDbatBETWEEN, false, "B between V1 and V2 (or vice versa) with conditional execution bat", args(1,10, batarg("",bit),batargany("b",1),argany("v1",1),argany("v2",1),batarg("r",bit),arg("sym",bit),arg("linc",bit),arg("hinc",bit),arg("nils_false",bit),arg("anti",bit))),
+ pattern("batcalc", "between", CMDbatBETWEEN, false, "B between V1 and V2 (or vice versa) with conditional execution bat", args(1,10, batarg("",bit),batargany("b",1),argany("v1",1),argany("v2",1),batarg("r",msk),arg("sym",bit),arg("linc",bit),arg("hinc",bit),arg("nils_false",bit),arg("anti",bit))),
+ pattern("batcalc", "between", CMDbatBETWEEN, false, "B between V1 and V2 (or vice versa) with candidates list and conditional execution bat", args(1,11, batarg("",bit),batargany("b",1),argany("v1",1),argany("v2",1),batarg("s",oid),batarg("r",bit),arg("sym",bit),arg("linc",bit),arg("hinc",bit),arg("nils_false",bit),arg("anti",bit))),
+ pattern("batcalc", "between", CMDbatBETWEEN, false, "B between V1 and V2 (or vice versa) with candidates list and conditional execution bat", args(1,11, batarg("",bit),batargany("b",1),argany("v1",1),argany("v2",1),batarg("s",oid),batarg("r",msk),arg("sym",bit),arg("linc",bit),arg("hinc",bit),arg("nils_false",bit),arg("anti",bit))),
 
  pattern("aggr", "avg", CMDcalcavg, false, "Gives the avg of all tail values", args(1,2, arg("",dbl),batargany("b",2))),
  pattern("aggr", "avg", CMDcalcavg, false, "Gives the avg of all tail values", args(1,3, arg("",dbl),batargany("b",2),arg("scale",int))),

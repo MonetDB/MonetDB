@@ -297,10 +297,8 @@ BATdiffcand(BAT *a, BAT *b)
 		/* b is dense and a is not: we can copy the part of a
 		 * that is before the start of b and the part of a
 		 * that is after the end of b */
-		bn = canditer_slice2(&cia, 0,
-				     canditer_search(&cia, cib.seq, true),
-				     canditer_search(&cia, cib.seq + cib.ncand, true),
-				     cia.ncand);
+		bn = canditer_slice2val(&cia, oid_nil, cib.seq,
+					cib.seq + cib.ncand, oid_nil);
 		goto doreturn;
 	}
 
@@ -362,6 +360,53 @@ binsearchcand(const oid *cand, BUN hi, oid o)
 	return hi;
 }
 
+/* population count: count number of 1 bits in a value */
+static inline uint32_t __attribute__((__const__))
+pop(uint32_t x)
+{
+#ifdef __GNUC__
+	return (uint32_t) __builtin_popcount(x);
+#else
+#ifdef _MSC_VER
+	return (uint32_t) __popcnt((unsigned int) (x));
+#else
+	/* divide and conquer implementation */
+	x = (x & 0x55555555) + ((x >>  1) & 0x55555555);
+	x = (x & 0x33333333) + ((x >>  2) & 0x33333333);
+	x = (x & 0x0F0F0F0F) + ((x >>  4) & 0x0F0F0F0F);
+	x = (x & 0x00FF00FF) + ((x >>  8) & 0x00FF00FF);
+	x = (x & 0x0000FFFF) + ((x >> 16) & 0x0000FFFF);
+	return x;
+#endif
+#endif
+}
+
+/* count number of 1 bits in ci->mask between bit positions lo
+ * (inclusive) and hi (not inclusive) */
+static BUN
+count_mask_bits(struct canditer *ci, BUN lo, BUN hi)
+{
+	BUN n;
+	assert(lo <= hi);
+	assert(ci->tpe == cand_mask);
+	if (lo == hi)
+		return 0;
+	lo += ci->firstbit;
+	hi += ci->firstbit;
+	BUN loi = lo / 32;
+	BUN hii = hi / 32;
+	lo %= 32;
+	hi %= 32;
+	if (loi == hii)
+		return (BUN) pop((ci->mask[loi] & ((1U << hi) - 1)) >> lo);
+	n = (BUN) pop(ci->mask[loi++] >> lo);
+	while (loi < hii)
+		n += (BUN) pop(ci->mask[loi++]);
+	if (hi != 0)
+		n += (BUN) pop(ci->mask[loi] & ((1U << hi) - 1));
+	return n;
+}
+
 /* initialize a candidate iterator, return number of iterations */
 BUN
 canditer_init(struct canditer *ci, BAT *b, BAT *s)
@@ -413,8 +458,8 @@ canditer_init(struct canditer *ci, BAT *b, BAT *s)
 		assert(!is_oid_nil(ci->seq));
 		if (s->tvheap) {
 			assert(s->tvheap->free % SIZEOF_OID == 0);
-			ci->noids = s->tvheap->free / SIZEOF_OID;
-			if (ci->noids > 0) {
+			ci->nvals = s->tvheap->free / SIZEOF_OID;
+			if (ci->nvals > 0) {
 				ci->tpe = cand_except;
 				ci->oids = (const oid *) s->tvheap->base;
 			} else {
@@ -424,11 +469,16 @@ canditer_init(struct canditer *ci, BAT *b, BAT *s)
 		} else {
 			ci->tpe = cand_dense;
 		}
+	} else if (s->ttype == TYPE_msk) {
+		ci->tpe = cand_mask;
+		ci->mask = (const uint32_t *) s->theap->base;
+		ci->seq = s->hseqbase;
+		ci->nvals = (cnt + 31U) / 32U;
 	} else if (is_oid_nil(ci->seq)) {
 		ci->tpe = cand_materialized;
 		ci->oids = (const oid *) Tloc(s, 0);
 		ci->seq = ci->oids[0];
-		ci->noids = cnt;
+		ci->nvals = cnt;
 	} else {
 		/* materialized dense: no exceptions */
 		ci->tpe = cand_dense;
@@ -436,14 +486,14 @@ canditer_init(struct canditer *ci, BAT *b, BAT *s)
 	switch (ci->tpe) {
 	case cand_materialized:
 		if (b != NULL) {
-			BUN p = binsearchcand(ci->oids, cnt - 1, b->hseqbase);
+			BUN p = binsearchcand(ci->oids, cnt - 1U, b->hseqbase);
 			/* p == cnt means candidate list is completely
 			 * before b */
 			ci->offset = p;
 			ci->oids += p;
 			cnt -= p;
 			if (cnt > 0) {
-				cnt = binsearchcand(ci->oids, cnt  - 1,
+				cnt = binsearchcand(ci->oids, cnt  - 1U,
 						    b->hseqbase + BATcount(b));
 				/* cnt == 0 means candidate list is
 				 * completely after b */
@@ -457,49 +507,50 @@ canditer_init(struct canditer *ci, BAT *b, BAT *s)
 				return 0;
 			}
 			ci->seq = ci->oids[0];
-			ci->noids = cnt;
-			if (ci->oids[cnt - 1] - ci->seq == cnt - 1) {
+			ci->nvals = cnt;
+			if (ci->oids[cnt - 1U] - ci->seq == cnt - 1U) {
 				/* actually dense */
 				ci->tpe = cand_dense;
 				ci->oids = NULL;
-				ci->noids = 0;
+				ci->nvals = 0;
 			}
 		}
 		break;
 	case cand_except:
 		/* exceptions must all be within range of s */
 		assert(ci->oids[0] >= ci->seq);
-		assert(ci->oids[ci->noids - 1] < ci->seq + cnt + ci->noids);
+		assert(ci->oids[ci->nvals - 1U] < ci->seq + cnt + ci->nvals);
 		/* prune exceptions at either end of range of s */
-		while (ci->noids > 0 && ci->oids[0] == ci->seq) {
-			ci->noids--;
+		while (ci->nvals > 0 && ci->oids[0] == ci->seq) {
+			ci->nvals--;
 			ci->oids++;
 			ci->seq++;
 		}
-		while (ci->noids > 0 &&
-		       ci->oids[ci->noids - 1] == ci->seq + cnt + ci->noids - 1)
-			ci->noids--;
+		while (ci->nvals > 0 &&
+		       ci->oids[ci->nvals - 1U] == ci->seq + cnt + ci->nvals - 1U)
+			ci->nvals--;
 		if (b != NULL) {
-			if (ci->seq + cnt + ci->noids <= b->hseqbase ||
+			if (ci->seq + cnt + ci->nvals <= b->hseqbase ||
 			    ci->seq >= b->hseqbase + BATcount(b)) {
 				/* candidate list does not overlap with b */
 				*ci = (struct canditer) {
 					.tpe = cand_dense,
+					.s = s,
 				};
 				return 0;
 			}
 		}
-		if (ci->noids > 0) {
+		if (ci->nvals > 0) {
 			if (b == NULL)
 				break;
 			BUN p;
-			p = binsearchcand(ci->oids, ci->noids - 1, b->hseqbase);
-			if (p == ci->noids) {
+			p = binsearchcand(ci->oids, ci->nvals - 1U, b->hseqbase);
+			if (p == ci->nvals) {
 				/* all exceptions before start of b */
-				ci->offset = b->hseqbase - ci->seq - ci->noids;
-				cnt = ci->seq + cnt + ci->noids - b->hseqbase;
+				ci->offset = b->hseqbase - ci->seq - ci->nvals;
+				cnt = ci->seq + cnt + ci->nvals - b->hseqbase;
 				ci->seq = b->hseqbase;
-				ci->noids = 0;
+				ci->nvals = 0;
 				ci->tpe = cand_dense;
 				ci->oids = NULL;
 				break;
@@ -509,27 +560,27 @@ canditer_init(struct canditer *ci, BAT *b, BAT *s)
 				/* skip candidates, possibly including
 				 * exceptions */
 				ci->oids += p;
-				ci->noids -= p;
+				ci->nvals -= p;
 				p = b->hseqbase - ci->seq - p;
 				cnt -= p;
 				ci->offset += p;
 				ci->seq = b->hseqbase;
 			}
-			if (ci->seq + cnt + ci->noids > b->hseqbase + BATcount(b)) {
-				p = binsearchcand(ci->oids, ci->noids - 1,
+			if (ci->seq + cnt + ci->nvals > b->hseqbase + BATcount(b)) {
+				p = binsearchcand(ci->oids, ci->nvals - 1U,
 						  b->hseqbase + BATcount(b));
-				ci->noids = p;
-				cnt = b->hseqbase + BATcount(b) - ci->seq - ci->noids;
+				ci->nvals = p;
+				cnt = b->hseqbase + BATcount(b) - ci->seq - ci->nvals;
 			}
-			while (ci->noids > 0 && ci->oids[0] == ci->seq) {
-				ci->noids--;
+			while (ci->nvals > 0 && ci->oids[0] == ci->seq) {
+				ci->nvals--;
 				ci->oids++;
 				ci->seq++;
 			}
-			while (ci->noids > 0 &&
-			       ci->oids[ci->noids - 1] == ci->seq + cnt + ci->noids - 1)
-				ci->noids--;
-			if (ci->noids > 0)
+			while (ci->nvals > 0 &&
+			       ci->oids[ci->nvals - 1U] == ci->seq + cnt + ci->nvals - 1U)
+				ci->nvals--;
+			if (ci->nvals > 0)
 				break;
 		}
 		ci->tpe = cand_dense;
@@ -539,7 +590,11 @@ canditer_init(struct canditer *ci, BAT *b, BAT *s)
 		if (b != NULL) {
 			if (ci->seq + cnt <= b->hseqbase ||
 			    ci->seq >= b->hseqbase + BATcount(b)) {
-				ci->ncand = 0;
+				/* no overlap */
+				*ci = (struct canditer) {
+					.tpe = cand_dense,
+					.s = s,
+				};
 				return 0;
 			}
 			if (b->hseqbase > ci->seq) {
@@ -551,6 +606,91 @@ canditer_init(struct canditer *ci, BAT *b, BAT *s)
 				cnt = b->hseqbase + BATcount(b) - ci->seq;
 		}
 		break;
+	case cand_mask:
+		if (b != NULL) {
+			if (ci->seq + cnt <= b->hseqbase ||
+			    ci->seq >= b->hseqbase + BATcount(b)) {
+				/* no overlap */
+				*ci = (struct canditer) {
+					.tpe = cand_dense,
+					.s = s,
+				};
+				return 0;
+			}
+			if (b->hseqbase > ci->seq) {
+				cnt = b->hseqbase - ci->seq;
+				ci->mask += cnt / 32U;
+				ci->firstbit = (uint8_t) (cnt % 32U);
+				cnt = BATcount(s) - cnt;
+				ci->seq = b->hseqbase;
+			}
+			if (ci->seq + cnt > b->hseqbase + BATcount(b)) {
+				cnt = b->hseqbase + BATcount(b) - ci->seq;
+			}
+			ci->nvals = (ci->firstbit + cnt + 31U) / 32U;
+		}
+		/* if first value is only partially used, check
+		 * whether there are any 1 bits in the used part */
+		if (ci->firstbit > 0 && (ci->mask[0] >> ci->firstbit) == 0) {
+			if (cnt <= 32U - ci->firstbit) {
+				cnt = 0;
+				/* returns below */
+			} else {
+				cnt -= 32U - ci->firstbit;
+				ci->firstbit = 0;
+				ci->mask++;
+				ci->nvals--;
+			}
+		}
+		/* skip over any zero mask words that are used completely */
+		if (ci->firstbit == 0) {
+			while (cnt >= 32U && ci->mask[0] == 0) {
+				cnt -= 32U;
+				ci->mask++;
+				ci->nvals--;
+			}
+		}
+		/* check whether there are any 1 bits in the last word */
+		if (cnt == 0 ||
+		    (cnt < 32U - ci->firstbit &&
+		     ((ci->mask[0] >> ci->firstbit) & ((1U << cnt) - 1U)) == 0)) {
+			/* no one bits in the whole relevant portion
+			 * of the bat */
+			*ci = (struct canditer) {
+				.tpe = cand_dense,
+				.s = s,
+			};
+			return 0;
+		}
+		/* here we know there are 1 bits in the first mask
+		 * word */
+		int i = candmask_lobit(ci->mask[0] >> ci->firstbit);
+		assert(i >= 0);	/* there should be a set bit */
+		ci->firstbit += i;
+		cnt -= i;
+		ci->mskoff = s->hseqbase + (ci->mask - (const uint32_t *) s->theap->base) * 32U;
+		ci->seq = ci->mskoff + ci->firstbit;
+		ci->hseq = ci->seq;
+		ci->nextbit = ci->firstbit;
+		/* at this point we know that bit ci->firstbit is set
+		 * in ci->mask[0] */
+		ci->lastbit = (ci->firstbit + cnt - 1U) % 32U + 1U;
+		if (ci->lastbit < 32 &&
+		    (ci->mask[ci->nvals - 1] & ((1U << ci->lastbit) - 1)) == 0) {
+			/* last partial word is all zero */
+			cnt -= ci->lastbit;
+			ci->lastbit = 32;
+			ci->nvals--;
+		}
+		if (ci->lastbit == 32) {
+			/* "remove" zero words at the end */
+			while (cnt >= 32 && ci->mask[ci->nvals - 1] == 0) {
+				ci->nvals--;
+				cnt -= 32;
+			}
+		}
+		ci->ncand = count_mask_bits(ci, 0, cnt);
+		return ci->ncand;
 	}
 	ci->ncand = cnt;
 	ci->hseq += ci->offset;
@@ -561,23 +701,32 @@ canditer_init(struct canditer *ci, BAT *b, BAT *s)
 oid
 canditer_peek(struct canditer *ci)
 {
+	oid o;
 	if (ci->next == ci->ncand)
 		return oid_nil;
 	switch (ci->tpe) {
 	case cand_dense:
-		return ci->seq + ci->next;
-	case cand_materialized:
-		assert(ci->next < ci->noids);
-		return ci->oids[ci->next];
-	case cand_except:
-		/* work around compiler error: control reaches end of
-		 * non-void function */
+		o = ci->seq + ci->next;
 		break;
-	}
-	oid o = ci->seq + ci->add + ci->next;
-	while (ci->add < ci->noids && o == ci->oids[ci->add]) {
-		ci->add++;
-		o++;
+	case cand_materialized:
+		assert(ci->next < ci->nvals);
+		o = ci->oids[ci->next];
+		break;
+	case cand_except:
+		o = ci->seq + ci->add + ci->next;
+		while (ci->add < ci->nvals && o == ci->oids[ci->add]) {
+			ci->add++;
+			o++;
+		}
+		break;
+	case cand_mask:
+		while ((ci->mask[ci->nextmsk] >> ci->nextbit) == 0) {
+			ci->nextmsk++;
+			ci->nextbit = 0;
+		}
+		ci->nextbit += candmask_lobit(ci->mask[ci->nextmsk] >> ci->nextbit);
+		o = ci->mskoff + ci->nextmsk * 32 + ci->nextbit;
+		break;
 	}
 	return o;
 }
@@ -595,6 +744,18 @@ canditer_prev(struct canditer *ci)
 		return ci->oids[--ci->next];
 	case cand_except:
 		break;
+	case cand_mask:
+		for (;;) {
+			if (ci->nextbit == 0) {
+				ci->nextbit = 32;
+				while (ci->mask[--ci->nextmsk] == 0)
+					;
+			}
+			if (ci->mask[ci->nextmsk] & (1U << --ci->nextbit))
+				break;
+		}
+		ci->next--;
+		return ci->mskoff + ci->nextmsk * 32 + ci->nextbit;
 	}
 	oid o = ci->seq + ci->add + --ci->next;
 	while (ci->add > 0 && o == ci->oids[ci->add - 1]) {
@@ -608,6 +769,8 @@ canditer_prev(struct canditer *ci)
 oid
 canditer_peekprev(struct canditer *ci)
 {
+	oid o;
+
 	if (ci->next == 0)
 		return oid_nil;
 	switch (ci->tpe) {
@@ -616,12 +779,28 @@ canditer_peekprev(struct canditer *ci)
 	case cand_materialized:
 		return ci->oids[ci->next - 1];
 	case cand_except:
+		o = ci->seq + ci->add + ci->next - 1;
+		while (ci->add > 0 && o == ci->oids[ci->add - 1]) {
+			ci->add--;
+			o--;
+		}
 		break;
-	}
-	oid o = ci->seq + ci->add + ci->next - 1;
-	while (ci->add > 0 && o == ci->oids[ci->add - 1]) {
-		ci->add--;
-		o--;
+	case cand_mask:
+		for (;;) {
+			if (ci->nextbit == 0) {
+				ci->nextbit = 32;
+				while (ci->mask[--ci->nextmsk] == 0)
+					;
+			}
+			if (ci->mask[ci->nextmsk] & (1U << --ci->nextbit))
+				break;
+		}
+		o = ci->mskoff + ci->nextmsk * 32 + ci->nextbit;
+		if (++ci->nextbit == 32) {
+			ci->nextbit = 0;
+			ci->nextmsk++;
+		}
+		break;
 	}
 	return o;
 }
@@ -641,8 +820,14 @@ canditer_last(struct canditer *ci)
 		/* work around compiler error: control reaches end of
 		 * non-void function */
 		break;
+	case cand_mask:
+		for (uint8_t i = ci->lastbit; i > 0; ) {
+			if (ci->mask[ci->nvals - 1] & (1U << --i))
+				return ci->mskoff + (ci->nvals - 1) * 32 + i;
+		}
+		return oid_nil;	/* cannot happen */
 	}
-	return ci->seq + ci->ncand + ci->noids - 1;
+	return ci->seq + ci->ncand + ci->nvals - 1;
 }
 
 /* return the candidate at the given index */
@@ -660,13 +845,40 @@ canditer_idx(struct canditer *ci, BUN p)
 		/* work around compiler error: control reaches end of
 		 * non-void function */
 		break;
+	case cand_mask: {
+		BUN x;
+		if ((x = pop(ci->mask[0] >> ci->firstbit)) > p) {
+			for (uint8_t i = ci->firstbit; ; i++) {
+				if (ci->mask[0] & (1U << i)) {
+					if (p == 0)
+						return ci->mskoff + i;
+					p--;
+				}
+			}
+		}
+		for (BUN n = 1; n < ci->nvals; n++) {
+			uint32_t mask = ci->mask[n];
+			p -= x;
+			x = pop(mask);
+			if (x > p) {
+				for (uint8_t i = 0; ; i++) {
+					if (mask & (1U << i)) {
+						if (p == 0)
+							return ci->mskoff + n * 32 + i;
+						p--;
+					}
+				}
+			}
+		}
+		return oid_nil;	/* cannot happen */
+	}
 	}
 	oid o = ci->seq + p;
 	if (o < ci->oids[0])
 		return o;
-	if (o + ci->noids > ci->oids[ci->noids - 1])
-		return o + ci->noids;
-	BUN lo = 0, hi = ci->noids - 1;
+	if (o + ci->nvals > ci->oids[ci->nvals - 1])
+		return o + ci->nvals;
+	BUN lo = 0, hi = ci->nvals - 1;
 	while (hi - lo > 1) {
 		BUN mid = (hi + lo) / 2;
 		if (ci->oids[mid] - mid > o)
@@ -684,12 +896,36 @@ canditer_setidx(struct canditer *ci, BUN p)
 	if (p != ci->next) {
 		if (p >= ci->ncand) {
 			ci->next = ci->ncand;
-			if (ci->tpe == cand_except)
-				ci->add = ci->noids;
+			switch (ci->tpe) {
+			case cand_except:
+				ci->add = ci->nvals;
+				break;
+			case cand_mask:
+				ci->nextbit = ci->lastbit;
+				ci->nextmsk = ci->nvals;
+				if (ci->nextbit == 32)
+					ci->nextbit = 0;
+				else
+					ci->nextmsk--;
+				break;
+			default:
+				break;
+			}
 		} else {
 			ci->next = p;
-			if (ci->tpe == cand_except)
+			switch (ci->tpe) {
+			case cand_except:
 				ci->add = canditer_idx(ci, p) - ci->seq - p;
+				break;
+			case cand_mask: {
+				oid o = canditer_idx(ci, p) - ci->mskoff;
+				ci->nextmsk = o / 32;
+				ci->nextbit = (uint8_t) (o % 32);
+				break;
+			}
+			default:
+				break;
+			}
 		}
 	}
 }
@@ -698,8 +934,13 @@ canditer_setidx(struct canditer *ci, BUN p)
 void
 canditer_reset(struct canditer *ci)
 {
+	if (ci->tpe == cand_mask) {
+		ci->nextbit = ci->firstbit;
+		ci->nextmsk = 0;
+	} else {
+		ci->add = 0;
+	}
 	ci->next = 0;
-	ci->add = 0;
 }
 
 /* return index of given candidate if it occurs; if the candidate does
@@ -718,28 +959,92 @@ canditer_search(struct canditer *ci, oid o, bool next)
 			return next ? ci->ncand : BUN_NONE;
 		return o - ci->seq;
 	case cand_materialized:
-		if (ci->noids == 0)
+		if (ci->nvals == 0)
 			return 0;
-		p = binsearchcand(ci->oids, ci->noids - 1, o);
-		if (!next && (p == ci->noids || ci->oids[p] != o))
+		p = binsearchcand(ci->oids, ci->nvals - 1, o);
+		if (!next && (p == ci->nvals || ci->oids[p] != o))
 			return BUN_NONE;
 		return p;
 	case cand_except:
 		break;
+	case cand_mask:
+		if (o < ci->mskoff) {
+			return next ? 0 : BUN_NONE;
+		}
+		o -= ci->mskoff;
+		p = o / 32;
+		if (p >= ci->nvals)
+			return next ? ci->ncand : BUN_NONE;
+		o %= 32;
+		if (p == ci->nvals - 1 && o >= ci->lastbit)
+			return next ? ci->ncand : BUN_NONE;
+		if (ci->mask[p] & (1U << o))
+			return count_mask_bits(ci, 0, p);
+		if (!next)
+			return BUN_NONE;
+		return count_mask_bits(ci, 0, p) + 1;
 	}
 	if (o < ci->seq)
 		return next ? 0 : BUN_NONE;
-	if (o >= ci->seq + ci->ncand + ci->noids)
+	if (o >= ci->seq + ci->ncand + ci->nvals)
 		return next ? ci->ncand : BUN_NONE;
-	p = binsearchcand(ci->oids, ci->noids - 1, o);
-	if (next || p == ci->noids || ci->oids[p] != o)
+	p = binsearchcand(ci->oids, ci->nvals - 1, o);
+	if (next || p == ci->nvals || ci->oids[p] != o)
 		return o - ci->seq - p;
 	return BUN_NONE;
 }
 
+static BAT *
+canditer_sliceval_mask(struct canditer *ci, oid lo1, oid hi1, BUN cnt1,
+		       oid lo2, oid hi2, BUN cnt2)
+{
+	assert(!is_oid_nil(lo2) || cnt2 > 0);
+	assert(cnt2 == 0 || lo2 >= hi1);
+	if (is_oid_nil(lo1) || lo1 < ci->mskoff + ci->firstbit)
+		lo1 = ci->mskoff + ci->firstbit;
+	if (is_oid_nil(hi1) || hi1 >= ci->mskoff + (ci->nvals - 1) * 32 + ci->lastbit)
+		hi1 = ci->mskoff + (ci->nvals - 1) * 32 + ci->lastbit;
+
+	BAT *bn = COLnew(0, TYPE_oid, cnt1 + cnt2, TRANSIENT);
+	if (bn == NULL)
+		return NULL;
+
+	lo1 -= ci->mskoff;
+	hi1 -= ci->mskoff;
+	for (oid o = lo1; o < hi1 && cnt1 > 0; o++) {
+		if (ci->mask[o / 32] & (1U << (o % 32))) {
+			if (BUNappend(bn, &(oid){o + ci->mskoff}, false) != GDK_SUCCEED) {
+				BBPreclaim(bn);
+				return NULL;
+			}
+			cnt1--;
+		}
+	}
+	if (cnt2 > 0) {
+		if (lo2 < ci->mskoff + ci->firstbit)
+			lo2 = ci->mskoff + ci->firstbit;
+		if (is_oid_nil(hi2) || hi2 >= ci->mskoff + (ci->nvals - 1) * 32 + ci->lastbit)
+			hi2 = ci->mskoff + (ci->nvals - 1) * 32 + ci->lastbit;
+
+		lo2 -= ci->mskoff;
+		hi2 -= ci->mskoff;
+		for (oid o = lo2; o < hi2 && cnt2 > 0; o++) {
+			if (ci->mask[o / 32] & (1U << (o % 32))) {
+				if (BUNappend(bn, &(oid){o + ci->mskoff}, false) != GDK_SUCCEED) {
+					BBPreclaim(bn);
+					return NULL;
+				}
+				cnt2--;
+			}
+		}
+	}
+	return bn;
+}
+
 /* return either an actual BATslice or a new BAT that contains the
  * "virtual" slice of the input candidate list BAT; except, unlike
- * BATslice, the hseqbase of the returned BAT is 0 */
+ * BATslice, the hseqbase of the returned BAT is 0; note for cand_mask
+ * candidate iterators, the BUN values refer to number of 1 bits */
 BAT *
 canditer_slice(struct canditer *ci, BUN lo, BUN hi)
 {
@@ -771,8 +1076,8 @@ canditer_slice(struct canditer *ci, BUN lo, BUN hi)
 	case cand_except:
 		o = canditer_idx(ci, lo);
 		add = o - ci->seq - lo;
-		assert(add <= ci->noids);
-		if (add == ci->noids || o + hi - lo < ci->oids[add]) {
+		assert(add <= ci->nvals);
+		if (add == ci->nvals || o + hi - lo < ci->oids[add]) {
 			/* after last exception or before next
 			 * exception: return dense sequence */
 			return BATdense(0, o, hi - lo);
@@ -782,13 +1087,17 @@ canditer_slice(struct canditer *ci, BUN lo, BUN hi)
 			return NULL;
 		BATsetcount(bn, hi - lo);
 		for (oid *dst = Tloc(bn, 0); lo < hi; lo++) {
-			while (add < ci->noids && o == ci->oids[add]) {
+			while (add < ci->nvals && o == ci->oids[add]) {
 				o++;
 				add++;
 			}
 			*dst++ = o++;
 		}
 		break;
+	case cand_mask:
+		return canditer_sliceval_mask(ci, canditer_idx(ci, lo),
+					      oid_nil, hi - lo,
+					      oid_nil, oid_nil, 0);
 	}
 	bn->tsorted = true;
 	bn->trevsorted = BATcount(bn) <= 1;
@@ -797,6 +1106,22 @@ canditer_slice(struct canditer *ci, BUN lo, BUN hi)
 	bn->tnil = false;
 	bn->tnonil = true;
 	return virtualize(bn);
+}
+
+/* like the above, except the bounds are given by values instead of
+ * indexes */
+BAT *
+canditer_sliceval(struct canditer *ci, oid lo, oid hi)
+{
+	if (ci->tpe != cand_mask) {
+		return canditer_slice(
+			ci,
+			is_oid_nil(lo) ? 0 : canditer_search(ci, lo, true),
+			is_oid_nil(hi) ? ci->ncand : canditer_search(ci, hi, true));
+	}
+
+	return canditer_sliceval_mask(ci, lo, hi, ci->ncand,
+				      oid_nil, oid_nil, 0);
 }
 
 /* return the combination of two slices */
@@ -852,14 +1177,14 @@ canditer_slice2(struct canditer *ci, BUN lo1, BUN hi1, BUN lo2, BUN hi2)
 	case cand_except:
 		o = canditer_idx(ci, lo1);
 		add = o - ci->seq - lo1;
-		assert(add <= ci->noids);
-		if (add == ci->noids) {
+		assert(add <= ci->nvals);
+		if (add == ci->nvals) {
 			/* after last exception: return dense sequence */
 			while (lo1 < hi1)
 				*dst++ = ci->seq + add + lo1++;
 		} else {
 			while (lo1 < hi1) {
-				while (add < ci->noids && o == ci->oids[add]) {
+				while (add < ci->nvals && o == ci->oids[add]) {
 					o++;
 					add++;
 				}
@@ -869,14 +1194,14 @@ canditer_slice2(struct canditer *ci, BUN lo1, BUN hi1, BUN lo2, BUN hi2)
 		}
 		o = canditer_idx(ci, lo2);
 		add = o - ci->seq - lo2;
-		assert(add <= ci->noids);
-		if (add == ci->noids) {
+		assert(add <= ci->nvals);
+		if (add == ci->nvals) {
 			/* after last exception: return dense sequence */
 			while (lo2 < hi2)
 				*dst++ = ci->seq + add + lo2++;
 		} else {
 			while (lo2 < hi2) {
-				while (add < ci->noids && o == ci->oids[add]) {
+				while (add < ci->nvals && o == ci->oids[add]) {
 					o++;
 					add++;
 				}
@@ -884,8 +1209,30 @@ canditer_slice2(struct canditer *ci, BUN lo1, BUN hi1, BUN lo2, BUN hi2)
 				lo2++;
 			}
 		}
+		break;
+	case cand_mask:
+		return canditer_sliceval_mask(ci, canditer_idx(ci, lo1),
+					      oid_nil, hi1 - lo1,
+					      canditer_idx(ci, lo2),
+					      oid_nil, hi2 - lo2);
 	}
 	return virtualize(bn);
+}
+
+BAT *
+canditer_slice2val(struct canditer *ci, oid lo1, oid hi1, oid lo2, oid hi2)
+{
+	if (ci->tpe != cand_mask) {
+		return canditer_slice2(
+			ci,
+			is_oid_nil(lo1) ? 0 : canditer_search(ci, lo1, true),
+			is_oid_nil(hi1) ? ci->ncand : canditer_search(ci, hi1, true),
+			is_oid_nil(lo2) ? 0 : canditer_search(ci, lo2, true),
+			is_oid_nil(hi2) ? ci->ncand : canditer_search(ci, hi2, true));
+	}
+
+	return canditer_sliceval_mask(ci, lo1, hi1, ci->ncand,
+				      lo2, hi2, ci->ncand);
 }
 
 gdk_return

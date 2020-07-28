@@ -13,7 +13,7 @@ op_typeswitchloop(const void *lft, int tp1, int incr1, const char *hp1, int wd1,
 		  const void *rgt, int tp2, int incr2, const char *hp2, int wd2,
 		  TPE *restrict dst,
 		  struct canditer *restrict ci1, struct canditer *restrict ci2,
-		  const bit *restrict rv,
+		  const bit *restrict rv, const uint32_t *restrict mrv,
 		  oid candoff1, oid candoff2,
 		  bool nonil,
 #ifdef NIL_MATCHES_FLAG
@@ -36,7 +36,7 @@ op_typeswitchloop(const void *lft, int tp1, int incr1, const char *hp1, int wd1,
 			TPE res;
 			x1 = canditer_next(ci1) - candoff1;
 			x2 = canditer_next(ci2) - candoff2;
-			if ((rv != NULL && !rv[k]) ||
+			if ((!chkmsk(rv, mrv, k)) ||
 			    is_oid_nil(v) || tp2 == TYPE_void) {
 				res = is_oid_nil(v) || is_oid_nil(* (const oid *) rgt) ?
 #ifdef NIL_MATCHES_FLAG
@@ -637,7 +637,7 @@ op_typeswitchloop(const void *lft, int tp1, int incr1, const char *hp1, int wd1,
 				x1 = canditer_next(ci1) - candoff1;
 				x2 = canditer_next(ci2) - candoff2;
 				i = x1 * incr1;
-				if ((rv != NULL && !rv[k]) || is_oid_nil(v)) {
+				if ((!chkmsk(rv, mrv, k)) || is_oid_nil(v)) {
 #ifdef NIL_MATCHES_FLAG
 					if (nil_matches) {
 						dst[k] = OP(is_oid_nil(((const oid *) lft)[i]), true);
@@ -682,7 +682,7 @@ op_typeswitchloop(const void *lft, int tp1, int incr1, const char *hp1, int wd1,
 		for (k = 0; k < ci1->ncand; k++) {
 			x1 = canditer_next(ci1) - candoff1;
 			x2 = canditer_next(ci2) - candoff2;
-			if (rv != NULL && !rv[k]) {
+			if (!chkmsk(rv, mrv, k)) {
 				dst[k] = TPE_nil;
 				nils++;
 			} else {
@@ -738,7 +738,7 @@ op_typeswitchloop(const void *lft, int tp1, int incr1, const char *hp1, int wd1,
 		for (k = 0; k < ci1->ncand; k++) {
 			x1 = canditer_next(ci1) - candoff1;
 			x2 = canditer_next(ci2) - candoff2;
-			if (rv != NULL && !rv[k]) {
+			if (!chkmsk(rv, mrv, k)) {
 				dst[k] = TPE_nil;
 				nils++;
 			} else {
@@ -785,7 +785,7 @@ static BAT *
 BATcalcop_intern(const void *lft, int tp1, int incr1, const char *hp1, int wd1,
 		 const void *rgt, int tp2, int incr2, const char *hp2, int wd2,
 		 struct canditer *restrict ci1, struct canditer *restrict ci2,
-		 const bit *restrict rv,
+		 const bit *restrict rv, const uint32_t *restrict mrv,
 		 oid candoff1, oid candoff2, bool nonil, oid seqbase,
 #ifdef NIL_MATCHES_FLAG
 		 bool nil_matches,
@@ -804,7 +804,7 @@ BATcalcop_intern(const void *lft, int tp1, int incr1, const char *hp1, int wd1,
 
 	nils = op_typeswitchloop(lft, tp1, incr1, hp1, wd1,
 				 rgt, tp2, incr2, hp2, wd2,
-				 dst, ci1, ci2, rv, candoff1, candoff2,
+				 dst, ci1, ci2, rv, mrv, candoff1, candoff2,
 				 nonil,
 #ifdef NIL_MATCHES_FLAG
 				 nil_matches,
@@ -836,7 +836,8 @@ BATcalcop(BAT *b1, BAT *b2, BAT *s1, BAT *s2, BAT *r
 {
 	struct canditer ci1, ci2;
 	BUN ncand;
-	const bit *rv = r ? Tloc(r, 0) : NULL;
+	const bit *rv = r && r->ttype == TYPE_bit ? Tloc(r, 0) : NULL;
+	const uint32_t *mrv = r && r->ttype == TYPE_msk ? Tloc(r, 0) : NULL;
 
 	BATcheck(b1, NULL);
 	BATcheck(b2, NULL);
@@ -871,7 +872,7 @@ BATcalcop(BAT *b1, BAT *b2, BAT *s1, BAT *s2, BAT *r
 				1,
 				b2->tvheap ? b2->tvheap->base : NULL,
 				b2->twidth,
-				&ci1, &ci2, rv,
+				&ci1, &ci2, rv, mrv,
 				b1->hseqbase, b2->hseqbase,
 				b1->tnonil && b2->tnonil,
 				ci1.hseq,
@@ -890,7 +891,8 @@ BATcalcopcst(BAT *b, const ValRecord *v, BAT *s, BAT *r
 {
 	struct canditer ci;
 	BUN ncand;
-	const bit *rv = r ? Tloc(r, 0) : NULL;
+	const bit *rv = r && r->ttype == TYPE_bit ? Tloc(r, 0) : NULL;
+	const uint32_t *mrv = r && r->ttype == TYPE_msk ? Tloc(r, 0) : NULL;
 
 	BATcheck(b, NULL);
 
@@ -910,7 +912,7 @@ BATcalcopcst(BAT *b, const ValRecord *v, BAT *s, BAT *r
 				0,
 				&ci,
 				&(struct canditer){.tpe=cand_dense, .ncand=ncand},
-				rv,
+				rv, mrv,
 				b->hseqbase, 0,
 				b->tnonil && ATOMcmp(v->vtype, VALptr(v), ATOMnilptr(v->vtype)) != 0,
 				ci.hseq,
@@ -929,7 +931,8 @@ BATcalccstop(const ValRecord *v, BAT *b, BAT *s, BAT *r
 {
 	struct canditer ci;
 	BUN ncand;
-	const bit *rv = r ? Tloc(r, 0) : NULL;
+	const bit *rv = r && r->ttype == TYPE_bit ? Tloc(r, 0) : NULL;
+	const uint32_t *mrv = r && r->ttype == TYPE_msk ? Tloc(r, 0) : NULL;
 
 	BATcheck(b, NULL);
 
@@ -949,7 +952,7 @@ BATcalccstop(const ValRecord *v, BAT *b, BAT *s, BAT *r
 				b->twidth,
 				&(struct canditer){.tpe=cand_dense, .ncand=ncand},
 				&ci,
-				rv,
+				rv, mrv,
 				0, b->hseqbase,
 				b->tnonil && ATOMcmp(v->vtype, VALptr(v), ATOMnilptr(v->vtype)) != 0,
 				ci.hseq,
@@ -980,7 +983,7 @@ VARcalcop(ValPtr ret, const ValRecord *lft, const ValRecord *rgt
 			      VALget(ret),
 			      &(struct canditer){.tpe=cand_dense, .ncand=1},
 			      &(struct canditer){.tpe=cand_dense, .ncand=1},
-			      NULL,
+			      NULL, NULL,
 			      0, 0,
 			      false,
 #ifdef NIL_MATCHES_FLAG

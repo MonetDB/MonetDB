@@ -424,7 +424,8 @@
 
 enum {
 	TYPE_void = 0,
-	TYPE_bit,
+	TYPE_msk,		/* bit mask */
+	TYPE_bit,		/* TRUE, FALSE, or nil */
 	TYPE_bte,
 	TYPE_sht,
 	TYPE_bat,		/* BAT id: index in BBPcache */
@@ -444,6 +445,7 @@ enum {
 	TYPE_any = 255,		/* limit types to <255! */
 };
 
+typedef bool msk;
 typedef int8_t bit;
 typedef int8_t bte;
 typedef int16_t sht;
@@ -602,6 +604,7 @@ typedef struct {
 		oid oval;
 		sht shval;
 		bte btval;
+		msk mval;
 		flt fval;
 		ptr pval;
 		bat bval;
@@ -626,7 +629,7 @@ gdk_export void VALclear(ValPtr v);
 gdk_export ValPtr VALset(ValPtr v, int t, void *p);
 gdk_export void *VALget(ValPtr v);
 gdk_export int VALcmp(const ValRecord *p, const ValRecord *q);
-gdk_export int VALisnil(const ValRecord *v);
+gdk_export bool VALisnil(const ValRecord *v);
 
 /*
  * @- The BAT record
@@ -749,7 +752,10 @@ typedef struct BAT {
 
 typedef struct BATiter {
 	BAT *b;
-	oid tvid;
+	union {
+		oid tvid;
+		bool tmsk;
+	};
 } BATiter;
 
 /* macros to hide complexity of the BAT structure */
@@ -776,6 +782,33 @@ typedef struct BATiter {
 #define tprops		T.props
 
 
+/* some access functions for the bitmask type */
+static inline void
+mskSet(BAT *b, BUN p)
+{
+	((uint32_t *) b->theap->base)[p / 32] |= 1U << (p % 32);
+}
+
+static inline void
+mskClr(BAT *b, BUN p)
+{
+	((uint32_t *) b->theap->base)[p / 32] &= ~(1U << (p % 32));
+}
+
+static inline void
+mskSetVal(BAT *b, BUN p, msk v)
+{
+	if (v)
+		mskSet(b, p);
+	else
+		mskClr(b, p);
+}
+
+static inline msk
+mskGetVal(BAT *b, BUN p)
+{
+	return ((uint32_t *) b->theap->base)[p / 32] & (1U << (p % 32));
+}
 
 /*
  * @- Heap Management
@@ -933,7 +966,11 @@ gdk_export BUN BUNfnd(BAT *b, const void *right);
 
 #define Tsize(b)	((b)->twidth)
 
-#define tailsize(b,p)	((b)->ttype?((size_t)(p))<<(b)->tshift:0)
+#define tailsize(b,p)	((b)->ttype ?				\
+			 (ATOMstorage((b)->ttype) == TYPE_msk ?	\
+			  (((size_t) (p) + 31) / 32) * 4 :	\
+			  ((size_t) (p)) << (b)->tshift) :	\
+			 0)
 
 #define Tloc(b,p)	((void *)((b)->theap->base+(((size_t)(p)+(b)->tbaseoff)<<(b)->tshift)))
 
@@ -943,7 +980,7 @@ typedef var_t stridx_t;
 
 #define BUNtvaroff(bi,p) VarHeapVal(Tloc((bi).b, 0), (p), (bi).b->twidth)
 
-#define BUNtloc(bi,p)	Tloc((bi).b,p)
+#define BUNtloc(bi,p)	(ATOMstorage((bi).b->ttype) == TYPE_msk ? Tmsk(&(bi), p) : Tloc((bi).b,p))
 #define BUNtpos(bi,p)	Tpos(&(bi),p)
 #define BUNtvar(bi,p)	(assert((bi).b->ttype && (bi).b->tvarsized), (void *) (Tbase((bi).b)+BUNtvaroff(bi,p)))
 #define BUNtail(bi,p)	((bi).b->ttype?(bi).b->tvarsized?BUNtvar(bi,p):BUNtloc(bi,p):BUNtpos(bi,p))
@@ -1527,6 +1564,8 @@ Tputvalue(BAT *b, BUN p, const void *v, bool copyall)
 			break;
 #endif
 		}
+	} else if (b->ttype == TYPE_msk) {
+		mskSetVal(b, p, * (msk *) v);
 	} else {
 		return ATOMputFIX(b->ttype, Tloc(b, p), v);
 	}
@@ -1537,7 +1576,13 @@ static inline gdk_return __attribute__((__warn_unused_result__))
 tfastins_nocheck(BAT *b, BUN p, const void *v, int s)
 {
 	assert(b->theap->parentid == b->batCacheid);
-	b->theap->free += s;
+	if (ATOMstorage(b->ttype) == TYPE_msk) {
+		if (p % 32 == 0) {
+			((uint32_t *) b->theap->base)[b->theap->free / 4] = 0;
+			b->theap->free += 4;
+		}
+	} else
+		b->theap->free += s;
 	return Tputvalue(b, p, v, false);
 }
 
@@ -1687,6 +1732,7 @@ VALptr(const ValRecord *v)
 {
 	switch (ATOMstorage(v->vtype)) {
 	case TYPE_void: return (const void *) &v->val.oval;
+	case TYPE_msk: return (const void *) &v->val.mval;
 	case TYPE_bte: return (const void *) &v->val.btval;
 	case TYPE_sht: return (const void *) &v->val.shval;
 	case TYPE_int: return (const void *) &v->val.ival;
@@ -1745,8 +1791,6 @@ gdk_export void *THRdata[THREADDATA];
 #define THRget_errbuf(t)	((char*)t->data[2])
 #define THRset_errbuf(t,b)	(t->data[2] = b)
 
-#ifndef GDK_NOLINK
-
 static inline bat
 BBPcheck(bat x, const char *y)
 {
@@ -1784,7 +1828,12 @@ Tpos(BATiter *bi, BUN p)
 	return (void*)&bi->tvid;
 }
 
-#endif
+static inline void *
+Tmsk(BATiter *bi, BUN p)
+{
+	bi->tmsk = mskGetVal(bi->b, p);
+	return &bi->tmsk;
+}
 
 /*
  * @+ Transaction Management

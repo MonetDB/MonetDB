@@ -14,6 +14,7 @@ target_sources(malmodules
   bbp.c bbp.h
   profiler.c profiler.h
   batExtensions.c
+  batMask.c
   orderidx.c orderidx.h
   inspect.c inspect.h
   manual.c manual.h
