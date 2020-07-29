@@ -2244,9 +2244,8 @@ SQLtid(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			BBPunfix(uv->batCacheid);
 			d = nd;
 		}
-		bit *deleted = (bit*)Tloc(d, 0);
 		for(BUN p = sb; p < sb+nr; p++) {
-			if (deleted[p]) {
+			if (mskGetVal(d,p)) {
 				oid id = p;
 				if (BUNappend(del_ids, &id, false) != GDK_SUCCEED) {
 					BBPreclaim(del_ids);

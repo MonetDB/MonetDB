@@ -174,32 +174,33 @@ count_deletes(storage *d)
 {
 	/* needs to be optimized */
 	BAT *b = temp_descriptor(d->cs.bid);
-	bit t = TRUE;
-	BAT *s = BATselect(b, NULL, &t, NULL, true, false, false);
-	size_t cnt = 0;
+	lng cnt = 0;
 
-	bat_destroy(b);
 	if (d->cs.ucnt) {
-		BAT *ui, *uv, *cminu;
-
-		if (cs_real_update_bats(&d->cs, &ui, &uv) == LOG_ERR)
-			return 0;
-		cminu = BATdiff(s, ui, NULL, NULL, false, false, BUN_NONE);
-		BBPunfix(s->batCacheid);
-		BBPunfix(ui->batCacheid);
-		if (!cminu) {
-			BBPunfix(uv->batCacheid);
+		if (BATsum(&cnt, TYPE_lng, b, NULL, true, false, false) != GDK_SUCCEED) {
+			bat_destroy(b);
 			return 0;
 		}
-		cnt = BATcount(cminu);
-		BBPunfix(cminu->batCacheid);
-		s = BATselect(uv, NULL, &t, NULL, true, false, false);
-		BBPunfix(uv->batCacheid);
-		if (!s)
+	} else {
+		BAT *ui, *uv, *c;
+
+		if (cs_real_update_bats(&d->cs, &ui, &uv) == LOG_ERR) {
+			bat_destroy(b);
 			return 0;
+		}
+		c = COLcopy(b, b->ttype, true, TRANSIENT);
+		bat_destroy(b);
+		if (BATreplace(c, ui, uv, true) != GDK_SUCCEED) {
+			BBPunfix(c->batCacheid);
+			return 0;
+		}
+		BBPunfix(ui->batCacheid);
+		BBPunfix(uv->batCacheid);
+		if (BATsum(&cnt, TYPE_lng, c, NULL, true, false, false) != GDK_SUCCEED) {
+			BBPunfix(c->batCacheid);
+			return 0;
+		}
 	}
-	cnt += BATcount(s);
-	bat_destroy(s);
 	return cnt;
 }
 
@@ -329,7 +330,7 @@ bind_del(sql_trans *tr, sql_table *t, int access)
 		t->base.rtime = t->s->base.rtime = tr->stime;
 	storage *s = t->data;
 	if (access == RD_UPD_ID || access == RD_UPD_VAL) {
-		return cs_bind_ubat( &s->cs, access, TYPE_bit);
+		return cs_bind_ubat( &s->cs, access, TYPE_msk);
 	} else {
 		return cs_bind_bat( &s->cs, access, s->end);
 	}
@@ -740,7 +741,7 @@ dup_dbat(storage *obat, storage *bat, int is_new, int temp)
 		MT_lock_unset(&segs_lock);
 		assert(bat->end <= bat->segs->end);
 	}
-	return dup_cs(&obat->cs, &bat->cs, TYPE_bit, is_new, temp);
+	return dup_cs(&obat->cs, &bat->cs, TYPE_msk, is_new, temp);
 }
 
 static int
@@ -808,8 +809,8 @@ static int
 delta_delete_bat( storage *bat, BAT *i, int is_new)
 {
 	/* update ids */
-	bit T = TRUE;
-	BAT *t = BATconstant(i->hseqbase, TYPE_bit, &T, BATcount(i), TRANSIENT);
+	msk T = TRUE;
+	BAT *t = BATconstant(i->hseqbase, TYPE_msk, &T, BATcount(i), TRANSIENT);
 	int ok = LOG_OK;
 
 	if (t) {
@@ -823,7 +824,7 @@ static int
 delta_delete_val( storage *bat, oid rid, int is_new)
 {
 	/* update pos */
-	bit T = TRUE;
+	msk T = TRUE;
 	return cs_update_val(&bat->cs, rid, &T, is_new);
 }
 
@@ -973,7 +974,7 @@ claim_tab(sql_trans *tr, sql_table *t, size_t cnt)
 
 	assert(isNew(t) || isTempTable(t) || s->cs.cleared || BATcount(b) == slot);
 
-	bit deleted = FALSE;
+	msk deleted = FALSE;
 	lng i;
 
 	/* general case, write deleted in the central bat (ie others don't see these values) and
@@ -1291,7 +1292,7 @@ log_create_idx(sql_trans *tr, sql_idx *ni)
 static int
 load_storage(storage *bat, sqlid id)
 {
-	int ok = load_cs(&bat->cs, TYPE_bit, id);
+	int ok = load_cs(&bat->cs, TYPE_msk, id);
 
 	if (ok == LOG_OK) {
 		bat->segs = new_segments(BATcount(quick_descriptor(bat->cs.bid)));
@@ -1325,7 +1326,7 @@ create_del(sql_trans *tr, sql_table *t)
 		bat->segs = new_segments(0);
 		bat->end = 0;
 
-		b = bat_new(TYPE_bit, t->sz, PERSISTENT);
+		b = bat_new(TYPE_msk, t->sz, PERSISTENT);
 		if(b != NULL) {
 			bat_set_access(b, BAT_READ);
 			bat->cs.bid = temp_create(b);

@@ -36,7 +36,7 @@ _delta_cands(sql_trans *tr, sql_table *t)
 				BAT *uv = store_funcs.bind_del(tr, t, RD_UPD_VAL);
 
 				BBPunfix(d->batCacheid);
-	    			if (!nd || !ui || !uv || BATreplace(nd, ui, uv, true) != GDK_SUCCEED) {
+	    		if (!nd || !ui || !uv || BATreplace(nd, ui, uv, true) != GDK_SUCCEED) {
 					if (nd) BBPunfix(nd->batCacheid);
 					if (ui) BBPunfix(ui->batCacheid);
 					if (uv) BBPunfix(uv->batCacheid);
@@ -47,9 +47,8 @@ _delta_cands(sql_trans *tr, sql_table *t)
 				BBPunfix(uv->batCacheid);
 				d = nd;
 			}
-			bit *deleted = (bit*)Tloc(d, 0);
 			for(BUN p = 0; p < nr; p++) {
-				if (deleted[p]) {
+				if (mskGetVal(d, p)) {
 					oid id = p;
 					if (BUNappend(del_ids, &id, false) != GDK_SUCCEED) {
 						BBPreclaim(del_ids);
