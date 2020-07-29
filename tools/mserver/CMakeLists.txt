@@ -14,6 +14,9 @@ target_sources(mserver5
   ${CMAKE_CURRENT_BINARY_DIR}/monet_version.c
   monet_version.h)
 
+string(TOUPPER ${CMAKE_BUILD_TYPE} build_type)
+set(compilercall ${CMAKE_C_COMPILER} " " ${CMAKE_C_FLAGS_${build_type}} ${CMAKE_C_FLAGS})
+
 configure_file(monet_version.c.in
   ${CMAKE_CURRENT_BINARY_DIR}/monet_version.c
   @ONLY)
