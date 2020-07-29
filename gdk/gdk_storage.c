@@ -839,8 +839,12 @@ BATload_intern(bat bid, bool lock)
 		assert(0);
 			return NULL;
 		}
-		assert(b->theap->size >> b->tshift <= BUN_MAX);
-		b->batCapacity = (BUN) (b->theap->size >> b->tshift);
+		if (ATOMstorage(b->ttype) == TYPE_msk) {
+			b->batCapacity = (BUN) (b->theap->size * 8);
+		} else {
+			assert(b->theap->size >> b->tshift <= BUN_MAX);
+			b->batCapacity = (BUN) (b->theap->size >> b->tshift);
+		}
 	} else {
 		b->theap->base = NULL;
 	}
