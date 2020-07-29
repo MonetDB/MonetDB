@@ -513,6 +513,10 @@ append_msk_bat(BAT *b, BAT *n, struct canditer *ci)
 
 	if (ci->ncand == 0)
 		return GDK_SUCCEED;
+	if (BATextend(b, BATcount(b) + ci->ncand) != GDK_SUCCEED)
+		return GDK_FAIL;
+	b->batCount += ci->ncand;
+	b->theap->free = ((b->batCount + 31) / 32) * 4;
 	if (ci->tpe == cand_dense) {
 		uint32_t *np;
 		uint32_t noff, mask;
@@ -520,7 +524,6 @@ append_msk_bat(BAT *b, BAT *n, struct canditer *ci)
 		noff = (ci->seq - n->hseqbase) % 32;
 		cnt = ci->ncand;
 		np = (uint32_t *) n->theap->base + (ci->seq - n->hseqbase) / 32;
-		b->batCount += cnt;
 		if (boff == noff) {
 			/* words of b and n are aligned, so we don't
 			 * need to shift bits around */
