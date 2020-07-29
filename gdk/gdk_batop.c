@@ -1224,6 +1224,22 @@ BATreplace(BAT *b, BAT *p, BAT *n, bool force)
 #endif
 			}
 		}
+	} else if (ATOMstorage(b->ttype) == TYPE_msk) {
+		for (BUN i = 0, j = BATcount(p); i < j; i++) {
+			oid updid = BUNtoid(p, i);
+
+			if (updid < b->hseqbase || updid >= hseqend) {
+				GDKerror("id out of range\n");
+				return GDK_FAIL;
+			}
+			updid -= b->hseqbase;
+			if (!force && updid < b->batInserted) {
+				GDKerror("updating committed value\n");
+				return GDK_FAIL;
+			}
+
+			mskSetVal(b, updid, mskGetVal(n, i));
+		}
 	} else if (BATtdense(p)) {
 		oid updid = BUNtoid(p, 0);
 
@@ -1304,22 +1320,6 @@ BATreplace(BAT *b, BAT *p, BAT *n, bool force)
 				/* replaced all of b with a dense sequence */
 				BATtseqbase(b, n->tseqbase);
 			}
-		}
-	} else if (ATOMstorage(b->ttype) == TYPE_msk) {
-		for (BUN i = 0, j = BATcount(p); i < j; i++) {
-			oid updid = BUNtoid(p, i);
-
-			if (updid < b->hseqbase || updid >= hseqend) {
-				GDKerror("id out of range\n");
-				return GDK_FAIL;
-			}
-			updid -= b->hseqbase;
-			if (!force && updid < b->batInserted) {
-				GDKerror("updating committed value\n");
-				return GDK_FAIL;
-			}
-
-			mskSetVal(b, updid, mskGetVal(n, i));
 		}
 	} else {
 		for (BUN i = 0, j = BATcount(p); i < j; i++) {
