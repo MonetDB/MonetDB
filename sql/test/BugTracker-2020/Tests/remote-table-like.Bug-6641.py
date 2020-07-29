@@ -57,6 +57,12 @@ with tempfile.TemporaryDirectory() as farm_dir:
             print(node2_cur.fetchall())
             node2_cur.execute("select name like 'N%' from remote_data")
             print(node2_cur.fetchall())
+            node2_cur.execute("select corr(1,1) from remote_data")
+            print(node2_cur.fetchall())
+            node2_cur.execute("select corr(1,1) over () from remote_data")
+            print(node2_cur.fetchall())
+            node2_cur.execute("select count(*) over (), max(name) over (), min(name) over (partition by name order by name rows between 3 preceding and 2 preceding) from remote_data")
+            print(node2_cur.fetchall())
 
             # cleanup: shutdown the monetdb servers and remove tempdir
             out, err = node1_proc.communicate()
