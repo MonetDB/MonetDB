@@ -54,7 +54,8 @@ BSKTlocate(str sch, str tbl)
 }
 
 // Find an empty slot in the basket catalog
-static int BSKTnewEntry(void)
+static int 
+BSKTnewEntry(void)
 {
 	int i = bsktTop;
 	BasketRec *bnew;
@@ -90,8 +91,7 @@ BSKTclean(int idx)
 {	int i;
 
 	if( idx && baskets[idx].table){
-		if(baskets[idx].error)
-			GDKfree(baskets[idx].error);
+		GDKfree(baskets[idx].error);
 		baskets[idx].table = NULL;
 		baskets[idx].error = NULL;
 		baskets[idx].window = 0;
@@ -120,7 +120,6 @@ BSKTregisterInternal(Client cntxt, MalBlkPtr mb, str sch, str tbl, int* res)
 	BAT *b;
 	node *o;
 	str msg = getSQLContext(cntxt, mb, &m, NULL);
-	timestamp tseen;
 
 	if ( msg != MAL_SUCCEED)
 		return msg;
@@ -131,7 +130,6 @@ BSKTregisterInternal(Client cntxt, MalBlkPtr mb, str sch, str tbl, int* res)
 		return MAL_SUCCEED;
 	}
 
-	tseen = timestamp_current();
 
 	if ((msg = checkSQLContext(cntxt)) != MAL_SUCCEED)
 		return msg;
@@ -152,7 +150,7 @@ BSKTregisterInternal(Client cntxt, MalBlkPtr mb, str sch, str tbl, int* res)
 	baskets[idx].window = t->stream->window;
 	baskets[idx].stride = t->stream->stride;
 	baskets[idx].error = MAL_SUCCEED;
-	baskets[idx].seen = tseen;
+	baskets[idx].seen = timestamp_current();
 
 	// Check the column types first
 	for (o = t->columns.set->h; o ; o = o->next){
@@ -217,9 +215,6 @@ BSKTwindow(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	(void) cntxt;
 	(void) mb;
-	msg= BSKTregisterInternal(cntxt, mb, sch, tbl, &idx);
-	if( msg != MAL_SUCCEED)
-		return msg;
 	if( window < 0)
 		throw(MAL,"basket.window",SQLSTATE(42000) "negative window not allowed\n");
 	if( pci->argc == 5) {
@@ -229,6 +224,9 @@ BSKTwindow(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		if( window < stride)
 			throw(MAL,"basket.window",SQLSTATE(42000) "the window size must not be smaller than the stride size\n");
 	}
+	msg= BSKTregisterInternal(cntxt, mb, sch, tbl, &idx);
+	if( msg != MAL_SUCCEED)
+		return msg;
 	baskets[idx].window = window;
 	if( pci->argc == 5) {
 		baskets[idx].stride = stride;
