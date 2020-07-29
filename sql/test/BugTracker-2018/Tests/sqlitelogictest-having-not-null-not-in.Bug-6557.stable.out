@@ -58,7 +58,7 @@ stdout of test 'sqlitelogictest-having-not-null-not-in.Bug-6557` in directory 's
 % 1 # length
 [ 0	]
 #SELECT CAST(- COUNT(*) * - - 61 + + + ( + COUNT(*) ) AS BIGINT) FROM tab0 WHERE NOT col0 + + 10 BETWEEN NULL AND NULL;
-% sys.%3 # table_name
+% .%3 # table_name
 % %3 # name
 % bigint # type
 % 1 # length

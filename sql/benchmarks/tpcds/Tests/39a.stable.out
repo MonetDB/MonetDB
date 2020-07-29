@@ -35,7 +35,16 @@ stdout of test '39a` in directory 'sql/benchmarks/tpcds` itself:
 #              ELSE stdev/mean
 #          END cov
 #   FROM
-% sys.inv1,	sys.inv1,	sys.inv1,	sys.inv1,	sys.inv1,	sys.inv2,	sys.inv2,	sys.inv2,	sys.inv2,	sys.inv2 # table_name
+#     (SELECT w_warehouse_name,
+#             w_warehouse_sk,
+#             i_item_sk,
+#             d_moy,
+#             stddev_samp(inv_quantity_on_hand)*1.000 stdev,
+#             avg(inv_quantity_on_hand) mean
+#      FROM inventory,
+#           item,
+#           warehouse,
+% sys.inv1,	sys.inv1,	sys.inv1,	sys.inv1,	.inv1,	sys.inv2,	sys.inv2,	sys.inv2,	sys.inv2,	.inv2 # table_name
 % w_warehouse_sk,	i_item_sk,	d_moy,	mean,	cov,	w_warehouse_sk,	i_item_sk,	d_moy,	mean,	cov # name
 % int,	int,	int,	double,	double,	int,	int,	int,	double,	double # type
 % 1,	5,	1,	24,	24,	1,	5,	1,	24,	24 # length

@@ -46,8 +46,8 @@ stdout of test 'CASE_nested_functions.Bug-2852` in directory 'sql/test/BugTracke
 #    FROM
 #      t2852
 #  ;
-% sys.%4 # table_name
-% %4 # name
+% .%1 # table_name
+% %1 # name
 % bigint # type
 % 1 # length
 [ 0	]
