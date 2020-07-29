@@ -774,7 +774,7 @@ exp_bin(backend *be, sql_exp *e, stmt *left, stmt *right, stmt *grp, stmt *ext, 
 		}
 		assert(!e->r);
 		if (exps) {
-			int nrcols = 0;
+			unsigned nrcols = 0;
 			int push_cond_exec = 0, coalesce = 0;
 			stmt *ncond = NULL, *ocond = cond;
 
