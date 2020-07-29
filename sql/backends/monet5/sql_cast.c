@@ -82,59 +82,6 @@ batstr_2_blob(bat *res, const bat *bid)
 	return msg;
 }
 
-str
-batstr_ce_2_blob(bat *res, const bat *bid, const bat *r)
-{
-	BAT *b, *c, *dst;
-	BATiter bi;
-	BUN p, q;
-	char *msg = NULL;
-	bit *ce;
-	const blob *n;
-
-	if ((b = BATdescriptor(*bid)) == NULL) {
-		throw(SQL, "batcalc.str_2_blob", SQLSTATE(HY005) "Cannot access column descriptor");
-	}
-	if ((c = BATdescriptor(*r)) == NULL) {
-		BBPunfix(b->batCacheid);
-		throw(SQL, "batcalc.str_2_blob", SQLSTATE(HY005) "Cannot access column descriptor");
-	}
-	ce = Tloc(c, 0);
-	bi = bat_iterator(b);
-	dst = COLnew(b->hseqbase, TYPE_blob, BATcount(b), TRANSIENT);
-	n = ATOMnilptr(TYPE_blob);
-	if (dst == NULL) {
-		BBPunfix(b->batCacheid);
-		BBPunfix(c->batCacheid);
-		throw(SQL, "sql.2_blob", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-	}
-	BATloop(b, p, q) {
-		str v = (str) BUNtvar(bi, p);
-		blob *r;
-		if (ce[p])
-			msg = str_2_blob(&r, &v);
-		else
-			r = (blob*)n;
-		if (msg) {
-			BBPunfix(dst->batCacheid);
-			BBPunfix(b->batCacheid);
-			BBPunfix(c->batCacheid);
-			return msg;
-		}
-		if (BUNappend(dst, r, false) != GDK_SUCCEED) {
-			BBPunfix(b->batCacheid);
-			BBPunfix(c->batCacheid);
-			BBPreclaim(dst);
-			throw(SQL, "sql.blob", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-		}
-		GDKfree(r);
-	}
-	BBPkeepref(*res = dst->batCacheid);
-	BBPunfix(b->batCacheid);
-	BBPunfix(c->batCacheid);
-	return msg;
-}
-
 static str
 SQLstr_cast_(str *res, mvc *m, sql_class eclass, int d, int s, int has_tz, ptr p, int tpe, int len)
 {
@@ -570,4 +517,3 @@ SQLbatstr_cast(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 #undef TP2
 #undef TP1
 #endif
-
