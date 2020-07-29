@@ -320,11 +320,6 @@ BATcalcnot(BAT *b, BAT *s, BAT *r)
 	bn->tnonil = nils == 0;
 	bn->tkey = b->tkey && nils <= 1;
 
-	if (nils != 0 && !b->tnil) {
-		b->tnil = true;
-		b->batDirtydesc = true;
-	}
-
 	TRC_DEBUG(ALGO, "b=" ALGOBATFMT ",s=" ALGOOPTBATFMT
 		  ",r=" ALGOOPTBATFMT " -> " ALGOOPTBATFMT " " LLFMT "usec\n",
 		  ALGOBATPAR(b), ALGOOPTBATPAR(s),
@@ -449,11 +444,6 @@ BATcalcnegate(BAT *b, BAT *s, BAT *r)
 	bn->tnil = nils != 0;
 	bn->tnonil = nils == 0;
 	bn->tkey = b->tkey && nils <= 1;
-
-	if (nils != 0 && !b->tnil) {
-		b->tnil = true;
-		b->batDirtydesc = true;
-	}
 
 	TRC_DEBUG(ALGO, "b=" ALGOBATFMT ",s=" ALGOOPTBATFMT
 		  ",r=" ALGOOPTBATFMT " -> " ALGOOPTBATFMT " " LLFMT "usec\n",
@@ -590,11 +580,6 @@ BATcalcabsolute(BAT *b, BAT *s, BAT *r)
 	bn->tnil = nils != 0;
 	bn->tnonil = nils == 0;
 
-	if (nils && !b->tnil) {
-		b->tnil = true;
-		b->batDirtydesc = true;
-	}
-
 	TRC_DEBUG(ALGO, "b=" ALGOBATFMT ",s=" ALGOOPTBATFMT
 		  ",r=" ALGOOPTBATFMT " -> " ALGOOPTBATFMT " " LLFMT "usec\n",
 		  ALGOBATPAR(b), ALGOOPTBATPAR(s),
@@ -728,11 +713,6 @@ BATcalciszero(BAT *b, BAT *s, BAT *r)
 	bn->tkey = ncand <= 1;
 	bn->tnil = nils != 0;
 	bn->tnonil = nils == 0;
-
-	if (nils != 0 && !b->tnil) {
-		b->tnil = true;
-		b->batDirtydesc = true;
-	}
 
 	TRC_DEBUG(ALGO, "b=" ALGOBATFMT ",s=" ALGOOPTBATFMT
 		  ",r=" ALGOOPTBATFMT " -> " ALGOOPTBATFMT " " LLFMT "usec\n",
@@ -871,11 +851,6 @@ BATcalcsign(BAT *b, BAT *s, BAT *r)
 	bn->tkey = ncand <= 1;
 	bn->tnil = nils != 0;
 	bn->tnonil = nils == 0;
-
-	if (nils != 0 && !b->tnil) {
-		b->tnil = true;
-		b->batDirtydesc = true;
-	}
 
 	TRC_DEBUG(ALGO, "b=" ALGOBATFMT ",s=" ALGOOPTBATFMT
 		  ",r=" ALGOOPTBATFMT " -> " ALGOOPTBATFMT " " LLFMT "usec\n",
@@ -3804,15 +3779,6 @@ BATcalcincrdecr(BAT *b, BAT *s, BAT *r, bool abort_on_error,
 	bn->tkey = ncand <= 1;
 	bn->tnil = nils != 0;
 	bn->tnonil = nils == 0;
-
-	if (nils && !b->tnil) {
-		b->tnil = true;
-		b->batDirtydesc = true;
-	}
-	if (nils == 0 && !b->tnonil) {
-		b->tnonil = true;
-		b->batDirtydesc = true;
-	}
 
 	TRC_DEBUG(ALGO, "%s: b=" ALGOBATFMT ",s=" ALGOOPTBATFMT
 		  ",r=" ALGOOPTBATFMT " -> " ALGOOPTBATFMT " " LLFMT "usec\n",
