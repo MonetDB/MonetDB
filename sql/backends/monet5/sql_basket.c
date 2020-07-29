@@ -580,19 +580,28 @@ BSKTappend(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		value = *(ptr*) value;
 
 	bskt = BSKTlocate(sname,tname);
-	if( bskt == 0)
+	if( bskt == 0) {
+		if (binsert) 
+			BBPunfix(((BAT *) binsert)->batCacheid);
 		throw(SQL, "basket.append",SQLSTATE(HY005) "Cannot access basket descriptor %s.%s\n",sname,tname);
+	}
 	bn = BSKTbindColumn(sname,tname,cname);
 
 	if( bn){
 		if (binsert){
-			if( BATappend(bn, binsert, NULL, TRUE) != GDK_SUCCEED)
+			if( BATappend(bn, binsert, NULL, TRUE) != GDK_SUCCEED) {
+				BBPunfix(((BAT *) binsert)->batCacheid);
 				throw(MAL,"basket.append",SQLSTATE(HY005) "insertion failed\n");
+			}
 		} else
 			if( BUNappend(bn, value, TRUE) != GDK_SUCCEED)
 				throw(MAL,"basket.append",SQLSTATE(HY005) "insertion failed\n");
 		BATsettrivprop(bn);
-	} else throw(SQL, "basket.append",SQLSTATE(3F000) "Cannot access target column %s.%s.%s\n",sname,tname,cname);
+	} else {
+		if (binsert)
+			BBPunfix(((BAT *) binsert)->batCacheid);
+		throw(SQL, "basket.append",SQLSTATE(3F000) "Cannot access target column %s.%s.%s\n",sname,tname,cname);
+	}
 	
 	if (binsert )
 		BBPunfix(((BAT *) binsert)->batCacheid);
@@ -669,8 +678,10 @@ BSKTdelete(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		throw(SQL, "basket.delete",SQLSTATE(3F000) "Cannot access source oid descriptor\n");
 
 	idx = BSKTlocate(sname,tname);
-	if( idx == 0)
+	if( idx == 0) {
+		BBPunfix(rid->batCacheid);
 		throw(SQL, "basket.delete",SQLSTATE(3F000) "Cannot access basket descriptor %s.%s\n",sname,tname);
+	}
 	for( i=0; i < baskets[idx].ncols; i++){
 		b = baskets[idx].bats[i];
 		if(b){
