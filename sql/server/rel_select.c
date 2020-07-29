@@ -3617,6 +3617,7 @@ _rel_aggr(sql_query *query, sql_rel **rel, int distinct, sql_schema *s, char *an
 			sql_exp *r = exps->h->next->data, *or = r;
 			sql_subtype *t2 = exp_subtype(r);
 
+			a = NULL; /* reset a */
 			if (rel_convert_types(sql, *rel, *rel, &l, &r, 1/*fix scale*/, type_equal) >= 0){
 				list *tps = sa_list(sql->sa);
 
@@ -4019,15 +4020,18 @@ rel_group_column(sql_query *query, sql_rel **rel, symbol *grp, dlist *selection,
 
 	if (!e) {
 		char buf[ERRSIZE];
+		int status = sql->session->status;
+		strcpy(buf, sql->errstr);
 		/* reset error */
 		sql->session->status = 0;
-		strcpy(buf, sql->errstr);
 		sql->errstr[0] = '\0';
 
 		e = rel_selection_ref(query, rel, grp, selection);
 		if (!e) {
-			if (sql->errstr[0] == 0)
+			if (sql->errstr[0] == 0) {
+				sql->session->status = status;
 				strcpy(sql->errstr, buf);
+			}
 			return NULL;
 		}
 	}

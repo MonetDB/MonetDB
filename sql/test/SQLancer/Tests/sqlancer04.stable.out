@@ -29,6 +29,23 @@ stdout of test 'sqlancer04` in directory 'sql/test/SQLancer` itself:
 % double # type
 % 24 # length
 #ROLLBACK;
+#SELECT covar_samp(1, - (COALESCE(1, 2)||5)); --error on default, covar_samp between integer and string not possible
+% .%1 # table_name
+% %1 # name
+% double # type
+% 24 # length
+[ NULL	]
+#START TRANSACTION;
+#CREATE TABLE "sys"."t0"("c0" DATE, "c1" DATE, "c2" INTERVAL SECOND NOT NULL,"c3" TIME NOT NULL);
+#ROLLBACK;
+#START TRANSACTION;
+#CREATE TABLE "sys"."t0" ("c0" INTERVAL SECOND NOT NULL);
+#SELECT CASE '5'^3 WHEN COUNT(TRUE) THEN 1 END FROM t0 GROUP BY 2 IN ((CAST(INTERVAL '-2' SECOND AS INT))%2);
+% .%7 # table_name
+% %7 # name
+% tinyint # type
+% 1 # length
+#ROLLBACK;
 
 # 09:44:50 >  
 # 09:44:50 >  "Done."
