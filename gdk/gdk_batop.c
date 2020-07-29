@@ -517,9 +517,9 @@ append_msk_bat(BAT *b, BAT *n, struct canditer *ci)
 		uint32_t *np;
 		uint32_t noff, mask;
 		BUN cnt;
-		noff = (ci->seq - n->tseqbase) % 32;
+		noff = (ci->seq - n->hseqbase) % 32;
 		cnt = ci->ncand;
-		np = (uint32_t *) n->theap->base + (ci->seq - n->tseqbase) / 32;
+		np = (uint32_t *) n->theap->base + (ci->seq - n->hseqbase) / 32;
 		b->batCount += cnt;
 		if (boff == noff) {
 			/* words of b and n are aligned, so we don't
