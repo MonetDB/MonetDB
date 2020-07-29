@@ -53,6 +53,10 @@ with tempfile.TemporaryDirectory() as farm_dir:
             print(node2_cur.fetchall())
             node2_cur.execute("select * from remote_data where name like 'N%'")
             print(node2_cur.fetchall())
+            node2_cur.execute("select rank() over () from remote_data where name like 'N%'")
+            print(node2_cur.fetchall())
+            node2_cur.execute("select name like 'N%' from remote_data")
+            print(node2_cur.fetchall())
 
             # cleanup: shutdown the monetdb servers and remove tempdir
             out, err = node1_proc.communicate()
