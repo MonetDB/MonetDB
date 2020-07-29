@@ -1401,20 +1401,16 @@ rel_filter(mvc *sql, sql_rel *rel, list *l, list *r, char *sname, char *filter_o
 	sql_exp *L = l->h->data, *R = r->h->data, *e = NULL;
 	sql_subfunc *f = NULL;
 	sql_schema *s = cur_schema(sql);
-	list *tl, *exps;
+	list *tl = sa_list(sql->sa);
 
-	exps = sa_list(sql->sa);
-	tl = sa_list(sql->sa);
 	for (n = l->h; n; n = n->next){
 		sql_exp *e = n->data;
 
-		list_append(exps, e);
 		list_append(tl, exp_subtype(e));
 	}
 	for (n = r->h; n; n = n->next){
 		sql_exp *e = n->data;
 
-		list_append(exps, e);
 		list_append(tl, exp_subtype(e));
 	}
 	if (sname && !(s = mvc_bind_schema(sql, sname)))
@@ -1423,7 +1419,7 @@ rel_filter(mvc *sql, sql_rel *rel, list *l, list *r, char *sname, char *filter_o
 	f = sql_bind_func_(sql->sa, s, filter_op, tl, F_FILT);
 
 	if (!f)
-		f = find_func(sql, s, filter_op, list_length(exps), F_FILT, NULL);
+		f = find_func(sql, s, filter_op, list_length(tl), F_FILT, NULL);
 	if (f) {
 		node *n,*m = f->func->ops->h;
 		list *nexps = sa_list(sql->sa);

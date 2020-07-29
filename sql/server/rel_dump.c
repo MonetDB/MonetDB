@@ -911,10 +911,22 @@ exp_read(mvc *sql, sql_rel *lrel, sql_rel *rrel, list *pexps, char *r, int *pos,
 			if (!(rexps = read_exps(sql, lrel, rrel, pexps, r, pos, '(', 0)))
 				return NULL;
 			if (filter) {
-				sql_subfunc *func = sql_find_func(sql->sa, mvc_bind_schema(sql, "sys"), fname, 1+list_length(exps), F_FILT, NULL);
-				if (!func)
-					return sql_error(sql, -1, SQLSTATE(42000) "Filter: missing function '%s'\n", fname);
+				sql_subfunc *func = NULL;
+				list *tl = sa_list(sql->sa);
 
+				for (node *n = lexps->h; n; n = n->next){
+					sql_exp *e = n->data;
+
+					list_append(tl, exp_subtype(e));
+				}
+				for (node *n = rexps->h; n; n = n->next){
+					sql_exp *e = n->data;
+	
+					list_append(tl, exp_subtype(e));
+				}
+
+				if (!(func = sql_bind_func_(sql->sa, mvc_bind_schema(sql, "sys"), fname, tl, F_FILT)))
+					return sql_error(sql, -1, SQLSTATE(42000) "Filter: missing function '%s'\n", fname);
 				return exp_filter(sql->sa, lexps, rexps, func, anti);
 			}
 			return exp_or(sql->sa, lexps, rexps, anti);
