@@ -1489,7 +1489,7 @@ BUNinplace(BAT *b, BUN p, const void *t, bool force)
 		BATkey(b, false);
 	} else if (!b->tkey && (b->tnokey[0] == p || b->tnokey[1] == p))
 		b->tnokey[0] = b->tnokey[1] = 0;
-	if (b->tnonil)
+	if (b->tnonil && ATOMstorage(b->ttype) != TYPE_msk)
 		b->tnonil = t && ATOMcmp(b->ttype, t, ATOMnilptr(b->ttype)) != 0;
 	b->theap->dirty = true;
 	if (b->tvheap)

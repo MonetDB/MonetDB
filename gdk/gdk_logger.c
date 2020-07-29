@@ -519,13 +519,15 @@ la_bat_updates(logger *lg, logaction *la)
 		BUN cnt = BATcount(b);
 
 		if (!lg->flushing) {
+			int is_msk = (b->ttype == TYPE_msk);
 			/* handle offset 0 ie clear */
 			if (/* DISABLES CODE */ (0) && la->offset == 0 && cnt)
 				BATclear(b, true);
 			/* handle offset */
 			if (cnt <= (BUN)la->offset) {
+				msk t = 1;
 				if (cnt < (BUN)la->offset) { /* insert nils */
-					const void *tv = ATOMnilptr(b->ttype);
+					const void *tv = (is_msk)?&t:ATOMnilptr(b->ttype);
 					lng i, d = la->offset - BATcount(b);
 					for(i=0;i<d;i++) {
 						if (BUNappend(b, tv, true) != GDK_SUCCEED) {
