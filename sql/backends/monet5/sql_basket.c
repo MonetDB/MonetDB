@@ -515,10 +515,8 @@ BSKTunlock(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	(void) mb;
 
 	idx = BSKTlocate(sch, tbl);
-	if( idx ==0) {
-		MT_lock_unset(&baskets[idx].lock);
+	if( idx ==0)
 		throw(SQL,"basket.lock",SQLSTATE(3F000) "Stream table %s.%s not accessible\n",sch,tbl);
-	}
 
 	/* this is also the place to administer the size of the basket */
 	b = BSKTbindColumn(sch,tbl, baskets[idx].cols[0]->base.name);
