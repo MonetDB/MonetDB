@@ -186,6 +186,9 @@ SELECT debugme6();
 	--NULL
 DROP FUNCTION debugme6;
 
+select rank() over (), min(TotalSales) from tbl_ProductSales;
+	-- 1 100
+
 DROP TABLE tbl_ProductSales;
 DROP TABLE another_T;
 DROP TABLE integers;
