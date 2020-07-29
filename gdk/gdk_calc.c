@@ -14487,7 +14487,7 @@ convert_msk_##TYPE(const uint32_t *restrict src, TYPE *restrict dst,	\
 					dst[k] = TYPE##_nil;		\
 					nils++;				\
 				} else {				\
-					dst[k] = (mask & (1U << j)) != 0; \
+					dst[k] = (TYPE) ((mask & (1U << j)) != 0); \
 				}					\
 				k++;					\
 			}						\
@@ -14500,7 +14500,7 @@ convert_msk_##TYPE(const uint32_t *restrict src, TYPE *restrict dst,	\
 					dst[k] = TYPE##_nil;		\
 					nils++;				\
 				} else {				\
-					dst[k] = (mask & (1U << j)) != 0; \
+					dst[k] = (TYPE) ((mask & (1U << j)) != 0); \
 				}					\
 				k++;					\
 			}						\
@@ -14512,7 +14512,7 @@ convert_msk_##TYPE(const uint32_t *restrict src, TYPE *restrict dst,	\
 				dst[k] = TYPE##_nil;			\
 				nils++;					\
 			} else {					\
-				dst[k] = (src[x / 32] & (1U << (x % 32))) != 0;	\
+				dst[k] = (TYPE) ((src[x / 32] & (1U << (x % 32))) != 0); \
 			}						\
 		}							\
 	}								\
