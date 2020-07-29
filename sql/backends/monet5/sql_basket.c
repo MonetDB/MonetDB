@@ -625,15 +625,25 @@ BSKTupdate(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	}
 
 	bskt = BSKTlocate(sname,tname);
-	if( bskt == 0)
+	if( bskt == 0) {
+		BBPunfix(rid->batCacheid);
+		BBPunfix(bval->batCacheid);
 		throw(SQL, "basket.update",SQLSTATE(HY005) "Cannot access basket descriptor %s.%s\n",sname,tname);
+	}
 	bn = BSKTbindColumn(sname,tname,cname);
 
 	if( bn){
-		if( BATreplace(bn, rid, bval, TRUE) != GDK_SUCCEED)
+		if( BATreplace(bn, rid, bval, TRUE) != GDK_SUCCEED) {
+			BBPunfix(rid->batCacheid);
+			BBPunfix(bval->batCacheid);
 			throw(SQL, "basket.update",SQLSTATE(HY005) "Cannot access basket descriptor %s.%s\n",sname,tname);
+		}
 		BATsettrivprop(bn);
-	} else throw(SQL, "basket.update",SQLSTATE(3F000) "Cannot access target column %s.%s.%s\n",sname,tname,cname);
+	} else {
+		BBPunfix(rid->batCacheid);
+		BBPunfix(bval->batCacheid);
+		throw(SQL, "basket.update",SQLSTATE(3F000) "Cannot access target column %s.%s.%s\n",sname,tname,cname);
+	}
 	
 	BBPunfix(rid->batCacheid);
 	BBPunfix(bval->batCacheid);
