@@ -2625,7 +2625,7 @@ stmt_catalog(backend *be, int type, stmt *args)
 void
 stmt_set_nrcols(stmt *s)
 {
-	int nrcols = 0;
+	unsigned nrcols = 0;
 	int key = 1;
 	node *n;
 	list *l = s->op4.lval;

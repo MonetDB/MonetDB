@@ -779,7 +779,8 @@ exp_bin(backend *be, sql_exp *e, stmt *left, stmt *right, stmt *grp, stmt *ext, 
 		}
 		assert(!e->r);
 		if (exps) {
-			int nrcols = 0, single_value = (fe->card <= CARD_ATOM);
+			unsigned nrcols = 0;
+			int single_value = (fe->card <= CARD_ATOM);
 			int push_cond_exec = 0, coalesce = 0;
 			stmt *ncond = NULL;
 

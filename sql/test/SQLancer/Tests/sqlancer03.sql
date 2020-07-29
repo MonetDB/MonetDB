@@ -250,7 +250,7 @@ COPY 5 RECORDS INTO "sys"."t0" FROM stdin USING DELIMITERS E'\t',E'\n','"';
 
 select coalesce(1 = true, false);
 select coalesce(1 = true, t0.c0 > 0) from t0;
-select count(all coalesce ((case coalesce (((r'Mk|8''Fx#S4ᬊ')||(time '07:11:45')), ((r'')||(interval '-87' second))) when case cast(t0.c0 as double) when sql_max(r'', null) 
+select count(all coalesce ((case coalesce (1, 2) when case cast(t0.c0 as double) when sql_max(r'', null) 
 then ((12)/(23)) end then cast("truncate"(r'1', 54) as boolean) else (coalesce (true, true, r'1', true)) = false end) = true, (t0.c0) not in (t0.c0))) from t0;
 ROLLBACK;
 
@@ -356,6 +356,33 @@ COPY 8 RECORDS INTO "sys"."t0" FROM stdin USING DELIMITERS E'\t',E'\n','"';
 SELECT ALL CASE t0.c0 WHEN VAR_POP(ALL t0.c0) THEN (t0.c0) BETWEEN SYMMETRIC (t0.c0) AND (t0.c0) END FROM t0 GROUP BY t0.c0;
 ROLLBACK;
 
+START TRANSACTION;
+CREATE TABLE "sys"."t0" ("c0" INT);
+COPY 8 RECORDS INTO "sys"."t0" FROM stdin USING DELIMITERS E'\t',E'\n','"';
+62183
+-2658
+-1258
+40690
+-198
+12260
+-1827
+-604
+
+CREATE TABLE "sys"."t1" ("c0" INT);
+COPY 7 RECORDS INTO "sys"."t1" FROM stdin USING DELIMITERS E'\t',E'\n','"';
+4440
+4440
+4440
+4440
+14228
+-4740
+NULL
+
+SELECT CASE TIMESTAMP '1970-01-02 23:16:17' WHEN DATE '1970-01-12' THEN 1 END;
+SELECT TIME '08:16:10' FROM t1 JOIN t0 ON (t1.c0) NOT BETWEEN SYMMETRIC (t1.c0) AND (charindex(CAST(TIME '04:39:29' AS STRING), CASE COALESCE (TIMESTAMP '1970-01-02 23:16:17', TIMESTAMP '1970-01-02 23:07:33') 
+WHEN COALESCE (DATE '1970-01-12', DATE '1970-01-02', DATE '1970-01-02') THEN COALESCE (r'/6望', r'hr?r3QDF*OD%6癰if}䃒5') END, t0.c0)) GROUP BY t1.c0;
+ROLLBACK;
+
 START TRANSACTION; -- Bug 6924
 CREATE TABLE "sys"."t0" ("a" INTEGER, "b" INTEGER NOT NULL, CONSTRAINT "t0_a_b_unique" UNIQUE ("a","b"));
 --This copy into must succeed 
@@ -429,4 +456,13 @@ insert into t0(c0) values(13), (((cast((0.1) between symmetric (0.2) and (0.3) a
 
 SELECT COUNT(t0.c0 = t0.c0 OR 1 BETWEEN ASYMMETRIC 1 AND 1) FROM t0;
 SELECT 0.9, COUNT(ALL (((((((CAST(TRUE AS INT))-(t0.c0)))=(t0.c0))) = TRUE)OR((CAST(char_length(r'H') AS INT)) BETWEEN ASYMMETRIC (CAST(-1.3 AS INT)) AND (+ (length(r'0')))))), 0.3 FROM t0 GROUP BY 0.5, 0.4;
+ROLLBACK;
+
+START TRANSACTION;
+CREATE TABLE t0(c0 DATE, c1 DATE);
+SELECT ALL least(MIN(ALL CAST('0.3' AS TIME)), COALESCE (CAST("second"(TIMESTAMP '1970-01-19 08:50:25') AS TIME), CAST(TIME '13:00:42' AS TIME))), t0.c0 FROM t0
+GROUP BY splitpart(CAST(CAST(COALESCE (CASE t0.c1 WHEN INTERVAL '5' SECOND THEN TIMESTAMP '1969-12-21 20:30:09' WHEN 0.5 THEN TIMESTAMP '1970-01-11 15:00:27' WHEN 0.9 
+THEN TIMESTAMP '1970-01-03 20:35:51' END, CASE -2 WHEN 0.2 THEN TIMESTAMP '1970-01-02 09:18:35' END, CAST(INTERVAL '3' SECOND AS TIMESTAMP), 
+TIMESTAMP '1970-01-19 23:59:32') AS STRING(660)) AS STRING), COALESCE (CAST(COALESCE (CAST(INTERVAL '2' SECOND AS INTERVAL SECOND), INTERVAL '-4' SECOND, INTERVAL '-4' SECOND) AS STRING), 'a'),
+CAST(CAST(((- (-5))||(((-2)-(5)))) AS DECIMAL) AS INT));
 ROLLBACK;
