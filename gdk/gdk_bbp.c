@@ -1471,8 +1471,14 @@ static inline int
 heap_entry(FILE *fp, BAT *b, BUN size)
 {
 	size_t free = b->theap->free;
-	if (b->twidth > 0 && free / b->twidth > size)
-		free = size * b->twidth;
+	if (size < BUN_NONE) {
+		if (ATOMstorage(b->ttype) == TYPE_msk) {
+			BUN bytes = ((size + 31) / 32) * 4;
+			if (free > bytes)
+				free = bytes;
+		} else if (b->twidth > 0 && free / b->twidth > size)
+			free = size * b->twidth;
+	}
 	return fprintf(fp, " %s %d %d %d " BUNFMT " " BUNFMT " " BUNFMT " "
 		       BUNFMT " " OIDFMT " %zu %zu %d",
 		       b->ttype >= 0 ? BATatoms[b->ttype].name : ATOMunknown_name(b->ttype),
