@@ -4048,15 +4048,18 @@ rel_group_column(sql_query *query, sql_rel **rel, symbol *grp, dlist *selection,
 
 	if (!e) {
 		char buf[ERRSIZE];
+		int status = sql->session->status;
+		strcpy(buf, sql->errstr);
 		/* reset error */
 		sql->session->status = 0;
-		strcpy(buf, sql->errstr);
 		sql->errstr[0] = '\0';
 
 		e = rel_selection_ref(query, rel, grp, selection);
 		if (!e) {
-			if (sql->errstr[0] == 0)
+			if (sql->errstr[0] == 0) {
+				sql->session->status = status;
 				strcpy(sql->errstr, buf);
+			}
 			return NULL;
 		}
 	}

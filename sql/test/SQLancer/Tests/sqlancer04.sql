@@ -41,3 +41,8 @@ else r'*' end then 0.8 end when sql_min(t0.c3, t0.c3) then coalesce (cast(t0.c2 
 0.9) when coalesce (cast(t0.c1 as double), 0.2) then 0.0 else 0.0 end, 0.2) end from t0 where (interval '6' month)
 is not null group by cast(dayofmonth(t0.c0) as string(679)), 0.2; --error, on Jun2020 t0.c0 is not aggregated, on default
 ROLLBACK;
+
+START TRANSACTION;
+CREATE TABLE "sys"."t0" ("c0" INTERVAL SECOND NOT NULL);
+SELECT CASE '5'^3 WHEN COUNT(TRUE) THEN 1 END FROM t0 GROUP BY 2 IN ((CAST(INTERVAL '-2' SECOND AS INT))%2); --error on default: types sec_interval(13,0) and int(32,0) are not equal
+ROLLBACK;
