@@ -1622,7 +1622,7 @@ batcalc_init(void)
 	for(tp1 = integer; tp1 < extra && !err; tp1++) {
 	    for(tp2 = integer; tp2 < extra && !err; tp2++) {
 	      for(rt = extra-1; rt >= integer && !err; rt--) {
-		if (rt < tp1 || rt < tp2)
+		if (rt < tp1 && rt < tp2)
 			continue;
 		if (*rt == TYPE_dbl && *tp1 != TYPE_dbl && *tp2 != TYPE_dbl)
 			continue;

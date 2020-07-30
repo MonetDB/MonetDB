@@ -80,3 +80,12 @@ CREATE TABLE t0(c0 INTERVAL SECOND, UNIQUE(c0));
 CREATE TABLE t1(c2 BLOB, FOREIGN KEY (c2) REFERENCES t0(c0) MATCH FULL, PRIMARY KEY(c2)); --error, foreign key from blob to interval second not allowed
 CREATE TABLE t1(c2 TIME, FOREIGN KEY (c2) REFERENCES t0(c0) MATCH FULL, PRIMARY KEY(c2)); --error, foreign key from time to interval second not allowed
 DROP TABLE t0;
+
+START TRANSACTION;
+CREATE TABLE "sys"."t0" ("c0" DOUBLE NOT NULL,CONSTRAINT "t0_c0_pkey" PRIMARY KEY ("c0"));
+CREATE TABLE "sys"."t1" ("c0" DOUBLE);
+create view v1(c0, c1) as (select distinct (((t0.c0)=(((1357695262)^(-922564194))))) = false, cast(coalesce(coalesce(0.3, 0.4), "second"(timestamp '1970-01-10 11:54:13')) as double) from t0);
+create view v2(c0) as (select distinct coalesce(abs(interval '-1976292283' month), cast(greatest(r'Dnwxjm4btQ9cp&\c''a_', r'(y7,{q?][NHU,') as interval month)) from t1, t0 where ((upper(r''))not ilike(lower(r'''wAg_ z ''PPxXßgrd⍮G'))));
+select all v2.c0 from v2 right outer join v1 on ((r'8*By1q)*Oc<n')like(substr(r'', 1151312829, 406714197))) 
+where (case v1.c0 when v1.c0 then interval '104279220' second end) in (interval '2129103763' second) group by timestamp '1970-01-21 14:05:46';
+ROLLBACK;

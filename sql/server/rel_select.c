@@ -3872,7 +3872,9 @@ do_complex_case(sql_query *query, node *n, str func, sql_subtype *restype)
 	sql_exp *r = n->data;
 	if (n->next)
 		r = do_complex_case(query, n, func, restype);
-	else if (!(r = exp_check_type(query->sql, restype, NULL, r, type_equal)))
+	else
+		r = exp_check_type(query->sql, restype, NULL, r, type_equal);
+	if (!r)
 		return NULL;
 	return rel_binop_(query->sql, NULL, l, r, NULL, func, card_value);
 }
@@ -3901,24 +3903,8 @@ rel_complex_case(sql_query *query, sql_rel **rel, dlist *case_args, int f, str f
 	}
 	if (!restype)
 		return sql_error(query->sql, 02, SQLSTATE(42000) "Result type missing");
-
-	/*
-	sql_exp *cur = NULL;
-	for (node *n = args->h; n; n = n->next) {
-		sql_exp *a = n->data;
-
-		if (!(a = exp_check_type(query->sql, restype, rel ? *rel : NULL, a, type_equal)))
-			return NULL;
-		if (!cur)
-			cur = a;
-		else {
-			cur = rel_binop_(query->sql, NULL, cur, a, NULL, func, card_value);
-			if (!cur)
-				return NULL;
-		}
-	}
-	return cur;
-	*/
+	if (restype->type->localtype == TYPE_void) /* NULL */
+		restype = sql_bind_localtype("str");
 	return do_complex_case(query, args->h, func, restype);
 }
 
