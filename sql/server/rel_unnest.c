@@ -2690,7 +2690,7 @@ rewrite_ifthenelse(visitor *v, sql_rel *rel, sql_exp *e, int depth)
 		for (node *n = l->h ; n ; n = n->next) {
 			sql_exp *e = n->data;
 
-			if (e->type == e_cmp && e->flag == cmp_equal && exp_is_true(e->r))
+			if (e->type == e_cmp && e->flag == cmp_equal && exp_is_true(e) && exp_is_true(e->r))
 				n->data = e->l;
 		}
 
