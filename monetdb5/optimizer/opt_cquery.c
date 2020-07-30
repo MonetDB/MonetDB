@@ -193,11 +193,11 @@ OPTcqueryImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 #ifdef DEBUG_OPT_CQUERY
 				mnstr_printf(cntxt->fdout, "#cquery optimizer found stream %d\n",fnd);
 #endif
+				// replace this sql.tid with basket.tid
 				if( fnd){
 					getModuleId(p) = basketRef;
 					pushInstruction(mb,p);
 					alias[getArg(p,0)] = -1;
-					//freeInstruction(p);
 					continue;
 				}
 			}
@@ -208,6 +208,7 @@ OPTcqueryImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				continue;
 			}
 
+			// when it's an updating continuous query, we don't want to return the number of affected rows back to the caller.
 			if (getModuleId(p) == sqlRef && getFunctionId(p) == affectedRowsRef ){
 				if(cq)
 					freeInstruction(p);
@@ -224,7 +225,7 @@ OPTcqueryImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 					retseen = 1;
 
 				if(p->token != ENDsymbol || !retseen) {
-					// watch out for second transaction in same block
+					// watch out for second transaction in the same block
 					if( mvcseen){
 						// unlock the tables
 						for( j=btop-1; j>= 0; j--){
@@ -278,6 +279,7 @@ OPTcqueryImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				}
 			}
 
+			// Update the X_NNN numbers for this instruction
 			for (j = 0; j < p->argc; j++)
 				if (alias[getArg(p, j)] > 0)
 					getArg(p, j) = alias[getArg(p, j)];
