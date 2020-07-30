@@ -299,9 +299,14 @@ bailout: 																\
 #define func2_noexcept(FUNC, RET, PARAM1, PARAM2) RET = FUNC(PARAM1, PARAM2)
 #define func2_except(FUNC, RET, PARAM1, PARAM2) msg = FUNC(&RET, PARAM1, PARAM2); if (msg) break;
 
-/* TODO change dayint again into an int in stead of lng */
-#define date_diff2dayint(d1,d2) (date_diff(d1,d2) == int_nil)?lng_nil:date_diff(d1,d2)
-func2(MTIMEdate_diff, MTIMEdate_diff_bulk, "diff", date, date, lng, date_diff2dayint, func2_noexcept, \
+/* TODO change dayint again into an int instead of lng */
+static inline lng
+date_diff_imp(const date d1, const date d2)
+{
+	int diff = date_diff(d1, d2);
+	return is_int_nil(diff) ? lng_nil : (lng) diff;
+}
+func2(MTIMEdate_diff, MTIMEdate_diff_bulk, "diff", date, date, lng, date_diff_imp, func2_noexcept, \
 	  DEC_VAR_R, DEC_VAR_R, DEC_VAR_R, DEC_VAR_R, DEC_VAR_R, INIT_VAR, INIT_VAR, INIT_VAR, GET_NEXT_VAR, GET_NEXT_VAR, APPEND_VAR)
 func2(MTIMEdaytime_diff_msec, MTIMEdaytime_diff_msec_bulk, "diff", daytime, daytime, lng, daytime_diff, func2_noexcept, \
 	  DEC_VAR_R, DEC_VAR_R, DEC_VAR_R, DEC_VAR_R, DEC_VAR_R, INIT_VAR, INIT_VAR, INIT_VAR, GET_NEXT_VAR, GET_NEXT_VAR, APPEND_VAR)
