@@ -301,7 +301,7 @@ str_2time_daytimetz(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	int tpe = getArgType(mb, pci, 1), digits = *getArgReference_int(stk, pci, 2), tz = *getArgReference_int(stk, pci, 3);
 	(void) cntxt;
-	return str_2time_daytimetz_internal(getArgReference(stk, pci, 0), getArgReference(stk, pci, 1), tpe, digits, tz); 
+	return str_2time_daytimetz_internal(getArgReference(stk, pci, 0), getArgReference(stk, pci, 1), tpe, digits, tz);
 }
 
 str
@@ -667,7 +667,7 @@ str_2time_timestamptz(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	int tpe = getArgType(mb, pci, 1), digits = *getArgReference_int(stk, pci, 2), tz = *getArgReference_int(stk, pci, 3);
 	(void) cntxt;
-	return str_2time_timestamptz_internal(getArgReference(stk, pci, 0), getArgReference(stk, pci, 1), tpe, digits, tz); 
+	return str_2time_timestamptz_internal(getArgReference(stk, pci, 0), getArgReference(stk, pci, 1), tpe, digits, tz);
 }
 
 str
@@ -1202,31 +1202,25 @@ nil_2_date(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 }
 
 static inline str
-str_2_date_internal_imp(date *ret, str next, bit ce, bit *hasnil)
+str_2_date_internal_imp(date *ret, str next)
 {
-	if (!ce || strNil(next)) {
-		*hasnil = 1;
-		*ret = date_nil;
-	} else {
-		ssize_t pos = 0;
-		date dt = 0, *conv = &dt;
+	ssize_t pos = 0;
+	date dt = 0, *conv = &dt;
 
-		pos = date_fromstr(next, &(size_t){sizeof(date)}, &conv, false);
-		if (pos < (ssize_t) strlen(next) || /* includes pos < 0 */ is_date_nil(*conv))
-			return createException(SQL, "batcalc.str_2_date", SQLSTATE(22007) "Date '%s' has incorrect format", next);
-		*ret = *conv;
-	}
+	pos = date_fromstr(next, &(size_t){sizeof(date)}, &conv, false);
+	if (pos < (ssize_t) strlen(next) || /* includes pos < 0 */ is_date_nil(*conv))
+		return createException(SQL, "batcalc.str_2_date", SQLSTATE(22007) "Date '%s' has incorrect format", next);
+	*ret = *conv;
 	return MAL_SUCCEED;
 }
 
 static str
-str_2_date_internal(ptr out, ptr in, int tpe, const bat *ce)
+str_2_date_internal(ptr out, ptr in, int tpe)
 {
 	str msg = MAL_SUCCEED;
-	BAT *b = NULL, *c = NULL, *res = NULL;
+	BAT *b = NULL, *res = NULL;
 	BUN q = 0;
 	date *restrict ret = NULL;
-	bit hasnil = 0;
 	bool is_a_bat = false;
 	bat *r = NULL;
 
@@ -1234,10 +1228,6 @@ str_2_date_internal(ptr out, ptr in, int tpe, const bat *ce)
 	if (is_a_bat) {
 		tpe = getBatType(tpe);
 		if (!(b = BATdescriptor(*(bat*) in))) {
-			msg = createException(SQL, "batcalc.batstr_2_date", SQLSTATE(HY005) "Cannot access column descriptor");
-			goto bailout;
-		}
-		if (ce && !(c = BATdescriptor(*ce))) {
 			msg = createException(SQL, "batcalc.batstr_2_date", SQLSTATE(HY005) "Cannot access column descriptor");
 			goto bailout;
 		}
@@ -1254,27 +1244,28 @@ str_2_date_internal(ptr out, ptr in, int tpe, const bat *ce)
 
 	if (is_a_bat) {
 		BATiter it = bat_iterator(b);
-		if (c) {
-			bit *restrict cbit = Tloc(c, 0);
-			for (BUN i = 0 ; i < q && !msg; i++)
-				msg = str_2_date_internal_imp(&(ret[i]), BUNtail(it, i), cbit[i], &hasnil);
-		} else {
-			for (BUN i = 0 ; i < q && !msg; i++)
-				msg = str_2_date_internal_imp(&(ret[i]), BUNtail(it, i), true, &hasnil);
+		for (BUN i = 0 ; i < q && !msg; i++) {
+			str next = BUNtail(it, i);
+			if (strNil(next))
+				ret[i] = date_nil;
+			else
+				msg = str_2_date_internal_imp(&(ret[i]), next);
 		}
 	} else {
-		msg = str_2_date_internal_imp(ret, *(str*)in, true, &hasnil);
+		str next = *(str*)in;
+		if (strNil(next))
+			*ret = date_nil;
+		else
+			msg = str_2_date_internal_imp(ret, next);
 	}
 
 bailout:
 	if (b)
 		BBPunfix(b->batCacheid);
-	if (c)
-		BBPunfix(c->batCacheid);
 	if (res && !msg) {
 		BATsetcount(res, q);
-		res->tnil = hasnil;
-		res->tnonil = !hasnil;
+		res->tnil = b->tnil;
+		res->tnonil = b->tnonil;
 		res->tkey = BATcount(res) <= 1;
 		res->tsorted = BATcount(res) <= 1;
 		res->trevsorted = BATcount(res) <= 1;
@@ -1287,7 +1278,7 @@ bailout:
 str
 batstr_2_date(bat *res, const bat *bid)
 {
-	return str_2_date_internal((ptr) res, (ptr) bid, newBatType(TYPE_str), NULL);
+	return str_2_date_internal((ptr) res, (ptr) bid, newBatType(TYPE_str));
 }
 
 str
@@ -1295,13 +1286,7 @@ str_2_date(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	int tpe = getArgType(mb, pci, 1);
 	(void) cntxt;
-	return str_2_date_internal(getArgReference(stk, pci, 0), getArgReference(stk, pci, 1), tpe, NULL);
-}
-
-str
-batstr_ce_2_date(bat *res, const bat *bid, const bat *r)
-{
-	return str_2_date_internal((ptr) res, (ptr) bid, newBatType(TYPE_str), r);
+	return str_2_date_internal(getArgReference(stk, pci, 0), getArgReference(stk, pci, 1), tpe);
 }
 
 str

@@ -82,59 +82,6 @@ batstr_2_blob(bat *res, const bat *bid)
 	return msg;
 }
 
-str
-batstr_ce_2_blob(bat *res, const bat *bid, const bat *r)
-{
-	BAT *b, *c, *dst;
-	BATiter bi;
-	BUN p, q;
-	char *msg = NULL;
-	bit *ce;
-	const blob *n;
-
-	if ((b = BATdescriptor(*bid)) == NULL) {
-		throw(SQL, "batcalc.str_2_blob", SQLSTATE(HY005) "Cannot access column descriptor");
-	}
-	if ((c = BATdescriptor(*r)) == NULL) {
-		BBPunfix(b->batCacheid);
-		throw(SQL, "batcalc.str_2_blob", SQLSTATE(HY005) "Cannot access column descriptor");
-	}
-	ce = Tloc(c, 0);
-	bi = bat_iterator(b);
-	dst = COLnew(b->hseqbase, TYPE_blob, BATcount(b), TRANSIENT);
-	n = ATOMnilptr(TYPE_blob);
-	if (dst == NULL) {
-		BBPunfix(b->batCacheid);
-		BBPunfix(c->batCacheid);
-		throw(SQL, "sql.2_blob", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-	}
-	BATloop(b, p, q) {
-		str v = (str) BUNtvar(bi, p);
-		blob *r;
-		if (ce[p])
-			msg = str_2_blob(&r, &v);
-		else
-			r = (blob*)n;
-		if (msg) {
-			BBPunfix(dst->batCacheid);
-			BBPunfix(b->batCacheid);
-			BBPunfix(c->batCacheid);
-			return msg;
-		}
-		if (BUNappend(dst, r, false) != GDK_SUCCEED) {
-			BBPunfix(b->batCacheid);
-			BBPunfix(c->batCacheid);
-			BBPreclaim(dst);
-			throw(SQL, "sql.blob", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-		}
-		GDKfree(r);
-	}
-	BBPkeepref(*res = dst->batCacheid);
-	BBPunfix(b->batCacheid);
-	BBPunfix(c->batCacheid);
-	return msg;
-}
-
 static str
 SQLstr_cast_(str *res, mvc *m, sql_class eclass, int d, int s, int has_tz, ptr p, int tpe, int len)
 {
@@ -196,11 +143,11 @@ SQLstr_cast(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	return SQLstr_cast_(res, m, eclass, d, s, has_tz, p, tpe, len);
 }
 
-/* str SQLbatstr_cast(int *res, int *eclass, int *d1, int *s1, int *has_tz, int *bid, int *digits, [ bat[:int] *condexec] ); */
+/* str SQLbatstr_cast(int *res, int *eclass, int *d1, int *s1, int *has_tz, int *bid, int *digits); */
 str
 SQLbatstr_cast(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	BAT *b, *dst, *ce = NULL;
+	BAT *b, *dst;
 	BATiter bi;
 	BUN p, q;
 	mvc *m = NULL;
@@ -213,7 +160,6 @@ SQLbatstr_cast(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	int *has_tz = getArgReference_int(stk, pci, 4);
 	bat *bid = getArgReference_bat(stk, pci, 5);
 	int *digits = getArgReference_int(stk, pci, 6);
-	bit *e = NULL;
 
 	if ((msg = getSQLContext(cntxt, mb, &m, NULL)) != NULL)
 		return msg;
@@ -222,42 +168,23 @@ SQLbatstr_cast(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if ((b = BATdescriptor(*bid)) == NULL) {
 		throw(SQL, "batcalc.str", SQLSTATE(HY005) "Cannot access column descriptor");
 	}
-	if (pci->argc == 8) {
-		bid = getArgReference_bat(stk, pci, 7);
-		if (bid && (ce = BATdescriptor(*bid)) == NULL) {
-			BBPunfix(b->batCacheid);
-			throw(SQL, "batcalc.str", SQLSTATE(HY005) "Cannot access column descriptor");
-		}
-		assert(BATcount(b) == BATcount(ce));
-	}
 
 	bi = bat_iterator(b);
-	if (ce)
-		e = (bit*)Tloc(ce, 0);
 	dst = COLnew(b->hseqbase, TYPE_str, BATcount(b), TRANSIENT);
 	if (dst == NULL) {
 		BBPunfix(b->batCacheid);
-		if (ce)
-			BBPunfix(ce->batCacheid);
 		throw(SQL, "sql.str_cast", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
 	BATloop(b, p, q) {
 		ptr v = (ptr) BUNtail(bi, p);
-		if (!ce || e[p])
-			msg = SQLstr_cast_(&r, m, eclass, *d1, *s1, *has_tz, v, b->ttype, *digits);
-		else
-			r = (str)str_nil;
+		msg = SQLstr_cast_(&r, m, eclass, *d1, *s1, *has_tz, v, b->ttype, *digits);
 		if (msg) {
 			BBPunfix(dst->batCacheid);
 			BBPunfix(b->batCacheid);
-			if (ce)
-				BBPunfix(ce->batCacheid);
 			return msg;
 		}
 		if (BUNappend(dst, r, false) != GDK_SUCCEED) {
 			BBPunfix(b->batCacheid);
-			if (ce)
-				BBPunfix(ce->batCacheid);
 			BBPreclaim(dst);
 			throw(SQL, "sql.str_cast", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		}
@@ -267,8 +194,6 @@ SQLbatstr_cast(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	}
 	BBPkeepref(*res = dst->batCacheid);
 	BBPunfix(b->batCacheid);
-	if (ce)
-		BBPunfix(ce->batCacheid);
 	return msg;
 }
 
@@ -570,4 +495,3 @@ SQLbatstr_cast(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 #undef TP2
 #undef TP1
 #endif
-

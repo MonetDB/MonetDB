@@ -33,7 +33,7 @@ stdout of test 'case-when-alias.Bug-2848` in directory 'sql/test/BugTracker-2011
 #insert into table2848 values ('c');
 [ 1	]
 #SELECT CASE WHEN id = 'a' THEN 'x' ELSE 'y' END AS id FROM table2848;
-% sys. # table_name
+% . # table_name
 % id # name
 % char # type
 % 1 # length
@@ -41,7 +41,7 @@ stdout of test 'case-when-alias.Bug-2848` in directory 'sql/test/BugTracker-2011
 [ "y"	]
 [ "y"	]
 #select * from ( SELECT CASE WHEN id = 'a' THEN 'x' ELSE 'y' END AS othercolnamealias FROM table2848) as req;
-% sys.req # table_name
+% .req # table_name
 % othercolnamealias # name
 % char # type
 % 1 # length
@@ -49,7 +49,7 @@ stdout of test 'case-when-alias.Bug-2848` in directory 'sql/test/BugTracker-2011
 [ "y"	]
 [ "y"	]
 #select * from ( SELECT CASE WHEN id = 'a' THEN 'x' ELSE 'y' END AS id FROM table2848) as req;
-% sys.req # table_name
+% .req # table_name
 % id # name
 % char # type
 % 1 # length

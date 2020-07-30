@@ -35,8 +35,29 @@ target_link_libraries(MonetODBCs
   $<$<PLATFORM_ID:Windows>:user32>
   $<$<PLATFORM_ID:Windows>:legacy_stdio_definitions>)
 
+add_executable(odbcinstall
+  install.c)
+
+target_link_libraries(odbcinstall
+  PRIVATE
+  monetdb_config_header
+  mutils
+  $<$<PLATFORM_ID:Windows>:odbc32>
+  $<$<PLATFORM_ID:Windows>:odbccp32>
+  $<$<PLATFORM_ID:Windows>:shlwapi>
+  $<$<PLATFORM_ID:Windows>:user32>
+  $<$<PLATFORM_ID:Windows>:legacy_stdio_definitions>)
+
+target_include_directories(odbcinstall
+  PRIVATE
+  ../driver
+  PUBLIC
+  $<INSTALL_INTERFACE:${INCLUDEDIR}/monetdb>)
+set(SOURCES install.c ../driver/ODBCGlobal.h)
+
 install(TARGETS
   MonetODBCs
+  odbcinstall
   RUNTIME
   DESTINATION ${CMAKE_INSTALL_BINDIR}
   COMPONENT odbc

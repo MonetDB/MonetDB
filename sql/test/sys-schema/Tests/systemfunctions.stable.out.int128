@@ -25,7 +25,7 @@ stdout of test 'systemfunctions` in directory 'sql/test/sys-schema` itself:
 #   and f.id = a.func_id
 #   and f.system
 # order by s.name, f.name, f.id, a.number;
-% sys.,	sys.,	sys.,	sys.,	sys. # table_name
+% sys.,	sys.,	sys.,	sys.,	. # table_name
 % schema,	function,	argno,	argtype,	definition # name
 % varchar,	varchar,	int,	varchar,	varchar # type
 % 8,	24,	2,	14,	681 # length
@@ -443,6 +443,9 @@ stdout of test 'systemfunctions` in directory 'sql/test/sys-schema` itself:
 [ "sys",	"charindex",	1,	"clob",	""	]
 [ "sys",	"charindex",	2,	"clob",	""	]
 [ "sys",	"charindex",	3,	"int",	""	]
+[ "sys",	"coalesce",	0,	"any",	""	]
+[ "sys",	"coalesce",	1,	"any",	""	]
+[ "sys",	"coalesce",	2,	"any",	""	]
 [ "sys",	"code",	0,	"char",	"unicode"	]
 [ "sys",	"code",	1,	"int",	""	]
 [ "sys",	"code",	0,	"varchar",	"unicode"	]
@@ -1672,6 +1675,9 @@ stdout of test 'systemfunctions` in directory 'sql/test/sys-schema` itself:
 [ "sys",	"ntile",	4,	"boolean",	""	]
 [ "sys",	"null",	0,	"boolean",	"null"	]
 [ "sys",	"null",	1,	"any",	""	]
+[ "sys",	"nullif",	0,	"any",	""	]
+[ "sys",	"nullif",	1,	"any",	""	]
+[ "sys",	"nullif",	2,	"any",	""	]
 [ "sys",	"octet_length",	0,	"int",	"nitems"	]
 [ "sys",	"octet_length",	1,	"blob",	""	]
 [ "sys",	"octet_length",	0,	"int",	"nbytes"	]

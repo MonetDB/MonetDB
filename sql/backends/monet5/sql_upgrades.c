@@ -36,6 +36,7 @@ sql_fix_system_tables(Client c, mvc *sql, const char *prev_schema)
 	char *buf = GDKmalloc(bufsize), *err = NULL;
 	node *n;
 	sql_schema *s;
+	static const char *boolnames[2] = {"false", "true"};
 
 	if (buf == NULL)
 		throw(SQL, __func__, SQLSTATE(HY013) MAL_MALLOC_FAIL);
@@ -83,12 +84,12 @@ sql_fix_system_tables(Client c, mvc *sql, const char *prev_schema)
 				func->base.id, func->base.name,
 				func->imp, func->mod, (int) FUNC_LANG_INT,
 				(int) func->type,
-				func->side_effect ? "true" : "false",
-				func->varres ? "true" : "false",
-				func->vararg ? "true" : "false",
+				boolnames[func->side_effect],
+				boolnames[func->varres],
+				boolnames[func->vararg],
 				func->s ? func->s->base.id : s->base.id,
-				func->system ? "true" : "false",
-				func->semantics ? "true" : "false");
+				boolnames[func->system],
+				boolnames[func->semantics]);
 		if (func->res) {
 			for (m = func->res->h; m; m = m->next, number++) {
 				arg = m->data;
@@ -2140,6 +2141,31 @@ sql_update_jun2020_sp1_hugeint(Client c, const char *prev_schema)
 #endif
 
 static str
+sql_update_jun2020_sp2(Client c, mvc *sql, const char *prev_schema, bool *systabfixed)
+{
+	/* we need to update the system tables, but only if we haven't done
+	 * so already, and if we are actually upgrading the database */
+	if (*systabfixed)
+		return MAL_SUCCEED;		/* already done */
+
+	char *buf = "select id from sys.functions where name = 'nullif' and schema_id = (select id from sys.schemas where name = 'sys');\n";
+	res_table *output;
+	char *err = SQLstatementIntern(c, &buf, "update", 1, 0, &output);
+	if (err == NULL) {
+		BAT *b = BATdescriptor(output->cols[0].b);
+		if (b) {
+			if (BATcount(b) == 0) {
+				err = sql_fix_system_tables(c, sql, prev_schema);
+				*systabfixed = true;
+			}
+			BBPunfix(b->batCacheid);
+		}
+		res_table_destroy(output);
+	}
+	return err;
+}
+
+static str
 sql_update_oscar_lidar(Client c)
 {
 	char *query =
@@ -2290,132 +2316,6 @@ sql_update_oscar(Client c, mvc *sql, const char *prev_schema, bool *systabfixed)
 			/* Move sys.degrees and sys.radians to sql_types.c definitions (I did this at the bat_logger) Remove the obsolete entries at privileges table */
 			pos += snprintf(buf + pos, bufsize - pos,
 					"delete from privileges where obj_id in (select obj_id from privileges left join functions on privileges.obj_id = functions.id where functions.id is null and privileges.obj_id not in ((SELECT tables.id from tables), 0));\n");
-			pos += snprintf(buf + pos, bufsize - pos,
-				"UPDATE sys.functions set semantics = false WHERE (name, func) IN (VALUES \n"
-					"('length', 'nitems'),\n"
-					"('octet_length', 'nitems'),\n"
-					"('>', '>'),\n"
-					"('>=', '>='),\n"
-					"('<', '<'),\n"
-					"('<=', '<='),\n"
-					"('min', 'min'),\n"
-					"('max', 'max'),\n"
-					"('sql_min', 'min'),\n"
-					"('sql_max', 'max'),\n"
-					"('least', 'min_no_nil'),\n"
-					"('greatest', 'max_no_nil'),\n"
-					"('sum', 'sum'),\n"
-					"('prod', 'prod'),\n"
-					"('mod', '%%'),\n"
-					"('and', 'and'),\n"
-					"('xor', 'xor'),\n"
-					"('not', 'not'),\n"
-					"('sql_mul', '*'),\n"
-					"('sql_div', '/'),\n"
-					"('sql_sub', '-'),\n"
-					"('sql_add', '+'),\n"
-					"('bit_and', 'and'),\n"
-					"('bit_or', 'or'),\n"
-					"('bit_xor', 'xor'),\n"
-					"('bit_not', 'not'),\n"
-					"('left_shift', '<<'),\n"
-					"('right_shift', '>>'),\n"
-					"('abs', 'abs'),\n"
-					"('sign', 'sign'),\n"
-					"('scale_up', '*'),\n"
-					"('scale_down', 'dec_round'),\n"
-					"('round', 'round'),\n"
-					"('power', 'pow'),\n"
-					"('floor', 'floor'),\n"
-					"('ceil', 'ceil'),\n"
-					"('ceiling', 'ceil'),\n"
-					"('sin', 'sin'),\n"
-					"('cos', 'cos'),\n"
-					"('tan', 'tan'),\n"
-					"('asin', 'asin'),\n"
-					"('acos', 'acos'),\n"
-					"('atan', 'atan'),\n"
-					"('atan', 'atan2'),\n"
-					"('sinh', 'sinh'),\n"
-					"('cot', 'cot'),\n"
-					"('cosh', 'cosh'),\n"
-					"('tanh', 'tanh'),\n"
-					"('sqrt', 'sqrt'),\n"
-					"('exp', 'exp'),\n"
-					"('log', 'log'),\n"
-					"('ln', 'log'),\n"
-					"('log10', 'log10'),\n"
-					"('log2', 'log2'),\n"
-					"('degrees', 'degrees'),\n"
-					"('radians', 'radians'),\n"
-					"('pi', 'pi'),\n"
-					"('curdate', 'current_date'),\n"
-					"('current_date', 'current_date'),\n"
-					"('curtime', 'current_time'),\n"
-					"('current_time', 'current_time'),\n"
-					"('current_timestamp', 'current_timestamp'),\n"
-					"('localtime', 'current_time'),\n"
-					"('localtimestamp', 'current_timestamp'),\n"
-					"('sql_sub', 'diff'),\n"
-					"('sql_sub', 'date_sub_msec_interval'),\n"
-					"('sql_sub', 'date_sub_month_interval'),\n"
-					"('sql_sub', 'time_sub_msec_interval'),\n"
-					"('sql_sub', 'timestamp_sub_msec_interval'),\n"
-					"('sql_sub', 'timestamp_sub_month_interval'),\n"
-					"('sql_add', 'date_add_msec_interval'),\n"
-					"('sql_add', 'addmonths'),\n"
-					"('sql_add', 'timestamp_add_msec_interval'),\n"
-					"('sql_add', 'timestamp_add_month_interval'),\n"
-					"('sql_add', 'time_add_msec_interval'),\n"
-					"('local_timezone', 'local_timezone'),\n"
-					"('century', 'century'),\n"
-					"('decade', 'decade'),\n"
-					"('year', 'year'),\n"
-					"('quarter', 'quarter'),\n"
-					"('month', 'month'),\n"
-					"('day', 'day'),\n"
-					"('dayofyear', 'dayofyear'),\n"
-					"('weekofyear', 'weekofyear'),\n"
-					"('dayofweek', 'dayofweek'),\n"
-					"('dayofmonth', 'day'),\n"
-					"('week', 'weekofyear'),\n"
-					"('hour', 'hours'),\n"
-					"('minute', 'minutes'),\n"
-					"('second', 'sql_seconds'),\n"
-					"('second', 'seconds'),\n"
-					"('strings', 'strings'),\n"
-					"('locate', 'locate'),\n"
-					"('charindex', 'locate'),\n"
-					"('splitpart', 'splitpart'),\n"
-					"('substring', 'substring'),\n"
-					"('substr', 'substring'),\n"
-					"('truncate', 'stringleft'),\n"
-					"('concat', '+'),\n"
-					"('ascii', 'ascii'),\n"
-					"('code', 'unicode'),\n"
-					"('length', 'length'),\n"
-					"('right', 'stringright'),\n"
-					"('left', 'stringleft'),\n"
-					"('upper', 'toUpper'),\n"
-					"('ucase', 'toUpper'),\n"
-					"('lower', 'toLower'),\n"
-					"('lcase', 'toLower'),\n"
-					"('trim', 'trim'),\n"
-					"('ltrim', 'ltrim'),\n"
-					"('rtrim', 'rtrim'),\n"
-					"('lpad', 'lpad'),\n"
-					"('rpad', 'rpad'),\n"
-					"('insert', 'insert'),\n"
-					"('replace', 'replace'),\n"
-					"('repeat', 'repeat'),\n"
-					"('space', 'space'),\n"
-					"('char_length', 'length'),\n"
-					"('character_length', 'length'),\n"
-					"('octet_length', 'nbytes'),\n"
-					"('soundex', 'soundex'),\n"
-					"('qgramnormalize', 'qgramnormalize')\n"
-					") and type <> %d;\n",
-					F_ANALYTIC);
 
 			pos += snprintf(buf + pos, bufsize - pos, "set schema \"%s\";\n", prev_schema);
 			assert(pos < bufsize);
@@ -2431,7 +2331,7 @@ sql_update_oscar(Client c, mvc *sql, const char *prev_schema, bool *systabfixed)
 }
 
 static str
-sql_update_default(Client c, mvc *sql, const char *prev_schema)
+sql_update_default(Client c, mvc *sql, const char *prev_schema, bool *systabfixed)
 {
 	size_t bufsize = 3000, pos = 0;
 	char *buf, *err;
@@ -2455,6 +2355,11 @@ sql_update_default(Client c, mvc *sql, const char *prev_schema)
 	b = BATdescriptor(output->cols[0].b);
 	if (b) {
 		if (BATcount(b) > 0) {
+			if (!*systabfixed &&
+				(err = sql_fix_system_tables(c, sql, prev_schema)) != NULL)
+				return err;
+			*systabfixed = true;
+
 			pos = 0;
 			pos += snprintf(buf + pos, bufsize - pos, "set schema sys;\n");
 
@@ -2705,6 +2610,13 @@ SQLupgrades(Client c, mvc *m)
 	}
 #endif
 
+	if ((err = sql_update_jun2020_sp2(c, m, prev_schema, &systabfixed)) != NULL) {
+		TRC_CRITICAL(SQL_PARSER, "%s\n", err);
+		freeException(err);
+		GDKfree(prev_schema);
+		return -1;
+	}
+
 	sql_find_subtype(&tp, "varchar", 0, 0);
 	if (sql_bind_func(m->sa, s, "lidarattach", &tp, NULL, F_PROC) &&
 	    (err = sql_update_oscar_lidar(c)) != NULL) {
@@ -2721,7 +2633,7 @@ SQLupgrades(Client c, mvc *m)
 		return -1;
 	}
 
-	if ((err = sql_update_default(c, m, prev_schema)) != NULL) {
+	if ((err = sql_update_default(c, m, prev_schema, &systabfixed)) != NULL) {
 		TRC_CRITICAL(SQL_PARSER, "%s\n", err);
 		freeException(err);
 		GDKfree(prev_schema);

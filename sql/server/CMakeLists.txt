@@ -9,7 +9,7 @@
 BISON_TARGET(sqlparser
   sql_parser.y
   ${CMAKE_CURRENT_BINARY_DIR}/sql_parser.tab.c
-  COMPILE_FLAGS "-d -p sql -r all"
+  COMPILE_FLAGS "-d -p sql"
   DEFINES_FILE ${CMAKE_CURRENT_BINARY_DIR}/sql_parser.tab.h)
 
 add_library(sqlserver STATIC)

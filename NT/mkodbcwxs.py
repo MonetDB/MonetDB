@@ -4,7 +4,7 @@
 #
 # Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
 
-# python mkodbcwxs.py VERSION makedefs.txt PREFIX > PREFIX/MonetDB-ODBC-Installer.wxs
+# python mkodbcwxs.py VERSION BITS PREFIX > PREFIX/MonetDB-ODBC-Installer.wxs
 # "c:\Program Files (x86)\WiX Toolset v3.10\bin\candle.exe" -nologo -arch x64/x86 PREFIX/MonetDB-ODBC-Installer.wxs
 # "c:\Program Files (x86)\WiX Toolset v3.10\bin\light.exe" -nologo -sice:ICE03 -sice:ICE60 -sice:ICE82 -ext WixUIExtension PREFIX/MonetDB-ODBC-Installer.wixobj
 
@@ -29,21 +29,19 @@ def comp(features, id, depth, files, fid=None, name=None, args=None, sid=None, v
 
 def main():
     if len(sys.argv) != 4:
-        print(r'Usage: mkodbcwxs.py version makedefs.txt installdir')
+        print(r'Usage: mkodbcwxs.py version bits installdir')
         return 1
-    makedefs = {}
-    for line in open(sys.argv[2]):
-        key, val = line.strip().split('=', 1)
-        makedefs[key] = val
-    if makedefs['bits'] == '64':
+    if sys.argv[2] == '64':
         folder = r'ProgramFiles64Folder'
         arch = 'x64'
         libcrypto = '-x64'
+        vcpkg = r'C:\vcpkg\installed\x64-windows\{}'
     else:
         folder = r'ProgramFilesFolder'
         arch = 'x86'
         libcrypto = ''
-    vs = os.getenv('vs')        # inherited from TestTools\common.bat
+        vcpkg = r'C:\vcpkg\installed\x86-windows\{}'
+    vs = '2019'
     features = []
     print(r'<?xml version="1.0"?>')
     print(r'<Wix xmlns="http://schemas.microsoft.com/wix/2006/wi">')
@@ -59,7 +57,7 @@ def main():
     print(r'    <CustomAction Id="driverinstall" FileKey="odbcinstall" ExeCommand="/Install" Execute="deferred" Impersonate="no"/>')
     print(r'    <CustomAction Id="driveruninstall" FileKey="odbcinstall" ExeCommand="/Uninstall" Execute="deferred" Impersonate="no"/>')
     print(r'    <Directory Id="TARGETDIR" Name="SourceDir">')
-    msvc = r'C:\Program Files (x86)\Microsoft Visual Studio\20{}\Community\VC\Redist\MSVC'.format(vs)
+    msvc = r'C:\Program Files (x86)\Microsoft Visual Studio\{}\Community\VC\Redist\MSVC'.format(vs)
     d = sorted(os.listdir(msvc))[-1]
     msm = '_CRT_{}.msm'.format(arch)
     for f in sorted(os.listdir(os.path.join(msvc, d, 'MergeModules'))):
@@ -72,14 +70,14 @@ def main():
     id = 1
     print(r'            <Directory Id="lib" Name="lib">')
     id = comp(features, id, 14,
-              [r'lib\libmapi.dll', r'lib\libmapi.pdb',
-               r'lib\libMonetODBC.dll', r'lib\libMonetODBC.pdb',
-               r'lib\libMonetODBCs.dll', r'lib\libMonetODBCs.pdb',
-               r'lib\libstream.dll', r'lib\libstream.pdb',
-               r'{}\bin\iconv-2.dll'.format(makedefs['LIBICONV']),
-               r'{}\bin\libbz2.dll'.format(makedefs['LIBBZIP2']),
-               r'{}\bin\libcrypto-1_1{}.dll'.format(makedefs['LIBOPENSSL'], libcrypto),
-               r'{}\bin\zlib1.dll'.format(makedefs['LIBZLIB'])])
+              [r'bin\mapi.dll', # r'lib\mapi.pdb',
+               r'bin\MonetODBC.dll', # r'lib\MonetODBC.pdb',
+               r'bin\MonetODBCs.dll', # r'lib\MonetODBCs.pdb',
+               r'bin\stream.dll', # r'lib\stream.pdb',
+               vcpkg.format(r'bin\libiconv.dll'),
+               vcpkg.format(r'bin\bz2.dll'),
+               vcpkg.format(r'bin\libcrypto-1_1{}.dll'.format(libcrypto)),
+               vcpkg.format(r'bin\zlib1.dll')])
     print(r'            </Directory>')
     id = comp(features, id, 12,
               [r'license.rtf'])

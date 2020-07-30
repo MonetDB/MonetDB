@@ -69,9 +69,11 @@ extern int atom_is_false(atom *a);
 extern int atom_is_zero(atom *a);
 
 #ifdef HAVE_HGE
-extern hge scales[39];
+#define MAX_SCALE 39
+extern hge scales[MAX_SCALE];
 #else
-extern lng scales[19];
+#define MAX_SCALE 19
+extern lng scales[MAX_SCALE];
 #endif
 
 extern atom *atom_zero_value(sql_allocator *sa, sql_subtype* tpe);
