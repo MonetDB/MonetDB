@@ -63,20 +63,6 @@ OPTremapDirect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int idx,
 			if (isaBatType(getArgType(mb, p, 2)))
 				p = pushNil(mb, p, TYPE_bat);
 		}
-	} else if (p->retc == 1 &&
-			   bufName == batmmathRef &&
-			   ((p->argc == 3 &&
-				 (strcmp(fcnName, "sqrt") == 0 ||
-				  strcmp(fcnName, "atan") == 0)) ||
-				(p->argc == 4 && strcmp(fcnName, "atan2") == 0))) {
-		/* mmath.sqrt, mmath.atan, and mmat.atan2 may be called with
-		 * an extra bit parameter saying whether to actually execute
-		 * the function or just return a nil; we need to add a nil
-		 * candidate list in front of that parameter */
-		int a = getArg(p, p->argc - 1);
-		p->argc--;
-		p = pushNil(mb, p, TYPE_bat);
-		p = pushArgument(mb, p, a);
 	}
 
 	/* now see if we can resolve the instruction */
