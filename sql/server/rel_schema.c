@@ -322,6 +322,8 @@ column_constraint_name(mvc *sql, symbol *s, sql_column *sc, sql_table *t)
 static bool
 foreign_key_check_types(sql_subtype *lt, sql_subtype *rt)
 {
+	if (lt->type->eclass == EC_EXTERNAL && rt->type->eclass == EC_EXTERNAL)
+		return lt->type->localtype == rt->type->localtype;
 	return lt->type->eclass == rt->type->eclass || (EC_VARCHAR(lt->type->eclass) && EC_VARCHAR(rt->type->eclass));
 }
 
