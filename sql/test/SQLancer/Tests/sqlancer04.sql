@@ -70,3 +70,13 @@ LEFT OUTER JOIN (SELECT t1.c1, t0.c1, 0.43 FROM t0, t1) AS sub0 ON TRUE
 WHERE ((NOT ((TIME '00:25:07') IN (TIME '07:29:34', TIME '05:21:58', CASE 0.54 WHEN 0.65 THEN TIME '17:23:46' ELSE TIME '05:14:30' END)))) 
 GROUP BY TIMESTAMP '1969-12-08 01:47:58';
 ROLLBACK;
+
+CREATE TABLE t0(c0 TIME, UNIQUE(c0));
+CREATE TABLE t1(c0 CHAR(222), FOREIGN KEY (c0) REFERENCES t0(c0) MATCH FULL, PRIMARY KEY(c0)); --error, foreign key from char to time not allowed
+CREATE TABLE t1(c0 int, FOREIGN KEY (c0) REFERENCES t0(c0) MATCH FULL, PRIMARY KEY(c0)); --error, foreign key from int to time not allowed
+DROP TABLE t0;
+
+CREATE TABLE t0(c0 INTERVAL SECOND, UNIQUE(c0));
+CREATE TABLE t1(c2 BLOB, FOREIGN KEY (c2) REFERENCES t0(c0) MATCH FULL, PRIMARY KEY(c2)); --error, foreign key from blob to interval second not allowed
+CREATE TABLE t1(c2 TIME, FOREIGN KEY (c2) REFERENCES t0(c0) MATCH FULL, PRIMARY KEY(c2)); --error, foreign key from time to interval second not allowed
+DROP TABLE t0;
