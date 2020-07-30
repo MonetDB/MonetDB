@@ -2331,7 +2331,7 @@ sql_update_oscar(Client c, mvc *sql, const char *prev_schema, bool *systabfixed)
 }
 
 static str
-sql_update_default(Client c, mvc *sql, const char *prev_schema)
+sql_update_default(Client c, mvc *sql, const char *prev_schema, bool *systabfixed)
 {
 	size_t bufsize = 3000, pos = 0;
 	char *buf, *err;
@@ -2355,6 +2355,11 @@ sql_update_default(Client c, mvc *sql, const char *prev_schema)
 	b = BATdescriptor(output->cols[0].b);
 	if (b) {
 		if (BATcount(b) > 0) {
+			if (!*systabfixed &&
+				(err = sql_fix_system_tables(c, sql, prev_schema)) != NULL)
+				return err;
+			*systabfixed = true;
+
 			pos = 0;
 			pos += snprintf(buf + pos, bufsize - pos, "set schema sys;\n");
 
@@ -2628,7 +2633,7 @@ SQLupgrades(Client c, mvc *m)
 		return -1;
 	}
 
-	if ((err = sql_update_default(c, m, prev_schema)) != NULL) {
+	if ((err = sql_update_default(c, m, prev_schema, &systabfixed)) != NULL) {
 		TRC_CRITICAL(SQL_PARSER, "%s\n", err);
 		freeException(err);
 		GDKfree(prev_schema);
