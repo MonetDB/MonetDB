@@ -167,23 +167,26 @@ OPTcqueryImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				pushInstruction(mb,p);
 				lastmvc = lastrealmvc = getArg(p,0);
 				manymvc++;
-				// register and lock all baskets used
-				for( j=0; j<btop; j++){
-					p= newStmt(mb,basketRef,registerRef);
-					p= pushArgument(mb,p,lastmvc);
-					p= pushStr(mb,p, schemas[j]);
-					p= pushStr(mb,p, tables[j]);
-					p= pushInt(mb,p, output[j]);
-					alias[lastmvc] = getArg(p,0);
-					lastmvc = getArg(p,0);
+				// register and lock all baskets used the first time we encounter an sql.mvc()
+				if (!mvcseen) {
+					for( j=0; j<btop; j++){
+						p= newStmt(mb,basketRef,registerRef);
+						p= pushArgument(mb,p,lastmvc);
+						p= pushStr(mb,p, schemas[j]);
+						p= pushStr(mb,p, tables[j]);
+						p= pushInt(mb,p, output[j]);
+						alias[lastmvc] = getArg(p,0);
+						lastmvc = getArg(p,0);
 
-					p= newStmt(mb,basketRef,lockRef);
-					p= pushArgument(mb,p,lastmvc);
-					p= pushStr(mb,p, schemas[j]);
-					p= pushStr(mb,p, tables[j]);
-					lastmvc = getArg(p,0);
+						p= newStmt(mb,basketRef,lockRef);
+						p= pushArgument(mb,p,lastmvc);
+						p= pushStr(mb,p, schemas[j]);
+						p= pushStr(mb,p, tables[j]);
+						// FIXME: why don't we store getArg(p,0) in alias[lastmvc] again?
+						lastmvc = getArg(p,0);
+					}
+					mvcseen=1;
 				}
-				mvcseen=1;
 				continue;
 			}
 			// register all baskets used after the mvc had been determined
