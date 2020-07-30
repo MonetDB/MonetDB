@@ -405,15 +405,13 @@ column_constraint_type(mvc *sql, const char *name, symbol *s, sql_schema *ss, sq
 		}
 		kc = rk->columns->h->data;
 		if (!foreign_key_check_types(&cs->type, &kc->c->type)) {
-			str tp1 = subtype2string(&cs->type), tp2 = subtype2string(&kc->c->type);
+			str tp1 = sql_subtype_string(sql->ta, &cs->type), tp2 = sql_subtype_string(sql->ta, &kc->c->type);
 
 			if (!tp1 || !tp2)
 				(void) sql_error(sql, 02, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			else
 				(void) sql_error(sql, 02, SQLSTATE(42000) "CONSTRAINT FOREIGN KEY: the type of the FOREIGN KEY column '%s' %s is not compatible with the referenced %s KEY column type %s\n",
 								 cs->base.name, tp1, rk->type == pkey ? "PRIMARY" : "UNIQUE", tp2);
-			_DELETE(tp1);
-			_DELETE(tp2);
 			return res;
 		}
 		fk = mvc_create_fkey(sql, t, name, fkey, rk, ref_actions & 255, (ref_actions>>8) & 255);
@@ -590,15 +588,13 @@ table_foreign_key(mvc *sql, char *name, symbol *s, sql_schema *ss, sql_table *t)
 				return SQL_ERR;
 			}
 			if (!foreign_key_check_types(&cs->type, &kc->c->type)) {
-				str tp1 = subtype2string(&cs->type), tp2 = subtype2string(&kc->c->type);
+				str tp1 = sql_subtype_string(sql->ta, &cs->type), tp2 = sql_subtype_string(sql->ta, &kc->c->type);
 
 				if (!tp1 || !tp2)
 					(void) sql_error(sql, 02, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 				else
-					(void) sql_error(sql, 02, SQLSTATE(42000) "CONSTRAINT FOREIGN KEY: the type of the FOREIGN KEY column '%s' %s is not compatible with the referenced %s KEY column type %s\n", 
+					(void) sql_error(sql, 02, SQLSTATE(42000) "CONSTRAINT FOREIGN KEY: the type of the FOREIGN KEY column '%s' %s is not compatible with the referenced %s KEY column type %s\n",
 									 cs->base.name, tp1, rk->type == pkey ? "PRIMARY" : "UNIQUE", tp2);
-				_DELETE(tp1);
-				_DELETE(tp2);
 				return SQL_ERR;
 			}
 			mvc_create_fkc(sql, fk, cs);
