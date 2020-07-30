@@ -14179,7 +14179,7 @@ convert_str_any(BAT *b, int tp, void *restrict dst,
 	ssize_t l;
 	ssize_t (*atomfromstr)(const char *, size_t *, ptr *, bool) = BATatoms[tp].atomFromStr;
 	BATiter bi = bat_iterator(b);
-	const char *s;
+	const char *s = NULL;
 
 	if (ATOMstorage(tp) == TYPE_msk) {
 		uint32_t mask = 0;
@@ -14234,8 +14234,13 @@ convert_str_any(BAT *b, int tp, void *restrict dst,
 
   conversion_failed:
 	GDKclrerr();
-	size_t sz = escapedStrlen(s, NULL, NULL, '\'');
-	char *bf = GDKmalloc(sz + 1);
+	size_t sz = 0;
+	char *bf = NULL;
+
+	if (s) {
+		sz = escapedStrlen(s, NULL, NULL, '\'');
+		bf = GDKmalloc(sz + 1);
+	}
 	if (bf) {
 		escapedStr(bf, s, sz + 1, NULL, NULL, '\'');
 		GDKerror("22018!conversion of string "
