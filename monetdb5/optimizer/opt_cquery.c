@@ -143,8 +143,6 @@ OPTcqueryImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if( btop == MAXBSKTOPT || btop == 0)
 		return MAL_SUCCEED;
 
-	(void) stk;
-
 	alias = (int *) GDKzalloc(mb->vtop * 2 * sizeof(int));
 	if (alias == 0)
 		return MAL_SUCCEED;
@@ -330,6 +328,8 @@ OPTcqueryImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	mnstr_printf(cntxt->fdout, "#cquery optimizer final\n");
 	printFunction(cntxt->fdout, mb, stk, LIST_MAL_DEBUG);
 #endif
+	(void) stk; // to silence compilers in case DEBUG_OPT_CQUERY is not defined
+
 	GDKfree(alias);
 	GDKfree(old);
 
