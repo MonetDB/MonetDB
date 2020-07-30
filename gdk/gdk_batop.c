@@ -550,7 +550,7 @@ append_msk_bat(BAT *b, BAT *n, struct canditer *ci)
 			if (cnt >= 32) {
 				/* copy an integral number of words fast */
 				BUN nw = cnt / 32;
-				memcpy(bp, np, nw);
+				memcpy(bp, np, nw*sizeof(int));
 				bp += nw;
 				np += nw;
 				cnt %= 32;
