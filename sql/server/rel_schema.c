@@ -315,6 +315,14 @@ column_constraint_name(mvc *sql, symbol *s, sql_column *sc, sql_table *t)
 #define COL_NULL	0
 #define COL_DEFAULT 1
 
+static bool
+foreign_key_check_types(sql_subtype *lt, sql_subtype *rt)
+{
+	if (lt->type->eclass == EC_EXTERNAL && rt->type->eclass == EC_EXTERNAL)
+		return lt->type->localtype == rt->type->localtype;
+	return lt->type->eclass == rt->type->eclass || (EC_VARCHAR(lt->type->eclass) && EC_VARCHAR(rt->type->eclass));
+}
+
 static int
 column_constraint_type(mvc *sql, const char *name, symbol *s, sql_schema *ss, sql_table *t, sql_column *cs, bool isDeclared, int *used)
 {
@@ -354,6 +362,7 @@ column_constraint_type(mvc *sql, const char *name, symbol *s, sql_schema *ss, sq
 		sql_fkey *fk;
 		list *cols;
 		sql_key *rk = NULL;
+		sql_kc *kc;
 
 		assert(n->next->next->next->type == type_int);
 /*
@@ -392,6 +401,19 @@ column_constraint_type(mvc *sql, const char *name, symbol *s, sql_schema *ss, sq
 		}
 		if (list_length(rk->columns) != 1) {
 			(void) sql_error(sql, 02, SQLSTATE(42000) "CONSTRAINT FOREIGN KEY: not all columns are handled\n");
+			return res;
+		}
+		kc = rk->columns->h->data;
+		if (!foreign_key_check_types(&cs->type, &kc->c->type)) {
+			str tp1 = subtype2string(&cs->type), tp2 = subtype2string(&kc->c->type);
+
+			if (!tp1 || !tp2)
+				(void) sql_error(sql, 02, SQLSTATE(HY013) MAL_MALLOC_FAIL);
+			else
+				(void) sql_error(sql, 02, SQLSTATE(42000) "CONSTRAINT FOREIGN KEY: the type of the FOREIGN KEY column '%s' %s is not compatible with the referenced %s KEY column type %s\n",
+								 cs->base.name, tp1, rk->type == pkey ? "PRIMARY" : "UNIQUE", tp2);
+			_DELETE(tp1);
+			_DELETE(tp2);
 			return res;
 		}
 		fk = mvc_create_fkey(sql, t, name, fkey, rk, ref_actions & 255, (ref_actions>>8) & 255);
@@ -560,13 +582,26 @@ table_foreign_key(mvc *sql, char *name, symbol *s, sql_schema *ss, sql_table *t)
 
 		for (fnms = rk->columns->h; nms && fnms; nms = nms->next, fnms = fnms->next) {
 			char *nm = nms->data.sval;
-			sql_column *c = mvc_bind_column(sql, t, nm);
+			sql_column *cs = mvc_bind_column(sql, t, nm);
+			sql_kc *kc = fnms->data;
 
-			if (!c) {
+			if (!cs) {
 				sql_error(sql, 02, SQLSTATE(42S22) "CONSTRAINT FOREIGN KEY: no such column '%s' in table '%s'\n", nm, t->base.name);
 				return SQL_ERR;
 			}
-			mvc_create_fkc(sql, fk, c);
+			if (!foreign_key_check_types(&cs->type, &kc->c->type)) {
+				str tp1 = subtype2string(&cs->type), tp2 = subtype2string(&kc->c->type);
+
+				if (!tp1 || !tp2)
+					(void) sql_error(sql, 02, SQLSTATE(HY013) MAL_MALLOC_FAIL);
+				else
+					(void) sql_error(sql, 02, SQLSTATE(42000) "CONSTRAINT FOREIGN KEY: the type of the FOREIGN KEY column '%s' %s is not compatible with the referenced %s KEY column type %s\n", 
+									 cs->base.name, tp1, rk->type == pkey ? "PRIMARY" : "UNIQUE", tp2);
+				_DELETE(tp1);
+				_DELETE(tp2);
+				return SQL_ERR;
+			}
+			mvc_create_fkc(sql, fk, cs);
 		}
 		if (nms || fnms) {
 			sql_error(sql, 02, SQLSTATE(42000) "CONSTRAINT FOREIGN KEY: not all columns are handled\n");
