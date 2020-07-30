@@ -176,7 +176,7 @@ count_deletes(storage *d)
 	BAT *b = temp_descriptor(d->cs.bid);
 	lng cnt = 0;
 
-	if (d->cs.ucnt) {
+	if (!d->cs.ucnt) {
 		if (BATsum(&cnt, TYPE_lng, b, NULL, true, false, false) != GDK_SUCCEED) {
 			bat_destroy(b);
 			return 0;
@@ -185,6 +185,7 @@ count_deletes(storage *d)
 		BAT *ui, *uv, *c;
 
 		if (cs_real_update_bats(&d->cs, &ui, &uv) == LOG_ERR) {
+			assert(0);
 			bat_destroy(b);
 			return 0;
 		}
@@ -1199,7 +1200,6 @@ create_col(sql_trans *tr, sql_column *c)
 			sql_delta *d = c->data;
 
 			bat_set_access(b, BAT_READ);
-			d->cs.bid = b->batCacheid;
 			d->cs.bid = temp_create(b);
 
 			if (!isTempTable(c->t)) {
