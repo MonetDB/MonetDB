@@ -5861,20 +5861,21 @@ delete from privileges where obj_id in (select obj_id from privileges left join 
 UPDATE sys.functions set semantics = false WHERE (name, func) IN (VALUES 
 ('length', 'nitems'),
 ('octet_length', 'nitems'),
+('=', '='),
+('<>', '!='),
 ('>', '>'),
 ('>=', '>='),
 ('<', '<'),
 ('<=', '<='),
+('between', 'between'),
 ('min', 'min'),
 ('max', 'max'),
 ('sql_min', 'min'),
 ('sql_max', 'max'),
-('least', 'min_no_nil'),
-('greatest', 'max_no_nil'),
 ('sum', 'sum'),
 ('prod', 'prod'),
 ('mod', '%'),
-('and', 'and'),
+('avg', 'avg'),
 ('xor', 'xor'),
 ('not', 'not'),
 ('sql_mul', '*'),
@@ -5887,6 +5888,7 @@ UPDATE sys.functions set semantics = false WHERE (name, func) IN (VALUES
 ('bit_not', 'not'),
 ('left_shift', '<<'),
 ('right_shift', '>>'),
+('sql_neg', '-'),
 ('abs', 'abs'),
 ('sign', 'sign'),
 ('scale_up', '*'),
@@ -5956,6 +5958,9 @@ UPDATE sys.functions set semantics = false WHERE (name, func) IN (VALUES
 ('splitpart', 'splitpart'),
 ('substring', 'substring'),
 ('substr', 'substring'),
+('not_like', 'not_like'),
+('not_ilike', 'not_ilike'),
+('patindex', 'patindex'),
 ('truncate', 'stringleft'),
 ('concat', '+'),
 ('ascii', 'ascii'),
@@ -5980,8 +5985,8 @@ UPDATE sys.functions set semantics = false WHERE (name, func) IN (VALUES
 ('character_length', 'length'),
 ('octet_length', 'nbytes'),
 ('soundex', 'soundex'),
-('qgramnormalize', 'qgramnormalize')
-) and type <> 6;
+('qgramnormalize', 'qgramnormalize'),
+) and type <> 6 and schema_id = (select id from sys.schemas where name = 'sys');
 set schema "sys";
 
 # MonetDB/SQL module loaded
