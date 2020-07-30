@@ -72,7 +72,7 @@ stdout of test 'sqlsmith-exists` in directory 'sql/test/mergetables` itself:
 #    ref_1.col5 as c12,
 #    ref_2.col3 as c13,
 #    case when exists (
-% sys.,	sys.,	.,	sys. # table_name
+% .,	sys.,	.,	sys. # table_name
 % c0,	c1,	c2,	c3 # name
 % int,	int,	tinyint,	int # type
 % 1,	1,	1,	1 # length
@@ -161,8 +161,8 @@ stdout of test 'sqlsmith-exists` in directory 'sql/test/mergetables` itself:
 # tbl_ProductSales as ref_3
 # where ref_1.aa is null))
 # on (ref_0.col1 = ref_2.col0 );
-% .%47 # table_name
-% %47 # name
+% .%54 # table_name
+% %54 # name
 % tinyint # type
 % 1 # length
 [ 1	]
@@ -331,7 +331,7 @@ stdout of test 'sqlsmith-exists` in directory 'sql/test/mergetables` itself:
 # where exists (
 # select 
 # ref_1.col4 as c0
-% sys. # table_name
+% . # table_name
 % c0 # name
 % int # type
 % 1 # length
@@ -361,7 +361,7 @@ stdout of test 'sqlsmith-exists` in directory 'sql/test/mergetables` itself:
 # sys.another_t as ref_0
 # where (true) 
 # and ((ref_0.col4 is not null) 
-% sys.,	sys.,	sys.,	.,	sys.,	sys.,	sys.,	sys.,	sys.,	.,	.,	sys.,	sys.,	sys.,	sys. # table_name
+% sys.,	sys.,	.,	.,	sys.,	sys.,	sys.,	sys.,	sys.,	.,	.,	sys.,	sys.,	sys.,	sys. # table_name
 % c0,	c1,	c2,	c3,	c4,	c5,	c6,	c7,	c8,	c9,	c10,	c11,	c12,	c13,	c14 # name
 % int,	int,	int,	tinyint,	int,	int,	int,	int,	int,	tinyint,	int,	int,	int,	int,	int # type
 % 1,	1,	1,	1,	1,	1,	1,	1,	1,	1,	1,	1,	1,	1,	1 # length

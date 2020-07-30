@@ -51,7 +51,7 @@ stdout of test 'analytics18` in directory 'sql/test/analytics` itself:
 #ORDER BY
 #tab2.col9 DESC,
 #case when col11 like '%-%' and col3 < 20190101 then -1
-% sys.tab2,	sys.tab2,	sys.tab2,	sys.tab2,	sys.tab1,	sys.tab1,	sys.,	sys.,	sys. # table_name
+% sys.tab2,	sys.tab2,	sys.tab2,	sys.tab2,	sys.tab1,	sys.tab1,	sys.,	.,	sys. # table_name
 % col10,	col7,	col1,	col8,	col2,	col3,	col4,	something,	rnk1 # name
 % int,	varchar,	varchar,	int,	varchar,	int,	int,	tinyint,	int # type
 % 1,	0,	0,	1,	0,	1,	1,	1,	1 # length

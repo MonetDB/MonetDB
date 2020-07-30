@@ -14,6 +14,16 @@ target_sources(mserver5
   ${CMAKE_CURRENT_BINARY_DIR}/monet_version.c
   monet_version.h)
 
+set(builtby $ENV{USER}) # $USER should be there in POSIX compliant systems
+cmake_host_system_information(RESULT host QUERY HOSTNAME)
+string(APPEND builtby "@" ${host})
+
+string(TOUPPER ${CMAKE_BUILD_TYPE} build_type)
+set(compilercall ${CMAKE_C_COMPILER})
+string(APPEND compilercall " " ${CMAKE_C_FLAGS_${build_type}} ${CMAKE_C_FLAGS})
+
+set(linkercall ${CMAKE_LINKER})
+
 configure_file(monet_version.c.in
   ${CMAKE_CURRENT_BINARY_DIR}/monet_version.c
   @ONLY)

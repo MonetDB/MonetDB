@@ -192,6 +192,15 @@ SELECT debugme6();
 	--NULL
 DROP FUNCTION debugme6;
 
+select rank() over (), min(TotalSales) from tbl_ProductSales;
+	-- 1 100
+
+select count(*) over (), max(Product_Name) from tbl_ProductSales;
+	-- 1 Shorts
+
+select corr(1,1), corr(1,1) over () from tbl_ProductSales;
+	-- NULL NULL
+
 DROP TABLE tbl_ProductSales;
 DROP TABLE another_T;
 DROP TABLE integers;

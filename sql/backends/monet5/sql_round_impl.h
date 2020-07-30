@@ -17,9 +17,7 @@
 #define nil_2dec		FUN(nil_2dec, TYPE)
 #define str_2dec		FUN(str_2dec, TYPE)
 #define batnil_2dec		FUN(batnil_2dec, TYPE)
-#define batnil_ce_2dec		FUN(batnil_ce_2dec, TYPE)
 #define batstr_2dec		FUN(batstr_2dec, TYPE)
-#define batstr_ce_2dec          FUN(batstr_ce_2dec, TYPE)
 #define dec2second_interval	FUN(TYPE, dec2second_interval)
 #define batdec2second_interval	FUN(TYPE, batdec2second_interval)
 
@@ -361,13 +359,6 @@ batnil_2dec(bat *res, const bat *bid, const int *d, const int *sc)
 }
 
 str
-batnil_ce_2dec(bat *res, const bat *bid, const int *d, const int *sc, const bat *r)
-{
-	(void)r;
-	return batnil_2dec(res, bid, d, sc);
-}
-
-str
 batstr_2dec(bat *res, const bat *bid, const int *d, const int *sc)
 {
 	BAT *b, *dst;
@@ -388,54 +379,6 @@ batstr_2dec(bat *res, const bat *bid, const int *d, const int *sc)
 		str v = (str) BUNtvar(bi, p);
 		TYPE r;
 		msg = str_2dec(&r, &v, d, sc);
-		if (msg) {
-			BBPunfix(dst->batCacheid);
-			BBPunfix(b->batCacheid);
-			return msg;
-		}
-		if (BUNappend(dst, &r, false) != GDK_SUCCEED) {
-			BBPunfix(b->batCacheid);
-			BBPreclaim(dst);
-			throw(SQL, "sql.dec_" STRING(TYPE), SQLSTATE(HY013) MAL_MALLOC_FAIL);
-		}
-	}
-	BBPkeepref(*res = dst->batCacheid);
-	BBPunfix(b->batCacheid);
-	return msg;
-}
-
-str
-batstr_ce_2dec(bat *res, const bat *bid, const int *d, const int *sc, const bat *cond)
-{
-	BAT *b, *dst, *c;
-	BATiter bi;
-	BUN p, q;
-	char *msg = NULL;
-	bit *ce;
-
-	if ((b = BATdescriptor(*bid)) == NULL) {
-		throw(SQL, "batcalc.str_2dec_" STRING(TYPE), SQLSTATE(HY005) "Cannot access column descriptor");
-	}
-	if ((c = BATdescriptor(*cond)) == NULL) {
-		BBPunfix(b->batCacheid);
-		throw(SQL, "batcalc.str_2dec_" STRING(TYPE), SQLSTATE(HY005) "Cannot access column descriptor");
-	}
-	const TYPE n = NIL(TYPE);
-	bi = bat_iterator(b);
-	ce = Tloc(c, 0);
-	dst = COLnew(b->hseqbase, TPE(TYPE), BATcount(b), TRANSIENT);
-	if (dst == NULL) {
-		BBPunfix(b->batCacheid);
-		BBPunfix(c->batCacheid);
-		throw(SQL, "sql.dec_" STRING(TYPE), SQLSTATE(HY013) MAL_MALLOC_FAIL);
-	}
-	BATloop(b, p, q) {
-		str v = (str) BUNtvar(bi, p);
-		TYPE r;
-		if (ce[p])
-			msg = str_2dec(&r, &v, d, sc);
-		else
-			r = n;
 		if (msg) {
 			BBPunfix(dst->batCacheid);
 			BBPunfix(b->batCacheid);

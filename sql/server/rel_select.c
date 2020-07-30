@@ -1428,20 +1428,16 @@ rel_filter(mvc *sql, sql_rel *rel, list *l, list *r, char *sname, char *filter_o
 	sql_exp *L = l->h->data, *R = r->h->data, *e = NULL;
 	sql_subfunc *f = NULL;
 	sql_schema *s = cur_schema(sql);
-	list *tl, *exps;
+	list *tl = sa_list(sql->sa);
 
-	exps = sa_list(sql->sa);
-	tl = sa_list(sql->sa);
 	for (n = l->h; n; n = n->next){
 		sql_exp *e = n->data;
 
-		list_append(exps, e);
 		list_append(tl, exp_subtype(e));
 	}
 	for (n = r->h; n; n = n->next){
 		sql_exp *e = n->data;
 
-		list_append(exps, e);
 		list_append(tl, exp_subtype(e));
 	}
 	if (sname && !(s = mvc_bind_schema(sql, sname)))
@@ -1450,7 +1446,7 @@ rel_filter(mvc *sql, sql_rel *rel, list *l, list *r, char *sname, char *filter_o
 	f = sql_bind_func_(sql->sa, s, filter_op, tl, F_FILT);
 
 	if (!f)
-		f = find_func(sql, s, filter_op, list_length(exps), F_FILT, NULL);
+		f = find_func(sql, s, filter_op, list_length(tl), F_FILT, NULL);
 	if (f) {
 		node *n,*m = f->func->ops->h;
 		list *nexps = sa_list(sql->sa);
@@ -3639,6 +3635,7 @@ _rel_aggr(sql_query *query, sql_rel **rel, int distinct, sql_schema *s, char *an
 			sql_exp *r = exps->h->next->data, *or = r;
 			sql_subtype *t2 = exp_subtype(r);
 
+			a = NULL; /* reset a */
 			if (rel_convert_types(sql, *rel, *rel, &l, &r, 1/*fix scale*/, type_equal) >= 0){
 				list *tps = sa_list(sql->sa);
 
@@ -3864,6 +3861,23 @@ rel_case(sql_query *query, sql_rel **rel, symbol *opt_cond, dlist *when_search_l
 }
 
 static sql_exp *
+do_complex_case(sql_query *query, node *n, str func, sql_subtype *restype)
+{
+	sql_exp *l = n->data;
+
+	if (!(l = exp_check_type(query->sql, restype, NULL, l, type_equal)))
+		return NULL;
+
+	n = n->next;
+	sql_exp *r = n->data;
+	if (n->next)
+		r = do_complex_case(query, n, func, restype);
+	else if (!(r = exp_check_type(query->sql, restype, NULL, r, type_equal)))
+		return NULL;
+	return rel_binop_(query->sql, NULL, l, r, NULL, func, card_value);
+}
+
+static sql_exp *
 rel_complex_case(sql_query *query, sql_rel **rel, dlist *case_args, int f, str func)
 {
 	exp_kind ek = {type_value, card_column, FALSE};
@@ -3888,6 +3902,7 @@ rel_complex_case(sql_query *query, sql_rel **rel, dlist *case_args, int f, str f
 	if (!restype)
 		return sql_error(query->sql, 02, SQLSTATE(42000) "Result type missing");
 
+	/*
 	sql_exp *cur = NULL;
 	for (node *n = args->h; n; n = n->next) {
 		sql_exp *a = n->data;
@@ -3903,6 +3918,8 @@ rel_complex_case(sql_query *query, sql_rel **rel, dlist *case_args, int f, str f
 		}
 	}
 	return cur;
+	*/
+	return do_complex_case(query, args->h, func, restype);
 }
 
 static sql_exp *
@@ -4041,15 +4058,18 @@ rel_group_column(sql_query *query, sql_rel **rel, symbol *grp, dlist *selection,
 
 	if (!e) {
 		char buf[ERRSIZE];
+		int status = sql->session->status;
+		strcpy(buf, sql->errstr);
 		/* reset error */
 		sql->session->status = 0;
-		strcpy(buf, sql->errstr);
 		sql->errstr[0] = '\0';
 
 		e = rel_selection_ref(query, rel, grp, selection);
 		if (!e) {
-			if (sql->errstr[0] == 0)
+			if (sql->errstr[0] == 0) {
+				sql->session->status = status;
 				strcpy(sql->errstr, buf);
+			}
 			return NULL;
 		}
 	}
