@@ -23,8 +23,8 @@
  */
 
 static str
-MSKmask(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
-
+MSKmask(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
 	BAT *b, *dst;
 	bat *bid;
 	int *ret;
@@ -36,7 +36,52 @@ MSKmask(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	bid = getArgReference_bat(stk, pci, 1);
 	if ((b = BATdescriptor(*bid)) == NULL)
 		throw(SQL, "bat.mask", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
-	dst = VIEWcreate(b->hseqbase, b);
+	if (BATcount(b) == 0) {
+		dst = COLnew(0, TYPE_msk, 0, TRANSIENT);
+	} else {
+		oid fst;
+		BUN cap;
+		BUN max = 0;
+		if (b->tsorted) {
+			fst = BUNtoid(b, 0);
+			dst = COLnew(fst, TYPE_msk, BUNtoid(b, BUNlast(b) - 1) + 1 - fst, TRANSIENT);
+		} else {
+			fst = 0;
+			dst = COLnew(0, TYPE_msk, BATcount(b), TRANSIENT);
+		}
+		cap = BATcapacity(b);
+		if (dst) {
+			memset(Tloc(dst, 0), 0, dst->theap->size);
+			for (BUN p = 0; p < BATcount(b); p++) {
+				oid o = BUNtoid(b, p);
+				if (is_oid_nil(o)) {
+					BBPunfix(b->batCacheid);
+					BBPreclaim(dst);
+					throw(MAL, "mask.mask", "no NULL allowed");
+				}
+				o -= fst;
+				if (o >= cap) {
+					if (BATextend(dst, o + 1) != GDK_SUCCEED) {
+						BBPunfix(b->batCacheid);
+						BBPreclaim(dst);
+						throw(MAL, "mask.mask", GDK_EXCEPTION);
+					}
+					cap = BATcapacity(dst);
+				}
+				mskSetVal(dst, o, true);
+				if (o > max)
+					max = o;
+			}
+			BATsetcount(dst, max + 1);
+			dst->tsorted = dst->trevsorted = false;
+			dst->tkey = false;
+			dst->tnil = false;
+			dst->tnonil = true;
+		}
+	}
+	BBPunfix(b->batCacheid);
+	if (dst == NULL)
+		throw(MAL, "mask.mask", GDK_EXCEPTION);
 
 	*ret=  dst->batCacheid;
 	BBPkeepref(*ret);
@@ -44,8 +89,8 @@ MSKmask(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 }
 
 static str
-MSKumask(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
-
+MSKumask(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
 	BAT *b, *dst;
 	bat *bid;
 	int *ret;
@@ -57,7 +102,18 @@ MSKumask(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	bid = getArgReference_bat(stk, pci, 1);
 	if ((b = BATdescriptor(*bid)) == NULL)
 		throw(SQL, "bat.umask", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
-	dst = VIEWcreate(b->hseqbase, b);
+	dst = COLnew(0, TYPE_oid, 0, TRANSIENT);
+	if (dst == NULL) {
+		BBPunfix(b->batCacheid);
+		throw(MAL, "mask.umask", GDK_EXCEPTION);
+	}
+	for (BUN p = 0; p < BATcount(b); p++) {
+		if (mskGetVal(b, p) &&
+			BUNappend(dst, &(oid){p + b->hseqbase}, false) != GDK_SUCCEED) {
+			BBPunfix(b->batCacheid);
+			throw(MAL, "mask.umask", GDK_EXCEPTION);
+		}
+	}
 
 	*ret=  dst->batCacheid;
 	BBPkeepref(*ret);
@@ -67,10 +123,8 @@ MSKumask(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 
 #include "mel.h"
 mel_func batMask_init_funcs[] = {
-//pattern("mask", "mask", MSKmask, false, "", args(1,2, batarg("r", msk), batarg("b",oid))),
-//pattern("mask", "umask", MSKumask, false, "", args(1,2, batarg("r", oid), batarg("b",msk))),
- pattern("mask", "mask", MSKmask, false, "", args(1,2, batarg("r", oid), batarg("b",oid))),
- pattern("mask", "umask", MSKumask, false, "", args(1,2, batarg("r", oid), batarg("b",oid))),
+ pattern("mask", "mask", MSKmask, false, "", args(1,2, batarg("r", msk), batarg("b",oid))),
+ pattern("mask", "umask", MSKumask, false, "", args(1,2, batarg("r", oid), batarg("b",msk))),
  { .imp=NULL }
 };
 #include "mal_import.h"
