@@ -637,7 +637,7 @@ stdout of test 'sqlancer03` in directory 'sql/test/SQLancer` itself:
 #0.369
 [ 8	]
 #SELECT ALL CASE t0.c0 WHEN VAR_POP(ALL t0.c0) THEN (t0.c0) BETWEEN SYMMETRIC (t0.c0) AND (t0.c0) END FROM t0 GROUP BY t0.c0;
-% sys.%2 # table_name
+% .%2 # table_name
 % %2 # name
 % boolean # type
 % 5 # length

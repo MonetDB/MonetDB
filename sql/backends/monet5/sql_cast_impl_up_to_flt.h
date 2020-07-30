@@ -133,63 +133,6 @@ FUN(bat,TP1,_dec2_,TP2) (bat *res, const int *s1, const bat *bid)
 }
 
 str
-FUN(bat,TP1,_ce_dec2_,TP2) (bat *res, const int *s1, const bat *bid, const bat *r)
-{
-	BAT *b, *c, *bn;
-	TP1 *p, *q;
-	char *msg = NULL;
-	int scale = *s1;
-	TP2 *o;
-	bit *ce;
-
-	if ((b = BATdescriptor(*bid)) == NULL) {
-		throw(SQL, "batcalc."STRNG(FUN(,TP1,_dec2_,TP2)), SQLSTATE(HY005) "Cannot access column descriptor");
-	}
-	if ((c = BATdescriptor(*r)) == NULL) {
-		BBPunfix(b->batCacheid);
-		throw(SQL, "batcalc."STRNG(FUN(,TP1,_dec2_,TP2)), SQLSTATE(HY005) "Cannot access column descriptor");
-	}
-	ce = Tloc(c, 0);
-	bn = COLnew(b->hseqbase, TPE(TP2), BATcount(b), TRANSIENT);
-	if (bn == NULL) {
-		BBPunfix(b->batCacheid);
-		BBPunfix(c->batCacheid);
-		throw(SQL, "sql."STRNG(FUN(,TP1,_dec2_,TP2)), SQLSTATE(HY013) MAL_MALLOC_FAIL);
-	}
-	o = (TP2 *) Tloc(bn, 0);
-	p = (TP1 *) Tloc(b, 0);
-	q = (TP1 *) Tloc(b, BUNlast(b));
-	bn->tnonil = true;
-	if (b->tnonil) {
-		for (; p < q; p++, o++, ce++) {
-			if (*ce) {
-				*o = (((TP2) *p) / scales[scale]);
-			} else {
-				*o = NIL(TP2);
-				bn->tnonil = false;
-			}
-		}
-	} else {
-		for (; p < q; p++, o++, ce++) {
-			if (!ce || ISNIL(TP1)(*p)) {
-				*o = NIL(TP2);
-				bn->tnonil = false;
-			} else
-				*o = (((TP2) *p) / scales[scale]);
-		}
-	}
-	BATsetcount(bn, BATcount(b));
-	bn->tsorted = false;
-	bn->trevsorted = false;
-	BATkey(bn, false);
-
-	BBPkeepref(*res = bn->batCacheid);
-	BBPunfix(b->batCacheid);
-	BBPunfix(c->batCacheid);
-	return msg;
-}
-
-str
 FUN(bat,TP1,_dec2dec_,TP2) (bat *res, const int *S1, const bat *bid, const int *d2, const int *S2)
 {
 	BAT *b, *dst;
@@ -222,57 +165,6 @@ FUN(bat,TP1,_dec2dec_,TP2) (bat *res, const int *S1, const bat *bid, const int *
 	}
 	BBPkeepref(*res = dst->batCacheid);
 	BBPunfix(b->batCacheid);
-	return msg;
-}
-
-str
-FUN(bat,TP1,_ce_dec2dec_,TP2) (bat *res, const int *S1, const bat *bid, const int *d2, const int *S2, const bat *r)
-{
-	BAT *b, *c, *dst;
-	BUN p, q;
-	char *msg = NULL;
-	bit *ce;
-
-	if ((b = BATdescriptor(*bid)) == NULL) {
-		throw(SQL, "batcalc."STRNG(FUN(,TP1,_dec2dec_,TP2)), SQLSTATE(HY005) "Cannot access column descriptor");
-	}
-	if ((c = BATdescriptor(*r)) == NULL) {
-		BBPunfix(b->batCacheid);
-		throw(SQL, "batcalc."STRNG(FUN(,TP1,_dec2dec_,TP2)), SQLSTATE(HY005) "Cannot access column descriptor");
-	}
-	ce = Tloc(c, 0);
-	dst = COLnew(b->hseqbase, TPE(TP2), BATcount(b), TRANSIENT);
-	if (dst == NULL) {
-		BBPunfix(b->batCacheid);
-		BBPunfix(c->batCacheid);
-		throw(SQL, "sql."STRNG(FUN(,TP1,_dec2dec_,TP2)), SQLSTATE(HY013) MAL_MALLOC_FAIL);
-	}
-	const TP1 *v = (const TP1 *) Tloc(b, 0);
-	BATloop(b, p, q) {
-		TP2 r;
-		if (ce[p])
-			msg = FUN(,TP1,_dec2dec_,TP2)(&r, S1, v, d2, S2);
-		else {
-			r = NIL(TP2);
-			dst->tnonil = false;
-		}
-		if (msg) {
-			BBPunfix(dst->batCacheid);
-			BBPunfix(b->batCacheid);
-			BBPunfix(c->batCacheid);
-			return msg;
-		}
-		if (BUNappend(dst, &r, false) != GDK_SUCCEED) {
-			BBPunfix(dst->batCacheid);
-			BBPunfix(b->batCacheid);
-			BBPunfix(c->batCacheid);
-			throw(SQL, "sql."STRNG(FUN(,TP1,_dec2dec_,TP2)), SQLSTATE(HY013) MAL_MALLOC_FAIL);
-		}
-		v++;
-	}
-	BBPkeepref(*res = dst->batCacheid);
-	BBPunfix(b->batCacheid);
-	BBPunfix(c->batCacheid);
 	return msg;
 }
 
@@ -312,57 +204,6 @@ FUN(bat,TP1,_num2dec_,TP2) (bat *res, const bat *bid, const int *d2, const int *
 	return msg;
 }
 
-str
-FUN(bat,TP1,_ce_num2dec_,TP2) (bat *res, const bat *bid, const int *d2, const int *s2, const bat *r)
-{
-	BAT *b, *c, *dst;
-	BUN p, q;
-	char *msg = NULL;
-	bit *ce;
-
-	if ((b = BATdescriptor(*bid)) == NULL) {
-		throw(SQL, "batcalc."STRNG(FUN(,TP1,_num2dec_,TP2)), SQLSTATE(HY005) "Cannot access column descriptor");
-	}
-	if ((c = BATdescriptor(*r)) == NULL) {
-		BBPunfix(b->batCacheid);
-		throw(SQL, "batcalc."STRNG(FUN(,TP1,_num2dec_,TP2)), SQLSTATE(HY005) "Cannot access column descriptor");
-	}
-	ce = Tloc(c, 0);
-	dst = COLnew(b->hseqbase, TPE(TP2), BATcount(b), TRANSIENT);
-	if (dst == NULL) {
-		BBPunfix(b->batCacheid);
-		BBPunfix(c->batCacheid);
-		throw(SQL, "sql."STRNG(FUN(,TP1,_num2dec_,TP2)), SQLSTATE(HY013) MAL_MALLOC_FAIL);
-	}
-	const TP1 *v = (const TP1 *) Tloc(b, 0);
-	BATloop(b, p, q) {
-		TP2 r;
-		if (ce[p])
-			msg = FUN(,TP1,_num2dec_,TP2)(&r, v, d2, s2);
-		else {
-			r = NIL(TP2);
-			dst->tnonil = false;
-		}
-		if (msg) {
-			BBPunfix(dst->batCacheid);
-			BBPunfix(b->batCacheid);
-			BBPunfix(c->batCacheid);
-			return msg;
-		}
-		if (BUNappend(dst, &r, false) != GDK_SUCCEED) {
-			BBPunfix(dst->batCacheid);
-			BBPunfix(b->batCacheid);
-			BBPunfix(c->batCacheid);
-			throw(SQL, "sql."STRNG(FUN(,TP1,_num2dec_,TP2)), SQLSTATE(HY013) MAL_MALLOC_FAIL);
-		}
-		v++;
-	}
-	BBPkeepref(*res = dst->batCacheid);
-	BBPunfix(b->batCacheid);
-	BBPunfix(c->batCacheid);
-	return msg;
-}
-
 /* undo local defines */
 #undef FUN
 #undef ISNIL
@@ -373,4 +214,3 @@ FUN(bat,TP1,_ce_num2dec_,TP2) (bat *res, const bat *bid, const int *d2, const in
 #undef CONCAT_4
 #undef STRNG
 #undef _STRNG_
-

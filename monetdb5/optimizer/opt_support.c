@@ -568,6 +568,8 @@ inline int isDelta(InstrPtr p){
 }
 
 int isFragmentGroup2(InstrPtr p){
+	if (getModuleId(p) == batRef && getFunctionId(p) == replaceRef)
+			return TRUE;
 	return
 			(getModuleId(p)== algebraRef && (
 				getFunctionId(p)== projectionRef

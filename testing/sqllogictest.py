@@ -29,12 +29,12 @@ class SQLLogicSyntaxError(Exception):
     pass
 
 class SQLLogic:
-    def __init__(self, database=None, out=sys.stdout):
+    def __init__(self, report=None, out=sys.stdout):
         self.dbh = None
         self.crs = None
         self.out = out
         self.res = None
-        self.dbs = database
+        self.rpt = report
 
     def connect(self, username='monetdb', password='monetdb',
                 hostname='localhost', port=None, database='demo'):
@@ -109,8 +109,8 @@ class SQLLogic:
         return ndata
 
     def query_error(self, query, message, exception=None):
-        if self.dbs is not None:
-            print('On database {}:'.format(self.dbs), file=self.out)
+        if self.rpt:
+            print(self.rpt, file=self.out)
         print(message, file=self.out)
         if exception:
             print(exception.rstrip('\n'), file=self.out)
@@ -280,10 +280,12 @@ if __name__ == '__main__':
     parser.add_argument('--results', action='store',
                         type=argparse.FileType('w'),
                         help='file to store results of queries')
+    parser.add_argument('--report', action='store', default='',
+                        help='information to add to any error messages')
     parser.add_argument('tests', nargs='*', help='tests to be run')
     opts = parser.parse_args()
     args = opts.tests
-    sql = SQLLogic(database=opts.database)
+    sql = SQLLogic(report=opts.report)
     sql.res = opts.results
     sql.connect(hostname=opts.host, port=opts.port, database=opts.database)
     for test in args:
