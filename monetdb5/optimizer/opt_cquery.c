@@ -315,6 +315,10 @@ OPTcqueryImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	for (; i<limit; i++)
 		if (old[i])
 			pushInstruction(mb,old[i]);
+	// Free up old instructions between limit and slimit
+	for(; i<slimit; i++)
+		if( old[i])
+			freeInstruction(old[i]);
 
 	/* Defense line against incorrect plans */
 	chkTypes(cntxt->usermodule, mb, FALSE);
