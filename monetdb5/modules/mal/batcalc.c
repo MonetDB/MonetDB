@@ -1624,12 +1624,16 @@ batcalc_init(void)
 	      for(rt = extra-1; rt >= integer && !err; rt--) {
 		if (rt < tp1 && rt < tp2)
 			continue;
-		if (*rt == TYPE_dbl && *tp1 != TYPE_dbl && *tp2 != TYPE_dbl)
-			continue;
-		else if (*rt == TYPE_flt && ((*tp1 != TYPE_flt && *tp2 != TYPE_flt) || *tp1 == TYPE_dbl || *tp2 == TYPE_dbl))
-			continue;
-		else if (*tp1 == TYPE_flt || *tp2 == TYPE_flt || *tp1 == TYPE_dbl || *tp2 == TYPE_dbl)
-			continue;
+		if (*rt == TYPE_dbl) {
+			if (*tp1 != TYPE_dbl || *tp2 != TYPE_dbl)
+				continue;
+		} else if (*rt == TYPE_flt) {
+			if (*tp1 != TYPE_flt || *tp2 != TYPE_flt)
+				continue;
+		} else {
+			if (*tp1 == TYPE_flt || *tp2 == TYPE_flt || *tp1 == TYPE_dbl || *tp2 == TYPE_dbl)
+				continue;
+		}
 		mel_func_arg ret = { .type = *rt, .isbat =1 };
 		mel_func_arg arg1 = { .type = *tp1, .isbat =1 };
 		mel_func_arg arg2 = { .type = *tp2, .isbat =1 };
