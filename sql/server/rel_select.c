@@ -4928,6 +4928,8 @@ rel_order_by(sql_query *query, sql_rel **R, symbol *orderby, int f )
 						e = exps_get_exp(rel->exps, nr);
 						if (!e)
 							return sql_error(sql, 02, SQLSTATE(42000) "SELECT: the order by column number (%d) is not in the number of projections range (%d)", nr, list_length(rel->exps));
+						if (!exp_name(e))
+							exp_label(sql->sa, e, ++sql->label);
 						e = exp_ref(sql->sa, e);
 						/* do not cache this query */
 						if (e)
@@ -5406,7 +5408,7 @@ rel_rankop(sql_query *query, sql_rel **rel, symbol *se, int f)
 		for (n = obe->h ; n ; n = n->next) {
 			sql_exp *oexp = n->data, *nexp;
 
-			if (is_sql_sel(f) && pp->op == op_project && !is_processed(pp) && !rel_find_exp(pp, oexp)) {
+			if (is_sql_sel(f) && pp->op == op_project && !is_processed(pp) && !rel_find_exp(pp, oexp) && !exps_find_exp(pp->exps, oexp)) {
 				append(pp->exps, oexp);
 				if (!exp_name(oexp))
 					exp_label(sql->sa, oexp, ++sql->label);
@@ -5460,6 +5462,8 @@ rel_rankop(sql_query *query, sql_rel **rel, symbol *se, int f)
 				lr = p->l;
 			}
 			in = lr->exps->h->data;
+			if (!exp_name(in))
+				exp_label(sql->sa, in, ++sql->label);
 			in = exp_ref(sql->sa, in);
 			if(!in)
 				return NULL;
@@ -5509,6 +5513,8 @@ rel_rankop(sql_query *query, sql_rel **rel, symbol *se, int f)
 					lr = p->l;
 				}
 				in = lr->exps->h->data;
+				if (!exp_name(in))
+					exp_label(sql->sa, in, ++sql->label);
 				in = exp_ref(sql->sa, in);
 				append(fargs, in);
 				append(fargs, exp_atom_bool(sql->sa, 0)); //don't ignore nills
@@ -5747,6 +5753,8 @@ rel_value_exp2(sql_query *query, sql_rel **rel, symbol *se, int f, exp_kind ek, 
 		if (sql->errstr[0] != '\0')
 			return NULL;
 		if (exp) {
+			if (!exp_name(exp))
+				exp_label(sql->sa, exp, ++sql->label);
 			sql_exp *res = exp_ref(sql->sa, exp);
 			if(se->token == SQL_AGGR) {
 				dlist *l = se->data.lval;

@@ -45,6 +45,8 @@ __hidden str ATOMunknown_name(int a)
 	__attribute__((__visibility__("hidden")));
 __hidden void ATOMunknown_clean(void)
 	__attribute__((__visibility__("hidden")));
+__hidden gdk_return BATappend2(BAT *b, BAT *n, BAT *s, bool force, bool mayshare)
+	__attribute__((__visibility__("hidden")));
 __hidden bool BATcheckhash(BAT *b)
 	__attribute__((__visibility__("hidden")));
 __hidden bool BATcheckimprints(BAT *b)

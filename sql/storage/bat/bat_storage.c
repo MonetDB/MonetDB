@@ -1081,7 +1081,8 @@ count_col(sql_trans *tr, sql_column *c, int all)
 {
 	sql_delta *b;
 
-	if (!isTable(c->t)) 
+	assert(tr->active || tr == gtrans);
+	if (!isTable(c->t))
 		return 0;
 	if (!c->data) {
 		sql_column *oc = tr_find_column(tr->parent, c);
@@ -1101,7 +1102,8 @@ dcount_col(sql_trans *tr, sql_column *c)
 {
 	sql_delta *b;
 
-	if (!isTable(c->t)) 
+	assert(tr->active || tr == gtrans);
+	if (!isTable(c->t))
 		return 0;
 	if (!c->data) {
 		sql_column *oc = tr_find_column(tr->parent, c);
@@ -1136,7 +1138,8 @@ count_idx(sql_trans *tr, sql_idx *i, int all)
 {
 	sql_delta *b;
 
-	if (!isTable(i->t) || (hash_index(i->type) && list_length(i->columns) <= 1) || !idx_has_column(i->type)) 
+	assert(tr->active || tr == gtrans);
+	if (!isTable(i->t) || (hash_index(i->type) && list_length(i->columns) <= 1) || !idx_has_column(i->type))
 		return 0;
 	if (!i->data) {
 		sql_idx *oi = tr_find_idx(tr->parent, i);
@@ -1156,7 +1159,8 @@ count_del(sql_trans *tr, sql_table *t)
 {
 	sql_dbat *d;
 
-	if (!isTable(t)) 
+	assert(tr->active || tr == gtrans);
+	if (!isTable(t))
 		return 0;
 	if (!t->data) {
 		sql_table *ot = tr_find_table(tr->parent, t);
@@ -1173,6 +1177,7 @@ count_col_upd(sql_trans *tr, sql_column *c)
 {
 	sql_delta *b;
 
+	assert(tr->active || tr == gtrans);
 	assert (isTable(c->t)) ;
 	if (!c->data) {
 		sql_column *oc = tr_find_column(tr->parent, c);
@@ -1189,7 +1194,8 @@ count_idx_upd(sql_trans *tr, sql_idx *i)
 {
 	sql_delta *b;
 
-	if (!isTable(i->t) || (hash_index(i->type) && list_length(i->columns) <= 1) || !idx_has_column(i->type)) 
+	assert(tr->active || tr == gtrans);
+	if (!isTable(i->t) || (hash_index(i->type) && list_length(i->columns) <= 1) || !idx_has_column(i->type))
 		return 0;
 	if (!i->data) {
 		sql_idx *oi = tr_find_idx(tr->parent, i);
@@ -1207,7 +1213,8 @@ count_upd(sql_trans *tr, sql_table *t)
 {
 	node *n;
 
-	if (!isTable(t)) 
+	assert(tr->active || tr == gtrans);
+	if (!isTable(t))
 		return 0;
 
 	for( n = t->columns.set->h; n; n = n->next) {
@@ -1233,6 +1240,7 @@ sorted_col(sql_trans *tr, sql_column *col)
 {
 	int sorted = 0;
 
+	assert(tr->active || tr == gtrans);
 	if (!isTable(col->t) || !col->t->s)
 		return 0;
 	/* fallback to central bat */
@@ -1253,6 +1261,7 @@ double_elim_col(sql_trans *tr, sql_column *col)
 {
 	int de = 0;
 
+	assert(tr->active || tr == gtrans);
 	if (!isTable(col->t) || !col->t->s)
 		return 0;
 	/* fallback to central bat */
@@ -1471,7 +1480,6 @@ create_col(sql_trans *tr, sql_column *c)
 	}
 
 	if (!isNew(c) && !isTempTable(c->t)){
-		c->base.wtime = 0;
 		return load_bat(bat, type, c->t->bootstrap?0:LOG_COL, c->base.id);
 	} else if (bat && bat->ibid && !isTempTable(c->t)) {
 		return new_persistent_bat(tr, c->data, c->t->sz);
@@ -1571,7 +1579,6 @@ create_idx(sql_trans *tr, sql_idx *ni)
 	}
 
 	if (!isNew(ni) && !isTempTable(ni->t)){
-		ni->base.wtime = 0;
 		return load_bat(bat, type, ni->t->bootstrap?0:LOG_IDX, ni->base.id);
 	} else if (bat && bat->ibid && !isTempTable(ni->t)) {
 		return new_persistent_bat( tr, ni->data, ni->t->sz);
@@ -1678,7 +1685,6 @@ create_del(sql_trans *tr, sql_table *t)
 		log_bid bid = logger_find_bat(bat_logger, bat->dname, t->bootstrap?0:LOG_TAB, t->base.id);
 
 		if (bid) {
-			t->base.wtime = 0;
 			return load_dbat(bat, bid);
 		}
 		ok = LOG_ERR;
@@ -1924,6 +1930,8 @@ delayed_destroy_dbat(sql_dbat *b)
 	while(n->next) 
 		n = n->next;
 	MT_lock_set(&destroy_lock);
+	while(n->next)
+		n = n->next;
 	n->next = tobe_destroyed_dbat;
 	tobe_destroyed_dbat = b;
 	MT_lock_unset(&destroy_lock);
@@ -2743,7 +2751,7 @@ update_table(sql_trans *tr, sql_table *ft, sql_table *tt)
 		sql_column *oc = m->data;
 
 		if (ATOMIC_GET(&store_nr_active) == 1 || (cc->base.wtime && cc->base.allocated)) {
-			assert(!cc->base.wtime || oc->base.wtime < cc->base.wtime);
+			assert(!cc->base.wtime || oc->base.wtime < cc->base.wtime || (oc->base.wtime == cc->base.wtime && oc->base.allocated /* alter */));
 			if (ATOMIC_GET(&store_nr_active) > 1 && cc->data) { /* move delta */
 				sql_delta *b = cc->data;
 				sql_column *oldc = NULL;
@@ -2788,7 +2796,6 @@ update_table(sql_trans *tr, sql_table *ft, sql_table *tt)
 			}
 		}
 
-		dup_sql_type(tr, ft->s, &(cc->type), &(oc->type));
 		oc->colnr = cc->colnr;
 		oc->null = cc->null;
 		oc->unique = cc->unique;

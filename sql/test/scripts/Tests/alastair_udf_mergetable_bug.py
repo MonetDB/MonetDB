@@ -30,7 +30,8 @@ drop table tab2;
 
 '''
 
-def main():
+s = None
+try:
     s = process.server(args = ["--set", "gdk_nr_threads=2", "--forcemito"],
                        stdin = process.PIPE,
                        stdout = process.PIPE,
@@ -39,6 +40,6 @@ def main():
     out, err = s.communicate()
     sys.stdout.write(out)
     sys.stderr.write(err)
-
-if __name__ == '__main__':
-    main()
+finally:
+    if s is not None:
+        s.terminate()

@@ -29,7 +29,8 @@ def client(lang, file):
                          stdout = process.PIPE, stderr = process.PIPE)
     return clt.communicate()
 
-def main():
+srv = None
+try:
     srv = server_start(["--set", "sql_debug=64"])
     out, err = client('SQL',
                       os.path.join(os.getenv('RELSRCDIR'),
@@ -39,7 +40,7 @@ def main():
     out, err = srv.communicate()
     sys.stdout.write(out)
     sys.stderr.write(err)
-
+finally:
+    if srv is not None:
+        srv.terminate()
     shutil.rmtree(farm_dir)
-
-main()

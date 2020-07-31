@@ -30,6 +30,7 @@
 
 #define USE_RINTERNALS 1
 
+#include <Rversion.h>
 #include <Rembedded.h>
 #include <Rdefines.h>
 #include <Rinternals.h>
@@ -110,25 +111,34 @@ static char *RAPIinitialize(void) {
 	// set some command line arguments
 	{
 		structRstart rp;
-		Rstart Rp = &rp;
-		char *rargv[] = { "R", "--slave", "--vanilla" };
+		char *rargv[] = { "R",
+#if R_VERSION >= R_Version(4,0,0)
+						  "--no-echo",
+#else
+						  "--slave",
+#endif
+						  "--vanilla" };
 		int stat = 0;
 
-		R_DefParams(Rp);
-		Rp->R_Slave = (Rboolean) TRUE;
-		Rp->R_Quiet = (Rboolean) TRUE;
-		Rp->R_Interactive = (Rboolean) FALSE;
-		Rp->R_Verbose = (Rboolean) FALSE;
-		Rp->LoadSiteFile = (Rboolean) FALSE;
-		Rp->LoadInitFile = (Rboolean) FALSE;
-		Rp->RestoreAction = SA_NORESTORE;
-		Rp->SaveAction = SA_NOSAVE;
-		Rp->NoRenviron = TRUE;
+		R_DefParams(&rp);
+#if R_VERSION >= R_Version(4,0,0)
+		rp.R_NoEcho = (Rboolean) TRUE;
+#else
+		rp.R_Slave = (Rboolean) TRUE;
+#endif
+		rp.R_Quiet = (Rboolean) TRUE;
+		rp.R_Interactive = (Rboolean) FALSE;
+		rp.R_Verbose = (Rboolean) FALSE;
+		rp.LoadSiteFile = (Rboolean) FALSE;
+		rp.LoadInitFile = (Rboolean) FALSE;
+		rp.RestoreAction = SA_NORESTORE;
+		rp.SaveAction = SA_NOSAVE;
+		rp.NoRenviron = TRUE;
 		stat = Rf_initialize_R(2, rargv);
 		if (stat < 0) {
 			return "Rf_initialize failed";
 		}
-		R_SetParams(Rp);
+		R_SetParams(&rp);
 	}
 
 	/* disable stack checking, because threads will throw it off */

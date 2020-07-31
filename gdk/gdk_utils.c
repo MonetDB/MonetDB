@@ -641,6 +641,8 @@ GDKinit(opt *set, int setlen)
 	static_assert(sizeof(hge) == SIZEOF_HGE,
 		      "error in configure: bad value for SIZEOF_HGE");
 #endif
+		static_assert(sizeof(dbl) == SIZEOF_DOUBLE,
+		      "error in configure: bad value for SIZEOF_DOUBLE");
 	static_assert(sizeof(oid) == SIZEOF_OID,
 		      "error in configure: bad value for SIZEOF_OID");
 	static_assert(sizeof(void *) == SIZEOF_VOID_P,
@@ -1568,7 +1570,7 @@ THRcreate(void (*f) (void *), void *arg, enum MT_thr_detach d, const char *name)
 	Thread s;
 	struct THRstart *t;
 	static ATOMIC_TYPE ctr = ATOMIC_VAR_INIT(0);
-	char semname[16];
+	char semname[32];
 	int len;
 
 	if ((t = GDKmalloc(sizeof(*t))) == NULL)

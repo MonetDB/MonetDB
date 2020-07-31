@@ -74,7 +74,8 @@ script14 = '''\
 delete from t1 where a = 1;
 '''
 
-def main():
+s = None
+try:
     s = process.server(args = [],
                        stdin = process.PIPE,
                        stdout = process.PIPE,
@@ -102,6 +103,6 @@ def main():
     client(script13)
     client(script14)
     server_stop(s)
-
-if __name__ == '__main__':
-    main()
+finally:
+    if s is not None:
+        s.terminate()

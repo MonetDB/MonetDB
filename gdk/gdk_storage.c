@@ -901,10 +901,10 @@ BATdelete(BAT *b)
 	assert(bid > 0);
 	if (loaded) {
 		b = loaded;
-		HASHdestroy(b);
-		IMPSdestroy(b);
-		OIDXdestroy(b);
 	}
+	HASHdestroy(b);
+	IMPSdestroy(b);
+	OIDXdestroy(b);
 	if (b->batCopiedtodisk || (b->theap.storage != STORE_MEM)) {
 		if (b->ttype != TYPE_void &&
 		    HEAPdelete(&b->theap, o, "tail") != GDK_SUCCEED &&

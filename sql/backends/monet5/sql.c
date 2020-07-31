@@ -113,23 +113,23 @@ rel_need_distinct_query(sql_rel *rel)
 }
 
 sql_rel *
-sql_symbol2relation(mvc *c, symbol *sym)
+sql_symbol2relation(mvc *sql, symbol *sym)
 {
-	sql_rel *r;
-	sql_query *query = query_create(c);
+	sql_rel *rel;
+	sql_query *query = query_create(sql);
 
-	r = rel_semantic(query, sym);
-	if (r)
-		r = rel_unnest(c, r);
-	if (r)
-		r = rel_optimizer(c, r, 1);
-	if (r)
-		r = rel_distribute(c, r);
-	if (r)
-		r = rel_partition(c, r);
-	if (r && (rel_no_mitosis(r) || rel_need_distinct_query(r)))
-		c->no_mitosis = 1;
-	return r;
+	rel = rel_semantic(query, sym);
+	if (rel)
+		rel = rel_unnest(sql, rel);
+	if (rel)
+		rel = rel_optimizer(sql, rel, 1);
+	if (rel)
+		rel = rel_distribute(sql, rel);
+	if (rel)
+		rel = rel_partition(sql, rel);
+	if (rel && (rel_no_mitosis(rel) || rel_need_distinct_query(rel)))
+		sql->no_mitosis = 1;
+	return rel;
 }
 
 /*
