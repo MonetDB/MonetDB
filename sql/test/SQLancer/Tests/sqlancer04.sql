@@ -121,6 +121,9 @@ SELECT PROD(ALL 0.14) FROM t0 JOIN t1 ON CAST(CASE t0.c1 WHEN t1.c1 THEN NOT (FA
 THEN (0.2) IN (0.3) END AS BOOLEAN) GROUP BY NOT (FALSE), COALESCE(((COALESCE(2, 4, 1))<<(COALESCE(5, -6))), ((COALESCE(r'-8', -4, 6))|(COALESCE(-2, 3, 4, 5, -6))));
 ROLLBACK;
 
+select cbrt(x) from (values (1), (8), (27)) as x(x);
+select cbrt(64);
+
 START TRANSACTION;
 CREATE TABLE "sys"."t0" ("c0" DATE,"c1" DOUBLE NOT NULL,"c2" DATE NOT NULL);
 select 1 from t0 natural join (select 4 from t0) as sub0; --error, no columns of tables 't0' and 'sub0' match

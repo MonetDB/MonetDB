@@ -117,6 +117,20 @@ stdout of test 'sqlancer04` in directory 'sql/test/SQLancer` itself:
 % 24 # length
 [ 0.002744	]
 #ROLLBACK;
+#select cbrt(x) from (values (1), (8), (27)) as x(x);
+% .%5 # table_name
+% %5 # name
+% double # type
+% 24 # length
+[ 1	]
+[ 2	]
+[ 3	]
+#select cbrt(64);
+% .%2 # table_name
+% %2 # name
+% double # type
+% 24 # length
+[ 4	]
 
 # 09:44:50 >  
 # 09:44:50 >  "Done."
