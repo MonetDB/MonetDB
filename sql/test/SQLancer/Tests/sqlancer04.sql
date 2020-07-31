@@ -127,6 +127,12 @@ select 1 from t0 natural join (select 4 from t0) as sub0; --error, no columns of
 ROLLBACK;
 
 START TRANSACTION;
+CREATE TABLE t0(c0 DATE);
+CREATE TABLE t1(c0 DATE NOT NULL);
+select t1.c0 from t0 natural join t1; --t1.c0 must be found
+ROLLBACK;
+
+START TRANSACTION;
 CREATE TABLE t0(c0 DOUBLE PRIMARY KEY NULL); 
 CREATE TABLE "sys"."t1" ("c0" DOUBLE,CONSTRAINT "t1_c0_unique" UNIQUE ("c0"));
 COPY 9 RECORDS INTO "sys"."t1" FROM stdin USING DELIMITERS E'\t',E'\n','"';
