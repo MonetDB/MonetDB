@@ -213,8 +213,8 @@ stdout of test 'sqlancer01` in directory 'sql/test/SQLancer` itself:
 % int # type
 % 1 # length
 #select 1 from another_t join integers on (cast(another_t.col4 between 1 and 2 as int)) where false;
-% .%15 # table_name
-% %15 # name
+% .%11 # table_name
+% %11 # name
 % tinyint # type
 % 1 # length
 #SELECT another_T.col2 FROM tbl_productsales, integers LEFT OUTER JOIN another_T ON another_T.col1 > 1 WHERE another_T.col2 > 1 GROUP BY another_T.col2 HAVING COUNT((another_T.col2) IN (another_T.col2)) > 0;
@@ -272,8 +272,8 @@ stdout of test 'sqlancer01` in directory 'sql/test/SQLancer` itself:
 % 1 # length
 [ 1	]
 #select 1 from t0 where (3 in (1, 2)) is null; --simplified
-% .%5 # table_name
-% %5 # name
+% .%4 # table_name
+% %4 # name
 % tinyint # type
 % 1 # length
 #SELECT 1 FROM t0 WHERE t0.c0 BETWEEN SYMMETRIC (1 IN (2, 1)) AND t0.c0;
@@ -622,6 +622,32 @@ stdout of test 'sqlancer01` in directory 'sql/test/SQLancer` itself:
 % .%5 # table_name
 % %5 # name
 % int # type
+% 1 # length
+[ NULL	]
+#ROLLBACK;
+#START TRANSACTION;
+#CREATE TABLE "sys"."t1" ("c0" VARCHAR(427),"c1" TIME);
+#COPY 5 RECORDS INTO "sys"."t1" FROM stdin USING DELIMITERS E'\t',E'\n','"';
+#"-"	NULL
+#"0.9494786438610024"	NULL
+#"MA4DƹXb,⻇멫ho\trYmꈋP-aR"	NULL
+#NULL	02:45:58
+#NULL	05:45:05
+[ 5	]
+#SELECT MEDIAN(ALL abs(CASE TIMESTAMP '1970-01-24 09:25:06' WHEN TIMESTAMP '1970-01-19 10:35:50' THEN 2 END)) FROM t1 GROUP BY abs(0.8);
+% .%2 # table_name
+% %2 # name
+% tinyint # type
+% 1 # length
+[ NULL	]
+#SELECT MEDIAN(ALL abs(CASE TIMESTAMP '1970-01-24 09:25:06' WHEN TIMESTAMP '1970-01-19 10:35:50' THEN 2 END)) FROM t1 GROUP BY abs(0.8) HAVING (NOT (MIN(ALL NOT (NOT ((0.7) IS NULL))))) = TRUE
+#UNION ALL
+#SELECT MEDIAN(ALL abs(CASE TIMESTAMP '1970-01-24 09:25:06' WHEN TIMESTAMP '1970-01-19 10:35:50' THEN 2 END)) FROM t1 GROUP BY abs(0.8) HAVING NOT ((NOT (MIN(ALL NOT (NOT ((0.7) IS NULL))))) = TRUE)
+#UNION ALL
+#SELECT MEDIAN(ALL abs(CASE TIMESTAMP '1970-01-24 09:25:06' WHEN TIMESTAMP '1970-01-19 10:35:50' THEN 2 END)) FROM t1 GROUP BY abs(0.8) HAVING ((NOT (MIN(ALL NOT (NOT ((0.7) IS NULL))))) = TRUE) IS NULL;
+% .%23 # table_name
+% %2 # name
+% tinyint # type
 % 1 # length
 [ NULL	]
 #ROLLBACK;
