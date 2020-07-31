@@ -1630,6 +1630,7 @@ rel_push_func_down(visitor *v, sql_rel *rel)
 			sql_rel *nrel;
 			sql_rel *l = rel->l, *ol = l;
 			sql_rel *r = rel->r, *or = r;
+			visitor nv = { .sql = v->sql, .parent = v->parent };
 
 			/* we need a full projection, group by's and unions cannot be extended
  			 * with more expressions */
@@ -1648,9 +1649,10 @@ rel_push_func_down(visitor *v, sql_rel *rel)
 				rel->r = r = rel_project(v->sql->sa, r, rel_projections(v->sql, r, NULL, 1, 1));
 			}
  			nrel = rel_project(v->sql->sa, rel, rel_projections(v->sql, rel, NULL, 1, 1));
-			if (!(exps = exps_push_single_func_down(v, rel, l, r, exps)))
+
+			if (!(exps = exps_push_single_func_down(&nv, rel, l, r, exps)))
 				return NULL;
-			if (v->changes) {
+			if (nv.changes) {
 				rel = nrel;
 			} else {
 				if (l != ol)
@@ -1658,6 +1660,7 @@ rel_push_func_down(visitor *v, sql_rel *rel)
 				if (is_joinop(rel->op) && r != or)
 					rel->r = or;
 			}
+			v->changes += nv.changes;
 		}
 	}
 	if (rel->op == op_project && rel->l && rel->exps) {
@@ -1957,18 +1960,17 @@ rel_simplify_fk_joins(visitor *v, sql_rel *rel)
  */
 
 static list *
-sum_limit_offset(mvc *sql, list *exps )
+sum_limit_offset(mvc *sql, sql_rel *rel)
 {
-	list *nexps = new_exp_list(sql->sa);
+	/* for sample we always propagate */
+	if (is_sample(rel->op))
+		return exps_copy(sql, rel->exps);
+	/* if the expression list only consists of a limit expression, we copy it */
+	if (list_length(rel->exps) == 1 && rel->exps->h->data)
+		return list_append(sa_list(sql->sa), rel->exps->h->data);
 	sql_subtype *lng = sql_bind_localtype("lng");
-	sql_subfunc *add;
-
-	/* if the expression list only consists of a limit expression,
-	 * we copy it */
-	if (list_length(exps) == 1 && exps->h->data)
-		return append(nexps, exps->h->data);
-	add = sql_bind_func_result(sql->sa, sql->session->schema, "sql_add", F_FUNC, lng, 2, lng, lng);
-	return append(nexps, exp_op(sql->sa, exps, add));
+	sql_subfunc *add = sql_bind_func_result(sql->sa, sql->session->schema, "sql_add", F_FUNC, lng, 2, lng, lng);
+	return list_append(sa_list(sql->sa), exp_op(sql->sa, rel->exps, add));
 }
 
 static int
@@ -2050,11 +2052,9 @@ rel_rename_exps( mvc *sql, list *exps1, list *exps2)
 static sql_rel *
 rel_push_topn_and_sample_down(visitor *v, sql_rel *rel)
 {
-	sql_rel *rl, *r = rel->l;
+	sql_rel *rp = NULL, *r = rel->l;
 
 	if ((is_topn(rel->op) || is_sample(rel->op)) && topn_sample_save_exps(rel->exps)) {
-		sql_rel *rp = NULL;
-		operator_type relation_type = is_topn(rel->op) ? op_topn : op_sample;
 		sql_rel *(*func) (sql_allocator *, sql_rel *, list *) = is_topn(rel->op) ? rel_topn : rel_sample;
 
 		/* nested topN relations */
@@ -2105,7 +2105,6 @@ rel_push_topn_and_sample_down(visitor *v, sql_rel *rel)
 			return rel;
 
 		/* push topn/sample under projections */
-
 		if (!rel_is_ref(rel) && r && is_simple_project(r->op) && !need_distinct(r) && !rel_is_ref(r) && r->l && !r->r) {
 			sql_rel *x = r, *px = x;
 
@@ -2113,7 +2112,10 @@ rel_push_topn_and_sample_down(visitor *v, sql_rel *rel)
 				px = x;
 				x = x->l;
 			}
-
+			/* only push topn once */
+			if (x && x->op == rel->op)
+				return rel;
+	
 			rel->l = x;
 			px->l = rel;
 			rel = r;
@@ -2121,32 +2123,36 @@ rel_push_topn_and_sample_down(visitor *v, sql_rel *rel)
 			return rel;
 		}
 
-		/* duplicate topn/sample direct under union */
-
-		if (r && r->exps && is_union(r->op) && !rel_is_ref(r) && r->l) {
+		/* duplicate topn/sample direct under union or crossproduct */
+		if (r && !rel_is_ref(r) && r->l && r->r && ((is_union(r->op) && r->exps) || (r->op == op_join && list_empty(r->exps)))) {
 			sql_rel *u = r, *x;
 			sql_rel *ul = u->l;
 			sql_rel *ur = u->r;
+			bool changed = false;
 
-			/* only push topn once */
 			x = ul;
-			while (is_simple_project(x->op) && x->l)
+			while (is_simple_project(x->op) && !need_distinct(x) && !rel_is_ref(x) && x->l && !x->r)
 				x = x->l;
-			if (x && x->op == relation_type)
-				return rel;
-			x = ur;
-			while (is_simple_project(x->op) && x->l)
-				x = x->l;
-			if (x && x->op == relation_type)
-				return rel;
+			if (x && x->op != rel->op) { /* only push topn once */
+				ul = func(v->sql->sa, ul, sum_limit_offset(v->sql, rel));
+				u->l = ul;
+				changed = true;
+			}
 
-			ul = func(v->sql->sa, ul, sum_limit_offset(v->sql, rel->exps));
-			ur = func(v->sql->sa, ur, sum_limit_offset(v->sql, rel->exps));
-			u->l = ul;
-			u->r = ur;
-			v->changes++;
+			x = ur;
+			while (is_simple_project(x->op) && !need_distinct(x) && !rel_is_ref(x) && x->l && !x->r)
+				x = x->l;
+			if (x && x->op != rel->op) { /* only push topn once */
+				ur = func(v->sql->sa, ur, sum_limit_offset(v->sql, rel));
+				u->r = ur;
+				changed = true;
+			}
+
+			if (changed)
+				v->changes++;
 			return rel;
 		}
+
 		/* duplicate topn/sample + [ project-order ] under union */
 		if (r)
 			rp = r->l;
@@ -2158,14 +2164,14 @@ rel_push_topn_and_sample_down(visitor *v, sql_rel *rel)
 
 			/* only push topn/sample once */
 			x = ul;
-			while (is_simple_project(x->op) && x->l)
+			while (is_simple_project(x->op) && !need_distinct(x) && !rel_is_ref(x) && x->l && !x->r)
 				x = x->l;
-			if (x && x->op == relation_type)
+			if (x && x->op == rel->op)
 				return rel;
 			x = ur;
-			while (is_simple_project(x->op) && x->l)
+			while (is_simple_project(x->op) && !need_distinct(x) && !rel_is_ref(x) && x->l && !x->r)
 				x = x->l;
-			if (x && x->op == relation_type)
+			if (x && x->op == rel->op)
 				return rel;
 
 			if (list_length(ul->exps) > list_length(r->exps))
@@ -2189,7 +2195,7 @@ rel_push_topn_and_sample_down(visitor *v, sql_rel *rel)
 				ul->exps = list_merge(ul->exps, exps_copy(v->sql, r->r), NULL);
 			ul->nrcols = list_length(ul->exps);
 			ul->r = exps_copy(v->sql, r->r);
-			ul = func(v->sql->sa, ul, sum_limit_offset(v->sql, rel->exps));
+			ul = func(v->sql->sa, ul, sum_limit_offset(v->sql, rel));
 
 			ur = rel_project(v->sql->sa, ur, NULL);
 			ur->exps = exps_copy(v->sql, r->exps);
@@ -2198,7 +2204,7 @@ rel_push_topn_and_sample_down(visitor *v, sql_rel *rel)
 				ur->exps = list_merge(ur->exps, exps_copy(v->sql, r->r), NULL);
 			ur->nrcols = list_length(ur->exps);
 			ur->r = exps_copy(v->sql, r->r);
-			ur = func(v->sql->sa, ur, sum_limit_offset(v->sql, rel->exps));
+			ur = func(v->sql->sa, ur, sum_limit_offset(v->sql, rel));
 
 			u = rel_setop(v->sql->sa, ul, ur, op_union);
 			u->exps = exps_alias(v->sql, r->exps);
@@ -2228,29 +2234,6 @@ rel_push_topn_and_sample_down(visitor *v, sql_rel *rel)
 			v->changes++;
 			return rel;
 		}
-
-		/* pass through projections */
-		while (r && is_project(r->op) && !need_distinct(r) &&
-			!rel_is_ref(r) &&
-			!r->r && (rl = r->l) != NULL && is_project(rl->op)) {
-			/* ensure there is no order by */
-			if (!r->r) {
-				r = r->l;
-			} else {
-				r = NULL;
-			}
-		}
-		if (r && r != rel && is_simple_project(r->op) && !rel_is_ref(r) && !r->r && r->l)
-			r = func(v->sql->sa, r, sum_limit_offset(v->sql, rel->exps));
-
-		/* push topn/sample under crossproduct */
-		if (r && !r->exps && r->op == op_join && !rel_is_ref(r) &&
-		    ((sql_rel *)r->l)->op != relation_type && ((sql_rel *)r->r)->op != relation_type) {
-			r->l = func(v->sql->sa, r->l, sum_limit_offset(v->sql, rel->exps));
-			r->r = func(v->sql->sa, r->r, sum_limit_offset(v->sql, rel->exps));
-			v->changes++;
-			return rel;
-		}
 /* TODO */
 #if 0
 		/* duplicate topn/sample + [ project-order ] under join on independend always matching joins */
@@ -2258,10 +2241,10 @@ rel_push_topn_and_sample_down(visitor *v, sql_rel *rel)
 			rp = r->l;
 		if (r && r->exps && is_simple_project(r->op) && !(rel_is_ref(r)) && r->r && r->l &&
 		    rp->op == op_join && rp->exps && rp->exps->h && ((prop*)((sql_exp*)rp->exps->h->data)->p)->kind == PROP_FETCH &&
-		    ((sql_rel *)rp->l)->op != relation_type && ((sql_rel *)rp->r)->op != relation_type) {
+		    ((sql_rel *)rp->l)->op != rel->op && ((sql_rel *)rp->r)->op != rel->op) {
 			/* TODO check if order by columns are independend of join conditions */
-			r->l = func(v->sql->sa, r->l, sum_limit_offset(v->sql, rel->exps));
-			r->r = func(v->sql->sa, r->r, sum_limit_offset(v->sql, rel->exps));
+			r->l = func(v->sql->sa, r->l, sum_limit_offset(v->sql, rel));
+			r->r = func(v->sql->sa, r->r, sum_limit_offset(v->sql, rel));
 			v->changes++;
 			return rel;
 		}
@@ -5661,53 +5644,8 @@ rel_push_project_down(visitor *v, sql_rel *rel)
 				return l;
 			}
 			return rel;
-#if 0
-			/* keep important internal columns */
-			for (node *n = l->exps->h; n; n = n->next) {
-				sql_exp *e = n->data;
-
-				if (is_intern(e))
-					append(rel->exps, e);
-			}
-			l->exps = rel->exps;
-			rel->l = NULL;
-			rel_destroy(rel);
-			v->changes++;
-			return l;
-#endif
 		} else if (list_check_prop_all(rel->exps, (prop_check_func)&exp_is_useless_rename)) {
-			if (is_simple_project(l->op) && list_length(l->exps) == list_length(rel->exps)) {
-				rel->l = NULL;
-				rel_destroy(rel);
-				v->changes++;
-				return l;
-			} else if (is_select(l->op)) {
-				/* push project under select (include exps used by selection) */
-				l->l = rel_project(v->sql->sa, l->l, rel_projections(v->sql, l, NULL, 1, 1));
-				l->l = rel_push_project_down(v, l->l);
-				rel->l = NULL;
-				rel_destroy(rel);
-				v->changes++;
-				return l;
-			} else if (is_join(l->op)) {
-				/* for each exp add to left or right project under join */
-				sql_rel *ll = l->l, *lr = l->r;
-				list *lexps = sa_list(v->sql->sa), *rexps = sa_list(v->sql->sa);
-
-				list *exps = rel_projections(v->sql, l, NULL, 1, 1); /* include exps used by join exps */
-				for(node *n = exps->h; n; n = n->next) {
-					sql_exp *e = n->data;
-					if ((exp_relname(e) && exp_name(e) && rel_bind_column2(v->sql, ll, exp_relname(e), exp_name(e), 0)) ||
-						(!exp_relname(e) && exp_name(e) && rel_bind_column(v->sql, ll, exp_name(e), 0, 1))) {
-						append(lexps, e);
-					} else {
-						append(rexps, e);
-					}
-				}
-				l->l = rel_project(v->sql->sa, ll, lexps);
-				l->l = rel_push_project_down(v, l->l);
-				l->r = rel_project(v->sql->sa, lr, rexps);
-				l->r = rel_push_project_down(v, l->r);
+			if ((is_project(l->op) && list_length(l->exps) == list_length(rel->exps)) || is_select(l->op) || is_join(l->op) || is_topn(l->op) || is_sample(l->op)) {
 				rel->l = NULL;
 				rel_destroy(rel);
 				v->changes++;
@@ -5795,7 +5733,7 @@ sql_class_base_score(mvc *sql, sql_column *c, sql_subtype *t, bool equality_base
 			return 150 - 64;
 #ifdef HAVE_HGE
 		case TYPE_hge:
-			return 150 - have_hge ? 128 : 64;
+			return 150 - (have_hge ? 128 : 64);
 #endif
 		case TYPE_flt:
 			return 75 - 24;

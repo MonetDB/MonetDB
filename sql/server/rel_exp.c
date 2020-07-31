@@ -1806,20 +1806,6 @@ exps_have_rel_exp( list *exps)
 	return 0;
 }
 
-int
-exps_have_func(list *exps)
-{
-	if (list_empty(exps))
-		return 0;
-	for(node *n=exps->h; n; n=n->next) {
-		sql_exp *e = n->data;
-
-		if (exp_has_func(e))
-			return 1;
-	}
-	return 0;
-}
-
 static sql_rel *
 exps_rel_get_rel(sql_allocator *sa, list *exps )
 {
@@ -1978,19 +1964,22 @@ exps_are_atoms( list *exps)
 	return atoms;
 }
 
-static int
-exps_has_func( list *exps)
+int
+exps_have_func(list *exps)
 {
-	node *n;
-	int has_func = 0;
+	if (list_empty(exps))
+		return 0;
+	for(node *n=exps->h; n; n=n->next) {
+		sql_exp *e = n->data;
 
-	for(n=exps->h; n && !has_func; n=n->next)
-		has_func |= exp_has_func(n->data);
-	return has_func;
+		if (exp_has_func(e))
+			return 1;
+	}
+	return 0;
 }
 
 int
-exp_has_func( sql_exp *e )
+exp_has_func(sql_exp *e)
 {
 	if (!e)
 		return 0;
@@ -2003,13 +1992,13 @@ exp_has_func( sql_exp *e )
 		return 1;
 	case e_aggr:
 		if (e->l)
-			return exps_has_func(e->l);
+			return exps_have_func(e->l);
 		return 0;
 	case e_cmp:
 		if (e->flag == cmp_or || e->flag == cmp_filter) {
-			return (exps_has_func(e->l) || exps_has_func(e->r));
+			return (exps_have_func(e->l) || exps_have_func(e->r));
 		} else if (e->flag == cmp_in || e->flag == cmp_notin) {
-			return (exp_has_func(e->l) || exps_has_func(e->r));
+			return (exp_has_func(e->l) || exps_have_func(e->r));
 		} else {
 			return (exp_has_func(e->l) || exp_has_func(e->r) ||
 					(e->f && exp_has_func(e->f)));

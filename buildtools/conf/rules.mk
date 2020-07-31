@@ -11,6 +11,7 @@ MV=mv
 
 %.tab.c: %.y
 	$(BISON) -o $*.tab.c --defines=$*.tmph.h $(YFLAGS) $(AM_YFLAGS) $<
+	$(SED) -i~ 's/$*\.tmph\.h/$*.tab.h/' $*.tab.c
 	rm -f $*.tmph.h
 
 %.tab.h: %.y

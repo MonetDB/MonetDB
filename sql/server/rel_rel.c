@@ -716,63 +716,6 @@ rel_join_add_exp( sql_allocator *sa, sql_rel *rel, sql_exp *e)
 		rel->card = e->card;
 }
 
-static sql_exp * exps_match(sql_exp *m, sql_exp *e);
-
-static int
-explists_match(list *m, list *e)
-{
-	node *nm,*ne;
-
-	if (!m || !e)
-		return (m==e);
-	if (list_length(m) != list_length(e))
-		return 0;
-	for (nm = m->h, ne = e->h; nm && ne; nm = nm->next, ne = ne->next) {
-		if (!exps_match(nm->data, ne->data))
-			return 0;
-	}
-	return 1;
-}
-
-static sql_exp *
-exps_match(sql_exp *m, sql_exp *e)
-{
-	if (m->type != e->type)
-		return NULL;
-	switch (m->type) {
-	case e_column:
-		if (strcmp(m->r, e->r) == 0) {
-			if (m->l && e->l && (strcmp(m->l, e->l) == 0))
-				return m;
-			else if (!m->l && !e->l)
-				return m;
-		}
-		break;
-	case e_aggr:
-		if (m->f == e->f && explists_match(m->l, e->l))
-			return m;
-		break;
-	default:
-		return NULL;
-	}
-	return NULL;
-}
-
-sql_exp *
-exps_find_match_exp(list *l, sql_exp *e)
-{
-	node *n;
-	if (!l || !list_length(l))
-		return NULL;
-
-	for (n = l->h; n; n = n->next){
-		sql_exp *m = n->data;
-		if (exps_match(m,e))
-			return m;
-	}
-	return NULL;
-}
-
 sql_exp *
 rel_groupby_add_aggr(mvc *sql, sql_rel *rel, sql_exp *e)
 {
@@ -781,7 +724,7 @@ rel_groupby_add_aggr(mvc *sql, sql_rel *rel, sql_exp *e)
 	if (list_empty(rel->r))
 		rel->card = e->card = CARD_ATOM;
 
-	if ((m=exps_find_match_exp(rel->exps, e)) == NULL) {
+	if ((m=exps_any_match(rel->exps, e)) == NULL) {
 		if (!exp_name(e))
 			exp_label(sql->sa, e, ++sql->label);
 		append(rel->exps, e);

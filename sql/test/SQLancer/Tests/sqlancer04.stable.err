@@ -1,0 +1,37 @@
+stderr of test 'sqlancer04` in directory 'sql/test/SQLancer` itself:
+
+
+# 09:44:50 >  
+# 09:44:50 >  "mclient" "-lsql" "-ftest" "-tnone" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-36890" "--port=30177"
+# 09:44:50 >  
+
+MAPI  = (monetdb) /var/tmp/mtest-297969/.s.monetdb.30789
+QUERY = select case covar_samp(all - (coalesce (cast(-5 as int), coalesce (((cast(0.4 as int))-(coalesce (5, 5))), + 
+        (case -3 when 0.5 then 5 else 3 end)))), - (- (((coalesce (cast(0.2 as int), 
+        coalesce (5, 3, -747176383), ((6)%(3)), ((-2)<<(3))))||(-5))))) when case t0.c0 when 
+        case coalesce (coalesce (0.2, 0.3, 0.7), 0.5, 
+        cast(t0.c2 as decimal)) when cast(interval '-4' month as interval second) then cast(case 0.3 when t0.c1 then 0.6 
+        when interval '-3' month then 0.3 end as interval second) end then coalesce (abs(0.6), 
+ERROR = !SELECT: cannot use non GROUP BY column 't0.c0' in query results without an aggregate function
+CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-32314/.s.monetdb.31414
+QUERY = CREATE TABLE t1(c0 CHAR(222), FOREIGN KEY (c0) REFERENCES t0(c0) MATCH FULL, PRIMARY KEY(c0)); --error, foreign key from char to time not allowed
+ERROR = !CONSTRAINT FOREIGN KEY: the type of the FOREIGN KEY column 'c0' char(222) is not compatible with the referenced UNIQUE KEY column type time(1)
+CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-32314/.s.monetdb.31414
+QUERY = CREATE TABLE t1(c0 int, FOREIGN KEY (c0) REFERENCES t0(c0) MATCH FULL, PRIMARY KEY(c0)); --error, foreign key from int to time not allowed
+ERROR = !CONSTRAINT FOREIGN KEY: the type of the FOREIGN KEY column 'c0' int(32) is not compatible with the referenced UNIQUE KEY column type time(1)
+CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-42538/.s.monetdb.31166
+QUERY = CREATE TABLE t1(c2 BLOB, FOREIGN KEY (c2) REFERENCES t0(c0) MATCH FULL, PRIMARY KEY(c2)); --error, foreign key from blob to interval second not allowed
+ERROR = !CONSTRAINT FOREIGN KEY: the type of the FOREIGN KEY column 'c2' blob is not compatible with the referenced UNIQUE KEY column type sec_interval(13)
+CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-42538/.s.monetdb.31166
+QUERY = CREATE TABLE t1(c2 TIME, FOREIGN KEY (c2) REFERENCES t0(c0) MATCH FULL, PRIMARY KEY(c2)); --error, foreign key from time to interval second not allowed
+ERROR = !CONSTRAINT FOREIGN KEY: the type of the FOREIGN KEY column 'c2' time(1) is not compatible with the referenced UNIQUE KEY column type sec_interval(13)
+CODE  = 42000
+
+# 09:44:50 >  
+# 09:44:50 >  "Done."
+# 09:44:50 >  
+
