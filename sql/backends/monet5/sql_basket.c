@@ -179,7 +179,7 @@ BSKTregisterInternal(Client cntxt, MalBlkPtr mb, str sch, str tbl, int* res)
 	// collect the column names and the storage
 	for ( i=0, o = t->columns.set->h; i <colcnt && o; o = o->next, i++){
 		sql_column *col = o->data;
-		b = store_funcs.bind_col(m->session->tr,col,RD_INS);
+		b = COLnew(0, col->type.type->localtype, 0, TRANSIENT);
 		assert(b);
 		BBPfix(b->batCacheid);
 		baskets[idx].bats[i]= b;
