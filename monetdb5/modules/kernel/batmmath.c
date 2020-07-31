@@ -19,8 +19,7 @@ CMDscienceUNARY(MalStkPtr stk, InstrPtr pci,
 				const char *malfunc)
 {
 	bat bid;
-	BAT *bn, *b, *s = NULL, *r = NULL;
-	const bit *rv;
+	BAT *bn, *b, *s = NULL;
 	struct canditer ci;
 	oid x;
 	BUN i;
@@ -31,31 +30,12 @@ CMDscienceUNARY(MalStkPtr stk, InstrPtr pci,
 	if ((b = BATdescriptor(bid)) == NULL)
 		throw(MAL, malfunc, SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 
-	if (pci->argc == 4) {
-		bid = *getArgReference_bat(stk, pci, 3);
-		if (!is_bat_nil(bid)) {
-			if ((r = BATdescriptor(bid)) == NULL) {
-				BBPunfix(b->batCacheid);
-				throw(MAL, malfunc, SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
-			}
-			assert(r->ttype == TYPE_bit);
-		}
-	}
-
-	if (pci->argc >= 3) {
+	if (pci->argc == 3) {
 		bid = *getArgReference_bat(stk, pci, 2);
 		if (!is_bat_nil(bid)) {
 			if ((s = BATdescriptor(bid)) == NULL) {
 				BBPunfix(b->batCacheid);
-				if (r)
-					BBPunfix(r->batCacheid);
 				throw(MAL, malfunc, SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
-			}
-			if (s->ttype == TYPE_bit) {
-				assert(pci->argc == 3);
-				assert(r == NULL);
-				r = s;
-				s = NULL;
 			}
 		}
 	}
@@ -66,14 +46,10 @@ CMDscienceUNARY(MalStkPtr stk, InstrPtr pci,
 		BBPunfix(b->batCacheid);
 		if (s)
 			BBPunfix(s->batCacheid);
-		if (r)
-			BBPunfix(r->batCacheid);
 		if (bn == NULL)
 			throw(MAL, malfunc, GDK_EXCEPTION);
 		goto doreturn;
 	}
-
-	rv = r ? Tloc(r, 0) : NULL;
 
 	errno = 0;
 	feclearexcept(FE_ALL_EXCEPT);
@@ -83,7 +59,7 @@ CMDscienceUNARY(MalStkPtr stk, InstrPtr pci,
 		flt *restrict fdst = (flt *) Tloc(bn, 0);
 		for (i = 0; i < ci.ncand; i++) {
 			x = canditer_next(&ci) - b->hseqbase;
-			if ((rv != NULL && !rv[i]) || is_flt_nil(fsrc[x])) {
+			if (is_flt_nil(fsrc[x])) {
 				fdst[i] = flt_nil;
 				nils++;
 			} else {
@@ -97,7 +73,7 @@ CMDscienceUNARY(MalStkPtr stk, InstrPtr pci,
 		dbl *restrict ddst = (dbl *) Tloc(bn, 0);
 		for (i = 0; i < ci.ncand; i++) {
 			x = canditer_next(&ci) - b->hseqbase;
-			if ((rv != NULL && !rv[i]) || is_dbl_nil(dsrc[x])) {
+			if (is_dbl_nil(dsrc[x])) {
 				ddst[i] = dbl_nil;
 				nils++;
 			} else {
@@ -114,8 +90,6 @@ CMDscienceUNARY(MalStkPtr stk, InstrPtr pci,
 	BBPunfix(b->batCacheid);
 	if (s)
 		BBPunfix(s->batCacheid);
-	if (r)
-		BBPunfix(r->batCacheid);
 	if (e != 0 || ex != 0) {
 		const char *err;
 		BBPunfix(bn->batCacheid);
@@ -148,10 +122,9 @@ CMDscienceBINARY(MalStkPtr stk, InstrPtr pci,
 				 const char *malfunc)
 {
 	bat bid;
-	BAT *bn, *b1 = NULL, *b2 = NULL, *s1 = NULL, *s2 = NULL, *r = NULL;
+	BAT *bn, *b1 = NULL, *b2 = NULL, *s1 = NULL, *s2 = NULL;
 	int tp1, tp2;
 	struct canditer ci1 = (struct canditer){0}, ci2 = (struct canditer){0};
-	const bit *rv;
 	oid x1, x2;
 	BUN i;
 	BUN nils = 0;
@@ -180,29 +153,13 @@ CMDscienceBINARY(MalStkPtr stk, InstrPtr pci,
 	assert(tp1 == tp2);
 	assert(b1 != NULL || b2 != NULL);
 
-	if (pci->argc > 5) {
-		assert(pci->argc == 6);
-		bid = *getArgReference_bat(stk, pci, 5);
-		if (!is_bat_nil(bid)) {
-			r = BATdescriptor(bid);
-			if (r == NULL)
-				goto bailout;
-			assert(r->ttype == TYPE_bit);
-		}
-	}
 	if (pci->argc > 4) {
+		assert(pci->argc == 5);
 		bid = *getArgReference_bat(stk, pci, 4);
 		if (!is_bat_nil(bid)) {
 			s2 = BATdescriptor(bid);
 			if (s2 == NULL)
 				goto bailout;
-			if (s2->ttype == TYPE_bit) {
-				assert(pci->argc == 5);
-				assert(r == NULL);
-				assert(b1 == NULL || b2 == NULL);
-				r = s2;
-				s2 = NULL;
-			}
 		}
 	}
 	if (pci->argc > 3) {
@@ -211,11 +168,7 @@ CMDscienceBINARY(MalStkPtr stk, InstrPtr pci,
 			s1 = BATdescriptor(bid);
 			if (s1 == NULL)
 				goto bailout;
-			if (s1->ttype == TYPE_bit) {
-				assert(pci->argc == 4);
-				r = s1;
-				s1 = NULL;
-			} else if (b1 == NULL) {
+			if (b1 == NULL) {
 				s2 = s1;
 				s1 = NULL;
 			}
@@ -249,8 +202,6 @@ CMDscienceBINARY(MalStkPtr stk, InstrPtr pci,
 		goto doreturn;
 	}
 
-	rv = r ? Tloc(r, 0) : NULL;
-
 	errno = 0;
 	feclearexcept(FE_ALL_EXCEPT);
 	switch (tp1) {
@@ -262,8 +213,7 @@ CMDscienceBINARY(MalStkPtr stk, InstrPtr pci,
 			for (i = 0; i < ci1.ncand; i++) {
 				x1 = canditer_next(&ci1) - b1->hseqbase;
 				x2 = canditer_next(&ci2) - b2->hseqbase;
-				if ((rv != NULL && !rv[i]) ||
-					is_flt_nil(fsrc1[x1]) ||
+				if (is_flt_nil(fsrc1[x1]) ||
 					is_flt_nil(fsrc2[x2])) {
 					fdst[i] = flt_nil;
 					nils++;
@@ -277,8 +227,7 @@ CMDscienceBINARY(MalStkPtr stk, InstrPtr pci,
 			flt *restrict fdst = (flt *) Tloc(bn, 0);
 			for (i = 0; i < ci1.ncand; i++) {
 				x1 = canditer_next(&ci1) - b1->hseqbase;
-				if ((rv != NULL && !rv[i]) ||
-					is_flt_nil(fsrc1[x1])) {
+				if (is_flt_nil(fsrc1[x1])) {
 					fdst[i] = flt_nil;
 					nils++;
 				} else {
@@ -291,8 +240,7 @@ CMDscienceBINARY(MalStkPtr stk, InstrPtr pci,
 			flt *restrict fdst = (flt *) Tloc(bn, 0);
 			for (i = 0; i < ci2.ncand; i++) {
 				x2 = canditer_next(&ci2) - b2->hseqbase;
-				if ((rv != NULL && !rv[i]) ||
-					is_flt_nil(fsrc2[x2])) {
+				if (is_flt_nil(fsrc2[x2])) {
 					fdst[i] = flt_nil;
 					nils++;
 				} else {
@@ -309,8 +257,7 @@ CMDscienceBINARY(MalStkPtr stk, InstrPtr pci,
 			for (i = 0; i < ci1.ncand; i++) {
 				x1 = canditer_next(&ci1) - b1->hseqbase;
 				x2 = canditer_next(&ci2) - b2->hseqbase;
-				if ((rv != NULL && !rv[i]) ||
-					is_dbl_nil(dsrc1[x1]) ||
+				if (is_dbl_nil(dsrc1[x1]) ||
 					is_dbl_nil(dsrc2[x2])) {
 					ddst[i] = dbl_nil;
 					nils++;
@@ -324,8 +271,7 @@ CMDscienceBINARY(MalStkPtr stk, InstrPtr pci,
 			dbl *restrict ddst = (dbl *) Tloc(bn, 0);
 			for (i = 0; i < ci1.ncand; i++) {
 				x1 = canditer_next(&ci1) - b1->hseqbase;
-				if ((rv != NULL && !rv[i]) ||
-					is_dbl_nil(dsrc1[x1])) {
+				if (is_dbl_nil(dsrc1[x1])) {
 					ddst[i] = dbl_nil;
 					nils++;
 				} else {
@@ -338,8 +284,7 @@ CMDscienceBINARY(MalStkPtr stk, InstrPtr pci,
 			dbl *restrict ddst = (dbl *) Tloc(bn, 0);
 			for (i = 0; i < ci2.ncand; i++) {
 				x2 = canditer_next(&ci2) - b2->hseqbase;
-				if ((rv != NULL && !rv[i]) ||
-					is_dbl_nil(dsrc2[x2])) {
+				if (is_dbl_nil(dsrc2[x2])) {
 					ddst[i] = dbl_nil;
 					nils++;
 				} else {
@@ -370,8 +315,6 @@ CMDscienceBINARY(MalStkPtr stk, InstrPtr pci,
 		BBPunfix(s1->batCacheid);
 	if (s2)
 		BBPunfix(s2->batCacheid);
-	if (r)
-		BBPunfix(r->batCacheid);
 	if (bn == NULL)
 		throw(MAL, malfunc, GDK_EXCEPTION);
 	if (e != 0 || ex != 0) {
@@ -400,8 +343,6 @@ CMDscienceBINARY(MalStkPtr stk, InstrPtr pci,
 		BBPunfix(s1->batCacheid);
 	if (s2)
 		BBPunfix(s2->batCacheid);
-	if (r)
-		BBPunfix(r->batCacheid);
 	throw(MAL, malfunc, SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 }
 

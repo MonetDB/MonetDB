@@ -132,7 +132,7 @@ SELECT
    DM_CustomerNation_N_NAME AS CustomerNation,
    DM_CustomerRegion_R_NAME AS CustomerRegion,
    avg(DM_Li_L_DISCOUNT) AS L_DISCOUNT_Customer_Nation_Supplier_Nation,
-   sum(DM_Li_L_QUANTITY) AS L_QUANTITY_Customer_Nation_Supplier_Nation,
+   CAST(sum(DM_Li_L_QUANTITY) AS DECIMAL(10,5)) AS L_QUANTITY_Customer_Nation_Supplier_Nation,
    O_ORDERDATE_Year,
    DM_Nation_N_NAME AS SupplierNation,
    DM_Region_R_NAME AS SupplierRegion 

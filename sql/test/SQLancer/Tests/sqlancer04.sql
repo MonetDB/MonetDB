@@ -46,3 +46,75 @@ START TRANSACTION;
 CREATE TABLE "sys"."t0" ("c0" INTERVAL SECOND NOT NULL);
 SELECT CASE '5'^3 WHEN COUNT(TRUE) THEN 1 END FROM t0 GROUP BY 2 IN ((CAST(INTERVAL '-2' SECOND AS INT))%2); --error on default: types sec_interval(13,0) and int(32,0) are not equal
 ROLLBACK;
+
+START TRANSACTION;
+CREATE TABLE "sys"."t0" ("c0" CHARACTER LARGE OBJECT NOT NULL,"c1" BIGINT NOT NULL,CONSTRAINT "t0_c1_pkey" PRIMARY KEY ("c1"));
+CREATE TABLE "sys"."t1" ("c0" CHARACTER LARGE OBJECT,"c1" BIGINT);
+COPY 3 RECORDS INTO "sys"."t1" FROM stdin USING DELIMITERS E'\t',E'\n','"';
+"-216073164"	NULL
+"-2044926527"	NULL
+NULL	1
+
+SELECT 1 FROM t1 LEFT OUTER JOIN t0 ON TRUE 
+LEFT OUTER JOIN (SELECT 1 FROM t0) AS sub0 ON TRUE 
+WHERE (TIME '00:25:07') IN (TIME '07:29:34', CASE 2 WHEN 2 THEN TIME '17:23:46' ELSE TIME '05:14:30' END);
+	-- empty
+
+SELECT 1 FROM t1 LEFT OUTER JOIN t0 ON TRUE 
+LEFT OUTER JOIN (SELECT 1 FROM t0) AS sub0 ON TRUE 
+WHERE t0.c0 <= t0.c0 AND (TIME '00:25:07') IN (TIME '07:29:34', CASE 2 WHEN 2 THEN TIME '17:23:46' ELSE TIME '05:14:30' END);
+	-- empty
+
+SELECT ALL COUNT(TIME '06:32:50') FROM t1 LEFT OUTER JOIN t0 ON TRUE 
+LEFT OUTER JOIN (SELECT t1.c1, t0.c1, 0.43 FROM t0, t1) AS sub0 ON TRUE 
+WHERE ((NOT ((TIME '00:25:07') IN (TIME '07:29:34', TIME '05:21:58', CASE 0.54 WHEN 0.65 THEN TIME '17:23:46' ELSE TIME '05:14:30' END)))) 
+GROUP BY TIMESTAMP '1969-12-08 01:47:58';
+ROLLBACK;
+
+CREATE TABLE t0(c0 TIME, UNIQUE(c0));
+CREATE TABLE t1(c0 CHAR(222), FOREIGN KEY (c0) REFERENCES t0(c0) MATCH FULL, PRIMARY KEY(c0)); --error, foreign key from char to time not allowed
+CREATE TABLE t1(c0 int, FOREIGN KEY (c0) REFERENCES t0(c0) MATCH FULL, PRIMARY KEY(c0)); --error, foreign key from int to time not allowed
+DROP TABLE t0;
+
+CREATE TABLE t0(c0 INTERVAL SECOND, UNIQUE(c0));
+CREATE TABLE t1(c2 BLOB, FOREIGN KEY (c2) REFERENCES t0(c0) MATCH FULL, PRIMARY KEY(c2)); --error, foreign key from blob to interval second not allowed
+CREATE TABLE t1(c2 TIME, FOREIGN KEY (c2) REFERENCES t0(c0) MATCH FULL, PRIMARY KEY(c2)); --error, foreign key from time to interval second not allowed
+DROP TABLE t0;
+
+START TRANSACTION;
+CREATE TABLE "sys"."t0" ("c0" DOUBLE NOT NULL,CONSTRAINT "t0_c0_pkey" PRIMARY KEY ("c0"));
+CREATE TABLE "sys"."t1" ("c0" DOUBLE);
+create view v1(c0, c1) as (select distinct (((t0.c0)=(((1357695262)^(-922564194))))) = false, cast(coalesce(coalesce(0.3, 0.4), "second"(timestamp '1970-01-10 11:54:13')) as double) from t0);
+create view v2(c0) as (select distinct coalesce(abs(interval '-1976292283' month), cast(greatest(r'Dnwxjm4btQ9cp&\c''a_', r'(y7,{q?][NHU,') as interval month)) from t1, t0 where ((upper(r''))not ilike(lower(r'''wAg_ z ''PPxXßgrd⍮G'))));
+select all v2.c0 from v2 right outer join v1 on ((r'8*By1q)*Oc<n')like(substr(r'', 1151312829, 406714197))) 
+where (case v1.c0 when v1.c0 then interval '104279220' second end) in (interval '2129103763' second) group by timestamp '1970-01-21 14:05:46';
+ROLLBACK;
+
+START TRANSACTION;
+CREATE TABLE "sys"."t0" ("c0" DOUBLE NOT NULL DEFAULT 0.7383512, "c1" VARCHAR(277),CONSTRAINT "t0_c0_pkey" PRIMARY KEY ("c0"),CONSTRAINT "t0_c0_unique" UNIQUE ("c0"),CONSTRAINT "t0_c1_unique" UNIQUE ("c1"));
+COPY 7 RECORDS INTO "sys"."t0" FROM stdin USING DELIMITERS E'\t',E'\n','"';
+0.1982342084128137	""
+0.0705861623402474	NULL
+0.7383512	"0.7547346625402616"
+0.1405589229429235	NULL
+0.7259117208346431	NULL
+0.9832712376311843	NULL
+0.03311829699079161	"'X狆l[%Lt]ulp!9nR)"
+
+CREATE TABLE "sys"."t1" ("c0" DOUBLE,"c1" VARCHAR(277));
+COPY 11 RECORDS INTO "sys"."t1" FROM stdin USING DELIMITERS E'\t',E'\n','"';
+1839750227	""
+0.4660818799383487	"l*+>⡪kF*bRp薓ßtP| P!-?54JIT"
+0.98293459381004	"X웨e_灰u8y"
+NULL	"2B_"
+NULL	"9"
+NULL	""
+NULL	""
+0.18404121429597398	NULL
+0.6820837154477003	"8C7_7\015\015(wntWql j\n9"
+NULL	"]"
+NULL	"0.48396026646393187"
+
+SELECT PROD(ALL 0.14) FROM t0 JOIN t1 ON CAST(CASE t0.c1 WHEN t1.c1 THEN NOT (FALSE) WHEN t1.c1 THEN (t0.c0) NOT  BETWEEN ASYMMETRIC (t1.c0) AND (t0.c0) WHEN t0.c1 
+THEN (0.2) IN (0.3) END AS BOOLEAN) GROUP BY NOT (FALSE), COALESCE(((COALESCE(2, 4, 1))<<(COALESCE(5, -6))), ((COALESCE(r'-8', -4, 6))|(COALESCE(-2, 3, 4, 5, -6))));
+ROLLBACK;

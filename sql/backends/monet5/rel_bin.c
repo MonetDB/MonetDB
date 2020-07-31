@@ -371,6 +371,9 @@ handle_in_exps(backend *be, sql_exp *ce, list *nl, stmt *left, stmt *right, stmt
 	if(!c)
 		return NULL;
 
+	if (reduce && c->nrcols == 0)
+		c = stmt_const(be, bin_first_column(be, left), c);
+
 	if (c->nrcols == 0 || (depth && !reduce)) {
 		sql_subtype *bt = sql_bind_localtype("bit");
 		sql_subfunc *cmp = (in)

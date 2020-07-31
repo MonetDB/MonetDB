@@ -113,7 +113,7 @@ stdout of test 'tpch-cube.Bug-6938` in directory 'sql/test/BugTracker-2020` itse
 % .,	.,	.,	.,	.customerorderdetails,	.,	. # table_name
 % customernation,	customerregion,	l_discount_customer_nation_supplier_nation,	l_quantity_customer_nation_supplier_nation,	o_orderdate_year,	suppliernation,	supplierregion # name
 % char,	char,	decimal,	decimal,	int,	char,	char # type
-% 25,	25,	20,	40,	1,	25,	25 # length
+% 25,	25,	20,	12,	1,	25,	25 # length
 [ NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
 #ROLLBACK;
 
