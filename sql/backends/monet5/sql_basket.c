@@ -210,7 +210,7 @@ BSKTwindow(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	str sch = *getArgReference_str(stk,pci,1);
 	str tbl = *getArgReference_str(stk,pci,2);
 	int window = *getArgReference_int(stk,pci,3);
-	int stride, idx;
+	int stride = DEFAULT_TABLE_STRIDE, idx = 0;
 	str msg;
 
 	(void) cntxt;
