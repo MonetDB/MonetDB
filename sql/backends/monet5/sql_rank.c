@@ -1714,6 +1714,25 @@ SQLvar_pop(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 								  GDKanalytical_variance_pop);
 }
 
+#define COVARIANCE_AND_CORRELATION_ONE_SIDE(TPE) \
+	do { \
+		TPE *restrict bp = (TPE*)Tloc(b, 0); \
+		for (BUN i = 0; i < cnt; i++) { \
+			for (lng j = start[i] ; j < end[i] ; j++) { \
+				if (is_##TPE##_nil(bp[j])) \
+					continue; \
+				n++; \
+			} \
+			if (n > minimum) { /* covariance_samp requires at least one value */ \
+				rb[i] = res; \
+			} else { \
+				rb[i] = dbl_nil; \
+				has_nils = true; \
+			} \
+			n = 0; \
+		} \
+	} while (0)
+
 static str
 do_covariance_and_correlation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, const char* op, const char* err,
 							  gdk_return (*func)(BAT *, BAT *, BAT *, BAT *, BAT *, int), BUN minimum, dbl defaultv, dbl single_case)
@@ -1774,30 +1793,58 @@ do_covariance_and_correlation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPt
 			}
 			gdk_res = func(r, b, c, s, e, tp1);
 		} else {
+			/* corner case, second column is a constant, calculate it this way... */
 			BUN cnt = BATcount(b), n = 0;
-			BATiter bi = bat_iterator(b); /* corner case, second column is a constant, calculate it this way... */
-			void *curval;
-			const void *restrict nil = ATOMnilptr(tp1);
-			int (*cmp) (const void *, const void *) = ATOMcompare(tp1);
 			ValRecord *input2 = &(stk)->stk[(pci)->argv[2]];
 			dbl *restrict rb = (dbl*) Tloc(r, 0), res = VALisnil(input2) ? dbl_nil : defaultv;
 			lng *restrict start = (lng*) Tloc(s, 0), *restrict end = (lng*) Tloc(e, 0);
 			bool has_nils = is_dbl_nil(res);
 
-			for (BUN i = 0; i < cnt; i++) {
-				for (lng j = start[i] ; j < end[i] ; j++) {
-					curval = BUNtail(bi, (BUN) j);
-					if (!cmp(curval, nil))
-						continue;
-					n++;
+			switch (ATOMbasetype(tp1)) {
+			case TYPE_bte:
+				COVARIANCE_AND_CORRELATION_ONE_SIDE(bte);
+				break;
+			case TYPE_sht:
+				COVARIANCE_AND_CORRELATION_ONE_SIDE(sht);
+				break;
+			case TYPE_int:
+				COVARIANCE_AND_CORRELATION_ONE_SIDE(int);
+				break;
+			case TYPE_lng:
+				COVARIANCE_AND_CORRELATION_ONE_SIDE(lng);
+				break;
+#ifdef HAVE_HGE
+			case TYPE_hge:
+				COVARIANCE_AND_CORRELATION_ONE_SIDE(hge);
+				break;
+#endif
+			case TYPE_flt:
+				COVARIANCE_AND_CORRELATION_ONE_SIDE(flt);
+				break;
+			case TYPE_dbl:
+				COVARIANCE_AND_CORRELATION_ONE_SIDE(dbl);
+				break;
+			default: {
+				BATiter bi = bat_iterator(b);
+				const void *restrict nil = ATOMnilptr(tp1);
+				int (*cmp) (const void *, const void *) = ATOMcompare(tp1);
+
+				for (BUN i = 0; i < cnt; i++) {
+					for (lng j = start[i] ; j < end[i] ; j++) {
+						void *curval = BUNtail(bi, (BUN) j);
+						if (!cmp(curval, nil))
+							continue;
+						n++;
+					}
+					if (n > minimum) { /* covariance_samp requires at least one value */
+						rb[i] = res;
+					} else {
+						rb[i] = dbl_nil;
+						has_nils = true;
+					}
+					n = 0;
 				}
-				if (n > minimum) { /* covariance_samp requires at least one value */
-					rb[i] = res;
-				} else {
-					rb[i] = dbl_nil;
-					has_nils = true;
-				}
-				n = 0;
+			}
 			}
 			BATsetcount(r, cnt);
 			r->tnonil = !has_nils;
