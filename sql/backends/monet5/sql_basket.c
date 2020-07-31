@@ -270,22 +270,22 @@ BSKTrelease(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	return MAL_SUCCEED;
 }
 
+// Returns the BAT of given sch.tbl.col
 static BAT *
 BSKTbindColumn(str sch, str tbl, str col)
 {
 	int idx =0,i;
 
-	if( (idx = BSKTlocate(sch,tbl)) < 0)
+	if( (idx = BSKTlocate(sch,tbl)) == 0)
 		return NULL;
 
-	for( i=0; i < baskets[idx].ncols; i++)
+	for( i=1; i < baskets[idx].ncols; i++)
 		if( strcmp(baskets[idx].cols[i]->base.name, col)== 0)
-			break;
-	if(  i < baskets[idx].ncols)
-		return baskets[idx].bats[i];
+			return baskets[idx].bats[i];
 	return NULL;
 }
 
+// Just return a void tid BAT with a count
 str
 BSKTtid(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
