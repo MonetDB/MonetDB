@@ -1800,7 +1800,7 @@ do_covariance_and_correlation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPt
 			lng *restrict start = (lng*) Tloc(s, 0), *restrict end = (lng*) Tloc(e, 0);
 			bool has_nils = is_dbl_nil(res);
 
-			switch (ATOMbasetype(tp1)) {
+			switch (tp1) {
 			case TYPE_bte:
 				COVARIANCE_AND_CORRELATION_ONE_SIDE(bte);
 				break;
@@ -1824,27 +1824,8 @@ do_covariance_and_correlation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPt
 			case TYPE_dbl:
 				COVARIANCE_AND_CORRELATION_ONE_SIDE(dbl);
 				break;
-			default: {
-				BATiter bi = bat_iterator(b);
-				const void *restrict nil = ATOMnilptr(tp1);
-				int (*cmp) (const void *, const void *) = ATOMcompare(tp1);
-
-				for (BUN i = 0; i < cnt; i++) {
-					for (lng j = start[i] ; j < end[i] ; j++) {
-						void *curval = BUNtail(bi, (BUN) j);
-						if (!cmp(curval, nil))
-							continue;
-						n++;
-					}
-					if (n > minimum) { /* covariance_samp requires at least one value */
-						rb[i] = res;
-					} else {
-						rb[i] = dbl_nil;
-						has_nils = true;
-					}
-					n = 0;
-				}
-			}
+			default:
+				throw(SQL, op, SQLSTATE(42000) "%s not available for %s", op, ATOMname(tp1));
 			}
 			BATsetcount(r, cnt);
 			r->tnonil = !has_nils;
