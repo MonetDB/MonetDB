@@ -1679,6 +1679,7 @@ sqltypeinit( sql_allocator *sa)
 		sql_create_func(sa, "cosh", "mmath", "cosh", FALSE, FALSE, SCALE_FIX, 0, *t, 1, *t);
 		sql_create_func(sa, "tanh", "mmath", "tanh", FALSE, FALSE, SCALE_FIX, 0, *t, 1, *t);
 		sql_create_func(sa, "sqrt", "mmath", "sqrt", FALSE, FALSE, SCALE_FIX, 0, *t, 1, *t);
+		sql_create_func(sa, "cbrt", "mmath", "cbrt", FALSE, FALSE, SCALE_FIX, 0, *t, 1, *t);
 		sql_create_func(sa, "exp", "mmath", "exp", FALSE, FALSE, SCALE_FIX, 0, *t, 1, *t);
 		sql_create_func(sa, "log", "mmath", "log", FALSE, FALSE, SCALE_FIX, 0, *t, 1, *t);
 		sql_create_func(sa, "ln", "mmath", "log", FALSE, FALSE, SCALE_FIX, 0, *t, 1, *t);

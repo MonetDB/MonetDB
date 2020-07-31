@@ -141,21 +141,16 @@ qc_insert(qc *cache, sql_allocator *sa, sql_rel *r, symbol *s, list *params, map
 		}
 	}
 
+	*f = (sql_func) {
+		.mod = "user",
+		.type = F_PROC,
+		.query = cmd,
+		.ops = params,
+		.res = res,
+	};
 	base_init(sa, &f->base, 0, TR_NEW, NULL);
 	f->base.id = n->id;
 	f->base.name = f->imp = n->name;
-	f->mod = "user";
-	f->type = F_PROC;
-	f->query = cmd;
-	f->lang = 0;
-	f->sql = 0;
-	f->side_effect = 0;
-	f->varres = 0;
-	f->vararg = 0;
-	f->ops = params;
-	f->res = res;
-	f->fix_scale = 0;
-	f->system = 0;
 	n->f = f;
 	return n;
 }

@@ -258,6 +258,7 @@ nomatch(BAT **r1p, BAT **r2p, BAT *l, BAT *r, struct canditer *restrict lci,
 {
 	BAT *r1, *r2 = NULL;
 
+	MT_thread_setalgorithm(__func__);
 	if (lci->ncand == 0 || !(nil_on_miss | only_misses)) {
 		/* return empty BATs */
 		if ((r1 = BATdense(0, 0, 0)) == NULL)
@@ -307,6 +308,7 @@ selectjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r,
 	assert(lci->ncand > 0);
 	assert(lci->ncand == 1 || (l->tsorted && l->trevsorted));
 
+	MT_thread_setalgorithm(__func__);
 	oid o = canditer_next(lci);
 	v = BUNtail(li, o - l->hseqbase);
 
@@ -446,6 +448,7 @@ mergejoin_void(BAT **r1p, BAT **r2p, BAT *l, BAT *r,
 	assert(rci->tpe == cand_dense);
 	assert(BATcount(r) > 0);
 
+	MT_thread_setalgorithm(__func__);
 	/* figure out range [lo..hi) of values in r that we need to match */
 	lo = r->tseqbase;
 	hi = lo + BATcount(r);
@@ -777,6 +780,7 @@ mergejoin_int(BAT **r1p, BAT **r2p, BAT *l, BAT *r,
 	assert(ATOMtype(l->ttype) == ATOMtype(r->ttype));
 	assert(r->tsorted || r->trevsorted);
 
+	MT_thread_setalgorithm(__func__);
 	lstart = rstart = 0;
 	lend = BATcount(l);
 	lcnt = lend - lstart;
@@ -1075,6 +1079,7 @@ mergejoin_lng(BAT **r1p, BAT **r2p, BAT *l, BAT *r,
 	assert(ATOMtype(l->ttype) == ATOMtype(r->ttype));
 	assert(r->tsorted || r->trevsorted);
 
+	MT_thread_setalgorithm(__func__);
 	lstart = rstart = 0;
 	lend = BATcount(l);
 	lcnt = lend - lstart;
@@ -1373,6 +1378,7 @@ mergejoin_cand(BAT **r1p, BAT **r2p, BAT *l, BAT *r,
 
 	assert(ATOMtype(l->ttype) == ATOMtype(r->ttype));
 
+	MT_thread_setalgorithm(__func__);
 	lstart = 0;
 	lend = BATcount(l);
 	lcnt = lend - lstart;
@@ -1704,6 +1710,7 @@ mergejoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r,
 	assert(ATOMtype(l->ttype) == ATOMtype(r->ttype));
 	assert(r->tsorted || r->trevsorted);
 
+	MT_thread_setalgorithm(__func__);
 	if (BATtvoid(l)) {
 		/* l->ttype == TYPE_void && is_oid_nil(l->tseqbase) is
 		 * handled by selectjoin */
@@ -2511,6 +2518,7 @@ hashjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r,
 	assert(!BATtvoid(r));
 	assert(ATOMtype(l->ttype) == ATOMtype(r->ttype));
 
+	MT_thread_setalgorithm(__func__);
 	int t = ATOMbasetype(r->ttype);
 	if (r->ttype == TYPE_void || l->ttype == TYPE_void)
 		t = TYPE_void;
@@ -3005,6 +3013,7 @@ fetchjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr,
 	BUN b, e, p;
 	BAT *r1, *r2 = NULL;
 
+	MT_thread_setalgorithm(__func__);
 	if (r->tsorted) {
 		b = SORTfndfirst(r, &lo);
 		e = SORTfndfirst(r, &hi);
@@ -3067,6 +3076,7 @@ bitmaskjoin(BAT *l, BAT *r,
 	uint32_t *mask = GDKzalloc(nmsk * sizeof(uint32_t));
 	BUN cnt = 0;
 
+	MT_thread_setalgorithm(__func__);
 	if (mask == NULL)
 		return NULL;
 
@@ -3156,6 +3166,7 @@ leftjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr,
 	bool rhash, prhash = false;
 	bat parent;
 
+	MT_thread_setalgorithm(__func__);
 	/* only_misses implies left output only */
 	assert(!only_misses || r2p == NULL);
 	/* if nil_on_miss is set, we really need a right output */
@@ -3763,6 +3774,7 @@ BATbandjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr,
 
 	TRC_DEBUG_IF(ALGO) t0 = GDKusec();
 
+	MT_thread_setalgorithm(__func__);
 	*r1p = NULL;
 	if (r2p) {
 		*r2p = NULL;
