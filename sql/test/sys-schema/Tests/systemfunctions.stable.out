@@ -4457,6 +4457,7 @@ stdout of test 'systemfunctions` in directory 'sql/test/sys-schema` itself:
 [ "sys",	"st_ymin",	1,	"mbr",	""	]
 [ "sys",	"st_z",	0,	"double",	"create function st_z(geom geometry) returns double external name geom.\"Z\";"	]
 [ "sys",	"st_z",	1,	"geometry",	""	]
+[ "sys",	"star",	0,	"any",	""	]
 [ "sys",	"stddev_pop",	0,	"double",	"create aggregate stddev_pop(val tinyint) returns double\nexternal name \"aggr\".\"stdevp\";"	]
 [ "sys",	"stddev_pop",	1,	"tinyint",	""	]
 [ "sys",	"stddev_pop",	0,	"double",	"create aggregate stddev_pop(val smallint) returns double\nexternal name \"aggr\".\"stdevp\";"	]
