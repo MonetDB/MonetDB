@@ -19,6 +19,14 @@
  */
 
 static int
+isProjectConst(InstrPtr p)
+{
+	if (getModuleId(p)== algebraRef && getFunctionId(p)== projectRef)
+		return TRUE;
+	return FALSE;
+}
+
+static int
 hashInstruction(MalBlkPtr mb, InstrPtr p)
 {
 	int i;
@@ -153,6 +161,7 @@ OPTcommonTermsImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr
 					 !hasCommonResults(p, q) &&
 					 !isUnsafeFunction(q) &&
 					 !isUpdateInstruction(q) &&
+					 !isProjectConst(q) && /* disable project(x,val), as its used for the result of case statements */
 					 isLinearFlow(q)
 					) {
 					if (safetyBarrier(p, q) ){

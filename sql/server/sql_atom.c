@@ -318,6 +318,7 @@ atom_general(sql_allocator *sa, sql_subtype *tpe, const char *val)
 			if (res < 0 || !p || ATOMcmp(type, p, ATOMnilptr(type)) == 0) {
 				if (p)
 					GDKfree(p);
+				GDKclrerr();
 				return NULL;
 			}
 			VALset(&a->data, a->data.vtype, p);
@@ -353,6 +354,27 @@ atom_ptr( sql_allocator *sa, sql_subtype *tpe, void *v)
 	a->data.vtype = TYPE_ptr;
 	VALset(&a->data, a->data.vtype, &v);
 	a->data.len = 0;
+	return a;
+}
+
+atom *
+atom_general_ptr( sql_allocator *sa, sql_subtype *tpe, void *v)
+{
+	atom *a = SA_ZNEW(sa, atom);
+
+	a->tpe = *tpe;
+	a->data.vtype = tpe->type->localtype;
+	if (ATOMstorage(a->data.vtype) == TYPE_str) {
+		if (strNil((char*)v)) {
+			VALset(&a->data, a->data.vtype, (ptr) ATOMnilptr(a->data.vtype));
+		} else {
+			a->data.val.sval = sa_strdup(sa, v);
+			a->data.len = strlen(a->data.val.sval);
+		}
+	} else {
+		VALset(&a->data, a->data.vtype, v);
+	}
+	a->isnull = VALisnil(&a->data);
 	return a;
 }
 
@@ -417,7 +439,7 @@ atom2string(sql_allocator *sa, atom *a)
 }
 
 char *
-atom2sql(sql_allocator *sa, atom *a)
+atom2sql(sql_allocator *sa, atom *a, int timezone)
 {
 	sql_class ec = a->tpe.type->eclass;
 	char buf[BUFSIZ];
@@ -446,12 +468,12 @@ atom2sql(sql_allocator *sa, atom *a)
 	case EC_BLOB: {
 		char *res;
 		blob *b = (blob*)a->data.val.pval;
-		size_t blob_size = (24 + (b->nitems * 3));
+		size_t blobstr_size = b->nitems * 2 + 1;
 
-		if ((res = SA_NEW_ARRAY(sa, char, blob_size + 8))) {
+		if ((res = SA_NEW_ARRAY(sa, char, blobstr_size + 8))) {
 			char *tail = stpcpy(res, "blob '");
-			ssize_t bloblen = BLOBtostr(&tail, &blob_size, b, true);
-			strcpy(res + bloblen + 6, "'");
+			ssize_t blobstr_offset = BLOBtostr(&tail, &blobstr_size, b, true);
+			strcpy(res + blobstr_offset + 6, "'");
 		}
 		return res;
 	} break;
@@ -554,22 +576,101 @@ atom2sql(sql_allocator *sa, atom *a)
 			sprintf(buf, "%f", a->data.val.fval);
 		break;
 	case EC_TIME:
+	case EC_TIME_TZ:
 	case EC_DATE:
 	case EC_TIMESTAMP:
-		if (a->data.vtype == TYPE_str) {
-			char *val1 = sql_escape_str(sa, a->tpe.type->sqlname), *val2 = sql_escape_str(sa, a->data.val.sval), *res;
+	case EC_TIMESTAMP_TZ: {
+		char val1[64], sbuf[64], *val2 = sbuf, *res;
+		size_t len = sizeof(sbuf);
 
-			if (!val1 || !val2) {
-				return NULL;
+		switch (ec) {
+		case EC_TIME:
+		case EC_TIME_TZ:
+		case EC_TIMESTAMP:
+		case EC_TIMESTAMP_TZ: {
+			char *n = stpcpy(val1, (ec == EC_TIME || ec == EC_TIME_TZ) ? "TIME" : "TIMESTAMP");
+			if (a->tpe.digits) {
+				char str[16];
+				sprintf(str, "%u", a->tpe.digits);
+				n = stpcpy(stpcpy(stpcpy(n, " ("), str), ")");
 			}
-
-			if ((res = SA_NEW_ARRAY(sa, char, strlen(val1) + strlen(val2) + 4)))
-				stpcpy(stpcpy(stpcpy(stpcpy(res, val1)," '"), val2), "'");
-			return res;
-		} else {
-			snprintf(buf, BUFSIZ, "atom2sql(TYPE_%d) not implemented", a->data.vtype);
-		}
+			if (ec == EC_TIME_TZ || ec == EC_TIMESTAMP_TZ)
+				stpcpy(n, " WITH TIME ZONE");
+		} break;
+		case EC_DATE:
+			strcpy(val1, "DATE");
 		break;
+		default:
+			assert(0);
+		}
+
+		switch (ec) {
+		case EC_TIME:
+		case EC_TIME_TZ: {
+			daytime dt = a->data.val.lval;
+			int digits = a->tpe.digits ? a->tpe.digits - 1 : 0;
+			char *s = val2;
+			ssize_t lens;
+
+			if (ec == EC_TIME_TZ)
+				dt = daytime_add_usec_modulo(dt, timezone * 1000);
+			if ((lens = daytime_precision_tostr(&s, &len, dt, digits, true)) < 0)
+				assert(0);
+
+			if (ec == EC_TIME_TZ) {
+				lng timezone_hours = llabs(timezone / 60000);
+				char *end = sbuf + sizeof(sbuf) - 1;
+
+				s += lens;
+				snprintf(s, end - s, "%c%02d:%02d", (timezone >= 0) ? '+' : '-', (int) (timezone_hours / 60), (int) (timezone_hours % 60));
+			}
+		} break;
+		case EC_DATE: {
+			date dt = a->data.val.ival;
+			if (date_tostr(&val2, &len, &dt, false) < 0)
+				assert(0);
+		} break;
+		case EC_TIMESTAMP:
+		case EC_TIMESTAMP_TZ: {
+			timestamp ts = a->data.val.lval;
+			int digits = a->tpe.digits ? a->tpe.digits - 1 : 0;
+			char *s = val2;
+			size_t nlen;
+			ssize_t lens;
+			date days;
+			daytime usecs;
+
+			if (ec == EC_TIMESTAMP_TZ)
+				ts = timestamp_add_usec(ts, timezone * 1000);
+			days = timestamp_date(ts);
+			if ((lens = date_tostr(&s, &len, &days, true)) < 0)
+				assert(0);
+
+			s += lens;
+			*s++ = ' ';
+			nlen = len - lens - 1;
+			assert(nlen < len);
+
+			usecs = timestamp_daytime(ts);
+			if ((lens = daytime_precision_tostr(&s, &nlen, usecs, digits, true)) < 0)
+				assert(0);
+
+			if (ec == EC_TIMESTAMP_TZ) {
+				lng timezone_hours = llabs(timezone / 60000);
+				char *end = sbuf + sizeof(sbuf) - 1;
+
+				s += lens;
+				snprintf(s, end - s, "%c%02d:%02d", (timezone >= 0) ? '+' : '-', (int) (timezone_hours / 60), (int) (timezone_hours % 60));
+			}
+		} break;
+		default:
+			assert(0);
+		}
+
+		if ((res = SA_NEW_ARRAY(sa, char, strlen(val1) + strlen(val2) + 4)))
+			stpcpy(stpcpy(stpcpy(stpcpy(res, val1)," '"), val2), "'");
+		return res;
+	} break;
 	default:
 		snprintf(buf, BUFSIZ, "atom2sql(TYPE_%d) not implemented", a->data.vtype);
 	}
@@ -1129,8 +1230,10 @@ atom_cast(sql_allocator *sa, atom *a, sql_subtype *tp)
 						p = &(a->data.val.dval);
 					else
 						p = &(a->data.val.fval);
-					if ((res = ATOMfromstr(tpe, &p, &len, s, false)) < 0)
+					if ((res = ATOMfromstr(tpe, &p, &len, s, false)) < 0) {
+						GDKclrerr();
 						return 0;
+					}
 				} else {
 					return 0;
 				}
@@ -1139,7 +1242,7 @@ atom_cast(sql_allocator *sa, atom *a, sql_subtype *tp)
 			a->data.vtype = tp->type->localtype;
 			return 1;
 		}
-		if (at->type->eclass == EC_CHAR && tp->type->eclass == EC_DATE){
+		if (EC_VARCHAR(at->type->eclass) && (tp->type->eclass == EC_DATE || EC_TEMP_NOFRAC(tp->type->eclass))){
 			int type = tp->type->localtype;
 			ssize_t res = 0;
 			ptr p = NULL;
@@ -1151,6 +1254,7 @@ atom_cast(sql_allocator *sa, atom *a, sql_subtype *tp)
 			    ATOMcmp(type, p, ATOMnilptr(type)) == 0) {
 				GDKfree(p);
 				a->data.len = strlen(a->data.val.sval);
+				GDKclrerr();
 				return 0;
 			}
 			a->tpe = *tp;

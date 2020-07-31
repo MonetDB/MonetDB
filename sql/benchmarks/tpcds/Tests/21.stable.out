@@ -35,7 +35,12 @@ stdout of test '21` in directory 'sql/benchmarks/tpcds` itself:
 #                  WHEN (cast(d_date AS date) >= CAST ('2000-03-11' AS date)) THEN inv_quantity_on_hand
 #                  ELSE 0
 #              END) AS inv_after
-% sys.x,	sys.x,	sys.x,	sys.x # table_name
+#   FROM inventory,
+#        warehouse,
+#        item,
+#        date_dim
+#   WHERE i_current_price BETWEEN 0.99 AND 1.49
+% sys.x,	sys.x,	.x,	.x # table_name
 % w_warehouse_name,	i_item_id,	inv_before,	inv_after # name
 % varchar,	char,	bigint,	bigint # type
 % 0,	16,	4,	4 # length

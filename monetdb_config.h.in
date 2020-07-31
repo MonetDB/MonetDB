@@ -280,9 +280,18 @@
 #cmakedefine SIZEOF_SHORT @SIZEOF_SHORT@
 #cmakedefine SIZEOF_INT @SIZEOF_INT@
 #cmakedefine SIZEOF_LONG @SIZEOF_LONG@
+#cmakedefine SIZEOF_DOUBLE @SIZEOF_DOUBLE@
 #cmakedefine SIZEOF_WCHAR_T @SIZEOF_WCHAR_T@
 
+#ifdef _MSC_VER
+#ifdef _WIN64
+#define LENP_OR_POINTER_T SQLLEN *
+#else
+#define LENP_OR_POINTER_T SQLPOINTER
+#endif
+#else
 #cmakedefine LENP_OR_POINTER_T @LENP_OR_POINTER_T@
+#endif
 #cmakedefine SIZEOF_SQLWCHAR @SIZEOF_SQLWCHAR@
 
 #cmakedefine WORDS_BIGENDIAN @HAVE_WORDS_BIGENDIAN@
@@ -290,9 +299,6 @@
 /* Does your compiler support `ssize_t' type? (Posix type) */
 #ifndef ssize_t
 #cmakedefine ssize_t @ssize_t@
-#endif
-#ifndef pid_t
-#cmakedefine pid_t @pid_t@
 #endif
 
 /* The size of `__int128', as computed by sizeof. */

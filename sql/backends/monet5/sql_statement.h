@@ -70,6 +70,7 @@ typedef enum stmt_type {
 	st_export,
 	st_append,
 	st_append_bulk,
+	st_replace,
 	st_table_clear,
 	st_exception,
 	st_trans,
@@ -157,6 +158,7 @@ extern stmt *stmt_delete(backend *be, sql_table *t, stmt *b);
 
 extern stmt *stmt_append(backend *be, stmt *c, stmt *values);
 extern stmt *stmt_append_bulk(backend *be, stmt *c, list *l);
+extern stmt *stmt_replace(backend *be, stmt *c, stmt *id, stmt *val);
 extern stmt *stmt_table_clear(backend *be, sql_table *t);
 
 extern stmt *stmt_export(backend *be, stmt *t, const char *sep, const char *rsep, const char *ssep, const char *null_string, int onclient, stmt *file);
@@ -187,12 +189,12 @@ extern stmt *stmt_tdiff(backend *be, stmt *op1, stmt *op2, stmt *lcand);
 extern stmt *stmt_tdiff2(backend *be, stmt *op1, stmt *op2, stmt *lcand);
 extern stmt *stmt_tinter(backend *be, stmt *op1, stmt *op2, bool single);
 
-extern stmt *stmt_join(backend *be, stmt *op1, stmt *op2, int anti, comp_type cmptype, int is_semantics, bool single);
+extern stmt *stmt_join(backend *be, stmt *op1, stmt *op2, int anti, comp_type cmptype, int need_left, int is_semantics, bool single);
 extern stmt *stmt_join2(backend *be, stmt *l, stmt *ra, stmt *rb, int cmp, int anti, int swapped);
 /* generic join operator, with a left and right statement list */
 extern stmt *stmt_genjoin(backend *be, stmt *l, stmt *r, sql_subfunc *op, int anti, int swapped);
 extern stmt *stmt_semijoin(backend *be, stmt *l, stmt *r, stmt *lcand, stmt *rcand, int is_semantics, bool single);
-extern stmt *stmt_join_cand(backend *be, stmt *l, stmt *r, stmt *lcand, stmt *rcand, int anti, comp_type cmptype, int is_semantics, bool single);
+extern stmt *stmt_join_cand(backend *be, stmt *l, stmt *r, stmt *lcand, stmt *rcand, int anti, comp_type cmptype, int need_left, int is_semantics, bool single);
 
 extern stmt *stmt_project(backend *be, stmt *op1, stmt *op2);
 extern stmt *stmt_project_delta(backend *be, stmt *col, stmt *upd, stmt *ins);
@@ -224,7 +226,7 @@ extern stmt *stmt_sample(backend *be, stmt *s, stmt *sample, stmt *seed);
 extern stmt *stmt_order(backend *be, stmt *s, int direction, int nullslast);
 extern stmt *stmt_reorder(backend *be, stmt *s, int direction, int nullslast, stmt *orderby_ids, stmt *orderby_grp);
 
-extern stmt *stmt_convert(backend *sa, stmt *v, sql_subtype *from, sql_subtype *to, stmt *cond);
+extern stmt *stmt_convert(backend *sa, stmt *v, sql_subtype *from, sql_subtype *to);
 extern stmt *stmt_unop(backend *be, stmt *op1, sql_subfunc *op);
 extern stmt *stmt_binop(backend *be, stmt *op1, stmt *op2, sql_subfunc *op);
 extern stmt *stmt_Nop(backend *be, stmt *ops, sql_subfunc *op);

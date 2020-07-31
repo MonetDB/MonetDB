@@ -27,7 +27,9 @@ typedef enum {
 typedef struct Ssabdb {
 	char *dbname;            /* database name */
 	char *path;              /* path to this database */
+#ifndef WIN32
 	pid_t pid;               /* pid, if known */
+#endif
 	bool locked;             /* whether this database is under maintenance */
 	SABdbState state;        /* current database state */
 	sablist* scens;          /* scenarios available for this database */

@@ -153,6 +153,236 @@ SELECT 1 FROM t0 WHERE NULL IN (DATE '1970-01-01');
 SELECT ALL DATE '1970-01-01', CAST(COUNT(ALL TIMESTAMP '1970-01-01 01:06:52') AS INT) FROM t0 WHERE (NULL) NOT IN (DATE '1970-01-01') GROUP BY ((CAST(0.6 AS STRING))||(0.75)), INTERVAL '-13' SECOND;
 ROLLBACK;
 
+START TRANSACTION;
+create table t0 (a time default time '10:15:32', b date default date '2010-01-31', c timestamp default timestamp '1980-11-04 08:49:25');
+insert into t0;
+insert into t0 values (default, default, default);
+select a,b,c from t0;
+ROLLBACK;
+
+START TRANSACTION;
+CREATE TABLE "sys"."t0" (
+	"c0" TIME,
+	"c1" CHARACTER LARGE OBJECT NOT NULL,
+	CONSTRAINT "t0_c1_pkey" PRIMARY KEY ("c1"),
+	CONSTRAINT "t0_c1_unique" UNIQUE ("c1")
+);
+COPY 14 RECORDS INTO "sys"."t0" FROM stdin USING DELIMITERS E'\t',E'\n','"';
+19:29:38	""
+05:51:00	"#B"
+NULL	".n"
+NULL	"0.0"
+20:29:28	"-601098762"
+20:59:23	")TD)Dnö"
+22:09:19	"aaJ즳#B!sJNG㡩"
+09:10:09	"W"
+23:43:33	"k"
+15:43:27	"-0.0"
+20:02:19	"0.7126186870446843"
+05:23:53	"1498390845"
+00:17:15	"{"
+06:51:52	"41230238"
+
+SELECT t0.c0 FROM t0 WHERE ((t0.c0)<>(t0.c0));
+	--empty
+SELECT t0.c0 FROM t0 WHERE NOT (((t0.c0)<>(t0.c0)));
+	--12 tuples (all rows except ones with c0 null)
+SELECT t0.c0 FROM t0 WHERE (((t0.c0)<>(t0.c0))) IS NULL;
+	--NULL
+	--NULL
+ROLLBACK;
+
+START TRANSACTION; -- Bug 6926
+CREATE TABLE t0(c0 TIME, c1 VARCHAR(1000) DEFAULT (upper(CAST((('')||(DATE '1970-01-19')) AS VARCHAR(152)))) PRIMARY KEY UNIQUE NULL);
+INSERT INTO t0(c0, c1) VALUES(TIME '19:29:38', '');
+INSERT INTO t0(c1, c0) VALUES(CAST(TIME '06:50:34' AS VARCHAR(256)), TIME '01:39:55');
+INSERT INTO t0(c1, c0) VALUES(CAST(0.6 AS VARCHAR(411)), TIME '22:07:22'), ('#B', TIME '05:51:00'), (((((CAST('434' AS VARCHAR(849)))||(0.4)))||(TIME '04:05:28')), TIME '06:50:34');
+INSERT INTO t0(c1) VALUES(CAST(INTERVAL '42' SECOND AS VARCHAR(102)));
+INSERT INTO t0(c0, c1) VALUES(TIME '16:29:13', 'J'), (TIME '05:57:44', '49䄎y_}');
+INSERT INTO t0(c1, c0) VALUES('2', TIME '07:15:50'), (CAST(TIME '16:29:13' AS VARCHAR(1000)), TIME '03:00:56');
+INSERT INTO t0(c1) VALUES('O큑LSGAM||Z赐'), ('.n');
+INSERT INTO t0(c1, c0) VALUES('c蠷웵', TIME '04:59:13');
+INSERT INTO t0(c1) VALUES('0.0');
+INSERT INTO t0(c0, c1) VALUES(TIME '20:29:28', '-343'), (TIME '01:19:51', 'j'), (TIME '11:37:23', ((((((((CAST(DATE '1970-01-23' AS VARCHAR(849)))||(INTERVAL '23' MONTH)))||(INTERVAL '-535' SECOND)))||(lower((('鮥*Qß4')||(DATE '1970-01-01'))))))||(0.4)));
+INSERT INTO t0(c0, c1) VALUES(TIME '02:38:14', lower(CAST(INTERVAL '342' SECOND AS VARCHAR(1000)))), (TIME '23:43:33', '64');
+DELETE FROM t0 WHERE ((((1 IS NOT NULL)AND(FALSE)))OR(((CAST(0.3 AS VARCHAR(836)))<(upper(t0.c1)))));
+INSERT INTO t0(c0, c1) VALUES(TIME '20:59:23', ')TD)Dnö'), (TIME '22:09:19', 'aaJ즳#B!sJNG㡩');
+INSERT INTO t0(c0, c1) VALUES(TIME '20:02:19', CAST(0.1 AS VARCHAR(927)));
+INSERT INTO t0(c0, c1) VALUES(TIME '00:17:15', '{'), (TIME '06:51:52', CAST(4.1230238E7 AS VARCHAR(459)));
+SELECT ALL t0.c0 FROM t0 WHERE (((t0.c0)<>(t0.c0))) IS NULL;
+	--NULL
+	--NULL
+ROLLBACK;
+
+START TRANSACTION;
+CREATE TEMPORARY TABLE t0(c0 integer AUTO_INCREMENT UNIQUE NOT NULL, c1 FLOAT DEFAULT (0.9323624));
+select t0.c0 from t0 where -t0.c0 <= 1 and t0.c0 between t0.c0 and -t0.c0;
+ROLLBACK;
+
+START TRANSACTION; --Bug 6927
+CREATE TABLE "sys"."t0" ("c0" CHARACTER LARGE OBJECT NOT NULL,CONSTRAINT "t0_c0_pkey" PRIMARY KEY ("c0"),CONSTRAINT "t0_c0_unique" UNIQUE ("c0"),CONSTRAINT "t0_c0_unique" UNIQUE ("c0"));
+COPY 5 RECORDS INTO "sys"."t0" FROM stdin USING DELIMITERS E'\t',E'\n','"';
+"1970-01-19"
+"0.9940522485469018"
+"Sn"
+""
+",骭2T*h[99#஺M\nBCϹ㦚X"
+
+CREATE TABLE "sys"."t1" ("c0" CHARACTER LARGE OBJECT,"c1" BOOLEAN NOT NULL,CONSTRAINT "t1_c1_unique" UNIQUE ("c1"));
+COPY 2 RECORDS INTO "sys"."t1" FROM stdin USING DELIMITERS E'\t',E'\n','"';
+"*"	true
+"Xh{%LTF"	false
+
+SELECT 1 FROM t0 CROSS JOIN t1 WHERE (t1.c1 AND (t0.c0 > t0.c0)) IS NULL;
+SELECT cast(SUM(agg0) as decimal(10,2)) FROM (SELECT ALL SUM(ALL 0.97) as agg0 FROM t0 CROSS JOIN t1 WHERE ((((t1.c1)AND(t1.c1)))AND(((t0.c0)>(t0.c0)))) 
+UNION ALL SELECT SUM(ALL 0.97) as agg0 FROM t0 CROSS JOIN t1 WHERE NOT (((((t1.c1)AND(t1.c1)))AND(((t0.c0)>(t0.c0))))) 
+UNION ALL SELECT SUM(ALL 0.97) as agg0 FROM t0 CROSS JOIN t1 WHERE (((((t1.c1)AND(t1.c1)))AND(((t0.c0)>(t0.c0))))) IS NULL) as asdf;
+ROLLBACK;
+
+START TRANSACTION; --Bug 6928
+CREATE TABLE "sys"."t0" ("c0" DECIMAL(18,3) DEFAULT 0.968720);
+COPY 5 RECORDS INTO "sys"."t0" FROM stdin USING DELIMITERS E'\t',E'\n','"';
+0.938
+0.958
+0.877
+0.550
+0.916
+
+select coalesce(1 = true, false);
+select coalesce(1 = true, t0.c0 > 0) from t0;
+select count(all coalesce ((case coalesce (1, 2) when case cast(t0.c0 as double) when sql_max(r'', null) 
+then ((12)/(23)) end then cast("truncate"(r'1', 54) as boolean) else (coalesce (true, true, r'1', true)) = false end) = true, (t0.c0) not in (t0.c0))) from t0;
+ROLLBACK;
+
+START TRANSACTION; --Bug 6929
+CREATE TEMPORARY TABLE IF NOT EXISTS t0(c0 TIMESTAMP) ON COMMIT PRESERVE ROWS;
+SELECT COALESCE(1, dayofmonth(t0.c0)) FROM t0;
+SELECT CAST(SUM(COALESCE(0.67, dayofmonth(t0.c0))) AS BIGINT) FROM t0;
+SELECT ALL CAST(SUM(ALL COALESCE (CAST(0.67090863 AS REAL), dayofmonth(t0.c0))) AS BIGINT) FROM t0;
+ROLLBACK;
+
+START TRANSACTION; --Bug 6930
+CREATE TABLE t0(c0 VARCHAR(319) NOT NULL, c1 TIME, c2 TIMESTAMP PRIMARY KEY UNIQUE NULL, UNIQUE(c0, c2, c1));
+CREATE TABLE t1(c0 CHARACTER LARGE OBJECT,c1 DATE);
+select t1.c0 from t1 join t0 on coalesce(trim(t0.c0), 1) like t0.c0;
+select all t1.c0 from t1 right outer join t0 on ((coalesce (t1.c0, trim(t0.c0), "insert"(splitpart(t0.c0, t0.c0, -618693953), - (-382400246), coalesce (1840724133, 1854087569, 1686971701, 576180091), t1.c0), 
+cast(abs(0.160418955416609) as string), cast(coalesce (greatest(interval '-1022285655' second, interval '-1047501443' second), interval '641174375' second, sql_max(interval '-1539884267' second, interval '-685917930' second)) as string)))not ilike(t0.c0));
+ROLLBACK;
+
+START TRANSACTION;
+CREATE TABLE "sys"."t1" ("c0" TIMESTAMP);
+COPY 4 RECORDS INTO "sys"."t1" FROM stdin USING DELIMITERS E'\t',E'\n','"';
+"1970-01-14 14:26:27.000000"
+"1970-01-18 02:50:56.000000"
+"1970-01-06 21:36:37.000000"
+"1970-01-14 01:01:12.000000"
+
+select all sum(all cast("concat"(cast("month"(t1.c0) as string), r'1313451898') as interval month)) from t1;
+ROLLBACK;
+
+START TRANSACTION; -- Unknown barrier type error
+CREATE TABLE "sys"."t0" ("c0" INTEGER);
+COPY 13 RECORDS INTO "sys"."t0" FROM stdin USING DELIMITERS E'\t',E'\n','"';
+-952561247
+668236378
+-2045848771
+-1790523044
+-1543588024
+-1750414901
+1790114978
+-274432932
+874627516
+-452950065
+303960197
+1
+20
+
+create view v0(c0, c1, c2, c3) as (
+	select distinct cast(case time '03:52:21' when time '05:04:36' then r'0.2' end as date), 
+	coalesce (t0.c0, length(coalesce (r't%QB', replace(r' ,yO_5G刵i稶bDßᶏ''', r'0.8', r'-1e500')))), 1, timestamp '1970-01-16 13:47:20' from t0) with check option;
+select v0.c0 from v0 join t0 on (0.3) not in 
+(least(cast(t0.c0 as decimal), 
+case least(time '19:32:57', time '16:10:04') when coalesce (time '22:25:53', time '00:14:31', time '18:12:09', time '01:59:38') 
+then sql_min(0.7, 0.03) else 0.3 end), coalesce (case - (t0.c0) when cast(v0.c2 as real) then abs(0.4) else 0.5 end, cast(t0.c0 as decimal)));
+ROLLBACK;
+
+START TRANSACTION; --SIGFPE
+CREATE TABLE "sys"."t0" (
+	"c0" BIGINT NOT NULL,
+	"c1" DOUBLE        NOT NULL,
+	"c2" INTERVAL SECOND,
+	CONSTRAINT "t0_c0_pkey" PRIMARY KEY ("c0"),
+	CONSTRAINT "t0_c0_unique" UNIQUE ("c0"),
+	CONSTRAINT "t0_c2_unique" UNIQUE ("c2"),
+	CONSTRAINT "t0_c1_c2_c0_unique" UNIQUE ("c1", "c2", "c0")
+);
+COPY 19 RECORDS INTO "sys"."t0" FROM stdin USING DELIMITERS E'\t',E'\n','"';
+99360484	0.8104160489147377	NULL
+434886876	2003187499	NULL
+1868593144	0.605787503265435	-721601140.000
+1061127048	888903964	1369533413.000
+-320985624	0.7758661909853402	0.423
+-559098799	0.589701133253508	40364999.000
+1065193340	0.41440171821837046	1426163499.000
+1712034073	0.17915355536697286	-514338316.000
+1526621371	0.5435870488621911	-3797659.000
+130081317	0.4014279036721254	NULL
+2048481116	0.2107093605121693	1704117927.000
+-2067368391	0.5763887172257189	-452165183.000
+0	0.9286759330434932	NULL
+1021996113	0.737198399943565	NULL
+-713573774	0.3021457500334628	NULL
+-1680724988	280992707	NULL
+1411861402	83084647	NULL
+-1710710010	-90593292	-1255979722.000
+1844355385	0.6101178479960011	1733503642.000
+
+select cast(group_concat(all r'0.5787210717348131') as decimal) from t0 group by - (abs(- (- (1061572565)))), least(t0.c0, least(cast(0.09300166 as int), t0.c0));
+ROLLBACK;
+
+START TRANSACTION;
+CREATE TABLE "sys"."t0" ("c0" DECIMAL(18,3));
+COMMENT ON COLUMN "sys"."t0"."c0" IS 'jc~\006}ℵH{\015﻿^aBPxpf+sP';
+COPY 8 RECORDS INTO "sys"."t0" FROM stdin USING DELIMITERS E'\t',E'\n','"';
+0.626
+0.634
+0.133
+0.244
+19.000
+0.455
+0.715
+0.369
+
+SELECT ALL CASE t0.c0 WHEN VAR_POP(ALL t0.c0) THEN (t0.c0) BETWEEN SYMMETRIC (t0.c0) AND (t0.c0) END FROM t0 GROUP BY t0.c0;
+ROLLBACK;
+
+START TRANSACTION;
+CREATE TABLE "sys"."t0" ("c0" INT);
+COPY 8 RECORDS INTO "sys"."t0" FROM stdin USING DELIMITERS E'\t',E'\n','"';
+62183
+-2658
+-1258
+40690
+-198
+12260
+-1827
+-604
+
+CREATE TABLE "sys"."t1" ("c0" INT);
+COPY 7 RECORDS INTO "sys"."t1" FROM stdin USING DELIMITERS E'\t',E'\n','"';
+4440
+4440
+4440
+4440
+14228
+-4740
+NULL
+
+SELECT CASE TIMESTAMP '1970-01-02 23:16:17' WHEN DATE '1970-01-12' THEN 1 END;
+SELECT TIME '08:16:10' FROM t1 JOIN t0 ON (t1.c0) NOT BETWEEN SYMMETRIC (t1.c0) AND (charindex(CAST(TIME '04:39:29' AS STRING), CASE COALESCE (TIMESTAMP '1970-01-02 23:16:17', TIMESTAMP '1970-01-02 23:07:33') 
+WHEN COALESCE (DATE '1970-01-12', DATE '1970-01-02', DATE '1970-01-02') THEN COALESCE (r'/6望', r'hr?r3QDF*OD%6癰if}䃒5') END, t0.c0)) GROUP BY t1.c0;
+ROLLBACK;
+
 START TRANSACTION; -- Bug 6924
 CREATE TABLE "sys"."t0" ("a" INTEGER, "b" INTEGER NOT NULL, CONSTRAINT "t0_a_b_unique" UNIQUE ("a","b"));
 --This copy into must succeed 
@@ -211,15 +441,28 @@ CREATE TABLE t0 (c0 BOOLEAN);
 create view v1(c0, c1, c2, c3) as (select 1, lower('1'), 1, cot(1) from t0);
 SELECT v1.c0 FROM v1 WHERE v1.c1 LIKE v1.c1 AND v1.c3 BETWEEN v1.c3 AND v1.c3 = TRUE;
 
-create view v0(c0, c1, c2, c3) as (select distinct 0.1, ((lower((((('&')||(2)))||(0.1))))||((('-1')||(abs(cast(r'Br' as int)))))), 0.1, cot(((((- (((2)&(3))))+(abs(4))))*(- (cast(cast(5 as string) as int))))) from t0);
+create view v2(c0, c1, c3) as (select distinct 1, lower('1'), cot(1) from t0);
+SELECT v2.c0 FROM v2 WHERE v2.c1 = '1' AND v2.c3 BETWEEN v2.c3 AND v2.c3;
+
+create view v0(c0, c1, c2, c3) as (select distinct 0.1, ((lower((((('&')||(2)))||(0.1))))||((('-1')||(abs(cast(r'1' as int)))))), 0.1, cot(((((- (((2)&(3))))+(abs(4))))*(- (cast(cast(5 as string) as int))))) from t0);
 SELECT v0.c0 FROM v0 WHERE NOT (NOT (((((((((NOT (((v0.c1)LIKE(v0.c1))))AND(((v0.c2)>=(v0.c0)))))AND(((v0.c3) BETWEEN SYMMETRIC (v0.c3) AND (v0.c3)) = TRUE)))AND
 ((((v0.c1)||(((v0.c0)<(v0.c0))))) BETWEEN SYMMETRIC (v0.c1) AND (v0.c1))))AND((0.2) BETWEEN SYMMETRIC (v0.c0) AND (v0.c0)))));
 ROLLBACK;
 
 START TRANSACTION;
 CREATE TABLE t0(c0 INT);
+insert into t0(c0) values (1 between 2 and 3);
 insert into t0(c0) values(13), (((cast((0.1) between symmetric (0.2) and (0.3) as int))%(length(upper(r'u鋔wsD30pYi&ᴮ*2*W쉉t+詫sD^#cjX{'))))), (cast(cast(cast(0.12 as int) as string(646)) as int));
 
 SELECT COUNT(t0.c0 = t0.c0 OR 1 BETWEEN ASYMMETRIC 1 AND 1) FROM t0;
 SELECT 0.9, COUNT(ALL (((((((CAST(TRUE AS INT))-(t0.c0)))=(t0.c0))) = TRUE)OR((CAST(char_length(r'H') AS INT)) BETWEEN ASYMMETRIC (CAST(-1.3 AS INT)) AND (+ (length(r'0')))))), 0.3 FROM t0 GROUP BY 0.5, 0.4;
+ROLLBACK;
+
+START TRANSACTION;
+CREATE TABLE t0(c0 DATE, c1 DATE);
+SELECT ALL least(MIN(ALL CAST('0.3' AS TIME)), COALESCE (CAST("second"(TIMESTAMP '1970-01-19 08:50:25') AS TIME), CAST(TIME '13:00:42' AS TIME))), t0.c0 FROM t0
+GROUP BY splitpart(CAST(CAST(COALESCE (CASE t0.c1 WHEN INTERVAL '5' SECOND THEN TIMESTAMP '1969-12-21 20:30:09' WHEN 0.5 THEN TIMESTAMP '1970-01-11 15:00:27' WHEN 0.9 
+THEN TIMESTAMP '1970-01-03 20:35:51' END, CASE -2 WHEN 0.2 THEN TIMESTAMP '1970-01-02 09:18:35' END, CAST(INTERVAL '3' SECOND AS TIMESTAMP), 
+TIMESTAMP '1970-01-19 23:59:32') AS STRING(660)) AS STRING), COALESCE (CAST(COALESCE (CAST(INTERVAL '2' SECOND AS INTERVAL SECOND), INTERVAL '-4' SECOND, INTERVAL '-4' SECOND) AS STRING), 'a'),
+CAST(CAST(((- (-5))||(((-2)-(5)))) AS DECIMAL) AS INT));
 ROLLBACK;

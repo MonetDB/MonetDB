@@ -8,7 +8,6 @@
 
 #include "monetdb_config.h"
 #include "bat_utils.h"
-#include "mal.h"		/* for have_hge */
 
 void
 bat_destroy(BAT *b)
@@ -185,11 +184,7 @@ bat_utils_init(void)
 	char name[32];
 
 	for (t=1; t<GDKatomcnt; t++) {
-		if (t != TYPE_bat && BATatoms[t].name[0]
-#ifdef HAVE_HGE
-		    && (have_hge || t != TYPE_hge)
-#endif
-		) {
+		if (t != TYPE_bat && BATatoms[t].name[0]) {
 			ebats[t] = bat_new(t, 0, TRANSIENT);
 			if(ebats[t] == NULL) {
 				for (t = t - 1; t >= 1; t--)
@@ -241,4 +236,3 @@ tr_find_idx( sql_trans *tr, sql_idx *i)
 		return i;
 	return NULL;
 }
-

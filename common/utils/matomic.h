@@ -57,7 +57,9 @@
 /* define this if you don't want to use atomic instructions */
 /* #define NO_ATOMIC_INSTRUCTIONS */
 
-#if defined(HAVE_STDATOMIC_H) && !defined(__STDC_NO_ATOMICS__) && !defined(NO_ATOMIC_INSTRUCTIONS)
+/* ignore __STDC_NO_ATOMICS__ if compiling using Intel compiler on
+ * Windows since otherwise we can't compile this at all in C99 mode */
+#if defined(HAVE_STDATOMIC_H) && (!defined(__STDC_NO_ATOMICS__) || (defined(__INTEL_COMPILER) && defined(_WINDOWS))) && !defined(NO_ATOMIC_INSTRUCTIONS)
 
 #include <stdatomic.h>
 

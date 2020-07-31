@@ -17,10 +17,6 @@ stream *maleventstream = 0;
 /* The compile time debugging flags are turned into bit masks, akin to GDK */
 lng MALdebug;
 
-#ifdef HAVE_HGE
-int have_hge = 1;
-#endif
-
 #include "mal_stack.h"
 #include "mal_linker.h"
 #include "mal_authorize.h"
@@ -102,7 +98,6 @@ void mal_reset(void)
 {
 	GDKprepareExit();
 	MCstopClients(0);
-	dropQRYqueue();
 	setHeartbeat(-1);
 	stopProfiler(0);
 	AUTHreset();
