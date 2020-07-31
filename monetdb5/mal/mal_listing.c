@@ -480,6 +480,13 @@ instruction2str(MalBlkPtr mb, MalStkPtr stk,  InstrPtr p, int flg)
 			}
 		}
 	}
+	const char *algo = MT_thread_getalgorithm();
+	if (algo) {
+		if (!copystring(&t, " # ", &len))
+			return base;
+		if (!copystring(&t, algo, &len))
+			return base;
+	}
 	return base;
 }
 

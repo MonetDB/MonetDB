@@ -93,7 +93,7 @@ BATunique(BAT *b, BAT *s)
 
 	if (BATordered(b) || BATordered_rev(b)) {
 		const void *prev = NULL;
-		algomsg = "sorted";
+		algomsg = "unique: sorted";
 		for (i = 0; i < ci.ncand; i++) {
 			o = canditer_next(&ci);
 			v = VALUE(o - b->hseqbase);
@@ -106,7 +106,7 @@ BATunique(BAT *b, BAT *s)
 	} else if (ATOMbasetype(b->ttype) == TYPE_bte) {
 		unsigned char val;
 
-		algomsg = "byte-sized atoms";
+		algomsg = "unique: byte-sized atoms";
 		assert(vars == NULL);
 		seen = GDKzalloc((256 / 16) * sizeof(seen[0]));
 		if (seen == NULL)
@@ -130,7 +130,7 @@ BATunique(BAT *b, BAT *s)
 	} else if (ATOMbasetype(b->ttype) == TYPE_sht) {
 		unsigned short val;
 
-		algomsg = "short-sized atoms";
+		algomsg = "unique: short-sized atoms";
 		assert(vars == NULL);
 		seen = GDKzalloc((65536 / 16) * sizeof(seen[0]));
 		if (seen == NULL)
@@ -163,7 +163,7 @@ BATunique(BAT *b, BAT *s)
 		/* we already have a hash table on b, or b is
 		 * persistent and we could create a hash table, or b
 		 * is a view on a bat that already has a hash table */
-		algomsg = "existing hash";
+		algomsg = "unique: existing hash";
 		seq = b->hseqbase;
 		if (b->thash == NULL && (parent = VIEWtparent(b)) != 0) {
 			BAT *b2 = BBPdescriptor(parent);
@@ -202,7 +202,7 @@ BATunique(BAT *b, BAT *s)
 		BUN mask;
 
 		GDKclrerr();	/* not interested in BAThash errors */
-		algomsg = "new partial hash";
+		algomsg = "unique: new partial hash";
 		nme = BBP_physical(b->batCacheid);
 		if (ATOMbasetype(b->ttype) == TYPE_bte) {
 			mask = (BUN) 1 << 8;
@@ -265,6 +265,7 @@ BATunique(BAT *b, BAT *s)
 		b->batDirtydesc = true;
 	}
 	bn = virtualize(bn);
+	MT_thread_setalgorithm(algomsg);
 	TRC_DEBUG(ALGO, "b=" ALGOBATFMT
 		  ",s=" ALGOOPTBATFMT " -> " ALGOOPTBATFMT
 		  " (%s -- " LLFMT "usec)\n",

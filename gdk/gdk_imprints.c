@@ -381,6 +381,7 @@ BATimprints(BAT *b)
 		size_t pages;
 
 		MT_lock_unset(&b->batIdxLock);
+		MT_thread_setalgorithm("create imprints");
 
 		if (s2)
 			TRC_DEBUG(ACCELERATOR, "BATimprints(b=" ALGOBATFMT
