@@ -31,6 +31,7 @@ INSERT INTO test101 VALUES (104, 104, 104);
 DROP TABLE test101;
 
 -- SQLancer just reproduced this bug
+START TRANSACTION;
 CREATE TABLE "sys"."t1" ("c0" DOUBLE,CONSTRAINT "t1_c0_unique" UNIQUE ("c0"),CONSTRAINT "t1_c0_fkey" FOREIGN KEY ("c0") REFERENCES "sys"."t1" ("c0"));
 COPY 9 RECORDS INTO "sys"."t1" FROM stdin USING DELIMITERS E'\t',E'\n','"';
 0.21248182395969406
