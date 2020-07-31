@@ -4745,12 +4745,9 @@ rel_rankop(sql_query *query, sql_rel **rel, symbol *se, int f)
 
 		distinct = dn->next->data.i_val;
 		if (extra_input) { /* pass an input column for analytic functions that don't require it */
-			in = rel_first_column(sql, p);
-			if (!in)
-				return NULL;
-			in = exp_ref(sql, in);
+			sql_subfunc *star = sql_bind_func(sql->sa, s, "star", NULL, NULL, F_FUNC);
+			in = exp_op(sql->sa, NULL, star);
 			append(fargs, in);
-			in = exp_ref_save(sql, in);
 		}
 		if (dl)
 			for (dargs = dl->h ; dargs ; dargs = dargs->next) {
@@ -4829,12 +4826,10 @@ rel_rankop(sql_query *query, sql_rel **rel, symbol *se, int f)
 					GDKfree(uaname);
 				return NULL;
 			}
-
-			in = rel_first_column(sql, p);
-			in = exp_ref(sql, in);
+			sql_subfunc *star = sql_bind_func(sql->sa, s, "star", NULL, NULL, F_FUNC);
+			in = exp_op(sql->sa, NULL, star);
 			append(fargs, in);
 			append(fargs, exp_atom_bool(sql->sa, 0)); /* don't ignore nills */
-			in = exp_ref_save(sql, in);
 		}
 	}
 

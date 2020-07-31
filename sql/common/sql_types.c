@@ -1293,6 +1293,8 @@ sqltypeinit( sql_allocator *sa)
 	/* nullif and coalesce don't have a backend implementation */
 	sql_create_func(sa, "nullif", "", "", TRUE, FALSE, SCALE_FIX, 0, ANY, 2, ANY, ANY);
 	sql_create_func(sa, "coalesce", "", "", TRUE, FALSE, SCALE_FIX, 0, ANY, 2, ANY, ANY);
+	/* needed for count(*) and window functions without input col */
+	sql_create_func(sa, "star", "", "", TRUE, FALSE, SCALE_FIX, 0, ANY, 0);
 
 	/* sum for numerical and decimals */
 	sql_create_aggr(sa, "sum", "aggr", "sum", FALSE, LargestINT, 1, BTE);

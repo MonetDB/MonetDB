@@ -5988,7 +5988,7 @@ static mel_func sql_init_funcs[] = {
  pattern("batsql", "first_value", SQLfirst_value, false, "return the first value of groups", args(1,4, batargany("",1),batargany("b",1),batarg("s",lng),batarg("e",lng))),
  pattern("sql", "last_value", SQLlast_value, false, "return the last value of groups", args(1,4, argany("",1),argany("b",1),arg("s",lng),arg("e",lng))),
  pattern("batsql", "last_value", SQLlast_value, false, "return the last value of groups", args(1,4, batargany("",1),batargany("b",1),batarg("s",lng),batarg("e",lng))),
- pattern("sql", "nth_value", SQLnth_value, false, "return the nth value of each group", args(1,5, argany("",1),argany("b",1),argany("n",2),arg("s",lng),arg("e",lng))),
+ pattern("sql", "nth_value", SQLnth_value, false, "return the nth value of each group", args(1,5, argany("",1),argany("b",1),argany("n",1),arg("s",lng),arg("e",lng))),
  pattern("batsql", "nth_value", SQLnth_value, false, "return the nth value of each group", args(1,5, batargany("",1),batargany("b",1),argany("n",2),batarg("s",lng),batarg("e",lng))),
  pattern("batsql", "nth_value", SQLnth_value, false, "return the nth value of each group", args(1,5, batargany("",1),argany("b",1),batargany("n",2),arg("s",lng),arg("e",lng))),
  pattern("batsql", "nth_value", SQLnth_value, false, "return the nth value of each group", args(1,5, batargany("",1),batargany("b",1),batargany("n",2),batarg("s",lng),batarg("e",lng))),

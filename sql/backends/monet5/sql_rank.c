@@ -1922,7 +1922,7 @@ SQLstrgroup_concat(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		str *res = (str*) getArgReference(stk, pci, 0);
 		str in = *getArgReference_str(stk, pci, 1);
 
-		if (pci->argc == 4) {
+		if (pci->argc == 5) {
 			str sep = *getArgReference_str(stk, pci, 2);
 			size_t l1 = strNil(in) ? 0 : strlen(in), l2 = strNil(sep) ? 0 : strlen(sep);
 
