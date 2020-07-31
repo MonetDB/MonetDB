@@ -71,8 +71,8 @@ stdout of test 'analytics15` in directory 'sql/test/analytics` itself:
 #       covar_samp(aa, aa) over (partition by bb order by bb asc),
 #       covar_samp(aa, aa) over (partition by bb order by bb desc),
 #       covar_samp(aa, aa) over (order by bb desc) from analytics;
-% sys.%3,	sys.%6,	sys.%11,	sys.%14 # table_name
-% %3,	%6,	%11,	%14 # name
+% sys.%7,	sys.%16,	sys.%25,	sys.%34 # table_name
+% %7,	%16,	%25,	%34 # name
 % double,	double,	double,	double # type
 % 24,	24,	24,	24 # length
 [ NULL,	NULL,	NULL,	NULL	]
@@ -89,8 +89,8 @@ stdout of test 'analytics15` in directory 'sql/test/analytics` itself:
 #       covar_samp(bb, bb) over (partition by bb order by bb asc),
 #       covar_samp(bb, bb) over (partition by bb order by bb desc),
 #       covar_samp(bb, bb) over (order by bb desc) from analytics;
-% sys.%3,	sys.%6,	sys.%11,	sys.%14 # table_name
-% %3,	%6,	%11,	%14 # name
+% sys.%7,	sys.%16,	sys.%25,	sys.%34 # table_name
+% %7,	%16,	%25,	%34 # name
 % double,	double,	double,	double # type
 % 24,	24,	24,	24 # length
 [ NULL,	NULL,	NULL,	NULL	]
@@ -107,8 +107,8 @@ stdout of test 'analytics15` in directory 'sql/test/analytics` itself:
 #       corr(bb, bb) over (partition by bb order by bb asc),
 #       corr(bb, bb) over (partition by bb order by bb desc),
 #       corr(bb, bb) over (order by bb desc) from analytics;
-% sys.%3,	sys.%6,	sys.%11,	sys.%14 # table_name
-% %3,	%6,	%11,	%14 # name
+% sys.%7,	sys.%16,	sys.%25,	sys.%34 # table_name
+% %7,	%16,	%25,	%34 # name
 % double,	double,	double,	double # type
 % 24,	24,	24,	24 # length
 [ NULL,	NULL,	NULL,	NULL	]
@@ -125,8 +125,8 @@ stdout of test 'analytics15` in directory 'sql/test/analytics` itself:
 #       covar_pop(aa, aa) over (partition by bb order by bb asc),
 #       covar_pop(aa, aa) over (partition by bb order by bb desc),
 #       covar_pop(aa, aa) over (order by bb desc) from analytics;
-% sys.%3,	sys.%6,	sys.%11,	sys.%14 # table_name
-% %3,	%6,	%11,	%14 # name
+% sys.%7,	sys.%16,	sys.%25,	sys.%34 # table_name
+% %7,	%16,	%25,	%34 # name
 % double,	double,	double,	double # type
 % 24,	24,	24,	24 # length
 [ NULL,	NULL,	NULL,	NULL	]
@@ -143,8 +143,8 @@ stdout of test 'analytics15` in directory 'sql/test/analytics` itself:
 #       covar_pop(bb, bb) over (partition by bb order by bb asc),
 #       covar_pop(bb, bb) over (partition by bb order by bb desc),
 #       covar_pop(bb, bb) over (order by bb desc) from analytics;
-% sys.%3,	sys.%6,	sys.%11,	sys.%14 # table_name
-% %3,	%6,	%11,	%14 # name
+% sys.%7,	sys.%16,	sys.%25,	sys.%34 # table_name
+% %7,	%16,	%25,	%34 # name
 % double,	double,	double,	double # type
 % 24,	24,	24,	24 # length
 [ 0,	0,	0,	0	]
@@ -161,8 +161,8 @@ stdout of test 'analytics15` in directory 'sql/test/analytics` itself:
 #       corr(bb, bb) over (partition by bb order by bb asc),
 #       corr(bb, bb) over (partition by bb order by bb desc),
 #       corr(bb, bb) over (order by bb desc) from analytics;
-% sys.%3,	sys.%6,	sys.%11,	sys.%14 # table_name
-% %3,	%6,	%11,	%14 # name
+% sys.%7,	sys.%16,	sys.%25,	sys.%34 # table_name
+% %7,	%16,	%25,	%34 # name
 % double,	double,	double,	double # type
 % 24,	24,	24,	24 # length
 [ NULL,	NULL,	NULL,	NULL	]
@@ -179,8 +179,8 @@ stdout of test 'analytics15` in directory 'sql/test/analytics` itself:
 #       covar_samp(aa, bb) over (partition by bb order by bb asc),
 #       covar_samp(aa, bb) over (partition by bb order by bb desc),
 #       covar_samp(aa, bb) over (order by bb desc) from analytics;
-% sys.%3,	sys.%6,	sys.%11,	sys.%14 # table_name
-% %3,	%6,	%11,	%14 # name
+% sys.%7,	sys.%16,	sys.%25,	sys.%34 # table_name
+% %7,	%16,	%25,	%34 # name
 % double,	double,	double,	double # type
 % 24,	24,	24,	24 # length
 [ NULL,	NULL,	NULL,	NULL	]
@@ -197,8 +197,8 @@ stdout of test 'analytics15` in directory 'sql/test/analytics` itself:
 #       covar_samp(bb, aa) over (partition by bb order by bb asc),
 #       covar_samp(bb, aa) over (partition by bb order by bb desc),
 #       covar_samp(bb, aa) over (order by bb desc) from analytics;
-% sys.%3,	sys.%6,	sys.%11,	sys.%14 # table_name
-% %3,	%6,	%11,	%14 # name
+% sys.%7,	sys.%16,	sys.%25,	sys.%34 # table_name
+% %7,	%16,	%25,	%34 # name
 % double,	double,	double,	double # type
 % 24,	24,	24,	24 # length
 [ NULL,	NULL,	NULL,	NULL	]
@@ -215,8 +215,8 @@ stdout of test 'analytics15` in directory 'sql/test/analytics` itself:
 #       corr(bb, aa) over (partition by bb order by bb asc),
 #       corr(bb, aa) over (partition by bb order by bb desc),
 #       corr(bb, aa) over (order by bb desc) from analytics;
-% sys.%3,	sys.%6,	sys.%11,	sys.%14 # table_name
-% %3,	%6,	%11,	%14 # name
+% sys.%7,	sys.%16,	sys.%25,	sys.%34 # table_name
+% %7,	%16,	%25,	%34 # name
 % double,	double,	double,	double # type
 % 24,	24,	24,	24 # length
 [ NULL,	NULL,	NULL,	NULL	]
@@ -233,8 +233,8 @@ stdout of test 'analytics15` in directory 'sql/test/analytics` itself:
 #       covar_pop(aa, bb) over (partition by bb order by bb asc),
 #       covar_pop(aa, bb) over (partition by bb order by bb desc),
 #       covar_pop(aa, bb) over (order by bb desc) from analytics;
-% sys.%3,	sys.%6,	sys.%11,	sys.%14 # table_name
-% %3,	%6,	%11,	%14 # name
+% sys.%7,	sys.%16,	sys.%25,	sys.%34 # table_name
+% %7,	%16,	%25,	%34 # name
 % double,	double,	double,	double # type
 % 24,	24,	24,	24 # length
 [ NULL,	NULL,	NULL,	NULL	]
@@ -251,8 +251,8 @@ stdout of test 'analytics15` in directory 'sql/test/analytics` itself:
 #       covar_pop(bb, aa) over (partition by bb order by bb asc),
 #       covar_pop(bb, aa) over (partition by bb order by bb desc),
 #       covar_pop(bb, aa) over (order by bb desc) from analytics;
-% sys.%3,	sys.%6,	sys.%11,	sys.%14 # table_name
-% %3,	%6,	%11,	%14 # name
+% sys.%7,	sys.%16,	sys.%25,	sys.%34 # table_name
+% %7,	%16,	%25,	%34 # name
 % double,	double,	double,	double # type
 % 24,	24,	24,	24 # length
 [ NULL,	NULL,	NULL,	NULL	]
@@ -269,8 +269,8 @@ stdout of test 'analytics15` in directory 'sql/test/analytics` itself:
 #       corr(bb, aa) over (partition by bb order by bb asc),
 #       corr(bb, aa) over (partition by bb order by bb desc),
 #       corr(bb, aa) over (order by bb desc) from analytics;
-% sys.%3,	sys.%6,	sys.%11,	sys.%14 # table_name
-% %3,	%6,	%11,	%14 # name
+% sys.%7,	sys.%16,	sys.%25,	sys.%34 # table_name
+% %7,	%16,	%25,	%34 # name
 % double,	double,	double,	double # type
 % 24,	24,	24,	24 # length
 [ NULL,	NULL,	NULL,	NULL	]
@@ -287,8 +287,8 @@ stdout of test 'analytics15` in directory 'sql/test/analytics` itself:
 #       covar_pop(aa, 1) over (partition by bb order by bb asc),
 #       covar_pop(aa, 1) over (partition by bb order by bb desc),
 #       covar_pop(aa, 1) over (order by bb desc) from analytics;
-% sys.%3,	sys.%6,	sys.%11,	sys.%14 # table_name
-% %3,	%6,	%11,	%14 # name
+% sys.%10,	sys.%20,	sys.%30,	sys.%40 # table_name
+% %10,	%20,	%30,	%40 # name
 % double,	double,	double,	double # type
 % 24,	24,	24,	24 # length
 [ NULL,	NULL,	NULL,	NULL	]
@@ -305,8 +305,8 @@ stdout of test 'analytics15` in directory 'sql/test/analytics` itself:
 #       covar_pop(bb, -100) over (partition by bb order by bb asc),
 #       covar_pop(bb, -100) over (partition by bb order by bb desc),
 #       covar_pop(bb, -100) over (order by bb desc) from analytics;
-% sys.%3,	sys.%6,	sys.%11,	sys.%14 # table_name
-% %3,	%6,	%11,	%14 # name
+% sys.%10,	sys.%20,	sys.%30,	sys.%40 # table_name
+% %10,	%20,	%30,	%40 # name
 % double,	double,	double,	double # type
 % 24,	24,	24,	24 # length
 [ 0,	0,	0,	0	]
@@ -323,8 +323,8 @@ stdout of test 'analytics15` in directory 'sql/test/analytics` itself:
 #       corr(bb, -100) over (partition by bb order by bb asc),
 #       corr(bb, -100) over (partition by bb order by bb desc),
 #       corr(bb, -100) over (order by bb desc) from analytics;
-% sys.%3,	sys.%6,	sys.%11,	sys.%14 # table_name
-% %3,	%6,	%11,	%14 # name
+% sys.%10,	sys.%20,	sys.%30,	sys.%40 # table_name
+% %10,	%20,	%30,	%40 # name
 % double,	double,	double,	double # type
 % 24,	24,	24,	24 # length
 [ NULL,	NULL,	NULL,	NULL	]
@@ -341,8 +341,8 @@ stdout of test 'analytics15` in directory 'sql/test/analytics` itself:
 #       covar_samp(aa, 1) over (partition by bb order by bb asc),
 #       covar_samp(aa, 1) over (partition by bb order by bb desc),
 #       covar_samp(aa, 1) over (order by bb desc) from analytics;
-% sys.%3,	sys.%6,	sys.%11,	sys.%14 # table_name
-% %3,	%6,	%11,	%14 # name
+% sys.%10,	sys.%20,	sys.%30,	sys.%40 # table_name
+% %10,	%20,	%30,	%40 # name
 % double,	double,	double,	double # type
 % 24,	24,	24,	24 # length
 [ NULL,	NULL,	NULL,	NULL	]
@@ -359,8 +359,8 @@ stdout of test 'analytics15` in directory 'sql/test/analytics` itself:
 #       covar_samp(bb, -100) over (partition by bb order by bb asc),
 #       covar_samp(bb, -100) over (partition by bb order by bb desc),
 #       covar_samp(bb, -100) over (order by bb desc) from analytics;
-% sys.%3,	sys.%6,	sys.%11,	sys.%14 # table_name
-% %3,	%6,	%11,	%14 # name
+% sys.%10,	sys.%20,	sys.%30,	sys.%40 # table_name
+% %10,	%20,	%30,	%40 # name
 % double,	double,	double,	double # type
 % 24,	24,	24,	24 # length
 [ NULL,	NULL,	NULL,	NULL	]
@@ -377,8 +377,8 @@ stdout of test 'analytics15` in directory 'sql/test/analytics` itself:
 #       corr(bb, -100) over (partition by bb order by bb asc),
 #       corr(bb, -100) over (partition by bb order by bb desc),
 #       corr(bb, -100) over (order by bb desc) from analytics;
-% sys.%3,	sys.%6,	sys.%11,	sys.%14 # table_name
-% %3,	%6,	%11,	%14 # name
+% sys.%10,	sys.%20,	sys.%30,	sys.%40 # table_name
+% %10,	%20,	%30,	%40 # name
 % double,	double,	double,	double # type
 % 24,	24,	24,	24 # length
 [ NULL,	NULL,	NULL,	NULL	]
@@ -397,8 +397,8 @@ stdout of test 'analytics15` in directory 'sql/test/analytics` itself:
 #       covar_pop(bb, aa) over (),
 #       covar_pop(aa, 1) over (),
 #       covar_pop(aa, 1) over () from analytics;
-% sys.,	sys.,	sys.,	sys.,	sys.,	sys. # table_name
-% %1,	%2,	%3,	%4,	%5,	%6 # name
+% sys.%7,	sys.%16,	sys.%25,	sys.%34,	sys.%44,	sys.%54 # table_name
+% %7,	%16,	%25,	%34,	%44,	%54 # name
 % double,	double,	double,	double,	double,	double # type
 % 24,	24,	24,	24,	24,	24 # length
 [ 15.4375,	0.96,	2.125,	2.125,	0,	0	]
@@ -417,8 +417,8 @@ stdout of test 'analytics15` in directory 'sql/test/analytics` itself:
 #       covar_samp(bb, aa) over (),
 #       covar_samp(aa, 1) over (),
 #       covar_samp(bb, -100) over () from analytics;
-% sys.,	sys.,	sys.,	sys.,	sys.,	sys. # table_name
-% %1,	%2,	%3,	%4,	%5,	%6 # name
+% sys.%7,	sys.%16,	sys.%25,	sys.%34,	sys.%44,	sys.%54 # table_name
+% %7,	%16,	%25,	%34,	%44,	%54 # name
 % double,	double,	double,	double,	double,	double # type
 % 24,	24,	24,	24,	24,	24 # length
 [ 17.64285714,	1.066666667,	2.428571429,	2.428571429,	0,	0	]
@@ -437,8 +437,8 @@ stdout of test 'analytics15` in directory 'sql/test/analytics` itself:
 #       corr(bb, aa) over (),
 #       corr(aa, 1) over (),
 #       corr(bb, -100) over () from analytics;
-% sys.,	sys.,	sys.,	sys.,	sys.,	sys. # table_name
-% %1,	%2,	%3,	%4,	%5,	%6 # name
+% sys.%7,	sys.%16,	sys.%25,	sys.%34,	sys.%44,	sys.%54 # table_name
+% %7,	%16,	%25,	%34,	%44,	%54 # name
 % double,	double,	double,	double,	double,	double # type
 % 24,	24,	24,	24,	24,	24 # length
 [ 1,	1,	0.6245106046,	0.6245106046,	NULL,	NULL	]
@@ -456,8 +456,8 @@ stdout of test 'analytics15` in directory 'sql/test/analytics` itself:
 #       covar_samp(aa, NULL) over (),
 #       covar_samp(NULL, aa) over (),
 #       covar_samp(NULL, NULL) over () from analytics;
-% .,	.,	sys.,	.,	. # table_name
-% %14,	%15,	%16,	%17,	%20 # name
+% .%12,	.%24,	sys.%35,	.%46,	.%61 # table_name
+% %12,	%24,	%35,	%46,	%61 # name
 % double,	double,	double,	double,	double # type
 % 24,	24,	24,	24,	24 # length
 [ NULL,	NULL,	NULL,	NULL,	NULL	]
@@ -475,8 +475,8 @@ stdout of test 'analytics15` in directory 'sql/test/analytics` itself:
 #       covar_pop(aa, NULL) over (),
 #       covar_pop(NULL, aa) over (),
 #       covar_pop(NULL, NULL) over () from analytics;
-% .,	.,	sys.,	.,	. # table_name
-% %14,	%15,	%16,	%17,	%20 # name
+% .%12,	.%24,	sys.%35,	.%46,	.%61 # table_name
+% %12,	%24,	%35,	%46,	%61 # name
 % double,	double,	double,	double,	double # type
 % 24,	24,	24,	24,	24 # length
 [ NULL,	NULL,	NULL,	NULL,	NULL	]
@@ -494,8 +494,8 @@ stdout of test 'analytics15` in directory 'sql/test/analytics` itself:
 #       corr(aa, NULL) over (),
 #       corr(NULL, aa) over (),
 #       corr(NULL, NULL) over () from analytics;
-% .,	.,	sys.,	.,	. # table_name
-% %14,	%15,	%16,	%17,	%20 # name
+% .%12,	.%24,	sys.%35,	.%46,	.%61 # table_name
+% %12,	%24,	%35,	%46,	%61 # name
 % double,	double,	double,	double,	double # type
 % 24,	24,	24,	24,	24 # length
 [ NULL,	NULL,	NULL,	NULL,	NULL	]
@@ -508,6 +508,27 @@ stdout of test 'analytics15` in directory 'sql/test/analytics` itself:
 [ NULL,	NULL,	NULL,	NULL,	NULL	]
 [ NULL,	NULL,	NULL,	NULL,	NULL	]
 [ NULL,	NULL,	NULL,	NULL,	NULL	]
+#select covar_pop(1,1) over (), covar_samp(1,1) over (), corr(1,1) over (), covar_pop(1,null) over (), covar_samp(1,null) over (), corr(1,null) over ();
+% .%11,	.%22,	.%33,	.%45,	.%57,	.%71 # table_name
+% %11,	%22,	%33,	%45,	%57,	%71 # name
+% double,	double,	double,	double,	double,	double # type
+% 24,	24,	24,	24,	24,	24 # length
+[ 0,	NULL,	NULL,	NULL,	NULL,	NULL	]
+#select covar_pop(1,1) over (), covar_samp(1,1) over (), corr(1,1) over (), covar_pop(1,null) over (), covar_samp(1,null) over (), corr(1,null) over () from analytics;
+% .%11,	.%22,	.%33,	.%45,	.%57,	.%71 # table_name
+% %11,	%22,	%33,	%45,	%57,	%71 # name
+% double,	double,	double,	double,	double,	double # type
+% 24,	24,	24,	24,	24,	24 # length
+[ 0,	0,	NULL,	NULL,	NULL,	NULL	]
+[ 0,	0,	NULL,	NULL,	NULL,	NULL	]
+[ 0,	0,	NULL,	NULL,	NULL,	NULL	]
+[ 0,	0,	NULL,	NULL,	NULL,	NULL	]
+[ 0,	0,	NULL,	NULL,	NULL,	NULL	]
+[ 0,	0,	NULL,	NULL,	NULL,	NULL	]
+[ 0,	0,	NULL,	NULL,	NULL,	NULL	]
+[ 0,	0,	NULL,	NULL,	NULL,	NULL	]
+[ 0,	0,	NULL,	NULL,	NULL,	NULL	]
+[ 0,	0,	NULL,	NULL,	NULL,	NULL	]
 #rollback;
 
 # 11:48:30 >  

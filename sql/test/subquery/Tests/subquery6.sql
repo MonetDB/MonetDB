@@ -201,6 +201,15 @@ select count(*) over (), max(Product_Name) from tbl_ProductSales;
 select corr(1,1), corr(1,1) over () from tbl_ProductSales;
 	-- NULL NULL
 
+select min(colid), group_concat(null) over () from tbl_ProductSales where null;
+	-- NULL NULL
+
+select min(colid), group_concat(null, null) over () from tbl_ProductSales where null;
+	-- NULL NULL
+
+select max(colid), group_concat('a', null) over () from tbl_ProductSales where null;
+	-- NULL a
+
 DROP TABLE tbl_ProductSales;
 DROP TABLE another_T;
 DROP TABLE integers;

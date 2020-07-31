@@ -1716,7 +1716,7 @@ SQLvar_pop(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 static str
 do_covariance_and_correlation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, const char* op, const char* err,
-							  gdk_return (*func)(BAT *, BAT *, BAT *, BAT *, BAT *, int), BUN minimum, dbl single_case)
+							  gdk_return (*func)(BAT *, BAT *, BAT *, BAT *, BAT *, int), BUN minimum, dbl defaultv, dbl single_case)
 {
 	BAT *r = NULL, *b = NULL, *c = NULL, *s = NULL, *e = NULL;
 	int tp1, tp2;
@@ -1780,7 +1780,7 @@ do_covariance_and_correlation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPt
 			const void *restrict nil = ATOMnilptr(tp1);
 			int (*cmp) (const void *, const void *) = ATOMcompare(tp1);
 			ValRecord *input2 = &(stk)->stk[(pci)->argv[2]];
-			dbl *restrict rb = (dbl*) Tloc(r, 0), res = VALisnil(input2) ? dbl_nil : single_case;
+			dbl *restrict rb = (dbl*) Tloc(r, 0), res = VALisnil(input2) ? dbl_nil : defaultv;
 			lng *restrict start = (lng*) Tloc(s, 0), *restrict end = (lng*) Tloc(e, 0);
 			bool has_nils = is_dbl_nil(res);
 
@@ -1827,7 +1827,7 @@ do_covariance_and_correlation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPt
 #endif
 			case TYPE_flt:
 			case TYPE_dbl:
-				*res = (VALisnil(input1) || VALisnil(input2)) ? dbl_nil : 0;
+				*res = (VALisnil(input1) || VALisnil(input2)) ? dbl_nil : single_case;
 				break;
 			default:
 				throw(SQL, op, SQLSTATE(42000) "%s not available for %s", op, ATOMname(tp1));
@@ -1840,21 +1840,21 @@ str
 SQLcovar_samp(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	return do_covariance_and_correlation(cntxt, mb, stk, pci, "sql.covariance", SQLSTATE(42000) "covariance(:any_1,:any_1,:lng,:lng)",
-										 GDKanalytical_covariance_samp, 1, 0.0f);
+										 GDKanalytical_covariance_samp, 1, 0.0f, dbl_nil);
 }
 
 str
 SQLcovar_pop(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	return do_covariance_and_correlation(cntxt, mb, stk, pci, "sql.covariancep", SQLSTATE(42000) "covariancep(:any_1,:any_1,:lng,:lng)",
-										 GDKanalytical_covariance_pop, 0, 0.0f);
+										 GDKanalytical_covariance_pop, 0, 0.0f, 0.0f);
 }
 
 str
 SQLcorr(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	return do_covariance_and_correlation(cntxt, mb, stk, pci, "sql.corr", SQLSTATE(42000) "corr(:any_1,:any_1,:lng,:lng)",
-										 GDKanalytical_correlation, 0, dbl_nil);
+										 GDKanalytical_correlation, 0, dbl_nil, dbl_nil);
 }
 
 str
@@ -1922,9 +1922,11 @@ SQLstrgroup_concat(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		str *res = (str*) getArgReference(stk, pci, 0);
 		str in = *getArgReference_str(stk, pci, 1);
 
-		if (pci->argc == 5) {
+		if (strNil(in)) {
+			*res = GDKstrdup(str_nil);
+		} else if (pci->argc == 5) {
 			str sep = *getArgReference_str(stk, pci, 2);
-			size_t l1 = strNil(in) ? 0 : strlen(in), l2 = strNil(sep) ? 0 : strlen(sep);
+			size_t l1 = strlen(in), l2 = strNil(sep) ? 0 : strlen(sep);
 
 			if ((*res = GDKmalloc(l1+l2+1))) {
 				if (l1)
@@ -1934,7 +1936,7 @@ SQLstrgroup_concat(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				(*res)[l1+l2] = '\0';
 			}
 		} else {
-			*res = strNil(in) ? GDKstrdup("") : GDKstrdup(in);
+			*res = GDKstrdup(in);
 		}
 		if (!*res)
 			throw(SQL, "sql.strgroup_concat", SQLSTATE(HY013) MAL_MALLOC_FAIL);
