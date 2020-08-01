@@ -4994,23 +4994,41 @@ rel_rankop(sql_query *query, sql_rel **rel, symbol *se, int f)
 	if (!wf) {
 		wf = find_func(sql, s, aname, list_length(types), F_ANALYTIC, NULL);
 		if (wf) {
-			node *op = wf->func->ops->h;
 			list *nexps = sa_list(sql->sa);
+			sql_subtype *atp = NULL;
+			sql_arg *aa = NULL;
 
-			for (n = fargs->h ; wf && op && n; op = op->next, n = n->next ) {
-				sql_arg *arg = op->data;
+			/* find largest any type argument */
+			for (node *n = fargs->h, *op = wf->func->ops->h ; op && n; op = op->next, n = n->next ) {
+				sql_arg *a = op->data;
 				sql_exp *e = n->data;
+				sql_subtype *t = exp_subtype(e);
 
-				e = exp_check_type(sql, &arg->type, NULL, e, type_equal);
-				if (!e) {
+				if (!aa && a->type.type->eclass == EC_ANY) {
+					atp = t;
+					aa = a;
+				}
+				if (aa && a->type.type->eclass == EC_ANY && t && atp && t->type->localtype > atp->type->localtype) {
+					atp = t;
+					aa = a;
+				}
+			}
+			for (node *n = fargs->h, *op = wf->func->ops->h ; wf && op && n; op = op->next, n = n->next ) {
+				sql_arg *a = op->data;
+				sql_exp *e = n->data;
+				sql_subtype *ntp = &a->type;
+
+				if (a->type.type->eclass == EC_ANY && atp)
+					ntp = sql_create_subtype(sql->sa, atp->type, atp->digits, atp->scale);
+				if (!(e = exp_check_type(sql, ntp, NULL, e, type_equal))) {
 					wf = NULL;
 					break;
 				}
 				list_append(nexps, e);
 			}
-			if (wf && list_length(nexps))
+			if (wf && list_length(nexps)) {
 				fargs = nexps;
-			else {
+			} else {
 				char *arg_list = nfargs ? window_function_arg_types_2str(sql, types, nfargs) : NULL;
 				sql_error(sql, 02, SQLSTATE(42000) "SELECT: window function '%s(%s)' not found", aname, arg_list ? arg_list : "");
 				return NULL;

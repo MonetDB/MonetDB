@@ -210,6 +210,20 @@ select min(colid), group_concat(null, null) over () from tbl_ProductSales where 
 select max(colid), group_concat('a', null) over () from tbl_ProductSales where null;
 	-- NULL a
 
+select ntile(1) over ();
+	-- 1
+
+select ntile(11) over (), min(TotalSales) from tbl_ProductSales;
+	-- 1 100
+
+select nth_value('bug', 'a') over (); --error converting string 'a' to an integer
+
+select nth_value('bug', 1) over ();
+	-- bug
+
+select nth_value('bug', 1) over (), max(TotalSales) from tbl_ProductSales;
+	-- bug 500
+
 DROP TABLE tbl_ProductSales;
 DROP TABLE another_T;
 DROP TABLE integers;
