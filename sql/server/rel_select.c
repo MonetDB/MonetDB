@@ -3204,17 +3204,17 @@ rel_nop(sql_query *query, sql_rel **rel, symbol *se, int fs, exp_kind ek)
 
 					e = exp_check_type(sql, ntp, NULL, e, type_equal);
 					if (!e) {
-						nexps = NULL;
+						err = 1;
 						break;
 					}
 					append(nexps, e);
 					append(tl, exp_subtype(e));
 				}
 			}
+			if (err)
+				return NULL;
 			sql->type = q->type;
-			if (nexps)
-				return exp_op(sql->sa, nexps, sql_dup_subfunc(sql->sa, f, tl, NULL));
-			return NULL;
+			return exp_op(sql->sa, list_empty(nexps) ? NULL : nexps, sql_dup_subfunc(sql->sa, f, tl, NULL));
 		} else {
 			return sql_error(sql, 02, SQLSTATE(42000) "EXEC: PREPARED Statement missing '%d'", nr);
 		}

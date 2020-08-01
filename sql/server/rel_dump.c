@@ -1095,7 +1095,7 @@ exp_read(mvc *sql, sql_rel *lrel, sql_rel *rrel, list *pexps, char *r, int *pos,
 			}
 
 			if (f)
-				exp = exp_op( sql->sa, exps, f);
+				exp = exp_op(sql->sa, list_empty(exps) ? NULL : exps, f);
 			else
 				return sql_error(sql, -1, SQLSTATE(42000) "Function '%s%s%s %d' not found\n", tname ? tname : "", tname ? "." : "", cname, nops);
 		}

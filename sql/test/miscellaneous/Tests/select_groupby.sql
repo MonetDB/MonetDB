@@ -183,6 +183,9 @@ LIMIT 1001 OFFSET 0;
 
 exec ** ();
 
+prepare select 1;
+exec ** (); 
+
 prepare select cast(? as interval second);
 exec ** (blob 'aaaa'); --error, cannot cast
 
