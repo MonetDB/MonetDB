@@ -48,10 +48,10 @@ stdout of test 'ifthenelse.Bug-3546` in directory 'sql/test/BugTracker-2014` its
 % . # table_name
 % r # name
 % decimal # type
-% 20 # length
-[ 0.02	]
-[ -1.00	]
-[ -1.00	]
+% 19 # length
+[ 0.023 ]
+[ -1.000        ]
+[ -1.000        ]
 #rollback;
 
 # 20:44:31 >  
