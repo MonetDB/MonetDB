@@ -8,16 +8,16 @@
 
 set(mal_public_headers
   ${CMAKE_CURRENT_SOURCE_DIR}/mal.h
-  ${CMAKE_CURRENT_SOURCE_DIR}/mal_linker.h
-  ${CMAKE_CURRENT_SOURCE_DIR}/mal_exception.h
-  ${CMAKE_CURRENT_SOURCE_DIR}/mal_instruction.h
-  ${CMAKE_CURRENT_SOURCE_DIR}/mal_import.h
-  ${CMAKE_CURRENT_SOURCE_DIR}/mal_type.h
-  ${CMAKE_CURRENT_SOURCE_DIR}/mal_stack.h
-  ${CMAKE_CURRENT_SOURCE_DIR}/mal_namespace.h
-  ${CMAKE_CURRENT_SOURCE_DIR}/mal_errors.h
+  ${CMAKE_CURRENT_SOURCE_DIR}/mal_authorize.h
   ${CMAKE_CURRENT_SOURCE_DIR}/mal_client.h
-  ${CMAKE_CURRENT_SOURCE_DIR}/mal_authorize.h)
+  ${CMAKE_CURRENT_SOURCE_DIR}/mal_errors.h
+  ${CMAKE_CURRENT_SOURCE_DIR}/mal_exception.h
+  ${CMAKE_CURRENT_SOURCE_DIR}/mal_import.h
+  ${CMAKE_CURRENT_SOURCE_DIR}/mal_instruction.h
+  ${CMAKE_CURRENT_SOURCE_DIR}/mal_linker.h
+  ${CMAKE_CURRENT_SOURCE_DIR}/mal_namespace.h
+  ${CMAKE_CURRENT_SOURCE_DIR}/mal_stack.h
+  ${CMAKE_CURRENT_SOURCE_DIR}/mal_type.h)
 
 add_library(mal OBJECT)
 
@@ -88,10 +88,6 @@ set_target_properties(mal
 
 install(TARGETS
   mal
-  LIBRARY
-  DESTINATION ${CMAKE_INSTALL_LIBDIR}
-  ARCHIVE
-  DESTINATION ${CMAKE_INSTALL_LIBDIR}
   PUBLIC_HEADER
   DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/monetdb
   COMPONENT serverdev

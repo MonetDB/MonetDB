@@ -36,14 +36,9 @@ set_target_properties(moptions
   POSITION_INDEPENDENT_CODE ON
   PUBLIC_HEADER "${moptions_public_headers}")
 
-install(TARGETS
-  moptions
-  LIBRARY
-  DESTINATION ${CMAKE_INSTALL_LIBDIR}
-  ARCHIVE
-  DESTINATION ${CMAKE_INSTALL_LIBDIR}
-  PUBLIC_HEADER
+install(FILES
+  monet_options.h
+  monet_getopt.h
   DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/monetdb
-  INCLUDES DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
   COMPONENT
   monetdbdev)
