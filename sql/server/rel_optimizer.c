@@ -649,13 +649,8 @@ order_join_expressions(mvc *sql, list *dje, list *rels)
 	if (cnt == 0)
 		return res;
 
-	keys = GDKmalloc(cnt*sizeof(int));
-	data = GDKmalloc(cnt*sizeof(void *));
-	if (keys == NULL || data == NULL) {
-		GDKfree(keys);
-		GDKfree(data);
-		return NULL;
-	}
+	keys = SA_NEW_ARRAY(sql->ta, int, cnt);
+	data = SA_NEW_ARRAY(sql->ta, void*, cnt);
 
 	for (n = dje->h, i = 0; n; n = n->next, i++) {
 		sql_exp *e = n->data;
@@ -678,8 +673,6 @@ order_join_expressions(mvc *sql, list *dje, list *rels)
 	for(i=0; i<cnt; i++) {
 		list_append(res, data[i]);
 	}
-	GDKfree(keys);
-	GDKfree(data);
 	return res;
 }
 
@@ -3458,8 +3451,8 @@ exps_cse( mvc *sql, list *oexps, list *l, list *r )
 		}
 	}
 
-	lu = GDKzalloc(list_length(l) * sizeof(char));
-	ru = GDKzalloc(list_length(r) * sizeof(char));
+	lu = SA_ZNEW_ARRAY(sql->ta, char, list_length(l));
+	ru = SA_ZNEW_ARRAY(sql->ta, char, list_length(r));
 	for (n = l->h, lc = 0; n; n = n->next, lc++) {
 		sql_exp *le = n->data;
 
@@ -3496,8 +3489,6 @@ exps_cse( mvc *sql, list *oexps, list *l, list *r )
 		append(oexps, exp_or(sql->sa, list_dup(l, (fdup)NULL),
 				     list_dup(r, (fdup)NULL), 0));
 	}
-	GDKfree(lu);
-	GDKfree(ru);
 	return res;
 }
 
@@ -5466,7 +5457,7 @@ static list *
 rel_used_projections(mvc *sql, list *exps, list *users)
 {
 	list *nexps = sa_list(sql->sa);
-	bool *used = (bool*)GDKzalloc(sizeof(bool) * list_length(exps));
+	bool *used = SA_ZNEW_ARRAY(sql->ta, bool, list_length(exps));
 	int i = 0;
 
 	for(node *n = users->h; n; n = n->next) {
@@ -5480,7 +5471,6 @@ rel_used_projections(mvc *sql, list *exps, list *users)
 		if (is_intern(e) || used[i])
 			append(nexps, e);
 	}
-	GDKfree(used);
 	return nexps;
 }
 
@@ -5650,37 +5640,33 @@ rel_groupby_order(visitor *v, sql_rel *rel)
 		node *n;
 		list *gbe = rel->r;
 		int i, ngbe = list_length(gbe);
-		scores = GDKmalloc(ngbe * sizeof(int));
-		exps = GDKmalloc(ngbe * sizeof(sql_exp*));
+		scores = SA_NEW_ARRAY(v->sql->ta, int, ngbe);
+		exps = SA_NEW_ARRAY(v->sql->ta, sql_exp*, ngbe);
 
-		if (scores && exps) {
-			/* first sorting step, give priority for integers and sorted columns */
-			for (i = 0, n = gbe->h; n; i++, n = n->next) {
-				exps[i] = n->data;
-				scores[i] = score_gbe(v->sql, rel, exps[i]);
-			}
-			GDKqsort(scores, exps, NULL, ngbe, sizeof(int), sizeof(void *), TYPE_int, true, true);
-
-			/* second sorting step, give priority to strings with lower number of digits */
-			for (i = ngbe - 1; i && !scores[i]; i--); /* find epressions with no score from the first round */
-			if (scores[i])
-				i++;
-			if (ngbe - i > 1) {
-				for (int j = i; j < ngbe; j++) {
-					sql_subtype *t = exp_subtype(exps[j]);
-					scores[j] = t->digits;
-				}
-				/* the less number of digits the better, order ascending */
-				GDKqsort(scores + i, exps + i, NULL, ngbe - i, sizeof(int), sizeof(void *), TYPE_int, false, true);
-			}
-
-			for (i = 0, n = gbe->h; n; i++, n = n->next)
-				n->data = exps[i];
+		/* first sorting step, give priority for integers and sorted columns */
+		for (i = 0, n = gbe->h; n; i++, n = n->next) {
+			exps[i] = n->data;
+			scores[i] = score_gbe(v->sql, rel, exps[i]);
 		}
+		GDKqsort(scores, exps, NULL, ngbe, sizeof(int), sizeof(void *), TYPE_int, true, true);
+
+		/* second sorting step, give priority to strings with lower number of digits */
+		for (i = ngbe - 1; i && !scores[i]; i--); /* find epressions with no score from the first round */
+		if (scores[i])
+			i++;
+		if (ngbe - i > 1) {
+			for (int j = i; j < ngbe; j++) {
+				sql_subtype *t = exp_subtype(exps[j]);
+				scores[j] = t->digits;
+			}
+			/* the less number of digits the better, order ascending */
+			GDKqsort(scores + i, exps + i, NULL, ngbe - i, sizeof(int), sizeof(void *), TYPE_int, false, true);
+		}
+
+		for (i = 0, n = gbe->h; n; i++, n = n->next)
+			n->data = exps[i];
 	}
 
-	GDKfree(scores);
-	GDKfree(exps);
 	return rel;
 }
 
@@ -5696,21 +5682,13 @@ rel_reduce_groupby_exps(visitor *v, sql_rel *rel)
 
 	if (is_groupby(rel->op) && rel->r && !rel_is_ref(rel) && list_length(gbe)) {
 		node *n, *m;
-		int8_t *scores = GDKmalloc(list_length(gbe));
-		int k, j, i;
+		int k, j, i, ngbe = list_length(gbe);
+		int8_t *scores = SA_NEW_ARRAY(v->sql->ta, int8_t, ngbe);
 		sql_column *c;
-		sql_table **tbls;
-		sql_rel **bts, *bt = NULL;
+		sql_table **tbls = SA_NEW_ARRAY(v->sql->ta, sql_table*, ngbe);
+		sql_rel **bts = SA_NEW_ARRAY(v->sql->ta, sql_rel*, ngbe), *bt = NULL;
 
 		gbe = rel->r;
-		tbls = (sql_table**)GDKmalloc(sizeof(sql_table*)*list_length(gbe));
-		bts = (sql_rel**)GDKmalloc(sizeof(sql_rel*)*list_length(gbe));
-		if (scores == NULL || tbls == NULL || bts == NULL) {
-			GDKfree(scores);
-			GDKfree(tbls);
-			GDKfree(bts);
-			return NULL;
-		}
 		for (k = 0, i = 0, n = gbe->h; n; n = n->next, k++) {
 			sql_exp *e = n->data;
 
@@ -5816,17 +5794,11 @@ rel_reduce_groupby_exps(visitor *v, sql_rel *rel)
 					rel->exps = nexps;
 					/* only one reduction at a time */
 					v->changes = 1;
-					GDKfree(bts);
-					GDKfree(tbls);
-					GDKfree(scores);
 					return rel;
 				}
 				gbe = rel->r;
 			}
 		}
-		GDKfree(bts);
-		GDKfree(tbls);
-		GDKfree(scores);
 	}
 	/* remove constants from group by list */
 	if (is_groupby(rel->op) && rel->r && !rel_is_ref(rel)) {
@@ -7451,23 +7423,19 @@ rel_select_order(visitor *v, sql_rel *rel)
 	if (is_select(rel->op) && list_length(rel->exps) > 1) {
 		node *n;
 		int i, nexps = list_length(rel->exps);
-		scores = GDKmalloc(nexps * sizeof(int));
-		exps = GDKmalloc(nexps * sizeof(sql_exp*));
+		scores = SA_NEW_ARRAY(v->sql->ta, int, nexps);
+		exps = SA_NEW_ARRAY(v->sql->ta, sql_exp*, nexps);
 
-		if (scores && exps) {
-			for (i = 0, n = rel->exps->h; n; i++, n = n->next) {
-				exps[i] = n->data;
-				scores[i] = score_se(v->sql, rel, n->data);
-			}
-			GDKqsort(scores, exps, NULL, nexps, sizeof(int), sizeof(void *), TYPE_int, true, true);
-
-			for (i = 0, n = rel->exps->h; n; i++, n = n->next)
-				n->data = exps[i];
+		for (i = 0, n = rel->exps->h; n; i++, n = n->next) {
+			exps[i] = n->data;
+			scores[i] = score_se(v->sql, rel, n->data);
 		}
+		GDKqsort(scores, exps, NULL, nexps, sizeof(int), sizeof(void *), TYPE_int, true, true);
+
+		for (i = 0, n = rel->exps->h; n; i++, n = n->next)
+			n->data = exps[i];
 	}
 
-	GDKfree(scores);
-	GDKfree(exps);
 	return rel;
 }
 
