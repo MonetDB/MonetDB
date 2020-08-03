@@ -462,7 +462,6 @@ Provides: MonetDB5-server-hugeint%{?_isa} = %{version}-%{release}
 %endif
 %if (0%{?fedora} >= 22)
 Recommends: %{name}-SQL-server5%{?_isa} = %{version}-%{release}
-%endif
 Suggests: %{name}-client%{?_isa} = %{version}-%{release}
 %endif
 # versions up to 1.0.5 don't accept the queryid field in the result set
