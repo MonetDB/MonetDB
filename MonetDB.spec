@@ -786,6 +786,7 @@ rmdir %{buildroot}%{_sysconfdir}/tmpfiles.d
 
 install -d -m 0750 %{buildroot}%{_localstatedir}/lib/monetdb
 install -d -m 0770 %{buildroot}%{_localstatedir}/monetdb5/dbfarm
+touch %{buildroot}%{_localstatedir}/monetdb5/dbfarm/.merovingian_lock
 install -d -m 0775 %{buildroot}%{_localstatedir}/log/monetdb
 install -d -m 0775 %{buildroot}%{_rundir}/monetdb
 
