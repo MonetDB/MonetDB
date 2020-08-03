@@ -9,8 +9,8 @@ stdout of test 'date-arithmetic.Bug-6415` in directory 'sql/test/BugTracker-2017
 % .%2,	.%3 # table_name
 % %2,	%3 # name
 % day_interval,	day_interval # type
-% 5,	5 # length
-[ 0.009,	0.009	]
+% 10,	10 # length
+[ 777600.000,	777600.000	]
 #select cast('2017-10-01' as date) + interval '9' day, date '2017-10-01' + interval '9' day;
 % .%2,	.%3 # table_name
 % %2,	%3 # name

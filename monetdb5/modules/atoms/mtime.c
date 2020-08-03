@@ -304,7 +304,7 @@ static inline lng
 date_diff_imp(const date d1, const date d2)
 {
 	int diff = date_diff(d1, d2);
-	return is_int_nil(diff) ? lng_nil : (lng) diff;
+	return is_int_nil(diff) ? lng_nil : (lng) diff * (lng) (24*60*60*1000);
 }
 func2(MTIMEdate_diff, MTIMEdate_diff_bulk, "diff", date, date, lng, date_diff_imp, func2_noexcept, \
 	  DEC_VAR_R, DEC_VAR_R, DEC_VAR_R, DEC_VAR_R, DEC_VAR_R, INIT_VAR, INIT_VAR, INIT_VAR, GET_NEXT_VAR, GET_NEXT_VAR, APPEND_VAR)

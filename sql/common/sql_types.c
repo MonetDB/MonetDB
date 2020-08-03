@@ -1725,20 +1725,26 @@ sqltypeinit( sql_allocator *sa)
 	sql_create_func(sa, "sql_sub", "mtime", "diff", FALSE, FALSE, SCALE_NONE, 0, SECINT, 2, TMESTAMPTZ, TMESTAMPTZ);
 	sql_create_func(sa, "sql_sub", "mtime", "diff", FALSE, FALSE, SCALE_FIX, 0, SECINT, 2, TMESTAMP, TMESTAMP);
 
+	sql_create_func(sa, "sql_sub", "mtime", "date_sub_msec_interval", FALSE, FALSE, SCALE_NONE, 0, DTE, 2, DTE, SECINT);
 	sql_create_func(sa, "sql_sub", "mtime", "date_sub_msec_interval", FALSE, FALSE, SCALE_NONE, 0, DTE, 2, DTE, DAYINT);
 	sql_create_func(sa, "sql_sub", "mtime", "date_sub_month_interval", FALSE, FALSE, SCALE_NONE, 0, DTE, 2, DTE, MONINT);
 	sql_create_func(sa, "sql_sub", "mtime", "time_sub_msec_interval", FALSE, FALSE, SCALE_NONE, 0, TME, 2, TME, SECINT);
 	sql_create_func(sa, "sql_sub", "mtime", "time_sub_msec_interval", FALSE, FALSE, SCALE_NONE, 0, TMETZ, 2, TMETZ, SECINT);
 	sql_create_func(sa, "sql_sub", "mtime", "timestamp_sub_msec_interval", FALSE, FALSE, SCALE_NONE, 0, TMESTAMP, 2, TMESTAMP, SECINT);
+	sql_create_func(sa, "sql_sub", "mtime", "timestamp_sub_msec_interval", FALSE, FALSE, SCALE_NONE, 0, TMESTAMP, 2, TMESTAMP, DAYINT);
 	sql_create_func(sa, "sql_sub", "mtime", "timestamp_sub_month_interval", FALSE, FALSE, SCALE_NONE, 0, TMESTAMP, 2, TMESTAMP, MONINT);
 	sql_create_func(sa, "sql_sub", "mtime", "timestamp_sub_msec_interval", FALSE, FALSE, SCALE_NONE, 0, TMESTAMPTZ, 2, TMESTAMPTZ, SECINT);
+	sql_create_func(sa, "sql_sub", "mtime", "timestamp_sub_msec_interval", FALSE, FALSE, SCALE_NONE, 0, TMESTAMPTZ, 2, TMESTAMPTZ, DAYINT);
 	sql_create_func(sa, "sql_sub", "mtime", "timestamp_sub_month_interval", FALSE, FALSE, SCALE_NONE, 0, TMESTAMPTZ, 2, TMESTAMPTZ, MONINT);
 
+	sql_create_func(sa, "sql_add", "mtime", "date_add_msec_interval", FALSE, FALSE, SCALE_NONE, 0, DTE, 2, DTE, SECINT);
 	sql_create_func(sa, "sql_add", "mtime", "date_add_msec_interval", FALSE, FALSE, SCALE_NONE, 0, DTE, 2, DTE, DAYINT);
 	sql_create_func(sa, "sql_add", "mtime", "addmonths", FALSE, FALSE, SCALE_NONE, 0, DTE, 2, DTE, MONINT);
 	sql_create_func(sa, "sql_add", "mtime", "timestamp_add_msec_interval", FALSE, FALSE, SCALE_NONE, 0, TMESTAMP, 2, TMESTAMP, SECINT);
+	sql_create_func(sa, "sql_add", "mtime", "timestamp_add_msec_interval", FALSE, FALSE, SCALE_NONE, 0, TMESTAMP, 2, TMESTAMP, DAYINT);
 	sql_create_func(sa, "sql_add", "mtime", "timestamp_add_month_interval", FALSE, FALSE, SCALE_NONE, 0, TMESTAMP, 2, TMESTAMP, MONINT);
 	sql_create_func(sa, "sql_add", "mtime", "timestamp_add_msec_interval", FALSE, FALSE, SCALE_NONE, 0, TMESTAMPTZ, 2, TMESTAMPTZ, SECINT);
+	sql_create_func(sa, "sql_add", "mtime", "timestamp_add_msec_interval", FALSE, FALSE, SCALE_NONE, 0, TMESTAMPTZ, 2, TMESTAMPTZ, DAYINT);
 	sql_create_func(sa, "sql_add", "mtime", "timestamp_add_month_interval", FALSE, FALSE, SCALE_NONE, 0, TMESTAMPTZ, 2, TMESTAMPTZ, MONINT);
 	sql_create_func(sa, "sql_add", "mtime", "time_add_msec_interval", FALSE, FALSE, SCALE_NONE, 0, TME, 2, TME, SECINT);
 	sql_create_func(sa, "sql_add", "mtime", "time_add_msec_interval", FALSE, FALSE, SCALE_NONE, 0, TMETZ, 2, TMETZ, SECINT);
@@ -1787,7 +1793,6 @@ sqltypeinit( sql_allocator *sa)
 	sql_create_func(sa, "year", "mtime", "year", FALSE, FALSE, SCALE_NONE, 0, INT, 1, MONINT);
 	sql_create_func(sa, "month", "mtime", "month", FALSE, FALSE, SCALE_NONE, 0, INT, 1, MONINT);
 	sql_create_func(sa, "day", "mtime", "day", FALSE, FALSE, SCALE_NONE, 0, LNG, 1, DAYINT);
-	sql_create_func(sa, "day", "mtime", "day", FALSE, FALSE, SCALE_NONE, 0, LNG, 1, SECINT);
 	sql_create_func(sa, "hour", "mtime", "hours", FALSE, FALSE, SCALE_NONE, 0, INT, 1, SECINT);
 	sql_create_func(sa, "minute", "mtime", "minutes", FALSE, FALSE, SCALE_NONE, 0, INT, 1, SECINT);
 	sql_create_func(sa, "second", "mtime", "seconds", FALSE, FALSE, SCALE_NONE, 0, INT, 1, SECINT);
