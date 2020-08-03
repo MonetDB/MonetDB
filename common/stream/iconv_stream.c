@@ -221,7 +221,7 @@ ic_flush(stream *s)
 		mnstr_copy_error(s, s->inner);
 		return -1;
 	}
-	return mnstr_flush(s->inner);
+	return mnstr_flush(s->inner, MNSTR_FLUSH_DATA);
 }
 
 static void

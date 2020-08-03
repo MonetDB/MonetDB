@@ -243,7 +243,7 @@ timerResume(void)
 static void
 timerEnd(void)
 {
-	mnstr_flush(toConsole);
+	mnstr_flush(toConsole, MNSTR_FLUSH_DATA);
 	t1 = gettime();
 	assert(t1 >= t0);
 }
@@ -280,7 +280,7 @@ timerHuman(int64_t sqloptimizer, int64_t maloptimizer, int64_t querytime, bool s
 	if (timermode == T_CLOCK && (singleinstr != total)) {
 		/* print wall-clock in "human-friendly" format */
 		fflush(stderr);
-		mnstr_flush(toConsole);
+		mnstr_flush(toConsole, MNSTR_FLUSH_DATA);
 		if (t / 1000 < 1000) {
 			fprintf(stderr, "clk: %" PRId64 ".%03d ms\n", t / 1000, (int) (t % 1000));
 			fflush(stderr);
@@ -306,7 +306,7 @@ timerHuman(int64_t sqloptimizer, int64_t maloptimizer, int64_t querytime, bool s
 	if (timermode == T_PERF && (!total || singleinstr != total)) {
 		/* for performance measures we use milliseconds as the base */
 		fflush(stderr);
-		mnstr_flush(toConsole);
+		mnstr_flush(toConsole, MNSTR_FLUSH_DATA);
 		if (!total)
 			fprintf(stderr, "sql:%" PRId64 ".%03d opt:%" PRId64 ".%03d run:%" PRId64 ".%03d ",
 				 sqloptimizer / 1000, (int) (sqloptimizer % 1000),
@@ -827,7 +827,7 @@ XMLrenderer(MapiHdl hdl)
 	char *name;
 
 	/* we must use toConsole since the XML file is encoded in UTF-8 */
-	mnstr_flush(toConsole);
+	mnstr_flush(toConsole, MNSTR_FLUSH_DATA);
 	mnstr_printf(toConsole, "<?xml version='1.0' encoding='UTF-8'?>\n");
 	mnstr_printf(toConsole,
 		     "<!DOCTYPE table [\n"
@@ -864,7 +864,7 @@ XMLrenderer(MapiHdl hdl)
 		mnstr_printf(toConsole, "</row>\n");
 	}
 	mnstr_printf(toConsole, "</table>\n");
-	mnstr_flush(toConsole);
+	mnstr_flush(toConsole, MNSTR_FLUSH_DATA);
 }
 
 static void
@@ -919,7 +919,7 @@ EXPANDEDrenderer(MapiHdl hdl)
 			} while (*edata);
 		}
 	}
-	mnstr_flush(toConsole);
+	mnstr_flush(toConsole, MNSTR_FLUSH_DATA);
 }
 
 static void
@@ -1377,7 +1377,7 @@ SQLpagemove(int *len, int fields, int *ps, bool *silent)
 
 	SQLseparator(len, fields, '-');
 	mnstr_printf(toConsole, "next page? (continue,quit,next)");
-	mnstr_flush(toConsole);
+	mnstr_flush(toConsole, MNSTR_FLUSH_DATA);
 	sz = mnstr_readline(fromConsole, buf, sizeof(buf));
 	if (sz > 0) {
 		if (buf[0] == 'c')
@@ -1789,7 +1789,7 @@ format_result(Mapi mid, MapiHdl hdl, bool singleinstr)
 		timerHumanStop();
 		/* handle errors first */
 		if (mapi_result_error(hdl) != NULL) {
-			mnstr_flush(toConsole);
+			mnstr_flush(toConsole, MNSTR_FLUSH_DATA);
 			if (formatter == TABLEformatter) {
 				mapi_noexplain(mid, "");
 			} else {
@@ -2097,7 +2097,7 @@ doFileBulk(Mapi mid, stream *fp)
 	timerEnd();
 
 	free(buf);
-	mnstr_flush(toConsole);
+	mnstr_flush(toConsole, MNSTR_FLUSH_DATA);
 	if (fp)
 		close_stream(fp);
 	return errseen;
@@ -2277,7 +2277,7 @@ doFile(Mapi mid, stream *fp, bool useinserts, bool interactive, int save_history
 			mnstr_write(toConsole, p, 1, strlen(p));
 #endif
 		}
-		mnstr_flush(toConsole);
+		mnstr_flush(toConsole, MNSTR_FLUSH_DATA);
 		timerPause();
 		/* read a line */
 		length = 0;
@@ -3084,7 +3084,7 @@ putfile(void *data, const char *filename, const void *buf, size_t bufsize)
 			return NULL; /* successfully opened file */
 	} else if (buf == NULL) {
 		/* done writing */
-		int flush = mnstr_flush(priv->f);
+		int flush = mnstr_flush(priv->f, MNSTR_FLUSH_DATA);
 		close_stream(priv->f);
 		priv->f = NULL;
 		return flush < 0 ? "error writing output" : NULL;

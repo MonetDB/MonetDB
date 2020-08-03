@@ -88,6 +88,11 @@ typedef enum mnstr_error_kind {
 	MNSTR_UNEXPECTED_EOF,
 } mnstr_error_kind;
 
+typedef enum mnstr_flush_level {
+	MNSTR_FLUSH_DATA = 1, // write all data
+	MNSTR_FLUSH_ALL = 2,  // write all data and also reset compression state
+} mnstr_flush_level;
+
 stream_export char *mnstr_error(const stream *s);
 stream_export const char* mnstr_peek_error(const stream *s);
 stream_export mnstr_error_kind mnstr_errnr(const stream *s);
@@ -141,7 +146,7 @@ stream_export ssize_t mnstr_readline(stream *restrict s, void *restrict buf, siz
 stream_export ssize_t mnstr_write(stream *restrict s, const void *restrict buf, size_t elmsize, size_t cnt); // USED all over
 stream_export void mnstr_close(stream *s);
 stream_export void mnstr_destroy(stream *s);
-stream_export int mnstr_flush(stream *s); // used all over
+stream_export int mnstr_flush(stream *s, mnstr_flush_level flush_level); // used all over
 stream_export int mnstr_fsync(stream *s); // used in gdk_logger.c, wlc.c and store.c
 stream_export int mnstr_fgetpos(stream *restrict s, fpos_t *restrict p); // unused
 stream_export int mnstr_fsetpos(stream *restrict s, fpos_t *restrict p); // unused

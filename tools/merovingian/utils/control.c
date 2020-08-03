@@ -338,7 +338,7 @@ control_setup(
 						mnstr_printf(control->fdout,
 								"BIG:monetdb:{%s}%s:control:merovingian:\n",
 								*algs, p);
-						mnstr_flush(control->fdout);
+						mnstr_flush(control->fdout, MNSTR_FLUSH_DATA);
 						free(p);
 						break;
 					}
@@ -389,7 +389,7 @@ control_setup(
 
 	if (control->fdout != NULL) {
 		mnstr_printf(control->fdout, "%s %s\n", database, command);
-		mnstr_flush(control->fdout);
+		mnstr_flush(control->fdout, MNSTR_FLUSH_DATA);
 	} else {
 		len = snprintf(control->sbuf, sizeof(control->sbuf), "%s %s\n", database, command);
 		if (send(control->sock, control->sbuf, len, 0) == -1) {

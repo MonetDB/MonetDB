@@ -1556,7 +1556,7 @@ mvc_export_table_prot10(backend *b, stream *s, res_table *t, BAT *order, BUN off
 				lng new_size = rowsize + 1024;
 				if (!mnstr_writeLng(s, (lng) -1) ||
 					!mnstr_writeLng(s, new_size) ||
-					mnstr_flush(s) < 0) {
+					mnstr_flush(s, MNSTR_FLUSH_DATA) < 0) {
 					fres = -1;
 					goto cleanup;
 				}
@@ -1728,7 +1728,7 @@ mvc_export_table_prot10(backend *b, stream *s, res_table *t, BAT *order, BUN off
 
 		bs2_setpos(s, buf - bs2_buffer(s).buf);
 		// flush the current chunk
-		if (mnstr_flush(s) < 0) {
+		if (mnstr_flush(s, MNSTR_FLUSH_DATA) < 0) {
 			fres = -1;
 			goto cleanup;
 		}
@@ -2280,7 +2280,7 @@ mvc_export_head_prot10(backend *b, stream *s, int res_id, int only_header, int c
 			goto cleanup;
 		}
 	}
-	if (mnstr_flush(s) < 0) {
+	if (mnstr_flush(s, MNSTR_FLUSH_DATA) < 0) {
 		fres = -1;
 		goto cleanup;
 	}

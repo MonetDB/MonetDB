@@ -1929,7 +1929,7 @@ mnstr_error_kind mnstr_errnr(const stream *s);
 char *mnstr_error(const stream *s);
 const char *mnstr_error_kind_name(mnstr_error_kind k);
 int mnstr_fgetpos(stream *restrict s, fpos_t *restrict p);
-int mnstr_flush(stream *s);
+int mnstr_flush(stream *s, mnstr_flush_level flush_level);
 int mnstr_fsetpos(stream *restrict s, fpos_t *restrict p);
 int mnstr_fsync(stream *s);
 buffer *mnstr_get_buffer(stream *s);

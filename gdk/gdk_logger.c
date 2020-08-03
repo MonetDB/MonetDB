@@ -3026,7 +3026,7 @@ log_tend(logger *lg)
 
 	if (res != GDK_SUCCEED ||
 	    log_write_format(lg, &l) != GDK_SUCCEED ||
-	    mnstr_flush(lg->log) ||
+	    mnstr_flush(lg->log, MNSTR_FLUSH_DATA) ||
 	    (!(GDKdebug & NOSYNCMASK) && mnstr_fsync(lg->log)) ||
 	    pre_allocate(lg) != GDK_SUCCEED) {
 		TRC_CRITICAL(GDK, "write failed\n");
@@ -3071,7 +3071,7 @@ log_sequence_(logger *lg, int seq, lng val, int flush)
 
 	if (log_write_format(lg, &l) != GDK_SUCCEED ||
 	    !mnstr_writeLng(lg->log, val) ||
-	    (flush && mnstr_flush(lg->log)) ||
+	    (flush && mnstr_flush(lg->log, MNSTR_FLUSH_DATA)) ||
 	    (flush && !(GDKdebug & NOSYNCMASK) && mnstr_fsync(lg->log))) {
 		TRC_CRITICAL(GDK, "write failed\n");
 		return GDK_FAIL;

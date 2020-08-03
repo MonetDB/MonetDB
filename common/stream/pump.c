@@ -120,7 +120,7 @@ static int pump_flush(stream *s)
 	if (nwritten < 0)
 		return -1;
 	else
-		return mnstr_flush(s->inner);
+		return mnstr_flush(s->inner, MNSTR_FLUSH_DATA);
 }
 
 

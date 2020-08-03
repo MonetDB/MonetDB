@@ -534,7 +534,7 @@ int cmd_bstream(char *argv[])
 				croak(2, "could not open '%s': %s", filename, strerror(errno));
 			copy_file_to_stream(f, bs, 42);
 			fclose(f);
-			mnstr_flush(bs);
+			mnstr_flush(bs, MNSTR_FLUSH_DATA);
 		}
 		mnstr_destroy(bs);
 		if (additional) {

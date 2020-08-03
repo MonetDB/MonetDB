@@ -167,7 +167,7 @@ doChallenge(void *data)
 #endif
 			MONETDB5_PASSWDHASH
 			);
-	mnstr_flush(fdout);
+	mnstr_flush(fdout, MNSTR_FLUSH_DATA);
 	/* get response */
 	if ((len = mnstr_read_block(fdin, buf, 1, BLOCK)) < 0) {
 		/* the client must have gone away, so no reason to write anything */

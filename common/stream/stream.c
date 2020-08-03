@@ -490,8 +490,9 @@ mnstr_error_kind_description(mnstr_error_kind kind)
 
 /* flush buffer, return 0 on success, non-zero on failure */
 int
-mnstr_flush(stream *s)
+mnstr_flush(stream *s, mnstr_flush_level flush_level)
 {
+	(void) flush_level;
 	if (s == NULL)
 		return -1;
 #ifdef STREAM_DEBUG

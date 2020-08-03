@@ -811,7 +811,7 @@ SQLreader(Client c)
 					commit_done = true;
 				}
 
-				if (go && ((!blocked && mnstr_write(c->fdout, c->prompt, c->promptlength, 1) != 1) || mnstr_flush(c->fdout))) {
+				if (go && ((!blocked && mnstr_write(c->fdout, c->prompt, c->promptlength, 1) != 1) || mnstr_flush(c->fdout, MNSTR_FLUSH_DATA))) {
 					go = false;
 					break;
 				}

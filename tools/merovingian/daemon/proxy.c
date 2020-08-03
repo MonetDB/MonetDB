@@ -52,7 +52,7 @@ proxyThread(void *d)
 	while ((len = mnstr_read(p->in, data, 1, sizeof(data))) >= 0) {
 		if (len > 0 && mnstr_write(p->out, data, len, 1) != 1)
 			break;
-		if (len == 0 &&	mnstr_flush(p->out) == -1)
+		if (len == 0 &&	mnstr_flush(p->out, MNSTR_FLUSH_DATA) == -1)
 			break;
 	}
 
@@ -371,7 +371,7 @@ handleMySQLClient(int sock)
 	*p = *(p + 1); p++;
 	*p = *(p + 1); p++;
 	*p = 0x00;   /* packet number */
-	mnstr_flush(fout);
+	mnstr_flush(fout, MNSTR_FLUSH_DATA);
 
 	return(NO_ERR);
 }

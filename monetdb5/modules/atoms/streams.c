@@ -155,7 +155,7 @@ mnstr_flush_streamwrap(void *ret, Stream *S)
 	stream *s = *(stream **)S;
 	(void)ret;
 
-	if (mnstr_flush(s))
+	if (mnstr_flush(s, MNSTR_FLUSH_DATA))
 		throw(IO, "streams.flush", "failed to flush stream");
 
 	return MAL_SUCCEED;

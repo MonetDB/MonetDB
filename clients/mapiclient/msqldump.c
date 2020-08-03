@@ -246,7 +246,7 @@ main(int argc, char **argv)
 		mnstr_printf(out, "COMMIT;\n");
 	} else
 		c = dump_database(mid, out, describe, useinserts);
-	mnstr_flush(out);
+	mnstr_flush(out, MNSTR_FLUSH_DATA);
 
 	mapi_destroy(mid);
 	if (mnstr_errnr(out)) {

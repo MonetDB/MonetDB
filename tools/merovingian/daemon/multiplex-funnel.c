@@ -533,7 +533,7 @@ multiplexQuery(multiplex *m, char *buf, stream *fout)
 		if (m->dbcv[i]->conn == NULL) {
 			mnstr_printf(fout, "!connection for %s is currently unresolved\n",
 					m->dbcv[i]->database);
-			mnstr_flush(fout);
+			mnstr_flush(fout, MNSTR_FLUSH_DATA);
 			Mfprintf(m->serr, "failed to find a provider for %s\n",
 					m->dbcv[i]->database);
 			return;
@@ -543,7 +543,7 @@ multiplexQuery(multiplex *m, char *buf, stream *fout)
 				mnstr_printf(fout, "!failed to establish connection "
 						"for %s: %s\n", m->dbcv[i]->database,
 						mapi_error_str(m->dbcv[i]->conn));
-				mnstr_flush(fout);
+				mnstr_flush(fout, MNSTR_FLUSH_DATA);
 				Mfprintf(m->serr, "mapi_reconnect for %s failed: %s\n",
 						m->dbcv[i]->database,
 						mapi_error_str(m->dbcv[i]->conn));
@@ -645,7 +645,7 @@ multiplexQuery(multiplex *m, char *buf, stream *fout)
 
 	/* error or empty result, just end here */
 	if (t != NULL || qtype == Q_PARSE) {
-		mnstr_flush(fout);
+		mnstr_flush(fout, MNSTR_FLUSH_DATA);
 		for (i = 0; i < m->dbcc; i++)
 			mapi_close_handle(m->dbcv[i]->hdl);
 		return;
@@ -681,7 +681,7 @@ multiplexQuery(multiplex *m, char *buf, stream *fout)
 			mnstr_printf(fout, "&%d %c\n", Q_TRANS, fcnt ? 't' : 'f');
 			break;
 	}
-	mnstr_flush(fout);
+	mnstr_flush(fout, MNSTR_FLUSH_DATA);
 	/* finish up */
 	for (i = 0; i < m->dbcc; i++)
 		mapi_close_handle(m->dbcv[i]->hdl);
@@ -804,12 +804,12 @@ multiplexThread(void *d)
 				case 'X':
 					/* ignored, some clients just really insist on using
 					 * these */
-					mnstr_flush(c->fout);
+					mnstr_flush(c->fout, MNSTR_FLUSH_DATA);
 					continue;
 				default:
 					mnstr_printf(c->fout, "!modifier %c not supported by "
 							"multiplex-funnel\n", *buf);
-					mnstr_flush(c->fout);
+					mnstr_flush(c->fout, MNSTR_FLUSH_DATA);
 					Mfprintf(m->serr, "client attempted to perform %c "
 							"type query: %s\n", *buf, buf);
 					continue;
@@ -905,7 +905,7 @@ multiplexAddClient(char *mp, int sock, stream *fout, stream *fdin, char *name)
 		Mfprintf(stderr, "failed to find multiplex-funnel '%s' for client %s\n",
 				mp, name);
 		mnstr_printf(fout, "!monetdbd: internal error: could not find multiplex-funnel '%s'\n", mp);
-		mnstr_flush(fout);
+		mnstr_flush(fout, MNSTR_FLUSH_DATA);
 		close_stream(fdin);
 		close_stream(fout);
 		free(n->name);
@@ -926,7 +926,7 @@ multiplexAddClient(char *mp, int sock, stream *fout, stream *fdin, char *name)
 	Mfprintf(m->sout, "mfunnel: added new client %s\n", n->name);
 
 	/* send client a prompt */
-	mnstr_flush(fout);
+	mnstr_flush(fout, MNSTR_FLUSH_DATA);
 }
 
 void
