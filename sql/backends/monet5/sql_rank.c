@@ -746,19 +746,11 @@ SQLcume_dist(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 #define NTILE_VALUE_SINGLE_IMP(TPE) \
 	do { \
 		TPE val = *(TPE*) VALget(ntile); \
-		if (!VALisnil(ntile) && val < 1) \
+		if (!is_##TPE##_nil(val) && val < 1) \
 			throw(SQL, "sql.ntile", SQLSTATE(42000) "ntile must be greater than zero"); \
-		if (VALisnil(ntile) || val > 1) { \
-			ValRecord def = (ValRecord) {.vtype = TYPE_void,}; \
-			if (!VALinit(&def, tp1, ATOMnilptr(tp1)) || !VALcopy(res, &def)) { \
-				VALclear(&def); \
-				throw(SQL, "sql.ntile", SQLSTATE(HY013) MAL_MALLOC_FAIL); \
-			} \
-			VALclear(&def); \
-		} else { \
-			if (!VALcopy(res, in)) \
-				throw(SQL, "sql.ntile", SQLSTATE(HY013) MAL_MALLOC_FAIL); \
-		} \
+		if (!is_##TPE##_nil(val)) \
+			val = 1; \
+		VALset(res, tp2, &val); \
 	} while(0)
 
 str
@@ -826,7 +818,6 @@ SQLntile(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			throw(SQL, "sql.ntile", GDK_EXCEPTION);
 	} else {
 		ValRecord *res = &(stk)->stk[(pci)->argv[0]];
-		ValRecord *in = &(stk)->stk[(pci)->argv[1]];
 		ValRecord *ntile = &(stk)->stk[(pci)->argv[2]];
 
 		switch (tp2) {
