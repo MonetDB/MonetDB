@@ -234,7 +234,7 @@ bs2_write(stream *restrict ss, const void *restrict buf, size_t elmsize, size_t 
  * flushed.
  */
 static int
-bs2_flush(stream *ss)
+bs2_flush(stream *ss, mnstr_flush_level flush_level)
 {
 	int64_t blksize;
 	bs2 *s;
@@ -291,6 +291,8 @@ bs2_flush(stream *ss)
 			return -1;
 		}
 		s->nr = 0;
+		// shouldn't we flush s->s too?
+		(void) flush_level;
 	}
 	return 0;
 }
@@ -558,7 +560,7 @@ bs2_close(stream *ss)
 	if (s == NULL)
 		return;
 	if (!ss->readonly && s->nr > 0)
-		bs2_flush(ss);
+		bs2_flush(ss, MNSTR_FLUSH_DATA);
 	assert(s->s);
 	if (s->s)
 		s->s->close(s->s);

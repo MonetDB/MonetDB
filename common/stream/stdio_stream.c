@@ -102,7 +102,7 @@ file_clrerr(stream *s)
 
 
 static int
-file_flush(stream *s)
+file_flush(stream *s, mnstr_flush_level flush_level)
 {
 	FILE *fp = (FILE *) s->stream_data.p;
 
@@ -110,6 +110,7 @@ file_flush(stream *s)
 			mnstr_set_error_errno(s, MNSTR_WRITE_ERROR, "flush error");
 		return -1;
 	}
+	(void) flush_level;
 	return 0;
 }
 
@@ -414,7 +415,7 @@ stdin_rastream(void)
 #endif
 	// Make an attempt to skip a BOM marker.
 	// It would be nice to integrate this with with the BOM removal code
-	// in text_stream.c but that is complicated. In text_stream, 
+	// in text_stream.c but that is complicated. In text_stream,
 	do {
 		struct stat stb;
 		if (fstat(fileno(stdin), &stb) < 0)

@@ -163,7 +163,7 @@ struct stream {
 	void (*close)(stream *s);
 	void (*clrerr)(stream *s);
 	void (*destroy)(stream *s);
-	int (*flush)(stream *s);
+	int (*flush)(stream *s, mnstr_flush_level flush_level);
 	int (*fsync)(stream *s);
 	int (*fgetpos)(stream *restrict s, fpos_t *restrict p);
 	int (*fsetpos)(stream *restrict s, fpos_t *restrict p);

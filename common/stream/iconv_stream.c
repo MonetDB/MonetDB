@@ -202,7 +202,7 @@ ic_read(stream *restrict s, void *restrict buf, size_t elmsize, size_t cnt)
 }
 
 static int
-ic_flush(stream *s)
+ic_flush(stream *s, mnstr_flush_level flush_level)
 {
 	struct icstream *ic = (struct icstream *) s->stream_data.p;
 	char *outbuf;
@@ -221,7 +221,7 @@ ic_flush(stream *s)
 		mnstr_copy_error(s, s->inner);
 		return -1;
 	}
-	return mnstr_flush(s->inner, MNSTR_FLUSH_DATA);
+	return mnstr_flush(s->inner, flush_level);
 }
 
 static void
@@ -231,7 +231,7 @@ ic_close(stream *s)
 
 	if (ic) {
 		if (!s->readonly)
-			ic_flush(s);
+			ic_flush(s, MNSTR_FLUSH_DATA);
 		iconv_close(ic->cd);
 		close_stream(s->inner);
 		free(s->stream_data.p);

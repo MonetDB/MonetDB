@@ -492,7 +492,6 @@ mnstr_error_kind_description(mnstr_error_kind kind)
 int
 mnstr_flush(stream *s, mnstr_flush_level flush_level)
 {
-	(void) flush_level;
 	if (s == NULL)
 		return -1;
 #ifdef STREAM_DEBUG
@@ -502,7 +501,7 @@ mnstr_flush(stream *s, mnstr_flush_level flush_level)
 	if (s->errkind != MNSTR_NO__ERROR)
 		return -1;
 	if (s->flush)
-		return s->flush(s);
+		return s->flush(s, flush_level);
 	return 0;
 }
 
@@ -754,9 +753,9 @@ wrapper_destroy(stream *s)
 
 
 static int
-wrapper_flush(stream *s)
+wrapper_flush(stream *s, mnstr_flush_level flush_level)
 {
-	return s->inner->flush(s->inner);
+	return s->inner->flush(s->inner, flush_level);
 }
 
 

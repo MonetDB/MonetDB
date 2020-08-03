@@ -103,7 +103,7 @@ bs_write(stream *restrict ss, const void *restrict buf, size_t elmsize, size_t c
  * flushed.
  */
 static int
-bs_flush(stream *ss)
+bs_flush(stream *ss, mnstr_flush_level flush_level)
 {
 	uint16_t blksize;
 	bs *s;
@@ -135,7 +135,7 @@ bs_flush(stream *ss)
 		/* indicate that this is the last buffer of a block by
 		 * setting the low-order bit */
 		blksize |= 1;
-		/* allways flush (even empty blocks) needed for the protocol) */
+		/* always flush (even empty blocks) needed for the protocol) */
 		if ((!mnstr_writeSht(ss->inner, (int16_t) blksize) ||
 		     (s->nr > 0 &&
 		      ss->inner->write(ss->inner, s->buf, 1, s->nr) != (ssize_t) s->nr))) {
@@ -143,6 +143,8 @@ bs_flush(stream *ss)
 			s->nr = 0; /* data is lost due to error */
 			return -1;
 		}
+		// shouldn't we flush ss->inner too?
+		(void) flush_level;
 		s->blks++;
 		s->nr = 0;
 	}
@@ -300,7 +302,7 @@ bs_close(stream *ss)
 	if (s == NULL)
 		return;
 	if (!ss->readonly && s->nr > 0)
-		bs_flush(ss);
+		bs_flush(ss, MNSTR_FLUSH_DATA);
 	mnstr_close(ss->inner);
 }
 

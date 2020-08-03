@@ -135,7 +135,7 @@ buffer_close(stream *s)
 }
 
 static int
-buffer_flush(stream *s)
+buffer_flush(stream *s, mnstr_flush_level flush_level)
 {
 	buffer *b;
 
@@ -144,6 +144,7 @@ buffer_flush(stream *s)
 	if (b == NULL)
 		return -1;
 	b->pos = 0;
+	(void) flush_level;
 	return 0;
 }
 

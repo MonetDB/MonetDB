@@ -20,7 +20,7 @@ static pump_result pump_out(stream *restrict s, pump_action action);
 
 static ssize_t pump_read(stream *restrict s, void *restrict buf, size_t elmsize, size_t cnt);
 static ssize_t pump_write(stream *restrict s, const void *restrict buf, size_t elmsize, size_t cnt);
-static int pump_flush(stream *s);
+static int pump_flush(stream *s, mnstr_flush_level flush_level);
 static void pump_close(stream *s);
 static void pump_destroy(stream *s);
 
@@ -110,17 +110,31 @@ pump_write(stream *restrict s, const void *restrict buf, size_t elmsize, size_t 
 }
 
 
-static int pump_flush(stream *s)
+static int pump_flush(stream *s, mnstr_flush_level flush_level)
 {
 	pump_state *state = (pump_state*) s->stream_data.p;
 	inner_state_t *inner_state = state->inner_state;
+	pump_action action;
+
+	switch (flush_level) {
+		case MNSTR_FLUSH_DATA:
+			action = PUMP_FLUSH_DATA;
+			break;
+		case MNSTR_FLUSH_ALL:
+			action = PUMP_FLUSH_ALL;
+			break;
+		default:
+			assert(0 /* unknown flush_level */);
+			action = PUMP_FLUSH_DATA;
+			break;
+	}
 
 	state->set_src_win(inner_state, (pump_buffer){ .start = NULL, .count = 0 });
-	ssize_t nwritten = pump_out(s, PUMP_FLUSH_DATA);
+	ssize_t nwritten = pump_out(s, action);
 	if (nwritten < 0)
 		return -1;
 	else
-		return mnstr_flush(s->inner, MNSTR_FLUSH_DATA);
+		return mnstr_flush(s->inner, action);
 }
 
 
