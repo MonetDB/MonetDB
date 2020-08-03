@@ -74,19 +74,19 @@ BSKTnewEntry(void)
 	BasketRec *bnew;
 
 	if( baskets == 0){
-		bnew = (BasketRec *) GDKzalloc((INTIAL_BSKT) * sizeof(BasketRec));
+		bnew = (BasketRec *) GDKzalloc((INITIAL_BSKT) * sizeof(BasketRec));
 		if( bnew == 0)
 			return 0;
-		bsktLimit = INTIAL_BSKT;
+		bsktLimit = INITIAL_BSKT;
 		baskets = bnew;
 	} else
 	if (bsktTop + 1 == bsktLimit) {
-		bnew = (BasketRec *) GDKrealloc(baskets, (bsktLimit+INTIAL_BSKT) * sizeof(BasketRec));
+		bnew = (BasketRec *) GDKrealloc(baskets, (bsktLimit+INITIAL_BSKT) * sizeof(BasketRec));
 		if( bnew == 0)
 			return 0;
-		bsktLimit += INTIAL_BSKT;
+		bsktLimit += INITIAL_BSKT;
 		baskets = bnew;
-		for (i = bsktLimit-INTIAL_BSKT; i < bsktLimit; i++){
+		for (i = bsktLimit-INITIAL_BSKT; i < bsktLimit; i++){
 			BSKTinit(i);
 		}
 	}
@@ -885,7 +885,7 @@ BSKTshutdown(void)
 		GDKfree(baskets);
 		baskets = NULL;
 	}
-	bsktLimit = INTIAL_BSKT;
+	bsktLimit = INITIAL_BSKT;
 	bsktTop = 1;
 }
 
@@ -893,8 +893,8 @@ str
 BSKTprelude(void *ret)
 {
 	(void) ret;
-	baskets = (BasketRec *) GDKzalloc(INTIAL_BSKT * sizeof(BasketRec));
-	bsktLimit = INTIAL_BSKT;
+	baskets = (BasketRec *) GDKzalloc(INITIAL_BSKT * sizeof(BasketRec));
+	bsktLimit = INITIAL_BSKT;
 	bsktTop = 1;
 	if( baskets == NULL)
 		throw(MAL, "basket.prelude", SQLSTATE(HY013) MAL_MALLOC_FAIL);

@@ -25,7 +25,7 @@
 #include "mal_interpreter.h"
 #include "sql.h"
 
-#define INTIAL_BSKT 128
+#define INITIAL_BSKT 128
 
 typedef struct{
 	sql_table *table;	/* The basket stream table */
