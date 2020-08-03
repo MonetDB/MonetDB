@@ -763,12 +763,12 @@ rel_values(sql_query *query, symbol *tableref)
 	sql_rel *r = NULL;
 	dlist *rowlist = tableref->data.lval;
 	symbol *optname = rowlist->t->data.sym;
-	dnode *o;
 	node *m;
 	list *exps = sa_list(sql->sa);
 	exp_kind ek = {type_value, card_value, TRUE};
+	unsigned int card = dlist_length(rowlist) == 1 ? CARD_ATOM : CARD_MULTI;
 
-	for (o = rowlist->h; o; o = o->next) {
+	for (dnode *o = rowlist->h; o; o = o->next) {
 		dlist *values = o->data.lval;
 
 		/* When performing sub-queries, the relation name appears under a SQL_NAME symbol at the end of the list */
@@ -798,14 +798,19 @@ rel_values(sql_query *query, symbol *tableref)
 			}
 		}
 	}
-	/* loop to check types */
-	for (m = exps->h; m; m = m->next)
-		if (!(m->data = exp_values_set_supertype(sql, (sql_exp*) m->data, NULL)))
+	/* loop to check types and cardinality */
+	for (m = exps->h; m; m = m->next) {
+		sql_exp *e = m->data;
+
+		if (!(e = exp_values_set_supertype(sql, e, NULL)))
 			return NULL;
+		e->card = card;
+		m->data = e;
+	}
 
 	r = rel_project(sql->sa, NULL, exps);
 	r->nrcols = list_length(exps);
-	r->card = dlist_length(rowlist) == 1 ? CARD_ATOM : CARD_MULTI;
+	r->card = card;
 	return rel_table_optname(sql, r, optname);
 }
 
