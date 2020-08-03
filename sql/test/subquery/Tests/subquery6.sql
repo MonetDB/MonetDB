@@ -225,6 +225,12 @@ select nth_value('bug', 1) over ();
 select nth_value('bug', 1) over (), max(TotalSales) from tbl_ProductSales;
 	-- bug 500
 
+select lag('bug') over (), lag('bug', 1) over (), lag('bug', 0) over (), lag('bug', 1, 'oth') over (), lag('bug', 0, 'oth') over ();
+	-- NULL NULL bug oth bug
+
+select lead('bug') over (), lead('bug', 1) over (), lead('bug', 0) over (), lead('bug', 1, 'oth') over (), lead('bug', 0, 'oth') over (), max(TotalSales) from tbl_ProductSales;
+	-- NULL NULL bug oth bug 500
+
 DROP TABLE tbl_ProductSales;
 DROP TABLE another_T;
 DROP TABLE integers;
