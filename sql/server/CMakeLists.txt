@@ -98,7 +98,7 @@ target_link_libraries(sqlserver
   PRIVATE
   monetdb_config_header
   mutils
-  gdk
+  bat
   sqlcommon
   sqlinclude
   sqlstorage)

@@ -36,7 +36,7 @@ target_link_libraries(sqlcommon
   monetdb_config_header
   matomic
   stream
-  gdk
+  bat
   sqlinclude
   sqlstorage)
 

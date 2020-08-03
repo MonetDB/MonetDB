@@ -44,7 +44,7 @@ target_link_libraries(kernel
   PRIVATE
   monetdb_config_header
   mutils
-  gdk
+  bat
   mal
   atoms)
 

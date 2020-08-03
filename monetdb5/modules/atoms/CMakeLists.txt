@@ -39,7 +39,7 @@ target_link_libraries(atoms
   PRIVATE
   monetdb_config_header
   mutils
-  gdk
+  bat
   mal)
 
 if(WIN32)

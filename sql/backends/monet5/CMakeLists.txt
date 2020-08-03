@@ -106,7 +106,7 @@ target_link_libraries(sql
   PRIVATE
   monetdb_config_header
   mcrypt
-  gdk
+  bat
   monetdb5
   sqlstorage
   sqlcommon

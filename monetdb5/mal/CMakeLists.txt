@@ -79,7 +79,7 @@ target_link_libraries(mal
   monetdb_config_header
   mutils
   mapi
-  gdk)
+  bat)
 
 set_target_properties(mal
   PROPERTIES

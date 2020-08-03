@@ -40,7 +40,7 @@ if(GEOS_FOUND)
     PRIVATE
     mutils
     stream
-    gdk
+    bat
     geomlib
     monetdb5
     sql

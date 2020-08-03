@@ -31,7 +31,7 @@ target_link_libraries(mserver5
   moptions
   mutils
   mcrypt
-  gdk
+  bat
   mapi
   monetdb5
   $<$<NOT:$<PLATFORM_ID:Windows>>:m>
@@ -59,7 +59,7 @@ target_link_libraries(shutdowntest
   sql
   mutils
   mcrypt
-  gdk
+  bat
   mapi
   monetdb5
   $<$<NOT:$<PLATFORM_ID:Windows>>:m>

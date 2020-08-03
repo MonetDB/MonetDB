@@ -30,7 +30,7 @@ target_link_libraries(sqlstorage
   PRIVATE
   monetdb_config_header
   mutils
-  gdk
+  bat
   sqlcommon
   sqlinclude)
 
