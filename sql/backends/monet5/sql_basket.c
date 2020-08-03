@@ -559,6 +559,26 @@ BSKTunlock(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	return MAL_SUCCEED;
 }
 
+// For the final clean up of the lock: unlock a basket if it's locked
+str
+BSKTcleanlock(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	str sch = *getArgReference_str(stk,pci,2);
+	str tbl = *getArgReference_str(stk,pci,3);
+	int idx;
+
+	(void) cntxt;
+	(void) mb;
+
+	idx = BSKTlocate(sch, tbl);
+	if( idx ==0)
+		throw(SQL,"basket.cleanlock",SQLSTATE(3F000) "Stream table %s.%s not accessible\n",sch,tbl);
+	/* set the basket lock */
+	if (MT_lock_try(&baskets[idx].lock))
+		MT_lock_unset(&baskets[idx].lock);
+	return MAL_SUCCEED;
+}
+
 str
 BSKTdump(void *ret)
 {

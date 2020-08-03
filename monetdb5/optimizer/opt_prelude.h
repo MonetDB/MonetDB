@@ -71,6 +71,7 @@ mal_export  str capiRef;
 mal_export  str catalogRef;
 mal_export  str change_all_cpRef;
 mal_export  str change_single_cpRef;
+mal_export  str clean_streamtable_lockRef;
 mal_export  str clear_tableRef;
 mal_export  str closeRef;
 mal_export  str columnBindRef;
