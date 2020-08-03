@@ -592,7 +592,7 @@ SQLpercent_rank(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		BBPunfix(b->batCacheid);
 		BBPkeepref(*res = r->batCacheid);
 	} else {
-		int *res = getArgReference_int(stk, pci, 0);
+		dbl *res = getArgReference_dbl(stk, pci, 0);
 
 		*res = 1;
 	}
@@ -705,7 +705,7 @@ SQLcume_dist(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		BBPunfix(b->batCacheid);
 		BBPkeepref(*res = r->batCacheid);
 	} else {
-		int *res = getArgReference_int(stk, pci, 0);
+		dbl *res = getArgReference_dbl(stk, pci, 0);
 
 		*res = 1;
 	}

@@ -284,6 +284,36 @@ stdout of test 'subquery6` in directory 'sql/test/subquery` itself:
 % int,	clob # type
 % 1,	1 # length
 [ NULL,	"a"	]
+#select ntile(1) over ();
+% .%4 # table_name
+% %4 # name
+% tinyint # type
+% 1 # length
+[ 1	]
+#select ntile(11) over (), min(TotalSales) from tbl_ProductSales;
+% sys.%4,	sys.%5 # table_name
+% %4,	%5 # name
+% tinyint,	int # type
+% 1,	3 # length
+[ 1,	100	]
+#select nth_value('bug', '1') over ();
+% .%11 # table_name
+% %11 # name
+% char # type
+% 3 # length
+[ "bug"	]
+#select nth_value('bug', 1) over ();
+% .%11 # table_name
+% %11 # name
+% char # type
+% 3 # length
+[ "bug"	]
+#select nth_value('bug', 1) over (), max(TotalSales) from tbl_ProductSales;
+% .%11,	sys.%12 # table_name
+% %11,	%12 # name
+% char,	int # type
+% 3,	3 # length
+[ "bug",	500	]
 #DROP TABLE tbl_ProductSales;
 #DROP TABLE another_T;
 #DROP TABLE integers;

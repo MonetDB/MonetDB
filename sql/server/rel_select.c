@@ -5033,6 +5033,9 @@ rel_rankop(sql_query *query, sql_rel **rel, symbol *se, int f)
 				sql_error(sql, 02, SQLSTATE(42000) "SELECT: window function '%s(%s)' not found", aname, arg_list ? arg_list : "");
 				return NULL;
 			}
+			/* dirty hack */
+			if (wf->res && aa && atp)
+				wf->res->h->data = sql_create_subtype(sql->sa, atp->type, atp->digits, atp->scale);
 		} else {
 			char *arg_list = nfargs ? window_function_arg_types_2str(sql, types, nfargs) : NULL;
 			sql_error(sql, 02, SQLSTATE(42000) "SELECT: window function '%s(%s)' not found", aname, arg_list ? arg_list : "");

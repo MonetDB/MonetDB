@@ -216,7 +216,8 @@ select ntile(1) over ();
 select ntile(11) over (), min(TotalSales) from tbl_ProductSales;
 	-- 1 100
 
-select nth_value('bug', 'a') over (); --error converting string 'a' to an integer
+select nth_value('bug', '1') over ();
+	-- bug
 
 select nth_value('bug', 1) over ();
 	-- bug
