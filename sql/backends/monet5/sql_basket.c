@@ -279,7 +279,7 @@ BSKTbindColumn(str sch, str tbl, str col)
 	if( (idx = BSKTlocate(sch,tbl)) == 0)
 		return NULL;
 
-	for( i=1; i < baskets[idx].ncols; i++)
+	for( i=0; i < baskets[idx].ncols; i++)
 		if( strcmp(baskets[idx].cols[i]->base.name, col)== 0)
 			return baskets[idx].bats[i];
 	return NULL;
@@ -300,10 +300,10 @@ BSKTtid(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	bskt = BSKTlocate(sch,tbl);
 	if( bskt == 0)	
-		throw(SQL,"basket.bind",SQLSTATE(3F000) "Stream table column '%s.%s' not found\n",sch,tbl);
+		throw(SQL,"basket.tid",SQLSTATE(3F000) "Stream table '%s.%s' not found\n",sch,tbl);
 	b = baskets[bskt].bats[0];
 	if( b == 0)
-		throw(SQL,"basket.bind",SQLSTATE(3F000) "Stream table reference column '%s.%s' not accessible\n",sch,tbl);
+		throw(SQL,"basket.tid",SQLSTATE(3F000) "Stream table reference column '%s.%s.tid' not accessible\n",sch,tbl);
 
 	tids = COLnew(0, TYPE_void, 0, TRANSIENT);
 	if (tids == NULL)
