@@ -108,6 +108,7 @@ BuildRequires: checkpolicy
 BuildRequires: selinux-policy-devel
 BuildRequires: hardlink
 %endif
+BuildRequires: cmake >= 3.12
 BuildRequires: gcc
 BuildRequires: bison
 BuildRequires: /usr/bin/python3
@@ -718,66 +719,36 @@ fi
 %setup -q
 
 %build
+%{cmake} \
+	-DASSERT=OFF \
+	-DCINTEGRATION=ON \
+	-DFITS=%{?with_fits:ON}%{!?with_fits:OFF} \
+	-DGEOM=%{?with_geos:ON}%{!?with_geos:OFF} \
+	-DINT128=%{?with_hugeint:ON}%{!?with_hugeint:OFF} \
+	-DNETCDF=OFF \
+	-DODBC=ON \
+	-DPY3INTEGRATION=%{?with_py3integration:ON}%{!?with_py3integration:OFF} \
+	-DRINTEGRATION=%{?with_rintegration:ON}%{!?with_rintegration:OFF} \
+	-DSANITIZER=OFF \
+	-DSHP=OFF \
+	-DSTRICT=OFF \
+	-DTESTING=ON \
+	-DWITH_BZ2=ON \
+	-DWITH_CMOCKA=OFF \
+	-DWITH_CRYPTO=ON \
+	-DWITH_CURL=ON \
+	-DWITH_LZ4=OFF \
+	-DWITH_LZMA=ON \
+	-DWITH_PCRE=ON \
+	-DWITH_PROJ=OFF \
+	-DWITH_READLINE=ON \
+	-DWITH_SNAPPY=OFF \
+	-DWITH_UUID=ON \
+	-DWITH_VALGRIND=OFF \
+	-DWITH_XML2=ON \
+	-DWITH_ZLIB=ON
 
-# There is a bug in GCC version 4.8 on AArch64 architectures
-# that causes it to report an internal error when compiling
-# testing/difflib.c.  The work around is to not use -fstack-protector-strong.
-# The bug exhibits itself on CentOS 7 on AArch64.
-# Everywhere else, add -Wno-format-truncation to the compiler options
-# to reduce the number of warnings during compilation.
-%ifarch aarch64
-    if gcc -v 2>&1 | grep -q 'gcc version 4\.'; then
-	CFLAGS="${CFLAGS:-$(echo %optflags | sed 's/-fstack-protector-strong//')}"
-    else
-	CFLAGS="${CFLAGS:-%optflags -Wno-format-truncation}"
-    fi
-%else
-    CFLAGS="${CFLAGS:-%optflags -Wno-format-truncation}"
-%endif
-export CFLAGS
-# do not use --enable-optimize or --disable-optimize: we don't want
-# any changes to optimization flags
-%{configure} \
- 	--with-rundir=%{_rundir}/monetdb \
-	--enable-assert=no \
-	--enable-debug=yes \
-	--enable-developer=no \
-	--enable-embedded=no \
-	--enable-embedded-r=no \
-	--enable-fits=%{?with_fits:yes}%{!?with_fits:no} \
-	--enable-geom=%{?with_geos:yes}%{!?with_geos:no} \
-	--enable-int128=%{?with_hugeint:yes}%{!?with_hugeint:no} \
-	--enable-mapi=yes \
-	--enable-netcdf=no \
-	--enable-odbc=yes \
-	--enable-profiler=no \
-	--enable-py3integration=%{?with_py3integration:yes}%{!?with_py3integration:no} \
-	--enable-rintegration=%{?with_rintegration:yes}%{!?with_rintegration:no} \
-	--enable-sanitizer=no \
-	--enable-shp=no \
-	--enable-static-analysis=no \
-	--enable-strict=no \
-	--enable-testing=yes \
-	--with-bz2=yes \
-	--with-curl=yes \
-	--with-gdal=no \
-	--with-geos=%{?with_geos:yes}%{!?with_geos:no} \
-	--with-libxml2=yes \
-	--with-lz4=no \
-	--with-lzma=yes \
-	--with-openssl=yes \
-	--with-proj=no \
-	--with-pthread=yes \
-	--with-python3=yes \
-	--with-readline=yes \
-	--with-regex=%{?with_pcre:PCRE}%{!?with_pcre:POSIX} \
-	--with-snappy=no \
-	--with-unixodbc=yes \
-	--with-uuid=yes \
-	--with-valgrind=no \
-	%{?comp_cc:CC="%{comp_cc}"}
-
-%make_build
+%cmake_build
 
 %if %{?rhel:0}%{!?rhel:1} || 0%{?rhel} >= 7
 cd buildtools/selinux
@@ -796,7 +767,7 @@ cd -
 %endif
 
 %install
-%make_install
+%cmake_install
 
 # move file to correct location
 %if %{?rhel:0}%{!?rhel:1} || 0%{?rhel} >= 7
