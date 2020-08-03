@@ -3711,7 +3711,7 @@ rel_case(sql_query *query, sql_rel **rel, symbol *opt_cond, dlist *when_search_l
 			cond = rel_logical_value_exp(query, rel, when->h->data.sym, f, ek);
 		if (!cond)
 			return NULL;
-		list_prepend(conds, cond);
+		append(conds, cond);
 		tpe = exp_subtype(cond);
 		if (tpe && condtype) {
 			supertype(&ctype, condtype, tpe);
@@ -3722,7 +3722,7 @@ rel_case(sql_query *query, sql_rel **rel, symbol *opt_cond, dlist *when_search_l
 
 		if (!(result = rel_value_exp(query, rel, when->h->next->data.sym, f, ek)))
 			return NULL;
-		list_prepend(results, result);
+		append(results, result);
 		tpe = exp_subtype(result);
 		if (tpe && restype) {
 			supertype(&rtype, restype, tpe);
@@ -3765,6 +3765,7 @@ rel_case(sql_query *query, sql_rel **rel, symbol *opt_cond, dlist *when_search_l
 	if (opt_cond_exp && !(opt_cond_exp = exp_check_type(sql, condtype, rel ? *rel : NULL, opt_cond_exp, type_equal)))
 		return NULL;
 	sql_find_subtype(&bt, "boolean", 0, 0);
+	list *args = sa_list(sql->sa);
 	for (node *n = conds->h, *m = results->h; n && m; n = n->next, m = m->next) {
 		sql_exp *cond = n->data;
 		sql_exp *result = m->data;
@@ -3778,15 +3779,19 @@ rel_case(sql_query *query, sql_rel **rel, symbol *opt_cond, dlist *when_search_l
 			return NULL;
 		if (!(cond = exp_check_type(sql, &bt, rel ? *rel : NULL, cond, type_equal)))
 			return NULL;
-
-		if (!(res = rel_nop_(sql, rel ? *rel : NULL, cond, result, res, NULL, NULL, "ifthenelse", card_value)))
-			return NULL;
-		/* ugh overwrite res type */
-		((sql_subfunc*)res->f)->res->h->data = sql_create_subtype(sql->sa, restype->type, restype->digits, restype->scale);
+		append(args, cond);
+		append(args, result);
 	}
+	if (res)
+		list_append(args, res);
+	list *types = append(append(append(sa_list(sql->sa), condtype), restype), restype);
+	sql_subfunc *ifthenelse = find_func(sql, NULL, "ifthenelse", list_length(types), F_FUNC, NULL);
+	res = exp_op(sql->sa, args, ifthenelse);
+	((sql_subfunc*)res->f)->res->h->data = sql_create_subtype(sql->sa, restype->type, restype->digits, restype->scale);
 	return res;
 }
 
+#if 0
 static sql_exp *
 do_complex_case(sql_query *query, node *n, str func, sql_subtype *restype)
 {
@@ -3805,6 +3810,7 @@ do_complex_case(sql_query *query, node *n, str func, sql_subtype *restype)
 		return NULL;
 	return rel_binop_(query->sql, NULL, l, r, NULL, func, card_value);
 }
+#endif
 
 static sql_exp *
 rel_complex_case(sql_query *query, sql_rel **rel, dlist *case_args, int f, str func)
@@ -3832,7 +3838,18 @@ rel_complex_case(sql_query *query, sql_rel **rel, dlist *case_args, int f, str f
 		return sql_error(query->sql, 02, SQLSTATE(42000) "Result type missing");
 	if (restype->type->localtype == TYPE_void) /* NULL */
 		restype = sql_bind_localtype("str");
-	return do_complex_case(query, args->h, func, restype);
+	list *nargs = sa_list(query->sql->sa);
+	for (node *m = args->h; m; m = m->next) {
+		sql_exp *result = m->data;
+
+		if (!(result = exp_check_type(query->sql, restype, rel ? *rel : NULL, result, type_equal)))
+			return NULL;
+		append(nargs, result);
+	}
+	//return do_complex_case(query, args->h, func, restype);
+	list *types = append(append(sa_list(query->sql->sa), restype), restype);
+	sql_subfunc *fnc = find_func(query->sql, NULL, func, list_length(types), F_FUNC, NULL);
+	return exp_op(query->sql->sa, nargs, fnc);
 }
 
 static sql_exp *

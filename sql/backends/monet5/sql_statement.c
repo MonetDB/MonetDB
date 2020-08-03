@@ -3157,7 +3157,9 @@ stmt_unop(backend *be, stmt *op1, sql_subfunc *op)
 {
 	list *ops = sa_list(be->mvc->sa);
 	list_append(ops, op1);
-	return stmt_Nop(be, stmt_list(be, ops), op);
+	stmt *r = stmt_Nop(be, stmt_list(be, ops), op);
+	r->cand = op1->cand;
+	return r;
 }
 
 stmt *
@@ -3166,7 +3168,9 @@ stmt_binop(backend *be, stmt *op1, stmt *op2, sql_subfunc *op)
 	list *ops = sa_list(be->mvc->sa);
 	list_append(ops, op1);
 	list_append(ops, op2);
-	return stmt_Nop(be, stmt_list(be, ops), op);
+	stmt *r = stmt_Nop(be, stmt_list(be, ops), op);
+	r->cand = op1->cand?op1->cand:op2->cand;
+	return r;
 }
 
 stmt *
@@ -3201,6 +3205,7 @@ stmt_Nop(backend *be, stmt *ops, sql_subfunc *f)
 		/* nrcols */
 		//coalesce(e1,e2) -> ifthenelse(isnil(e1),e2,e1)
 		if (strcmp(f->func->base.name, "coalesce") == 0) {
+			assert(0);
 			str mod = (!nrcols)?calcRef:batcalcRef;
 			q = newStmt(mb, e1->nrcols?mod:calcRef, "isnil");
 			q = pushArgument(mb, q, e1->nr);
