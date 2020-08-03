@@ -518,6 +518,7 @@ exit 0
 %{_libdir}/libmonetdb5.so.*
 %dir %{_libdir}/monetdb5
 %{_libdir}/monetdb5/microbenchmark.mal
+%{_libdir}/monetdb5/run_*.mal
 %if %{with cintegration}
 %{_libdir}/monetdb5/lib_capi.so
 %endif
@@ -604,7 +605,7 @@ use SQL with MonetDB, you will need to install this package.
 %config(noreplace) %attr(664,monetdb,monetdb) %{_localstatedir}/monetdb5/dbfarm/.merovingian_properties
 %verify(not mtime) %attr(664,monetdb,monetdb) %{_localstatedir}/monetdb5/dbfarm/.merovingian_lock
 %config(noreplace) %attr(644,root,root) %{_sysconfdir}/logrotate.d/monetdbd
-%{_libdir}/monetdb5/lib_sql.so
+%{_libdir}/monetdb5/lib_sql.so*
 %doc %{_mandir}/man1/monetdb.1.gz
 %doc %{_mandir}/man1/monetdbd.1.gz
 %dir %{_datadir}/doc/MonetDB-SQL
@@ -795,6 +796,8 @@ install -d -m 0775 %{buildroot}%{_rundir}/monetdb
 rm -f %{buildroot}%{_libdir}/*.la
 rm -f %{buildroot}%{_libdir}/monetdb5/*.la
 rm -f %{buildroot}%{_libdir}/monetdb5/lib_opt_sql_append.so
+rm -f %{buildroot}%{_bindir}/monetdb_mtest.sh
+rm -rf %{buildroot}%{_datadir}/monetdb # /cmake
 
 %if %{?rhel:0}%{!?rhel:1} || 0%{?rhel} >= 7
 for selinuxvariant in %{selinux_variants}
