@@ -69,9 +69,10 @@ url = f'http://localhost:{port}'
 def streamcat(suffix):
     u = url + suffix
     cmd = ['streamcat', 'read', u, 'urlstream']
-    print(f'FETCHING {suffix}')
+    print(f'FETCHING {suffix}', end="")
     PIPE = subprocess.PIPE
     p = subprocess.run(cmd, check=False, stdout=PIPE, stderr=PIPE, timeout=10)
+    print(f' yielded return code {p.returncode}')
     return (p.returncode, p.stdout, p.stderr)
 
 
