@@ -44,7 +44,7 @@ target_link_libraries(kernel
   PRIVATE
   monetdb_config_header
   mutils
-  gdk
+  bat
   mal
   atoms)
 
@@ -52,16 +52,6 @@ set_target_properties(kernel
   PROPERTIES
   POSITION_INDEPENDENT_CODE ON
   PUBLIC_HEADER ${CMAKE_CURRENT_SOURCE_DIR}/bat5.h)
-
-install(TARGETS
-  kernel
-  LIBRARY
-  DESTINATION ${CMAKE_INSTALL_LIBDIR}
-  ARCHIVE
-  DESTINATION ${CMAKE_INSTALL_LIBDIR}
-  PUBLIC_HEADER
-  DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/monetdb
-  INCLUDES DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
 
 install(FILES
   microbenchmark.mal

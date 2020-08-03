@@ -83,7 +83,7 @@ stdout of test 'count_from_commented_function_signatures.Bug-6542` in directory 
 % .plan # table_name
 % rel # name
 % clob # type
-% 157 # length
+% 159 # length
 project (
 | group by (
 | | project (
@@ -112,7 +112,7 @@ project (
 | | | | | | | ) [ "f"."id", "p"."number" ] [ "f"."id" ASC, "p"."number" ASC ]
 | | | | | | ) [ "f"."id", "p"."number" ] [ "f"."id" ASC, "p"."number" NULLS LAST ]
 | | | | | ) [ "f"."id", "p"."number" ] [ "f"."id" ASC, "p"."number" ASC ]
-| | | | ) [ "f"."id", sys.row_number("f"."id", boolean "false" as "%17"."%17", sys.diff(sys.diff("f"."id" ASC), "p"."number" ASC) as "%20"."%20") as "line" ]
+| | | | ) [ "f"."id", sys.row_number(sys.star(), boolean "false" as "%17"."%17", sys.diff(sys.diff("f"."id" ASC), "p"."number" ASC) as "%20"."%20") as "line" ]
 | | | ) [ "f"."id" as "fid", "line" ]
 | | ) [ "fid" as "commented_function_signatures_6542"."fid" ] [ "line" ASC ]
 | ) [  ] [ sys.count() NOT NULL as "%23"."%23" ]

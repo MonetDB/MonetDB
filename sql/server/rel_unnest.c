@@ -1926,10 +1926,7 @@ rewrite_split_select_exps(visitor *v, sql_rel *rel)
 {
 	if (is_select(rel->op) && !list_empty(rel->exps)) {
 		int i = 0;
-		bool has_complex_exps = false, has_simple_exps = false, *complex_exps = (bool*) GDKmalloc(list_length(rel->exps) * sizeof(bool));
-
-		if (!complex_exps)
-			return sql_error(v->sql, 02, SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		bool has_complex_exps = false, has_simple_exps = false, *complex_exps = SA_NEW_ARRAY(v->sql->ta, bool, list_length(rel->exps));
 
 		for (node *n = rel->exps->h ; n ; n = n->next) {
 			sql_exp *e = n->data;
@@ -1961,7 +1958,6 @@ rewrite_split_select_exps(visitor *v, sql_rel *rel)
 			}
 			v->changes++;
 		}
-		GDKfree(complex_exps);
 	}
 	return rel;
 }
@@ -1982,10 +1978,11 @@ rewrite_rank(visitor *v, sql_rel *rel, sql_exp *e, int depth)
 	e->card = (rel->card == CARD_AGGR) ? CARD_AGGR : CARD_MULTI; /* After the unnesting, the cardinality of the window function becomes larger */
 
 	needed = (gbe || obe);
-	for (node *n = l->h; n && !needed; n = n->next) {
-		sql_exp *e = n->data;
-		needed = e->ref;
-	}
+	if (l)
+		for (node *n = l->h; n && !needed; n = n->next) {
+			sql_exp *e = n->data;
+			needed = e->ref;
+		}
 
 	if (needed) {
 		rell = rel->l = rel_project(v->sql->sa, rel->l, rel_projections(v->sql, rel->l, NULL, 1, 1));
@@ -2754,7 +2751,7 @@ rewrite_ifthenelse(visitor *v, sql_rel *rel, sql_exp *e, int depth)
 		for (node *n = l->h ; n ; n = n->next) {
 			sql_exp *e = n->data;
 
-			if (e->type == e_cmp && e->flag == cmp_equal && exp_is_true(e->r))
+			if (e->type == e_cmp && e->flag == cmp_equal && exp_is_true(e) && exp_is_true(e->r))
 				n->data = e->l;
 		}
 

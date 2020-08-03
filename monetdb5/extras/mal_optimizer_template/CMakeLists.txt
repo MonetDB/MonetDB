@@ -24,7 +24,7 @@ target_link_libraries(opt_sql_append
   monetdb_config_header
   mutils
   stream
-  gdk
+  bat
   monetdb5)
 
 target_compile_definitions(opt_sql_append 

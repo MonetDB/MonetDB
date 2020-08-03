@@ -319,6 +319,19 @@ stdout of test 'select_groupby` in directory 'sql/test/miscellaneous` itself:
 % 'col26' # name
 % varchar # type
 % 0 # length
+#prepare select 1;
+#prepare select 1;
+% .prepare,	.prepare,	.prepare,	.prepare,	.prepare,	.prepare # table_name
+% type,	digits,	scale,	schema,	table,	column # name
+% varchar,	int,	int,	str,	str,	str # type
+% 7,	1,	1,	0,	2,	2 # length
+[ "tinyint",	1,	0,	"",	"%2",	"%2"	]
+#exec  6 (); 
+% .%2 # table_name
+% %2 # name
+% tinyint # type
+% 1 # length
+[ 1	]
 #prepare select cast(? as interval second);
 #prepare select cast(? as interval second);
 % .prepare,	.prepare,	.prepare,	.prepare,	.prepare,	.prepare # table_name

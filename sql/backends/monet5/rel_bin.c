@@ -371,6 +371,9 @@ handle_in_exps(backend *be, sql_exp *ce, list *nl, stmt *left, stmt *right, stmt
 	if(!c)
 		return NULL;
 
+	if (reduce && c->nrcols == 0)
+		c = stmt_const(be, bin_first_column(be, left), c);
+
 	if (c->nrcols == 0 || (depth && !reduce)) {
 		sql_subtype *bt = sql_bind_localtype("bit");
 		sql_subfunc *cmp = (in)
@@ -778,7 +781,9 @@ exp_bin(backend *be, sql_exp *e, stmt *left, stmt *right, stmt *grp, stmt *ext, 
 			}
 		}
 		assert(!e->r);
-		if (exps) {
+		if (strcmp(sql_func_mod(f->func), "") == 0 && strcmp(sql_func_imp(f->func), "") == 0 && strcmp(f->func->base.name, "star") == 0)
+			return left->op4.lval->h->data;
+		else if (exps) {
 			unsigned nrcols = 0;
 			int single_value = (fe->card <= CARD_ATOM);
 			int push_cond_exec = 0, coalesce = 0;
@@ -809,10 +814,10 @@ exp_bin(backend *be, sql_exp *e, stmt *left, stmt *right, stmt *grp, stmt *ext, 
 				if (rows && en == exps->h && f->func->type != F_LOADER)
 					es = stmt_const(be, rows, es);
 				else if (f->func->type == F_ANALYTIC && es->nrcols == 0) {
-					if (en == exps->h)
+					if (en == exps->h && left->nrcols)
 						es = stmt_const(be, bin_first_column(be, left), es); /* ensure the first argument is a column */
 					if (!f->func->s && !strcmp(f->func->base.name, "window_bound")
-						&& exps->h->next && list_length(f->func->ops) == 6 && en == exps->h->next)
+						&& exps->h->next && list_length(f->func->ops) == 6 && en == exps->h->next && left->nrcols)
 						es = stmt_const(be, bin_first_column(be, left), es);
 				}
 

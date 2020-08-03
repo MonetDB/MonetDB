@@ -98,7 +98,7 @@ target_link_libraries(sqlserver
   PRIVATE
   monetdb_config_header
   mutils
-  gdk
+  bat
   sqlcommon
   sqlinclude
   sqlstorage)
@@ -115,13 +115,3 @@ set_target_properties(sqlserver
   PROPERTIES
   POSITION_INDEPENDENT_CODE ON
   PUBLIC_HEADER "${sqlserver_public_headers}")
-
-install(TARGETS
-  sqlserver
-  LIBRARY
-  DESTINATION ${CMAKE_INSTALL_LIBDIR}
-  ARCHIVE
-  DESTINATION ${CMAKE_INSTALL_LIBDIR}
-  PUBLIC_HEADER
-  DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/monetdb
-  INCLUDES DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
