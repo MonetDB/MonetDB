@@ -91,6 +91,3 @@ assert err == b''
 (code, out, err) = streamcat('/xyzzy')
 assert code != 0
 assert b'hollow voice' in err
-
-if __name__ == "__main__":
-    input('banana>')
