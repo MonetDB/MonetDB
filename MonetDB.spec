@@ -65,6 +65,9 @@
 # operators.  Otherwise the POSIX regex functions are used.
 %bcond_without pcre
 
+# By default, include C integration
+%bcond_without cintegration
+
 %if %{fedpkgs}
 # By default, create the MonetDB-R package.
 %bcond_without rintegration
@@ -515,7 +518,9 @@ exit 0
 %{_libdir}/libmonetdb5.so.*
 %dir %{_libdir}/monetdb5
 %{_libdir}/monetdb5/microbenchmark.mal
+%if %{with cintegration}
 %{_libdir}/monetdb5/lib_capi.so
+%endif
 %{_libdir}/monetdb5/lib_generator.so
 %{_libdir}/monetdb5/lib_udf.so
 %doc %{_mandir}/man1/mserver5.1.gz
@@ -721,7 +726,7 @@ fi
 %build
 %{cmake} \
 	-DASSERT=OFF \
-	-DCINTEGRATION=ON \
+	-DCINTEGRATION=%{?with_cintegration:ON}%{!?with_cintegration:OFF} \
 	-DFITS=%{?with_fits:ON}%{!?with_fits:OFF} \
 	-DGEOM=%{?with_geos:ON}%{!?with_geos:OFF} \
 	-DINT128=%{?with_hugeint:ON}%{!?with_hugeint:OFF} \
