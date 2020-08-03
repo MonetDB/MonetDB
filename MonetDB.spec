@@ -191,6 +191,7 @@ functionality of MonetDB.
 %{_includedir}/monetdb/gdk*.h
 %{_includedir}/monetdb/matomic.h
 %{_includedir}/monetdb/mstring.h
+%exclude %{_includedir}/monetdb/monetdbe.h
 %{_includedir}/monetdb/monet*.h
 %{_libdir}/libbat.so
 %{_libdir}/pkgconfig/monetdb-gdk.pc
@@ -611,6 +612,39 @@ use SQL with MonetDB, you will need to install this package.
 %dir %{_datadir}/doc/MonetDB-SQL
 %docdir %{_datadir}/doc/MonetDB-SQL
 %{_datadir}/doc/MonetDB-SQL/*
+
+%package embedded
+Summary: MonetDB as an embedded library
+Group: Applications/Databases
+
+%description embedded
+MonetDB is a database management system that is developed from a
+main-memory perspective with use of a fully decomposed storage model,
+automatic index management, extensibility of data types and search
+accelerators.  It also has an SQL front end.
+
+This package contains the library to turn MonetDB into an embeddable
+library.  Also see %{name}-embedded-devel to use this in a program.
+
+%files embedded
+%{_libdir}/libmonetdbe.so.*
+
+%package embedded-devel
+Summary: MonetDB as an embedded library development files
+Group: Applications/Databases
+
+%description embedded-devel
+MonetDB is a database management system that is developed from a
+main-memory perspective with use of a fully decomposed storage model,
+automatic index management, extensibility of data types and search
+accelerators.  It also has an SQL front end.
+
+This package contains the library and include files to turn MonetDB
+into an embeddable library.
+
+%files embedded-devel
+%{_libdir}/libmonetdbe.so
+%{_includedir}/monetdb/monetdbe.h
 
 %package testing
 Summary: MonetDB - Monet Database Management System
