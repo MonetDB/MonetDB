@@ -18,9 +18,6 @@ if(GEOS_FOUND)
     path "${CMAKE_SOURCE_DIR}/geom/sql"
     modules_list ${include_sql_files})
 
-  set(geomodule_public_headers
-    ${CMAKE_CURRENT_SOURCE_DIR}/geom.h)
-
   target_sources(geomodule
     PRIVATE
     geom.c
@@ -43,7 +40,7 @@ if(GEOS_FOUND)
     PRIVATE
     mutils
     stream
-    gdk
+    bat
     geomlib
     monetdb5
     sql

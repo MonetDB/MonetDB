@@ -284,6 +284,48 @@ stdout of test 'subquery6` in directory 'sql/test/subquery` itself:
 % int,	clob # type
 % 1,	1 # length
 [ NULL,	"a"	]
+#select ntile(1) over ();
+% .%4 # table_name
+% %4 # name
+% tinyint # type
+% 1 # length
+[ 1	]
+#select ntile(11) over (), min(TotalSales) from tbl_ProductSales;
+% sys.%4,	sys.%5 # table_name
+% %4,	%5 # name
+% tinyint,	int # type
+% 1,	3 # length
+[ 1,	100	]
+#select nth_value('bug', '1') over ();
+% .%11 # table_name
+% %11 # name
+% char # type
+% 3 # length
+[ "bug"	]
+#select nth_value('bug', 1) over ();
+% .%11 # table_name
+% %11 # name
+% char # type
+% 3 # length
+[ "bug"	]
+#select nth_value('bug', 1) over (), max(TotalSales) from tbl_ProductSales;
+% .%11,	sys.%12 # table_name
+% %11,	%12 # name
+% char,	int # type
+% 3,	3 # length
+[ "bug",	500	]
+#select lag('bug') over (), lag('bug', 1) over (), lag('bug', 0) over (), lag('bug', 1, 'oth') over (), lag('bug', 0, 'oth') over ();
+% .%4,	.%11,	.%16,	.%24,	.%32 # table_name
+% %4,	%11,	%16,	%24,	%32 # name
+% char,	char,	char,	char,	char # type
+% 0,	0,	3,	3,	3 # length
+[ NULL,	NULL,	"bug",	"oth",	"bug"	]
+#select lead('bug') over (), lead('bug', 1) over (), lead('bug', 0) over (), lead('bug', 1, 'oth') over (), lead('bug', 0, 'oth') over (), max(TotalSales) from tbl_ProductSales;
+% .%4,	.%11,	.%16,	.%24,	.%32,	sys.%33 # table_name
+% %4,	%11,	%16,	%24,	%32,	%33 # name
+% char,	char,	char,	char,	char,	int # type
+% 0,	0,	3,	3,	3,	3 # length
+[ NULL,	NULL,	"bug",	"oth",	"bug",	500	]
 #DROP TABLE tbl_ProductSales;
 #DROP TABLE another_T;
 #DROP TABLE integers;
