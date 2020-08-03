@@ -30,9 +30,9 @@ set(gdk_public_headers
   $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}/monetdb/gdk_calc.h>
   $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}/monetdb/gdk_cand.h>)
 
-add_library(gdk SHARED)
+add_library(bat SHARED)
 
-target_sources(gdk
+target_sources(bat
   PRIVATE
   gdk_select.c
   gdk_calc.c gdk_calc.h
@@ -81,12 +81,12 @@ target_sources(gdk
   PUBLIC
   ${gdk_public_headers})
 
-target_include_directories(gdk
+target_include_directories(bat
   PUBLIC
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
   $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}/monetdb>)
 
-target_link_libraries(gdk
+target_link_libraries(bat
   PUBLIC
   stream
   matomic
@@ -101,11 +101,11 @@ target_link_libraries(gdk
   Threads::Threads)
 
 # This definition is also used in Linux
-target_compile_definitions(gdk
+target_compile_definitions(bat
   PRIVATE
   LIBGDK)
 
-set_target_properties(gdk
+set_target_properties(bat
   PROPERTIES
   VERSION ${GDK_VERSION}
   SOVERSION ${GDK_VERSION_MAJOR}
@@ -122,7 +122,7 @@ if (NOT WIN32)
 endif()
 
 install(TARGETS
-  gdk
+  bat
   EXPORT gdkTargets
   RUNTIME
   DESTINATION ${CMAKE_INSTALL_BINDIR}

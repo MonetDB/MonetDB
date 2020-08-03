@@ -36,7 +36,7 @@ target_include_directories(generator
 target_link_libraries(generator
   PRIVATE
   monetdb_config_header
-  gdk
+  bat
   monetdb5
   sql)
 
