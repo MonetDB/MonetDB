@@ -98,9 +98,14 @@ work(inner_state_t *inner_state, pump_action action)
 	switch (ret) {
 		case BZ_OK:
 		case BZ_RUN_OK:
+			if (a == PUMP_NO_FLUSH)
+				return PUMP_OK;
+			else
+				/* when flushing or finishing, done */
+				return PUMP_END;
 		case BZ_FLUSH_OK:
 		case BZ_FINISH_OK:
-			// if you think it's ok, I think it's ok
+			/* flushing and finishing is not yet done */
 			return PUMP_OK;
 		case BZ_STREAM_END:
 			inner_state->eof_reached = true;
