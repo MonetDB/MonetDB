@@ -169,8 +169,7 @@ typedef enum comp_type {
 	cmp_all = 12,			/* special case for crossproducts */
 	cmp_project = 13,		/* special case for projection joins */
 	cmp_joined = 14, 		/* special case already joined */
-	cmp_left = 15,			/* special case equi join, keep left order */
-	cmp_left_project = 16		/* last step of outer join */
+	cmp_left_project = 15	/* last step of outer join */
 } comp_type;
 
 /* for ranges we keep the requirment for symmetric */
@@ -178,9 +177,12 @@ typedef enum comp_type {
 #define CMP_BETWEEN 16
 
 #define is_theta_exp(e) ((e) == cmp_gt || (e) == cmp_gte || (e) == cmp_lte ||\
-		         (e) == cmp_lt || (e) == cmp_equal || (e) == cmp_notequal)
+						 (e) == cmp_lt || (e) == cmp_equal || (e) == cmp_notequal)
 
 #define is_complex_exp(et) ((et) == cmp_or || (et) == cmp_in || (et) == cmp_notin || (et) == cmp_filter)
+
+#define is_equality_or_inequality_exp(et) ((et) == cmp_equal || (et) == cmp_notequal || (et) == cmp_in || \
+							 			   (et) == cmp_notin || (et) == mark_in || (et) == mark_notin)
 
 typedef enum commit_action_t {
 	CA_COMMIT, 	/* commit rows, only for persistent tables */
@@ -238,7 +240,6 @@ typedef struct sql_trans {
 	char *name;
 	int stime;		/* start of transaction */
 	int wstime;		/* first write transaction time stamp */
-	int rtime;		/* timestamp of latest read performed in transaction*/
 	int wtime;		/* timestamp of latest write performed in transaction*/
 	int schema_number;	/* schema timestamp */
 	int schema_updates;	/* set on schema changes */
@@ -307,6 +308,7 @@ typedef enum sql_class {
 #define EC_TEMP_TZ(e)		(e==EC_TIME_TZ||e==EC_TIMESTAMP_TZ)
 #define EC_TEMP(e)			(e==EC_TIME||e==EC_DATE||e==EC_TIMESTAMP||EC_TEMP_TZ(e))
 #define EC_TEMP_FRAC(e)		(e==EC_TIME||e==EC_TIMESTAMP||EC_TEMP_TZ(e))
+#define EC_TEMP_NOFRAC(e)	(e==EC_TIME||e==EC_TIMESTAMP)
 #define EC_BACKEND_FIXED(e)	(EC_NUMBER(e)||e==EC_BIT||EC_TEMP(e))
 
 typedef struct sql_type {

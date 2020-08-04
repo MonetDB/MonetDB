@@ -421,12 +421,6 @@ SQLinit(Client c)
 		maybeupgrade = 0;
 
 		for (int i = 0; i < sql_modules && !msg; i++) {
-#ifdef HAVE_HGE
-			if (!have_hge) {
-				if (strstr(sql_module_name[i], "_hge"))
-					continue;
-			}
-#endif
 			char *createdb_inline = (char*)sql_module_code[i];
 
 			msg = SQLstatementIntern(c, &createdb_inline, "sql.init", TRUE, FALSE, NULL);
@@ -1163,6 +1157,11 @@ SQLparser(Client c)
 
 				if (msg != MAL_SUCCEED) {
 					str other = c->curprg->def->errors;
+					/* In debugging mode you may want to assess what went wrong in the optimizers*/
+#ifndef NDEBUG
+					if( m->emod & mod_debug)
+						runMALDebugger(c, c->curprg->def);
+#endif
 					c->curprg->def->errors = 0;
 					MSresetInstructions(c->curprg->def, oldstop);
 					freeVariables(c, c->curprg->def, NULL, oldvtop);

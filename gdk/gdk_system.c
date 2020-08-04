@@ -178,6 +178,7 @@ static struct winthread {
 	MT_Sema *semawait;	/* semaphore we're waiting for */
 	struct winthread *joinwait; /* process we are joining with */
 	const char *working;	/* what we're currently doing */
+	char algorithm[512];	/* the algorithm used in the last operation */
 	ATOMIC_TYPE exited;
 	bool detached:1, waiting:1;
 	char threadname[MT_NAME_LEN];
@@ -246,7 +247,7 @@ const char *
 MT_thread_getname(void)
 {
 	struct winthread *w = TlsGetValue(threadslot);
-	return w ? w->threadname : "unknown thread";
+	return w ? w->threadname : UNKNOWN_THREAD;
 }
 
 void
@@ -283,6 +284,32 @@ MT_thread_setworking(const char *work)
 
 	if (w)
 		w->working = work;
+}
+
+void
+MT_thread_setalgorithm(const char *algo)
+{
+	struct winthread *w = TlsGetValue(threadslot);
+
+	if (w) {
+		if (algo) {
+			size_t l = strlen(w->algorithm);
+			if (l > 0)
+				strconcat_len(w->algorithm + l, sizeof(w->algorithm) - l, "; ", algo, NULL);
+			else
+				strcpy_len(w->algorithm, algo, sizeof(w->algorithm));
+		} else {
+			w->algorithm[0] = 0;
+		}
+	}
+}
+
+const char *
+MT_thread_getalgorithm(void)
+{
+	struct winthread *w = TlsGetValue(threadslot);
+
+	return w && w->algorithm[0] ? w->algorithm : NULL;
 }
 
 bool
@@ -509,6 +536,7 @@ static struct posthread {
 	MT_Sema *semawait;	/* semaphore we're waiting for */
 	struct posthread *joinwait; /* process we are joining with */
 	const char *working;	/* what we're currently doing */
+	char algorithm[512];	/* the algorithm used in the last operation */
 	char threadname[MT_NAME_LEN];
 	pthread_t tid;
 	MT_Id mtid;
@@ -579,7 +607,7 @@ MT_thread_getname(void)
 	struct posthread *p;
 
 	p = pthread_getspecific(threadkey);
-	return p ? p->threadname : "unknown thread";
+	return p ? p->threadname : UNKNOWN_THREAD;
 }
 
 void
@@ -624,6 +652,32 @@ MT_thread_setworking(const char *work)
 
 	if (p)
 		p->working = work;
+}
+
+void
+MT_thread_setalgorithm(const char *algo)
+{
+	struct posthread *p = pthread_getspecific(threadkey);
+
+	if (p) {
+		if (algo) {
+			size_t l = strlen(p->algorithm);
+			if (l > 0)
+				strconcat_len(p->algorithm + l, sizeof(p->algorithm) - l, "; ", algo, NULL);
+			else
+				strcpy_len(p->algorithm, algo, sizeof(p->algorithm));
+		} else {
+			p->algorithm[0] = 0;
+		}
+	}
+}
+
+const char *
+MT_thread_getalgorithm(void)
+{
+	struct posthread *p = pthread_getspecific(threadkey);
+
+	return p && p->algorithm[0] ? p->algorithm : NULL;
 }
 
 bool
@@ -694,9 +748,9 @@ join_threads(void)
 				p->waiting = true;
 				pthread_mutex_unlock(&posthread_lock);
 				TRC_DEBUG(THRD, "Join thread \"%s\"\n", p->threadname);
-				self->joinwait = p;
+				if (self) self->joinwait = p;
 				pthread_join(p->tid, NULL);
-				self->joinwait = NULL;
+				if (self) self->joinwait = NULL;
 				rm_posthread(p);
 				waited = true;
 				pthread_mutex_lock(&posthread_lock);
@@ -721,9 +775,9 @@ join_detached_threads(void)
 				p->waiting = true;
 				pthread_mutex_unlock(&posthread_lock);
 				TRC_DEBUG(THRD, "Join thread \"%s\"\n", p->threadname);
-				self->joinwait = p;
+				if (self) self->joinwait = p;
 				pthread_join(p->tid, NULL);
-				self->joinwait = NULL;
+				if (self) self->joinwait = NULL;
 				rm_posthread(p);
 				waited = true;
 				pthread_mutex_lock(&posthread_lock);
@@ -836,9 +890,9 @@ MT_join_thread(MT_Id t)
 		return -1;
 	TRC_DEBUG(THRD, "Join thread \"%s\"\n", p->threadname);
 	struct posthread *self = pthread_getspecific(threadkey);
-	self->joinwait = p;
+	if (self) self->joinwait = p;
 	ret = pthread_join(p->tid, NULL);
-	self->joinwait = NULL;
+	if (self) self->joinwait = NULL;
 	if (ret != 0) {
 		GDKsyserr(ret, "Joining thread failed");
 		return -1;

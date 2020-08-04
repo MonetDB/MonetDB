@@ -46,11 +46,16 @@ if(HAVE_LIBPY3)
     PRIVATE
     Python3::Python
     $<$<VERSION_GREATER_EQUAL:${CMAKE_VERSION},3.14.0>:Python3::NumPy>
+    sql
     mutils
     stream
-    gdk
+    bat
     monetdb5
     monetdb_config_header)
+
+  target_compile_definitions(pyapi3
+    PRIVATE
+    LIBPYAPI3)
 
   set_target_properties(pyapi3
     PROPERTIES 
@@ -69,8 +74,14 @@ if(HAVE_LIBPY3)
     INCLUDES DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
 
   if(WIN32)
+    configure_file(pyapi_locatepython3.bat.in
+      ${CMAKE_CURRENT_BINARY_DIR}/pyapi_locatepython3.bat @ONLY)
+
     install(FILES $<TARGET_PDB_FILE:pyapi3> DESTINATION ${LIBDIR}/monetdb5 OPTIONAL)
-    install(FILES pyapi_locatepython3.bat DESTINATION ${CMAKE_INSTALL_PREFIX})
+    install(FILES
+      ${CMAKE_CURRENT_BINARY_DIR}/pyapi_locatepython3.bat
+      DESTINATION ${CMAKE_INSTALL_PREFIX}
+      COMPONENT server)
   endif()
 endif()
 # vim: set ts=2:sw=2:et

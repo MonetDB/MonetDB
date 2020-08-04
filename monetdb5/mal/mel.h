@@ -46,6 +46,7 @@ typedef struct __attribute__((__designated_init__)) mel_atom {
 #define command(MOD,FCN,IMP,UNSAFE,COMMENT,ARGS) { .command=true, .mod=MOD, .fcn=FCN, .imp=(fptr)&IMP, .cname=#IMP, .unsafe=UNSAFE, .args=ARGS }
 #define pattern(MOD,FCN,IMP,UNSAFE,COMMENT,ARGS) { .command=false, .mod=MOD, .fcn=FCN, .imp=(fptr)&IMP, .cname=#IMP, .unsafe=UNSAFE, .args=ARGS }
 
+/* ARGC = arg-count + ret-count */
 //#define args(RETC,ARGC,...) (mel_arg[ARGC?ARGC:1]){__VA_ARGS__}, .retc=RETC, .argc=ARGC
 #define args(RETC,ARGC,...) (mel_arg[ARGC]){__VA_ARGS__}, .retc=RETC, .argc=ARGC
 #define noargs		    NULL, .retc=0, .argc=0

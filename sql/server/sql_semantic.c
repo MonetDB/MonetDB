@@ -362,7 +362,7 @@ _symbol2string(mvc *sql, symbol *se, int expression, char **err) /**/
 	case SQL_ATOM:{
 		AtomNode *an = (AtomNode *) se;
 		if (an && an->a)
-			return atom2sql(sql->ta, an->a);
+			return atom2sql(sql->ta, an->a, sql->timezone);
 		else
 			return sa_strdup(sql->ta, "NULL");
 	}

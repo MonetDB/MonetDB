@@ -1665,7 +1665,91 @@ GDKanalyticalavg(BAT *r, BAT *b, BAT *s, BAT *e, int tpe)
 		ANALYTICAL_AVERAGE_CALC_FP(dbl);
 		break;
 	default:
-		GDKerror("average of type %s unsupported.\n", ATOMname(tpe));
+		GDKerror("average of type %s to dbl unsupported.\n", ATOMname(tpe));
+		return GDK_FAIL;
+	}
+	BATsetcount(r, cnt);
+	r->tnonil = !has_nils;
+	r->tnil = has_nils;
+	return GDK_SUCCEED;
+}
+
+#ifdef TRUNCATE_NUMBERS
+#define ANALYTICAL_AVERAGE_INT_CALC_FINALIZE(avg, rem, ncnt) \
+	do {
+		if (rem > 0 && avg < 0) \
+			avg++; \
+	} while(0)
+#else
+#define ANALYTICAL_AVERAGE_INT_CALC_FINALIZE(avg, rem, ncnt) \
+	do { \
+		if (rem > 0) { \
+			if (avg < 0) { \
+				if (2*rem > ncnt) \
+					avg++; \
+			} else { \
+				if (2*rem >= ncnt) \
+					avg++; \
+			} \
+		} \
+	} while(0)
+#endif
+
+#define ANALYTICAL_AVERAGE_INT_CALC(TPE)			\
+	do {								\
+		TPE *bp = (TPE*)Tloc(b, 0), *restrict rb = (TPE *) Tloc(r, 0), *bs, *be, v, avg = 0;	\
+		for (; i < cnt; i++) {				\
+			bs = bp + start[i];				\
+			be = bp + end[i];				\
+			for (; bs < be; bs++) {				\
+				v = *bs;				\
+				if (!is_##TPE##_nil(v))	\
+					AVERAGE_ITER(TPE, v, avg, rem, ncnt); \
+			}	\
+			if (ncnt == 0) {	\
+				has_nils = true; \
+				rb[i] = TPE##_nil; \
+			} else { \
+				ANALYTICAL_AVERAGE_INT_CALC_FINALIZE(avg, rem, ncnt); \
+				rb[i] = avg; \
+			} \
+			rem = 0; \
+			ncnt = 0; \
+			avg = 0; \
+		}	\
+	} while (0)
+
+gdk_return
+GDKanalyticalavginteger(BAT *r, BAT *b, BAT *s, BAT *e, int tpe)
+{
+	bool has_nils = false;
+	BUN i = 0, cnt = BATcount(b);
+	lng *restrict start, *restrict end, rem = 0, ncnt = 0;
+
+	assert(s && e);
+	start = (lng *) Tloc(s, 0);
+	end = (lng *) Tloc(e, 0);
+
+	switch (tpe) {
+	case TYPE_bte:
+		ANALYTICAL_AVERAGE_INT_CALC(bte);
+		break;
+	case TYPE_sht:
+		ANALYTICAL_AVERAGE_INT_CALC(sht);
+		break;
+	case TYPE_int:
+		ANALYTICAL_AVERAGE_INT_CALC(int);
+		break;
+	case TYPE_lng:
+		ANALYTICAL_AVERAGE_INT_CALC(lng);
+		break;
+#ifdef HAVE_HGE
+	case TYPE_hge:
+		ANALYTICAL_AVERAGE_INT_CALC(hge);
+		break;
+#endif
+	default:
+		GDKerror("average of type %s to %s unsupported.\n", ATOMname(tpe), ATOMname(tpe));
 		return GDK_FAIL;
 	}
 	BATsetcount(r, cnt);

@@ -23,9 +23,6 @@
 #include <string.h>
 #include <ctype.h>
 #include "sql_keyword.h"
-#ifdef HAVE_HGE
-#include "mal.h"		/* for have_hge */
-#endif
 
 char *
 query_cleaned(sql_allocator *sa, const char *query)
@@ -155,8 +152,7 @@ scanner_init_keywords(void)
 	failed += keywords_insert("MEDIUMINT", sqlINTEGER);
 	failed += keywords_insert("BIGINT", BIGINT);
 #ifdef HAVE_HGE
-	if (have_hge)
-		failed += keywords_insert("HUGEINT", HUGEINT);
+	failed += keywords_insert("HUGEINT", HUGEINT);
 #endif
 	failed += keywords_insert("DEC", sqlDECIMAL);
 	failed += keywords_insert("DECIMAL", sqlDECIMAL);

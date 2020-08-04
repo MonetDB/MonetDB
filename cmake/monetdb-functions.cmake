@@ -159,6 +159,7 @@ function(monetdb_cmake_summary)
   message(STATUS "Dpkg-buildpackage: ${DPKGBUILDPACKAGE_FOUND}")
   message(STATUS "Reprepro: ${REPREPRO_FOUND}")
   message(STATUS "Semodule: ${SEMODULE_FOUND}")
+  message(STATUS "Awk: ${AWK_FOUND}")
   message(STATUS "flags: ${CMAKE_C_FLAGS}")
   message(STATUS "-----------------------------------------")
   message(STATUS "")
@@ -342,4 +343,28 @@ function(monetdb_debian_extra_files)
     DESTINATION
     ${CMAKE_INSTALL_DATAROOTDIR}/doc/monetdb5-server
     COMPONENT server)
+endfunction()
+
+function(find_selinux_types)
+  # The execute_process does not handle the single quotes around the awk
+  # command well. That is why we run it from the file. Be careful that the
+  # awk command is on a single line. Otherwise the output is not on a single
+  # line, which is needed to convert it to a cmake list.
+  # If the command fails, or awk is not found, we set a default list.
+  if(AWK_FOUND)
+    execute_process(COMMAND ${AWK_EXECUTABLE} "-f" "${CMAKE_SOURCE_DIR}/misc/selinux/selinux_types.awk" "/etc/selinux/config"
+      WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}"
+      RESULT_VARIABLE AWK_RETURN_CODE
+      OUTPUT_VARIABLE AWK_OUTPUT_RES
+      ERROR_VARIABLE AWK_ERROR_RES
+      OUTPUT_STRIP_TRAILING_WHITESPACE)
+    if(AWK_RETURN_CODE EQUAL 0 AND AWK_OUTPUT_RES)
+      set(SELINUX_TYPES "${AWK_OUTPUT_RES}" PARENT_SCOPE)
+    else()
+      message(WARNING "Unable to get selinux types. Using defaults.")
+      set(SELINUX_TYPES "mls targeted" PARENT_SCOPE)
+    endif()
+  else()
+    set(SELINUX_TYPES "mls targeted" PARENT_SCOPE)
+  endif()
 endfunction()

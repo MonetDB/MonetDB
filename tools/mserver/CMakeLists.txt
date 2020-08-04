@@ -14,6 +14,20 @@ target_sources(mserver5
   ${CMAKE_CURRENT_BINARY_DIR}/monet_version.c
   monet_version.h)
 
+set(builtby $ENV{USER}) # $USER should be there in POSIX compliant systems
+cmake_host_system_information(RESULT host QUERY HOSTNAME)
+string(APPEND builtby "@" ${host})
+
+set(compilercall ${CMAKE_C_COMPILER})
+set(linkercall ${CMAKE_LINKER})
+
+if(${CMAKE_BUILD_TYPE})
+  string(TOUPPER ${CMAKE_BUILD_TYPE} build_type)
+  string(APPEND compilercall " " ${CMAKE_C_FLAGS_${build_type}} ${CMAKE_C_FLAGS})
+else()
+  string(APPEND compilercall " " ${CMAKE_C_FLAGS})
+endif()
+
 configure_file(monet_version.c.in
   ${CMAKE_CURRENT_BINARY_DIR}/monet_version.c
   @ONLY)
@@ -31,7 +45,7 @@ target_link_libraries(mserver5
   moptions
   mutils
   mcrypt
-  gdk
+  bat
   mapi
   monetdb5
   $<$<NOT:$<PLATFORM_ID:Windows>>:m>
@@ -56,9 +70,10 @@ target_link_libraries(shutdowntest
   monetdb_config_header
   matomic
   moptions
+  sql
   mutils
   mcrypt
-  gdk
+  bat
   mapi
   monetdb5
   $<$<NOT:$<PLATFORM_ID:Windows>>:m>

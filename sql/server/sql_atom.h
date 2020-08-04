@@ -36,6 +36,7 @@ extern atom *atom_dec( sql_allocator *sa, sql_subtype *tpe, hge val);
 extern atom *atom_dec( sql_allocator *sa, sql_subtype *tpe, lng val);
 #endif
 extern atom *atom_ptr( sql_allocator *sa, sql_subtype *tpe, void *v);
+extern atom *atom_general_ptr( sql_allocator *sa, sql_subtype *tpe, void *v);
 
 extern int atom_neg( atom *a );
 extern unsigned int atom_num_digits( atom *a );
@@ -47,7 +48,7 @@ extern atom *atom_dup( sql_allocator *sa, atom *a);
 extern int atom_cast(sql_allocator *sa, atom *a, sql_subtype *tp);
 
 extern char *atom2string(sql_allocator *sa, atom *a);
-extern char *atom2sql(sql_allocator *sa, atom *a);
+extern char *atom2sql(sql_allocator *sa, atom *a, int timezone);
 extern sql_subtype *atom_type(atom *a);
 extern void atom_set_type(atom *a, sql_subtype *t);
 
@@ -68,9 +69,11 @@ extern int atom_is_false(atom *a);
 extern int atom_is_zero(atom *a);
 
 #ifdef HAVE_HGE
-extern hge scales[39];
+#define MAX_SCALE 39
+extern hge scales[MAX_SCALE];
 #else
-extern lng scales[19];
+#define MAX_SCALE 19
+extern lng scales[MAX_SCALE];
 #endif
 
 extern atom *atom_zero_value(sql_allocator *sa, sql_subtype* tpe);

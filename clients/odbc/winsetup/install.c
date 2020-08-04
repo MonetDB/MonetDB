@@ -7,6 +7,7 @@
  */
 
 #include "ODBCGlobal.h"
+#undef DATADIR
 #include <winver.h>
 #include <shlwapi.h>
 #include <string.h>

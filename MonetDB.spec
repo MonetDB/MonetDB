@@ -7,7 +7,7 @@
 # The --with OPTION and --without OPTION arguments can be passed on
 # the commandline of both rpmbuild and mock.
 
-# On 64 bit architectures we build "hugeint" packages.
+# On 64 bit architectures compile with 128 bit integer support.
 %if "%{?_lib}" == "lib64"
 %bcond_without hugeint
 %endif
@@ -65,6 +65,9 @@
 # operators.  Otherwise the POSIX regex functions are used.
 %bcond_without pcre
 
+# By default, include C integration
+%bcond_without cintegration
+
 %if %{fedpkgs}
 # By default, create the MonetDB-R package.
 %bcond_without rintegration
@@ -94,7 +97,7 @@ Group: Applications/Databases
 License: MPLv2.0
 URL: https://www.monetdb.org/
 BugURL: https://bugs.monetdb.org/
-Source: https://www.monetdb.org/downloads/sources/Jun2020/%{name}-%{version}.tar.bz2
+Source: https://www.monetdb.org/downloads/sources/Jun2020-SP1/%{name}-%{version}.tar.bz2
 
 # The Fedora packaging document says we need systemd-rpm-macros for
 # the _unitdir and _tmpfilesdir macros to exist; however on RHEL 7
@@ -108,6 +111,7 @@ BuildRequires: checkpolicy
 BuildRequires: selinux-policy-devel
 BuildRequires: hardlink
 %endif
+BuildRequires: cmake >= 3.12
 BuildRequires: gcc
 BuildRequires: bison
 BuildRequires: /usr/bin/python3
@@ -187,6 +191,7 @@ functionality of MonetDB.
 %{_includedir}/monetdb/gdk*.h
 %{_includedir}/monetdb/matomic.h
 %{_includedir}/monetdb/mstring.h
+%exclude %{_includedir}/monetdb/monetdbe.h
 %{_includedir}/monetdb/monet*.h
 %{_libdir}/libbat.so
 %{_libdir}/pkgconfig/monetdb-gdk.pc
@@ -379,9 +384,6 @@ extensions for %{name}-SQL-server5.
 
 %files geom-MonetDB5
 %defattr(-,root,root)
-%{_libdir}/monetdb5/autoload/*_geom.mal
-%{_libdir}/monetdb5/createdb/*_geom.sql
-%{_libdir}/monetdb5/geom.mal
 %{_libdir}/monetdb5/lib_geom.so
 %endif
 
@@ -406,8 +408,7 @@ install it.
 
 %files R
 %defattr(-,root,root)
-%{_libdir}/monetdb5/rapi.*
-%{_libdir}/monetdb5/autoload/*_rapi.mal
+%{_libdir}/monetdb5/rapi.R
 %{_libdir}/monetdb5/lib_rapi.so
 %endif
 
@@ -432,8 +433,6 @@ install it.
 
 %files python3
 %defattr(-,root,root)
-%{_libdir}/monetdb5/pyapi3.*
-%{_libdir}/monetdb5/autoload/*_pyapi3.mal
 %{_libdir}/monetdb5/lib_pyapi3.so
 %endif
 
@@ -454,9 +453,6 @@ format.
 
 %files cfitsio
 %defattr(-,root,root)
-%{_libdir}/monetdb5/fits.mal
-%{_libdir}/monetdb5/autoload/*_fits.mal
-%{_libdir}/monetdb5/createdb/*_fits.sql
 %{_libdir}/monetdb5/lib_fits.so
 %endif
 
@@ -465,11 +461,12 @@ Summary: MonetDB - Monet Database Management System
 Group: Applications/Databases
 Requires(pre): shadow-utils
 Requires: %{name}-client%{?_isa} = %{version}-%{release}
+Obsoletes: MonetDB5-server-hugeint < 11.38.0
+%if %{with hugeint}
+Provides: MonetDB5-server-hugeint%{?_isa} = %{version}-%{release}
+%endif
 %if (0%{?fedora} >= 22)
 Recommends: %{name}-SQL-server5%{?_isa} = %{version}-%{release}
-%if %{with hugeint}
-Recommends: MonetDB5-server-hugeint%{?_isa} = %{version}-%{release}
-%endif
 Suggests: %{name}-client%{?_isa} = %{version}-%{release}
 %endif
 # versions up to 1.0.5 don't accept the queryid field in the result set
@@ -521,66 +518,17 @@ exit 0
 %exclude %{_bindir}/stethoscope
 %{_libdir}/libmonetdb5.so.*
 %dir %{_libdir}/monetdb5
-%dir %{_libdir}/monetdb5/autoload
-%if %{with fits}
-%exclude %{_libdir}/monetdb5/fits.mal
-%exclude %{_libdir}/monetdb5/autoload/*_fits.mal
-%endif
-%if %{with geos}
-%exclude %{_libdir}/monetdb5/geom.mal
-%endif
-%if %{with py3integration}
-%exclude %{_libdir}/monetdb5/pyapi3.mal
-%endif
-%if %{with rintegration}
-%exclude %{_libdir}/monetdb5/rapi.mal
-%endif
-%exclude %{_libdir}/monetdb5/sql*.mal
-%if %{with hugeint}
-%exclude %{_libdir}/monetdb5/*_hge.mal
-%exclude %{_libdir}/monetdb5/autoload/*_hge.mal
-%endif
-%{_libdir}/monetdb5/*.mal
-%if %{with geos}
-%exclude %{_libdir}/monetdb5/autoload/*_geom.mal
-%endif
-%if %{with py3integration}
-%exclude %{_libdir}/monetdb5/autoload/*_pyapi3.mal
-%endif
-%if %{with rintegration}
-%exclude %{_libdir}/monetdb5/autoload/*_rapi.mal
-%endif
-%exclude %{_libdir}/monetdb5/autoload/??_sql*.mal
-%{_libdir}/monetdb5/autoload/*.mal
+%{_libdir}/monetdb5/microbenchmark.mal
+%{_libdir}/monetdb5/run_*.mal
+%if %{with cintegration}
 %{_libdir}/monetdb5/lib_capi.so
+%endif
 %{_libdir}/monetdb5/lib_generator.so
 %{_libdir}/monetdb5/lib_udf.so
 %doc %{_mandir}/man1/mserver5.1.gz
 %dir %{_datadir}/doc/MonetDB
 %docdir %{_datadir}/doc/MonetDB
 %{_datadir}/doc/MonetDB/*
-
-%if %{with hugeint}
-%package -n MonetDB5-server-hugeint
-Summary: MonetDB - 128-bit integer support for MonetDB5-server
-Group: Applications/Databases
-Requires: MonetDB5-server%{?_isa}
-
-%description -n MonetDB5-server-hugeint
-MonetDB is a database management system that is developed from a
-main-memory perspective with use of a fully decomposed storage model,
-automatic index management, extensibility of data types and search
-accelerators.  It also has an SQL front end.
-
-This package provides HUGEINT (128-bit integer) support for the
-MonetDB5-server component.
-
-%files -n MonetDB5-server-hugeint
-%exclude %{_libdir}/monetdb5/sql*_hge.mal
-%{_libdir}/monetdb5/*_hge.mal
-%exclude %{_libdir}/monetdb5/autoload/??_sql_hge.mal
-%{_libdir}/monetdb5/autoload/*_hge.mal
-%endif
 
 %package -n MonetDB5-server-devel
 Summary: MonetDB development files
@@ -608,10 +556,11 @@ used from the MAL level.
 Summary: MonetDB5 SQL server modules
 Group: Applications/Databases
 Requires(pre): MonetDB5-server%{?_isa} = %{version}-%{release}
-%if (0%{?fedora} >= 22)
+Obsoletes: %{name}-SQL-server5-hugeint < 11.38.0
 %if %{with hugeint}
-Recommends: %{name}-SQL-server5-hugeint%{?_isa} = %{version}-%{release}
+Provides: %{name}-SQL-server5-hugeint%{?_isa} = %{version}-%{release}
 %endif
+%if (0%{?fedora} >= 22)
 Suggests: %{name}-client%{?_isa} = %{version}-%{release}
 %endif
 %if %{?rhel:0}%{!?rhel:1} || 0%{?rhel} >= 7
@@ -657,49 +606,45 @@ use SQL with MonetDB, you will need to install this package.
 %config(noreplace) %attr(664,monetdb,monetdb) %{_localstatedir}/monetdb5/dbfarm/.merovingian_properties
 %verify(not mtime) %attr(664,monetdb,monetdb) %{_localstatedir}/monetdb5/dbfarm/.merovingian_lock
 %config(noreplace) %attr(644,root,root) %{_sysconfdir}/logrotate.d/monetdbd
-%{_libdir}/monetdb5/autoload/??_sql.mal
-%{_libdir}/monetdb5/lib_sql.so
-%dir %{_libdir}/monetdb5/createdb
-%if %{with fits}
-%exclude %{_libdir}/monetdb5/createdb/*_fits.sql
-%endif
-%if %{with geos}
-%exclude %{_libdir}/monetdb5/createdb/*_geom.sql
-%endif
-%{_libdir}/monetdb5/createdb/*.sql
-%{_libdir}/monetdb5/sql*.mal
-%if %{with hugeint}
-%exclude %{_libdir}/monetdb5/createdb/*_hge.sql
-%exclude %{_libdir}/monetdb5/sql*_hge.mal
-%endif
+%{_libdir}/monetdb5/lib_sql.so*
 %doc %{_mandir}/man1/monetdb.1.gz
 %doc %{_mandir}/man1/monetdbd.1.gz
 %dir %{_datadir}/doc/MonetDB-SQL
 %docdir %{_datadir}/doc/MonetDB-SQL
 %{_datadir}/doc/MonetDB-SQL/*
 
-%if %{with hugeint}
-%package SQL-server5-hugeint
-Summary: MonetDB5 128 bit integer (hugeint) support for SQL
+%package embedded
+Summary: MonetDB as an embedded library
 Group: Applications/Databases
-Requires: MonetDB5-server-hugeint%{?_isa} = %{version}-%{release}
-Requires: MonetDB-SQL-server5%{?_isa} = %{version}-%{release}
 
-%description SQL-server5-hugeint
+%description embedded
 MonetDB is a database management system that is developed from a
 main-memory perspective with use of a fully decomposed storage model,
 automatic index management, extensibility of data types and search
 accelerators.  It also has an SQL front end.
 
-This package provides HUGEINT (128-bit integer) support for the SQL
-front end of MonetDB.
+This package contains the library to turn MonetDB into an embeddable
+library.  Also see %{name}-embedded-devel to use this in a program.
 
-%files SQL-server5-hugeint
-%defattr(-,root,root)
-%{_libdir}/monetdb5/autoload/??_sql_hge.mal
-%{_libdir}/monetdb5/createdb/*_hge.sql
-%{_libdir}/monetdb5/sql*_hge.mal
-%endif
+%files embedded
+%{_libdir}/libmonetdbe.so.*
+
+%package embedded-devel
+Summary: MonetDB as an embedded library development files
+Group: Applications/Databases
+
+%description embedded-devel
+MonetDB is a database management system that is developed from a
+main-memory perspective with use of a fully decomposed storage model,
+automatic index management, extensibility of data types and search
+accelerators.  It also has an SQL front end.
+
+This package contains the library and include files to turn MonetDB
+into an embeddable library.
+
+%files embedded-devel
+%{_libdir}/libmonetdbe.so
+%{_includedir}/monetdb/monetdbe.h
 
 %package testing
 Summary: MonetDB - Monet Database Management System
@@ -814,66 +759,36 @@ fi
 %setup -q
 
 %build
+%{cmake} \
+	-DASSERT=OFF \
+	-DCINTEGRATION=%{?with_cintegration:ON}%{!?with_cintegration:OFF} \
+	-DFITS=%{?with_fits:ON}%{!?with_fits:OFF} \
+	-DGEOM=%{?with_geos:ON}%{!?with_geos:OFF} \
+	-DINT128=%{?with_hugeint:ON}%{!?with_hugeint:OFF} \
+	-DNETCDF=OFF \
+	-DODBC=ON \
+	-DPY3INTEGRATION=%{?with_py3integration:ON}%{!?with_py3integration:OFF} \
+	-DRINTEGRATION=%{?with_rintegration:ON}%{!?with_rintegration:OFF} \
+	-DSANITIZER=OFF \
+	-DSHP=OFF \
+	-DSTRICT=OFF \
+	-DTESTING=ON \
+	-DWITH_BZ2=ON \
+	-DWITH_CMOCKA=OFF \
+	-DWITH_CRYPTO=ON \
+	-DWITH_CURL=ON \
+	-DWITH_LZ4=OFF \
+	-DWITH_LZMA=ON \
+	-DWITH_PCRE=ON \
+	-DWITH_PROJ=OFF \
+	-DWITH_READLINE=ON \
+	-DWITH_SNAPPY=OFF \
+	-DWITH_UUID=ON \
+	-DWITH_VALGRIND=OFF \
+	-DWITH_XML2=ON \
+	-DWITH_ZLIB=ON
 
-# There is a bug in GCC version 4.8 on AArch64 architectures
-# that causes it to report an internal error when compiling
-# testing/difflib.c.  The work around is to not use -fstack-protector-strong.
-# The bug exhibits itself on CentOS 7 on AArch64.
-# Everywhere else, add -Wno-format-truncation to the compiler options
-# to reduce the number of warnings during compilation.
-%ifarch aarch64
-    if gcc -v 2>&1 | grep -q 'gcc version 4\.'; then
-	CFLAGS="${CFLAGS:-$(echo %optflags | sed 's/-fstack-protector-strong//')}"
-    else
-	CFLAGS="${CFLAGS:-%optflags -Wno-format-truncation}"
-    fi
-%else
-    CFLAGS="${CFLAGS:-%optflags -Wno-format-truncation}"
-%endif
-export CFLAGS
-# do not use --enable-optimize or --disable-optimize: we don't want
-# any changes to optimization flags
-%{configure} \
- 	--with-rundir=%{_rundir}/monetdb \
-	--enable-assert=no \
-	--enable-debug=yes \
-	--enable-developer=no \
-	--enable-embedded=no \
-	--enable-embedded-r=no \
-	--enable-fits=%{?with_fits:yes}%{!?with_fits:no} \
-	--enable-geom=%{?with_geos:yes}%{!?with_geos:no} \
-	--enable-int128=%{?with_hugeint:yes}%{!?with_hugeint:no} \
-	--enable-mapi=yes \
-	--enable-netcdf=no \
-	--enable-odbc=yes \
-	--enable-profiler=no \
-	--enable-py3integration=%{?with_py3integration:yes}%{!?with_py3integration:no} \
-	--enable-rintegration=%{?with_rintegration:yes}%{!?with_rintegration:no} \
-	--enable-sanitizer=no \
-	--enable-shp=no \
-	--enable-static-analysis=no \
-	--enable-strict=no \
-	--enable-testing=yes \
-	--with-bz2=yes \
-	--with-curl=yes \
-	--with-gdal=no \
-	--with-geos=%{?with_geos:yes}%{!?with_geos:no} \
-	--with-libxml2=yes \
-	--with-lz4=no \
-	--with-lzma=yes \
-	--with-openssl=yes \
-	--with-proj=no \
-	--with-pthread=yes \
-	--with-python3=yes \
-	--with-readline=yes \
-	--with-regex=%{?with_pcre:PCRE}%{!?with_pcre:POSIX} \
-	--with-snappy=no \
-	--with-unixodbc=yes \
-	--with-uuid=yes \
-	--with-valgrind=no \
-	%{?comp_cc:CC="%{comp_cc}"}
-
-%make_build
+%cmake_build
 
 %if %{?rhel:0}%{!?rhel:1} || 0%{?rhel} >= 7
 cd buildtools/selinux
@@ -892,7 +807,7 @@ cd -
 %endif
 
 %install
-%make_install
+%cmake_install
 
 # move file to correct location
 %if %{?rhel:0}%{!?rhel:1} || 0%{?rhel} >= 7
@@ -906,6 +821,7 @@ rmdir %{buildroot}%{_sysconfdir}/tmpfiles.d
 
 install -d -m 0750 %{buildroot}%{_localstatedir}/lib/monetdb
 install -d -m 0770 %{buildroot}%{_localstatedir}/monetdb5/dbfarm
+touch %{buildroot}%{_localstatedir}/monetdb5/dbfarm/.merovingian_lock
 install -d -m 0775 %{buildroot}%{_localstatedir}/log/monetdb
 install -d -m 0775 %{buildroot}%{_rundir}/monetdb
 
@@ -913,9 +829,9 @@ install -d -m 0775 %{buildroot}%{_rundir}/monetdb
 # .la files
 rm -f %{buildroot}%{_libdir}/*.la
 rm -f %{buildroot}%{_libdir}/monetdb5/*.la
-rm -f %{buildroot}%{_libdir}/monetdb5/opt_sql_append.mal
 rm -f %{buildroot}%{_libdir}/monetdb5/lib_opt_sql_append.so
-rm -f %{buildroot}%{_libdir}/monetdb5/autoload/??_opt_sql_append.mal
+rm -f %{buildroot}%{_bindir}/monetdb_mtest.sh
+rm -rf %{buildroot}%{_datadir}/monetdb # /cmake
 
 %if %{?rhel:0}%{!?rhel:1} || 0%{?rhel} >= 7
 for selinuxvariant in %{selinux_variants}
@@ -937,6 +853,77 @@ fi
 %postun -p /sbin/ldconfig
 
 %changelog
+* Thu Jul 23 2020 Sjoerd Mullender <sjoerd@acm.org> - 11.37.11-20200723
+- Rebuilt.
+- BZ#6917: Decimal parsing fails
+- BZ#6932: Syntax error while parsing JSON numbers with exponent
+- BZ#6934: sys.isauuid() returns wrong answer for some invalid uuid
+  strings
+
+* Mon Jul 20 2020 Sjoerd Mullender <sjoerd@acm.org> - 11.37.9-20200720
+- Rebuilt.
+- BZ#6844: sys.getUser('https://me:pw@www.monetdb.org/Doc') does not
+  return the user: me
+- BZ#6845: the url sys.get...(url) functions do not allow null as
+  a parameter
+- BZ#6858: json.keyarray(json '{ "":0 }') fails with error: Could not
+  allocate space
+- BZ#6859: only first character of the separator string in json.text(js
+  json, sep string) is used
+- BZ#6873: sys.hot_snapshot() creates incomplete snapshots if the
+  write-ahead log is very large
+- BZ#6876: tar files created by sys.hot_snapshot() produce warnings on
+  some implementations of tar
+- BZ#6877: MonetDB produces malformed LZ4 files
+- BZ#6878: SQL Connection Error when running SELECT queries containing
+  AND command
+- BZ#6880: Left fuzzy queries are much slower than other fuzzy queries.
+- BZ#6882: cgroups limits no longer respected?
+- BZ#6883: SQLancer crash on delete query
+- BZ#6884: SQLancer generates query with unclear error message
+- BZ#6885: SQLancer causes assertion error on UTF8_strlen
+- BZ#6886: SQLancer alter table add unique gives strange error message
+- BZ#6887: SQLancer crash on complex query
+- BZ#6888: SQLancer crash on cross join on view
+- BZ#6889: SQLancer crash on long query
+- BZ#6892: SQLancer crash on query with HAVING
+- BZ#6893: SQLancer inner join reporting GDK error
+- BZ#6894: SQLancer crash on rtrim function
+- BZ#6895: SQLancer causing 'algebra.select' undefined error
+- BZ#6896: SQLancer algebra.select' undefined 2
+- BZ#6897: SQLancer distinct aggregate with error on group by constant
+- BZ#6898: SQLancer crash on join query
+- BZ#6899: SQLancer TLP query with wrong results
+- BZ#6900: SQLancer generated SIGFPE
+- BZ#6901: SQLancer TLP query with wrong results 2
+- BZ#6902: SQLancer query: batcalc.between undefined
+- BZ#6903: SQLancer calc.abs undefined
+- BZ#6904: SQLancer aggr.subavg undefined
+- BZ#6905: SQLancer TLP query with wrong results 3
+- BZ#6906: SQLancer crash on complex join
+- BZ#6907: SQLancer algebra.select undefined
+- BZ#6908: SQLancer inputs not the same size
+- BZ#6909: SQLancer query with wrong results
+- BZ#6911: SQLancer query: 'calc.bit' undefined
+- BZ#6918: SQLancer query compilation error
+- BZ#6919: SQLancer insert function doesn't handle utf-8 strings
+- BZ#6920: SQLancer project_bte: does not match always
+- BZ#6922: Timestamp columns not migrated to new format
+- BZ#6923: Imprints data files for timestamp BAT not migrated to the
+  new format
+- BZ#6924: SQLancer query copy on unique pair of columns fails and
+  complex query with GDK error
+- BZ#6925: Count string rows in union of string tables leaks (RSS) memory
+- BZ#6926: SQLancer query with wrong results
+- BZ#6927: SQLancer inputs not the same size
+- BZ#6928: SQLancer crash on coalesce
+- BZ#6929: SQLancer calc.date undefined
+
+* Tue Jun  9 2020 Sjoerd Mullender <sjoerd@acm.org> - 11.37.9-20200720
+- gdk: Hash buckets come in variable widths.  But if a BAT grows long enough so
+  that the BAT indexes that are stored in the buckets don't fit anymore,
+  the buckets need to be widened.  This is now fixed.
+
 * Fri May 29 2020 Sjoerd Mullender <sjoerd@acm.org> - 11.37.7-20200529
 - Rebuilt.
 

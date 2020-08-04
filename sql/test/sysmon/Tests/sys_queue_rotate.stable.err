@@ -1,0 +1,12 @@
+stderr of test 'sys_queue_rotate` in directory 'sql/test/sysmon` itself:
+
+
+# 14:43:48 >  
+# 14:43:48 >  "mclient" "-lsql" "-ftest" "-tnone" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-28100" "--port=39321"
+# 14:43:48 >  
+
+
+# 14:43:48 >  
+# 14:43:48 >  "Done."
+# 14:43:48 >  
+

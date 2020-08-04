@@ -68,8 +68,4 @@ extern int is_sqlfunc(sql_func *f);
 
 extern void types_init(sql_allocator *sa);
 
-/* This function should be used in exceptional cases such as dealing with tricky upgrades! */
-extern sql_func *sql_create_func(sql_allocator *sa, const char *name, const char *mod, const char *imp, bit semantics, bit side_effect, int fix_scale,
-								 unsigned int res_scale, sql_type *fres, int nargs, ...);
-
 #endif /* SQL_TYPES_H */

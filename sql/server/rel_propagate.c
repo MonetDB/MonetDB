@@ -278,8 +278,8 @@ propagate_validation_to_upper_tables(sql_query* query, sql_table *mt, sql_table 
 				bool found_all = false;
 
 				if (atomcmp(spt->part.range.minvalue, nil) != 0 && atomcmp(spt->part.range.maxvalue, nil) != 0) {
-					e1 = create_table_part_atom_exp(sql, spt->tpe, spt->part.range.minvalue);
-					e2 = create_table_part_atom_exp(sql, spt->tpe, spt->part.range.maxvalue);
+					e1 = exp_atom(sql->sa, atom_general_ptr(sql->sa, &spt->tpe, spt->part.range.minvalue));
+					e2 = exp_atom(sql->sa, atom_general_ptr(sql->sa, &spt->tpe, spt->part.range.maxvalue));
 				} else {
 					assert(spt->with_nills);
 					found_all = is_bit_nil(spt->with_nills);
@@ -290,7 +290,7 @@ propagate_validation_to_upper_tables(sql_query* query, sql_table *mt, sql_table 
 				list *exps = new_exp_list(sql->sa);
 				for (node *n = spt->part.values->h ; n ; n = n->next) {
 					sql_part_value *next = (sql_part_value*) n->data;
-					sql_exp *e1 = create_table_part_atom_exp(sql, spt->tpe, next->value);
+					sql_exp *e1 = exp_atom(sql->sa, atom_general_ptr(sql->sa, &spt->tpe, next->value));
 					list_append(exps, e1);
 				}
 				rel = rel_list(sql->sa, rel, create_list_partition_anti_rel(query, it, pt, spt->with_nills, exps));
@@ -709,8 +709,8 @@ rel_generate_subinserts(sql_query *query, sql_rel *rel, sql_table *t, int *chang
 
 			if (atomcmp(pt->part.range.minvalue, nil) != 0 || atomcmp(pt->part.range.maxvalue, nil) != 0) {
 				sql_exp *e1, *e2;
-				e1 = create_table_part_atom_exp(sql, pt->tpe, pt->part.range.minvalue);
-				e2 = create_table_part_atom_exp(sql, pt->tpe, pt->part.range.maxvalue);
+				e1 = exp_atom(sql->sa, atom_general_ptr(sql->sa, &pt->tpe, pt->part.range.minvalue));
+				e2 = exp_atom(sql->sa, atom_general_ptr(sql->sa, &pt->tpe, pt->part.range.maxvalue));
 				range = exp_compare2(sql->sa, le, e1, e2, cmp_gte|CMP_BETWEEN);
 				full_range = range;
 			} else {
@@ -752,7 +752,7 @@ rel_generate_subinserts(sql_query *query, sql_rel *rel, sql_table *t, int *chang
 				list *exps = new_exp_list(sql->sa);
 				for (node *nn = pt->part.values->h ; nn ; nn = nn->next) {
 					sql_part_value *next = (sql_part_value*) nn->data;
-					sql_exp *e1 = create_table_part_atom_exp(sql, pt->tpe, next->value);
+					sql_exp *e1 = exp_atom(sql->sa, atom_general_ptr(sql->sa, &pt->tpe, next->value));
 					list_append(exps, e1);
 					list_append(anti_exps, exp_copy(sql, e1));
 				}
@@ -941,16 +941,16 @@ rel_subtable_insert(sql_query *query, sql_rel *rel, sql_table *t, int *changes)
 					anti_exp = exp_compare(sql->sa, anti_nils, exp_atom_bool(sql->sa, 0), cmp_equal);
 				}
 			} else {
-				sql_exp *e2 = create_table_part_atom_exp(sql, pt->tpe, pt->part.range.maxvalue);
+				sql_exp *e2 = exp_atom(sql->sa, atom_general_ptr(sql->sa, &pt->tpe, pt->part.range.maxvalue));
 				anti_exp = exp_compare(sql->sa, exp_copy(sql, anti_le), e2, cmp_gte);
 			}
 		} else {
 			if (atomcmp(pt->part.range.maxvalue, nil) == 0) {
-				sql_exp *e1 = create_table_part_atom_exp(sql, pt->tpe, pt->part.range.minvalue);
+				sql_exp *e1 = exp_atom(sql->sa, atom_general_ptr(sql->sa, &pt->tpe, pt->part.range.minvalue));
 				anti_exp = exp_compare(sql->sa, exp_copy(sql, anti_le), e1, cmp_lt);
 			} else {
-				sql_exp *e1 = create_table_part_atom_exp(sql, pt->tpe, pt->part.range.minvalue),
-					*e2 = create_table_part_atom_exp(sql, pt->tpe, pt->part.range.maxvalue),
+				sql_exp *e1 = exp_atom(sql->sa, atom_general_ptr(sql->sa, &pt->tpe, pt->part.range.minvalue)),
+					*e2 = exp_atom(sql->sa, atom_general_ptr(sql->sa, &pt->tpe, pt->part.range.maxvalue)),
 					*range1 = exp_compare(sql->sa, exp_copy(sql, anti_le), e1, cmp_lt),
 					*range2 = exp_compare(sql->sa, exp_copy(sql, anti_le), e2, cmp_gte);
 				anti_exp = exp_or(sql->sa, list_append(new_exp_list(sql->sa), range1),
@@ -971,7 +971,7 @@ rel_subtable_insert(sql_query *query, sql_rel *rel, sql_table *t, int *changes)
 		if (list_length(pt->part.values)) { /* if the partition holds non-null values */
 			for (node *n = pt->part.values->h ; n ; n = n->next) {
 				sql_part_value *next = (sql_part_value*) n->data;
-				sql_exp *e1 = create_table_part_atom_exp(sql, pt->tpe, next->value);
+				sql_exp *e1 = exp_atom(sql->sa, atom_general_ptr(sql->sa, &pt->tpe, next->value));
 				list_append(anti_exps, exp_copy(sql, e1));
 			}
 			anti_exp = exp_in(sql->sa, exp_copy(sql, anti_le), anti_exps, cmp_notin);

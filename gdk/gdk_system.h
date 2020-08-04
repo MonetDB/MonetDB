@@ -140,6 +140,8 @@ typedef size_t MT_Id;		/* thread number. will not be zero */
 enum MT_thr_detach { MT_THR_JOINABLE, MT_THR_DETACHED };
 #define MT_NAME_LEN	32	/* length of thread/semaphore/etc. names */
 
+#define UNKNOWN_THREAD "unknown thread"
+
 gdk_export bool MT_thread_init(void);
 gdk_export int MT_create_thread(MT_Id *t, void (*function) (void *),
 				void *arg, enum MT_thr_detach d,
@@ -644,6 +646,8 @@ typedef struct {
 gdk_export void MT_thread_setlockwait(MT_Lock *lock);
 gdk_export void MT_thread_setsemawait(MT_Sema *sema);
 gdk_export void MT_thread_setworking(const char *work);
+gdk_export void MT_thread_setalgorithm(const char *algo);
+gdk_export const char *MT_thread_getalgorithm(void);
 
 gdk_export int MT_check_nr_cores(void);
 

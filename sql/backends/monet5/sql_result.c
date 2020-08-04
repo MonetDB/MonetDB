@@ -34,14 +34,14 @@
 
 #define normal_int_SWAP(i) (((0x000000ff&(i))<<24) | ((0x0000ff00&(i))<<8) | \
 			    ((0x00ff0000&(i))>>8)  | ((0xff000000&(i))>>24))
-#define long_long_SWAP(l)				\
-		((((lng)normal_int_SWAP(l))<<32) |	\
+#define long_long_SWAP(l)						\
+		((((lng)normal_int_SWAP(l))<<32) |		\
 		 (0xffffffff&normal_int_SWAP(l>>32)))
 #endif
 
 #ifdef HAVE_HGE
-#define huge_int_SWAP(h)					\
-		((((hge)long_long_SWAP(h))<<64) |		\
+#define huge_int_SWAP(h)								\
+		((((hge)long_long_SWAP(h))<<64) |				\
 		 (0xffffffffffffffff&long_long_SWAP(h>>64)))
 #endif
 
@@ -50,58 +50,58 @@ mnstr_swap_lng(stream *s, lng lngval) {
 	return mnstr_get_swapbytes(s) ? long_long_SWAP(lngval) : lngval;
 }
 
-#define DEC_TOSTR(TYPE)							\
-	do {								\
-		char buf[64];						\
-		TYPE v = *(const TYPE *) a;				\
-		int scale = (int) (ptrdiff_t) extra;			\
-		int cur = 63, i, done = 0;				\
-		int neg = v < 0;					\
-		ssize_t l;						\
-		if (is_##TYPE##_nil(v)) {				\
-			if (*len < 5){					\
-				if (*Buf)				\
-					GDKfree(*Buf);			\
-				*len = 5;				\
-				*Buf = GDKzalloc(*len);			\
-				if (*Buf == NULL) {			\
-					return -1;			\
-				}					\
-			}						\
-			strcpy(*Buf, "NULL");				\
-			return 4;					\
-		}							\
-		if (v<0)						\
-			v = -v;						\
-		buf[cur--] = 0;						\
-		if (scale){						\
-			for (i=0; i<scale; i++) {			\
+#define DEC_TOSTR(TYPE)								\
+	do {											\
+		char buf[64];								\
+		TYPE v = *(const TYPE *) a;					\
+		int scale = (int) (ptrdiff_t) extra;		\
+		int cur = 63, i, done = 0;					\
+		int neg = v < 0;							\
+		ssize_t l;									\
+		if (is_##TYPE##_nil(v)) {					\
+			if (*len < 5){							\
+				if (*Buf)							\
+					GDKfree(*Buf);					\
+				*len = 5;							\
+				*Buf = GDKzalloc(*len);				\
+				if (*Buf == NULL) {					\
+					return -1;						\
+				}									\
+			}										\
+			strcpy(*Buf, "NULL");					\
+			return 4;								\
+		}											\
+		if (v<0)									\
+			v = -v;									\
+		buf[cur--] = 0;								\
+		if (scale){									\
+			for (i=0; i<scale; i++) {				\
 				buf[cur--] = (char) (v%10 + '0');	\
-				v /= 10;				\
-			}						\
-			buf[cur--] = '.';				\
-		}							\
-		while (v) {						\
+				v /= 10;							\
+			}										\
+			buf[cur--] = '.';						\
+		}											\
+		while (v) {									\
 			buf[cur--] = (char ) (v%10 + '0');		\
-			v /= 10;					\
-			done = 1;					\
-		}							\
-		if (!done)						\
-			buf[cur--] = '0';				\
-		if (neg)						\
-			buf[cur--] = '-';				\
-		l = (64-cur-1);						\
-		if ((ssize_t) *len < l){				\
-			if (*Buf)					\
-				GDKfree(*Buf);				\
-			*len = (size_t) l+1;				\
-			*Buf = GDKzalloc(*len);				\
-			if (*Buf == NULL) {				\
-				return -1;				\
-			}						\
-		}							\
-		strcpy(*Buf, buf+cur+1);				\
-		return l-1;						\
+			v /= 10;								\
+			done = 1;								\
+		}											\
+		if (!done)									\
+			buf[cur--] = '0';						\
+		if (neg)									\
+			buf[cur--] = '-';						\
+		l = (64-cur-1);								\
+		if ((ssize_t) *len < l){					\
+			if (*Buf)								\
+				GDKfree(*Buf);						\
+			*len = (size_t) l+1;					\
+			*Buf = GDKzalloc(*len);					\
+			if (*Buf == NULL) {						\
+				return -1;							\
+			}										\
+		}											\
+		strcpy(*Buf, buf+cur+1);					\
+		return l-1;									\
 	} while (0)
 
 static ssize_t
@@ -581,64 +581,57 @@ bat_max_hgelength(BAT *b)
 }
 #endif
 
-#define DEC_FRSTR(X)							\
-	do {								\
-		sql_column *col = c->extra;				\
-		sql_subtype *t = &col->type;				\
-									\
-		unsigned int i, neg = 0;				\
-		X *r;							\
-		X res = 0;						\
-		while(isspace((unsigned char) *s))			\
-			s++;						\
-		if (*s == '-'){						\
-			neg = 1;					\
-			s++;						\
-		} else if (*s == '+'){					\
-			neg = 0;					\
-			s++;						\
-		}							\
+#define DEC_FRSTR(X)													\
+	do {																\
+		sql_column *col = c->extra;										\
+		sql_subtype *t = &col->type;									\
+		unsigned int scale = t->scale;									\
+		unsigned int i;													\
+		bool neg = false;												\
+		X *r;															\
+		X res = 0;														\
+		while(isspace((unsigned char) *s))								\
+			s++;														\
+		if (*s == '-'){													\
+			neg = true;													\
+			s++;														\
+		} else if (*s == '+'){											\
+			s++;														\
+		}																\
 		for (i = 0; *s && *s != '.' && ((res == 0 && *s == '0') || i < t->digits - t->scale); s++) { \
-			if (!*s || !isdigit((unsigned char) *s))		\
-				return NULL;				\
-			res *= 10;					\
-			res += (*s-'0');				\
-			if (res)					\
-				i++;					\
-		}							\
-		if (!*s && t->scale) {					\
-			for( i = 0; i < t->scale; i++) {		\
-				res *= 10;				\
-			}						\
-		}							\
-		while(isspace((unsigned char) *s))			\
-			s++;						\
-		if (*s) {						\
-			if (*s != '.')					\
-				return NULL;				\
-			s++;						\
-			for (i = 0; *s && isdigit((unsigned char) *s) && i < t->scale; i++, s++) { \
-				res *= 10;				\
-				res += *s - '0';			\
-			}						\
-			while(isspace((unsigned char) *s))		\
-				s++;					\
-			for (; i < t->scale; i++) {			\
-				res *= 10;				\
-			}						\
-		}							\
-		if (*s)							\
-			return NULL;					\
-		r = c->data;						\
-		if (r == NULL &&					\
-		    (r = GDKzalloc(sizeof(X))) == NULL)			\
-			return NULL;					\
-		c->data = r;						\
-		if (neg)						\
-			*r = -res;					\
-		else							\
-			*r = res;					\
-		return (void *) r;					\
+			if (!isdigit((unsigned char) *s))							\
+				break;													\
+			res *= 10;													\
+			res += (*s-'0');											\
+			if (res)													\
+				i++;													\
+		}																\
+		if (*s == '.') {												\
+			s++;														\
+			while (*s && isdigit((unsigned char) *s) && scale > 0) {	\
+				res *= 10;												\
+				res += *s++ - '0';										\
+				scale--;												\
+			}															\
+		}																\
+		while(*s && isspace((unsigned char) *s))						\
+			s++;														\
+		while (scale > 0) {												\
+			res *= 10;													\
+			scale--;													\
+		}																\
+		if (*s)															\
+			return NULL;												\
+		r = c->data;													\
+		if (r == NULL &&												\
+		    (r = GDKzalloc(sizeof(X))) == NULL)							\
+			return NULL;												\
+		c->data = r;													\
+		if (neg)														\
+			*r = -res;													\
+		else															\
+			*r = res;													\
+		return (void *) r;												\
 	} while (0)
 
 static void *

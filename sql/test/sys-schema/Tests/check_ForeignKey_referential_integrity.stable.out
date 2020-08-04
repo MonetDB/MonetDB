@@ -464,27 +464,27 @@ stdout of test 'check_ForeignKey_referential_integrity` in directory 'sql/test/s
 % varchar,	bigint,	bigint,	bigint,	bigint,	bigint,	bigint # type
 % 0,	1,	1,	1,	1,	1,	1 # length
 #SELECT * FROM sys.storagemodel WHERE schema NOT IN (SELECT name FROM sys.schemas);
-% sys.storagemodel,	sys.storagemodel,	sys.storagemodel,	sys.storagemodel,	sys.storagemodel,	sys.storagemodel,	sys.storagemodel,	sys.storagemodel,	sys.storagemodel,	sys.storagemodel,	sys.storagemodel,	sys.storagemodel,	sys.storagemodel # table_name
+% sys.storagemodel,	sys.storagemodel,	sys.storagemodel,	sys.storagemodel,	sys.storagemodel,	sys.storagemodel,	sys.storagemodel,	sys.storagemodel,	.storagemodel,	.storagemodel,	sys.storagemodel,	sys.storagemodel,	sys.storagemodel # table_name
 % schema,	table,	column,	type,	count,	columnsize,	heapsize,	hashsize,	imprintsize,	orderidxsize,	sorted,	unique,	isacolumn # name
 % varchar,	varchar,	varchar,	varchar,	bigint,	bigint,	bigint,	bigint,	bigint,	bigint,	boolean,	boolean,	boolean # type
 % 0,	0,	0,	0,	1,	1,	1,	1,	1,	1,	5,	5,	5 # length
 #SELECT * FROM sys.storagemodel WHERE table NOT IN (SELECT name FROM sys._tables UNION ALL SELECT name FROM tmp._tables);
-% sys.storagemodel,	sys.storagemodel,	sys.storagemodel,	sys.storagemodel,	sys.storagemodel,	sys.storagemodel,	sys.storagemodel,	sys.storagemodel,	sys.storagemodel,	sys.storagemodel,	sys.storagemodel,	sys.storagemodel,	sys.storagemodel # table_name
+% sys.storagemodel,	sys.storagemodel,	sys.storagemodel,	sys.storagemodel,	sys.storagemodel,	sys.storagemodel,	sys.storagemodel,	sys.storagemodel,	.storagemodel,	.storagemodel,	sys.storagemodel,	sys.storagemodel,	sys.storagemodel # table_name
 % schema,	table,	column,	type,	count,	columnsize,	heapsize,	hashsize,	imprintsize,	orderidxsize,	sorted,	unique,	isacolumn # name
 % varchar,	varchar,	varchar,	varchar,	bigint,	bigint,	bigint,	bigint,	bigint,	bigint,	boolean,	boolean,	boolean # type
 % 0,	0,	0,	0,	1,	1,	1,	1,	1,	1,	5,	5,	5 # length
 #SELECT * FROM sys.storagemodel WHERE (schema, table) NOT IN (SELECT sch.name, tbl.name FROM sys.schemas AS sch JOIN sys.tables AS tbl ON sch.id = tbl.schema_id);
-% sys.storagemodel,	sys.storagemodel,	sys.storagemodel,	sys.storagemodel,	sys.storagemodel,	sys.storagemodel,	sys.storagemodel,	sys.storagemodel,	sys.storagemodel,	sys.storagemodel,	sys.storagemodel,	sys.storagemodel,	sys.storagemodel # table_name
+% sys.storagemodel,	sys.storagemodel,	sys.storagemodel,	sys.storagemodel,	sys.storagemodel,	sys.storagemodel,	sys.storagemodel,	sys.storagemodel,	.storagemodel,	.storagemodel,	sys.storagemodel,	sys.storagemodel,	sys.storagemodel # table_name
 % schema,	table,	column,	type,	count,	columnsize,	heapsize,	hashsize,	imprintsize,	orderidxsize,	sorted,	unique,	isacolumn # name
 % varchar,	varchar,	varchar,	varchar,	bigint,	bigint,	bigint,	bigint,	bigint,	bigint,	boolean,	boolean,	boolean # type
 % 0,	0,	0,	0,	1,	1,	1,	1,	1,	1,	5,	5,	5 # length
 #SELECT * FROM sys.storagemodel WHERE column NOT IN (SELECT name FROM sys._columns UNION ALL SELECT name FROM tmp._columns UNION ALL SELECT name FROM sys.keys UNION ALL SELECT name FROM tmp.keys UNION ALL SELECT name FROM sys.idxs UNION ALL SELECT name FROM tmp.idxs);
-% sys.storagemodel,	sys.storagemodel,	sys.storagemodel,	sys.storagemodel,	sys.storagemodel,	sys.storagemodel,	sys.storagemodel,	sys.storagemodel,	sys.storagemodel,	sys.storagemodel,	sys.storagemodel,	sys.storagemodel,	sys.storagemodel # table_name
+% sys.storagemodel,	sys.storagemodel,	sys.storagemodel,	sys.storagemodel,	sys.storagemodel,	sys.storagemodel,	sys.storagemodel,	sys.storagemodel,	.storagemodel,	.storagemodel,	sys.storagemodel,	sys.storagemodel,	sys.storagemodel # table_name
 % schema,	table,	column,	type,	count,	columnsize,	heapsize,	hashsize,	imprintsize,	orderidxsize,	sorted,	unique,	isacolumn # name
 % varchar,	varchar,	varchar,	varchar,	bigint,	bigint,	bigint,	bigint,	bigint,	bigint,	boolean,	boolean,	boolean # type
 % 0,	0,	0,	0,	1,	1,	1,	1,	1,	1,	5,	5,	5 # length
 #SELECT * FROM sys.storagemodel WHERE type NOT IN (SELECT sqlname FROM sys.types);
-% sys.storagemodel,	sys.storagemodel,	sys.storagemodel,	sys.storagemodel,	sys.storagemodel,	sys.storagemodel,	sys.storagemodel,	sys.storagemodel,	sys.storagemodel,	sys.storagemodel,	sys.storagemodel,	sys.storagemodel,	sys.storagemodel # table_name
+% sys.storagemodel,	sys.storagemodel,	sys.storagemodel,	sys.storagemodel,	sys.storagemodel,	sys.storagemodel,	sys.storagemodel,	sys.storagemodel,	.storagemodel,	.storagemodel,	sys.storagemodel,	sys.storagemodel,	sys.storagemodel # table_name
 % schema,	table,	column,	type,	count,	columnsize,	heapsize,	hashsize,	imprintsize,	orderidxsize,	sorted,	unique,	isacolumn # name
 % varchar,	varchar,	varchar,	varchar,	bigint,	bigint,	bigint,	bigint,	bigint,	bigint,	boolean,	boolean,	boolean # type
 % 0,	0,	0,	0,	1,	1,	1,	1,	1,	1,	5,	5,	5 # length
@@ -514,17 +514,17 @@ stdout of test 'check_ForeignKey_referential_integrity` in directory 'sql/test/s
 % varchar,	varchar,	varchar,	varchar,	int,	bigint,	bigint,	int,	boolean,	boolean,	boolean,	boolean # type
 % 0,	0,	0,	0,	1,	1,	1,	1,	5,	5,	5,	5 # length
 #SELECT schema, table, rowcount, columnsize, heapsize, hashsize, imprintsize, orderidxsize FROM sys.tablestoragemodel WHERE schema NOT IN (SELECT name FROM sys.schemas);
-% sys.tablestoragemodel,	sys.tablestoragemodel,	sys.tablestoragemodel,	sys.tablestoragemodel,	sys.tablestoragemodel,	sys.tablestoragemodel,	sys.tablestoragemodel,	sys.tablestoragemodel # table_name
+% sys.tablestoragemodel,	sys.tablestoragemodel,	sys.tablestoragemodel,	sys.tablestoragemodel,	sys.tablestoragemodel,	sys.tablestoragemodel,	.tablestoragemodel,	.tablestoragemodel # table_name
 % schema,	table,	rowcount,	columnsize,	heapsize,	hashsize,	imprintsize,	orderidxsize # name
 % varchar,	varchar,	bigint,	bigint,	bigint,	bigint,	bigint,	bigint # type
 % 0,	0,	1,	1,	1,	1,	1,	1 # length
 #SELECT schema, table, rowcount, columnsize, heapsize, hashsize, imprintsize, orderidxsize FROM sys.tablestoragemodel WHERE table NOT IN (SELECT name FROM sys._tables UNION ALL SELECT name FROM tmp._tables);
-% sys.tablestoragemodel,	sys.tablestoragemodel,	sys.tablestoragemodel,	sys.tablestoragemodel,	sys.tablestoragemodel,	sys.tablestoragemodel,	sys.tablestoragemodel,	sys.tablestoragemodel # table_name
+% sys.tablestoragemodel,	sys.tablestoragemodel,	sys.tablestoragemodel,	sys.tablestoragemodel,	sys.tablestoragemodel,	sys.tablestoragemodel,	.tablestoragemodel,	.tablestoragemodel # table_name
 % schema,	table,	rowcount,	columnsize,	heapsize,	hashsize,	imprintsize,	orderidxsize # name
 % varchar,	varchar,	bigint,	bigint,	bigint,	bigint,	bigint,	bigint # type
 % 0,	0,	1,	1,	1,	1,	1,	1 # length
 #SELECT schema, table, rowcount, columnsize, heapsize, hashsize, imprintsize, orderidxsize FROM sys.tablestoragemodel WHERE (schema, table) NOT IN (SELECT sch.name, tbl.name FROM sys.schemas AS sch JOIN sys.tables AS tbl ON sch.id = tbl.schema_id);
-% sys.tablestoragemodel,	sys.tablestoragemodel,	sys.tablestoragemodel,	sys.tablestoragemodel,	sys.tablestoragemodel,	sys.tablestoragemodel,	sys.tablestoragemodel,	sys.tablestoragemodel # table_name
+% sys.tablestoragemodel,	sys.tablestoragemodel,	sys.tablestoragemodel,	sys.tablestoragemodel,	sys.tablestoragemodel,	sys.tablestoragemodel,	.tablestoragemodel,	.tablestoragemodel # table_name
 % schema,	table,	rowcount,	columnsize,	heapsize,	hashsize,	imprintsize,	orderidxsize # name
 % varchar,	varchar,	bigint,	bigint,	bigint,	bigint,	bigint,	bigint # type
 % 0,	0,	1,	1,	1,	1,	1,	1 # length

@@ -1546,6 +1546,20 @@ mvc_is_sorted(mvc *m, sql_column *col)
 	return sql_trans_is_sorted(m->session->tr, col);
 }
 
+int
+mvc_is_unique(mvc *m, sql_column *col)
+{
+	TRC_DEBUG(SQL_TRANS, "Is unique: %s\n", col->base.name);
+	return sql_trans_is_unique(m->session->tr, col);
+}
+
+int
+mvc_is_duplicate_eliminated(mvc *m, sql_column *col)
+{
+	TRC_DEBUG(SQL_TRANS, "Is duplicate eliminated: %s\n", col->base.name);
+	return sql_trans_is_duplicate_eliminated(m->session->tr, col);
+}
+
 sql_column *
 mvc_copy_column( mvc *m, sql_table *t, sql_column *c)
 {

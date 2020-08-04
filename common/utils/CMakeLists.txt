@@ -145,21 +145,6 @@ set_target_properties(mprompt
   POSITION_INDEPENDENT_CODE ON
   PUBLIC_HEADER mprompt.h)
 
-install(TARGETS
-  mutils
-  mcrypt
-  msabaoth
-  mprompt
-  RUNTIME
-  DESTINATION ${CMAKE_INSTALL_BINDIR}
-  LIBRARY
-  DESTINATION ${CMAKE_INSTALL_LIBDIR}
-  ARCHIVE
-  DESTINATION ${CMAKE_INSTALL_LIBDIR}
-  PUBLIC_HEADER
-  DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/monetdb
-  INCLUDES DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
-
 # We need to define the matomic target because it is a public
 # dependency of gdk.
 install(TARGETS

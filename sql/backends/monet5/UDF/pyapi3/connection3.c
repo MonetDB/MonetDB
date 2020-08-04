@@ -13,11 +13,6 @@
 #include "type_conversion.h"
 #include "gdk_interprocess.h"
 
-CREATE_SQL_FUNCTION_PTR(void, SQLdestroyResult);
-CREATE_SQL_FUNCTION_PTR(str, SQLstatementIntern);
-CREATE_SQL_FUNCTION_PTR(str, create_table_from_emit);
-CREATE_SQL_FUNCTION_PTR(str, append_to_table_from_emit);
-
 static PyObject *_connection_execute(Py_ConnectionObject *self, PyObject *args)
 {
 	char *query = NULL;
@@ -118,26 +113,26 @@ PyTypeObject Py_ConnectionType = {
 
 void _connection_cleanup_result(void *output)
 {
-	(*SQLdestroyResult_ptr)((res_table *)output);
+	SQLdestroyResult((res_table *)output);
 }
 
 str _connection_query(Client cntxt, char *query, res_table **result)
 {
 	str res = MAL_SUCCEED;
-	res = (*SQLstatementIntern_ptr)(cntxt, &query, "name", 1, 0, result);
+	res = SQLstatementIntern(cntxt, &query, "name", 1, 0, result);
 	return res;
 }
 
 str _connection_create_table(Client cntxt, char *sname, char *tname,
 							 sql_emit_col *columns, size_t ncols)
 {
-	return (*create_table_from_emit_ptr)(cntxt, sname, tname, columns, ncols);
+	return create_table_from_emit(cntxt, sname, tname, columns, ncols);
 }
 
 str _connection_append_to_table(Client cntxt, char *sname, char *tname,
 							 sql_emit_col *columns, size_t ncols)
 {
-	return (*append_to_table_from_emit_ptr)(cntxt, sname, tname, columns, ncols);
+	return append_to_table_from_emit(cntxt, sname, tname, columns, ncols);
 }
 
 PyObject *Py_Connection_Create(Client cntxt, bit mapped, QueryStruct *query_ptr,
@@ -164,11 +159,6 @@ str _connection_init(void)
 {
 	str msg = MAL_SUCCEED;
 	_connection_import_array();
-
-	LOAD_SQL_FUNCTION_PTR(SQLdestroyResult);
-	LOAD_SQL_FUNCTION_PTR(SQLstatementIntern);
-	LOAD_SQL_FUNCTION_PTR(create_table_from_emit);
-	LOAD_SQL_FUNCTION_PTR(append_to_table_from_emit);
 
 	if (msg != MAL_SUCCEED) {
 		return msg;

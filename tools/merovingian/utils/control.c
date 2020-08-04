@@ -24,11 +24,11 @@
 #include "mstring.h"
 
 struct control_state {
-	char sbuf[8096];
-	char rbuf[8096];
 	int sock;
 	stream *fdin;
 	stream *fdout;
+	char sbuf[8096];
+	char rbuf[8096];
 };
 
 static char *

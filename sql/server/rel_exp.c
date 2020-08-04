@@ -15,11 +15,6 @@
 #include "rel_unnest.h"
 #include "rel_optimizer.h"
 #include "rel_distribute.h"
-#ifdef HAVE_HGE
-#include "mal.h"		/* for have_hge */
-#endif
-#include "gdk_time.h"
-#include "blob.h"
 
 comp_type
 compare_str2type(const char *compare_op)
@@ -436,7 +431,7 @@ exp_atom_lng(sql_allocator *sa, lng i)
 	sql_subtype it;
 
 #ifdef HAVE_HGE
-	sql_find_subtype(&it, "bigint", have_hge ? 18 : 19, 0);
+	sql_find_subtype(&it, "bigint", 18, 0);
 #else
 	sql_find_subtype(&it, "bigint", 19, 0);
 #endif
@@ -875,6 +870,7 @@ exp_setalias(sql_exp *e, const char *rname, const char *name )
 void
 exp_prop_alias(sql_allocator *sa, sql_exp *e, sql_exp *oe )
 {
+	e->ref = oe->ref;
 	if (oe->alias.name == NULL && exp_has_rel(oe)) {
 		sql_rel *r = exp_rel_get_rel(sa, oe);
 		if (!is_project(r->op))
@@ -1712,7 +1708,7 @@ exp_two_sided_bound_cmp_exp_is_false(sql_exp* e) {
     assert(e->type == e_cmp);
     sql_exp* v = e->l;
     sql_exp* l = e->r;
-    sql_exp* h = e->r;
+    sql_exp* h = e->f;
     assert (v && l && h);
 
     return exp_is_null(l) || exp_is_null(v) || exp_is_null(h);
@@ -2072,19 +2068,22 @@ exps_are_atoms( list *exps)
 	return atoms;
 }
 
-static int
-exps_has_func( list *exps)
+int
+exps_have_func(list *exps)
 {
-	node *n;
-	int has_func = 0;
+	if (list_empty(exps))
+		return 0;
+	for(node *n=exps->h; n; n=n->next) {
+		sql_exp *e = n->data;
 
-	for(n=exps->h; n && !has_func; n=n->next)
-		has_func |= exp_has_func(n->data);
-	return has_func;
+		if (exp_has_func(e))
+			return 1;
+	}
+	return 0;
 }
 
 int
-exp_has_func( sql_exp *e )
+exp_has_func(sql_exp *e)
 {
 	if (!e)
 		return 0;
@@ -2097,13 +2096,13 @@ exp_has_func( sql_exp *e )
 		return 1;
 	case e_aggr:
 		if (e->l)
-			return exps_has_func(e->l);
+			return exps_have_func(e->l);
 		return 0;
 	case e_cmp:
 		if (e->flag == cmp_or || e->flag == cmp_filter) {
-			return (exps_has_func(e->l) || exps_has_func(e->r));
+			return (exps_have_func(e->l) || exps_have_func(e->r));
 		} else if (e->flag == cmp_in || e->flag == cmp_notin) {
-			return (exp_has_func(e->l) || exps_has_func(e->r));
+			return (exp_has_func(e->l) || exps_have_func(e->r));
 		} else {
 			return (exp_has_func(e->l) || exp_has_func(e->r) ||
 					(e->f && exp_has_func(e->f)));
@@ -2614,25 +2613,21 @@ exp_sum_scales(sql_subfunc *f, sql_exp *l, sql_exp *r)
 
 		/* HACK alert: digits should be less than max */
 #ifdef HAVE_HGE
-		if (have_hge) {
-			if (ares->type.type->radix == 10 && res->digits > 39)
-				res->digits = 39;
-			if (ares->type.type->radix == 2 && res->digits > 128)
-				res->digits = 128;
-		} else
+		if (ares->type.type->radix == 10 && res->digits > 39)
+			res->digits = 39;
+		if (ares->type.type->radix == 2 && res->digits > 128)
+			res->digits = 128;
+#else
+		if (ares->type.type->radix == 10 && res->digits > 19)
+			res->digits = 19;
+		if (ares->type.type->radix == 2 && res->digits > 64)
+			res->digits = 64;
 #endif
-		{
-
-			if (ares->type.type->radix == 10 && res->digits > 19)
-				res->digits = 19;
-			if (ares->type.type->radix == 2 && res->digits > 64)
-				res->digits = 64;
-		}
 
 		/* numeric types are fixed length */
 		if (ares->type.type->eclass == EC_NUM) {
 #ifdef HAVE_HGE
-			if (have_hge && ares->type.type->localtype == TYPE_hge && res->digits == 128)
+			if (ares->type.type->localtype == TYPE_hge && res->digits == 128)
 				t = *sql_bind_localtype("hge");
 			else
 #endif
@@ -2645,97 +2640,6 @@ exp_sum_scales(sql_subfunc *f, sql_exp *l, sql_exp *r)
 		}
 		*res = t;
 	}
-}
-
-sql_exp *
-create_table_part_atom_exp(mvc *sql, sql_subtype tpe, ptr value)
-{
-	str buf = NULL;
-	size_t len = 0;
-	sql_exp *res = NULL;
-
-	switch (tpe.type->eclass) {
-		case EC_BIT: {
-			bit bval = *((bit*) value);
-			return exp_atom_bool(sql->sa, bval ? 1 : 0);
-		}
-		case EC_POS:
-		case EC_NUM:
-		case EC_DEC:
-		case EC_SEC:
-		case EC_MONTH:
-			switch (tpe.type->localtype) {
-#ifdef HAVE_HGE
-				case TYPE_hge: {
-					hge hval = *((hge*) value);
-					return exp_atom_hge(sql->sa, hval);
-				}
-#endif
-				case TYPE_lng: {
-					lng lval = *((lng*) value);
-					return exp_atom_lng(sql->sa, lval);
-				}
-				case TYPE_int: {
-					int ival = *((int*) value);
-					return exp_atom_int(sql->sa, ival);
-				}
-				case TYPE_sht: {
-					sht sval = *((sht*) value);
-					return exp_atom_sht(sql->sa, sval);
-				}
-				case TYPE_bte: {
-					bte bbval = *((bte *) value);
-					return exp_atom_bte(sql->sa, bbval);
-				}
-				default:
-					return NULL;
-			}
-		case EC_FLT:
-			switch (tpe.type->localtype) {
-				case TYPE_flt: {
-					flt fval = *((flt*) value);
-					return exp_atom_flt(sql->sa, fval);
-				}
-				case TYPE_dbl: {
-					dbl dval = *((dbl*) value);
-					return exp_atom_dbl(sql->sa, dval);
-				}
-				default:
-					return NULL;
-			}
-		case EC_DATE: {
-			if(date_tostr(&buf, &len, (const date *)value, false) < 0)
-				return NULL;
-			res = exp_atom(sql->sa, atom_general(sql->sa, &tpe, buf));
-			break;
-		}
-		case EC_TIME: {
-			if(daytime_tostr(&buf, &len, (const daytime *)value, false) < 0)
-				return NULL;
-			res = exp_atom(sql->sa, atom_general(sql->sa, &tpe, buf));
-			break;
-		}
-		case EC_TIMESTAMP: {
-			if(timestamp_tostr(&buf, &len, (const timestamp *)value, false) < 0)
-				return NULL;
-			res = exp_atom(sql->sa, atom_general(sql->sa, &tpe, buf));
-			break;
-		}
-		case EC_BLOB: {
-			if(BLOBtostr(&buf, &len, (const blob *)value, false) < 0)
-				return NULL;
-			res = exp_atom(sql->sa, atom_general(sql->sa, &tpe, buf));
-			break;
-		}
-		case EC_CHAR:
-		case EC_STRING:
-			return exp_atom_clob(sql->sa, sa_strdup(sql->sa, value));
-		default:
-			assert(0);
-	}
-	if(buf)
-		GDKfree(buf);
-	return res;
 }
 
 int
@@ -2771,7 +2675,7 @@ rel_set_type_param(mvc *sql, sql_subtype *type, sql_rel *rel, sql_exp *rel_exp, 
 	/* use largest numeric types */
 	if (upcast && type->type->eclass == EC_NUM)
 #ifdef HAVE_HGE
-		type = sql_bind_localtype(have_hge ? "hge" : "lng");
+		type = sql_bind_localtype("hge");
 #else
 		type = sql_bind_localtype("lng");
 #endif
@@ -2848,7 +2752,7 @@ exp_numeric_supertype(mvc *sql, sql_exp *e )
 	}
 	if (tp->type->eclass == EC_NUM) {
 #ifdef HAVE_HGE
-		sql_subtype *ltp = sql_bind_localtype(have_hge ? "hge" : "lng");
+		sql_subtype *ltp = sql_bind_localtype("hge");
 #else
 		sql_subtype *ltp = sql_bind_localtype("lng");
 #endif

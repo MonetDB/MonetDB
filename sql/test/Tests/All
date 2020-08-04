@@ -122,8 +122,6 @@ unicode
 
 window_functions
 
-sysqueue
-
 HAVE_PYMONETDB?hot_snapshot
 HAVE_PYMONETDB&HAVE_LIBZ?hot_snapshot_gz
 HAVE_PYMONETDB&HAVE_LIBBZ2?hot_snapshot_bz2

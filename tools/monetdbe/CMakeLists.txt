@@ -46,7 +46,7 @@ target_link_libraries(monetdbe
   moptions
   mutils
   mcrypt
-  gdk
+  bat
   monetdb5
   sql
   $<$<NOT:$<PLATFORM_ID:Windows>>:m>

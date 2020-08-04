@@ -263,7 +263,7 @@ _exp_push_down(mvc *sql, sql_exp *e, sql_rel *f, sql_rel *t)
 			e = exp_propagate(sql->sa, e, oe);
 		/* if the upper exp was an alias, keep this */
 		if (e && exp_relname(ne))
-			exp_setname(sql->sa, e, exp_relname(ne), exp_name(ne));
+			exp_prop_alias(sql->sa, e, ne);
 		return e;
 	case e_cmp:
 		if (e->flag == cmp_or || e->flag == cmp_filter) {

@@ -1,0 +1,15 @@
+@CMAKE_INSTALL_FULL_BINDIR@/monetdbd				--	gen_context(system_u:object_r:monetdbd_exec_t,s0)
+@CMAKE_INSTALL_FULL_BINDIR@/mserver5				--	gen_context(system_u:object_r:mserver5_exec_t,s0)
+@CMAKE_INSTALL_FULL_LIBDIR@/systemd/system/monetdbd.*			gen_context(system_u:object_r:monetdbd_unit_file_t,s0)
+@CMAKE_INSTALL_FULL_LOCALSTATEDIR@/log/monetdb(/.*)?					gen_context(system_u:object_r:monetdbd_log_t,s0)
+# for some reason we cannot use /run/monetdb here, even though that is the real name
+@CMAKE_INSTALL_FULL_LOCALSTATEDIR@/run/monetdb(/.*)?					gen_context(system_u:object_r:monetdbd_var_run_t,s0)
+# database "farm"
+@CMAKE_INSTALL_FULL_LOCALSTATEDIR@/monetdb5/dbfarm(/.*)?				gen_context(system_u:object_r:mserver5_db_t,s0)
+@CMAKE_INSTALL_FULL_LOCALSTATEDIR@/monetdb5/dbfarm/\.merovingian_properties	--	gen_context(system_u:object_r:monetdbd_etc_t,s0)
+@CMAKE_INSTALL_FULL_LOCALSTATEDIR@/monetdb5/dbfarm/\.merovingian_lock		--	gen_context(system_u:object_r:monetdbd_lock_t,s0)
+@CMAKE_INSTALL_FULL_LOCALSTATEDIR@/monetdb5/dbfarm/.*/\.gdk_lock		--	gen_context(system_u:object_r:mserver5_lock_t,s0)
+@CMAKE_INSTALL_FULL_LOCALSTATEDIR@/lib/monetdb(/.*)?					gen_context(system_u:object_r:mserver5_db_t,s0)
+@CMAKE_INSTALL_FULL_LOCALSTATEDIR@/lib/monetdb/\.merovingian_properties	--	gen_context(system_u:object_r:monetdbd_etc_t,s0)
+@CMAKE_INSTALL_FULL_LOCALSTATEDIR@/lib/monetdb/\.merovingian_lock		--	gen_context(system_u:object_r:monetdbd_lock_t,s0)
+@CMAKE_INSTALL_FULL_LOCALSTATEDIR@/lib/monetdb/.*/\.gdk_lock			--	gen_context(system_u:object_r:mserver5_lock_t,s0)

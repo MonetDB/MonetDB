@@ -30,7 +30,9 @@ MSI
 
 The windows packages are located at https://www.monetdb.org/downloads/Windows/Apr2019-SP1/
 
-### Mac OS X
+Mac OS X
+========
+
 The Mac OS X packages are downloaded from https://www.monetdb.org/downloads/MacOSX/ This repository contains a binary tarball and a pkg package. This last one is generated using the "MonetDB.pkgproj" file in the "MacOSX" directory in the source repository. The repository itself is only a download folder, there is no scripting needed to generate the repository itself. The third option to install monetdb on MacOS is to use homebrew. The relevant file is "https://github.com/MonetDB/homebrew-core/blob/master/Formula/monetdb.rb", the repository is in the MonetDB github organization and is a clone of the homebrew repository. This file will need to be changes after swithing to cmake. The difficult part will likely be to keep this backwards compatible.
 
 ``Releasing``
@@ -84,6 +86,39 @@ The find_packages function should define a "GEOS_FOUND" variable that is used th
 
 This should give the correct result, because of the way "boolean" values, in combination with empty and non-existing variables work. The only situation where this might go wrong is when the variable explicitly has to have the value 1. This way, we cleanup as much of the legacy variables as possible from the build system. If the build system is setup correctly, the "HAVE_xxxx" variables should not be needed in most cases, because the code will only be build if the value = 1.
 
+Build type
+""""""""""
+
+Install prefix
+""""""""""""""
+
+Verbose
+"""""""
+
+Debug find
+""""""""""
+
+Prefix path
+"""""""""""
+
+Toolchain files
+"""""""""""""""
+
+Custom targets
+==============
+
+Help
+""""
+
+install
+"""""""
+
+test
+""""
+
+mtest
+"""""
+
 Installing
 ==========
 
@@ -121,9 +156,6 @@ Numpy detection
 ===============
 
 Since the Python3::Numpy target is not available before version 3.14, we need an alternative. We use a NumPy detection function from a github project: https://raw.githubusercontent.com/fperazzi/davis-2017/master/cmake/FindNumPy.cmake This is MIT licensened, so we can include this in MonetDB. We change the python detection to detect python3, instead of python2.
-
-### Special monetdb_config.h for windows
-Now there are two versions of the monetdb_config.h.in , one for windows and one for the rest of the supported OS-es. They should be merged. This is not trivial, because on windows the order in which certain header files are #include-d into the main one is very tricky. And both have a number of obsolete definitions that have to be removed.
 
 shp.h define conflicts
 ======================

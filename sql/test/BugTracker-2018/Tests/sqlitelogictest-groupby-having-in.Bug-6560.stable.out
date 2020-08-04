@@ -32,8 +32,8 @@ stdout of test 'sqlitelogictest-groupby-having-in.Bug-6560` in directory 'sql/te
 % int # type
 % 1 # length
 #SELECT DISTINCT - NULLIF ( - 85, 24 ) * tab1.col1 FROM tab1 GROUP BY tab1.col1;
-% .%3 # table_name
-% %3 # name
+% sys.%1 # table_name
+% %1 # name
 % bigint # type
 % 4 # length
 [ 510	]

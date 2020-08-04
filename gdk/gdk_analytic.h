@@ -35,6 +35,7 @@ gdk_export gdk_return GDKanalyticalcount(BAT *r, BAT *b, BAT *s, BAT *e, const b
 gdk_export gdk_return GDKanalyticalsum(BAT *r, BAT *b, BAT *s, BAT *e, int tp1, int tp2);
 gdk_export gdk_return GDKanalyticalprod(BAT *r, BAT *b, BAT *s, BAT *e, int tp1, int tp2);
 gdk_export gdk_return GDKanalyticalavg(BAT *r, BAT *b, BAT *s, BAT *e, int tpe);
+gdk_export gdk_return GDKanalyticalavginteger(BAT *r, BAT *b, BAT *s, BAT *e, int tpe);
 
 gdk_export gdk_return GDKanalytical_stddev_samp(BAT *r, BAT *b, BAT *s, BAT *e, int tpe);
 gdk_export gdk_return GDKanalytical_stddev_pop(BAT *r, BAT *b, BAT *s, BAT *e, int tpe);

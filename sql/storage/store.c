@@ -1366,7 +1366,7 @@ create_trans(sql_allocator *sa)
 
 	t->sa = sa;
 	t->name = NULL;
-	t->wtime = t->rtime = 0;
+	t->wtime = 0;
 	t->stime = 0;
 	t->wstime = timestamp();
 	t->schema_updates = 0;
@@ -1539,7 +1539,7 @@ insert_args(sql_trans *tr, sql_table *sysarg, list *args, sqlid funcid, const ch
 	}
 }
 
-void
+static void
 insert_functions(sql_trans *tr, sql_table *sysfunc, list *funcs_list, sql_table *sysarg)
 {
 	for (node *n = funcs_list->h; n; n = n->next) {
@@ -3660,6 +3660,7 @@ func_dup(sql_trans *tr, int flags, sql_func *of, sql_schema *s)
 	f->ops = list_new(sa, of->ops->destroy);
 	f->fix_scale = of->fix_scale;
 	f->system = of->system;
+	f->semantics = of->semantics;
 	for (n=of->ops->h; n; n = n->next)
 		list_append(f->ops, arg_dup(newFlagSet(flags)?tr->parent:tr, s, n->data));
 	if (of->res) {
@@ -3757,7 +3758,7 @@ schema_dup(sql_trans *tr, int flags, sql_schema *os, sql_trans *o)
 static void
 _trans_init(sql_trans *tr, sql_trans *otr)
 {
-	tr->wtime = tr->rtime = 0;
+	tr->wtime = 0;
 	tr->stime = otr->wtime;
 	tr->wstime = timestamp();
 	tr->schema_updates = 0;
@@ -4611,13 +4612,16 @@ validate_tables(sql_schema *s, sql_schema *os)
 	if (cs_size(&s->tables))
 		for (n = s->tables.set->h; n; n = n->next) {
 			sql_table *t = n->data;
-			sql_table *ot;
 
 			if (!t->base.wtime && !t->base.rtime)
 				continue;
 
- 			ot = find_sql_table(os, t->base.name);
-			if (ot && isKindOfTable(ot) && isKindOfTable(t) && !isDeclaredTable(ot) && !isDeclaredTable(t)) {
+			sql_table *ot = find_sql_table_id(os, t->base.id);
+
+			if (!ot && os->tables.dset && list_find_base_id(os->tables.dset, t->base.id) != NULL) {
+				/* dropped table */
+				return 0;
+			} else if (ot && isKindOfTable(ot) && isKindOfTable(t) && !isDeclaredTable(ot) && !isDeclaredTable(t)) {
 				if ((t->base.wtime && (t->base.wtime < ot->base.rtime || t->base.wtime < ot->base.wtime)) ||
 				    (t->base.rtime && (t->base.rtime < ot->base.wtime)))
 					return 0;
@@ -4776,7 +4780,7 @@ reset_func(sql_trans *tr, sql_func *ff, sql_func *pff)
 		ff->res = pff->res;
 		ff->fix_scale = pff->fix_scale;
 		ff->system = pff->system;
-		ff->ops = pff->ops;
+		ff->semantics = pff->semantics;
 		ff->s = find_sql_schema(tr, pff->s->base.name);
 		ff->sa = tr->sa;
 	}
@@ -4876,7 +4880,9 @@ reset_table(sql_trans *tr, sql_table *ft, sql_table *pft)
 		ft->access = pft->access;
 		if (pft->p) {
 			ft->p = find_sql_table(ft->s, pft->p->base.name);
-			assert(isMergeTable(ft->p) || isReplicaTable(ft->p));
+			//Check if this assert can be removed definitely.
+			//the parent (merge or replica table) maybe created later!
+			//assert(isMergeTable(ft->p) || isReplicaTable(ft->p));
 		} else
 			ft->p = NULL;
 
@@ -4985,6 +4991,12 @@ reset_trans(sql_trans *tr, sql_trans *ptr)
 {
 	int res = reset_changeset(tr, &tr->schemas, &ptr->schemas, (sql_base *)tr->parent, (resetf) &reset_schema, (dupfunc) &schema_dup);
 	TRC_DEBUG(SQL_STORE, "Reset transaction: %d\n", tr->wtime);
+
+	for (node *n = tr->schemas.set->h; n; n = n->next) { /* Set table members */
+		sql_schema *s = n->data;
+
+		set_members(&s->tables);
+	}
 	return res;
 }
 
@@ -6767,6 +6779,22 @@ sql_trans_is_sorted( sql_trans *tr, sql_column *col )
 	return 0;
 }
 
+int
+sql_trans_is_unique( sql_trans *tr, sql_column *col )
+{
+	if (col && isTable(col->t) && store_funcs.unique_col && store_funcs.unique_col(tr, col))
+		return 1;
+	return 0;
+}
+
+int
+sql_trans_is_duplicate_eliminated( sql_trans *tr, sql_column *col )
+{
+	if (col && isTable(col->t) && EC_VARCHAR(col->type.type->eclass) && store_funcs.double_elim_col)
+		return store_funcs.double_elim_col(tr, col);
+	return 0;
+}
+
 size_t
 sql_trans_dist_count( sql_trans *tr, sql_column *col )
 {
@@ -6798,6 +6826,8 @@ sql_trans_dist_count( sql_trans *tr, sql_column *col )
 int
 sql_trans_ranges( sql_trans *tr, sql_column *col, char **min, char **max )
 {
+	*min = NULL;
+	*max = NULL;
 	if (col && isTable(col->t)) {
 		/* get from statistics */
 		sql_schema *sys = find_sql_schema(tr, "sys");

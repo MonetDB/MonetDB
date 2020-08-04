@@ -1665,7 +1665,7 @@ copyfrom(sql_query *query, dlist *qname, dlist *columns, dlist *files, dlist *he
 				size_t l = strlen(cs->type.type->sqlname);
 				char *fname = sa_alloc(sql->sa, l+8);
 
-				snprintf(fname, l+8, "str_to_%s", cs->type.type->sqlname);
+				snprintf(fname, l+8, "str_to_%s", strcmp(cs->type.type->sqlname, "timestamptz") == 0 ? "timestamp" : cs->type.type->sqlname);
 				sql_find_subtype(&st, "clob", 0, 0);
 				f = sql_bind_func_result(sql->sa, sys, fname, F_FUNC, &cs->type, 2, &st, &st);
 				if (!f)
@@ -1673,7 +1673,8 @@ copyfrom(sql_query *query, dlist *qname, dlist *columns, dlist *files, dlist *he
 				append(args, e);
 				append(args, exp_atom_clob(sql->sa, format));
 				ne = exp_op(sql->sa, args, f);
-				exp_setname(sql->sa, ne, exp_relname(e), exp_name(e));
+				if (exp_name(e))
+					exp_prop_alias(sql->sa, ne, e);
 			} else {
 				ne = exp_ref(sql, e);
 			}

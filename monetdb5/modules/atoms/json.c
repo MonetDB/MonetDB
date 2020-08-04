@@ -867,14 +867,12 @@ JSONnumberParser(const char *j, const char **next)
 
 	if (!JSONfractionParser(j, next)) {
 		*next = j;
-		return MAL_SUCCEED;
 	}
 
 	j = *next;
 
 	if (!JSONexponentParser(j, next)) {
 		*next = j;
-		return MAL_SUCCEED;
 	}
 	return MAL_SUCCEED;
 }

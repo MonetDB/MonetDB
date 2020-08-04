@@ -233,7 +233,7 @@ stdout of test 'simple_selects` in directory 'sql/test/miscellaneous` itself:
 [ 2	]
 #select x like null, null like x, null like null, x ilike null, null ilike x, null ilike null,
 #       x not like null, null not like x, null not like null, x not ilike null, null not ilike x, null not ilike null from x;
-% sys.%1,	.%2,	.%3,	sys.%4,	.%5,	.%6,	sys.%7,	.%10,	.%11,	sys.%12,	.%13,	.%14 # table_name
+% sys.%1,	.%2,	.%3,	sys.%4,	.%5,	.%6,	.%7,	.%10,	.%11,	.%12,	.%13,	.%14 # table_name
 % %1,	%2,	%3,	%4,	%5,	%6,	%7,	%10,	%11,	%12,	%13,	%14 # name
 % boolean,	boolean,	boolean,	boolean,	boolean,	boolean,	boolean,	boolean,	boolean,	boolean,	boolean,	boolean # type
 % 5,	5,	5,	5,	5,	5,	5,	5,	5,	5,	5,	5 # length

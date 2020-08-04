@@ -13,9 +13,9 @@
 #include "wlc.h"
 #include "gdk_logger_internals.h"
 
-#define CATALOG_MAR2018 52201
-#define CATALOG_AUG2018 52202
-#define CATALOG_NOV2019 52203
+#define CATALOG_MAR2018 52201	/* first in Jun2016 */
+#define CATALOG_AUG2018 52202	/* first in Aug2018 */
+#define CATALOG_NOV2019 52203	/* first in Apr2019 */
 #define CATALOG_JUN2020 52204
 
 logger *bat_logger = NULL;

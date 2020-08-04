@@ -592,7 +592,7 @@ SQLpercent_rank(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		BBPunfix(b->batCacheid);
 		BBPkeepref(*res = r->batCacheid);
 	} else {
-		int *res = getArgReference_int(stk, pci, 0);
+		dbl *res = getArgReference_dbl(stk, pci, 0);
 
 		*res = 1;
 	}
@@ -705,7 +705,7 @@ SQLcume_dist(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		BBPunfix(b->batCacheid);
 		BBPkeepref(*res = r->batCacheid);
 	} else {
-		int *res = getArgReference_int(stk, pci, 0);
+		dbl *res = getArgReference_dbl(stk, pci, 0);
 
 		*res = 1;
 	}
@@ -741,15 +741,17 @@ SQLcume_dist(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			} \
 		} \
 		gdk_code = GDKanalyticalntile(r, b, p, n, TYPE_##TPE, ntile); \
-	} while(0);
+	} while(0)
 
-#define NTILE_VALUE_SINGLE_IMP(TPE)                                                     \
-	do {                                                                                \
-		TPE val = *(TPE*) ntile, *rres = (TPE*) res;                                    \
-		if (!is_##TPE##_nil(val) && val < 1)                                            \
+#define NTILE_VALUE_SINGLE_IMP(TPE) \
+	do { \
+		TPE val = *(TPE*) VALget(ntile); \
+		if (!is_##TPE##_nil(val) && val < 1) \
 			throw(SQL, "sql.ntile", SQLSTATE(42000) "ntile must be greater than zero"); \
-		*rres = (is_##TPE##_nil(val) || val > 1) ? TPE##_nil : *(TPE*) in;              \
-	} while(0);
+		if (!is_##TPE##_nil(val)) \
+			val = 1; \
+		VALset(res, tp2, &val); \
+	} while(0)
 
 str
 SQLntile(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
@@ -784,20 +786,20 @@ SQLntile(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 		switch (tp2) {
 			case TYPE_bte:
-				NTILE_IMP(bte)
+				NTILE_IMP(bte);
 				break;
 			case TYPE_sht:
-				NTILE_IMP(sht)
+				NTILE_IMP(sht);
 				break;
 			case TYPE_int:
-				NTILE_IMP(int)
+				NTILE_IMP(int);
 				break;
 			case TYPE_lng:
-				NTILE_IMP(lng)
+				NTILE_IMP(lng);
 				break;
 #ifdef HAVE_HGE
 			case TYPE_hge:
-				NTILE_IMP(hge)
+				NTILE_IMP(hge);
 				break;
 #endif
 			default: {
@@ -815,26 +817,25 @@ SQLntile(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		else
 			throw(SQL, "sql.ntile", GDK_EXCEPTION);
 	} else {
-		ptr res = getArgReference_ptr(stk, pci, 0);
-		ptr in = getArgReference_ptr(stk, pci, 1);
-		ptr ntile = getArgReference_ptr(stk, pci, 2);
+		ValRecord *res = &(stk)->stk[(pci)->argv[0]];
+		ValRecord *ntile = &(stk)->stk[(pci)->argv[2]];
 
 		switch (tp2) {
 			case TYPE_bte:
-				NTILE_VALUE_SINGLE_IMP(bte)
+				NTILE_VALUE_SINGLE_IMP(bte);
 				break;
 			case TYPE_sht:
-				NTILE_VALUE_SINGLE_IMP(sht)
+				NTILE_VALUE_SINGLE_IMP(sht);
 				break;
 			case TYPE_int:
-				NTILE_VALUE_SINGLE_IMP(int)
+				NTILE_VALUE_SINGLE_IMP(int);
 				break;
 			case TYPE_lng:
-				NTILE_VALUE_SINGLE_IMP(lng)
+				NTILE_VALUE_SINGLE_IMP(lng);
 				break;
 #ifdef HAVE_HGE
 			case TYPE_hge:
-				NTILE_VALUE_SINGLE_IMP(hge)
+				NTILE_VALUE_SINGLE_IMP(hge);
 				break;
 #endif
 			default:
@@ -940,9 +941,11 @@ do_limit_value(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, const ch
 		else
 			throw(SQL, op, GDK_EXCEPTION);
 	} else {
-		ptr *res = getArgReference(stk, pci, 0);
-		ptr *in = getArgReference(stk, pci, 1);
-		*res = *in;
+		ValRecord *res = &(stk)->stk[(pci)->argv[0]];
+		ValRecord *in = &(stk)->stk[(pci)->argv[1]];
+
+		if (!VALcopy(res, in))
+			throw(SQL, op, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
 	return MAL_SUCCEED;
 }
@@ -983,16 +986,25 @@ SQLlast_value(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			} \
 		} \
 		gdk_res = GDKanalyticalnthvalue(r, b, s, e, l, nth, tp1, tp2); \
-	} while(0);
+	} while(0)
 
 #define NTH_VALUE_SINGLE_IMP(TPE) \
 	do { \
-		TPE val = *(TPE*) VALget(nth), *toset; \
+		TPE val = *(TPE*) VALget(nth); \
 		if (!VALisnil(nth) && val < 1) \
 			throw(SQL, "sql.nth_value", SQLSTATE(42000) "nth_value must be greater than zero"); \
-		toset = (VALisnil(nth) || val > 1) ? (TPE*) ATOMnilptr(tp1) : (TPE*) in; \
-		VALset(res, tp1, toset); \
-	} while(0);
+		if (VALisnil(nth) || val > 1) { \
+			ValRecord def = (ValRecord) {.vtype = TYPE_void,}; \
+			if (!VALinit(&def, tp1, ATOMnilptr(tp1)) || !VALcopy(res, &def)) { \
+				VALclear(&def); \
+				throw(SQL, "sql.ntile", SQLSTATE(HY013) MAL_MALLOC_FAIL); \
+			} \
+			VALclear(&def); \
+		} else { \
+			if (!VALcopy(res, in)) \
+				throw(SQL, "sql.nth_value", SQLSTATE(HY013) MAL_MALLOC_FAIL); \
+		} \
+	} while(0)
 
 str
 SQLnth_value(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
@@ -1052,20 +1064,20 @@ SQLnth_value(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			tp2 = getBatType(tp2);
 		switch (tp2) {
 			case TYPE_bte:
-				NTH_VALUE_IMP(bte)
+				NTH_VALUE_IMP(bte);
 				break;
 			case TYPE_sht:
-				NTH_VALUE_IMP(sht)
+				NTH_VALUE_IMP(sht);
 				break;
 			case TYPE_int:
-				NTH_VALUE_IMP(int)
+				NTH_VALUE_IMP(int);
 				break;
 			case TYPE_lng:
-				NTH_VALUE_IMP(lng)
+				NTH_VALUE_IMP(lng);
 				break;
 #ifdef HAVE_HGE
 			case TYPE_hge:
-				NTH_VALUE_IMP(hge)
+				NTH_VALUE_IMP(hge);
 				break;
 #endif
 			default: {
@@ -1093,20 +1105,20 @@ SQLnth_value(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 		switch (tp2) {
 			case TYPE_bte:
-				NTH_VALUE_SINGLE_IMP(bte)
+				NTH_VALUE_SINGLE_IMP(bte);
 				break;
 			case TYPE_sht:
-				NTH_VALUE_SINGLE_IMP(sht)
+				NTH_VALUE_SINGLE_IMP(sht);
 				break;
 			case TYPE_int:
-				NTH_VALUE_SINGLE_IMP(int)
+				NTH_VALUE_SINGLE_IMP(int);
 				break;
 			case TYPE_lng:
-				NTH_VALUE_SINGLE_IMP(lng)
+				NTH_VALUE_SINGLE_IMP(lng);
 				break;
 #ifdef HAVE_HGE
 			case TYPE_hge:
-				NTH_VALUE_SINGLE_IMP(hge)
+				NTH_VALUE_SINGLE_IMP(hge);
 				break;
 #endif
 			default:
@@ -1133,7 +1145,7 @@ SQLnth_value(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			rval *= -1; \
 		} \
 		l_value = is_##TPE##_nil(rval) ? BUN_NONE : (BUN)rval; \
-	} while(0);
+	} while(0)
 
 static str
 do_lead_lag(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, const char* op, const char* desc,
@@ -1162,20 +1174,20 @@ do_lead_lag(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, const char*
 
 		switch (tp2) {
 			case TYPE_bte:
-				CHECK_L_VALUE(bte)
+				CHECK_L_VALUE(bte);
 				break;
 			case TYPE_sht:
-				CHECK_L_VALUE(sht)
+				CHECK_L_VALUE(sht);
 				break;
 			case TYPE_int:
-				CHECK_L_VALUE(int)
+				CHECK_L_VALUE(int);
 				break;
 			case TYPE_lng:
-				CHECK_L_VALUE(lng)
+				CHECK_L_VALUE(lng);
 				break;
 #ifdef HAVE_HGE
 			case TYPE_hge:
-				CHECK_L_VALUE(hge)
+				CHECK_L_VALUE(hge);
 				break;
 #endif
 			default:
@@ -1197,8 +1209,8 @@ do_lead_lag(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, const char*
 			bpi = bat_iterator(d);
 			default_value = BUNtail(bpi, 0);
 		} else {
-			ValRecord *vin = &(stk)->stk[(pci)->argv[3]];
-			default_value = VALget(vin);
+			ValRecord *in = &(stk)->stk[(pci)->argv[3]];
+			default_value = VALget(in);
 		}
 		base = 4;
 	} else {
@@ -1239,15 +1251,17 @@ do_lead_lag(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, const char*
 		}
 	} else {
 		ValRecord *res = &(stk)->stk[(pci)->argv[0]];
-		ValRecord *vin = &(stk)->stk[(pci)->argv[1]];
+		ValRecord *in = &(stk)->stk[(pci)->argv[1]];
 
 		if (l_value == 0) {
-			if (!VALcopy(res, vin)) {
+			if (!VALcopy(res, in))
 				msg = createException(SQL, op, SQLSTATE(HY013) MAL_MALLOC_FAIL);
-				goto bailout;
-			}
 		} else {
-			VALset(res, tp1, (ptr) default_value);
+			ValRecord def = (ValRecord) {.vtype = TYPE_void,};
+
+			if (!VALinit(&def, tp1, default_value) || !VALcopy(res, &def))
+				msg = createException(SQL, op, SQLSTATE(HY013) MAL_MALLOC_FAIL);
+			VALclear(&def);
 		}
 	}
 
@@ -1300,9 +1314,11 @@ SQLanalytical_func(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, cons
 		else
 			throw(SQL, op, GDK_EXCEPTION);
 	} else {
-		ptr *res = getArgReference(stk, pci, 0);
-		ptr *in = getArgReference(stk, pci, 1);
-		*res = *in;
+		ValRecord *res = &(stk)->stk[(pci)->argv[0]];
+		ValRecord *in = &(stk)->stk[(pci)->argv[1]];
+
+		if (!VALcopy(res, in))
+			throw(SQL, op, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
 	return msg;
 }
@@ -1376,14 +1392,10 @@ SQLcount(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		else
 			throw(SQL, "sql.count", GDK_EXCEPTION);
 	} else {
-		lng *res = (lng*) getArgReference(stk, pci, 0);
-		ptr *in = getArgReference(stk, pci, 1);
-		int (*atomcmp)(const void *, const void *) = ATOMcompare(tpe);
-		const void *nil = ATOMnilptr(tpe);
-		if(atomcmp(in, nil) == 0 && *ignore_nils)
-			*res = 0;
-		else
-			*res = 1;
+		lng *res = getArgReference_lng(stk, pci, 0);
+		ValRecord *in = &(stk)->stk[(pci)->argv[1]];
+
+		*res = (VALisnil(in) && *ignore_nils) ? 0 : 1;
 	}
 	return MAL_SUCCEED;
 }
@@ -1461,8 +1473,9 @@ do_analytical_sumprod(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, c
 		else
 			throw(SQL, op, GDK_EXCEPTION);
 	} else {
-		ptr *res = getArgReference(stk, pci, 0);
-		ptr *in = getArgReference(stk, pci, 1);
+		/* the pointers here will always point from bte to dbl, so no strings are handled here */
+		ptr res = getArgReference(stk, pci, 0);
+		ptr in = getArgReference(stk, pci, 1);
 		int scale = 0;
 
 		switch (tp1) {
@@ -1480,7 +1493,7 @@ do_analytical_sumprod(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, c
 				msg = lng_dec2_hge((hge*)res, &scale, (lng*)in);
 				break;
 			case TYPE_hge:
-				*res = *in;
+				*(hge*)res = *((hge*)in);
 				break;
 #else
 			case TYPE_bte:
@@ -1493,19 +1506,15 @@ do_analytical_sumprod(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, c
 				msg = int_dec2_lng((lng*)res, &scale, (int*)in);
 				break;
 			case TYPE_lng:
-				*res = *in;
+				*(lng*)res = *((lng*)in);
 				break;
 #endif
 			case TYPE_flt: {
 				flt fp = *((flt*)in);
-				dbl *db = (dbl*)res;
-				if(is_flt_nil(fp))
-					*db = dbl_nil;
-				else
-					*db = (dbl) fp;
+				*(dbl*)res = is_flt_nil(fp) ? dbl_nil : (dbl) fp;
 			} break;
 			case TYPE_dbl:
-				*res = *in;
+				*(dbl*)res = *((dbl*)in);
 				break;
 			default:
 				throw(SQL, op, SQLSTATE(42000) "%s not available for %s", op, ATOMname(tp1));
@@ -1553,8 +1562,9 @@ SQLavg(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		else
 			throw(SQL, "sql.avg", GDK_EXCEPTION);
 	} else {
-		ptr *res = getArgReference(stk, pci, 0);
-		ptr *in = getArgReference(stk, pci, 1);
+		/* the pointers here will always point from bte to dbl, so no strings are handled here */
+		ptr res = getArgReference(stk, pci, 0);
+		ptr in = getArgReference(stk, pci, 1);
 		int scale = 0;
 
 		switch (tpe) {
@@ -1577,17 +1587,59 @@ SQLavg(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 #endif
 			case TYPE_flt: {
 				flt fp = *((flt*)in);
-				dbl *db = (dbl*)res;
-				if (is_flt_nil(fp))
-					*db = dbl_nil;
-				else
-					*db = (dbl) fp;
+				*(dbl*)res = is_flt_nil(fp) ? dbl_nil : (dbl) fp;
 			} break;
 			case TYPE_dbl:
-				*res = *in;
+				*(dbl*)res = *((dbl*)in);
 				break;
 			default:
-				throw(SQL, "sql.avg", SQLSTATE(42000) "sql.avg not available for %s", ATOMname(tpe));
+				throw(SQL, "sql.avg", SQLSTATE(42000) "sql.avg not available for %s to dbl", ATOMname(tpe));
+		}
+	}
+	return msg;
+}
+
+str
+SQLavginteger(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	BAT *r, *b, *s, *e;
+	str msg = SQLanalytics_args(&r, &b, &s, &e, cntxt, mb, stk, pci, 0, "sql.avg", SQLSTATE(42000) "avg(:any_1,:lng,:lng)");
+	int tpe = getArgType(mb, pci, 1);
+	gdk_return gdk_res;
+
+	if (msg)
+		return msg;
+	if (isaBatType(tpe))
+		tpe = getBatType(tpe);
+
+	if (b) {
+		bat *res = getArgReference_bat(stk, pci, 0);
+
+		gdk_res = GDKanalyticalavginteger(r, b, s, e, tpe);
+		BBPunfix(b->batCacheid);
+		if (s) BBPunfix(s->batCacheid);
+		if (e) BBPunfix(e->batCacheid);
+		if (gdk_res == GDK_SUCCEED)
+			BBPkeepref(*res = r->batCacheid);
+		else
+			throw(SQL, "sql.avg", GDK_EXCEPTION);
+	} else {
+		ValRecord *res = &(stk)->stk[(pci)->argv[0]];
+		ValRecord *in = &(stk)->stk[(pci)->argv[1]];
+
+		switch (tpe) {
+			case TYPE_bte:
+			case TYPE_sht:
+			case TYPE_int:
+			case TYPE_lng:
+#ifdef HAVE_HGE
+			case TYPE_hge:
+#endif
+				if (!VALcopy(res, in))
+					throw(SQL, "sql.avg", SQLSTATE(HY013) MAL_MALLOC_FAIL); /* malloc failure should never happen, but let it be here */
+				break;
+			default:
+				throw(SQL, "sql.avg", SQLSTATE(42000) "sql.avg not available for %s to %s", ATOMname(tpe), ATOMname(tpe));
 		}
 	}
 	return msg;
@@ -1619,7 +1671,7 @@ do_stddev_and_variance(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, 
 		else
 			throw(SQL, op, GDK_EXCEPTION);
 	} else {
-		dbl *res = (dbl*) getArgReference(stk, pci, 0);
+		dbl *res = getArgReference_dbl(stk, pci, 0);
 		ValRecord *input1 = &(stk)->stk[(pci)->argv[1]];
 
 		switch (tpe) {
@@ -1669,9 +1721,28 @@ SQLvar_pop(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 								  GDKanalytical_variance_pop);
 }
 
+#define COVARIANCE_AND_CORRELATION_ONE_SIDE(TPE) \
+	do { \
+		TPE *restrict bp = (TPE*)Tloc(b, 0); \
+		for (BUN i = 0; i < cnt; i++) { \
+			for (lng j = start[i] ; j < end[i] ; j++) { \
+				if (is_##TPE##_nil(bp[j])) \
+					continue; \
+				n++; \
+			} \
+			if (n > minimum) { /* covariance_samp requires at least one value */ \
+				rb[i] = res; \
+			} else { \
+				rb[i] = dbl_nil; \
+				has_nils = true; \
+			} \
+			n = 0; \
+		} \
+	} while (0)
+
 static str
 do_covariance_and_correlation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, const char* op, const char* err,
-							  gdk_return (*func)(BAT *, BAT *, BAT *, BAT *, BAT *, int), BUN minimum, dbl single_case)
+							  gdk_return (*func)(BAT *, BAT *, BAT *, BAT *, BAT *, int), BUN minimum, dbl defaultv, dbl single_case)
 {
 	BAT *r = NULL, *b = NULL, *c = NULL, *s = NULL, *e = NULL;
 	int tp1, tp2;
@@ -1729,30 +1800,39 @@ do_covariance_and_correlation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPt
 			}
 			gdk_res = func(r, b, c, s, e, tp1);
 		} else {
+			/* corner case, second column is a constant, calculate it this way... */
 			BUN cnt = BATcount(b), n = 0;
-			BATiter bi = bat_iterator(b); /* corner case, second column is a constant, calculate it this way... */
-			void *curval;
-			const void *restrict nil = ATOMnilptr(tp1);
-			int (*cmp) (const void *, const void *) = ATOMcompare(tp1);
 			ValRecord *input2 = &(stk)->stk[(pci)->argv[2]];
-			dbl *restrict rb = (dbl*) Tloc(r, 0), res = VALisnil(input2) ? dbl_nil : single_case;
+			dbl *restrict rb = (dbl*) Tloc(r, 0), res = VALisnil(input2) ? dbl_nil : defaultv;
 			lng *restrict start = (lng*) Tloc(s, 0), *restrict end = (lng*) Tloc(e, 0);
 			bool has_nils = is_dbl_nil(res);
 
-			for (BUN i = 0; i < cnt; i++) {
-				for (lng j = start[i] ; j < end[i] ; j++) {
-					curval = BUNtail(bi, (BUN) j);
-					if (!cmp(curval, nil))
-						continue;
-					n++;
-				}
-				if (n > minimum) { /* covariance_samp requires at least one value */
-					rb[i] = res;
-				} else {
-					rb[i] = dbl_nil;
-					has_nils = true;
-				}
-				n = 0;
+			switch (tp1) {
+			case TYPE_bte:
+				COVARIANCE_AND_CORRELATION_ONE_SIDE(bte);
+				break;
+			case TYPE_sht:
+				COVARIANCE_AND_CORRELATION_ONE_SIDE(sht);
+				break;
+			case TYPE_int:
+				COVARIANCE_AND_CORRELATION_ONE_SIDE(int);
+				break;
+			case TYPE_lng:
+				COVARIANCE_AND_CORRELATION_ONE_SIDE(lng);
+				break;
+#ifdef HAVE_HGE
+			case TYPE_hge:
+				COVARIANCE_AND_CORRELATION_ONE_SIDE(hge);
+				break;
+#endif
+			case TYPE_flt:
+				COVARIANCE_AND_CORRELATION_ONE_SIDE(flt);
+				break;
+			case TYPE_dbl:
+				COVARIANCE_AND_CORRELATION_ONE_SIDE(dbl);
+				break;
+			default:
+				throw(SQL, op, SQLSTATE(42000) "%s not available for %s", op, ATOMname(tp1));
 			}
 			BATsetcount(r, cnt);
 			r->tnonil = !has_nils;
@@ -1768,7 +1848,7 @@ do_covariance_and_correlation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPt
 		else
 			throw(SQL, op, GDK_EXCEPTION);
 	} else {
-		dbl *res = (dbl*) getArgReference(stk, pci, 0);
+		dbl *res = getArgReference_dbl(stk, pci, 0);
 		ValRecord *input1 = &(stk)->stk[(pci)->argv[1]];
 		ValRecord *input2 = &(stk)->stk[(pci)->argv[2]];
 
@@ -1782,7 +1862,7 @@ do_covariance_and_correlation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPt
 #endif
 			case TYPE_flt:
 			case TYPE_dbl:
-				*res = (VALisnil(input1) || VALisnil(input2)) ? dbl_nil : 0;
+				*res = (VALisnil(input1) || VALisnil(input2)) ? dbl_nil : single_case;
 				break;
 			default:
 				throw(SQL, op, SQLSTATE(42000) "%s not available for %s", op, ATOMname(tp1));
@@ -1795,21 +1875,21 @@ str
 SQLcovar_samp(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	return do_covariance_and_correlation(cntxt, mb, stk, pci, "sql.covariance", SQLSTATE(42000) "covariance(:any_1,:any_1,:lng,:lng)",
-										 GDKanalytical_covariance_samp, 1, 0.0f);
+										 GDKanalytical_covariance_samp, 1, 0.0f, dbl_nil);
 }
 
 str
 SQLcovar_pop(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	return do_covariance_and_correlation(cntxt, mb, stk, pci, "sql.covariancep", SQLSTATE(42000) "covariancep(:any_1,:any_1,:lng,:lng)",
-										 GDKanalytical_covariance_pop, 0, 0.0f);
+										 GDKanalytical_covariance_pop, 0, 0.0f, 0.0f);
 }
 
 str
 SQLcorr(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	return do_covariance_and_correlation(cntxt, mb, stk, pci, "sql.corr", SQLSTATE(42000) "corr(:any_1,:any_1,:lng,:lng)",
-										 GDKanalytical_correlation, 0, dbl_nil);
+										 GDKanalytical_correlation, 0, dbl_nil, dbl_nil);
 }
 
 str
@@ -1874,12 +1954,14 @@ SQLstrgroup_concat(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		else
 			throw(SQL, "sql.strgroup_concat", GDK_EXCEPTION);
 	} else {
-		str *res = (str*) getArgReference(stk, pci, 0);
+		str *res = getArgReference_str(stk, pci, 0);
 		str in = *getArgReference_str(stk, pci, 1);
 
-		if (pci->argc == 4) {
+		if (strNil(in)) {
+			*res = GDKstrdup(str_nil);
+		} else if (pci->argc == 5) {
 			str sep = *getArgReference_str(stk, pci, 2);
-			size_t l1 = strNil(in) ? 0 : strlen(in), l2 = strNil(sep) ? 0 : strlen(sep);
+			size_t l1 = strlen(in), l2 = strNil(sep) ? 0 : strlen(sep);
 
 			if ((*res = GDKmalloc(l1+l2+1))) {
 				if (l1)
@@ -1889,7 +1971,7 @@ SQLstrgroup_concat(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				(*res)[l1+l2] = '\0';
 			}
 		} else {
-			*res = strNil(in) ? GDKstrdup("") : GDKstrdup(in);
+			*res = GDKstrdup(in);
 		}
 		if (!*res)
 			throw(SQL, "sql.strgroup_concat", SQLSTATE(HY013) MAL_MALLOC_FAIL);

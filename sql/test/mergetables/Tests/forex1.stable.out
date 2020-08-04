@@ -29,7 +29,7 @@ stdout of test 'forex1` in directory 'sql/test/mergetables` itself:
 #ALTER TABLE forex1 SET READ ONLY;
 #ALTER TABLE forex ADD TABLE forex1;
 #SELECT X.clk FROM forex AS X;
-% sys.x # table_name
+% .x # table_name
 % clk # name
 % timestamp # type
 % 26 # length

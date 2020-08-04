@@ -35,10 +35,10 @@ mythrow(enum malexception type, const char *fcn, const char *msg)
 
 static str
 CMDbatUNARY(MalStkPtr stk, InstrPtr pci,
-			BAT *(*batfunc)(BAT *, BAT *, BAT *), const char *malfunc)
+			BAT *(*batfunc)(BAT *, BAT *), const char *malfunc)
 {
 	bat bid;
-	BAT *bn, *b, *s = NULL, *r = NULL;
+	BAT *bn, *b, *s = NULL;
 
 	bid = *getArgReference_bat(stk, pci, 1);
 	if ((b = BATdescriptor(bid)) == NULL)
@@ -50,26 +50,10 @@ CMDbatUNARY(MalStkPtr stk, InstrPtr pci,
 				BBPunfix(b->batCacheid);
 				throw(MAL, malfunc, SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 			}
-			if (s->ttype == TYPE_bit) {
-				r = s;
-				s = NULL;
-			}
-		}
-	} else if (pci->argc == 4) {
-		bid = *getArgReference_bat(stk, pci, 2);
-		if (!is_bat_nil(bid) && (s = BATdescriptor(bid)) == NULL) {
-			BBPunfix(b->batCacheid);
-			throw(MAL, malfunc, SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
-		}
-		bid = *getArgReference_bat(stk, pci, 3);
-		if (!is_bat_nil(bid) && (r = BATdescriptor(bid)) == NULL) {
-			BBPunfix(b->batCacheid);
-			BBPunfix(s->batCacheid);
-			throw(MAL, malfunc, SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 		}
 	}
 
-	bn = (*batfunc)(b, s, r);
+	bn = (*batfunc)(b, s);
 	BBPunfix(b->batCacheid);
 	if (s)
 		BBPunfix(s->batCacheid);
@@ -83,10 +67,10 @@ CMDbatUNARY(MalStkPtr stk, InstrPtr pci,
 
 static str
 CMDbatUNARY1(MalStkPtr stk, InstrPtr pci, bool abort_on_error,
-			 BAT *(*batfunc)(BAT *, BAT *, BAT *, bool), const char *malfunc)
+			 BAT *(*batfunc)(BAT *, BAT *, bool), const char *malfunc)
 {
 	bat bid;
-	BAT *bn, *b, *s = NULL, *r = NULL;
+	BAT *bn, *b, *s = NULL;
 
 	bid = *getArgReference_bat(stk, pci, 1);
 	if ((b = BATdescriptor(bid)) == NULL)
@@ -98,26 +82,10 @@ CMDbatUNARY1(MalStkPtr stk, InstrPtr pci, bool abort_on_error,
 				BBPunfix(b->batCacheid);
 				throw(MAL, malfunc, SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 			}
-			if (s->ttype == TYPE_bit) {
-				r = s;
-				s = NULL;
-			}
-		}
-	} else if (pci->argc == 4) {
-		bid = *getArgReference_bat(stk, pci, 2);
-		if (!is_bat_nil(bid) && (s = BATdescriptor(bid)) == NULL) {
-			BBPunfix(b->batCacheid);
-			throw(MAL, malfunc, SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
-		}
-		bid = *getArgReference_bat(stk, pci, 3);
-		if (!is_bat_nil(bid) && (r = BATdescriptor(bid)) == NULL) {
-			BBPunfix(b->batCacheid);
-			BBPunfix(s->batCacheid);
-			throw(MAL, malfunc, SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 		}
 	}
 
-	bn = (*batfunc)(b, s, r, abort_on_error);
+	bn = (*batfunc)(b, s, abort_on_error);
 	BBPunfix(b->batCacheid);
 	if (s)
 		BBPunfix(s->batCacheid);
@@ -314,25 +282,17 @@ calcmodtype(int tp1, int tp2)
  * func(b1:bat, b2:bat, s1:bat, s2:bat) :bat
  * func(b1:bat, v2:any, s1:bat) :bat
  * func(v1:any, b2:bat, s2:bat) :bat
- * # without candidate list
- * func(b1:bat, b2:bat, r:bat) :bat
- * func(b1:bat, v2:any, r:bat) :bat
- * func(v1:any, b2:bat, r:bat) :bat
- * # with candidate list
- * func(b1:bat, b2:bat, s1:bat, s2:bat, r:bat) :bat
- * func(b1:bat, v2:any, s1:bat, r:bat) :bat
- * func(v1:any, b2:bat, s2:bat, r:bat) :bat
  */
 static str
 CMDbatBINARY2(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
-			  BAT *(*batfunc)(BAT *, BAT *, BAT *, BAT *, BAT *, int, bool),
-			  BAT *(batfunc1)(BAT *, const ValRecord *, BAT *, BAT *, int, bool),
-			  BAT *(batfunc2)(const ValRecord *, BAT *, BAT *, BAT *, int, bool),
+			  BAT *(*batfunc)(BAT *, BAT *, BAT *, BAT *, int, bool),
+			  BAT *(batfunc1)(BAT *, const ValRecord *, BAT *, int, bool),
+			  BAT *(batfunc2)(const ValRecord *, BAT *, BAT *, int, bool),
 			  int (*typefunc)(int, int),
 			  bool abort_on_error, const char *malfunc)
 {
 	bat bid;
-	BAT *bn, *b1 = NULL, *b2 = NULL, *s1 = NULL, *s2 = NULL, *r = NULL;
+	BAT *bn, *b1 = NULL, *b2 = NULL, *s1 = NULL, *s2 = NULL;
 	int tp1, tp2, tp3;
 
 	tp1 = stk->stk[getArg(pci, 1)].vtype; /* first argument */
@@ -355,29 +315,13 @@ CMDbatBINARY2(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 			goto bailout;
 	}
 
-	if (pci->argc > 5) {
-		assert(pci->argc == 6);
-		bid = *getArgReference_bat(stk, pci, 5);
-		if (!is_bat_nil(bid)) {
-			r = BATdescriptor(bid);
-			if (r == NULL)
-				goto bailout;
-			assert(r->ttype == TYPE_bit);
-		}
-	}
 	if (pci->argc > 4) {
+		assert(pci->argc == 5);
 		bid = *getArgReference_bat(stk, pci, 4);
 		if (!is_bat_nil(bid)) {
 			s2 = BATdescriptor(bid);
 			if (s2 == NULL)
 				goto bailout;
-			if (s2->ttype == TYPE_bit) {
-				assert(pci->argc == 5);
-				assert(r == NULL);
-				assert(b1 == NULL || b2 == NULL);
-				r = s2;
-				s2 = NULL;
-			}
 		}
 	}
 	if (pci->argc > 3) {
@@ -386,11 +330,7 @@ CMDbatBINARY2(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 			s1 = BATdescriptor(bid);
 			if (s1 == NULL)
 				goto bailout;
-			if (s1->ttype == TYPE_bit) {
-				assert(pci->argc == 4);
-				r = s1;
-				s1 = NULL;
-			} else if (b1 == NULL) {
+			if (b1 == NULL) {
 				s2 = s1;
 				s1 = NULL;
 			}
@@ -400,15 +340,15 @@ CMDbatBINARY2(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 	if (b1 && b2) {
 		if (tp3 == TYPE_any)
 			tp3 = (*typefunc)(b1->ttype, b2->ttype);
-		bn = (*batfunc)(b1, b2, s1, s2, r, tp3, abort_on_error);
+		bn = (*batfunc)(b1, b2, s1, s2, tp3, abort_on_error);
 	} else if (b1) {
 		if (tp3 == TYPE_any)
 			tp3 = (*typefunc)(b1->ttype, tp2);
-		bn = (*batfunc1)(b1, &stk->stk[getArg(pci, 2)], s1, r, tp3, abort_on_error);
+		bn = (*batfunc1)(b1, &stk->stk[getArg(pci, 2)], s1, tp3, abort_on_error);
 	} else if (b2) {
 		if (tp3 == TYPE_any)
 			tp3 = (*typefunc)(tp1, b2->ttype);
-		bn = (*batfunc2)(&stk->stk[getArg(pci, 1)], b2, s2, r, tp3, abort_on_error);
+		bn = (*batfunc2)(&stk->stk[getArg(pci, 1)], b2, s2, tp3, abort_on_error);
 	} else
 		goto bailout;			/* cannot happen */
 	if (b1)
@@ -419,8 +359,6 @@ CMDbatBINARY2(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 		BBPunfix(s1->batCacheid);
 	if (s2)
 		BBPunfix(s2->batCacheid);
-	if (r)
-		BBPunfix(r->batCacheid);
 	if (bn == NULL)
 		return mythrow(MAL, malfunc, GDK_EXCEPTION);
 	*getArgReference_bat(stk, pci, 0) = bn->batCacheid;
@@ -436,8 +374,6 @@ bailout:
 		BBPunfix(s1->batCacheid);
 	if (s2)
 		BBPunfix(s2->batCacheid);
-	if (r)
-		BBPunfix(r->batCacheid);
 	throw(MAL, malfunc, SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 }
 
@@ -451,151 +387,17 @@ bailout:
  * func(b1:bat, b2:bat, s1:bat, s2:bat, abort_on_error:bit) :bat
  * func(b1:bat, v2:any, s1:bat, abort_on_error:bit) :bat
  * func(v1:any, b2:bat, s2:bat, abort_on_error:bit) :bat
- * # without candidate list
- * func(b1:bat, b2:bat, r:bat, abort_on_error:bit) :bat
- * func(b1:bat, v2:any, r:bat, abort_on_error:bit) :bat
- * func(v1:any, b2:bat, r:bat, abort_on_error:bit) :bat
- * # with candidate list
- * func(b1:bat, b2:bat, s1:bat, s2:bat, r:bat, abort_on_error:bit) :bat
- * func(b1:bat, v2:any, s1:bat, r:bat, abort_on_error:bit) :bat
- * func(v1:any, b2:bat, s2:bat, r:bat, abort_on_error:bit) :bat
  */
 static str
 CMDbatBINARY1(MalStkPtr stk, InstrPtr pci,
-			  BAT *(*batfunc)(BAT *, BAT *, BAT *, BAT *, BAT *, bool),
-			  BAT *(*batfunc1)(BAT *, const ValRecord *, BAT *, BAT *, bool),
-			  BAT *(*batfunc2)(const ValRecord *, BAT *, BAT *, BAT *, bool),
+			  BAT *(*batfunc)(BAT *, BAT *, BAT *, BAT *, bool),
+			  BAT *(*batfunc1)(BAT *, const ValRecord *, BAT *, bool),
+			  BAT *(*batfunc2)(const ValRecord *, BAT *, BAT *, bool),
 			  bool abort_on_error,
 			  const char *malfunc)
 {
 	bat bid;
-	BAT *bn, *b1 = NULL, *b2 = NULL, *s1 = NULL, *s2 = NULL, *r = NULL;
-	int tp1, tp2;
-
-	tp1 = stk->stk[getArg(pci, 1)].vtype; /* first argument */
-	tp2 = stk->stk[getArg(pci, 2)].vtype; /* second argument */
-
-	if (tp1 == TYPE_bat || isaBatType(tp1)) {
-		bid = *getArgReference_bat(stk, pci, 1);
-		b1 = BATdescriptor(bid);
-		if (b1 == NULL)
-			goto bailout;
-	}
-
-	if (tp2 == TYPE_bat || isaBatType(tp2)) {
-		bid = *getArgReference_bat(stk, pci, 2);
-		b2 = BATdescriptor(bid);
-		if (b2 == NULL)
-			goto bailout;
-	}
-
-	if (pci->argc > 6) {
-		assert(pci->argc == 7);
-		abort_on_error = *getArgReference_bit(stk, pci, 6);
-	}
-	if (pci->argc > 5) {
-		if (stk->stk[getArg(pci, 5)].vtype == TYPE_bat) {
-			bid = *getArgReference_bat(stk, pci, 5);
-			if (!is_bat_nil(bid)) {
-				r = BATdescriptor(bid);
-				if (r == NULL)
-					goto bailout;
-				assert(r->ttype == TYPE_bit);
-			}
-		} else {
-			assert(pci->argc == 6);
-			abort_on_error = *getArgReference_bit(stk, pci, 5);
-		}
-	}
-	if (pci->argc > 4) {
-		if (stk->stk[getArg(pci, 4)].vtype == TYPE_bat) {
-			bid = *getArgReference_bat(stk, pci, 4);
-			if (!is_bat_nil(bid)) {
-				s2 = BATdescriptor(bid);
-				if (s2 == NULL)
-					goto bailout;
-				if (s2->ttype == TYPE_bit) {
-					assert(r == NULL);
-					assert(b1 == NULL || b2 == NULL);
-					r = s2;
-					s2 = NULL;
-				}
-			}
-		} else {
-			assert(pci->argc == 5);
-			abort_on_error = *getArgReference_bit(stk, pci, 4);
-		}
-	}
-	if (pci->argc > 3) {
-		if (stk->stk[getArg(pci, 3)].vtype == TYPE_bat) {
-			bid = *getArgReference_bat(stk, pci, 3);
-			if (!is_bat_nil(bid)) {
-				s1 = BATdescriptor(bid);
-				if (s1 == NULL)
-					goto bailout;
-				if (s1->ttype == TYPE_bit) {
-					r = s1;
-					s1 = NULL;
-				} else if (b1 == NULL) {
-					s2 = s1;
-					s1 = NULL;
-				}
-			}
-		} else {
-			assert(pci->argc == 4);
-			abort_on_error = *getArgReference_bit(stk, pci, 3);
-		}
-	}
-
-	if (b1 && b2)
-		bn = (*batfunc)(b1, b2, s1, s2, r, abort_on_error);
-	else if (b1)
-		bn = (*batfunc1)(b1, &stk->stk[getArg(pci, 2)], s1, r, abort_on_error);
-	else if (b2)
-		bn = (*batfunc2)(&stk->stk[getArg(pci, 1)], b2, s2, r, abort_on_error);
-	else
-		goto bailout;			/* cannot happen */
-	if (b1)
-		BBPunfix(b1->batCacheid);
-	if (b2)
-		BBPunfix(b2->batCacheid);
-	if (s1)
-		BBPunfix(s1->batCacheid);
-	if (s2)
-		BBPunfix(s2->batCacheid);
-	if (r)
-		BBPunfix(r->batCacheid);
-	if (bn == NULL)
-		return mythrow(MAL, malfunc, GDK_EXCEPTION);
-	*getArgReference_bat(stk, pci, 0) = bn->batCacheid;
-	BBPkeepref(bn->batCacheid);
-	return MAL_SUCCEED;
-
-bailout:
-	if (b1)
-		BBPunfix(b1->batCacheid);
-	if (b2)
-		BBPunfix(b2->batCacheid);
-	if (s1)
-		BBPunfix(s1->batCacheid);
-	if (s2)
-		BBPunfix(s2->batCacheid);
-	if (r)
-		BBPunfix(r->batCacheid);
-	throw(MAL, malfunc, SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
-}
-
-/* MAL function has one of the signatures for CMDbatBINARY2
- */
-static str
-CMDbatBINARY0(MalStkPtr stk, InstrPtr pci,
-			  BAT *(*batfunc)(BAT *, BAT *, BAT *, BAT *, BAT *),
-			  BAT *(*batfunc1)(BAT *, const ValRecord *, BAT *, BAT *),
-			  BAT *(*batfunc2)(const ValRecord *, BAT *, BAT *, BAT *),
-			  const char *malfunc)
-{
-	bat bid;
-	BAT *bn, *b1 = NULL, *b2 = NULL, *s1 = NULL, *s2 = NULL, *r = NULL;
+	BAT *bn, *b1 = NULL, *b2 = NULL, *s1 = NULL, *s2 = NULL;
 	int tp1, tp2;
 
 	tp1 = stk->stk[getArg(pci, 1)].vtype; /* first argument */
@@ -617,52 +419,45 @@ CMDbatBINARY0(MalStkPtr stk, InstrPtr pci,
 
 	if (pci->argc > 5) {
 		assert(pci->argc == 6);
-		bid = *getArgReference_bat(stk, pci, 5);
-		if (!is_bat_nil(bid)) {
-			r = BATdescriptor(bid);
-			if (r == NULL)
-				goto bailout;
-			assert(r->ttype == TYPE_bit);
-		}
+		abort_on_error = *getArgReference_bit(stk, pci, 5);
 	}
 	if (pci->argc > 4) {
-		bid = *getArgReference_bat(stk, pci, 4);
-		if (!is_bat_nil(bid)) {
-			s2 = BATdescriptor(bid);
-			if (s2 == NULL)
-				goto bailout;
-			if (s2->ttype == TYPE_bit) {
-				assert(pci->argc == 5);
-				assert(r == NULL);
-				assert(b1 == NULL || b2 == NULL);
-				r = s2;
-				s2 = NULL;
+		if (stk->stk[getArg(pci, 4)].vtype == TYPE_bat) {
+			bid = *getArgReference_bat(stk, pci, 4);
+			if (!is_bat_nil(bid)) {
+				s2 = BATdescriptor(bid);
+				if (s2 == NULL)
+					goto bailout;
 			}
+		} else {
+			assert(pci->argc == 5);
+			abort_on_error = *getArgReference_bit(stk, pci, 4);
 		}
 	}
 	if (pci->argc > 3) {
-		bid = *getArgReference_bat(stk, pci, 3);
-		if (!is_bat_nil(bid)) {
-			s1 = BATdescriptor(bid);
-			if (s1 == NULL)
-				goto bailout;
-			if (s1->ttype == TYPE_bit) {
-				assert(pci->argc == 4);
-				r = s1;
-				s1 = NULL;
-			} else if (b1 == NULL) {
-				s2 = s1;
-				s1 = NULL;
+		if (stk->stk[getArg(pci, 3)].vtype == TYPE_bat) {
+			bid = *getArgReference_bat(stk, pci, 3);
+			if (!is_bat_nil(bid)) {
+				s1 = BATdescriptor(bid);
+				if (s1 == NULL)
+					goto bailout;
+				if (b1 == NULL) {
+					s2 = s1;
+					s1 = NULL;
+				}
 			}
+		} else {
+			assert(pci->argc == 4);
+			abort_on_error = *getArgReference_bit(stk, pci, 3);
 		}
 	}
 
 	if (b1 && b2)
-		bn = (*batfunc)(b1, b2, s1, s2, r);
+		bn = (*batfunc)(b1, b2, s1, s2, abort_on_error);
 	else if (b1)
-		bn = (*batfunc1)(b1, &stk->stk[getArg(pci, 2)], s1, r);
+		bn = (*batfunc1)(b1, &stk->stk[getArg(pci, 2)], s1, abort_on_error);
 	else if (b2)
-		bn = (*batfunc2)(&stk->stk[getArg(pci, 1)], b2, s2, r);
+		bn = (*batfunc2)(&stk->stk[getArg(pci, 1)], b2, s2, abort_on_error);
 	else
 		goto bailout;			/* cannot happen */
 	if (b1)
@@ -673,8 +468,6 @@ CMDbatBINARY0(MalStkPtr stk, InstrPtr pci,
 		BBPunfix(s1->batCacheid);
 	if (s2)
 		BBPunfix(s2->batCacheid);
-	if (r)
-		BBPunfix(r->batCacheid);
 	if (bn == NULL)
 		return mythrow(MAL, malfunc, GDK_EXCEPTION);
 	*getArgReference_bat(stk, pci, 0) = bn->batCacheid;
@@ -690,8 +483,92 @@ bailout:
 		BBPunfix(s1->batCacheid);
 	if (s2)
 		BBPunfix(s2->batCacheid);
-	if (r)
-		BBPunfix(r->batCacheid);
+	throw(MAL, malfunc, SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
+}
+
+/* MAL function has one of the signatures for CMDbatBINARY2
+ */
+static str
+CMDbatBINARY0(MalStkPtr stk, InstrPtr pci,
+			  BAT *(*batfunc)(BAT *, BAT *, BAT *, BAT *),
+			  BAT *(*batfunc1)(BAT *, const ValRecord *, BAT *),
+			  BAT *(*batfunc2)(const ValRecord *, BAT *, BAT *),
+			  const char *malfunc)
+{
+	bat bid;
+	BAT *bn, *b1 = NULL, *b2 = NULL, *s1 = NULL, *s2 = NULL;
+	int tp1, tp2;
+
+	tp1 = stk->stk[getArg(pci, 1)].vtype; /* first argument */
+	tp2 = stk->stk[getArg(pci, 2)].vtype; /* second argument */
+
+	if (tp1 == TYPE_bat || isaBatType(tp1)) {
+		bid = *getArgReference_bat(stk, pci, 1);
+		b1 = BATdescriptor(bid);
+		if (b1 == NULL)
+			goto bailout;
+	}
+
+	if (tp2 == TYPE_bat || isaBatType(tp2)) {
+		bid = *getArgReference_bat(stk, pci, 2);
+		b2 = BATdescriptor(bid);
+		if (b2 == NULL)
+			goto bailout;
+	}
+
+	if (pci->argc > 4) {
+		assert(pci->argc == 5);
+		bid = *getArgReference_bat(stk, pci, 4);
+		if (!is_bat_nil(bid)) {
+			s2 = BATdescriptor(bid);
+			if (s2 == NULL)
+				goto bailout;
+		}
+	}
+	if (pci->argc > 3) {
+		bid = *getArgReference_bat(stk, pci, 3);
+		if (!is_bat_nil(bid)) {
+			s1 = BATdescriptor(bid);
+			if (s1 == NULL)
+				goto bailout;
+			if (b1 == NULL) {
+				s2 = s1;
+				s1 = NULL;
+			}
+		}
+	}
+
+	if (b1 && b2)
+		bn = (*batfunc)(b1, b2, s1, s2);
+	else if (b1)
+		bn = (*batfunc1)(b1, &stk->stk[getArg(pci, 2)], s1);
+	else if (b2)
+		bn = (*batfunc2)(&stk->stk[getArg(pci, 1)], b2, s2);
+	else
+		goto bailout;			/* cannot happen */
+	if (b1)
+		BBPunfix(b1->batCacheid);
+	if (b2)
+		BBPunfix(b2->batCacheid);
+	if (s1)
+		BBPunfix(s1->batCacheid);
+	if (s2)
+		BBPunfix(s2->batCacheid);
+	if (bn == NULL)
+		return mythrow(MAL, malfunc, GDK_EXCEPTION);
+	*getArgReference_bat(stk, pci, 0) = bn->batCacheid;
+	BBPkeepref(bn->batCacheid);
+	return MAL_SUCCEED;
+
+bailout:
+	if (b1)
+		BBPunfix(b1->batCacheid);
+	if (b2)
+		BBPunfix(b2->batCacheid);
+	if (s1)
+		BBPunfix(s1->batCacheid);
+	if (s2)
+		BBPunfix(s2->batCacheid);
 	throw(MAL, malfunc, SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 }
 
@@ -992,7 +869,7 @@ static str
 CMDbatBETWEEN(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	bat bid;
-	BAT *bn, *b = NULL, *lo = NULL, *hi = NULL, *s = NULL, *slo = NULL, *shi = NULL, *r = NULL;
+	BAT *bn, *b = NULL, *lo = NULL, *hi = NULL, *s = NULL, *slo = NULL, *shi = NULL;
 	int tp1, tp2, tp3, tp;
 	int bc = 0;					/* number of extra BAT arguments */
 	bool symmetric, linc, hinc, nils_false, anti, has_cand = false;
@@ -1029,11 +906,6 @@ CMDbatBETWEEN(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			s = BATdescriptor(bid);
 			if (s == NULL)
 				goto bailout;
-			if (s->ttype == TYPE_bit) {
-				r = s;
-				s = NULL;
-				has_cand = false;
-			}
 		}
 		bc++;
 	}
@@ -1068,18 +940,6 @@ CMDbatBETWEEN(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		}
 		bc++;
 	}
-	tp = getArgType(mb, pci, 4 + bc);
-	if (r == NULL && (tp == TYPE_bat || isaBatType(tp))) {
-		bid = *getArgReference_bat(stk, pci, 4 + bc);
-		if (!is_bat_nil(bid)) {
-			r = BATdescriptor(bid);
-			if (r == NULL)
-				goto bailout;
-			if (r->ttype != TYPE_bit)
-				goto bailout;
-		}
-		bc++;
-	}
 
 	symmetric = *getArgReference_bit(stk, pci, bc + 4);
 	linc = *getArgReference_bit(stk, pci, bc + 5);
@@ -1088,17 +948,17 @@ CMDbatBETWEEN(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	anti = *getArgReference_bit(stk, pci, bc + 8);
 
 	if (b && lo && hi)
-		bn = BATcalcbetween(b, lo, hi, s, slo, shi, r,
+		bn = BATcalcbetween(b, lo, hi, s, slo, shi,
 							symmetric, linc, hinc, nils_false, anti);
 	else if (b && lo)
-		bn = BATcalcbetweenbatcst(b, lo, &stk->stk[getArg(pci, 3)], s, slo, r,
+		bn = BATcalcbetweenbatcst(b, lo, &stk->stk[getArg(pci, 3)], s, slo,
 								  symmetric, linc, hinc, nils_false, anti);
 	else if (b && hi)
-		bn = BATcalcbetweencstbat(b, &stk->stk[getArg(pci, 2)], hi, s, shi, r,
+		bn = BATcalcbetweencstbat(b, &stk->stk[getArg(pci, 2)], hi, s, shi,
 								  symmetric, linc, hinc, nils_false, anti);
 	else
 		bn = BATcalcbetweencstcst(b, &stk->stk[getArg(pci, 2)],
-								  &stk->stk[getArg(pci, 3)], s, r,
+								  &stk->stk[getArg(pci, 3)], s,
 								  symmetric, linc, hinc, nils_false, anti);
 	BBPunfix(b->batCacheid);
 	if (lo)
@@ -1111,8 +971,6 @@ CMDbatBETWEEN(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		BBPunfix(slo->batCacheid);
 	if (shi)
 		BBPunfix(shi->batCacheid);
-	if (r)
-		BBPunfix(r->batCacheid);
 	if (bn == NULL)
 		return mythrow(MAL, "batcalc.between", OPERATION_FAILED);
 	*getArgReference_bat(stk, pci, 0) = bn->batCacheid;
@@ -1132,8 +990,6 @@ CMDbatBETWEEN(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		BBPunfix(slo->batCacheid);
 	if (shi)
 		BBPunfix(shi->batCacheid);
-	if (r)
-		BBPunfix(r->batCacheid);
 	throw(MAL, "batcalc.between", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 }
 
@@ -1182,7 +1038,7 @@ static str
 CMDconvertbat(MalStkPtr stk, InstrPtr pci, int tp, bool abort_on_error)
 {
 	bat bid;
-	BAT *b, *bn, *s = NULL, *r = NULL;
+	BAT *b, *bn, *s = NULL;
 
 	bid = *getArgReference_bat(stk, pci, 1);
 	if ((b = BATdescriptor(bid)) == NULL)
@@ -1193,34 +1049,14 @@ CMDconvertbat(MalStkPtr stk, InstrPtr pci, int tp, bool abort_on_error)
 			BBPunfix(b->batCacheid);
 			throw(MAL, "batcalc.convert", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 		}
-		switch (s->ttype) {
-		case TYPE_oid:
-		case TYPE_void:
-			break;
-		case TYPE_bit:
-			r = s;
-			s = NULL;
-			break;
-		default:
+		if (ATOMtype(s->ttype) != TYPE_oid) {
 			BBPunfix(b->batCacheid);
 			BBPunfix(s->batCacheid);
 			throw(MAL, "batcalc.convert", SQLSTATE(42000) ILLEGAL_ARGUMENT);
 		}
-	} else if (pci->argc == 4) {
-		bid = *getArgReference_bat(stk, pci, 2);
-		if (!is_bat_nil(bid) && (s = BATdescriptor(bid)) == NULL) {
-			BBPunfix(b->batCacheid);
-			throw(MAL, "batcalc.convert", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
-		}
-		bid = *getArgReference_bat(stk, pci, 3);
-		if (!is_bat_nil(bid) && (r = BATdescriptor(bid)) == NULL) {
-			BBPunfix(b->batCacheid);
-			BBPunfix(s->batCacheid);
-			throw(MAL, "batcalc.convert", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
-		}
 	}
 
-	bn = BATconvert(b, s, r, tp, abort_on_error, 0, 0, 0);
+	bn = BATconvert(b, s, tp, abort_on_error, 0, 0, 0);
 	BBPunfix(b->batCacheid);
 	if (s)
 		BBPunfix(s->batCacheid);
@@ -1540,8 +1376,7 @@ batcalc_init(void)
 	types[cur++] = TYPE_int;
 	types[cur++] = TYPE_lng;
 #ifdef HAVE_HGE
-	if (have_hge)
-		types[cur++] = TYPE_hge;
+	types[cur++] = TYPE_hge;
 #endif
 	floats = types+cur;
 	types[cur++] = TYPE_flt;
@@ -1556,7 +1391,6 @@ batcalc_init(void)
 	specials[cur++] = TYPE_str;
 
 	mel_func_arg cand = { .type = TYPE_oid, .isbat=1 };
-	mel_func_arg condexec = { .type = TYPE_bit, .isbat=1 };
 
 	int err=0;
 	/* for all numeric types, use reverse order */
@@ -1566,8 +1400,6 @@ batcalc_init(void)
 
 		err += melFunction(false, "batcalc", "iszero", (fptr)&CMDbatISZERO, "CMDbatISZERO", false, "Unary check for zero over the tail of the bat", 1, 2, ret, arg);
 		err += melFunction(false, "batcalc", "iszero", (fptr)&CMDbatISZERO, "CMDbatISZERO", false, "Unary check for zero over the tail of the bat with candidates list", 1, 3, ret, arg, cand);
-		err += melFunction(false, "batcalc", "iszero", (fptr)&CMDbatISZERO, "CMDbatISZERO", false, "Unary check for zero over the tail of the bat", 1, 3, ret, arg, condexec);
-		err += melFunction(false, "batcalc", "iszero", (fptr)&CMDbatISZERO, "CMDbatISZERO", false, "Unary check for zero over the tail of the bat with candidates list", 1, 4, ret, arg, cand, condexec);
 	}
 	for(tp = types; tp < extra && !err; tp++) { /* bit + numeric */
 		mel_func_arg ret = { .type = *tp, .isbat =1 };
@@ -1575,8 +1407,6 @@ batcalc_init(void)
 
 		err += melFunction(false, "batcalc", "not", (fptr)&CMDbatNOT, "CMDbatNOT", false, "Unary bitwise not over the tail of the bat", 1, 2, ret, arg);
 		err += melFunction(false, "batcalc", "not", (fptr)&CMDbatNOT, "CMDbatNOT", false, "Unary bitwise not over the tail of the bat with candidates list", 1, 3, ret, arg, cand);
-		err += melFunction(false, "batcalc", "not", (fptr)&CMDbatNOT, "CMDbatNOT", false, "Unary bitwise not over the tail of the bat", 1, 3, ret, arg, condexec);
-		err += melFunction(false, "batcalc", "not", (fptr)&CMDbatNOT, "CMDbatNOT", false, "Unary bitwise not over the tail of the bat with candidates list", 1, 4, ret, arg, cand, condexec);
 	}
 	for(tp = integer; tp < extra && !err; tp++) {
 		mel_func_arg ret = { .type = TYPE_bte, .isbat =1 };
@@ -1584,8 +1414,6 @@ batcalc_init(void)
 
 		err += melFunction(false, "batcalc", "sign", (fptr)&CMDbatSIGN, "CMDbatSIGN", false, "Unary sign (-1,0,1) over the tail of the bat", 1, 2, ret, arg);
 		err += melFunction(false, "batcalc", "sign", (fptr)&CMDbatSIGN, "CMDbatSIGN", false, "Unary sign (-1,0,1) over the tail of the bat with candidates list", 1, 3, ret, arg, cand);
-		err += melFunction(false, "batcalc", "sign", (fptr)&CMDbatSIGN, "CMDbatSIGN", false, "Unary sign (-1,0,1) over the tail of the bat", 1, 3, ret, arg, condexec);
-		err += melFunction(false, "batcalc", "sign", (fptr)&CMDbatSIGN, "CMDbatSIGN", false, "Unary sign (-1,0,1) over the tail of the bat with candidates list", 1, 4, ret, arg, cand, condexec);
 	}
 	for(tp = integer; tp < extra && !err; tp++) {
 		mel_func_arg ret = { .type = *tp, .isbat =1 };
@@ -1593,23 +1421,15 @@ batcalc_init(void)
 
 		err += melFunction(false, "batcalc", "abs", (fptr)&CMDbatABS, "CMDbatABS", false, "Unary abs over the tail of the bat", 1, 2, ret, arg);
 		err += melFunction(false, "batcalc", "abs", (fptr)&CMDbatABS, "CMDbatABS", false, "Unary abs over the tail of the bat with candidates list", 1, 3, ret, arg, cand);
-		err += melFunction(false, "batcalc", "abs", (fptr)&CMDbatABS, "CMDbatABS", false, "Unary abs over the tail of the bat", 1, 3, ret, arg, condexec);
-		err += melFunction(false, "batcalc", "abs", (fptr)&CMDbatABS, "CMDbatABS", false, "Unary abs over the tail of the bat with candidates list", 1, 4, ret, arg, cand, condexec);
 
 		err += melFunction(false, "batcalc", "-", (fptr)&CMDbatNEG, "CMDbatNEG", false, "Unary neg over the tail of the bat", 1, 2, ret, arg);
 		err += melFunction(false, "batcalc", "-", (fptr)&CMDbatNEG, "CMDbatNEG", false, "Unary neg over the tail of the bat with candidates list", 1, 3, ret, arg, cand);
-		err += melFunction(false, "batcalc", "-", (fptr)&CMDbatNEG, "CMDbatNEG", false, "Unary neg over the tail of the bat", 1, 3, ret, arg, condexec);
-		err += melFunction(false, "batcalc", "-", (fptr)&CMDbatNEG, "CMDbatNEG", false, "Unary neg over the tail of the bat with candidates list", 1, 4, ret, arg, cand, condexec);
 
 		err += melFunction(false, "batcalc", "++", (fptr)&CMDbatINCR, "CMDbatINCR", false, "Unary increment over the tail of the bat", 1, 2, ret, arg);
 		err += melFunction(false, "batcalc", "++", (fptr)&CMDbatINCR, "CMDbatINCR", false, "Unary increment over the tail of the bat with candidates list", 1, 3, ret, arg, cand);
-		err += melFunction(false, "batcalc", "++", (fptr)&CMDbatINCR, "CMDbatINCR", false, "Unary increment over the tail of the bat", 1, 3, ret, arg, condexec);
-		err += melFunction(false, "batcalc", "++", (fptr)&CMDbatINCR, "CMDbatINCR", false, "Unary increment over the tail of the bat with candidates list", 1, 4, ret, arg, cand, condexec);
 
 		err += melFunction(false, "batcalc", "--", (fptr)&CMDbatDECR, "CMDbatDECR", false, "Unary decrement over the tail of the bat", 1, 2, ret, arg);
 		err += melFunction(false, "batcalc", "--", (fptr)&CMDbatDECR, "CMDbatDECR", false, "Unary decrement over the tail of the bat with candidates list", 1, 3, ret, arg, cand);
-		err += melFunction(false, "batcalc", "--", (fptr)&CMDbatDECR, "CMDbatDECR", false, "Unary decrement over the tail of the bat", 1, 3, ret, arg, condexec);
-		err += melFunction(false, "batcalc", "--", (fptr)&CMDbatDECR, "CMDbatDECR", false, "Unary decrement over the tail of the bat with candidates list", 1, 4, ret, arg, cand, condexec);
 	}
 	/* possibly add the min/max + _no_nil */
 	/* binops on numeric types */
@@ -1708,19 +1528,10 @@ batcalc_init(void)
 		  err += melFunction(false, "batcalc", funcs[f].op_ne, funcs[f].fcn_ne, funcs[f].fname_ne, false, funcs[f].comment_v_ne, 1, 4, ret, arg1, varg2, cand);
 		  err += melFunction(false, "batcalc", funcs[f].op, funcs[f].fcn, funcs[f].fname, false, funcs[f].comment_v_, 1, 4, ret, varg1, arg2, cand);
 		  err += melFunction(false, "batcalc", funcs[f].op_ne, funcs[f].fcn_ne, funcs[f].fname_ne, false, funcs[f].comment_v__ne, 1, 4, ret, varg1, arg2, cand);
-		  err += melFunction(false, "batcalc", funcs[f].op, funcs[f].fcn, funcs[f].fname, false, funcs[f].comment, 1, 6, ret, arg1, arg2, cand, cand, condexec);
-		  err += melFunction(false, "batcalc", funcs[f].op_ne, funcs[f].fcn_ne, funcs[f].fname_ne, false, funcs[f].comment_ne, 1, 6, ret, arg1, arg2, cand, cand, condexec);
-		  err += melFunction(false, "batcalc", funcs[f].op, funcs[f].fcn, funcs[f].fname, false, funcs[f].comment_v, 1, 5, ret, arg1, varg2, cand, condexec);
-		  err += melFunction(false, "batcalc", funcs[f].op_ne, funcs[f].fcn_ne, funcs[f].fname_ne, false, funcs[f].comment_v_ne, 1, 5, ret, arg1, varg2, cand, condexec);
-		  err += melFunction(false, "batcalc", funcs[f].op, funcs[f].fcn, funcs[f].fname, false, funcs[f].comment_v_, 1, 5, ret, varg1, arg2, cand, condexec);
-		  err += melFunction(false, "batcalc", funcs[f].op_ne, funcs[f].fcn_ne, funcs[f].fname_ne, false, funcs[f].comment_v__ne, 1, 5, ret, varg1, arg2, cand, condexec);
 		} else {
 		  err += melFunction(false, "batcalc", funcs[f].op, funcs[f].fcn_el, funcs[f].fname_el, false, funcs[f].comment_el, 1, 5, ret, arg1, arg2, cand, cand);
 		  err += melFunction(false, "batcalc", funcs[f].op, funcs[f].fcn_el, funcs[f].fname_el, false, funcs[f].comment_el_v, 1, 4, ret, arg1, varg2, cand);
 		  err += melFunction(false, "batcalc", funcs[f].op, funcs[f].fcn_el, funcs[f].fname_el, false, funcs[f].comment_el_v_, 1, 4, ret, varg1, arg2, cand);
-		  err += melFunction(false, "batcalc", funcs[f].op, funcs[f].fcn_el, funcs[f].fname_el, false, funcs[f].comment_el, 1, 6, ret, arg1, arg2, cand, cand, condexec);
-		  err += melFunction(false, "batcalc", funcs[f].op, funcs[f].fcn_el, funcs[f].fname_el, false, funcs[f].comment_el_v, 1, 5, ret, arg1, varg2, cand, condexec);
-		  err += melFunction(false, "batcalc", funcs[f].op, funcs[f].fcn_el, funcs[f].fname_el, false, funcs[f].comment_el_v_, 1, 5, ret, varg1, arg2, cand, condexec);
 		}
 	      }
 	    }
@@ -1774,12 +1585,6 @@ batcalc_init(void)
 		err += melFunction(false, "batcalc", div.op_ne, div.fcn_ne, div.fname_ne, false, div.comment_v_ne, 1, 4, ret, arg1, varg2, cand);
 		err += melFunction(false, "batcalc", div.op, div.fcn, div.fname, false, div.comment_v_, 1, 4, ret, varg1, arg2, cand);
 		err += melFunction(false, "batcalc", div.op_ne, div.fcn_ne, div.fname_ne, false, div.comment_v__ne, 1, 4, ret, varg1, arg2, cand);
-		err += melFunction(false, "batcalc", div.op, div.fcn, div.fname, false, div.comment, 1, 6, ret, arg1, arg2, cand, cand, condexec);
-		err += melFunction(false, "batcalc", div.op_ne, div.fcn_ne, div.fname_ne, false, div.comment_ne, 1, 6, ret, arg1, arg2, cand, cand, condexec);
-		err += melFunction(false, "batcalc", div.op, div.fcn, div.fname, false, div.comment_v, 1, 5, ret, arg1, varg2, cand, condexec);
-		err += melFunction(false, "batcalc", div.op_ne, div.fcn_ne, div.fname_ne, false, div.comment_v_ne, 1, 5, ret, arg1, varg2, cand, condexec);
-		err += melFunction(false, "batcalc", div.op, div.fcn, div.fname, false, div.comment_v_, 1, 5, ret, varg1, arg2, cand, condexec);
-		err += melFunction(false, "batcalc", div.op_ne, div.fcn_ne, div.fname_ne, false, div.comment_v__ne, 1, 5, ret, varg1, arg2, cand, condexec);
 	      }
 	    }
 	}
@@ -1813,14 +1618,18 @@ batcalc_init(void)
 	for(tp1 = integer; tp1 < extra && !err; tp1++) {
 	    for(tp2 = integer; tp2 < extra && !err; tp2++) {
 	      for(rt = extra-1; rt >= integer && !err; rt--) {
-		if (rt < tp1 || rt < tp2)
+		if (rt < tp1 && rt < tp2)
 			continue;
-		if (*rt == TYPE_dbl && *tp1 != TYPE_dbl && *tp2 != TYPE_dbl)
-			continue;
-		else if (*rt == TYPE_flt && ((*tp1 != TYPE_flt && *tp2 != TYPE_flt) || *tp1 == TYPE_dbl || *tp2 == TYPE_dbl))
-			continue;
-		else if (*tp1 == TYPE_flt || *tp2 == TYPE_flt || *tp1 == TYPE_dbl || *tp2 == TYPE_dbl)
-			continue;
+		if (*rt == TYPE_dbl) {
+			if (*tp1 != TYPE_dbl || *tp2 != TYPE_dbl)
+				continue;
+		} else if (*rt == TYPE_flt) {
+			if (*tp1 != TYPE_flt || *tp2 != TYPE_flt)
+				continue;
+		} else {
+			if (*tp1 == TYPE_flt || *tp2 == TYPE_flt || *tp1 == TYPE_dbl || *tp2 == TYPE_dbl)
+				continue;
+		}
 		mel_func_arg ret = { .type = *rt, .isbat =1 };
 		mel_func_arg arg1 = { .type = *tp1, .isbat =1 };
 		mel_func_arg arg2 = { .type = *tp2, .isbat =1 };
@@ -1833,12 +1642,6 @@ batcalc_init(void)
 		err += melFunction(false, "batcalc", mods.op_ne, mods.fcn_ne, mods.fname_ne, false, mods.comment_v_ne, 1, 4, ret, arg1, varg2, cand);
 		err += melFunction(false, "batcalc", mods.op, mods.fcn, mods.fname, false, mods.comment_v_, 1, 4, ret, varg1, arg2, cand);
 		err += melFunction(false, "batcalc", mods.op_ne, mods.fcn_ne, mods.fname_ne, false, mods.comment_v__ne, 1, 4, ret, varg1, arg2, cand);
-		err += melFunction(false, "batcalc", mods.op, mods.fcn, mods.fname, false, mods.comment, 1, 6, ret, arg1, arg2, cand, cand, condexec);
-		err += melFunction(false, "batcalc", mods.op_ne, mods.fcn_ne, mods.fname_ne, false, mods.comment_ne, 1, 6, ret, arg1, arg2, cand, cand, condexec);
-		err += melFunction(false, "batcalc", mods.op, mods.fcn, mods.fname, false, mods.comment_v, 1, 5, ret, arg1, varg2, cand, condexec);
-		err += melFunction(false, "batcalc", mods.op_ne, mods.fcn_ne, mods.fname_ne, false, mods.comment_v_ne, 1, 5, ret, arg1, varg2, cand, condexec);
-		err += melFunction(false, "batcalc", mods.op, mods.fcn, mods.fname, false, mods.comment_v_, 1, 5, ret, varg1, arg2, cand, condexec);
-		err += melFunction(false, "batcalc", mods.op_ne, mods.fcn_ne, mods.fname_ne, false, mods.comment_v__ne, 1, 5, ret, varg1, arg2, cand, condexec);
 	      }
 	    }
 	}
@@ -1885,12 +1688,6 @@ batcalc_init(void)
 		err += melFunction(false, "batcalc", logops[f].op, logops[f].fcn, logops[f].fname, false, logops[f].comment_v, 1, 4, ret, arg, varg, cand);
 		err += melFunction(false, "batcalc", logops[f].op, logops[f].fcn, logops[f].fname, false, logops[f].comment_v_, 1, 3, ret, varg, arg);
 		err += melFunction(false, "batcalc", logops[f].op, logops[f].fcn, logops[f].fname, false, logops[f].comment_v_, 1, 4, ret, varg, arg, cand);
-		err += melFunction(false, "batcalc", logops[f].op, logops[f].fcn, logops[f].fname, false, logops[f].comment, 1, 4, ret, arg, arg, condexec);
-		err += melFunction(false, "batcalc", logops[f].op, logops[f].fcn, logops[f].fname, false, logops[f].comment, 1, 6, ret, arg, arg, cand, cand, condexec);
-		err += melFunction(false, "batcalc", logops[f].op, logops[f].fcn, logops[f].fname, false, logops[f].comment_v, 1, 4, ret, arg, varg, condexec);
-		err += melFunction(false, "batcalc", logops[f].op, logops[f].fcn, logops[f].fname, false, logops[f].comment_v, 1, 5, ret, arg, varg, cand, condexec);
-		err += melFunction(false, "batcalc", logops[f].op, logops[f].fcn, logops[f].fname, false, logops[f].comment_v_, 1, 4, ret, varg, arg, condexec);
-		err += melFunction(false, "batcalc", logops[f].op, logops[f].fcn, logops[f].fname, false, logops[f].comment_v_, 1, 5, ret, varg, arg, cand, condexec);
 	  }
 	}
 	struct {
@@ -1957,19 +1754,6 @@ batcalc_init(void)
 		err += melFunction(false, "batcalc", shifts[f].op, shifts[f].fcn, shifts[f].fname, false, shifts[f].comment_v_, 1, 4, ret, varg1, arg2, cand);
 		err += melFunction(false, "batcalc", shifts[f].op_ne, shifts[f].fcn_ne, shifts[f].fname_ne, false, shifts[f].comment_ne_v_, 1, 3, ret, varg1, arg2);
 		err += melFunction(false, "batcalc", shifts[f].op_ne, shifts[f].fcn_ne, shifts[f].fname_ne, false, shifts[f].comment_ne_v_, 1, 4, ret, varg1, arg2, cand);
-
-		err += melFunction(false, "batcalc", shifts[f].op, shifts[f].fcn, shifts[f].fname, false, shifts[f].comment, 1, 4, ret, arg1, arg2, condexec);
-		err += melFunction(false, "batcalc", shifts[f].op, shifts[f].fcn, shifts[f].fname, false, shifts[f].comment, 1, 6, ret, arg1, arg2, cand, cand, condexec);
-		err += melFunction(false, "batcalc", shifts[f].op_ne, shifts[f].fcn_ne, shifts[f].fname_ne, false, shifts[f].comment_ne, 1, 4, ret, arg1, arg2, condexec);
-		err += melFunction(false, "batcalc", shifts[f].op_ne, shifts[f].fcn_ne, shifts[f].fname_ne, false, shifts[f].comment_ne, 1, 6, ret, arg1, arg2, cand, cand, condexec);
-		err += melFunction(false, "batcalc", shifts[f].op, shifts[f].fcn, shifts[f].fname, false, shifts[f].comment_v, 1, 4, ret, arg1, varg2, condexec);
-		err += melFunction(false, "batcalc", shifts[f].op, shifts[f].fcn, shifts[f].fname, false, shifts[f].comment_v, 1, 5, ret, arg1, varg2, cand, condexec);
-		err += melFunction(false, "batcalc", shifts[f].op_ne, shifts[f].fcn_ne, shifts[f].fname_ne, false, shifts[f].comment_ne_v, 1, 4, ret, arg1, varg2, condexec);
-		err += melFunction(false, "batcalc", shifts[f].op_ne, shifts[f].fcn_ne, shifts[f].fname_ne, false, shifts[f].comment_ne_v, 1, 5, ret, arg1, varg2, cand, condexec);
-		err += melFunction(false, "batcalc", shifts[f].op, shifts[f].fcn, shifts[f].fname, false, shifts[f].comment_v_, 1, 4, ret, varg1, arg2, condexec);
-		err += melFunction(false, "batcalc", shifts[f].op, shifts[f].fcn, shifts[f].fname, false, shifts[f].comment_v_, 1, 5, ret, varg1, arg2, cand, condexec);
-		err += melFunction(false, "batcalc", shifts[f].op_ne, shifts[f].fcn_ne, shifts[f].fname_ne, false, shifts[f].comment_ne_v_, 1, 4, ret, varg1, arg2, condexec);
-		err += melFunction(false, "batcalc", shifts[f].op_ne, shifts[f].fcn_ne, shifts[f].fname_ne, false, shifts[f].comment_ne_v_, 1, 5, ret, varg1, arg2, cand, condexec);
 	    }
 	  }
 	}
@@ -2039,13 +1823,6 @@ batcalc_init(void)
 	  err += melFunction(false, "batcalc", cmps[f].op, cmps[f].fcn, cmps[f].fname, false, cmps[f].comment_v_, 1, 3, ret, varg, arg);
 	  err += melFunction(false, "batcalc", cmps[f].op, cmps[f].fcn, cmps[f].fname, false, cmps[f].comment_v_, 1, 4, ret, varg, arg, cand);
 
-	  err += melFunction(false, "batcalc", cmps[f].op, cmps[f].fcn, cmps[f].fname, false, cmps[f].comment, 1, 4, ret, arg, arg, condexec);
-	  err += melFunction(false, "batcalc", cmps[f].op, cmps[f].fcn, cmps[f].fname, false, cmps[f].comment, 1, 6, ret, arg, arg, cand, cand, condexec);
-	  err += melFunction(false, "batcalc", cmps[f].op, cmps[f].fcn, cmps[f].fname, false, cmps[f].comment_v, 1, 4, ret, arg, varg, condexec);
-	  err += melFunction(false, "batcalc", cmps[f].op, cmps[f].fcn, cmps[f].fname, false, cmps[f].comment_v, 1, 5, ret, arg, varg, cand, condexec);
-	  err += melFunction(false, "batcalc", cmps[f].op, cmps[f].fcn, cmps[f].fname, false, cmps[f].comment_v_, 1, 4, ret, varg, arg, condexec);
-	  err += melFunction(false, "batcalc", cmps[f].op, cmps[f].fcn, cmps[f].fname, false, cmps[f].comment_v_, 1, 5, ret, varg, arg, cand, condexec);
-
 	  if (strcmp(cmps[f].op,"==")==0 || strcmp(cmps[f].op,"!=")==0) {
 		mel_func_arg nil_matches = { .type = TYPE_bit };
 	  	err += melFunction(false, "batcalc", cmps[f].op, cmps[f].fcn, cmps[f].fname, false, cmps[f].comment, 1, 4, ret, arg, arg, nil_matches);
@@ -2054,13 +1831,6 @@ batcalc_init(void)
 	  	err += melFunction(false, "batcalc", cmps[f].op, cmps[f].fcn, cmps[f].fname, false, cmps[f].comment_v, 1, 5, ret, arg, varg, cand, nil_matches);
 	  	err += melFunction(false, "batcalc", cmps[f].op, cmps[f].fcn, cmps[f].fname, false, cmps[f].comment_v_, 1, 4, ret, varg, arg, nil_matches);
 	  	err += melFunction(false, "batcalc", cmps[f].op, cmps[f].fcn, cmps[f].fname, false, cmps[f].comment_v_, 1, 5, ret, varg, arg, cand, nil_matches);
-
-	  	err += melFunction(false, "batcalc", cmps[f].op, cmps[f].fcn, cmps[f].fname, false, cmps[f].comment, 1, 5, ret, arg, arg, condexec, nil_matches);
-	  	err += melFunction(false, "batcalc", cmps[f].op, cmps[f].fcn, cmps[f].fname, false, cmps[f].comment, 1, 7, ret, arg, arg, cand, cand, condexec, nil_matches);
-	  	err += melFunction(false, "batcalc", cmps[f].op, cmps[f].fcn, cmps[f].fname, false, cmps[f].comment_v, 1, 5, ret, arg, varg, condexec, nil_matches);
-	  	err += melFunction(false, "batcalc", cmps[f].op, cmps[f].fcn, cmps[f].fname, false, cmps[f].comment_v, 1, 6, ret, arg, varg, cand, condexec, nil_matches);
-	  	err += melFunction(false, "batcalc", cmps[f].op, cmps[f].fcn, cmps[f].fname, false, cmps[f].comment_v_, 1, 5, ret, varg, arg, condexec, nil_matches);
-	  	err += melFunction(false, "batcalc", cmps[f].op, cmps[f].fcn, cmps[f].fname, false, cmps[f].comment_v_, 1, 6, ret, varg, arg, cand, condexec, nil_matches);
 	  }
 
 	  /* uuid, json and mtime (date, daytime, timestamp */
@@ -2076,13 +1846,6 @@ batcalc_init(void)
 	     err += melFunction(false, "batcalc", cmps[f].op, cmps[f].fcn, cmps[f].fname, false, cmps[f].comment_v_, 1, 3, ret, varg, arg);
 	     err += melFunction(false, "batcalc", cmps[f].op, cmps[f].fcn, cmps[f].fname, false, cmps[f].comment_v_, 1, 4, ret, varg, arg, cand);
 
- 	     err += melFunction(false, "batcalc", cmps[f].op, cmps[f].fcn, cmps[f].fname, false, cmps[f].comment, 1, 4, ret, arg, arg, condexec);
-	     err += melFunction(false, "batcalc", cmps[f].op, cmps[f].fcn, cmps[f].fname, false, cmps[f].comment, 1, 6, ret, arg, arg, cand, cand, condexec);
-	     err += melFunction(false, "batcalc", cmps[f].op, cmps[f].fcn, cmps[f].fname, false, cmps[f].comment_v, 1, 4, ret, arg, varg, condexec);
-	     err += melFunction(false, "batcalc", cmps[f].op, cmps[f].fcn, cmps[f].fname, false, cmps[f].comment_v, 1, 5, ret, arg, varg, cand, condexec);
-	     err += melFunction(false, "batcalc", cmps[f].op, cmps[f].fcn, cmps[f].fname, false, cmps[f].comment_v_, 1, 4, ret, varg, arg, condexec);
-	     err += melFunction(false, "batcalc", cmps[f].op, cmps[f].fcn, cmps[f].fname, false, cmps[f].comment_v_, 1, 5, ret, varg, arg, cand, condexec);
-
 	     if (strcmp(cmps[f].op,"==")==0 || strcmp(cmps[f].op,"!=")==0) {
 		mel_func_arg nil_matches = { .type = TYPE_bit };
 	  	err += melFunction(false, "batcalc", cmps[f].op, cmps[f].fcn, cmps[f].fname, false, cmps[f].comment, 1, 4, ret, arg, arg, nil_matches);
@@ -2091,13 +1854,6 @@ batcalc_init(void)
 	  	err += melFunction(false, "batcalc", cmps[f].op, cmps[f].fcn, cmps[f].fname, false, cmps[f].comment_v, 1, 5, ret, arg, varg, cand, nil_matches);
 	  	err += melFunction(false, "batcalc", cmps[f].op, cmps[f].fcn, cmps[f].fname, false, cmps[f].comment_v_, 1, 4, ret, varg, arg, nil_matches);
 	  	err += melFunction(false, "batcalc", cmps[f].op, cmps[f].fcn, cmps[f].fname, false, cmps[f].comment_v_, 1, 5, ret, varg, arg, cand, nil_matches);
-
-	  	err += melFunction(false, "batcalc", cmps[f].op, cmps[f].fcn, cmps[f].fname, false, cmps[f].comment, 1, 5, ret, arg, arg, condexec, nil_matches);
-	  	err += melFunction(false, "batcalc", cmps[f].op, cmps[f].fcn, cmps[f].fname, false, cmps[f].comment, 1, 7, ret, arg, arg, cand, cand, condexec, nil_matches);
-	  	err += melFunction(false, "batcalc", cmps[f].op, cmps[f].fcn, cmps[f].fname, false, cmps[f].comment_v, 1, 5, ret, arg, varg, condexec, nil_matches);
-	  	err += melFunction(false, "batcalc", cmps[f].op, cmps[f].fcn, cmps[f].fname, false, cmps[f].comment_v, 1, 6, ret, arg, varg, cand, condexec, nil_matches);
-	  	err += melFunction(false, "batcalc", cmps[f].op, cmps[f].fcn, cmps[f].fname, false, cmps[f].comment_v_, 1, 5, ret, varg, arg, condexec, nil_matches);
-	  	err += melFunction(false, "batcalc", cmps[f].op, cmps[f].fcn, cmps[f].fname, false, cmps[f].comment_v_, 1, 6, ret, varg, arg, cand, condexec, nil_matches);
 	     }
 	  }
 
@@ -2119,13 +1875,6 @@ batcalc_init(void)
 		err += melFunction(false, "batcalc", cmps[f].op, cmps[f].fcn, cmps[f].fname, false, cmps[f].comment_v_, 1, 3, ret, varg1, arg2);
 		err += melFunction(false, "batcalc", cmps[f].op, cmps[f].fcn, cmps[f].fname, false, cmps[f].comment_v_, 1, 4, ret, varg1, arg2, cand);
 
-		err += melFunction(false, "batcalc", cmps[f].op, cmps[f].fcn, cmps[f].fname, false, cmps[f].comment, 1, 4, ret, arg1, arg2, condexec);
-		err += melFunction(false, "batcalc", cmps[f].op, cmps[f].fcn, cmps[f].fname, false, cmps[f].comment, 1, 6, ret, arg1, arg2, cand, cand, condexec);
-		err += melFunction(false, "batcalc", cmps[f].op, cmps[f].fcn, cmps[f].fname, false, cmps[f].comment_v, 1, 4, ret, arg1, varg2, condexec);
-		err += melFunction(false, "batcalc", cmps[f].op, cmps[f].fcn, cmps[f].fname, false, cmps[f].comment_v, 1, 5, ret, arg1, varg2, cand, condexec);
-		err += melFunction(false, "batcalc", cmps[f].op, cmps[f].fcn, cmps[f].fname, false, cmps[f].comment_v_, 1, 4, ret, varg1, arg2, condexec);
-		err += melFunction(false, "batcalc", cmps[f].op, cmps[f].fcn, cmps[f].fname, false, cmps[f].comment_v_, 1, 5, ret, varg1, arg2, cand, condexec);
-
 	  	if (strcmp(cmps[f].op,"==")==0 || strcmp(cmps[f].op,"!=")==0) {
 			mel_func_arg nil_matches = { .type = TYPE_bit };
 
@@ -2135,13 +1884,6 @@ batcalc_init(void)
 			err += melFunction(false, "batcalc", cmps[f].op, cmps[f].fcn, cmps[f].fname, false, cmps[f].comment_v, 1, 4, ret, arg1, varg2, cand, nil_matches);
 			err += melFunction(false, "batcalc", cmps[f].op, cmps[f].fcn, cmps[f].fname, false, cmps[f].comment_v_, 1, 3, ret, varg1, arg2, nil_matches);
 			err += melFunction(false, "batcalc", cmps[f].op, cmps[f].fcn, cmps[f].fname, false, cmps[f].comment_v_, 1, 4, ret, varg1, arg2, cand, nil_matches);
-
-			err += melFunction(false, "batcalc", cmps[f].op, cmps[f].fcn, cmps[f].fname, false, cmps[f].comment, 1, 4, ret, arg1, arg2, condexec, nil_matches);
-			err += melFunction(false, "batcalc", cmps[f].op, cmps[f].fcn, cmps[f].fname, false, cmps[f].comment, 1, 6, ret, arg1, arg2, cand, cand, condexec, nil_matches);
-			err += melFunction(false, "batcalc", cmps[f].op, cmps[f].fcn, cmps[f].fname, false, cmps[f].comment_v, 1, 4, ret, arg1, varg2, condexec, nil_matches);
-			err += melFunction(false, "batcalc", cmps[f].op, cmps[f].fcn, cmps[f].fname, false, cmps[f].comment_v, 1, 5, ret, arg1, varg2, cand, condexec, nil_matches);
-			err += melFunction(false, "batcalc", cmps[f].op, cmps[f].fcn, cmps[f].fname, false, cmps[f].comment_v_, 1, 4, ret, varg1, arg2, condexec, nil_matches);
-			err += melFunction(false, "batcalc", cmps[f].op, cmps[f].fcn, cmps[f].fname, false, cmps[f].comment_v_, 1, 5, ret, varg1, arg2, cand, condexec, nil_matches);
 		}
 	    }
 	  }
@@ -2174,13 +1916,6 @@ batcalc_init(void)
 		err += melFunction(false, "batcalc", cmp.op, cmp.fcn, cmp.fname, false, cmp.comment_v, 1, 4, ret, arg, varg, cand);
 		err += melFunction(false, "batcalc", cmp.op, cmp.fcn, cmp.fname, false, cmp.comment_v_, 1, 3, ret, varg, arg);
 		err += melFunction(false, "batcalc", cmp.op, cmp.fcn, cmp.fname, false, cmp.comment_v_, 1, 4, ret, varg, arg, cand);
-
-		err += melFunction(false, "batcalc", cmp.op, cmp.fcn, cmp.fname, false, cmp.comment, 1, 4, ret, arg, arg, condexec);
-		err += melFunction(false, "batcalc", cmp.op, cmp.fcn, cmp.fname, false, cmp.comment, 1, 6, ret, arg, arg, cand, cand, condexec);
-		err += melFunction(false, "batcalc", cmp.op, cmp.fcn, cmp.fname, false, cmp.comment_v, 1, 4, ret, arg, varg, condexec);
-		err += melFunction(false, "batcalc", cmp.op, cmp.fcn, cmp.fname, false, cmp.comment_v, 1, 5, ret, arg, varg, cand, condexec);
-		err += melFunction(false, "batcalc", cmp.op, cmp.fcn, cmp.fname, false, cmp.comment_v_, 1, 4, ret, varg, arg, condexec);
-		err += melFunction(false, "batcalc", cmp.op, cmp.fcn, cmp.fname, false, cmp.comment_v_, 1, 5, ret, varg, arg, cand, condexec);
 	}
 	for(tp1 = integer; tp1 < extra && !err; tp1++) {
 	    for(tp2 = integer; tp2 < extra && !err; tp2++) {
@@ -2196,13 +1931,6 @@ batcalc_init(void)
 		err += melFunction(false, "batcalc", cmp.op, cmp.fcn, cmp.fname, false, cmp.comment_v, 1, 4, ret, arg1, varg2, cand);
 		err += melFunction(false, "batcalc", cmp.op, cmp.fcn, cmp.fname, false, cmp.comment_v_, 1, 3, ret, varg1, arg2);
 		err += melFunction(false, "batcalc", cmp.op, cmp.fcn, cmp.fname, false, cmp.comment_v_, 1, 4, ret, varg1, arg2, cand);
-
-		err += melFunction(false, "batcalc", cmp.op, cmp.fcn, cmp.fname, false, cmp.comment, 1, 4, ret, arg1, arg2, condexec);
-		err += melFunction(false, "batcalc", cmp.op, cmp.fcn, cmp.fname, false, cmp.comment, 1, 6, ret, arg1, arg2, cand, cand, condexec);
-		err += melFunction(false, "batcalc", cmp.op, cmp.fcn, cmp.fname, false, cmp.comment_v, 1, 4, ret, arg1, varg2, condexec);
-		err += melFunction(false, "batcalc", cmp.op, cmp.fcn, cmp.fname, false, cmp.comment_v, 1, 5, ret, arg1, varg2, cand, condexec);
-		err += melFunction(false, "batcalc", cmp.op, cmp.fcn, cmp.fname, false, cmp.comment_v_, 1, 4, ret, varg1, arg2, condexec);
-		err += melFunction(false, "batcalc", cmp.op, cmp.fcn, cmp.fname, false, cmp.comment_v_, 1, 5, ret, varg1, arg2, cand, condexec);
 	    }
 	}
 	for(tp = integer; tp < extra && !err; tp++) {
@@ -2320,10 +2048,6 @@ batcalc_init(void)
 	int typeopslen = 9;
 #endif
 	for(int t = 0; t<typeopslen; t++) {
-#ifdef HAVE_HGE
-		if (!have_hge && strcmp(typeops[t].name, "hge")==0)
-			continue;
-#endif
 		/* from any 2 string */
 		if (strcmp(typeops[t].name, "str")==0) {
 			mel_func_arg ret = { .type = typeops[t].type, .isbat =1 };
@@ -2333,17 +2057,8 @@ batcalc_init(void)
 			err += melFunction(false, "batcalc", typeops[t].name, typeops[t].fcn, typeops[t].fname, false, "", 1, 3, ret, arg, cand);
 			err += melFunction(false, "batcalc", typeops[t].name_ne, typeops[t].fcn_ne, typeops[t].fname_ne, false, "", 1, 2, ret, arg);
 			err += melFunction(false, "batcalc", typeops[t].name_ne, typeops[t].fcn_ne, typeops[t].fname_ne, false, "", 1, 3, ret, arg, cand);
-
-			err += melFunction(false, "batcalc", typeops[t].name, typeops[t].fcn, typeops[t].fname, false, "", 1, 3, ret, arg, condexec);
-			err += melFunction(false, "batcalc", typeops[t].name, typeops[t].fcn, typeops[t].fname, false, "", 1, 4, ret, arg, cand, condexec);
-			err += melFunction(false, "batcalc", typeops[t].name_ne, typeops[t].fcn_ne, typeops[t].fname_ne, false, "", 1, 3, ret, arg, condexec);
-			err += melFunction(false, "batcalc", typeops[t].name_ne, typeops[t].fcn_ne, typeops[t].fname_ne, false, "", 1, 4, ret, arg, cand, condexec);
 		} else {
 		    for(int p = 0; p<typeopslen; p++) {
-#ifdef HAVE_HGE
-			if (!have_hge && strcmp(typeops[p].name, "hge")==0)
-				continue;
-#endif
 			mel_func_arg ret = { .type = typeops[t].type, .isbat =1 };
 			mel_func_arg arg = { .type = typeops[p].type, .isbat =1 };
 
@@ -2351,11 +2066,6 @@ batcalc_init(void)
 			err += melFunction(false, "batcalc", typeops[t].name, typeops[t].fcn, typeops[t].fname, false, "", 1, 3, ret, arg, cand);
 			err += melFunction(false, "batcalc", typeops[t].name_ne, typeops[t].fcn_ne, typeops[t].fname_ne, false, "", 1, 2, ret, arg);
 			err += melFunction(false, "batcalc", typeops[t].name_ne, typeops[t].fcn_ne, typeops[t].fname_ne, false, "", 1, 3, ret, arg, cand);
-
-			err += melFunction(false, "batcalc", typeops[t].name, typeops[t].fcn, typeops[t].fname, false, "", 1, 3, ret, arg, condexec);
-			err += melFunction(false, "batcalc", typeops[t].name, typeops[t].fcn, typeops[t].fname, false, "", 1, 4, ret, arg, cand, condexec);
-			err += melFunction(false, "batcalc", typeops[t].name_ne, typeops[t].fcn_ne, typeops[t].fname_ne, false, "", 1, 3, ret, arg, condexec);
-			err += melFunction(false, "batcalc", typeops[t].name_ne, typeops[t].fcn_ne, typeops[t].fname_ne, false, "", 1, 4, ret, arg, cand, condexec);
 		    }
 		}
 	}
@@ -2366,94 +2076,50 @@ static mel_func batcalc_init_funcs[] = {
  /* batcalc */
  pattern("batcalc", "isnil", CMDbatISNIL, false, "Unary check for nil over the tail of the bat", args(1,2, batarg("",bit),batargany("b",0))),
  pattern("batcalc", "isnil", CMDbatISNIL, false, "Unary check for nil over the tail of the bat with candidates list", args(1,3, batarg("",bit),batargany("b",0),batarg("s",oid))),
- pattern("batcalc", "isnil", CMDbatISNIL, false, "Unary check for nil over the tail of the bat", args(1,3, batarg("",bit),batargany("b",0),batarg("r",bit))),
- pattern("batcalc", "isnil", CMDbatISNIL, false, "Unary check for nil over the tail of the bat with candidates list", args(1,4, batarg("",bit),batargany("b",0),batarg("s",oid),batarg("r",bit))),
  pattern("batcalc", "isnotnil", CMDbatISNOTNIL, false, "Unary check for notnil over the tail of the bat", args(1,2, batarg("",bit),batargany("b",0))),
  pattern("batcalc", "isnotnil", CMDbatISNOTNIL, false, "Unary check for notnil over the tail of the bat with candidates list", args(1,3, batarg("",bit),batargany("b",0),batarg("s",oid))),
- pattern("batcalc", "isnotnil", CMDbatISNOTNIL, false, "Unary check for notnil over the tail of the bat", args(1,3, batarg("",bit),batargany("b",0),batarg("r",bit))),
- pattern("batcalc", "isnotnil", CMDbatISNOTNIL, false, "Unary check for notnil over the tail of the bat with candidates list", args(1,4, batarg("",bit),batargany("b",0),batarg("s",oid),batarg("r",bit))),
  pattern("batcalc", "min", CMDbatMIN, false, "Return bat with minimum value of each pair of inputs", args(1,3, batargany("",1),batargany("b1",1),batargany("b2",1))),
  pattern("batcalc", "min", CMDbatMIN, false, "Return bat with minimum value of each pair of inputs", args(1,5, batargany("",1),batargany("b1",1),batargany("b2",1),batarg("s1",oid),batarg("s2",oid))),
  pattern("batcalc", "min", CMDbatMIN, false, "Return bat with minimum value of each pair of inputs", args(1,3, batargany("",1),batargany("b",1),argany("v",1))),
  pattern("batcalc", "min", CMDbatMIN, false, "Return bat with minimum value of each pair of inputs", args(1,4, batargany("",1),batargany("b",1),argany("v",1),batarg("s",oid))),
  pattern("batcalc", "min", CMDbatMIN, false, "Return bat with minimum value of each pair of inputs", args(1,3, batargany("",1),argany("v",1),batargany("b",1))),
  pattern("batcalc", "min", CMDbatMIN, false, "Return bat with minimum value of each pair of inputs", args(1,4, batargany("",1),argany("v",1),batargany("b",1),batarg("s",oid))),
- pattern("batcalc", "min", CMDbatMIN, false, "Return bat with minimum value of each pair of inputs", args(1,4, batargany("",1),batargany("b1",1),batargany("b2",1),batarg("r",bit))),
- pattern("batcalc", "min", CMDbatMIN, false, "Return bat with minimum value of each pair of inputs", args(1,6, batargany("",1),batargany("b1",1),batargany("b2",1),batarg("s1",oid),batarg("s2",oid),batarg("r",bit))),
- pattern("batcalc", "min", CMDbatMIN, false, "Return bat with minimum value of each pair of inputs", args(1,4, batargany("",1),batargany("b",1),argany("v",1),batarg("r",bit))),
- pattern("batcalc", "min", CMDbatMIN, false, "Return bat with minimum value of each pair of inputs", args(1,5, batargany("",1),batargany("b",1),argany("v",1),batarg("s",oid),batarg("r",bit))),
- pattern("batcalc", "min", CMDbatMIN, false, "Return bat with minimum value of each pair of inputs", args(1,4, batargany("",1),argany("v",1),batargany("b",1),batarg("r",bit))),
- pattern("batcalc", "min", CMDbatMIN, false, "Return bat with minimum value of each pair of inputs", args(1,5, batargany("",1),argany("v",1),batargany("b",1),batarg("s",oid),batarg("r",bit))),
  pattern("batcalc", "min_no_nil", CMDbatMIN_no_nil, false, "Return bat with minimum value of each pair of inputs, ignoring nil values", args(1,3, batargany("",1),batargany("b1",1),batargany("b2",1))),
  pattern("batcalc", "min_no_nil", CMDbatMIN_no_nil, false, "Return bat with minimum value of each pair of inputs, ignoring nil values", args(1,5, batargany("",1),batargany("b1",1),batargany("b2",1),batarg("s1",oid),batarg("s2",oid))),
  pattern("batcalc", "min_no_nil", CMDbatMIN_no_nil, false, "Return bat with minimum value of each pair of inputs, ignoring nil values", args(1,3, batargany("",1),batargany("b",1),argany("v",1))),
  pattern("batcalc", "min_no_nil", CMDbatMIN_no_nil, false, "Return bat with minimum value of each pair of inputs, ignoring nil values", args(1,4, batargany("",1),batargany("b",1),argany("v",1),batarg("s",oid))),
  pattern("batcalc", "min_no_nil", CMDbatMIN_no_nil, false, "Return bat with minimum value of each pair of inputs, ignoring nil values", args(1,3, batargany("",1),argany("v",1),batargany("b",1))),
  pattern("batcalc", "min_no_nil", CMDbatMIN_no_nil, false, "Return bat with minimum value of each pair of inputs, ignoring nil values", args(1,4, batargany("",1),argany("v",1),batargany("b",1),batarg("s",oid))),
- pattern("batcalc", "min_no_nil", CMDbatMIN_no_nil, false, "Return bat with minimum value of each pair of inputs, ignoring nil values", args(1,4, batargany("",1),batargany("b1",1),batargany("b2",1),batarg("r",bit))),
- pattern("batcalc", "min_no_nil", CMDbatMIN_no_nil, false, "Return bat with minimum value of each pair of inputs, ignoring nil values", args(1,6, batargany("",1),batargany("b1",1),batargany("b2",1),batarg("s1",oid),batarg("s2",oid),batarg("r",bit))),
- pattern("batcalc", "min_no_nil", CMDbatMIN_no_nil, false, "Return bat with minimum value of each pair of inputs, ignoring nil values", args(1,4, batargany("",1),batargany("b",1),argany("v",1),batarg("r",bit))),
- pattern("batcalc", "min_no_nil", CMDbatMIN_no_nil, false, "Return bat with minimum value of each pair of inputs, ignoring nil values", args(1,5, batargany("",1),batargany("b",1),argany("v",1),batarg("s",oid),batarg("r",bit))),
- pattern("batcalc", "min_no_nil", CMDbatMIN_no_nil, false, "Return bat with minimum value of each pair of inputs, ignoring nil values", args(1,4, batargany("",1),argany("v",1),batargany("b",1),batarg("r",bit))),
- pattern("batcalc", "min_no_nil", CMDbatMIN_no_nil, false, "Return bat with minimum value of each pair of inputs, ignoring nil values", args(1,5, batargany("",1),argany("v",1),batargany("b",1),batarg("s",oid),batarg("r",bit))),
  pattern("batcalc", "max", CMDbatMAX, false, "Return bat with maximum value of each pair of inputs", args(1,3, batargany("",1),batargany("b1",1),batargany("b2",1))),
  pattern("batcalc", "max", CMDbatMAX, false, "Return bat with maximum value of each pair of inputs", args(1,5, batargany("",1),batargany("b1",1),batargany("b2",1),batarg("s1",oid),batarg("s2",oid))),
  pattern("batcalc", "max", CMDbatMAX, false, "Return bat with maximum value of each pair of inputs", args(1,3, batargany("",1),batargany("b",1),argany("v",1))),
  pattern("batcalc", "max", CMDbatMAX, false, "Return bat with maximum value of each pair of inputs", args(1,4, batargany("",1),batargany("b",1),argany("v",1),batarg("s",oid))),
  pattern("batcalc", "max", CMDbatMAX, false, "Return bat with maximum value of each pair of inputs", args(1,3, batargany("",1),argany("v",1),batargany("b",1))),
  pattern("batcalc", "max", CMDbatMAX, false, "Return bat with maximum value of each pair of inputs", args(1,4, batargany("",1),argany("v",1),batargany("b",1),batarg("s",oid))),
- pattern("batcalc", "max", CMDbatMAX, false, "Return bat with maximum value of each pair of inputs", args(1,4, batargany("",1),batargany("b1",1),batargany("b2",1),batarg("r",bit))),
- pattern("batcalc", "max", CMDbatMAX, false, "Return bat with maximum value of each pair of inputs", args(1,6, batargany("",1),batargany("b1",1),batargany("b2",1),batarg("s1",oid),batarg("s2",oid),batarg("r",bit))),
- pattern("batcalc", "max", CMDbatMAX, false, "Return bat with maximum value of each pair of inputs", args(1,4, batargany("",1),batargany("b",1),argany("v",1),batarg("r",bit))),
- pattern("batcalc", "max", CMDbatMAX, false, "Return bat with maximum value of each pair of inputs", args(1,5, batargany("",1),batargany("b",1),argany("v",1),batarg("s",oid),batarg("r",bit))),
- pattern("batcalc", "max", CMDbatMAX, false, "Return bat with maximum value of each pair of inputs", args(1,4, batargany("",1),argany("v",1),batargany("b",1),batarg("r",bit))),
- pattern("batcalc", "max", CMDbatMAX, false, "Return bat with maximum value of each pair of inputs", args(1,5, batargany("",1),argany("v",1),batargany("b",1),batarg("s",oid),batarg("r",bit))),
  pattern("batcalc", "max_no_nil", CMDbatMAX_no_nil, false, "Return bat with maximum value of each pair of inputs, ignoring nil values", args(1,3, batargany("",1),batargany("b1",1),batargany("b2",1))),
  pattern("batcalc", "max_no_nil", CMDbatMAX_no_nil, false, "Return bat with maximum value of each pair of inputs, ignoring nil values", args(1,5, batargany("",1),batargany("b1",1),batargany("b2",1),batarg("s1",oid),batarg("s2",oid))),
  pattern("batcalc", "max_no_nil", CMDbatMAX_no_nil, false, "Return bat with maximum value of each pair of inputs, ignoring nil values", args(1,3, batargany("",1),batargany("b",1),argany("v",1))),
  pattern("batcalc", "max_no_nil", CMDbatMAX_no_nil, false, "Return bat with maximum value of each pair of inputs, ignoring nil values", args(1,4, batargany("",1),batargany("b",1),argany("v",1),batarg("s",oid))),
  pattern("batcalc", "max_no_nil", CMDbatMAX_no_nil, false, "Return bat with maximum value of each pair of inputs, ignoring nil values", args(1,3, batargany("",1),argany("v",1),batargany("b",1))),
  pattern("batcalc", "max_no_nil", CMDbatMAX_no_nil, false, "Return bat with maximum value of each pair of inputs, ignoring nil values", args(1,4, batargany("",1),argany("v",1),batargany("b",1),batarg("s",oid))),
- pattern("batcalc", "max_no_nil", CMDbatMAX_no_nil, false, "Return bat with maximum value of each pair of inputs, ignoring nil values", args(1,4, batargany("",1),batargany("b1",1),batargany("b2",1),batarg("r",bit))),
- pattern("batcalc", "max_no_nil", CMDbatMAX_no_nil, false, "Return bat with maximum value of each pair of inputs, ignoring nil values", args(1,6, batargany("",1),batargany("b1",1),batargany("b2",1),batarg("s1",oid),batarg("s2",oid),batarg("r",bit))),
- pattern("batcalc", "max_no_nil", CMDbatMAX_no_nil, false, "Return bat with maximum value of each pair of inputs, ignoring nil values", args(1,4, batargany("",1),batargany("b",1),argany("v",1),batarg("r",bit))),
- pattern("batcalc", "max_no_nil", CMDbatMAX_no_nil, false, "Return bat with maximum value of each pair of inputs, ignoring nil values", args(1,5, batargany("",1),batargany("b",1),argany("v",1),batarg("s",oid),batarg("r",bit))),
- pattern("batcalc", "max_no_nil", CMDbatMAX_no_nil, false, "Return bat with maximum value of each pair of inputs, ignoring nil values", args(1,4, batargany("",1),argany("v",1),batargany("b",1),batarg("r",bit))),
- pattern("batcalc", "max_no_nil", CMDbatMAX_no_nil, false, "Return bat with maximum value of each pair of inputs, ignoring nil values", args(1,5, batargany("",1),argany("v",1),batargany("b",1),batarg("s",oid),batarg("r",bit))),
 
  pattern("batcalc", "+", CMDbatADD, false, "Return concatenation of B1 and B2 with candidates list", args(1,5, batarg("",str),batarg("b1",str),batarg("b2",str),batarg("s1",oid),batarg("s2",oid))),
  pattern("batcalc", "+", CMDbatADD, false, "Return concatenation of B and V with candidates list", args(1,4, batarg("",str),batarg("b",str),arg("v",str),batarg("s",oid))),
  pattern("batcalc", "+", CMDbatADD, false, "Return concatenation of V and B with candidates list", args(1,4, batarg("",str),arg("v",str),batarg("b",str),batarg("s",oid))),
- pattern("batcalc", "+", CMDbatADD, false, "Return concatenation of B1 and B2 with candidates list", args(1,6, batarg("",str),batarg("b1",str),batarg("b2",str),batarg("s1",oid),batarg("s2",oid),batarg("r",bit))),
- pattern("batcalc", "+", CMDbatADD, false, "Return concatenation of B and V with candidates list", args(1,5, batarg("",str),batarg("b",str),arg("v",str),batarg("s",oid),batarg("r",bit))),
- pattern("batcalc", "+", CMDbatADD, false, "Return concatenation of V and B with candidates list", args(1,5, batarg("",str),arg("v",str),batarg("b",str),batarg("s",oid),batarg("r",bit))),
 
  pattern("batmmath", "fmod", CMDbatMODsignal, false, "", args(1,3, batarg("",dbl),batarg("x",dbl),arg("y",dbl))),
- pattern("batmmath", "fmod", CMDbatMODsignal, false, "", args(1,4, batarg("",dbl),batarg("x",dbl),arg("y",dbl),batarg("r",bit))),
  pattern("batmmath", "fmod", CMDbatMODsignal, false, "", args(1,4, batarg("",dbl),batarg("x",dbl),arg("y",dbl),batarg("s",oid))),
- pattern("batmmath", "fmod", CMDbatMODsignal, false, "", args(1,5, batarg("",dbl),batarg("x",dbl),arg("y",dbl),batarg("s",oid),batarg("r",bit))),
  pattern("batmmath", "fmod", CMDbatMODsignal, false, "", args(1,3, batarg("",flt),batarg("x",flt),arg("y",flt))),
- pattern("batmmath", "fmod", CMDbatMODsignal, false, "", args(1,4, batarg("",flt),batarg("x",flt),arg("y",flt),batarg("r",bit))),
  pattern("batmmath", "fmod", CMDbatMODsignal, false, "", args(1,4, batarg("",flt),batarg("x",flt),arg("y",flt),batarg("s",oid))),
- pattern("batmmath", "fmod", CMDbatMODsignal, false, "", args(1,5, batarg("",flt),batarg("x",flt),arg("y",flt),batarg("s",oid),batarg("r",bit))),
 
  pattern("batcalc", "between", CMDbatBETWEEN, false, "B between V1 and V2 (or vice versa)", args(1,9, batarg("",bit),batargany("b",1),batargany("v1",1),batargany("v2",1),arg("sym",bit),arg("linc",bit),arg("hinc",bit),arg("nils_false",bit),arg("anti",bit))),
- pattern("batcalc", "between", CMDbatBETWEEN, false, "B between V1 and V2 (or vice versa) with candidate list", args(1,12, batarg("",bit),batargany("b",1),batargany("v1",1),batargany("v2",1),batarg("s",oid),batarg("s1",oid),batarg("s2",oid),arg("sym",bit),arg("linc",bit),arg("hinc",bit),arg("nils_false",bit),arg("anti",bit))),
+ pattern("batcalc", "between", CMDbatBETWEEN, false, "B between V1 and V2 (or vice versa) with candidates list", args(1,12, batarg("",bit),batargany("b",1),batargany("v1",1),batargany("v2",1),batarg("s",oid),batarg("s1",oid),batarg("s2",oid),arg("sym",bit),arg("linc",bit),arg("hinc",bit),arg("nils_false",bit),arg("anti",bit))),
  pattern("batcalc", "between", CMDbatBETWEEN, false, "B between V1 and V2 (or vice versa)", args(1,9, batarg("",bit),batargany("b",1),batargany("v1",1),argany("v2",1),arg("sym",bit),arg("linc",bit),arg("hinc",bit),arg("nils_false",bit),arg("anti",bit))),
- pattern("batcalc", "between", CMDbatBETWEEN, false, "B between V1 and V2 (or vice versa) with candidate list", args(1,11, batarg("",bit),batargany("b",1),batargany("v1",1),argany("v2",1),batarg("s",oid),batarg("s1",oid),arg("sym",bit),arg("linc",bit),arg("hinc",bit),arg("nils_false",bit),arg("anti",bit))),
+ pattern("batcalc", "between", CMDbatBETWEEN, false, "B between V1 and V2 (or vice versa) with candidates list", args(1,11, batarg("",bit),batargany("b",1),batargany("v1",1),argany("v2",1),batarg("s",oid),batarg("s1",oid),arg("sym",bit),arg("linc",bit),arg("hinc",bit),arg("nils_false",bit),arg("anti",bit))),
  pattern("batcalc", "between", CMDbatBETWEEN, false, "B between V1 and V2 (or vice versa)", args(1,9, batarg("",bit),batargany("b",1),argany("v1",1),batargany("v2",1),arg("sym",bit),arg("linc",bit),arg("hinc",bit),arg("nils_false",bit),arg("anti",bit))),
- pattern("batcalc", "between", CMDbatBETWEEN, false, "B between V1 and V2 (or vice versa) with candidate list", args(1,11, batarg("",bit),batargany("b",1),argany("v1",1),batargany("v2",1),batarg("s",oid),batarg("s2",oid),arg("sym",bit),arg("linc",bit),arg("hinc",bit),arg("nils_false",bit),arg("anti",bit))),
+ pattern("batcalc", "between", CMDbatBETWEEN, false, "B between V1 and V2 (or vice versa) with candidates list", args(1,11, batarg("",bit),batargany("b",1),argany("v1",1),batargany("v2",1),batarg("s",oid),batarg("s2",oid),arg("sym",bit),arg("linc",bit),arg("hinc",bit),arg("nils_false",bit),arg("anti",bit))),
  pattern("batcalc", "between", CMDbatBETWEEN, false, "B between V1 and V2 (or vice versa)", args(1,9, batarg("",bit),batargany("b",1),argany("v1",1),argany("v2",1),arg("sym",bit),arg("linc",bit),arg("hinc",bit),arg("nils_false",bit),arg("anti",bit))),
- pattern("batcalc", "between", CMDbatBETWEEN, false, "B between V1 and V2 (or vice versa) with candidate list", args(1,10, batarg("",bit),batargany("b",1),argany("v1",1),argany("v2",1),batarg("s",oid),arg("sym",bit),arg("linc",bit),arg("hinc",bit),arg("nils_false",bit),arg("anti",bit))),
-
- pattern("batcalc", "between", CMDbatBETWEEN, false, "B between V1 and V2 (or vice versa)", args(1,10, batarg("",bit),batargany("b",1),batargany("v1",1),batargany("v2",1),batarg("ce",bit),arg("sym",bit),arg("linc",bit),arg("hinc",bit),arg("nils_false",bit),arg("anti",bit))),
- pattern("batcalc", "between", CMDbatBETWEEN, false, "B between V1 and V2 (or vice versa) with candidate list", args(1,13, batarg("",bit),batargany("b",1),batargany("v1",1),batargany("v2",1),batarg("s",oid),batarg("s1",oid),batarg("s2",oid),batarg("ce",bit),arg("sym",bit),arg("linc",bit),arg("hinc",bit),arg("nils_false",bit),arg("anti",bit))),
- pattern("batcalc", "between", CMDbatBETWEEN, false, "B between V1 and V2 (or vice versa)", args(1,10, batarg("",bit),batargany("b",1),batargany("v1",1),argany("v2",1),batarg("ce",bit),arg("sym",bit),arg("linc",bit),arg("hinc",bit),arg("nils_false",bit),arg("anti",bit))),
- pattern("batcalc", "between", CMDbatBETWEEN, false, "B between V1 and V2 (or vice versa) with candidate list", args(1,12, batarg("",bit),batargany("b",1),batargany("v1",1),argany("v2",1),batarg("s",oid),batarg("s1",oid),batarg("ce",bit),arg("sym",bit),arg("linc",bit),arg("hinc",bit),arg("nils_false",bit),arg("anti",bit))),
- pattern("batcalc", "between", CMDbatBETWEEN, false, "B between V1 and V2 (or vice versa)", args(1,10, batarg("",bit),batargany("b",1),argany("v1",1),batargany("v2",1),batarg("ce",bit),arg("sym",bit),arg("linc",bit),arg("hinc",bit),arg("nils_false",bit),arg("anti",bit))),
- pattern("batcalc", "between", CMDbatBETWEEN, false, "B between V1 and V2 (or vice versa) with candidate list", args(1,12, batarg("",bit),batargany("b",1),argany("v1",1),batargany("v2",1),batarg("s",oid),batarg("s2",oid),batarg("ce",bit),arg("sym",bit),arg("linc",bit),arg("hinc",bit),arg("nils_false",bit),arg("anti",bit))),
- pattern("batcalc", "between", CMDbatBETWEEN, false, "B between V1 and V2 (or vice versa)", args(1,10, batarg("",bit),batargany("b",1),argany("v1",1),argany("v2",1),batarg("ce",bit),arg("sym",bit),arg("linc",bit),arg("hinc",bit),arg("nils_false",bit),arg("anti",bit))),
- pattern("batcalc", "between", CMDbatBETWEEN, false, "B between V1 and V2 (or vice versa) with candidate list", args(1,11, batarg("",bit),batargany("b",1),argany("v1",1),argany("v2",1),batarg("s",oid),batarg("ce",bit),arg("sym",bit),arg("linc",bit),arg("hinc",bit),arg("nils_false",bit),arg("anti",bit))),
+ pattern("batcalc", "between", CMDbatBETWEEN, false, "B between V1 and V2 (or vice versa) with candidates list", args(1,10, batarg("",bit),batargany("b",1),argany("v1",1),argany("v2",1),batarg("s",oid),arg("sym",bit),arg("linc",bit),arg("hinc",bit),arg("nils_false",bit),arg("anti",bit))),
 
  pattern("aggr", "avg", CMDcalcavg, false, "Gives the avg of all tail values", args(1,2, arg("",dbl),batargany("b",2))),
  pattern("aggr", "avg", CMDcalcavg, false, "Gives the avg of all tail values", args(1,3, arg("",dbl),batargany("b",2),arg("scale",int))),

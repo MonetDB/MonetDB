@@ -1,0 +1,3 @@
+user=monetdb
+password=monetdb
+language=sql

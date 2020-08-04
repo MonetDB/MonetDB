@@ -80,7 +80,7 @@ stdout of test 'storagemodel` in directory 'sql/test/BugTracker-2016` itself:
 #update storagemodelinput set "distinct" =10 where "table" ='bug3923' and "column" ='i';
 [ 1	]
 #select * from storagemodel where "table" = 'bug3923';
-% sys.storagemodel,	sys.storagemodel,	sys.storagemodel,	sys.storagemodel,	sys.storagemodel,	sys.storagemodel,	sys.storagemodel,	sys.storagemodel,	sys.storagemodel,	sys.storagemodel,	sys.storagemodel,	sys.storagemodel,	sys.storagemodel # table_name
+% sys.storagemodel,	sys.storagemodel,	sys.storagemodel,	sys.storagemodel,	sys.storagemodel,	sys.storagemodel,	sys.storagemodel,	sys.storagemodel,	.storagemodel,	.storagemodel,	sys.storagemodel,	sys.storagemodel,	sys.storagemodel # table_name
 % schema,	table,	column,	type,	count,	columnsize,	heapsize,	hashsize,	imprintsize,	orderidxsize,	sorted,	unique,	isacolumn # name
 % varchar,	varchar,	varchar,	varchar,	bigint,	bigint,	bigint,	bigint,	bigint,	bigint,	boolean,	boolean,	boolean # type
 % 3,	7,	1,	3,	5,	5,	4,	1,	4,	1,	5,	5,	5 # length
@@ -105,7 +105,7 @@ stdout of test 'storagemodel` in directory 'sql/test/BugTracker-2016` itself:
 #update storagemodelinput set "distinct" =10 where "table" ='bug3923' and "column" ='i';
 [ 1	]
 #select * from sys.storagemodel where "table" = 'bug3923';
-% sys.storagemodel,	sys.storagemodel,	sys.storagemodel,	sys.storagemodel,	sys.storagemodel,	sys.storagemodel,	sys.storagemodel,	sys.storagemodel,	sys.storagemodel,	sys.storagemodel,	sys.storagemodel,	sys.storagemodel,	sys.storagemodel # table_name
+% sys.storagemodel,	sys.storagemodel,	sys.storagemodel,	sys.storagemodel,	sys.storagemodel,	sys.storagemodel,	sys.storagemodel,	sys.storagemodel,	.storagemodel,	.storagemodel,	sys.storagemodel,	sys.storagemodel,	sys.storagemodel # table_name
 % schema,	table,	column,	type,	count,	columnsize,	heapsize,	hashsize,	imprintsize,	orderidxsize,	sorted,	unique,	isacolumn # name
 % varchar,	varchar,	varchar,	varchar,	bigint,	bigint,	bigint,	bigint,	bigint,	bigint,	boolean,	boolean,	boolean # type
 % 13,	7,	1,	3,	5,	5,	4,	1,	4,	1,	5,	5,	5 # length

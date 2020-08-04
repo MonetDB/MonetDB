@@ -52,7 +52,7 @@ stdout of test 'sqlsmith01` in directory 'sql/test/BugTracker-2017` itself:
 #from
 #  another_T as ref_20
 #where ref_20.col1 is not NULL; --empty
-% sys.,	sys. # table_name
+% sys.,	. # table_name
 % c0,	c1 # name
 % int,	bigint # type
 % 4,	4 # length

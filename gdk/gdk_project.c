@@ -34,6 +34,7 @@ project_##TYPE(BAT *restrict bn, BAT *restrict l,			\
 	oid r1seq, r1end;						\
 	oid r2seq, r2end;						\
 									\
+	MT_thread_setalgorithm(__func__);				\
 	r1t = (const TYPE *) Tloc(r1, 0);				\
 	r2t = r2 ? (const TYPE *) Tloc(r2, 0) : NULL;			\
 	bt = (TYPE *) Tloc(bn, 0);					\
@@ -118,6 +119,7 @@ project_oid(BAT *restrict bn, BAT *restrict l, struct canditer *restrict lci,
 	const oid *restrict r2t = NULL;
 	struct canditer r1ci = {0}, r2ci = {0};
 
+	MT_thread_setalgorithm(__func__);
 	if (r1->ttype == TYPE_void && r1->tvheap != NULL)
 		canditer_init(&r1ci, NULL, r1);
 	else if (!BATtdense(r1))
@@ -224,6 +226,7 @@ project_any(BAT *restrict bn, BAT *restrict l, struct canditer *restrict ci,
 	oid r1seq, r1end;
 	oid r2seq, r2end;
 
+	MT_thread_setalgorithm(__func__);
 	r1i = bat_iterator(r1);
 	r1seq = r1->hseqbase;
 	r1end = r1seq + BATcount(r1);
@@ -542,7 +545,8 @@ BATprojectchain(BAT **bats)
 		};
 		allnil |= b->ttype == TYPE_void && is_oid_nil(b->tseqbase);
 		issorted &= b->tsorted;
-		nonil &= b->tnonil;
+		if (bats[n + 1])
+			nonil &= b->tnonil;
 		if (b->tnonil && b->tkey && b->tsorted &&
 		    ATOMtype(b->ttype) == TYPE_oid) {
 			canditer_init(&ba[n].ci, NULL, b);
@@ -634,7 +638,7 @@ BATprojectchain(BAT **bats)
 		}
 		if (stringtrick) {
 			bn->tnil = false;
-			bn->tnonil = nonil;
+			bn->tnonil = b->tnonil;
 			bn->tkey = false;
 			BBPshare(b->tvheap->parentid);
 			bn->tvheap = b->tvheap;
@@ -683,7 +687,7 @@ BATprojectchain(BAT **bats)
 	BATsetcount(bn, ba[0].cnt);
 	bn->tsorted = (ba[0].cnt <= 1) | issorted;
 	bn->trevsorted = ba[0].cnt <= 1;
-	bn->tnonil = nonil;
+	bn->tnonil = nonil & b->tnonil;
 	bn->tseqbase = oid_nil;
 	GDKfree(ba);
 	TRC_DEBUG(ALGO, "with %d bats: " ALGOOPTBATFMT " " LLFMT " usec\n",

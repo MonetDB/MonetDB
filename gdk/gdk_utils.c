@@ -767,6 +767,8 @@ GDKinit(opt *set, int setlen, int embedded)
 	static_assert(sizeof(hge) == SIZEOF_HGE,
 		      "error in configure: bad value for SIZEOF_HGE");
 #endif
+	static_assert(sizeof(dbl) == SIZEOF_DOUBLE,
+		      "error in configure: bad value for SIZEOF_DOUBLE");
 	static_assert(sizeof(oid) == SIZEOF_OID,
 		      "error in configure: bad value for SIZEOF_OID");
 	static_assert(sizeof(void *) == SIZEOF_VOID_P,
@@ -1056,7 +1058,7 @@ GDKreset(int status)
 		for (Thread t = GDKthreads; t < GDKthreads + THREADS; t++) {
 			MT_Id victim;
 			if ((victim = (MT_Id) ATOMIC_GET(&t->pid)) != 0) {
-				if (victim != pid) {
+				if (pid && victim != pid) {
 					int e;
 
 					killed = true;
@@ -1358,7 +1360,10 @@ GDKusec(void)
 	return (lng) (f.QuadPart / 10);
 #elif defined(HAVE_CLOCK_GETTIME)
 	struct timespec ts;
-	clock_gettime(CLOCK_REALTIME, &ts);
+#ifdef CLOCK_REALTIME_COARSE
+	if (clock_gettime(CLOCK_REALTIME_COARSE, &ts) < 0)
+#endif
+		(void) clock_gettime(CLOCK_REALTIME, &ts);
 	return (lng) (ts.tv_sec * LL_CONSTANT(1000000) + ts.tv_nsec / 1000);
 #elif defined(HAVE_GETTIMEOFDAY)
 	struct timeval tv;
@@ -1495,11 +1500,7 @@ THRcreate(void (*f) (void *), void *arg, enum MT_thr_detach d, const char *name)
 	};
 	len = snprintf(semname, sizeof(semname), "THRcreate%" PRIu64, (uint64_t) ATOMIC_INC(&ctr));
 	if (len == -1 || len > (int) sizeof(semname)) {
-		TRC_DEBUG(IO_, "Semaphore name is too large\n");
-		GDKerror("semaphore name is too large\n");
-		GDKfree(t);
-		ATOMIC_SET(&s->pid, 0); /* deallocate */
-		return 0;
+		TRC_WARNING(IO_, "Semaphore name is too large\n");
 	}
 	MT_sema_init(&t->sem, 0, semname);
 	if (MT_create_thread(&pid, THRstarter, t, d, name) != 0) {
