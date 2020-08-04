@@ -5,7 +5,7 @@ Maintainer: MonetDB BV <info@monetdb.org>
 Homepage: https://www.monetdb.org/
 Vcs-Browser: https://dev.monetdb.org/hg/MonetDB/
 Vcs-Hg: https://dev.monetdb.org/hg/MonetDB/
-Build-Depends: debhelper (>= 9), autotools-dev, bison,
+Build-Depends: debhelper (>= 9), cmake, bison,
  libbz2-dev, libcurl4-gnutls-dev, libgeos-dev (>= 3.4.0),
  libpcre3-dev, libreadline-dev, liblzma-dev,
  libssl-dev, libxml2-dev, pkg-config,
@@ -172,9 +172,9 @@ Architecture: any
 Depends: ${shlibs:Depends}, ${misc:Depends}, adduser
 Recommends: monetdb5-sql (= ${source:Version})
 Suggests: monetdb-client (= ${source:Version})
-Conflicts: monetdb5-server-hugeint (<< 11.38.0)
+Conflicts: monetdb5-server-hugeint (<< 11.38.0),
+ python-pymonetdb (<< 1.0.6)
 Replaces: monetdb5-server-hugeint (<< 11.38.0)
-Conflicts: python-pymonetdb (<< 1.0.6)
 Description: MonetDB database server version 5
  MonetDB is a database management system that is developed from a
  main-memory perspective with use of a fully decomposed storage model,
@@ -246,6 +246,31 @@ Description: Integration of MonetDB and R, allowing use of R from within SQL
  NOTE: INSTALLING THIS PACKAGE OPENS UP SECURITY ISSUES.  If you don't
  know how this package affects the security of your system, do not
  install it.
+
+Package: libmonetdbe0
+Architecture: any
+Depends: ${shlibs:Depends}, ${misc:Depends}
+Description: MonetDB as an embedded library
+ MonetDB is a database management system that is developed from a
+ main-memory perspective with use of a fully decomposed storage model,
+ automatic index management, extensibility of data types and search
+ accelerators.  It also has an SQL front end.
+ .
+ This package contains the library to turn MonetDB into an embeddable
+ library.  Also see %{name}-embedded-devel to use this in a program.
+
+Package: libmonetdbe-dev
+Architecture: any
+Depends: ${shlibs:Depends}, ${misc:Depends},
+ libmonetdbe0, libmonetdb-dev
+Description: MonetDB development files
+ MonetDB is a database management system that is developed from a
+ main-memory perspective with use of a fully decomposed storage model,
+ automatic index management, extensibility of data types and search
+ accelerators.  It also has an SQL front end.
+ .
+ This package contains the library and include files to create a
+ program that uses MonetDB as an embeddable library.
 
 Package: monetdb-testing
 Architecture: any
