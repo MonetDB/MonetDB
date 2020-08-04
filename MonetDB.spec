@@ -632,6 +632,8 @@ library.  Also see %{name}-embedded-devel to use this in a program.
 %package embedded-devel
 Summary: MonetDB as an embedded library development files
 Group: Applications/Databases
+Requires: %{name}-embedded%{?_isa} = %{version}-%{release}
+Requires: %{name}-devel%{?_isa} = %{version}-%{release}
 
 %description embedded-devel
 MonetDB is a database management system that is developed from a
