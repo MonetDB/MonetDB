@@ -1,0 +1,11 @@
+stderr of test 'interval-math.Bug-6935` in directory 'sql/test/BugTracker-2020` itself:
+
+
+# 10:13:31 >  
+# 10:13:31 >  "mclient" "-lsql" "-ftest" "-tnone" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-80282" "--port=37020"
+# 10:13:31 >  
+
+# 10:13:31 >  
+# 10:13:31 >  "Done."
+# 10:13:31 >  
+
