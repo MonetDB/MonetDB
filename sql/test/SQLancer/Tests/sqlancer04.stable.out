@@ -76,6 +76,12 @@ stdout of test 'sqlancer04` in directory 'sql/test/SQLancer` itself:
 #CREATE TABLE "sys"."t1" ("c0" DOUBLE);
 #create view v1(c0, c1) as (select distinct (((t0.c0)=(((1357695262)^(-922564194))))) = false, cast(coalesce(coalesce(0.3, 0.4), "second"(timestamp '1970-01-10 11:54:13')) as double) from t0);
 #create view v2(c0) as (select distinct coalesce(abs(interval '-1976292283' month), cast(greatest(r'Dnwxjm4btQ9cp&\c''a_', r'(y7,{q?][NHU,') as interval month)) from t1, t0 where ((upper(r''))not ilike(lower(r'''wAg_ z ''PPxXßgrd⍮G'))));
+#select all v2.c0 from v2 right outer join v1 on ((r'8*By1q)*Oc<n')like(substr(r'', 1151312829, 406714197))) 
+#where (case v1.c0 when v1.c0 then interval '104279220' second end) in (interval '2129103763' second) group by timestamp '1970-01-21 14:05:46';
+% .v2 # table_name
+% c0 # name
+% month_interval # type
+% 1 # length
 #ROLLBACK;
 #START TRANSACTION;
 #CREATE TABLE "sys"."t0" ("c0" DOUBLE NOT NULL DEFAULT 0.7383512, "c1" VARCHAR(277),CONSTRAINT "t0_c0_pkey" PRIMARY KEY ("c0"),CONSTRAINT "t0_c0_unique" UNIQUE ("c0"),CONSTRAINT "t0_c1_unique" UNIQUE ("c1"));
@@ -131,6 +137,58 @@ stdout of test 'sqlancer04` in directory 'sql/test/SQLancer` itself:
 % double # type
 % 24 # length
 [ 4	]
+#START TRANSACTION;
+#CREATE TABLE "sys"."t0" ("c0" DATE,"c1" DOUBLE NOT NULL,"c2" DATE NOT NULL);
+#ROLLBACK;
+#START TRANSACTION;
+#CREATE TABLE t0(c0 DATE);
+#CREATE TABLE t1(c0 DATE NOT NULL);
+#ROLLBACK;
+#START TRANSACTION;
+#CREATE TABLE t0(c0 DOUBLE PRIMARY KEY NULL); 
+#CREATE TABLE "sys"."t1" ("c0" DOUBLE,CONSTRAINT "t1_c0_unique" UNIQUE ("c0"));
+#COPY 9 RECORDS INTO "sys"."t1" FROM stdin USING DELIMITERS E'\t',E'\n','"';
+#0.21248182395969406
+#0.6307796692265083
+#2059310235
+#-6.5457821e+08
+#0.743704157497456
+#0.4001718453135127
+#0.3935743494971655
+#0.5299192301063729
+#0.7609386265982908
+[ 9	]
+#SELECT CASE WHEN DATE '1970-01-04' IS NULL THEN CAST(CASE t1.c0 WHEN t1.c0 THEN TIME '11:33:56' END AS VARCHAR(524)) ELSE '0.6' END FROM t1;
+% .%2 # table_name
+% %2 # name
+% varchar # type
+% 3 # length
+[ "0.6"	]
+[ "0.6"	]
+[ "0.6"	]
+[ "0.6"	]
+[ "0.6"	]
+[ "0.6"	]
+[ "0.6"	]
+[ "0.6"	]
+[ "0.6"	]
+#SELECT ALL MAX(ALL CASE WHEN (DATE '1970-01-04') IS NULL THEN CAST(CASE t1.c0 WHEN t1.c0 THEN TIME '11:33:56' END AS VARCHAR(524)) ELSE sql_max(r'iDfwsFjp藖1J洅ៅR-?0OT^.', r'0.6') END) FROM t1 
+#JOIN (SELECT ALL t0.c0, greatest(CAST(INTERVAL '6' SECOND AS TIME), TIME '10:25:00') FROM t1, t0) AS sub0 ON (COALESCE(-3, -6, 3)) NOT IN (CASE WHEN TRUE THEN -3 END, ((-4)&(-5)), - (6))
+#WHERE ((r'%')ILIKE(r'6')) GROUP BY COALESCE(CAST(least(0.4, 0.7) AS VARCHAR(506)), CAST(nullif(TIME '14:14:35', TIME '02:49:23') AS VARCHAR(388))), abs(0.6);
+% .%16 # table_name
+% %16 # name
+% varchar # type
+% 0 # length
+#ROLLBACK;
+#START TRANSACTION;
+#CREATE TABLE t0(c0 INTERVAL SECOND, c1 serial);
+#create view v0(c0) as (select distinct t0.c1 from t0);
+#SELECT ALL AVG(ALL CASE COALESCE(CAST(v0.c0 AS REAL), atan(v0.c0, v0.c0)) WHEN abs(0.7471649) THEN INTERVAL '1865286244' MONTH END) FROM v0 GROUP BY COALESCE(((((v0.c0)+(v0.c0)))&(v0.c0)), v0.c0, CAST("second"(TIME '01:32:22') AS INT));
+% .%4 # table_name
+% %4 # name
+% month_interval # type
+% 1 # length
+#ROLLBACK;
 
 # 09:44:50 >  
 # 09:44:50 >  "Done."

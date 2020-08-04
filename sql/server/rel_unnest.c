@@ -2744,7 +2744,8 @@ rewrite_ifthenelse(visitor *v, sql_rel *rel, sql_exp *e, int depth)
 		return e;
 
 	sf = e->f;
-	if (is_ifthenelse_func(sf) && !list_empty(e->l)) {
+	/* TODO also handle ifthenelse with more than 3 arguments */
+	if (is_ifthenelse_func(sf) && !list_empty(e->l) && list_length(e->l) == 3) {
 		list *l = e->l;
 
 		/* remove unecessary = true expressions under ifthenelse */

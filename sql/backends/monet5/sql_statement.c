@@ -3157,7 +3157,9 @@ stmt_unop(backend *be, stmt *op1, sql_subfunc *op)
 {
 	list *ops = sa_list(be->mvc->sa);
 	list_append(ops, op1);
-	return stmt_Nop(be, stmt_list(be, ops), op);
+	stmt *r = stmt_Nop(be, stmt_list(be, ops), op);
+	r->cand = op1->cand;
+	return r;
 }
 
 stmt *
@@ -3166,7 +3168,9 @@ stmt_binop(backend *be, stmt *op1, stmt *op2, sql_subfunc *op)
 	list *ops = sa_list(be->mvc->sa);
 	list_append(ops, op1);
 	list_append(ops, op2);
-	return stmt_Nop(be, stmt_list(be, ops), op);
+	stmt *r = stmt_Nop(be, stmt_list(be, ops), op);
+	r->cand = op1->cand?op1->cand:op2->cand;
+	return r;
 }
 
 stmt *
@@ -3190,7 +3194,7 @@ stmt_Nop(backend *be, stmt *ops, sql_subfunc *f)
 		}
 	}
 
-	/* handle coalesce and nullif */
+	/* handle nullif */
 	if (list_length(ops->op4.lval) == 2 &&
 		f->func->mod && strcmp(f->func->mod, "") == 0 && f->func->imp && strcmp(f->func->imp, "") == 0) {
 		stmt *e1 = ops->op4.lval->h->data;
@@ -3198,20 +3202,7 @@ stmt_Nop(backend *be, stmt *ops, sql_subfunc *f)
 		int nrcols = 0;
 
 		nrcols = e1->nrcols>e2->nrcols ? e1->nrcols:e2->nrcols;
-		/* nrcols */
-		//coalesce(e1,e2) -> ifthenelse(isnil(e1),e2,e1)
-		if (strcmp(f->func->base.name, "coalesce") == 0) {
-			str mod = (!nrcols)?calcRef:batcalcRef;
-			q = newStmt(mb, e1->nrcols?mod:calcRef, "isnil");
-			q = pushArgument(mb, q, e1->nr);
-			int nr = getDestVar(q);
-
-			q = newStmt(mb, mod, "ifthenelse");
-			q = pushArgument(mb, q, nr);
-			q = pushArgument(mb, q, e2->nr);
-			q = pushArgument(mb, q, e1->nr);
-		}
-		//nullif(e1,e2) -> ifthenelse(e1==e2),NULL,e1)
+		/* nullif(e1,e2) -> ifthenelse(e1==e2),NULL,e1) */
 		if (strcmp(f->func->base.name, "nullif") == 0) {
 			str mod = (!nrcols)?calcRef:batcalcRef;
 			sql_subtype *t = tail_type(e1);

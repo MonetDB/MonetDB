@@ -28,4 +28,7 @@ select id, name, age from coalescetest where coalesce(name,'unknown') LIKE 'unkn
 --select the name where the id > age
 select id, name, age from coalescetest where coalesce(id, 0) < coalesce(age, 1) and coalesce(name,'unknown') LIKE 'unknown';
 
+insert into coalescetest(id,name) values (3,'hello this is a test');
+select id, coalesce(name, age, 'unknown') from coalescetest; --the output type should be char(20)
+
 drop table coalescetest;
