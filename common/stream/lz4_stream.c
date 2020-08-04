@@ -106,6 +106,7 @@ compr(inner_state_t *inner_state, pump_action action)
 	LZ4F_compressOptions_t opts = {0};
 	size_t consumed;
 	LZ4F_errorCode_t produced;
+	pump_result intended_result;
 
 	if (inner_state->finished)
 		return PUMP_END;
@@ -125,6 +126,7 @@ compr(inner_state_t *inner_state, pump_action action)
 				chunk,
 				&opts);
 			consumed = chunk;
+			intended_result = PUMP_OK;
 			break;
 
 		case PUMP_FLUSH_ALL:
@@ -136,6 +138,7 @@ compr(inner_state_t *inner_state, pump_action action)
 				inner_state->dst_win.count,
 				&opts);
 			consumed = 0;
+			intended_result = PUMP_END;
 			break;
 
 		case PUMP_FINISH:
@@ -146,6 +149,7 @@ compr(inner_state_t *inner_state, pump_action action)
 				&opts);
 			consumed = 0;
 			inner_state->finished = true;
+			intended_result = PUMP_END;
 			break;
 
 		default:
@@ -160,7 +164,7 @@ compr(inner_state_t *inner_state, pump_action action)
 	inner_state->dst_win.start += produced;
 	inner_state->dst_win.count -= produced;
 
-	return PUMP_OK;
+	return intended_result;
 }
 
 static void
