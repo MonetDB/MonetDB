@@ -1,0 +1,4 @@
+START TRANSACTION;
+CREATE TABLE twitter_data (tweets JSON);
+COPY INTO twitter_data FROM E'$QTSTDATAPATH/json/tweets200k.json' USING DELIMITERS E'\x01',E'\n',E'\x02';
+COMMIT;
