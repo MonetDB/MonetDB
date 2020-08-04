@@ -2333,7 +2333,7 @@ sql_update_oscar(Client c, mvc *sql, const char *prev_schema, bool *systabfixed)
 static str
 sql_update_default(Client c, mvc *sql, const char *prev_schema, bool *systabfixed)
 {
-	size_t bufsize = 3000, pos = 0;
+	size_t bufsize = 4096, pos = 0;
 	char *buf, *err;
 	sql_schema *s = mvc_bind_schema(sql, "sys");
 	sql_table *t;
@@ -2380,6 +2380,45 @@ sql_update_default(Client c, mvc *sql, const char *prev_schema, bool *systabfixe
 							"SELECT 'rowcnt', rowcnt;\n"
 							"UPDATE sys._tables SET system = true WHERE name = 'var_values' AND schema_id = (SELECT id FROM sys.schemas WHERE name = 'sys');\n"
 							"GRANT SELECT ON sys.var_values TO PUBLIC;\n");
+
+			/* WARNING this upgrade is related to the typing branch, which I hope it will be merged into default before the next feature release */
+			/* 39_analytics.sql */
+			pos += snprintf(buf + pos, bufsize - pos,
+							"DROP AGGREGATE stddev_samp(INTERVAL SECOND);\n"
+							"DROP AGGREGATE stddev_samp(INTERVAL MONTH);\n"
+							"DROP WINDOW stddev_samp(INTERVAL SECOND);\n"
+							"DROP WINDOW stddev_samp(INTERVAL MONTH);\n"
+							"DROP AGGREGATE stddev_pop(INTERVAL SECOND);\n"
+							"DROP AGGREGATE stddev_pop(INTERVAL MONTH);\n"
+							"DROP WINDOW stddev_pop(INTERVAL SECOND);\n"
+							"DROP WINDOW stddev_pop(INTERVAL MONTH);\n"
+							"DROP AGGREGATE var_samp(INTERVAL SECOND);\n"
+							"DROP AGGREGATE var_samp(INTERVAL MONTH);\n"
+							"DROP WINDOW var_samp(INTERVAL SECOND);\n"
+							"DROP WINDOW var_samp(INTERVAL MONTH);\n"
+							"DROP AGGREGATE var_pop(INTERVAL SECOND);\n"
+							"DROP AGGREGATE var_pop(INTERVAL MONTH);\n"
+							"DROP WINDOW var_pop(INTERVAL SECOND);\n"
+							"DROP WINDOW var_pop(INTERVAL MONTH);\n"
+							"DROP AGGREGATE covar_samp(INTERVAL SECOND,INTERVAL SECOND);\n"
+							"DROP AGGREGATE covar_samp(INTERVAL MONTH,INTERVAL MONTH);\n"
+							"DROP WINDOW covar_samp(INTERVAL SECOND,INTERVAL SECOND);\n"
+							"DROP WINDOW covar_samp(INTERVAL MONTH,INTERVAL MONTH);\n"
+							"DROP AGGREGATE covar_pop(INTERVAL SECOND,INTERVAL SECOND);\n"
+							"DROP AGGREGATE covar_pop(INTERVAL MONTH,INTERVAL MONTH);\n"
+							"DROP WINDOW covar_pop(INTERVAL SECOND,INTERVAL SECOND);\n"
+							"DROP WINDOW covar_pop(INTERVAL MONTH,INTERVAL MONTH);\n"
+							"DROP AGGREGATE corr(INTERVAL SECOND,INTERVAL SECOND);\n"
+							"DROP AGGREGATE corr(INTERVAL MONTH,INTERVAL MONTH);\n"
+							"DROP WINDOW corr(INTERVAL SECOND,INTERVAL SECOND);\n"
+							"DROP WINDOW corr(INTERVAL MONTH,INTERVAL MONTH);\n"
+							"\n"
+							"create aggregate median(val INTERVAL DAY) returns INTERVAL DAY\n"
+							" external name \"aggr\".\"median\";\n"
+							"GRANT EXECUTE ON AGGREGATE median(INTERVAL DAY) TO PUBLIC;\n"
+							"create aggregate quantile(val INTERVAL DAY, q DOUBLE) returns INTERVAL DAY\n"
+							" external name \"aggr\".\"quantile\";\n"
+							"GRANT EXECUTE ON AGGREGATE quantile(INTERVAL DAY, DOUBLE) TO PUBLIC;\n");
 
 			pos += snprintf(buf + pos, bufsize - pos, "set schema \"%s\";\n", prev_schema);
 
