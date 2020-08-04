@@ -1,0 +1,3 @@
+debian/tmp/usr/lib/x86_64-linux-gnu/libmonetdbe.so usr/lib/x86_64-linux-gnu
+debian/tmp/usr/include/monetdb/monetdbe.h usr/include/monetdb
+debian/tmp/usr/lib/x86_64-linux-gnu/pkgconfig/monetdbe.pc usr/lib/x86_64-linux-gnu/pkgconfig
