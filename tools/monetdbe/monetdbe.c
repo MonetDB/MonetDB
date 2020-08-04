@@ -1131,12 +1131,12 @@ monetdbe_append(monetdbe_database dbhdl, const char* schema, const char* table, 
 		goto cleanup;
 	}
 
-	if (schema) { // i think this is always gonna be non null cause the check is before
+	if (schema) { 
 		if (!(s = mvc_bind_schema(m, schema))) {
 			mdbe->msg = createException(MAL, "monetdbe.monetdbe_append", "Schema missing %s", schema);
 			goto cleanup;
 		}
-	} else {//when are we gonna be here
+	} else {
 		s = cur_schema(m);
 	}
 
@@ -1152,7 +1152,7 @@ monetdbe_append(monetdbe_database dbhdl, const char* schema, const char* table, 
 		goto cleanup;
 	}
 
-	cnt = input[0]->count; // where is it used
+	cnt = input[0]->count;
 
 	for (i = 0, n = t->columns.set->h; i < column_count && n; i++, n = n->next) {
 		sql_column *c = n->data;
@@ -1175,11 +1175,17 @@ monetdbe_append(monetdbe_database dbhdl, const char* schema, const char* table, 
 			//-------------------------------------
 			BAT *bn = NULL;
 			if ((bn = COLnew(0, TYPE_int, 0, TRANSIENT)) == NULL) {
-				//BBPreclaim(bn);
+				BBPreclaim(bn);
 				mdbe->msg = createException(SQL, "monetdbe.monetdbe_append", "Cannot create append column");
 				goto cleanup;
 			}
 ;
+			//save prev heap pointer			
+			char *prev_base;
+			size_t prev_size;
+			prev_base = bn->theap.base;
+			prev_size = bn->theap.size;
+
 			//BAT heap base to input[i]->data
 			bn->theap.base = input[i]->data;
 			bn->theap.size = tailsize(bn, cnt);
@@ -1197,7 +1203,9 @@ monetdbe_append(monetdbe_database dbhdl, const char* schema, const char* table, 
 
 			}
 
-			//BBPreclaim(bn);
+			bn->theap.base = prev_base;
+			bn->theap.size = prev_size;
+			BBPreclaim(bn);
 			
 			//-------------------------------------
 			/*

@@ -201,8 +201,6 @@ main(void)
 		}
 		printf("\n");
 	}
-
-	printf("Starting cleanup\n");
 	
 	if ((err = monetdbe_cleanup_result(mdbe, result)) != NULL)
 		error(err)
