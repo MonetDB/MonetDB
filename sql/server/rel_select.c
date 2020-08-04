@@ -197,15 +197,14 @@ rel_table_optname(mvc *sql, sql_rel *sq, symbol *optname)
 			ne = sq->exps->h;
 			for (; ne; ne = ne->next) {
 				sql_exp *e = ne->data;
+				char *name = NULL;
 
-				/*
-				if (exp_name(e) && exps_bind_column2(l, tname, exp_name(e)))
-					return sql_error(sql, ERR_AMBIGUOUS, SQLSTATE(42000) "SELECT: Duplicate column name '%s.%s'", tname, exp_name(e));
-					*/
-				noninternexp_setname(sql->sa, e, tname, NULL );
-				if (!is_intern(e))
+				if (!is_intern(e)) {
+					if (!exp_name(e))
+						name = make_label(sql->sa, ++sql->label);
+					noninternexp_setname(sql->sa, e, tname, name);
 					set_basecol(e);
-				append(l, e);
+				}
 			}
 		}
 	} else {
@@ -252,19 +251,19 @@ rel_with_query(sql_query *query, symbol *q )
 	for (d = d->data.lval->h; d; d = d->next) {
 		symbol *sym = d->data.sym;
 		dnode *dn = sym->data.lval->h;
-		char *name = qname_schema_object(dn->data.lval);
+		char *rname = qname_schema_object(dn->data.lval);
 		sql_rel *nrel;
 
-		if (frame_find_rel_view(sql, name)) {
+		if (frame_find_rel_view(sql, rname)) {
 			stack_pop_frame(sql);
-			return sql_error(sql, 01, SQLSTATE(42000) "View '%s' already declared", name);
+			return sql_error(sql, 01, SQLSTATE(42000) "View '%s' already declared", rname);
 		}
 		nrel = rel_semantic(query, sym);
 		if (!nrel) {
 			stack_pop_frame(sql);
 			return NULL;
 		}
-		if (!stack_push_rel_view(sql, name, nrel)) {
+		if (!stack_push_rel_view(sql, rname, nrel)) {
 			stack_pop_frame(sql);
 			return sql_error(sql, 02, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		}
@@ -282,10 +281,14 @@ rel_with_query(sql_query *query, symbol *q )
 
 			for (; ne; ne = ne->next) {
 				sql_exp *e = ne->data;
+				char *name = NULL;
 
-				noninternexp_setname(sql->sa, e, name, NULL );
-				if (!is_intern(e))
+				if (!is_intern(e)) {
+					if (!exp_name(e))
+						name = make_label(sql->sa, ++sql->label);
+					noninternexp_setname(sql->sa, e, rname, name);
 					set_basecol(e);
+				}
 			}
 		}
 	}
@@ -5402,20 +5405,17 @@ static sql_rel *
 join_on_column_name(sql_query *query, sql_rel *rel, sql_rel *t1, sql_rel *t2, int op, int l_nil, int r_nil)
 {
 	mvc *sql = query->sql;
-	int nr = ++sql->label, found = 0, full = (op != op_join);
-	char name[16], *nme;
+	int found = 0, full = (op != op_join);
 	list *exps = rel_projections(sql, t1, NULL, 1, 0);
 	list *r_exps = rel_projections(sql, t2, NULL, 1, 0);
 	list *outexps = new_exp_list(sql->sa);
-	node *n;
 
-	nme = number2name(name, sizeof(name), nr);
 	if (!exps || !r_exps)
 		return NULL;
-	for (n = exps->h; n; n = n->next) {
+	for (node *n = exps->h; n; n = n->next) {
 		sql_exp *le = n->data;
-		const char *nm = exp_name(le);
-		sql_exp *re = exps_bind_column(r_exps, nm, NULL, 0);
+		const char *rname = exp_relname(le), *name = exp_name(le);
+		sql_exp *re = exps_bind_column(r_exps, name, NULL, 0);
 
 		if (re) {
 			found = 1;
@@ -5429,7 +5429,7 @@ join_on_column_name(sql_query *query, sql_rel *rel, sql_rel *t1, sql_rel *t2, in
 				if (!(le = rel_nop_(sql, rel, cond, re, le, NULL, NULL, "ifthenelse", card_value)))
 					return NULL;
 			}
-			exp_setname(sql->sa, le, nme, sa_strdup(sql->sa, nm));
+			exp_setname(sql->sa, le, rname, name);
 			append(outexps, le);
 			list_remove_data(r_exps, re);
 		} else {
@@ -5440,7 +5440,7 @@ join_on_column_name(sql_query *query, sql_rel *rel, sql_rel *t1, sql_rel *t2, in
 	}
 	if (!found)
 		return sql_error(sql, 02, SQLSTATE(42000) "JOIN: no columns of tables '%s' and '%s' match", rel_name(t1)?rel_name(t1):"", rel_name(t2)?rel_name(t2):"");
-	for (n = r_exps->h; n; n = n->next) {
+	for (node *n = r_exps->h; n; n = n->next) {
 		sql_exp *re = n->data;
 		if (r_nil)
 			set_has_nil(re);

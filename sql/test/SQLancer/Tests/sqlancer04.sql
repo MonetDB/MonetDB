@@ -124,15 +124,15 @@ ROLLBACK;
 select cbrt(x) from (values (1), (8), (27)) as x(x);
 select cbrt(64);
 
-START TRANSACTION;
 CREATE TABLE "sys"."t0" ("c0" DATE,"c1" DOUBLE NOT NULL,"c2" DATE NOT NULL);
 select 1 from t0 natural join (select 4 from t0) as sub0; --error, no columns of tables 't0' and 'sub0' match
-ROLLBACK;
+with sub0 as (select 4 from t0) select 1 from t0 natural join sub0; --error, no columns of tables 't0' and 'sub0' match
+DROP TABLE t0;
 
 START TRANSACTION;
 CREATE TABLE t0(c0 DATE);
 CREATE TABLE t1(c0 DATE NOT NULL);
-select t1.c0 from t0 natural join t1; --t1.c0 must be found
+select t0.c0 from t0 natural join t1; --t0.c0 must be found
 ROLLBACK;
 
 START TRANSACTION;

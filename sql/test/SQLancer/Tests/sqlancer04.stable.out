@@ -143,6 +143,11 @@ stdout of test 'sqlancer04` in directory 'sql/test/SQLancer` itself:
 #START TRANSACTION;
 #CREATE TABLE t0(c0 DATE);
 #CREATE TABLE t1(c0 DATE NOT NULL);
+#select t0.c0 from t0 natural join t1; --t0.c0 must be found
+% sys.t0 # table_name
+% c0 # name
+% date # type
+% 10 # length
 #ROLLBACK;
 #START TRANSACTION;
 #CREATE TABLE t0(c0 DOUBLE PRIMARY KEY NULL); 
