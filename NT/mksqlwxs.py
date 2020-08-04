@@ -124,7 +124,7 @@ def main():
               [r'bin\mclient.exe',
                r'bin\mserver5.exe',
                r'bin\msqldump.exe',
-               r'bin\gdk.dll',
+               r'bin\bat.dll',
                r'bin\mapi.dll',
                r'bin\monetdb5.dll',
                r'bin\stream.dll',
@@ -175,7 +175,7 @@ def main():
               [r'lib\monetdb5\_pyapi3.dll'])
     print(r'              </Directory>')
     id = comp(extend, id, 14,
-              [r'lib\gdk.lib',
+              [r'lib\bat.lib',
                r'lib\mapi.lib',
                r'lib\monetdb5.lib',
                r'lib\stream.lib',
