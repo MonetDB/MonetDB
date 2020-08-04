@@ -547,7 +547,6 @@ used from the MAL level.
 
 %files -n MonetDB5-server-devel
 %defattr(-,root,root)
-%dir %{_includedir}/monetdb
 %{_includedir}/monetdb/mal*.h
 %{_libdir}/libmonetdb5.so
 %{_libdir}/pkgconfig/monetdb5.pc
@@ -641,12 +640,14 @@ main-memory perspective with use of a fully decomposed storage model,
 automatic index management, extensibility of data types and search
 accelerators.  It also has an SQL front end.
 
-This package contains the library and include files to turn MonetDB
-into an embeddable library.
+This package contains the library and include files to create a
+program that uses MonetDB as an embeddable library.
 
 %files embedded-devel
+%defattr(-,root,root)
 %{_libdir}/libmonetdbe.so
 %{_includedir}/monetdb/monetdbe.h
+%{_libdir}/pkgconfig/monetdbe.pc
 
 %package testing
 Summary: MonetDB - Monet Database Management System
