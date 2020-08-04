@@ -100,6 +100,7 @@
 		INIT_0;							\
 		if (ci.tpe == cand_dense) {				\
 			if (grps) {					\
+				MT_thread_setalgorithm("GRP_compare_consecutive_values, dense, groups"); \
 				for (r = 0; r < cnt; r++) {		\
 					p = canditer_next_dense(&ci) - hseqb; \
 					INIT_1;				\
@@ -114,6 +115,7 @@
 					prev = grps[r];			\
 				}					\
 			} else {					\
+				MT_thread_setalgorithm("GRP_compare_consecutive_values, dense, !groups"); \
 				for (r = 0; r < cnt; r++) {		\
 					p = canditer_next_dense(&ci) - hseqb; \
 					INIT_1;				\
@@ -129,6 +131,7 @@
 			}						\
 		} else {						\
 			if (grps) {					\
+				MT_thread_setalgorithm("GRP_compare_consecutive_values, !dense, groups"); \
 				for (r = 0; r < cnt; r++) {		\
 					p = canditer_next(&ci) - hseqb;	\
 					INIT_1;				\
@@ -143,6 +146,7 @@
 					prev = grps[r];			\
 				}					\
 			} else {					\
+				MT_thread_setalgorithm("GRP_compare_consecutive_values, !dense, !groups"); \
 				for (r = 0; r < cnt; r++) {		\
 					p = canditer_next(&ci) - hseqb;	\
 					INIT_1;				\
@@ -191,6 +195,7 @@
 		pgrp[grps[0]] = 0;					\
 		j = 0;							\
 		if (ci.tpe == cand_dense) {				\
+			MT_thread_setalgorithm("GRP_subscan_old_groups, dense"); \
 			for (r = 0; r < cnt; r++) {			\
 				p = canditer_next_dense(&ci) - hseqb;	\
 				INIT_1;					\
@@ -230,6 +235,7 @@
 				GRPnotfound();				\
 			}						\
 		} else {						\
+			MT_thread_setalgorithm("GRP_subscan_old_groups, !dense"); \
 			for (r = 0; r < cnt; r++) {			\
 				p = canditer_next(&ci) - hseqb;		\
 				INIT_1;					\
@@ -316,6 +322,7 @@
 		INIT_0;							\
 		assert(grps == NULL);					\
 		if (ci.tpe == cand_dense) {				\
+			MT_thread_setalgorithm("GRP_use_existing_hash_table, dense"); \
 			for (r = 0; r < cnt; r++) {			\
 				oid o = canditer_next_dense(&ci);	\
 				p = o - hseqb + lo;			\
@@ -349,6 +356,7 @@
 				}					\
 			}						\
 		} else {						\
+			MT_thread_setalgorithm("GRP_use_existing_hash_table, !dense"); \
 			for (r = 0; r < cnt; r++) {			\
 				oid o = canditer_next(&ci);		\
 				p = o - hseqb + lo;			\
@@ -460,6 +468,7 @@ pop(oid x)
 #define GRP_create_partial_hash_table_core(INIT_1,HASH,EQUAL,ASSERT,GRPTST) \
 	do {								\
 		if (ci.tpe == cand_dense) {				\
+			MT_thread_setalgorithm("GRP_create_partial_hash_table, dense"); \
 			for (r = 0; r < cnt; r++) {			\
 				p = canditer_next_dense(&ci) - hseqb;	\
 				INIT_1;					\
@@ -491,6 +500,7 @@ pop(oid x)
 				}					\
 			}						\
 		} else {						\
+			MT_thread_setalgorithm("GRP_create_partial_hash_table, !dense"); \
 			for (r = 0; r < cnt; r++) {			\
 				p = canditer_next(&ci) - hseqb;		\
 				INIT_1;					\

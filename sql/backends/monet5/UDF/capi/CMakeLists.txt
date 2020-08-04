@@ -28,7 +28,7 @@ if(CINTEGRATION)
     PRIVATE
     mutils
     stream
-    gdk
+    bat
     monetdb5
     monetdb_config_header)
 

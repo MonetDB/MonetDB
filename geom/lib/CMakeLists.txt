@@ -24,7 +24,7 @@ if(GEOS_FOUND)
     PRIVATE
     mutils
     stream
-    gdk
+    bat
     Geos::Geos
     $<$<BOOL:${PROJ_FOUND}>:PROJ::PROJ>)
 

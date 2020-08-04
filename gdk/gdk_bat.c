@@ -106,7 +106,6 @@ BATcreatedesc(oid hseq, int tt, bool heapnames, role_t role)
 		GDKfree(bn);
 		return NULL;
 	}
-
 	/*
 	 * fill in heap names, so HEAPallocs can resort to disk for
 	 * very large writes.

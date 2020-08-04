@@ -1,0 +1,24 @@
+stdout of test 'interval-math.Bug-6935` in directory 'sql/test/BugTracker-2020` itself:
+
+
+# 10:13:31 >  
+# 10:13:31 >  "mclient" "-lsql" "-ftest" "-tnone" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-80282" "--port=37020"
+# 10:13:31 >  
+
+#SELECT INTERVAL '1' HOUR / 2, INTERVAL '1' HOUR / 2.0, INTERVAL '1' HOUR * 1000 / 2000, INTERVAL '1' HOUR * 1000.0 / 2000.0;
+% .%2,	.%3,	.%4,	.%5 # table_name
+% %2,	%3,	%4,	%5 # name
+% sec_interval,	sec_interval,	sec_interval,	sec_interval # type
+% 8,	8,	8,	8 # length
+[ 1800.000,	1800.000,	1800.000,	1800.000	]
+#SELECT INTERVAL '1' HOUR * 1000 / 1800000; -- 2.000
+% .%2 # table_name
+% %2 # name
+% sec_interval # type
+% 5 # length
+[ 2.000	]
+
+# 10:13:31 >  
+# 10:13:31 >  "Done."
+# 10:13:31 >  
+

@@ -446,7 +446,7 @@ dofsum(const void *restrict values, oid seqb,
 		if (ngrp == 1 && ci->tpe == cand_dense) {		\
 			/* single group, no candidate list */		\
 			TYPE2 sum;					\
-			*algo = "no candidates, no groups";		\
+			*algo = "sum: no candidates, no groups";	\
 			sum = 0;					\
 			if (nonil) {					\
 				*seen = ncand > 0;			\
@@ -482,7 +482,7 @@ dofsum(const void *restrict values, oid seqb,
 			/* single group, with candidate list */		\
 			TYPE2 sum;					\
 			bool seenval = false;				\
-			*algo = "with candidates, no groups";		\
+			*algo = "sum: with candidates, no groups";	\
 			sum = 0;					\
 			for (i = 0; i < ncand && nils == 0; i++) {	\
 				x = vals[canditer_next(ci) - seqb];	\
@@ -503,7 +503,7 @@ dofsum(const void *restrict values, oid seqb,
 				*sums = sum;				\
 		} else if (ci->tpe == cand_dense) {			\
 			/* multiple groups, no candidate list */	\
-			*algo = "no candidates, with groups";		\
+			*algo = "sum: no candidates, with groups";	\
 			for (i = 0; i < ncand; i++) {			\
 				if (gids == NULL ||			\
 				    (gids[i] >= min && gids[i] <= max)) { \
@@ -534,7 +534,7 @@ dofsum(const void *restrict values, oid seqb,
 			}						\
 		} else {						\
 			/* multiple groups, with candidate list */	\
-			*algo = "with candidates, with groups";		\
+			*algo = "sum: with candidates, with groups";	\
 			while (ncand > 0) {				\
 				ncand--;				\
 				i = canditer_next(ci) - seqb;		\
@@ -577,14 +577,14 @@ dofsum(const void *restrict values, oid seqb,
 			TYPE2 sum;					\
 			sum = 0;					\
 			if (nonil) {					\
-				*algo = "no candidates, no groups, no nils, no overflow"; \
+				*algo = "sum: no candidates, no groups, no nils, no overflow"; \
 				*seen = ncand > 0;			\
 				for (i = 0; i < ncand && nils == 0; i++) { \
 					sum += vals[ci->seq + i - seqb]; \
 				}					\
 			} else {					\
 				bool seenval = false;			\
-				*algo = "no candidates, no groups, no overflow"; \
+				*algo = "sum: no candidates, no groups, no overflow"; \
 				for (i = 0; i < ncand && nils == 0; i++) { \
 					x = vals[ci->seq + i - seqb];	\
 					if (is_##TYPE1##_nil(x)) {	\
@@ -605,7 +605,7 @@ dofsum(const void *restrict values, oid seqb,
 			/* single group, with candidate list */		\
 			TYPE2 sum;					\
 			bool seenval = false;				\
-			*algo = "with candidates, no groups, no overflow"; \
+			*algo = "sum: with candidates, no groups, no overflow"; \
 			sum = 0;					\
 			for (i = 0; i < ncand && nils == 0; i++) {	\
 				x = vals[canditer_next(ci) - seqb];	\
@@ -624,7 +624,7 @@ dofsum(const void *restrict values, oid seqb,
 		} else if (ci->tpe == cand_dense) {			\
 			/* multiple groups, no candidate list */	\
 			if (nonil) {					\
-				*algo = "no candidates, with groups, no nils, no overflow"; \
+				*algo = "sum: no candidates, with groups, no nils, no overflow"; \
 				for (i = 0; i < ncand; i++) {		\
 					if (gids == NULL ||		\
 					    (gids[i] >= min && gids[i] <= max)) { \
@@ -639,7 +639,7 @@ dofsum(const void *restrict values, oid seqb,
 					}				\
 				}					\
 			} else {					\
-				*algo = "no candidates, with groups, no overflow"; \
+				*algo = "sum: no candidates, with groups, no overflow"; \
 				for (i = 0; i < ncand; i++) {		\
 					if (gids == NULL ||		\
 					    (gids[i] >= min && gids[i] <= max)) { \
@@ -665,7 +665,7 @@ dofsum(const void *restrict values, oid seqb,
 			}						\
 		} else {						\
 			/* multiple groups, with candidate list */	\
-			*algo = "with candidates, with groups, no overflow"; \
+			*algo = "sum: with candidates, with groups, no overflow"; \
 			while (ncand > 0) {				\
 				ncand--;				\
 				i = canditer_next(ci) - seqb;		\
@@ -714,7 +714,7 @@ dosum(const void *restrict values, bool nonil, oid seqb,
 	case TYPE_dbl:
 		if (tp1 != TYPE_flt && tp1 != TYPE_dbl)
 			goto unsupported;
-		*algo = "floating sum";
+		*algo = "sum: floating point";
 		return dofsum(values, seqb, ci, ncand, results, ngrp, tp1, tp2,
 			      gids, min, max, skip_nils, abort_on_error,
 			      nil_if_empty);
@@ -944,6 +944,8 @@ BATgroupsum(BAT *b, BAT *g, BAT *e, BAT *s, int tp, bool skip_nils, bool abort_o
 		bn = NULL;
 	}
 
+	if (algo)
+		MT_thread_setalgorithm(algo);
 	TRC_DEBUG(ALGO, "b=" ALGOBATFMT ",g=" ALGOOPTBATFMT ","
 		  "e=" ALGOOPTBATFMT ",s=" ALGOOPTBATFMT " -> " ALGOOPTBATFMT
 		  "; start " OIDFMT ", count " BUNFMT " (%s -- " LLFMT " usec)\n",
@@ -1173,6 +1175,8 @@ BATsum(void *res, int tp, BAT *b, BAT *s, bool skip_nils, bool abort_on_error, b
 	nils = dosum(Tloc(b, 0), b->tnonil, b->hseqbase, &ci, ncand,
 		     res, true, b->ttype, tp, &min, min, max,
 		     skip_nils, abort_on_error, nil_if_empty, __func__, &algo);
+	if (algo)
+		MT_thread_setalgorithm(algo);
 	TRC_DEBUG(ALGO, "b=" ALGOBATFMT ",s=" ALGOOPTBATFMT "; "
 		  "start " OIDFMT ", count " BUNFMT " (%s -- " LLFMT " usec)\n",
 		  ALGOBATPAR(b), ALGOOPTBATPAR(s),

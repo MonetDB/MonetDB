@@ -49,7 +49,7 @@ if(HAVE_LIBPY3)
     sql
     mutils
     stream
-    gdk
+    bat
     monetdb5
     monetdb_config_header)
 

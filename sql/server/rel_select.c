@@ -763,12 +763,12 @@ rel_values(sql_query *query, symbol *tableref)
 	sql_rel *r = NULL;
 	dlist *rowlist = tableref->data.lval;
 	symbol *optname = rowlist->t->data.sym;
-	dnode *o;
 	node *m;
 	list *exps = sa_list(sql->sa);
 	exp_kind ek = {type_value, card_value, TRUE};
+	unsigned int card = dlist_length(rowlist) == 1 ? CARD_ATOM : CARD_MULTI;
 
-	for (o = rowlist->h; o; o = o->next) {
+	for (dnode *o = rowlist->h; o; o = o->next) {
 		dlist *values = o->data.lval;
 
 		/* When performing sub-queries, the relation name appears under a SQL_NAME symbol at the end of the list */
@@ -798,14 +798,19 @@ rel_values(sql_query *query, symbol *tableref)
 			}
 		}
 	}
-	/* loop to check types */
-	for (m = exps->h; m; m = m->next)
-		if (!(m->data = exp_values_set_supertype(sql, (sql_exp*) m->data, NULL)))
+	/* loop to check types and cardinality */
+	for (m = exps->h; m; m = m->next) {
+		sql_exp *e = m->data;
+
+		if (!(e = exp_values_set_supertype(sql, e, NULL)))
 			return NULL;
+		e->card = card;
+		m->data = e;
+	}
 
 	r = rel_project(sql->sa, NULL, exps);
 	r->nrcols = list_length(exps);
-	r->card = dlist_length(rowlist) == 1 ? CARD_ATOM : CARD_MULTI;
+	r->card = card;
 	return rel_table_optname(sql, r, optname);
 }
 
@@ -3204,17 +3209,17 @@ rel_nop(sql_query *query, sql_rel **rel, symbol *se, int fs, exp_kind ek)
 
 					e = exp_check_type(sql, ntp, NULL, e, type_equal);
 					if (!e) {
-						nexps = NULL;
+						err = 1;
 						break;
 					}
 					append(nexps, e);
 					append(tl, exp_subtype(e));
 				}
 			}
+			if (err)
+				return NULL;
 			sql->type = q->type;
-			if (nexps)
-				return exp_op(sql->sa, nexps, sql_dup_subfunc(sql->sa, f, tl, NULL));
-			return NULL;
+			return exp_op(sql->sa, list_empty(nexps) ? NULL : nexps, sql_dup_subfunc(sql->sa, f, tl, NULL));
 		} else {
 			return sql_error(sql, 02, SQLSTATE(42000) "EXEC: PREPARED Statement missing '%d'", nr);
 		}
@@ -3255,68 +3260,32 @@ _rel_aggr(sql_query *query, sql_rel **rel, int distinct, sql_schema *s, char *an
 
 	if (!query_has_outer(query)) {
 		if (!groupby) {
-			char *uaname = GDKmalloc(strlen(aname) + 1);
-			sql_exp *e = sql_error(sql, 02, SQLSTATE(42000) "%s: missing group by",
-							uaname ? toUpperCopy(uaname, aname) : aname);
-			if (uaname)
-				GDKfree(uaname);
-			return e;
+			char *uaname = SA_NEW_ARRAY(sql->ta, char, strlen(aname) + 1);
+			return sql_error(sql, 02, SQLSTATE(42000) "%s: missing group by", toUpperCopy(uaname, aname));
 		} else if (is_sql_groupby(f)) {
-			char *uaname = GDKmalloc(strlen(aname) + 1);
-			sql_exp *e = sql_error(sql, 02, SQLSTATE(42000) "%s: aggregate function '%s' not allowed in GROUP BY clause",
-								uaname ? toUpperCopy(uaname, aname) : aname, aname);
-			if (uaname)
-				GDKfree(uaname);
-			return e;
+			char *uaname = SA_NEW_ARRAY(sql->ta, char, strlen(aname) + 1);
+			return sql_error(sql, 02, SQLSTATE(42000) "%s: aggregate function '%s' not allowed in GROUP BY clause", toUpperCopy(uaname, aname), aname);
 		} else if (is_sql_values(f)) {
-			char *uaname = GDKmalloc(strlen(aname) + 1);
-			sql_exp *e = sql_error(sql, 02, SQLSTATE(42000) "%s: aggregate functions not allowed on an unique value",
-						uaname ? toUpperCopy(uaname, aname) : aname);
-			if (uaname)
-				GDKfree(uaname);
-			return e;
+			char *uaname = SA_NEW_ARRAY(sql->ta, char, strlen(aname) + 1);
+			return sql_error(sql, 02, SQLSTATE(42000) "%s: aggregate functions not allowed on an unique value", toUpperCopy(uaname, aname));
 		} else if (is_sql_join(f)) { /* the is_sql_join test must come before is_sql_where, because the join conditions are handled with sql_where */
-			char *uaname = GDKmalloc(strlen(aname) + 1);
-			sql_exp *e = sql_error(sql, 02, SQLSTATE(42000) "%s: aggregate functions not allowed in JOIN conditions",
-						uaname ? toUpperCopy(uaname, aname) : aname);
-			if (uaname)
-				GDKfree(uaname);
-			return e;
+			char *uaname = SA_NEW_ARRAY(sql->ta, char, strlen(aname) + 1);
+			return sql_error(sql, 02, SQLSTATE(42000) "%s: aggregate functions not allowed in JOIN conditions", toUpperCopy(uaname, aname));
 		} else if (is_sql_where(f)) {
-			char *uaname = GDKmalloc(strlen(aname) + 1);
-			sql_exp *e = sql_error(sql, 02, SQLSTATE(42000) "%s: aggregate functions not allowed in WHERE clause",
-						uaname ? toUpperCopy(uaname, aname) : aname);
-			if (uaname)
-				GDKfree(uaname);
-			return e;
+			char *uaname = SA_NEW_ARRAY(sql->ta, char, strlen(aname) + 1);
+			return sql_error(sql, 02, SQLSTATE(42000) "%s: aggregate functions not allowed in WHERE clause", toUpperCopy(uaname, aname));
 		} else if (is_sql_update_set(f) || is_sql_psm(f)) {
-			char *uaname = GDKmalloc(strlen(aname) + 1);
-			sql_exp *e = sql_error(sql, 02, SQLSTATE(42000) "%s: aggregate functions not allowed in SET, WHILE, IF, ELSE, CASE, WHEN, RETURN, ANALYZE clauses (use subquery)",
-						uaname ? toUpperCopy(uaname, aname) : aname);
-			if (uaname)
-				GDKfree(uaname);
-			return e;
+			char *uaname = SA_NEW_ARRAY(sql->ta, char, strlen(aname) + 1);
+			return sql_error(sql, 02, SQLSTATE(42000) "%s: aggregate functions not allowed in SET, WHILE, IF, ELSE, CASE, WHEN, RETURN, ANALYZE clauses (use subquery)", toUpperCopy(uaname, aname));
 		} else if (is_sql_aggr(f)) {
-			char *uaname = GDKmalloc(strlen(aname) + 1);
-			sql_exp *e = sql_error(sql, 02, SQLSTATE(42000) "%s: aggregate functions cannot be nested",
-						uaname ? toUpperCopy(uaname, aname) : aname);
-			if (uaname)
-				GDKfree(uaname);
-			return e;
+			char *uaname = SA_NEW_ARRAY(sql->ta, char, strlen(aname) + 1);
+			return sql_error(sql, 02, SQLSTATE(42000) "%s: aggregate functions cannot be nested", toUpperCopy(uaname, aname));
 		} else if (is_psm_call(f)) {
-			char *uaname = GDKmalloc(strlen(aname) + 1);
-			sql_exp *e = sql_error(sql, 02, SQLSTATE(42000) "%s: aggregate functions not allowed inside CALL",
-						uaname ? toUpperCopy(uaname, aname) : aname);
-			if (uaname)
-				GDKfree(uaname);
-			return e;
+			char *uaname = SA_NEW_ARRAY(sql->ta, char, strlen(aname) + 1);
+			return sql_error(sql, 02, SQLSTATE(42000) "%s: aggregate functions not allowed inside CALL", toUpperCopy(uaname, aname));
 		} else if (is_sql_from(f)) {
-			char *uaname = GDKmalloc(strlen(aname) + 1);
-			sql_exp *e = sql_error(sql, 02, SQLSTATE(42000) "%s: aggregate functions not allowed in functions in FROM",
-						uaname ? toUpperCopy(uaname, aname) : aname);
-			if (uaname)
-				GDKfree(uaname);
-			return e;
+			char *uaname = SA_NEW_ARRAY(sql->ta, char, strlen(aname) + 1);
+			return sql_error(sql, 02, SQLSTATE(42000) "%s: aggregate functions not allowed in functions in FROM", toUpperCopy(uaname, aname));
 		}
 	}
 
@@ -3338,12 +3307,8 @@ _rel_aggr(sql_query *query, sql_rel **rel, int distinct, sql_schema *s, char *an
 			has_args = true;
 			if (gl && gl != ogl) {
 				if (gl->grouped) {
-					char *uaname = GDKmalloc(strlen(aname) + 1);
-					sql_exp *e = sql_error(sql, 02, SQLSTATE(42000) "%s: aggregate functions cannot be nested",
-						uaname ? toUpperCopy(uaname, aname) : aname);
-					if (uaname)
-						GDKfree(uaname);
-					return e;
+					char *uaname = SA_NEW_ARRAY(sql->ta, char, strlen(aname) + 1);
+					return sql_error(sql, 02, SQLSTATE(42000) "%s: aggregate functions cannot be nested", toUpperCopy(uaname, aname));
 				}
 				if (!base)
 					groupby->l = subquery = gl;
@@ -3351,12 +3316,8 @@ _rel_aggr(sql_query *query, sql_rel **rel, int distinct, sql_schema *s, char *an
 					groupby = subquery = gl;
 			}
 			if (!exp_subtype(e)) { /* we also do not expect parameters here */
-				char *uaname = GDKmalloc(strlen(aname) + 1);
-				sql_exp *e = sql_error(sql, 02, SQLSTATE(42000) "%s: parameters not allowed as arguments to aggregate functions",
-						uaname ? toUpperCopy(uaname, aname) : aname);
-				if (uaname)
-					GDKfree(uaname);
-				return e;
+				char *uaname = SA_NEW_ARRAY(sql->ta, char, strlen(aname) + 1);
+				return sql_error(sql, 02, SQLSTATE(42000) "%s: parameters not allowed as arguments to aggregate functions", toUpperCopy(uaname, aname));
 			}
 
 			all_aggr &= (exp_card(e) <= CARD_AGGR && !exp_is_atom(e) && is_aggr(e->type) && !is_func(e->type) && (!groupby || !is_groupby(groupby->op) || !groupby->r || !exps_find_exp(groupby->r, e)));
@@ -3371,40 +3332,20 @@ _rel_aggr(sql_query *query, sql_rel **rel, int distinct, sql_schema *s, char *an
 			all_freevar = 0;
 		if (!all_freevar) {
 			if (is_sql_groupby(f)) {
-				char *uaname = GDKmalloc(strlen(aname) + 1);
-				sql_exp *e = sql_error(sql, 02, SQLSTATE(42000) "%s: aggregate function '%s' not allowed in GROUP BY clause",
-								uaname ? toUpperCopy(uaname, aname) : aname, aname);
-				if (uaname)
-					GDKfree(uaname);
-				return e;
+				char *uaname = SA_NEW_ARRAY(sql->ta, char, strlen(aname) + 1);
+				return sql_error(sql, 02, SQLSTATE(42000) "%s: aggregate function '%s' not allowed in GROUP BY clause", toUpperCopy(uaname, aname), aname);
 			} else if (is_sql_values(f)) {
-				char *uaname = GDKmalloc(strlen(aname) + 1);
-				sql_exp *e = sql_error(sql, 02, SQLSTATE(42000) "%s: aggregate functions not allowed on an unique value",
-							uaname ? toUpperCopy(uaname, aname) : aname);
-				if (uaname)
-					GDKfree(uaname);
-				return e;
+				char *uaname = SA_NEW_ARRAY(sql->ta, char, strlen(aname) + 1);
+				return sql_error(sql, 02, SQLSTATE(42000) "%s: aggregate functions not allowed on an unique value", toUpperCopy(uaname, aname));
 			} else if (is_sql_join(f)) { /* the is_sql_join test must come before is_sql_where, because the join conditions are handled with sql_where */
-				char *uaname = GDKmalloc(strlen(aname) + 1);
-				sql_exp *e = sql_error(sql, 02, SQLSTATE(42000) "%s: aggregate functions not allowed in JOIN conditions",
-							uaname ? toUpperCopy(uaname, aname) : aname);
-				if (uaname)
-					GDKfree(uaname);
-				return e;
+				char *uaname = SA_NEW_ARRAY(sql->ta, char, strlen(aname) + 1);
+				return sql_error(sql, 02, SQLSTATE(42000) "%s: aggregate functions not allowed in JOIN conditions", toUpperCopy(uaname, aname));
 			} else if (is_sql_where(f)) {
-				char *uaname = GDKmalloc(strlen(aname) + 1);
-				sql_exp *e = sql_error(sql, 02, SQLSTATE(42000) "%s: aggregate functions not allowed in WHERE clause",
-							uaname ? toUpperCopy(uaname, aname) : aname);
-				if (uaname)
-					GDKfree(uaname);
-				return e;
+				char *uaname = SA_NEW_ARRAY(sql->ta, char, strlen(aname) + 1);
+				return sql_error(sql, 02, SQLSTATE(42000) "%s: aggregate functions not allowed in WHERE clause", toUpperCopy(uaname, aname));
 			} else if (is_sql_from(f)) {
-				char *uaname = GDKmalloc(strlen(aname) + 1);
-				sql_exp *e = sql_error(sql, 02, SQLSTATE(42000) "%s: aggregate functions not allowed in functions in FROM",
-							uaname ? toUpperCopy(uaname, aname) : aname);
-				if (uaname)
-					GDKfree(uaname);
-				return e;
+				char *uaname = SA_NEW_ARRAY(sql->ta, char, strlen(aname) + 1);
+				return sql_error(sql, 02, SQLSTATE(42000) "%s: aggregate functions not allowed in functions in FROM", toUpperCopy(uaname, aname));
 			} else if (!all_aggr && ungrouped_cols && !list_empty(ungrouped_cols)) {
 				for (node *n = ungrouped_cols->h ; n ; n = n->next) {
 					sql_rel *outer;
@@ -3510,12 +3451,8 @@ _rel_aggr(sql_query *query, sql_rel **rel, int distinct, sql_schema *s, char *an
 	}
 
 	if (!groupby && exps_card(exps) > CARD_ATOM) {
-		char *uaname = GDKmalloc(strlen(aname) + 1);
-		sql_exp *e = sql_error(sql, 02, SQLSTATE(42000) "%s: missing group by",
-				       uaname ? toUpperCopy(uaname, aname) : aname);
-		if (uaname)
-			GDKfree(uaname);
-		return e;
+		char *uaname = SA_NEW_ARRAY(sql->ta, char, strlen(aname) + 1);
+		return sql_error(sql, 02, SQLSTATE(42000) "%s: missing group by", toUpperCopy(uaname, aname));
 	}
 
 	if (!subquery && groupby && groupby->op != op_groupby) { 		/* implicit groupby */
@@ -3545,12 +3482,8 @@ _rel_aggr(sql_query *query, sql_rel **rel, int distinct, sql_schema *s, char *an
 		sql_exp *e;
 
 		if (strcmp(aname, "count") != 0) {
-			char *uaname = GDKmalloc(strlen(aname) + 1);
-			sql_exp *e = sql_error(sql, 02, SQLSTATE(42000) "%s: unable to perform '%s(*)'",
-					       uaname ? toUpperCopy(uaname, aname) : aname, aname);
-			if (uaname)
-				GDKfree(uaname);
-			return e;
+			char *uaname = SA_NEW_ARRAY(sql->ta, char, strlen(aname) + 1);
+			return sql_error(sql, 02, SQLSTATE(42000) "%s: unable to perform '%s(*)'", toUpperCopy(uaname, aname), aname);
 		}
 		a = sql_bind_func(sql->sa, s, aname, sql_bind_localtype("void"), NULL, F_AGGR);
 		e = exp_aggr(sql->sa, NULL, a, distinct, 0, groupby?groupby->card:CARD_ATOM, 0);
@@ -3724,21 +3657,15 @@ _rel_aggr(sql_query *query, sql_rel **rel, int distinct, sql_schema *s, char *an
 		}
 		return e;
 	} else {
-		sql_exp *e;
 		char *type = "unknown";
-		char *uaname = GDKmalloc(strlen(aname) + 1);
+		char *uaname = SA_NEW_ARRAY(sql->ta, char, strlen(aname) + 1);
 
 		if (exps->h) {
 			sql_exp *e = exps->h->data;
 			type = exp_subtype(e)->type->sqlname;
 		}
 
-		e = sql_error(sql, 02, SQLSTATE(42000) "%s: no such aggregate '%s(%s)'",
-			      uaname ? toUpperCopy(uaname, aname) : aname, aname, type);
-
-		if (uaname)
-			GDKfree(uaname);
-		return e;
+		return sql_error(sql, 02, SQLSTATE(42000) "%s: no such aggregate '%s(%s)'", toUpperCopy(uaname, aname), aname, type);
 	}
 }
 
@@ -3784,7 +3711,7 @@ rel_case(sql_query *query, sql_rel **rel, symbol *opt_cond, dlist *when_search_l
 			cond = rel_logical_value_exp(query, rel, when->h->data.sym, f, ek);
 		if (!cond)
 			return NULL;
-		list_prepend(conds, cond);
+		append(conds, cond);
 		tpe = exp_subtype(cond);
 		if (tpe && condtype) {
 			supertype(&ctype, condtype, tpe);
@@ -3795,7 +3722,7 @@ rel_case(sql_query *query, sql_rel **rel, symbol *opt_cond, dlist *when_search_l
 
 		if (!(result = rel_value_exp(query, rel, when->h->next->data.sym, f, ek)))
 			return NULL;
-		list_prepend(results, result);
+		append(results, result);
 		tpe = exp_subtype(result);
 		if (tpe && restype) {
 			supertype(&rtype, restype, tpe);
@@ -3838,6 +3765,7 @@ rel_case(sql_query *query, sql_rel **rel, symbol *opt_cond, dlist *when_search_l
 	if (opt_cond_exp && !(opt_cond_exp = exp_check_type(sql, condtype, rel ? *rel : NULL, opt_cond_exp, type_equal)))
 		return NULL;
 	sql_find_subtype(&bt, "boolean", 0, 0);
+	list *args = sa_list(sql->sa);
 	for (node *n = conds->h, *m = results->h; n && m; n = n->next, m = m->next) {
 		sql_exp *cond = n->data;
 		sql_exp *result = m->data;
@@ -3851,15 +3779,19 @@ rel_case(sql_query *query, sql_rel **rel, symbol *opt_cond, dlist *when_search_l
 			return NULL;
 		if (!(cond = exp_check_type(sql, &bt, rel ? *rel : NULL, cond, type_equal)))
 			return NULL;
-
-		if (!(res = rel_nop_(sql, rel ? *rel : NULL, cond, result, res, NULL, NULL, "ifthenelse", card_value)))
-			return NULL;
-		/* ugh overwrite res type */
-		((sql_subfunc*)res->f)->res->h->data = sql_create_subtype(sql->sa, restype->type, restype->digits, restype->scale);
+		append(args, cond);
+		append(args, result);
 	}
+	if (res)
+		list_append(args, res);
+	list *types = append(append(append(sa_list(sql->sa), condtype), restype), restype);
+	sql_subfunc *ifthenelse = find_func(sql, NULL, "ifthenelse", list_length(types), F_FUNC, NULL);
+	res = exp_op(sql->sa, args, ifthenelse);
+	((sql_subfunc*)res->f)->res->h->data = sql_create_subtype(sql->sa, restype->type, restype->digits, restype->scale);
 	return res;
 }
 
+#if 0
 static sql_exp *
 do_complex_case(sql_query *query, node *n, str func, sql_subtype *restype)
 {
@@ -3878,6 +3810,7 @@ do_complex_case(sql_query *query, node *n, str func, sql_subtype *restype)
 		return NULL;
 	return rel_binop_(query->sql, NULL, l, r, NULL, func, card_value);
 }
+#endif
 
 static sql_exp *
 rel_complex_case(sql_query *query, sql_rel **rel, dlist *case_args, int f, str func)
@@ -3905,7 +3838,18 @@ rel_complex_case(sql_query *query, sql_rel **rel, dlist *case_args, int f, str f
 		return sql_error(query->sql, 02, SQLSTATE(42000) "Result type missing");
 	if (restype->type->localtype == TYPE_void) /* NULL */
 		restype = sql_bind_localtype("str");
-	return do_complex_case(query, args->h, func, restype);
+	list *nargs = sa_list(query->sql->sa);
+	for (node *m = args->h; m; m = m->next) {
+		sql_exp *result = m->data;
+
+		if (!(result = exp_check_type(query->sql, restype, rel ? *rel : NULL, result, type_equal)))
+			return NULL;
+		append(nargs, result);
+	}
+	//return do_complex_case(query, args->h, func, restype);
+	list *types = append(append(sa_list(query->sql->sa), restype), restype);
+	sql_subfunc *fnc = find_func(query->sql, NULL, func, list_length(types), F_FUNC, NULL);
+	return exp_op(query->sql->sa, nargs, fnc);
 }
 
 static sql_exp *
@@ -4687,29 +4631,17 @@ rel_rankop(sql_query *query, sql_rel **rel, symbol *se, int f)
 	supports_frames = window_function->token != SQL_RANK || is_nth_value || !strcmp(aname, "first_value") || !strcmp(aname, "last_value");
 
 	if (is_sql_update_set(f) || is_sql_psm(f) || is_sql_values(f) || is_sql_join(f) || is_sql_where(f) || is_sql_groupby(f) || is_sql_having(f) || is_psm_call(f) || is_sql_from(f)) {
-		char *uaname = GDKmalloc(strlen(aname) + 1);
+		char *uaname = SA_NEW_ARRAY(sql->ta, char, strlen(aname) + 1);
 		const char *clause = is_sql_update_set(f)||is_sql_psm(f)?"in SET, WHILE, IF, ELSE, CASE, WHEN, RETURN, ANALYZE clauses (use subquery)":is_sql_values(f)?"on an unique value":
 							 is_sql_join(f)?"in JOIN conditions":is_sql_where(f)?"in WHERE clause":is_sql_groupby(f)?"in GROUP BY clause":
 							 is_psm_call(f)?"in CALL":is_sql_from(f)?"in functions in FROM":"in HAVING clause";
-		(void) sql_error(sql, 02, SQLSTATE(42000) "%s: window function '%s' not allowed %s",
-						 uaname ? toUpperCopy(uaname, aname) : aname, aname, clause);
-		if (uaname)
-			GDKfree(uaname);
-		return NULL;
+		return sql_error(sql, 02, SQLSTATE(42000) "%s: window function '%s' not allowed %s", toUpperCopy(uaname, aname), aname, clause);
 	} else if (is_sql_aggr(f)) {
-		char *uaname = GDKmalloc(strlen(aname) + 1);
-		(void) sql_error(sql, 02, SQLSTATE(42000) "%s: window functions not allowed inside aggregation functions",
-						 uaname ? toUpperCopy(uaname, aname) : aname);
-		if (uaname)
-			GDKfree(uaname);
-		return NULL;
+		char *uaname = SA_NEW_ARRAY(sql->ta, char, strlen(aname) + 1);
+		return sql_error(sql, 02, SQLSTATE(42000) "%s: window functions not allowed inside aggregation functions", toUpperCopy(uaname, aname));
 	} else if (is_sql_window(f)) {
-		char *uaname = GDKmalloc(strlen(aname) + 1);
-		(void) sql_error(sql, 02, SQLSTATE(42000) "%s: window functions cannot be nested",
-						 uaname ? toUpperCopy(uaname, aname) : aname);
-		if (uaname)
-			GDKfree(uaname);
-		return NULL;
+		char *uaname = SA_NEW_ARRAY(sql->ta, char, strlen(aname) + 1);
+		return sql_error(sql, 02, SQLSTATE(42000) "%s: window functions cannot be nested", toUpperCopy(uaname, aname));
 	}
 
 	/* window operations are only allowed in the projection */
@@ -4745,12 +4677,9 @@ rel_rankop(sql_query *query, sql_rel **rel, symbol *se, int f)
 
 		distinct = dn->next->data.i_val;
 		if (extra_input) { /* pass an input column for analytic functions that don't require it */
-			in = rel_first_column(sql, p);
-			if (!in)
-				return NULL;
-			in = exp_ref(sql, in);
+			sql_subfunc *star = sql_bind_func(sql->sa, s, "star", NULL, NULL, F_FUNC);
+			in = exp_op(sql->sa, NULL, star);
 			append(fargs, in);
-			in = exp_ref_save(sql, in);
 		}
 		if (dl)
 			for (dargs = dl->h ; dargs ; dargs = dargs->next) {
@@ -4761,12 +4690,8 @@ rel_rankop(sql_query *query, sql_rel **rel, symbol *se, int f)
 				if (!in)
 					return NULL;
 				if (!exp_subtype(in)) { /* we also do not expect parameters here */
-					char *uaname = GDKmalloc(strlen(aname) + 1);
-					(void) sql_error(sql, 02, SQLSTATE(42000) "%s: parameters not allowed as arguments to window functions",
-									uaname ? toUpperCopy(uaname, aname) : aname);
-					if (uaname)
-						GDKfree(uaname);
-					return NULL;
+					char *uaname = SA_NEW_ARRAY(sql->ta, char, strlen(aname) + 1);
+					return sql_error(sql, 02, SQLSTATE(42000) "%s: parameters not allowed as arguments to window functions", toUpperCopy(uaname, aname));
 				}
 				if (!exp_name(in))
 					exp_label(sql->sa, in, ++sql->label);
@@ -4796,12 +4721,8 @@ rel_rankop(sql_query *query, sql_rel **rel, symbol *se, int f)
 			if (!in)
 				return NULL;
 			if (!exp_subtype(in)) { /* we also do not expect parameters here */
-				char *uaname = GDKmalloc(strlen(aname) + 1);
-				(void) sql_error(sql, 02, SQLSTATE(42000) "%s: parameters not allowed as arguments to window functions",
-								uaname ? toUpperCopy(uaname, aname) : aname);
-				if (uaname)
-					GDKfree(uaname);
-				return NULL;
+				char *uaname = SA_NEW_ARRAY(sql->ta, char, strlen(aname) + 1);
+				return sql_error(sql, 02, SQLSTATE(42000) "%s: parameters not allowed as arguments to window functions", toUpperCopy(uaname, aname));
 			}
 			if (!exp_name(in))
 				exp_label(sql->sa, in, ++sql->label);
@@ -4822,19 +4743,13 @@ rel_rankop(sql_query *query, sql_rel **rel, symbol *se, int f)
 
 		if (!nfargs) { /* count(*) */
 			if (window_function->token == SQL_AGGR && strcmp(aname, "count") != 0) {
-				char *uaname = GDKmalloc(strlen(aname) + 1);
-				(void) sql_error(sql, 02, SQLSTATE(42000) "%s: unable to perform '%s(*)'",
-								uaname ? toUpperCopy(uaname, aname) : aname, aname);
-				if (uaname)
-					GDKfree(uaname);
-				return NULL;
+				char *uaname = SA_NEW_ARRAY(sql->ta, char, strlen(aname) + 1);
+				return sql_error(sql, 02, SQLSTATE(42000) "%s: unable to perform '%s(*)'", toUpperCopy(uaname, aname), aname);
 			}
-
-			in = rel_first_column(sql, p);
-			in = exp_ref(sql, in);
+			sql_subfunc *star = sql_bind_func(sql->sa, s, "star", NULL, NULL, F_FUNC);
+			in = exp_op(sql->sa, NULL, star);
 			append(fargs, in);
 			append(fargs, exp_atom_bool(sql->sa, 0)); /* don't ignore nills */
-			in = exp_ref_save(sql, in);
 		}
 	}
 
@@ -4999,27 +4914,48 @@ rel_rankop(sql_query *query, sql_rel **rel, symbol *se, int f)
 	if (!wf) {
 		wf = find_func(sql, s, aname, list_length(types), F_ANALYTIC, NULL);
 		if (wf) {
-			node *op = wf->func->ops->h;
 			list *nexps = sa_list(sql->sa);
+			sql_subtype *atp = NULL;
+			sql_arg *aa = NULL;
 
-			for (n = fargs->h ; wf && op && n; op = op->next, n = n->next ) {
-				sql_arg *arg = op->data;
+			/* find largest any type argument */
+			for (node *n = fargs->h, *op = wf->func->ops->h ; op && n; op = op->next, n = n->next ) {
+				sql_arg *a = op->data;
 				sql_exp *e = n->data;
+				sql_subtype *t = exp_subtype(e);
 
-				e = exp_check_type(sql, &arg->type, NULL, e, type_equal);
-				if (!e) {
+				if (!aa && a->type.type->eclass == EC_ANY) {
+					atp = t;
+					aa = a;
+				}
+				if (aa && a->type.type->eclass == EC_ANY && t && atp && t->type->localtype > atp->type->localtype) {
+					atp = t;
+					aa = a;
+				}
+			}
+			for (node *n = fargs->h, *op = wf->func->ops->h ; wf && op && n; op = op->next, n = n->next ) {
+				sql_arg *a = op->data;
+				sql_exp *e = n->data;
+				sql_subtype *ntp = &a->type;
+
+				if (a->type.type->eclass == EC_ANY && atp)
+					ntp = sql_create_subtype(sql->sa, atp->type, atp->digits, atp->scale);
+				if (!(e = exp_check_type(sql, ntp, NULL, e, type_equal))) {
 					wf = NULL;
 					break;
 				}
 				list_append(nexps, e);
 			}
-			if (wf && list_length(nexps))
+			if (wf && list_length(nexps)) {
 				fargs = nexps;
-			else {
+			} else {
 				char *arg_list = nfargs ? window_function_arg_types_2str(sql, types, nfargs) : NULL;
 				sql_error(sql, 02, SQLSTATE(42000) "SELECT: window function '%s(%s)' not found", aname, arg_list ? arg_list : "");
 				return NULL;
 			}
+			/* dirty hack */
+			if (wf->res && aa && atp)
+				wf->res->h->data = sql_create_subtype(sql->sa, atp->type, atp->digits, atp->scale);
 		} else {
 			char *arg_list = nfargs ? window_function_arg_types_2str(sql, types, nfargs) : NULL;
 			sql_error(sql, 02, SQLSTATE(42000) "SELECT: window function '%s(%s)' not found", aname, arg_list ? arg_list : "");

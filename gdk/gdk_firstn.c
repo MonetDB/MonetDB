@@ -219,6 +219,7 @@ BATfirstn_unique(BAT *b, BAT *s, BUN n, bool asc, bool nilslast, oid *lastp, lng
 	oid item;
 	BUN pos, childpos;
 
+	MT_thread_setalgorithm(__func__);
 	cnt = canditer_init(&ci, b, s);
 
 	if (n >= cnt) {
@@ -724,6 +725,7 @@ BATfirstn_unique_with_groups(BAT *b, BAT *s, BAT *g, BUN n, bool asc, bool nilsl
 	oid item;
 	BUN pos, childpos;
 
+	MT_thread_setalgorithm(__func__);
 	cnt = canditer_init(&ci, b, s);
 
 	if (n > cnt)
@@ -1019,6 +1021,7 @@ BATfirstn_grouped(BAT **topn, BAT **gids, BAT *b, BAT *s, BUN n, bool asc, bool 
 	oid last;
 	gdk_return rc;
 
+	MT_thread_setalgorithm(__func__);
 	if (distinct && !b->tkey) {
 		su = s;
 		s = BATunique(b, s);
@@ -1118,6 +1121,7 @@ BATfirstn_grouped_with_groups(BAT **topn, BAT **gids, BAT *b, BAT *s, BAT *g, BU
 	oid last, lastg;
 	gdk_return rc;
 
+	MT_thread_setalgorithm(__func__);
 	if (distinct) {
 		BAT *bn1, *bn2, *bn3, *bn4, *bn5, *bn6, *bn7, *bn8;
 		if (BATgroup(&bn1, &bn2, NULL, b, s, g, NULL, NULL) != GDK_SUCCEED)
