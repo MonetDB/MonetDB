@@ -92,6 +92,7 @@ def gen_docs():
 
 
 def gen_tests():
+    sherlock = Doc(testdata.SHERLOCK)
     for compr in testdata.COMPRESSIONS:
         for name, doc in gen_docs():
             yield TestCase(name, doc, compr, "wstream", doc)
@@ -103,6 +104,8 @@ def gen_tests():
             yield TestCase(name, doc, compr, ["wastream", "blocksize:2"], doc.to_platform())
             yield TestCase(name, doc, compr, ["wstream", "blocksize:1000000"], doc)
             yield TestCase(name, doc, compr, ["wastream", "blocksize:1000000"], doc.to_platform())
+        for level in ['data', 'all']:
+            yield TestCase(f'flush{level}.txt', sherlock, compr, ["wstream", "blocksize:1024", f"flush:{level}"], sherlock)
 
 
 def all_tests(filename_filter):

@@ -30,6 +30,8 @@ const char *USAGE =
 	"With W_OPENER:\n"
 	"    - wstream           stream = open_wstream(filename)\n"
 	"    - wastream          stream = open_wastream(filename)\n"
+	"    - blocksize:N       Copy in blocks of this size\n"
+	"    - flush:{data,all}  Flush after each block\n"
 	"With R_WRAPPER:\n"
 	"    - iconv:enc         stream = iconv_rstream(stream, enc)\n"
 	"    - blocksize:N       Copy in blocks of this size\n"
@@ -61,7 +63,7 @@ static stream *wrapper_autocompression(stream *s, char *level);
 
 static void copy_stream_to_file(stream *in, FILE *out, size_t bufsize);
 
-static void copy_file_to_stream(FILE *in, stream *out, size_t bufsize);
+static void copy_file_to_stream(FILE *in, stream *out, size_t bufsize, bool do_flush, mnstr_flush_level flush_level);
 
 _Noreturn static void croak(int status, const char *msg, ...)
 	__attribute__((__format__(__printf__, 2, 3)));
@@ -215,6 +217,8 @@ int cmd_write(char *argv[])
 	char *opener_name = NULL;
 	opener_fun opener;
 	size_t bufsize = 1024;
+	bool do_flush = false;
+	mnstr_flush_level flush_level = MNSTR_FLUSH_DATA;
 
 	FILE *in = NULL;
 	stream *s = NULL;
@@ -281,6 +285,16 @@ int cmd_write(char *argv[])
 			if (*end != '\0' || size <= 0)
 				croak(1, "invalid blocksize: %ld", size);
 			bufsize = size;
+		} else if (strcmp(wrapper_name, "flush") == 0) {
+			if (parms == NULL)
+				parms = "";
+			if (strcmp(parms, "data") == 0)
+				flush_level = MNSTR_FLUSH_DATA;
+			else if (strcmp(parms, "all") == 0)
+				flush_level = MNSTR_FLUSH_ALL;
+			else
+				croak(1, "flush wrapper parameter is either \"data\" or \"all\"");
+			do_flush = true;
 		} else {
 			croak(1, "Unknown wrapper: %s", wrapper_name);
 		}
@@ -297,7 +311,7 @@ int cmd_write(char *argv[])
 #endif
 	}
 
-	copy_file_to_stream(in, s, bufsize);
+	copy_file_to_stream(in, s, bufsize, do_flush, flush_level);
 	mnstr_close(s);
 
 	return 0;
@@ -344,7 +358,7 @@ static void copy_stream_to_file(stream *in, FILE *out, size_t bufsize)
 }
 
 
-static void copy_file_to_stream(FILE *in, stream *out, size_t bufsize)
+static void copy_file_to_stream(FILE *in, stream *out, size_t bufsize, bool do_flush, mnstr_flush_level flush_level)
 {
 	char *buffer;
 	size_t nread;
@@ -370,6 +384,9 @@ static void copy_file_to_stream(FILE *in, stream *out, size_t bufsize)
 				(unsigned long)nwritten,  (unsigned long)nread,
 				total + (int64_t)nwritten, mnstr_error(out));
 		total += (int64_t)nwritten;
+		if (do_flush)
+			if (mnstr_flush(out, flush_level) != 0)
+				croak(2, "Flush failed after %" PRId64 " bytes: %s", total, mnstr_error(out));
 	}
 
 	free(buffer);
@@ -532,7 +549,7 @@ int cmd_bstream(char *argv[])
 			FILE *f = fopen(filename, "r");
 			if (!f)
 				croak(2, "could not open '%s': %s", filename, strerror(errno));
-			copy_file_to_stream(f, bs, 42);
+			copy_file_to_stream(f, bs, 42, false, 0);
 			fclose(f);
 			mnstr_flush(bs, MNSTR_FLUSH_DATA);
 		}

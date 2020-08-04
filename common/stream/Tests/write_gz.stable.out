@@ -126,7 +126,13 @@ Test: write ['wstream', 'blocksize:1000000'] sherlock.txt.gz
 Test: write ['wastream', 'blocksize:1000000'] sherlock.txt.gz
 	OK
 
-# 10:20:12 >  
-# 10:20:12 >  "Done."
-# 10:20:12 >  
+Test: write ['wstream', 'blocksize:1024', 'flush:data'] flushdata.txt.gz
+	OK
+
+Test: write ['wstream', 'blocksize:1024', 'flush:all'] flushall.txt.gz
+	OK
+
+# 14:39:40 >  
+# 14:39:40 >  "Done."
+# 14:39:40 >  
 
