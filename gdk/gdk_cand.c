@@ -769,7 +769,7 @@ canditer_prev(struct canditer *ci)
 oid
 canditer_peekprev(struct canditer *ci)
 {
-	oid o;
+	oid o = oid_nil;
 
 	if (ci->next == 0)
 		return oid_nil;
