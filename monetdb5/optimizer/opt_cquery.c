@@ -178,7 +178,7 @@ OPTcqueryImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 						p= pushStr(mb,p, schemas[j]);
 						p= pushStr(mb,p, tables[j]);
 						p= pushInt(mb,p, output[j]);
-						alias[lastmvc] = getArg(p,0);
+						alias[lastmvc] = getArg(p,0); // replace dependency on the current lastmvc with dependency on basket.register?
 						lastmvc = getArg(p,0);
 
 						p= newStmt(mb,basketRef,lockRef);
@@ -200,7 +200,7 @@ OPTcqueryImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				if( fnd){
 					getModuleId(p) = basketRef;
 					pushInstruction(mb,p);
-					alias[getArg(p,0)] = -1;
+					alias[getArg(p,0)] = -1; // FIXME: why do we do this?
 					continue;
 				}
 			}
@@ -241,6 +241,7 @@ OPTcqueryImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 					// watch out for second transaction in the same block
 					if( mvcseen){
 						// NB: make sure this is only done once.
+						// FIXME: maybe we should set mvcseen = 0 here
 						// unlock the stream tables
 						for( j=btop-1; j>= 0; j--){
 							r= newStmt(mb,basketRef,unlockRef);
@@ -302,11 +303,12 @@ OPTcqueryImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				}
 			}
 
-			// Update the X_NNN numbers for this instruction
+			// If the X_NNN variables used by this stmt haven modified by stmts before, update them
 			for (j = 0; j < p->argc; j++)
 				if (alias[getArg(p, j)] > 0)
 					getArg(p, j) = alias[getArg(p, j)];
 
+			// Update the chain dependency of {sql,basket}.{append,update} on lastmvc
 			if ( (getModuleId(p) == sqlRef ||getModuleId(p)== basketRef) && getFunctionId(p) == appendRef ){
 				getArg(p,1) = lastmvc;
 				lastmvc = getArg(p,0);
@@ -318,8 +320,6 @@ OPTcqueryImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			pushInstruction(mb, p);
 		}
 
-	// a basket lock is performed for each sql.mvc, but we need to remove the last one if there are more than 1 sql.mvc
-	// in the generated MAL plan
 	if(manymvc > 1) {
 		for (j = mb->stop - 1; j >= 0; j--) {
 			p = getInstrPtr(mb, j);
@@ -328,7 +328,15 @@ OPTcqueryImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			} else if(getModuleId(p) == basketRef && getFunctionId(p) == unlockRef) {
 				getArg(p,1) = lastrealmvc;
 			} else if(getModuleId(p) == basketRef &&
-				(getFunctionId(p) == registerRef || getFunctionId(p) == lockRef || getFunctionId(p) == tumbleRef)) {
+				(getFunctionId(p) == registerRef || getFunctionId(p) == lockRef)) {
+				// a basket lock is performed for each sql.mvc,
+				// but we need to remove the last one if there
+				// are more than 1 sql.mvc in the generated MAL
+				// plan
+				// FIXME: this is probably no longer needed,
+				//        since we now guard against multiple
+				//        sql.mvc to do register and lock only
+				//        once.
 				removeInstruction(mb, p);
 				freeInstruction(p);
 				mb->stmt[mb->stop] = NULL;
