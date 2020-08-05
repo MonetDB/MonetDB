@@ -147,12 +147,12 @@ OPTcqueryImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	alias = (int *) GDKzalloc(mb->vtop * 2 * sizeof(int));
 	if (alias == 0)
-		return MAL_SUCCEED;
+		throw (MAL,"optimizer.cquery", "failed to allocate space for \"alias\"");
 
 	// allocate space for output MAL stmts
 	if (newMalBlkStmt(mb, slimit + extra_stmts) < 0) {
 		GDKfree(alias);
-		return MAL_SUCCEED;
+		throw (MAL,"optimizer.cquery", "allocate newMalBlkStmt failed");
 	}
 
 	pushInstruction(mb, old[0]);
