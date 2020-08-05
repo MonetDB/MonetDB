@@ -322,7 +322,6 @@ exp_convert(sql_allocator *sa, sql_exp *exp, sql_subtype *fromtype, sql_subtype 
 sql_exp *
 exp_op( sql_allocator *sa, list *l, sql_subfunc *f )
 {
-	sql_subtype *fres;
 	sql_exp *e = exp_create(sa, e_func);
 	if (e == NULL)
 		return NULL;
@@ -330,13 +329,6 @@ exp_op( sql_allocator *sa, list *l, sql_subfunc *f )
 	e->l = l;
 	e->f = f;
 	e->semantics = f->func->semantics;
-
-	fres = exp_subtype(e);
-	 /* corner case if the output of the function is void, set the type to one of the inputs */
-	if (!f->func->varres && list_length(l) > 0 && list_length(f->func->res) == 1 && fres && !subtype_cmp(fres, sql_bind_localtype("void"))) {
-		sql_subtype *t = exp_subtype(l->t->data);
-		f->res->h->data = sql_create_subtype(sa, t->type, t->digits, t->scale);
-	}
 	return e;
 }
 

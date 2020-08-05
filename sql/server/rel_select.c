@@ -2931,18 +2931,24 @@ rel_binop_(mvc *sql, sql_rel *rel, sql_exp *l, sql_exp *r, sql_schema *s, char *
 		if (t1->type->eclass == EC_ANY || t2->type->eclass == EC_ANY) {
 			sql_exp *ol = l;
 			sql_exp *or = r;
+			sql_subtype *s = sql_bind_localtype("str");
 
 			if (t1->type->eclass == EC_ANY && t2->type->eclass == EC_ANY) {
-				sql_subtype *s = sql_bind_localtype("str");
 				l = exp_check_type(sql, s, rel, l, type_equal);
 				r = exp_check_type(sql, s, rel, r, type_equal);
 			} else if (t1->type->eclass == EC_ANY) {
-				l = exp_check_type(sql, t2, rel, l, type_equal);
+				s = t2;
+				l = exp_check_type(sql, s, rel, l, type_equal);
 			} else {
-				r = exp_check_type(sql, t1, rel, r, type_equal);
+				s = t1;
+				r = exp_check_type(sql, s, rel, r, type_equal);
 			}
-			if (l && r)
-				return exp_binop(sql->sa, l, r, f);
+			if (l && r) {
+				res = exp_binop(sql->sa, l, r, f);
+				/* needs the hack */
+				((sql_subfunc*)res->f)->res->h->data = sql_create_subtype(sql->sa, s->type, s->digits, s->scale);
+				return res;
+			}
 
 			/* reset error */
 			sql->session->status = 0;
@@ -3749,6 +3755,7 @@ rel_complex_case(sql_query *query, sql_rel **rel, dlist *case_args, int f, str f
 	exp_kind ek = {type_value, card_column, FALSE};
 	list *args = sa_list(query->sql->sa);
 	sql_subtype *restype = NULL, rtype;
+	sql_exp *res;
 
 	/* generate nested func calls */
 	for(dnode *dn = case_args->h; dn; dn = dn->next) {
@@ -3779,7 +3786,9 @@ rel_complex_case(sql_query *query, sql_rel **rel, dlist *case_args, int f, str f
 	}
 	list *types = append(append(sa_list(query->sql->sa), restype), restype);
 	sql_subfunc *fnc = find_func(query->sql, NULL, func, list_length(types), F_FUNC, NULL);
-	return exp_op(query->sql->sa, nargs, fnc);
+	res = exp_op(query->sql->sa, nargs, fnc);
+	((sql_subfunc*)res->f)->res->h->data = sql_create_subtype(query->sql->sa, restype->type, restype->digits, restype->scale);
+	return res;
 }
 
 static sql_exp *
