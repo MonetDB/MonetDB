@@ -213,8 +213,8 @@ stdout of test 'sqlancer01` in directory 'sql/test/SQLancer` itself:
 % int # type
 % 1 # length
 #select 1 from another_t join integers on (cast(another_t.col4 between 1 and 2 as int)) where false;
-% .%11 # table_name
-% %11 # name
+% .%6 # table_name
+% %6 # name
 % tinyint # type
 % 1 # length
 #SELECT another_T.col2 FROM tbl_productsales, integers LEFT OUTER JOIN another_T ON another_T.col1 > 1 WHERE another_T.col2 > 1 GROUP BY another_T.col2 HAVING COUNT((another_T.col2) IN (another_T.col2)) > 0;

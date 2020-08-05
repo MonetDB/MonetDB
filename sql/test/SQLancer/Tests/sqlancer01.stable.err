@@ -21,7 +21,7 @@ ERROR = !Current transaction is aborted (please ROLLBACK)
 CODE  = 25005
 MAPI  = (monetdb) /var/tmp/mtest-118864/.s.monetdb.39484
 QUERY = SELECT ALL CAST(VAR_SAMP(ALL abs(CAST(t0.c1 AS INT))) AS INT) FROM t0 GROUP BY CAST(t0.c1 AS INT), t0.c1; --error, cannot convert string into int
-ERROR = !conversion of string '0.6278315174254069' to type int failed.
+ERROR = !conversion of string to type int failed.
 CODE  = 22018
 
 # 11:08:12 >  

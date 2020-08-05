@@ -27,7 +27,7 @@ stderr of test 'analytics14` in directory 'sql/test/analytics` itself:
 
 MAPI  = (monetdb) /var/tmp/mtest-97238/.s.monetdb.32728
 QUERY = select stddev_samp(aa) over (partition by bb) from stressme; --error, stddev_samp not available for string type
-ERROR = !conversion of string 'one' to type bte failed.
+ERROR = !conversion of string to type bte failed.
 CODE  = 22018
 MAPI  = (monetdb) /var/tmp/mtest-138248/.s.monetdb.35099
 QUERY = select stddev_samp() over (partition by bb) from stressme; --error, stddev_samp without parameters not available

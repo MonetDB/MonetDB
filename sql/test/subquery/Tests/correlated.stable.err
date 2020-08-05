@@ -104,7 +104,7 @@ ERROR = !syntax error, unexpected LIMIT, expecting UNION or EXCEPT or INTERSECT 
 CODE  = 42000
 MAPI  = (monetdb) /var/tmp/mtest-324/.s.monetdb.38129
 QUERY = SELECT 3 IN (SELECT * FROM strings WHERE v=s1.v) FROM strings s1 ORDER BY v; --error, cannot cast 3 into string
-ERROR = !conversion of string 'hello' to type bte failed.
+ERROR = !conversion of string to type bte failed.
 CODE  = 22018
 
 # 20:30:33 >  

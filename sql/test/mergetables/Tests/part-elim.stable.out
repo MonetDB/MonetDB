@@ -55,87 +55,86 @@ stdout of test 'part-elim` in directory 'sql/test/mergetables` itself:
 % .plan # table_name
 % rel # name
 % clob # type
-% 60 # length
+% 64 # length
 project (
 | select (
-| | table(sys.mt2) [ "test"."id", "test"."posx" ] COUNT 
-| ) [ bigint "1" <= "test"."id" <= bigint "10000" BETWEEN  ]
-) [ "test"."id", "test"."posx" ]
+| |  [ boolean "true" ]
+| ) [ boolean "false" ]
+) [ bigint "NULL" as "test"."id", real "NULL" as "test"."posx" ]
 #plan select * from test where id between 1 and 1000;
 % .plan # table_name
 % rel # name
 % clob # type
-% 59 # length
+% 64 # length
 project (
 | select (
-| | table(sys.mt2) [ "test"."id", "test"."posx" ] COUNT 
-| ) [ bigint "1" <= "test"."id" <= bigint "1000" BETWEEN  ]
-) [ "test"."id", "test"."posx" ]
-#declare l integer;
-#set l = 1;
-#declare h integer;
-#set h = 10000;
-#plan select * from test where id between l and h;
+| |  [ boolean "true" ]
+| ) [ boolean "false" ]
+) [ bigint "NULL" as "test"."id", real "NULL" as "test"."posx" ]
+#plan select * from test where id between 1 and 10000;
 % .plan # table_name
 % rel # name
 % clob # type
-% 60 # length
+% 64 # length
 project (
 | select (
-| | table(sys.mt2) [ "test"."id", "test"."posx" ] COUNT 
-| ) [ bigint "1" <= "test"."id" <= bigint "10000" BETWEEN  ]
-) [ "test"."id", "test"."posx" ]
-#set h = 1000;
-#plan select * from test where id between l and h;
+| |  [ boolean "true" ]
+| ) [ boolean "false" ]
+) [ bigint "NULL" as "test"."id", real "NULL" as "test"."posx" ]
+#plan select * from test where id between 1 and 1000;
 % .plan # table_name
 % rel # name
 % clob # type
-% 59 # length
+% 64 # length
 project (
 | select (
-| | table(sys.mt2) [ "test"."id", "test"."posx" ] COUNT 
-| ) [ bigint "1" <= "test"."id" <= bigint "1000" BETWEEN  ]
-) [ "test"."id", "test"."posx" ]
+| |  [ boolean "true" ]
+| ) [ boolean "false" ]
+) [ bigint "NULL" as "test"."id", real "NULL" as "test"."posx" ]
 #plan select * from test where id between 1 and 1000*10;
+% .plan # table_name
+% rel # name
+% clob # type
+% 98 # length
+project (
+| select (
+| | select (
+| | |  [ boolean "true" ]
+| | ) [ boolean "false" ]
+| ) [ bigint "1" <= bigint "NULL" <= bigint[sys.sql_mul(smallint "1000", tinyint "10")] BETWEEN  ]
+) [ bigint "NULL" as "test"."id", real "NULL" as "test"."posx" ]
+#plan select * from test where id between 1 and 100*10;
 % .plan # table_name
 % rel # name
 % clob # type
 % 96 # length
 project (
 | select (
-| | table(sys.mt2) [ "test"."id", "test"."posx" ] COUNT 
-| ) [ bigint "1" <= "test"."id" <= bigint[sys.sql_mul(smallint "1000", tinyint "10")] BETWEEN  ]
-) [ "test"."id", "test"."posx" ]
-#plan select * from test where id between 1 and 100*10;
-% .plan # table_name
-% rel # name
-% clob # type
-% 94 # length
-project (
-| select (
-| | table(sys.mt2) [ "test"."id", "test"."posx" ] COUNT 
-| ) [ bigint "1" <= "test"."id" <= bigint[sys.sql_mul(tinyint "100", tinyint "10")] BETWEEN  ]
-) [ "test"."id", "test"."posx" ]
+| | select (
+| | |  [ boolean "true" ]
+| | ) [ boolean "false" ]
+| ) [ bigint "1" <= bigint "NULL" <= bigint[sys.sql_mul(tinyint "100", tinyint "10")] BETWEEN  ]
+) [ bigint "NULL" as "test"."id", real "NULL" as "test"."posx" ]
 #plan select * from test where id in (1, 1022);
 % .plan # table_name
 % rel # name
 % clob # type
-% 76 # length
+% 64 # length
 project (
 | select (
-| | table(sys.mt2) [ "test"."id", "test"."posx" ] COUNT 
-| ) [ "test"."id" in (bigint "1" as "%2"."%2", bigint "1022" as "%3"."%3") ]
-) [ "test"."id", "test"."posx" ]
+| |  [ boolean "true" ]
+| ) [ boolean "false" ]
+) [ bigint "NULL" as "test"."id", real "NULL" as "test"."posx" ]
 #plan select * from test where id in (1, 1000);
 % .plan # table_name
 % rel # name
 % clob # type
-% 76 # length
+% 64 # length
 project (
 | select (
-| | table(sys.mt2) [ "test"."id", "test"."posx" ] COUNT 
-| ) [ "test"."id" in (bigint "1" as "%2"."%2", bigint "1000" as "%3"."%3") ]
-) [ "test"."id", "test"."posx" ]
+| |  [ boolean "true" ]
+| ) [ boolean "false" ]
+) [ bigint "NULL" as "test"."id", real "NULL" as "test"."posx" ]
 #drop table test;
 #drop table mt1;
 #drop table mt2;

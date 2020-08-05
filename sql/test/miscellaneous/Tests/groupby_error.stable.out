@@ -165,7 +165,7 @@ stdout of test 'groupby_error` in directory 'sql/test/miscellaneous` itself:
 % 112 # length
 group by (
 | table(sys.tab0) [ "tab0"."col0", "tab0"."col1", "tab0"."col2" ] COUNT 
-) [ "tab0"."col0", "tab0"."col1", "tab0"."col2" ] [ "tab0"."col0", "tab0"."col1", "tab0"."col2", "tab0"."col0" ]
+) [ "tab0"."col2", "tab0"."col0", "tab0"."col1" ] [ "tab0"."col0", "tab0"."col1", "tab0"."col2", "tab0"."col0" ]
 #SELECT DISTINCT col0, col1, col2, col0 FROM tab0;
 % sys.tab0,	sys.tab0,	sys.tab0,	sys.tab0 # table_name
 % col0,	col1,	col2,	col0 # name
@@ -191,8 +191,8 @@ project (
 % 2 # length
 [ 64	]
 #SELECT 11 FROM tab1 AS cor0 LEFT JOIN tab0 ON 80 = 70;
-% .%6 # table_name
-% %6 # name
+% .%4 # table_name
+% %4 # name
 % tinyint # type
 % 2 # length
 [ 11	]
@@ -434,8 +434,8 @@ project (
 [ 1303	]
 #SELECT CAST(- 4 * + COUNT ( * ) + 22 + 69 AS BIGINT) AS col2, CAST(- ( + CASE + 85 WHEN - 77 / - CAST ( + CASE - + 51 WHEN 79 THEN + 95 + 13 * ( 60 * 77 ) END AS INTEGER ) + + 82 - COUNT ( * ) * COUNT ( * ) THEN 
 #NULL WHEN SUM ( ALL 99 ) THEN COUNT ( * ) ELSE COUNT ( * ) * - ( COUNT ( * ) ) END ) * 46 - 83 AS BIGINT);
-% .,	.%11 # table_name
-% col2,	%11 # name
+% .,	.%4 # table_name
+% col2,	%4 # name
 % bigint,	bigint # type
 % 2,	3 # length
 [ 87,	-37	]
@@ -447,8 +447,8 @@ project (
 [ 0,	-1161	]
 #SELECT DISTINCT CAST(66 * - + CAST ( - - COUNT ( * ) AS INTEGER ) * 54 * + CASE 68 WHEN - 56 * + CAST ( NULL AS INTEGER ) + + + 47 THEN 
 #- 83 ELSE + 59 + - COUNT ( * ) - 26 * ( 59 ) * 11 - - + COUNT ( * ) * - 73 END + + COUNT ( * ) / + ( 86 + 19 * 90 ) AS BIGINT);
-% .%6 # table_name
-% %6 # name
+% .%3 # table_name
+% %3 # name
 % bigint # type
 % 8 # length
 [ 60192396	]
