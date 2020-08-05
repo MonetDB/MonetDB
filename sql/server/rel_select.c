@@ -478,7 +478,7 @@ check_arguments_and_find_largest_any_type(mvc *sql, sql_rel *rel, list* exps, sq
 		append(nexps, e);
 	}
 	/* dirty hack */
-	if (sf->func->type != F_UNION && sf->func->type != F_LOADER && sf->res && aa && atp)
+	if (sf->func->type != F_PROC && sf->func->type != F_UNION && sf->func->type != F_LOADER && sf->res && aa && atp)
 		sf->res->h->data = sql_create_subtype(sql->sa, atp->type, atp->digits, atp->scale);
 	return nexps;
 }
