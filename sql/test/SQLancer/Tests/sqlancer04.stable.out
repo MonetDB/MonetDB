@@ -194,6 +194,30 @@ stdout of test 'sqlancer04` in directory 'sql/test/SQLancer` itself:
 % month_interval # type
 % 1 # length
 #ROLLBACK;
+#START TRANSACTION;
+#CREATE TABLE "sys"."t0" ("c0" DOUBLE,"c1" INTERVAL MONTH);
+#COPY 4 RECORDS INTO "sys"."t0" FROM stdin USING DELIMITERS E'\t',E'\n','"';
+#NULL	1876068957
+#NULL	1798321013
+#0.8609488658910056	496732801
+#0.6220338267946794	1689393833
+[ 4	]
+#SELECT 1 FROM t0 WHERE 'b' = COALESCE('1', CASE WHEN 2 THEN 'a' END);
+% .%2 # table_name
+% %2 # name
+% tinyint # type
+% 1 # length
+#SELECT MAX(ALL 0.47279814) FROM t0 WHERE ((r'Vቕ*2DGj!K-?')NOT ILIKE(COALESCE(r'뷿', upper(r'1285890467'), r'R B+ ]%''?E}%<[cöjö媘թ丅MJV%r&伉', 
+#CASE WHEN -681304440 THEN r'+s' WHEN -2104930505 THEN r'M[' END))) GROUP BY t0.c0, t0.c1;
+% .%1 # table_name
+% %1 # name
+% decimal # type
+% 11 # length
+[ 0.47279814	]
+[ 0.47279814	]
+[ 0.47279814	]
+[ 0.47279814	]
+#ROLLBACK;
 
 # 09:44:50 >  
 # 09:44:50 >  "Done."
