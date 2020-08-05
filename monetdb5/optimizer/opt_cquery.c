@@ -229,6 +229,14 @@ OPTcqueryImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 					retseen = 1;
 
 				if(p->token != ENDsymbol || !retseen) {
+					// empty all baskets used only when we are optimizing a cq
+					for(j = 0; j < btop; j++)
+						if( input[j] && !output[j] ){
+							r =  newStmt(mb, basketRef, tumbleRef);
+							r =  pushStr(mb,r, schemas[j]);
+							r =  pushStr(mb,r, tables[j]);
+							lastmvc = getArg(r,0);
+					}
 					// watch out for second transaction in the same block
 					if( mvcseen){
 						// NB: make sure this is only done once.
@@ -240,14 +248,6 @@ OPTcqueryImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 							r= pushStr(mb,r, tables[j]);
 							lastmvc= getArg(r,0);
 						}
-					}
-					// empty all baskets used only when we are optimizing a cq
-					for(j = 0; j < btop; j++)
-						if( input[j] && !output[j] ){
-							r =  newStmt(mb, basketRef, tumbleRef);
-							r =  pushStr(mb,r, schemas[j]);
-							r =  pushStr(mb,r, tables[j]);
-							lastmvc = getArg(r,0);
 					}
 				}
 
