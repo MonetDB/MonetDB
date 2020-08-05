@@ -2118,7 +2118,7 @@ store_apply_deltas(void)
 	/* make sure we reset all transactions on re-activation */
 	//gtrans->wstime = timestamp();
 	/* cleanup drop tables, columns and idxs first */
-	if (0)
+	if (/* DISABLES CODE */ (0))
 	trans_cleanup(gtrans);
 
 	res = logger_funcs.flush();
