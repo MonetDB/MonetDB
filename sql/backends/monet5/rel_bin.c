@@ -733,7 +733,7 @@ static stmt*
 exp2bin_coalesce(backend *be, sql_exp *fe, stmt *left, stmt *right, stmt *isel, int depth)
 {
 	stmt *res = NULL, *sel = NULL, *osel = NULL, *ncond = NULL, *ocond = NULL;
-	int single_value = (fe->card <= CARD_ATOM);
+	int single_value = (fe->card <= CARD_ATOM && (!left || !left->nrcols));
 	char name[16], *nme = NULL;
 	sql_subtype *bt = sql_bind_localtype("bit");
 	sql_subfunc *and = sql_bind_func(be->mvc->sa, NULL, "and", bt, bt, F_FUNC);

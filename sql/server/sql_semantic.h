@@ -28,6 +28,7 @@ extern char *qname_schema_object(dlist *qname);
 extern char *qname_catalog(dlist *qname);
 #define qname_module(qname) qname_schema(qname)
 
+extern sql_subtype *result_datatype(sql_subtype *super, sql_subtype *l, sql_subtype *r);
 extern sql_subtype *supertype(sql_subtype *super, sql_subtype *r, sql_subtype *i);
 
 typedef enum {

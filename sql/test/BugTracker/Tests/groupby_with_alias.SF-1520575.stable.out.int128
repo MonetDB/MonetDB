@@ -35,6 +35,7 @@ stdout of test 'groupby_with_alias.SF-1520575` in directory 'sql/test/BugTracker
 % bug_alias,	%1 # name
 % varchar,	hugeint # type
 % 0,	1 # length
+#ROLLBACK;
 
 # 11:54:20 >  
 # 11:54:20 >  Done.
