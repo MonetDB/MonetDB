@@ -2960,18 +2960,15 @@ exp_set_type_recurse(mvc *sql, sql_subtype *type, sql_exp *e, const char **relna
 				exp_set_type_recurse(sql, type, e->l, relname, expname);
 			}
 		} break;
+		case e_aggr:
 		case e_func: {
-			for(node *n = ((list*)e->l)->h ; n ; n = n->next)
-				exp_set_type_recurse(sql, type, (sql_exp*) n->data, relname, expname);
-			if (e->r)
-				for(node *n = ((list*)e->r)->h ; n ; n = n->next)
-					exp_set_type_recurse(sql, type, (sql_exp*) n->data, relname, expname);
-		} 	break;
-		case e_aggr: {
 			if (e->l)
 				for(node *n = ((list*)e->l)->h ; n ; n = n->next)
 					exp_set_type_recurse(sql, type, (sql_exp*) n->data, relname, expname);
-		} 	break;
+			if (e->type == e_func && e->r)
+				for(node *n = ((list*)e->r)->h ; n ; n = n->next)
+					exp_set_type_recurse(sql, type, (sql_exp*) n->data, relname, expname);
+		} break;
 		case e_cmp: {
 			if (e->flag == cmp_in || e->flag == cmp_notin) {
 				exp_set_type_recurse(sql, type, e->l, relname, expname);

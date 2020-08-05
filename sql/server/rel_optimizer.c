@@ -9157,6 +9157,8 @@ static void replace_column_references_with_nulls_2(mvc *sql, list* crefs, sql_ex
 
 static void
 replace_column_references_with_nulls_1(mvc *sql, list* crefs, list* exps) {
+    if (list_empty(exps))
+        return;
     for(node* n = exps->h; n; n=n->next) {
         sql_exp* e = n->data;
         replace_column_references_with_nulls_2(sql, crefs, e);

@@ -458,18 +458,15 @@ exp_change_column_table(mvc *sql, sql_exp *e, sql_table* oldt, sql_table* newt)
 		} break;
 		case e_atom:
 			break;
+		case e_aggr:
 		case e_func: {
-			for (node *n = ((list*)e->l)->h ; n ; n = n->next)
-				n->data = exp_change_column_table(sql, (sql_exp*) n->data, oldt, newt);
-			if (e->r)
-				for (node *n = ((list*)e->r)->h ; n ; n = n->next)
-					n->data = exp_change_column_table(sql, (sql_exp*) n->data, oldt, newt);
-		} 	break;
-		case e_aggr: {
 			if (e->l)
 				for (node *n = ((list*)e->l)->h ; n ; n = n->next)
 					n->data = exp_change_column_table(sql, (sql_exp*) n->data, oldt, newt);
-		} 	break;
+			if (e->type == e_func && e->r)
+				for (node *n = ((list*)e->r)->h ; n ; n = n->next)
+					n->data = exp_change_column_table(sql, (sql_exp*) n->data, oldt, newt);
+		} break;
 		case e_column: {
 			if (!strcmp(e->l, oldt->base.name))
 				e->l = sa_strdup(sql->sa, newt->base.name);
