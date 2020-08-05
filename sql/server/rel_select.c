@@ -3703,7 +3703,7 @@ rel_case(sql_query *query, sql_rel **rel, symbol *opt_cond, dlist *when_search_l
 		append(conds, cond);
 		tpe = exp_subtype(cond);
 		if (tpe && condtype) {
-			supertype(&ctype, condtype, tpe);
+			result_datatype(&ctype, condtype, tpe);
 			condtype = &ctype;
 		} else if (tpe) {
 			condtype = tpe;
@@ -3714,7 +3714,7 @@ rel_case(sql_query *query, sql_rel **rel, symbol *opt_cond, dlist *when_search_l
 		append(results, result);
 		tpe = exp_subtype(result);
 		if (tpe && restype) {
-			supertype(&rtype, restype, tpe);
+			result_datatype(&rtype, restype, tpe);
 			restype = &rtype;
 		} else if (tpe) {
 			restype = tpe;
@@ -3726,7 +3726,7 @@ rel_case(sql_query *query, sql_rel **rel, symbol *opt_cond, dlist *when_search_l
 
 		tpe = exp_subtype(res);
 		if (tpe && restype) {
-			supertype(&rtype, restype, tpe);
+			result_datatype(&rtype, restype, tpe);
 			restype = &rtype;
 		} else if (tpe) {
 			restype = tpe;
@@ -3780,27 +3780,6 @@ rel_case(sql_query *query, sql_rel **rel, symbol *opt_cond, dlist *when_search_l
 	return res;
 }
 
-#if 0
-static sql_exp *
-do_complex_case(sql_query *query, node *n, str func, sql_subtype *restype)
-{
-	sql_exp *l = n->data;
-
-	if (!(l = exp_check_type(query->sql, restype, NULL, l, type_equal)))
-		return NULL;
-
-	n = n->next;
-	sql_exp *r = n->data;
-	if (n->next)
-		r = do_complex_case(query, n, func, restype);
-	else
-		r = exp_check_type(query->sql, restype, NULL, r, type_equal);
-	if (!r)
-		return NULL;
-	return rel_binop_(query->sql, NULL, l, r, NULL, func, card_value);
-}
-#endif
-
 static sql_exp *
 rel_complex_case(sql_query *query, sql_rel **rel, dlist *case_args, int f, str func)
 {
@@ -3817,7 +3796,7 @@ rel_complex_case(sql_query *query, sql_rel **rel, dlist *case_args, int f, str f
 		/* all arguments should have the same type */
 		sql_subtype *tpe = exp_subtype(a);
 		if (tpe && restype) {
-			supertype(&rtype, restype, tpe);
+			result_datatype(&rtype, restype, tpe);
 			restype = &rtype;
 		} else if (tpe) {
 			restype = tpe;
@@ -3835,7 +3814,6 @@ rel_complex_case(sql_query *query, sql_rel **rel, dlist *case_args, int f, str f
 			return NULL;
 		append(nargs, result);
 	}
-	//return do_complex_case(query, args->h, func, restype);
 	list *types = append(append(sa_list(query->sql->sa), restype), restype);
 	sql_subfunc *fnc = find_func(query->sql, NULL, func, list_length(types), F_FUNC, NULL);
 	return exp_op(query->sql->sa, nargs, fnc);
