@@ -789,26 +789,24 @@ BSKTreset(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	return MAL_SUCCEED;
 }
 
+// Send the err msg to TRC_ERROR since we can't return the errors of a
+//   continuous query to its caller.  Ideally, instead of handeling the errors
+//   with the baskets, we'd want to log them per invocation of a c-query.
 str
 BSKTerror(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	str sname = *getArgReference_str(stk, pci, 1);
-	str tname = *getArgReference_str(stk, pci, 2);
-	str error = *getArgReference_str(stk, pci, 3);
-	int idx;
+	str loc = *getArgReference_str(stk, pci, 1);
+	str msg = *getArgReference_str(stk, pci, 2);
 
 	(void) cntxt;
 	(void) mb;
 
-	idx = BSKTlocate(sname,tname);
-	if( idx == 0)
-		throw(SQL,"basket.error",SQLSTATE(3F000) "Stream table %s.%s not registered\n",sname,tname);
-
-	if(error) {
-		baskets[idx].error = GDKstrdup(error);
-		if(baskets[idx].error == NULL)
-			throw(SQL,"basket.error",SQLSTATE(HY013) MAL_MALLOC_FAIL);
-	}
+	if (!loc || !msg)
+		TRC_ERROR(SQL_EXECUTION, "unkown error");
+	else if (strcmp(loc, "MAL") == 0)
+		TRC_ERROR(MAL_SERVER, "%s", msg);
+	else
+		TRC_ERROR(SQL_EXECUTION, "%s", msg);
 	return MAL_SUCCEED;
 }
 

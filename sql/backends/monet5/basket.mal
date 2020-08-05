@@ -62,7 +62,11 @@ comment "Lock the basket for private use";
 
 unsafe pattern unlock(mvc:any, sch:str, tbl:str):int
 address BSKTunlock
-comment "Lock the basket for private use";
+comment "Unlock the basket that has been locked for private use";
+
+unsafe pattern cleanlock(mvc:any, sch:str, tbl:str):int
+address BSKTcleanlock
+comment "Clean up possible lock set on the given basket";
 
 pattern commit(mvc:any, sch:str, tbl:str):int
 address BSKTcommit
@@ -72,7 +76,7 @@ pattern reset(mvc:int,sch:str,tbl:str):int
 address BSKTreset
 comment "Remove a basket content";
 
-pattern error(sch:str,tbl:str,msg:str)
+pattern error(loc:str,msg:str)
 address BSKTerror
 comment "Remember the error seen";
 

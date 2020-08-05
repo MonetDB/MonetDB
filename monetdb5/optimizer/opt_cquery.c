@@ -51,6 +51,7 @@ OPTcqueryImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	int input[MAXBSKTOPT]= {0};
 	int output[MAXBSKTOPT]= {0};
 	int btop=0, lastmvc=0, lastrealmvc=0, manymvc=0, retseen = 0, noerror=0, mvcseen = 0;
+	int tmpmvc = 0;
 	int cq= strncmp(getFunctionId(getInstrPtr(mb,0)),"cq",2) == 0;
 	char buf[256];
 	lng usec = GDKusec();
@@ -236,7 +237,7 @@ OPTcqueryImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 							r =  pushStr(mb,r, schemas[j]);
 							r =  pushStr(mb,r, tables[j]);
 							lastmvc = getArg(r,0);
-					}
+						}
 					// watch out for second transaction in the same block
 					if( mvcseen){
 						// NB: make sure this is only done once.
@@ -258,22 +259,39 @@ OPTcqueryImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 					setVarUDFtype(mb, j);
 					r->barrier = CATCHsymbol;
 
+					tmpmvc = lastmvc; // save lastmvc for the MALexception block
+					for (k = btop-1; k >= 0; k--){
+						r= newStmt(mb,basketRef,clean_streamtable_lockRef);
+						r= pushArgument(mb,r,lastmvc);
+						r= pushStr(mb,r, schemas[k]);
+						r= pushStr(mb,r, tables[k]);
+						lastmvc= getArg(r,0);
+					}
+
 					r = newStmt(mb,basketRef, errorRef);
-					r = pushStr(mb, r, getModuleId(old[0]));
-					r = pushStr(mb, r, getFunctionId(old[0]));
+					r = pushStr(mb, r, "SQL");
 					r = pushArgument(mb, r, j);
 
 					r = newAssignment(mb);
 					getArg(r, 0) = j;
 					r->barrier = EXITsymbol;
+
 					r = newAssignment(mb);
 					j = getArg(r, 0) = newVariable(mb, "MALexception",12, TYPE_str);
 					setVarUDFtype(mb, j);
 					r->barrier = CATCHsymbol;
 
+					lastmvc = tmpmvc; // go back to use the same lastmvc value as at the beginning of the SQLexception block
+					for (k = btop-1; k >= 0; k--){
+						r= newStmt(mb,basketRef,clean_streamtable_lockRef);
+						r= pushArgument(mb,r,lastmvc);
+						r= pushStr(mb,r, schemas[k]);
+						r= pushStr(mb,r, tables[k]);
+						lastmvc= getArg(r,0);
+					}
+
 					r = newStmt(mb,basketRef, errorRef);
-					r = pushStr(mb, r, getModuleId(old[0]));
-					r = pushStr(mb, r, getFunctionId(old[0]));
+					r = pushStr(mb, r, "MAL");
 					r = pushArgument(mb, r, j);
 
 					r = newAssignment(mb);
