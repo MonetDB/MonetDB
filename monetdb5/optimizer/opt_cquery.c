@@ -176,6 +176,7 @@ OPTcqueryImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 						p= pushArgument(mb,p,lastmvc);
 						p= pushStr(mb,p, schemas[j]);
 						p= pushStr(mb,p, tables[j]);
+						p= pushInt(mb,p, output[j]);
 						alias[lastmvc] = getArg(p,0);
 						lastmvc = getArg(p,0);
 
