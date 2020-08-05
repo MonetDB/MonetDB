@@ -1713,7 +1713,7 @@ copyfrom(sql_query *query, dlist *qname, dlist *columns, dlist *files, dlist *he
 				size_t l = strlen(cs->type.type->sqlname);
 				char *fname = sa_alloc(sql->sa, l+8);
 
-				snprintf(fname, l+8, "str_to_%s", cs->type.type->sqlname);
+				snprintf(fname, l+8, "str_to_%s", strcmp(cs->type.type->sqlname, "timestamptz") == 0 ? "timestamp" : cs->type.type->sqlname);
 				sql_find_subtype(&st, "clob", 0, 0);
 				f = sql_bind_func_result(sql->sa, sys, fname, F_FUNC, &cs->type, 2, &st, &st);
 				if (!f)

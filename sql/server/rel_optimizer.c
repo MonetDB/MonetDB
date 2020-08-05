@@ -7795,6 +7795,8 @@ rel_simplify_predicates(visitor *v, sql_rel *rel, sql_exp *e, int depth)
 
 							if (!strcmp(inf->func->base.name, "<>"))
 								flag = !flag;
+							if (e->flag == cmp_notequal)
+								flag = !flag;
 							assert(list_length(args) == 2);
 							l = args->h->data;
 							r = args->h->next->data;
