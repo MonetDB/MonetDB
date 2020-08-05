@@ -18,26 +18,26 @@
 #include "mal_interpreter.h"
 
 typedef enum JSONkind {
-  JSON_OBJECT=1,
-  JSON_ARRAY,
-  JSON_ELEMENT,
-  JSON_VALUE,
-  JSON_STRING,
-  JSON_NUMBER,
-  JSON_BOOL,
-  JSON_NULL
+	JSON_OBJECT=1,
+	JSON_ARRAY,
+	JSON_ELEMENT,
+	JSON_VALUE,
+	JSON_STRING,
+	JSON_NUMBER,
+	JSON_BOOL,
+	JSON_NULL
 } JSONkind;
 
 /* The JSON index structure is meant for short lived versions */
 typedef struct JSONterm {
-  JSONkind kind;
-  char *name; /* exclude the quotes */
-  size_t namelen;
-  const char *value; /* start of string rep */
-  size_t valuelen;
-  int child, next, tail; /* next offsets allow you to walk array/object chains
-													and append quickly */
-  /* An array or object item has a number of components */
+	JSONkind kind;
+	char *name; /* exclude the quotes */
+	size_t namelen;
+	const char *value; /* start of string rep */
+	size_t valuelen;
+	int child, next, tail; /* next offsets allow you to walk array/object chains
+							  and append quickly */
+	/* An array or object item has a number of components */
 } JSONterm;
 
 typedef struct JSON{
@@ -71,17 +71,19 @@ typedef str json;
 	} while (0)
 
 #define CHECK_JSON(jt)													\
-	if (jt == NULL || jt->error) {										\
-		char *msg;														\
-		if (jt) {														\
-			msg = jt->error;											\
-			jt->error = NULL;											\
-			JSONfree(jt);												\
-		} else {														\
-			msg = createException(MAL, "json.new", SQLSTATE(HY013) MAL_MALLOC_FAIL);		\
+	do {																\
+		if (jt == NULL || jt->error) {									\
+			char *msg;													\
+			if (jt) {													\
+				msg = jt->error;										\
+				jt->error = NULL;										\
+				JSONfree(jt);											\
+			} else {													\
+				msg = createException(MAL, "json.new", SQLSTATE(HY013) MAL_MALLOC_FAIL); \
+			}															\
+			return msg;													\
 		}																\
-		return msg;														\
-	}
+	} while (0)
 
 int TYPE_json;
 
@@ -1189,7 +1191,7 @@ JSONplaintext(char **r, size_t *l, size_t *ilen, JSON *jt, int idx, str sep, siz
 		if (jt->elm[idx].child)
 			*r = JSONplaintext(r, l, ilen, jt, jt->elm[idx].child, sep, sep_len);
 		break;
-		case JSON_STRING:
+	case JSON_STRING:
 		// Make sure there is enough space for the value plus the separator plus the NULL byte
 		if (*l < jt->elm[idx].valuelen - 2 + sep_len + 1) {
 			char *p = *r - *ilen + *l;
