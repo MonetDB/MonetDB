@@ -46,6 +46,13 @@ OPTmaskImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		p = old[i];
 		if( p == 0)
 			continue; //left behind by others?
+		for(j=0; j< p->retc; j++){
+			k =  getArg(p,j);
+			if( isaBatType(getArgType(mb, p,k)) && getBatType(getArgType(mb, p, k)) == TYPE_msk){
+				// remember we have encountered a mask producing function
+				varused[k] = k;
+			}
+		}
 		for(j=p->retc; j< p->argc; j++){
 			k =  getArg(p,j);
 			if(varused[k]) {
@@ -63,12 +70,10 @@ OPTmaskImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			k=  getArg(p,0);
 			setDestVar(p, newTmpVariable(mb, newBatType(TYPE_oid)));
 			setVarFixed(mb,getArg(p,0));
-			// setDestVar(p, newTmpVariable(mb, newBatType(TYPE_msk))); TODO
-			// setModuleId(p, maskRef);
 
 			// Inject a dummy pair, just based on :oid for now and later to be switched to :msk
 			q = newInstruction(mb, maskRef, maskRef);
-			setDestVar(q, newTmpVariable(mb, newBatType(TYPE_oid)));
+			setDestVar(q, newTmpVariable(mb, newBatType(TYPE_msk)));
 			setVarFixed(mb,getArg(q,0));
 			q= pushArgument(mb, q, getArg(p,0));
 			pushInstruction(mb,q);

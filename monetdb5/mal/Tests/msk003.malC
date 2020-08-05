@@ -1,24 +1,22 @@
 # Let's explore what happens when we want to support :bat[:msk] vectors
 
-b := bat.new(:int);
-bat.append(b,1);
-bat.append(b,3);
-bat.append(b,5);
-bat.append(b,0);
-bat.append(b,1);
+b := bat.new(:oid);
+bat.append(b,1@0);
+bat.append(b,3@0);
+bat.append(b,5@0);
+bat.append(b,6@0);
+bat.append(b,8@0);
 
-bv2:bat[:msk]:= bat.mask(b);
-# should produce (1,1,1,1,1)
+bv2:bat[:msk]:= mask.mask(b);
 io.print(bv2);
+# should produce (1,0,1,0,1,1,0,1)
+bv3:bat[:oid]:= mask.umask(bv2);
+io.print(bv3);
+#should produce 1@0, 3@0, 5@0,6@0,8@0
 
-sel:bat[:msk] := algebra.select(bv2, nil:bat[:oid], 0, 2, true, true, false);
-# should produce (1,0,0,1,1)
-io.print(sel);
-
-prj:bat[:int]:= bat.project(sel, cnd);
-io.print(prj); #produce (1,0,1)
-
-neg:bat[:msk] := bat.not(bv2);
-io.print(neg); # (0,1,1)
-
-od:bat[:oid]:= bat.umask(bv2); #produces a candidate list
+b2 := bat.new(:oid);
+bat.append(b,1@0);
+bat.append(b,5@0);
+bat.append(b,3@0);
+# bat should be ordered
+mv2:bat[:msk]:= mask.mask(b2);
