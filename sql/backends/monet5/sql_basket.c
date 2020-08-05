@@ -205,7 +205,7 @@ BSKTregisterInternal(Client cntxt, MalBlkPtr mb, str sch, str tbl, int* res)
 		throw(MAL,"basket.register",SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
 
-	// collect the column names and the storage
+	// collect the column names and create new BATs for them at this first registration.
 	for ( i=0, o = t->columns.set->h; i <colcnt && o; o = o->next, i++){
 		sql_column *col = o->data;
 		b = COLnew(0, col->type.type->localtype, 0, TRANSIENT);

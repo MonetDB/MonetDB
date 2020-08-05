@@ -70,7 +70,7 @@ OPTcqueryImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	mnstr_printf(cntxt->fdout, "#cquery optimizer start\n");
 	printFunction(cntxt->fdout, mb, stk, LIST_MAL_DEBUG);
 #endif
-	old = mb->stmt;
+	old = mb->stmt; // save the input MAL stmts
 	limit = mb->stop;
 	slimit = mb->ssize;
 
@@ -86,10 +86,11 @@ OPTcqueryImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			for( j =0; j< btop ; j++)
 			if( strcmp(schemas[j], schemas[btop])==0  && strcmp(tables[j],tables[btop]) ==0)
 				break;
-			input[j]= 1;
+			input[j]= 1; // identify an input basket so that it can be tumbled at the end of this query execution
 			if( j == btop)
 				btop++;
 		}
+
 		if( getModuleId(p)== basketRef && getFunctionId(p) == appendRef ){
 			schemas[btop]= getVarConstant(mb, getArg(p,2)).val.sval;
 			tables[btop]= getVarConstant(mb, getArg(p,3)).val.sval;
@@ -140,6 +141,7 @@ OPTcqueryImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 #ifdef DEBUG_OPT_CQUERY
 	mnstr_printf(cntxt->fdout, "#cquery optimizer started with %d streams, mvc %d\n", btop,lastmvc);
 #endif
+	// no stream table found
 	if( btop == MAXBSKTOPT || btop == 0)
 		return MAL_SUCCEED;
 
@@ -147,6 +149,7 @@ OPTcqueryImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (alias == 0)
 		return MAL_SUCCEED;
 
+	// allocate space for output MAL stmts
 	if (newMalBlkStmt(mb, slimit + extra_stmts) < 0) {
 		GDKfree(alias);
 		return MAL_SUCCEED;
@@ -157,6 +160,7 @@ OPTcqueryImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		if (old[i]) {
 			p = old[i];
 
+			// we don't support transaction sematics on stream tables
 			if(getModuleId(p) == sqlRef && getFunctionId(p)== transactionRef){
 				freeInstruction(p);
 				continue;
@@ -180,20 +184,18 @@ OPTcqueryImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 						p= pushArgument(mb,p,lastmvc);
 						p= pushStr(mb,p, schemas[j]);
 						p= pushStr(mb,p, tables[j]);
-						// FIXME: why don't we store getArg(p,0) in alias[lastmvc] again?
 						lastmvc = getArg(p,0);
 					}
 					mvcseen=1;
 				}
 				continue;
 			}
-			// register all baskets used after the mvc had been determined
+			// if this is an sql.tid on a stream table, replace it with basket.tid
 			if (getModuleId(p) == sqlRef && getFunctionId(p) == tidRef ){
 				getStreamTableInfo(getVarConstant(mb,getArg(p,2)).val.sval, getVarConstant(mb,getArg(p,3)).val.sval );
 #ifdef DEBUG_OPT_CQUERY
 				mnstr_printf(cntxt->fdout, "#cquery optimizer found stream %d\n",fnd);
 #endif
-				// replace this sql.tid with basket.tid
 				if( fnd){
 					getModuleId(p) = basketRef;
 					pushInstruction(mb,p);
@@ -202,6 +204,7 @@ OPTcqueryImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				}
 			}
 
+			// If the first input of algebra.projection has been removed, just save its second input and skip this instruction
 			if (getModuleId(p) == algebraRef && getFunctionId(p) == projectionRef && alias[getArg(p,1)] < 0){
 				alias[getArg(p,0)] = getArg(p,2);
 				freeInstruction(p);
@@ -219,6 +222,7 @@ OPTcqueryImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 			if( getModuleId(p)== cqueryRef && getFunctionId(p)==errorRef)
 				noerror++;
+			// NB: we need to keep track of returns...
 			if ((p->barrier == YIELDsymbol || p->barrier == RETURNsymbol || p->token == ENDsymbol) && btop > 0) {
 
 				if(p->barrier == YIELDsymbol || p->barrier == RETURNsymbol)
@@ -227,7 +231,8 @@ OPTcqueryImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				if(p->token != ENDsymbol || !retseen) {
 					// watch out for second transaction in the same block
 					if( mvcseen){
-						// unlock the tables
+						// NB: make sure this is only done once.
+						// unlock the stream tables
 						for( j=btop-1; j>= 0; j--){
 							r= newStmt(mb,basketRef,unlockRef);
 							r= pushArgument(mb,r,lastmvc);
