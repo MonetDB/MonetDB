@@ -209,15 +209,13 @@ result_datatype(sql_subtype *super, sql_subtype *l, sql_subtype *r)
 		if (l->type->radix == 10 || r->type->radix == 10) {
 			digits = 0;
 			/* change to radix 10 */
-			if (l->type->radix == 2)
+			if (l->type->radix == 2 && r->type->radix == 10) {
 				digits = bits2digits(l->type->digits);
-			if (l->type->radix == 2)
-				digits = bits2digits(r->type->digits);
-			if (l->type->radix != 10) {
-				digits = sql_max(digits, r->digits);
+				digits = sql_max(r->digits, digits);
 				scale = r->scale;
-			} else if (r->type->radix != 10) {
-				digits = sql_max(digits, l->digits);
+			} else if (l->type->radix == 10 && r->type->radix == 2) {
+				digits = bits2digits(r->type->digits);
+				digits = sql_max(l->digits, digits);
 				scale = l->scale;
 			}
 		}
