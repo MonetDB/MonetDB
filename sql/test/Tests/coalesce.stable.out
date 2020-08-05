@@ -81,14 +81,14 @@ stdout of test 'coalesce` in directory 'sql/test` itself:
 % sys.coalescetest,	.%1 # table_name
 % id,	%1 # name
 % int,	char # type
-% 1,	7 # length
+% 1,	10 # length
 [ 1,	"a"	]
 [ 2,	"26"	]
 [ 3,	"c"	]
 [ 4,	"unknown"	]
 #SELECT COALESCE(NULL,'x');
-% .%2 # table_name
-% %2 # name
+% .%3 # table_name
+% %3 # name
 % char # type
 % 1 # length
 [ "x"	]

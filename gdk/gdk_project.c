@@ -34,6 +34,7 @@ project_##TYPE(BAT *restrict bn, BAT *restrict l,			\
 	oid r1seq, r1end;						\
 	oid r2seq, r2end;						\
 									\
+	MT_thread_setalgorithm(__func__);				\
 	r1t = (const TYPE *) Tloc(r1, 0);				\
 	r2t = r2 ? (const TYPE *) Tloc(r2, 0) : NULL;			\
 	bt = (TYPE *) Tloc(bn, 0);					\
@@ -118,6 +119,7 @@ project_oid(BAT *restrict bn, BAT *restrict l, struct canditer *restrict lci,
 	const oid *restrict r2t = NULL;
 	struct canditer r1ci = {0}, r2ci = {0};
 
+	MT_thread_setalgorithm(__func__);
 	if (r1->ttype == TYPE_void && r1->tvheap != NULL)
 		canditer_init(&r1ci, NULL, r1);
 	else if (!BATtdense(r1))
@@ -224,6 +226,7 @@ project_any(BAT *restrict bn, BAT *restrict l, struct canditer *restrict ci,
 	oid r1seq, r1end;
 	oid r2seq, r2end;
 
+	MT_thread_setalgorithm(__func__);
 	r1i = bat_iterator(r1);
 	r1seq = r1->hseqbase;
 	r1end = r1seq + BATcount(r1);

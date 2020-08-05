@@ -1,1 +1,2 @@
-debian/tmp/usr/lib/x86_64-linux-gnu/libbat.so.* usr/lib/x86_64-linux-gnu
+debian/tmp/usr/lib/x86_64-linux-gnu/libbat.so.20 usr/lib/x86_64-linux-gnu
+debian/tmp/usr/lib/x86_64-linux-gnu/libbat.so.20.* usr/lib/x86_64-linux-gnu

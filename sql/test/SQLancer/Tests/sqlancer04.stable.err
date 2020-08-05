@@ -38,10 +38,13 @@ MAPI  = (monetdb) /var/tmp/mtest-42538/.s.monetdb.31166
 QUERY = CREATE TABLE t1(c2 TIME, FOREIGN KEY (c2) REFERENCES t0(c0) MATCH FULL, PRIMARY KEY(c2)); --error, foreign key from time to interval second not allowed
 ERROR = !CONSTRAINT FOREIGN KEY: the type of the FOREIGN KEY column 'c2' time(1) is not compatible with the referenced UNIQUE KEY column type sec_interval(13)
 CODE  = 42000
-MAPI  = (monetdb) /var/tmp/mtest-217740/.s.monetdb.38224
-QUERY = select all v2.c0 from v2 right outer join v1 on ((r'8*By1q)*Oc<n')like(substr(r'', 1151312829, 406714197))) 
-        where (case v1.c0 when v1.c0 then interval '104279220' second end) in (interval '2129103763' second) group by timestamp '1970-01-21 14:05:46';
-ERROR = !Wrong format (Dnwxjm4btQ9cp&\c'a_)
+MAPI  = (monetdb) /var/tmp/mtest-434574/.s.monetdb.34597
+QUERY = select 1 from t0 natural join (select 4 from t0) as sub0; --error, no columns of tables 't0' and 'sub0' match
+ERROR = !JOIN: no columns of tables 't0' and 'sub0' match
+CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-633982/.s.monetdb.32164
+QUERY = with sub0 as (select 4 from t0) select 1 from t0 natural join sub0; --error, no columns of tables 't0' and 'sub0' match
+ERROR = !JOIN: no columns of tables 't0' and 'sub0' match
 CODE  = 42000
 
 # 09:44:50 >  

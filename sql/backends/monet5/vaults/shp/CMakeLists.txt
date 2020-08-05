@@ -36,7 +36,7 @@ if(GDAL_FOUND)
     monetdb_config_header
     mutils
     stream
-    gdk
+    bat
     monetdb5
     sqlinclude
     $<$<VERSION_GREATER_EQUAL:${CMAKE_VERSION},3.14.0>:GDAL::GDAL>)

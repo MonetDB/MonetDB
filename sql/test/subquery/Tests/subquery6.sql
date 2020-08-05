@@ -201,6 +201,45 @@ select count(*) over (), max(Product_Name) from tbl_ProductSales;
 select corr(1,1), corr(1,1) over () from tbl_ProductSales;
 	-- NULL NULL
 
+select min(colid), group_concat(null) over () from tbl_ProductSales where null;
+	-- NULL NULL
+
+select min(colid), group_concat(null, null) over () from tbl_ProductSales where null;
+	-- NULL NULL
+
+select max(colid), group_concat('a', null) over () from tbl_ProductSales where null;
+	-- NULL a
+
+select ntile(1) over ();
+	-- 1
+
+select ntile(11) over (), min(TotalSales) from tbl_ProductSales;
+	-- 1 100
+
+select nth_value('bug', '1') over ();
+	-- bug
+
+select nth_value('bug', 1) over ();
+	-- bug
+
+select nth_value('bug', 1) over (), max(TotalSales) from tbl_ProductSales;
+	-- bug 500
+
+select lag('bug') over (), lag('bug', 1) over (), lag('bug', 0) over (), lag('bug', 1, 'oth') over (), lag('bug', 0, 'oth') over ();
+	-- NULL NULL bug oth bug
+
+select lead('bug') over (), lead('bug', 1) over (), lead('bug', 0) over (), lead('bug', 1, 'oth') over (), lead('bug', 0, 'oth') over (), max(TotalSales) from tbl_ProductSales;
+	-- NULL NULL bug oth bug 500
+
+select 1 = any(ColID), max(totalsales) from tbl_ProductSales;
+	-- error, cannot use non GROUP BY column 'ColID' in query results without an aggregate function
+
+select 1 in (ColID), max(totalsales) from tbl_ProductSales;
+	-- error, cannot use non GROUP BY column 'ColID' in query results without an aggregate function
+
+select 1 in (ColID, (select 1)), max(totalsales) from tbl_ProductSales;
+	-- error, cannot use non GROUP BY column 'ColID' in query results without an aggregate function
+
 DROP TABLE tbl_ProductSales;
 DROP TABLE another_T;
 DROP TABLE integers;

@@ -236,26 +236,17 @@ table_constraint_name(mvc *sql, symbol *s, sql_table *t)
 	slen = strlen(suffix);
 	while (len + slen >= buflen)
 		buflen += BUFSIZ;
-	buf = GDKmalloc(buflen);
-	if (!buf) {
-		sql_error(sql, 02, SQLSTATE(HY013) MAL_MALLOC_FAIL);
-		return NULL;
-	}
+	buf = SA_NEW_ARRAY(sql->ta, char, buflen);
 	strcpy(buf, t->base.name);
 
 	/* add column name(s) */
 	for (; nms; nms = nms->next) {
 		slen = strlen(nms->data.sval);
 		while (len + slen + 1 >= buflen) {
-			char *nbuf;
-			buflen += BUFSIZ;
-			nbuf = GDKrealloc(buf, buflen);
-			if (!nbuf) {
-				GDKfree(buf);
-				sql_error(sql, 02, SQLSTATE(HY013) MAL_MALLOC_FAIL);
-				return NULL;
-			}
+			size_t nbuflen = buflen + BUFSIZ;
+			char *nbuf = SA_RENEW_ARRAY(sql->ta, char, buf, nbuflen, buflen);
 			buf = nbuf;
+			buflen = nbuflen;
 		}
 		snprintf(buf + len, buflen - len, "_%s", nms->data.sval);
 		len += slen + 1;
@@ -264,15 +255,10 @@ table_constraint_name(mvc *sql, symbol *s, sql_table *t)
 	/* add suffix */
 	slen = strlen(suffix);
 	while (len + slen >= buflen) {
-		char *nbuf;
-		buflen += BUFSIZ;
-		nbuf = GDKrealloc(buf, buflen);
-		if (!nbuf) {
-			GDKfree(buf);
-			sql_error(sql, 02, SQLSTATE(HY013) MAL_MALLOC_FAIL);
-			return NULL;
-		}
+		size_t nbuflen = buflen + BUFSIZ;
+		char *nbuf = SA_RENEW_ARRAY(sql->ta, char, buf, nbuflen, buflen);
 		buf = nbuf;
+		buflen = nbuflen;
 	}
 	snprintf(buf + len, buflen - len, "%s", suffix);
 	return buf;
@@ -303,11 +289,7 @@ column_constraint_name(mvc *sql, symbol *s, sql_column *sc, sql_table *t)
 	}
 
 	buflen = strlen(t->base.name) + strlen(sc->base.name) + strlen(suffix) + 3;
-	buf = GDKmalloc(buflen);
-	if (!buf){
-		sql_error(sql, 02, SQLSTATE(HY013) MAL_MALLOC_FAIL);
-		return NULL;
-	}
+	buf = SA_NEW_ARRAY(sql->ta, char, buflen);
 	snprintf(buf, buflen, "%s_%s_%s", t->base.name, sc->base.name, suffix);
 	return buf;
 }
@@ -466,7 +448,6 @@ column_options(sql_query *query, dlist *opt_list, sql_schema *ss, sql_table *t, 
 						return SQL_ERR;
 
 					res = column_constraint_type(sql, opt_name ? opt_name : default_name, sym, ss, t, cs, isDeclared, &used);
-					GDKfree(default_name);
 				} 	break;
 				case SQL_DEFAULT: {
 					symbol *sym = s->data.sym;
@@ -676,8 +657,6 @@ table_constraint(mvc *sql, symbol *s, sql_schema *ss, sql_table *t)
 		if (opt_name == NULL)
 			return SQL_ERR;
 		res = table_constraint_type(sql, opt_name, sym, ss, t);
-		if (opt_name != l->h->data.sval)
-			GDKfree(opt_name);
 	}
 
 	if (res != SQL_OK) {

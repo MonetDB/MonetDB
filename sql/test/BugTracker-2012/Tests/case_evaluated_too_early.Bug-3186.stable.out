@@ -30,10 +30,10 @@ stdout of test 'case_evaluated_too_early.Bug-3186` in directory 'sql/test/BugTra
 % 3 # length
 [ -10	]
 #SELECT coalesce (CASE WHEN TRUE THEN -10. end, case when false then 0/0 END);
-% .%2 # table_name
-% %2 # name
+% .%3 # table_name
+% %3 # name
 % decimal # type
-% 5 # length
+% 4 # length
 [ -10	]
 
 # 17:10:20 >  
