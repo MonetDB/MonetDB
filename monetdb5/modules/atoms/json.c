@@ -62,14 +62,6 @@ typedef str json;
 				break;							\
 	} while (0)
 
-#define hex(J)													\
-	do {														\
-		if (isxdigit((unsigned char) *(J)))						\
-			(J)++;												\
-		else													\
-			throw(MAL, "json.parser", "illegal escape char");	\
-	} while (0)
-
 #define CHECK_JSON(jt)													\
 	do {																\
 		if (jt == NULL || jt->error) {									\
@@ -756,6 +748,9 @@ JSONfilterInternal(json *ret, json *js, str *expr, str other)
 static str
 JSONstringParser(const char *j, const char **next)
 {
+	unsigned int u;
+	bool seensurrogate = false;
+
 	assert(*j == '"');
 	j++;
 	for (; *j; j++) {
@@ -772,16 +767,34 @@ JSONstringParser(const char *j, const char **next)
 			case 'n':
 			case 'r':
 			case 't':
+				if (seensurrogate)
+					throw(MAL, "json.parser", "illegal escape char");
 				continue;
 			case 'u':
-				j++;
-				hex(j);
-				hex(j);
-				hex(j);
-				hex(j);
-				// Go back one character, because it would be skipped by the
-				// loop iterator otherwise.
-				j--;
+				u = 0;
+				for (int i = 0; i < 4; i++) {
+					u <<= 4;
+					j++;
+					if ('0' <= *j && *j <= '9')
+						u |= *j - '0';
+					else if ('a' <= *j && *j <= 'f')
+						u |= *j - 'a' + 10;
+					else if ('A' <= *j && *j <= 'F')
+						u |= *j - 'A' + 10;
+					else
+						throw(MAL, "json.parser", "illegal escape char");
+				}
+				if (seensurrogate) {
+					if ((u & 0xFC00) == 0xDC00)
+						seensurrogate = false;
+					else
+						throw(MAL, "json.parser", "illegal escape char");
+				} else {
+					if ((u & 0xFC00) == 0xD800)
+						seensurrogate = true;
+					else if ((u & 0xFC00) == 0xDC00)
+						throw(MAL, "json.parser", "illegal escape char");
+				}
 				break;
 			default:
 				*next = j;
@@ -789,9 +802,15 @@ JSONstringParser(const char *j, const char **next)
 			}
 			break;
 		case '"':
+			if (seensurrogate)
+				throw(MAL, "json.parser", "illegal escape char");
 			j++;
 			*next = j;
 			return MAL_SUCCEED;
+		default:
+			if (seensurrogate)
+				throw(MAL, "json.parser", "illegal escape char");
+			break;
 		}
 	}
 	*next = j;
@@ -1174,7 +1193,7 @@ static char *
 JSONplaintext(char **r, size_t *l, size_t *ilen, JSON *jt, int idx, str sep, size_t sep_len)
 {
 	int i;
-	unsigned int j, k;
+	unsigned int j, u;
 
 	switch (jt->elm[idx].kind) {
 	case JSON_OBJECT:
@@ -1201,18 +1220,79 @@ JSONplaintext(char **r, size_t *l, size_t *ilen, JSON *jt, int idx, str sep, siz
 			*l = *ilen - *l;
 		}
 		for (j = 1; j < jt->elm[idx].valuelen - 1; j++) {
-			if (jt->elm[idx].value[j] == '\\')
-				**r = jt->elm[idx].value[++j];
-			else
-				**r = jt->elm[idx].value[j];
-			(*r)++;
-			(*l)--;
+			if (jt->elm[idx].value[j] == '\\') {
+				switch (jt->elm[idx].value[++j]) {
+				case '"':
+				case '\\':
+				case '/':
+					*(*r)++ = jt->elm[idx].value[j];
+					(*l)--;
+					break;
+				case 'b':
+					*(*r)++ = '\b';
+					(*l)--;
+					break;
+				case 'f':
+					*(*r)++ = '\f';
+					(*l)--;
+					break;
+				case 'r':
+					*(*r)++ = '\r';
+					(*l)--;
+					break;
+				case 'n':
+					*(*r)++ = '\n';
+					(*l)--;
+					break;
+				case 't':
+					*(*r)++ = '\t';
+					(*l)--;
+					break;
+				case 'u':
+					u = 0;
+					for (int i = 0;i < 4; i++) {
+						char c = jt->elm[idx].value[++j];
+						u <<= 4;
+						if ('0' <= c && c <= '9')
+							u |= c - '0';
+						else if ('a' <= c && c <= 'f')
+							u |= c - 'a' + 10;
+						else /* if ('A' <= c && c <= 'F') */
+							u |= c - 'A' + 10;
+					}
+					if (u <= 0x7F) {
+						*(*r)++ = (char) u;
+						(*l)--;
+					} else if (u <= 0x7FF) {
+						*(*r)++ = 0xC0 | (u >> 6);
+						*(*r)++ = 0x80 | (u & 0x3F);
+						(*l) -= 2;
+					} else if ((u & 0xFC00) == 0xD800) {
+						/* high surrogate; must be followed by low surrogate */
+						*(*r)++ = 0xF0 | (((u & 0x03C0) + 0x0040) >> 8);
+						*(*r)++ = 0x80 | ((((u & 0x03C0) + 0x0040) >> 2) & 0x3F);
+						**r = 0x80 | ((u & 0x0003) << 4); /* no increment */
+						(*l) -= 2;
+					} else if ((u & 0xFC00) == 0xDC00) {
+						/* low surrogate; must follow high surrogate */
+						*(*r)++ |= (u & 0x03C0) >> 6; /* amend last value */
+						*(*r)++ = 0x80 | (u & 0x3F);
+						(*l) -= 2;
+					} else /* if (u <= 0xFFFF) */ {
+						*(*r)++ = 0xE0 | (u >> 12);
+						*(*r)++ = 0x80 | ((u >> 6) & 0x3F);
+						*(*r)++ = 0x80 | (u & 0x3F);
+						(*l) -= 3;
+					}
+				}
+			} else {
+				*(*r)++ = jt->elm[idx].value[j];
+				(*l)--;
+			}
 		}
-		for(k = 0; k < sep_len; k++) {
-			**r = *(sep + k);
-			(*r)++;
-		}
-		(*l) -= k;
+		memcpy(*r, sep, sep_len);
+		*l -= sep_len;
+		*r += sep_len;
 		break;
 	default:
 		if (*l < jt->elm[idx].valuelen + sep_len + 1) {
@@ -1223,16 +1303,12 @@ JSONplaintext(char **r, size_t *l, size_t *ilen, JSON *jt, int idx, str sep, siz
 			*r += offset;
 			*l = *ilen - offset;
 		}
-		for (j = 0; j < jt->elm[idx].valuelen; j++) {
-			**r = jt->elm[idx].value[j];
-			(*r)++;
-			(*l)--;
-		}
-		for(k = 0; k < sep_len; k++) {
-			**r = *(sep + k);
-			(*r)++;
-		}
-		(*l) -= k;
+		memcpy(*r, jt->elm[idx].value, jt->elm[idx].valuelen);
+		*l -= jt->elm[idx].valuelen;
+		*r += jt->elm[idx].valuelen;
+		memcpy(*r, sep, sep_len);
+		*l -= sep_len;
+		*r += sep_len;
 	}
 	assert(*l > 0);
 	**r = 0;
