@@ -508,13 +508,13 @@ append_varsized_bat(BAT *b, BAT *n, struct canditer *ci, bool mayshare)
 static gdk_return
 append_msk_bat(BAT *b, BAT *n, struct canditer *ci)
 {
-	uint32_t boff = b->batCount % 32;
-	uint32_t *bp = (uint32_t *) b->theap->base + b->batCount / 32;
-
 	if (ci->ncand == 0)
 		return GDK_SUCCEED;
 	if (BATextend(b, BATcount(b) + ci->ncand) != GDK_SUCCEED)
 		return GDK_FAIL;
+
+	uint32_t boff = b->batCount % 32;
+	uint32_t *bp = (uint32_t *) b->theap->base + b->batCount / 32;
 	b->batCount += ci->ncand;
 	b->theap->free = ((b->batCount + 31) / 32) * 4;
 	if (ci->tpe == cand_dense) {
