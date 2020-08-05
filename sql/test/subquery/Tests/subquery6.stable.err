@@ -25,7 +25,7 @@ QUERY = SELECT i FROM integers i1 WHERE (SELECT CASE WHEN i1.i IS NULL THEN (SEL
 ERROR = !GDK reported error: mergejoin: more than one match
 MAPI  = (monetdb) /var/tmp/mtest-308774/.s.monetdb.32939
 QUERY = SELECT 1 IN (col4, MIN(col2)) FROM another_t;
-ERROR = !SELECT: cannot use non GROUP BY column 'col4' in query results without an aggregate function
+ERROR = !SELECT: cannot use non GROUP BY column in query results without an aggregate function
 CODE  = 42000
 MAPI  = (monetdb) /var/tmp/mtest-25203/.s.monetdb.33709
 QUERY = SELECT (SELECT col1) IN ('not a number') FROM another_t;
@@ -54,6 +54,18 @@ ERROR = !GDK reported error: BATsubcross: more than one match
 MAPI  = (monetdb) /var/tmp/mtest-184851/.s.monetdb.32392
 QUERY = SELECT debugme5(); --error, cannot fetch a single row from an empty input
 ERROR = !Illegal argument: cannot fetch a single row from an empty input
+MAPI  = (monetdb) /var/tmp/mtest-137383/.s.monetdb.39088
+QUERY = select 1 = any(ColID), max(totalsales) from tbl_ProductSales;
+ERROR = !SELECT: cannot use non GROUP BY column in query results without an aggregate function
+CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-137383/.s.monetdb.39088
+QUERY = select 1 in (ColID), max(totalsales) from tbl_ProductSales;
+ERROR = !SELECT: cannot use non GROUP BY column in query results without an aggregate function
+CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-137383/.s.monetdb.39088
+QUERY = select 1 in (ColID, (select 1)), max(totalsales) from tbl_ProductSales;
+ERROR = !SELECT: cannot use non GROUP BY column in query results without an aggregate function
+CODE  = 42000
 
 # 11:45:43 >  
 # 11:45:43 >  "Done."
