@@ -599,7 +599,7 @@ rel_named_table_function(sql_query *query, sql_rel *rel, symbol *ast, int latera
 		}
 	}
 
-	e = find_table_function(sql, s, fname, exps, tl);
+	e = find_table_function(sql, s, fname, list_empty(exps) ? NULL : exps, tl);
 	if (!e)
 		return sql_error(sql, 02, SQLSTATE(42000) "SELECT: no such table returning function '%s'", fname);
 	rel = sq;
