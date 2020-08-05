@@ -2623,7 +2623,7 @@ hot_snapshot_write_tar(stream *out, const char *prefix, char *plan)
 {
 	gdk_return ret = GDK_FAIL;
 	const char *p = plan; // our cursor in the plan
-	time_t timestamp = time(NULL);
+	time_t timestamp = 0;
 	// Name convention: _path for the absolute path
 	// and _name for the corresponding local relative path
 	char abs_src_path[2 * FILENAME_MAX];
@@ -2671,6 +2671,7 @@ hot_snapshot_write_tar(stream *out, const char *prefix, char *plan)
 				GDKerror("Unknown command in snapshot plan: %c (%s)", command, src_name);
 				goto end;
 		}
+		mnstr_flush(out, MNSTR_FLUSH_ALL);
 	}
 
 	// write a trailing block of zeros. If it succeeds, this function succeeds.
