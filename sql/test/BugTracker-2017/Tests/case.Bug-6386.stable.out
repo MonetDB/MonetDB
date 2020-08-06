@@ -27,7 +27,7 @@ stdout of test 'case.Bug-6386` in directory 'sql/test/BugTracker-2017` itself:
 % . # table_name
 % t1 # name
 % decimal # type
-% 40 # length
+% 20 # length
 [ 1.0000000000000	]
 [ 60.3281000000000	]
 [ 0.0000000000000	]
