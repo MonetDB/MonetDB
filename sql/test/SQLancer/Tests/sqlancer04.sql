@@ -197,7 +197,6 @@ WHERE (COALESCE(FALSE, (((((((((((t1.c0) NOT BETWEEN ASYMMETRIC (t1.c0) AND (t1.
 as asdf;
 ROLLBACK;
 
-START TRANSACTION;
 CREATE TABLE "sys"."t1" ("c1" DOUBLE);
 COPY 7 RECORDS INTO "sys"."t1" FROM stdin USING DELIMITERS E'\t',E'\n','"';
 763223864
@@ -208,8 +207,9 @@ COPY 7 RECORDS INTO "sys"."t1" FROM stdin USING DELIMITERS E'\t',E'\n','"';
 0.6184216877785851
 0.6479886625655562
 
-select max(coalesce(interval '5' month, interval '2' month)) from t1 order by t1.c1 desc nulls last;
+select max(coalesce(interval '5' month, interval '2' month)) from t1 order by t1.c1 desc nulls last; --error, cannot use non GROUP BY column 't1.c1' in query results without an aggregate function
 select sum(coalesce(coalesce(interval '5' month, interval '3' month), interval '2' month, coalesce(abs(interval '5' month), interval '2' month, 
 case timestamp '1970-01-15 22:17:17' when timestamp '1970-01-03 22:17:36' then interval '5' month else interval '5' month end, interval '3' month), interval '3' month)) from t1 order by t1.c1 desc nulls last;
+	--error, cannot use non GROUP BY column 't1.c1' in query results without an aggregate function
 SELECT 1 FROM t1 WHERE COALESCE(1, CAST(t1.c1 AS INT) & COALESCE(1101847419, 2)); --inputs not same size error
-ROLLBACK;
+DROP TABLE "sys"."t1";

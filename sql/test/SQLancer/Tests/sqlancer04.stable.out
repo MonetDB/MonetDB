@@ -218,6 +218,27 @@ stdout of test 'sqlancer04` in directory 'sql/test/SQLancer` itself:
 [ 0.47279814	]
 [ 0.47279814	]
 #ROLLBACK;
+#START TRANSACTION;
+#CREATE TABLE "sys"."t1" ("c0" CHAR(240));
+#COPY 5 RECORDS INTO "sys"."t1" FROM stdin USING DELIMITERS E'\t',E'\n','"';
+#"2m^OqPm/3DḞZ02"
+#"2m^OqPm/3DḞZ02"
+#"2m^OqPm/3DḞZ02"
+#"2m^OqPm/3DḞZ02"
+#"2m^OqPm/3DḞZ02"
+[ 5	]
+#ROLLBACK;
+#CREATE TABLE "sys"."t1" ("c1" DOUBLE);
+#COPY 7 RECORDS INTO "sys"."t1" FROM stdin USING DELIMITERS E'\t',E'\n','"';
+#763223864
+#0.4947502779444658
+#0.7872504424909134
+#0.7099123743128314
+#0.7223969464007746
+#0.6184216877785851
+#0.6479886625655562
+[ 7	]
+#DROP TABLE "sys"."t1";
 
 # 09:44:50 >  
 # 09:44:50 >  "Done."
