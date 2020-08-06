@@ -1154,6 +1154,9 @@ mvc_bind_idxbat(mvc *m, const char *sname, const char *tname, const char *iname,
 	return b;
 }
 
+#define BAT_ALIGN 32
+#define ALIGN(s, a)	((s+(a-1))&(~(a-1)))
+
 /* str mvc_bind_wrap(int *bid, str *sname, str *tname, str *cname, int *access); */
 str
 mvc_bind_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
@@ -1186,13 +1189,22 @@ mvc_bind_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			int nr_parts = *getArgReference_int(stk, pci, 7 + upd);
 
 			if (access == 0) {
+				BUN l, h;
+				/* here we align the parts to multiples of 'BAT_ALIGN', needed for efficient 'msk' slices */
 				psz = cnt ? (cnt / nr_parts) : 0;
-				bn = BATslice(b, part_nr * psz, (part_nr + 1 == nr_parts) ? cnt : ((part_nr + 1) * psz));
+				psz = ALIGN(psz, BAT_ALIGN);
+				l = part_nr * psz;
+				if (l > cnt)
+					l = cnt;
+				h = (part_nr + 1 == nr_parts) ? cnt : ((part_nr + 1) * psz);
+				if (h > cnt)
+					h = cnt;
+				bn = BATslice(b, l, h);
 				if(bn == NULL) {
 					BBPunfix(b->batCacheid);
 					throw(SQL, "sql.bind", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 				}
-				BAThseqbase(bn, part_nr * psz);
+				BAThseqbase(bn, l);
 			} else {
 				/* BAT b holds the UPD_ID bat */
 				oid l, h;
@@ -1204,8 +1216,13 @@ mvc_bind_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				}
 				cnt = BATcount(c);
 				psz = cnt ? (cnt / nr_parts) : 0;
+				psz = ALIGN(psz, BAT_ALIGN);
 				l = part_nr * psz;
+				if (l > cnt)
+					l = cnt;
 				h = (part_nr + 1 == nr_parts) ? cnt : ((part_nr + 1) * psz);
+				if (h > cnt)
+					h = cnt;
 				h--;
 				bn = BATselect(b, NULL, &l, &h, true, true, false);
 				BBPunfix(c->batCacheid);
@@ -1517,11 +1534,20 @@ mvc_bind_idxbat_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			int nr_parts = *getArgReference_int(stk, pci, 7 + upd);
 
 			if (access == 0) {
+				BUN l, h;
+				/* here we align the parts to multiples of 'BAT_ALIGN', needed for efficient 'msk' slices */
 				psz = cnt ? (cnt / nr_parts) : 0;
-				bn = BATslice(b, part_nr * psz, (part_nr + 1 == nr_parts) ? cnt : ((part_nr + 1) * psz));
+				psz = ALIGN(psz, BAT_ALIGN);
+				l = part_nr * psz;
+				if (l > cnt)
+					l = cnt;
+				h = (part_nr + 1 == nr_parts) ? cnt : ((part_nr + 1) * psz);
+				if (h > cnt)
+					h = cnt;
+				bn = BATslice(b, l, h);
 				if(bn == NULL)
 					throw(SQL, "sql.bindidx", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-				BAThseqbase(bn, part_nr * psz);
+				BAThseqbase(bn, l);
 			} else {
 				/* BAT b holds the UPD_ID bat */
 				oid l, h;
@@ -1532,8 +1558,13 @@ mvc_bind_idxbat_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				}
 				cnt = BATcount(c);
 				psz = cnt ? (cnt / nr_parts) : 0;
+				psz = ALIGN(psz, BAT_ALIGN);
 				l = part_nr * psz;
+				if (l > cnt)
+					l = cnt;
 				h = (part_nr + 1 == nr_parts) ? cnt : ((part_nr + 1) * psz);
+				if (h > cnt)
+					h = cnt;
 				h--;
 				bn = BATselect(b, NULL, &l, &h, true, true, false);
 				BBPunfix(c->batCacheid);
@@ -2203,9 +2234,14 @@ SQLtid(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		int nr_parts = *getArgReference_int(stk, pci, 5);
 
 		nr /= nr_parts;
+		nr = ALIGN(nr, BAT_ALIGN);
 		sb = (oid) (part_nr * nr);
+		if (sb > cnt)
+			sb = cnt;
 		if (nr_parts == (part_nr + 1)) 		/* last part gets remainder */
-			nr = cnt - (part_nr * nr);	/* keep rest */
+			nr = (cnt > (part_nr*nr))?cnt - (part_nr * nr):0;	/* keep rest */
+		if (sb+nr > cnt)
+			nr = cnt-sb;
 	}
 
 	/* create void,void bat with length and oid's set */
