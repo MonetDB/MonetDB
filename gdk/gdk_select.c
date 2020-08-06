@@ -306,7 +306,7 @@ hashselect(BAT *b, struct canditer *restrict ci, BAT *bn,
 				 buninsfix(bn, dst, cnt, o,		\
 					   (BUN) ((dbl) cnt / (dbl) (p == 0 ? 1 : p) \
 						  * (dbl) (ci->ncand-p) * 1.1 + 1024), \
-					   BATcapacity(bn) + ci->ncand - p, BUN_NONE)); \
+					   maximum, BUN_NONE)); \
 		} else {						\
 			impsloop(ISDENSE, TEST, quickins(dst, cnt, o, bn)); \
 		}							\
@@ -361,7 +361,7 @@ hashselect(BAT *b, struct canditer *restrict ci, BAT *bn,
 					buninsfix(bn, dst, cnt, o,	\
 						  (BUN) ((dbl) cnt / (dbl) (p == 0 ? 1 : p) \
 							 * (dbl) (ci->ncand-p) * 1.1 + 1024), \
-						  BATcapacity(bn) + ci->ncand - p, BUN_NONE); \
+						  maximum, BUN_NONE); \
 					cnt++;				\
 				}					\
 			}						\
@@ -526,7 +526,7 @@ fullscan_any(BAT *b, struct canditer *restrict ci, BAT *bn,
 				buninsfix(bn, dst, cnt, o,
 					  (BUN) ((dbl) cnt / (dbl) (p == 0 ? 1 : p)
 						 * (dbl) (ci->ncand-p) * 1.1 + 1024),
-					  BATcapacity(bn) + ci->ncand - p, BUN_NONE);
+					  maximum, BUN_NONE);
 				cnt++;
 			}
 		}
@@ -545,7 +545,7 @@ fullscan_any(BAT *b, struct canditer *restrict ci, BAT *bn,
 				buninsfix(bn, dst, cnt, o,
 					  (BUN) ((dbl) cnt / (dbl) (p == 0 ? 1 : p)
 						 * (dbl) (ci->ncand-p) * 1.1 + 1024),
-					  BATcapacity(bn) + ci->ncand - p, BUN_NONE);
+					  maximum, BUN_NONE);
 				cnt++;
 			}
 		}
@@ -564,7 +564,7 @@ fullscan_any(BAT *b, struct canditer *restrict ci, BAT *bn,
 				buninsfix(bn, dst, cnt, o,
 					  (BUN) ((dbl) cnt / (dbl) (p == 0 ? 1 : p)
 						 * (dbl) (ci->ncand-p) * 1.1 + 1024),
-					  BATcapacity(bn) + ci->ncand - p, BUN_NONE);
+					  maximum, BUN_NONE);
 				cnt++;
 			}
 		}
@@ -603,7 +603,7 @@ fullscan_str(BAT *b, struct canditer *restrict ci, BAT *bn,
 				buninsfix(bn, dst, cnt, o,
 					  (BUN) ((dbl) cnt / (dbl) (p == 0 ? 1 : p)
 						 * (dbl) (ci->ncand-p) * 1.1 + 1024),
-					  BATcapacity(bn) + ci->ncand - p, BUN_NONE);
+					  maximum, BUN_NONE);
 				cnt++;
 			}
 		}
@@ -618,7 +618,7 @@ fullscan_str(BAT *b, struct canditer *restrict ci, BAT *bn,
 				buninsfix(bn, dst, cnt, o,
 					  (BUN) ((dbl) cnt / (dbl) (p == 0 ? 1 : p)
 						 * (dbl) (ci->ncand-p) * 1.1 + 1024),
-					  BATcapacity(bn) + ci->ncand - p, BUN_NONE);
+					  maximum, BUN_NONE);
 				cnt++;
 			}
 		}
@@ -633,7 +633,7 @@ fullscan_str(BAT *b, struct canditer *restrict ci, BAT *bn,
 				buninsfix(bn, dst, cnt, o,
 					  (BUN) ((dbl) cnt / (dbl) (p == 0 ? 1 : p)
 						 * (dbl) (ci->ncand-p) * 1.1 + 1024),
-					  BATcapacity(bn) + ci->ncand - p, BUN_NONE);
+					  maximum, BUN_NONE);
 				cnt++;
 			}
 		}
@@ -648,7 +648,7 @@ fullscan_str(BAT *b, struct canditer *restrict ci, BAT *bn,
 				buninsfix(bn, dst, cnt, o,
 					  (BUN) ((dbl) cnt / (dbl) (p == 0 ? 1 : p)
 						 * (dbl) (ci->ncand-p) * 1.1 + 1024),
-					  BATcapacity(bn) + ci->ncand - p, BUN_NONE);
+					  maximum, BUN_NONE);
 				cnt++;
 			}
 		}
@@ -1950,12 +1950,11 @@ rangejoin(BAT *r1, BAT *r2, BAT *l, BAT *rl, BAT *rh,
 		 * imprints) and either the left bat is persistent or
 		 * already has imprints, or the right bats are long
 		 * enough (for creating imprints being worth it) */
-		BUN maximum;
 
 		sorted = 2;
 		cnt = 0;
-		maximum = lci->ncand;
 		for (BUN i = 0; i < rci->ncand; i++) {
+			maxsize = cnt + (rci->ncand - i) * lci->ncand;
 			ro = canditer_next(rci);
 			if (rlvals) {
 				vrl = FVALUE(rl, ro - rl->hseqbase);
@@ -1995,7 +1994,7 @@ rangejoin(BAT *r1, BAT *r2, BAT *l, BAT *rl, BAT *rh,
 						    false, true, true,
 						    false, cnt,
 						    l->hseqbase, dst1,
-						    cnt + maximum,
+						    maxsize,
 						    true, &algo);
 				break;
 			}
@@ -2022,7 +2021,7 @@ rangejoin(BAT *r1, BAT *r2, BAT *l, BAT *rl, BAT *rh,
 						    false, true, true,
 						    false, cnt,
 						    l->hseqbase, dst1,
-						    cnt + maximum,
+						    maxsize,
 						    true, &algo);
 				break;
 			}
@@ -2062,7 +2061,7 @@ rangejoin(BAT *r1, BAT *r2, BAT *l, BAT *rl, BAT *rh,
 						    false, true, true,
 						    false, cnt,
 						    l->hseqbase, dst1,
-						    cnt + maximum,
+						    maxsize,
 						    true, &algo);
 				break;
 			}
@@ -2102,7 +2101,7 @@ rangejoin(BAT *r1, BAT *r2, BAT *l, BAT *rl, BAT *rh,
 						    false, true, true,
 						    false, cnt,
 						    l->hseqbase, dst1,
-						    cnt + maximum,
+						    maxsize,
 						    true, &algo);
 				break;
 			}
@@ -2130,7 +2129,7 @@ rangejoin(BAT *r1, BAT *r2, BAT *l, BAT *rl, BAT *rh,
 						    false, true, true,
 						    false, cnt,
 						    l->hseqbase, dst1,
-						    cnt + maximum,
+						    maxsize,
 						    true, &algo);
 				break;
 			}
@@ -2160,7 +2159,7 @@ rangejoin(BAT *r1, BAT *r2, BAT *l, BAT *rl, BAT *rh,
 						    false, true, true,
 						    false, cnt,
 						    l->hseqbase, dst1,
-						    cnt + maximum,
+						    maxsize,
 						    true, &algo);
 				break;
 			}
@@ -2189,7 +2188,7 @@ rangejoin(BAT *r1, BAT *r2, BAT *l, BAT *rl, BAT *rh,
 						    false, true, true,
 						    false, cnt,
 						    l->hseqbase, dst1,
-						    cnt + maximum,
+						    maxsize,
 						    true, &algo);
 				break;
 			}

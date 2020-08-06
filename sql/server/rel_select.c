@@ -917,9 +917,12 @@ table_ref(sql_query *query, sql_rel *rel, symbol *tableref, int lateral)
 			/* Rename columns of the rel_parse relation */
 			if (sql->emode != m_deps) {
 				assert(is_project(rel->op));
-				if (!rel)
-					return NULL;
 				set_processed(rel);
+				if ((is_simple_project(rel->op) || is_groupby(rel->op)) && !list_empty(rel->r)) {
+					/* it's unsafe to set the projection names because of possible dependent sorting/grouping columns */
+					rel = rel_project(sql->sa, rel, rel_projections(sql, rel, NULL, 1, 0));
+					set_processed(rel);
+				}
 				for (n = t->columns.set->h, m = rel->exps->h; n && m; n = n->next, m = m->next) {
 					sql_column *c = n->data;
 					sql_exp *e = m->data;
