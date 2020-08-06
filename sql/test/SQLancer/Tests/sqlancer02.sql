@@ -129,3 +129,5 @@ NULL	0.36945874012955704	NULL
 
 UPDATE t0 SET c2 = r'' WHERE (((length(r'-14'))>>(((patindex(t0.c0, t0.c2))+(CAST(2 AS INT)))))) NOT IN (0.2, t0.c1, t0.c1, ((CAST(((-1)*(2)) AS INT))/(2)));
 ROLLBACK;
+
+SELECT 1 WHERE scale_up(CAST(0.89767724 AS REAL), 1); --error function scale_up not available for real,tinyint

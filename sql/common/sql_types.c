@@ -1113,7 +1113,7 @@ sqltypeinit( sql_allocator *sa)
 {
 	sql_type *ts[100];
 	sql_type **strings, **numerical;
-	sql_type **decimals, **floats, **dates, **end, **t;
+	sql_type **decimals, **floats, **dates, **t;
 	sql_type *STR, *BTE, *SHT, *INT, *LNG, *OID, *FLT, *DBL, *DEC;
 #ifdef HAVE_HGE
 	sql_type *HGE = NULL;
@@ -1237,7 +1237,6 @@ sqltypeinit( sql_allocator *sa)
 		sql_create_func(sa, "right_shift", "geom", "mbrRight", TRUE, FALSE, SCALE_FIX, 0, BIT, 2, MBR, MBR);
 	}
 
-	end = t;
 	*t = NULL;
 
 //	sql_create_func(sa, "st_pointfromtext", "geom", "st_pointformtext", FALSE, SCALE_NONE, 0, OID, 1, OID);
@@ -1654,11 +1653,12 @@ sqltypeinit( sql_allocator *sa)
 	for (t = decimals; t < dates; t++)
 		sql_create_func(sa, "round", "sql", "round", FALSE, FALSE, INOUT, 0, *t, 2, *t, BTE);
 
-	for (t = numerical; t < end; t++) {
-		sql_type **u;
-
-		for (u = numerical; u < end; u++) {
-			sql_create_func(sa, "scale_up", "calc", "*", FALSE, FALSE, SCALE_NONE, 0, *t, 2, *u, *t);
+	for (t = numerical; *t != TME; t++) {
+		if (*t != FLT && *t != DBL) {
+			for (sql_type **u = numerical; *u != TME; u++) {
+				if (*u != FLT && *u != DBL)
+					sql_create_func(sa, "scale_up", "calc", "*", FALSE, FALSE, SCALE_NONE, 0, *t, 2, *u, *t);
+			}
 		}
 	}
 
