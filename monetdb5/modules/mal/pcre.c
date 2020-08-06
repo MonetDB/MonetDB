@@ -1995,6 +1995,8 @@ BATPCRElike3(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, const str 
 				pcre_clean(&re, &ex);
 			}
 			has_nil |= is_bit_nil(ret[p]);
+			GDKfree(ppat);
+			ppat = NULL;
 		}
 	} else {
 		bi = bat_iterator(b);
@@ -2027,6 +2029,7 @@ BATPCRElike3(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, const str 
 	}
 
 bailout:
+	GDKfree(ppat);
 	re_like_clean(&re_simple, &wpat);
 	pcre_clean(&re, &ex);
 	if (bn && !msg) {
