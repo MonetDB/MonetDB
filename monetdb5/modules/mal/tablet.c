@@ -1501,7 +1501,7 @@ create_rejects_table(Client cntxt)
 }
 
 BUN
-SQLload_file(Client cntxt, Tablet *as, bstream *b, stream *out, const char *csep, const char *rsep, char quote, lng skip, lng maxrow, int best, bool from_stdin, const char *tabnam)
+SQLload_file(Client cntxt, Tablet *as, bstream *b, stream *out, const char *csep, const char *rsep, char quote, lng skip, lng maxrow, int best, bool from_stdin, const char *tabnam, bool escape)
 {
 	BUN cnt = 0, cntstart = 0, leftover = 0;
 	int res = 0;		/* < 0: error, > 0: success, == 0: continue processing */
@@ -1522,6 +1522,8 @@ SQLload_file(Client cntxt, Tablet *as, bstream *b, stream *out, const char *csep
 		.from_stdin = from_stdin,
 		.as = as,
 	};
+
+	(void) escape;				/* TODO: implement feature!!! */
 
 	/* create the reject tables */
 	create_rejects_table(task.cntxt);
