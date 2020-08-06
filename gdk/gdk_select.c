@@ -1955,7 +1955,7 @@ rangejoin(BAT *r1, BAT *r2, BAT *l, BAT *rl, BAT *rh,
 		sorted = 2;
 		cnt = 0;
 		for (BUN i = 0; i < rci->ncand; i++) {
-			maxsize = r1->batCount + (rci->ncand - i) * lci->ncand;
+			maxsize = cnt + (rci->ncand - i) * lci->ncand;
 			ro = canditer_next(rci);
 			if (rlvals) {
 				vrl = FVALUE(rl, ro - rl->hseqbase);
