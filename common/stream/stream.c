@@ -322,7 +322,9 @@ mnstr_va_set_error(stream *s, mnstr_error_kind kind, const char *fmt, va_list ap
 	// for gnu_printf format attribute' warning from gcc.
 	// It's really eager to trace where the vsnprintf ends up, we need
 	// the ? : to throw it off its scent.
-	void *f1 = 1 ? (void*)&vsnprintf : (void*)&atoi;
+	// Similarly, the parentheses around the 1 serve to suppress a Clang
+	// warning about dead code (the atoi).
+	void *f1 = (1) ? (void*)&vsnprintf : (void*)&atoi;
 	int (*f)(char *str, size_t size, const char *format, va_list ap) = f1;
 	f(start, end - start, fmt, ap);
 }

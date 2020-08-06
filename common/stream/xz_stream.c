@@ -81,6 +81,7 @@ xz_work(inner_state_t *xz, pump_action action)
 		break;
 	default:
 		assert(0 /* unknown action */);
+		return PUMP_ERROR;
 	}
 
 	lzma_ret ret = lzma_code(&xz->strm, a);
