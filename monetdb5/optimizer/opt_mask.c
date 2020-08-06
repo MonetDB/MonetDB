@@ -48,7 +48,7 @@ OPTmaskImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			continue; //left behind by others?
 		for(j=0; j< p->retc; j++){
 			k =  getArg(p,j);
-			if( isaBatType(getArgType(mb, p,k)) && getBatType(getArgType(mb, p, k)) == TYPE_msk){
+			if( isaBatType(getArgType(mb, p,j)) && getBatType(getArgType(mb, p, j)) == TYPE_msk){
 				// remember we have encountered a mask producing function
 				varused[k] = k;
 			}
