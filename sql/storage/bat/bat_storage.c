@@ -984,7 +984,7 @@ claim_tab(sql_trans *tr, sql_table *t, size_t cnt)
 		/* add updates */
 		BAT *ui, *uv;
 
-		if (0 && table_claim_space(tr, t, cnt) == LOG_ERR) {
+		if (/* DISABLES CODE */ (0) && table_claim_space(tr, t, cnt) == LOG_ERR) {
 			unlock_table(t->base.id);
 			return LOG_ERR;
 		}
