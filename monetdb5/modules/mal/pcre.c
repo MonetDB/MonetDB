@@ -1737,14 +1737,14 @@ PCREnotilike2(bit *ret, const str *s, const str *pat)
 }
 
 static inline str
-re_like_proj_build(struct RE **re, uint32_t **wpat, const char *pat, bool caseignore, bool use_strcmp, uint32_t esc)
+re_like_build(struct RE **re, uint32_t **wpat, const char *pat, bool caseignore, bool use_strcmp, uint32_t esc)
 {
 	if (!use_strcmp) {
 		if (!(*re = re_create(pat, caseignore, esc)))
-			return createException(MAL, "pcre.likeselect", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+			return createException(MAL, "pcre.re_like_build", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	} else if (caseignore) {
 		if (!(*wpat = utf8stoucs(pat)))
-			return createException(MAL, "pcre.likeselect", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+			return createException(MAL, "pcre.re_like_build", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
 	return MAL_SUCCEED;
 }
@@ -1788,7 +1788,7 @@ re_like_proj_apply(str s, struct RE *re, uint32_t *wpat, const char *pat, bool c
 }
 
 static inline void
-re_like_proj_clean(struct RE **re, uint32_t **wpat)
+re_like_clean(struct RE **re, uint32_t **wpat)
 {
 	if (*re) {
 		re_destroy(*re);
@@ -1840,7 +1840,7 @@ pcre_like_build(
 		(errcode = regcomp(res, ppat, options)) != 0
 #endif
 		)
-		return createException(MAL, "pcre.match", OPERATION_FAILED
+		return createException(MAL, "pcre.pcre_like_build", OPERATION_FAILED
 								": compilation of regular expression (%s) failed"
 #ifdef HAVE_LIBPCRE
 								" at %d with '%s'", ppat, errpos, err_p
@@ -1851,7 +1851,7 @@ pcre_like_build(
 #ifdef HAVE_LIBPCRE
 	*ex = pcre_study(*res, pcrestopt, &err_p);
 	if (err_p != NULL)
-		return createException(MAL, "pcre.match", OPERATION_FAILED
+		return createException(MAL, "pcre.pcre_like_build", OPERATION_FAILED
 								": pcre study of pattern (%s) "
 								"failed with '%s'", ppat, err_p);
 #else
@@ -1981,10 +1981,10 @@ BATPCRElike3(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, const str 
 				goto bailout;
 
 			if (use_re) {
-				if ((msg = re_like_proj_build(&re_simple, &wpat, np, isensitive, use_strcmp, (unsigned char) **esc)) != MAL_SUCCEED)
+				if ((msg = re_like_build(&re_simple, &wpat, np, isensitive, use_strcmp, (unsigned char) **esc)) != MAL_SUCCEED)
 					goto bailout;
 				ret[p] = re_like_proj_apply(next_input, re_simple, wpat, np, isensitive, anti, use_strcmp);
-				re_like_proj_clean(&re_simple, &wpat);
+				re_like_clean(&re_simple, &wpat);
 			} else if (allnulls) {
 				ret[p] = bit_nil;
 			} else {
@@ -2003,7 +2003,7 @@ BATPCRElike3(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, const str 
 			goto bailout;
 
 		if (use_re) {
-			if ((msg = re_like_proj_build(&re_simple, &wpat, pat, isensitive, use_strcmp, (unsigned char) **esc)) != MAL_SUCCEED)
+			if ((msg = re_like_build(&re_simple, &wpat, pat, isensitive, use_strcmp, (unsigned char) **esc)) != MAL_SUCCEED)
 				goto bailout;
 			for (BUN p = 0; p < q; p++) {
 				const str s = BUNtail(bi, p);
@@ -2027,7 +2027,7 @@ BATPCRElike3(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, const str 
 	}
 
 bailout:
-	re_like_proj_clean(&re_simple, &wpat);
+	re_like_clean(&re_simple, &wpat);
 	pcre_clean(&re, &ex);
 	if (bn && !msg) {
 		BATsetcount(bn, q);
@@ -2193,38 +2193,6 @@ PCRElikeselect5(bat *ret, const bat *bid, const bat *sid, const str *pat, const 
 #define VALUE(s, x)		(s##vars + VarHeapVal(s##vals, (x), s##width))
 
 #ifdef HAVE_LIBPCRE
-#define PCRE_COMPILE \
-	do { \
-		pcrere = pcre_compile(pcrepat, pcreopt, &err_p, &errpos, NULL); \
-		if (pcrere == NULL) { \
-			msg = createException(MAL, "pcre.join", OPERATION_FAILED \
-									": pcre compile of pattern (%s) " \
-									"failed at %d with '%s'", \
-									pcrepat, errpos, err_p); \
-			goto bailout; \
-		} \
-		pcreex = pcre_study(pcrere, pcrestopt, &err_p); \
-		if (err_p != NULL) { \
-			msg = createException(MAL, "pcre.join", OPERATION_FAILED \
-									": pcre study of pattern (%s) " \
-									"failed with '%s'", pcrepat, err_p); \
-			goto bailout; \
-		} \
-	} while (0)
-#else
-#define PCRE_COMPILE \
-	do { \
-		if ((errcode = regcomp(&regex, pcrepat, options)) != 0) { \
-			msg = createException(MAL, "pcre.join", OPERATION_FAILED \
-									": pcre compile of pattern (%s)", \
-									pcrepat); \
-			goto bailout; \
-		} \
-		pcrere = 1; \
-	} while (0)
-#endif
-
-#ifdef HAVE_LIBPCRE
 #define PCRE_EXEC \
 	do { \
 		retval = pcre_exec(pcrere, pcreex, vl, (int) strlen(vl), 0, 0, NULL, 0); \
@@ -2233,25 +2201,9 @@ PCRElikeselect5(bat *ret, const bat *bid, const bat *sid, const str *pat, const 
 #else
 #define PCRE_EXEC \
 	do { \
-		retval = regexec(&regex, vl, (size_t) 0, NULL, 0); \
+		retval = regexec(&pcrere, vl, (size_t) 0, NULL, 0); \
 	} while (0)
 #define PCRE_EXEC_COND (retval == REG_NOMATCH || retval == REG_ENOSYS)
-#endif
-
-#ifdef HAVE_LIBPCRE
-#define PCRE_CLEAN \
-	do { \
-		pcre_free_study(pcreex); \
-		pcre_free(pcrere); \
-		pcrere = NULL; \
-		pcreex = NULL; \
-	} while (0)
-#else
-#define PCRE_CLEAN \
-	do { \
-		regfree(&regex); \
-		pcrere = 0; \
-	} while (0)
 #endif
 
 /* nested loop implementation for PCRE join */
@@ -2260,25 +2212,17 @@ PCRElikeselect5(bat *ret, const bat *bid, const bat *sid, const str *pat, const 
 		for (BUN ri = 0; ri < rci.ncand; ri++) { \
 			ro = canditer_next(&rci); \
 			vr = VALUE(r, ro - r->hseqbase); \
-			use_re = false; \
-			use_strcmp = false; \
-			empty = false; \
+			use_re = use_strcmp = empty = false; \
 			if ((msg = choose_like_path(&pcrepat, &use_re, &use_strcmp, &empty, (const str*)&vr, (const str*)&esc))) \
 				goto bailout; \
 			if (empty) { \
 				continue; \
 			} else if (use_re) { \
-				if (use_strcmp) { \
-					if (caseignore && !(wpat = utf8stoucs(vr))) { \
-						msg = createException(MAL, "pcre.join", SQLSTATE(HY013) MAL_MALLOC_FAIL); \
-						goto bailout; \
-					} \
-				} else if (!(re = re_create(vr, caseignore, (unsigned char) *esc))) { \
-					msg = createException(MAL, "pcre.join", SQLSTATE(HY013) MAL_MALLOC_FAIL); \
+				if ((msg = re_like_build(&re, &wpat, vr, caseignore, use_strcmp, (unsigned char) *esc)) != MAL_SUCCEED) \
 					goto bailout; \
-				} \
 			} else if (pcrepat) { \
-				PCRE_COMPILE; \
+				if ((msg = pcre_like_build(&pcrere, &pcreex, pcrepat, caseignore, count)) != MAL_SUCCEED) \
+					goto bailout; \
 				GDKfree(pcrepat); \
 				pcrepat = NULL; \
 			} \
@@ -2338,17 +2282,10 @@ PCRElikeselect5(bat *ret, const bat *bid, const bat *sid, const str *pat, const 
 				lastl = lo; \
 				nl++; \
 			} \
-			if (re) { \
-				re_destroy(re); \
-				re = NULL; \
-			} \
-			if (wpat) { \
-				GDKfree(wpat); \
-				wpat = NULL; \
-			} \
-			if (pcrere) { \
-				PCRE_CLEAN; \
-			} \
+			if (re) \
+				re_like_clean(&re, &wpat); \
+			if (pcrere) \
+				pcre_clean(&pcrere, &pcreex); \
 			if (r2) { \
 				if (nl > 1) { \
 					r2->tkey = false; \
@@ -2369,41 +2306,21 @@ static char *
 pcrejoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr, const char *esc, bool caseignore, bool anti)
 {
 	struct canditer lci, rci;
-	const char *lvals, *rvals;
-	const char *lvars, *rvars;
-	int lwidth, rwidth;
-	const char *vl, *vr;
-	oid lastl = 0;		/* last value inserted into r1 */
-	BUN nl;
-	BUN newcap;
-	oid lo, ro;
-	int rskipped = 0;	/* whether we skipped values in r */
-	char *msg = MAL_SUCCEED;
+	const char *lvals, *rvals, *lvars, *rvars, *vl, *vr;
+	int lwidth, rwidth, rskipped = 0;	/* whether we skipped values in r */
+	oid lo, ro, lastl = 0;		/* last value inserted into r1 */
+	BUN nl, newcap, count = BATcount(sl ? sl : l);
+	char *pcrepat = NULL, *msg = MAL_SUCCEED;
 	struct RE *re = NULL;
-	char *pcrepat = NULL;
 	bool use_re = false, use_strcmp = false, empty = false;
 	uint32_t *wpat = NULL;
 #ifdef HAVE_LIBPCRE
 	pcre *pcrere = NULL;
 	pcre_extra *pcreex = NULL;
-	const char *err_p = NULL;
-	int errpos;
-	int pcreopt = PCRE_UTF8 | PCRE_MULTILINE | PCRE_DOTALL;
-	int pcrestopt = (sl ? BATcount(sl) : BATcount(l)) > JIT_COMPILE_MIN ? PCRE_STUDY_JIT_COMPILE : 0;
 #else
-	int pcrere = 0;
-	regex_t regex;
-	int options =  REG_NEWLINE | REG_NOSUB | REG_EXTENDED;
-	int errcode = -1;
+	regex_t pcrere;
+	int64_t pcreex = 0;
 #endif
-
-	if (caseignore) {
-#ifdef HAVE_LIBPCRE
-		pcreopt |= PCRE_CASELESS;
-#else
-		options |= REG_ICASE;
-#endif
-	}
 
 	TRC_DEBUG(ALGO,
 			  "pcrejoin(l=%s#" BUNFMT "[%s]%s%s,"
@@ -2495,22 +2412,13 @@ pcrejoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr, const char *esc, bo
 			r1->trevsorted ? "-revsorted" : "");
 	return MAL_SUCCEED;
 
-  bailout:
-	if (re)
-		re_destroy(re);
+bailout:
 	if (pcrepat)
 		GDKfree(pcrepat);
-	if (wpat)
-		GDKfree(wpat);
-#ifdef HAVE_LIBPCRE
-	if (pcreex)
-		pcre_free_study(pcreex);
+	if (re)
+		re_like_clean(&re, &wpat);
 	if (pcrere)
-		pcre_free(pcrere);
-#else
-	if (pcrere)
-		regfree(&regex);
-#endif
+		pcre_clean(&pcrere, &pcreex);
 
 	assert(msg != MAL_SUCCEED);
 	return msg;
