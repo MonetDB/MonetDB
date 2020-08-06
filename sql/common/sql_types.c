@@ -121,8 +121,7 @@ int sql_type_convert (int from, int to)
 
 bool is_commutative(const char *fnm)
 {
-	return strcmp("sql_add", fnm) == 0 ||
-		strcmp("sql_mul", fnm) == 0;
+	return strcmp("sql_add", fnm) == 0 || strcmp("sql_mul", fnm) == 0 || strcmp("scale_up", fnm) == 0;
 }
 
 void
@@ -1654,10 +1653,14 @@ sqltypeinit( sql_allocator *sa)
 		sql_create_func(sa, "round", "sql", "round", FALSE, FALSE, INOUT, 0, *t, 2, *t, BTE);
 
 	for (t = numerical; *t != TME; t++) {
-		if (*t != FLT && *t != DBL) {
-			for (sql_type **u = numerical; *u != TME; u++) {
-				if (*u != FLT && *u != DBL)
-					sql_create_func(sa, "scale_up", "calc", "*", FALSE, FALSE, SCALE_NONE, 0, *t, 2, *u, *t);
+		if (*t == OID || *t == FLT || *t == DBL)
+			continue;
+		for (sql_type **u = numerical; *u != TME; u++) {
+			if (*u == OID || *u == FLT || *u == DBL)
+				continue;
+			if ((*t)->localtype > (*u)->localtype) {
+				sql_create_func(sa, "scale_up", "calc", "*", FALSE, FALSE, SCALE_NONE, 0, *t, 2, *t, *u);
+				sql_create_func(sa, "scale_up", "calc", "*", FALSE, FALSE, SCALE_NONE, 0, *t, 2, *u, *t);
 			}
 		}
 	}

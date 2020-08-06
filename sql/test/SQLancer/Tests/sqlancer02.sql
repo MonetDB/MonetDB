@@ -131,3 +131,5 @@ UPDATE t0 SET c2 = r'' WHERE (((length(r'-14'))>>(((patindex(t0.c0, t0.c2))+(CAS
 ROLLBACK;
 
 SELECT 1 WHERE scale_up(CAST(0.89767724 AS REAL), 1); --error function scale_up not available for real,tinyint
+
+SELECT scale_up(0.2928163, 3);
