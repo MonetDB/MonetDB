@@ -382,9 +382,18 @@ hasSideEffects(MalBlkPtr mb, InstrPtr p, int strict)
 		if (getFunctionId(p) == singleRef) return FALSE;
 		return TRUE;
 	}
-	if (getModuleId(p) == basketRef || getModuleId(p) == cqueryRef){
+
+	/* basket.{tid,bind} behave in the same way as their SQL counterparts,
+ 	 * hence mark them as side-effect free */
+	if (getModuleId(p) == basketRef){
+		if (getFunctionId(p) == tidRef) return FALSE;
+		if (getFunctionId(p) == bindRef) return FALSE;
 		return TRUE;
 	}
+	if (getModuleId(p) == cqueryRef){
+		return TRUE;
+	}
+
 	if( getModuleId(p) == mapiRef){
 		if( getFunctionId(p) == rpcRef)
 			return TRUE;
