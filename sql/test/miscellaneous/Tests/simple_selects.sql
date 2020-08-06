@@ -185,3 +185,12 @@ select cast(x as interval month) from (values ('1'), (NULL), ('100'), (NULL)) as
 
 select cast(92233720368547750 as interval month); --error value to large for a month interval
 select cast(92233720368547750 as interval second); --error, overflow in conversion for interval second
+
+start transaction;
+CREATE VIEW myv AS
+SELECT t.schema_id AS table_schema_id, t.id AS table_id, t.name AS table_name, fk.name AS fk_name
+  FROM sys.tables AS t, sys.keys AS k, sys.keys AS fk
+ WHERE fk.rkey = k.id and k.table_id = t.id
+ ORDER BY t.schema_id, t.name, fk.name;
+select * from myv limit 1;
+rollback;
