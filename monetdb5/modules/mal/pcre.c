@@ -1752,13 +1752,13 @@ re_like_proj_build(struct RE **re, uint32_t **wpat, const char *pat, bool caseig
 #define proj_scanloop(TEST)	\
 	do {	\
 		if (*s == '\200') \
-			*ret = bit_nil; \
+			return bit_nil; \
 		else \
-			*ret = TEST; \
+			return TEST; \
 	} while (0)
 
-static inline void
-re_like_proj_apply(bit *ret, str s, struct RE *re, uint32_t *wpat, const char *pat, bool caseignore, bool anti, bool use_strcmp)
+static inline bit
+re_like_proj_apply(str s, struct RE *re, uint32_t *wpat, const char *pat, bool caseignore, bool anti, bool use_strcmp)
 {
 	if (use_strcmp) {
 		if (caseignore) {
@@ -1803,18 +1803,22 @@ re_like_proj_clean(struct RE **re, uint32_t **wpat)
 static inline str
 pcre_like_build(
 #ifdef HAVE_LIBPCRE
-	pcre **res
+	pcre **res,
+	pcre_extra **ex
 #else
-	regex_t *res
+	regex_t *res,
+	void *ex
 #endif
-, const char *ppat, bool caseignore)
+, const char *ppat, bool caseignore, BUN count)
 {
+	int pcrestopt = count > JIT_COMPILE_MIN ? PCRE_STUDY_JIT_COMPILE : 0;
 #ifdef HAVE_LIBPCRE
 	const char *err_p = NULL;
 	int errpos = 0;
-	int options = PCRE_UTF8 | PCRE_DOTALL;
+	int options = PCRE_UTF8 | PCRE_MULTILINE | PCRE_DOTALL;
 
 	*res = NULL;
+	*ex = NULL;
 #else
 	int options = REG_NEWLINE | REG_NOSUB | REG_EXTENDED;
 	int errcode;
@@ -1835,7 +1839,7 @@ pcre_like_build(
 #else
 		(errcode = regcomp(res, ppat, options)) != 0
 #endif
-		) {
+		)
 		return createException(MAL, "pcre.match", OPERATION_FAILED
 								": compilation of regular expression (%s) failed"
 #ifdef HAVE_LIBPCRE
@@ -1844,7 +1848,16 @@ pcre_like_build(
 								, ppat
 #endif
 			);
-	}
+#ifdef HAVE_LIBPCRE
+	*ex = pcre_study(*res, pcrestopt, &err_p);
+	if (err_p != NULL)
+		return createException(MAL, "pcre.match", OPERATION_FAILED
+								": pcre study of pattern (%s) "
+								"failed with '%s'", ppat, err_p);
+#else
+	(void) ex;
+	(void) pcrestopt;
+#endif
 	return MAL_SUCCEED;
 }
 
@@ -1864,9 +1877,9 @@ pcre_like_build(
 static inline str
 pcre_like_apply(bit *ret, str s,
 #ifdef HAVE_LIBPCRE
-	pcre *re
+	pcre *re, pcre_extra *ex
 #else
-	regex_t re
+	regex_t re, void *ex
 #endif
 , const char *ppat, bool anti)
 {
@@ -1874,10 +1887,11 @@ pcre_like_apply(bit *ret, str s,
 
 #ifdef HAVE_LIBPCRE
 #define LOOP_BODY	\
-	pos = pcre_exec(re, NULL, s, (int) strlen(s), 0, 0, NULL, 0);
+	pos = pcre_exec(re, ex, s, (int) strlen(s), 0, 0, NULL, 0);
 #else
 #define LOOP_BODY	\
 	int retval = regexec(&re, s, (size_t) 0, NULL, 0); \
+	(void) ex; \
 	pos = retval == REG_NOMATCH ? -1 : (retval == REG_ENOSYS ? -2 : 0);
 #endif
 
@@ -1892,12 +1906,17 @@ pcre_like_apply(bit *ret, str s,
 static inline void
 pcre_clean(
 #ifdef HAVE_LIBPCRE
-	pcre **re) {
+	pcre **re, pcre_extra **ex) {
 	if (*re)
 		pcre_free(*re);
+	if (*ex)
+		pcre_free_study(*ex);
+	*ex = NULL;
 #else
-	regex_t *re) {
-	regfree(re);
+	regex_t *re, void *ex) {
+	if (*re)
+		regfree(*re);
+	(void) ex;
 #endif
 	*re = NULL;
 }
@@ -1915,8 +1934,10 @@ BATPCRElike3(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, const str 
 	bit *restrict ret = NULL;
 #ifdef HAVE_LIBPCRE
 	pcre *re = NULL;
+	pcre_extra *ex = NULL;
 #else
 	regex_t re = (regex_t) {0};
+	int64_t ex = 0;
 #endif
 	struct RE *re_simple = NULL;
 	uint32_t *wpat = NULL;
@@ -1962,16 +1983,16 @@ BATPCRElike3(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, const str 
 			if (use_re) {
 				if ((msg = re_like_proj_build(&re_simple, &wpat, np, isensitive, use_strcmp, (unsigned char) **esc)) != MAL_SUCCEED)
 					goto bailout;
-				re_like_proj_apply(&(ret[p]), next_input, re_simple, wpat, np, isensitive, anti, use_strcmp);
+				ret[p] = re_like_proj_apply(next_input, re_simple, wpat, np, isensitive, anti, use_strcmp);
 				re_like_proj_clean(&re_simple, &wpat);
 			} else if (allnulls) {
 				ret[p] = bit_nil;
 			} else {
-				if ((msg = pcre_like_build(&re, ppat, isensitive)) != MAL_SUCCEED)
+				if ((msg = pcre_like_build(&re, &ex, ppat, isensitive, 0)) != MAL_SUCCEED)
 					goto bailout;
-				if ((msg = pcre_like_apply(&(ret[p]), next_input, re, ppat, anti)) != MAL_SUCCEED)
+				if ((msg = pcre_like_apply(&(ret[p]), next_input, re, ex, ppat, anti)) != MAL_SUCCEED)
 					goto bailout;
-				pcre_clean(&re);
+				pcre_clean(&re, &ex);
 			}
 			has_nil |= is_bit_nil(ret[p]);
 		}
@@ -1986,30 +2007,28 @@ BATPCRElike3(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, const str 
 				goto bailout;
 			for (BUN p = 0; p < q; p++) {
 				const str s = BUNtail(bi, p);
-				re_like_proj_apply(&(ret[p]), s, re_simple, wpat, pat, isensitive, anti, use_strcmp);
+				ret[p] = re_like_proj_apply(s, re_simple, wpat, pat, isensitive, anti, use_strcmp);
 				has_nil |= is_bit_nil(ret[p]);
 			}
-			re_like_proj_clean(&re_simple, &wpat);
 		} else if (allnulls) {
 			for (BUN p = 0; p < q; p++)
 				ret[p] = bit_nil;
 			has_nil = true;
 		} else {
-			if ((msg = pcre_like_build(&re, ppat, isensitive)) != MAL_SUCCEED)
+			if ((msg = pcre_like_build(&re, &ex, ppat, isensitive, q)) != MAL_SUCCEED)
 				goto bailout;
 			for (BUN p = 0; p < q; p++) {
 				const str s = BUNtail(bi, p);
-				if ((msg = pcre_like_apply(&(ret[p]), s, re, ppat, anti)) != MAL_SUCCEED)
+				if ((msg = pcre_like_apply(&(ret[p]), s, re, ex, ppat, anti)) != MAL_SUCCEED)
 					goto bailout;
 				has_nil |= is_bit_nil(ret[p]);
 			}
-			pcre_clean(&re);
 		}
 	}
 
 bailout:
 	re_like_proj_clean(&re_simple, &wpat);
-	pcre_clean(&re);
+	pcre_clean(&re, &ex);
 	if (bn && !msg) {
 		BATsetcount(bn, q);
 		bn->tnil = has_nil;
@@ -2369,7 +2388,7 @@ pcrejoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr, const char *esc, bo
 	pcre_extra *pcreex = NULL;
 	const char *err_p = NULL;
 	int errpos;
-	int pcreopt = PCRE_UTF8 | PCRE_MULTILINE;
+	int pcreopt = PCRE_UTF8 | PCRE_MULTILINE | PCRE_DOTALL;
 	int pcrestopt = (sl ? BATcount(sl) : BATcount(l)) > JIT_COMPILE_MIN ? PCRE_STUDY_JIT_COMPILE : 0;
 #else
 	int pcrere = 0;
