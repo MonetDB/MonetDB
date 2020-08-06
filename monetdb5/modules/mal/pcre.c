@@ -22,6 +22,8 @@
 #include <string.h>
 
 #include "mal.h"
+#include "mal_client.h"
+#include "mal_interpreter.h"
 #include "mal_exception.h"
 
 #include <wchar.h>
@@ -62,18 +64,18 @@ mal_export str PCRElike3(bit *ret, const str *s, const str *pat, const str *esc)
 mal_export str PCRElike2(bit *ret, const str *s, const str *pat);
 mal_export str PCREnotlike3(bit *ret, const str *s, const str *pat, const str *esc);
 mal_export str PCREnotlike2(bit *ret, const str *s, const str *pat);
-mal_export str BATPCRElike(bat *ret, const bat *b, const str *pat, const str *esc);
-mal_export str BATPCRElike2(bat *ret, const bat *b, const str *pat);
-mal_export str BATPCREnotlike(bat *ret, const bat *b, const str *pat, const str *esc);
-mal_export str BATPCREnotlike2(bat *ret, const bat *b, const str *pat);
+mal_export str BATPCRElike(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+mal_export str BATPCRElike2(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+mal_export str BATPCREnotlike(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+mal_export str BATPCREnotlike2(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 mal_export str PCREilike3(bit *ret, const str *s, const str *pat, const str *esc);
 mal_export str PCREilike2(bit *ret, const str *s, const str *pat);
 mal_export str PCREnotilike3(bit *ret, const str *s, const str *pat, const str *esc);
 mal_export str PCREnotilike2(bit *ret, const str *s, const str *pat);
-mal_export str BATPCREilike(bat *ret, const bat *b, const str *pat, const str *esc);
-mal_export str BATPCREilike2(bat *ret, const bat *b, const str *pat);
-mal_export str BATPCREnotilike(bat *ret, const bat *b, const str *pat, const str *esc);
-mal_export str BATPCREnotilike2(bat *ret, const bat *b, const str *pat);
+mal_export str BATPCREilike(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+mal_export str BATPCREilike2(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+mal_export str BATPCREnotilike(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+mal_export str BATPCREnotilike2(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 
 mal_export str PCRElikeselect2(bat *ret, const bat *bid, const bat *sid, const str *pat, const str *esc, const bit *caseignore, const bit *anti);
 mal_export str PCRElikeselect1(bat *ret, const bat *bid, const bat *cid, const str *pat, const str *esc, const bit *anti);
@@ -883,103 +885,6 @@ re_likeselect(BAT **bnp, BAT *b, BAT *s, const char *pat, bool caseignore, bool 
 	BBPreclaim(bn);
 	*bnp = NULL;
 	throw(MAL, "pcre.likeselect", OPERATION_FAILED);
-}
-
-#define proj_scanloop(TEST)	\
-	do {	\
-		if (b->tnonil) { \
-			for (BUN p = 0; p < q; p++) {	\
-				v = BUNtail(bi, p);	\
-				res[p] = TEST; \
-			}	\
-		} else { \
-			for (BUN p = 0; p < q; p++) {	\
-				v = BUNtail(bi, p);	\
-				if (*v == '\200') { \
-					res[p] = bit_nil; \
-					bn->tnonil = false; \
-					bn->tnil = true; \
-				} else \
-					res[p] = TEST; \
-			}	\
-		} \
-	} while (0)
-
-static str
-re_like_proj(BAT **bnp, BAT *b, const char *pat, bool caseignore, bool anti, bool use_strcmp, uint32_t esc)
-{
-	BATiter bi = bat_iterator(b);
-	BAT *bn;
-	const char *restrict v;
-	struct RE *re = NULL;
-	uint32_t *wpat = NULL;
-	BUN q = BATcount(b);
-	bit *restrict res;
-	str msg = MAL_SUCCEED;
-
-	assert(ATOMstorage(b->ttype) == TYPE_str);
-
-	bn = COLnew(b->hseqbase, TYPE_bit, q, TRANSIENT);
-	if (bn == NULL) {
-		msg = createException(MAL, "pcre.likeselect", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-		goto bailout;
-	}
-	res = (bit*) Tloc(bn, 0);
-
-	if (!use_strcmp) {
-		re = re_create(pat, caseignore, esc);
-		if (!re) {
-			msg = createException(MAL, "pcre.likeselect", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-			goto bailout;
-		}
-	}
-
-	if (use_strcmp) {
-		if (caseignore) {
-			wpat = utf8stoucs(pat);
-			if (wpat == NULL) {
-				msg = createException(MAL, "pcre.likeselect", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-				goto bailout;
-			}
-			if (anti)
-				proj_scanloop(mywstrcasecmp(v, wpat) != 0);
-			else
-				proj_scanloop(mywstrcasecmp(v, wpat) == 0);
-		} else {
-			if (anti)
-				proj_scanloop(strcmp(v, pat) != 0);
-			else
-				proj_scanloop(strcmp(v, pat) == 0);
-		}
-	} else {
-		if (caseignore) {
-			if (anti)
-				proj_scanloop(!re_match_ignore(v, re));
-			else
-				proj_scanloop(re_match_ignore(v, re));
-		} else {
-			if (anti)
-				proj_scanloop(!re_match_no_ignore(v, re));
-			else
-				proj_scanloop(re_match_no_ignore(v, re));
-		}
-	}
-
-bailout:
-	if (bn) {
-		if (msg) {
-			BBPreclaim(bn);
-		} else {
-			BATsetcount(bn, q);
-			bn->tsorted = false;
-			bn->trevsorted = false;
-			*bnp = bn;
-		}
-	}
-	if (re)
-		re_destroy(re);
-	GDKfree(wpat);
-	return msg;
 }
 
 /* maximum number of back references and quoted \ or $ in replacement string */
@@ -1882,69 +1787,91 @@ PCREnotilike2(bit *ret, const str *s, const str *pat)
 	return MAL_SUCCEED;
 }
 
-#define PCRE_LIKE_BODY(LOOP_BODY, RES1, RES2) \
-	do { \
-		if (b->tnonil) { \
-			for (BUN p = 0; p < q; p++) {	\
-				const char *restrict s = BUNtail(bi, p); \
-				LOOP_BODY  \
-				if (pos >= 0) \
-					res[p] = RES1; \
-				else if (pos == -1) \
-					res[p] = RES2; \
-				else { \
-					msg = createException(MAL, "pcre.match", OPERATION_FAILED ": matching of regular expression (%s) failed with %d", ppat, pos); \
-					goto bailout; \
-				} \
-			}	\
-		} else { \
-			for (BUN p = 0; p < q; p++) { \
-				const char *restrict s = BUNtail(bi, p); \
-				LOOP_BODY  \
-				if (*s == '\200') { \
-					res[p] = bit_nil; \
-					bn->tnonil = false; \
-					bn->tnil = true; \
-				} else { \
-					if (pos >= 0) \
-						res[p] = RES1; \
-					else if (pos == -1) \
-						res[p] = RES2; \
-					else { \
-						msg = createException(MAL, "pcre.match", OPERATION_FAILED ": matching of regular expression (%s) failed with %d", ppat, pos); \
-						goto bailout; \
-					} \
-				} \
-			} \
-		} \
-	} while(0)
-
-static str
-pcre_like(BAT **bnp, BAT *b, const char *ppat, bool caseignore, bool anti)
+static inline str
+re_like_proj_build(struct RE **re, uint32_t **wpat, const char *pat, bool caseignore, bool use_strcmp, uint32_t esc)
 {
-	BATiter bi = bat_iterator(b);
-	BUN q = BATcount(b);
-	int pos;
-	BAT *bn;
-	bit *restrict res;
-	str msg = MAL_SUCCEED;
+	if (!use_strcmp) {
+		if (!(*re = re_create(pat, caseignore, esc)))
+			return createException(MAL, "pcre.likeselect", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+	} else if (caseignore) {
+		if (!(*wpat = utf8stoucs(pat)))
+			return createException(MAL, "pcre.likeselect", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+	}
+	return MAL_SUCCEED;
+}
+
+#define proj_scanloop(TEST)	\
+	do {	\
+		if (*s == '\200') \
+			*ret = bit_nil; \
+		else \
+			*ret = TEST; \
+	} while (0)
+
+static inline void
+re_like_proj_apply(bit *ret, str s, struct RE *re, uint32_t *wpat, const char *pat, bool caseignore, bool anti, bool use_strcmp)
+{
+	if (use_strcmp) {
+		if (caseignore) {
+			if (anti)
+				proj_scanloop(mywstrcasecmp(s, wpat) != 0);
+			else
+				proj_scanloop(mywstrcasecmp(s, wpat) == 0);
+		} else {
+			if (anti)
+				proj_scanloop(strcmp(s, pat) != 0);
+			else
+				proj_scanloop(strcmp(s, pat) == 0);
+		}
+	} else {
+		if (caseignore) {
+			if (anti)
+				proj_scanloop(!re_match_ignore(s, re));
+			else
+				proj_scanloop(re_match_ignore(s, re));
+		} else {
+			if (anti)
+				proj_scanloop(!re_match_no_ignore(s, re));
+			else
+				proj_scanloop(re_match_no_ignore(s, re));
+		}
+	}
+}
+
+static inline void
+re_like_proj_clean(struct RE **re, uint32_t **wpat)
+{
+	if (*re) {
+		re_destroy(*re);
+		*re = NULL;
+	}
+	if (*wpat) {
+		GDKfree(*wpat);
+		*wpat = NULL;
+	}
+}
+
+static inline str
+pcre_like_build(
+#ifdef HAVE_LIBPCRE
+	pcre **res
+#else
+	regex_t *res
+#endif
+, const char *ppat, bool caseignore)
+{
 #ifdef HAVE_LIBPCRE
 	const char *err_p = NULL;
 	int errpos = 0;
 	int options = PCRE_UTF8 | PCRE_DOTALL;
-	pcre *re = NULL;
+
+	*res = NULL;
 #else
-	regex_t re = (regex_t) {0};
 	int options = REG_NEWLINE | REG_NOSUB | REG_EXTENDED;
 	int errcode;
-#endif
 
-	bn = COLnew(b->hseqbase, TYPE_bit, BATcount(b), TRANSIENT);
-	if (bn == NULL) {
-		msg = createException(MAL, "pcre.likeselect", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-		goto bailout;
-	}
-	res = (bit*)Tloc(bn, 0);
+	*res = (regex_t) {0};
+#endif
 
 	if (caseignore) {
 #ifdef HAVE_LIBPCRE
@@ -1955,12 +1882,12 @@ pcre_like(BAT **bnp, BAT *b, const char *ppat, bool caseignore, bool anti)
 	}
 	if (
 #ifdef HAVE_LIBPCRE
-		(re = pcre_compile(ppat, options, &err_p, &errpos, NULL)) == NULL
+		(*res = pcre_compile(ppat, options, &err_p, &errpos, NULL)) == NULL
 #else
-		(errcode = regcomp(&re, ppat, options)) != 0
+		(errcode = regcomp(res, ppat, options)) != 0
 #endif
 		) {
-		msg = createException(MAL, "pcre.match", OPERATION_FAILED
+		return createException(MAL, "pcre.match", OPERATION_FAILED
 								": compilation of regular expression (%s) failed"
 #ifdef HAVE_LIBPCRE
 								" at %d with '%s'", ppat, errpos, err_p
@@ -1968,8 +1895,33 @@ pcre_like(BAT **bnp, BAT *b, const char *ppat, bool caseignore, bool anti)
 								, ppat
 #endif
 			);
-		goto bailout;
 	}
+	return MAL_SUCCEED;
+}
+
+#define PCRE_LIKE_BODY(LOOP_BODY, RES1, RES2) \
+	do { \
+		LOOP_BODY  \
+		if (*s == '\200') \
+			*ret = bit_nil; \
+		else if (pos >= 0) \
+			*ret = RES1; \
+		else if (pos == -1) \
+			*ret = RES2; \
+		else \
+			return createException(MAL, "pcre.match", OPERATION_FAILED ": matching of regular expression (%s) failed with %d", ppat, pos); \
+	} while(0)
+
+static inline str
+pcre_like_apply(bit *ret, str s,
+#ifdef HAVE_LIBPCRE
+	pcre *re
+#else
+	regex_t re
+#endif
+, const char *ppat, bool anti)
+{
+	int pos;
 
 #ifdef HAVE_LIBPCRE
 #define LOOP_BODY	\
@@ -1985,124 +1937,217 @@ pcre_like(BAT **bnp, BAT *b, const char *ppat, bool caseignore, bool anti)
 	else
 		PCRE_LIKE_BODY(LOOP_BODY, TRUE, FALSE);
 
-bailout:
-#ifdef HAVE_LIBPCRE
-	if (re)
-		pcre_free(re);
-#else
-	regfree(&re);
-#endif
-	if (bn) {
-		if (msg) {
-			BBPreclaim(bn);
-		} else {
-			BATsetcount(bn, BATcount(b));
-			bn->tsorted = false;
-			bn->trevsorted = false;
-			*bnp = bn;
-		}
-	}
-	return msg;
-}
-
-static str
-BATPCRElike3(bat *ret, const bat *bid, const str *pat, const str *esc, const bit *isens, const bit *not)
-{
-	str res = MAL_SUCCEED;
-	BAT *b = NULL, *bn = NULL;
-	char *ppat = NULL;
-	bool use_re = false, use_strcmp = false, allnulls = false;
-
-	if (!(b = BATdescriptor(*bid)))
-		throw(MAL, "pcre.like3", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
-
-	if ((res = choose_like_path(&ppat, &use_re, &use_strcmp, &allnulls, pat, esc)) != MAL_SUCCEED) {
-		BBPunfix(b->batCacheid);
-		return res;
-	}
-
-	if (use_re) {
-		res = re_like_proj(&bn, b, *pat, (bool) *isens, (bool) *not, use_strcmp, (unsigned char) **esc);
-	} else if (allnulls) {
-		if (!(bn = BATconstant(b->hseqbase, TYPE_bit, ATOMnilptr(TYPE_bit), BATcount(b), TRANSIENT)))
-			res = createException(MAL, "pcre.like3", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-	} else {
-		res = pcre_like(&bn, b, ppat, (bool) *isens, (bool) *not);
-	}
-
-	GDKfree(ppat);
-	BBPunfix(b->batCacheid);
-	if (res != MAL_SUCCEED)
-		return res;
-	assert(bn);
-	BBPkeepref(*ret = bn->batCacheid);
 	return MAL_SUCCEED;
 }
 
-str
-BATPCRElike(bat *ret, const bat *bid, const str *pat, const str *esc)
+static inline void
+pcre_clean(
+#ifdef HAVE_LIBPCRE
+	pcre **re) {
+	if (*re)
+		pcre_free(*re);
+#else
+	regex_t *re) {
+	regfree(re);
+#endif
+	*re = NULL;
+}
+
+static str
+BATPCRElike3(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, const str *esc, const bit *isens, const bit *not) 
 {
+	str msg = MAL_SUCCEED, input = NULL, pat = NULL;
+	BAT *b = NULL, *pbn = NULL, *bn = NULL;
+	char *ppat = NULL;
+	bool use_re = false, use_strcmp = false, allnulls = false, isensitive = (bool) *isens, anti = (bool) *not, has_nil = false,
+		 input_is_a_bat = isaBatType(getArgType(mb, pci, 1)), pattern_is_a_bat = isaBatType(getArgType(mb, pci, 2));
+	bat *r = getArgReference_bat(stk, pci, 0);
+	BUN q = 0;
+	bit *restrict ret = NULL;
+#ifdef HAVE_LIBPCRE
+	pcre *re = NULL;
+#else
+	regex_t re = (regex_t) {0};
+#endif
+	struct RE *re_simple = NULL;
+	uint32_t *wpat = NULL;
+	BATiter bi = (BATiter) {0}, pi;
+
+	(void) cntxt;
+	if (input_is_a_bat) {
+		bat *bid = getArgReference_bat(stk, pci, 1);
+		if (!(b = BATdescriptor(*bid))) {
+			msg = createException(SQL, "batalgebra.batpcrelike3", SQLSTATE(HY005) "Cannot access column descriptor");
+			goto bailout;
+		}
+	}
+	if (pattern_is_a_bat) {
+		bat *pb = getArgReference_bat(stk, pci, 2);
+		if (!(pbn = BATdescriptor(*pb))) {
+			msg = createException(SQL, "batalgebra.batpcrelike3", SQLSTATE(HY005) "Cannot access column descriptor");
+			goto bailout;
+		}
+	}
+	assert((!b || ATOMstorage(b->ttype) == TYPE_str) && (!pbn || ATOMstorage(pbn->ttype) == TYPE_str));
+
+	q = BATcount(b ? b : pbn);
+	if (!(bn = COLnew(b ? b->hseqbase : pbn->hseqbase, TYPE_bit, q, TRANSIENT))) {
+		msg = createException(SQL, "batalgebra.batpcrelike3", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		goto bailout;
+	}
+	ret = (bit*) Tloc(bn, 0);
+
+	if (pattern_is_a_bat) {
+		pi = bat_iterator(pbn);
+		if (b)
+			bi = bat_iterator(b);
+		else
+			input = *getArgReference_str(stk, pci, 1);
+
+		for (BUN p = 0; p < q; p++) {
+			const str next_input = b ? BUNtail(bi, p) : input, np = BUNtail(pi, p);
+
+			if ((msg = choose_like_path(&ppat, &use_re, &use_strcmp, &allnulls, &np, esc)) != MAL_SUCCEED)
+				goto bailout;
+
+			if (use_re) {
+				if ((msg = re_like_proj_build(&re_simple, &wpat, np, isensitive, use_strcmp, (unsigned char) **esc)) != MAL_SUCCEED)
+					goto bailout;
+				re_like_proj_apply(&(ret[p]), next_input, re_simple, wpat, np, isensitive, anti, use_strcmp);
+				re_like_proj_clean(&re_simple, &wpat);
+			} else if (allnulls) {
+				ret[p] = bit_nil;
+			} else {
+				if ((msg = pcre_like_build(&re, ppat, isensitive)) != MAL_SUCCEED)
+					goto bailout;
+				if ((msg = pcre_like_apply(&(ret[p]), next_input, re, ppat, anti)) != MAL_SUCCEED)
+					goto bailout;
+				pcre_clean(&re);
+			}
+			has_nil |= is_bit_nil(ret[p]);
+		}
+	} else {
+		bi = bat_iterator(b);
+		pat = *getArgReference_str(stk, pci, 2);
+		if ((msg = choose_like_path(&ppat, &use_re, &use_strcmp, &allnulls, &pat, esc)) != MAL_SUCCEED)
+			goto bailout;
+
+		if (use_re) {
+			if ((msg = re_like_proj_build(&re_simple, &wpat, pat, isensitive, use_strcmp, (unsigned char) **esc)) != MAL_SUCCEED)
+				goto bailout;
+			for (BUN p = 0; p < q; p++) {
+				const str s = BUNtail(bi, p);
+				re_like_proj_apply(&(ret[p]), s, re_simple, wpat, pat, isensitive, anti, use_strcmp);
+				has_nil |= is_bit_nil(ret[p]);
+			}
+			re_like_proj_clean(&re_simple, &wpat);
+		} else if (allnulls) {
+			for (BUN p = 0; p < q; p++)
+				ret[p] = bit_nil;
+			has_nil = true;
+		} else {
+			if ((msg = pcre_like_build(&re, ppat, isensitive)) != MAL_SUCCEED)
+				goto bailout;
+			for (BUN p = 0; p < q; p++) {
+				const str s = BUNtail(bi, p);
+				if ((msg = pcre_like_apply(&(ret[p]), s, re, ppat, anti)) != MAL_SUCCEED)
+					goto bailout;
+				has_nil |= is_bit_nil(ret[p]);
+			}
+			pcre_clean(&re);
+		}
+	}
+
+bailout:
+	re_like_proj_clean(&re_simple, &wpat);
+	pcre_clean(&re);
+	if (bn && !msg) {
+		BATsetcount(bn, q);
+		bn->tnil = has_nil;
+		bn->tnonil = !has_nil;
+		bn->tkey = BATcount(bn) <= 1;
+		bn->tsorted = BATcount(bn) <= 1;
+		bn->trevsorted = BATcount(bn) <= 1;
+		BBPkeepref(*r = bn->batCacheid);
+	} else if (bn)
+		BBPreclaim(bn);
+	if (b)
+		BBPunfix(b->batCacheid);
+	if (pbn)
+		BBPunfix(pbn->batCacheid);
+	return msg;
+}
+
+str
+BATPCRElike(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	const str *esc = getArgReference_str(stk, pci, 3);
 	bit no = FALSE;
 
-	return BATPCRElike3(ret, bid, pat, esc, &no, &no);
+	return BATPCRElike3(cntxt, mb, stk, pci, esc, &no, &no);
 }
 
 str
-BATPCRElike2(bat *ret, const bat *bid, const str *pat)
+BATPCRElike2(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	char *esc = "\\";
-
-	return BATPCRElike(ret, bid, pat, &esc);
-}
-
-str
-BATPCREnotlike(bat *ret, const bat *bid, const str *pat, const str *esc)
-{
-	bit no = FALSE;
-	bit yes = TRUE;
-
-	return BATPCRElike3(ret, bid, pat, esc, &no, &yes);
-}
-
-str
-BATPCREnotlike2(bat *ret, const bat *bid, const str *pat)
-{
-	char *esc = "\\";
-
-	return BATPCREnotlike(ret, bid, pat, &esc);
-}
-
-str
-BATPCREilike(bat *ret, const bat *bid, const str *pat, const str *esc)
-{
-	bit yes = TRUE;
 	bit no = FALSE;
 
-	return BATPCRElike3(ret, bid, pat, esc, &yes, &no);
+	return BATPCRElike3(cntxt, mb, stk, pci, &esc, &no, &no);
 }
 
 str
-BATPCREilike2(bat *ret, const bat *bid, const str *pat)
+BATPCREnotlike(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	const str *esc = getArgReference_str(stk, pci, 3);
+	bit no = FALSE, yes = TRUE;
+
+	return BATPCRElike3(cntxt, mb, stk, pci, esc, &no, &yes);
+}
+
+str
+BATPCREnotlike2(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	char *esc = "\\";
+	bit no = FALSE, yes = TRUE;
 
-	return BATPCREilike(ret, bid, pat, &esc);
+	return BATPCRElike3(cntxt, mb, stk, pci, &esc, &no, &yes);
 }
 
 str
-BATPCREnotilike(bat *ret, const bat *bid, const str *pat, const str *esc)
+BATPCREilike(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
+	const str *esc = getArgReference_str(stk, pci, 3);
+	bit yes = TRUE, no = FALSE;
+
+	return BATPCRElike3(cntxt, mb, stk, pci, esc, &yes, &no);
+}
+
+str
+BATPCREilike2(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	char *esc = "\\";
+	bit yes = TRUE, no = FALSE;
+
+	return BATPCRElike3(cntxt, mb, stk, pci, &esc, &yes, &no);
+}
+
+str
+BATPCREnotilike(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	const str *esc = getArgReference_str(stk, pci, 3);
 	bit yes = TRUE;
 
-	return BATPCRElike3(ret, bid, pat, esc, &yes, &yes);
+	return BATPCRElike3(cntxt, mb, stk, pci, esc, &yes, &yes);
 }
 
 str
-BATPCREnotilike2(bat *ret, const bat *bid, const str *pat)
+BATPCREnotilike2(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	char *esc = "\\";
+	bit yes = TRUE;
 
-	return BATPCREnotilike(ret, bid, pat, &esc);
+	return BATPCRElike3(cntxt, mb, stk, pci, &esc, &yes, &yes);
 }
 
 str
@@ -2663,14 +2708,30 @@ mel_func pcre_init_funcs[] = {
  command("algebra", "not_ilike", PCREnotilike2, false, "", args(1,3, arg("",bit),arg("s",str),arg("pat",str))),
  command("batpcre", "replace", PCREreplace_bat_wrap, false, "", args(1,5, batarg("",str),batarg("orig",str),arg("pat",str),arg("repl",str),arg("flag",str))),
  command("batpcre", "replace_first", PCREreplacefirst_bat_wrap, false, "", args(1,5, batarg("",str),batarg("orig",str),arg("pat",str),arg("repl",str),arg("flag",str))),
- command("batalgebra", "like", BATPCRElike, false, "", args(1,4, batarg("",bit),batarg("s",str),arg("pat",str),arg("esc",str))),
- command("batalgebra", "like", BATPCRElike2, false, "", args(1,3, batarg("",bit),batarg("s",str),arg("pat",str))),
- command("batalgebra", "not_like", BATPCREnotlike, false, "", args(1,4, batarg("",bit),batarg("s",str),arg("pat",str),arg("esc",str))),
- command("batalgebra", "not_like", BATPCREnotlike2, false, "", args(1,3, batarg("",bit),batarg("s",str),arg("pat",str))),
- command("batalgebra", "ilike", BATPCREilike, false, "", args(1,4, batarg("",bit),batarg("s",str),arg("pat",str),arg("esc",str))),
- command("batalgebra", "ilike", BATPCREilike2, false, "", args(1,3, batarg("",bit),batarg("s",str),arg("pat",str))),
- command("batalgebra", "not_ilike", BATPCREnotilike, false, "", args(1,4, batarg("",bit),batarg("s",str),arg("pat",str),arg("esc",str))),
- command("batalgebra", "not_ilike", BATPCREnotilike2, false, "", args(1,3, batarg("",bit),batarg("s",str),arg("pat",str))),
+ pattern("batalgebra", "like", BATPCRElike, false, "", args(1,4, batarg("",bit),batarg("s",str),arg("pat",str),arg("esc",str))),
+ pattern("batalgebra", "like", BATPCRElike, false, "", args(1,4, batarg("",bit),arg("s",str),batarg("pat",str),arg("esc",str))),
+ pattern("batalgebra", "like", BATPCRElike, false, "", args(1,4, batarg("",bit),batarg("s",str),batarg("pat",str),arg("esc",str))),
+ pattern("batalgebra", "like", BATPCRElike2, false, "", args(1,3, batarg("",bit),batarg("s",str),arg("pat",str))),
+ pattern("batalgebra", "like", BATPCRElike2, false, "", args(1,3, batarg("",bit),arg("s",str),batarg("pat",str))),
+ pattern("batalgebra", "like", BATPCRElike2, false, "", args(1,3, batarg("",bit),batarg("s",str),batarg("pat",str))),
+ pattern("batalgebra", "not_like", BATPCREnotlike, false, "", args(1,4, batarg("",bit),batarg("s",str),arg("pat",str),arg("esc",str))),
+ pattern("batalgebra", "not_like", BATPCREnotlike, false, "", args(1,4, batarg("",bit),arg("s",str),batarg("pat",str),arg("esc",str))),
+ pattern("batalgebra", "not_like", BATPCREnotlike, false, "", args(1,4, batarg("",bit),batarg("s",str),batarg("pat",str),arg("esc",str))),
+ pattern("batalgebra", "not_like", BATPCREnotlike2, false, "", args(1,3, batarg("",bit),batarg("s",str),arg("pat",str))),
+ pattern("batalgebra", "not_like", BATPCREnotlike2, false, "", args(1,3, batarg("",bit),arg("s",str),batarg("pat",str))),
+ pattern("batalgebra", "not_like", BATPCREnotlike2, false, "", args(1,3, batarg("",bit),batarg("s",str),batarg("pat",str))),
+ pattern("batalgebra", "ilike", BATPCREilike, false, "", args(1,4, batarg("",bit),batarg("s",str),arg("pat",str),arg("esc",str))),
+ pattern("batalgebra", "ilike", BATPCREilike, false, "", args(1,4, batarg("",bit),arg("s",str),batarg("pat",str),arg("esc",str))),
+ pattern("batalgebra", "ilike", BATPCREilike, false, "", args(1,4, batarg("",bit),batarg("s",str),batarg("pat",str),arg("esc",str))),
+ pattern("batalgebra", "ilike", BATPCREilike2, false, "", args(1,3, batarg("",bit),batarg("s",str),arg("pat",str))),
+ pattern("batalgebra", "ilike", BATPCREilike2, false, "", args(1,3, batarg("",bit),arg("s",str),batarg("pat",str))),
+ pattern("batalgebra", "ilike", BATPCREilike2, false, "", args(1,3, batarg("",bit),batarg("s",str),batarg("pat",str))),
+ pattern("batalgebra", "not_ilike", BATPCREnotilike, false, "", args(1,4, batarg("",bit),batarg("s",str),arg("pat",str),arg("esc",str))),
+ pattern("batalgebra", "not_ilike", BATPCREnotilike, false, "", args(1,4, batarg("",bit),arg("s",str),batarg("pat",str),arg("esc",str))),
+ pattern("batalgebra", "not_ilike", BATPCREnotilike, false, "", args(1,4, batarg("",bit),batarg("s",str),batarg("pat",str),arg("esc",str))),
+ pattern("batalgebra", "not_ilike", BATPCREnotilike2, false, "", args(1,3, batarg("",bit),batarg("s",str),arg("pat",str))),
+ pattern("batalgebra", "not_ilike", BATPCREnotilike2, false, "", args(1,3, batarg("",bit),arg("s",str),batarg("pat",str))),
+ pattern("batalgebra", "not_ilike", BATPCREnotilike2, false, "", args(1,3, batarg("",bit),batarg("s",str),batarg("pat",str))),
  command("algebra", "likeselect", PCRElikeselect2, false, "Select all head values of the first input BAT for which the\ntail value is \"like\" the given (SQL-style) pattern and for\nwhich the head value occurs in the tail of the second input\nBAT.\nInput is a dense-headed BAT, output is a dense-headed BAT with in\nthe tail the head value of the input BAT for which the\nrelationship holds.  The output BAT is sorted on the tail value.", args(1,7, batarg("",oid),batarg("b",str),batarg("s",oid),arg("pat",str),arg("esc",str),arg("caseignore",bit),arg("anti",bit))),
  command("algebra", "likeselect", PCRElikeselect3, false, "", args(1,6, batarg("",oid),batarg("b",str),batarg("cand",oid),arg("pat",str),arg("esc",str),arg("anti",bit))),
  command("algebra", "ilikeselect", PCRElikeselect1, false, "", args(1,6, batarg("",oid),batarg("b",str),batarg("cand",oid),arg("pat",str),arg("esc",str),arg("anti",bit))),
