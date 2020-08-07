@@ -27,17 +27,13 @@ cmake_dependent_option(CINTEGRATION
   "NOT WIN32"
   OFF)
 
-cmake_dependent_option(PY3INTEGRATION 
+option(PY3INTEGRATION 
   "Enable support for Python 3 integration into MonetDB (default=ON)"
-  ON
-  "DEVELOPMENT"
-  OFF)
+  ON)
 
-cmake_dependent_option(RINTEGRATION 
+option(RINTEGRATION 
   "Enable support for R integration into MonetDB (default=ON)"
-  ON
-  "DEVELOPMENT"
-  OFF)
+  ON)
 
 option(FITS 
   "Enable support for FITS (default=ON)"
@@ -69,17 +65,13 @@ option(SANITIZER
   "Enable support for the GCC address sanitizer (default=OFF)"
   OFF)
 
-cmake_dependent_option(STRICT 
+option(STRICT 
   "Enable strict compiler flags (default=ON for development sources, OFF for tarball installation)"
-  ON
-  "DEVELOPMENT"
-  OFF)
+  "${DEVELOPMENT}")
 
-cmake_dependent_option(ASSERT 
+option(ASSERT 
   "Enable asserts (default=ON for development sources, OFF for tarball installation)"
-  ON
-  "DEVELOPMENT"
-  OFF)
+  "${DEVELOPMENT}")
 
 option(WITH_BZ2
   "Include bz2 support"

@@ -30,7 +30,7 @@ target_link_libraries(sqlstorage
   PRIVATE
   monetdb_config_header
   mutils
-  gdk
+  bat
   sqlcommon
   sqlinclude)
 
@@ -46,15 +46,5 @@ target_compile_definitions(sqlstorage
   LIBSQLCOMMON
   LIBBATSTORE
   LIBSTORE)
-
-install(TARGETS
-  sqlstorage
-  LIBRARY
-  DESTINATION ${CMAKE_INSTALL_LIBDIR}
-  ARCHIVE
-  DESTINATION ${CMAKE_INSTALL_LIBDIR}
-  PUBLIC_HEADER
-  DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/monetdb
-  INCLUDES DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
 
 add_subdirectory(bat)

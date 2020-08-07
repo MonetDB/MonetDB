@@ -56,27 +56,12 @@ OPTremapDirect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int idx,
 		if (p->argc == 3 &&
 			/* these two filter out unary batcalc.- with a candidate list */
 			getBatType(getArgType(mb, p, 1)) != TYPE_oid &&
-			getBatType(getArgType(mb, p, 2)) != TYPE_oid &&
-			getBatType(getArgType(mb, p, 2)) != TYPE_bit) {
+			(getBatType(getArgType(mb, p, 2)) != TYPE_oid && !(isVarConstant(mb, getArg(p, 2)) && getArgType(mb, p, 2) == TYPE_bat))) {
 			/* add candidate lists */
 			if (isaBatType(getArgType(mb, p, 1)))
 				p = pushNil(mb, p, TYPE_bat);
 			if (isaBatType(getArgType(mb, p, 2)))
 				p = pushNil(mb, p, TYPE_bat);
-		} else if (p->argc == 4 &&
-				   getBatType(getArgType(mb, p, 3)) == TYPE_bit &&
-				   /* these two filter out unary batcalc.- with a
-					* candidate list */
-				   getBatType(getArgType(mb, p, 1)) != TYPE_oid &&
-				   getBatType(getArgType(mb, p, 2)) != TYPE_oid) {
-			int a = getArg(p, 3);
-			p->argc--;
-			/* add candidate lists */
-			if (isaBatType(getArgType(mb, p, 1)))
-				p = pushNil(mb, p, TYPE_bat);
-			if (isaBatType(getArgType(mb, p, 2)))
-				p = pushNil(mb, p, TYPE_bat);
-			p = pushArgument(mb, p, a);
 		}
 	}
 

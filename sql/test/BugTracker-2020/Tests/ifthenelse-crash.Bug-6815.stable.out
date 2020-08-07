@@ -25,7 +25,7 @@ stdout of test 'ifthenelse-crash.Bug-6815` in directory 'sql/test/BugTracker-202
 #start transaction;
 #create table t6815 (type_digits int);
 #select ifthenelse((type_digits > 0), '('||type_digits||')', '') as opt_len from t6815;
-% sys. # table_name
+% . # table_name
 % opt_len # name
 % varchar # type
 % 0 # length

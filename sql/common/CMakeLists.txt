@@ -37,7 +37,7 @@ target_link_libraries(sqlcommon
   monetdb_config_header
   matomic
   stream
-  gdk
+  bat
   sqlinclude
   sqlstorage)
 
@@ -53,13 +53,3 @@ set_target_properties(sqlcommon
   PROPERTIES
   POSITION_INDEPENDENT_CODE ON
   PUBLIC_HEADER ${CMAKE_CURRENT_SOURCE_DIR}/sql_types.h)
-
-install(TARGETS
-  sqlcommon
-  LIBRARY
-  DESTINATION ${CMAKE_INSTALL_LIBDIR}
-  ARCHIVE
-  DESTINATION ${CMAKE_INSTALL_LIBDIR}
-  PUBLIC_HEADER
-  DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/monetdb
-  INCLUDES DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})

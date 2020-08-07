@@ -36,7 +36,7 @@ target_link_libraries(monetdbd
   mcrypt
   stream
   mapi
-  gdk
+  bat
   msabaoth
   mal
   ${CMAKE_DL_LIBS}

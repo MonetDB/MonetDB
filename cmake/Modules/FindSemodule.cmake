@@ -7,7 +7,7 @@
 #]]
 
 find_program(SEMODULE_EXECUTABLE NAMES semodule
-  DOC "Manage selinux policy mocules"
+  DOC "Manage selinux policy modules"
 )
 
 include(FindPackageHandleStandardArgs)

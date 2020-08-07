@@ -12,6 +12,9 @@ add_subdirectory(include)
 add_subdirectory(scripts)
 add_subdirectory(server)
 add_subdirectory(storage)
+if(WIN32)
+  add_subdirectory(NT)
+endif()
 
 install(FILES
   dump-restore.html

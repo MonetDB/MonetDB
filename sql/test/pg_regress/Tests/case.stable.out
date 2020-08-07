@@ -118,7 +118,7 @@ stdout of test 'case` in directory 'sql/test/pg_regress` itself:
 #    WHEN i >= 3 THEN i
 #  END AS ">= 3 or Null"
 #  FROM CASE_TBL;
-% .,	sys. # table_name
+% .,	. # table_name
 % Five,	">= 3 or Null" # name
 % char,	int # type
 % 0,	1 # length
@@ -132,7 +132,7 @@ stdout of test 'case` in directory 'sql/test/pg_regress` itself:
 #       ELSE i
 #  END AS "Simplest Math"
 #  FROM CASE_TBL;
-% .,	sys. # table_name
+% .,	. # table_name
 % Five,	"Simplest Math" # name
 % char,	bigint # type
 % 0,	1 # length
@@ -149,7 +149,7 @@ stdout of test 'case` in directory 'sql/test/pg_regress` itself:
 #       ELSE 'big'
 #  END AS "Category"
 #  FROM CASE_TBL;
-% .,	sys.,	sys. # table_name
+% .,	sys.,	. # table_name
 % Five,	Value,	Category # name
 % char,	int,	char # type
 % 0,	1,	5 # length
@@ -166,7 +166,7 @@ stdout of test 'case` in directory 'sql/test/pg_regress` itself:
 #       ELSE 'big'
 #  END AS "Category"
 #  FROM CASE_TBL;
-% .,	sys. # table_name
+% .,	. # table_name
 % Five,	Category # name
 % char,	char # type
 % 0,	5 # length
@@ -196,7 +196,7 @@ stdout of test 'case` in directory 'sql/test/pg_regress` itself:
 % 1,	24 # length
 #SELECT distinct COALESCE(a.f, b.i, b.j)
 #  FROM CASE_TBL a, CASE2_TBL b  Order By COALESCE(a.f, b.i, b.j);
-% sys.%2 # table_name
+% .%2 # table_name
 % %2 # name
 % double # type
 % 24 # length

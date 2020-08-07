@@ -46,6 +46,14 @@ MAPI  = (monetdb) /var/tmp/mtest-399914/.s.monetdb.30869
 QUERY = exec  4 (); --error, from the condition "'col9'"='', it fails to covert '' to date
 ERROR = !Date '' has incorrect format
 CODE  = 22007
+MAPI  = (monetdb) /var/tmp/mtest-61110/.s.monetdb.36063
+QUERY = exec  7 (blob 'aaaa'); --error, cannot cast
+ERROR = !types blob(0,0) and sec_interval(13,0) are not equal
+CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-61110/.s.monetdb.36063
+QUERY = exec  8 (time '10:00:00' + 1); --error, no such binary operator
+ERROR = !SELECT: no such binary operator 'sql_add(time,tinyint)'
+CODE  = 42000
 
 # 13:54:02 >  
 # 13:54:02 >  "Done."

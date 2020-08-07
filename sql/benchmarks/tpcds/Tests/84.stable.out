@@ -38,7 +38,7 @@ stdout of test '84` in directory 'sql/benchmarks/tpcds` itself:
 #  AND ib_income_band_sk = hd_income_band_sk
 #  AND cd_demo_sk = c_current_cdemo_sk
 #  AND hd_demo_sk = c_current_hdemo_sk
-% sys.,	sys. # table_name
+% sys.,	. # table_name
 % customer_id,	customername # name
 % char,	varchar # type
 % 16,	19 # length

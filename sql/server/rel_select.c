@@ -197,15 +197,14 @@ rel_table_optname(mvc *sql, sql_rel *sq, symbol *optname)
 			ne = sq->exps->h;
 			for (; ne; ne = ne->next) {
 				sql_exp *e = ne->data;
+				char *name = NULL;
 
-				/*
-				if (exp_name(e) && exps_bind_column2(l, tname, exp_name(e)))
-					return sql_error(sql, ERR_AMBIGUOUS, SQLSTATE(42000) "SELECT: Duplicate column name '%s.%s'", tname, exp_name(e));
-					*/
-				noninternexp_setname(sql->sa, e, tname, NULL );
-				if (!is_intern(e))
+				if (!is_intern(e)) {
+					if (!exp_name(e))
+						name = make_label(sql->sa, ++sql->label);
+					noninternexp_setname(sql->sa, e, tname, name);
 					set_basecol(e);
-				append(l, e);
+				}
 			}
 		}
 	} else {
@@ -252,19 +251,19 @@ rel_with_query(sql_query *query, symbol *q )
 	for (d = d->data.lval->h; d; d = d->next) {
 		symbol *sym = d->data.sym;
 		dnode *dn = sym->data.lval->h;
-		char *name = qname_schema_object(dn->data.lval);
+		char *rname = qname_schema_object(dn->data.lval);
 		sql_rel *nrel;
 
-		if (frame_find_rel_view(sql, name)) {
+		if (frame_find_rel_view(sql, rname)) {
 			stack_pop_frame(sql);
-			return sql_error(sql, 01, SQLSTATE(42000) "View '%s' already declared", name);
+			return sql_error(sql, 01, SQLSTATE(42000) "View '%s' already declared", rname);
 		}
 		nrel = rel_semantic(query, sym);
 		if (!nrel) {
 			stack_pop_frame(sql);
 			return NULL;
 		}
-		if (!stack_push_rel_view(sql, name, nrel)) {
+		if (!stack_push_rel_view(sql, rname, nrel)) {
 			stack_pop_frame(sql);
 			return sql_error(sql, 02, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		}
@@ -282,10 +281,14 @@ rel_with_query(sql_query *query, symbol *q )
 
 			for (; ne; ne = ne->next) {
 				sql_exp *e = ne->data;
+				char *name = NULL;
 
-				noninternexp_setname(sql->sa, e, name, NULL );
-				if (!is_intern(e))
+				if (!is_intern(e)) {
+					if (!exp_name(e))
+						name = make_label(sql->sa, ++sql->label);
+					noninternexp_setname(sql->sa, e, rname, name);
 					set_basecol(e);
+				}
 			}
 		}
 	}
@@ -437,6 +440,49 @@ score_func( sql_subfunc *sf, list *tl)
 	return score;
 }
 
+static list *
+check_arguments_and_find_largest_any_type(mvc *sql, sql_rel *rel, list* exps, sql_subfunc *sf, int maybe_zero_or_one)
+{
+	list *nexps = new_exp_list(sql->sa);
+	sql_subtype *atp = NULL;
+	sql_arg *aa = NULL;
+
+	/* find largest any type argument */
+	for (node *n = exps->h, *m = sf->func->ops->h; n && m; n = n->next, m = m->next) {
+		sql_arg *a = m->data;
+		sql_exp *e = n->data;
+		sql_subtype *t = exp_subtype(e);
+
+		if (!aa && a->type.type->eclass == EC_ANY) {
+			atp = t;
+			aa = a;
+		}
+		if (aa && a->type.type->eclass == EC_ANY && t && atp && t->type->localtype > atp->type->localtype) {
+			atp = t;
+			aa = a;
+		}
+	}
+	for (node *n = exps->h, *m = sf->func->ops->h; n && m; n = n->next, m = m->next) {
+		sql_arg *a = m->data;
+		sql_exp *e = n->data;
+		sql_subtype *ntp = &a->type;
+
+		if (a->type.type->eclass == EC_ANY && atp)
+			ntp = sql_create_subtype(sql->sa, atp->type, atp->digits, atp->scale);
+		if (!(e = exp_check_type(sql, ntp, rel, e, type_equal)))
+			return NULL;
+		if (maybe_zero_or_one && e->card > CARD_ATOM) {
+			sql_subfunc *zero_or_one = sql_bind_func(sql->sa, sql->session->schema, "zero_or_one", exp_subtype(e), NULL, F_AGGR);
+			e = exp_aggr1(sql->sa, e, zero_or_one, 0, 0, CARD_ATOM, has_nil(e));
+		}
+		append(nexps, e);
+	}
+	/* dirty hack */
+	if (sf->func->type != F_PROC && sf->func->type != F_UNION && sf->func->type != F_LOADER && sf->res && aa && atp)
+		sf->res->h->data = sql_create_subtype(sql->sa, atp->type, atp->digits, atp->scale);
+	return nexps;
+}
+
 static sql_exp *
 find_table_function_type(mvc *sql, sql_schema *s, char *fname, list *exps, list *tl, sql_ftype type, sql_subfunc **sf)
 {
@@ -470,45 +516,7 @@ find_table_function_type(mvc *sql, sql_schema *s, char *fname, list *exps, list 
 		if ((*sf)->func->vararg) {
 			e = exp_op(sql->sa, exps, *sf);
 		} else {
-			node *n, *m;
-			list *nexps = new_exp_list(sql->sa);
-			sql_subtype *atp = NULL;
-			sql_arg *aa = NULL;
-
-			/* find largest any type argument */
-			for (n = exps->h, m = (*sf)->func->ops->h; n && m; n = n->next, m = m->next) {
-				sql_arg *a = m->data;
-				sql_exp *e = n->data;
-				sql_subtype *t = exp_subtype(e);
-
-				if (!aa && a->type.type->eclass == EC_ANY) {
-					atp = t;
-					aa = a;
-				}
-				if (aa && a->type.type->eclass == EC_ANY && t && atp &&
-				    t->type->localtype > atp->type->localtype){
-					atp = t;
-					aa = a;
-				}
-			}
-			for (n = exps->h, m = (*sf)->func->ops->h; n && m; n = n->next, m = m->next) {
-				sql_arg *a = m->data;
-				sql_exp *e = n->data;
-				sql_subtype *ntp = &a->type;
-
-				if (a->type.type->eclass == EC_ANY && atp)
-					ntp = sql_create_subtype(sql->sa, atp->type, atp->digits, atp->scale);
-				e = exp_check_type(sql, ntp, NULL, e, type_equal);
-				if (!e) {
-					nexps = NULL;
-					break;
-				}
-				if (e->card > CARD_ATOM) {
-					sql_subfunc *zero_or_one = sql_bind_func(sql->sa, sql->session->schema, "zero_or_one", exp_subtype(e), NULL, F_AGGR);
-					e = exp_aggr1(sql->sa, e, zero_or_one, 0, 0, CARD_ATOM, has_nil(e));
-				}
-				append(nexps, e);
-			}
+			list *nexps = check_arguments_and_find_largest_any_type(sql, NULL, exps, *sf, 1);
 			e = NULL;
 			if (nexps)
 				e = exp_op(sql->sa, nexps, *sf);
@@ -596,7 +604,7 @@ rel_named_table_function(sql_query *query, sql_rel *rel, symbol *ast, int latera
 		}
 	}
 
-	e = find_table_function(sql, s, fname, exps, tl);
+	e = find_table_function(sql, s, fname, list_empty(exps) ? NULL : exps, tl);
 	if (!e)
 		return sql_error(sql, 02, SQLSTATE(42000) "SELECT: no such table returning function '%s'", fname);
 	rel = sq;
@@ -763,12 +771,12 @@ rel_values(sql_query *query, symbol *tableref)
 	sql_rel *r = NULL;
 	dlist *rowlist = tableref->data.lval;
 	symbol *optname = rowlist->t->data.sym;
-	dnode *o;
 	node *m;
 	list *exps = sa_list(sql->sa);
 	exp_kind ek = {type_value, card_value, TRUE};
+	unsigned int card = dlist_length(rowlist) == 1 ? CARD_ATOM : CARD_MULTI;
 
-	for (o = rowlist->h; o; o = o->next) {
+	for (dnode *o = rowlist->h; o; o = o->next) {
 		dlist *values = o->data.lval;
 
 		/* When performing sub-queries, the relation name appears under a SQL_NAME symbol at the end of the list */
@@ -798,14 +806,19 @@ rel_values(sql_query *query, symbol *tableref)
 			}
 		}
 	}
-	/* loop to check types */
-	for (m = exps->h; m; m = m->next)
-		if (!(m->data = exp_values_set_supertype(sql, (sql_exp*) m->data, NULL)))
+	/* loop to check types and cardinality */
+	for (m = exps->h; m; m = m->next) {
+		sql_exp *e = m->data;
+
+		if (!(e = exp_values_set_supertype(sql, e, NULL)))
 			return NULL;
+		e->card = card;
+		m->data = e;
+	}
 
 	r = rel_project(sql->sa, NULL, exps);
 	r->nrcols = list_length(exps);
-	r->card = dlist_length(rowlist) == 1 ? CARD_ATOM : CARD_MULTI;
+	r->card = card;
 	return rel_table_optname(sql, r, optname);
 }
 
@@ -918,9 +931,12 @@ table_ref(sql_query *query, sql_rel *rel, symbol *tableref, int lateral)
 			/* Rename columns of the rel_parse relation */
 			if (sql->emode != m_deps) {
 				assert(is_project(rel->op));
-				if (!rel)
-					return NULL;
 				set_processed(rel);
+				if ((is_simple_project(rel->op) || is_groupby(rel->op)) && !list_empty(rel->r)) {
+					/* it's unsafe to set the projection names because of possible dependent sorting/grouping columns */
+					rel = rel_project(sql->sa, rel, rel_projections(sql, rel, NULL, 1, 0));
+					set_processed(rel);
+				}
 				for (n = t->columns.set->h, m = rel->exps->h; n && m; n = n->next, m = m->next) {
 					sql_column *c = n->data;
 					sql_exp *e = m->data;
@@ -1082,7 +1098,7 @@ rel_column_ref(sql_query *query, sql_rel **rel, symbol *column_r, int f)
 				if (is_groupby(outer->op) && !is_sql_aggr(f)) {
 					exp = rel_groupby_add_aggr(sql, outer, exp);
 					exp->card = CARD_ATOM;
-				} else if (is_groupby(outer->op) && is_sql_aggr(f) && exps_find_match_exp(outer->exps, exp))
+				} else if (is_groupby(outer->op) && is_sql_aggr(f) && exps_any_match(outer->exps, exp))
 					exp = exp_ref(sql, exp);
 				else
 					exp->card = CARD_ATOM;
@@ -1154,7 +1170,7 @@ rel_column_ref(sql_query *query, sql_rel **rel, symbol *column_r, int f)
 				if (is_groupby(outer->op) && !is_sql_aggr(f)) {
 					exp = rel_groupby_add_aggr(sql, outer, exp);
 					exp->card = CARD_ATOM;
-				} else if (is_groupby(outer->op) && is_sql_aggr(f) && exps_find_match_exp(outer->exps, exp))
+				} else if (is_groupby(outer->op) && is_sql_aggr(f) && exps_any_match(outer->exps, exp))
 					exp = exp_ref(sql, exp);
 				else
 					exp->card = CARD_ATOM;
@@ -1232,13 +1248,17 @@ exp_fix_scale(mvc *sql, sql_subtype *ct, sql_exp *e, int both, int always)
 		if (scale_diff) {
 			sql_subtype *it = sql_bind_localtype(et->type->base.name);
 			sql_subfunc *c = NULL;
+			bool swapped = false;
 
 			if (scale_diff < 0) {
 				if (!both)
 					return e;
 				c = sql_bind_func(sql->sa, sql->session->schema, "scale_down", et, it, F_FUNC);
 			} else {
-				c = sql_bind_func(sql->sa, sql->session->schema, "scale_up", et, it, F_FUNC);
+				if (!(c = sql_bind_func(sql->sa, sql->session->schema, "scale_up", et, it, F_FUNC))) {
+					if ((c = sql_bind_func(sql->sa, sql->session->schema, "scale_up", it, et, F_FUNC)))
+						swapped = true;
+				}
 			}
 			if (c) {
 #ifdef HAVE_HGE
@@ -1246,11 +1266,11 @@ exp_fix_scale(mvc *sql, sql_subtype *ct, sql_exp *e, int both, int always)
 #else
 				lng val = scale2value(scale_diff);
 #endif
-				atom *a = atom_int(sql->sa, it, val);
+				sql_exp *atom_exp = exp_atom(sql->sa, atom_int(sql->sa, it, val));
 				sql_subtype *res = c->res->h->data;
 
 				res->scale = (et->scale + scale_diff);
-				return exp_binop(sql->sa, e, exp_atom(sql->sa, a), c);
+				return exp_binop(sql->sa, swapped ? atom_exp : e, swapped ? e : atom_exp, c);
 			}
 		}
 	} else if (always && et->scale) {	/* scale down */
@@ -1428,20 +1448,16 @@ rel_filter(mvc *sql, sql_rel *rel, list *l, list *r, char *sname, char *filter_o
 	sql_exp *L = l->h->data, *R = r->h->data, *e = NULL;
 	sql_subfunc *f = NULL;
 	sql_schema *s = cur_schema(sql);
-	list *tl, *exps;
+	list *tl = sa_list(sql->sa);
 
-	exps = sa_list(sql->sa);
-	tl = sa_list(sql->sa);
 	for (n = l->h; n; n = n->next){
 		sql_exp *e = n->data;
 
-		list_append(exps, e);
 		list_append(tl, exp_subtype(e));
 	}
 	for (n = r->h; n; n = n->next){
 		sql_exp *e = n->data;
 
-		list_append(exps, e);
 		list_append(tl, exp_subtype(e));
 	}
 	if (sname && !(s = mvc_bind_schema(sql, sname)))
@@ -1450,7 +1466,7 @@ rel_filter(mvc *sql, sql_rel *rel, list *l, list *r, char *sname, char *filter_o
 	f = sql_bind_func_(sql->sa, s, filter_op, tl, F_FILT);
 
 	if (!f)
-		f = find_func(sql, s, filter_op, list_length(exps), F_FILT, NULL);
+		f = find_func(sql, s, filter_op, list_length(tl), F_FILT, NULL);
 	if (f) {
 		node *n,*m = f->func->ops->h;
 		list *nexps = sa_list(sql->sa);
@@ -1745,49 +1761,7 @@ _rel_nop(mvc *sql, sql_schema *s, char *fname, list *tl, sql_rel *rel, list *exp
 		if (f->func->vararg) {
 			return exp_op(sql->sa, exps, f);
 		} else {
-			node *n, *m;
-			list *nexps = new_exp_list(sql->sa);
-			sql_subtype *atp = NULL;
-			sql_arg *aa = NULL;
-
-			/* find largest any type argument */
-			for (n = exps->h, m = f->func->ops->h; n && m; n = n->next, m = m->next) {
-				sql_arg *a = m->data;
-				sql_exp *e = n->data;
-				sql_subtype *t = exp_subtype(e);
-
-				if (!aa && a->type.type->eclass == EC_ANY) {
-					atp = t;
-					aa = a;
-				}
-				if (aa && a->type.type->eclass == EC_ANY && t && atp &&
-				    t->type->localtype > atp->type->localtype){
-					atp = t;
-					aa = a;
-				}
-			}
-			for (n = exps->h, m = f->func->ops->h; n && m; n = n->next, m = m->next) {
-				sql_arg *a = m->data;
-				sql_exp *e = n->data;
-				sql_subtype *ntp = &a->type;
-
-				if (a->type.type->eclass == EC_ANY && atp)
-					ntp = sql_create_subtype(sql->sa, atp->type, atp->digits, atp->scale);
-				e = exp_check_type(sql, ntp, rel, e, type_equal);
-				if (!e) {
-					nexps = NULL;
-					break;
-				}
-				if (table_func && e->card > CARD_ATOM) {
-					sql_subfunc *zero_or_one = sql_bind_func(sql->sa, sql->session->schema, "zero_or_one", exp_subtype(e), NULL, F_AGGR);
-
-					e = exp_aggr1(sql->sa, e, zero_or_one, 0, 0, CARD_ATOM, has_nil(e));
-				}
-				append(nexps, e);
-			}
-			/* dirty hack */
-			if (f->res && aa && atp)
-				f->res->h->data = sql_create_subtype(sql->sa, atp->type, atp->digits, atp->scale);
+			list *nexps = check_arguments_and_find_largest_any_type(sql, rel, exps, f, table_func);
 			if (nexps)
 				return exp_op(sql->sa, nexps, f);
 		}
@@ -1924,18 +1898,6 @@ rel_in_value_exp(sql_query *query, sql_rel **rel, symbol *sc, int f)
 			append(vals, re);
 		}
 
-		if (rel && *rel)
-			for (node *n = vals->h ; n ; n = n->next) {
-				sql_exp *e = n->data;
-
-				if (!exp_is_rel(e) && e->card > (*rel)->card) {
-					if (exp_name(e))
-						return sql_error(sql, ERR_GROUPBY, SQLSTATE(42000) "SELECT: cannot use non GROUP BY column '%s' in query results without an aggregate function", exp_name(e));
-					else
-						return sql_error(sql, ERR_GROUPBY, SQLSTATE(42000) "SELECT: cannot use non GROUP BY column in query results without an aggregate function");
-				}
-			}
-
 		values = exp_values(sql->sa, vals);
 		exp_label(sql->sa, values, ++sql->label);
 		if (is_tuple) {
@@ -1975,8 +1937,6 @@ rel_in_value_exp(sql_query *query, sql_rel **rel, symbol *sc, int f)
 		if (!e)
 			e = exp_in_func(sql, le, values, (sc->token == SQL_IN), is_tuple);
 	}
-	if (e && le)
-		e->card = le->card;
 	return e;
 }
 
@@ -2978,18 +2938,24 @@ rel_binop_(mvc *sql, sql_rel *rel, sql_exp *l, sql_exp *r, sql_schema *s, char *
 		if (t1->type->eclass == EC_ANY || t2->type->eclass == EC_ANY) {
 			sql_exp *ol = l;
 			sql_exp *or = r;
+			sql_subtype *s = sql_bind_localtype("str");
 
 			if (t1->type->eclass == EC_ANY && t2->type->eclass == EC_ANY) {
-				sql_subtype *s = sql_bind_localtype("str");
 				l = exp_check_type(sql, s, rel, l, type_equal);
 				r = exp_check_type(sql, s, rel, r, type_equal);
 			} else if (t1->type->eclass == EC_ANY) {
-				l = exp_check_type(sql, t2, rel, l, type_equal);
+				s = t2;
+				l = exp_check_type(sql, s, rel, l, type_equal);
 			} else {
-				r = exp_check_type(sql, t1, rel, r, type_equal);
+				s = t1;
+				r = exp_check_type(sql, s, rel, r, type_equal);
 			}
-			if (l && r)
-				return exp_binop(sql->sa, l, r, f);
+			if (l && r) {
+				res = exp_binop(sql->sa, l, r, f);
+				/* needs the hack */
+				((sql_subfunc*)res->f)->res->h->data = sql_create_subtype(sql->sa, s->type, s->digits, s->scale);
+				return res;
+			}
 
 			/* reset error */
 			sql->session->status = 0;
@@ -3167,34 +3133,33 @@ static sql_exp *
 rel_nop(sql_query *query, sql_rel **rel, symbol *se, int fs, exp_kind ek)
 {
 	mvc *sql = query->sql;
-	int nr_args = 0;
+	int nr_args = 0, err = 0;
 	dnode *l = se->data.lval->h;
 	dnode *ops = l->next->next->data.lval?l->next->next->data.lval->h:NULL;
 	list *exps = sa_list(sql->sa), *tl = sa_list(sql->sa);
 	sql_subfunc *sf = NULL;
 	sql_schema *s = cur_schema(sql);
 	exp_kind iek = {type_value, card_column, FALSE};
-	int err = 0;
 
 	for (; ops; ops = ops->next, nr_args++) {
-		sql_exp *e = rel_value_exp(query, rel, ops->data.sym, fs, iek);
-		sql_subtype *tpe;
-
-		if (!e)
-			err = 1;
-		append(exps, e);
-		if (e) {
-			tpe = exp_subtype(e);
-			append(tl, tpe);
+		if (!err) { /* we need the nr_args count at the end, but if an error is found, stop calling rel_value_exp */
+			sql_exp *e = rel_value_exp(query, rel, ops->data.sym, fs, iek);
+			if (!e) {
+				err = 1;
+				continue;
+			}
+			append(exps, e);
+			append(tl, exp_subtype(e));
 		}
 	}
 	if (l->type == type_int) {
 		/* exec nr (ops)*/
 		int nr = l->data.i_val;
-		cq *q = qc_find(sql->qc, nr);
+		cq *q;
 
-		if (q) {
-			node *n, *m;
+		if (err)
+			return NULL;
+		if ((q = qc_find(sql->qc, nr))) {
 			list *nexps = new_exp_list(sql->sa);
 			sql_func *f = q->f;
 
@@ -3202,23 +3167,24 @@ rel_nop(sql_query *query, sql_rel **rel, symbol *se, int fs, exp_kind ek)
 			if (list_length(f->ops) != list_length(exps))
 				return sql_error(sql, 02, SQLSTATE(42000) "EXEC called with wrong number of arguments: expected %d, got %d", list_length(f->ops), list_length(exps));
 			if (exps->h && f->ops) {
-				for (n = exps->h, m = f->ops->h; n && m; n = n->next, m = m->next) {
+				for (node *n = exps->h, *m = f->ops->h; n && m; n = n->next, m = m->next) {
 					sql_arg *a = m->data;
 					sql_exp *e = n->data;
 					sql_subtype *ntp = &a->type;
 
 					e = exp_check_type(sql, ntp, NULL, e, type_equal);
 					if (!e) {
-						nexps = NULL;
+						err = 1;
 						break;
 					}
 					append(nexps, e);
 					append(tl, exp_subtype(e));
 				}
 			}
+			if (err)
+				return NULL;
 			sql->type = q->type;
-			if (nexps)
-				return exp_op(sql->sa, nexps, sql_dup_subfunc(sql->sa, f, tl, NULL));
+			return exp_op(sql->sa, list_empty(nexps) ? NULL : nexps, sql_dup_subfunc(sql->sa, f, tl, NULL));
 		} else {
 			return sql_error(sql, 02, SQLSTATE(42000) "EXEC: PREPARED Statement missing '%d'", nr);
 		}
@@ -3231,7 +3197,6 @@ rel_nop(sql_query *query, sql_rel **rel, symbol *se, int fs, exp_kind ek)
 
 	/* first try aggregate */
 	sf = find_func(sql, s, fname, nr_args, F_AGGR, NULL);
-
 	if (sf) { /* We have to pas the arguments properly, so skip call to rel_aggr */
 		if (err) {
 			/* reset error */
@@ -3260,68 +3225,32 @@ _rel_aggr(sql_query *query, sql_rel **rel, int distinct, sql_schema *s, char *an
 
 	if (!query_has_outer(query)) {
 		if (!groupby) {
-			char *uaname = GDKmalloc(strlen(aname) + 1);
-			sql_exp *e = sql_error(sql, 02, SQLSTATE(42000) "%s: missing group by",
-							uaname ? toUpperCopy(uaname, aname) : aname);
-			if (uaname)
-				GDKfree(uaname);
-			return e;
+			char *uaname = SA_NEW_ARRAY(sql->ta, char, strlen(aname) + 1);
+			return sql_error(sql, 02, SQLSTATE(42000) "%s: missing group by", toUpperCopy(uaname, aname));
 		} else if (is_sql_groupby(f)) {
-			char *uaname = GDKmalloc(strlen(aname) + 1);
-			sql_exp *e = sql_error(sql, 02, SQLSTATE(42000) "%s: aggregate function '%s' not allowed in GROUP BY clause",
-								uaname ? toUpperCopy(uaname, aname) : aname, aname);
-			if (uaname)
-				GDKfree(uaname);
-			return e;
+			char *uaname = SA_NEW_ARRAY(sql->ta, char, strlen(aname) + 1);
+			return sql_error(sql, 02, SQLSTATE(42000) "%s: aggregate function '%s' not allowed in GROUP BY clause", toUpperCopy(uaname, aname), aname);
 		} else if (is_sql_values(f)) {
-			char *uaname = GDKmalloc(strlen(aname) + 1);
-			sql_exp *e = sql_error(sql, 02, SQLSTATE(42000) "%s: aggregate functions not allowed on an unique value",
-						uaname ? toUpperCopy(uaname, aname) : aname);
-			if (uaname)
-				GDKfree(uaname);
-			return e;
+			char *uaname = SA_NEW_ARRAY(sql->ta, char, strlen(aname) + 1);
+			return sql_error(sql, 02, SQLSTATE(42000) "%s: aggregate functions not allowed on an unique value", toUpperCopy(uaname, aname));
 		} else if (is_sql_join(f)) { /* the is_sql_join test must come before is_sql_where, because the join conditions are handled with sql_where */
-			char *uaname = GDKmalloc(strlen(aname) + 1);
-			sql_exp *e = sql_error(sql, 02, SQLSTATE(42000) "%s: aggregate functions not allowed in JOIN conditions",
-						uaname ? toUpperCopy(uaname, aname) : aname);
-			if (uaname)
-				GDKfree(uaname);
-			return e;
+			char *uaname = SA_NEW_ARRAY(sql->ta, char, strlen(aname) + 1);
+			return sql_error(sql, 02, SQLSTATE(42000) "%s: aggregate functions not allowed in JOIN conditions", toUpperCopy(uaname, aname));
 		} else if (is_sql_where(f)) {
-			char *uaname = GDKmalloc(strlen(aname) + 1);
-			sql_exp *e = sql_error(sql, 02, SQLSTATE(42000) "%s: aggregate functions not allowed in WHERE clause",
-						uaname ? toUpperCopy(uaname, aname) : aname);
-			if (uaname)
-				GDKfree(uaname);
-			return e;
+			char *uaname = SA_NEW_ARRAY(sql->ta, char, strlen(aname) + 1);
+			return sql_error(sql, 02, SQLSTATE(42000) "%s: aggregate functions not allowed in WHERE clause", toUpperCopy(uaname, aname));
 		} else if (is_sql_update_set(f) || is_sql_psm(f)) {
-			char *uaname = GDKmalloc(strlen(aname) + 1);
-			sql_exp *e = sql_error(sql, 02, SQLSTATE(42000) "%s: aggregate functions not allowed in SET, WHILE, IF, ELSE, CASE, WHEN, RETURN, ANALYZE clauses (use subquery)",
-						uaname ? toUpperCopy(uaname, aname) : aname);
-			if (uaname)
-				GDKfree(uaname);
-			return e;
+			char *uaname = SA_NEW_ARRAY(sql->ta, char, strlen(aname) + 1);
+			return sql_error(sql, 02, SQLSTATE(42000) "%s: aggregate functions not allowed in SET, WHILE, IF, ELSE, CASE, WHEN, RETURN, ANALYZE clauses (use subquery)", toUpperCopy(uaname, aname));
 		} else if (is_sql_aggr(f)) {
-			char *uaname = GDKmalloc(strlen(aname) + 1);
-			sql_exp *e = sql_error(sql, 02, SQLSTATE(42000) "%s: aggregate functions cannot be nested",
-						uaname ? toUpperCopy(uaname, aname) : aname);
-			if (uaname)
-				GDKfree(uaname);
-			return e;
+			char *uaname = SA_NEW_ARRAY(sql->ta, char, strlen(aname) + 1);
+			return sql_error(sql, 02, SQLSTATE(42000) "%s: aggregate functions cannot be nested", toUpperCopy(uaname, aname));
 		} else if (is_psm_call(f)) {
-			char *uaname = GDKmalloc(strlen(aname) + 1);
-			sql_exp *e = sql_error(sql, 02, SQLSTATE(42000) "%s: aggregate functions not allowed inside CALL",
-						uaname ? toUpperCopy(uaname, aname) : aname);
-			if (uaname)
-				GDKfree(uaname);
-			return e;
+			char *uaname = SA_NEW_ARRAY(sql->ta, char, strlen(aname) + 1);
+			return sql_error(sql, 02, SQLSTATE(42000) "%s: aggregate functions not allowed inside CALL", toUpperCopy(uaname, aname));
 		} else if (is_sql_from(f)) {
-			char *uaname = GDKmalloc(strlen(aname) + 1);
-			sql_exp *e = sql_error(sql, 02, SQLSTATE(42000) "%s: aggregate functions not allowed in functions in FROM",
-						uaname ? toUpperCopy(uaname, aname) : aname);
-			if (uaname)
-				GDKfree(uaname);
-			return e;
+			char *uaname = SA_NEW_ARRAY(sql->ta, char, strlen(aname) + 1);
+			return sql_error(sql, 02, SQLSTATE(42000) "%s: aggregate functions not allowed in functions in FROM", toUpperCopy(uaname, aname));
 		}
 	}
 
@@ -3343,12 +3272,8 @@ _rel_aggr(sql_query *query, sql_rel **rel, int distinct, sql_schema *s, char *an
 			has_args = true;
 			if (gl && gl != ogl) {
 				if (gl->grouped) {
-					char *uaname = GDKmalloc(strlen(aname) + 1);
-					sql_exp *e = sql_error(sql, 02, SQLSTATE(42000) "%s: aggregate functions cannot be nested",
-						uaname ? toUpperCopy(uaname, aname) : aname);
-					if (uaname)
-						GDKfree(uaname);
-					return e;
+					char *uaname = SA_NEW_ARRAY(sql->ta, char, strlen(aname) + 1);
+					return sql_error(sql, 02, SQLSTATE(42000) "%s: aggregate functions cannot be nested", toUpperCopy(uaname, aname));
 				}
 				if (!base)
 					groupby->l = subquery = gl;
@@ -3356,12 +3281,8 @@ _rel_aggr(sql_query *query, sql_rel **rel, int distinct, sql_schema *s, char *an
 					groupby = subquery = gl;
 			}
 			if (!exp_subtype(e)) { /* we also do not expect parameters here */
-				char *uaname = GDKmalloc(strlen(aname) + 1);
-				sql_exp *e = sql_error(sql, 02, SQLSTATE(42000) "%s: parameters not allowed as arguments to aggregate functions",
-						uaname ? toUpperCopy(uaname, aname) : aname);
-				if (uaname)
-					GDKfree(uaname);
-				return e;
+				char *uaname = SA_NEW_ARRAY(sql->ta, char, strlen(aname) + 1);
+				return sql_error(sql, 02, SQLSTATE(42000) "%s: parameters not allowed as arguments to aggregate functions", toUpperCopy(uaname, aname));
 			}
 
 			all_aggr &= (exp_card(e) <= CARD_AGGR && !exp_is_atom(e) && is_aggr(e->type) && !is_func(e->type) && (!groupby || !is_groupby(groupby->op) || !groupby->r || !exps_find_exp(groupby->r, e)));
@@ -3376,40 +3297,20 @@ _rel_aggr(sql_query *query, sql_rel **rel, int distinct, sql_schema *s, char *an
 			all_freevar = 0;
 		if (!all_freevar) {
 			if (is_sql_groupby(f)) {
-				char *uaname = GDKmalloc(strlen(aname) + 1);
-				sql_exp *e = sql_error(sql, 02, SQLSTATE(42000) "%s: aggregate function '%s' not allowed in GROUP BY clause",
-								uaname ? toUpperCopy(uaname, aname) : aname, aname);
-				if (uaname)
-					GDKfree(uaname);
-				return e;
+				char *uaname = SA_NEW_ARRAY(sql->ta, char, strlen(aname) + 1);
+				return sql_error(sql, 02, SQLSTATE(42000) "%s: aggregate function '%s' not allowed in GROUP BY clause", toUpperCopy(uaname, aname), aname);
 			} else if (is_sql_values(f)) {
-				char *uaname = GDKmalloc(strlen(aname) + 1);
-				sql_exp *e = sql_error(sql, 02, SQLSTATE(42000) "%s: aggregate functions not allowed on an unique value",
-							uaname ? toUpperCopy(uaname, aname) : aname);
-				if (uaname)
-					GDKfree(uaname);
-				return e;
+				char *uaname = SA_NEW_ARRAY(sql->ta, char, strlen(aname) + 1);
+				return sql_error(sql, 02, SQLSTATE(42000) "%s: aggregate functions not allowed on an unique value", toUpperCopy(uaname, aname));
 			} else if (is_sql_join(f)) { /* the is_sql_join test must come before is_sql_where, because the join conditions are handled with sql_where */
-				char *uaname = GDKmalloc(strlen(aname) + 1);
-				sql_exp *e = sql_error(sql, 02, SQLSTATE(42000) "%s: aggregate functions not allowed in JOIN conditions",
-							uaname ? toUpperCopy(uaname, aname) : aname);
-				if (uaname)
-					GDKfree(uaname);
-				return e;
+				char *uaname = SA_NEW_ARRAY(sql->ta, char, strlen(aname) + 1);
+				return sql_error(sql, 02, SQLSTATE(42000) "%s: aggregate functions not allowed in JOIN conditions", toUpperCopy(uaname, aname));
 			} else if (is_sql_where(f)) {
-				char *uaname = GDKmalloc(strlen(aname) + 1);
-				sql_exp *e = sql_error(sql, 02, SQLSTATE(42000) "%s: aggregate functions not allowed in WHERE clause",
-							uaname ? toUpperCopy(uaname, aname) : aname);
-				if (uaname)
-					GDKfree(uaname);
-				return e;
+				char *uaname = SA_NEW_ARRAY(sql->ta, char, strlen(aname) + 1);
+				return sql_error(sql, 02, SQLSTATE(42000) "%s: aggregate functions not allowed in WHERE clause", toUpperCopy(uaname, aname));
 			} else if (is_sql_from(f)) {
-				char *uaname = GDKmalloc(strlen(aname) + 1);
-				sql_exp *e = sql_error(sql, 02, SQLSTATE(42000) "%s: aggregate functions not allowed in functions in FROM",
-							uaname ? toUpperCopy(uaname, aname) : aname);
-				if (uaname)
-					GDKfree(uaname);
-				return e;
+				char *uaname = SA_NEW_ARRAY(sql->ta, char, strlen(aname) + 1);
+				return sql_error(sql, 02, SQLSTATE(42000) "%s: aggregate functions not allowed in functions in FROM", toUpperCopy(uaname, aname));
 			} else if (!all_aggr && ungrouped_cols && !list_empty(ungrouped_cols)) {
 				for (node *n = ungrouped_cols->h ; n ; n = n->next) {
 					sql_rel *outer;
@@ -3515,12 +3416,8 @@ _rel_aggr(sql_query *query, sql_rel **rel, int distinct, sql_schema *s, char *an
 	}
 
 	if (!groupby && exps_card(exps) > CARD_ATOM) {
-		char *uaname = GDKmalloc(strlen(aname) + 1);
-		sql_exp *e = sql_error(sql, 02, SQLSTATE(42000) "%s: missing group by",
-				       uaname ? toUpperCopy(uaname, aname) : aname);
-		if (uaname)
-			GDKfree(uaname);
-		return e;
+		char *uaname = SA_NEW_ARRAY(sql->ta, char, strlen(aname) + 1);
+		return sql_error(sql, 02, SQLSTATE(42000) "%s: missing group by", toUpperCopy(uaname, aname));
 	}
 
 	if (!subquery && groupby && groupby->op != op_groupby) { 		/* implicit groupby */
@@ -3550,12 +3447,8 @@ _rel_aggr(sql_query *query, sql_rel **rel, int distinct, sql_schema *s, char *an
 		sql_exp *e;
 
 		if (strcmp(aname, "count") != 0) {
-			char *uaname = GDKmalloc(strlen(aname) + 1);
-			sql_exp *e = sql_error(sql, 02, SQLSTATE(42000) "%s: unable to perform '%s(*)'",
-					       uaname ? toUpperCopy(uaname, aname) : aname, aname);
-			if (uaname)
-				GDKfree(uaname);
-			return e;
+			char *uaname = SA_NEW_ARRAY(sql->ta, char, strlen(aname) + 1);
+			return sql_error(sql, 02, SQLSTATE(42000) "%s: unable to perform '%s(*)'", toUpperCopy(uaname, aname), aname);
 		}
 		a = sql_bind_func(sql->sa, s, aname, sql_bind_localtype("void"), NULL, F_AGGR);
 		e = exp_aggr(sql->sa, NULL, a, distinct, 0, groupby?groupby->card:CARD_ATOM, 0);
@@ -3640,6 +3533,7 @@ _rel_aggr(sql_query *query, sql_rel **rel, int distinct, sql_schema *s, char *an
 			sql_exp *r = exps->h->next->data, *or = r;
 			sql_subtype *t2 = exp_subtype(r);
 
+			a = NULL; /* reset a */
 			if (rel_convert_types(sql, *rel, *rel, &l, &r, 1/*fix scale*/, type_equal) >= 0){
 				list *tps = sa_list(sql->sa);
 
@@ -3728,21 +3622,15 @@ _rel_aggr(sql_query *query, sql_rel **rel, int distinct, sql_schema *s, char *an
 		}
 		return e;
 	} else {
-		sql_exp *e;
 		char *type = "unknown";
-		char *uaname = GDKmalloc(strlen(aname) + 1);
+		char *uaname = SA_NEW_ARRAY(sql->ta, char, strlen(aname) + 1);
 
 		if (exps->h) {
 			sql_exp *e = exps->h->data;
 			type = exp_subtype(e)->type->sqlname;
 		}
 
-		e = sql_error(sql, 02, SQLSTATE(42000) "%s: no such aggregate '%s(%s)'",
-			      uaname ? toUpperCopy(uaname, aname) : aname, aname, type);
-
-		if (uaname)
-			GDKfree(uaname);
-		return e;
+		return sql_error(sql, 02, SQLSTATE(42000) "%s: no such aggregate '%s(%s)'", toUpperCopy(uaname, aname), aname, type);
 	}
 }
 
@@ -3763,132 +3651,58 @@ rel_aggr(sql_query *query, sql_rel **rel, symbol *se, int f)
 }
 
 static sql_exp *
-rel_case(sql_query *query, sql_rel **rel, tokens token, symbol *opt_cond, dlist *when_search_list, symbol *opt_else, int f)
+rel_case(sql_query *query, sql_rel **rel, symbol *opt_cond, dlist *when_search_list, symbol *opt_else, int f)
 {
 	mvc *sql = query->sql;
 	sql_subtype *tpe = NULL;
-	list *conds = new_exp_list(sql->sa);
-	list *results = new_exp_list(sql->sa);
-	dnode *dn = when_search_list->h;
-	sql_subtype *restype = NULL, rtype, bt;
-	sql_exp *res = NULL, *else_exp = NULL;
-	node *n, *m;
+	list *conds = new_exp_list(sql->sa), *results = new_exp_list(sql->sa);
+	sql_subtype *restype = NULL, *condtype = NULL, ctype, rtype, bt;
+	sql_exp *res = NULL, *opt_cond_exp = NULL;
 	exp_kind ek = {type_value, card_column, FALSE};
 
-	sql_find_subtype(&bt, "boolean", 0, 0);
-	if (dn) {
-		sql_exp *cond = NULL, *result = NULL;
-
-		/* NULLIF(e1,e2) == CASE WHEN e1=e2 THEN NULL ELSE e1 END */
-		if (token == SQL_NULLIF) {
-			sql_exp *e1, *e2;
-
-			if (!(e1 = rel_value_exp(query, rel, dn->data.sym, f, ek)))
-				return NULL;
-			if (!(e2 = rel_value_exp(query, rel, dn->next->data.sym, f, ek)))
-				return NULL;
-
-			cond = rel_binop_(sql, rel ? *rel : NULL, e1, e2, NULL, "=", card_value);
-			result = exp_null(sql->sa, exp_subtype(e1));
-			else_exp = exp_ref_save(sql, e1);	/* ELSE case */
-			/* COALESCE(e1,e2) == CASE WHEN e1
-			   IS NOT NULL THEN e1 ELSE e2 END */
-		} else if (token == SQL_COALESCE) {
-			cond = rel_value_exp(query, rel, dn->data.sym, f, ek);
-
-			if (cond) {
-				result = exp_ref_save(sql, cond);
-				if (!(cond = rel_unop_(sql, rel ? *rel : NULL, cond, NULL, "isnotnull", card_value)))
-					return NULL;
-				set_has_no_nil(cond);
-			}
-		} else {
-			dlist *when = dn->data.sym->data.lval;
-
-			if (opt_cond) {
-				sql_exp *l, *r;
-
-				if (!(l = rel_value_exp(query, rel, opt_cond, f, ek)))
-					return NULL;
-				if (!(r = rel_value_exp(query, rel, when->h->data.sym, f, ek)))
-					return NULL;
-				if (rel_convert_types(sql, rel ? *rel : NULL, rel ? *rel : NULL, &l, &r, 1, type_equal) < 0)
-					return NULL;
-				cond = rel_binop_(sql, rel ? *rel : NULL, l, r, NULL, "=", card_value);
-			} else {
-				cond = rel_logical_value_exp(query, rel, when->h->data.sym, f, ek);
-			}
-			if (!cond)
-				return NULL;
-			result = rel_value_exp(query, rel, when->h->next->data.sym, f, ek);
-		}
-		if (!cond || !result)
+	if (opt_cond) {
+		if (!(opt_cond_exp = rel_value_exp(query, rel, opt_cond, f, ek)))
 			return NULL;
-		list_prepend(conds, cond);
-		list_prepend(results, result);
-
-		restype = exp_subtype(result);
-
-		if (token == SQL_NULLIF)
-			dn = NULL;
-		else
-			dn = dn->next;
+		condtype = exp_subtype(opt_cond_exp);
 	}
-	/* for COALESCE we skip the last (else part) */
-	for (; dn && (token != SQL_COALESCE || dn->next); dn = dn->next) {
+
+	for (dnode *dn = when_search_list->h; dn; dn = dn->next) {
 		sql_exp *cond = NULL, *result = NULL;
+		dlist *when = dn->data.sym->data.lval;
 
-		if (token == SQL_COALESCE) {
-			cond = rel_value_exp(query, rel, dn->data.sym, f, ek);
-
-			if (cond) {
-				result = exp_ref_save(sql, cond);
-				if (!(cond = rel_unop_(sql, rel ? *rel : NULL, cond, NULL, "isnotnull", card_value)))
-					return NULL;
-				set_has_no_nil(cond);
-			}
-		} else {
-			dlist *when = dn->data.sym->data.lval;
-
-			if (opt_cond) {
-				sql_exp *l, *r;
-
-				if (!(l = rel_value_exp(query, rel, opt_cond, f, ek)))
-					return NULL;
-				if (!(r = rel_value_exp(query, rel, when->h->data.sym, f, ek)))
-					return NULL;
-				if (rel_convert_types(sql, rel ? *rel : NULL, rel ? *rel : NULL, &l, &r, 1, type_equal) < 0)
-					return NULL;
-				cond = rel_binop_(sql, rel ? *rel : NULL, l, r, NULL, "=", card_value);
-			} else {
-				cond = rel_logical_value_exp(query, rel, when->h->data.sym, f, ek);
-			}
-			if (!cond)
-				return NULL;
-			result = rel_value_exp(query, rel, when->h->next->data.sym, f, ek);
-		}
-		if (!cond || !result)
+		if (opt_cond)
+			cond = rel_value_exp(query, rel, when->h->data.sym, f, ek);
+		else
+			cond = rel_logical_value_exp(query, rel, when->h->data.sym, f, ek);
+		if (!cond)
 			return NULL;
-		list_prepend(conds, cond);
-		list_prepend(results, result);
+		append(conds, cond);
+		tpe = exp_subtype(cond);
+		if (tpe && condtype) {
+			result_datatype(&ctype, condtype, tpe);
+			condtype = &ctype;
+		} else if (tpe) {
+			condtype = tpe;
+		}
 
+		if (!(result = rel_value_exp(query, rel, when->h->next->data.sym, f, ek)))
+			return NULL;
+		append(results, result);
 		tpe = exp_subtype(result);
 		if (tpe && restype) {
-			supertype(&rtype, restype, tpe);
+			result_datatype(&rtype, restype, tpe);
 			restype = &rtype;
 		} else if (tpe) {
 			restype = tpe;
 		}
 	}
-	if (opt_else || else_exp) {
-		sql_exp *result = else_exp;
-
-		if (!result && !(result = rel_value_exp(query, rel, opt_else, f, ek)))
+	if (opt_else) {
+		if (!(res = rel_value_exp(query, rel, opt_else, f, ek)))
 			return NULL;
 
-		tpe = exp_subtype(result);
+		tpe = exp_subtype(res);
 		if (tpe && restype) {
-			supertype(&rtype, restype, tpe);
+			result_datatype(&rtype, restype, tpe);
 			restype = &rtype;
 		} else if (tpe) {
 			restype = tpe;
@@ -3899,11 +3713,7 @@ rel_case(sql_query *query, sql_rel **rel, tokens token, symbol *opt_cond, dlist 
 		if (restype->type->localtype == TYPE_void) /* NULL */
 			restype = sql_bind_localtype("str");
 
-		if (!result || !(result = exp_check_type(sql, restype, rel ? *rel : NULL, result, type_equal)))
-			return NULL;
-		res = result;
-
-		if (!res)
+		if (!(res = exp_check_type(sql, restype, rel ? *rel : NULL, res, type_equal)))
 			return NULL;
 	} else {
 		if (!restype)
@@ -3913,24 +3723,78 @@ rel_case(sql_query *query, sql_rel **rel, tokens token, symbol *opt_cond, dlist 
 		res = exp_null(sql->sa, restype);
 	}
 
-	for (n = conds->h, m = results->h; n && m; n = n->next, m = m->next) {
+	if (!condtype)
+		return sql_error(sql, 02, SQLSTATE(42000) "Condition type missing");
+	if (condtype->type->localtype == TYPE_void) /* NULL */
+		condtype = sql_bind_localtype("str");
+	if (opt_cond_exp && !(opt_cond_exp = exp_check_type(sql, condtype, rel ? *rel : NULL, opt_cond_exp, type_equal)))
+		return NULL;
+	sql_find_subtype(&bt, "boolean", 0, 0);
+	list *args = sa_list(sql->sa);
+	for (node *n = conds->h, *m = results->h; n && m; n = n->next, m = m->next) {
 		sql_exp *cond = n->data;
 		sql_exp *result = m->data;
 
 		if (!(result = exp_check_type(sql, restype, rel ? *rel : NULL, result, type_equal)))
 			return NULL;
 
+		if (!(cond = exp_check_type(sql, condtype, rel ? *rel : NULL, cond, type_equal)))
+			return NULL;
+		if (opt_cond_exp && !(cond = rel_binop_(sql, rel ? *rel : NULL, n == conds->h ? opt_cond_exp : exp_copy(sql, opt_cond_exp), cond, NULL, "=", card_value)))
+			return NULL;
 		if (!(cond = exp_check_type(sql, &bt, rel ? *rel : NULL, cond, type_equal)))
 			return NULL;
-
-		if (!cond || !result || !res)
-			return NULL;
-		res = rel_nop_(sql, rel ? *rel : NULL, cond, result, res, NULL, NULL, "ifthenelse", card_value);
-		if (!res)
-			return NULL;
-		/* ugh overwrite res type */
-		((sql_subfunc*)res->f)->res->h->data = sql_create_subtype(sql->sa, restype->type, restype->digits, restype->scale);
+		append(args, cond);
+		append(args, result);
 	}
+	if (res)
+		list_append(args, res);
+	list *types = append(append(append(sa_list(sql->sa), condtype), restype), restype);
+	sql_subfunc *ifthenelse = find_func(sql, NULL, "ifthenelse", list_length(types), F_FUNC, NULL);
+	res = exp_op(sql->sa, args, ifthenelse);
+	((sql_subfunc*)res->f)->res->h->data = sql_create_subtype(sql->sa, restype->type, restype->digits, restype->scale);
+	return res;
+}
+
+static sql_exp *
+rel_complex_case(sql_query *query, sql_rel **rel, dlist *case_args, int f, str func)
+{
+	exp_kind ek = {type_value, card_column, FALSE};
+	list *args = sa_list(query->sql->sa);
+	sql_subtype *restype = NULL, rtype;
+	sql_exp *res;
+
+	/* generate nested func calls */
+	for(dnode *dn = case_args->h; dn; dn = dn->next) {
+		sql_exp *a = rel_value_exp(query, rel, dn->data.sym, f, ek);
+		if (!a)
+			return NULL;
+		append(args, a);
+		/* all arguments should have the same type */
+		sql_subtype *tpe = exp_subtype(a);
+		if (tpe && restype) {
+			result_datatype(&rtype, restype, tpe);
+			restype = &rtype;
+		} else if (tpe) {
+			restype = tpe;
+		}
+	}
+	if (!restype)
+		return sql_error(query->sql, 02, SQLSTATE(42000) "Result type missing");
+	if (restype->type->localtype == TYPE_void) /* NULL */
+		restype = sql_bind_localtype("str");
+	list *nargs = sa_list(query->sql->sa);
+	for (node *m = args->h; m; m = m->next) {
+		sql_exp *result = m->data;
+
+		if (!(result = exp_check_type(query->sql, restype, rel ? *rel : NULL, result, type_equal)))
+			return NULL;
+		append(nargs, result);
+	}
+	list *types = append(append(sa_list(query->sql->sa), restype), restype);
+	sql_subfunc *fnc = find_func(query->sql, NULL, func, list_length(types), F_FUNC, NULL);
+	res = exp_op(query->sql->sa, nargs, fnc);
+	((sql_subfunc*)res->f)->res->h->data = sql_create_subtype(query->sql->sa, restype->type, restype->digits, restype->scale);
 	return res;
 }
 
@@ -3940,22 +3804,20 @@ rel_case_exp(sql_query *query, sql_rel **rel, symbol *se, int f)
 	dlist *l = se->data.lval;
 
 	if (se->token == SQL_COALESCE) {
-		symbol *opt_else = l->t->data.sym;
-
-		return rel_case(query, rel, se->token, NULL, l, opt_else, f);
+		return rel_complex_case(query, rel, l, f, "coalesce");
 	} else if (se->token == SQL_NULLIF) {
-		return rel_case(query, rel, se->token, NULL, l, NULL, f);
+		return rel_complex_case(query, rel, l, f, "nullif");
 	} else if (l->h->type == type_list) {
 		dlist *when_search_list = l->h->data.lval;
 		symbol *opt_else = l->h->next->data.sym;
 
-		return rel_case(query, rel, SQL_CASE, NULL, when_search_list, opt_else, f);
+		return rel_case(query, rel, NULL, when_search_list, opt_else, f);
 	} else {
 		symbol *scalar_exp = l->h->data.sym;
 		dlist *when_value_list = l->h->next->data.lval;
 		symbol *opt_else = l->h->next->next->data.sym;
 
-		return rel_case(query, rel, SQL_CASE, scalar_exp, when_value_list, opt_else, f);
+		return rel_case(query, rel, scalar_exp, when_value_list, opt_else, f);
 	}
 }
 
@@ -4072,15 +3934,18 @@ rel_group_column(sql_query *query, sql_rel **rel, symbol *grp, dlist *selection,
 
 	if (!e) {
 		char buf[ERRSIZE];
+		int status = sql->session->status;
+		strcpy(buf, sql->errstr);
 		/* reset error */
 		sql->session->status = 0;
-		strcpy(buf, sql->errstr);
 		sql->errstr[0] = '\0';
 
 		e = rel_selection_ref(query, rel, grp, selection);
 		if (!e) {
-			if (sql->errstr[0] == 0)
+			if (sql->errstr[0] == 0) {
+				sql->session->status = status;
 				strcpy(sql->errstr, buf);
+			}
 			return NULL;
 		}
 	}
@@ -4712,29 +4577,17 @@ rel_rankop(sql_query *query, sql_rel **rel, symbol *se, int f)
 	supports_frames = window_function->token != SQL_RANK || is_nth_value || !strcmp(aname, "first_value") || !strcmp(aname, "last_value");
 
 	if (is_sql_update_set(f) || is_sql_psm(f) || is_sql_values(f) || is_sql_join(f) || is_sql_where(f) || is_sql_groupby(f) || is_sql_having(f) || is_psm_call(f) || is_sql_from(f)) {
-		char *uaname = GDKmalloc(strlen(aname) + 1);
+		char *uaname = SA_NEW_ARRAY(sql->ta, char, strlen(aname) + 1);
 		const char *clause = is_sql_update_set(f)||is_sql_psm(f)?"in SET, WHILE, IF, ELSE, CASE, WHEN, RETURN, ANALYZE clauses (use subquery)":is_sql_values(f)?"on an unique value":
 							 is_sql_join(f)?"in JOIN conditions":is_sql_where(f)?"in WHERE clause":is_sql_groupby(f)?"in GROUP BY clause":
 							 is_psm_call(f)?"in CALL":is_sql_from(f)?"in functions in FROM":"in HAVING clause";
-		(void) sql_error(sql, 02, SQLSTATE(42000) "%s: window function '%s' not allowed %s",
-						 uaname ? toUpperCopy(uaname, aname) : aname, aname, clause);
-		if (uaname)
-			GDKfree(uaname);
-		return NULL;
+		return sql_error(sql, 02, SQLSTATE(42000) "%s: window function '%s' not allowed %s", toUpperCopy(uaname, aname), aname, clause);
 	} else if (is_sql_aggr(f)) {
-		char *uaname = GDKmalloc(strlen(aname) + 1);
-		(void) sql_error(sql, 02, SQLSTATE(42000) "%s: window functions not allowed inside aggregation functions",
-						 uaname ? toUpperCopy(uaname, aname) : aname);
-		if (uaname)
-			GDKfree(uaname);
-		return NULL;
+		char *uaname = SA_NEW_ARRAY(sql->ta, char, strlen(aname) + 1);
+		return sql_error(sql, 02, SQLSTATE(42000) "%s: window functions not allowed inside aggregation functions", toUpperCopy(uaname, aname));
 	} else if (is_sql_window(f)) {
-		char *uaname = GDKmalloc(strlen(aname) + 1);
-		(void) sql_error(sql, 02, SQLSTATE(42000) "%s: window functions cannot be nested",
-						 uaname ? toUpperCopy(uaname, aname) : aname);
-		if (uaname)
-			GDKfree(uaname);
-		return NULL;
+		char *uaname = SA_NEW_ARRAY(sql->ta, char, strlen(aname) + 1);
+		return sql_error(sql, 02, SQLSTATE(42000) "%s: window functions cannot be nested", toUpperCopy(uaname, aname));
 	}
 
 	/* window operations are only allowed in the projection */
@@ -4770,12 +4623,9 @@ rel_rankop(sql_query *query, sql_rel **rel, symbol *se, int f)
 
 		distinct = dn->next->data.i_val;
 		if (extra_input) { /* pass an input column for analytic functions that don't require it */
-			in = rel_first_column(sql, p);
-			if (!in)
-				return NULL;
-			in = exp_ref(sql, in);
+			sql_subfunc *star = sql_bind_func(sql->sa, s, "star", NULL, NULL, F_FUNC);
+			in = exp_op(sql->sa, NULL, star);
 			append(fargs, in);
-			in = exp_ref_save(sql, in);
 		}
 		if (dl)
 			for (dargs = dl->h ; dargs ; dargs = dargs->next) {
@@ -4786,12 +4636,8 @@ rel_rankop(sql_query *query, sql_rel **rel, symbol *se, int f)
 				if (!in)
 					return NULL;
 				if (!exp_subtype(in)) { /* we also do not expect parameters here */
-					char *uaname = GDKmalloc(strlen(aname) + 1);
-					(void) sql_error(sql, 02, SQLSTATE(42000) "%s: parameters not allowed as arguments to window functions",
-									uaname ? toUpperCopy(uaname, aname) : aname);
-					if (uaname)
-						GDKfree(uaname);
-					return NULL;
+					char *uaname = SA_NEW_ARRAY(sql->ta, char, strlen(aname) + 1);
+					return sql_error(sql, 02, SQLSTATE(42000) "%s: parameters not allowed as arguments to window functions", toUpperCopy(uaname, aname));
 				}
 				if (!exp_name(in))
 					exp_label(sql->sa, in, ++sql->label);
@@ -4821,12 +4667,8 @@ rel_rankop(sql_query *query, sql_rel **rel, symbol *se, int f)
 			if (!in)
 				return NULL;
 			if (!exp_subtype(in)) { /* we also do not expect parameters here */
-				char *uaname = GDKmalloc(strlen(aname) + 1);
-				(void) sql_error(sql, 02, SQLSTATE(42000) "%s: parameters not allowed as arguments to window functions",
-								uaname ? toUpperCopy(uaname, aname) : aname);
-				if (uaname)
-					GDKfree(uaname);
-				return NULL;
+				char *uaname = SA_NEW_ARRAY(sql->ta, char, strlen(aname) + 1);
+				return sql_error(sql, 02, SQLSTATE(42000) "%s: parameters not allowed as arguments to window functions", toUpperCopy(uaname, aname));
 			}
 			if (!exp_name(in))
 				exp_label(sql->sa, in, ++sql->label);
@@ -4847,19 +4689,13 @@ rel_rankop(sql_query *query, sql_rel **rel, symbol *se, int f)
 
 		if (!nfargs) { /* count(*) */
 			if (window_function->token == SQL_AGGR && strcmp(aname, "count") != 0) {
-				char *uaname = GDKmalloc(strlen(aname) + 1);
-				(void) sql_error(sql, 02, SQLSTATE(42000) "%s: unable to perform '%s(*)'",
-								uaname ? toUpperCopy(uaname, aname) : aname, aname);
-				if (uaname)
-					GDKfree(uaname);
-				return NULL;
+				char *uaname = SA_NEW_ARRAY(sql->ta, char, strlen(aname) + 1);
+				return sql_error(sql, 02, SQLSTATE(42000) "%s: unable to perform '%s(*)'", toUpperCopy(uaname, aname), aname);
 			}
-
-			in = rel_first_column(sql, p);
-			in = exp_ref(sql, in);
+			sql_subfunc *star = sql_bind_func(sql->sa, s, "star", NULL, NULL, F_FUNC);
+			in = exp_op(sql->sa, NULL, star);
 			append(fargs, in);
 			append(fargs, exp_atom_bool(sql->sa, 0)); /* don't ignore nills */
-			in = exp_ref_save(sql, in);
 		}
 	}
 
@@ -5020,45 +4856,21 @@ rel_rankop(sql_query *query, sql_rel **rel, symbol *se, int f)
 	}
 
 	types = exp_types(sql->sa, fargs);
-	wf = bind_func_(sql, s, aname, types, F_ANALYTIC);
-	if (!wf) {
+	if (!(wf = bind_func_(sql, s, aname, types, F_ANALYTIC))) {
 		wf = find_func(sql, s, aname, list_length(types), F_ANALYTIC, NULL);
-		if (wf) {
-			node *op = wf->func->ops->h;
-			list *nexps = sa_list(sql->sa);
-
-			for (n = fargs->h ; wf && op && n; op = op->next, n = n->next ) {
-				sql_arg *arg = op->data;
-				sql_exp *e = n->data;
-
-				e = exp_check_type(sql, &arg->type, NULL, e, type_equal);
-				if (!e) {
-					wf = NULL;
-					break;
-				}
-				list_append(nexps, e);
-			}
-			if (wf && list_length(nexps))
-				fargs = nexps;
-			else {
-				char *arg_list = nfargs ? window_function_arg_types_2str(sql, types, nfargs) : NULL;
-				sql_error(sql, 02, SQLSTATE(42000) "SELECT: window function '%s(%s)' not found", aname, arg_list ? arg_list : "");
-				return NULL;
-			}
-		} else {
+		if (!wf || (!(fargs = check_arguments_and_find_largest_any_type(sql, NULL, fargs, wf, 0)))) {
 			char *arg_list = nfargs ? window_function_arg_types_2str(sql, types, nfargs) : NULL;
-			sql_error(sql, 02, SQLSTATE(42000) "SELECT: window function '%s(%s)' not found", aname, arg_list ? arg_list : "");
-			return NULL;
+			return sql_error(sql, 02, SQLSTATE(42000) "SELECT: window function '%s(%s)' not found", aname, arg_list ? arg_list : "");
 		}
 	}
 	args = sa_list(sql->sa);
-	for(node *nn = fargs->h ; nn ; nn = nn->next)
-		append(args, (sql_exp*) nn->data);
+	for (node *n = fargs->h ; n ; n = n->next)
+		append(args, n->data);
 	if (supports_frames) {
 		append(args, start);
 		append(args, eend);
 	}
-	call = exp_rank_op(sql->sa, args, gbe, obe, wf);
+	call = exp_rank_op(sql->sa, list_empty(args) ? NULL : args, gbe, obe, wf);
 	if (call && !exp_name(call))
 		exp_label(sql->sa, call, ++sql->label);
 	*rel = p;
@@ -5491,20 +5303,17 @@ static sql_rel *
 join_on_column_name(sql_query *query, sql_rel *rel, sql_rel *t1, sql_rel *t2, int op, int l_nil, int r_nil)
 {
 	mvc *sql = query->sql;
-	int nr = ++sql->label, found = 0, full = (op != op_join);
-	char name[16], *nme;
+	int found = 0, full = (op != op_join);
 	list *exps = rel_projections(sql, t1, NULL, 1, 0);
 	list *r_exps = rel_projections(sql, t2, NULL, 1, 0);
 	list *outexps = new_exp_list(sql->sa);
-	node *n;
 
-	nme = number2name(name, sizeof(name), nr);
 	if (!exps || !r_exps)
 		return NULL;
-	for (n = exps->h; n; n = n->next) {
+	for (node *n = exps->h; n; n = n->next) {
 		sql_exp *le = n->data;
-		const char *nm = exp_name(le);
-		sql_exp *re = exps_bind_column(r_exps, nm, NULL, 0);
+		const char *rname = exp_relname(le), *name = exp_name(le);
+		sql_exp *re = exps_bind_column(r_exps, name, NULL, 0);
 
 		if (re) {
 			found = 1;
@@ -5518,7 +5327,7 @@ join_on_column_name(sql_query *query, sql_rel *rel, sql_rel *t1, sql_rel *t2, in
 				if (!(le = rel_nop_(sql, rel, cond, re, le, NULL, NULL, "ifthenelse", card_value)))
 					return NULL;
 			}
-			exp_setname(sql->sa, le, nme, sa_strdup(sql->sa, nm));
+			exp_setname(sql->sa, le, rname, name);
 			append(outexps, le);
 			list_remove_data(r_exps, re);
 		} else {
@@ -5529,7 +5338,7 @@ join_on_column_name(sql_query *query, sql_rel *rel, sql_rel *t1, sql_rel *t2, in
 	}
 	if (!found)
 		return sql_error(sql, 02, SQLSTATE(42000) "JOIN: no columns of tables '%s' and '%s' match", rel_name(t1)?rel_name(t1):"", rel_name(t2)?rel_name(t2):"");
-	for (n = r_exps->h; n; n = n->next) {
+	for (node *n = r_exps->h; n; n = n->next) {
 		sql_exp *re = n->data;
 		if (r_nil)
 			set_has_nil(re);

@@ -79,7 +79,7 @@ FUN(bat,TP1,_dec2_,TP2) (bat *res, const int *s1, const bat *bid)
 	if ((b = BATdescriptor(*bid)) == NULL) {
 		throw(SQL, "batcalc."STRNG(FUN(,TP1,_dec2_,TP2)), SQLSTATE(HY005) RUNTIME_OBJECT_MISSING);
 	}
-	bn = BATconvert(b, NULL, NULL, TPE(TP2), true, *s1, 0, 0);
+	bn = BATconvert(b, NULL, TPE(TP2), true, *s1, 0, 0);
 	BBPunfix(b->batCacheid);
 	if (bn == NULL)
 		throw(SQL, "sql."STRNG(FUN(dec,TP1,_2_,TP2)), GDK_EXCEPTION);
@@ -87,27 +87,6 @@ FUN(bat,TP1,_dec2_,TP2) (bat *res, const int *s1, const bat *bid)
 	return MAL_SUCCEED;
 }
 
-str
-FUN(bat,TP1,_ce_dec2_,TP2) (bat *res, const int *s1, const bat *bid, const bat *r)
-{
-	BAT *b, *c, *bn;
-
-	if ((b = BATdescriptor(*bid)) == NULL) {
-		throw(SQL, "batcalc."STRNG(FUN(,TP1,_dec2_,TP2)), SQLSTATE(HY005) RUNTIME_OBJECT_MISSING);
-	}
-	if ((c = BATdescriptor(*r)) == NULL) {
-		BBPunfix(b->batCacheid);
-		throw(SQL, "batcalc."STRNG(FUN(,TP1,_dec2_,TP2)), SQLSTATE(HY005) RUNTIME_OBJECT_MISSING);
-	}
-	bn = BATconvert(b, NULL, c, TPE(TP2), true, *s1, 0, 0);
-	BBPunfix(b->batCacheid);
-	BBPunfix(c->batCacheid);
-	if (bn == NULL) {
-		throw(SQL, "sql."STRNG(FUN(dec,TP1,_2_,TP2)), GDK_EXCEPTION);
-	}
-	BBPkeepref(*res = bn->batCacheid);
-	return MAL_SUCCEED;
-}
 str
 FUN(bat,TP1,_dec2dec_,TP2) (bat *res, const int *S1, const bat *bid, const int *d2, const int *S2)
 {
@@ -116,33 +95,11 @@ FUN(bat,TP1,_dec2dec_,TP2) (bat *res, const int *S1, const bat *bid, const int *
 	if ((b = BATdescriptor(*bid)) == NULL) {
 		throw(SQL, "batcalc."STRNG(FUN(,TP1,_dec2dec_,TP2)), SQLSTATE(HY005) RUNTIME_OBJECT_MISSING);
 	}
-	bn = BATconvert(b, NULL, NULL, TPE(TP2), true, *S1, *S2, *d2);
+	bn = BATconvert(b, NULL, TPE(TP2), true, *S1, *S2, *d2);
 	BBPunfix(b->batCacheid);
 	if (bn == NULL)
 		throw(SQL, "sql."STRNG(FUN(,TP1,_dec2dec_,TP2)), GDK_EXCEPTION);
 
-	BBPkeepref(*res = bn->batCacheid);
-	return MAL_SUCCEED;
-}
-
-str
-FUN(bat,TP1,_ce_dec2dec_,TP2) (bat *res, const int *S1, const bat *bid, const int *d2, const int *S2, const bat *r)
-{
-	BAT *b, *c, *bn;
-
-	if ((b = BATdescriptor(*bid)) == NULL) {
-		throw(SQL, "batcalc."STRNG(FUN(,TP1,_dec2dec_,TP2)), SQLSTATE(HY005) RUNTIME_OBJECT_MISSING);
-	}
-	if ((c = BATdescriptor(*r)) == NULL) {
-		BBPunfix(b->batCacheid);
-		throw(SQL, "batcalc."STRNG(FUN(,TP1,_dec2dec_,TP2)), SQLSTATE(HY005) RUNTIME_OBJECT_MISSING);
-	}
-	bn = BATconvert(b, NULL, c, TPE(TP2), true, *S1, *S2, *d2);
-	BBPunfix(b->batCacheid);
-	BBPunfix(c->batCacheid);
-	if (bn == NULL) {
-		throw(SQL, "sql."STRNG(FUN(,TP1,_dec2dec_,TP2)), GDK_EXCEPTION);
-	}
 	BBPkeepref(*res = bn->batCacheid);
 	return MAL_SUCCEED;
 }
@@ -155,32 +112,10 @@ FUN(bat,TP1,_num2dec_,TP2) (bat *res, const bat *bid, const int *d2, const int *
 	if ((b = BATdescriptor(*bid)) == NULL) {
 		throw(SQL, "batcalc."STRNG(FUN(,TP1,_num2dec_,TP2)), SQLSTATE(HY005) RUNTIME_OBJECT_MISSING);
 	}
-	bn = BATconvert(b, NULL, NULL, TPE(TP2), true, 0, *s2, *d2);
+	bn = BATconvert(b, NULL, TPE(TP2), true, 0, *s2, *d2);
 	BBPunfix(b->batCacheid);
 	if (bn == NULL)
 		throw(SQL, "sql."STRNG(FUN(,TP1,_num2dec_,TP2)), GDK_EXCEPTION);
-	BBPkeepref(*res = bn->batCacheid);
-	return MAL_SUCCEED;
-}
-
-str
-FUN(bat,TP1,_ce_num2dec_,TP2) (bat *res, const bat *bid, const int *d2, const int *s2, const bat *r)
-{
-	BAT *b, *c, *bn;
-
-	if ((b = BATdescriptor(*bid)) == NULL) {
-		throw(SQL, "batcalc."STRNG(FUN(,TP1,_num2dec_,TP2)), SQLSTATE(HY005) RUNTIME_OBJECT_MISSING);
-	}
-	if ((c = BATdescriptor(*r)) == NULL) {
-		BBPunfix(b->batCacheid);
-		throw(SQL, "batcalc."STRNG(FUN(,TP1,_num2dec_,TP2)), SQLSTATE(HY005) RUNTIME_OBJECT_MISSING);
-	}
-	bn = BATconvert(b, NULL, c, TPE(TP2), true, 0, *s2, *d2);
-	BBPunfix(b->batCacheid);
-	BBPunfix(c->batCacheid);
-	if (bn == NULL) {
-		throw(SQL, "sql."STRNG(FUN(,TP1,_num2dec_,TP2)), GDK_EXCEPTION);
-	}
 	BBPkeepref(*res = bn->batCacheid);
 	return MAL_SUCCEED;
 }
@@ -197,4 +132,3 @@ FUN(bat,TP1,_ce_num2dec_,TP2) (bat *res, const bat *bid, const int *d2, const in
 #undef CONCAT_4
 #undef STRNG
 #undef _STRNG_
-

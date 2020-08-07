@@ -3,6 +3,6 @@ debian/tmp/usr/bin/monetdb usr/bin
 debian/tmp/usr/lib/systemd/system/monetdbd.service lib/systemd/system
 debian/tmp/etc/logrotate.d/monetdbd etc/logrotate.d
 debian/tmp/etc/tmpfiles.d/monetdbd.conf usr/lib/tmpfiles.d
-debian/tmp/usr/lib/x86_64-linux-gnu/monetdb5/lib_sql.so usr/lib/x86_64-linux-gnu/monetdb5
+debian/tmp/usr/lib/x86_64-linux-gnu/libmonetdbsql.so* usr/lib/x86_64-linux-gnu
 debian/tmp/var/monetdb5/dbfarm/.merovingian_properties var/monetdb5/dbfarm
 debian/tmp/var/monetdb5/dbfarm/.merovingian_lock var/monetdb5/dbfarm

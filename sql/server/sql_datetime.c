@@ -55,7 +55,6 @@ qualifier2multiplier( int sk )
 		/* fall through */
 	case imonth:
 		break;
-
 	case iday:
 		mul *= 24;
 		/* fall through */
@@ -76,11 +75,9 @@ qualifier2multiplier( int sk )
 static int
 parse_interval_(mvc *sql, lng sign, char *str, int sk, int ek, int sp, int ep, lng *i)
 {
-	char *n = NULL;
-	lng val = 0;
-	char sep = ':';
+	char *n = NULL, sep = ':';
+	lng val = 0, mul;
 	int type;
-	lng mul;
 
 	if (*str == '-') {
 		sign *= -1;
@@ -96,7 +93,6 @@ parse_interval_(mvc *sql, lng sign, char *str, int sk, int ek, int sp, int ep, l
 		sep = '-';
 		type = 0;
 		break;
-
 	case iday:
 		mul *= 24;
 		sep = ' ';
@@ -110,7 +106,6 @@ parse_interval_(mvc *sql, lng sign, char *str, int sk, int ek, int sp, int ep, l
 	case isec:
 		type = 1;
 		break;
-
 	default:
 		if (sql)
 			snprintf(sql->errstr, ERRSIZE, _("Internal error: parse_interval: bad value for sk (%d)\n"), sk);
@@ -177,14 +172,14 @@ parse_interval_(mvc *sql, lng sign, char *str, int sk, int ek, int sp, int ep, l
 	}
 }
 
+#define MABS(a) (((a) < 0) ? -(a) : (a))
+
 int
 parse_interval(mvc *sql, lng sign, char *str, int sk, int ek, int sp, int ep, lng *i)
 {
-	char *n = NULL;
-	lng val = 0;
-	char sep = ':';
+	char *n = NULL, sep = ':';
+	lng val = 0, mul, msec = 0;
 	int type;
-	lng mul;
 
 	if (*str == '-') {
 		sign *= -1;
@@ -200,7 +195,6 @@ parse_interval(mvc *sql, lng sign, char *str, int sk, int ek, int sp, int ep, ln
 		sep = '-';
 		type = 0;
 		break;
-
 	case iday:
 		mul *= 24;
 		sep = ' ';
@@ -214,7 +208,6 @@ parse_interval(mvc *sql, lng sign, char *str, int sk, int ek, int sp, int ep, ln
 	case isec:
 		type = 1;
 		break;
-
 	default:
 		if (sql)
 			snprintf(sql->errstr, ERRSIZE, _("Internal error: parse_interval: bad value for sk (%d)\n"), sk);
@@ -225,7 +218,6 @@ parse_interval(mvc *sql, lng sign, char *str, int sk, int ek, int sp, int ep, ln
 	if (!n)
 		return -1;
 	if (sk == isec) {
-		lng msec = 0;
 		if (n && n[0] == '.') {
 			char *nn;
 			msec = strtol(n+1, &nn, 10);
@@ -238,14 +230,36 @@ parse_interval(mvc *sql, lng sign, char *str, int sk, int ek, int sp, int ep, ln
 				n = nn;
 			}
 		}
-		if (val > GDK_lng_max / 1000 ||
-		    (val == GDK_lng_max / 1000 && msec > GDK_lng_max % 1000)) {
+	}
+	switch (sk) {
+	case iyear:
+	case imonth:
+		if (val > (lng) GDK_int_max / MABS(mul)) {
+			if (sql)
+				snprintf(sql->errstr, ERRSIZE, _("Overflow\n"));
+			return -1;
+		}
+		break;
+	case iday:
+	case ihour:
+	case imin:
+		if (val > GDK_lng_max / MABS(mul)) {
+			if (sql)
+				snprintf(sql->errstr, ERRSIZE, _("Overflow\n"));
+			return -1;
+		}
+		break;
+	case isec:
+		if (val > GDK_lng_max / 1000 / MABS(mul) || (val == GDK_lng_max / 1000 / MABS(mul) && msec > GDK_lng_max % 1000)) {
 			if (sql)
 				snprintf(sql->errstr, ERRSIZE, _("Overflow\n"));
 			return -1;
 		}
 		val *= 1000;
 		val += msec;
+		break;
+	default:
+		assert(0);
 	}
 	val *= mul;
 	*i += val;

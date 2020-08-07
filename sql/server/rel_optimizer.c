@@ -649,13 +649,8 @@ order_join_expressions(mvc *sql, list *dje, list *rels)
 	if (cnt == 0)
 		return res;
 
-	keys = GDKmalloc(cnt*sizeof(int));
-	data = GDKmalloc(cnt*sizeof(void *));
-	if (keys == NULL || data == NULL) {
-		GDKfree(keys);
-		GDKfree(data);
-		return NULL;
-	}
+	keys = SA_NEW_ARRAY(sql->ta, int, cnt);
+	data = SA_NEW_ARRAY(sql->ta, void*, cnt);
 
 	for (n = dje->h, i = 0; n; n = n->next, i++) {
 		sql_exp *e = n->data;
@@ -678,8 +673,6 @@ order_join_expressions(mvc *sql, list *dje, list *rels)
 	for(i=0; i<cnt; i++) {
 		list_append(res, data[i]);
 	}
-	GDKfree(keys);
-	GDKfree(data);
 	return res;
 }
 
@@ -1491,6 +1484,7 @@ rel_push_func_down(visitor *v, sql_rel *rel)
 			sql_rel *nrel;
 			sql_rel *l = rel->l, *ol = l;
 			sql_rel *r = rel->r, *or = r;
+			visitor nv = { .sql = v->sql, .parent = v->parent };
 
 			/* we need a full projection, group by's and unions cannot be extended
  			 * with more expressions */
@@ -1509,9 +1503,10 @@ rel_push_func_down(visitor *v, sql_rel *rel)
 				rel->r = r = rel_project(v->sql->sa, r, rel_projections(v->sql, r, NULL, 1, 1));
 			}
  			nrel = rel_project(v->sql->sa, rel, rel_projections(v->sql, rel, NULL, 1, 1));
-			if (!(exps = exps_push_single_func_down(v, rel, l, r, exps)))
+
+			if (!(exps = exps_push_single_func_down(&nv, rel, l, r, exps)))
 				return NULL;
-			if (v->changes) {
+			if (nv.changes) {
 				rel = nrel;
 			} else {
 				if (l != ol)
@@ -1519,6 +1514,7 @@ rel_push_func_down(visitor *v, sql_rel *rel)
 				if (is_joinop(rel->op) && r != or)
 					rel->r = or;
 			}
+			v->changes += nv.changes;
 		}
 	}
 	if (rel->op == op_project && rel->l && rel->exps) {
@@ -1588,7 +1584,7 @@ rel_push_count_down(visitor *v, sql_rel *rel)
 
 	r = rel->l;
 
-	if (is_groupby(rel->op) && !rel_is_ref(rel) &&
+	if (is_groupby(rel->op) && !rel_is_ref(rel) && list_empty(rel->r) &&
 		r && !r->exps && r->op == op_join && !(rel_is_ref(r)) &&
 		/* currently only single count aggregation is handled, no other projects or aggregation */
 		list_length(rel->exps) == 1 && exp_aggr_is_count(rel->exps->h->data)) {
@@ -1818,18 +1814,17 @@ rel_simplify_fk_joins(visitor *v, sql_rel *rel)
  */
 
 static list *
-sum_limit_offset(mvc *sql, list *exps )
+sum_limit_offset(mvc *sql, sql_rel *rel)
 {
-	list *nexps = new_exp_list(sql->sa);
+	/* for sample we always propagate */
+	if (is_sample(rel->op))
+		return exps_copy(sql, rel->exps);
+	/* if the expression list only consists of a limit expression, we copy it */
+	if (list_length(rel->exps) == 1 && rel->exps->h->data)
+		return list_append(sa_list(sql->sa), rel->exps->h->data);
 	sql_subtype *lng = sql_bind_localtype("lng");
-	sql_subfunc *add;
-
-	/* if the expression list only consists of a limit expression,
-	 * we copy it */
-	if (list_length(exps) == 1 && exps->h->data)
-		return append(nexps, exps->h->data);
-	add = sql_bind_func_result(sql->sa, sql->session->schema, "sql_add", F_FUNC, lng, 2, lng, lng);
-	return append(nexps, exp_op(sql->sa, exps, add));
+	sql_subfunc *add = sql_bind_func_result(sql->sa, sql->session->schema, "sql_add", F_FUNC, lng, 2, lng, lng);
+	return list_append(sa_list(sql->sa), exp_op(sql->sa, rel->exps, add));
 }
 
 static int
@@ -1911,11 +1906,9 @@ rel_rename_exps( mvc *sql, list *exps1, list *exps2)
 static sql_rel *
 rel_push_topn_and_sample_down(visitor *v, sql_rel *rel)
 {
-	sql_rel *rl, *r = rel->l;
+	sql_rel *rp = NULL, *r = rel->l;
 
 	if ((is_topn(rel->op) || is_sample(rel->op)) && topn_sample_save_exps(rel->exps)) {
-		sql_rel *rp = NULL;
-		operator_type relation_type = is_topn(rel->op) ? op_topn : op_sample;
 		sql_rel *(*func) (sql_allocator *, sql_rel *, list *) = is_topn(rel->op) ? rel_topn : rel_sample;
 
 		/* nested topN relations */
@@ -1966,7 +1959,6 @@ rel_push_topn_and_sample_down(visitor *v, sql_rel *rel)
 			return rel;
 
 		/* push topn/sample under projections */
-
 		if (!rel_is_ref(rel) && r && is_simple_project(r->op) && !need_distinct(r) && !rel_is_ref(r) && r->l && !r->r) {
 			sql_rel *x = r, *px = x;
 
@@ -1974,7 +1966,10 @@ rel_push_topn_and_sample_down(visitor *v, sql_rel *rel)
 				px = x;
 				x = x->l;
 			}
-
+			/* only push topn once */
+			if (x && x->op == rel->op)
+				return rel;
+	
 			rel->l = x;
 			px->l = rel;
 			rel = r;
@@ -1982,32 +1977,36 @@ rel_push_topn_and_sample_down(visitor *v, sql_rel *rel)
 			return rel;
 		}
 
-		/* duplicate topn/sample direct under union */
-
-		if (r && r->exps && is_union(r->op) && !rel_is_ref(r) && r->l) {
+		/* duplicate topn/sample direct under union or crossproduct */
+		if (r && !rel_is_ref(r) && r->l && r->r && ((is_union(r->op) && r->exps) || (r->op == op_join && list_empty(r->exps)))) {
 			sql_rel *u = r, *x;
 			sql_rel *ul = u->l;
 			sql_rel *ur = u->r;
+			bool changed = false;
 
-			/* only push topn once */
 			x = ul;
-			while (is_simple_project(x->op) && x->l)
+			while (is_simple_project(x->op) && !need_distinct(x) && !rel_is_ref(x) && x->l && !x->r)
 				x = x->l;
-			if (x && x->op == relation_type)
-				return rel;
-			x = ur;
-			while (is_simple_project(x->op) && x->l)
-				x = x->l;
-			if (x && x->op == relation_type)
-				return rel;
+			if (x && x->op != rel->op) { /* only push topn once */
+				ul = func(v->sql->sa, ul, sum_limit_offset(v->sql, rel));
+				u->l = ul;
+				changed = true;
+			}
 
-			ul = func(v->sql->sa, ul, sum_limit_offset(v->sql, rel->exps));
-			ur = func(v->sql->sa, ur, sum_limit_offset(v->sql, rel->exps));
-			u->l = ul;
-			u->r = ur;
-			v->changes++;
+			x = ur;
+			while (is_simple_project(x->op) && !need_distinct(x) && !rel_is_ref(x) && x->l && !x->r)
+				x = x->l;
+			if (x && x->op != rel->op) { /* only push topn once */
+				ur = func(v->sql->sa, ur, sum_limit_offset(v->sql, rel));
+				u->r = ur;
+				changed = true;
+			}
+
+			if (changed)
+				v->changes++;
 			return rel;
 		}
+
 		/* duplicate topn/sample + [ project-order ] under union */
 		if (r)
 			rp = r->l;
@@ -2019,14 +2018,14 @@ rel_push_topn_and_sample_down(visitor *v, sql_rel *rel)
 
 			/* only push topn/sample once */
 			x = ul;
-			while (is_simple_project(x->op) && x->l)
+			while (is_simple_project(x->op) && !need_distinct(x) && !rel_is_ref(x) && x->l && !x->r)
 				x = x->l;
-			if (x && x->op == relation_type)
+			if (x && x->op == rel->op)
 				return rel;
 			x = ur;
-			while (is_simple_project(x->op) && x->l)
+			while (is_simple_project(x->op) && !need_distinct(x) && !rel_is_ref(x) && x->l && !x->r)
 				x = x->l;
-			if (x && x->op == relation_type)
+			if (x && x->op == rel->op)
 				return rel;
 
 			if (list_length(ul->exps) > list_length(r->exps))
@@ -2050,7 +2049,7 @@ rel_push_topn_and_sample_down(visitor *v, sql_rel *rel)
 				ul->exps = list_merge(ul->exps, exps_copy(v->sql, r->r), NULL);
 			ul->nrcols = list_length(ul->exps);
 			ul->r = exps_copy(v->sql, r->r);
-			ul = func(v->sql->sa, ul, sum_limit_offset(v->sql, rel->exps));
+			ul = func(v->sql->sa, ul, sum_limit_offset(v->sql, rel));
 
 			ur = rel_project(v->sql->sa, ur, NULL);
 			ur->exps = exps_copy(v->sql, r->exps);
@@ -2059,7 +2058,7 @@ rel_push_topn_and_sample_down(visitor *v, sql_rel *rel)
 				ur->exps = list_merge(ur->exps, exps_copy(v->sql, r->r), NULL);
 			ur->nrcols = list_length(ur->exps);
 			ur->r = exps_copy(v->sql, r->r);
-			ur = func(v->sql->sa, ur, sum_limit_offset(v->sql, rel->exps));
+			ur = func(v->sql->sa, ur, sum_limit_offset(v->sql, rel));
 
 			u = rel_setop(v->sql->sa, ul, ur, op_union);
 			u->exps = exps_alias(v->sql, r->exps);
@@ -2089,29 +2088,6 @@ rel_push_topn_and_sample_down(visitor *v, sql_rel *rel)
 			v->changes++;
 			return rel;
 		}
-
-		/* pass through projections */
-		while (r && is_project(r->op) && !need_distinct(r) &&
-			!rel_is_ref(r) &&
-			!r->r && (rl = r->l) != NULL && is_project(rl->op)) {
-			/* ensure there is no order by */
-			if (!r->r) {
-				r = r->l;
-			} else {
-				r = NULL;
-			}
-		}
-		if (r && r != rel && is_simple_project(r->op) && !rel_is_ref(r) && !r->r && r->l)
-			r = func(v->sql->sa, r, sum_limit_offset(v->sql, rel->exps));
-
-		/* push topn/sample under crossproduct */
-		if (r && !r->exps && r->op == op_join && !rel_is_ref(r) &&
-		    ((sql_rel *)r->l)->op != relation_type && ((sql_rel *)r->r)->op != relation_type) {
-			r->l = func(v->sql->sa, r->l, sum_limit_offset(v->sql, rel->exps));
-			r->r = func(v->sql->sa, r->r, sum_limit_offset(v->sql, rel->exps));
-			v->changes++;
-			return rel;
-		}
 /* TODO */
 #if 0
 		/* duplicate topn/sample + [ project-order ] under join on independend always matching joins */
@@ -2119,10 +2095,10 @@ rel_push_topn_and_sample_down(visitor *v, sql_rel *rel)
 			rp = r->l;
 		if (r && r->exps && is_simple_project(r->op) && !(rel_is_ref(r)) && r->r && r->l &&
 		    rp->op == op_join && rp->exps && rp->exps->h && ((prop*)((sql_exp*)rp->exps->h->data)->p)->kind == PROP_FETCH &&
-		    ((sql_rel *)rp->l)->op != relation_type && ((sql_rel *)rp->r)->op != relation_type) {
+		    ((sql_rel *)rp->l)->op != rel->op && ((sql_rel *)rp->r)->op != rel->op) {
 			/* TODO check if order by columns are independend of join conditions */
-			r->l = func(v->sql->sa, r->l, sum_limit_offset(v->sql, rel->exps));
-			r->r = func(v->sql->sa, r->r, sum_limit_offset(v->sql, rel->exps));
+			r->l = func(v->sql->sa, r->l, sum_limit_offset(v->sql, rel));
+			r->r = func(v->sql->sa, r->r, sum_limit_offset(v->sql, rel));
 			v->changes++;
 			return rel;
 		}
@@ -2829,20 +2805,6 @@ rel_merge_projects(visitor *v, sql_rel *rel)
 				all = 0;
 				break;
 			}
-			/*
-			if (ne && ne->type == e_column) {
-				sql_exp *nne = NULL;
-
-				if (ne->l)
-					nne = exps_bind_column2(rel->exps, ne->l, ne->r);
-				if (!nne && !ne->l)
-					nne = exps_bind_column(rel->exps, ne->r, NULL, 1);
-				if (nne && ne != nne && nne != e) {
-					all = 0;
-					break;
-				}
-			}
-			*/
 			if (ne) {
 				if (exp_name(e))
 					exp_prop_alias(v->sql->sa, ne, e);
@@ -2913,46 +2875,47 @@ exp_simplify_math( mvc *sql, sql_exp *e, int *changes)
 		if (list_length(l) < 1)
 			return e;
 
-		le = l->h->data;
-		if (!exp_subtype(le) || (!EC_COMPUTE(exp_subtype(le)->type->eclass) && exp_subtype(le)->type->eclass != EC_DEC))
-			return e;
+		/* if the function has no null semantics we can return NULL if one of the arguments is NULL */
+		if (!f->func->semantics && f->func->type != F_PROC) {
+			for (node *n = l->h ; n ; n = n->next) {
+				sql_exp *arg = n->data;
 
-		if (!f->func->s && list_length(l) == 2) {
+				if (exp_is_atom(arg) && exp_is_null(arg)) {
+					sql_exp *ne = exp_null(sql->sa, exp_subtype(e));
+					(*changes)++;
+					if (exp_name(e))
+						exp_prop_alias(sql->sa, ne, e);
+					return ne;
+				}
+			}
+		}
+		if (!f->func->s && list_length(l) == 2 && strstr(f->func->imp, "_no_nil") != NULL) {
 			sql_exp *le = l->h->data;
 			sql_exp *re = l->h->next->data;
-			sql_subtype *et = exp_subtype(e);
 
-			/* if one argument is NULL, return it, EXCEPT
-			 * if "_no_nil" is in the name of the
+			/* if "_no_nil" is in the name of the
 			 * implementation function (currently either
 			 * min_no_nil or max_no_nil), in which case we
-			 * ignore the NULL and return the other
-			 * value */
+			 * ignore the NULL and return the other value */
+
 			if (exp_is_atom(le) && exp_is_null(le)) {
 				(*changes)++;
-				if (f && f->func && f->func->imp && strstr(f->func->imp, "_no_nil") != NULL) {
-					if (exp_name(e))
-						exp_prop_alias(sql->sa, re, e);
-					return re;
-				}
-				le = exp_null(sql->sa, et);
-				if (exp_name(e))
-					exp_prop_alias(sql->sa, le, e);
-				return le;
-			}
-			if (exp_is_atom(re) && exp_is_null(re)) {
-				(*changes)++;
-				if (f && f->func && f->func->imp && strstr(f->func->imp, "_no_nil") != NULL) {
-					if (exp_name(e))
-						exp_prop_alias(sql->sa, le, e);
-					return le;
-				}
-				re = exp_null(sql->sa, et);
 				if (exp_name(e))
 					exp_prop_alias(sql->sa, re, e);
 				return re;
 			}
+			if (exp_is_atom(re) && exp_is_null(re)) {
+				(*changes)++;
+				if (exp_name(e))
+					exp_prop_alias(sql->sa, le, e);
+				return le;
+			}
 		}
+
+		le = l->h->data;
+		if (!EC_COMPUTE(exp_subtype(le)->type->eclass) && exp_subtype(le)->type->eclass != EC_DEC)
+			return e;
+
 		if (!f->func->s && !strcmp(f->func->base.name, "sql_mul") && list_length(l) == 2) {
 			sql_exp *le = l->h->data;
 			sql_exp *re = l->h->next->data;
@@ -3488,8 +3451,8 @@ exps_cse( mvc *sql, list *oexps, list *l, list *r )
 		}
 	}
 
-	lu = GDKzalloc(list_length(l) * sizeof(char));
-	ru = GDKzalloc(list_length(r) * sizeof(char));
+	lu = SA_ZNEW_ARRAY(sql->ta, char, list_length(l));
+	ru = SA_ZNEW_ARRAY(sql->ta, char, list_length(r));
 	for (n = l->h, lc = 0; n; n = n->next, lc++) {
 		sql_exp *le = n->data;
 
@@ -3526,8 +3489,6 @@ exps_cse( mvc *sql, list *oexps, list *l, list *r )
 		append(oexps, exp_or(sql->sa, list_dup(l, (fdup)NULL),
 				     list_dup(r, (fdup)NULL), 0));
 	}
-	GDKfree(lu);
-	GDKfree(ru);
 	return res;
 }
 
@@ -4475,7 +4436,7 @@ rel_push_select_down(visitor *v, sql_rel *rel)
 
 	/* merge 2 selects */
 	r = rel->l;
-	if (is_select(rel->op) && r && r->exps && is_select(r->op) && !(rel_is_ref(r))) {
+	if (is_select(rel->op) && r && r->exps && is_select(r->op) && !(rel_is_ref(r)) && !exps_have_func(rel->exps)) {
 		(void)list_merge(r->exps, rel->exps, (fdup)NULL);
 		rel->l = NULL;
 		rel_destroy(rel);
@@ -5496,7 +5457,7 @@ static list *
 rel_used_projections(mvc *sql, list *exps, list *users)
 {
 	list *nexps = sa_list(sql->sa);
-	bool *used = (bool*)GDKzalloc(sizeof(bool) * list_length(exps));
+	bool *used = SA_ZNEW_ARRAY(sql->ta, bool, list_length(exps));
 	int i = 0;
 
 	for(node *n = users->h; n; n = n->next) {
@@ -5510,7 +5471,6 @@ rel_used_projections(mvc *sql, list *exps, list *users)
 		if (is_intern(e) || used[i])
 			append(nexps, e);
 	}
-	GDKfree(used);
 	return nexps;
 }
 
@@ -5530,7 +5490,7 @@ rel_push_project_down(visitor *v, sql_rel *rel)
 
 		if (rel_is_ref(l))
 			return rel;
-		if (is_basetable(l->op)) {
+		if (is_base(l->op)) {
 			if (list_check_prop_all(rel->exps, (prop_check_func)&exp_is_useless_rename)) {
 				/* TODO reduce list (those in the project + internal) */
 				rel->l = NULL;
@@ -5540,53 +5500,8 @@ rel_push_project_down(visitor *v, sql_rel *rel)
 				return l;
 			}
 			return rel;
-#if 0
-			/* keep important internal columns */
-			for (node *n = l->exps->h; n; n = n->next) {
-				sql_exp *e = n->data;
-
-				if (is_intern(e))
-					append(rel->exps, e);
-			}
-			l->exps = rel->exps;
-			rel->l = NULL;
-			rel_destroy(rel);
-			v->changes++;
-			return l;
-#endif
 		} else if (list_check_prop_all(rel->exps, (prop_check_func)&exp_is_useless_rename)) {
-			if (is_simple_project(l->op) && list_length(l->exps) == list_length(rel->exps)) {
-				rel->l = NULL;
-				rel_destroy(rel);
-				v->changes++;
-				return l;
-			} else if (is_select(l->op)) {
-				/* push project under select (include exps used by selection) */
-				l->l = rel_project(v->sql->sa, l->l, rel_projections(v->sql, l, NULL, 1, 1));
-				l->l = rel_push_project_down(v, l->l);
-				rel->l = NULL;
-				rel_destroy(rel);
-				v->changes++;
-				return l;
-			} else if (is_join(l->op)) {
-				/* for each exp add to left or right project under join */
-				sql_rel *ll = l->l, *lr = l->r;
-				list *lexps = sa_list(v->sql->sa), *rexps = sa_list(v->sql->sa);
-
-				list *exps = rel_projections(v->sql, l, NULL, 1, 1); /* include exps used by join exps */
-				for(node *n = exps->h; n; n = n->next) {
-					sql_exp *e = n->data;
-					if ((exp_relname(e) && exp_name(e) && rel_bind_column2(v->sql, ll, exp_relname(e), exp_name(e), 0)) ||
-						(!exp_relname(e) && exp_name(e) && rel_bind_column(v->sql, ll, exp_name(e), 0, 1))) {
-						append(lexps, e);
-					} else {
-						append(rexps, e);
-					}
-				}
-				l->l = rel_project(v->sql->sa, ll, lexps);
-				l->l = rel_push_project_down(v, l->l);
-				l->r = rel_project(v->sql->sa, lr, rexps);
-				l->r = rel_push_project_down(v, l->r);
+			if ((is_project(l->op) && list_length(l->exps) == list_length(rel->exps)) || is_select(l->op) || is_join(l->op) || is_topn(l->op) || is_sample(l->op)) {
 				rel->l = NULL;
 				rel_destroy(rel);
 				v->changes++;
@@ -5725,37 +5640,33 @@ rel_groupby_order(visitor *v, sql_rel *rel)
 		node *n;
 		list *gbe = rel->r;
 		int i, ngbe = list_length(gbe);
-		scores = GDKmalloc(ngbe * sizeof(int));
-		exps = GDKmalloc(ngbe * sizeof(sql_exp*));
+		scores = SA_NEW_ARRAY(v->sql->ta, int, ngbe);
+		exps = SA_NEW_ARRAY(v->sql->ta, sql_exp*, ngbe);
 
-		if (scores && exps) {
-			/* first sorting step, give priority for integers and sorted columns */
-			for (i = 0, n = gbe->h; n; i++, n = n->next) {
-				exps[i] = n->data;
-				scores[i] = score_gbe(v->sql, rel, exps[i]);
-			}
-			GDKqsort(scores, exps, NULL, ngbe, sizeof(int), sizeof(void *), TYPE_int, true, true);
-
-			/* second sorting step, give priority to strings with lower number of digits */
-			for (i = ngbe - 1; i && !scores[i]; i--); /* find epressions with no score from the first round */
-			if (scores[i])
-				i++;
-			if (ngbe - i > 1) {
-				for (int j = i; j < ngbe; j++) {
-					sql_subtype *t = exp_subtype(exps[j]);
-					scores[j] = t->digits;
-				}
-				/* the less number of digits the better, order ascending */
-				GDKqsort(scores + i, exps + i, NULL, ngbe - i, sizeof(int), sizeof(void *), TYPE_int, false, true);
-			}
-
-			for (i = 0, n = gbe->h; n; i++, n = n->next)
-				n->data = exps[i];
+		/* first sorting step, give priority for integers and sorted columns */
+		for (i = 0, n = gbe->h; n; i++, n = n->next) {
+			exps[i] = n->data;
+			scores[i] = score_gbe(v->sql, rel, exps[i]);
 		}
+		GDKqsort(scores, exps, NULL, ngbe, sizeof(int), sizeof(void *), TYPE_int, true, true);
+
+		/* second sorting step, give priority to strings with lower number of digits */
+		for (i = ngbe - 1; i && !scores[i]; i--); /* find epressions with no score from the first round */
+		if (scores[i])
+			i++;
+		if (ngbe - i > 1) {
+			for (int j = i; j < ngbe; j++) {
+				sql_subtype *t = exp_subtype(exps[j]);
+				scores[j] = t->digits;
+			}
+			/* the less number of digits the better, order ascending */
+			GDKqsort(scores + i, exps + i, NULL, ngbe - i, sizeof(int), sizeof(void *), TYPE_int, false, true);
+		}
+
+		for (i = 0, n = gbe->h; n; i++, n = n->next)
+			n->data = exps[i];
 	}
 
-	GDKfree(scores);
-	GDKfree(exps);
 	return rel;
 }
 
@@ -5771,21 +5682,13 @@ rel_reduce_groupby_exps(visitor *v, sql_rel *rel)
 
 	if (is_groupby(rel->op) && rel->r && !rel_is_ref(rel) && list_length(gbe)) {
 		node *n, *m;
-		int8_t *scores = GDKmalloc(list_length(gbe));
-		int k, j, i;
+		int k, j, i, ngbe = list_length(gbe);
+		int8_t *scores = SA_NEW_ARRAY(v->sql->ta, int8_t, ngbe);
 		sql_column *c;
-		sql_table **tbls;
-		sql_rel **bts, *bt = NULL;
+		sql_table **tbls = SA_NEW_ARRAY(v->sql->ta, sql_table*, ngbe);
+		sql_rel **bts = SA_NEW_ARRAY(v->sql->ta, sql_rel*, ngbe), *bt = NULL;
 
 		gbe = rel->r;
-		tbls = (sql_table**)GDKmalloc(sizeof(sql_table*)*list_length(gbe));
-		bts = (sql_rel**)GDKmalloc(sizeof(sql_rel*)*list_length(gbe));
-		if (scores == NULL || tbls == NULL || bts == NULL) {
-			GDKfree(scores);
-			GDKfree(tbls);
-			GDKfree(bts);
-			return NULL;
-		}
 		for (k = 0, i = 0, n = gbe->h; n; n = n->next, k++) {
 			sql_exp *e = n->data;
 
@@ -5891,17 +5794,11 @@ rel_reduce_groupby_exps(visitor *v, sql_rel *rel)
 					rel->exps = nexps;
 					/* only one reduction at a time */
 					v->changes = 1;
-					GDKfree(bts);
-					GDKfree(tbls);
-					GDKfree(scores);
 					return rel;
 				}
 				gbe = rel->r;
 			}
 		}
-		GDKfree(bts);
-		GDKfree(tbls);
-		GDKfree(scores);
 	}
 	/* remove constants from group by list */
 	if (is_groupby(rel->op) && rel->r && !rel_is_ref(rel)) {
@@ -6685,7 +6582,7 @@ exp_mark_used(sql_rel *subrel, sql_exp *e, int local_proj)
 		break;
 	}
 	if (ne && e != ne) {
-		if (!local_proj || (has_label(ne) || (ne->alias.rname && ne->alias.rname[0] == '%')))
+		if (!local_proj || (has_label(ne) || (ne->alias.rname && ne->alias.rname[0] == '%')) || (subrel->l && !rel_find_exp(subrel->l, e)))
 			ne->used = 1;
 		return ne->used;
 	}
@@ -7526,23 +7423,19 @@ rel_select_order(visitor *v, sql_rel *rel)
 	if (is_select(rel->op) && list_length(rel->exps) > 1) {
 		node *n;
 		int i, nexps = list_length(rel->exps);
-		scores = GDKmalloc(nexps * sizeof(int));
-		exps = GDKmalloc(nexps * sizeof(sql_exp*));
+		scores = SA_NEW_ARRAY(v->sql->ta, int, nexps);
+		exps = SA_NEW_ARRAY(v->sql->ta, sql_exp*, nexps);
 
-		if (scores && exps) {
-			for (i = 0, n = rel->exps->h; n; i++, n = n->next) {
-				exps[i] = n->data;
-				scores[i] = score_se(v->sql, rel, n->data);
-			}
-			GDKqsort(scores, exps, NULL, nexps, sizeof(int), sizeof(void *), TYPE_int, true, true);
-
-			for (i = 0, n = rel->exps->h; n; i++, n = n->next)
-				n->data = exps[i];
+		for (i = 0, n = rel->exps->h; n; i++, n = n->next) {
+			exps[i] = n->data;
+			scores[i] = score_se(v->sql, rel, n->data);
 		}
+		GDKqsort(scores, exps, NULL, nexps, sizeof(int), sizeof(void *), TYPE_int, true, true);
+
+		for (i = 0, n = rel->exps->h; n; i++, n = n->next)
+			n->data = exps[i];
 	}
 
-	GDKfree(scores);
-	GDKfree(exps);
 	return rel;
 }
 
@@ -7715,6 +7608,8 @@ rel_simplify_predicates(visitor *v, sql_rel *rel, sql_exp *e, int depth)
 							args = inner->l;
 
 							if (!strcmp(inf->func->base.name, "<>"))
+								flag = !flag;
+							if (e->flag == cmp_notequal)
 								flag = !flag;
 							assert(list_length(args) == 2);
 							l = args->h->data;
@@ -9262,6 +9157,8 @@ static void replace_column_references_with_nulls_2(mvc *sql, list* crefs, sql_ex
 
 static void
 replace_column_references_with_nulls_1(mvc *sql, list* crefs, list* exps) {
+    if (list_empty(exps))
+        return;
     for(node* n = exps->h; n; n=n->next) {
         sql_exp* e = n->data;
         replace_column_references_with_nulls_2(sql, crefs, e);

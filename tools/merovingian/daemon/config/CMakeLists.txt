@@ -30,6 +30,7 @@ install(FILES
 
 install(FILES
   ${CMAKE_CURRENT_BINARY_DIR}/.merovingian_properties
+  .merovingian_lock
   DESTINATION ${CMAKE_INSTALL_FULL_LOCALSTATEDIR}/monetdb5/dbfarm
   COMPONENT sql)
 

@@ -46,7 +46,7 @@ target_link_libraries(monetdbe
   moptions
   mutils
   mcrypt
-  gdk
+  bat
   monetdb5
   sql
   $<$<NOT:$<PLATFORM_ID:Windows>>:m>
@@ -55,6 +55,16 @@ target_link_libraries(monetdbe
   $<$<BOOL:${PCRE_FOUND}>:PCRE::PCRE>
   $<$<NOT:$<PLATFORM_ID:Windows>>:$<$<BOOL:${LibXml2_FOUND}>:LibXml2::LibXml2>>
   Threads::Threads)
+
+if (NOT WIN32)
+  configure_file(monetdbe.pc.in
+    ${CMAKE_CURRENT_BINARY_DIR}/monetdbe.pc @ONLY)
+
+  install(FILES
+    ${CMAKE_CURRENT_BINARY_DIR}/monetdbe.pc
+    DESTINATION ${CMAKE_INSTALL_LIBDIR}/pkgconfig
+    COMPONENT serverdev)
+endif()
 
 install(TARGETS
   monetdbe

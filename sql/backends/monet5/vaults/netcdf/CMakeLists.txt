@@ -38,7 +38,7 @@ if(NETCDF_FOUND)
     monetdb_config_header
     mutils
     stream
-    gdk
+    bat
     monetdb5
     sqlinclude
     NetCDF::NetCDF)

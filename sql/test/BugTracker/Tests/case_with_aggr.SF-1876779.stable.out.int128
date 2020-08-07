@@ -40,8 +40,8 @@ stdout of test 'case_with_aggr.SF-1876779` in directory 'sql/test/BugTracker` it
 % 1 # length
 [ NULL	]
 #SELECT COALESCE(MIN(a), 0) FROM casebug;
-% sys.%2 # table_name
-% %2 # name
+% .%3 # table_name
+% %3 # name
 % int # type
 % 1 # length
 [ 0	]

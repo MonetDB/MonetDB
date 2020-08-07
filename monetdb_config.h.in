@@ -300,9 +300,6 @@
 #ifndef ssize_t
 #cmakedefine ssize_t @ssize_t@
 #endif
-#ifndef pid_t
-#cmakedefine pid_t @pid_t@
-#endif
 
 /* The size of `__int128', as computed by sizeof. */
 #cmakedefine SIZEOF___INT128 @SIZEOF___INT128@
