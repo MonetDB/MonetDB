@@ -2670,13 +2670,33 @@ rel_distinct_project2groupby(visitor *v, sql_rel *rel)
 	return rel;
 }
 
+static int exp_shares_exps(sql_exp *e, list *shared, lng *uses);
+
 static int
-exp_shares_exps( sql_exp *e, list *shared, lng *uses)
+exps_shares_exps(list *exps, list *shared, lng *uses)
+{
+	if (!exps || !shared)
+		return 0;
+	for (node *n = exps->h; n; n = n->next) {
+		sql_exp *e = n->data;
+
+		if (exp_shares_exps(e, shared, uses))
+			return 1;
+	}
+	return 0;
+}
+
+static int
+exp_shares_exps(sql_exp *e, list *shared, lng *uses)
 {
 	switch(e->type) {
-	case e_cmp: /* not in projection list */
-	case e_psm:
-		assert(0);
+	case e_cmp:
+		if (e->flag == cmp_or || e->flag == cmp_filter)
+			return exps_shares_exps(e->l, shared, uses) || exps_shares_exps(e->r, shared, uses);
+		else if (e->flag == cmp_in || e->flag == cmp_notin)
+			return exp_shares_exps(e->l, shared, uses) || exps_shares_exps(e->r, shared, uses);
+		else
+			return exp_shares_exps(e->l, shared, uses) || exp_shares_exps(e->r, shared, uses) || (e->f && exp_shares_exps(e->f, shared, uses));
 	case e_atom:
 		return 0;
 	case e_column:
@@ -2697,43 +2717,31 @@ exp_shares_exps( sql_exp *e, list *shared, lng *uses)
 			}
 			if (ne && ne != e && (list_position(shared, e) < 0 || list_position(shared, e) > list_position(shared, ne)))
 				/* maybe ne refers to a local complex exp */
-				return exp_shares_exps( ne, shared, uses);
+				return exp_shares_exps(ne, shared, uses);
 			return 0;
 		}
 	case e_convert:
 		return exp_shares_exps(e->l, shared, uses);
-
 	case e_aggr:
 	case e_func:
-		{
-			list *l = e->l;
-			node *n;
-
-			if (!l)
-				return 0;
-			for (n = l->h; n; n = n->next) {
-				sql_exp *e = n->data;
-
-				if (exp_shares_exps( e, shared, uses))
-					return 1;
-			}
-		}
+		return exps_shares_exps(e->l, shared, uses);
+	case e_psm:
+		assert(0);  /* not in projection list */
 	}
 	return 0;
 }
 
 static int
-exps_share_expensive_exp( list *exps, list *shared )
+exps_share_expensive_exp(list *exps, list *shared )
 {
-	node *n;
 	lng uses = 0;
 
 	if (!exps || !shared)
 		return 0;
-	for (n = exps->h; n; n = n->next){
+	for (node *n = exps->h; n; n = n->next) {
 		sql_exp *e = n->data;
 
-		if (exp_shares_exps( e, shared, &uses))
+		if (exp_shares_exps(e, shared, &uses))
 			return 1;
 	}
 	return 0;
