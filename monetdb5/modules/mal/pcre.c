@@ -1628,7 +1628,7 @@ BATPCRElike3(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, const str 
 		 input_is_a_bat = isaBatType(getArgType(mb, pci, 1)), pattern_is_a_bat = isaBatType(getArgType(mb, pci, 2));
 	bat *r = getArgReference_bat(stk, pci, 0);
 	BUN q = 0;
-	bit *restrict ret = NULL;
+	bit *ret = NULL;
 #ifdef HAVE_LIBPCRE
 	pcre *re = NULL;
 	pcre_extra *ex = NULL;

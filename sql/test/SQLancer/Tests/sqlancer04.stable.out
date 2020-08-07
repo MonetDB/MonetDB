@@ -227,6 +227,22 @@ stdout of test 'sqlancer04` in directory 'sql/test/SQLancer` itself:
 #"2m^OqPm/3DḞZ02"
 #"2m^OqPm/3DḞZ02"
 [ 5	]
+#SELECT 1 FROM t1 WHERE COALESCE(FALSE, t1.c0 = '0' AND t1.c0 LIKE t1.c0);
+% .%2 # table_name
+% %2 # name
+% tinyint # type
+% 1 # length
+#SELECT SUM(agg0) FROM (
+#SELECT ALL sum(ALL abs(INTERVAL '1507781126' SECOND)) as agg0 FROM t1
+#WHERE COALESCE(FALSE, (((((((((((t1.c0) NOT BETWEEN ASYMMETRIC (t1.c0) AND (t1.c0))AND(((t1.c0)>=(t1.c0)))))AND(NOT (TRUE))))AND(((t1.c0)LIKE(t1.c0)))))AND(((t1.c0)NOT ILIKE(t1.c0)))))OR(COALESCE(FALSE, FALSE))))
+#UNION ALL
+#SELECT sum(ALL abs(INTERVAL '1507781126' SECOND)) as agg0 FROM t1
+#WHERE NOT (COALESCE(FALSE, (((((((((((t1.c0) NOT BETWEEN ASYMMETRIC (t1.c0) AND (t1.c0))AND(((t1.c0)>=(t1.c0)))))AND(NOT (TRUE))))AND(((t1.c0)LIKE(t1.c0)))))AND(((t1.c0)NOT ILIKE(t1.c0)))))OR(COALESCE(FALSE, FALSE)))))
+% .%16 # table_name
+% %16 # name
+% sec_interval # type
+% 14 # length
+[ 7538905630.000	]
 #ROLLBACK;
 #CREATE TABLE "sys"."t1" ("c1" DOUBLE);
 #COPY 7 RECORDS INTO "sys"."t1" FROM stdin USING DELIMITERS E'\t',E'\n','"';
@@ -238,6 +254,18 @@ stdout of test 'sqlancer04` in directory 'sql/test/SQLancer` itself:
 #0.6184216877785851
 #0.6479886625655562
 [ 7	]
+#SELECT 1 FROM t1 WHERE COALESCE(1, CAST(t1.c1 AS INT) & COALESCE(1101847419, 2)); --inputs not same size error
+% .%3 # table_name
+% %3 # name
+% tinyint # type
+% 1 # length
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
 #DROP TABLE "sys"."t1";
 
 # 09:44:50 >  
