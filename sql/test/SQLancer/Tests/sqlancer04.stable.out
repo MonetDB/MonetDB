@@ -267,6 +267,40 @@ stdout of test 'sqlancer04` in directory 'sql/test/SQLancer` itself:
 [ 1	]
 [ 1	]
 #DROP TABLE "sys"."t1";
+#START TRANSACTION;
+#CREATE TABLE "t0" (
+#	"c0" DATE          NOT NULL,
+#	"c1" SMALLINT      NOT NULL,
+#	"c2" DATE          NOT NULL,
+#	CONSTRAINT "t0_c2_c0_c1_pkey" PRIMARY KEY ("c2", "c0", "c1"),
+#	CONSTRAINT "t0_c0_c1_c2_unique" UNIQUE ("c0", "c1", "c2")
+#);
+#CREATE TABLE "t1" (
+#	"c0" DOUBLE PRECISION        NOT NULL,
+#	CONSTRAINT "t1_c0_pkey" PRIMARY KEY ("c0"),
+#	CONSTRAINT "t1_c0_unique" UNIQUE ("c0")
+#);
+#SELECT count(*) FROM t1 CROSS JOIN t0;
+% .%3 # table_name
+% %3 # name
+% bigint # type
+% 1 # length
+[ 0	]
+#SELECT count(*) FROM t1 CROSS JOIN t0 GROUP BY 0.2;
+% .%4 # table_name
+% %4 # name
+% bigint # type
+% 1 # length
+#SELECT count(*) FROM t1 CROSS JOIN t0 GROUP BY 0.2 HAVING max((ltrim(')''+')) NOT IN (CAST(t0.c1 AS VARCHAR(32)), CAST(INTERVAL '6' MONTH AS VARCHAR(32)), CAST(INTERVAL '7' MONTH AS VARCHAR(32)))) 
+#UNION ALL
+#SELECT count(*) FROM t1 CROSS JOIN t0 GROUP BY 0.2 HAVING NOT (max((ltrim(')''+')) NOT IN (CAST(t0.c1 AS VARCHAR(32)), CAST(INTERVAL '6' MONTH AS VARCHAR(32)), CAST(INTERVAL '7' MONTH AS VARCHAR(32)))))
+#UNION ALL
+#SELECT count(*) FROM t1 CROSS JOIN t0 GROUP BY 0.2 HAVING (max((ltrim(')''+')) NOT IN (CAST(t0.c1 AS VARCHAR(32)), CAST(INTERVAL '6' MONTH AS VARCHAR(32)), CAST(INTERVAL '7' MONTH AS VARCHAR(32))))) IS NULL;
+% .%56 # table_name
+% %4 # name
+% bigint # type
+% 1 # length
+#ROLLBACK;
 
 # 09:44:50 >  
 # 09:44:50 >  "Done."
