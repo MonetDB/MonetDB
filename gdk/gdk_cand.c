@@ -701,7 +701,7 @@ canditer_init(struct canditer *ci, BAT *b, BAT *s)
 oid
 canditer_peek(struct canditer *ci)
 {
-	oid o;
+	oid o = oid_nil;
 	if (ci->next == ci->ncand)
 		return oid_nil;
 	switch (ci->tpe) {
