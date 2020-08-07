@@ -193,6 +193,7 @@ SQLbatstr_cast(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		BBPunfix(b->batCacheid);
 		throw(SQL, "batcalc.str", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 	}
+	canditer_init(&ci, b, s);
 	bi = bat_iterator(b);
 	dst = COLnew(b->hseqbase, TYPE_str, ci.ncand, TRANSIENT);
 	if (dst == NULL) {
@@ -201,7 +202,6 @@ SQLbatstr_cast(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			BBPunfix(b->batCacheid);
 		throw(SQL, "sql.str_cast", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
-	canditer_init(&ci, b, s);
 	for (BUN i = 0; i < ci.ncand; i++) {
 		BUN p = (BUN) (canditer_next(&ci) - b->hseqbase);
 		ptr v = BUNtail(bi, p);
