@@ -78,9 +78,7 @@ target_sources(sql
   sql_optimizer.c sql_optimizer.h
   sql_result.c sql_result.h
   sql_cast.c sql_cast.h
-  sql_cast_impl_down_from_flt.h
   sql_cast_impl_int.h
-  sql_cast_impl_up_to_flt.h
   sql_round.c
   sql_round_impl.h
   sql_fround.c sql_fround_impl.h
