@@ -1155,6 +1155,7 @@ mvc_bind_idxbat(mvc *m, const char *sname, const char *tname, const char *iname,
 }
 
 #define BAT_ALIGN 32
+#undef ALIGN
 #define ALIGN(s, a)	((s+(a-1))&(~(a-1)))
 
 /* str mvc_bind_wrap(int *bid, str *sname, str *tname, str *cname, int *access); */
