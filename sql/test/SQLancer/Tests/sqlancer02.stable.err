@@ -22,6 +22,10 @@ QUERY = SELECT AVG(ALL ((((CAST(((+ (-12))/(sql_min(-12, -67))) AS INT))+(abs(((
         GROUP BY 0.1, 0.7, 0.2, + (+ (- (length(r'q')))), greatest(upper(upper(r'623865997')), trim(replace(r'vAd(Lup}Z', r'-1774953973', r'0.4235712099498189'), substr(r'', -19)));
 ERROR = !division by zero.
 CODE  = 22012
+MAPI  = (monetdb) /var/tmp/mtest-817278/.s.monetdb.31783
+QUERY = SELECT 1 WHERE scale_up(CAST(0.89767724 AS REAL), 1); --error function scale_up not available for real,tinyint
+ERROR = !types real(24,0) and boolean(1,0) are not equal
+CODE  = 42000
 
 # 17:04:12 >  
 # 17:04:12 >  "Done."

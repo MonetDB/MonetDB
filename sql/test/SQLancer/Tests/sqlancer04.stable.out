@@ -143,6 +143,11 @@ stdout of test 'sqlancer04` in directory 'sql/test/SQLancer` itself:
 #START TRANSACTION;
 #CREATE TABLE t0(c0 DATE);
 #CREATE TABLE t1(c0 DATE NOT NULL);
+#select t0.c0 from t0 natural join t1; --t0.c0 must be found
+% sys.t0 # table_name
+% c0 # name
+% date # type
+% 10 # length
 #ROLLBACK;
 #START TRANSACTION;
 #CREATE TABLE t0(c0 DOUBLE PRIMARY KEY NULL); 
@@ -188,6 +193,128 @@ stdout of test 'sqlancer04` in directory 'sql/test/SQLancer` itself:
 % %4 # name
 % month_interval # type
 % 1 # length
+#ROLLBACK;
+#START TRANSACTION;
+#CREATE TABLE "sys"."t0" ("c0" DOUBLE,"c1" INTERVAL MONTH);
+#COPY 4 RECORDS INTO "sys"."t0" FROM stdin USING DELIMITERS E'\t',E'\n','"';
+#NULL	1876068957
+#NULL	1798321013
+#0.8609488658910056	496732801
+#0.6220338267946794	1689393833
+[ 4	]
+#SELECT 1 FROM t0 WHERE 'b' = COALESCE('1', CASE WHEN 2 THEN 'a' END);
+% .%2 # table_name
+% %2 # name
+% tinyint # type
+% 1 # length
+#SELECT MAX(ALL 0.47279814) FROM t0 WHERE ((r'Vቕ*2DGj!K-?')NOT ILIKE(COALESCE(r'뷿', upper(r'1285890467'), r'R B+ ]%''?E}%<[cöjö媘թ丅MJV%r&伉', 
+#CASE WHEN -681304440 THEN r'+s' WHEN -2104930505 THEN r'M[' END))) GROUP BY t0.c0, t0.c1;
+% .%1 # table_name
+% %1 # name
+% decimal # type
+% 11 # length
+[ 0.47279814	]
+[ 0.47279814	]
+[ 0.47279814	]
+[ 0.47279814	]
+#ROLLBACK;
+#START TRANSACTION;
+#CREATE TABLE "sys"."t1" ("c0" CHAR(240));
+#COPY 5 RECORDS INTO "sys"."t1" FROM stdin USING DELIMITERS E'\t',E'\n','"';
+#"2m^OqPm/3DḞZ02"
+#"2m^OqPm/3DḞZ02"
+#"2m^OqPm/3DḞZ02"
+#"2m^OqPm/3DḞZ02"
+#"2m^OqPm/3DḞZ02"
+[ 5	]
+#SELECT 1 FROM t1 WHERE COALESCE(FALSE, t1.c0 = '0' AND t1.c0 LIKE t1.c0);
+% .%2 # table_name
+% %2 # name
+% tinyint # type
+% 1 # length
+#SELECT SUM(agg0) FROM (
+#SELECT ALL sum(ALL abs(INTERVAL '1507781126' SECOND)) as agg0 FROM t1
+#WHERE COALESCE(FALSE, (((((((((((t1.c0) NOT BETWEEN ASYMMETRIC (t1.c0) AND (t1.c0))AND(((t1.c0)>=(t1.c0)))))AND(NOT (TRUE))))AND(((t1.c0)LIKE(t1.c0)))))AND(((t1.c0)NOT ILIKE(t1.c0)))))OR(COALESCE(FALSE, FALSE))))
+#UNION ALL
+#SELECT sum(ALL abs(INTERVAL '1507781126' SECOND)) as agg0 FROM t1
+#WHERE NOT (COALESCE(FALSE, (((((((((((t1.c0) NOT BETWEEN ASYMMETRIC (t1.c0) AND (t1.c0))AND(((t1.c0)>=(t1.c0)))))AND(NOT (TRUE))))AND(((t1.c0)LIKE(t1.c0)))))AND(((t1.c0)NOT ILIKE(t1.c0)))))OR(COALESCE(FALSE, FALSE)))))
+% .%16 # table_name
+% %16 # name
+% sec_interval # type
+% 14 # length
+[ 7538905630.000	]
+#ROLLBACK;
+#CREATE TABLE "sys"."t1" ("c1" DOUBLE);
+#COPY 7 RECORDS INTO "sys"."t1" FROM stdin USING DELIMITERS E'\t',E'\n','"';
+#763223864
+#0.4947502779444658
+#0.7872504424909134
+#0.7099123743128314
+#0.7223969464007746
+#0.6184216877785851
+#0.6479886625655562
+[ 7	]
+#SELECT 1 FROM t1 WHERE COALESCE(1, CAST(t1.c1 AS INT) & COALESCE(1101847419, 2)); --inputs not same size error
+% .%3 # table_name
+% %3 # name
+% tinyint # type
+% 1 # length
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+#DROP TABLE "sys"."t1";
+#START TRANSACTION;
+#CREATE TABLE "t0" (
+#	"c0" DATE          NOT NULL,
+#	"c1" SMALLINT      NOT NULL,
+#	"c2" DATE          NOT NULL,
+#	CONSTRAINT "t0_c2_c0_c1_pkey" PRIMARY KEY ("c2", "c0", "c1"),
+#	CONSTRAINT "t0_c0_c1_c2_unique" UNIQUE ("c0", "c1", "c2")
+#);
+#CREATE TABLE "t1" (
+#	"c0" DOUBLE PRECISION        NOT NULL,
+#	CONSTRAINT "t1_c0_pkey" PRIMARY KEY ("c0"),
+#	CONSTRAINT "t1_c0_unique" UNIQUE ("c0")
+#);
+#SELECT count(*) FROM t1 CROSS JOIN t0;
+% .%3 # table_name
+% %3 # name
+% bigint # type
+% 1 # length
+[ 0	]
+#SELECT count(*) FROM t1 CROSS JOIN t0 GROUP BY 0.2;
+% .%4 # table_name
+% %4 # name
+% bigint # type
+% 1 # length
+#SELECT count(*) FROM t1 CROSS JOIN t0 GROUP BY 0.2 HAVING max((ltrim(')''+')) NOT IN (CAST(t0.c1 AS VARCHAR(32)), CAST(INTERVAL '6' MONTH AS VARCHAR(32)), CAST(INTERVAL '7' MONTH AS VARCHAR(32)))) 
+#UNION ALL
+#SELECT count(*) FROM t1 CROSS JOIN t0 GROUP BY 0.2 HAVING NOT (max((ltrim(')''+')) NOT IN (CAST(t0.c1 AS VARCHAR(32)), CAST(INTERVAL '6' MONTH AS VARCHAR(32)), CAST(INTERVAL '7' MONTH AS VARCHAR(32)))))
+#UNION ALL
+#SELECT count(*) FROM t1 CROSS JOIN t0 GROUP BY 0.2 HAVING (max((ltrim(')''+')) NOT IN (CAST(t0.c1 AS VARCHAR(32)), CAST(INTERVAL '6' MONTH AS VARCHAR(32)), CAST(INTERVAL '7' MONTH AS VARCHAR(32))))) IS NULL;
+% .%56 # table_name
+% %4 # name
+% bigint # type
+% 1 # length
+#ROLLBACK;
+#START TRANSACTION;
+#CREATE TABLE IF NOT EXISTS t0(c0 FLOAT, c1 DECIMAL NULL UNIQUE);
+#CREATE TEMP TABLE t1 (c0 TIME);
+#SELECT 1 FROM t1 INNER JOIN (SELECT 2 FROM t0) AS sub0 ON CASE 8 WHEN 3 THEN (4) IN (5, 6, 7) END;
+% .%17 # table_name
+% %17 # name
+% tinyint # type
+% 1 # length
+#SELECT t1.c0 FROM t1 INNER JOIN (SELECT ALL CAST(TIMESTAMP '1970-01-07 06:59:48' AS TIMESTAMP) FROM t0) AS sub0 ON CASE t1.c0 WHEN sql_min(t1.c0, t1.c0) 
+#THEN (((((((496867080) IN (52439321, 1596181433, -506328570))OR(((r'W1')ILIKE(r'0.48600327092830353')))))OR((t1.c0) BETWEEN SYMMETRIC (t1.c0) AND (t1.c0))))OR(NOT (FALSE))) END;
+% tmp.t1 # table_name
+% c0 # name
+% time # type
+% 8 # length
 #ROLLBACK;
 
 # 09:44:50 >  

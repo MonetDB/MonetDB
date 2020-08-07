@@ -650,8 +650,12 @@ exp2bin_case(backend *be, sql_exp *fe, stmt *left, stmt *right, stmt *isel, int 
 		if (!single_value) {
 			/* create result */
 			if (!res) {
-				stmt *l = bin_first_column(be, left);
+				stmt *l = sel;
+				if (!l)
+					l = bin_first_column(be, left);
 				res = stmt_const(be, l, stmt_atom(be, atom_general(be->mvc->sa, exp_subtype(fe), NULL)));
+				if (res)
+					res->cand = sel;
 			} else if (res && !next_cond) { /* use result too update column */
 				stmt *val = es, *pos = sel;
 
@@ -733,7 +737,7 @@ static stmt*
 exp2bin_coalesce(backend *be, sql_exp *fe, stmt *left, stmt *right, stmt *isel, int depth)
 {
 	stmt *res = NULL, *sel = NULL, *osel = NULL, *ncond = NULL, *ocond = NULL;
-	int single_value = (fe->card <= CARD_ATOM);
+	int single_value = (fe->card <= CARD_ATOM && (!left || !left->nrcols));
 	char name[16], *nme = NULL;
 	sql_subtype *bt = sql_bind_localtype("bit");
 	sql_subfunc *and = sql_bind_func(be->mvc->sa, NULL, "and", bt, bt, F_FUNC);
@@ -756,8 +760,12 @@ exp2bin_coalesce(backend *be, sql_exp *fe, stmt *left, stmt *right, stmt *isel, 
 		/* create result */
 		if (!single_value) {
 			if (!res) {
-				stmt *l = bin_first_column(be, left);
+				stmt *l = sel;
+				if (!l)
+					l = bin_first_column(be, left);
 				res = stmt_const(be, l, stmt_atom(be, atom_general(be->mvc->sa, exp_subtype(fe), NULL)));
+				if (res)
+					res->cand = sel;
 			}
 			if (res) {
 				if (sel && es->cand != sel) {
@@ -1024,18 +1032,16 @@ exp_bin(backend *be, sql_exp *e, stmt *left, stmt *right, stmt *grp, stmt *ext, 
 					nrcands++;
 			}
 			if (push_cands) {
-				if (strcmp(sql_func_imp(f->func), "and") != 0 && strcmp(sql_func_imp(f->func), "or") != 0) {
-					int i;
-					for (i=0, en = l->h; i<nrcands && en; en = en->next) {
-						stmt *s = en->data;
-						/* if handled use bat nil */
-						if (s->nrcols) { /* only for cols not values */
-							i++;
-							if (s->cand && s->cand == isel)
-								list_append(l, NULL);
-							else
-								list_append(l,sel);
-						}
+				int i;
+				for (i=0, en = l->h; i<nrcands && en; en = en->next) {
+					stmt *s = en->data;
+					/* if handled use bat nil */
+					if (s->nrcols) { /* only for cols not values */
+						i++;
+						if (s->cand && s->cand == isel)
+							list_append(l, NULL);
+						else
+							list_append(l,sel);
 					}
 				}
 			}

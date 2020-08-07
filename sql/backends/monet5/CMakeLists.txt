@@ -78,9 +78,7 @@ target_sources(sql
   sql_optimizer.c sql_optimizer.h
   sql_result.c sql_result.h
   sql_cast.c sql_cast.h
-  sql_cast_impl_down_from_flt.h
   sql_cast_impl_int.h
-  sql_cast_impl_up_to_flt.h
   sql_round.c
   sql_round_impl.h
   sql_fround.c sql_fround_impl.h
@@ -116,7 +114,7 @@ target_link_libraries(sql
 
 set_target_properties(sql
   PROPERTIES
-  OUTPUT_NAME _sql
+  OUTPUT_NAME monetdbsql
   VERSION ${MONETDB_VERSION}
   SOVERSION ${MONETDB_VERSION_MAJOR})
 
@@ -133,9 +131,9 @@ install(TARGETS
   sql
   EXPORT sqlTargets
   RUNTIME
-  DESTINATION ${CMAKE_INSTALL_LIBDIR}/monetdb5
+  DESTINATION ${CMAKE_INSTALL_BINDIR}
   LIBRARY
-  DESTINATION ${CMAKE_INSTALL_LIBDIR}/monetdb5
+  DESTINATION ${CMAKE_INSTALL_LIBDIR}
   COMPONENT sql
   NAMELINK_COMPONENT monetdbdev
   ARCHIVE

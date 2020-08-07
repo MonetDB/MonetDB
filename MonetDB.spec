@@ -111,7 +111,7 @@ BuildRequires: checkpolicy
 BuildRequires: selinux-policy-devel
 BuildRequires: hardlink
 %endif
-BuildRequires: cmake >= 3.12
+BuildRequires: cmake3 >= 3.12
 BuildRequires: gcc
 BuildRequires: bison
 BuildRequires: /usr/bin/python3
@@ -605,7 +605,7 @@ use SQL with MonetDB, you will need to install this package.
 %config(noreplace) %attr(664,monetdb,monetdb) %{_localstatedir}/monetdb5/dbfarm/.merovingian_properties
 %verify(not mtime) %attr(664,monetdb,monetdb) %{_localstatedir}/monetdb5/dbfarm/.merovingian_lock
 %config(noreplace) %attr(644,root,root) %{_sysconfdir}/logrotate.d/monetdbd
-%{_libdir}/monetdb5/lib_sql.so*
+%{_libdir}/libmonetdbsql.so*
 %doc %{_mandir}/man1/monetdb.1.gz
 %doc %{_mandir}/man1/monetdbd.1.gz
 %dir %{_datadir}/doc/MonetDB-SQL
@@ -762,7 +762,7 @@ fi
 %setup -q
 
 %build
-%{cmake} \
+%cmake3 \
 	-DASSERT=OFF \
 	-DCINTEGRATION=%{?with_cintegration:ON}%{!?with_cintegration:OFF} \
 	-DFITS=%{?with_fits:ON}%{!?with_fits:OFF} \
@@ -791,7 +791,7 @@ fi
 	-DWITH_XML2=ON \
 	-DWITH_ZLIB=ON
 
-%cmake_build
+%cmake3_build
 
 %if %{?rhel:0}%{!?rhel:1} || 0%{?rhel} >= 7
 cd buildtools/selinux
@@ -810,7 +810,7 @@ cd -
 %endif
 
 %install
-%cmake_install
+%cmake3_install
 
 # move file to correct location
 %if %{?rhel:0}%{!?rhel:1} || 0%{?rhel} >= 7
