@@ -10,6 +10,7 @@
 #include "stream.h"
 #include "stream_internal.h"
 #include "pump.h"
+
 /* When reading, text streams convert \r\n to \n regardless of operating system,
  * and they drop the leading UTF-8 BOM marker if found.
  * When writing on Windows, \n is translated back to \r\n.
