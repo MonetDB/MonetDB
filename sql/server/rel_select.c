@@ -931,9 +931,12 @@ table_ref(sql_query *query, sql_rel *rel, symbol *tableref, int lateral)
 			/* Rename columns of the rel_parse relation */
 			if (sql->emode != m_deps) {
 				assert(is_project(rel->op));
-				if (!rel)
-					return NULL;
 				set_processed(rel);
+				if ((is_simple_project(rel->op) || is_groupby(rel->op)) && !list_empty(rel->r)) {
+					/* it's unsafe to set the projection names because of possible dependent sorting/grouping columns */
+					rel = rel_project(sql->sa, rel, rel_projections(sql, rel, NULL, 1, 0));
+					set_processed(rel);
+				}
 				for (n = t->columns.set->h, m = rel->exps->h; n && m; n = n->next, m = m->next) {
 					sql_column *c = n->data;
 					sql_exp *e = m->data;
@@ -1245,13 +1248,17 @@ exp_fix_scale(mvc *sql, sql_subtype *ct, sql_exp *e, int both, int always)
 		if (scale_diff) {
 			sql_subtype *it = sql_bind_localtype(et->type->base.name);
 			sql_subfunc *c = NULL;
+			bool swapped = false;
 
 			if (scale_diff < 0) {
 				if (!both)
 					return e;
 				c = sql_bind_func(sql->sa, sql->session->schema, "scale_down", et, it, F_FUNC);
 			} else {
-				c = sql_bind_func(sql->sa, sql->session->schema, "scale_up", et, it, F_FUNC);
+				if (!(c = sql_bind_func(sql->sa, sql->session->schema, "scale_up", et, it, F_FUNC))) {
+					if ((c = sql_bind_func(sql->sa, sql->session->schema, "scale_up", it, et, F_FUNC)))
+						swapped = true;
+				}
 			}
 			if (c) {
 #ifdef HAVE_HGE
@@ -1259,11 +1266,11 @@ exp_fix_scale(mvc *sql, sql_subtype *ct, sql_exp *e, int both, int always)
 #else
 				lng val = scale2value(scale_diff);
 #endif
-				atom *a = atom_int(sql->sa, it, val);
+				sql_exp *atom_exp = exp_atom(sql->sa, atom_int(sql->sa, it, val));
 				sql_subtype *res = c->res->h->data;
 
 				res->scale = (et->scale + scale_diff);
-				return exp_binop(sql->sa, e, exp_atom(sql->sa, a), c);
+				return exp_binop(sql->sa, swapped ? atom_exp : e, swapped ? e : atom_exp, c);
 			}
 		}
 	} else if (always && et->scale) {	/* scale down */

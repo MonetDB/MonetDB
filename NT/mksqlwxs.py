@@ -124,9 +124,10 @@ def main():
               [r'bin\mclient.exe',
                r'bin\mserver5.exe',
                r'bin\msqldump.exe',
-               r'bin\gdk.dll',
+               r'bin\bat.dll',
                r'bin\mapi.dll',
                r'bin\monetdb5.dll',
+               r'bin\monetdbsql.dll',
                r'bin\stream.dll',
                vcpkg.format(r'bin\libiconv.dll'),
                vcpkg.format(r'bin\bz2.dll'),
@@ -166,18 +167,19 @@ def main():
     id = comp(features, id, 16,
               [r'lib\monetdb5\microbenchmark.mal'])
     id = comp(features, id, 16,
-              [r'lib\monetdb5\{}'.format(x) for x in sorted(filter(lambda x: x.startswith('lib_') and x.endswith('.dll') and ('geom' not in x) and ('pyapi' not in x) and ('opt_sql_append' not in x), os.listdir(os.path.join(sys.argv[3], 'lib', 'monetdb5'))))])
+              [r'lib\monetdb5\{}'.format(x) for x in sorted(filter(lambda x: x.startswith('_') and x.endswith('.dll') and ('geom' not in x) and ('pyapi' not in x) and ('opt_sql_append' not in x), os.listdir(os.path.join(sys.argv[3], 'lib', 'monetdb5'))))])
     id = comp(debug, id, 16,
-              [r'lib\monetdb5\{}'.format(x) for x in sorted(filter(lambda x: x.startswith('lib_') and x.endswith('.pdb') and ('geom' not in x) and ('opt_sql_append' not in x), os.listdir(os.path.join(sys.argv[3], 'lib', 'monetdb5'))))])
+              [r'lib\monetdb5\{}'.format(x) for x in sorted(filter(lambda x: x.startswith('_') and x.endswith('.pdb') and ('geom' not in x) and ('opt_sql_append' not in x), os.listdir(os.path.join(sys.argv[3], 'lib', 'monetdb5'))))])
     id = comp(geom, id, 16,
-              [r'lib\monetdb5\{}'.format(x) for x in sorted(filter(lambda x: x.startswith('lib_') and (x.endswith('.dll') or x.endswith('.pdb')) and ('geom' in x), os.listdir(os.path.join(sys.argv[3], 'lib', 'monetdb5'))))])
+              [r'lib\monetdb5\{}'.format(x) for x in sorted(filter(lambda x: x.startswith('_') and (x.endswith('.dll') or x.endswith('.pdb')) and ('geom' in x), os.listdir(os.path.join(sys.argv[3], 'lib', 'monetdb5'))))])
     id = comp(pyapi3, id, 16,
               [r'lib\monetdb5\_pyapi3.dll'])
     print(r'              </Directory>')
     id = comp(extend, id, 14,
-              [r'lib\gdk.lib',
+              [r'lib\bat.lib',
                r'lib\mapi.lib',
                r'lib\monetdb5.lib',
+               r'lib\monetdbsql.lib',
                r'lib\stream.lib',
                vcpkg.format(r'lib\libiconv.lib'),
                vcpkg.format(r'lib\bz2.lib'),

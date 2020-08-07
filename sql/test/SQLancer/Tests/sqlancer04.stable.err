@@ -46,6 +46,15 @@ MAPI  = (monetdb) /var/tmp/mtest-633982/.s.monetdb.32164
 QUERY = with sub0 as (select 4 from t0) select 1 from t0 natural join sub0; --error, no columns of tables 't0' and 'sub0' match
 ERROR = !JOIN: no columns of tables 't0' and 'sub0' match
 CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-708102/.s.monetdb.30216
+QUERY = select max(coalesce(interval '5' month, interval '2' month)) from t1 order by t1.c1 desc nulls last; --error, cannot use non GROUP BY column 't1.c1' in query results without an aggregate function
+ERROR = !SELECT: cannot use non GROUP BY column 't1.c1' in query results without an aggregate function
+CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-708102/.s.monetdb.30216
+QUERY = select sum(coalesce(coalesce(interval '5' month, interval '3' month), interval '2' month, coalesce(abs(interval '5' month), interval '2' month, 
+        case timestamp '1970-01-15 22:17:17' when timestamp '1970-01-03 22:17:36' then interval '5' month else interval '5' month end, interval '3' month), interval '3' month)) from t1 order by t1.c1 desc nulls last;
+ERROR = !SELECT: cannot use non GROUP BY column 't1.c1' in query results without an aggregate function
+CODE  = 42000
 
 # 09:44:50 >  
 # 09:44:50 >  "Done."
