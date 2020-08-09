@@ -147,6 +147,8 @@ static mel_func optimizer_init_funcs[] = {
  pattern("inspect", "optimizer_stats", OPTstatistics, false, "Get optimizer use statistics, i.e. calls and total time", args(3,3, batarg("",str),batarg("",int),batarg("",lng))),
  pattern("optimizer", "pushselect", OPTwrapper, false, "", args(1,1, arg("",str))),
  pattern("optimizer", "pushselect", OPTwrapper, false, "Push selects down projections", args(1,3, arg("",str),arg("mod",str),arg("fcn",str))),
+ pattern("optimizer", "pushproject", OPTwrapper, false, "", args(1,1, arg("",str))),
+ pattern("optimizer", "pushproject", OPTwrapper, false, "Push selects down projections", args(1,3, arg("",str),arg("mod",str),arg("fcn",str))),
  pattern("optimizer", "oltp", OPTwrapper, false, "", args(1,1, arg("",str))),
  pattern("optimizer", "oltp", OPTwrapper, false, "Inject the OLTP locking primitives.", args(1,3, arg("",str),arg("mod",str),arg("fcn",str))),
  pattern("optimizer", "wlc", OPTwrapper, false, "", args(1,1, arg("",str))),

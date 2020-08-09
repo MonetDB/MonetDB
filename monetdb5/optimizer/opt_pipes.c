@@ -86,6 +86,7 @@ static struct PIPELINES {
 	 "optimizer.generator();"
 	 "optimizer.profiler();"
 	 "optimizer.candidates();"
+	 "optimizer.pushproject();"
 	 "optimizer.deadcode();"
 	 "optimizer.postfix();"
 //	 "optimizer.jit();" awaiting the new batcalc api
@@ -122,6 +123,7 @@ static struct PIPELINES {
 	 "optimizer.generator();"
 	 "optimizer.profiler();"
 	 "optimizer.candidates();"
+	 "optimizer.pushproject();"
 	 "optimizer.deadcode();"
 	 "optimizer.postfix();"
 //	 "optimizer.jit();" awaiting the new batcalc api
@@ -159,6 +161,7 @@ static struct PIPELINES {
 	 "optimizer.volcano();"
 	 "optimizer.profiler();"
 	 "optimizer.candidates();"
+	 "optimizer.pushproject();"
 	 "optimizer.deadcode();"
 	 "optimizer.postfix();"
 //	 "optimizer.jit();" awaiting the new batcalc api
@@ -200,6 +203,7 @@ static struct PIPELINES {
 	 "optimizer.generator();"
 	 "optimizer.profiler();"
 	 "optimizer.candidates();"
+	 "optimizer.pushproject();"
 	 "optimizer.deadcode();"
 	 "optimizer.postfix();"
 //	 "optimizer.jit();" awaiting the new batcalc api
@@ -240,6 +244,7 @@ static struct PIPELINES {
 	 "optimizer.generator();"
 	 "optimizer.profiler();"
 	 "optimizer.candidates();"
+	 "optimizer.pushproject();"
 	 "optimizer.deadcode();"
 	 "optimizer.postfix();"
 //	 "optimizer.jit();" awaiting the new batcalc api

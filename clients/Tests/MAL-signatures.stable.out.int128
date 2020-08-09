@@ -11181,6 +11181,8 @@ stdout of test 'MAL-signatures` in directory 'clients` itself:
 [ "optimizer",	"profiler",	"pattern optimizer.profiler(X_1:str, X_2:str):str ",	"OPTwrapper;",	""	]
 [ "optimizer",	"projectionpath",	"pattern optimizer.projectionpath():str ",	"OPTwrapper;",	""	]
 [ "optimizer",	"projectionpath",	"pattern optimizer.projectionpath(X_1:str, X_2:str):str ",	"OPTwrapper;",	""	]
+[ "optimizer",	"pushproject",	"pattern optimizer.pushproject():str ",	"OPTwrapper;",	""	]
+[ "optimizer",	"pushproject",	"pattern optimizer.pushproject(X_1:str, X_2:str):str ",	"OPTwrapper;",	""	]
 [ "optimizer",	"pushselect",	"pattern optimizer.pushselect():str ",	"OPTwrapper;",	""	]
 [ "optimizer",	"pushselect",	"pattern optimizer.pushselect(X_1:str, X_2:str):str ",	"OPTwrapper;",	""	]
 [ "optimizer",	"querylog",	"pattern optimizer.querylog():str ",	"OPTwrapper;",	""	]

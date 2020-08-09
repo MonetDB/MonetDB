@@ -128,10 +128,10 @@ stdout of test 'sys_queue_expand` in directory 'sql/test/sysmon` itself:
 % %2,	username,	status,	query # name
 % tinyint,	clob,	clob,	clob # type
 % 1,	7,	8,	51 # length
-[ 3,	"monetdb",	"running",	"prepare select 2;"	]
+[ 3,	"monetdb",	"finished",	"prepare select 2;"	]
 [ 3,	"monetdb",	"finished",	"select 2, username, status, query from sys.queue();"	]
 [ 3,	"monetdb",	"running",	"prepare select 0;"	]
-[ 3,	"monetdb",	"finished",	"exec 3();"	]
+[ 3,	"monetdb",	"running",	"exec 3();"	]
 [ 3,	"monetdb",	"running",	"prepare select 3;"	]
 [ 3,	"monetdb",	"running",	"prepare select 1;"	]
 [ 3,	"monetdb",	"running",	"select 3, username, status, query from sys.queue();"	]
@@ -148,11 +148,10 @@ stdout of test 'sys_queue_expand` in directory 'sql/test/sysmon` itself:
 % 1,	7,	8,	51 # length
 [ 4,	"monetdb",	"running",	"prepare select 0;"	]
 [ 4,	"monetdb",	"finished",	"exec 3();"	]
-[ 4,	"monetdb",	"running",	"prepare select 3;"	]
+[ 4,	"monetdb",	"finished",	"prepare select 3;"	]
 [ 4,	"monetdb",	"running",	"prepare select 1;"	]
-[ 4,	"monetdb",	"finished",	"select 3, username, status, query from sys.queue();"	]
-[ 4,	"monetdb",	"finished",	"exec 4();"	]
-[ 4,	"monetdb",	"running",	"prepare select 2;"	]
+[ 4,	"monetdb",	"running",	"select 3, username, status, query from sys.queue();"	]
+[ 4,	"monetdb",	"running",	"exec 4();"	]
 [ 4,	"monetdb",	"running",	"prepare select 4;"	]
 [ 4,	"monetdb",	"running",	"select 4, username, status, query from sys.queue();"	]
 #exec 5();
@@ -178,33 +177,33 @@ stdout of test 'sys_queue_expand` in directory 'sql/test/sysmon` itself:
 % %2,	username,	status,	query # name
 % tinyint,	clob,	clob,	clob # type
 % 1,	7,	8,	51 # length
+[ 7,	"monetdb",	"finished",	"select 4, username, status, query from sys.queue();"	]
+[ 7,	"monetdb",	"running",	"exec 5();"	]
 [ 7,	"monetdb",	"running",	"prepare select 5;"	]
-[ 7,	"monetdb",	"finished",	"exec 6();"	]
-[ 7,	"monetdb",	"running",	"prepare select 0;"	]
+[ 7,	"monetdb",	"running",	"exec 6();"	]
 [ 7,	"monetdb",	"running",	"prepare select 6;"	]
-[ 7,	"monetdb",	"running",	"prepare select 3;"	]
-[ 7,	"monetdb",	"running",	"prepare select 1;"	]
+[ 7,	"monetdb",	"running",	"prepare select 0;"	]
 [ 7,	"monetdb",	"finished",	"exec 7();"	]
 [ 7,	"monetdb",	"running",	"prepare select 7;"	]
-[ 7,	"monetdb",	"running",	"prepare select 2;"	]
-[ 7,	"monetdb",	"running",	"prepare select 4;"	]
+[ 7,	"monetdb",	"running",	"prepare select 1;"	]
 [ 7,	"monetdb",	"running",	"select 7, username, status, query from sys.queue();"	]
+[ 7,	"monetdb",	"running",	"exec 4();"	]
 #select 8, username, status, query from sys.queue();
 % .%2,	.%1,	.%1,	.%1 # table_name
 % %2,	username,	status,	query # name
 % tinyint,	clob,	clob,	clob # type
 % 1,	7,	8,	51 # length
-[ 8,	"monetdb",	"running",	"prepare select 0;"	]
+[ 8,	"monetdb",	"running",	"exec 5();"	]
+[ 8,	"monetdb",	"running",	"prepare select 5;"	]
+[ 8,	"monetdb",	"running",	"exec 6();"	]
 [ 8,	"monetdb",	"running",	"prepare select 6;"	]
-[ 8,	"monetdb",	"running",	"prepare select 3;"	]
-[ 8,	"monetdb",	"running",	"prepare select 1;"	]
+[ 8,	"monetdb",	"running",	"prepare select 0;"	]
 [ 8,	"monetdb",	"finished",	"exec 7();"	]
 [ 8,	"monetdb",	"running",	"prepare select 7;"	]
-[ 8,	"monetdb",	"running",	"prepare select 2;"	]
-[ 8,	"monetdb",	"running",	"prepare select 4;"	]
+[ 8,	"monetdb",	"running",	"prepare select 1;"	]
 [ 8,	"monetdb",	"finished",	"select 7, username, status, query from sys.queue();"	]
+[ 8,	"monetdb",	"running",	"exec 4();"	]
 [ 8,	"monetdb",	"running",	"select 8, username, status, query from sys.queue();"	]
-[ 8,	"monetdb",	"running",	"prepare select 5;"	]
 
 # 18:07:00 >  
 # 18:07:00 >  "Done."

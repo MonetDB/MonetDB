@@ -53,8 +53,8 @@ stdout of test 'opt_sql_append` in directory 'monetdb5/extras/mal_optimizer_temp
 % .%1 # table_name
 % def # name
 % clob # type
-% 580 # length
-[ "optimizer.inline();optimizer.remap();optimizer.costModel();optimizer.coercions();optimizer.aliases();optimizer.evaluate();optimizer.emptybind();optimizer.pushselect();optimizer.aliases();optimizer.mergetable();optimizer.deadcode();optimizer.aliases();optimizer.constants();optimizer.commonTerms();optimizer.projectionpath();optimizer.deadcode();optimizer.reorder();optimizer.matpack();optimizer.querylog();optimizer.multiplex();optimizer.generator();optimizer.profiler();optimizer.candidates();optimizer.deadcode();optimizer.postfix();optimizer.wlc();optimizer.garbageCollector();"	]
+% 604 # length
+[ "optimizer.inline();optimizer.remap();optimizer.costModel();optimizer.coercions();optimizer.aliases();optimizer.evaluate();optimizer.emptybind();optimizer.pushselect();optimizer.aliases();optimizer.mergetable();optimizer.deadcode();optimizer.aliases();optimizer.constants();optimizer.commonTerms();optimizer.projectionpath();optimizer.deadcode();optimizer.reorder();optimizer.matpack();optimizer.querylog();optimizer.multiplex();optimizer.generator();optimizer.profiler();optimizer.candidates();optimizer.pushproject();optimizer.deadcode();optimizer.postfix();optimizer.wlc();optimizer.garbageCollector();"	]
 #explain copy into ttt from '/tmp/xyz';
 % .explain # table_name
 % mal # name
@@ -63,7 +63,7 @@ stdout of test 'opt_sql_append` in directory 'monetdb5/extras/mal_optimizer_temp
 function user.main():void;
     X_1:void := querylog.define("explain copy into ttt from \\'/tmp/xyz\\';":str, "sequential_pipe":str, 21:int);
     X_4:int := sql.mvc();
-    (X_26:bat[:int], X_27:bat[:int], X_28:bat[:int]) := sql.copy_from(0x7f92641ac1e0:ptr, "|":str, "\n":str, nil:str, "null":str, "/tmp/xyz":str, -1:lng, 0:lng, 0:int, 0:int, nil:str, 0:int);
+    (X_26:bat[:int], X_27:bat[:int], X_28:bat[:int]) := sql.copy_from(0x7f072c1d9fa0:ptr, "|":str, "\n":str, nil:str, "null":str, "/tmp/xyz":str, -1:lng, 0:lng, 0:int, 0:int, nil:str, 0:int);
     X_30:int := sql.append(X_4:int, "sys":str, "ttt":str, "averylongcolumnnametomakeitlargeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee":str, X_26:bat[:int]);
     X_35:int := sql.append(X_30:int, "sys":str, "ttt":str, "b":str, X_27:bat[:int]);
     X_38:int := sql.append(X_35:int, "sys":str, "ttt":str, "c":str, X_28:bat[:int]);
@@ -113,8 +113,9 @@ end user.main;
 % .%1 # table_name
 % def # name
 % clob # type
-% 603 # length
-[ "optimizer.inline();optimizer.remap();optimizer.costModel();optimizer.coercions();optimizer.aliases();optimizer.evaluate();optimizer.emptybind();optimizer.pushselect();optimizer.aliases();optimizer.mergetable();optimizer.deadcode();optimizer.aliases();optimizer.constants();optimizer.commonTerms();optimizer.projectionpath();optimizer.deadcode();optimizer.reorder();optimizer.matpack();optimizer.querylog();optimizer.multiplex();optimizer.generator();optimizer.profiler();optimizer.candidates();optimizer.deadcode();optimizer.postfix();optimizer.wlc();optimizer.sql_append();optimizer.garbageCollector();"	]
+% 627 # length
+[ "optimizer.inline();optimizer.remap();optimizer.costModel();optimizer.coercions();optimizer.aliases();optimizer.evaluate();optimizer.emptybind();optimizer.pushselect();optimizer.aliases();optimizer.mergetable();optimizer.deadcode();optimizer.aliases();optimizer.constants();optimizer.commonTerms();optimizer.projectionpath();optimizer.deadcode();optimizer.reorder();optimizer.matpack();optimizer.querylog();optimizer.multiplex();optimizer.generator();optimizer.profiler();optimizer.candidates();optimizer.pushproject();optimizer.deadcode();optimizer.postfix();optimizer.wlc();optimizer.sql_append();optimizer.garbageCollector();"	]
+#rollback;
 #explain copy into ttt from '/tmp/xyz';
 % .explain # table_name
 % mal # name
@@ -123,7 +124,7 @@ end user.main;
 function user.main():void;
     X_1:void := querylog.define("explain copy into ttt from \\'/tmp/xyz\\';":str, "user_0":str, 21:int);
     X_4:int := sql.mvc();
-    (X_26:bat[:int], X_27:bat[:int], X_28:bat[:int]) := sql.copy_from(0x7f92641ac1e0:ptr, "|":str, "\n":str, nil:str, "null":str, "/tmp/xyz":str, -1:lng, 0:lng, 0:int, 0:int, nil:str, 0:int);
+    (X_26:bat[:int], X_27:bat[:int], X_28:bat[:int]) := sql.copy_from(0x7f072c1d9fa0:ptr, "|":str, "\n":str, nil:str, "null":str, "/tmp/xyz":str, -1:lng, 0:lng, 0:int, 0:int, nil:str, 0:int);
     X_30:int := sql.append(X_4:int, "sys":str, "ttt":str, "averylongcolumnnametomakeitlargeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee":str, X_26:bat[:int]);
     X_35:int := sql.append(X_30:int, "sys":str, "ttt":str, "b":str, X_27:bat[:int]);
     X_40:lng := aggr.count(X_28:bat[:int]);

@@ -261,6 +261,14 @@ pattern optimizer.pushselect(mod:str, fcn:str):str
 address OPTwrapper
 comment "Push selects down projections";
 
+#opt_pushproject.mal
+
+pattern optimizer.pushproject():str
+address OPTwrapper;
+pattern optimizer.pushproject(mod:str, fcn:str):str
+address OPTwrapper
+comment "Push selects down projections";
+
 #opt_oltp.mal
 
 pattern optimizer.oltp():str

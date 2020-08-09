@@ -34,7 +34,7 @@ stdout of test 'duplicates-not-eliminated-long-CASE-stmt.Bug-6697` in directory 
 % 1023 # length
 function user.main():void;
     X_1:void := querylog.define("explain select sys.timestamp_to_str(case when task0.\"sys_created_on\" >= \\'1999-10-31 09:00:00\\' and task0.\"sys_created_on\" < \\'2000-04-02 10:00:00\\' then task0.\"sys_created_on\" + interval \\'-28800\\' second when task0.\"sys_created_on\" >= \\'2000-04-02 10:00:00\\' and task0.\"sys_created_on\" < \\'2000-10-29 09:00:00\\' then task0.\"sys_created_on\" + interval \\'-25200\\' second when task0.\"sys_created_on\" >= \\'2000-10-29 09:00:00\\' and task0.\"sys_created_on\" < \\'2001-04-01 10:00:00\\' then task0.\"sys_created_on\" + interval \\'-28800\\' second when task0.\"sys_created_on\" >= \\'2001-04-01 10:00:00\\' and task0.\"sys_created_on\" < \\'2001-10-28 09:00:00\\' then task0.\"sys_created_on\" + interval \\'-25200\\' second when task0.\"sys_created_on\" >= \\'2001-10-28 09:00:00\\' and task0.\"sys_created_on\" < \\'2002-04-07 10:00:00\\' then task0.\"sys_created_on\" + interval \\'-28800\\' second when task0.\"sys_created_on\" >= \\'2002-04-07 10:00:00\\' and t
-barrier X_1246:bit := language.dataflow();
+barrier X_1247:bit := language.dataflow();
     X_43:bat[:str] := bat.new(nil:str);
     X_56:bat[:timestamp] := algebra.project(X_43:bat[:str], nil:timestamp);
     X_45:bat[:timestamp] := bat.new(nil:timestamp);
@@ -648,7 +648,7 @@ barrier X_1246:bit := language.dataflow();
     language.pass(X_1045:bat[:bit]);
     language.pass(X_61:bat[:timestamp]);
     language.pass(C_1067:bat[:oid]);
-exit X_1246:bit;
+exit X_1247:bit;
     sql.resultSet(X_1091:bat[:str], X_1092:bat[:str], X_1093:bat[:str], X_1094:bat[:int], X_1094:bat[:int], X_1088:bat[:str]);
 end user.main;
 # optimizer.mitosis()

@@ -43,6 +43,7 @@ target_sources(optimizer
   opt_reorder.c opt_reorder.h
   opt_support.c opt_support.h
   opt_pushselect.c opt_pushselect.h
+  opt_pushproject.c opt_pushproject.h
   opt_profiler.c opt_profiler.h
   opt_postfix.c opt_postfix.h
   opt_volcano.c opt_volcano.h
