@@ -12,7 +12,7 @@ if(WIN32)
     license.rtf
     monetdb.ico
     website.html
-    DESTINATION ${CMAKE_INSTALL_PREFIX}
+    DESTINATION ${CMAKE_INSTALL_DATADIR}
     COMPONENT server)
 endif()
 

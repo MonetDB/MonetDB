@@ -6,11 +6,15 @@
 # Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
 #]]
 
+# These files have to be installed in the root of the project. But you
+# cannot use the CMAKE_INSTALL_PREFIX variable, because the WIX
+# generator does not allow for absolute install paths. That is why we use
+# the "." as a relative path.
 if(WIN32)
   install(FILES
     mclient.bat
     msqldump.bat
-    DESTINATION ${CMAKE_INSTALL_PREFIX}
+    DESTINATION "."
     COMPONENT server)
 endif()
 

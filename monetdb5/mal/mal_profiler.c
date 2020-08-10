@@ -186,7 +186,10 @@ renderProfilerEvent(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int
     	}
 	logadd(",\"state\":\"%s\"", start?"start":"done");
 	logadd(",\"usec\":"LLFMT, pci->ticks);
-
+	const char *algo = MT_thread_getalgorithm();
+	if (algo) {
+		logadd(",\"algorithm\":\"%s\"", algo);
+	}
 /* EXAMPLE MAL statement argument decomposition
  * The eventparser may assume this layout for ease of parsing
 {
