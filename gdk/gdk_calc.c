@@ -908,7 +908,7 @@ VARcalcsign(ValPtr ret, const ValRecord *v)
 		const TYPE *restrict src = (const TYPE *) Tloc(b, 0);	\
 		for (i = 0; i < ci.ncand; i++) {			\
 			x = canditer_next(&ci) - b->hseqbase;		\
-			dst[i] = (bit) (is_##TYPE##_nil(src[i]) ^ NOTNIL); \
+			dst[i] = (bit) (is_##TYPE##_nil(src[x]) ^ NOTNIL); \
 		}							\
 	} while (0)
 

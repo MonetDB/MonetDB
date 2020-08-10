@@ -172,3 +172,16 @@ kvm library
 ===========
 
 The kvm library is only used on \*bsd. We already remove the header detection from cmakelists.txt: "find_path(HAVE_KVM_H "kvm.h")".
+
+WIX packages
+============
+
+You need to install the wixtoolset (with chocolaty): ::
+
+  choco install wixtoolset
+
+Then you can run the following command from the build directory: ::
+
+  "C:\Program Files (x86)\Microsoft Visual Studio\2017\Community\Common7\IDE\CommonExtensions\Microsoft\CMake\CMake\bin\CPack" -G WIX -C Debug --config CPackConfig.cmake
+
+This will create the "msi" file.

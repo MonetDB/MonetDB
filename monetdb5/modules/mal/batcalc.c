@@ -1076,7 +1076,7 @@ CMDconvert_bit(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	(void) cntxt;
 	(void) mb;
 
-	return CMDconvertbat(stk, pci, TYPE_bit, 0);
+	return CMDconvertbat(stk, pci, TYPE_bit, false);
 }
 
 static str
@@ -1085,7 +1085,7 @@ CMDconvertsignal_bit(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	(void) cntxt;
 	(void) mb;
 
-	return CMDconvertbat(stk, pci, TYPE_bit, 1);
+	return CMDconvertbat(stk, pci, TYPE_bit, true);
 }
 
 static str
@@ -1094,7 +1094,7 @@ CMDconvert_bte(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	(void) cntxt;
 	(void) mb;
 
-	return CMDconvertbat(stk, pci, TYPE_bte, 0);
+	return CMDconvertbat(stk, pci, TYPE_bte, false);
 }
 
 static str
@@ -1103,7 +1103,7 @@ CMDconvertsignal_bte(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	(void) cntxt;
 	(void) mb;
 
-	return CMDconvertbat(stk, pci, TYPE_bte, 1);
+	return CMDconvertbat(stk, pci, TYPE_bte, true);
 }
 
 static str
@@ -1112,7 +1112,7 @@ CMDconvert_sht(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	(void) cntxt;
 	(void) mb;
 
-	return CMDconvertbat(stk, pci, TYPE_sht, 0);
+	return CMDconvertbat(stk, pci, TYPE_sht, false);
 }
 
 static str
@@ -1121,7 +1121,7 @@ CMDconvertsignal_sht(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	(void) cntxt;
 	(void) mb;
 
-	return CMDconvertbat(stk, pci, TYPE_sht, 1);
+	return CMDconvertbat(stk, pci, TYPE_sht, true);
 }
 
 static str
@@ -1130,7 +1130,7 @@ CMDconvert_int(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	(void) cntxt;
 	(void) mb;
 
-	return CMDconvertbat(stk, pci, TYPE_int, 0);
+	return CMDconvertbat(stk, pci, TYPE_int, false);
 }
 
 static str
@@ -1139,7 +1139,7 @@ CMDconvertsignal_int(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	(void) cntxt;
 	(void) mb;
 
-	return CMDconvertbat(stk, pci, TYPE_int, 1);
+	return CMDconvertbat(stk, pci, TYPE_int, true);
 }
 
 static str
@@ -1148,7 +1148,7 @@ CMDconvert_lng(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	(void) cntxt;
 	(void) mb;
 
-	return CMDconvertbat(stk, pci, TYPE_lng, 0);
+	return CMDconvertbat(stk, pci, TYPE_lng, false);
 }
 
 static str
@@ -1157,7 +1157,7 @@ CMDconvertsignal_lng(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	(void) cntxt;
 	(void) mb;
 
-	return CMDconvertbat(stk, pci, TYPE_lng, 1);
+	return CMDconvertbat(stk, pci, TYPE_lng, true);
 }
 
 #ifdef HAVE_HGE
@@ -1168,7 +1168,7 @@ CMDconvert_hge(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	(void) cntxt;
 	(void) mb;
 
-	return CMDconvertbat(stk, pci, TYPE_hge, 0);
+	return CMDconvertbat(stk, pci, TYPE_hge, false);
 }
 
 static str
@@ -1177,7 +1177,7 @@ CMDconvertsignal_hge(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	(void) cntxt;
 	(void) mb;
 
-	return CMDconvertbat(stk, pci, TYPE_hge, 1);
+	return CMDconvertbat(stk, pci, TYPE_hge, true);
 }
 #endif
 
@@ -1187,7 +1187,7 @@ CMDconvert_flt(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	(void) cntxt;
 	(void) mb;
 
-	return CMDconvertbat(stk, pci, TYPE_flt, 0);
+	return CMDconvertbat(stk, pci, TYPE_flt, false);
 }
 
 static str
@@ -1196,7 +1196,7 @@ CMDconvertsignal_flt(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	(void) cntxt;
 	(void) mb;
 
-	return CMDconvertbat(stk, pci, TYPE_flt, 1);
+	return CMDconvertbat(stk, pci, TYPE_flt, true);
 }
 
 static str
@@ -1205,7 +1205,7 @@ CMDconvert_dbl(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	(void) cntxt;
 	(void) mb;
 
-	return CMDconvertbat(stk, pci, TYPE_dbl, 0);
+	return CMDconvertbat(stk, pci, TYPE_dbl, false);
 }
 
 static str
@@ -1214,7 +1214,7 @@ CMDconvertsignal_dbl(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	(void) cntxt;
 	(void) mb;
 
-	return CMDconvertbat(stk, pci, TYPE_dbl, 1);
+	return CMDconvertbat(stk, pci, TYPE_dbl, true);
 }
 
 static str
@@ -1223,7 +1223,7 @@ CMDconvert_oid(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	(void) cntxt;
 	(void) mb;
 
-	return CMDconvertbat(stk, pci, TYPE_oid, 0);
+	return CMDconvertbat(stk, pci, TYPE_oid, false);
 }
 
 static str
@@ -1232,7 +1232,7 @@ CMDconvertsignal_oid(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	(void) cntxt;
 	(void) mb;
 
-	return CMDconvertbat(stk, pci, TYPE_oid, 1);
+	return CMDconvertbat(stk, pci, TYPE_oid, true);
 }
 
 static str
@@ -1241,7 +1241,7 @@ CMDconvert_str(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	(void) cntxt;
 	(void) mb;
 
-	return CMDconvertbat(stk, pci, TYPE_str, 0);
+	return CMDconvertbat(stk, pci, TYPE_str, false);
 }
 
 static str
@@ -1250,7 +1250,7 @@ CMDconvertsignal_str(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	(void) cntxt;
 	(void) mb;
 
-	return CMDconvertbat(stk, pci, TYPE_str, 1);
+	return CMDconvertbat(stk, pci, TYPE_str, true);
 }
 
 static str
@@ -2053,8 +2053,8 @@ batcalc_init(void)
 #endif
 	for(int t = 0; t<typeopslen; t++) {
 		/* from any 2 string */
+		mel_func_arg ret = { .type = typeops[t].type, .isbat =1 };
 		if (strcmp(typeops[t].name, "str")==0) {
-			mel_func_arg ret = { .type = typeops[t].type, .isbat =1 };
 			mel_func_arg arg = { .type = TYPE_any, .isbat =1 };
 
 			err += melFunction(false, "batcalc", typeops[t].name, typeops[t].fcn, typeops[t].fname, false, "", 1, 2, ret, arg);
@@ -2063,13 +2063,12 @@ batcalc_init(void)
 			err += melFunction(false, "batcalc", typeops[t].name_ne, typeops[t].fcn_ne, typeops[t].fname_ne, false, "", 1, 3, ret, arg, cand);
 		} else {
 		    for(int p = 0; p<typeopslen; p++) {
-			mel_func_arg ret = { .type = typeops[t].type, .isbat =1 };
-			mel_func_arg arg = { .type = typeops[p].type, .isbat =1 };
+				mel_func_arg arg = { .type = typeops[p].type, .isbat =1 };
 
-			err += melFunction(false, "batcalc", typeops[t].name, typeops[t].fcn, typeops[t].fname, false, "", 1, 2, ret, arg);
-			err += melFunction(false, "batcalc", typeops[t].name, typeops[t].fcn, typeops[t].fname, false, "", 1, 3, ret, arg, cand);
-			err += melFunction(false, "batcalc", typeops[t].name_ne, typeops[t].fcn_ne, typeops[t].fname_ne, false, "", 1, 2, ret, arg);
-			err += melFunction(false, "batcalc", typeops[t].name_ne, typeops[t].fcn_ne, typeops[t].fname_ne, false, "", 1, 3, ret, arg, cand);
+				err += melFunction(false, "batcalc", typeops[t].name, typeops[t].fcn, typeops[t].fname, false, "", 1, 2, ret, arg);
+				err += melFunction(false, "batcalc", typeops[t].name, typeops[t].fcn, typeops[t].fname, false, "", 1, 3, ret, arg, cand);
+				err += melFunction(false, "batcalc", typeops[t].name_ne, typeops[t].fcn_ne, typeops[t].fname_ne, false, "", 1, 2, ret, arg);
+				err += melFunction(false, "batcalc", typeops[t].name_ne, typeops[t].fcn_ne, typeops[t].fname_ne, false, "", 1, 3, ret, arg, cand);
 		    }
 		}
 	}

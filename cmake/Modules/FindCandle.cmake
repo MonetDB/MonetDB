@@ -6,11 +6,15 @@
 # Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
 #]]
 
-if(WIN32)
-  install(FILES
-    M5server.bat
-    DESTINATION "."
-    COMPONENT server)
-endif()
+find_program(CANDLE_EXECUTABLE NAMES candle
+  DOC "Create wix packages"
+)
 
-# vim: set ts=2:sw=2:et
+include(FindPackageHandleStandardArgs)
+
+find_package_handle_standard_args(Candle
+  DEFAULT_MSG
+  CANDLE_EXECUTABLE
+)
+
+mark_as_advanced(CANDLE_EXECUTABLE)
