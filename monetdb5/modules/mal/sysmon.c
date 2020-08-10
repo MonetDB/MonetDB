@@ -29,7 +29,7 @@ SYSMONstatistics(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	bat *m = getArgReference_bat(stk,pci,5);
 	bat *q = getArgReference_bat(stk,pci,6);
 	size_t i;
-	timestamp tsn;
+	timestamp tsn = timestamp_nil;
 	str msg = MAL_SUCCEED;
 
 	(void) mb;
@@ -70,25 +70,38 @@ SYSMONstatistics(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			goto bailout;
 		}
 		/* convert number of seconds into a timestamp */
-		tsn = timestamp_fromtime(USRstats[i].started);
-		if (is_timestamp_nil(tsn)) {
-			msg = createException(MAL, "SYSMONstatistics", SQLSTATE(22003) "failed to convert start time");
-			goto bailout;
-		}
-		if (BUNappend(started, &tsn, false) != GDK_SUCCEED){
-			msg = createException(MAL, "SYSMONstatistics", "Failed to append 'started'");
-			goto bailout;
+		if (USRstats[i].maxquery != 0){
+			tsn = timestamp_fromtime(USRstats[i].started);
+			if (is_timestamp_nil(tsn)) {
+				msg = createException(MAL, "SYSMONstatistics", SQLSTATE(22003) "failed to convert start time");
+				goto bailout;
+			}
+			if (BUNappend(started, &tsn, false) != GDK_SUCCEED){
+				msg = createException(MAL, "SYSMONstatistics", "Failed to append 'started'");
+				goto bailout;
+			}
+
+			tsn = timestamp_fromtime(USRstats[i].finished);
+			if (is_timestamp_nil(tsn)) {
+				msg = createException(MAL, "SYSMONstatistics", SQLSTATE(22003) "failed to convert finish time");
+				goto bailout;
+			}
+			if (BUNappend(finished, &tsn, false) != GDK_SUCCEED){
+				msg = createException(MAL, "SYSMONstatistics", "Failed to append 'finished'");
+				goto bailout;
+			}
+		} else {
+			tsn = timestamp_nil;
+			if (BUNappend(started, &tsn, false) != GDK_SUCCEED){
+				msg = createException(MAL, "SYSMONstatistics", "Failed to append 'started'");
+				goto bailout;
+			}
+			if (BUNappend(finished, &tsn, false) != GDK_SUCCEED){
+				msg = createException(MAL, "SYSMONstatistics", "Failed to append 'finished'");
+				goto bailout;
+			}
 		}
 
-		tsn = timestamp_fromtime(USRstats[i].finished);
-		if (is_timestamp_nil(tsn)) {
-			msg = createException(MAL, "SYSMONstatistics", SQLSTATE(22003) "failed to convert finish time");
-			goto bailout;
-		}
-		if (BUNappend(finished, &tsn, false) != GDK_SUCCEED){
-			msg = createException(MAL, "SYSMONstatistics", "Failed to append 'finished'");
-			goto bailout;
-		}
 		if (BUNappend(maxticks, &USRstats[i].maxticks, false) != GDK_SUCCEED){
 			msg = createException(MAL, "SYSMONstatistics", "Failed to append 'maxticks'");
 			goto bailout;
