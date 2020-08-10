@@ -4,7 +4,6 @@ import os
 users = ['user1', 'user2', 'user3', 'user4', 'user5', 'user6', 'user7']
 try:
     mdbdbh = pymonetdb.connect(database = os.environ['TSTDB'], port = int(os.environ['MAPIPORT']), hostname = os.environ['MAPIHOST'], autocommit=True)
-    #mdbdbh = pymonetdb.connect(database = 'usrstat', autocommit=True)
     mdbcursor = mdbdbh.cursor()
     rowcnt = mdbcursor.execute('create procedure sleep(i int) external name alarm.sleep')
     rowcnt = mdbcursor.execute('call sys.sleep(1000)')
@@ -18,7 +17,6 @@ try:
 
         try:
             usrdbh = pymonetdb.connect(database = os.environ['TSTDB'], port = int(os.environ['MAPIPORT']), hostname = os.environ['MAPIHOST'], username=usr, password=usr, autocommit=True)
-            #usrdbh = pymonetdb.connect(database = 'usrstat', username=usr, password=usr, autocommit=True)
             usrcursor = usrdbh.cursor()
             usrcursor.execute('select current_user as myname')
             usrcursor.execute('call sys.sleep(1000)')
@@ -52,14 +50,3 @@ finally:
         print(e)
     mdbdbh.close()
 
-
-
-
-#import pymonetdb
-#import os
-#dbh = pymonetdb.connect(database = 'usrstat')
-#cur = dbh.cursor()
-#cur.execute('create user "user1" with password \'user1\' name \'user1\' schema "sys"')
-#dbh = pymonetdb.connect(database = 'usrstat', username='user1', password='user1')
-#cur = dbh.cursor()
-#cur.execute('select current_user')
