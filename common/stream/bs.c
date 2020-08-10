@@ -362,6 +362,7 @@ block_stream(stream *s)
 	ns->read = bs_read;
 	ns->write = bs_write;
 	ns->close = bs_close;
+	ns->destroy = bs_destroy;
 	ns->stream_data.p = (void *) b;
 
 	return ns;
