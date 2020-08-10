@@ -2049,8 +2049,8 @@ batcalc_init(void)
 #endif
 	for(int t = 0; t<typeopslen; t++) {
 		/* from any 2 string */
+		mel_func_arg ret = { .type = typeops[t].type, .isbat =1 };
 		if (strcmp(typeops[t].name, "str")==0) {
-			mel_func_arg ret = { .type = typeops[t].type, .isbat =1 };
 			mel_func_arg arg = { .type = TYPE_any, .isbat =1 };
 
 			err += melFunction(false, "batcalc", typeops[t].name, typeops[t].fcn, typeops[t].fname, false, "", 1, 2, ret, arg);
@@ -2059,13 +2059,12 @@ batcalc_init(void)
 			err += melFunction(false, "batcalc", typeops[t].name_ne, typeops[t].fcn_ne, typeops[t].fname_ne, false, "", 1, 3, ret, arg, cand);
 		} else {
 		    for(int p = 0; p<typeopslen; p++) {
-			mel_func_arg ret = { .type = typeops[t].type, .isbat =1 };
-			mel_func_arg arg = { .type = typeops[p].type, .isbat =1 };
+				mel_func_arg arg = { .type = typeops[p].type, .isbat =1 };
 
-			err += melFunction(false, "batcalc", typeops[t].name, typeops[t].fcn, typeops[t].fname, false, "", 1, 2, ret, arg);
-			err += melFunction(false, "batcalc", typeops[t].name, typeops[t].fcn, typeops[t].fname, false, "", 1, 3, ret, arg, cand);
-			err += melFunction(false, "batcalc", typeops[t].name_ne, typeops[t].fcn_ne, typeops[t].fname_ne, false, "", 1, 2, ret, arg);
-			err += melFunction(false, "batcalc", typeops[t].name_ne, typeops[t].fcn_ne, typeops[t].fname_ne, false, "", 1, 3, ret, arg, cand);
+				err += melFunction(false, "batcalc", typeops[t].name, typeops[t].fcn, typeops[t].fname, false, "", 1, 2, ret, arg);
+				err += melFunction(false, "batcalc", typeops[t].name, typeops[t].fcn, typeops[t].fname, false, "", 1, 3, ret, arg, cand);
+				err += melFunction(false, "batcalc", typeops[t].name_ne, typeops[t].fcn_ne, typeops[t].fname_ne, false, "", 1, 2, ret, arg);
+				err += melFunction(false, "batcalc", typeops[t].name_ne, typeops[t].fcn_ne, typeops[t].fname_ne, false, "", 1, 3, ret, arg, cand);
 		    }
 		}
 	}
