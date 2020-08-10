@@ -94,7 +94,7 @@ updateUserStats(Client cntxt, MalBlkPtr mb, lng ticks, time_t started, time_t fi
 	}
 	USRstats[idx].querycount++;
 	USRstats[idx].totalticks += ticks;
-	if( ticks > USRstats[idx].maxticks && query){
+	if( ticks >= USRstats[idx].maxticks && query){
 		USRstats[idx].started = started;
 		USRstats[idx].finished = finished;
 		USRstats[idx].maxticks = ticks;
