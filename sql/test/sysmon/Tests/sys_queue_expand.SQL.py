@@ -25,7 +25,7 @@ try:
     #mstdbh = pymonetdb.connect(database = 'demo', autocommit=True)
     mstcur = mstdbh.cursor()
 
-    rowcnt = mstcur.execute('select \'before\', username,status,query from sys.queue()')
+    rowcnt = mstcur.execute('select \'before\', username,status,query from sys.queue() order by status, query')
     print("Before sleep: {no}".format(no=rowcnt))
     [print(row) for row in mstcur.fetchall()]
 
@@ -35,14 +35,14 @@ try:
     [p.start() for p in jobs]
 
     time.sleep(1)
-    rowcnt = mstcur.execute('select \'during\', username,status,query from sys.queue()')
+    rowcnt = mstcur.execute('select \'during\', username,status,query from sys.queue() order by status, query')
     print("\nDuring sleep: {no}".format(no=rowcnt))
     [print(row) for row in mstcur.fetchall()]
 
     # Exit the completed processes
     [p.join() for p in jobs]
 
-    rowcnt = mstcur.execute('select \'after\', username,status,query from sys.queue()')
+    rowcnt = mstcur.execute('select \'after\', username,status,query from sys.queue() order by status, query')
     print("\nAfter sleep: {no}".format(no=rowcnt))
     [print(row) for row in mstcur.fetchall()]
 
