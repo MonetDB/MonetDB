@@ -7424,7 +7424,6 @@ stdout of test 'MAL-signatures` in directory 'clients` itself:
 [ "calc",	"sign",	"pattern calc.sign(X_1:lng):bte ",	"CMDvarSIGN;",	""	]
 [ "calc",	"sign",	"pattern calc.sign(X_1:sht):bte ",	"CMDvarSIGN;",	""	]
 [ "calc",	"str",	"pattern calc.str(X_1:any):str ",	"CMDvarCONVERT;",	""	]
-[ "calc",	"str",	"command calc.str(X_1:blob):str ",	"SQLblob_2_str;",	""	]
 [ "calc",	"str",	"pattern calc.str(X_1:int, X_2:int, X_3:int, X_4:int, X_5:any_1, X_6:int):str ",	"SQLstr_cast;",	""	]
 [ "calc",	"str",	"command calc.str(X_1:uuid):str ",	"UUIDuuid2str;",	""	]
 [ "calc",	"strings",	"command calc.strings(X_1:str):str ",	"STRstrings;",	""	]

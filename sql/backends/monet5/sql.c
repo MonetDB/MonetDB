@@ -5703,7 +5703,6 @@ static mel_func sql_init_funcs[] = {
  command("calc", "blob", str_2_blob, false, "cast to blob", args(1,2, arg("",blob),arg("v",str))),
  command("batcalc", "blob", batstr_2_blob, false, "cast to blob", args(1,2, batarg("",blob),batarg("v",str))),
  command("batcalc", "blob", batstr_2_blob_cand, false, "cast to blob", args(1,3, batarg("",blob),batarg("v",str),batarg("s",oid))),
- command("calc", "str", SQLblob_2_str, false, "cast blob to str", args(1,2, arg("",str),arg("v",blob))),
  pattern("calc", "str", SQLstr_cast, false, "cast to string and check for overflow", args(1,7, arg("",str),arg("eclass",int),arg("d1",int),arg("s1",int),arg("has_tz",int),argany("v",1),arg("digits",int))),
  pattern("batcalc", "str", SQLbatstr_cast, false, "cast to string and check for overflow", args(1,7, batarg("",str),arg("eclass",int),arg("d1",int),arg("s1",int),arg("has_tz",int),batargany("v",1),arg("digits",int))),
  pattern("batcalc", "str", SQLbatstr_cast, false, "cast to string and check for overflow", args(1,8, batarg("",str),arg("eclass",int),arg("d1",int),arg("s1",int),arg("has_tz",int),batargany("v",1),batarg("s",oid),arg("digits",int))),
