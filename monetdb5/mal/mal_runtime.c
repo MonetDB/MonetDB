@@ -113,10 +113,8 @@ dropUSRstats(void)
 	size_t i;
 	MT_lock_set(&mal_delayLock);
 	for(i = 0; i < usrstatscnt; i++){
-		if(USRstats[i].username)
-			GDKfree(USRstats[i].username);
-		if( USRstats[i].maxquery)
-			GDKfree(USRstats[i].maxquery);
+		GDKfree(USRstats[i].username);
+		GDKfree(USRstats[i].maxquery);
 		clearUSRstats(i);
 	}
 	GDKfree(USRstats);
