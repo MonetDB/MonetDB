@@ -308,6 +308,7 @@ runtimeProfileFinish(Client cntxt, MalBlkPtr mb, MalStkPtr stk)
 			QRYqueue[i].cntxt = 0;
 			QRYqueue[i].stk = 0;
 			QRYqueue[i].mb = 0;
+			QRYqueue[i].ticks = GDKusec() - QRYqueue[i].ticks;
 			updateUserStats(cntxt, mb, QRYqueue[i].ticks, QRYqueue[i].start, QRYqueue[i].finished, QRYqueue[i].query);
 			// assume that the user is now idle
 			cntxt->idle = time(0);
