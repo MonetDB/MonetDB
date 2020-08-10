@@ -431,10 +431,10 @@ canditer_init(struct canditer *ci, BAT *b, BAT *s)
 		return ci->ncand;
 	}
 
-	assert(ATOMtype(s->ttype) == TYPE_oid);
-	assert(s->tsorted);
-	assert(s->tkey);
-	assert(s->tnonil);
+	assert(ATOMtype(s->ttype) == TYPE_oid || s->ttype == TYPE_msk);
+	assert(s->ttype == TYPE_msk|| s->tsorted);
+	assert(s->ttype == TYPE_msk|| s->tkey);
+	assert(s->ttype == TYPE_msk|| s->tnonil);
 	assert(s->ttype == TYPE_void || s->tvheap == NULL);
 
 	BUN cnt = BATcount(s);
@@ -998,7 +998,7 @@ static BAT *
 canditer_sliceval_mask(struct canditer *ci, oid lo1, oid hi1, BUN cnt1,
 		       oid lo2, oid hi2, BUN cnt2)
 {
-	assert(!is_oid_nil(lo2) || cnt2 > 0);
+	assert(cnt2 == 0 || !is_oid_nil(lo2));
 	assert(cnt2 == 0 || lo2 >= hi1);
 	if (is_oid_nil(lo1) || lo1 < ci->mskoff + ci->firstbit)
 		lo1 = ci->mskoff + ci->firstbit;

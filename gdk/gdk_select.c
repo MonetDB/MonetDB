@@ -1051,7 +1051,7 @@ BATselect(BAT *b, BAT *s, const void *tl, const void *th,
 		return NULL;
 	}
 
-	if (s && !BATtordered(s)) {
+	if (s && s->ttype != TYPE_msk && !BATtordered(s)) {
 		GDKerror("invalid argument: s must be sorted.\n");
 		return NULL;
 	}
