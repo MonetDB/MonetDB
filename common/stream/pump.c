@@ -134,7 +134,7 @@ static int pump_flush(stream *s, mnstr_flush_level flush_level)
 	if (nwritten < 0)
 		return -1;
 	else
-		return mnstr_flush(s->inner, action);
+		return mnstr_flush(s->inner, flush_level);
 }
 
 
