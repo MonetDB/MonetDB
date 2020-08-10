@@ -5737,7 +5737,7 @@ static mel_func sql_init_funcs[] = {
  pattern("batcalc", "month_interval", month_interval, false, "cast lng to a month_interval and check for overflow", args(1,5, batarg("",int),batarg("v",lng),batarg("s",oid),arg("ek",int),arg("sk",int))),
  pattern("calc", "second_interval", second_interval, false, "cast lng to a second_interval and check for overflow", args(1,4, arg("",lng),arg("v",lng),arg("ek",int),arg("sk",int))),
  pattern("batcalc", "second_interval", second_interval, false, "cast lng to a second_interval and check for overflow", args(1,4, batarg("",lng),batarg("v",lng),arg("ek",int),arg("sk",int))),
- pattern("batcalc", "second_interval", second_interval, false, "cast lng to a second_interval and check for overflow", args(1,5, batarg("",lng),batarg("v",lng),batarg("s",oid),arg("ek",int),arg("sk",int))), 
+ pattern("batcalc", "second_interval", second_interval, false, "cast lng to a second_interval and check for overflow", args(1,5, batarg("",lng),batarg("v",lng),batarg("s",oid),arg("ek",int),arg("sk",int))),
  pattern("calc", "rowid", sql_rowid, false, "return the next rowid", args(1,4, arg("",oid),argany("v",1),arg("schema",str),arg("table",str))),
  pattern("sql", "shrink", SQLshrink, true, "Consolidate the deletion table over all columns using shrinking", args(0,2, arg("sch",str),arg("tbl",str))),
  pattern("sql", "reuse", SQLreuse, true, "Consolidate the deletion table over all columns reusing deleted slots", args(0,2, arg("sch",str),arg("tbl",str))),
