@@ -197,6 +197,60 @@ stdout of test 'sqlancer02` in directory 'sql/test/SQLancer` itself:
 % decimal # type
 % 10 # length
 [ 8784489	]
+#START TRANSACTION;
+#CREATE TABLE "sys"."t0" ("c0" BOOLEAN NOT NULL);
+#COPY 15 RECORDS INTO "sys"."t0" FROM stdin USING DELIMITERS E'\t',E'\n','"';
+#true
+#false
+#true
+#false
+#true
+#false
+#true
+#true
+#false
+#true
+#false
+#false
+#true
+#false
+#true
+[ 15	]
+#SELECT count(*) FROM t0 FULL OUTER JOIN (SELECT 1 FROM t0) AS sub0 ON t0.c0;
+% .%4 # table_name
+% %4 # name
+% bigint # type
+% 3 # length
+[ 127	]
+#SELECT count(*) FROM t0 FULL OUTER JOIN (SELECT 1 FROM t0) AS sub0 ON t0.c0 WHERE t0.c0;
+% .%4 # table_name
+% %4 # name
+% bigint # type
+% 3 # length
+[ 120	]
+#SELECT CAST(sum(- (((((abs(2))*("quarter"(DATE '1970-01-25'))))<<("minute"(INTERVAL '1279040638' SECOND))))) as BIGINT) FROM t0 FULL OUTER JOIN (SELECT greatest(least(INTERVAL '-33334168' SECOND, INTERVAL '41947202' SECOND), greatest(INTERVAL '1134741726' SECOND, INTERVAL '1713690410' SECOND)), t0.c0 FROM t0 WHERE t0.c0) AS sub0 ON t0.c0;
+% .%4 # table_name
+% %4 # name
+% bigint # type
+% 5 # length
+[ -1136	]
+#SELECT CAST(SUM(agg0) as BIGINT) FROM (
+#SELECT sum(- (((((abs(2))*("quarter"(DATE '1970-01-25'))))<<("minute"(INTERVAL '1279040638' SECOND))))) as agg0 FROM t0 FULL OUTER JOIN (SELECT greatest(least(INTERVAL '-33334168' SECOND, INTERVAL '41947202' SECOND), greatest(INTERVAL '1134741726' SECOND, INTERVAL '1713690410' SECOND)), t0.c0 FROM t0 WHERE t0.c0) AS sub0 ON t0.c0 WHERE t0.c0
+#UNION ALL
+#SELECT sum(- (((((abs(2))*("quarter"(DATE '1970-01-25'))))<<("minute"(INTERVAL '1279040638' SECOND)))))  as agg0 FROM t0 FULL OUTER JOIN (SELECT greatest(least(INTERVAL '-33334168' SECOND, INTERVAL '41947202' SECOND), greatest(INTERVAL '1134741726' SECOND, INTERVAL '1713690410' SECOND)), t0.c0 FROM t0 WHERE t0.c0) AS sub0 ON t0.c0 WHERE NOT (t0.c0)
+% .%27 # table_name
+% %27 # name
+% bigint # type
+% 5 # length
+[ -1136	]
+#ROLLBACK;
+#START TRANSACTION;
+#CREATE TABLE "sys"."t0" ("c0" BOOLEAN NOT NULL,CONSTRAINT "t0_c0_pkey" PRIMARY KEY ("c0"));
+#COPY 2 RECORDS INTO "sys"."t0" FROM stdin USING DELIMITERS E'\t',E'\n','"';
+#true
+#false
+[ 2	]
+#ROLLBACK;
 
 # 17:04:12 >  
 # 17:04:12 >  "Done."

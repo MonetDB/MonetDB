@@ -116,13 +116,13 @@ install(DIRECTORY DESTINATION
   ${CMAKE_INSTALL_DATADIR}
   COMPONENT server)
 install(DIRECTORY DESTINATION
-  ${CMAKE_INSTALL_FULL_LOCALSTATEDIR}/monetdb5/dbfarm
+  ${CMAKE_INSTALL_LOCALSTATEDIR}/monetdb5/dbfarm
   COMPONENT server)
 
 install(FILES
   monetdblogo.png
   DESTINATION
-  ${CMAKE_INSTALL_DATAROOTDIR}/doc/MonetDB
+  ${CMAKE_INSTALL_DOCDIR}
   COMPONENT server)
 
 # vim: set ts=2:sw=2:et
