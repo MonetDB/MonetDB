@@ -797,15 +797,6 @@ exp2bin_coalesce(backend *be, sql_exp *fe, stmt *left, stmt *right, stmt *isel, 
 				stmt *val = es;
 				stmt *pos = rsel;
 
-				if (val->nrcols == 0)
-					val = stmt_const(be, pos, val);
-				/*
-				else if (val->cand != isel && val->cand != rsel && val->cand != nsel)
-					val = stmt_project(be, rsel, val);
-					*/
-				else if (!val->cand && nsel)
-					val = stmt_project(be, nsel, val);
-
 				if (en->next) {
 					sql_subfunc *a = sql_bind_func(be->mvc->sa, be->mvc->session->schema, "isnotnull", tail_type(es), NULL, F_FUNC);
 					ncond = stmt_unop(be, es, a);
@@ -819,6 +810,8 @@ exp2bin_coalesce(backend *be, sql_exp *fe, stmt *left, stmt *right, stmt *isel, 
 					} else if (!ncond->cand && nsel)
 						ncond = stmt_project(be, nsel, ncond);
 					stmt *s = stmt_uselect(be, ncond, stmt_bool(be, 1), cmp_equal, NULL, 0/*anti*/, 0);
+					if (!val->cand && nsel)
+						val = stmt_project(be, nsel, val);
 					val = stmt_project(be, s, val);
 					if (osel)
 						rsel = stmt_project(be, s, osel);
@@ -827,6 +820,15 @@ exp2bin_coalesce(backend *be, sql_exp *fe, stmt *left, stmt *right, stmt *isel, 
 					pos = rsel;
 					val->cand = pos;
 				}
+				if (val->nrcols == 0)
+					val = stmt_const(be, pos, val);
+				/*
+				else if (val->cand != isel && val->cand != rsel && val->cand != nsel)
+					val = stmt_project(be, rsel, val);
+					*/
+				else if (!val->cand && nsel)
+					val = stmt_project(be, nsel, val);
+
 				res = stmt_replace(be, res, pos, val);
 			}
 			if (en->next) { /* handled then part */
