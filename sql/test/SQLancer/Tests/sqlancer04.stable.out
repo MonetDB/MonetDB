@@ -364,6 +364,13 @@ stdout of test 'sqlancer04` in directory 'sql/test/SQLancer` itself:
 [ NULL,	NULL	]
 [ NULL,	NULL	]
 #ROLLBACK;
+#SELECT CASE WHEN 3 THEN cot(COALESCE(3, 4)) END FROM (values(1),(2)) as t0(c0);
+% .%4 # table_name
+% %4 # name
+% double # type
+% 24 # length
+[ -7.015252551	]
+[ -7.015252551	]
 
 # 09:44:50 >  
 # 09:44:50 >  "Done."
