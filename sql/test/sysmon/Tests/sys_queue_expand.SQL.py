@@ -11,7 +11,7 @@ def exec_query():
         dbh = pymonetdb.connect(database = os.environ['TSTDB'], port = int(os.environ['MAPIPORT']), hostname = os.environ['MAPIHOST'], autocommit=True)
         #dbh = pymonetdb.connect(database = 'demo', autocommit=True)
         cur = dbh.cursor()
-        cur.execute('call sleep(3000)')
+        cur.execute('call sys.sleep(3000)')
     except pymonetdb.exceptions.Error as e:
         print(e)
     finally:

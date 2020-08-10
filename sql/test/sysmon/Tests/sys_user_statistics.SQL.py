@@ -5,7 +5,6 @@ users = ['user1', 'user2', 'user3', 'user4', 'user5', 'user6', 'user7']
 try:
     mdbdbh = pymonetdb.connect(database = os.environ['TSTDB'], port = int(os.environ['MAPIPORT']), hostname = os.environ['MAPIHOST'], autocommit=True)
     mdbcursor = mdbdbh.cursor()
-    rowcnt = mdbcursor.execute('create procedure sleep(i int) external name alarm.sleep')
     rowcnt = mdbcursor.execute('call sys.sleep(200)')
     rowcnt = mdbcursor.execute('select querycount from sys.user_statistics() where username = \'monetdb\'')
     mdbqrycnt = mdbcursor.fetchone()[0]
@@ -44,9 +43,5 @@ finally:
             mdbcursor.execute('drop user {usr}'.format(usr=usr))
         except pymonetdb.exceptions.Error as e:
             print(e)
-    try:
-        mdbcursor.execute('drop procedure sleep')
-    except pymonetdb.exceptions.Error as e:
-        print(e)
     mdbdbh.close()
 
