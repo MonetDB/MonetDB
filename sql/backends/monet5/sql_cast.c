@@ -215,7 +215,7 @@ SQLbatstr_cast(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	BBPkeepref(*res = dst->batCacheid);
 	BBPunfix(b->batCacheid);
 	if (s)
-		BBPunfix(b->batCacheid);
+		BBPunfix(s->batCacheid);
 	return msg;
 }
 
