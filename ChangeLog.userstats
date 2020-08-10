@@ -3,8 +3,9 @@
 
 * Mon Aug 10 2020 Ying Zhang <y.zhang@cwi.nl>
 - Finished a first version of the new monitoring function
-  user_statistics().  For each database user who has logged in during the
-  current mserver5 session, it returns 
+  user_statistics(), which is only intended for the DBAs.
+  For each database user who has logged in during the current mserver5
+  session, it returns 
   "username": login name of the database user,
   "querycount": the number of queries this user has executed since his/her
       first login,
