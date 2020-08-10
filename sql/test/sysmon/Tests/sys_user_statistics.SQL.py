@@ -6,7 +6,7 @@ try:
     mdbdbh = pymonetdb.connect(database = os.environ['TSTDB'], port = int(os.environ['MAPIPORT']), hostname = os.environ['MAPIHOST'], autocommit=True)
     mdbcursor = mdbdbh.cursor()
     rowcnt = mdbcursor.execute('create procedure sleep(i int) external name alarm.sleep')
-    rowcnt = mdbcursor.execute('call sys.sleep(1000)')
+    rowcnt = mdbcursor.execute('call sys.sleep(200)')
     rowcnt = mdbcursor.execute('select querycount from sys.user_statistics() where username = \'monetdb\'')
     mdbqrycnt = mdbcursor.fetchone()[0]
 
@@ -19,7 +19,7 @@ try:
             usrdbh = pymonetdb.connect(database = os.environ['TSTDB'], port = int(os.environ['MAPIPORT']), hostname = os.environ['MAPIHOST'], username=usr, password=usr, autocommit=True)
             usrcursor = usrdbh.cursor()
             usrcursor.execute('select current_user as myname')
-            usrcursor.execute('call sys.sleep(1000)')
+            usrcursor.execute('call sys.sleep(200)')
         except pymonetdb.exceptions.Error as e:
             print(usr + ' query failed')
             print(e)

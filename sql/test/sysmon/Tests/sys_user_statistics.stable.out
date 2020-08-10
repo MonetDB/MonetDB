@@ -6,14 +6,14 @@ stdout of test 'sys_user_statistics` in directory 'sql/test/sysmon` itself:
 # 14:56:33 >  
 
 User statistics after: 8
-('monetdb', 15, 'call sys.sleep(1000)\n;')
-('user1', 2, 'call sys.sleep(1000)\n;')
-('user2', 2, 'call sys.sleep(1000)\n;')
-('user3', 2, 'call sys.sleep(1000)\n;')
-('user4', 2, 'call sys.sleep(1000)\n;')
-('user5', 2, 'call sys.sleep(1000)\n;')
-('user6', 2, 'call sys.sleep(1000)\n;')
-('user7', 2, 'call sys.sleep(1000)\n;')
+('monetdb', 15, 'call sys.sleep(200)\n;')
+('user1', 2, 'call sys.sleep(200)\n;')
+('user2', 2, 'call sys.sleep(200)\n;')
+('user3', 2, 'call sys.sleep(200)\n;')
+('user4', 2, 'call sys.sleep(200)\n;')
+('user5', 2, 'call sys.sleep(200)\n;')
+('user6', 2, 'call sys.sleep(200)\n;')
+('user7', 2, 'call sys.sleep(200)\n;')
 
 # 14:56:33 >  
 # 14:56:33 >  "Done."
