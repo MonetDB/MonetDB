@@ -930,6 +930,22 @@ unlock_table(sqlid id)
 {
 	MT_lock_unset(&table_locks[id&(NR_TABLE_LOCKS-1)]);
 }
+
+static BAT *
+mask_bat(size_t cnt, msk val)
+{
+	BAT *b = COLnew(0, TYPE_msk, cnt, TRANSIENT);
+
+	if (b) {
+		size_t nr = (cnt+31)/32;
+		int *p = (int*)b->T.heap->base;
+		for(size_t i = 0; i<nr; i++) {
+			p[i] = (val)?0xffffffff:0;
+		}
+		BATsetcount(b, cnt);
+	}
+	return b;
+}
 /*
  * Claim cnt slots to store the tuples. The claim_tab should claim storage on the level
  * of the global transaction and mark the newly added storage slots unused on the global
@@ -976,7 +992,6 @@ claim_tab(sql_trans *tr, sql_table *t, size_t cnt)
 	assert(isNew(t) || isTempTable(t) || s->cs.cleared || BATcount(b) == slot);
 
 	msk deleted = FALSE;
-	lng i;
 
 	/* general case, write deleted in the central bat (ie others don't see these values) and
 	 * insert rows into the update bats */
@@ -994,7 +1009,23 @@ claim_tab(sql_trans *tr, sql_table *t, size_t cnt)
 		}
 
 		oid id = slot;
-		for(i=0; i<(lng)cnt; i++, id++) {
+		BAT *uin = BATdense(0, id, cnt);
+		BAT *uvn = mask_bat(cnt, deleted);
+		if (!uin || !uvn ||
+				BATappend(ui, uin, NULL, true) != GDK_SUCCEED ||
+				BATappend(uv, uvn, NULL, true) != GDK_SUCCEED) {
+			if (uin) bat_destroy(uin);
+			if (uvn) bat_destroy(uvn);
+			bat_destroy(ui);
+			bat_destroy(uv);
+			unlock_table(t->base.id);
+			return LOG_ERR;
+		}
+		bat_destroy(uin);
+		bat_destroy(uvn);
+#if 0
+		for(lng i=0; i<(lng)cnt; i++, id++) {
+			/* create void-bat ui (id,cnt), msk-0's (write in chunks of 32bit */
 			if (BUNappend(ui, &id, true) != GDK_SUCCEED ||
 			    BUNappend(uv, &deleted, true) != GDK_SUCCEED) {
 				bat_destroy(ui);
@@ -1003,6 +1034,7 @@ claim_tab(sql_trans *tr, sql_table *t, size_t cnt)
 				return LOG_ERR;
 			}
 		}
+#endif
 		s->cs.ucnt += cnt;
 	}
 
@@ -1011,7 +1043,8 @@ claim_tab(sql_trans *tr, sql_table *t, size_t cnt)
 		deleted = FALSE;
 	else /* persistent central copy needs space marked deleted (such that other transactions don't see these rows) */
 		deleted = TRUE;
-	for(lng i=0; i<(lng)cnt; i++){
+	/* TODO first up to 32 boundary, then int writes */
+	for(lng i=0; i<(lng)cnt; i++) {
 		if (BUNappend(b, &deleted, true) != GDK_SUCCEED) {
 			bat_destroy(b);
 			unlock_table(t->base.id);
