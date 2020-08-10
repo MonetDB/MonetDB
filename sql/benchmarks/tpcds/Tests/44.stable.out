@@ -41,7 +41,7 @@ stdout of test '44` in directory 'sql/benchmarks/tpcds` itself:
 #         HAVING avg(ss_net_profit) > 0.9*
 #           (SELECT avg(ss_net_profit) rank_col
 #            FROM store_sales
-% .asceding,	sys.,	sys. # table_name
+% sys.asceding,	sys.,	sys. # table_name
 % rnk,	best_performing,	worst_performing # name
 % int,	char,	char # type
 % 2,	50,	50 # length

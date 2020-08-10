@@ -9181,16 +9181,19 @@ replace_column_references_with_nulls_2(mvc *sql, list* crefs, sql_exp* e) {
 
     switch (e->type) {
     case e_column:
-        for(node* n = crefs->h; n; n=n->next) {
-            sql_exp* c = n->data;
-
-            if (exp_match(e, c)) {
+		{
+			sql_exp *c = NULL;
+			if (e->l) {
+				c = exps_bind_column2(crefs, e->l, e->r);
+			} else {
+				c = exps_bind_column(crefs, e->r, NULL, 1);
+			}
+			if (c) {
                 e->type = e_atom;
                 e->l = atom_general(sql->sa, &e->tpe, NULL);
                 e->r = e->f = NULL;
-                break;
-            }
-        }
+			}
+		}
         break;
     case e_cmp:
         switch (e->flag) {
