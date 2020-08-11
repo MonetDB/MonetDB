@@ -4109,6 +4109,18 @@ SELECT 'pi', pi() UNION ALL
 SELECT 'rowcnt', rowcnt;
 UPDATE sys._tables SET system = true WHERE name = 'var_values' AND schema_id = (SELECT id FROM sys.schemas WHERE name = 'sys');
 GRANT SELECT ON sys.var_values TO PUBLIC;
+create function sys.user_statistics()
+returns table(
+ username string,
+ querycount bigint,
+ totalticks bigint,
+ started timestamp,
+ finished timestamp,
+ maxticks bigint,
+ maxquery string
+)
+external name sysmon.user_statistics;
+update sys.functions set system = true where system <> true and name = 'user_statistics' and schema_id = (select id from sys.schemas where name = 'sys') and type = 5;
 set schema "sys";
 
 # MonetDB/SQL module loaded

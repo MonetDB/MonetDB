@@ -2392,7 +2392,8 @@ sql_update_default(Client c, mvc *sql, const char *prev_schema, bool *systabfixe
 						" maxticks bigint,\n"
 						" maxquery string\n"
 					")\n"
-					"external name sysmon.user_statistics;\n");
+					"external name sysmon.user_statistics;\n"
+					"update sys.functions set system = true where system <> true and name = 'user_statistics' and schema_id = (select id from sys.schemas where name = 'sys') and type = %d;\n", (int) F_UNION);
 
 			pos += snprintf(buf + pos, bufsize - pos, "set schema \"%s\";\n", prev_schema);
 
