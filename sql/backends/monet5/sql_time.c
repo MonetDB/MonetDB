@@ -78,7 +78,7 @@ daytime_2time_daytime(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		for (BUN i = 0 ; i < q ; i++) {
 			BUN p = (BUN) (canditer_next(&ci) - off);
 			daytime next = vals[p];
-			ret[p] = is_daytime_nil(next) ? daytime_nil : daytime_2time_daytime_imp(next, shift, divider, multiplier);
+			ret[i] = is_daytime_nil(next) ? daytime_nil : daytime_2time_daytime_imp(next, shift, divider, multiplier);
 		}
 	} else {
 		daytime next = *(daytime*)getArgReference(stk, pci, 1);
@@ -169,7 +169,7 @@ second_interval_2_daytime(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 		for (BUN i = 0 ; i < q ; i++) {
 			BUN p = (BUN) (canditer_next(&ci) - off);
 			lng next = vals[p];
-			ret[p] = is_lng_nil(next) ? daytime_nil : second_interval_2_daytime_imp(next, shift, divider, multiplier);
+			ret[i] = is_lng_nil(next) ? daytime_nil : second_interval_2_daytime_imp(next, shift, divider, multiplier);
 		}
 	} else {
 		lng next = *(lng*)getArgReference(stk, pci, 1);
@@ -294,9 +294,9 @@ str_2time_daytimetz_internal(ptr out, ptr in, const bat *sid, int tpe, int digit
 			str next = BUNtail(it, p);
 
 			if (strNil(next))
-				ret[p] = daytime_nil;
+				ret[i] = daytime_nil;
 			else
-				msg = str_2time_daytimetz_internal_imp(&(ret[p]), next, fromstr_func, shift, divider, multiplier);
+				msg = str_2time_daytimetz_internal_imp(&(ret[i]), next, fromstr_func, shift, divider, multiplier);
 		}
 	} else {
 		str next = *(str*)in;
@@ -423,7 +423,7 @@ timestamp_2_daytime(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		for (BUN i = 0 ; i < q ; i++) {
 			BUN p = (BUN) (canditer_next(&ci) - off);
 			timestamp next = vals[p];
-			ret[p] = is_timestamp_nil(next) ? daytime_nil : timestamp_2_daytime_imp(next, shift, divider, multiplier);
+			ret[i] = is_timestamp_nil(next) ? daytime_nil : timestamp_2_daytime_imp(next, shift, divider, multiplier);
 		}
 	} else {
 		timestamp next = *(timestamp*)getArgReference(stk, pci, 1);
@@ -488,7 +488,7 @@ date_2_timestamp(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		date *restrict vals = (date*) Tloc(b, 0);
 		for (BUN i = 0 ; i < q ; i++) {
 			BUN p = (BUN) (canditer_next(&ci) - off);
-			ret[p] = timestamp_fromdate(vals[p]);
+			ret[i] = timestamp_fromdate(vals[p]);
 		}
 	} else {
 		*ret = timestamp_fromdate(*(date*)getArgReference(stk, pci, 1));
@@ -582,7 +582,7 @@ timestamp_2time_timestamp(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 		for (BUN i = 0 ; i < q ; i++) {
 			BUN p = (BUN) (canditer_next(&ci) - off);
 			timestamp next = vals[p];
-			ret[p] = is_timestamp_nil(next) ? timestamp_nil : timestamp_2time_timestamp_imp(next, shift, divider, multiplier);
+			ret[i] = is_timestamp_nil(next) ? timestamp_nil : timestamp_2time_timestamp_imp(next, shift, divider, multiplier);
 		}
 	} else {
 		timestamp next = *(timestamp*)getArgReference(stk, pci, 1);
@@ -707,9 +707,9 @@ str_2time_timestamptz_internal(ptr out, ptr in, const bat *sid, int tpe, int dig
 			str next = BUNtail(it, p);
 
 			if (strNil(next))
-				ret[p] = timestamp_nil;
+				ret[i] = timestamp_nil;
 			else
-				msg = str_2time_timestamptz_internal_imp(&(ret[p]), next, fromstr_func, shift, divider, multiplier);
+				msg = str_2time_timestamptz_internal_imp(&(ret[i]), next, fromstr_func, shift, divider, multiplier);
 		}
 	} else {
 		str next = *(str*)in;
@@ -834,9 +834,9 @@ month_interval_str(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			const str next = BUNtail(bi, p);
 
 			if (strNil(next))
-				ret[p] = int_nil;
+				ret[i] = int_nil;
 			else
-				msg = month_interval_str_imp(&(ret[p]), next, d, sk);
+				msg = month_interval_str_imp(&(ret[i]), next, d, sk);
 		}
 	} else {
 		const str next = *getArgReference_str(stk, pci, 1);
@@ -917,9 +917,9 @@ second_interval_str(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			const str next = BUNtail(bi, p);
 
 			if (strNil(next))
-				ret[p] = lng_nil;
+				ret[i] = lng_nil;
 			else
-				msg = second_interval_str_imp(&(ret[p]), next, d, sk);
+				msg = second_interval_str_imp(&(ret[i]), next, d, sk);
 		}
 	} else {
 		const str next = *getArgReference_str(stk, pci, 1);
@@ -955,7 +955,7 @@ bailout:
 			TPE *restrict vals = Tloc(b, 0); \
 			for (BUN i = 0 ; i < q && !msg ; i++) { \
 				BUN p = (BUN) (canditer_next(&ci) - off); \
-				FUNC(ret[p], vals[p], TPE, FUNC_NAME, MAX_VALUE, CAST_VALIDATION, MUL_VALIDATION); \
+				FUNC(ret[i], vals[p], TPE, FUNC_NAME, MAX_VALUE, CAST_VALIDATION, MUL_VALIDATION); \
 			} \
 		} else { \
 			TPE val = *(TPE*)getArgReference(stk, pci, 1); \
@@ -1286,7 +1286,7 @@ second_interval_daytime(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		for (BUN i = 0 ; i < q ; i++) {
 			BUN p = (BUN) (canditer_next(&ci) - off);
 			daytime next = vals[p];
-			ret[p] = is_daytime_nil(next) ? lng_nil : (next / divider) * multiplier;
+			ret[i] = is_daytime_nil(next) ? lng_nil : (next / divider) * multiplier;
 		}
 	} else {
 		daytime next = *(daytime*)getArgReference(stk, pci, 1);
@@ -1389,9 +1389,9 @@ str_2_date_internal(ptr out, ptr in, const bat *sid, int tpe)
 			str next = BUNtail(it, p);
 
 			if (strNil(next))
-				ret[p] = date_nil;
+				ret[i] = date_nil;
 			else
-				msg = str_2_date_internal_imp(&(ret[p]), next);
+				msg = str_2_date_internal_imp(&(ret[i]), next);
 		}
 	} else {
 		str next = *(str*)in;
