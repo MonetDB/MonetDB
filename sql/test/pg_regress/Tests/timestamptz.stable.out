@@ -37,25 +37,25 @@ stdout of test 'timestamptz` in directory 'sql/test/pg_regress` itself:
 #INSERT INTO TIMESTAMPTZ_TBL VALUES (cast((select test_current_date from test_current_date) - interval '1' DAY as timestamp));
 [ 1	]
 #SELECT count(*) AS One FROM TIMESTAMPTZ_TBL WHERE d1 = cast((select test_current_date from test_current_date) as timestamptz);
-% . # table_name
+% sys. # table_name
 % one # name
 % bigint # type
 % 1 # length
 [ 1 ]
 #SELECT count(*) AS One FROM TIMESTAMPTZ_TBL WHERE d1 = cast((select test_current_date from test_current_date) + interval '1' DAY as timestamp);
-% . # table_name
+% sys. # table_name
 % one # name
 % bigint # type
 % 1 # length
 [ 1	]
 #SELECT count(*) AS One FROM TIMESTAMPTZ_TBL WHERE d1 = cast((select test_current_date from test_current_date) - interval '1' DAY as timestamp);
-% . # table_name
+% sys. # table_name
 % one # name
 % bigint # type
 % 1 # length
 [ 1	]
 #SELECT count(*) AS None FROM TIMESTAMPTZ_TBL WHERE d1 = cast((select test_now from test_now) as timestamptz);
-% . # table_name
+% sys. # table_name
 % none # name
 % bigint # type
 % 1 # length
@@ -68,7 +68,7 @@ stdout of test 'timestamptz` in directory 'sql/test/pg_regress` itself:
 #INSERT INTO TIMESTAMPTZ_TBL VALUES ('now');
 [ 1 ]
 #SELECT count(*) AS two FROM TIMESTAMPTZ_TBL WHERE d1 <= cast((select test_now from test_now) as timestamptz);
-% . # table_name
+% sys. # table_name
 % two # name
 % bigint # type
 % 1 # length

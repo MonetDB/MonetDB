@@ -45,7 +45,7 @@ if(HAVE_FITS)
     monetdb_config_header
     mutils
     stream
-    gdk
+    bat
     monetdb5
     sqlinclude
     CFitsIO::CFitsIO)

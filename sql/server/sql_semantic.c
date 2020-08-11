@@ -170,6 +170,77 @@ set_type_param(mvc *sql, sql_subtype *type, int nr)
 	return 0;
 }
 
+/*
+ * Find the result_datatype for certain combinations of values
+ * (like case expressions or coumns in a result of a query expression).
+ * See standaard pages 505-507 Result of data type combinations */
+sql_subtype *
+result_datatype(sql_subtype *super, sql_subtype *l, sql_subtype *r)
+{
+	int lclass = l->type->eclass, rclass = r->type->eclass;
+	int lc=0, rc=0;
+
+	/* case a strings */
+	if (EC_VARCHAR(lclass) || EC_VARCHAR(rclass)) {
+		char *tpe = "varchar";
+		int digits = 0;
+		if (!EC_VARCHAR(lclass)) {
+				tpe = r->type->sqlname;
+				digits = (!l->digits)?0:r->digits;
+		} else if (!EC_VARCHAR(rclass)) {
+				tpe = l->type->sqlname;
+				digits = (!r->digits)?0:l->digits;
+		} else { /* both */
+				tpe = (l->type->base.id > r->type->base.id)?l->type->sqlname:r->type->sqlname;
+				digits = (!l->digits||!r->digits)?0:sql_max(l->digits, r->digits);
+		}
+		sql_find_subtype(super, tpe, digits, 0);
+	/* case b blob */
+	} else if ((lc=strcmp(l->type->sqlname, "blob")) == 0 || (rc=strcmp(r->type->sqlname, "blob")) == 0) {
+		if (!lc)
+			*super = *l;
+		else
+			*super = *r;
+	/* case c all exact numeric */
+	} else if (EC_EXACTNUM(lclass) && EC_EXACTNUM(rclass)) {
+		char *tpe = (l->type->base.id > r->type->base.id)?l->type->sqlname:r->type->sqlname;
+		unsigned int digits = sql_max(l->digits, r->digits);
+		int scale = sql_max(l->scale, r->scale);
+		if (l->type->radix == 10 || r->type->radix == 10) {
+			digits = 0;
+			/* change to radix 10 */
+			if (l->type->radix == 2 && r->type->radix == 10) {
+				digits = bits2digits(l->type->digits);
+				digits = sql_max(r->digits, digits);
+				scale = r->scale;
+			} else if (l->type->radix == 10 && r->type->radix == 2) {
+				digits = bits2digits(r->type->digits);
+				digits = sql_max(l->digits, digits);
+				scale = l->scale;
+			}
+		}
+		sql_find_subtype(super, tpe, digits, scale);
+	/* case d approximate numeric */
+	} else if (EC_APPNUM(lclass) || EC_APPNUM(rclass)) {
+		if (!EC_APPNUM(lclass)) {
+				*super = *r;
+		} else if (!EC_APPNUM(rclass)) {
+				*super = *l;
+		} else { /* both */
+				char *tpe = (l->type->base.id > r->type->base.id)?l->type->sqlname:r->type->sqlname;
+				int digits = sql_max(l->digits, r->digits); /* bits precision */
+				sql_find_subtype(super, tpe, digits, 0);
+		}
+	/* now its getting serious, ie e any 'case e' datetime data type */
+	/* 'case f' interval types */
+	/* 'case g' boolean */
+	/* 'case h-l' compounds like row (tuple), etc */
+	} else {
+		return supertype(super, l, r);
+	}
+	return super;
+}
+
 sql_subtype *
 supertype(sql_subtype *super, sql_subtype *r, sql_subtype *i)
 {

@@ -191,6 +191,74 @@ stdout of test 'sqlancer02` in directory 'sql/test/SQLancer` itself:
 #UPDATE t0 SET c2 = r'' WHERE (((length(r'-14'))>>(((patindex(t0.c0, t0.c2))+(CAST(2 AS INT)))))) NOT IN (0.2, t0.c1, t0.c1, ((CAST(((-1)*(2)) AS INT))/(2)));
 [ 2	]
 #ROLLBACK;
+#SELECT scale_up(0.2928163, 3);
+% .%2 # table_name
+% %2 # name
+% decimal # type
+% 10 # length
+[ 8784489	]
+#START TRANSACTION;
+#CREATE TABLE "sys"."t0" ("c0" BOOLEAN NOT NULL);
+#COPY 15 RECORDS INTO "sys"."t0" FROM stdin USING DELIMITERS E'\t',E'\n','"';
+#true
+#false
+#true
+#false
+#true
+#false
+#true
+#true
+#false
+#true
+#false
+#false
+#true
+#false
+#true
+[ 15	]
+#SELECT count(*) FROM t0 FULL OUTER JOIN (SELECT 1 FROM t0) AS sub0 ON t0.c0;
+% .%4 # table_name
+% %4 # name
+% bigint # type
+% 3 # length
+[ 127	]
+#SELECT count(*) FROM t0 FULL OUTER JOIN (SELECT 1 FROM t0) AS sub0 ON t0.c0 WHERE t0.c0;
+% .%4 # table_name
+% %4 # name
+% bigint # type
+% 3 # length
+[ 120	]
+#SELECT CAST(sum(- (((((abs(2))*("quarter"(DATE '1970-01-25'))))<<("minute"(INTERVAL '1279040638' SECOND))))) as BIGINT) FROM t0 FULL OUTER JOIN (SELECT greatest(least(INTERVAL '-33334168' SECOND, INTERVAL '41947202' SECOND), greatest(INTERVAL '1134741726' SECOND, INTERVAL '1713690410' SECOND)), t0.c0 FROM t0 WHERE t0.c0) AS sub0 ON t0.c0;
+% .%4 # table_name
+% %4 # name
+% bigint # type
+% 5 # length
+[ -1136	]
+#SELECT CAST(SUM(agg0) as BIGINT) FROM (
+#SELECT sum(- (((((abs(2))*("quarter"(DATE '1970-01-25'))))<<("minute"(INTERVAL '1279040638' SECOND))))) as agg0 FROM t0 FULL OUTER JOIN (SELECT greatest(least(INTERVAL '-33334168' SECOND, INTERVAL '41947202' SECOND), greatest(INTERVAL '1134741726' SECOND, INTERVAL '1713690410' SECOND)), t0.c0 FROM t0 WHERE t0.c0) AS sub0 ON t0.c0 WHERE t0.c0
+#UNION ALL
+#SELECT sum(- (((((abs(2))*("quarter"(DATE '1970-01-25'))))<<("minute"(INTERVAL '1279040638' SECOND)))))  as agg0 FROM t0 FULL OUTER JOIN (SELECT greatest(least(INTERVAL '-33334168' SECOND, INTERVAL '41947202' SECOND), greatest(INTERVAL '1134741726' SECOND, INTERVAL '1713690410' SECOND)), t0.c0 FROM t0 WHERE t0.c0) AS sub0 ON t0.c0 WHERE NOT (t0.c0)
+% .%27 # table_name
+% %27 # name
+% bigint # type
+% 5 # length
+[ -1136	]
+#ROLLBACK;
+#START TRANSACTION;
+#CREATE TABLE "sys"."t0" ("c0" BOOLEAN NOT NULL,CONSTRAINT "t0_c0_pkey" PRIMARY KEY ("c0"));
+#COPY 2 RECORDS INTO "sys"."t0" FROM stdin USING DELIMITERS E'\t',E'\n','"';
+#true
+#false
+[ 2	]
+#SELECT sum(CASE 0.84864913922764240172824656838201917707920074462890625 WHEN 0.26932793764126483626597519105416722595691680908203125 THEN INTERVAL '6' MONTH 
+#WHEN 0.82674200362462446634026491665281355381011962890625 THEN INTERVAL '1' MONTH WHEN 0.16258430860651318372589457794674672186374664306640625 THEN INTERVAL '5' MONTH 
+#WHEN 0.94891882487575707205706976310466416180133819580078125 THEN INTERVAL '8' MONTH WHEN 0.74703252230588967908175845877849496901035308837890625 THEN INTERVAL '1' MONTH END) FROM t0;
+% .%1 # table_name
+% %1 # name
+% month_interval # type
+% 1 # length
+[ NULL	]
+#ROLLBACK;
 
 # 17:04:12 >  
 # 17:04:12 >  "Done."

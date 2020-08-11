@@ -236,26 +236,17 @@ table_constraint_name(mvc *sql, symbol *s, sql_table *t)
 	slen = strlen(suffix);
 	while (len + slen >= buflen)
 		buflen += BUFSIZ;
-	buf = GDKmalloc(buflen);
-	if (!buf) {
-		sql_error(sql, 02, SQLSTATE(HY013) MAL_MALLOC_FAIL);
-		return NULL;
-	}
+	buf = SA_NEW_ARRAY(sql->ta, char, buflen);
 	strcpy(buf, t->base.name);
 
 	/* add column name(s) */
 	for (; nms; nms = nms->next) {
 		slen = strlen(nms->data.sval);
 		while (len + slen + 1 >= buflen) {
-			char *nbuf;
-			buflen += BUFSIZ;
-			nbuf = GDKrealloc(buf, buflen);
-			if (!nbuf) {
-				GDKfree(buf);
-				sql_error(sql, 02, SQLSTATE(HY013) MAL_MALLOC_FAIL);
-				return NULL;
-			}
+			size_t nbuflen = buflen + BUFSIZ;
+			char *nbuf = SA_RENEW_ARRAY(sql->ta, char, buf, nbuflen, buflen);
 			buf = nbuf;
+			buflen = nbuflen;
 		}
 		snprintf(buf + len, buflen - len, "_%s", nms->data.sval);
 		len += slen + 1;
@@ -264,15 +255,10 @@ table_constraint_name(mvc *sql, symbol *s, sql_table *t)
 	/* add suffix */
 	slen = strlen(suffix);
 	while (len + slen >= buflen) {
-		char *nbuf;
-		buflen += BUFSIZ;
-		nbuf = GDKrealloc(buf, buflen);
-		if (!nbuf) {
-			GDKfree(buf);
-			sql_error(sql, 02, SQLSTATE(HY013) MAL_MALLOC_FAIL);
-			return NULL;
-		}
+		size_t nbuflen = buflen + BUFSIZ;
+		char *nbuf = SA_RENEW_ARRAY(sql->ta, char, buf, nbuflen, buflen);
 		buf = nbuf;
+		buflen = nbuflen;
 	}
 	snprintf(buf + len, buflen - len, "%s", suffix);
 	return buf;
@@ -303,17 +289,21 @@ column_constraint_name(mvc *sql, symbol *s, sql_column *sc, sql_table *t)
 	}
 
 	buflen = strlen(t->base.name) + strlen(sc->base.name) + strlen(suffix) + 3;
-	buf = GDKmalloc(buflen);
-	if (!buf){
-		sql_error(sql, 02, SQLSTATE(HY013) MAL_MALLOC_FAIL);
-		return NULL;
-	}
+	buf = SA_NEW_ARRAY(sql->ta, char, buflen);
 	snprintf(buf, buflen, "%s_%s_%s", t->base.name, sc->base.name, suffix);
 	return buf;
 }
 
 #define COL_NULL	0
 #define COL_DEFAULT 1
+
+static bool
+foreign_key_check_types(sql_subtype *lt, sql_subtype *rt)
+{
+	if (lt->type->eclass == EC_EXTERNAL && rt->type->eclass == EC_EXTERNAL)
+		return lt->type->localtype == rt->type->localtype;
+	return lt->type->eclass == rt->type->eclass || (EC_VARCHAR(lt->type->eclass) && EC_VARCHAR(rt->type->eclass));
+}
 
 static int
 column_constraint_type(mvc *sql, const char *name, symbol *s, sql_schema *ss, sql_table *t, sql_column *cs, bool isDeclared, int *used)
@@ -354,6 +344,7 @@ column_constraint_type(mvc *sql, const char *name, symbol *s, sql_schema *ss, sq
 		sql_fkey *fk;
 		list *cols;
 		sql_key *rk = NULL;
+		sql_kc *kc;
 
 		assert(n->next->next->next->type == type_int);
 /*
@@ -392,6 +383,17 @@ column_constraint_type(mvc *sql, const char *name, symbol *s, sql_schema *ss, sq
 		}
 		if (list_length(rk->columns) != 1) {
 			(void) sql_error(sql, 02, SQLSTATE(42000) "CONSTRAINT FOREIGN KEY: not all columns are handled\n");
+			return res;
+		}
+		kc = rk->columns->h->data;
+		if (!foreign_key_check_types(&cs->type, &kc->c->type)) {
+			str tp1 = sql_subtype_string(sql->ta, &cs->type), tp2 = sql_subtype_string(sql->ta, &kc->c->type);
+
+			if (!tp1 || !tp2)
+				(void) sql_error(sql, 02, SQLSTATE(HY013) MAL_MALLOC_FAIL);
+			else
+				(void) sql_error(sql, 02, SQLSTATE(42000) "CONSTRAINT FOREIGN KEY: the type of the FOREIGN KEY column '%s' %s is not compatible with the referenced %s KEY column type %s\n",
+								 cs->base.name, tp1, rk->type == pkey ? "PRIMARY" : "UNIQUE", tp2);
 			return res;
 		}
 		fk = mvc_create_fkey(sql, t, name, fkey, rk, ref_actions & 255, (ref_actions>>8) & 255);
@@ -446,7 +448,6 @@ column_options(sql_query *query, dlist *opt_list, sql_schema *ss, sql_table *t, 
 						return SQL_ERR;
 
 					res = column_constraint_type(sql, opt_name ? opt_name : default_name, sym, ss, t, cs, isDeclared, &used);
-					GDKfree(default_name);
 				} 	break;
 				case SQL_DEFAULT: {
 					symbol *sym = s->data.sym;
@@ -560,13 +561,24 @@ table_foreign_key(mvc *sql, char *name, symbol *s, sql_schema *ss, sql_table *t)
 
 		for (fnms = rk->columns->h; nms && fnms; nms = nms->next, fnms = fnms->next) {
 			char *nm = nms->data.sval;
-			sql_column *c = mvc_bind_column(sql, t, nm);
+			sql_column *cs = mvc_bind_column(sql, t, nm);
+			sql_kc *kc = fnms->data;
 
-			if (!c) {
+			if (!cs) {
 				sql_error(sql, 02, SQLSTATE(42S22) "CONSTRAINT FOREIGN KEY: no such column '%s' in table '%s'\n", nm, t->base.name);
 				return SQL_ERR;
 			}
-			mvc_create_fkc(sql, fk, c);
+			if (!foreign_key_check_types(&cs->type, &kc->c->type)) {
+				str tp1 = sql_subtype_string(sql->ta, &cs->type), tp2 = sql_subtype_string(sql->ta, &kc->c->type);
+
+				if (!tp1 || !tp2)
+					(void) sql_error(sql, 02, SQLSTATE(HY013) MAL_MALLOC_FAIL);
+				else
+					(void) sql_error(sql, 02, SQLSTATE(42000) "CONSTRAINT FOREIGN KEY: the type of the FOREIGN KEY column '%s' %s is not compatible with the referenced %s KEY column type %s\n",
+									 cs->base.name, tp1, rk->type == pkey ? "PRIMARY" : "UNIQUE", tp2);
+				return SQL_ERR;
+			}
+			mvc_create_fkc(sql, fk, cs);
 		}
 		if (nms || fnms) {
 			sql_error(sql, 02, SQLSTATE(42000) "CONSTRAINT FOREIGN KEY: not all columns are handled\n");
@@ -645,8 +657,6 @@ table_constraint(mvc *sql, symbol *s, sql_schema *ss, sql_table *t)
 		if (opt_name == NULL)
 			return SQL_ERR;
 		res = table_constraint_type(sql, opt_name, sym, ss, t);
-		if (opt_name != l->h->data.sval)
-			GDKfree(opt_name);
 	}
 
 	if (res != SQL_OK) {

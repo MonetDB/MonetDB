@@ -78,9 +78,7 @@ target_sources(sql
   sql_optimizer.c sql_optimizer.h
   sql_result.c sql_result.h
   sql_cast.c sql_cast.h
-  sql_cast_impl_down_from_flt.h
   sql_cast_impl_int.h
-  sql_cast_impl_up_to_flt.h
   sql_round.c
   sql_round_impl.h
   sql_fround.c sql_fround_impl.h
@@ -106,7 +104,7 @@ target_link_libraries(sql
   PRIVATE
   monetdb_config_header
   mcrypt
-  gdk
+  bat
   monetdb5
   sqlstorage
   sqlcommon
@@ -116,10 +114,9 @@ target_link_libraries(sql
 
 set_target_properties(sql
   PROPERTIES
-  OUTPUT_NAME _sql
+  OUTPUT_NAME monetdbsql
   VERSION ${MONETDB_VERSION}
-  SOVERSION ${MONETDB_VERSION_MAJOR}
-  PUBLIC_HEADER ${CMAKE_CURRENT_SOURCE_DIR}/sql_import.h)
+  SOVERSION ${MONETDB_VERSION_MAJOR})
 
 target_compile_definitions(sql
   PRIVATE
@@ -134,16 +131,13 @@ install(TARGETS
   sql
   EXPORT sqlTargets
   RUNTIME
-  DESTINATION ${CMAKE_INSTALL_LIBDIR}/monetdb5
+  DESTINATION ${CMAKE_INSTALL_BINDIR}
   LIBRARY
-  DESTINATION ${CMAKE_INSTALL_LIBDIR}/monetdb5
+  DESTINATION ${CMAKE_INSTALL_LIBDIR}
   COMPONENT sql
   NAMELINK_COMPONENT monetdbdev
   ARCHIVE
-  DESTINATION ${CMAKE_INSTALL_LIBDIR}
-  PUBLIC_HEADER
-  DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/monetdb
-  INCLUDES DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
+  DESTINATION ${CMAKE_INSTALL_LIBDIR})
 
 add_subdirectory(generator)
 add_subdirectory(UDF)

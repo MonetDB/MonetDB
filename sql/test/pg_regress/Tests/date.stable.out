@@ -397,6 +397,132 @@ stdout of test 'date` in directory 'sql/test/pg_regress` itself:
 [ 2039-04-09,	99	]
 [ 2040-04-10,	101	]
 [ NULL,	NULL	]
+#SELECT f1, "hour"(f1) FROM DATE_TBL;
+% sys.date_tbl,	sys.%1 # table_name
+% f1,	%1 # name
+% date,	int # type
+% 10,	1 # length
+[ 1957-04-09,	0	]
+[ 1957-06-13,	0	]
+[ 1996-02-28,	0	]
+[ 1996-02-29,	0	]
+[ 1996-03-01,	0	]
+[ 1996-03-02,	0	]
+[ 1997-02-28,	0	]
+[ 1997-03-01,	0	]
+[ 1997-03-02,	0	]
+[ 2000-04-01,	0	]
+[ 2000-04-02,	0	]
+[ 2000-04-03,	0	]
+[ 2038-04-08,	0	]
+[ 2039-04-09,	0	]
+[ 2040-04-10,	0	]
+[ NULL,	NULL	]
+#SELECT f1, "minute"(f1) FROM DATE_TBL;
+% sys.date_tbl,	sys.%1 # table_name
+% f1,	%1 # name
+% date,	int # type
+% 10,	1 # length
+[ 1957-04-09,	0	]
+[ 1957-06-13,	0	]
+[ 1996-02-28,	0	]
+[ 1996-02-29,	0	]
+[ 1996-03-01,	0	]
+[ 1996-03-02,	0	]
+[ 1997-02-28,	0	]
+[ 1997-03-01,	0	]
+[ 1997-03-02,	0	]
+[ 2000-04-01,	0	]
+[ 2000-04-02,	0	]
+[ 2000-04-03,	0	]
+[ 2038-04-08,	0	]
+[ 2039-04-09,	0	]
+[ 2040-04-10,	0	]
+[ NULL,	NULL	]
+#SELECT f1, "second"(f1) FROM DATE_TBL;
+% sys.date_tbl,	sys.%1 # table_name
+% f1,	%1 # name
+% date,	decimal # type
+% 10,	11 # length
+[ 1957-04-09,	0.000000	]
+[ 1957-06-13,	0.000000	]
+[ 1996-02-28,	0.000000	]
+[ 1996-02-29,	0.000000	]
+[ 1996-03-01,	0.000000	]
+[ 1996-03-02,	0.000000	]
+[ 1997-02-28,	0.000000	]
+[ 1997-03-01,	0.000000	]
+[ 1997-03-02,	0.000000	]
+[ 2000-04-01,	0.000000	]
+[ 2000-04-02,	0.000000	]
+[ 2000-04-03,	0.000000	]
+[ 2038-04-08,	0.000000	]
+[ 2039-04-09,	0.000000	]
+[ 2040-04-10,	0.000000	]
+[ NULL,	NULL	]
+#SELECT f1, extract(hour from f1) FROM DATE_TBL;
+% sys.date_tbl,	sys.%1 # table_name
+% f1,	%1 # name
+% date,	int # type
+% 10,	1 # length
+[ 1957-04-09,	0	]
+[ 1957-06-13,	0	]
+[ 1996-02-28,	0	]
+[ 1996-02-29,	0	]
+[ 1996-03-01,	0	]
+[ 1996-03-02,	0	]
+[ 1997-02-28,	0	]
+[ 1997-03-01,	0	]
+[ 1997-03-02,	0	]
+[ 2000-04-01,	0	]
+[ 2000-04-02,	0	]
+[ 2000-04-03,	0	]
+[ 2038-04-08,	0	]
+[ 2039-04-09,	0	]
+[ 2040-04-10,	0	]
+[ NULL,	NULL	]
+#SELECT f1, extract(minute from f1) FROM DATE_TBL;
+% sys.date_tbl,	sys.%1 # table_name
+% f1,	%1 # name
+% date,	int # type
+% 10,	1 # length
+[ 1957-04-09,	0	]
+[ 1957-06-13,	0	]
+[ 1996-02-28,	0	]
+[ 1996-02-29,	0	]
+[ 1996-03-01,	0	]
+[ 1996-03-02,	0	]
+[ 1997-02-28,	0	]
+[ 1997-03-01,	0	]
+[ 1997-03-02,	0	]
+[ 2000-04-01,	0	]
+[ 2000-04-02,	0	]
+[ 2000-04-03,	0	]
+[ 2038-04-08,	0	]
+[ 2039-04-09,	0	]
+[ 2040-04-10,	0	]
+[ NULL,	NULL	]
+#SELECT f1, extract(second from f1) FROM DATE_TBL;
+% sys.date_tbl,	sys.%1 # table_name
+% f1,	%1 # name
+% date,	decimal # type
+% 10,	11 # length
+[ 1957-04-09,	0.000000	]
+[ 1957-06-13,	0.000000	]
+[ 1996-02-28,	0.000000	]
+[ 1996-02-29,	0.000000	]
+[ 1996-03-01,	0.000000	]
+[ 1996-03-02,	0.000000	]
+[ 1997-02-28,	0.000000	]
+[ 1997-03-01,	0.000000	]
+[ 1997-03-02,	0.000000	]
+[ 2000-04-01,	0.000000	]
+[ 2000-04-02,	0.000000	]
+[ 2000-04-03,	0.000000	]
+[ 2038-04-08,	0.000000	]
+[ 2039-04-09,	0.000000	]
+[ 2040-04-10,	0.000000	]
+[ NULL,	NULL	]
 #SELECT f1, cast(f1 as timestamp) FROM DATE_TBL;
 % sys.date_tbl,	sys.%1 # table_name
 % f1,	%1 # name
@@ -1057,12 +1183,60 @@ stdout of test 'date` in directory 'sql/test/pg_regress` itself:
 % timestamp # type
 % 26 # length
 [ 1000-01-01 00:00:00.000000	]
+#SELECT DATE_TRUNC('MILLENNIUM', DATE '1970-03-20'); -- 1001-01-01
+% .%2 # table_name
+% %2 # name
+% timestamp # type
+% 26 # length
+[ 1000-01-01 00:00:00.000000	]
 #SELECT DATE_TRUNC('CENTURY', TIMESTAMP '1970-03-20 04:30:00.00000'); -- 1901
 % .%2 # table_name
 % %2 # name
 % timestamp # type
 % 26 # length
 [ 1900-01-01 00:00:00.000000	]
+#SELECT DATE_TRUNC('CENTURY', DATE '1970-03-20'); -- 1901
+% .%2 # table_name
+% %2 # name
+% timestamp # type
+% 26 # length
+[ 1900-01-01 00:00:00.000000	]
+#SELECT DATE_TRUNC('CENTURY', DATE '2004-08-10'); -- 2001-01-01
+% .%2 # table_name
+% %2 # name
+% timestamp # type
+% 26 # length
+[ 2000-01-01 00:00:00.000000	]
+#SELECT DATE_TRUNC('CENTURY', DATE '0002-02-04'); -- 0001-01-01
+% .%2 # table_name
+% %2 # name
+% timestamp # type
+% 26 # length
+[ 0-01-01 00:00:00.000000	]
+#SELECT DATE_TRUNC('CENTURY', DATE '0055-08-10 BC'); -- 0100-01-01 BC
+% .%2 # table_name
+% %2 # name
+% timestamp # type
+% 26 # length
+[ 0-01-01 00:00:00.000000	]
+#SELECT DATE_TRUNC('DECADE', DATE '1993-12-25'); -- 1990-01-01
+% .%2 # table_name
+% %2 # name
+% timestamp # type
+% 26 # length
+[ 1990-01-01 00:00:00.000000	]
+#SELECT DATE_TRUNC('DECADE', DATE '0004-12-25'); -- 0001-01-01 BC
+% .%2 # table_name
+% %2 # name
+% timestamp # type
+% 26 # length
+[ 0-01-01 00:00:00.000000	]
+#SELECT DATE_TRUNC('DECADE', DATE '0002-12-31 BC'); -- 0011-01-01 BC
+% .%2 # table_name
+% %2 # name
+% timestamp # type
+% 26 # length
+[ 0-01-01 00:00:00.000000	]
 #DROP TABLE DATE_TBL;
 
 # 11:57:21 >  

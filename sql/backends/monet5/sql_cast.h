@@ -12,13 +12,13 @@
 #define CAST_INTEGER_2_NUMERIC_2(T1,T2)					\
 sql5_export str T1##_dec2_##T2(T2 *res, const int *s1, const T1 *v);	\
 sql5_export str bat##T1##_dec2_##T2(bat *res, const int *s1, const bat *v); \
-sql5_export str bat##T1##_ce_dec2_##T2(bat *res, const int *s1, const bat *v, const bat *r); \
+sql5_export str bat##T1##_dec2_cand_##T2(bat *res, const int *s1, const bat *v, const bat *sid); \
 sql5_export str T1##_dec2dec_##T2(T2 *res, const int *S1, const T1 *v, const int *d2, const int *S2); \
 sql5_export str bat##T1##_dec2dec_##T2(bat *res, const int *S1, const bat *v, const int *d2, const int *S2); \
-sql5_export str bat##T1##_ce_dec2dec_##T2(bat *res, const int *S1, const bat *v, const int *d2, const int *S2, const bat *r); \
+ sql5_export str bat##T1##_dec2dec_cand_##T2(bat *res, const int *S1, const bat *v, const bat *sid, const int *d2, const int *S2); \
 sql5_export str T1##_num2dec_##T2(T2 *res, const T1 *v, const int *d2, const int *s2); \
 sql5_export str bat##T1##_num2dec_##T2(bat *res, const bat *v, const int *d2, const int *s2); \
-sql5_export str bat##T1##_ce_num2dec_##T2(bat *res, const bat *v, const int *d2, const int *s2, const bat *r);
+ sql5_export str bat##T1##_num2dec_cand_##T2(bat *res, const bat *v, const bat *sid, const int *d2, const int *s2);
 
 #ifdef HAVE_HGE
 #define CAST_INTEGER_2_NUMERIC_2_hge(T1) CAST_INTEGER_2_NUMERIC_2(T1,hge)
@@ -47,7 +47,7 @@ CAST_INTEGER_2_NUMERIC_1(hge)
 #define CAST_FLOATINGPOINT_2_INTEGER_2(T1,T2)				\
 sql5_export str T1##_num2dec_##T2(T2 *res, const T1 *v, const int *d2, const int *s2); \
 sql5_export str bat##T1##_num2dec_##T2(bat *res, const bat *v, const int *d2, const int *s2); \
-sql5_export str bat##T1##_ce_num2dec_##T2(bat *res, const bat *v, const int *d2, const int *s2, const bat *r);
+sql5_export str bat##T1##_num2dec_cand_##T2(bat *res, const bat *v, const bat *sid, const int *d2, const int *s2);
 
 #ifdef HAVE_HGE
 #define CAST_FLOATINGPOINT_2_INTEGER_2_hge(T1) CAST_FLOATINGPOINT_2_INTEGER_2(T1,hge)

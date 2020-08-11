@@ -104,7 +104,7 @@ printBATelm(stream *f, bat i, BUN cnt, BUN first)
 			if (bs[1] == NULL)
 				mnstr_printf(f, "Failed to take chunk\n");
 			else {
-				bs[0] = BATdense(bs[1]->hseqbase, 0, BATcount(bs[1]));
+				bs[0] = BATdense(0, bs[1]->hseqbase, BATcount(bs[1]));
 				if( bs[0] == NULL){
 					mnstr_printf(f, "Failed to take chunk index\n");
 				} else {

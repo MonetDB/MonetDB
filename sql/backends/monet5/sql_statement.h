@@ -70,6 +70,7 @@ typedef enum stmt_type {
 	st_export,
 	st_append,
 	st_append_bulk,
+	st_replace,
 	st_table_clear,
 	st_exception,
 	st_trans,
@@ -157,6 +158,7 @@ extern stmt *stmt_delete(backend *be, sql_table *t, stmt *b);
 
 extern stmt *stmt_append(backend *be, stmt *c, stmt *values);
 extern stmt *stmt_append_bulk(backend *be, stmt *c, list *l);
+extern stmt *stmt_replace(backend *be, stmt *c, stmt *id, stmt *val);
 extern stmt *stmt_table_clear(backend *be, sql_table *t);
 
 extern stmt *stmt_export(backend *be, stmt *t, const char *sep, const char *rsep, const char *ssep, const char *null_string, int onclient, stmt *file);
@@ -224,7 +226,7 @@ extern stmt *stmt_sample(backend *be, stmt *s, stmt *sample, stmt *seed);
 extern stmt *stmt_order(backend *be, stmt *s, int direction, int nullslast);
 extern stmt *stmt_reorder(backend *be, stmt *s, int direction, int nullslast, stmt *orderby_ids, stmt *orderby_grp);
 
-extern stmt *stmt_convert(backend *sa, stmt *v, sql_subtype *from, sql_subtype *to, stmt *cond);
+extern stmt *stmt_convert(backend *sa, stmt *v, stmt *sel, sql_subtype *from, sql_subtype *to);
 extern stmt *stmt_unop(backend *be, stmt *op1, sql_subfunc *op);
 extern stmt *stmt_binop(backend *be, stmt *op1, stmt *op2, sql_subfunc *op);
 extern stmt *stmt_Nop(backend *be, stmt *ops, sql_subfunc *op);

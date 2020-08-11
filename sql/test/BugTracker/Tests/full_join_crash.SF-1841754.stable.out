@@ -53,7 +53,7 @@ stdout of test 'full_join_crash.SF-1841754` in directory 'sql/test/BugTracker` i
 [ "dd",	NULL,	42,	NULL	]
 [ "cc",	NULL,	NULL,	33	]
 #SELECT * FROM t1841754a natural FULL JOIN t1841754b ;
-% .%1,	.%1 # table_name
+% .t1841754a,	.t1841754a # table_name
 % name,	n # name
 % clob,	int # type
 % 2,	2 # length
@@ -62,7 +62,7 @@ stdout of test 'full_join_crash.SF-1841754` in directory 'sql/test/BugTracker` i
 [ "bb",	22	]
 [ "dd",	42	]
 #SELECT * FROM t1841754a natural FULL JOIN t1841754b natural FULL JOIN t1841754c;
-% .%4,	.%4 # table_name
+% .t1841754a,	.t1841754a # table_name
 % name,	n # name
 % clob,	int # type
 % 2,	2 # length

@@ -198,14 +198,14 @@ stdout of test 'groupby_expressions` in directory 'sql/test/miscellaneous` itsel
 [ false	]
 [ true	]
 #select count(*) from "groupings" group by case when "aa" > 1 then "aa" else "aa" + 10 end;
-% sys.%2 # table_name
+% .%2 # table_name
 % %2 # name
 % bigint # type
 % 1 # length
 [ 2	]
 [ 1	]
 #select case when "aa" > 1 then "aa" else "aa" * 4 end from "groupings" group by case when "aa" > 1 then "aa" else "aa" * 4 end;
-% sys.%1 # table_name
+% .%1 # table_name
 % %1 # name
 % bigint # type
 % 1 # length

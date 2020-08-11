@@ -224,10 +224,19 @@ sql_exp *
 exp_in(sql_allocator *sa, sql_exp *l, list *r, int cmptype)
 {
 	sql_exp *e = exp_create(sa, e_cmp);
+	unsigned int exps_card = CARD_ATOM;
 
 	if (e == NULL)
 		return NULL;
-	e->card = l->card;
+
+	/* ignore the cardinalites of sub-relations */
+	for (node *n = r->h; n ; n = n->next) {
+		sql_exp *next = n->data;
+
+		if (!exp_is_rel(next) && exps_card < next->card)
+			exps_card = next->card;
+	}
+	e->card = MAX(l->card, exps_card);
 	e->l = l;
 	e->r = r;
 	assert( cmptype == cmp_in || cmptype == cmp_notin);
@@ -245,16 +254,26 @@ exp_in_func(mvc *sql, sql_exp *le, sql_exp *vals, int anyequal, int is_tuple)
 		list *l = exp_get_values(e);
 		e = l->h->data;
 	}
-	if (anyequal)
-		a_func = sql_bind_func(sql->sa, sql->session->schema, "sql_anyequal", exp_subtype(e), exp_subtype(e), F_FUNC);
-	else
-		a_func = sql_bind_func(sql->sa, sql->session->schema, "sql_not_anyequal", exp_subtype(e), exp_subtype(e), F_FUNC);
-
+	a_func = sql_bind_func(sql->sa, sql->session->schema, anyequal ? "sql_anyequal" : "sql_not_anyequal", exp_subtype(e), exp_subtype(e), F_FUNC);
 	if (!a_func)
 		return sql_error(sql, 02, SQLSTATE(42000) "(NOT) IN operator on type %s missing", exp_subtype(le)->type->sqlname);
 	e = exp_binop(sql->sa, le, vals, a_func);
-	if (e)
-		e->card = le->card;
+	if (e) {
+		unsigned int exps_card = CARD_ATOM;
+
+		/* ignore the cardinalites of sub-relations */
+		if (vals->type == e_atom && vals->f) {
+			for (node *n = ((list*)vals->f)->h ; n ; n = n->next) {
+				sql_exp *next = n->data;
+
+				if (!exp_is_rel(next) && exps_card < next->card)
+					exps_card = next->card;
+			}
+		} else if (!exp_is_rel(vals))
+			exps_card = vals->card;
+
+		e->card = MAX(le->card, exps_card);
+	}
 	return e;
 }
 
@@ -268,10 +287,8 @@ exp_compare_func(mvc *sql, sql_exp *le, sql_exp *re, const char *compareop, int 
 	e = exp_binop(sql->sa, le, re, cmp_func);
 	if (e) {
 		e->flag = quantifier;
-		if (quantifier)
-			e->card = le->card; /* At ANY and ALL operators, the cardinality on the right side is ignored */
-		else
-			e->card = MAX(le->card, re->card);
+		/* At ANY and ALL operators, the cardinality on the right side is ignored if it is a sub-relation */
+		e->card = quantifier && exp_is_rel(re) ? le->card : MAX(le->card, re->card);
 	}
 	return e;
 }
@@ -305,7 +322,6 @@ exp_convert(sql_allocator *sa, sql_exp *exp, sql_subtype *fromtype, sql_subtype 
 sql_exp *
 exp_op( sql_allocator *sa, list *l, sql_subfunc *f )
 {
-	sql_subtype *fres;
 	sql_exp *e = exp_create(sa, e_func);
 	if (e == NULL)
 		return NULL;
@@ -313,13 +329,6 @@ exp_op( sql_allocator *sa, list *l, sql_subfunc *f )
 	e->l = l;
 	e->f = f;
 	e->semantics = f->func->semantics;
-
-	fres = exp_subtype(e);
-	 /* corner case if the output of the function is void, set the type to one of the inputs */
-	if (!f->func->varres && list_length(l) > 0 && list_length(f->func->res) == 1 && fres && !subtype_cmp(fres, sql_bind_localtype("void"))) {
-		sql_subtype *t = exp_subtype(l->t->data);
-		f->res->h->data = sql_create_subtype(sa, t->type, t->digits, t->scale);
-	}
 	return e;
 }
 
@@ -2068,19 +2077,22 @@ exps_are_atoms( list *exps)
 	return atoms;
 }
 
-static int
-exps_has_func( list *exps)
+int
+exps_have_func(list *exps)
 {
-	node *n;
-	int has_func = 0;
+	if (list_empty(exps))
+		return 0;
+	for(node *n=exps->h; n; n=n->next) {
+		sql_exp *e = n->data;
 
-	for(n=exps->h; n && !has_func; n=n->next)
-		has_func |= exp_has_func(n->data);
-	return has_func;
+		if (exp_has_func(e))
+			return 1;
+	}
+	return 0;
 }
 
 int
-exp_has_func( sql_exp *e )
+exp_has_func(sql_exp *e)
 {
 	if (!e)
 		return 0;
@@ -2093,13 +2105,13 @@ exp_has_func( sql_exp *e )
 		return 1;
 	case e_aggr:
 		if (e->l)
-			return exps_has_func(e->l);
+			return exps_have_func(e->l);
 		return 0;
 	case e_cmp:
 		if (e->flag == cmp_or || e->flag == cmp_filter) {
-			return (exps_has_func(e->l) || exps_has_func(e->r));
+			return (exps_have_func(e->l) || exps_have_func(e->r));
 		} else if (e->flag == cmp_in || e->flag == cmp_notin) {
-			return (exp_has_func(e->l) || exps_has_func(e->r));
+			return (exp_has_func(e->l) || exps_have_func(e->r));
 		} else {
 			return (exp_has_func(e->l) || exp_has_func(e->r) ||
 					(e->f && exp_has_func(e->f)));
@@ -2940,18 +2952,15 @@ exp_set_type_recurse(mvc *sql, sql_subtype *type, sql_exp *e, const char **relna
 				exp_set_type_recurse(sql, type, e->l, relname, expname);
 			}
 		} break;
+		case e_aggr:
 		case e_func: {
-			for(node *n = ((list*)e->l)->h ; n ; n = n->next)
-				exp_set_type_recurse(sql, type, (sql_exp*) n->data, relname, expname);
-			if (e->r)
-				for(node *n = ((list*)e->r)->h ; n ; n = n->next)
-					exp_set_type_recurse(sql, type, (sql_exp*) n->data, relname, expname);
-		} 	break;
-		case e_aggr: {
 			if (e->l)
 				for(node *n = ((list*)e->l)->h ; n ; n = n->next)
 					exp_set_type_recurse(sql, type, (sql_exp*) n->data, relname, expname);
-		} 	break;
+			if (e->type == e_func && e->r)
+				for(node *n = ((list*)e->r)->h ; n ; n = n->next)
+					exp_set_type_recurse(sql, type, (sql_exp*) n->data, relname, expname);
+		} break;
 		case e_cmp: {
 			if (e->flag == cmp_in || e->flag == cmp_notin) {
 				exp_set_type_recurse(sql, type, e->l, relname, expname);

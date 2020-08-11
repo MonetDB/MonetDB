@@ -55,7 +55,7 @@ stdout of test 'sqlitelogictest-comparisons-between-floating-points-and-NULL.Bug
 [ 8,	535,	18.11,	"ijika",	630,	489.63,	"hpnyu"	]
 [ 9,	501,	776.4,	"cvygg",	725,	75.5,	"etlyv"	]
 #SELECT + - COUNT ( * ) FROM tab0 AS cor0 WHERE NOT ( - col0 ) BETWEEN - + col4 AND NULL; --should be -5
-% sys.%3 # table_name
+% .%3 # table_name
 % %3 # name
 % bigint # type
 % 2 # length

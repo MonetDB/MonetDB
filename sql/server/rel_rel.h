@@ -123,7 +123,6 @@ extern sql_rel *rel_return_zero_or_one(mvc *sql, sql_rel *rel, exp_kind ek);
 extern sql_rel *rel_zero_or_one(mvc *sql, sql_rel *rel, exp_kind ek);
 
 extern list *rel_dependencies(mvc *sql, sql_rel *r);
-extern sql_exp * exps_find_match_exp(list *l, sql_exp *e);
 
 typedef struct visitor {
 	int changes;

@@ -132,6 +132,20 @@ stdout of test 'values` in directory 'sql/test/miscellaneous` itself:
 % 1 # length
 [ 1	]
 #drop function foo;
+#values (date '2010-01-01'), (timestamp '2010-01-01 10:00:00');
+% .%1 # table_name
+% %1 # name
+% timestamp # type
+% 26 # length
+[ 2010-01-01 00:00:00.000000	]
+[ 2010-01-01 10:00:00.000000	]
+#values (timestamp '2010-01-01 10:00:00'), (date '2010-01-01');
+% .%1 # table_name
+% %1 # name
+% timestamp # type
+% 26 # length
+[ 2010-01-01 10:00:00.000000	]
+[ 2010-01-01 00:00:00.000000	]
 
 # 16:16:11 >  
 # 16:16:11 >  "Done."

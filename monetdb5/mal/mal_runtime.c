@@ -107,6 +107,7 @@ dropQRYqueue(void)
 	MT_lock_unset(&mal_delayLock);
 }
 
+/* At the start of every MAL block or SQL query */
 void
 runtimeProfileInit(Client cntxt, MalBlkPtr mb, MalStkPtr stk)
 {
@@ -176,9 +177,10 @@ runtimeProfileInit(Client cntxt, MalBlkPtr mb, MalStkPtr stk)
 }
 
 /*
+ * At the end of every MAL block or SQL query.
+ *
  * Returning from a recursive call does not change the number of workers.
  */
-
 void
 runtimeProfileFinish(Client cntxt, MalBlkPtr mb, MalStkPtr stk)
 {
@@ -230,6 +232,7 @@ mal_runtime_reset(void)
  */
 Workingset workingset[THREADS];
 
+/* At the start of each MAL stmt */
 void
 runtimeProfileBegin(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, RuntimeProfile prof)
 {
@@ -253,6 +256,7 @@ runtimeProfileBegin(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, Run
 		profilerEvent(cntxt, mb, stk, pci, TRUE);
 }
 
+/* At the end of each MAL stmt */
 void
 runtimeProfileExit(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, RuntimeProfile prof)
 {

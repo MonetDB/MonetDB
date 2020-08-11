@@ -306,7 +306,7 @@ hashselect(BAT *b, struct canditer *restrict ci, BAT *bn,
 				 buninsfix(bn, dst, cnt, o,		\
 					   (BUN) ((dbl) cnt / (dbl) (p == 0 ? 1 : p) \
 						  * (dbl) (ci->ncand-p) * 1.1 + 1024), \
-					   BATcapacity(bn) + ci->ncand - p, BUN_NONE)); \
+					   maximum, BUN_NONE)); \
 		} else {						\
 			impsloop(ISDENSE, TEST, quickins(dst, cnt, o, bn)); \
 		}							\
@@ -352,7 +352,7 @@ hashselect(BAT *b, struct canditer *restrict ci, BAT *bn,
 /* core scan select loop with & without candidates */
 #define scanloop(NAME,canditer_next,TEST)				\
 	do {								\
-		*algo = #NAME " " #TEST " (" #canditer_next ")";	\
+		*algo = "select: " #NAME " " #TEST " (" #canditer_next ")"; \
 		if (BATcapacity(bn) < maximum) {			\
 			for (p = 0; p < ci->ncand; p++) {		\
 				o = canditer_next(ci);			\
@@ -361,7 +361,7 @@ hashselect(BAT *b, struct canditer *restrict ci, BAT *bn,
 					buninsfix(bn, dst, cnt, o,	\
 						  (BUN) ((dbl) cnt / (dbl) (p == 0 ? 1 : p) \
 							 * (dbl) (ci->ncand-p) * 1.1 + 1024), \
-						  BATcapacity(bn) + ci->ncand - p, BUN_NONE); \
+						  maximum, BUN_NONE); \
 					cnt++;				\
 				}					\
 			}						\
@@ -518,7 +518,7 @@ fullscan_any(BAT *b, struct canditer *restrict ci, BAT *bn,
 	(void) lnil;
 
 	if (equi) {
-		*algo = "fullscan equi";
+		*algo = "select: fullscan equi";
 		for (p = 0; p < ci->ncand; p++) {
 			o = canditer_next(ci);
 			v = BUNtail(bi,(BUN)(o-hseq));
@@ -526,12 +526,12 @@ fullscan_any(BAT *b, struct canditer *restrict ci, BAT *bn,
 				buninsfix(bn, dst, cnt, o,
 					  (BUN) ((dbl) cnt / (dbl) (p == 0 ? 1 : p)
 						 * (dbl) (ci->ncand-p) * 1.1 + 1024),
-					  BATcapacity(bn) + ci->ncand - p, BUN_NONE);
+					  maximum, BUN_NONE);
 				cnt++;
 			}
 		}
 	} else if (anti) {
-		*algo = "fullscan anti";
+		*algo = "select: fullscan anti";
 		for (p = 0; p < ci->ncand; p++) {
 			o = canditer_next(ci);
 			v = BUNtail(bi,(BUN)(o-hseq));
@@ -545,12 +545,12 @@ fullscan_any(BAT *b, struct canditer *restrict ci, BAT *bn,
 				buninsfix(bn, dst, cnt, o,
 					  (BUN) ((dbl) cnt / (dbl) (p == 0 ? 1 : p)
 						 * (dbl) (ci->ncand-p) * 1.1 + 1024),
-					  BATcapacity(bn) + ci->ncand - p, BUN_NONE);
+					  maximum, BUN_NONE);
 				cnt++;
 			}
 		}
 	} else {
-		*algo = "fullscan range";
+		*algo = "select: fullscan range";
 		for (p = 0; p < ci->ncand; p++) {
 			o = canditer_next(ci);
 			v = BUNtail(bi,(BUN)(o-hseq));
@@ -564,7 +564,7 @@ fullscan_any(BAT *b, struct canditer *restrict ci, BAT *bn,
 				buninsfix(bn, dst, cnt, o,
 					  (BUN) ((dbl) cnt / (dbl) (p == 0 ? 1 : p)
 						 * (dbl) (ci->ncand-p) * 1.1 + 1024),
-					  BATcapacity(bn) + ci->ncand - p, BUN_NONE);
+					  maximum, BUN_NONE);
 				cnt++;
 			}
 		}
@@ -588,10 +588,10 @@ fullscan_str(BAT *b, struct canditer *restrict ci, BAT *bn,
 				    lval, hval, lnil, cnt, hseq, dst,
 				    maximum, use_imprints, algo);
 	if ((pos = strLocate(b->tvheap, tl)) == 0) {
-		*algo = "fullscan equi strelim (nomatch)";
+		*algo = "select: fullscan equi strelim (nomatch)";
 		return 0;
 	}
-	*algo = "fullscan equi strelim";
+	*algo = "select: fullscan equi strelim";
 	assert(pos >= GDK_VAROFFSET);
 	switch (b->twidth) {
 	case 1: {
@@ -603,7 +603,7 @@ fullscan_str(BAT *b, struct canditer *restrict ci, BAT *bn,
 				buninsfix(bn, dst, cnt, o,
 					  (BUN) ((dbl) cnt / (dbl) (p == 0 ? 1 : p)
 						 * (dbl) (ci->ncand-p) * 1.1 + 1024),
-					  BATcapacity(bn) + ci->ncand - p, BUN_NONE);
+					  maximum, BUN_NONE);
 				cnt++;
 			}
 		}
@@ -618,7 +618,7 @@ fullscan_str(BAT *b, struct canditer *restrict ci, BAT *bn,
 				buninsfix(bn, dst, cnt, o,
 					  (BUN) ((dbl) cnt / (dbl) (p == 0 ? 1 : p)
 						 * (dbl) (ci->ncand-p) * 1.1 + 1024),
-					  BATcapacity(bn) + ci->ncand - p, BUN_NONE);
+					  maximum, BUN_NONE);
 				cnt++;
 			}
 		}
@@ -633,7 +633,7 @@ fullscan_str(BAT *b, struct canditer *restrict ci, BAT *bn,
 				buninsfix(bn, dst, cnt, o,
 					  (BUN) ((dbl) cnt / (dbl) (p == 0 ? 1 : p)
 						 * (dbl) (ci->ncand-p) * 1.1 + 1024),
-					  BATcapacity(bn) + ci->ncand - p, BUN_NONE);
+					  maximum, BUN_NONE);
 				cnt++;
 			}
 		}
@@ -648,7 +648,7 @@ fullscan_str(BAT *b, struct canditer *restrict ci, BAT *bn,
 				buninsfix(bn, dst, cnt, o,
 					  (BUN) ((dbl) cnt / (dbl) (p == 0 ? 1 : p)
 						 * (dbl) (ci->ncand-p) * 1.1 + 1024),
-					  BATcapacity(bn) + ci->ncand - p, BUN_NONE);
+					  maximum, BUN_NONE);
 				cnt++;
 			}
 		}
@@ -1048,6 +1048,7 @@ BATselect(BAT *b, BAT *s, const void *tl, const void *th,
 
 	if (canditer_init(&ci, b, s) == 0) {
 		/* trivially empty result */
+		MT_thread_setalgorithm("select: trivially empty");
 		bn = BATdense(0, 0, 0);
 		TRC_DEBUG(ALGO, "b=" ALGOBATFMT
 			  ",s=" ALGOOPTBATFMT ",anti=%d -> " ALGOOPTBATFMT
@@ -1068,6 +1069,7 @@ BATselect(BAT *b, BAT *s, const void *tl, const void *th,
 		/* upper and lower bound of range are equal and we
 		 * want an interval that's open on at least one
 		 * side */
+		MT_thread_setalgorithm("select: empty interval");
 		bn = BATdense(0, 0, 0);
 		TRC_DEBUG(ALGO, "b=" ALGOBATFMT
 			  ",s=" ALGOOPTBATFMT ",li=%d,hi=%d,anti=%d -> "
@@ -1116,6 +1118,7 @@ BATselect(BAT *b, BAT *s, const void *tl, const void *th,
 			/* antiselect for nil-nil range: all non-nil
 			 * values are in range; we must return all
 			 * other non-nil values, i.e. nothing */
+			MT_thread_setalgorithm("select: anti: nil-nil range, nonil");
 			bn = BATdense(0, 0, 0);
 			TRC_DEBUG(ALGO, "b=" ALGOBATFMT
 				  ",s=" ALGOOPTBATFMT ",anti=%d -> "
@@ -1171,6 +1174,7 @@ BATselect(BAT *b, BAT *s, const void *tl, const void *th,
 
 	if (hval && (equi ? !li || !hi : ATOMcmp(t, tl, th) > 0)) {
 		/* empty range */
+		MT_thread_setalgorithm("select: empty range");
 		bn = BATdense(0, 0, 0);
 		TRC_DEBUG(ALGO, "b=" ALGOBATFMT
 			  ",s=" ALGOOPTBATFMT ",anti=%d -> " ALGOOPTBATFMT
@@ -1182,6 +1186,7 @@ BATselect(BAT *b, BAT *s, const void *tl, const void *th,
 	}
 	if (equi && lnil && b->tnonil) {
 		/* return all nils, but there aren't any */
+		MT_thread_setalgorithm("select: equi-nil, nonil");
 		bn = BATdense(0, 0, 0);
 		TRC_DEBUG(ALGO, "b=" ALGOBATFMT
 			  ",s=" ALGOOPTBATFMT ",anti=%d -> " ALGOOPTBATFMT
@@ -1195,6 +1200,7 @@ BATselect(BAT *b, BAT *s, const void *tl, const void *th,
 	if (!equi && !lval && !hval && lnil && b->tnonil) {
 		/* return all non-nils from a BAT that doesn't have
 		 * any: i.e. return everything */
+		MT_thread_setalgorithm("select: everything, nonil");
 		bn = canditer_slice(&ci, 0, ci.ncand);
 		TRC_DEBUG(ALGO, "b=" ALGOBATFMT
 			  ",s=" ALGOOPTBATFMT ",anti=%d -> " ALGOOPTBATFMT
@@ -1221,6 +1227,7 @@ BATselect(BAT *b, BAT *s, const void *tl, const void *th,
 						 * BAT, so nothing
 						 * left over for
 						 * anti */
+						MT_thread_setalgorithm("select: nothing, out of range");
 						bn = BATdense(0, 0, 0);
 						TRC_DEBUG(ALGO, "b=" ALGOBATFMT
 							  ",s=" ALGOOPTBATFMT ",anti=%d -> " ALGOOPTBATFMT
@@ -1241,6 +1248,7 @@ BATselect(BAT *b, BAT *s, const void *tl, const void *th,
 			if (c < 0 || (!hi && c == 0)) {
 				/* smallest value in BAT larger than
 				 * what we're looking for */
+				MT_thread_setalgorithm("select: nothing, out of range");
 				bn = BATdense(0, 0, 0);
 				TRC_DEBUG(ALGO, "b="
 					  ALGOBATFMT ",s="
@@ -1258,6 +1266,7 @@ BATselect(BAT *b, BAT *s, const void *tl, const void *th,
 			if (c > 0 || (!li && c == 0)) {
 				/* largest value in BAT smaller than
 				 * what we're looking for */
+				MT_thread_setalgorithm("select: nothing, out of range");
 				bn = BATdense(0, 0, 0);
 				TRC_DEBUG(ALGO, "b="
 					  ALGOBATFMT ",s="
@@ -1385,7 +1394,7 @@ BATselect(BAT *b, BAT *s, const void *tl, const void *th,
 			oid h, l;
 			assert(b->tnonil);
 			assert(b->tsorted);
-			algo = "dense";
+			algo = "select: dense";
 			h = * (oid *) th + hi;
 			if (h > b->tseqbase)
 				h -= b->tseqbase;
@@ -1404,7 +1413,7 @@ BATselect(BAT *b, BAT *s, const void *tl, const void *th,
 			if (low > high)
 				low = high;
 		} else if (b->tsorted) {
-			algo = "sorted";
+			algo = "select: sorted";
 			if (lval) {
 				if (li)
 					low = SORTfndfirst(b, tl);
@@ -1421,7 +1430,7 @@ BATselect(BAT *b, BAT *s, const void *tl, const void *th,
 					high = SORTfndfirst(b, th);
 			}
 		} else if (b->trevsorted) {
-			algo = "reverse sorted";
+			algo = "select: reverse sorted";
 			if (lval) {
 				if (li)
 					high = SORTfndlast(b, tl);
@@ -1439,7 +1448,7 @@ BATselect(BAT *b, BAT *s, const void *tl, const void *th,
 			}
 		} else {
 			assert(use_orderidx);
-			algo = "orderidx";
+			algo = "select: orderidx";
 			if (lval) {
 				if (li)
 					low = ORDERfndfirst(b, tl);
@@ -1520,6 +1529,7 @@ BATselect(BAT *b, BAT *s, const void *tl, const void *th,
 		}
 
 		bn = virtualize(bn);
+		MT_thread_setalgorithm(algo);
 		TRC_DEBUG(ALGO, "b=" ALGOBATFMT ",anti=%s -> "
 			  ALGOOPTBATFMT " %s (" LLFMT " usec)\n",
 			  ALGOBATPAR(b), anti ? "true" : "false",
@@ -1637,6 +1647,7 @@ BATselect(BAT *b, BAT *s, const void *tl, const void *th,
 	}
 
 	bn = virtualize(bn);
+	MT_thread_setalgorithm(algo);
 	TRC_DEBUG(ALGO, "b=" ALGOBATFMT ",s=" ALGOOPTBATFMT",anti=%s -> " ALGOOPTBATFMT
 		  " %s (" LLFMT " usec)\n",
 		  ALGOBATPAR(b), ALGOOPTBATPAR(s),
@@ -1950,12 +1961,11 @@ rangejoin(BAT *r1, BAT *r2, BAT *l, BAT *rl, BAT *rh,
 		 * imprints) and either the left bat is persistent or
 		 * already has imprints, or the right bats are long
 		 * enough (for creating imprints being worth it) */
-		BUN maximum;
 
 		sorted = 2;
 		cnt = 0;
-		maximum = lci->ncand;
 		for (BUN i = 0; i < rci->ncand; i++) {
+			maxsize = cnt + (rci->ncand - i) * lci->ncand;
 			ro = canditer_next(rci);
 			if (rlvals) {
 				vrl = FVALUE(rl, ro - rl->hseqbase);
@@ -1995,7 +2005,7 @@ rangejoin(BAT *r1, BAT *r2, BAT *l, BAT *rl, BAT *rh,
 						    false, true, true,
 						    false, cnt,
 						    l->hseqbase, dst1,
-						    cnt + maximum,
+						    maxsize,
 						    true, &algo);
 				break;
 			}
@@ -2022,7 +2032,7 @@ rangejoin(BAT *r1, BAT *r2, BAT *l, BAT *rl, BAT *rh,
 						    false, true, true,
 						    false, cnt,
 						    l->hseqbase, dst1,
-						    cnt + maximum,
+						    maxsize,
 						    true, &algo);
 				break;
 			}
@@ -2062,7 +2072,7 @@ rangejoin(BAT *r1, BAT *r2, BAT *l, BAT *rl, BAT *rh,
 						    false, true, true,
 						    false, cnt,
 						    l->hseqbase, dst1,
-						    cnt + maximum,
+						    maxsize,
 						    true, &algo);
 				break;
 			}
@@ -2102,7 +2112,7 @@ rangejoin(BAT *r1, BAT *r2, BAT *l, BAT *rl, BAT *rh,
 						    false, true, true,
 						    false, cnt,
 						    l->hseqbase, dst1,
-						    cnt + maximum,
+						    maxsize,
 						    true, &algo);
 				break;
 			}
@@ -2130,7 +2140,7 @@ rangejoin(BAT *r1, BAT *r2, BAT *l, BAT *rl, BAT *rh,
 						    false, true, true,
 						    false, cnt,
 						    l->hseqbase, dst1,
-						    cnt + maximum,
+						    maxsize,
 						    true, &algo);
 				break;
 			}
@@ -2160,7 +2170,7 @@ rangejoin(BAT *r1, BAT *r2, BAT *l, BAT *rl, BAT *rh,
 						    false, true, true,
 						    false, cnt,
 						    l->hseqbase, dst1,
-						    cnt + maximum,
+						    maxsize,
 						    true, &algo);
 				break;
 			}
@@ -2189,7 +2199,7 @@ rangejoin(BAT *r1, BAT *r2, BAT *l, BAT *rl, BAT *rh,
 						    false, true, true,
 						    false, cnt,
 						    l->hseqbase, dst1,
-						    cnt + maximum,
+						    maxsize,
 						    true, &algo);
 				break;
 			}

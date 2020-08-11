@@ -138,4 +138,8 @@ select corr(NULL, 2) over (),
        corr(NULL, aa) over (),
        corr(NULL, NULL) over () from analytics;
 
+select covar_pop(1,1) over (), covar_samp(1,1) over (), corr(1,1) over (), covar_pop(1,null) over (), covar_samp(1,null) over (), corr(1,null) over ();
+
+select covar_pop(1,1) over (), covar_samp(1,1) over (), corr(1,1) over (), covar_pop(1,null) over (), covar_samp(1,null) over (), corr(1,null) over () from analytics;
+
 rollback;

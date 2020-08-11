@@ -924,10 +924,22 @@ exp_read(mvc *sql, sql_rel *lrel, sql_rel *rrel, list *pexps, char *r, int *pos,
 			if (!(rexps = read_exps(sql, lrel, rrel, pexps, r, pos, '(', 0)))
 				return NULL;
 			if (filter) {
-				sql_subfunc *func = sql_find_func(sql->sa, mvc_bind_schema(sql, "sys"), fname, 1+list_length(exps), F_FILT, NULL);
-				if (!func)
-					return sql_error(sql, -1, SQLSTATE(42000) "Filter: missing function '%s'\n", fname);
+				sql_subfunc *func = NULL;
+				list *tl = sa_list(sql->sa);
 
+				for (node *n = lexps->h; n; n = n->next){
+					sql_exp *e = n->data;
+
+					list_append(tl, exp_subtype(e));
+				}
+				for (node *n = rexps->h; n; n = n->next){
+					sql_exp *e = n->data;
+	
+					list_append(tl, exp_subtype(e));
+				}
+
+				if (!(func = sql_bind_func_(sql->sa, mvc_bind_schema(sql, "sys"), fname, tl, F_FILT)))
+					return sql_error(sql, -1, SQLSTATE(42000) "Filter: missing function '%s'\n", fname);
 				return exp_filter(sql->sa, lexps, rexps, func, anti);
 			}
 			return exp_or(sql->sa, lexps, rexps, anti);
@@ -1028,20 +1040,33 @@ exp_read(mvc *sql, sql_rel *lrel, sql_rel *rrel, list *pexps, char *r, int *pos,
 		if (tname && !s)
 			return sql_error(sql, -1, SQLSTATE(42000) "Schema %s not found\n", tname);
 		if (grp) {
-			if (exps && exps->h)
-				a = sql_bind_func(sql->sa, s, cname, exp_subtype(exps->h->data), NULL, F_AGGR);
-			else
+			if (exps && exps->h) {
+				list *ops = sa_list(sql->sa);
+				for( n = exps->h; n; n = n->next)
+					append(ops, exp_subtype(n->data));
+				a = sql_bind_func_(sql->sa, s, cname, ops, F_AGGR);
+			} else {
 				a = sql_bind_func(sql->sa, s, cname, sql_bind_localtype("void"), NULL, F_AGGR); /* count(*) */
+			}
 			if (!a)
-				return sql_error(sql, -1, SQLSTATE(42000) "Aggregate %s%s%s not found\n", tname ? tname : "", tname ? "." : "", cname);
+				return sql_error(sql, -1, SQLSTATE(42000) "Aggregate '%s%s%s %d' not found\n", tname ? tname : "", tname ? "." : "", cname, list_length(exps));
 			exp = exp_aggr( sql->sa, exps, a, unique, no_nils, CARD_ATOM, 1);
 			if (zero_if_empty)
 				set_zero_if_empty(exp);
 		} else {
+			int nops = list_length(exps);
 			list *ops = sa_list(sql->sa);
 			for( n = exps->h; n; n = n->next)
 				append(ops, exp_subtype(n->data));
+
 			f = sql_bind_func_(sql->sa, s, cname, ops, F_FUNC);
+			if (!f)
+				f = sql_bind_func_(sql->sa, s, cname, ops, F_ANALYTIC);
+			if (!f && list_length(ops) > 1) {
+				list_remove_node(ops, ops->t);
+				list_remove_node(ops, ops->t); /* some window functions require don't include the bounds on their definition, ugh */
+				f = sql_bind_func_(sql->sa, s, cname, ops, F_ANALYTIC);
+			}
 
 			/* fix scale of mul function, other type casts are explicit */
 			if (f && f->func->fix_scale == SCALE_MUL && list_length(exps) == 2) {
@@ -1070,9 +1095,9 @@ exp_read(mvc *sql, sql_rel *lrel, sql_rel *rrel, list *pexps, char *r, int *pos,
 			}
 
 			if (f)
-				exp = exp_op( sql->sa, exps, f);
+				exp = exp_op(sql->sa, list_empty(exps) ? NULL : exps, f);
 			else
-				return sql_error(sql, -1, SQLSTATE(42000) "Function: missing '%s.%s %d'\n", tname, cname, list_length(ops));
+				return sql_error(sql, -1, SQLSTATE(42000) "Function '%s%s%s %d' not found\n", tname ? tname : "", tname ? "." : "", cname, nops);
 		}
 	}
 

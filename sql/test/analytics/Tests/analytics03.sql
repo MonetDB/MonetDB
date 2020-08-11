@@ -115,4 +115,8 @@ select count(*) over (groups between current row and unbounded following) from r
 
 select min(1) over (partition by 1 order by 1 range between 1 preceding and 1 following);
 
+select min('a') over (partition by 1 order by 1 range between 1 preceding and 1 following);
+
+select min(time '10:10:00') over (partition by 1 order by 1 range between 1 preceding and 1 following);
+
 drop table rowsvsrangevsgroups;

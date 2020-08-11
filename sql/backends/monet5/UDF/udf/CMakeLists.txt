@@ -37,7 +37,7 @@ target_link_libraries(udf
   PRIVATE
   mutils
   stream
-  gdk
+  bat
   monetdb5
   sql
   monetdb_config_header)

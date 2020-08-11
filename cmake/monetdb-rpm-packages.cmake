@@ -135,6 +135,8 @@ set(CPACK_RPM_selinux_PACKAGE_SUMMARY "SELinux policy files for MonetDB")
 set(CPACK_RPM_selinux_PACKAGE_ARCHITECTURE "noarch")
 set(CPACK_RPM_selinux_PACKAGE_REQUIRES_POST "MonetDB5-server%{?_isa} = %{version}-%{release}, %{name}-SQL-server5%{?_isa} = %{version}-%{release}, /usr/sbin/semodule, /sbin/restorecon, /sbin/fixfiles")
 set(CPACK_RPM_selinux_PACKAGE_REQUIRES_POSTUN "MonetDB5-server%{?_isa} = %{version}-%{release}, %{name}-SQL-server5%{?_isa} = %{version}-%{release}, /usr/sbin/semodule, /sbin/restorecon, /sbin/fixfiles")
+set(CPACK_RPM_selinux_POST_INSTALL_SCRIPT_FILE "${CMAKE_BINARY_DIR}/misc/selinux/post_install_script_file")
+set(CPACK_RPM_selinux_POST_UNINSTALL_SCRIPT_FILE "${CMAKE_BINARY_DIR}/misc/selinux/post_uninstall_script_file")
 
 # Determine the build requires settings for the source build
 # This add buildsrequirement based on the packages that are

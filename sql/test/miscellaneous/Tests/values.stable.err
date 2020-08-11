@@ -63,6 +63,18 @@ MAPI  = (monetdb) /var/tmp/mtest-25203/.s.monetdb.33709
 QUERY = create function foo() returns table (aa int, bb int) begin return table(values (1,2), (3)); end; --error
 ERROR = !VALUES: number of columns doesn't match between rows
 CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-371305/.s.monetdb.35738
+QUERY = values (time '10:00:00'), (timestamp '2010-01-01 10:00:00'); --error, converting from time to timestamp not possible
+ERROR = !types time(1,0) and timestamp(7,0) are not equal
+CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-371305/.s.monetdb.35738
+QUERY = values (timestamp '2010-01-01 10:00:00'), (time '10:00:00'); --error, converting from time to timestamp not possible
+ERROR = !types time(1,0) and timestamp(7,0) are not equal
+CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-371305/.s.monetdb.35738
+QUERY = values (timestamp '2010-01-01 10:00:00'), (time '10:00:00'), (date '2010-01-01'); --error, converting from time to timestamp not possible
+ERROR = !types time(1,0) and timestamp(7,0) are not equal
+CODE  = 42000
 
 # 16:16:11 >  
 # 16:16:11 >  "Done."

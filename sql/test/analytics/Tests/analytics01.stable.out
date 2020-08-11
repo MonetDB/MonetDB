@@ -28,8 +28,8 @@ stdout of test 'analytics01` in directory 'sql/test/analytics` itself:
 [ 10	]
 #start transaction;
 #select percent_rank() over (partition by aa) from analytics;
-% sys.%4 # table_name
-% %4 # name
+% sys.%3 # table_name
+% %3 # name
 % double # type
 % 24 # length
 [ 0	]
@@ -43,8 +43,8 @@ stdout of test 'analytics01` in directory 'sql/test/analytics` itself:
 [ 0	]
 [ 0	]
 #select percent_rank() over (partition by aa order by aa asc) from analytics;
-% sys.%4 # table_name
-% %4 # name
+% sys.%3 # table_name
+% %3 # name
 % double # type
 % 24 # length
 [ 0	]
@@ -58,8 +58,8 @@ stdout of test 'analytics01` in directory 'sql/test/analytics` itself:
 [ 0	]
 [ 0	]
 #select percent_rank() over (partition by aa order by aa desc) from analytics;
-% sys.%4 # table_name
-% %4 # name
+% sys.%3 # table_name
+% %3 # name
 % double # type
 % 24 # length
 [ 0	]
@@ -73,8 +73,8 @@ stdout of test 'analytics01` in directory 'sql/test/analytics` itself:
 [ 0	]
 [ 0	]
 #select percent_rank() over (order by aa) from analytics;
-% sys.%4 # table_name
-% %4 # name
+% sys.%3 # table_name
+% %3 # name
 % double # type
 % 24 # length
 [ 0	]
@@ -88,8 +88,8 @@ stdout of test 'analytics01` in directory 'sql/test/analytics` itself:
 [ 0.8888888889	]
 [ 1	]
 #select percent_rank() over (order by aa desc) from analytics;
-% sys.%4 # table_name
-% %4 # name
+% sys.%3 # table_name
+% %3 # name
 % double # type
 % 24 # length
 [ 0	]
@@ -103,8 +103,8 @@ stdout of test 'analytics01` in directory 'sql/test/analytics` itself:
 [ 0.8888888889	]
 [ 0.8888888889	]
 #select percent_rank() over (partition by bb) from analytics;
-% sys.%4 # table_name
-% %4 # name
+% sys.%3 # table_name
+% %3 # name
 % double # type
 % 24 # length
 [ 0	]
@@ -118,8 +118,8 @@ stdout of test 'analytics01` in directory 'sql/test/analytics` itself:
 [ 0	]
 [ 0	]
 #select percent_rank() over (partition by bb order by bb asc) from analytics;
-% sys.%4 # table_name
-% %4 # name
+% sys.%3 # table_name
+% %3 # name
 % double # type
 % 24 # length
 [ 0	]
@@ -133,8 +133,8 @@ stdout of test 'analytics01` in directory 'sql/test/analytics` itself:
 [ 0	]
 [ 0	]
 #select percent_rank() over (partition by bb order by bb desc) from analytics;
-% sys.%4 # table_name
-% %4 # name
+% sys.%3 # table_name
+% %3 # name
 % double # type
 % 24 # length
 [ 0	]
@@ -148,8 +148,8 @@ stdout of test 'analytics01` in directory 'sql/test/analytics` itself:
 [ 0	]
 [ 0	]
 #select percent_rank() over (order by bb) from analytics;
-% sys.%4 # table_name
-% %4 # name
+% sys.%3 # table_name
+% %3 # name
 % double # type
 % 24 # length
 [ 0	]
@@ -163,8 +163,8 @@ stdout of test 'analytics01` in directory 'sql/test/analytics` itself:
 [ 0.6666666667	]
 [ 1	]
 #select percent_rank() over (order by bb desc) from analytics;
-% sys.%4 # table_name
-% %4 # name
+% sys.%3 # table_name
+% %3 # name
 % double # type
 % 24 # length
 [ 0	]
@@ -178,8 +178,8 @@ stdout of test 'analytics01` in directory 'sql/test/analytics` itself:
 [ 0.7777777778	]
 [ 0.7777777778	]
 #select cume_dist() over (partition by aa) from analytics;
-% sys.%4 # table_name
-% %4 # name
+% sys.%3 # table_name
+% %3 # name
 % double # type
 % 24 # length
 [ 1	]
@@ -193,8 +193,8 @@ stdout of test 'analytics01` in directory 'sql/test/analytics` itself:
 [ 1	]
 [ 1	]
 #select cume_dist() over (partition by aa order by aa asc) from analytics;
-% sys.%4 # table_name
-% %4 # name
+% sys.%3 # table_name
+% %3 # name
 % double # type
 % 24 # length
 [ 1	]
@@ -208,8 +208,8 @@ stdout of test 'analytics01` in directory 'sql/test/analytics` itself:
 [ 1	]
 [ 1	]
 #select cume_dist() over (partition by aa order by aa desc) from analytics;
-% sys.%4 # table_name
-% %4 # name
+% sys.%3 # table_name
+% %3 # name
 % double # type
 % 24 # length
 [ 1	]
@@ -223,8 +223,8 @@ stdout of test 'analytics01` in directory 'sql/test/analytics` itself:
 [ 1	]
 [ 1	]
 #select cume_dist() over (order by aa) from analytics;
-% sys.%4 # table_name
-% %4 # name
+% sys.%3 # table_name
+% %3 # name
 % double # type
 % 24 # length
 [ 0.2	]
@@ -238,8 +238,8 @@ stdout of test 'analytics01` in directory 'sql/test/analytics` itself:
 [ 0.9	]
 [ 1	]
 #select cume_dist() over (order by aa desc) from analytics;
-% sys.%4 # table_name
-% %4 # name
+% sys.%3 # table_name
+% %3 # name
 % double # type
 % 24 # length
 [ 0.1	]
@@ -253,8 +253,8 @@ stdout of test 'analytics01` in directory 'sql/test/analytics` itself:
 [ 1	]
 [ 1	]
 #select cume_dist() over (partition by bb) from analytics;
-% sys.%4 # table_name
-% %4 # name
+% sys.%3 # table_name
+% %3 # name
 % double # type
 % 24 # length
 [ 1	]
@@ -268,8 +268,8 @@ stdout of test 'analytics01` in directory 'sql/test/analytics` itself:
 [ 1	]
 [ 1	]
 #select cume_dist() over (partition by bb order by bb asc) from analytics;
-% sys.%4 # table_name
-% %4 # name
+% sys.%3 # table_name
+% %3 # name
 % double # type
 % 24 # length
 [ 1	]
@@ -283,8 +283,8 @@ stdout of test 'analytics01` in directory 'sql/test/analytics` itself:
 [ 1	]
 [ 1	]
 #select cume_dist() over (partition by bb order by bb desc) from analytics;
-% sys.%4 # table_name
-% %4 # name
+% sys.%3 # table_name
+% %3 # name
 % double # type
 % 24 # length
 [ 1	]
@@ -298,8 +298,8 @@ stdout of test 'analytics01` in directory 'sql/test/analytics` itself:
 [ 1	]
 [ 1	]
 #select cume_dist() over (order by bb) from analytics;
-% sys.%4 # table_name
-% %4 # name
+% sys.%3 # table_name
+% %3 # name
 % double # type
 % 24 # length
 [ 0.3	]
@@ -313,8 +313,8 @@ stdout of test 'analytics01` in directory 'sql/test/analytics` itself:
 [ 0.9	]
 [ 1	]
 #select cume_dist() over (order by bb desc) from analytics;
-% sys.%4 # table_name
-% %4 # name
+% sys.%3 # table_name
+% %3 # name
 % double # type
 % 24 # length
 [ 0.1	]
@@ -328,8 +328,8 @@ stdout of test 'analytics01` in directory 'sql/test/analytics` itself:
 [ 1	]
 [ 1	]
 #select ntile(1) over (partition by aa) from analytics;
-% sys.%5 # table_name
-% %5 # name
+% sys.%4 # table_name
+% %4 # name
 % tinyint # type
 % 1 # length
 [ 1	]
@@ -343,8 +343,8 @@ stdout of test 'analytics01` in directory 'sql/test/analytics` itself:
 [ 1	]
 [ 1	]
 #select ntile(1) over (partition by aa order by aa asc) from analytics;
-% sys.%5 # table_name
-% %5 # name
+% sys.%4 # table_name
+% %4 # name
 % tinyint # type
 % 1 # length
 [ 1	]
@@ -358,8 +358,8 @@ stdout of test 'analytics01` in directory 'sql/test/analytics` itself:
 [ 1	]
 [ 1	]
 #select ntile(1) over (partition by aa order by aa desc) from analytics;
-% sys.%5 # table_name
-% %5 # name
+% sys.%4 # table_name
+% %4 # name
 % tinyint # type
 % 1 # length
 [ 1	]
@@ -373,8 +373,8 @@ stdout of test 'analytics01` in directory 'sql/test/analytics` itself:
 [ 1	]
 [ 1	]
 #select ntile(1) over (order by aa) from analytics;
-% sys.%5 # table_name
-% %5 # name
+% sys.%4 # table_name
+% %4 # name
 % tinyint # type
 % 1 # length
 [ 1	]
@@ -388,8 +388,8 @@ stdout of test 'analytics01` in directory 'sql/test/analytics` itself:
 [ 1	]
 [ 1	]
 #select ntile(1) over (order by aa desc) from analytics;
-% sys.%5 # table_name
-% %5 # name
+% sys.%4 # table_name
+% %4 # name
 % tinyint # type
 % 1 # length
 [ 1	]
@@ -403,8 +403,8 @@ stdout of test 'analytics01` in directory 'sql/test/analytics` itself:
 [ 1	]
 [ 1	]
 #select ntile(3) over (partition by bb) from analytics;
-% sys.%5 # table_name
-% %5 # name
+% sys.%4 # table_name
+% %4 # name
 % tinyint # type
 % 1 # length
 [ 1	]
@@ -418,8 +418,8 @@ stdout of test 'analytics01` in directory 'sql/test/analytics` itself:
 [ 3	]
 [ 1	]
 #select ntile(3) over (partition by bb order by bb asc) from analytics;
-% sys.%5 # table_name
-% %5 # name
+% sys.%4 # table_name
+% %4 # name
 % tinyint # type
 % 1 # length
 [ 1	]
@@ -433,8 +433,8 @@ stdout of test 'analytics01` in directory 'sql/test/analytics` itself:
 [ 3	]
 [ 1	]
 #select ntile(3) over (partition by bb order by bb desc) from analytics;
-% sys.%5 # table_name
-% %5 # name
+% sys.%4 # table_name
+% %4 # name
 % tinyint # type
 % 1 # length
 [ 1	]
@@ -448,8 +448,8 @@ stdout of test 'analytics01` in directory 'sql/test/analytics` itself:
 [ 2	]
 [ 3	]
 #select ntile(3) over (order by bb) from analytics;
-% sys.%5 # table_name
-% %5 # name
+% sys.%4 # table_name
+% %4 # name
 % tinyint # type
 % 1 # length
 [ 1	]
@@ -463,8 +463,8 @@ stdout of test 'analytics01` in directory 'sql/test/analytics` itself:
 [ 3	]
 [ 3	]
 #select ntile(3) over (order by bb desc) from analytics;
-% sys.%5 # table_name
-% %5 # name
+% sys.%4 # table_name
+% %4 # name
 % tinyint # type
 % 1 # length
 [ 1	]
@@ -478,8 +478,8 @@ stdout of test 'analytics01` in directory 'sql/test/analytics` itself:
 [ 3	]
 [ 3	]
 #select ntile(10) over (partition by aa) from analytics;
-% sys.%5 # table_name
-% %5 # name
+% sys.%4 # table_name
+% %4 # name
 % tinyint # type
 % 1 # length
 [ 1	]
@@ -493,8 +493,8 @@ stdout of test 'analytics01` in directory 'sql/test/analytics` itself:
 [ 1	]
 [ 1	]
 #select ntile(10) over (partition by aa order by aa asc) from analytics;
-% sys.%5 # table_name
-% %5 # name
+% sys.%4 # table_name
+% %4 # name
 % tinyint # type
 % 1 # length
 [ 1	]
@@ -508,8 +508,8 @@ stdout of test 'analytics01` in directory 'sql/test/analytics` itself:
 [ 1	]
 [ 1	]
 #select ntile(10) over (partition by aa order by aa desc) from analytics;
-% sys.%5 # table_name
-% %5 # name
+% sys.%4 # table_name
+% %4 # name
 % tinyint # type
 % 1 # length
 [ 1	]
@@ -523,8 +523,8 @@ stdout of test 'analytics01` in directory 'sql/test/analytics` itself:
 [ 1	]
 [ 2	]
 #select ntile(10) over (order by aa) from analytics;
-% sys.%5 # table_name
-% %5 # name
+% sys.%4 # table_name
+% %4 # name
 % tinyint # type
 % 2 # length
 [ 1	]
@@ -538,8 +538,8 @@ stdout of test 'analytics01` in directory 'sql/test/analytics` itself:
 [ 9	]
 [ 10	]
 #select ntile(10) over (order by aa desc) from analytics;
-% sys.%5 # table_name
-% %5 # name
+% sys.%4 # table_name
+% %4 # name
 % tinyint # type
 % 2 # length
 [ 1	]
@@ -553,8 +553,8 @@ stdout of test 'analytics01` in directory 'sql/test/analytics` itself:
 [ 9	]
 [ 10	]
 #select ntile(aa) over (partition by aa) from analytics;
-% sys.%4 # table_name
-% %4 # name
+% sys.%3 # table_name
+% %3 # name
 % int # type
 % 1 # length
 [ NULL	]
@@ -568,8 +568,8 @@ stdout of test 'analytics01` in directory 'sql/test/analytics` itself:
 [ 1	]
 [ 1	]
 #select ntile(aa) over (partition by aa order by aa asc) from analytics;
-% sys.%4 # table_name
-% %4 # name
+% sys.%3 # table_name
+% %3 # name
 % int # type
 % 1 # length
 [ NULL	]
@@ -583,8 +583,8 @@ stdout of test 'analytics01` in directory 'sql/test/analytics` itself:
 [ 1	]
 [ 1	]
 #select ntile(aa) over (partition by aa order by aa desc) from analytics;
-% sys.%4 # table_name
-% %4 # name
+% sys.%3 # table_name
+% %3 # name
 % int # type
 % 1 # length
 [ 1	]
@@ -598,8 +598,8 @@ stdout of test 'analytics01` in directory 'sql/test/analytics` itself:
 [ NULL	]
 [ NULL	]
 #select ntile(aa) over (order by aa) from analytics;
-% sys.%4 # table_name
-% %4 # name
+% sys.%3 # table_name
+% %3 # name
 % int # type
 % 2 # length
 [ NULL	]
@@ -613,8 +613,8 @@ stdout of test 'analytics01` in directory 'sql/test/analytics` itself:
 [ 7	]
 [ 10	]
 #select ntile(aa) over (order by aa desc) from analytics;
-% sys.%4 # table_name
-% %4 # name
+% sys.%3 # table_name
+% %3 # name
 % int # type
 % 1 # length
 [ 1	]
@@ -628,8 +628,8 @@ stdout of test 'analytics01` in directory 'sql/test/analytics` itself:
 [ NULL	]
 [ NULL	]
 #select ntile(aa) over (partition by bb) from analytics;
-% sys.%4 # table_name
-% %4 # name
+% sys.%3 # table_name
+% %3 # name
 % int # type
 % 1 # length
 [ 1	]
@@ -643,8 +643,8 @@ stdout of test 'analytics01` in directory 'sql/test/analytics` itself:
 [ 3	]
 [ NULL	]
 #select ntile(aa) over (partition by bb order by bb asc) from analytics;
-% sys.%4 # table_name
-% %4 # name
+% sys.%3 # table_name
+% %3 # name
 % int # type
 % 1 # length
 [ 1	]
@@ -658,8 +658,8 @@ stdout of test 'analytics01` in directory 'sql/test/analytics` itself:
 [ 3	]
 [ NULL	]
 #select ntile(aa) over (partition by bb order by bb desc) from analytics;
-% sys.%4 # table_name
-% %4 # name
+% sys.%3 # table_name
+% %3 # name
 % int # type
 % 1 # length
 [ NULL	]
@@ -673,8 +673,8 @@ stdout of test 'analytics01` in directory 'sql/test/analytics` itself:
 [ 1	]
 [ 3	]
 #select ntile(aa) over (order by bb) from analytics;
-% sys.%4 # table_name
-% %4 # name
+% sys.%3 # table_name
+% %3 # name
 % int # type
 % 1 # length
 [ 1	]
@@ -688,8 +688,8 @@ stdout of test 'analytics01` in directory 'sql/test/analytics` itself:
 [ 5	]
 [ NULL	]
 #select ntile(aa) over (order by bb desc) from analytics;
-% sys.%4 # table_name
-% %4 # name
+% sys.%3 # table_name
+% %3 # name
 % int # type
 % 1 # length
 [ NULL	]
@@ -703,8 +703,8 @@ stdout of test 'analytics01` in directory 'sql/test/analytics` itself:
 [ 2	]
 [ 4	]
 #select ntile(bb) over (partition by aa) from analytics;
-% sys.%4 # table_name
-% %4 # name
+% sys.%3 # table_name
+% %3 # name
 % int # type
 % 1 # length
 [ 1	]
@@ -718,8 +718,8 @@ stdout of test 'analytics01` in directory 'sql/test/analytics` itself:
 [ 1	]
 [ 1	]
 #select ntile(bb) over (partition by aa order by aa asc) from analytics;
-% sys.%4 # table_name
-% %4 # name
+% sys.%3 # table_name
+% %3 # name
 % int # type
 % 1 # length
 [ 1	]
@@ -733,8 +733,8 @@ stdout of test 'analytics01` in directory 'sql/test/analytics` itself:
 [ 1	]
 [ 1	]
 #select ntile(bb) over (partition by aa order by aa desc) from analytics;
-% sys.%4 # table_name
-% %4 # name
+% sys.%3 # table_name
+% %3 # name
 % int # type
 % 1 # length
 [ 1	]
@@ -748,8 +748,8 @@ stdout of test 'analytics01` in directory 'sql/test/analytics` itself:
 [ 1	]
 [ 2	]
 #select ntile(bb) over (order by aa) from analytics;
-% sys.%4 # table_name
-% %4 # name
+% sys.%3 # table_name
+% %3 # name
 % int # type
 % 1 # length
 [ 1	]
@@ -763,8 +763,8 @@ stdout of test 'analytics01` in directory 'sql/test/analytics` itself:
 [ 2	]
 [ 3	]
 #select ntile(bb) over (order by aa desc) from analytics;
-% sys.%4 # table_name
-% %4 # name
+% sys.%3 # table_name
+% %3 # name
 % int # type
 % 1 # length
 [ 1	]
@@ -778,8 +778,8 @@ stdout of test 'analytics01` in directory 'sql/test/analytics` itself:
 [ 2	]
 [ 4	]
 #select ntile(bb) over (partition by bb) from analytics;
-% sys.%4 # table_name
-% %4 # name
+% sys.%3 # table_name
+% %3 # name
 % int # type
 % 1 # length
 [ 1	]
@@ -793,8 +793,8 @@ stdout of test 'analytics01` in directory 'sql/test/analytics` itself:
 [ 3	]
 [ 1	]
 #select ntile(bb) over (partition by bb order by bb asc) from analytics;
-% sys.%4 # table_name
-% %4 # name
+% sys.%3 # table_name
+% %3 # name
 % int # type
 % 1 # length
 [ 1	]
@@ -808,8 +808,8 @@ stdout of test 'analytics01` in directory 'sql/test/analytics` itself:
 [ 3	]
 [ 1	]
 #select ntile(bb) over (partition by bb order by bb desc) from analytics;
-% sys.%4 # table_name
-% %4 # name
+% sys.%3 # table_name
+% %3 # name
 % int # type
 % 1 # length
 [ 1	]
@@ -823,8 +823,8 @@ stdout of test 'analytics01` in directory 'sql/test/analytics` itself:
 [ 1	]
 [ 1	]
 #select ntile(bb) over (order by bb) from analytics;
-% sys.%4 # table_name
-% %4 # name
+% sys.%3 # table_name
+% %3 # name
 % int # type
 % 1 # length
 [ 1	]
@@ -838,8 +838,8 @@ stdout of test 'analytics01` in directory 'sql/test/analytics` itself:
 [ 3	]
 [ 4	]
 #select ntile(bb) over (order by bb desc) from analytics;
-% sys.%4 # table_name
-% %4 # name
+% sys.%3 # table_name
+% %3 # name
 % int # type
 % 1 # length
 [ 1	]
@@ -1453,8 +1453,8 @@ stdout of test 'analytics01` in directory 'sql/test/analytics` itself:
 [ 1	]
 [ NULL	]
 #select percent_rank() over () from analytics;
-% sys.%4 # table_name
-% %4 # name
+% sys.%3 # table_name
+% %3 # name
 % double # type
 % 24 # length
 [ 0	]
@@ -1468,8 +1468,8 @@ stdout of test 'analytics01` in directory 'sql/test/analytics` itself:
 [ 0	]
 [ 0	]
 #select cume_dist() over () from analytics;
-% sys.%4 # table_name
-% %4 # name
+% sys.%3 # table_name
+% %3 # name
 % double # type
 % 24 # length
 [ 1	]
@@ -1483,8 +1483,8 @@ stdout of test 'analytics01` in directory 'sql/test/analytics` itself:
 [ 1	]
 [ 1	]
 #select ntile(1) over () from analytics;
-% sys.%5 # table_name
-% %5 # name
+% sys.%4 # table_name
+% %4 # name
 % tinyint # type
 % 1 # length
 [ 1	]
@@ -1498,8 +1498,8 @@ stdout of test 'analytics01` in directory 'sql/test/analytics` itself:
 [ 1	]
 [ 1	]
 #select ntile(2) over () from analytics;
-% sys.%5 # table_name
-% %5 # name
+% sys.%4 # table_name
+% %4 # name
 % tinyint # type
 % 1 # length
 [ 1	]
@@ -1513,8 +1513,8 @@ stdout of test 'analytics01` in directory 'sql/test/analytics` itself:
 [ 2	]
 [ 2	]
 #select ntile(5) over () from analytics;
-% sys.%5 # table_name
-% %5 # name
+% sys.%4 # table_name
+% %4 # name
 % tinyint # type
 % 1 # length
 [ 1	]
@@ -1528,8 +1528,8 @@ stdout of test 'analytics01` in directory 'sql/test/analytics` itself:
 [ 5	]
 [ 5	]
 #select ntile(11) over () from analytics;
-% sys.%5 # table_name
-% %5 # name
+% sys.%4 # table_name
+% %4 # name
 % tinyint # type
 % 2 # length
 [ 1	]
@@ -1543,8 +1543,8 @@ stdout of test 'analytics01` in directory 'sql/test/analytics` itself:
 [ 9	]
 [ 10	]
 #select ntile(100) over () from analytics;
-% sys.%5 # table_name
-% %5 # name
+% sys.%4 # table_name
+% %4 # name
 % tinyint # type
 % 2 # length
 [ 1	]
@@ -1723,8 +1723,8 @@ stdout of test 'analytics01` in directory 'sql/test/analytics` itself:
 [ 4	]
 [ NULL	]
 #select ntile(null) over () from analytics;
-% sys.%6 # table_name
-% %6 # name
+% .%5 # table_name
+% %5 # name
 % tinyint # type
 % 1 # length
 [ NULL	]
@@ -2761,8 +2761,8 @@ stdout of test 'analytics01` in directory 'sql/test/analytics` itself:
 [ 4	]
 [ NULL	]
 #select aa, bb, lead(aa, 2, 100) over (partition by bb), lead(aa, 1, '100') over (partition by bb) from analytics;
-% sys.analytics,	sys.analytics,	sys.%6,	sys.%14 # table_name
-% aa,	bb,	%6,	%14 # name
+% sys.analytics,	sys.analytics,	sys.%5,	sys.%13 # table_name
+% aa,	bb,	%5,	%13 # name
 % int,	int,	int,	int # type
 % 2,	1,	3,	3 # length
 [ 3,	1,	4,	2	]
@@ -2910,8 +2910,8 @@ stdout of test 'analytics01` in directory 'sql/test/analytics` itself:
 #first_value("points") over (partition by cast("start_time" as date) order by cast("start_time" as date))
 #FROM test2
 #order by "name";
-% sys.test2,	sys.%7 # table_name
-% name,	%7 # name
+% sys.test2,	sys.%11 # table_name
+% name,	%11 # name
 % varchar,	int # type
 % 8,	2 # length
 [ "Ashish",	20	]
@@ -2921,8 +2921,8 @@ stdout of test 'analytics01` in directory 'sql/test/analytics` itself:
 #first_value("points") over (partition by cast("start_time" as date), "name" order by cast("start_time" as date))
 #FROM test2
 #order by "name";
-% sys.test2,	sys.%7 # table_name
-% name,	%7 # name
+% sys.test2,	sys.%11 # table_name
+% name,	%11 # name
 % varchar,	int # type
 % 8,	2 # length
 [ "Ashish",	20	]

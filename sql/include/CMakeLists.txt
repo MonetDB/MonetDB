@@ -22,8 +22,3 @@ target_include_directories(sqlinclude
   INTERFACE
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
   $<INSTALL_INTERFACE:${INCLUDEDIR}/monetdb>)
-
-install(FILES
-  ${sqlinclude_public_headers}
-  DESTINATION
-  ${CMAKE_INSTALL_INCLUDEDIR}/monetdb)

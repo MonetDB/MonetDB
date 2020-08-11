@@ -1,40 +1,48 @@
-stdout of test 'sysqueue` in directory 'sql/test` itself:
+stdout of test 'sysqueue` in directory 'sql/test/sysmon` itself:
 
 
 # 16:51:46 >  
 # 16:51:46 >  "mclient" "-lsql" "-ftest" "-tnone" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-1061" "--port=34490"
 # 16:51:46 >  
 
+#select username, status, query from sys.queue();
+% .%1,	.%1,	.%1 # table_name
+% username,	status,	query # name
+% clob,	clob,	clob # type
+% 7,	8,	56 # length
+[ "monetdb",	"finished",	"create procedure sleep(i int) external name alarm.sleep;"	]
+[ "monetdb",	"finished",	"set time zone interval \\'+02:00\\' hour to minute\n;"	]
+[ "monetdb",	"running",	"select username, status, query from sys.queue();"	]
 #select count(*) from sys.queue();
 % .%2 # table_name
 % %2 # name
 % bigint # type
-% 2 # length
-[ 71	]
+% 1 # length
+[ 3	]
 #select count(*) from sys.queue();
 % .%2 # table_name
 % %2 # name
 % bigint # type
-% 2 # length
-[ 71	]
+% 1 # length
+[ 3	]
 #select count(*) from sys.queue();
 % .%2 # table_name
 % %2 # name
 % bigint # type
-% 2 # length
-[ 71	]
+% 1 # length
+[ 3	]
 #select count(*) from sys.queue();
 % .%2 # table_name
 % %2 # name
 % bigint # type
-% 2 # length
-[ 71	]
+% 1 # length
+[ 3	]
 #select count(*) from sys.queue() where query = 'select count(*) from sys.queue();';
 % .%2 # table_name
 % %2 # name
 % bigint # type
 % 1 # length
-[ 0	]
+[ 2	]
 
 # 16:51:46 >  
 # 16:51:46 >  "Done."

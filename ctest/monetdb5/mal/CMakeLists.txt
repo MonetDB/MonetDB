@@ -11,7 +11,7 @@ target_link_libraries(test_malEmbeddedBoot
   PRIVATE
   monetdb_config_header
   mcrypt
-  gdk
+  bat
   mal
   ${CMAKE_DL_LIBS}
   Threads::Threads)
@@ -23,7 +23,7 @@ target_link_libraries(test_malInclude
   PRIVATE
   monetdb_config_header
   mcrypt
-  gdk
+  bat
   mal
   ${CMAKE_DL_LIBS}
   Threads::Threads)

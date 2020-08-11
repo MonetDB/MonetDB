@@ -30,3 +30,10 @@ create function foo() returns table (aa int, bb int) begin return table(values (
 select aa, bb + 1 from foo();
 select cc from foo() as bar(cc, dd);
 drop function foo;
+
+values (date '2010-01-01'), (timestamp '2010-01-01 10:00:00');
+values (timestamp '2010-01-01 10:00:00'), (date '2010-01-01');
+
+values (time '10:00:00'), (timestamp '2010-01-01 10:00:00'); --error, converting from time to timestamp not possible
+values (timestamp '2010-01-01 10:00:00'), (time '10:00:00'); --error, converting from time to timestamp not possible
+values (timestamp '2010-01-01 10:00:00'), (time '10:00:00'), (date '2010-01-01'); --error, converting from time to timestamp not possible
