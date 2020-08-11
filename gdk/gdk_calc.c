@@ -14014,7 +14014,10 @@ BATconvert(BAT *b, BAT *s, int tp, bool abort_on_error,
 	    scale1 == 0 && scale2 == 0 && precision == 0 &&
 	    (tp != TYPE_str ||
 	     BATatoms[b->ttype].atomToStr == BATatoms[TYPE_str].atomToStr)) {
-		return COLcopy(b, tp, false, TRANSIENT);
+		bn = COLcopy(b, tp, false, TRANSIENT);
+		if (bn && s)
+			bn->hseqbase = s->hseqbase;
+		return bn;
 	}
 	if (ATOMstorage(tp) == TYPE_ptr) {
 		GDKerror("type combination (convert(%s)->%s) "
