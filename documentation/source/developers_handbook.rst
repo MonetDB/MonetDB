@@ -46,19 +46,19 @@ instance the above test's canonical name is
 In order to run a single test from ``$src_root`` or any of its descendants, use
 its canonical name as the argument of ``Mtest.py``::
 
-  [$src_root] $ Mtest.py sql/test/json/jsonkeyarray.Bug-6858
+  [$src_root]$ Mtest.py sql/test/json/jsonkeyarray.Bug-6858
 
 Alternatively, from within the directory where the test is defined you can run
 the test by giving the last component of its canonical name as the argument to
 ``Mtest.py``::
 
-  [$src_root/sql/test/json/Tests/] $ Mtest.py jsonkeyarray.Bug-6858
+  [$src_root/sql/test/json/Tests/]$ Mtest.py jsonkeyarray.Bug-6858
 
 Another way to run tests is running a number of them together using the
 canonical name of a group. For example to run all the tests in the ``json``
 group of the ``sql`` component use::
 
-  [$src_root] $ Mtest.py sql/test/json/
+  [$src_root]$ Mtest.py sql/test/json/
 
 This will run all the tests defined in the file
 ``$src_root/sql/test/json/Tests/All``.
