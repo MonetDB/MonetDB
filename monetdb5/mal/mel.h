@@ -133,7 +133,8 @@ typedef struct __attribute__((__designated_init__)) mel_func_arg {
 	uint16_t type:8,
 		nr:4,
 		isbat:1,
-		vargs:1;
+		vargs:1,
+		iscand:1;
 } mel_func_arg;
 
 /* var arg of arguments of type mel_func_arg */

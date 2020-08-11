@@ -200,7 +200,7 @@ OPTpushselectImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 		}
 		lastbat = lastbat_arg(mb, p);
 		if (isSelect(p) && p->retc == 1 &&
-		   /* no cand list */ getArgType(mb, p, lastbat) != newBatType(TYPE_oid)) {
+			/* no cand list */ !isCandType(getArgType(mb, p, lastbat)) && getArgType(mb, p, lastbat) != newBatType(TYPE_oid)) {
 			int i1 = getArg(p, 1), tid = 0;
 			InstrPtr q = old[vars[i1]];
 

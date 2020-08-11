@@ -19,6 +19,8 @@
 #define newBatType(T)  (1<<16 |  (T & 0377) )
 #define getBatType(X)  ((X) & 0377 )
 #define isaBatType(X)   ((1<<16) & (X) && (X)!= TYPE_any)
+#define isCandType(X)	((X) & 1 << 23)
+#define setCandType(X)	((X) | 1 << 23)
 
 #define isAnyExpression(X) ((X) >> 17)
 #define isPolymorphic(X) (isAnyExpression(X) || (X)== TYPE_any)

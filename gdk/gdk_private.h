@@ -263,9 +263,9 @@ BAT *virtualize(BAT *bn)
 			ATOMname(b->ttype),				\
 			!b->batTransient ? "P" : isVIEW(b) ? "V" : "T", \
 			BATtdense(b) ? "D" : b->ttype == TYPE_void && b->tvheap ? "X" :"", \
-			b->tsorted ? "S" : "",				\
-			b->trevsorted ? "R" : "",			\
-			b->tkey ? "K" : "",				\
+			b->tsorted ? "S" : b->tnosorted ? "!s" : "",	\
+			b->trevsorted ? "R" : b->tnorevsorted ? "!r" : "", \
+			b->tkey ? "K" : b->tnokey[1] ? "!k" : "",	\
 			b->tnonil ? "N" : "",				\
 			b->thash ? "H" : "",				\
 			b->torderidx ? "O" : "",			\
@@ -283,9 +283,9 @@ BAT *virtualize(BAT *bn)
 			b ? "]" : "",					\
 			b ? !b->batTransient ? "P" : isVIEW(b) ? "V" : "T" : "", \
 			b && BATtdense(b) ? "D" : b && b->ttype == TYPE_void && b->tvheap ? "X" :"", \
-			b && b->tsorted ? "S" : "",			\
-			b && b->trevsorted ? "R" : "",			\
-			b && b->tkey ? "K" : "",			\
+			b ? b->tsorted ? "S" : b->tnosorted ? "!s" : "" : "", \
+			b ? b->trevsorted ? "R" : b->tnorevsorted ? "!r" : "" : "", \
+			b ? b->tkey ? "K" : b->tnokey[1] ? "!k" : "" : "", \
 			b && b->tnonil ? "N" : "",			\
 			b && b->thash ? "H" : "",			\
 			b && b->torderidx ? "O" : "",			\

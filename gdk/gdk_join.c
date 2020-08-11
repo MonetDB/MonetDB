@@ -2849,8 +2849,6 @@ thetajoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr, int opcode, BU
 	oid lval = oid_nil, rval = oid_nil;
 
 	assert(ATOMtype(l->ttype) == ATOMtype(r->ttype));
-	assert(sl == NULL || sl->tsorted);
-	assert(sr == NULL || sr->tsorted);
 	assert((opcode & (MASK_EQ | MASK_LT | MASK_GT)) != 0);
 
 	lcnt = canditer_init(&lci, l, sl);
@@ -3783,8 +3781,6 @@ BATbandjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr,
 		return GDK_FAIL;
 
 	assert(ATOMtype(l->ttype) == ATOMtype(r->ttype));
-	assert(sl == NULL || sl->tsorted);
-	assert(sr == NULL || sr->tsorted);
 
 	t = ATOMtype(l->ttype);
 	t = ATOMbasetype(t);

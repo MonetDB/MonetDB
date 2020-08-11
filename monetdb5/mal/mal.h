@@ -148,7 +148,7 @@ typedef struct {
 								   BARRIER, LEAVE, REDO, EXIT, CATCH, RAISE */
 	bit typechk;				/* type check status */
 	bte gc;						/* garbage control flags */
-	bit polymorphic;			/* complex type analysis */
+	bte polymorphic;			/* complex type analysis */
 	bit varargs;				/* variable number of arguments */
 	int jump;					/* controlflow program counter */
 	int pc;						/* location in MAL plan for profiler*/

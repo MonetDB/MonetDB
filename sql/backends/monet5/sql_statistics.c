@@ -180,7 +180,7 @@ sql_analyze(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 							else
 								br = bn;
 							if (br && (en = BATunique(br, NULL)) != NULL) {
-								uniq = BATcount(en);
+								uniq = canditer_init(&(struct canditer){0}, NULL, en);
 								BBPunfix(en->batCacheid);
 							} else
 								uniq = 0;

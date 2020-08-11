@@ -1604,7 +1604,7 @@ mel_func batxml_init_funcs[] = {
  command("batxml", "isdocument", BATXMLisdocument, false, "Validate the string as a XML document.", args(1,2, batarg("",bit),batarg("val",str))),
  command("xml", "aggr", BATXMLgroup, false, "Aggregate the XML values.", args(1,2, arg("",xml),batarg("val",xml))),
  command("xml", "subaggr", AGGRsubxml, false, "Grouped aggregation of XML values.", args(1,5, batarg("",xml),batarg("val",xml),batarg("g",oid),batargany("e",1),arg("skip_nils",bit))),
- command("xml", "subaggr", AGGRsubxmlcand, false, "Grouped aggregation of XML values with candidates list.", args(1,6, batarg("",xml),batarg("val",xml),batarg("g",oid),batargany("e",1),batarg("s",oid),arg("skip_nils",bit))),
+ command("xml", "subaggr", AGGRsubxmlcand, false, "Grouped aggregation of XML values with candidates list.", args(1,6, batarg("",xml),batarg("val",xml),batarg("g",oid),batargany("e",1),batarg("s",cnd),arg("skip_nils",bit))),
  command("batcalc", "xml", BATXMLstr2xml, false, "", args(1,2, batarg("",xml),batarg("src",str))),
  { .imp=NULL }
 };

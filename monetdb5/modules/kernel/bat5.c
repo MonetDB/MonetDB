@@ -1199,8 +1199,8 @@ mel_func bat5_init_funcs[] = {
  command("bat", "replace", BKCbat_inplace_force, false, "Perform replace for all BUNs of the second BAT into the first.", args(1,5, batargany("",1),batargany("b",1),batarg("rid",oid),batargany("val",1),arg("force",bit))),
  command("bat", "append", BKCappend_wrap, false, "append the content of u to i", args(1,3, batargany("",1),batargany("i",1),batargany("u",1))),
  command("bat", "append", BKCappend_force_wrap, false, "append the content of u to i", args(1,4, batargany("",1),batargany("i",1),batargany("u",1),arg("force",bit))),
- command("bat", "append", BKCappend_cand_wrap, false, "append the content of u with candidate list s to i", args(1,4, batargany("",1),batargany("i",1),batargany("u",1),batarg("s",oid))),
- command("bat", "append", BKCappend_cand_force_wrap, false, "append the content of u with candidate list s to i", args(1,5, batargany("",1),batargany("i",1),batargany("u",1),batarg("s",oid),arg("force",bit))),
+ command("bat", "append", BKCappend_cand_wrap, false, "append the content of u with candidate list s to i", args(1,4, batargany("",1),batargany("i",1),batargany("u",1),batarg("s",cnd))),
+ command("bat", "append", BKCappend_cand_force_wrap, false, "append the content of u with candidate list s to i", args(1,5, batargany("",1),batargany("i",1),batargany("u",1),batarg("s",cnd),arg("force",bit))),
  command("bat", "append", BKCappend_val_force_wrap, false, "append the value u to i", args(1,4, batargany("",1),batargany("i",1),argany("u",1),arg("force",bit))),
  command("bat", "attach", BKCattach, false, "Returns a new BAT with dense head and tail of the given type and uses\nthe given file to initialize the tail. The file will be owned by the\nserver.", args(1,3, batargany("",1),arg("tt",int),arg("heapfile",str))),
  command("bat", "densebat", BKCdensebat, false, "Creates a new [void,void] BAT of size 'sz'.", args(1,2, batarg("",oid),arg("sz",lng))),
@@ -1230,9 +1230,9 @@ mel_func bat5_init_funcs[] = {
  command("bat", "isSynced", BKCisSynced, false, "Tests whether two BATs are synced or not. ", args(1,3, arg("",bit),batargany("b1",1),batargany("b2",2))),
  command("bat", "reuse", BKCreuseBAT, false, "Shuffle the values around to restore a dense representation of buns.", args(1,3, batargany("",1),batargany("b",1),batarg("del",oid))),
  command("bat", "reuseMap", BKCreuseBATmap, false, "Derive the oid mapping for reuse BAT based on list of to-be-deleted", args(1,3, batarg("",oid),batargany("b",1),batarg("del",oid))),
- command("bat", "mergecand", BKCmergecand, false, "Merge two candidate lists into one", args(1,3, batarg("",oid),batarg("a",oid),batarg("b",oid))),
- command("bat", "intersectcand", BKCintersectcand, false, "Intersect two candidate lists into one", args(1,3, batarg("",oid),batarg("a",oid),batarg("b",oid))),
- command("bat", "diffcand", BKCdiffcand, false, "Calculate difference of two candidate lists", args(1,3, batarg("",oid),batarg("a",oid),batarg("b",oid))),
+ command("bat", "mergecand", BKCmergecand, false, "Merge two candidate lists into one", args(1,3, batarg("",cnd),batarg("a",cnd),batarg("b",cnd))),
+ command("bat", "intersectcand", BKCintersectcand, false, "Intersect two candidate lists into one", args(1,3, batarg("",cnd),batarg("a",cnd),batarg("b",cnd))),
+ command("bat", "diffcand", BKCdiffcand, false, "Calculate difference of two candidate lists", args(1,3, batarg("",cnd),batarg("a",cnd),batarg("b",cnd))),
  { .imp=NULL }
 };
 #include "mal_import.h"

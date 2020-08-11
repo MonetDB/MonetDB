@@ -28,7 +28,7 @@ function user.foo():void;               	#[0] (0)  0
     b:bat[:int] := bat.new(:int);       	#[1] (0) CMDBATnew 1 <- 2 
     c:bat[:int] := bat.new(:int);       	#[2] (0) CMDBATnew 3 <- 2 
 # identical until insert takes place 
-    d:bat[:oid] := algebra.select(b:bat[:int], nil:bat[:oid], 0:int, 100:int, true:bit, true:bit, false:bit);	#[4] (0) ALGselect2 5 <- 1 6 7 8 9 10 11 
+    d:bat[:cnd] := algebra.select(b:bat[:int], nil:bat[:oid], 0:int, 100:int, true:bit, true:bit, false:bit);	#[4] (0) ALGselect2 5 <- 1 6 7 8 9 10 11 
 # mapped onto one instruction 
     l:int := calc.+(24:int, 27:int);	#[9] (0) CMDvarADDsignal 19 <- 16 18 
 # mapped to l 

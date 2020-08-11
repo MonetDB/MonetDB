@@ -175,13 +175,18 @@ makeArgument(MalBlkPtr mb, mel_arg *a, int *idx)
 		if (a->nr > 0)
 			setTypeIndex(tpe, a->nr);
 	} else {
+		int mask = 0;
 #ifdef MEL_STR
-		tpe = getAtomIndex(a->type, strlen(a->type),-1);
+		if (a->isbat && strcmp(a->type, "cnd") == 0) {
+			tpe = getAtomIndex("oid", 3, -1);
+			mask = 1 << 23;
+		} else
+			tpe = getAtomIndex(a->type, strlen(a->type),-1);
 #else
 		tpe = a->type ;
 #endif
 		if (a->isbat)
-			tpe = newBatType(tpe);
+			tpe = newBatType(tpe) | mask;
 	}
 	/*
 	  if (a->name){
@@ -297,9 +302,11 @@ makeFuncArgument(MalBlkPtr mb, mel_func_arg *a)
 		if (a->nr > 0)
 			setTypeIndex(tpe, a->nr);
 	} else {
-		tpe = a->type;;
+		tpe = a->type;
 		if (a->isbat)
 			tpe = newBatType(tpe);
+		if (a->iscand)
+			tpe |= 1 << 23;
 	}
 	return newTmpVariable(mb, tpe);
 }

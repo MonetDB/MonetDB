@@ -1394,7 +1394,7 @@ batcalc_init(void)
 	specials[cur++] = TYPE_oid;
 	specials[cur++] = TYPE_str;
 
-	mel_func_arg cand = { .type = TYPE_oid, .isbat=1 };
+	mel_func_arg cand = { .type = TYPE_oid, .isbat=1, .iscand=1 };
 
 	int err=0;
 	/* for all numeric types, use reverse order */
@@ -2078,51 +2078,51 @@ batcalc_init(void)
 static mel_func batcalc_init_funcs[] = {
  /* batcalc */
  pattern("batcalc", "isnil", CMDbatISNIL, false, "Unary check for nil over the tail of the bat", args(1,2, batarg("",bit),batargany("b",0))),
- pattern("batcalc", "isnil", CMDbatISNIL, false, "Unary check for nil over the tail of the bat with candidates list", args(1,3, batarg("",bit),batargany("b",0),batarg("s",oid))),
+ pattern("batcalc", "isnil", CMDbatISNIL, false, "Unary check for nil over the tail of the bat with candidates list", args(1,3, batarg("",bit),batargany("b",0),batarg("s",cnd))),
  pattern("batcalc", "isnotnil", CMDbatISNOTNIL, false, "Unary check for notnil over the tail of the bat", args(1,2, batarg("",bit),batargany("b",0))),
- pattern("batcalc", "isnotnil", CMDbatISNOTNIL, false, "Unary check for notnil over the tail of the bat with candidates list", args(1,3, batarg("",bit),batargany("b",0),batarg("s",oid))),
+ pattern("batcalc", "isnotnil", CMDbatISNOTNIL, false, "Unary check for notnil over the tail of the bat with candidates list", args(1,3, batarg("",bit),batargany("b",0),batarg("s",cnd))),
  pattern("batcalc", "min", CMDbatMIN, false, "Return bat with minimum value of each pair of inputs", args(1,3, batargany("",1),batargany("b1",1),batargany("b2",1))),
- pattern("batcalc", "min", CMDbatMIN, false, "Return bat with minimum value of each pair of inputs", args(1,5, batargany("",1),batargany("b1",1),batargany("b2",1),batarg("s1",oid),batarg("s2",oid))),
+ pattern("batcalc", "min", CMDbatMIN, false, "Return bat with minimum value of each pair of inputs", args(1,5, batargany("",1),batargany("b1",1),batargany("b2",1),batarg("s1",cnd),batarg("s2",cnd))),
  pattern("batcalc", "min", CMDbatMIN, false, "Return bat with minimum value of each pair of inputs", args(1,3, batargany("",1),batargany("b",1),argany("v",1))),
- pattern("batcalc", "min", CMDbatMIN, false, "Return bat with minimum value of each pair of inputs", args(1,4, batargany("",1),batargany("b",1),argany("v",1),batarg("s",oid))),
+ pattern("batcalc", "min", CMDbatMIN, false, "Return bat with minimum value of each pair of inputs", args(1,4, batargany("",1),batargany("b",1),argany("v",1),batarg("s",cnd))),
  pattern("batcalc", "min", CMDbatMIN, false, "Return bat with minimum value of each pair of inputs", args(1,3, batargany("",1),argany("v",1),batargany("b",1))),
- pattern("batcalc", "min", CMDbatMIN, false, "Return bat with minimum value of each pair of inputs", args(1,4, batargany("",1),argany("v",1),batargany("b",1),batarg("s",oid))),
+ pattern("batcalc", "min", CMDbatMIN, false, "Return bat with minimum value of each pair of inputs", args(1,4, batargany("",1),argany("v",1),batargany("b",1),batarg("s",cnd))),
  pattern("batcalc", "min_no_nil", CMDbatMIN_no_nil, false, "Return bat with minimum value of each pair of inputs, ignoring nil values", args(1,3, batargany("",1),batargany("b1",1),batargany("b2",1))),
- pattern("batcalc", "min_no_nil", CMDbatMIN_no_nil, false, "Return bat with minimum value of each pair of inputs, ignoring nil values", args(1,5, batargany("",1),batargany("b1",1),batargany("b2",1),batarg("s1",oid),batarg("s2",oid))),
+ pattern("batcalc", "min_no_nil", CMDbatMIN_no_nil, false, "Return bat with minimum value of each pair of inputs, ignoring nil values", args(1,5, batargany("",1),batargany("b1",1),batargany("b2",1),batarg("s1",cnd),batarg("s2",cnd))),
  pattern("batcalc", "min_no_nil", CMDbatMIN_no_nil, false, "Return bat with minimum value of each pair of inputs, ignoring nil values", args(1,3, batargany("",1),batargany("b",1),argany("v",1))),
- pattern("batcalc", "min_no_nil", CMDbatMIN_no_nil, false, "Return bat with minimum value of each pair of inputs, ignoring nil values", args(1,4, batargany("",1),batargany("b",1),argany("v",1),batarg("s",oid))),
+ pattern("batcalc", "min_no_nil", CMDbatMIN_no_nil, false, "Return bat with minimum value of each pair of inputs, ignoring nil values", args(1,4, batargany("",1),batargany("b",1),argany("v",1),batarg("s",cnd))),
  pattern("batcalc", "min_no_nil", CMDbatMIN_no_nil, false, "Return bat with minimum value of each pair of inputs, ignoring nil values", args(1,3, batargany("",1),argany("v",1),batargany("b",1))),
- pattern("batcalc", "min_no_nil", CMDbatMIN_no_nil, false, "Return bat with minimum value of each pair of inputs, ignoring nil values", args(1,4, batargany("",1),argany("v",1),batargany("b",1),batarg("s",oid))),
+ pattern("batcalc", "min_no_nil", CMDbatMIN_no_nil, false, "Return bat with minimum value of each pair of inputs, ignoring nil values", args(1,4, batargany("",1),argany("v",1),batargany("b",1),batarg("s",cnd))),
  pattern("batcalc", "max", CMDbatMAX, false, "Return bat with maximum value of each pair of inputs", args(1,3, batargany("",1),batargany("b1",1),batargany("b2",1))),
- pattern("batcalc", "max", CMDbatMAX, false, "Return bat with maximum value of each pair of inputs", args(1,5, batargany("",1),batargany("b1",1),batargany("b2",1),batarg("s1",oid),batarg("s2",oid))),
+ pattern("batcalc", "max", CMDbatMAX, false, "Return bat with maximum value of each pair of inputs", args(1,5, batargany("",1),batargany("b1",1),batargany("b2",1),batarg("s1",cnd),batarg("s2",cnd))),
  pattern("batcalc", "max", CMDbatMAX, false, "Return bat with maximum value of each pair of inputs", args(1,3, batargany("",1),batargany("b",1),argany("v",1))),
- pattern("batcalc", "max", CMDbatMAX, false, "Return bat with maximum value of each pair of inputs", args(1,4, batargany("",1),batargany("b",1),argany("v",1),batarg("s",oid))),
+ pattern("batcalc", "max", CMDbatMAX, false, "Return bat with maximum value of each pair of inputs", args(1,4, batargany("",1),batargany("b",1),argany("v",1),batarg("s",cnd))),
  pattern("batcalc", "max", CMDbatMAX, false, "Return bat with maximum value of each pair of inputs", args(1,3, batargany("",1),argany("v",1),batargany("b",1))),
- pattern("batcalc", "max", CMDbatMAX, false, "Return bat with maximum value of each pair of inputs", args(1,4, batargany("",1),argany("v",1),batargany("b",1),batarg("s",oid))),
+ pattern("batcalc", "max", CMDbatMAX, false, "Return bat with maximum value of each pair of inputs", args(1,4, batargany("",1),argany("v",1),batargany("b",1),batarg("s",cnd))),
  pattern("batcalc", "max_no_nil", CMDbatMAX_no_nil, false, "Return bat with maximum value of each pair of inputs, ignoring nil values", args(1,3, batargany("",1),batargany("b1",1),batargany("b2",1))),
- pattern("batcalc", "max_no_nil", CMDbatMAX_no_nil, false, "Return bat with maximum value of each pair of inputs, ignoring nil values", args(1,5, batargany("",1),batargany("b1",1),batargany("b2",1),batarg("s1",oid),batarg("s2",oid))),
+ pattern("batcalc", "max_no_nil", CMDbatMAX_no_nil, false, "Return bat with maximum value of each pair of inputs, ignoring nil values", args(1,5, batargany("",1),batargany("b1",1),batargany("b2",1),batarg("s1",cnd),batarg("s2",cnd))),
  pattern("batcalc", "max_no_nil", CMDbatMAX_no_nil, false, "Return bat with maximum value of each pair of inputs, ignoring nil values", args(1,3, batargany("",1),batargany("b",1),argany("v",1))),
- pattern("batcalc", "max_no_nil", CMDbatMAX_no_nil, false, "Return bat with maximum value of each pair of inputs, ignoring nil values", args(1,4, batargany("",1),batargany("b",1),argany("v",1),batarg("s",oid))),
+ pattern("batcalc", "max_no_nil", CMDbatMAX_no_nil, false, "Return bat with maximum value of each pair of inputs, ignoring nil values", args(1,4, batargany("",1),batargany("b",1),argany("v",1),batarg("s",cnd))),
  pattern("batcalc", "max_no_nil", CMDbatMAX_no_nil, false, "Return bat with maximum value of each pair of inputs, ignoring nil values", args(1,3, batargany("",1),argany("v",1),batargany("b",1))),
- pattern("batcalc", "max_no_nil", CMDbatMAX_no_nil, false, "Return bat with maximum value of each pair of inputs, ignoring nil values", args(1,4, batargany("",1),argany("v",1),batargany("b",1),batarg("s",oid))),
+ pattern("batcalc", "max_no_nil", CMDbatMAX_no_nil, false, "Return bat with maximum value of each pair of inputs, ignoring nil values", args(1,4, batargany("",1),argany("v",1),batargany("b",1),batarg("s",cnd))),
 
- pattern("batcalc", "+", CMDbatADD, false, "Return concatenation of B1 and B2 with candidates list", args(1,5, batarg("",str),batarg("b1",str),batarg("b2",str),batarg("s1",oid),batarg("s2",oid))),
- pattern("batcalc", "+", CMDbatADD, false, "Return concatenation of B and V with candidates list", args(1,4, batarg("",str),batarg("b",str),arg("v",str),batarg("s",oid))),
- pattern("batcalc", "+", CMDbatADD, false, "Return concatenation of V and B with candidates list", args(1,4, batarg("",str),arg("v",str),batarg("b",str),batarg("s",oid))),
+ pattern("batcalc", "+", CMDbatADD, false, "Return concatenation of B1 and B2 with candidates list", args(1,5, batarg("",str),batarg("b1",str),batarg("b2",str),batarg("s1",cnd),batarg("s2",cnd))),
+ pattern("batcalc", "+", CMDbatADD, false, "Return concatenation of B and V with candidates list", args(1,4, batarg("",str),batarg("b",str),arg("v",str),batarg("s",cnd))),
+ pattern("batcalc", "+", CMDbatADD, false, "Return concatenation of V and B with candidates list", args(1,4, batarg("",str),arg("v",str),batarg("b",str),batarg("s",cnd))),
 
  pattern("batmmath", "fmod", CMDbatMODsignal, false, "", args(1,3, batarg("",dbl),batarg("x",dbl),arg("y",dbl))),
- pattern("batmmath", "fmod", CMDbatMODsignal, false, "", args(1,4, batarg("",dbl),batarg("x",dbl),arg("y",dbl),batarg("s",oid))),
+ pattern("batmmath", "fmod", CMDbatMODsignal, false, "", args(1,4, batarg("",dbl),batarg("x",dbl),arg("y",dbl),batarg("s",cnd))),
  pattern("batmmath", "fmod", CMDbatMODsignal, false, "", args(1,3, batarg("",flt),batarg("x",flt),arg("y",flt))),
- pattern("batmmath", "fmod", CMDbatMODsignal, false, "", args(1,4, batarg("",flt),batarg("x",flt),arg("y",flt),batarg("s",oid))),
+ pattern("batmmath", "fmod", CMDbatMODsignal, false, "", args(1,4, batarg("",flt),batarg("x",flt),arg("y",flt),batarg("s",cnd))),
 
  pattern("batcalc", "between", CMDbatBETWEEN, false, "B between V1 and V2 (or vice versa)", args(1,9, batarg("",bit),batargany("b",1),batargany("v1",1),batargany("v2",1),arg("sym",bit),arg("linc",bit),arg("hinc",bit),arg("nils_false",bit),arg("anti",bit))),
- pattern("batcalc", "between", CMDbatBETWEEN, false, "B between V1 and V2 (or vice versa) with candidates list", args(1,12, batarg("",bit),batargany("b",1),batargany("v1",1),batargany("v2",1),batarg("s",oid),batarg("s1",oid),batarg("s2",oid),arg("sym",bit),arg("linc",bit),arg("hinc",bit),arg("nils_false",bit),arg("anti",bit))),
+ pattern("batcalc", "between", CMDbatBETWEEN, false, "B between V1 and V2 (or vice versa) with candidates list", args(1,12, batarg("",bit),batargany("b",1),batargany("v1",1),batargany("v2",1),batarg("s",cnd),batarg("s1",cnd),batarg("s2",cnd),arg("sym",bit),arg("linc",bit),arg("hinc",bit),arg("nils_false",bit),arg("anti",bit))),
  pattern("batcalc", "between", CMDbatBETWEEN, false, "B between V1 and V2 (or vice versa)", args(1,9, batarg("",bit),batargany("b",1),batargany("v1",1),argany("v2",1),arg("sym",bit),arg("linc",bit),arg("hinc",bit),arg("nils_false",bit),arg("anti",bit))),
- pattern("batcalc", "between", CMDbatBETWEEN, false, "B between V1 and V2 (or vice versa) with candidates list", args(1,11, batarg("",bit),batargany("b",1),batargany("v1",1),argany("v2",1),batarg("s",oid),batarg("s1",oid),arg("sym",bit),arg("linc",bit),arg("hinc",bit),arg("nils_false",bit),arg("anti",bit))),
+ pattern("batcalc", "between", CMDbatBETWEEN, false, "B between V1 and V2 (or vice versa) with candidates list", args(1,11, batarg("",bit),batargany("b",1),batargany("v1",1),argany("v2",1),batarg("s",cnd),batarg("s1",cnd),arg("sym",bit),arg("linc",bit),arg("hinc",bit),arg("nils_false",bit),arg("anti",bit))),
  pattern("batcalc", "between", CMDbatBETWEEN, false, "B between V1 and V2 (or vice versa)", args(1,9, batarg("",bit),batargany("b",1),argany("v1",1),batargany("v2",1),arg("sym",bit),arg("linc",bit),arg("hinc",bit),arg("nils_false",bit),arg("anti",bit))),
- pattern("batcalc", "between", CMDbatBETWEEN, false, "B between V1 and V2 (or vice versa) with candidates list", args(1,11, batarg("",bit),batargany("b",1),argany("v1",1),batargany("v2",1),batarg("s",oid),batarg("s2",oid),arg("sym",bit),arg("linc",bit),arg("hinc",bit),arg("nils_false",bit),arg("anti",bit))),
+ pattern("batcalc", "between", CMDbatBETWEEN, false, "B between V1 and V2 (or vice versa) with candidates list", args(1,11, batarg("",bit),batargany("b",1),argany("v1",1),batargany("v2",1),batarg("s",cnd),batarg("s2",cnd),arg("sym",bit),arg("linc",bit),arg("hinc",bit),arg("nils_false",bit),arg("anti",bit))),
  pattern("batcalc", "between", CMDbatBETWEEN, false, "B between V1 and V2 (or vice versa)", args(1,9, batarg("",bit),batargany("b",1),argany("v1",1),argany("v2",1),arg("sym",bit),arg("linc",bit),arg("hinc",bit),arg("nils_false",bit),arg("anti",bit))),
- pattern("batcalc", "between", CMDbatBETWEEN, false, "B between V1 and V2 (or vice versa) with candidates list", args(1,10, batarg("",bit),batargany("b",1),argany("v1",1),argany("v2",1),batarg("s",oid),arg("sym",bit),arg("linc",bit),arg("hinc",bit),arg("nils_false",bit),arg("anti",bit))),
+ pattern("batcalc", "between", CMDbatBETWEEN, false, "B between V1 and V2 (or vice versa) with candidates list", args(1,10, batarg("",bit),batargany("b",1),argany("v1",1),argany("v2",1),batarg("s",cnd),arg("sym",bit),arg("linc",bit),arg("hinc",bit),arg("nils_false",bit),arg("anti",bit))),
 
  pattern("aggr", "avg", CMDcalcavg, false, "Gives the avg of all tail values", args(1,2, arg("",dbl),batargany("b",2))),
  pattern("aggr", "avg", CMDcalcavg, false, "Gives the avg of all tail values", args(1,3, arg("",dbl),batargany("b",2),arg("scale",int))),

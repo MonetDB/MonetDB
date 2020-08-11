@@ -203,7 +203,11 @@ findFunctionType(Module scope, MalBlkPtr mb, InstrPtr p, int idx, int silent)
 				 * In all other cases the type should apply to all
 				 * remaining arguments.
 				 */
-				if (formal == actual)
+				if (isCandType(formal)) {
+					if (actual == newBatType(TYPE_oid) ||
+						actual == newBatType(TYPE_msk))
+						continue;
+				} else if (formal == actual)
 					continue;
 				if (updateTypeMap(formal, actual, polytype)) {
 					unmatched = i;
@@ -321,7 +325,10 @@ findFunctionType(Module scope, MalBlkPtr mb, InstrPtr p, int idx, int silent)
 				if (k == sig->retc - 1 && sig->varargs & VARRETS)
 					k--;
 
-				if (actual == formal)
+				if (isCandType(formal) && (actual == newBatType(TYPE_oid) ||
+										   actual == newBatType(TYPE_msk)))
+					returntype[i] = actual;
+				else if (actual == formal)
 					returntype[i] = actual;
 				else {
 					returntype[i] = resolveType(formal, actual);
@@ -428,6 +435,10 @@ findFunctionType(Module scope, MalBlkPtr mb, InstrPtr p, int idx, int silent)
 int
 resolveType(int dsttype, int srctype)
 {
+	if (isCandType(dsttype)) {
+		if (srctype == newBatType(TYPE_oid) || srctype == newBatType(TYPE_msk))
+			return srctype;
+	}
 	if (dsttype == srctype)
 		return dsttype;
 	if (dsttype == TYPE_any)
@@ -735,8 +746,11 @@ getPolyType(malType t, int *polytype)
 		return polytype[ti];
 
 	tail = ti == 0 ? getBatType(t) : polytype[ti];
-	if (isaBatType(t))
-		return newBatType(tail);
+	if (isaBatType(t)) {
+		tail = newBatType(tail);
+		if (isCandType(t))
+			tail = setCandType(tail);
+	}
 	return tail;
 }
 
