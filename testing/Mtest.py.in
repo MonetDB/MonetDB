@@ -3666,7 +3666,7 @@ os.environ['VERSION'] = VERSION
 if 'HTMLTITLE' in os.environ:
     HTMLTITLE = os.environ['HTMLTITLE']
 else:
-    HTMLTITLE = ""+THISFILE+" results on "+DISTVER       #"+ ("`date`")"
+    HTMLTITLE = "{} results on {} ({})".format(THISFILE, HOST, DISTVER)       #"+ ("`date`")"
 
 URLPREFIX = 'http://dev.monetdb.org/hg/MonetDB/file/'
 
