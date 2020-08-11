@@ -11730,6 +11730,7 @@ stdout of test 'MAL-signatures` in directory 'clients` itself:
 [ "sysmon",	"stop",	"pattern sysmon.stop(X_1:int):void ",	"SYSMONstop;",	""	]
 [ "sysmon",	"stop",	"pattern sysmon.stop(X_1:lng):void ",	"SYSMONstop;",	""	]
 [ "sysmon",	"stop",	"pattern sysmon.stop(X_1:sht):void ",	"SYSMONstop;",	""	]
+[ "sysmon",	"user_statistics",	"pattern sysmon.user_statistics() (X_0:bat[:str], X_1:bat[:lng], X_2:bat[:lng], X_3:bat[:timestamp], X_4:bat[:timestamp], X_5:bat[:lng], X_6:bat[:str]) ",	"SYSMONstatistics;",	""	]
 [ "tokenizer",	"append",	"command tokenizer.append(X_1:str):oid ",	"TKNZRappend;",	""	]
 [ "tokenizer",	"close",	"command tokenizer.close():void ",	"TKNZRclose;",	""	]
 [ "tokenizer",	"depositFile",	"command tokenizer.depositFile(X_1:str):void ",	"TKNZRdepositFile;",	""	]
