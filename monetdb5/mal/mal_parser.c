@@ -676,7 +676,7 @@ typeAlias(Client cntxt, int tpe)
  * We should change getMALtype to return a failure instead.
  */
 static int
-simpleTypeId(Client cntxt)
+simpleTypeId(Client cntxt, bool isbat)
 {
 	int tpe;
 	size_t l;
@@ -687,6 +687,10 @@ simpleTypeId(Client cntxt)
 		parseError(cntxt, "Type identifier expected\n");
 		cntxt->yycur--; /* keep it */
 		return -1;
+	}
+	if (isbat && l == 3 && strncmp(CURRENT(cntxt), "cnd", 3) == 0) {
+		advance(cntxt, 3);
+		return 512;				/* magic value only used in parseTypeId() */
 	}
 	tpe = getAtomIndex(CURRENT(cntxt), l, -1);
 	if (tpe < 0) {
@@ -709,14 +713,17 @@ parseTypeId(Client cntxt, int defaultType)
 		/* parse :bat[:type] */
 		advance(cntxt, 5);
 		if (currChar(cntxt) == ':') {
-			tt = simpleTypeId(cntxt);
+			tt = simpleTypeId(cntxt, true);
 			kt = typeAlias(cntxt, tt);
 		} else{
 			parseError(cntxt, "':bat[:any]' expected\n");
 			return TYPE_bat;
 		}
 
-		i = newBatType(tt);
+		if (tt == 512)			/* magic value set by simpleTypeId() */
+			i = setCandType(newBatType(TYPE_oid));
+		else
+			i = newBatType(tt);
 		if (kt > 0)
 			setTypeIndex(i, kt);
 
@@ -727,7 +734,7 @@ parseTypeId(Client cntxt, int defaultType)
 		return i;
 	}
 	if (currChar(cntxt) == ':') {
-		tt = simpleTypeId(cntxt);
+		tt = simpleTypeId(cntxt, false);
 		kt = typeAlias(cntxt, tt);
 		if (kt > 0)
 			setTypeIndex(tt, kt);
