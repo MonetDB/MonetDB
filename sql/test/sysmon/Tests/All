@@ -1,5 +1,5 @@
 create_sleep
 sysqueue
 sys_queue_rotate
-sys_queue_expand
+HAVE_PYMONETDB?sys_queue_expand
 drop_sleep
