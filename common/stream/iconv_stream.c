@@ -234,6 +234,7 @@ ic_close(stream *s)
 			ic_flush(s, MNSTR_FLUSH_DATA);
 		iconv_close(ic->cd);
 		close_stream(s->inner);
+		s->inner = NULL;
 		free(s->stream_data.p);
 		s->stream_data.p = NULL;
 	}
@@ -243,6 +244,7 @@ static void
 ic_destroy(stream *s)
 {
 	ic_close(s);
+	mnstr_destroy(s->inner);
 	destroy_stream(s);
 }
 

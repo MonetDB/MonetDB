@@ -158,8 +158,10 @@ pump_destroy(stream *s)
 	pump_state *state = (pump_state*) s->stream_data.p;
 	inner_state_t *inner_state = state->inner_state;
 
-	mnstr_destroy(s->inner);
 	state->finalizer(inner_state);
+	free(state);
+	mnstr_destroy(s->inner);
+	destroy_stream(s);
 }
 
 static pump_result

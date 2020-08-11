@@ -821,7 +821,7 @@ create_wrapper_stream(const char *name, stream *inner)
 	s->write = inner->write == NULL ? NULL : wrapper_write;
 	s->close = inner->close == NULL ? NULL : wrapper_close;
 	s->clrerr = inner->clrerr == NULL ? NULL : wrapper_clrerr;
-	s->destroy = inner->destroy == NULL ? NULL : wrapper_destroy;
+	s->destroy = wrapper_destroy;
 	s->flush = inner->flush == NULL ? NULL : wrapper_flush;
 	s->fsync = inner->fsync == NULL ? NULL : wrapper_fsync;
 	s->fgetpos = inner->fgetpos == NULL ? NULL : wrapper_fgetpos;

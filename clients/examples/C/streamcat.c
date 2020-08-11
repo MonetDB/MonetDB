@@ -204,7 +204,7 @@ int cmd_read(char *argv[])
 	}
 
 	copy_stream_to_file(s, out, bufsize);
-	mnstr_close(s);
+	close_stream(s);
 
 	return 0;
 }
@@ -312,7 +312,7 @@ int cmd_write(char *argv[])
 	}
 
 	copy_file_to_stream(in, s, bufsize, do_flush, flush_level);
-	mnstr_close(s);
+	close_stream(s);
 
 	return 0;
 }
