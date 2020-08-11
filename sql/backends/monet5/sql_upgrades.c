@@ -1658,19 +1658,7 @@ sql_update_jun2020(Client c, mvc *sql, const char *prev_schema, bool *systabfixe
 
 			"grant execute on procedure sys.pause(bigint) to public;\n"
 			"grant execute on procedure sys.resume(bigint) to public;\n"
-			"grant execute on procedure sys.stop(bigint) to public;\n"
-
-			"create function sys.user_statistics() returns table(\n"
-				"username string,\n"
-				"querycount bigint,\n"
-				"totalticks bigint,\n"
-				"started timestamp,\n"
-				"finished timestamp,\n"
-				"maxticks bigint,\n"
-				"maxquery string\n"
-			")\n"
-			"external name sysmon.user_statistics;\n"
-	);
+			"grant execute on procedure sys.stop(bigint) to public;\n");
 
 	pos += snprintf(buf + pos, bufsize - pos,
 			"update sys.functions set system = true where system <> true and schema_id = (select id from sys.schemas where name = 'sys')"
@@ -2392,6 +2380,19 @@ sql_update_default(Client c, mvc *sql, const char *prev_schema, bool *systabfixe
 							"SELECT 'rowcnt', rowcnt;\n"
 							"UPDATE sys._tables SET system = true WHERE name = 'var_values' AND schema_id = (SELECT id FROM sys.schemas WHERE name = 'sys');\n"
 							"GRANT SELECT ON sys.var_values TO PUBLIC;\n");
+			/* 26_sysmon.sql */
+			pos += snprintf(buf + pos, bufsize - pos,
+					"create function sys.user_statistics()\n"
+					"returns table(\n"
+						" username string,\n"
+						" querycount bigint,\n"
+						" totalticks bigint,\n"
+						" started timestamp,\n"
+						" finished timestamp,\n"
+						" maxticks bigint,\n"
+						" maxquery string\n"
+					")\n"
+					"external name sysmon.user_statistics;\n");
 
 			pos += snprintf(buf + pos, bufsize - pos, "set schema \"%s\";\n", prev_schema);
 
