@@ -170,7 +170,7 @@ compr(inner_state_t *inner_state, pump_action action)
 static void
 compr_end(inner_state_t *inner_state)
 {
-	LZ4F_freeDecompressionContext(inner_state->ctx.d);
+	LZ4F_freeCompressionContext(inner_state->ctx.c);
 	free(inner_state->buffer.start);
 	free(inner_state);
 }
