@@ -34,7 +34,7 @@ stdout of test 'duplicates-not-eliminated-long-CASE-stmt.Bug-6697` in directory 
 % 1023 # length
 function user.main():void;
     X_1:void := querylog.define("explain select sys.timestamp_to_str(case when task0.\"sys_created_on\" >= \\'1999-10-31 09:00:00\\' and task0.\"sys_created_on\" < \\'2000-04-02 10:00:00\\' then task0.\"sys_created_on\" + interval \\'-28800\\' second when task0.\"sys_created_on\" >= \\'2000-04-02 10:00:00\\' and task0.\"sys_created_on\" < \\'2000-10-29 09:00:00\\' then task0.\"sys_created_on\" + interval \\'-25200\\' second when task0.\"sys_created_on\" >= \\'2000-10-29 09:00:00\\' and task0.\"sys_created_on\" < \\'2001-04-01 10:00:00\\' then task0.\"sys_created_on\" + interval \\'-28800\\' second when task0.\"sys_created_on\" >= \\'2001-04-01 10:00:00\\' and task0.\"sys_created_on\" < \\'2001-10-28 09:00:00\\' then task0.\"sys_created_on\" + interval \\'-25200\\' second when task0.\"sys_created_on\" >= \\'2001-10-28 09:00:00\\' and task0.\"sys_created_on\" < \\'2002-04-07 10:00:00\\' then task0.\"sys_created_on\" + interval \\'-28800\\' second when task0.\"sys_created_on\" >= \\'2002-04-07 10:00:00\\' and t
-barrier X_1300:bit := language.dataflow();
+barrier X_1298:bit := language.dataflow();
     X_43:bat[:str] := bat.new(nil:str);
     X_56:bat[:timestamp] := algebra.project(X_43:bat[:str], nil:timestamp);
     X_45:bat[:timestamp] := bat.new(nil:timestamp);
@@ -500,12 +500,12 @@ barrier X_1300:bit := language.dataflow();
     C_1128:bat[:oid] := algebra.projection(C_1127:bat[:oid], C_1109:bat[:oid]);
     X_1134:bat[:timestamp] := algebra.projection(C_1128:bat[:oid], X_61:bat[:timestamp]);
     X_1135:bat[:timestamp] := bat.replace(X_1121:bat[:timestamp], C_1128:bat[:oid], X_1134:bat[:timestamp], true:bit);
-    X_1145:bat[:str] := bat.pack(".":str);
-    X_1146:bat[:str] := bat.pack("yearref":str);
-    X_1147:bat[:str] := bat.pack("clob":str);
-    X_1148:bat[:int] := bat.pack(0:int);
+    X_1143:bat[:str] := bat.pack(".":str);
+    X_1144:bat[:str] := bat.pack("yearref":str);
+    X_1145:bat[:str] := bat.pack("clob":str);
+    X_1146:bat[:int] := bat.pack(0:int);
     X_1136:bat[:timestamp] := batcalc.timestamp(X_1135:bat[:timestamp], 7:int);
-    X_1142:bat[:str] := batmtime.timestamp_to_str(X_1136:bat[:timestamp], "%Y":str);
+    X_1140:bat[:str] := batmtime.timestamp_to_str(X_1136:bat[:timestamp], "%Y":str);
     language.pass(C_58:bat[:oid]);
     language.pass(X_51:bat[:bit]);
     language.pass(C_83:bat[:oid]);
@@ -647,8 +647,8 @@ barrier X_1300:bit := language.dataflow();
     language.pass(C_1109:bat[:oid]);
     language.pass(X_61:bat[:timestamp]);
     language.pass(C_1128:bat[:oid]);
-exit X_1300:bit;
-    sql.resultSet(X_1145:bat[:str], X_1146:bat[:str], X_1147:bat[:str], X_1148:bat[:int], X_1148:bat[:int], X_1142:bat[:str]);
+exit X_1298:bit;
+    sql.resultSet(X_1143:bat[:str], X_1144:bat[:str], X_1145:bat[:str], X_1146:bat[:int], X_1146:bat[:int], X_1140:bat[:str]);
 end user.main;
 # optimizer.mitosis()
 # optimizer.dataflow()
