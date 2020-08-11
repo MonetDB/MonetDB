@@ -195,5 +195,7 @@ create view v0(c0, c1, c2, c3) as (
 select distinct cast(case time '03:52:21' when time '05:04:36' then r'0.2' end as date),
 coalesce (t0.c0, length(coalesce (r't%QB', replace(r' ,yO_5G刵i稶bDßᶏ''', r'0.8', r'-1e500')))), 1, timestamp '1970-01-16 13:47:20' from t0) with check option;
 SELECT COUNT(*) FROM v0 LEFT OUTER JOIN t0 ON COALESCE(v0.c1, v0.c2) BETWEEN v0.c2 AND t0.c0;
+	-- 16
 SELECT ALL max(ALL v0.c3) FROM v0 LEFT OUTER JOIN t0 ON (- (((v0.c2)-(COALESCE(v0.c2, v0.c1))))) NOT  BETWEEN SYMMETRIC (v0.c2) AND (t0.c0);
+	-- 1970-01-16 13:47:20
 ROLLBACK;
