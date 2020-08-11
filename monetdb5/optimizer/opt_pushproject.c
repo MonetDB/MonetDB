@@ -16,7 +16,8 @@
 #include "mal_interpreter.h"	/* for showErrors() */
 
 
-#define NILBATTST(M,P,I) (isVarConstant(M,getArg(P,I)) && isaBatType(getArgType(M,P,I)))
+#define NILBATTST(M,P,I) (( *(bat*) getVarValue(M,getArg(P,I)) == 0 && isaBatType(getArgType(M,P,I))) || !isaBatType(getArgType(M,P,I)))
+
 
 str
 OPTpushprojectImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
@@ -54,13 +55,12 @@ OPTpushprojectImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr
 
 			/* collect all projection operations*/
 			if ( getFunctionId(p) == projectionRef && p->argc ==3 && 
-				isVarCList(mb, getArg(p,0)) && 
 				isVarCList(mb, getArg(p,1)) && 
 				isaBatType(getArgType(mb, p, 2))){
 				projects[getArg(p,0)] = i;
 			}
 			/* projection over the last column in a projection path could be replaced with the original */
-			if ( getModuleId(p) == algebraRef && getFunctionId(p) == projectionpathRef && projects[getArg(p, p->argc-1)]  && NILBATTST(mb,p, p->argc-1)){
+			if ( getModuleId(p) == algebraRef && getFunctionId(p) == projectionpathRef && projects[getArg(p, p->argc-1)] ){
 				q = old[projects[getArg(p, p->argc-1)]];
 				getArg(p, p->argc-1) = getArg(q,1);
 				p= pushArgument(mb, p, getArg(q,2));
@@ -81,13 +81,13 @@ OPTpushprojectImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr
 					getFunctionId(p)[0] == '*' ||
 					getFunctionId(p)[0] == '%' ){
 					// Inject the projection arguments
-					if( projects[getArg(p, 1)] && NILBATTST(mb,p, 2)){
+					if( projects[getArg(p, 1)] ){
 						q = old[projects[getArg(p,1)]];
 						getArg(p, 1) = getArg(q,2);
 						p= pushArgument(mb, p, getArg(q,1));
 						actions++;
 					}
-					if( projects[getArg(p, 2)] && NILBATTST(mb,p, 2)){
+					if( projects[getArg(p, 2)] ){
 						q = old[projects[getArg(p, 2)]];
 						getArg(p, 2) = getArg(q,2);
 						p= pushArgument(mb, p, getArg(q,1));
@@ -103,13 +103,15 @@ OPTpushprojectImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr
 					getFunctionId(p)[0] == '*' ||
 					getFunctionId(p)[0] == '%' ){
 					// Inject the projection arguments
-					if( projects[getArg(p, 1)] && NILBATTST(mb,p, 3)){
+					if( projects[getArg(p, 1)] ){
+						assert(NILBATTST(mb,p, 3));
 						q = old[projects[getArg(p, 1)]];
 						getArg(p, 1) = getArg(q,2);
 						getArg(p, 3) = getArg(q,1);
 						actions++;
 					}
-					if( projects[getArg(p, 2)] && NILBATTST(mb,p, 3)){
+					if( projects[getArg(p, 2)] ){
+						assert(NILBATTST(mb,p, 3));
 						q = old[projects[getArg(p, 2)]];
 						getArg(p, 2 ) = getArg(q,2);
 						getArg(p, 3) = getArg(q,1);
@@ -126,13 +128,15 @@ OPTpushprojectImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr
 					getFunctionId(p)[0] == '*' ||
 					getFunctionId(p)[0] == '%' ){
 					// Inject the projection arguments
-					if( projects[getArg(p, 1)] && NILBATTST(mb,p, 3)){
+					if( projects[getArg(p, 1)] ){
+						assert(NILBATTST(mb,p, 3));
 						q = old[projects[getArg(p, 1)]];
 						getArg(p, 1) = getArg(q,2);
 						getArg(p, 3) = getArg(q,1);
 						actions++;
 					}
-					if( projects[getArg(p, 2)] && NILBATTST(mb,p, 4)){
+					if( projects[getArg(p, 2)] ){
+						assert(NILBATTST(mb,p, 3));
 						q = old[projects[getArg(p, 2)]];
 						getArg(p, 2) = getArg(q,2);
 						getArg(p, 4) = getArg(q,1);
