@@ -18,29 +18,17 @@ str_2_blob(blob **res, const str *val)
 	ptr p = NULL;
 	size_t len = 0;
 	ssize_t e;
-	char buf[BUFSIZ];
+	str v = *val;
 
-	e = ATOMfromstr(TYPE_blob, &p, &len, *val, false);
-	if (e < 0 || !p || (ATOMcmp(TYPE_blob, p, ATOMnilptr(TYPE_blob)) == 0 && ATOMcmp(TYPE_str, *val, ATOMnilptr(TYPE_str)) != 0)) {
+	e = ATOMfromstr(TYPE_blob, &p, &len, v, false);
+	if (e < 0 || !p || (ATOMcmp(TYPE_blob, p, ATOMnilptr(TYPE_blob)) == 0 && !strNil(v))) {
 		if (p)
 			GDKfree(p);
-		snprintf(buf, BUFSIZ, "Conversion of string '%s' failed", *val? *val:"");
-		throw(SQL, "blob", SQLSTATE(42000) "%s", buf);
+		if (strNil(v))
+			throw(SQL, "calc.str_2_blob", SQLSTATE(42000) "Conversion of NULL string to blob failed");
+		throw(SQL, "calc.str_2_blob", SQLSTATE(42000) "Conversion of string '%s' to blob failed", v);
 	}
 	*res = (blob *) p;
-	return MAL_SUCCEED;
-}
-
-str
-SQLblob_2_str(str *res, const blob *val)
-{
-	char *p = NULL;
-	size_t len = 0;
-	if (BLOBtostr(&p, &len, val, false) < 0) {
-		GDKfree(p);
-		throw(SQL, "blob", GDK_EXCEPTION);
-	}
-	*res = p;
 	return MAL_SUCCEED;
 }
 
@@ -66,7 +54,7 @@ batstr_2_blob_cand(bat *res, const bat *bid, const bat *sid)
 		BBPunfix(b->batCacheid);
 		if (s)
 			BBPunfix(s->batCacheid);
-		throw(SQL, "sql.2_blob", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		throw(SQL, "batcalc.str_2_blob", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
 	for (BUN i = 0; i < ci.ncand; i++) {
 		BUN p = (BUN) (canditer_next(&ci) - b->hseqbase);
@@ -85,7 +73,7 @@ batstr_2_blob_cand(bat *res, const bat *bid, const bat *sid)
 			if (s)
 				BBPunfix(s->batCacheid);
 			BBPreclaim(dst);
-			throw(SQL, "sql.blob", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+			throw(SQL, "batcalc.str_2_blob", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		}
 		GDKfree(r);
 	}
@@ -200,7 +188,7 @@ SQLbatstr_cast(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		BBPunfix(b->batCacheid);
 		if (s)
 			BBPunfix(b->batCacheid);
-		throw(SQL, "sql.str_cast", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		throw(SQL, "batcalc.str_cast", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
 	for (BUN i = 0; i < ci.ncand; i++) {
 		BUN p = (BUN) (canditer_next(&ci) - b->hseqbase);
@@ -218,7 +206,7 @@ SQLbatstr_cast(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			if (s)
 				BBPunfix(b->batCacheid);
 			BBPreclaim(dst);
-			throw(SQL, "sql.str_cast", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+			throw(SQL, "batcalc.str_cast", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		}
 		if (r != str_nil)
 			GDKfree(r);
@@ -227,7 +215,7 @@ SQLbatstr_cast(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	BBPkeepref(*res = dst->batCacheid);
 	BBPunfix(b->batCacheid);
 	if (s)
-		BBPunfix(b->batCacheid);
+		BBPunfix(s->batCacheid);
 	return msg;
 }
 
