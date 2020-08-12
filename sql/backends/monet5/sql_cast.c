@@ -12,75 +12,76 @@
 #include "sql_result.h"
 #include "mal_instruction.h"
 
+static inline str
+str_2_blob_imp(blob **r, size_t *rlen, const str val)
+{
+	ssize_t e = ATOMfromstr(TYPE_blob, (void**)r, rlen, val, false);
+	if (e < 0 || (ATOMcmp(TYPE_blob, *r, ATOMnilptr(TYPE_blob)) == 0 && !strNil(val))) {
+		if (strNil(val))
+			throw(SQL, "calc.str_2_blob", SQLSTATE(42000) "Conversion of NULL string to blob failed");
+		throw(SQL, "calc.str_2_blob", SQLSTATE(42000) "Conversion of string '%s' to blob failed", val);
+	}
+	return MAL_SUCCEED;
+}
+
 str
 str_2_blob(blob **res, const str *val)
 {
-	ptr p = NULL;
-	size_t len = 0;
-	ssize_t e;
-	str v = *val;
+	size_t rlen = 0;
 
-	e = ATOMfromstr(TYPE_blob, &p, &len, v, false);
-	if (e < 0 || !p || (ATOMcmp(TYPE_blob, p, ATOMnilptr(TYPE_blob)) == 0 && !strNil(v))) {
-		if (p)
-			GDKfree(p);
-		if (strNil(v))
-			throw(SQL, "calc.str_2_blob", SQLSTATE(42000) "Conversion of NULL string to blob failed");
-		throw(SQL, "calc.str_2_blob", SQLSTATE(42000) "Conversion of string '%s' to blob failed", v);
-	}
-	*res = (blob *) p;
-	return MAL_SUCCEED;
+	return str_2_blob_imp(res, &rlen, *val);
 }
 
 str
 batstr_2_blob_cand(bat *res, const bat *bid, const bat *sid)
 {
-	BAT *b, *s = NULL, *dst;
+	BAT *b = NULL, *s = NULL, *dst = NULL;
 	BATiter bi;
 	char *msg = NULL;
 	struct canditer ci;
+	BUN q;
+	oid off;
+	blob *r = NULL;
+	size_t rlen = 0;
 
 	if ((b = BATdescriptor(*bid)) == NULL) {
-		throw(SQL, "batcalc.str_2_blob", SQLSTATE(HY005) "Cannot access column descriptor");
+		msg = createException(SQL, "batcalc.str_2_blob", SQLSTATE(HY005) RUNTIME_OBJECT_MISSING);
+		goto bailout;
 	}
 	if (sid && !is_bat_nil(*sid) && (s = BATdescriptor(*sid)) == NULL) {
-		BBPunfix(b->batCacheid);
-		throw(SQL, "batcalc.str_2_blob", SQLSTATE(HY005) "Cannot access column descriptor");
+		msg = createException(SQL, "batcalc.str_2_blob", SQLSTATE(HY005) RUNTIME_OBJECT_MISSING);
+		goto bailout;
 	}
-	canditer_init(&ci, b, s);
+	off = b->hseqbase;
+	q = canditer_init(&ci, b, s);
 	bi = bat_iterator(b);
-	dst = COLnew(b->hseqbase, TYPE_blob, ci.ncand, TRANSIENT);
-	if (dst == NULL) {
-		BBPunfix(b->batCacheid);
-		if (s)
-			BBPunfix(s->batCacheid);
-		throw(SQL, "batcalc.str_2_blob", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+	if (!(dst = COLnew(b->hseqbase, TYPE_blob, q, TRANSIENT))) {
+		msg = createException(SQL, "batcalc.str_2_blob", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		goto bailout;
 	}
+
 	for (BUN i = 0; i < ci.ncand; i++) {
-		BUN p = (BUN) (canditer_next(&ci) - b->hseqbase);
+		BUN p = (BUN) (canditer_next(&ci) - off);
 		str v = (str) BUNtvar(bi, p);
-		blob *r;
-		msg = str_2_blob(&r, &v);
-		if (msg) {
-			BBPunfix(dst->batCacheid);
-			BBPunfix(b->batCacheid);
-			if (s)
-				BBPunfix(s->batCacheid);
-			return msg;
-		}
+
+		if ((msg = str_2_blob_imp(&r, &rlen, v)))
+			goto bailout;
 		if (BUNappend(dst, r, false) != GDK_SUCCEED) {
-			BBPunfix(b->batCacheid);
-			if (s)
-				BBPunfix(s->batCacheid);
-			BBPreclaim(dst);
-			throw(SQL, "batcalc.str_2_blob", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+			msg = createException(SQL, "batcalc.str_2_blob", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+			goto bailout;
 		}
-		GDKfree(r);
 	}
-	BBPkeepref(*res = dst->batCacheid);
-	BBPunfix(b->batCacheid);
+
+bailout:
+	GDKfree(r);
+	if (b)
+		BBPunfix(b->batCacheid);
 	if (s)
 		BBPunfix(s->batCacheid);
+	if (dst && !msg)
+		BBPkeepref(*res = dst->batCacheid);
+	else if (dst)
+		BBPreclaim(dst);
 	return msg;
 }
 
@@ -207,6 +208,7 @@ SQLbatstr_cast(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	struct canditer ci;
 	BUN q;
 	int initial_capacity = MAX(str_buf_initial_capacity(eclass), (int) strlen(str_nil) + 1); /* don't reallocate on str_nil */
+	oid off;
 
 	if ((msg = getSQLContext(cntxt, mb, &m, NULL)) != NULL)
 		return msg;
@@ -220,6 +222,7 @@ SQLbatstr_cast(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		msg = createException(SQL, "batcalc.str", SQLSTATE(HY005) RUNTIME_OBJECT_MISSING);
 		goto bailout;
 	}
+	off = b->hseqbase;
 	q = canditer_init(&ci, b, s);
 	bi = bat_iterator(b);
 	if (!(dst = COLnew(b->hseqbase, TYPE_str, q, TRANSIENT))) {
@@ -237,7 +240,7 @@ SQLbatstr_cast(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	}
 
 	for (BUN i = 0; i < q; i++) {
-		BUN p = (BUN) (canditer_next(&ci) - b->hseqbase);
+		BUN p = (BUN) (canditer_next(&ci) - off);
 		ptr v = BUNtail(bi, p);
 
 		if (EC_VARCHAR(eclass) || tpe == TYPE_str)
