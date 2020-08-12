@@ -305,7 +305,7 @@ BATproject2(BAT *restrict l, BAT *restrict r1, BAT *restrict r2)
 
 	TRC_DEBUG_IF(ALGO) t0 = GDKusec();
 
-	assert(ATOMtype(l->ttype) == TYPE_oid);
+	assert(ATOMtype(l->ttype) == TYPE_oid || l->ttype == TYPE_msk);
 	assert(r2 == NULL || ATOMtype(r1->ttype) == ATOMtype(r2->ttype));
 	assert(r2 == NULL || r1->hseqbase + r1->batCount == r2->hseqbase);
 
@@ -329,9 +329,10 @@ BATproject2(BAT *restrict l, BAT *restrict r1, BAT *restrict r2)
 			goto doreturn;
 		}
 	}
-	if (l->ttype == TYPE_void && l->tvheap != NULL) {
-		/* l is candidate list with exceptions */
-		assert(!is_oid_nil(l->tseqbase));
+	if ((l->ttype == TYPE_void && l->tvheap != NULL) ||
+	    l->ttype == TYPE_msk) {
+		/* l is candidate list with exceptions or is a bitmask */
+		assert(l->ttype == TYPE_msk || !is_oid_nil(l->tseqbase));
 		lcount = canditer_init(&ci, NULL, l);
 		lci = &ci;
 	}
