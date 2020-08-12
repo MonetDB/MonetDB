@@ -60,7 +60,7 @@ batstr_2_blob_cand(bat *res, const bat *bid, const bat *sid)
 		goto bailout;
 	}
 
-	for (BUN i = 0; i < ci.ncand; i++) {
+	for (BUN i = 0; i < q; i++) {
 		BUN p = (BUN) (canditer_next(&ci) - off);
 		str v = (str) BUNtvar(bi, p);
 
