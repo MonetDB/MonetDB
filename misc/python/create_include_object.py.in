@@ -9,7 +9,7 @@
 import os
 import sys
 import argparse
-
+import re
 
 def open_convert_file(srcfile):
     if os.path.isfile(srcfile):
@@ -24,59 +24,90 @@ def open_convert_file(srcfile):
         raise FileNotFoundError
 
 
-def write_c_file(module_name, language, buffer_as_string, c_filename):
+def write_c_file(module_name, language, buffer_as_array, length, c_filename):
     # [NOTE]: also escape the { and } character in the strings
     with open(c_filename, 'w') as f:
-        f.write("unsigned char _{mod}_{lang}[] = {{{buf}0}};\n".format(
+        write = f.write
+        write("unsigned char _{mod}_{lang}[{length}] = {{\n".format(
             mod=module_name,
             lang=language,
-            buf=buffer_as_string))
-        f.write("#include \"monetdb_config.h\"\n")
-        f.write("#include \"{lang}_import.h\"\n".format(lang=language))
-        f.write("#ifdef _MSC_VER\n")
-        f.write("#undef read\n")
-        f.write("#pragma section(\".CRT$XCU\",read)\n")
-        f.write("#endif\n")
-        f.write("LIB_STARTUP_FUNC(init_{mod}_{lang})\n"
-                "{{ {lang}_register(\"{mod}\", _{mod}"
-                "_{lang}); }}\n".format(mod=module_name, lang=language))
+            length=length+1))
+        if length >= 65535:
+            for line in buffer_as_array:
+                for c in line:
+                    write("'")
+                    if c == '\\':
+                        write(r"\\")
+                    elif c == "'":
+                        write(r"\'")
+                    else:
+                        write(c)
+                    write("',")
+                write("'\\n',\n")
+            write("'\\0'\n")
+        else:
+            for line in buffer_as_array:
+                write('"')
+                write(line.replace('\\', r'\\').replace('"', r'\"'))
+                write('\\n"\n')
+        write('};\n')
+        write("#include \"monetdb_config.h\"\n")
+        write("#include \"{lang}_import.h\"\n".format(lang=language))
+        write("#ifdef _MSC_VER\n")
+        write("#undef read\n")
+        write("#pragma section(\".CRT$XCU\",read)\n")
+        write("#endif\n")
+        write("LIB_STARTUP_FUNC(init_{mod}_{lang})\n"
+              "{{ {lang}_register(\"{mod}\", _{mod}"
+              "_{lang}); }}\n".format(mod=module_name, lang=language))
 
 def mal2c(content):
-    c_array = ""
+    comment_or_empty = re.compile('^[ \t]*(#|$)')
+    space = re.compile('[ \t]+')
+    c_array = []
+    length = 0
     for line in content.split('\n'):
-        if ((line.startswith("#") == False) and
-            (line.startswith("comment") == False) and
-            (line.startswith("include") == False) and
-            (len(line.strip()) > 0)):
-            array_line = ",".join(str(ord(c)) for c in line + "\n") + ","
-            c_array += array_line
-        if (line.startswith("comment")):
-            array_line = ",".join(str(ord(c)) for c in ";\n") + ","
-            c_array += array_line
-    return c_array
+        if comment_or_empty.match(line):
+            continue
+        line = space.sub(' ', line)
+        line = line.strip()
+        if not line:
+            continue
+        c_array.append(line)
+        length += len(line) + 1 # include newline in length calculation
+    return c_array, length
 
 
 def sql2c(content):
-    c_array = ""
+    comment_or_empty = re.compile('^[ \t]*(--|#|$)')
+    comment = re.compile(r'/\*.*?\*/|--.*')
+    space = re.compile('[ \t]+')
+    c_array = []
+    length = 0
     for line in content.split('\n'):
-        if ((line.startswith("--") == False) and
-            (len(line.strip()) > 0)):
-            array_line = ",".join(str(ord(c)) for c in line + "\n") + ","
-            c_array += array_line
-    return c_array
+        if comment_or_empty.match(line):
+            continue
+        line = comment.sub('', line)
+        line = space.sub(' ', line)
+        line = line.strip()
+        if line.startswith('include '):
+            continue
+        if not line:
+            continue
+        c_array.append(line)
+        length += len(line) + 1 # include newline in length calculation
+    return c_array, length
 
 
 def create_c_sourcefile(srcfile, lang, mod, c_filename):
     content = open_convert_file(srcfile)
-    if(lang == 'mal'):
-       # buffer_as_string = mal2c(content)
-       # buffer_as_string = copy2c(content)
-       buffer_as_string = txt2c(content, 0)
-    if(lang == 'sql'):
-       # buffer_as_string = sql2c(content)
-       # buffer_as_string = copy2c(content)
-       buffer_as_string = txt2c(content, 1)
-    write_c_file(mod, lang, buffer_as_string, c_filename)
+    if lang == 'mal':
+       buffer_as_array, length = mal2c(content)
+    elif lang == 'sql':
+       buffer_as_array, length = sql2c(content)
+    else:
+        return
+    write_c_file(mod, lang, buffer_as_array, length, c_filename)
 
 def copy2c(content):
     return ",".join(str(ord(c)) for c in content) + ","
@@ -130,12 +161,12 @@ def txt2c(content, sql):
             cur_state = 2
             i += 6
             continue
-        if sql != 0:
+        if sql:
             if i+2 < endloop and content[i:i+2] == '--':
                 i += 2
                 cur_state = 1 # remove comment
                 continue
-        if sql == 0 and c == 'i' and i + 8 < endloop and content[i:i+7] == 'include' and content[i-1].isspace() and content[i+7].isspace():
+        if not sql and c == 'i' and i + 8 < endloop and content[i:i+7] == 'include' and content[i-1].isspace() and content[i+7].isspace():
                 cur_state = 1 # remove include line from mal
                 i += 7
                 continue
@@ -146,7 +177,7 @@ def txt2c(content, sql):
             cur_state = 4
         i += 1
 
-    if len(buffer) < 0: # nothing too add, ie return error
+    if len(buffer) < 0: # nothing to add, ie return error
         sys.exit(-1)
     buffer_as_string = ",".join(str(c) for c in buffer) + ','
     #return buffer
