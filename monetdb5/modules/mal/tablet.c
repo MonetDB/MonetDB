@@ -612,6 +612,7 @@ typedef struct {
 	int rounds;					/* how often did we divide the work */
 	bool ateof;					/* io control */
 	bool from_stdin;
+	bool escape;				/* whether to handle \ escapes */
 	bstream *b;
 	stream *out;
 	MT_Id tid;
@@ -1350,7 +1351,7 @@ SQLproducer(void *p)
 					/* check for quoting and the row separator */
 					if (bs) {
 						bs = false;
-					} else if (*e == '\\') {
+					} else if (task->escape && *e == '\\') {
 						bs = true;
 						i = 0;
 					} else if (*e == q) {
@@ -1521,9 +1522,8 @@ SQLload_file(Client cntxt, Tablet *as, bstream *b, stream *out, const char *csep
 		.cntxt = cntxt,
 		.from_stdin = from_stdin,
 		.as = as,
+		.escape = escape,		/* TODO: implement feature!!! */
 	};
-
-	(void) escape;				/* TODO: implement feature!!! */
 
 	/* create the reject tables */
 	create_rejects_table(task.cntxt);
