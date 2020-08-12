@@ -35,16 +35,30 @@ typedef struct QRYQUEUE{
 	int idx;
 	int workers;
 	int memory;
+	lng ticks;
 	time_t start;
 	time_t finished;
 } *QueryQueue;
 mal_export size_t qhead, qtail, qsize;
 
+/* We keep a few statistics per user to identify unexpected behavior */
+typedef struct USERSTAT{
+	oid user;       /* user id in the auth administration */
+	str username;
+	lng querycount;
+	lng totalticks;
+	time_t started;
+	time_t finished;
+	lng maxticks;
+	str maxquery;
+} *UserStats;
+mal_export size_t usrstatscnt;
+
 typedef struct WORKINGSET{
 	Client		cntxt;
-    MalBlkPtr   mb;
-    MalStkPtr   stk;
-    InstrPtr    pci;
+	MalBlkPtr   mb;
+	MalStkPtr   stk;
+	InstrPtr    pci;
 } Workingset;
 
 mal_export Workingset workingset[THREADS];
@@ -57,4 +71,5 @@ mal_export lng getVolume(MalStkPtr stk, InstrPtr pci, int rd);
 mal_export lng getBatSpace(BAT *b);
 
 mal_export QueryQueue QRYqueue;
+mal_export UserStats USRstats;
 #endif

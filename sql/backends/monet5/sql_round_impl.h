@@ -268,10 +268,6 @@ str_2dec_body(TYPE *res, const str val, const int d, const int sc)
 	int scale;
 	BIG value;
 
-	if (strNil(s)) {
-		*res = NIL(TYPE);
-		return MAL_SUCCEED;
-	}
 	dot = strchr(s, '.');
 	if (dot != NULL) {
 		s = strip_extra_zeros(s);
@@ -330,7 +326,14 @@ str_2dec_body(TYPE *res, const str val, const int d, const int sc)
 str
 str_2dec(TYPE *res, const str *val, const int *d, const int *sc)
 {
-	return str_2dec_body(res, *val, *d, *sc);
+	str v = *val;
+
+	if (strNil(v)) {
+		*res = NIL(TYPE);
+		return MAL_SUCCEED;
+	} else {
+		return str_2dec_body(res, v, *d, *sc);
+	}
 }
 
 str
@@ -373,7 +376,8 @@ batstr_2dec(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	BATiter bi;
 	oid off;
 	struct canditer ci = {0};
-	TYPE *restrict ret, v;
+	TYPE *restrict ret;
+	bool nils = false;
 
 	(void) cntxt;
 	(void) mb;
@@ -398,9 +402,11 @@ batstr_2dec(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		BUN p = (BUN) (canditer_next(&ci) - off);
 		const str next = BUNtail(bi, p);
 
-		if ((msg = str_2dec_body(&v, next, d, sk)))
+		if (strNil(next)) {
+			ret[i] = NIL(TYPE);
+			nils = true;
+		} else if ((msg = str_2dec_body(&(ret[i]), next, d, sk)))
 			goto bailout;
-		ret[p] = v;
 	}
 
 bailout:
@@ -410,8 +416,8 @@ bailout:
 		BBPunfix(s->batCacheid);
 	if (res && !msg) {
 		BATsetcount(res, q);
-		res->tnil = b->tnil;
-		res->tnonil = b->tnonil;
+		res->tnil = nils;
+		res->tnonil = !nils;
 		res->tkey = BATcount(res) <= 1;
 		res->tsorted = BATcount(res) <= 1;
 		res->trevsorted = BATcount(res) <= 1;
@@ -456,6 +462,7 @@ batdec2second_interval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	struct canditer ci = {0};
 	TYPE *restrict src;
 	BIG *restrict ret, multiplier = 1, divider = 1, offset = 0;
+	bool nils = false;
 
 	(void) cntxt;
 	(void) mb;
@@ -491,29 +498,36 @@ batdec2second_interval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		for (BUN i = 0 ; i < q ; i++) {
 			BUN p = (BUN) (canditer_next(&ci) - off);
 			if (ISNIL(TYPE)(src[p])) {
-				ret[p] = lng_nil;
+				ret[i] = lng_nil;
+				nils = true;
 			} else {
 				BIG next = (BIG) src[p];
 				next *= multiplier;
-				ret[p] = next;
+				ret[i] = next;
 			}
 		}
 	} else if (sc > 3) {
 		for (BUN i = 0 ; i < q ; i++) {
 			BUN p = (BUN) (canditer_next(&ci) - off);
 			if (ISNIL(TYPE)(src[p])) {
-				ret[p] = lng_nil;
+				ret[i] = lng_nil;
+				nils = true;
 			} else {
 				BIG next = (BIG) src[p];
 				next += offset;
 				next /= divider;
-				ret[p] = next;
+				ret[i] = next;
 			}
 		}
 	} else {
 		for (BUN i = 0 ; i < q ; i++) {
 			BUN p = (BUN) (canditer_next(&ci) - off);
-			ret[p] = ISNIL(TYPE)(src[p]) ? lng_nil : (BIG) src[p];
+			if (ISNIL(TYPE)(src[p])) {
+				ret[i] = lng_nil;
+				nils = true;
+			} else {
+				ret[i] = (BIG) src[p];
+			}
 		}
 	}
 
@@ -524,8 +538,8 @@ bailout:
 		BBPunfix(s->batCacheid);
 	if (res && !msg) {
 		BATsetcount(res, q);
-		res->tnil = b->tnil;
-		res->tnonil = b->tnonil;
+		res->tnil = nils;
+		res->tnonil = !nils;
 		res->tkey = BATcount(res) <= 1;
 		res->tsorted = BATcount(res) <= 1;
 		res->trevsorted = BATcount(res) <= 1;

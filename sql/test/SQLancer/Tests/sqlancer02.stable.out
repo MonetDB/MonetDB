@@ -259,6 +259,45 @@ stdout of test 'sqlancer02` in directory 'sql/test/SQLancer` itself:
 % 1 # length
 [ NULL	]
 #ROLLBACK;
+#START TRANSACTION;
+#CREATE TABLE "sys"."t0" (
+#	"c0" TIMESTAMP,
+#	"c2" DATE          NOT NULL DEFAULT DATE '1970-01-02',
+#	CONSTRAINT "t0_c2_pkey" PRIMARY KEY ("c2"),
+#	CONSTRAINT "t0_c0_unique" UNIQUE ("c0")
+#);
+#COMMENT ON TABLE "sys"."t0" IS 'r';
+#INSERT INTO "sys"."t0" VALUES (NULL, DATE '1970-01-02');
+[ 1	]
+#SELECT ALL t0.c2 FROM t0 WHERE (t0.c2) NOT BETWEEN ASYMMETRIC (t0.c2) AND (sql_min(CAST(t0.c0 AS DATE), t0.c2))
+#UNION ALL
+#SELECT t0.c2 FROM t0 WHERE NOT ((t0.c2) NOT BETWEEN ASYMMETRIC (t0.c2) AND (sql_min(CAST(t0.c0 AS DATE), t0.c2)))
+#UNION ALL
+#SELECT t0.c2 FROM t0 WHERE ((t0.c2) NOT BETWEEN ASYMMETRIC (t0.c2) AND (sql_min(CAST(t0.c0 AS DATE), t0.c2))) IS NULL;
+% .%15 # table_name
+% c2 # name
+% date # type
+% 10 # length
+[ 1970-01-02	]
+#ROLLBACK;
+#START TRANSACTION;
+#CREATE TABLE "sys"."t0" ("c0" INTEGER);
+#COPY 10 RECORDS INTO "sys"."t0" FROM stdin USING DELIMITERS E'\t',E'\n','"';
+#-733291712
+#383672170
+#1913274279
+#-709161370
+#-1166455306
+#-53279625
+#1985993362
+#-1
+#386205865
+#-780047338
+[ 10	]
+#create view v0(c0, c1, c2, c3) as (
+#select distinct cast(case time '03:52:21' when time '05:04:36' then r'0.2' end as date),
+#coalesce (t0.c0, length(coalesce (r't%QB', replace(r' ,yO_5G刵i稶bDßᶏ''', r'0.8', r'-1e500')))), 1, timestamp '1970-01-16 13:47:20' from t0) with check option;
+#ROLLBACK;
 
 # 17:04:12 >  
 # 17:04:12 >  "Done."
