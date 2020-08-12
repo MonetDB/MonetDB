@@ -93,12 +93,13 @@ batstr_2_blob(bat *res, const bat *bid)
 
 /* TODO get max size for all from type  */
 static int
-str_buf_initial_capacity(sql_class eclass)
+str_buf_initial_capacity(sql_class eclass, int digits)
 {
 	switch (eclass)
 	{
 		case EC_BIT:
-			return 4;
+			/* should hold false for clob type and (var)char > 4 */
+			return (digits == 0 || digits > 4) ? 8 : 2;
 		case EC_SEC:
 		case EC_MONTH:
 		case EC_NUM:
@@ -162,7 +163,7 @@ SQLstr_cast(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	ptr p = getArgReference(stk, pci, 5);
 	int tpe = getArgType(mb, pci, 5), digits = *getArgReference_int(stk, pci, 6), rlen = 0;
 	mvc *m = NULL;
-	int initial_capacity = MAX(str_buf_initial_capacity(eclass), (int) strlen(str_nil) + 1); /* don't reallocate on str_nil */
+	int initial_capacity = MAX(str_buf_initial_capacity(eclass, digits), (int) strlen(str_nil) + 1); /* don't reallocate on str_nil */
 
 	if ((msg = getSQLContext(cntxt, mb, &m, NULL)) != NULL)
 		return msg;
@@ -207,7 +208,7 @@ SQLbatstr_cast(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	int rlen = 0, tpe = getBatType(getArgType(mb, pci, 5));
 	struct canditer ci;
 	BUN q;
-	int initial_capacity = MAX(str_buf_initial_capacity(eclass), (int) strlen(str_nil) + 1); /* don't reallocate on str_nil */
+	int initial_capacity = MAX(str_buf_initial_capacity(eclass, digits), (int) strlen(str_nil) + 1); /* don't reallocate on str_nil */
 	oid off;
 
 	if ((msg = getSQLContext(cntxt, mb, &m, NULL)) != NULL)
