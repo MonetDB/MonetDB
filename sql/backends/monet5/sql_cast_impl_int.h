@@ -144,7 +144,7 @@ FUN(bat,TP1,_dec2dec_cand_,TP2) (bat *res, const int *S1, const bat *bid, const 
 		BBPunfix(b->batCacheid);
 		throw(SQL, "batcalc."STRNG(FUN(,TP1,_dec2_,TP2)), SQLSTATE(HY005) RUNTIME_OBJECT_MISSING);
 	}
-	bn = BATconvert(b, NULL, TPE(TP2), true, *S1, *S2, *d2);
+	bn = BATconvert(b, s, TPE(TP2), true, *S1, *S2, *d2);
 	BBPunfix(b->batCacheid);
 	if (s)
 		BBPunfix(s->batCacheid);
@@ -168,7 +168,7 @@ FUN(bat,TP1,_num2dec_cand_,TP2) (bat *res, const bat *bid, const bat *sid, const
 		BBPunfix(b->batCacheid);
 		throw(SQL, "batcalc."STRNG(FUN(,TP1,_dec2_,TP2)), SQLSTATE(HY005) RUNTIME_OBJECT_MISSING);
 	}
-	bn = BATconvert(b, NULL, TPE(TP2), true, 0, *s2, *d2);
+	bn = BATconvert(b, s, TPE(TP2), true, 0, *s2, *d2);
 	BBPunfix(b->batCacheid);
 	if (s)
 		BBPunfix(s->batCacheid);
