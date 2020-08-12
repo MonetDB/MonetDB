@@ -920,10 +920,20 @@ JSONtoken(JSON *jt, const char *j, const char **next)
 			nxt = JSONtoken(jt, j, next);
 			if (jt->error)
 				return idx;
-			if (jt->elm[nxt].kind != JSON_ELEMENT) {
-				jt->error = createException(MAL, "json.parser", "JSON syntax error: element expected at offset %td", j - string_start);
+			j = *next;
+			skipblancs(j);
+			if (jt->elm[nxt].kind != JSON_STRING || *j != ':') {
+				jt->error = createException(MAL, "json.parser", "JSON syntax error: element expected at offset %td", jt->elm[nxt].value - string_start);
 				return idx;
 			}
+			j++;
+			skipblancs(j);
+			jt->elm[nxt].kind = JSON_ELEMENT;
+			jt->elm[nxt].child = JSONtoken(jt, j, next);
+			if (jt->error)
+				return idx;
+			jt->elm[nxt].value++;
+			jt->elm[nxt].valuelen -= 2;
 			JSONappend(jt, idx, nxt);
 			if (jt->error)
 				return idx;
@@ -1015,19 +1025,6 @@ JSONtoken(JSON *jt, const char *j, const char **next)
 		jt->elm[idx].kind = JSON_STRING;
 		jt->elm[idx].value = j;
 		jt->elm[idx].valuelen = *next - j;
-		j = *next;
-		skipblancs(j);
-		if (*j == ':') {
-			j++;
-			skipblancs(j);
-			jt->elm[idx].kind = JSON_ELEMENT;
-			nxt = JSONtoken(jt, j, next);
-			if (jt->error)
-				return idx;
-			jt->elm[idx].child = nxt;
-			jt->elm[idx].value++;
-			jt->elm[idx].valuelen -= 2;
-		}
 		return idx;
 	case 'n':
 		if (strncmp("null", j, 4) == 0) {
