@@ -55,6 +55,10 @@ QUERY = select sum(coalesce(coalesce(interval '5' month, interval '3' month), in
         case timestamp '1970-01-15 22:17:17' when timestamp '1970-01-03 22:17:36' then interval '5' month else interval '5' month end, interval '3' month), interval '3' month)) from t1 order by t1.c1 desc nulls last;
 ERROR = !SELECT: cannot use non GROUP BY column 't1.c1' in query results without an aggregate function
 CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-316864/.s.monetdb.33737
+QUERY = select coalesce(-1129107763, '1415606329') from (values(1),(2)) as t0(c0);
+ERROR = !value too long for type (var)char(10)
+CODE  = 22001
 
 # 09:44:50 >  
 # 09:44:50 >  "Done."
