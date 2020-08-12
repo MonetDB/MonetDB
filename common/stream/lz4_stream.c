@@ -154,6 +154,7 @@ compr(inner_state_t *inner_state, pump_action action)
 
 		default:
 			assert(0); // shut up, compiler!
+			return PUMP_ERROR;
 	}
 
 	if (LZ4F_isError(produced))
