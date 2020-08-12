@@ -80,8 +80,8 @@ stdout of test 'coalesce` in directory 'sql/test` itself:
 #select id, coalesce(name, age, 'unknown') from coalescetest;
 % sys.coalescetest,	.%1 # table_name
 % id,	%1 # name
-% int,	char # type
-% 1,	10 # length
+% int,	varchar # type
+% 1,	7 # length
 [ 1,	"a"	]
 [ 2,	"26"	]
 [ 3,	"c"	]
@@ -103,6 +103,19 @@ stdout of test 'coalesce` in directory 'sql/test` itself:
 % int,	varchar,	int # type
 % 1,	0,	2 # length
 [ 2,	NULL,	26	]
+#insert into coalescetest(id,name) values (3,'hello this is a test');
+[ 1	]
+#select id, coalesce(name, age, 'unknown') from coalescetest; --the output type should be char(20)
+% sys.coalescetest,	.%1 # table_name
+% id,	%1 # name
+% int,	varchar # type
+% 1,	20 # length
+[ 1,	"a"	]
+[ 2,	"26"	]
+[ 3,	"c"	]
+[ 4,	"unknown"	]
+[ 3,	"hello this is a test"	]
+#drop table coalescetest;
 
 # 15:56:24 >  
 # 15:56:24 >  Done.

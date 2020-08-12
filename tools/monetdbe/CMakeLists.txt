@@ -56,6 +56,16 @@ target_link_libraries(monetdbe
   $<$<NOT:$<PLATFORM_ID:Windows>>:$<$<BOOL:${LibXml2_FOUND}>:LibXml2::LibXml2>>
   Threads::Threads)
 
+if (NOT WIN32)
+  configure_file(monetdbe.pc.in
+    ${CMAKE_CURRENT_BINARY_DIR}/monetdbe.pc @ONLY)
+
+  install(FILES
+    ${CMAKE_CURRENT_BINARY_DIR}/monetdbe.pc
+    DESTINATION ${CMAKE_INSTALL_LIBDIR}/pkgconfig
+    COMPONENT serverdev)
+endif()
+
 install(TARGETS
   monetdbe
   EXPORT monetdbeTargets

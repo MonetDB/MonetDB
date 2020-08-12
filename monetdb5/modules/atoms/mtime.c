@@ -77,6 +77,7 @@ MTIMEcurrent_timestamp(timestamp *ret)
 
 #define GET_NEXT_VAR(VAR) VAR[i]
 
+#define GET_NEXT_VAR_CAND(VAR) VAR[p]
 
 #define INIT_ITER(VAR, VAR_BAT) VAR = bat_iterator(VAR_BAT)
 
@@ -88,6 +89,7 @@ MTIMEcurrent_timestamp(timestamp *ret)
 
 #define GET_NEXT_ITER(VAR) BUNtvar(VAR, i)
 
+#define GET_NEXT_ITER_CAND(VAR) BUNtvar(VAR, p)
 
 #define DEC_NOTHING(A, B) ;
 
@@ -137,6 +139,60 @@ NAMEBULK(bat *ret, const bat *bid)										\
 bailout: 																\
 	if (b1)																\
 		BBPunfix(b1->batCacheid);										\
+	if (msg && bn)														\
+		BBPreclaim(bn);													\
+	else if (bn) 														\
+		BBPkeepref(*ret = bn->batCacheid);								\
+	return msg;															\
+}
+#define func1_cand(NAMEBULK, MALFUNC, INTYPE, OUTTYPE, FUNC, SETFLAGS, FUNC_CALL, DEC_SRC, \
+				   DEC_OUTPUT, INIT_SRC, INIT_OUTPUT, GET_NEXT_SRC)		\
+static str																\
+NAMEBULK##_cand(bat *ret, const bat *bid, const bat *sid)				\
+{																		\
+	BAT *b1 = NULL, *s = NULL, *bn = NULL;								\
+	BUN n;																\
+	DEC_SRC(INTYPE, src1); 												\
+	DEC_OUTPUT(OUTTYPE, dst);											\
+	str msg = MAL_SUCCEED; 												\
+	struct canditer ci;													\
+	oid off;															\
+	bool nils = false;													\
+																		\
+	if ((b1 = BATdescriptor(*bid)) == NULL)	{							\
+		msg = createException(MAL, "batmtime." MALFUNC "_cand",			\
+			  SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);					\
+		goto bailout;													\
+	}																	\
+	if (sid && !is_bat_nil(*sid) && (s = BATdescriptor(*sid)) == NULL) {\
+		msg = createException(MAL, "batmtime." MALFUNC "_cand",			\
+			  SQLSTATE(HY005) RUNTIME_OBJECT_MISSING);					\
+		goto bailout;													\
+	}																	\
+	off = b1->hseqbase;													\
+	n = canditer_init(&ci, b1, s);										\
+	if ((bn = COLnew(b1->hseqbase, TYPE_##OUTTYPE, n, TRANSIENT)) == NULL) { \
+		msg = createException(MAL, "batmtime." MALFUNC "_cand", 		\
+			  SQLSTATE(HY013) MAL_MALLOC_FAIL); 						\
+		goto bailout;													\
+	}																	\
+	INIT_SRC(src1, b1);													\
+	INIT_OUTPUT(dst, bn);												\
+	for (BUN i = 0; i < n; i++) { 										\
+		BUN p = (BUN) (canditer_next(&ci) - off);						\
+		FUNC_CALL(FUNC, (dst[i]), (GET_NEXT_SRC(src1)));				\
+		nils |= is_##OUTTYPE##_nil(dst[i]);								\
+	}																	\
+	bn->tnonil = !nils;													\
+	bn->tnil = nils;													\
+	BATsetcount(bn, n);													\
+	SETFLAGS;															\
+	bn->tkey = false;													\
+bailout: 																\
+	if (b1)																\
+		BBPunfix(b1->batCacheid);										\
+	if (s)																\
+		BBPunfix(s->batCacheid);										\
 	if (msg && bn)														\
 		BBPreclaim(bn);													\
 	else if (bn) 														\
@@ -541,13 +597,19 @@ date_fromstr_func(date *ret, str s)
 }
 func1(MTIMEdate_fromstr, MTIMEdate_fromstr_bulk, "date_fromstr", str, date, date_fromstr_func, SETFLAGS, func1_except, \
 	  DEC_ITER, DEC_VAR_R, INIT_ITER, INIT_VAR, GET_NEXT_ITER)
+func1_cand(MTIMEdate_fromstr_bulk, "date_fromstr", str, date, date_fromstr_func, SETFLAGS, func1_except, \
+	  DEC_ITER, DEC_VAR_R, INIT_ITER, INIT_VAR, GET_NEXT_ITER_CAND)
 
 #define date_date(m) m
 func1(MTIMEdate_date, MTIMEdate_date_bulk, "date_date", date, date, date_date, COPYFLAGS, func1_noexcept, \
 	  DEC_VAR_R, DEC_VAR_R, INIT_VAR, INIT_VAR, GET_NEXT_VAR)
+func1_cand(MTIMEdate_date_bulk, "date_date", date, date, date_date, COPYFLAGS, func1_noexcept, \
+	  DEC_VAR_R, DEC_VAR_R, INIT_VAR, INIT_VAR, GET_NEXT_VAR_CAND)
 
 func1(MTIMEtimestamp_extract_date, MTIMEtimestamp_extract_date_bulk, "date", timestamp, date, timestamp_date, COPYFLAGS, func1_noexcept, \
 	  DEC_VAR_R, DEC_VAR_R, INIT_VAR, INIT_VAR, GET_NEXT_VAR)
+func1_cand(MTIMEtimestamp_extract_date_bulk, "date", timestamp, date, timestamp_date, COPYFLAGS, func1_noexcept, \
+	  DEC_VAR_R, DEC_VAR_R, INIT_VAR, INIT_VAR, GET_NEXT_VAR_CAND)
 
 static inline str
 timestamp_fromstr_func(timestamp *ret, str s)
@@ -558,14 +620,20 @@ timestamp_fromstr_func(timestamp *ret, str s)
 }
 func1(MTIMEtimestamp_fromstr, MTIMEtimestamp_fromstr_bulk, "timestamp_fromstr", str, timestamp, timestamp_fromstr_func, SETFLAGS, func1_except, \
 	  DEC_ITER, DEC_VAR_R, INIT_ITER, INIT_VAR, GET_NEXT_ITER)
+func1_cand(MTIMEtimestamp_fromstr_bulk, "timestamp_fromstr", str, timestamp, timestamp_fromstr_func, SETFLAGS, func1_except, \
+	  DEC_ITER, DEC_VAR_R, INIT_ITER, INIT_VAR, GET_NEXT_ITER_CAND)
 
 #define timestamp_timestamp(m) m
 func1(MTIMEtimestamp_timestamp, MTIMEtimestamp_timestamp_bulk, "timestamp_timestamp", timestamp, timestamp, timestamp_timestamp, COPYFLAGS, func1_noexcept, \
 	  DEC_VAR_R, DEC_VAR_R, INIT_VAR, INIT_VAR, GET_NEXT_VAR)
+func1_cand(MTIMEtimestamp_timestamp_bulk, "timestamp_timestamp", timestamp, timestamp, timestamp_timestamp, COPYFLAGS, func1_noexcept, \
+	  DEC_VAR_R, DEC_VAR_R, INIT_VAR, INIT_VAR, GET_NEXT_VAR_CAND)
 
 #define mkts(dt)	timestamp_create(dt, daytime_create(0, 0, 0, 0))
 func1(MTIMEtimestamp_fromdate, MTIMEtimestamp_fromdate_bulk, "timestamp_fromdate", date, timestamp, mkts, COPYFLAGS, func1_noexcept, \
 	  DEC_VAR_R, DEC_VAR_R, INIT_VAR, INIT_VAR, GET_NEXT_VAR)
+func1_cand(MTIMEtimestamp_fromdate_bulk, "timestamp_fromdate", date, timestamp, mkts, COPYFLAGS, func1_noexcept, \
+	  DEC_VAR_R, DEC_VAR_R, INIT_VAR, INIT_VAR, GET_NEXT_VAR_CAND)
 
 #define seconds_since_epoch(t) is_timestamp_nil(t) ? int_nil : (int) (timestamp_diff(t, unixepoch) / 1000000);
 func1(MTIMEseconds_since_epoch, MTIMEseconds_since_epoch_bulk, "seconds_since_epoch", timestamp, int, seconds_since_epoch, COPYFLAGS, func1_noexcept, \
@@ -581,8 +649,12 @@ func1(MTIMEseconds_since_epoch, MTIMEseconds_since_epoch_bulk, "seconds_since_ep
 												(msec) * LL_CONSTANT(1000)))
 func1(MTIMEtimestamp_fromsecond, MTIMEtimestamp_fromsecond_bulk, "timestamp_fromsecond", int, timestamp, mktsfromsec, COPYFLAGS, func1_noexcept, \
 	  DEC_VAR_R, DEC_VAR_R, INIT_VAR, INIT_VAR, GET_NEXT_VAR)
+func1_cand(MTIMEtimestamp_fromsecond_bulk, "timestamp_fromsecond", int, timestamp, mktsfromsec, COPYFLAGS, func1_noexcept, \
+	  DEC_VAR_R, DEC_VAR_R, INIT_VAR, INIT_VAR, GET_NEXT_VAR_CAND)
 func1(MTIMEtimestamp_frommsec, MTIMEtimestamp_frommsec_bulk, "timestamp_frommsec", lng, timestamp, mktsfrommsec, COPYFLAGS, func1_noexcept, \
 	  DEC_VAR_R, DEC_VAR_R, INIT_VAR, INIT_VAR, GET_NEXT_VAR)
+func1_cand(MTIMEtimestamp_frommsec_bulk, "timestamp_frommsec", lng, timestamp, mktsfrommsec, COPYFLAGS, func1_noexcept, \
+	  DEC_VAR_R, DEC_VAR_R, INIT_VAR, INIT_VAR, GET_NEXT_VAR_CAND)
 
 static inline str
 daytime_fromstr_func(daytime *ret, str s)
@@ -593,10 +665,14 @@ daytime_fromstr_func(daytime *ret, str s)
 }
 func1(MTIMEdaytime_fromstr, MTIMEdaytime_fromstr_bulk, "daytime_fromstr", str, daytime, daytime_fromstr_func, SETFLAGS, func1_except, \
 	  DEC_ITER, DEC_VAR_R, INIT_ITER, INIT_VAR, GET_NEXT_ITER)
+func1_cand(MTIMEdaytime_fromstr_bulk, "daytime_fromstr", str, daytime, daytime_fromstr_func, SETFLAGS, func1_except, \
+	  DEC_ITER, DEC_VAR_R, INIT_ITER, INIT_VAR, GET_NEXT_ITER_CAND)
 
 #define daytime_daytime(m) m
 func1(MTIMEdaytime_daytime, MTIMEdaytime_daytime_bulk, "daytime_daytime", daytime, daytime, daytime_daytime, COPYFLAGS, func1_noexcept, \
 	  DEC_VAR_R, DEC_VAR_R, INIT_VAR, INIT_VAR, GET_NEXT_VAR)
+func1_cand(MTIMEdaytime_daytime_bulk, "daytime_daytime", daytime, daytime, daytime_daytime, COPYFLAGS, func1_noexcept, \
+	  DEC_VAR_R, DEC_VAR_R, INIT_VAR, INIT_VAR, GET_NEXT_VAR_CAND)
 
 static inline str
 daytime_fromseconds(daytime *ret, const lng secs)
@@ -611,9 +687,13 @@ daytime_fromseconds(daytime *ret, const lng secs)
 }
 func1(MTIMEdaytime_fromseconds, MTIMEdaytime_fromseconds_bulk, "daytime_fromseconds", lng, daytime, daytime_fromseconds, COPYFLAGS, func1_except, \
 	  DEC_VAR_R, DEC_VAR_R, INIT_VAR, INIT_VAR, GET_NEXT_VAR)
+func1_cand(MTIMEdaytime_fromseconds_bulk, "daytime_fromseconds", lng, daytime, daytime_fromseconds, COPYFLAGS, func1_except, \
+	  DEC_VAR_R, DEC_VAR_R, INIT_VAR, INIT_VAR, GET_NEXT_VAR_CAND)
 
 func1(MTIMEtimestamp_extract_daytime, MTIMEtimestamp_extract_daytime_bulk, "timestamp_extract_daytime", timestamp, daytime, timestamp_daytime, SETFLAGS, func1_noexcept, \
 	  DEC_VAR_R, DEC_VAR_R, INIT_VAR, INIT_VAR, GET_NEXT_VAR)
+func1_cand(MTIMEtimestamp_extract_daytime_bulk, "timestamp_extract_daytime", timestamp, daytime, timestamp_daytime, SETFLAGS, func1_noexcept, \
+	  DEC_VAR_R, DEC_VAR_R, INIT_VAR, INIT_VAR, GET_NEXT_VAR_CAND)
 
 /* return current system time zone offset in seconds East of Greenwich */
 static int
@@ -988,17 +1068,29 @@ static mel_func mtime_init_funcs[] = {
  command("calc", "daytime", MTIMEdaytime_fromseconds, false, "", args(1,2, arg("",daytime),arg("s",lng))),
  command("calc", "daytime", MTIMEtimestamp_extract_daytime, false, "", args(1,2, arg("",daytime),arg("t",timestamp))),
  command("batcalc", "date", MTIMEdate_fromstr_bulk, false, "", args(1,2, batarg("",date),batarg("s",str))),
+ command("batcalc", "date", MTIMEdate_fromstr_bulk_cand, false, "", args(1,3, batarg("",date),batarg("s",str),batarg("s",oid))),
  command("batcalc", "date", MTIMEdate_date_bulk, false, "", args(1,2, batarg("",date),batarg("d",date))),
+ command("batcalc", "date", MTIMEdate_date_bulk_cand, false, "", args(1,3, batarg("",date),batarg("d",date),batarg("s",oid))),
  command("batcalc", "date", MTIMEtimestamp_extract_date_bulk, false, "", args(1,2, batarg("",date),batarg("t",timestamp))),
+ command("batcalc", "date", MTIMEtimestamp_extract_date_bulk_cand, false, "", args(1,3, batarg("",date),batarg("t",timestamp),batarg("s",oid))),
  command("batcalc", "timestamp", MTIMEtimestamp_fromstr_bulk, false, "", args(1,2, batarg("",timestamp),batarg("s",str))),
+ command("batcalc", "timestamp", MTIMEtimestamp_fromstr_bulk_cand, false, "", args(1,3, batarg("",timestamp),batarg("s",str),batarg("s",oid))),
  command("batcalc", "timestamp", MTIMEtimestamp_timestamp_bulk, false, "", args(1,2, batarg("",timestamp),batarg("t",timestamp))),
+ command("batcalc", "timestamp", MTIMEtimestamp_timestamp_bulk_cand, false, "", args(1,3, batarg("",timestamp),batarg("t",timestamp),batarg("s",oid))),
  command("batcalc", "timestamp", MTIMEtimestamp_fromdate_bulk, false, "", args(1,2, batarg("",timestamp),batarg("d",date))),
+ command("batcalc", "timestamp", MTIMEtimestamp_fromdate_bulk_cand, false, "", args(1,3, batarg("",timestamp),batarg("d",date),batarg("s",oid))),
  command("batcalc", "timestamp", MTIMEtimestamp_fromsecond_bulk, false, "", args(1,2, batarg("",timestamp),batarg("secs",int))),
+ command("batcalc", "timestamp", MTIMEtimestamp_fromsecond_bulk_cand, false, "", args(1,3, batarg("",timestamp),batarg("secs",int),batarg("s",oid))),
  command("batcalc", "timestamp", MTIMEtimestamp_frommsec_bulk, false, "", args(1,2, batarg("",timestamp),batarg("msecs",lng))),
+ command("batcalc", "timestamp", MTIMEtimestamp_frommsec_bulk_cand, false, "", args(1,3, batarg("",timestamp),batarg("msecs",lng),batarg("s",oid))),
  command("batcalc", "daytime", MTIMEdaytime_fromstr_bulk, false, "", args(1,2, batarg("",daytime),batarg("s",str))),
+ command("batcalc", "daytime", MTIMEdaytime_fromstr_bulk_cand, false, "", args(1,3, batarg("",daytime),batarg("s",str),batarg("s",oid))),
  command("batcalc", "daytime", MTIMEdaytime_daytime_bulk, false, "", args(1,2, batarg("",daytime),batarg("d",daytime))),
+ command("batcalc", "daytime", MTIMEdaytime_daytime_bulk_cand, false, "", args(1,3, batarg("",daytime),batarg("d",daytime),batarg("s",oid))),
  command("batcalc", "daytime", MTIMEdaytime_fromseconds_bulk, false, "", args(1,2, batarg("",daytime),batarg("s",lng))),
+ command("batcalc", "daytime", MTIMEdaytime_fromseconds_bulk_cand, false, "", args(1,3, batarg("",daytime),batarg("s",lng),batarg("s",oid))),
  command("batcalc", "daytime", MTIMEtimestamp_extract_daytime_bulk, false, "", args(1,2, batarg("",daytime),batarg("t",timestamp))),
+ command("batcalc", "daytime", MTIMEtimestamp_extract_daytime_bulk_cand, false, "", args(1,3, batarg("",daytime),batarg("t",timestamp),batarg("s",oid))),
  { .imp=NULL }
 };
 #include "mal_import.h"

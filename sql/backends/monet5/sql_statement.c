@@ -1525,10 +1525,12 @@ stmt_uselect(backend *be, stmt *op1, stmt *op2, comp_type cmptype, stmt *sub, in
 				anti = !anti;
 			q = newStmt(mb, algebraRef, selectRef);
 			q = pushArgument(mb, q, l);
-			if (sub && !op1->cand)
+			if (sub && !op1->cand) {
 				q = pushArgument(mb, q, sub->nr);
-			else
+			} else {
+				assert(!sub || op1->cand == sub);
 				sub = NULL;
+			}
 			q = pushArgument(mb, q, r);
 			q = pushArgument(mb, q, r);
 			q = pushBit(mb, q, TRUE);
@@ -1537,10 +1539,12 @@ stmt_uselect(backend *be, stmt *op1, stmt *op2, comp_type cmptype, stmt *sub, in
 		} else {
 			q = newStmt(mb, algebraRef, thetaselectRef);
 			q = pushArgument(mb, q, l);
-			if (sub && !op1->cand)
+			if (sub && !op1->cand) {
 				q = pushArgument(mb, q, sub->nr);
-			else
+			} else {
+				assert(!sub || op1->cand == sub);
 				sub = NULL;
+			}
 			q = pushArgument(mb, q, r);
 			switch (cmptype) {
 			case mark_in:
@@ -3032,11 +3036,12 @@ tail_set_type(stmt *st, sql_subtype *t)
 }
 
 stmt *
-stmt_convert(backend *be, stmt *v, sql_subtype *f, sql_subtype *t)
+stmt_convert(backend *be, stmt *v, stmt *sel, sql_subtype *f, sql_subtype *t)
 {
 	MalBlkPtr mb = be->mb;
 	InstrPtr q = NULL;
 	const char *convert = t->type->base.name;
+	int pushed = (v->cand && v->cand == sel);
 	/* convert types and make sure they are rounded up correctly */
 
 	if (v->nr < 0)
@@ -3068,12 +3073,17 @@ stmt_convert(backend *be, stmt *v, sql_subtype *f, sql_subtype *t)
 	/* Lookup the sql convert function, there is no need
 	 * for single value vs bat, this is handled by the
 	 * mal function resolution */
-	if (v->nrcols == 0) {	/* simple calc */
+	if (v->nrcols == 0 && (!sel || sel->nrcols == 0)) {	/* simple calc */
 		q = newStmt(mb, calcRef, convert);
-	} else if (v->nrcols > 0 &&
-		(t->type->localtype > TYPE_str || f->type->eclass == EC_DEC || t->type->eclass == EC_DEC || EC_INTERVAL(t->type->eclass) || EC_TEMP(t->type->eclass) || (EC_VARCHAR(t->type->eclass) && !(f->type->eclass == EC_STRING && t->digits == 0)))) {
+	} else if ((v->nrcols > 0 || (sel && sel->nrcols > 0)) && t->type->eclass == EC_EXTERNAL) {
 		int type = t->type->localtype;
 
+		/* with our current implementation, all internal SQL types have candidate list support on their conversions */
+		if (sel && !pushed) {
+			pushed = 1;
+			v = stmt_project(be, sel, v);
+			v->cand = sel;
+		}
 		q = newStmt(mb, malRef, multiplexRef);
 		if (q == NULL)
 			return NULL;
@@ -3081,8 +3091,14 @@ stmt_convert(backend *be, stmt *v, sql_subtype *f, sql_subtype *t)
 		setVarUDFtype(mb, getArg(q, 0));
 		q = pushStr(mb, q, convertMultiplexMod(calcRef, convert));
 		q = pushStr(mb, q, convertMultiplexFcn(convert));
-	} else
+	} else {
+		if (v->nrcols == 0 && sel && !pushed) {
+			pushed = 1;
+			v = stmt_project(be, sel, v);
+			v->cand = sel;
+		}
 		q = newStmt(mb, batcalcRef, convert);
+	}
 
 	/* convert to string is complex, we need full type info and mvc for the timezone */
 	if (EC_VARCHAR(t->type->eclass) && !(f->type->eclass == EC_STRING && t->digits == 0)) {
@@ -3093,12 +3109,13 @@ stmt_convert(backend *be, stmt *v, sql_subtype *f, sql_subtype *t)
 	} else if (f->type->eclass == EC_DEC) {
 		/* scale of the current decimal */
 		q = pushInt(mb, q, f->scale);
-	} else if (f->type->eclass == EC_SEC &&
-		   (EC_COMPUTE(t->type->eclass) || t->type->eclass == EC_DEC)) {
+	} else if (f->type->eclass == EC_SEC && (EC_COMPUTE(t->type->eclass) || t->type->eclass == EC_DEC)) {
 		/* scale of the current decimal */
 		q = pushInt(mb, q, 3);
 	}
 	q = pushArgument(mb, q, v->nr);
+	if (sel && !pushed && !v->cand)
+		q = pushArgument(mb, q, sel->nr);
 
 	if (t->type->eclass == EC_DEC || EC_TEMP_FRAC(t->type->eclass) || EC_INTERVAL(t->type->eclass)) {
 		/* digits, scale of the result decimal */
@@ -3147,6 +3164,7 @@ stmt_convert(backend *be, stmt *v, sql_subtype *f, sql_subtype *t)
 		s->op4.typeval = *t;
 		s->nr = getDestVar(q);
 		s->q = q;
+		s->cand = sel;
 		return s;
 	}
 	return NULL;

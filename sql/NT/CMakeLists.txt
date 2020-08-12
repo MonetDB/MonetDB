@@ -10,11 +10,11 @@ if(WIN32)
   install(FILES
 #    MSQLclient.bat
     MSQLserver.bat
-    DESTINATION ${CMAKE_INSTALL_PREFIX}
+    DESTINATION "."
     COMPONENT server)
   install(FILES
     .monetdb
-    DESTINATION ${CMAKE_INSTALL_PREFIX}/etc
+    DESTINATION ${CMAKE_INSTALL_SYSCONFDIR}
     COMPONENT server)
 endif()
 

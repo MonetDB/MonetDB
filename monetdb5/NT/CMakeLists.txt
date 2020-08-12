@@ -9,7 +9,7 @@
 if(WIN32)
   install(FILES
     M5server.bat
-    DESTINATION ${CMAKE_INSTALL_PREFIX}
+    DESTINATION "."
     COMPONENT server)
 endif()
 

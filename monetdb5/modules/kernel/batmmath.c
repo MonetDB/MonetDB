@@ -379,6 +379,18 @@ CMDscience_bat_##FUNC(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) \
 }
 
 static double
+cot(double x)
+{
+	return 1 / tan(x);
+}
+
+static float
+cotf(float x)
+{
+	return (float) (1 / tan(x));
+}
+
+static double
 radians(double x)
 {
 	return x * (M_PI / 180.0);
@@ -402,12 +414,13 @@ degreesf(float x)
 	return (float) (x * (180.0 / M_PI));
 }
 
-scienceImpl(asin)
 scienceImpl(acos)
+scienceImpl(asin)
 scienceImpl(atan)
 scienceImpl(cos)
 scienceImpl(sin)
 scienceImpl(tan)
+scienceImpl(cot)
 scienceImpl(cosh)
 scienceImpl(sinh)
 scienceImpl(tanh)
@@ -457,6 +470,10 @@ mel_func batmmath_init_funcs[] = {
  pattern("batmmath", "tan", CMDscience_bat_tan, false, "", args(1,3, batarg("",dbl),batarg("x",dbl),batarg("s",oid))),
  pattern("batmmath", "tan", CMDscience_bat_tan, false, "", args(1,2, batarg("",flt),batarg("x",flt))),
  pattern("batmmath", "tan", CMDscience_bat_tan, false, "", args(1,3, batarg("",flt),batarg("x",flt),batarg("s",oid))),
+ pattern("batmmath", "cot", CMDscience_bat_cot, false, "", args(1,2, batarg("",dbl),batarg("x",dbl))),
+ pattern("batmmath", "cot", CMDscience_bat_cot, false, "", args(1,3, batarg("",dbl),batarg("x",dbl),batarg("s",oid))),
+ pattern("batmmath", "cot", CMDscience_bat_cot, false, "", args(1,2, batarg("",flt),batarg("x",flt))),
+ pattern("batmmath", "cot", CMDscience_bat_cot, false, "", args(1,3, batarg("",flt),batarg("x",flt),batarg("s",oid))),
  pattern("batmmath", "cosh", CMDscience_bat_cosh, false, "", args(1,2, batarg("",dbl),batarg("x",dbl))),
  pattern("batmmath", "cosh", CMDscience_bat_cosh, false, "", args(1,3, batarg("",dbl),batarg("x",dbl),batarg("s",oid))),
  pattern("batmmath", "cosh", CMDscience_bat_cosh, false, "", args(1,2, batarg("",flt),batarg("x",flt))),

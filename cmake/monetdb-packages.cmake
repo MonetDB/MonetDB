@@ -18,6 +18,7 @@ list (APPEND CPACK_SOURCE_IGNORE_FILES "benchmarks")
 
 include(monetdb-deb-packages)
 include(monetdb-rpm-packages)
+include(monetdb-wix-packages)
 
 if(${CMAKE_SYSTEM_NAME} STREQUAL "Linux")
   get_os_release_info(LINUX_DISTRO LINUX_DISTRO_VERSION)

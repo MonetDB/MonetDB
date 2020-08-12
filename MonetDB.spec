@@ -111,7 +111,7 @@ BuildRequires: checkpolicy
 BuildRequires: selinux-policy-devel
 BuildRequires: hardlink
 %endif
-BuildRequires: cmake >= 3.12
+BuildRequires: cmake3 >= 3.12
 BuildRequires: gcc
 BuildRequires: bison
 BuildRequires: /usr/bin/python3
@@ -547,7 +547,6 @@ used from the MAL level.
 
 %files -n MonetDB5-server-devel
 %defattr(-,root,root)
-%dir %{_includedir}/monetdb
 %{_includedir}/monetdb/mal*.h
 %{_libdir}/libmonetdb5.so
 %{_libdir}/pkgconfig/monetdb5.pc
@@ -606,7 +605,7 @@ use SQL with MonetDB, you will need to install this package.
 %config(noreplace) %attr(664,monetdb,monetdb) %{_localstatedir}/monetdb5/dbfarm/.merovingian_properties
 %verify(not mtime) %attr(664,monetdb,monetdb) %{_localstatedir}/monetdb5/dbfarm/.merovingian_lock
 %config(noreplace) %attr(644,root,root) %{_sysconfdir}/logrotate.d/monetdbd
-%{_libdir}/monetdb5/lib_sql.so*
+%{_libdir}/libmonetdbsql.so*
 %doc %{_mandir}/man1/monetdb.1.gz
 %doc %{_mandir}/man1/monetdbd.1.gz
 %dir %{_datadir}/doc/MonetDB-SQL
@@ -632,6 +631,8 @@ library.  Also see %{name}-embedded-devel to use this in a program.
 %package embedded-devel
 Summary: MonetDB as an embedded library development files
 Group: Applications/Databases
+Requires: %{name}-embedded%{?_isa} = %{version}-%{release}
+Requires: %{name}-devel%{?_isa} = %{version}-%{release}
 
 %description embedded-devel
 MonetDB is a database management system that is developed from a
@@ -639,12 +640,14 @@ main-memory perspective with use of a fully decomposed storage model,
 automatic index management, extensibility of data types and search
 accelerators.  It also has an SQL front end.
 
-This package contains the library and include files to turn MonetDB
-into an embeddable library.
+This package contains the library and include files to create a
+program that uses MonetDB as an embeddable library.
 
 %files embedded-devel
+%defattr(-,root,root)
 %{_libdir}/libmonetdbe.so
 %{_includedir}/monetdb/monetdbe.h
+%{_libdir}/pkgconfig/monetdbe.pc
 
 %package testing
 Summary: MonetDB - Monet Database Management System
@@ -759,7 +762,7 @@ fi
 %setup -q
 
 %build
-%{cmake} \
+%cmake3 \
 	-DASSERT=OFF \
 	-DCINTEGRATION=%{?with_cintegration:ON}%{!?with_cintegration:OFF} \
 	-DFITS=%{?with_fits:ON}%{!?with_fits:OFF} \
@@ -788,7 +791,7 @@ fi
 	-DWITH_XML2=ON \
 	-DWITH_ZLIB=ON
 
-%cmake_build
+%cmake3_build
 
 %if %{?rhel:0}%{!?rhel:1} || 0%{?rhel} >= 7
 cd buildtools/selinux
@@ -807,7 +810,7 @@ cd -
 %endif
 
 %install
-%cmake_install
+%cmake3_install
 
 # move file to correct location
 %if %{?rhel:0}%{!?rhel:1} || 0%{?rhel} >= 7
@@ -821,7 +824,6 @@ rmdir %{buildroot}%{_sysconfdir}/tmpfiles.d
 
 install -d -m 0750 %{buildroot}%{_localstatedir}/lib/monetdb
 install -d -m 0770 %{buildroot}%{_localstatedir}/monetdb5/dbfarm
-touch %{buildroot}%{_localstatedir}/monetdb5/dbfarm/.merovingian_lock
 install -d -m 0775 %{buildroot}%{_localstatedir}/log/monetdb
 install -d -m 0775 %{buildroot}%{_rundir}/monetdb
 

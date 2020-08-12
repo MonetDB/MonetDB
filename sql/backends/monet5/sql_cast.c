@@ -12,127 +12,158 @@
 #include "sql_result.h"
 #include "mal_instruction.h"
 
-str
-str_2_blob(blob **res, const str *val)
+static inline str
+str_2_blob_imp(blob **r, size_t *rlen, const str val)
 {
-	ptr p = NULL;
-	size_t len = 0;
-	ssize_t e;
-	char buf[BUFSIZ];
-
-	e = ATOMfromstr(TYPE_blob, &p, &len, *val, false);
-	if (e < 0 || !p || (ATOMcmp(TYPE_blob, p, ATOMnilptr(TYPE_blob)) == 0 && ATOMcmp(TYPE_str, *val, ATOMnilptr(TYPE_str)) != 0)) {
-		if (p)
-			GDKfree(p);
-		snprintf(buf, BUFSIZ, "Conversion of string '%s' failed", *val? *val:"");
-		throw(SQL, "blob", SQLSTATE(42000) "%s", buf);
+	ssize_t e = ATOMfromstr(TYPE_blob, (void**)r, rlen, val, false);
+	if (e < 0 || (ATOMcmp(TYPE_blob, *r, ATOMnilptr(TYPE_blob)) == 0 && !strNil(val))) {
+		if (strNil(val))
+			throw(SQL, "calc.str_2_blob", SQLSTATE(42000) "Conversion of NULL string to blob failed");
+		throw(SQL, "calc.str_2_blob", SQLSTATE(42000) "Conversion of string '%s' to blob failed", val);
 	}
-	*res = (blob *) p;
 	return MAL_SUCCEED;
 }
 
 str
-SQLblob_2_str(str *res, const blob *val)
+str_2_blob(blob **res, const str *val)
 {
-	char *p = NULL;
-	size_t len = 0;
-	if (BLOBtostr(&p, &len, val, false) < 0) {
-		GDKfree(p);
-		throw(SQL, "blob", GDK_EXCEPTION);
+	size_t rlen = 0;
+
+	return str_2_blob_imp(res, &rlen, *val);
+}
+
+str
+batstr_2_blob_cand(bat *res, const bat *bid, const bat *sid)
+{
+	BAT *b = NULL, *s = NULL, *dst = NULL;
+	BATiter bi;
+	char *msg = NULL;
+	struct canditer ci;
+	BUN q;
+	oid off;
+	blob *r = NULL;
+	size_t rlen = 0;
+
+	if ((b = BATdescriptor(*bid)) == NULL) {
+		msg = createException(SQL, "batcalc.str_2_blob", SQLSTATE(HY005) RUNTIME_OBJECT_MISSING);
+		goto bailout;
 	}
-	*res = p;
-	return MAL_SUCCEED;
+	if (sid && !is_bat_nil(*sid) && (s = BATdescriptor(*sid)) == NULL) {
+		msg = createException(SQL, "batcalc.str_2_blob", SQLSTATE(HY005) RUNTIME_OBJECT_MISSING);
+		goto bailout;
+	}
+	off = b->hseqbase;
+	q = canditer_init(&ci, b, s);
+	bi = bat_iterator(b);
+	if (!(dst = COLnew(b->hseqbase, TYPE_blob, q, TRANSIENT))) {
+		msg = createException(SQL, "batcalc.str_2_blob", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		goto bailout;
+	}
+
+	for (BUN i = 0; i < q; i++) {
+		BUN p = (BUN) (canditer_next(&ci) - off);
+		str v = (str) BUNtvar(bi, p);
+
+		if ((msg = str_2_blob_imp(&r, &rlen, v)))
+			goto bailout;
+		if (BUNappend(dst, r, false) != GDK_SUCCEED) {
+			msg = createException(SQL, "batcalc.str_2_blob", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+			goto bailout;
+		}
+	}
+
+bailout:
+	GDKfree(r);
+	if (b)
+		BBPunfix(b->batCacheid);
+	if (s)
+		BBPunfix(s->batCacheid);
+	if (dst && !msg)
+		BBPkeepref(*res = dst->batCacheid);
+	else if (dst)
+		BBPreclaim(dst);
+	return msg;
 }
 
 str
 batstr_2_blob(bat *res, const bat *bid)
 {
-	BAT *b, *dst;
-	BATiter bi;
-	BUN p, q;
-	char *msg = NULL;
-
-	if ((b = BATdescriptor(*bid)) == NULL) {
-		throw(SQL, "batcalc.str_2_blob", SQLSTATE(HY005) "Cannot access column descriptor");
-	}
-	bi = bat_iterator(b);
-	dst = COLnew(b->hseqbase, TYPE_blob, BATcount(b), TRANSIENT);
-	if (dst == NULL) {
-		BBPunfix(b->batCacheid);
-		throw(SQL, "sql.2_blob", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-	}
-	BATloop(b, p, q) {
-		str v = (str) BUNtvar(bi, p);
-		blob *r;
-		msg = str_2_blob(&r, &v);
-		if (msg) {
-			BBPunfix(dst->batCacheid);
-			BBPunfix(b->batCacheid);
-			return msg;
-		}
-		if (BUNappend(dst, r, false) != GDK_SUCCEED) {
-			BBPunfix(b->batCacheid);
-			BBPreclaim(dst);
-			throw(SQL, "sql.blob", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-		}
-		GDKfree(r);
-	}
-	BBPkeepref(*res = dst->batCacheid);
-	BBPunfix(b->batCacheid);
-	return msg;
+	return batstr_2_blob_cand(res, bid, NULL);
 }
 
-static str
-SQLstr_cast_(str *res, mvc *m, sql_class eclass, int d, int s, int has_tz, ptr p, int tpe, int len)
+/* TODO get max size for all from type  */
+static int
+str_buf_initial_capacity(sql_class eclass, int digits)
 {
-	char *r = NULL;
-	int sz = MAX(2, len + 1);	/* nil should fit */
+	switch (eclass)
+	{
+		case EC_BIT:
+			/* should hold false for clob type and (var)char > 4 */
+			return (digits == 0 || digits > 4) ? 8 : 2;
+		case EC_SEC:
+		case EC_MONTH:
+		case EC_NUM:
+		case EC_DEC:
+		case EC_FLT:
+		case EC_POS:
+		case EC_TIME:
+		case EC_TIME_TZ:
+		case EC_DATE:
+		case EC_TIMESTAMP:
+		case EC_TIMESTAMP_TZ:
+			return 64;
+		default:
+			return -1;
+	}
+}
 
-	if (tpe != TYPE_str) {
-		/* TODO get max size for all from type */
-		if (len == 0 && tpe == TYPE_bit) /* should hold false */
-			sz = 6;
-		r = GDKmalloc(sz);
-		if (r == NULL)
-			throw(SQL, "str_cast", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-		sz = convert2str(m, eclass, d, s, has_tz, p, tpe, &r, sz);
-	} else {
-		str v = (str) p;
-		STRLength(&sz, &v);
-		if (len == 0 || (sz >= 0 && sz <= len)) {
-			r = GDKstrdup(v);
-			if (r == NULL)
-				throw(SQL, "str_cast", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-		}
-	}
-	if ((len > 0 && sz > len) || sz < 0) {
-		if (r)
-			GDKfree(r);
-		if (ATOMcmp(tpe, ATOMnilptr(tpe), p) != 0) {
+static inline str
+SQLstr_cast_any_type(str *r, int rlen, mvc *m, sql_class eclass, int d, int s, int has_tz, ptr p, int tpe, int len)
+{
+	int sz = convert2str(m, eclass, d, s, has_tz, p, tpe, r, rlen);
+	if ((len > 0 && sz > len) || sz < 0)
+		throw(SQL, "str_cast", SQLSTATE(22001) "value too long for type (var)char(%d)", len);
+	return MAL_SUCCEED;
+}
+
+static inline str
+SQLstr_cast_str(str *r, int *rlen, str v, int len)
+{
+	int intput_strlen;
+
+	if (!strNil(v) && len > 0) {
+		int logical_size = 0;
+		STRLength(&logical_size, &v);
+
+		if (logical_size > len)
 			throw(SQL, "str_cast", SQLSTATE(22001) "value too long for type (var)char(%d)", len);
-		} else {
-			r = GDKstrdup(str_nil);
-			if (r == NULL)
-				throw(SQL, "str_cast", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-		}
 	}
-	*res = r;
+
+	intput_strlen = (int) strlen(v) + 1;
+	if (intput_strlen > *rlen) {
+		str newr = GDKmalloc(intput_strlen);
+
+		if (!newr)
+			throw(SQL, "str_cast", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		GDKfree(*r);
+		*r = newr;
+		*rlen = intput_strlen;
+	}
+	strcpy(*r, v);
 	return MAL_SUCCEED;
 }
 
 str
 SQLstr_cast(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	str *res = getArgReference_str(stk, pci, 0);
+	str *res = getArgReference_str(stk, pci, 0), msg;
 	sql_class eclass = (sql_class)*getArgReference_int(stk, pci, 1);
-	int d = *getArgReference_int(stk, pci, 2);
-	int s = *getArgReference_int(stk, pci, 3);
+	int d = *getArgReference_int(stk, pci, 2), s = *getArgReference_int(stk, pci, 3);
 	int has_tz = *getArgReference_int(stk, pci, 4);
 	ptr p = getArgReference(stk, pci, 5);
-	int tpe = getArgType(mb, pci, 5);
-	int len = *getArgReference_int(stk, pci, 6);
+	int tpe = getArgType(mb, pci, 5), digits = *getArgReference_int(stk, pci, 6), rlen = 0;
 	mvc *m = NULL;
-	str msg;
+	int initial_capacity = MAX(str_buf_initial_capacity(eclass, digits), (int) strlen(str_nil) + 1); /* don't reallocate on str_nil */
 
 	if ((msg = getSQLContext(cntxt, mb, &m, NULL)) != NULL)
 		return msg;
@@ -140,62 +171,112 @@ SQLstr_cast(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		return msg;
 	if (ATOMextern(tpe))
 		p = *(ptr *) p;
-	return SQLstr_cast_(res, m, eclass, d, s, has_tz, p, tpe, len);
+
+	assert(initial_capacity > 0);
+	if (!(EC_VARCHAR(eclass) || tpe == TYPE_str)) { /* for decimals and other fixed size types allocate once */
+		if (!(*res = GDKmalloc(initial_capacity)))
+			return createException(SQL, "calc.str_cast", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		rlen = initial_capacity;
+	} else {
+		*res = NULL;
+	}
+
+	if (EC_VARCHAR(eclass) || tpe == TYPE_str)
+		msg = SQLstr_cast_str(res, &rlen, (str) p, digits);
+	else
+		msg = SQLstr_cast_any_type(res, rlen, m, eclass, d, s, has_tz, p, tpe, digits);
+
+	if (msg)
+		GDKfree(*res);
+	return msg;
 }
 
 /* str SQLbatstr_cast(int *res, int *eclass, int *d1, int *s1, int *has_tz, int *bid, int *digits); */
 str
 SQLbatstr_cast(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	BAT *b, *dst;
+	BAT *b = NULL, *s = NULL, *dst = NULL;
 	BATiter bi;
-	BUN p, q;
 	mvc *m = NULL;
-	str msg;
-	char *r = NULL;
+	str msg, r = NULL;
 	bat *res = getArgReference_bat(stk, pci, 0);
 	sql_class eclass = (sql_class) *getArgReference_int(stk, pci, 1);
-	int *d1 = getArgReference_int(stk, pci, 2);
-	int *s1 = getArgReference_int(stk, pci, 3);
-	int *has_tz = getArgReference_int(stk, pci, 4);
-	bat *bid = getArgReference_bat(stk, pci, 5);
-	int *digits = getArgReference_int(stk, pci, 6);
+	int d1 = *getArgReference_int(stk, pci, 2), s1 = *getArgReference_int(stk, pci, 3);
+	int has_tz = *getArgReference_int(stk, pci, 4);
+	bat *bid = getArgReference_bat(stk, pci, 5), *sid = pci->argc == 7 ? NULL : getArgReference_bat(stk, pci, 6);
+	int digits = pci->argc == 7 ? *getArgReference_int(stk, pci, 6) : *getArgReference_int(stk, pci, 7);
+	int rlen = 0, tpe = getBatType(getArgType(mb, pci, 5));
+	struct canditer ci;
+	BUN q;
+	int initial_capacity = MAX(str_buf_initial_capacity(eclass, digits), (int) strlen(str_nil) + 1); /* don't reallocate on str_nil */
+	oid off;
 
 	if ((msg = getSQLContext(cntxt, mb, &m, NULL)) != NULL)
 		return msg;
 	if ((msg = checkSQLContext(cntxt)) != NULL)
 		return msg;
 	if ((b = BATdescriptor(*bid)) == NULL) {
-		throw(SQL, "batcalc.str", SQLSTATE(HY005) "Cannot access column descriptor");
+		msg = createException(SQL, "batcalc.str", SQLSTATE(HY005) RUNTIME_OBJECT_MISSING);
+		goto bailout;
+	}
+	if (sid && !is_bat_nil(*sid) && (s = BATdescriptor(*sid)) == NULL) {
+		msg = createException(SQL, "batcalc.str", SQLSTATE(HY005) RUNTIME_OBJECT_MISSING);
+		goto bailout;
+	}
+	off = b->hseqbase;
+	q = canditer_init(&ci, b, s);
+	bi = bat_iterator(b);
+	if (!(dst = COLnew(b->hseqbase, TYPE_str, q, TRANSIENT))) {
+		msg = createException(SQL, "batcalc.str_cast", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		goto bailout;
 	}
 
-	bi = bat_iterator(b);
-	dst = COLnew(b->hseqbase, TYPE_str, BATcount(b), TRANSIENT);
-	if (dst == NULL) {
-		BBPunfix(b->batCacheid);
-		throw(SQL, "sql.str_cast", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-	}
-	BATloop(b, p, q) {
-		ptr v = (ptr) BUNtail(bi, p);
-		msg = SQLstr_cast_(&r, m, eclass, *d1, *s1, *has_tz, v, b->ttype, *digits);
-		if (msg) {
-			BBPunfix(dst->batCacheid);
-			BBPunfix(b->batCacheid);
-			return msg;
+	assert(initial_capacity > 0);
+	if (!(EC_VARCHAR(eclass) || tpe == TYPE_str)) { /* for decimals and other fixed size types allocate once */
+		if (!(r = GDKmalloc(initial_capacity))) {
+			msg = createException(SQL, "batcalc.str_cast", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+			goto bailout;
 		}
+		rlen = initial_capacity;
+	}
+
+	for (BUN i = 0; i < q; i++) {
+		BUN p = (BUN) (canditer_next(&ci) - off);
+		ptr v = BUNtail(bi, p);
+
+		if (EC_VARCHAR(eclass) || tpe == TYPE_str)
+			msg = SQLstr_cast_str(&r, &rlen, (str) v, digits);
+		else
+			msg = SQLstr_cast_any_type(&r, rlen, m, eclass, d1, s1, has_tz, v, tpe, digits);
+
+		if (msg)
+			goto bailout;
 		if (BUNappend(dst, r, false) != GDK_SUCCEED) {
-			BBPunfix(b->batCacheid);
-			BBPreclaim(dst);
-			throw(SQL, "sql.str_cast", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+			msg = createException(SQL, "batcalc.str_cast", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+			goto bailout;
 		}
-		if (r != str_nil)
-			GDKfree(r);
-		r = NULL;
 	}
-	BBPkeepref(*res = dst->batCacheid);
-	BBPunfix(b->batCacheid);
+
+bailout:
+	GDKfree(r);
+	if (b)
+		BBPunfix(b->batCacheid);
+	if (s)
+		BBPunfix(s->batCacheid);
+	if (dst && !msg)
+		BBPkeepref(*res = dst->batCacheid);
+	else if (dst)
+		BBPreclaim(dst);
 	return msg;
 }
+
+#define flt_is_numeric 0
+#define dbl_is_numeric 0
+#define bte_is_numeric 1
+#define sht_is_numeric 1
+#define int_is_numeric 1
+#define lng_is_numeric 1
+#define hge_is_numeric 1
 
 /* up casting */
 
@@ -297,32 +378,32 @@ SQLbatstr_cast(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 #define TP1 flt
 #define TP2 bte
-#include "sql_cast_impl_down_from_flt.h"
+#include "sql_cast_impl_int.h"
 #undef TP2
 #undef TP1
 
 #define TP1 flt
 #define TP2 sht
-#include "sql_cast_impl_down_from_flt.h"
+#include "sql_cast_impl_int.h"
 #undef TP2
 #undef TP1
 
 #define TP1 flt
 #define TP2 int
-#include "sql_cast_impl_down_from_flt.h"
+#include "sql_cast_impl_int.h"
 #undef TP2
 #undef TP1
 
 #define TP1 flt
 #define TP2 lng
-#include "sql_cast_impl_down_from_flt.h"
+#include "sql_cast_impl_int.h"
 #undef TP2
 #undef TP1
 
 #ifdef HAVE_HGE
 #define TP1 flt
 #define TP2 hge
-#include "sql_cast_impl_down_from_flt.h"
+#include "sql_cast_impl_int.h"
 #undef TP2
 #undef TP1
 #endif
@@ -332,32 +413,32 @@ SQLbatstr_cast(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 #define TP1 dbl
 #define TP2 bte
-#include "sql_cast_impl_down_from_flt.h"
+#include "sql_cast_impl_int.h"
 #undef TP2
 #undef TP1
 
 #define TP1 dbl
 #define TP2 sht
-#include "sql_cast_impl_down_from_flt.h"
+#include "sql_cast_impl_int.h"
 #undef TP2
 #undef TP1
 
 #define TP1 dbl
 #define TP2 int
-#include "sql_cast_impl_down_from_flt.h"
+#include "sql_cast_impl_int.h"
 #undef TP2
 #undef TP1
 
 #define TP1 dbl
 #define TP2 lng
-#include "sql_cast_impl_down_from_flt.h"
+#include "sql_cast_impl_int.h"
 #undef TP2
 #undef TP1
 
 #ifdef HAVE_HGE
 #define TP1 dbl
 #define TP2 hge
-#include "sql_cast_impl_down_from_flt.h"
+#include "sql_cast_impl_int.h"
 #undef TP2
 #undef TP1
 #endif
@@ -366,64 +447,64 @@ SQLbatstr_cast(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 #define TP1 bte
 #define TP2 flt
-#include "sql_cast_impl_up_to_flt.h"
+#include "sql_cast_impl_int.h"
 #undef TP2
 #undef TP1
 
 #define TP1 sht
 #define TP2 flt
-#include "sql_cast_impl_up_to_flt.h"
+#include "sql_cast_impl_int.h"
 #undef TP2
 #undef TP1
 
 #define TP1 int
 #define TP2 flt
-#include "sql_cast_impl_up_to_flt.h"
+#include "sql_cast_impl_int.h"
 #undef TP2
 #undef TP1
 
 #define TP1 lng
 #define TP2 flt
-#include "sql_cast_impl_up_to_flt.h"
+#include "sql_cast_impl_int.h"
 #undef TP2
 #undef TP1
 
 #ifdef HAVE_HGE
 #define TP1 hge
 #define TP2 flt
-#include "sql_cast_impl_up_to_flt.h"
+#include "sql_cast_impl_int.h"
 #undef TP2
 #undef TP1
 #endif
 
 #define TP1 bte
 #define TP2 dbl
-#include "sql_cast_impl_up_to_flt.h"
+#include "sql_cast_impl_int.h"
 #undef TP2
 #undef TP1
 
 #define TP1 sht
 #define TP2 dbl
-#include "sql_cast_impl_up_to_flt.h"
+#include "sql_cast_impl_int.h"
 #undef TP2
 #undef TP1
 
 #define TP1 int
 #define TP2 dbl
-#include "sql_cast_impl_up_to_flt.h"
+#include "sql_cast_impl_int.h"
 #undef TP2
 #undef TP1
 
 #define TP1 lng
 #define TP2 dbl
-#include "sql_cast_impl_up_to_flt.h"
+#include "sql_cast_impl_int.h"
 #undef TP2
 #undef TP1
 
 #ifdef HAVE_HGE
 #define TP1 hge
 #define TP2 dbl
-#include "sql_cast_impl_up_to_flt.h"
+#include "sql_cast_impl_int.h"
 #undef TP2
 #undef TP1
 #endif
