@@ -3107,11 +3107,11 @@ stmt_convert(backend *be, stmt *v, stmt *sel, sql_subtype *f, sql_subtype *t)
 	 * mal function resolution */
 	if (v->nrcols == 0 && (!sel || sel->nrcols == 0)) {	/* simple calc */
 		q = newStmt(mb, calcRef, convert);
-	} else if ((v->nrcols > 0 || (sel && sel->nrcols > 0)) &&
-		(t->type->localtype > TYPE_str || f->type->eclass == EC_DEC || t->type->eclass == EC_DEC || EC_INTERVAL(t->type->eclass) || EC_TEMP(t->type->eclass) || (EC_VARCHAR(t->type->eclass) && !(f->type->eclass == EC_STRING && t->digits == 0)))) {
+	} else if ((v->nrcols > 0 || (sel && sel->nrcols > 0)) && t->type->eclass == EC_EXTERNAL) {
 		int type = t->type->localtype;
 
-		if (!pushed && sel) {
+		/* with our current implementation, all internal SQL types have candidate list support on their conversions */
+		if (sel && !pushed) {
 			pushed = 1;
 			v = stmt_project(be, sel, v);
 			v->cand = sel;
@@ -3141,13 +3141,11 @@ stmt_convert(backend *be, stmt *v, stmt *sel, sql_subtype *f, sql_subtype *t)
 	} else if (f->type->eclass == EC_DEC) {
 		/* scale of the current decimal */
 		q = pushInt(mb, q, f->scale);
-	} else if (f->type->eclass == EC_SEC &&
-		   (EC_COMPUTE(t->type->eclass) || t->type->eclass == EC_DEC)) {
+	} else if (f->type->eclass == EC_SEC && (EC_COMPUTE(t->type->eclass) || t->type->eclass == EC_DEC)) {
 		/* scale of the current decimal */
 		q = pushInt(mb, q, 3);
 	}
 	q = pushArgument(mb, q, v->nr);
-	assert (!sel || pushed || q->argc == 2);
 	if (sel && !pushed && !v->cand)
 		q = pushArgument(mb, q, sel->nr);
 

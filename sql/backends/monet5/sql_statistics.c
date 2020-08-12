@@ -34,15 +34,29 @@ sql_drop_statistics(mvc *m, sql_table *t)
 	tr = m->session->tr;
 	sys = mvc_bind_schema(m, "sys");
 	if (sys == NULL)
-		throw(SQL, "sql_drop_statistics", SQLSTATE(3F000) "Internal error");
-	if (!mvc_schema_privs(m, sys))
-		throw(SQL, "sql.sql_drop_statistics", SQLSTATE(42000) "Access denied for %s to schema '%s'", sqlvar_get_string(find_global_var(m, mvc_bind_schema(m, "sys"), "current_user")), sys->base.name);
+		throw(SQL, "sql_drop_statistics", SQLSTATE(3F000) "Internal error: No schema sys");
 	sysstats = mvc_bind_table(m, sys, "statistics");
 	if (sysstats == NULL)
 		throw(SQL, "sql_drop_statistics", SQLSTATE(3F000) "No table sys.statistics");
 	statsid = mvc_bind_column(m, sysstats, "column_id");
 	if (statsid == NULL)
 		throw(SQL, "sql_drop_statistics", SQLSTATE(3F000) "No table sys.statistics");
+
+	/* Do all the validations before any drop */
+	if (!isTable(t))
+		throw(SQL, "sql_drop_statistics", SQLSTATE(42S02) "DROP STATISTICS: %s '%s' is not persistent", TABLE_TYPE_DESCRIPTION(t->type, t->properties), t->base.name);
+	if (!table_privs(m, t, PRIV_SELECT))
+		throw(SQL, "sql_drop_statistics", SQLSTATE(42000) "DROP STATISTICS: access denied for %s to table '%s.%s'", 
+			  sqlvar_get_string(find_global_var(m, mvc_bind_schema(m, "sys"), "current_user")), t->s->base.name, t->base.name);
+	if (isTable(t) && t->columns.set) {
+		for (ncol = (t)->columns.set->h; ncol; ncol = ncol->next) {
+			sql_column *c = (sql_column *) ncol->data;
+
+			if (!column_privs(m, c, PRIV_SELECT))
+				throw(SQL, "sql_drop_statistics", SQLSTATE(42000) "DROP STATISTICS: access denied for %s to column '%s' on table '%s.%s'", 
+					  sqlvar_get_string(find_global_var(m, mvc_bind_schema(m, "sys"), "current_user")), c->base.name, t->s->base.name, t->base.name);
+		}
+	}
 
 	if (isTable(t) && t->columns.set) {
 		for (ncol = (t)->columns.set->h; ncol; ncol = ncol->next) {
@@ -51,7 +65,7 @@ sql_drop_statistics(mvc *m, sql_table *t)
 			rid = table_funcs.column_find_row(tr, statsid, &c->base.id, NULL);
 			if (!is_oid_nil(rid) &&
 			    table_funcs.table_delete(tr, sysstats, rid) != LOG_OK)
-				throw(SQL, "analyze", "delete failed");
+				throw(SQL, "sql_drop_statistics", "delete failed");
 		}
 	}
 	return MAL_SUCCEED;
@@ -87,8 +101,6 @@ sql_analyze(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	sys = mvc_bind_schema(m, "sys");
 	if (sys == NULL)
 		throw(SQL, "sql.analyze", SQLSTATE(3F000) "Internal error: No schema sys");
-	if (!mvc_schema_privs(m, sys))
-		throw(SQL, "sql.analyze", SQLSTATE(42000) "Access denied for %s to schema '%s'", sqlvar_get_string(find_global_var(m, mvc_bind_schema(m, "sys"), "current_user")), sys->base.name);
 	sysstats = mvc_bind_table(m, sys, "statistics");
 	if (sysstats == NULL)
 		throw(SQL, "sql.analyze", SQLSTATE(3F000) "Internal error: No table sys.statistics");
@@ -109,6 +121,48 @@ sql_analyze(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	TRC_DEBUG(SQL_PARSER, "analyze %s.%s.%s sample " LLFMT "%s\n", (sch ? sch : ""), (tbl ? tbl : " "), (col ? col : " "), samplesize, (minmax)?"MinMax":"");
 
+	/* Do all the validations before doing any analyze */
+	for (nsch = tr->schemas.set->h; nsch; nsch = nsch->next) {
+		sql_schema *s = (sql_schema *) nsch->data;
+		if (!isalpha((unsigned char) s->base.name[0]))
+			continue;
+
+		if (sch && strcmp(s->base.name, sch))
+			continue;
+		sfnd = 1;
+		if (s->tables.set)
+			for (ntab = (s)->tables.set->h; ntab; ntab = ntab->next) {
+				sql_table *t = (sql_table *) ntab->data;
+
+				if (tbl && strcmp(t->base.name, tbl))
+					continue;
+				tfnd = 1;
+				if (tbl && !isTable(t))
+					throw(SQL, "analyze", SQLSTATE(42S02) "%s '%s' is not persistent", TABLE_TYPE_DESCRIPTION(t->type, t->properties), t->base.name);
+				if (!table_privs(m, t, PRIV_SELECT))
+					throw(SQL, "analyze", SQLSTATE(42000) "ANALYZE: access denied for %s to table '%s.%s'", 
+						  sqlvar_get_string(find_global_var(m, mvc_bind_schema(m, "sys"), "current_user")), t->s->base.name, t->base.name);
+				if (isTable(t) && t->columns.set) {
+					for (ncol = (t)->columns.set->h; ncol; ncol = ncol->next) {
+						sql_column *c = (sql_column *) ncol->data;
+
+						if (col && strcmp(c->base.name, col))
+							continue;
+						cfnd = 1;
+						if (!column_privs(m, c, PRIV_SELECT))
+							throw(SQL, "analyze", SQLSTATE(42000) "ANALYZE: access denied for %s to column '%s' on table '%s.%s'", 
+								  sqlvar_get_string(find_global_var(m, mvc_bind_schema(m, "sys"), "current_user")), c->base.name, t->s->base.name, t->base.name);
+					}
+				}
+			}
+	}
+	if (sch && !sfnd)
+		throw(SQL, "analyze", SQLSTATE(3F000) "Schema '%s' does not exist", sch);
+	if (tbl && !tfnd)
+		throw(SQL, "analyze", SQLSTATE(42S02) "Table '%s' does not exist", tbl);
+	if (col && !cfnd)
+		throw(SQL, "analyze", SQLSTATE(38000) "Column '%s' does not exist", col);
+
 	for (nsch = tr->schemas.set->h; nsch; nsch = nsch->next) {
 		sql_base *b = nsch->data;
 		sql_schema *s = (sql_schema *) nsch->data;
@@ -117,7 +171,6 @@ sql_analyze(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 		if (sch && strcmp(sch, b->name))
 			continue;
-		sfnd = 1;
 		if (s->tables.set)
 			for (ntab = (s)->tables.set->h; ntab; ntab = ntab->next) {
 				sql_base *bt = ntab->data;
@@ -125,12 +178,6 @@ sql_analyze(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 				if (tbl && strcmp(bt->name, tbl))
 					continue;
-				tfnd = 1;
-				if (tbl && !isTable(t)) {
-					GDKfree(maxval);
-					GDKfree(minval);
-					throw(SQL, "analyze", SQLSTATE(42S02) "%s '%s' is not persistent", TABLE_TYPE_DESCRIPTION(t->type, t->properties), bt->name);
-				}
 				if (isTable(t) && t->columns.set)
 					for (ncol = (t)->columns.set->h; ncol; ncol = ncol->next) {
 						sql_base *bc = ncol->data;
@@ -158,7 +205,6 @@ sql_analyze(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 						tostr = BATatoms[bn->ttype].atomToStr;
 
 						rid = table_funcs.column_find_row(tr, statsid, &c->base.id, NULL);
-						cfnd = 1;
 						if (samplesize > 0) {
 							bsample = BATsample(bn, (BUN) samplesize);
 						} else
@@ -258,15 +304,9 @@ sql_analyze(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 							throw(SQL, "analyze", "insert failed");
 						}
 					}
+				}
 			}
-	}
 	GDKfree(maxval);
 	GDKfree(minval);
-	if (sch && !sfnd)
-		throw(SQL, "analyze", SQLSTATE(3F000) "Schema '%s' does not exist", sch);
-	if (tbl && !tfnd)
-		throw(SQL, "analyze", SQLSTATE(42S02) "Table '%s' does not exist", tbl);
-	if (col && !cfnd)
-		throw(SQL, "analyze", SQLSTATE(38000) "Column '%s' does not exist", col);
 	return MAL_SUCCEED;
 }

@@ -381,13 +381,13 @@ CMDscience_bat_##FUNC(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) \
 static double
 cot(double x)
 {
-	return (1/tan(x));
+	return 1 / tan(x);
 }
 
 static float
 cotf(float x)
 {
-	return (1/tan(x));
+	return (float) (1 / tan(x));
 }
 
 static double

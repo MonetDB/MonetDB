@@ -90,15 +90,15 @@ end user.main;
 % clob # type
 % 121 # length
 function user.main():void;
-    X_1:void := querylog.define("explain select count(*) from tmp where i = 201602221;":str, "default_pipe":str, 14:int);
-    X_12:bat[:int] := bat.new(nil:int);
-    X_13:bat[:int] := batcalc.int(0:int, X_12:bat[:int], 9:int, 0:int);
-    C_19:bat[:cnd] := algebra.thetaselect(X_13:bat[:int], 201602221:int, "==":str);
+    X_1:void := querylog.define("explain select count(*) from tmp where i = 201602221;":str, "default_pipe":str, 13:int);
     X_4:int := sql.mvc();
+    X_11:bat[:int] := sql.bind(X_4:int, "sys":str, "tmp":str, "i":str, 0:int);
     C_5:bat[:oid] := sql.tid(X_4:int, "sys":str, "tmp":str);
-    C_21:bat[:oid] := algebra.projection(C_19:bat[:cnd], C_5:bat[:oid]);
-    X_23:lng := aggr.count(C_21:bat[:oid]);
-    sql.resultSet(".%1":str, "%1":str, "bigint":str, 64:int, 0:int, 7:int, X_23:lng);
+    X_12:bat[:int] := batcalc.int(0:int, X_11:bat[:int], C_5:bat[:oid], 9:int, 0:int);
+    C_16:bat[:cnd] := algebra.thetaselect(X_12:bat[:int], 201602221:int, "==":str);
+    C_18:bat[:oid] := algebra.projection(C_16:bat[:cnd], C_5:bat[:oid]);
+    X_20:lng := aggr.count(C_18:bat[:oid]);
+    sql.resultSet(".%1":str, "%1":str, "bigint":str, 64:int, 0:int, 7:int, X_20:lng);
 end user.main;
 #inline               actions= 0 time=3 usec 
 #remap                actions= 1 time=15 usec 

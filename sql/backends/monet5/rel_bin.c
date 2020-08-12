@@ -697,7 +697,9 @@ exp2bin_case(backend *be, sql_exp *fe, stmt *left, stmt *right, stmt *isel, int 
 			if (next_cond) {
 				ncond = cond = es;
 				if (!ncond->nrcols) {
-					if (isel)
+					if (osel)
+						ncond = stmt_const(be, nsel, ncond);
+					else if (isel)
 						ncond = stmt_const(be, isel, ncond);
 					else
 						ncond = stmt_const(be, bin_first_column(be, left), ncond);

@@ -499,13 +499,13 @@ function user.main():void;
     C_1128:bat[:oid] := algebra.projection(C_1127:bat[:oid], C_1109:bat[:oid]);
     X_1134:bat[:timestamp] := algebra.projection(C_1128:bat[:oid], X_61:bat[:timestamp]);
     X_1135:bat[:timestamp] := bat.replace(X_1121:bat[:timestamp], C_1128:bat[:oid], X_1134:bat[:timestamp], true:bit);
-    X_1145:bat[:str] := bat.pack(".":str);
-    X_1146:bat[:str] := bat.pack("yearref":str);
-    X_1147:bat[:str] := bat.pack("clob":str);
-    X_1148:bat[:int] := bat.pack(0:int);
+    X_1143:bat[:str] := bat.pack(".":str);
+    X_1144:bat[:str] := bat.pack("yearref":str);
+    X_1145:bat[:str] := bat.pack("clob":str);
+    X_1146:bat[:int] := bat.pack(0:int);
     X_1136:bat[:timestamp] := batcalc.timestamp(X_1135:bat[:timestamp], 7:int);
-    X_1142:bat[:str] := batmtime.timestamp_to_str(X_1136:bat[:timestamp], "%Y":str);
-    sql.resultSet(X_1145:bat[:str], X_1146:bat[:str], X_1147:bat[:str], X_1148:bat[:int], X_1148:bat[:int], X_1142:bat[:str]);
+    X_1140:bat[:str] := batmtime.timestamp_to_str(X_1136:bat[:timestamp], "%Y":str);
+    sql.resultSet(X_1143:bat[:str], X_1144:bat[:str], X_1145:bat[:str], X_1146:bat[:int], X_1146:bat[:int], X_1140:bat[:str]);
 end user.main;
 # optimizer.mitosis()
 #inline               actions= 0 time=37 usec 
