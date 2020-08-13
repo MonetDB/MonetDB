@@ -228,23 +228,24 @@ TABLETcollect_parts(BAT **bats, Tablet *as, BUN offset)
 // the starting quote character has already been skipped
 
 static char *
-tablet_skip_string(char *s, char quote)
+tablet_skip_string(char *s, char quote, bool escape)
 {
-	while (*s) {
-		if (*s == '\\' && s[1] != '\0')
-			s++;
-		else if (*s == quote) {
-			if (s[1] == quote)
-				*s++ = '\\';	/* sneakily replace "" with \" */
-			else
+	size_t i = 0, j = 0;
+	while (s[i]) {
+		if (escape && s[i] == '\\' && s[i + 1] != '\0')
+			s[j++] = s[i++];
+		else if (s[i] == quote) {
+			if (s[i + 1] != quote)
 				break;
+			i++;				/* skip the first quote */
 		}
-		s++;
+		s[j++] = s[i++];
 	}
-	assert(*s == quote || *s == '\0');
-	if (*s == 0)
+	assert(s[i] == quote || s[i] == '\0');
+	if (s[i] == 0)
 		return NULL;
-	return s;
+	s[j] = 0;
+	return s + i;
 }
 
 static int
@@ -819,8 +820,18 @@ SQLinsert_val(READERtask *task, int col, int idx)
 	if (s == 0) {
 		adt = fmt->nildata;
 		fmt->c->tnonil = false;
-	} else
-		adt = fmt->frstr(fmt, fmt->adt, s);
+	} else {
+		if (task->escape) {
+			char *data = GDKmalloc(strlen(s) + 1);
+			if (data == NULL ||
+				GDKstrFromStr((unsigned char *) data, (unsigned char *) s, strlen(s)) < 0)
+				adt = NULL;
+			else
+				adt = fmt->frstr(fmt, fmt->adt, data);
+			GDKfree(data);
+		} else
+			adt = fmt->frstr(fmt, fmt->adt, s);
+	}
 
 	/* col is zero-based, but for error messages it needs to be
 	 * one-based, and from here on, we only use col anymore to produce
@@ -967,7 +978,7 @@ SQLload_parse_line(READERtask *task, int idx)
 			if (*line && *line == task->quote) {
 				quote = true;
 				task->fields[i][idx] = line + 1;
-				line = tablet_skip_string(line + 1, task->quote);
+				line = tablet_skip_string(line + 1, task->quote, task->escape);
 
 				if (!line) {
 					errline = SQLload_error(task, idx, i+1);
