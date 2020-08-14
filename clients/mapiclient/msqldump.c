@@ -42,6 +42,7 @@ usage(const char *prog, int xit)
 	fprintf(stderr, " -t table    | --table=table      dump a database table\n");
 	fprintf(stderr, " -D          | --describe         describe database\n");
 	fprintf(stderr, " -N          | --inserts          use INSERT INTO statements\n");
+	fprintf(stderr, " -e          | --noescape         use NO ESCAPE\n");
 	fprintf(stderr, " -q          | --quiet            don't print welcome message\n");
 	fprintf(stderr, " -X          | --Xdebug           trace mapi network interaction\n");
 	fprintf(stderr, " -?          | --help             show this usage message\n");
@@ -62,6 +63,7 @@ main(int argc, char **argv)
 	bool describe = false;
 	bool functions = false;
 	bool useinserts = false;
+	bool noescape = false;
 	int c;
 	Mapi mid;
 	bool quiet = false;
@@ -76,6 +78,7 @@ main(int argc, char **argv)
 		{"functions", 0, 0, 'f'},
 		{"table", 1, 0, 't'},
 		{"inserts", 0, 0, 'N'},
+		{"noescape", 0, 0, 'e'},
 		{"Xdebug", 0, 0, 'X'},
 		{"user", 1, 0, 'u'},
 		{"quiet", 0, 0, 'q'},
@@ -91,7 +94,7 @@ main(int argc, char **argv)
 	host = dotfile.host;
 	port = dotfile.port;
 
-	while ((c = getopt_long(argc, argv, "h:p:d:Dft:NXu:qv?", long_options, NULL)) != -1) {
+	while ((c = getopt_long(argc, argv, "h:p:d:Dft:NeXu:qv?", long_options, NULL)) != -1) {
 		switch (c) {
 		case 'u':
 			if (user)
@@ -116,6 +119,9 @@ main(int argc, char **argv)
 			break;
 		case 'N':
 			useinserts = true;
+			break;
+		case 'e':
+			noescape = true;
 			break;
 		case 'f':
 			if (table)
@@ -242,10 +248,10 @@ main(int argc, char **argv)
 		mnstr_printf(out, "COMMIT;\n");
 	} else if (table) {
 		mnstr_printf(out, "START TRANSACTION;\n");
-		c = dump_table(mid, NULL, table, out, describe, true, useinserts, false);
+		c = dump_table(mid, NULL, table, out, describe, true, useinserts, false, noescape);
 		mnstr_printf(out, "COMMIT;\n");
 	} else
-		c = dump_database(mid, out, describe, useinserts);
+		c = dump_database(mid, out, describe, useinserts, noescape);
 	mnstr_flush(out);
 
 	mapi_destroy(mid);

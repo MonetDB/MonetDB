@@ -74,6 +74,10 @@ COPY INTO + CSV values.
 INSERT INTO statements are more portable, and necessary when the
 load of the dump is processed by e.g. a JDBC application.
 .TP
+\fB\-\-noescape\fP (\fB\-e\fP)
+When dumping the table data, use the NO ESCAPE option on the COPY INTO
+query.
+.TP
 \fB\-\-functions\fP (\fB\-f\fP)
 Only dump functions definitions.
 .TP

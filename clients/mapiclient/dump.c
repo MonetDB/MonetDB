@@ -122,17 +122,18 @@ dquoted_print(stream *f, const char *s, const char *suff)
 }
 
 static int
-squoted_print(stream *f, const char *s, char quote)
+squoted_print(stream *f, const char *s, char quote, bool noescape)
 {
 	assert(quote == '\'' || quote == '"');
 	if (mnstr_printf(f, "%c", quote) < 0)
 		return -1;
 	while (*s) {
-		size_t n = strcspn(s, "\\'\"\177"
-				   "\001\002\003\004\005\006\007"
-				   "\010\011\012\013\014\015\016\017"
-				   "\020\021\022\023\024\025\026\027"
-				   "\030\031\032\033\034\035\036\037");
+		size_t n = noescape ? strcspn(s, "'\"") :
+			strcspn(s, "\\'\"\177"
+					"\001\002\003\004\005\006\007"
+					"\010\011\012\013\014\015\016\017"
+					"\020\021\022\023\024\025\026\027"
+					"\030\031\032\033\034\035\036\037");
 		if (n > 0 && mnstr_write(f, s, 1, n) < 0)
 			return -1;
 		s += n;
@@ -235,7 +236,7 @@ comment_on(stream *toConsole, const char *object,
 			}
 		}
 		if (mnstr_write(toConsole, " IS ", 1, 4) < 0 ||
-		    squoted_print(toConsole, remark, '\'') < 0 ||
+		    squoted_print(toConsole, remark, '\'', false) < 0 ||
 		    mnstr_write(toConsole, ";\n", 1, 2) < 0)
 			return -1;
 	}
@@ -1307,11 +1308,11 @@ describe_table(Mapi mid, const char *schema, const char *tname,
 				rt_hash = mapi_fetch_field(hdl, 1);
 			}
 			mnstr_printf(toConsole, " ON ");
-			squoted_print(toConsole, view, '\'');
+			squoted_print(toConsole, view, '\'', false);
 			mnstr_printf(toConsole, " WITH USER ");
-			squoted_print(toConsole, rt_user, '\'');
+			squoted_print(toConsole, rt_user, '\'', false);
 			mnstr_printf(toConsole, " ENCRYPTED PASSWORD ");
-			squoted_print(toConsole, rt_hash, '\'');
+			squoted_print(toConsole, rt_hash, '\'', false);
 			mapi_close_handle(hdl);
 			hdl = NULL;
 		} else if (type == 3 && has_table_partitions(mid)) { /* A merge table might be partitioned */
@@ -1660,7 +1661,7 @@ describe_schema(Mapi mid, const char *sname, stream *toConsole)
 
 static int
 dump_table_data(Mapi mid, const char *schema, const char *tname, stream *toConsole,
-		bool useInserts)
+				bool useInserts, bool noescape)
 {
 	int cnt, i;
 	int64_t rows;
@@ -1743,9 +1744,9 @@ dump_table_data(Mapi mid, const char *schema, const char *tname, stream *toConso
 	if (!useInserts) {
 		mnstr_printf(toConsole, "COPY %" PRId64 " RECORDS INTO ", rows);
 		dquoted_print(toConsole, schema, ".");
-		dquoted_print(toConsole, tname,
-			      " FROM stdin USING DELIMITERS "
-			      "E'\\t',E'\\n','\"';\n");
+		dquoted_print(toConsole, tname, NULL);
+		mnstr_printf(toConsole, " FROM stdin USING DELIMITERS "
+					 "E'\\t',E'\\n','\"'%s;\n", noescape ? " NO ESCAPE" : "");
 	}
 	string = malloc(sizeof(unsigned char) * cnt);
 	if (string == NULL)
@@ -1800,13 +1801,13 @@ dump_table_data(Mapi mid, const char *schema, const char *tname, stream *toConso
 					 strcmp(tp, "url") == 0 ||
 					 strcmp(tp, "uuid") == 0 ||
 					 string[i])
-					squoted_print(toConsole, s, '\'');
+					squoted_print(toConsole, s, '\'', false);
 				else
 					mnstr_printf(toConsole, "%s", s);
 			} else if (string[i]) {
 				/* write double-quoted string with
 				   certain characters escaped */
-				squoted_print(toConsole, s, '"');
+				squoted_print(toConsole, s, '"', noescape);
 			} else
 				mnstr_printf(toConsole, "%s", s);
 
@@ -1862,13 +1863,14 @@ bailout:
 
 int
 dump_table(Mapi mid, const char *schema, const char *tname, stream *toConsole,
-	   bool describe, bool foreign, bool useInserts, bool databaseDump)
+		   bool describe, bool foreign, bool useInserts, bool databaseDump,
+		   bool noescape)
 {
 	int rc;
 
 	rc = describe_table(mid, schema, tname, toConsole, foreign, databaseDump);
 	if (rc == 0 && !describe)
-		rc = dump_table_data(mid, schema, tname, toConsole, useInserts);
+		rc = dump_table_data(mid, schema, tname, toConsole, useInserts, noescape);
 	return rc;
 }
 
@@ -2147,7 +2149,7 @@ dump_function(Mapi mid, stream *toConsole, const char *fid, bool hashge)
 			free(ascal);
 		}
 		mnstr_printf(toConsole, ") IS ");
-		squoted_print(toConsole, remark, '\'');
+		squoted_print(toConsole, remark, '\'', false);
 		mnstr_printf(toConsole, ";\n");
 		free(remark);
 	}
@@ -2291,7 +2293,7 @@ bailout:
 }
 
 int
-dump_database(Mapi mid, stream *toConsole, bool describe, bool useInserts)
+dump_database(Mapi mid, stream *toConsole, bool describe, bool useInserts, bool noescape)
 {
 	const char *start_trx = "START TRANSACTION";
 	const char *end = "ROLLBACK";
@@ -2636,9 +2638,9 @@ dump_database(Mapi mid, stream *toConsole, bool describe, bool useInserts)
 			mnstr_printf(toConsole, "CREATE USER ");
 			dquoted_print(toConsole, uname, " ");
 			mnstr_printf(toConsole, "WITH ENCRYPTED PASSWORD ");
-			squoted_print(toConsole, pwhash, '\'');
+			squoted_print(toConsole, pwhash, '\'', false);
 			mnstr_printf(toConsole, " NAME ");
-			squoted_print(toConsole, fullname, '\'');
+			squoted_print(toConsole, fullname, '\'', false);
 			mnstr_printf(toConsole, " SCHEMA ");
 			dquoted_print(toConsole, describe ? sname : "sys", ";\n");
 		}
@@ -2802,7 +2804,7 @@ dump_database(Mapi mid, stream *toConsole, bool describe, bool useInserts)
 		}
 		if (type) { /* table */
 			int ptype = atoi(type), dont_describe = (ptype == 3 || ptype == 5);
-			rc = dump_table(mid, schema, name, toConsole, dont_describe || describe, describe, useInserts, true);
+			rc = dump_table(mid, schema, name, toConsole, dont_describe || describe, describe, useInserts, true, noescape);
 		} else if (query) {
 			/* view or trigger */
 			mnstr_printf(toConsole, "%s\n", query);
@@ -2884,7 +2886,7 @@ dump_database(Mapi mid, stream *toConsole, bool describe, bool useInserts)
 						} else {
 							mnstr_printf(toConsole, ", ");
 						}
-						squoted_print(toConsole, nextv, '\'');
+						squoted_print(toConsole, nextv, '\'', false);
 						i++;
 					}
 					first = false;
@@ -2923,12 +2925,12 @@ dump_database(Mapi mid, stream *toConsole, bool describe, bool useInserts)
 				if (minv || maxv || !wnulls || (!minv && !maxv && wnulls && strcmp(wnulls, "false") == 0)) {
 					mnstr_printf(toConsole, " FROM ");
 					if (minv)
-						squoted_print(toConsole, minv, '\'');
+						squoted_print(toConsole, minv, '\'', false);
 					else
 						mnstr_printf(toConsole, "RANGE MINVALUE");
 					mnstr_printf(toConsole, " TO ");
 					if (maxv)
-						squoted_print(toConsole, maxv, '\'');
+						squoted_print(toConsole, maxv, '\'', false);
 					else
 						mnstr_printf(toConsole, "RANGE MAXVALUE");
 				}
