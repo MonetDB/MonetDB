@@ -2179,6 +2179,9 @@ rel_logical_value_exp(sql_query *query, sql_rel **rel, symbol *sc, int f, exp_ki
 		if (!rs)
 			return NULL;
 
+		if (ls && rs && exp_is_null(ls) && exp_is_null(rs))
+			return exp_convert(sql->sa, ls, exp_subtype(ls), sql_bind_localtype("bit"));
+
 		if (rel_binop_check_types(sql, rel ? *rel : NULL, ls, rs, 0) < 0)
 			return NULL;
 		ls = exp_compare_func(sql, ls, rs, compare_func(compare_str2type(compare_op), quantifier?0:need_not), quantifier);

@@ -131,6 +131,7 @@ OIDXcreateImplementation(Client cntxt, int tpe, BAT *b, int pieces)
 	for (i = 0; i < pieces; i++) {
 		/* add slice instruction */
 		q = newInstruction(smb, putName("algebra"),putName("slice"));
+		setDestVar(q, newTmpVariable(smb, TYPE_any));
 		setVarType(smb, getArg(q,0), tpe);
 		setVarFixed(smb, getArg(q,0));
 		q = addArgument(smb, q, arg);
@@ -147,6 +148,7 @@ OIDXcreateImplementation(Client cntxt, int tpe, BAT *b, int pieces)
 	for (i = 0; i < pieces; i++) {
 		/* add sort instruction */
 		q = newInstruction(smb, putName("algebra"), putName("orderidx"));
+		setDestVar(q, newTmpVariable(smb, TYPE_any));
 		setVarType(smb, getArg(q, 0), tpe);
 		setVarFixed(smb, getArg(q, 0));
 		q = addArgument(smb, q, pack->argv[2+i]);

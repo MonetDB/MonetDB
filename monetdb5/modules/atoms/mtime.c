@@ -157,6 +157,7 @@ NAMEBULK##_cand(bat *ret, const bat *bid, const bat *sid)				\
 	str msg = MAL_SUCCEED; 												\
 	struct canditer ci;													\
 	oid off;															\
+	bool nils = false;													\
 																		\
 	if ((b1 = BATdescriptor(*bid)) == NULL)	{							\
 		msg = createException(MAL, "batmtime." MALFUNC "_cand",			\
@@ -180,9 +181,10 @@ NAMEBULK##_cand(bat *ret, const bat *bid, const bat *sid)				\
 	for (BUN i = 0; i < n; i++) { 										\
 		BUN p = (BUN) (canditer_next(&ci) - off);						\
 		FUNC_CALL(FUNC, (dst[i]), (GET_NEXT_SRC(src1)));				\
+		nils |= is_##OUTTYPE##_nil(dst[i]);								\
 	}																	\
-	bn->tnonil = b1->tnonil;											\
-	bn->tnil = b1->tnil;												\
+	bn->tnonil = !nils;													\
+	bn->tnil = nils;													\
 	BATsetcount(bn, n);													\
 	SETFLAGS;															\
 	bn->tkey = false;													\
