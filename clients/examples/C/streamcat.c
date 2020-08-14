@@ -469,7 +469,7 @@ int cmd_bstream(char *argv[])
 {
 	char **arg = &argv[1];
 	char *inout_filename = NULL;
-	bool dump;
+	bool dump = false;
 	char *additional = NULL;
 	stream *s = NULL;
 	stream *bs = NULL;
