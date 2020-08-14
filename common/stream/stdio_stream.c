@@ -420,7 +420,7 @@ stdin_rastream(void)
 		struct stat stb;
 		if (fstat(fileno(stdin), &stb) < 0)
 			break;
-		if (!S_ISREG(stb.st_mode))
+		if ((stb.st_mode & S_IFMT) != S_IFREG)
 			break;
 		fpos_t pos;
 		if (fgetpos(stdin, &pos) != 0)
