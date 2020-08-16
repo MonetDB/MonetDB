@@ -2244,11 +2244,11 @@ split_join_exps(sql_rel *rel, list *joinable, list *not_joinable)
 						int nrcr1 = 0, nrcr2 = 0, nrcl1 = 0, nrcl2 = 0;
 
 						if ((ll && !rl &&
-						   ((rr && !lr) || (nrcr1 = r->card == CARD_ATOM)) &&
-						   ((rf && !lf) || (nrcr2 = f->card == CARD_ATOM)) && (nrcr1+nrcr2) <= 1) ||
+						   ((rr && !lr) || (nrcr1 = r->card == CARD_ATOM && exp_is_atom(r))) &&
+						   ((rf && !lf) || (nrcr2 = f->card == CARD_ATOM && exp_is_atom(f))) && (nrcr1+nrcr2) <= 1) ||
 						    (rl && !ll &&
-						   ((lr && !rr) || (nrcl1 = r->card == CARD_ATOM)) &&
-						   ((lf && !rf) || (nrcl2 = f->card == CARD_ATOM)) && (nrcl1+nrcl2) <= 1)) {
+						   ((lr && !rr) || (nrcl1 = r->card == CARD_ATOM && exp_is_atom(r))) &&
+						   ((lf && !rf) || (nrcl2 = f->card == CARD_ATOM && exp_is_atom(f))) && (nrcl1+nrcl2) <= 1)) {
 							left_reference = right_reference = 1;
 						}
 					} else {
