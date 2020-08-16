@@ -2180,7 +2180,7 @@ rel_logical_value_exp(sql_query *query, sql_rel **rel, symbol *sc, int f, exp_ki
 			return NULL;
 
 		if (ls && rs && exp_is_null(ls) && exp_is_null(rs))
-			return exp_convert(sql->sa, ls, exp_subtype(ls), sql_bind_localtype("bit"));
+			return exp_atom(sql->sa, atom_general(sql->sa, sql_bind_localtype("bit"), NULL));
 
 		if (rel_binop_check_types(sql, rel ? *rel : NULL, ls, rs, 0) < 0)
 			return NULL;
