@@ -625,21 +625,23 @@ SERVERlisten(int port, const char *usockfile, int maxusers)
 					if (setsockopt(sock, SOL_SOCKET, SO_REUSEADDR, (char *) &on, sizeof on) == SOCKET_ERROR) {
 						e = errno;
 						closesocket(sock);
+						sock = INVALID_SOCKET;
 						continue;
 					}
 
 					bind_check = bind(sock, (SOCKPTR) rp->ai_addr, (socklen_t) rp->ai_addrlen);
-					e = errno;
 					if (bind_check == SOCKET_ERROR) {
+						e = errno;
 						closesocket(sock);
+						sock = INVALID_SOCKET;
 						continue;
-					} else
-						break;
+					}
+					break;
 				}
 				if (result)
 					freeaddrinfo(result);
 				errno = e;
-				if (errno == 0 && sock != INVALID_SOCKET)
+				if (sock != INVALID_SOCKET)
 					break;
 
 				if (port > 65535) {
