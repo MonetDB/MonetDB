@@ -753,7 +753,7 @@ fi
 
 %files selinux
 %defattr(-,root,root,0755)
-%doc buildtools/selinux/*
+%doc buildtools/selinux/monetdb.*
 %{_datadir}/selinux/*/monetdb.pp
 
 %endif
