@@ -87,6 +87,9 @@ select cast(true as interval month); --error, not possible
 select cast(cast(1 as interval second) as boolean); --error, not possible
 select cast(cast(1 as interval month) as boolean); --error, not possible
 
+select cast(null as blob) > cast(null as blob);
+	-- NULL
+
 select substring('abc' from 1 for null);
 select substring('abc' from null for 2);
 select substring('abc' from null for null);

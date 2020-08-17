@@ -28,8 +28,14 @@ str
 str_2_blob(blob **res, const str *val)
 {
 	size_t rlen = 0;
-
-	return str_2_blob_imp(res, &rlen, *val);
+	str msg;
+	
+	*res = NULL;
+	if ((msg = str_2_blob_imp(res, &rlen, *val))) {
+		GDKfree(*res);
+		*res = NULL;
+	}
+	return msg;
 }
 
 str
@@ -186,8 +192,16 @@ SQLstr_cast(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	else
 		msg = SQLstr_cast_any_type(res, rlen, m, eclass, d, s, has_tz, p, tpe, digits);
 
-	if (msg)
+	if (msg) {
 		GDKfree(*res);
+		*res = NULL;
+	} else if (!(EC_VARCHAR(eclass) || tpe == TYPE_str)) { /* if a too long string was allocated, return what is needed */
+		str newr = GDKstrdup(*res);
+		GDKfree(*res);
+		if (!newr)
+			return createException(SQL, "calc.str_cast", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		*res = newr;
+	}
 	return msg;
 }
 

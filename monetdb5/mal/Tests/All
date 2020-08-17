@@ -181,7 +181,7 @@ tst890
 tst900
 tst901
 tst902
-tst903
+#tst903 old test to study the overhead in MAL interpretation, see also mal/Tests/performance
 tst904
 tst905
 tst906

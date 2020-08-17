@@ -48,11 +48,11 @@ def main():
     print(r'  <Product Id="*" Language="1033" Manufacturer="MonetDB" Name="MonetDB ODBC Driver" UpgradeCode="{}" Version="{}">'.format(upgradecode[arch], sys.argv[1]))
     print(r'    <Package Id="*" Comments="MonetDB ODBC Driver" Compressed="yes" InstallerVersion="301" Keywords="MonetDB SQL ODBC" Languages="1033" Manufacturer="MonetDB BV" Platform="{}"/>'.format(arch))
     print(r'    <MajorUpgrade AllowDowngrades="no" DowngradeErrorMessage="A later version of [ProductName] is already installed." AllowSameVersionUpgrades="no"/>')
-    print(r'    <WixVariable Id="WixUILicenseRtf" Value="license.rtf"/>')
-    print(r'    <WixVariable Id="WixUIBannerBmp" Value="banner.bmp"/>')
+    print(r'    <WixVariable Id="WixUILicenseRtf" Value="share\license.rtf"/>')
+    print(r'    <WixVariable Id="WixUIBannerBmp" Value="share\banner.bmp"/>')
     # print(r'    <WixVariable Id="WixUIDialogBmp" Value="backgroundRipple.bmp"/>')
     print(r'    <Property Id="WIXUI_INSTALLDIR" Value="INSTALLDIR"/>')
-    print(r'    <Property Id="ARPPRODUCTICON" Value="monetdb.ico"/>')
+    print(r'    <Property Id="ARPPRODUCTICON" Value="share\monetdb.ico"/>')
     print(r'    <Media Id="1" Cabinet="monetdb.cab" EmbedCab="yes"/>')
     print(r'    <CustomAction Id="driverinstall" FileKey="odbcinstall" ExeCommand="/Install" Execute="deferred" Impersonate="no"/>')
     print(r'    <CustomAction Id="driveruninstall" FileKey="odbcinstall" ExeCommand="/Uninstall" Execute="deferred" Impersonate="no"/>')
@@ -80,12 +80,12 @@ def main():
                vcpkg.format(r'bin\zlib1.dll')])
     print(r'            </Directory>')
     id = comp(features, id, 12,
-              [r'license.rtf'])
+              [r'share\license.rtf'])
     id = comp(features, id, 12,
               [r'bin\odbcinstall.exe'],
               fid = 'odbcinstall')
     id = comp(features, id, 12,
-              [r'website.html'],
+              [r'share\website.html'],
               name = 'MonetDB Web Site',
               sid = 'website_html',
               vital = 'no')
@@ -109,7 +109,7 @@ def main():
     print(r'    </Feature>')
     print(r'    <UIRef Id="WixUI_InstallDir"/>')
     print(r'    <UIRef Id="WixUI_ErrorProgressText"/>')
-    print(r'    <Icon Id="monetdb.ico" SourceFile="monetdb.ico"/>')
+    print(r'    <Icon Id="monetdb.ico" SourceFile="share\monetdb.ico"/>')
     print(r'    <InstallExecuteSequence>')
     print(r'      <Custom Action="driverinstall" Before="RegisterUser">')
     print(r'        NOT Installed OR REINSTALL')

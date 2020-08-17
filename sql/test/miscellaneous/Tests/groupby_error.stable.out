@@ -465,6 +465,41 @@ project (
 % bigint # type
 % 1 # length
 [ 1	]
+#SELECT DISTINCT CAST(COALESCE ( + 38, - - ( - 70 ) * 52 + + 91 + - 47 ) + + CAST ( - 54 AS REAL ) / + 68 / + ( - 92 ) * - - CASE WHEN NULL >= NULL THEN COUNT ( * ) WHEN - COUNT ( * ) IS NULL 
+#THEN NULL ELSE NULL END * + 28 * - 58 + COUNT ( * ) + + COUNT ( * ) AS BIGINT);
+% .%3 # table_name
+% %3 # name
+% bigint # type
+% 1 # length
+[ NULL	]
+#SELECT DISTINCT CAST(- ( COUNT ( * ) ) / + CASE 28 * + 72 + - 45 * + 2 WHEN - 14 THEN NULL WHEN 37 THEN - COALESCE ( CASE WHEN + 17 IS NOT NULL THEN ( + ( - 39 ) ) WHEN NOT NULL = ( NULL )
+#THEN NULL ELSE 52 END, - COUNT ( * ) * - 80, + NULLIF ( CASE - 70 WHEN 48 + 63 THEN NULL ELSE 89 * + 57 END, + 15 ) + - CASE + 19 WHEN - 97 THEN + 66 + - 25 END ) * + 79 + 93 * 21 END AS BIGINT) AS col1;
+% . # table_name
+% col1 # name
+% bigint # type
+% 1 # length
+[ NULL	]
+#START TRANSACTION;
+#CREATE TABLE "tab0" ("col0" INTEGER,"col1" INTEGER,"col2" INTEGER);
+#INSERT INTO "tab0" VALUES (83, 0, 38), (26, 0, 79), (43, 81, 24);
+[ 3	]
+#ROLLBACK;
+#START TRANSACTION;
+#CREATE TABLE tab2 ("col0" INTEGER,"col1" INTEGER,"col2" INTEGER);
+#INSERT INTO tab2 VALUES(64,77,40), (75,67,58), (46,51,23);
+[ 3	]
+#ROLLBACK;
+#START TRANSACTION;
+#CREATE TABLE t(x DECIMAL(4,1));
+#INSERT INTO t VALUES (42);
+[ 1	]
+#SELECT CAST(SUM(x) / COUNT(x) AS DECIMAL(13,1)) FROM t;
+% sys.%3 # table_name
+% %3 # name
+% decimal # type
+% 15 # length
+[ 42.0	]
+#ROLLBACK;
 
 # 10:56:47 >  
 # 10:56:47 >  "Done."
