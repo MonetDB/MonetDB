@@ -412,7 +412,6 @@ static int
 cstToken(Client cntxt, ValPtr cst)
 {
 	int i = 0;
-	int hex = 0;
 	str s = CURRENT(cntxt);
 
 	cst->vtype = TYPE_int;
@@ -437,24 +436,21 @@ cstToken(Client cntxt, ValPtr cst)
 	case '0':
 		if (s[0] == '0' && (s[1] == 'x' || s[1] == 'X')) {
 			/* deal with hex */
-			hex = TRUE;
 			i += 2;
 			s += 2;
-		}
-		/* fall through */
-	case '1': case '2': case '3': case '4': case '5':
-	case '6': case '7': case '8': case '9':
-		if (hex) {
 			while (isxdigit((unsigned char) *s)) {
 				i++;
 				s++;
 			}
 			goto handleInts;
-		} else
-			while (isdigit((unsigned char) *s)) {
-				i++;
-				s++;
-			}
+		}
+		/* fall through */
+	case '1': case '2': case '3': case '4': case '5':
+	case '6': case '7': case '8': case '9':
+		while (isdigit((unsigned char) *s)) {
+			i++;
+			s++;
+		}
 
 		/* fall through */
 	case '.':
