@@ -2439,6 +2439,10 @@ logger_exit(logger *lg)
 
 	if (LOG_DISABLED(lg)) {
 		logger_close(lg);
+		if (logger_commit(lg) != GDK_SUCCEED) {
+			TRC_CRITICAL(GDK, "logger_commit failed\n");
+			return GDK_FAIL;
+		}
 		lg->changes = 0;
 		return GDK_SUCCEED;
 	}
