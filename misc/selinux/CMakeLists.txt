@@ -61,23 +61,14 @@ if(SEMODULE_FOUND)
       RENAME monetdb.pp
       COMPONENT
       selinux)
-
-    install(FILES
-      ${CMAKE_CURRENT_BINARY_DIR}/monetdb.pp.${SETYPE}
-      DESTINATION
-      ${CMAKE_INSTALL_DATADIR}/doc
-      COMPONENT
-      selinux)
   endforeach()
 
   install(FILES
-    ChangeLog-Archive
-    ChangeLog.Jun2020
     ${CMAKE_CURRENT_BINARY_DIR}/monetdb.fc
     monetdb.if
     monetdb.te
     DESTINATION
-    ${CMAKE_INSTALL_DATADIR}/doc
+    ${CMAKE_INSTALL_DATADIR}/doc/MonetDB-selinux
     COMPONENT
     selinux)
 

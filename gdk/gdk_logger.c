@@ -97,7 +97,7 @@
 
 #define NAME(name,tpe,id) (name?name:"tpe id")
 
-#define LOG_DISABLED(lg) ((lg)->debug&128)
+#define LOG_DISABLED(lg) ((lg)->debug&128 || (lg)->inmemory)
 
 static const char *log_commands[] = {
 	NULL,
@@ -1069,9 +1069,9 @@ logger_open(logger *lg)
 	char id[BUFSIZ];
 	char *filename;
 
-	if (lg->inmemory || LOG_DISABLED(lg)) {
+	if (LOG_DISABLED(lg)) {
 		lg->end = 0;
-		if (lg->id) /* go back too last used id */
+		if (lg->id) /* go back to last used id */
 			lg->id--;
 		return GDK_SUCCEED;
 	}
@@ -1104,7 +1104,7 @@ logger_open(logger *lg)
 static inline void
 logger_close(logger *lg)
 {
-	if (!lg->inmemory)
+	if (!LOG_DISABLED(lg))
 		close_stream(lg->log);
 	lg->log = NULL;
 }
@@ -1691,7 +1691,7 @@ logger_load(int debug, const char *fn, char filename[FILENAME_MAX], logger *lg)
 	bool needcommit = false;
 	int dbg = GDKdebug;
 
-	if (!lg->inmemory && !LOG_DISABLED(lg)) {
+	if (!LOG_DISABLED(lg)) {
 		if ((filenamestr = GDKfilepath(farmid, lg->dir, LOGFILE, NULL)) == NULL)
 			goto error;
 		len = snprintf(filename, FILENAME_MAX, "%s", filenamestr);
@@ -1721,7 +1721,7 @@ logger_load(int debug, const char *fn, char filename[FILENAME_MAX], logger *lg)
 	lg->seqs_val = NULL;
 	lg->dseqs = NULL;
 
-	if (!lg->inmemory && !LOG_DISABLED(lg)) {
+	if (!LOG_DISABLED(lg)) {
 		/* try to open logfile backup, or failing that, the file
 		 * itself. we need to know whether this file exists when
 		 * checking the database consistency later on */
@@ -1808,7 +1808,7 @@ logger_load(int debug, const char *fn, char filename[FILENAME_MAX], logger *lg)
 			goto error;
 		}
 
-		if (!lg->inmemory && !LOG_DISABLED(lg)) {
+		if (!LOG_DISABLED(lg)) {
 			if (GDKcreatedir(filename) != GDK_SUCCEED) {
 				GDKerror("cannot create directory for log file %s\n",
 					 filename);
@@ -2466,8 +2466,12 @@ logger_exit(logger *lg)
 	char filename[FILENAME_MAX];
 	int len, farmid;
 
-	if (lg->inmemory || LOG_DISABLED(lg)) {
+	if (LOG_DISABLED(lg)) {
 		logger_close(lg);
+		if (logger_commit(lg) != GDK_SUCCEED) {
+			TRC_CRITICAL(GDK, "logger_commit failed\n");
+			return GDK_FAIL;
+		}
 		lg->changes = 0;
 		return GDK_SUCCEED;
 	}
@@ -2567,7 +2571,7 @@ logger_cleanup(logger *lg)
 	char buf[BUFSIZ];
 	FILE *fp = NULL;
 
-	if (lg->inmemory || LOG_DISABLED(lg))
+	if (LOG_DISABLED(lg))
 		return GDK_SUCCEED;
 
 	farmid = BBPselectfarm(PERSISTENT, 0, offheap);
@@ -2682,7 +2686,7 @@ log_bat_persists(logger *lg, BAT *b, const char *name, char tpe, oid id)
 		l.flag = (l.flag == LOG_USE)?LOG_USE_ID:LOG_CREATE_ID;
 	l.tid = lg->tid;
 	lg->changes++;
-	if (!lg->inmemory && !LOG_DISABLED(lg)) {
+	if (!LOG_DISABLED(lg)) {
 		if (log_write_format(lg, &l) != GDK_SUCCEED ||
 		    log_write_string(lg, name) != GDK_SUCCEED ||
 		    (tpe && log_write_id(lg, tpe, id) != GDK_SUCCEED))
@@ -2715,7 +2719,7 @@ log_bat_persists(logger *lg, BAT *b, const char *name, char tpe, oid id)
 		}
 		return GDK_SUCCEED;
 	}
-	if (lg->inmemory || LOG_DISABLED(lg))
+	if (LOG_DISABLED(lg))
 		return GDK_SUCCEED;
 
 	ha = "vid";
@@ -2774,7 +2778,7 @@ log_bat_transient(logger *lg, const char *name, char tpe, oid id)
 		//	assert(lg->tid == tid);
 	}
 
-	if (lg->inmemory || LOG_DISABLED(lg))
+	if (LOG_DISABLED(lg))
 		return GDK_SUCCEED;
 
 	if (log_write_format(lg, &l) != GDK_SUCCEED ||
@@ -2801,7 +2805,7 @@ log_delta(logger *lg, BAT *uid, BAT *uval, const char *name, char tpe, oid id)
 	l.nr = (BUNlast(uval));
 	lg->changes += l.nr;
 
-	if (LOG_DISABLED(lg) || lg->inmemory) {
+	if (LOG_DISABLED(lg)) {
 		/* logging is switched off */
 		return GDK_SUCCEED;
 	}
@@ -2870,7 +2874,7 @@ log_bat(logger *lg, BAT *b, const char *name, char tpe, oid id)
 	l.nr = (BUNlast(b) - b->batInserted);
 	lg->changes += (b->batInserted)?l.nr:1; /* initial large inserts is counted as 1 change */
 
-	if (LOG_DISABLED(lg) || lg->inmemory) {
+	if (LOG_DISABLED(lg)) {
 		/* logging is switched off */
 		return GDK_SUCCEED;
 	}
@@ -2916,7 +2920,7 @@ log_bat_clear(logger *lg, const char *name, char tpe, oid id)
 	l.tid = lg->tid;
 	lg->changes += l.nr;
 
-	if (LOG_DISABLED(lg) || lg->inmemory) {
+	if (LOG_DISABLED(lg)) {
 		/* logging is switched off */
 		return GDK_SUCCEED;
 	}
@@ -2937,7 +2941,7 @@ log_tstart(logger *lg)
 {
 	logformat l;
 
-	if (LOG_DISABLED(lg) || lg->inmemory)
+	if (LOG_DISABLED(lg))
 		return GDK_SUCCEED;
 
 	l.flag = LOG_START;
@@ -2959,7 +2963,7 @@ static gdk_return
 pre_allocate(logger *lg)
 {
 	// FIXME: this causes serious issues on Windows at least with MinGW
-	assert(!lg->inmemory && !LOG_DISABLED(lg));
+	assert(!LOG_DISABLED(lg));
 #ifndef WIN32
 	lng p;
 	p = (lng) getfilepos(getFile(lg->log));
@@ -3018,7 +3022,7 @@ log_tend(logger *lg)
 				   lg->snapshots_tid, NULL, NULL, lg->dsnapshots, NULL, lg->debug);
 		BBPunfix(bids->batCacheid);
 	}
-	if (LOG_DISABLED(lg) || lg->inmemory)
+	if (LOG_DISABLED(lg))
 		return GDK_SUCCEED;
 	l.flag = LOG_END;
 	l.tid = lg->tid;
@@ -3040,7 +3044,7 @@ log_abort(logger *lg)
 {
 	logformat l;
 
-	if (LOG_DISABLED(lg) || lg->inmemory)
+	if (LOG_DISABLED(lg))
 		return GDK_SUCCEED;
 	if (lg->debug & 1)
 		fprintf(stderr, "#log_abort %d\n", lg->tid);
@@ -3060,7 +3064,7 @@ log_sequence_(logger *lg, int seq, lng val, int flush)
 {
 	logformat l;
 
-	if (LOG_DISABLED(lg) || lg->inmemory)
+	if (LOG_DISABLED(lg))
 		return GDK_SUCCEED;
 	l.flag = LOG_SEQ;
 	l.tid = lg->tid;
