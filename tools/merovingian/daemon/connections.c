@@ -65,6 +65,12 @@ openConnectionTCP(int *ret, bool bind_ipv6, const char *bindaddr, unsigned short
 				closesocket(sock);
 				continue;
 			}
+#ifdef SO_EXCLUSIVEADDRUSE
+			(void) setsockopt(sock, SOL_SOCKET, SO_EXCLUSIVEADDRUSE, (char *) &on, sizeof on);
+#endif
+#ifdef SO_EXCLBIND
+			(void) setsockopt(sock, SOL_SOCKET, SO_EXCLBIND, (char *) &on, sizeof on);
+#endif
 
 			if (bind(sock, rp->ai_addr, rp->ai_addrlen) != -1)
 				break; /* working */
