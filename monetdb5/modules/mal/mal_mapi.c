@@ -275,15 +275,13 @@ SERVERlistenThread(SOCKET *Sock)
 {
 	char *msg = 0;
 	int retval;
-	SOCKET sock = INVALID_SOCKET;
-	SOCKET usock = INVALID_SOCKET;
+	SOCKET sock = Sock[0];
+	SOCKET usock = Sock[1];
 	SOCKET msgsock = INVALID_SOCKET;
 	struct challengedata *data;
 	MT_Id tid;
 	stream *s;
 
-	sock = Sock[0];
-	usock = Sock[1];
 	GDKfree(Sock);
 
 	(void) ATOMIC_INC(&nlistener);
@@ -319,10 +317,14 @@ SERVERlistenThread(SOCKET *Sock)
 		};
 
 		/* temporarily use msgsock to record the larger of sock and usock */
+#ifdef _MSC_VER
+		msgsock = 0;			/* value is ignored on Windows */
+#else
 		msgsock = sock;
 #ifdef HAVE_SYS_UN_H
 		if (usock != INVALID_SOCKET && (sock == INVALID_SOCKET || usock > sock))
 			msgsock = usock;
+#endif
 #endif
 		retval = select((int)msgsock + 1, &fds, NULL, NULL, &tv);
 #endif
@@ -521,35 +523,198 @@ error:
 		closesocket(usock);
 }
 
-static const struct in6_addr ipv6_loopback_addr = IN6ADDR_LOOPBACK_INIT;
+static char *
+start_listen(SOCKET *sockp, int *portp, const char *listenaddr,
+			 char *host, size_t hostlen, int maxusers)
+{
+	struct addrinfo *result = NULL;
+	struct addrinfo hints = {
+		.ai_family = AF_INET6,
+		.ai_flags = AI_PASSIVE | AI_NUMERICSERV,
+		.ai_socktype = SOCK_STREAM,
+		.ai_protocol = IPPROTO_TCP,
+	};
+	struct sockaddr_in addr4 = {0};
+	struct sockaddr_in6 addr6 = {0};
+	struct sockaddr *addr;
+	SOCKLEN addrlen;
+	int e = 0;
+	int ipv6_vs6only = -1;
+	SOCKET sock = INVALID_SOCKET;
+	const char *err;
+	*sockp = INVALID_SOCKET;
+	host[0] = 0;
+	if (listenaddr == NULL || strcmp(listenaddr, "localhost") == 0) {
+		hints.ai_family = AF_INET6;
+		hints.ai_flags |= AI_NUMERICHOST;
+		ipv6_vs6only = 0;
+		listenaddr = "::1";
+		addr = (struct sockaddr *) &addr6;
+		addrlen = (SOCKLEN) sizeof(addr6);
+		strncpy(host, "localhost", hostlen);
+	} else if (strcmp(listenaddr, "all") == 0) {
+		hints.ai_family = AF_INET6;
+		ipv6_vs6only = 0;
+		listenaddr = NULL;
+		addr = (struct sockaddr *) &addr6;
+		addrlen = (SOCKLEN) sizeof(addr6);
+	} else if (strcmp(listenaddr, "::") == 0) {
+		hints.ai_family = AF_INET6;
+		ipv6_vs6only = 1;
+		listenaddr = NULL;
+		addr = (struct sockaddr *) &addr6;
+		addrlen = (SOCKLEN) sizeof(addr6);
+	} else if (strcmp(listenaddr, "0.0.0.0") == 0) {
+		hints.ai_family = AF_INET;
+		hints.ai_flags |= AI_NUMERICHOST;
+		listenaddr = NULL;
+		addr = (struct sockaddr *) &addr4;
+		addrlen = (SOCKLEN) sizeof(addr4);
+	} else if (strcmp(listenaddr, "::1") == 0) {
+		hints.ai_family = AF_INET6;
+		hints.ai_flags |= AI_NUMERICHOST;
+		ipv6_vs6only = 1;
+		addr = (struct sockaddr *) &addr6;
+		addrlen = (SOCKLEN) sizeof(addr6);
+		strncpy(host, "localhost", hostlen);
+	} else if (strcmp(listenaddr, "127.0.0.1") == 0) {
+		hints.ai_family = AF_INET;
+		hints.ai_flags |= AI_NUMERICHOST;
+		addr = (struct sockaddr *) &addr4;
+		addrlen = (SOCKLEN) sizeof(addr4);
+		strncpy(host, "localhost", hostlen);
+	} else {
+		hints.ai_family = AF_INET6;
+		ipv6_vs6only = 0;
+		addr = (struct sockaddr *) &addr6;
+		addrlen = (SOCKLEN) sizeof(addr6);
+	}
+	char sport[8];		/* max "65535" */
+	snprintf(sport, sizeof(sport), "%d", *portp);
+	int check = getaddrinfo(listenaddr, sport, &hints, &result);
+	if (check != 0 && ipv6_vs6only == 0) {
+		/* if IPv6 didn't work and we can use IPv4 as well, try just IPv4 */
+		hints.ai_family = AF_INET;
+		ipv6_vs6only = -1;
+		if (listenaddr && strcmp(listenaddr, "::1") == 0)
+			listenaddr = "127.0.0.1";
+		check = getaddrinfo(listenaddr, sport, &hints, &result);
+	}
+	if (check != 0) {
+#ifdef _MSC_VER
+		err = wsaerror(WSAGetLastError());
+#else
+		err = gai_strerror(check);
+#endif
+		throw(IO, "mal_mapi.listen", OPERATION_FAILED ": cannot get address "
+			  "information for %s and port %s: %s",
+			  listenaddr ? listenaddr : hints.ai_family == AF_INET6 ? "::" : "0.0.0.0",
+			  sport, err);
+	}
 
-static const struct in6_addr ipv6_any_addr = IN6ADDR_ANY_INIT;
+	for (struct addrinfo *rp = result; rp; rp = rp->ai_next) {
+		sock = socket(rp->ai_family, rp->ai_socktype
+#ifdef SOCK_CLOEXEC
+					  | SOCK_CLOEXEC
+#endif
+					  , rp->ai_protocol);
+		if (sock == INVALID_SOCKET) {
+#ifdef _MSC_VER
+			e = WSAGetLastError();
+#else
+			e = errno;
+#endif
+			continue;
+		}
+#if defined(HAVE_FCNTL) && !defined(SOCK_CLOEXEC)
+		(void) fcntl(sock, F_SETFD, FD_CLOEXEC);
+#endif
+		if (ipv6_vs6only >= 0)
+			setsockopt(sock, SOL_IPV6, IPV6_V6ONLY, &ipv6_vs6only, sizeof(int));
+
+		/* do not reuse addresses for ephemeral (autosense) ports */
+		if (setsockopt(sock, SOL_SOCKET, SO_REUSEADDR, &(int){*portp != 0},
+					   sizeof(int)) == SOCKET_ERROR) {
+#ifdef _MSC_VER
+			e = WSAGetLastError();
+#else
+			e = errno;
+#endif
+			closesocket(sock);
+			sock = INVALID_SOCKET;
+			continue;
+		}
+		if (bind(sock, rp->ai_addr, rp->ai_addrlen) == SOCKET_ERROR) {
+#ifdef _MSC_VER
+			e = WSAGetLastError();
+#else
+			e = errno;
+#endif
+			closesocket(sock);
+			sock = INVALID_SOCKET;
+			continue;
+		}
+		if (listen(sock, maxusers) == SOCKET_ERROR) {
+#ifdef _MSC_VER
+			err = wsaerror(WSAGetLastError());
+#else
+			err = GDKstrerror(errno, (char[128]){0}, 128);
+#endif
+			closesocket(sock);
+			sock = INVALID_SOCKET;
+			continue;
+		}
+		if (getsockname(sock, addr, &addrlen) == SOCKET_ERROR) {
+#ifdef _MSC_VER
+			err = wsaerror(WSAGetLastError());
+#else
+			err = GDKstrerror(errno, (char[128]){0}, 128);
+#endif
+			closesocket(sock);
+			sock = INVALID_SOCKET;
+			continue;
+		}
+		break;
+	}
+	freeaddrinfo(result);
+
+	if (sock == INVALID_SOCKET) {
+#ifdef _MSC_VER
+		err = wsaerror(e);
+#else
+		err = GDKstrerror(e, (char[128]){0}, 128);
+#endif
+		throw(IO, "mal_mapi.listen", OPERATION_FAILED ": bind to "
+			  "stream socket on address %s and port %s failed: %s",
+			  listenaddr ? listenaddr : hints.ai_family == AF_INET6 ? "::" : "0.0.0.0",
+			  sport, err);
+	}
+	*sockp = sock;
+	if (ipv6_vs6only >= 0)
+		*portp = ntohs(addr6.sin6_port);
+	else
+		*portp = ntohs(addr4.sin_port);
+	if (host[0] == 0)
+		gethostname(host, sizeof(host));
+	return NULL;
+}
 
 static str
 SERVERlisten(int port, const char *usockfile, int maxusers)
 {
-	struct sockaddr* server = NULL;
-	struct sockaddr_in server_ipv4;
-	struct sockaddr_in6 server_ipv6;
 	SOCKET sock = INVALID_SOCKET;
 	SOCKET *psock;
-	bool bind_ipv6 = false;
-	bool accept_any = false;
 	bool autosense = false;
 #ifdef HAVE_SYS_UN_H
 	struct sockaddr_un userver;
 	SOCKET usock = INVALID_SOCKET;
 #endif
 	SOCKLEN length = 0;
-	int on = 1;
-	int i = 0;
 	MT_Id pid;
 	str buf;
-	char host[128];
+	char host[128] = "";
 	const char *listenaddr;
 
-	accept_any = GDKgetenv_istrue("mapi_open");
-	bind_ipv6 = GDKgetenv_istrue("mapi_ipv6");
 	autosense = GDKgetenv_istrue("mapi_autosense");
 	listenaddr = GDKgetenv("mapi_listenaddr");
 
@@ -558,242 +723,38 @@ SERVERlisten(int port, const char *usockfile, int maxusers)
 		return MAL_SUCCEED;
 	}
 
-	psock = GDKmalloc(sizeof(SOCKET) * 2);
-	if (psock == NULL)
-		throw(MAL,"mal_mapi.listen", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-
 	if (strNil(usockfile)) {
 		usockfile = NULL;
 	} else {
 #ifndef HAVE_SYS_UN_H
-		GDKfree(psock);
 		throw(IO, "mal_mapi.listen", OPERATION_FAILED ": UNIX domain sockets are not supported");
 #endif
 	}
 	maxusers = (maxusers ? maxusers : SERVERMAXUSERS);
 
 	if (port <= 0 && usockfile == NULL) {
-		GDKfree(psock);
 		throw(ILLARG, "mal_mapi.listen", OPERATION_FAILED ": no port or socket file specified");
 	}
 
 	if (port > 65535) {
-		GDKfree(psock);
 		throw(ILLARG, "mal_mapi.listen", OPERATION_FAILED ": port number should be between 1 and 65535");
 	}
 
-	if (port > 0) {
-		if (listenaddr && *listenaddr) {
-			int check = 0, e = errno;
-			char sport[MT_NAME_LEN];
-			struct addrinfo *result = NULL, *rp = NULL, hints = (struct addrinfo) {
-				.ai_family = bind_ipv6 ? AF_INET6 : AF_INET,
-				.ai_socktype = SOCK_STREAM,
-				.ai_flags = AI_PASSIVE,
-				.ai_protocol = IPPROTO_TCP,
-			};
+	psock = GDKmalloc(sizeof(SOCKET) * 2);
+	if (psock == NULL)
+		throw(MAL,"mal_mapi.listen", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 
-			do {
-				snprintf(sport, 16, "%d", port);
-				check = getaddrinfo(listenaddr, sport, &hints, &result);
-				if (check != 0) {
-					if (autosense && port <= 65535) {
-						port++;
-						continue;
-					}
-					GDKfree(psock);
-					throw(IO, "mal_mapi.listen", OPERATION_FAILED
-							  ": bind to stream socket on address %s and port %d failed: %s", listenaddr, port,
-							  gai_strerror(check));
-				}
-
-				for (rp = result; rp != NULL; rp = rp->ai_next) {
-					int bind_check;
-					sock = socket(rp->ai_family, rp->ai_socktype
-#ifdef SOCK_CLOEXEC
-								  | SOCK_CLOEXEC
-#endif
-								  , rp->ai_protocol);
-					if (sock == INVALID_SOCKET) {
-						e = errno;
-						continue;
-					}
-#if !defined(SOCK_CLOEXEC) && defined(HAVE_FCNTL)
-					(void) fcntl(sock, F_SETFD, FD_CLOEXEC);
-#endif
-
-					if (setsockopt(sock, SOL_SOCKET, SO_REUSEADDR, (char *) &on, sizeof on) == SOCKET_ERROR) {
-						e = errno;
-						closesocket(sock);
-						continue;
-					}
-
-					bind_check = bind(sock, (SOCKPTR) rp->ai_addr, (socklen_t) rp->ai_addrlen);
-					e = errno;
-					if (bind_check == SOCKET_ERROR) {
-						closesocket(sock);
-						continue;
-					} else
-						break;
-				}
-				if (result)
-					freeaddrinfo(result);
-				errno = e;
-				if (errno == 0 && sock != INVALID_SOCKET)
-					break;
-
-				if (port > 65535) {
-					GDKfree(psock);
-					throw(IO, "mal_mapi.listen", OPERATION_FAILED ": bind to stream socket port %d failed", port);
-				} else if (
-#ifdef _MSC_VER
-							WSAGetLastError() == WSAEADDRINUSE &&
-#else
-#ifdef EADDRINUSE
-							errno == EADDRINUSE &&
-#else
-#endif
-#endif
-							autosense && port <= 65535) {
-								port++;
-								continue;
-				}
-				GDKfree(psock);
-				errno = e;
-				throw(IO, "mal_mapi.listen", OPERATION_FAILED ": bind to stream socket port %d failed: %s", port,
-#ifdef _MSC_VER
-					  wsaerror(WSAGetLastError())
-#else
-					  GDKstrerror(errno, (char[128]){0}, 128)
-#endif
-				);
-			} while (1);
-		} else {
-			sock = socket(bind_ipv6 ? AF_INET6 : AF_INET, SOCK_STREAM
-#ifdef SOCK_CLOEXEC
-						  | SOCK_CLOEXEC
-#endif
-						  , 0);
-			if (sock == INVALID_SOCKET) {
-				int e = errno;
-				GDKfree(psock);
-				errno = e;
-				throw(IO, "mal_mapi.listen",
-					  OPERATION_FAILED ": bind to stream socket port %d "
-					  "failed: %s", port,
-#ifdef _MSC_VER
-					  wsaerror(WSAGetLastError())
-#else
-					  GDKstrerror(errno, (char[128]){0}, 128)
-#endif
-				);
-			}
-#if !defined(SOCK_CLOEXEC) && defined(HAVE_FCNTL)
-			(void) fcntl(sock, F_SETFD, FD_CLOEXEC);
-#endif
-
-			if (setsockopt(sock, SOL_SOCKET, SO_REUSEADDR, (char *) &on, sizeof on) == SOCKET_ERROR) {
-				int e = errno;
-#ifdef _MSC_VER
-				const char *err = wsaerror(WSAGetLastError());
-#else
-				const char *err = GDKstrerror(errno, (char[128]){0}, 128);
-#endif
-				GDKfree(psock);
-				closesocket(sock);
-				errno = e;
-				throw(IO, "mal_mapi.listen", OPERATION_FAILED ": setsockptr failed %s", err);
-			}
-
-			if (bind_ipv6) {
-				memset(&server_ipv6, 0, sizeof(server_ipv6));
-				server_ipv6.sin6_family = AF_INET6;
-				if (accept_any)
-					server_ipv6.sin6_addr = ipv6_any_addr;
-				else
-					server_ipv6.sin6_addr = ipv6_loopback_addr;
-				server = (struct sockaddr*) &server_ipv6;
-				length = (SOCKLEN) sizeof(server_ipv6);
-			} else {
-				server_ipv4.sin_family = AF_INET;
-				if (accept_any)
-					server_ipv4.sin_addr.s_addr = htonl(INADDR_ANY);
-				else
-					server_ipv4.sin_addr.s_addr = htonl(INADDR_LOOPBACK);
-				for (i = 0; i < 8; i++)
-					server_ipv4.sin_zero[i] = 0;
-				server = (struct sockaddr*) &server_ipv4;
-				length = (SOCKLEN) sizeof(server_ipv4);
-			}
-
-			for (;;) {
-				if (bind_ipv6)
-					server_ipv6.sin6_port = htons((unsigned short) ((port) & 0xFFFF));
-				else
-					server_ipv4.sin_port = htons((unsigned short) ((port) & 0xFFFF));
-
-				if (bind(sock, (SOCKPTR) server, length) == SOCKET_ERROR) {
-					int e = errno;
-					if (
-#ifdef _MSC_VER
-						WSAGetLastError() == WSAEADDRINUSE &&
-#else
-#ifdef EADDRINUSE
-						errno == EADDRINUSE &&
-#else
-#endif
-#endif
-						autosense && port <= 65535)
-					{
-						port++;
-						continue;
-					}
-					closesocket(sock);
-					GDKfree(psock);
-					errno = e;
-					throw(IO, "mal_mapi.listen", OPERATION_FAILED ": bind to stream socket port %d failed: %s", port,
-#ifdef _MSC_VER
-						  wsaerror(WSAGetLastError())
-#else
-						  GDKstrerror(errno, (char[128]){0}, 128)
-#endif
-					);
-				} else {
-					break;
-				}
-			}
-
-			if (getsockname(sock, server, &length) == SOCKET_ERROR) {
-				int e = errno;
-				closesocket(sock);
-				GDKfree(psock);
-				errno = e;
-				throw(IO, "mal_mapi.listen", OPERATION_FAILED ": failed getting socket name: %s",
-#ifdef _MSC_VER
-					  wsaerror(WSAGetLastError())
-#else
-					  GDKstrerror(errno, (char[128]){0}, 128)
-#endif
-				);
-			}
-		}
-
-		if (listen(sock, maxusers) == SOCKET_ERROR) {
-			int e = errno;
+	if (port > 0 && (listenaddr == NULL || strcmp(listenaddr, "none") != 0)) {
+		if (autosense)
+			port = 0;
+		char *msg = start_listen(&sock, &port, listenaddr, host, sizeof(host), maxusers);
+		if (msg != MAL_SUCCEED) {
 			GDKfree(psock);
-			if (sock != INVALID_SOCKET)
-				closesocket(sock);
-			errno = e;
-			throw(IO, "mal_mapi.listen",
-				  OPERATION_FAILED ": failed to set socket to listen %s",
-#ifdef _MSC_VER
-				  wsaerror(WSAGetLastError())
-#else
-				  GDKstrerror(errno, (char[128]){0}, 128)
-#endif
-				);
+			return msg;
 		}
 	}
+	psock[0] = sock;
+
 #ifdef HAVE_SYS_UN_H
 	if (usockfile) {
 		/* prevent silent truncation, sun_path is typically around 108
@@ -896,15 +857,15 @@ SERVERlisten(int port, const char *usockfile, int maxusers)
 			return e;
 		}
 	}
-#endif
-
-	psock[0] = sock;
-
-#ifdef HAVE_SYS_UN_H
 	psock[1] = usock;
 #else
 	psock[1] = INVALID_SOCKET;
 #endif
+
+	/* seed the randomiser such that our challenges aren't
+	 * predictable... */
+	srand((unsigned int) GDKusec());
+
 	if (MT_create_thread(&pid, (void (*)(void *)) SERVERlistenThread, psock,
 						 MT_THR_DETACHED, "listenThread") != 0) {
 		if (sock != INVALID_SOCKET)
@@ -917,47 +878,11 @@ SERVERlisten(int port, const char *usockfile, int maxusers)
 		throw(MAL, "mal_mapi.listen", OPERATION_FAILED ": starting thread failed");
 	}
 
-	gethostname(host, sizeof(host));
 	TRC_DEBUG(MAL_SERVER, "Ready to accept connections on: %s:%d\n", host, port);
 
-	/* seed the randomiser such that our challenges aren't
-	 * predictable... */
-	srand((unsigned int) GDKusec());
-
 	if (port > 0) {
-		if (bind_ipv6) {
-			if (memcmp(server_ipv6.sin6_addr.s6_addr, &ipv6_loopback_addr, sizeof(struct in6_addr)) == 0) {
-				sprintf(host, "[::1]");
-			} else if (memcmp(server_ipv6.sin6_addr.s6_addr, &ipv6_any_addr, sizeof(struct in6_addr)) == 0) {
-				gethostname(host, sizeof(host));
-				host[sizeof(host) - 1] = '\0';
-			} else {
-				snprintf(host, sizeof(host),"[%02x%02x:%02x%02x:%02x%02x:%02x%02x:%02x%02x:%02x%02x:%02x%02x:%02x%02x]",
-						(uint8_t)server_ipv6.sin6_addr.s6_addr[0],  (uint8_t)server_ipv6.sin6_addr.s6_addr[1],
-						(uint8_t)server_ipv6.sin6_addr.s6_addr[2],  (uint8_t)server_ipv6.sin6_addr.s6_addr[3],
-						(uint8_t)server_ipv6.sin6_addr.s6_addr[4],  (uint8_t)server_ipv6.sin6_addr.s6_addr[5],
-						(uint8_t)server_ipv6.sin6_addr.s6_addr[6],  (uint8_t)server_ipv6.sin6_addr.s6_addr[7],
-						(uint8_t)server_ipv6.sin6_addr.s6_addr[8],  (uint8_t)server_ipv6.sin6_addr.s6_addr[9],
-						(uint8_t)server_ipv6.sin6_addr.s6_addr[10], (uint8_t)server_ipv6.sin6_addr.s6_addr[11],
-						(uint8_t)server_ipv6.sin6_addr.s6_addr[12], (uint8_t)server_ipv6.sin6_addr.s6_addr[13],
-						(uint8_t)server_ipv6.sin6_addr.s6_addr[14], (uint8_t)server_ipv6.sin6_addr.s6_addr[15]);
-			}
-		} else {
-			if (server_ipv4.sin_addr.s_addr == INADDR_ANY) {
-				gethostname(host, sizeof(host));
-				host[sizeof(host) - 1] = '\0';
-			} else {
-				/* avoid doing this, it requires some includes that probably
-				 * give trouble on windowz
-				host = inet_ntoa(addr);
-				 */
-				snprintf(host, sizeof(host), "%u.%u.%u.%u",
-						(unsigned) ((ntohl(server_ipv4.sin_addr.s_addr) >> 24) & 0xff),
-						(unsigned) ((ntohl(server_ipv4.sin_addr.s_addr) >> 16) & 0xff),
-						(unsigned) ((ntohl(server_ipv4.sin_addr.s_addr) >> 8) & 0xff),
-						(unsigned) (ntohl(server_ipv4.sin_addr.s_addr) & 0xff));
-			}
-		}
+		if (host[0] == 0 || strcmp(host, "0.0.0.0") == 0 || strcmp(host, "::") == 0)
+			gethostname(host, sizeof(host));
 
 		if (!GDKinmemory() && (buf = msab_marchConnection(host, port)) != NULL)
 			free(buf);
