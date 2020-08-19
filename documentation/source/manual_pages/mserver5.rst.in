@@ -65,7 +65,7 @@ MSERVER5 OPTIONS
 
 **--config=**\ *file*
    Config file to read options from. This file can contain all options
-   as can be set with the --set flag. See *CONFIG FILE FORMAT*.
+   as can be set with the **--set** flag. See *CONFIG FILE FORMAT*.
 
 **--single-user**
    Allow only a single user at a time.
@@ -202,8 +202,52 @@ distributed) plans. These parameters control behaviour on the MAL level.
    same time. Note that MonetDB is not designed to handle massive
    amounts of connected clients. The funnel capability from
    *monetdbd*\ (1) might be a more suitable solution for such workloads.
+   Default **64**.
 
-Default **64**.
+**mapi_usock**
+   The name of the UNIX domain socket file on which the server will
+   listen for connections. Note, there is usually a severe
+   system-imposed length limitation on the name of the file.
+
+**mapi_port**
+   The TCP/IP port number on which the server will listen for
+   connections. This is only used if the value of the
+   **mapi_listenaddr** option is not equal to **none**. Default
+   **50000**. If the value is **0**, the server will use a so called
+   ephemeral port, i.e. one that is assigned by the system. After
+   successfully starting to listen to a port, the value of the port can
+   be retrieved from the file **.conn** inside the database
+   (**--dbpath**) directory.
+
+**mapi_listenaddr**
+   The TCP/IP interface on which the server will listen for connections.
+   Possibilites are:
+
+   **localhost**
+      The server listens only on the IPv4 and IPv6 loopback interface.
+
+   **127.0.0.1**
+      The server listens only on the IPv4 loopback interface.
+
+   **::1**
+      The server listens only on the IPv6 loopback interface.
+
+   **all**
+      The server listens on all IPv4 and IPv6 interfaces.
+
+   **0.0.0.0**
+      The server listens on all IPv4 interfaces.
+
+   **::**
+      The server listens on all IPv6 interfaces.
+
+   **none**
+      The server will not listen on any TCP/IP interface (you need to
+      use the UNIX domain socket interface).
+
+   *hostname*
+      The server will listen on the interface designated by *hostname*
+      which is looked up using the normal hostname lookup facilities.
 
 SQL PARAMETERS
 ==============
