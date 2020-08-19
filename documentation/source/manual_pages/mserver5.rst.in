@@ -225,6 +225,7 @@ distributed) plans. These parameters control behaviour on the MAL level.
 
    **localhost**
       The server listens only on the IPv4 and IPv6 loopback interface.
+      This is the default.
 
    **127.0.0.1**
       The server listens only on the IPv4 loopback interface.

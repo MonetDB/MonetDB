@@ -280,6 +280,7 @@ Possibilites are:
 .TP
 .B localhost
 The server listens only on the IPv4 and IPv6 loopback interface.
+This is the default.
 .TP
 .B 127.0.0.1
 The server listens only on the IPv4 loopback interface.
