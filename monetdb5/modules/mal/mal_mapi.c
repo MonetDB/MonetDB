@@ -629,15 +629,14 @@ start_listen(SOCKET *sockp, int *portp, const char *listenaddr,
 #if defined(HAVE_FCNTL) && !defined(SOCK_CLOEXEC)
 		(void) fcntl(sock, F_SETFD, FD_CLOEXEC);
 #endif
-#ifdef SOL_IPV6
-		static_assert(SOL_IPV6 == IPPROTO_IPV6, "expect SOL_IPV6 == IPPROTO_IPV6");
-#endif
 		if (ipv6_vs6only >= 0)
-			setsockopt(sock, IPPROTO_IPV6, IPV6_V6ONLY, (char *) &ipv6_vs6only, sizeof(int));
+			setsockopt(sock, IPPROTO_IPV6, IPV6_V6ONLY,
+					   (const char *) &ipv6_vs6only, (SOCKLEN) sizeof(int));
 
 		/* do not reuse addresses for ephemeral (autosense) ports */
-		if (setsockopt(sock, SOL_SOCKET, SO_REUSEADDR, (char *) &(int){*portp != 0},
-					   sizeof(int)) == SOCKET_ERROR) {
+		if (setsockopt(sock, SOL_SOCKET, SO_REUSEADDR,
+					   (const char *) &(int){*portp != 0},
+					   (SOCKLEN) sizeof(int)) == SOCKET_ERROR) {
 #ifdef _MSC_VER
 			e = WSAGetLastError();
 #else
