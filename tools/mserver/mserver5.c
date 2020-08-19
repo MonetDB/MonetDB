@@ -735,7 +735,7 @@ main(int argc, char **av)
 		/* don't show this as a crash */
 		if (!GDKinmemory())
 			msab_registerStop();
-		return 0;
+		return 1;
 	}
 
 	emergencyBreakpoint();

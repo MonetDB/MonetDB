@@ -6,15 +6,17 @@
 # Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
 #]]
 
-find_program(SEMODULE_EXECUTABLE NAMES semodule
+find_file(SELINUX_MAKEFILE Makefile
+  PATHS /usr/share/selinux/devel
   DOC "Manage selinux policy modules"
+  NO_DEFAULT_PATH
 )
 
 include(FindPackageHandleStandardArgs)
 
 find_package_handle_standard_args(Semodule
   DEFAULT_MSG
-  SEMODULE_EXECUTABLE
+  SELINUX_MAKEFILE
 )
 
-mark_as_advanced(SEMODULE_EXECUTABLE)
+mark_as_advanced(SELINUX_MAKEFILE)
