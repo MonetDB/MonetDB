@@ -853,7 +853,7 @@ SERVERlisten(int port, const char *usockfile, int maxusers)
 
 	TRC_DEBUG(MAL_SERVER, "Ready to accept connections on: %s:%d\n", host, port);
 
-	if (port > 0) {
+	if (sock != INVALID_SOCKET) {
 		if (!GDKinmemory() && (buf = msab_marchConnection(host, port)) != NULL)
 			free(buf);
 		else
@@ -861,7 +861,7 @@ SERVERlisten(int port, const char *usockfile, int maxusers)
 			printf("# Listening for connection requests on "
 				   "mapi:monetdb://%s:%i/\n", host, port);
 	}
-	if (usockfile != NULL) {
+	if (usock != INVALID_SOCKET) {
 		if (!GDKinmemory() && (buf = msab_marchConnection(usockfile, 0)) != NULL)
 			free(buf);
 		else
