@@ -880,6 +880,7 @@ struct MapiStruct {
 	bool connected;
 	bool trace;		/* Trace Mapi interaction */
 	bool auto_commit;
+	bool columnar_protocol;
 	MapiHdl first;		/* start of doubly-linked list */
 	MapiHdl active;		/* set when not all rows have been received */
 
@@ -1360,6 +1361,13 @@ mapi_get_autocommit(Mapi mid)
 {
 	mapi_check0(mid);
 	return mid->auto_commit;
+}
+
+bool
+mapi_get_columnar_protocol(Mapi mid)
+{
+	mapi_check0(mid);
+	return mid->columnar_protocol;
 }
 
 static int64_t
@@ -3668,6 +3676,22 @@ mapi_setAutocommit(Mapi mid, bool autocommit)
 		return mapi_Xcommand(mid, "auto_commit", "1");
 	else
 		return mapi_Xcommand(mid, "auto_commit", "0");
+}
+
+MapiMsg
+mapi_set_columnar_protocol(Mapi mid, bool columnar_protocol)
+{
+	if (mid->columnar_protocol == columnar_protocol)
+		return MOK;
+	if (mid->languageId != LANG_SQL) {
+		mapi_setError(mid, "columnar_protocol only supported in SQL", __func__, MERROR);
+		return MERROR;
+	}
+	mid->columnar_protocol = columnar_protocol;
+	if (columnar_protocol)
+		return mapi_Xcommand(mid, "columnar_protocol", "1");
+	else
+		return mapi_Xcommand(mid, "columnar_protocol", "0");
 }
 
 MapiMsg

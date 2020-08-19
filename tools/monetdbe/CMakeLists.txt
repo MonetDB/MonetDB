@@ -12,6 +12,8 @@ set(monetdbe_public_headers
 
 add_library(monetdbe SHARED)
 
+add_compile_definitions(COMPILING_MONETDBE)
+
 target_sources(monetdbe
   PRIVATE
   monetdbe.c
@@ -24,6 +26,7 @@ target_include_directories(monetdbe
   PRIVATE
   $<TARGET_PROPERTY:mal,INCLUDE_DIRECTORIES>
   $<TARGET_PROPERTY:sql,INCLUDE_DIRECTORIES>
+  ${CMAKE_SOURCE_DIR}/clients/mapiclient
   PUBLIC
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
   $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}/monetdb>)
@@ -45,6 +48,7 @@ target_link_libraries(monetdbe
   matomic
   moptions
   mutils
+  mapi
   mcrypt
   bat
   monetdb5

@@ -2464,6 +2464,11 @@ mvc_export_result(backend *b, stream *s, int res_id, bool header, lng starttime,
 	if (!s || !t)
 		return 0;
 
+	if (b->client->protocol == PROTOCOL_10) {
+		// Don't do anything
+		return 0;
+	}
+
 	/* Proudly supporting SQLstatementIntern's output flag */
 	if (b->output_format == OFMT_NONE) {
 		return 0;

@@ -13,6 +13,37 @@
 #include <unistd.h>
 #include <string.h>
 #include <ctype.h>
+
+// TODO get rid of this ugly work around: Properly factor out mapi cals from dump.c
+#ifdef COMPILING_MONETDBE
+
+#define Mapi monetdbe_Mapi
+#define MapiHdl monetdbe_MapiHdl
+#define MapiHdl monetdbe_MapiHdl
+#define MapiMsg monetdbe_MapiMsg
+
+#define mapi_error monetdbe_mapi_error
+#define mapi_query monetdbe_mapi_query
+#define mapi_error monetdbe_mapi_error
+#define mapi_close_handle monetdbe_mapi_close_handle
+#define mapi_fetch_row monetdbe_mapi_fetch_row
+#define mapi_fetch_field monetdbe_mapi_fetch_field
+#define mapi_get_type monetdbe_mapi_get_type
+#define mapi_seek_row monetdbe_mapi_seek_row
+#define mapi_get_row_count monetdbe_mapi_get_row_count
+#define mapi_rows_affected monetdbe_mapi_rows_affected
+#define mapi_get_field_count monetdbe_mapi_get_field_count
+#define mapi_result_error monetdbe_mapi_result_error
+#define mapi_get_len monetdbe_mapi_get_len
+#define mapi_explain monetdbe_mapi_explain
+#define mapi_explain_query monetdbe_mapi_explain_query
+#define mapi_explain_result monetdbe_mapi_explain_result
+
+#include "monetdbe_mapi.h"
+#else
+#include "mapi.h"
+#endif
+
 #include "msqldump.h"
 
 static const char *

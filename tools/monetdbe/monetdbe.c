@@ -27,6 +27,7 @@
 #include "monet_options.h"
 #include "mapi.h"
 #include "monetdbe_mapi.h"
+#include "msqldump.h"
 
 #define UNUSED(x) (void)(x)
 
@@ -90,6 +91,7 @@ typedef struct {
 	monetdbe_data_date date_null;
 	monetdbe_data_time time_null;
 	monetdbe_data_timestamp timestamp_null;
+	Mapi mid;
 } monetdbe_database_internal;
 
 typedef struct {
@@ -170,6 +172,7 @@ validate_database_handle_noerror(monetdbe_database_internal *mdbe)
 	clear_error(mdbe);
 	return 1;
 }
+
 
 // Call this function always inside the embedded_lock
 static char*
@@ -439,9 +442,21 @@ monetdbe_shutdown_internal(void) // Call this function always inside the embedde
 	}
 }
 
+static bool
+monetdbe_is_remote(char* dbname) {
+
+	// TODO copied from mal_client.c
+	return dbname != NULL && (strncmp(dbname, "mapi:monetdb://", 15) == 0);
+}
+
+
+
 static void
 monetdbe_startup(monetdbe_database_internal *mdbe, char* dbdir, monetdbe_options *opts)
 {
+	// Only call monetdbe_startup when there is no monetdb internal yet initialized.
+	assert(!monetdbe_embedded_initialized);
+
 	const char* mbedded = "MBEDDED";
 	opt *set = NULL;
 	int setlen;
@@ -559,6 +574,10 @@ cleanup:
 		monetdbe_shutdown_internal();
 }
 
+static bool urls_matches(const char* l, const char* r) {
+	return (l && r && (strcmp(l, r) == 0)) || (l == NULL && r == NULL);
+}
+
 int
 monetdbe_open(monetdbe_database *dbhdl, char *url, monetdbe_options *opts)
 {
@@ -576,11 +595,40 @@ monetdbe_open(monetdbe_database *dbhdl, char *url, monetdbe_options *opts)
 	mdbe->msg = NULL;
 	mdbe->c = NULL;
 
+	bool is_remote = monetdbe_is_remote(url);
+
+	if (is_remote) {
+		monetdbe_remote* remote = opts->remote;
+		if (!remote) {
+			mdbe->msg = createException(MAL, "monetdbe.monetdbe_startup", "Missing user credential for monetdbe remote proxy set up");
+			return -1;
+		}
+
+		Mapi mid = mapi_mapiuri(url, remote->username, remote->password, remote->lang);
+		if (mid == NULL) {
+			mdbe->msg = createException(MAL, "monetdbe.monetdbe_startup", "Cannot initialize mapi object.");
+			return -2;
+		}
+		else if(mapi_reconnect(mid) /* actually, initial connect */, mapi_error(mid)) {
+			mdbe->msg = createException(MAL, "monetdbe.monetdbe_startup", "%s", mapi_error_str(mid));
+			return -2;
+		}
+
+		mdbe->mid = mid;
+	}
+
 	if (!monetdbe_embedded_initialized) {
-		monetdbe_startup(mdbe, url, opts);
-	} else if ((monetdbe_embedded_url && url && strcmp(monetdbe_embedded_url, url) != 0) || (monetdbe_embedded_url != url && (monetdbe_embedded_url == NULL || url == NULL))) {
+		/* When used as a remote mapi proxy,
+		 * it is still necessary to have an initialized monetdbe. E.g. for BAT life cycle management.
+		 * Use an ephemeral/anonymous dbfarm when there is no initialized monetdbe yet.
+		 */
+		char* _url = is_remote?NULL:url;
+		monetdbe_startup(mdbe, _url, opts);
+	}
+	else if (!is_remote && !urls_matches(monetdbe_embedded_url, url)) {
 		mdbe->msg = createException(MAL, "monetdbe.monetdbe_open", "monetdbe_open currently only one active database is supported");
 	}
+
 	if (!mdbe->msg)
 		res = monetdbe_open_internal(mdbe);
 	MT_lock_unset(&embedded_lock);
@@ -597,6 +645,9 @@ monetdbe_close(monetdbe_database dbhdl)
 
 	monetdbe_database_internal *mdbe = (monetdbe_database_internal*)dbhdl;
 	MT_lock_set(&embedded_lock);
+
+	if (mdbe->mid) mapi_destroy(mdbe->mid);
+
 	int err = monetdbe_close_internal(mdbe);
 	if (!open_dbs)
 		monetdbe_shutdown_internal();
@@ -614,10 +665,6 @@ monetdbe_error(monetdbe_database dbhdl)
 	return mdbe->msg;
 }
 
-/* needs to be before the undef of the bool type */
-extern int dump_database(Mapi mid, stream *toConsole, bool describe, bool useInserts);
-extern int dump_table(Mapi mid, const char *schema, const char *tname, stream *toConsole, bool describe, bool foreign, bool useInserts, bool databaseDump);
-
 char*
 monetdbe_dump_database(monetdbe_database dbhdl, const char *filename)
 {
@@ -625,25 +672,14 @@ monetdbe_dump_database(monetdbe_database dbhdl, const char *filename)
 		return NULL;
 
 	monetdbe_database_internal *mdbe = (monetdbe_database_internal*)dbhdl;
-	
+
 	if ((mdbe->msg = validate_database_handle(mdbe, "embedded.monetdbe_dump_database")) != MAL_SUCCEED) {
-		
+
 		return mdbe->msg;
 	}
-	
-	struct MapiStruct mid = { .mdbe = mdbe };
 
-	/* open file stream */
-	stream *fd = open_wastream(filename);
-	if (fd) {
-		if (dump_database(&mid, fd, 0, 0)) {
-			if (mid.msg)
-				mdbe->msg = mid.msg;
-		}
-		close_stream(fd);
-	} else {
-		mdbe->msg = createException(MAL, "embedded.monetdbe_dump_database", "Unable to open file %s", filename);
-	}
+	mdbe->msg = monetdbe_mapi_dump_database(dbhdl, filename);
+
 	return mdbe->msg;
 }
 
@@ -656,23 +692,12 @@ monetdbe_dump_table(monetdbe_database dbhdl, const char *sname, const char *tnam
 	monetdbe_database_internal *mdbe = (monetdbe_database_internal*)dbhdl;
 	
 	if ((mdbe->msg = validate_database_handle(mdbe, "embedded.monetdbe_dump_table")) != MAL_SUCCEED) {
-		
+
 		return mdbe->msg;
 	}
-	
-	struct MapiStruct mid = { .mdbe = mdbe };
 
-	/* open file stream */
-	stream *fd = open_wastream(filename);
-	if (fd) {
-		if (dump_table(&mid, sname, tname, fd, 0, 0, 0, 0)) {
-			if (mid.msg)
-				mdbe->msg = mid.msg;
-		}
-		close_stream(fd);
-	} else {
-		mdbe->msg = createException(MAL, "embedded.monetdbe_dump_table", "Unable to open file %s", filename);
-	}
+	mdbe->msg = monetdbe_mapi_dump_table(dbhdl, sname, tname, filename);
+
 	return mdbe->msg;
 }
 
@@ -755,6 +780,22 @@ monetdbe_query(monetdbe_database dbhdl, char* query, monetdbe_result** result, m
 	if (!dbhdl)
 		return NULL;
 	monetdbe_database_internal *mdbe = (monetdbe_database_internal*)dbhdl;
+
+	if (mdbe->mid) {
+		if (mapi_set_columnar_protocol(mdbe->mid, true) != MOK || mapi_error(mdbe->mid)) {
+			mdbe->msg = createException(MAL, "monetdbe.connect", "%s", mapi_error_str(mdbe->mid));
+			return mdbe->msg;
+		}
+
+		MapiHdl hdl = mapi_query(mdbe->mid, query);
+		if ( hdl == NULL || mapi_error(mdbe->mid)) {
+			mapi_close_handle(hdl);
+			mdbe->msg = createException(MAL, "monetdbe.connect", "%s", mapi_error_str(mdbe->mid));
+			return mdbe->msg;
+		}
+
+		return mdbe->msg;
+	}
 	
 	mdbe->msg = monetdbe_query_internal(mdbe, query, result, affected_rows, NULL, 'S');
 	

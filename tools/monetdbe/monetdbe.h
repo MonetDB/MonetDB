@@ -90,10 +90,19 @@ typedef struct {
 typedef void* monetdbe_database;
 
 typedef struct {
+	const char *host;
+	int port;
+	const char *username;
+	const char *password;
+	const char *lang;
+} monetdbe_remote;
+
+typedef struct {
 	int memorylimit;  // top off the amount of RAM to be used, in MB
 	int querytimeout;  // graceful terminate query after a few seconds
 	int sessiontimeout;  // graceful terminate the session after a few seconds
 	int nr_threads;				// maximum number of worker treads, limits level of parallalism
+	monetdbe_remote* remote;
 } monetdbe_options;
 
 #define DEFAULT_STRUCT_DEFINITION(ctype, typename)         \

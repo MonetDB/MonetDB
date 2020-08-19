@@ -979,6 +979,15 @@ SQLparser(Client c)
 				goto finalize;
 			return MAL_SUCCEED;
 		}
+		static const char* columnar_protocol = "columnar_protocol ";
+		if (strncmp(in->buf + in->pos, columnar_protocol, strlen(columnar_protocol)) == 0) {
+			v = (int) strtol(in->buf + in->pos + strlen(columnar_protocol), NULL, 10);
+
+			c->protocol = v?PROTOCOL_COLUMNAR:PROTOCOL_9;
+
+			in->pos = in->len;	/* HACK: should use parsed length */
+			return MAL_SUCCEED;
+		}
 		if (strncmp(in->buf + in->pos, "reply_size ", 11) == 0) {
 			v = (int) strtol(in->buf + in->pos + 11, NULL, 10);
 			if (v < -1) {

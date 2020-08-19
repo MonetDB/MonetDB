@@ -8,24 +8,28 @@
 
 #include "monetdb_config.h"
 #include "stream.h"
-#include "mapi.h"
 #include "monetdbe_mapi.h"
+#include "mal_exception.h"
 
 #define MAPIalloc(sz) malloc(sz)
 #define MAPIfree(p)   free(p)
 
-MapiMsg
-mapi_error(Mapi mid)
+#define MAPI_SEEK_SET	0
+#define MOK		0
+#define MERROR	(-1)
+
+monetdbe_MapiMsg
+monetdbe_mapi_error(monetdbe_Mapi mid)
 {
 	if (mid->msg)
 		return MERROR;
 	return MOK;
 }
 
-MapiHdl
-mapi_query(Mapi mid, const char *query)
+monetdbe_MapiHdl
+monetdbe_mapi_query(monetdbe_Mapi mid, const char *query)
 {
-	MapiHdl mh = (MapiHdl)MAPIalloc(sizeof(struct MapiStatement));
+	monetdbe_MapiHdl mh = (monetdbe_MapiHdl)MAPIalloc(sizeof(struct monetdbe_MapiStatement));
 
 	mh->mid = mid;
 	mh->query = (char*)query;
@@ -43,8 +47,8 @@ mapi_query(Mapi mid, const char *query)
 	return mh;
 }
 
-MapiMsg
-mapi_close_handle(MapiHdl hdl)
+monetdbe_MapiMsg
+monetdbe_mapi_close_handle(monetdbe_MapiHdl hdl)
 {
 	if (hdl) {
 		char *msg = NULL;
@@ -66,7 +70,7 @@ mapi_close_handle(MapiHdl hdl)
 }
 
 int
-mapi_fetch_row(MapiHdl hdl)
+monetdbe_mapi_fetch_row(monetdbe_MapiHdl hdl)
 {
 	int n = 0;
 
@@ -79,7 +83,7 @@ mapi_fetch_row(MapiHdl hdl)
 #define SIMPLE_TYPE_SIZE 128
 
 char *
-mapi_fetch_field(MapiHdl hdl, int fnr)
+monetdbe_mapi_fetch_field(monetdbe_MapiHdl hdl, int fnr)
 {
 	if (hdl && fnr < (int)hdl->result->ncols && hdl->current_row > 0 && hdl->current_row <= hdl->result->nrows) {
 		monetdbe_column *rcol = NULL;
@@ -172,7 +176,7 @@ mapi_fetch_field(MapiHdl hdl, int fnr)
 }
 
 char *
-mapi_get_type(MapiHdl hdl, int fnr)
+monetdbe_mapi_get_type(monetdbe_MapiHdl hdl, int fnr)
 {
 	if (hdl && fnr < (int)hdl->result->ncols) {
 		monetdbe_column *rcol = NULL;
@@ -206,8 +210,8 @@ mapi_get_type(MapiHdl hdl, int fnr)
 	return NULL;
 }
 
-MapiMsg
-mapi_seek_row(MapiHdl hdl, int64_t rowne, int whence)
+monetdbe_MapiMsg
+monetdbe_mapi_seek_row(monetdbe_MapiHdl hdl, int64_t rowne, int whence)
 {
 	if (hdl && rowne == 0 && whence == MAPI_SEEK_SET) {
 		hdl->current_row = 0;
@@ -216,7 +220,7 @@ mapi_seek_row(MapiHdl hdl, int64_t rowne, int whence)
 }
 
 int64_t
-mapi_get_row_count(MapiHdl hdl)
+monetdbe_mapi_get_row_count(monetdbe_MapiHdl hdl)
 {
 	if (hdl) {
 		return hdl->result->nrows;
@@ -225,7 +229,7 @@ mapi_get_row_count(MapiHdl hdl)
 }
 
 int64_t
-mapi_rows_affected(MapiHdl hdl)
+monetdbe_mapi_rows_affected(monetdbe_MapiHdl hdl)
 {
 	if (hdl) {
 		if (hdl->result)
@@ -236,7 +240,7 @@ mapi_rows_affected(MapiHdl hdl)
 }
 
 int
-mapi_get_field_count(MapiHdl hdl)
+monetdbe_mapi_get_field_count(monetdbe_MapiHdl hdl)
 {
 	if (hdl) {
 		return (int) hdl->result->ncols;
@@ -245,7 +249,7 @@ mapi_get_field_count(MapiHdl hdl)
 }
 
 const char *
-mapi_result_error(MapiHdl hdl)
+monetdbe_mapi_result_error(monetdbe_MapiHdl hdl)
 {
 	if (hdl) {
 		return hdl->msg;
@@ -253,7 +257,7 @@ mapi_result_error(MapiHdl hdl)
 	return NULL;
 }
 
-int mapi_get_len(MapiHdl hdl, int fnr)
+int monetdbe_mapi_get_len(monetdbe_MapiHdl hdl, int fnr)
 {
 	(void)hdl;
 	(void)fnr;
@@ -261,20 +265,68 @@ int mapi_get_len(MapiHdl hdl, int fnr)
 }
 
 /* implement these to make dump.c error's more informative */
-void mapi_explain(Mapi mid, FILE *fd)
+void monetdbe_mapi_explain(monetdbe_Mapi mid, FILE *fd)
 {
 	(void)mid;
 	(void)fd;
 }
 
-void mapi_explain_query(MapiHdl hdl, FILE *fd)
+void monetdbe_mapi_explain_query(monetdbe_MapiHdl hdl, FILE *fd)
 {
 	(void)hdl;
 	(void)fd;
 }
 
-void mapi_explain_result(MapiHdl hdl, FILE *fd)
+void monetdbe_mapi_explain_result(monetdbe_MapiHdl hdl, FILE *fd)
 {
 	(void)hdl;
 	(void)fd;
+}
+
+#define Mapi monetdbe_Mapi
+#define MapiHdl monetdbe_MapiHdl
+#define MapiHdl monetdbe_MapiHdl
+#define MapiMsg monetdbe_MapiMsg
+
+#include "msqldump.h"
+
+char*
+monetdbe_mapi_dump_database(monetdbe_database dbhdl, const char *filename)
+{
+	char* msg = NULL;
+	struct monetdbe_MapiStruct mid = { .mdbe = dbhdl };
+
+	/* open file stream */
+	stream *fd = open_wastream(filename);
+	if (fd) {
+		if (dump_database(&mid, fd, 0, 0)) {
+			if (mid.msg)
+				msg = mid.msg;
+		}
+		close_stream(fd);
+	} else {
+		return createException(MAL, "embedded.monetdbe_dump_database", "Unable to open file %s", filename);
+	}
+
+	return msg;
+}
+
+char*
+monetdbe_mapi_dump_table(monetdbe_database dbhdl, const char *sname, const char *tname, const char *filename)
+{
+	char* msg = NULL;
+	struct monetdbe_MapiStruct mid = { .mdbe = dbhdl };
+
+	/* open file stream */
+	stream *fd = open_wastream(filename);
+	if (fd) {
+		if (dump_table(&mid, sname, tname, fd, 0, 0, 0, 0)) {
+			if (mid.msg)
+				msg = mid.msg;
+		}
+		close_stream(fd);
+	} else {
+		return createException(MAL, "embedded.monetdbe_dump_table", "Unable to open file %s", filename);
+	}
+	return msg;
 }

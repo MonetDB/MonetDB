@@ -84,8 +84,10 @@ mapi_export stream *mapi_get_to(Mapi mid);
 #endif
 mapi_export bool mapi_get_trace(Mapi mid);
 mapi_export bool mapi_get_autocommit(Mapi mid);
+mapi_export bool mapi_get_columnar_protocol(Mapi mid);
 mapi_export MapiMsg mapi_log(Mapi mid, const char *nme);
 mapi_export MapiMsg mapi_setAutocommit(Mapi mid, bool autocommit);
+mapi_export MapiMsg mapi_set_columnar_protocol(Mapi mid, bool columnar_protocol);
 mapi_export MapiMsg mapi_set_size_header(Mapi mid, bool value);
 mapi_export MapiMsg mapi_release_id(Mapi mid, int id);
 mapi_export const char *mapi_result_error(MapiHdl hdl);

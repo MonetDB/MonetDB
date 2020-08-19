@@ -207,7 +207,8 @@ stream_export stream *bs_stream(stream *s);
 typedef enum {
 	PROTOCOL_AUTO = 0,
 	PROTOCOL_9 = 1,
-	PROTOCOL_10 = 2
+	PROTOCOL_10 = 2,
+	PROTOCOL_COLUMNAR = 3
 } protocol_version;
 
 typedef enum {
