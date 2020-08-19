@@ -2369,10 +2369,12 @@ store_manager(void)
 	// In the main loop we always hold the lock except when sleeping
 	MT_lock_set(&bs_lock);
 
-	while (!GDKexiting()) {
+	for (;;) {
 		int res;
 
 		if (!flusher_should_run()) {
+			if (GDKexiting())
+				break;
 			const int sleeptime = 100;
 			MT_lock_unset(&bs_lock);
 			MT_sleep_ms(sleeptime);
