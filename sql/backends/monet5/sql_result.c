@@ -426,159 +426,42 @@ bat_max_strlength(BAT *b)
 	return max;
 }
 
-static size_t
-bat_max_btelength(BAT *b)
-{
-	BUN p, q;
-	lng max = 0;
-	lng min = 0;
-	size_t ret = 0;
-	const bte *vals = (const bte *) Tloc(b, 0);
-
-	BATloop(b, p, q) {
-		lng m = 0;
-		bte l = vals[p];
-
-		if (!is_bte_nil(l))
-			m = l;
-		if (m > max)
-			max = m;
-		if (m < min)
-			min = m;
-	}
-
-	if (-min > max / 10) {
-		max = -min;
-		ret++;		/* '-' */
-	}
-	while (max /= 10)
-		ret++;
-	ret++;
-	return ret;
+#define bat_max_length(TPE, HIGH) \
+static size_t \
+bat_max_##TPE##length(BAT *b) \
+{ \
+	BUN p, q; \
+	HIGH max = 0, min = 0; \
+	size_t ret = 0; \
+	const TPE *restrict vals = (const TPE *) Tloc(b, 0); \
+ \
+	BATloop(b, p, q) { \
+		HIGH m = 0; \
+		TPE l = vals[p]; \
+ \
+		if (!is_##TPE##_nil(l)) \
+			m = l; \
+		if (m > max) \
+			max = m; \
+		if (m < min) \
+			min = m; \
+	} \
+	if (-min > max / 10) { \
+		max = -min; \
+		ret++;		/* '-' */ \
+	} \
+	while (max /= 10) \
+		ret++; \
+	ret++; \
+	return ret; \
 }
 
-static size_t
-bat_max_shtlength(BAT *b)
-{
-	BUN p, q;
-	lng max = 0;
-	lng min = 0;
-	size_t ret = 0;
-	const sht *vals = (const sht *) Tloc(b, 0);
-
-	BATloop(b, p, q) {
-		lng m = 0;
-		sht l = vals[p];
-
-		if (!is_sht_nil(l))
-			m = l;
-		if (m > max)
-			max = m;
-		if (m < min)
-			min = m;
-	}
-
-	if (-min > max / 10) {
-		max = -min;
-		ret++;		/* '-' */
-	}
-	while (max /= 10)
-		ret++;
-	ret++;
-	return ret;
-}
-
-static size_t
-bat_max_intlength(BAT *b)
-{
-	BUN p, q;
-	lng max = 0;
-	lng min = 0;
-	size_t ret = 0;
-	const int *vals = (const int *) Tloc(b, 0);
-
-	BATloop(b, p, q) {
-		lng m = 0;
-		int l = vals[p];
-
-		if (!is_int_nil(l))
-			m = l;
-		if (m > max)
-			max = m;
-		if (m < min)
-			min = m;
-	}
-
-	if (-min > max / 10) {
-		max = -min;
-		ret++;		/* '-' */
-	}
-	while (max /= 10)
-		ret++;
-	ret++;
-	return ret;
-}
-
-static size_t
-bat_max_lnglength(BAT *b)
-{
-	BUN p, q;
-	lng max = 0;
-	lng min = 0;
-	size_t ret = 0;
-	const lng *vals = (const lng *) Tloc(b, 0);
-
-	BATloop(b, p, q) {
-		lng m = 0;
-		lng l = vals[p];
-
-		if (!is_lng_nil(l))
-			m = l;
-		if (m > max)
-			max = m;
-		if (m < min)
-			min = m;
-	}
-
-	if (-min > max / 10) {
-		max = -min;
-		ret++;		/* '-' */
-	}
-	while (max /= 10)
-		ret++;
-	ret++;
-	return ret;
-}
-
+bat_max_length(bte, lng)
+bat_max_length(sht, lng)
+bat_max_length(int, lng)
+bat_max_length(lng, lng)
 #ifdef HAVE_HGE
-static size_t
-bat_max_hgelength(BAT *b)
-{
-	BUN p, q;
-	hge max = 0;
-	hge min = 0;
-	size_t ret = 0;
-	const hge *vals = (const hge *) Tloc(b, 0);
-
-	BATloop(b, p, q) {
-		hge m = 0;
-		hge l = vals[p];
-
-		if (!is_hge_nil(l))
-			m = l;
-		if (m > max) max = m;
-		if (m < min) min = m;
-	}
-
-	if (-min > max / 10) {
-		max = -min;
-		ret++;		/* '-' */
-	}
-	while (max /= 10)
-		ret++;
-	ret++;
-	return ret;
-}
+bat_max_length(hge, hge)
 #endif
 
 #define DEC_FRSTR(X)													\

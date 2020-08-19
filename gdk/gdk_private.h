@@ -258,39 +258,40 @@ BAT *virtualize(BAT *bn)
 
 /* some macros to help print info about BATs when using ALGODEBUG */
 #define ALGOBATFMT	"%s#" BUNFMT "@" OIDFMT "[%s]%s%s%s%s%s%s%s%s%s"
-#define ALGOBATPAR(b)	BATgetId(b),					\
-			BATcount(b),					\
-			b->hseqbase,					\
-			ATOMname(b->ttype),				\
-			!b->batTransient ? "P" : isVIEW(b) ? "V" : "T", \
-			BATtdense(b) ? "D" : b->ttype == TYPE_void && b->tvheap ? "X" :"", \
-			b->tsorted ? "S" : "",				\
-			b->trevsorted ? "R" : "",			\
-			b->tkey ? "K" : "",				\
-			b->tnonil ? "N" : "",				\
-			b->thash ? "H" : "",				\
-			b->torderidx ? "O" : "",			\
-			b->timprints ? "I" : b->theap.parentid && BBP_cache(b->theap.parentid)->timprints ? "(I)" : ""
+#define ALGOBATPAR(b)							\
+	BATgetId(b),							\
+	BATcount(b),							\
+	b->hseqbase,							\
+	ATOMname(b->ttype),						\
+	!b->batTransient ? "P" : isVIEW(b) ? "V" : "T",			\
+	BATtdense(b) ? "D" : b->ttype == TYPE_void && b->tvheap ? "X" :"", \
+	b->tsorted ? "S" : b->tnosorted ? "!s" : "",			\
+	b->trevsorted ? "R" : b->tnorevsorted ? "!r" : "",		\
+	b->tkey ? "K" : b->tnokey[1] ? "!k" : "",			\
+	b->tnonil ? "N" : "",						\
+	b->thash ? "H" : "",						\
+	b->torderidx ? "O" : "",					\
+	b->timprints ? "I" : b->theap.parentid && BBP_cache(b->theap.parentid)->timprints ? "(I)" : ""
 /* use ALGOOPTBAT* when BAT is optional (can be NULL) */
 #define ALGOOPTBATFMT	"%s%s" BUNFMT "%s" OIDFMT "%s%s%s%s%s%s%s%s%s%s%s%s"
 #define ALGOOPTBATPAR(b)						\
-			b ? BATgetId(b) : "",				\
-			b ? "#" : "",					\
-			b ? BATcount(b) : 0,				\
-			b ? "@" : "",					\
-			b ? b->hseqbase : 0,				\
-			b ? "[" : "",					\
-			b ? ATOMname(b->ttype) : "",			\
-			b ? "]" : "",					\
-			b ? !b->batTransient ? "P" : isVIEW(b) ? "V" : "T" : "", \
-			b && BATtdense(b) ? "D" : b && b->ttype == TYPE_void && b->tvheap ? "X" :"", \
-			b && b->tsorted ? "S" : "",			\
-			b && b->trevsorted ? "R" : "",			\
-			b && b->tkey ? "K" : "",			\
-			b && b->tnonil ? "N" : "",			\
-			b && b->thash ? "H" : "",			\
-			b && b->torderidx ? "O" : "",			\
-			b ? b->timprints ? "I" : b->theap.parentid && BBP_cache(b->theap.parentid)->timprints ? "(I)" : "" : ""
+	b ? BATgetId(b) : "",						\
+	b ? "#" : "",							\
+	b ? BATcount(b) : 0,						\
+	b ? "@" : "",							\
+	b ? b->hseqbase : 0,						\
+	b ? "[" : "",							\
+	b ? ATOMname(b->ttype) : "",					\
+	b ? "]" : "",							\
+	b ? !b->batTransient ? "P" : isVIEW(b) ? "V" : "T" : "",	\
+	b ? BATtdense(b) ? "D" : b->ttype == TYPE_void && b->tvheap ? "X" : "" : "", \
+	b ? b->tsorted ? "S" : b->tnosorted ? "!s" : "" : "",		\
+	b ? b->trevsorted ? "R" : b->tnorevsorted ? "!r" : "" : "",	\
+	b ? b->tkey ? "K" : b->tnokey[1] ? "!k" : "" : "",		\
+	b && b->tnonil ? "N" : "",					\
+	b && b->thash ? "H" : "",					\
+	b && b->torderidx ? "O" : "",					\
+	b ? b->timprints ? "I" : b->theap.parentid && BBP_cache(b->theap.parentid)->timprints ? "(I)" : "" : ""
 
 #define BBP_BATMASK	(128 * SIZEOF_SIZE_T - 1)
 #define BBP_THREADMASK	63

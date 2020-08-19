@@ -5,23 +5,17 @@ stdout of test 'sys_queue_expand` in directory 'sql/test/sysmon` itself:
 # 18:07:00 >  "mclient" "-lsql" "-ftest" "-tnone" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-31724" "--port=38231"
 # 18:07:00 >  
 
-Before sleep: 3
-('before', 'monetdb', 'finished', 'select 5, username, status, query from sys.queue();')
-('before', 'monetdb', 'finished', 'select 6, username, status, query from sys.queue();')
-('before', 'monetdb', 'running', "select \\'before\\', username,status,query from sys.queue() order by status, query\n;")
+Before sleep: 1
+('before', 'monetdb', 'running', "select \\'before\\', username,status,query from sys.queue() where status = \\'running\\' order by status, query\n;")
 
 During sleep: 4
-('during', 'monetdb', 'running', 'call sleep(3000)\n;')
-('during', 'monetdb', 'running', 'call sleep(3000)\n;')
-('during', 'monetdb', 'running', 'call sleep(3000)\n;')
-('during', 'monetdb', 'running', "select \\'during\\', username,status,query from sys.queue() order by status, query\n;")
+('during', 'monetdb', 'running', 'call sys.sleep(3000)\n;')
+('during', 'monetdb', 'running', 'call sys.sleep(3000)\n;')
+('during', 'monetdb', 'running', 'call sys.sleep(3000)\n;')
+('during', 'monetdb', 'running', "select \\'during\\', username,status,query from sys.queue() where status = \\'running\\' order by status, query\n;")
 
-After sleep: 5
-('after', 'monetdb', 'finished', 'call sleep(3000)\n;')
-('after', 'monetdb', 'finished', 'call sleep(3000)\n;')
-('after', 'monetdb', 'finished', 'call sleep(3000)\n;')
-('after', 'monetdb', 'finished', "select \\'during\\', username,status,query from sys.queue() order by status, query\n;")
-('after', 'monetdb', 'running', "select \\'after\\', username,status,query from sys.queue() order by status, query\n;")
+After sleep: 1
+('after', 'monetdb', 'running', "select \\'after\\', username,status,query from sys.queue() where status = \\'running\\' order by status, query\n;")
 
 # 16:54:22 >  
 # 16:54:22 >  "Done."

@@ -1,0 +1,12 @@
+stderr of test 'sys_user_statistics` in directory 'sql/test/sysmon` itself:
+
+
+# 14:56:33 >  
+# 14:56:33 >  "/usr/bin/python3.6" "sys_user_statistics.SQL.py" "sys_user_statistics"
+# 14:56:33 >  
+
+
+# 14:56:33 >  
+# 14:56:33 >  "Done."
+# 14:56:33 >  
+

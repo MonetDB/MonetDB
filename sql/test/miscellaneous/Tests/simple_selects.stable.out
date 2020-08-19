@@ -190,6 +190,12 @@ stdout of test 'simple_selects` in directory 'sql/test/miscellaneous` itself:
 % double,	sec_interval,	int,	int,	int,	int,	int,	bigint # type
 % 24,	5,	1,	1,	1,	1,	1,	1 # length
 [ 10,	NULL,	2,	NULL,	NULL,	NULL,	NULL,	NULL	]
+#select cast(null as blob) > cast(null as blob);
+% .%2 # table_name
+% %2 # name
+% boolean # type
+% 5 # length
+[ NULL	]
 #select substring('abc' from 1 for null);
 % .%2 # table_name
 % %2 # name

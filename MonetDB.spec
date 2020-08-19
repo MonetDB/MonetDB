@@ -753,7 +753,8 @@ fi
 
 %files selinux
 %defattr(-,root,root,0755)
-%doc buildtools/selinux/*
+%docdir %{_datadir}/doc/MonetDB-selinux
+%{_datadir}/doc/MonetDB-selinux/*
 %{_datadir}/selinux/*/monetdb.pp
 
 %endif
@@ -793,22 +794,6 @@ fi
 
 %cmake3_build
 
-%if %{?rhel:0}%{!?rhel:1} || 0%{?rhel} >= 7
-cd buildtools/selinux
-%if 0%{?fedora} < 27
-# no `map' policy available before Fedora 27
-sed -i '/map/d' monetdb.te
-%endif
-
-for selinuxvariant in %{selinux_variants}
-do
-  make NAME=${selinuxvariant} -f /usr/share/selinux/devel/Makefile
-  mv monetdb.pp monetdb.pp.${selinuxvariant}
-  make NAME=${selinuxvariant} -f /usr/share/selinux/devel/Makefile clean
-done
-cd -
-%endif
-
 %install
 %cmake3_install
 
@@ -836,12 +821,6 @@ rm -f %{buildroot}%{_bindir}/monetdb_mtest.sh
 rm -rf %{buildroot}%{_datadir}/monetdb # /cmake
 
 %if %{?rhel:0}%{!?rhel:1} || 0%{?rhel} >= 7
-for selinuxvariant in %{selinux_variants}
-do
-  install -d %{buildroot}%{_datadir}/selinux/${selinuxvariant}
-  install -p -m 644 buildtools/selinux/monetdb.pp.${selinuxvariant} \
-    %{buildroot}%{_datadir}/selinux/${selinuxvariant}/monetdb.pp
-done
 if [ -x /usr/sbin/hardlink ]; then
     /usr/sbin/hardlink -cv %{buildroot}%{_datadir}/selinux
 else

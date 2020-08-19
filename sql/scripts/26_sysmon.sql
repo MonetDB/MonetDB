@@ -35,3 +35,17 @@ grant execute on procedure sys.resume(bigint) to public;
 create procedure sys.stop(tag bigint)
 external name sysmon.stop;
 grant execute on procedure sys.stop(bigint) to public;
+
+-- we collect some aggregated user information
+create function sys.user_statistics()
+returns table(
+	username string,
+	querycount bigint,
+	totalticks bigint,
+	started timestamp,
+	finished timestamp,
+	maxticks bigint,
+	maxquery string
+)
+external name sysmon.user_statistics;
+
