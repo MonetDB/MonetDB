@@ -629,11 +629,14 @@ start_listen(SOCKET *sockp, int *portp, const char *listenaddr,
 #if defined(HAVE_FCNTL) && !defined(SOCK_CLOEXEC)
 		(void) fcntl(sock, F_SETFD, FD_CLOEXEC);
 #endif
+#ifdef SOL_IPV6
+		static_assert(SOL_IPV6 == IPPROTO_IPV6, "expect SOL_IPV6 == IPPROTO_IPV6");
+#endif
 		if (ipv6_vs6only >= 0)
-			setsockopt(sock, SOL_IPV6, IPV6_V6ONLY, &ipv6_vs6only, sizeof(int));
+			setsockopt(sock, IPPROTO_IPV6, IPV6_V6ONLY, (char *) &ipv6_vs6only, sizeof(int));
 
 		/* do not reuse addresses for ephemeral (autosense) ports */
-		if (setsockopt(sock, SOL_SOCKET, SO_REUSEADDR, &(int){*portp != 0},
+		if (setsockopt(sock, SOL_SOCKET, SO_REUSEADDR, (char *) &(int){*portp != 0},
 					   sizeof(int)) == SOCKET_ERROR) {
 #ifdef _MSC_VER
 			e = WSAGetLastError();
@@ -644,7 +647,7 @@ start_listen(SOCKET *sockp, int *portp, const char *listenaddr,
 			sock = INVALID_SOCKET;
 			continue;
 		}
-		if (bind(sock, rp->ai_addr, rp->ai_addrlen) == SOCKET_ERROR) {
+		if (bind(sock, rp->ai_addr, (SOCKLEN) rp->ai_addrlen) == SOCKET_ERROR) {
 #ifdef _MSC_VER
 			e = WSAGetLastError();
 #else
@@ -861,6 +864,7 @@ SERVERlisten(int port, const char *usockfile, int maxusers)
 			printf("# Listening for connection requests on "
 				   "mapi:monetdb://%s:%i/\n", host, port);
 	}
+#ifdef HAVE_SYS_UN_H
 	if (usock != INVALID_SOCKET) {
 		if (!GDKinmemory() && (buf = msab_marchConnection(usockfile, 0)) != NULL)
 			free(buf);
@@ -869,6 +873,7 @@ SERVERlisten(int port, const char *usockfile, int maxusers)
 			printf("# Listening for UNIX domain connection requests on "
 				   "mapi:monetdb://%s\n", usockfile);
 	}
+#endif
 
 	return MAL_SUCCEED;
 }
