@@ -2421,7 +2421,6 @@ mapi_reconnect(Mapi mid)
 	} else
 #endif
 	{
-#ifdef HAVE_GETADDRINFO
 		struct addrinfo hints, *res, *rp;
 		char port[32];
 		int ret;
@@ -2456,12 +2455,12 @@ mapi_reconnect(Mapi mid)
 				closesocket(s);
 			}
 			snprintf(errbuf, sizeof(errbuf),
-				 "could not connect to %s:%s: %s",
-				 mid->hostname, port,
+					 "could not connect to %s:%s: %s",
+					 mid->hostname, port,
 #ifdef _MSC_VER
 					 wsaerror(WSAGetLastError())
 #else
-				 strerror(errno)
+					 strerror(errno)
 #endif
 				);
 		}
@@ -2474,61 +2473,6 @@ mapi_reconnect(Mapi mid)
 			}
 			return mapi_setError(mid, errbuf, __func__, MERROR);
 		}
-#else
-		struct sockaddr_in server;
-		struct hostent *hp;
-		struct sockaddr *serv = (struct sockaddr *) &server;
-
-		if (mid->hostname == NULL)
-			mid->hostname = strdup("localhost");
-
-		if ((hp = gethostbyname(mid->hostname)) == NULL) {
-			snprintf(errbuf, sizeof(errbuf), "gethostbyname failed: %s",
-#ifdef _MSC_VER
-				 wsaerror(WSAGetLastError())
-#else
-				 errno ? strerror(errno) : hstrerror(h_errno)
-#endif
-				);
-			return mapi_setError(mid, errbuf, __func__, MERROR);
-		}
-		server = (struct sockaddr_in) {
-			.sin_family = hp->h_addrtype,
-			.sin_port = htons((unsigned short) mid->port),
-		};
-		memcpy(&server.sin_addr, hp->h_addr_list[0], hp->h_length);
-		s = socket(server.sin_family, SOCK_STREAM
-#ifdef SOCK_CLOEXEC
-			   | SOCK_CLOEXEC
-#endif
-			   , IPPROTO_TCP);
-
-		if (s == INVALID_SOCKET) {
-			snprintf(errbuf, sizeof(errbuf), "opening socket failed: %s",
-#ifdef _MSC_VER
-				 wsaerror(WSAGetLastError())
-#else
-				 strerror(errno)
-#endif
-				);
-			return mapi_setError(mid, errbuf, __func__, MERROR);
-		}
-#if !defined(SOCK_CLOEXEC) && defined(HAVE_FCNTL)
-		(void) fcntl(s, F_SETFD, FD_CLOEXEC);
-#endif
-
-		if (connect(s, serv, sizeof(server)) == SOCKET_ERROR) {
-			snprintf(errbuf, sizeof(errbuf),
-				 "initiating connection on socket failed: %s",
-#ifdef _MSC_VER
-				 wsaerror(WSAGetLastError())
-#else
-				 strerror(errno)
-#endif
-				);
-			return mapi_setError(mid, errbuf, __func__, MERROR);
-		}
-#endif
 		/* compare our own address with that of our peer and
 		 * if they are the same, we were connected to our own
 		 * socket, so then we can't use this connection */
@@ -5562,4 +5506,3 @@ mapi_get_active(Mapi mid)
 {
 	return mid->active;
 }
-
