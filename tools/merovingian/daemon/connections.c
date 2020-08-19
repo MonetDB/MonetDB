@@ -63,18 +63,22 @@ openConnectionTCP(int *ret, bool bind_ipv6, const char *bindaddr, unsigned short
 #endif
 
 		if (rp->ai_family == AF_INET6)
-			(void) setsockopt(sock, SOL_IPV6, IPV6_V6ONLY, &(int){0}, sizeof(int));
+			(void) setsockopt(sock, IPPROTO_IPV6, IPV6_V6ONLY,
+							  (const char *) &(int){0}, sizeof(int));
 
-		if (setsockopt(sock, SOL_SOCKET, SO_REUSEADDR, (char *) &on, sizeof on) < 0) {
+		if (setsockopt(sock, SOL_SOCKET, SO_REUSEADDR,
+					   (const char *) &on, sizeof on) < 0) {
 			e = errno;
 			closesocket(sock);
 			continue;
 		}
 #ifdef SO_EXCLUSIVEADDRUSE
-		(void) setsockopt(sock, SOL_SOCKET, SO_EXCLUSIVEADDRUSE, (char *) &on, sizeof on);
+		(void) setsockopt(sock, SOL_SOCKET, SO_EXCLUSIVEADDRUSE,
+						  (const char *) &on, sizeof on);
 #endif
 #ifdef SO_EXCLBIND
-		(void) setsockopt(sock, SOL_SOCKET, SO_EXCLBIND, (char *) &on, sizeof on);
+		(void) setsockopt(sock, SOL_SOCKET, SO_EXCLBIND,
+						  (const char *) &on, sizeof on);
 #endif
 
 		if (bind(sock, rp->ai_addr, rp->ai_addrlen) != -1)
