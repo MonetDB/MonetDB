@@ -43,8 +43,10 @@ openConnectionTCP(int *ret, bool bind_ipv6, const char *bindaddr, unsigned short
 	};
 
 	check = getaddrinfo(bindaddr, sport, &hints, &result);
+	if (bindaddr == NULL)
+		bindaddr = "any";		/* provide something for messages */
 	if (check != 0)
-		return newErr("cannot find host %s with error: %s", bindaddr ? bindaddr : "any", gai_strerror(check));
+		return newErr("cannot find host %s with error: %s", bindaddr, gai_strerror(check));
 
 	for (rp = result; rp != NULL; rp = rp->ai_next) {
 		sock = socket(rp->ai_family, rp->ai_socktype
@@ -85,7 +87,7 @@ openConnectionTCP(int *ret, bool bind_ipv6, const char *bindaddr, unsigned short
 		if (e != 0) { /* results found, tried socket, setsockopt and bind calls */
 			return newErr("binding to stream socket port %hu failed: %s", port, strerror(e));
 		} else { /* no results found, could not translate address */
-			return newErr("cannot translate host %s", bindaddr ? bindaddr : "any");
+			return newErr("cannot translate host %s", bindaddr);
 		}
 	}
 
@@ -96,7 +98,7 @@ openConnectionTCP(int *ret, bool bind_ipv6, const char *bindaddr, unsigned short
 		return(newErr("failed setting socket to listen: %s", strerror(e)));
 	}
 
-	Mfprintf(log, "accepting connections on TCP socket %s:%hu\n", bindaddr, port);
+	Mfprintf(log, "accepting connections on TCP socket %s:%hu\n", bindaddr , port);
 
 	*ret = sock;
 	return(NO_ERR);
