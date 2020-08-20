@@ -929,9 +929,11 @@ JSONtoken(JSON *jt, const char *j, const char **next)
 			j++;
 			skipblancs(j);
 			jt->elm[nxt].kind = JSON_ELEMENT;
-			jt->elm[nxt].child = JSONtoken(jt, j, next);
+			/* do in two steps since JSONtoken may realloc jt->elm */
+			int chld = JSONtoken(jt, j, next);
 			if (jt->error)
 				return idx;
+			jt->elm[nxt].child = chld;
 			jt->elm[nxt].value++;
 			jt->elm[nxt].valuelen -= 2;
 			JSONappend(jt, idx, nxt);
