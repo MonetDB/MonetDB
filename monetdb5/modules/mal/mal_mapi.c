@@ -522,6 +522,12 @@ error:
 		closesocket(usock);
 }
 
+#ifdef _MSC_VER
+#define HOSTLEN int
+#else
+#define HOSTLEN size_t
+#endif
+
 static char *
 start_listen(SOCKET *sockp, int *portp, const char *listenaddr,
 			 char *host, size_t hostlen, int maxusers)
@@ -679,7 +685,7 @@ start_listen(SOCKET *sockp, int *portp, const char *listenaddr,
 	}
 	*sockp = sock;
 	if (host[0] == 0)
-		gethostname(host, hostlen);
+		gethostname(host, (HOSTLEN) hostlen);
 	return NULL;
 }
 
