@@ -12,6 +12,8 @@
 #include "monetdb_config.h"
 
 #ifdef HAVE_LIBREADLINE
+#include <fcntl.h>
+#include <unistd.h>
 
 #include <readline/readline.h>
 #include <readline/history.h>
@@ -289,6 +291,71 @@ continue_completion(rl_completion_func_t * func)
 	rl_attempted_completion_function = func;
 }
 
+#ifndef BUFSIZ
+#define BUFSIZ 1024
+#endif
+
+static void
+readline_show_error(const char *msg) {
+	rl_save_prompt();
+	rl_message(msg);
+	rl_restore_prompt();
+	rl_clear_message();
+}
+
+static int
+invoke_editor(int cnt, int key) {
+	char template[] = "/tmp/mclient_temp_XXXXXX";
+	char cmd[BUFSIZ];
+	char *editor;
+	FILE *fp;
+	size_t cmd_len;
+
+	(void) cnt;
+	(void) key;
+
+	if ((fp = fdopen(mkstemp(template), "r+")) == NULL) {
+		// Notify the user that we cannot create temp file
+		readline_show_error("invoke_editor: Cannot create temp file\n");
+		goto bailout;
+	}
+
+	fwrite(rl_line_buffer, sizeof(char), rl_end, fp);
+	fflush(fp);
+
+	editor = getenv("EDITOR");
+	if (!editor) {
+		editor = getenv("VISUAL");
+		if (!editor) {
+			readline_show_error("invoke_editor: EDITOR/VISUAL env variable not set\n");
+			goto bailout;
+		}
+	}
+
+	snprintf(cmd, BUFSIZ, "%s %s", editor, template);
+	if (system(cmd) != 0) {
+		readline_show_error("invoke_editor: Starting editor failed\n");
+		goto bailout;
+	}
+
+	fseek(fp, 0, SEEK_SET);
+	cmd_len = fread(cmd, sizeof(char), BUFSIZ, fp);
+	fclose(fp);
+
+	*(cmd + cmd_len) = 0;
+
+	rl_replace_line(cmd, 0);
+	rl_point = cmd_len - 1;
+
+	unlink(template);
+
+	return 0;
+
+bailout:
+	fclose(fp);
+	return 1;
+}
+
 void
 init_readline(Mapi mid, const char *lang, bool save_history)
 {
@@ -307,6 +374,8 @@ init_readline(Mapi mid, const char *lang, bool save_history)
 #endif
 		rl_attempted_completion_function = mal_completion;
 	}
+
+	rl_bind_key(024, invoke_editor);
 
 	if (save_history) {
 		int len;
