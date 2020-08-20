@@ -156,7 +156,7 @@ openConnectionUNIX(int *ret, const char *path, int mode, FILE *log)
 	/* have to use umask to restrict permissions to avoid a race
 	 * condition */
 	omask = umask(mode);
-	if (bind(sock, (SOCKPTR) &server, sizeof(struct sockaddr_un)) == -1) {
+	if (bind(sock, (struct sockaddr *) &server, sizeof(struct sockaddr_un)) == -1) {
 		umask(omask);
 		closesocket(sock);
 		return(newErr("binding to UNIX stream socket at %s failed: %s",

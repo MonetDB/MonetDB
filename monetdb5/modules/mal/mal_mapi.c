@@ -69,7 +69,6 @@
 #include <fcntl.h>
 #endif
 
-#define SOCKPTR struct sockaddr *
 #ifdef HAVE_SOCKLEN_T
 #define SOCKLEN socklen_t
 #else
@@ -354,7 +353,7 @@ SERVERlistenThread(SOCKET *Sock)
 			FD_ISSET(sock, &fds)
 #endif
 			) {
-			if ((msgsock = accept4(sock, (SOCKPTR)0, (socklen_t *)0, SOCK_CLOEXEC)) == INVALID_SOCKET) {
+			if ((msgsock = accept4(sock, NULL, NULL, SOCK_CLOEXEC)) == INVALID_SOCKET) {
 				if (
 #ifdef _MSC_VER
 					WSAGetLastError() != WSAEINTR
@@ -386,7 +385,7 @@ SERVERlistenThread(SOCKET *Sock)
 			char ccmsg[CMSG_SPACE(sizeof(int))];
 			struct cmsghdr *cmsg;
 
-			if ((msgsock = accept4(usock, (SOCKPTR)0, (socklen_t *)0, SOCK_CLOEXEC)) == INVALID_SOCKET) {
+			if ((msgsock = accept4(usock, NULL, NULL, SOCK_CLOEXEC)) == INVALID_SOCKET) {
 				if (
 #ifdef _MSC_VER
 					WSAGetLastError() != WSAEINTR
@@ -782,7 +781,7 @@ SERVERlisten(int port, const char *usockfile, int maxusers)
 			GDKfree(psock);
 			return e;
 		}
-		if (bind(usock, (SOCKPTR) &userver, length) == SOCKET_ERROR) {
+		if (bind(usock, (struct sockaddr *) &userver, length) == SOCKET_ERROR) {
 #ifdef _MSC_VER
 			const char *err = wsaerror(WSAGetLastError());
 #else

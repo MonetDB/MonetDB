@@ -2353,7 +2353,6 @@ mapi_reconnect(Mapi mid)
 		struct msghdr msg;
 		struct iovec vec;
 		struct sockaddr_un userver;
-		struct sockaddr *serv = (struct sockaddr *) &userver;
 
 		if (strlen(mid->hostname) >= sizeof(userver.sun_path)) {
 			return mapi_setError(mid, "path name too long", __func__, MERROR);
@@ -2382,7 +2381,7 @@ mapi_reconnect(Mapi mid)
 		};
 		strcpy_len(userver.sun_path, mid->hostname, sizeof(userver.sun_path));
 
-		if (connect(s, serv, sizeof(struct sockaddr_un)) == SOCKET_ERROR) {
+		if (connect(s, (struct sockaddr *) &userver, sizeof(struct sockaddr_un)) == SOCKET_ERROR) {
 			snprintf(errbuf, sizeof(errbuf),
 				 "initiating connection on socket failed: %s",
 #ifdef _MSC_VER
@@ -2477,16 +2476,24 @@ mapi_reconnect(Mapi mid)
 		 * if they are the same, we were connected to our own
 		 * socket, so then we can't use this connection */
 		union {
-			struct sockaddr s;
-			struct sockaddr_in i;
+			struct sockaddr_storage ss;
+			struct sockaddr_in i4;
+			struct sockaddr_in6 i6;
 		} myaddr, praddr;
 		socklen_t myaddrlen, praddrlen;
-		myaddrlen = (socklen_t) sizeof(myaddr);
-		praddrlen = (socklen_t) sizeof(praddr);
-		if (getsockname(s, &myaddr.s, &myaddrlen) == 0 &&
-		    getpeername(s, &praddr.s, &praddrlen) == 0 &&
-		    myaddr.i.sin_addr.s_addr == praddr.i.sin_addr.s_addr &&
-		    myaddr.i.sin_port == praddr.i.sin_port) {
+		myaddrlen = (socklen_t) sizeof(myaddr.ss);
+		praddrlen = (socklen_t) sizeof(praddr.ss);
+		if (getsockname(s, (struct sockaddr *) &myaddr.ss, &myaddrlen) == 0 &&
+		    getpeername(s, (struct sockaddr *) &praddr.ss, &praddrlen) == 0 &&
+			myaddr.ss.ss_family == praddr.ss.ss_family &&
+			(myaddr.ss.ss_family == AF_INET
+			 ? myaddr.i4.sin_port == praddr.i4.sin_port
+			 : myaddr.i6.sin6_port == praddr.i6.sin6_port) &&
+			(myaddr.ss.ss_family == AF_INET
+			 ? myaddr.i4.sin_addr.s_addr == praddr.i4.sin_addr.s_addr
+			 : memcmp(myaddr.i6.sin6_addr.s6_addr,
+					  praddr.i6.sin6_addr.s6_addr,
+					  sizeof(praddr.i6.sin6_addr.s6_addr)) == 0)) {
 			closesocket(s);
 			return mapi_setError(mid, "connected to self",
 					     __func__, MERROR);

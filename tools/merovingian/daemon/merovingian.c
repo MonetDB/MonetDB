@@ -119,8 +119,6 @@ FILE *_mero_ctlout = NULL;
 FILE *_mero_ctlerr = NULL;
 /* broadcast socket for announcements */
 int _mero_broadcastsock = -1;
-/* ipv6 global any bind address constant */
-const struct in6_addr ipv6_any_addr = IN6ADDR_ANY_INIT;
 /* broadcast address/port */
 struct sockaddr_in _mero_broadcastaddr;
 /* hostname of this machine */
