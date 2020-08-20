@@ -356,15 +356,15 @@ win_console_in_stream(const char *name)
 {
 	HANDLE h = GetStdHandle(STD_INPUT_HANDLE);
 	struct console *c = NULL;
-	stream *s = create_stream(name);
-	if (s == NULL) {
-		mnstr_set_error_errno(NULL, MNSTR_OPEN_ERROR, NULL);
-		return NULL;
-	}
-	s->readonly = true;
+	stream *s;
 
 	switch (GetFileType(h)) {
 	case FILE_TYPE_PIPE:
+		s = create_stream(name);
+		if (s == NULL) {
+			mnstr_set_error_errno(NULL, MNSTR_OPEN_ERROR, NULL);
+			return NULL;
+		}
 		s->stream_data.p = h;
 		s->read = pipe_read;
 		s->write = NULL;
@@ -376,6 +376,11 @@ win_console_in_stream(const char *name)
 		s->fsetpos = NULL;
 		break;
 	case FILE_TYPE_CHAR:
+		s = create_stream(name);
+		if (s == NULL) {
+			mnstr_set_error_errno(NULL, MNSTR_OPEN_ERROR, NULL);
+			return NULL;
+		}
 		c = malloc(sizeof(struct console));
 		if (c == NULL) {
 			destroy_stream(s);
@@ -396,7 +401,11 @@ win_console_in_stream(const char *name)
 		s->fsetpos = NULL;
 		s->isutf8 = true;
 		break;
+	default:
+		s = file_rstream(stdin, false, name);
+		break;
 	}
+	s->readonly = true;
 	return s;
 }
 
