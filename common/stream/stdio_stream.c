@@ -412,35 +412,29 @@ stdin_rastream(void)
 	const char *name = "<stdin>";
 #ifdef _MSC_VER
 	return win_console_in_stream(name);
-#endif
+#else
 	// Make an attempt to skip a BOM marker.
 	// It would be nice to integrate this with with the BOM removal code
 	// in text_stream.c but that is complicated. In text_stream,
-	do {
-		struct stat stb;
-		if (fstat(fileno(stdin), &stb) < 0)
-			break;
-		if ((stb.st_mode & S_IFMT) != S_IFREG)
-			break;
+	struct stat stb;
+	if (fstat(fileno(stdin), &stb) == 0 && (stb.st_mode & S_IFMT) == S_IFREG) {
 		fpos_t pos;
-		if (fgetpos(stdin, &pos) != 0)
-			break;
-		char bytes[UTF8BOMLENGTH];
-		size_t nread = fread(bytes, 1, UTF8BOMLENGTH, stdin);
-		if (nread == 3 && memcmp(bytes, UTF8BOM, UTF8BOMLENGTH) == 0) {
-			// found BOM, skip it
-			break;
+		if (fgetpos(stdin, &pos) == 0) {
+			char bytes[UTF8BOMLENGTH];
+			size_t nread = fread(bytes, 1, UTF8BOMLENGTH, stdin);
+			if (nread != 3 || memcmp(bytes, UTF8BOM, UTF8BOMLENGTH) != 0) {
+				// not a BOM, rewind
+				if (nread > 0 && fsetpos(stdin, &pos) != 0) {
+					// oops, bytes have been read but we can't rewind
+					mnstr_set_error_errno(NULL, MNSTR_OPEN_ERROR, "while rewinding after checking for byte order mark");
+					return NULL;
+				}
+			}
 		}
-		// not a BOM, rewind
-		if (fsetpos(stdin, &pos) != 0 && nread > 0) {
-			// oops, bytes have been read but we can't rewind
-			mnstr_set_error_errno(NULL, MNSTR_OPEN_ERROR, "while rewinding after checking for byte order mark");
-			return NULL;
-		}
-
-	} while (0);
+	}
 
 	return file_rstream(stdin, false, name);
+#endif
 }
 
 stream *
@@ -504,4 +498,3 @@ getFileSize(stream *s)
 		return (size_t) stb.st_size;
 	return 0;		/* unknown */
 }
-
