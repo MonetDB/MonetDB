@@ -3014,7 +3014,7 @@ fix_windows_newline(unsigned char *s)
 static char fwftsep[2] = {STREAM_FWF_FIELD_SEP, '\0'};
 static char fwfrsep[2] = {STREAM_FWF_RECORD_SEP, '\0'};
 
-/* str mvc_import_table_wrap(int *res, str *sname, str *tname, unsigned char* *T, unsigned char* *R, unsigned char* *S, unsigned char* *N, str *fname, lng *sz, lng *offset, int *locked, int *besteffort, str *fixed_width, int *onclient); */
+/* str mvc_import_table_wrap(int *res, str *sname, str *tname, unsigned char* *T, unsigned char* *R, unsigned char* *S, unsigned char* *N, str *fname, lng *sz, lng *offset, int *locked, int *besteffort, str *fixed_width, int *onclient, int *escape); */
 str
 mvc_import_table_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
@@ -3033,6 +3033,7 @@ mvc_import_table_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	int besteffort = *getArgReference_int(stk, pci, pci->retc + 9);
 	char *fixed_widths = *getArgReference_str(stk, pci, pci->retc + 10);
 	int onclient = *getArgReference_int(stk, pci, pci->retc + 11);
+	bool escape = *getArgReference_int(stk, pci, pci->retc + 12);
 	str msg = MAL_SUCCEED;
 	bstream *s = NULL;
 	stream *ss;
@@ -3054,7 +3055,7 @@ mvc_import_table_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (strNil(fname))
 		fname = NULL;
 	if (fname == NULL) {
-		msg = mvc_import_table(cntxt, &b, be->mvc, be->mvc->scanner.rs, t, tsep, rsep, ssep, ns, sz, offset, locked, besteffort, true);
+		msg = mvc_import_table(cntxt, &b, be->mvc, be->mvc->scanner.rs, t, tsep, rsep, ssep, ns, sz, offset, locked, besteffort, true, escape);
 	} else {
 		if (onclient) {
 			mnstr_write(be->mvc->scanner.ws, PROMPT3, sizeof(PROMPT3)-1, 1);
@@ -3128,7 +3129,7 @@ mvc_import_table_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		s = bstream_create(ss, 0x200000);
 #endif
 		if (s != NULL) {
-			msg = mvc_import_table(cntxt, &b, be->mvc, s, t, tsep, rsep, ssep, ns, sz, offset, locked, besteffort, false);
+			msg = mvc_import_table(cntxt, &b, be->mvc, s, t, tsep, rsep, ssep, ns, sz, offset, locked, besteffort, false, escape);
 			if (onclient) {
 				mnstr_write(be->mvc->scanner.ws, PROMPT3, sizeof(PROMPT3)-1, 1);
 				mnstr_flush(be->mvc->scanner.ws, MNSTR_FLUSH_DATA);
@@ -5544,7 +5545,7 @@ static mel_func sql_init_funcs[] = {
  pattern("sql", "exportChunk", mvc_export_chunk_wrap, true, "Export a chunk of the result set (in order) to stream s", args(1,5, arg("",void),arg("s",streams),arg("res_id",int),arg("offset",int),arg("nr",int))),
  pattern("sql", "exportOperation", mvc_export_operation_wrap, true, "Export result of schema/transaction queries", args(1,1, arg("",void))),
  pattern("sql", "affectedRows", mvc_affected_rows_wrap, true, "export the number of affected rows by the current query", args(1,3, arg("",int),arg("mvc",int),arg("nr",lng))),
- pattern("sql", "copy_from", mvc_import_table_wrap, true, "Import a table from bstream s with the \ngiven tuple and seperators (sep/rsep)", args(1,13, batvarargany("",0),arg("t",ptr),arg("sep",str),arg("rsep",str),arg("ssep",str),arg("ns",str),arg("fname",str),arg("nr",lng),arg("offset",lng),arg("locked",int),arg("best",int),arg("fwf",str),arg("onclient",int))),
+ pattern("sql", "copy_from", mvc_import_table_wrap, true, "Import a table from bstream s with the \ngiven tuple and seperators (sep/rsep)", args(1,14, batvarargany("",0),arg("t",ptr),arg("sep",str),arg("rsep",str),arg("ssep",str),arg("ns",str),arg("fname",str),arg("nr",lng),arg("offset",lng),arg("locked",int),arg("best",int),arg("fwf",str),arg("onclient",int),arg("escape",int))),
  //we use bat.single now
  //pattern("sql", "single", CMDBATsingle, false, "", args(1,2, batargany("",2),argany("x",2))),
  pattern("sql", "importTable", mvc_bin_import_table_wrap, true, "Import a table from the files (fname)", args(1,5, batvarargany("",0),arg("sname",str),arg("tname",str),arg("onclient",int),vararg("fname",str))),

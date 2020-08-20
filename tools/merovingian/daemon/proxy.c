@@ -156,7 +156,7 @@ startProxy(int psock, stream *cfdin, stream *cfout, char *url, char *client)
 #if !defined(SOCK_CLOEXEC) && defined(HAVE_FCNTL)
 		(void) fcntl(ssock, F_SETFD, FD_CLOEXEC);
 #endif
-		if (connect(ssock, (SOCKPTR) &server, sizeof(struct sockaddr_un)) == -1) {
+		if (connect(ssock, (struct sockaddr *) &server, sizeof(struct sockaddr_un)) == -1) {
 			closesocket(ssock);
 			return(newErr("cannot connect: %s", strerror(errno)));
 		}

@@ -1251,7 +1251,7 @@ controlRunner(void *d)
 		}
 #endif
 
-		if ((msgsock = accept4(usock, (SOCKPTR) 0, (socklen_t *) 0, SOCK_CLOEXEC)) == -1) {
+		if ((msgsock = accept4(usock, NULL, NULL, SOCK_CLOEXEC)) == -1) {
 			free(p);
 			if (_mero_keep_listening == 0)
 				break;

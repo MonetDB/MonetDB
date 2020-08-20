@@ -338,20 +338,12 @@ class server(Popen):
         cmd = _server[:]
         if not cmd:
             cmd = ['mserver5',
-                   '--set', 'mapi_open=true',
+                   '--set', ipv6 and 'mapi_listenaddr=all' or 'mapi_listenaddr=0.0.0.0',
                    '--set', 'gdk_nr_threads=1']
         if verbose:
             sys.stdout.write('Default server: ' + ' '.join(cmd +  args) + '\n')
         if notrace and '--trace' in cmd:
             cmd.remove('--trace')
-        if ipv6:
-            for i in range(len(cmd)):
-                if cmd[i].startswith('mapi_ipv6='):
-                    del cmd[i]
-                    del cmd[i - 1]
-                    break
-            cmd.append('--set')
-            cmd.append('mapi_ipv6=true')
         if mapiport is not None:
             # make sure it's a string
             mapiport = str(int(mapiport))

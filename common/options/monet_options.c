@@ -218,7 +218,7 @@ mo_builtin_settings(opt **Set)
 	if (Set == NULL)
 		return 0;
 
-#define N_OPTIONS	8	/*MUST MATCH # OPTIONS BELOW */
+#define N_OPTIONS	5	/*MUST MATCH # OPTIONS BELOW */
 	set = malloc(sizeof(opt) * N_OPTIONS);
 	if (set == NULL)
 		return 0;
@@ -230,19 +230,7 @@ mo_builtin_settings(opt **Set)
 	i++;
 	set[i].kind = opt_builtin;
 	set[i].name = strdup("mapi_port");
-	set[i].value = strdup("50000");
-	i++;
-	set[i].kind = opt_builtin;
-	set[i].name = strdup("mapi_open");
-	set[i].value = strdup("false");
-	i++;
-	set[i].kind = opt_builtin;
-	set[i].name = strdup("mapi_ipv6");
-	set[i].value = strdup("false");
-	i++;
-	set[i].kind = opt_builtin;
-	set[i].name = strdup("mapi_autosense");
-	set[i].value = strdup("false");
+	set[i].value = strdup(MAPI_PORT_STR);
 	i++;
 	set[i].kind = opt_builtin;
 	set[i].name = strdup("sql_optimizer");
