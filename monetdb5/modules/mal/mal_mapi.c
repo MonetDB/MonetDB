@@ -534,10 +534,8 @@ start_listen(SOCKET *sockp, int *portp, const char *listenaddr,
 		.ai_socktype = SOCK_STREAM,
 		.ai_protocol = IPPROTO_TCP,
 	};
-	struct sockaddr_in addr4 = {0};
-	struct sockaddr_in6 addr6 = {0};
-	struct sockaddr *addr;
-	SOCKLEN addrlen;
+	struct sockaddr_storage addr;
+	SOCKLEN addrlen = (SOCKLEN) sizeof(addr);
 	int e = 0;
 	int ipv6_vs6only = -1;
 	SOCKET sock = INVALID_SOCKET;
@@ -549,45 +547,31 @@ start_listen(SOCKET *sockp, int *portp, const char *listenaddr,
 		hints.ai_flags |= AI_NUMERICHOST;
 		ipv6_vs6only = 0;
 		listenaddr = "::1";
-		addr = (struct sockaddr *) &addr6;
-		addrlen = (SOCKLEN) sizeof(addr6);
-		strncpy(host, "localhost", hostlen);
+		strcpy_len(host, "localhost", hostlen);
 	} else if (strcmp(listenaddr, "all") == 0) {
 		hints.ai_family = AF_INET6;
 		ipv6_vs6only = 0;
 		listenaddr = NULL;
-		addr = (struct sockaddr *) &addr6;
-		addrlen = (SOCKLEN) sizeof(addr6);
 	} else if (strcmp(listenaddr, "::") == 0) {
 		hints.ai_family = AF_INET6;
 		ipv6_vs6only = 1;
 		listenaddr = NULL;
-		addr = (struct sockaddr *) &addr6;
-		addrlen = (SOCKLEN) sizeof(addr6);
 	} else if (strcmp(listenaddr, "0.0.0.0") == 0) {
 		hints.ai_family = AF_INET;
 		hints.ai_flags |= AI_NUMERICHOST;
 		listenaddr = NULL;
-		addr = (struct sockaddr *) &addr4;
-		addrlen = (SOCKLEN) sizeof(addr4);
 	} else if (strcmp(listenaddr, "::1") == 0) {
 		hints.ai_family = AF_INET6;
 		hints.ai_flags |= AI_NUMERICHOST;
 		ipv6_vs6only = 1;
-		addr = (struct sockaddr *) &addr6;
-		addrlen = (SOCKLEN) sizeof(addr6);
-		strncpy(host, "localhost", hostlen);
+		strcpy_len(host, "localhost", hostlen);
 	} else if (strcmp(listenaddr, "127.0.0.1") == 0) {
 		hints.ai_family = AF_INET;
 		hints.ai_flags |= AI_NUMERICHOST;
-		addr = (struct sockaddr *) &addr4;
-		addrlen = (SOCKLEN) sizeof(addr4);
-		strncpy(host, "localhost", hostlen);
+		strcpy_len(host, "localhost", hostlen);
 	} else {
 		hints.ai_family = AF_INET6;
 		ipv6_vs6only = 0;
-		addr = (struct sockaddr *) &addr6;
-		addrlen = (SOCKLEN) sizeof(addr6);
 	}
 	char sport[8];		/* max "65535" */
 	snprintf(sport, sizeof(sport), "%d", *portp);
@@ -666,7 +650,7 @@ start_listen(SOCKET *sockp, int *portp, const char *listenaddr,
 			sock = INVALID_SOCKET;
 			continue;
 		}
-		if (getsockname(sock, addr, &addrlen) == SOCKET_ERROR) {
+		if (getsockname(sock, (struct sockaddr *) &addr, &addrlen) == SOCKET_ERROR) {
 #ifdef _MSC_VER
 			err = wsaerror(WSAGetLastError());
 #else
@@ -676,6 +660,9 @@ start_listen(SOCKET *sockp, int *portp, const char *listenaddr,
 			sock = INVALID_SOCKET;
 			continue;
 		}
+		if (getnameinfo((struct sockaddr *) &addr, addrlen, NULL, (SOCKLEN) 0,
+						sport, (SOCKLEN) sizeof(sport), NI_NUMERICSERV) == 0)
+			*portp = (int) strtol(sport, NULL, 10);
 		break;
 	}
 	freeaddrinfo(result);
@@ -692,12 +679,8 @@ start_listen(SOCKET *sockp, int *portp, const char *listenaddr,
 			  sport, err);
 	}
 	*sockp = sock;
-	if (ipv6_vs6only >= 0)
-		*portp = ntohs(addr6.sin6_port);
-	else
-		*portp = ntohs(addr4.sin_port);
 	if (host[0] == 0)
-		gethostname(host, sizeof(host));
+		gethostname(host, hostlen);
 	return NULL;
 }
 
