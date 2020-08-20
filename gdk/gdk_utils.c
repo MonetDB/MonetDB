@@ -1360,7 +1360,11 @@ GDKusec(void)
 	return (lng) (f.QuadPart / 10);
 #elif defined(HAVE_CLOCK_GETTIME)
 	struct timespec ts;
-	clock_gettime(CLOCK_REALTIME, &ts);
+#undef CLOCK_REALTIME_COARSE
+#ifdef CLOCK_REALTIME_COARSE
+	if (clock_gettime(CLOCK_REALTIME_COARSE, &ts) < 0)
+#endif
+		(void) clock_gettime(CLOCK_REALTIME, &ts);
 	return (lng) (ts.tv_sec * LL_CONSTANT(1000000) + ts.tv_nsec / 1000);
 #elif defined(HAVE_GETTIMEOFDAY)
 	struct timeval tv;

@@ -254,9 +254,6 @@ This information can be used to determine memory footprint and variable life tim
 						logadd(",\"nonil\":%d", d->tnonil);
 						logadd(",\"nil\":%d", d->tnil);
 						logadd(",\"key\":%d", d->tkey);
-						logadd(",\"hash\":%d", d->thash != NULL);
-						logadd(",\"imprints\":%d", d->timprints != NULL);
-						logadd(",\"orderidx\":%d", d->torderidx != NULL);
 						cv = VALformat(&stk->stk[getArg(pci,j)]);
 						c = strchr(cv, '>');
 						*c = 0;
