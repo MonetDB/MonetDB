@@ -21,6 +21,7 @@ Options are:
  -t table    | --table=table      dump a database table
  -D          | --describe       describe database
  -N          | --inserts          use INSERT INTO statements
+ -e          | --noescape         use NO ESCAPE
  -q          | --quiet          don't print welcome message
  -X          | --Xdebug           trace mapi network interaction
  -?          | --help           show this usage message

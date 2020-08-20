@@ -15,11 +15,10 @@
 
 #include "utils/utils.h" /* confkeyval */
 
-#define MERO_PORT      "50000"
+#define MERO_PORT      MAPI_PORT_STR
 #define MERO_SOCK      ".s.monetdb."
 #define CONTROL_SOCK   ".s.merovingian."
 
-#define SOCKPTR struct sockaddr *
 #ifdef HAVE_SOCKLEN_T
 #define SOCKLEN socklen_t
 #else
@@ -76,7 +75,6 @@ extern unsigned short _mero_controlport;
 extern FILE *_mero_ctlout;
 extern FILE *_mero_ctlerr;
 extern int _mero_broadcastsock;
-extern const struct in6_addr ipv6_any_addr;
 extern struct sockaddr_in _mero_broadcastaddr;
 extern char _mero_hostname[128];
 extern confkeyval *_mero_db_props;

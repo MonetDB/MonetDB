@@ -67,7 +67,7 @@ handleClient(void *data)
 	char port[16];
 	sabdb *top = NULL;
 	sabdb *stat = NULL;
-	struct sockaddr saddr;
+	struct sockaddr_storage saddr;
 	socklen_t saddrlen = (socklen_t) sizeof(saddr);
 	err e;
 	confkeyval *ckv, *kv;
@@ -100,12 +100,12 @@ handleClient(void *data)
 
 	if (isusock) {
 		snprintf(host, sizeof(host), "(local)");
-	} else if (getpeername(sock, &saddr, &saddrlen) == -1) {
+	} else if (getpeername(sock, (struct sockaddr *) &saddr, &saddrlen) == -1) {
 		Mfprintf(stderr, "couldn't get peername of client: %s\n", strerror(errno));
 		snprintf(host, sizeof(host), "(unknown)");
 	} else {
 		char ghost[512];
-		if (getnameinfo(&saddr, saddrlen, ghost, sizeof(ghost), port, sizeof(port),
+		if (getnameinfo((struct sockaddr *) &saddr, saddrlen, ghost, sizeof(ghost), port, sizeof(port),
 			NI_NUMERICSERV | NI_NUMERICHOST) == 0) {
 			snprintf(host, sizeof(host), "%s:%s", ghost, port);
 		} else {
@@ -493,7 +493,7 @@ acceptConnections(int sock, int usock)
 #endif
 			) {
 			isusock = false;
-			if ((msgsock = accept4(sock, (SOCKPTR)0, (socklen_t *) 0, SOCK_CLOEXEC)) == -1) {
+			if ((msgsock = accept4(sock, NULL, NULL, SOCK_CLOEXEC)) == -1) {
 				if (_mero_keep_listening == 0)
 					break;
 				switch (errno) {
@@ -532,7 +532,7 @@ acceptConnections(int sock, int usock)
 			char ccmsg[CMSG_SPACE(sizeof(int))];
 
 			isusock = true;
-			if ((msgsock = accept4(usock, (SOCKPTR)0, (socklen_t *)0, SOCK_CLOEXEC)) == -1) {
+			if ((msgsock = accept4(usock, NULL, NULL, SOCK_CLOEXEC)) == -1) {
 				if (_mero_keep_listening == 0)
 					break;
 				switch (errno) {

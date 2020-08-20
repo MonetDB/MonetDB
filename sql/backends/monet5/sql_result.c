@@ -598,35 +598,33 @@ static void *
 _ASCIIadt_frStr(Column *c, int type, const char *s)
 {
 	ssize_t len;
-	const char *e;
 
-	if (type == TYPE_str) {
+	len = (*BATatoms[type].atomFromStr) (s, &c->len, &c->data, false);
+	if (len < 0)
+		return NULL;
+	switch (type) {
+	case TYPE_bte:
+	case TYPE_int:
+	case TYPE_lng:
+	case TYPE_sht:
+#ifdef HAVE_HGE
+	case TYPE_hge:
+#endif
+		if (len == 0 || s[len]) {
+			/* decimals can be converted to integers when *.000 */
+			if (s[len++] == '.') {
+				while (s[len] == '0')
+					len++;
+				if (s[len] == 0)
+					return c->data;
+			}
+			return NULL;
+		}
+		break;
+	case TYPE_str: {
 		sql_column *col = (sql_column *) c->extra;
 		int slen;
 
-		for (e = s; *e; e++)
-			;
-		len = (ssize_t) (e - s + 1);
-
-		/* or shouldn't len rather be ssize_t, here? */
-
-		if ((ssize_t) c->len < len) {
-			void *p;
-			c->len = (size_t) len;
-			if ((p = GDKrealloc(c->data, c->len)) == NULL) {
-				GDKfree(c->data);
-				c->data = NULL;
-				c->len = 0;
-				return NULL;
-			}
-			c->data = p;
-		}
-		if (s == e || *s == 0) {
-			len = -1;
-			*(char *) c->data = 0;
-		} else if ((len = GDKstrFromStr(c->data, (unsigned char *) s, (ssize_t) (e - s))) < 0) {
-			return NULL;
-		}
 		s = c->data;
 		STRLength(&slen, (const str *) &s);
 		if (col->type.digits > 0 && len > 0 && slen > (int) col->type.digits) {
@@ -634,32 +632,10 @@ _ASCIIadt_frStr(Column *c, int type, const char *s)
 			if (len > (ssize_t) col->type.digits)
 				return NULL;
 		}
-		return c->data;
+		break;
 	}
-	// All other values are not allowed to the MonetDB nil value
-	if( strcmp(s,"nil")== 0)
-		return NULL;
-
-	len = (*BATatoms[type].atomFromStr) (s, &c->len, &c->data, true);
-	if (len < 0)
-		return NULL;
-	if (len == 0 || s[len]) {
-		/* decimals can be converted to integers when *.000 */
-		if (s[len++] == '.')
-			switch (type) {
-			case TYPE_bte:
-			case TYPE_int:
-			case TYPE_lng:
-			case TYPE_sht:
-#ifdef HAVE_HGE
-			case TYPE_hge:
-#endif
-				while (s[len] == '0')
-					len++;
-				if (s[len] == 0)
-					return c->data;
-			}
-		return NULL;
+	default:
+		break;
 	}
 	return c->data;
 }
@@ -720,7 +696,7 @@ has_whitespace(const char *s)
 }
 
 str
-mvc_import_table(Client cntxt, BAT ***bats, mvc *m, bstream *bs, sql_table *t, const char *sep, const char *rsep, const char *ssep, const char *ns, lng sz, lng offset, int best, bool from_stdin)
+mvc_import_table(Client cntxt, BAT ***bats, mvc *m, bstream *bs, sql_table *t, const char *sep, const char *rsep, const char *ssep, const char *ns, lng sz, lng offset, int best, bool from_stdin, bool escape)
 {
 	int i = 0, j;
 	node *n;
@@ -806,7 +782,7 @@ mvc_import_table(Client cntxt, BAT ***bats, mvc *m, bstream *bs, sql_table *t, c
 			fmt[i].size = ATOMsize(fmt[i].adt);
 		}
 		if ((msg = TABLETcreate_bats(&as, (BUN) (sz < 0 ? 1000 : sz))) == MAL_SUCCEED){
-			if (!sz || (SQLload_file(cntxt, &as, bs, out, sep, rsep, ssep ? ssep[0] : 0, offset, sz, best, from_stdin, t->base.name) != BUN_NONE &&
+			if (!sz || (SQLload_file(cntxt, &as, bs, out, sep, rsep, ssep ? ssep[0] : 0, offset, sz, best, from_stdin, t->base.name, escape) != BUN_NONE &&
 				(best || !as.error))) {
 				*bats = (BAT**) GDKzalloc(sizeof(BAT *) * as.nr_attrs);
 				if ( *bats == NULL){

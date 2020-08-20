@@ -591,7 +591,7 @@ func1(MTIMEsql_seconds, MTIMEsql_seconds_bulk, "sql_seconds", lng, int, sql_seco
 static inline str
 date_fromstr_func(date *ret, str s)
 {
-	if (date_fromstr(s, &(size_t){sizeof(date)}, &ret, true) < 0)
+	if (date_fromstr(s, &(size_t){sizeof(date)}, &ret, false) < 0)
 		throw(MAL, "mtime.date_fromstr", GDK_EXCEPTION);
 	return MAL_SUCCEED;
 }
@@ -614,7 +614,7 @@ func1_cand(MTIMEtimestamp_extract_date_bulk, "date", timestamp, date, timestamp_
 static inline str
 timestamp_fromstr_func(timestamp *ret, str s)
 {
-	if (timestamp_fromstr(s, &(size_t){sizeof(timestamp)}, &ret, true) < 0)
+	if (timestamp_fromstr(s, &(size_t){sizeof(timestamp)}, &ret, false) < 0)
 		throw(MAL, "mtime.timestamp_fromstr", GDK_EXCEPTION);
 	return MAL_SUCCEED;
 }
@@ -659,7 +659,7 @@ func1_cand(MTIMEtimestamp_frommsec_bulk, "timestamp_frommsec", lng, timestamp, m
 static inline str
 daytime_fromstr_func(daytime *ret, str s)
 {
-	if (daytime_fromstr(s, &(size_t){sizeof(daytime)}, &ret, true) < 0)
+	if (daytime_fromstr(s, &(size_t){sizeof(daytime)}, &ret, false) < 0)
 		throw(MAL, "mtime.daytime_fromstr", GDK_EXCEPTION);
 	return MAL_SUCCEED;
 }

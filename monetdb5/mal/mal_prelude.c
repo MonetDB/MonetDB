@@ -68,11 +68,13 @@ mal_module(str name, mel_atom *atoms, mel_func *funcs)
 	mel_modules++;
 }
 
-static void
+static char *
 initModule(Client c, char *name)
 {
+	char *msg = MAL_SUCCEED;
+
 	if (!getName(name))
-		return;
+		return msg;
 	Module m = getModule(putName(name));
 	if (m) { /* run prelude */
 		Symbol s = findSymbolInModule(m, putName("prelude"));
@@ -84,14 +86,15 @@ initModule(Client c, char *name)
 				int ret = 0;
 
 				assert(pci->fcn != NULL);
-				(*pci->fcn)(&ret);
+				msg = (*pci->fcn)(&ret);
 				(void)ret;
 			} else if (pci && pci->token == PATTERNsymbol) {
 				assert(pci->fcn != NULL);
-				(*pci->fcn)(c, NULL, NULL, NULL);
+				msg = (*pci->fcn)(c, NULL, NULL, NULL);
 			}
 		}
 	}
+	return msg;
 }
 
 /*
@@ -427,8 +430,11 @@ malPrelude(Client c, int listing, int embedded)
 			/* skip sql should be last to startup and mapi in the embedded version */
 			if (strcmp(mel_module_name[i], "sql") == 0 || (embedded && strcmp(mel_module_name[i], "mapi") == 0))
 				continue;
-			if (!mel_module_inits[i])
-				initModule(c, mel_module_name[i]);
+			if (!mel_module_inits[i]) {
+				msg = initModule(c, mel_module_name[i]);
+				if (msg)
+					return msg;
+			}
 		}
 		if (mel_module_inits[i]) {
 			msg = mel_module_inits[i]();
@@ -437,7 +443,9 @@ malPrelude(Client c, int listing, int embedded)
 			/* skip sql should be last to startup and mapi in the embedded version */
 			if (strcmp(mel_module_name[i], "sql") == 0 || (embedded && strcmp(mel_module_name[i], "mapi") == 0))
 				continue;
-			initModule(c, mel_module_name[i]);
+			msg = initModule(c, mel_module_name[i]);
+			if (msg)
+				return msg;
 		}
 	}
 	return MAL_SUCCEED;

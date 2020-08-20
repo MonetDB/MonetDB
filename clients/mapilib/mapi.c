@@ -2237,7 +2237,7 @@ mapi_reconnect(Mapi mid)
 		} else if (mid->database == NULL) {
 			/* case 1) */
 			if (port == 0)
-				port = 50000;	/* case 1a), hardwired default */
+				port = MAPI_PORT;	/* case 1a), hardwired default */
 			if (host == NULL)
 				host = "localhost";
 		} else {
@@ -2261,11 +2261,11 @@ mapi_reconnect(Mapi mid)
 					/* see comment above for why
 					 * we don't stat */
 					snprintf(buf, sizeof(buf),
-						 "%s/.s.monetdb.50000", host);
+							 "%s/.s.monetdb.%d", host, MAPI_PORT);
 					host = buf;
 				}
 #endif
-				port = 50000;
+				port = MAPI_PORT;
 			} else {
 				/* case 2b), no host, no port, but a
 				 * dbname, search for meros */
@@ -2336,7 +2336,7 @@ mapi_reconnect(Mapi mid)
 				/* case 2bIII) resort to TCP
 				 * connection on hardwired port */
 				host = "localhost";
-				port = 50000;
+				port = MAPI_PORT;
 			}
 		}
 		if (host != mid->hostname) {
@@ -2353,7 +2353,6 @@ mapi_reconnect(Mapi mid)
 		struct msghdr msg;
 		struct iovec vec;
 		struct sockaddr_un userver;
-		struct sockaddr *serv = (struct sockaddr *) &userver;
 
 		if (strlen(mid->hostname) >= sizeof(userver.sun_path)) {
 			return mapi_setError(mid, "path name too long", __func__, MERROR);
@@ -2382,7 +2381,7 @@ mapi_reconnect(Mapi mid)
 		};
 		strcpy_len(userver.sun_path, mid->hostname, sizeof(userver.sun_path));
 
-		if (connect(s, serv, sizeof(struct sockaddr_un)) == SOCKET_ERROR) {
+		if (connect(s, (struct sockaddr *) &userver, sizeof(struct sockaddr_un)) == SOCKET_ERROR) {
 			snprintf(errbuf, sizeof(errbuf),
 				 "initiating connection on socket failed: %s",
 #ifdef _MSC_VER
@@ -2421,7 +2420,6 @@ mapi_reconnect(Mapi mid)
 	} else
 #endif
 	{
-#ifdef HAVE_GETADDRINFO
 		struct addrinfo hints, *res, *rp;
 		char port[32];
 		int ret;
@@ -2456,12 +2454,12 @@ mapi_reconnect(Mapi mid)
 				closesocket(s);
 			}
 			snprintf(errbuf, sizeof(errbuf),
-				 "could not connect to %s:%s: %s",
-				 mid->hostname, port,
+					 "could not connect to %s:%s: %s",
+					 mid->hostname, port,
 #ifdef _MSC_VER
 					 wsaerror(WSAGetLastError())
 #else
-				 strerror(errno)
+					 strerror(errno)
 #endif
 				);
 		}
@@ -2474,75 +2472,28 @@ mapi_reconnect(Mapi mid)
 			}
 			return mapi_setError(mid, errbuf, __func__, MERROR);
 		}
-#else
-		struct sockaddr_in server;
-		struct hostent *hp;
-		struct sockaddr *serv = (struct sockaddr *) &server;
-
-		if (mid->hostname == NULL)
-			mid->hostname = strdup("localhost");
-
-		if ((hp = gethostbyname(mid->hostname)) == NULL) {
-			snprintf(errbuf, sizeof(errbuf), "gethostbyname failed: %s",
-#ifdef _MSC_VER
-				 wsaerror(WSAGetLastError())
-#else
-				 errno ? strerror(errno) : hstrerror(h_errno)
-#endif
-				);
-			return mapi_setError(mid, errbuf, __func__, MERROR);
-		}
-		server = (struct sockaddr_in) {
-			.sin_family = hp->h_addrtype,
-			.sin_port = htons((unsigned short) mid->port),
-		};
-		memcpy(&server.sin_addr, hp->h_addr_list[0], hp->h_length);
-		s = socket(server.sin_family, SOCK_STREAM
-#ifdef SOCK_CLOEXEC
-			   | SOCK_CLOEXEC
-#endif
-			   , IPPROTO_TCP);
-
-		if (s == INVALID_SOCKET) {
-			snprintf(errbuf, sizeof(errbuf), "opening socket failed: %s",
-#ifdef _MSC_VER
-				 wsaerror(WSAGetLastError())
-#else
-				 strerror(errno)
-#endif
-				);
-			return mapi_setError(mid, errbuf, __func__, MERROR);
-		}
-#if !defined(SOCK_CLOEXEC) && defined(HAVE_FCNTL)
-		(void) fcntl(s, F_SETFD, FD_CLOEXEC);
-#endif
-
-		if (connect(s, serv, sizeof(server)) == SOCKET_ERROR) {
-			snprintf(errbuf, sizeof(errbuf),
-				 "initiating connection on socket failed: %s",
-#ifdef _MSC_VER
-				 wsaerror(WSAGetLastError())
-#else
-				 strerror(errno)
-#endif
-				);
-			return mapi_setError(mid, errbuf, __func__, MERROR);
-		}
-#endif
 		/* compare our own address with that of our peer and
 		 * if they are the same, we were connected to our own
 		 * socket, so then we can't use this connection */
 		union {
-			struct sockaddr s;
-			struct sockaddr_in i;
+			struct sockaddr_storage ss;
+			struct sockaddr_in i4;
+			struct sockaddr_in6 i6;
 		} myaddr, praddr;
 		socklen_t myaddrlen, praddrlen;
-		myaddrlen = (socklen_t) sizeof(myaddr);
-		praddrlen = (socklen_t) sizeof(praddr);
-		if (getsockname(s, &myaddr.s, &myaddrlen) == 0 &&
-		    getpeername(s, &praddr.s, &praddrlen) == 0 &&
-		    myaddr.i.sin_addr.s_addr == praddr.i.sin_addr.s_addr &&
-		    myaddr.i.sin_port == praddr.i.sin_port) {
+		myaddrlen = (socklen_t) sizeof(myaddr.ss);
+		praddrlen = (socklen_t) sizeof(praddr.ss);
+		if (getsockname(s, (struct sockaddr *) &myaddr.ss, &myaddrlen) == 0 &&
+		    getpeername(s, (struct sockaddr *) &praddr.ss, &praddrlen) == 0 &&
+			myaddr.ss.ss_family == praddr.ss.ss_family &&
+			(myaddr.ss.ss_family == AF_INET
+			 ? myaddr.i4.sin_port == praddr.i4.sin_port
+			 : myaddr.i6.sin6_port == praddr.i6.sin6_port) &&
+			(myaddr.ss.ss_family == AF_INET
+			 ? myaddr.i4.sin_addr.s_addr == praddr.i4.sin_addr.s_addr
+			 : memcmp(myaddr.i6.sin6_addr.s6_addr,
+					  praddr.i6.sin6_addr.s6_addr,
+					  sizeof(praddr.i6.sin6_addr.s6_addr)) == 0)) {
 			closesocket(s);
 			return mapi_setError(mid, "connected to self",
 					     __func__, MERROR);
@@ -2926,7 +2877,7 @@ mapi_reconnect(Mapi mid)
 					if (q != NULL) {
 						mid->port = atoi(q);
 						if (mid->port == 0)
-							mid->port = 50000;	/* hardwired default */
+							mid->port = MAPI_PORT;	/* hardwired default */
 					}
 					db = red;
 				} else {
@@ -5562,4 +5513,3 @@ mapi_get_active(Mapi mid)
 {
 	return mid->active;
 }
-

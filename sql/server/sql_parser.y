@@ -593,6 +593,7 @@ int yydebug=1;
 	opt_chain
 	opt_constraint
 	opt_distinct
+	opt_escape
 	opt_grant_for
 	opt_nulls_first_last
 	opt_on_location
@@ -2743,7 +2744,7 @@ opt_on_location:
   ;
 
 copyfrom_stmt:
-    COPY opt_nr INTO qname opt_column_list FROM string_commalist opt_header_list opt_on_location opt_seps opt_null_string opt_best_effort opt_constraint opt_fwf_widths
+    COPY opt_nr INTO qname opt_column_list FROM string_commalist opt_header_list opt_on_location opt_seps opt_escape opt_null_string opt_best_effort opt_constraint opt_fwf_widths
 	{ dlist *l = L();
 	  append_list(l, $4);
 	  append_list(l, $5);
@@ -2751,13 +2752,14 @@ copyfrom_stmt:
 	  append_list(l, $8);
 	  append_list(l, $10);
 	  append_list(l, $2);
-	  append_string(l, $11);
-	  append_int(l, $12);
+	  append_string(l, $12);
 	  append_int(l, $13);
-	  append_list(l, $14);
+	  append_int(l, $14);
+	  append_list(l, $15);
 	  append_int(l, $9);
+	  append_int(l, $11);
 	  $$ = _symbol_create_list( SQL_COPYFROM, l ); }
-  | COPY opt_nr INTO qname opt_column_list FROM STDIN  opt_header_list opt_seps opt_null_string opt_best_effort opt_constraint
+  | COPY opt_nr INTO qname opt_column_list FROM STDIN  opt_header_list opt_seps opt_escape opt_null_string opt_best_effort opt_constraint
 	{ dlist *l = L();
 	  append_list(l, $4);
 	  append_list(l, $5);
@@ -2765,11 +2767,12 @@ copyfrom_stmt:
 	  append_list(l, $8);
 	  append_list(l, $9);
 	  append_list(l, $2);
-	  append_string(l, $10);
-	  append_int(l, $11);
+	  append_string(l, $11);
 	  append_int(l, $12);
+	  append_int(l, $13);
 	  append_list(l, NULL);
 	  append_int(l, 0);
+	  append_int(l, $10);
 	  $$ = _symbol_create_list( SQL_COPYFROM, l ); }
   | COPY sqlLOADER INTO qname FROM func_ref
 	{ dlist *l = L();
@@ -2878,6 +2881,12 @@ opt_nr:
 opt_null_string:
 	/* empty */		{ $$ = NULL; }
  |  	sqlNULL opt_as string	{ $$ = $3; }
+ ;
+
+opt_escape:
+	/* empty */	{ $$ = TRUE; }		/* ESCAPE is default */
+ |  	ESCAPE		{ $$ = TRUE; }
+ |  	NO ESCAPE	{ $$ = FALSE; }
  ;
 
 opt_best_effort:

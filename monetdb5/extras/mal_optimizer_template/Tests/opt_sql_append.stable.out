@@ -61,15 +61,15 @@ stdout of test 'opt_sql_append` in directory 'monetdb5/extras/mal_optimizer_temp
 % clob # type
 % 245 # length
 function user.main():void;
-    X_1:void := querylog.define("explain copy into ttt from \\'/tmp/xyz\\';":str, "sequential_pipe":str, 21:int);
+    X_1:void := querylog.define("explain copy into ttt from \\'/tmp/xyz\\';":str, "sequential_pipe":str, 22:int);
     X_4:int := sql.mvc();
-    (X_25:bat[:int], X_26:bat[:int], X_27:bat[:int]) := sql.copy_from(0x7fadb01d9990:ptr, "|":str, "\n":str, nil:str, "null":str, "/tmp/xyz":str, -1:lng, 0:lng, 0:int, nil:str, 0:int);
-    X_28:lng := aggr.count(X_25:bat[:int]);
-    X_29:lng := sql.claim(X_4:int, "sys":str, "ttt":str, X_28:lng);
-    X_33:int := sql.append(X_4:int, "sys":str, "ttt":str, "averylongcolumnnametomakeitlargeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee":str, X_29:lng, X_25:bat[:int]);
-    X_36:int := sql.append(X_33:int, "sys":str, "ttt":str, "b":str, X_29:lng, X_26:bat[:int]);
-    X_39:int := sql.append(X_36:int, "sys":str, "ttt":str, "c":str, X_29:lng, X_27:bat[:int]);
-    sql.affectedRows(X_39:int, X_28:lng);
+    (X_27:bat[:int], X_28:bat[:int], X_29:bat[:int]) := sql.copy_from(0x7f85501da060:ptr, "|":str, "\n":str, nil:str, "null":str, "/tmp/xyz":str, -1:lng, 0:lng, 0:int, nil:str, 0:int, 1:int);
+    X_30:lng := aggr.count(X_27:bat[:int]);
+    X_31:lng := sql.claim(X_4:int, "sys":str, "ttt":str, X_30:lng);
+    X_35:int := sql.append(X_4:int, "sys":str, "ttt":str, "averylongcolumnnametomakeitlargeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee":str, X_31:lng, X_27:bat[:int]);
+    X_38:int := sql.append(X_35:int, "sys":str, "ttt":str, "b":str, X_31:lng, X_28:bat[:int]);
+    X_41:int := sql.append(X_38:int, "sys":str, "ttt":str, "c":str, X_31:lng, X_29:bat[:int]);
+    sql.affectedRows(X_41:int, X_30:lng);
 end user.main;
 #inline               actions= 0 time=0 usec 
 #remap                actions= 0 time=1 usec 
@@ -119,15 +119,15 @@ end user.main;
 % clob # type
 % 245 # length
 function user.main():void;
-    X_1:void := querylog.define("explain copy into ttt from \\'/tmp/xyz\\';":str, "user_0":str, 21:int);
+    X_1:void := querylog.define("explain copy into ttt from \\'/tmp/xyz\\';":str, "user_0":str, 22:int);
     X_4:int := sql.mvc();
-    (X_25:bat[:int], X_26:bat[:int], X_27:bat[:int]) := sql.copy_from(0x7fadb01d9990:ptr, "|":str, "\n":str, nil:str, "null":str, "/tmp/xyz":str, -1:lng, 0:lng, 0:int, nil:str, 0:int);
-    X_28:lng := aggr.count(X_25:bat[:int]);
-    X_29:lng := sql.claim(X_4:int, "sys":str, "ttt":str, X_28:lng);
-    X_33:int := sql.append(X_4:int, "sys":str, "ttt":str, "averylongcolumnnametomakeitlargeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee":str, X_29:lng, X_25:bat[:int]);
-    X_36:int := sql.append(X_33:int, "sys":str, "ttt":str, "b":str, X_29:lng, X_26:bat[:int]);
-    X_39:int := sql.append(X_36:int, "sys":str, "ttt":str, "c":str, X_29:lng, X_27:bat[:int]);
-    sql.affectedRows(X_39:int, X_28:lng);
+    (X_27:bat[:int], X_28:bat[:int], X_29:bat[:int]) := sql.copy_from(0x7f85501da060:ptr, "|":str, "\n":str, nil:str, "null":str, "/tmp/xyz":str, -1:lng, 0:lng, 0:int, nil:str, 0:int, 1:int);
+    X_30:lng := aggr.count(X_27:bat[:int]);
+    X_31:lng := sql.claim(X_4:int, "sys":str, "ttt":str, X_30:lng);
+    X_35:int := sql.append(X_4:int, "sys":str, "ttt":str, "averylongcolumnnametomakeitlargeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee":str, X_31:lng, X_27:bat[:int]);
+    X_38:int := sql.append(X_35:int, "sys":str, "ttt":str, "b":str, X_31:lng, X_28:bat[:int]);
+    X_41:int := sql.append(X_38:int, "sys":str, "ttt":str, "c":str, X_31:lng, X_29:bat[:int]);
+    sql.affectedRows(X_41:int, X_30:lng);
 end user.main;
 #inline               actions= 0 time=0 usec 
 #remap                actions= 0 time=0 usec 

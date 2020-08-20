@@ -183,7 +183,6 @@ forkMserver(char *database, sabdb** stats, bool force)
 	char dbpath[1024];
 	char dbextra_path[1024];
 	char dbtrace_path[1024];
-	char port[32];
 	char listenaddr[512];
 	char muri[512]; /* possibly undersized */
 	char usock[512];
@@ -198,7 +197,7 @@ forkMserver(char *database, sabdb** stats, bool force)
 	char *embeddedpy = NULL;
 	char *embeddedc = NULL;
 	char *raw_strings = NULL;
-	char *ipv6 = NULL;
+	bool ipv6 = false;
 	char *dbextra = NULL;
 	char *dbtrace = NULL;
 	char *mserver5_extra = NULL;
@@ -534,7 +533,7 @@ forkMserver(char *database, sabdb** stats, bool force)
 		raw_strings="raw_strings=true";
 	}
 	mport = (unsigned int)getConfNum(_mero_props, "port");
-	ipv6 = getConfNum(_mero_props, "ipv6") == 1 ? "mapi_ipv6=true" : "mapi_ipv6=false";
+	ipv6 = getConfNum(_mero_props, "ipv6") == 1;
 
 	/* ok, now exec that mserver we want */
 	snprintf(dbpath, sizeof(dbpath),
@@ -561,37 +560,35 @@ forkMserver(char *database, sabdb** stats, bool force)
 	}
 
 	if (mydoproxy) {
-		argv[c++] = set; argv[c++] = "mapi_open=false";
 		/* we "proxy", so we can just solely use UNIX domain sockets
 		 * internally.  Before we hit our head, check if we can
 		 * actually use a UNIX socket (due to pathlength) */
 		if (strlen((*stats)->path) + 11 < sizeof(((struct sockaddr_un *) 0)->sun_path)) {
-			snprintf(port, sizeof(port), "mapi_port=0");
+			argv[c++] = set; argv[c++] = "mapi_listenaddr=none";
 			snprintf(usock, sizeof(usock), "mapi_usock=%s/.mapi.sock",
 					 (*stats)->path);
+			argv[c++] = set; argv[c++] = usock;
 		} else {
-			argv[c++] = set; argv[c++] = "mapi_autosense=true";
 			/* for logic here, see comment below */
-			snprintf(port, sizeof(port), "mapi_port=%u", mport + 1);
+			argv[c++] = set; argv[c++] = "mapi_port=0";
+			argv[c++] = set; argv[c++] = ipv6 ? "mapi_listenaddr=localhost" : "mapi_listenaddr=127.0.0.1";
 			snprintf(usock, sizeof(usock), "mapi_usock=");
+			argv[c++] = set; argv[c++] = usock;
 		}
 	} else {
 		if (listenaddr[0] != '\0') {
 			argv[c++] = set; argv[c++] = listenaddr;
 		} else {
-			argv[c++] = set; argv[c++] = "mapi_open=true";
+			argv[c++] = set; argv[c++] = ipv6 ? "mapi_listenaddr=all" : "mapi_listenaddr=0.0.0.0";
 		}
-		argv[c++] = set; argv[c++] = "mapi_autosense=true";
+		argv[c++] = set; argv[c++] = "mapi_port=0";
 		/* avoid this mserver binding to the same port as merovingian
 		 * but on another interface, (INADDR_ANY ... sigh) causing
 		 * endless redirects since 0.0.0.0 is not a valid address to
 		 * connect to, and hence the hostname is advertised instead */
-		snprintf(port, sizeof(port), "mapi_port=%u", mport + 1);
 		snprintf(usock, sizeof(usock), "mapi_usock=");
+		argv[c++] = set; argv[c++] = usock;
 	}
-	argv[c++] = set; argv[c++] = ipv6;
-	argv[c++] = set; argv[c++] = port;
-	argv[c++] = set; argv[c++] = usock;
 	argv[c++] = set; argv[c++] = vaultkey;
 	if (nthreads[0] != '\0') {
 		argv[c++] = set; argv[c++] = nthreads;

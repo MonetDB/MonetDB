@@ -24,7 +24,6 @@
 #define NEW_ARRAY( type, size )	(type*)GDKmalloc((size)*sizeof(type))
 #define STREQ(a, b) 		(strcmp(a, b)==0)
 
-#define SERVERPORT		50000
 #define SERVERMAXUSERS 		5
 
 mal_export str SERVERlisten_default(int *ret);
