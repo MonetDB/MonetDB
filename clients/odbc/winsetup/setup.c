@@ -258,7 +258,7 @@ ConfigDSN(HWND parent, WORD request, LPCSTR driver, LPCSTR attributes)
 	MergeFromProfileString(data.dsn, &data.uid, "uid", "monetdb");
 	MergeFromProfileString(data.dsn, &data.pwd, "pwd", "monetdb");
 	MergeFromProfileString(data.dsn, &data.host, "host", "localhost");
-	MergeFromProfileString(data.dsn, &data.port, "port", "50000");
+	MergeFromProfileString(data.dsn, &data.port, "port", MAPI_PORT_STR);
 	MergeFromProfileString(data.dsn, &data.database, "database", "");
 
 	ODBCLOG("ConfigDSN values: dsn=%s uid=%s pwd=%s host=%s port=%s database=%s\n",

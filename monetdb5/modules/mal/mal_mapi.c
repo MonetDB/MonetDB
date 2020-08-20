@@ -887,7 +887,7 @@ SERVERlisten(int port, const char *usockfile, int maxusers)
 str
 SERVERlisten_default(int *ret)
 {
-	int port = SERVERPORT;
+	int port = MAPI_PORT;
 	const char* p = GDKgetenv("mapi_port");
 
 	(void) ret;

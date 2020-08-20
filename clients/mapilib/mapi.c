@@ -2237,7 +2237,7 @@ mapi_reconnect(Mapi mid)
 		} else if (mid->database == NULL) {
 			/* case 1) */
 			if (port == 0)
-				port = 50000;	/* case 1a), hardwired default */
+				port = MAPI_PORT;	/* case 1a), hardwired default */
 			if (host == NULL)
 				host = "localhost";
 		} else {
@@ -2261,11 +2261,11 @@ mapi_reconnect(Mapi mid)
 					/* see comment above for why
 					 * we don't stat */
 					snprintf(buf, sizeof(buf),
-						 "%s/.s.monetdb.50000", host);
+							 "%s/.s.monetdb.%d", host, MAPI_PORT);
 					host = buf;
 				}
 #endif
-				port = 50000;
+				port = MAPI_PORT;
 			} else {
 				/* case 2b), no host, no port, but a
 				 * dbname, search for meros */
@@ -2336,7 +2336,7 @@ mapi_reconnect(Mapi mid)
 				/* case 2bIII) resort to TCP
 				 * connection on hardwired port */
 				host = "localhost";
-				port = 50000;
+				port = MAPI_PORT;
 			}
 		}
 		if (host != mid->hostname) {
@@ -2870,7 +2870,7 @@ mapi_reconnect(Mapi mid)
 					if (q != NULL) {
 						mid->port = atoi(q);
 						if (mid->port == 0)
-							mid->port = 50000;	/* hardwired default */
+							mid->port = MAPI_PORT;	/* hardwired default */
 					}
 					db = red;
 				} else {

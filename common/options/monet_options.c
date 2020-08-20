@@ -230,7 +230,7 @@ mo_builtin_settings(opt **Set)
 	i++;
 	set[i].kind = opt_builtin;
 	set[i].name = strdup("mapi_port");
-	set[i].value = strdup("50000");
+	set[i].value = strdup(MAPI_PORT_STR);
 	i++;
 	set[i].kind = opt_builtin;
 	set[i].name = strdup("sql_optimizer");
