@@ -2645,10 +2645,10 @@ doFile(Mapi mid, stream *fp, bool useinserts, bool interactive, int save_history
 #endif
 					if (*line) {
 						mnstr_printf(toConsole, "START TRANSACTION;\n");
-						dump_table(mid, NULL, line, toConsole, false, true, useinserts, false);
+						dump_table(mid, NULL, line, toConsole, false, true, useinserts, false, false);
 						mnstr_printf(toConsole, "COMMIT;\n");
 					} else
-						dump_database(mid, toConsole, 0, useinserts);
+						dump_database(mid, toConsole, 0, useinserts, false);
 #ifdef HAVE_POPEN
 					end_pager(saveFD);
 #endif
@@ -3533,7 +3533,7 @@ main(int argc, char **argv)
 	mapi_cache_limit(mid, -1);
 	if (dump) {
 		if (mode == SQL) {
-			exit(dump_database(mid, toConsole, 0, useinserts));
+			exit(dump_database(mid, toConsole, 0, useinserts, false));
 		} else {
 			fprintf(stderr, "Dump only supported for SQL\n");
 			exit(1);

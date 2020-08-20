@@ -485,6 +485,7 @@ stdout of test 'systemfunctions` in directory 'sql/test/sys-schema` itself:
 [ "sys",	"copyfrom",	10,	"int",	""	]
 [ "sys",	"copyfrom",	11,	"int",	""	]
 [ "sys",	"copyfrom",	12,	"varchar",	""	]
+[ "sys",	"copyfrom",	13,	"int",	""	]
 [ "sys",	"copyfrom",	0,	"table",	"importTable"	]
 [ "sys",	"copyfrom",	1,	"varchar",	""	]
 [ "sys",	"copyfrom",	2,	"varchar",	""	]

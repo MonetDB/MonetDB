@@ -682,8 +682,7 @@ BAThashsync(void *arg)
 #define finishhash(TYPE)						\
 	do {								\
 		const TYPE *restrict v = (const TYPE *) BUNtloc(bi, 0);	\
-		for (; p < ci->ncand; p++) {					\
-			c = hash_##TYPE(h, v + o - b->hseqbase);	\
+		for (; p < ci->ncand; p++) {				\
 			c = hash_##TYPE(h, v + o - b->hseqbase);	\
 			hget = HASHget(h, c);				\
 			h->nheads += hget == hnil;			\
