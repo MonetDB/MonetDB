@@ -351,7 +351,8 @@ console_destroy(stream *s)
 }
 
 
-stream *win_console_in_stream(const char *name)
+stream *
+win_console_in_stream(const char *name)
 {
 	HANDLE h = GetStdHandle(STD_INPUT_HANDLE);
 	struct console *c = NULL;
@@ -399,7 +400,8 @@ stream *win_console_in_stream(const char *name)
 	return s;
 }
 
-stream *win_console_out_stream(const char *name)
+stream *
+win_console_out_stream(const char *name)
 {
 	stream *s = create_stream(name);
 	if (s == NULL) {

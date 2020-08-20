@@ -15,8 +15,8 @@
 
 #include <assert.h>
 
-static pump_result pump_in(stream *restrict s);
-static pump_result pump_out(stream *restrict s, pump_action action);
+static pump_result pump_in(stream *s);
+static pump_result pump_out(stream *s, pump_action action);
 
 static ssize_t pump_read(stream *restrict s, void *restrict buf, size_t elmsize, size_t cnt);
 static ssize_t pump_write(stream *restrict s, const void *restrict buf, size_t elmsize, size_t cnt);
@@ -165,7 +165,7 @@ pump_destroy(stream *s)
 }
 
 static pump_result
-pump_in(stream *restrict s)
+pump_in(stream *s)
 {
 	pump_state *state = (pump_state *) s->stream_data.p;
 	inner_state_t *inner_state = state->inner_state;
@@ -223,7 +223,7 @@ pump_in(stream *restrict s)
 
 
 static pump_result
-pump_out(stream *restrict s, pump_action action)
+pump_out(stream *s, pump_action action)
 {
 	pump_state *state = (pump_state *) s->stream_data.p;
 	inner_state_t *inner_state = state->inner_state;
@@ -292,5 +292,3 @@ pump_out(stream *restrict s, pump_action action)
 
 
 }
-
-

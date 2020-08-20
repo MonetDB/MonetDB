@@ -253,29 +253,34 @@ bz2_stream(stream *inner, int preset)
 	return NULL;
 }
 
-stream *open_bzrstream(const char *filename)
+stream *
+open_bzrstream(const char *filename)
 {
 	mnstr_set_open_error(filename, 0, "BZIP2 support has been left out of this MonetDB");
 	return NULL;
 }
 
-stream *open_bzwstream(const char *filename, const char *mode)
+stream *
+open_bzwstream(const char *restrict filename, const char *restrict mode)
+{
+	(void) mode;
+	mnstr_set_open_error(filename, 0, "BZIP2 support has been left out of this MonetDB");
+	return NULL;
+}
+
+stream *
+open_bzrastream(const char *filename)
 {
 	mnstr_set_open_error(filename, 0, "BZIP2 support has been left out of this MonetDB");
 	return NULL;
 }
 
-stream *open_bzrastream(const char *filename)
+stream *
+open_bzwastream(const char *restrict filename, const char *restrict mode)
 {
-	mnstr_set_open_error(filename, 0, "BZIP2 support has been left out of this MonetDB");
-	return NULL;
-}
-
-stream *open_bzwastream(const char *filename, const char *mode)
-{
+	(void) mode;
 	mnstr_set_open_error(filename, 0, "BZIP2 support has been left out of this MonetDB");
 	return NULL;
 }
 
 #endif
-

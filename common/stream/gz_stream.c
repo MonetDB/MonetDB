@@ -234,29 +234,34 @@ gz_stream(stream *inner, int preset)
 	mnstr_set_open_error(inner->name, 0, "GZ support has been left out of this MonetDB");
 	return NULL;
 }
-stream *open_gzrstream(const char *filename)
+stream *
+open_gzrstream(const char *filename)
 {
 	mnstr_set_open_error(filename, 0, "GZ support has been left out of this MonetDB");
 	return NULL;
 }
 
-stream *open_gzwstream(const char *filename, const char *mode)
+stream *
+open_gzwstream(const char *restrict filename, const char *restrict mode)
+{
+	(void) mode;
+	mnstr_set_open_error(filename, 0, "GZ support has been left out of this MonetDB");
+	return NULL;
+}
+
+stream *
+open_gzrastream(const char *filename)
 {
 	mnstr_set_open_error(filename, 0, "GZ support has been left out of this MonetDB");
 	return NULL;
 }
 
-stream *open_gzrastream(const char *filename)
+stream *
+open_gzwastream(const char *restrict filename, const char *restrict mode)
 {
-	mnstr_set_open_error(filename, 0, "GZ support has been left out of this MonetDB");
-	return NULL;
-}
-
-stream *open_gzwastream(const char *filename, const char *mode)
-{
+	(void) mode;
 	mnstr_set_open_error(filename, 0, "GZ support has been left out of this MonetDB");
 	return NULL;
 }
 
 #endif
-

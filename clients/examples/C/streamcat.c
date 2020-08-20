@@ -549,7 +549,7 @@ int cmd_bstream(char *argv[])
 			FILE *f = fopen(filename, "r");
 			if (!f)
 				croak(2, "could not open '%s': %s", filename, strerror(errno));
-			copy_file_to_stream(f, bs, 42, false, 0);
+			copy_file_to_stream(f, bs, 42, false, MNSTR_FLUSH_DATA);
 			fclose(f);
 			mnstr_flush(bs, MNSTR_FLUSH_DATA);
 		}
