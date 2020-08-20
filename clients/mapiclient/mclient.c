@@ -2207,7 +2207,7 @@ mydestroy(void *private)
 #endif
 
 static bool
-doFile(Mapi mid, stream *fp, bool useinserts, bool interactive, int save_history)
+doFile(Mapi mid, stream *fp, bool useinserts, bool interactive, bool save_history)
 {
 	char *line = NULL;
 	char *buf = NULL;
@@ -3173,7 +3173,7 @@ main(int argc, char **argv)
 	bool useinserts = false;
 	int c = 0;
 	Mapi mid;
-	int save_history = 0;
+	bool save_history = false;
 	bool interactive = false;
 	bool has_fileargs = false;
 	int option_index = 0;
@@ -3252,7 +3252,7 @@ main(int argc, char **argv)
 	dbname = dotfile.dbname;
         language = dotfile.language;
 	host = dotfile.host;
-	save_history = (int)dotfile.save_history;
+	save_history = dotfile.save_history;
         output = dotfile.output;
         pagewidth = dotfile.pagewidth;
 	port = dotfile.port;
@@ -3315,7 +3315,7 @@ main(int argc, char **argv)
 			host = optarg;
 			break;
 		case 'H':
-			save_history = 1;
+			save_history = true;
 			break;
 		case 'i':
 			interactive = true;

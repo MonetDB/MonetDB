@@ -39,7 +39,7 @@ static const char *sql_commands[] = {
 
 static Mapi _mid;
 static char _history_file[FILENAME_MAX];
-static int _save_history = 0;
+static bool _save_history = false;
 static const char *language;
 
 static char *
@@ -290,7 +290,7 @@ continue_completion(rl_completion_func_t * func)
 }
 
 void
-init_readline(Mapi mid, const char *lang, int save_history)
+init_readline(Mapi mid, const char *lang, bool save_history)
 {
 	language = lang;
 	_mid = mid;
@@ -317,7 +317,7 @@ init_readline(Mapi mid, const char *lang, int save_history)
 			if (len == -1 || len >= FILENAME_MAX)
 				fprintf(stderr, "Warning: history filename path is too large\n");
 			else
-				_save_history = 1;
+				_save_history = true;
 		}
 		if (_save_history) {
 			FILE *f;
