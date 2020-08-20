@@ -199,13 +199,13 @@ MNDBConnect(ODBCDbc *dbc,
 	if (port == 0 && (s = getenv("MAPIPORT")) != NULL)
 		port = atoi(s);
 	if (port == 0 && dsn && *dsn) {
-		n = SQLGetPrivateProfileString(dsn, "port", "50000",
+		n = SQLGetPrivateProfileString(dsn, "port", MAPI_PORT_STR,
 					       buf, sizeof(buf), "odbc.ini");
 		if (n > 0)
 			port = atoi(buf);
 	}
 	if (port == 0)
-		port = 50000;
+		port = MAPI_PORT;
 
 	if (host == NULL || *host == 0) {
 		host = "localhost";

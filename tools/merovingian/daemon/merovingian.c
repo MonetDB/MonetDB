@@ -119,8 +119,6 @@ FILE *_mero_ctlout = NULL;
 FILE *_mero_ctlerr = NULL;
 /* broadcast socket for announcements */
 int _mero_broadcastsock = -1;
-/* ipv6 global any bind address constant */
-const struct in6_addr ipv6_any_addr = IN6ADDR_ANY_INIT;
 /* broadcast address/port */
 struct sockaddr_in _mero_broadcastaddr;
 /* hostname of this machine */
@@ -483,7 +481,7 @@ main(int argc, char *argv[])
 			exit(command_set(ckv, argc - 1, &argv[1]));
 		} else if (strcmp(argv[1], "start") == 0) {
 			if (argc > 3 && strcmp(argv[2], "-n") == 0)
-					merodontfork = 1;
+				merodontfork = 1;
 			if (argc == 3 + merodontfork) {
 				int len;
 				len = snprintf(dbfarm, sizeof(dbfarm), "%s",
@@ -537,15 +535,17 @@ main(int argc, char *argv[])
 					Mfprintf(stderr, "hmmm, can't detach from controlling tty, "
 							"continuing anyway\n");
 				if((retfd = open("/dev/null", O_RDONLY | O_CLOEXEC)) < 0) {
-					Mfprintf(stderr, "unable to dup stdin\n");
+					Mfprintf(stderr, "unable to dup stdin: %s\n", strerror(errno));
 					return(1);
 				}
 				dup_err = dup2(retfd, 0);
+				if(dup_err == -1) {
+					Mfprintf(stderr, "unable to dup stdin: %s\n", strerror(errno));
+				}
 				close(retfd);
 				close(pfd[0]); /* close unused read end */
 				retfd = pfd[1]; /* store the write end */
 				if(dup_err == -1) {
-					Mfprintf(stderr, "unable to dup stdin\n");
 					return(1);
 				}
 #if !defined(HAVE_PIPE2) || O_CLOEXEC == 0
@@ -721,7 +721,7 @@ main(int argc, char *argv[])
 	if ((remove(control_usock) != 0 && errno != ENOENT) ||
 		(remove(mapi_usock) != 0 && errno != ENOENT)) {
 		/* cannot remove socket files */
-		Mfprintf(stderr, "cannot remove socket files\n");
+		Mfprintf(stderr, "cannot remove socket files: %s\n", strerror(errno));
 		MERO_EXIT_CLEAN(1);
 	}
 
@@ -965,9 +965,9 @@ main(int argc, char *argv[])
 	Mfprintf(stdout, "monitoring dbfarm %s\n", dbfarm);
 
 	/* open up connections */
-	if ((e = openConnectionTCP(&sock, use_ipv6, host, port, stdout)) == NO_ERR &&
+	if ((e = openConnectionIP(&sock, false, use_ipv6, host, port, stdout)) == NO_ERR &&
 		(e = openConnectionUNIX(&socku, mapi_usock, 0, stdout)) == NO_ERR &&
-		(!discovery || (e = openConnectionUDP(&discsock, false, host, port)) == NO_ERR) &&
+		(!discovery || (e = openConnectionIP(&discsock, true, false, host, port, _mero_discout)) == NO_ERR) &&
 		(e = openConnectionUNIX(&unsock, control_usock, S_IRWXO, _mero_ctlout)) == NO_ERR) {
 		pthread_t ctid = 0;
 		pthread_t dtid = 0;

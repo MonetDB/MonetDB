@@ -3144,9 +3144,6 @@ usage(const char *prog, int xit)
 	exit(xit);
 }
 
-/* hardwired defaults, only used if monet environment cannot be found */
-#define defaultPort 50000
-
 static inline bool
 isfile(FILE *fp)
 {

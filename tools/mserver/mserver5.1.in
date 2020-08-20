@@ -82,7 +82,9 @@ option.
 .TP
 \fB\-\-config=\fP\fIfile\fP
 Config file to read options from.
-This file can contain all options as can be set with the --set flag.
+This file can contain all options as can be set with the
+.B \-\-set
+flag.
 See
 .IR "CONFIG FILE FORMAT" .
 .TP
@@ -243,9 +245,67 @@ connected clients.
 The funnel capability from
 .IR monetdbd (1)
 might be a more suitable solution for such workloads.
-
 Default
 .BR 64 .
+.TP
+.B mapi_usock
+The name of the UNIX domain socket file on which the server will
+listen for connections.  Note, there is usually a severe
+system-imposed length limitation on the name of the file.
+.TP
+.B mapi_port
+The TCP/IP port number on which the server will listen for
+connections.
+This is only used if the value of the
+.B mapi_listenaddr
+option is not equal to
+.BR none .
+Default
+.BR 50000 .
+If the value is
+.BR 0 ,
+the server will use a so called ephemeral port, i.e. one that is
+assigned by the system.
+After successfully starting to listen to a port, the value of the port
+can be retrieved from the file
+.B .conn
+inside the database 
+.RB ( \-\-dbpath )
+directory.
+.TP
+.B mapi_listenaddr
+The TCP/IP interface on which the server will listen for connections.
+Possibilites are:
+.RS
+.TP
+.B localhost
+The server listens only on the IPv4 and IPv6 loopback interface.
+This is the default.
+.TP
+.B 127.0.0.1
+The server listens only on the IPv4 loopback interface.
+.TP
+.B ::1
+The server listens only on the IPv6 loopback interface.
+.TP
+.B all
+The server listens on all IPv4 and IPv6 interfaces.
+.TP
+.B 0.0.0.0
+The server listens on all IPv4 interfaces.
+.TP
+.B ::
+The server listens on all IPv6 interfaces.
+.TP
+.B none
+The server will not listen on any TCP/IP interface (you need to use
+the UNIX domain socket interface).
+.TP
+.I hostname
+The server will listen on the interface designated by
+.I hostname
+which is looked up using the normal hostname lookup facilities.
+.RE
 .SH SQL PARAMETERS
 The SQL component of MonetDB 5 runs on top of the MAL environment.
 It has its own SQL-level specific settings.
