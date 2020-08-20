@@ -323,9 +323,9 @@ invoke_editor(int cnt, int key) {
 	fwrite(rl_line_buffer, sizeof(char), rl_end, fp);
 	fflush(fp);
 
-	editor = getenv("EDITOR");
+	editor = getenv("VISUAL");
 	if (!editor) {
-		editor = getenv("VISUAL");
+		editor = getenv("EDITOR");
 		if (!editor) {
 			readline_show_error("invoke_editor: EDITOR/VISUAL env variable not set\n");
 			goto bailout;
