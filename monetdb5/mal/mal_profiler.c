@@ -263,6 +263,7 @@ This information can be used to determine memory footprint and variable life tim
 						logadd(",\"file\":\"%s\"", cv + 1);
 						GDKfree(cv);
 						total += cnt * d->twidth;
+						logadd(",\"width\":%d", d->twidth);
 						/* keeping information about the individual auxiliary heaps is helpful during analysis. */
 						if( d->thash)
 							logadd(",\"hash\":" LLFMT, (lng) hashinfo(d->thash, d->batCacheid));
