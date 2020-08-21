@@ -361,7 +361,6 @@ main(int argc, char *argv[])
 		{"sockdir",       strdup("/tmp"),          0,                  STR},
 		{"listenaddr",    strdup("localhost"),     0,                  LADDR},
 		{"port",          strdup(MERO_PORT),       atoi(MERO_PORT),    INT},
-		{"ipv6",          strdup("false"),         0,                  BOOLEAN},
 
 		{"exittimeout",   strdup("60"),            60,                 INT},
 		{"forward",       strdup("proxy"),         0,                  OTHER},
@@ -422,8 +421,6 @@ main(int argc, char *argv[])
 	kv = findConfKey(_mero_db_props, "embedpy3");
 	kv->val = strdup("no");
 	kv = findConfKey(_mero_db_props, "embedc");
-	kv->val = strdup("no");
-	kv = findConfKey(_mero_db_props, "ipv6");
 	kv->val = strdup("no");
 	kv = findConfKey(_mero_db_props, "nclients");
 	kv->val = strdup("64");
@@ -642,7 +639,6 @@ main(int argc, char *argv[])
 	}
 	_mero_props = ckv;
 
-	use_ipv6 = getConfNum(_mero_props, "ipv6") == 1;
 	pidfilename = getConfVal(_mero_props, "pidfile");
 
 	p = getConfVal(_mero_props, "forward");
@@ -662,6 +658,17 @@ main(int argc, char *argv[])
 		writeProps(_mero_props, ".");
 	}
 	host = kv->val;
+
+	if (strncmp(host, "127.0.0.1", strlen("127.0.0.1")) == 0 ||
+		strncmp(host, "0.0.0.0", strlen("0.0.0.0")) == 0) {
+		use_ipv6 = false;
+	} else {
+		use_ipv6 = true;
+	}
+
+	if (strncmp(host, "all", strlen("all")) == 0) {
+		host = NULL;
+	}
 
 	kv = findConfKey(_mero_props, "port");
 	if (kv->ival <= 0 || kv->ival > 65535) {
@@ -967,7 +974,7 @@ main(int argc, char *argv[])
 	/* open up connections */
 	if ((e = openConnectionIP(&sock, false, use_ipv6, host, port, stdout)) == NO_ERR &&
 		(e = openConnectionUNIX(&socku, mapi_usock, 0, stdout)) == NO_ERR &&
-		(!discovery || (e = openConnectionIP(&discsock, true, false, host, port, _mero_discout)) == NO_ERR) &&
+		(!discovery || (e = openConnectionIP(&discsock, true, use_ipv6, host, port, _mero_discout)) == NO_ERR) &&
 		(e = openConnectionUNIX(&unsock, control_usock, S_IRWXO, _mero_ctlout)) == NO_ERR) {
 		pthread_t ctid = 0;
 		pthread_t dtid = 0;
