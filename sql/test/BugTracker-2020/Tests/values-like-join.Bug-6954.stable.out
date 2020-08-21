@@ -22,25 +22,23 @@ project (
 % clob # type
 % 197 # length
 function user.s2_0():void;
-    X_6:void := querylog.define("explain select 1 from (values (\\'one\\'), (\\'two\\')) as l(s), (values (\\'three\\'), (\\'four\\')) as r(s) where l.s like r.s;":str, "default_pipe":str, 27:int);
-barrier X_99:bit := language.dataflow();
-    X_10:bat[:str] := bat.new(nil:str);
-    X_13:bat[:str] := bat.append(X_10:bat[:str], "one":str, true:bit);
-    X_16:bat[:str] := bat.append(X_13:bat[:str], "two":str, true:bit);
-    X_17:bat[:str] := bat.new(nil:str);
-    X_19:bat[:str] := bat.append(X_17:bat[:str], "three":str, true:bit);
-    X_27:bat[:str] := bat.append(X_19:bat[:str], "four":str, true:bit);
-    X_40:bat[:str] := bat.pack(".%7":str);
-    X_41:bat[:str] := bat.pack("%7":str);
-    X_42:bat[:str] := bat.pack("tinyint":str);
-    X_43:bat[:int] := bat.pack(1:int);
-    X_44:bat[:int] := bat.pack(0:int);
-    (X_30:bat[:oid], X_31:bat[:oid]) := algebra.likejoin(X_16:bat[:str], X_27:bat[:str], "":str, nil:BAT, nil:BAT, true:bit, nil:lng);
-    X_35:bat[:str] := algebra.projection(X_30:bat[:oid], X_16:bat[:str]);
-    X_38:bat[:bte] := algebra.project(X_35:bat[:str], 1:bte);
-    language.pass(X_16:bat[:str]);
-exit X_99:bit;
-    sql.resultSet(X_40:bat[:str], X_41:bat[:str], X_42:bat[:str], X_43:bat[:int], X_44:bat[:int], X_38:bat[:bte]);
+    X_6:void := querylog.define("explain select 1 from (values (\\'one\\'), (\\'two\\')) as l(s), (values (\\'three\\'), (\\'four\\')) as r(s) where l.s like r.s;":str, "default_pipe":str, 25:int);
+barrier X_98:bit := language.dataflow();
+    X_39:bat[:str] := bat.pack(".%7":str);
+    X_40:bat[:str] := bat.pack("%7":str);
+    X_41:bat[:str] := bat.pack("tinyint":str);
+    X_42:bat[:int] := bat.pack(1:int);
+    X_43:bat[:int] := bat.pack(0:int);
+    X_12:bat[:str] := bat.new(nil:str);
+    X_14:bat[:str] := bat.appendBulk(X_12:bat[:str], true:bit, "one":str, "two":str);
+    X_24:bat[:str] := bat.new(nil:str);
+    X_25:bat[:str] := bat.appendBulk(X_24:bat[:str], true:bit, "three":str, "four":str);
+    X_28:bat[:oid] := algebra.likejoin(X_14:bat[:str], X_25:bat[:str], "":str, nil:BAT, nil:BAT, true:bit, nil:lng, false:bit);
+    X_34:bat[:str] := algebra.projection(X_28:bat[:oid], X_14:bat[:str]);
+    X_37:bat[:bte] := algebra.project(X_34:bat[:str], 1:bte);
+    language.pass(X_14:bat[:str]);
+exit X_98:bit;
+    sql.resultSet(X_39:bat[:str], X_40:bat[:str], X_41:bat[:str], X_42:bat[:int], X_43:bat[:int], X_37:bat[:bte]);
 end user.s2_0;
 #inline               actions= 0 time=0 usec 
 #remap                actions= 0 time=2 usec 
