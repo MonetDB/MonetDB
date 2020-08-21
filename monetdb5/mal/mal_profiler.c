@@ -246,9 +246,9 @@ This information can be used to determine memory footprint and variable life tim
 							logadd(",\"parent\":%d", VIEWtparent(d));
 							logadd(",\"seqbase\":"BUNFMT, d->hseqbase);
 							v= BBPquickdesc(VIEWtparent(d), false);
-							logadd(",\"persistence\":\"%s\"", (v &&  !v->batTransient ? "persistent" : "transient"));
+							logadd(",\"mode\":\"%s\"", (v &&  !v->batTransient ? "persistent" : "transient"));
 						} else
-							logadd(",\"persistence\":\"%s\"", (d->batTransient ? "transient" : "persistent"));
+							logadd(",\"mode\":\"%s\"", (d->batTransient ? "transient" : "persistent"));
 						logadd(",\"sorted\":%d", d->tsorted);
 						logadd(",\"revsorted\":%d", d->trevsorted);
 						logadd(",\"nonil\":%d", d->tnonil);
@@ -260,6 +260,7 @@ This information can be used to determine memory footprint and variable life tim
 						logadd(",\"file\":\"%s\"", cv + 1);
 						GDKfree(cv);
 						total += cnt * d->twidth;
+						logadd(",\"width\":%d", d->twidth);
 						/* keeping information about the individual auxiliary heaps is helpful during analysis. */
 						if( d->thash)
 							logadd(",\"hash\":" LLFMT, (lng) hashinfo(d->thash, d->batCacheid));
@@ -290,10 +291,10 @@ This information can be used to determine memory footprint and variable life tim
 					GDKfree(cv);
 					GDKfree(stmtq);
 				}
-				logadd(",\"eol\":%d", getVarEolife(mb,getArg(pci,j)));
-				logadd(",\"used\":%d", isVarUsed(mb,getArg(pci,j)));
-				logadd(",\"fixed\":%d", isVarFixed(mb,getArg(pci,j)));
-				logadd(",\"udf\":%d", isVarUDFtype(mb,getArg(pci,j)));
+				// logadd(",\"eol\":%d", getVarEolife(mb,getArg(pci,j))); useful for MAL debugging
+				// logadd(",\"used\":%d", isVarUsed(mb,getArg(pci,j)));
+				// logadd(",\"fixed\":%d", isVarFixed(mb,getArg(pci,j)));
+				// logadd(",\"udf\":%d", isVarUDFtype(mb,getArg(pci,j)));
 				GDKfree(tname);
 				logadd("}");
 			}
