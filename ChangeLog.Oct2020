@@ -1,0 +1,11 @@
+# ChangeLog file for devel
+# This file is updated with Maddlog
+
+* Wed Jun 10 2020 Sjoerd Mullender <sjoerd@acm.org>
+- Removed support for LiDAR data, that is the SQL procedures
+  sys.lidarattach, sys.lidarload, and sys.lidarexport.
+
+* Thu Apr  2 2020 Martin Kersten <mk@cwi.nl>
+- The sys.queue() has been turned into a circular buffer to allow for
+  inspection of both active, paused and recently executed queries.
+
