@@ -1,0 +1,59 @@
+server afhandeling van xcommand calls
+    sql_scenario.c:SQLparser
+
+client kant van xcommand 
+    bijvoorbeeld mapi.c:mapi_setAutocommit
+
+bepaling van MAPI protocol server kant
+    mal_mapi.c:doChallenge voor parsen en mal_session.c:MSscheduleClient zet het Client.protocol field gelijk aan protocol
+
+Opmerkingen:
+mapi.c/h kent geen protocol verschillen zoals PROTOCOL_9 en PROTOCOL_10/"PROT10".
+
+Via een aanvankelijk mapi xcommand aangeven dat we PROTOCOL_COLUMNAR gebruiken. PROTOCOL_COLUMNAR moet er voor zorgen dat sql_result sets geen tablet results gaat maken maar alleen de bats vasthoud.
+De headers moeten
+
+gdb -ex r --args mserver5 --dbpath=devdb  --set "mapi_port=50000"
+gdb -ex r --args mserver5 --dbpath=devdb1 --set "mapi_port=50001"
+
+mclient -p 50001
+CREATE TABLE t1 (i int);
+INSERT INTO t1 VALUES (20), (10), (NULL), (30);
+
+CREATE REMOTE TABLE rt (i int) ON 'mapi:monetdb://127.0.0.1:50001/devdb1/sys/t1';
+
+SELECT * FROM rt;
+
+this will create the following mal function user.%4 on the local side in sql_gencode.c:_create_relational_remote.
+
+function user.%4():bat[:int];
+    X_2:bat[:int] := bat.new(nil:int);
+    X_4:str := remote.connect("sys.rt":str, "msql":str);
+    remote.put(X_4:str, 15:int);
+    X_11:str := remote.put(X_4:str, "user":str);
+    X_13:str := remote.put(X_4:str, "l4":str);
+    X_15:str := remote.put(X_4:str, "\nproject (\ntable(sys.t1) [ \"t1\".\"i\" as \"rt\".\"i\" ] COUNT \n) [ \"rt\".\"i\" ] REMOTE sys.rt\n":str);
+    X_17:str := remote.put(X_4:str, "":str);
+    X_19:str := remote.put(X_4:str, "int":str);
+    remote.exec(X_4:str, "sql":str, "register":str, X_11:str, X_13:str, X_15:str, X_17:str, X_19:str);
+    remote.put(X_4:str, 5:int);
+    X_25:str := remote.put(X_4:str, "df7b54d9-da0f-4f38-a40b-10f675da1e7e":str);
+    X_27:str := remote.put(X_4:str, "8499eb56-2c5b-4509-97a5-ac4b90d3b309":str);
+    remote.exec(X_4:str, "remote":str, "register_supervisor":str, X_25:str, X_27:str);
+    remote.register_supervisor("df7b54d9-da0f-4f38-a40b-10f675da1e7e":str, "8499eb56-2c5b-4509-97a5-ac4b90d3b309":str);
+    X_30:str := remote.put(X_4:str, X_2:bat[:int]);
+    X_30:str := remote.exec(X_4:str, "user":str, "l4":str);
+    X_2:bat[:int] := remote.get(X_4:str, X_30:str);
+    remote.disconnect(X_4:str);
+    return X_2:bat[:int] := X_2:bat[:int];
+
+
+DESIGN
+Xset_protocol PROTOCOL_COLUMNAR
+sql_result checkt taal
+stuurt header op welke ook de volgorde van opsturen van de BAT's bepaald en stuurt vervolgens de BAT's ook op in die volgorde via de onderliggende mapi stream a la remote.
+
+de client leest de header stream en pakt daarna de onderliggende read stream en vangt daarmee de bats op.
+
+
+

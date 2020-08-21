@@ -1628,6 +1628,76 @@ cleanup:
 	return fres;
 }
 
+// TODO copied from/based on remote.c:RMTbincopyto
+static int
+mvc_export_table_columnar(stream *s, res_table *t, BAT *order) {
+	int i;
+
+	(void) order;
+
+	if (!t)
+		return -1;
+	if (!s)
+		return 0;
+
+	for (i = 1; i <= t->nr_cols; i++) {
+		res_col *c = t->cols + (i - 1);
+
+		if (!c->b)
+			break;
+
+		BAT* b = BATdescriptor(c->b);
+		if (b == NULL) {
+			while (--i >= 1)
+				BBPunfix(b->batCacheid);
+			return -1;
+		}
+
+		BAT* bn = b;
+
+		bool sendtheap = b->ttype != TYPE_void && b->tvarsized;
+
+		mnstr_printf(s, /*JSON*/"{"
+				"\"version\":1,"
+				"\"ttype\":%d,"
+				"\"hseqbase\":" OIDFMT ","
+				"\"tseqbase\":" OIDFMT ","
+				"\"tsorted\":%d,"
+				"\"trevsorted\":%d,"
+				"\"tkey\":%d,"
+				"\"tnonil\":%d,"
+				"\"tdense\":%d,"
+				"\"size\":" BUNFMT ","
+				"\"tailsize\":%zu,"
+				"\"theapsize\":%zu"
+				"}\n",
+				bn->ttype,
+				bn->hseqbase, bn->tseqbase,
+				bn->tsorted, bn->trevsorted,
+				bn->tkey,
+				bn->tnonil,
+				BATtdense(bn),
+				bn->batCount,
+				(size_t)bn->batCount * Tsize(bn),
+				sendtheap && bn->batCount > 0 ? bn->tvheap->free : 0
+				);
+
+		if (bn->batCount > 0) {
+			mnstr_write(s, /* tail */
+			Tloc(bn, 0), bn->batCount * Tsize(bn), 1);
+			if (sendtheap)
+				mnstr_write(s, /* theap */
+						Tbase(bn), bn->tvheap->free, 1);
+		}
+
+		mnstr_flush(s);
+
+		BBPunfix(b->batCacheid);
+	}
+
+	return 0;
+}
+
 static int
 mvc_export_table(backend *b, stream *s, res_table *t, BAT *order, BUN offset, BUN nr, const char *btag, const char *sep, const char *rsep, const char *ssep, const char *ns)
 {
@@ -2347,11 +2417,6 @@ mvc_export_result(backend *b, stream *s, int res_id, bool header, lng starttime,
 	if (!s || !t)
 		return 0;
 
-	if (b->client->protocol == PROTOCOL_10) {
-		// Don't do anything
-		return 0;
-	}
-
 	/* Proudly supporting SQLstatementIntern's output flag */
 	if (b->output_format == OFMT_NONE) {
 		return 0;
@@ -2375,6 +2440,11 @@ mvc_export_result(backend *b, stream *s, int res_id, bool header, lng starttime,
 	order = BATdescriptor(t->order);
 	if (!order)
 		return -1;
+
+	if (b->client->protocol == PROTOCOL_COLUMNAR) {
+		if (mnstr_flush(s) < 0) return -1;
+		return mvc_export_table_columnar(s, t, order);
+	}
 
 	count = m->reply_size;
 	if (m->reply_size != -2 && (count <= 0 || count >= t->nr_rows)) {

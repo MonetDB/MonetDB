@@ -28,6 +28,7 @@
 #include "mapi.h"
 #include "monetdbe_mapi.h"
 #include "msqldump.h"
+#include "sql_result.h"
 
 #define UNUSED(x) (void)(x)
 
@@ -774,6 +775,221 @@ monetdbe_in_transaction(monetdbe_database dbhdl)
 	return result;
 }
 
+typedef struct _binbat_v1 {
+	int Ttype;
+	oid Hseqbase;
+	oid Tseqbase;
+	bool
+		Tsorted:1,
+		Trevsorted:1,
+		Tkey:1,
+		Tnonil:1,
+		Tdense:1;
+	BUN size;
+	size_t headsize;
+	size_t tailsize;
+	size_t theapsize;
+} binbat;
+
+// TODO: copied from/based on remote.c:RMTinternalcopyfrom
+static inline str
+RMTinternalcopyfrom(BAT **ret, stream *sin)
+{
+	ssize_t sz = 0, rd;
+
+	char buf[256] = {0};
+
+	/* read the JSON header */
+	while ((rd = mnstr_read(sin, &buf[sz], 1, 1)) == 1 && buf[sz] != '\n') {
+		sz += rd;
+	}
+	if (rd < 0) {
+		throw(MAL, "remote.get", "could not read BAT JSON header");
+	}
+	if (buf[0] == '!') {
+		char *result;
+		if((result = GDKstrdup(buf)) == NULL)
+			throw(MAL, "remote.get", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		return result;
+	}
+
+	binbat bb = { 0, 0, 0, false, false, false, false, false, 0, 0, 0, 0 };
+	char *nme = NULL;
+	char *val = NULL;
+	char tmp;
+	size_t len;
+	lng lv, *lvp;
+
+	BAT *b;
+
+	char *hdr = buf;
+
+	/* hdr is a JSON structure that looks like
+	 * {"version":1,"ttype":6,"tseqbase":0,"tailsize":4,"theapsize":0}
+	 * we take the binary data directly from the stream */
+
+	/* could skip whitespace, but we just don't allow that */
+	if (*hdr++ != '{')
+		throw(MAL, "remote.bincopyfrom", "illegal input, not a JSON header (got '%s')", hdr - 1);
+	while (*hdr != '\0') {
+		switch (*hdr) {
+			case '"':
+				/* we assume only numeric values, so all strings are
+				 * elems */
+				if (nme != NULL) {
+					*hdr = '\0';
+				} else {
+					nme = hdr + 1;
+				}
+				break;
+			case ':':
+				val = hdr + 1;
+				break;
+			case ',':
+			case '}':
+				if (val == NULL)
+					throw(MAL, "remote.bincopyfrom",
+							"illegal input, JSON value missing");
+				*hdr = '\0';
+
+				lvp = &lv;
+				len = sizeof(lv);
+				/* tseqbase can be 1<<31/1<<63 which causes overflow
+				 * in lngFromStr, so we check separately */
+				if (strcmp(val,
+#if SIZEOF_OID == 8
+						   "9223372036854775808"
+#else
+						   "2147483648"
+#endif
+						) == 0 &&
+					strcmp(nme, "tseqbase") == 0) {
+					bb.Tseqbase = oid_nil;
+				} else {
+					/* all values should be non-negative, so we check that
+					 * here as well */
+					if (lngFromStr(val, &len, &lvp, true) < 0 ||
+						lv < 0 /* includes lng_nil */)
+						throw(MAL, "remote.bincopyfrom",
+							  "bad %s value: %s", nme, val);
+
+					/* deal with nme and val */
+					if (strcmp(nme, "version") == 0) {
+						if (lv != 1)
+							throw(MAL, "remote.bincopyfrom",
+								  "unsupported version: %s", val);
+					} else if (strcmp(nme, "hseqbase") == 0) {
+#if SIZEOF_OID < SIZEOF_LNG
+						if (lv > GDK_oid_max)
+							throw(MAL, "remote.bincopyfrom",
+									  "bad %s value: %s", nme, val);
+#endif
+						bb.Hseqbase = (oid)lv;
+					} else if (strcmp(nme, "ttype") == 0) {
+						if (lv >= GDKatomcnt)
+							throw(MAL, "remote.bincopyfrom",
+								  "bad %s value: %s", nme, val);
+						bb.Ttype = (int) lv;
+					} else if (strcmp(nme, "tseqbase") == 0) {
+#if SIZEOF_OID < SIZEOF_LNG
+						if (lv > GDK_oid_max)
+							throw(MAL, "remote.bincopyfrom",
+								  "bad %s value: %s", nme, val);
+#endif
+						bb.Tseqbase = (oid) lv;
+					} else if (strcmp(nme, "tsorted") == 0) {
+						bb.Tsorted = lv != 0;
+					} else if (strcmp(nme, "trevsorted") == 0) {
+						bb.Trevsorted = lv != 0;
+					} else if (strcmp(nme, "tkey") == 0) {
+						bb.Tkey = lv != 0;
+					} else if (strcmp(nme, "tnonil") == 0) {
+						bb.Tnonil = lv != 0;
+					} else if (strcmp(nme, "tdense") == 0) {
+						bb.Tdense = lv != 0;
+					} else if (strcmp(nme, "size") == 0) {
+						if (lv > (lng) BUN_MAX)
+							throw(MAL, "remote.bincopyfrom",
+								  "bad %s value: %s", nme, val);
+						bb.size = (BUN) lv;
+					} else if (strcmp(nme, "tailsize") == 0) {
+						bb.tailsize = (size_t) lv;
+					} else if (strcmp(nme, "theapsize") == 0) {
+						bb.theapsize = (size_t) lv;
+					} else {
+						throw(MAL, "remote.bincopyfrom",
+							  "unknown element: %s", nme);
+					}
+				}
+				nme = val = NULL;
+				break;
+		}
+		hdr++;
+	}
+
+	b = COLnew(0, bb.Ttype, bb.size, TRANSIENT);
+	if (b == NULL)
+		throw(MAL, "remote.get", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+
+	/* for strings, the width may not match, fix it to match what we
+	 * retrieved */
+	if (bb.Ttype == TYPE_str && bb.size) {
+		b->twidth = (unsigned short) (bb.tailsize / bb.size);
+		b->tshift = ATOMelmshift(Tsize(b));
+	}
+
+	if (bb.tailsize > 0) {
+		if (HEAPextend(&b->theap, bb.tailsize, true) != GDK_SUCCEED ||
+			mnstr_read(sin, b->theap.base, bb.tailsize, 1) < 0)
+			goto bailout;
+		b->theap.dirty = true;
+	}
+	if (bb.theapsize > 0) {
+		if (HEAPextend(b->tvheap, bb.theapsize, true) != GDK_SUCCEED ||
+			mnstr_read(sin, b->tvheap->base, bb.theapsize, 1) < 0)
+			goto bailout;
+		b->tvheap->free = bb.theapsize;
+		b->tvheap->dirty = true;
+	}
+
+	/* set properties */
+	b->tseqbase = bb.Tdense ? bb.Tseqbase : oid_nil;
+	b->tsorted = bb.Tsorted;
+	b->trevsorted = bb.Trevsorted;
+	b->tkey = bb.Tkey;
+	b->tnonil = bb.Tnonil;
+	if (bb.Ttype == TYPE_str && bb.size)
+		BATsetcapacity(b, (BUN) (bb.tailsize >> b->tshift));
+	BATsetcount(b, bb.size);
+	b->batDirtydesc = true;
+
+	/* read blockmode flush */
+	while (mnstr_read(sin, &tmp, 1, 1) > 0) {
+		TRC_ERROR(MAL_REMOTE, "Expected flush, got: %c\n", tmp);
+	}
+
+	BATsettrivprop(b);
+
+	*ret = b;
+	return(MAL_SUCCEED);
+
+  bailout:
+	BBPreclaim(b);
+	throw(MAL, "remote.bincopyfrom", "reading failed");
+}
+
+// TODO: Copied from sql.c
+static str
+getBackendContext(Client cntxt, backend **be)
+{
+	str msg;
+
+	if ((msg = checkSQLContext(cntxt)) != MAL_SUCCEED)
+		return msg;
+	*be = (backend *) cntxt->sqlcontext;
+	return MAL_SUCCEED;
+}
+
 char*
 monetdbe_query(monetdbe_database dbhdl, char* query, monetdbe_result** result, monetdbe_cnt* affected_rows)
 {
@@ -794,12 +1010,83 @@ monetdbe_query(monetdbe_database dbhdl, char* query, monetdbe_result** result, m
 			return mdbe->msg;
 		}
 
+		int fields = mapi_get_field_count(hdl);
+		for (int i = 0; i < fields; i++) {
+			char* s = mapi_get_name(hdl, i);
+			if (s == NULL)
+				s = "";
+			printf("%s%s", " ", s);
+		}
+
+		backend *be = NULL;
+		if ((mdbe->msg = getBackendContext(mdbe->c, &be)) != NULL)
+			return mdbe->msg;
+
+		BAT* order; // just to first column in the result set.
+		RMTinternalcopyfrom(&order, mapi_get_from(mdbe->mid));
+
+		mvc_result_table(be, 0, fields, Q_TABLE, order);
+		char* tblname = mapi_get_table(hdl, 0);
+
+		for (int i = 0; i < fields; i++) {
+			BAT *b = NULL;
+			if (i > 0)
+				RMTinternalcopyfrom(&b, mapi_get_from(mdbe->mid));
+			else
+				b = order; // We already fetched this first column
+
+			char* colname = mapi_get_name(hdl, i);
+			char* tpename = mapi_get_type(hdl, i);
+			int digits = mapi_get_digits(hdl, i);
+			int scale = mapi_get_scale(hdl, i);
+
+			if ( b == NULL)
+				mdbe->msg= createException(MAL,"sql.resultset",SQLSTATE(HY005) "Cannot access column descriptor ");
+			else if (mvc_result_column(be, tblname, colname, tpename, digits, scale, b))
+				mdbe->msg = createException(SQL, "sql.resultset", SQLSTATE(42000) "Cannot access column descriptor %s.%s",tblname,colname);
+			if( b)
+				BBPkeepref(b->batCacheid);
+		}
+
+		if (result) {
+			// TODO: copied from monetdbe_query_internal
+
+			monetdbe_result_internal *res_internal = NULL;
+			mvc *m = be->mvc;
+			if (!(res_internal = GDKzalloc(sizeof(monetdbe_result_internal)))) {
+				mdbe->msg = createException(MAL, "monetdbe.monetdbe_query_internal", MAL_MALLOC_FAIL);
+				return mdbe->msg;
+			}
+			if (m->emode & m_prepare)
+				res_internal->type = Q_PREPARE;
+			else
+				res_internal->type = (be->results) ? be->results->query_type : m->type;
+
+			res_internal->res.last_id = be->last_id;
+			res_internal->mdbe = mdbe;
+			*result = (monetdbe_result*) res_internal;
+			m->reply_size = -2; /* do not clean up result tables */
+
+			if (be->results) {
+				res_internal->res.ncols = (size_t) be->results->nr_cols;
+				res_internal->monetdbe_resultset = be->results;
+				if (be->results->nr_cols > 0)
+					res_internal->res.nrows = be->results->nr_rows;
+				be->results = NULL;
+				res_internal->converted_columns = GDKzalloc(sizeof(monetdbe_column*) * res_internal->res.ncols);
+				if (!res_internal->converted_columns) {
+					mdbe->msg = createException(MAL, "monetdbe.monetdbe_query_internal", MAL_MALLOC_FAIL);
+					return mdbe->msg;
+				}
+			}
+		}
+
 		return mdbe->msg;
 	}
-	
-	mdbe->msg = monetdbe_query_internal(mdbe, query, result, affected_rows, NULL, 'S');
-	
-	return mdbe->msg;
+	else {
+		mdbe->msg = monetdbe_query_internal(mdbe, query, result, affected_rows, NULL, 'S');
+		return mdbe->msg;
+	}
 }
 
 char*
