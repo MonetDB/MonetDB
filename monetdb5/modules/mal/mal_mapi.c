@@ -646,6 +646,16 @@ start_listen(SOCKET *sockp, int *portp, const char *listenaddr,
 #endif
 			closesocket(sock);
 			sock = INVALID_SOCKET;
+			if (e == EADDRNOTAVAIL && ipv6_vs6only == 0 &&
+				(strcmp(listenaddr, "::") == 0 ||
+				 strcmp(listenaddr, "::1") == 0)) {
+				/* IPv6 failed, maybe just IPv4 will work */
+				freeaddrinfo(result);
+				return start_listen(sockp, portp,
+									strcmp(listenaddr, "::") == 0
+									? "0.0.0.0" : "127.0.0.1",
+									host, hostlen, maxusers);
+			}
 			continue;
 		}
 		if (listen(sock, maxusers) == SOCKET_ERROR) {
