@@ -17,3 +17,4 @@ isauuid.Bug-6934
 tpch-cube.Bug-6938
 HAVE_PYMONETDB?remote-table-like.Bug-6841
 KNOWNFAIL?copy-empty-blob.Bug-6948
+values-like-join.Bug-6954
