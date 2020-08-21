@@ -176,19 +176,19 @@ renderProfilerEvent(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int
 	if( pci->token < FCNcall || pci->token > PATcall)
 		logadd(",\"operator\":\"%s\"", operatorName(pci->token));
     	if (!GDKinmemory() && !GDKembedded()) {
-        	char *uuid = NULL;
-		str c;
-		if ((c = msab_getUUID(&uuid)) == NULL) {
-			logadd(",\"session\":\"%s\"", uuid);
-			free(uuid);
-		} else
-			free(c);
-    	}
-	logadd(",\"state\":\"%s\"", start?"start":"done");
-	logadd(",\"usec\":"LLFMT, pci->ticks);
-	const char *algo = MT_thread_getalgorithm();
-	if (algo) {
-		logadd(",\"algorithm\":\"%s\"", algo);
+			char *uuid = NULL;
+			str c;
+			if ((c = msab_getUUID(&uuid)) == NULL) {
+				logadd(",\"session\":\"%s\"", uuid);
+				free(uuid);
+			} else
+				free(c);
+		}
+		logadd(",\"state\":\"%s\"", start?"start":"done");
+		logadd(",\"usec\":"LLFMT, pci->ticks);
+		const char *algo = MT_thread_getalgorithm();
+		if (algo) {
+			logadd(",\"algorithm\":\"%s\"", algo);
 	}
 /* EXAMPLE MAL statement argument decomposition
  * The eventparser may assume this layout for ease of parsing
@@ -291,7 +291,7 @@ This information can be used to determine memory footprint and variable life tim
 					GDKfree(cv);
 					GDKfree(stmtq);
 				}
-				// logadd(",\"eol\":%d", getVarEolife(mb,getArg(pci,j))); useful for MAL debugging
+				logadd(",\"eol\":%d", getVarEolife(mb,getArg(pci,j)));
 				// logadd(",\"used\":%d", isVarUsed(mb,getArg(pci,j)));
 				// logadd(",\"fixed\":%d", isVarFixed(mb,getArg(pci,j)));
 				// logadd(",\"udf\":%d", isVarUDFtype(mb,getArg(pci,j)));
