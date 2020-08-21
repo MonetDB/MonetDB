@@ -1562,11 +1562,11 @@ THRinit(void)
 	Thread s;
 	static bool first = true;
 
-	if ((THRdata[0] = (void *) file_wastream(stdout, "stdout")) == NULL) {
+	if ((THRdata[0] = (void *) stdout_wastream()) == NULL) {
 		TRC_CRITICAL(GDK, "malloc for stdout failed\n");
 		return -1;
 	}
-	if ((THRdata[1] = (void *) file_rastream(stdin, "stdin")) == NULL) {
+	if ((THRdata[1] = (void *) stdin_rastream()) == NULL) {
 		TRC_CRITICAL(GDK, "malloc for stdin failed\n");
 		mnstr_destroy(THRdata[0]);
 		THRdata[0] = NULL;

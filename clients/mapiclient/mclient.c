@@ -243,7 +243,7 @@ timerResume(void)
 static void
 timerEnd(void)
 {
-	mnstr_flush(toConsole);
+	mnstr_flush(toConsole, MNSTR_FLUSH_DATA);
 	t1 = gettime();
 	assert(t1 >= t0);
 }
@@ -280,7 +280,7 @@ timerHuman(int64_t sqloptimizer, int64_t maloptimizer, int64_t querytime, bool s
 	if (timermode == T_CLOCK && (singleinstr != total)) {
 		/* print wall-clock in "human-friendly" format */
 		fflush(stderr);
-		mnstr_flush(toConsole);
+		mnstr_flush(toConsole, MNSTR_FLUSH_DATA);
 		if (t / 1000 < 1000) {
 			fprintf(stderr, "clk: %" PRId64 ".%03d ms\n", t / 1000, (int) (t % 1000));
 			fflush(stderr);
@@ -306,7 +306,7 @@ timerHuman(int64_t sqloptimizer, int64_t maloptimizer, int64_t querytime, bool s
 	if (timermode == T_PERF && (!total || singleinstr != total)) {
 		/* for performance measures we use milliseconds as the base */
 		fflush(stderr);
-		mnstr_flush(toConsole);
+		mnstr_flush(toConsole, MNSTR_FLUSH_DATA);
 		if (!total)
 			fprintf(stderr, "sql:%" PRId64 ".%03d opt:%" PRId64 ".%03d run:%" PRId64 ".%03d ",
 				 sqloptimizer / 1000, (int) (sqloptimizer % 1000),
@@ -827,7 +827,7 @@ XMLrenderer(MapiHdl hdl)
 	char *name;
 
 	/* we must use toConsole since the XML file is encoded in UTF-8 */
-	mnstr_flush(toConsole);
+	mnstr_flush(toConsole, MNSTR_FLUSH_DATA);
 	mnstr_printf(toConsole, "<?xml version='1.0' encoding='UTF-8'?>\n");
 	mnstr_printf(toConsole,
 		     "<!DOCTYPE table [\n"
@@ -864,7 +864,7 @@ XMLrenderer(MapiHdl hdl)
 		mnstr_printf(toConsole, "</row>\n");
 	}
 	mnstr_printf(toConsole, "</table>\n");
-	mnstr_flush(toConsole);
+	mnstr_flush(toConsole, MNSTR_FLUSH_DATA);
 }
 
 static void
@@ -919,7 +919,7 @@ EXPANDEDrenderer(MapiHdl hdl)
 			} while (*edata);
 		}
 	}
-	mnstr_flush(toConsole);
+	mnstr_flush(toConsole, MNSTR_FLUSH_DATA);
 }
 
 static void
@@ -1377,7 +1377,7 @@ SQLpagemove(int *len, int fields, int *ps, bool *silent)
 
 	SQLseparator(len, fields, '-');
 	mnstr_printf(toConsole, "next page? (continue,quit,next)");
-	mnstr_flush(toConsole);
+	mnstr_flush(toConsole, MNSTR_FLUSH_DATA);
 	sz = mnstr_readline(fromConsole, buf, sizeof(buf));
 	if (sz > 0) {
 		if (buf[0] == 'c')
@@ -1733,7 +1733,7 @@ start_pager(stream **saveFD)
 		else {
 			*saveFD = toConsole;
 			/* put | in name to indicate that file should be closed with pclose */
-			if ((toConsole = file_wastream(p, "|pager")) == NULL) {
+			if ((toConsole = file_wstream(p, false, "|pager")) == NULL) {
 				toConsole = *saveFD;
 				*saveFD = NULL;
 				fprintf(stderr, "Starting '%s' failed\n", pager);
@@ -1789,7 +1789,7 @@ format_result(Mapi mid, MapiHdl hdl, bool singleinstr)
 		timerHumanStop();
 		/* handle errors first */
 		if (mapi_result_error(hdl) != NULL) {
-			mnstr_flush(toConsole);
+			mnstr_flush(toConsole, MNSTR_FLUSH_DATA);
 			if (formatter == TABLEformatter) {
 				mapi_noexplain(mid, "");
 			} else {
@@ -1942,8 +1942,8 @@ format_result(Mapi mid, MapiHdl hdl, bool singleinstr)
 	if (timerHumanCalled)
 		timerHuman(sqloptimizer, maloptimizer, querytime, singleinstr, true);
 	if (mnstr_errnr(toConsole)) {
+		fprintf(stderr, "write error: %s\n", mnstr_peek_error(toConsole));
 		mnstr_clearerr(toConsole);
-		fprintf(stderr, "write error\n");
 		errseen = true;
 	}
 #ifdef HAVE_POPEN
@@ -2097,7 +2097,7 @@ doFileBulk(Mapi mid, stream *fp)
 	timerEnd();
 
 	free(buf);
-	mnstr_flush(toConsole);
+	mnstr_flush(toConsole, MNSTR_FLUSH_DATA);
 	if (fp)
 		close_stream(fp);
 	return errseen;
@@ -2277,7 +2277,7 @@ doFile(Mapi mid, stream *fp, bool useinserts, bool interactive, bool save_histor
 			mnstr_write(toConsole, p, 1, strlen(p));
 #endif
 		}
-		mnstr_flush(toConsole);
+		mnstr_flush(toConsole, MNSTR_FLUSH_DATA);
 		timerPause();
 		/* read a line */
 		length = 0;
@@ -2668,7 +2668,7 @@ doFile(Mapi mid, stream *fp, bool useinserts, bool interactive, bool save_histor
 					    mnstr_errnr(s)) {
 						if (s)
 							close_stream(s);
-						fprintf(stderr, "%s: cannot open\n", line);
+						fprintf(stderr, "Cannot open %s: %s\n", line, mnstr_peek_error(NULL));
 					} else
 						doFile(mid, s, 0, 0, 0);
 					continue;
@@ -2690,11 +2690,11 @@ doFile(Mapi mid, stream *fp, bool useinserts, bool interactive, bool save_histor
 						toConsole = stderr_stream;
 					else if ((toConsole = open_wastream(line)) == NULL ||
 						 mnstr_errnr(toConsole)) {
+						fprintf(stderr, "Cannot open %s: %s\n", line, mnstr_peek_error(toConsole));
 						if (toConsole != NULL) {
 							close_stream(toConsole);
 						}
 						toConsole = stdout_stream;
-						fprintf(stderr, "Cannot open %s\n", line);
 					}
 					continue;
 				case 'L':
@@ -3026,7 +3026,7 @@ getfile(void *data, const char *filename, bool binary,
 #endif
 		}
 		if (f == NULL)
-			return "cannot open file";
+			return (char*) mnstr_peek_error(NULL);
 		while (offset > 1) {
 			s = mnstr_readline(f, buf, READSIZE);
 			if (s < 0) {
@@ -3069,14 +3069,14 @@ putfile(void *data, const char *filename, const void *buf, size_t bufsize)
 
 	if (filename != NULL) {
 		if ((priv->f = open_wastream(filename)) == NULL)
-			return "cannot open file";
+			return (char*)mnstr_peek_error(NULL);
 #ifdef HAVE_ICONV
 		if (encoding) {
 			stream *f = priv->f;
 			priv->f = iconv_wstream(f, encoding, mnstr_name(f));
 			if (priv->f == NULL) {
 				close_stream(f);
-				return "cannot open file";
+				return (char*)mnstr_peek_error(NULL);
 			}
 		}
 #endif
@@ -3084,7 +3084,7 @@ putfile(void *data, const char *filename, const void *buf, size_t bufsize)
 			return NULL; /* successfully opened file */
 	} else if (buf == NULL) {
 		/* done writing */
-		int flush = mnstr_flush(priv->f);
+		int flush = mnstr_flush(priv->f, MNSTR_FLUSH_DATA);
 		close_stream(priv->f);
 		priv->f = NULL;
 		return flush < 0 ? "error writing output" : NULL;
@@ -3167,7 +3167,7 @@ main(int argc, char **argv)
 	char *dbname = NULL;
 	char *output = NULL;	/* output format as string */
 	DotMonetdb dotfile = {0};
-	FILE *fp = NULL;
+	stream *s = NULL;
 	bool trace = false;
 	bool dump = false;
 	bool useinserts = false;
@@ -3234,8 +3234,13 @@ main(int argc, char **argv)
 		perror("sigaction");
 #endif
 
-	toConsole = stdout_stream = file_wastream(stdout, "stdout");
-	stderr_stream = file_wastream(stderr, "stderr");
+	if (mnstr_init(0) < 0) {
+		fprintf(stderr, "error: could not initialize streams library");
+		exit(2);
+	}
+
+	toConsole = stdout_stream = stdout_wastream();
+	stderr_stream = stderr_wastream();
 	if(!stdout_stream || !stderr_stream) {
 		if(stdout_stream)
 			close_stream(stdout_stream);
@@ -3493,12 +3498,17 @@ main(int argc, char **argv)
 	c = 0;
 	has_fileargs = optind != argc;
 
-	if (dbname == NULL && has_fileargs &&
-	    ((fp = fopen(argv[optind], "r")) == NULL || !isfile(fp))) {
-		fp = NULL;
-		dbname = strdup(argv[optind]);
-		optind++;
-		has_fileargs = optind != argc;
+	if (dbname == NULL && has_fileargs) {
+		s = open_rastream(argv[optind]);
+		if (s == NULL || !isfile(getFile(s))) {
+			mnstr_close(s);
+			s = NULL;
+		}
+		if (s == NULL) {
+			dbname = strdup(argv[optind]);
+			optind++;
+			has_fileargs = optind != argc;
+		}
 	}
 
 	if (dbname != NULL && strncmp(dbname, "mapi:monetdb://", 15) == 0) {
@@ -3665,28 +3675,29 @@ main(int argc, char **argv)
 	if (optind < argc) {
 		/* execute from file(s) */
 		while (optind < argc) {
-			stream *s;
+			const char *arg = argv[optind];
 
-			if (fp == NULL &&
-			    (fp = (strcmp(argv[optind], "-") == 0 ?
-				   stdin :
-				   fopen(argv[optind], "r"))) == NULL) {
-				fprintf(stderr, "%s: cannot open\n", argv[optind]);
-				c |= 1;
-			} else if ((s = file_rastream(fp, argv[optind])) == NULL) {
-				fclose(fp);
-				c |= 1;
-			} else {
-				c |= doFile(mid, s, useinserts, interactive, save_history);
+			if (s == NULL) {
+				if (strcmp(arg, "-") == 0)
+					s = stdin_rastream();
+				else
+					s = open_rastream(arg);
 			}
-			fp = NULL;
+			if (s == NULL) {
+				fprintf(stderr, "%s: cannot open: %s", arg, mnstr_peek_error(NULL));
+				c |= 1;
+				continue;
+			}
+			// doFile closes 's'.
+			c |= doFile(mid, s, useinserts, interactive, save_history);
+			s = NULL;
 			optind++;
 		}
 	} else if (command && mapi_get_active(mid))
 		c = doFileBulk(mid, NULL);
 
 	if (!has_fileargs && command == NULL) {
-		stream *s = file_rastream(stdin, "<stdin>");
+		s = stdin_rastream();
 		if(!s) {
 			mapi_destroy(mid);
 			mnstr_destroy(stdout_stream);
@@ -3695,6 +3706,7 @@ main(int argc, char **argv)
 			exit(2);
 		}
 		c = doFile(mid, s, useinserts, interactive, save_history);
+		s = NULL;
 	}
 
 	mapi_destroy(mid);

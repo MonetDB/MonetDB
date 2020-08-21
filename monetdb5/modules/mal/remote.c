@@ -655,7 +655,7 @@ str RMTget(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 
 		/* call our remote helper to do this more efficiently */
 		mnstr_printf(sout, "remote.batbincopy(%s);\n", ident);
-		mnstr_flush(sout);
+		mnstr_flush(sout, MNSTR_FLUSH_DATA);
 
 		/* read the JSON header */
 		while ((rd = mnstr_read(sin, &buf[sz], 1, 1)) == 1 && buf[sz] != '\n') {
@@ -803,7 +803,7 @@ str RMTput(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 		mnstr_printf(sout,
 				"%s := remote.batload(:%s, " BUNFMT ");\n",
 				ident, tail, (bid == 0 ? 0 : BATcount(b)));
-		mnstr_flush(sout);
+		mnstr_flush(sout, MNSTR_FLUSH_DATA);
 		GDKfree(tail);
 
 		/* b can be NULL if bid == 0 (only type given, ugh) */
@@ -840,7 +840,7 @@ str RMTput(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 		sout = mapi_get_to(c->mconn);
 		mnstr_printf(sout,
 				"%s := nil:%s;\n", ident, typename);
-		mnstr_flush(sout);
+		mnstr_flush(sout, MNSTR_FLUSH_DATA);
 		GDKfree(typename);
 	} else {
 		size_t l;

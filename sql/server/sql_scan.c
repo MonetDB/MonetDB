@@ -595,7 +595,7 @@ scanner_read_more(struct scanner *lc, size_t n)
 		/* query is not finished ask for more */
 		if (b->eof || !isa_block_stream(b->s)) {
 			if (mnstr_write(lc->ws, PROMPT2, sizeof(PROMPT2) - 1, 1) == 1)
-				mnstr_flush(lc->ws);
+				mnstr_flush(lc->ws, MNSTR_FLUSH_DATA);
 			b->eof = false;
 			more = true;
 		}

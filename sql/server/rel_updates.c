@@ -1528,6 +1528,11 @@ copyfrom(sql_query *query, dlist *qname, dlist *columns, dlist *files, dlist *he
 	assert(!nr_offset || nr_offset->h->type == type_lng);
 	assert(!nr_offset || nr_offset->h->next->type == type_lng);
 
+	if (strstr(rsep, "\r\n") != NULL)
+		return sql_error(sql, 02, SQLSTATE(42000)
+				"COPY INTO: record separator contains '\\r\\n' but "
+				"in the input stream, '\\r\\n' is being normalized into '\\n'");
+
 	if (sname && !(s = mvc_bind_schema(sql, sname)))
 		return sql_error(sql, 02, SQLSTATE(3F000) "COPY INTO: no such schema '%s'", sname);
 	t = find_table_on_scope(sql, &s, sname, tname);

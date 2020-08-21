@@ -712,7 +712,10 @@ mvc_import_table(Client cntxt, BAT ***bats, mvc *m, bstream *bs, sql_table *t, c
 		return NULL;
 	}
 	if (mnstr_errnr(bs->s)) {
-		sql_error(m, 500, "stream not open %d", mnstr_errnr(bs->s));
+		mnstr_error_kind errnr = mnstr_errnr(bs->s);
+		char *msg = mnstr_error(bs->s);
+		sql_error(m, 500, "stream not open %s: %s", mnstr_error_kind_name(errnr), msg ? msg : "unknown error");
+		free(msg);
 		return NULL;
 	}
 	if (offset < 0 || offset > (lng) BUN_MAX) {
@@ -1412,7 +1415,7 @@ mvc_export_table_prot10(backend *b, stream *s, res_table *t, BAT *order, BUN off
 				lng new_size = rowsize + 1024;
 				if (!mnstr_writeLng(s, (lng) -1) ||
 					!mnstr_writeLng(s, new_size) ||
-					mnstr_flush(s) < 0) {
+					mnstr_flush(s, MNSTR_FLUSH_DATA) < 0) {
 					fres = -1;
 					goto cleanup;
 				}
@@ -1584,7 +1587,7 @@ mvc_export_table_prot10(backend *b, stream *s, res_table *t, BAT *order, BUN off
 
 		bs2_setpos(s, buf - bs2_buffer(s).buf);
 		// flush the current chunk
-		if (mnstr_flush(s) < 0) {
+		if (mnstr_flush(s, MNSTR_FLUSH_DATA) < 0) {
 			fres = -1;
 			goto cleanup;
 		}
@@ -2136,7 +2139,7 @@ mvc_export_head_prot10(backend *b, stream *s, int res_id, int only_header, int c
 			goto cleanup;
 		}
 	}
-	if (mnstr_flush(s) < 0) {
+	if (mnstr_flush(s, MNSTR_FLUSH_DATA) < 0) {
 		fres = -1;
 		goto cleanup;
 	}

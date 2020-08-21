@@ -572,7 +572,7 @@ MCreadClient(Client c)
 		if (in->eof || !isa_block_stream(c->fdout)) {
 			if (!isa_block_stream(c->fdout) && c->promptlength > 0)
 				mnstr_write(c->fdout, c->prompt, c->promptlength, 1);
-			mnstr_flush(c->fdout);
+			mnstr_flush(c->fdout, MNSTR_FLUSH_DATA);
 			in->eof = false;
 		}
 		while ((rd = bstream_next(in)) > 0 && !in->eof) {

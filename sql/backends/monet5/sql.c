@@ -738,7 +738,7 @@ mvc_logfile(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	if (!strNil(filename)) {
 		if((m->scanner.log = open_wastream(filename)) == NULL)
-			throw(SQL, "sql.logfile", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+			throw(SQL, "sql.logfile", SQLSTATE(HY013) "%s", mnstr_peek_error(NULL));
 	}
 	return MAL_SUCCEED;
 }
@@ -2559,8 +2559,7 @@ mvc_export_table_wrap( Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		s = cntxt->fdout;
 	} else if (!onclient) {
 		if ((s = open_wastream(filename)) == NULL || mnstr_errnr(s)) {
-			msg=  createException(IO, "streams.open", SQLSTATE(42000) "could not open file '%s': %s",
-					      filename?filename:"stdout", GDKstrerror(errno, (char[128]){0}, 128));
+			msg=  createException(IO, "streams.open", SQLSTATE(42000) "%s", mnstr_peek_error(NULL));
 			close_stream(s);
 			goto wrapup_result_set1;
 		}
@@ -2570,7 +2569,7 @@ mvc_export_table_wrap( Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		s = m->scanner.ws;
 		mnstr_write(s, PROMPT3, sizeof(PROMPT3) - 1, 1);
 		mnstr_printf(s, "w %s\n", filename);
-		mnstr_flush(s);
+		mnstr_flush(s, MNSTR_FLUSH_DATA);
 		if ((sz = mnstr_readline(m->scanner.rs->s, buf, sizeof(buf))) > 1) {
 			/* non-empty line indicates failure on client */
 			msg = createException(IO, "streams.open", "%s", buf);
@@ -2586,7 +2585,7 @@ mvc_export_table_wrap( Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	mb->starttime = 0;
 	mb->optimize = 0;
 	if (onclient) {
-		mnstr_flush(s);
+		mnstr_flush(s, MNSTR_FLUSH_DATA);
 		if ((sz = mnstr_readline(m->scanner.rs->s, buf, sizeof(buf))) > 1) {
 			msg = createException(IO, "streams.open", "%s", buf);
 		}
@@ -2756,8 +2755,7 @@ mvc_export_row_wrap( Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		s = cntxt->fdout;
 	} else if (!onclient) {
 		if ((s = open_wastream(filename)) == NULL || mnstr_errnr(s)) {
-			msg=  createException(IO, "streams.open", SQLSTATE(42000) "could not open file '%s': %s",
-					      filename?filename:"stdout", GDKstrerror(errno, (char[128]){0}, 128));
+			msg=  createException(IO, "streams.open", SQLSTATE(42000) "%s", mnstr_peek_error(NULL));
 			close_stream(s);
 			goto wrapup_result_set;
 		}
@@ -2767,7 +2765,7 @@ mvc_export_row_wrap( Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		s = m->scanner.ws;
 		mnstr_write(s, PROMPT3, sizeof(PROMPT3) - 1, 1);
 		mnstr_printf(s, "w %s\n", filename);
-		mnstr_flush(s);
+		mnstr_flush(s, MNSTR_FLUSH_DATA);
 		if ((sz = mnstr_readline(m->scanner.rs->s, buf, sizeof(buf))) > 1) {
 			/* non-empty line indicates failure on client */
 			msg = createException(IO, "streams.open", "%s", buf);
@@ -2785,7 +2783,7 @@ mvc_export_row_wrap( Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	mb->starttime = 0;
 	mb->optimize = 0;
 	if (onclient) {
-		mnstr_flush(s);
+		mnstr_flush(s, MNSTR_FLUSH_DATA);
 		if ((sz = mnstr_readline(m->scanner.rs->s, buf, sizeof(buf))) > 1) {
 			msg = createException(IO, "streams.open", "%s", buf);
 		}
@@ -3070,7 +3068,7 @@ mvc_import_table_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				mnstr_printf(be->mvc->scanner.ws, "r 0 %s\n", fname);
 			}
 			msg = MAL_SUCCEED;
-			mnstr_flush(be->mvc->scanner.ws);
+			mnstr_flush(be->mvc->scanner.ws, MNSTR_FLUSH_DATA);
 			while (!be->mvc->scanner.rs->eof)
 				bstream_next(be->mvc->scanner.rs);
 			ss = be->mvc->scanner.rs->s;
@@ -3091,7 +3089,7 @@ mvc_import_table_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		} else {
 			ss = open_rastream(fname);
 			if (ss == NULL || mnstr_errnr(ss)) {
-				msg = createException(IO, "sql.copy_from", SQLSTATE(42000) "Cannot open file '%s': %s", fname, GDKstrerror(errno, (char[128]){0}, 128));
+				msg = createException(IO, "sql.copy_from", SQLSTATE(42000) "%s", mnstr_peek_error(NULL));
 				close_stream(ss);
 				return msg;
 			}
@@ -3134,7 +3132,7 @@ mvc_import_table_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			msg = mvc_import_table(cntxt, &b, be->mvc, s, t, tsep, rsep, ssep, ns, sz, offset, locked, besteffort, false, escape);
 			if (onclient) {
 				mnstr_write(be->mvc->scanner.ws, PROMPT3, sizeof(PROMPT3)-1, 1);
-				mnstr_flush(be->mvc->scanner.ws);
+				mnstr_flush(be->mvc->scanner.ws, MNSTR_FLUSH_DATA);
 				be->mvc->scanner.rs->eof = s->eof;
 				s->s = NULL;
 			}
@@ -3158,7 +3156,7 @@ read_more(bstream *in, stream *out)
 			return false;
 		if (in->eof) {
 			if (mnstr_write(out, PROMPT2, sizeof(PROMPT2) - 1, 1) != 1
-			    || mnstr_flush(out) < 0)
+			    || mnstr_flush(out, MNSTR_FLUSH_DATA) < 0)
 				return false;
 			in->eof = false;
 			if (bstream_next(in) <= 0)
@@ -3315,7 +3313,7 @@ mvc_bin_import_table_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 				mnstr_write(be->mvc->scanner.ws, PROMPT3, sizeof(PROMPT3)-1, 1);
 				mnstr_printf(be->mvc->scanner.ws, "rb %s\n", fname);
 				msg = MAL_SUCCEED;
-				mnstr_flush(be->mvc->scanner.ws);
+				mnstr_flush(be->mvc->scanner.ws, MNSTR_FLUSH_DATA);
 				while (!be->mvc->scanner.rs->eof)
 					bstream_next(be->mvc->scanner.rs);
 				stream *ss = be->mvc->scanner.rs->s;
@@ -3335,7 +3333,7 @@ mvc_bin_import_table_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 					goto bailout;
 				}
 				mnstr_write(be->mvc->scanner.ws, PROMPT3, sizeof(PROMPT3)-1, 1);
-				mnstr_flush(be->mvc->scanner.ws);
+				mnstr_flush(be->mvc->scanner.ws, MNSTR_FLUSH_DATA);
 				be->mvc->scanner.rs->eof = s->eof;
 				s->s = NULL;
 				bstream_destroy(s);
@@ -4994,7 +4992,7 @@ SQLhot_snapshot_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	// tell client to open file, copy pasted from mvc_export_table_wrap
 	mnstr_write(s, PROMPT3, sizeof(PROMPT3) - 1, 1);
 	mnstr_printf(s, "w %s\n", filename);
-	mnstr_flush(s);
+	mnstr_flush(s, MNSTR_FLUSH_DATA);
 	if ((sz = mnstr_readline(mvc->scanner.rs->s, buf, sizeof(buf))) > 1) {
 		/* non-empty line indicates failure on client */
 		msg = createException(IO, "streams.open", "%s", buf);
@@ -5014,7 +5012,7 @@ SQLhot_snapshot_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	mnstr_destroy(cb);
 
 	// tell client no more data, also copy pasted from mvc_export_table_wrap
-	mnstr_flush(s);
+	mnstr_flush(s, MNSTR_FLUSH_DATA);
 	if ((sz = mnstr_readline(mvc->scanner.rs->s, buf, sizeof(buf))) > 1) {
 		msg = createException(IO, "streams.open", "%s", buf);
 	}
