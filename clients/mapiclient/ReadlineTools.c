@@ -406,7 +406,8 @@ init_readline(Mapi mid, const char *lang, bool save_history)
 		rl_attempted_completion_function = mal_completion;
 	}
 
-	rl_bind_key(024, invoke_editor);
+	rl_add_funmap_entry("invoke-editor", invoke_editor);
+	rl_bind_keyseq("\\M-e", invoke_editor);
 
 	if (save_history) {
 		int len;
