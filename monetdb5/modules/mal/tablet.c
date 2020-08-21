@@ -393,7 +393,7 @@ tablet_read_more(bstream *in, stream *out, size_t n)
 				return false;
 			if (in->eof) {
 				if (mnstr_write(out, PROMPT2, sizeof(PROMPT2) - 1, 1) == 1)
-					mnstr_flush(out);
+					mnstr_flush(out, MNSTR_FLUSH_DATA);
 				in->eof = false;
 				/* we need more query text */
 				if (bstream_next(in) <= 0)

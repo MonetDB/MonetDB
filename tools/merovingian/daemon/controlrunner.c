@@ -168,7 +168,7 @@ control_authorise(
 	{
 		Mfprintf(_mero_ctlout, "%s: remote control disabled\n", host);
 		mnstr_printf(fout, "!access denied\n");
-		mnstr_flush(fout);
+		mnstr_flush(fout, MNSTR_FLUSH_DATA);
 		return 0;
 	}
 
@@ -177,7 +177,7 @@ control_authorise(
 	if (!pwd) {
 		Mfprintf(_mero_ctlout, "%s: Allocation failure during authentication\n", host);
 		mnstr_printf(fout, "!allocation failure\n");
-		mnstr_flush(fout);
+		mnstr_flush(fout, MNSTR_FLUSH_DATA);
 		return 0;
 	}
 	if (strcmp(pwd, passwd) != 0) {
@@ -185,13 +185,13 @@ control_authorise(
 		Mfprintf(_mero_ctlout, "%s: permission denied "
 				"(bad passphrase)\n", host);
 		mnstr_printf(fout, "!access denied\n");
-		mnstr_flush(fout);
+		mnstr_flush(fout, MNSTR_FLUSH_DATA);
 		return 0;
 	}
 	free(pwd);
 
 	mnstr_printf(fout, "=OK\n");
-	mnstr_flush(fout);
+	mnstr_flush(fout, MNSTR_FLUSH_DATA);
 
 	return 1;
 }
@@ -200,7 +200,7 @@ control_authorise(
 	do {											\
 		if (fout != NULL) {							\
 			mnstr_printf(fout, P "%s", buf2);		\
-			mnstr_flush(fout);						\
+			mnstr_flush(fout, MNSTR_FLUSH_DATA);						\
 		} else {									\
 			if (send(msgsock, buf2, len, 0) < 0)	\
 				senderror = errno;					\
@@ -224,7 +224,7 @@ control_authorise(
 			}												\
 			if (*q != '\0')									\
 				mnstr_printf(fout, "=%s\n", q);				\
-			mnstr_flush(fout);								\
+			mnstr_flush(fout, MNSTR_FLUSH_DATA);								\
 		}													\
 	} while (0)
 
@@ -783,7 +783,7 @@ static void ctl_handle_client(
 						//
 					}
 					e = snapshot_database_stream(q, s);
-					mnstr_flush(s);
+					mnstr_flush(s, MNSTR_FLUSH_DATA);
 				} while (0);
 				if (bs)
 					mnstr_destroy(bs);
@@ -1114,7 +1114,7 @@ static void ctl_handle_client(
 				}
 
 				if (fout != NULL)
-					mnstr_flush(fout);
+					mnstr_flush(fout, MNSTR_FLUSH_DATA);
 
 				if (q == NULL) {
 					Mfprintf(_mero_ctlout, "%s: served status list\n",
@@ -1158,7 +1158,7 @@ static void ctl_handle_client(
 				}
 
 				if (fout != NULL)
-					mnstr_flush(fout);
+					mnstr_flush(fout, MNSTR_FLUSH_DATA);
 
 				pthread_mutex_unlock(&_mero_remotedb_lock);
 

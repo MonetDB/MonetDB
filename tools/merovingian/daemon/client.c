@@ -84,9 +84,9 @@ handleClient(void *data)
 	memcpy(chal, ((struct clientdata *) data)->challenge, sizeof(chal));
 	free(data);
 	fdin = socket_rstream(sock, "merovingian<-client (read)");
-	if (fdin == 0) {
+	if (fdin == NULL) {
 		self->dead = true;
-		return(newErr("merovingian-client inputstream problems"));
+		return(newErr("merovingian-client inputstream problems: %s", mnstr_peek_error(NULL)));
 	}
 	fdin = block_stream(fdin);
 
@@ -94,7 +94,7 @@ handleClient(void *data)
 	if (fout == 0) {
 		close_stream(fdin);
 		self->dead = true;
-		return(newErr("merovingian-client outputstream problems"));
+		return(newErr("merovingian-client outputstream problems: %s", mnstr_peek_error(NULL)));
 	}
 	fout = block_stream(fout);
 
@@ -124,7 +124,7 @@ handleClient(void *data)
 #endif
 			MONETDB5_PASSWDHASH
 			);
-	mnstr_flush(fout);
+	mnstr_flush(fout, MNSTR_FLUSH_DATA);
 
 	/* get response */
 	buf[0] = '\0';
@@ -134,7 +134,7 @@ handleClient(void *data)
 				host, buf);
 		mnstr_printf(fout, "!monetdbd: client sent something this "
 				"server could not understand, sorry\n");
-		mnstr_flush(fout);
+		mnstr_flush(fout, MNSTR_FLUSH_DATA);
 		close_stream(fout);
 		close_stream(fdin);
 		self->dead = true;
@@ -155,7 +155,7 @@ handleClient(void *data)
 	} else {
 		e = newErr("client %s challenge error: %s", host, buf);
 		mnstr_printf(fout, "!monetdbd: incomplete challenge '%s'\n", buf);
-		mnstr_flush(fout);
+		mnstr_flush(fout, MNSTR_FLUSH_DATA);
 		close_stream(fout);
 		close_stream(fdin);
 		self->dead = true;
@@ -171,7 +171,7 @@ handleClient(void *data)
 		if (*passwd != '{') {
 			e = newErr("client %s challenge error: %s", host, buf);
 			mnstr_printf(fout, "!monetdbd: invalid password entry\n");
-			mnstr_flush(fout);
+			mnstr_flush(fout, MNSTR_FLUSH_DATA);
 			close_stream(fout);
 			close_stream(fdin);
 			self->dead = true;
@@ -182,7 +182,7 @@ handleClient(void *data)
 		if (!s) {
 			e = newErr("client %s challenge error: %s", host, buf);
 			mnstr_printf(fout, "!monetdbd: invalid password entry\n");
-			mnstr_flush(fout);
+			mnstr_flush(fout, MNSTR_FLUSH_DATA);
 			close_stream(fout);
 			close_stream(fdin);
 			self->dead = true;
@@ -193,7 +193,7 @@ handleClient(void *data)
 	} else {
 		e = newErr("client %s challenge error: %s", host, buf);
 		mnstr_printf(fout, "!monetdbd: incomplete challenge, missing password after '%s'\n", user);
-		mnstr_flush(fout);
+		mnstr_flush(fout, MNSTR_FLUSH_DATA);
 		close_stream(fout);
 		close_stream(fdin);
 		self->dead = true;
@@ -208,7 +208,7 @@ handleClient(void *data)
 	} else {
 		e = newErr("client %s challenge error: %s", host, buf);
 		mnstr_printf(fout, "!monetdbd: incomplete challenge, missing language after '%s'\n", passwd);
-		mnstr_flush(fout);
+		mnstr_flush(fout, MNSTR_FLUSH_DATA);
 		close_stream(fout);
 		close_stream(fdin);
 		self->dead = true;
@@ -226,7 +226,7 @@ handleClient(void *data)
 		if (s == NULL) {
 			e = newErr("client %s challenge error: %s", host, buf);
 			mnstr_printf(fout, "!monetdbd: incomplete challenge, missing trailing colon\n");
-			mnstr_flush(fout);
+			mnstr_flush(fout, MNSTR_FLUSH_DATA);
 			close_stream(fout);
 			close_stream(fdin);
 			self->dead = true;
@@ -240,7 +240,7 @@ handleClient(void *data)
 		/* we need to have a database, if we haven't gotten one,
 		 * complain */
 		mnstr_printf(fout, "!monetdbd: please specify a database\n");
-		mnstr_flush(fout);
+		mnstr_flush(fout, MNSTR_FLUSH_DATA);
 		close_stream(fout);
 		close_stream(fdin);
 		self->dead = true;
@@ -280,7 +280,7 @@ handleClient(void *data)
 			mnstr_printf(fout, "!monetdbd: internal error while starting mserver '%s'%s\n", e, strstr(e, "logfile")?"":", please refer to the logs");
 			Mfprintf(_mero_ctlerr, "!monetdbd: an internal error has occurred '%s'\n",e);
 		}
-		mnstr_flush(fout);
+		mnstr_flush(fout, MNSTR_FLUSH_DATA);
 		close_stream(fout);
 		close_stream(fdin);
 		self->dead = true;
@@ -320,7 +320,7 @@ handleClient(void *data)
 			e = newErr("there are no available connections for '%s'", database);
 		}
 		mnstr_printf(fout, "!monetdbd: %s\n", e);
-		mnstr_flush(fout);
+		mnstr_flush(fout, MNSTR_FLUSH_DATA);
 		close_stream(fout);
 		close_stream(fdin);
 		msab_freeStatus(&top);
@@ -367,7 +367,7 @@ handleClient(void *data)
 		/* flush redirect */
 		fprintf(stdout, "\n");
 		fflush(stdout);
-		mnstr_flush(fout);
+		mnstr_flush(fout, MNSTR_FLUSH_DATA);
 	} else {
 		Mfprintf(stdout, "proxying client %s for database '%s' to "
 				"%s?database=%s\n",
@@ -376,7 +376,7 @@ handleClient(void *data)
 		mnstr_printf(fout, "^mapi:merovingian://proxy?database=%s\n",
 				redirs[0].dbname);
 		/* flush redirect */
-		mnstr_flush(fout);
+		mnstr_flush(fout, MNSTR_FLUSH_DATA);
 
 		/* wait for input, or disconnect in a proxy runner */
 		if ((e = startProxy(sock, fdin, fout,
@@ -386,10 +386,10 @@ handleClient(void *data)
 			 * the protocol */
 			mnstr_printf(fout, "void:merovingian:9:%s:BIG:%s:",
 					mcrypt_getHashAlgorithms(), MONETDB5_PASSWDHASH);
-			mnstr_flush(fout);
+			mnstr_flush(fout, MNSTR_FLUSH_DATA);
 			mnstr_read_block(fdin, buf, 8095, 1); /* eat away client response */
 			mnstr_printf(fout, "!monetdbd: an internal error has occurred '%s', refer to the logs for details, please try again later\n",e);
-			mnstr_flush(fout);
+			mnstr_flush(fout, MNSTR_FLUSH_DATA);
 			Mfprintf(_mero_ctlerr, "!monetdbd: an internal error has occurred '%s'\n",e);
 			close_stream(fout);
 			close_stream(fdin);

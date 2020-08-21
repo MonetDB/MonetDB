@@ -1,0 +1,79 @@
+stdout of test 'values-like-join.Bug-6954` in directory 'sql/test/BugTracker-2020` itself:
+
+
+# 10:15:34 >  
+# 10:15:34 >  "mclient" "-lsql" "-ftest" "-tnone" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-70857" "--port=32688"
+# 10:15:34 >  
+
+#plan select 1 from (values ('one'), ('two')) as l(s), (values ('three'), ('four')) as r(s) where l.s like r.s;
+% .plan # table_name
+% rel # name
+% clob # type
+% 94 # length
+project (
+| join (
+| |  [  [ char(3) "one", char(3) "two" ] as "l"."s" ],
+| |  [  [ char(5) "three", char(5) "four" ] as "r"."s" ]
+| ) [ (clob[char["l"."s"]] as "l"."s") FILTER like (clob[char["r"."s"]] as "r"."s", clob "") ]
+) [ tinyint "1" ]
+#explain select 1 from (values ('one'), ('two')) as l(s), (values ('three'), ('four')) as r(s) where l.s like r.s;
+% .explain # table_name
+% mal # name
+% clob # type
+% 197 # length
+function user.s2_0():void;
+    X_6:void := querylog.define("explain select 1 from (values (\\'one\\'), (\\'two\\')) as l(s), (values (\\'three\\'), (\\'four\\')) as r(s) where l.s like r.s;":str, "default_pipe":str, 27:int);
+    X_10:bat[:str] := bat.new(nil:str);
+    X_13:bat[:str] := bat.append(X_10:bat[:str], "one":str, true:bit);
+    X_16:bat[:str] := bat.append(X_13:bat[:str], "two":str, true:bit);
+    X_17:bat[:str] := bat.new(nil:str);
+    X_19:bat[:str] := bat.append(X_17:bat[:str], "three":str, true:bit);
+    X_27:bat[:str] := bat.append(X_19:bat[:str], "four":str, true:bit);
+    X_40:bat[:str] := bat.pack(".%7":str);
+    X_41:bat[:str] := bat.pack("%7":str);
+    X_42:bat[:str] := bat.pack("tinyint":str);
+    X_43:bat[:int] := bat.pack(1:int);
+    X_44:bat[:int] := bat.pack(0:int);
+    (X_30:bat[:oid], X_31:bat[:oid]) := algebra.likejoin(X_16:bat[:str], X_27:bat[:str], "":str, nil:BAT, nil:BAT, true:bit, nil:lng);
+    X_35:bat[:str] := algebra.projection(X_30:bat[:oid], X_16:bat[:str]);
+    X_38:bat[:bte] := algebra.project(X_35:bat[:str], 1:bte);
+    sql.resultSet(X_40:bat[:str], X_41:bat[:str], X_42:bat[:str], X_43:bat[:int], X_44:bat[:int], X_38:bat[:bte]);
+end user.s2_0;
+#inline               actions= 0 time=0 usec 
+#remap                actions= 0 time=2 usec 
+#costmodel            actions= 1 time=1 usec 
+#coercion             actions= 1 time=5 usec 
+#aliases              actions= 6 time=24 usec 
+#evaluate             actions= 1 time=27 usec 
+#emptybind            actions= 0 time=1 usec 
+#pushselect           actions= 0 time=24 usec 
+#aliases              actions= 1 time=7 usec 
+#mitosis              actions=1 time=1 usec 
+#mergetable           actions= 0 time=57 usec 
+#deadcode             actions= 2 time=8 usec 
+#aliases              actions= 0 time=1 usec 
+#constants            actions= 3 time=6 usec 
+#commonTerms          actions= 0 time=4 usec 
+#projectionpath       actions= 0 time=3 usec 
+#deadcode             actions= 0 time=5 usec 
+#reorder              actions= 1 time=15 usec 
+#matpack              actions= 0 time=1 usec 
+#dataflow             actions= 1 time=14 usec 
+#multiplex            actions= 0 time=2 usec 
+#profiler             actions= 1 time=1 usec 
+#candidates           actions= 1 time=0 usec 
+#deadcode             actions= 0 time=6 usec 
+#postfix              actions= 0 time=4 usec 
+#wlc                  actions= 0 time=0 usec 
+#garbagecollector     actions= 1 time=22 usec 
+#total                actions=29 time=334 usec 
+#select 1 from (values ('one'), ('two')) as l(s), (values ('three'), ('four')) as r(s) where l.s like r.s;
+% .%7 # table_name
+% %7 # name
+% tinyint # type
+% 1 # length
+
+# 10:15:34 >  
+# 10:15:34 >  "Done."
+# 10:15:34 >  
+

@@ -166,7 +166,7 @@ doChallenge(void *data)
 #endif
 			MONETDB5_PASSWDHASH
 			);
-	mnstr_flush(fdout);
+	mnstr_flush(fdout, MNSTR_FLUSH_DATA);
 	/* get response */
 	if ((len = mnstr_read_block(fdin, buf, 1, BLOCK)) < 0) {
 		/* the client must have gone away, so no reason to write anything */
@@ -472,15 +472,18 @@ SERVERlistenThread(SOCKET *Sock)
 			continue;
 		}
 		data->in = socket_rstream(msgsock, "Server read");
-		data->out = socket_wstream(msgsock, "Server write");
-		if (data->in == NULL || data->out == NULL) {
+		if (data->in == NULL) {
 		  stream_alloc_fail:
 			mnstr_destroy(data->in);
 			mnstr_destroy(data->out);
 			GDKfree(data);
 			closesocket(msgsock);
-			TRC_ERROR(MAL_SERVER, "Cannot allocate stream\n");
+			TRC_ERROR(MAL_SERVER, "Cannot allocate stream: %s\n", mnstr_peek_error(NULL));
 			continue;
+		}
+		data->out = socket_wstream(msgsock, "Server write");
+		if (data->out == NULL) {
+			goto stream_alloc_fail;
 		}
 		s = block_stream(data->in);
 		if (s == NULL) {

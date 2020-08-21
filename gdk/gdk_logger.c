@@ -906,7 +906,7 @@ logger_open_output(logger *lg)
 	lg->end = 0;
 
 	if (lg->output_log == NULL || mnstr_errnr(lg->output_log)) {
-		TRC_CRITICAL(GDK, "creating %s failed\n", filename);
+		TRC_CRITICAL(GDK, "creating %s failed: %s\n", filename, mnstr_peek_error(NULL));
 		GDKfree(filename);
 		return GDK_FAIL;
 	}
@@ -2242,7 +2242,7 @@ log_tend(logger *lg)
 
 	if (res != GDK_SUCCEED ||
 	    log_write_format(lg, &l) != GDK_SUCCEED ||
-	    mnstr_flush(lg->output_log) ||
+	    mnstr_flush(lg->output_log, MNSTR_FLUSH_DATA) ||
 	    (!(GDKdebug & NOSYNCMASK) && mnstr_fsync(lg->output_log)) ||
 	    pre_allocate(lg) != GDK_SUCCEED) {
 		TRC_CRITICAL(GDK, "write failed\n");
@@ -2266,7 +2266,7 @@ log_sequence_(logger *lg, int seq, lng val, int flush)
 
 	if (log_write_format(lg, &l) != GDK_SUCCEED ||
 	    !mnstr_writeLng(lg->output_log, val) ||
-	    (flush && mnstr_flush(lg->output_log)) ||
+	    (flush && mnstr_flush(lg->output_log, MNSTR_FLUSH_DATA)) ||
 	    (flush && !(GDKdebug & NOSYNCMASK) && mnstr_fsync(lg->output_log))) {
 		TRC_CRITICAL(GDK, "write failed\n");
 		return GDK_FAIL;

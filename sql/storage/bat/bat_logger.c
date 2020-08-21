@@ -488,7 +488,7 @@ snapshot_immediate_copy_file(stream *plan, const char *path, const char *name)
 
 	s = open_rstream(path);
 	if (!s) {
-		GDKerror("could not open %s", path);
+		GDKerror("%s", mnstr_peek_error(NULL));
 		goto end;
 	}
 
@@ -631,7 +631,7 @@ snapshot_bats(stream *plan, const char *db_dir)
 	// Open the catalog and parse the header
 	cat = open_rastream(bbpdir);
 	if (cat == NULL) {
-		GDKerror("Could not open %s for reading", bbpdir);
+		GDKerror("Could not open %s for reading: %s", bbpdir, mnstr_peek_error(NULL));
 		goto end;
 	}
 	if (mnstr_readline(cat, line, sizeof(line)) < 0) {

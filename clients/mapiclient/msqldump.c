@@ -204,9 +204,9 @@ main(int argc, char **argv)
 	mapi_trace(mid, trace);
 	mapi_cache_limit(mid, -1);
 
-	out = file_wastream(stdout, "stdout");
+	out = stdout_wastream();
 	if (out == NULL) {
-		fprintf(stderr, "failed to allocate stream\n");
+		fprintf(stderr, "failed to allocate stream: %s\n", mnstr_peek_error(NULL));
 		exit(2);
 	}
 	if (!quiet) {
@@ -252,11 +252,11 @@ main(int argc, char **argv)
 		mnstr_printf(out, "COMMIT;\n");
 	} else
 		c = dump_database(mid, out, describe, useinserts, noescape);
-	mnstr_flush(out);
+	mnstr_flush(out, MNSTR_FLUSH_DATA);
 
 	mapi_destroy(mid);
 	if (mnstr_errnr(out)) {
-		fprintf(stderr, "%s: %s", argv[0], mnstr_error(out));
+		fprintf(stderr, "%s: %s\n", argv[0], mnstr_error(out));
 		return 1;
 	}
 

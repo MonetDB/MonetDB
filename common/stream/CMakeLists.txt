@@ -18,6 +18,30 @@ add_library(stream
 target_sources(stream
   PRIVATE
   stream.c
+  rw.c
+  bstream.c
+  bs.c
+  bs2.c
+  stdio_stream.c
+  winio.c
+  compressed.c
+  gz_stream.c
+  bz2_stream.c
+  xz_stream.c
+  lz4_stream.c
+  url_stream.c
+  socket_stream.c
+  memio.c
+  callback.c
+  blackhole.c
+  fwf.c
+  iconv_stream.c
+  text_stream.c
+  pump.c
+  stream.h
+  stream_internal.h
+  stream_socket.h
+  pump.h
   PUBLIC
   ${stream_public_headers})
 
