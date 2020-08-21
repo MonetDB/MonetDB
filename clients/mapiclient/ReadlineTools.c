@@ -311,7 +311,7 @@ invoke_editor(int cnt, int key) {
 	char *editor = NULL;
 	FILE *fp;
 	size_t content_len;
-	size_t read_bytes;
+	size_t read_bytes, idx;
 
 	(void) cnt;
 	(void) key;
@@ -344,25 +344,39 @@ invoke_editor(int cnt, int key) {
 	content_len = ftell(fp);
 	rewind(fp);
 
-	read_buff = (char *)malloc(content_len*sizeof(char));
-	if (read_buff == NULL) {
-		readline_show_error("invoke_editor: Cannot allocate memory\n");
-		goto bailout;
+	if (content_len > 0) {
+		read_buff = (char *)malloc(content_len*sizeof(char));
+		if (read_buff == NULL) {
+			readline_show_error("invoke_editor: Cannot allocate memory\n");
+			goto bailout;
+		}
+
+		read_bytes = fread(read_buff, sizeof(char), content_len, fp);
+		if (read_bytes != content_len) {
+			readline_show_error("invoke_editor: Did not read from file correctly\n");
+			goto bailout;
+		}
+
+		*(read_buff + read_bytes) = 0;
+
+		/* Remove trailing whitespace */
+		idx = read_bytes - 1;
+		while(isspace(*(read_buff + idx))) {
+			*(read_buff + idx) = 0;
+			idx--;
+		}
+
+		rl_replace_line(read_buff, 0);
+		rl_point = idx + 1;  // place the point one character after the end of the string
+
+		free(read_buff);
+	} else {
+		rl_replace_line("", 0);
+		rl_point = 0;
 	}
 
-	read_bytes = fread(read_buff, sizeof(char), content_len, fp);
 	fclose(fp);
 	unlink(template);
-	if (read_bytes != content_len) {
-		readline_show_error("invoke_editor: Did not read from file correctly\n");
-		goto bailout;
-	}
-
-	*(read_buff + read_bytes - 1) = 0;
-	rl_replace_line(read_buff, 0);
-	rl_point = read_bytes;
-
-	free(read_buff);
 
 	return 0;
 
