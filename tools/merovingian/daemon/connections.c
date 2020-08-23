@@ -88,6 +88,10 @@ openConnectionIP(int *ret, bool udp, bool bind_ipv6, const char *bindaddr, unsig
 			e = errno;
 			closesocket(sock);
 			sock = -1;
+			if (e == EADDRNOTAVAIL && bind_ipv6) {
+				freeaddrinfo(result);
+				return openConnectionIP(ret, udp, false, bindaddr, port, log);
+			}
 			continue;
 		}
 		if (getnameinfo(rp->ai_addr, rp->ai_addrlen,
