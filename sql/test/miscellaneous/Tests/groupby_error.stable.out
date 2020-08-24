@@ -497,6 +497,14 @@ project (
 [ 93	]
 [ 93	]
 [ 93	]
+#select group_concat(distinct 'a') from tab0;
+% .%1 # table_name
+% %1 # name
+% clob # type
+% 5 # length
+[ "a,a,a"	]
+#INSERT INTO "tab0" VALUES (83, 0, 38), (26, 0, 79), (43, 81, 24);
+[ 3	]
 #ROLLBACK;
 #START TRANSACTION;
 #CREATE TABLE tab2 ("col0" INTEGER,"col1" INTEGER,"col2" INTEGER);
