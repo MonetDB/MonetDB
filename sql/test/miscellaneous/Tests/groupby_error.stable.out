@@ -501,8 +501,8 @@ project (
 % .%1 # table_name
 % %1 # name
 % clob # type
-% 5 # length
-[ "a,a,a"	]
+% 1 # length
+[ "a"	]
 #INSERT INTO "tab0" VALUES (83, 0, 38), (26, 0, 79), (43, 81, 24);
 [ 3	]
 #ROLLBACK;
