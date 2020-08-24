@@ -5983,15 +5983,6 @@ rel_groupby_distinct(visitor *v, sql_rel *rel)
 		}
 	}
 
-	/*if the input expressions are atoms, drop distinct property */
-	if (is_groupby(rel->op) && !list_empty(rel->exps)) {
-		for (n=rel->exps->h; n ; n = n->next) {
-			sql_exp *e = n->data;
-			if (e->type == e_aggr && need_distinct(e) && (!e->l || exps_are_atoms(e->l)))
-				set_nodistinct(e);
-		}
-	}
-
 	if (is_groupby(rel->op)) {
 		sql_rel *l = rel->l;
 		if (!l || is_groupby(l->op))
