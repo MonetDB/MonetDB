@@ -3903,7 +3903,7 @@ rel_selection_ref(sql_query *query, sql_rel **rel, symbol *grp, dlist *selection
 			/* AS name */
 			if (l->h->next->data.sval &&
 					strcmp(l->h->next->data.sval, name) == 0){
-				sql_exp *ve = rel_value_exp(query, rel, l->h->data.sym, sql_sel, ek);
+				sql_exp *ve = rel_value_exp(query, rel, l->h->data.sym, sql_sel|sql_groupby, ek);
 				if (ve) {
 					dlist *l = dlist_create(sa);
 					symbol *sym;
