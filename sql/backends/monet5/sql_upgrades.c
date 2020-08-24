@@ -2395,6 +2395,9 @@ sql_update_oct2020(Client c, mvc *sql, const char *prev_schema, bool *systabfixe
 					"external name sysmon.user_statistics;\n"
 					"update sys.functions set system = true where system <> true and name = 'user_statistics' and schema_id = (select id from sys.schemas where name = 'sys') and type = %d;\n", (int) F_UNION);
 
+			/* Remove entries on sys.args table without correspondents on sys.functions table */
+			pos += snprintf(buf + pos, bufsize - pos,
+					"delete from sys.args where id in (select args.id from sys.args left join sys.functions on args.func_id = functions.id where functions.id is null);\n");
 			pos += snprintf(buf + pos, bufsize - pos, "set schema \"%s\";\n", prev_schema);
 
 			assert(pos < bufsize);
