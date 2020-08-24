@@ -441,8 +441,8 @@ SERVERlistenThread(SOCKET *Sock)
 					TRC_CRITICAL(MAL_SERVER, "Unknown command type in first byte\n");
 					continue;
 			}
-#endif
 		}
+#endif
 
 		data = GDKmalloc(sizeof(*data));
 		if( data == NULL){
