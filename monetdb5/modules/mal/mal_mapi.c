@@ -622,8 +622,9 @@ start_listen(SOCKET *sockp, int *portp, const char *listenaddr,
 		(void) fcntl(sock, F_SETFD, FD_CLOEXEC);
 #endif
 		if (ipv6_vs6only >= 0)
-			setsockopt(sock, IPPROTO_IPV6, IPV6_V6ONLY,
-					   (const char *) &ipv6_vs6only, (SOCKLEN) sizeof(int));
+			if (setsockopt(sock, IPPROTO_IPV6, IPV6_V6ONLY,
+						   (const char *) &ipv6_vs6only, (SOCKLEN) sizeof(int)) == -1)
+				perror("setsockopt IPV6_V6ONLY");
 
 		/* do not reuse addresses for ephemeral (autosense) ports */
 		if (setsockopt(sock, SOL_SOCKET, SO_REUSEADDR,
