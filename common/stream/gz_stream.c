@@ -144,7 +144,7 @@ gz_stream(stream *inner, int level)
 		ret = deflateInit2(&gz->strm, level, Z_DEFLATED, 15 | 16, 8, Z_DEFAULT_STRATEGY);
 	}
 
-	if (ret != LZMA_OK) {
+	if (ret != Z_OK) {
 		free(gz);
 		free(state);
 		mnstr_set_open_error(inner->name, 0, "failed to initialize gz stream: code %d", (int)ret);
