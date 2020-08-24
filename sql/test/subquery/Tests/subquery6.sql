@@ -246,6 +246,9 @@ select (select (i1.i, i2.i) in (select i2.i, i1.i) from integers i2) from intege
 select min(i) as myx from integers group by myx;
 	-- I expect this to throw the error: aggregate functions are not allowed in GROUP BY
 
+select ntile(i) over (), count(*) from integers;
+	--error, column "i" must appear in the GROUP BY clause or be used in an aggregate function
+
 DROP TABLE tbl_ProductSales;
 DROP TABLE another_T;
 DROP TABLE integers;
