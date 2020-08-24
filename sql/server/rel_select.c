@@ -9,8 +9,6 @@
 #include "monetdb_config.h"
 #include "rel_select.h"
 #include "sql_tokens.h"
-#include "sql_semantic.h"	/* TODO this dependency should be removed, move
-				   the dependent code into sql_mvc */
 #include "sql_privileges.h"
 #include "sql_env.h"
 #include "sql_qc.h"
@@ -2986,7 +2984,8 @@ rel_binop_(mvc *sql, sql_rel *rel, sql_exp *l, sql_exp *r, sql_schema *s, char *
 				if (!check_card(card,f))
 					continue;
 
-				l = exp_check_type(sql, &a->type, rel, l, type_equal);
+				if (f->func->fix_scale != INOUT)
+					l = exp_check_type(sql, &a->type, rel, l, type_equal);
 				a = m->next->data;
 				r = exp_check_type(sql, &a->type, rel, r, type_equal);
 				if (l && r)
@@ -3042,7 +3041,8 @@ rel_binop_(mvc *sql, sql_rel *rel, sql_exp *l, sql_exp *r, sql_schema *s, char *
 			node *m = f->func->ops->h;
 			sql_arg *a = m->data;
 
-			l = exp_check_type(sql, &a->type, rel, l, type_equal);
+			if (f->func->fix_scale != INOUT)
+				l = exp_check_type(sql, &a->type, rel, l, type_equal);
 			a = m->next->data;
 			r = exp_check_type(sql, &a->type, rel, r, type_equal);
 			if (l && r)
