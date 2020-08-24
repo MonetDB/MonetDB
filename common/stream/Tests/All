@@ -1,13 +1,13 @@
 read_uncompressed
 HAVE_LIBBZ2?read_bz2
 HAVE_LIBZ?read_gz
-HAVE_LIBLZ4?read_lz4
+HAVE_LIBLZ4&HAVE_PYTHON_LZ4?read_lz4
 HAVE_LIBLZMA?read_xz
 
 write_uncompressed
 HAVE_LIBBZ2?write_bz2
 HAVE_LIBZ?write_gz
-HAVE_LIBLZ4?write_lz4
+HAVE_LIBLZ4&HAVE_PYTHON_LZ4?write_lz4
 HAVE_LIBLZMA?write_xz
 
 urlstream
