@@ -871,7 +871,7 @@ bl_postversion(void *lg)
 			   "storage", str_nil,
 			   NULL) != GDK_SUCCEED)
 			return GDK_FAIL;
-		{	/* move sql.degrees and sql.radians functions from 10_math.sql script to sql_types list */
+		{	/* move sql.degrees, sql.radians, sql.like and sql.ilike functions from 09_like.sql and 10_math.sql script to sql_types list */
 			BAT *func_func = temp_descriptor(logger_find_bat(lg, N("sys", "functions", "name"), 0, 0));
 			if (func_func == NULL) {
 				return GDK_FAIL;
@@ -882,7 +882,6 @@ bl_postversion(void *lg)
 				return GDK_FAIL;
 			}
 			BAT *radians_func = BATselect(func_func, NULL, "radians", NULL, 1, 1, 0);
-			bat_destroy(func_func);
 			if (radians_func == NULL) {
 				bat_destroy(degrees_func);
 				return GDK_FAIL;
@@ -892,16 +891,46 @@ bl_postversion(void *lg)
 			bat_destroy(degrees_func);
 			bat_destroy(radians_func);
 			if (cands == NULL) {
+				bat_destroy(func_func);
+				return GDK_FAIL;
+			}
+
+			BAT *like_func = BATselect(func_func, NULL, "like", NULL, 1, 1, 0);
+			if (like_func == NULL) {
+				bat_destroy(func_func);
+				bat_destroy(cands);
+				return GDK_FAIL;
+			}
+
+			BAT *ncands = BATmergecand(cands, like_func);
+			bat_destroy(cands);
+			bat_destroy(like_func);
+			if (ncands == NULL) {
+				bat_destroy(func_func);
+				return GDK_FAIL;
+			}
+
+			BAT *ilike_func = BATselect(func_func, NULL, "ilike", NULL, 1, 1, 0);
+			bat_destroy(func_func);
+			if (ilike_func == NULL) {
+				bat_destroy(ncands);
+				return GDK_FAIL;
+			}
+
+			BAT *final_cands = BATmergecand(ncands, ilike_func);
+			bat_destroy(ncands);
+			bat_destroy(ilike_func);
+			if (final_cands == NULL) {
 				return GDK_FAIL;
 			}
 
 			BAT *sys_funcs = temp_descriptor(logger_find_bat(lg, D("sys", "functions"), 0, 0));
 			if (sys_funcs == NULL) {
-				bat_destroy(cands);
+				bat_destroy(final_cands);
 				return GDK_FAIL;
 			}
-			gdk_return res = BATappend(sys_funcs, cands, NULL, true);
-			bat_destroy(cands);
+			gdk_return res = BATappend(sys_funcs, final_cands, NULL, true);
+			bat_destroy(final_cands);
 			bat_destroy(sys_funcs);
 			if (res != GDK_SUCCEED)
 				return res;
