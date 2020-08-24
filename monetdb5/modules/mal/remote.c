@@ -75,7 +75,6 @@ static connection conns = NULL;
 static unsigned char localtype = 0177;
 
 static inline str RMTquery(MapiHdl *ret, const char *func, Mapi conn, const char *query);
-static inline str RMTinternalcopyfrom(BAT **ret, char *hdr, stream *in);
 
 /**
  * Returns a BAT with valid redirects for the given pattern.  If
@@ -516,6 +515,28 @@ str RMTepilogue(void *ret) {
 	return(MAL_SUCCEED);
 }
 
+str RMTreadbatheader(stream* sin, char* buf) {
+		ssize_t sz = 0, rd;
+
+		/* read the JSON header */
+		while ((rd = mnstr_read(sin, &buf[sz], 1, 1)) == 1 && buf[sz] != '\n') {
+			sz += rd;
+		}
+		if (rd < 0) {
+			throw(MAL, "remote.get", "could not read BAT JSON header");
+		}
+		if (buf[0] == '!') {
+			char *result;
+			if((result = GDKstrdup(buf)) == NULL)
+				throw(MAL, "remote.get", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+			return result;
+		}
+
+		buf[sz] = '\0';
+
+		return MAL_SUCCEED;
+}
+
 /**
  * get fetches the object referenced by ident over connection conn.
  * We are only interested in retrieving void-headed BATs, i.e. single columns.
@@ -638,7 +659,6 @@ str RMTget(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 		stream *sout;
 		stream *sin;
 		char buf[256];
-		ssize_t sz = 0, rd;
 		BAT *b = NULL;
 
 		/* this call should be a single transaction over the channel*/
@@ -657,23 +677,11 @@ str RMTget(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 		mnstr_printf(sout, "remote.batbincopy(%s);\n", ident);
 		mnstr_flush(sout);
 
-		/* read the JSON header */
-		while ((rd = mnstr_read(sin, &buf[sz], 1, 1)) == 1 && buf[sz] != '\n') {
-			sz += rd;
-		}
-		if (rd < 0) {
+		if ( (tmp = RMTreadbatheader(sin, buf)) != MAL_SUCCEED) {
 			MT_lock_unset(&c->lock);
-			throw(MAL, "remote.get", "could not read BAT JSON header");
-		}
-		if (buf[0] == '!') {
-			char *result;
-			MT_lock_unset(&c->lock);
-			if((result = GDKstrdup(buf)) == NULL)
-				throw(MAL, "remote.get", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-			return result;
+			return tmp;
 		}
 
-		buf[sz] = '\0';
 		if ((tmp = RMTinternalcopyfrom(&b, buf, sin)) != NULL) {
 			MT_lock_unset(&c->lock);
 			return(tmp);
@@ -1209,7 +1217,7 @@ typedef struct _binbat_v1 {
 	size_t theapsize;
 } binbat;
 
-static inline str
+str
 RMTinternalcopyfrom(BAT **ret, char *hdr, stream *in)
 {
 	binbat bb = { 0, 0, 0, false, false, false, false, false, 0, 0, 0, 0 };

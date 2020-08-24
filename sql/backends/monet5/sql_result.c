@@ -1628,7 +1628,6 @@ cleanup:
 	return fres;
 }
 
-// TODO copied from/based on remote.c:RMTbincopyto
 static int
 mvc_export_table_columnar(stream *s, res_table *t, BAT *order) {
 	int i;

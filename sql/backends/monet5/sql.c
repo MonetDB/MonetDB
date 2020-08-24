@@ -189,7 +189,7 @@ checkSQLContext(Client cntxt)
 	return MAL_SUCCEED;
 }
 
-static str
+str
 getBackendContext(Client cntxt, backend **be)
 {
 	str msg;
