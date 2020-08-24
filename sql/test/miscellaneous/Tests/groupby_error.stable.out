@@ -489,6 +489,14 @@ project (
 #CREATE TABLE "tab0" ("col0" INTEGER,"col1" INTEGER,"col2" INTEGER);
 #INSERT INTO "tab0" VALUES (83, 0, 38), (26, 0, 79), (43, 81, 24);
 [ 3	]
+#SELECT CAST(COUNT ( DISTINCT + CAST ( NULL AS INTEGER ) ) + 93 as BIGINT) AS col2 FROM tab0 GROUP BY col0 HAVING NOT ( COUNT ( * ) ) = 94 / COUNT ( * );
+% . # table_name
+% col2 # name
+% bigint # type
+% 2 # length
+[ 93	]
+[ 93	]
+[ 93	]
 #ROLLBACK;
 #START TRANSACTION;
 #CREATE TABLE tab2 ("col0" INTEGER,"col1" INTEGER,"col2" INTEGER);

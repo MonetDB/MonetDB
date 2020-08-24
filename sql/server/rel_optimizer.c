@@ -5998,13 +5998,17 @@ rel_groupby_distinct(visitor *v, sql_rel *rel)
 		for (n=rel->exps->h; n && nr <= 2; n = n->next) {
 			sql_exp *e = n->data;
 			if (need_distinct(e)) {
-				distinct = n->data;
-				nr++;
+				if (e->type == e_aggr && (!e->l || exps_are_atoms(e->l))) {
+					set_nodistinct(e);
+				} else {
+					distinct = n->data;
+					nr++;
+				}
 			}
 		}
 		if (nr < 1 || distinct->type != e_aggr)
 			return rel;
-		if ((nr > 1 || list_length(rel->r) + nr != list_length(rel->exps)))
+		if (nr > 1 || list_length(rel->r) + nr != list_length(rel->exps))
 			return rel;//rel_groupby_distinct2(v, rel);
 		arg = distinct->l;
 		if (list_length(arg) != 1 || list_length(rel->r) + nr != list_length(rel->exps))
