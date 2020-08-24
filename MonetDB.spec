@@ -764,6 +764,7 @@ fi
 
 %build
 %cmake3 \
+	-DRELEASE_VERSION=ON \
 	-DASSERT=OFF \
 	-DCINTEGRATION=%{?with_cintegration:ON}%{!?with_cintegration:OFF} \
 	-DFITS=%{?with_fits:ON}%{!?with_fits:OFF} \
