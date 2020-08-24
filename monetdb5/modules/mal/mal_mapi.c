@@ -675,6 +675,7 @@ start_listen(SOCKET *sockp, int *portp, const char *listenaddr,
 static str
 SERVERlisten(int port, const char *usockfile, int maxusers)
 {
+	SOCKET socks[3];
 	SOCKET *psock;
 #ifdef HAVE_SYS_UN_H
 	struct sockaddr_un userver;
@@ -708,13 +709,13 @@ SERVERlisten(int port, const char *usockfile, int maxusers)
 		throw(ILLARG, "mal_mapi.listen", OPERATION_FAILED ": port number should be between 0 and 65535");
 	}
 
-	psock = GDKmalloc(sizeof(SOCKET) * 3);
+	psock = GDKmalloc(sizeof(socks));
 	if (psock == NULL)
 		throw(MAL,"mal_mapi.listen", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-	psock[0] = psock[1] = psock[2] = INVALID_SOCKET;
+	socks[0] = socks[1] = socks[2] = INVALID_SOCKET;
 
 	if (listenaddr == NULL || strcmp(listenaddr, "none") != 0) {
-		char *msg = start_listen(psock, &port, listenaddr, host, sizeof(host), maxusers);
+		char *msg = start_listen(socks, &port, listenaddr, host, sizeof(host), maxusers);
 		if (msg != MAL_SUCCEED) {
 			GDKfree(psock);
 			return msg;
@@ -727,37 +728,37 @@ SERVERlisten(int port, const char *usockfile, int maxusers)
 		 * chars long :/ */
 		size_t ulen = strlen(usockfile);
 		if (ulen >= sizeof(userver.sun_path)) {
-			if (psock[0] != INVALID_SOCKET)
-				closesocket(psock[0]);
-			if (psock[1] != INVALID_SOCKET)
-				closesocket(psock[1]);
+			if (socks[0] != INVALID_SOCKET)
+				closesocket(socks[0]);
+			if (socks[1] != INVALID_SOCKET)
+				closesocket(socks[1]);
 			GDKfree(psock);
 			throw(MAL, "mal_mapi.listen",
 				  OPERATION_FAILED ": UNIX socket path too long: %s",
 				  usockfile);
 		}
 
-		psock[2] = socket(AF_UNIX, SOCK_STREAM
+		socks[2] = socket(AF_UNIX, SOCK_STREAM
 #ifdef SOCK_CLOEXEC
 						  | SOCK_CLOEXEC
 #endif
 						  , 0);
-		if (psock[2] == INVALID_SOCKET) {
+		if (socks[2] == INVALID_SOCKET) {
 #ifdef _MSC_VER
 			const char *err = wsaerror(WSAGetLastError());
 #else
 			const char *err = GDKstrerror(errno, (char[128]){0}, 128);
 #endif
-			if (psock[0] != INVALID_SOCKET)
-				closesocket(psock[0]);
-			if (psock[1] != INVALID_SOCKET)
-				closesocket(psock[1]);
+			if (socks[0] != INVALID_SOCKET)
+				closesocket(socks[0]);
+			if (socks[1] != INVALID_SOCKET)
+				closesocket(socks[1]);
 			GDKfree(psock);
 			throw(IO, "mal_mapi.listen",
 				  OPERATION_FAILED ": creation of UNIX socket failed: %s", err);
 		}
 #if !defined(SOCK_CLOEXEC) && defined(HAVE_FCNTL)
-		(void) fcntl(psock[2], F_SETFD, FD_CLOEXEC);
+		(void) fcntl(socks[2], F_SETFD, FD_CLOEXEC);
 #endif
 
 		userver.sun_family = AF_UNIX;
@@ -766,25 +767,25 @@ SERVERlisten(int port, const char *usockfile, int maxusers)
 		if (remove(usockfile) == -1 && errno != ENOENT) {
 			char *e = createException(IO, "mal_mapi.listen", OPERATION_FAILED ": remove UNIX socket file: %s",
 									  GDKstrerror(errno, (char[128]){0}, 128));
-			if (psock[0] != INVALID_SOCKET)
-				closesocket(psock[0]);
-			if (psock[1] != INVALID_SOCKET)
-				closesocket(psock[1]);
-			closesocket(psock[2]);
+			if (socks[0] != INVALID_SOCKET)
+				closesocket(socks[0]);
+			if (socks[1] != INVALID_SOCKET)
+				closesocket(socks[1]);
+			closesocket(socks[2]);
 			GDKfree(psock);
 			return e;
 		}
-		if (bind(psock[2], (struct sockaddr *) &userver, length) == SOCKET_ERROR) {
+		if (bind(socks[2], (struct sockaddr *) &userver, length) == SOCKET_ERROR) {
 #ifdef _MSC_VER
 			const char *err = wsaerror(WSAGetLastError());
 #else
 			const char *err = GDKstrerror(errno, (char[128]){0}, 128);
 #endif
-			if (psock[0] != INVALID_SOCKET)
-				closesocket(psock[0]);
-			if (psock[1] != INVALID_SOCKET)
-				closesocket(psock[1]);
-			closesocket(psock[2]);
+			if (socks[0] != INVALID_SOCKET)
+				closesocket(socks[0]);
+			if (socks[1] != INVALID_SOCKET)
+				closesocket(socks[1]);
+			closesocket(socks[2]);
 			(void) remove(usockfile);
 			GDKfree(psock);
 			throw(IO, "mal_mapi.listen",
@@ -792,17 +793,17 @@ SERVERlisten(int port, const char *usockfile, int maxusers)
 				  ": binding to UNIX socket file %s failed: %s",
 				  usockfile, err);
 		}
-		if (listen(psock[2], maxusers) == SOCKET_ERROR) {
+		if (listen(socks[2], maxusers) == SOCKET_ERROR) {
 #ifdef _MSC_VER
 			const char *err = wsaerror(WSAGetLastError());
 #else
 			const char *err = GDKstrerror(errno, (char[128]){0}, 128);
 #endif
-			if (psock[0] != INVALID_SOCKET)
-				closesocket(psock[0]);
-			if (psock[1] != INVALID_SOCKET)
-				closesocket(psock[1]);
-			closesocket(psock[2]);
+			if (socks[0] != INVALID_SOCKET)
+				closesocket(socks[0]);
+			if (socks[1] != INVALID_SOCKET)
+				closesocket(socks[1]);
+			closesocket(socks[2]);
 			(void) remove(usockfile);
 			GDKfree(psock);
 			throw(IO, "mal_mapi.listen",
@@ -817,15 +818,16 @@ SERVERlisten(int port, const char *usockfile, int maxusers)
 	 * predictable... */
 	srand((unsigned int) GDKusec());
 
+	memcpy(psock, socks, sizeof(socks));
 	if (MT_create_thread(&pid, (void (*)(void *)) SERVERlistenThread, psock,
 						 MT_THR_DETACHED, "listenThread") != 0) {
-		if (psock[0] != INVALID_SOCKET)
-			closesocket(psock[0]);
-		if (psock[1] != INVALID_SOCKET)
-			closesocket(psock[1]);
+		if (socks[0] != INVALID_SOCKET)
+			closesocket(socks[0]);
+		if (socks[1] != INVALID_SOCKET)
+			closesocket(socks[1]);
 #ifdef HAVE_SYS_UN_H
-		if (psock[2] != INVALID_SOCKET)
-			closesocket(psock[2]);
+		if (socks[2] != INVALID_SOCKET)
+			closesocket(socks[2]);
 #endif
 		GDKfree(psock);
 		throw(MAL, "mal_mapi.listen", OPERATION_FAILED ": starting thread failed");
@@ -833,7 +835,7 @@ SERVERlisten(int port, const char *usockfile, int maxusers)
 
 	TRC_DEBUG(MAL_SERVER, "Ready to accept connections on: %s:%d\n", host, port);
 
-	if (psock[0] != INVALID_SOCKET || psock[1] != INVALID_SOCKET) {
+	if (socks[0] != INVALID_SOCKET || socks[1] != INVALID_SOCKET) {
 		if (!GDKinmemory() && (buf = msab_marchConnection(host, port)) != NULL)
 			free(buf);
 		else
@@ -842,7 +844,7 @@ SERVERlisten(int port, const char *usockfile, int maxusers)
 				   "mapi:monetdb://%s:%i/\n", host, port);
 	}
 #ifdef HAVE_SYS_UN_H
-	if (psock[2] != INVALID_SOCKET) {
+	if (socks[2] != INVALID_SOCKET) {
 		if (!GDKinmemory() && (buf = msab_marchConnection(usockfile, 0)) != NULL)
 			free(buf);
 		else
