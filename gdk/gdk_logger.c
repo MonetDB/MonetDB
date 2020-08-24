@@ -2009,7 +2009,7 @@ internal_log_bat(logger *lg, BAT *b, log_id id, lng offset, lng cnt, int sliced)
 			for (lng i = 0; i < nr; i += 32) {
 				uint32_t v = 0;
 				for (int j = 0; j < 32 && i + j < nr; j++)
-					v |= (uint32_t) mskGetVal(b, offset + i + j) << j;
+					v |= (uint32_t) mskGetVal(b, (BUN) (offset + i + j)) << j;
 				if (!mnstr_writeInt(lg->output_log, (int) v)) {
 					ok = GDK_FAIL;
 					break;
