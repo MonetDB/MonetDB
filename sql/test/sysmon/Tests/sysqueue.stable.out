@@ -5,14 +5,14 @@ stdout of test 'sysqueue` in directory 'sql/test/sysmon` itself:
 # 16:51:46 >  "mclient" "-lsql" "-ftest" "-tnone" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-1061" "--port=34490"
 # 16:51:46 >  
 
-#select username, status, query from sys.queue();
-% .%1,	.%1,	.%1 # table_name
-% username,	status,	query # name
+#select username, status, case when query ilike 'set time%' then 'set time...' else query end from sys.queue();
+% .%1,	.%1,	.%2 # table_name
+% username,	status,	%2 # name
 % clob,	clob,	clob # type
-% 7,	8,	56 # length
+% 7,	8,	114 # length
 [ "monetdb",	"finished",	"create procedure sleep(i int) external name alarm.sleep;"	]
-[ "monetdb",	"finished",	"set time zone interval \\'+02:00\\' hour to minute\n;"	]
-[ "monetdb",	"running",	"select username, status, query from sys.queue();"	]
+[ "monetdb",	"finished",	"set time..."	]
+[ "monetdb",	"running",	"select username, status, case when query ilike \\'set time%\\' then \\'set time...\\' else query end from sys.queue();"	]
 #select count(*) from sys.queue();
 % .%2 # table_name
 % %2 # name
