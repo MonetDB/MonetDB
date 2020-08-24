@@ -291,10 +291,6 @@ continue_completion(rl_completion_func_t * func)
 	rl_attempted_completion_function = func;
 }
 
-#ifndef BUFSIZ
-#define BUFSIZ 1024
-#endif
-
 static void
 readline_show_error(const char *msg) {
 	rl_save_prompt();
@@ -303,13 +299,19 @@ readline_show_error(const char *msg) {
 	rl_clear_message();
 }
 
+#ifndef BUFFER_SIZE
+#define BUFFER_SIZE 1024
+#endif
+
 static int
 invoke_editor(int cnt, int key) {
 	char template[] = "/tmp/mclient_temp_XXXXXX";
-	char cmd[BUFSIZ];
-	char *editor;
+	char editor_command[BUFFER_SIZE];
+	char *read_buff = NULL;
+	char *editor = NULL;
 	FILE *fp;
-	size_t cmd_len;
+	size_t content_len;
+	size_t read_bytes, idx;
 
 	(void) cnt;
 	(void) key;
@@ -324,35 +326,64 @@ invoke_editor(int cnt, int key) {
 	fflush(fp);
 
 	editor = getenv("VISUAL");
-	if (!editor) {
+	if (editor == NULL) {
 		editor = getenv("EDITOR");
-		if (!editor) {
+		if (editor == NULL) {
 			readline_show_error("invoke_editor: EDITOR/VISUAL env variable not set\n");
 			goto bailout;
 		}
 	}
 
-	snprintf(cmd, BUFSIZ, "%s %s", editor, template);
-	if (system(cmd) != 0) {
+	snprintf(editor_command, BUFFER_SIZE, "%s %s", editor, template);
+	if (system(editor_command) != 0) {
 		readline_show_error("invoke_editor: Starting editor failed\n");
 		goto bailout;
 	}
 
-	fseek(fp, 0, SEEK_SET);
-	cmd_len = fread(cmd, sizeof(char), BUFSIZ, fp);
+	fseek(fp, 0L, SEEK_END);
+	content_len = ftell(fp);
+	rewind(fp);
+
+	if (content_len > 0) {
+		read_buff = (char *)malloc(content_len*sizeof(char));
+		if (read_buff == NULL) {
+			readline_show_error("invoke_editor: Cannot allocate memory\n");
+			goto bailout;
+		}
+
+		read_bytes = fread(read_buff, sizeof(char), content_len, fp);
+		if (read_bytes != content_len) {
+			readline_show_error("invoke_editor: Did not read from file correctly\n");
+			goto bailout;
+		}
+
+		*(read_buff + read_bytes) = 0;
+
+		/* Remove trailing whitespace */
+		idx = read_bytes - 1;
+		while(isspace(*(read_buff + idx))) {
+			*(read_buff + idx) = 0;
+			idx--;
+		}
+
+		rl_replace_line(read_buff, 0);
+		rl_point = idx + 1;  // place the point one character after the end of the string
+
+		free(read_buff);
+	} else {
+		rl_replace_line("", 0);
+		rl_point = 0;
+	}
+
 	fclose(fp);
-
-	*(cmd + cmd_len) = 0;
-
-	rl_replace_line(cmd, 0);
-	rl_point = cmd_len - 1;
-
 	unlink(template);
 
 	return 0;
 
 bailout:
 	fclose(fp);
+	free(read_buff);
+	unlink(template);
 	return 1;
 }
 
@@ -375,7 +406,8 @@ init_readline(Mapi mid, const char *lang, bool save_history)
 		rl_attempted_completion_function = mal_completion;
 	}
 
-	rl_bind_key(024, invoke_editor);
+	rl_add_funmap_entry("invoke-editor", invoke_editor);
+	rl_bind_keyseq("\\M-e", invoke_editor);
 
 	if (save_history) {
 		int len;

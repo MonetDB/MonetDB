@@ -192,6 +192,13 @@ SELECT CAST(COUNT ( DISTINCT + CAST ( NULL AS INTEGER ) ) + 93 as BIGINT) AS col
 	-- 93
 	-- 93
 	-- 93
+select group_concat(distinct 'a') from tab0;
+	-- a
+INSERT INTO "tab0" VALUES (83, 0, 38), (26, 0, 79), (43, 81, 24);
+select group_concat(distinct col1, col2) from tab0 group by col0;
+	-- 0
+	-- 81
+	-- 0
 ROLLBACK;
 
 START TRANSACTION;

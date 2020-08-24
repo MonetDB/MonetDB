@@ -2,10 +2,7 @@
 
 # Generating test files and verifying them after transmission.
 
-import bz2
 import gzip
-import lz4.frame
-import lzma
 
 import os
 import sys
@@ -208,10 +205,13 @@ class TestFile:
         elif self.compression == 'gz':
             f = gzip.GzipFile(filename, 'wb', fileobj=fileobj, mtime=131875200, compresslevel=1)
         elif self.compression == 'bz2':
+            import bz2
             f = bz2.BZ2File(fileobj, 'wb', compresslevel=1)
         elif self.compression == 'xz':
+            import lzma
             f = lzma.LZMAFile(fileobj, 'wb', preset=1)
         elif self.compression == 'lz4': # ok
+            import lz4.frame
             f = lz4.frame.LZ4FrameFile(fileobj, 'wb', compression_level=1)
         else:
             raise Exception("Unknown compression scheme: " + self.compression)
@@ -225,10 +225,13 @@ class TestFile:
         elif self.compression == 'gz':
             f = gzip.GzipFile(filename, 'rb', mtime=131875200)
         elif self.compression == 'bz2':
+            import bz2
             f = bz2.BZ2File(filename, 'rb')
         elif self.compression == 'xz':
+            import lzma
             f = lzma.LZMAFile(filename, 'rb')
         elif self.compression == 'lz4':
+            import lz4.frame
             f = lz4.frame.LZ4FrameFile(filename, 'rb')
         else:
             raise Exception("Unknown compression scheme: " + self.compression)
