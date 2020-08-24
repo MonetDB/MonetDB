@@ -406,17 +406,10 @@ handleClient(void *data)
 }
 
 char *
-acceptConnections(int sock, int usock)
+acceptConnections(int socks[3])
 {
 	char *msg;
 	int retval;
-#ifdef HAVE_POLL
-	struct pollfd pfd[2];
-#else
-	fd_set fds;
-	struct timeval tv;
-#endif
-	int msgsock;
 	void *e;
 	struct clientdata *data;
 	struct threads *threads = NULL, **threadp, *p;
@@ -425,22 +418,36 @@ acceptConnections(int sock, int usock)
 	do {
 		/* handle socket connections */
 		bool isusock = false;
+		int i;
+		int sock = -1;
 
 #ifdef HAVE_POLL
-		pfd[0] = (struct pollfd) {.fd = sock, .events = POLLIN};
-		pfd[1] = (struct pollfd) {.fd = usock, .events = POLLIN};
+		struct pollfd pfd[3];
+		int npoll = 0;
+		for (i = 0; i < 3; i++) {
+			if (socks[i] >= 0)
+				pfd[npoll++] = (struct pollfd) {.fd = socks[i],
+												.events = POLLIN};
+		}
 
 		/* Wait up to 5 seconds */
-		retval = poll(pfd, 2, 5000);
+		retval = poll(pfd, npoll, 5000);
 #else
+		fd_set fds;
 		FD_ZERO(&fds);
-		FD_SET(sock, &fds);
-		FD_SET(usock, &fds);
+
+		for (i = 0; i < 3; i++) {
+			if (socks[i] >= 0) {
+				if (socks[i] > sock)
+					sock = socks[i];
+				FD_SET(socks[i], &fds);
+			}
+		}
 
 		/* Wait up to 5 seconds */
-		tv = (struct timeval) {.tv_sec = 5};
-		retval = select((sock > usock ? sock : usock) + 1,
-				&fds, NULL, NULL, &tv);
+		struct timeval tv = (struct timeval) {.tv_sec = 5};
+		retval = select(sock + 1, &fds, NULL, NULL, &tv);
+		sock = -1;
 #endif
 		errnr = errno;
 		/* join any handleClient threads that we started and that may
@@ -485,78 +492,58 @@ acceptConnections(int sock, int usock)
 			}
 			continue;
 		}
-		if (
 #ifdef HAVE_POLL
-			pfd[0].revents & POLLIN
-#else
-			FD_ISSET(sock, &fds)
-#endif
-			) {
-			isusock = false;
-			if ((msgsock = accept4(sock, NULL, NULL, SOCK_CLOEXEC)) == -1) {
-				if (_mero_keep_listening == 0)
-					break;
-				switch (errno) {
-				case EINTR:
-					/* interrupted */
-					break;
-				case EMFILE:
-				case ENFILE:
-				case ENOBUFS:
-				case ENOMEM:
-					/* transient failures */
-					break;
-				case ECONNABORTED:
-					/* connection aborted before we began */
-					break;
-				default:
-					msg = strerror(errno);
-					goto error;
-				}
-				continue;
+		for (i = 0; i < npoll; i++) {
+			if (pfd[i].revents & POLLIN) {
+				sock = pfd[i].fd;
+				isusock = sock == socks[2];
+				break;
 			}
-#if defined(HAVE_FCNTL) && (!defined(SOCK_CLOEXEC) || !defined(HAVE_ACCEPT4))
-			(void) fcntl(msgsock, F_SETFD, FD_CLOEXEC);
-#endif
-		} else if (
-#ifdef HAVE_POLL
-			pfd[1].revents & POLLIN
+		}
 #else
-			FD_ISSET(usock, &fds)
+		for (i = 0; i < 3; i++) {
+			if (socks[i] >= 0 && FD_ISSET(socks[i], &fds)) {
+				sock = socks[i];
+				isusock = i == 2;
+				break;
+			}
+		}
 #endif
-			) {
+		if (sock < 0)
+			continue;
+
+		if ((sock = accept4(sock, NULL, NULL, SOCK_CLOEXEC)) == -1) {
+			if (_mero_keep_listening == 0)
+				break;
+			switch (errno) {
+			case EINTR:
+				/* interrupted */
+				break;
+			case EMFILE:
+			case ENFILE:
+			case ENOBUFS:
+			case ENOMEM:
+				/* transient failures */
+				break;
+			case ECONNABORTED:
+				/* connection aborted before we began */
+				break;
+			default:
+				msg = strerror(errno);
+				goto error;
+			}
+			continue;
+		}
+#if defined(HAVE_FCNTL) && (!defined(SOCK_CLOEXEC) || !defined(HAVE_ACCEPT4))
+		(void) fcntl(sock, F_SETFD, FD_CLOEXEC);
+#endif
+
+		if (isusock) {
 			struct msghdr msgh;
 			struct iovec iov;
 			char buf[1];
 			int rv;
 			char ccmsg[CMSG_SPACE(sizeof(int))];
-
-			isusock = true;
-			if ((msgsock = accept4(usock, NULL, NULL, SOCK_CLOEXEC)) == -1) {
-				if (_mero_keep_listening == 0)
-					break;
-				switch (errno) {
-				case EINTR:
-					/* interrupted */
-					break;
-				case EMFILE:
-				case ENFILE:
-				case ENOBUFS:
-				case ENOMEM:
-					/* transient failures */
-					break;
-				case ECONNABORTED:
-					/* connection aborted before we began */
-					break;
-				default:
-					msg = strerror(errno);
-					goto error;
-				}
-				continue;
-			}
-#if defined(HAVE_FCNTL) && (!defined(SOCK_CLOEXEC) || !defined(HAVE_ACCEPT4))
-			(void) fcntl(usock, F_SETFD, FD_CLOEXEC);
-#endif
 
 			/* BEWARE: unix domain sockets have a slightly different
 			 * behaviour initialy than normal sockets, because we can
@@ -585,9 +572,9 @@ acceptConnections(int sock, int usock)
 				.msg_controllen = sizeof(ccmsg),
 			};
 
-			rv = recvmsg(msgsock, &msgh, 0);
+			rv = recvmsg(sock, &msgh, 0);
 			if (rv == -1) {
-				closesocket(msgsock);
+				closesocket(sock);
 				continue;
 			}
 
@@ -597,17 +584,17 @@ acceptConnections(int sock, int usock)
 				break;
 			case '1':
 				/* filedescriptor, no way */
-				closesocket(msgsock);
+				closesocket(sock);
 				Mfprintf(stderr, "client error: fd passing not supported\n");
 				continue;
 			default:
 				/* some unknown state */
-				closesocket(msgsock);
+				closesocket(sock);
 				Mfprintf(stderr, "client error: unknown initial byte\n");
 				continue;
 			}
-		} else
-			continue;
+		}
+
 		/* start handleClient as a thread so that we're not blocked by
 		 * a slow client */
 		data = malloc(sizeof(*data)); /* freed by handleClient */
@@ -617,11 +604,11 @@ acceptConnections(int sock, int usock)
 				free(data);
 			if (p)
 				free(p);
-			closesocket(msgsock);
+			closesocket(sock);
 			Mfprintf(stderr, "cannot allocate memory\n");
 			continue;
 		}
-		data->sock = msgsock;
+		data->sock = sock;
 		data->isusock = isusock;
 		p->dead = false;
 		data->self = p;
@@ -631,18 +618,31 @@ acceptConnections(int sock, int usock)
 			p->next = threads;
 			threads = p;
 		} else {
-			closesocket(msgsock);
+			closesocket(sock);
 			free(data);
 			free(p);
 		}
 	} while (_mero_keep_listening);
-	shutdown(sock, SHUT_RDWR);
-	closesocket(sock);
+	if (socks[0] >= 0) {
+		shutdown(socks[0], SHUT_RDWR);
+		closesocket(socks[0]);
+	}
+	if (socks[1] >= 0) {
+		shutdown(socks[1], SHUT_RDWR);
+		closesocket(socks[1]);
+	}
 	return(NO_ERR);
 
 error:
 	_mero_keep_listening = 0;
-	closesocket(sock);
+	if (socks[0] >= 0) {
+		shutdown(socks[0], SHUT_RDWR);
+		closesocket(socks[0]);
+	}
+	if (socks[1] >= 0) {
+		shutdown(socks[1], SHUT_RDWR);
+		closesocket(socks[1]);
+	}
 	return(newErr("accept connection: %s", msg));
 }
 

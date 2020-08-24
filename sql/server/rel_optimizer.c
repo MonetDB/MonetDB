@@ -5969,9 +5969,9 @@ rel_groupby_distinct2(visitor *v, sql_rel *rel)
 static sql_rel *
 rel_groupby_distinct(visitor *v, sql_rel *rel)
 {
-	if (is_groupby(rel->op) && !rel_is_ref(rel) && rel->exps && list_empty(rel->r)) {
-		node *n;
+	node *n;
 
+	if (is_groupby(rel->op) && !rel_is_ref(rel) && rel->exps && list_empty(rel->r)) {
 		for (n = rel->exps->h; n; n = n->next) {
 			sql_exp *e = n->data;
 
@@ -5983,13 +5983,21 @@ rel_groupby_distinct(visitor *v, sql_rel *rel)
 		}
 	}
 
+	/*if the input expressions are atoms, drop distinct property */
+	if (is_groupby(rel->op) && !list_empty(rel->exps)) {
+		for (n=rel->exps->h; n ; n = n->next) {
+			sql_exp *e = n->data;
+			if (e->type == e_aggr && need_distinct(e) && (!e->l || exps_are_atoms(e->l)))
+				set_nodistinct(e);
+		}
+	}
+
 	if (is_groupby(rel->op)) {
 		sql_rel *l = rel->l;
 		if (!l || is_groupby(l->op))
 			return rel;
 	}
 	if (is_groupby(rel->op) && rel->r && !rel_is_ref(rel)) {
-		node *n;
 		int nr = 0;
 		list *gbe, *ngbe, *arg, *exps, *nexps;
 		sql_exp *distinct = NULL, *darg;
@@ -6004,7 +6012,7 @@ rel_groupby_distinct(visitor *v, sql_rel *rel)
 		}
 		if (nr < 1 || distinct->type != e_aggr)
 			return rel;
-		if ((nr > 1 || list_length(rel->r) + nr != list_length(rel->exps)))
+		if (nr > 1 || list_length(rel->r) + nr != list_length(rel->exps))
 			return rel;//rel_groupby_distinct2(v, rel);
 		arg = distinct->l;
 		if (list_length(arg) != 1 || list_length(rel->r) + nr != list_length(rel->exps))

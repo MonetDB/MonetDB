@@ -269,10 +269,15 @@ setConfVal(confkeyval *ckv, const char *val) {
 		}; break;
 		case LADDR: {
 			if (strncmp(val, "127.0.0.1", strlen("127.0.0.1")) != 0 &&
-				strncmp(val, "0.0.0.0", strlen("0.0.0.0")) != 0) {
+				strncmp(val, "0.0.0.0", strlen("0.0.0.0")) != 0 &&
+				strncmp(val, "::", 2) != 0 &&
+				strncmp(val, "::1", 3) != 0 &&
+				strncmp(val, "localhost", strlen("localhost")) != 0 &&
+				strncmp(val, "all", strlen("all")) != 0
+			) {
 				char buf[256];
 				snprintf(buf, sizeof(buf),
-						 "only valid values for %s are \"127.0.0.1\" or \"0.0.0.0\"\n",
+						 "only valid values for %s are \"127.0.0.1\", \"0.0.0.0\", \"::1\", \"::\", \"localhost\" or \"all\"\n",
 						 ckv->key);
 				return(strdup(buf));
 			}

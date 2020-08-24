@@ -533,7 +533,6 @@ forkMserver(char *database, sabdb** stats, bool force)
 		raw_strings="raw_strings=true";
 	}
 	mport = (unsigned int)getConfNum(_mero_props, "port");
-	ipv6 = getConfNum(_mero_props, "ipv6") == 1;
 
 	/* ok, now exec that mserver we want */
 	snprintf(dbpath, sizeof(dbpath),
@@ -557,6 +556,13 @@ forkMserver(char *database, sabdb** stats, bool force)
 		snprintf(dbtrace_path, sizeof(dbtrace_path),
 				 "--dbtrace=%s", dbtrace);
 		argv[c++] = dbtrace_path;
+	}
+
+	if (strncmp(listenaddr, "127.0.0.1", strlen("127.0.0.1")) == 0 ||
+		strncmp(listenaddr, "0.0.0.0", strlen("0.0.0.0")) == 0) {
+		ipv6 = false;
+	} else {
+		ipv6 = true;
 	}
 
 	if (mydoproxy) {

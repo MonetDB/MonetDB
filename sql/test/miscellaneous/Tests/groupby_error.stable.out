@@ -465,6 +465,12 @@ project (
 % bigint # type
 % 1 # length
 [ 1	]
+#SELECT CAST(SUM ( + 73 ) * - CASE WHEN NOT ( NOT 27 BETWEEN 15 AND - NULLIF ( - 63, - 28 + + 76 ) ) THEN NULL ELSE + 77 * + 69 END / - CAST ( - 69 AS INTEGER ) AS BIGINT) AS col0;
+% . # table_name
+% col0 # name
+% bigint # type
+% 1 # length
+[ NULL	]
 #SELECT DISTINCT CAST(COALESCE ( + 38, - - ( - 70 ) * 52 + + 91 + - 47 ) + + CAST ( - 54 AS REAL ) / + 68 / + ( - 92 ) * - - CASE WHEN NULL >= NULL THEN COUNT ( * ) WHEN - COUNT ( * ) IS NULL 
 #THEN NULL ELSE NULL END * + 28 * - 58 + COUNT ( * ) + + COUNT ( * ) AS BIGINT);
 % .%3 # table_name
@@ -481,6 +487,22 @@ project (
 [ NULL	]
 #START TRANSACTION;
 #CREATE TABLE "tab0" ("col0" INTEGER,"col1" INTEGER,"col2" INTEGER);
+#INSERT INTO "tab0" VALUES (83, 0, 38), (26, 0, 79), (43, 81, 24);
+[ 3	]
+#SELECT CAST(COUNT ( DISTINCT + CAST ( NULL AS INTEGER ) ) + 93 as BIGINT) AS col2 FROM tab0 GROUP BY col0 HAVING NOT ( COUNT ( * ) ) = 94 / COUNT ( * );
+% . # table_name
+% col2 # name
+% bigint # type
+% 2 # length
+[ 93	]
+[ 93	]
+[ 93	]
+#select group_concat(distinct 'a') from tab0;
+% .%1 # table_name
+% %1 # name
+% clob # type
+% 5 # length
+[ "a,a,a"	]
 #INSERT INTO "tab0" VALUES (83, 0, 38), (26, 0, 79), (43, 81, 24);
 [ 3	]
 #ROLLBACK;
