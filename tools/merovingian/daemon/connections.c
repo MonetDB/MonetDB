@@ -39,7 +39,7 @@ openConnectionIP(int *socks, bool udp, bool bind_ipv6, const char *bindaddr, uns
 	struct addrinfo hints = (struct addrinfo) {
 		.ai_family = bind_ipv6 ? AF_INET6 : AF_INET,
 		.ai_socktype = udp ? SOCK_DGRAM : SOCK_STREAM,
-		.ai_flags = AI_PASSIVE,
+		.ai_flags = AI_PASSIVE | AI_NUMERICSERV,
 		.ai_protocol = udp ? 0 : IPPROTO_TCP,
 	};
 	snprintf(sport, sizeof(sport), "%hu", port);
@@ -103,7 +103,15 @@ openConnectionIP(int *socks, bool udp, bool bind_ipv6, const char *bindaddr, uns
 				sock = -1;
 				continue;
 			}
-			if (getnameinfo(rp->ai_addr, rp->ai_addrlen,
+			struct sockaddr_storage addr;
+			socklen_t addrlen = (socklen_t) sizeof(addr);
+			if (getsockname(sock, (struct sockaddr *) &addr, &addrlen) == -1) {
+				e = errno;
+				closesocket(sock);
+				sock = -1;
+				continue;
+			}
+			if (getnameinfo((struct sockaddr *) &addr, addrlen,
 							host, sizeof(host),
 							sport, sizeof(sport),
 							NI_NUMERICSERV | (udp ? NI_DGRAM : 0)) != 0) {
