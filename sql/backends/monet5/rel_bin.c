@@ -1106,19 +1106,30 @@ exp_bin(backend *be, sql_exp *e, stmt *left, stmt *right, stmt *grp, stmt *ext, 
 
 				if (!as)
 					return NULL;
-				if (need_distinct(e)){
-					stmt *next = NULL;
-					if (grp) {
-						stmt *g = stmt_group(be, as, grp, ext, cnt, 1);
-						next = stmt_result(be, g, 1);
-					} else {
-						next = stmt_unique(be, as);
-					}
-					as = stmt_project(be, next, as);
-					if (grp)
-						grp = stmt_project(be, next, grp);
-				}
 				append(l, as);
+			}
+			if (need_distinct(e) && (grp || list_length(l) > 1)){
+				list *nl = sa_list(sql->sa);
+				stmt *ngrp = grp;
+				stmt *next = ext;
+				for (en = l->h; en; en = en->next) {
+					stmt *as = en->data;
+					stmt *g = stmt_group(be, as, ngrp, next, cnt, 1);
+					ngrp = stmt_result(be, g, 0);
+					next = stmt_result(be, g, 1);
+				}
+				for (en = l->h; en; en = en->next) {
+					stmt *as = en->data;
+					append(nl, stmt_project(be, next, as));
+				}
+				if (grp)
+					grp = stmt_project(be, next, grp);
+				l = nl;
+			} else if (need_distinct(e)) {
+				stmt *a = l->h->data;
+				stmt *u = stmt_unique(be, a);
+				l = sa_list(sql->sa);
+				append(l, stmt_project(be, u, a));
 			}
 			as = stmt_list(be, l);
 		} else {
