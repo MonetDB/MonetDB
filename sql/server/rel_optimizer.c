@@ -7528,6 +7528,22 @@ rel_simplify_predicates(visitor *v, sql_rel *rel, sql_exp *e, int depth)
 {
 	(void)depth;
 	if (is_select(rel->op) || is_join(rel->op) || is_semi(rel->op)) {
+		if (is_compare(e->type) && is_semantics(e) && (e->flag == cmp_equal || e->flag == cmp_notequal) && exp_is_null(e->r)) {
+			/* simplify 'is null' predicates on constants */
+			if (exp_is_null(e->l)) {
+				int nval = e->flag == cmp_equal;
+				if (is_anti(e)) nval = !nval;
+				e = exp_atom_bool(v->sql->sa, nval);
+				v->changes++;
+				return e;
+			} else if (exp_is_not_null(e->l)) {
+				int nval = e->flag == cmp_notequal;
+				if (is_anti(e)) nval = !nval;
+				e = exp_atom_bool(v->sql->sa, nval);
+				v->changes++;
+				return e;
+			}
+		}
 		if (is_atom(e->type) && ((!e->l && !e->r && !e->f) || e->r)) /* prepared statement parameter or argument */
 			return e;
 		if (is_atom(e->type) && e->l) { /* direct literal */
@@ -7642,6 +7658,7 @@ rel_simplify_predicates(visitor *v, sql_rel *rel, sql_exp *e, int depth)
 					}
 				}
 			} else if (is_atom(l->type) && is_atom(r->type) && !is_semantics(e)) {
+				/* compute comparisons on atoms */
 				if (exp_is_null(l) || exp_is_null(r)) {
 					e = exp_null(v->sql->sa, sql_bind_localtype("bit"));
 					v->changes++;
