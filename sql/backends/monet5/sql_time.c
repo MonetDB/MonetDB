@@ -109,27 +109,17 @@ bailout:
 	return msg;
 }
 
-static inline str
-second_interval_2_daytime_imp(daytime *res, lng next,
+static inline daytime
+second_interval_2_daytime_imp(lng next,
 #ifdef HAVE_HGE
 hge shift, hge divider, hge multiplier
 #else
 lng shift, lng divider, lng multiplier
 #endif
 ) {
-	daytime d = daytime_add_usec(daytime_create(0, 0, 0, 0), next * 1000);
-	if (is_daytime_nil(d)) {
-		str msg;
-		size_t len = 0;
-		char *str_val = NULL;
-		if (BATatoms[TYPE_lng].atomToStr(&str_val, &len, &next, false) < 0)
-			return createException(SQL, "batcalc.second_interval_2_daytime", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-		msg = createException(SQL, "batcalc.second_interval_2_daytime", SQLSTATE(22003) "Overflow in conversion of second interval '%s' to time", str_val);
-		GDKfree(str_val);
-		return msg;
-	}
-	*res = daytime_2time_daytime_imp(d, shift, divider, multiplier);
-	return MAL_SUCCEED;
+	daytime d = daytime_add_usec(daytime_create(0, 0, 0, 0), (next % (24*60*60*1000)) * 1000);
+	assert(!is_daytime_nil(d));
+	return daytime_2time_daytime_imp(d, shift, divider, multiplier);
 }
 
 str
@@ -183,7 +173,7 @@ second_interval_2_daytime(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 	if (is_a_bat) {
 		oid off = b->hseqbase;
 		lng *restrict vals = (lng*) Tloc(b, 0);
-		for (BUN i = 0 ; i < q && !msg; i++) {
+		for (BUN i = 0 ; i < q ; i++) {
 			BUN p = (BUN) (canditer_next(&ci) - off);
 			lng next = vals[p];
 
@@ -191,15 +181,12 @@ second_interval_2_daytime(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 				ret[i] = daytime_nil;
 				nils = true;
 			} else {
-				msg = second_interval_2_daytime_imp(&(ret[i]), next, shift, divider, multiplier);
+				ret[i] = second_interval_2_daytime_imp(next, shift, divider, multiplier);
 			}
 		}
 	} else {
 		lng next = *(lng*)getArgReference(stk, pci, 1);
-		if (is_lng_nil(next))
-			*ret = daytime_nil;
-		else
-			msg = second_interval_2_daytime_imp(ret, next, shift, divider, multiplier);
+		*ret = is_lng_nil(next) ? daytime_nil : second_interval_2_daytime_imp(next, shift, divider, multiplier);
 	}
 
 bailout:

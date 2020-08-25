@@ -325,5 +325,8 @@ COPY 5 RECORDS INTO "sys"."t4" FROM stdin USING DELIMITERS E'\t',E'\n','"';
 1699639666.000
 
 select interval '-1680612084' second from t3 natural join (select t4.c0, (cast(r'*' as boolean)) = false from t2, t0, t4) as sub0 group by t3.c0;
-	--error, overflow in conversion to time
+	--empty
 ROLLBACK;
+
+select cast(interval '29578044' second as time);
+	-- 08:07:24
