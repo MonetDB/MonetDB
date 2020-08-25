@@ -5863,22 +5863,6 @@ rel_reduce_groupby_exps(visitor *v, sql_rel *rel)
 	return rel;
 }
 
-/* Rewrite group by expressions with distinct
- *
- * ie select a, count(distinct b) from c where ... groupby a;
- * No other aggregations should be present
- *
- * Rewrite the more general case, good for parallel execution
- *
- * groupby(R) [e,f] [ aggr1 a distinct, aggr2 b distinct, aggr3 c, aggr4 d]
- *
- * into
- *
- * groupby(
- * 	groupby(R) [e,f,a,b] [ a, b, aggr3 c, aggr4 d]
- * ) [e,f]( aggr1 a distinct, aggr2 b distinct, aggr3_phase2 c, aggr4_phase2 d)
- */
-
 #if 0
 static sql_rel *
 rel_groupby_distinct2(visitor *v, sql_rel *rel)
@@ -5966,6 +5950,21 @@ rel_groupby_distinct2(visitor *v, sql_rel *rel)
 }
 #endif
 
+/* Rewrite group by expressions with distinct
+ *
+ * ie select a, count(distinct b) from c where ... groupby a;
+ * No other aggregations should be present
+ *
+ * Rewrite the more general case, good for parallel execution
+ *
+ * groupby(R) [e,f] [ aggr1 a distinct, aggr2 b distinct, aggr3 c, aggr4 d]
+ *
+ * into
+ *
+ * groupby(
+ * 	groupby(R) [e,f,a,b] [ a, b, aggr3 c, aggr4 d]
+ * ) [e,f]( aggr1 a distinct, aggr2 b distinct, aggr3_phase2 c, aggr4_phase2 d)
+ */
 static sql_rel *
 rel_groupby_distinct(visitor *v, sql_rel *rel)
 {
@@ -5989,7 +5988,7 @@ rel_groupby_distinct(visitor *v, sql_rel *rel)
 			return rel;
 	}
 	if (is_groupby(rel->op) && rel->r && !rel_is_ref(rel)) {
-		int nr = 0;
+		int nr = 0, anr = 0;
 		list *gbe, *ngbe, *arg, *exps, *nexps;
 		sql_exp *distinct = NULL, *darg;
 		sql_rel *l = NULL;
@@ -6000,10 +5999,11 @@ rel_groupby_distinct(visitor *v, sql_rel *rel)
 				distinct = n->data;
 				nr++;
 			}
+			anr += is_aggr(e->type);
 		}
 		if (nr < 1 || distinct->type != e_aggr)
 			return rel;
-		if (nr > 1 || list_length(rel->r) + nr != list_length(rel->exps))
+		if (nr > 1 || anr > nr)
 			return rel;//rel_groupby_distinct2(v, rel);
 		arg = distinct->l;
 		if (list_length(arg) != 1 || list_length(rel->r) + nr != list_length(rel->exps))
