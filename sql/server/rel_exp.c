@@ -1800,9 +1800,33 @@ exp_is_zero(sql_exp *e)
 int
 exp_is_not_null(sql_exp *e)
 {
-	if (e->type == e_atom && e->l)
-		return !(atom_null(e->l));
-	return 0;
+	switch (e->type) {
+	case e_atom:
+		if (e->f) /* values list */
+			return false;
+		if (e->l)
+			return !(atom_null(e->l));
+		return false;
+	case e_convert:
+		return exp_is_not_null(e->l);
+	case e_func:
+		if (!e->semantics && e->l) {
+			list *l = e->l;
+			for (node *n = l->h; n; n=n->next) {
+				sql_exp *p = n->data;
+				if (!exp_is_not_null(p))
+					return false;
+			}
+			return true;
+		}
+		return false;
+	case e_aggr:
+	case e_column:
+	case e_cmp:
+	case e_psm:
+		return false;
+	}
+	return false;
 }
 
 int
