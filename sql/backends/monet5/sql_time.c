@@ -124,7 +124,7 @@ lng shift, lng divider, lng multiplier
 		char *str_val = NULL;
 		if (BATatoms[TYPE_lng].atomToStr(&str_val, &len, &next, false) < 0)
 			return createException(SQL, "batcalc.second_interval_2_daytime", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-		msg = createException(SQL, "batcalc.second_interval_2_daytime", SQLSTATE(22003) "Overflow in convertion of second interval '%s' to time", str_val);
+		msg = createException(SQL, "batcalc.second_interval_2_daytime", SQLSTATE(22003) "Overflow in conversion of second interval '%s' to time", str_val);
 		GDKfree(str_val);
 		return msg;
 	}
@@ -1052,7 +1052,7 @@ bailout:
 				msg = createException(SQL, "batcalc." FUNC_NAME, SQLSTATE(HY013) MAL_MALLOC_FAIL); \
 				goto bailout; \
 			} \
-			msg = createException(SQL, "batcalc." FUNC_NAME, SQLSTATE(22003) "Overflow in convertion of %s to " FUNC_NAME, str_val); \
+			msg = createException(SQL, "batcalc." FUNC_NAME, SQLSTATE(22003) "Overflow in conversion of %s to " FUNC_NAME, str_val); \
 			GDKfree(str_val); \
 			goto bailout; \
 		} \
