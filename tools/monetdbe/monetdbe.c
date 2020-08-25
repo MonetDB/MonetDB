@@ -1096,6 +1096,7 @@ GENERATE_BASE_HEADERS(monetdbe_data_timestamp, timestamp);
 char*
 monetdbe_append(monetdbe_database dbhdl, const char* schema, const char* table, monetdbe_column **input /*bat *batids*/, size_t column_count)
 {
+
 	monetdbe_database_internal *mdbe = (monetdbe_database_internal*)dbhdl;
 	mvc *m = NULL;
 	sql_schema *s = NULL;
@@ -1159,7 +1160,6 @@ monetdbe_append(monetdbe_database dbhdl, const char* schema, const char* table, 
 		int mtype = monetdbe_type(input[i]->type);
 		const void* nil = (mtype>=0)?ATOMnilptr(mtype):NULL;
 		char *v = input[i]->data;
-		//int w = 1;
 
 		if (mtype < 0) {
 			mdbe->msg = createException(SQL, "monetdbe.monetdbe_append", "Cannot find type for column %zu", i);
@@ -1174,12 +1174,13 @@ monetdbe_append(monetdbe_database dbhdl, const char* schema, const char* table, 
 		) {
 			//-------------------------------------
 			BAT *bn = NULL;
-			if ((bn = COLnew(0, TYPE_int, 0, TRANSIENT)) == NULL) {
+				
+			if ((bn = COLnew(0, mtype, 0, TRANSIENT)) == NULL) {
 				BBPreclaim(bn);
 				mdbe->msg = createException(SQL, "monetdbe.monetdbe_append", "Cannot create append column");
 				goto cleanup;
 			}
-;
+
 			//save prev heap pointer			
 			char *prev_base;
 			size_t prev_size;
@@ -1191,14 +1192,14 @@ monetdbe_append(monetdbe_database dbhdl, const char* schema, const char* table, 
 			bn->theap.size = tailsize(bn, cnt);
 		
 			//BATsetdims(bn); called in COLnew
-			BATsetcount(bn, cnt);
 			BATsetcapacity(bn, cnt);
-		
+			BATsetcount(bn, cnt);
+			
 			//set default flags
 			BATsettrivprop(bn);
 
 			if (store_funcs.append_col(m->session->tr, c, bn, TYPE_bat) != 0) {
-				mdbe->msg = createException(SQL, "monetdbe.monetdbe_append", "Cannot append values");
+				mdbe->msg = createException(SQL, "monetdbe.monetdbe_append", "Cannot append BAT");
 				goto cleanup;
 
 			}
@@ -1207,15 +1208,7 @@ monetdbe_append(monetdbe_database dbhdl, const char* schema, const char* table, 
 			bn->theap.size = prev_size;
 			BBPreclaim(bn);
 			
-			//-------------------------------------
-			/*
-			w = ATOMsize(mtype);
-			for (size_t j=0; j<cnt; j++, v+=w){
-				if (store_funcs.append_col(m->session->tr, c, v, mtype) != 0) {
-					mdbe->msg = createException(SQL, "monetdbe.monetdbe_append", "Cannot append values");
-					goto cleanup;
-				}
-			}*/
+			
 		} else if (mtype == TYPE_str) {
 			char **d = (char**)v;
 
