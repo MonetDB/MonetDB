@@ -145,7 +145,16 @@ control_setup(
 			ver = 9;
 
 			control->fdin = block_stream(socket_rstream(control->sock, "client in"));
+			if (control->fdin == NULL) {
+				snprintf(control->sbuf, sizeof(control->sbuf), "cannot connect: %s", mnstr_peek_error(NULL));
+				return strdup(control->sbuf);
+			}
 			control->fdout = block_stream(socket_wstream(control->sock, "client out"));
+			if (control->fdout == NULL) {
+				close_stream(control->fdin);
+				snprintf(control->sbuf, sizeof(control->sbuf), "cannot connect: %s", mnstr_peek_error(NULL));
+				return strdup(control->sbuf);
+			}
 		} else {
 			if (strstr(control->rbuf + 2, ":BIG:") != NULL ||
 				strstr(control->rbuf + 2, ":LIT:") != NULL)
@@ -329,7 +338,7 @@ control_setup(
 						mnstr_printf(control->fdout,
 								"BIG:monetdb:{%s}%s:control:merovingian:\n",
 								*algs, p);
-						mnstr_flush(control->fdout);
+						mnstr_flush(control->fdout, MNSTR_FLUSH_DATA);
 						free(p);
 						break;
 					}
@@ -380,7 +389,7 @@ control_setup(
 
 	if (control->fdout != NULL) {
 		mnstr_printf(control->fdout, "%s %s\n", database, command);
-		mnstr_flush(control->fdout);
+		mnstr_flush(control->fdout, MNSTR_FLUSH_DATA);
 	} else {
 		len = snprintf(control->sbuf, sizeof(control->sbuf), "%s %s\n", database, command);
 		if (send(control->sock, control->sbuf, len, 0) == -1) {

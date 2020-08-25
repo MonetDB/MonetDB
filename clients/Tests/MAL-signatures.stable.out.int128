@@ -11362,7 +11362,7 @@ stdout of test 'MAL-signatures` in directory 'clients` itself:
 [ "sql",	"bind_idxbat",	"pattern sql.bind_idxbat(X_2:int, X_3:str, X_4:str, X_5:str, X_6:int, X_7:int, X_8:int) (X_0:bat[:oid], X_1:bat[:any_1]) ",	"mvc_bind_idxbat_wrap;",	""	]
 [ "sql",	"clear_table",	"unsafe pattern sql.clear_table(X_1:str, X_2:str):lng ",	"mvc_clear_table_wrap;",	""	]
 [ "sql",	"commit",	"unsafe pattern sql.commit():void ",	"SQLcommit;",	""	]
-[ "sql",	"copy_from",	"unsafe pattern sql.copy_from(X_1:ptr, X_2:str, X_3:str, X_4:str, X_5:str, X_6:str, X_7:lng, X_8:lng, X_9:int, X_10:int, X_11:str, X_12:int):bat[:any]... ",	"mvc_import_table_wrap;",	""	]
+[ "sql",	"copy_from",	"unsafe pattern sql.copy_from(X_1:ptr, X_2:str, X_3:str, X_4:str, X_5:str, X_6:str, X_7:lng, X_8:lng, X_9:int, X_10:int, X_11:str, X_12:int, X_13:int):bat[:any]... ",	"mvc_import_table_wrap;",	""	]
 [ "sql",	"copy_rejects",	"pattern sql.copy_rejects() (X_0:bat[:lng], X_1:bat[:int], X_2:bat[:str], X_3:bat[:str]) ",	"COPYrejects;",	""	]
 [ "sql",	"copy_rejects_clear",	"unsafe pattern sql.copy_rejects_clear():void ",	"COPYrejects_clear;",	""	]
 [ "sql",	"corr",	"pattern sql.corr(X_1:bte, X_2:bte, X_3:lng, X_4:lng):dbl ",	"SQLcorr;",	""	]

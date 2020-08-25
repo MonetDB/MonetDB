@@ -190,6 +190,12 @@ stdout of test 'simple_selects` in directory 'sql/test/miscellaneous` itself:
 % double,	sec_interval,	int,	int,	int,	int,	int,	bigint # type
 % 24,	5,	1,	1,	1,	1,	1,	1 # length
 [ 10,	NULL,	2,	NULL,	NULL,	NULL,	NULL,	NULL	]
+#select cast(null as blob) > cast(null as blob);
+% .%2 # table_name
+% %2 # name
+% boolean # type
+% 5 # length
+[ NULL	]
 #select substring('abc' from 1 for null);
 % .%2 # table_name
 % %2 # name
@@ -233,14 +239,14 @@ stdout of test 'simple_selects` in directory 'sql/test/miscellaneous` itself:
 [ 2	]
 #select x like null, null like x, null like null, x ilike null, null ilike x, null ilike null,
 #       x not like null, null not like x, null not like null, x not ilike null, null not ilike x, null not ilike null from x;
-% sys.%1,	.%2,	.%3,	sys.%4,	.%5,	.%6,	.%7,	.%10,	.%11,	.%12,	.%13,	.%14 # table_name
+% .%1,	.%2,	.%3,	.%4,	.%5,	.%6,	.%7,	.%10,	.%11,	.%12,	.%13,	.%14 # table_name
 % %1,	%2,	%3,	%4,	%5,	%6,	%7,	%10,	%11,	%12,	%13,	%14 # name
 % boolean,	boolean,	boolean,	boolean,	boolean,	boolean,	boolean,	boolean,	boolean,	boolean,	boolean,	boolean # type
 % 5,	5,	5,	5,	5,	5,	5,	5,	5,	5,	5,	5 # length
 [ NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
 [ NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
 #select x like null from x;
-% sys.%1 # table_name
+% .%1 # table_name
 % %1 # name
 % boolean # type
 % 5 # length

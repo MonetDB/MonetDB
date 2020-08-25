@@ -1270,7 +1270,7 @@ exp_bin(backend *be, sql_exp *e, stmt *left, stmt *right, stmt *grp, stmt *ext, 
 		} else {
 			if (r2) { /* handle all cases in stmt_uselect,
 						 reducing, non reducing, scalar etc */
-				if (l->nrcols == 0 && left)
+				if (l->nrcols == 0 && left && left->nrcols > 0)
 					l = stmt_const(be, bin_first_column(be, left), l);
 				s = stmt_uselect2(be, l, r, r2, (comp_type)e->flag, sel, is_anti(e), reduce);
 			} else {
@@ -2244,11 +2244,11 @@ split_join_exps(sql_rel *rel, list *joinable, list *not_joinable)
 						int nrcr1 = 0, nrcr2 = 0, nrcl1 = 0, nrcl2 = 0;
 
 						if ((ll && !rl &&
-						   ((rr && !lr) || (nrcr1 = r->card == CARD_ATOM)) &&
-						   ((rf && !lf) || (nrcr2 = f->card == CARD_ATOM)) && (nrcr1+nrcr2) <= 1) ||
+						   ((rr && !lr) || (nrcr1 = r->card == CARD_ATOM && exp_is_atom(r))) &&
+						   ((rf && !lf) || (nrcr2 = f->card == CARD_ATOM && exp_is_atom(f))) && (nrcr1+nrcr2) <= 1) ||
 						    (rl && !ll &&
-						   ((lr && !rr) || (nrcl1 = r->card == CARD_ATOM)) &&
-						   ((lf && !rf) || (nrcl2 = f->card == CARD_ATOM)) && (nrcl1+nrcl2) <= 1)) {
+						   ((lr && !rr) || (nrcl1 = r->card == CARD_ATOM && exp_is_atom(r))) &&
+						   ((lf && !rf) || (nrcl2 = f->card == CARD_ATOM && exp_is_atom(f))) && (nrcl1+nrcl2) <= 1)) {
 							left_reference = right_reference = 1;
 						}
 					} else {

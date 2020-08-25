@@ -192,6 +192,9 @@ macro(monetdb_macro_variables)
     message(FATAL_ERROR "PCRE library or GNU regex library not found but required for MonetDB5")
   endif()
 
+  set(MAPI_PORT 50000)
+  set(MAPI_PORT_STR "${MAPI_PORT}")
+
   set(DIR_SEP  "/")
   set(PATH_SEP ":")
   set(DIR_SEP_STR  "/")

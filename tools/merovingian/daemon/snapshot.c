@@ -272,7 +272,7 @@ snapshot_restore_from(char *dbname, char *source)
 	/* Open the file */
 	instream = open_rstream(source);
 	if (instream == NULL) {
-		e = newErr("Could not open %s", source);
+		e = newErr("%s", mnstr_peek_error(NULL));
 		goto bailout;
 	}
 

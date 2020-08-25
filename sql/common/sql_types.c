@@ -464,6 +464,8 @@ _dup_subaggr(sql_allocator *sa, sql_func *a, sql_subtype *member)
 		/* same type as the input */
 		if (r->type->eclass == EC_ANY && member)
 			r = member;
+		if (!EC_SCALE(r->type->eclass))
+			scale = 0;
 		res = sql_create_subtype(sa, r->type, digits, scale);
 		list_append(ares->res, res);
 	}
@@ -1074,6 +1076,19 @@ sql_create_aggr(sql_allocator *sa, const char *name, const char *mod, const char
 
 	va_start(valist, nargs);
 	res = sql_create_func_(sa, name, mod, imp, F_AGGR, semantics, FALSE, SCALE_NONE, 0, fres, nargs, valist);
+	va_end(valist);
+	return res;
+}
+
+static sql_func *
+sql_create_filter(sql_allocator *sa, const char *name, const char *mod, const char *imp, bit semantics, bit side_effect, int fix_scale,
+				unsigned int res_scale, int nargs, ...)
+{
+	sql_func *res;
+	va_list valist;
+
+	va_start(valist, nargs);
+	res = sql_create_func_(sa, name, mod, imp, F_FILT, semantics, side_effect, fix_scale, res_scale, BIT, nargs, valist);
 	va_end(valist);
 	return res;
 }
@@ -1826,16 +1841,15 @@ sqltypeinit( sql_allocator *sa)
 		sql_create_func(sa, "substring", "str", "substring", FALSE, FALSE, INOUT, 0, *t, 3, *t, INT, INT);
 		sql_create_func(sa, "substr", "str", "substring", FALSE, FALSE, INOUT, 0, *t, 2, *t, INT);
 		sql_create_func(sa, "substr", "str", "substring", FALSE, FALSE, INOUT, 0, *t, 3, *t, INT, INT);
-		/*
-		sql_create_func(sa, "like", "algebra", "like", FALSE, SCALE_NONE, 0, BIT, 2, *t, *t);
-		sql_create_func3(sa, "like", "algebra", "like", FALSE, SCALE_NONE, 0, BIT, 3, *t, *t, *t);
-		sql_create_func(sa, "ilike", "algebra", "ilike", FALSE, SCALE_NONE, 0, BIT, 2, *t, *t);
-		sql_create_func3(sa, "ilike", "algebra", "ilike", FALSE, SCALE_NONE, 0, BIT, 3, *t, *t, *t);
-		*/
-		sql_create_func(sa, "not_like", "algebra", "not_like", FALSE, FALSE, SCALE_NONE, 0, BIT, 2, *t, *t);
-		sql_create_func(sa, "not_like", "algebra", "not_like", FALSE, FALSE, SCALE_NONE, 0, BIT, 3, *t, *t, *t);
-		sql_create_func(sa, "not_ilike", "algebra", "not_ilike", FALSE, FALSE, SCALE_NONE, 0, BIT, 2, *t, *t);
-		sql_create_func(sa, "not_ilike", "algebra", "not_ilike", FALSE, FALSE, SCALE_NONE, 0, BIT, 3, *t, *t, *t);
+
+		sql_create_filter(sa, "like", "algebra", "like", FALSE, FALSE, SCALE_NONE, 0, 2, *t, *t);
+		sql_create_filter(sa, "like", "algebra", "like", FALSE, FALSE, SCALE_NONE, 0, 3, *t, *t, *t);
+		sql_create_filter(sa, "ilike", "algebra", "ilike", FALSE, FALSE, SCALE_NONE, 0, 2, *t, *t);
+		sql_create_filter(sa, "ilike", "algebra", "ilike", FALSE, FALSE, SCALE_NONE, 0, 3, *t, *t, *t);
+		sql_create_filter(sa, "not_like", "algebra", "not_like", FALSE, FALSE, SCALE_NONE, 0, 2, *t, *t);
+		sql_create_filter(sa, "not_like", "algebra", "not_like", FALSE, FALSE, SCALE_NONE, 0, 3, *t, *t, *t);
+		sql_create_filter(sa, "not_ilike", "algebra", "not_ilike", FALSE, FALSE, SCALE_NONE, 0, 2, *t, *t);
+		sql_create_filter(sa, "not_ilike", "algebra", "not_ilike", FALSE, FALSE, SCALE_NONE, 0, 3, *t, *t, *t);
 
 		sql_create_func(sa, "patindex", "pcre", "patindex", FALSE, FALSE, SCALE_NONE, 0, INT, 2, *t, *t);
 		sql_create_func(sa, "truncate", "str", "stringleft", FALSE, FALSE, SCALE_NONE, 0, *t, 2, *t, INT);
@@ -1880,8 +1894,8 @@ sqltypeinit( sql_allocator *sa)
 		sql_create_func(sa, "levenshtein", "txtsim", "levenshtein", TRUE, FALSE, SCALE_FIX, 0, INT, 2, *t, *t);
 		sql_create_func(sa, "levenshtein", "txtsim", "levenshtein", TRUE, FALSE, SCALE_FIX, 0, INT, 5, *t, *t, INT, INT, INT);
 	}
-	/* copyfrom fname (arg 12) */
-	f = sql_create_union(sa, "copyfrom", "sql", "copy_from", FALSE, SCALE_FIX, 0, TABLE, 12, PTR, STR, STR, STR, STR, STR, STR, LNG, LNG, INT, INT, STR, INT);
+	/* copyfrom fname (arg 13) */
+	f = sql_create_union(sa, "copyfrom", "sql", "copy_from", FALSE, SCALE_FIX, 0, TABLE, 13, PTR, STR, STR, STR, STR, STR, STR, LNG, LNG, INT, INT, STR, INT, INT);
 	f->varres = 1;
 
 	/* bincopyfrom */

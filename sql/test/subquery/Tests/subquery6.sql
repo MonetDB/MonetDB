@@ -240,6 +240,15 @@ select 1 in (ColID), max(totalsales) from tbl_ProductSales;
 select 1 in (ColID, (select 1)), max(totalsales) from tbl_ProductSales;
 	-- error, cannot use non GROUP BY column 'ColID' in query results without an aggregate function
 
+select (select (i1.i, i2.i) in (select i2.i, i1.i) from integers i2) from integers i1;
+	-- I expect this to throw the error: IN with multiple columns not available in projections
+
+select min(i) as myx from integers group by myx;
+	-- I expect this to throw the error: aggregate functions are not allowed in GROUP BY
+
+select ntile(i) over (), count(*) from integers;
+	--error, column "i" must appear in the GROUP BY clause or be used in an aggregate function
+
 DROP TABLE tbl_ProductSales;
 DROP TABLE another_T;
 DROP TABLE integers;

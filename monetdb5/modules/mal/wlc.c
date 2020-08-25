@@ -261,7 +261,7 @@ str WLCsetConfig(void){
 	fd = open_wastream(path);
 	GDKfree(path);
 	if( fd == NULL)
-		throw(MAL,"wlc.setConfig","Could not access wlc.config\n");
+		throw(MAL,"wlc.setConfig","Could not access wlc.config: %s\n", mnstr_peek_error(NULL));
 	if( wlc_snapshot[0] )
 		mnstr_printf(fd,"snapshot=%s\n", wlc_snapshot);
 	mnstr_printf(fd,"logs=%s\n", wlc_dir);
@@ -270,7 +270,7 @@ str WLCsetConfig(void){
 	mnstr_printf(fd,"state=%d\n", wlc_state );
 	mnstr_printf(fd,"batches=%d\n", wlc_batches );
 	mnstr_printf(fd,"beat=%d\n", wlc_beat );
-	(void) mnstr_flush(wlc_fd);
+	(void) mnstr_flush(wlc_fd, MNSTR_FLUSH_DATA);
 	(void) mnstr_fsync(wlc_fd);
 	close_stream(fd);
 	return MAL_SUCCEED;
@@ -311,7 +311,7 @@ WLCcloselogger(void)
 {
 	if( wlc_fd == NULL)
 		return MAL_SUCCEED;
-	mnstr_flush(wlc_fd);
+	mnstr_flush(wlc_fd, MNSTR_FLUSH_DATA);
 	mnstr_fsync(wlc_fd);
 	close_stream(wlc_fd);
 	wlc_fd= NULL;
@@ -328,7 +328,7 @@ WLCflush(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	(void) pci;
 	if( wlc_fd == NULL)
 		return MAL_SUCCEED;
-	mnstr_flush(wlc_fd);
+	mnstr_flush(wlc_fd, MNSTR_FLUSH_DATA);
 	mnstr_fsync(wlc_fd);
 	return WLCsetConfig();
 }
@@ -578,7 +578,7 @@ WLCpreparewrite(Client cntxt)
 
 		MT_lock_set(&wlc_lock);
 		printFunction(wlc_fd, cntxt->wlc, 0, LIST_MAL_CALL );
-		(void) mnstr_flush(wlc_fd);
+		(void) mnstr_flush(wlc_fd, MNSTR_FLUSH_DATA);
 		(void) mnstr_fsync(wlc_fd);
 		// close file if no delay is allowed
 		if( wlc_beat == 0 )

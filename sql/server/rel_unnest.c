@@ -3154,13 +3154,13 @@ rewrite_complex(visitor *v, sql_rel *rel, sql_exp *e, int depth)
 		return e;
 
 	res = rewrite_anyequal(v->sql, rel, e, depth);
-	if (res && res != e)
+	if (!res || res != e)
 		return res;
 	res = rewrite_exists(v, rel, e, depth);
-	if (res && res != e)
+	if (!res || res != e)
 		return res;
 	res = rewrite_compare(v, rel, e, depth);
-	if (res && res != e)
+	if (!res || res != e)
 		return res;
 	return e;
 }

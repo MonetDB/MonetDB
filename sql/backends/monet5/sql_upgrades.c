@@ -2313,7 +2313,7 @@ sql_update_oscar(Client c, mvc *sql, const char *prev_schema, bool *systabfixed)
 					"DROP FUNCTION \"sys\".\"getcontent\"(url);\n"
 					"DROP AGGREGATE \"json\".\"output\"(json);\n");
 
-			/* Move sys.degrees and sys.radians to sql_types.c definitions (I did this at the bat_logger) Remove the obsolete entries at privileges table */
+			/* Move sys.degrees,sys.radians,sys.like and sys.ilike to sql_types.c definitions (I did this at the bat_logger) Remove the obsolete entries at privileges table */
 			pos += snprintf(buf + pos, bufsize - pos,
 					"delete from privileges where obj_id in (select obj_id from privileges left join functions on privileges.obj_id = functions.id where functions.id is null and privileges.obj_id not in ((SELECT tables.id from tables), 0));\n");
 
@@ -2331,7 +2331,7 @@ sql_update_oscar(Client c, mvc *sql, const char *prev_schema, bool *systabfixed)
 }
 
 static str
-sql_update_default(Client c, mvc *sql, const char *prev_schema, bool *systabfixed)
+sql_update_oct2020(Client c, mvc *sql, const char *prev_schema, bool *systabfixed)
 {
 	size_t bufsize = 4096, pos = 0;
 	char *buf, *err;
@@ -2395,44 +2395,48 @@ sql_update_default(Client c, mvc *sql, const char *prev_schema, bool *systabfixe
 					"external name sysmon.user_statistics;\n"
 					"update sys.functions set system = true where system <> true and name = 'user_statistics' and schema_id = (select id from sys.schemas where name = 'sys') and type = %d;\n", (int) F_UNION);
 
-			/* WARNING this upgrade is related to the typing branch, which I hope it will be merged into default before the next feature release */
+			/* Remove entries on sys.args table without correspondents on sys.functions table */
+			pos += snprintf(buf + pos, bufsize - pos,
+					"delete from sys.args where id in (select args.id from sys.args left join sys.functions on args.func_id = functions.id where functions.id is null);\n");
+
+			/* WARNING this upgrade is related to the typing branch, which I hope it will be merged into Oct2020 before it gets released */
 			/* 39_analytics.sql */
 			pos += snprintf(buf + pos, bufsize - pos,
-							"DROP AGGREGATE stddev_samp(INTERVAL SECOND);\n"
-							"DROP AGGREGATE stddev_samp(INTERVAL MONTH);\n"
-							"DROP WINDOW stddev_samp(INTERVAL SECOND);\n"
-							"DROP WINDOW stddev_samp(INTERVAL MONTH);\n"
-							"DROP AGGREGATE stddev_pop(INTERVAL SECOND);\n"
-							"DROP AGGREGATE stddev_pop(INTERVAL MONTH);\n"
-							"DROP WINDOW stddev_pop(INTERVAL SECOND);\n"
-							"DROP WINDOW stddev_pop(INTERVAL MONTH);\n"
-							"DROP AGGREGATE var_samp(INTERVAL SECOND);\n"
-							"DROP AGGREGATE var_samp(INTERVAL MONTH);\n"
-							"DROP WINDOW var_samp(INTERVAL SECOND);\n"
-							"DROP WINDOW var_samp(INTERVAL MONTH);\n"
-							"DROP AGGREGATE var_pop(INTERVAL SECOND);\n"
-							"DROP AGGREGATE var_pop(INTERVAL MONTH);\n"
-							"DROP WINDOW var_pop(INTERVAL SECOND);\n"
-							"DROP WINDOW var_pop(INTERVAL MONTH);\n"
-							"DROP AGGREGATE covar_samp(INTERVAL SECOND,INTERVAL SECOND);\n"
-							"DROP AGGREGATE covar_samp(INTERVAL MONTH,INTERVAL MONTH);\n"
-							"DROP WINDOW covar_samp(INTERVAL SECOND,INTERVAL SECOND);\n"
-							"DROP WINDOW covar_samp(INTERVAL MONTH,INTERVAL MONTH);\n"
-							"DROP AGGREGATE covar_pop(INTERVAL SECOND,INTERVAL SECOND);\n"
-							"DROP AGGREGATE covar_pop(INTERVAL MONTH,INTERVAL MONTH);\n"
-							"DROP WINDOW covar_pop(INTERVAL SECOND,INTERVAL SECOND);\n"
-							"DROP WINDOW covar_pop(INTERVAL MONTH,INTERVAL MONTH);\n"
-							"DROP AGGREGATE corr(INTERVAL SECOND,INTERVAL SECOND);\n"
-							"DROP AGGREGATE corr(INTERVAL MONTH,INTERVAL MONTH);\n"
-							"DROP WINDOW corr(INTERVAL SECOND,INTERVAL SECOND);\n"
-							"DROP WINDOW corr(INTERVAL MONTH,INTERVAL MONTH);\n"
-							"\n"
-							"create aggregate median(val INTERVAL DAY) returns INTERVAL DAY\n"
-							" external name \"aggr\".\"median\";\n"
-							"GRANT EXECUTE ON AGGREGATE median(INTERVAL DAY) TO PUBLIC;\n"
-							"create aggregate quantile(val INTERVAL DAY, q DOUBLE) returns INTERVAL DAY\n"
-							" external name \"aggr\".\"quantile\";\n"
-							"GRANT EXECUTE ON AGGREGATE quantile(INTERVAL DAY, DOUBLE) TO PUBLIC;\n");
+					"DROP AGGREGATE stddev_samp(INTERVAL SECOND);\n"
+					"DROP AGGREGATE stddev_samp(INTERVAL MONTH);\n"
+					"DROP WINDOW stddev_samp(INTERVAL SECOND);\n"
+					"DROP WINDOW stddev_samp(INTERVAL MONTH);\n"
+					"DROP AGGREGATE stddev_pop(INTERVAL SECOND);\n"
+					"DROP AGGREGATE stddev_pop(INTERVAL MONTH);\n"
+					"DROP WINDOW stddev_pop(INTERVAL SECOND);\n"
+					"DROP WINDOW stddev_pop(INTERVAL MONTH);\n"
+					"DROP AGGREGATE var_samp(INTERVAL SECOND);\n"
+					"DROP AGGREGATE var_samp(INTERVAL MONTH);\n"
+					"DROP WINDOW var_samp(INTERVAL SECOND);\n"
+					"DROP WINDOW var_samp(INTERVAL MONTH);\n"
+					"DROP AGGREGATE var_pop(INTERVAL SECOND);\n"
+					"DROP AGGREGATE var_pop(INTERVAL MONTH);\n"
+					"DROP WINDOW var_pop(INTERVAL SECOND);\n"
+					"DROP WINDOW var_pop(INTERVAL MONTH);\n"
+					"DROP AGGREGATE covar_samp(INTERVAL SECOND,INTERVAL SECOND);\n"
+					"DROP AGGREGATE covar_samp(INTERVAL MONTH,INTERVAL MONTH);\n"
+					"DROP WINDOW covar_samp(INTERVAL SECOND,INTERVAL SECOND);\n"
+					"DROP WINDOW covar_samp(INTERVAL MONTH,INTERVAL MONTH);\n"
+					"DROP AGGREGATE covar_pop(INTERVAL SECOND,INTERVAL SECOND);\n"
+					"DROP AGGREGATE covar_pop(INTERVAL MONTH,INTERVAL MONTH);\n"
+					"DROP WINDOW covar_pop(INTERVAL SECOND,INTERVAL SECOND);\n"
+					"DROP WINDOW covar_pop(INTERVAL MONTH,INTERVAL MONTH);\n"
+					"DROP AGGREGATE corr(INTERVAL SECOND,INTERVAL SECOND);\n"
+					"DROP AGGREGATE corr(INTERVAL MONTH,INTERVAL MONTH);\n"
+					"DROP WINDOW corr(INTERVAL SECOND,INTERVAL SECOND);\n"
+					"DROP WINDOW corr(INTERVAL MONTH,INTERVAL MONTH);\n"
+					"\n"
+					"create aggregate median(val INTERVAL DAY) returns INTERVAL DAY\n"
+					" external name \"aggr\".\"median\";\n"
+					"GRANT EXECUTE ON AGGREGATE median(INTERVAL DAY) TO PUBLIC;\n"
+					"create aggregate quantile(val INTERVAL DAY, q DOUBLE) returns INTERVAL DAY\n"
+					" external name \"aggr\".\"quantile\";\n"
+					"GRANT EXECUTE ON AGGREGATE quantile(INTERVAL DAY, DOUBLE) TO PUBLIC;\n");
 
 			pos += snprintf(buf + pos, bufsize - pos, "set schema \"%s\";\n", prev_schema);
 
@@ -2686,7 +2690,7 @@ SQLupgrades(Client c, mvc *m)
 		return -1;
 	}
 
-	if ((err = sql_update_default(c, m, prev_schema, &systabfixed)) != NULL) {
+	if ((err = sql_update_oct2020(c, m, prev_schema, &systabfixed)) != NULL) {
 		TRC_CRITICAL(SQL_PARSER, "%s\n", err);
 		freeException(err);
 		GDKfree(prev_schema);

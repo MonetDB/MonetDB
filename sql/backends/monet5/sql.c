@@ -126,7 +126,7 @@ sql_symbol2relation(backend *be, symbol *sym)
 		rel = rel_partition(be->mvc, rel);
 	if (rel && (rel_no_mitosis(rel) || rel_need_distinct_query(rel)))
 		be->no_mitosis = 1;
-	be->reloptimizer += GDKusec() - Tbegin;
+	be->reloptimizer = GDKusec() - Tbegin;
 	return rel;
 }
 
@@ -738,7 +738,7 @@ mvc_logfile(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	if (!strNil(filename)) {
 		if((m->scanner.log = open_wastream(filename)) == NULL)
-			throw(SQL, "sql.logfile", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+			throw(SQL, "sql.logfile", SQLSTATE(HY013) "%s", mnstr_peek_error(NULL));
 	}
 	return MAL_SUCCEED;
 }
@@ -2559,8 +2559,7 @@ mvc_export_table_wrap( Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		s = cntxt->fdout;
 	} else if (!onclient) {
 		if ((s = open_wastream(filename)) == NULL || mnstr_errnr(s)) {
-			msg=  createException(IO, "streams.open", SQLSTATE(42000) "could not open file '%s': %s",
-					      filename?filename:"stdout", GDKstrerror(errno, (char[128]){0}, 128));
+			msg=  createException(IO, "streams.open", SQLSTATE(42000) "%s", mnstr_peek_error(NULL));
 			close_stream(s);
 			goto wrapup_result_set1;
 		}
@@ -2570,7 +2569,7 @@ mvc_export_table_wrap( Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		s = m->scanner.ws;
 		mnstr_write(s, PROMPT3, sizeof(PROMPT3) - 1, 1);
 		mnstr_printf(s, "w %s\n", filename);
-		mnstr_flush(s);
+		mnstr_flush(s, MNSTR_FLUSH_DATA);
 		if ((sz = mnstr_readline(m->scanner.rs->s, buf, sizeof(buf))) > 1) {
 			/* non-empty line indicates failure on client */
 			msg = createException(IO, "streams.open", "%s", buf);
@@ -2586,7 +2585,7 @@ mvc_export_table_wrap( Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	mb->starttime = 0;
 	mb->optimize = 0;
 	if (onclient) {
-		mnstr_flush(s);
+		mnstr_flush(s, MNSTR_FLUSH_DATA);
 		if ((sz = mnstr_readline(m->scanner.rs->s, buf, sizeof(buf))) > 1) {
 			msg = createException(IO, "streams.open", "%s", buf);
 		}
@@ -2756,8 +2755,7 @@ mvc_export_row_wrap( Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		s = cntxt->fdout;
 	} else if (!onclient) {
 		if ((s = open_wastream(filename)) == NULL || mnstr_errnr(s)) {
-			msg=  createException(IO, "streams.open", SQLSTATE(42000) "could not open file '%s': %s",
-					      filename?filename:"stdout", GDKstrerror(errno, (char[128]){0}, 128));
+			msg=  createException(IO, "streams.open", SQLSTATE(42000) "%s", mnstr_peek_error(NULL));
 			close_stream(s);
 			goto wrapup_result_set;
 		}
@@ -2767,7 +2765,7 @@ mvc_export_row_wrap( Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		s = m->scanner.ws;
 		mnstr_write(s, PROMPT3, sizeof(PROMPT3) - 1, 1);
 		mnstr_printf(s, "w %s\n", filename);
-		mnstr_flush(s);
+		mnstr_flush(s, MNSTR_FLUSH_DATA);
 		if ((sz = mnstr_readline(m->scanner.rs->s, buf, sizeof(buf))) > 1) {
 			/* non-empty line indicates failure on client */
 			msg = createException(IO, "streams.open", "%s", buf);
@@ -2785,7 +2783,7 @@ mvc_export_row_wrap( Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	mb->starttime = 0;
 	mb->optimize = 0;
 	if (onclient) {
-		mnstr_flush(s);
+		mnstr_flush(s, MNSTR_FLUSH_DATA);
 		if ((sz = mnstr_readline(m->scanner.rs->s, buf, sizeof(buf))) > 1) {
 			msg = createException(IO, "streams.open", "%s", buf);
 		}
@@ -3016,7 +3014,7 @@ fix_windows_newline(unsigned char *s)
 static char fwftsep[2] = {STREAM_FWF_FIELD_SEP, '\0'};
 static char fwfrsep[2] = {STREAM_FWF_RECORD_SEP, '\0'};
 
-/* str mvc_import_table_wrap(int *res, str *sname, str *tname, unsigned char* *T, unsigned char* *R, unsigned char* *S, unsigned char* *N, str *fname, lng *sz, lng *offset, int *locked, int *besteffort, str *fixed_width, int *onclient); */
+/* str mvc_import_table_wrap(int *res, str *sname, str *tname, unsigned char* *T, unsigned char* *R, unsigned char* *S, unsigned char* *N, str *fname, lng *sz, lng *offset, int *locked, int *besteffort, str *fixed_width, int *onclient, int *escape); */
 str
 mvc_import_table_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
@@ -3035,6 +3033,7 @@ mvc_import_table_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	int besteffort = *getArgReference_int(stk, pci, pci->retc + 9);
 	char *fixed_widths = *getArgReference_str(stk, pci, pci->retc + 10);
 	int onclient = *getArgReference_int(stk, pci, pci->retc + 11);
+	bool escape = *getArgReference_int(stk, pci, pci->retc + 12);
 	str msg = MAL_SUCCEED;
 	bstream *s = NULL;
 	stream *ss;
@@ -3056,7 +3055,7 @@ mvc_import_table_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (strNil(fname))
 		fname = NULL;
 	if (fname == NULL) {
-		msg = mvc_import_table(cntxt, &b, be->mvc, be->mvc->scanner.rs, t, tsep, rsep, ssep, ns, sz, offset, locked, besteffort, true);
+		msg = mvc_import_table(cntxt, &b, be->mvc, be->mvc->scanner.rs, t, tsep, rsep, ssep, ns, sz, offset, locked, besteffort, true, escape);
 	} else {
 		if (onclient) {
 			mnstr_write(be->mvc->scanner.ws, PROMPT3, sizeof(PROMPT3)-1, 1);
@@ -3069,7 +3068,7 @@ mvc_import_table_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				mnstr_printf(be->mvc->scanner.ws, "r 0 %s\n", fname);
 			}
 			msg = MAL_SUCCEED;
-			mnstr_flush(be->mvc->scanner.ws);
+			mnstr_flush(be->mvc->scanner.ws, MNSTR_FLUSH_DATA);
 			while (!be->mvc->scanner.rs->eof)
 				bstream_next(be->mvc->scanner.rs);
 			ss = be->mvc->scanner.rs->s;
@@ -3090,7 +3089,7 @@ mvc_import_table_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		} else {
 			ss = open_rastream(fname);
 			if (ss == NULL || mnstr_errnr(ss)) {
-				msg = createException(IO, "sql.copy_from", SQLSTATE(42000) "Cannot open file '%s': %s", fname, GDKstrerror(errno, (char[128]){0}, 128));
+				msg = createException(IO, "sql.copy_from", SQLSTATE(42000) "%s", mnstr_peek_error(NULL));
 				close_stream(ss);
 				return msg;
 			}
@@ -3130,10 +3129,10 @@ mvc_import_table_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		s = bstream_create(ss, 0x200000);
 #endif
 		if (s != NULL) {
-			msg = mvc_import_table(cntxt, &b, be->mvc, s, t, tsep, rsep, ssep, ns, sz, offset, locked, besteffort, false);
+			msg = mvc_import_table(cntxt, &b, be->mvc, s, t, tsep, rsep, ssep, ns, sz, offset, locked, besteffort, false, escape);
 			if (onclient) {
 				mnstr_write(be->mvc->scanner.ws, PROMPT3, sizeof(PROMPT3)-1, 1);
-				mnstr_flush(be->mvc->scanner.ws);
+				mnstr_flush(be->mvc->scanner.ws, MNSTR_FLUSH_DATA);
 				be->mvc->scanner.rs->eof = s->eof;
 				s->s = NULL;
 			}
@@ -3157,7 +3156,7 @@ read_more(bstream *in, stream *out)
 			return false;
 		if (in->eof) {
 			if (mnstr_write(out, PROMPT2, sizeof(PROMPT2) - 1, 1) != 1
-			    || mnstr_flush(out) < 0)
+			    || mnstr_flush(out, MNSTR_FLUSH_DATA) < 0)
 				return false;
 			in->eof = false;
 			if (bstream_next(in) <= 0)
@@ -3314,7 +3313,7 @@ mvc_bin_import_table_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 				mnstr_write(be->mvc->scanner.ws, PROMPT3, sizeof(PROMPT3)-1, 1);
 				mnstr_printf(be->mvc->scanner.ws, "rb %s\n", fname);
 				msg = MAL_SUCCEED;
-				mnstr_flush(be->mvc->scanner.ws);
+				mnstr_flush(be->mvc->scanner.ws, MNSTR_FLUSH_DATA);
 				while (!be->mvc->scanner.rs->eof)
 					bstream_next(be->mvc->scanner.rs);
 				stream *ss = be->mvc->scanner.rs->s;
@@ -3334,7 +3333,7 @@ mvc_bin_import_table_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 					goto bailout;
 				}
 				mnstr_write(be->mvc->scanner.ws, PROMPT3, sizeof(PROMPT3)-1, 1);
-				mnstr_flush(be->mvc->scanner.ws);
+				mnstr_flush(be->mvc->scanner.ws, MNSTR_FLUSH_DATA);
 				be->mvc->scanner.rs->eof = s->eof;
 				s->s = NULL;
 				bstream_destroy(s);
@@ -4993,7 +4992,7 @@ SQLhot_snapshot_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	// tell client to open file, copy pasted from mvc_export_table_wrap
 	mnstr_write(s, PROMPT3, sizeof(PROMPT3) - 1, 1);
 	mnstr_printf(s, "w %s\n", filename);
-	mnstr_flush(s);
+	mnstr_flush(s, MNSTR_FLUSH_DATA);
 	if ((sz = mnstr_readline(mvc->scanner.rs->s, buf, sizeof(buf))) > 1) {
 		/* non-empty line indicates failure on client */
 		msg = createException(IO, "streams.open", "%s", buf);
@@ -5013,7 +5012,7 @@ SQLhot_snapshot_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	mnstr_destroy(cb);
 
 	// tell client no more data, also copy pasted from mvc_export_table_wrap
-	mnstr_flush(s);
+	mnstr_flush(s, MNSTR_FLUSH_DATA);
 	if ((sz = mnstr_readline(mvc->scanner.rs->s, buf, sizeof(buf))) > 1) {
 		msg = createException(IO, "streams.open", "%s", buf);
 	}
@@ -5546,7 +5545,7 @@ static mel_func sql_init_funcs[] = {
  pattern("sql", "exportChunk", mvc_export_chunk_wrap, true, "Export a chunk of the result set (in order) to stream s", args(1,5, arg("",void),arg("s",streams),arg("res_id",int),arg("offset",int),arg("nr",int))),
  pattern("sql", "exportOperation", mvc_export_operation_wrap, true, "Export result of schema/transaction queries", args(1,1, arg("",void))),
  pattern("sql", "affectedRows", mvc_affected_rows_wrap, true, "export the number of affected rows by the current query", args(1,3, arg("",int),arg("mvc",int),arg("nr",lng))),
- pattern("sql", "copy_from", mvc_import_table_wrap, true, "Import a table from bstream s with the \ngiven tuple and seperators (sep/rsep)", args(1,13, batvarargany("",0),arg("t",ptr),arg("sep",str),arg("rsep",str),arg("ssep",str),arg("ns",str),arg("fname",str),arg("nr",lng),arg("offset",lng),arg("locked",int),arg("best",int),arg("fwf",str),arg("onclient",int))),
+ pattern("sql", "copy_from", mvc_import_table_wrap, true, "Import a table from bstream s with the \ngiven tuple and seperators (sep/rsep)", args(1,14, batvarargany("",0),arg("t",ptr),arg("sep",str),arg("rsep",str),arg("ssep",str),arg("ns",str),arg("fname",str),arg("nr",lng),arg("offset",lng),arg("locked",int),arg("best",int),arg("fwf",str),arg("onclient",int),arg("escape",int))),
  //we use bat.single now
  //pattern("sql", "single", CMDBATsingle, false, "", args(1,2, batargany("",2),argany("x",2))),
  pattern("sql", "importTable", mvc_bin_import_table_wrap, true, "Import a table from the files (fname)", args(1,5, batvarargany("",0),arg("sname",str),arg("tname",str),arg("onclient",int),vararg("fname",str))),

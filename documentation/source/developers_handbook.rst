@@ -63,9 +63,26 @@ group of the ``sql`` component use::
 This will run all the tests defined in the file
 ``$src_root/sql/test/json/Tests/All``.
 
+The last way to run a group of tests is from within the
+directory where they reside::
+
+  [$src_root/sql/test/json/Tests]$ Mtest.py .
+
 
 Adding a new test
 -----------------
+
+Summarizing the above discussion, to add a new test, you need to write the test
+itself, create the stable output and error files, and finally add the test to the
+``All`` index. This will make ensure that the test will be picked up by
+``Mtest.py`` as part of its group.
+
+To create the correct stable output you can use the ``Mapprove.py`` utility.
+First create empty ``.stable.{out,err}`` files and run the test using
+``Mtest.py``. Check the output and if it is correct, run ``Mapprove.py`` with
+the same arguments. This will add the correct contents to the
+``.stable.{out,err}`` files. Commit the changes to the VCS and the test can now
+be used by other developers and the nightly testing infrastructure.
 
 Python tests API
 ----------------

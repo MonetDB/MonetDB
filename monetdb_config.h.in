@@ -196,6 +196,9 @@
 #cmakedefine HAVE_GETADDRINFO 1
 #cmakedefine HAVE_CUDF 1
 
+#cmakedefine MAPI_PORT @MAPI_PORT@
+#cmakedefine MAPI_PORT_STR "@MAPI_PORT_STR@"
+
 #ifdef _MSC_VER
 #define DIR_SEP '\\'
 #define PATH_SEP ';'
