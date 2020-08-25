@@ -505,6 +505,14 @@ project (
 [ "a"	]
 #INSERT INTO "tab0" VALUES (83, 0, 38), (26, 0, 79), (43, 81, 24);
 [ 3	]
+#select group_concat(distinct col1, col2) from tab0 group by col0;
+% sys.%1 # table_name
+% %1 # name
+% clob # type
+% 2 # length
+[ "0"	]
+[ "0"	]
+[ "81"	]
 #ROLLBACK;
 #START TRANSACTION;
 #CREATE TABLE tab2 ("col0" INTEGER,"col1" INTEGER,"col2" INTEGER);
