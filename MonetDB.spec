@@ -358,9 +358,10 @@ developer.
 %{_bindir}/sample0
 %{_bindir}/sample1
 %{_bindir}/sample4
+%{_bindir}/shutdowntest
 %{_bindir}/smack00
 %{_bindir}/smack01
-%{_bindir}/shutdowntest
+%{_bindir}/streamcat
 %{_bindir}/testgetinfo
 %{_bindir}/testStmtAttr
 %{_bindir}/malsample.pl
