@@ -513,6 +513,12 @@ project (
 [ "0"	]
 [ "0"	]
 [ "81"	]
+#select group_concat(distinct col1, col2) from tab0;
+% sys.%1 # table_name
+% %1 # name
+% clob # type
+% 8 # length
+[ "07902481"	]
 #ROLLBACK;
 #START TRANSACTION;
 #CREATE TABLE tab2 ("col0" INTEGER,"col1" INTEGER,"col2" INTEGER);

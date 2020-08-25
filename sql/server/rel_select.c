@@ -5420,7 +5420,7 @@ rel_select_exp(sql_query *query, sql_rel *rel, SelectNode *sn, exp_kind ek)
 		for (node *n=pexps->h; n; n = n->next) {
 			sql_exp *ce = n->data;
 			if (rel->card < ce->card) {
-				if (exp_name(ce)) {
+				if (exp_name(ce) && !has_label(ce)) {
 					return sql_error(sql, ERR_GROUPBY, SQLSTATE(42000) "SELECT: cannot use non GROUP BY column '%s' in query results without an aggregate function", exp_name(ce));
 				} else {
 					return sql_error(sql, ERR_GROUPBY, SQLSTATE(42000) "SELECT: cannot use non GROUP BY column in query results without an aggregate function");
