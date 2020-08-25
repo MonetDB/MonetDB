@@ -77,10 +77,10 @@ if(HAVE_LIBPY3)
     configure_file(pyapi_locatepython3.bat.in
       ${CMAKE_CURRENT_BINARY_DIR}/pyapi_locatepython3.bat @ONLY)
 
-    install(FILES $<TARGET_PDB_FILE:pyapi3> DESTINATION ${LIBDIR}/monetdb5 OPTIONAL)
+    install(FILES $<TARGET_PDB_FILE:pyapi3> DESTINATION ${CMAKE_INSTALL_LIBDIR}/monetdb5 OPTIONAL)
     install(FILES
       ${CMAKE_CURRENT_BINARY_DIR}/pyapi_locatepython3.bat
-      DESTINATION ${CMAKE_INSTALL_PREFIX}
+      DESTINATION "."
       COMPONENT server)
   endif()
 endif()
