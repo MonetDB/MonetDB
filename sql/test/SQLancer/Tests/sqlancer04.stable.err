@@ -59,6 +59,10 @@ MAPI  = (monetdb) /var/tmp/mtest-316864/.s.monetdb.33737
 QUERY = select coalesce(-1129107763, '1415606329') from (values(1),(2)) as t0(c0);
 ERROR = !value too long for type (var)char(10)
 CODE  = 22001
+MAPI  = (monetdb) /var/tmp/mtest-878466/.s.monetdb.33759
+QUERY = select interval '-1680612084' second from t3 natural join (select t4.c0, (cast(r'*' as boolean)) = false from t2, t0, t4) as sub0 group by t3.c0;
+ERROR = !Overflow in convertion of second interval '29578044000' to time
+CODE  = 22003
 
 # 09:44:50 >  
 # 09:44:50 >  "Done."
