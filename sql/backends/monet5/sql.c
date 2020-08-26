@@ -3353,7 +3353,7 @@ mvc_bin_import_table_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 					goto bailout;
 				}
 
-#define bufsiz	(128 * BLOCK)
+				const size_t bufsiz = 128 * BLOCK;
 				char *buf = GDKmalloc(bufsiz);
 				if (buf == NULL) {
 					fclose(f);
@@ -3372,7 +3372,6 @@ mvc_bin_import_table_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 						goto bailout;
 					}
 				}
-#undef bufsiz
 				fclose(f);
 				GDKfree(buf);
 			} else {
