@@ -3932,9 +3932,10 @@ rel_selection_ref(sql_query *query, sql_rel **rel, symbol *grp, dlist *selection
 static sql_exp*
 rel_group_column(sql_query *query, sql_rel **rel, symbol *grp, dlist *selection, int f)
 {
+	sql_query *lquery = query_create(query->sql);
 	mvc *sql = query->sql;
 	exp_kind ek = {type_value, card_value, TRUE};
-	sql_exp *e = rel_value_exp2(query, rel, grp, f, ek);
+	sql_exp *e = rel_value_exp2(lquery, rel, grp, f, ek);
 
 	if (!e) {
 		char buf[ERRSIZE];
@@ -3945,6 +3946,12 @@ rel_group_column(sql_query *query, sql_rel **rel, symbol *grp, dlist *selection,
 		sql->errstr[0] = '\0';
 
 		e = rel_selection_ref(query, rel, grp, selection);
+		if (!e && query_has_outer(query)) {
+			/* reset error */
+			sql->session->status = 0;
+			sql->errstr[0] = '\0';
+			e = rel_value_exp2(query, rel, grp, f, ek);
+		}
 		if (!e) {
 			if (sql->errstr[0] == 0) {
 				sql->session->status = status;
