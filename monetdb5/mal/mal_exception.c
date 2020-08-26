@@ -67,8 +67,8 @@ createExceptionInternal(enum malexception type, const char *fcn, const char *for
 	// if there is an error we allow memory allocation once again
 	GDKsetmallocsuccesscount(-1);
 #endif
-	len = snprintf(local, GDKMAXERRLEN - 1, "%s:%s:", exceptionNames[type], fcn);
-	len = vsnprintf(local + len, GDKMAXERRLEN -1, format, ap);
+	len = snprintf(local, GDKMAXERRLEN, "%s:%s:", exceptionNames[type], fcn);
+	len = vsnprintf(local + len, GDKMAXERRLEN - len, format, ap);
 	if (len < 0)
 		TRC_CRITICAL(MAL_SERVER, "called with bad arguments");
 	char *q = local;
