@@ -1230,15 +1230,15 @@ exp_bin(backend *be, sql_exp *e, stmt *left, stmt *right, stmt *grp, stmt *ext, 
 			be->join_idx++;
 
 		if (!l) {
-			l = exp_bin(be, e->l, left, NULL, grp, ext, cnt, sel, depth+1, 0, push);
+			l = exp_bin(be, e->l, left, (!reduce)?right:NULL, grp, ext, cnt, sel, depth+1, 0, push);
 			swapped = 0;
 		}
 		if (!l && right) {
  			l = exp_bin(be, e->l, right, NULL, grp, ext, cnt, sel, depth+1, 0, push);
 			swapped = 1;
 		}
-		if (swapped || !right)
- 			r = exp_bin(be, re, left, NULL, grp, ext, cnt, sel, depth+1, 0, push);
+		if (swapped || !right || !reduce)
+ 			r = exp_bin(be, re, left, (!reduce)?right:NULL, grp, ext, cnt, sel, depth+1, 0, push);
 		else
  			r = exp_bin(be, re, right, NULL, grp, ext, cnt, sel, depth+1, 0, push);
 		if (!r && !swapped) {
