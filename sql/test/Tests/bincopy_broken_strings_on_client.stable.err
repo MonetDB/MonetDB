@@ -1,0 +1,21 @@
+stderr of test 'bincopy_broken_strings_on_client` in directory 'sql/test` itself:
+
+
+# 16:41:40 >  
+# 16:41:40 >  "/usr/bin/python3.7" "bincopy_broken_strings_on_client.SQL.py" "bincopy_broken_strings_on_client"
+# 16:41:40 >  
+
+
+# 16:41:40 >  
+# 16:41:40 >  mclient -lsql -ftest -tnone -Eutf-8 -i -e --host=/var/tmp/mtest-554 --port=38574 --database=mTests_sql_test
+# 16:41:40 >  
+
+MAPI  = (monetdb) /var/tmp/mtest-554/.s.monetdb.38574
+QUERY = COPY BINARY INTO foo(id, s) FROM R'/home/jvr/monets/copybinary/inst/mTests/sql/test/bincopy_ints.bin', R'/home/jvr/monets/copybinary/inst/mTests/sql/test/bincopy_broken_strings.bin' ON CLIENT;
+
+CODE  = BADENCODING ??????? what should be here?
+
+# 16:41:40 >  
+# 16:41:40 >  "Done."
+# 16:41:40 >  
+

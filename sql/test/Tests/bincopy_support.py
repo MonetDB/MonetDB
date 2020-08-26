@@ -77,6 +77,15 @@ def gen_large_strings(outfile):
             f.write("a" * n)
         f.write("\n")
 
+def gen_broken_strings(outfile):
+    good = bytes('bröken\n', 'utf-8')
+    bad = bytes('bröken\n', 'latin1')
+    for i in range(1_000_000):
+        if i == 123_456:
+            outfile.write(bad)
+        else:
+            outfile.write(good)
+
 INTS = """
 CREATE TABLE foo(id INT NOT NULL);
 COPY BINARY INTO foo(id) FROM @ints@ @ON@;
@@ -109,4 +118,10 @@ COPY BINARY INTO foo(id, s) FROM @ints@, @large_strings@ @ON@;
 SELECT COUNT(id) FROM foo
 WHERE (id % 10000 <> 0 AND LENGTH(s) = 9)
 OR    (id % 10000 = 0 AND LENGTH(s) = 280000 + 9);
+"""
+
+BROKEN_STRINGS = """
+CREATE TABLE foo(id INT NOT NULL, s TEXT);
+COPY BINARY INTO foo(id, s) FROM @ints@, @broken_strings@ @ON@;
+-- should fail!
 """
