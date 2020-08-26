@@ -1,0 +1,17 @@
+stderr of test 'bincopy_strings_on_server` in directory 'sql/test` itself:
+
+
+# 15:35:04 >  
+# 15:35:04 >  "/usr/bin/python3.7" "bincopy_strings_on_server.SQL.py" "bincopy_strings_on_server"
+# 15:35:04 >  
+
+
+# 15:35:04 >  
+# 15:35:04 >  mclient -lsql -ftest -tnone -Eutf-8 -i -e --host=/var/tmp/mtest-9154 --port=36987 --database=mTests_sql_test
+# 15:35:04 >  
+
+
+# 15:35:05 >  
+# 15:35:05 >  "Done."
+# 15:35:05 >  
+
