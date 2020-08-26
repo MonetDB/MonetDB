@@ -11,22 +11,22 @@
 
 char* control_send(
 		char** ret,
-		char* host,
+		const char *host,
 		int port,
-		char* database,
-		char* command,
+		const char *database,
+		const char *command,
 		char wait,
-		char* pass);
+		const char *pass);
 char* control_send_callback(
 		char** ret,
-		char* host,
+		const char *host,
 		int port,
-		char* database,
-		char* command,
-		void (*callback)(char *data, size_t size, void *cb_private),
+		const char *database,
+		const char *command,
+		void (*callback)(const void *data, size_t size, void *cb_private),
 		void *cb_private,
-		char* pass);
-char* control_hash(char *pass, char *salt);
-char *control_ping(char *host, int port, char *pass);
+		const char *pass);
+char* control_hash(const char *pass, const char *salt);
+char *control_ping(const char *host, int port, const char *pass);
 
 #endif

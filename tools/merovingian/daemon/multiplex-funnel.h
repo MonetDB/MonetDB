@@ -45,9 +45,9 @@ typedef struct _multiplex {
 	multiplex_client    *clients;
 } multiplex;
 
-err multiplexInit(char *name, char *pattern, FILE *sout, FILE *serr);
-void multiplexDestroy(char *mp);
-void multiplexAddClient(char *mp, int sock, stream *fout, stream *fdin, char *name);
+err multiplexInit(const char *name, const char *pattern, FILE *sout, FILE *serr);
+void multiplexDestroy(const char *mp);
+void multiplexAddClient(const char *mp, int sock, stream *fout, stream *fdin, char *name);
 void multiplexRemoveClient(multiplex *m, multiplex_client *c);
 void multiplexNotifyAddedDB(const char *database);
 void multiplexNotifyRemovedDB(const char *database);

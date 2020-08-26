@@ -80,10 +80,10 @@ msab_export char *msab_registerStarted(void);
 msab_export char *msab_registerStop(void);
 msab_export char *msab_pickSecret(char **generated_secret);
 msab_export char *msab_getMyStatus(sabdb** ret);
-msab_export char *msab_getStatus(sabdb** ret, char *dbname);
+msab_export char *msab_getStatus(sabdb** ret, const char *dbname);
 msab_export void msab_freeStatus(sabdb** ret);
 msab_export char *msab_getUplogInfo(sabuplog *ret, const sabdb *db);
 msab_export char *msab_serialise(char **ret, const sabdb *db);
-msab_export char *msab_deserialise(sabdb **ret, char *sabdb);
+msab_export char *msab_deserialise(sabdb **ret, const char *sabdb);
 
 #endif
