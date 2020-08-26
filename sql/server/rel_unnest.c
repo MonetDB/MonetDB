@@ -2680,7 +2680,8 @@ rewrite_ifthenelse(visitor *v, sql_rel *rel, sql_exp *e, int depth)
 		return e;
 
 	sf = e->f;
-	if (is_ifthenelse_func(sf) && !list_empty(e->l)) {
+	/* TODO also handle ifthenelse with more than 3 arguments */
+	if (is_ifthenelse_func(sf) && !list_empty(e->l) && list_length(e->l) == 3) {
 		list *l = e->l;
 
 		/* remove unecessary = true expressions under ifthenelse */
@@ -3089,13 +3090,13 @@ rewrite_complex(visitor *v, sql_rel *rel, sql_exp *e, int depth)
 		return e;
 
 	res = rewrite_anyequal(v->sql, rel, e, depth);
-	if (res && res != e)
+	if (!res || res != e)
 		return res;
 	res = rewrite_exists(v, rel, e, depth);
-	if (res && res != e)
+	if (!res || res != e)
 		return res;
 	res = rewrite_compare(v, rel, e, depth);
-	if (res && res != e)
+	if (!res || res != e)
 		return res;
 	return e;
 }

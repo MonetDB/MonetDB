@@ -190,6 +190,12 @@ stdout of test 'simple_selects` in directory 'sql/test/miscellaneous` itself:
 % double,	sec_interval,	int,	int,	int,	int,	int,	bigint # type
 % 24,	5,	1,	1,	1,	1,	1,	1 # length
 [ 10,	NULL,	2,	NULL,	NULL,	NULL,	NULL,	NULL	]
+#select cast(null as blob) > cast(null as blob);
+% .%2 # table_name
+% %2 # name
+% boolean # type
+% 5 # length
+[ NULL	]
 #select substring('abc' from 1 for null);
 % .%2 # table_name
 % %2 # name
@@ -362,6 +368,18 @@ stdout of test 'simple_selects` in directory 'sql/test/miscellaneous` itself:
 [ NULL	]
 [ 100	]
 [ NULL	]
+#start transaction;
+#CREATE VIEW myv AS
+#SELECT t.schema_id AS table_schema_id, t.id AS table_id, t.name AS table_name, fk.name AS fk_name
+#  FROM sys.tables AS t, sys.keys AS k, sys.keys AS fk
+# WHERE fk.rkey = k.id and k.table_id = t.id
+# ORDER BY t.schema_id, t.name, fk.name;
+#select * from myv limit 1;
+% .myv,	.myv,	.myv,	.myv # table_name
+% table_schema_id,	table_id,	table_name,	fk_name # name
+% int,	int,	varchar,	varchar # type
+% 1,	1,	0,	0 # length
+#rollback;
 
 # 17:31:38 >  
 # 17:31:38 >  "Done."

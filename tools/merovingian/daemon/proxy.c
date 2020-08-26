@@ -52,7 +52,7 @@ proxyThread(void *d)
 	while ((len = mnstr_read(p->in, data, 1, sizeof(data))) >= 0) {
 		if (len > 0 && mnstr_write(p->out, data, len, 1) != 1)
 			break;
-		if (len == 0 &&	mnstr_flush(p->out) == -1)
+		if (len == 0 &&	mnstr_flush(p->out, MNSTR_FLUSH_DATA) == -1)
 			break;
 	}
 
@@ -156,7 +156,7 @@ startProxy(int psock, stream *cfdin, stream *cfout, char *url, char *client)
 #if !defined(SOCK_CLOEXEC) && defined(HAVE_FCNTL)
 		(void) fcntl(ssock, F_SETFD, FD_CLOEXEC);
 #endif
-		if (connect(ssock, (SOCKPTR) &server, sizeof(struct sockaddr_un)) == -1) {
+		if (connect(ssock, (struct sockaddr *) &server, sizeof(struct sockaddr_un)) == -1) {
 			closesocket(ssock);
 			return(newErr("cannot connect: %s", strerror(errno)));
 		}
@@ -247,12 +247,14 @@ startProxy(int psock, stream *cfdin, stream *cfout, char *url, char *client)
 	}
 
 	sfdin = block_stream(socket_rstream(ssock, "merovingian<-server (proxy read)"));
-	sfout = block_stream(socket_wstream(ssock, "merovingian->server (proxy write)"));
+	if (sfdin == 0) {
+		return(newErr("merovingian-server inputstream or outputstream problems: %s", mnstr_peek_error(NULL)));
+	}
 
+	sfout = block_stream(socket_wstream(ssock, "merovingian->server (proxy write)"));
 	if (sfdin == 0 || sfout == 0) {
-		close_stream(sfout);
 		close_stream(sfdin);
-		return(newErr("merovingian-server inputstream or outputstream problems"));
+		return(newErr("merovingian-server inputstream or outputstream problems: %s", mnstr_peek_error(NULL)));
 	}
 
 	/* our proxy schematically looks like this:
@@ -317,12 +319,12 @@ handleMySQLClient(int sock)
 
 	fdin = socket_rstream(sock, "merovingian<-mysqlclient (read)");
 	if (fdin == 0)
-		return(newErr("merovingian-mysqlclient inputstream problems"));
+		return(newErr("merovingian-mysqlclient inputstream problems: %s", mnstr_peek_error(NULL)));
 
 	fout = socket_wstream(sock, "merovingian->mysqlclient (write)");
 	if (fout == 0) {
 		close_stream(fdin);
-		return(newErr("merovingian-mysqlclient outputstream problems"));
+		return(newErr("merovingian-mysqlclient outputstream problems: %s", mnstr_peek_error(NULL)));
 	}
 
 #ifdef WORDS_BIGENDIAN
@@ -369,7 +371,7 @@ handleMySQLClient(int sock)
 	*p = *(p + 1); p++;
 	*p = *(p + 1); p++;
 	*p = 0x00;   /* packet number */
-	mnstr_flush(fout);
+	mnstr_flush(fout, MNSTR_FLUSH_DATA);
 
 	return(NO_ERR);
 }

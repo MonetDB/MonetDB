@@ -2369,10 +2369,12 @@ store_manager(void)
 	// In the main loop we always hold the lock except when sleeping
 	MT_lock_set(&bs_lock);
 
-	while (!GDKexiting()) {
+	for (;;) {
 		int res;
 
 		if (!flusher_should_run()) {
+			if (GDKexiting())
+				break;
 			const int sleeptime = 100;
 			MT_lock_unset(&bs_lock);
 			MT_sleep_ms(sleeptime);
@@ -2623,7 +2625,7 @@ hot_snapshot_write_tar(stream *out, const char *prefix, char *plan)
 {
 	gdk_return ret = GDK_FAIL;
 	const char *p = plan; // our cursor in the plan
-	time_t timestamp = time(NULL);
+	time_t timestamp = 0;
 	// Name convention: _path for the absolute path
 	// and _name for the corresponding local relative path
 	char abs_src_path[2 * FILENAME_MAX];
@@ -2654,7 +2656,7 @@ hot_snapshot_write_tar(stream *out, const char *prefix, char *plan)
 			case 'c':
 				infile = open_rstream(abs_src_path);
 				if (!infile) {
-					GDKerror("Could not open %s", abs_src_path);
+					GDKerror("%s", mnstr_peek_error(NULL));
 					goto end;
 				}
 				if (tar_copy_stream(out, dest_path, timestamp, infile, size) != GDK_SUCCEED)
@@ -2671,6 +2673,7 @@ hot_snapshot_write_tar(stream *out, const char *prefix, char *plan)
 				GDKerror("Unknown command in snapshot plan: %c (%s)", command, src_name);
 				goto end;
 		}
+		mnstr_flush(out, MNSTR_FLUSH_ALL);
 	}
 
 	// write a trailing block of zeros. If it succeeds, this function succeeds.
@@ -2819,7 +2822,7 @@ store_hot_snapshot(str tarfile)
 	}
 	tar_stream = open_wstream(tmppath);
 	if (!tar_stream) {
-		GDKerror("Failed to open %s for writing", tmppath);
+		GDKerror("Failed to open %s for writing: %s", tmppath, mnstr_peek_error(NULL));
 		goto end;
 	}
 	do_remove = 1;

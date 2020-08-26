@@ -3666,7 +3666,7 @@ os.environ['VERSION'] = VERSION
 if 'HTMLTITLE' in os.environ:
     HTMLTITLE = os.environ['HTMLTITLE']
 else:
-    HTMLTITLE = ""+THISFILE+" results on "+DISTVER       #"+ ("`date`")"
+    HTMLTITLE = "{} results on {} ({})".format(THISFILE, HOST, DISTVER)       #"+ ("`date`")"
 
 URLPREFIX = 'http://dev.monetdb.org/hg/MonetDB/file/'
 
@@ -4228,7 +4228,7 @@ def main(argv) :
                 SOCK = ""
 
             exe = {}
-            exe['mserver5']       = CheckExec('mserver5')     , '%s mserver5 --debug=%s --set gdk_nr_threads=%s %s --set mapi_open=true --set mapi_port=%s %s %s %s' % \
+            exe['mserver5']       = CheckExec('mserver5')     , '%s mserver5 --debug=%s --set gdk_nr_threads=%s %s --set mapi_listenaddr=all --set mapi_port=%s %s %s %s' % \
                                                                    (env['setDBG'], env['GDK_DEBUG'], env['GDK_NR_THREADS'], env['setMONETDB_MOD_PATH'], env['MAPIPORT'], SOCK, not nomito and '--forcemito' or '', env['MSERVER_SET'])
             exe['Mdiff']         = CheckExec('Mdiff')        , 'Mdiff'
             exe['python']        = CheckExec(sys.executable) , sys.executable

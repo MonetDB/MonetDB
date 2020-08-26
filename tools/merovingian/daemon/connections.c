@@ -25,192 +25,122 @@
 #include "connections.h"
 
 err
-openConnectionTCP(int *ret, bool bind_ipv6, const char *bindaddr, unsigned short port, FILE *log)
+openConnectionIP(int *socks, bool udp, bool bind_ipv6, const char *bindaddr, unsigned short port, FILE *log)
 {
-	struct sockaddr *server;
-	struct sockaddr_in server_ipv4;
-	struct sockaddr_in6 server_ipv6;
 	struct addrinfo *result = NULL, *rp = NULL;
 	int sock = -1, check = 0;
-	socklen_t length = 0;
+	int nsock = 0;
 	int on = 1;
 	char sport[16];
+	char host[512] = "";
+	int e = 0;
+	const char *msghost = bindaddr ? bindaddr : "any"; /* for messages */
 
-	snprintf(sport, 16, "%hu", port);
-	if (bindaddr) {
-		struct addrinfo hints = (struct addrinfo) {
-			.ai_family = bind_ipv6 ? AF_INET6 : AF_INET,
-			.ai_socktype = SOCK_STREAM,
-			.ai_flags = AI_PASSIVE,
-			.ai_protocol = IPPROTO_TCP,
-		};
+	struct addrinfo hints = (struct addrinfo) {
+		.ai_family = bind_ipv6 ? AF_INET6 : AF_INET,
+		.ai_socktype = udp ? SOCK_DGRAM : SOCK_STREAM,
+		.ai_flags = AI_PASSIVE | AI_NUMERICSERV,
+		.ai_protocol = udp ? 0 : IPPROTO_TCP,
+	};
+	snprintf(sport, sizeof(sport), "%hu", port);
 
+	socks[0] = socks[1] = -1;
+
+	for (;;) {					/* max twice */
 		check = getaddrinfo(bindaddr, sport, &hints, &result);
 		if (check != 0)
-			return newErr("cannot find host %s with error: %s", bindaddr, gai_strerror(check));
+			return newErr("cannot find interface %s with error: %s", msghost, gai_strerror(check));
 
 		for (rp = result; rp != NULL; rp = rp->ai_next) {
 			sock = socket(rp->ai_family, rp->ai_socktype
 #ifdef SOCK_CLOEXEC
-						 | SOCK_CLOEXEC
+						  | SOCK_CLOEXEC
 #endif
-					, rp->ai_protocol);
-			if (sock == -1)
+						  , rp->ai_protocol);
+			if (sock == -1) {
+				e = errno;
 				continue;
+			}
 #if !defined(SOCK_CLOEXEC) && defined(HAVE_FCNTL)
-			(void) fcntl(sock, F_SETFD, FD_CLOEXEC);
+			if (fcntl(sock, F_SETFD, FD_CLOEXEC) < 0)
+					Mfprintf(log, "fcntl FD_CLOEXEC: %s", strerror(e));
 #endif
 
-			if (setsockopt(sock, SOL_SOCKET, SO_REUSEADDR, (char *) &on, sizeof on) < 0) {
+			if (rp->ai_family == AF_INET6 &&
+				setsockopt(sock, IPPROTO_IPV6, IPV6_V6ONLY,
+						   (const char *) &(int){0}, sizeof(int)) == -1)
+				Mfprintf(log, "setsockopt IPV6_V6ONLY: %s", strerror(e));
+
+			if (!udp) {
+				if (setsockopt(sock, SOL_SOCKET, SO_REUSEADDR,
+							   (const char *) &on, sizeof on) < 0) {
+					e = errno;
+					closesocket(sock);
+					sock = -1;
+					continue;
+				}
+#ifdef SO_EXCLUSIVEADDRUSE
+				if (setsockopt(sock, SOL_SOCKET, SO_EXCLUSIVEADDRUSE,
+							   (const char *) &on, sizeof on) < 0)
+					Mfprintf(log, "setsockopt SO_EXCLUSIVEADDRUSE: %s", strerror(e));
+#endif
+#ifdef SO_EXCLBIND
+				if (setsockopt(sock, SOL_SOCKET, SO_EXCLBIND,
+							   (const char *) &on, sizeof on) < 0)
+					Mfprintf(log, "setsockopt SO_EXCLBIND: %s", strerror(e));
+#endif
+			}
+
+			if (bind(sock, rp->ai_addr, rp->ai_addrlen) == -1) {
+				e = errno;
 				closesocket(sock);
+				sock = -1;
 				continue;
 			}
-
-			if (bind(sock, rp->ai_addr, rp->ai_addrlen) != -1)
-				break; /* working */
-			closesocket(sock);
-		}
-		if (rp == NULL) {
-			int e = errno;
-			freeaddrinfo(result);
-			if (result) { /* results found, tried socket, setsockopt and bind calls */
-				errno = e;
-				return newErr("binding to stream socket port %hu failed: %s", port, strerror(errno));
-			} else { /* no results found, could not translate address */
-				return newErr("cannot translate host %s", bindaddr);
+			if (!udp && listen(sock, 5) == -1) {
+				e = errno;
+				closesocket(sock);
+				sock = -1;
+				continue;
 			}
+			struct sockaddr_storage addr;
+			socklen_t addrlen = (socklen_t) sizeof(addr);
+			if (getsockname(sock, (struct sockaddr *) &addr, &addrlen) == -1) {
+				e = errno;
+				closesocket(sock);
+				sock = -1;
+				continue;
+			}
+			if (getnameinfo((struct sockaddr *) &addr, addrlen,
+							host, sizeof(host),
+							sport, sizeof(sport),
+							NI_NUMERICSERV | (udp ? NI_DGRAM : 0)) != 0) {
+				host[0] = 0;
+				snprintf(sport, sizeof(sport), "%hu", port);
+			}
+			if (udp)
+				Mfprintf(log, "listening for UDP messages on %s:%s\n", host, sport);
+			else
+				Mfprintf(log, "accepting connections on TCP socket %s:%s\n", host, sport);
+			socks[nsock++] = sock;
+			break;					/* working */
 		}
-		server = rp->ai_addr;
-		length = rp->ai_addrlen;
 		freeaddrinfo(result);
-	} else {
-		sock = socket(bind_ipv6 ? AF_INET6 : AF_INET, SOCK_STREAM
-#ifdef SOCK_CLOEXEC
-					| SOCK_CLOEXEC
-#endif
-				, 0);
-		if (sock == -1)
-			return(newErr("creation of stream socket failed: %s", strerror(errno)));
+		if (hints.ai_family == AF_INET6)
+			hints.ai_family = AF_INET;
+		else
+			break;
+	}
 
-		if (bind_ipv6) {
-			server_ipv6 = (struct sockaddr_in6) {
-				.sin6_family = AF_INET6,
-				.sin6_port = htons((unsigned short) (port & 0xFFFF)),
-				.sin6_addr = ipv6_any_addr,
-			};
-			length = (socklen_t) sizeof(server_ipv6);
-			server = (struct sockaddr*) &server_ipv6;
-		} else {
-			server_ipv4 = (struct sockaddr_in) {
-				.sin_family = AF_INET,
-				.sin_port = htons((unsigned short) (port & 0xFFFF)),
-				.sin_addr.s_addr = htonl(INADDR_ANY),
-			};
-			length = (socklen_t) sizeof(server_ipv4);
-			server = (struct sockaddr*) &server_ipv4;
-		}
-
-#if !defined(SOCK_CLOEXEC) && defined(HAVE_FCNTL)
-		(void) fcntl(sock, F_SETFD, FD_CLOEXEC);
-#endif
-		if (setsockopt(sock, SOL_SOCKET, SO_REUSEADDR, (char *) &on, sizeof on) < 0) {
-			int e = errno;
-			closesocket(sock);
-			errno = e;
-			return newErr("setsockopt unexpectedly failed: %s", strerror(errno));
-		}
-
-		if (bind(sock, server, length) == -1) {
-			int e = errno;
-			closesocket(sock);
-			errno = e;
-			return(newErr("binding to stream socket port %hu failed: %s", port, strerror(errno)));
-		}
-
-		if (getsockname(sock, server, &length) == -1) {
-			int e = errno;
-			closesocket(sock);
-			errno = e;
-			return(newErr("failed getting socket name: %s", strerror(errno)));
+	if (nsock == 0) {
+		if (e != 0) {			/* results found, error occurred */
+			return newErr("binding to %s socket port %hu failed: %s",
+						  udp ? "datagram" : "stream", port, strerror(e));
+		} else { /* no results found, could not translate address */
+			return newErr("cannot translate host %s", msghost);
 		}
 	}
 
-	/* keep queue of 5 */
-	if (listen(sock, 5) == -1) {
-		int e = errno;
-		closesocket(sock);
-		errno = e;
-		return(newErr("failed setting socket to listen: %s", strerror(errno)));
-	}
-
-	Mfprintf(log, "accepting connections on TCP socket %s:%hu\n", bindaddr, port);
-
-	*ret = sock;
-	return(NO_ERR);
-}
-
-err
-openConnectionUDP(int *ret, bool bind_ipv6, const char *bindaddr, unsigned short port)
-{
-	struct addrinfo hints;
-	struct addrinfo *result, *rp;
-	int sock = -1;
-
-	char sport[10];
-	char host[512];
-
-	hints = (struct addrinfo) {
-		.ai_family = bind_ipv6 ? AF_INET6 : AF_INET,
-		.ai_socktype = SOCK_DGRAM, /* Datagram socket */
-		.ai_flags = AI_PASSIVE,    /* For wildcard IP address */
-		.ai_protocol = 0,          /* Any protocol */
-		.ai_canonname = NULL,
-		.ai_addr = NULL,
-		.ai_next = NULL,
-	};
-
-	snprintf(sport, 10, "%hu", port);
-	sock = getaddrinfo(bindaddr, sport, &hints, &result);
-	if (sock != 0)
-		return(newErr("failed getting address info: %s", gai_strerror(sock)));
-
-	for (rp = result; rp != NULL; rp = rp->ai_next) {
-		sock = socket(rp->ai_family, rp->ai_socktype
-#ifdef SOCK_CLOEXEC
-					  | SOCK_CLOEXEC
-#endif
-					  , rp->ai_protocol);
-		if (sock == -1)
-			continue;
-#if !defined(SOCK_CLOEXEC) && defined(HAVE_FCNTL)
-		(void) fcntl(sock, F_SETFD, FD_CLOEXEC);
-#endif
-
-		if (bind(sock, rp->ai_addr, rp->ai_addrlen) != -1)
-			break; /* working */
-
-		closesocket(sock);
-	}
-
-	if (rp == NULL) {
-		freeaddrinfo(result);
-		return(newErr("binding to datagram socket port %hu failed: "
-					"no available address", port));
-	}
-
-	/* retrieve information from the socket */
-	if(getnameinfo(rp->ai_addr, rp->ai_addrlen,
-			host, sizeof(host),
-			sport, sizeof(sport),
-			NI_NUMERICSERV | NI_DGRAM) == 0) {
-		Mfprintf(_mero_discout, "listening for UDP messages on %s:%s\n", host, sport);
-	} else {
-		Mfprintf(_mero_discout, "listening for UDP messages\n");
-	}
-
-	freeaddrinfo(result);
-
-	*ret = sock;
 	return(NO_ERR);
 }
 
@@ -244,7 +174,7 @@ openConnectionUNIX(int *ret, const char *path, int mode, FILE *log)
 	/* have to use umask to restrict permissions to avoid a race
 	 * condition */
 	omask = umask(mode);
-	if (bind(sock, (SOCKPTR) &server, sizeof(struct sockaddr_un)) == -1) {
+	if (bind(sock, (struct sockaddr *) &server, sizeof(struct sockaddr_un)) == -1) {
 		umask(omask);
 		closesocket(sock);
 		return(newErr("binding to UNIX stream socket at %s failed: %s",

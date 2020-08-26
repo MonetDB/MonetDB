@@ -38,5 +38,7 @@ SELECT json.isValid(r'-0.001');         -- true
 SELECT json.isValid(r'0.001e12');        -- true
 SELECT json.isValid(r'-0.001e-12');      -- true
 
+SELECT json.isValid(r'1290345');         -- true
+
 SELECT json.isValid(r'{"foo": 90}');     -- true
 SELECT json.isValid(r'{"foo": 9}');      -- true

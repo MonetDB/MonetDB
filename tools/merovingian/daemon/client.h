@@ -9,7 +9,7 @@
 #ifndef _CLIENT_H
 #define _CLIENT_H 1
 
-char *acceptConnections(int sock, int usock);
+char *acceptConnections(int socks[3]);
 
 #endif
 

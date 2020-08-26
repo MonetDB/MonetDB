@@ -151,8 +151,8 @@ stdout of test 'groupby_error` in directory 'sql/test/miscellaneous` itself:
 % bigint # type
 % 1 # length
 #SELECT NOT ( NOT + - CAST ( NULL AS INTEGER ) NOT IN ( col0 / CAST ( col2 AS INTEGER ) - + col1 ) ) FROM tab0 AS cor0;
-% .%4 # table_name
-% %4 # name
+% .%3 # table_name
+% %3 # name
 % boolean # type
 % 5 # length
 [ NULL	]
@@ -191,8 +191,8 @@ project (
 % 2 # length
 [ 64	]
 #SELECT 11 FROM tab1 AS cor0 LEFT JOIN tab0 ON 80 = 70;
-% .%6 # table_name
-% %6 # name
+% .%4 # table_name
+% %4 # name
 % tinyint # type
 % 2 # length
 [ 11	]
@@ -218,8 +218,8 @@ project (
 % int,	int,	int # type
 % 1,	1,	1 # length
 #SELECT CAST(+ col2 * col2 AS BIGINT) FROM tab2 AS cor0 WHERE NOT - CAST ( NULL AS INTEGER ) <> - - col1 AND NOT NULL NOT BETWEEN ( NULL ) AND - 91 - - + 27 * + col2;
-% sys.%2 # table_name
-% %2 # name
+% sys.%1 # table_name
+% %1 # name
 % bigint # type
 % 1 # length
 #SELECT + 2 FROM tab0 AS cor0 WHERE NOT - 29 IS NULL OR NOT NULL IS NULL AND NOT NULL BETWEEN + col1 - + 60 AND + 37 * + col1 + + col0;
@@ -434,21 +434,21 @@ project (
 [ 1303	]
 #SELECT CAST(- 4 * + COUNT ( * ) + 22 + 69 AS BIGINT) AS col2, CAST(- ( + CASE + 85 WHEN - 77 / - CAST ( + CASE - + 51 WHEN 79 THEN + 95 + 13 * ( 60 * 77 ) END AS INTEGER ) + + 82 - COUNT ( * ) * COUNT ( * ) THEN 
 #NULL WHEN SUM ( ALL 99 ) THEN COUNT ( * ) ELSE COUNT ( * ) * - ( COUNT ( * ) ) END ) * 46 - 83 AS BIGINT);
-% .,	.%11 # table_name
-% col2,	%11 # name
+% .,	.%4 # table_name
+% col2,	%4 # name
 % bigint,	bigint # type
 % 2,	3 # length
 [ 87,	-37	]
 #SELECT DISTINCT CAST(- CAST ( CASE 81 WHEN 48 - - 3 / - - 47 - - CAST ( NULL AS INTEGER ) THEN NULL WHEN COUNT ( * ) THEN + - 91 + + 43 ELSE + - 0 END AS INTEGER ) AS BIGINT) AS col0, CAST(- 27 * + 43 AS BIGINT);
-% .,	.%5 # table_name
-% col0,	%5 # name
+% .,	.%4 # table_name
+% col0,	%4 # name
 % bigint,	bigint # type
 % 1,	5 # length
 [ 0,	-1161	]
 #SELECT DISTINCT CAST(66 * - + CAST ( - - COUNT ( * ) AS INTEGER ) * 54 * + CASE 68 WHEN - 56 * + CAST ( NULL AS INTEGER ) + + + 47 THEN 
 #- 83 ELSE + 59 + - COUNT ( * ) - 26 * ( 59 ) * 11 - - + COUNT ( * ) * - 73 END + + COUNT ( * ) / + ( 86 + 19 * 90 ) AS BIGINT);
-% .%7 # table_name
-% %7 # name
+% .%3 # table_name
+% %3 # name
 % bigint # type
 % 8 # length
 [ 60192396	]
@@ -465,6 +465,63 @@ project (
 % bigint # type
 % 1 # length
 [ 1	]
+#SELECT CAST(SUM ( + 73 ) * - CASE WHEN NOT ( NOT 27 BETWEEN 15 AND - NULLIF ( - 63, - 28 + + 76 ) ) THEN NULL ELSE + 77 * + 69 END / - CAST ( - 69 AS INTEGER ) AS BIGINT) AS col0;
+% . # table_name
+% col0 # name
+% bigint # type
+% 1 # length
+[ NULL	]
+#SELECT DISTINCT CAST(COALESCE ( + 38, - - ( - 70 ) * 52 + + 91 + - 47 ) + + CAST ( - 54 AS REAL ) / + 68 / + ( - 92 ) * - - CASE WHEN NULL >= NULL THEN COUNT ( * ) WHEN - COUNT ( * ) IS NULL 
+#THEN NULL ELSE NULL END * + 28 * - 58 + COUNT ( * ) + + COUNT ( * ) AS BIGINT);
+% .%3 # table_name
+% %3 # name
+% bigint # type
+% 1 # length
+[ NULL	]
+#SELECT DISTINCT CAST(- ( COUNT ( * ) ) / + CASE 28 * + 72 + - 45 * + 2 WHEN - 14 THEN NULL WHEN 37 THEN - COALESCE ( CASE WHEN + 17 IS NOT NULL THEN ( + ( - 39 ) ) WHEN NOT NULL = ( NULL )
+#THEN NULL ELSE 52 END, - COUNT ( * ) * - 80, + NULLIF ( CASE - 70 WHEN 48 + 63 THEN NULL ELSE 89 * + 57 END, + 15 ) + - CASE + 19 WHEN - 97 THEN + 66 + - 25 END ) * + 79 + 93 * 21 END AS BIGINT) AS col1;
+% . # table_name
+% col1 # name
+% bigint # type
+% 1 # length
+[ NULL	]
+#START TRANSACTION;
+#CREATE TABLE "tab0" ("col0" INTEGER,"col1" INTEGER,"col2" INTEGER);
+#INSERT INTO "tab0" VALUES (83, 0, 38), (26, 0, 79), (43, 81, 24);
+[ 3	]
+#SELECT CAST(COUNT ( DISTINCT + CAST ( NULL AS INTEGER ) ) + 93 as BIGINT) AS col2 FROM tab0 GROUP BY col0 HAVING NOT ( COUNT ( * ) ) = 94 / COUNT ( * );
+% . # table_name
+% col2 # name
+% bigint # type
+% 2 # length
+[ 93	]
+[ 93	]
+[ 93	]
+#select group_concat(distinct 'a') from tab0;
+% .%1 # table_name
+% %1 # name
+% clob # type
+% 1 # length
+[ "a"	]
+#INSERT INTO "tab0" VALUES (83, 0, 38), (26, 0, 79), (43, 81, 24);
+[ 3	]
+#ROLLBACK;
+#START TRANSACTION;
+#CREATE TABLE tab2 ("col0" INTEGER,"col1" INTEGER,"col2" INTEGER);
+#INSERT INTO tab2 VALUES(64,77,40), (75,67,58), (46,51,23);
+[ 3	]
+#ROLLBACK;
+#START TRANSACTION;
+#CREATE TABLE t(x DECIMAL(4,1));
+#INSERT INTO t VALUES (42);
+[ 1	]
+#SELECT CAST(SUM(x) / COUNT(x) AS DECIMAL(13,1)) FROM t;
+% sys.%3 # table_name
+% %3 # name
+% decimal # type
+% 15 # length
+[ 42.0	]
+#ROLLBACK;
 
 # 10:56:47 >  
 # 10:56:47 >  "Done."

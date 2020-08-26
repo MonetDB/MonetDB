@@ -18,26 +18,26 @@
 #include "mal_interpreter.h"
 
 typedef enum JSONkind {
-  JSON_OBJECT=1,
-  JSON_ARRAY,
-  JSON_ELEMENT,
-  JSON_VALUE,
-  JSON_STRING,
-  JSON_NUMBER,
-  JSON_BOOL,
-  JSON_NULL
+	JSON_OBJECT=1,
+	JSON_ARRAY,
+	JSON_ELEMENT,
+	JSON_VALUE,
+	JSON_STRING,
+	JSON_NUMBER,
+	JSON_BOOL,
+	JSON_NULL
 } JSONkind;
 
 /* The JSON index structure is meant for short lived versions */
 typedef struct JSONterm {
-  JSONkind kind;
-  char *name; /* exclude the quotes */
-  size_t namelen;
-  const char *value; /* start of string rep */
-  size_t valuelen;
-  int child, next, tail; /* next offsets allow you to walk array/object chains
-													and append quickly */
-  /* An array or object item has a number of components */
+	JSONkind kind;
+	char *name; /* exclude the quotes */
+	size_t namelen;
+	const char *value; /* start of string rep */
+	size_t valuelen;
+	int child, next, tail; /* next offsets allow you to walk array/object chains
+							  and append quickly */
+	/* An array or object item has a number of components */
 } JSONterm;
 
 typedef struct JSON{
@@ -62,26 +62,20 @@ typedef str json;
 				break;							\
 	} while (0)
 
-#define hex(J)													\
-	do {														\
-		if (isxdigit((unsigned char) *(J)))						\
-			(J)++;												\
-		else													\
-			throw(MAL, "json.parser", "illegal escape char");	\
-	} while (0)
-
 #define CHECK_JSON(jt)													\
-	if (jt == NULL || jt->error) {										\
-		char *msg;														\
-		if (jt) {														\
-			msg = jt->error;											\
-			jt->error = NULL;											\
-			JSONfree(jt);												\
-		} else {														\
-			msg = createException(MAL, "json.new", SQLSTATE(HY013) MAL_MALLOC_FAIL);		\
+	do {																\
+		if (jt == NULL || jt->error) {									\
+			char *msg;													\
+			if (jt) {													\
+				msg = jt->error;										\
+				jt->error = NULL;										\
+				JSONfree(jt);											\
+			} else {													\
+				msg = createException(MAL, "json.new", SQLSTATE(HY013) MAL_MALLOC_FAIL); \
+			}															\
+			return msg;													\
 		}																\
-		return msg;														\
-	}
+	} while (0)
 
 int TYPE_json;
 
@@ -160,14 +154,7 @@ JSONfromString(const char *src, size_t *len, void **J, bool external)
 			return -1;
 		*len = slen + 1;
 	}
-	if (external) {
-		if (GDKstrFromStr((unsigned char *) *j,
-						  (const unsigned char *) src, (ssize_t) slen) < 0)
-			return -1;
-		src = *j;
-	} else {
-		strcpy(*j, src);
-	}
+	strcpy(*j, src);
 	jt = JSONparse(*j);
 	if (jt == NULL)
 		return -1;
@@ -761,6 +748,9 @@ JSONfilterInternal(json *ret, json *js, str *expr, str other)
 static str
 JSONstringParser(const char *j, const char **next)
 {
+	unsigned int u;
+	bool seensurrogate = false;
+
 	assert(*j == '"');
 	j++;
 	for (; *j; j++) {
@@ -777,16 +767,34 @@ JSONstringParser(const char *j, const char **next)
 			case 'n':
 			case 'r':
 			case 't':
+				if (seensurrogate)
+					throw(MAL, "json.parser", "illegal escape char");
 				continue;
 			case 'u':
-				j++;
-				hex(j);
-				hex(j);
-				hex(j);
-				hex(j);
-				// Go back one character, because it would be skipped by the
-				// loop iterator otherwise.
-				j--;
+				u = 0;
+				for (int i = 0; i < 4; i++) {
+					u <<= 4;
+					j++;
+					if ('0' <= *j && *j <= '9')
+						u |= *j - '0';
+					else if ('a' <= *j && *j <= 'f')
+						u |= *j - 'a' + 10;
+					else if ('A' <= *j && *j <= 'F')
+						u |= *j - 'A' + 10;
+					else
+						throw(MAL, "json.parser", "illegal escape char");
+				}
+				if (seensurrogate) {
+					if ((u & 0xFC00) == 0xDC00)
+						seensurrogate = false;
+					else
+						throw(MAL, "json.parser", "illegal escape char");
+				} else {
+					if ((u & 0xFC00) == 0xD800)
+						seensurrogate = true;
+					else if ((u & 0xFC00) == 0xDC00)
+						throw(MAL, "json.parser", "illegal escape char");
+				}
 				break;
 			default:
 				*next = j;
@@ -794,9 +802,15 @@ JSONstringParser(const char *j, const char **next)
 			}
 			break;
 		case '"':
+			if (seensurrogate)
+				throw(MAL, "json.parser", "illegal escape char");
 			j++;
 			*next = j;
 			return MAL_SUCCEED;
+		default:
+			if (seensurrogate)
+				throw(MAL, "json.parser", "illegal escape char");
+			break;
 		}
 	}
 	*next = j;
@@ -906,10 +920,22 @@ JSONtoken(JSON *jt, const char *j, const char **next)
 			nxt = JSONtoken(jt, j, next);
 			if (jt->error)
 				return idx;
-			if (jt->elm[nxt].kind != JSON_ELEMENT) {
-				jt->error = createException(MAL, "json.parser", "JSON syntax error: element expected at offset %td", j - string_start);
+			j = *next;
+			skipblancs(j);
+			if (jt->elm[nxt].kind != JSON_STRING || *j != ':') {
+				jt->error = createException(MAL, "json.parser", "JSON syntax error: element expected at offset %td", jt->elm[nxt].value - string_start);
 				return idx;
 			}
+			j++;
+			skipblancs(j);
+			jt->elm[nxt].kind = JSON_ELEMENT;
+			/* do in two steps since JSONtoken may realloc jt->elm */
+			int chld = JSONtoken(jt, j, next);
+			if (jt->error)
+				return idx;
+			jt->elm[nxt].child = chld;
+			jt->elm[nxt].value++;
+			jt->elm[nxt].valuelen -= 2;
 			JSONappend(jt, idx, nxt);
 			if (jt->error)
 				return idx;
@@ -1001,19 +1027,6 @@ JSONtoken(JSON *jt, const char *j, const char **next)
 		jt->elm[idx].kind = JSON_STRING;
 		jt->elm[idx].value = j;
 		jt->elm[idx].valuelen = *next - j;
-		j = *next;
-		skipblancs(j);
-		if (*j == ':') {
-			j++;
-			skipblancs(j);
-			jt->elm[idx].kind = JSON_ELEMENT;
-			nxt = JSONtoken(jt, j, next);
-			if (jt->error)
-				return idx;
-			jt->elm[idx].child = nxt;
-			jt->elm[idx].value++;
-			jt->elm[idx].valuelen -= 2;
-		}
 		return idx;
 	case 'n':
 		if (strncmp("null", j, 4) == 0) {
@@ -1179,7 +1192,7 @@ static char *
 JSONplaintext(char **r, size_t *l, size_t *ilen, JSON *jt, int idx, str sep, size_t sep_len)
 {
 	int i;
-	unsigned int j, k;
+	unsigned int j, u;
 
 	switch (jt->elm[idx].kind) {
 	case JSON_OBJECT:
@@ -1196,7 +1209,7 @@ JSONplaintext(char **r, size_t *l, size_t *ilen, JSON *jt, int idx, str sep, siz
 		if (jt->elm[idx].child)
 			*r = JSONplaintext(r, l, ilen, jt, jt->elm[idx].child, sep, sep_len);
 		break;
-		case JSON_STRING:
+	case JSON_STRING:
 		// Make sure there is enough space for the value plus the separator plus the NULL byte
 		if (*l < jt->elm[idx].valuelen - 2 + sep_len + 1) {
 			char *p = *r - *ilen + *l;
@@ -1206,18 +1219,79 @@ JSONplaintext(char **r, size_t *l, size_t *ilen, JSON *jt, int idx, str sep, siz
 			*l = *ilen - *l;
 		}
 		for (j = 1; j < jt->elm[idx].valuelen - 1; j++) {
-			if (jt->elm[idx].value[j] == '\\')
-				**r = jt->elm[idx].value[++j];
-			else
-				**r = jt->elm[idx].value[j];
-			(*r)++;
-			(*l)--;
+			if (jt->elm[idx].value[j] == '\\') {
+				switch (jt->elm[idx].value[++j]) {
+				case '"':
+				case '\\':
+				case '/':
+					*(*r)++ = jt->elm[idx].value[j];
+					(*l)--;
+					break;
+				case 'b':
+					*(*r)++ = '\b';
+					(*l)--;
+					break;
+				case 'f':
+					*(*r)++ = '\f';
+					(*l)--;
+					break;
+				case 'r':
+					*(*r)++ = '\r';
+					(*l)--;
+					break;
+				case 'n':
+					*(*r)++ = '\n';
+					(*l)--;
+					break;
+				case 't':
+					*(*r)++ = '\t';
+					(*l)--;
+					break;
+				case 'u':
+					u = 0;
+					for (int i = 0;i < 4; i++) {
+						char c = jt->elm[idx].value[++j];
+						u <<= 4;
+						if ('0' <= c && c <= '9')
+							u |= c - '0';
+						else if ('a' <= c && c <= 'f')
+							u |= c - 'a' + 10;
+						else /* if ('A' <= c && c <= 'F') */
+							u |= c - 'A' + 10;
+					}
+					if (u <= 0x7F) {
+						*(*r)++ = (char) u;
+						(*l)--;
+					} else if (u <= 0x7FF) {
+						*(*r)++ = 0xC0 | (u >> 6);
+						*(*r)++ = 0x80 | (u & 0x3F);
+						(*l) -= 2;
+					} else if ((u & 0xFC00) == 0xD800) {
+						/* high surrogate; must be followed by low surrogate */
+						*(*r)++ = 0xF0 | (((u & 0x03C0) + 0x0040) >> 8);
+						*(*r)++ = 0x80 | ((((u & 0x03C0) + 0x0040) >> 2) & 0x3F);
+						**r = 0x80 | ((u & 0x0003) << 4); /* no increment */
+						(*l) -= 2;
+					} else if ((u & 0xFC00) == 0xDC00) {
+						/* low surrogate; must follow high surrogate */
+						*(*r)++ |= (u & 0x03C0) >> 6; /* amend last value */
+						*(*r)++ = 0x80 | (u & 0x3F);
+						(*l) -= 2;
+					} else /* if (u <= 0xFFFF) */ {
+						*(*r)++ = 0xE0 | (u >> 12);
+						*(*r)++ = 0x80 | ((u >> 6) & 0x3F);
+						*(*r)++ = 0x80 | (u & 0x3F);
+						(*l) -= 3;
+					}
+				}
+			} else {
+				*(*r)++ = jt->elm[idx].value[j];
+				(*l)--;
+			}
 		}
-		for(k = 0; k < sep_len; k++) {
-			**r = *(sep + k);
-			(*r)++;
-		}
-		(*l) -= k;
+		memcpy(*r, sep, sep_len);
+		*l -= sep_len;
+		*r += sep_len;
 		break;
 	default:
 		if (*l < jt->elm[idx].valuelen + sep_len + 1) {
@@ -1228,16 +1302,12 @@ JSONplaintext(char **r, size_t *l, size_t *ilen, JSON *jt, int idx, str sep, siz
 			*r += offset;
 			*l = *ilen - offset;
 		}
-		for (j = 0; j < jt->elm[idx].valuelen; j++) {
-			**r = jt->elm[idx].value[j];
-			(*r)++;
-			(*l)--;
-		}
-		for(k = 0; k < sep_len; k++) {
-			**r = *(sep + k);
-			(*r)++;
-		}
-		(*l) -= k;
+		memcpy(*r, jt->elm[idx].value, jt->elm[idx].valuelen);
+		*l -= jt->elm[idx].valuelen;
+		*r += jt->elm[idx].valuelen;
+		memcpy(*r, sep, sep_len);
+		*l -= sep_len;
+		*r += sep_len;
 	}
 	assert(*l > 0);
 	**r = 0;

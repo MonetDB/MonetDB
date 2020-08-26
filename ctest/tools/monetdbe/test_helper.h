@@ -36,22 +36,22 @@ TYPE_DEFTEST_TPE(timestamp, monetdbe_data_timestamp);
 
 #define Null  ._is_null = 1
 
-monetdbe_export bool check_column_bool      (monetdbe_result* result, size_t column_index, size_t expected_nr_column_entries, TEST_TPE_ID(int8_t) expected_column[]);
-monetdbe_export bool check_column_int8_t    (monetdbe_result* result, size_t column_index, size_t expected_nr_column_entries, TEST_TPE_ID(int8_t)* expected_column);
-monetdbe_export bool check_column_int16_t   (monetdbe_result* result, size_t column_index, size_t expected_nr_column_entries, TEST_TPE_ID(int16_t)* expected_column);
-monetdbe_export bool check_column_int32_t   (monetdbe_result* result, size_t column_index, size_t expected_nr_column_entries, TEST_TPE_ID(int32_t)* expected_column);
-monetdbe_export bool check_column_int64_t   (monetdbe_result* result, size_t column_index, size_t expected_nr_column_entries, TEST_TPE_ID(int64_t)* expected_column);
+extern bool check_column_bool      (monetdbe_result* result, size_t column_index, size_t expected_nr_column_entries, TEST_TPE_ID(int8_t) expected_column[]);
+extern bool check_column_int8_t    (monetdbe_result* result, size_t column_index, size_t expected_nr_column_entries, TEST_TPE_ID(int8_t)* expected_column);
+extern bool check_column_int16_t   (monetdbe_result* result, size_t column_index, size_t expected_nr_column_entries, TEST_TPE_ID(int16_t)* expected_column);
+extern bool check_column_int32_t   (monetdbe_result* result, size_t column_index, size_t expected_nr_column_entries, TEST_TPE_ID(int32_t)* expected_column);
+extern bool check_column_int64_t   (monetdbe_result* result, size_t column_index, size_t expected_nr_column_entries, TEST_TPE_ID(int64_t)* expected_column);
 #if HAVE_HGE
-monetdbe_export bool check_column_int128_t  (monetdbe_result* result, size_t column_index, size_t expected_nr_column_entries, TEST_TPE_ID(int128_t)* expected_column);
+extern bool check_column_int128_t  (monetdbe_result* result, size_t column_index, size_t expected_nr_column_entries, TEST_TPE_ID(int128_t)* expected_column);
 #endif
-monetdbe_export bool check_column_size_t    (monetdbe_result* result, size_t column_index, size_t expected_nr_column_entries, TEST_TPE_ID(size_t)* expected_column);
-monetdbe_export bool check_column_float     (monetdbe_result* result, size_t column_index, size_t expected_nr_column_entries, TEST_TPE_ID(float)* expected_column);
-monetdbe_export bool check_column_double    (monetdbe_result* result, size_t column_index, size_t expected_nr_column_entries, TEST_TPE_ID(double)* expected_column);
-monetdbe_export bool check_column_str       (monetdbe_result* result, size_t column_index, size_t expected_nr_column_entries, TEST_TPE_ID(str)* expected_column);
-monetdbe_export bool check_column_blob      (monetdbe_result* result, size_t column_index, size_t expected_nr_column_entries, TEST_TPE_ID(blob)* expected_column);
-monetdbe_export bool check_column_date      (monetdbe_result* result, size_t column_index, size_t expected_nr_column_entries, TEST_TPE_ID(date)* expected_column);
-monetdbe_export bool check_column_time      (monetdbe_result* result, size_t column_index, size_t expected_nr_column_entries, TEST_TPE_ID(time)* expected_column);
-monetdbe_export bool check_column_timestamp (monetdbe_result* result, size_t column_index, size_t expected_nr_column_entries, TEST_TPE_ID(timestamp)* expected_column);
+extern bool check_column_size_t    (monetdbe_result* result, size_t column_index, size_t expected_nr_column_entries, TEST_TPE_ID(size_t)* expected_column);
+extern bool check_column_float     (monetdbe_result* result, size_t column_index, size_t expected_nr_column_entries, TEST_TPE_ID(float)* expected_column);
+extern bool check_column_double    (monetdbe_result* result, size_t column_index, size_t expected_nr_column_entries, TEST_TPE_ID(double)* expected_column);
+extern bool check_column_str       (monetdbe_result* result, size_t column_index, size_t expected_nr_column_entries, TEST_TPE_ID(str)* expected_column);
+extern bool check_column_blob      (monetdbe_result* result, size_t column_index, size_t expected_nr_column_entries, TEST_TPE_ID(blob)* expected_column);
+extern bool check_column_date      (monetdbe_result* result, size_t column_index, size_t expected_nr_column_entries, TEST_TPE_ID(date)* expected_column);
+extern bool check_column_time      (monetdbe_result* result, size_t column_index, size_t expected_nr_column_entries, TEST_TPE_ID(time)* expected_column);
+extern bool check_column_timestamp (monetdbe_result* result, size_t column_index, size_t expected_nr_column_entries, TEST_TPE_ID(timestamp)* expected_column);
 
 #if HAVE_HGE
 #define BIGGEST_INTEGER_TPE int128_t
@@ -102,4 +102,3 @@ check_column_##TPE ( \
     column_index, \
     sizeof((TEST_TPE_ID(TPE)[]) COLUMN(__VA_ARGS__)) /sizeof(((TEST_TPE_ID(TPE)[]) COLUMN(__VA_ARGS__))[0]), \
     (TEST_TPE_ID(TPE)[]) COLUMN(__VA_ARGS__))
-

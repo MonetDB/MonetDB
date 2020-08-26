@@ -27,12 +27,13 @@ str
 daytime_2time_daytime(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	str msg = MAL_SUCCEED;
-	BAT *b = NULL, *res = NULL;
+	BAT *b = NULL, *s = NULL, *res = NULL;
 	BUN q = 0;
 	daytime *restrict ret = NULL;
-	int tpe = getArgType(mb, pci, 1), *digits = getArgReference_int(stk, pci, 2), d = (*digits) ? *digits - 1 : 0;
-	bool is_a_bat = false;
-	bat *r = NULL;
+	int tpe = getArgType(mb, pci, 1), *digits = getArgReference_int(stk, pci, pci->argc == 4 ? 3 : 2), d = (*digits) ? *digits - 1 : 0;
+	bool is_a_bat = false, nils = false;
+	bat *r = NULL, *sid = pci->argc == 4 ? getArgReference_bat(stk, pci, 2): NULL;
+	struct canditer ci = {0};
 #ifdef HAVE_HGE
 	hge shift = 0, divider = 1, multiplier = 1;
 #else
@@ -44,10 +45,14 @@ daytime_2time_daytime(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (is_a_bat) {
 		tpe = getBatType(tpe);
 		if (!(b = BATdescriptor(*getArgReference_bat(stk, pci, 1)))) {
-			msg = createException(SQL, "batcalc.daytime_2time_daytime", SQLSTATE(HY005) "Cannot access column descriptor");
+			msg = createException(SQL, "batcalc.daytime_2time_daytime", SQLSTATE(HY005) RUNTIME_OBJECT_MISSING);
 			goto bailout;
 		}
-		q = BATcount(b);
+		if (sid && !is_bat_nil(*sid) && (s = BATdescriptor(*sid)) == NULL) {
+			msg = createException(SQL, "batcalc.timestamp_2_daytime", SQLSTATE(HY005) RUNTIME_OBJECT_MISSING);
+			goto bailout;
+		}
+		q = canditer_init(&ci, b, s);
 		if (!(res = COLnew(b->hseqbase, TYPE_daytime, q, TRANSIENT))) {
 			msg = createException(SQL, "batcalc.daytime_2time_daytime", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			goto bailout;
@@ -68,10 +73,18 @@ daytime_2time_daytime(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	}
 
 	if (is_a_bat) {
+		oid off = b->hseqbase;
 		daytime *restrict vals = (daytime*) Tloc(b, 0);
 		for (BUN i = 0 ; i < q ; i++) {
-			daytime next = vals[i];
-			ret[i] = is_daytime_nil(next) ? daytime_nil : daytime_2time_daytime_imp(next, shift, divider, multiplier);
+			BUN p = (BUN) (canditer_next(&ci) - off);
+			daytime next = vals[p];
+
+			if (is_daytime_nil(next)) {
+				ret[i] = daytime_nil;
+				nils = true;
+			} else {
+				ret[i] = daytime_2time_daytime_imp(next, shift, divider, multiplier);
+			}
 		}
 	} else {
 		daytime next = *(daytime*)getArgReference(stk, pci, 1);
@@ -81,10 +94,12 @@ daytime_2time_daytime(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 bailout:
 	if (b)
 		BBPunfix(b->batCacheid);
+	if (s)
+		BBPunfix(s->batCacheid);
 	if (res && !msg) {
 		BATsetcount(res, q);
-		res->tnil = b->tnil;
-		res->tnonil = b->tnonil;
+		res->tnil = nils;
+		res->tnonil = !nils;
 		res->tkey = b->tkey;
 		res->tsorted = b->tsorted;
 		res->trevsorted  = b->trevsorted;
@@ -111,11 +126,12 @@ second_interval_2_daytime(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 {
 	str msg = MAL_SUCCEED;
 	daytime *restrict ret = NULL;
-	int tpe = getArgType(mb, pci, 1), digits = *getArgReference_int(stk, pci, 2);
-	bool is_a_bat = false;
-	BAT *b = NULL, *res = NULL;
-	bat *r = NULL;
+	int tpe = getArgType(mb, pci, 1), digits = *getArgReference_int(stk, pci, pci->argc == 4 ? 3 : 2);
+	bool is_a_bat = false, nils = false;
+	BAT *b = NULL, *s = NULL, *res = NULL;
+	bat *r = NULL, *sid = pci->argc == 4 ? getArgReference_bat(stk, pci, 2) : NULL;
 	BUN q = 0;
+	struct canditer ci = {0};
 #ifdef HAVE_HGE
 	hge shift = 0, divider = 1, multiplier = 1;
 #else
@@ -127,10 +143,14 @@ second_interval_2_daytime(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 	if (is_a_bat) {
 		tpe = getBatType(tpe);
 		if (!(b = BATdescriptor(*getArgReference_bat(stk, pci, 1)))) {
-			msg = createException(SQL, "batcalc.second_interval_2_daytime", SQLSTATE(HY005) "Cannot access column descriptor");
+			msg = createException(SQL, "batcalc.second_interval_2_daytime", SQLSTATE(HY005) RUNTIME_OBJECT_MISSING);
 			goto bailout;
 		}
-		q = BATcount(b);
+		if (sid && !is_bat_nil(*sid) && (s = BATdescriptor(*sid)) == NULL) {
+			msg = createException(SQL, "batcalc.second_interval_2_daytime", SQLSTATE(HY005) RUNTIME_OBJECT_MISSING);
+			goto bailout;
+		}
+		q = canditer_init(&ci, b, s);
 		if (!(res = COLnew(b->hseqbase, TYPE_daytime, q, TRANSIENT))) {
 			msg = createException(SQL, "batcalc.second_interval_2_daytime", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			goto bailout;
@@ -150,10 +170,18 @@ second_interval_2_daytime(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 	}
 
 	if (is_a_bat) {
+		oid off = b->hseqbase;
 		lng *restrict vals = (lng*) Tloc(b, 0);
-		for (BUN i = 0 ; i < q && !msg ; i++) {
-			lng next = vals[i];
-			ret[i] = is_lng_nil(next) ? daytime_nil : second_interval_2_daytime_imp(next, shift, divider, multiplier);
+		for (BUN i = 0 ; i < q ; i++) {
+			BUN p = (BUN) (canditer_next(&ci) - off);
+			lng next = vals[p];
+
+			if (is_lng_nil(next)) {
+				ret[i] = daytime_nil;
+				nils = true;
+			} else {
+				ret[i] = second_interval_2_daytime_imp(next, shift, divider, multiplier);
+			}
 		}
 	} else {
 		lng next = *(lng*)getArgReference(stk, pci, 1);
@@ -163,10 +191,12 @@ second_interval_2_daytime(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 bailout:
 	if (b)
 		BBPunfix(b->batCacheid);
+	if (s)
+		BBPunfix(s->batCacheid);
 	if (res && !msg) {
 		BATsetcount(res, q);
-		res->tnil = b->tnil;
-		res->tnonil = b->tnonil;
+		res->tnil = nils;
+		res->tnonil = !nils;
 		res->tkey = BATcount(res) <= 1;
 		res->tsorted = BATcount(res) <= 1;
 		res->trevsorted = BATcount(res) <= 1;
@@ -186,7 +216,7 @@ nil_2time_daytime(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (isaBatType(getArgType(mb, pci, 1))) {
 		daytime d = daytime_nil;
 		if (!(b = BATdescriptor(*getArgReference_bat(stk, pci, 1))))
-			throw(SQL, "batcalc.nil_2time_daytime", SQLSTATE(HY005) "Cannot access column descriptor");
+			throw(SQL, "batcalc.nil_2time_daytime", SQLSTATE(HY005) RUNTIME_OBJECT_MISSING);
 		res = BATconstant(b->hseqbase, TYPE_daytime, &d, BATcount(b), TRANSIENT);
 		BBPunfix(b->batCacheid);
 		if (!res)
@@ -220,16 +250,17 @@ lng shift, lng divider, lng multiplier
 }
 
 static str
-str_2time_daytimetz_internal(ptr out, ptr in, int tpe, int digits, int tz)
+str_2time_daytimetz_internal(ptr out, ptr in, const bat *sid, int tpe, int digits, int tz)
 {
 	str msg = MAL_SUCCEED;
-	BAT *b = NULL, *res = NULL;
+	BAT *b = NULL, *s = NULL, *res = NULL;
 	BUN q = 0;
 	daytime *restrict ret = NULL;
 	int d = (digits) ? digits - 1 : 0;
-	bool is_a_bat = false;
+	bool is_a_bat = false, nils = false;
 	bat *r = NULL;
 	ssize_t (*fromstr_func)(const char *, size_t *, daytime **, bool) = tz ? daytime_tz_fromstr : daytime_fromstr;
+	struct canditer ci = {0};
 #ifdef HAVE_HGE
 	hge shift = 0, divider = 1, multiplier = 1;
 #else
@@ -240,10 +271,14 @@ str_2time_daytimetz_internal(ptr out, ptr in, int tpe, int digits, int tz)
 	if (is_a_bat) {
 		tpe = getBatType(tpe);
 		if (!(b = BATdescriptor(*(bat*) in))) {
-			msg = createException(SQL, "batcalc.str_2time_daytimetz", SQLSTATE(HY005) "Cannot access column descriptor");
+			msg = createException(SQL, "batcalc.str_2time_daytimetz", SQLSTATE(HY005) RUNTIME_OBJECT_MISSING);
 			goto bailout;
 		}
-		q = BATcount(b);
+		if (sid && !is_bat_nil(*sid) && (s = BATdescriptor(*sid)) == NULL) {
+			msg = createException(SQL, "batcalc.str_2time_daytimetz", SQLSTATE(HY005) RUNTIME_OBJECT_MISSING);
+			goto bailout;
+		}
+		q = canditer_init(&ci, b, s);
 		if (!(res = COLnew(b->hseqbase, TYPE_daytime, q, TRANSIENT))) {
 			msg = createException(SQL, "batcalc.str_2time_daytimetz", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			goto bailout;
@@ -264,13 +299,18 @@ str_2time_daytimetz_internal(ptr out, ptr in, int tpe, int digits, int tz)
 	}
 
 	if (is_a_bat) {
+		oid off = b->hseqbase;
 		BATiter it = bat_iterator(b);
 		for (BUN i = 0 ; i < q && !msg; i++) {
-			str next = BUNtail(it, i);
-			if (strNil(next))
+			BUN p = (BUN) (canditer_next(&ci) - off);
+			str next = BUNtail(it, p);
+
+			if (strNil(next)) {
 				ret[i] = daytime_nil;
-			else
+				nils = true;
+			} else {
 				msg = str_2time_daytimetz_internal_imp(&(ret[i]), next, fromstr_func, shift, divider, multiplier);
+			}
 		}
 	} else {
 		str next = *(str*)in;
@@ -283,10 +323,12 @@ str_2time_daytimetz_internal(ptr out, ptr in, int tpe, int digits, int tz)
 bailout:
 	if (b)
 		BBPunfix(b->batCacheid);
+	if (s)
+		BBPunfix(s->batCacheid);
 	if (res && !msg) {
 		BATsetcount(res, q);
-		res->tnil = b->tnil;
-		res->tnonil = b->tnonil;
+		res->tnil = nils;
+		res->tnonil = !nils;
 		res->tkey = BATcount(res) <= 1;
 		res->tsorted = BATcount(res) <= 1;
 		res->trevsorted = BATcount(res) <= 1;
@@ -299,15 +341,24 @@ bailout:
 str
 str_2time_daytimetz(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	int tpe = getArgType(mb, pci, 1), digits = *getArgReference_int(stk, pci, 2), tz = *getArgReference_int(stk, pci, 3);
+	int tpe = getArgType(mb, pci, 1),
+		digits = *getArgReference_int(stk, pci, pci->argc == 5 ? 3 : 2),
+		tz = *getArgReference_int(stk, pci, pci->argc == 5 ? 4 : 3);
+	bat *sid = pci->argc == 5 ? getArgReference_bat(stk, pci, 2) : NULL;
 	(void) cntxt;
-	return str_2time_daytimetz_internal(getArgReference(stk, pci, 0), getArgReference(stk, pci, 1), tpe, digits, tz);
+	return str_2time_daytimetz_internal(getArgReference(stk, pci, 0), getArgReference(stk, pci, 1), sid, tpe, digits, tz);
 }
 
 str
 batstr_2time_daytime(bat *res, const bat *bid, const int *digits)
 {
-	return str_2time_daytimetz_internal((ptr) res, (ptr) bid, newBatType(TYPE_str), *digits, 0);
+	return str_2time_daytimetz_internal((ptr) res, (ptr) bid, NULL, newBatType(TYPE_str), *digits, 0);
+}
+
+str
+batstr_2time_daytime_cand(bat *res, const bat *bid, const bat *s, const int *digits)
+{
+	return str_2time_daytimetz_internal((ptr) res, (ptr) bid, s, newBatType(TYPE_str), *digits, 0);
 }
 
 str
@@ -315,7 +366,7 @@ str_2time_daytime(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	int tpe = getArgType(mb, pci, 1), digits = *getArgReference_int(stk, pci, 2);
 	(void) cntxt;
-	return str_2time_daytimetz_internal(getArgReference(stk, pci, 0), getArgReference(stk, pci, 1), tpe, digits, 0);
+	return str_2time_daytimetz_internal(getArgReference(stk, pci, 0), getArgReference(stk, pci, 1), NULL, tpe, digits, 0);
 }
 
 static inline daytime
@@ -335,12 +386,13 @@ str
 timestamp_2_daytime(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	str msg = MAL_SUCCEED;
-	BAT *b = NULL, *res = NULL;
+	BAT *b = NULL, *s = NULL, *res = NULL;
 	BUN q = 0;
 	daytime *restrict ret = NULL;
-	int tpe = getArgType(mb, pci, 1), *digits = getArgReference_int(stk, pci, 2), d = (*digits) ? *digits - 1 : 0;
-	bool is_a_bat = false;
-	bat *r = NULL;
+	int tpe = getArgType(mb, pci, 1), *digits = getArgReference_int(stk, pci, pci->argc == 4 ? 3 : 2), d = (*digits) ? *digits - 1 : 0;
+	bool is_a_bat = false, nils = false;
+	bat *r = NULL, *sid = pci->argc == 4 ? getArgReference_bat(stk, pci, 2): NULL;
+	struct canditer ci = {0};
 #ifdef HAVE_HGE
 	hge shift = 0, divider = 1, multiplier = 1;
 #else
@@ -352,10 +404,14 @@ timestamp_2_daytime(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (is_a_bat) {
 		tpe = getBatType(tpe);
 		if (!(b = BATdescriptor(*getArgReference_bat(stk, pci, 1)))) {
-			msg = createException(SQL, "batcalc.timestamp_2_daytime", SQLSTATE(HY005) "Cannot access column descriptor");
+			msg = createException(SQL, "batcalc.timestamp_2_daytime", SQLSTATE(HY005) RUNTIME_OBJECT_MISSING);
 			goto bailout;
 		}
-		q = BATcount(b);
+		if (sid && !is_bat_nil(*sid) && (s = BATdescriptor(*sid)) == NULL) {
+			msg = createException(SQL, "batcalc.timestamp_2_daytime", SQLSTATE(HY005) RUNTIME_OBJECT_MISSING);
+			goto bailout;
+		}
+		q = canditer_init(&ci, b, s);
 		if (!(res = COLnew(b->hseqbase, TYPE_daytime, q, TRANSIENT))) {
 			msg = createException(SQL, "batcalc.timestamp_2_daytime", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			goto bailout;
@@ -376,10 +432,18 @@ timestamp_2_daytime(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	}
 
 	if (is_a_bat) {
+		oid off = b->hseqbase;
 		timestamp *restrict vals = (timestamp*) Tloc(b, 0);
 		for (BUN i = 0 ; i < q ; i++) {
-			timestamp next = vals[i];
-			ret[i] = is_timestamp_nil(next) ? daytime_nil : timestamp_2_daytime_imp(next, shift, divider, multiplier);
+			BUN p = (BUN) (canditer_next(&ci) - off);
+			timestamp next = vals[p];
+
+			if (is_timestamp_nil(next)) {
+				ret[i] = daytime_nil;
+				nils = true;
+			} else {
+				ret[i] = timestamp_2_daytime_imp(next, shift, divider, multiplier);
+			}
 		}
 	} else {
 		timestamp next = *(timestamp*)getArgReference(stk, pci, 1);
@@ -389,10 +453,12 @@ timestamp_2_daytime(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 bailout:
 	if (b)
 		BBPunfix(b->batCacheid);
+	if (s)
+		BBPunfix(s->batCacheid);
 	if (res && !msg) {
 		BATsetcount(res, q);
-		res->tnil = b->tnil;
-		res->tnonil = b->tnonil;
+		res->tnil = nils;
+		res->tnonil = !nils;
 		res->tkey = BATcount(res) <= 1;
 		res->tsorted = BATcount(res) <= 1;
 		res->trevsorted = BATcount(res) <= 1;
@@ -406,22 +472,27 @@ str
 date_2_timestamp(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	str msg = MAL_SUCCEED;
-	BAT *b = NULL, *res = NULL;
+	BAT *b = NULL, *s = NULL, *res = NULL;
 	BUN q = 0;
 	timestamp *restrict ret = NULL;
 	int tpe = getArgType(mb, pci, 1);
-	bool is_a_bat = false;
-	bat *r = NULL;
+	bool is_a_bat = false, nils = false;
+	bat *r = NULL, *sid = pci->argc == 4 ? getArgReference_bat(stk, pci, 2) : NULL;
+	struct canditer ci = {0};
 
 	(void) cntxt;
 	is_a_bat = isaBatType(tpe);
 	if (is_a_bat) {
 		tpe = getBatType(tpe);
 		if (!(b = BATdescriptor(*getArgReference_bat(stk, pci, 1)))) {
-			msg = createException(SQL, "batcalc.date_2_timestamp", SQLSTATE(HY005) "Cannot access column descriptor");
+			msg = createException(SQL, "batcalc.date_2_timestamp", SQLSTATE(HY005) RUNTIME_OBJECT_MISSING);
 			goto bailout;
 		}
-		q = BATcount(b);
+		if (sid && !is_bat_nil(*sid) && (s = BATdescriptor(*sid)) == NULL) {
+			msg = createException(SQL, "batcalc.date_2_timestamp", SQLSTATE(HY005) RUNTIME_OBJECT_MISSING);
+			goto bailout;
+		}
+		q = canditer_init(&ci, b, s);
 		if (!(res = COLnew(b->hseqbase, TYPE_timestamp, q, TRANSIENT))) {
 			msg = createException(SQL, "batcalc.date_2_timestamp", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			goto bailout;
@@ -433,9 +504,13 @@ date_2_timestamp(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	}
 
 	if (is_a_bat) {
+		oid off = b->hseqbase;
 		date *restrict vals = (date*) Tloc(b, 0);
-		for (BUN i = 0 ; i < q ; i++)
-			ret[i] = timestamp_fromdate(vals[i]);
+		for (BUN i = 0 ; i < q ; i++) {
+			BUN p = (BUN) (canditer_next(&ci) - off);
+			ret[i] = timestamp_fromdate(vals[p]);
+			nils |= is_timestamp_nil(ret[i]);
+		}
 	} else {
 		*ret = timestamp_fromdate(*(date*)getArgReference(stk, pci, 1));
 	}
@@ -443,10 +518,12 @@ date_2_timestamp(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 bailout:
 	if (b)
 		BBPunfix(b->batCacheid);
+	if (s)
+		BBPunfix(s->batCacheid);
 	if (res && !msg) {
 		BATsetcount(res, q);
-		res->tnil = b->tnil;
-		res->tnonil = b->tnonil;
+		res->tnil = nils;
+		res->tnonil = !nils;
 		res->tkey = b->tkey;
 		res->tsorted = b->tsorted;
 		res->trevsorted  = b->trevsorted;
@@ -475,12 +552,13 @@ str
 timestamp_2time_timestamp(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	str msg = MAL_SUCCEED;
-	BAT *b = NULL, *res = NULL;
+	BAT *b = NULL, *s = NULL, *res = NULL;
 	BUN q = 0;
 	timestamp *restrict ret = NULL;
-	int tpe = getArgType(mb, pci, 1), *digits = getArgReference_int(stk, pci, 2), d = (*digits) ? *digits - 1 : 0;
-	bool is_a_bat = false;
-	bat *r = NULL;
+	int tpe = getArgType(mb, pci, 1), *digits = getArgReference_int(stk, pci, pci->argc == 4 ? 3 : 2), d = (*digits) ? *digits - 1 : 0;
+	bool is_a_bat = false, nils = false;
+	bat *r = NULL, *sid = pci->argc == 4 ? getArgReference_bat(stk, pci, 2): NULL;
+	struct canditer ci = {0};
 #ifdef HAVE_HGE
 	hge shift = 0, divider = 1, multiplier = 1;
 #else
@@ -492,10 +570,14 @@ timestamp_2time_timestamp(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 	if (is_a_bat) {
 		tpe = getBatType(tpe);
 		if (!(b = BATdescriptor(*getArgReference_bat(stk, pci, 1)))) {
-			msg = createException(SQL, "batcalc.timestamp_2time_timestamp", SQLSTATE(HY005) "Cannot access column descriptor");
+			msg = createException(SQL, "batcalc.timestamp_2time_timestamp", SQLSTATE(HY005) RUNTIME_OBJECT_MISSING);
 			goto bailout;
 		}
-		q = BATcount(b);
+		if (sid && !is_bat_nil(*sid) && (s = BATdescriptor(*sid)) == NULL) {
+			msg = createException(SQL, "batcalc.timestamp_2time_timestamp", SQLSTATE(HY005) RUNTIME_OBJECT_MISSING);
+			goto bailout;
+		}
+		q = canditer_init(&ci, b, s);
 		if (!(res = COLnew(b->hseqbase, TYPE_timestamp, q, TRANSIENT))) {
 			msg = createException(SQL, "batcalc.timestamp_2time_timestamp", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			goto bailout;
@@ -516,10 +598,18 @@ timestamp_2time_timestamp(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 	}
 
 	if (is_a_bat) {
+		oid off = b->hseqbase;
 		timestamp *restrict vals = (timestamp*) Tloc(b, 0);
 		for (BUN i = 0 ; i < q ; i++) {
-			timestamp next = vals[i];
-			ret[i] = is_timestamp_nil(next) ? timestamp_nil : timestamp_2time_timestamp_imp(next, shift, divider, multiplier);
+			BUN p = (BUN) (canditer_next(&ci) - off);
+			timestamp next = vals[p];
+
+			if (is_timestamp_nil(next)) {
+				ret[i] = timestamp_nil;
+				nils = true;
+			} else {
+				ret[i] = timestamp_2time_timestamp_imp(next, shift, divider, multiplier);
+			}
 		}
 	} else {
 		timestamp next = *(timestamp*)getArgReference(stk, pci, 1);
@@ -529,10 +619,12 @@ timestamp_2time_timestamp(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 bailout:
 	if (b)
 		BBPunfix(b->batCacheid);
+	if (s)
+		BBPunfix(s->batCacheid);
 	if (res && !msg) {
 		BATsetcount(res, q);
-		res->tnil = b->tnil;
-		res->tnonil = b->tnonil;
+		res->tnil = nils;
+		res->tnonil = !nils;
 		res->tkey = b->tkey;
 		res->tsorted = b->tsorted;
 		res->trevsorted  = b->trevsorted;
@@ -552,7 +644,7 @@ nil_2time_timestamp(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (isaBatType(getArgType(mb, pci, 1))) {
 		timestamp d = timestamp_nil;
 		if (!(b = BATdescriptor(*getArgReference_bat(stk, pci, 1))))
-			throw(SQL, "batcalc.nil_2time_timestamp", SQLSTATE(HY005) "Cannot access column descriptor");
+			throw(SQL, "batcalc.nil_2time_timestamp", SQLSTATE(HY005) RUNTIME_OBJECT_MISSING);
 		res = BATconstant(b->hseqbase, TYPE_timestamp, &d, BATcount(b), TRANSIENT);
 		BBPunfix(b->batCacheid);
 		if (!res)
@@ -586,16 +678,17 @@ lng shift, lng divider, lng multiplier
 }
 
 static str
-str_2time_timestamptz_internal(ptr out, ptr in, int tpe, int digits, int tz)
+str_2time_timestamptz_internal(ptr out, ptr in, const bat *sid, int tpe, int digits, int tz)
 {
 	str msg = MAL_SUCCEED;
-	BAT *b = NULL, *res = NULL;
+	BAT *b = NULL, *s = NULL, *res = NULL;
 	BUN q = 0;
 	timestamp *restrict ret = NULL;
 	int d = (digits) ? digits - 1 : 0;
-	bool is_a_bat = false;
+	bool is_a_bat = false, nils = false;
 	bat *r = NULL;
 	ssize_t (*fromstr_func)(const char *, size_t *, timestamp **, bool) = tz ? timestamp_tz_fromstr : timestamp_fromstr;
+	struct canditer ci = {0};
 #ifdef HAVE_HGE
 	hge shift = 0, divider = 1, multiplier = 1;
 #else
@@ -606,10 +699,14 @@ str_2time_timestamptz_internal(ptr out, ptr in, int tpe, int digits, int tz)
 	if (is_a_bat) {
 		tpe = getBatType(tpe);
 		if (!(b = BATdescriptor(*(bat*) in))) {
-			msg = createException(SQL, "batcalc.str_2time_timestamptz_internal", SQLSTATE(HY005) "Cannot access column descriptor");
+			msg = createException(SQL, "batcalc.str_2time_timestamptz_internal", SQLSTATE(HY005) RUNTIME_OBJECT_MISSING);
 			goto bailout;
 		}
-		q = BATcount(b);
+		if (sid && !is_bat_nil(*sid) && (s = BATdescriptor(*sid)) == NULL) {
+			msg = createException(SQL, "batcalc.str_2time_timestamptz_internal", SQLSTATE(HY005) RUNTIME_OBJECT_MISSING);
+			goto bailout;
+		}
+		q = canditer_init(&ci, b, s);
 		if (!(res = COLnew(b->hseqbase, TYPE_timestamp, q, TRANSIENT))) {
 			msg = createException(SQL, "batcalc.str_2time_timestamptz_internal", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			goto bailout;
@@ -630,13 +727,18 @@ str_2time_timestamptz_internal(ptr out, ptr in, int tpe, int digits, int tz)
 	}
 
 	if (is_a_bat) {
+		oid off = b->hseqbase;
 		BATiter it = bat_iterator(b);
 		for (BUN i = 0 ; i < q && !msg; i++) {
-			str next = BUNtail(it, i);
-			if (strNil(next))
+			BUN p = (BUN) (canditer_next(&ci) - off);
+			str next = BUNtail(it, p);
+
+			if (strNil(next)) {
 				ret[i] = timestamp_nil;
-			else
+				nils = true;
+			} else {
 				msg = str_2time_timestamptz_internal_imp(&(ret[i]), next, fromstr_func, shift, divider, multiplier);
+			}
 		}
 	} else {
 		str next = *(str*)in;
@@ -649,10 +751,12 @@ str_2time_timestamptz_internal(ptr out, ptr in, int tpe, int digits, int tz)
 bailout:
 	if (b)
 		BBPunfix(b->batCacheid);
+	if (s)
+		BBPunfix(s->batCacheid);
 	if (res && !msg) {
 		BATsetcount(res, q);
-		res->tnil = b->tnil;
-		res->tnonil = b->tnonil;
+		res->tnil = nils;
+		res->tnonil = !nils;
 		res->tkey = BATcount(res) <= 1;
 		res->tsorted = BATcount(res) <= 1;
 		res->trevsorted = BATcount(res) <= 1;
@@ -665,15 +769,23 @@ bailout:
 str
 str_2time_timestamptz(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	int tpe = getArgType(mb, pci, 1), digits = *getArgReference_int(stk, pci, 2), tz = *getArgReference_int(stk, pci, 3);
+	int tpe = getArgType(mb, pci, 1),
+		digits = *getArgReference_int(stk, pci, pci->argc == 5 ? 3 : 2),
+		tz = *getArgReference_int(stk, pci, pci->argc == 5 ? 4 : 3);
 	(void) cntxt;
-	return str_2time_timestamptz_internal(getArgReference(stk, pci, 0), getArgReference(stk, pci, 1), tpe, digits, tz);
+	return str_2time_timestamptz_internal(getArgReference(stk, pci, 0), getArgReference(stk, pci, 1), NULL, tpe, digits, tz);
 }
 
 str
 batstr_2time_timestamptz(bat *res, const bat *bid, const int *digits, int *tz)
 {
-	return str_2time_timestamptz_internal((ptr) res, (ptr) bid, newBatType(TYPE_str), *digits, *tz);
+	return str_2time_timestamptz_internal((ptr) res, (ptr) bid, NULL, newBatType(TYPE_str), *digits, *tz);
+}
+
+str
+batstr_2time_timestamptz_cand(bat *res, const bat *bid, const bat *sid, const int *digits, int *tz)
+{
+	return str_2time_timestamptz_internal((ptr) res, (ptr) bid, sid, newBatType(TYPE_str), *digits, *tz);
 }
 
 str
@@ -681,13 +793,19 @@ str_2time_timestamp(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	int tpe = getArgType(mb, pci, 1), digits = *getArgReference_int(stk, pci, 2);
 	(void) cntxt;
-	return str_2time_timestamptz_internal(getArgReference(stk, pci, 0), getArgReference(stk, pci, 1), tpe, digits, 0);
+	return str_2time_timestamptz_internal(getArgReference(stk, pci, 0), getArgReference(stk, pci, 1), NULL, tpe, digits, 0);
 }
 
 str
 batstr_2time_timestamp(bat *res, const bat *bid, const int *digits)
 {
-	return str_2time_timestamptz_internal((ptr) res, (ptr) bid, newBatType(TYPE_str), *digits, 0);
+	return str_2time_timestamptz_internal((ptr) res, (ptr) bid, NULL, newBatType(TYPE_str), *digits, 0);
+}
+
+str
+batstr_2time_timestamp_cand(bat *res, const bat *bid, const bat *sid, const int *digits)
+{
+	return str_2time_timestamptz_internal((ptr) res, (ptr) bid, sid, newBatType(TYPE_str), *digits, 0);
 }
 
 static inline str
@@ -706,21 +824,27 @@ month_interval_str(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	str msg = MAL_SUCCEED;
 	int *restrict ret = NULL;
-	int d = *getArgReference_int(stk, pci, 2), sk = *getArgReference_int(stk, pci, 3), tpe = getArgType(mb, pci, 1);
-	bool is_a_bat = false;
-	BAT *b = NULL, *res = NULL;
-	bat *r = NULL;
+	int d = *getArgReference_int(stk, pci, pci->argc == 5 ? 3 : 2), sk = *getArgReference_int(stk, pci, pci->argc == 5 ? 4 : 3),
+		tpe = getArgType(mb, pci, 1);
+	bool is_a_bat = false, nils = false;
+	BAT *b = NULL, *s = NULL, *res = NULL;
+	bat *r = NULL, *sid = pci->argc == 5 ? getArgReference_bat(stk, pci, 2): NULL;
 	BUN q = 0;
+	struct canditer ci = {0};
 
 	(void) cntxt;
 	is_a_bat = isaBatType(tpe);
 	if (is_a_bat) {
 		tpe = getBatType(tpe);
 		if (!(b = BATdescriptor(*getArgReference_bat(stk, pci, 1)))) {
-			msg = createException(SQL, "batcalc.month_interval_str", SQLSTATE(HY005) "Cannot access column descriptor");
+			msg = createException(SQL, "batcalc.month_interval_str", SQLSTATE(HY005) RUNTIME_OBJECT_MISSING);
 			goto bailout;
 		}
-		q = BATcount(b);
+		if (sid && !is_bat_nil(*sid) && (s = BATdescriptor(*sid)) == NULL) {
+			msg = createException(SQL, "batcalc.month_interval_str", SQLSTATE(HY005) RUNTIME_OBJECT_MISSING);
+			goto bailout;
+		}
+		q = canditer_init(&ci, b, s);
 		if (!(res = COLnew(b->hseqbase, TYPE_int, q, TRANSIENT))) {
 			msg = createException(SQL, "batcalc.month_interval_str", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			goto bailout;
@@ -732,14 +856,18 @@ month_interval_str(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	}
 
 	if (is_a_bat) {
+		oid off = b->hseqbase;
 		BATiter bi = bat_iterator(b);
 		for (BUN i = 0 ; i < q ; i++) {
-			const str next = BUNtail(bi, i);
+			BUN p = (BUN) (canditer_next(&ci) - off);
+			const str next = BUNtail(bi, p);
 
-			if (strNil(next))
+			if (strNil(next)) {
 				ret[i] = int_nil;
-			else
+				nils = true;
+			} else {
 				msg = month_interval_str_imp(&(ret[i]), next, d, sk);
+			}
 		}
 	} else {
 		const str next = *getArgReference_str(stk, pci, 1);
@@ -753,10 +881,12 @@ month_interval_str(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 bailout:
 	if (b)
 		BBPunfix(b->batCacheid);
+	if (s)
+		BBPunfix(s->batCacheid);
 	if (res && !msg) {
 		BATsetcount(res, q);
-		res->tnil = b->tnil;
-		res->tnonil = b->tnonil;
+		res->tnil = nils;
+		res->tnonil = !nils;
 		res->tkey = BATcount(res) <= 1;
 		res->tsorted = BATcount(res) <= 1;
 		res->trevsorted = BATcount(res) <= 1;
@@ -779,21 +909,27 @@ second_interval_str(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	str msg = MAL_SUCCEED;
 	lng *restrict ret = NULL;
-	int d = *getArgReference_int(stk, pci, 2), sk = *getArgReference_int(stk, pci, 3), tpe = getArgType(mb, pci, 1);
-	bool is_a_bat = false;
-	BAT *b = NULL, *res = NULL;
-	bat *r = NULL;
+	int d = *getArgReference_int(stk, pci, pci->argc == 5 ? 3 : 2), sk = *getArgReference_int(stk, pci, pci->argc == 5 ? 4 : 3),
+		tpe = getArgType(mb, pci, 1);
+	bool is_a_bat = false, nils = false;
+	BAT *b = NULL, *s = NULL, *res = NULL;
+	bat *r = NULL, *sid = pci->argc == 5 ? getArgReference_bat(stk, pci, 2): NULL;
 	BUN q = 0;
+	struct canditer ci = {0};
 
 	(void) cntxt;
 	is_a_bat = isaBatType(tpe);
 	if (is_a_bat) {
 		tpe = getBatType(tpe);
 		if (!(b = BATdescriptor(*getArgReference_bat(stk, pci, 1)))) {
-			msg = createException(SQL, "batcalc.second_interval_str", SQLSTATE(HY005) "Cannot access column descriptor");
+			msg = createException(SQL, "batcalc.second_interval_str", SQLSTATE(HY005) RUNTIME_OBJECT_MISSING);
 			goto bailout;
 		}
-		q = BATcount(b);
+		if (sid && !is_bat_nil(*sid) && (s = BATdescriptor(*sid)) == NULL) {
+			msg = createException(SQL, "batcalc.second_interval_str", SQLSTATE(HY005) RUNTIME_OBJECT_MISSING);
+			goto bailout;
+		}
+		q = canditer_init(&ci, b, s);
 		if (!(res = COLnew(b->hseqbase, TYPE_lng, q, TRANSIENT))) {
 			msg = createException(SQL, "batcalc.second_interval_str", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			goto bailout;
@@ -805,14 +941,18 @@ second_interval_str(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	}
 
 	if (is_a_bat) {
+		oid off = b->hseqbase;
 		BATiter bi = bat_iterator(b);
 		for (BUN i = 0 ; i < q ; i++) {
-			const str next = BUNtail(bi, i);
+			BUN p = (BUN) (canditer_next(&ci) - off);
+			const str next = BUNtail(bi, p);
 
-			if (strNil(next))
+			if (strNil(next)) {
 				ret[i] = lng_nil;
-			else
+				nils = true;
+			} else {
 				msg = second_interval_str_imp(&(ret[i]), next, d, sk);
+			}
 		}
 	} else {
 		const str next = *getArgReference_str(stk, pci, 1);
@@ -826,10 +966,12 @@ second_interval_str(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 bailout:
 	if (b)
 		BBPunfix(b->batCacheid);
+	if (s)
+		BBPunfix(s->batCacheid);
 	if (res && !msg) {
 		BATsetcount(res, q);
-		res->tnil = b->tnil;
-		res->tnonil = b->tnonil;
+		res->tnil = nils;
+		res->tnonil = !nils;
 		res->tkey = BATcount(res) <= 1;
 		res->tsorted = BATcount(res) <= 1;
 		res->trevsorted = BATcount(res) <= 1;
@@ -842,9 +984,12 @@ bailout:
 #define interval_loop(FUNC, TPE, FUNC_NAME, MAX_VALUE, CAST_VALIDATION, MUL_VALIDATION) \
 	do { \
 		if (is_a_bat) { \
+			oid off = b->hseqbase; \
 			TPE *restrict vals = Tloc(b, 0); \
-			for (BUN i = 0 ; i < q && !msg ; i++) \
-				FUNC(ret[i], vals[i], TPE, FUNC_NAME, MAX_VALUE, CAST_VALIDATION, MUL_VALIDATION); \
+			for (BUN i = 0 ; i < q && !msg ; i++) { \
+				BUN p = (BUN) (canditer_next(&ci) - off); \
+				FUNC(ret[i], vals[p], TPE, FUNC_NAME, MAX_VALUE, CAST_VALIDATION, MUL_VALIDATION); \
+			} \
 		} else { \
 			TPE val = *(TPE*)getArgReference(stk, pci, 1); \
 			FUNC(*ret, val, TPE, FUNC_NAME, MAX_VALUE, CAST_VALIDATION, MUL_VALIDATION); \
@@ -855,6 +1000,7 @@ bailout:
 	do { \
 		if (is_##TPE##_nil(IN)) { \
 			OUT = int_nil; \
+			nils = true; \
 		} else { \
 			TPE next = IN; \
 			int cast, r; \
@@ -902,22 +1048,27 @@ str
 month_interval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	str msg = MAL_SUCCEED;
-	int *restrict ret = NULL, multiplier = 1;
-	int k = digits2ek(*getArgReference_int(stk, pci, 2)), tpe = getArgType(mb, pci, 1);
-	bool is_a_bat = false;
-	BAT *b = NULL, *res = NULL;
-	bat *r = NULL;
+	int *restrict ret = NULL, multiplier = 1, k = digits2ek(*getArgReference_int(stk, pci, pci->argc == 5 ? 3 : 2)),
+		tpe = getArgType(mb, pci, 1);
+	bool is_a_bat = false, nils = false;
+	BAT *b = NULL, *s = NULL, *res = NULL;
+	bat *r = NULL, *sid = pci->argc == 5 ? getArgReference_bat(stk, pci, 2): NULL;
 	BUN q = 0;
+	struct canditer ci = {0};
 
 	(void) cntxt;
 	is_a_bat = isaBatType(tpe);
 	if (is_a_bat) {
 		tpe = getBatType(tpe);
 		if (!(b = BATdescriptor(*getArgReference_bat(stk, pci, 1)))) {
-			msg = createException(SQL, "batcalc.month_interval", SQLSTATE(HY005) "Cannot access column descriptor");
+			msg = createException(SQL, "batcalc.month_interval", SQLSTATE(HY005) RUNTIME_OBJECT_MISSING);
 			goto bailout;
 		}
-		q = BATcount(b);
+		if (sid && !is_bat_nil(*sid) && (s = BATdescriptor(*sid)) == NULL) {
+			msg = createException(SQL, "batcalc.month_interval", SQLSTATE(HY005) RUNTIME_OBJECT_MISSING);
+			goto bailout;
+		}
+		q = canditer_init(&ci, b, s);
 		if (!(res = COLnew(b->hseqbase, TYPE_int, q, TRANSIENT))) {
 			msg = createException(SQL, "batcalc.month_interval", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			goto bailout;
@@ -966,10 +1117,12 @@ month_interval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 bailout:
 	if (b)
 		BBPunfix(b->batCacheid);
+	if (s)
+		BBPunfix(s->batCacheid);
 	if (res && !msg) {
 		BATsetcount(res, q);
-		res->tnil = b->tnil;
-		res->tnonil = b->tnonil;
+		res->tnil = nils;
+		res->tnonil = !nils;
 		res->tkey = b->tkey;
 		res->tsorted = b->tsorted;
 		res->trevsorted  = b->trevsorted;
@@ -983,6 +1136,7 @@ bailout:
 	do { \
 		if (is_##TPE##_nil(IN)) { \
 			OUT = lng_nil; \
+			nils = true; \
 		} else { \
 			TPE next = IN; \
 			lng cast, r; \
@@ -1003,11 +1157,13 @@ second_interval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	str msg = MAL_SUCCEED;
 	lng *restrict ret = NULL, multiplier = 1;
-	int tpe = getArgType(mb, pci, 1), k = digits2ek(*getArgReference_int(stk, pci, 2)), scale = 0;
-	bool is_a_bat = false;
-	BAT *b = NULL, *res = NULL;
-	bat *r = NULL;
+	int tpe = getArgType(mb, pci, 1), k = digits2ek(*getArgReference_int(stk, pci, pci->argc == 5 ? 3 : 2)), 
+		scale = *getArgReference_int(stk, pci, pci->argc == 5 ? 4 : 3);
+	bool is_a_bat = false, nils = false;
+	BAT *b = NULL, *s = NULL, *res = NULL;
+	bat *r = NULL, *sid = pci->argc == 5 ? getArgReference_bat(stk, pci, 2) : NULL;
 	BUN q = 0;
+	struct canditer ci = {0};
 #ifdef HAVE_HGE
 	hge shift = 0, divider = 1;
 #else
@@ -1015,16 +1171,18 @@ second_interval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 #endif
 
 	(void) cntxt;
-	if (pci->argc > 3)
-		scale = *getArgReference_int(stk, pci, 3);
 	is_a_bat = isaBatType(tpe);
 	if (is_a_bat) {
 		tpe = getBatType(tpe);
 		if (!(b = BATdescriptor(*getArgReference_bat(stk, pci, 1)))) {
-			msg = createException(SQL, "batcalc.sec_interval", SQLSTATE(HY005) "Cannot access column descriptor");
+			msg = createException(SQL, "batcalc.sec_interval", SQLSTATE(HY005) RUNTIME_OBJECT_MISSING);
 			goto bailout;
 		}
-		q = BATcount(b);
+		if (sid && !is_bat_nil(*sid) && (s = BATdescriptor(*sid)) == NULL) {
+			msg = createException(SQL, "batcalc.sec_interval", SQLSTATE(HY005) RUNTIME_OBJECT_MISSING);
+			goto bailout;
+		}
+		q = canditer_init(&ci, b, s);
 		if (!(res = COLnew(b->hseqbase, TYPE_lng, q, TRANSIENT))) {
 			msg = createException(SQL, "batcalc.sec_interval", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			goto bailout;
@@ -1086,10 +1244,12 @@ second_interval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 bailout:
 	if (b)
 		BBPunfix(b->batCacheid);
+	if (s)
+		BBPunfix(s->batCacheid);
 	if (res && !msg) {
 		BATsetcount(res, q);
-		res->tnil = b->tnil;
-		res->tnonil = b->tnonil;
+		res->tnil = nils;
+		res->tnonil = !nils;
 		res->tkey = b->tkey;
 		res->tsorted = b->tsorted;
 		res->trevsorted  = b->trevsorted;
@@ -1104,21 +1264,26 @@ second_interval_daytime(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	str msg = MAL_SUCCEED;
 	lng *restrict ret = NULL, multiplier = 1, divider = 1;
-	int tpe = getArgType(mb, pci, 1), k = digits2ek(*getArgReference_int(stk, pci, 2));
-	bool is_a_bat = false;
-	BAT *b = NULL, *res = NULL;
-	bat *r = NULL;
+	int tpe = getArgType(mb, pci, 1), k = digits2ek(*getArgReference_int(stk, pci, pci->argc == 5 ? 3 : 2));
+	bool is_a_bat = false, nils = false;
+	BAT *b = NULL, *s = NULL, *res = NULL;
+	bat *r = NULL, *sid = pci->argc == 5 ? getArgReference_bat(stk, pci, 2) : NULL;
 	BUN q = 0;
+	struct canditer ci = {0};
 
 	(void) cntxt;
 	is_a_bat = isaBatType(tpe);
 	if (is_a_bat) {
 		tpe = getBatType(tpe);
 		if (!(b = BATdescriptor(*getArgReference_bat(stk, pci, 1)))) {
-			msg = createException(SQL, "batcalc.second_interval_daytime", SQLSTATE(HY005) "Cannot access column descriptor");
+			msg = createException(SQL, "batcalc.second_interval_daytime", SQLSTATE(HY005) RUNTIME_OBJECT_MISSING);
 			goto bailout;
 		}
-		q = BATcount(b);
+		if (sid && !is_bat_nil(*sid) && (s = BATdescriptor(*sid)) == NULL) {
+			msg = createException(SQL, "batcalc.second_interval_daytime", SQLSTATE(HY005) RUNTIME_OBJECT_MISSING);
+			goto bailout;
+		}
+		q = canditer_init(&ci, b, s);
 		if (!(res = COLnew(b->hseqbase, TYPE_lng, q, TRANSIENT))) {
 			msg = createException(SQL, "batcalc.second_interval_daytime", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			goto bailout;
@@ -1151,10 +1316,18 @@ second_interval_daytime(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	}
 
 	if (is_a_bat) {
+		oid off = b->hseqbase;
 		daytime *restrict vals = (daytime*) Tloc(b, 0);
 		for (BUN i = 0 ; i < q ; i++) {
-			daytime next = vals[i];
-			ret[i] = is_daytime_nil(next) ? lng_nil : (next / divider) * multiplier;
+			BUN p = (BUN) (canditer_next(&ci) - off);
+			daytime next = vals[p];
+
+			if (is_daytime_nil(next)) {
+				ret[i] = lng_nil;
+				nils = true;
+			} else {
+				ret[i] = (next / divider) * multiplier;
+			}
 		}
 	} else {
 		daytime next = *(daytime*)getArgReference(stk, pci, 1);
@@ -1164,10 +1337,12 @@ second_interval_daytime(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 bailout:
 	if (b)
 		BBPunfix(b->batCacheid);
+	if (s)
+		BBPunfix(s->batCacheid);
 	if (res && !msg) {
 		BATsetcount(res, q);
-		res->tnil = b->tnil;
-		res->tnonil = b->tnonil;
+		res->tnil = nils;
+		res->tnonil = !nils;
 		res->tkey = b->tkey;
 		res->tsorted = b->tsorted;
 		res->trevsorted  = b->trevsorted;
@@ -1187,7 +1362,7 @@ nil_2_date(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (isaBatType(getArgType(mb, pci, 1))) {
 		date d = date_nil;
 		if (!(b = BATdescriptor(*getArgReference_bat(stk, pci, 1))))
-			throw(SQL, "batcalc.nil_2_date", SQLSTATE(HY005) "Cannot access column descriptor");
+			throw(SQL, "batcalc.nil_2_date", SQLSTATE(HY005) RUNTIME_OBJECT_MISSING);
 		res = BATconstant(b->hseqbase, TYPE_date, &d, BATcount(b), TRANSIENT);
 		BBPunfix(b->batCacheid);
 		if (!res)
@@ -1215,23 +1390,28 @@ str_2_date_internal_imp(date *ret, str next)
 }
 
 static str
-str_2_date_internal(ptr out, ptr in, int tpe)
+str_2_date_internal(ptr out, ptr in, const bat *sid, int tpe)
 {
 	str msg = MAL_SUCCEED;
-	BAT *b = NULL, *res = NULL;
+	BAT *b = NULL, *s = NULL, *res = NULL;
 	BUN q = 0;
 	date *restrict ret = NULL;
-	bool is_a_bat = false;
+	bool is_a_bat = false, nils = false;
 	bat *r = NULL;
+	struct canditer ci = {0};
 
 	is_a_bat = isaBatType(tpe);
 	if (is_a_bat) {
 		tpe = getBatType(tpe);
 		if (!(b = BATdescriptor(*(bat*) in))) {
-			msg = createException(SQL, "batcalc.batstr_2_date", SQLSTATE(HY005) "Cannot access column descriptor");
+			msg = createException(SQL, "batcalc.batstr_2_date", SQLSTATE(HY005) RUNTIME_OBJECT_MISSING);
 			goto bailout;
 		}
-		q = BATcount(b);
+		if (sid && !is_bat_nil(*sid) && (s = BATdescriptor(*sid)) == NULL) {
+			msg = createException(SQL, "batcalc.batstr_2_date", SQLSTATE(HY005) RUNTIME_OBJECT_MISSING);
+			goto bailout;
+		}
+		q = canditer_init(&ci, b, s);
 		if (!(res = COLnew(b->hseqbase, TYPE_date, q, TRANSIENT))) {
 			msg = createException(SQL, "batcalc.batstr_2_date", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			goto bailout;
@@ -1243,13 +1423,18 @@ str_2_date_internal(ptr out, ptr in, int tpe)
 	}
 
 	if (is_a_bat) {
+		oid off = b->hseqbase;
 		BATiter it = bat_iterator(b);
 		for (BUN i = 0 ; i < q && !msg; i++) {
-			str next = BUNtail(it, i);
-			if (strNil(next))
+			BUN p = (BUN) (canditer_next(&ci) - off);
+			str next = BUNtail(it, p);
+
+			if (strNil(next)) {
 				ret[i] = date_nil;
-			else
+				nils = true;
+			} else {
 				msg = str_2_date_internal_imp(&(ret[i]), next);
+			}
 		}
 	} else {
 		str next = *(str*)in;
@@ -1262,10 +1447,12 @@ str_2_date_internal(ptr out, ptr in, int tpe)
 bailout:
 	if (b)
 		BBPunfix(b->batCacheid);
+	if (s)
+		BBPunfix(s->batCacheid);
 	if (res && !msg) {
 		BATsetcount(res, q);
-		res->tnil = b->tnil;
-		res->tnonil = b->tnonil;
+		res->tnil = nils;
+		res->tnonil = !nils;
 		res->tkey = BATcount(res) <= 1;
 		res->tsorted = BATcount(res) <= 1;
 		res->trevsorted = BATcount(res) <= 1;
@@ -1278,7 +1465,13 @@ bailout:
 str
 batstr_2_date(bat *res, const bat *bid)
 {
-	return str_2_date_internal((ptr) res, (ptr) bid, newBatType(TYPE_str));
+	return str_2_date_internal((ptr) res, (ptr) bid, NULL, newBatType(TYPE_str));
+}
+
+str
+batstr_2_date_cand(bat *res, const bat *bid, const bat *s)
+{
+	return str_2_date_internal((ptr) res, (ptr) bid, s, newBatType(TYPE_str));
 }
 
 str
@@ -1286,7 +1479,7 @@ str_2_date(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	int tpe = getArgType(mb, pci, 1);
 	(void) cntxt;
-	return str_2_date_internal(getArgReference(stk, pci, 0), getArgReference(stk, pci, 1), tpe);
+	return str_2_date_internal(getArgReference(stk, pci, 0), getArgReference(stk, pci, 1), NULL, tpe);
 }
 
 str

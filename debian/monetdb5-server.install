@@ -6,4 +6,5 @@ debian/tmp/usr/lib/x86_64-linux-gnu/monetdb5/lib_capi.so usr/lib/x86_64-linux-gn
 debian/tmp/usr/lib/x86_64-linux-gnu/monetdb5/lib_generator.so usr/lib/x86_64-linux-gnu/monetdb5
 debian/tmp/usr/lib/x86_64-linux-gnu/monetdb5/lib_udf.so usr/lib/x86_64-linux-gnu/monetdb5
 
-debian/tmp/usr/lib/x86_64-linux-gnu/monetdb5/benchmark.mal usr/lib/x86_64-linux-gnu/monetdb5
+debian/tmp/usr/lib/x86_64-linux-gnu/monetdb5/microbenchmark.mal usr/lib/x86_64-linux-gnu/monetdb5
+debian/tmp/usr/lib/x86_64-linux-gnu/monetdb5/run_*.mal usr/lib/x86_64-linux-gnu/monetdb5

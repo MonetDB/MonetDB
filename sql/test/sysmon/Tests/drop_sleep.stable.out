@@ -1,0 +1,13 @@
+stdout of test 'drop_sleep` in directory 'sql/test/sysmon` itself:
+
+
+# 16:42:18 >  
+# 16:42:18 >  "mclient" "-lsql" "-ftest" "-tnone" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-21836" "--port=39319"
+# 16:42:18 >  
+
+#drop procedure sleep;
+
+# 16:42:18 >  
+# 16:42:18 >  "Done."
+# 16:42:18 >  
+

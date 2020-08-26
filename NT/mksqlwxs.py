@@ -48,7 +48,14 @@ def main():
         arch = 'x86'
         libcrypto = ''
         vcpkg = r'C:\vcpkg\installed\x86-windows\{}'
-    vs = '2019'
+    with open('CMakeCache.txt') as cache:
+        for line in cache:
+            if line.startswith('CMAKE_GENERATOR_INSTANCE:INTERNAL='):
+                comdir = line.split('=', 1)[1].strip().replace('/', '\\')
+                break
+        else:
+            comdir = r'C:\Program Files (x86)\Microsoft Visual Studio\2019\Community'
+    msvc = os.path.join(comdir, r'VC\Redist\MSVC')
     features = []
     extend = []
     debug = []
@@ -65,8 +72,8 @@ def main():
     print(r'      <UpgradeVersion OnlyDetect="no" Minimum="11.29.3" IncludeMinimum="no" Maximum="{}" Property="GEOMINSTALLED"/>'.format(sys.argv[1]))
     print(r'    </Upgrade>')
     print(r'    <MajorUpgrade AllowDowngrades="no" DowngradeErrorMessage="A later version of [ProductName] is already installed." AllowSameVersionUpgrades="no"/>')
-    print(r'    <WixVariable Id="WixUILicenseRtf" Value="license.rtf"/>')
-    print(r'    <WixVariable Id="WixUIBannerBmp" Value="banner.bmp"/>')
+    print(r'    <WixVariable Id="WixUILicenseRtf" Value="share\license.rtf"/>')
+    print(r'    <WixVariable Id="WixUIBannerBmp" Value="share\banner.bmp"/>')
     # print(r'    <WixVariable Id="WixUIDialogBmp" Value="backgroundRipple.bmp"/>')
     print(r'    <Property Id="INSTALLDIR">')
     print(r'      <RegistrySearch Id="MonetDBRegistry" Key="Software\[Manufacturer]\[ProductName]" Name="InstallPath" Root="HKLM" Type="raw"/>')
@@ -99,10 +106,9 @@ def main():
     print(r'    <Property Id="ApplicationFolderName" Value="MonetDB"/>')
     print(r'    <Property Id="WixAppFolder" Value="WixPerMachineFolder"/>')
     print(r'    <Property Id="WIXUI_INSTALLDIR" Value="INSTALLDIR"/>')
-    print(r'    <Property Id="ARPPRODUCTICON" Value="monetdb.ico"/>')
+    print(r'    <Property Id="ARPPRODUCTICON" Value="share\monetdb.ico"/>')
     print(r'    <Media Id="1" Cabinet="monetdb.cab" EmbedCab="yes"/>')
     print(r'    <Directory Id="TARGETDIR" Name="SourceDir">')
-    msvc = r'C:\Program Files (x86)\Microsoft Visual Studio\{}\Community\VC\Redist\MSVC'.format(vs)
     d = sorted(os.listdir(msvc))[-1]
     msm = '_CRT_{}.msm'.format(arch)
     for f in sorted(os.listdir(os.path.join(msvc, d, 'MergeModules'))):
@@ -124,9 +130,10 @@ def main():
               [r'bin\mclient.exe',
                r'bin\mserver5.exe',
                r'bin\msqldump.exe',
-               r'bin\gdk.dll',
+               r'bin\bat.dll',
                r'bin\mapi.dll',
                r'bin\monetdb5.dll',
+               r'bin\monetdbsql.dll',
                r'bin\stream.dll',
                vcpkg.format(r'bin\libiconv.dll'),
                vcpkg.format(r'bin\bz2.dll'),
@@ -166,18 +173,19 @@ def main():
     id = comp(features, id, 16,
               [r'lib\monetdb5\microbenchmark.mal'])
     id = comp(features, id, 16,
-              [r'lib\monetdb5\{}'.format(x) for x in sorted(filter(lambda x: x.startswith('lib_') and x.endswith('.dll') and ('geom' not in x) and ('pyapi' not in x) and ('opt_sql_append' not in x), os.listdir(os.path.join(sys.argv[3], 'lib', 'monetdb5'))))])
+              [r'lib\monetdb5\{}'.format(x) for x in sorted(filter(lambda x: x.startswith('_') and x.endswith('.dll') and ('geom' not in x) and ('pyapi' not in x) and ('opt_sql_append' not in x), os.listdir(os.path.join(sys.argv[3], 'lib', 'monetdb5'))))])
     id = comp(debug, id, 16,
-              [r'lib\monetdb5\{}'.format(x) for x in sorted(filter(lambda x: x.startswith('lib_') and x.endswith('.pdb') and ('geom' not in x) and ('opt_sql_append' not in x), os.listdir(os.path.join(sys.argv[3], 'lib', 'monetdb5'))))])
+              [r'lib\monetdb5\{}'.format(x) for x in sorted(filter(lambda x: x.startswith('_') and x.endswith('.pdb') and ('geom' not in x) and ('opt_sql_append' not in x), os.listdir(os.path.join(sys.argv[3], 'lib', 'monetdb5'))))])
     id = comp(geom, id, 16,
-              [r'lib\monetdb5\{}'.format(x) for x in sorted(filter(lambda x: x.startswith('lib_') and (x.endswith('.dll') or x.endswith('.pdb')) and ('geom' in x), os.listdir(os.path.join(sys.argv[3], 'lib', 'monetdb5'))))])
+              [r'lib\monetdb5\{}'.format(x) for x in sorted(filter(lambda x: x.startswith('_') and (x.endswith('.dll') or x.endswith('.pdb')) and ('geom' in x), os.listdir(os.path.join(sys.argv[3], 'lib', 'monetdb5'))))])
     id = comp(pyapi3, id, 16,
               [r'lib\monetdb5\_pyapi3.dll'])
     print(r'              </Directory>')
     id = comp(extend, id, 14,
-              [r'lib\gdk.lib',
+              [r'lib\bat.lib',
                r'lib\mapi.lib',
                r'lib\monetdb5.lib',
+               r'lib\monetdbsql.lib',
                r'lib\stream.lib',
                vcpkg.format(r'lib\libiconv.lib'),
                vcpkg.format(r'lib\bz2.lib'),
@@ -193,7 +201,7 @@ def main():
                                  r'share\doc\MonetDB-SQL\dump-restore.txt'],
               vital = 'no')
     id = comp(features, id, 18,
-              [r'website.html'],
+              [r'share\website.html'],
               name = 'MonetDB Web Site',
               sid = 'website_html',
               vital = 'no')
@@ -201,7 +209,7 @@ def main():
     print(r'              </Directory>')
     print(r'            </Directory>')
     id = comp(features, id, 12,
-              [r'license.rtf',
+              [r'share\license.rtf',
                r'M5server.bat',
                r'msqldump.bat'])
     id = comp(pyapi3, id, 12,
@@ -257,7 +265,7 @@ def main():
     print(r'    </Feature>')
     print(r'    <UIRef Id="WixUI_Mondo"/>')
     print(r'    <UIRef Id="WixUI_ErrorProgressText"/>')
-    print(r'    <Icon Id="monetdb.ico" SourceFile="monetdb.ico"/>')
+    print(r'    <Icon Id="monetdb.ico" SourceFile="share\monetdb.ico"/>')
     print(r'  </Product>')
     print(r'</Wix>')
 

@@ -15,7 +15,7 @@
 #include "mapi.h"
 #include <monetdbe.h>
 
-extern int dump_database(Mapi mid, stream *toConsole, bool describe, bool useInserts);
+extern int dump_database(Mapi mid, stream *toConsole, bool describe, bool useInserts, bool noescape);
 
 #define error(msg) {fprintf(stderr, "Failure: %s\n", msg); return -1;}
 
@@ -42,7 +42,7 @@ main(void)
 	/* open file stream */
 	stream *fd = open_wastream("/tmp/backup");
 
-	if (dump_database(mid, fd, 0, 0)) {
+	if (dump_database(mid, fd, 0, 0, false)) {
 		if (mid->msg)
 			error(mid->msg)
 		fprintf(stderr, "database backup failed\n");

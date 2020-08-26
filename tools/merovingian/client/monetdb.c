@@ -609,6 +609,7 @@ simple_argv_cmd(char *cmd, sabdb *dbs, char *merocmd,
 				printf("FAILED\n");
 			fprintf(stderr, "%s: %s\n",
 					cmd, ret);
+			free(out);
 			free(ret);
 			exit(2);
 		}
@@ -973,6 +974,7 @@ command_discover(int argc, char *argv[])
 	if ((p = strtok_r(buf, "\n", &sp)) != NULL) {
 		if (strcmp(p, "OK") != 0) {
 			fprintf(stderr, "%s: %s\n", argv[0], p);
+			free(buf);
 			exit(1);
 		}
 		if (twidth > 0)
@@ -1678,6 +1680,7 @@ command_destroy(int argc, char *argv[])
 						stats->dbname, "stop", 0, mero_pass);
 				if (ret != NULL)
 					free(ret);
+				free(out);
 			}
 		}
 	}
@@ -1936,18 +1939,19 @@ snapshot_restore_file(char *sourcefile, char *dbname)
 		if (!monetdb_quiet) {
 			printf("done\n");
 		}
-		free(out);
 	} else {
 		fprintf(stderr, "failed: %s\n", out);
+		free(out);
 		exit(1);
 	}
+	free(out);
 }
 
 static void
 snapshot_destroy_file(char *path)
 {
 	char *ret;
-	char *out;
+	char *out = NULL;
 	char *merocmd = malloc(100 + strlen(path));
 
 	sprintf(merocmd, "snapshot destroy %s", path);
@@ -1965,6 +1969,7 @@ snapshot_destroy_file(char *path)
 	if (!monetdb_quiet)
 		printf("Destroyed %s\n", path);
 
+	free(out);
 	free(merocmd);
 }
 
@@ -2061,7 +2066,7 @@ command_snapshot_restore(int argc, char *argv[])
 {
 	int force = 0;
 	char *snapid = NULL;
-	char *snapfile;
+	char *snapfile = NULL;
 	char *dbname = NULL;
 
 	/* walk through the arguments and hunt for "options" */
@@ -2089,7 +2094,7 @@ command_snapshot_restore(int argc, char *argv[])
 		if (snapid == NULL)
 			snapid = argv[i];
 		else if (dbname == NULL)
-			dbname = argv[i];
+			dbname = strdup(argv[i]);
 		else {
 			fprintf(stderr, "snapshot restore: unexpected argument: %s\n", argv[i]);
 			command_help(argc + 2, &argv[-2]);
@@ -2110,7 +2115,7 @@ command_snapshot_restore(int argc, char *argv[])
 			fprintf(stderr, "snapshot restore: dbname is mandatory\n");
 			exit(1);
 		}
-		snapfile = snapid;
+		snapfile = strdup(snapid);
 	} else {
 		// it must be <dbname>@<seqno> then.
 		if (strchr(snapid, '@') == NULL) {
@@ -2139,8 +2144,10 @@ command_snapshot_restore(int argc, char *argv[])
 			exit(1);
 		}
 		if (dbname == NULL)
-			dbname = snap->dbname;
-		snapfile = snap->path;
+			dbname = strdup(snap->dbname);
+		snapfile = strdup(snap->path);
+
+		free_snapshots(snapshots, nsnapshots);
 	}
 
 	// check if the database exists
@@ -2156,10 +2163,14 @@ command_snapshot_restore(int argc, char *argv[])
 			printf("aborted\n");
 			exit(1);
 		}
-		msab_freeStatus(&db);
 	}
 
+	if (db)
+		msab_freeStatus(&db);
+
 	snapshot_restore_file(snapfile, dbname);
+	free(snapfile);
+	free(dbname);
 }
 
 
@@ -2505,7 +2516,7 @@ main(int argc, char *argv[])
 			mero_host = "/tmp";
 		/* first try the port given (or else its default) */
 		snprintf(buf, sizeof(buf), "%s/.s.merovingian.%d",
-			 mero_host, mero_port == -1 ? 50000 : mero_port);
+			 mero_host, mero_port == -1 ? MAPI_PORT : mero_port);
 		if ((err = control_ping(buf, -1, NULL)) == NULL) {
 			mero_host = buf;
 		} else {
@@ -2552,7 +2563,7 @@ main(int argc, char *argv[])
 	}
 	/* for TCP connections */
 	if (mero_host != NULL && *mero_host != '/' && mero_port == -1)
-		mero_port = 50000;
+		mero_port = MAPI_PORT;
 
 	/* handle regular commands */
 	if (strcmp(argv[i], "create") == 0) {

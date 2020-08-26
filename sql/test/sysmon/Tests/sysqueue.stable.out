@@ -9,7 +9,8 @@ stdout of test 'sysqueue` in directory 'sql/test/sysmon` itself:
 % .%1,	.%1,	.%1 # table_name
 % username,	status,	query # name
 % clob,	clob,	clob # type
-% 7,	8,	50 # length
+% 7,	8,	56 # length
+[ "monetdb",	"finished",	"create procedure sleep(i int) external name alarm.sleep;"	]
 [ "monetdb",	"finished",	"set time zone interval \\'+02:00\\' hour to minute\n;"	]
 [ "monetdb",	"running",	"select username, status, query from sys.queue();"	]
 #select count(*) from sys.queue();

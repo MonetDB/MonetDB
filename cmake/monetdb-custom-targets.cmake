@@ -82,3 +82,14 @@ else()
     COMMAND
     ${CMAKE_COMMAND} -E echo 'Target not available because \"dpkg-buildpackage\" was not found.')
 endif()
+
+if(CANDLE_FOUND)
+  add_custom_target(create-wix-packages
+    COMMAND
+    ${CMAKE_CPACK_COMMAND} -G WIX -C Debug
+    WORKING_DIRECTORY ${CMAKE_BINARY_DIR})
+else()
+  add_custom_target(create-wix-packages
+    COMMAND
+    ${CMAKE_COMMAND} -E echo 'Target not available because \"candle\" was not found.')
+endif()

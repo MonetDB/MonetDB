@@ -84,6 +84,7 @@ DROP TABLE t0;
 START TRANSACTION;
 CREATE TABLE "sys"."t0" ("c0" DOUBLE NOT NULL,CONSTRAINT "t0_c0_pkey" PRIMARY KEY ("c0"));
 CREATE TABLE "sys"."t1" ("c0" DOUBLE);
+select coalesce(c0, cast('a' as int)) from t0; --the cast operation shouldn't be executed
 create view v1(c0, c1) as (select distinct (((t0.c0)=(((1357695262)^(-922564194))))) = false, cast(coalesce(coalesce(0.3, 0.4), "second"(timestamp '1970-01-10 11:54:13')) as double) from t0);
 create view v2(c0) as (select distinct coalesce(abs(interval '-1976292283' month), cast(greatest(r'Dnwxjm4btQ9cp&\c''a_', r'(y7,{q?][NHU,') as interval month)) from t1, t0 where ((upper(r''))not ilike(lower(r'''wAg_ z ''PPxXßgrd⍮G'))));
 select all v2.c0 from v2 right outer join v1 on ((r'8*By1q)*Oc<n')like(substr(r'', 1151312829, 406714197))) 
@@ -124,15 +125,15 @@ ROLLBACK;
 select cbrt(x) from (values (1), (8), (27)) as x(x);
 select cbrt(64);
 
-START TRANSACTION;
 CREATE TABLE "sys"."t0" ("c0" DATE,"c1" DOUBLE NOT NULL,"c2" DATE NOT NULL);
 select 1 from t0 natural join (select 4 from t0) as sub0; --error, no columns of tables 't0' and 'sub0' match
-ROLLBACK;
+with sub0 as (select 4 from t0) select 1 from t0 natural join sub0; --error, no columns of tables 't0' and 'sub0' match
+DROP TABLE t0;
 
 START TRANSACTION;
 CREATE TABLE t0(c0 DATE);
 CREATE TABLE t1(c0 DATE NOT NULL);
-select t1.c0 from t0 natural join t1; --t1.c0 must be found
+select t0.c0 from t0 natural join t1; --t0.c0 must be found
 ROLLBACK;
 
 START TRANSACTION;
@@ -161,3 +162,118 @@ CREATE TABLE t0(c0 INTERVAL SECOND, c1 serial);
 create view v0(c0) as (select distinct t0.c1 from t0);
 SELECT ALL AVG(ALL CASE COALESCE(CAST(v0.c0 AS REAL), atan(v0.c0, v0.c0)) WHEN abs(0.7471649) THEN INTERVAL '1865286244' MONTH END) FROM v0 GROUP BY COALESCE(((((v0.c0)+(v0.c0)))&(v0.c0)), v0.c0, CAST("second"(TIME '01:32:22') AS INT));
 ROLLBACK;
+
+START TRANSACTION;
+CREATE TABLE "sys"."t0" ("c0" DOUBLE,"c1" INTERVAL MONTH);
+COPY 4 RECORDS INTO "sys"."t0" FROM stdin USING DELIMITERS E'\t',E'\n','"';
+NULL	1876068957
+NULL	1798321013
+0.8609488658910056	496732801
+0.6220338267946794	1689393833
+
+SELECT 1 FROM t0 WHERE 'b' = COALESCE('1', CASE WHEN 2 THEN 'a' END);
+SELECT MAX(ALL 0.47279814) FROM t0 WHERE ((r'Vቕ*2DGj!K-?')NOT ILIKE(COALESCE(r'뷿', upper(r'1285890467'), r'R B+ ]%''?E}%<[cöjö媘թ丅MJV%r&伉', 
+CASE WHEN -681304440 THEN r'+s' WHEN -2104930505 THEN r'M[' END))) GROUP BY t0.c0, t0.c1;
+ROLLBACK;
+
+START TRANSACTION;
+CREATE TABLE "sys"."t1" ("c0" CHAR(240));
+COPY 5 RECORDS INTO "sys"."t1" FROM stdin USING DELIMITERS E'\t',E'\n','"';
+"2m^OqPm/3DḞZ02"
+"2m^OqPm/3DḞZ02"
+"2m^OqPm/3DḞZ02"
+"2m^OqPm/3DḞZ02"
+"2m^OqPm/3DḞZ02"
+
+SELECT 1 FROM t1 WHERE COALESCE(FALSE, t1.c0 = '0' AND t1.c0 LIKE t1.c0);
+SELECT SUM(agg0) FROM (
+SELECT ALL sum(ALL abs(INTERVAL '1507781126' SECOND)) as agg0 FROM t1
+WHERE COALESCE(FALSE, (((((((((((t1.c0) NOT BETWEEN ASYMMETRIC (t1.c0) AND (t1.c0))AND(((t1.c0)>=(t1.c0)))))AND(NOT (TRUE))))AND(((t1.c0)LIKE(t1.c0)))))AND(((t1.c0)NOT ILIKE(t1.c0)))))OR(COALESCE(FALSE, FALSE))))
+UNION ALL
+SELECT sum(ALL abs(INTERVAL '1507781126' SECOND)) as agg0 FROM t1
+WHERE NOT (COALESCE(FALSE, (((((((((((t1.c0) NOT BETWEEN ASYMMETRIC (t1.c0) AND (t1.c0))AND(((t1.c0)>=(t1.c0)))))AND(NOT (TRUE))))AND(((t1.c0)LIKE(t1.c0)))))AND(((t1.c0)NOT ILIKE(t1.c0)))))OR(COALESCE(FALSE, FALSE)))))
+UNION ALL
+SELECT sum(ALL abs(INTERVAL '1507781126' SECOND)) as agg0 FROM t1
+WHERE (COALESCE(FALSE, (((((((((((t1.c0) NOT BETWEEN ASYMMETRIC (t1.c0) AND (t1.c0))AND(((t1.c0)>=(t1.c0)))))AND(NOT (TRUE))))AND(((t1.c0)LIKE(t1.c0)))))AND(((t1.c0)NOT ILIKE(t1.c0)))))OR(COALESCE(FALSE, FALSE))))) IS NULL) 
+as asdf;
+ROLLBACK;
+
+CREATE TABLE "sys"."t1" ("c1" DOUBLE);
+COPY 7 RECORDS INTO "sys"."t1" FROM stdin USING DELIMITERS E'\t',E'\n','"';
+763223864
+0.4947502779444658
+0.7872504424909134
+0.7099123743128314
+0.7223969464007746
+0.6184216877785851
+0.6479886625655562
+
+select max(coalesce(interval '5' month, interval '2' month)) from t1 order by t1.c1 desc nulls last; --error, cannot use non GROUP BY column 't1.c1' in query results without an aggregate function
+select sum(coalesce(coalesce(interval '5' month, interval '3' month), interval '2' month, coalesce(abs(interval '5' month), interval '2' month, 
+case timestamp '1970-01-15 22:17:17' when timestamp '1970-01-03 22:17:36' then interval '5' month else interval '5' month end, interval '3' month), interval '3' month)) from t1 order by t1.c1 desc nulls last;
+	--error, cannot use non GROUP BY column 't1.c1' in query results without an aggregate function
+SELECT 1 FROM t1 WHERE COALESCE(1, CAST(t1.c1 AS INT) & COALESCE(1101847419, 2)); --inputs not same size error
+DROP TABLE "sys"."t1";
+
+START TRANSACTION;
+CREATE TABLE "t0" (
+	"c0" DATE          NOT NULL,
+	"c1" SMALLINT      NOT NULL,
+	"c2" DATE          NOT NULL,
+	CONSTRAINT "t0_c2_c0_c1_pkey" PRIMARY KEY ("c2", "c0", "c1"),
+	CONSTRAINT "t0_c0_c1_c2_unique" UNIQUE ("c0", "c1", "c2")
+);
+CREATE TABLE "t1" (
+	"c0" DOUBLE PRECISION        NOT NULL,
+	CONSTRAINT "t1_c0_pkey" PRIMARY KEY ("c0"),
+	CONSTRAINT "t1_c0_unique" UNIQUE ("c0")
+);
+SELECT count(*) FROM t1 CROSS JOIN t0;
+	-- 0
+SELECT count(*) FROM t1 CROSS JOIN t0 GROUP BY 0.2;
+	-- empty
+SELECT count(*) FROM t1 CROSS JOIN t0 GROUP BY 0.2 HAVING max((ltrim(')''+')) NOT IN (CAST(t0.c1 AS VARCHAR(32)), CAST(INTERVAL '6' MONTH AS VARCHAR(32)), CAST(INTERVAL '7' MONTH AS VARCHAR(32)))) 
+UNION ALL
+SELECT count(*) FROM t1 CROSS JOIN t0 GROUP BY 0.2 HAVING NOT (max((ltrim(')''+')) NOT IN (CAST(t0.c1 AS VARCHAR(32)), CAST(INTERVAL '6' MONTH AS VARCHAR(32)), CAST(INTERVAL '7' MONTH AS VARCHAR(32)))))
+UNION ALL
+SELECT count(*) FROM t1 CROSS JOIN t0 GROUP BY 0.2 HAVING (max((ltrim(')''+')) NOT IN (CAST(t0.c1 AS VARCHAR(32)), CAST(INTERVAL '6' MONTH AS VARCHAR(32)), CAST(INTERVAL '7' MONTH AS VARCHAR(32))))) IS NULL;
+	-- empty
+ROLLBACK;
+
+START TRANSACTION;
+CREATE TABLE IF NOT EXISTS t0(c0 FLOAT, c1 DECIMAL NULL UNIQUE);
+CREATE TEMP TABLE t1 (c0 TIME);
+SELECT 1 FROM t1 INNER JOIN (SELECT 2 FROM t0) AS sub0 ON CASE 8 WHEN 3 THEN (4) IN (5, 6, 7) END;
+SELECT t1.c0 FROM t1 INNER JOIN (SELECT ALL CAST(TIMESTAMP '1970-01-07 06:59:48' AS TIMESTAMP) FROM t0) AS sub0 ON CASE t1.c0 WHEN sql_min(t1.c0, t1.c0) 
+THEN (((((((496867080) IN (52439321, 1596181433, -506328570))OR(((r'W1')ILIKE(r'0.48600327092830353')))))OR((t1.c0) BETWEEN SYMMETRIC (t1.c0) AND (t1.c0))))OR(NOT (FALSE))) END;
+ROLLBACK;
+
+START TRANSACTION;
+CREATE TABLE "sys"."t0" (
+	"c0" INTERVAL SECOND,
+	"c1" INTERVAL MONTH NOT NULL,
+	CONSTRAINT "t0_c1_pkey" PRIMARY KEY ("c1"),
+	CONSTRAINT "t0_c1_unique" UNIQUE ("c1"),
+	CONSTRAINT "t0_c0_unique" UNIQUE ("c0")
+);
+COPY 4 RECORDS INTO "sys"."t0" FROM stdin USING DELIMITERS E'\t',E'\n','"';
+NULL	1519431547
+NULL	557549613
+1798684773.000	124642631
+2039246931.000	1575918952
+
+CREATE TABLE "sys"."t1" ("c0" INTERVAL SECOND NOT NULL,"c1" INTERVAL MONTH);
+COPY 4 RECORDS INTO "sys"."t1" FROM stdin USING DELIMITERS E'\t',E'\n','"';
+800031356.000	386570239
+-725381573.000	1244714316
+1942291856.000	NULL
+125146072.000	NULL
+
+SELECT 1 FROM t1 WHERE CASE WHEN CASE t1.c1 WHEN t1.c1 THEN FALSE ELSE TRUE END THEN COALESCE(FALSE, FALSE) END;
+SELECT t0.c1, t0.c0 FROM t1 FULL OUTER JOIN t0 ON CASE WHEN CASE t1.c1 WHEN t1.c1 THEN CAST(FALSE AS INT) ELSE abs(-1677579573) END 
+THEN NOT (COALESCE(FALSE, FALSE)) WHEN ((COALESCE(1985884175, 53875539, r'-427000320'))/(- (-936496635))) THEN (((((FALSE)OR(TRUE)))OR(TRUE))) = FALSE ELSE (t1.c1) BETWEEN ASYMMETRIC (t0.c1) AND (t1.c1) END;
+ROLLBACK;
+
+SELECT CASE WHEN 3 THEN cot(COALESCE(3, 4)) END FROM (values(1),(2)) as t0(c0);
+
+select coalesce(-1129107763, '1415606329') from (values(1),(2)) as t0(c0);

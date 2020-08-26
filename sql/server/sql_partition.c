@@ -189,18 +189,15 @@ exp_find_table_columns(mvc *sql, sql_exp *e, sql_table *t, list *cols)
 		} break;
 		case e_atom:
 			break;
+		case e_aggr:
 		case e_func: {
-			for (node *n = ((list*)e->l)->h ; n ; n = n->next)
-				exp_find_table_columns(sql, (sql_exp*) n->data, t, cols);
-			if (e->r)
-				for (node *n = ((list*)e->r)->h ; n ; n = n->next)
-					exp_find_table_columns(sql, (sql_exp*) n->data, t, cols);
-		} 	break;
-		case e_aggr: {
 			if (e->l)
 				for (node *n = ((list*)e->l)->h ; n ; n = n->next)
 					exp_find_table_columns(sql, (sql_exp*) n->data, t, cols);
-		} 	break;
+			if (e->type == e_func && e->r)
+				for (node *n = ((list*)e->r)->h ; n ; n = n->next)
+					exp_find_table_columns(sql, (sql_exp*) n->data, t, cols);
+		} break;
 		case e_column: {
 			if (!strcmp(e->l, t->base.name)) {
 				sql_column *col = find_sql_column(t, e->r);

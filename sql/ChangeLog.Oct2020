@@ -1,0 +1,58 @@
+# ChangeLog file for sql
+# This file is updated with Maddlog
+
+* Thu Apr  2 2020 Martin Kersten <mk@cwi.nl>
+- Extended the system monitor with a table-returning function
+  user_statistics() which keeps some statistics for each SQL user, e.g. the
+  user's query count, total time spent, and maximal query seen.
+
+* Tue Jun  2 2020 Pedro Ferreira <pedro.ferreira@monetdbsolutions.com>
+- Removed '@' syntax used to refer into a variable in a query. It
+  was a non-standard method, which was replaced by a schema addition to
+  variables. Variables in the global scope now have schema. All default
+  global variables are set under schema "sys". However variables
+  inside PSM don't have a schema, because there are no transaction
+  semantics inside PSM at the moment.
+- Removed declared variables and tables from the global scope. They were
+  transaction agnostic and incompatible with the SQL standard, i.e. they
+  are valid exclusively under PSM (e.g. functions, procedures and 
+  triggers).
+- Scoping semantics were added for both variables and tables. Variables
+  with the same name at a query are now resolved under the following
+  precedence rules:
+    1. Tables, Views and CTEs at the FROM clause.
+    2. Variable declared in the body of function/procedure, i.e. local
+       variable.
+    3. Function/procedure parameter.
+    4. Variable from the global scope.
+  Tables with the same name now have the following precedence rules at a
+  SQL query: 
+    1. Table declared in the body of function/procedure, ie local table.
+    2. Temporary table.
+    3. Table from the current session schema.
+  This means the query: SELECT * FROM "keys"; will list keys from
+  temporary tables instead of persisted ones, because "keys" table
+  is available for both "sys" and "tmp" schemas.
+- The table returning function "var" was extended with more details
+  about globally declared variables, namely their schema, type and
+  current value.
+
+* Mon Jun 15 2020 Pedro Ferreira <pedro.ferreira@monetdbsolutions.com>
+- Removed obsolete sys.getContent(url) function.
+
+* Tue Jun 16 2020 Pedro Ferreira <pedro.ferreira@monetdbsolutions.com>
+- Removed obsolete json.output(json) function.
+
+* Tue Jun 30 2020 Pedro Ferreira <pedro.ferreira@monetdbsolutions.com>
+- Removed compability between interval types and other numeric types in
+  favor for a more strict SQL standard compliance. This means operations
+  between temporal types and other numeric types such as INT and 
+  DECIMAL are no longer possible, instead use interval types.
+  e.g. SELECT date '2020-01-01' + 1; now gives the error. Instead do:
+  SELECT date '2020-01-01' + interval '1' day; if 1 was meant to be a
+  day interval.
+  Setting an interval variable such as the session's current timezone
+  with a number e.g. SET current_timezone = 1; is no longer possible.
+  Instead do SET current_timezone = interval '1' hour;
+  Casting between interval and other numeric types is no longer possible
+  as well, because they are not compatible.

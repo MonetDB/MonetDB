@@ -883,7 +883,7 @@ VARcalcsign(ValPtr ret, const ValRecord *v)
 		const TYPE *restrict src = (const TYPE *) Tloc(b, 0);	\
 		for (i = 0; i < ci.ncand; i++) {			\
 			x = canditer_next(&ci) - b->hseqbase;		\
-			dst[i] = (bit) (is_##TYPE##_nil(src[i]) ^ NOTNIL); \
+			dst[i] = (bit) (is_##TYPE##_nil(src[x]) ^ NOTNIL); \
 		}							\
 	} while (0)
 
@@ -14014,7 +14014,10 @@ BATconvert(BAT *b, BAT *s, int tp, bool abort_on_error,
 	    scale1 == 0 && scale2 == 0 && precision == 0 &&
 	    (tp != TYPE_str ||
 	     BATatoms[b->ttype].atomToStr == BATatoms[TYPE_str].atomToStr)) {
-		return COLcopy(b, tp, false, TRANSIENT);
+		bn = COLcopy(b, tp, false, TRANSIENT);
+		if (bn && s)
+			bn->hseqbase = s->hseqbase;
+		return bn;
 	}
 	if (ATOMstorage(tp) == TYPE_ptr) {
 		GDKerror("type combination (convert(%s)->%s) "
