@@ -683,15 +683,11 @@ exp2bin_case(backend *be, sql_exp *fe, stmt *left, stmt *right, stmt *isel, int 
 				assert(cond);
 
 				if (en->next) {
-					cond = stmt_unop(be, cond, not);
-					sql_subfunc *isnull = sql_bind_func(be->mvc->sa, be->mvc->session->schema, "isnull", bt, NULL, F_FUNC);
-					cond = stmt_binop(be, cond, stmt_unop(be, ncond, isnull), or);
-					stmt *s = stmt_uselect(be, cond, stmt_bool(be, 1), cmp_equal, NULL, 0/*anti*/, 0);
-					if (osel)
-						rsel = stmt_project(be, s, osel);
-					else
-						rsel = s;
-					osel = rsel;
+					/* osel - rsel */
+					if (!osel)
+						osel = stmt_mirror(be, res);
+					stmt *d = stmt_tdiff(be, osel, rsel, NULL);
+					osel = rsel = stmt_project(be, d, osel);
 				}
 			}
 			if (next_cond) {
@@ -704,8 +700,10 @@ exp2bin_case(backend *be, sql_exp *fe, stmt *left, stmt *right, stmt *isel, int 
 					else
 						ncond = stmt_const(be, bin_first_column(be, left), ncond);
 				}
-				stmt *s = stmt_uselect(be, ncond, stmt_bool(be, 1), cmp_equal, NULL, 0/*anti*/, 0);
-				if (rsel)
+				// else if (!ncond->cand && rsel)
+				//	ncond = stmt_project(be, rsel, ncond);
+				stmt *s = stmt_uselect(be, ncond, stmt_bool(be, 1), cmp_equal, !ncond->cand?rsel:NULL, 0/*anti*/, 0);
+				if (rsel && ncond->cand)
 					rsel = stmt_project(be, s, rsel);
 				else
 					rsel = s;
