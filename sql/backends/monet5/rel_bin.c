@@ -1665,8 +1665,10 @@ rel2bin_basetable(backend *be, sql_rel *rel)
 
 			if (col)
 				s = stmt_mirror(be, col);
-			else
+			else {
 				s = dels?dels:stmt_tid(be, t, 0);
+				dels = NULL;
+			}
 			s = stmt_alias(be, s, rnme, TID);
 		} else if (oname[0] == '%') {
 			sql_idx *i = find_sql_idx(t, oname+1);
