@@ -9,6 +9,10 @@ MAPI  = (monetdb) /var/tmp/mtest-282348/.s.monetdb.38779
 QUERY = INSERT INTO t1(c0) VALUES(INTERVAL '1474617942' SECOND), (NULL);
 ERROR = !INSERT INTO: NOT NULL constraint violated for column t1.c0
 CODE  = 40002
+MAPI  = (monetdb) /var/tmp/mtest-311844/.s.monetdb.34866
+QUERY = UPDATE t1 SET c0 = 0.28 WHERE (CAST(INTERVAL '31' MONTH AS STRING)) NOT IN (COALESCE('靟', 'P먌+}I*CpQ'));
+ERROR = !UPDATE: PRIMARY KEY constraint 't1.t1_c0_pkey' violated
+CODE  = 40002
 
 # 12:00:38 >  
 # 12:00:38 >  "Done."

@@ -111,6 +111,35 @@ stdout of test 'sqlancer05` in directory 'sql/test/SQLancer` itself:
 #NOT BETWEEN SYMMETRIC (COALESCE(TIMESTAMP '1969-12-30 12:07:22', TIMESTAMP '1970-01-05 05:04:47')) AND (CASE WHEN TRUE THEN TIMESTAMP '1970-01-01 20:00:35' END)), 2);
 [ 1	]
 #ROLLBACK;
+#START TRANSACTION;
+#CREATE TABLE "sys"."t1" ("c0" TIMESTAMP NOT NULL,CONSTRAINT "t1_c0_pkey" PRIMARY KEY ("c0"));
+#CREATE TABLE "sys"."t2" ("c0" TIMESTAMP);
+#COPY 3 RECORDS INTO "sys"."t2" FROM stdin USING DELIMITERS E'\t',E'\n','"';
+#"1970-01-25 08:23:04.000000"
+#"1970-01-06 08:19:06.000000"
+#"1970-01-19 15:18:44.000000"
+[ 3	]
+#create view v0(c0) as (select all -1454749390 from t2, t1 where not 
+#((interval '990585801' month) in (interval '1558064353' month, interval '1877885111' month, interval '1286819945' month))) 
+#with check option;
+#ROLLBACK;
+#CREATE TABLE "sys"."t1" ("c0" DECIMAL(18,3) NOT NULL,CONSTRAINT "t1_c0_pkey" PRIMARY KEY ("c0"));
+#COPY 2 RECORDS INTO "sys"."t1" FROM stdin USING DELIMITERS E'\t',E'\n','"';
+#0.403
+#0.008
+[ 2	]
+#DELETE FROM t1 WHERE (((0.86983466) IS NOT NULL) = TRUE) = TRUE;
+[ 2	]
+#INSERT INTO t1(c0) VALUES(0.40), (0.75);
+[ 2	]
+#SELECT c0 FROM t1;
+% sys.t1 # table_name
+% c0 # name
+% decimal # type
+% 20 # length
+[ 0.400	]
+[ 0.750	]
+#DROP TABLE t1;
 
 # 12:00:38 >  
 # 12:00:38 >  "Done."
