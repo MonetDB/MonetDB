@@ -145,7 +145,7 @@ addRemoteDB(const char *dbname, const char *conn, const int ttl) {
 }
 
 sabdb *
-getRemoteDB(char *database)
+getRemoteDB(const char *database)
 {
 	struct _remotedb dummy = { NULL, NULL, NULL, NULL, 0, NULL };
 	remotedb rdb = NULL;

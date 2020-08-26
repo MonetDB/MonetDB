@@ -162,7 +162,7 @@ terminateProcess(char *dbname, pid_t pid, mtype type)
 #define MAX_NR_ARGS 511
 
 err
-forkMserver(char *database, sabdb** stats, bool force)
+forkMserver(const char *database, sabdb** stats, bool force)
 {
 	pid_t pid;
 	char *er;
@@ -859,7 +859,7 @@ forkMserver(char *database, sabdb** stats, bool force)
  * attached to it.
  */
 err
-fork_profiler(char *dbname, sabdb **stats, char **log_path)
+fork_profiler(const char *dbname, sabdb **stats, char **log_path)
 {
 	pid_t pid;
 	char *error = NO_ERR;
@@ -1084,7 +1084,7 @@ fork_profiler(char *dbname, sabdb **stats, char **log_path)
 	pid = fork();
 	if (pid == 0) {
 		char timestamp[20];
-		char *argv[512];
+		const char *argv[512];
 		int arg_idx = 0;
 		size_t log_filename_len;
 		char *log_filename;
@@ -1118,7 +1118,7 @@ fork_profiler(char *dbname, sabdb **stats, char **log_path)
 		argv[arg_idx++] = "-o";
 		argv[arg_idx++] = log_filename;
 		/* execute */
-		execv(profiler_executable, argv);
+		execv(profiler_executable, (char **) argv);
 		exit(1);
 	} else {
 		/* write pid of stethoscope */
@@ -1136,7 +1136,7 @@ fork_profiler(char *dbname, sabdb **stats, char **log_path)
 }
 
 err
-shutdown_profiler(char *dbname, sabdb **stats)
+shutdown_profiler(const char *dbname, sabdb **stats)
 {
 	err error=NO_ERR;
 	confkeyval *ckv = NULL, *kv;
