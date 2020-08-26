@@ -101,3 +101,15 @@ SELECT count(ALL + (((v0.c0)/(((v0.c0)^(v0.c0)))))) as agg0 FROM v0 WHERE (CAST(
 as asdf;
 	-- 0
 ROLLBACK;
+
+-- This crash only happens on auto-commit mode
+CREATE TABLE "sys"."t1" ("c0" DECIMAL(18,3) NOT NULL,CONSTRAINT "t1_c0_pkey" PRIMARY KEY ("c0"));
+COPY 2 RECORDS INTO "sys"."t1" FROM stdin USING DELIMITERS E'\t',E'\n','"';
+0.403
+0.008
+
+DELETE FROM t1 WHERE (((0.86983466) IS NOT NULL) = TRUE) = TRUE;
+INSERT INTO t1(c0) VALUES(0.40), (0.75);
+UPDATE t1 SET c0 = 0.28 WHERE (CAST(INTERVAL '31' MONTH AS STRING)) NOT IN (COALESCE('靟', 'P먌+}I*CpQ'));
+SELECT c0 FROM t1;
+DROP TABLE t1;
