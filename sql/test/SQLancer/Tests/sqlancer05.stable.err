@@ -1,0 +1,16 @@
+stderr of test 'sqlancer05` in directory 'sql/test/SQLancer` itself:
+
+
+# 12:00:38 >  
+# 12:00:38 >  "mclient" "-lsql" "-ftest" "-tnone" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-282348" "--port=38779"
+# 12:00:38 >  
+
+MAPI  = (monetdb) /var/tmp/mtest-282348/.s.monetdb.38779
+QUERY = INSERT INTO t1(c0) VALUES(INTERVAL '1474617942' SECOND), (NULL);
+ERROR = !INSERT INTO: NOT NULL constraint violated for column t1.c0
+CODE  = 40002
+
+# 12:00:38 >  
+# 12:00:38 >  "Done."
+# 12:00:38 >  
+
