@@ -158,6 +158,22 @@ stdout of test 'sqlancer05` in directory 'sql/test/SQLancer` itself:
 [ 0.400	]
 [ 0.750	]
 #DROP TABLE t1;
+#SELECT 1 WHERE '0';
+% .%2 # table_name
+% %2 # name
+% tinyint # type
+% 1 # length
+#SELECT 1 WHERE NOT '0';
+% .%3 # table_name
+% %3 # name
+% tinyint # type
+% 1 # length
+[ 1	]
+#SELECT 1 WHERE '0' IS NULL;
+% .%2 # table_name
+% %2 # name
+% tinyint # type
+% 1 # length
 
 # 12:00:38 >  
 # 12:00:38 >  "Done."
