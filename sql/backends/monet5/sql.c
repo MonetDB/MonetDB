@@ -6448,7 +6448,6 @@ static mel_func sql_init_funcs[] = {
  pattern("sql", "setmemorylimit", SQLsetmemorylimit, true, "Limit the memory claim in MB per query", args(1,3, arg("",void),arg("sid",sht),arg("n",int))),
 #ifdef HAVE_HGE
  /* sql_hge */
-
  command("sql", "dec_round", hge_dec_round_wrap, false, "round off the value v to nearests multiple of r", args(1,3, arg("",hge),arg("v",hge),arg("r",hge))),
  command("batsql", "dec_round", hge_bat_dec_round_wrap, false, "round off the value v to nearests multiple of r", args(1,3, batarg("",hge),batarg("v",hge),arg("r",hge))),
  command("sql", "round", hge_round_wrap, false, "round off the decimal v(d,s) to r digits behind the dot (if r < 0, before the dot)", args(1,5, arg("",hge),arg("v",hge),arg("d",int),arg("s",int),arg("r",bte))),

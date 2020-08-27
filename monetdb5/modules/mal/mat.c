@@ -27,7 +27,9 @@
  * front-end to produce reasonable efficient code.
  */
 #include "monetdb_config.h"
-#include "mat.h"
+#include "mal_resolve.h"
+#include "mal_exception.h"
+#include "mal_interpreter.h"
 
 /*
  * The pack is an ordinary multi BAT insert. Oid synchronistion
@@ -97,7 +99,7 @@ MATpackInternal(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
  * Enable incremental packing. The SQL front-end requires
  * fixed oid sequences.
  */
-str
+static str
 MATpackIncrement(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 {
 	bat *ret = getArgReference_bat(stk,p,0);
@@ -169,13 +171,13 @@ MATpackIncrement(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	return MAL_SUCCEED;
 }
 
-str
+static str
 MATpack(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 {
 	return MATpackInternal(cntxt,mb,stk,p);
 }
 
-str
+static str
 MATpackValues(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 {
 	int i, type, first = 1;

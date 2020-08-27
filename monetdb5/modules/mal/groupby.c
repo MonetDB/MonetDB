@@ -41,7 +41,8 @@
  *
  */
 #include "monetdb_config.h"
-#include "groupby.h"
+#include "mal.h"
+#include "mal_interpreter.h"
 #include "group.h"
 
 /*
@@ -153,7 +154,7 @@ GROUPdelete(AGGRtask *a){
  * estimate of intermediate results using properties.
  */
 
-str
+static str
 GROUPmulticolumngroup(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	bat *grp = getArgReference_bat(stk, pci, 0);

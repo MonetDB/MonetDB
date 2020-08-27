@@ -12,9 +12,11 @@
  * the commands provided here. to-be-completed-when-needed
  */
 #include "monetdb_config.h"
-#include "factories.h"
+#include "mal.h"
+#include "mal_interpreter.h"
+#include "mal_namespace.h"
 
-str
+static str
 FCTgetPlants(bat *ret, bat *ret2)
 {
 	(void) ret;
@@ -22,35 +24,35 @@ FCTgetPlants(bat *ret, bat *ret2)
 	throw(MAL, "factories.getPlants", SQLSTATE(0A000) PROGRAM_NYI);
 }
 
-str
+static str
 FCTgetCaller(int *ret)
 {
 	(void) ret;
 	throw(MAL, "factories.getCaller", SQLSTATE(0A000) PROGRAM_NYI);
 }
 
-str
+static str
 FCTgetOwners(bat *ret)
 {
 	(void) ret;
 	throw(MAL, "factories.getOwner", SQLSTATE(0A000) PROGRAM_NYI);
 }
 
-str
+static str
 FCTgetArrival(bat *ret)
 {
 	(void) ret;
 	throw(MAL, "factories.getArrival", SQLSTATE(0A000) PROGRAM_NYI);
 }
 
-str
+static str
 FCTgetDeparture(bat *ret)
 {
 	(void) ret;
 	throw(MAL, "factories.getDeparture", SQLSTATE(0A000) PROGRAM_NYI);
 }
 
-str
+static str
 FCTshutdown(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	str mod = *getArgReference_str(stk, pci, 1);
