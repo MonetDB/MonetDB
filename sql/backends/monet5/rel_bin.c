@@ -623,7 +623,7 @@ exp_bin_or(backend *be, sql_exp *e, stmt *left, stmt *right, stmt *grp, stmt *ex
 static stmt *
 exp2bin_case(backend *be, sql_exp *fe, stmt *left, stmt *right, stmt *isel, int depth)
 {
-	stmt *res = NULL, *rsel = NULL, *osel = NULL, *ncond = NULL, *ocond = NULL, *cond = NULL;
+	stmt *res = NULL, *ires = NULL, *rsel = NULL, *osel = NULL, *ncond = NULL, *ocond = NULL, *cond = NULL;
 	int next_cond = 1, single_value = (fe->card <= CARD_ATOM && (!left || !left->nrcols));
 	char name[16], *nme = NULL;
 	sql_subtype *bt = sql_bind_localtype("bit");
@@ -666,6 +666,7 @@ exp2bin_case(backend *be, sql_exp *fe, stmt *left, stmt *right, stmt *isel, int 
 				if (!l)
 					l = bin_first_column(be, left);
 				res = stmt_const(be, l, stmt_atom(be, atom_general(be->mvc->sa, exp_subtype(fe), NULL)));
+				ires = l;
 				if (res)
 					res->cand = isel;
 			} else if (res && !next_cond) { /* use result too update column */
@@ -685,7 +686,7 @@ exp2bin_case(backend *be, sql_exp *fe, stmt *left, stmt *right, stmt *isel, int 
 				if (en->next) {
 					/* osel - rsel */
 					if (!osel)
-						osel = stmt_mirror(be, res);
+						osel = stmt_mirror(be, ires);
 					stmt *d = stmt_tdiff(be, osel, rsel, NULL);
 					osel = rsel = stmt_project(be, d, osel);
 				}

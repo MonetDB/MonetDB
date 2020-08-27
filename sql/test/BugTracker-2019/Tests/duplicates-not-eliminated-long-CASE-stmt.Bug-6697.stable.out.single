@@ -42,7 +42,7 @@ function user.main():void;
     X_61:bat[:timestamp] := batmtime.timestamp_add_msec_interval(X_45:bat[:timestamp], -28800000:lng);
     X_64:bat[:timestamp] := algebra.projection(C_58:bat[:oid], X_61:bat[:timestamp]);
     X_65:bat[:timestamp] := bat.replace(X_56:bat[:timestamp], C_58:bat[:oid], X_64:bat[:timestamp], true:bit);
-    C_66:bat[:oid] := bat.mirror(X_65:bat[:timestamp]);
+    C_66:bat[:oid] := bat.mirror(X_43:bat[:str]);
     C_67:bat[:oid] := algebra.difference(C_66:bat[:oid], C_58:bat[:oid], nil:BAT, nil:BAT, false:bit, false:bit, nil:lng);
     C_71:bat[:oid] := algebra.projection(C_67:bat[:oid], C_66:bat[:oid]);
     X_75:bat[:bit] := batcalc.between(X_45:bat[:timestamp], "2000-04-02 10:00:00.000000":timestamp, "2000-10-29 09:00:00.000000":timestamp, C_71:bat[:oid], false:bit, true:bit, false:bit, false:bit, false:bit);
