@@ -1562,9 +1562,9 @@ rel_find_exp_and_corresponding_rel_( sql_rel *rel, sql_exp *e, sql_rel **res)
 	case e_column:
 		if (rel->exps && (is_project(rel->op) || is_base(rel->op))) {
 			if (e->l) {
-				ne = exps_bind_column2(rel->exps, e->l, e->r);
+				ne = exps_bind_column2(rel->exps, e->l, e->r, NULL);
 			} else {
-				ne = exps_bind_column(rel->exps, e->r, NULL, 1);
+				ne = exps_bind_column(rel->exps, e->r, NULL, NULL, 1);
 			}
 		}
 		if (ne && res)
@@ -1625,7 +1625,7 @@ rel_find_exp_and_corresponding_rel(sql_rel *rel, sql_exp *e, sql_rel **res, bool
 				*under_join = true;
 			break;
 		case op_table:
-			if (rel->exps && e->type == e_column && e->l && exps_bind_column2(rel->exps, e->l, e->r))
+			if (rel->exps && e->type == e_column && e->l && exps_bind_column2(rel->exps, e->l, e->r, NULL))
 				ne = e;
 			if (ne && res)
 				*res = rel;
@@ -1637,11 +1637,11 @@ rel_find_exp_and_corresponding_rel(sql_rel *rel, sql_exp *e, sql_rel **res, bool
 			if (rel->l)
 				ne = rel_find_exp_and_corresponding_rel(rel->l, e, res, under_join);
 			else if (rel->exps && e->l) {
-				ne = exps_bind_column2(rel->exps, e->l, e->r);
+				ne = exps_bind_column2(rel->exps, e->l, e->r, NULL);
 				if (ne && res)
 					*res = rel;
 			} else if (rel->exps) {
-				ne = exps_bind_column(rel->exps, e->r, NULL, 1);
+				ne = exps_bind_column(rel->exps, e->r, NULL, NULL, 1);
 				if (ne && res)
 					*res = rel;
 			}
@@ -1649,7 +1649,7 @@ rel_find_exp_and_corresponding_rel(sql_rel *rel, sql_exp *e, sql_rel **res, bool
 		break;
 		case op_basetable:
 			if (rel->exps && e->type == e_column && e->l)
-				ne = exps_bind_column2(rel->exps, e->l, e->r);
+				ne = exps_bind_column2(rel->exps, e->l, e->r, NULL);
 			if (ne && res)
 				*res = rel;
 			break;
@@ -2221,9 +2221,9 @@ exp_key( sql_exp *e )
 }
 
 sql_exp *
-exps_bind_column( list *exps, const char *cname, int *ambiguous, int no_tname)
+exps_bind_column(list *exps, const char *cname, int *ambiguous, int *multiple, int no_tname)
 {
-	sql_exp *e = NULL;
+	sql_exp *res = NULL;
 
 	if (exps && cname) {
 		node *en;
@@ -2253,41 +2253,54 @@ exps_bind_column( list *exps, const char *cname, int *ambiguous, int no_tname)
 				sql_hash_e *he = exps->ht->buckets[key&(exps->ht->size-1)];
 
 				for (; he; he = he->chain) {
-					sql_exp *ce = he->value;
+					sql_exp *e = he->value;
 
-					if (ce->alias.name && strcmp(ce->alias.name, cname) == 0 && (!no_tname || !ce->alias.rname)) {
-						if (e && e != ce && ce->alias.rname && e->alias.rname && strcmp(ce->alias.rname, e->alias.rname) != 0 ) {
+					if (e->alias.name && strcmp(e->alias.name, cname) == 0 && (!no_tname || !e->alias.rname)) {
+						if (res && multiple)
+							*multiple = 1;
+						if (!res)
+							res = e;
+						
+						if (res && res != e && e->alias.rname && res->alias.rname && strcmp(e->alias.rname, res->alias.rname) != 0 ) {
 							if (ambiguous)
 								*ambiguous = 1;
 							MT_lock_unset(&exps->ht_lock);
 							return NULL;
 						}
-						e = ce;
+						res = e;
 					}
 				}
 				MT_lock_unset(&exps->ht_lock);
-				return e;
+				return res;
 			}
 			MT_lock_unset(&exps->ht_lock);
 		}
 		for (en = exps->h; en; en = en->next ) {
-			sql_exp *ce = en->data;
-			if (ce->alias.name && strcmp(ce->alias.name, cname) == 0 && (!no_tname || !ce->alias.rname)) {
-				if (e && e != ce && ce->alias.rname && e->alias.rname && strcmp(ce->alias.rname, e->alias.rname) != 0 ) {
+			sql_exp *e = en->data;
+
+			if (e->alias.name && strcmp(e->alias.name, cname) == 0 && (!no_tname || !e->alias.rname)) {
+				if (res && multiple)
+					*multiple = 1;
+				if (!res)
+					res = e;
+
+				if (res && res != e && e->alias.rname && res->alias.rname && strcmp(e->alias.rname, res->alias.rname) != 0 ) {
 					if (ambiguous)
 						*ambiguous = 1;
 					return NULL;
 				}
-				e = ce;
+				res = e;
 			}
 		}
 	}
-	return e;
+	return res;
 }
 
 sql_exp *
-exps_bind_column2( list *exps, const char *rname, const char *cname )
+exps_bind_column2(list *exps, const char *rname, const char *cname, int *multiple)
 {
+	sql_exp *res = NULL;
+
 	if (exps) {
 		node *en;
 
@@ -2297,7 +2310,7 @@ exps_bind_column2( list *exps, const char *rname, const char *cname )
 				exps->ht = hash_new(exps->sa, list_length(exps), (fkeyvalue)&exp_key);
 				if (exps->ht == NULL) {
 					MT_lock_unset(&exps->ht_lock);
-					return NULL;
+					return res;
 				}
 
 				for (en = exps->h; en; en = en->next ) {
@@ -2307,7 +2320,7 @@ exps_bind_column2( list *exps, const char *rname, const char *cname )
 
 						if (hash_add(exps->ht, key, e) == NULL) {
 							MT_lock_unset(&exps->ht_lock);
-							return NULL;
+							return res;
 						}
 					}
 				}
@@ -2320,23 +2333,29 @@ exps_bind_column2( list *exps, const char *rname, const char *cname )
 					sql_exp *e = he->value;
 
 					if (e && e->alias.name && e->alias.rname && strcmp(e->alias.name, cname) == 0 && strcmp(e->alias.rname, rname) == 0) {
-						MT_lock_unset(&exps->ht_lock);
-						return e;
+						if (res && multiple)
+							*multiple = 1;
+						if (!res)
+							res = e;
 					}
 				}
 				MT_lock_unset(&exps->ht_lock);
-				return NULL;
+				return res;
 			}
 			MT_lock_unset(&exps->ht_lock);
 		}
 		for (en = exps->h; en; en = en->next ) {
 			sql_exp *e = en->data;
 
-			if (e && e->alias.name && e->alias.rname && strcmp(e->alias.name, cname) == 0 && strcmp(e->alias.rname, rname) == 0)
-				return e;
+			if (e && e->alias.name && e->alias.rname && strcmp(e->alias.name, cname) == 0 && strcmp(e->alias.rname, rname) == 0) {
+				if (res && multiple)
+					*multiple = 1;
+				if (!res)
+					res = e;
+			}
 		}
 	}
-	return NULL;
+	return res;
 }
 
 /* find an column based on the original name, not the alias it got */
@@ -2445,9 +2464,9 @@ is_identity( sql_exp *e, sql_rel *r)
 		if (r && is_project(r->op)) {
 			sql_exp *re = NULL;
 			if (e->l)
-				re = exps_bind_column2(r->exps, e->l, e->r);
+				re = exps_bind_column2(r->exps, e->l, e->r, NULL);
 			if (!re && has_label(e))
-				re = exps_bind_column(r->exps, e->r, NULL, 1);
+				re = exps_bind_column(r->exps, e->r, NULL, NULL, 1);
 			if (re)
 				return is_identity(re, r->l);
 		}

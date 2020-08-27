@@ -123,7 +123,6 @@ SELECT 1 WHERE NOT '0';
 SELECT 1 WHERE '0' IS NULL;
 	--empty
 
-START TRANSACTION;
 CREATE TABLE "sys"."t0" ("c2" DATE NOT NULL DEFAULT DATE '1970-01-03',
 	CONSTRAINT "t0_c2_pkey" PRIMARY KEY ("c2"),
 	CONSTRAINT "t0_c2_unique" UNIQUE ("c2"),
@@ -152,8 +151,10 @@ SELECT count(ALL + (((((18)%(-16)))/(CAST(TRUE AS INT))))) FROM t1, v1, t0 FULL 
 ON (CAST(+ (-116) AS BOOLEAN)) = FALSE RIGHT OUTER JOIN t2 
 ON (COALESCE(v0.c1, v0.c1, v0.c1, v0.c1)) NOT IN (TIMESTAMP '1970-01-15 03:05:56', TIMESTAMP '1970-01-14 22:30:41') 
 NATURAL JOIN (SELECT t1.c0, CAST(48 AS INT), t2.c0 FROM t2, v0, v1, t0, t1) AS sub0;
-	-- I think it's the same error as the previous one, it can't be computed
-ROLLBACK;
+	-- error, common column name "c0" appears more than once in right table
+DROP TABLE t0 cascade;
+DROP TABLE t1 cascade;
+DROP TABLE t2 cascade;
 
 select sub0.c0 from (select 1 as c0, 2 as c0) as sub0;
 	--error, column reference "c0" is ambiguous

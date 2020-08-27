@@ -174,6 +174,51 @@ stdout of test 'sqlancer05` in directory 'sql/test/SQLancer` itself:
 % %2 # name
 % tinyint # type
 % 1 # length
+#CREATE TABLE "sys"."t0" ("c2" DATE NOT NULL DEFAULT DATE '1970-01-03',
+#	CONSTRAINT "t0_c2_pkey" PRIMARY KEY ("c2"),
+#	CONSTRAINT "t0_c2_unique" UNIQUE ("c2"),
+#	CONSTRAINT "t0_c2_fkey" FOREIGN KEY ("c2") REFERENCES "sys"."t0" ("c2")
+#);
+#CREATE TABLE "sys"."t1" ("c0" CHARACTER LARGE OBJECT NOT NULL,CONSTRAINT "t1_c0_unique" UNIQUE ("c0"));
+#COPY 5 RECORDS INTO "sys"."t1" FROM stdin USING DELIMITERS E'\t',E'\n','"';
+#"t8rMম<b\015"
+#"}鸺s"
+#""
+#"!5Ef"
+#">l\tigL쓵9Q"
+[ 5	]
+#CREATE TABLE "sys"."t2" ("c0" TIME NOT NULL, "c1" DECIMAL(18,3) NOT NULL DEFAULT 0.428153, "c2" TIME,
+#	CONSTRAINT "t2_c2_c0_c1_unique" UNIQUE ("c2", "c0", "c1")
+#);
+#COPY 1 RECORDS INTO "sys"."t2" FROM stdin USING DELIMITERS E'\t',E'\n','"';
+#05:17:55	0.450	02:23:09
+[ 1	]
+#create view v0(c0, c1) as (select t2.c2, cast(timestamp '1970-01-01 17:26:21' as timestamp) from t0, t2);
+#create view v1(c0) as (select distinct 0.73 from t2, t1, t0, v0) with check option;
+#DROP TABLE t0 cascade;
+#DROP TABLE t1 cascade;
+#DROP TABLE t2 cascade;
+#START TRANSACTION;
+#CREATE TABLE "sys"."t0" ("c0" VARCHAR(31) NOT NULL,"c1" BOOLEAN,"c2" TIMESTAMP NOT NULL,
+#	CONSTRAINT "t0_c0_c2_c1_unique" UNIQUE ("c0", "c2", "c1"),
+#	CONSTRAINT "t0_c2_unique" UNIQUE ("c2"),
+#	CONSTRAINT "t0_c1_c0_unique" UNIQUE ("c1", "c0"),
+#	CONSTRAINT "t0_c0_unique" UNIQUE ("c0")
+#);
+#CREATE TABLE "sys"."t1" ("c1" INTERVAL MONTH NOT NULL,CONSTRAINT "t1_c1_pkey" PRIMARY KEY ("c1"),CONSTRAINT "t1_c1_unique" UNIQUE ("c1"));
+#COPY 2 RECORDS INTO "sys"."t1" FROM stdin USING DELIMITERS E'\t',E'\n','"';
+#311141409
+#1247645829
+[ 2	]
+#CREATE TABLE "sys"."t2" ("c1" BIGINT NOT NULL,CONSTRAINT "t2_c1_pkey" PRIMARY KEY ("c1"),CONSTRAINT "t2_c1_unique" UNIQUE ("c1"));
+#COPY 4 RECORDS INTO "sys"."t2" FROM stdin USING DELIMITERS E'\t',E'\n','"';
+#1909667273
+#720758463
+#24545308
+#-1804793562
+[ 4	]
+#create view v0(c0, c1) as (select distinct t0.c0, t0.c2 from t2, t0 where t0.c1);
+#ROLLBACK;
 
 # 12:00:38 >  
 # 12:00:38 >  "Done."
