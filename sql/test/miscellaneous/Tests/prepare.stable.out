@@ -1,0 +1,27 @@
+stdout of test 'prepare` in directory 'sql/test/miscellaneous` itself:
+
+
+# 15:48:36 >  
+# 15:48:36 >  "mclient" "-lsql" "-ftest" "-tnone" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-461643" "--port=32495"
+# 15:48:36 >  
+
+#prepare select 1=?+?;
+#prepare select 1=?+?;
+% .prepare,	.prepare,	.prepare,	.prepare,	.prepare,	.prepare # table_name
+% type,	digits,	scale,	schema,	table,	column # name
+% varchar,	int,	int,	str,	str,	str # type
+% 7,	2,	1,	0,	2,	2 # length
+[ "boolean",	1,	0,	"",	"%2",	"%2"	]
+[ "bigint",	64,	0,	NULL,	NULL,	NULL	]
+[ "bigint",	64,	0,	NULL,	NULL,	NULL	]
+#exec  0 (1,0);
+% .%2 # table_name
+% %2 # name
+% boolean # type
+% 5 # length
+[ true	]
+
+# 15:48:36 >  
+# 15:48:36 >  "Done."
+# 15:48:36 >  
+

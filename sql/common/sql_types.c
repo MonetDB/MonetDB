@@ -1358,6 +1358,8 @@ sqltypeinit( sql_allocator *sa)
 #endif
 
 	for (t = numerical; t < dates; t++) {
+		if (*t == OID)
+			continue;
 		sql_create_func(sa, "mod", "calc", "%", FALSE, FALSE, SCALE_FIX, 0, *t, 2, *t, *t);
 	}
 
@@ -1601,6 +1603,8 @@ sqltypeinit( sql_allocator *sa)
 	for (t = numerical, t++; t != floats; t++) {
 		sql_type **u;
 		for (u = numerical, u++; u != decimals; u++) {
+			if (*t == OID)
+				continue;
 			if (t != u && (*t)->localtype >  (*u)->localtype) {
 				sql_create_func(sa, "sql_mul", "calc", "*", FALSE, FALSE, SCALE_MUL, 0, *t, 2, *t, *u);
 				sql_create_func(sa, "sql_mul", "calc", "*", FALSE, FALSE, SCALE_MUL, 0, *t, 2, *u, *t);
@@ -1622,6 +1626,9 @@ sqltypeinit( sql_allocator *sa)
 	/* all numericals */
 	for (t = numerical; *t != TME; t++) {
 		sql_subtype *lt;
+
+		if (*t == OID)
+			continue;
 
 		lt = sql_bind_localtype((*t)->base.name);
 
