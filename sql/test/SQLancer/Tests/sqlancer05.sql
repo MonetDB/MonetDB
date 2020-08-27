@@ -157,3 +157,36 @@ ROLLBACK;
 
 select sub0.c0 from (select 1 as c0, 2 as c0) as sub0;
 	--error, column reference "c0" is ambiguous
+
+START TRANSACTION;
+CREATE TABLE "sys"."t0" ("c0" VARCHAR(31) NOT NULL,"c1" BOOLEAN,"c2" TIMESTAMP NOT NULL,
+	CONSTRAINT "t0_c0_c2_c1_unique" UNIQUE ("c0", "c2", "c1"),
+	CONSTRAINT "t0_c2_unique" UNIQUE ("c2"),
+	CONSTRAINT "t0_c1_c0_unique" UNIQUE ("c1", "c0"),
+	CONSTRAINT "t0_c0_unique" UNIQUE ("c0")
+);
+CREATE TABLE "sys"."t1" ("c1" INTERVAL MONTH NOT NULL,CONSTRAINT "t1_c1_pkey" PRIMARY KEY ("c1"),CONSTRAINT "t1_c1_unique" UNIQUE ("c1"));
+COPY 2 RECORDS INTO "sys"."t1" FROM stdin USING DELIMITERS E'\t',E'\n','"';
+311141409
+1247645829
+
+CREATE TABLE "sys"."t2" ("c1" BIGINT NOT NULL,CONSTRAINT "t2_c1_pkey" PRIMARY KEY ("c1"),CONSTRAINT "t2_c1_unique" UNIQUE ("c1"));
+COPY 4 RECORDS INTO "sys"."t2" FROM stdin USING DELIMITERS E'\t',E'\n','"';
+1909667273
+720758463
+24545308
+-1804793562
+
+create view v0(c0, c1) as (select distinct t0.c0, t0.c2 from t2, t0 where t0.c1);
+
+SELECT 1 FROM v0, t0 JOIN t1 ON t0.c1 WHERE (CASE CASE t0.c0 WHEN t0.c0 THEN t1.c1 END WHEN t1.c1 THEN v0.c1 END) BETWEEN (v0.c1) AND (t0.c2);
+	-- empty
+SELECT count(agg0) FROM (
+SELECT ALL sum(ALL t1.c1) as agg0 FROM v0, t0 JOIN t1 ON t0.c1 CROSS JOIN t2 WHERE (CASE CASE t0.c0 WHEN t0.c0 THEN t1.c1 END WHEN t1.c1 THEN v0.c1 END) NOT  BETWEEN ASYMMETRIC (v0.c1) AND (t0.c2)
+UNION ALL
+SELECT ALL sum(ALL t1.c1) as agg0 FROM v0, t0 JOIN t1 ON t0.c1 CROSS JOIN t2 WHERE NOT ((CASE CASE t0.c0 WHEN t0.c0 THEN t1.c1 END WHEN t1.c1 THEN v0.c1 END) NOT  BETWEEN ASYMMETRIC (v0.c1) AND (t0.c2))
+UNION ALL
+SELECT ALL sum(ALL t1.c1) as agg0 FROM v0, t0 JOIN t1 ON t0.c1 CROSS JOIN t2 WHERE ((CASE CASE t0.c0 WHEN t0.c0 THEN t1.c1 END WHEN t1.c1 THEN v0.c1 END) NOT  BETWEEN ASYMMETRIC (v0.c1) AND (t0.c2)) IS NULL
+) as asdf;
+	-- 0
+ROLLBACK;
