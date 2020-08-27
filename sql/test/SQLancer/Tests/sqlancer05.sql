@@ -122,3 +122,35 @@ SELECT 1 WHERE NOT '0';
 	-- 1
 SELECT 1 WHERE '0' IS NULL;
 	--empty
+
+START TRANSACTION;
+CREATE TABLE "sys"."t0" ("c2" DATE NOT NULL DEFAULT DATE '1970-01-03',
+	CONSTRAINT "t0_c2_pkey" PRIMARY KEY ("c2"),
+	CONSTRAINT "t0_c2_unique" UNIQUE ("c2"),
+	CONSTRAINT "t0_c2_fkey" FOREIGN KEY ("c2") REFERENCES "sys"."t0" ("c2")
+);
+CREATE TABLE "sys"."t1" ("c0" CHARACTER LARGE OBJECT NOT NULL,CONSTRAINT "t1_c0_unique" UNIQUE ("c0"));
+COPY 5 RECORDS INTO "sys"."t1" FROM stdin USING DELIMITERS E'\t',E'\n','"';
+"t8rMম<b\015"
+"}鸺s"
+""
+"!5Ef"
+">l\tigL쓵9Q"
+
+CREATE TABLE "sys"."t2" ("c0" TIME NOT NULL, "c1" DECIMAL(18,3) NOT NULL DEFAULT 0.428153, "c2" TIME,
+	CONSTRAINT "t2_c2_c0_c1_unique" UNIQUE ("c2", "c0", "c1")
+);
+COPY 1 RECORDS INTO "sys"."t2" FROM stdin USING DELIMITERS E'\t',E'\n','"';
+05:17:55	0.450	02:23:09
+
+create view v0(c0, c1) as (select t2.c2, cast(timestamp '1970-01-01 17:26:21' as timestamp) from t0, t2);
+create view v1(c0) as (select distinct 0.73 from t2, t1, t0, v0) with check option;
+
+SELECT 1 FROM v0 NATURAL JOIN (SELECT t1.c0, t2.c0 FROM t2, t1) AS sub0;
+	-- error, common column name "c0" appears more than once in right table
+SELECT count(ALL + (((((18)%(-16)))/(CAST(TRUE AS INT))))) FROM t1, v1, t0 FULL OUTER JOIN v0 
+ON (CAST(+ (-116) AS BOOLEAN)) = FALSE RIGHT OUTER JOIN t2 
+ON (COALESCE(v0.c1, v0.c1, v0.c1, v0.c1)) NOT IN (TIMESTAMP '1970-01-15 03:05:56', TIMESTAMP '1970-01-14 22:30:41') 
+NATURAL JOIN (SELECT t1.c0, CAST(48 AS INT), t2.c0 FROM t2, v0, v1, t0, t1) AS sub0;
+	-- I think it's the same error as the previous one, it can't be computed
+ROLLBACK;
