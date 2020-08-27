@@ -17,19 +17,12 @@ target_include_directories(run_adder
   PUBLIC
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
   $<INSTALL_INTERFACE:${INCLUDEDIR}/monetdb>)
-if(WIN32)
-  target_compile_definitions(run_adder
-    PRIVATE
-    LIBMAL
-    LIBATOMS
-    LIBKERNEL
-    LIBOPTIMIZER
-    LIBSCHEDULER
-    LIBMONETDB5)
-endif()
 target_link_libraries(run_adder
   PRIVATE
-  monetdb_config_header)
+  monetdb_config_header
+  mutils
+  bat
+  monetdb5)
 set_target_properties(run_adder
   PROPERTIES
   OUTPUT_NAME _run_adder)
@@ -51,19 +44,12 @@ target_include_directories(run_isolate
   PUBLIC
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
   $<INSTALL_INTERFACE:${INCLUDEDIR}/monetdb>)
-if(WIN32)
-  target_compile_definitions(run_isolate
-    PRIVATE
-    LIBMAL
-    LIBATOMS
-    LIBKERNEL
-    LIBOPTIMIZER
-    LIBSCHEDULER
-    LIBMONETDB5)
-endif()
 target_link_libraries(run_isolate
   PRIVATE
-  monetdb_config_header)
+  monetdb_config_header
+  mutils
+  bat
+  monetdb5)
 set_target_properties(run_isolate
   PROPERTIES
   OUTPUT_NAME _run_isolate)
@@ -85,19 +71,12 @@ target_include_directories(run_memo
   PUBLIC
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
   $<INSTALL_INTERFACE:${INCLUDEDIR}/monetdb>)
-if(WIN32)
-  target_compile_definitions(run_memo
-    PRIVATE
-    LIBMAL
-    LIBATOMS
-    LIBKERNEL
-    LIBOPTIMIZER
-    LIBSCHEDULER
-    LIBMONETDB5)
-endif()
 target_link_libraries(run_memo
   PRIVATE
-  monetdb_config_header)
+  monetdb_config_header
+  mutils
+  bat
+  monetdb5)
 set_target_properties(run_memo
   PROPERTIES
   OUTPUT_NAME _run_memo)

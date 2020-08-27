@@ -100,10 +100,14 @@
 #include "mal_client.h"
 #include "mal_runtime.h"
 
-mal_export str RUNchoice(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
-mal_export str RUNvolumeCost(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
-mal_export str RUNcostPrediction(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
-mal_export str RUNpickResult(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
+#ifndef _MSC_VER
+#define __declspec(x)
+#endif
+
+extern __declspec(dllexport) str RUNchoice(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
+extern __declspec(dllexport) str RUNvolumeCost(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
+extern __declspec(dllexport) str RUNcostPrediction(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
+extern __declspec(dllexport) str RUNpickResult(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
 
 static void
 propagateNonTarget(MalBlkPtr mb, int pc)

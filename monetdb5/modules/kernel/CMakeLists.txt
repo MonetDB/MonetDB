@@ -25,7 +25,7 @@ target_sources(kernel
   ${CMAKE_CURRENT_SOURCE_DIR}/bat5.h)
 target_sources(microbenchmark
   PRIVATE
-  microbenchmark.c microbenchmark.h
+  microbenchmark.c
   PUBLIC
   ${CMAKE_CURRENT_SOURCE_DIR}/bat5.h)
 
@@ -40,14 +40,6 @@ target_include_directories(microbenchmark
 
 if(WIN32)
   target_compile_definitions(kernel
-    PRIVATE
-    LIBMAL
-    LIBATOMS
-    LIBKERNEL
-    LIBOPTIMIZER
-    LIBSCHEDULER
-    LIBMONETDB5)
-  target_compile_definitions(microbenchmark
     PRIVATE
     LIBMAL
     LIBATOMS

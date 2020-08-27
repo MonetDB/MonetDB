@@ -18,7 +18,18 @@
 #include "monetdb_config.h"
 #include "mal.h"
 #include "mal_exception.h"
-#include "microbenchmark.h"
+#include "mal.h"
+
+#ifndef _MSC_VER
+#define __declspec(x)
+#endif
+
+extern __declspec(dllexport) str MBMrandom(bat *ret, oid *base, lng *size, int *domain);
+extern __declspec(dllexport) str MBMrandom_seed(bat *ret, oid *base, lng *size, int *domain, const int *seed);
+extern __declspec(dllexport) str MBMuniform(bat *ret, oid *base, lng *size, int *domain);
+extern __declspec(dllexport) str MBMnormal(bat *ret, oid *base, lng *size, int *domain, int *stddev, int *mean);
+extern __declspec(dllexport) str MBMmix(bat *ret, bat *batid);
+extern __declspec(dllexport) str MBMskewed(bat *ret, oid *base, lng *size, int *domain, int *skew);
 
 #ifdef STATIC_CODE_ANALYSIS
 #define rand()		0

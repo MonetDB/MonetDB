@@ -49,7 +49,11 @@
 #include "mal_linker.h"
 #include "mal_client.h"
 
-mal_export str RUNadder(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
+#ifndef _MSC_VER
+#define __declspec(x)
+#endif
+
+extern __declspec(dllexport) str RUNadder(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
 
 /*
  * @-

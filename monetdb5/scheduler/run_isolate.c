@@ -35,7 +35,11 @@
 #include "mal_instruction.h"
 #include "mal_client.h"
 
-mal_export str RUNisolation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
+#ifndef _MSC_VER
+#define __declspec(x)
+#endif
+
+extern __declspec(dllexport) str RUNisolation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
 
 str
 RUNisolation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
