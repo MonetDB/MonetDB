@@ -12,9 +12,16 @@
  * and the list of all MAL functions for analysis using SQL.
  */
 #include "monetdb_config.h"
-#include "manual.h"
+#include "gdk.h"
+#include <time.h>
+#include "mal_resolve.h"
+#include "mal_client.h"
+#include "mal_exception.h"
+#include "mal_debugger.h"
+#include "mal_interpreter.h"
+#include "mal_namespace.h"
 
-str
+static str
 MANUALcreateOverview(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	BAT *mod, *fcn, *sig, *adr, *com;

@@ -15,8 +15,8 @@ target_sources(malmodules
   profiler.c profiler.h
   batExtensions.c
   orderidx.c orderidx.h
-  inspect.c inspect.h
-  manual.c manual.h
+  inspect.c
+  manual.c
   mal_io.c mal_io.h
   mkey.c
   manifold.c manifold.h
@@ -32,7 +32,7 @@ target_sources(malmodules
   wlc.c
   mal_mapi.c mal_mapi.h
   remote.c
-  txtsim.c txtsim.h
+  txtsim.c
   tokenizer.c tokenizer.h
   sample.c
   json_util.c
