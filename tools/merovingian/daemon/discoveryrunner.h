@@ -25,7 +25,7 @@ typedef struct _remotedb {
 	struct _remotedb* next;
 }* remotedb;
 
-sabdb *getRemoteDB(char *database);
+sabdb *getRemoteDB(const char *database);
 
 extern remotedb _mero_remotedbs;
 extern pthread_mutex_t _mero_remotedb_lock;

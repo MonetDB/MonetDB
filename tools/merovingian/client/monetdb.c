@@ -2302,7 +2302,7 @@ end:
 }
 
 static void
-command_snapshot_write_cb(char *buf, size_t count, void *private) {
+command_snapshot_write_cb(const void *buf, size_t count, void *private) {
 	FILE *f = (FILE*)private;
 	fwrite(buf, 1, count, f);
 }

@@ -33,6 +33,7 @@
 #include "msabaoth.h"
 #include "mutils.h"
 #include "muuid.h"
+#include "mstring.h"
 
 #if defined(_MSC_VER) && _MSC_VER >= 1400
 #define close _close
@@ -895,7 +896,7 @@ msab_getSingleStatus(const char *pathbuf, const char *dbname, sabdb *next)
  * is terminated by a NULL entry.
  */
 char *
-msab_getStatus(sabdb** ret, char *dbname)
+msab_getStatus(sabdb** ret, const char *dbname)
 {
 	DIR *d;
 	struct dirent *e;
@@ -1148,272 +1149,202 @@ msab_serialise(char **ret, const sabdb *db)
  * Produces a sabdb struct out of a serialised string.
  */
 char *
-msab_deserialise(sabdb **ret, char *sdb)
+msab_deserialise(sabdb **ret, const char *sdb)
 {
 	char *dbname;
 	char *uri;
-	int locked;
-	int state;
-	char *scens = "";
+	char *scens;
 	sabdb *s;
 	sabuplog *u;
-	sablist *l;
-	char *p;
-	char *lasts;
+	const char *lasts;
 	char buf[FILENAME_MAX];
-	char protover = 0;
 
-	lasts = sdb;
-	if ((p = strchr(lasts, ':')) == NULL) {
+	if (strncmp(sdb, "sabdb:", 6) != 0) {
 		snprintf(buf, sizeof(buf),
-				"string does not contain a magic: %s", lasts);
+				"string is not a sabdb struct: %s", sdb);
 		return(strdup(buf));
 	}
-	*p++ = '\0';
-	if (strcmp(lasts, "sabdb") != 0) {
+	sdb += 6;
+	/* Protocol 1 was used uptil Oct2012 and is no longer supported.
+	 * Since Jul2012 a new state
+	 * SABdbStarting was introduced, but not exposed to the client
+	 * in serialise.  In Feb2013, the path component was removed
+	 * and replaced by a URI field.  This meant dbname could no
+	 * longer be deduced from path, and hence sent separately.
+	 * Since the conns property became useless in the light of the
+	 * added uri, it was dropped.  On top of this, a laststop
+	 * property was added to the uplog struct.
+	 * These four changes were effectuated in protocol 2.  When
+	 * reading protocol 1, we use the path field to set dbname, but
+	 * ignore the path information (and set uri to "<unknown>".  The
+	 * SABdbStarting state never occurs. */
+	if (strncmp(sdb, SABDBVER ":", sizeof(SABDBVER)) != 0) {
 		snprintf(buf, sizeof(buf),
-				"string is not a sabdb struct: %s", lasts);
+				"string has unsupported version: %s", sdb);
 		return(strdup(buf));
 	}
-	lasts = p;
-	if ((p = strchr(p, ':')) == NULL) {
+	sdb += sizeof(SABDBVER);
+	lasts = strchr(sdb, ',');
+	if (lasts == NULL) {
 		snprintf(buf, sizeof(buf),
-				"string does not contain a version number: %s", lasts);
+				"string does not contain dbname: %s", sdb);
 		return(strdup(buf));
 	}
-	*p++ = '\0';
-	if (strcmp(lasts, "1") == 0) {
-		/* Protocol 1 was used uptil Oct2012.  Since Jul2012 a new state
-		 * SABdbStarting was introduced, but not exposed to the client
-		 * in serialise.  In Feb2013, the path component was removed
-		 * and replaced by an URI field.  This meant dbname could no
-		 * longer be deduced from path, and hence sent separately.
-		 * Since the conns property became useless in the light of the
-		 * added uri, it was dropped.  On top of this, a laststop
-		 * property was added to the uplog struct.
-		 * These four changes were effectuated in protocol 2.  When
-		 * reading protocol 1, we use the path field to set dbname, but
-		 * ignore the path information (and set uri to "<unknown>".  The
-		 * SABdbStarting state never occurs. */
-	} else if (strcmp(lasts, SABDBVER) != 0) {
+	dbname = malloc(lasts - sdb + 1);
+	strcpy_len(dbname, sdb, lasts - sdb + 1);
+	sdb = ++lasts;
+	lasts = strchr(sdb, ',');
+	if (lasts == NULL) {
 		snprintf(buf, sizeof(buf),
-				"string has unsupported version: %s", lasts);
+				"string does not contain uri: %s", sdb);
 		return(strdup(buf));
 	}
-	protover = lasts[0];
-	lasts = p;
-	if ((p = strchr(p, ',')) == NULL) {
-		snprintf(buf, sizeof(buf),
-				"string does not contain %s: %s",
-				protover == '1' ? "path" : "dbname", lasts);
-		return(strdup(buf));
-	}
-	*p++ = '\0';
-	dbname = lasts;
-	if (protover == '1') {
-		uri = "<unknown>";
-	} else {
-		lasts = p;
-		if ((p = strchr(p, ',')) == NULL) {
-			snprintf(buf, sizeof(buf),
-					"string does not contain uri: %s", lasts);
-			return(strdup(buf));
-		}
-		*p++ = '\0';
-		uri = lasts;
-	}
-	lasts = p;
-	if ((p = strchr(p, ',')) == NULL) {
+	uri = malloc(lasts - sdb + 1);
+	strcpy_len(uri, sdb, lasts - sdb + 1);
+	sdb = ++lasts;
+	int locked, state, n;
+	switch (sscanf(sdb, "%d,%d%n", &locked, &state, &n)) {
+	case 0:
 		snprintf(buf, sizeof(buf),
 				"string does not contain locked state: %s", lasts);
 		return(strdup(buf));
-	}
-	*p++ = '\0';
-	locked = atoi(lasts);
-	lasts = p;
-	if ((p = strchr(p, ',')) == NULL) {
+	case 1:
 		snprintf(buf, sizeof(buf),
 				"string does not contain state: %s", lasts);
 		return(strdup(buf));
+	case -1:
+		return strdup("should not happen");
+	default:
+		break;
 	}
-	*p++ = '\0';
-	state = atoi(lasts);
-	lasts = p;
-	if ((p = strchr(p, ',')) == NULL) {
+	sdb += n;
+	if (*sdb++ != ',' || (lasts = strchr(sdb, ',')) == NULL) {
 		snprintf(buf, sizeof(buf),
 				"string does not contain scenarios: %s", lasts);
 		return(strdup(buf));
 	}
-	*p++ = '\0';
-	scens = lasts;
-	lasts = p;
-	if (protover == '1') {
-		if ((p = strchr(p, ',')) == NULL) {
-			snprintf(buf, sizeof(buf),
-					"string does not contain connections: %s", lasts);
-			return(strdup(buf));
-		}
-		*p++ = '\0';
-		lasts = p;
+	if (lasts > sdb) {
+		scens = malloc(lasts - sdb + 1);
+		strcpy_len(scens, sdb, lasts - sdb + 1);
+	} else {
+		scens = NULL;
+	}
+	sdb = ++lasts;
+	int startcntr, stopcntr, crashcntr;
+	int64_t avguptime, maxuptime, minuptime, lastcrash, laststart, laststop;
+	int crashavg1;
+	double crashavg10, crashavg30;
+	switch (sscanf(sdb, "%d,%d,%d,%" SCNd64 ",%" SCNd64 ",%" SCNd64 ",%" SCNd64 ",%" SCNd64 ",%" SCNd64 ",%d,%lf,%lf%n", &startcntr, &stopcntr, &crashcntr, &avguptime, &maxuptime, &minuptime, &lastcrash, &laststart, &laststop, &crashavg1, &crashavg10, &crashavg30, &n)) {
+	case -1:
+		free(dbname);
+		free(uri);
+		free(scens);
+		return strdup("should not happen");
+	case 0:
+		snprintf(buf, sizeof(buf),
+				"string does not contain startcounter: %s", sdb);
+		goto bailout;
+	case 1:
+		snprintf(buf, sizeof(buf),
+				"string does not contain stopcounter: %s", sdb);
+		goto bailout;
+	case 2:
+		snprintf(buf, sizeof(buf),
+				"string does not contain crashcounter: %s", sdb);
+		goto bailout;
+	case 3:
+		snprintf(buf, sizeof(buf),
+				"string does not contain avguptime: %s", sdb);
+		goto bailout;
+	case 4:
+		snprintf(buf, sizeof(buf),
+				"string does not contain maxuptime: %s", sdb);
+		goto bailout;
+	case 5:
+		snprintf(buf, sizeof(buf),
+				"string does not contain minuptime: %s", sdb);
+		goto bailout;
+	case 6:
+		snprintf(buf, sizeof(buf),
+				"string does not contain lastcrash: %s", sdb);
+		goto bailout;
+	case 7:
+		snprintf(buf, sizeof(buf),
+				"string does not contain laststart: %s", sdb);
+		goto bailout;
+	case 8:
+		snprintf(buf, sizeof(buf),
+				 "string does not contain laststop: %s", sdb);
+		goto bailout;
+	case 9:
+		snprintf(buf, sizeof(buf),
+				"string does not contain crashavg1: %s", sdb);
+		goto bailout;
+	case 10:
+		snprintf(buf, sizeof(buf),
+				"string does not contain crashavg10: %s", sdb);
+		goto bailout;
+	case 11:
+		snprintf(buf, sizeof(buf),
+				"string does not contain crashavg30: %s", sdb);
+		goto bailout;
+	case 12:
+		break;
+	}
+	sdb += n;
+	if (*sdb) {
+		snprintf(buf, sizeof(buf),
+				 "string contains additional garbage after crashavg30: %s",
+				 sdb);
+		goto bailout;
 	}
 
-	/* start parsing sabuplog struct */
 	u = malloc(sizeof(sabuplog));
-
-	if ((p = strchr(p, ',')) == NULL) {
-		free(u);
-		snprintf(buf, sizeof(buf),
-				"string does not contain startcounter: %s", lasts);
-		return(strdup(buf));
-	}
-	*p++ = '\0';
-	u->startcntr = atoi(lasts);
-	lasts = p;
-	if ((p = strchr(p, ',')) == NULL) {
-		free(u);
-		snprintf(buf, sizeof(buf),
-				"string does not contain stopcounter: %s", lasts);
-		return(strdup(buf));
-	}
-	*p++ = '\0';
-	u->stopcntr = atoi(lasts);
-	lasts = p;
-	if ((p = strchr(p, ',')) == NULL) {
-		free(u);
-		snprintf(buf, sizeof(buf),
-				"string does not contain crashcounter: %s", lasts);
-		return(strdup(buf));
-	}
-	*p++ = '\0';
-	u->crashcntr = atoi(lasts);
-	lasts = p;
-	if ((p = strchr(p, ',')) == NULL) {
-		free(u);
-		snprintf(buf, sizeof(buf),
-				"string does not contain avguptime: %s", lasts);
-		return(strdup(buf));
-	}
-	*p++ = '\0';
-	u->avguptime = (time_t)strtoll(lasts, (char **)NULL, 10);
-	lasts = p;
-	if ((p = strchr(p, ',')) == NULL) {
-		free(u);
-		snprintf(buf, sizeof(buf),
-				"string does not contain maxuptime: %s", lasts);
-		return(strdup(buf));
-	}
-	*p++ = '\0';
-	u->maxuptime = (time_t)strtoll(lasts, (char **)NULL, 10);
-	lasts = p;
-	if ((p = strchr(p, ',')) == NULL) {
-		free(u);
-		snprintf(buf, sizeof(buf),
-				"string does not contain minuptime: %s", lasts);
-		return(strdup(buf));
-	}
-	*p++ = '\0';
-	u->minuptime = (time_t)strtoll(lasts, (char **)NULL, 10);
-	lasts = p;
-	if ((p = strchr(p, ',')) == NULL) {
-		free(u);
-		snprintf(buf, sizeof(buf),
-				"string does not contain lastcrash: %s", lasts);
-		return(strdup(buf));
-	}
-	*p++ = '\0';
-	u->lastcrash = (time_t)strtoll(lasts, (char **)NULL, 10);
-	lasts = p;
-	if ((p = strchr(p, ',')) == NULL) {
-		free(u);
-		snprintf(buf, sizeof(buf),
-				"string does not contain laststart: %s", lasts);
-		return(strdup(buf));
-	}
-	*p++ = '\0';
-	u->laststart = (time_t)strtoll(lasts, (char **)NULL, 10);
-	lasts = p;
-	if (protover != '1') {
-		if ((p = strchr(p, ',')) == NULL) {
-			free(u);
-			snprintf(buf, sizeof(buf),
-					"string does not contain laststop: %s", lasts);
-			return(strdup(buf));
-		}
-		*p++ = '\0';
-		u->laststop = (time_t)strtoll(lasts, (char **)NULL, 10);
-		lasts = p;
-	} else {
-		u->laststop = -1;
-	}
-	if ((p = strchr(p, ',')) == NULL) {
-		free(u);
-		snprintf(buf, sizeof(buf),
-				"string does not contain crashavg1: %s", lasts);
-		return(strdup(buf));
-	}
-	*p++ = '\0';
-	u->crashavg1 = atoi(lasts);
-	lasts = p;
-	if ((p = strchr(p, ',')) == NULL) {
-		free(u);
-		snprintf(buf, sizeof(buf),
-				"string does not contain crashavg10: %s", lasts);
-		return(strdup(buf));
-	}
-	*p++ = '\0';
-	u->crashavg10 = atof(lasts);
-	lasts = p;
-	if ((p = strchr(p, ',')) != NULL) {
-		free(u);
-		snprintf(buf, sizeof(buf),
-				"string contains additional garbage after crashavg30: %s",
-				p);
-		return(strdup(buf));
-	}
-	u->crashavg30 = atof(lasts);
-
-	/* fill/create sabdb struct */
-
-	if (protover == '1') {
-		if ((p = strrchr(dbname, '/')) == NULL) {
-			free(u);
-			snprintf(buf, sizeof(buf), "invalid path: %s", dbname);
-			return(strdup(buf));
-		}
-		dbname = p + 1;
-	}
-
 	s = malloc(sizeof(sabdb));
-
-	*s = (sabdb) { 0 };
-	/* msab_freeStatus() actually relies on this trick */
-	s->path = s->dbname = strdup(dbname);
-	s->uri = strdup(uri);
-	s->secret = NULL;
-	s->locked = locked;
-	s->state = (SABdbState)state;
-	if (strlen(scens) == 0) {
-		s->scens = NULL;
-	} else {
-		l = s->scens = malloc(sizeof(sablist));
-		p = strtok_r(scens, "'", &lasts);
-		if (p == NULL) {
-			l->val = strdup(scens);
-			l->next = NULL;
-		} else {
-			l->val = strdup(p);
-			l->next = NULL;
-			while ((p = strtok_r(NULL, "'", &lasts)) != NULL) {
-				l = l->next = malloc(sizeof(sablist));
-				l->val = strdup(p);
-				l->next = NULL;
-			}
+	*u = (sabuplog) {
+		.startcntr = startcntr,
+		.stopcntr = stopcntr,
+		.crashcntr = crashcntr,
+		.avguptime = (time_t) avguptime,
+		.maxuptime = (time_t) maxuptime,
+		.minuptime = (time_t) minuptime,
+		.lastcrash = (time_t) lastcrash,
+		.laststart = (time_t) laststart,
+		.laststop = (time_t) laststop,
+		.crashavg1 = crashavg1,
+		.crashavg10 = crashavg10,
+		.crashavg30 = crashavg30,
+	};
+	*s = (sabdb) {
+		.dbname = dbname,
+		.path = dbname,
+		.uri = uri,
+		.locked = locked,
+		.state = (SABdbState) state,
+		.uplog = u,
+	};
+	if (scens) {
+		sablist **sp = &s->scens;
+		char *sc = scens;
+		while (sc) {
+			*sp = malloc(sizeof(sablist));
+			char *p = strchr(sc, '\'');
+			if (p)
+				*p++ = 0;
+			**sp = (sablist) {
+				.val = strdup(sc),
+			};
+			sc = p;
+			sp = &(*sp)->next;
 		}
+		free(scens);
 	}
-	s->conns = NULL;
-	s->uplog = u;
-	s->next = NULL;
 
 	*ret = s;
 	return(NULL);
+  bailout:
+		free(dbname);
+		free(uri);
+		free(scens);
+		return strdup(buf);
 }

@@ -56,11 +56,6 @@ target_include_directories(malmodules
 
 target_compile_definitions(malmodules
   PRIVATE
-  LIBMAL
-  LIBATOMS
-  LIBKERNEL
-  LIBOPTIMIZER
-  LIBSCHEDULER
   LIBMONETDB5)
 
 target_link_libraries(malmodules

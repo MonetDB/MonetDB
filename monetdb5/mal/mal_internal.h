@@ -6,15 +6,11 @@
  * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
  */
 
-#ifndef _RUN_ADDER
-#define _RUN_ADDER
-#include "mal.h"
-#include "mal_interpreter.h"
-#include "mal_linker.h"
-#include "mal_client.h"
+/* This file should not be included in any file outside of the monetdb5 library */
 
-/* #define DEBUG_RUN_ADDER*/
+#ifndef LIBMONETDB5
+#error this file should not be included outside its source directory
+#endif
 
-mal_export str RUNadder(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
-#endif /* MAL_RUN_ADDER */
-
+void setqptimeout(lng usecs)
+	__attribute__((__visibility__("hidden")));

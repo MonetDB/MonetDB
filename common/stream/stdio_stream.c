@@ -410,9 +410,6 @@ stream *
 stdin_rastream(void)
 {
 	const char *name = "<stdin>";
-#ifdef _MSC_VER
-	return win_console_in_stream(name);
-#else
 	// Make an attempt to skip a BOM marker.
 	// It would be nice to integrate this with with the BOM removal code
 	// in text_stream.c but that is complicated. In text_stream,
@@ -433,6 +430,9 @@ stdin_rastream(void)
 		}
 	}
 
+#ifdef _MSC_VER
+	return win_console_in_stream(name);
+#else
 	return file_rstream(stdin, false, name);
 #endif
 }

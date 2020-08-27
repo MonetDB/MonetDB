@@ -1,0 +1,24 @@
+stderr of test 'sqlancer05` in directory 'sql/test/SQLancer` itself:
+
+
+# 12:00:38 >  
+# 12:00:38 >  "mclient" "-lsql" "-ftest" "-tnone" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-282348" "--port=38779"
+# 12:00:38 >  
+
+MAPI  = (monetdb) /var/tmp/mtest-282348/.s.monetdb.38779
+QUERY = INSERT INTO t1(c0) VALUES(INTERVAL '1474617942' SECOND), (NULL);
+ERROR = !INSERT INTO: NOT NULL constraint violated for column t1.c0
+CODE  = 40002
+MAPI  = (monetdb) /var/tmp/mtest-13844/.s.monetdb.32436
+QUERY = SELECT count(ALL + (((v0.c0)/(((v0.c0)^(v0.c0)))))) FROM v0 ORDER BY v0.c0 ASC NULLS LAST, v0.c0 DESC NULLS FIRST, v0.c0 DESC NULLS LAST;
+ERROR = !SELECT: no such column 'v0.c0'
+CODE  = 42S22
+MAPI  = (monetdb) /var/tmp/mtest-15559/.s.monetdb.32763
+QUERY = UPDATE t1 SET c0 = 0.28 WHERE (CAST(INTERVAL '31' MONTH AS STRING)) NOT IN (COALESCE('靟', 'P먌+}I*CpQ'));
+ERROR = !UPDATE: PRIMARY KEY constraint 't1.t1_c0_pkey' violated
+CODE  = 40002
+
+# 12:00:38 >  
+# 12:00:38 >  "Done."
+# 12:00:38 >  
+

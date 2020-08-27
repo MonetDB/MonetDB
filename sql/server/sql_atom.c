@@ -1435,8 +1435,6 @@ atom_is_true(atom *a)
 		return a->data.val.fval != 0;
 	case TYPE_dbl:
 		return a->data.val.dval != 0;
-	case TYPE_str:
-		return strcmp(a->data.val.sval, "") != 0;
 	default:
 		return 0;
 	}
@@ -1464,8 +1462,6 @@ atom_is_false(atom *a)
 		return a->data.val.fval == 0;
 	case TYPE_dbl:
 		return a->data.val.dval == 0;
-	case TYPE_str:
-		return strcmp(a->data.val.sval, "") == 0;
 	default:
 		return 0;
 	}

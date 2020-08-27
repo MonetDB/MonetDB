@@ -9,11 +9,11 @@
 #ifndef _SEEN_DATABASE_H
 #define _SEEN_DATABASE_H 1
 
-char* db_validname(char* dbname);
-char* db_create(char* dbname);
-char* db_destroy(char* dbname);
-char* db_rename(char* olddb, char* newdb);
-char* db_lock(char* dbname);
-char* db_release(char* dbname);
+char* db_validname(const char *dbname);
+char* db_create(const char *dbname);
+char* db_destroy(const char *dbname);
+char* db_rename(const char *olddb, const char *newdb);
+char* db_lock(const char *dbname);
+char* db_release(const char *dbname);
 
 #endif

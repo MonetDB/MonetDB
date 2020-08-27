@@ -358,9 +358,10 @@ developer.
 %{_bindir}/sample0
 %{_bindir}/sample1
 %{_bindir}/sample4
+%{_bindir}/shutdowntest
 %{_bindir}/smack00
 %{_bindir}/smack01
-%{_bindir}/shutdowntest
+%{_bindir}/streamcat
 %{_bindir}/testgetinfo
 %{_bindir}/testStmtAttr
 %{_bindir}/malsample.pl
@@ -518,8 +519,6 @@ exit 0
 %exclude %{_bindir}/stethoscope
 %{_libdir}/libmonetdb5.so.*
 %dir %{_libdir}/monetdb5
-%{_libdir}/monetdb5/microbenchmark.mal
-%{_libdir}/monetdb5/run_*.mal
 %if %{with cintegration}
 %{_libdir}/monetdb5/lib_capi.so
 %endif
@@ -764,6 +763,7 @@ fi
 
 %build
 %cmake3 \
+	-DRELEASE_VERSION=ON \
 	-DASSERT=OFF \
 	-DCINTEGRATION=%{?with_cintegration:ON}%{!?with_cintegration:OFF} \
 	-DFITS=%{?with_fits:ON}%{!?with_fits:OFF} \
@@ -817,6 +817,10 @@ install -d -m 0775 %{buildroot}%{_rundir}/monetdb
 rm -f %{buildroot}%{_libdir}/*.la
 rm -f %{buildroot}%{_libdir}/monetdb5/*.la
 rm -f %{buildroot}%{_libdir}/monetdb5/lib_opt_sql_append.so
+rm -f %{buildroot}%{_libdir}/monetdb5/run_*.mal
+rm -f %{buildroot}%{_libdir}/monetdb5/lib_run_*.so
+rm -f %{buildroot}%{_libdir}/monetdb5/microbenchmark.mal
+rm -f %{buildroot}%{_libdir}/monetdb5/lib_microbenchmark*.so
 rm -f %{buildroot}%{_bindir}/monetdb_mtest.sh
 rm -rf %{buildroot}%{_datadir}/monetdb # /cmake
 

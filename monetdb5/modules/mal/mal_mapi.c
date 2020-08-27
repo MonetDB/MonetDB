@@ -348,7 +348,7 @@ SERVERlistenThread(SOCKET *Sock)
 		}
 #else
 		for (i = 0; i < 3; i++) {
-			if (socks[i] >= 0 && FD_ISSET(socks[i], &fds)) {
+			if (socks[i] != INVALID_SOCKET && FD_ISSET(socks[i], &fds)) {
 				msgsock = socks[i];
 				isusock = i == 2;
 				break;

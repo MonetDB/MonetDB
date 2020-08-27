@@ -31,7 +31,6 @@ struct dir_helper {
 	int fd;
 };
 
-static err prepare_directory(struct dir_helper *state, char *prefix_dir, char *dir);
 static bool parse_snapshot_name(const char *filename, char **dbname, time_t *timestamp);
 static err validate_location(const char *path);
 static err unpack_tarstream(stream *tarstream, char *destdir, int skipcomponents);
@@ -223,7 +222,6 @@ err
 snapshot_restore_from(char *dbname, char *source)
 {
 	err e;
-	(void)dbname;
 	(void)source;
 	sabdb *existing = NULL;
 	char *dbfarm = NULL;
@@ -632,7 +630,7 @@ bailout:
  * filename is set to NULL.
  */
 static err
-prepare_directory(struct dir_helper *state, char *prefix_dir, char *filename)
+prepare_directory(struct dir_helper *state, const char *prefix_dir, const char *filename)
 {
 	char *e = NO_ERR;
 	size_t file_len;
@@ -877,4 +875,3 @@ bailout:
 	free(destfile);
 	return e;
 }
-

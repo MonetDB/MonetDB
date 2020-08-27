@@ -7,6 +7,7 @@
 #]]
 
 add_library(kernel OBJECT)
+add_library(microbenchmark MODULE)
 
 target_sources(kernel
   PRIVATE
@@ -20,7 +21,11 @@ target_sources(kernel
   batmmath.c
   batstr.c
   batcolor.c
-  microbenchmark.c microbenchmark.h
+  PUBLIC
+  ${CMAKE_CURRENT_SOURCE_DIR}/bat5.h)
+target_sources(microbenchmark
+  PRIVATE
+  microbenchmark.c
   PUBLIC
   ${CMAKE_CURRENT_SOURCE_DIR}/bat5.h)
 
@@ -28,19 +33,25 @@ target_include_directories(kernel
   PUBLIC
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
   $<INSTALL_INTERFACE:${INCLUDEDIR}/monetdb>)
+target_include_directories(microbenchmark
+  PUBLIC
+  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
+  $<INSTALL_INTERFACE:${INCLUDEDIR}/monetdb>)
 
 if(WIN32)
   target_compile_definitions(kernel
     PRIVATE
-    LIBMAL
-    LIBATOMS
-    LIBKERNEL
-    LIBOPTIMIZER
-    LIBSCHEDULER
     LIBMONETDB5)
 endif()
 
 target_link_libraries(kernel
+  PRIVATE
+  monetdb_config_header
+  mutils
+  bat
+  mal
+  atoms)
+target_link_libraries(microbenchmark
   PRIVATE
   monetdb_config_header
   mutils
@@ -52,7 +63,13 @@ set_target_properties(kernel
   PROPERTIES
   POSITION_INDEPENDENT_CODE ON
   PUBLIC_HEADER ${CMAKE_CURRENT_SOURCE_DIR}/bat5.h)
+set_target_properties(microbenchmark
+  PROPERTIES
+  OUTPUT_NAME _microbenchmark)
 
+install(TARGETS microbenchmark
+  DESTINATION ${CMAKE_INSTALL_LIBDIR}/monetdb5
+  COMPONENT microbenchmark)
 install(FILES
   microbenchmark.mal
   DESTINATION ${CMAKE_INSTALL_LIBDIR}/monetdb5)

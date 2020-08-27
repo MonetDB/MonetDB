@@ -470,6 +470,8 @@ SORTfndlast(BAT *b, const void *v)
 	if (b->ttype == TYPE_void) {
 		if (b->tvheap) {
 			struct canditer ci;
+			if (is_oid_nil(*(const oid*)v))
+				return 0;
 			canditer_init(&ci, NULL, b);
 			return canditer_search(&ci, *(const oid*)v + 1, true);
 		}

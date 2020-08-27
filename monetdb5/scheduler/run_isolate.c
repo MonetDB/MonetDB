@@ -31,7 +31,15 @@
  * @+ Isolation implementation
  */
 #include "monetdb_config.h"
-#include "run_isolate.h"
+#include "mal.h"
+#include "mal_instruction.h"
+#include "mal_client.h"
+
+#ifndef _MSC_VER
+#define __declspec(x)
+#endif
+
+extern __declspec(dllexport) str RUNisolation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
 
 str
 RUNisolation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
