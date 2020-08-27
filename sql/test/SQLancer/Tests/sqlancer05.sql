@@ -90,8 +90,6 @@ create view v0(c0) as (select all -1454749390 from t2, t1 where not
 ((interval '990585801' month) in (interval '1558064353' month, interval '1877885111' month, interval '1286819945' month))) 
 with check option;
 
-SELECT count(ALL + (((v0.c0)/(((v0.c0)^(v0.c0)))))) FROM v0 ORDER BY v0.c0 ASC NULLS LAST, v0.c0 DESC NULLS FIRST, v0.c0 DESC NULLS LAST;
-	-- 0
 SELECT CAST(SUM(agg0) AS BIGINT) FROM (
 SELECT count(ALL + (((v0.c0)/(((v0.c0)^(v0.c0)))))) as agg0 FROM v0 WHERE CAST(CAST(v0.c0 AS STRING) AS BOOLEAN)
 UNION ALL
@@ -100,6 +98,10 @@ UNION ALL
 SELECT count(ALL + (((v0.c0)/(((v0.c0)^(v0.c0)))))) as agg0 FROM v0 WHERE (CAST(CAST(v0.c0 AS STRING) AS BOOLEAN)) IS NULL)
 as asdf;
 	-- 0
+SELECT count(ALL + (((v0.c0)/(((v0.c0)^(v0.c0)))))) FROM v0;
+	-- 0
+SELECT count(ALL + (((v0.c0)/(((v0.c0)^(v0.c0)))))) FROM v0 ORDER BY v0.c0 ASC NULLS LAST, v0.c0 DESC NULLS FIRST, v0.c0 DESC NULLS LAST;
+	--error, v0.c0 cannot be used without an aggregate function
 ROLLBACK;
 
 -- This crash only happens on auto-commit mode

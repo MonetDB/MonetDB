@@ -122,6 +122,24 @@ stdout of test 'sqlancer05` in directory 'sql/test/SQLancer` itself:
 #create view v0(c0) as (select all -1454749390 from t2, t1 where not 
 #((interval '990585801' month) in (interval '1558064353' month, interval '1877885111' month, interval '1286819945' month))) 
 #with check option;
+#SELECT CAST(SUM(agg0) AS BIGINT) FROM (
+#SELECT count(ALL + (((v0.c0)/(((v0.c0)^(v0.c0)))))) as agg0 FROM v0 WHERE CAST(CAST(v0.c0 AS STRING) AS BOOLEAN)
+#UNION ALL
+#SELECT count(ALL + (((v0.c0)/(((v0.c0)^(v0.c0)))))) as agg0 FROM v0 WHERE NOT (CAST(CAST(v0.c0 AS STRING) AS BOOLEAN))
+#UNION ALL
+#SELECT count(ALL + (((v0.c0)/(((v0.c0)^(v0.c0)))))) as agg0 FROM v0 WHERE (CAST(CAST(v0.c0 AS STRING) AS BOOLEAN)) IS NULL)
+#as asdf;
+% .%40 # table_name
+% %40 # name
+% bigint # type
+% 1 # length
+[ 0	]
+#SELECT count(ALL + (((v0.c0)/(((v0.c0)^(v0.c0)))))) FROM v0;
+% .%5 # table_name
+% %5 # name
+% bigint # type
+% 1 # length
+[ 0	]
 #ROLLBACK;
 #CREATE TABLE "sys"."t1" ("c0" DECIMAL(18,3) NOT NULL,CONSTRAINT "t1_c0_pkey" PRIMARY KEY ("c0"));
 #COPY 2 RECORDS INTO "sys"."t1" FROM stdin USING DELIMITERS E'\t',E'\n','"';
