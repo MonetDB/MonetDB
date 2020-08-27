@@ -41,11 +41,6 @@ target_include_directories(microbenchmark
 if(WIN32)
   target_compile_definitions(kernel
     PRIVATE
-    LIBMAL
-    LIBATOMS
-    LIBKERNEL
-    LIBOPTIMIZER
-    LIBSCHEDULER
     LIBMONETDB5)
 endif()
 

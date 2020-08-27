@@ -48,9 +48,6 @@ str malAtomDefinition(str name,int tpe)
 str malAtomProperty(MalBlkPtr mb, InstrPtr pci)
 	__attribute__((__visibility__("hidden")));
 
-void setqptimeout(lng usecs)
-	__attribute__((__visibility__("hidden")));
-
 bool mdbInit(void)
 	__attribute__((__visibility__("hidden")));
 void mdbExit(void)

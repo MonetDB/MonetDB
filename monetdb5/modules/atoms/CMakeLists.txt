@@ -49,11 +49,6 @@ if(WIN32)
 
   target_compile_definitions(atoms
     PRIVATE
-    LIBMAL
-    LIBATOMS
-    LIBKERNEL
-    LIBOPTIMIZER
-    LIBSCHEDULER
     LIBMONETDB5)
 
   target_link_libraries(atoms
