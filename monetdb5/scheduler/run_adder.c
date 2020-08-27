@@ -44,7 +44,16 @@
 #include "monetdb_config.h"
 #include "mal_builder.h"
 #include "opt_prelude.h"
-#include "run_adder.h"
+#include "mal.h"
+#include "mal_interpreter.h"
+#include "mal_linker.h"
+#include "mal_client.h"
+
+#ifndef _MSC_VER
+#define __declspec(x)
+#endif
+
+extern __declspec(dllexport) str RUNadder(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
 
 /*
  * @-

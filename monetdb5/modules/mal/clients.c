@@ -23,7 +23,7 @@
 #include "mal_runtime.h"
 #include "mal_client.h"
 #include "mal_authorize.h"
-#include "mal_private.h"
+#include "mal_internal.h"
 #include "gdk_time.h"
 
 static int

@@ -18,7 +18,18 @@
 #include "monetdb_config.h"
 #include "mal.h"
 #include "mal_exception.h"
-#include "microbenchmark.h"
+#include "mal.h"
+
+#ifndef _MSC_VER
+#define __declspec(x)
+#endif
+
+extern __declspec(dllexport) str MBMrandom(bat *ret, oid *base, lng *size, int *domain);
+extern __declspec(dllexport) str MBMrandom_seed(bat *ret, oid *base, lng *size, int *domain, const int *seed);
+extern __declspec(dllexport) str MBMuniform(bat *ret, oid *base, lng *size, int *domain);
+extern __declspec(dllexport) str MBMnormal(bat *ret, oid *base, lng *size, int *domain, int *stddev, int *mean);
+extern __declspec(dllexport) str MBMmix(bat *ret, bat *batid);
+extern __declspec(dllexport) str MBMskewed(bat *ret, oid *base, lng *size, int *domain, int *skew);
 
 #ifdef STATIC_CODE_ANALYSIS
 #define rand()		0
@@ -59,17 +70,17 @@ BATrandom(BAT **bn, oid *base, lng *size, int *domain, int seed)
 	if (!is_int_nil(seed))
 		srand(seed);
 	if (is_int_nil(*domain)) {
-	        for (i = 0; i < n; i++) {
+		for (i = 0; i < n; i++) {
 			val[i] = rand();
 		}
 #if RAND_MAX < 46340	    /* 46340*46340 = 2147395600 < INT_MAX */
 	} else if (*domain > RAND_MAX + 1) {
-	        for (i = 0; i < n; i++) {
+		for (i = 0; i < n; i++) {
 			val[i] = (rand() * (RAND_MAX + 1) + rand()) % *domain;
 		}
 #endif
 	} else {
-	        for (i = 0; i < n; i++) {
+		for (i = 0; i < n; i++) {
 			val[i] = rand() % *domain;
 		}
 	}
@@ -116,7 +127,7 @@ BATuniform(BAT **bn, oid *base, lng *size, int *domain)
 	val = (int *) Tloc(b, 0);
 
 	/* create BUNs with uniform distribution */
-        for (v = 0, i = 0; i < n; i++) {
+	for (v = 0, i = 0; i < n; i++) {
 		val[i] = v;
 		if (++v >= *domain)
 			v = 0;
@@ -248,7 +259,7 @@ BATnormal(BAT **bn, oid *base, lng *size, int *domain, int *stddev, int *mean)
 	b = COLnew(*base, TYPE_int, n, TRANSIENT);
 	if (b == NULL) {
 		return GDK_FAIL;
-        }
+	}
 	if (n == 0) {
 		b->tsorted = true;
 		b->trevsorted = false;
@@ -261,8 +272,8 @@ BATnormal(BAT **bn, oid *base, lng *size, int *domain, int *stddev, int *mean)
 
 	abs = (unsigned int *) GDKmalloc(d * sizeof(unsigned int));
 	if (abs == NULL) {
-	        BBPreclaim(b);
-	        return GDK_FAIL;
+		BBPreclaim(b);
+		return GDK_FAIL;
 	}
 	rel = (flt *) abs;
 
@@ -291,16 +302,16 @@ BATnormal(BAT **bn, oid *base, lng *size, int *domain, int *stddev, int *mean)
 
 	/* create BUNs with normal distribution */
 	for (j = 0, i = 0; i < n && j < d; i++) {
-	        while (j < d && abs[j] == 0)
-	                j++;
-                if (j < d) {
-        	        val[i] = j;
-	                abs[j]--;
-                }
+		while (j < d && abs[j] == 0)
+			j++;
+		if (j < d) {
+			val[i] = j;
+			abs[j]--;
+		}
 	}
 	assert(i == n);
-        while (j < d && abs[j] == 0)
-                j++;
+	while (j < d && abs[j] == 0)
+		j++;
 	assert(j == d);
 	GDKfree(abs);
 

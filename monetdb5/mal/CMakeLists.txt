@@ -51,7 +51,7 @@ target_sources(mal
   mal_type.c
   mal_utils.c mal_utils.h
   mal_embedded.c mal_embedded.h
-  mal_private.h
+  mal_private.h mal_internal.h
   mal_prelude.c
   mel.h
   PUBLIC
@@ -65,10 +65,6 @@ target_include_directories(mal
 target_compile_definitions(mal
   PRIVATE
   LIBMAL
-  LIBATOMS
-  LIBKERNEL
-  LIBOPTIMIZER
-  LIBSCHEDULER
   LIBMONETDB5)
 
 target_link_libraries(mal
