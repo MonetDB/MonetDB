@@ -18,7 +18,7 @@ target_sources(malmodules
   inspect.c inspect.h
   manual.c manual.h
   mal_io.c mal_io.h
-  mkey.c mkey.h
+  mkey.c
   manifold.c manifold.h
   iterator.c  iterator.h
   clients.c clients.h
@@ -34,12 +34,12 @@ target_sources(malmodules
   remote.c remote.h
   txtsim.c txtsim.h
   tokenizer.c tokenizer.h
-  sample.c sample.h
+  sample.c
   json_util.c
   querylog.c querylog.h
   sysmon.c sysmon.h
   tracer.c tracer.h
-  projectionpath.c  projectionpath.h
+  projectionpath.c
   tablet.c tablet.h
   batcalc.c calc.c 
   PUBLIC

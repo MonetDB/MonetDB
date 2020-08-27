@@ -15,7 +15,9 @@
  * values together. We create a hash and rotate command to do this.
  */
 #include "monetdb_config.h"
-#include "mkey.h"
+#include "mal.h"
+#include "mal_interpreter.h"
+#include "mal_exception.h"
 
 #define MKEYHASH_bte(valp)	((ulng) (lng) *(const bte*)(valp))
 #define MKEYHASH_sht(valp)	((ulng) (lng) *(const sht*)(valp))
@@ -33,14 +35,14 @@ GDK_ROTATE(ulng x, int y, int z)
 }
 
 /* TODO: nil handling. however; we do not want to lose time in bulk_rotate_xor_hash with that */
-str
+static str
 MKEYrotate(lng *res, const lng *val, const int *n)
 {
 	*res = (lng) GDK_ROTATE((ulng) *val, *n, (sizeof(lng)*8) - *n);
 	return MAL_SUCCEED;
 }
 
-str
+static str
 MKEYhash(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 {
 	lng *res;
@@ -87,7 +89,7 @@ MKEYhash(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	return MAL_SUCCEED;
 }
 
-str
+static str
 MKEYbathash(bat *res, const bat *bid)
 {
 	BAT *b, *dst;
@@ -184,7 +186,7 @@ MKEYbathash(bat *res, const bat *bid)
 	return MAL_SUCCEED;
 }
 
-str
+static str
 MKEYrotate_xor_hash(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 {
 	lng *dst = getArgReference_lng(stk, p, 0);
@@ -227,7 +229,7 @@ MKEYrotate_xor_hash(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	return MAL_SUCCEED;
 }
 
-str
+static str
 MKEYbulk_rotate_xor_hash(bat *res, const bat *hid, const int *nbits, const bat *bid)
 {
 	BAT *hb, *b, *bn;
@@ -340,7 +342,7 @@ MKEYbulk_rotate_xor_hash(bat *res, const bat *hid, const int *nbits, const bat *
 	return MAL_SUCCEED;
 }
 
-str
+static str
 MKEYbulkconst_rotate_xor_hash(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 {
 	bat *res = getArgReference_bat(stk, p, 0);
@@ -420,7 +422,7 @@ MKEYbulkconst_rotate_xor_hash(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPt
 	return MAL_SUCCEED;
 }
 
-str
+static str
 MKEYconstbulk_rotate_xor_hash(bat *res, const lng *h, const int *nbits, const bat *bid)
 {
 	BAT *b, *bn;
@@ -529,8 +531,30 @@ mel_func mkey_init_funcs[] = {
  pattern("mkey", "bulk_rotate_xor_hash", MKEYbulkconst_rotate_xor_hash, false, "pre:  h and b should be synced on head\npost: [:xor=]([:rotate=](h, nbits), [hash](b))", args(1,4, batarg("",lng),batarg("h",lng),arg("nbits",int),argany("v",0))),
  command("mkey", "bulk_rotate_xor_hash", MKEYbulk_rotate_xor_hash, false, "pre:  h and b should be synced on head\npost: [:xor=]([:rotate=](h, nbits), [hash](b))", args(1,4, batarg("",lng),batarg("h",lng),arg("nbits",int),batargany("b",1))),
  command("batmkey", "hash", MKEYbathash, false, "calculate a hash value", args(1,2, batarg("",lng),batargany("b",1))),
+ pattern("calc", "hash", MKEYhash, false, "", args(1,2, arg("",lng),arg("v",bte))),
+ command("batcalc", "hash", MKEYbathash, false, "", args(1,2, batarg("",lng),batarg("b",bte))),
+ pattern("calc", "hash", MKEYhash, false, "", args(1,2, arg("",lng),arg("v",sht))),
+ command("batcalc", "hash", MKEYbathash, false, "", args(1,2, batarg("",lng),batarg("b",sht))),
+ pattern("calc", "hash", MKEYhash, false, "", args(1,2, arg("",lng),arg("v",int))),
+ command("batcalc", "hash", MKEYbathash, false, "", args(1,2, batarg("",lng),batarg("b",int))),
+ pattern("calc", "hash", MKEYhash, false, "", args(1,2, arg("",lng),arg("v",lng))),
+ command("batcalc", "hash", MKEYbathash, false, "", args(1,2, batarg("",lng),batarg("b",lng))),
+ pattern("calc", "hash", MKEYhash, false, "", args(1,2, arg("",lng),arg("v",oid))),
+ command("batcalc", "hash", MKEYbathash, false, "", args(1,2, batarg("",lng),batarg("b",oid))),
+ pattern("calc", "hash", MKEYhash, false, "", args(1,2, arg("",lng),arg("v",lng))),
+ command("batcalc", "hash", MKEYbathash, false, "", args(1,2, batarg("",lng),batarg("b",lng))),
+ pattern("calc", "hash", MKEYhash, false, "", args(1,2, arg("",lng),arg("v",flt))),
+ command("batcalc", "hash", MKEYbathash, false, "", args(1,2, batarg("",lng),batarg("b",flt))),
+ pattern("calc", "hash", MKEYhash, false, "", args(1,2, arg("",lng),arg("v",dbl))),
+ command("batcalc", "hash", MKEYbathash, false, "", args(1,2, batarg("",lng),batarg("b",dbl))),
+ pattern("calc", "hash", MKEYhash, false, "", args(1,2, arg("",lng),argany("v",0))),
+ command("batcalc", "hash", MKEYbathash, false, "", args(1,2, batarg("",lng),batargany("b",1))),
+ pattern("calc", "rotate_xor_hash", MKEYrotate_xor_hash, false, "", args(1,4, arg("",lng),arg("h",lng),arg("nbits",int),argany("v",1))),
+ command("batcalc", "rotate_xor_hash", MKEYbulk_rotate_xor_hash, false, "", args(1,4, batarg("",int),batarg("h",lng),arg("nbits",int),batargany("b",1))),
 #ifdef HAVE_HGE
  pattern("mkey", "hash", MKEYhash, false, "calculate a hash value", args(1,2, arg("",lng),arg("v",hge))),
+ pattern("calc", "hash", MKEYhash, false, "", args(1,2, arg("",lng),arg("v",hge))),
+ command("batcalc", "hash", MKEYbathash, false, "", args(1,2, batarg("",lng),batarg("b",hge))),
 #endif
  { .imp=NULL }
 };
