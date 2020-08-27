@@ -154,3 +154,6 @@ ON (COALESCE(v0.c1, v0.c1, v0.c1, v0.c1)) NOT IN (TIMESTAMP '1970-01-15 03:05:56
 NATURAL JOIN (SELECT t1.c0, CAST(48 AS INT), t2.c0 FROM t2, v0, v1, t0, t1) AS sub0;
 	-- I think it's the same error as the previous one, it can't be computed
 ROLLBACK;
+
+select sub0.c0 from (select 1 as c0, 2 as c0) as sub0;
+	--error, column reference "c0" is ambiguous
