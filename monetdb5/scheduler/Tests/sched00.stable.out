@@ -29,7 +29,7 @@ function user.f():void;                 	#[0] (0)  0
 # just properties                       
     mdb.List();                         	#[3] (0) MDBlistDetail 4 
     io.print("start running\n":str);    	#[4] (0) IOprint_val 5 <- 6 
-    scheduler.isolation();              	#[5] (0) RUNisolation 7 
+    run_isolate.isolation();	#[5] (0) RUNisolation 7 
     io.print("done\n":str);             	#[6] (0) IOprint_val 8 <- 9 
     mdb.List();                         	#[7] (0) MDBlistDetail 10 
 end user.f;                             	#[8] (0)  

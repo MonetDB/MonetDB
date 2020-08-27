@@ -3,7 +3,7 @@ function f();
 	i:=1;	# just properties
     mdb.List();
     io.print("start running\n");
-    scheduler.isolation();
+    run_isolate.isolation();
     io.print("done\n");
     mdb.List();
 end f;

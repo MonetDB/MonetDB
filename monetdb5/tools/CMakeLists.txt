@@ -11,8 +11,7 @@ add_library(monetdb5 SHARED
   $<TARGET_OBJECTS:atoms>
   $<TARGET_OBJECTS:malmodules>
   $<TARGET_OBJECTS:kernel>
-  $<TARGET_OBJECTS:optimizer>
-  $<TARGET_OBJECTS:scheduler>)
+  $<TARGET_OBJECTS:optimizer>)
 
 target_link_libraries(monetdb5
     PRIVATE

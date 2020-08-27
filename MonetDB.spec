@@ -519,8 +519,6 @@ exit 0
 %exclude %{_bindir}/stethoscope
 %{_libdir}/libmonetdb5.so.*
 %dir %{_libdir}/monetdb5
-%{_libdir}/monetdb5/microbenchmark.mal
-%{_libdir}/monetdb5/run_*.mal
 %if %{with cintegration}
 %{_libdir}/monetdb5/lib_capi.so
 %endif
@@ -819,6 +817,10 @@ install -d -m 0775 %{buildroot}%{_rundir}/monetdb
 rm -f %{buildroot}%{_libdir}/*.la
 rm -f %{buildroot}%{_libdir}/monetdb5/*.la
 rm -f %{buildroot}%{_libdir}/monetdb5/lib_opt_sql_append.so
+rm -f %{buildroot}%{_libdir}/monetdb5/run_*.mal
+rm -f %{buildroot}%{_libdir}/monetdb5/lib_run_*.so
+rm -f %{buildroot}%{_libdir}/monetdb5/microbenchmark.mal
+rm -f %{buildroot}%{_libdir}/monetdb5/lib_microbenchmark*.so
 rm -f %{buildroot}%{_bindir}/monetdb_mtest.sh
 rm -rf %{buildroot}%{_datadir}/monetdb # /cmake
 
