@@ -241,3 +241,30 @@ SELECT t0.c1 FROM t0 WHERE (((((t0.c0) NOT IN (-1003666733, t0.c0))OR((t0.c0) NO
 SELECT CAST(SUM(count) AS BIGINT) FROM (SELECT CAST((((((t0.c0) NOT IN (-10, t0.c0))OR((t0.c0) NOT  BETWEEN SYMMETRIC (((14)*(10))) AND (- (756050096)))))OR('TRUE')) AS INT) as count FROM t0) as res;
 	-- 4
 ROLLBACK;
+
+START TRANSACTION;
+CREATE TABLE "sys"."t1" (
+	"c0" CHAR(420)     NOT NULL,
+	CONSTRAINT "t1_c0_pkey" PRIMARY KEY ("c0")
+);
+COPY 14 RECORDS INTO "sys"."t1" FROM stdin USING DELIMITERS E'\t',E'\n','"';
+"-1284014837"
+"R/<"
+""
+"s2"
+")L"
+"-1637493938"
+"0.7778392099491236"
+"w"
+"-\\h"
+"d"
+"mfvgds&o"
+"449949101"
+"f8i8c"
+"?"
+
+SELECT t1.c0 FROM t1 WHERE t1.c0 NOT ILIKE t1.c0;
+	--empty
+SELECT t1.c0 NOT ILIKE t1.c0 FROM t1;
+	--14 * false
+ROLLBACK;
