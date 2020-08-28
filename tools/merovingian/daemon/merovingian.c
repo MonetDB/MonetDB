@@ -193,10 +193,6 @@ logListener(void *x)
 	do {
 		/* wait max 1 second, tradeoff between performance and being
 		 * able to catch up new logger streams */
-#ifndef HAVE_POLL
-		tv = (struct timeval) {.tv_sec = 1};
-		FD_ZERO(&readfds);
-#endif
 		nfds = 0;
 
 		/* make sure noone is killing or adding entries here */
@@ -218,6 +214,8 @@ logListener(void *x)
 			w->flag |= 1;
 		}
 #else
+		tv = (struct timeval) {.tv_sec = 1};
+		FD_ZERO(&readfds);
 		for (w = d; w != NULL; w = w->next) {
 			if (w->pid <= 0)
 				continue;
@@ -351,7 +349,7 @@ main(int argc, char *argv[])
 	struct stat sb;
 	FILE *oerr = NULL;
 	int thret;
-	char merodontfork = 0;
+	bool merodontfork = false;
 	bool use_ipv6 = false;
 	confkeyval ckv[] = {
 		{"logfile",       strdup("merovingian.log"), 0,                STR},
@@ -476,7 +474,7 @@ main(int argc, char *argv[])
 			exit(command_set(ckv, argc - 1, &argv[1]));
 		} else if (strcmp(argv[1], "start") == 0) {
 			if (argc > 3 && strcmp(argv[2], "-n") == 0)
-				merodontfork = 1;
+				merodontfork = true;
 			if (argc == 3 + merodontfork) {
 				int len;
 				len = snprintf(dbfarm, sizeof(dbfarm), "%s",
@@ -730,12 +728,11 @@ main(int argc, char *argv[])
 		MERO_EXIT_CLEAN(1);
 	}
 
+	dpcons = (struct _dpair) {
+		.type = MERO,
+		.fork_lock = PTHREAD_MUTEX_INITIALIZER,
+	};
 	_mero_topdp = &dpcons;
-	_mero_topdp->pid = 0;
-	_mero_topdp->type = MERO;
-	_mero_topdp->dbname = NULL;
-	_mero_topdp->flag = 0;
-	pthread_mutex_init(&_mero_topdp->fork_lock, NULL);
 
 	/* where should our msg output go to? */
 	p = getConfVal(_mero_props, "logfile");
@@ -758,8 +755,13 @@ main(int argc, char *argv[])
 		MERO_EXIT(1);
 	}
 
+	dpmero = (struct _dpair) {
+		.fork_lock = PTHREAD_MUTEX_INITIALIZER,
+		.pid = getpid(),
+		.type = MERO,
+		.dbname = "merovingian",
+	};
 	d = _mero_topdp->next = &dpmero;
-	pthread_mutex_init(&d->fork_lock, NULL);
 
 	/* redirect stdout */
 	if (pipe2(pfd, O_CLOEXEC) == -1) {
@@ -813,12 +815,13 @@ main(int argc, char *argv[])
 		MERO_EXIT(1);
 	}
 
-	d->pid = getpid();
-	d->type = MERO;
-	d->dbname = "merovingian";
-	d->flag = 0;
-
 	/* separate entry for the neighbour discovery service */
+	dpdisc = (struct _dpair) {
+		.fork_lock = PTHREAD_MUTEX_INITIALIZER,
+		.pid = getpid(),
+		.type = MERO,
+		.dbname = "discovery",
+	};
 	d = d->next = &dpdisc;
 	pthread_mutex_init(&d->fork_lock, NULL);
 	if (pipe2(pfd, O_CLOEXEC) == -1) {
@@ -851,13 +854,14 @@ main(int argc, char *argv[])
 				 strerror(errno));
 		MERO_EXIT(1);
 	}
-	d->pid = getpid();
-	d->type = MERO;
-	d->dbname = "discovery";
-	d->next = NULL;
-	d->flag = 0;
 
 	/* separate entry for the control runner */
+	dpcont = (struct _dpair) {
+		.fork_lock = PTHREAD_MUTEX_INITIALIZER,
+		.pid = getpid(),
+		.type = MERO,
+		.dbname = "control",
+	};
 	d = d->next = &dpcont;
 	pthread_mutex_init(&d->fork_lock, NULL);
 	if (pipe2(pfd, O_CLOEXEC) == -1) {
@@ -890,11 +894,6 @@ main(int argc, char *argv[])
 				 strerror(errno));
 		MERO_EXIT(1);
 	}
-	d->pid = getpid();
-	d->type = MERO;
-	d->dbname = "control";
-	d->next = NULL;
-	d->flag = 0;
 
 	if ((thret = pthread_create(&tid, NULL, logListener, NULL)) != 0) {
 		Mfprintf(oerr, "%s: FATAL: unable to create logthread: %s\n",

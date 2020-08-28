@@ -117,7 +117,8 @@ hge shift, hge divider, hge multiplier
 lng shift, lng divider, lng multiplier
 #endif
 ) {
-	daytime d = daytime_add_usec(daytime_create(0, 0, 0, 0), next * 1000);
+	daytime d = daytime_add_usec(daytime_create(0, 0, 0, 0), (next % (24*60*60*1000)) * 1000);
+	assert(!is_daytime_nil(d));
 	return daytime_2time_daytime_imp(d, shift, divider, multiplier);
 }
 
@@ -1038,7 +1039,7 @@ bailout:
 				msg = createException(SQL, "batcalc." FUNC_NAME, SQLSTATE(HY013) MAL_MALLOC_FAIL); \
 				goto bailout; \
 			} \
-			msg = createException(SQL, "batcalc." FUNC_NAME, SQLSTATE(22003) "Overflow in convertion of %s to " FUNC_NAME, str_val); \
+			msg = createException(SQL, "batcalc." FUNC_NAME, SQLSTATE(22003) "Overflow in conversion of %s to " FUNC_NAME, str_val); \
 			GDKfree(str_val); \
 			goto bailout; \
 		} \

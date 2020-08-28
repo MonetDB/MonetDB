@@ -199,6 +199,8 @@ select group_concat(distinct col1, col2) from tab0 group by col0;
 	-- 0
 	-- 81
 	-- 0
+select group_concat(distinct col1, col2) from tab0;
+	-- 03881240
 ROLLBACK;
 
 START TRANSACTION;

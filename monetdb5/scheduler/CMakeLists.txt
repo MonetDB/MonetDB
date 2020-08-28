@@ -6,44 +6,83 @@
 # Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
 #]]
 
-add_library(scheduler OBJECT)
-
-target_sources(scheduler
+add_library(run_adder MODULE)
+target_sources(run_adder
   PRIVATE
-  run_adder.c run_adder.h
-  run_isolate.c run_isolate.h
-  run_memo.c run_memo.h
-  run_pipeline.c run_pipeline.h)
-
-target_include_directories(scheduler
+  run_adder.c)
+target_include_directories(run_adder
   PRIVATE
   $<TARGET_PROPERTY:mal,INCLUDE_DIRECTORIES>
   $<TARGET_PROPERTY:optimizer,INCLUDE_DIRECTORIES>
   PUBLIC
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
   $<INSTALL_INTERFACE:${INCLUDEDIR}/monetdb>)
-
-if(WIN32)
-  target_compile_definitions(scheduler
-    PRIVATE
-    LIBMAL
-    LIBATOMS
-    LIBKERNEL
-    LIBOPTIMIZER
-    LIBSCHEDULER
-    LIBMONETDB5)
-endif()
-
-target_link_libraries(scheduler
+target_link_libraries(run_adder
   PRIVATE
-  monetdb_config_header)
-
-set_target_properties(scheduler
+  monetdb_config_header
+  mutils
+  bat
+  monetdb5)
+set_target_properties(run_adder
   PROPERTIES
-  POSITION_INDEPENDENT_CODE ON)
-
+  OUTPUT_NAME _run_adder)
+install(TARGETS run_adder
+  DESTINATION ${CMAKE_INSTALL_LIBDIR}/monetdb5
+  COMPONENT run_adder)
 install(FILES
   run_adder.mal
+  DESTINATION ${CMAKE_INSTALL_LIBDIR}/monetdb5)
+
+add_library(run_isolate MODULE)
+target_sources(run_isolate
+  PRIVATE
+  run_isolate.c)
+target_include_directories(run_isolate
+  PRIVATE
+  $<TARGET_PROPERTY:mal,INCLUDE_DIRECTORIES>
+  $<TARGET_PROPERTY:optimizer,INCLUDE_DIRECTORIES>
+  PUBLIC
+  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
+  $<INSTALL_INTERFACE:${INCLUDEDIR}/monetdb>)
+target_link_libraries(run_isolate
+  PRIVATE
+  monetdb_config_header
+  mutils
+  bat
+  monetdb5)
+set_target_properties(run_isolate
+  PROPERTIES
+  OUTPUT_NAME _run_isolate)
+install(TARGETS run_isolate
+  DESTINATION ${CMAKE_INSTALL_LIBDIR}/monetdb5
+  COMPONENT run_isolate)
+install(FILES
   run_isolate.mal
+  DESTINATION ${CMAKE_INSTALL_LIBDIR}/monetdb5)
+
+add_library(run_memo MODULE)
+target_sources(run_memo
+  PRIVATE
+  run_memo.c)
+target_include_directories(run_memo
+  PRIVATE
+  $<TARGET_PROPERTY:mal,INCLUDE_DIRECTORIES>
+  $<TARGET_PROPERTY:optimizer,INCLUDE_DIRECTORIES>
+  PUBLIC
+  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
+  $<INSTALL_INTERFACE:${INCLUDEDIR}/monetdb>)
+target_link_libraries(run_memo
+  PRIVATE
+  monetdb_config_header
+  mutils
+  bat
+  monetdb5)
+set_target_properties(run_memo
+  PROPERTIES
+  OUTPUT_NAME _run_memo)
+install(TARGETS run_memo
+  DESTINATION ${CMAKE_INSTALL_LIBDIR}/monetdb5
+  COMPONENT run_memo)
+install(FILES
   run_memo.mal
   DESTINATION ${CMAKE_INSTALL_LIBDIR}/monetdb5)

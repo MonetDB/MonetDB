@@ -18,7 +18,7 @@ extern "C" {
 #include <stdint.h>
 
 #ifdef WIN32
-#if !defined(LIBMONETDBE)
+#ifndef LIBMONETDBE
 #define monetdbe_export extern __declspec(dllimport)
 #else
 #define monetdbe_export extern __declspec(dllexport)

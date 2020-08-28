@@ -32,7 +32,8 @@
 #include "monetdb_config.h"
 #include "gdk.h"
 #include "mal_exception.h"
-#include "sample.h"
+#include "mal_interpreter.h"
+
 // TODO: Go through this documentation and update it with an explanation about seeds.
 /*
  * @- Uniform Sampling.
@@ -67,7 +68,7 @@
  *
  */
 
-str
+static str
 SAMPLEuniform(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 
 	bat *r, *b;

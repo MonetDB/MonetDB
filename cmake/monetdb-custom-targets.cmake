@@ -86,7 +86,7 @@ endif()
 if(CANDLE_FOUND)
   add_custom_target(create-wix-packages
     COMMAND
-    ${CMAKE_CPACK_COMMAND} -G WIX -C Debug
+    ${CMAKE_CPACK_COMMAND} -G WIX -C Release
     WORKING_DIRECTORY ${CMAKE_BINARY_DIR})
 else()
   add_custom_target(create-wix-packages

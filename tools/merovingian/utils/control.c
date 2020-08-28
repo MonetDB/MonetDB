@@ -34,11 +34,11 @@ struct control_state {
 static char *
 control_setup(
 	struct control_state *control,
-	char *host,
+	const char *host,
 	int port,
-	char *database,
-	char *command,
-	char *pass
+	const char *database,
+	const char *command,
+	const char *pass
 )
 {
 	ssize_t len;
@@ -505,12 +505,12 @@ control_receive_nowait(char **ret, struct control_state *control)
  */
 char* control_send(
 		char** ret,
-		char* host,
+		const char* host,
 		int port,
-		char* database,
-		char* command,
+		const char *database,
+		const char *command,
 		char wait,
-		char* pass)
+		const char *pass)
 {
 	char *msg;
 	struct control_state control_state = {0};
@@ -552,13 +552,13 @@ char* control_send(
  */
 char* control_send_callback(
 		char** ret,
-		char* host,
+		const char *host,
 		int port,
-		char* database,
-		char* command,
-		void (*callback)(char *data, size_t size, void *cb_private),
+		const char *database,
+		const char *command,
+		void (*callback)(const void *data, size_t size, void *cb_private),
 		void *cb_private,
-		char* pass)
+		const char *pass)
 {
 	char *msg = NULL;
 	struct control_state control_state = {0};
@@ -627,7 +627,7 @@ char* control_send_callback(
  * and v2 protocol merovingians (<=Aug2011).
  */
 char *
-control_hash(char *pass, char *salt) {
+control_hash(const char *pass, const char *salt) {
 	unsigned int ho;
 	unsigned int h = 0;
 	char buf[32];
@@ -664,7 +664,7 @@ control_hash(char *pass, char *salt) {
  * socket.
  */
 char *
-control_ping(char *host, int port, char *pass) {
+control_ping(const char *host, int port, const char *pass) {
 	char *res;
 	char *err;
 	if ((err = control_send(&res, host, port, "", "ping", 0, pass)) == NULL) {

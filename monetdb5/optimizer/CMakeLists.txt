@@ -60,12 +60,7 @@ target_include_directories(optimizer
 
 target_compile_definitions(optimizer
   PRIVATE
-  LIBMAL
-  LIBMALMODULES
-  LIBATOMS
-  LIBKERNEL
   LIBOPTIMIZER
-  LIBSCHEDULER
   LIBMONETDB5)
 
 target_link_libraries(optimizer

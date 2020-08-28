@@ -63,7 +63,7 @@ target_link_libraries(mcrypt
 if(WIN32)
   target_compile_definitions(mcrypt 
     PRIVATE
-    LIBMAL
+    LIBMONETDB5
     LIBMAPI
     LIBMCRYPT)
 endif()
@@ -102,12 +102,7 @@ target_link_libraries(msabaoth
 if(WIN32)
   target_compile_definitions(msabaoth
     PRIVATE
-    LIBMAL
-    LIBATOMS
-    LIBKERNEL
     LIBMSABAOTH
-    LIBOPTIMIZER
-    LIBSCHEDULER
     LIBMONETDB5)
 endif()
 

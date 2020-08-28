@@ -1365,6 +1365,8 @@ sqltypeinit( sql_allocator *sa)
 #endif
 
 	for (t = numerical; t < dates; t++) {
+		if (*t == OID)
+			continue;
 		sql_create_func(sa, "mod", "calc", "%", FALSE, FALSE, SCALE_FIX, 0, *t, 2, *t, *t);
 	}
 
@@ -1623,6 +1625,8 @@ sqltypeinit( sql_allocator *sa)
 	for (t = numerical, t++; t != floats; t++) {
 		sql_type **u;
 		for (u = numerical, u++; u != decimals; u++) {
+			if (*t == OID)
+				continue;
 			if (t != u && (*t)->localtype >  (*u)->localtype) {
 				sql_create_func(sa, "sql_mul", "calc", "*", FALSE, FALSE, SCALE_MUL, 0, *t, 2, *t, *u);
 				sql_create_func(sa, "sql_mul", "calc", "*", FALSE, FALSE, SCALE_MUL, 0, *t, 2, *u, *t);
@@ -1645,6 +1649,9 @@ sqltypeinit( sql_allocator *sa)
 	for (t = numerical; t < dates; t++) {
 		sql_subtype *lt;
 
+		if (*t == OID)
+			continue;
+
 		lt = sql_bind_localtype((*t)->base.name);
 
 		sql_create_func(sa, "sql_sub", "calc", "-", FALSE, FALSE, SCALE_FIX, 0, *t, 2, *t, *t);
@@ -1666,7 +1673,7 @@ sqltypeinit( sql_allocator *sa)
 		sql_create_func(sa, "scale_up", "calc", "*", FALSE, FALSE, SCALE_NONE, 0, *t, 2, *t, lt->type);
 		sql_create_func(sa, "scale_down", "sql", "dec_round", FALSE, FALSE, SCALE_NONE, 0, *t, 2, *t, lt->type);
 		/* numeric functions on INTERVALS */
-		if (t < decimals && *t != OID) {
+		if (t < decimals) {
 			sql_create_func(sa, "sql_mul", "calc", "*", FALSE, FALSE, SCALE_MUL, 0, MONINT, 2, MONINT, *t);
 			sql_create_func(sa, "sql_div", "calc", "/", FALSE, FALSE, SCALE_DIV, 0, MONINT, 2, MONINT, *t);
 			sql_create_func(sa, "sql_mul", "calc", "*", FALSE, FALSE, SCALE_MUL, 0, DAYINT, 2, DAYINT, *t);

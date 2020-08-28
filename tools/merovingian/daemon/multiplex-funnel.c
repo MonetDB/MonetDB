@@ -278,7 +278,7 @@ multiplexNotifyRemovedDB(const char *database)
 }
 
 err
-multiplexInit(char *name, char *pattern, FILE *sout, FILE *serr)
+multiplexInit(const char *name, const char *pattern, FILE *sout, FILE *serr)
 {
 	multiplex *m = malloc(sizeof(multiplex));
 	multiplexlist *mpl;
@@ -473,7 +473,7 @@ multiplexInit(char *name, char *pattern, FILE *sout, FILE *serr)
 }
 
 void
-multiplexDestroy(char *mp)
+multiplexDestroy(const char *mp)
 {
 	multiplexlist *ml, *mlp;
 	multiplex *m = NULL;
@@ -882,7 +882,7 @@ multiplexThread(void *d)
 }
 
 void
-multiplexAddClient(char *mp, int sock, stream *fout, stream *fdin, char *name)
+multiplexAddClient(const char *mp, int sock, stream *fout, stream *fdin, char *name)
 {
 	multiplex_client *w;
 	multiplex_client *n = malloc(sizeof(multiplex_client));

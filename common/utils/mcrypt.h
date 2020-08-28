@@ -10,7 +10,7 @@
 #define _SEEN_MCRYPT_H 1
 
 #if defined(_MSC_VER) || defined(__CYGWIN__) || defined(__MINGW32__)
-#if !defined(LIBMAPI) && !defined(LIBMCRYPT) && !defined(LIBMAL)
+#if !defined(LIBMAPI) && !defined(LIBMCRYPT) && !defined(LIBMONETDB5)
 #define mcrypt_export extern __declspec(dllimport)
 #else
 #define mcrypt_export extern __declspec(dllexport)
@@ -45,4 +45,3 @@ mcrypt_export char *mcrypt_RIPEMD160Sum(const char *string, size_t len);
 mcrypt_export char *mcrypt_BackendSum(const char *string, size_t len);
 mcrypt_export char *mcrypt_hashPassword(const char *algo, const char *password, const char *challenge);
 #endif
-

@@ -922,6 +922,7 @@ SQLparser(Client c)
 		throw(SQL, "SQLparser", SQLSTATE(HY001) MAL_MALLOC_FAIL " for SQL allocator");
 	}
 	opt = 0;
+	preparedid = -1;
 
 	m->emode = m_normal;
 	m->emod = mod_none;
