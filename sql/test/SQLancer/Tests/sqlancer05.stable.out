@@ -261,6 +261,43 @@ stdout of test 'sqlancer05` in directory 'sql/test/SQLancer` itself:
 % 1 # length
 [ 0	]
 #ROLLBACK;
+#START TRANSACTION;
+#CREATE TABLE "sys"."t0" ("c0" DOUBLE, "c1" TIMESTAMP,
+#	CONSTRAINT "t0_c0_unique" UNIQUE ("c0"),
+#	CONSTRAINT "t0_c1_unique" UNIQUE ("c1"),
+#	CONSTRAINT "t0_c0_c1_unique" UNIQUE ("c0", "c1"),
+#	CONSTRAINT "t0_c0_fkey" FOREIGN KEY ("c0") REFERENCES "sys"."t0" ("c0")
+#);
+#COPY 4 RECORDS INTO "sys"."t0" FROM stdin USING DELIMITERS E'\t',E'\n','"';
+#NULL	"1970-01-19 09:37:48.000000"
+#NULL	"1970-01-25 15:39:05.000000"
+#NULL	"1970-01-25 02:16:22.000000"
+#NULL	"1970-01-20 18:57:37.000000"
+[ 4	]
+#CREATE TABLE "sys"."t1" ("c0" DOUBLE,"c1" TIMESTAMP);
+#COPY 5 RECORDS INTO "sys"."t1" FROM stdin USING DELIMITERS E'\t',E'\n','"';
+#NULL	"1970-01-17 22:34:50.000000"
+#NULL	"1970-01-21 20:17:49.000000"
+#0.5197361696675626	NULL
+#0.46979060080234214	NULL
+#0.0047394257892724445	NULL
+[ 5	]
+#SELECT t0.c1 FROM t0 WHERE (((((t0.c0) NOT IN (-1003666733, t0.c0))OR((t0.c0) NOT BETWEEN SYMMETRIC (((14)*(10))) AND (- (75)))))OR('TRUE'));
+% sys.t0 # table_name
+% c1 # name
+% timestamp # type
+% 26 # length
+[ 1970-01-19 09:37:48.000000	]
+[ 1970-01-25 15:39:05.000000	]
+[ 1970-01-25 02:16:22.000000	]
+[ 1970-01-20 18:57:37.000000	]
+#SELECT CAST(SUM(count) AS BIGINT) FROM (SELECT CAST((((((t0.c0) NOT IN (-10, t0.c0))OR((t0.c0) NOT  BETWEEN SYMMETRIC (((14)*(10))) AND (- (756050096)))))OR('TRUE')) AS INT) as count FROM t0) as res;
+% sys.%6 # table_name
+% %6 # name
+% bigint # type
+% 1 # length
+[ 4	]
+#ROLLBACK;
 
 # 12:00:38 >  
 # 12:00:38 >  "Done."

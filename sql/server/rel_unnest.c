@@ -2747,7 +2747,7 @@ rewrite_ifthenelse(visitor *v, sql_rel *rel, sql_exp *e, int depth)
 }
 
 static list *
-rewrite_compare_exps(visitor *v, list *exps)
+rewrite_compare_exps(visitor *v, sql_rel *rel, list *exps)
 {
 	if (list_empty(exps))
 		return exps;
@@ -2755,12 +2755,18 @@ rewrite_compare_exps(visitor *v, list *exps)
 		sql_exp *e = n->data;
 
 		if (!is_compare(e->type)) {
-			n->data = e = exp_compare(v->sql->sa, e, exp_atom_bool(v->sql->sa, 1), cmp_equal);
+			sql_subtype bt;
+			sql_find_subtype(&bt, "boolean", 0, 0);
+			if (!(e = exp_check_type(v->sql, &bt, rel, e, type_equal)))
+				return NULL;
+			n->data = exp_compare(v->sql->sa, e, exp_atom_bool(v->sql->sa, 1), cmp_equal);
 			v->changes++;
 		}
 		if (is_compare(e->type) && e->flag == cmp_or) {
-			e->l = rewrite_compare_exps(v, e->l);
-			e->r = rewrite_compare_exps(v, e->r);
+			if (!(e->l = rewrite_compare_exps(v, rel, e->l)))
+				return NULL;
+			if (!(e->r = rewrite_compare_exps(v, rel, e->r)))
+				return NULL;
 		}
 	}
 	list_hash_clear(exps);
@@ -2772,7 +2778,8 @@ static sql_rel *
 rewrite_compare_exp(visitor *v, sql_rel *rel)
 {
 	if ((is_select(rel->op) || is_join(rel->op) || is_semi(rel->op)) && !list_empty(rel->exps))
-		rel->exps = rewrite_compare_exps(v, rel->exps);
+		if (!(rel->exps = rewrite_compare_exps(v, rel, rel->exps)))
+			return NULL;
 	return rel;
 }
 
