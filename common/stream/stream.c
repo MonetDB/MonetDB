@@ -73,7 +73,7 @@ static pthread_key_t tl_error_key;
 static int
 tl_error_init(void)
 {
-	if (pthread_key_create(&tl_error_key, free) < 0)
+	if (pthread_key_create(&tl_error_key, free) != 0)
 		return -1;
 	return 0;
 }
@@ -407,7 +407,7 @@ my_strerror_r(int error_nr, char *buf, size_t buflen)
 #ifndef HAVE_STRERROR_R
 	// Hope for the best
 	to_move = strerror(error_nr);
-#elif (_POSIX_C_SOURCE >= 200112L) && !_GNU_SOURCE
+#elif !defined(_GNU_SOURCE) || !_GNU_SOURCE
 	// standard strerror_r always writes to buf
 	int result_code = strerror_r(error_nr, buf, buflen);
 	if (result_code == 0)
@@ -946,4 +946,3 @@ mnstr_read_block(stream *restrict s, void *restrict buf, size_t elmsize, size_t 
 		return -1;
 	return len;
 }
-

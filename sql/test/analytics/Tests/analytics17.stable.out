@@ -222,9 +222,9 @@ stdout of test 'analytics17` in directory 'sql/test/analytics` itself:
 #       listagg(a) over (order by a),
 #       listagg(a, min(b)) over (), 
 #       listagg(a, min(b)) over (partition by max(b)) from testmore group by a;
-% sys.testmore,	sys.%7,	sys.%16,	sys.%26,	sys.%37 # table_name
-% a,	%7,	%16,	%26,	%37 # name
-% int,	varchar,	varchar,	varchar,	varchar # type
+% sys.testmore,	sys.%7,	sys.%16,	sys.%26,	sys.%36 # table_name
+% a,	%7,	%16,	%26,	%36 # name
+% int,	clob,	clob,	clob,	clob # type
 % 1,	5,	5,	9,	1 # length
 [ 3,	"3,2,1",	"1,2,3",	"3harder21",	"3"	]
 [ 2,	"3,2,1",	"1,2",	"3harder21",	"2"	]
