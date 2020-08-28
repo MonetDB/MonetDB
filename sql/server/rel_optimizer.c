@@ -4789,7 +4789,8 @@ rel_push_semijoin_down_or_up(visitor *v, sql_rel *rel)
 			if (n != exps->h && sje->type == e_cmp &&
 			    !is_complex_exp(sje->flag) &&
 			     rel_has_exp(rel->l, sje->l) >= 0 &&
-			     rel_has_exp(rel->l, sje->r) >= 0) {
+			     rel_has_exp(rel->l, sje->r) >= 0 &&
+			     (!sje->f || rel_has_exp(rel->l, sje->f) >= 0)) {
 				rel->l = rel_select(v->sql->sa, rel->l, NULL);
 				rel_select_add_exp(v->sql->sa, rel->l, sje);
 				v->changes++;
@@ -4827,7 +4828,8 @@ rel_push_semijoin_down_or_up(visitor *v, sql_rel *rel)
 			if (right &&
 				(is_complex_exp(sje->flag) ||
 			    	rel_has_exp(lr, sje->l) >= 0 ||
-			    	rel_has_exp(lr, sje->r) >= 0)) {
+			    	rel_has_exp(lr, sje->r) >= 0 ||
+					(sje->f && rel_has_exp(lr, sje->f) >= 0))) {
 				right = 0;
 			}
 			if (right)
@@ -4835,7 +4837,8 @@ rel_push_semijoin_down_or_up(visitor *v, sql_rel *rel)
 			if (!right && left &&
 				(is_complex_exp(sje->flag) ||
 			    	rel_has_exp(ll, sje->l) >= 0 ||
-			    	rel_has_exp(ll, sje->r) >= 0)) {
+			    	rel_has_exp(ll, sje->r) >= 0 ||
+					(sje->f && rel_has_exp(ll, sje->f) >= 0))) {
 				left = 0;
 			}
 			if (!right && !left)
@@ -4870,6 +4873,8 @@ rel_part_nr( sql_rel *rel, sql_exp *e )
 	c = exp_find_column(rel, e->l, -1);
 	if (!c)
 		c = exp_find_column(rel, e->r, -1);
+	if (!c && e->f)
+		c = exp_find_column(rel, e->f, -1);
 	if (!c)
 		return -1;
 	pp = c->t;
@@ -8317,11 +8322,10 @@ is_identity_of(sql_exp *e, sql_rel *l)
 {
 	if (e->type != e_cmp)
 		return 0;
-	if (!is_identity(e->l, l) || !is_identity(e->r, l))
+	if (!is_identity(e->l, l) || !is_identity(e->r, l) || (e->f && !is_identity(e->f, l)))
 		return 0;
 	return 1;
 }
-
 
 static sql_rel *
 rel_rewrite_semijoin(visitor *v, sql_rel *rel)
