@@ -235,6 +235,32 @@ stdout of test 'sqlancer05` in directory 'sql/test/SQLancer` itself:
 % 1 # length
 [ 0	]
 #ROLLBACK;
+#START TRANSACTION;
+#CREATE TABLE "t1" ("c0" INTERVAL MONTH NOT NULL,CONSTRAINT "t1_c0_pkey" PRIMARY KEY ("c0"));
+#COPY 5 RECORDS INTO "t1" FROM stdin USING DELIMITERS E'\t',E'\n','"';
+#141227804
+#1365727954
+#498933006
+#1181578353
+#651226237
+[ 5	]
+#SELECT CAST(SUM(count) AS BIGINT) FROM (SELECT CASE INTERVAL '-1' MONTH WHEN INTERVAL '2' MONTH 
+#THEN NOT t1.c0 BETWEEN t1.c0 AND t1.c0 ELSE t1.c0 < CASE FALSE WHEN TRUE THEN t1.c0 ELSE t1.c0 END END as count FROM t1) 
+#as res;
+% .%1 # table_name
+% %1 # name
+% bigint # type
+% 1 # length
+[ 0	]
+#SELECT CAST(SUM(count) AS BIGINT) FROM (SELECT CAST(CASE INTERVAL '-803989404' MONTH WHEN INTERVAL '795326851' MONTH 
+#THEN NOT ((t1.c0) BETWEEN ASYMMETRIC (t1.c0) AND (t1.c0)) ELSE ((t1.c0)<(CASE FALSE WHEN TRUE THEN t1.c0 ELSE t1.c0 END)) END AS INT) as count FROM t1) 
+#as res;
+% .%3 # table_name
+% %3 # name
+% bigint # type
+% 1 # length
+[ 0	]
+#ROLLBACK;
 
 # 12:00:38 >  
 # 12:00:38 >  "Done."
