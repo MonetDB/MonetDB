@@ -20,7 +20,6 @@ target_include_directories(run_adder
 target_link_libraries(run_adder
   PRIVATE
   monetdb_config_header
-  mutils
   bat
   monetdb5)
 set_target_properties(run_adder
@@ -47,7 +46,6 @@ target_include_directories(run_isolate
 target_link_libraries(run_isolate
   PRIVATE
   monetdb_config_header
-  mutils
   bat
   monetdb5)
 set_target_properties(run_isolate
@@ -74,7 +72,6 @@ target_include_directories(run_memo
 target_link_libraries(run_memo
   PRIVATE
   monetdb_config_header
-  mutils
   bat
   monetdb5)
 set_target_properties(run_memo
