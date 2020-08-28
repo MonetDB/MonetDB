@@ -4827,18 +4827,18 @@ rel_push_semijoin_down_or_up(visitor *v, sql_rel *rel)
 				return rel;
 			if (right &&
 				(is_complex_exp(sje->flag) ||
-			    	rel_has_exp(lr, sje->l) >= 0 ||
-			    	rel_has_exp(lr, sje->r) >= 0 ||
-					(sje->f && rel_has_exp(lr, sje->f) >= 0))) {
+			    	rel_has_exp(lr, sje->l) < 0 ||
+			    	rel_has_exp(lr, sje->r) < 0 ||
+					(sje->f && rel_has_exp(lr, sje->f) < 0))) {
 				right = 0;
 			}
 			if (right)
 				left = 0;
 			if (!right && left &&
 				(is_complex_exp(sje->flag) ||
-			    	rel_has_exp(ll, sje->l) >= 0 ||
-			    	rel_has_exp(ll, sje->r) >= 0 ||
-					(sje->f && rel_has_exp(ll, sje->f) >= 0))) {
+			    	rel_has_exp(ll, sje->l) < 0 ||
+			    	rel_has_exp(ll, sje->r) < 0 ||
+					(sje->f && rel_has_exp(ll, sje->f) < 0))) {
 				left = 0;
 			}
 			if (!right && !left)
@@ -4846,12 +4846,12 @@ rel_push_semijoin_down_or_up(visitor *v, sql_rel *rel)
 		}
 		nsexps = exps_copy(v->sql, rel->exps);
 		njexps = exps_copy(v->sql, l->exps);
-		if (right)
+		if (left)
 			l = rel_crossproduct(v->sql->sa, rel_dup(ll), rel_dup(r), op);
 		else
 			l = rel_crossproduct(v->sql->sa, rel_dup(lr), rel_dup(r), op);
 		l->exps = nsexps;
-		if (right)
+		if (left)
 			l = rel_crossproduct(v->sql->sa, l, rel_dup(lr), lop);
 		else
 			l = rel_crossproduct(v->sql->sa, l, rel_dup(ll), lop);
