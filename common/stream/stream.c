@@ -73,7 +73,7 @@ static pthread_key_t tl_error_key;
 static int
 tl_error_init(void)
 {
-	if (pthread_key_create(&tl_error_key, free) < 0)
+	if (pthread_key_create(&tl_error_key, free) != 0)
 		return -1;
 	return 0;
 }
