@@ -73,7 +73,7 @@ static pthread_key_t tl_error_key;
 static int
 tl_error_init(void)
 {
-	if (pthread_key_create(&tl_error_key, free) < 0)
+	if (pthread_key_create(&tl_error_key, free) != 0)
 		return -1;
 	return 0;
 }
@@ -403,26 +403,27 @@ my_strerror_r(int error_nr, char *buf, size_t buflen)
 	// 1. no strerror_r
 	// 2. gnu strerror_r (returns char* and does not always fill buffer)
 	// 3. xsi strerror_r (returns int and always fills the buffer)
-	char *ret;
+	char *to_move;
 #ifndef HAVE_STRERROR_R
 	// Hope for the best
-	ret = strerror(error_nr);
+	to_move = strerror(error_nr);
+#elif !defined(_GNU_SOURCE) || !_GNU_SOURCE
+	// standard strerror_r always writes to buf
+	int result_code = strerror_r(error_nr, buf, buflen);
+	if (result_code == 0)
+		to_move = NULL;
+	else
+		to_move = "<failed to retrieve error message>";
 #else
-#ifdef STRERROR_R_CHAR_P
-	// gnu strerror_r
-	ret = strerror_r(error_nr, buf, buflen);
-#else
-	// standard strerror_r
-	(void) strerror_r(error_nr, buf, buflen);
-	ret = NULL;
+	// gnu strerror_r sometimes only returns static string, needs copy
+	to_move = strerror_r(error_nr, buf, buflen);
 #endif
-#endif
-	if (ret != NULL) {
+	if (to_move != NULL) {
 		// move to buffer
-		size_t size = strlen(ret) + 1;
+		size_t size = strlen(to_move) + 1;
 		assert(size <= buflen);
 		// strerror_r may have return a pointer to/into the buffer
-		memmove(buf, ret, size);
+		memmove(buf, to_move, size);
 		return size - 1;
 	} else {
 		return strlen(buf);
@@ -945,4 +946,3 @@ mnstr_read_block(stream *restrict s, void *restrict buf, size_t elmsize, size_t 
 		return -1;
 	return len;
 }
-

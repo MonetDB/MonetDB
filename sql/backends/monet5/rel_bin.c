@@ -675,8 +675,6 @@ exp2bin_case(backend *be, sql_exp *fe, stmt *left, stmt *right, stmt *isel, int 
 
 				if (val->nrcols == 0)
 					val = stmt_const(be, pos, val);
-				else if (val->cand != isel && val->cand != rsel && val->cand != nsel)
-					val = stmt_project(be, rsel, val);
 				else if (!val->cand && nsel)
 					val = stmt_project(be, nsel, val);
 				res = stmt_replace(be, res, pos, val);
@@ -694,13 +692,17 @@ exp2bin_case(backend *be, sql_exp *fe, stmt *left, stmt *right, stmt *isel, int 
 			if (next_cond) {
 				ncond = cond = es;
 				if (!ncond->nrcols) {
-					if (osel)
+					if (osel) {
 						ncond = stmt_const(be, nsel, ncond);
-					else if (isel)
+						ncond->cand = nsel;
+					} else if (isel) {
 						ncond = stmt_const(be, isel, ncond);
-					else
+						ncond->cand = isel;
+					} else
 						ncond = stmt_const(be, bin_first_column(be, left), ncond);
 				}
+				if (isel && !ncond->cand)
+					ncond = stmt_project(be, nsel, ncond);
 				stmt *s = stmt_uselect(be, ncond, stmt_bool(be, 1), cmp_equal, !ncond->cand?rsel:NULL, 0/*anti*/, 0);
 				if (rsel && ncond->cand)
 					rsel = stmt_project(be, s, rsel);
@@ -821,10 +823,6 @@ exp2bin_coalesce(backend *be, sql_exp *fe, stmt *left, stmt *right, stmt *isel, 
 				}
 				if (val->nrcols == 0)
 					val = stmt_const(be, pos, val);
-				/*
-				else if (val->cand != isel && val->cand != rsel && val->cand != nsel)
-					val = stmt_project(be, rsel, val);
-					*/
 				else if (!val->cand && nsel)
 					val = stmt_project(be, nsel, val);
 

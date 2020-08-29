@@ -19,7 +19,6 @@
 #include "rel_select.h"
 #include "rel_exp.h"
 #include "rel_dump.h"
-#include "clients.h"
 #include "mal_instruction.h"
 
 #define CONCAT_2(a, b)		a##b

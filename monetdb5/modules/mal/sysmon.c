@@ -7,7 +7,8 @@
  */
 
 #include "monetdb_config.h"
-#include "sysmon.h"
+#include "mal.h"
+#include "mal_interpreter.h"
 #include "mal_authorize.h"
 #include "mal_client.h"
 #include "mal_runtime.h"
@@ -17,7 +18,7 @@
  * The queries currently in execution are returned to the front-end for managing expensive ones.
 */
 
-str
+static str
 SYSMONstatistics(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	BAT *user, *querycount, *totalticks, *started, *finished, *maxquery, *maxticks;
@@ -140,7 +141,7 @@ bailout:
 	return msg;
 }
 
-str
+static str
 SYSMONqueue(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	BAT *tag, *sessionid, *user, *started, *status, *query, *finished, *workers, *memory;
@@ -258,7 +259,7 @@ SYSMONqueue(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	return msg ? msg : createException(MAL, "SYSMONqueue", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 }
 
-str
+static str
 SYSMONpause(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	bool set = false;
@@ -294,7 +295,7 @@ SYSMONpause(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	return set ? MAL_SUCCEED : createException(MAL, "SYSMONpause", SQLSTATE(42000) "Tag " LLFMT " unknown", tag);
 }
 
-str
+static str
 SYSMONresume(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	bool set = false;
@@ -330,7 +331,7 @@ SYSMONresume(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	return set ? MAL_SUCCEED : createException(MAL, "SYSMONresume", SQLSTATE(42000) "Tag " LLFMT " unknown", tag);
 }
 
-str
+static str
 SYSMONstop(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	bool set = false;

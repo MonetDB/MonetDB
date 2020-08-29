@@ -786,7 +786,7 @@ backend_dumpproc(backend *be, Client c, cq *cq, sql_rel *r)
 	InstrPtr curInstr = 0;
 	char arg[IDLENGTH];
 	node *n;
-	int argc = 0, res;
+	int argc = 0, res, added_to_cache = 0;
 
 	backup = c->curprg;
 	if (cq)
@@ -840,6 +840,7 @@ backend_dumpproc(backend *be, Client c, cq *cq, sql_rel *r)
 
 	if (cq) {
 		SQLaddQueryToCache(c);
+		added_to_cache = 1;
 		// optimize this code the 'old' way
 		if (m->emode == m_prepare && !c->curprg->def->errors)
 			c->curprg->def->errors = SQLoptimizeFunction(c,c->curprg->def);
@@ -856,7 +857,8 @@ backend_dumpproc(backend *be, Client c, cq *cq, sql_rel *r)
 	return curPrg;
 
 cleanup:
-	freeSymbol(curPrg);
+	if (!added_to_cache)
+		freeSymbol(curPrg);
 	if (backup)
 		c->curprg = backup;
 	return NULL;

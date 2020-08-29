@@ -48,9 +48,9 @@ name_find_column( sql_rel *rel, const char *rname, const char *name, int pnr, sq
 			sql_exp *e;
 
 			if (rname)
-				e = exps_bind_column2(rel->exps, rname, name);
+				e = exps_bind_column2(rel->exps, rname, name, NULL);
 			else
-				e = exps_bind_column(rel->exps, name, NULL, 0);
+				e = exps_bind_column(rel->exps, name, NULL, NULL, 0);
 			if (!e || e->type != e_column)
 				return NULL;
 			if (e->l)
@@ -125,14 +125,14 @@ name_find_column( sql_rel *rel, const char *rname, const char *name, int pnr, sq
 		if (!rel->exps)
 			break;
 		if (rname)
-			alias = exps_bind_column2(rel->exps, rname, name);
+			alias = exps_bind_column2(rel->exps, rname, name, NULL);
 		else
-			alias = exps_bind_column(rel->exps, name, NULL, 1);
+			alias = exps_bind_column(rel->exps, name, NULL, NULL, 1);
 		if (is_groupby(rel->op) && alias && alias->type == e_column && rel->r) {
 			if (alias->l)
-				alias = exps_bind_column2(rel->r, alias->l, alias->r);
+				alias = exps_bind_column2(rel->r, alias->l, alias->r, NULL);
 			else
-				alias = exps_bind_column(rel->r, alias->r, NULL, 1);
+				alias = exps_bind_column(rel->r, alias->r, NULL, NULL, 1);
 		}
 		if (is_groupby(rel->op) && !alias && rel->l) {
 			/* Group by column not found as alias in projection
@@ -193,8 +193,8 @@ list_find_exp( list *exps, sql_exp *e)
 
 	if (e->type != e_column)
 		return NULL;
-	if (( e->l && (ne=exps_bind_column2(exps, e->l, e->r)) != NULL) ||
-	   ((!e->l && (ne=exps_bind_column(exps, e->r, NULL, 1)) != NULL)))
+	if (( e->l && (ne=exps_bind_column2(exps, e->l, e->r, NULL)) != NULL) ||
+	   ((!e->l && (ne=exps_bind_column(exps, e->r, NULL, NULL, 1)) != NULL)))
 		return ne;
 	return NULL;
 }
@@ -1236,10 +1236,10 @@ exp_rename(mvc *sql, sql_exp *e, sql_rel *f, sql_rel *t)
 	switch(e->type) {
 	case e_column:
 		if (e->l) {
-			ne = exps_bind_column2(f->exps, e->l, e->r);
+			ne = exps_bind_column2(f->exps, e->l, e->r, NULL);
 			/* if relation name matches expressions relation name, find column based on column name alone */
 		} else {
-			ne = exps_bind_column(f->exps, e->r, NULL, 1);
+			ne = exps_bind_column(f->exps, e->r, NULL, NULL, 1);
 		}
 		if (!ne)
 			return e;
@@ -1871,9 +1871,9 @@ rel_rename_exps( mvc *sql, list *exps1, list *exps2)
 			sql_exp *ne = NULL;
 
 			if (e2->l)
-				ne = exps_bind_column2(exps2, e2->l, e2->r);
+				ne = exps_bind_column2(exps2, e2->l, e2->r, NULL);
 			if (!ne && !e2->l)
-				ne = exps_bind_column(exps2, e2->r, NULL, 1);
+				ne = exps_bind_column(exps2, e2->r, NULL, NULL, 1);
 			if (ne) {
 				int p = list_position(exps2, ne);
 
@@ -2143,9 +2143,9 @@ exp_push_down_prj(mvc *sql, sql_exp *e, sql_rel *f, sql_rel *t)
 	switch(e->type) {
 	case e_column:
 		if (e->l)
-			ne = exps_bind_column2(f->exps, e->l, e->r);
+			ne = exps_bind_column2(f->exps, e->l, e->r, NULL);
 		if (!ne && !e->l)
-			ne = exps_bind_column(f->exps, e->r, NULL, 1);
+			ne = exps_bind_column(f->exps, e->r, NULL, NULL, 1);
 		if (!ne || (ne->type != e_column && ne->type != e_atom))
 			return NULL;
 		while (ne && has_label(ne) && f->op == op_project && ne->type == e_column) {
@@ -2154,9 +2154,9 @@ exp_push_down_prj(mvc *sql, sql_exp *e, sql_rel *f, sql_rel *t)
 			e = ne;
 			ne = NULL;
 			if (e->l)
-				ne = exps_bind_column2(f->exps, e->l, e->r);
+				ne = exps_bind_column2(f->exps, e->l, e->r, NULL);
 			if (!ne && !e->l)
-				ne = exps_bind_column(f->exps, e->r, NULL, 1);
+				ne = exps_bind_column(f->exps, e->r, NULL, NULL, 1);
 			if (ne && ne != one && list_position(f->exps, ne) >= list_position(f->exps, one))
 				ne = NULL;
 			if (!ne || ne == one) {
@@ -2171,9 +2171,9 @@ exp_push_down_prj(mvc *sql, sql_exp *e, sql_rel *f, sql_rel *t)
 		if (is_groupby(f->op) && f->r) {
 			sql_exp *gbe = NULL;
 			if (ne->l)
-				gbe = exps_bind_column2(f->r, ne->l, ne->r);
+				gbe = exps_bind_column2(f->r, ne->l, ne->r, NULL);
 			if (!gbe && !e->l)
-				gbe = exps_bind_column(f->r, ne->r, NULL, 1);
+				gbe = exps_bind_column(f->r, ne->r, NULL, NULL, 1);
 			ne = gbe;
 			if (!ne || (ne->type != e_column && ne->type != e_atom))
 				return NULL;
@@ -2640,7 +2640,7 @@ rel_distinct_project2groupby(visitor *v, sql_rel *rel)
 
 				if (e->type != e_column)
 					fnd = 1;
-				else if (exps_bind_column2(rel->exps, e->l, e->r) == 0)
+				else if (exps_bind_column2(rel->exps, e->l, e->r, NULL) == 0)
 					fnd = 1;
 			}
 			if (fnd)
@@ -2703,9 +2703,9 @@ exp_shares_exps(sql_exp *e, list *shared, lng *uses)
 		{
 			sql_exp *ne = NULL;
 			if (e->l)
-				ne = exps_bind_column2(shared, e->l, e->r);
+				ne = exps_bind_column2(shared, e->l, e->r, NULL);
 			if (!ne && !e->l)
-				ne = exps_bind_column(shared, e->r, NULL, 1);
+				ne = exps_bind_column(shared, e->r, NULL, NULL, 1);
 			if (!ne)
 				return 0;
 			if (ne && ne->type != e_column) {
@@ -2769,9 +2769,9 @@ ambigious_ref( list *exps, sql_exp *e)
 
 	if (e->type == e_column) {
 		if (e->l)
-			ne = exps_bind_column2(exps, e->l, e->r);
+			ne = exps_bind_column2(exps, e->l, e->r, NULL);
 		if (!ne && !e->l)
-			ne = exps_bind_column(exps, e->r, NULL, 1);
+			ne = exps_bind_column(exps, e->r, NULL, NULL, 1);
 		if (ne && e != ne)
 			return 1;
 	}
@@ -3737,7 +3737,7 @@ rel_project_cse(visitor *v, sql_rel *rel)
 				for (m=nexps->h; m; m = m->next){
 					sql_exp *e2 = m->data;
 
-					if (exp_name(e2) && exp_match_exp(e1, e2) && (e1->type != e_column || exps_bind_column2(nexps, exp_relname(e1), exp_name(e1)) == e1)) {
+					if (exp_name(e2) && exp_match_exp(e1, e2) && (e1->type != e_column || exps_bind_column2(nexps, exp_relname(e1), exp_name(e1), NULL) == e1)) {
 						sql_exp *ne = exp_alias(v->sql->sa, exp_relname(e1), exp_name(e1), exp_relname(e2), exp_name(e2), exp_subtype(e2), e2->card, has_nil(e2), is_intern(e1));
 
 						ne = exp_propagate(v->sql->sa, ne, e1);
@@ -4789,7 +4789,8 @@ rel_push_semijoin_down_or_up(visitor *v, sql_rel *rel)
 			if (n != exps->h && sje->type == e_cmp &&
 			    !is_complex_exp(sje->flag) &&
 			     rel_has_exp(rel->l, sje->l) >= 0 &&
-			     rel_has_exp(rel->l, sje->r) >= 0) {
+			     rel_has_exp(rel->l, sje->r) >= 0 &&
+			     (!sje->f || rel_has_exp(rel->l, sje->f) >= 0)) {
 				rel->l = rel_select(v->sql->sa, rel->l, NULL);
 				rel_select_add_exp(v->sql->sa, rel->l, sje);
 				v->changes++;
@@ -4826,16 +4827,18 @@ rel_push_semijoin_down_or_up(visitor *v, sql_rel *rel)
 				return rel;
 			if (right &&
 				(is_complex_exp(sje->flag) ||
-			    	rel_has_exp(lr, sje->l) >= 0 ||
-			    	rel_has_exp(lr, sje->r) >= 0)) {
+			    	rel_has_exp(lr, sje->l) < 0 ||
+			    	rel_has_exp(lr, sje->r) < 0 ||
+					(sje->f && rel_has_exp(lr, sje->f) < 0))) {
 				right = 0;
 			}
 			if (right)
 				left = 0;
 			if (!right && left &&
 				(is_complex_exp(sje->flag) ||
-			    	rel_has_exp(ll, sje->l) >= 0 ||
-			    	rel_has_exp(ll, sje->r) >= 0)) {
+			    	rel_has_exp(ll, sje->l) < 0 ||
+			    	rel_has_exp(ll, sje->r) < 0 ||
+					(sje->f && rel_has_exp(ll, sje->f) < 0))) {
 				left = 0;
 			}
 			if (!right && !left)
@@ -4843,12 +4846,12 @@ rel_push_semijoin_down_or_up(visitor *v, sql_rel *rel)
 		}
 		nsexps = exps_copy(v->sql, rel->exps);
 		njexps = exps_copy(v->sql, l->exps);
-		if (right)
+		if (left)
 			l = rel_crossproduct(v->sql->sa, rel_dup(ll), rel_dup(r), op);
 		else
 			l = rel_crossproduct(v->sql->sa, rel_dup(lr), rel_dup(r), op);
 		l->exps = nsexps;
-		if (right)
+		if (left)
 			l = rel_crossproduct(v->sql->sa, l, rel_dup(lr), lop);
 		else
 			l = rel_crossproduct(v->sql->sa, l, rel_dup(ll), lop);
@@ -4870,6 +4873,8 @@ rel_part_nr( sql_rel *rel, sql_exp *e )
 	c = exp_find_column(rel, e->l, -1);
 	if (!c)
 		c = exp_find_column(rel, e->r, -1);
+	if (!c && e->f)
+		c = exp_find_column(rel, e->f, -1);
 	if (!c)
 		return -1;
 	pp = c->t;
@@ -5470,7 +5475,7 @@ rel_used_projections(mvc *sql, list *exps, list *users)
 
 	for(node *n = users->h; n; n = n->next) {
 		sql_exp *e = n->data, *ne = NULL;
-		if ((e->l && (ne = exps_bind_column2(exps, e->l, e->r))) || (ne = exps_bind_column(exps, e->r, NULL, 1))) {
+		if ((e->l && (ne = exps_bind_column2(exps, e->l, e->r, NULL))) || (ne = exps_bind_column(exps, e->r, NULL, NULL, 1))) {
 			used[list_position(exps, ne)] = 1;
 		}
 	}
@@ -5844,9 +5849,9 @@ rel_reduce_groupby_exps(visitor *v, sql_rel *rel)
 
 					if (e->type == e_column) {
 						if (e->l)
-							ne = exps_bind_column2(dgbe, e->l, e->r);
+							ne = exps_bind_column2(dgbe, e->l, e->r, NULL);
 						else
-							ne = exps_bind_column(dgbe, e->r, NULL, 1);
+							ne = exps_bind_column(dgbe, e->r, NULL, NULL, 1);
 						if (ne) {
 							ne = exp_copy(v->sql, ne);
 							exp_prop_alias(v->sql->sa, ne, e);
@@ -6129,9 +6134,9 @@ exp_use_consts(mvc *sql, sql_exp *e, list *consts)
 	switch(e->type) {
 	case e_column:
 		if (e->l)
-			ne = exps_bind_column2(consts, e->l, e->r);
+			ne = exps_bind_column2(consts, e->l, e->r, NULL);
 		if (!ne && !e->l)
-			ne = exps_bind_column(consts, e->r, NULL, 1);
+			ne = exps_bind_column(consts, e->r, NULL, NULL, 1);
 		if (!ne)
 			return e;
 		return ne;
@@ -6403,8 +6408,8 @@ rel_push_project_up(visitor *v, sql_rel *rel)
 
 				if (exp_is_atom(e))
 					continue;
-				if ((rname && exps_bind_column2(r_exps, rname, name) != NULL) ||
-				    (!rname && exps_bind_column(r_exps, name, NULL, 1) != NULL))
+				if ((rname && exps_bind_column2(r_exps, rname, name, NULL) != NULL) ||
+				    (!rname && exps_bind_column(r_exps, name, NULL, NULL, 1) != NULL))
 					return rel;
 			}
 			t = (r->op == op_project && r->l)?r->l:r;
@@ -6415,8 +6420,8 @@ rel_push_project_up(visitor *v, sql_rel *rel)
 
 				if (exp_is_atom(e))
 					continue;
-				if ((e->l && exps_bind_column2(r_exps, e->l, e->r) != NULL) ||
-				   (exps_bind_column(r_exps, e->r, NULL, 1) != NULL && (!e->l || !e->r)))
+				if ((e->l && exps_bind_column2(r_exps, e->l, e->r, NULL) != NULL) ||
+				   (exps_bind_column(r_exps, e->r, NULL, NULL, 1) != NULL && (!e->l || !e->r)))
 					return rel;
 			}
 			/* conflict with new left expressions */
@@ -6425,8 +6430,8 @@ rel_push_project_up(visitor *v, sql_rel *rel)
 
 				if (exp_is_atom(e))
 					continue;
-				if ((e->l && exps_bind_column2(l_exps, e->l, e->r) != NULL) ||
-				   (exps_bind_column(l_exps, e->r, NULL, 1) != NULL && (!e->l || !e->r)))
+				if ((e->l && exps_bind_column2(l_exps, e->l, e->r, NULL) != NULL) ||
+				   (exps_bind_column(l_exps, e->r, NULL, NULL, 1) != NULL && (!e->l || !e->r)))
 					return rel;
 			}
 		}
@@ -8317,11 +8322,10 @@ is_identity_of(sql_exp *e, sql_rel *l)
 {
 	if (e->type != e_cmp)
 		return 0;
-	if (!is_identity(e->l, l) || !is_identity(e->r, l))
+	if (!is_identity(e->l, l) || !is_identity(e->r, l) || (e->f && !is_identity(e->f, l)))
 		return 0;
 	return 1;
 }
-
 
 static sql_rel *
 rel_rewrite_semijoin(visitor *v, sql_rel *rel)
@@ -9108,7 +9112,7 @@ rel_merge_table_rewrite(visitor *v, sql_rel *rel)
 									i++;
 								}
 							if (!skip) {
-								sql_exp *ne = exps_bind_column2(prel->exps, e->l, e->r);
+								sql_exp *ne = exps_bind_column2(prel->exps, e->l, e->r, NULL);
 								assert(ne);
 								exp_setname(v->sql->sa, ne, e->l, e->r);
 								append(exps, ne);
@@ -9200,9 +9204,9 @@ replace_column_references_with_nulls_2(mvc *sql, list* crefs, sql_exp* e) {
 		{
 			sql_exp *c = NULL;
 			if (e->l) {
-				c = exps_bind_column2(crefs, e->l, e->r);
+				c = exps_bind_column2(crefs, e->l, e->r, NULL);
 			} else {
-				c = exps_bind_column(crefs, e->r, NULL, 1);
+				c = exps_bind_column(crefs, e->r, NULL, NULL, 1);
 			}
 			if (c) {
                 e->type = e_atom;

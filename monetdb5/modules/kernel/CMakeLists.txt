@@ -34,6 +34,8 @@ target_include_directories(kernel
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
   $<INSTALL_INTERFACE:${INCLUDEDIR}/monetdb>)
 target_include_directories(microbenchmark
+  PRIVATE
+  $<TARGET_PROPERTY:mal,INCLUDE_DIRECTORIES>
   PUBLIC
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
   $<INSTALL_INTERFACE:${INCLUDEDIR}/monetdb>)
@@ -54,10 +56,8 @@ target_link_libraries(kernel
 target_link_libraries(microbenchmark
   PRIVATE
   monetdb_config_header
-  mutils
   bat
-  mal
-  atoms)
+  monetdb5)
 
 set_target_properties(kernel
   PROPERTIES
