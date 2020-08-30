@@ -197,3 +197,6 @@ SELECT t.schema_id AS table_schema_id, t.id AS table_id, t.name AS table_name, f
  ORDER BY t.schema_id, t.name, fk.name;
 select * from myv limit 1;
 rollback;
+
+select * from (select 1 as c0, 2 as c0) as sub;
+	-- 1 2
