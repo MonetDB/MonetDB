@@ -1294,15 +1294,17 @@ BATunmask(BAT *b)
 		return NULL;
 
 	BUN cnt = BATcount(b) / 32;
+	uint32_t rem = (uint32_t) (BATcount(b) % 32);
+	uint32_t val;
 	const uint32_t *src = (const uint32_t *) Tloc(b, 0);
 	oid *dst = (oid *) Tloc(bn, 0);
 	BUN n = 0;
 
 	for (BUN p = 0; p < cnt; p++) {
-		if (src[p] == 0)
+		if ((val = src[p]) == 0)
 			continue;
 		for (uint32_t i = 0; i < 32; i++) {
-			if (src[p] & (1U << i)) {
+			if (val & (1U << i)) {
 				if (n == BATcapacity(bn)) {
 					if (BATextend(bn, BATgrows(bn)) != GDK_SUCCEED) {
 						BBPreclaim(bn);
@@ -1311,6 +1313,21 @@ BATunmask(BAT *b)
 					dst = (oid *) Tloc(bn, 0);
 				}
 				dst[n++] = b->hseqbase + p * 32 + i;
+			}
+		}
+	}
+	/* the last partial mask word */
+	if (rem > 0 && (val = src[cnt]) != 0) {
+		for (uint32_t i = 0; i < rem; i++) {
+			if (val & (1U << i)) {
+				if (n == BATcapacity(bn)) {
+					if (BATextend(bn, BATgrows(bn)) != GDK_SUCCEED) {
+						BBPreclaim(bn);
+						return NULL;
+					}
+					dst = (oid *) Tloc(bn, 0);
+				}
+				dst[n++] = b->hseqbase + cnt * 32 + i;
 			}
 		}
 	}
