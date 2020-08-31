@@ -1008,6 +1008,7 @@ canditer_sliceval_mask(struct canditer *ci, oid lo1, oid hi1, BUN cnt1,
 	BAT *bn = COLnew(0, TYPE_oid, cnt1 + cnt2, TRANSIENT);
 	if (bn == NULL)
 		return NULL;
+	bn->tkey = true;
 
 	lo1 -= ci->mskoff;
 	hi1 -= ci->mskoff;
