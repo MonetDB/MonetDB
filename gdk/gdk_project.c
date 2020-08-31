@@ -495,7 +495,7 @@ BATproject(BAT *restrict l, BAT *restrict r)
  * bn = BATproject(bn, bats[n-1]);
  * return bn;
  * where none of the intermediates are actually produced (and bats[n]==NULL).
- * Note that all BATs except the last must have type oid/void.
+ * Note that all BATs except the last must have type oid/void or msk.
  */
 BAT *
 BATprojectchain(BAT **bats)
@@ -507,8 +507,10 @@ BATprojectchain(BAT **bats)
 		oid *t;
 		struct canditer ci; /* used if .ci.s != NULL */
 	} *ba;
+	BAT **tobedeleted = NULL;
+	int ndelete = 0;
 	int n;
-	BAT *b = NULL, *bn;
+	BAT *b = NULL, *bn = NULL;
 	bool allnil = false;
 	bool issorted = true;
 	bool nonil = true;
@@ -522,6 +524,7 @@ BATprojectchain(BAT **bats)
 	 * temporary work space */
 	for (n = 0; bats[n]; n++) {
 		b = bats[n];
+		ndelete += (b->ttype == TYPE_msk);
 		TRC_DEBUG(ALGO, "arg %d: " ALGOBATFMT "\n",
 			  n + 1, ALGOBATPAR(b));
 	}
@@ -537,12 +540,24 @@ BATprojectchain(BAT **bats)
 		return bn;
 	}
 
-	ba = GDKmalloc(sizeof(*ba) * n);
-	if (ba == NULL)
+	if (ndelete > 0 &&
+	    (tobedeleted = GDKmalloc(sizeof(BAT *) * ndelete)) == NULL)
 		return NULL;
+	ba = GDKmalloc(sizeof(*ba) * n);
+	if (ba == NULL) {
+		GDKfree(tobedeleted);
+		return NULL;
+	}
 
+	ndelete = 0;
 	for (n = 0; bats[n]; n++) {
 		b = bats[n];
+		if (b->ttype == TYPE_msk) {
+			if ((b = BATunmask(b)) == NULL) {
+				goto bunins_failed;
+			}
+			tobedeleted[ndelete++] = b;
+		}
 		ba[n] = (struct ba) {
 			.b = b,
 			.hlo = b->hseqbase,
@@ -564,6 +579,9 @@ BATprojectchain(BAT **bats)
 	if (allnil || ba[0].cnt == 0) {
 		bn = BATconstant(ba[0].hlo, tpe == TYPE_oid ? TYPE_void : tpe,
 				 nil, ba[0].cnt, TRANSIENT);
+		while (ndelete-- > 0)
+			BBPreclaim(tobedeleted[ndelete]);
+		GDKfree(tobedeleted);
 		GDKfree(ba);
 		TRC_DEBUG(ALGO, "with %d bats: nil/empty -> " ALGOOPTBATFMT
 			  " " LLFMT " usec\n",
@@ -578,8 +596,7 @@ BATprojectchain(BAT **bats)
 
 	bn = COLnew(ba[0].hlo, tpe, ba[0].cnt, TRANSIENT);
 	if (bn == NULL) {
-		GDKfree(ba);
-		return NULL;
+		goto bunins_failed;
 	}
 
 	if (ATOMtype(b->ttype) == TYPE_oid) {
@@ -693,6 +710,9 @@ BATprojectchain(BAT **bats)
 		}
 		n++;		/* undo for debug print */
 	}
+	while (ndelete-- > 0)
+		BBPreclaim(tobedeleted[ndelete]);
+	GDKfree(tobedeleted);
 	BATsetcount(bn, ba[0].cnt);
 	bn->tsorted = (ba[0].cnt <= 1) | issorted;
 	bn->trevsorted = ba[0].cnt <= 1;
@@ -704,6 +724,9 @@ BATprojectchain(BAT **bats)
 	return bn;
 
   bunins_failed:
+	while (ndelete-- > 0)
+		BBPreclaim(tobedeleted[ndelete]);
+	GDKfree(tobedeleted);
 	GDKfree(ba);
 	BBPreclaim(bn);
 	TRC_DEBUG(ALGO, "failed " LLFMT "usec\n", GDKusec() - t0);

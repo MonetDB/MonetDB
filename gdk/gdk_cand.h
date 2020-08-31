@@ -149,5 +149,6 @@ gdk_export BAT *canditer_sliceval(struct canditer *ci, oid lo, oid hi);
 gdk_export BAT *canditer_slice2(struct canditer *ci, BUN lo1, BUN hi1, BUN lo2, BUN hi2);
 gdk_export BAT *canditer_slice2val(struct canditer *ci, oid lo1, oid hi1, oid lo2, oid hi2);
 gdk_export gdk_return BATnegcands( BAT *cands, BAT *odels);
+gdk_export BAT *BATunmask(BAT *b);
 
 #endif	/* _GDK_CAND_H_ */

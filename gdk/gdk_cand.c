@@ -1285,3 +1285,40 @@ BATnegcands(BAT *dense_cands, BAT *odels)
 		  ALGOBATPAR(odels));
     	return GDK_SUCCEED;
 }
+
+BAT *
+BATunmask(BAT *b)
+{
+	BAT *bn = COLnew(0, TYPE_oid, 1024, TRANSIENT);
+	if (bn == NULL)
+		return NULL;
+
+	BUN cnt = BATcount(b) / 32;
+	const uint32_t *src = (const uint32_t *) Tloc(b, 0);
+	oid *dst = (oid *) Tloc(bn, 0);
+	BUN n = 0;
+
+	for (BUN p = 0; p < cnt; p++) {
+		if (src[p] == 0)
+			continue;
+		for (uint32_t i = 0; i < 32; i++) {
+			if (src[p] & (1U << i)) {
+				if (n == BATcapacity(bn)) {
+					if (BATextend(bn, BATgrows(bn)) != GDK_SUCCEED) {
+						BBPreclaim(bn);
+						return NULL;
+					}
+					dst = (oid *) Tloc(bn, 0);
+				}
+				dst[n++] = b->hseqbase + p * 32 + i;
+			}
+		}
+	}
+	BATsetcount(bn, n);
+	bn->tkey = true;
+	bn->tsorted = true;
+	bn->trevsorted = n <= 1;
+	bn->tnil = false;
+	bn->tnonil = true;
+	return virtualize(bn);
+}

@@ -104,19 +104,11 @@ MSKumask(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	bid = getArgReference_bat(stk, pci, 1);
 	if ((b = BATdescriptor(*bid)) == NULL)
 		throw(SQL, "bat.umask", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
-	dst = COLnew(0, TYPE_oid, BATcount(b), TRANSIENT);
+	dst = BATunmask(b);
 	if (dst == NULL) {
 		BBPunfix(b->batCacheid);
 		throw(MAL, "mask.umask", GDK_EXCEPTION);
 	}
-	for (BUN p = 0; p < BATcount(b); p++) {
-		if (mskGetVal(b, p) &&
-			BUNappend(dst, &(oid){p + b->hseqbase}, false) != GDK_SUCCEED) {
-			BBPunfix(b->batCacheid);
-			throw(MAL, "mask.umask", GDK_EXCEPTION);
-		}
-	}
-
 	*ret=  dst->batCacheid;
 	BBPkeepref(*ret);
 	return MAL_SUCCEED;

@@ -1011,7 +1011,7 @@ BUNtoid(BAT *b, BUN p)
 	if (b->ttype == TYPE_oid || b->tvheap == NULL) {
 		return o;
 	}
-	/* only exceptions allowed on transient BATs */
+	/* exceptions only allowed on transient BATs */
 	assert(b->batRole == TRANSIENT);
 	/* make sure exception area is a reasonable size */
 	assert(b->tvheap->free % SIZEOF_OID == 0);
