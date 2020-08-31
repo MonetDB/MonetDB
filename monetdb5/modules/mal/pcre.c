@@ -1407,7 +1407,7 @@ PCREilike3(bit *ret, const str *s, const str *pat, const str *esc)
 static str
 PCREilike2(bit *ret, const str *s, const str *pat)
 {
-	char *esc = "\\";
+	char *esc = "";
 
 	return PCREilike3(ret, s, pat, &esc);
 }
@@ -1758,7 +1758,7 @@ BATPCRElike(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 static str
 BATPCRElike2(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	char *esc = "\\";
+	char *esc = "";
 	bit no = FALSE;
 
 	return BATPCRElike3(cntxt, mb, stk, pci, &esc, &no, &no);
@@ -1776,7 +1776,7 @@ BATPCREnotlike(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 static str
 BATPCREnotlike2(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	char *esc = "\\";
+	char *esc = "";
 	bit no = FALSE, yes = TRUE;
 
 	return BATPCRElike3(cntxt, mb, stk, pci, &esc, &no, &yes);
@@ -1794,7 +1794,7 @@ BATPCREilike(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 static str
 BATPCREilike2(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	char *esc = "\\";
+	char *esc = "";
 	bit yes = TRUE, no = FALSE;
 
 	return BATPCRElike3(cntxt, mb, stk, pci, &esc, &yes, &no);
