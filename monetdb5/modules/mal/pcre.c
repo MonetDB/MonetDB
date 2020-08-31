@@ -1619,7 +1619,7 @@ pcre_clean(
 }
 
 static str
-BATPCRElike3(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, const str *esc, const bit *isens, const bit *not) 
+BATPCRElike3(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, const str *esc, const bit *isens, const bit *not)
 {
 	str msg = MAL_SUCCEED, input = NULL, pat = NULL;
 	BAT *b = NULL, *pbn = NULL, *bn = NULL;
@@ -1812,7 +1812,7 @@ BATPCREnotilike(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 static str
 BATPCREnotilike2(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	char *esc = "\\";
+	char *esc = "";
 	bit yes = TRUE;
 
 	return BATPCRElike3(cntxt, mb, stk, pci, &esc, &yes, &yes);
