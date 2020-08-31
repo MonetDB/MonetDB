@@ -131,7 +131,7 @@ no_updates(InstrPtr *old, int *vars, int oldv, int newv)
 str
 OPTpushselectImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	int i, j, limit, slimit, actions=0, *vars, *nvars = NULL, *slices = NULL, push_down_delta = 0, nr_topn = 0, nr_likes = 0;
+	int i, j, limit, slimit, actions=0, *vars, *nvars = NULL, *slices = NULL, push_down_delta = 0, nr_topn = 0, nr_likes = 0, no_mito = 0;
 	char *rslices = NULL, *oclean = NULL;
 	InstrPtr p, *old;
 	subselect_t subselects;
@@ -143,6 +143,7 @@ OPTpushselectImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 	if( mb->errors)
 		return MAL_SUCCEED;
 
+	no_mito = !isOptimizerEnabled(mb, "mitosis");
 	(void) stk;
 	(void) pci;
 	vars= (int*) GDKzalloc(sizeof(int)* mb->vtop);
@@ -177,7 +178,7 @@ OPTpushselectImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 			nr_likes++;
 
 		if ((getModuleId(p) == sqlRef && getFunctionId(p) == deltaRef) ||
-			(getModuleId(p) == matRef && getFunctionId(p) == packRef && p->argc == (p->retc+2)))
+			(no_mito && getModuleId(p) == matRef && getFunctionId(p) == packRef && p->argc == (p->retc+2)))
 			push_down_delta++;
 
 		if (/* DISABLES CODE */ (0) && getModuleId(p) == sqlRef && getFunctionId(p) == tidRef) { /* rewrite equal table ids */
@@ -612,7 +613,7 @@ OPTpushselectImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 		 *
 		 * doesn't handle Xselect(x, .. z, C1.. cases) ie multicolumn selects
 		 *
-		 * also handle
+		 * also handle (if no_mito)
 		 * c = pack(b, ins)
 		 * s = select(c, C1..)
 		 */
@@ -625,7 +626,7 @@ OPTpushselectImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 				var = getArg(q, 1);
 				q = old[vars[var]];
 			}
-			if (q && getModuleId(q) == matRef && getFunctionId(q) == packRef && q->argc == (q->retc+2)) {
+			if (no_mito && q && getModuleId(q) == matRef && getFunctionId(q) == packRef && q->argc == (q->retc+2)) {
 				InstrPtr r = copyInstruction(p);
 				InstrPtr t = copyInstruction(p);
 
@@ -716,7 +717,8 @@ OPTpushselectImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 			int var = getArg(p, 2);
 			InstrPtr q = old[vars[var]];
 
-			if (getModuleId(q) == matRef && getFunctionId(q) == packRef && q->argc == 3 &&
+			if (no_mito &&
+				getModuleId(q) == matRef && getFunctionId(q) == packRef && q->argc == 3 &&
 			    getModuleId(s) == matRef && getFunctionId(s) == packRef && s->argc == 3) {
 				InstrPtr r = copyInstruction(p);
 				InstrPtr t = copyInstruction(p);
