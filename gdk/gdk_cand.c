@@ -1306,6 +1306,7 @@ BATunmask(BAT *b)
 		for (uint32_t i = 0; i < 32; i++) {
 			if (val & (1U << i)) {
 				if (n == BATcapacity(bn)) {
+					BATsetcount(bn, n);
 					if (BATextend(bn, BATgrows(bn)) != GDK_SUCCEED) {
 						BBPreclaim(bn);
 						return NULL;
@@ -1321,6 +1322,7 @@ BATunmask(BAT *b)
 		for (uint32_t i = 0; i < rem; i++) {
 			if (val & (1U << i)) {
 				if (n == BATcapacity(bn)) {
+					BATsetcount(bn, n);
 					if (BATextend(bn, BATgrows(bn)) != GDK_SUCCEED) {
 						BBPreclaim(bn);
 						return NULL;
@@ -1332,7 +1334,6 @@ BATunmask(BAT *b)
 		}
 	}
 	BATsetcount(bn, n);
-	bn->tseqbase = oid_nil;
 	bn->tkey = true;
 	bn->tsorted = true;
 	bn->trevsorted = n <= 1;
