@@ -340,9 +340,16 @@ bind_del(sql_trans *tr, sql_table *t, int access)
 static int
 cs_update_bat( column_storage *cs, BAT *tids, BAT *updates, int is_new)
 {
+	int res = LOG_OK;
+	BAT *otids = tids;
 	if (!BATcount(tids))
 		return LOG_OK;
 
+	if (tids && tids->ttype == TYPE_msk) {
+		otids = msk2oid(tids, BATcount(updates));
+		if (!otids)
+			return LOG_ERR;
+	}
 	/* handle cleared and updates on just inserted bits */
 	if (!is_new && !cs->cleared && cs->uibid && cs->uvbid) {
 		BAT *ui, *uv;
@@ -350,35 +357,35 @@ cs_update_bat( column_storage *cs, BAT *tids, BAT *updates, int is_new)
 		if (cs_real_update_bats(cs, &ui, &uv) == LOG_ERR)
 			return LOG_ERR;
 
-		assert(BATcount(tids) == BATcount(updates));
-		if (BATappend(ui, tids, NULL, true) != GDK_SUCCEED ||
+		assert(BATcount(otids) == BATcount(updates));
+		if (BATappend(ui, otids, NULL, true) != GDK_SUCCEED ||
 		    BATappend(uv, updates, NULL, true) != GDK_SUCCEED) {
+			if (otids != tids)
+				bat_destroy(otids);
 			bat_destroy(ui);
 			bat_destroy(uv);
 			return LOG_ERR;
 		}
-		assert(BATcount(tids) == BATcount(updates));
+		assert(BATcount(otids) == BATcount(updates));
 		assert(BATcount(ui) == BATcount(uv));
 		bat_destroy(ui);
 		bat_destroy(uv);
-		cs->ucnt += BATcount(tids);
+		cs->ucnt += BATcount(otids);
 	} else if (is_new || cs->cleared) {
 		BAT *b = temp_descriptor(cs->bid);
 
 		if (b == NULL)
-			return LOG_ERR;
-		if (BATcount(b)==0) { /* alter add column */
-			if (BATappend(b, updates, NULL, true) != GDK_SUCCEED) {
-				bat_destroy(b);
-				return LOG_ERR;
-			}
-		} else if (BATreplace(b, tids, updates, true) != GDK_SUCCEED) {
+			res = LOG_ERR;
+		else if (BATcount(b)==0 && BATappend(b, updates, NULL, true) != GDK_SUCCEED) /* alter add column */
+			res = LOG_ERR;
+		else if (BATreplace(b, otids, updates, true) != GDK_SUCCEED)
+			res = LOG_ERR;
+		if (b)
 			bat_destroy(b);
-			return LOG_ERR;
-		}
-		bat_destroy(b);
 	}
-	return LOG_OK;
+	if (otids != tids)
+		bat_destroy(otids);
+	return res;
 }
 
 static int

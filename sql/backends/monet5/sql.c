@@ -2245,14 +2245,17 @@ SQLtid(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			nr = cnt-sb;
 	}
 
-	/* create void,void bat with length and oid's set */
-	tids = BATdense(sb, sb, (BUN) nr);
-	if (tids == NULL)
-		throw(SQL, "sql.tid", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-
 	/* check if we have deletes, iff get bit msk */
 	if ((dcnt = store_funcs.count_del(tr, t, 0)) > 0 || store_funcs.count_del(tr, t, 2) > 0) {
-		BAT *d = store_funcs.bind_del(tr, t, RDONLY);
+		setVarType(mb, getArg(pci, 0), setCandType(newBatType(TYPE_msk)));
+		BAT *d = store_funcs.bind_del(tr, t, RDONLY), *bn;
+
+		bn = BATslice(d, sb, sb+nr);
+		if(bn == NULL)
+			throw(SQL, "sql.tid", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		BAThseqbase(bn, sb);
+		*res = bn->batCacheid;
+#if 0
 		BAT *del_ids = COLnew(0, TYPE_oid, dcnt, TRANSIENT);
 
 		if (d == NULL || del_ids == NULL) {
@@ -2297,8 +2300,16 @@ SQLtid(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		BBPunfix(del_ids->batCacheid);
 		if (ret != GDK_SUCCEED)
 			throw(MAL, "sql.tids", SQLSTATE(45003) "TIDdeletes failed");
+#endif
+	} else {
+	/* create void,void bat with length and oid's set */
+	tids = BATdense(sb, sb, (BUN) nr);
+	if (tids == NULL)
+		throw(SQL, "sql.tid", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+	*res = tids->batCacheid;
 	}
-	BBPkeepref(*res = tids->batCacheid);
+
+	BBPkeepref(*res);
 	return msg;
 }
 

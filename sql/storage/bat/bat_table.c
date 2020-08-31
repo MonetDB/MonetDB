@@ -26,8 +26,6 @@ _delta_cands(sql_trans *tr, sql_table *t)
 		BAT *d;
 
 		if ((d = store_funcs.bind_del(tr, t, RDONLY)) != NULL) {
-			BAT *del_ids = COLnew(0, TYPE_oid, dcnt, TRANSIENT);
-
 			if (!d)
 				return NULL;
 			if (store_funcs.count_del(tr, t, 2) > 0) {
@@ -40,23 +38,17 @@ _delta_cands(sql_trans *tr, sql_table *t)
 					if (nd) BBPunfix(nd->batCacheid);
 					if (ui) BBPunfix(ui->batCacheid);
 					if (uv) BBPunfix(uv->batCacheid);
-					BBPreclaim(del_ids);
 					return NULL;
 				}
 				BBPunfix(ui->batCacheid);
 				BBPunfix(uv->batCacheid);
 				d = nd;
 			}
-			for(BUN p = 0; p < nr; p++) {
-				if (mskGetVal(d, p)) {
-					oid id = p;
-					if (BUNappend(del_ids, &id, false) != GDK_SUCCEED) {
-						BBPreclaim(del_ids);
-						bat_destroy(d);
-						bat_destroy(tids);
-						return NULL;
-					}
-				}
+			BAT *del_ids = msk2oid(d, dcnt);
+			if (!del_ids) {
+				bat_destroy(d);
+				bat_destroy(tids);
+				return NULL;
 			}
 			bat_destroy(d);
 			gdk_return ret = BATnegcands(tids, del_ids);
