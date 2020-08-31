@@ -1332,6 +1332,7 @@ BATunmask(BAT *b)
 		}
 	}
 	BATsetcount(bn, n);
+	bn->tseqbase = oid_nil;
 	bn->tkey = true;
 	bn->tsorted = true;
 	bn->trevsorted = n <= 1;
