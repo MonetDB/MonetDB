@@ -5274,15 +5274,13 @@ sys_drop_func(sql_trans *tr, sql_func *func, int drop_action)
 	oid rid_func = table_funcs.column_find_row(tr, sys_func_col, &func->base.id, NULL);
 	if (is_oid_nil(rid_func))
 		return ;
-	if (IS_AGGR(func)) {
-		sql_table *sys_tab_args = find_sql_table(syss, "args");
-		sql_column *sys_args_col = find_sql_column(sys_tab_args, "func_id");
-		rids *args = table_funcs.rids_select(tr, sys_args_col, &func->base.id, &func->base.id, NULL);
+	sql_table *sys_tab_args = find_sql_table(syss, "args");
+	sql_column *sys_args_col = find_sql_column(sys_tab_args, "func_id");
+	rids *args = table_funcs.rids_select(tr, sys_args_col, &func->base.id, &func->base.id, NULL);
 
-		for (oid r = table_funcs.rids_next(args); !is_oid_nil(r); r = table_funcs.rids_next(args))
-			table_funcs.table_delete(tr, sys_tab_args, r);
-		table_funcs.rids_destroy(args);
-	}
+	for (oid r = table_funcs.rids_next(args); !is_oid_nil(r); r = table_funcs.rids_next(args))
+		table_funcs.table_delete(tr, sys_tab_args, r);
+	table_funcs.rids_destroy(args);
 
 	assert(!is_oid_nil(rid_func));
 	table_funcs.table_delete(tr, sys_tab_func, rid_func);

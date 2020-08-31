@@ -623,7 +623,7 @@ exp_bin_or(backend *be, sql_exp *e, stmt *left, stmt *right, stmt *grp, stmt *ex
 static stmt *
 exp2bin_case(backend *be, sql_exp *fe, stmt *left, stmt *right, stmt *isel, int depth)
 {
-	stmt *res = NULL, *rsel = NULL, *osel = NULL, *ncond = NULL, *ocond = NULL, *cond = NULL;
+	stmt *res = NULL, *ires = NULL, *rsel = NULL, *osel = NULL, *ncond = NULL, *ocond = NULL, *cond = NULL;
 	int next_cond = 1, single_value = (fe->card <= CARD_ATOM && (!left || !left->nrcols));
 	char name[16], *nme = NULL;
 	sql_subtype *bt = sql_bind_localtype("bit");
@@ -666,6 +666,7 @@ exp2bin_case(backend *be, sql_exp *fe, stmt *left, stmt *right, stmt *isel, int 
 				if (!l)
 					l = bin_first_column(be, left);
 				res = stmt_const(be, l, stmt_atom(be, atom_general(be->mvc->sa, exp_subtype(fe), NULL)));
+				ires = l;
 				if (res)
 					res->cand = isel;
 			} else if (res && !next_cond) { /* use result too update column */
@@ -674,8 +675,6 @@ exp2bin_case(backend *be, sql_exp *fe, stmt *left, stmt *right, stmt *isel, int 
 
 				if (val->nrcols == 0)
 					val = stmt_const(be, pos, val);
-				else if (val->cand != isel && val->cand != rsel && val->cand != nsel)
-					val = stmt_project(be, rsel, val);
 				else if (!val->cand && nsel)
 					val = stmt_project(be, nsel, val);
 				res = stmt_replace(be, res, pos, val);
@@ -683,29 +682,29 @@ exp2bin_case(backend *be, sql_exp *fe, stmt *left, stmt *right, stmt *isel, int 
 				assert(cond);
 
 				if (en->next) {
-					cond = stmt_unop(be, cond, not);
-					sql_subfunc *isnull = sql_bind_func(be->mvc->sa, be->mvc->session->schema, "isnull", bt, NULL, F_FUNC);
-					cond = stmt_binop(be, cond, stmt_unop(be, ncond, isnull), or);
-					stmt *s = stmt_uselect(be, cond, stmt_bool(be, 1), cmp_equal, NULL, 0/*anti*/, 0);
-					if (osel)
-						rsel = stmt_project(be, s, osel);
-					else
-						rsel = s;
-					osel = rsel;
+					/* osel - rsel */
+					if (!osel)
+						osel = stmt_mirror(be, ires);
+					stmt *d = stmt_tdiff(be, osel, rsel, NULL);
+					osel = rsel = stmt_project(be, d, osel);
 				}
 			}
 			if (next_cond) {
 				ncond = cond = es;
 				if (!ncond->nrcols) {
-					if (osel)
+					if (osel) {
 						ncond = stmt_const(be, nsel, ncond);
-					else if (isel)
+						ncond->cand = nsel;
+					} else if (isel) {
 						ncond = stmt_const(be, isel, ncond);
-					else
+						ncond->cand = isel;
+					} else
 						ncond = stmt_const(be, bin_first_column(be, left), ncond);
 				}
-				stmt *s = stmt_uselect(be, ncond, stmt_bool(be, 1), cmp_equal, NULL, 0/*anti*/, 0);
-				if (rsel)
+				if (isel && !ncond->cand)
+					ncond = stmt_project(be, nsel, ncond);
+				stmt *s = stmt_uselect(be, ncond, stmt_bool(be, 1), cmp_equal, !ncond->cand?rsel:NULL, 0/*anti*/, 0);
+				if (rsel && ncond->cand)
 					rsel = stmt_project(be, s, rsel);
 				else
 					rsel = s;
@@ -824,10 +823,6 @@ exp2bin_coalesce(backend *be, sql_exp *fe, stmt *left, stmt *right, stmt *isel, 
 				}
 				if (val->nrcols == 0)
 					val = stmt_const(be, pos, val);
-				/*
-				else if (val->cand != isel && val->cand != rsel && val->cand != nsel)
-					val = stmt_project(be, rsel, val);
-					*/
 				else if (!val->cand && nsel)
 					val = stmt_project(be, nsel, val);
 
@@ -1106,19 +1101,32 @@ exp_bin(backend *be, sql_exp *e, stmt *left, stmt *right, stmt *grp, stmt *ext, 
 
 				if (!as)
 					return NULL;
-				if (need_distinct(e)){
-					stmt *next = NULL;
-					if (grp) {
-						stmt *g = stmt_group(be, as, grp, ext, cnt, 1);
-						next = stmt_result(be, g, 1);
-					} else {
-						next = stmt_unique(be, as);
-					}
-					as = stmt_project(be, next, as);
-					if (grp)
-						grp = stmt_project(be, next, grp);
-				}
 				append(l, as);
+			}
+			if (need_distinct(e) && (grp || list_length(l) > 1)){
+				list *nl = sa_list(sql->sa);
+				stmt *ngrp = grp;
+				stmt *next = ext;
+				stmt *ncnt = cnt;
+				for (en = l->h; en; en = en->next) {
+					stmt *as = en->data;
+					stmt *g = stmt_group(be, as, ngrp, next, ncnt, 1);
+					ngrp = stmt_result(be, g, 0);
+					next = stmt_result(be, g, 1);
+					ncnt = stmt_result(be, g, 2);
+				}
+				for (en = l->h; en; en = en->next) {
+					stmt *as = en->data;
+					append(nl, stmt_project(be, next, as));
+				}
+				if (grp)
+					grp = stmt_project(be, next, grp);
+				l = nl;
+			} else if (need_distinct(e)) {
+				stmt *a = l->h->data;
+				stmt *u = stmt_unique(be, a);
+				l = sa_list(sql->sa);
+				append(l, stmt_project(be, u, a));
 			}
 			as = stmt_list(be, l);
 		} else {
@@ -1219,15 +1227,15 @@ exp_bin(backend *be, sql_exp *e, stmt *left, stmt *right, stmt *grp, stmt *ext, 
 			be->join_idx++;
 
 		if (!l) {
-			l = exp_bin(be, e->l, left, NULL, grp, ext, cnt, sel, depth+1, 0, push);
+			l = exp_bin(be, e->l, left, (!reduce)?right:NULL, grp, ext, cnt, sel, depth+1, 0, push);
 			swapped = 0;
 		}
 		if (!l && right) {
  			l = exp_bin(be, e->l, right, NULL, grp, ext, cnt, sel, depth+1, 0, push);
 			swapped = 1;
 		}
-		if (swapped || !right)
- 			r = exp_bin(be, re, left, NULL, grp, ext, cnt, sel, depth+1, 0, push);
+		if (swapped || !right || !reduce)
+ 			r = exp_bin(be, re, left, (!reduce)?right:NULL, grp, ext, cnt, sel, depth+1, 0, push);
 		else
  			r = exp_bin(be, re, right, NULL, grp, ext, cnt, sel, depth+1, 0, push);
 		if (!r && !swapped) {
@@ -1357,79 +1365,6 @@ stmt_idx( backend *be, sql_idx *i, stmt *del, int part)
 	}
 	return sc;
 }
-
-#if 0
-static stmt *
-check_table_types(backend *be, list *types, stmt *s, check_type tpe)
-{
-	mvc *sql = be->mvc;
-	//const char *tname;
-	stmt *tab = s;
-	int temp = 0;
-
-	if (s->type != st_table) {
-		return sql_error(
-			sql, 03,
-			SQLSTATE(42000) "single value and complex type are not equal");
-	}
-	tab = s->op1;
-	temp = s->flag;
-	if (tab->type == st_var) {
-		sql_table *tbl = NULL;//tail_type(tab)->comp_type;
-		stmt *dels = stmt_tid(be, tbl, 0);
-		node *n, *m;
-		list *l = sa_list(sql->sa);
-
-		stack_find_var(sql, tab->op1->op4.aval->data.val.sval);
-
-		for (n = types->h, m = tbl->columns.set->h;
-			n && m; n = n->next, m = m->next)
-		{
-			sql_subtype *ct = n->data;
-			sql_column *dtc = m->data;
-			stmt *dtcs = stmt_col(be, dtc, dels, dels->partition);
-			stmt *r = check_types(be, ct, dtcs, tpe);
-			if (!r)
-				return NULL;
-			//r = stmt_alias(be, r, tbl->base.name, c->base.name);
-			list_append(l, r);
-		}
-	 	return stmt_table(be, stmt_list(be, l), temp);
-	} else if (tab->type == st_list) {
-		node *n, *m;
-		list *l = sa_list(sql->sa);
-		for (n = types->h, m = tab->op4.lval->h;
-			n && m; n = n->next, m = m->next)
-		{
-			sql_subtype *ct = n->data;
-			stmt *r = check_types(be, ct, m->data, tpe);
-			if (!r)
-				return NULL;
-			//tname = table_name(sql->sa, r);
-			//r = stmt_alias(be, r, tname, c->base.name);
-			list_append(l, r);
-		}
-		return stmt_table(be, stmt_list(be, l), temp);
-	} else { /* single column/value */
-		stmt *r;
-		sql_subtype *st = tail_type(tab), *ct;
-
-		if (list_length(types) != 1) {
-			stmt *res = sql_error(
-				sql, 03,
-				SQLSTATE(42000) "single value of type %s and complex type are not equal",
-				st->type->sqlname
-			);
-			return res;
-		}
-		ct = types->h->data;
-		r = check_types(be, ct, tab, tpe);
-		//tname = table_name(sql->sa, r);
-		//r = stmt_alias(be, r, tname, c->base.name);
-		return stmt_table(be, r, temp);
-	}
-}
-#endif
 
 static int
 stmt_set_type_param(mvc *sql, sql_subtype *type, stmt *param)
@@ -1650,8 +1585,10 @@ rel2bin_basetable(backend *be, sql_rel *rel)
 
 			if (col)
 				s = stmt_mirror(be, col);
-			else
+			else {
 				s = dels?dels:stmt_tid(be, t, 0);
+				dels = NULL;
+			}
 			s = stmt_alias(be, s, rnme, TID);
 		} else if (oname[0] == '%') {
 			sql_idx *i = find_sql_idx(t, oname+1);
@@ -3370,7 +3307,6 @@ rel2bin_select(backend *be, sql_rel *rel, list *refs)
 	if (rel->l) { /* first construct the sub relation */
 		sub = subrel_bin(be, rel->l, refs);
 		sel = sub->cand;
-		//sub = subrel_project(be, sub, refs, rel->l);
 		if (!sub)
 			return NULL;
 		sub = row2cols(be, sub);
@@ -3677,7 +3613,7 @@ insert_check_ukey(backend *be, list *inserts, sql_key *k, stmt *idx_inserts)
 
 		s = ins;
 		/* 1st stage: find out if original contains same values */
-		if (s->key && s->nrcols == 0) {
+		if (/*s->key &&*/ s->nrcols == 0) {
 			s = NULL;
 			if (k->idx && hash_index(k->idx->type))
 				s = stmt_uselect(be, stmt_idx(be, k->idx, dels, dels->partition), idx_inserts, cmp_equal, s, 0, 1 /* is_semantics*/);
@@ -4219,12 +4155,6 @@ update_check_ukey(backend *be, stmt **updates, sql_key *k, stmt *tids, stmt *idx
 
 				if (updates && updates[c->c->colnr]) {
 					upd = updates[c->c->colnr];
-					/*
-				} else if (updates) {
-					//upd = updates[updcol]->op1;
-					//upd = stmt_project(be, upd, stmt_col(be, c->c, dels, dels->partition));
-					upd = stmt_project(be, tids, stmt_col(be, c->c, dels, dels->partition));
-					*/
 				} else {
 					upd = stmt_col(be, c->c, dels, dels->partition);
 				}
@@ -4399,8 +4329,6 @@ update_check_fkey(backend *be, stmt **updates, sql_key *k, stmt *tids, stmt *idx
 				upd = updates[c->c->colnr];
 			} else if (updates && updcol >= 0) {
 				assert(0);
-				//upd = updates[updcol]->op1;
-				//upd = stmt_project(be, upd, stmt_col(be, c->c, tids, tids->partition));
 				upd = stmt_col(be, c->c, tids, tids->partition);
 			} else { /* created idx/key using alter */
 				upd = stmt_col(be, c->c, tids, tids->partition);
@@ -4457,7 +4385,6 @@ join_updated_pkey(backend *be, sql_key * k, stmt *tids, stmt **updates)
 			upd = updates[c->c->colnr];
 		} else {
 			assert(0);
-			//upd = updates[updcol]->op1;
 			upd = stmt_project(be, tids, stmt_col(be, c->c, dels, dels->partition));
 		}
 		if (c->c->null) {	/* new nulls (MATCH SIMPLE) */
@@ -4663,9 +4590,6 @@ hash_update(backend *be, sql_idx * i, stmt *rows, stmt **updates, int updcol)
 			upd = updates[c->c->colnr];
 		} else if (updates && updcol >= 0) {
 			assert(0);
-			//upd = updates[updcol]->op1;
-			//upd = rows;
-			//upd = stmt_project(be, upd, stmt_col(be, c->c, tids, tids->partition));
 			upd = stmt_col(be, c->c, rows, rows->partition);
 		} else { /* created idx/key using alter */
 			upd = stmt_col(be, c->c, tids, tids->partition);
@@ -4716,8 +4640,6 @@ join_idx_update(backend *be, sql_idx * i, stmt *ftids, stmt **updates, int updco
 			upd = updates[c->c->colnr];
 		} else if (updates && updcol >= 0) {
 			assert(0);
-			//upd = updates[updcol]->op1;
-			//upd = stmt_project(be, upd, stmt_col(be, c->c, ftids, ftids->partition));
 			upd = stmt_col(be, c->c, ftids, ftids->partition);
 		} else { /* created idx/key using alter */
 			upd = stmt_col(be, c->c, ftids, ftids->partition);

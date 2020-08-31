@@ -1075,6 +1075,19 @@ sql_create_aggr(sql_allocator *sa, const char *name, const char *mod, const char
 }
 
 static sql_func *
+sql_create_filter(sql_allocator *sa, const char *name, const char *mod, const char *imp, bit semantics, bit side_effect, int fix_scale,
+				unsigned int res_scale, int nargs, ...)
+{
+	sql_func *res;
+	va_list valist;
+
+	va_start(valist, nargs);
+	res = sql_create_func_(sa, name, mod, imp, F_FILT, semantics, side_effect, fix_scale, res_scale, BIT, nargs, valist);
+	va_end(valist);
+	return res;
+}
+
+static sql_func *
 sql_create_union(sql_allocator *sa, const char *name, const char *mod, const char *imp, bit side_effect, int fix_scale,
 				unsigned int res_scale, sql_type *fres, int nargs, ...)
 {
@@ -1345,6 +1358,8 @@ sqltypeinit( sql_allocator *sa)
 #endif
 
 	for (t = numerical; t < dates; t++) {
+		if (*t == OID)
+			continue;
 		sql_create_func(sa, "mod", "calc", "%", FALSE, FALSE, SCALE_FIX, 0, *t, 2, *t, *t);
 	}
 
@@ -1385,8 +1400,10 @@ sqltypeinit( sql_allocator *sa)
 	sql_create_aggr(sa, "count_no_nil", "aggr", "count_no_nil", TRUE, LNG, 0);
 	sql_create_aggr(sa, "count", "aggr", "count", TRUE, LNG, 1, ANY);
 
-	sql_create_aggr(sa, "listagg", "aggr", "str_group_concat", TRUE, STR, 1, STR);
-	sql_create_aggr(sa, "listagg", "aggr", "str_group_concat", TRUE, STR, 2, STR, STR);
+	for (t = strings; t < numerical; t++) {
+		sql_create_aggr(sa, "listagg", "aggr", "str_group_concat", TRUE, *t, 1, *t);
+		sql_create_aggr(sa, "listagg", "aggr", "str_group_concat", TRUE, *t, 2, *t, *t);
+	}
 
 	/* order based operators */
 	sql_create_analytic(sa, "diff", "sql", "diff", SCALE_NONE, BIT, 1, ANY);
@@ -1576,9 +1593,10 @@ sqltypeinit( sql_allocator *sa)
 	sql_create_analytic(sa, "avg", "sql", "avg", SCALE_NONE, MONINT, 1, MONINT);
 	sql_create_analytic(sa, "avg", "sql", "avg", SCALE_NONE, SECINT, 1, SECINT);
 
-	sql_create_analytic(sa, "listagg", "sql", "str_group_concat", SCALE_NONE, STR, 1, STR);
-	sql_create_analytic(sa, "listagg", "sql", "str_group_concat", SCALE_NONE, STR, 2, STR, STR);
-
+	for (t = strings; t < numerical; t++) {
+		sql_create_analytic(sa, "listagg", "sql", "str_group_concat", SCALE_NONE, *t, 1, *t);
+		sql_create_analytic(sa, "listagg", "sql", "str_group_concat", SCALE_NONE, *t, 2, *t, *t);
+	}
 	sql_create_func(sa, "and", "calc", "and", TRUE, FALSE, SCALE_FIX, 0, BIT, 2, BIT, BIT);
 	sql_create_func(sa, "or",  "calc",  "or", TRUE, FALSE, SCALE_FIX, 0, BIT, 2, BIT, BIT);
 	sql_create_func(sa, "xor", "calc", "xor", FALSE, FALSE, SCALE_FIX, 0, BIT, 2, BIT, BIT);
@@ -1588,6 +1606,8 @@ sqltypeinit( sql_allocator *sa)
 	for (t = numerical, t++; t != floats; t++) {
 		sql_type **u;
 		for (u = numerical, u++; u != decimals; u++) {
+			if (*t == OID)
+				continue;
 			if (t != u && (*t)->localtype >  (*u)->localtype) {
 				sql_create_func(sa, "sql_mul", "calc", "*", FALSE, FALSE, SCALE_MUL, 0, *t, 2, *t, *u);
 				sql_create_func(sa, "sql_mul", "calc", "*", FALSE, FALSE, SCALE_MUL, 0, *t, 2, *u, *t);
@@ -1609,6 +1629,9 @@ sqltypeinit( sql_allocator *sa)
 	/* all numericals */
 	for (t = numerical; *t != TME; t++) {
 		sql_subtype *lt;
+
+		if (*t == OID)
+			continue;
 
 		lt = sql_bind_localtype((*t)->base.name);
 
@@ -1780,10 +1803,11 @@ sqltypeinit( sql_allocator *sa)
 	sql_create_func(sa, "minute", "mtime", "minutes", FALSE, FALSE, SCALE_NONE, 0, INT, 1, SECINT);
 	sql_create_func(sa, "second", "mtime", "seconds", FALSE, FALSE, SCALE_NONE, 0, INT, 1, SECINT);
 
-	sql_create_func(sa, "next_value_for", "sql", "next_value", TRUE, TRUE, SCALE_NONE, 0, LNG, 2, STR, STR);
-	sql_create_func(sa, "get_value_for", "sql", "get_value", TRUE, FALSE, SCALE_NONE, 0, LNG, 2, STR, STR);
-	sql_create_func(sa, "restart", "sql", "restart", TRUE, FALSE, SCALE_NONE, 0, LNG, 3, STR, STR, LNG);
 	for (t = strings; t < numerical; t++) {
+		sql_create_func(sa, "next_value_for", "sql", "next_value", TRUE, TRUE, SCALE_NONE, 0, LNG, 2, *t, *t);
+		sql_create_func(sa, "get_value_for", "sql", "get_value", TRUE, FALSE, SCALE_NONE, 0, LNG, 2, *t, *t);
+		sql_create_func(sa, "restart", "sql", "restart", TRUE, FALSE, SCALE_NONE, 0, LNG, 3, *t, *t, LNG);
+
 		sql_create_func(sa, "index", "calc", "index", TRUE, FALSE, SCALE_NONE, 0, BTE, 2, *t, BIT);
 		sql_create_func(sa, "index", "calc", "index", TRUE, FALSE, SCALE_NONE, 0, SHT, 2, *t, BIT);
 		sql_create_func(sa, "index", "calc", "index", TRUE, FALSE, SCALE_NONE, 0, INT, 2, *t, BIT);
@@ -1798,16 +1822,15 @@ sqltypeinit( sql_allocator *sa)
 		sql_create_func(sa, "substring", "str", "substring", FALSE, FALSE, INOUT, 0, *t, 3, *t, INT, INT);
 		sql_create_func(sa, "substr", "str", "substring", FALSE, FALSE, INOUT, 0, *t, 2, *t, INT);
 		sql_create_func(sa, "substr", "str", "substring", FALSE, FALSE, INOUT, 0, *t, 3, *t, INT, INT);
-		/*
-		sql_create_func(sa, "like", "algebra", "like", FALSE, SCALE_NONE, 0, BIT, 2, *t, *t);
-		sql_create_func3(sa, "like", "algebra", "like", FALSE, SCALE_NONE, 0, BIT, 3, *t, *t, *t);
-		sql_create_func(sa, "ilike", "algebra", "ilike", FALSE, SCALE_NONE, 0, BIT, 2, *t, *t);
-		sql_create_func3(sa, "ilike", "algebra", "ilike", FALSE, SCALE_NONE, 0, BIT, 3, *t, *t, *t);
-		*/
-		sql_create_func(sa, "not_like", "algebra", "not_like", FALSE, FALSE, SCALE_NONE, 0, BIT, 2, *t, *t);
-		sql_create_func(sa, "not_like", "algebra", "not_like", FALSE, FALSE, SCALE_NONE, 0, BIT, 3, *t, *t, *t);
-		sql_create_func(sa, "not_ilike", "algebra", "not_ilike", FALSE, FALSE, SCALE_NONE, 0, BIT, 2, *t, *t);
-		sql_create_func(sa, "not_ilike", "algebra", "not_ilike", FALSE, FALSE, SCALE_NONE, 0, BIT, 3, *t, *t, *t);
+
+		sql_create_filter(sa, "like", "algebra", "like", FALSE, FALSE, SCALE_NONE, 0, 2, *t, *t);
+		sql_create_filter(sa, "like", "algebra", "like", FALSE, FALSE, SCALE_NONE, 0, 3, *t, *t, *t);
+		sql_create_filter(sa, "ilike", "algebra", "ilike", FALSE, FALSE, SCALE_NONE, 0, 2, *t, *t);
+		sql_create_filter(sa, "ilike", "algebra", "ilike", FALSE, FALSE, SCALE_NONE, 0, 3, *t, *t, *t);
+		sql_create_filter(sa, "not_like", "algebra", "not_like", FALSE, FALSE, SCALE_NONE, 0, 2, *t, *t);
+		sql_create_filter(sa, "not_like", "algebra", "not_like", FALSE, FALSE, SCALE_NONE, 0, 3, *t, *t, *t);
+		sql_create_filter(sa, "not_ilike", "algebra", "not_ilike", FALSE, FALSE, SCALE_NONE, 0, 2, *t, *t);
+		sql_create_filter(sa, "not_ilike", "algebra", "not_ilike", FALSE, FALSE, SCALE_NONE, 0, 3, *t, *t, *t);
 
 		sql_create_func(sa, "patindex", "pcre", "patindex", FALSE, FALSE, SCALE_NONE, 0, INT, 2, *t, *t);
 		sql_create_func(sa, "truncate", "str", "stringleft", FALSE, FALSE, SCALE_NONE, 0, *t, 2, *t, INT);

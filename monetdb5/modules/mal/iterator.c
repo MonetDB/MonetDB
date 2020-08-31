@@ -35,7 +35,8 @@
  */
 
 #include "monetdb_config.h"
-#include "iterator.h"
+#include "mal.h"
+#include "mal_interpreter.h"
 
 /*
  * We start with the large chunk iterator.
@@ -45,7 +46,7 @@
  * The number of elements in the chunk is limited by the granule
  * size.
  */
-str
+static str
 ITRnewChunk(lng *res, bat *vid, bat *bid, lng *granule)
 {
 	BAT *b, *view;
@@ -76,7 +77,7 @@ ITRnewChunk(lng *res, bat *vid, bat *bid, lng *granule)
  * which also means that the view descriptor is already available.
  * The granule size may differ in each call.
  */
-str
+static str
 ITRnextChunk(lng *res, bat *vid, bat *bid, lng *granule)
 {
 	BAT *b, *view;
@@ -116,7 +117,7 @@ ITRnextChunk(lng *res, bat *vid, bat *bid, lng *granule)
  * variable. If it returns zero the control variable has been reset
  * to zero and end of stream has been reached.
  */
-str
+static str
 ITRbunIterator(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	BATiter bi;
@@ -151,7 +152,7 @@ ITRbunIterator(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	return MAL_SUCCEED;
 }
 
-str
+static str
 ITRbunNext(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	BATiter bi;
@@ -185,7 +186,7 @@ ITRbunNext(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	return MAL_SUCCEED;
 }
 
-str ITRnext_oid(oid *i, oid *step, oid *last){
+static str ITRnext_oid(oid *i, oid *step, oid *last){
 	oid v = *i;
 	v = v + *step;
 	*i = v;
@@ -193,7 +194,7 @@ str ITRnext_oid(oid *i, oid *step, oid *last){
 		*i = oid_nil;
 	return MAL_SUCCEED;
 }
-str ITRnext_lng(lng *i, lng *step, lng *last){
+static str ITRnext_lng(lng *i, lng *step, lng *last){
 	lng v = *i;
 	v = v + *step;
 	*i = v;
@@ -202,7 +203,7 @@ str ITRnext_lng(lng *i, lng *step, lng *last){
 	return MAL_SUCCEED;
 }
 #ifdef HAVE_HGE
-str ITRnext_hge(hge *i, hge *step, hge *last){
+static str ITRnext_hge(hge *i, hge *step, hge *last){
 	hge v = *i;
 	v = v + *step;
 	*i = v;
@@ -211,7 +212,7 @@ str ITRnext_hge(hge *i, hge *step, hge *last){
 	return MAL_SUCCEED;
 }
 #endif
-str ITRnext_int(int *i, int *step, int *last){
+static str ITRnext_int(int *i, int *step, int *last){
 	int v = *i;
 	v = v + *step;
 	*i = v;
@@ -219,7 +220,7 @@ str ITRnext_int(int *i, int *step, int *last){
 		*i = int_nil;
 	return MAL_SUCCEED;
 }
-str ITRnext_sht(sht *i, sht *step, sht *last){
+static str ITRnext_sht(sht *i, sht *step, sht *last){
 	sht v = *i;
 	v = v + *step;
 	*i = v;
@@ -227,7 +228,7 @@ str ITRnext_sht(sht *i, sht *step, sht *last){
 		*i = int_nil;
 	return MAL_SUCCEED;
 }
-str ITRnext_flt(flt *i, flt *step, flt *last){
+static str ITRnext_flt(flt *i, flt *step, flt *last){
 	flt v = *i;
 	v = v + *step;
 	*i = v;
@@ -235,7 +236,7 @@ str ITRnext_flt(flt *i, flt *step, flt *last){
 		*i = flt_nil;
 	return MAL_SUCCEED;
 }
-str ITRnext_dbl(dbl *i, dbl *step, dbl *last){
+static str ITRnext_dbl(dbl *i, dbl *step, dbl *last){
 	dbl v = *i;
 	v = v + *step;
 	*i = v;

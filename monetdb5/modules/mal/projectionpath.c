@@ -7,9 +7,10 @@
  */
 
 #include "monetdb_config.h"
-#include "projectionpath.h"
+#include "mal_client.h"
+#include "mal_interpreter.h"
 
-str
+static str
 ALGprojectionpath(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	int i;

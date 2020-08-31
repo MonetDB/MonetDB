@@ -9,8 +9,8 @@
 /* this file is included multiple times by gdk_calc.c */
 
 static BUN
-op_typeswitchloop(const void *lft, int tp1, int incr1, const char *hp1, int wd1,
-		  const void *rgt, int tp2, int incr2, const char *hp2, int wd2,
+op_typeswitchloop(const void *lft, int tp1, bool incr1, const char *hp1, int wd1,
+		  const void *rgt, int tp2, bool incr2, const char *hp2, int wd2,
 		  TPE *restrict dst,
 		  struct canditer *restrict ci1, struct canditer *restrict ci2,
 		  oid candoff1, oid candoff2,
@@ -21,20 +21,20 @@ op_typeswitchloop(const void *lft, int tp1, int incr1, const char *hp1, int wd1,
 		  const char *func)
 {
 	BUN nils = 0;
-	BUN i, j, k;
+	BUN i = 0, j = 0, k;
 	const void *restrict nil;
 	int (*atomcmp)(const void *, const void *);
-	oid x1, x2;
 
 	switch (tp1) {
 	case TYPE_void: {
-		assert(incr1 == 1);
-		assert(tp2 == TYPE_oid || incr2 == 1); /* if void, incr2==1 */
+		assert(incr1);
+		assert(tp2 == TYPE_oid || incr2); /* if void, incr2==1 */
 		oid v = lft ? * (const oid *) lft : oid_nil;
 		for (k = 0; k < ci1->ncand; k++) {
 			TPE res;
-			x1 = canditer_next(ci1) - candoff1;
-			x2 = canditer_next(ci2) - candoff2;
+			i = canditer_next(ci1) - candoff1;
+			if (incr2)
+				j = canditer_next(ci2) - candoff2;
 			if (is_oid_nil(v) || tp2 == TYPE_void) {
 				res = is_oid_nil(v) || is_oid_nil(* (const oid *) rgt) ?
 #ifdef NIL_MATCHES_FLAG
@@ -45,7 +45,6 @@ op_typeswitchloop(const void *lft, int tp1, int incr1, const char *hp1, int wd1,
 				dst[k] = res;
 				nils += is_TPE_nil(res);
 			} else {
-				j = x2 * incr2;
 				if (is_oid_nil(((const oid *) rgt)[j])) {
 #ifdef NIL_MATCHES_FLAG
 					if (nil_matches) {
@@ -57,7 +56,7 @@ op_typeswitchloop(const void *lft, int tp1, int incr1, const char *hp1, int wd1,
 						dst[k] = TPE_nil;
 					}
 				} else {
-					dst[k] = OP(v + x1, ((const oid *) rgt)[j]);
+					dst[k] = OP(v + i, ((const oid *) rgt)[j]);
 				}
 			}
 		}
@@ -632,9 +631,9 @@ op_typeswitchloop(const void *lft, int tp1, int incr1, const char *hp1, int wd1,
 		if (tp2 == TYPE_void) {
 			oid v = * (const oid *) rgt;
 			for (k = 0; k < ci1->ncand; k++) {
-				x1 = canditer_next(ci1) - candoff1;
-				x2 = canditer_next(ci2) - candoff2;
-				i = x1 * incr1;
+				if (incr1)
+					i = canditer_next(ci1) - candoff1;
+				j = canditer_next(ci2) - candoff2;
 				if (is_oid_nil(v)) {
 #ifdef NIL_MATCHES_FLAG
 					if (nil_matches) {
@@ -657,7 +656,7 @@ op_typeswitchloop(const void *lft, int tp1, int incr1, const char *hp1, int wd1,
 							dst[k] = TPE_nil;
 						}
 					} else {
-						dst[k] = OP(((const oid *) lft)[i], v + x2);
+						dst[k] = OP(((const oid *) lft)[i], v + j);
 					}
 				}
 			}
@@ -678,10 +677,10 @@ op_typeswitchloop(const void *lft, int tp1, int incr1, const char *hp1, int wd1,
 		if (tp1 != tp2)
 			goto unsupported;
 		for (k = 0; k < ci1->ncand; k++) {
-			x1 = canditer_next(ci1) - candoff1;
-			x2 = canditer_next(ci2) - candoff2;
-			i = x1 * incr1;
-			j = x2 * incr2;
+			if (incr1)
+				i = canditer_next(ci1) - candoff1;
+			if (incr2)
+				j = canditer_next(ci2) - candoff2;
 			const char *s1, *s2;
 			s1 = hp1 ? hp1 + VarHeapVal(lft, i, wd1) : (const char *) lft;
 			s2 = hp2 ? hp2 + VarHeapVal(rgt, j, wd2) : (const char *) rgt;
@@ -729,10 +728,10 @@ op_typeswitchloop(const void *lft, int tp1, int incr1, const char *hp1, int wd1,
 			goto dbldbl;
 		nil = ATOMnilptr(tp1);
 		for (k = 0; k < ci1->ncand; k++) {
-			x1 = canditer_next(ci1) - candoff1;
-			x2 = canditer_next(ci2) - candoff2;
-			i = x1 * incr1;
-			j = x2 * incr2;
+			if (incr1)
+				i = canditer_next(ci1) - candoff1;
+			if (incr2)
+				j = canditer_next(ci2) - candoff2;
 			const void *p1, *p2;
 			p1 = hp1
 				? (const void *) (hp1 + VarHeapVal(lft, i, wd1))
@@ -770,8 +769,8 @@ op_typeswitchloop(const void *lft, int tp1, int incr1, const char *hp1, int wd1,
 }
 
 static BAT *
-BATcalcop_intern(const void *lft, int tp1, int incr1, const char *hp1, int wd1,
-		 const void *rgt, int tp2, int incr2, const char *hp2, int wd2,
+BATcalcop_intern(const void *lft, int tp1, bool incr1, const char *hp1, int wd1,
+		 const void *rgt, int tp2, bool incr2, const char *hp2, int wd2,
 		 struct canditer *restrict ci1, struct canditer *restrict ci2,
 		 oid candoff1, oid candoff2, bool nonil, oid seqbase,
 #ifdef NIL_MATCHES_FLAG
@@ -849,12 +848,12 @@ BATcalcop(BAT *b1, BAT *b2, BAT *s1, BAT *s2
 
 	return BATcalcop_intern(b1->ttype == TYPE_void ? (const void *) &b1->tseqbase : (const void *) Tloc(b1, 0),
 				ATOMtype(b1->ttype) == TYPE_oid ? b1->ttype : ATOMbasetype(b1->ttype),
-				1,
+				true,
 				b1->tvheap ? b1->tvheap->base : NULL,
 				b1->twidth,
 				b2->ttype == TYPE_void ? (const void *) &b2->tseqbase : (const void *) Tloc(b2, 0),
 				ATOMtype(b2->ttype) == TYPE_oid ? b2->ttype : ATOMbasetype(b2->ttype),
-				1,
+				true,
 				b2->tvheap ? b2->tvheap->base : NULL,
 				b2->twidth,
 				&ci1, &ci2,
@@ -885,12 +884,12 @@ BATcalcopcst(BAT *b, const ValRecord *v, BAT *s
 
 	return BATcalcop_intern(b->ttype == TYPE_void ? (const void *) &b->tseqbase : (const void *) Tloc(b, 0),
 				ATOMtype(b->ttype) == TYPE_oid ? b->ttype : ATOMbasetype(b->ttype),
-				1,
+				true,
 				b->tvheap ? b->tvheap->base : NULL,
 				b->twidth,
 				VALptr(v),
 				ATOMtype(v->vtype) == TYPE_oid ? v->vtype : ATOMbasetype(v->vtype),
-				0,
+				false,
 				NULL,
 				0,
 				&ci,
@@ -922,12 +921,12 @@ BATcalccstop(const ValRecord *v, BAT *b, BAT *s
 
 	return BATcalcop_intern(VALptr(v),
 				ATOMtype(v->vtype) == TYPE_oid ? v->vtype : ATOMbasetype(v->vtype),
-				0,
+				false,
 				NULL,
 				0,
 				b->ttype == TYPE_void ? (const void *) &b->tseqbase : (const void *) Tloc(b, 0),
 				ATOMtype(b->ttype) == TYPE_oid ? b->ttype : ATOMbasetype(b->ttype),
-				1,
+				true,
 				b->tvheap ? b->tvheap->base : NULL,
 				b->twidth,
 				&(struct canditer){.tpe=cand_dense, .ncand=ncand},
@@ -951,12 +950,12 @@ VARcalcop(ValPtr ret, const ValRecord *lft, const ValRecord *rgt
 	ret->vtype = TYPE_TPE;
 	if (op_typeswitchloop(VALptr(lft),
 			      ATOMtype(lft->vtype) == TYPE_oid ? lft->vtype : ATOMbasetype(lft->vtype),
-			      0,
+			      false,
 			      NULL,
 			      0,
 			      VALptr(rgt),
 			      ATOMtype(rgt->vtype) == TYPE_oid ? rgt->vtype : ATOMbasetype(rgt->vtype),
-			      0,
+			      false,
 			      NULL,
 			      0,
 			      VALget(ret),

@@ -54,9 +54,6 @@
  *
  */
 #include "monetdb_config.h"
-#include "remote.h"
-
-#include "mal_authorize.h"
 
 /*
  * Technically, these methods need to be serialised per connection,
@@ -71,6 +68,38 @@
  */
 #ifdef HAVE_MAPI
 
+#include "mal.h"
+#include "mal_exception.h"
+#include "mal_interpreter.h"
+#include "mal_function.h" /* for printFunction */
+#include "mal_listing.h"
+#include "mal_instruction.h" /* for getmodule/func macros */
+#include "mal_authorize.h"
+#include "mapi.h"
+#include "mutils.h"
+
+#define RMTT_L_ENDIAN   (0<<1)
+#define RMTT_B_ENDIAN   (1<<1)
+#define RMTT_32_BITS    (0<<2)
+#define RMTT_64_BITS    (1<<2)
+#define RMTT_32_OIDS    (0<<3)
+#define RMTT_64_OIDS    (1<<3)
+
+typedef struct _connection {
+	MT_Lock            lock;      /* lock to avoid interference */
+	str                name;      /* the handle for this connection */
+	Mapi               mconn;     /* the Mapi handle for the connection */
+	unsigned char      type;      /* binary profile of the connection target */
+	size_t             nextid;    /* id counter */
+	struct _connection *next;     /* the next connection in the list */
+} *connection;
+
+#ifndef WIN32
+#include <sys/socket.h> /* socket */
+#include <sys/un.h> /* sockaddr_un */
+#endif
+#include <unistd.h> /* gethostname */
+
 static connection conns = NULL;
 static unsigned char localtype = 0177;
 
@@ -81,7 +110,7 @@ static inline str RMTinternalcopyfrom(BAT **ret, char *hdr, stream *in);
  * Returns a BAT with valid redirects for the given pattern.  If
  * merovingian is not running, this function throws an error.
  */
-str RMTresolve(bat *ret, str *pat) {
+static str RMTresolve(bat *ret, str *pat) {
 #ifdef NATIVE_WIN32
 	(void) ret;
 	(void) pat;
@@ -152,7 +181,7 @@ static size_t connection_id = 0;
  * Returns a connection to the given uri.  It always returns a newly
  * created connection.
  */
-str RMTconnectScen(
+static str RMTconnectScen(
 		str *ret,
 		str *ouri,
 		str *user,
@@ -252,7 +281,7 @@ str RMTconnectScen(
 	return(MAL_SUCCEED);
 }
 
-str RMTconnect(
+static str RMTconnect(
 		str *ret,
 		str *uri,
 		str *user,
@@ -262,7 +291,7 @@ str RMTconnect(
 	return RMTconnectScen(ret, uri, user, passwd, &scen);
 }
 
-str
+static str
 RMTconnectTable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	char *local_table;
@@ -321,7 +350,7 @@ RMTconnectTable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
  * system, it only needs to exist for the client (i.e. it was once
  * created).
  */
-str RMTdisconnect(void *ret, str *conn) {
+static str RMTdisconnect(void *ret, str *conn) {
 	connection c, t;
 
 	if (conn == NULL || *conn == NULL || strcmp(*conn, (str)str_nil) == 0)
@@ -467,7 +496,7 @@ RMTquery(MapiHdl *ret, const char *func, Mapi conn, const char *query) {
 	return(MAL_SUCCEED);
 }
 
-str RMTprelude(void *ret) {
+static str RMTprelude(void *ret) {
 	unsigned int type = 0;
 
 	(void)ret;
@@ -491,7 +520,7 @@ str RMTprelude(void *ret) {
 	return(MAL_SUCCEED);
 }
 
-str RMTepilogue(void *ret) {
+static str RMTepilogue(void *ret) {
 	connection c, t;
 
 	(void)ret;
@@ -520,7 +549,7 @@ str RMTepilogue(void *ret) {
  * get fetches the object referenced by ident over connection conn.
  * We are only interested in retrieving void-headed BATs, i.e. single columns.
  */
-str RMTget(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
+static str RMTget(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 	str conn, ident, tmp, rt;
 	connection c;
 	char qbuf[BUFSIZ + 1];
@@ -729,7 +758,7 @@ str RMTget(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
  * stores the given object on the remote host.  The identifier of the
  * object on the remote host is returned for later use.
  */
-str RMTput(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
+static str RMTput(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 	str conn, tmp;
 	char ident[BUFSIZ];
 	connection c;
@@ -959,7 +988,7 @@ static str RMTregisterInternal(Client cntxt, const char *conn, const char *mod, 
 	return msg;
 }
 
-str RMTregister(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
+static str RMTregister(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 	const char *conn = *getArgReference_str(stk, pci, 1);
 	const char *mod = *getArgReference_str(stk, pci, 2);
 	const char *fcn = *getArgReference_str(stk, pci, 3);
@@ -976,7 +1005,7 @@ str RMTregister(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
  * remotely executed function.  This return value can be retrieved using
  * a get call. It handles multiple return arguments.
  */
-str RMTexec(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
+static str RMTexec(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 	str conn, mod, func, tmp;
 	int i;
 	size_t len, buflen;
@@ -1071,7 +1100,7 @@ str RMTexec(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
  * line is read.  The given size argument is taken as a hint only, and
  * is not enforced to match the number of rows read.
  */
-str RMTbatload(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
+static str RMTbatload(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 	ValPtr v;
 	int t;
 	int size;
@@ -1136,7 +1165,7 @@ str RMTbatload(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 /**
  * dump given BAT to stream
  */
-str RMTbincopyto(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+static str RMTbincopyto(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	bat bid = *getArgReference_bat(stk, pci, 1);
 	BAT *b = BBPquickdesc(bid, false);
@@ -1378,7 +1407,7 @@ RMTinternalcopyfrom(BAT **ret, char *hdr, stream *in)
 /**
  * read from the input stream and give the BAT handle back to the caller
  */
-str RMTbincopyfrom(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
+static str RMTbincopyfrom(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 	BAT *b = NULL;
 	ValPtr v;
 	str err;
@@ -1413,7 +1442,7 @@ str RMTbincopyfrom(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
  * bintype identifies the system on its binary profile.  This is mainly
  * used to determine if BATs can be sent binary across.
  */
-str RMTbintype(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
+static str RMTbintype(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 	int type = 0;
 	(void)mb;
 	(void)stk;
@@ -1444,7 +1473,7 @@ str RMTbintype(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
  * Returns whether the underlying connection is still connected or not.
  * Best effort implementation on top of mapi using a ping.
  */
-str
+static str
 RMTisalive(int *ret, str *conn)
 {
 	str tmp;
@@ -1464,7 +1493,7 @@ RMTisalive(int *ret, str *conn)
 }
 
 // This is basically a no op
-str
+static str
 RMTregisterSupervisor(int *ret, str *sup_uuid, str *query_uuid) {
 	(void)sup_uuid;
 	(void)query_uuid;

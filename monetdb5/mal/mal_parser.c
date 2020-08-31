@@ -1061,14 +1061,14 @@ parseInclude(Client cntxt)
 		return 0;
 	}
 
-	/*
-	s = loadLibrary(modnme, FALSE);
-	if (s) {
-		parseError(cntxt, s);
-		freeException(s);
-		return 0;
+	if (getModule(modnme) == NULL) {
+		s = loadLibrary(modnme, FALSE);
+		if (s) {
+			parseError(cntxt, s);
+			freeException(s);
+			return 0;
+		}
 	}
-	*/
 	if ((s = malInclude(cntxt, modnme, 0))) {
 		parseError(cntxt, s);
 		freeException(s);

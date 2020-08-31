@@ -234,7 +234,7 @@ readPropsBuf(confkeyval *ckv, char *buf)
  * the key and associated value.
  */
 char *
-setProp(char *path, char *key, char *val)
+setProp(const char *path, const char *key, const char *val)
 {
 	char *err;
 	char buf[8096];
@@ -261,7 +261,7 @@ setProp(char *path, char *key, char *val)
 				return(strdup(buf));
 			}
 		} else if (strcmp(key, "shared") == 0) {
-			char *value = val;
+			const char *value = val;
 			/* check if tag matches [A-Za-z0-9./]+ */
 			if (*value == '\0') {
 				freeConfFile(props);

@@ -83,12 +83,13 @@ checkbats(BAT *b1, BAT *b2, const char *func)
 
 #define BINARY_3TYPE_FUNC(TYPE1, TYPE2, TYPE3, FUNC)			\
 	do {								\
+		i = j = 0;						\
 		if (ci1->tpe == cand_dense && ci2->tpe == cand_dense) {	\
 			for (k = 0; k < ci1->ncand; k++) {		\
-				x1 = canditer_next_dense(ci1) - candoff1; \
-				x2 = canditer_next_dense(ci2) - candoff2; \
-				i = x1 * incr1;				\
-				j = x2 * incr2;				\
+				if (incr1)				\
+					i = canditer_next_dense(ci1) - candoff1; \
+				if (incr2)				\
+					j = canditer_next_dense(ci2) - candoff2; \
 				TYPE1 v1 = ((const TYPE1 *) lft)[i];	\
 				TYPE2 v2 = ((const TYPE2 *) rgt)[j];	\
 				if (is_##TYPE1##_nil(v1) || is_##TYPE2##_nil(v2)) { \
@@ -100,10 +101,10 @@ checkbats(BAT *b1, BAT *b2, const char *func)
 			}						\
 		} else {						\
 			for (k = 0; k < ci1->ncand; k++) {		\
-				x1 = canditer_next(ci1) - candoff1;	\
-				x2 = canditer_next(ci2) - candoff2;	\
-				i = x1 * incr1;				\
-				j = x2 * incr2;				\
+				if (incr1)				\
+					i = canditer_next(ci1) - candoff1; \
+				if (incr2)				\
+					j = canditer_next(ci2) - candoff2; \
 				TYPE1 v1 = ((const TYPE1 *) lft)[i];	\
 				TYPE2 v2 = ((const TYPE2 *) rgt)[j];	\
 				if (is_##TYPE1##_nil(v1) || is_##TYPE2##_nil(v2)) { \
@@ -120,12 +121,13 @@ checkbats(BAT *b1, BAT *b2, const char *func)
  * when it is set */
 #define BINARY_3TYPE_FUNC_nilmatch(TYPE1, TYPE2, TYPE3, FUNC)		\
 	do {								\
+		i = j = 0;						\
 		if (ci1->tpe == cand_dense && ci2->tpe == cand_dense) {	\
 			for (k = 0; k < ci1->ncand; k++) {		\
-				x1 = canditer_next_dense(ci1) - candoff1; \
-				x2 = canditer_next_dense(ci2) - candoff2; \
-				i = x1 * incr1;				\
-				j = x2 * incr2;				\
+				if (incr1)				\
+					i = canditer_next_dense(ci1) - candoff1; \
+				if (incr2)				\
+					j = canditer_next_dense(ci2) - candoff2; \
 				TYPE1 v1 = ((const TYPE1 *) lft)[i];	\
 				TYPE2 v2 = ((const TYPE2 *) rgt)[j];	\
 				if (is_##TYPE1##_nil(v1) || is_##TYPE2##_nil(v2)) { \
@@ -136,10 +138,10 @@ checkbats(BAT *b1, BAT *b2, const char *func)
 			}						\
 		} else {						\
 			for (k = 0; k < ci1->ncand; k++) {		\
-				x1 = canditer_next(ci1) - candoff1;	\
-				x2 = canditer_next(ci2) - candoff2;	\
-				i = x1 * incr1;				\
-				j = x2 * incr2;				\
+				if (incr1)				\
+					i = canditer_next(ci1) - candoff1; \
+				if (incr2)				\
+					j = canditer_next(ci2) - candoff2; \
 				TYPE1 v1 = ((const TYPE1 *) lft)[i];	\
 				TYPE2 v2 = ((const TYPE2 *) rgt)[j];	\
 				if (is_##TYPE1##_nil(v1) || is_##TYPE2##_nil(v2)) { \
@@ -153,22 +155,23 @@ checkbats(BAT *b1, BAT *b2, const char *func)
 
 #define BINARY_3TYPE_FUNC_nonil(TYPE1, TYPE2, TYPE3, FUNC)		\
 	do {								\
+		i = j = 0;						\
 		if (ci1->tpe == cand_dense && ci2->tpe == cand_dense) {	\
 			for (k = 0; k < ci1->ncand; k++) {		\
-				x1 = canditer_next_dense(ci1) - candoff1; \
-				x2 = canditer_next_dense(ci2) - candoff2; \
-				i = x1 * incr1;				\
-				j = x2 * incr2;				\
+				if (incr1)				\
+					i = canditer_next_dense(ci1) - candoff1; \
+				if (incr2)				\
+					j = canditer_next_dense(ci2) - candoff2; \
 				TYPE1 v1 = ((const TYPE1 *) lft)[i];	\
 				TYPE2 v2 = ((const TYPE2 *) rgt)[j];	\
 				((TYPE3 *) dst)[k] = FUNC(v1, v2);	\
 			}						\
 		} else {						\
 			for (k = 0; k < ci1->ncand; k++) {		\
-				x1 = canditer_next(ci1) - candoff1;	\
-				x2 = canditer_next(ci2) - candoff2;	\
-				i = x1 * incr1;				\
-				j = x2 * incr2;				\
+				if (incr1)				\
+					i = canditer_next(ci1) - candoff1; \
+				if (incr2)				\
+					j = canditer_next(ci2) - candoff2; \
 				TYPE1 v1 = ((const TYPE1 *) lft)[i];	\
 				TYPE2 v2 = ((const TYPE2 *) rgt)[j];	\
 				((TYPE3 *) dst)[k] = FUNC(v1, v2);	\
@@ -178,12 +181,13 @@ checkbats(BAT *b1, BAT *b2, const char *func)
 
 #define BINARY_3TYPE_FUNC_CHECK(TYPE1, TYPE2, TYPE3, FUNC, CHECK)	\
 	do {								\
+		i = j = 0;						\
 		if (ci1->tpe == cand_dense && ci2->tpe == cand_dense) {	\
 			for (k = 0; k < ci1->ncand; k++) {		\
-				x1 = canditer_next_dense(ci1) - candoff1; \
-				x2 = canditer_next_dense(ci2) - candoff2; \
-				i = x1 * incr1;				\
-				j = x2 * incr2;				\
+				if (incr1)				\
+					i = canditer_next_dense(ci1) - candoff1; \
+				if (incr2)				\
+					j = canditer_next_dense(ci2) - candoff2; \
 				TYPE1 v1 = ((const TYPE1 *) lft)[i];	\
 				TYPE2 v2 = ((const TYPE2 *) rgt)[j];	\
 				if (is_##TYPE1##_nil(v1) || is_##TYPE2##_nil(v2)) { \
@@ -206,10 +210,10 @@ checkbats(BAT *b1, BAT *b2, const char *func)
 			}						\
 		} else {						\
 			for (k = 0; k < ci1->ncand; k++) {		\
-				x1 = canditer_next(ci1) - candoff1;	\
-				x2 = canditer_next(ci2) - candoff2;	\
-				i = x1 * incr1;				\
-				j = x2 * incr2;				\
+				if (incr1)				\
+					i = canditer_next(ci1) - candoff1; \
+				if (incr2)				\
+					j = canditer_next(ci2) - candoff2; \
 				TYPE1 v1 = ((const TYPE1 *) lft)[i];	\
 				TYPE2 v2 = ((const TYPE2 *) rgt)[j];	\
 				if (is_##TYPE1##_nil(v1) || is_##TYPE2##_nil(v2)) { \
@@ -1725,8 +1729,8 @@ BATcalccstmax_no_nil(const ValRecord *v, BAT *b, BAT *s)
 
 #define ADD_3TYPE(TYPE1, TYPE2, TYPE3, IF)				\
 static BUN								\
-add_##TYPE1##_##TYPE2##_##TYPE3(const TYPE1 *lft, int incr1,		\
-				const TYPE2 *rgt, int incr2,		\
+add_##TYPE1##_##TYPE2##_##TYPE3(const TYPE1 *lft, bool incr1,		\
+				const TYPE2 *rgt, bool incr2,		\
 				TYPE3 *restrict dst, TYPE3 max,		\
 				struct canditer *restrict ci1,		\
 				struct canditer *restrict ci2,		\
@@ -1734,13 +1738,14 @@ add_##TYPE1##_##TYPE2##_##TYPE3(const TYPE1 *lft, int incr1,		\
 				bool abort_on_error)			\
 {									\
 	BUN nils = 0;							\
+	BUN i = 0, j = 0;						\
 									\
 	if (ci1->tpe == cand_dense && ci2->tpe == cand_dense) {		\
 		for (BUN k = 0; k < ci1->ncand; k++) {			\
-			oid x1 = canditer_next_dense(ci1) - candoff1;	\
-			oid x2 = canditer_next_dense(ci2) - candoff2;	\
-			BUN i = x1 * incr1;				\
-			BUN j = x2 * incr2;				\
+			if (incr1)					\
+				i = canditer_next_dense(ci1) - candoff1; \
+			if (incr2)					\
+				j = canditer_next_dense(ci2) - candoff2; \
 			if (is_##TYPE1##_nil(lft[i]) || is_##TYPE2##_nil(rgt[j])) { \
 				dst[k] = TYPE3##_nil;			\
 				nils++;					\
@@ -1753,10 +1758,10 @@ add_##TYPE1##_##TYPE2##_##TYPE3(const TYPE1 *lft, int incr1,		\
 		}							\
 	} else {							\
 		for (BUN k = 0; k < ci1->ncand; k++) {			\
-			oid x1 = canditer_next(ci1) - candoff1;		\
-			oid x2 = canditer_next(ci2) - candoff2;		\
-			BUN i = x1 * incr1;				\
-			BUN j = x2 * incr2;				\
+			if (incr1)					\
+				i = canditer_next(ci1) - candoff1;	\
+			if (incr2)					\
+				j = canditer_next(ci2) - candoff2; \
 			if (is_##TYPE1##_nil(lft[i]) || is_##TYPE2##_nil(rgt[j])) { \
 				dst[k] = TYPE3##_nil;			\
 				nils++;					\
@@ -1773,8 +1778,8 @@ add_##TYPE1##_##TYPE2##_##TYPE3(const TYPE1 *lft, int incr1,		\
 
 #define ADD_3TYPE_enlarge(TYPE1, TYPE2, TYPE3, IF)			\
 static BUN								\
-add_##TYPE1##_##TYPE2##_##TYPE3(const TYPE1 *lft, int incr1,		\
-				const TYPE2 *rgt, int incr2,		\
+add_##TYPE1##_##TYPE2##_##TYPE3(const TYPE1 *lft, bool incr1,		\
+				const TYPE2 *rgt, bool incr2,		\
 				TYPE3 *restrict dst, TYPE3 max,		\
 				struct canditer *restrict ci1,		\
 				struct canditer *restrict ci2,		\
@@ -1782,14 +1787,15 @@ add_##TYPE1##_##TYPE2##_##TYPE3(const TYPE1 *lft, int incr1,		\
 				bool abort_on_error)			\
 {									\
 	BUN nils = 0;							\
+	BUN i = 0, j = 0;						\
 	const bool couldoverflow = (max < (TYPE3) GDK_##TYPE1##_max + (TYPE3) GDK_##TYPE2##_max); \
 									\
 	if (ci1->tpe == cand_dense && ci2->tpe == cand_dense) {		\
 		for (BUN k = 0; k < ci1->ncand; k++) {			\
-			oid x1 = canditer_next_dense(ci1) - candoff1;	\
-			oid x2 = canditer_next_dense(ci2) - candoff2;	\
-			BUN i = x1 * incr1;				\
-			BUN j = x2 * incr2;				\
+			if (incr1)					\
+				i = canditer_next_dense(ci1) - candoff1; \
+			if (incr2)					\
+				j = canditer_next_dense(ci2) - candoff2; \
 			if (is_##TYPE1##_nil(lft[i]) || is_##TYPE2##_nil(rgt[j])) { \
 				dst[k] = TYPE3##_nil;			\
 				nils++;					\
@@ -1804,10 +1810,10 @@ add_##TYPE1##_##TYPE2##_##TYPE3(const TYPE1 *lft, int incr1,		\
 		}							\
 	} else {							\
 		for (BUN k = 0; k < ci1->ncand; k++) {			\
-			oid x1 = canditer_next(ci1) - candoff1;		\
-			oid x2 = canditer_next(ci2) - candoff2;		\
-			BUN i = x1 * incr1;				\
-			BUN j = x2 * incr2;				\
+			if (incr1)					\
+				i = canditer_next(ci1) - candoff1;	\
+			if (incr2)					\
+				j = canditer_next(ci2) - candoff2;	\
 			if (is_##TYPE1##_nil(lft[i]) || is_##TYPE2##_nil(rgt[j])) { \
 				dst[k] = TYPE3##_nil;			\
 				nils++;					\
@@ -2012,8 +2018,8 @@ ADD_3TYPE(dbl, flt, dbl, F)
 ADD_3TYPE(dbl, dbl, dbl, F)
 
 static BUN
-add_typeswitchloop(const void *lft, int tp1, int incr1,
-		   const void *rgt, int tp2, int incr2,
+add_typeswitchloop(const void *lft, int tp1, bool incr1,
+		   const void *rgt, int tp2, bool incr2,
 		   void *restrict dst, int tp,
 		   struct canditer *restrict ci1, struct canditer *restrict ci2,
 		   oid candoff1, oid candoff2, bool abort_on_error,
@@ -3343,10 +3349,8 @@ BATcalcadd(BAT *b1, BAT *b2, BAT *s1, BAT *s2, int tp, bool abort_on_error)
 	if (b1->ttype == TYPE_str && b2->ttype == TYPE_str && tp == TYPE_str) {
 		nils = addstr_loop(b1, NULL, b2, NULL, bn, &ci1, &ci2);
 	} else {
-		nils = add_typeswitchloop(Tloc(b1, 0),
-					  b1->ttype, 1,
-					  Tloc(b2, 0),
-					  b2->ttype, 1,
+		nils = add_typeswitchloop(Tloc(b1, 0), b1->ttype, true,
+					  Tloc(b2, 0), b2->ttype, true,
 					  Tloc(bn, 0), tp,
 					  &ci1, &ci2,
 					  b1->hseqbase, b2->hseqbase,
@@ -3405,8 +3409,8 @@ BATcalcaddcst(BAT *b, const ValRecord *v, BAT *s, int tp, bool abort_on_error)
 	if (b->ttype == TYPE_str && v->vtype == TYPE_str && tp == TYPE_str) {
 		nils = addstr_loop(b, NULL, NULL, v->val.sval, bn, &ci, &(struct canditer){.tpe=cand_dense, .ncand=ncand});
 	} else {
-		nils = add_typeswitchloop(Tloc(b, 0), b->ttype, 1,
-					  VALptr(v), v->vtype, 0,
+		nils = add_typeswitchloop(Tloc(b, 0), b->ttype, true,
+					  VALptr(v), v->vtype, false,
 					  Tloc(bn, 0), tp,
 					  &ci,
 					  &(struct canditer){.tpe=cand_dense, .ncand=ncand},
@@ -3464,8 +3468,8 @@ BATcalccstadd(const ValRecord *v, BAT *b, BAT *s, int tp, bool abort_on_error)
 	if (b->ttype == TYPE_str && v->vtype == TYPE_str && tp == TYPE_str) {
 		nils = addstr_loop(NULL, v->val.sval, b, NULL, bn, &(struct canditer){.tpe=cand_dense, .ncand=ncand}, &ci);
 	} else {
-		nils = add_typeswitchloop(VALptr(v), v->vtype, 0,
-					  Tloc(b, 0), b->ttype, 1,
+		nils = add_typeswitchloop(VALptr(v), v->vtype, false,
+					  Tloc(b, 0), b->ttype, true,
 					  Tloc(bn, 0), tp,
 					  &(struct canditer){.tpe=cand_dense, .ncand=ncand},
 					  &ci,
@@ -3503,8 +3507,8 @@ gdk_return
 VARcalcadd(ValPtr ret, const ValRecord *lft, const ValRecord *rgt,
 	   bool abort_on_error)
 {
-	if (add_typeswitchloop(VALptr(lft), lft->vtype, 0,
-			       VALptr(rgt), rgt->vtype, 0,
+	if (add_typeswitchloop(VALptr(lft), lft->vtype, false,
+			       VALptr(rgt), rgt->vtype, false,
 			       VALget(ret), ret->vtype,
 			       &(struct canditer){.tpe=cand_dense, .ncand=1},
 			       &(struct canditer){.tpe=cand_dense, .ncand=1},
@@ -3515,8 +3519,8 @@ VARcalcadd(ValPtr ret, const ValRecord *lft, const ValRecord *rgt,
 
 static BAT *
 BATcalcincrdecr(BAT *b, BAT *s, bool abort_on_error,
-		BUN (*typeswitchloop)(const void *, int, int,
-				      const void *, int, int,
+		BUN (*typeswitchloop)(const void *, int, bool,
+				      const void *, int, bool,
 				      void *, int,
 				      struct canditer *restrict,
 				      struct canditer *restrict,
@@ -3541,8 +3545,8 @@ BATcalcincrdecr(BAT *b, BAT *s, bool abort_on_error,
 	if (ncand == 0)
 		return bn;
 
-	nils = (*typeswitchloop)(Tloc(b, 0), b->ttype, 1,
-				 &(bte){1}, TYPE_bte, 0,
+	nils = (*typeswitchloop)(Tloc(b, 0), b->ttype, true,
+				 &(bte){1}, TYPE_bte, false,
 				 Tloc(bn, 0), bn->ttype,
 				 &(struct canditer){.tpe=cand_dense, .ncand=1},
 				 &ci,
@@ -3585,8 +3589,8 @@ BATcalcincr(BAT *b, BAT *s, bool abort_on_error)
 gdk_return
 VARcalcincr(ValPtr ret, const ValRecord *v, bool abort_on_error)
 {
-	if (add_typeswitchloop(VALptr(v), v->vtype, 0,
-			       &(bte){1}, TYPE_bte, 0,
+	if (add_typeswitchloop(VALptr(v), v->vtype, false,
+			       &(bte){1}, TYPE_bte, false,
 			       VALget(ret), ret->vtype,
 			       &(struct canditer){.tpe=cand_dense, .ncand=1},
 			       &(struct canditer){.tpe=cand_dense, .ncand=1},
@@ -3600,8 +3604,8 @@ VARcalcincr(ValPtr ret, const ValRecord *v, bool abort_on_error)
 
 #define SUB_3TYPE(TYPE1, TYPE2, TYPE3, IF)				\
 static BUN								\
-sub_##TYPE1##_##TYPE2##_##TYPE3(const TYPE1 *lft, int incr1,		\
-				const TYPE2 *rgt, int incr2,		\
+sub_##TYPE1##_##TYPE2##_##TYPE3(const TYPE1 *lft, bool incr1,		\
+				const TYPE2 *rgt, bool incr2,		\
 				TYPE3 *restrict dst, TYPE3 max,		\
 				struct canditer *restrict ci1,		\
 				struct canditer *restrict ci2,		\
@@ -3609,13 +3613,14 @@ sub_##TYPE1##_##TYPE2##_##TYPE3(const TYPE1 *lft, int incr1,		\
 				bool abort_on_error)			\
 {									\
 	BUN nils = 0;							\
+	BUN i = 0, j = 0;						\
 									\
 	if (ci1->tpe == cand_dense && ci2->tpe == cand_dense) {		\
 		for (BUN k = 0; k < ci1->ncand; k++) {			\
-			oid x1 = canditer_next_dense(ci1) - candoff1;	\
-			oid x2 = canditer_next_dense(ci2) - candoff2;	\
-			BUN i = x1 * incr1;				\
-			BUN j = x2 * incr2;				\
+			if (incr1)					\
+				i = canditer_next_dense(ci1) - candoff1; \
+			if (incr2)					\
+				j = canditer_next_dense(ci2) - candoff2; \
 			if (is_##TYPE1##_nil(lft[i]) || is_##TYPE2##_nil(rgt[j])) { \
 				dst[k] = TYPE3##_nil;			\
 				nils++;					\
@@ -3628,10 +3633,10 @@ sub_##TYPE1##_##TYPE2##_##TYPE3(const TYPE1 *lft, int incr1,		\
 		}							\
 	} else {							\
 		for (BUN k = 0; k < ci1->ncand; k++) {			\
-			oid x1 = canditer_next(ci1) - candoff1;		\
-			oid x2 = canditer_next(ci2) - candoff2;		\
-			BUN i = x1 * incr1;				\
-			BUN j = x2 * incr2;				\
+			if (incr1)					\
+				i = canditer_next(ci1) - candoff1;	\
+			if (incr2)					\
+				j = canditer_next(ci2) - candoff2;	\
 			if (is_##TYPE1##_nil(lft[i]) || is_##TYPE2##_nil(rgt[j])) { \
 				dst[k] = TYPE3##_nil;			\
 				nils++;					\
@@ -3648,8 +3653,8 @@ sub_##TYPE1##_##TYPE2##_##TYPE3(const TYPE1 *lft, int incr1,		\
 
 #define SUB_3TYPE_enlarge(TYPE1, TYPE2, TYPE3, IF)			\
 static BUN								\
-sub_##TYPE1##_##TYPE2##_##TYPE3(const TYPE1 *lft, int incr1,		\
-				const TYPE2 *rgt, int incr2,		\
+sub_##TYPE1##_##TYPE2##_##TYPE3(const TYPE1 *lft, bool incr1,		\
+				const TYPE2 *rgt, bool incr2,		\
 				TYPE3 *restrict dst, TYPE3 max,		\
 				struct canditer *restrict ci1,		\
 				struct canditer *restrict ci2,		\
@@ -3657,14 +3662,15 @@ sub_##TYPE1##_##TYPE2##_##TYPE3(const TYPE1 *lft, int incr1,		\
 				bool abort_on_error)			\
 {									\
 	BUN nils = 0;							\
+	BUN i = 0, j = 0;						\
 	const bool couldoverflow = (max < (TYPE3) GDK_##TYPE1##_max + (TYPE3) GDK_##TYPE2##_max); \
 									\
 	if (ci1->tpe == cand_dense && ci2->tpe == cand_dense) {		\
 		for (BUN k = 0; k < ci1->ncand; k++) {			\
-			oid x1 = canditer_next_dense(ci1) - candoff1;	\
-			oid x2 = canditer_next_dense(ci2) - candoff2;	\
-			BUN i = x1 * incr1;				\
-			BUN j = x2 * incr2;				\
+			if (incr1)					\
+				i = canditer_next_dense(ci1) - candoff1; \
+			if (incr2)					\
+				j = canditer_next_dense(ci2) - candoff2; \
 			if (is_##TYPE1##_nil(lft[i]) || is_##TYPE2##_nil(rgt[j])) { \
 				dst[k] = TYPE3##_nil;			\
 				nils++;					\
@@ -3679,10 +3685,10 @@ sub_##TYPE1##_##TYPE2##_##TYPE3(const TYPE1 *lft, int incr1,		\
 		}							\
 	} else {							\
 		for (BUN k = 0; k < ci1->ncand; k++) {			\
-			oid x1 = canditer_next(ci1) - candoff1;		\
-			oid x2 = canditer_next(ci2) - candoff2;		\
-			BUN i = x1 * incr1;				\
-			BUN j = x2 * incr2;				\
+			if (incr1)					\
+				i = canditer_next(ci1) - candoff1;	\
+			if (incr2)					\
+				j = canditer_next(ci2) - candoff2;	\
 			if (is_##TYPE1##_nil(lft[i]) || is_##TYPE2##_nil(rgt[j])) { \
 				dst[k] = TYPE3##_nil;			\
 				nils++;					\
@@ -3887,8 +3893,8 @@ SUB_3TYPE(dbl, flt, dbl, F)
 SUB_3TYPE(dbl, dbl, dbl, F)
 
 static BUN
-sub_typeswitchloop(const void *lft, int tp1, int incr1,
-		   const void *rgt, int tp2, int incr2,
+sub_typeswitchloop(const void *lft, int tp1, bool incr1,
+		   const void *rgt, int tp2, bool incr2,
 		   void *restrict dst, int tp,
 		   struct canditer *restrict ci1, struct canditer *restrict ci2,
 		   oid candoff1, oid candoff2,
@@ -5161,8 +5167,8 @@ BATcalcsub(BAT *b1, BAT *b2, BAT *s1, BAT *s2, int tp, bool abort_on_error)
 	if (ncand == 0)
 		return bn;
 
-	nils = sub_typeswitchloop(Tloc(b1, 0), b1->ttype, 1,
-				  Tloc(b2, 0), b2->ttype, 1,
+	nils = sub_typeswitchloop(Tloc(b1, 0), b1->ttype, true,
+				  Tloc(b2, 0), b2->ttype, true,
 				  Tloc(bn, 0), tp,
 				  &ci1, &ci2,
 				  b1->hseqbase, b2->hseqbase,
@@ -5212,8 +5218,8 @@ BATcalcsubcst(BAT *b, const ValRecord *v, BAT *s, int tp, bool abort_on_error)
 	if (ncand == 0)
 		return bn;
 
-	nils = sub_typeswitchloop(Tloc(b, 0), b->ttype, 1,
-				  VALptr(v), v->vtype, 0,
+	nils = sub_typeswitchloop(Tloc(b, 0), b->ttype, true,
+				  VALptr(v), v->vtype, false,
 				  Tloc(bn, 0), tp,
 				  &ci,
 				  &(struct canditer){.tpe=cand_dense, .ncand=ncand},
@@ -5267,8 +5273,8 @@ BATcalccstsub(const ValRecord *v, BAT *b, BAT *s, int tp, bool abort_on_error)
 	if (ncand == 0)
 		return bn;
 
-	nils = sub_typeswitchloop(VALptr(v), v->vtype, 0,
-				  Tloc(b, 0), b->ttype, 1,
+	nils = sub_typeswitchloop(VALptr(v), v->vtype, false,
+				  Tloc(b, 0), b->ttype, true,
 				  Tloc(bn, 0), tp,
 				  &(struct canditer){.tpe=cand_dense, .ncand=ncand},
 				  &ci,
@@ -5306,8 +5312,8 @@ gdk_return
 VARcalcsub(ValPtr ret, const ValRecord *lft, const ValRecord *rgt,
 	   bool abort_on_error)
 {
-	if (sub_typeswitchloop(VALptr(lft), lft->vtype, 0,
-			       VALptr(rgt), rgt->vtype, 0,
+	if (sub_typeswitchloop(VALptr(lft), lft->vtype, false,
+			       VALptr(rgt), rgt->vtype, false,
 			       VALget(ret), ret->vtype,
 			       &(struct canditer){.tpe=cand_dense, .ncand=1},
 			       &(struct canditer){.tpe=cand_dense, .ncand=1},
@@ -5326,8 +5332,8 @@ BATcalcdecr(BAT *b, BAT *s, bool abort_on_error)
 gdk_return
 VARcalcdecr(ValPtr ret, const ValRecord *v, bool abort_on_error)
 {
-	if (sub_typeswitchloop(VALptr(v), v->vtype, 0,
-			       &(bte){1}, TYPE_bte, 0,
+	if (sub_typeswitchloop(VALptr(v), v->vtype, false,
+			       &(bte){1}, TYPE_bte, false,
 			       VALget(ret), ret->vtype,
 			       &(struct canditer){.tpe=cand_dense, .ncand=1},
 			       &(struct canditer){.tpe=cand_dense, .ncand=1},
@@ -5343,8 +5349,8 @@ VARcalcdecr(ValPtr ret, const ValRecord *v, bool abort_on_error)
  * multiplying into it doesn't cause overflow */
 #define MUL_4TYPE(TYPE1, TYPE2, TYPE3, TYPE4, IF)			\
 static BUN								\
-mul_##TYPE1##_##TYPE2##_##TYPE3(const TYPE1 *lft, int incr1,		\
-				const TYPE2 *rgt, int incr2,		\
+mul_##TYPE1##_##TYPE2##_##TYPE3(const TYPE1 *lft, bool incr1,		\
+				const TYPE2 *rgt, bool incr2,		\
 				TYPE3 *restrict dst, TYPE3 max,		\
 				struct canditer *restrict ci1,		\
 				struct canditer *restrict ci2,		\
@@ -5352,13 +5358,14 @@ mul_##TYPE1##_##TYPE2##_##TYPE3(const TYPE1 *lft, int incr1,		\
 				bool abort_on_error)			\
 {									\
 	BUN nils = 0;							\
+	BUN i = 0, j = 0;						\
 									\
 	if (ci1->tpe == cand_dense && ci2->tpe == cand_dense) {		\
 		for (BUN k = 0; k < ci1->ncand; k++) {			\
-			oid x1 = canditer_next_dense(ci1) - candoff1;	\
-			oid x2 = canditer_next_dense(ci2) - candoff2;	\
-			BUN i = x1 * incr1;				\
-			BUN j = x2 * incr2;				\
+			if (incr1)					\
+				i = canditer_next_dense(ci1) - candoff1; \
+			if (incr2)					\
+				j = canditer_next_dense(ci2) - candoff2; \
 			if (is_##TYPE1##_nil(lft[i]) || is_##TYPE2##_nil(rgt[j])) { \
 				dst[k] = TYPE3##_nil;			\
 				nils++;					\
@@ -5372,10 +5379,10 @@ mul_##TYPE1##_##TYPE2##_##TYPE3(const TYPE1 *lft, int incr1,		\
 		}							\
 	} else {							\
 		for (BUN k = 0; k < ci1->ncand; k++) {			\
-			oid x1 = canditer_next(ci1) - candoff1;		\
-			oid x2 = canditer_next(ci2) - candoff2;		\
-			BUN i = x1 * incr1;				\
-			BUN j = x2 * incr2;				\
+			if (incr1)					\
+				i = canditer_next(ci1) - candoff1;	\
+			if (incr2)					\
+				j = canditer_next(ci2) - candoff2;	\
 			if (is_##TYPE1##_nil(lft[i]) || is_##TYPE2##_nil(rgt[j])) { \
 				dst[k] = TYPE3##_nil;			\
 				nils++;					\
@@ -5393,8 +5400,8 @@ mul_##TYPE1##_##TYPE2##_##TYPE3(const TYPE1 *lft, int incr1,		\
 
 #define MUL_3TYPE_enlarge(TYPE1, TYPE2, TYPE3, IF)			\
 static BUN								\
-mul_##TYPE1##_##TYPE2##_##TYPE3(const TYPE1 *lft, int incr1,		\
-				const TYPE2 *rgt, int incr2,		\
+mul_##TYPE1##_##TYPE2##_##TYPE3(const TYPE1 *lft, bool incr1,		\
+				const TYPE2 *rgt, bool incr2,		\
 				TYPE3 *restrict dst, TYPE3 max,		\
 				struct canditer *restrict ci1,		\
 				struct canditer *restrict ci2,		\
@@ -5402,14 +5409,15 @@ mul_##TYPE1##_##TYPE2##_##TYPE3(const TYPE1 *lft, int incr1,		\
 				bool abort_on_error)			\
 {									\
 	BUN nils = 0;							\
+	BUN i = 0, j = 0;						\
 	const bool couldoverflow = (max < (TYPE3) GDK_##TYPE1##_max * (TYPE3) GDK_##TYPE2##_max); \
 									\
 	if (ci1->tpe == cand_dense && ci2->tpe == cand_dense) {		\
 		for (BUN k = 0; k < ci1->ncand; k++) {			\
-			oid x1 = canditer_next_dense(ci1) - candoff1;	\
-			oid x2 = canditer_next_dense(ci2) - candoff2;	\
-			BUN i = x1 * incr1;				\
-			BUN j = x2 * incr2;				\
+			if (incr1)					\
+				i = canditer_next_dense(ci1) - candoff1; \
+			if (incr2)					\
+				j = canditer_next_dense(ci2) - candoff2; \
 			if (is_##TYPE1##_nil(lft[i]) || is_##TYPE2##_nil(rgt[j])) { \
 				dst[k] = TYPE3##_nil;			\
 				nils++;					\
@@ -5425,10 +5433,10 @@ mul_##TYPE1##_##TYPE2##_##TYPE3(const TYPE1 *lft, int incr1,		\
 		}							\
 	} else {							\
 		for (BUN k = 0; k < ci1->ncand; k++) {			\
-			oid x1 = canditer_next(ci1) - candoff1;		\
-			oid x2 = canditer_next(ci2) - candoff2;		\
-			BUN i = x1 * incr1;				\
-			BUN j = x2 * incr2;				\
+			if (incr1)					\
+				i = canditer_next(ci1) - candoff1;	\
+			if (incr2)					\
+				j = canditer_next(ci2) - candoff2;	\
 			if (is_##TYPE1##_nil(lft[i]) || is_##TYPE2##_nil(rgt[j])) { \
 				dst[k] = TYPE3##_nil;			\
 				nils++;					\
@@ -5452,8 +5460,8 @@ mul_##TYPE1##_##TYPE2##_##TYPE3(const TYPE1 *lft, int incr1,		\
 
 #define MUL_2TYPE_hge(TYPE1, TYPE2)					\
 static BUN								\
-mul_##TYPE1##_##TYPE2##_hge(const TYPE1 *lft, int incr1,		\
-			    const TYPE2 *rgt, int incr2,		\
+mul_##TYPE1##_##TYPE2##_hge(const TYPE1 *lft, bool incr1,		\
+			    const TYPE2 *rgt, bool incr2,		\
 			    hge *restrict dst, hge max,			\
 			    struct canditer *restrict ci1,		\
 			    struct canditer *restrict ci2,		\
@@ -5461,13 +5469,14 @@ mul_##TYPE1##_##TYPE2##_hge(const TYPE1 *lft, int incr1,		\
 			    bool abort_on_error)			\
 {									\
 	BUN nils = 0;							\
+	BUN i = 0, j = 0;						\
 									\
 	if (ci1->tpe == cand_dense && ci2->tpe == cand_dense) {		\
 		for (BUN k = 0; k < ci1->ncand; k++) {			\
-			oid x1 = canditer_next_dense(ci1) - candoff1;	\
-			oid x2 = canditer_next_dense(ci2) - candoff2;	\
-			BUN i = x1 * incr1;				\
-			BUN j = x2 * incr2;				\
+			if (incr1)					\
+				i = canditer_next_dense(ci1) - candoff1; \
+			if (incr2)					\
+				j = canditer_next_dense(ci2) - candoff2; \
 			if (is_##TYPE1##_nil(lft[i]) || is_##TYPE2##_nil(rgt[j])) { \
 				dst[k] = hge_nil;			\
 				nils++;					\
@@ -5480,10 +5489,10 @@ mul_##TYPE1##_##TYPE2##_hge(const TYPE1 *lft, int incr1,		\
 		}							\
 	} else {							\
 		for (BUN k = 0; k < ci1->ncand; k++) {			\
-			oid x1 = canditer_next(ci1) - candoff1;		\
-			oid x2 = canditer_next(ci2) - candoff2;		\
-			BUN i = x1 * incr1;				\
-			BUN j = x2 * incr2;				\
+			if (incr1)					\
+				i = canditer_next(ci1) - candoff1;	\
+			if (incr2)					\
+				j = canditer_next(ci2) - candoff2;	\
 			if (is_##TYPE1##_nil(lft[i]) || is_##TYPE2##_nil(rgt[j])) { \
 				dst[k] = hge_nil;			\
 				nils++;					\
@@ -5502,8 +5511,8 @@ mul_##TYPE1##_##TYPE2##_hge(const TYPE1 *lft, int incr1,		\
 
 #define MUL_2TYPE_lng(TYPE1, TYPE2)					\
 static BUN								\
-mul_##TYPE1##_##TYPE2##_lng(const TYPE1 *lft, int incr1,		\
-			    const TYPE2 *rgt, int incr2,		\
+mul_##TYPE1##_##TYPE2##_lng(const TYPE1 *lft, bool incr1,		\
+			    const TYPE2 *rgt, bool incr2,		\
 			    lng *restrict dst, lng max,			\
 			    struct canditer *restrict ci1,		\
 			    struct canditer *restrict ci2,		\
@@ -5511,13 +5520,14 @@ mul_##TYPE1##_##TYPE2##_lng(const TYPE1 *lft, int incr1,		\
 			    bool abort_on_error)			\
 {									\
 	BUN nils = 0;							\
+	BUN i = 0, j = 0;						\
 									\
 	if (ci1->tpe == cand_dense && ci2->tpe == cand_dense) {		\
 		for (BUN k = 0; k < ci1->ncand; k++) {			\
-			oid x1 = canditer_next_dense(ci1) - candoff1;	\
-			oid x2 = canditer_next_dense(ci2) - candoff2;	\
-			BUN i = x1 * incr1;				\
-			BUN j = x2 * incr2;				\
+			if (incr1)					\
+				i = canditer_next_dense(ci1) - candoff1; \
+			if (incr2)					\
+				j = canditer_next_dense(ci2) - candoff2; \
 			if (is_##TYPE1##_nil(lft[i]) || is_##TYPE2##_nil(rgt[j])) { \
 				dst[k] = lng_nil;			\
 				nils++;					\
@@ -5530,10 +5540,10 @@ mul_##TYPE1##_##TYPE2##_lng(const TYPE1 *lft, int incr1,		\
 		}							\
 	} else {							\
 		for (BUN k = 0; k < ci1->ncand; k++) {			\
-			oid x1 = canditer_next(ci1) - candoff1;		\
-			oid x2 = canditer_next(ci2) - candoff2;		\
-			BUN i = x1 * incr1;				\
-			BUN j = x2 * incr2;				\
+			if (incr1)					\
+				i = canditer_next(ci1) - candoff1;	\
+			if (incr2)					\
+				j = canditer_next(ci2) - candoff2;	\
 			if (is_##TYPE1##_nil(lft[i]) || is_##TYPE2##_nil(rgt[j])) { \
 				dst[k] = lng_nil;			\
 				nils++;					\
@@ -5552,8 +5562,8 @@ mul_##TYPE1##_##TYPE2##_lng(const TYPE1 *lft, int incr1,		\
 
 #define MUL_2TYPE_float(TYPE1, TYPE2, TYPE3)				\
 static BUN								\
-mul_##TYPE1##_##TYPE2##_##TYPE3(const TYPE1 *lft, int incr1,		\
-				const TYPE2 *rgt, int incr2,		\
+mul_##TYPE1##_##TYPE2##_##TYPE3(const TYPE1 *lft, bool incr1,		\
+				const TYPE2 *rgt, bool incr2,		\
 				TYPE3 *restrict dst, TYPE3 max,		\
 				struct canditer *restrict ci1,		\
 				struct canditer *restrict ci2,		\
@@ -5561,13 +5571,14 @@ mul_##TYPE1##_##TYPE2##_##TYPE3(const TYPE1 *lft, int incr1,		\
 				bool abort_on_error)			\
 {									\
 	BUN nils = 0;							\
+	BUN i = 0, j = 0;						\
 									\
 	if (ci1->tpe == cand_dense && ci2->tpe == cand_dense) {		\
 		for (BUN k = 0; k < ci1->ncand; k++) {			\
-			oid x1 = canditer_next_dense(ci1) - candoff1;	\
-			oid x2 = canditer_next_dense(ci2) - candoff2;	\
-			BUN i = x1 * incr1;				\
-			BUN j = x2 * incr2;				\
+			if (incr1)					\
+				i = canditer_next_dense(ci1) - candoff1; \
+			if (incr2)					\
+				j = canditer_next_dense(ci2) - candoff2; \
 			if (is_##TYPE1##_nil(lft[i]) || is_##TYPE2##_nil(rgt[j])) { \
 				dst[k] = TYPE3##_nil;			\
 				nils++;					\
@@ -5584,10 +5595,10 @@ mul_##TYPE1##_##TYPE2##_##TYPE3(const TYPE1 *lft, int incr1,		\
 		}							\
 	} else {							\
 		for (BUN k = 0; k < ci1->ncand; k++) {			\
-			oid x1 = canditer_next(ci1) - candoff1;		\
-			oid x2 = canditer_next(ci2) - candoff2;		\
-			BUN i = x1 * incr1;				\
-			BUN j = x2 * incr2;				\
+			if (incr1)					\
+				i = canditer_next(ci1) - candoff1;	\
+			if (incr2)					\
+				j = canditer_next(ci2) - candoff2;	\
 			if (is_##TYPE1##_nil(lft[i]) || is_##TYPE2##_nil(rgt[j])) { \
 				dst[k] = TYPE3##_nil;			\
 				nils++;					\
@@ -5794,8 +5805,8 @@ MUL_2TYPE_float(dbl, flt, dbl)
 MUL_2TYPE_float(dbl, dbl, dbl)
 
 static BUN
-mul_typeswitchloop(const void *lft, int tp1, int incr1,
-		   const void *rgt, int tp2, int incr2,
+mul_typeswitchloop(const void *lft, int tp1, bool incr1,
+		   const void *rgt, int tp2, bool incr2,
 		   void *restrict dst, int tp,
 		   struct canditer *restrict ci1,
 		   struct canditer *restrict ci2,
@@ -7047,8 +7058,8 @@ mul_typeswitchloop(const void *lft, int tp1, int incr1,
 static BAT *
 BATcalcmuldivmod(BAT *b1, BAT *b2, BAT *s1, BAT *s2, int tp,
 		 bool abort_on_error,
-		 BUN (*typeswitchloop)(const void *, int, int,
-				       const void *, int, int,
+		 BUN (*typeswitchloop)(const void *, int, bool,
+				       const void *, int, bool,
 				       void *restrict, int,
 				       struct canditer *restrict,
 				       struct canditer *restrict,
@@ -7079,8 +7090,8 @@ BATcalcmuldivmod(BAT *b1, BAT *b2, BAT *s1, BAT *s2, int tp,
 	if (ncand == 0)
 		return bn;
 
-	nils = (*typeswitchloop)(Tloc(b1, 0), b1->ttype, 1,
-				 Tloc(b2, 0), b2->ttype, 1,
+	nils = (*typeswitchloop)(Tloc(b1, 0), b1->ttype, true,
+				 Tloc(b2, 0), b2->ttype, true,
 				 Tloc(bn, 0), tp,
 				 &ci1, &ci2, b1->hseqbase, b2->hseqbase,
 				 abort_on_error, func);
@@ -7136,8 +7147,8 @@ BATcalcmulcst(BAT *b, const ValRecord *v, BAT *s, int tp, bool abort_on_error)
 	if (ncand == 0)
 		return bn;
 
-	nils = mul_typeswitchloop(Tloc(b, 0), b->ttype, 1,
-				  VALptr(v), v->vtype, 0,
+	nils = mul_typeswitchloop(Tloc(b, 0), b->ttype, true,
+				  VALptr(v), v->vtype, false,
 				  Tloc(bn, 0), tp,
 				  &ci,
 				  &(struct canditer){.tpe=cand_dense, .ncand=ncand},
@@ -7201,8 +7212,8 @@ BATcalccstmul(const ValRecord *v, BAT *b, BAT *s, int tp, bool abort_on_error)
 	if (ncand == 0)
 		return bn;
 
-	nils = mul_typeswitchloop(VALptr(v), v->vtype, 0,
-				  Tloc(b, 0), b->ttype, 1,
+	nils = mul_typeswitchloop(VALptr(v), v->vtype, false,
+				  Tloc(b, 0), b->ttype, true,
 				  Tloc(bn, 0), tp,
 				  &(struct canditer){.tpe=cand_dense, .ncand=ncand},
 				  &ci,
@@ -7249,8 +7260,8 @@ gdk_return
 VARcalcmul(ValPtr ret, const ValRecord *lft, const ValRecord *rgt,
 	   bool abort_on_error)
 {
-	if (mul_typeswitchloop(VALptr(lft), lft->vtype, 0,
-			       VALptr(rgt), rgt->vtype, 0,
+	if (mul_typeswitchloop(VALptr(lft), lft->vtype, false,
+			       VALptr(rgt), rgt->vtype, false,
 			       VALget(ret), ret->vtype,
 			       &(struct canditer){.tpe=cand_dense, .ncand=1},
 			       &(struct canditer){.tpe=cand_dense, .ncand=1},
@@ -7264,8 +7275,8 @@ VARcalcmul(ValPtr ret, const ValRecord *lft, const ValRecord *rgt,
 
 #define DIV_3TYPE(TYPE1, TYPE2, TYPE3)					\
 static BUN								\
-div_##TYPE1##_##TYPE2##_##TYPE3(const TYPE1 *lft, int incr1,		\
-				const TYPE2 *rgt, int incr2,		\
+div_##TYPE1##_##TYPE2##_##TYPE3(const TYPE1 *lft, bool incr1,		\
+				const TYPE2 *rgt, bool incr2,		\
 				TYPE3 *restrict dst, TYPE3 max,		\
 				struct canditer *restrict ci1,		\
 				struct canditer *restrict ci2,		\
@@ -7273,13 +7284,14 @@ div_##TYPE1##_##TYPE2##_##TYPE3(const TYPE1 *lft, int incr1,		\
 				bool abort_on_error)			\
 {									\
 	BUN nils = 0;							\
+	BUN i = 0, j = 0;						\
 									\
 	if (ci1->tpe == cand_dense && ci2->tpe == cand_dense) {		\
 		for (BUN k = 0; k < ci1->ncand; k++) {			\
-			oid x1 = canditer_next_dense(ci1) - candoff1;	\
-			oid x2 = canditer_next_dense(ci2) - candoff2;	\
-			BUN i = x1 * incr1;				\
-			BUN j = x2 * incr2;				\
+			if (incr1)					\
+				i = canditer_next_dense(ci1) - candoff1; \
+			if (incr2)					\
+				j = canditer_next_dense(ci2) - candoff2; \
 			if (is_##TYPE1##_nil(lft[i]) || is_##TYPE2##_nil(rgt[j])) { \
 				dst[k] = TYPE3##_nil;			\
 				nils++;					\
@@ -7300,10 +7312,10 @@ div_##TYPE1##_##TYPE2##_##TYPE3(const TYPE1 *lft, int incr1,		\
 		}							\
 	} else {							\
 		for (BUN k = 0; k < ci1->ncand; k++) {			\
-			oid x1 = canditer_next(ci1) - candoff1;		\
-			oid x2 = canditer_next(ci2) - candoff2;		\
-			BUN i = x1 * incr1;				\
-			BUN j = x2 * incr2;				\
+			if (incr1)					\
+				i = canditer_next(ci1) - candoff1;	\
+			if (incr2)					\
+				j = canditer_next(ci2) - candoff2;	\
 			if (is_##TYPE1##_nil(lft[i]) || is_##TYPE2##_nil(rgt[j])) { \
 				dst[k] = TYPE3##_nil;			\
 				nils++;					\
@@ -7328,8 +7340,8 @@ div_##TYPE1##_##TYPE2##_##TYPE3(const TYPE1 *lft, int incr1,		\
 
 #define DIV_3TYPE_float(TYPE1, TYPE2, TYPE3)				\
 static BUN								\
-div_##TYPE1##_##TYPE2##_##TYPE3(const TYPE1 *lft, int incr1,		\
-				const TYPE2 *rgt, int incr2,		\
+div_##TYPE1##_##TYPE2##_##TYPE3(const TYPE1 *lft, bool incr1,		\
+				const TYPE2 *rgt, bool incr2,		\
 				TYPE3 *restrict dst, TYPE3 max,		\
 				struct canditer *restrict ci1,		\
 				struct canditer *restrict ci2,		\
@@ -7337,13 +7349,14 @@ div_##TYPE1##_##TYPE2##_##TYPE3(const TYPE1 *lft, int incr1,		\
 				bool abort_on_error)			\
 {									\
 	BUN nils = 0;							\
+	BUN i = 0, j = 0;						\
 									\
 	if (ci1->tpe == cand_dense && ci2->tpe == cand_dense) {		\
 		for (BUN k = 0; k < ci1->ncand; k++) {			\
-			oid x1 = canditer_next_dense(ci1) - candoff1;	\
-			oid x2 = canditer_next_dense(ci2) - candoff2;	\
-			BUN i = x1 * incr1;				\
-			BUN j = x2 * incr2;				\
+			if (incr1)					\
+				i = canditer_next_dense(ci1) - candoff1; \
+			if (incr2)					\
+				j = canditer_next_dense(ci2) - candoff2; \
 			if (is_##TYPE1##_nil(lft[i]) || is_##TYPE2##_nil(rgt[j])) { \
 				dst[k] = TYPE3##_nil;			\
 				nils++;					\
@@ -7370,10 +7383,10 @@ div_##TYPE1##_##TYPE2##_##TYPE3(const TYPE1 *lft, int incr1,		\
 		}							\
 	} else {							\
 		for (BUN k = 0; k < ci1->ncand; k++) {			\
-			oid x1 = canditer_next(ci1) - candoff1;		\
-			oid x2 = canditer_next(ci2) - candoff2;		\
-			BUN i = x1 * incr1;				\
-			BUN j = x2 * incr2;				\
+			if (incr1)					\
+				i = canditer_next(ci1) - candoff1;	\
+			if (incr2)					\
+				j = canditer_next(ci2) - candoff2;	\
 			if (is_##TYPE1##_nil(lft[i]) || is_##TYPE2##_nil(rgt[j])) { \
 				dst[k] = TYPE3##_nil;			\
 				nils++;					\
@@ -7610,8 +7623,8 @@ DIV_3TYPE_float(dbl, flt, dbl)
 DIV_3TYPE_float(dbl, dbl, dbl)
 
 static BUN
-div_typeswitchloop(const void *lft, int tp1, int incr1,
-		   const void *rgt, int tp2, int incr2,
+div_typeswitchloop(const void *lft, int tp1, bool incr1,
+		   const void *rgt, int tp2, bool incr2,
 		   void *restrict dst, int tp,
 		   struct canditer *restrict ci1, struct canditer *restrict ci2,
 		   oid candoff1, oid candoff2,
@@ -9008,8 +9021,8 @@ BATcalcdivcst(BAT *b, const ValRecord *v, BAT *s, int tp, bool abort_on_error)
 	if (ncand == 0)
 		return bn;
 
-	nils = div_typeswitchloop(Tloc(b, 0), b->ttype, 1,
-				  VALptr(v), v->vtype, 0,
+	nils = div_typeswitchloop(Tloc(b, 0), b->ttype, true,
+				  VALptr(v), v->vtype, false,
 				  Tloc(bn, 0), tp,
 				  &ci,
 				  &(struct canditer){.tpe=cand_dense, .ncand=ncand},
@@ -9079,8 +9092,8 @@ BATcalccstdiv(const ValRecord *v, BAT *b, BAT *s, int tp, bool abort_on_error)
 	if (ncand == 0)
 		return bn;
 
-	nils = div_typeswitchloop(VALptr(v), v->vtype, 0,
-				  Tloc(b, 0), b->ttype, 1,
+	nils = div_typeswitchloop(VALptr(v), v->vtype, false,
+				  Tloc(b, 0), b->ttype, true,
 				  Tloc(bn, 0), tp,
 				  &(struct canditer){.tpe=cand_dense, .ncand=ncand},
 				  &ci,
@@ -9112,8 +9125,8 @@ gdk_return
 VARcalcdiv(ValPtr ret, const ValRecord *lft, const ValRecord *rgt,
 	   bool abort_on_error)
 {
-	if (div_typeswitchloop(VALptr(lft), lft->vtype, 0,
-			       VALptr(rgt), rgt->vtype, 0,
+	if (div_typeswitchloop(VALptr(lft), lft->vtype, false,
+			       VALptr(rgt), rgt->vtype, false,
 			       VALget(ret), ret->vtype,
 			       &(struct canditer){.tpe=cand_dense, .ncand=1},
 			       &(struct canditer){.tpe=cand_dense, .ncand=1},
@@ -9127,8 +9140,8 @@ VARcalcdiv(ValPtr ret, const ValRecord *lft, const ValRecord *rgt,
 
 #define MOD_3TYPE(TYPE1, TYPE2, TYPE3)					\
 static BUN								\
-mod_##TYPE1##_##TYPE2##_##TYPE3(const TYPE1 *lft, int incr1,		\
-				const TYPE2 *rgt, int incr2,		\
+mod_##TYPE1##_##TYPE2##_##TYPE3(const TYPE1 *lft, bool incr1,		\
+				const TYPE2 *rgt, bool incr2,		\
 				TYPE3 *restrict dst,			\
 				struct canditer *restrict ci1,		\
 				struct canditer *restrict ci2,		\
@@ -9136,13 +9149,14 @@ mod_##TYPE1##_##TYPE2##_##TYPE3(const TYPE1 *lft, int incr1,		\
 				bool abort_on_error)			\
 {									\
 	BUN nils = 0;							\
+	BUN i = 0, j = 0;						\
 									\
 	if (ci1->tpe == cand_dense && ci2->tpe == cand_dense) {		\
 		for (BUN k = 0; k < ci1->ncand; k++) {			\
-			oid x1 = canditer_next_dense(ci1) - candoff1;	\
-			oid x2 = canditer_next_dense(ci2) - candoff2;	\
-			BUN i = x1 * incr1;				\
-			BUN j = x2 * incr2;				\
+			if (incr1)					\
+				i = canditer_next_dense(ci1) - candoff1; \
+			if (incr2)					\
+				j = canditer_next_dense(ci2) - candoff2; \
 			if (is_##TYPE1##_nil(lft[i]) || is_##TYPE2##_nil(rgt[j])) { \
 				dst[k] = TYPE3##_nil;			\
 				nils++;					\
@@ -9157,10 +9171,10 @@ mod_##TYPE1##_##TYPE2##_##TYPE3(const TYPE1 *lft, int incr1,		\
 		}							\
 	} else {							\
 		for (BUN k = 0; k < ci1->ncand; k++) {			\
-			oid x1 = canditer_next(ci1) - candoff1;		\
-			oid x2 = canditer_next(ci2) - candoff2;		\
-			BUN i = x1 * incr1;				\
-			BUN j = x2 * incr2;				\
+			if (incr1)					\
+				i = canditer_next(ci1) - candoff1;	\
+			if (incr2)					\
+				j = canditer_next(ci2) - candoff2;	\
 			if (is_##TYPE1##_nil(lft[i]) || is_##TYPE2##_nil(rgt[j])) { \
 				dst[k] = TYPE3##_nil;			\
 				nils++;					\
@@ -9179,8 +9193,8 @@ mod_##TYPE1##_##TYPE2##_##TYPE3(const TYPE1 *lft, int incr1,		\
 
 #define FMOD_3TYPE(TYPE1, TYPE2, TYPE3, FUNC)				\
 static BUN								\
-mod_##TYPE1##_##TYPE2##_##TYPE3(const TYPE1 *lft, int incr1,		\
-				const TYPE2 *rgt, int incr2,		\
+mod_##TYPE1##_##TYPE2##_##TYPE3(const TYPE1 *lft, bool incr1,		\
+				const TYPE2 *rgt, bool incr2,		\
 				TYPE3 *restrict dst,			\
 				struct canditer *restrict ci1,		\
 				struct canditer *restrict ci2,		\
@@ -9188,13 +9202,14 @@ mod_##TYPE1##_##TYPE2##_##TYPE3(const TYPE1 *lft, int incr1,		\
 				bool abort_on_error)			\
 {									\
 	BUN nils = 0;							\
+	BUN i = 0, j = 0;						\
 									\
 	if (ci1->tpe == cand_dense && ci2->tpe == cand_dense) {		\
 		for (BUN k = 0; k < ci1->ncand; k++) {			\
-			oid x1 = canditer_next_dense(ci1) - candoff1;	\
-			oid x2 = canditer_next_dense(ci2) - candoff2;	\
-			BUN i = x1 * incr1;				\
-			BUN j = x2 * incr2;				\
+			if (incr1)					\
+				i = canditer_next_dense(ci1) - candoff1; \
+			if (incr2)					\
+				j = canditer_next_dense(ci2) - candoff2; \
 			if (is_##TYPE1##_nil(lft[i]) || is_##TYPE2##_nil(rgt[j])) { \
 				dst[k] = TYPE3##_nil;			\
 				nils++;					\
@@ -9210,10 +9225,10 @@ mod_##TYPE1##_##TYPE2##_##TYPE3(const TYPE1 *lft, int incr1,		\
 		}							\
 	} else {							\
 		for (BUN k = 0; k < ci1->ncand; k++) {			\
-			oid x1 = canditer_next(ci1) - candoff1;		\
-			oid x2 = canditer_next(ci2) - candoff2;		\
-			BUN i = x1 * incr1;				\
-			BUN j = x2 * incr2;				\
+			if (incr1)					\
+				i = canditer_next(ci1) - candoff1;	\
+			if (incr2)					\
+				j = canditer_next(ci2) - candoff2;	\
 			if (is_##TYPE1##_nil(lft[i]) || is_##TYPE2##_nil(rgt[j])) { \
 				dst[k] = TYPE3##_nil;			\
 				nils++;					\
@@ -9403,8 +9418,8 @@ FMOD_3TYPE(dbl, flt, dbl, fmod)
 FMOD_3TYPE(dbl, dbl, dbl, fmod)
 
 static BUN
-mod_typeswitchloop(const void *lft, int tp1, int incr1,
-		   const void *rgt, int tp2, int incr2,
+mod_typeswitchloop(const void *lft, int tp1, bool incr1,
+		   const void *rgt, int tp2, bool incr2,
 		   void *restrict dst, int tp,
 		   struct canditer *restrict ci1, struct canditer *restrict ci2,
 		   oid candoff1, oid candoff2,
@@ -10436,8 +10451,8 @@ BATcalcmodcst(BAT *b, const ValRecord *v, BAT *s, int tp, bool abort_on_error)
 	if (ncand == 0)
 		return bn;
 
-	nils = mod_typeswitchloop(Tloc(b, 0), b->ttype, 1,
-				  VALptr(v), v->vtype, 0,
+	nils = mod_typeswitchloop(Tloc(b, 0), b->ttype, true,
+				  VALptr(v), v->vtype, false,
 				  Tloc(bn, 0), tp,
 				  &ci,
 				  &(struct canditer){.tpe=cand_dense, .ncand=ncand},
@@ -10485,8 +10500,8 @@ BATcalccstmod(const ValRecord *v, BAT *b, BAT *s, int tp, bool abort_on_error)
 	if (ncand == 0)
 		return bn;
 
-	nils = mod_typeswitchloop(VALptr(v), v->vtype, 0,
-				  Tloc(b, 0), b->ttype, 1,
+	nils = mod_typeswitchloop(VALptr(v), v->vtype, false,
+				  Tloc(b, 0), b->ttype, true,
 				  Tloc(bn, 0), tp,
 				  &(struct canditer){.tpe=cand_dense, .ncand=ncand},
 				  &ci,
@@ -10518,8 +10533,8 @@ gdk_return
 VARcalcmod(ValPtr ret, const ValRecord *lft, const ValRecord *rgt,
 	   bool abort_on_error)
 {
-	if (mod_typeswitchloop(VALptr(lft), lft->vtype, 0,
-			       VALptr(rgt), rgt->vtype, 0,
+	if (mod_typeswitchloop(VALptr(lft), lft->vtype, false,
+			       VALptr(rgt), rgt->vtype, false,
 			       VALget(ret), ret->vtype,
 			       &(struct canditer){.tpe=cand_dense, .ncand=1},
 			       &(struct canditer){.tpe=cand_dense, .ncand=1},
@@ -10535,15 +10550,14 @@ VARcalcmod(ValPtr ret, const ValRecord *lft, const ValRecord *rgt,
 #define XORBIT(a, b)	(((a) == 0) != ((b) == 0))
 
 static BUN
-xor_typeswitchloop(const void *lft, int incr1,
-		   const void *rgt, int incr2,
+xor_typeswitchloop(const void *lft, bool incr1,
+		   const void *rgt, bool incr2,
 		   void *restrict dst, int tp,
 		   struct canditer *restrict ci1,
 		   struct canditer *restrict ci2,
 		   oid candoff1, oid candoff2,
 		   bool nonil, const char *func)
 {
-	oid x1, x2;
 	BUN i, j, k;
 	BUN nils = 0;
 
@@ -10627,8 +10641,8 @@ BATcalcxor(BAT *b1, BAT *b2, BAT *s1, BAT *s2)
 	if (ncand == 0)
 		return bn;
 
-	nils = xor_typeswitchloop(Tloc(b1, 0), 1,
-				  Tloc(b2, 0), 1,
+	nils = xor_typeswitchloop(Tloc(b1, 0), true,
+				  Tloc(b2, 0), true,
 				  Tloc(bn, 0),
 				  b1->ttype,
 				  &ci1, &ci2,
@@ -10685,8 +10699,8 @@ BATcalcxorcst(BAT *b, const ValRecord *v, BAT *s)
 	if (ncand == 0)
 		return bn;
 
-	nils = xor_typeswitchloop(Tloc(b, 0), 1,
-				  VALptr(v), 0,
+	nils = xor_typeswitchloop(Tloc(b, 0), true,
+				  VALptr(v), false,
 				  Tloc(bn, 0), b->ttype,
 				  &ci,
 				  &(struct canditer){.tpe=cand_dense, .ncand=ncand},
@@ -10729,8 +10743,8 @@ VARcalcxor(ValPtr ret, const ValRecord *lft, const ValRecord *rgt)
 		return GDK_FAIL;
 	}
 
-	if (xor_typeswitchloop(VALptr(lft), 0,
-			       VALptr(rgt), 0,
+	if (xor_typeswitchloop(VALptr(lft), false,
+			       VALptr(rgt), false,
 			       VALget(ret), lft->vtype,
 			       &(struct canditer){.tpe=cand_dense, .ncand=1},
 			       &(struct canditer){.tpe=cand_dense, .ncand=1},
@@ -10747,16 +10761,15 @@ VARcalcxor(ValPtr ret, const ValRecord *lft, const ValRecord *rgt)
 #define OR(a, b)	((a) | (b))
 
 static BUN
-or_typeswitchloop(const void *lft, int incr1,
-		  const void *rgt, int incr2,
+or_typeswitchloop(const void *lft, bool incr1,
+		  const void *rgt, bool incr2,
 		  void *restrict dst, int tp,
 		  struct canditer *restrict ci1,
 		  struct canditer *restrict ci2,
 		  oid candoff1, oid candoff2,
 		  bool nonil, const char *func)
 {
-	oid x1, x2;
-	BUN i, j, k;
+	BUN i = 0, j = 0, k;
 	BUN nils = 0;
 
 	switch (ATOMbasetype(tp)) {
@@ -10764,10 +10777,10 @@ or_typeswitchloop(const void *lft, int incr1,
 		if (tp == TYPE_bit) {
 			/* implement tri-Boolean algebra */
 			for (k = 0; k < ci1->ncand; k++) {
-				x1 = canditer_next(ci1) - candoff1;
-				x2 = canditer_next(ci2) - candoff2;
-				i = x1 * incr1;
-				j = x2 * incr2;
+				if (incr1)
+					i = canditer_next(ci1) - candoff1;
+				if (incr2)
+					j = canditer_next(ci2) - candoff2;
 				bit v1 = ((const bit *) lft)[i];
 				bit v2 = ((const bit *) rgt)[j];
 				((bit *) dst)[k] = or3(v1, v2);
@@ -10846,8 +10859,8 @@ BATcalcor(BAT *b1, BAT *b2, BAT *s1, BAT *s2)
 	if (ncand == 0)
 		return bn;
 
-	nils = or_typeswitchloop(Tloc(b1, 0), 1,
-				 Tloc(b2, 0), 1,
+	nils = or_typeswitchloop(Tloc(b1, 0), true,
+				 Tloc(b2, 0), true,
 				 Tloc(bn, 0),
 				 b1->ttype,
 				 &ci1, &ci2, b1->hseqbase, b2->hseqbase,
@@ -10909,8 +10922,8 @@ BATcalcorcst(BAT *b, const ValRecord *v, BAT *s)
 	if (ncand == 0)
 		return bn;
 
-	nils = or_typeswitchloop(Tloc(b, 0), 1,
-				 VALptr(v), 0,
+	nils = or_typeswitchloop(Tloc(b, 0), true,
+				 VALptr(v), false,
 				 Tloc(bn, 0), b->ttype,
 				 &ci,
 				 &(struct canditer){.tpe=cand_dense, .ncand=ncand},
@@ -10953,8 +10966,8 @@ VARcalcor(ValPtr ret, const ValRecord *lft, const ValRecord *rgt)
 		return GDK_FAIL;
 	}
 
-	if (or_typeswitchloop(VALptr(lft), 0,
-			      VALptr(rgt), 0,
+	if (or_typeswitchloop(VALptr(lft), false,
+			      VALptr(rgt), false,
 			      VALget(ret), lft->vtype,
 			      &(struct canditer){.tpe=cand_dense, .ncand=1},
 			      &(struct canditer){.tpe=cand_dense, .ncand=1},
@@ -10971,16 +10984,15 @@ VARcalcor(ValPtr ret, const ValRecord *lft, const ValRecord *rgt)
 #define AND(a, b)	((a) & (b))
 
 static BUN
-and_typeswitchloop(const void *lft, int incr1,
-		   const void *rgt, int incr2,
+and_typeswitchloop(const void *lft, bool incr1,
+		   const void *rgt, bool incr2,
 		   void *restrict dst, int tp,
 		   struct canditer *restrict ci1,
 		   struct canditer *restrict ci2,
 		   oid candoff1, oid candoff2,
 		   bool nonil, const char *func)
 {
-	oid x1, x2;
-	BUN i, j, k;
+	BUN i = 0, j = 0, k;
 	BUN nils = 0;
 
 	switch (ATOMbasetype(tp)) {
@@ -10988,10 +11000,10 @@ and_typeswitchloop(const void *lft, int incr1,
 		if (tp == TYPE_bit) {
 			/* implement tri-Boolean algebra */
 			for (k = 0; k < ci1->ncand; k++) {
-				x1 = canditer_next(ci1) - candoff1;
-				x2 = canditer_next(ci2) - candoff2;
-				i = x1 * incr1;
-				j = x2 * incr2;
+				if (incr1)
+					i = canditer_next(ci1) - candoff1;
+				if (incr2)
+					j = canditer_next(ci2) - candoff2;
 				bit v1 = ((const bit *) lft)[i];
 				bit v2 = ((const bit *) rgt)[j];
 				((bit *) dst)[k] = and3(v1, v2);
@@ -11070,8 +11082,8 @@ BATcalcand(BAT *b1, BAT *b2, BAT *s1, BAT *s2)
 	if (ncand == 0)
 		return bn;
 
-	nils = and_typeswitchloop(Tloc(b1, 0), 1,
-				  Tloc(b2, 0), 1,
+	nils = and_typeswitchloop(Tloc(b1, 0), true,
+				  Tloc(b2, 0), true,
 				  Tloc(bn, 0),
 				  b1->ttype,
 				  &ci1, &ci2, b1->hseqbase, b2->hseqbase,
@@ -11133,8 +11145,8 @@ BATcalcandcst(BAT *b, const ValRecord *v, BAT *s)
 	if (ncand == 0)
 		return bn;
 
-	nils = and_typeswitchloop(Tloc(b, 0), 1,
-				  VALptr(v), 0,
+	nils = and_typeswitchloop(Tloc(b, 0), true,
+				  VALptr(v), false,
 				  Tloc(bn, 0), b->ttype,
 				  &ci,
 				  &(struct canditer){.tpe=cand_dense, .ncand=ncand},
@@ -11177,8 +11189,8 @@ VARcalcand(ValPtr ret, const ValRecord *lft, const ValRecord *rgt)
 		return GDK_FAIL;
 	}
 
-	if (and_typeswitchloop(VALptr(lft), 0,
-			       VALptr(rgt), 0,
+	if (and_typeswitchloop(VALptr(lft), false,
+			       VALptr(rgt), false,
 			       VALget(ret), lft->vtype,
 			       &(struct canditer){.tpe=cand_dense, .ncand=1},
 			       &(struct canditer){.tpe=cand_dense, .ncand=1},
@@ -11209,15 +11221,14 @@ VARcalcand(ValPtr ret, const ValRecord *lft, const ValRecord *rgt)
 #define LSH_CHECK_lng(a, b)	LSH_CHECK(a, b, lng)
 
 static BUN
-lsh_typeswitchloop(const void *lft, int tp1, int incr1,
-		   const void *rgt, int tp2, int incr2,
+lsh_typeswitchloop(const void *lft, int tp1, bool incr1,
+		   const void *rgt, int tp2, bool incr2,
 		   void *restrict dst,
 		   struct canditer *restrict ci1,
 		   struct canditer *restrict ci2,
 		   oid candoff1, oid candoff2,
 		   bool abort_on_error, const char *func)
 {
-	oid x1, x2;
 	BUN i, j, k;
 	BUN nils = 0;
 
@@ -11404,8 +11415,8 @@ BATcalclsh(BAT *b1, BAT *b2, BAT *s1, BAT *s2, bool abort_on_error)
 	if (ncand == 0)
 		return bn;
 
-	nils = lsh_typeswitchloop(Tloc(b1, 0), b1->ttype, 1,
-				  Tloc(b2, 0), b2->ttype, 1,
+	nils = lsh_typeswitchloop(Tloc(b1, 0), b1->ttype, true,
+				  Tloc(b2, 0), b2->ttype, true,
 				  Tloc(bn, 0),
 				  &ci1, &ci2, b1->hseqbase, b2->hseqbase,
 				  abort_on_error, __func__);
@@ -11454,8 +11465,8 @@ BATcalclshcst(BAT *b, const ValRecord *v, BAT *s, bool abort_on_error)
 	if (ncand == 0)
 		return bn;
 
-	nils = lsh_typeswitchloop(Tloc(b, 0), b->ttype, 1,
-				  VALptr(v), v->vtype, 0,
+	nils = lsh_typeswitchloop(Tloc(b, 0), b->ttype, true,
+				  VALptr(v), v->vtype, false,
 				  Tloc(bn, 0),
 				  &ci,
 				  &(struct canditer){.tpe=cand_dense, .ncand=ncand},
@@ -11504,8 +11515,8 @@ BATcalccstlsh(const ValRecord *v, BAT *b, BAT *s, bool abort_on_error)
 	if (ncand == 0)
 		return bn;
 
-	nils = lsh_typeswitchloop(VALptr(v), v->vtype, 0,
-				  Tloc(b, 0), b->ttype, 1,
+	nils = lsh_typeswitchloop(VALptr(v), v->vtype, false,
+				  Tloc(b, 0), b->ttype, true,
 				  Tloc(bn, 0),
 				  &(struct canditer){.tpe=cand_dense, .ncand=ncand},
 				  &ci,
@@ -11538,8 +11549,8 @@ VARcalclsh(ValPtr ret, const ValRecord *lft, const ValRecord *rgt,
 	   bool abort_on_error)
 {
 	ret->vtype = lft->vtype;
-	if (lsh_typeswitchloop(VALptr(lft), lft->vtype, 0,
-			       VALptr(rgt), rgt->vtype, 0,
+	if (lsh_typeswitchloop(VALptr(lft), lft->vtype, false,
+			       VALptr(rgt), rgt->vtype, false,
 			       VALget(ret),
 			       &(struct canditer){.tpe=cand_dense, .ncand=1},
 			       &(struct canditer){.tpe=cand_dense, .ncand=1},
@@ -11554,15 +11565,14 @@ VARcalclsh(ValPtr ret, const ValRecord *lft, const ValRecord *rgt,
 #define RSH(a, b)	((a) >> (b))
 
 static BUN
-rsh_typeswitchloop(const void *lft, int tp1, int incr1,
-		   const void *rgt, int tp2, int incr2,
+rsh_typeswitchloop(const void *lft, int tp1, bool incr1,
+		   const void *rgt, int tp2, bool incr2,
 		   void *restrict dst,
 		   struct canditer *restrict ci1,
 		   struct canditer *restrict ci2,
 		   oid candoff1, oid candoff2,
 		   bool abort_on_error, const char *restrict func)
 {
-	oid x1, x2;
 	BUN i, j, k;
 	BUN nils = 0;
 
@@ -11749,8 +11759,8 @@ BATcalcrsh(BAT *b1, BAT *b2, BAT *s1, BAT *s2, bool abort_on_error)
 	if (ncand == 0)
 		return bn;
 
-	nils = rsh_typeswitchloop(Tloc(b1, 0), b1->ttype, 1,
-				  Tloc(b2, 0), b2->ttype, 1,
+	nils = rsh_typeswitchloop(Tloc(b1, 0), b1->ttype, true,
+				  Tloc(b2, 0), b2->ttype, true,
 				  Tloc(bn, 0),
 				  &ci1, &ci2, b1->hseqbase, b2->hseqbase,
 				  abort_on_error, __func__);
@@ -11799,8 +11809,8 @@ BATcalcrshcst(BAT *b, const ValRecord *v, BAT *s, bool abort_on_error)
 	if (ncand == 0)
 		return bn;
 
-	nils = rsh_typeswitchloop(Tloc(b, 0), b->ttype, 1,
-				  VALptr(v), v->vtype, 0,
+	nils = rsh_typeswitchloop(Tloc(b, 0), b->ttype, true,
+				  VALptr(v), v->vtype, false,
 				  Tloc(bn, 0),
 				  &ci,
 				  &(struct canditer){.tpe=cand_dense, .ncand=ncand},
@@ -11849,8 +11859,8 @@ BATcalccstrsh(const ValRecord *v, BAT *b, BAT *s, bool abort_on_error)
 	if (ncand == 0)
 		return bn;
 
-	nils = rsh_typeswitchloop(VALptr(v), v->vtype, 0,
-				  Tloc(b, 0), b->ttype, 1,
+	nils = rsh_typeswitchloop(VALptr(v), v->vtype, false,
+				  Tloc(b, 0), b->ttype, true,
 				  Tloc(bn, 0),
 				  &(struct canditer){.tpe=cand_dense, .ncand=ncand},
 				  &ci,
@@ -11883,8 +11893,8 @@ VARcalcrsh(ValPtr ret, const ValRecord *lft, const ValRecord *rgt,
 	   bool abort_on_error)
 {
 	ret->vtype = lft->vtype;
-	if (rsh_typeswitchloop(VALptr(lft), lft->vtype, 0,
-			       VALptr(rgt), rgt->vtype, 0,
+	if (rsh_typeswitchloop(VALptr(lft), lft->vtype, false,
+			       VALptr(rgt), rgt->vtype, false,
 			       VALget(ret),
 			       &(struct canditer){.tpe=cand_dense, .ncand=1},
 			       &(struct canditer){.tpe=cand_dense, .ncand=1},
@@ -12122,13 +12132,14 @@ VARcalcrsh(ValPtr ret, const ValRecord *lft, const ValRecord *rgt,
 
 #define BETWEEN_LOOP_TYPE(TYPE, canditer_next)				\
 	do {								\
+		i = j = k = 0;						\
 		for (l = 0; l < ci->ncand; l++) {			\
-			x1 = canditer_next(ci) - seqbase1;		\
-			x2 = canditer_next(cilo) - seqbase2;		\
-			x3 = canditer_next(cihi) - seqbase3;		\
-			i = x1 * incr1;					\
-			j = x2 * incr2;					\
-			k = x3 * incr3;					\
+			if (incr1)					\
+				i = canditer_next(ci) - seqbase1;	\
+			if (incr2)					\
+				j = canditer_next(cilo) - seqbase2;	\
+			if (incr3)					\
+				k = canditer_next(cihi) - seqbase3;	\
 			dst[l] = BETWEEN(((const TYPE *) src)[i],	\
 					 ((const TYPE *) lo)[j],	\
 					 ((const TYPE *) hi)[k],	\
@@ -12138,9 +12149,9 @@ VARcalcrsh(ValPtr ret, const ValRecord *lft, const ValRecord *rgt,
 	} while (0)
 
 static BAT *
-BATcalcbetween_intern(const void *src, int incr1, const char *hp1, int wd1,
-		      const void *lo, int incr2, const char *hp2, int wd2,
-		      const void *hi, int incr3, const char *hp3, int wd3,
+BATcalcbetween_intern(const void *src, bool incr1, const char *hp1, int wd1,
+		      const void *lo, bool incr2, const char *hp2, int wd2,
+		      const void *hi, bool incr3, const char *hp3, int wd3,
 		      int tp,
 		      struct canditer *restrict ci,
 		      struct canditer *restrict cilo,
@@ -12155,7 +12166,6 @@ BATcalcbetween_intern(const void *src, int incr1, const char *hp1, int wd1,
 	bit *restrict dst;
 	const void *nil;
 	int (*atomcmp)(const void *, const void *);
-	oid x1, x2, x3;
 
 	bn = COLnew(ci->hseq, TYPE_bit, ci->ncand, TRANSIENT);
 	if (bn == NULL)
@@ -12222,13 +12232,14 @@ BATcalcbetween_intern(const void *src, int incr1, const char *hp1, int wd1,
 			return NULL;
 		}
 		nil = ATOMnilptr(tp);
+		i = j = k = 0;
 		for (l = 0; l < ci->ncand; l++) {
-			x1 = canditer_next(ci) - seqbase1;
-			x2 = canditer_next(cilo) - seqbase2;
-			x3 = canditer_next(cihi) - seqbase3;
-			i = x1 * incr1;
-			j = x2 * incr2;
-			k = x3 * incr3;
+			if (incr1)
+				i = canditer_next(ci) - seqbase1;
+			if (incr2)
+				j = canditer_next(cilo) - seqbase2;
+			if (incr3)
+				k = canditer_next(cihi) - seqbase3;
 			const void *p1, *p2, *p3;
 			p1 = hp1
 				? (const void *) (hp1 + VarHeapVal(src, i, wd1))
@@ -12555,9 +12566,9 @@ VARcalcbetween(ValPtr ret, const ValRecord *v, const ValRecord *lo,
 
 static BAT *
 BATcalcifthenelse_intern(BAT *b,
-			 const void *col1, int incr1, const char *heap1,
+			 const void *col1, bool incr1, const char *heap1,
 			 int width1, bool nonil1, oid seq1,
-			 const void *col2, int incr2, const char *heap2,
+			 const void *col2, bool incr2, const char *heap2,
 			 int width2, bool nonil2, oid seq2,
 			 int tpe)
 {
@@ -12565,6 +12576,7 @@ BATcalcifthenelse_intern(BAT *b,
 	void *restrict dst;
 	BUN i, k, l;
 	const void *p;
+	const bit *src;
 	BUN cnt = b->batCount;
 
 	/* col1 and col2 can only be NULL for void columns */
@@ -12572,8 +12584,8 @@ BATcalcifthenelse_intern(BAT *b,
 	assert(col2 != NULL || ATOMtype(tpe) == TYPE_oid);
 	assert(col1 != NULL || heap1 == NULL);
 	assert(col2 != NULL || heap2 == NULL);
-	assert(col1 != NULL || incr1 == 1);
-	assert(col2 != NULL || incr2 == 1);
+	assert(col1 != NULL || incr1 == true);
+	assert(col2 != NULL || incr2 == true);
 
 	bn = COLnew(b->hseqbase, ATOMtype(tpe), cnt, TRANSIENT);
 	if (bn == NULL)
@@ -12794,8 +12806,8 @@ BATcalcifthenelse_intern(BAT *b,
 	BATsetcount(bn, cnt);
 	bn->theap->dirty = true;
 
-	bn->tsorted = ATOMlinear(tpe) && cnt <= 1;
-	bn->trevsorted = ATOMlinear(tpe) && cnt <= 1;
+	bn->tsorted = cnt <= 1;
+	bn->trevsorted = cnt <= 1;
 	bn->tkey = cnt <= 1;
 	bn->tnil = 0;
 	bn->tnonil = nonil1 && nonil2;
@@ -12824,8 +12836,8 @@ BATcalcifthenelse(BAT *b, BAT *b1, BAT *b2)
 		return NULL;
 	}
 	bn = BATcalcifthenelse_intern(b,
-				      Tloc(b1, 0), 1, b1->tvheap ? b1->tvheap->base : NULL, b1->twidth, b1->tnonil, b1->tseqbase,
-				      Tloc(b2, 0), 1, b2->tvheap ? b2->tvheap->base : NULL, b2->twidth, b2->tnonil, b2->tseqbase,
+				      Tloc(b1, 0), true, b1->tvheap ? b1->tvheap->base : NULL, b1->twidth, b1->tnonil, b1->tseqbase,
+				      Tloc(b2, 0), true, b2->tvheap ? b2->tvheap->base : NULL, b2->twidth, b2->tnonil, b2->tseqbase,
 				      b1->ttype);
 
 	TRC_DEBUG(ALGO, "b=" ALGOBATFMT ",b1=" ALGOBATFMT ",b2=" ALGOBATFMT
@@ -12855,8 +12867,8 @@ BATcalcifthenelsecst(BAT *b, BAT *b1, const ValRecord *c2)
 		return NULL;
 	}
 	bn = BATcalcifthenelse_intern(b,
-				      Tloc(b1, 0), 1, b1->tvheap ? b1->tvheap->base : NULL, b1->twidth, b1->tnonil, b1->tseqbase,
-				      VALptr(c2), 0, NULL, 0, !VALisnil(c2), 0,
+				      Tloc(b1, 0), true, b1->tvheap ? b1->tvheap->base : NULL, b1->twidth, b1->tnonil, b1->tseqbase,
+				      VALptr(c2), false, NULL, 0, !VALisnil(c2), 0,
 				      b1->ttype);
 
 	TRC_DEBUG(ALGO, "b=" ALGOBATFMT ",b1=" ALGOBATFMT
@@ -12886,8 +12898,8 @@ BATcalcifthencstelse(BAT *b, const ValRecord *c1, BAT *b2)
 		return NULL;
 	}
 	bn = BATcalcifthenelse_intern(b,
-				      VALptr(c1), 0, NULL, 0, !VALisnil(c1), 0,
-				      Tloc(b2, 0), 1, b2->tvheap ? b2->tvheap->base : NULL, b2->twidth, b2->tnonil, b2->tseqbase,
+				      VALptr(c1), false, NULL, 0, !VALisnil(c1), 0,
+				      Tloc(b2, 0), true, b2->tvheap ? b2->tvheap->base : NULL, b2->twidth, b2->tnonil, b2->tseqbase,
 				      c1->vtype);
 
 	TRC_DEBUG(ALGO, "b=" ALGOBATFMT ",b2=" ALGOBATFMT
@@ -12915,8 +12927,8 @@ BATcalcifthencstelsecst(BAT *b, const ValRecord *c1, const ValRecord *c2)
 		return NULL;
 	}
 	bn = BATcalcifthenelse_intern(b,
-				      VALptr(c1), 0, NULL, 0, !VALisnil(c1), 0,
-				      VALptr(c2), 0, NULL, 0, !VALisnil(c2), 0,
+				      VALptr(c1), false, NULL, 0, !VALisnil(c1), 0,
+				      VALptr(c2), false, NULL, 0, !VALisnil(c2), 0,
 				      c1->vtype);
 
 	TRC_DEBUG(ALGO, "b=" ALGOBATFMT
@@ -13009,7 +13021,7 @@ static lng scales[19] = {
 
 #define convertimpl_enlarge_float(TYPE1, TYPE2, MANT_DIG)		\
 static BUN								\
-convert_##TYPE1##_##TYPE2(const TYPE1 *restrict src, TYPE2 *restrict dst, \
+convert_##TYPE1##_##TYPE2(const TYPE1 *src, TYPE2 *restrict dst,	\
 			  struct canditer *restrict ci,			\
 			  oid candoff, uint8_t scale1, bool *reduce)	\
 {									\
@@ -13077,7 +13089,7 @@ convert_##TYPE1##_##TYPE2(const TYPE1 *restrict src, TYPE2 *restrict dst, \
 
 #define convertimpl_oid_enlarge(TYPE1)					\
 static BUN								\
-convert_##TYPE1##_oid(const TYPE1 *restrict src, oid *restrict dst,	\
+convert_##TYPE1##_oid(const TYPE1 *src, oid *restrict dst,		\
 		      struct canditer *restrict ci,			\
 		      oid candoff, bool abort_on_error, bool *reduce)	\
 {									\
@@ -13123,7 +13135,7 @@ convert_##TYPE1##_oid(const TYPE1 *restrict src, oid *restrict dst,	\
 
 #define convertimpl_oid_reduce(TYPE1)					\
 static BUN								\
-convert_##TYPE1##_oid(const TYPE1 *restrict src, oid *restrict dst,	\
+convert_##TYPE1##_oid(const TYPE1 *src, oid *restrict dst,		\
 		      struct canditer *restrict ci,			\
 		      oid candoff, bool abort_on_error, bool *reduce)	\
 {									\
@@ -13307,7 +13319,7 @@ convert_##TYPE1##_##TYPE2(const TYPE1 *restrict src,			\
 
 #define convertimpl_reduce_float(TYPE1, TYPE2)				\
 static BUN								\
-convert_##TYPE1##_##TYPE2(const TYPE1 *restrict src, TYPE2 *restrict dst, \
+convert_##TYPE1##_##TYPE2(const TYPE1 *src, TYPE2 *restrict dst,	\
 			  struct canditer *restrict ci,			\
 			  oid candoff, uint8_t scale2, uint8_t precision, \
 			  bool abort_on_error, bool *reduce)		\
@@ -13371,7 +13383,7 @@ convert_##TYPE1##_##TYPE2(const TYPE1 *restrict src, TYPE2 *restrict dst, \
 
 #define convert2bit_impl(TYPE)						\
 static BUN								\
-convert_##TYPE##_bit(const TYPE *restrict src, bit *restrict dst,	\
+convert_##TYPE##_bit(const TYPE *src, bit *restrict dst,		\
 		     struct canditer *restrict ci,			\
 		     oid candoff, bool *reduce)				\
 {									\
@@ -13403,7 +13415,7 @@ convert_##TYPE##_bit(const TYPE *restrict src, bit *restrict dst,	\
 
 #define convertimpl_msk(TYPE)						\
 static BUN								\
-convert_##TYPE##_msk(const TYPE *restrict src, uint32_t *restrict dst,	\
+convert_##TYPE##_msk(const TYPE *src, uint32_t *restrict dst,		\
 		     struct canditer *restrict ci,			\
 		     oid candoff, bool *reduce)				\
 {									\
@@ -13459,7 +13471,7 @@ convert_##TYPE##_msk(const TYPE *restrict src, uint32_t *restrict dst,	\
 }									\
 									\
 static BUN								\
-convert_msk_##TYPE(const uint32_t *restrict src, TYPE *restrict dst,	\
+convert_msk_##TYPE(const uint32_t *src, TYPE *restrict dst,		\
 		   struct canditer *restrict ci,			\
 		   oid candoff, bool *reduce)				\
 {									\

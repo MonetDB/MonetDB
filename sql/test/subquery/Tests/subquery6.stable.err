@@ -74,6 +74,10 @@ MAPI  = (monetdb) /var/tmp/mtest-214995/.s.monetdb.36797
 QUERY = select min(i) as myx from integers group by myx;
 ERROR = !MIN: aggregate function 'min' not allowed in GROUP BY clause
 CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-429967/.s.monetdb.36971
+QUERY = select ntile(i) over (), count(*) from integers;
+ERROR = !SELECT: cannot use non GROUP BY column in query results without an aggregate function
+CODE  = 42000
 
 # 11:45:43 >  
 # 11:45:43 >  "Done."

@@ -8,7 +8,6 @@
 
 #[[
 install(FILES
-  09_like.sql
   12_url.sql
   13_date.sql
   14_inet.sql

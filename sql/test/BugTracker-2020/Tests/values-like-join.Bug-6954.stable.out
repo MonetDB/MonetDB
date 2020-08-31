@@ -9,12 +9,12 @@ stdout of test 'values-like-join.Bug-6954` in directory 'sql/test/BugTracker-202
 % .plan # table_name
 % rel # name
 % clob # type
-% 94 # length
+% 82 # length
 project (
 | join (
 | |  [  [ char(3) "one", char(3) "two" ] as "l"."s" ],
 | |  [  [ char(5) "three", char(5) "four" ] as "r"."s" ]
-| ) [ (clob[char["l"."s"]] as "l"."s") FILTER like (clob[char["r"."s"]] as "r"."s", clob "") ]
+| ) [ (char["l"."s"] as "l"."s") FILTER like (char["r"."s"] as "r"."s", char "") ]
 ) [ tinyint "1" ]
 #explain select 1 from (values ('one'), ('two')) as l(s), (values ('three'), ('four')) as r(s) where l.s like r.s;
 % .explain # table_name

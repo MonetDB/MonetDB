@@ -320,7 +320,7 @@ rel_inserts(mvc *sql, sql_table *t, sql_rel *r, list *collist, size_t rowcount, 
 				sql_column *c = m->data;
 				sql_exp *e;
 
-				e = exps_bind_column2( r->exps, c->t->base.name, c->base.name);
+				e = exps_bind_column2(r->exps, c->t->base.name, c->base.name, NULL);
 				if (e) {
 					if (inserts[c->colnr])
 						return sql_error(sql, 02, SQLSTATE(42000) "%s: column '%s' specified more than once", action, c->base.name);

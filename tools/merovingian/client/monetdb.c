@@ -609,7 +609,6 @@ simple_argv_cmd(char *cmd, sabdb *dbs, char *merocmd,
 				printf("FAILED\n");
 			fprintf(stderr, "%s: %s\n",
 					cmd, ret);
-			free(out);
 			free(ret);
 			exit(2);
 		}
@@ -1680,7 +1679,8 @@ command_destroy(int argc, char *argv[])
 						stats->dbname, "stop", 0, mero_pass);
 				if (ret != NULL)
 					free(ret);
-				free(out);
+				else
+					free(out);
 			}
 		}
 	}
@@ -1963,6 +1963,7 @@ snapshot_destroy_file(char *path)
 
 	if (strcmp(out, "OK") != 0) {
 		fprintf(stderr, "snapshot destroy %s: %s\n", path, out);
+		free(out);
 		exit(2);
 	}
 
@@ -2302,7 +2303,7 @@ end:
 }
 
 static void
-command_snapshot_write_cb(char *buf, size_t count, void *private) {
+command_snapshot_write_cb(const void *buf, size_t count, void *private) {
 	FILE *f = (FILE*)private;
 	fwrite(buf, 1, count, f);
 }
