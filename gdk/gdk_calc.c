@@ -12576,7 +12576,6 @@ BATcalcifthenelse_intern(BAT *b,
 	void *restrict dst;
 	BUN i, k, l;
 	const void *p;
-	const bit *src;
 	BUN cnt = b->batCount;
 
 	/* col1 and col2 can only be NULL for void columns */
