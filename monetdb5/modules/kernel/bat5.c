@@ -1047,12 +1047,12 @@ BKCreuseBAT(bat *ret, const bat *bid, const bat *did)
 		}
 	}
 
-    BATsetcount(bn, BATcount(b) - BATcount(bs));
-    bn->tsorted = false;
-    bn->trevsorted = false;
+	BATsetcount(bn, BATcount(b) - BATcount(bs));
+	bn->tsorted = false;
+	bn->trevsorted = false;
 	bn->tseqbase = oid_nil;
 	bn->tkey = b->tkey;
-
+	bn->tnonil = b->tnonil;
 
 	BBPunfix(b->batCacheid);
 	BBPunfix(bs->batCacheid);
@@ -1109,9 +1109,9 @@ BKCreuseBATmap(bat *ret, const bat *bid, const bat *did)
 		}
 	}
 
-    BATsetcount(bn, BATcount(b)-BATcount(bs));
-    bn->tsorted = false;
-    bn->trevsorted = false;
+	BATsetcount(bn, BATcount(b)-BATcount(bs));
+	bn->tsorted = false;
+	bn->trevsorted = false;
 	bn->tseqbase = oid_nil;
 
 
