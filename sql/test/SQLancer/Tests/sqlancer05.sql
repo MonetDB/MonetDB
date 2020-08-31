@@ -268,3 +268,9 @@ SELECT t1.c0 FROM t1 WHERE t1.c0 NOT ILIKE t1.c0;
 SELECT t1.c0 NOT ILIKE t1.c0 FROM t1;
 	--14 * false
 ROLLBACK;
+
+START TRANSACTION;
+CREATE TABLE "sys"."t0" ("c0" INTERVAL MONTH,"c1" INTERVAL SECOND);
+create view v0(c0) as (select all t0.c1 from t0);
+CALL sys.reuse('sys', 'v0'); --error not persistent
+ROLLBACK;
