@@ -81,11 +81,11 @@ stderr of test 'mixed_type.SF-917372` in directory 'sql/test/BugDay_2005-10-06_2
 
 MAPI  = (monetdb) /var/tmp/mtest-10022/.s.monetdb.31381
 QUERY = select 'a'+1;
-ERROR = !conversion of string 'a' to type lng failed.
+ERROR = !conversion of string 'a' to type hge failed.
 CODE  = 22018
 MAPI  = (monetdb) /var/tmp/mtest-2179869/.s.monetdb.37655
 QUERY = select 1-'a';
-ERROR = !conversion of string 'a' to type lng failed.
+ERROR = !conversion of string 'a' to type hge failed.
 CODE  = 22018
 
 # 19:21:06 >  

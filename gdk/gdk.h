@@ -1040,7 +1040,7 @@ BUNtoid(BAT *b, BUN p)
  * to insert BUNs at the end of the BAT, but not to modify anything
  * that already was in there.
  */
-gdk_export BUN BATcount_no_nil(BAT *b);
+gdk_export BUN BATcount_no_nil(BAT *b, BAT *s);
 gdk_export void BATsetcapacity(BAT *b, BUN cnt);
 gdk_export void BATsetcount(BAT *b, BUN cnt);
 gdk_export BUN BATgrows(BAT *b);

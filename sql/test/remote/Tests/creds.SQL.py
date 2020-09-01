@@ -51,7 +51,7 @@ def freeport():
 def worker_load(in_filename, workerrec, cmovies, ratings_table_def_fk):
     c = workerrec['conn']
     screateq = "CREATE TABLE ratings {}".format(ratings_table_def_fk)
-    load_data = "COPY INTO ratings FROM '{}' USING DELIMITERS ',','\n'".format(in_filename)
+    load_data = "COPY INTO ratings FROM r'{}' USING DELIMITERS ',','\n'".format(in_filename)
     c.execute(cmovies)
     c.execute(screateq)
     c.execute(load_data)
@@ -95,10 +95,10 @@ with tempfile.TemporaryDirectory() as tmpdir:
         c = supervisorconn.cursor()
 
         # Create the movies table and load the data
-        movies_filename=os.getenv("TSTDATAPATH")+"/netflix_data/movies.csv"
+        movies_filename = os.path.join(os.getenv("TSTDATAPATH"), "netflix_data", "movies.csv")
         movies_create = "CREATE TABLE movies {}".format(MOVIES_TABLE_DEF)
         c.execute(movies_create)
-        load_movies = "COPY INTO movies FROM '{}' USING DELIMITERS ',','\n','\"'".format(movies_filename)
+        load_movies = "COPY INTO movies FROM r'{}' USING DELIMITERS ',','\n','\"'".format(movies_filename)
         c.execute(load_movies)
 
         # Declare the ratings merge table on supervisor
@@ -106,7 +106,7 @@ with tempfile.TemporaryDirectory() as tmpdir:
         c.execute(mtable)
 
         # Create the workers and load the ratings data
-        fn_template=os.getenv("TSTDATAPATH")+"/netflix_data/ratings_sample_{}.csv"
+        fn_template = os.path.join(os.getenv("TSTDATAPATH"), "netflix_data", "ratings_sample_{}.csv")
         cmovies = "CREATE REMOTE TABLE movies {} ON '{}' WITH USER 'monetdb' PASSWORD 'monetdb'".format(MOVIES_TABLE_DEF, supervisor_uri)
         try:
             create_workers(tmpdir, workers, fn_template, NWORKERS, cmovies, RATINGS_TABLE_DEF_FK)

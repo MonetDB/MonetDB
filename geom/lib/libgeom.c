@@ -56,7 +56,7 @@ is_wkb_nil(const wkb *w)
  * Creates an mbr holding the lower left and upper right coordinates
  * of a GEOSGeom.
  */
-/*
+#if 0
 int
 getMbrGeos(mbr *res, const GEOSGeom geosGeometry)
 {
@@ -113,7 +113,7 @@ getMbrGeos(mbr *res, const GEOSGeom geosGeometry)
 	GEOSGeom_destroy(envelope);
 	return 1;
 }
-*/
+#endif
 
 GEOSGeom
 wkb2geos(const wkb *geomWKB)
@@ -134,7 +134,7 @@ wkb2geos(const wkb *geomWKB)
 /* Function getMbrGeom
  * A wrapper for getMbrGeos on a geom_geometry.
  */
-/*
+#if 0
 int
 getMbrGeom(mbr *res, wkb *geom)
 {
@@ -147,7 +147,7 @@ getMbrGeom(mbr *res, wkb *geom)
 	}
 	return 0;
 }
-*/
+#endif
 
 const char *
 geom_type2str(int t, int flag)
@@ -199,7 +199,7 @@ geom_type2str(int t, int flag)
 }
 
 
-/*
+#if 0
 str
 geomerty_2_geometry(wkb *res, wkb **geom, int *columnType, int *columnSRID, int *valueSRID)
 {
@@ -217,4 +217,4 @@ geomerty_2_geometry(wkb *res, wkb **geom, int *columnType, int *columnSRID, int 
 	fprintf(stderr, "%d vs %d\n", *columnSRID, *valueSRID);
 	return "0";
 }
-*/
+#endif

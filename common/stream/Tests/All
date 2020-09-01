@@ -10,7 +10,7 @@ HAVE_LIBZ?write_gz
 HAVE_LIBLZ4&HAVE_PYTHON_LZ4?write_lz4
 HAVE_LIBLZMA?write_xz
 
-urlstream
+HAVE_CURL?urlstream
 read_iconv
 write_iconv
 
