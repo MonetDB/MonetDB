@@ -9595,7 +9595,7 @@ optimize_rel(mvc *sql, sql_rel *rel, int *g_changes, int level, int value_based_
 
 	/* Important -> Make sure rel_push_select_down gets called after rel_join_order,
 	   because pushing down select expressions makes rel_join_order more difficult */
-	if (gp.cnt[op_select] || gp.cnt[op_semi]) {
+	if (gp.cnt[op_select] || gp.cnt[op_join] || gp.cnt[op_semi] || gp.cnt[op_anti]) {
 		rel = rel_visitor_topdown(&v, rel, &rel_push_select_down);
 		rel = rel_visitor_bottomup(&ev, rel, &rel_remove_empty_select);
 	}
