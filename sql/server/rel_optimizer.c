@@ -9196,12 +9196,12 @@ replace_column_references_with_nulls_1(mvc *sql, list* crefs, list* exps) {
 
 static void
 replace_column_references_with_nulls_2(mvc *sql, list* crefs, sql_exp* e) {
-    if (e == NULL) {
-        return;
-    }
+	if (e == NULL) {
+		return;
+	}
 
-    switch (e->type) {
-    case e_column:
+	switch (e->type) {
+	case e_column:
 		{
 			sql_exp *c = NULL;
 			if (e->l) {
@@ -9210,57 +9210,67 @@ replace_column_references_with_nulls_2(mvc *sql, list* crefs, sql_exp* e) {
 				c = exps_bind_column(crefs, e->r, NULL, NULL, 1);
 			}
 			if (c) {
-                e->type = e_atom;
-                e->l = atom_general(sql->sa, &e->tpe, NULL);
-                e->r = e->f = NULL;
+				e->type = e_atom;
+				e->l = atom_general(sql->sa, &e->tpe, NULL);
+				e->r = e->f = NULL;
 			}
 		}
-        break;
-    case e_cmp:
-        switch (e->flag) {
-        case cmp_gt:
-        case cmp_gte:
-        case cmp_lte:
-        case cmp_lt:
-        case cmp_equal:
-        case cmp_notequal:
-        {
-            sql_exp* l = e->l;
-            sql_exp* r = e->r;
-            sql_exp* f = e->f;
+		break;
+	case e_cmp:
+		switch (e->flag) {
+		case cmp_gt:
+		case cmp_gte:
+		case cmp_lte:
+		case cmp_lt:
+		case cmp_equal:
+		case cmp_notequal:
+		{
+			sql_exp* l = e->l;
+			sql_exp* r = e->r;
+			sql_exp* f = e->f;
 
-            replace_column_references_with_nulls_2(sql, crefs, l);
-            replace_column_references_with_nulls_2(sql, crefs, r);
-            replace_column_references_with_nulls_2(sql, crefs, f);
-            break;
-        }
-        case cmp_or:
-        {
-            list* l = e->l;
-            list* r = e->r;
-            replace_column_references_with_nulls_1(sql, crefs, l);
-            replace_column_references_with_nulls_1(sql, crefs, r);
-            break;
-        }
-        default:
-            break;
-        }
-        break;
-    case e_func:
-    {
-        list* l = e->l;
-        replace_column_references_with_nulls_1(sql, crefs, l);
-        break;
-    }
-    case e_convert:
-    {
-        sql_exp* l = e->l;
-        replace_column_references_with_nulls_2(sql, crefs, l);
-        break;
-    }
-    default:
-        break;
-    }
+			replace_column_references_with_nulls_2(sql, crefs, l);
+			replace_column_references_with_nulls_2(sql, crefs, r);
+			replace_column_references_with_nulls_2(sql, crefs, f);
+			break;
+		}
+		case cmp_filter:
+		case cmp_or:
+		{
+			list* l = e->l;
+			list* r = e->r;
+			replace_column_references_with_nulls_1(sql, crefs, l);
+			replace_column_references_with_nulls_1(sql, crefs, r);
+			break;
+		}
+		case cmp_in:
+		case cmp_notin:
+		{
+			sql_exp* l = e->l;
+			list* r = e->r;
+			replace_column_references_with_nulls_2(sql, crefs, l);
+			replace_column_references_with_nulls_1(sql, crefs, r);
+			break;
+		}
+		default:
+			break;
+		}
+		break;
+	case e_func:
+	{
+		list* l = e->l;
+		replace_column_references_with_nulls_1(sql, crefs, l);
+		break;
+	}
+	case e_convert:
+	{
+		sql_exp* l = e->l;
+		replace_column_references_with_nulls_2(sql, crefs, l);
+		break;
+	}
+	default:
+		break;
+	}
 }
 
 static sql_rel *
