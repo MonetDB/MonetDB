@@ -373,18 +373,19 @@ ALGselectNotNil(bat *result, const bat *bid)
 		throw(MAL, "algebra.selectNotNil", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 
 	if (!b->tnonil) {
-		BAT *bn, *s;
+		BAT *s;
 		s = BATselect(b, NULL, ATOMnilptr(b->ttype), NULL, true, true, true);
 		if (s) {
-			bn = BATproject(s, b);
+			BAT *bn = BATproject(s, b);
 			BBPunfix(s->batCacheid);
+			if (bn) {
+				BBPunfix(b->batCacheid);
+				*result = bn->batCacheid;
+				BBPkeepref(*result);
+				return MAL_SUCCEED;
+			}
 		}
 		BBPunfix(b->batCacheid);
-		if (bn) {
-			*result = bn->batCacheid;
-			BBPkeepref(*result);
-			return MAL_SUCCEED;
-		}
 		throw(MAL, "algebra.selectNotNil", GDK_EXCEPTION);
 	}
 	/* just pass on the result */
