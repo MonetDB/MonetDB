@@ -444,6 +444,45 @@ stdout of test 'sqlancer05` in directory 'sql/test/SQLancer` itself:
 % 1 # length
 [ 0	]
 #ROLLBACK;
+#START TRANSACTION;
+#CREATE TABLE "sys"."t0" (
+#	"c0" INTERVAL SECOND NOT NULL,
+#	"c1" DOUBLE        NOT NULL,
+#	CONSTRAINT "t0_c1_c0_pkey" PRIMARY KEY ("c1", "c0"),
+#	CONSTRAINT "t0_c0_c1_unique" UNIQUE ("c0", "c1")
+#);
+#COPY 2 RECORDS INTO "sys"."t0" FROM stdin USING DELIMITERS E'\t',E'\n','"';
+#-1209789190.000	879292012
+#1924429801.000	0.6708880135477207
+[ 2	]
+#CREATE TABLE "sys"."t1" (
+#	"c0" TIME,
+#	"c1" DECIMAL(18,3),
+#	CONSTRAINT "t1_c0_c1_unique" UNIQUE ("c0", "c1")
+#);
+#COPY 8 RECORDS INTO "sys"."t1" FROM stdin USING DELIMITERS E'\t',E'\n','"';
+#04:31:04	0.075
+#22:31:37	NULL
+#03:24:48	0.588
+#NULL	0.808
+#05:31:38	0.351
+#NULL	0.024
+#NULL	0.794
+#23:37:32	0.907
+[ 8	]
+#select cast(sum(count) as bigint) from (select cast(not (not (true)) as int) as count from t1 natural join t0) as res;
+% .%5 # table_name
+% %5 # name
+% bigint # type
+% 1 # length
+[ NULL	]
+#select cast(interval '-1' second as time);
+% .%1 # table_name
+% %1 # name
+% time # type
+% 8 # length
+[ 23:59:59	]
+#ROLLBACK;
 
 # 12:00:38 >  
 # 12:00:38 >  "Done."

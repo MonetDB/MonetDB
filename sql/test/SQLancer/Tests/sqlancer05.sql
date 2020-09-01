@@ -365,3 +365,35 @@ SELECT CAST(SUM(count) AS BIGINT) FROM (SELECT CAST((CAST((TIME '15:03:17') NOT 
 TIME '01:03:49') AS INT)) BETWEEN ASYMMETRIC (t1.c0) AND (t1.c0) AS INT) as count FROM t1, t2 NATURAL JOIN t0) as res;
 	-- 0
 ROLLBACK;
+
+START TRANSACTION;
+CREATE TABLE "sys"."t0" (
+	"c0" INTERVAL SECOND NOT NULL,
+	"c1" DOUBLE        NOT NULL,
+	CONSTRAINT "t0_c1_c0_pkey" PRIMARY KEY ("c1", "c0"),
+	CONSTRAINT "t0_c0_c1_unique" UNIQUE ("c0", "c1")
+);
+COPY 2 RECORDS INTO "sys"."t0" FROM stdin USING DELIMITERS E'\t',E'\n','"';
+-1209789190.000	879292012
+1924429801.000	0.6708880135477207
+
+CREATE TABLE "sys"."t1" (
+	"c0" TIME,
+	"c1" DECIMAL(18,3),
+	CONSTRAINT "t1_c0_c1_unique" UNIQUE ("c0", "c1")
+);
+COPY 8 RECORDS INTO "sys"."t1" FROM stdin USING DELIMITERS E'\t',E'\n','"';
+04:31:04	0.075
+22:31:37	NULL
+03:24:48	0.588
+NULL	0.808
+05:31:38	0.351
+NULL	0.024
+NULL	0.794
+23:37:32	0.907
+
+select cast(sum(count) as bigint) from (select cast(not (not (true)) as int) as count from t1 natural join t0) as res;
+	-- NULL
+select cast(interval '-1' second as time);
+	--23:59:59
+ROLLBACK;
