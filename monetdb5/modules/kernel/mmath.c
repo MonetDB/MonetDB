@@ -28,13 +28,13 @@
 #define degrees(x)			((x) * (180.0 / M_PI))
 
 double
-logbs(double x, double base)
+logbs(double base, double x)
 {
 	return log(x) / log(base);
 }
 
 float
-logbsf(float x, float base)
+logbsf(float base, float x)
 {
 	return logf(x) / logf(base);
 }

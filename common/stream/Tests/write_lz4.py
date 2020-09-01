@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
 
+import sys, os
+sys.path.append(os.environ.get('TSTSRCDIR','.'))
 import write_tests
-import sys
 
 
 def filter(f):

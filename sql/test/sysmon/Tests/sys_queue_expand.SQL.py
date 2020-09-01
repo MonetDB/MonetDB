@@ -18,37 +18,36 @@ def exec_query():
         if dbh is not None:
             dbh.close()
 
+if __name__ == '__main__':
+    mstdbh = None
+    try:
+        mstdbh = pymonetdb.connect(database = os.environ['TSTDB'], port = int(os.environ['MAPIPORT']), hostname = os.environ['MAPIHOST'], autocommit=True)
+        #mstdbh = pymonetdb.connect(database = 'demo', autocommit=True)
+        mstcur = mstdbh.cursor()
 
-mstdbh = None
-try:
-    mstdbh = pymonetdb.connect(database = os.environ['TSTDB'], port = int(os.environ['MAPIPORT']), hostname = os.environ['MAPIHOST'], autocommit=True)
-    #mstdbh = pymonetdb.connect(database = 'demo', autocommit=True)
-    mstcur = mstdbh.cursor()
+        rowcnt = mstcur.execute('select \'before\', username,status,query from sys.queue() where status = \'running\' order by status, query')
+        print("Before sleep: {no}".format(no=rowcnt))
+        [print(row) for row in mstcur.fetchall()]
 
-    rowcnt = mstcur.execute('select \'before\', username,status,query from sys.queue() where status = \'running\' order by status, query')
-    print("Before sleep: {no}".format(no=rowcnt))
-    [print(row) for row in mstcur.fetchall()]
+        # Setup a list of processes that we want to run
+        jobs = [mp.Process(target=exec_query, args=()) for x in range(3)]
+        # Run processes
+        [p.start() for p in jobs]
 
-    # Setup a list of processes that we want to run
-    jobs = [mp.Process(target=exec_query, args=()) for x in range(3)]
-    # Run processes
-    [p.start() for p in jobs]
+        time.sleep(1)
+        rowcnt = mstcur.execute('select \'during\', username,status,query from sys.queue() where status = \'running\' order by status, query')
+        print("\nDuring sleep: {no}".format(no=rowcnt))
+        [print(row) for row in mstcur.fetchall()]
 
-    time.sleep(1)
-    rowcnt = mstcur.execute('select \'during\', username,status,query from sys.queue() where status = \'running\' order by status, query')
-    print("\nDuring sleep: {no}".format(no=rowcnt))
-    [print(row) for row in mstcur.fetchall()]
+        # Exit the completed processes
+        [p.join() for p in jobs]
 
-    # Exit the completed processes
-    [p.join() for p in jobs]
+        rowcnt = mstcur.execute('select \'after\', username,status,query from sys.queue() where status = \'running\' order by status, query')
+        print("\nAfter sleep: {no}".format(no=rowcnt))
+        [print(row) for row in mstcur.fetchall()]
 
-    rowcnt = mstcur.execute('select \'after\', username,status,query from sys.queue() where status = \'running\' order by status, query')
-    print("\nAfter sleep: {no}".format(no=rowcnt))
-    [print(row) for row in mstcur.fetchall()]
-
-except pymonetdb.exceptions.Error as e:
-    print(e)
-finally:
-    if mstdbh is not None:
-        mstdbh.close()
-
+    except pymonetdb.exceptions.Error as e:
+        print(e)
+    finally:
+        if mstdbh is not None:
+            mstdbh.close()

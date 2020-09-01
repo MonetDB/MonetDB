@@ -32,6 +32,10 @@ MAPI  = (monetdb) /var/tmp/mtest-533187/.s.monetdb.35832
 QUERY = select sub0.c0 from (select 1 as c0, 2 as c0) as sub0;
 ERROR = !SELECT: identifier 'sub0.c0' ambiguous
 CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-15258/.s.monetdb.36565
+QUERY = CALL sys.reuse('sys', 'v0'); --error not persistent
+ERROR = !reuse: VIEW 'v0' is not persistent
+CODE  = 42000
 
 # 12:00:38 >  
 # 12:00:38 >  "Done."

@@ -2759,7 +2759,7 @@ rewrite_compare_exps(visitor *v, sql_rel *rel, list *exps)
 			sql_find_subtype(&bt, "boolean", 0, 0);
 			if (!(e = exp_check_type(v->sql, &bt, rel, e, type_equal)))
 				return NULL;
-			n->data = exp_compare(v->sql->sa, e, exp_atom_bool(v->sql->sa, 1), cmp_equal);
+			n->data = e = exp_compare(v->sql->sa, e, exp_atom_bool(v->sql->sa, 1), cmp_equal);
 			v->changes++;
 		}
 		if (is_compare(e->type) && e->flag == cmp_or) {

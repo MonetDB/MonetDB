@@ -131,7 +131,7 @@ no_updates(InstrPtr *old, int *vars, int oldv, int newv)
 str
 OPTpushselectImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	int i, j, limit, slimit, actions=0, *vars, *nvars = NULL, *slices = NULL, push_down_delta = 0, nr_topn = 0, nr_likes = 0;
+	int i, j, limit, slimit, actions=0, *vars, *nvars = NULL, *slices = NULL, push_down_delta = 0, nr_topn = 0, nr_likes = 0, no_mito = 0;
 	char *rslices = NULL, *oclean = NULL;
 	InstrPtr p, *old;
 	subselect_t subselects;
@@ -143,6 +143,7 @@ OPTpushselectImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 	if( mb->errors)
 		return MAL_SUCCEED;
 
+	no_mito = !isOptimizerEnabled(mb, "mitosis");
 	(void) stk;
 	(void) pci;
 	vars= (int*) GDKzalloc(sizeof(int)* mb->vtop);
@@ -176,7 +177,8 @@ OPTpushselectImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 		if (isLikeOp(p))
 			nr_likes++;
 
-		if (getModuleId(p) == sqlRef && getFunctionId(p) == deltaRef)
+		if ((getModuleId(p) == sqlRef && getFunctionId(p) == deltaRef) ||
+			(no_mito && getModuleId(p) == matRef && getFunctionId(p) == packRef && p->argc == (p->retc+2)))
 			push_down_delta++;
 
 		if (/* DISABLES CODE */ (0) && getModuleId(p) == sqlRef && getFunctionId(p) == tidRef) { /* rewrite equal table ids */
@@ -609,6 +611,10 @@ OPTpushselectImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 		 * s = subdelta(nc, uid, nu);
 		 *
 		 * doesn't handle Xselect(x, .. z, C1.. cases) ie multicolumn selects
+		 *
+		 * also handle (if no_mito)
+		 * c = pack(b, ins)
+		 * s = select(c, C1..)
 		 */
 		lastbat = lastbat_arg(mb, p);
 		if (isSelect(p) && p->retc == 1 && lastbat == 2) {
@@ -619,7 +625,40 @@ OPTpushselectImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 				var = getArg(q, 1);
 				q = old[vars[var]];
 			}
-			if (q && getModuleId(q) == sqlRef && getFunctionId(q) == deltaRef) {
+			if (no_mito && q && getModuleId(q) == matRef && getFunctionId(q) == packRef && q->argc == (q->retc+2)) {
+				InstrPtr r = copyInstruction(p);
+				InstrPtr t = copyInstruction(p);
+
+				if( r == NULL || t == NULL){
+					freeInstruction(r);
+					freeInstruction(t);
+					GDKfree(vars);
+					GDKfree(nvars);
+					GDKfree(slices);
+					GDKfree(rslices);
+					GDKfree(oclean);
+					GDKfree(old);
+					throw(MAL,"optimizer.pushselect", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+				}
+				getArg(r, 0) = newTmpVariable(mb, newBatType(TYPE_oid));
+				setVarCList(mb,getArg(r,0));
+				getArg(r, 1) = getArg(q, 1); /* column */
+				r->typechk = TYPE_UNKNOWN;
+				pushInstruction(mb,r);
+				getArg(t, 0) = newTmpVariable(mb, newBatType(TYPE_oid));
+				setVarCList(mb,getArg(t,0));
+				getArg(t, 1) = getArg(q, 2); /* inserts */
+				pushInstruction(mb,t);
+
+				InstrPtr u = copyInstruction(q); /* pack result */
+				getArg(u, 0) = getArg(p,0);
+				getArg(u, 1) = getArg(r,0);
+				getArg(u, 2) = getArg(t,0);
+				u->typechk = TYPE_UNKNOWN;
+				pushInstruction(mb,u);
+				oclean[i] = 1;
+				continue;
+			} else if (q && getModuleId(q) == sqlRef && getFunctionId(q) == deltaRef) {
 				InstrPtr r = copyInstruction(p);
 				InstrPtr s = copyInstruction(p);
 				InstrPtr u = copyInstruction(q);
@@ -668,10 +707,49 @@ OPTpushselectImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 				continue;
 			}
 		} else if (getModuleId(p) == algebraRef && getFunctionId(p) == projectionRef) {
+			int id = getArg(p, 1);
+			InstrPtr s = old[vars[id]];
 			int var = getArg(p, 2);
 			InstrPtr q = old[vars[var]];
 
-			if (getModuleId(q) == sqlRef && getFunctionId(q) == deltaRef && q->argc == 4) {
+			if (no_mito &&
+				getModuleId(q) == matRef && getFunctionId(q) == packRef && q->argc == 3 &&
+			    getModuleId(s) == matRef && getFunctionId(s) == packRef && s->argc == 3) {
+				InstrPtr r = copyInstruction(p);
+				InstrPtr t = copyInstruction(p);
+
+				if( r == NULL || t == NULL){
+					freeInstruction(r);
+					freeInstruction(t);
+					GDKfree(vars);
+					GDKfree(nvars);
+					GDKfree(slices);
+					GDKfree(rslices);
+					GDKfree(oclean);
+					GDKfree(old);
+					throw(MAL,"optimizer.pushselect", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+				}
+				getArg(r, 0) = newTmpVariable(mb, getArgType(mb, p, 0));
+				setVarCList(mb,getArg(r,0));
+				getArg(r, 1) = getArg(s, 1);
+				getArg(r, 2) = getArg(q, 1); /* column */
+				r->typechk = TYPE_UNKNOWN;
+				pushInstruction(mb,r);
+				getArg(t, 0) = newTmpVariable(mb, getArgType(mb, p, 0));
+				setVarCList(mb,getArg(t,0));
+				getArg(t, 1) = getArg(s, 2);
+				getArg(t, 2) = getArg(q, 2); /* inserts */
+				pushInstruction(mb,t);
+
+				InstrPtr u = copyInstruction(q); /* pack result */
+				getArg(u, 0) = getArg(p,0);
+				getArg(u, 1) = getArg(r,0);
+				getArg(u, 2) = getArg(t,0);
+				u->typechk = TYPE_UNKNOWN;
+				pushInstruction(mb,u);
+				oclean[i] = 1;
+				continue;
+			} else if (getModuleId(q) == sqlRef && getFunctionId(q) == deltaRef && q->argc == 4) {
 				q = copyInstruction(q);
 				if( q == NULL){
 					GDKfree(vars);

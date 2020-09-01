@@ -298,6 +298,66 @@ stdout of test 'sqlancer05` in directory 'sql/test/SQLancer` itself:
 % 1 # length
 [ 4	]
 #ROLLBACK;
+#START TRANSACTION;
+#CREATE TABLE "sys"."t1" (
+#	"c0" CHAR(420)     NOT NULL,
+#	CONSTRAINT "t1_c0_pkey" PRIMARY KEY ("c0")
+#);
+#COPY 14 RECORDS INTO "sys"."t1" FROM stdin USING DELIMITERS E'\t',E'\n','"';
+#"-1284014837"
+#"R/<"
+#""
+#"s2"
+#")L"
+#"-1637493938"
+#"0.7778392099491236"
+#"w"
+#"-\\h"
+#"d"
+#"mfvgds&o"
+#"449949101"
+#"f8i8c"
+#"?"
+[ 14	]
+#SELECT t1.c0 FROM t1 WHERE t1.c0 NOT ILIKE t1.c0;
+% sys.t1 # table_name
+% c0 # name
+% char # type
+% 420 # length
+#SELECT t1.c0 NOT ILIKE t1.c0 FROM t1;
+% sys.%1 # table_name
+% %1 # name
+% boolean # type
+% 5 # length
+[ false	]
+[ false	]
+[ false	]
+[ false	]
+[ false	]
+[ false	]
+[ false	]
+[ false	]
+[ false	]
+[ false	]
+[ false	]
+[ false	]
+[ false	]
+[ false	]
+#ROLLBACK;
+#START TRANSACTION;
+#CREATE TABLE "sys"."t0" ("c0" INTERVAL MONTH,"c1" INTERVAL SECOND);
+#create view v0(c0) as (select all t0.c1 from t0);
+#ROLLBACK;
+#CREATE TABLE "sys"."t1" ("c1" BOOLEAN);
+#INSERT INTO t1(c1) VALUES(TRUE), (FALSE), (FALSE);
+[ 3	]
+#INSERT INTO t1(c1) VALUES((- (2127809083)) NOT IN (CASE TIME '22:10:54' WHEN TIME '19:30:46' THEN -1396572561 WHEN TIME '15:58:42' THEN -1164282298 END, + (-767637633), COALESCE(1638931666, 596854699))), (TRUE);
+[ 2	]
+#INSERT INTO t1(c1) VALUES(FALSE), (TRUE), (FALSE), (FALSE), (FALSE), (FALSE), (TRUE), (TRUE), (FALSE), (TRUE);
+[ 10	]
+#DELETE FROM t1 WHERE t1.c1;
+[ 6	]
+#DROP TABLE "sys"."t1";
 
 # 12:00:38 >  
 # 12:00:38 >  "Done."

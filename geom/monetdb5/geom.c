@@ -3814,8 +3814,10 @@ wkbBasicBoolean(bit *out, wkb **geom, char (*func) (const GEOSGeometry *), const
 	ret = (*func) (geosGeometry);	//it is supposed to return char but treating it as such gives wrong results
 	GEOSGeom_destroy(geosGeometry);
 
-	if (ret == 2)
-		throw(MAL, name, SQLSTATE(38000) "Geos operation GEOSis%s failed", name + 7);
+	if (ret == 2) {
+		GDKclrerr();
+		ret = 0;
+	}
 
 	*out = ret;
 

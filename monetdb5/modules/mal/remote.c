@@ -1168,7 +1168,7 @@ static str RMTbatload(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 static str RMTbincopyto(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	bat bid = *getArgReference_bat(stk, pci, 1);
-	BAT *b = BBPquickdesc(bid, false);
+	BAT *b = BBPquickdesc(bid, false), *v = b;
 	char sendtheap = 0;
 
 	(void)mb;
@@ -1182,6 +1182,8 @@ static str RMTbincopyto(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		throw(MAL, "remote.bincopyto", MAL_MALLOC_FAIL);
 
 	sendtheap = b->ttype != TYPE_void && b->tvarsized;
+	if (isVIEW(b) && sendtheap && VIEWvtparent(b) && BATcount(b) < BATcount(BBPquickdesc(VIEWvtparent(b), false)))
+		v = COLcopy(b, b->ttype, true, TRANSIENT);
 
 	mnstr_printf(cntxt->fdout, /*JSON*/"{"
 			"\"version\":1,"
@@ -1197,25 +1199,28 @@ static str RMTbincopyto(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			"\"tailsize\":%zu,"
 			"\"theapsize\":%zu"
 			"}\n",
-			b->ttype,
-			b->hseqbase, b->tseqbase,
-			b->tsorted, b->trevsorted,
-			b->tkey,
-			b->tnonil,
-			BATtdense(b),
-			b->batCount,
-			(size_t)b->batCount * Tsize(b),
-			sendtheap && b->batCount > 0 ? b->tvheap->free : 0
+			v->ttype,
+			v->hseqbase, v->tseqbase,
+			v->tsorted, v->trevsorted,
+			v->tkey,
+			v->tnonil,
+			BATtdense(v),
+			v->batCount,
+			(size_t)v->batCount * Tsize(v),
+			sendtheap && v->batCount > 0 ? v->tvheap->free : 0
 			);
 
-	if (b->batCount > 0) {
+	if (v->batCount > 0) {
 		mnstr_write(cntxt->fdout, /* tail */
-		Tloc(b, 0), b->batCount * Tsize(b), 1);
+		Tloc(v, 0), v->batCount * Tsize(v), 1);
 		if (sendtheap)
 			mnstr_write(cntxt->fdout, /* theap */
-					Tbase(b), b->tvheap->free, 1);
+					Tbase(v), v->tvheap->free, 1);
 	}
 	/* flush is done by the calling environment (MAL) */
+
+	if (b != v)
+		BBPreclaim(v);
 
 	BBPunfix(bid);
 
