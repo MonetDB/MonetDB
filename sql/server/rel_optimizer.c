@@ -919,11 +919,6 @@ order_joins(visitor *v, list *rels, list *exps)
 			ln = list_find(n_rels, cje->l, (fcmp)&rel_has_exp);
 			rn = list_find(n_rels, cje->r, (fcmp)&rel_has_exp);
 
-			if (ln || rn) {
-				/* remove the expression from the lists */
-				list_remove_data(sdje, cje);
-				list_remove_data(exps, cje);
-			}
 			if (ln && rn) {
 				assert(0);
 				/* create a selection on the current */
@@ -941,8 +936,14 @@ order_joins(visitor *v, list *rels, list *exps)
 				}
 				if (!r) {
 					fnd = 1; /* not really, but this bails out */
+					list_remove_data(sdje, cje); /* handle later as select */
 					continue;
 				}
+
+				/* remove the expression from the lists */
+				list_remove_data(sdje, cje);
+				list_remove_data(exps, cje);
+
 				list_remove_data(rels, r);
 				append(n_rels, r);
 
@@ -4819,28 +4820,29 @@ rel_push_semijoin_down_or_up(visitor *v, sql_rel *rel)
 		lop = l->op;
 		ll = l->l;
 		lr = l->r;
-		/* semijoin shouldn't be based on right relation of join */
+
+		/* check which side is used and other exps are atoms or from right of semijoin */
 		for(n = exps->h; n; n = n->next) {
 			sql_exp *sje = n->data;
 
-			if (sje->type != e_cmp)
+			if (sje->type != e_cmp || is_complex_exp(sje->flag))
 				return rel;
-			if (right &&
-				(is_complex_exp(sje->flag) ||
-			    	rel_has_exp(lr, sje->l) < 0 ||
-			    	rel_has_exp(lr, sje->r) < 0 ||
-					(sje->f && rel_has_exp(lr, sje->f) < 0))) {
+			/* sje->l from ll and sje->r/f from semijoin r ||
+			 * sje->l from semijoin r and sje->r/f from ll ||
+			 * sje->l from lr and sje->r/f from semijoin r ||
+			 * sje->l from semijoin r and sje->r/f from lr */
+			if (left &&
+			   ((rel_has_exp(ll, sje->l) >= 0 && rel_has_exp(rel->r, sje->r) >= 0 && (!sje->f || rel_has_exp(rel->r, sje->f) >= 0)) ||
+			    (rel_has_exp(rel->r, sje->l) >= 0 && rel_has_exp(ll, sje->r) >= 0 && (!sje->f || rel_has_exp(ll, sje->f) >= 0))))
 				right = 0;
-			}
-			if (right)
+			else
 				left = 0;
-			if (!right && left &&
-				(is_complex_exp(sje->flag) ||
-			    	rel_has_exp(ll, sje->l) < 0 ||
-			    	rel_has_exp(ll, sje->r) < 0 ||
-					(sje->f && rel_has_exp(ll, sje->f) < 0))) {
+			if (right &&
+			   ((rel_has_exp(lr, sje->l) >= 0 && rel_has_exp(rel->r, sje->r) >= 0 && (!sje->f || rel_has_exp(rel->r, sje->f) >= 0)) ||
+			    (rel_has_exp(rel->r, sje->l) >= 0 && rel_has_exp(lr, sje->r) >= 0 && (!sje->f || rel_has_exp(lr, sje->f) >= 0))))
 				left = 0;
-			}
+			else
+				right = 0;
 			if (!right && !left)
 				return rel;
 		}
@@ -5514,7 +5516,7 @@ rel_push_project_down(visitor *v, sql_rel *rel)
 			}
 			return rel;
 		} else if (list_check_prop_all(rel->exps, (prop_check_func)&exp_is_useless_rename)) {
-			if ((is_project(l->op) && list_length(l->exps) == list_length(rel->exps)) || is_set(l->op) || is_select(l->op) 
+			if ((is_project(l->op) && list_length(l->exps) == list_length(rel->exps)) || is_set(l->op) || is_select(l->op)
 				|| is_join(l->op) || is_semi(l->op) || is_topn(l->op) || is_sample(l->op)) {
 				rel->l = NULL;
 				rel_destroy(rel);
