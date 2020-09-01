@@ -7586,9 +7586,12 @@ rel_simplify_predicates(visitor *v, sql_rel *rel, sql_exp *e, int depth)
 						atom *a = r->l;
 
 						if (a->isnull) {
-							if (is_semantics(e)) /* isnull(x) = NULL -> false, isnull(x) <> NULL -> true */
-								e = exp_atom_bool(v->sql->sa, e->flag == cmp_notequal);
-							else /* always NULL */
+							if (is_semantics(e)) { /* isnull(x) = NULL -> false, isnull(x) <> NULL -> true */
+								int flag = e->flag == cmp_notequal;
+								if (is_anti(e))
+									flag = !flag;
+								e = exp_atom_bool(v->sql->sa, flag);
+							} else /* always NULL */
 								e = exp_null(v->sql->sa, sql_bind_localtype("bit"));
 							v->changes++;
 						} else {
