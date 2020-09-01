@@ -367,15 +367,14 @@ ALGthetaselect1(bat *result, const bat *bid, const void *val, const char **op)
 static str
 ALGselectNotNil(bat *result, const bat *bid)
 {
-	BAT *b, *bn = NULL;
+	BAT *b;
 
 	if ((b = BATdescriptor(*bid)) == NULL)
 		throw(MAL, "algebra.selectNotNil", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 
-	if( BATcount_no_nil(b) != BATcount(b) ){
-		BAT *s = NULL;
-
-		s = BATselect(b, s, ATOMnilptr(b->ttype), NULL, true, true, true);
+	if (!b->tnonil) {
+		BAT *bn, *s;
+		s = BATselect(b, NULL, ATOMnilptr(b->ttype), NULL, true, true, true);
 		if (s) {
 			bn = BATproject(s, b);
 			BBPunfix(s->batCacheid);
@@ -986,7 +985,7 @@ ALGcount_nil(lng *result, const bat *bid, const bit *ignore_nils)
 		throw(MAL, "aggr.count", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 	}
 	if (*ignore_nils)
-		cnt = BATcount_no_nil(b);
+		cnt = BATcount_no_nil(b, NULL);
 	else
 		cnt = BATcount(b);
 	*result = (lng) cnt;
@@ -1007,18 +1006,20 @@ ALGcountCND_bat(lng *result, const bat *bid, const bat *cnd)
 {
 	BAT *b;
 
-	if ( *cnd) {
-		if ((b = BATdescriptor(*cnd)) == NULL) {
-			throw(MAL, "aggr.count", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
-		}
-		*result = (lng) BATcount(b);
-		BBPunfix(b->batCacheid);
-		return MAL_SUCCEED;
-	}
 	if ((b = BATdescriptor(*bid)) == NULL) {
 		throw(MAL, "aggr.count", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 	}
-	*result = (lng) BATcount(b);
+	if (*cnd) {
+		struct canditer ci;
+		BAT *s;
+		if ((s = BATdescriptor(*cnd)) == NULL) {
+			BBPunfix(b->batCacheid);
+			throw(MAL, "aggr.count", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
+		}
+		*result = (lng) canditer_init(&ci, b, s);
+		BBPunfix(s->batCacheid);
+	} else
+		*result = (lng) BATcount(b);
 	BBPunfix(b->batCacheid);
 	return MAL_SUCCEED;
 }
@@ -1026,39 +1027,29 @@ ALGcountCND_bat(lng *result, const bat *bid, const bat *cnd)
 static str
 ALGcountCND_nil(lng *result, const bat *bid, const bat *cnd, const bit *ignore_nils)
 {
-	BAT *b;
-	BUN cnt;
+	BAT *b, *s = NULL;
 
-	if (*ignore_nils){
-		if ((b = BATdescriptor(*bid)) == NULL) {
-			throw(MAL, "aggr.count", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
-		}
-		cnt = BATcount_no_nil(b);
-	} else{
-		if ( *cnd) {
-			if ((b = BATdescriptor(*cnd)) == NULL) {
-				throw(MAL, "aggr.count", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
-			}
-			*result = (lng) BATcount(b);
-			BBPunfix(b->batCacheid);
-			return MAL_SUCCEED;
-		}
-		if ((b = BATdescriptor(*bid)) == NULL) {
-			throw(MAL, "aggr.count", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
-		}
-		cnt = BATcount(b);
+	if (!*ignore_nils)
+		return ALGcountCND_bat(result, bid, cnd);
+	if (*cnd && (s = BATdescriptor(*cnd)) == NULL) {
+		throw(MAL, "aggr.count", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 	}
-	*result = (lng) cnt;
+	if ((b = BATdescriptor(*bid)) == NULL) {
+		if (s)
+			BBPunfix(s->batCacheid);
+		throw(MAL, "aggr.count", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
+	}
+	*result = (lng) BATcount_no_nil(b, s);
 	BBPunfix(b->batCacheid);
+	if (s)
+		BBPunfix(s->batCacheid);
 	return MAL_SUCCEED;
 }
 
 static str
 ALGcountCND_no_nil(lng *result, const bat *bid, const bat *cnd)
 {
-	bit ignore_nils = 1;
-
-	return ALGcountCND_nil(result, bid, cnd, &ignore_nils);
+	return ALGcountCND_nil(result, bid, cnd, &(bit){1});
 }
 
 static str
