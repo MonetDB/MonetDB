@@ -14,3 +14,16 @@ SELECT CAST(SUM(count) AS BIGINT) FROM (SELECT ALL CAST(((COALESCE(0.9, 0.5, 0.7
 as count FROM t2) as res;
 	-- 1
 ROLLBACK;
+
+START TRANSACTION;
+CREATE TABLE "sys"."t0" ("c0" TIME,"c1" SMALLINT NOT NULL);
+CREATE TABLE "sys"."t1" ("c1" SMALLINT,"c2" DATE NOT NULL);
+CREATE TABLE "sys"."t2" ("c0" TIME,"c1" SMALLINT,CONSTRAINT "t2_c0_unique" UNIQUE ("c0"));
+COPY 3 RECORDS INTO "sys"."t2" FROM stdin USING DELIMITERS E'\t',E'\n','"';
+NULL	0
+16:03:32	NULL
+02:15:11	NULL
+
+select all t0.c1 from t0, t1 natural join t2 where (t1.c1) not between symmetric (t1.c1) and (t0.c1);
+	--empty
+ROLLBACK;
