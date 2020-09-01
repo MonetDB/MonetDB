@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
 
+import sys, os
+sys.path.append(os.environ.get('TSTSRCDIR','.'))
 from testdata import Doc, TestFile
 
-import os
 import subprocess
-import sys
 
 
 def run_streamcat(text, enc, expected_error = None):
@@ -20,7 +20,10 @@ def run_streamcat(text, enc, expected_error = None):
     cmd = ['streamcat', 'read', filename, 'rstream', f'iconv:{enc}']
     print(f"Input is {repr(content)}")
     proc = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    if proc.stdout:
+        proc.stdout = proc.stdout.replace(b'\r', b'')
     if proc.stderr:
+        proc.stderr = proc.stderr.replace(b'\r', b'')
         sys.stderr.buffer.write(proc.stderr)
         sys.stderr.flush()
     if expected_error == None:
@@ -49,4 +52,3 @@ run_streamcat(text, 'latin1')
 
 # invalid utf-8, expect an error
 run_streamcat(b"M\xc3\xc3NETDB", 'utf-8', b'multibyte sequence')
-

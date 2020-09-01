@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
 
+import sys, os
+sys.path.append(os.environ.get('TSTSRCDIR','.'))
 from testdata import Doc, TestFile
 
-import os
 import subprocess
-import sys
 import tempfile
 
 
