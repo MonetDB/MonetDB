@@ -294,6 +294,7 @@ BAT *
 BATproject2(BAT *restrict l, BAT *restrict r1, BAT *restrict r2)
 {
 	BAT *bn;
+	BAT *or1 = r1, *or2 = r2;
 	oid lo, hi;
 	gdk_return res;
 	int tpe = ATOMtype(r1->ttype);
@@ -306,7 +307,7 @@ BATproject2(BAT *restrict l, BAT *restrict r1, BAT *restrict r2)
 	TRC_DEBUG_IF(ALGO) t0 = GDKusec();
 
 	assert(ATOMtype(l->ttype) == TYPE_oid || l->ttype == TYPE_msk);
-	assert(r2 == NULL || ATOMtype(r1->ttype) == ATOMtype(r2->ttype));
+	assert(r2 == NULL || tpe == ATOMtype(r2->ttype));
 	assert(r2 == NULL || r1->hseqbase + r1->batCount == r2->hseqbase);
 
 	if (BATtdense(l) && lcount > 0) {
@@ -342,9 +343,9 @@ BATproject2(BAT *restrict l, BAT *restrict r1, BAT *restrict r2)
 	     (r2 == NULL ||
 	      (r2->ttype == TYPE_void && is_oid_nil(r2->tseqbase))))) {
 		/* trivial: all values are nil (includes no entries at all) */
-		const void *nil = ATOMnilptr(r1->ttype);
+		const void *nil = r1->ttype == TYPE_msk ? &oid_nil : ATOMnilptr(r1->ttype);
 
-		bn = BATconstant(l->hseqbase, r1->ttype == TYPE_oid ? TYPE_void : r1->ttype,
+		bn = BATconstant(l->hseqbase, r1->ttype == TYPE_oid || r1->ttype == TYPE_msk ? TYPE_void : r1->ttype,
 				 nil, lcount, TRANSIENT);
 		if (bn != NULL &&
 		    ATOMtype(bn->ttype) == TYPE_oid &&
@@ -369,6 +370,16 @@ BATproject2(BAT *restrict l, BAT *restrict r1, BAT *restrict r2)
 		 * right string heap) */
 		tpe = r1->twidth == 1 ? TYPE_bte : (r1->twidth == 2 ? TYPE_sht : (r1->twidth == 4 ? TYPE_int : TYPE_lng));
 		stringtrick = true;
+	} else if (tpe == TYPE_msk) {
+		r1 = BATunmask(r1);
+		if (r1 == NULL)
+			goto doreturn;
+		if (r2) {
+			r2 = BATunmask(r2);
+			if (r2 == NULL)
+				goto doreturn;
+		}
+		tpe = TYPE_oid;
 	}
 	bn = COLnew(l->hseqbase, tpe, lcount, TRANSIENT);
 	if (bn == NULL) {
@@ -467,10 +478,14 @@ BATproject2(BAT *restrict l, BAT *restrict r1, BAT *restrict r2)
   doreturn:
 	TRC_DEBUG(ALGO, "l=" ALGOBATFMT " r1=" ALGOBATFMT " r2=" ALGOOPTBATFMT
 		  " -> " ALGOOPTBATFMT "%s%s " LLFMT "us\n",
-		  ALGOBATPAR(l), ALGOBATPAR(r1), ALGOOPTBATPAR(r2),
+		  ALGOBATPAR(l), ALGOBATPAR(or1), ALGOOPTBATPAR(or2),
 		  ALGOOPTBATPAR(bn),
 		  bn && bn->ttype == TYPE_str && bn->tvheap == r1->tvheap ? " sharing string heap" : "",
 		  msg, GDKusec() - t0);
+	if (r1 != or1)
+		BBPreclaim(r1);
+	if (r2 != or2)
+		BBPreclaim(r2);
 	return bn;
 
   bailout:
