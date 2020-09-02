@@ -104,4 +104,15 @@ INSERT INTO t2 VALUES (TIME '20:39:07' BETWEEN TIME '11:09:56' AND TIME '04:20:0
 SELECT c0 from t2;
 	-- false
 INSERT INTO t2(c0) VALUES(CAST((CASE WHEN r'' THEN TIME '06:29:46' WHEN r'b_P' THEN TIME '20:39:07' END) BETWEEN ASYMMETRIC (COALESCE(TIME '11:09:56', TIME '12:05:55')) AND (COALESCE(TIME '18:59:07', TIME '04:20:04', TIME '19:01:06')) AS STRING(638)));
+	--error while converting string '' to bit
+ROLLBACK;
+
+START TRANSACTION;
+CREATE TABLE "sys"."t0" ("c0" DATE NOT NULL,CONSTRAINT "t0_c0_pkey" PRIMARY KEY ("c0"));
+CREATE TABLE "sys"."t1" ("c0" DATE NOT NULL);
+CREATE INDEX "i1" ON "sys"."t1" ("c0");
+CREATE ORDERED INDEX "i2" ON "sys"."t1" ("c0");
+create view v0(c0) as (select 1 from t0,t1 where ((t0.c0)>=(t1.c0)));
+select '12' like 'i' from t0, t1 right outer join v0 on exists (select 'a' from t0, t1);
+	--empty
 ROLLBACK;
