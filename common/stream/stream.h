@@ -228,6 +228,10 @@ stream_export stream *block_stream(stream *s); // mapi.c, mal_mapi.c, client.c, 
 stream_export bool isa_block_stream(const stream *s); // mapi.c, mal_client.c, remote.c, sql_scenario.c/sqlReader, sql_scan.c
 stream_export stream *bs_stream(stream *s); // unused
 
+stream_export void joeri_role(const char *role);
+stream_export void joeri_log(const char *fmt, ...)
+	__attribute__((__format__(__printf__, 1, 2)))
+;
 
 typedef enum {
 	PROTOCOL_AUTO = 0, // unused

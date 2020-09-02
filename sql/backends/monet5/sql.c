@@ -3310,6 +3310,8 @@ mvc_bin_import_table_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 
 		if (tpe <= TYPE_str || tpe == TYPE_date || tpe == TYPE_daytime || tpe == TYPE_timestamp) {
 			if (onclient) {
+				joeri_role("server");
+				joeri_log("mvc_bin_import_table_wrap: onclient\n");
 				mnstr_write(be->mvc->scanner.ws, PROMPT3, sizeof(PROMPT3)-1, 1);
 				mnstr_printf(be->mvc->scanner.ws, "rb %s\n", fname);
 				msg = MAL_SUCCEED;
@@ -3337,6 +3339,8 @@ mvc_bin_import_table_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 				be->mvc->scanner.rs->eof = s->eof;
 				s->s = NULL;
 				bstream_destroy(s);
+				joeri_log("mvc_bin_import_table_wrap: onclient done\n");
+				joeri_role(NULL);
 			} else if (tpe == TYPE_str) {
 				/* get the BAT and fill it with the strings */
 				c = COLnew(0, TYPE_str, 0, TRANSIENT);
