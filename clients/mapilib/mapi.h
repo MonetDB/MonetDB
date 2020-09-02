@@ -53,6 +53,13 @@ extern "C" {
 #define mapi_export extern
 #endif
 
+#ifndef __GNUC__
+/* This feature is available in gcc versions 2.5 and later.  */
+# ifndef __attribute__
+#  define __attribute__(Spec)	/* empty */
+# endif
+#endif
+
 /* connection-oriented functions */
 mapi_export Mapi mapi_mapi(const char *host, int port, const char *username, const char *password, const char *lang, const char *dbname);
 mapi_export Mapi mapi_mapiuri(const char *url, const char *user, const char *pass, const char *lang);
