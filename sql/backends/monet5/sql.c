@@ -4192,6 +4192,9 @@ SQLvacuum(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		throw(SQL, "sql.vacuum", SQLSTATE(42000) "vacuum not allowed on tables with indices");
 	if (t->system)
 		throw(SQL, "sql.vacuum", SQLSTATE(42000) "vacuum not allowed on system tables");
+	if (!isTable(t))
+		throw(SQL, "sql.vacuum", SQLSTATE(42000) "vacuum: %s '%s' is not persistent",
+			  TABLE_TYPE_DESCRIPTION(t->type, t->properties), t->base.name);
 
 	if (has_snapshots(m->session->tr))
 		throw(SQL, "sql.vacuum", SQLSTATE(42000) "vacuum not allowed on snapshots");
@@ -4257,6 +4260,9 @@ SQLdrop_hash(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	t = mvc_bind_table(m, s, tbl);
 	if (t == NULL)
 		throw(SQL, "sql.drop_hash", SQLSTATE(42S02) "Table missing %s.%s",sch, tbl);
+	if (!isTable(t))
+		throw(SQL, "sql.drop_hash", SQLSTATE(42000) "%s '%s' is not persistent",
+			  TABLE_TYPE_DESCRIPTION(t->type, t->properties), t->base.name);
 
 	for (o = t->columns.set->h; o; o = o->next) {
 		c = o->data;
