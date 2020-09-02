@@ -293,7 +293,7 @@ project_any(BAT *restrict bn, BAT *restrict l, struct canditer *restrict ci,
 BAT *
 BATproject2(BAT *restrict l, BAT *restrict r1, BAT *restrict r2)
 {
-	BAT *bn;
+	BAT *bn = NULL;
 	BAT *or1 = r1, *or2 = r2;
 	oid lo, hi;
 	gdk_return res;
