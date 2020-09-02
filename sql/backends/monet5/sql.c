@@ -3151,17 +3151,12 @@ mvc_import_table_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 static bool
 read_more(bstream *in, stream *out)
 {
+	(void)out;
+	bool success = false;
 	do {
-		if (bstream_next(in) < 0)
-			return false;
-		if (in->eof) {
-			if (mnstr_write(out, PROMPT2, sizeof(PROMPT2) - 1, 1) != 1
-			    || mnstr_flush(out, MNSTR_FLUSH_DATA) < 0)
-				return false;
-			in->eof = false;
-			if (bstream_next(in) <= 0)
-				return false;
-		}
+		if (bstream_next(in) <= 0)
+			return success;
+		success = true;
 	} while (in->len <= in->pos);
 	return true;
 }
@@ -3332,7 +3327,9 @@ mvc_bin_import_table_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 					msg = createException(SQL, "sql", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 					goto bailout;
 				}
+				set_prompting(rs, PROMPT2, ws);
 				c = BATattach_bstream(col->type.type->localtype, s, ws, cnt);
+				set_prompting(rs, NULL, NULL);
 				if (!c) {
 					bstream_destroy(s);
 					msg = createException(SQL, "sql", SQLSTATE(HY013) MAL_MALLOC_FAIL);
