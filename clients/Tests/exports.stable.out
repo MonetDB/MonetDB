@@ -203,6 +203,7 @@ BAT *BATthetaselect(BAT *b, BAT *s, const void *val, const char *op);
 void BATtseqbase(BAT *b, oid o);
 void BATundo(BAT *b);
 BAT *BATunique(BAT *b, BAT *s);
+BAT *BATunmask(BAT *b);
 BBPrec *BBP[N_BBPINIT];
 gdk_return BBPaddfarm(const char *dirname, int rolemask, bool logerror);
 void BBPclear(bat bid);

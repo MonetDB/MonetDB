@@ -27,7 +27,7 @@ command projection( left:bat[:oid], right:bat[:any_3] ) :bat[:any_3]
 address ALGprojection
 comment "Project left input onto right input.";
 
-command projection2( left:bat[:oid], right1:bat[:any_3], right2:bat[:any_3] ) :bat[:any_3]
+command projection( left:bat[:oid], right1:bat[:any_3], right2:bat[:any_3] ) :bat[:any_3]
 address ALGprojection2
 comment "Project left input onto right inputs which should be consecutive.";
 

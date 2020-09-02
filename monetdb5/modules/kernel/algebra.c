@@ -374,18 +374,19 @@ ALGselectNotNil(bat *result, const bat *bid)
 		throw(MAL, "algebra.selectNotNil", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 
 	if (!b->tnonil) {
-		BAT *bn, *s;
+		BAT *s;
 		s = BATselect(b, NULL, ATOMnilptr(b->ttype), NULL, true, true, true);
 		if (s) {
-			bn = BATproject(s, b);
+			BAT *bn = BATproject(s, b);
 			BBPunfix(s->batCacheid);
+			if (bn) {
+				BBPunfix(b->batCacheid);
+				*result = bn->batCacheid;
+				BBPkeepref(*result);
+				return MAL_SUCCEED;
+			}
 		}
 		BBPunfix(b->batCacheid);
-		if (bn) {
-			*result = bn->batCacheid;
-			BBPkeepref(*result);
-			return MAL_SUCCEED;
-		}
 		throw(MAL, "algebra.selectNotNil", GDK_EXCEPTION);
 	}
 	/* just pass on the result */
@@ -821,44 +822,22 @@ ALGcrossproduct2(bat *l, bat *r, const bat *left, const bat *right, const bit *m
 	return ALGcrossproduct(l, r, left, right, max_one);
 }
 
-str
-ALGprojection(bat *result, const bat *lid, const bat *rid)
-{
-	BAT *left, *right,*bn= NULL;
-
-	if ((left = BATdescriptor(*lid)) == NULL) {
-		throw(MAL, "algebra.projection", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
-	}
-	if ((right = BATdescriptor(*rid)) == NULL) {
-		BBPunfix(left->batCacheid);
-		throw(MAL, "algebra.projection", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
-	}
-	bn = BATproject(left, right);
-	BBPunfix(left->batCacheid);
-	BBPunfix(right->batCacheid);
-	if (bn == NULL)
-		throw(MAL, "algebra.projection", GDK_EXCEPTION);
-	*result = bn->batCacheid;
-	BBPkeepref(*result);
-	return MAL_SUCCEED;
-}
-
 static str
 ALGprojection2(bat *result, const bat *lid, const bat *r1id, const bat *r2id)
 {
 	BAT *l, *r1, *r2 = NULL, *bn;
 
 	if ((l = BATdescriptor(*lid)) == NULL) {
-		throw(MAL, "algebra.projection2", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
+		throw(MAL, "algebra.projection", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 	}
 	if ((r1 = BATdescriptor(*r1id)) == NULL) {
 		BBPunfix(l->batCacheid);
-		throw(MAL, "algebra.projection2", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
+		throw(MAL, "algebra.projection", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 	}
 	if (r2id && !is_bat_nil(*r2id) && (r2 = BATdescriptor(*r2id)) == NULL) {
 		BBPunfix(l->batCacheid);
 		BBPunfix(r1->batCacheid);
-		throw(MAL, "algebra.projection2", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
+		throw(MAL, "algebra.projection", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 	}
 	bn = BATproject2(l, r1, r2);
 	BBPunfix(l->batCacheid);
@@ -866,10 +845,16 @@ ALGprojection2(bat *result, const bat *lid, const bat *r1id, const bat *r2id)
 	if (r2)
 		BBPunfix(r2->batCacheid);
 	if (bn == NULL)
-		throw(MAL, "algegra.projection2", GDK_EXCEPTION);
+		throw(MAL, "algebra.projection", GDK_EXCEPTION);
 	*result = bn->batCacheid;
 	BBPkeepref(*result);
 	return MAL_SUCCEED;
+}
+
+str
+ALGprojection(bat *result, const bat *lid, const bat *rid)
+{
+	return ALGprojection2(result, lid, rid, NULL);
 }
 
 static str
@@ -964,14 +949,25 @@ ALGsort11(bat *result, const bat *bid, const bit *reverse, const bit *nilslast, 
 }
 
 static str
-ALGcount_bat(lng *result, const bat *bid)
+ALGcountCND_nil(lng *result, const bat *bid, const bat *cnd, const bit *ignore_nils)
 {
-	BAT *b;
+	BAT *b, *s = NULL;
 
 	if ((b = BATdescriptor(*bid)) == NULL) {
 		throw(MAL, "aggr.count", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 	}
-	*result = (lng) BATcount(b);
+	if (cnd && !is_bat_nil(*cnd) && (s = BATdescriptor(*cnd)) == NULL) {
+		BBPunfix(b->batCacheid);
+		throw(MAL, "aggr.count", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
+	}
+	if (*ignore_nils) {
+		*result = (lng) BATcount_no_nil(b, s);
+	} else {
+		struct canditer ci;
+		*result = (lng) canditer_init(&ci, b, s);
+	}
+	if (s)
+		BBPunfix(s->batCacheid);
 	BBPunfix(b->batCacheid);
 	return MAL_SUCCEED;
 }
@@ -979,78 +975,31 @@ ALGcount_bat(lng *result, const bat *bid)
 static str
 ALGcount_nil(lng *result, const bat *bid, const bit *ignore_nils)
 {
-	BAT *b;
-	BUN cnt;
-
-	if ((b = BATdescriptor(*bid)) == NULL) {
-		throw(MAL, "aggr.count", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
-	}
-	if (*ignore_nils)
-		cnt = BATcount_no_nil(b, NULL);
-	else
-		cnt = BATcount(b);
-	*result = (lng) cnt;
-	BBPunfix(b->batCacheid);
-	return MAL_SUCCEED;
-}
-
-static str
-ALGcount_no_nil(lng *result, const bat *bid)
-{
-	bit ignore_nils = 1;
-
-	return ALGcount_nil(result, bid, &ignore_nils);
+	return ALGcountCND_nil(result, bid, NULL, ignore_nils);
 }
 
 static str
 ALGcountCND_bat(lng *result, const bat *bid, const bat *cnd)
 {
-	BAT *b;
-
-	if ((b = BATdescriptor(*bid)) == NULL) {
-		throw(MAL, "aggr.count", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
-	}
-	if (*cnd) {
-		struct canditer ci;
-		BAT *s;
-		if ((s = BATdescriptor(*cnd)) == NULL) {
-			BBPunfix(b->batCacheid);
-			throw(MAL, "aggr.count", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
-		}
-		*result = (lng) canditer_init(&ci, b, s);
-		BBPunfix(s->batCacheid);
-	} else
-		*result = (lng) BATcount(b);
-	BBPunfix(b->batCacheid);
-	return MAL_SUCCEED;
+	return ALGcountCND_nil(result, bid, cnd, &(bit){0});
 }
 
 static str
-ALGcountCND_nil(lng *result, const bat *bid, const bat *cnd, const bit *ignore_nils)
+ALGcount_bat(lng *result, const bat *bid)
 {
-	BAT *b, *s = NULL;
-
-	if (!*ignore_nils)
-		return ALGcountCND_bat(result, bid, cnd);
-	if (*cnd && (s = BATdescriptor(*cnd)) == NULL) {
-		throw(MAL, "aggr.count", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
-	}
-	if ((b = BATdescriptor(*bid)) == NULL) {
-		if (s)
-			BBPunfix(s->batCacheid);
-		throw(MAL, "aggr.count", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
-	}
-	*result = (lng) BATcount_no_nil(b, s);
-	BBPunfix(b->batCacheid);
-	if (s)
-		BBPunfix(s->batCacheid);
-	return MAL_SUCCEED;
+	return ALGcountCND_nil(result, bid, NULL, &(bit){0});
 }
 
 static str
 ALGcountCND_no_nil(lng *result, const bat *bid, const bat *cnd)
 {
 	return ALGcountCND_nil(result, bid, cnd, &(bit){1});
+}
+
+static str
+ALGcount_no_nil(lng *result, const bat *bid)
+{
+	return ALGcountCND_nil(result, bid, NULL, &(bit){1});
 }
 
 static str
@@ -1495,9 +1444,9 @@ mel_func algebra_init_funcs[] = {
  command("algebra", "fetch", ALGfetchoid, false, "Returns the value of the BUN at x-th position with 0 <= x < b.count", args(1,3, argany("",1),batargany("b",1),arg("x",oid))),
  pattern("algebra", "project", ALGprojecttail, false, "Fill the tail with a constant", args(1,3, batargany("",3),batargany("b",1),argany("v",3))),
  command("algebra", "projection", ALGprojection, false, "Project left input onto right input.", args(1,3, batargany("",3),batarg("left",oid),batargany("right",3))),
- command("algebra", "projection2", ALGprojection2, false, "Project left input onto right inputs which should be consecutive.", args(1,4, batargany("",3),batarg("left",oid),batargany("right1",3),batargany("right2",3))),
+ command("algebra", "projection", ALGprojection2, false, "Project left input onto right inputs which should be consecutive.", args(1,4, batargany("",3),batarg("left",oid),batargany("right1",3),batargany("right2",3))),
  command("algebra", "projection", ALGprojection, false, "Project left input onto right input.", args(1,3, batargany("",3),batarg("left",msk),batargany("right",3))),
- command("algebra", "projection2", ALGprojection2, false, "Project left input onto right inputs which should be consecutive.", args(1,4, batargany("",3),batarg("left",msk),batargany("right1",3),batargany("right2",3))),
+ command("algebra", "projection", ALGprojection2, false, "Project left input onto right inputs which should be consecutive.", args(1,4, batargany("",3),batarg("left",msk),batargany("right1",3),batargany("right2",3))),
  command("algebra", "copy", ALGcopy, false, "Returns physical copy of a BAT.", args(1,2, batargany("",1),batargany("b",1))),
  command("algebra", "exist", ALGexist, false, "Returns whether 'val' occurs in b.", args(1,3, arg("",bit),batargany("b",1),argany("val",1))),
  command("algebra", "select", ALGselect1, false, "Select all head values for which the tail value is in range.\nInput is a dense-headed BAT, output is a dense-headed BAT with in\nthe tail the head value of the input BAT for which the tail value\nis between the values low and high (inclusive if li respectively\nhi is set).  The output BAT is sorted on the tail value.  If low\nor high is nil, the boundary is not considered (effectively - and\n+ infinity).  If anti is set, the result is the complement.  Nil\nvalues in the tail are never matched, unless low=nil, high=nil,\nli=1, hi=1, anti=0.  All non-nil values are returned if low=nil,\nhigh=nil, and li, hi are not both 1, or anti=1.\nNote that the output is suitable as second input for the other\nversion of this function.", args(1,7, batarg("",cnd),batargany("b",1),argany("low",1),argany("high",1),arg("li",bit),arg("hi",bit),arg("anti",bit))),
