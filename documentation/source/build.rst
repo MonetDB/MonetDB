@@ -6,19 +6,19 @@ Summary
 =======
 
 For cmake, you should always build the code in a separate directory, say
-"build". This directory should be OUTSIDE of the source code tree. The
+"build". This directory should be outside of the source code tree. The
 results of the build are stored in this directory. The location on the
 filesystem is not important, as long as you have permissions to write in
 that location.
 
-Assuming the monetdb source code is checked out in directory
-"/path/to/monetdb/source". And if you have all the required packages
-(See below) to build MonetDB, these are the set of commands to build and
-*install* it from source. Install is one of the predefined targets
-[install, test, mtest]. When you test monetdb, you will likely not want
-to install it in the default location, the standard GNU directory
-structure. So you want to set the install prefix variable when
-generating the build system, using ``-DCMAKE_INSTALL_PREFIX``::
+Assuming the MonetDB source code is checked out in directory
+"/path/to/monetdb/source", and if you have all the required packages
+(see below) to build MonetDB, these are the set of commands to build and
+install it from source. Install is one of the predefined targets
+[``install``, ``test``, ``mtest``]. When you test MonetDB, you will
+likely not want to install it in the default location, the standard GNU
+directory structure. So you may want to set the install prefix variable
+when generating the build system, using ``-DCMAKE_INSTALL_PREFIX``::
 
   mkdir build
   cd build
