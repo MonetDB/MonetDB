@@ -53,8 +53,7 @@ COPY 8 RECORDS INTO t0 FROM stdin USING DELIMITERS E'\t',E'\n','"';
 1112194034
 2140251980
 
-SELECT 1 FROM (select time '12:43:09' from t0) as v0(c0) RIGHT OUTER JOIN (SELECT INTERVAL '2' SECOND FROM t0) AS sub0 ON 
-TIME '07:04:19' BETWEEN CASE 'b' WHEN 'a' THEN v0.c0 ELSE v0.c0 END AND v0.c0;
+SELECT 1 FROM (select time '12:43:09' from t0) as v0(c0) RIGHT OUTER JOIN (SELECT INTERVAL '2' SECOND FROM t0) AS sub0 ON TIME '07:04:19' BETWEEN CASE 'b' WHEN 'a' THEN v0.c0 ELSE v0.c0 END AND v0.c0;
 	--8 rows of 1
 create view v0(c0, c1) as (select all time '12:43:09', interval '1251003346' second from t0) with check option;
 SELECT count(ALL - (CAST(NULL AS INT))) FROM v0 RIGHT OUTER JOIN (SELECT INTERVAL '1380374779' SECOND FROM t0) AS sub0 ON 
@@ -365,4 +364,36 @@ TIME '01:03:49') AS INT)) BETWEEN ASYMMETRIC (t1.c0) AND (t1.c0);
 SELECT CAST(SUM(count) AS BIGINT) FROM (SELECT CAST((CAST((TIME '15:03:17') NOT IN (TIME '11:36:59', TIME '21:14:10', 
 TIME '01:03:49') AS INT)) BETWEEN ASYMMETRIC (t1.c0) AND (t1.c0) AS INT) as count FROM t1, t2 NATURAL JOIN t0) as res;
 	-- 0
+ROLLBACK;
+
+START TRANSACTION;
+CREATE TABLE "sys"."t0" (
+	"c0" INTERVAL SECOND NOT NULL,
+	"c1" DOUBLE        NOT NULL,
+	CONSTRAINT "t0_c1_c0_pkey" PRIMARY KEY ("c1", "c0"),
+	CONSTRAINT "t0_c0_c1_unique" UNIQUE ("c0", "c1")
+);
+COPY 2 RECORDS INTO "sys"."t0" FROM stdin USING DELIMITERS E'\t',E'\n','"';
+-1209789190.000	879292012
+1924429801.000	0.6708880135477207
+
+CREATE TABLE "sys"."t1" (
+	"c0" TIME,
+	"c1" DECIMAL(18,3),
+	CONSTRAINT "t1_c0_c1_unique" UNIQUE ("c0", "c1")
+);
+COPY 8 RECORDS INTO "sys"."t1" FROM stdin USING DELIMITERS E'\t',E'\n','"';
+04:31:04	0.075
+22:31:37	NULL
+03:24:48	0.588
+NULL	0.808
+05:31:38	0.351
+NULL	0.024
+NULL	0.794
+23:37:32	0.907
+
+select cast(sum(count) as bigint) from (select cast(not (not (true)) as int) as count from t1 natural join t0) as res;
+	-- NULL
+select cast(interval '-1' second as time);
+	--23:59:59
 ROLLBACK;

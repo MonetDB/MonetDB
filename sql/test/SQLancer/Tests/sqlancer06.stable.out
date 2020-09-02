@@ -1,0 +1,36 @@
+stdout of test 'sqlancer06` in directory 'sql/test/SQLancer` itself:
+
+
+# 19:38:32 >  
+# 19:38:32 >  "mclient" "-lsql" "-ftest" "-tnone" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-506117" "--port=38597"
+# 19:38:32 >  
+
+#START TRANSACTION;
+#CREATE TABLE "sys"."t2" (
+#	"c0" DOUBLE        NOT NULL,
+#	"c1" INTERVAL MONTH,
+#	CONSTRAINT "t2_c0_pkey" PRIMARY KEY ("c0"),
+#	CONSTRAINT "t2_c1_c0_unique" UNIQUE ("c1", "c0")
+#);
+#COPY 1 RECORDS INTO "sys"."t2" FROM stdin USING DELIMITERS E'\t',E'\n','"';
+#1662973479	1626041622
+[ 1	]
+#SELECT ALL t2.c0 FROM t2 WHERE ((COALESCE(0.9, 0.5, 0.7, 0.6, 0.8)) IS NULL) IS NOT NULL;
+% sys.t2 # table_name
+% c0 # name
+% double # type
+% 24 # length
+[ 1662973479	]
+#SELECT CAST(SUM(count) AS BIGINT) FROM (SELECT ALL CAST(((COALESCE(0.9, 0.5, 0.7, 0.6, 0.8)) IS NULL) IS NOT NULL AS INT) 
+#as count FROM t2) as res;
+% .%3 # table_name
+% %3 # name
+% bigint # type
+% 1 # length
+[ 1	]
+#ROLLBACK;
+
+# 19:38:32 >  
+# 19:38:32 >  "Done."
+# 19:38:32 >  
+
