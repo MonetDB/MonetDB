@@ -3312,30 +3312,33 @@ mvc_bin_import_table_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 			if (onclient) {
 				joeri_role("server");
 				joeri_log("mvc_bin_import_table_wrap: onclient\n");
-				mnstr_write(be->mvc->scanner.ws, PROMPT3, sizeof(PROMPT3)-1, 1);
-				mnstr_printf(be->mvc->scanner.ws, "rb %s\n", fname);
+				stream *ws = be->mvc->scanner.ws;
+				mnstr_write(ws, PROMPT3, sizeof(PROMPT3)-1, 1);
+				mnstr_printf(ws, "rb %s\n", fname);
 				msg = MAL_SUCCEED;
-				mnstr_flush(be->mvc->scanner.ws, MNSTR_FLUSH_DATA);
+				mnstr_flush(ws, MNSTR_FLUSH_DATA);
 				while (!be->mvc->scanner.rs->eof)
 					bstream_next(be->mvc->scanner.rs);
-				stream *ss = be->mvc->scanner.rs->s;
+				stream *rs = be->mvc->scanner.rs->s;
 				char buf[80];
-				if (mnstr_readline(ss, buf, sizeof(buf)) > 1) {
+				if (mnstr_readline(rs, buf, sizeof(buf)) > 1) {
 					msg = createException(IO, "sql.attach", "%s", buf);
 					goto bailout;
 				}
-				bstream *s = bstream_create(ss, 1 << 20);
+				assert(isa_block_stream(rs));
+				assert(isa_block_stream(ws));
+				bstream *s = bstream_create(rs, 1 << 20);
 				if (!s) {
 					msg = createException(SQL, "sql", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 					goto bailout;
 				}
-				if (!(c = BATattach_bstream(col->type.type->localtype, s, be->mvc->scanner.ws, cnt))) {
+				if (!(c = BATattach_bstream(col->type.type->localtype, s, ws, cnt))) {
 					bstream_destroy(s);
 					msg = createException(SQL, "sql", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 					goto bailout;
 				}
-				mnstr_write(be->mvc->scanner.ws, PROMPT3, sizeof(PROMPT3)-1, 1);
-				mnstr_flush(be->mvc->scanner.ws, MNSTR_FLUSH_DATA);
+				mnstr_write(ws, PROMPT3, sizeof(PROMPT3)-1, 1);
+				mnstr_flush(ws, MNSTR_FLUSH_DATA);
 				be->mvc->scanner.rs->eof = s->eof;
 				s->s = NULL;
 				bstream_destroy(s);
