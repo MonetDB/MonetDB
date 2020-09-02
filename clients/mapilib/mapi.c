@@ -1056,7 +1056,7 @@ mapi_clrError(Mapi mid)
 
 static MapiMsg
 mapi_setError(Mapi mid, const char *msg, const char *action, MapiMsg error)
-	__attribute__((__nonnull__(2)));
+	__attribute__((__nonnull__(2, 3)));
 
 static MapiMsg
 mapi_setError(Mapi mid, const char *msg, const char *action, MapiMsg error)
