@@ -70,7 +70,8 @@ target_link_libraries(stream
   PRIVATE
   matomic
   monetdb_config_header
-  $<$<PLATFORM_ID:Windows>:ws2_32>)
+  $<$<PLATFORM_ID:Windows>:ws2_32>
+  Threads::Threads)
 
 set_target_properties(stream
   PROPERTIES

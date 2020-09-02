@@ -1045,6 +1045,10 @@ static char nomem[] = "Memory allocation failed";
 
 static void
 mapi_clrError(Mapi mid)
+	__attribute__((__nonnull__));
+
+static void
+mapi_clrError(Mapi mid)
 {
 	assert(mid);
 	if (mid->errorstr && mid->errorstr != nomem)
@@ -1053,6 +1057,10 @@ mapi_clrError(Mapi mid)
 	mid->error = 0;
 	mid->errorstr = 0;
 }
+
+static MapiMsg
+mapi_setError(Mapi mid, const char *msg, const char *action, MapiMsg error)
+	__attribute__((__nonnull__(2, 3)));
 
 static MapiMsg
 mapi_setError(Mapi mid, const char *msg, const char *action, MapiMsg error)
@@ -1801,6 +1809,8 @@ finish_handle(MapiHdl hdl)
 MapiMsg
 mapi_close_handle(MapiHdl hdl)
 {
+	if (hdl == NULL)
+		return MOK;
 	debugprint("entering %s\n", "mapi_close_handle");
 
 	/* don't use mapi_check_hdl: it's ok if we're not connected */
@@ -2512,10 +2522,10 @@ mapi_reconnect(Mapi mid)
 
 	if (!isa_block_stream(mid->to)) {
 		mid->to = block_stream(mid->to);
-		check_stream(mid, mid->to, NULL, mid->error);
+		check_stream(mid, mid->to, "not a block stream", mid->error);
 
 		mid->from = block_stream(mid->from);
-		check_stream(mid, mid->from, NULL, mid->error);
+		check_stream(mid, mid->from, "not a block stream", mid->error);
 	}
 
   try_again_after_redirect:
@@ -4676,7 +4686,7 @@ mapi_fetch_line(MapiHdl hdl)
 				  result->tableid,
 				  result->cache.first + result->cache.tuplecount) < 0 ||
 		    mnstr_flush(hdl->mid->to, MNSTR_FLUSH_DATA))
-			check_stream(hdl->mid, hdl->mid->to, NULL, NULL);
+			check_stream(hdl->mid, hdl->mid->to, "sending export command", NULL);
 		reply = mapi_fetch_line_internal(hdl);
 	}
 	return reply;
@@ -5201,7 +5211,7 @@ mapi_fetch_all_rows(MapiHdl hdl)
 			if (mnstr_printf(mid->to, "X" "export %d %" PRId64 "\n",
 					  result->tableid, result->cache.first + result->cache.tuplecount) < 0 ||
 			    mnstr_flush(mid->to, MNSTR_FLUSH_DATA))
-				check_stream(mid, mid->to, NULL, 0);
+				check_stream(mid, mid->to, "sending export command", 0);
 		}
 		if (mid->active)
 			read_into_cache(mid->active, 0);
