@@ -227,7 +227,7 @@ stream_export buffer *mnstr_get_buffer(stream *s);
 stream_export stream *block_stream(stream *s); // mapi.c, mal_mapi.c, client.c, merovingian
 stream_export bool isa_block_stream(const stream *s); // mapi.c, mal_client.c, remote.c, sql_scenario.c/sqlReader, sql_scan.c
 stream_export stream *bs_stream(stream *s); // unused
-stream_export stream *prompting_block_stream(stream *s, const char *prompt, stream *prompt_stream);
+stream_export void set_prompting(stream *block_stream, const char *prompt, stream *prompt_stream);
 
 stream_export void joeri_role(const char *role);
 stream_export void joeri_log(const char *fmt, ...)

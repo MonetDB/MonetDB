@@ -443,30 +443,12 @@ block_stream(stream *s)
 	return ns;
 }
 
-/* Like block_stream(), but enables prompting.
- * This means that on encountering a block boundary, a prompt is sent
- * on the prompt_stream and the read is retried. If this does not
- * yield another block boundary, the first block boundary is ignored.
- * This is used as part of the MAPI protocol.
- *
- * When the stream is destroyed, prompt is not freed and prompt_stream is
- * not destroyed or closed.
- */
-stream *
-prompting_block_stream(stream *s, const char *prompt, stream *prompt_stream)
+void
+set_prompting(stream *block_stream, const char *prompt, stream *prompt_stream)
 {
-	if (!s->readonly) {
-		mnstr_set_open_error(s->name, 0, "prompting_block_stream not implemented for write streams");
-		return NULL;
+	if (isa_block_stream(block_stream)) {
+		bs *bs = block_stream->stream_data.p;
+		bs->prompt = prompt;
+		bs->pstream = prompt_stream;
 	}
-
-	stream *b = block_stream(s);
-	if (b == NULL)
-		return NULL;
-
-	bs *bs = b->stream_data.p;
-	bs->prompt = prompt;
-	bs->pstream = prompt_stream;
-
-	return b;
 }
