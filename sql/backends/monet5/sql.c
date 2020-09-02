@@ -3332,7 +3332,8 @@ mvc_bin_import_table_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 					msg = createException(SQL, "sql", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 					goto bailout;
 				}
-				if (!(c = BATattach_bstream(col->type.type->localtype, s, ws, cnt))) {
+				c = BATattach_bstream(col->type.type->localtype, s, ws, cnt);
+				if (!c) {
 					bstream_destroy(s);
 					msg = createException(SQL, "sql", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 					goto bailout;
