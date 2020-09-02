@@ -919,11 +919,6 @@ order_joins(visitor *v, list *rels, list *exps)
 			ln = list_find(n_rels, cje->l, (fcmp)&rel_has_exp);
 			rn = list_find(n_rels, cje->r, (fcmp)&rel_has_exp);
 
-			if (ln || rn) {
-				/* remove the expression from the lists */
-				list_remove_data(sdje, cje);
-				list_remove_data(exps, cje);
-			}
 			if (ln && rn) {
 				assert(0);
 				/* create a selection on the current */
@@ -941,8 +936,14 @@ order_joins(visitor *v, list *rels, list *exps)
 				}
 				if (!r) {
 					fnd = 1; /* not really, but this bails out */
+					list_remove_data(sdje, cje); /* handle later as select */
 					continue;
 				}
+
+				/* remove the expression from the lists */
+				list_remove_data(sdje, cje);
+				list_remove_data(exps, cje);
+
 				list_remove_data(rels, r);
 				append(n_rels, r);
 
@@ -4819,28 +4820,29 @@ rel_push_semijoin_down_or_up(visitor *v, sql_rel *rel)
 		lop = l->op;
 		ll = l->l;
 		lr = l->r;
-		/* semijoin shouldn't be based on right relation of join */
+
+		/* check which side is used and other exps are atoms or from right of semijoin */
 		for(n = exps->h; n; n = n->next) {
 			sql_exp *sje = n->data;
 
-			if (sje->type != e_cmp)
+			if (sje->type != e_cmp || is_complex_exp(sje->flag))
 				return rel;
-			if (right &&
-				(is_complex_exp(sje->flag) ||
-			    	rel_has_exp(lr, sje->l) < 0 ||
-			    	rel_has_exp(lr, sje->r) < 0 ||
-					(sje->f && rel_has_exp(lr, sje->f) < 0))) {
+			/* sje->l from ll and sje->r/f from semijoin r ||
+			 * sje->l from semijoin r and sje->r/f from ll ||
+			 * sje->l from lr and sje->r/f from semijoin r ||
+			 * sje->l from semijoin r and sje->r/f from lr */
+			if (left &&
+			   ((rel_has_exp(ll, sje->l) >= 0 && rel_has_exp(rel->r, sje->r) >= 0 && (!sje->f || rel_has_exp(rel->r, sje->f) >= 0)) ||
+			    (rel_has_exp(rel->r, sje->l) >= 0 && rel_has_exp(ll, sje->r) >= 0 && (!sje->f || rel_has_exp(ll, sje->f) >= 0))))
 				right = 0;
-			}
-			if (right)
+			else
 				left = 0;
-			if (!right && left &&
-				(is_complex_exp(sje->flag) ||
-			    	rel_has_exp(ll, sje->l) < 0 ||
-			    	rel_has_exp(ll, sje->r) < 0 ||
-					(sje->f && rel_has_exp(ll, sje->f) < 0))) {
+			if (right &&
+			   ((rel_has_exp(lr, sje->l) >= 0 && rel_has_exp(rel->r, sje->r) >= 0 && (!sje->f || rel_has_exp(rel->r, sje->f) >= 0)) ||
+			    (rel_has_exp(rel->r, sje->l) >= 0 && rel_has_exp(lr, sje->r) >= 0 && (!sje->f || rel_has_exp(lr, sje->f) >= 0))))
 				left = 0;
-			}
+			else
+				right = 0;
 			if (!right && !left)
 				return rel;
 		}
@@ -5514,7 +5516,8 @@ rel_push_project_down(visitor *v, sql_rel *rel)
 			}
 			return rel;
 		} else if (list_check_prop_all(rel->exps, (prop_check_func)&exp_is_useless_rename)) {
-			if ((is_project(l->op) && list_length(l->exps) == list_length(rel->exps)) || is_select(l->op) || is_join(l->op) || is_topn(l->op) || is_sample(l->op)) {
+			if ((is_project(l->op) && list_length(l->exps) == list_length(rel->exps)) || is_set(l->op) || is_select(l->op)
+				|| is_join(l->op) || is_semi(l->op) || is_topn(l->op) || is_sample(l->op)) {
 				rel->l = NULL;
 				rel_destroy(rel);
 				v->changes++;
@@ -7583,9 +7586,12 @@ rel_simplify_predicates(visitor *v, sql_rel *rel, sql_exp *e, int depth)
 						atom *a = r->l;
 
 						if (a->isnull) {
-							if (is_semantics(e)) /* isnull(x) = NULL -> false, isnull(x) <> NULL -> true */
-								e = exp_atom_bool(v->sql->sa, e->flag == cmp_notequal);
-							else /* always NULL */
+							if (is_semantics(e)) { /* isnull(x) = NULL -> false, isnull(x) <> NULL -> true */
+								int flag = e->flag == cmp_notequal;
+								if (is_anti(e))
+									flag = !flag;
+								e = exp_atom_bool(v->sql->sa, flag);
+							} else /* always NULL */
 								e = exp_null(v->sql->sa, sql_bind_localtype("bit"));
 							v->changes++;
 						} else {
@@ -9195,12 +9201,12 @@ replace_column_references_with_nulls_1(mvc *sql, list* crefs, list* exps) {
 
 static void
 replace_column_references_with_nulls_2(mvc *sql, list* crefs, sql_exp* e) {
-    if (e == NULL) {
-        return;
-    }
+	if (e == NULL) {
+		return;
+	}
 
-    switch (e->type) {
-    case e_column:
+	switch (e->type) {
+	case e_column:
 		{
 			sql_exp *c = NULL;
 			if (e->l) {
@@ -9209,57 +9215,67 @@ replace_column_references_with_nulls_2(mvc *sql, list* crefs, sql_exp* e) {
 				c = exps_bind_column(crefs, e->r, NULL, NULL, 1);
 			}
 			if (c) {
-                e->type = e_atom;
-                e->l = atom_general(sql->sa, &e->tpe, NULL);
-                e->r = e->f = NULL;
+				e->type = e_atom;
+				e->l = atom_general(sql->sa, &e->tpe, NULL);
+				e->r = e->f = NULL;
 			}
 		}
-        break;
-    case e_cmp:
-        switch (e->flag) {
-        case cmp_gt:
-        case cmp_gte:
-        case cmp_lte:
-        case cmp_lt:
-        case cmp_equal:
-        case cmp_notequal:
-        {
-            sql_exp* l = e->l;
-            sql_exp* r = e->r;
-            sql_exp* f = e->f;
+		break;
+	case e_cmp:
+		switch (e->flag) {
+		case cmp_gt:
+		case cmp_gte:
+		case cmp_lte:
+		case cmp_lt:
+		case cmp_equal:
+		case cmp_notequal:
+		{
+			sql_exp* l = e->l;
+			sql_exp* r = e->r;
+			sql_exp* f = e->f;
 
-            replace_column_references_with_nulls_2(sql, crefs, l);
-            replace_column_references_with_nulls_2(sql, crefs, r);
-            replace_column_references_with_nulls_2(sql, crefs, f);
-            break;
-        }
-        case cmp_or:
-        {
-            list* l = e->l;
-            list* r = e->r;
-            replace_column_references_with_nulls_1(sql, crefs, l);
-            replace_column_references_with_nulls_1(sql, crefs, r);
-            break;
-        }
-        default:
-            break;
-        }
-        break;
-    case e_func:
-    {
-        list* l = e->l;
-        replace_column_references_with_nulls_1(sql, crefs, l);
-        break;
-    }
-    case e_convert:
-    {
-        sql_exp* l = e->l;
-        replace_column_references_with_nulls_2(sql, crefs, l);
-        break;
-    }
-    default:
-        break;
-    }
+			replace_column_references_with_nulls_2(sql, crefs, l);
+			replace_column_references_with_nulls_2(sql, crefs, r);
+			replace_column_references_with_nulls_2(sql, crefs, f);
+			break;
+		}
+		case cmp_filter:
+		case cmp_or:
+		{
+			list* l = e->l;
+			list* r = e->r;
+			replace_column_references_with_nulls_1(sql, crefs, l);
+			replace_column_references_with_nulls_1(sql, crefs, r);
+			break;
+		}
+		case cmp_in:
+		case cmp_notin:
+		{
+			sql_exp* l = e->l;
+			list* r = e->r;
+			replace_column_references_with_nulls_2(sql, crefs, l);
+			replace_column_references_with_nulls_1(sql, crefs, r);
+			break;
+		}
+		default:
+			break;
+		}
+		break;
+	case e_func:
+	{
+		list* l = e->l;
+		replace_column_references_with_nulls_1(sql, crefs, l);
+		break;
+	}
+	case e_convert:
+	{
+		sql_exp* l = e->l;
+		replace_column_references_with_nulls_2(sql, crefs, l);
+		break;
+	}
+	default:
+		break;
+	}
 }
 
 static sql_rel *
@@ -9594,7 +9610,7 @@ optimize_rel(mvc *sql, sql_rel *rel, int *g_changes, int level, int value_based_
 
 	/* Important -> Make sure rel_push_select_down gets called after rel_join_order,
 	   because pushing down select expressions makes rel_join_order more difficult */
-	if (gp.cnt[op_select] || gp.cnt[op_semi]) {
+	if (gp.cnt[op_select] || gp.cnt[op_join] || gp.cnt[op_semi] || gp.cnt[op_anti]) {
 		rel = rel_visitor_topdown(&v, rel, &rel_push_select_down);
 		rel = rel_visitor_bottomup(&ev, rel, &rel_remove_empty_select);
 	}

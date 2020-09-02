@@ -728,6 +728,12 @@ main(int argc, char *argv[])
 		MERO_EXIT_CLEAN(1);
 	}
 
+	/* time to initialize the stream library */
+	if (mnstr_init(false) < 0) {
+		Mfprintf(stderr, "cannot initialize stream library\n");
+		MERO_EXIT_CLEAN(1);
+	}
+
 	dpcons = (struct _dpair) {
 		.type = MERO,
 		.fork_lock = PTHREAD_MUTEX_INITIALIZER,

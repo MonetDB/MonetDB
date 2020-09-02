@@ -117,7 +117,10 @@ hge shift, hge divider, hge multiplier
 lng shift, lng divider, lng multiplier
 #endif
 ) {
-	daytime d = daytime_add_usec(daytime_create(0, 0, 0, 0), (next % (24*60*60*1000)) * 1000);
+	lng usec = (next % (24*60*60*1000)) * 1000;
+	if (usec < 0) /* for negative intervals add the complement */
+		usec = DAY_USEC - (-usec);
+	daytime d = daytime_add_usec(daytime_create(0, 0, 0, 0), usec);
 	assert(!is_daytime_nil(d));
 	return daytime_2time_daytime_imp(d, shift, divider, multiplier);
 }

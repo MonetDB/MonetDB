@@ -316,6 +316,8 @@ exp_convert(sql_allocator *sa, sql_exp *exp, sql_subtype *fromtype, sql_subtype 
 	e->r = append(append(sa_list(sa), dup_subtype(sa, fromtype)),totype);
 	e->tpe = *totype;
 	e->alias = exp->alias;
+	if (!has_nil(exp))
+		set_has_no_nil(e);
 	return e;
 }
 

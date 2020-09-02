@@ -283,7 +283,7 @@ char *
 msab_marchScenario(const char *lang)
 {
 	FILE *f;
-	char buf[256];	/* should be enough for now */
+	char buf[2*FILENAME_MAX];
 	size_t len;
 	char pathbuf[FILENAME_MAX];
 	char *tmp;
@@ -327,7 +327,7 @@ char *
 msab_retreatScenario(const char *lang)
 {
 	FILE *f;
-	char buf[256];	/* should be enough to hold the entire file */
+	char buf[2*FILENAME_MAX];	/* should be enough to hold the entire file */
 	size_t len;
 	char pathbuf[FILENAME_MAX];
 	char *tmp;
@@ -487,7 +487,7 @@ msab_registerStarting(void)
 		(void)fflush(f);
 		(void)fclose(f);
 	} else {
-		char buf[FILENAME_MAX];
+		char buf[2*FILENAME_MAX];
 		snprintf(buf, sizeof(buf), "failed to open file: %s (%s)",
 				strerror(errno), pathbuf);
 		return(strdup(buf));
@@ -557,7 +557,7 @@ msab_registerStop(void)
 		(void)fflush(f);
 		(void)fclose(f);
 	} else {
-		char buf[FILENAME_MAX];
+		char buf[2*FILENAME_MAX];
 		snprintf(buf, sizeof(buf), "failed to open file: %s (%s)",
 				strerror(errno), pathbuf);
 		return(strdup(buf));
@@ -1077,7 +1077,7 @@ msab_getUplogInfo(sabuplog *ret, const sabdb *db)
 		}
 		(void)fclose(f);
 	} else {
-		char buf[FILENAME_MAX];
+		char buf[2*FILENAME_MAX];
 		snprintf(buf, sizeof(buf), "could not open file %s: %s",
 				log, strerror(errno));
 		return(strdup(buf));

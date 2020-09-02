@@ -70,7 +70,7 @@ mapi_fetch_row(MapiHdl hdl)
 {
 	int n = 0;
 
-	if (hdl && hdl->result && hdl->current_row < hdl->result->nrows) {
+	if (hdl->result && hdl->current_row < hdl->result->nrows) {
 		n = (int) ++hdl->current_row;
 	}
 	return n;
@@ -81,7 +81,7 @@ mapi_fetch_row(MapiHdl hdl)
 char *
 mapi_fetch_field(MapiHdl hdl, int fnr)
 {
-	if (hdl && fnr < (int)hdl->result->ncols && hdl->current_row > 0 && hdl->current_row <= hdl->result->nrows) {
+	if (fnr < (int)hdl->result->ncols && hdl->current_row > 0 && hdl->current_row <= hdl->result->nrows) {
 		monetdbe_column *rcol = NULL;
 		if (monetdbe_result_fetch(hdl->result,  &rcol, fnr) == NULL) {
 			size_t r = (size_t) hdl->current_row - 1;
@@ -174,7 +174,7 @@ mapi_fetch_field(MapiHdl hdl, int fnr)
 char *
 mapi_get_type(MapiHdl hdl, int fnr)
 {
-	if (hdl && fnr < (int)hdl->result->ncols) {
+	if (fnr < (int)hdl->result->ncols) {
 		monetdbe_column *rcol = NULL;
 		if (monetdbe_result_fetch(hdl->result,  &rcol, fnr) == NULL) {
 			switch(rcol->type) {
@@ -209,7 +209,7 @@ mapi_get_type(MapiHdl hdl, int fnr)
 MapiMsg
 mapi_seek_row(MapiHdl hdl, int64_t rowne, int whence)
 {
-	if (hdl && rowne == 0 && whence == MAPI_SEEK_SET) {
+	if (rowne == 0 && whence == MAPI_SEEK_SET) {
 		hdl->current_row = 0;
 	}
 	return MOK;
@@ -218,30 +218,21 @@ mapi_seek_row(MapiHdl hdl, int64_t rowne, int whence)
 int64_t
 mapi_get_row_count(MapiHdl hdl)
 {
-	if (hdl) {
-		return hdl->result->nrows;
-	}
-	return 0;
+	return hdl->result->nrows;
 }
 
 int64_t
 mapi_rows_affected(MapiHdl hdl)
 {
-	if (hdl) {
-		if (hdl->result)
-			return hdl->result->nrows;
-		return hdl->affected_rows;
-	}
-	return 0;
+	if (hdl->result)
+		return hdl->result->nrows;
+	return hdl->affected_rows;
 }
 
 int
 mapi_get_field_count(MapiHdl hdl)
 {
-	if (hdl) {
-		return (int) hdl->result->ncols;
-	}
-	return 0;
+	return (int) hdl->result->ncols;
 }
 
 const char *

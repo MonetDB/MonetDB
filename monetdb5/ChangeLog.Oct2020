@@ -14,3 +14,7 @@
   system choose a free port (like mapi_autosense).  Default behavior
   has not changed.
 
+* Mon Aug 31 2020 Pedro Ferreira <pedro.ferreira@monetdbsolutions.com>
+- Made general logarithm function log(x,base) compliant with the SQL 
+  standard, by swapping the input parameters.
+  Instead of log(x,base), now is log(base,x).

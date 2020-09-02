@@ -4080,6 +4080,9 @@ vacuum(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, str (*func) (bat
 		throw(SQL, name, SQLSTATE(42000) "%s not allowed on tables with indices", name + 4);
 	if (t->system)
 		throw(SQL, name, SQLSTATE(42000) "%s not allowed on system tables", name + 4);
+	if (!isTable(t))
+		throw(SQL, name, SQLSTATE(42000) "%s: %s '%s' is not persistent", name + 4, 
+			  TABLE_TYPE_DESCRIPTION(t->type, t->properties), t->base.name);
 
 	if (has_snapshots(m->session->tr))
 		throw(SQL, name, SQLSTATE(42000) "%s not allowed on snapshots", name + 4);
