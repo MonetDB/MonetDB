@@ -352,7 +352,7 @@ rel_bind_column2( mvc *sql, sql_rel *rel, const char *tname, const char *cname, 
 		if (!list_empty(rel->exps)) {
 			e = exps_bind_column2(rel->exps, tname, cname, &multi);
 			if (multi)
-				return sql_error(sql, ERR_AMBIGUOUS, SQLSTATE(42000) "SELECT: identifier '%s.%s' ambiguous", 
+				return sql_error(sql, ERR_AMBIGUOUS, SQLSTATE(42000) "SELECT: identifier '%s.%s' ambiguous",
 								 tname, cname);
 			if (!e && is_groupby(rel->op) && rel->r) {
 				e = exps_bind_alias(rel->r, tname, cname);
@@ -363,7 +363,7 @@ rel_bind_column2( mvc *sql, sql_rel *rel, const char *tname, const char *cname, 
 					else
 						e = exps_bind_column(rel->exps, nname, &ambiguous, &multi, 0);
 					if (ambiguous || multi)
-						return sql_error(sql, ERR_AMBIGUOUS, SQLSTATE(42000) "SELECT: identifier '%s%s%s' ambiguous", 
+						return sql_error(sql, ERR_AMBIGUOUS, SQLSTATE(42000) "SELECT: identifier '%s%s%s' ambiguous",
 										 rname ? rname : "", rname ? "." : "", nname);
 					if (e)
 						return e;
@@ -373,7 +373,7 @@ rel_bind_column2( mvc *sql, sql_rel *rel, const char *tname, const char *cname, 
 		if (!e && (is_sql_sel(f) || is_sql_having(f) || !f) && is_groupby(rel->op) && rel->r) {
 			e = exps_bind_column2(rel->r, tname, cname, &multi);
 			if (multi)
-				return sql_error(sql, ERR_AMBIGUOUS, SQLSTATE(42000) "SELECT: identifier '%s.%s' ambiguous", 
+				return sql_error(sql, ERR_AMBIGUOUS, SQLSTATE(42000) "SELECT: identifier '%s.%s' ambiguous",
 								 tname, cname);
 			if (e) {
 				e = exp_ref(sql, e);
@@ -2332,4 +2332,26 @@ exps_have_analytics(mvc *sql, list *exps)
 	visitor v = { .sql = sql };
 	(void)exps_exp_visitor_topdown(&v, NULL, exps, 0, &exp_check_has_analytics, true);
 	return v.changes;
+}
+
+static sql_exp *
+_rel_rebind_exp(visitor *v, sql_rel *rel, sql_exp *e, int depth)
+{
+	(void)depth;
+	/* visitor will handle recursion, ie only need to check columns here */
+	if (e->type == e_column) {
+		sql_exp *ne = rel_find_exp(rel, e);
+		if (!ne)
+			v->changes++;
+	}
+	return e;
+}
+
+bool
+rel_rebind_exp(mvc *sql, sql_rel *rel, sql_exp *e)
+{
+	visitor v = { .sql = sql };
+	exp_visitor(&v, rel, e, 0, &_rel_rebind_exp, true, true);
+	/* problems are passed via changes */
+	return (v.changes==0);
 }

@@ -185,6 +185,7 @@ typedef enum operator_type {
 #define is_left(op) 		(op == op_left)
 #define is_right(op) 		(op == op_right)
 #define is_full(op) 		(op == op_full)
+#define is_innerjoin(op)	(op == op_join)
 #define is_join(op) 		(op == op_join || is_outerjoin(op))
 #define is_semi(op) 		(op == op_semi || op == op_anti)
 #define is_joinop(op) 		(is_join(op) || is_semi(op))

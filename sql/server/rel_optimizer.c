@@ -897,15 +897,23 @@ order_joins(visitor *v, list *rels, list *exps)
 		rel_join_add_exp(v->sql->sa, top, cje);
 
 		/* all other join expressions on these 2 relations */
-		while((djn = list_find(exps, n_rels, (fcmp)&exp_joins_rels)) != NULL) {
-			sql_exp *e = djn->data;
-
-			rel_join_add_exp(v->sql->sa, top, e);
-			list_remove_data(exps, e);
+		for (node *en = exps->h; en; ) {
+			node *next = en->next;
+			sql_exp *e = en->data;
+			if (rel_rebind_exp(v->sql, top, e)) {
+				rel_join_add_exp(v->sql->sa, top, e);
+				list_remove_data(exps, e);
+			}
+			en = next;
 		}
 		/* Remove other joins on the current 'n_rels' set in the distinct list too */
-		while((djn = list_find(sdje, n_rels, (fcmp)&exp_joins_rels)) != NULL)
-			list_remove_data(sdje, djn->data);
+		for (node *en = sdje->h; en; ) {
+			node *next = en->next;
+			sql_exp *e = en->data;
+			if (rel_rebind_exp(v->sql, top, e))
+				list_remove_data(sdje, en->data);
+			en = next;
+		}
 		fnd = 1;
 	}
 	/* build join tree using the ordered list */
@@ -952,15 +960,24 @@ order_joins(visitor *v, list *rels, list *exps)
 				rel_join_add_exp(v->sql->sa, top, cje);
 
 				/* all join expressions on these tables */
-				while((en = list_find(exps, n_rels, (fcmp)&exp_joins_rels)) != NULL) {
+				for (en = exps->h; en; ) {
+					node *next = en->next;
 					sql_exp *e = en->data;
-					rel_join_add_exp(v->sql->sa, top, e);
-					list_remove_data(exps, e);
+					if (rel_rebind_exp(v->sql, top, e)) {
+						rel_join_add_exp(v->sql->sa, top, e);
+						list_remove_data(exps, e);
+					}
+					en = next;
 				}
 				/* Remove other joins on the current 'n_rels'
 				   set in the distinct list too */
-				while((en = list_find(sdje, n_rels, (fcmp)&exp_joins_rels)) != NULL)
-					list_remove_data(sdje, en->data);
+				for (en = sdje->h; en; ) {
+					node *next = en->next;
+					sql_exp *e = en->data;
+					if (rel_rebind_exp(v->sql, top, e))
+						list_remove_data(sdje, en->data);
+					en = next;
+				}
 				fnd = 1;
 			}
 		}
@@ -1090,6 +1107,9 @@ push_up_join_exps( mvc *sql, sql_rel *rel)
 		r = push_up_join_exps(sql, rr);
 		if (l && r) {
 			l = list_merge(l, r, (fdup)NULL);
+			r = NULL;
+		} else if (!l) {
+			l = r;
 			r = NULL;
 		}
 		if (rel->exps) {
@@ -4599,7 +4619,7 @@ rel_push_select_down_join(visitor *v, sql_rel *rel)
 	r = rel->l;
 
 	/* push select through join */
-	if (is_select(rel->op) && exps && r && r->op == op_join && !(rel_is_ref(r))) {
+	if (/* DISABLES CODE */ (0) && is_select(rel->op) && exps && r && r->op == op_join && !(rel_is_ref(r))) {
 		rel->exps = new_exp_list(v->sql->sa);
 		for (n = exps->h; n; n = n->next) {
 			sql_exp *e = n->data;
@@ -4634,6 +4654,36 @@ rel_push_select_down_join(visitor *v, sql_rel *rel)
 			}
 		}
 		return rel;
+    /* push select exps part of the join expressions down */
+	} else if (is_innerjoin(rel->op) && !list_empty(exps)) {
+		int can_push = 0;
+		for (n = exps->h; !can_push && n; n = n->next) {
+			sql_exp *e = n->data;
+			if (rel_rebind_exp(v->sql, rel->l, e) || rel_rebind_exp(v->sql, rel->r, e))
+				can_push = 1;
+		}
+		if (!can_push)
+			return rel;
+
+		rel->exps = sa_list(v->sql->sa);
+		for (n = exps->h; n; n = n->next) {
+			sql_exp *e = n->data;
+			if (rel_rebind_exp(v->sql, rel->l, e)) {
+				sql_rel *l = rel->l;
+				if (!is_select(l->op))
+					rel->l = l = rel_select(v->sql->sa, rel->l, NULL);
+				rel_select_add_exp(v->sql->sa, rel->l, e);
+				v->changes++;
+			} else if (rel_rebind_exp(v->sql, rel->r, e)) {
+				sql_rel *r = rel->r;
+				if (!is_select(r->op))
+					rel->r = r = rel_select(v->sql->sa, rel->r, NULL);
+				rel_select_add_exp(v->sql->sa, rel->r, e);
+				v->changes++;
+			} else {
+				append(rel->exps, e);
+			}
+		}
 	}
 	return rel;
 }
@@ -9545,7 +9595,7 @@ optimize_rel(mvc *sql, sql_rel *rel, int *g_changes, int level, int value_based_
 	if (gp.cnt[op_project])
 		rel = rel_exp_visitor_bottomup(&v, rel, &rel_merge_project_rse, false);
 
-	if (gp.cnt[op_select] && gp.cnt[op_join] && /* DISABLES CODE */ (0))
+	if (gp.cnt[op_join])
 		rel = rel_visitor_topdown(&v, rel, &rel_push_select_down_join);
 
 	if (gp.cnt[op_select])
