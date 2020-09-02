@@ -1045,6 +1045,10 @@ static char nomem[] = "Memory allocation failed";
 
 static void
 mapi_clrError(Mapi mid)
+	__attribute__((__nonnull__));
+
+static void
+mapi_clrError(Mapi mid)
 {
 	assert(mid);
 	if (mid->errorstr && mid->errorstr != nomem)
@@ -1805,6 +1809,8 @@ finish_handle(MapiHdl hdl)
 MapiMsg
 mapi_close_handle(MapiHdl hdl)
 {
+	if (hdl == NULL)
+		return MOK;
 	debugprint("entering %s\n", "mapi_close_handle");
 
 	/* don't use mapi_check_hdl: it's ok if we're not connected */
