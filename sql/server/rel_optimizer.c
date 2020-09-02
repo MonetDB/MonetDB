@@ -4837,11 +4837,7 @@ rel_push_semijoin_down_or_up(visitor *v, sql_rel *rel)
 		for(n = exps->h; n; n = n->next) {
 			sql_exp *sje = n->data;
 
-			if (n != exps->h && sje->type == e_cmp &&
-			    !is_complex_exp(sje->flag) &&
-			     rel_has_exp(rel->l, sje->l) >= 0 &&
-			     rel_has_exp(rel->l, sje->r) >= 0 &&
-			     (!sje->f || rel_has_exp(rel->l, sje->f) >= 0)) {
+			if (n != exps->h && sje->type == e_cmp && rel_rebind_exp(v->sql, rel->l, sje)) {
 				rel->l = rel_select(v->sql->sa, rel->l, NULL);
 				rel_select_add_exp(v->sql->sa, rel->l, sje);
 				v->changes++;
@@ -4882,14 +4878,14 @@ rel_push_semijoin_down_or_up(visitor *v, sql_rel *rel)
 			 * sje->l from lr and sje->r/f from semijoin r ||
 			 * sje->l from semijoin r and sje->r/f from lr */
 			if (left &&
-			   ((rel_has_exp(ll, sje->l) >= 0 && rel_has_exp(rel->r, sje->r) >= 0 && (!sje->f || rel_has_exp(rel->r, sje->f) >= 0)) ||
-			    (rel_has_exp(rel->r, sje->l) >= 0 && rel_has_exp(ll, sje->r) >= 0 && (!sje->f || rel_has_exp(ll, sje->f) >= 0))))
+			   ((rel_rebind_exp(v->sql, ll, sje->l) && rel_rebind_exp(v->sql, rel->r, sje->r) && (!sje->f || rel_rebind_exp(v->sql, rel->r, sje->f))) ||
+			    (rel_rebind_exp(v->sql, rel->r, sje->l) && rel_rebind_exp(v->sql, ll, sje->r) && (!sje->f || rel_rebind_exp(v->sql, ll, sje->f)))))
 				right = 0;
 			else
 				left = 0;
 			if (right &&
-			   ((rel_has_exp(lr, sje->l) >= 0 && rel_has_exp(rel->r, sje->r) >= 0 && (!sje->f || rel_has_exp(rel->r, sje->f) >= 0)) ||
-			    (rel_has_exp(rel->r, sje->l) >= 0 && rel_has_exp(lr, sje->r) >= 0 && (!sje->f || rel_has_exp(lr, sje->f) >= 0))))
+			   ((rel_rebind_exp(v->sql, lr, sje->l) && rel_rebind_exp(v->sql, rel->r, sje->r) && (!sje->f || rel_rebind_exp(v->sql, rel->r, sje->f))) ||
+			    (rel_rebind_exp(v->sql, rel->r, sje->l) && rel_rebind_exp(v->sql, lr, sje->r) && (!sje->f || rel_rebind_exp(v->sql, lr, sje->f)))))
 				left = 0;
 			else
 				right = 0;
