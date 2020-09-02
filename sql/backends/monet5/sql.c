@@ -3871,7 +3871,7 @@ sql_rowid(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	/* HACK, get insert bat */
 	b = store_funcs.bind_col(m->session->tr, c, RD_INS);
 	if( b == NULL)
-		throw(SQL,"sql.rowid", SQLSTATE(HY005) "Canot access column descriptor");
+		throw(SQL,"sql.rowid", SQLSTATE(HY005) "Cannot access column descriptor");
 	/* UGH (move into storage backends!!) */
 	d = c->data;
 	*rid = d->ibase + BATcount(b);

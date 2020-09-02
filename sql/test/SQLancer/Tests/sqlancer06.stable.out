@@ -44,6 +44,14 @@ stdout of test 'sqlancer06` in directory 'sql/test/SQLancer` itself:
 % smallint # type
 % 1 # length
 #ROLLBACK;
+#CREATE TABLE t2(c1 bigint UNIQUE PRIMARY KEY NOT NULL);
+#CREATE IMPRINTS INDEX i0 ON t2 (c1);
+#INSERT INTO t2(c1) VALUES(68055641); 
+[ 1	]
+#CREATE INDEX i1 ON t2 (c1);
+#INSERT INTO t2(c1) VALUES(1807763525);
+[ 1	]
+#DROP TABLE t2;
 
 # 19:38:32 >  
 # 19:38:32 >  "Done."
