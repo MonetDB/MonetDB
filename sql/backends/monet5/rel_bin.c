@@ -1246,20 +1246,16 @@ exp_bin(backend *be, sql_exp *e, stmt *left, stmt *right, stmt *grp, stmt *ext, 
  			r = exp_bin(be, re, right, NULL, grp, ext, cnt, sel, depth+1, 0, push);
 			is_select = 1;
 		}
-		if (re2)
- 			r2 = exp_bin(be, re2, left, right, grp, ext, cnt, sel, depth+1, 0, push);
+		if (re2 && (swapped || !right || !reduce))
+ 			r2 = exp_bin(be, re2, left, (!reduce)?right:NULL, grp, ext, cnt, sel, depth+1, 0, push);
+		else if (re2)
+ 			r2 = exp_bin(be, re2, right, NULL, grp, ext, cnt, sel, depth+1, 0, push);
 
 		if (!l || !r || (re2 && !r2)) {
 			TRC_ERROR(SQL_EXECUTION, "Query: '%s'\n", be->client->query);
 			return NULL;
 		}
 
-		/*
-		if (left && right && !is_select &&
-		   ((l->nrcols && (r->nrcols || (r2 && r2->nrcols))) ||
-		     re->card > CARD_ATOM ||
-		    (re2 && re2->card > CARD_ATOM))) {
-		    */
 		(void)is_select;
 		if (reduce && left && right) {
 			if (l->nrcols == 0)
