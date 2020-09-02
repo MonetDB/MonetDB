@@ -3877,7 +3877,7 @@ sql_insert_check_null(backend *be, sql_table *t, list *inserts)
 			char *msg = NULL;
 
 			if (!(s->key && s->nrcols == 0)) {
-				s = stmt_selectnil(be, i);
+				s = stmt_selectnil(be, column(be, i));
 				s = stmt_aggr(be, s, NULL, NULL, cnt, 1, 0, 1);
 			} else {
 				sql_subfunc *isnil = sql_bind_func(sql->sa, sql->session->schema, "isnull", &c->type, NULL, F_FUNC);

@@ -112,6 +112,17 @@ stdout of test 'sqlancer06` in directory 'sql/test/SQLancer` itself:
 % 1 # length
 [ NULL	]
 #ROLLBACK;
+#START TRANSACTION;
+#CREATE TABLE "sys"."t2" ("c0" CHARACTER LARGE OBJECT NOT NULL);
+#INSERT INTO t2 VALUES (TIME '20:39:07' BETWEEN TIME '11:09:56' AND TIME '04:20:04');
+[ 1	]
+#SELECT c0 from t2;
+% sys.t2 # table_name
+% c0 # name
+% clob # type
+% 5 # length
+[ "false"	]
+#ROLLBACK;
 
 # 19:38:32 >  
 # 19:38:32 >  "Done."

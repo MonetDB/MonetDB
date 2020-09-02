@@ -5,6 +5,10 @@ stderr of test 'sqlancer06` in directory 'sql/test/SQLancer` itself:
 # 19:38:32 >  "mclient" "-lsql" "-ftest" "-tnone" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-506117" "--port=38597"
 # 19:38:32 >  
 
+MAPI  = (monetdb) /var/tmp/mtest-8009/.s.monetdb.31186
+QUERY = INSERT INTO t2(c0) VALUES(CAST((CASE WHEN r'' THEN TIME '06:29:46' WHEN r'b_P' THEN TIME '20:39:07' END) BETWEEN ASYMMETRIC (COALESCE(TIME '11:09:56', TIME '12:05:55')) AND (COALESCE(TIME '18:59:07', TIME '04:20:04', TIME '19:01:06')) AS STRING(638)));
+ERROR = !conversion of string '' to type bit failed.
+CODE  = 22018
 
 # 19:38:32 >  
 # 19:38:32 >  "Done."
