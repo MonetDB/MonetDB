@@ -27,3 +27,10 @@ NULL	0
 select all t0.c1 from t0, t1 natural join t2 where (t1.c1) not between symmetric (t1.c1) and (t0.c1);
 	--empty
 ROLLBACK;
+
+CREATE TABLE t2(c1 bigint UNIQUE PRIMARY KEY NOT NULL);
+CREATE IMPRINTS INDEX i0 ON t2 (c1);
+INSERT INTO t2(c1) VALUES(68055641); 
+CREATE INDEX i1 ON t2 (c1);
+INSERT INTO t2(c1) VALUES(1807763525);
+DROP TABLE t2;
