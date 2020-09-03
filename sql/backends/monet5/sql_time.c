@@ -53,7 +53,7 @@ daytime_2time_daytime(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			goto bailout;
 		}
 		q = canditer_init(&ci, b, s);
-		if (!(res = COLnew(b->hseqbase, TYPE_daytime, q, TRANSIENT))) {
+		if (!(res = COLnew(ci.hseq, TYPE_daytime, q, TRANSIENT))) {
 			msg = createException(SQL, "batcalc.daytime_2time_daytime", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			goto bailout;
 		}
@@ -155,7 +155,7 @@ second_interval_2_daytime(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 			goto bailout;
 		}
 		q = canditer_init(&ci, b, s);
-		if (!(res = COLnew(b->hseqbase, TYPE_daytime, q, TRANSIENT))) {
+		if (!(res = COLnew(ci.hseq, TYPE_daytime, q, TRANSIENT))) {
 			msg = createException(SQL, "batcalc.second_interval_2_daytime", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			goto bailout;
 		}
@@ -283,7 +283,7 @@ str_2time_daytimetz_internal(ptr out, ptr in, const bat *sid, int tpe, int digit
 			goto bailout;
 		}
 		q = canditer_init(&ci, b, s);
-		if (!(res = COLnew(b->hseqbase, TYPE_daytime, q, TRANSIENT))) {
+		if (!(res = COLnew(ci.hseq, TYPE_daytime, q, TRANSIENT))) {
 			msg = createException(SQL, "batcalc.str_2time_daytimetz", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			goto bailout;
 		}
@@ -416,7 +416,7 @@ timestamp_2_daytime(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			goto bailout;
 		}
 		q = canditer_init(&ci, b, s);
-		if (!(res = COLnew(b->hseqbase, TYPE_daytime, q, TRANSIENT))) {
+		if (!(res = COLnew(ci.hseq, TYPE_daytime, q, TRANSIENT))) {
 			msg = createException(SQL, "batcalc.timestamp_2_daytime", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			goto bailout;
 		}
@@ -497,7 +497,7 @@ date_2_timestamp(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			goto bailout;
 		}
 		q = canditer_init(&ci, b, s);
-		if (!(res = COLnew(b->hseqbase, TYPE_timestamp, q, TRANSIENT))) {
+		if (!(res = COLnew(ci.hseq, TYPE_timestamp, q, TRANSIENT))) {
 			msg = createException(SQL, "batcalc.date_2_timestamp", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			goto bailout;
 		}
@@ -582,7 +582,7 @@ timestamp_2time_timestamp(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 			goto bailout;
 		}
 		q = canditer_init(&ci, b, s);
-		if (!(res = COLnew(b->hseqbase, TYPE_timestamp, q, TRANSIENT))) {
+		if (!(res = COLnew(ci.hseq, TYPE_timestamp, q, TRANSIENT))) {
 			msg = createException(SQL, "batcalc.timestamp_2time_timestamp", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			goto bailout;
 		}
@@ -711,7 +711,7 @@ str_2time_timestamptz_internal(ptr out, ptr in, const bat *sid, int tpe, int dig
 			goto bailout;
 		}
 		q = canditer_init(&ci, b, s);
-		if (!(res = COLnew(b->hseqbase, TYPE_timestamp, q, TRANSIENT))) {
+		if (!(res = COLnew(ci.hseq, TYPE_timestamp, q, TRANSIENT))) {
 			msg = createException(SQL, "batcalc.str_2time_timestamptz_internal", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			goto bailout;
 		}
@@ -849,7 +849,7 @@ month_interval_str(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			goto bailout;
 		}
 		q = canditer_init(&ci, b, s);
-		if (!(res = COLnew(b->hseqbase, TYPE_int, q, TRANSIENT))) {
+		if (!(res = COLnew(ci.hseq, TYPE_int, q, TRANSIENT))) {
 			msg = createException(SQL, "batcalc.month_interval_str", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			goto bailout;
 		}
@@ -934,7 +934,7 @@ second_interval_str(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			goto bailout;
 		}
 		q = canditer_init(&ci, b, s);
-		if (!(res = COLnew(b->hseqbase, TYPE_lng, q, TRANSIENT))) {
+		if (!(res = COLnew(ci.hseq, TYPE_lng, q, TRANSIENT))) {
 			msg = createException(SQL, "batcalc.second_interval_str", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			goto bailout;
 		}
@@ -1073,7 +1073,7 @@ month_interval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			goto bailout;
 		}
 		q = canditer_init(&ci, b, s);
-		if (!(res = COLnew(b->hseqbase, TYPE_int, q, TRANSIENT))) {
+		if (!(res = COLnew(ci.hseq, TYPE_int, q, TRANSIENT))) {
 			msg = createException(SQL, "batcalc.month_interval", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			goto bailout;
 		}
@@ -1187,7 +1187,7 @@ second_interval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			goto bailout;
 		}
 		q = canditer_init(&ci, b, s);
-		if (!(res = COLnew(b->hseqbase, TYPE_lng, q, TRANSIENT))) {
+		if (!(res = COLnew(ci.hseq, TYPE_lng, q, TRANSIENT))) {
 			msg = createException(SQL, "batcalc.sec_interval", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			goto bailout;
 		}
@@ -1288,7 +1288,7 @@ second_interval_daytime(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			goto bailout;
 		}
 		q = canditer_init(&ci, b, s);
-		if (!(res = COLnew(b->hseqbase, TYPE_lng, q, TRANSIENT))) {
+		if (!(res = COLnew(ci.hseq, TYPE_lng, q, TRANSIENT))) {
 			msg = createException(SQL, "batcalc.second_interval_daytime", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			goto bailout;
 		}
@@ -1416,7 +1416,7 @@ str_2_date_internal(ptr out, ptr in, const bat *sid, int tpe)
 			goto bailout;
 		}
 		q = canditer_init(&ci, b, s);
-		if (!(res = COLnew(b->hseqbase, TYPE_date, q, TRANSIENT))) {
+		if (!(res = COLnew(ci.hseq, TYPE_date, q, TRANSIENT))) {
 			msg = createException(SQL, "batcalc.batstr_2_date", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			goto bailout;
 		}
