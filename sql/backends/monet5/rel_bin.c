@@ -3966,7 +3966,7 @@ rel2bin_insert(backend *be, sql_rel *rel, list *refs)
 
 		if (non_updatable_index(i->type)) /* Some indexes don't hold delta structures */
 			continue;
-		if (hash_index(i->type) && list_length(i->columns) <= 1)
+		if ((hash_index(i->type) && list_length(i->columns) <= 1) || !idx_has_column(i->type))
 			is = NULL;
 		if (i->key && constraint) {
 			stmt *ckeys = sql_insert_key(be, inserts->op4.lval, i->key, is, pin);
@@ -4940,7 +4940,7 @@ rel2bin_update(backend *be, sql_rel *rel, list *refs)
 			update_idx = bin_find_column(be, update, ce->l, ce->r);
 			if (update_idx)
 				is = update_idx;
-			if (hash_index(i->type) && list_length(i->columns) <= 1) {
+			if ((hash_index(i->type) && list_length(i->columns) <= 1) || !idx_has_column(i->type)) {
 				is = NULL;
 				update_idx = NULL;
 			}

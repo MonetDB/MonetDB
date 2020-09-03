@@ -833,7 +833,7 @@ rel_basetable(mvc *sql, sql_table *t, const char *atname)
 			char *iname = NULL;
 
 			/* do not include empty indices in the plan */
-			if ((hash_index(i->type) && list_length(i->columns) <= 1) || i->type == no_idx || i->type == imprints_idx)
+			if ((hash_index(i->type) && list_length(i->columns) <= 1) || !idx_has_column(i->type))
 				continue;
 
 			if (i->type == join_idx)

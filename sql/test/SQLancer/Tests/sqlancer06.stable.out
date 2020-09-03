@@ -123,6 +123,18 @@ stdout of test 'sqlancer06` in directory 'sql/test/SQLancer` itself:
 % 5 # length
 [ "false"	]
 #ROLLBACK;
+#START TRANSACTION;
+#CREATE TABLE "sys"."t0" ("c0" DATE NOT NULL,CONSTRAINT "t0_c0_pkey" PRIMARY KEY ("c0"));
+#CREATE TABLE "sys"."t1" ("c0" DATE NOT NULL);
+#CREATE INDEX "i1" ON "sys"."t1" ("c0");
+#CREATE ORDERED INDEX "i2" ON "sys"."t1" ("c0");
+#create view v0(c0) as (select 1 from t0,t1 where ((t0.c0)>=(t1.c0)));
+#select '12' like 'i' from t0, t1 right outer join v0 on exists (select 'a' from t0, t1);
+% .%24 # table_name
+% %24 # name
+% boolean # type
+% 5 # length
+#ROLLBACK;
 
 # 19:38:32 >  
 # 19:38:32 >  "Done."

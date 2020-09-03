@@ -8820,7 +8820,7 @@ rel_rename_part(mvc *sql, sql_rel *p, char *tname, sql_table *mt)
 			sql_idx *i = m->data;
 			char *iname = NULL;
 
-			if (hash_index(i->type) && list_length(i->columns) <= 1)
+			if ((hash_index(i->type) && list_length(i->columns) <= 1) || !idx_has_column(i->type))
 				continue;
 
 			iname = sa_strconcat( sql->sa, "%", i->base.name);
