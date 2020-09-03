@@ -2264,9 +2264,9 @@ pcrejoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr, const char *esc, bo
 
 	lvals = (const char *) Tloc(l, 0);
 	rvals = (const char *) Tloc(r, 0);
-		assert(r->tvarsized && r->ttype);
-		lvars = l->tvheap->base;
-		rvars = r->tvheap->base;
+	assert(r->tvarsized && r->ttype);
+	lvars = l->tvheap->base;
+	rvars = r->tvheap->base;
 	lwidth = l->twidth;
 	rwidth = r->twidth;
 
