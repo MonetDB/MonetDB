@@ -2127,80 +2127,80 @@ PCRElikeselect5(bat *ret, const bat *bid, const bat *sid, const str *pat, const 
 		for (BUN ri = 0; ri < rci.ncand; ri++) { \
 			ro = canditer_next(&rci); \
 			vr = VALUE(r, ro - r->hseqbase); \
+			nl = 0; \
 			use_re = use_strcmp = empty = false; \
 			if ((msg = choose_like_path(&pcrepat, &use_re, &use_strcmp, &empty, (const str*)&vr, (const str*)&esc))) \
 				goto bailout; \
-			if (empty) { \
-				continue; \
-			} else if (use_re) { \
-				if ((msg = re_like_build(&re, &wpat, vr, caseignore, use_strcmp, (unsigned char) *esc)) != MAL_SUCCEED) \
-					goto bailout; \
-			} else if (pcrepat) { \
-				if ((msg = pcre_like_build(&pcrere, &pcreex, pcrepat, caseignore, lci.ncand)) != MAL_SUCCEED) \
-					goto bailout; \
-				GDKfree(pcrepat); \
-				pcrepat = NULL; \
-			} \
-			nl = 0; \
-			canditer_reset(&lci); \
-			for (BUN li = 0; li < lci.ncand; li++) { \
-				lo = canditer_next(&lci); \
-				vl = VALUE(l, lo - l->hseqbase); \
-				if (strNil(vl)) { \
-					continue; \
-				} else if (use_re) { \
-					if (use_strcmp) { \
-						if (STRCMP) \
-							continue; \
-					} else { \
-						assert(re); \
-						if (RE_MATCH) \
-							continue; \
-					} \
-				} else { \
-					int retval; \
-					assert(pcrere); \
-					PCRE_EXEC;  \
-					if (PCRE_COND) \
-						continue; \
-				} \
-				if (BUNlast(r1) == BATcapacity(r1)) { \
-					newcap = BATgrows(r1); \
-					BATsetcount(r1, BATcount(r1)); \
-					if (r2) \
-						BATsetcount(r2, BATcount(r2)); \
-					if (BATextend(r1, newcap) != GDK_SUCCEED || (r2 && BATextend(r2, newcap) != GDK_SUCCEED)) { \
-						msg = createException(MAL, "pcre.join", SQLSTATE(HY013) MAL_MALLOC_FAIL); \
+			if (!empty) { \
+				if (use_re) { \
+					if ((msg = re_like_build(&re, &wpat, vr, caseignore, use_strcmp, (unsigned char) *esc)) != MAL_SUCCEED) \
 						goto bailout; \
-					} \
-					assert(!r2 || BATcapacity(r1) == BATcapacity(r2)); \
+				} else if (pcrepat) { \
+					if ((msg = pcre_like_build(&pcrere, &pcreex, pcrepat, caseignore, lci.ncand)) != MAL_SUCCEED) \
+						goto bailout; \
+					GDKfree(pcrepat); \
+					pcrepat = NULL; \
 				} \
-				if (BATcount(r1) > 0) { \
-					if (lastl + 1 != lo) \
-						r1->tseqbase = oid_nil; \
-					if (nl == 0) { \
-						if (r2) \
-							r2->trevsorted = false; \
-						if (lastl > lo) { \
-							r1->tsorted = false; \
-							r1->tkey = false; \
-						} else if (lastl < lo) { \
-							r1->trevsorted = false; \
+				canditer_reset(&lci); \
+				for (BUN li = 0; li < lci.ncand; li++) { \
+					lo = canditer_next(&lci); \
+					vl = VALUE(l, lo - l->hseqbase); \
+					if (strNil(vl)) { \
+						continue; \
+					} else if (use_re) { \
+						if (use_strcmp) { \
+							if (STRCMP) \
+								continue; \
 						} else { \
-							r1->tkey = false; \
+							assert(re); \
+							if (RE_MATCH) \
+								continue; \
+						} \
+					} else { \
+						int retval; \
+						assert(pcrere); \
+						PCRE_EXEC;  \
+						if (PCRE_COND) \
+							continue; \
+					} \
+					if (BUNlast(r1) == BATcapacity(r1)) { \
+						newcap = BATgrows(r1); \
+						BATsetcount(r1, BATcount(r1)); \
+						if (r2) \
+							BATsetcount(r2, BATcount(r2)); \
+						if (BATextend(r1, newcap) != GDK_SUCCEED || (r2 && BATextend(r2, newcap) != GDK_SUCCEED)) { \
+							msg = createException(MAL, "pcre.join", SQLSTATE(HY013) MAL_MALLOC_FAIL); \
+							goto bailout; \
+						} \
+						assert(!r2 || BATcapacity(r1) == BATcapacity(r2)); \
+					} \
+					if (BATcount(r1) > 0) { \
+						if (lastl + 1 != lo) \
+							r1->tseqbase = oid_nil; \
+						if (nl == 0) { \
+							if (r2) \
+								r2->trevsorted = false; \
+							if (lastl > lo) { \
+								r1->tsorted = false; \
+								r1->tkey = false; \
+							} else if (lastl < lo) { \
+								r1->trevsorted = false; \
+							} else { \
+								r1->tkey = false; \
+							} \
 						} \
 					} \
+					APPEND(r1, lo); \
+					if (r2) \
+						APPEND(r2, ro); \
+					lastl = lo; \
+					nl++; \
 				} \
-				APPEND(r1, lo); \
-				if (r2) \
-					APPEND(r2, ro); \
-				lastl = lo; \
-				nl++; \
+				if (re) \
+					re_like_clean(&re, &wpat); \
+				if (pcrere) \
+					pcre_clean(&pcrere, &pcreex); \
 			} \
-			if (re) \
-				re_like_clean(&re, &wpat); \
-			if (pcrere) \
-				pcre_clean(&pcrere, &pcreex); \
 			if (r2) { \
 				if (nl > 1) { \
 					r2->tkey = false; \
@@ -2264,9 +2264,9 @@ pcrejoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr, const char *esc, bo
 
 	lvals = (const char *) Tloc(l, 0);
 	rvals = (const char *) Tloc(r, 0);
-	assert(r->tvarsized && r->ttype);
-	lvars = l->tvheap->base;
-	rvars = r->tvheap->base;
+		assert(r->tvarsized && r->ttype);
+		lvars = l->tvheap->base;
+		rvars = r->tvheap->base;
 	lwidth = l->twidth;
 	rwidth = r->twidth;
 
