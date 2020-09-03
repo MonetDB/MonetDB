@@ -116,3 +116,47 @@ create view v0(c0) as (select 1 from t0,t1 where ((t0.c0)>=(t1.c0)));
 select '12' like 'i' from t0, t1 right outer join v0 on exists (select 'a' from t0, t1);
 	--empty
 ROLLBACK;
+
+START TRANSACTION;
+CREATE TABLE "sys"."t0" ("c0" CHARACTER LARGE OBJECT NOT NULL,"c1" INTEGER,CONSTRAINT "t0_c0_pkey" PRIMARY KEY ("c0"),CONSTRAINT "t0_c0_unique" UNIQUE ("c0"),CONSTRAINT "t0_c1_unique" UNIQUE ("c1"));
+COPY 4 RECORDS INTO "sys"."t0" FROM stdin USING DELIMITERS E'\t',E'\n','"';
+"0.6010931584470857"	-743829177
+"0.42620477484022556"	NULL
+"1329239822"	-2112960019
+"(tO\\i4"	NULL
+
+CREATE TABLE "sys"."t1" ("c0" CHARACTER LARGE OBJECT,"c1" INTEGER);
+COPY 3 RECORDS INTO "sys"."t1" FROM stdin USING DELIMITERS E'\t',E'\n','"';
+NULL	-1356169629
+NULL	21282885
+"380068065"	2028904352
+
+CREATE TABLE "sys"."t2" ("c0" CHARACTER LARGE OBJECT);
+COPY 20 RECORDS INTO "sys"."t2" FROM stdin USING DELIMITERS E'\t',E'\n','"';
+"1339658188"
+"g曹"
+NULL
+"1886645193"
+"I+"
+"YhN"
+"밿o{%p"
+"n8v"
+"nFa{#"
+"1001686043"
+">+"
+"0.3359225172978786"
+"_"
+"990996842"
+"B3弸_"
+""
+"Pd\\"
+"!jt*cw+~"
+""
+"<P9\t-s펰>"
+
+create view v0(c0, c1, c2, c3) as (select distinct timestamp '1970-01-15 12:32:10', date '1970-01-19', t1.c1, t1.c1 from t0, t1 where ((t1.c1)=(t1.c1)));
+select 1 from t2 right outer join t1 on t1.c0 not like t2.c0;
+	-- 21 1s
+select cast((((coalesce(t2.c0, t2.c0))not ilike(t2.c0))) = true as int) as count from v0, t2 right outer join t1 on not (not (((t1.c0)not ilike(t2.c0))));
+	-- 6 1s, 6 NULLs, 51 0s, 63 rows in total
+ROLLBACK;
