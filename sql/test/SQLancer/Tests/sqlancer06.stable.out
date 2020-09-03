@@ -93,6 +93,23 @@ stdout of test 'sqlancer06` in directory 'sql/test/SQLancer` itself:
 #540568573,NULL,false
 #NULL,NULL,false
 [ 4	]
+#SELECT 1 FROM t2 LEFT JOIN t0 ON CASE CAST(t2.c0 AS VARCHAR(32)) WHEN CAST(t2.c2 AS VARCHAR(32)) THEN 4 WHEN COALESCE('a', 'b') THEN 3 END IS NOT NULL;
+% .%13 # table_name
+% %13 # name
+% tinyint # type
+% 1 # length
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+#SELECT CAST(SUM(count) AS BIGINT) FROM (SELECT CAST(t2.c2 AS INT) as count FROM t2 LEFT OUTER JOIN t0 ON (CASE CAST(t2.c0 AS VARCHAR(32)) WHEN CAST('*D' AS VARCHAR(32)) THEN CASE 'u--' 
+#WHEN 'Q' THEN 0.81 END WHEN CAST(t2.c2 AS VARCHAR(32)) THEN CASE 51854410 WHEN 0.6132552 THEN 134188918 END WHEN COALESCE('鈋', 'Nb|k', 's{%g.8Bj') THEN CAST(571120738 AS INT) 
+#ELSE CAST(0.13 AS REAL) END) IS NOT NULL CROSS JOIN (SELECT ALL COALESCE(t1.c0, t0.c0) FROM t0, t1) AS sub0) as res;
+% .%13 # table_name
+% %13 # name
+% bigint # type
+% 2 # length
+[ 54	]
 #ROLLBACK;
 #START TRANSACTION;
 #CREATE TABLE "sys"."t0" ("c0" BOOLEAN NOT NULL,CONSTRAINT "t0_c0_pkey" PRIMARY KEY ("c0"),CONSTRAINT "t0_c0_unique" UNIQUE ("c0"));
@@ -291,6 +308,18 @@ stdout of test 'sqlancer06` in directory 'sql/test/SQLancer` itself:
 [ 0	]
 [ NULL	]
 [ NULL	]
+#ROLLBACK;
+#START TRANSACTION;
+#CREATE TABLE "sys"."t1" ("c0" BOOLEAN);
+#INSERT INTO t1(c0) VALUES(TRUE), ((EXISTS (SELECT DATE '1970-01-06' FROM t1)) BETWEEN (TRUE) AND ((1) IN (1)));
+[ 2	]
+#SELECT c0 from t1;
+% sys.t1 # table_name
+% c0 # name
+% boolean # type
+% 5 # length
+[ true	]
+[ false	]
 #ROLLBACK;
 
 # 19:38:32 >  

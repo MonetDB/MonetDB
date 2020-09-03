@@ -2858,9 +2858,24 @@ stmt_append_bulk(backend *be, stmt *c, list *l)
 {
 	MalBlkPtr mb = be->mb;
 	InstrPtr q = NULL;
+	bool needs_columns = false;
 
 	if (c->nr < 0)
 		return NULL;
+
+	/* currently appendBulk accepts its inputs all either scalar or vectors 
+	   if there is one vector and any scala, then the scalars mut be upgraded to vectors */
+	for (node *n = l->h; n; n = n->next) {
+		stmt *t = n->data;
+		needs_columns |= t->nrcols > 0;
+	}
+	if (needs_columns) {
+		for (node *n = l->h; n; n = n->next) {
+			stmt *t = n->data;
+			if (t->nrcols == 0)
+				n->data = const_column(be, t);
+		}
+	}
 
 	q = newStmtArgs(mb, batRef, appendBulkRef, list_length(l) + 3);
 	q = pushArgument(mb, q, c->nr);

@@ -162,3 +162,9 @@ select 1 from t2 join t1 on t1.c0 not like t2.c0;
 select cast((((coalesce(t2.c0, t2.c0))not ilike(t2.c0))) = true as int) as count from v0, t2 right outer join t1 on not (not (((t1.c0)not ilike(t2.c0))));
 	-- 6 NULLs, 57 0s, 63 rows in total
 ROLLBACK;
+
+START TRANSACTION;
+CREATE TABLE "sys"."t1" ("c0" BOOLEAN);
+INSERT INTO t1(c0) VALUES(TRUE), ((EXISTS (SELECT DATE '1970-01-06' FROM t1)) BETWEEN (TRUE) AND ((1) IN (1)));
+SELECT c0 from t1;
+ROLLBACK;
