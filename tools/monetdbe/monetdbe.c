@@ -95,6 +95,7 @@ typedef struct {
 	monetdbe_data_time time_null;
 	monetdbe_data_timestamp timestamp_null;
 	Mapi mid;
+	str mid_sr;
 } monetdbe_database_internal;
 
 typedef struct {
@@ -251,7 +252,7 @@ monetdbe_get_results(monetdbe_result** result, monetdbe_database_internal *mdbe)
 	monetdbe_result_internal* res_internal;
 
     if (!(res_internal = GDKzalloc(sizeof(monetdbe_result_internal)))) {
-        mdbe->msg = createException(MAL, "monetdbe.monetdbe_query_internal", MAL_MALLOC_FAIL);
+        mdbe->msg = createException(MAL, "monetdbe.monetdbe_get_results", MAL_MALLOC_FAIL);
         return mdbe->msg;
     }
     // TODO: set type of result outside.
@@ -268,7 +269,7 @@ monetdbe_get_results(monetdbe_result** result, monetdbe_database_internal *mdbe)
         be->results = NULL;
         res_internal->converted_columns = GDKzalloc(sizeof(monetdbe_column*) * res_internal->res.ncols);
         if (!res_internal->converted_columns) {
-            mdbe->msg = createException(MAL, "monetdbe.monetdbe_query_internal", MAL_MALLOC_FAIL);
+            mdbe->msg = createException(MAL, "monetdbe.monetdbe_get_results", MAL_MALLOC_FAIL);
             return mdbe->msg;
         }
     }
@@ -600,6 +601,74 @@ static bool urls_matches(const char* l, const char* r) {
 	return (l && r && (strcmp(l, r) == 0)) || (l == NULL && r == NULL);
 }
 
+#include <mal.h>
+#include <mal_backend.h>
+#include <opt_prelude.h>
+
+static int
+monetdbe_open_remote(monetdbe_database_internal *mdbe, char *url, monetdbe_options *opts) {
+
+	monetdbe_remote* remote = opts->remote;
+	if (!remote) {
+		mdbe->msg = createException(MAL, "monetdbe.monetdbe_open_remote", "Missing user credential for monetdbe remote proxy set up");
+		return -1;
+	}
+
+	Client c = mdbe->c;
+
+	assert(!c->curprg);
+
+	const char *mod = "user";
+	char nme[16];
+	const char *name = number2name(nme, sizeof(nme), ++((backend*)  c->sqlcontext)->remote);
+	c->curprg = newFunction(putName(mod), putName(name), FUNCTIONsymbol);
+
+	if (c->curprg == NULL) {
+		mdbe->msg = createException(MAL, "monetdbe.monetdbe_open_remote", MAL_MALLOC_FAIL);
+		return -2;
+	}
+
+	MalBlkPtr mb = c->curprg->def;
+
+	InstrPtr q = getInstrPtr(mb, 0);
+	q->argc = q->retc = 0;
+	q = pushReturn(mb, q, newTmpVariable(mb, TYPE_str));
+
+	InstrPtr p = newFcnCall(mb, remoteRef, connectRef);
+	p = pushStr(mb, p, url);
+	p = pushStr(mb, p, remote->username);
+	p = pushStr(mb, p, remote->password);
+	p = pushStr(mb, p, "msql");
+
+	q = newInstruction(mb, NULL, NULL);
+	q->barrier= RETURNsymbol;
+	q = pushReturn(mb, q, getArg(p, 0));
+
+	pushInstruction(mb, q);
+
+	if (p == NULL) {
+		mdbe->msg = createException(MAL, "monetdbe.monetdbe_open_remote", MAL_MALLOC_FAIL);
+		return -2;
+	}
+	if ( (mdbe->msg = chkProgram(c->usermodule, mb)) != MAL_SUCCEED ) {
+		return -2;
+	}
+	MalStkPtr stk = prepareMALstack(mb, mb->vsize);
+	stk->keepAlive = TRUE;
+	if ( (mdbe->msg = runMAL(c, mb, 0, stk)) != MAL_SUCCEED ) {
+		return -2;
+	}
+	mdbe->mid_sr = strdup(*getArgReference_str(stk, p, 0));
+
+	garbageCollector(c, mb, stk, TRUE);
+	freeStack(stk);
+
+	printf("yeah a connect string: %s!\n", mdbe->mid_sr);
+
+
+	return 0;
+}
+
 int
 monetdbe_open(monetdbe_database *dbhdl, char *url, monetdbe_options *opts)
 {
@@ -618,27 +687,6 @@ monetdbe_open(monetdbe_database *dbhdl, char *url, monetdbe_options *opts)
 	mdbe->c = NULL;
 
 	bool is_remote = monetdbe_is_remote(url);
-
-	if (is_remote) {
-		monetdbe_remote* remote = opts->remote;
-		if (!remote) {
-			mdbe->msg = createException(MAL, "monetdbe.monetdbe_startup", "Missing user credential for monetdbe remote proxy set up");
-			return -1;
-		}
-
-		Mapi mid = mapi_mapiuri(url, remote->username, remote->password, remote->lang);
-		if (mid == NULL) {
-			mdbe->msg = createException(MAL, "monetdbe.monetdbe_startup", "Cannot initialize mapi object.");
-			return -2;
-		}
-		else if(mapi_reconnect(mid) /* actually, initial connect */, mapi_error(mid)) {
-			mdbe->msg = createException(MAL, "monetdbe.monetdbe_startup", "%s", mapi_error_str(mid));
-			return -2;
-		}
-
-		mdbe->mid = mid;
-	}
-
 	if (!monetdbe_embedded_initialized) {
 		/* When used as a remote mapi proxy,
 		 * it is still necessary to have an initialized monetdbe. E.g. for BAT life cycle management.
@@ -653,6 +701,10 @@ monetdbe_open(monetdbe_database *dbhdl, char *url, monetdbe_options *opts)
 
 	if (!mdbe->msg)
 		res = monetdbe_open_internal(mdbe);
+
+	if (res == 0 && is_remote)
+		res = monetdbe_open_remote(mdbe, url, opts);
+
 	MT_lock_unset(&embedded_lock);
 	if (mdbe->msg)
 		return -2;
@@ -796,15 +848,12 @@ monetdbe_in_transaction(monetdbe_database dbhdl)
 	return result;
 }
 
-char*
-monetdbe_query(monetdbe_database dbhdl, char* query, monetdbe_result** result, monetdbe_cnt* affected_rows)
+static char*
+monetdbe_query_external(monetdbe_database_internal *mdbe, char* query, monetdbe_result** result, monetdbe_cnt* affected_rows)
 {
-	if (!dbhdl)
-		return NULL;
-	monetdbe_database_internal *mdbe = (monetdbe_database_internal*)dbhdl;
-
-	if (mdbe->mid) {
-		if (mapi_set_columnar_protocol(mdbe->mid, true) != MOK || mapi_error(mdbe->mid)) {
+	// TODO: do something with affected_rows
+	(void) affected_rows;
+	if (mapi_set_columnar_protocol(mdbe->mid, true) != MOK || mapi_error(mdbe->mid)) {
 			mdbe->msg = createException(MAL, "monetdbe.connect", "%s", mapi_error_str(mdbe->mid));
 			return mdbe->msg;
 		}
@@ -880,12 +929,47 @@ monetdbe_query(monetdbe_database dbhdl, char* query, monetdbe_result** result, m
 		}
 
 		return mdbe->msg;
+}
+
+char*
+monetdbe_query(monetdbe_database dbhdl, char* query, monetdbe_result** result, monetdbe_cnt* affected_rows)
+{
+	if (!dbhdl)
+		return NULL;
+	monetdbe_database_internal *mdbe = (monetdbe_database_internal*)dbhdl;
+
+	if (mdbe->mid) {
+		mdbe->msg = monetdbe_query_external(mdbe, query, result, affected_rows);
 	}
 	else {
 		mdbe->msg = monetdbe_query_internal(mdbe, query, result, affected_rows, NULL, 'S');
-		return mdbe->msg;
 	}
+
+	return mdbe->msg;
 }
+
+
+/*
+static 
+void _remote_execute(
+	monetdbe_database_internal *mdbe,
+	char* query,
+	monetdbe_statement **stmt) {
+
+	Client c = mdbe->c;
+	MalBlkPtr curBlk = 0;
+	InstrPtr curInstr = 0, p, o;
+
+	backup = c->curprg;
+	const char *mod = "user";
+
+	
+	c->curprg = newFunction(putName(mod), putName(name), FUNCTIONsymbol);
+
+}
+*/
+
+
 
 char*
 monetdbe_prepare(monetdbe_database dbhdl, char* query, monetdbe_statement **stmt)
@@ -973,9 +1057,13 @@ monetdbe_execute(monetdbe_statement *stmt, monetdbe_result **result, monetdbe_cn
 		if (!stmt_internal->data[i].vtype)
 			return createException(MAL, "monetdbe.monetdbe_execute", "Parameter %d not bound to a value", i);
 	}
-	//MalStkPtr glb = (MalStkPtr) (q->stk);
-	//Symbol s = (Symbol)q->code;
-	//mdbe->msg = callMAL(mdbe->c, s->def, &glb, stmt_internal->args, 0);
+
+	cq* q = stmt_internal->q;
+
+	MalStkPtr glb = (MalStkPtr) (NULL);
+	Symbol s = findSymbolInModule(mdbe->c->usermodule, q->f->imp);
+
+	mdbe->msg = callMAL(mdbe->c, s->def, &glb, stmt_internal->args, 0);
 
 	if (!b->results && b->rowcnt >= 0 && affected_rows)
 		*affected_rows = b->rowcnt;

@@ -56,4 +56,45 @@ stuurt header op welke ook de volgorde van opsturen van de BAT's bepaald en stuu
 de client leest de header stream en pakt daarna de onderliggende read stream en vangt daarmee de bats op.
 
 
+handling monetdbe_prepare
 
+Normale prepare komt in
+
+sql_scenario.c:parser terecht. Daar wordt de PREPARE herkent en daar wordt m(ode) van de mvc
+op m_prepare gezet. de sql_parse operatie parst de hele query en maakt een geoptimaliseerd relationeel plan
+met place holders. Deze wordt vervolgens in de query cache gestopt via sql_qc.c:qc_insert.
+Een id naar de query in de qc wordt teruggegeven en bewaard in de backend van de mvc.
+
+normale exec
+
+#0  rel_nop (query=0x7fffd42c6830, rel=0x7ffff02e1858, se=0x7fffd42c67e0, fs=32772, ek=...)
+    at /home/aris/sources/monetdb/sql/server/rel_select.c:3137
+#1  0x00007ffff1eacebc in rel_value_exp2 (query=0x7fffd42c6830, rel=0x7ffff02e1858, se=0x7fffd42c67e0, 
+    f=32772, ek=...) at /home/aris/sources/monetdb/sql/server/rel_select.c:4923
+#2  0x00007ffff1ead4f0 in rel_value_exp (query=0x7fffd42c6830, rel=0x7ffff02e1858, se=0x7fffd42c67e0, 
+    f=32772, ek=...) at /home/aris/sources/monetdb/sql/server/rel_select.c:5050
+#3  0x00007ffff1f27a6a in rel_psm_call (query=0x7fffd42c6830, se=0x7fffd42c67e0)
+    at /home/aris/sources/monetdb/sql/server/rel_psm.c:166
+#4  0x00007ffff1f2f5ee in rel_psm (query=0x7fffd42c6830, s=0x7fffd42c6800)
+    at /home/aris/sources/monetdb/sql/server/rel_psm.c:1576
+#5  0x00007ffff1e91f34 in rel_semantic (query=0x7fffd42c6830, s=0x7fffd42c6800)
+    at /home/aris/sources/monetdb/sql/server/rel_semantic.c:198
+(gdb) p s->token 
+$24 = SQL_CALL
+#6  0x00007ffff1d3a754 in sql_symbol2relation (be=0x7fffd4222fc0, sym=0x7fffd42c6800)
+    at /home/aris/sources/monetdb/sql/backends/monet5/sql.c:119
+#7  0x00007ffff1d5d1b4 in SQLparser (c=0x5555557b51c0)
+    at /home/aris/sources/monetdb/sql/backends/monet5/sql_scenario.c:1074
+#8  0x00007ffff795d01b in runPhase (c=0x5555557b51c0, phase=1)
+    at /home/aris/sources/monetdb/monetdb5/mal/mal_scenario.c:448
+
+mclient doet prepare niet via mapi_prepare maar via een normale mapi_query.
+De remote zal dan dit normaal parsen. en geeft in sql_result.c:mvc_export_prepare
+de noodzakelijke meta data voor het aanroepen van de prepared statement.
+mclient gebruikt 
+
+Plan
+
+Expand sqlStatementIntern to incorporate prepared statements.
+
+use remote to call sql.prepare on the remote side. Remote should return similar info as regular mapi.

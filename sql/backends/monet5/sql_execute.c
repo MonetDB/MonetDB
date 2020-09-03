@@ -311,8 +311,12 @@ SQLescapeString(str s)
 }
 
 str
-SQLstatementIntern(Client c, str *expr, str nme, bit execute, bit output, res_table **result)
+SQLstatementIntern2(Client c, str *expr, str nme, bit prepare, bit execute, bit output, res_table **result);
+
+str
+SQLstatementIntern2(Client c, str *expr, str nme, bit prepare, bit execute, bit output, res_table **result)
 {
+	(void) prepare;
 	int status = 0, err = 0, oldvtop, oldstop = 1, inited = 0, ac, sizeframes, topframes;
 	unsigned int label;
 	mvc *o = NULL, *m = NULL;
@@ -585,6 +589,12 @@ endofcompile:
 	if (inited)
 		SQLresetClient(c);
 	return msg;
+}
+
+str
+SQLstatementIntern(Client c, str *expr, str nme, bit execute, bit output, res_table **result)
+{
+	return SQLstatementIntern2(c, expr, nme, FALSE, execute, output, result);
 }
 
 str
