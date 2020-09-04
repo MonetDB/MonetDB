@@ -3149,9 +3149,8 @@ mvc_import_table_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 }
 
 static bool
-read_more(bstream *in, stream *out)
+read_more(bstream *in)
 {
-	(void)out;
 	bool success = false;
 	do {
 		if (bstream_next(in) <= 0)
@@ -3162,7 +3161,7 @@ read_more(bstream *in, stream *out)
 }
 
 static BAT *
-BATattach_bstream(int tt, bstream *in, stream *out, BUN size)
+BATattach_bstream(int tt, bstream *in, BUN size)
 {
 	BAT *bn;
 	size_t n;
@@ -3173,7 +3172,7 @@ BATattach_bstream(int tt, bstream *in, stream *out, BUN size)
 		return NULL;
 
 	if (ATOMstorage(tt) < TYPE_str) {
-		while (read_more(in, out)) {
+		while (read_more(in)) {
 			n = (in->len - in->pos) / asz;
 			if (BATextend(bn, bn->batCount + n) != GDK_SUCCEED) {
 				BBPreclaim(bn);
@@ -3198,7 +3197,7 @@ BATattach_bstream(int tt, bstream *in, stream *out, BUN size)
 		}
 	} else {
 		assert(ATOMstorage(tt) == TYPE_str);
-		while (read_more(in, out)) {
+		while (read_more(in)) {
 			int u;
 			for (n = in->pos, u = 0; n < in->len; n++) {
 				int c = in->buf[n];
@@ -3328,7 +3327,7 @@ mvc_bin_import_table_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 					goto bailout;
 				}
 				set_prompting(rs, PROMPT2, ws);
-				c = BATattach_bstream(col->type.type->localtype, s, ws, cnt);
+				c = BATattach_bstream(col->type.type->localtype, s, cnt);
 				set_prompting(rs, NULL, NULL);
 				if (!c) {
 					bstream_destroy(s);
