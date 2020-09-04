@@ -3161,76 +3161,43 @@ read_more(bstream *in)
 }
 
 static BAT *
-BATattach_bstream(int tt, bstream *in, BUN size)
+BATattach_str(bstream *in, BAT *bn)
 {
-	BAT *bn;
 	size_t n;
-	size_t asz = (size_t) ATOMsize(tt);
 
-	bn = COLnew(0, tt, size, TRANSIENT);
-	if (bn == NULL)
-		return NULL;
-
-	if (ATOMstorage(tt) < TYPE_str) {
-		while (read_more(in)) {
-			n = (in->len - in->pos) / asz;
-			if (BATextend(bn, bn->batCount + n) != GDK_SUCCEED) {
-				BBPreclaim(bn);
-				return NULL;
-			}
-			memcpy(Tloc(bn, bn->batCount), in->buf + in->pos, n * asz);
-			bn->batCount += (BUN) n;
-			in->pos += n * asz;
-		}
-		BATsetcount(bn, bn->batCount);
-		bn->tseqbase = oid_nil;
-		bn->tnonil = bn->batCount == 0;
-		bn->tnil = false;
-		if (bn->batCount <= 1) {
-			bn->tsorted = true;
-			bn->trevsorted = true;
-			bn->tkey = true;
-		} else {
-			bn->tsorted = false;
-			bn->trevsorted = false;
-			bn->tkey = false;
-		}
-	} else {
-		assert(ATOMstorage(tt) == TYPE_str);
-		while (read_more(in)) {
-			int u;
-			for (n = in->pos, u = 0; n < in->len; n++) {
-				int c = in->buf[n];
-				if (u) {
-					if ((c & 0xC0) == 0x80)
-						u--;
-					else
-						goto bailout;
-				} else if ((c & 0xF8) == 0xF0) {
-					u = 3;
-				} else if ((c & 0xF0) == 0xE0) {
-					u = 2;
-				} else if ((c & 0xE0) == 0xC0) {
-					u = 1;
-				} else if ((c & 0xC0) == 0x80) {
+	while (read_more(in)) {
+		int u;
+		for (n = in->pos, u = 0; n < in->len; n++) {
+			int c = in->buf[n];
+			if (u) {
+				if ((c & 0xC0) == 0x80)
+					u--;
+				else
 					goto bailout;
-				} else if (c == '\r') {
-					if (n + 1 < in->len
-					    && in->buf[n + 1] == '\n') {
-						in->buf[n] = 0;
-						if (BUNappend(bn, in->buf + in->pos, false) != GDK_SUCCEED)
-							goto bailout;
-						in->buf[n] = '\r';
-						in->pos = n + 2;
-						n++;
-					}
-				} else if (c == '\n' || c == '\0') {
+			} else if ((c & 0xF8) == 0xF0) {
+				u = 3;
+			} else if ((c & 0xF0) == 0xE0) {
+				u = 2;
+			} else if ((c & 0xE0) == 0xC0) {
+				u = 1;
+			} else if ((c & 0xC0) == 0x80) {
+				goto bailout;
+			} else if (c == '\r') {
+				if (n + 1 < in->len
+					&& in->buf[n + 1] == '\n') {
 					in->buf[n] = 0;
 					if (BUNappend(bn, in->buf + in->pos, false) != GDK_SUCCEED)
 						goto bailout;
-					in->buf[n] = c;
-					in->pos = n + 1;
+					in->buf[n] = '\r';
+					in->pos = n + 2;
+					n++;
 				}
+			} else if (c == '\n' || c == '\0') {
+				in->buf[n] = 0;
+				if (BUNappend(bn, in->buf + in->pos, false) != GDK_SUCCEED)
+					goto bailout;
+				in->buf[n] = c;
+				in->pos = n + 1;
 			}
 		}
 	}
@@ -3239,6 +3206,55 @@ BATattach_bstream(int tt, bstream *in, BUN size)
   bailout:
 	BBPreclaim(bn);
 	return NULL;
+}
+
+static BAT *
+BATattach_as_bytes(int tt, bstream *in, BAT *bn)
+{
+	size_t n;
+	size_t asz = (size_t) ATOMsize(tt);
+
+	while (read_more(in)) {
+		n = (in->len - in->pos) / asz;
+		if (BATextend(bn, bn->batCount + n) != GDK_SUCCEED) {
+			BBPreclaim(bn);
+			return NULL;
+		}
+		memcpy(Tloc(bn, bn->batCount), in->buf + in->pos, n * asz);
+		bn->batCount += (BUN) n;
+		in->pos += n * asz;
+	}
+	BATsetcount(bn, bn->batCount);
+	bn->tseqbase = oid_nil;
+	bn->tnonil = bn->batCount == 0;
+	bn->tnil = false;
+	if (bn->batCount <= 1) {
+		bn->tsorted = true;
+		bn->trevsorted = true;
+		bn->tkey = true;
+	} else {
+		bn->tsorted = false;
+		bn->trevsorted = false;
+		bn->tkey = false;
+	}
+	return bn;
+}
+
+static BAT *
+BATattach_bstream(int tt, bstream *in, BUN size)
+{
+	BAT *bn;
+
+	bn = COLnew(0, tt, size, TRANSIENT);
+	if (bn == NULL)
+		return NULL;
+
+	if (ATOMstorage(tt) < TYPE_str) {
+		return BATattach_as_bytes(tt, in, bn);
+	} else {
+		assert(ATOMstorage(tt) == TYPE_str);
+		return BATattach_str(in, bn);
+	}
 }
 
 /* str mvc_bin_import_table_wrap(.., str *sname, str *tname, str *fname..);
