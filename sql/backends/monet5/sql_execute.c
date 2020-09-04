@@ -414,9 +414,7 @@ SQLstatementIntern(Client c, str *expr, str nme, bit execute, bit output, res_ta
 
 	m->params = NULL;
 	m->session->auto_commit = 0;
-	if (!m->sa)
-		m->sa = sa_create(m->pa); // TODO: refactor A
-	if (!m->sa) {
+	if (!m->sa && !(m->sa = sa_create(m->pa)) ) {
 		msg = createException(SQL,"sql.statement",SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		goto endofcompile;
 	}
@@ -429,12 +427,6 @@ SQLstatementIntern(Client c, str *expr, str nme, bit execute, bit output, res_ta
 	while (msg == MAL_SUCCEED && m->scanner.rs->pos < m->scanner.rs->len) {
 		sql_rel *r;
 
-		if (!m->sa) // TODO: refactor A
-			m->sa = sa_create(m->pa);
-		if (!m->sa) {
-			msg = createException(PARSE, "SQLparser",SQLSTATE(HY013) MAL_MALLOC_FAIL);
-			goto endofcompile;
-		}
 		m->sym = NULL;
 		if ((err = sqlparse(m)) ||
 		    /* Only forget old errors on transaction boundaries */
