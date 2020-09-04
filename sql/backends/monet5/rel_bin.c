@@ -3960,7 +3960,7 @@ rel2bin_insert(backend *be, sql_rel *rel, list *refs)
 		return sql_error(sql, 02, SQLSTATE(27000) "INSERT INTO: triggers failed for table '%s'", t->base.name);
 
 	if (t->idxs.set)
-	for (n = t->idxs.set->h; n && m; n = n->next, m = m->next) {
+	for (n = t->idxs.set->h; n && m; n = n->next) {
 		stmt *is = m->data;
 		sql_idx *i = n->data;
 
@@ -3977,10 +3977,11 @@ rel2bin_insert(backend *be, sql_rel *rel, list *refs)
 			insert = is;
 		if (is)
 			is = stmt_append_idx(be, i, is);
+		/* If the index doesn't hold delta structures, don't update the 'm' variable */
+		m = m->next;
 	}
 
-	for (n = t->columns.set->h, m = inserts->op4.lval->h;
-		n && m; n = n->next, m = m->next) {
+	for (n = t->columns.set->h, m = inserts->op4.lval->h; n && m; n = n->next, m = m->next) {
 
 		stmt *ins = m->data;
 		sql_column *c = n->data;
@@ -4940,7 +4941,7 @@ rel2bin_update(backend *be, sql_rel *rel, list *refs)
 			update_idx = bin_find_column(be, update, ce->l, ce->r);
 			if (update_idx)
 				is = update_idx;
-			if ((hash_index(i->type) && list_length(i->columns) <= 1) || !idx_has_column(i->type)) {
+			if (hash_index(i->type) && list_length(i->columns) <= 1) {
 				is = NULL;
 				update_idx = NULL;
 			}
