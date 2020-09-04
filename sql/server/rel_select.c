@@ -3842,10 +3842,11 @@ rel_cast(sql_query *query, sql_rel **rel, symbol *se, int f)
 
 	if (!e)
 		return NULL;
-	/* strings may need too be truncated */
-	if (tpe ->type ->localtype == TYPE_str) {
-		if (tpe->digits > 0) {
-			sql_subtype *et = exp_subtype(e);
+	/* strings may need to be truncated */
+	if (EC_VARCHAR(tpe->type->eclass) && tpe->digits > 0) {
+		sql_subtype *et = exp_subtype(e);
+		/* truncate only if the number of digits are smaller or from clob */
+		if (et && (tpe->digits < et->digits || et->digits == 0)) {
 			sql_subtype *it = sql_bind_localtype("int");
 			sql_subfunc *c = sql_bind_func(sql->sa, sql->session->schema, "truncate", et, it, F_FUNC);
 			if (c)

@@ -147,7 +147,7 @@ stdout of test 'strings` in directory 'sql/test/pg_regress` itself:
 #SELECT CAST(f1 AS varchar(1)) AS "varchar(char)" FROM CHAR_TBL;
 % sys. # table_name
 % varchar(char) # name
-% varchar # type
+% char # type
 % 1 # length
 [ "a"	]
 [ "A"	]
