@@ -12,6 +12,16 @@ stdout of test 'bincopy_large_strings_on_server` in directory 'sql/test/bincopy`
 
 #START TRANSACTION;
 #CREATE TABLE foo(id INT NOT NULL, s TEXT);
+#COPY BINARY INTO foo(id, s) FROM R'/home/jvr/monets/copybinary/inst/mTests/sql/test/bincopy/bincopy_ints.bin', R'/home/jvr/monets/copybinary/inst/mTests/sql/test/bincopy/bincopy_large_strings.bin' ON SERVER;
+[ 1000000	]
+#SELECT COUNT(id) FROM foo
+#WHERE (id % 10000 <> 0 AND LENGTH(s) = 9)
+#OR    (id % 10000 = 0 AND LENGTH(s) = 280000 + 9);
+% sys.%1 # table_name
+% %1 # name
+% bigint # type
+% 7 # length
+[ 1000000	]
 #ROLLBACK;
 
 # 16:33:57 >  
