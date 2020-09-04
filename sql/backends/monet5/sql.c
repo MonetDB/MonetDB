@@ -3369,15 +3369,34 @@ mvc_bin_import_table_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 				}
 				assert(isa_block_stream(rs));
 				assert(isa_block_stream(ws));
+				bool eof = false;
 				set_prompting(rs, PROMPT2, ws);
-				msg = BATattach_stream(&c, col->type.type->localtype, rs, cnt, &be->mvc->scanner.rs->eof);
+				msg = BATattach_stream(&c, col->type.type->localtype, rs, cnt, &eof);
 				set_prompting(rs, NULL, NULL);
-				if (msg != NULL)
-					goto bailout;
+				if (!eof) {
+					// Didn't read everything, probably due to an error.
+					// Read until message boundary.
+					char buf[8190];
+					while (1) {
+						ssize_t nread = mnstr_read(rs, buf, 1, sizeof(buf));
+						if (nread > 0)
+							continue;
+						if (nread < 0) {
+							// do not overwrite existing error message
+							if (msg == NULL)
+								msg = createException(
+									SQL, "mvc_bin_import_table_wrap",
+									"while syncing read stream: %s", mnstr_peek_error(rs));
+						}
+						break;
+					}
+				}
 				mnstr_write(ws, PROMPT3, sizeof(PROMPT3)-1, 1);
 				mnstr_flush(ws, MNSTR_FLUSH_DATA);
 				joeri_log("mvc_bin_import_table_wrap: onclient done\n");
 				joeri_role(NULL);
+				if (msg != NULL)
+					goto bailout;
 			} else {
 				c = BATattach(tpe, fname, TRANSIENT);
 			}
