@@ -502,7 +502,7 @@ fixdateheap(BAT *b, const char *anme)
 		bnme++;
 	else
 		bnme = nme;
-	sprintf(filename, "BACKUP%c%s", DIR_SEP, bnme);
+	snprintf(filename, sizeof(filename), "BACKUP%c%s", DIR_SEP, bnme);
 
 	/* we don't maintain index structures */
 	HASHdestroy(b);
