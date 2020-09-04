@@ -1,0 +1,13 @@
+
+bincopy_ints_on_client
+bincopy_ints_on_server
+bincopy_more_ints_on_client
+bincopy_more_ints_on_server
+bincopy_strings_on_client
+bincopy_strings_on_server
+bincopy_null_ints_on_client
+bincopy_null_ints_on_server
+bincopy_large_strings_on_client
+bincopy_large_strings_on_server
+bincopy_broken_strings_on_client
+bincopy_broken_strings_on_server

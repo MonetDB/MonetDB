@@ -1,4 +1,4 @@
-stderr of test 'bincopy_large_strings_on_server` in directory 'sql/test` itself:
+stdout of test 'bincopy_large_strings_on_server` in directory 'sql/test/bincopy` itself:
 
 
 # 16:33:55 >  
@@ -10,6 +10,9 @@ stderr of test 'bincopy_large_strings_on_server` in directory 'sql/test` itself:
 # 16:33:56 >  mclient -lsql -ftest -tnone -Eutf-8 -i -e --host=/var/tmp/mtest-30104 --port=35185 --database=mTests_sql_test
 # 16:33:56 >  
 
+#START TRANSACTION;
+#CREATE TABLE foo(id INT NOT NULL, s TEXT);
+#ROLLBACK;
 
 # 16:33:57 >  
 # 16:33:57 >  "Done."
