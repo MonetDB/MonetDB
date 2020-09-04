@@ -2004,14 +2004,17 @@ rel_union_exps(mvc *sql, sql_exp **l, list *vals, int is_tuple)
 {
 	sql_rel *u = NULL;
 	list *exps = NULL;
+	int freevar = 0;
 
 	for (node *n=vals->h; n; n = n->next) {
 		sql_exp *ve = n->data, *r, *s;
 		sql_rel *sq = NULL;
 
-		if (exp_has_rel(ve))
+		if (exp_has_rel(ve)) {
 			sq = exp_rel_get_rel(sql->sa, ve); /* get subquery */
-		else {
+			if (sq)
+				freevar = rel_has_freevar(sql,sq);
+		} else {
 			sq = rel_project(sql->sa, NULL, append(sa_list(sql->sa), ve));
 			set_processed(sq);
 		}
@@ -2040,7 +2043,8 @@ rel_union_exps(mvc *sql, sql_exp **l, list *vals, int is_tuple)
 					sq = rel_project(sql->sa, sq, append(sa_list(sql->sa), ve));
 					set_processed(sq);
 				}
-				exp_set_freevar(sql, ve, sq);
+				if (freevar)
+					exp_set_freevar(sql, ve, sq);
 			}
 		}
 		if (!u) {
