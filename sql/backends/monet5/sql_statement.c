@@ -3063,13 +3063,14 @@ stmt_convert(backend *be, stmt *v, stmt *sel, sql_subtype *f, sql_subtype *t)
 	if (v->nr < 0)
 		return NULL;
 
-	if (t->type->localtype == f->type->localtype &&
+	if ((t->type->localtype == f->type->localtype &&
 	    (t->type->eclass == f->type->eclass ||
 	     (EC_VARCHAR(f->type->eclass) && EC_VARCHAR(t->type->eclass))) &&
 	    !EC_INTERVAL(f->type->eclass) &&
 	    f->type->eclass != EC_DEC &&
 	    (t->digits == 0 || f->digits == t->digits) &&
-	    type_has_tz(t) == type_has_tz(f)) {
+	    type_has_tz(t) == type_has_tz(f)) || 
+		(EC_VARCHAR(f->type->eclass) && EC_VARCHAR(t->type->eclass) && f->digits > 0 && t->digits >= f->digits)) {
 		/* set output type. Despite the MAL code already being generated,
 		   the output type may still be checked */
 		tail_set_type(v, t);
