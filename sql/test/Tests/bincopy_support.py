@@ -9,7 +9,8 @@ try:
 except ImportError:
     import process
 
-TRG = os.environ['TSTTRGDIR']
+# location generated test data files.
+TRG = os.environ.get('BINCOPY_FILES', None) or os.environ['TSTTRGDIR']
 
 def make_fill_in(side):
     if side.lower() == 'client':
