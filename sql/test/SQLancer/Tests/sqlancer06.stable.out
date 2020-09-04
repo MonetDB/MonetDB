@@ -105,8 +105,8 @@ stdout of test 'sqlancer06` in directory 'sql/test/SQLancer` itself:
 #SELECT CAST(SUM(count) AS BIGINT) FROM (SELECT CAST(t2.c2 AS INT) as count FROM t2 LEFT OUTER JOIN t0 ON (CASE CAST(t2.c0 AS VARCHAR(32)) WHEN CAST('*D' AS VARCHAR(32)) THEN CASE 'u--' 
 #WHEN 'Q' THEN 0.81 END WHEN CAST(t2.c2 AS VARCHAR(32)) THEN CASE 51854410 WHEN 0.6132552 THEN 134188918 END WHEN COALESCE('鈋', 'Nb|k', 's{%g.8Bj') THEN CAST(571120738 AS INT) 
 #ELSE CAST(0.13 AS REAL) END) IS NOT NULL CROSS JOIN (SELECT ALL COALESCE(t1.c0, t0.c0) FROM t0, t1) AS sub0) as res;
-% .%13 # table_name
-% %13 # name
+% .%12 # table_name
+% %12 # name
 % bigint # type
 % 2 # length
 [ 54	]
@@ -321,6 +321,58 @@ stdout of test 'sqlancer06` in directory 'sql/test/SQLancer` itself:
 [ true	]
 [ false	]
 #ROLLBACK;
+#START TRANSACTION;
+#CREATE TABLE "sys"."t0" ("c0" TIMESTAMP,"c1" CHARACTER LARGE OBJECT NOT NULL,CONSTRAINT "t0_c1_pkey" PRIMARY KEY ("c1"),CONSTRAINT "t0_c0_c1_unique" UNIQUE ("c0", "c1"));
+#COPY 4 RECORDS INTO "sys"."t0" FROM stdin USING DELIMITERS E'\t',E'\n','"';
+#"1970-01-23 07:23:51.000000"	"1906903205"
+#"1970-01-23 07:23:51.000000"	"0.4338646653291859"
+#"1970-01-23 07:23:51.000000"	"-1882905169"
+#"1970-01-23 07:23:51.000000"	"*"
+[ 4	]
+#CREATE TABLE "sys"."t1" ("c0" CHAR(343) NOT NULL,"c2" SMALLINT NOT NULL,CONSTRAINT "t1_c0_pkey" PRIMARY KEY ("c0"),CONSTRAINT "t1_c0_unique" UNIQUE ("c0"),CONSTRAINT "t1_c2_unique" UNIQUE ("c2"),CONSTRAINT "t1_c2_c0_unique" UNIQUE ("c2", "c0"));
+#COPY 3 RECORDS INTO "sys"."t1" FROM stdin USING DELIMITERS E'\t',E'\n','"';
+#"+}TD"	1
+#""	3
+#"541635614"	5
+[ 3	]
+#CREATE TABLE "sys"."t2" ("c0" CHAR(343) NOT NULL,"c2" SMALLINT NOT NULL);
+#SELECT t0.c1 FROM t0, t1 FULL OUTER JOIN t2 ON TRUE WHERE (t0.c1) BETWEEN SYMMETRIC ('p%AY') AND (t1.c0);
+% sys.t0 # table_name
+% c1 # name
+% clob # type
+% 18 # length
+[ "1906903205"	]
+[ "1906903205"	]
+[ "0.4338646653291859"	]
+[ "0.4338646653291859"	]
+[ "-1882905169"	]
+[ "-1882905169"	]
+[ "*"	]
+#SELECT t1.c2 FROM t0, t1 FULL OUTER JOIN t2 ON NOT (((TIME '03:59:32') IS NULL) = TRUE) WHERE (t0.c1) NOT BETWEEN SYMMETRIC ('p%AY') AND (t1.c0);
+% .t1 # table_name
+% c2 # name
+% smallint # type
+% 1 # length
+[ 5	]
+[ 5	]
+[ 5	]
+[ 1	]
+[ 5	]
+#SELECT CAST(SUM(count) AS BIGINT) FROM (SELECT ALL CAST((t0.c1) NOT BETWEEN SYMMETRIC ('p%AY') AND (t1.c0) AS INT) as count FROM t0, t1 FULL OUTER JOIN t2 ON NOT (((TIME '03:59:32') IS NULL) = TRUE)) as res;
+% sys.%5 # table_name
+% %5 # name
+% bigint # type
+% 1 # length
+[ 5	]
+#ROLLBACK;
+#CREATE TABLE t1(c0 TIME  DEFAULT (TIME '23:27:06'), c1 CHAR(317));
+#INSERT INTO t1(c1, c0) VALUES(r'V', TIME '14:09:48'), (r'c', TIME '01:06:46');
+[ 2	]
+#DELETE FROM t1 WHERE NOT (CAST(((854517748)/(-1764883455)) AS BOOLEAN));
+[ 2	]
+#INSERT INTO t1(c0) VALUES(TIME '09:41:58');
+[ 1	]
+#DROP TABLE t1;
 
 # 19:38:32 >  
 # 19:38:32 >  "Done."
