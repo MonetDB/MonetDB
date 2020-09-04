@@ -1800,8 +1800,9 @@ select2_join2(backend *be, stmt *op1, stmt *op2, stmt *op3, int cmp, stmt **Sub,
 		if (type == st_uselect2) {
 			if (cmp & CMP_BETWEEN)
 				q = pushBit(mb, q, TRUE); /* all nil's are != */
-		} else
-			q = pushBit(mb, q, FALSE);
+		} else {
+			q = pushBit(mb, q, (cmp & CMP_SYMMETRIC)?TRUE:FALSE);
+		}
 		if (type == st_join2)
 			q = pushNil(mb, q, TYPE_lng); /* estimate */
 		if (q == NULL)
@@ -2863,7 +2864,7 @@ stmt_append_bulk(backend *be, stmt *c, list *l)
 	if (c->nr < 0)
 		return NULL;
 
-	/* currently appendBulk accepts its inputs all either scalar or vectors 
+	/* currently appendBulk accepts its inputs all either scalar or vectors
 	   if there is one vector and any scala, then the scalars mut be upgraded to vectors */
 	for (node *n = l->h; n; n = n->next) {
 		stmt *t = n->data;
