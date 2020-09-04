@@ -3160,7 +3160,7 @@ read_more(bstream *in)
 	return true;
 }
 
-static BAT *
+static str
 BATattach_str(bstream *in, BAT *bn)
 {
 	size_t n;
@@ -3173,7 +3173,7 @@ BATattach_str(bstream *in, BAT *bn)
 				if ((c & 0xC0) == 0x80)
 					u--;
 				else
-					goto bailout;
+					goto bad_utf8;
 			} else if ((c & 0xF8) == 0xF0) {
 				u = 3;
 			} else if ((c & 0xF0) == 0xE0) {
@@ -3181,7 +3181,7 @@ BATattach_str(bstream *in, BAT *bn)
 			} else if ((c & 0xE0) == 0xC0) {
 				u = 1;
 			} else if ((c & 0xC0) == 0x80) {
-				goto bailout;
+				goto bad_utf8;
 			} else if (c == '\r') {
 				if (n + 1 < in->len
 					&& in->buf[n + 1] == '\n') {
@@ -3201,14 +3201,15 @@ BATattach_str(bstream *in, BAT *bn)
 			}
 		}
 	}
-	return bn;
+	return MAL_SUCCEED;
 
-  bailout:
-	BBPreclaim(bn);
-	return NULL;
+bailout:
+	return createException(SQL, "BATattach_stream", GDK_EXCEPTION);
+bad_utf8:
+	return createException(SQL, "BATattach_stream", "malformed utf-8 byte sequence");
 }
 
-static BAT *
+static str
 BATattach_as_bytes(int tt, bstream *in, BAT *bn)
 {
 	size_t n;
@@ -3217,8 +3218,9 @@ BATattach_as_bytes(int tt, bstream *in, BAT *bn)
 	while (read_more(in)) {
 		n = (in->len - in->pos) / asz;
 		if (BATextend(bn, bn->batCount + n) != GDK_SUCCEED) {
+			str msg = createException(SQL, "BATattach_stream", GDK_EXCEPTION);
 			BBPreclaim(bn);
-			return NULL;
+			return msg;
 		}
 		memcpy(Tloc(bn, bn->batCount), in->buf + in->pos, n * asz);
 		bn->batCount += (BUN) n;
@@ -3237,23 +3239,53 @@ BATattach_as_bytes(int tt, bstream *in, BAT *bn)
 		bn->trevsorted = false;
 		bn->tkey = false;
 	}
-	return bn;
+	return MAL_SUCCEED;
 }
 
-static BAT *
-BATattach_bstream(int tt, bstream *in, BUN size)
+static str
+BATattach_stream(BAT **result, int tt, stream *s, BUN size, bool *eof)
 {
-	BAT *bn;
+	str msg = MAL_SUCCEED;
+	BAT *bn = NULL;
+	bstream *in = NULL;
 
 	bn = COLnew(0, tt, size, TRANSIENT);
-	if (bn == NULL)
-		return NULL;
+	if (bn == NULL) {
+		msg = createException(SQL, "BATattach_stream", GDK_EXCEPTION);
+		goto end;
+	}
 
-	if (ATOMstorage(tt) < TYPE_str) {
-		return BATattach_as_bytes(tt, in, bn);
+	in = bstream_create(s, 1 << 20);
+	if (in == NULL) {
+		msg = createException(SQL, "sql", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		goto end;
+	}
+
+	switch (ATOMstorage(tt)) {
+	case TYPE_str:
+		msg = BATattach_str(in, bn);
+		break;
+	default:
+		msg = BATattach_as_bytes(tt, in, bn);
+		break;
+	}
+	if (msg != MAL_SUCCEED)
+		goto end;
+
+end:
+	if (in != NULL){
+		*eof = in->eof;
+		in->s = NULL;
+		bstream_destroy(in);
+	}
+	if (msg == NULL) {
+		*result = bn;
+		return NULL;
 	} else {
-		assert(ATOMstorage(tt) == TYPE_str);
-		return BATattach_str(in, bn);
+		*result = NULL;
+		if (bn != NULL)
+			BBPreclaim(bn);
+		return msg;
 	}
 }
 
@@ -3337,24 +3369,13 @@ mvc_bin_import_table_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 				}
 				assert(isa_block_stream(rs));
 				assert(isa_block_stream(ws));
-				bstream *s = bstream_create(rs, 1 << 20);
-				if (!s) {
-					msg = createException(SQL, "sql", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-					goto bailout;
-				}
 				set_prompting(rs, PROMPT2, ws);
-				c = BATattach_bstream(col->type.type->localtype, s, cnt);
+				msg = BATattach_stream(&c, col->type.type->localtype, rs, cnt, &be->mvc->scanner.rs->eof);
 				set_prompting(rs, NULL, NULL);
-				if (!c) {
-					bstream_destroy(s);
-					msg = createException(SQL, "sql", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+				if (msg != NULL)
 					goto bailout;
-				}
 				mnstr_write(ws, PROMPT3, sizeof(PROMPT3)-1, 1);
 				mnstr_flush(ws, MNSTR_FLUSH_DATA);
-				be->mvc->scanner.rs->eof = s->eof;
-				s->s = NULL;
-				bstream_destroy(s);
 				joeri_log("mvc_bin_import_table_wrap: onclient done\n");
 				joeri_role(NULL);
 			} else {
