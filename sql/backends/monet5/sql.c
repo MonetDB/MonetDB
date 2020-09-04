@@ -3342,43 +3342,6 @@ mvc_bin_import_table_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 				bstream_destroy(s);
 				joeri_log("mvc_bin_import_table_wrap: onclient done\n");
 				joeri_role(NULL);
-			} else if (tpe == TYPE_str) {
-				/* get the BAT and fill it with the strings */
-				c = COLnew(0, TYPE_str, 0, TRANSIENT);
-				if (c == NULL) {
-					msg = createException(SQL, "sql", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-					goto bailout;
-				}
-				/* this code should be extended to
-				 * deal with larger text strings. */
-				FILE *f = fopen(fname, "r");
-				if (f == NULL) {
-					BBPreclaim(c);
-					msg = createException(SQL, "sql", SQLSTATE(42000) "Failed to re-open file %s", fname);
-					goto bailout;
-				}
-
-				const size_t bufsiz = 128 * BLOCK;
-				char *buf = GDKmalloc(bufsiz);
-				if (buf == NULL) {
-					fclose(f);
-					BBPreclaim(c);
-					msg = createException(SQL, "sql", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-					goto bailout;
-				}
-				while (fgets(buf, bufsiz, f) != NULL) {
-					char *t = strrchr(buf, '\n');
-					if (t)
-						*t = 0;
-					if (BUNappend(c, buf, false) != GDK_SUCCEED) {
-						BBPreclaim(c);
-						fclose(f);
-						msg = createException(SQL, "sql", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-						goto bailout;
-					}
-				}
-				fclose(f);
-				GDKfree(buf);
 			} else {
 				c = BATattach(tpe, fname, TRANSIENT);
 			}

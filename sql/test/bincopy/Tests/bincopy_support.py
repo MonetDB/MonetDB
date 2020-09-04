@@ -10,7 +10,7 @@ except ImportError:
     import process
 
 # location generated test data files.
-TRG = os.environ.get('BINCOPY_FILES', None) or os.environ['TSTTRGDIR']
+BINCOPY_FILES = os.environ.get('BINCOPY_FILES', None) or os.environ['TSTTRGDIR']
 
 def make_fill_in(side):
     if side.lower() == 'client':
@@ -27,7 +27,7 @@ def make_fill_in(side):
         generator_name = 'gen_' + var
         if generator_name in globals():
             base = f'bincopy_{var}.bin'
-            filename = os.path.join(TRG, base)
+            filename = os.path.join(BINCOPY_FILES, base)
             f = open(filename, 'wb')
             gen = globals()[generator_name]
             gen(f)
@@ -61,7 +61,7 @@ def gen_more_ints(outfile):
 def gen_strings(outfile):
     f = codecs.getwriter('utf-8')(outfile)
     for i in range(1_000_000):
-        f.write(f"int{i}\n")
+        f.write(f"int{i}\0")
 
 def gen_null_ints(outfile):
     nil = -(1<<31)
@@ -76,11 +76,11 @@ def gen_large_strings(outfile):
         if i % 10_000 == 0:
             n = 280_000
             f.write("a" * n)
-        f.write("\n")
+        f.write("\0")
 
 def gen_broken_strings(outfile):
-    good = bytes('bröken\n', 'utf-8')
-    bad = bytes('bröken\n', 'latin1')
+    good = bytes('bröken\0', 'utf-8')
+    bad = bytes('bröken\0', 'latin1')
     for i in range(1_000_000):
         if i == 123_456:
             outfile.write(bad)
