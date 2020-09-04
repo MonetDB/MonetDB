@@ -3274,7 +3274,8 @@ BATattach_stream(BAT **result, int tt, stream *s, BUN size, bool *eof)
 
 end:
 	if (in != NULL){
-		*eof = in->eof;
+		if (eof != NULL)
+			*eof = in->eof;
 		in->s = NULL;
 		bstream_destroy(in);
 	}
@@ -3398,10 +3399,18 @@ mvc_bin_import_table_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 				if (msg != NULL)
 					goto bailout;
 			} else {
-				c = BATattach(tpe, fname, TRANSIENT);
+				stream *s = open_rstream(fname);
+				if (s != NULL)
+					msg = BATattach_stream(&c, tpe, s, 0, NULL);
+				else
+					msg = createException(
+						SQL, "mvc_bin_import_table_wrap",
+						SQLSTATE(42000) "Failed to attach file %s: %s",
+						fname, mnstr_peek_error(NULL));
 			}
 			if (c == NULL) {
-				msg = createException(SQL, "sql", SQLSTATE(42000) "Failed to attach file %s", fname);
+				if (msg == NULL)
+					msg = createException(SQL, "sql", SQLSTATE(42000) "Failed to attach file %s", fname);
 				goto bailout;
 			}
 			if (BATsetaccess(c, BAT_READ) != GDK_SUCCEED) {

@@ -21,9 +21,10 @@ stderr of test 'bincopy_broken_strings_on_client` in directory 'sql/test/bincopy
 
 
 
-# 10:17:52 >  
-# 10:17:52 >  "/usr/bin/python3.7" "bincopy_broken_strings_on_client.SQL.py" "bincopy_broken_strings_on_client"
-# 10:17:52 >  
+MAPI  = (monetdb) /var/tmp/mtest-29878/.s.monetdb.38969
+QUERY = COPY BINARY INTO foo(id, s) FROM R'/tmp/jvr/bincopy_ints.bin', R'/tmp/jvr/bincopy_broken_strings.bin' ON CLIENT;
+
+ERROR = !malformed utf-8 byte sequence
 
 
 # 10:17:52 >  

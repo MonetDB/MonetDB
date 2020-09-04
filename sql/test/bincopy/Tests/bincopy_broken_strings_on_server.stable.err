@@ -28,12 +28,12 @@ stderr of test 'bincopy_broken_strings_on_server` in directory 'sql/test/bincopy
 # 10:17:52 >  mclient -lsql -ftest -tnone -Eutf-8 -i -e --host=/var/tmp/mtest-17076 --port=32201 --database=mTests_sql_test_bincopy
 # 10:17:52 >  
 
-MAPI  = (monetdb) /var/tmp/mtest-17076/.s.monetdb.32201
-QUERY = COPY BINARY INTO foo(id, s) FROM R'/home/jvr/monets/copybinary/inst/mTests/sql/test/bincopy/bincopy_ints.bin', R'/home/jvr/monets/copybinary/inst/mTests/sql/test/bincopy/bincopy_broken_strings.bin' ON SERVER;
+MAPI  = (monetdb) /var/tmp/mtest-29878/.s.monetdb.38969
+QUERY = COPY BINARY INTO foo(id, s) FROM R'/tmp/jvr/bincopy_ints.bin', R'/tmp/jvr/bincopy_broken_strings.bin' ON SERVER;
 
-CODE  = 42000
+ERROR = !malformed utf-8 byte sequence
 
-# 10:17:53 >  
-# 10:17:53 >  "Done."
-# 10:17:53 >  
+# 16:40:12 >  
+# 16:40:12 >  "Done."
+# 16:40:12 >  
 
