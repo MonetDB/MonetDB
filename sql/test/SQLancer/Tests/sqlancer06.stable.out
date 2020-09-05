@@ -393,6 +393,151 @@ stdout of test 'sqlancer06` in directory 'sql/test/SQLancer` itself:
 #DROP TABLE t0;
 #DROP TABLE t1;
 #DROP TABLE t2;
+#CREATE TABLE t0(c1 INTERVAL SECOND UNIQUE);
+#DROP INDEX t0_c1_unique;
+#DROP TABLE t0;
+#START TRANSACTION;
+#CREATE TABLE "sys"."t0" ("c0" CHAR(473),"c1" INTERVAL SECOND NOT NULL,
+#	CONSTRAINT "t0_c0_unique" UNIQUE ("c0"),
+#	CONSTRAINT "t0_c1_unique" UNIQUE ("c1"),
+#	CONSTRAINT "t0_c0_c1_unique" UNIQUE ("c0", "c1")
+#);
+#CREATE INDEX "i0" ON "sys"."t0" ("c1", "c0");
+#COPY 18 RECORDS INTO "sys"."t0" FROM stdin USING DELIMITERS E'\t',E'\n','"';
+#"Qnec4v3|"	916700621.000
+#"B"	916700622.000
+#NULL	2052029418.000
+#"R"	1043124199.000
+#""	165830731.000
+#NULL	345888540.000
+#"[|"	393122059.000
+#" 瘞o"	1919932925.000
+#NULL	894242295.000
+#NULL	973935741.000
+#"W~[G-"	449082176.000
+#NULL	553114649.000
+#"MH锈"	2121838025.000
+#"'F6ꒉ"	97497547.000
+#NULL	2056175383.000
+#NULL	836812973.000
+#"/j"	97497548.000
+#"\t()Y%"	709557814.000
+[ 18	]
+#CREATE TABLE "sys"."t1" ("c0" CHAR(473) NOT NULL);
+#COPY 40 RECORDS INTO "sys"."t1" FROM stdin USING DELIMITERS E'\t',E'\n','"';
+#"v0"
+#"?}z#4齩"
+#"}IFT"
+#"A铑"
+#"1953144617"
+#"F฀r.(H"
+#"Vt1"
+#"E+Tx4A"
+#"b"
+#"O-,j3맲"
+#"0.6948820797452814"
+#"\015Hꢖ"
+#"^"
+#"RﻻK2"
+#"858302044"
+#"鄌"
+#"Y7瑚?뮱Qpt鿌"
+#"["
+#"-1593184632"
+#"0.4196422515625643"
+#"F9"
+#"VA"
+#"fN\n?菸\015Bb"
+#"0.3418058502965632"
+#"pM\015"
+#"{dT"
+#""
+#"vT"
+#"Ri5D"
+#"o_⑦l"
+#" "
+#"j"
+#""
+#""
+#"1814883154"
+#"715827645"
+#""
+#"pv"
+#"'AㆁB^UrHl"
+#"670216259"
+[ 40	]
+#CREATE TABLE "sys"."t2" ("c0" DECIMAL(18,3) NOT NULL,"c1" DATE DEFAULT DATE '1970-01-07',
+#	CONSTRAINT "t2_c0_pkey" PRIMARY KEY ("c0"),
+#	CONSTRAINT "t2_c1_c0_unique" UNIQUE ("c1", "c0")
+#);
+#COPY 8 RECORDS INTO "sys"."t2" FROM stdin USING DELIMITERS E'\t',E'\n','"';
+#0.203	1970-01-16
+#0.252	1970-01-07
+#0.511	1970-01-07
+#0.880	1970-01-23
+#0.209	1970-01-07
+#0.713	1970-01-07
+#0.199	1970-01-07
+#0.109	1970-01-07
+[ 8	]
+#SELECT count(*) FROM t1 WHERE t1.c0 <> ALL(SELECT '1' WHERE FALSE);
+% sys.%4 # table_name
+% %4 # name
+% bigint # type
+% 2 # length
+[ 40	]
+#SELECT t1.c0 FROM t1 WHERE t1.c0 <> ALL(SELECT DISTINCT CAST(0.5646222839477373 AS INT) FROM t0, t1 WHERE (t0.c1) NOT BETWEEN ASYMMETRIC (COALESCE(t0.c1, t0.c1)) AND (t0.c1));
+% sys.t1 # table_name
+% c0 # name
+% char # type
+% 473 # length
+[ "v0"	]
+[ "?}z#4齩"	]
+[ "}IFT"	]
+[ "A铑"	]
+[ "1953144617"	]
+[ "F฀r.(H"	]
+[ "Vt1"	]
+[ "E+Tx4A"	]
+[ "b"	]
+[ "O-,j3맲"	]
+[ "0.6948820797452814"	]
+[ "\rHꢖ"	]
+[ "^"	]
+[ "RﻻK2"	]
+[ "858302044"	]
+[ "鄌"	]
+[ "Y7瑚?뮱Qpt鿌"	]
+[ "["	]
+[ "-1593184632"	]
+[ "0.4196422515625643"	]
+[ "F9"	]
+[ "VA"	]
+[ "fN\n?菸\rBb"	]
+[ "0.3418058502965632"	]
+[ "pM\r"	]
+[ "{dT"	]
+[ ""	]
+[ "vT"	]
+[ "Ri5D"	]
+[ "o_⑦l"	]
+[ " "	]
+[ "j"	]
+[ ""	]
+[ ""	]
+[ "1814883154"	]
+[ "715827645"	]
+[ ""	]
+[ "pv"	]
+[ "'AㆁB^UrHl"	]
+[ "670216259"	]
+#SELECT CAST(SUM(count) AS BIGINT) FROM (SELECT ALL CAST(t1.c0 <> ALL(SELECT DISTINCT CAST(0.5646222839477373 AS INT) FROM t0, t1 WHERE (t0.c1) NOT BETWEEN ASYMMETRIC (COALESCE(t0.c1, t0.c1)) AND (t0.c1)) AS INT) as count FROM t1) as res;
+% .%6 # table_name
+% %6 # name
+% bigint # type
+% 2 # length
+[ 40	]
+#ROLLBACK;
 
 # 19:38:32 >  
 # 19:38:32 >  "Done."
