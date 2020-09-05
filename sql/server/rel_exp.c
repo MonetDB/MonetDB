@@ -2783,7 +2783,7 @@ convert_atom(atom *a, sql_subtype *rt)
 	a->tpe = *rt;
 }
 
-static sql_exp *
+sql_exp *
 exp_convert_inplace(mvc *sql, sql_subtype *t, sql_exp *exp)
 {
 	atom *a;

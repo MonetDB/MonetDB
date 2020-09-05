@@ -3846,11 +3846,21 @@ rel_cast(sql_query *query, sql_rel **rel, symbol *se, int f)
 	if (EC_VARCHAR(tpe->type->eclass) && tpe->digits > 0) {
 		sql_subtype *et = exp_subtype(e);
 		/* truncate only if the number of digits are smaller or from clob */
-		if (et && (tpe->digits < et->digits || et->digits == 0)) {
-			sql_subtype *it = sql_bind_localtype("int");
-			sql_subfunc *c = sql_bind_func(sql->sa, sql->session->schema, "truncate", et, it, F_FUNC);
-			if (c)
-				e = exp_binop(sql->sa, e, exp_atom_int(sql->sa, tpe->digits), c);
+		if (et && EC_VARCHAR(et->type->eclass) && (tpe->digits < et->digits || et->digits == 0)) {
+			sql_subfunc *f;
+			sql_exp *ne = exp_convert_inplace(sql, tpe, e); /* first try cheap internal (in-place) conversion */
+
+			if (ne) {
+				exp_label(sql->sa, ne, ++sql->label);
+				return ne;
+			}
+			f = sql_bind_func(sql->sa, sql->session->schema, "truncate", et, sql_bind_localtype("int"), F_FUNC);
+			assert(f);
+			ne = exp_binop(sql->sa, e, exp_atom_int(sql->sa, tpe->digits), f);
+			/* set output type as the one to be casted */
+			f->res->h->data = sql_create_subtype(sql->sa, tpe->type, tpe->digits, tpe->scale);
+			exp_label(sql->sa, ne, ++sql->label);
+			return ne;
 		}
 	}
 	if (e)
