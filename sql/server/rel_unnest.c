@@ -2386,7 +2386,7 @@ rewrite_compare(visitor *v, sql_rel *rel, sql_exp *e, int depth)
 				if (!lsq)
 					lsq = rel->l;
 				if (sq)
-					(void)rewrite_inner(v->sql, rel, sq, op_join);
+					(void)rewrite_inner(v->sql, rel, sq, depth?op_left:op_join);
 
 				if (quantifier) {
 					sql_subfunc *a;
