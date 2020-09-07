@@ -585,6 +585,39 @@ stdout of test 'sqlancer06` in directory 'sql/test/SQLancer` itself:
 [ 0	]
 [ 0	]
 #ROLLBACK;
+#START TRANSACTION;
+#CREATE TABLE "sys"."t0" ("c0" INTERVAL SECOND,CONSTRAINT "t0_c0_unique" UNIQUE ("c0"));
+#COPY 5 RECORDS INTO "sys"."t0" FROM stdin USING DELIMITERS E'\t',E'\n','"';
+#1177718831.000
+#216055657.000
+#1178886037.000
+#859694812.000
+#979878169.000
+[ 5	]
+#CREATE TABLE "sys"."t1" ("c0" INTERVAL SECOND);
+#COPY 4 RECORDS INTO "sys"."t1" FROM stdin USING DELIMITERS E'\t',E'\n','"';
+#506889709.000
+#2018784278.000
+#106857823.000
+#NULL
+[ 4	]
+#CREATE TABLE "sys"."t2" ("c0" INTERVAL SECOND);
+#COPY 3 RECORDS INTO "sys"."t2" FROM stdin USING DELIMITERS E'\t',E'\n','"';
+#645994103.000
+#368127331.000
+#1669757164.000
+[ 3	]
+#SELECT t2.c0 FROM t2 RIGHT OUTER JOIN t0 ON t2.c0 = ANY(SELECT t1.c0 FROM t1, t2);
+% .t2 # table_name
+% c0 # name
+% sec_interval # type
+% 5 # length
+[ NULL	]
+[ NULL	]
+[ NULL	]
+[ NULL	]
+[ NULL	]
+#ROLLBACK;
 
 # 19:38:32 >  
 # 19:38:32 >  "Done."

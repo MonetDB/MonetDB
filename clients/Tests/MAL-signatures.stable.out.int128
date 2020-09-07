@@ -70,9 +70,9 @@ stdout of test 'MAL-signatures` in directory 'clients` itself:
 % clob,	clob,	clob,	clob,	clob # type
 % 12,	28,	313,	42,	0 # length
 [ "aggr",	"all",	"command aggr.all(X_1:bat[:any_1]):any_1 ",	"SQLall;",	""	]
-[ "aggr",	"allnotequal",	"command aggr.allnotequal(X_1:bat[:any_1], X_2:bat[:any_1]):bit ",	"SQLallnotequal;",	""	]
+[ "aggr",	"allnotequal",	"pattern aggr.allnotequal(X_1:bat[:any_1], X_2:bat[:any_1]):bit ",	"SQLallnotequal;",	""	]
 [ "aggr",	"anyequal",	"pattern aggr.anyequal(X_1:any_1, X_2:any_1):bit ",	"CMDvarEQ;",	""	]
-[ "aggr",	"anyequal",	"command aggr.anyequal(X_1:bat[:any_1], X_2:bat[:any_1]):bit ",	"SQLanyequal;",	""	]
+[ "aggr",	"anyequal",	"pattern aggr.anyequal(X_1:bat[:any_1], X_2:bat[:any_1]):bit ",	"SQLanyequal;",	""	]
 [ "aggr",	"avg",	"command aggr.avg(X_1:bat[:bte], X_2:bat[:oid], X_3:bat[:any_1]):bat[:dbl] ",	"AGGRavg13_dbl;",	""	]
 [ "aggr",	"avg",	"command aggr.avg(X_1:bat[:dbl], X_2:bat[:oid], X_3:bat[:any_1]):bat[:dbl] ",	"AGGRavg13_dbl;",	""	]
 [ "aggr",	"avg",	"command aggr.avg(X_1:bat[:flt], X_2:bat[:oid], X_3:bat[:any_1]):bat[:dbl] ",	"AGGRavg13_dbl;",	""	]
@@ -866,6 +866,8 @@ stdout of test 'MAL-signatures` in directory 'clients` itself:
 [ "bat",	"setPersistent",	"command bat.setPersistent(X_1:bat[:any_1]):void ",	"BKCsetPersistent;",	""	]
 [ "bat",	"setTransient",	"command bat.setTransient(X_1:bat[:any_1]):void ",	"BKCsetTransient;",	""	]
 [ "bat",	"single",	"pattern bat.single(X_1:any_1):bat[:any_1] ",	"CMDBATsingle;",	""	]
+[ "bataggr",	"allnotequal",	"pattern bataggr.allnotequal(X_1:bat[:any_1], X_2:bat[:any_1]):bit ",	"SQLallnotequal;",	""	]
+[ "bataggr",	"anyequal",	"pattern bataggr.anyequal(X_1:bat[:any_1], X_2:bat[:any_1]):bat[:bit] ",	"SQLanyequal;",	""	]
 [ "bataggr",	"exist",	"pattern bataggr.exist(X_1:any_1):bat[:bit] ",	"SQLexist;",	""	]
 [ "bataggr",	"exist",	"pattern bataggr.exist(X_1:bat[:any_1]):bat[:bit] ",	"SQLexist;",	""	]
 [ "bataggr",	"exist",	"pattern bataggr.exist(X_1:bat[:any_1]):bit ",	"SQLexist;",	""	]
