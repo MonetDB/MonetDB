@@ -98,6 +98,14 @@ def gen_newline_strings(outfile):
     for i in range(1_000_000):
         f.write(f"rn\r\nr\r{i}\0")
 
+def gen_null_strings(outfile):
+    for i in range(1_000_000):
+        if i % 2 == 0:
+            outfile.write(b"\x80\x00")
+        else:
+            outfile.write(b"banana\0")
+
+
 INTS = """
 CREATE TABLE foo(id INT NOT NULL);
 COPY BINARY INTO foo(id) FROM @ints@ @ON@;
@@ -144,4 +152,12 @@ NEWLINE_STRINGS = r"""
 CREATE TABLE foo(id INT NOT NULL, s TEXT);
 COPY BINARY INTO foo(id, s) FROM @ints@, @newline_strings@ @ON@;
 SELECT COUNT(id) FROM foo WHERE s = (E'rn\nr\r' || id);
+"""
+
+NULL_STRINGS = """
+CREATE TABLE foo(id INT NOT NULL, s TEXT);
+COPY BINARY INTO foo(id, s) FROM @ints@, @null_strings@ @ON@;
+SELECT COUNT(id) FROM foo
+WHERE (id % 2 = 0 AND s IS NULL)
+OR    (id % 2 = 1 AND s = 'banana');
 """

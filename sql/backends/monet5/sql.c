@@ -3172,36 +3172,44 @@ BATattach_str(bstream *in, BAT *bn)
 		// the middle loop looks for complete strings
 		char *end;
 		while ((end = memchr(&in->buf[in->pos], '\0', in->len - in->pos)) != NULL) {
+			unsigned char *r = (unsigned char*) &in->buf[in->pos];
+			unsigned char *w = (unsigned char*) &in->buf[in->pos];
+			const char *s;
 
-			// the inner loop validates them and converts line endings.
-			unsigned int u = 0; // utf-8 state
-			char *r = &in->buf[in->pos];
-			char *w = &in->buf[in->pos];
-			while (1) {
-				if (u > 0) {
-					// must be an utf-8 continuation byte.
-					if ((*r & 0xC0) == 0x80)    // 10xx xxxx
-						u--;
-					else
+			if (*r == 0x80 && *(r+1) == 0) {
+				// technically a utf-8 violation but we treat it as the NULL marker
+				s = str_nil;
+			} else {
+				s = &in->buf[in->pos]; // to be validated first
+
+				// the inner loop validates them and converts line endings.
+				unsigned int u = 0; // utf-8 state
+				while (1) {
+					if (u > 0) {
+						// must be an utf-8 continuation byte.
+						if ((*r & 0xC0) == 0x80)    // 10xx xxxx
+							u--;
+						else
+							goto bad_utf8;
+					} else if ((*r & 0xF8) == 0xF0) // 1111_0xxx
+						u = 3;
+					else if ((*r & 0xF0) == 0xE0)   // 1110_xxxx
+						u = 2;
+					else if ((*r & 0xE0) == 0xC0)   // 110x xxxx
+						u = 1;
+					else if ((*r & 0xC0) == 0x80)   // 10xx xxxx
 						goto bad_utf8;
-				} else if ((*r & 0xF8) == 0xF0) // 1111_0xxx
-					u = 3;
-				else if ((*r & 0xF0) == 0xE0)   // 1110_xxxx
-					u = 2;
-				else if ((*r & 0xE0) == 0xC0)   // 110x xxxx
-					u = 1;
-				else if ((*r & 0xC0) == 0x80)   // 10xx xxxx
-					goto bad_utf8;
-				else if (*r == '\r' && *(r+1) == '\n') // convert!
-					r++;
-				else if (*r == '\0') { // guaranteed to happen.
-					*w = '\0';
-					break;
+					else if (*r == '\r' && *(r+1) == '\n') // convert!
+						r++;
+					else if (*r == '\0') { // guaranteed to happen.
+						*w = '\0';
+						break;
+					}
+					*w++ = *r++;
 				}
-				*w++ = *r++;
 			}
 
-			if (BUNappend(bn, &in->buf[in->pos], false) != GDK_SUCCEED)
+			if (BUNappend(bn, s, false) != GDK_SUCCEED)
 				return createException(SQL, "BATattach_stream", GDK_EXCEPTION);
 
 			in->pos = end - in->buf + 1;
