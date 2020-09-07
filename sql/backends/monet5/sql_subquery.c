@@ -602,12 +602,12 @@ bailout:
 		} \
 	} while (0)
 
-#define SQLanyequal_or_not_imp_multi(TPE, OUTPUT) \
+#define SQLanyequal_or_not_imp_multi(TPE, CMP) \
 	do {							\
 		TPE *rp = (TPE*)Tloc(r, 0), *lp = (TPE*)Tloc(l, 0);	\
 		for (BUN q = 0; q < o; q++) {	\
 			TPE c = rp[q], d = lp[q]; \
-			res_l[q] = (is_##TPE##_nil(c) || is_##TPE##_nil(d)) ? bit_nil : c == d; \
+			res_l[q] = (is_##TPE##_nil(c) || is_##TPE##_nil(d)) ? bit_nil : c CMP d; \
 		} \
 	} while (0)
 
@@ -635,35 +635,37 @@ SQLanyequal(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		goto bailout;
 	}
 
+	o = BATcount(r);
 	if (bret) {
-		o = BATcount(r);
-		if ((res = COLnew(r->hseqbase, TYPE_bit, o, TRANSIENT)) == NULL)
+		if (!(res = COLnew(r->hseqbase, TYPE_bit, o, TRANSIENT))) {
+			msg = createException(SQL, "sql.any =", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			goto bailout;
-		bit *restrict res_l = (bit *) Tloc(res, 0);
+		}
+		bit *restrict res_l = (bit*) Tloc(res, 0);
 
 		switch (ATOMbasetype(l->ttype)) {
 		case TYPE_bte:
-			SQLanyequal_or_not_imp_multi(bte, TRUE);
+			SQLanyequal_or_not_imp_multi(bte, ==);
 			break;
 		case TYPE_sht:
-			SQLanyequal_or_not_imp_multi(sht, TRUE);
+			SQLanyequal_or_not_imp_multi(sht, ==);
 			break;
 		case TYPE_int:
-			SQLanyequal_or_not_imp_multi(int, TRUE);
+			SQLanyequal_or_not_imp_multi(int, ==);
 			break;
 		case TYPE_lng:
-			SQLanyequal_or_not_imp_multi(lng, TRUE);
+			SQLanyequal_or_not_imp_multi(lng, ==);
 			break;
 #ifdef HAVE_HGE
 		case TYPE_hge:
-			SQLanyequal_or_not_imp_multi(hge, TRUE);
+			SQLanyequal_or_not_imp_multi(hge, ==);
 			break;
 #endif
 		case TYPE_flt:
-			SQLanyequal_or_not_imp_multi(flt, TRUE);
+			SQLanyequal_or_not_imp_multi(flt, ==);
 			break;
 		case TYPE_dbl:
-			SQLanyequal_or_not_imp_multi(dbl, TRUE);
+			SQLanyequal_or_not_imp_multi(dbl, ==);
 			break;
 		default: {
 			int (*ocmp) (const void *, const void *) = ATOMcompare(l->ttype);
@@ -687,7 +689,7 @@ SQLanyequal(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		bit *ret = getArgReference_bit(stk, pci, 0);
 
 		*ret = FALSE;
-		if (BATcount(r) > 0) {
+		if (o > 0) {
 			switch (ATOMbasetype(l->ttype)) {
 			case TYPE_bte:
 				SQLanyequal_or_not_imp_single(bte, TRUE);
@@ -892,35 +894,37 @@ SQLallnotequal(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		goto bailout;
 	}
 
+	o = BATcount(r);
 	if (bret) {
-		o = BATcount(r);
-		if ((res = COLnew(r->hseqbase, TYPE_bit, o, TRANSIENT)) == NULL)
+		if (!(res = COLnew(r->hseqbase, TYPE_bit, o, TRANSIENT))) {
+			msg = createException(SQL, "sql.all <>", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			goto bailout;
-		bit *restrict res_l = (bit *) Tloc(res, 0);
+		}
+		bit *restrict res_l = (bit*) Tloc(res, 0);
 
 		switch (ATOMbasetype(l->ttype)) {
 		case TYPE_bte:
-			SQLanyequal_or_not_imp_multi(bte, FALSE);
+			SQLanyequal_or_not_imp_multi(bte, !=);
 			break;
 		case TYPE_sht:
-			SQLanyequal_or_not_imp_multi(sht, FALSE);
+			SQLanyequal_or_not_imp_multi(sht, !=);
 			break;
 		case TYPE_int:
-			SQLanyequal_or_not_imp_multi(int, FALSE);
+			SQLanyequal_or_not_imp_multi(int, !=);
 			break;
 		case TYPE_lng:
-			SQLanyequal_or_not_imp_multi(lng, FALSE);
+			SQLanyequal_or_not_imp_multi(lng, !=);
 			break;
 #ifdef HAVE_HGE
 		case TYPE_hge:
-			SQLanyequal_or_not_imp_multi(hge, FALSE);
+			SQLanyequal_or_not_imp_multi(hge, !=);
 			break;
 #endif
 		case TYPE_flt:
-			SQLanyequal_or_not_imp_multi(flt, FALSE);
+			SQLanyequal_or_not_imp_multi(flt, !=);
 			break;
 		case TYPE_dbl:
-			SQLanyequal_or_not_imp_multi(dbl, FALSE);
+			SQLanyequal_or_not_imp_multi(dbl, !=);
 			break;
 		default: {
 			int (*ocmp) (const void *, const void *) = ATOMcompare(l->ttype);
@@ -929,7 +933,7 @@ SQLallnotequal(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 			for (BUN q = 0; q < o; q++) {
 				const void *c = BUNtail(ri, q), *d = BUNtail(li, q);
-				res_l[q] = ocmp(nilp, c) == 0 || ocmp(nilp, d) == 0 ? bit_nil : ocmp(c, d) == 0;
+				res_l[q] = ocmp(nilp, c) == 0 || ocmp(nilp, d) == 0 ? bit_nil : ocmp(c, d) != 0;
 			}
 		}
 		}
@@ -943,8 +947,8 @@ SQLallnotequal(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	} else {
 		bit *ret = getArgReference_bit(stk, pci, 0);
 
-		*ret = FALSE;
-		if (BATcount(r) > 0) {
+		*ret = TRUE;
+		if (o > 0) {
 			switch (ATOMbasetype(l->ttype)) {
 			case TYPE_bte:
 				SQLanyequal_or_not_imp_single(bte, FALSE);
