@@ -2040,6 +2040,8 @@ exp_rel_update_exps(mvc *sql, list *exps)
 
 		if (exp_has_rel(e))
 			n->data = exp_rel_update_exp(sql, e);
+		else if (!exp_is_atom(e))
+			set_freevar(e,1);
 	}
 	list_hash_clear(exps);
 	return exps;
@@ -2276,7 +2278,7 @@ exps_bind_column(list *exps, const char *cname, int *ambiguous, int *multiple, i
 							*multiple = 1;
 						if (!res)
 							res = e;
-						
+
 						if (res && res != e && e->alias.rname && res->alias.rname && strcmp(e->alias.rname, res->alias.rname) != 0 ) {
 							if (ambiguous)
 								*ambiguous = 1;

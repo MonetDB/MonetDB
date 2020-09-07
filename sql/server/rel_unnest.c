@@ -2326,10 +2326,8 @@ rewrite_compare(visitor *v, sql_rel *rel, sql_exp *e, int depth)
 
 			if (exp_has_rel(re))
 				rsq = exp_rel_get_rel(v->sql->sa, re); /* get subquery */
-			if (rsq) {
-				re = rsq->exps->t->data;
-				re = exp_ref(v->sql, re);
-			}
+			if (rsq)
+				re = exp_rel_update_exp(v->sql, re);
 
 			if (is_values(le)) /* exp_values */
 				is_tuple = 1;
