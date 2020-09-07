@@ -1692,7 +1692,7 @@ rel_compare(sql_query *query, sql_rel *rel, symbol *sc, symbol *lo, symbol *ro, 
 		compare_op = "=";
 	}
 
-	if (!ro2 && lo->token == SQL_SELECT) { /* swap subquery to the right hand side */
+	if (!ro2 && lo->token == SQL_SELECT && ro->token != SQL_SELECT) { /* swap subquery to the right hand side */
 		symbol *tmp = lo;
 
 		lo = ro;
