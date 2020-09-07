@@ -1138,6 +1138,67 @@ STRbatWChrAtcst(bat *ret, const bat *l, const int *cst)
 }
 
 static str
+do_batstr_str_int(bat *ret, const bat *l, const int *cst, const char *name, str (*func)(str *, const str *, const int *))
+{
+	BATiter bi;
+	BAT *bn, *b;
+	BUN p, q;
+	str x, y, msg = MAL_SUCCEED;
+
+	prepareOperand(b, l, name);
+	prepareResult(bn, b, TYPE_str, name);
+
+	bi = bat_iterator(b);
+
+	BATloop(b, p, q) {
+		y = NULL;
+		x = (str) BUNtvar(bi, p);
+		if (!strNil(x) &&
+			(msg = (*func)(&y, &x, cst)) != MAL_SUCCEED)
+			goto bailout;
+		if (y == NULL)
+			y = (str) str_nil;
+		if (bunfastappVAR(bn, y) != GDK_SUCCEED) {
+			if (y != str_nil)
+				GDKfree(y);
+			goto bailout;
+		}
+		if (y == str_nil) {
+			bn->tnonil = false;
+			bn->tnil = true;
+		} else
+			GDKfree(y);
+	}
+	finalizeResult(ret, bn, b);
+	return MAL_SUCCEED;
+
+bailout:
+	BBPunfix(b->batCacheid);
+	BBPunfix(bn->batCacheid);
+	if (msg != MAL_SUCCEED)
+		return msg;
+	throw(MAL, name, OPERATION_FAILED " During bulk operation");
+}
+
+static str
+STRbatprefix(bat *ret, const bat *l, const int *cst)
+{
+	return do_batstr_str_int(ret, l, cst, "batstr.prefix", STRprefix);
+}
+
+static str
+STRbatsuffix(bat *ret, const bat *l, const int *cst)
+{
+	return do_batstr_str_int(ret, l, cst, "batstr.suffix", STRsuffix);
+}
+
+static str
+STRbatrepeat(bat *ret, const bat *l, const int *cst)
+{
+	return do_batstr_str_int(ret, l, cst, "batstr.repeat", STRrepeat);
+}
+
+static str
 STRbatSubstitutecst(bat *ret, const bat *l, const str *arg2, const str *arg3, const bit *rep)
 {
 	BATiter bi;
@@ -1328,6 +1389,9 @@ mel_func batstr_init_funcs[] = {
  command("batstr", "unicodeAt", STRbatWChrAt, false, "get a unicode character (as an int) from a string position.", args(1,3, batarg("",int),batarg("s",str),batarg("index",int))),
  command("batstr", "unicodeAt", STRbatWChrAtcst, false, "get a unicode character (as an int) from a string position.", args(1,3, batarg("",int),batarg("s",str),arg("index",int))),
  command("batstr", "substitute", STRbatSubstitutecst, false, "Substitute first occurrence of 'src' by\n'dst'.  Iff repeated = true this is\nrepeated while 'src' can be found in the\nresult string. In order to prevent\nrecursion and result strings of unlimited\nsize, repeating is only done iff src is\nnot a substring of dst.", args(1,5, batarg("",str),batarg("s",str),arg("src",str),arg("dst",str),arg("rep",bit))),
+ command("batstr", "stringleft", STRbatprefix, false, "", args(1,3, batarg("",str),batarg("s",str),arg("l",int))),
+ command("batstr", "stringright", STRbatsuffix, false, "", args(1,3, batarg("",str),batarg("s",str),arg("l",int))),
+ command("batstr", "repeat", STRbatrepeat, false, "", args(1,3, batarg("",str),batarg("s",str),arg("c",int))),
  { .imp=NULL }
 };
 #include "mal_import.h"

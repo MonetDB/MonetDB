@@ -1800,8 +1800,9 @@ select2_join2(backend *be, stmt *op1, stmt *op2, stmt *op3, int cmp, stmt **Sub,
 		if (type == st_uselect2) {
 			if (cmp & CMP_BETWEEN)
 				q = pushBit(mb, q, TRUE); /* all nil's are != */
-		} else
-			q = pushBit(mb, q, FALSE);
+		} else {
+			q = pushBit(mb, q, (cmp & CMP_SYMMETRIC)?TRUE:FALSE);
+		}
 		if (type == st_join2)
 			q = pushNil(mb, q, TYPE_lng); /* estimate */
 		if (q == NULL)
@@ -2858,9 +2859,24 @@ stmt_append_bulk(backend *be, stmt *c, list *l)
 {
 	MalBlkPtr mb = be->mb;
 	InstrPtr q = NULL;
+	bool needs_columns = false;
 
 	if (c->nr < 0)
 		return NULL;
+
+	/* currently appendBulk accepts its inputs all either scalar or vectors
+	   if there is one vector and any scala, then the scalars mut be upgraded to vectors */
+	for (node *n = l->h; n; n = n->next) {
+		stmt *t = n->data;
+		needs_columns |= t->nrcols > 0;
+	}
+	if (needs_columns) {
+		for (node *n = l->h; n; n = n->next) {
+			stmt *t = n->data;
+			if (t->nrcols == 0)
+				n->data = const_column(be, t);
+		}
+	}
 
 	q = newStmtArgs(mb, batRef, appendBulkRef, list_length(l) + 3);
 	q = pushArgument(mb, q, c->nr);
@@ -3047,13 +3063,14 @@ stmt_convert(backend *be, stmt *v, stmt *sel, sql_subtype *f, sql_subtype *t)
 	if (v->nr < 0)
 		return NULL;
 
-	if (t->type->localtype == f->type->localtype &&
+	if ((t->type->localtype == f->type->localtype &&
 	    (t->type->eclass == f->type->eclass ||
 	     (EC_VARCHAR(f->type->eclass) && EC_VARCHAR(t->type->eclass))) &&
 	    !EC_INTERVAL(f->type->eclass) &&
 	    f->type->eclass != EC_DEC &&
 	    (t->digits == 0 || f->digits == t->digits) &&
-	    type_has_tz(t) == type_has_tz(f)) {
+	    type_has_tz(t) == type_has_tz(f)) || 
+		(EC_VARCHAR(f->type->eclass) && EC_VARCHAR(t->type->eclass) && f->digits > 0 && t->digits >= f->digits)) {
 		/* set output type. Despite the MAL code already being generated,
 		   the output type may still be checked */
 		tail_set_type(v, t);

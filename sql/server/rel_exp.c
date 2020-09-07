@@ -169,6 +169,8 @@ exp_compare(sql_allocator *sa, sql_exp *l, sql_exp *r, int cmptype)
 	e->l = l;
 	e->r = r;
 	e->flag = cmptype;
+	if (!has_nil(l) && !has_nil(r))
+		set_has_no_nil(e);
 	return e;
 }
 
@@ -184,6 +186,8 @@ exp_compare2(sql_allocator *sa, sql_exp *l, sql_exp *r, sql_exp *f, int cmptype)
 	e->r = r;
 	e->f = f;
 	e->flag = cmptype;
+	if (!has_nil(l) && !has_nil(r) && !has_nil(f))
+		set_has_no_nil(e);
 	return e;
 }
 
@@ -201,6 +205,8 @@ exp_filter(sql_allocator *sa, list *l, list *r, sql_subfunc *f, int anti)
 	e->flag = cmp_filter;
 	if (anti)
 		set_anti(e);
+	if (!have_nil(l) && !have_nil(r))
+		set_has_no_nil(e);
 	return e;
 }
 
@@ -217,6 +223,8 @@ exp_or(sql_allocator *sa, list *l, list *r, int anti)
 	e->flag = cmp_or;
 	if (anti)
 		set_anti(e);
+	if (!have_nil(l) && !have_nil(r))
+		set_has_no_nil(e);
 	return e;
 }
 
@@ -241,6 +249,8 @@ exp_in(sql_allocator *sa, sql_exp *l, list *r, int cmptype)
 	e->r = r;
 	assert( cmptype == cmp_in || cmptype == cmp_notin);
 	e->flag = cmptype;
+	if (!has_nil(l) && !have_nil(r))
+		set_has_no_nil(e);
 	return e;
 }
 
@@ -273,6 +283,8 @@ exp_in_func(mvc *sql, sql_exp *le, sql_exp *vals, int anyequal, int is_tuple)
 			exps_card = vals->card;
 
 		e->card = MAX(le->card, exps_card);
+		if (!has_nil(le) && !has_nil(vals))
+			set_has_no_nil(e);
 	}
 	return e;
 }
@@ -289,6 +301,8 @@ exp_compare_func(mvc *sql, sql_exp *le, sql_exp *re, const char *compareop, int 
 		e->flag = quantifier;
 		/* At ANY and ALL operators, the cardinality on the right side is ignored if it is a sub-relation */
 		e->card = quantifier && exp_is_rel(re) ? le->card : MAX(le->card, re->card);
+		if (!has_nil(le) && !has_nil(re))
+			set_has_no_nil(e);
 	}
 	return e;
 }
@@ -331,6 +345,8 @@ exp_op( sql_allocator *sa, list *l, sql_subfunc *f )
 	e->l = l;
 	e->f = f;
 	e->semantics = f->func->semantics;
+	if (!e->semantics && l && !have_nil(l))
+		set_has_no_nil(e);
 	return e;
 }
 
@@ -590,10 +606,10 @@ list *
 exp_types(sql_allocator *sa, list *exps)
 {
 	list *l = sa_list(sa);
-	node *n;
 
-	for ( n = exps->h; n; n = n->next)
-		append(l, exp_subtype(n->data));
+	if (exps)
+		for (node *n = exps->h; n; n = n->next)
+			list_append(l, exp_subtype(n->data));
 	return l;
 }
 
@@ -601,12 +617,12 @@ int
 have_nil(list *exps)
 {
 	int has_nil = 0;
-	node *n;
 
-	for ( n = exps->h; n && !has_nil; n = n->next) {
-		sql_exp *e = n->data;
-		has_nil |= has_nil(e);
-	}
+	if (exps)
+		for (node *n = exps->h; n && !has_nil; n = n->next) {
+			sql_exp *e = n->data;
+			has_nil |= has_nil(e);
+		}
 	return has_nil;
 }
 
@@ -1343,14 +1359,13 @@ exps_any_match(list *l, sql_exp *e)
 static int
 exps_are_joins( list *l )
 {
-	node *n;
+	if (l)
+		for (node *n = l->h; n; n = n->next) {
+			sql_exp *e = n->data;
 
-	for (n = l->h; n; n = n->next) {
-		sql_exp *e = n->data;
-
-		if (exp_is_join_exp(e))
-			return -1;
-	}
+			if (exp_is_join_exp(e))
+				return -1;
+		}
 	return 0;
 }
 
@@ -2095,11 +2110,10 @@ exp_rel_label(mvc *sql, sql_exp *e)
 int
 exps_are_atoms( list *exps)
 {
-	node *n;
 	int atoms = 1;
-
-	for(n=exps->h; n && atoms; n=n->next)
-		atoms &= exp_is_atom(n->data);
+	if (exps)
+		for(node *n=exps->h; n && atoms; n=n->next)
+			atoms &= exp_is_atom(n->data);
 	return atoms;
 }
 
@@ -2398,9 +2412,8 @@ exps_card( list *l )
 void
 exps_fix_card( list *exps, unsigned int card)
 {
-	node *n;
-
-	for (n = exps->h; n; n = n->next) {
+	if (exps)
+		for (node *n = exps->h; n; n = n->next) {
 		sql_exp *e = n->data;
 
 		if (e && e->card > card)
@@ -2411,27 +2424,25 @@ exps_fix_card( list *exps, unsigned int card)
 void
 exps_setcard( list *exps, unsigned int card)
 {
-	node *n;
+	if (exps)
+		for (node *n = exps->h; n; n = n->next) {
+			sql_exp *e = n->data;
 
-	for (n = exps->h; n; n = n->next) {
-		sql_exp *e = n->data;
-
-		if (e && e->card != CARD_ATOM)
-			e->card = card;
-	}
+			if (e && e->card != CARD_ATOM)
+				e->card = card;
+		}
 }
 
 int
 exps_intern(list *exps)
 {
-	node *n;
+	if (exps)
+		for (node *n=exps->h; n; n = n->next) {
+			sql_exp *e = n->data;
 
-	for (n=exps->h; n; n = n->next) {
-		sql_exp *e = n->data;
-
-		if (is_intern(e))
-			return 1;
-	}
+			if (is_intern(e))
+				return 1;
+		}
 	return 0;
 }
 
@@ -2485,16 +2496,16 @@ is_identity( sql_exp *e, sql_rel *r)
 list *
 exps_alias(mvc *sql, list *exps)
 {
-	node *n;
 	list *nl = new_exp_list(sql->sa);
 
-	for (n = exps->h; n; n = n->next) {
-		sql_exp *e = n->data, *ne;
+	if (exps)
+		for (node *n = exps->h; n; n = n->next) {
+			sql_exp *e = n->data, *ne;
 
-		assert(exp_name(e));
-		ne = exp_ref(sql, e);
-		append(nl, ne);
-	}
+			assert(exp_name(e));
+			ne = exp_ref(sql, e);
+			append(nl, ne);
+		}
 	return nl;
 }
 
@@ -2707,14 +2718,13 @@ exp_aggr_is_count(sql_exp *e)
 void
 exps_reset_freevar(list *exps)
 {
-	node *n;
+	if (exps)
+		for(node *n=exps->h; n; n=n->next) {
+			sql_exp *e = n->data;
 
-	for(n=exps->h; n; n=n->next) {
-		sql_exp *e = n->data;
-
-		/*later use case per type */
-		reset_freevar(e);
-	}
+			/*later use case per type */
+			reset_freevar(e);
+		}
 }
 
 int
@@ -2773,7 +2783,7 @@ convert_atom(atom *a, sql_subtype *rt)
 	a->tpe = *rt;
 }
 
-static sql_exp *
+sql_exp *
 exp_convert_inplace(mvc *sql, sql_subtype *t, sql_exp *exp)
 {
 	atom *a;

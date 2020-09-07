@@ -41,8 +41,8 @@ stdout of test 'duplicate_column_name.Bug-3349` in directory 'sql/test/BugTracke
 % int,	int,	int,	int # type
 % 1,	1,	1,	1 # length
 [ 1,	1,	1,	1	]
-[ 1,	1,	1,	1	]
-[ 1,	2,	1,	2	]
+[ 1,	1,	1,	2	]
+[ 1,	2,	1,	1	]
 [ 1,	2,	1,	2	]
 #SELECT *
 #FROM (

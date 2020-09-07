@@ -3403,55 +3403,55 @@ mapi_param_store(MapiHdl hdl)
 			switch (hdl->params[i].intype) {
 			case MAPI_TINY:
 				checkSpace(5);
-				sprintf(hdl->query + k, "%hhd", *(signed char *) src);
+				snprintf(hdl->query + k, lim - k, "%hhd", *(signed char *) src);
 				break;
 			case MAPI_UTINY:
 				checkSpace(5);
-				sprintf(hdl->query + k, "%hhu", *(unsigned char *) src);
+				snprintf(hdl->query + k, lim - k, "%hhu", *(unsigned char *) src);
 				break;
 			case MAPI_SHORT:
 				checkSpace(10);
-				sprintf(hdl->query + k, "%hd", *(short *) src);
+				snprintf(hdl->query + k, lim - k, "%hd", *(short *) src);
 				break;
 			case MAPI_USHORT:
 				checkSpace(10);
-				sprintf(hdl->query + k, "%hu", *(unsigned short *) src);
+				snprintf(hdl->query + k, lim - k, "%hu", *(unsigned short *) src);
 				break;
 			case MAPI_INT:
 				checkSpace(20);
-				sprintf(hdl->query + k, "%d", *(int *) src);
+				snprintf(hdl->query + k, lim - k, "%d", *(int *) src);
 				break;
 			case MAPI_UINT:
 				checkSpace(20);
-				sprintf(hdl->query + k, "%u", *(unsigned int *) src);
+				snprintf(hdl->query + k, lim - k, "%u", *(unsigned int *) src);
 				break;
 			case MAPI_LONG:
 				checkSpace(20);
-				sprintf(hdl->query + k, "%ld", *(long *) src);
+				snprintf(hdl->query + k, lim - k, "%ld", *(long *) src);
 				break;
 			case MAPI_ULONG:
 				checkSpace(20);
-				sprintf(hdl->query + k, "%lu", *(unsigned long *) src);
+				snprintf(hdl->query + k, lim - k, "%lu", *(unsigned long *) src);
 				break;
 			case MAPI_LONGLONG:
 				checkSpace(30);
-				sprintf(hdl->query + k, "%"PRId64, *(int64_t *) src);
+				snprintf(hdl->query + k, lim - k, "%"PRId64, *(int64_t *) src);
 				break;
 			case MAPI_ULONGLONG:
 				checkSpace(30);
-				sprintf(hdl->query + k, "%"PRIu64, *(uint64_t *) src);
+				snprintf(hdl->query + k, lim - k, "%"PRIu64, *(uint64_t *) src);
 				break;
 			case MAPI_FLOAT:
 				checkSpace(30);
-				sprintf(hdl->query + k, "%.9g", *(float *) src);
+				snprintf(hdl->query + k, lim - k, "%.9g", *(float *) src);
 				break;
 			case MAPI_DOUBLE:
 				checkSpace(30);
-				sprintf(hdl->query + k, "%.17g", *(double *) src);
+				snprintf(hdl->query + k, lim - k, "%.17g", *(double *) src);
 				break;
 			case MAPI_DATE:
 				checkSpace(50);
-				sprintf(hdl->query + k,
+				snprintf(hdl->query + k, lim - k,
 					"DATE '%04hd-%02hu-%02hu'",
 					((MapiDate *) src)->year,
 					((MapiDate *) src)->month,
@@ -3459,7 +3459,7 @@ mapi_param_store(MapiHdl hdl)
 				break;
 			case MAPI_TIME:
 				checkSpace(60);
-				sprintf(hdl->query + k,
+				snprintf(hdl->query + k, lim - k,
 					"TIME '%02hu:%02hu:%02hu'",
 					((MapiTime *) src)->hour,
 					((MapiTime *) src)->minute,
@@ -3467,7 +3467,7 @@ mapi_param_store(MapiHdl hdl)
 				break;
 			case MAPI_DATETIME:
 				checkSpace(110);
-				sprintf(hdl->query + k,
+				snprintf(hdl->query + k, lim - k,
 					"TIMESTAMP '%04hd-%02hu-%02hu %02hu:%02hu:%02hu.%09u'",
 					((MapiDateTime *) src)->year,
 					((MapiDateTime *) src)->month,
@@ -3493,7 +3493,7 @@ mapi_param_store(MapiHdl hdl)
 					}
 					hdl->query = q;
 				}
-				sprintf(hdl->query + k, "'%s'", val);
+				snprintf(hdl->query + k, lim - k, "'%s'", val);
 				free(val);
 				break;
 			case MAPI_VARCHAR:
@@ -3510,11 +3510,11 @@ mapi_param_store(MapiHdl hdl)
 					}
 					hdl->query = q;
 				}
-				sprintf(hdl->query + k, "'%s'", val);
+				snprintf(hdl->query + k, lim - k, "'%s'", val);
 				free(val);
 				break;
 			default:
-				strcpy(hdl->query + k, src);
+				strcpy_len(hdl->query + k, src, lim - k);
 				break;
 			}
 		}

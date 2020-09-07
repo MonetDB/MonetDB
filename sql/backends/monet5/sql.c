@@ -3871,7 +3871,7 @@ sql_rowid(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	/* HACK, get insert bat */
 	b = store_funcs.bind_col(m->session->tr, c, RD_INS);
 	if( b == NULL)
-		throw(SQL,"sql.rowid", SQLSTATE(HY005) "Canot access column descriptor");
+		throw(SQL,"sql.rowid", SQLSTATE(HY005) "Cannot access column descriptor");
 	/* UGH (move into storage backends!!) */
 	d = c->data;
 	*rid = d->ibase + BATcount(b);
@@ -4192,6 +4192,9 @@ SQLvacuum(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		throw(SQL, "sql.vacuum", SQLSTATE(42000) "vacuum not allowed on tables with indices");
 	if (t->system)
 		throw(SQL, "sql.vacuum", SQLSTATE(42000) "vacuum not allowed on system tables");
+	if (!isTable(t))
+		throw(SQL, "sql.vacuum", SQLSTATE(42000) "vacuum: %s '%s' is not persistent",
+			  TABLE_TYPE_DESCRIPTION(t->type, t->properties), t->base.name);
 
 	if (has_snapshots(m->session->tr))
 		throw(SQL, "sql.vacuum", SQLSTATE(42000) "vacuum not allowed on snapshots");
@@ -4257,6 +4260,9 @@ SQLdrop_hash(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	t = mvc_bind_table(m, s, tbl);
 	if (t == NULL)
 		throw(SQL, "sql.drop_hash", SQLSTATE(42S02) "Table missing %s.%s",sch, tbl);
+	if (!isTable(t))
+		throw(SQL, "sql.drop_hash", SQLSTATE(42000) "%s '%s' is not persistent",
+			  TABLE_TYPE_DESCRIPTION(t->type, t->properties), t->base.name);
 
 	for (o = t->columns.set->h; o; o = o->next) {
 		c = o->data;
@@ -6291,8 +6297,10 @@ static mel_func sql_init_funcs[] = {
  pattern("batsql", "all", SQLall_cmp, false, "if !cmp then false, (nl or nr) then nil, else true", args(1,4, batarg("",bit),batarg("cmp",bit),arg("nl",bit),batarg("nr",bit))),
  pattern("batsql", "all", SQLall_cmp, false, "if !cmp then false, (nl or nr) then nil, else true", args(1,4, batarg("",bit),batarg("cmp",bit),batarg("nl",bit),arg("nr",bit))),
  pattern("batsql", "all", SQLall_cmp, false, "if !cmp then false, (nl or nr) then nil, else true", args(1,4, batarg("",bit),batarg("cmp",bit),batarg("nl",bit),batarg("nr",bit))),
- command("aggr", "anyequal", SQLanyequal, false, "if any value in r is equal to l return true, else if r has nil nil else false", args(1,3, arg("",bit),batargany("l",1),batargany("r",1))),
- command("aggr", "allnotequal", SQLallnotequal, false, "if all values in r are not equal to l return true, else if r has nil nil else false", args(1,3, arg("",bit),batargany("l",1),batargany("r",1))),
+ pattern("aggr", "anyequal", SQLanyequal, false, "if any value in r is equal to l return true, else if r has nil nil else false", args(1,3, arg("",bit),batargany("l",1),batargany("r",1))),
+ pattern("bataggr", "anyequal", SQLanyequal, false, "", args(1,3, batarg("",bit),batargany("l",1),batargany("r",1))),
+ pattern("aggr", "allnotequal", SQLallnotequal, false, "if all values in r are not equal to l return true, else if r has nil nil else false", args(1,3, arg("",bit),batargany("l",1),batargany("r",1))),
+ pattern("bataggr", "allnotequal", SQLallnotequal, false, "", args(1,3, arg("",bit),batargany("l",1),batargany("r",1))),
  pattern("aggr", "subanyequal", SQLanyequal_grp, false, "if any value in r is equal to l return true, else if r has nil nil else false", args(1,6, batarg("",bit),batargany("l",1),batargany("r",1),batarg("g",oid),batarg("e",oid),arg("no_nil",bit))),
  pattern("aggr", "subanyequal", SQLanyequal_grp, false, "if any value in r is equal to l return true, else if r has nil nil else false; with candidate list", args(1,7, batarg("",bit),batargany("l",1),batargany("r",1),batarg("g",oid),batarg("e",oid),batarg("s",oid),arg("no_nil",bit))),
  pattern("aggr", "subanyequal", SQLanyequal_grp2, false, "if any value in r is equal to l return true, else if r has nil nil else false, except if rid is nil (ie empty) then false", args(1,7, batarg("",bit),batargany("l",1),batargany("r",1),batarg("rid",oid),batarg("g",oid),batarg("e",oid),arg("no_nil",bit))),

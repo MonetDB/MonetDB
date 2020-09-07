@@ -171,7 +171,7 @@ NAMEBULK##_cand(bat *ret, const bat *bid, const bat *sid)				\
 	}																	\
 	off = b1->hseqbase;													\
 	n = canditer_init(&ci, b1, s);										\
-	if ((bn = COLnew(b1->hseqbase, TYPE_##OUTTYPE, n, TRANSIENT)) == NULL) { \
+	if ((bn = COLnew(ci.hseq, TYPE_##OUTTYPE, n, TRANSIENT)) == NULL) { \
 		msg = createException(MAL, "batmtime." MALFUNC "_cand", 		\
 			  SQLSTATE(HY013) MAL_MALLOC_FAIL); 						\
 		goto bailout;													\

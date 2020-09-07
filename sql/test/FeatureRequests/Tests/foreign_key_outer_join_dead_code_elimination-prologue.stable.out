@@ -176,8 +176,8 @@ stdout of test 'foreign_key_outer_join_dead_code_elimination-prologue` in direct
 % 1 # length
 [ 6	]
 #select count(*) from v1;
-% .%4 # table_name
-% %4 # name
+% .%3 # table_name
+% %3 # name
 % bigint # type
 % 1 # length
 [ 6	]
@@ -188,8 +188,8 @@ stdout of test 'foreign_key_outer_join_dead_code_elimination-prologue` in direct
 % 1 # length
 [ 6	]
 #select count(*) from v2;
-% .%6 # table_name
-% %6 # name
+% .%5 # table_name
+% %5 # name
 % bigint # type
 % 1 # length
 [ 6	]
