@@ -573,7 +573,7 @@ update_idx(sql_trans *tr, sql_idx * i, void *tids, void *upd, int tpe)
 static int
 delta_append_bat( sql_delta *bat, size_t offset, BAT *i, sql_table *t )
 {
-	BAT *b;
+	BAT *b, *oi = i;
 
 	(void)t;
 	if (!BATcount(i))
@@ -582,9 +582,14 @@ delta_append_bat( sql_delta *bat, size_t offset, BAT *i, sql_table *t )
 	if (b == NULL)
 		return LOG_ERR;
 
-	if (BATcount(b) >= offset+BATcount(i)){
-		BAT *ui = BATdense(0, offset, BATcount(i));
-		if (BATreplace(b, ui, i, true) != GDK_SUCCEED) {
+	if (i && i->ttype == TYPE_msk) {
+		oi = msk2oid(i, -1);
+	}
+	if (BATcount(b) >= offset+BATcount(oi)){
+		BAT *ui = BATdense(0, offset, BATcount(oi));
+		if (BATreplace(b, ui, oi, true) != GDK_SUCCEED) {
+			if (oi != i)
+				bat_destroy(oi);
 			bat_destroy(b);
 			bat_destroy(ui);
 			return LOG_ERR;
@@ -594,29 +599,37 @@ delta_append_bat( sql_delta *bat, size_t offset, BAT *i, sql_table *t )
 		//assert (isNew(t) || isTempTable(t) || bat->cs.cleared);
 		if (BATcount(b) < offset) { /* add space */
 			const void *tv = ATOMnilptr(b->ttype);
-			lng i, d = offset - BATcount(b);
-			for(i=0;i<d;i++) {
+			lng d = offset - BATcount(b);
+			for(lng j=0;j<d;j++) {
 				if (BUNappend(b, tv, true) != GDK_SUCCEED) {
+					if (oi != i)
+						bat_destroy(oi);
 					bat_destroy(b);
 					return LOG_ERR;
 				}
 			}
 		}
-		if (isVIEW(i) && b->batCacheid == VIEWtparent(i)) {
-                        BAT *ic = COLcopy(i, i->ttype, true, TRANSIENT);
+		if (isVIEW(oi) && b->batCacheid == VIEWtparent(oi)) {
+            BAT *ic = COLcopy(oi, oi->ttype, true, TRANSIENT);
 
 			if (ic == NULL || BATappend(b, ic, NULL, true) != GDK_SUCCEED) {
-                                if(ic)
-                                        bat_destroy(ic);
-                                bat_destroy(b);
-                                return LOG_ERR;
-                        }
-                        bat_destroy(ic);
-		} else if (BATappend(b, i, NULL, true) != GDK_SUCCEED) {
+				if (oi != i)
+					bat_destroy(oi);
+                if(ic)
+					bat_destroy(ic);
+                bat_destroy(b);
+                return LOG_ERR;
+            }
+            bat_destroy(ic);
+		} else if (BATappend(b, oi, NULL, true) != GDK_SUCCEED) {
+			if (oi != i)
+				bat_destroy(oi);
 			bat_destroy(b);
 			return LOG_ERR;
 		}
 	}
+	if (oi != i)
+		bat_destroy(oi);
 	bat_destroy(b);
 	return LOG_OK;
 }
@@ -821,6 +834,7 @@ delta_delete_bat( storage *bat, BAT *i, int is_new)
 	BAT *t = BATconstant(i->hseqbase, TYPE_msk, &T, BATcount(i), TRANSIENT);
 	int ok = LOG_OK;
 
+	assert(i->ttype != TYPE_msk);
 	if (t) {
 		ok = cs_update_bat( &bat->cs, i, t, is_new);
 	}

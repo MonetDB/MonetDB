@@ -2251,62 +2251,51 @@ SQLtid(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		BAT *d = store_funcs.bind_del(tr, t, RDONLY), *bn;
 
 		bn = BATslice(d, sb, sb+nr);
-		if(bn == NULL)
-			throw(SQL, "sql.tid", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-		BAThseqbase(bn, sb);
-		*res = bn->batCacheid;
-#if 0
-		BAT *del_ids = COLnew(0, TYPE_oid, dcnt, TRANSIENT);
-
-		if (d == NULL || del_ids == NULL) {
-			BBPunfix(tids->batCacheid);
-			if (d)
-				BBPunfix(d->batCacheid);
-			if (del_ids)
-				BBPreclaim(del_ids);
-			throw(SQL,"sql.tid", SQLSTATE(45002) "Can not bind delete column");
-		}
-
-		if (store_funcs.count_del(tr, t, 2) > 0) {
-			BAT *nd = COLcopy(d, d->ttype, true, TRANSIENT);
+		BBPunfix(d->batCacheid);
+		if (bn && store_funcs.count_del(tr, t, 2) > 0) {
 			BAT *ui = store_funcs.bind_del(tr, t, RD_UPD_ID);
 			BAT *uv = store_funcs.bind_del(tr, t, RD_UPD_VAL);
+			oid h = sb+nr;
 
-			BBPunfix(d->batCacheid);
-	    		if (!nd || !ui || !uv || BATreplace(nd, ui, uv, true) != GDK_SUCCEED) {
-				if (nd) BBPunfix(nd->batCacheid);
-				if (ui) BBPunfix(ui->batCacheid);
-				if (uv) BBPunfix(uv->batCacheid);
-				BBPreclaim(del_ids);
+			h--;
+			BAT *p = BATselect(ui, NULL, &sb, &h, true, true, false);
+			BAT *nui = NULL, *nuv = NULL;
+
+			if (p) {
+				nui = BATproject(p, ui);
+				nuv = BATproject(p, uv);
+				BBPunfix(p->batCacheid);
+			}
+			if (ui) BBPunfix(ui->batCacheid);
+			if (uv) BBPunfix(uv->batCacheid);
+
+	    	if (!nui || !nuv || BATreplace(bn, nui, nuv, true) != GDK_SUCCEED) {
+				if (bn) BBPunfix(bn->batCacheid);
+				if (nui) BBPunfix(nui->batCacheid);
+				if (nuv) BBPunfix(nuv->batCacheid);
 				throw(MAL, "sql.tids", SQLSTATE(45003) "TIDdeletes failed");
 			}
-			BBPunfix(ui->batCacheid);
-			BBPunfix(uv->batCacheid);
-			d = nd;
+			BBPunfix(nui->batCacheid);
+			BBPunfix(nuv->batCacheid);
 		}
-		for(BUN p = sb; p < sb+nr; p++) {
-			if (mskGetVal(d,p)) {
-				oid id = p;
-				if (BUNappend(del_ids, &id, false) != GDK_SUCCEED) {
-					BBPreclaim(del_ids);
-					BBPunfix(d->batCacheid);
-					BBPunfix(tids->batCacheid);
-					throw(MAL, "sql.tids", SQLSTATE(45003) "TIDdeletes failed");
-				}
-			}
-		}
-		BBPunfix(d->batCacheid);
-		gdk_return ret = BATnegcands(tids, del_ids);
-		BBPunfix(del_ids->batCacheid);
-		if (ret != GDK_SUCCEED)
-			throw(MAL, "sql.tids", SQLSTATE(45003) "TIDdeletes failed");
-#endif
+		d = NULL;
+		/* true == deleted, need not deleted  */
+		if (bn && BATcount(bn))
+			d = BATcalcnot(bn, NULL);
+		else if (bn)
+			d = bn;
+		if(d == NULL)
+			throw(SQL, "sql.tid", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		if (bn && bn != d)
+			BBPunfix(bn->batCacheid);
+		BAThseqbase(d, sb);
+		*res = d->batCacheid;
 	} else {
-	/* create void,void bat with length and oid's set */
-	tids = BATdense(sb, sb, (BUN) nr);
-	if (tids == NULL)
-		throw(SQL, "sql.tid", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-	*res = tids->batCacheid;
+		/* create void,void bat with length and oid's set */
+		tids = BATdense(sb, sb, (BUN) nr);
+		if (tids == NULL)
+			throw(SQL, "sql.tid", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		*res = tids->batCacheid;
 	}
 
 	BBPkeepref(*res);

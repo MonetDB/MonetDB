@@ -960,6 +960,9 @@ ALGcountCND_nil(lng *result, const bat *bid, const bat *cnd, const bit *ignore_n
 		BBPunfix(b->batCacheid);
 		throw(MAL, "aggr.count", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 	}
+	if (b->ttype == TYPE_msk) {
+		BATsum(result, TYPE_lng, b, s, *ignore_nils, false, false);
+	} else
 	if (*ignore_nils) {
 		*result = (lng) BATcount_no_nil(b, s);
 	} else {
