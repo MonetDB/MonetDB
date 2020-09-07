@@ -346,5 +346,5 @@ NULL	0.824
 NULL	NULL
 
 select cast((t2.c0) not in ((select all 1.360204425E9 from t0), t2.c0) as int) from t1 full outer join t2 on false;
-	--error, more than one row returned by a subquery used as an expression
+	--5 0s 2 NULLs
 ROLLBACK;

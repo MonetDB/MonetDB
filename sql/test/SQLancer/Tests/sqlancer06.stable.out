@@ -556,10 +556,34 @@ stdout of test 'sqlancer06` in directory 'sql/test/SQLancer` itself:
 #946154646
 #0.5253008674729628
 [ 5	]
+#select cast((t2.c0) not in ((select all 1.360204425E9 from t0), t2.c0) as int) from t1 full outer join t2 on false;
+% .%7 # table_name
+% %7 # name
+% int # type
+% 1 # length
+[ NULL	]
+[ NULL	]
+[ 0	]
+[ 0	]
+[ 0	]
+[ 0	]
+[ 0	]
 #COPY 2 RECORDS INTO "sys"."t0" FROM stdin USING DELIMITERS E'\t',E'\n','"';
 #NULL	0.824
 #NULL	NULL
 [ 2	]
+#select cast((t2.c0) not in ((select all 1.360204425E9 from t0), t2.c0) as int) from t1 full outer join t2 on false;
+% .%7 # table_name
+% %7 # name
+% int # type
+% 1 # length
+[ NULL	]
+[ NULL	]
+[ 0	]
+[ 0	]
+[ 0	]
+[ 0	]
+[ 0	]
 #ROLLBACK;
 
 # 19:38:32 >  
