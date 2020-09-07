@@ -19,8 +19,8 @@ ERROR = !INSERT INTO: UNIQUE constraint 't0.t0_c1_unique' violated
 CODE  = 40002
 MAPI  = (monetdb) /var/tmp/mtest-331577/.s.monetdb.32973
 QUERY = SELECT CAST(((t0.c0)<(COALESCE((SELECT DISTINCT t0.c0 FROM t0, t2, t1), t0.c0, t2.c0))) AS INT) FROM t2 RIGHT OUTER JOIN t0 ON t2.c0 = ANY(SELECT t1.c0 FROM t1, t2);
-ERROR = !Cardinality violation, scalar value expected
-CODE  = 21000
+ERROR = !zero_or_one: cardinality violation, scalar expression expected
+CODE  = M0M29
 
 # 19:38:32 >  
 # 19:38:32 >  "Done."
