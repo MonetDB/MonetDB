@@ -440,8 +440,10 @@ SQLany_cmp(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	if (cmp || nl || nr) {
 		q = cmp ? BATcount(cmp) : nl ? BATcount(nl) : BATcount(nr);
-		if ((res = COLnew(cmp ? cmp->hseqbase : nl ? nl->hseqbase : nr->hseqbase, TYPE_bit, q, TRANSIENT)) == NULL)
+		if (!(res = COLnew(cmp ? cmp->hseqbase : nl ? nl->hseqbase : nr->hseqbase, TYPE_bit, q, TRANSIENT))) {
+			msg = createException(SQL, "sql.any_cmp", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			goto bailout;
+		}
 		res_l = (bit *) Tloc(res, 0);
 	}
 
@@ -541,8 +543,10 @@ SQLall_cmp(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	if (cmp || nl || nr) {
 		q = cmp ? BATcount(cmp) : nl ? BATcount(nl) : BATcount(nr);
-		if ((res = COLnew(cmp ? cmp->hseqbase : nl ? nl->hseqbase : nr->hseqbase, TYPE_bit, q, TRANSIENT)) == NULL)
+		if (!(res = COLnew(cmp ? cmp->hseqbase : nl ? nl->hseqbase : nr->hseqbase, TYPE_bit, q, TRANSIENT))) {
+			msg = createException(SQL, "sql.all_cmp", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			goto bailout;
+		}
 		res_l = (bit *) Tloc(res, 0);
 	}
 
