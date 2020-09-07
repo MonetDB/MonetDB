@@ -3207,28 +3207,46 @@ bad_utf8:
 }
 
 static str
-BATattach_as_bytes(int tt, bstream *in, BAT *bn)
+BATattach_as_bytes(int tt, stream *s, BAT *bn, bool *eof_seen)
 {
-	size_t n;
 	size_t asz = (size_t) ATOMsize(tt);
+	size_t chunk_size = 1<<20;
 
-	while (1) {
-		ssize_t nread = bstream_next(in);
-		if (nread < 0) {
-			return createException(SQL, "BATattach_stream", "%s", mnstr_peek_error(in->s));
+	bool eof = false;
+	while (!eof) {
+		assert(chunk_size % asz == 0);
+		size_t n = chunk_size / asz;
+
+		// First make some room
+		BUN validCount = bn->batCount;
+		BUN newCount = validCount + n;
+		if (BATextend(bn, newCount) != GDK_SUCCEED)
+			return createException(SQL, "BATattach_stream", GDK_EXCEPTION);
+
+		// Read into the newly allocated space
+		char *start = Tloc(bn, validCount);
+		char *cur = start;
+		char *end = Tloc(bn, newCount);
+		while (cur < end) {
+			ssize_t nread = mnstr_read(s, cur, 1, end - cur);
+			if (nread < 0)
+				return createException(SQL, "BATattach_stream", "%s", mnstr_peek_error(s));
+			if (nread == 0) {
+				size_t tail = (cur - start) % asz;
+				if (tail != 0) {
+					return createException(SQL, "BATattach_stream", "final item incomplete: %d bytes instead of %d",
+						(int) tail, (int) asz);
+				}
+				eof = true;
+				if (eof_seen != NULL)
+					*eof_seen = true;
+				end = cur;
+			}
+			cur += (size_t) nread;
 		}
-		if (nread == 0)
-			break;
-		n = (in->len - in->pos) / asz;
-		if (BATextend(bn, bn->batCount + n) != GDK_SUCCEED) {
-			str msg = createException(SQL, "BATattach_stream", GDK_EXCEPTION);
-			BBPreclaim(bn);
-			return msg;
-		}
-		memcpy(Tloc(bn, bn->batCount), in->buf + in->pos, n * asz);
-		bn->batCount += (BUN) n;
-		in->pos += n * asz;
+		bn->batCount += (cur - start) / asz;
 	}
+
 	BATsetcount(bn, bn->batCount);
 	bn->tseqbase = oid_nil;
 	bn->tnonil = bn->batCount == 0;
@@ -3246,7 +3264,7 @@ BATattach_as_bytes(int tt, bstream *in, BAT *bn)
 }
 
 static str
-BATattach_stream(BAT **result, int tt, stream *s, BUN size, bool *eof)
+BATattach_stream(BAT **result, int tt, stream *s, BUN size, bool *eof_seen)
 {
 	str msg = MAL_SUCCEED;
 	BAT *bn = NULL;
@@ -3258,18 +3276,20 @@ BATattach_stream(BAT **result, int tt, stream *s, BUN size, bool *eof)
 		goto end;
 	}
 
-	in = bstream_create(s, 1 << 20);
-	if (in == NULL) {
-		msg = createException(SQL, "sql", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-		goto end;
-	}
 
 	switch (ATOMstorage(tt)) {
 	case TYPE_str:
+		in = bstream_create(s, 1 << 20);
+		if (in == NULL) {
+			msg = createException(SQL, "sql", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+			goto end;
+		}
 		msg = BATattach_str(in, bn);
+		if (eof_seen != NULL)
+			*eof_seen = in->eof;
 		break;
 	default:
-		msg = BATattach_as_bytes(tt, in, bn);
+		msg = BATattach_as_bytes(tt, s, bn, eof_seen);
 		break;
 	}
 	if (msg != MAL_SUCCEED)
@@ -3277,8 +3297,6 @@ BATattach_stream(BAT **result, int tt, stream *s, BUN size, bool *eof)
 
 end:
 	if (in != NULL){
-		if (eof != NULL)
-			*eof = in->eof;
 		in->s = NULL;
 		bstream_destroy(in);
 	}
