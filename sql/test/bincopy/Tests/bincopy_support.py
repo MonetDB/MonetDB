@@ -3,6 +3,7 @@ import array
 import codecs
 import os
 import re
+import sys
 
 try:
     from MonetDBtesting import process
@@ -43,8 +44,13 @@ def run_test(side, code):
 
     with process.client('sql',
                     stdin=process.PIPE, input=code,
+                    stdout=process.PIPE, stderr=process.PIPE,
                     log=True) as p:
         out, err = p.communicate()
+    sys.stdout.write(out.replace(os.environ['TSTTRGBASE'].replace('\\', '\\\\'),'${TSTTRGBASE}').replace('\\\\','/'))
+    sys.stderr.write(err.replace(os.environ['TSTTRGBASE'].replace('\\', '\\\\'),'${TSTTRGBASE}').replace('\\\\','/'))
+
+
 
 
 
