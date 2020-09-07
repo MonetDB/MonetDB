@@ -3148,24 +3148,18 @@ mvc_import_table_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	return msg;
 }
 
-static bool
-read_more(bstream *in)
-{
-	bool success = false;
-	do {
-		if (bstream_next(in) <= 0)
-			return success;
-		success = true;
-	} while (in->len <= in->pos);
-	return true;
-}
-
 static str
 BATattach_str(bstream *in, BAT *bn)
 {
 	size_t n;
 
-	while (read_more(in)) {
+	while (1) {
+		ssize_t nread = bstream_next(in);
+		if (nread < 0) {
+			return createException(SQL, "BATattach_stream", "%s", mnstr_peek_error(in->s));
+		}
+		if (nread == 0)
+			break;
 		int u;
 		for (n = in->pos, u = 0; n < in->len; n++) {
 			int c = in->buf[n];
@@ -3201,7 +3195,10 @@ BATattach_str(bstream *in, BAT *bn)
 			}
 		}
 	}
-	return MAL_SUCCEED;
+	if (in->pos == in->len)
+		return MAL_SUCCEED;
+	else
+		return createException(SQL, "BATattach_str", "unterminated string at end");
 
 bailout:
 	return createException(SQL, "BATattach_stream", GDK_EXCEPTION);
@@ -3215,7 +3212,13 @@ BATattach_as_bytes(int tt, bstream *in, BAT *bn)
 	size_t n;
 	size_t asz = (size_t) ATOMsize(tt);
 
-	while (read_more(in)) {
+	while (1) {
+		ssize_t nread = bstream_next(in);
+		if (nread < 0) {
+			return createException(SQL, "BATattach_stream", "%s", mnstr_peek_error(in->s));
+		}
+		if (nread == 0)
+			break;
 		n = (in->len - in->pos) / asz;
 		if (BATextend(bn, bn->batCount + n) != GDK_SUCCEED) {
 			str msg = createException(SQL, "BATattach_stream", GDK_EXCEPTION);
@@ -4112,7 +4115,7 @@ vacuum(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, str (*func) (bat
 	if (t->system)
 		throw(SQL, name, SQLSTATE(42000) "%s not allowed on system tables", name + 4);
 	if (!isTable(t))
-		throw(SQL, name, SQLSTATE(42000) "%s: %s '%s' is not persistent", name + 4, 
+		throw(SQL, name, SQLSTATE(42000) "%s: %s '%s' is not persistent", name + 4,
 			  TABLE_TYPE_DESCRIPTION(t->type, t->properties), t->base.name);
 
 	if (has_snapshots(m->session->tr))
