@@ -1514,14 +1514,6 @@ _rel_unnest(visitor *v, sql_rel *rel)
 	return rel;
 }
 
-static sql_rel *
-rel_reset_subquery(visitor *v, sql_rel *rel)
-{
-	(void)v;
-	rel->subquery = 0;
-	return rel;
-}
-
 static sql_exp *
 rewrite_inner(mvc *sql, sql_rel *rel, sql_rel *inner, operator_type op)
 {
@@ -3166,8 +3158,6 @@ rel_unnest(mvc *sql, sql_rel *rel)
 {
 	visitor v = { .sql = sql };
 
-	rel = rel_visitor_topdown(&v, rel, &rel_reset_subquery);
-	v.changes = 0;
 	rel = rel_exp_visitor_bottomup(&v, rel, &rewrite_simplify_exp, false);
 	rel = rel_visitor_bottomup(&v, rel, &rewrite_simplify);
 	rel = rel_visitor_bottomup(&v, rel, &rewrite_or_exp);

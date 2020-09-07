@@ -246,9 +246,6 @@ typedef enum operator_type {
 #define is_processed(rel) 	((rel)->processed)
 #define set_processed(rel) 	(rel)->processed = 1
 #define reset_processed(rel) 	(rel)->processed = 0
-#define is_subquery(rel) 	((rel)->subquery)
-#define set_subquery(rel) 	(rel)->subquery = 1
-#define reset_subquery(rel) 	(rel)->subquery = 0
 #define is_dependent(rel) 	((rel)->dependent)
 #define set_dependent(rel) 	(rel)->dependent = 1
 #define reset_dependent(rel) 	(rel)->dependent = 0
@@ -282,7 +279,6 @@ typedef struct relation {
 	 outer:1,	/* used as outer (ungrouped) */
 	 grouped:1,	/* groupby processed all the group by exps */
 	 single:1,
-	 subquery:1,	/* is this part a subquery, this is needed for proper name binding */
 	 used:1;	/* used by rewrite_fix_count at rel_unnest, so a relation is not modified twice */
 	void *p;	/* properties for the optimizer, distribution */
 } sql_rel;

@@ -230,16 +230,6 @@ rel_select_copy(sql_allocator *sa, sql_rel *l, list *exps)
 	return rel;
 }
 
-static int
-rel_issubquery(sql_rel*r)
-{
-	if (!r->subquery) {
-		if (is_select(r->op))
-			return rel_issubquery(r->l);
-	}
-	return r->subquery;
-}
-
 static sql_rel *
 rel_bind_column_(mvc *sql, int *exp_has_nil, sql_rel *rel, const char *cname, int no_tname)
 {
@@ -254,17 +244,13 @@ rel_bind_column_(mvc *sql, int *exp_has_nil, sql_rel *rel, const char *cname, in
 	case op_left:
 	case op_right:
 	case op_full: {
-		sql_rel *right = rel->r;
-
 		r = rel_bind_column_(sql, exp_has_nil, rel->r, cname, no_tname);
-		if (!r || !rel_issubquery(right)) {
-			sql_exp *e = r?exps_bind_column(r->exps, cname, &ambiguous, &multi, 0):NULL;
+		sql_exp *e = r?exps_bind_column(r->exps, cname, &ambiguous, &multi, 0):NULL;
 
-			if (!r || !e || !is_freevar(e)) {
-				l = rel_bind_column_(sql, exp_has_nil, rel->l, cname, no_tname);
-				if (l && r && !rel_issubquery(r) && !is_dependent(rel))
-					return sql_error(sql, ERR_AMBIGUOUS, SQLSTATE(42000) "SELECT: identifier '%s' ambiguous", cname);
-			}
+		if (!r || !e || !is_freevar(e)) {
+			l = rel_bind_column_(sql, exp_has_nil, rel->l, cname, no_tname);
+			if (l && r && !is_dependent(rel))
+				return sql_error(sql, ERR_AMBIGUOUS, SQLSTATE(42000) "SELECT: identifier '%s' ambiguous", cname);
 		}
 		if (sql->session->status == -ERR_AMBIGUOUS)
 			return NULL;
