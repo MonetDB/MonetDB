@@ -93,6 +93,11 @@ def gen_broken_strings(outfile):
         else:
             outfile.write(good)
 
+def gen_newline_strings(outfile):
+    f = codecs.getwriter('utf-8')(outfile)
+    for i in range(1_000_000):
+        f.write(f"rn\r\nr\r{i}\0")
+
 INTS = """
 CREATE TABLE foo(id INT NOT NULL);
 COPY BINARY INTO foo(id) FROM @ints@ @ON@;
@@ -131,4 +136,12 @@ BROKEN_STRINGS = """
 CREATE TABLE foo(id INT NOT NULL, s TEXT);
 COPY BINARY INTO foo(id, s) FROM @ints@, @broken_strings@ @ON@;
 -- should fail!
+"""
+
+# note that the \r\n has been normalized to \n but the lone \r has been
+# left alone.
+NEWLINE_STRINGS = r"""
+CREATE TABLE foo(id INT NOT NULL, s TEXT);
+COPY BINARY INTO foo(id, s) FROM @ints@, @newline_strings@ @ON@;
+SELECT COUNT(id) FROM foo WHERE s = (E'rn\nr\r' || id);
 """

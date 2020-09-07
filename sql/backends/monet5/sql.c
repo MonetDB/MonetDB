@@ -3151,8 +3151,16 @@ mvc_import_table_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 static str
 BATattach_str(bstream *in, BAT *bn)
 {
-	size_t n;
+	// we have three jobs:
+	// 1. scan for the '\0' that terminates a str value.
+	// 2. validate the utf-8 encoding.
+	// 3. convert \r\n to \n.
+	//
+	// It might be possible to combine all this into a single scan
+	// but it's simpler to first scan for \0 and then when the full string
+	// is available, do a validation/conversion scan.
 
+	// The outer loop iterates over input blocks
 	while (1) {
 		ssize_t nread = bstream_next(in);
 		if (nread < 0) {
@@ -3160,48 +3168,53 @@ BATattach_str(bstream *in, BAT *bn)
 		}
 		if (nread == 0)
 			break;
-		int u;
-		for (n = in->pos, u = 0; n < in->len; n++) {
-			int c = in->buf[n];
-			if (u) {
-				if ((c & 0xC0) == 0x80)
-					u--;
-				else
+
+		// the middle loop looks for complete strings
+		char *end;
+		while ((end = memchr(&in->buf[in->pos], '\0', in->len - in->pos)) != NULL) {
+
+			// the inner loop validates them and converts line endings.
+			unsigned int u = 0; // utf-8 state
+			char *r = &in->buf[in->pos];
+			char *w = &in->buf[in->pos];
+			while (1) {
+				if (u > 0) {
+					// must be an utf-8 continuation byte.
+					if ((*r & 0xC0) == 0x80)    // 10xx xxxx
+						u--;
+					else
+						goto bad_utf8;
+				} else if ((*r & 0xF8) == 0xF0) // 1111_0xxx
+					u = 3;
+				else if ((*r & 0xF0) == 0xE0)   // 1110_xxxx
+					u = 2;
+				else if ((*r & 0xE0) == 0xC0)   // 110x xxxx
+					u = 1;
+				else if ((*r & 0xC0) == 0x80)   // 10xx xxxx
 					goto bad_utf8;
-			} else if ((c & 0xF8) == 0xF0) {
-				u = 3;
-			} else if ((c & 0xF0) == 0xE0) {
-				u = 2;
-			} else if ((c & 0xE0) == 0xC0) {
-				u = 1;
-			} else if ((c & 0xC0) == 0x80) {
-				goto bad_utf8;
-			} else if (c == '\r') {
-				if (n + 1 < in->len
-					&& in->buf[n + 1] == '\n') {
-					in->buf[n] = 0;
-					if (BUNappend(bn, in->buf + in->pos, false) != GDK_SUCCEED)
-						goto bailout;
-					in->buf[n] = '\r';
-					in->pos = n + 2;
-					n++;
+				else if (*r == '\r' && *(r+1) == '\n') // convert!
+					r++;
+				else if (*r == '\0') { // guaranteed to happen.
+					*w = '\0';
+					break;
 				}
-			} else if (c == '\n' || c == '\0') {
-				in->buf[n] = 0;
-				if (BUNappend(bn, in->buf + in->pos, false) != GDK_SUCCEED)
-					goto bailout;
-				in->buf[n] = c;
-				in->pos = n + 1;
+				*w++ = *r++;
 			}
+
+			if (BUNappend(bn, &in->buf[in->pos], false) != GDK_SUCCEED)
+				return createException(SQL, "BATattach_stream", GDK_EXCEPTION);
+
+			in->pos = end - in->buf + 1;
 		}
+		// If we fall out of the middle loop, part of the buffer may be unconsumed.
+		// This is fine, we'll pick it up on the next iteration.
 	}
-	if (in->pos == in->len)
-		return MAL_SUCCEED;
-	else
+
+	// It's an error to  have data left after falling out of the outer loop.
+	if (in->pos < in->len)
 		return createException(SQL, "BATattach_str", "unterminated string at end");
 
-bailout:
-	return createException(SQL, "BATattach_stream", GDK_EXCEPTION);
+	return MAL_SUCCEED;
 bad_utf8:
 	return createException(SQL, "BATattach_stream", "malformed utf-8 byte sequence");
 }

@@ -11,3 +11,5 @@ bincopy_large_strings_on_client
 bincopy_large_strings_on_server
 bincopy_broken_strings_on_client
 bincopy_broken_strings_on_server
+bincopy_newlines_on_client
+bincopy_newlines_on_server
