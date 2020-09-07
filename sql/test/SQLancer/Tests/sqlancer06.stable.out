@@ -538,6 +538,29 @@ stdout of test 'sqlancer06` in directory 'sql/test/SQLancer` itself:
 % 2 # length
 [ 40	]
 #ROLLBACK;
+#START TRANSACTION;
+#CREATE TABLE "sys"."t0" ("c0" TIME,"c1" DECIMAL(18,3));
+#COPY 1 RECORDS INTO "sys"."t0" FROM stdin USING DELIMITERS E'\t',E'\n','"';
+#05:09:43	0.122
+[ 1	]
+#CREATE TABLE "sys"."t1" ("c1" DECIMAL(18,3));
+#COPY 2 RECORDS INTO "sys"."t1" FROM stdin USING DELIMITERS E'\t',E'\n','"';
+#0.320
+#0.995
+[ 2	]
+#CREATE TABLE "sys"."t2" ("c0" DOUBLE NOT NULL,CONSTRAINT "t2_c0_pkey" PRIMARY KEY ("c0"),CONSTRAINT "t2_c0_unique" UNIQUE ("c0"));
+#COPY 5 RECORDS INTO "sys"."t2" FROM stdin USING DELIMITERS E'\t',E'\n','"';
+#0.5352396631754883
+#0.4722686692942629
+#0.06898879964424565
+#946154646
+#0.5253008674729628
+[ 5	]
+#COPY 2 RECORDS INTO "sys"."t0" FROM stdin USING DELIMITERS E'\t',E'\n','"';
+#NULL	0.824
+#NULL	NULL
+[ 2	]
+#ROLLBACK;
 
 # 19:38:32 >  
 # 19:38:32 >  "Done."

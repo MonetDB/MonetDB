@@ -225,7 +225,7 @@ DROP TABLE t1;
 DROP TABLE t2;
 
 CREATE TABLE t0(c1 INTERVAL SECOND UNIQUE);
-DROP INDEX t0_c1_unique;
+DROP INDEX t0_c1_unique; --error, cannot drop index because of dependency to unique key
 INSERT INTO t0 VALUES (INTERVAL '2071616848' SECOND), (INTERVAL '2071616848' SECOND); --error, unique constraint violated
 DROP TABLE t0;
 
@@ -323,10 +323,8 @@ ROLLBACK;
 
 START TRANSACTION;
 CREATE TABLE "sys"."t0" ("c0" TIME,"c1" DECIMAL(18,3));
-COPY 3 RECORDS INTO "sys"."t0" FROM stdin USING DELIMITERS E'\t',E'\n','"';
+COPY 1 RECORDS INTO "sys"."t0" FROM stdin USING DELIMITERS E'\t',E'\n','"';
 05:09:43	0.122
-NULL	0.824
-NULL	NULL
 
 CREATE TABLE "sys"."t1" ("c1" DECIMAL(18,3));
 COPY 2 RECORDS INTO "sys"."t1" FROM stdin USING DELIMITERS E'\t',E'\n','"';
@@ -340,6 +338,12 @@ COPY 5 RECORDS INTO "sys"."t2" FROM stdin USING DELIMITERS E'\t',E'\n','"';
 0.06898879964424565
 946154646
 0.5253008674729628
+
+select cast((t2.c0) not in ((select all 1.360204425E9 from t0), t2.c0) as int) from t1 full outer join t2 on false;
+	--5 0s 2 NULLs
+COPY 2 RECORDS INTO "sys"."t0" FROM stdin USING DELIMITERS E'\t',E'\n','"';
+NULL	0.824
+NULL	NULL
 
 select cast((t2.c0) not in ((select all 1.360204425E9 from t0), t2.c0) as int) from t1 full outer join t2 on false;
 	--error, more than one row returned by a subquery used as an expression
