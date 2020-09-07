@@ -2008,6 +2008,8 @@ rel_union_exps(mvc *sql, sql_exp **l, list *vals, int is_tuple)
 				freevar = rel_has_freevar(sql,sq);
 		} else {
 			sq = rel_project(sql->sa, NULL, append(sa_list(sql->sa), ve));
+			if (!exp_is_atom(ve))
+				freevar = 1;
 			set_processed(sq);
 		}
 		if (is_tuple) { /* cast each one */
