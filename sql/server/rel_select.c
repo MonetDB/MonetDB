@@ -5116,8 +5116,24 @@ column_exp(sql_query *query, sql_rel **rel, symbol *column_e, int f)
 	return ve;
 }
 
+static int
+exp_is_not_intern(sql_exp *e)
+{
+	return is_intern(e)?-1:0;
+}
+
+static void
+rel_remove_internal_exp(sql_rel *rel)
+{
+	if (rel->exps) {
+		list *n_exps = list_select(rel->exps, rel, (fcmp)&exp_is_not_intern, (fdup)NULL);
+
+		rel->exps = n_exps;
+	}
+}
+
 static list *
-rel_table_exp(sql_query *query, sql_rel **rel, symbol *column_e )
+rel_table_exp(sql_query *query, sql_rel **rel, symbol *column_e, bool single_exp )
 {
 	mvc *sql = query->sql;
 	if (column_e->token == SQL_TABLE && column_e->data.lval->h->type == type_symbol) {
@@ -5132,7 +5148,7 @@ rel_table_exp(sql_query *query, sql_rel **rel, symbol *column_e )
 		return sa_list(sql->sa);
 	} else if (column_e->token == SQL_TABLE) {
 		char *tname = column_e->data.lval->h->data.sval;
-		list *exps;
+		list *exps = NULL;
 		sql_rel *project = *rel, *groupby = NULL;
 
 		/* if there's a group by relation in the tree, skip it for the '*' case and use the underlying projection */
@@ -5146,7 +5162,12 @@ rel_table_exp(sql_query *query, sql_rel **rel, symbol *column_e )
 			assert(project);
 		}
 
-		if ((exps = rel_table_projections(sql, project, tname, 0)) != NULL && !list_empty(exps)) {
+		if (project->op == op_project && project->l && project == *rel && !tname && !rel_is_ref(project) && !need_distinct(project) && single_exp) {
+			rel_remove_internal_exp(*rel);
+			exps = project->exps;
+			*rel = project->l;
+		}
+		if ((exps || (exps = rel_table_projections(sql, project, tname, 0)) != NULL) && !list_empty(exps)) {
 			if (groupby) {
 				groupby->exps = list_distinct(list_merge(groupby->exps, exps, (fdup) NULL), (fcmp) exp_equal, (fdup) NULL);
 				for (node *n = groupby->exps->h ; n ; n = n->next) {
@@ -5383,22 +5404,6 @@ join_on_column_name(sql_query *query, sql_rel *rel, sql_rel *t1, sql_rel *t2, in
 	return rel;
 }
 
-static int
-exp_is_not_intern(sql_exp *e)
-{
-	return is_intern(e)?-1:0;
-}
-
-static void
-rel_remove_internal_exp(sql_rel *rel)
-{
-	if (rel->exps) {
-		list *n_exps = list_select(rel->exps, rel, (fcmp)&exp_is_not_intern, (fdup)NULL);
-
-		rel->exps = n_exps;
-	}
-}
-
 static sql_rel *
 rel_select_exp(sql_query *query, sql_rel *rel, SelectNode *sn, exp_kind ek)
 {
@@ -5433,7 +5438,7 @@ rel_select_exp(sql_query *query, sql_rel *rel, SelectNode *sn, exp_kind ek)
 			rel = inner;
 			continue;
 		} else if (!ce) {
-			te = rel_table_exp(query, &rel, n->data.sym);
+			te = rel_table_exp(query, &rel, n->data.sym, !list_length(pexps) && !n->next);
 		} else
 			ce = NULL;
 		if (!ce && !te) {
