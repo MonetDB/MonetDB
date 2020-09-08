@@ -1,0 +1,15 @@
+stdout of test 'sqlancer07` in directory 'sql/test/SQLancer` itself:
+
+
+# 10:16:14 >  
+# 10:16:14 >  "mclient" "-lsql" "-ftest" "-tnone" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-52758" "--port=31957"
+# 10:16:14 >  
+
+#START TRANSACTION;
+#CREATE TABLE "t1" ("c0" DECIMAL(18,3),"c1" BINARY LARGE OBJECT NOT NULL,"c2" DECIMAL(18,3),CONSTRAINT "t1_c1_unique" UNIQUE ("c1"));
+#ROLLBACK;
+
+# 10:16:14 >  
+# 10:16:14 >  "Done."
+# 10:16:14 >  
+

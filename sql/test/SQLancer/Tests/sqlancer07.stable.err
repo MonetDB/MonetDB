@@ -1,0 +1,16 @@
+stderr of test 'sqlancer07` in directory 'sql/test/SQLancer` itself:
+
+
+# 10:16:14 >  
+# 10:16:14 >  "mclient" "-lsql" "-ftest" "-tnone" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-52758" "--port=31957"
+# 10:16:14 >  
+
+MAPI  = (monetdb) /var/tmp/mtest-52758/.s.monetdb.31957
+QUERY = PREPARE SELECT DISTINCT (SELECT DISTINCT r'|m<kv' FROM t1 WHERE ((t1.c0)<(?)) GROUP BY t1.c2, ?), ?, t1.c2 FROM t1 WHERE CAST(? AS BOOLEAN) LIMIT 2103332269785059850;
+ERROR = !Could not determine type for argument number 2
+CODE  = 42000
+
+# 10:16:14 >  
+# 10:16:14 >  "Done."
+# 10:16:14 >  
+
