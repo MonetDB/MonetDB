@@ -390,9 +390,7 @@ SELECT t1.c2 FROM t2 RIGHT OUTER JOIN t1 ON (t2.c1) WHERE (SELECT TIME '10:00:00
 	-- NULL
 	-- 20:32:11
 SELECT t1.c2 FROM t2 RIGHT OUTER JOIN t1 ON (t2.c1) WHERE (SELECT t1.c2 FROM t1) = ALL(SELECT t0.c2 FROM t0, t2);
-	-- NULL
-	-- NULL
-	-- 20:32:11
+	-- error, more than one row returned by a subquery used as an expression
 SELECT t1.c2 FROM t2 RIGHT OUTER JOIN t1 ON (t2.c1) WHERE (SELECT t1.c2 FROM t1, t2) = ALL(SELECT t0.c2 FROM t0, t2);
 	-- NULL
 	-- NULL
