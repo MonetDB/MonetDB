@@ -2199,7 +2199,7 @@ rewrite_anyequal(mvc *sql, sql_rel *rel, sql_exp *e, int depth)
 						join->r = rel_crossproduct(sql->sa, join->r, rsq, op_join);
 						set_dependent(join);
 					} else
-						(void)rewrite_inner(sql, rel, rsq, !is_tuple?op_join:is_anyequal(sf)?op_semi:op_anti);
+						(void)rewrite_inner(sql, rel, rsq, !is_tuple?((depth>0)?op_left:op_join):is_anyequal(sf)?op_semi:op_anti);
 				}
 
 				if (on_right) {
