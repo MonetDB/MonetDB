@@ -56,44 +56,6 @@
 #include "stream_internal.h"
 #include <stdio.h>
 
-static char *logfile_mode = "w";
-static FILE *logfile = NULL;
-
-void
-joeri_role(const char *role)
-{
-	if (logfile != NULL) {
-		fclose(logfile);
-		logfile = NULL;
-	}
-	if (role) {
-		const char *fmt = "/tmp/joeri_%s.log";
-		size_t needed = 2 + snprintf(NULL, 0, fmt, role);
-		char *buf = malloc(needed);
-		snprintf(buf, needed, fmt, role);
-		logfile = fopen(buf, logfile_mode);
-		if (!logfile) {
-			fprintf(stderr, "couldn't open logfile %s: %s", buf, strerror(errno));
-		}
-		logfile_mode = "a";
-		free(buf);
-	}
-}
-
-void
-joeri_log(const char *fmt, ...)
-{
-	if (logfile == NULL)
-		return;
-
-	va_list ap;
-	va_start(ap, fmt);
-	vfprintf(logfile, fmt, ap);
-	fflush(logfile);
-	va_end(ap);
-}
-
-
 
 #ifdef HAVE_PTHREAD_H
 #include <pthread.h>

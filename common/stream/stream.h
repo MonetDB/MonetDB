@@ -229,10 +229,6 @@ stream_export bool isa_block_stream(const stream *s); // mapi.c, mal_client.c, r
 stream_export stream *bs_stream(stream *s); // unused
 stream_export void set_prompting(stream *block_stream, const char *prompt, stream *prompt_stream);
 
-stream_export void joeri_role(const char *role);
-stream_export void joeri_log(const char *fmt, ...)
-	__attribute__((__format__(__printf__, 1, 2)))
-;
 
 typedef enum {
 	PROTOCOL_AUTO = 0, // unused

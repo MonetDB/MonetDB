@@ -10,33 +10,6 @@
 #include "stream.h"
 #include "stream_internal.h"
 
-void joerijoeri(char *func, const char *buf, size_t count, ssize_t result);
-
-#define SHOW (15)
-
-void
-joerijoeri(char *func, const char *buf, size_t count, ssize_t result)
-{
-	char hex[2 * SHOW + 1];
-	char txt[SHOW + 1];
-	char *h = hex;
-	char *t = txt;
-
-	if (count > 0) {
-		for (size_t i = 0; i < SHOW && i < count; i++) {
-			unsigned char c = buf[i];
-			h += snprintf(h, hex + sizeof(hex) - h, "%02x", c);
-			*t++ = isprint(c) ? c : '.';
-		}
-	}
-	*t = '\0';
-	*h = '\0';
-
-	joeri_log("%s %ld bytes -> %ld: %s '%s'\n", func, (long) count, (long)result, hex, txt);
-
-
-}
-
 /* ------------------------------------------------------------------ */
 
 /* A buffered stream consists of a sequence of blocks.  Each block
@@ -74,13 +47,10 @@ bs_write(stream *restrict ss, const void *restrict buf, size_t elmsize, size_t c
 	bs *s;
 	size_t todo = cnt * elmsize;
 	uint16_t blksize;
-	size_t requested = todo;
 
 	s = (bs *) ss->stream_data.p;
-	if (s == NULL) {
-		joerijoeri("bs_write", buf, requested, -1);
+	if (s == NULL)
 		return -1;
-	}
 	assert(!ss->readonly);
 	assert(s->nr < sizeof(s->buf));
 	while (todo > 0) {
@@ -119,14 +89,12 @@ bs_write(stream *restrict ss, const void *restrict buf, size_t elmsize, size_t c
 			    ss->inner->write(ss->inner, s->buf, 1, s->nr) != (ssize_t) s->nr) {
 				mnstr_copy_error(ss, ss->inner);
 				s->nr = 0; /* data is lost due to error */
-				joerijoeri("bs_write", buf, requested, -1);
 				return -1;
 			}
 			s->blks++;
 			s->nr = 0;
 		}
 	}
-	joerijoeri("bs_write", buf, requested, cnt);
 	return (ssize_t) cnt;
 }
 
@@ -142,10 +110,8 @@ bs_flush(stream *ss, mnstr_flush_level flush_level)
 	bs *s;
 
 	s = (bs *) ss->stream_data.p;
-	if (s == NULL) {
-		joerijoeri("bs_flush", NULL, 0, -1);
+	if (s == NULL)
 		return -1;
-	}
 	assert(!ss->readonly);
 	assert(s->nr < sizeof(s->buf));
 	if (!ss->readonly) {
@@ -176,7 +142,6 @@ bs_flush(stream *ss, mnstr_flush_level flush_level)
 		      ss->inner->write(ss->inner, s->buf, 1, s->nr) != (ssize_t) s->nr))) {
 			mnstr_copy_error(ss, ss->inner);
 			s->nr = 0; /* data is lost due to error */
-			joerijoeri("bs_flush", NULL, 0, -1);
 			return -1;
 		}
 		// shouldn't we flush ss->inner too?
@@ -184,7 +149,6 @@ bs_flush(stream *ss, mnstr_flush_level flush_level)
 		s->blks++;
 		s->nr = 0;
 	}
-	joerijoeri("bs_flush", NULL, 0, 0);
 	return 0;
 }
 
@@ -230,13 +194,10 @@ bs_read_internal(stream *restrict ss, void *restrict buf, size_t elmsize, size_t
 	bs *s;
 	size_t todo = cnt * elmsize;
 	size_t n;
-	size_t requested = todo;
 
 	s = (bs *) ss->stream_data.p;
-	if (s == NULL) {
-		joerijoeri("bs_read", buf, requested, -1);
+	if (s == NULL)
 		return -1;
-	}
 	assert(ss->readonly);
 	assert(s->nr <= 1);
 
@@ -249,7 +210,6 @@ bs_read_internal(stream *restrict ss, void *restrict buf, size_t elmsize, size_t
 			 * that we did by setting s->nr to 0. */
 			assert(s->nr == 1);
 			s->nr = 0;
-			joerijoeri("bs_read", buf, requested, 0);
 			return 0;
 		}
 
@@ -260,17 +220,14 @@ bs_read_internal(stream *restrict ss, void *restrict buf, size_t elmsize, size_t
 		switch (mnstr_readSht(ss->inner, &blksize)) {
 		case -1:
 			mnstr_copy_error(ss, ss->inner);
-			joerijoeri("bs_read", buf, requested, -1);
 			return -1;
 		case 0:
-			joerijoeri("bs_read", buf, requested, 0);
 			return 0;
 		case 1:
 			break;
 		}
 		if ((uint16_t) blksize > (BLOCK << 1 | 1)) {
 			mnstr_set_error(ss, MNSTR_READ_ERROR, "invalid block size %d", blksize);
-			joerijoeri("bs_read", buf, requested, -1);
 			return -1;
 		}
 #ifdef BSTREAM_DEBUG
@@ -295,7 +252,6 @@ bs_read_internal(stream *restrict ss, void *restrict buf, size_t elmsize, size_t
 
 			if (m <= 0) {
 				mnstr_copy_error(ss, ss->inner);
-				joerijoeri("bs_read", buf, requested, -1);
 				return -1;
 			}
 #ifdef BSTREAM_DEBUG
@@ -330,17 +286,14 @@ bs_read_internal(stream *restrict ss, void *restrict buf, size_t elmsize, size_t
 			switch (mnstr_readSht(ss->inner, &blksize)) {
 			case -1:
 				mnstr_copy_error(ss, ss->inner);
-				joerijoeri("bs_read", buf, requested, -1);
 				return -1;
 			case 0:
-				joerijoeri("bs_read", buf, requested, 0);
 				return 0;
 			case 1:
 				break;
 			}
 			if ((uint16_t) blksize > (BLOCK << 1 | 1)) {
 				mnstr_set_error(ss, MNSTR_READ_ERROR, "invalid block size %d", blksize);
-				joerijoeri("bs_read", buf, requested, -1);
 				return -1;
 			}
 #ifdef BSTREAM_DEBUG
@@ -361,7 +314,6 @@ bs_read_internal(stream *restrict ss, void *restrict buf, size_t elmsize, size_t
 	 * empty read */
 	if (todo > 0 && cnt == 0)
 		s->nr = 0;
-	joerijoeri("bs_read", buf, requested, (ssize_t) (elmsize > 0 ? cnt / elmsize : 0));
 	return (ssize_t) (elmsize > 0 ? cnt / elmsize : 0);
 }
 

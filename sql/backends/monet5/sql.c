@@ -3395,8 +3395,6 @@ mvc_bin_import_table_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 
 		if (tpe <= TYPE_str || tpe == TYPE_date || tpe == TYPE_daytime || tpe == TYPE_timestamp) {
 			if (onclient) {
-				joeri_role("server");
-				joeri_log("mvc_bin_import_table_wrap: onclient\n");
 				stream *ws = be->mvc->scanner.ws;
 				mnstr_write(ws, PROMPT3, sizeof(PROMPT3)-1, 1);
 				mnstr_printf(ws, "rb %s\n", fname);
@@ -3436,8 +3434,6 @@ mvc_bin_import_table_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 				}
 				mnstr_write(ws, PROMPT3, sizeof(PROMPT3)-1, 1);
 				mnstr_flush(ws, MNSTR_FLUSH_DATA);
-				joeri_log("mvc_bin_import_table_wrap: onclient done\n");
-				joeri_role(NULL);
 				if (msg != NULL)
 					goto bailout;
 			} else {
