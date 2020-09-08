@@ -2002,7 +2002,7 @@ not_symbol_can_be_propagated(mvc *sql, symbol *sc)
 }
 
 /* Warning, this function assumes the entire bison tree can be negated, so call it after 'not_symbol_can_be_propagated' */
-static void
+static symbol *
 negate_symbol_tree(mvc *sql, symbol *sc)
 {
 	switch (sc->token) {
@@ -2039,10 +2039,11 @@ negate_symbol_tree(mvc *sql, symbol *sc)
 	case SQL_NOT: { /* nested NOTs eliminate each other */
 		if (sc->data.sym->token == SQL_ATOM) {
 			AtomNode *an = (AtomNode*) sc->data.sym;
-			memmove(sc, an, sizeof(AtomNode));
+			sc = newAtomNode(sql->sa, an->a);
 		} else if (sc->data.sym->token == SQL_SELECT) {
 			SelectNode *sn = (SelectNode*) sc->data.sym;
-			memmove(sc, sn, sizeof(SelectNode));
+			sc = newSelectNode(sql->sa, sn->distinct, sn->selection, sn->into, sn->from, sn->where, sn->groupby, sn->having,
+							   sn->orderby, sn->name, sn->limit, sn->offset, sn->sample, sn->seed, sn->window);
 		} else {
 			memmove(sc, sc->data.sym, sizeof(symbol));
 		}
@@ -2056,13 +2057,14 @@ negate_symbol_tree(mvc *sql, symbol *sc)
 	} break;
 	case SQL_AND:
 	case SQL_OR: {
-		negate_symbol_tree(sql, sc->data.lval->h->data.sym);
-		negate_symbol_tree(sql, sc->data.lval->h->next->data.sym);
+		sc->data.lval->h->data.sym = negate_symbol_tree(sql, sc->data.lval->h->data.sym);
+		sc->data.lval->h->next->data.sym= negate_symbol_tree(sql, sc->data.lval->h->next->data.sym);
 		sc->token = sc->token == SQL_AND ? SQL_OR : SQL_AND;
 	} break;
 	default:
 		break;
 	}
+	return sc;
 }
 
 sql_exp *
@@ -2308,7 +2310,7 @@ rel_logical_value_exp(sql_query *query, sql_rel **rel, symbol *sc, int f, exp_ki
 	}
 	case SQL_NOT: {
 		if (not_symbol_can_be_propagated(sql, sc->data.sym)) {
-			negate_symbol_tree(sql, sc->data.sym);
+			sc->data.sym = negate_symbol_tree(sql, sc->data.sym);
 			return rel_logical_value_exp(query, rel, sc->data.sym, f, ek);
 		}
 		sql_exp *le = rel_logical_value_exp(query, rel, sc->data.sym, f, ek);
@@ -2603,7 +2605,7 @@ rel_logical_exp(sql_query *query, sql_rel *rel, symbol *sc, int f)
 	}
 	case SQL_NOT: {
 		if (not_symbol_can_be_propagated(sql, sc->data.sym)) {
-			negate_symbol_tree(sql, sc->data.sym);
+			sc->data.sym = negate_symbol_tree(sql, sc->data.sym);
 			return rel_logical_exp(query, rel, sc->data.sym, f);
 		}
 		sql_exp *le = rel_value_exp(query, &rel, sc->data.sym, f|sql_farg, ek);
