@@ -1585,7 +1585,7 @@ dumpGeometriesSingle(BAT *idBAT, BAT *geomBAT, const GEOSGeometry *geosGeometry,
 
 	//change the path only if it is empty
 	if (pathLength == 0) {
-		int lvlDigitsNum = 10;	//MAX_UNIT = 4,294,967,295
+		const int lvlDigitsNum = 10;	//MAX_UNIT = 4,294,967,295
 
 		(*lvl)++;
 
@@ -1756,7 +1756,7 @@ dumpPointsPoint(BAT *idBAT, BAT *geomBAT, const GEOSGeometry *geosGeometry, unsi
 	char *newPath = NULL;
 	size_t pathLength = strlen(path);
 	wkb *pointWKB = geos2wkb(geosGeometry);
-	int lvlDigitsNum = 10;	//MAX_UNIT = 4,294,967,295
+	const int lvlDigitsNum = 10;	//MAX_UNIT = 4,294,967,295
 	str err = MAL_SUCCEED;
 
 	if (pointWKB == NULL)
@@ -1814,7 +1814,7 @@ dumpPointsPolygon(BAT *idBAT, BAT *geomBAT, const GEOSGeometry *geosGeometry, un
 	const GEOSGeometry *exteriorRingGeometry;
 	int numInteriorRings = 0, i = 0;
 	str err;
-	int lvlDigitsNum = 10;	//MAX_UNIT = 4,294,967,295
+	const int lvlDigitsNum = 10;	//MAX_UNIT = 4,294,967,295
 	size_t pathLength = strlen(path);
 	char *newPath;
 	char *extraStr = ",";
@@ -1829,7 +1829,8 @@ dumpPointsPolygon(BAT *idBAT, BAT *geomBAT, const GEOSGeometry *geosGeometry, un
 	newPath = GDKmalloc(pathLength + lvlDigitsNum + extraLength + 1);
 	if (newPath == NULL)
 		throw(MAL, "geom.DumpPoints", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-	sprintf(newPath, "%s%u%s", path, *lvl, extraStr);
+	snprintf(newPath, pathLength + lvlDigitsNum + extraLength + 1,
+			 "%s%u%s", path, *lvl, extraStr);
 
 	//get the points in the exterior ring
 	err = dumpPointsLineString(idBAT, geomBAT, exteriorRingGeometry, newPath);
@@ -1845,12 +1846,12 @@ dumpPointsPolygon(BAT *idBAT, BAT *geomBAT, const GEOSGeometry *geosGeometry, un
 	// iterate over the interiorRing and transform each one of them
 	for (i = 0; i < numInteriorRings; i++) {
 		(*lvl)++;
-		lvlDigitsNum = 10;	//MAX_UNIT = 4,294,967,295
 
 		newPath = GDKmalloc(pathLength + lvlDigitsNum + extraLength + 1);
 		if (newPath == NULL)
 			throw(MAL, "geom.DumpPoints", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-		sprintf(newPath, "%s%u%s", path, *lvl, extraStr);
+		snprintf(newPath, pathLength + lvlDigitsNum + extraLength + 1,
+				 "%s%u%s", path, *lvl, extraStr);
 
 		err = dumpPointsLineString(idBAT, geomBAT, GEOSGetInteriorRingN(geosGeometry, i), newPath);
 		GDKfree(newPath);
@@ -1877,7 +1878,7 @@ dumpPointsMultiGeometry(BAT *idBAT, BAT *geomBAT, const GEOSGeometry *geosGeomet
 	geometriesNum = GEOSGetNumGeometries(geosGeometry);
 
 	for (i = 0; i < geometriesNum; i++) {
-		int lvlDigitsNum = 10;	//MAX_UNIT = 4,294,967,295
+		const int lvlDigitsNum = 10;	//MAX_UNIT = 4,294,967,295
 
 		multiGeometry = GEOSGetGeometryN(geosGeometry, i);
 		lvl++;
@@ -1885,7 +1886,8 @@ dumpPointsMultiGeometry(BAT *idBAT, BAT *geomBAT, const GEOSGeometry *geosGeomet
 		newPath = GDKmalloc(pathLength + lvlDigitsNum + extraLength + 1);
 		if (newPath == NULL)
 			throw(MAL, "geom.DumpPoints", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-		sprintf(newPath, "%s%u%s", path, lvl, extraStr);
+		snprintf(newPath, pathLength + lvlDigitsNum + extraLength + 1,
+				 "%s%u%s", path, lvl, extraStr);
 
 		//*secondLevel = 0;
 		err = dumpPointsGeometry(idBAT, geomBAT, multiGeometry, newPath);
@@ -2176,11 +2178,11 @@ wkbFROMSTR_withSRID(const char *geomWKT, size_t *len, wkb **geomWKB, int srid, s
 	//continuing. Of course this means that isValid for example does
 	//not work correctly.
 	if (strncasecmp(geomWKT, polyhedralSurface, strlen(polyhedralSurface)) == 0) {
-		size_t sizeOfInfo = strlen(geomWKT) - strlen(polyhedralSurface);
-		geomWKT_new = GDKmalloc(sizeOfInfo + strlen(multiPolygon) + 1);
+		size_t sizeOfInfo = strlen(geomWKT) - strlen(polyhedralSurface) + strlen(multiPolygon) + 1;
+		geomWKT_new = GDKmalloc(sizeOfInfo);
 		if (geomWKT_new == NULL)
 			throw(MAL, "wkb.FromText", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-		sprintf(geomWKT_new, "%s%s", multiPolygon, geomWKT + strlen(polyhedralSurface));
+		snprintf(geomWKT_new, sizeOfInfo, "%s%s", multiPolygon, geomWKT + strlen(polyhedralSurface));
 		geomWKT = geomWKT_new;
 	}
 	////////////////////////// UP TO HERE ///////////////////////////
@@ -5479,8 +5481,7 @@ wkbaTOSTR(char **toStr, size_t *len, const void *FROMARRAY, bool external)
 	if (itemsNumStr == NULL)
 		return -1;
 
-	sprintf(itemsNumStr, "%d", items);
-	dataSize = strlen(itemsNumStr);
+	dataSize = (size_t) snprintf(itemsNumStr, itemsNumDigits + 1, "%d", items);
 
 	// reserve space for an array with pointers to the partial
 	// strings, i.e. for each wkbTOSTR

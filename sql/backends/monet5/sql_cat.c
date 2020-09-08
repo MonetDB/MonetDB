@@ -634,6 +634,8 @@ drop_index(Client cntxt, mvc *sql, char *sname, char *iname)
 		throw(SQL,"sql.drop_index", SQLSTATE(42000) "DROP INDEX: access denied for %s to schema '%s'", sqlvar_get_string(find_global_var(sql, mvc_bind_schema(sql, "sys"), "current_user")), s->base.name);
 	if (!(i = mvc_bind_idx(sql, s, iname)))
 		throw(SQL,"sql.drop_index", SQLSTATE(42S12) "DROP INDEX: no such index '%s'", iname);
+	if (i->key)
+		throw(SQL,"sql.drop_index", SQLSTATE(42S12) "DROP INDEX: cannot drop index '%s', because the constraint '%s' depends on it", iname, i->key->base.name);
 	if (i->type == ordered_idx) {
 		sql_kc *ic = i->columns->h->data;
 		BAT *b = mvc_bind(sql, s->base.name, ic->c->t->base.name, ic->c->base.name, 0);

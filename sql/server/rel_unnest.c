@@ -1514,14 +1514,6 @@ _rel_unnest(visitor *v, sql_rel *rel)
 	return rel;
 }
 
-static sql_rel *
-rel_reset_subquery(visitor *v, sql_rel *rel)
-{
-	(void)v;
-	rel->subquery = 0;
-	return rel;
-}
-
 static sql_exp *
 rewrite_inner(mvc *sql, sql_rel *rel, sql_rel *inner, operator_type op)
 {
@@ -2004,15 +1996,20 @@ rel_union_exps(mvc *sql, sql_exp **l, list *vals, int is_tuple)
 {
 	sql_rel *u = NULL;
 	list *exps = NULL;
+	int freevar = 0;
 
 	for (node *n=vals->h; n; n = n->next) {
 		sql_exp *ve = n->data, *r, *s;
 		sql_rel *sq = NULL;
 
-		if (exp_has_rel(ve))
+		if (exp_has_rel(ve)) {
 			sq = exp_rel_get_rel(sql->sa, ve); /* get subquery */
-		else {
+			if (sq)
+				freevar = rel_has_freevar(sql,sq);
+		} else {
 			sq = rel_project(sql->sa, NULL, append(sa_list(sql->sa), ve));
+			if (!exp_is_atom(ve))
+				freevar = 1;
 			set_processed(sq);
 		}
 		if (is_tuple) { /* cast each one */
@@ -2040,7 +2037,8 @@ rel_union_exps(mvc *sql, sql_exp **l, list *vals, int is_tuple)
 					sq = rel_project(sql->sa, sq, append(sa_list(sql->sa), ve));
 					set_processed(sq);
 				}
-				exp_set_freevar(sql, ve, sq);
+				if (freevar)
+					exp_set_freevar(sql, ve, sq);
 			}
 		}
 		if (!u) {
@@ -2328,10 +2326,8 @@ rewrite_compare(visitor *v, sql_rel *rel, sql_exp *e, int depth)
 
 			if (exp_has_rel(re))
 				rsq = exp_rel_get_rel(v->sql->sa, re); /* get subquery */
-			if (rsq) {
-				re = rsq->exps->t->data;
-				re = exp_ref(v->sql, re);
-			}
+			if (rsq)
+				re = exp_rel_update_exp(v->sql, re);
 
 			if (is_values(le)) /* exp_values */
 				is_tuple = 1;
@@ -2390,7 +2386,7 @@ rewrite_compare(visitor *v, sql_rel *rel, sql_exp *e, int depth)
 				if (!lsq)
 					lsq = rel->l;
 				if (sq)
-					(void)rewrite_inner(v->sql, rel, sq, op_join);
+					(void)rewrite_inner(v->sql, rel, sq, depth?op_left:op_join);
 
 				if (quantifier) {
 					sql_subfunc *a;
@@ -3162,8 +3158,6 @@ rel_unnest(mvc *sql, sql_rel *rel)
 {
 	visitor v = { .sql = sql };
 
-	rel = rel_visitor_topdown(&v, rel, &rel_reset_subquery);
-	v.changes = 0;
 	rel = rel_exp_visitor_bottomup(&v, rel, &rewrite_simplify_exp, false);
 	rel = rel_visitor_bottomup(&v, rel, &rewrite_simplify);
 	rel = rel_visitor_bottomup(&v, rel, &rewrite_or_exp);

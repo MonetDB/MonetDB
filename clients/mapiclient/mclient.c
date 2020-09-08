@@ -77,7 +77,7 @@ static char *encoding;
 static bool errseen = false;
 static bool allow_remote = false;
 
-#define setPrompt() sprintf(promptbuf, "%.*s>", (int) sizeof(promptbuf) - 2, language)
+#define setPrompt() snprintf(promptbuf, sizeof(promptbuf), "%.*s>", (int) sizeof(promptbuf) - 2, language)
 #define debugMode() (strncmp(promptbuf, "mdb", 3) == 0)
 
 /* the internal result set formatters */
@@ -335,7 +335,7 @@ fetch_line(MapiHdl hdl)
 		if (strncmp(reply, "mdb>#EOD", 8) == 0)
 			setPrompt();
 		else
-			sprintf(promptbuf, "mdb>");
+			snprintf(promptbuf, sizeof(promptbuf), "mdb>");
 	}
 	return reply;
 }
@@ -1352,7 +1352,7 @@ SQLdebugRendering(MapiHdl hdl)
 	char *reply;
 	int cnt = 0;
 
-	sprintf(promptbuf, "mdb>");
+	snprintf(promptbuf, sizeof(promptbuf), "mdb>");
 	while ((reply = fetch_line(hdl))) {
 		cnt++;
 		mnstr_printf(toConsole, "%s\n", reply);

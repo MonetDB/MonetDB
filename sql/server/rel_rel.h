@@ -144,4 +144,7 @@ typedef sql_rel *(*rel_rewrite_fptr)(visitor *v, sql_rel *rel);
 extern sql_rel *rel_visitor_topdown(visitor *v, sql_rel *rel, rel_rewrite_fptr rel_rewriter);
 extern sql_rel *rel_visitor_bottomup(visitor *v, sql_rel *rel, rel_rewrite_fptr rel_rewriter);
 
+/* validate that all parts of the expression e can be bound to the relation rel (or are atoms) */
+extern bool rel_rebind_exp(mvc *sql, sql_rel *rel, sql_exp *e);
+
 #endif /* _REL_REL_H_ */

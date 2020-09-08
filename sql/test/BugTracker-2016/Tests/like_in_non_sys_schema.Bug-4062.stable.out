@@ -71,24 +71,24 @@ stdout of test 'like_in_non_sys_schema.Bug-4062` in directory 'sql/test/BugTrack
 #WHERE "columns"."default" LIKE 'next value for %';
 % . # table_name
 % IS_AUTOINCREMENT # name
-% varchar # type
-% 0 # length
+% char # type
+% 3 # length
 #set schema tmp;
 #SELECT cast(CASE WHEN "columns"."default" IS NOT NULL AND "columns"."default" LIKE 'next value for %' THEN 'YES' ELSE 'NO' END AS varchar(3)) AS "IS_AUTOINCREMENT"
 #FROM "sys"."columns"
 #WHERE "columns"."default" LIKE 'next value for %';
 % . # table_name
 % IS_AUTOINCREMENT # name
-% varchar # type
-% 0 # length
+% char # type
+% 3 # length
 #set schema profiler;
 #SELECT cast(CASE WHEN "columns"."default" IS NOT NULL AND "columns"."default" LIKE 'next value for %' THEN 'YES' ELSE 'NO' END AS varchar(3)) AS "IS_AUTOINCREMENT"
 #FROM "sys"."columns"
 #WHERE "columns"."default" LIKE 'next value for %';
 % . # table_name
 % IS_AUTOINCREMENT # name
-% varchar # type
-% 0 # length
+% char # type
+% 3 # length
 
 # 15:05:37 >  
 # 15:05:37 >  "Done."

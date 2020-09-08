@@ -392,7 +392,7 @@ batstr_2dec(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	}
 	off = b->hseqbase;
 	q = canditer_init(&ci, b, s);
-	if (!(res = COLnew(b->hseqbase, TPE(TYPE), q, TRANSIENT))) {
+	if (!(res = COLnew(ci.hseq, TPE(TYPE), q, TRANSIENT))) {
 		msg = createException(SQL, "sql.dec_" STRING(TYPE), SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		goto bailout;
 	}
@@ -476,7 +476,7 @@ batdec2second_interval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	}
 	off = b->hseqbase;
 	q = canditer_init(&ci, b, s);
-	if (!(res = COLnew(b->hseqbase, TYPE_lng, q, TRANSIENT))) {
+	if (!(res = COLnew(ci.hseq, TYPE_lng, q, TRANSIENT))) {
 		msg = createException(SQL, "batcalc.batdec2second_interval", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		goto bailout;
 	}
