@@ -808,7 +808,7 @@ GDKinit(opt *set, int setlen, int embedded)
 		BBPunlock();
 	}
 	errno = 0;
-	if (!GDKinmemory() && !GDKenvironment(dbpath))
+	if (!GDKinmemory(0) && !GDKenvironment(dbpath))
 		return GDK_FAIL;
 
 	MT_init_posix();
@@ -940,7 +940,7 @@ GDKinit(opt *set, int setlen, int embedded)
 	if (GDKnr_threads == 0)
 		GDKnr_threads = MT_check_nr_cores();
 
-	if (!GDKinmemory()) {
+	if (!GDKinmemory(0)) {
 		if ((p = GDKgetenv("gdk_dbpath")) != NULL &&
 			(p = strrchr(p, DIR_SEP)) != NULL) {
 			if (GDKsetenv("gdk_dbname", p + 1) != GDK_SUCCEED) {
@@ -1135,7 +1135,7 @@ GDKreset(int status)
 void
 GDKexit(int status)
 {
-	if (!GDKinmemory() && GET_GDKLOCK(PERSISTENT) == NULL) {
+	if (!GDKinmemory(0) && GET_GDKLOCK(PERSISTENT) == NULL) {
 		/* stop GDKtracer */
 		GDKtracer_stop();
 

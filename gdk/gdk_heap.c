@@ -109,14 +109,14 @@ HEAPalloc(Heap *h, size_t nitems, size_t itemsize)
 		GDKerror("allocating more than heap can accomodate\n");
 		return GDK_FAIL;
 	}
-	if (GDKinmemory() ||
+	if (GDKinmemory(h->farmid) ||
 	    (GDKmem_cursize() + h->size < GDK_mem_maxsize &&
 	     h->size < (h->farmid == 0 ? GDK_mmap_minsize_persistent : GDK_mmap_minsize_transient))) {
 		h->storage = STORE_MEM;
 		h->base = GDKmalloc(h->size);
 		TRC_DEBUG(HEAP, "HEAPalloc %zu %p\n", h->size, h->base);
 	}
-	if (!GDKinmemory() && h->base == NULL) {
+	if (!GDKinmemory(h->farmid) && h->base == NULL) {
 		char *nme;
 
 		nme = GDKfilepath(h->farmid, BATDIR, h->filename, NULL);
@@ -158,7 +158,7 @@ HEAPextend(Heap *h, size_t size, bool mayshare)
 	char nme[sizeof(h->filename)], *ext;
 	const char *failure = "None";
 
-	if (GDKinmemory()) {
+	if (GDKinmemory(h->farmid)) {
 		strcpy_len(nme, ":inmemory", sizeof(nme));
 		ext = "ext";
 	} else {
@@ -200,7 +200,7 @@ HEAPextend(Heap *h, size_t size, bool mayshare)
 		 * file-mapped storage */
 		Heap bak = *h;
 		bool exceeds_swap = size + GDKmem_cursize() >= GDK_mem_maxsize;
-		bool must_mmap = !GDKinmemory() && (exceeds_swap || h->newstorage != STORE_MEM || size >= (h->farmid == 0 ? GDK_mmap_minsize_persistent : GDK_mmap_minsize_transient));
+		bool must_mmap = !GDKinmemory(h->farmid) && (exceeds_swap || h->newstorage != STORE_MEM || size >= (h->farmid == 0 ? GDK_mmap_minsize_persistent : GDK_mmap_minsize_transient));
 
 		h->size = size;
 
@@ -217,7 +217,7 @@ HEAPextend(Heap *h, size_t size, bool mayshare)
 			failure = "h->storage == STORE_MEM && !must_map && !h->base";
 		}
 
-		if (!GDKinmemory()) {
+		if (!GDKinmemory(h->farmid)) {
 			/* too big: convert it to a disk-based temporary heap */
 			bool existing = false;
 
@@ -579,7 +579,7 @@ HEAPfree(Heap *h, bool rmheap)
 		}
 	} else
 #endif
-	if (rmheap) {
+	if (rmheap && !GDKinmemory(h->farmid)) {
 		char *path = GDKfilepath(h->farmid, BATDIR, h->filename, NULL);
 		if (path && remove(path) != 0 && errno != ENOENT)
 			perror(path);

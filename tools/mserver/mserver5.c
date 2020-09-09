@@ -497,13 +497,13 @@ main(int argc, char **av)
 		}
 	}
 	if (inmemory) {
-		if (BBPaddfarm(NULL, (1 << PERSISTENT) | (1 << TRANSIENT), true) != GDK_SUCCEED) {
+		if (BBPaddfarm(NULL, (1U << PERSISTENT) | (1U << TRANSIENT), true) != GDK_SUCCEED) {
 			fprintf(stderr, "!ERROR: cannot add in-memory farm\n");
 			exit(1);
 		}
 	} else {
-		if (BBPaddfarm(dbpath, 1 << PERSISTENT, true) != GDK_SUCCEED ||
-		    BBPaddfarm(dbextra ? dbextra : dbpath, 1 << TRANSIENT, true) != GDK_SUCCEED) {
+		if (BBPaddfarm(dbpath, 1U << PERSISTENT, true) != GDK_SUCCEED ||
+		    BBPaddfarm(dbextra ? dbextra : dbpath, 1U << TRANSIENT, true) != GDK_SUCCEED) {
 			fprintf(stderr, "!ERROR: cannot add farm\n");
 			exit(1);
 		}
@@ -599,7 +599,7 @@ main(int argc, char **av)
 		}
 	}
 
-	if (!GDKinmemory()) {
+	if (!GDKinmemory(0)) {
 		/* configure sabaoth to use the right dbpath and active database */
 		msab_dbpathinit(GDKgetenv("gdk_dbpath"));
 		/* wipe out all cruft, if left over */
@@ -645,7 +645,7 @@ main(int argc, char **av)
 #endif
 #endif
 
-	if (!GDKinmemory()) {
+	if (!GDKinmemory(0)) {
 		str lang = "mal";
 		/* we inited mal before, so publish its existence */
 		if ((err = msab_marchScenario(lang)) != NULL) {
@@ -663,7 +663,7 @@ main(int argc, char **av)
 		FILE *secretf;
 		size_t len;
 
-		if (GDKinmemory() || GDKgetenv("monet_vault_key") == NULL) {
+		if (GDKinmemory(0) || GDKgetenv("monet_vault_key") == NULL) {
 			/* use a default (hard coded, non safe) key */
 			snprintf(secret, sizeof(secret), "%s", "Xas632jsi2whjds8");
 		} else {
@@ -691,7 +691,7 @@ main(int argc, char **av)
 		}
 		if ((err = AUTHunlockVault(secretp)) != MAL_SUCCEED) {
 			/* don't show this as a crash */
-			if (!GDKinmemory())
+			if (!GDKinmemory(0))
 				msab_registerStop();
 			fprintf(stderr, "%s\n", err);
 			freeException(err);
@@ -733,14 +733,14 @@ main(int argc, char **av)
 
 	if (mal_init(modules, 0)) {
 		/* don't show this as a crash */
-		if (!GDKinmemory())
+		if (!GDKinmemory(0))
 			msab_registerStop();
 		return 1;
 	}
 
 	emergencyBreakpoint();
 
-	if (!GDKinmemory()) {
+	if (!GDKinmemory(0)) {
 		char *secret = NULL;
 		if ((err = msab_pickSecret(&secret)) != NULL || (err = msab_registerStarted()) != NULL) {
 			/* throw the error at the user, but don't die */

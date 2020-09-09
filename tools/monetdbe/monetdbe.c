@@ -524,14 +524,14 @@ monetdbe_startup(monetdbe_database_internal *mdbe, char* dbdir, monetdbe_options
 	}
 
 	if (!dbdir) { /* in-memory */
-		if (BBPaddfarm(NULL, (1 << PERSISTENT) | (1 << TRANSIENT), false) != GDK_SUCCEED) {
+		if (BBPaddfarm(NULL, (1U << PERSISTENT) | (1U << TRANSIENT), false) != GDK_SUCCEED) {
 			mo_free_options(set, setlen);
 			mdbe->msg = createException(MAL, "monetdbe.monetdbe_startup", "Cannot add in-memory farm");
 			goto cleanup;
 		}
 	} else {
-		if (BBPaddfarm(dbdir, 1 << PERSISTENT, false) != GDK_SUCCEED ||
-			BBPaddfarm(/*dbextra ? dbextra : */dbdir, 1 << TRANSIENT, false) != GDK_SUCCEED) {
+		if (BBPaddfarm(dbdir, 1U << PERSISTENT, false) != GDK_SUCCEED ||
+			BBPaddfarm(/*dbextra ? dbextra : */dbdir, 1U << TRANSIENT, false) != GDK_SUCCEED) {
 			mo_free_options(set, setlen);
 			mdbe->msg = createException(MAL, "monetdbe.monetdbe_startup", "Cannot add farm %s", dbdir);
 			goto cleanup;

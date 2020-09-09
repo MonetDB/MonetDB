@@ -69,6 +69,12 @@ should store transient data.  Default value is the
 value of the
 .B \-\-dbpath
 option.
+If the value of
+.I path
+is
+.BR :inmemory ,
+transient data is not stored on disk at all but kept in memory at all
+times.
 .TP
 \fB\-\-dbtrace=\fP\fIpath\fP
 File name for the trace log file for

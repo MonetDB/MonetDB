@@ -182,7 +182,7 @@ TMsubcommit_list(bat *subcommit, int cnt)
 	assert(cnt > 0);
 	assert(subcommit[0] == 0); /* BBP artifact: slot 0 in the array will be ignored */
 
-	if (GDKinmemory())
+	if (GDKinmemory(0))
 		return GDK_SUCCEED;
 
 	/* sort the list on BAT id */
