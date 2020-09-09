@@ -11,18 +11,6 @@
 #include "gdk_private.h"
 #include "gdk_cand.h"
 
-bool
-BATiscand(BAT *b)
-{
-	if (b->ttype == TYPE_msk)
-		return true;
-	if (ATOMtype(b->ttype) != TYPE_oid)
-		return false;
-	if (b->ttype == TYPE_void && is_oid_nil(b->tseqbase))
-		return false;
-	return BATtordered(b) && BATtkey(b);
-}
-
 /* create a new, dense candidate list with values from `first' up to,
  * but not including, `last' */
 static inline BAT *
