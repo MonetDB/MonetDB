@@ -30,8 +30,7 @@ QUERY = SELECT
                 BETWEEN (SELECT tp2.proj * t1.col1 + MAX(t1.col5) FROM LATERAL (SELECT tp.ColID + MIN(t1.col6) - t1.col1 as proj FROM tbl_ProductSales tp) AS tp2) 
                 AND 
                 (SELECT SUM(t1.col7) FROM tbl_ProductSales tp HAVING t1.col2 < ALL(SELECT MAX(tp.ColID))) a2
-ERROR = !zero_or_one: cardinality violation, scalar expression expected
-CODE  = M0M29
+ERROR = !GDK reported error: hashjoin: more than one match
 
 # 14:18:27 >  
 # 14:18:27 >  "Done."
