@@ -2968,9 +2968,9 @@ exp_set_type_recurse(mvc *sql, sql_subtype *type, sql_exp *e, const char **relna
 	switch (e->type) {
 		case e_atom: {
 			const char *next_exp = exp_name(e);
-			if (e->f || (next_exp && !strcmp(next_exp, *expname))) {
-				if (!e->f)
-					*expname = e->r ? (const char*) e->r : next_exp;
+			if (e->f || !next_exp || !strcmp(next_exp, *expname)) {
+				if (!e->f && next_exp)
+					*expname = next_exp;
 				return exp_set_list_recurse(sql, type, e, relname, expname);
 			}
 		} break;
