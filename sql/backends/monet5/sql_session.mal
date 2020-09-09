@@ -24,7 +24,7 @@ unsafe pattern sql.setsessiontimeout(sid:sht, n:int):void
 address SQLsessionTimeout;
 unsafe pattern sql.setsessiontimeout(sid:int, n:int):void
 address SQLsessionTimeout
-comment "Set the session timeout for a particulat session id";
+comment "Set the session timeout for a particular session id";
 
 unsafe pattern sql.setoptimizer(opt:str):void
 address SQLsetoptimizer;
