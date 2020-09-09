@@ -3051,7 +3051,8 @@ tail_set_type(stmt *st, sql_subtype *t)
 	}
 }
 
-#define trivial_string_conversion(x) ((x) == EC_BIT || (x) == EC_CHAR || (x) == EC_STRING || (x) == EC_NUM || (x) == EC_POS || (x) == EC_FLT)
+#define trivial_string_conversion(x) ((x) == EC_BIT || (x) == EC_CHAR || (x) == EC_STRING || (x) == EC_NUM || (x) == EC_POS || (x) == EC_FLT \
+									  || (x) == EC_DATE || (x) == EC_BLOB || (x) == EC_MONTH)
 
 stmt *
 stmt_convert(backend *be, stmt *v, stmt *sel, sql_subtype *f, sql_subtype *t)
