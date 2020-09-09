@@ -84,19 +84,8 @@ joinparamcheck(BAT *l, BAT *r1, BAT *r2, BAT *sl, BAT *sr, const char *func)
 		GDKerror("%s: right inputs not aligned.\n", func);
 		return GDK_FAIL;
 	}
-	if ((sl && ATOMtype(sl->ttype) != TYPE_oid) ||
-	    (sr && ATOMtype(sr->ttype) != TYPE_oid)) {
-		GDKerror("%s: candidate lists must have type OID.\n", func);
-		return GDK_FAIL;
-	}
-	if ((sl && !BATtordered(sl)) ||
-	    (sr && !BATtordered(sr))) {
-		GDKerror("%s: candidate lists must be sorted.\n", func);
-		return GDK_FAIL;
-	}
-	if ((sl && !BATtkey(sl)) ||
-	    (sr && !BATtkey(sr))) {
-		GDKerror("%s: candidate lists must be unique.\n", func);
+	if (!BATiscand(sl) || !BATiscand(sr)) {
+		GDKerror("%s: argument not a candidate list.\n", func);
 		return GDK_FAIL;
 	}
 	return GDK_SUCCEED;
