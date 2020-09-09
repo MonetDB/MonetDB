@@ -51,6 +51,28 @@ stdout of test 'sqlancer07` in directory 'sql/test/SQLancer` itself:
 % boolean # type
 % 5 # length
 #ROLLBACK;
+#START TRANSACTION;
+#CREATE TABLE "t0" ("c0" BOOLEAN NOT NULL);
+#CREATE TABLE "t1" ("c0" DECIMAL(18,3));
+#CREATE TABLE "t2" ("c0" DECIMAL(18,3),"c2" DATE);
+#PREPARE (SELECT DISTINCT t0.c0, INTERVAL '1734780053' SECOND FROM t0, t1) UNION ALL (SELECT ?, ? FROM t2);
+#PREPARE (SELECT DISTINCT t0.c0, INTERVAL '1734780053' SECOND FROM t0, t1) UNION ALL (SELECT ?, ? FROM t2);
+% .prepare,	.prepare,	.prepare,	.prepare,	.prepare,	.prepare # table_name
+% type,	digits,	scale,	schema,	table,	column # name
+% varchar,	int,	int,	str,	str,	str # type
+% 12,	3,	1,	0,	3,	2 # length
+[ "boolean",	1,	0,	"",	"%10",	"c0"	]
+[ "sec_interval",	13,	0,	"",	"%10",	"%2"	]
+[ "boolean",	1,	0,	NULL,	NULL,	NULL	]
+[ "sec_interval",	13,	0,	NULL,	NULL,	NULL	]
+#ROLLBACK;
+#START TRANSACTION;
+#CREATE TABLE "t0" ("c0" INTERVAL MONTH NOT NULL,CONSTRAINT "t0_c0_pkey" PRIMARY KEY ("c0"),CONSTRAINT "t0_c0_unique" UNIQUE ("c0"),CONSTRAINT "t0_c0_unique" UNIQUE ("c0"));
+#INSERT INTO "t0" VALUES (INTERVAL '2101098338' MONTH);
+[ 1	]
+#CREATE TABLE "t1" ("c0" INTERVAL MONTH,"c1" BOOLEAN);
+#CREATE TABLE "t2" ("c0" INTERVAL MONTH);
+#ROLLBACK;
 
 # 10:16:14 >  
 # 10:16:14 >  "Done."
