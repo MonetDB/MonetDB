@@ -86,7 +86,7 @@ get_tl_error_buf(void)
 		p = malloc(sizeof(*p));
 		if (p == NULL)
 			return NULL;
-		*p = (struct tl_error_buf) { 0 };
+		*p = (struct tl_error_buf) { .msg = 0 };
 		pthread_setspecific(tl_error_key, p);
 		struct tl_error_buf *second_attempt = pthread_getspecific(tl_error_key);
 		assert(p == second_attempt /* maybe mnstr_init has not been called? */);
@@ -124,7 +124,7 @@ get_tl_error_buf(void)
 		p = malloc(sizeof(*p));
 		if (p == NULL)
 			return NULL;
-		*p = (struct tl_error_buf) { 0 };
+		*p = (struct tl_error_buf) { .msg = 0 };
 		if (!TlsSetValue(tl_error_key, p)) {
 			free(p);
 			return NULL;
