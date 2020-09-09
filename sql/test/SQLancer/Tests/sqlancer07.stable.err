@@ -9,6 +9,12 @@ MAPI  = (monetdb) /var/tmp/mtest-52758/.s.monetdb.31957
 QUERY = PREPARE SELECT DISTINCT (SELECT DISTINCT r'|m<kv' FROM t1 WHERE ((t1.c0)<(?)) GROUP BY t1.c2, ?), ?, t1.c2 FROM t1 WHERE CAST(? AS BOOLEAN) LIMIT 2103332269785059850;
 ERROR = !Could not determine type for argument number 2
 CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-81449/.s.monetdb.32416
+QUERY = SELECT t0.c0 BETWEEN SYMMETRIC (SELECT t0.c0 FROM t0) AND t0.c0 FROM t0;
+ERROR = !GDK reported error: BATsubcross: more than one match
+MAPI  = (monetdb) /var/tmp/mtest-81449/.s.monetdb.32416
+QUERY = SELECT CAST(NOT ((t0.c0) NOT BETWEEN SYMMETRIC ((SELECT DISTINCT t0.c0 FROM t0, t1)) AND (t0.c0)) AS INT) FROM t0;
+ERROR = !GDK reported error: BATsubcross: more than one match
 
 # 10:16:14 >  
 # 10:16:14 >  "Done."
