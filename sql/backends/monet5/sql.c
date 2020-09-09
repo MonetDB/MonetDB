@@ -3164,7 +3164,7 @@ BATattach_str(bstream *in, BAT *bn)
 	while (1) {
 		ssize_t nread = bstream_next(in);
 		if (nread < 0) {
-			return createException(SQL, "BATattach_stream", "%s", mnstr_peek_error(in->s));
+			return createException(SQL, "BATattach_stream", SQLSTATE(42000) "%s", mnstr_peek_error(in->s));
 		}
 		if (nread == 0)
 			break;
@@ -3220,11 +3220,11 @@ BATattach_str(bstream *in, BAT *bn)
 
 	// It's an error to  have data left after falling out of the outer loop.
 	if (in->pos < in->len)
-		return createException(SQL, "BATattach_str", "unterminated string at end");
+		return createException(SQL, "BATattach_str", SQLSTATE(42000) "unterminated string at end");
 
 	return MAL_SUCCEED;
 bad_utf8:
-	return createException(SQL, "BATattach_stream", "malformed utf-8 byte sequence");
+	return createException(SQL, "BATattach_stream", SQLSTATE(42000) "malformed utf-8 byte sequence");
 }
 
 static str
@@ -3251,11 +3251,11 @@ BATattach_as_bytes(int tt, stream *s, BAT *bn, bool *eof_seen)
 		while (cur < end) {
 			ssize_t nread = mnstr_read(s, cur, 1, end - cur);
 			if (nread < 0)
-				return createException(SQL, "BATattach_stream", "%s", mnstr_peek_error(s));
+				return createException(SQL, "BATattach_stream", SQLSTATE(42000) "%s", mnstr_peek_error(s));
 			if (nread == 0) {
 				size_t tail = (cur - start) % asz;
 				if (tail != 0) {
-					return createException(SQL, "BATattach_stream", "final item incomplete: %d bytes instead of %d",
+					return createException(SQL, "BATattach_stream", SQLSTATE(42000) "final item incomplete: %d bytes instead of %d",
 						(int) tail, (int) asz);
 				}
 				eof = true;
@@ -3427,7 +3427,7 @@ mvc_bin_import_table_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 							if (msg == NULL)
 								msg = createException(
 									SQL, "mvc_bin_import_table_wrap",
-									"while syncing read stream: %s", mnstr_peek_error(rs));
+									SQLSTATE(42000) "while syncing read stream: %s", mnstr_peek_error(rs));
 						}
 						break;
 					}
