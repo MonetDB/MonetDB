@@ -3051,6 +3051,8 @@ tail_set_type(stmt *st, sql_subtype *t)
 	}
 }
 
+#define trivial_string_conversion(x) ((x) == EC_BIT || (x) == EC_CHAR || (x) == EC_STRING || (x) == EC_NUM || (x) == EC_POS || (x) == EC_FLT)
+
 stmt *
 stmt_convert(backend *be, stmt *v, stmt *sel, sql_subtype *f, sql_subtype *t)
 {
@@ -3118,7 +3120,7 @@ stmt_convert(backend *be, stmt *v, stmt *sel, sql_subtype *f, sql_subtype *t)
 	}
 
 	/* convert to string is complex, we need full type info and mvc for the timezone */
-	if (EC_VARCHAR(t->type->eclass) && !(f->type->eclass == EC_STRING && t->digits == 0)) {
+	if (EC_VARCHAR(t->type->eclass) && !(trivial_string_conversion(f->type->eclass) && t->digits == 0)) {
 		q = pushInt(mb, q, f->type->eclass);
 		q = pushInt(mb, q, f->digits);
 		q = pushInt(mb, q, f->scale);
@@ -3141,7 +3143,7 @@ stmt_convert(backend *be, stmt *v, stmt *sel, sql_subtype *f, sql_subtype *t)
 			q = pushInt(mb, q, t->scale);
 	}
 	/* convert to string, give error on to large strings */
-	if (EC_VARCHAR(t->type->eclass) && !(f->type->eclass == EC_STRING && t->digits == 0))
+	if (EC_VARCHAR(t->type->eclass) && !(trivial_string_conversion(f->type->eclass) && t->digits == 0))
 		q = pushInt(mb, q, t->digits);
 	/* convert a string to a time(stamp) with time zone */
 	if (EC_VARCHAR(f->type->eclass) && EC_TEMP_TZ(t->type->eclass))
