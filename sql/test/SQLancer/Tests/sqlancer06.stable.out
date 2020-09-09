@@ -747,6 +747,18 @@ stdout of test 'sqlancer06` in directory 'sql/test/SQLancer` itself:
 [ 1	]
 #INSERT INTO "t2" VALUES (-808084788, 0.922);
 [ 1	]
+#SELECT t0.c0 FROM t0 WHERE (t0.c0 <> ALL(SELECT TRUE FROM t0, t1) AND t0.c0) = FALSE;
+% .t0 # table_name
+% c0 # name
+% boolean # type
+% 5 # length
+[ false	]
+#SELECT t0.c0 FROM t0 WHERE (((((((t0.c0 <> ALL(SELECT ALL t0.c0 FROM t0, t2, t1))OR(t0.c0)))AND(t0.c0)))OR(t0.c0))) = FALSE;
+% .t0 # table_name
+% c0 # name
+% boolean # type
+% 5 # length
+[ false	]
 #SELECT CAST(SUM(count) AS BIGINT) FROM (SELECT CAST((((((((t0.c0 <> ALL(SELECT t0.c0 FROM t0, t2, t1))OR(t0.c0)))AND(t0.c0)))OR(t0.c0))) = FALSE AS INT) as count FROM t0) as res;
 % .%6 # table_name
 % %6 # name
