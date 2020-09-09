@@ -43,6 +43,7 @@ def make_fill_in(side):
 def run_test(side, code):
     code = re.sub(r'@(\w+)@', make_fill_in(side), code)
     code = f"START TRANSACTION;\n{code}\nROLLBACK;"
+    open(os.path.join(BINCOPY_FILES, 'test.sql'), "w").write(code)
 
     with process.client('sql',
                     stdin=process.PIPE, input=code,
