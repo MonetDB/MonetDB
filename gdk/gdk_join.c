@@ -84,7 +84,7 @@ joinparamcheck(BAT *l, BAT *r1, BAT *r2, BAT *sl, BAT *sr, const char *func)
 		GDKerror("%s: right inputs not aligned.\n", func);
 		return GDK_FAIL;
 	}
-	if (!BATiscand(sl) || !BATiscand(sr)) {
+	if ((sl && !BATiscand(sl)) || (sr && !BATiscand(sr))) {
 		GDKerror("%s: argument not a candidate list.\n", func);
 		return GDK_FAIL;
 	}

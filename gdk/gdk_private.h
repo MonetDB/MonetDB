@@ -78,8 +78,6 @@ gdk_return BAThashsave(BAT *b, bool dosync)
 	__attribute__((__visibility__("hidden")));
 void BATinit_idents(BAT *bn)
 	__attribute__((__visibility__("hidden")));
-bool BATiscand(BAT *b)
-	__attribute__((__visibility__("hidden")));
 BAT *BATload_intern(bat bid, bool lock)
 	__attribute__((__visibility__("hidden")));
 gdk_return BATmaterialize(BAT *b)
