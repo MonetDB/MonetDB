@@ -1231,7 +1231,6 @@ gdk_export void GDKqsort(void *restrict h, void *restrict t, const void *restric
 /* BATtvoid: BAT can be (or actually is) represented by TYPE_void */
 #define BATtvoid(b)	(BATtdense(b) || (b)->ttype==TYPE_void)
 #define BATtkey(b)	((b)->tkey || BATtdense(b))
-bool BATiscand(BAT *b);
 
 /* set some properties that are trivial to deduce */
 static inline void
