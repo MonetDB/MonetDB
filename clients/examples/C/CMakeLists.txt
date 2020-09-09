@@ -45,6 +45,15 @@ if(TESTING)
     monetdb_config_header
     stream)
 
+  add_executable(bincopydata
+    bincopydata.c
+  )
+
+  target_link_libraries(bincopydata
+    PRIVATE
+    monetdb_config_header
+  )
+
   install(TARGETS
     sample0
     sample1
@@ -52,6 +61,7 @@ if(TESTING)
     smack00
     smack01
     streamcat
+    bincopydata
     RUNTIME
     DESTINATION
     ${CMAKE_INSTALL_BINDIR}

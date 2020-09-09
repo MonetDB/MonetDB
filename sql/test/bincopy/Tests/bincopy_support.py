@@ -27,16 +27,14 @@ def make_fill_in(side):
         var = match.group(1)
         if var == 'ON':
             return on_side
-        generator_name = 'gen_' + var
-        if generator_name in globals():
-            base = f'bincopy_{var}.bin'
-            filename = os.path.join(BINCOPY_FILES, base)
-            f = open(filename, 'wb')
-            gen = globals()[generator_name]
-            gen(f)
-            return f"R'{filename}'"
-        else:
-            raise Exception(f'Unknown substitution {match.group(0)}')
+        base = f'bincopy_{var}.bin'
+        dst_filename = os.path.join(BINCOPY_FILES, base)
+        tmp_filename = os.path.join(BINCOPY_FILES, 'tmp_' + base)
+        if not os.path.isfile(dst_filename):
+            import subprocess
+            subprocess.run(["bincopydata", var, str(NRECS), tmp_filename])
+            os.rename(tmp_filename, dst_filename)
+        return f"R'{dst_filename}'"
 
     return fill_in
 
@@ -53,60 +51,6 @@ def run_test(side, code):
     sys.stdout.write(out.replace(os.environ['TSTTRGBASE'].replace('\\', '\\\\'),'${TSTTRGBASE}').replace('\\\\','/'))
     sys.stderr.write(err.replace(os.environ['TSTTRGBASE'].replace('\\', '\\\\'),'${TSTTRGBASE}').replace('\\\\','/'))
 
-
-
-
-
-def gen_ints(outfile):
-    data = range(1_000_000)
-    arr = array.array('i', data)
-    arr.tofile(outfile)
-
-def gen_more_ints(outfile):
-    data = [i + 1 for i in range(1_000_000)]
-    arr = array.array('i', data)
-    arr.tofile(outfile)
-
-def gen_strings(outfile):
-    f = codecs.getwriter('utf-8')(outfile)
-    for i in range(1_000_000):
-        f.write(f"int{i}\0")
-
-def gen_null_ints(outfile):
-    nil = -(1<<31)
-    data = [(nil if i % 2 == 0 else i) for i in range(1_000_000)]
-    arr = array.array('i', data)
-    arr.tofile(outfile)
-
-def gen_large_strings(outfile):
-    f = codecs.getwriter('utf-8')(outfile)
-    for i in range(1_000_000):
-        f.write(f"int{i:06d}")
-        if i % 10_000 == 0:
-            n = 280_000
-            f.write("a" * n)
-        f.write("\0")
-
-def gen_broken_strings(outfile):
-    good = bytes('bröken\0', 'utf-8')
-    bad = bytes('bröken\0', 'latin1')
-    for i in range(1_000_000):
-        if i == 123_456:
-            outfile.write(bad)
-        else:
-            outfile.write(good)
-
-def gen_newline_strings(outfile):
-    f = codecs.getwriter('utf-8')(outfile)
-    for i in range(1_000_000):
-        f.write(f"rn\r\nr\r{i}\0")
-
-def gen_null_strings(outfile):
-    for i in range(1_000_000):
-        if i % 2 == 0:
-            outfile.write(b"\x80\x00")
-        else:
-            outfile.write(b"banana\0")
 
 
 INTS = """
