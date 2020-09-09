@@ -2067,6 +2067,35 @@ negate_symbol_tree(mvc *sql, symbol *sc)
 	return sc;
 }
 
+static int
+exp_between_check_types(sql_subtype *res, sql_subtype *t1, sql_subtype *t2, sql_subtype *t3)
+{
+	bool type_found = false;
+	sql_subtype super;
+
+	if (t1 && t2) {
+		supertype(&super, t2, t1);
+		type_found = true;
+	} else if (t1) {
+		super = *t1;
+		type_found = true;
+	} else if (t2) {
+		super = *t2;
+		type_found = true;
+	}
+	if (t3) {
+		if (type_found)
+			supertype(&super, t3, &super);
+		else
+			super = *t3;
+		type_found = true;
+	}
+	if (!type_found)
+		return -1;
+	*res = super;
+	return 0;
+}
+
 sql_exp *
 rel_logical_value_exp(sql_query *query, sql_rel **rel, symbol *sc, int f, exp_kind ek)
 {
@@ -2256,15 +2285,12 @@ rel_logical_value_exp(sql_query *query, sql_rel **rel, symbol *sc, int f, exp_ki
 		if (!(re2 = rel_value_exp(query, rel, ro2, f, ek)))
 			return NULL;
 
-		supertype(&super, exp_subtype(re1), exp_subtype(le));
-		supertype(&super, exp_subtype(re2), &super);
+		if (exp_between_check_types(&super, exp_subtype(le), exp_subtype(re1), exp_subtype(re2)) < 0) 
+			return sql_error(sql, 01, SQLSTATE(42000) "Cannot have a parameter (?) on both sides of an expression");
 
 		if ((le = exp_check_type(sql, &super, rel ? *rel:NULL, le, type_equal)) == NULL ||
 		    (re1 = exp_check_type(sql, &super, rel ? *rel:NULL, re1, type_equal)) == NULL ||
 		    (re2 = exp_check_type(sql, &super, rel ? *rel:NULL, re2, type_equal)) == NULL)
-			return NULL;
-
-		if (!re1 || !re2)
 			return NULL;
 
 		le = exp_compare2(sql->sa, le, re1, re2, 3|CMP_BETWEEN);
@@ -2502,7 +2528,7 @@ rel_logical_exp(sql_query *query, sql_rel *rel, symbol *sc, int f)
 		symbol *ro1 = sc->data.lval->h->next->next->data.sym;
 		symbol *ro2 = sc->data.lval->h->next->next->next->data.sym;
 		sql_exp *le, *re1, *re2;
-		sql_subtype *t1, *t2, *t3;
+		sql_subtype super;
 		int flag = (symmetric)?CMP_SYMMETRIC:0;
 
 		assert(sc->data.lval->h->next->type == type_int);
@@ -2514,22 +2540,12 @@ rel_logical_exp(sql_query *query, sql_rel *rel, symbol *sc, int f)
 		if (!(re2 = rel_value_exp(query, &rel, ro2, f, ek)))
 			return NULL;
 
-		t1 = exp_subtype(le);
-		t2 = exp_subtype(re1);
-		t3 = exp_subtype(re2);
+		if (exp_between_check_types(&super, exp_subtype(le), exp_subtype(re1), exp_subtype(re2)) < 0) 
+			return sql_error(sql, 01, SQLSTATE(42000) "Cannot have a parameter (?) on both sides of an expression");
 
-		if (!t1 && (t2 || t3) && rel_binop_check_types(sql, rel, le, t2 ? re1 : re2, 0) < 0)
-			return NULL;
-		if (!t2 && (t1 || t3) && rel_binop_check_types(sql, rel, le, t1 ? le : re2, 0) < 0)
-			return NULL;
-		if (!t3 && (t1 || t2) && rel_binop_check_types(sql, rel, le, t1 ? le : re1, 0) < 0)
-			return NULL;
-
-		if (rel_convert_types(sql, rel, rel, &le, &re1, 1, type_equal) < 0 ||
-		    rel_convert_types(sql, rel, rel, &le, &re2, 1, type_equal) < 0)
-			return NULL;
-
-		if (!re1 || !re2)
+		if ((le = exp_check_type(sql, &super, rel, le, type_equal)) == NULL ||
+		    (re1 = exp_check_type(sql, &super, rel, re1, type_equal)) == NULL ||
+		    (re2 = exp_check_type(sql, &super, rel, re2, type_equal)) == NULL)
 			return NULL;
 
 		return rel_compare_exp_(query, rel, le, re1, re2, 3|CMP_BETWEEN|flag, sc->token == SQL_NOT_BETWEEN ? 1 : 0, 0, f);

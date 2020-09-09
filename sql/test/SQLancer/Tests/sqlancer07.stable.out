@@ -78,6 +78,36 @@ stdout of test 'sqlancer07` in directory 'sql/test/SQLancer` itself:
 % int # type
 % 1 # length
 #ROLLBACK;
+#START TRANSACTION;
+#CREATE TABLE "t0" ("c0" DATE,"c2" INTEGER);
+#CREATE TABLE "t1" ("c1" TIMESTAMP,"c2" INTEGER);
+#CREATE TABLE "t2" ("c0" DATE,"c1" TIMESTAMP,"c2" INTEGER);
+#PREPARE (SELECT ?, t1.c2 FROM t1, t0 WHERE (SELECT DISTINCT (t1.c2) BETWEEN ASYMMETRIC (?) AND (t1.c2) FROM t1 CROSS JOIN 
+#((SELECT DISTINCT 6.9089063E7, TRUE FROM t2 WHERE TRUE) EXCEPT (SELECT ALL 0.4, FALSE FROM t2, t0, t1 INNER JOIN t0 ON FALSE)) AS sub0 WHERE FALSE)) INTERSECT DISTINCT (SELECT DISTINCT 0.2, ? FROM t0, t2 WHERE ?);
+#PREPARE (SELECT ?, t1.c2 FROM t1, t0 WHERE (SELECT DISTINCT (t1.c2) BETWEEN ASYMMETRIC (?) AND (t1.c2) FROM t1 CROSS JOIN 
+#((SELECT DISTINCT 6.9089063E7, TRUE FROM t2 WHERE TRUE) EXCEPT (SELECT ALL 0.4, FALSE FROM t2, t0, t1 INNER JOIN t0 ON FALSE)) AS sub0 WHERE FALSE)) INTERSECT DISTINCT (SELECT DISTINCT 0.2, ? FROM t0, t2 WHERE ?);
+% .prepare,	.prepare,	.prepare,	.prepare,	.prepare,	.prepare # table_name
+% type,	digits,	scale,	schema,	table,	column # name
+% varchar,	int,	int,	str,	str,	str # type
+% 7,	3,	1,	0,	3,	3 # length
+[ "decimal",	2,	1,	"",	"%26",	"%20"	]
+[ "int",	32,	0,	"",	"%26",	"c2"	]
+[ "decimal",	2,	1,	NULL,	NULL,	NULL	]
+[ "int",	32,	0,	NULL,	NULL,	NULL	]
+[ "int",	32,	0,	NULL,	NULL,	NULL	]
+[ "boolean",	1,	0,	NULL,	NULL,	NULL	]
+#ROLLBACK;
+#START TRANSACTION;
+#CREATE TABLE "t0" ("c0" CHAR(315));
+#INSERT INTO "t0" VALUES ('(y/l'), (''), ('*J');
+[ 3	]
+#CREATE TABLE "t1" ("c0" VARCHAR(512), "c1" DOUBLE PRECISION);
+#INSERT INTO "t1" VALUES ('0.9295919173154146', NULL);
+[ 1	]
+#CREATE TABLE "t2" ("c0" CHAR(315));
+#INSERT INTO "t2" VALUES ('1753268987.000'), ('(y/l'), ('(y/l'), ('');
+[ 4	]
+#ROLLBACK;
 
 # 10:16:14 >  
 # 10:16:14 >  "Done."
