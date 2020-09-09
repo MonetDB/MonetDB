@@ -72,6 +72,11 @@ stdout of test 'sqlancer07` in directory 'sql/test/SQLancer` itself:
 [ 1	]
 #CREATE TABLE "t1" ("c0" INTERVAL MONTH,"c1" BOOLEAN);
 #CREATE TABLE "t2" ("c0" INTERVAL MONTH);
+#SELECT CAST(t1.c1 AS INT) FROM t1, t0 RIGHT OUTER JOIN t2 ON ((SELECT DISTINCT t1.c0 FROM t1, t0 WHERE FALSE)) NOT IN (t0.c0);
+% sys.%6 # table_name
+% %6 # name
+% int # type
+% 1 # length
 #ROLLBACK;
 
 # 10:16:14 >  
