@@ -1528,7 +1528,10 @@ rewrite_inner(mvc *sql, sql_rel *rel, sql_rel *inner, operator_type op)
 		inner = rel_project(sql->sa, inner, rel_projections(sql, inner, NULL, 1, 1));
 
 	if (is_join(rel->op)){ /* TODO handle set operators etc */
-		d = rel->r = rel_crossproduct(sql->sa, rel->r, inner, op);
+		if (rel->op == op_right)
+			d = rel->l = rel_crossproduct(sql->sa, rel->l, inner, op);
+		else
+			d = rel->r = rel_crossproduct(sql->sa, rel->r, inner, op);
 		if (single)
 			set_single(d);
 	} else if (is_project(rel->op)){ /* projection -> op_left */
@@ -3018,7 +3021,7 @@ include_tid(sql_rel *r)
 static sql_rel *
 rewrite_outer2inner_union(visitor *v, sql_rel *rel)
 {
-	if (is_outerjoin(rel->op) && !list_empty(rel->exps) && (rel_has_freevar(v->sql,rel->l) || rel_has_freevar(v->sql,rel->r) || exps_have_rel_exp(rel->exps))) {
+	if (is_outerjoin(rel->op) && !list_empty(rel->exps) && (((rel->op == op_left || rel->op == op_full) && rel_has_freevar(v->sql,rel->l)) || ((rel->op == op_right || rel->op == op_full) && rel_has_freevar(v->sql,rel->r)) || exps_have_freevar(v->sql, rel->exps) /*exps_have_rel_exp(rel->exps)*/)) {
 		sql_exp *f = exp_atom_bool(v->sql->sa, 0);
 		int nrcols = rel->nrcols;
 
