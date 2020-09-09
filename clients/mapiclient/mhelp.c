@@ -128,17 +128,17 @@ SQLhelp sqlhelp1[] = {
 	{"CREATE AGGREGATE",
 	 "Create an user-defined aggregate function. The body of the aggregate function\n"
 	 "can also be defined in other programming languages such as Python, R, C or CPP.",
-	 "CREATE [ OR REPLACE ] AGGREGATE qname '(' { '*' | [ param [',' ...]] } ')'\n"
+	 "CREATE [ OR REPLACE ] AGGREGATE [ FUNCTION ] qname '(' { '*' | [ param [',' ...]] } ')'\n"
 	 "    RETURNS data_type\n"
 	 "    EXTERNAL NAME ident ',' ident\n"
-	 "CREATE [ OR REPLACE ] AGGREGATE qname '(' { '*' | [ param [',' ...]] } ')'\n"
+	 "CREATE [ OR REPLACE ] AGGREGATE [ FUNCTION ] qname '(' { '*' | [ param [',' ...]] } ')'\n"
 	 "    RETURNS data_type\n"
 	 "    LANGUAGE language_keyword external_code",
 	 "qname,param,data_type,ident,language_keyword,external_code",
 	 "See also https://www.monetdb.org/Documentation/Manuals/SQLreference/Functions"},
 	{"CREATE FILTER FUNCTION",
 	 "",
-	 "CREATE [ OR REPLACE ] FILTER FUNCTION qname '(' { '*' | [ param [',' ...]] } ')'\n"
+	 "CREATE [ OR REPLACE ] FILTER [ FUNCTION ] qname '(' { '*' | [ param [',' ...]] } ')'\n"
 	 "    RETURNS { data_type | TABLE '(' function_return [',' ...] ')' }\n"
 	 "    EXTERNAL NAME ident ',' ident",
 	 "qname,param,data_type,function_return,ident",
@@ -164,7 +164,7 @@ SQLhelp sqlhelp1[] = {
 	 "See also https://www.monetdb.org/Documentation/Manuals/SQLreference/Indices"},
 	{"CREATE LOADER",
 	 "Create a custom (external) data loader function. The body is defined in Python language",
-	 "CREATE [ OR REPLACE ] LOADER qname '(' [ param [',' ...]] ')'\n"
+	 "CREATE [ OR REPLACE ] LOADER [ FUNCTION ] qname '(' [ param [',' ...]] ')'\n"
 	 "    LANGUAGE PYTHON external_code",
 	 "qname,param,external_code",
 	 "See also https://www.monetdb.org/blog/monetdbpython-loader-functions"},
@@ -308,14 +308,20 @@ SQLhelp sqlhelp1[] = {
 	 NULL},
 	{"DROP AGGREGATE",
 	 "",
-	 "DROP ALL AGGREGATE qname [ RESTRICT | CASCADE ]\n"
-	 "DROP AGGREGATE [ IF EXISTS ] qname [ '(' [ param [',' ...]] ')' ] [ RESTRICT | CASCADE ]",
+	 "DROP ALL AGGREGATE [ FUNCTION ] qname [ RESTRICT | CASCADE ]\n"
+	 "DROP AGGREGATE [ FUNCTION ] [ IF EXISTS ] qname [ '(' [ param [',' ...]] ')' ] [ RESTRICT | CASCADE ]",
+	 "param",
+	 NULL},
+	{"DROP FILTER FUNCTION",
+	 "",
+	 "DROP ALL FILTER [ FUNCTION ] qname [ RESTRICT | CASCADE ]\n"
+	 "DROP FILTER [ FUNCTION ] [ IF EXISTS ] qname [ '(' [ param [',' ...]] ')' ] [ RESTRICT | CASCADE ]",
 	 "param",
 	 NULL},
 	{"DROP FUNCTION",
 	 "",
-	 "DROP ALL [FILTER] FUNCTION qname [ RESTRICT | CASCADE ]\n"
-	 "DROP [FILTER] FUNCTION [ IF EXISTS ] qname [ '(' [ param [',' ...]] ')' ] [ RESTRICT | CASCADE ]",
+	 "DROP ALL FUNCTION qname [ RESTRICT | CASCADE ]\n"
+	 "DROP FUNCTION [ IF EXISTS ] qname [ '(' [ param [',' ...]] ')' ] [ RESTRICT | CASCADE ]",
 	 "param",
 	 NULL},
 	{"DROP INDEX",
@@ -325,8 +331,8 @@ SQLhelp sqlhelp1[] = {
 	 NULL},
 	{"DROP LOADER",
 	 "",
-	 "DROP ALL LOADER qname [ RESTRICT | CASCADE ]\n"
-	 "DROP LOADER [ IF EXISTS ] qname [ '(' [ param [',' ...]] ')' ] [ RESTRICT | CASCADE ]",
+	 "DROP ALL LOADER [ FUNCTION ] qname [ RESTRICT | CASCADE ]\n"
+	 "DROP LOADER [ FUNCTION ] [ IF EXISTS ] qname [ '(' [ param [',' ...]] ')' ] [ RESTRICT | CASCADE ]",
 	 "param",
 	 NULL},
 	{"DROP PROCEDURE",
@@ -375,10 +381,10 @@ SQLhelp sqlhelp1[] = {
 	 "DROP VIEW [ IF EXISTS ] qname [ RESTRICT | CASCADE ]",
 	 NULL,
 	 NULL},
-	{"DROP WINDOW",
+	{"DROP WINDOW [ FUNCTION ]",
 	 "",
-	 "DROP ALL WINDOW qname [ RESTRICT | CASCADE ]\n"
-	 "DROP WINDOW [ IF EXISTS ] qname [ '(' [ param [',' ...]] ')' ] [ RESTRICT | CASCADE ]",
+	 "DROP ALL WINDOW [ FUNCTION ] qname [ RESTRICT | CASCADE ]\n"
+	 "DROP WINDOW [ FUNCTION ] [ IF EXISTS ] qname [ '(' [ param [',' ...]] ')' ] [ RESTRICT | CASCADE ]",
 	 "param",
 	 NULL},
 	{"EXECUTE",
