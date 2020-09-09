@@ -10,6 +10,8 @@ try:
 except ImportError:
     import process
 
+NRECS = 1_000_000
+
 # location generated test data files.
 BINCOPY_FILES = os.environ.get('BINCOPY_FILES', None) or os.environ['TSTTRGDIR']
 
