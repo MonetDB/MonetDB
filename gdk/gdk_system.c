@@ -179,6 +179,7 @@ static struct winthread {
 	struct winthread *joinwait; /* process we are joining with */
 	const char *working;	/* what we're currently doing */
 	char algorithm[512];	/* the algorithm used in the last operation */
+	size_t algolen;		/* length of string in .algorithm */
 	ATOMIC_TYPE exited;
 	bool detached:1, waiting:1;
 	char threadname[MT_NAME_LEN];
@@ -293,13 +294,14 @@ MT_thread_setalgorithm(const char *algo)
 
 	if (w) {
 		if (algo) {
-			size_t l = strlen(w->algorithm);
-			if (l > 0)
-				strconcat_len(w->algorithm + l, sizeof(w->algorithm) - l, "; ", algo, NULL);
-			else
-				strcpy_len(w->algorithm, algo, sizeof(w->algorithm));
+			if (w->algolen > 0) {
+				if (w->algolen < sizeof(w->algorithm))
+					w->algolen += strconcat_len(w->algorithm + l, sizeof(w->algorithm) - l, "; ", algo, NULL);
+			} else
+				w->algolen = strcpy_len(w->algorithm, algo, sizeof(w->algorithm));
 		} else {
 			w->algorithm[0] = 0;
+			w->algolen = 0;
 		}
 	}
 }
@@ -537,6 +539,7 @@ static struct posthread {
 	struct posthread *joinwait; /* process we are joining with */
 	const char *working;	/* what we're currently doing */
 	char algorithm[512];	/* the algorithm used in the last operation */
+	size_t algolen;		/* length of string in .algorithm */
 	char threadname[MT_NAME_LEN];
 	pthread_t tid;
 	MT_Id mtid;
@@ -661,13 +664,14 @@ MT_thread_setalgorithm(const char *algo)
 
 	if (p) {
 		if (algo) {
-			size_t l = strlen(p->algorithm);
-			if (l > 0)
-				strconcat_len(p->algorithm + l, sizeof(p->algorithm) - l, "; ", algo, NULL);
-			else
-				strcpy_len(p->algorithm, algo, sizeof(p->algorithm));
+			if (p->algolen > 0) {
+				if (p->algolen < sizeof(p->algorithm))
+					p->algolen += strconcat_len(p->algorithm + p->algolen, sizeof(p->algorithm) - p->algolen, "; ", algo, NULL);
+			} else
+				p->algolen = strcpy_len(p->algorithm, algo, sizeof(p->algorithm));
 		} else {
 			p->algorithm[0] = 0;
+			p->algolen = 0;
 		}
 	}
 }
