@@ -296,7 +296,7 @@ MT_thread_setalgorithm(const char *algo)
 		if (algo) {
 			if (w->algolen > 0) {
 				if (w->algolen < sizeof(w->algorithm))
-					w->algolen += strconcat_len(w->algorithm + l, sizeof(w->algorithm) - l, "; ", algo, NULL);
+					w->algolen += strconcat_len(w->algorithm + w->algolen, sizeof(w->algorithm) - w->algolen, "; ", algo, NULL);
 			} else
 				w->algolen = strcpy_len(w->algorithm, algo, sizeof(w->algorithm));
 		} else {
