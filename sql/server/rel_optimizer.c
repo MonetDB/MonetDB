@@ -5613,6 +5613,8 @@ sql_class_base_score(mvc *sql, sql_column *c, sql_subtype *t, bool equality_base
 {
 	int de;
 
+	if (!t)
+		return 0;
 	switch (ATOMstorage(t->type->localtype)) {
 		case TYPE_bte:
 			return 150 - 8;

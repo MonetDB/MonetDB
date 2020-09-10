@@ -624,7 +624,7 @@ forkMserver(const char *database, sabdb** stats, bool force)
 		argv[c++] = readonly;
 	}
 	if (raw_strings != NULL) {
-		argv[c++] = "--set"; argv[c++] = raw_strings;
+		argv[c++] = set; argv[c++] = raw_strings;
 	}
 	/* get the rest (non-default) mserver props set in the conf file */
 	list = ckv;

@@ -637,6 +637,23 @@ stdout of test 'sqlancer06` in directory 'sql/test/SQLancer` itself:
 [ NULL	]
 [ NULL	]
 [ 20:32:11	]
+#SELECT t1.c2 FROM t2 RIGHT OUTER JOIN t1 ON (t2.c1) WHERE (SELECT t1.c2 FROM t1, t2) = ALL(SELECT t0.c2 FROM t0, t2);
+% .t1 # table_name
+% c2 # name
+% time # type
+% 8 # length
+[ NULL	]
+[ NULL	]
+[ 20:32:11	]
+#SELECT t1.c2 FROM t2 RIGHT OUTER JOIN t1 ON NOT (t2.c1) WHERE (((((((0.9842272043385978) NOT IN (1721458345))OR(t2.c0)))AND((t2.c0) BETWEEN ASYMMETRIC (t2.c0) AND 
+#((SELECT ALL t2.c0 FROM t2, t0 WHERE t2.c1)))))OR((SELECT t1.c2 FROM t1, t2) = ALL(SELECT ALL t0.c2 FROM t0, t1, t2)));
+% .t1 # table_name
+% c2 # name
+% time # type
+% 8 # length
+[ NULL	]
+[ NULL	]
+[ 20:32:11	]
 #SELECT CAST(SUM(count) AS BIGINT) FROM (SELECT CAST((((((((0.9842272043385978) NOT IN (1721458345))OR(t2.c0)))AND((t2.c0) BETWEEN ASYMMETRIC (t2.c0) AND 
 #((SELECT t2.c0 FROM t2, t0 WHERE t2.c1)))))OR((SELECT ALL t1.c2 FROM t1, t2) = ALL(SELECT t0.c2 FROM t0, t1, t2))) AS INT) as count FROM t2 RIGHT OUTER JOIN t1 ON NOT (t2.c1)) as res;
 % .%12 # table_name
@@ -719,6 +736,35 @@ stdout of test 'sqlancer06` in directory 'sql/test/SQLancer` itself:
 % bigint # type
 % 1 # length
 [ 3	]
+#ROLLBACK;
+#START TRANSACTION;
+#CREATE TABLE "t0" ("c0" BOOLEAN NOT NULL,"c1" INTERVAL MONTH,CONSTRAINT "t0_c0_pkey" PRIMARY KEY ("c0"));
+#INSERT INTO "t0" VALUES (false, NULL);
+[ 1	]
+#CREATE TABLE "t1" ("c0" BOOLEAN);
+#CREATE TABLE "t2" ("c1" DOUBLE PRECISION NOT NULL,"c2" DECIMAL(18,3) NOT NULL,CONSTRAINT "t2_c2_pkey" PRIMARY KEY ("c2"),CONSTRAINT "t2_c2_unique" UNIQUE ("c2"),CONSTRAINT "t2_c1_c2_unique" UNIQUE ("c1", "c2"));
+#INSERT INTO "t2" VALUES (0.9896628791758083, 0.017);
+[ 1	]
+#INSERT INTO "t2" VALUES (-808084788, 0.922);
+[ 1	]
+#SELECT t0.c0 FROM t0 WHERE (t0.c0 <> ALL(SELECT TRUE FROM t0, t1) AND t0.c0) = FALSE;
+% .t0 # table_name
+% c0 # name
+% boolean # type
+% 5 # length
+[ false	]
+#SELECT t0.c0 FROM t0 WHERE (((((((t0.c0 <> ALL(SELECT ALL t0.c0 FROM t0, t2, t1))OR(t0.c0)))AND(t0.c0)))OR(t0.c0))) = FALSE;
+% .t0 # table_name
+% c0 # name
+% boolean # type
+% 5 # length
+[ false	]
+#SELECT CAST(SUM(count) AS BIGINT) FROM (SELECT CAST((((((((t0.c0 <> ALL(SELECT t0.c0 FROM t0, t2, t1))OR(t0.c0)))AND(t0.c0)))OR(t0.c0))) = FALSE AS INT) as count FROM t0) as res;
+% .%6 # table_name
+% %6 # name
+% bigint # type
+% 1 # length
+[ 1	]
 #ROLLBACK;
 
 # 19:38:32 >  

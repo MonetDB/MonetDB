@@ -1,0 +1,115 @@
+stdout of test 'sqlancer07` in directory 'sql/test/SQLancer` itself:
+
+
+# 10:16:14 >  
+# 10:16:14 >  "mclient" "-lsql" "-ftest" "-tnone" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-52758" "--port=31957"
+# 10:16:14 >  
+
+#START TRANSACTION;
+#CREATE TABLE "t1" ("c0" DECIMAL(18,3),"c1" BINARY LARGE OBJECT NOT NULL,"c2" DECIMAL(18,3),CONSTRAINT "t1_c1_unique" UNIQUE ("c1"));
+#ROLLBACK;
+#START TRANSACTION;
+#CREATE TABLE "t0"("c0" INTERVAL MONTH,"c1" INTERVAL SECOND);
+#CREATE TABLE "t1"("c0" INTERVAL MONTH,"c1" INTERVAL SECOND);
+#CREATE TABLE "t2"("c0" INTERVAL MONTH,"c1" INTERVAL SECOND);
+#SELECT 1 FROM t1 JOIN t2 ON NOT (NOT (SELECT FALSE FROM t2));
+% .%14 # table_name
+% %14 # name
+% tinyint # type
+% 1 # length
+#SELECT ALL CAST(NOT ((DATE '1970-01-22') NOT IN (DATE '1970-01-04')) AS INT) as count FROM t0, t1 FULL OUTER JOIN t2 ON NOT (NOT ((SELECT DISTINCT FALSE FROM t2, t0, t1)));
+% . # table_name
+% count # name
+% int # type
+% 1 # length
+#ROLLBACK;
+#CREATE TABLE "t0" ("c0" DOUBLE PRECISION NOT NULL);
+#INSERT INTO "t0" VALUES (0.13492451886840173);
+[ 1	]
+#INSERT INTO "t0" VALUES (79004262);
+[ 1	]
+#INSERT INTO "t0" VALUES (1476461507);
+[ 1	]
+#CREATE TABLE "t1" ("c0" DOUBLE PRECISION);
+#INSERT INTO "t1" VALUES (973588428);
+[ 1	]
+#INSERT INTO "t1" VALUES (NULL);
+[ 1	]
+#INSERT INTO "t1" VALUES (0.39517295223772886);
+[ 1	]
+#INSERT INTO "t1" VALUES (NULL);
+[ 1	]
+#DROP TABLE t0;
+#DROP TABLE t1;
+#START TRANSACTION;
+#CREATE TABLE "t0" ("c0" DATE NOT NULL);
+#CREATE TABLE "t1" ("c1" INT);
+#CREATE TABLE "t2" ("c0" DATE NOT NULL);
+#SELECT 0 <= ANY(SELECT CASE INTERVAL '2' SECOND WHEN INTERVAL '6' SECOND THEN t1.c1 ELSE (SELECT t1.c1 FROM t1) END FROM t1) FROM t1;
+% .%7 # table_name
+% %7 # name
+% boolean # type
+% 5 # length
+#ROLLBACK;
+#START TRANSACTION;
+#CREATE TABLE "t0" ("c0" BOOLEAN NOT NULL);
+#CREATE TABLE "t1" ("c0" DECIMAL(18,3));
+#CREATE TABLE "t2" ("c0" DECIMAL(18,3),"c2" DATE);
+#PREPARE (SELECT DISTINCT t0.c0, INTERVAL '1734780053' SECOND FROM t0, t1) UNION ALL (SELECT ?, ? FROM t2);
+#PREPARE (SELECT DISTINCT t0.c0, INTERVAL '1734780053' SECOND FROM t0, t1) UNION ALL (SELECT ?, ? FROM t2);
+% .prepare,	.prepare,	.prepare,	.prepare,	.prepare,	.prepare # table_name
+% type,	digits,	scale,	schema,	table,	column # name
+% varchar,	int,	int,	str,	str,	str # type
+% 12,	3,	1,	0,	3,	2 # length
+[ "boolean",	1,	0,	"",	"%10",	"c0"	]
+[ "sec_interval",	13,	0,	"",	"%10",	"%2"	]
+[ "boolean",	1,	0,	NULL,	NULL,	NULL	]
+[ "sec_interval",	13,	0,	NULL,	NULL,	NULL	]
+#ROLLBACK;
+#START TRANSACTION;
+#CREATE TABLE "t0" ("c0" INTERVAL MONTH NOT NULL,CONSTRAINT "t0_c0_pkey" PRIMARY KEY ("c0"),CONSTRAINT "t0_c0_unique" UNIQUE ("c0"),CONSTRAINT "t0_c0_unique" UNIQUE ("c0"));
+#INSERT INTO "t0" VALUES (INTERVAL '2101098338' MONTH);
+[ 1	]
+#CREATE TABLE "t1" ("c0" INTERVAL MONTH,"c1" BOOLEAN);
+#CREATE TABLE "t2" ("c0" INTERVAL MONTH);
+#SELECT CAST(t1.c1 AS INT) FROM t1, t0 RIGHT OUTER JOIN t2 ON ((SELECT DISTINCT t1.c0 FROM t1, t0 WHERE FALSE)) NOT IN (t0.c0);
+% sys.%6 # table_name
+% %6 # name
+% int # type
+% 1 # length
+#ROLLBACK;
+#START TRANSACTION;
+#CREATE TABLE "t0" ("c0" DATE,"c2" INTEGER);
+#CREATE TABLE "t1" ("c1" TIMESTAMP,"c2" INTEGER);
+#CREATE TABLE "t2" ("c0" DATE,"c1" TIMESTAMP,"c2" INTEGER);
+#PREPARE (SELECT ?, t1.c2 FROM t1, t0 WHERE (SELECT DISTINCT (t1.c2) BETWEEN ASYMMETRIC (?) AND (t1.c2) FROM t1 CROSS JOIN 
+#((SELECT DISTINCT 6.9089063E7, TRUE FROM t2 WHERE TRUE) EXCEPT (SELECT ALL 0.4, FALSE FROM t2, t0, t1 INNER JOIN t0 ON FALSE)) AS sub0 WHERE FALSE)) INTERSECT DISTINCT (SELECT DISTINCT 0.2, ? FROM t0, t2 WHERE ?);
+#PREPARE (SELECT ?, t1.c2 FROM t1, t0 WHERE (SELECT DISTINCT (t1.c2) BETWEEN ASYMMETRIC (?) AND (t1.c2) FROM t1 CROSS JOIN 
+#((SELECT DISTINCT 6.9089063E7, TRUE FROM t2 WHERE TRUE) EXCEPT (SELECT ALL 0.4, FALSE FROM t2, t0, t1 INNER JOIN t0 ON FALSE)) AS sub0 WHERE FALSE)) INTERSECT DISTINCT (SELECT DISTINCT 0.2, ? FROM t0, t2 WHERE ?);
+% .prepare,	.prepare,	.prepare,	.prepare,	.prepare,	.prepare # table_name
+% type,	digits,	scale,	schema,	table,	column # name
+% varchar,	int,	int,	str,	str,	str # type
+% 7,	3,	1,	0,	3,	3 # length
+[ "decimal",	2,	1,	"",	"%26",	"%20"	]
+[ "int",	32,	0,	"",	"%26",	"c2"	]
+[ "decimal",	2,	1,	NULL,	NULL,	NULL	]
+[ "int",	32,	0,	NULL,	NULL,	NULL	]
+[ "int",	32,	0,	NULL,	NULL,	NULL	]
+[ "boolean",	1,	0,	NULL,	NULL,	NULL	]
+#ROLLBACK;
+#START TRANSACTION;
+#CREATE TABLE "t0" ("c0" CHAR(315));
+#INSERT INTO "t0" VALUES ('(y/l'), (''), ('*J');
+[ 3	]
+#CREATE TABLE "t1" ("c0" VARCHAR(512), "c1" DOUBLE PRECISION);
+#INSERT INTO "t1" VALUES ('0.9295919173154146', NULL);
+[ 1	]
+#CREATE TABLE "t2" ("c0" CHAR(315));
+#INSERT INTO "t2" VALUES ('1753268987.000'), ('(y/l'), ('(y/l'), ('');
+[ 4	]
+#ROLLBACK;
+
+# 10:16:14 >  
+# 10:16:14 >  "Done."
+# 10:16:14 >  
+

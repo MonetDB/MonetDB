@@ -1138,13 +1138,14 @@ convert2str(mvc *m, sql_class eclass, int d, int sc, int has_tz, ptr p, int mtyp
 		ts_res.fraction = d ? d - 1 : 0;
 		ts_res.timezone = m->timezone;
 		l = sql_time_tostr((void *) &ts_res, buf, &len2, mtype, p);
-
 	} else if (eclass == EC_TIMESTAMP || eclass == EC_TIMESTAMP_TZ) {
 		struct time_res ts_res;
 		ts_res.has_tz = has_tz;
 		ts_res.fraction = d ? d - 1 : 0;
 		ts_res.timezone = m->timezone;
 		l = sql_timestamp_tostr((void *) &ts_res, buf, &len2, mtype, p);
+	} else if (eclass == EC_SEC) {
+		l = dec_tostr((void *) (ptrdiff_t) 3, buf, &len2, mtype, p);
 	} else if (eclass == EC_BIT) {
 		bit b = *(bit *) p;
 		if (len <= 0 || len > 5) {

@@ -16,7 +16,7 @@ SELECT * FROM sys._columns WHERE table_id NOT IN (SELECT id FROM sys._tables);
 SELECT * FROM tmp._columns WHERE table_id NOT IN (SELECT id FROM tmp._tables);
 SELECT * FROM sys.columns WHERE type NOT IN (SELECT sqlname FROM sys.types);
 SELECT * FROM sys._columns WHERE type NOT IN (SELECT sqlname FROM sys.types);
-SELECT * FROM sys._columns WHERE type NOT IN (SELECT sqlname FROM sys.types);
+SELECT * FROM tmp._columns WHERE type NOT IN (SELECT sqlname FROM sys.types);
 
 SELECT * FROM sys.functions WHERE schema_id NOT IN (SELECT id FROM sys.schemas);
 SELECT * FROM sys.functions WHERE type NOT IN (SELECT function_type_id FROM sys.function_types);

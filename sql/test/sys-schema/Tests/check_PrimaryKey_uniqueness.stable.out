@@ -188,11 +188,11 @@ stdout of test 'check_PrimaryKey_uniqueness` in directory 'sql/test/sys-schema` 
 % duplicates,	privilege_code_id # name
 % bigint,	int # type
 % 1,	1 # length
-#SELECT COUNT(*) AS duplicates, obj_id, auth_id FROM sys.privileges GROUP BY obj_id, auth_id HAVING COUNT(*) > 1;
-% sys.,	sys.privileges,	sys.privileges # table_name
-% duplicates,	obj_id,	auth_id # name
-% bigint,	int,	int # type
-% 1,	1,	1 # length
+#SELECT COUNT(*) AS duplicates, obj_id, auth_id, privileges FROM sys.privileges GROUP BY obj_id, auth_id, privileges HAVING COUNT(*) > 1;
+% sys.,	sys.privileges,	sys.privileges,	sys.privileges # table_name
+% duplicates,	obj_id,	auth_id,	privileges # name
+% bigint,	int,	int,	int # type
+% 1,	1,	1,	1 # length
 #SELECT COUNT(*) AS duplicates, id FROM sys.querylog_catalog GROUP BY id HAVING COUNT(*) >1;
 % .,	.querylog_catalog # table_name
 % duplicates,	id # name

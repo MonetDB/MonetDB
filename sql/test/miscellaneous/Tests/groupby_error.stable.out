@@ -321,7 +321,7 @@ project (
 % type,	digits,	scale,	schema,	table,	column # name
 % varchar,	int,	int,	str,	str,	str # type
 % 7,	1,	1,	0,	2,	2 # length
-[ "tinyint",	1,	0,	"",	"%2",	"%2"	]
+[ "tinyint",	1,	0,	"",	"%1",	"%1"	]
 [ "tinyint",	1,	0,	NULL,	NULL,	NULL	]
 [ "tinyint",	1,	0,	NULL,	NULL,	NULL	]
 #prepare select 1 from tab0 where ? between 1 and ?;
@@ -330,7 +330,7 @@ project (
 % type,	digits,	scale,	schema,	table,	column # name
 % varchar,	int,	int,	str,	str,	str # type
 % 7,	1,	1,	0,	2,	2 # length
-[ "tinyint",	1,	0,	"",	"%2",	"%2"	]
+[ "tinyint",	1,	0,	"",	"%1",	"%1"	]
 [ "tinyint",	1,	0,	NULL,	NULL,	NULL	]
 [ "tinyint",	1,	0,	NULL,	NULL,	NULL	]
 #prepare select 1 from tab0 where ? between ? and 1;
@@ -339,7 +339,7 @@ project (
 % type,	digits,	scale,	schema,	table,	column # name
 % varchar,	int,	int,	str,	str,	str # type
 % 7,	1,	1,	0,	2,	2 # length
-[ "tinyint",	1,	0,	"",	"%2",	"%2"	]
+[ "tinyint",	1,	0,	"",	"%1",	"%1"	]
 [ "tinyint",	1,	0,	NULL,	NULL,	NULL	]
 [ "tinyint",	1,	0,	NULL,	NULL,	NULL	]
 #prepare select EXISTS (SELECT ? FROM tab0) from tab0;

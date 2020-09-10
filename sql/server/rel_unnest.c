@@ -1528,7 +1528,10 @@ rewrite_inner(mvc *sql, sql_rel *rel, sql_rel *inner, operator_type op)
 		inner = rel_project(sql->sa, inner, rel_projections(sql, inner, NULL, 1, 1));
 
 	if (is_join(rel->op)){ /* TODO handle set operators etc */
-		d = rel->r = rel_crossproduct(sql->sa, rel->r, inner, op);
+		if (rel->op == op_right)
+			d = rel->l = rel_crossproduct(sql->sa, rel->l, inner, op);
+		else
+			d = rel->r = rel_crossproduct(sql->sa, rel->r, inner, op);
 		if (single)
 			set_single(d);
 	} else if (is_project(rel->op)){ /* projection -> op_left */
@@ -2199,7 +2202,7 @@ rewrite_anyequal(mvc *sql, sql_rel *rel, sql_exp *e, int depth)
 						join->r = rel_crossproduct(sql->sa, join->r, rsq, op_join);
 						set_dependent(join);
 					} else
-						(void)rewrite_inner(sql, rel, rsq, !is_tuple?op_join:is_anyequal(sf)?op_semi:op_anti);
+						(void)rewrite_inner(sql, rel, rsq, !is_tuple?((depth>0)?op_left:op_join):is_anyequal(sf)?op_semi:op_anti);
 				}
 
 				if (on_right) {
@@ -2386,7 +2389,7 @@ rewrite_compare(visitor *v, sql_rel *rel, sql_exp *e, int depth)
 				if (!lsq)
 					lsq = rel->l;
 				if (sq)
-					(void)rewrite_inner(v->sql, rel, sq, depth?op_left:op_join);
+					(void)rewrite_inner(v->sql, rel, sq, (depth||quantifier)?op_left:op_join);
 
 				if (quantifier) {
 					sql_subfunc *a;
@@ -2677,7 +2680,7 @@ rewrite_ifthenelse(visitor *v, sql_rel *rel, sql_exp *e, int depth)
 
 	sf = e->f;
 	/* TODO also handle ifthenelse with more than 3 arguments */
-	if (is_ifthenelse_func(sf) && !list_empty(e->l) && list_length(e->l) == 3) {
+	if (is_ifthenelse_func(sf) && !list_empty(e->l) && list_length(e->l) == 3 && rel_has_freevar(v->sql, rel)) {
 		list *l = e->l;
 
 		/* remove unecessary = true expressions under ifthenelse */
@@ -3018,7 +3021,7 @@ include_tid(sql_rel *r)
 static sql_rel *
 rewrite_outer2inner_union(visitor *v, sql_rel *rel)
 {
-	if (is_outerjoin(rel->op) && !list_empty(rel->exps) && (rel_has_freevar(v->sql,rel->l) || rel_has_freevar(v->sql,rel->r) || exps_have_rel_exp(rel->exps))) {
+	if (is_outerjoin(rel->op) && !list_empty(rel->exps) && (((rel->op == op_left || rel->op == op_full) && rel_has_freevar(v->sql,rel->l)) || ((rel->op == op_right || rel->op == op_full) && rel_has_freevar(v->sql,rel->r)) || exps_have_freevar(v->sql, rel->exps) /*exps_have_rel_exp(rel->exps)*/)) {
 		sql_exp *f = exp_atom_bool(v->sql->sa, 0);
 		int nrcols = rel->nrcols;
 

@@ -14075,7 +14075,7 @@ BATconvert(BAT *b, BAT *s, int tp, bool abort_on_error,
 
 	bn->tnil = nils != 0;
 	bn->tnonil = nils == 0;
-	if ((bn->ttype != TYPE_bit && b->ttype != TYPE_str) ||
+	if ((bn->ttype != TYPE_str && bn->ttype != TYPE_bit && b->ttype != TYPE_str) ||
 	    BATcount(bn) < 2) {
 		bn->tsorted = nils == 0 && b->tsorted;
 		bn->trevsorted = nils == 0 && b->trevsorted;
