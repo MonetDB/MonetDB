@@ -550,7 +550,6 @@ BATfree(BAT *b)
 	if (b->tident && !default_ident(b->tident))
 		GDKfree(b->tident);
 	b->tident = BATstring_t;
-	PROPdestroy(b);
 	HASHfree(b);
 	IMPSfree(b);
 	OIDXfree(b);

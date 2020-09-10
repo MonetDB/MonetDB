@@ -435,6 +435,7 @@ VIEWdestroy(BAT *b)
 	HASHdestroy(b);
 	IMPSdestroy(b);
 	OIDXdestroy(b);
+	PROPdestroy(b);
 	VIEWunlink(b);
 
 	if (b->ttype && !b->theap.parentid) {
