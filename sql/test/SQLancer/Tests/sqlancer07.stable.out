@@ -13,8 +13,8 @@ stdout of test 'sqlancer07` in directory 'sql/test/SQLancer` itself:
 #CREATE TABLE "t1"("c0" INTERVAL MONTH,"c1" INTERVAL SECOND);
 #CREATE TABLE "t2"("c0" INTERVAL MONTH,"c1" INTERVAL SECOND);
 #SELECT 1 FROM t1 JOIN t2 ON NOT (NOT (SELECT FALSE FROM t2));
-% .%14 # table_name
-% %14 # name
+% .%2 # table_name
+% %2 # name
 % tinyint # type
 % 1 # length
 #SELECT ALL CAST(NOT ((DATE '1970-01-22') NOT IN (DATE '1970-01-04')) AS INT) as count FROM t0, t1 FULL OUTER JOIN t2 ON NOT (NOT ((SELECT DISTINCT FALSE FROM t2, t0, t1)));
@@ -46,8 +46,8 @@ stdout of test 'sqlancer07` in directory 'sql/test/SQLancer` itself:
 #CREATE TABLE "t1" ("c1" INT);
 #CREATE TABLE "t2" ("c0" DATE NOT NULL);
 #SELECT 0 <= ANY(SELECT CASE INTERVAL '2' SECOND WHEN INTERVAL '6' SECOND THEN t1.c1 ELSE (SELECT t1.c1 FROM t1) END FROM t1) FROM t1;
-% .%7 # table_name
-% %7 # name
+% .%5 # table_name
+% %5 # name
 % boolean # type
 % 5 # length
 #ROLLBACK;
@@ -73,8 +73,8 @@ stdout of test 'sqlancer07` in directory 'sql/test/SQLancer` itself:
 #CREATE TABLE "t1" ("c0" INTERVAL MONTH,"c1" BOOLEAN);
 #CREATE TABLE "t2" ("c0" INTERVAL MONTH);
 #SELECT CAST(t1.c1 AS INT) FROM t1, t0 RIGHT OUTER JOIN t2 ON ((SELECT DISTINCT t1.c0 FROM t1, t0 WHERE FALSE)) NOT IN (t0.c0);
-% sys.%6 # table_name
-% %6 # name
+% sys.%4 # table_name
+% %4 # name
 % int # type
 % 1 # length
 #ROLLBACK;
@@ -90,8 +90,8 @@ stdout of test 'sqlancer07` in directory 'sql/test/SQLancer` itself:
 % type,	digits,	scale,	schema,	table,	column # name
 % varchar,	int,	int,	str,	str,	str # type
 % 7,	3,	1,	0,	3,	3 # length
-[ "decimal",	2,	1,	"",	"%26",	"%20"	]
-[ "int",	32,	0,	"",	"%26",	"c2"	]
+[ "decimal",	2,	1,	"",	"%22",	"%14"	]
+[ "int",	32,	0,	"",	"%22",	"c2"	]
 [ "decimal",	2,	1,	NULL,	NULL,	NULL	]
 [ "int",	32,	0,	NULL,	NULL,	NULL	]
 [ "int",	32,	0,	NULL,	NULL,	NULL	]

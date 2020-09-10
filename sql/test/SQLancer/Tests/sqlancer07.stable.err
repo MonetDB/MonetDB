@@ -15,6 +15,10 @@ ERROR = !GDK reported error: BATsubcross: more than one match
 MAPI  = (monetdb) /var/tmp/mtest-81449/.s.monetdb.32416
 QUERY = SELECT CAST(NOT ((t0.c0) NOT BETWEEN SYMMETRIC ((SELECT DISTINCT t0.c0 FROM t0, t1)) AND (t0.c0)) AS INT) FROM t0;
 ERROR = !GDK reported error: BATsubcross: more than one match
+MAPI  = (monetdb) /var/tmp/mtest-240512/.s.monetdb.37779
+QUERY = select 1 from t0, t1 inner join t0 on true;
+ERROR = !SELECT: relation name "t0" specified more than once
+CODE  = 42000
 
 # 10:16:14 >  
 # 10:16:14 >  "Done."

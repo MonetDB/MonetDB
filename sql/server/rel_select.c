@@ -5460,6 +5460,15 @@ rel_unique_names(mvc *sql, sql_rel *rel)
 	return rel;
 }
 
+static int
+exp_relname_cmp(sql_exp *e1, sql_exp *e2)
+{
+	const char *r1 = exp_relname(e1), *r2 = exp_relname(e2);
+	if (!r1 || !r2)
+		return -1;
+	return strcmp(r1, r2);
+}
+
 static sql_rel *
 rel_query(sql_query *query, sql_rel *rel, symbol *sq, int toplevel, exp_kind ek)
 {
@@ -5498,8 +5507,8 @@ rel_query(sql_query *query, sql_rel *rel, symbol *sq, int toplevel, exp_kind ek)
 		list *names = new_exp_list(sql->sa);
 
 		for (dnode *n = fl->h; n ; n = n->next) {
-			char *nrame = NULL;
 			int lateral = check_is_lateral(n->data.sym);
+			list *projs, *projs_distinct_names;
 
 			/* just used current expression */
 			fnd = table_ref(query, NULL, n->data.sym, lateral);
@@ -5514,13 +5523,20 @@ rel_query(sql_query *query, sql_rel *rel, symbol *sq, int toplevel, exp_kind ek)
 			}
 			if (!fnd)
 				break;
-			if ((nrame = (char*) rel_name(fnd))) {
-				if (list_find(names, nrame, (fcmp) &strcmp)) {
-					if (res)
-						rel_destroy(res);
-					return sql_error(sql, 01, SQLSTATE(42000) "SELECT: relation name \"%s\" specified more than once", nrame);
-				} else
-					list_append(names, nrame);
+			projs = rel_projections(sql, fnd, NULL, 1, 0);
+			projs_distinct_names = list_distinct(projs, (fcmp) exp_relname_cmp, (fdup) NULL);
+
+			for (node *m = projs_distinct_names->h ; m ; m = m->next) {
+				char *nrame = (char *)exp_relname((sql_exp *)m->data);
+
+				if (nrame) {
+					if (list_find(names, nrame, (fcmp) &strcmp)) {
+						if (res)
+							rel_destroy(res);
+						return sql_error(sql, 01, SQLSTATE(42000) "SELECT: relation name \"%s\" specified more than once", nrame);
+					} else
+						list_append(names, nrame);
+				}
 			}
 			if (res) {
 				res = rel_crossproduct(sql->sa, res, fnd, op_join);
