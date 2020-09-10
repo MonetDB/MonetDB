@@ -118,6 +118,42 @@ STRbatBytes(bat *ret, const bat *l)
 }
 
 static str
+STRbatAscii(bat *ret, const bat *l)
+{
+	BATiter bi;
+	BAT *bn, *b;
+	BUN p, q;
+	str x;
+	int y;
+	str msg = MAL_SUCCEED;
+
+	prepareOperand(b, l, "batstr.Ascii");
+	prepareResult(bn, b, TYPE_int, "batstr.Ascii");
+
+	bi = bat_iterator(b);
+
+	BATloop(b, p, q) {
+		x = (str) BUNtvar(bi, p);
+		if ((msg = STRascii(&y, &x)) != MAL_SUCCEED)
+			goto bunins_failed;
+		if (is_int_nil(y)) {
+			bn->tnonil = false;
+			bn->tnil = true;
+		}
+		if (bunfastappTYPE(int, bn, &y) != GDK_SUCCEED)
+			goto bunins_failed;
+	}
+	finalizeResult(ret, bn, b);
+	return MAL_SUCCEED;
+bunins_failed:
+	BBPunfix(b->batCacheid);
+	BBPunfix(bn->batCacheid);
+	if (msg != MAL_SUCCEED)
+		return msg;
+	throw(MAL, "batstr.Ascii", OPERATION_FAILED " During bulk operation");
+}
+
+static str
 do_batstr_str(bat *ret, const bat *l, const char *name, str (*func)(str *, const str *))
 {
 	BATiter bi;
@@ -996,85 +1032,6 @@ STRbatRstrSearchcst(bat *ret, const bat *l, const str *cst)
 }
 
 static str
-STRbatTail(bat *ret, const bat *l, const bat *r)
-{
-	BATiter lefti, righti;
-	BAT *bn, *left, *right;
-	BUN p,q;
-	str v;
-	str msg = MAL_SUCCEED;
-
-	prepareOperand2(left,l,right,r,"batstr.string");
-	if(BATcount(left) != BATcount(right)) {
-		BBPunfix(left->batCacheid);
-		BBPunfix(right->batCacheid);
-		throw(MAL, "batstr.string", ILLEGAL_ARGUMENT " Requires bats of identical size");
-	}
-	prepareResult2(bn,left,right,TYPE_str,"batstr.string");
-
-	lefti = bat_iterator(left);
-	righti = bat_iterator(right);
-
-	BATloop(left, p, q) {
-		str tl = (str) BUNtvar(lefti,p);
-		int *tr = (int *) BUNtloc(righti,p);
-		if ((msg = STRTail(&v, &tl, tr)) != MAL_SUCCEED)
-			goto bunins_failed;
-		if (bunfastappVAR(bn, v) != GDK_SUCCEED)
-			goto bunins_failed;
-		GDKfree(v);
-	}
-	bn->tnonil = false;
-	BBPunfix(right->batCacheid);
-	finalizeResult(ret,bn,left);
-	return MAL_SUCCEED;
-
-bunins_failed:
-	BBPunfix(left->batCacheid);
-	BBPunfix(right->batCacheid);
-	BBPunfix(*ret);
-	if (msg)
-		return msg;
-	GDKfree(v);
-	throw(MAL, "batstr.string" , OPERATION_FAILED " During bulk operation");
-}
-
-static str
-STRbatTailcst(bat *ret, const bat *l, const int *cst)
-{
-	BATiter lefti;
-	BAT *bn, *left;
-	BUN p,q;
-	str v;
-	str msg = MAL_SUCCEED;
-
-	prepareOperand(left,l,"batstr.string");
-	prepareResult(bn,left,TYPE_str,"batstr.string");
-
-	lefti = bat_iterator(left);
-
-	BATloop(left, p, q) {
-		str tl = (str) BUNtvar(lefti,p);
-		if ((msg = STRTail(&v, &tl, cst)) != MAL_SUCCEED)
-			goto bunins_failed;
-		if (bunfastappVAR(bn, v) != GDK_SUCCEED)
-			goto bunins_failed;
-		GDKfree(v);
-	}
-	bn->tnonil = false;
-	finalizeResult(ret,bn,left);
-	return MAL_SUCCEED;
-
-bunins_failed:
-	BBPunfix(left->batCacheid);
-	BBPunfix(*ret);
-	if (msg)
-		return msg;
-	GDKfree(v);
-	throw(MAL, "batstr.string", OPERATION_FAILED " During bulk operation");
-}
-
-static str
 STRbatWChrAt(bat *ret, const bat *l, const bat *r)
 {
 	BATiter lefti, righti;
@@ -1138,7 +1095,7 @@ STRbatWChrAtcst(bat *ret, const bat *l, const int *cst)
 }
 
 static str
-do_batstr_str_int(bat *ret, const bat *l, const int *cst, const char *name, str (*func)(str *, const str *, const int *))
+do_batstr_str_int_cst(bat *ret, const bat *l, const int *cst, const char *name, str (*func)(str *, const str *, const int *))
 {
 	BATiter bi;
 	BAT *bn, *b;
@@ -1181,21 +1138,96 @@ bailout:
 }
 
 static str
-STRbatprefix(bat *ret, const bat *l, const int *cst)
+STRbatprefixcst(bat *ret, const bat *l, const int *cst)
 {
-	return do_batstr_str_int(ret, l, cst, "batstr.prefix", STRprefix);
+	return do_batstr_str_int_cst(ret, l, cst, "batstr.prefix", STRprefix);
 }
 
 static str
-STRbatsuffix(bat *ret, const bat *l, const int *cst)
+STRbatsuffixcst(bat *ret, const bat *l, const int *cst)
 {
-	return do_batstr_str_int(ret, l, cst, "batstr.suffix", STRsuffix);
+	return do_batstr_str_int_cst(ret, l, cst, "batstr.suffix", STRsuffix);
 }
 
 static str
-STRbatrepeat(bat *ret, const bat *l, const int *cst)
+STRbatrepeatcst(bat *ret, const bat *l, const int *cst)
 {
-	return do_batstr_str_int(ret, l, cst, "batstr.repeat", STRrepeat);
+	return do_batstr_str_int_cst(ret, l, cst, "batstr.repeat", STRrepeat);
+}
+
+static str
+STRbatTailcst(bat *ret, const bat *l, const int *cst)
+{
+	return do_batstr_str_int_cst(ret, l, cst, "batstr.tail", STRTail);
+}
+
+static str
+do_batstr_str_int(bat *ret, const bat *l, const bat *r, const char *name, str (*func)(str *, const str *, const int *))
+{
+	BATiter lefti;
+	BAT *bn, *left, *right;
+	BUN p,q;
+	str v;
+	str msg = MAL_SUCCEED;
+	int *restrict right_vals;
+
+	prepareOperand2(left,l,right,r,name);
+	if(BATcount(left) != BATcount(right)) {
+		BBPunfix(left->batCacheid);
+		BBPunfix(right->batCacheid);
+		throw(MAL, name, ILLEGAL_ARGUMENT " Requires bats of identical size");
+	}
+	prepareResult2(bn,left,right,TYPE_str,name);
+
+	lefti = bat_iterator(left);
+	right_vals = Tloc(right, 0);
+
+	BATloop(left, p, q) {
+		str tl = (str) BUNtvar(lefti,p);
+		int tr = right_vals[p];
+		if ((msg = func(&v, &tl, &tr)) != MAL_SUCCEED)
+			goto bunins_failed;
+		if (bunfastappVAR(bn, v) != GDK_SUCCEED)
+			goto bunins_failed;
+		GDKfree(v);
+	}
+	bn->tnonil = false;
+	BBPunfix(right->batCacheid);
+	finalizeResult(ret,bn,left);
+	return MAL_SUCCEED;
+
+bunins_failed:
+	BBPunfix(left->batCacheid);
+	BBPunfix(right->batCacheid);
+	BBPunfix(*ret);
+	if (msg)
+		return msg;
+	GDKfree(v);
+	throw(MAL, name, OPERATION_FAILED " During bulk operation");
+}
+
+static str
+STRbatprefix(bat *ret, const bat *l, const bat *r)
+{
+	return do_batstr_str_int(ret, l, r, "batstr.prefix", STRprefix);
+}
+
+static str
+STRbatsuffix(bat *ret, const bat *l, const bat *r)
+{
+	return do_batstr_str_int(ret, l, r, "batstr.suffix", STRsuffix);
+}
+
+static str
+STRbatrepeat(bat *ret, const bat *l, const bat *r)
+{
+	return do_batstr_str_int(ret, l, r, "batstr.repeat", STRrepeat);
+}
+
+static str
+STRbatTail(bat *ret, const bat *l, const bat *r)
+{
+	return do_batstr_str_int(ret, l, r, "batstr.tail", STRTail);
 }
 
 static str
@@ -1332,6 +1364,7 @@ STRbatsubstring(bat *ret, const bat *l, const bat *r, const bat *t)
 			BUNappend(bn, v, false) != GDK_SUCCEED) {
 			BBPunfix(left->batCacheid);
 			BBPunfix(start->batCacheid);
+			BBPunfix(length->batCacheid);
 			BBPreclaim(bn);
 			if (msg)
 				return msg;
@@ -1344,6 +1377,161 @@ STRbatsubstring(bat *ret, const bat *l, const bat *r, const bat *t)
 	BBPunfix(start->batCacheid);
 	BBPunfix(length->batCacheid);
 	finalizeResult(ret,bn,left);
+	return MAL_SUCCEED;
+}
+
+static str
+STRbatstrLocatecst(bat *ret, const bat *s, const str *s2)
+{
+	BATiter lefti;
+	BAT *bn, *left;
+	BUN p,q;
+	int v, *restrict res;
+
+	prepareOperand(left,s,"batstr.locate");
+	prepareResult(bn,left,TYPE_int,"batstr.locate");
+
+	lefti = bat_iterator(left);
+	res = Tloc(bn, 0);
+
+	BATloop(left, p, q) {
+		str tl = (str) BUNtvar(lefti,p);
+		STRlocate(&v, &tl, s2);
+		res[p] = v;
+	}
+
+	BATsetcount(bn, BATcount(left));
+	bn->tnonil = false;
+	bn->tkey = BATcount(bn) <= 1;
+	bn->tsorted = BATcount(bn) <= 1;
+	bn->trevsorted = BATcount(bn) <= 1;
+	finalizeResult(ret,bn,left);
+	return MAL_SUCCEED;
+}
+
+static str
+STRbatstrLocate(bat *ret, const bat *l, const bat *r)
+{
+	BATiter lefti, righti;
+	BAT *bn, *left, *right;
+	BUN p,q;
+	int v, *restrict res;
+
+	prepareOperand2(left,l,right,r,"batstr.locate");
+	if(BATcount(left) != BATcount(right)) {
+		BBPunfix(left->batCacheid);
+		BBPunfix(right->batCacheid);
+		throw(MAL, "batstr.locate", ILLEGAL_ARGUMENT " Requires bats of identical size");
+	}
+	prepareResult2(bn,left,right,TYPE_int,"batstr.locate");
+
+	lefti = bat_iterator(left);
+	righti = bat_iterator(right);
+	res = Tloc(bn, 0);
+
+	BATloop(left, p, q) {
+		str tl = (str) BUNtvar(lefti,p);
+		str tr = (str) BUNtvar(righti,p);
+		STRlocate(&v, &tl, &tr);
+		res[p] = v;
+	}
+
+	BATsetcount(bn, BATcount(left));
+	bn->tnonil = false;
+	bn->tkey = BATcount(bn) <= 1;
+	bn->tsorted = BATcount(bn) <= 1;
+	bn->trevsorted = BATcount(bn) <= 1;
+	BBPunfix(right->batCacheid);
+	finalizeResult(ret,bn,left);
+	return MAL_SUCCEED;
+}
+
+static str
+STRbatstrLocate2cst(bat *ret, const bat *s, const str *s2, const int *start)
+{
+	BATiter lefti;
+	BAT *bn, *left;
+	BUN p,q;
+	int v, *restrict res;
+
+	prepareOperand(left,s,"batstr.locate2");
+	prepareResult(bn,left,TYPE_int,"batstr.locate2");
+
+	lefti = bat_iterator(left);
+	res = Tloc(bn, 0);
+
+	BATloop(left, p, q) {
+		str tl = (str) BUNtvar(lefti,p);
+		STRlocate2(&v, &tl, s2, start);
+		res[p] = v;
+	}
+
+	BATsetcount(bn, BATcount(left));
+	bn->tnonil = false;
+	bn->tkey = BATcount(bn) <= 1;
+	bn->tsorted = BATcount(bn) <= 1;
+	bn->trevsorted = BATcount(bn) <= 1;
+	finalizeResult(ret,bn,left);
+	return MAL_SUCCEED;
+}
+
+static str
+STRbatstrLocate2(bat *ret, const bat *l, const bat *r, const bat *t)
+{
+	BATiter s1i, s2i;
+	BAT *bn, *s1, *s2, *start;
+	BUN p,q;
+	int v, *restrict res, *restrict starti;
+
+	if( (s1= BATdescriptor(*l)) == NULL )
+		throw(MAL, "batstr.locate2", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
+	if( (s2= BATdescriptor(*r)) == NULL ){
+		BBPunfix(s1->batCacheid);
+		throw(MAL, "batstr.locate2", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
+	}
+	if( (start= BATdescriptor(*t)) == NULL ){
+		BBPunfix(s1->batCacheid);
+		BBPunfix(s2->batCacheid);
+		throw(MAL, "batstr.locate2", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
+	}
+	if (BATcount(s1) != BATcount(s2) ||
+		BATcount(s1) != BATcount(start)) {
+		BBPunfix(s1->batCacheid);
+		BBPunfix(s2->batCacheid);
+		BBPunfix(start->batCacheid);
+		throw(MAL, "batstr.locate2", ILLEGAL_ARGUMENT " Requires bats of identical size");
+	}
+
+	bn= COLnew(s1->hseqbase, TYPE_int,BATcount(s1), TRANSIENT);
+	if( bn == NULL){
+		BBPunfix(s1->batCacheid);
+		BBPunfix(s2->batCacheid);
+		BBPunfix(start->batCacheid);
+		throw(MAL, "batstr.locate2", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+	}
+	res = Tloc(bn, 0);
+	bn->tsorted=false;
+	bn->trevsorted=false;
+
+	s1i = bat_iterator(s1);
+	s2i = bat_iterator(s2);
+	starti = Tloc(start, 0);
+	BATloop(s1, p, q) {
+		str tl = (str) BUNtvar(s1i,p);
+		str tr = (str) BUNtvar(s2i,p);
+		int s = starti[p];
+		STRlocate2(&v, &tl, &tr, &s);
+		res[p] = v;
+	}
+
+	BATsetcount(bn, BATcount(s1));
+	bn->tnonil = false;
+	bn->tkey = BATcount(bn) <= 1;
+	bn->tsorted = BATcount(bn) <= 1;
+	bn->trevsorted = BATcount(bn) <= 1;
+	BBPunfix(s2->batCacheid);
+	BBPunfix(start->batCacheid);
+	finalizeResult(ret,bn,s1);
 	return MAL_SUCCEED;
 }
 
@@ -1384,14 +1572,22 @@ mel_func batstr_init_funcs[] = {
  command("batstr", "r_search", STRbatRstrSearchcst, false, "Reverse search for a substring. Returns position, -1 if not found.", args(1,3, batarg("",int),batarg("s",str),arg("c",str))),
  command("batstr", "string", STRbatTail, false, "Return the tail s[offset..n] of a string s[0..n].", args(1,3, batarg("",str),batarg("b",str),batarg("offset",int))),
  command("batstr", "string", STRbatTailcst, false, "Return the tail s[offset..n] of a string s[0..n].", args(1,3, batarg("",str),batarg("b",str),arg("offset",int))),
+ command("batstr", "ascii", STRbatAscii, false, "Return unicode of head of string", args(1,2, batarg("",int),batarg("s",str))),
  command("batstr", "substring", STRbatsubstring, false, "Substring extraction using [start,start+length]", args(1,4, batarg("",str),batarg("s",str),batarg("start",int),batarg("index",int))),
  command("batstr", "substring", STRbatsubstringcst, false, "Substring extraction using [start,start+length]", args(1,4, batarg("",str),batarg("s",str),arg("start",int),arg("index",int))),
  command("batstr", "unicodeAt", STRbatWChrAt, false, "get a unicode character (as an int) from a string position.", args(1,3, batarg("",int),batarg("s",str),batarg("index",int))),
  command("batstr", "unicodeAt", STRbatWChrAtcst, false, "get a unicode character (as an int) from a string position.", args(1,3, batarg("",int),batarg("s",str),arg("index",int))),
  command("batstr", "substitute", STRbatSubstitutecst, false, "Substitute first occurrence of 'src' by\n'dst'.  Iff repeated = true this is\nrepeated while 'src' can be found in the\nresult string. In order to prevent\nrecursion and result strings of unlimited\nsize, repeating is only done iff src is\nnot a substring of dst.", args(1,5, batarg("",str),batarg("s",str),arg("src",str),arg("dst",str),arg("rep",bit))),
- command("batstr", "stringleft", STRbatprefix, false, "", args(1,3, batarg("",str),batarg("s",str),arg("l",int))),
- command("batstr", "stringright", STRbatsuffix, false, "", args(1,3, batarg("",str),batarg("s",str),arg("l",int))),
- command("batstr", "repeat", STRbatrepeat, false, "", args(1,3, batarg("",str),batarg("s",str),arg("c",int))),
+ command("batstr", "stringleft", STRbatprefix, false, "", args(1,3, batarg("",str),batarg("s",str),batarg("l",int))),
+ command("batstr", "stringleft", STRbatprefixcst, false, "", args(1,3, batarg("",str),batarg("s",str),arg("l",int))),
+ command("batstr", "stringright", STRbatsuffix, false, "", args(1,3, batarg("",str),batarg("s",str),batarg("l",int))),
+ command("batstr", "stringright", STRbatsuffixcst, false, "", args(1,3, batarg("",str),batarg("s",str),arg("l",int))),
+ command("batstr", "locate", STRbatstrLocate, false, "Locate the start position of a string", args(1,3, batarg("",int),batarg("s1",str),batarg("s2",str))),
+ command("batstr", "locate", STRbatstrLocatecst, false, "Locate the start position of a string", args(1,3, batarg("",int),batarg("s1",str),arg("s2",str))),
+ command("batstr", "locate", STRbatstrLocate2, false, "Locate the start position of a string", args(1,4, batarg("",int),batarg("s1",str),batarg("s2",str),batarg("start",int))),
+ command("batstr", "locate", STRbatstrLocate2cst, false, "Locate the start position of a string", args(1,4, batarg("",int),batarg("s1",str),arg("s2",str),arg("start",int))),
+ command("batstr", "repeat", STRbatrepeat, false, "", args(1,3, batarg("",str),batarg("s",str),batarg("c",int))),
+ command("batstr", "repeat", STRbatrepeatcst, false, "", args(1,3, batarg("",str),batarg("s",str),arg("c",int))),
  { .imp=NULL }
 };
 #include "mal_import.h"

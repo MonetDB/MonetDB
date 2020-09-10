@@ -1672,7 +1672,7 @@ rel_compare(sql_query *query, sql_rel *rel, symbol *sc, symbol *lo, symbol *ro, 
 		compare_op = "=";
 	}
 
-	if (!ro2 && lo->token == SQL_SELECT) { /* swap subquery to the right hand side */
+	if (!ro2 && lo->token == SQL_SELECT && ro->token != SQL_SELECT) { /* swap subquery to the right hand side */
 		symbol *tmp = lo;
 
 		lo = ro;
@@ -1982,7 +1982,7 @@ not_symbol_can_be_propagated(mvc *sql, symbol *sc)
 }
 
 /* Warning, this function assumes the entire bison tree can be negated, so call it after 'not_symbol_can_be_propagated' */
-static void
+static symbol *
 negate_symbol_tree(mvc *sql, symbol *sc)
 {
 	switch (sc->token) {
@@ -2019,10 +2019,11 @@ negate_symbol_tree(mvc *sql, symbol *sc)
 	case SQL_NOT: { /* nested NOTs eliminate each other */
 		if (sc->data.sym->token == SQL_ATOM) {
 			AtomNode *an = (AtomNode*) sc->data.sym;
-			memmove(sc, an, sizeof(AtomNode));
+			sc = newAtomNode(sql->sa, an->a);
 		} else if (sc->data.sym->token == SQL_SELECT) {
 			SelectNode *sn = (SelectNode*) sc->data.sym;
-			memmove(sc, sn, sizeof(SelectNode));
+			sc = newSelectNode(sql->sa, sn->distinct, sn->selection, sn->into, sn->from, sn->where, sn->groupby, sn->having,
+							   sn->orderby, sn->name, sn->limit, sn->offset, sn->sample, sn->seed, sn->window);
 		} else {
 			memmove(sc, sc->data.sym, sizeof(symbol));
 		}
@@ -2036,13 +2037,43 @@ negate_symbol_tree(mvc *sql, symbol *sc)
 	} break;
 	case SQL_AND:
 	case SQL_OR: {
-		negate_symbol_tree(sql, sc->data.lval->h->data.sym);
-		negate_symbol_tree(sql, sc->data.lval->h->next->data.sym);
+		sc->data.lval->h->data.sym = negate_symbol_tree(sql, sc->data.lval->h->data.sym);
+		sc->data.lval->h->next->data.sym= negate_symbol_tree(sql, sc->data.lval->h->next->data.sym);
 		sc->token = sc->token == SQL_AND ? SQL_OR : SQL_AND;
 	} break;
 	default:
 		break;
 	}
+	return sc;
+}
+
+static int
+exp_between_check_types(sql_subtype *res, sql_subtype *t1, sql_subtype *t2, sql_subtype *t3)
+{
+	bool type_found = false;
+	sql_subtype super;
+
+	if (t1 && t2) {
+		supertype(&super, t2, t1);
+		type_found = true;
+	} else if (t1) {
+		super = *t1;
+		type_found = true;
+	} else if (t2) {
+		super = *t2;
+		type_found = true;
+	}
+	if (t3) {
+		if (type_found)
+			supertype(&super, t3, &super);
+		else
+			super = *t3;
+		type_found = true;
+	}
+	if (!type_found)
+		return -1;
+	*res = super;
+	return 0;
 }
 
 sql_exp *
@@ -2222,8 +2253,9 @@ rel_logical_value_exp(sql_query *query, sql_rel **rel, symbol *sc, int f, exp_ki
 		int symmetric = sc->data.lval->h->next->data.i_val;
 		symbol *ro1 = sc->data.lval->h->next->next->data.sym;
 		symbol *ro2 = sc->data.lval->h->next->next->next->data.sym;
-		sql_subtype *t1, *t2, *t3;
-		sql_exp *le, *re1, *re2, *e1 = NULL, *e2 = NULL;
+		sql_exp *le, *re1, *re2;
+		sql_subtype super;
+
 		assert(sc->data.lval->h->next->type == type_int);
 
 		if (!(le = rel_value_exp(query, rel, lo, f, ek)))
@@ -2233,44 +2265,20 @@ rel_logical_value_exp(sql_query *query, sql_rel **rel, symbol *sc, int f, exp_ki
 		if (!(re2 = rel_value_exp(query, rel, ro2, f, ek)))
 			return NULL;
 
-		t1 = exp_subtype(le);
-		t2 = exp_subtype(re1);
-		t3 = exp_subtype(re2);
+		if (exp_between_check_types(&super, exp_subtype(le), exp_subtype(re1), exp_subtype(re2)) < 0) 
+			return sql_error(sql, 01, SQLSTATE(42000) "Cannot have a parameter (?) on both sides of an expression");
 
-		if (!t1 && (t2 || t3) && rel_binop_check_types(sql, rel ? *rel : NULL, le, t2 ? re1 : re2, 0) < 0)
-			return NULL;
-		if (!t2 && (t1 || t3) && rel_binop_check_types(sql, rel ? *rel : NULL, le, t1 ? le : re2, 0) < 0)
-			return NULL;
-		if (!t3 && (t1 || t2) && rel_binop_check_types(sql, rel ? *rel : NULL, le, t1 ? le : re1, 0) < 0)
+		if ((le = exp_check_type(sql, &super, rel ? *rel:NULL, le, type_equal)) == NULL ||
+		    (re1 = exp_check_type(sql, &super, rel ? *rel:NULL, re1, type_equal)) == NULL ||
+		    (re2 = exp_check_type(sql, &super, rel ? *rel:NULL, re2, type_equal)) == NULL)
 			return NULL;
 
-		if (rel_convert_types(sql, rel ? *rel : NULL, rel ? *rel : NULL, &le, &re1, 1, type_equal) < 0 ||
-			rel_convert_types(sql, rel ? *rel : NULL, rel ? *rel : NULL, &le, &re2, 1, type_equal) < 0)
-			return NULL;
-
-		if (!re1 || !re2)
-			return NULL;
-
-		if (symmetric) {
-			sql_exp *tmp = NULL;
-			sql_subfunc *min, *max;
-
-			if (rel_convert_types(sql, rel ? *rel : NULL, rel ? *rel : NULL, &re1, &re2, 1, type_equal) < 0)
-				return NULL;
-			min = sql_bind_func(sql->sa, sql->session->schema, "sql_min", exp_subtype(re1), exp_subtype(re2), F_FUNC);
-			max = sql_bind_func(sql->sa, sql->session->schema, "sql_max", exp_subtype(re1), exp_subtype(re2), F_FUNC);
-			if (!min || !max)
-				return sql_error(sql, 02, SQLSTATE(42000) "min or max operator on types %s %s missing", exp_subtype(re1)->type->sqlname, exp_subtype(re2)->type->sqlname);
-			tmp = exp_binop(sql->sa, re1, re2, min);
-			re2 = exp_binop(sql->sa, re1, re2, max);
-			re1 = tmp;
-		}
-
-		if (!(e1 = rel_binop_(sql, rel ? *rel : NULL, le, re1, NULL, sc->token == SQL_NOT_BETWEEN ? "<" : ">=", card_value)))
-			return NULL;
-		if (!(e2 = rel_binop_(sql, rel ? *rel : NULL, le, re2, NULL, sc->token == SQL_NOT_BETWEEN ? ">" : "<=", card_value)))
-			return NULL;
-		return rel_binop_(sql, rel ? *rel : NULL, e1, e2, NULL, sc->token == SQL_NOT_BETWEEN ? "or" : "and", card_value);
+		le = exp_compare2(sql->sa, le, re1, re2, 3|CMP_BETWEEN);
+		if (sc->token == SQL_NOT_BETWEEN)
+			set_anti(le);
+		if (symmetric)
+			le->flag |= CMP_SYMMETRIC;
+		return le;
 	}
 	case SQL_IS_NULL:
 	case SQL_IS_NOT_NULL:
@@ -2288,7 +2296,7 @@ rel_logical_value_exp(sql_query *query, sql_rel **rel, symbol *sc, int f, exp_ki
 	}
 	case SQL_NOT: {
 		if (not_symbol_can_be_propagated(sql, sc->data.sym)) {
-			negate_symbol_tree(sql, sc->data.sym);
+			sc->data.sym = negate_symbol_tree(sql, sc->data.sym);
 			return rel_logical_value_exp(query, rel, sc->data.sym, f, ek);
 		}
 		sql_exp *le = rel_logical_value_exp(query, rel, sc->data.sym, f, ek);
@@ -2500,8 +2508,8 @@ rel_logical_exp(sql_query *query, sql_rel *rel, symbol *sc, int f)
 		symbol *ro1 = sc->data.lval->h->next->next->data.sym;
 		symbol *ro2 = sc->data.lval->h->next->next->next->data.sym;
 		sql_exp *le, *re1, *re2;
-		sql_subtype *t1, *t2, *t3;
-		int flag = 0;
+		sql_subtype super;
+		int flag = (symmetric)?CMP_SYMMETRIC:0;
 
 		assert(sc->data.lval->h->next->type == type_int);
 
@@ -2512,59 +2520,15 @@ rel_logical_exp(sql_query *query, sql_rel *rel, symbol *sc, int f)
 		if (!(re2 = rel_value_exp(query, &rel, ro2, f, ek)))
 			return NULL;
 
-		t1 = exp_subtype(le);
-		t2 = exp_subtype(re1);
-		t3 = exp_subtype(re2);
+		if (exp_between_check_types(&super, exp_subtype(le), exp_subtype(re1), exp_subtype(re2)) < 0) 
+			return sql_error(sql, 01, SQLSTATE(42000) "Cannot have a parameter (?) on both sides of an expression");
 
-		if (!t1 && (t2 || t3) && rel_binop_check_types(sql, rel, le, t2 ? re1 : re2, 0) < 0)
-			return NULL;
-		if (!t2 && (t1 || t3) && rel_binop_check_types(sql, rel, le, t1 ? le : re2, 0) < 0)
-			return NULL;
-		if (!t3 && (t1 || t2) && rel_binop_check_types(sql, rel, le, t1 ? le : re1, 0) < 0)
+		if ((le = exp_check_type(sql, &super, rel, le, type_equal)) == NULL ||
+		    (re1 = exp_check_type(sql, &super, rel, re1, type_equal)) == NULL ||
+		    (re2 = exp_check_type(sql, &super, rel, re2, type_equal)) == NULL)
 			return NULL;
 
-		if (rel_convert_types(sql, rel, rel, &le, &re1, 1, type_equal) < 0 ||
-		    rel_convert_types(sql, rel, rel, &le, &re2, 1, type_equal) < 0)
-			return NULL;
-
-		if (!re1 || !re2)
-			return NULL;
-
-		/* for between 3 columns we use the between operator */
-		if (symmetric && (le->card == CARD_ATOM || (re1->card == CARD_ATOM && re2->card == CARD_ATOM))) {
-			sql_exp *tmp = NULL;
-			sql_subfunc *min, *max;
-
-			if (rel_convert_types(sql, rel, rel, &re1, &re2, 1, type_equal) < 0)
-				return NULL;
-			min = sql_bind_func(sql->sa, sql->session->schema, "sql_min", exp_subtype(re1), exp_subtype(re2), F_FUNC);
-			max = sql_bind_func(sql->sa, sql->session->schema, "sql_max", exp_subtype(re1), exp_subtype(re2), F_FUNC);
-			if (!min || !max)
-				return sql_error(sql, 02, SQLSTATE(42000) "min or max operator on types %s %s missing", exp_subtype(re1)->type->sqlname, exp_subtype(re2)->type->sqlname);
-			tmp = exp_binop(sql->sa, re1, re2, min);
-			re2 = exp_binop(sql->sa, re1, re2, max);
-			re1 = tmp;
-			symmetric = 0;
-			if (!re1 || !re2)
-				return NULL;
-		}
-
-		flag = (symmetric)?CMP_SYMMETRIC:0;
-
-		if (le->card == CARD_ATOM) {
-			sql_exp *e1, *e2;
-			if (!(e1 = rel_binop_(sql, rel, le, re1, NULL, sc->token == SQL_NOT_BETWEEN ? "<" : ">=", card_value)))
-				return NULL;
-			if (!(e2 = rel_binop_(sql, rel, le, re2, NULL, sc->token == SQL_NOT_BETWEEN ? ">" : "<=", card_value)))
-				return NULL;
-			if (!(e1 = rel_binop_(sql, rel, e1, e2, NULL, sc->token == SQL_NOT_BETWEEN ? "or" : "and", card_value)))
-				return NULL;
-			e2 = exp_compare(sql->sa, e1, exp_atom_bool(sql->sa, 1), cmp_equal);
-			return rel_select_push_exp_down(sql, rel, e2, le, le, re1, re1, re2, f);
-		} else {
-			rel = rel_compare_exp_(query, rel, le, re1, re2, 3|CMP_BETWEEN|flag, sc->token == SQL_NOT_BETWEEN ? 1 : 0, 0, f);
-		}
-		return rel;
+		return rel_compare_exp_(query, rel, le, re1, re2, 3|CMP_BETWEEN|flag, sc->token == SQL_NOT_BETWEEN ? 1 : 0, 0, f);
 	}
 	case SQL_IS_NULL:
 	case SQL_IS_NOT_NULL:
@@ -2583,7 +2547,7 @@ rel_logical_exp(sql_query *query, sql_rel *rel, symbol *sc, int f)
 	}
 	case SQL_NOT: {
 		if (not_symbol_can_be_propagated(sql, sc->data.sym)) {
-			negate_symbol_tree(sql, sc->data.sym);
+			sc->data.sym = negate_symbol_tree(sql, sc->data.sym);
 			return rel_logical_exp(query, rel, sc->data.sym, f);
 		}
 		sql_exp *le = rel_value_exp(query, &rel, sc->data.sym, f|sql_farg, ek);
@@ -5476,6 +5440,15 @@ rel_unique_names(mvc *sql, sql_rel *rel)
 	return rel;
 }
 
+static int
+exp_relname_cmp(sql_exp *e1, sql_exp *e2)
+{
+	const char *r1 = exp_relname(e1), *r2 = exp_relname(e2);
+	if (!r1 || !r2)
+		return -1;
+	return strcmp(r1, r2);
+}
+
 static sql_rel *
 rel_query(sql_query *query, sql_rel *rel, symbol *sq, int toplevel, exp_kind ek)
 {
@@ -5514,8 +5487,8 @@ rel_query(sql_query *query, sql_rel *rel, symbol *sq, int toplevel, exp_kind ek)
 		list *names = new_exp_list(sql->sa);
 
 		for (dnode *n = fl->h; n ; n = n->next) {
-			char *nrame = NULL;
 			int lateral = check_is_lateral(n->data.sym);
+			list *projs, *projs_distinct_names;
 
 			/* just used current expression */
 			fnd = table_ref(query, NULL, n->data.sym, lateral);
@@ -5530,13 +5503,20 @@ rel_query(sql_query *query, sql_rel *rel, symbol *sq, int toplevel, exp_kind ek)
 			}
 			if (!fnd)
 				break;
-			if ((nrame = (char*) rel_name(fnd))) {
-				if (list_find(names, nrame, (fcmp) &strcmp)) {
-					if (res)
-						rel_destroy(res);
-					return sql_error(sql, 01, SQLSTATE(42000) "SELECT: relation name \"%s\" specified more than once", nrame);
-				} else
-					list_append(names, nrame);
+			projs = rel_projections(sql, fnd, NULL, 1, 0);
+			projs_distinct_names = list_distinct(projs, (fcmp) exp_relname_cmp, (fdup) NULL);
+
+			for (node *m = projs_distinct_names->h ; m ; m = m->next) {
+				char *nrame = (char *)exp_relname((sql_exp *)m->data);
+
+				if (nrame) {
+					if (list_find(names, nrame, (fcmp) &strcmp)) {
+						if (res)
+							rel_destroy(res);
+						return sql_error(sql, 01, SQLSTATE(42000) "SELECT: relation name \"%s\" specified more than once", nrame);
+					} else
+						list_append(names, nrame);
+				}
 			}
 			if (res) {
 				res = rel_crossproduct(sql->sa, res, fnd, op_join);

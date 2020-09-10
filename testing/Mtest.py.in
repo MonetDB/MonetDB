@@ -3059,7 +3059,7 @@ def DoIt(env, SERVER, CALL, TST, EXT, TestOutFile, TestErrFile, STIMEOUT, CTIMEO
         else:
             s = '%-*s ' % (length, TST)
         STDOUT.write('%s%s' % (prompt(), s))
-        if isatty:
+        if isatty and TIMEOUT > 0:
             s = '(<=%d,%d,%d)' % (TIMEOUT, CTIMEOUT, STIMEOUT)
             STDOUT.write(s + '\b' * len(s))
 

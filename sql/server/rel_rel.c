@@ -1014,12 +1014,13 @@ _rel_projections(mvc *sql, sql_rel *rel, const char *tname, int settname, int in
 		return exps;
 	case op_groupby:
 		if (list_empty(rel->exps) && rel->r) {
-			node *en;
 			list *r = rel->r;
-			int label = ++sql->label;
+			int label = 0;
 
+			if (!settname)
+				label = ++sql->label;
 			exps = new_exp_list(sql->sa);
-			for (en = r->h; en; en = en->next) {
+			for (node *en = r->h; en; en = en->next) {
 				sql_exp *e = en->data;
 
 				if (basecol && !is_basecol(e))
@@ -1042,11 +1043,12 @@ _rel_projections(mvc *sql, sql_rel *rel, const char *tname, int settname, int in
 	case op_except:
 	case op_inter:
 		if (rel->exps) {
-			node *en;
-			int label = ++sql->label;
+			int label = 0;
 
+			if (!settname)
+				label = ++sql->label;
 			exps = new_exp_list(sql->sa);
-			for (en = rel->exps->h; en; en = en->next) {
+			for (node *en = rel->exps->h; en; en = en->next) {
 				sql_exp *e = en->data;
 
 				if (basecol && !is_basecol(e))
@@ -1064,9 +1066,11 @@ _rel_projections(mvc *sql, sql_rel *rel, const char *tname, int settname, int in
 		rexps = _rel_projections(sql, rel->r, tname, settname, intern, basecol);
 		exps = sa_list(sql->sa);
 		if (lexps && rexps && exps) {
-			node *en, *ren;
-			int label = ++sql->label;
-			for (en = lexps->h, ren = rexps->h; en && ren; en = en->next, ren = ren->next) {
+			int label = 0;
+
+			if (!settname)
+				label = ++sql->label;
+			for (node *en = lexps->h, *ren = rexps->h; en && ren; en = en->next, ren = ren->next) {
 				sql_exp *e = en->data;
 				e->card = rel->card;
 				if (!settname) /* noname use alias */

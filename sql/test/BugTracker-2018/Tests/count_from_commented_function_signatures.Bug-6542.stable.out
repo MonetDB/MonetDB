@@ -83,7 +83,7 @@ stdout of test 'count_from_commented_function_signatures.Bug-6542` in directory 
 % .plan # table_name
 % rel # name
 % clob # type
-% 161 # length
+% 159 # length
 project (
 | group by (
 | | project (
@@ -113,15 +113,15 @@ project (
 | | | | | | | | ) [ "f"."id", "p"."number" ] [ "f"."id" ASC, "p"."number" ASC ]
 | | | | | | | ) [ "f"."id", "p"."number" ] [ "f"."id" ASC, "p"."number" NULLS LAST ]
 | | | | | | ) [ "f"."id", "p"."number" ] [ "f"."id" ASC, "p"."number" ASC ]
-| | | | | ) [ "f"."id", sys.row_number(sys.star(), boolean "false" as "%17"."%17", sys.diff(sys.diff("f"."id" ASC), "p"."number" ASC) as "%20"."%20") as "line" ]
+| | | | | ) [ "f"."id", sys.row_number(sys.star(), boolean "false" as "%7"."%7", sys.diff(sys.diff("f"."id" ASC), "p"."number" ASC) as "%10"."%10") as "line" ]
 | | | | ) [ "f"."id" as "fid", "line" ]
 | | | ) [ "fid" ] [ "line" ASC ]
 | | ) [ "fid" as "commented_function_signatures_6542"."fid" ]
-| ) [  ] [ sys.count() NOT NULL as "%24"."%24" ]
-) [ "%24"."%24" NOT NULL ]
+| ) [  ] [ sys.count() NOT NULL as "%12"."%12" ]
+) [ "%12"."%12" NOT NULL ]
 #select count (*) from sys.commented_function_signatures_6542;
-% .%24 # table_name
-% %24 # name
+% .%12 # table_name
+% %12 # name
 % bigint # type
 % 1 # length
 [ 0	]

@@ -191,8 +191,8 @@ project (
 % 2 # length
 [ 64	]
 #SELECT 11 FROM tab1 AS cor0 LEFT JOIN tab0 ON 80 = 70;
-% .%4 # table_name
-% %4 # name
+% .%1 # table_name
+% %1 # name
 % tinyint # type
 % 2 # length
 [ 11	]
@@ -223,8 +223,8 @@ project (
 % bigint # type
 % 1 # length
 #SELECT + 2 FROM tab0 AS cor0 WHERE NOT - 29 IS NULL OR NOT NULL IS NULL AND NOT NULL BETWEEN + col1 - + 60 AND + 37 * + col1 + + col0;
-% .%2 # table_name
-% %2 # name
+% .%1 # table_name
+% %1 # name
 % tinyint # type
 % 1 # length
 [ 2	]
@@ -305,7 +305,7 @@ project (
 % type,	digits,	scale,	schema,	table,	column # name
 % varchar,	int,	int,	str,	str,	str # type
 % 7,	2,	1,	0,	2,	2 # length
-[ "boolean",	1,	0,	"",	"%5",	"%5"	]
+[ "boolean",	1,	0,	"",	"%4",	"%4"	]
 [ "int",	32,	0,	NULL,	NULL,	NULL	]
 #prepare select col0 = ALL (select ? from tab0) from tab0 t1;
 #prepare select col0 = ALL (select ? from tab0) from tab0 t1;
@@ -313,7 +313,7 @@ project (
 % type,	digits,	scale,	schema,	table,	column # name
 % varchar,	int,	int,	str,	str,	str # type
 % 7,	2,	1,	0,	2,	2 # length
-[ "boolean",	1,	0,	"",	"%5",	"%5"	]
+[ "boolean",	1,	0,	"",	"%4",	"%4"	]
 [ "int",	32,	0,	NULL,	NULL,	NULL	]
 #prepare select 1 from tab0 where 1 between ? and ?;
 #prepare select 1 from tab0 where 1 between ? and ?;
@@ -321,7 +321,7 @@ project (
 % type,	digits,	scale,	schema,	table,	column # name
 % varchar,	int,	int,	str,	str,	str # type
 % 7,	1,	1,	0,	2,	2 # length
-[ "tinyint",	1,	0,	"",	"%2",	"%2"	]
+[ "tinyint",	1,	0,	"",	"%1",	"%1"	]
 [ "tinyint",	1,	0,	NULL,	NULL,	NULL	]
 [ "tinyint",	1,	0,	NULL,	NULL,	NULL	]
 #prepare select 1 from tab0 where ? between 1 and ?;
@@ -330,7 +330,7 @@ project (
 % type,	digits,	scale,	schema,	table,	column # name
 % varchar,	int,	int,	str,	str,	str # type
 % 7,	1,	1,	0,	2,	2 # length
-[ "tinyint",	1,	0,	"",	"%2",	"%2"	]
+[ "tinyint",	1,	0,	"",	"%1",	"%1"	]
 [ "tinyint",	1,	0,	NULL,	NULL,	NULL	]
 [ "tinyint",	1,	0,	NULL,	NULL,	NULL	]
 #prepare select 1 from tab0 where ? between ? and 1;
@@ -339,7 +339,7 @@ project (
 % type,	digits,	scale,	schema,	table,	column # name
 % varchar,	int,	int,	str,	str,	str # type
 % 7,	1,	1,	0,	2,	2 # length
-[ "tinyint",	1,	0,	"",	"%2",	"%2"	]
+[ "tinyint",	1,	0,	"",	"%1",	"%1"	]
 [ "tinyint",	1,	0,	NULL,	NULL,	NULL	]
 [ "tinyint",	1,	0,	NULL,	NULL,	NULL	]
 #prepare select EXISTS (SELECT ? FROM tab0) from tab0;
@@ -392,17 +392,17 @@ project (
 % type,	digits,	scale,	schema,	table,	column # name
 % varchar,	int,	int,	str,	str,	str # type
 % 7,	2,	1,	0,	3,	3 # length
-[ "tinyint",	1,	0,	"",	"%11",	"%11"	]
+[ "tinyint",	1,	0,	"",	"%10",	"%10"	]
 [ "int",	32,	0,	NULL,	NULL,	NULL	]
 [ "clob",	0,	0,	NULL,	NULL,	NULL	]
 #SELECT 1 FROM tab0 where CASE WHEN 64 IN ( col0 ) THEN true END;
-% .%5 # table_name
-% %5 # name
+% .%4 # table_name
+% %4 # name
 % tinyint # type
 % 1 # length
 #SELECT 1 FROM tab0 GROUP BY col0 HAVING CASE WHEN 64 IN ( col0 ) THEN TRUE END;
-% .%5 # table_name
-% %5 # name
+% .%4 # table_name
+% %4 # name
 % tinyint # type
 % 1 # length
 #SELECT + col2 + + col0 AS col0 FROM tab0 AS cor0 GROUP BY col1, col2, col0 HAVING NULL IN ( + ( - - ( CASE WHEN 64 IN ( col0 * - col2 + + col1 ) THEN - 98 END ) ) * - 13 );
