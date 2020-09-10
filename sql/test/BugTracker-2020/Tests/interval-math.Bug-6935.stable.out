@@ -11,7 +11,13 @@ stdout of test 'interval-math.Bug-6935` in directory 'sql/test/BugTracker-2020` 
 % sec_interval,	sec_interval # type
 % 8,	8 # length
 [ 1800.000,	1800.000	]
-#SELECT INTERVAL '1' HOUR / 2.0; --cannot divide interval with decimal
+#SELECT INTERVAL '1' HOUR / 2.0; -- 1800.000
+% .%2 # table_name
+% %2 # name
+% sec_interval # type
+% 8 # length
+[ 1800.000	]
+#SELECT INTERVAL '1' HOUR * 1000.0 / 2000.0;
 % .%2 # table_name
 % %2 # name
 % sec_interval # type
@@ -23,18 +29,18 @@ stdout of test 'interval-math.Bug-6935` in directory 'sql/test/BugTracker-2020` 
 % sec_interval # type
 % 5 # length
 [ 2.000	]
-#SELECT INTERVAL '1' MONTH * 1.2; --cannot multiply interval with decimal
+#SELECT INTERVAL '1' MONTH * 1.2;
 % .%2 # table_name
 % %2 # name
 % month_interval # type
 % 1 # length
 [ 1	]
-#SELECT INTERVAL '1' SECOND * 1.2; --cannot multiply interval with decimal
+#SELECT INTERVAL '1' SECOND * 1.2; --1.200
 % .%2 # table_name
 % %2 # name
 % sec_interval # type
 % 5 # length
-[ 1.000	]
+[ 1.200	]
 
 # 10:13:31 >  
 # 10:13:31 >  "Done."
