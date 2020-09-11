@@ -71,14 +71,11 @@ OPTgeneratorImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
 	char buf[256];
 	lng usec= GDKusec();
 	str msg = MAL_SUCCEED;
+	int needed = 0;
 
-	(void) cntxt;
 	(void) stk;
 	(void) pci;
 
-	series = (InstrPtr*) GDKzalloc(sizeof(InstrPtr) * mb->vtop);
-	if(series == NULL)
-		throw(MAL,"optimizer.generator", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	old = mb->stmt;
 	limit = mb->stop;
 	slimit = mb->ssize;
@@ -87,12 +84,16 @@ OPTgeneratorImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
 	for( i=0; i < limit; i++){
 		p = old[i];
 		if ( getModuleId(p) == generatorRef && getFunctionId(p) == seriesRef)
-			break;
+			needed = 1;
+		if (p->token == RETURNsymbol || p->barrier == RETURNsymbol)
+			return 0;
 	}
-	if (i == limit) {
-		GDKfree(series);
+	if (!needed)
 		return 0;
-	}
+
+	series = (InstrPtr*) GDKzalloc(sizeof(InstrPtr) * mb->vtop);
+	if(series == NULL)
+		throw(MAL,"optimizer.generator", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 
 	if (newMalBlkStmt(mb, mb->ssize) < 0) {
 		GDKfree(series);

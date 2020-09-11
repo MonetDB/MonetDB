@@ -234,6 +234,43 @@ cleanup:
 }
 
 static char*
+monetdbe_get_results(monetdbe_result** result, monetdbe_database_internal *mdbe) {
+
+	backend *be = NULL;
+	if ((mdbe->msg = getBackendContext(mdbe->c, &be)) != NULL)
+		return mdbe->msg;
+
+    mvc *m = be->mvc;
+
+	monetdbe_result_internal* res_internal;
+
+    if (!(res_internal = GDKzalloc(sizeof(monetdbe_result_internal)))) {
+        mdbe->msg = createException(MAL, "monetdbe.monetdbe_get_results", MAL_MALLOC_FAIL);
+        return mdbe->msg;
+    }
+    // TODO: set type of result outside.
+    res_internal->res.last_id = be->last_id;
+    res_internal->mdbe = mdbe;
+    *result = (monetdbe_result*) res_internal;
+    m->reply_size = -2; /* do not clean up result tables */
+
+    if (be->results) {
+        res_internal->res.ncols = (size_t) be->results->nr_cols;
+        res_internal->monetdbe_resultset = be->results;
+        if (be->results->nr_cols > 0)
+            res_internal->res.nrows = be->results->nr_rows;
+        be->results = NULL;
+        res_internal->converted_columns = GDKzalloc(sizeof(monetdbe_column*) * res_internal->res.ncols);
+        if (!res_internal->converted_columns) {
+            mdbe->msg = createException(MAL, "monetdbe.monetdbe_get_results", MAL_MALLOC_FAIL);
+            return mdbe->msg;
+        }
+    }
+
+	return MAL_SUCCEED;
+}
+
+static char*
 monetdbe_query_internal(monetdbe_database_internal *mdbe, char* query, monetdbe_result** result, monetdbe_cnt* affected_rows, int *prepare_id, char language)
 {
 	char *nq = NULL;
@@ -243,7 +280,6 @@ monetdbe_query_internal(monetdbe_database_internal *mdbe, char* query, monetdbe_
 	size_t query_len, input_query_len, prep_len = 0;
 	buffer query_buf;
 	stream *query_stream;
-	monetdbe_result_internal *res_internal = NULL;
 	bstream *old_bstream = NULL;
 	stream *fdout = c->fdout;
 
@@ -324,31 +360,14 @@ monetdbe_query_internal(monetdbe_database_internal *mdbe, char* query, monetdbe_
 		*affected_rows = b->rowcnt;
 
 	if (result) {
-		if (!(res_internal = GDKzalloc(sizeof(monetdbe_result_internal)))) {
-			mdbe->msg = createException(MAL, "monetdbe.monetdbe_query_internal", MAL_MALLOC_FAIL);
+		if ((mdbe->msg = monetdbe_get_results(result, mdbe)) != MAL_SUCCEED) {
 			goto cleanup;
 		}
-		if (m->emode & m_prepare)
-			res_internal->type = Q_PREPARE;
-		else
-			res_internal->type = (b->results) ? b->results->query_type : m->type;
-		res_internal->res.last_id = b->last_id;
-		res_internal->mdbe = mdbe;
-		*result = (monetdbe_result*) res_internal;
-		m->reply_size = -2; /* do not clean up result tables */
 
-		if (b->results) {
-			res_internal->res.ncols = (size_t) b->results->nr_cols;
-			res_internal->monetdbe_resultset = b->results;
-			if (b->results->nr_cols > 0)
-				res_internal->res.nrows = b->results->nr_rows;
-			b->results = NULL;
-			res_internal->converted_columns = GDKzalloc(sizeof(monetdbe_column*) * res_internal->res.ncols);
-			if (!res_internal->converted_columns) {
-				mdbe->msg = createException(MAL, "monetdbe.monetdbe_query_internal", MAL_MALLOC_FAIL);
-				goto cleanup;
-			}
-		}
+		if (m->emode & m_prepare)
+			((monetdbe_result_internal*) result)->type = Q_PREPARE;
+		else
+			((monetdbe_result_internal*) result)->type = (b->results) ? b->results->query_type : m->type;
 	}
 
 cleanup:
@@ -361,7 +380,7 @@ cleanup:
 		c->fdin = old_bstream;
 	}
 
-	char* msg = commit_action(m, mdbe, result, res_internal);
+	char* msg = commit_action(m, mdbe, result, (monetdbe_result_internal*) result);
 
 	return msg;
 }
@@ -837,7 +856,6 @@ monetdbe_execute(monetdbe_statement *stmt, monetdbe_result **result, monetdbe_cn
 	backend *b = (backend *) stmt_internal->mdbe->c->sqlcontext;
 	mvc *m = b->mvc;
 	monetdbe_database_internal *mdbe = stmt_internal->mdbe;
-	//cq *q = stmt_internal->q;
 
 	if ((mdbe->msg = SQLtrans(m)) != MAL_SUCCEED)
 		return mdbe->msg;
@@ -847,36 +865,23 @@ monetdbe_execute(monetdbe_statement *stmt, monetdbe_result **result, monetdbe_cn
 		if (!stmt_internal->data[i].vtype)
 			return createException(MAL, "monetdbe.monetdbe_execute", "Parameter %d not bound to a value", i);
 	}
-	//MalStkPtr glb = (MalStkPtr) (q->stk);
-	//Symbol s = (Symbol)q->code;
-	//mdbe->msg = callMAL(mdbe->c, s->def, &glb, stmt_internal->args, 0);
+	cq* q = stmt_internal->q;
+
+	MalStkPtr glb = (MalStkPtr) (NULL);
+	Symbol s = findSymbolInModule(mdbe->c->usermodule, q->f->imp);
+
+	mdbe->msg = callMAL(mdbe->c, s->def, &glb, stmt_internal->args, 0);
 
 	if (!b->results && b->rowcnt >= 0 && affected_rows)
 		*affected_rows = b->rowcnt;
 
+
 	if (result) {
-		if (!(res_internal = GDKzalloc(sizeof(monetdbe_result_internal)))) {
-			mdbe->msg = createException(MAL, "monetdbe.monetdbe_query_internal", MAL_MALLOC_FAIL);
+		if ((mdbe->msg = monetdbe_get_results(result, mdbe)) != MAL_SUCCEED) {
 			goto cleanup;
 		}
-		res_internal->type = (b->results) ? Q_TABLE : Q_UPDATE;
-		res_internal->res.last_id = b->last_id;
-		res_internal->mdbe = stmt_internal->mdbe;
-		*result = (monetdbe_result*) res_internal;
-		m->reply_size = -2; /* do not clean up result tables */
 
-		if (b->results) {
-			res_internal->res.ncols = (size_t) b->results->nr_cols;
-			res_internal->monetdbe_resultset = b->results;
-			if (b->results->nr_cols > 0)
-				res_internal->res.nrows = b->results->nr_rows;
-			b->results = NULL;
-			res_internal->converted_columns = GDKzalloc(sizeof(monetdbe_column*) * res_internal->res.ncols);
-			if (!res_internal->converted_columns) {
-				mdbe->msg = createException(MAL, "monetdbe.monetdbe_query_internal", MAL_MALLOC_FAIL);
-				goto cleanup;
-			}
-		}
+		((monetdbe_result_internal*) result)->type = (b->results) ? Q_TABLE : Q_UPDATE;
 	}
 cleanup:
 	return commit_action(m, stmt_internal->mdbe, result, res_internal);
