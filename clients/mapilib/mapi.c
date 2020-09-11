@@ -3683,10 +3683,6 @@ mapi_set_columnar_protocol(Mapi mid, bool columnar_protocol)
 {
 	if (mid->columnar_protocol == columnar_protocol)
 		return MOK;
-	if (mid->languageId != LANG_SQL) {
-		mapi_setError(mid, "columnar_protocol only supported in SQL", __func__, MERROR);
-		return MERROR;
-	}
 	mid->columnar_protocol = columnar_protocol;
 	if (columnar_protocol)
 		return mapi_Xcommand(mid, "columnar_protocol", "1");

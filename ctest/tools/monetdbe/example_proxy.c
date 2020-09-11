@@ -30,7 +30,7 @@ main(void)
     monetdbe_options opt = {.remote = &remote};
 
 	// second argument is a string for the db directory or NULL for in-memory mode
-	if (monetdbe_open(&mdbe, "mapi:monetdb://127.0.0.1:50001?database=devdb1", &opt))
+	if (monetdbe_open(&mdbe, "mapi:monetdb://127.0.0.1:50000?database=devdb", &opt))
 		error("Failed to open database")
 
 	// Assumes the existance of a table test (x INT, y STRING)  on the remote.

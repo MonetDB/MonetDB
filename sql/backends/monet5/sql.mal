@@ -42,9 +42,9 @@ comment "Trigger the abort operation for a MAL block";
 pattern eval(cmd:str):void 
 address SQLstatement
 comment "Compile and execute a single sql statement";
-pattern eval(cmd:str, output:bit):void 
+pattern eval(cmd:str, columnar:bit):void 
 address SQLstatement
-comment "Compile and execute a single sql statement (and optionaly send output on the output stream)";
+comment "Compile and execute a single sql statement (and optionaly set the output to columnar format)";
 
 pattern include(fname:str):void 
 address SQLinclude

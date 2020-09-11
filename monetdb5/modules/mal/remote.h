@@ -26,6 +26,19 @@
 #define RMTT_32_OIDS    (0<<3)
 #define RMTT_64_OIDS    (1<<3)
 
+typedef struct {
+	bat id;
+	char* colname;
+	char* tpename;
+	int digits;
+	int scale;
+} columnar_result;
+
+typedef struct {
+	void* context;
+	str (*call) (void* context, char* tblname, columnar_result* columns, size_t  nrcolumns);
+} columnar_result_callback;
+
 typedef struct _connection {
 	MT_Lock            lock;      /* lock to avoid interference */
 	str                name;      /* the handle for this connection */
@@ -33,6 +46,7 @@ typedef struct _connection {
 	unsigned char      type;      /* binary profile of the connection target */
 	size_t             nextid;    /* id counter */
 	struct _connection *next;     /* the next connection in the list */
+	MapiHdl			   hdl;       /* MapiHdl  */
 } *connection;
 
 #ifndef WIN32
@@ -46,8 +60,7 @@ typedef struct _connection {
 mal_export str RMTprelude(void *ret);
 mal_export str RMTepilogue(void *ret);
 mal_export str RMTresolve(bat *ret, str *pat);
-mal_export str RMTconnectScen( str *ret, str *ouri, str *user, str *passwd, str *scen);
-mal_export str RMTconnect( str *ret, str *uri, str *user, str *passwd);
+mal_export str RMTconnect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 mal_export str RMTconnectTable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 
 mal_export str RMTdisconnect(void *ret, str *conn);

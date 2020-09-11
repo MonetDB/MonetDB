@@ -5469,7 +5469,7 @@ static mel_func sql_init_funcs[] = {
  pattern("sql", "commit", SQLcommit, true, "Trigger the commit operation for a MAL block", noargs),
  pattern("sql", "abort", SQLabort, true, "Trigger the abort operation for a MAL block", noargs),
  pattern("sql", "eval", SQLstatement, false, "Compile and execute a single sql statement", args(1,2, arg("",void),arg("cmd",str))),
- pattern("sql", "eval", SQLstatement, false, "Compile and execute a single sql statement (and optionaly send output on the output stream)", args(1,3, arg("",void),arg("cmd",str),arg("output",bit))),
+ pattern("sql", "eval", SQLstatement, false, "Compile and execute a single sql statement (and optionaly set the output to columnar format)", args(1,3, arg("",void),arg("cmd",str),arg("columnar",bit))),
  pattern("sql", "include", SQLinclude, false, "Compile and execute a sql statements on the file", args(1,2, arg("",void),arg("fname",str))),
  pattern("sql", "evalAlgebra", RAstatement, false, "Compile and execute a single 'relational algebra' statement", args(1,3, arg("",void),arg("cmd",str),arg("optimize",bit))),
  pattern("sql", "register", RAstatement2, false, "", args(1,5, arg("",int),arg("mod",str),arg("fname",str),arg("rel_stmt",str),arg("sig",str))),

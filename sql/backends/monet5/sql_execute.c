@@ -542,6 +542,9 @@ SQLstatementIntern(Client c, str *expr, str nme, bit execute, bit output, res_ta
 					err = 1;
 					msg = createException(PARSE, "SQLparser", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 				}
+
+				if (!err)
+					err = mvc_export_prepare(m, c->fdout, be->q, "");
 			}
 		}
 

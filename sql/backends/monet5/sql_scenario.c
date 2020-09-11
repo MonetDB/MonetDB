@@ -650,13 +650,12 @@ str
 SQLstatement(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	str *expr = getArgReference_str(stk, pci, 1);
-	bit output = TRUE;
 
 	(void) mb;
-	if (pci->argc == 3)
-		output = *getArgReference_bit(stk, pci, 2);
+	if (pci->argc == 3 && *getArgReference_bit(stk, pci, 2))
+		cntxt->protocol = PROTOCOL_COLUMNAR;
 
-	return SQLstatementIntern(cntxt, expr, "SQLstatement", TRUE, output, NULL);
+	return SQLstatementIntern(cntxt, expr, "SQLstatement", TRUE, TRUE, NULL);
 }
 
 str

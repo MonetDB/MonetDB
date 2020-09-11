@@ -94,8 +94,7 @@ typedef struct {
 	monetdbe_data_date date_null;
 	monetdbe_data_time time_null;
 	monetdbe_data_timestamp timestamp_null;
-	Mapi mid;
-	str mid_sr;
+	str mid;
 } monetdbe_database_internal;
 
 typedef struct {
@@ -658,12 +657,12 @@ monetdbe_open_remote(monetdbe_database_internal *mdbe, char *url, monetdbe_optio
 	if ( (mdbe->msg = runMAL(c, mb, 0, stk)) != MAL_SUCCEED ) {
 		return -2;
 	}
-	mdbe->mid_sr = strdup(*getArgReference_str(stk, p, 0));
+	mdbe->mid = strdup(*getArgReference_str(stk, p, 0));
 
 	garbageCollector(c, mb, stk, TRUE);
 	freeStack(stk);
 
-	printf("yeah a connect string: %s!\n", mdbe->mid_sr);
+	printf("yeah a connect string: %s!\n", mdbe->mid);
 
 
 	return 0;
@@ -720,12 +719,21 @@ monetdbe_close(monetdbe_database dbhdl)
 	monetdbe_database_internal *mdbe = (monetdbe_database_internal*)dbhdl;
 	MT_lock_set(&embedded_lock);
 
-	if (mdbe->mid) mapi_destroy(mdbe->mid);
+	// TODO it is a bit unclear how to handle the error in a faulty disconnect.
+	char* msg;
+	if (mdbe->mid) {
+		msg = RMTdisconnect(NULL, &(mdbe->mid));
+	}
 
 	int err = monetdbe_close_internal(mdbe);
 	if (!open_dbs)
 		monetdbe_shutdown_internal();
 	MT_lock_unset(&embedded_lock);
+
+	if (!err && msg) {
+		return -2;
+	}
+
 	return err;
 }
 
@@ -848,87 +856,137 @@ monetdbe_in_transaction(monetdbe_database dbhdl)
 	return result;
 }
 
+struct callback_context {
+	monetdbe_result** result;
+	monetdbe_database_internal *mdbe;
+};
+
+static str
+monetdbe_result_cb(void* context, char* tblname, columnar_result* results, size_t nr_results) {
+	monetdbe_result** result			= ((struct callback_context*) context)->result;
+	monetdbe_database_internal *mdbe	= ((struct callback_context*) context)->mdbe;
+
+	if (nr_results == 0)
+		return MAL_SUCCEED; // No work to do.
+
+	backend *be = NULL;
+	if ((mdbe->msg = getBackendContext(mdbe->c, &be)) != NULL)
+		return mdbe->msg;
+
+	BAT* order = BATdescriptor(results[0].id);
+
+	mvc_result_table(be, 0, nr_results, Q_TABLE, order);
+
+	for (unsigned  i = 0; i < nr_results; i++) {
+		BAT *b = NULL;
+		if (i > 0) {
+			b = BATdescriptor(results[i].id);
+		}
+		else
+			b = order; // We already fetched this first column
+
+		char* colname	= results[i].colname;
+		char* tpename	= results[i].tpename;
+		int digits		= results[i].digits;
+		int scale		= results[i].scale;
+
+		if ( b == NULL)
+			mdbe->msg= createException(MAL,"sql.resultset",SQLSTATE(HY005) "Cannot access column descriptor ");
+		else if (mvc_result_column(be, tblname, colname, tpename, digits, scale, b))
+			mdbe->msg = createException(SQL, "sql.resultset", SQLSTATE(42000) "Cannot access column descriptor %s.%s",tblname,colname);
+		if( b)
+			BBPkeepref(b->batCacheid);
+	}
+
+	if (result) {
+		if ((mdbe->msg = monetdbe_get_results(result, mdbe)) != MAL_SUCCEED) {
+			return mdbe->msg;
+		}
+
+		Client c = mdbe->c;
+		mvc* m;
+		backend * b;
+		if ((mdbe->msg = getSQLContext(c, NULL, &m, &b)) != MAL_SUCCEED)
+			return mdbe->msg;
+
+		if (m->emode & m_prepare)
+			((monetdbe_result_internal*) result)->type = Q_PREPARE;
+		else
+			((monetdbe_result_internal*) result)->type = (be->results) ? be->results->query_type : m->type;
+	}
+
+	return MAL_SUCCEED;
+}
+
 static char*
 monetdbe_query_external(monetdbe_database_internal *mdbe, char* query, monetdbe_result** result, monetdbe_cnt* affected_rows)
 {
 	// TODO: do something with affected_rows
 	(void) affected_rows;
-	if (mapi_set_columnar_protocol(mdbe->mid, true) != MOK || mapi_error(mdbe->mid)) {
-			mdbe->msg = createException(MAL, "monetdbe.connect", "%s", mapi_error_str(mdbe->mid));
-			return mdbe->msg;
-		}
 
-		MapiHdl hdl = mapi_query(mdbe->mid, query);
-		if ( hdl == NULL || mapi_error(mdbe->mid)) {
-			mapi_close_handle(hdl);
-			mdbe->msg = createException(MAL, "monetdbe.connect", "%s", mapi_error_str(mdbe->mid));
-			return mdbe->msg;
-		}
+	(void) result;
 
-		int fields = mapi_get_field_count(hdl);
-		for (int i = 0; i < fields; i++) {
-			char* s = mapi_get_name(hdl, i);
-			if (s == NULL)
-				s = "";
-			printf("%s%s", " ", s);
-		}
+	const char *mod = "user";
+	char nme[16];
 
-		backend *be = NULL;
-		if ((mdbe->msg = getBackendContext(mdbe->c, &be)) != NULL)
-			return mdbe->msg;
+	Client c = mdbe->c;
 
-		BAT* order; // just to first column in the result set.
+	const char *name = number2name(nme, sizeof(nme), ++((backend*)  c->sqlcontext)->remote);
+	Symbol prg = newFunction(putName(mod), putName(name), FUNCTIONsymbol);
 
-		char buf[256] = {0};
-
-		stream* sin = mapi_get_from(mdbe->mid);
-
-		RMTreadbatheader(sin, buf);
-		RMTinternalcopyfrom(&order, buf, sin);
-
-		mvc_result_table(be, 0, fields, Q_TABLE, order);
-		char* tblname = mapi_get_table(hdl, 0);
-
-		for (int i = 0; i < fields; i++) {
-			BAT *b = NULL;
-			if (i > 0) {
-				RMTreadbatheader(sin, buf);
-				RMTinternalcopyfrom(&b, buf, sin);
-			}
-			else
-				b = order; // We already fetched this first column
-
-			char* colname = mapi_get_name(hdl, i);
-			char* tpename = mapi_get_type(hdl, i);
-			int digits = mapi_get_digits(hdl, i);
-			int scale = mapi_get_scale(hdl, i);
-
-			if ( b == NULL)
-				mdbe->msg= createException(MAL,"sql.resultset",SQLSTATE(HY005) "Cannot access column descriptor ");
-			else if (mvc_result_column(be, tblname, colname, tpename, digits, scale, b))
-				mdbe->msg = createException(SQL, "sql.resultset", SQLSTATE(42000) "Cannot access column descriptor %s.%s",tblname,colname);
-			if( b)
-				BBPkeepref(b->batCacheid);
-		}
-
-		if (result) {
-			if ((mdbe->msg = monetdbe_get_results(result, mdbe)) != MAL_SUCCEED) {
-				return mdbe->msg;
-			}
-
-			Client c = mdbe->c;
-			mvc* m;
-			backend * b;
-			if ((mdbe->msg = getSQLContext(c, NULL, &m, &b)) != MAL_SUCCEED)
-				return mdbe->msg;
-
-			if (m->emode & m_prepare)
-				((monetdbe_result_internal*) result)->type = Q_PREPARE;
-			else
-				((monetdbe_result_internal*) result)->type = (be->results) ? be->results->query_type : m->type;
-		}
-
+	if (prg == NULL) {
+		mdbe->msg = createException(MAL, "monetdbe.monetdbe_open_remote", MAL_MALLOC_FAIL);
 		return mdbe->msg;
+	}
+
+	MalBlkPtr mb = prg->def;
+
+	InstrPtr o = newStmt(mb, remoteRef, putRef);
+	o = pushStr(mb, o, mdbe->mid);
+	o = pushBit(mb, o, TRUE);
+
+	InstrPtr p = newStmt(mb, remoteRef, putRef);
+	p = pushStr(mb, p, mdbe->mid);
+	p = pushStr(mb, p, query);
+
+
+	InstrPtr q = newInstruction(mb, remoteRef, execRef);
+	q->retc = q->argc = 0;
+	q = pushStr(mb, q, mdbe->mid);
+	q = pushStr(mb, q, sqlRef);
+	q = pushStr(mb, q, evalRef);
+
+	/*
+	 * prepare the call back routine and its context
+	 * and pass it over as a pointer to remote.exec.
+	 */
+	struct callback_context context = {.result = result, .mdbe = mdbe};
+	columnar_result_callback rcb = {.context = &context, .call = monetdbe_result_cb};
+	ValRecord v;
+	ptr vp = (ptr) &rcb;
+	
+	VALset(&v, TYPE_ptr, &vp);	
+	q = pushValue(mb, q, &v);
+
+	q = pushArgument(mb, q, getArg(p, 0));
+	q = pushArgument(mb, q, getArg(o, 0));
+
+	pushInstruction(mb, q);
+
+	p = newInstruction(mb, NULL, NULL);
+	p->barrier= RETURNsymbol;
+	pushInstruction(mb, p);
+
+	if ( (mdbe->msg = chkProgram(c->usermodule, mb)) != MAL_SUCCEED ) {
+		return mdbe->msg;
+	}
+
+	MalStkPtr stk = prepareMALstack(mb, mb->vsize);
+	stk->keepAlive = TRUE;
+	if ( (mdbe->msg = runMAL(c, mb, 0, stk)) != MAL_SUCCEED )
+		return mdbe->msg;
+
+	return mdbe->msg;
 }
 
 char*
