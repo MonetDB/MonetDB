@@ -919,7 +919,7 @@ monetdbe_result_cb(void* context, char* tblname, columnar_result* results, size_
 }
 
 static char*
-monetdbe_query_external(monetdbe_database_internal *mdbe, char* query, monetdbe_result** result, monetdbe_cnt* affected_rows)
+monetdbe_query_remote(monetdbe_database_internal *mdbe, char* query, monetdbe_result** result, monetdbe_cnt* affected_rows)
 {
 	// TODO: do something with affected_rows
 	(void) affected_rows;
@@ -997,7 +997,7 @@ monetdbe_query(monetdbe_database dbhdl, char* query, monetdbe_result** result, m
 	monetdbe_database_internal *mdbe = (monetdbe_database_internal*)dbhdl;
 
 	if (mdbe->mid) {
-		mdbe->msg = monetdbe_query_external(mdbe, query, result, affected_rows);
+		mdbe->msg = monetdbe_query_remote(mdbe, query, result, affected_rows);
 	}
 	else {
 		mdbe->msg = monetdbe_query_internal(mdbe, query, result, affected_rows, NULL, 'S');
