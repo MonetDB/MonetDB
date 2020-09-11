@@ -35,6 +35,7 @@ showUsage(char *name)
 	printf("             this makes diff slower (sometimes much slower)\n");
 	printf(" -t<text>  : text for caption (optional, default: empty)\n");
 	printf(" -r<rev>   : revision of old file (optional, default: empty)\n");
+	printf(" -f<format>: output format html or txt (optional, default: html)\n");
 	printf(" -q        : be less verbose\n");
 	printf(" <oldfile> : first file for diff\n");
 	printf(" <newfile> : second file for diff\n");
@@ -51,10 +52,11 @@ main(int argc, char **argv)
 	char DEFAULT[] = "-I'^#'";
 #endif
 	char ignoreWHITE[] = " -b -B";
-	char *old_fn, *new_fn, *html_fn, *caption = EMPTY, *revision = EMPTY, *ignoreEXP = DEFAULT, *ignore = NULL, *function = EMPTY;
+	char *old_fn, *new_fn, *out_fn, *caption = EMPTY, *revision = EMPTY, *ignoreEXP = DEFAULT, *ignore = NULL, *function = EMPTY;
 	int LWC = 1, context = 1, option, mindiff = 0, quiet = 0;
+    bool out_html = true;
 
-	while ((option = getopt(argc, argv, "hdqA:C:I:F:t:r:")) != EOF)
+	while ((option = getopt(argc, argv, "hdqA:C:I:F:t:r:f:")) != EOF)
 		switch (option) {
 		case 'd':
 			mindiff = 1;
@@ -100,6 +102,10 @@ main(int argc, char **argv)
 		case 'r':
 			revision = optarg;
 			break;
+		case 'f':
+            if (strcmp("txt", optarg) == 0)
+                out_html=false;
+			break;
 		case 'q':
 			quiet = 1;
 			break;
@@ -120,11 +126,17 @@ main(int argc, char **argv)
 	optind--;
 	old_fn = ((argc > (++optind)) ? argv[optind] : "-");
 	new_fn = ((argc > (++optind)) ? argv[optind] : "-");
-	html_fn = ((argc > (++optind)) ? argv[optind] : "-");
+	out_fn = ((argc > (++optind)) ? argv[optind] : "-");
 
-	TRACE(fprintf(STDERR, "%s %s -A %i -C %i %s %s -t %s -r %s  %s %s %s\n", argv[0], mindiff ? "-d" : "", LWC, context, ignore, function, caption, revision, old_fn, new_fn, html_fn));
-
-	switch (oldnew2html(mindiff, LWC, context, ignore, function, old_fn, new_fn, html_fn, caption, revision)) {
+	TRACE(fprintf(STDERR, "%s %s -A %i -C %i %s %s -t %s -r %s  %s %s %s\n", argv[0], mindiff ? "-d" : "", LWC, context, ignore, function, caption, revision, old_fn, new_fn, out_fn));
+    int res;
+    if (out_html) {
+        res = oldnew2html(mindiff, LWC, context, ignore, function, old_fn, new_fn, out_fn, caption, revision);
+    } else {
+        oldnew2lwc_diff(mindiff, LWC, context, ignore, function, old_fn, new_fn, out_fn);
+        res = oldnew2html(mindiff, LWC, context, ignore, function, old_fn, new_fn, "/dev/null", caption, revision);
+    }
+	switch (res) {
 	case 0:
 		if (quiet == 0)
 			fprintf(STDERR, "%s and %s are equal.\n", old_fn, new_fn);
