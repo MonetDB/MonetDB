@@ -8,3 +8,4 @@ SELECT INTERVAL '1' MONTH / 2.0; -- 0
 SELECT INTERVAL '1' MONTH / 1.0; -- 1
 SELECT INTERVAL '1' SECOND * 1.2; --1.200
 SELECT INTERVAL '1' HOUR / INTERVAL '1800' SECOND; --error on typing branch, cannot divide intervals
+select mya + interval '2' second from (select interval '3' second * 1.2) as mya(mya); -- 5.600

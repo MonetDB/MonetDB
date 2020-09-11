@@ -41,6 +41,12 @@ stdout of test 'interval-math.Bug-6935` in directory 'sql/test/BugTracker-2020` 
 % sec_interval # type
 % 5 # length
 [ 1.200	]
+#select mya + interval '2' second from (select interval '3' second * 1.2) as mya(mya); -- 5.600
+% .%2 # table_name
+% %2 # name
+% sec_interval # type
+% 5 # length
+[ 5.600	]
 
 # 10:13:31 >  
 # 10:13:31 >  "Done."

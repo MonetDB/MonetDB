@@ -1710,6 +1710,7 @@ exp_physical_types(visitor *v, sql_rel *rel, sql_exp *e, int depth)
 {
 	(void)rel;
 	(void)depth;
+	sql_exp *ne = e;
 
 	if (!e || (e->type != e_func && e->type != e_convert) || !e->l)
 		return e;
@@ -1721,8 +1722,8 @@ exp_physical_types(visitor *v, sql_rel *rel, sql_exp *e, int depth)
 		/* complex conversion matrix */
 		if (ft->type->eclass == EC_SEC && tt->type->eclass == EC_SEC && ft->type->digits > tt->type->digits) {
 			/* no conversion needed, just time adjustment */
-			e = e->l;
-			e->tpe = *tt; // ugh
+			ne = e->l;
+			ne->tpe = *tt; // ugh
 		}
 	} else {
 		list *args = e->l;
@@ -1730,10 +1731,13 @@ exp_physical_types(visitor *v, sql_rel *rel, sql_exp *e, int depth)
 
 		/* multiplication and division on decimals */
 		if (is_multiplication(f) && list_length(args) == 2) {
-			sql_exp *le = args->h->data, *re = args->h->next->data;
-			sql_subtype *lt = exp_subtype(le), *rt = exp_subtype(re);
+			sql_exp *le = args->h->data;
+			sql_subtype *lt = exp_subtype(le);
 
 			if (lt->type->eclass == EC_SEC || lt->type->eclass == EC_MONTH) {
+				sql_exp *re = args->h->next->data;
+				sql_subtype *rt = exp_subtype(re);
+
 				if (rt->type->eclass == EC_DEC && rt->scale) {
 					int scale = rt->scale; /* shift with scale */
 					sql_subtype *it = sql_bind_localtype(lt->type->base.name);
@@ -1749,14 +1753,17 @@ exp_physical_types(visitor *v, sql_rel *rel, sql_exp *e, int depth)
 					lng val = scale2value(scale);
 #endif
 					atom *a = atom_int(v->sql->sa, it, val);
-					return exp_binop(v->sql->sa, e, exp_atom(v->sql->sa, a), c);
+					ne = exp_binop(v->sql->sa, e, exp_atom(v->sql->sa, a), c);
 				}
 			}
 		} else if (is_division(f) && list_length(args) == 2) {
-			sql_exp *le = args->h->data, *re = args->h->next->data;
-			sql_subtype *lt = exp_subtype(le), *rt = exp_subtype(re);
+			sql_exp *le = args->h->data;
+			sql_subtype *lt = exp_subtype(le);
 
 			if (lt->type->eclass == EC_SEC) {
+				sql_exp *re = args->h->next->data;
+				sql_subtype *rt = exp_subtype(re);
+
 				if (rt->type->eclass == EC_DEC && rt->scale) {
 					int scale = rt->scale; /* shift with scale */
 					sql_subtype *it = sql_bind_localtype(lt->type->base.name);
@@ -1772,12 +1779,14 @@ exp_physical_types(visitor *v, sql_rel *rel, sql_exp *e, int depth)
 					lng val = scale2value(scale);
 #endif
 					atom *a = atom_int(v->sql->sa, it, val);
-					return exp_binop(v->sql->sa, e, exp_atom(v->sql->sa, a), c);
+					ne = exp_binop(v->sql->sa, e, exp_atom(v->sql->sa, a), c);
 				}
 			}
 		}
 	}
-	return e;
+	if (ne != e && exp_name(e))
+		exp_prop_alias(v->sql->sa, ne, e);
+	return ne;
 }
 
 static list*
