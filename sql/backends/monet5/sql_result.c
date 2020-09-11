@@ -919,9 +919,130 @@ mvc_export_warning(stream *s, str w)
 	return (1);
 }
 
+static void
+mvc_export_binary_bat(stream *s, BAT* bn) {
+	bool sendtheap = bn->ttype != TYPE_void && bn->tvarsized;
+
+		mnstr_printf(s, /*JSON*/"{"
+				"\"version\":1,"
+				"\"ttype\":%d,"
+				"\"hseqbase\":" OIDFMT ","
+				"\"tseqbase\":" OIDFMT ","
+				"\"tsorted\":%d,"
+				"\"trevsorted\":%d,"
+				"\"tkey\":%d,"
+				"\"tnonil\":%d,"
+				"\"tdense\":%d,"
+				"\"size\":" BUNFMT ","
+				"\"tailsize\":%zu,"
+				"\"theapsize\":%zu"
+				"}\n",
+				bn->ttype,
+				bn->hseqbase, bn->tseqbase,
+				bn->tsorted, bn->trevsorted,
+				bn->tkey,
+				bn->tnonil,
+				BATtdense(bn),
+				bn->batCount,
+				(size_t)bn->batCount * Tsize(bn),
+				sendtheap && bn->batCount > 0 ? bn->tvheap->free : 0
+				);
+
+		if (bn->batCount > 0) {
+			mnstr_write(s, /* tail */ Tloc(bn, 0), bn->batCount * Tsize(bn), 1);
+			if (sendtheap)
+				mnstr_write(s, /* theap */ Tbase(bn), bn->tvheap->free, 1);
+		}
+
+		mnstr_flush(s);
+}
+
+static int
+mvc_export_prepare_columnar(stream *out, cq *q, int nrows, sql_rel *r) {
+	int error = -1;
+
+	BAT* btype		= COLnew(0, TYPE_int, nrows, TRANSIENT);
+	BAT* bdigits	= COLnew(0, TYPE_int, nrows, TRANSIENT);
+	BAT* bscale		= COLnew(0, TYPE_int, nrows, TRANSIENT);
+	BAT* bschema	= COLnew(0, TYPE_str, nrows, TRANSIENT);
+	BAT* btable		= COLnew(0, TYPE_str, nrows, TRANSIENT);
+	BAT* bcolumn	= COLnew(0, TYPE_str, nrows, TRANSIENT);
+
+	node *n;
+	sql_subtype *t;
+	sql_arg *a;
+	if (r && is_project(r->op) && r->exps) {
+		for (n = r->exps->h; n; n = n->next) {
+			const char *name, *rname, *schema = NULL;
+			sql_exp *e = n->data;
+
+			t = exp_subtype(e);
+			name = exp_name(e);
+			if (!name && e->type == e_column && e->r)
+				name = e->r;
+			rname = exp_relname(e);
+			if (!rname && e->type == e_column && e->l)
+				rname = e->l;
+
+			if (!schema)
+				schema = "";
+
+			if (!rname)
+				rname = "";
+
+			if (!name)
+				name = "";
+
+			if (	BUNappend(btype,	&t->type->localtype	, false) != GDK_SUCCEED ||
+					BUNappend(bdigits,	&t->digits			, false) != GDK_SUCCEED ||
+					BUNappend(bscale,	&t->scale			, false) != GDK_SUCCEED ||
+					BUNappend(bschema,	&schema				, false) != GDK_SUCCEED ||
+					BUNappend(btable,	&rname				, false) != GDK_SUCCEED ||
+					BUNappend(bcolumn,	&name				, false) != GDK_SUCCEED)
+				goto bailout;
+		}
+	}
+
+	if (q->f->ops) {
+		int i;
+
+		for (n = q->f->ops->h, i = 0; n; n = n->next, i++) {
+			a = n->data;
+			t = &a->type;
+
+			if (	BUNappend(btype,	&t->type->localtype	, false) != GDK_SUCCEED ||
+					BUNappend(bdigits,	&t->digits			, false) != GDK_SUCCEED ||
+					BUNappend(bscale,	&t->scale			, false) != GDK_SUCCEED ||
+					BUNappend(bschema,	&str_nil			, false) != GDK_SUCCEED ||
+					BUNappend(btable,	&str_nil			, false) != GDK_SUCCEED ||
+					BUNappend(bcolumn,	&str_nil			, false) != GDK_SUCCEED)
+				goto bailout;
+		}
+	}
+
+	mvc_export_binary_bat(out, btype);
+	mvc_export_binary_bat(out, bdigits);
+	mvc_export_binary_bat(out, bscale);
+	mvc_export_binary_bat(out, bschema);
+	mvc_export_binary_bat(out, btable);
+	mvc_export_binary_bat(out, bcolumn);
+
+	error = 0;
+
+	bailout:
+		BBPreclaim(btype);
+		BBPreclaim(bdigits);
+		BBPreclaim(bscale);
+		BBPreclaim(bschema);
+		BBPreclaim(btable);
+		BBPreclaim(bcolumn);
+		return error;
+}
+
 int
-mvc_export_prepare(mvc *c, stream *out, cq *q, str w)
+mvc_export_prepare(backend *b, stream *out, str w)
 {
+	cq *q = b->q;
 	node *n;
 	int nparam = q->f->ops ? list_length(q->f->ops) : 0;
 	int nrows = nparam;
@@ -931,7 +1052,6 @@ mvc_export_prepare(mvc *c, stream *out, cq *q, str w)
 	sql_subtype *t;
 	sql_rel *r = q->rel;
 
-	(void)c;
 	if(!out || GDKembedded())
 		return 0;
 
@@ -1003,36 +1123,42 @@ mvc_export_prepare(mvc *c, stream *out, cq *q, str w)
 		return -1;
 	}
 
-	if (r && is_project(r->op) && r->exps) {
-		for (n = r->exps->h; n; n = n->next) {
-			const char *name, *rname, *schema = NULL;
-			sql_exp *e = n->data;
+	if (b->client->protocol == PROTOCOL_COLUMNAR) {
+		mvc_export_prepare_columnar(out, q, nrows, r);
+	}
+	else {
+		if (r && is_project(r->op) && r->exps) {
+			for (n = r->exps->h; n; n = n->next) {
+				const char *name, *rname, *schema = NULL;
+				sql_exp *e = n->data;
 
-			t = exp_subtype(e);
-			name = exp_name(e);
-			if (!name && e->type == e_column && e->r)
-				name = e->r;
-			rname = exp_relname(e);
-			if (!rname && e->type == e_column && e->l)
-				rname = e->l;
+				t = exp_subtype(e);
+				name = exp_name(e);
+				if (!name && e->type == e_column && e->r)
+					name = e->r;
+				rname = exp_relname(e);
+				if (!rname && e->type == e_column && e->l)
+					rname = e->l;
 
-			if (mnstr_printf(out, "[ \"%s\",\t%u,\t%u,\t\"%s\",\t\"%s\",\t\"%s\"\t]\n", t->type->sqlname, t->digits, t->scale, schema ? schema : "", rname ? rname : "", name ? name : "") < 0) {
-				return -1;
+				if (mnstr_printf(out, "[ \"%s\",\t%u,\t%u,\t\"%s\",\t\"%s\",\t\"%s\"\t]\n", t->type->sqlname, t->digits, t->scale, schema ? schema : "", rname ? rname : "", name ? name : "") < 0) {
+					return -1;
+				}
+			}
+		}
+
+		if (q->f->ops) {
+			int i;
+
+			for (n = q->f->ops->h, i = 0; n; n = n->next, i++) {
+				a = n->data;
+				t = &a->type;
+
+				if (!t || mnstr_printf(out, "[ \"%s\",\t%u,\t%u,\tNULL,\tNULL,\tNULL\t]\n", t->type->sqlname, t->digits, t->scale) < 0)
+					return -1;
 			}
 		}
 	}
 
-	if (q->f->ops) {
-		int i;
-
-		for (n = q->f->ops->h, i = 0; n; n = n->next, i++) {
-			a = n->data;
-			t = &a->type;
-
-			if (!t || mnstr_printf(out, "[ \"%s\",\t%u,\t%u,\tNULL,\tNULL,\tNULL\t]\n", t->type->sqlname, t->digits, t->scale) < 0)
-				return -1;
-		}
-	}
 	if (mvc_export_warning(out, w) != 1)
 		return -1;
 	return 0;
@@ -1646,44 +1772,7 @@ mvc_export_table_columnar(stream *s, res_table *t, BAT *order) {
 			return -1;
 		}
 
-		BAT* bn = b;
-
-		bool sendtheap = b->ttype != TYPE_void && b->tvarsized;
-
-		mnstr_printf(s, /*JSON*/"{"
-				"\"version\":1,"
-				"\"ttype\":%d,"
-				"\"hseqbase\":" OIDFMT ","
-				"\"tseqbase\":" OIDFMT ","
-				"\"tsorted\":%d,"
-				"\"trevsorted\":%d,"
-				"\"tkey\":%d,"
-				"\"tnonil\":%d,"
-				"\"tdense\":%d,"
-				"\"size\":" BUNFMT ","
-				"\"tailsize\":%zu,"
-				"\"theapsize\":%zu"
-				"}\n",
-				bn->ttype,
-				bn->hseqbase, bn->tseqbase,
-				bn->tsorted, bn->trevsorted,
-				bn->tkey,
-				bn->tnonil,
-				BATtdense(bn),
-				bn->batCount,
-				(size_t)bn->batCount * Tsize(bn),
-				sendtheap && bn->batCount > 0 ? bn->tvheap->free : 0
-				);
-
-		if (bn->batCount > 0) {
-			mnstr_write(s, /* tail */
-			Tloc(bn, 0), bn->batCount * Tsize(bn), 1);
-			if (sendtheap)
-				mnstr_write(s, /* theap */
-						Tbase(bn), bn->tvheap->free, 1);
-		}
-
-		mnstr_flush(s);
+		mvc_export_binary_bat(s, b);
 
 		BBPunfix(b->batCacheid);
 	}
