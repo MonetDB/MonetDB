@@ -270,6 +270,7 @@ main(int argc, char **av)
 	char *dbextra = NULL;
 	char *dbtrace = NULL;
 	bool inmemory = false;
+	bool readpwdxit = false;
 	static struct option long_options[] = {
 		{ "config", required_argument, NULL, 'c' },
 		{ "dbextra", required_argument, NULL, 0 },
@@ -293,6 +294,8 @@ main(int argc, char **av)
 		{ "properties", no_argument, NULL, 0 },
 		{ "threads", no_argument, NULL, 0 },
 		{ "transactions", no_argument, NULL, 0 },
+
+		{ "read-password-initialize-and-exit", no_argument, NULL, 0 },
 
 		{ NULL, 0, NULL, 0 }
 	};
@@ -428,6 +431,10 @@ main(int argc, char **av)
 				grpdebug |= GRPtransactions;
 				break;
 			}
+			if (strcmp(long_options[option_index].name, "read-password-initialize-and-exit") == 0) {
+				readpwdxit = true;
+				break;
+			}
 			usage(prog, -1);
 			/* not reached */
 		case 'c':
@@ -486,6 +493,11 @@ main(int argc, char **av)
 
 	if (dbpath && inmemory) {
 		fprintf(stderr, "!ERROR: both dbpath and in-memory must not be set at the same time\n");
+		exit(1);
+	}
+
+	if (inmemory && readpwdxit) {
+		fprintf(stderr, "!ERROR: cannot have both in-memory and read-password-initialize-and-exit\n");
 		exit(1);
 	}
 
@@ -689,13 +701,30 @@ main(int argc, char **av)
 			}
 			fclose(secretf);
 		}
-		if ((err = AUTHunlockVault(secretp)) != MAL_SUCCEED) {
+		if ((err = AUTHunlockVault(secret)) != MAL_SUCCEED) {
 			/* don't show this as a crash */
 			if (!GDKinmemory())
 				msab_registerStop();
 			fprintf(stderr, "%s\n", err);
 			freeException(err);
 			exit(1);
+		}
+		if (readpwdxit) {
+			if (fgets(secret, (int) sizeof(secret), stdin) == NULL) {
+				fprintf(stderr, "!ERROR: no password read\n");
+				exit(1);
+			}
+			if ((secretp = strchr(secret, '\n')) == NULL) {
+				fprintf(stderr, "!ERROR: password too long\n");
+				exit(1);
+			}
+			*secretp = '\0';
+			if ((err = AUTHinitTables(secret)) != MAL_SUCCEED) {
+				fprintf(stderr, "%s\n", err);
+				freeException(err);
+				exit(1);
+			}
+			exit(0);
 		}
 	}
 
