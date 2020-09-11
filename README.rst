@@ -93,6 +93,38 @@ WITH_XML2       Include xml2 support
 WITH_ZLIB       Include zlib support
 ==============  ===============================================================================================
 
+Required packages
+.................
+
+On Fedora, the following packages are required:
+``bison``, ``cmake``, ``gcc``, ``openssl-devel``, ``pkgconf``,
+``python3``.
+
+The following packages are optional but recommended:
+``bzip2-devel``, ``libuuid-devel``, ``pcre-devel``, ``readline-devel``,
+``xz-devel``, ``zlib-devel``.
+
+The following packages are optional:
+``cfitsio-devel``, ``geos-devel``, ``libcurl-devel``, ``libxml2-devel``,
+``python3-devel``, ``python3-numpy``, ``R-core-devel``,
+``unixODBC-devel``.
+
+On Ubuntu and Debian the following packages are required:
+``bison``, ``cmake``, ``gcc``, ``libssl-dev``, ``pkg-config``,
+``python3``.
+
+The following packages are optional but recommended:
+``libbz2-dev``, ``uuid-dev``, ``libpcre3-dev``, ``libreadline-dev``,
+``liblzma-dev``, ``zlib1g-dev``.
+
+The following packages are optional:
+``libcfitsio-dev``, ``libgeos-dev``, ``libcurl4-gnutls-dev``,
+``libxml2-dev``, ``python3-dev``, ``python3-numpy``, ``r-base-dev``,
+``unixodbc-dev``.
+
+``cmake`` must be at least version 3.12, ``python`` must be at least
+version 3.5.
+
 Bugs
 ----
 
