@@ -10,8 +10,8 @@ stdout of test 'simple_plans` in directory 'sql/test/miscellaneous` itself:
 #insert into myy values (1, 1), (2, 0), (3,3), (4,2);
 [ 4	]
 #select distinct col1 + col2 from myy order by col1 + col2;
-% sys.%2 # table_name
-% %2 # name
+% sys.%1 # table_name
+% %1 # name
 % bigint # type
 % 1 # length
 [ 2	]
@@ -25,9 +25,9 @@ project (
 | group by (
 | | project (
 | | | table(sys.myy) [ "myy"."col1", "myy"."col2" ] COUNT 
-| | ) [ sys.sql_add(bigint["myy"."col1"] as "myy"."col1", bigint["myy"."col2"] as "myy"."col2") as "%2"."%2" ]
-| ) [ "%2"."%2" ] [ "%2"."%2" ]
-) [ "%2"."%2" ] [ "%2"."%2" ASC ]
+| | ) [ sys.sql_add(bigint["myy"."col1"] as "myy"."col1", bigint["myy"."col2"] as "myy"."col2") as "%1"."%1" ]
+| ) [ "%1"."%1" ] [ "%1"."%1" ]
+) [ "%1"."%1" ] [ "%1"."%1" ASC ]
 #create table myx (x uuid, y uuid);
 #plan select * from myx where x in ('1aea00e5db6e0810b554fde31d961965') or y = '1aea00e5db6e0810b554fde31d961965';
 % .plan # table_name
@@ -188,8 +188,8 @@ project (
 % 166 # length
 function user.main():void;
     X_1:void := querylog.define("explain select 1 from another_t t1 inner join another_t t2 on t1.col1 between t2.col1 and t2.col1;":str, "default_pipe":str, 22:int);
-    X_32:bat[:str] := bat.pack(".%3":str);
-    X_33:bat[:str] := bat.pack("%3":str);
+    X_32:bat[:str] := bat.pack(".%1":str);
+    X_33:bat[:str] := bat.pack("%1":str);
     X_34:bat[:str] := bat.pack("tinyint":str);
     X_35:bat[:int] := bat.pack(1:int);
     X_36:bat[:int] := bat.pack(0:int);
@@ -237,8 +237,8 @@ end user.main;
 % 174 # length
 function user.main():void;
     X_1:void := querylog.define("explain select 1 from another_t t1 inner join another_t t2 on t1.col1 between t2.col1 - 1 and t2.col1 + 1;":str, "default_pipe":str, 31:int);
-    X_45:bat[:str] := bat.pack(".%11":str);
-    X_46:bat[:str] := bat.pack("%11":str);
+    X_45:bat[:str] := bat.pack(".%3":str);
+    X_46:bat[:str] := bat.pack("%3":str);
     X_47:bat[:str] := bat.pack("tinyint":str);
     X_48:bat[:int] := bat.pack(1:int);
     X_49:bat[:int] := bat.pack(0:int);
@@ -289,8 +289,8 @@ end user.main;
 % 160 # length
 function user.main():void;
     X_1:void := querylog.define("explain select 1 from another_t t1 inner join another_t t2 on t1.col1 between t2.col1 and 2;":str, "default_pipe":str, 24:int);
-    X_35:bat[:str] := bat.pack(".%3":str);
-    X_36:bat[:str] := bat.pack("%3":str);
+    X_35:bat[:str] := bat.pack(".%1":str);
+    X_36:bat[:str] := bat.pack("%1":str);
     X_37:bat[:str] := bat.pack("tinyint":str);
     X_38:bat[:int] := bat.pack(1:int);
     X_39:bat[:int] := bat.pack(0:int);
@@ -339,8 +339,8 @@ end user.main;
 % 189 # length
 function user.main():void;
     X_1:void := querylog.define("explain select 1 from tbl_productsales t1 inner join tbl_productsales t2 on t1.product_category like t2.product_category;":str, "default_pipe":str, 23:int);
-    X_32:bat[:str] := bat.pack(".%3":str);
-    X_33:bat[:str] := bat.pack("%3":str);
+    X_32:bat[:str] := bat.pack(".%1":str);
+    X_33:bat[:str] := bat.pack("%1":str);
     X_34:bat[:str] := bat.pack("tinyint":str);
     X_35:bat[:int] := bat.pack(1:int);
     X_36:bat[:int] := bat.pack(0:int);
@@ -388,8 +388,8 @@ end user.main;
 % 148 # length
 function user.main():void;
     X_1:void := querylog.define("explain select 1 from another_t t1 inner join another_t t2 on t1.col1 > t2.col1;":str, "default_pipe":str, 22:int);
-    X_30:bat[:str] := bat.pack(".%3":str);
-    X_31:bat[:str] := bat.pack("%3":str);
+    X_30:bat[:str] := bat.pack(".%1":str);
+    X_31:bat[:str] := bat.pack("%1":str);
     X_32:bat[:str] := bat.pack("tinyint":str);
     X_33:bat[:int] := bat.pack(1:int);
     X_34:bat[:int] := bat.pack(0:int);

@@ -37,7 +37,7 @@ function user.main():void;
     X_4:int := sql.mvc();
     C_5:bat[:oid] := sql.tid(X_4:int, "sys":str, "fk":str);
     X_23:lng := aggr.count(C_5:bat[:oid]);
-    sql.resultSet(".%5":str, "%5":str, "bigint":str, 64:int, 0:int, 7:int, X_23:lng);
+    sql.resultSet(".%1":str, "%1":str, "bigint":str, 64:int, 0:int, 7:int, X_23:lng);
 end user.main;
 #inline               actions= 0 time=0 usec 
 #remap                actions= 0 time=1 usec 

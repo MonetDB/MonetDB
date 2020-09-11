@@ -164,32 +164,32 @@ stdout of test 'foreign_key_outer_join_dead_code_elimination-prologue` in direct
 % 1 # length
 [ 6	]
 #select count(*) from v0;
-% .%2 # table_name
-% %2 # name
+% .%1 # table_name
+% %1 # name
 % bigint # type
 % 1 # length
 [ 6	]
 #select count(*) from fk left outer join pk1 on fk.fk1 = pk1.pk1;
-% .%3 # table_name
-% %3 # name
+% .%1 # table_name
+% %1 # name
 % bigint # type
 % 1 # length
 [ 6	]
 #select count(*) from v1;
-% .%3 # table_name
-% %3 # name
+% .%1 # table_name
+% %1 # name
 % bigint # type
 % 1 # length
 [ 6	]
 #select count(*) from fk left outer join pk1 on fk.fk1 = pk1.pk1 left outer join pk2 on fk.fk2 = pk2.pk2;
-% .%5 # table_name
-% %5 # name
+% .%1 # table_name
+% %1 # name
 % bigint # type
 % 1 # length
 [ 6	]
 #select count(*) from v2;
-% .%5 # table_name
-% %5 # name
+% .%1 # table_name
+% %1 # name
 % bigint # type
 % 1 # length
 [ 6	]

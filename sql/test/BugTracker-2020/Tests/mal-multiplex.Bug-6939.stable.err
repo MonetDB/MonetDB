@@ -1,0 +1,12 @@
+stderr of test 'mal-multiplex.Bug-6939` in directory 'sql/test/BugTracker-2020` itself:
+
+
+# 16:32:49 >  
+# 16:32:49 >  "mclient" "-lsql" "-ftest" "-tnone" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-183724" "--port=30927"
+# 16:32:49 >  
+
+
+# 16:32:49 >  
+# 16:32:49 >  "Done."
+# 16:32:49 >  
+

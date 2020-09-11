@@ -12,16 +12,6 @@
 #ifndef _SQL_TRANSACTION_H
 #define _SQL_TRANSACTION_H
 
-#ifdef WIN32
-#ifndef LIBSQL
-#define sql5_export extern __declspec(dllimport)
-#else
-#define sql5_export extern __declspec(dllexport)
-#endif
-#else
-#define sql5_export extern
-#endif
-
 #include "sql.h"
 #include "mal_backend.h"
 #include "sql_atom.h"

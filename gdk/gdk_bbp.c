@@ -1420,6 +1420,7 @@ BBPexit(void)
 						}
 						VIEWdestroy(b);
 					} else {
+						PROPdestroy(b);
 						BATfree(b);
 					}
 				}
@@ -1722,15 +1723,14 @@ BBPdump(void)
 		if (b == NULL)
 			continue;
 		fprintf(stderr,
-			"# %d[%s]: nme='%s' refs=%d lrefs=%d "
-			"status=%u count=" BUNFMT,
+			"# %d: " ALGOBATFMT " "
+			"refs=%d lrefs=%d "
+			"status=%u",
 			i,
-			ATOMname(b->ttype),
-			BBP_logical(i) ? BBP_logical(i) : "<NULL>",
+			ALGOBATPAR(b),
 			BBP_refs(i),
 			BBP_lrefs(i),
-			BBP_status(i),
-			b->batCount);
+			BBP_status(i));
 		if (b->batSharecnt > 0)
 			fprintf(stderr, " shares=%d", b->batSharecnt);
 		if (b->batDirtydesc)
@@ -1739,9 +1739,10 @@ BBPdump(void)
 			fprintf(stderr, " Theap -> %d", b->theap.parentid);
 		} else {
 			fprintf(stderr,
-				" Theap=[%zu,%zu]%s",
+				" Theap=[%zu,%zu,f=%d]%s",
 				HEAPmemsize(&b->theap),
 				HEAPvmsize(&b->theap),
+				b->theap.farmid,
 				b->theap.dirty ? "(Dirty)" : "");
 			if (BBP_logical(i) && BBP_logical(i)[0] == '.') {
 				cmem += HEAPmemsize(&b->theap);
@@ -1760,9 +1761,10 @@ BBPdump(void)
 					b->tvheap->parentid);
 			} else {
 				fprintf(stderr,
-					" Tvheap=[%zu,%zu]%s",
+					" Tvheap=[%zu,%zu,f=%d]%s",
 					HEAPmemsize(b->tvheap),
 					HEAPvmsize(b->tvheap),
+					b->tvheap->farmid,
 					b->tvheap->dirty ? "(Dirty)" : "");
 				if (BBP_logical(i) && BBP_logical(i)[0] == '.') {
 					cmem += HEAPmemsize(b->tvheap);
@@ -1776,7 +1778,9 @@ BBPdump(void)
 		if (b->thash && b->thash != (Hash *) 1) {
 			size_t m = HEAPmemsize(&b->thash->heaplink) + HEAPmemsize(&b->thash->heapbckt);
 			size_t v = HEAPvmsize(&b->thash->heaplink) + HEAPvmsize(&b->thash->heapbckt);
-			fprintf(stderr, " Thash=[%zu,%zu]", m, v);
+			fprintf(stderr, " Thash=[%zu,%zu,f=%d/%d]", m, v,
+				b->thash->heaplink.farmid,
+				b->thash->heapbckt.farmid);
 			if (BBP_logical(i) && BBP_logical(i)[0] == '.') {
 				cmem += m;
 				cvm += v;
@@ -1785,9 +1789,8 @@ BBPdump(void)
 				vm += v;
 			}
 		}
-		fprintf(stderr, " role: %s, persistence: %s\n",
-			b->batRole == PERSISTENT ? "persistent" : "transient",
-			b->batTransient ? "transient" : "persistent");
+		fprintf(stderr, " role: %s\n",
+			b->batRole == PERSISTENT ? "persistent" : "transient");
 	}
 	fprintf(stderr,
 		"# %d bats: mem=%zu, vm=%zu %d cached bats: mem=%zu, vm=%zu\n",
@@ -2452,7 +2455,7 @@ decref(bat i, bool logical, bool releaseShare, bool lock, const char *func)
 	 * if they have been made cold or are not dirty */
 	if (BBP_refs(i) > 0 ||
 	    (BBP_lrefs(i) > 0 &&
-	     (b == NULL || BATdirty(b) || !(BBP_status(i) & BBPPERSISTENT) || GDKinmemory(b->theap.farmid)))) {
+	     (b == NULL || BATdirtydata(b) || !(BBP_status(i) & BBPPERSISTENT) || GDKinmemory(b->theap.farmid)))) {
 		/* bat cannot be swapped out */
 	} else if (b ? b->batSharecnt == 0 : (BBP_status(i) & BBPTMP)) {
 		/* bat will be unloaded now. set the UNLOADING bit
@@ -2642,7 +2645,7 @@ BBPsave(BAT *b)
 	bat bid = b->batCacheid;
 	gdk_return ret = GDK_SUCCEED;
 
-	if (BBP_lrefs(bid) == 0 || isVIEW(b) || !BATdirty(b)) {
+	if (BBP_lrefs(bid) == 0 || isVIEW(b) || !BATdirtydata(b)) {
 		/* do nothing */
 		if (b->thash && b->thash != (Hash *) 1 &&
 		    (b->thash->heaplink.dirty || b->thash->heapbckt.dirty))
