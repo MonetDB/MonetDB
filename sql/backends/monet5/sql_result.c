@@ -932,97 +932,96 @@ mvc_export_prepare(mvc *c, stream *out, cq *q, str w)
 	sql_rel *r = q->rel;
 
 	(void)c;
-	if(!out)
+	if(!out || GDKembedded())
 		return 0;
 
-	if (!GDKembedded()) {
-		if (r && (is_topn(r->op) || is_sample(r->op)))
-			r = r->l;
-		if (r && is_project(r->op) && r->exps) {
-			unsigned int max2 = 10, max3 = 10;	/* to help calculate widths */
-			nrows += list_length(r->exps);
+	if (r && (is_topn(r->op) || is_sample(r->op)))
+		r = r->l;
+	if (r && is_project(r->op) && r->exps) {
+		unsigned int max2 = 10, max3 = 10;	/* to help calculate widths */
+		nrows += list_length(r->exps);
 
-			for (n = r->exps->h; n; n = n->next) {
-				const char *name;
-				sql_exp *e = n->data;
-				size_t slen;
+		for (n = r->exps->h; n; n = n->next) {
+			const char *name;
+			sql_exp *e = n->data;
+			size_t slen;
 
-				t = exp_subtype(e);
-				slen = strlen(t->type->sqlname);
-				if (slen > len1)
-					len1 = slen;
-				while (t->digits >= max2) {
-					len2++;
-					max2 *= 10;
-				}
-				while (t->scale >= max3) {
-					len3++;
-					max3 *= 10;
-				}
-				name = exp_relname(e);
-				if (!name && e->type == e_column && e->l)
-					name = e->l;
-				slen = name ? strlen(name) : 0;
-				if (slen > len5)
-					len5 = slen;
-				name = exp_name(e);
-				if (!name && e->type == e_column && e->r)
-					name = e->r;
-				slen = name ? strlen(name) : 0;
-				if (slen > len6)
-					len6 = slen;
+			t = exp_subtype(e);
+			slen = strlen(t->type->sqlname);
+			if (slen > len1)
+				len1 = slen;
+			while (t->digits >= max2) {
+				len2++;
+				max2 *= 10;
 			}
-		}
-
-		/* calculate column widths */
-		if (q->f->ops) {
-			unsigned int max2 = 10, max3 = 10;	/* to help calculate widths */
-
-			for (n = q->f->ops->h; n; n = n->next) {
-				size_t slen;
-
-				a = n->data;
-				t = &a->type;
-				slen = strlen(t->type->sqlname);
-				if (slen > len1)
-					len1 = slen;
-				while (t->digits >= max2) {
-					len2++;
-					max2 *= 10;
-				}
-				while (t->scale >= max3) {
-					len3++;
-					max3 *= 10;
-				}
+			while (t->scale >= max3) {
+				len3++;
+				max3 *= 10;
 			}
+			name = exp_relname(e);
+			if (!name && e->type == e_column && e->l)
+				name = e->l;
+			slen = name ? strlen(name) : 0;
+			if (slen > len5)
+				len5 = slen;
+			name = exp_name(e);
+			if (!name && e->type == e_column && e->r)
+				name = e->r;
+			slen = name ? strlen(name) : 0;
+			if (slen > len6)
+				len6 = slen;
 		}
+	}
 
-		/* write header, query type: Q_PREPARE */
-		if (mnstr_printf(out, "&5 %d %d 6 %d\n"	/* TODO: add type here: r(esult) or u(pdate) */
-			 	"%% .prepare,\t.prepare,\t.prepare,\t.prepare,\t.prepare,\t.prepare # table_name\n" "%% type,\tdigits,\tscale,\tschema,\ttable,\tcolumn # name\n" "%% varchar,\tint,\tint,\tstr,\tstr,\tstr # type\n" "%% %zu,\t%d,\t%d,\t"
-			 	"%zu,\t%zu,\t%zu # length\n", q->id, nrows, nrows, len1, len2, len3, len4, len5, len6) < 0) {
-			return -1;
-		}
+	/* calculate column widths */
+	if (q->f->ops) {
+		unsigned int max2 = 10, max3 = 10;	/* to help calculate widths */
 
-		if (r && is_project(r->op) && r->exps) {
-			for (n = r->exps->h; n; n = n->next) {
-				const char *name, *rname, *schema = NULL;
-				sql_exp *e = n->data;
+		for (n = q->f->ops->h; n; n = n->next) {
+			size_t slen;
 
-				t = exp_subtype(e);
-				name = exp_name(e);
-				if (!name && e->type == e_column && e->r)
-					name = e->r;
-				rname = exp_relname(e);
-				if (!rname && e->type == e_column && e->l)
-					rname = e->l;
-
-				if (mnstr_printf(out, "[ \"%s\",\t%u,\t%u,\t\"%s\",\t\"%s\",\t\"%s\"\t]\n", t->type->sqlname, t->digits, t->scale, schema ? schema : "", rname ? rname : "", name ? name : "") < 0) {
-					return -1;
-				}
+			a = n->data;
+			t = &a->type;
+			slen = strlen(t->type->sqlname);
+			if (slen > len1)
+				len1 = slen;
+			while (t->digits >= max2) {
+				len2++;
+				max2 *= 10;
+			}
+			while (t->scale >= max3) {
+				len3++;
+				max3 *= 10;
 			}
 		}
 	}
+
+	/* write header, query type: Q_PREPARE */
+	if (mnstr_printf(out, "&5 %d %d 6 %d\n"	/* TODO: add type here: r(esult) or u(pdate) */
+			"%% .prepare,\t.prepare,\t.prepare,\t.prepare,\t.prepare,\t.prepare # table_name\n" "%% type,\tdigits,\tscale,\tschema,\ttable,\tcolumn # name\n" "%% varchar,\tint,\tint,\tstr,\tstr,\tstr # type\n" "%% %zu,\t%d,\t%d,\t"
+			"%zu,\t%zu,\t%zu # length\n", q->id, nrows, nrows, len1, len2, len3, len4, len5, len6) < 0) {
+		return -1;
+	}
+
+	if (r && is_project(r->op) && r->exps) {
+		for (n = r->exps->h; n; n = n->next) {
+			const char *name, *rname, *schema = NULL;
+			sql_exp *e = n->data;
+
+			t = exp_subtype(e);
+			name = exp_name(e);
+			if (!name && e->type == e_column && e->r)
+				name = e->r;
+			rname = exp_relname(e);
+			if (!rname && e->type == e_column && e->l)
+				rname = e->l;
+
+			if (mnstr_printf(out, "[ \"%s\",\t%u,\t%u,\t\"%s\",\t\"%s\",\t\"%s\"\t]\n", t->type->sqlname, t->digits, t->scale, schema ? schema : "", rname ? rname : "", name ? name : "") < 0) {
+				return -1;
+			}
+		}
+	}
+
 	if (q->f->ops) {
 		int i;
 
@@ -1030,16 +1029,11 @@ mvc_export_prepare(mvc *c, stream *out, cq *q, str w)
 			a = n->data;
 			t = &a->type;
 
-			if (t) {
-				if (!GDKembedded() && mnstr_printf(out, "[ \"%s\",\t%u,\t%u,\tNULL,\tNULL,\tNULL\t]\n", t->type->sqlname, t->digits, t->scale) < 0) {
-					return -1;
-				}
-			} else {
+			if (!t || mnstr_printf(out, "[ \"%s\",\t%u,\t%u,\tNULL,\tNULL,\tNULL\t]\n", t->type->sqlname, t->digits, t->scale) < 0)
 				return -1;
-			}
 		}
 	}
-	if (!GDKembedded() && mvc_export_warning(out, w) != 1)
+	if (mvc_export_warning(out, w) != 1)
 		return -1;
 	return 0;
 }
