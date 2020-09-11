@@ -5527,7 +5527,7 @@ rel_push_project_down(visitor *v, sql_rel *rel)
 
 		if (rel_is_ref(l))
 			return rel;
-		if (is_base(l->op)) {
+		if (is_basetable(l->op)) {
 			if (list_check_prop_all(rel->exps, (prop_check_func)&exp_is_useless_rename)) {
 				/* TODO reduce list (those in the project + internal) */
 				rel->l = NULL;
@@ -9559,7 +9559,7 @@ optimize_rel(mvc *sql, sql_rel *rel, int *g_changes, int level, int value_based_
 			rel = rel_visitor_bottomup(&v, rel, &rewrite_reset_used); /* reset used flag, used by rel_merge_select_rse */
 		}
 
-	if (gp.cnt[op_project])
+	if (gp.cnt[op_project] && /* DISABLES CODE */ (0))
 		rel = rel_exp_visitor_bottomup(&v, rel, &rel_merge_project_rse, false);
 
 	if (gp.cnt[op_join])
