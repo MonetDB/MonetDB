@@ -1760,26 +1760,39 @@ exp_physical_types(visitor *v, sql_rel *rel, sql_exp *e, int depth)
 			sql_exp *le = args->h->data;
 			sql_subtype *lt = exp_subtype(le);
 
-			if (lt->type->eclass == EC_SEC) {
+			if (lt->type->eclass == EC_SEC || lt->type->eclass == EC_MONTH) {
 				sql_exp *re = args->h->next->data;
 				sql_subtype *rt = exp_subtype(re);
 
 				if (rt->type->eclass == EC_DEC && rt->scale) {
 					int scale = rt->scale; /* shift with scale */
-					sql_subtype *it = sql_bind_localtype(lt->type->base.name);
-					sql_subfunc *c = sql_bind_func(v->sql->sa, v->sql->session->schema, "scale_up", lt, it, F_FUNC);
-
-					if (!c) {
-						TRC_CRITICAL(SQL_PARSER, "scale_up missing (%s)\n", lt->type->base.name);
-						return NULL;
-					}
 #ifdef HAVE_HGE
 					hge val = scale2value(scale);
 #else
 					lng val = scale2value(scale);
 #endif
-					atom *a = atom_int(v->sql->sa, it, val);
-					ne = exp_binop(v->sql->sa, e, exp_atom(v->sql->sa, a), c);
+
+					if (lt->type->eclass == EC_SEC) {
+						sql_subtype *it = sql_bind_localtype(lt->type->base.name);
+						sql_subfunc *c = sql_bind_func(v->sql->sa, v->sql->session->schema, "scale_up", lt, it, F_FUNC);
+
+						if (!c) {
+							TRC_CRITICAL(SQL_PARSER, "scale_up missing (%s)\n", lt->type->base.name);
+							return NULL;
+						}
+						atom *a = atom_int(v->sql->sa, it, val);
+						ne = exp_binop(v->sql->sa, e, exp_atom(v->sql->sa, a), c);
+					} else { /* EC_MONTH */
+						sql_subtype *it = sql_bind_localtype(rt->type->base.name);
+						sql_subfunc *c = sql_bind_func(v->sql->sa, v->sql->session->schema, "scale_down", rt, it, F_FUNC);
+
+						if (!c) {
+							TRC_CRITICAL(SQL_PARSER, "scale_down missing (%s)\n", lt->type->base.name);
+							return NULL;
+						}
+						atom *a = atom_int(v->sql->sa, it, val);
+						args->h->next->data = exp_binop(v->sql->sa, args->h->next->data, exp_atom(v->sql->sa, a), c);
+					}
 				}
 			}
 		}

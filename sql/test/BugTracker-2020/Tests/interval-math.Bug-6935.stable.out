@@ -29,7 +29,31 @@ stdout of test 'interval-math.Bug-6935` in directory 'sql/test/BugTracker-2020` 
 % sec_interval # type
 % 5 # length
 [ 2.000	]
-#SELECT INTERVAL '1' MONTH * 1.2;
+#SELECT INTERVAL '4' MONTH * 2.03; -- 8
+% .%2 # table_name
+% %2 # name
+% month_interval # type
+% 1 # length
+[ 8	]
+#SELECT INTERVAL '1' MONTH * 1.2; -- 1
+% .%2 # table_name
+% %2 # name
+% month_interval # type
+% 1 # length
+[ 1	]
+#SELECT INTERVAL '1' MONTH / 2.0; -- 0
+% .%2 # table_name
+% %2 # name
+% month_interval # type
+% 1 # length
+[ 0	]
+#SELECT INTERVAL '1' MONTH / 1.5; -- 0
+% .%2 # table_name
+% %2 # name
+% month_interval # type
+% 1 # length
+[ 0	]
+#SELECT INTERVAL '1' MONTH / 1.0; -- 1
 % .%2 # table_name
 % %2 # name
 % month_interval # type
@@ -41,6 +65,12 @@ stdout of test 'interval-math.Bug-6935` in directory 'sql/test/BugTracker-2020` 
 % sec_interval # type
 % 5 # length
 [ 1.200	]
+#SELECT INTERVAL '2' MONTH / -1.4; -- 2
+% .%2 # table_name
+% %2 # name
+% month_interval # type
+% 2 # length
+[ -2	]
 #select mya + interval '2' second from (select interval '3' second * 1.2) as mya(mya); -- 5.600
 % .%2 # table_name
 % %2 # name
