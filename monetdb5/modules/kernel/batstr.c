@@ -154,6 +154,44 @@ bunins_failed:
 }
 
 static str
+STRbatFromWChr(bat *ret, const bat *l)
+{
+	BAT *bn, *b;
+	BUN q;
+	str y;
+	int *restrict input;
+	str msg = MAL_SUCCEED;
+
+	prepareOperand(b, l, "batstr.unicode");
+	prepareResult(bn, b, TYPE_str, "batstr.unicode");
+	input = Tloc(b, 0);
+	q = BATcount(b);
+
+	for (BUN p = 0 ; p < q; p++) {
+		int x = input[p];
+		gdk_return res;
+
+		if ((msg = STRFromWChr(&y, &x)) != MAL_SUCCEED)
+			goto bailout;
+		res = bunfastappVAR(bn, y);
+		GDKfree(y);
+		if (res != GDK_SUCCEED)
+			goto bailout;
+	}
+	bn->tnonil = b->tnonil;
+	bn->tnil = b->tnonil;
+	finalizeResult(ret, bn, b);
+	return MAL_SUCCEED;
+
+bailout:
+	BBPunfix(b->batCacheid);
+	BBPunfix(bn->batCacheid);
+	if (msg != MAL_SUCCEED)
+		return msg;
+	throw(MAL, "batstr.unicode", OPERATION_FAILED " During bulk operation");
+}
+
+static str
 do_batstr_str(bat *ret, const bat *l, const char *name, str (*func)(str *, const str *))
 {
 	BATiter bi;
@@ -1162,6 +1200,12 @@ STRbatTailcst(bat *ret, const bat *l, const int *cst)
 }
 
 static str
+STRbatsubstringTailcst(bat *ret, const bat *l, const int *cst)
+{
+	return do_batstr_str_int_cst(ret, l, cst, "batstr.substring", STRsubstringTail);
+}
+
+static str
 do_batstr_str_int(bat *ret, const bat *l, const bat *r, const char *name, str (*func)(str *, const str *, const int *))
 {
 	BATiter lefti;
@@ -1228,6 +1272,12 @@ static str
 STRbatTail(bat *ret, const bat *l, const bat *r)
 {
 	return do_batstr_str_int(ret, l, r, "batstr.tail", STRTail);
+}
+
+static str
+STRbatsubstringTail(bat *ret, const bat *l, const bat *r)
+{
+	return do_batstr_str_int(ret, l, r, "batstr.substring", STRsubstringTail);
 }
 
 static str
@@ -1573,8 +1623,11 @@ mel_func batstr_init_funcs[] = {
  command("batstr", "string", STRbatTail, false, "Return the tail s[offset..n] of a string s[0..n].", args(1,3, batarg("",str),batarg("b",str),batarg("offset",int))),
  command("batstr", "string", STRbatTailcst, false, "Return the tail s[offset..n] of a string s[0..n].", args(1,3, batarg("",str),batarg("b",str),arg("offset",int))),
  command("batstr", "ascii", STRbatAscii, false, "Return unicode of head of string", args(1,2, batarg("",int),batarg("s",str))),
+ command("batstr", "substring", STRbatsubstringTailcst, false, "Extract the tail of a string", args(1,3, batarg("",str),batarg("s",str),arg("start",int))),
+ command("batstr", "substring", STRbatsubstringTail, false, "Extract the tail of a string", args(1,3, batarg("",str),batarg("s",str),batarg("start",int))),
  command("batstr", "substring", STRbatsubstring, false, "Substring extraction using [start,start+length]", args(1,4, batarg("",str),batarg("s",str),batarg("start",int),batarg("index",int))),
  command("batstr", "substring", STRbatsubstringcst, false, "Substring extraction using [start,start+length]", args(1,4, batarg("",str),batarg("s",str),arg("start",int),arg("index",int))),
+ command("batstr", "unicode", STRbatFromWChr, false, "convert a unicode to a character.", args(1,2, batarg("",str),batarg("wchar",int))),
  command("batstr", "unicodeAt", STRbatWChrAt, false, "get a unicode character (as an int) from a string position.", args(1,3, batarg("",int),batarg("s",str),batarg("index",int))),
  command("batstr", "unicodeAt", STRbatWChrAtcst, false, "get a unicode character (as an int) from a string position.", args(1,3, batarg("",int),batarg("s",str),arg("index",int))),
  command("batstr", "substitute", STRbatSubstitutecst, false, "Substitute first occurrence of 'src' by\n'dst'.  Iff repeated = true this is\nrepeated while 'src' can be found in the\nresult string. In order to prevent\nrecursion and result strings of unlimited\nsize, repeating is only done iff src is\nnot a substring of dst.", args(1,5, batarg("",str),batarg("s",str),arg("src",str),arg("dst",str),arg("rep",bit))),
