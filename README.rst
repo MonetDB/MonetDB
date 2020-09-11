@@ -105,9 +105,10 @@ The following packages are optional but recommended:
 ``xz-devel``, ``zlib-devel``.
 
 The following packages are optional:
-``cfitsio-devel``, ``geos-devel``, ``libcurl-devel``, ``libxml2-devel``,
+``cfitsio-devel``, ``gdal-devel``, ``geos-devel``, ``libasan``,
+``libcurl-devel``, ``libxml2-devel``, ``netcdf-devel``, ``proj-devel``,
 ``python3-devel``, ``python3-numpy``, ``R-core-devel``,
-``unixODBC-devel``.
+``unixODBC-devel``, ``valgrind-devel``.
 
 On Ubuntu and Debian the following packages are required:
 ``bison``, ``cmake``, ``gcc``, ``libssl-dev``, ``pkg-config``,
@@ -118,9 +119,10 @@ The following packages are optional but recommended:
 ``liblzma-dev``, ``zlib1g-dev``.
 
 The following packages are optional:
-``libcfitsio-dev``, ``libgeos-dev``, ``libcurl4-gnutls-dev``,
+``libasan5``, ``libcfitsio-dev``, ``libcurl4-gnutls-dev``,
+``libgdal-dev``, ``libgeos-dev``, ``libnetcdf-dev``, ``libproj-dev``,
 ``libxml2-dev``, ``python3-dev``, ``python3-numpy``, ``r-base-dev``,
-``unixodbc-dev``.
+``unixodbc-dev``, ``valgrind``.
 
 ``cmake`` must be at least version 3.12, ``python`` must be at least
 version 3.5.
