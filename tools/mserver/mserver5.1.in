@@ -72,7 +72,7 @@ option.
 If the value of
 .I path
 is
-.BR :inmemory ,
+.BR :memory: ,
 transient data is not stored on disk at all but kept in memory at all
 times.
 .TP
