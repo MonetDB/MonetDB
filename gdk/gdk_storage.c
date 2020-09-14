@@ -57,7 +57,7 @@ GDKfilepath(int farmid, const char *dir, const char *name, const char *ext)
 	char *path;
 
 	if (GDKinmemory(farmid))
-		return GDKstrdup(":inmemory");
+		return GDKstrdup(":memory:");
 
 	assert(dir == NULL || *dir != DIR_SEP);
 	assert(farmid == NOFARM ||

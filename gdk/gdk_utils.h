@@ -101,7 +101,7 @@ gdk_export str GDKstrndup(const char *s, size_t n)
 
 gdk_export void MT_init(void);	/*  init the package. */
 struct opt;
-gdk_export gdk_return GDKinit(struct opt *set, int setlen, int embedded);
+gdk_export gdk_return GDKinit(struct opt *set, int setlen, bool embedded);
 
 /* used for testing only */
 gdk_export void GDKsetmallocsuccesscount(lng count);

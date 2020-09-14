@@ -480,32 +480,24 @@ stmt_varnr(backend *be, int nr, sql_subtype *t)
 stmt *
 stmt_table(backend *be, stmt *cols, int temp)
 {
+	stmt *s = stmt_create(be->mvc->sa, st_table);
 	MalBlkPtr mb = be->mb;
-	InstrPtr q = newAssignment(mb);
 
-	if (cols->nr < 0)
+	if (s == NULL || cols->nr < 0)
 		return NULL;
 
 	if (cols->type != st_list) {
+	    InstrPtr q = newAssignment(mb);
 		q = newStmt(mb, sqlRef, printRef);
 		q = pushStr(mb, q, "not a valid output list\n");
 		if (q == NULL)
 			return NULL;
 	}
-	if (q) {
-		stmt *s = stmt_create(be->mvc->sa, st_table);
-		if (s == NULL) {
-			freeInstruction(q);
-			return NULL;
-		}
-
-		s->op1 = cols;
-		s->flag = temp;
-		s->nr = cols->nr;
-		s->nrcols = cols->nrcols;
-		return s;
-	}
-	return NULL;
+	s->op1 = cols;
+	s->flag = temp;
+	s->nr = cols->nr;
+	s->nrcols = cols->nrcols;
+	return s;
 }
 
 stmt *
@@ -3072,7 +3064,7 @@ stmt_convert(backend *be, stmt *v, stmt *sel, sql_subtype *f, sql_subtype *t)
 	    !EC_INTERVAL(f->type->eclass) &&
 	    f->type->eclass != EC_DEC &&
 	    (t->digits == 0 || f->digits == t->digits) &&
-	    type_has_tz(t) == type_has_tz(f)) || 
+	    type_has_tz(t) == type_has_tz(f)) ||
 		(EC_VARCHAR(f->type->eclass) && EC_VARCHAR(t->type->eclass) && f->digits > 0 && t->digits >= f->digits)) {
 		/* set output type. Despite the MAL code already being generated,
 		   the output type may still be checked */

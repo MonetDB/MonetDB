@@ -1325,9 +1325,14 @@ push_up_set(mvc *sql, sql_rel *rel, list *ad)
 		/* left of rel should be a set */
 		if (d && is_distinct_set(sql, d, ad) && s && is_set(s->op)) {
 			list *sexps;
-			node *m;
 			sql_rel *sl = s->l, *sr = s->r, *n;
 
+			sl = rel_project(sql->sa, sl, rel_projections(sql, sl, NULL, 1, 1));
+			for (node *n = sl->exps->h, *m = s->exps->h; n; n = n->next, m = m->next)
+				exp_prop_alias(sql->sa, n->data, m->data);
+			sr = rel_project(sql->sa, sr, rel_projections(sql, sr, NULL, 1, 1));
+			for (node *n = sr->exps->h, *m = s->exps->h; n; n = n->next, m = m->next)
+				exp_prop_alias(sql->sa, n->data, m->data);
 			/* D djoin (sl setop sr) -> (D djoin sl) setop (D djoin sr) */
 			rel->r = sl;
 			n = rel_crossproduct(sql->sa, rel_dup(d), sr, rel->op);
@@ -1336,7 +1341,7 @@ push_up_set(mvc *sql, sql_rel *rel, list *ad)
 			s->r = n;
 			if (is_join(rel->op)) {
 				sexps = sa_list(sql->sa);
-				for (m = d->exps->h; m; m = m->next) {
+				for (node *m = d->exps->h; m; m = m->next) {
 					sql_exp *e = m->data, *pe;
 
 					pe = exp_ref(sql, e);

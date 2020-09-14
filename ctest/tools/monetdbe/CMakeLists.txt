@@ -18,7 +18,7 @@ target_link_libraries(example2
   PRIVATE
     monetdb_config_header
     monetdbe)
-#add_test(run_example2 example2)
+add_test(run_example2 example2)
 
 add_executable(example_temporal example_temporal.c)
 target_link_libraries(example_temporal

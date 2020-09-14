@@ -101,3 +101,45 @@ INSERT INTO "t1" VALUES ('i?#\t+U,s'), ('288044674'), ('b'), ('W?ykP7L+X'), ('34
 SELECT CASE '1' WHEN COALESCE((SELECT t0.c0 FROM t0), COALESCE(t1.c0, '2')) THEN 1 END FROM t1;
 	-- 7 NULL rows
 ROLLBACK;
+
+CREATE TABLE "t0" ("c1" VARCHAR(388) NOT NULL,CONSTRAINT "t0_c1_pkey" PRIMARY KEY ("c1"),CONSTRAINT "t0_c1_unique" UNIQUE ("c1"));
+INSERT INTO "t0" VALUES (''), ('Ral%}?U*A'), ('Dz '), ('P');
+CREATE TABLE "t2" ("c1" VARCHAR(388) NOT NULL);
+INSERT INTO "t2" VALUES ('4'),('4'),('3eSU8,'),(''),('5E~쟱'),('~'),('1386006226'),('0.19005213960704492'),('''{Mdd뒆VB'''),('\015␱%L%]'),('+'),(''),('㕚o+k');
+
+select t0.c1 from t0 where (-5) in (case when t0.c1 then 1 end, (select -3 from t0));
+	-- error while converting empty string to bit
+select t0.c1 from t0 where (-5) in (case when t0.c1 then 1 else -2 end, (select -3 from t0, t2 where false));
+	-- error while converting empty string to bit
+DROP TABLE t0;
+DROP TABLE t2;
+
+CREATE TABLE t1 (c0 DOUBLE PRECISION NOT NULL);
+INSERT INTO t1(c0) VALUES((0.6548429615298178*0.3050008736497528)/(0.5061323979270875)); --error, scale too large
+INSERT INTO t1(c0) VALUES(((((COALESCE(0.6548429615298178, 0.20317629894456002))*(COALESCE(0.3050008736497528, 0.2277902039419617))))/(0.5061323979270875))); --error, scale too large
+SELECT t1.c0 FROM t1;
+	-- empty
+DROP TABLE t1;
+
+START TRANSACTION;
+CREATE TABLE "t0" ("c0" DECIMAL(18,3) NOT NULL,"c1" DOUBLE PRECISION NOT NULL);
+CREATE TABLE "t1" ("c1" DOUBLE PRECISION);
+CREATE TABLE "t2" ("c0" DECIMAL(18,3),"c1" DOUBLE PRECISION);
+
+SELECT (SELECT 1 FROM t1, t2, t0 JOIN (SELECT 1) AS sub0 ON (t1.c1) BETWEEN (t2.c1) AND (t1.c1)) FROM t2, t0 CROSS JOIN t1;
+	-- empty
+ROLLBACK;
+
+START TRANSACTION;
+CREATE TABLE "t0" ("c0" BIGINT NOT NULL,CONSTRAINT "t0_c0_pkey" PRIMARY KEY ("c0"),CONSTRAINT "t0_c0_unique" UNIQUE ("c0"));
+INSERT INTO "t0" VALUES (0),(-1557127883),(-488477810);
+CREATE TABLE "t1" ("c0" BIGINT NOT NULL);
+INSERT INTO "t1" VALUES (1457011207),(98933083),(1259938486);
+CREATE TABLE "t2" ("c0" BIGINT NOT NULL,CONSTRAINT "t2_c0_pkey" PRIMARY KEY ("c0"));
+INSERT INTO "t2" VALUES (596983192), (-601428889), (1688368391);
+
+SELECT t1.c0 FROM t2, t0 CROSS JOIN t1 WHERE ((((t0.c0)%((SELECT DISTINCT t0.c0 FROM t1, t0, t2 WHERE FALSE))))<=(t1.c0));
+	-- empty
+SELECT CAST(SUM(count) AS BIGINT) FROM (SELECT ALL CAST(((((t0.c0)%((SELECT DISTINCT t0.c0 FROM t1, t0, t2 WHERE FALSE))))<=(t1.c0)) AS INT) as count FROM t2, t0 CROSS JOIN t1) as res;
+	-- NULL
+ROLLBACK;

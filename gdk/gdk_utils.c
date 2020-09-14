@@ -732,7 +732,7 @@ GDKgetdebug(void)
 	return debug;
 }
 
-static bool Mbedded = 1;
+static bool Mbedded = true;
 bool
 GDKembedded(void)
 {
@@ -740,7 +740,7 @@ GDKembedded(void)
 }
 
 gdk_return
-GDKinit(opt *set, int setlen, int embedded)
+GDKinit(opt *set, int setlen, bool embedded)
 {
 	static bool first = true;
 	char *dbpath = mo_find_option(set, setlen, "gdk_dbpath");
@@ -957,7 +957,7 @@ GDKinit(opt *set, int setlen, int embedded)
 #endif
 		}
 	} else {
-		if (GDKsetenv("gdk_dbname", ":inmemory") != GDK_SUCCEED) {
+		if (GDKsetenv("gdk_dbname", ":memory:") != GDK_SUCCEED) {
 			TRC_CRITICAL(GDK, "GDKsetenv gdk_dbname failed");
 			return GDK_FAIL;
 		}

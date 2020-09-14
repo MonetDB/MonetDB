@@ -203,3 +203,5 @@ select * from (select 1 as c0, 2 as c0) as sub;
 
 select cast(interval '3' second as clob);
 	-- 3.000
+
+select cast(13121 as varchar(2147483647)) || cast(231231 as varchar(2147483647)); --error, too big

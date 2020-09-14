@@ -1972,7 +1972,7 @@ mapi_mapiuri(const char *url, const char *user, const char *pass, const char *la
 	char *query;
 
 	if (!ATOMIC_TAS(&mapi_initialized)) {
-		if (mnstr_init(0) < 0)
+		if (mnstr_init(false) < 0)
 			return NULL;
 	}
 
@@ -2094,7 +2094,7 @@ mapi_mapi(const char *host, int port, const char *username,
 	Mapi mid;
 
 	if (!ATOMIC_TAS(&mapi_initialized)) {
-		if (mnstr_init(0) < 0)
+		if (mnstr_init(false) < 0)
 			return NULL;
 	}
 
