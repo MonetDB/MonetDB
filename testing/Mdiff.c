@@ -128,13 +128,13 @@ main(int argc, char **argv)
 	new_fn = ((argc > (++optind)) ? argv[optind] : "-");
 	out_fn = ((argc > (++optind)) ? argv[optind] : "-");
 
-	TRACE(fprintf(STDERR, "%s %s -A %i -C %i %s %s -t %s -r %s  %s %s %s\n", argv[0], mindiff ? "-d" : "", LWC, context, ignore, function, caption, revision, old_fn, new_fn, out_fn));
     int res;
     if (out_html) {
+        TRACE(fprintf(STDERR, "%s %s -A %i -C %i %s %s -t %s -r %s  %s %s %s\n", argv[0], mindiff ? "-d" : "", LWC, context, ignore, function, caption, revision, old_fn, new_fn, out_fn));
         res = oldnew2html(mindiff, LWC, context, ignore, function, old_fn, new_fn, out_fn, caption, revision);
     } else {
-        oldnew2lwc_diff(mindiff, LWC, context, ignore, function, old_fn, new_fn, out_fn);
-        res = oldnew2html(mindiff, LWC, context, ignore, function, old_fn, new_fn, "/dev/null", caption, revision);
+        TRACE(fprintf(STDERR, "%s %s -A %i -C %i %s %s %s %s %s\n", argv[0], mindiff ? "-d" : "", LWC, context, ignore, function, old_fn, new_fn, out_fn));
+        res = oldnew2txt(mindiff, LWC, context, ignore, function, old_fn, new_fn, out_fn);
     }
 	switch (res) {
 	case 0:

@@ -1424,6 +1424,7 @@ def PerformDir(env, testdir, testlist, BusyPorts, all_tests = False) :
                         '*.client.err', '*.client.out',
                         '*.err.diff.html', '*.err.head.html', '*.err.html',
                         '*.out.diff.html', '*.out.head.html', '*.out.html',
+                        '*.out.diff.txt', '*.err.diff.txt',
                         '*.server.err', '*.server.out',
                         '*.stable.err*', '*.stable.out*',
                         '*.test.err', '*.test.out',
@@ -2453,12 +2454,15 @@ def RunTest(env, TST, BusyPorts, COND, oktests, length, all_tests, pSrvr) :
                 cmd.append('-d')
             if not verbose:
                 cmd.append('-q')
+            diff_format = env.get('diff_format', 'html') 
+            out_fn = ('%s.out.diff.html' % TST)
             cmd.extend(['-F^#', '-I%s' % par['IGNORE'],
                         '-C%s' % par['CONTEXT'], '-A%d' % ACCURACYout,
                         titlefmt % ('err', 'err'),
+                        '-f{}'.format(diff_format),
                         '%s%s.FILTERED' % (TST, STABLEout),
                         '%s.test.out.FILTERED' % TST,
-                        '%s.out.diff.html' % TST])
+                         out_fn])
             if procdebug:
                 print('RunTest: starting process "%s"\n' % '" "'.join(cmd))
             setpgrp = True
@@ -2522,12 +2526,15 @@ def RunTest(env, TST, BusyPorts, COND, oktests, length, all_tests, pSrvr) :
                 cmd.append('-d')
             if not verbose:
                 cmd.append('-q')
+            diff_format = env.get('diff_format', 'html') 
+            out_fn = ('%s.err.diff.html' % TST)
             cmd.extend(['-F^#', '-I%s' % par['IGNORE'],
                         '-C%s' % par['CONTEXT'], '-A%d' % ACCURACYerr,
                         titlefmt % ('out', 'out'),
+                        '-f{}'.format(diff_format),
                         '%s%s.FILTERED' % (TST, STABLEerr),
                         '%s.test.err.FILTERED' % TST,
-                        '%s.err.diff.html' % TST])
+                        out_fn])
             if procdebug:
                 print('RunTest: starting process "%s"\n' % '" "'.join(cmd))
             setpgrp = True
@@ -2585,6 +2592,12 @@ def RunTest(env, TST, BusyPorts, COND, oktests, length, all_tests, pSrvr) :
         if not testweb:
             elem = AddTstToHtmlIndex(env, TST, STABLEout, STABLEerr, EXT,
                                      FailedOut, FailedErr)
+        diff_format = env.get('diff_format', 'html') 
+        if diff_format == 'txt':
+            # we know the content is not html, so change the extension here
+            for f in [('%s.out.diff.html' % TST), ('%s.err.diff.html' % TST)]:
+                if os.path.exists(f):
+                    shutil.move(f, f[:-4] + 'txt')
 
         if not verbose and not quiet:
             if tres == 'socket':
@@ -3789,6 +3802,7 @@ def main(argv) :
         parser.add_argument('--data_path', '-D', action='store', dest='data_path', metavar='<path>', help='Path to the root directory of the data files needed for testing')
         parser.add_argument('--alltests', action='store_true', dest='alltests', help='also run tests that are known to fail')
         parser.add_argument('--initdb', action='store', dest='initdb', metavar='<zipfile>', help='zip file with contents for initial database')
+        parser.add_argument('--diff-format', dest='diff_format', type=str, metavar='html|txt', default='html', help='output format for the difference between stable and current test (html or txt)')
     elif THISFILE == 'Mapprove.py':
         f = _configure(os.path.join('@QXprefix@',dftTSTPREF,'.Mapprove.rc'))
         v = ReadMapproveRc(f)
@@ -3875,6 +3889,7 @@ def main(argv) :
             env['TSTDATAPATH'] = a
         global initdb
         initdb = opts.initdb
+        env['diff_format'] = opts.diff_format
     if THISFILE == 'Mapprove.py':
         a = opts.ext
         if a is None:
