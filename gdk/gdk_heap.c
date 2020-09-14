@@ -159,7 +159,7 @@ HEAPextend(Heap *h, size_t size, bool mayshare)
 	const char *failure = "None";
 
 	if (GDKinmemory()) {
-		strcpy_len(nme, ":inmemory", sizeof(nme));
+		strcpy_len(nme, ":memory:", sizeof(nme));
 		ext = "ext";
 	} else {
 		strcpy_len(nme, h->filename, sizeof(nme));

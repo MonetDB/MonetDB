@@ -377,7 +377,7 @@ BATimprints(BAT *b)
 
 	if (b->timprints == NULL) {
 		BUN cnt;
-		const char *nme = GDKinmemory() ? ":inmemory" : BBP_physical(b->batCacheid);
+		const char *nme = GDKinmemory() ? ":memory:" : BBP_physical(b->batCacheid);
 		size_t pages;
 
 		MT_lock_unset(&b->batIdxLock);

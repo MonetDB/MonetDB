@@ -1048,7 +1048,7 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 		 * BATassertProps for similar code; we also exploit if
 		 * g is clustered */
 		algomsg = "new partial hash -- ";
-		nme = GDKinmemory() ? ":inmemory" : BBP_physical(b->batCacheid);
+		nme = GDKinmemory() ? ":memory:" : BBP_physical(b->batCacheid);
 		if (grps && !gc) {
 			/* we manipulate the hash value after having
 			 * calculated it, and when doing that, we
