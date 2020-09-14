@@ -732,7 +732,7 @@ GDKgetdebug(void)
 	return debug;
 }
 
-static bool Mbedded = 1;
+static bool Mbedded = true;
 bool
 GDKembedded(void)
 {
@@ -740,7 +740,7 @@ GDKembedded(void)
 }
 
 gdk_return
-GDKinit(opt *set, int setlen, int embedded)
+GDKinit(opt *set, int setlen, bool embedded)
 {
 	static bool first = true;
 	char *dbpath = mo_find_option(set, setlen, "gdk_dbpath");

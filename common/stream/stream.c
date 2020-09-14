@@ -146,7 +146,7 @@ get_tl_error_buf(void)
 static const char *mnstr_error_kind_description(mnstr_error_kind kind);
 
 int
-mnstr_init(int embedded)
+mnstr_init(bool embedded)
 {
 	static ATOMIC_FLAG inited = ATOMIC_FLAG_INIT;
 

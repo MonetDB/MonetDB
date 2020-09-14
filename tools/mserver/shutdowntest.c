@@ -115,7 +115,7 @@ static str monetdb_initialize(void) {
 		retval = GDKstrdup("BBPaddfarm failed");
 		goto cleanup;
 	}
-	if (GDKinit(set, setlen, 1) != GDK_SUCCEED) {
+	if (GDKinit(set, setlen, true) != GDK_SUCCEED) {
 		retval = GDKstrdup("GDKinit() failed");
 		goto cleanup;
 	}
