@@ -107,10 +107,12 @@ INSERT INTO "t0" VALUES (''), ('Ral%}?U*A'), ('Dz '), ('P');
 CREATE TABLE "t2" ("c1" VARCHAR(388) NOT NULL);
 INSERT INTO "t2" VALUES ('4'),('4'),('3eSU8,'),(''),('5E~쟱'),('~'),('1386006226'),('0.19005213960704492'),('''{Mdd뒆VB'''),('\015␱%L%]'),('+'),(''),('㕚o+k');
 
-select t0.c1 from t0 where (-5) in (case when t0.c1 then 1 end, (select -3 from t0));
-	-- error while converting empty string to bit
-select t0.c1 from t0 where (-5) in (case when t0.c1 then 1 else -2 end, (select -3 from t0, t2 where false));
-	-- error while converting empty string to bit
+select t0.c1 from t0 where (5) in (case when t0.c1 = 'a' then 1 end, (select 3));
+	-- empty
+select t0.c1 from t0 where (5) in (case when t0.c1 = 'a' then 1 end, (select 3 from t0));
+	-- empty
+select t0.c1 from t0 where (-5) in (case when t0.c1 = 'a' then 1 else -2 end, (select -3 from t0, t2 where false));
+	-- empty
 DROP TABLE t0;
 DROP TABLE t2;
 
@@ -130,7 +132,6 @@ SELECT (SELECT 1 FROM t1, t2, t0 JOIN (SELECT 1) AS sub0 ON (t1.c1) BETWEEN (t2.
 	-- empty
 ROLLBACK;
 
-START TRANSACTION;
 CREATE TABLE "t0" ("c0" BIGINT NOT NULL,CONSTRAINT "t0_c0_pkey" PRIMARY KEY ("c0"),CONSTRAINT "t0_c0_unique" UNIQUE ("c0"));
 INSERT INTO "t0" VALUES (0),(-1557127883),(-488477810);
 CREATE TABLE "t1" ("c0" BIGINT NOT NULL);
@@ -138,8 +139,18 @@ INSERT INTO "t1" VALUES (1457011207),(98933083),(1259938486);
 CREATE TABLE "t2" ("c0" BIGINT NOT NULL,CONSTRAINT "t2_c0_pkey" PRIMARY KEY ("c0"));
 INSERT INTO "t2" VALUES (596983192), (-601428889), (1688368391);
 
+SELECT 1 FROM t2, t0 CROSS JOIN t1 WHERE t0.c0 % (SELECT 1 WHERE FALSE) <= t1.c0;
+	-- empty
 SELECT t1.c0 FROM t2, t0 CROSS JOIN t1 WHERE ((((t0.c0)%((SELECT DISTINCT t0.c0 FROM t1, t0, t2 WHERE FALSE))))<=(t1.c0));
 	-- empty
 SELECT CAST(SUM(count) AS BIGINT) FROM (SELECT ALL CAST(((((t0.c0)%((SELECT DISTINCT t0.c0 FROM t1, t0, t2 WHERE FALSE))))<=(t1.c0)) AS INT) as count FROM t2, t0 CROSS JOIN t1) as res;
 	-- NULL
-ROLLBACK;
+SELECT 1 FROM t2, t0 WHERE (SELECT 1 UNION SELECT 2) > 0;
+	-- error, more than one row returned by a subquery used as an expression
+SELECT 1 FROM t2, t0, t1 WHERE (SELECT 1 UNION SELECT 2) > 0;
+	-- error, more than one row returned by a subquery used as an expression
+SELECT 1 FROM t2, t0 CROSS JOIN t1 WHERE (SELECT 1 UNION SELECT 2) > 0;
+	-- error, more than one row returned by a subquery used as an expression
+DROP TABLE t0;
+DROP TABLE t1;
+DROP TABLE t2;

@@ -219,7 +219,7 @@ absolute_path(str s)
 #define BSIZE 8192
 
 static int
-monet_init(opt *set, int setlen, int embedded)
+monet_init(opt *set, int setlen, bool embedded)
 {
 	/* determine Monet's kernel settings */
 	if (GDKinit(set, setlen, embedded) != GDK_SUCCEED)
@@ -535,7 +535,7 @@ main(int argc, char **av)
 		GDKfree(dbtrace);
 	}
 
-	if (monet_init(set, setlen, 0) == 0) {
+	if (monet_init(set, setlen, false) == 0) {
 		mo_free_options(set, setlen);
 		if (GDKerrbuf && *GDKerrbuf)
 			fprintf(stderr, "%s\n", GDKerrbuf);

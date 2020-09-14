@@ -561,7 +561,7 @@ monetdbe_startup(monetdbe_database_internal *mdbe, char* dbdir, monetdbe_options
 			goto cleanup;
 		}
 	}
-	gdk_res = GDKinit(set, setlen, 1);
+	gdk_res = GDKinit(set, setlen, true);
 	mo_free_options(set, setlen);
 	if (gdk_res == GDK_FAIL) {
 		mdbe->msg = createException(MAL, "monetdbe.monetdbe_startup", "GDKinit() failed");

@@ -124,7 +124,11 @@ extern sql_rel *rel_zero_or_one(mvc *sql, sql_rel *rel, exp_kind ek);
 
 extern list *rel_dependencies(mvc *sql, sql_rel *r);
 
+#define exists_rewritter          (1 << 0)  //ORed
+#define is_exists_rewritter(X)    ((X & exists_rewritter) == exists_rewritter)
+
 typedef struct visitor {
+	int properties; /* to be used by visitors */
 	int changes;
 	int depth;		/* depth of the current relation */
 	sql_rel *parent;

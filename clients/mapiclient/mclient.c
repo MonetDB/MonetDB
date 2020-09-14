@@ -3230,7 +3230,7 @@ main(int argc, char **argv)
 		perror("sigaction");
 #endif
 
-	if (mnstr_init(0) < 0) {
+	if (mnstr_init(false) < 0) {
 		fprintf(stderr, "error: could not initialize streams library");
 		exit(2);
 	}
