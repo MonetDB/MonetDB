@@ -1115,13 +1115,12 @@ monetdbe_append(monetdbe_database dbhdl, const char* schema, const char* table, 
 
 
 	if ((mdbe->msg = validate_database_handle(mdbe, "monetdbe.monetdbe_append")) != MAL_SUCCEED) {
-
 		return mdbe->msg;
 	}
 
 	if ((mdbe->msg = getSQLContext(mdbe->c, NULL, &m, NULL)) != MAL_SUCCEED)
 		goto cleanup;
-        if ((mdbe->msg = SQLtrans(m)) != MAL_SUCCEED)
+	if ((mdbe->msg = SQLtrans(m)) != MAL_SUCCEED)
 		goto cleanup;
 
 	if (schema == NULL) {
@@ -1185,7 +1184,6 @@ monetdbe_append(monetdbe_database dbhdl, const char* schema, const char* table, 
 			BAT *bn = NULL;
 
 			if ((bn = COLnew(0, mtype, 0, TRANSIENT)) == NULL) {
-				BBPreclaim(bn);
 				mdbe->msg = createException(SQL, "monetdbe.monetdbe_append", "Cannot create append column");
 				goto cleanup;
 			}
@@ -1208,16 +1206,14 @@ monetdbe_append(monetdbe_database dbhdl, const char* schema, const char* table, 
 			BATsettrivprop(bn);
 
 			if (store_funcs.append_col(m->session->tr, c, bn, TYPE_bat) != 0) {
+				BBPreclaim(bn);
 				mdbe->msg = createException(SQL, "monetdbe.monetdbe_append", "Cannot append BAT");
 				goto cleanup;
-
 			}
 
 			bn->theap.base = prev_base;
 			bn->theap.size = prev_size;
 			BBPreclaim(bn);
-
-
 		} else if (mtype == TYPE_str) {
 			char **d = (char**)v;
 
@@ -1275,6 +1271,7 @@ monetdbe_append(monetdbe_database dbhdl, const char* schema, const char* table, 
 
 			for (size_t j=0; j<cnt; j++){
 				blob* b = (blob*) nil;
+				int res;
 				if (!blob_is_null(be[j])) {
 					size_t len = be[j].size;
 					b = (blob*) GDKmalloc(blobsize(len));
@@ -1285,12 +1282,13 @@ monetdbe_append(monetdbe_database dbhdl, const char* schema, const char* table, 
 					memcpy(b->data, be[j].data, len);
 				}
 
-				if (store_funcs.append_col(m->session->tr, c, b, mtype) != 0) {
+				res = store_funcs.append_col(m->session->tr, c, b, mtype);
+				if (b && b != (blob*)nil)
+					GDKfree(b);
+				if (res != 0) {
 					mdbe->msg = createException(SQL, "monetdbe.monetdbe_append", "Cannot append values");
 					goto cleanup;
 				}
-				if (b && b != (blob*)nil)
-					GDKfree(b);
 			}
 		}
 	}
