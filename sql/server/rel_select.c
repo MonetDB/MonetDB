@@ -1327,7 +1327,7 @@ exp_scale_algebra(mvc *sql, sql_subfunc *f, sql_rel *rel, sql_exp *l, sql_exp *r
 	if (lt->type->scale == SCALE_FIX && rt->scale &&
 		strcmp(f->func->imp, "/") == 0) {
 		sql_subtype *res = f->res->h->data;
-		int scale, digits, digL, scaleL;
+		unsigned int scale, digits, digL, scaleL;
 		sql_subtype nlt;
 
 		/* scale fixing may require a larger type ! */
@@ -1335,7 +1335,7 @@ exp_scale_algebra(mvc *sql, sql_subfunc *f, sql_rel *rel, sql_exp *l, sql_exp *r
 		scale = scaleL;
 		scaleL += rt->scale;
 		digL = lt->digits + (scaleL - lt->scale);
-		digits = (digL > (int)rt->digits) ? digL : (int)rt->digits;
+		digits = (digL > rt->digits) ? digL : rt->digits;
 
 		/* HACK alert: digits should be less than max */
 #ifdef HAVE_HGE
@@ -1351,6 +1351,10 @@ exp_scale_algebra(mvc *sql, sql_subfunc *f, sql_rel *rel, sql_exp *l, sql_exp *r
 #endif
 
 		sql_find_subtype(&nlt, lt->type->sqlname, digL, scaleL);
+		if (nlt.digits < scaleL) {
+		    sql_error(sql, 01, SQLSTATE(42000) "Scale (%d) overflows type", scaleL);
+			return NULL;
+		}
 		l = exp_check_type( sql, &nlt, rel, l, type_equal);
 
 		sql_find_subtype(res, lt->type->sqlname, digits, scale);
@@ -2285,7 +2289,7 @@ rel_logical_value_exp(sql_query *query, sql_rel **rel, symbol *sc, int f, exp_ki
 		if (!(re2 = rel_value_exp(query, rel, ro2, f, ek)))
 			return NULL;
 
-		if (exp_between_check_types(&super, exp_subtype(le), exp_subtype(re1), exp_subtype(re2)) < 0) 
+		if (exp_between_check_types(&super, exp_subtype(le), exp_subtype(re1), exp_subtype(re2)) < 0)
 			return sql_error(sql, 01, SQLSTATE(42000) "Cannot have a parameter (?) on both sides of an expression");
 
 		if ((le = exp_check_type(sql, &super, rel ? *rel:NULL, le, type_equal)) == NULL ||
@@ -2540,7 +2544,7 @@ rel_logical_exp(sql_query *query, sql_rel *rel, symbol *sc, int f)
 		if (!(re2 = rel_value_exp(query, &rel, ro2, f, ek)))
 			return NULL;
 
-		if (exp_between_check_types(&super, exp_subtype(le), exp_subtype(re1), exp_subtype(re2)) < 0) 
+		if (exp_between_check_types(&super, exp_subtype(le), exp_subtype(re1), exp_subtype(re2)) < 0)
 			return sql_error(sql, 01, SQLSTATE(42000) "Cannot have a parameter (?) on both sides of an expression");
 
 		if ((le = exp_check_type(sql, &super, rel, le, type_equal)) == NULL ||
@@ -2886,6 +2890,8 @@ rel_binop_(mvc *sql, sql_rel *rel, sql_exp *l, sql_exp *r, sql_schema *s, char *
 			r = exp_fix_scale(sql, t2, r, 0, 0);
 		} else if (f->func->fix_scale == SCALE_DIV) {
 			l = exp_scale_algebra(sql, f, rel, l, r);
+			if (!l)
+				return NULL;
 		} else if (f->func->fix_scale == SCALE_MUL) {
 			exp_sum_scales(f, l, r);
 		} else if (f->func->fix_scale == DIGITS_ADD) {
@@ -2989,6 +2995,8 @@ rel_binop_(mvc *sql, sql_rel *rel, sql_exp *l, sql_exp *r, sql_schema *s, char *
 					r = exp_fix_scale(sql, t2, r, 0, 0);
 				} else if (f->func->fix_scale == SCALE_DIV) {
 					l = exp_scale_algebra(sql, f, rel, l, r);
+					if (!l)
+						return NULL;
 				} else if (f->func->fix_scale == SCALE_MUL) {
 					exp_sum_scales(f, l, r);
 				} else if (f->func->fix_scale == DIGITS_ADD) {
