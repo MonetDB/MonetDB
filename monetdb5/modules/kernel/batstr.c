@@ -1329,7 +1329,7 @@ static str
 STRbatSubstitutecst(bat *ret, const bat *l, const str *arg2, const str *arg3, const bit *rep)
 {
 	BATiter lefti;
-	BAT *bn, *left;
+	BAT *bn = NULL, *left;
 	BUN p,q;
 	str y = NULL, err = MAL_SUCCEED;
 
@@ -1380,7 +1380,7 @@ static str
 STRbatSubstitute(bat *ret, const bat *l, const bat *arg2, const bat *arg3, const bat *rep)
 {
 	BATiter lefti, arg2i, arg3i;
-	BAT *bn, *left, *arg2b, *arg3b, *repb;
+	BAT *bn = NULL, *left, *arg2b = NULL, *arg3b = NULL, *repb;
 	BUN p,q;
 	str y = NULL, err = MAL_SUCCEED;
 	bit *restrict repi;
@@ -1447,7 +1447,7 @@ static str
 STRbatsplitpartcst(bat *ret, const bat *bid, const str *needle, const int *field)
 {
 	BATiter lefti;
-	BAT *bn, *left;
+	BAT *bn = NULL, *left;
 	BUN p,q;
 	str y = NULL, err = MAL_SUCCEED;
 
@@ -1498,7 +1498,7 @@ static str
 STRbatsplitpart(bat *ret, const bat *l, const bat *r, const bat *t)
 {
 	BATiter lefti, arg2i;
-	BAT *bn, *left, *arg2b, *arg3b;
+	BAT *bn = NULL, *left, *arg2b = NULL, *arg3b;
 	BUN p,q;
 	str y = NULL, err = MAL_SUCCEED;
 	int *restrict fieldi;
@@ -1561,7 +1561,7 @@ static str
 STRbatReplacecst(bat *ret, const bat *bid, const str *pat, const str *s2)
 {
 	BATiter lefti;
-	BAT *bn, *left;
+	BAT *bn = NULL, *left;
 	BUN p,q;
 	str y = NULL, err = MAL_SUCCEED;
 
@@ -1612,7 +1612,7 @@ static str
 STRbatReplace(bat *ret, const bat *l, const bat *s, const bat *s2)
 {
 	BATiter lefti, arg2i, arg3i;
-	BAT *bn, *left, *arg2b, *arg3b;
+	BAT *bn = NULL, *left, *arg2b = NULL, *arg3b;
 	BUN p,q;
 	str y = NULL, err = MAL_SUCCEED;
 
@@ -1675,7 +1675,7 @@ static str
 STRbatInsert(bat *ret, const bat *l, const bat *start, const bat *ll, const bat *s2)
 {
 	BATiter lefti, s2i;
-	BAT *bn, *left, *startb, *lb, *s2b;
+	BAT *bn = NULL, *left, *startb = NULL, *lb = NULL, *s2b;
 	BUN p,q;
 	str y = NULL, err = MAL_SUCCEED;
 	int *starti, *li;
@@ -1741,7 +1741,7 @@ static str
 STRbatInsertcst(bat *ret, const bat *bid, const int *start, const int *nchars, const str *input2)
 {
 	BATiter lefti;
-	BAT *bn, *left;
+	BAT *bn = NULL, *left;
 	BUN p,q;
 	str y = NULL, err = MAL_SUCCEED;
 
