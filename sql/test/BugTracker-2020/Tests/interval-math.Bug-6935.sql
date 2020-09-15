@@ -20,3 +20,11 @@ SELECT INTERVAL '1' MONTH * cast(1.0 as double); -- 1
 SELECT INTERVAL '1' SECOND * cast(2.44 as double); -- 2.440
 SELECT INTERVAL '5' SECOND * cast(2.29 as real); -- 11.450
 SELECT INTERVAL '5' SECOND * cast(1.0 as double); -- 5.000
+
+SELECT INTERVAL '1' MONTH / cast(2.0 as double); -- 0
+SELECT INTERVAL '1' MONTH / cast(1.5 as double); -- 0
+SELECT INTERVAL '1' MONTH / cast(1.0 as double); -- 1
+
+SELECT INTERVAL '1' SECOND / cast(2.0 as double); -- 0.500
+SELECT INTERVAL '5' SECOND / cast(1.5 as double); -- 3.330
+SELECT INTERVAL '5' SECOND / cast(1.0 as double); -- 5.000
