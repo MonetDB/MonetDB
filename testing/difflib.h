@@ -35,5 +35,7 @@ int w_diff2c_diff(int mindiff, char *w_diff_fn, char *c_diff_fn);
 
 int oldnew2html(int mindiff, int LWC, int context, char *ignore, char *function, char *old_fn, char *new_fn, char *html_fn, char *caption, char *revision);
 int lwc_diff2html(char *old_fn, char *new_fn, char *lwc_diff_fn, char *html_fn, char *caption, char *revision);
+int oldnew2txt(int mindiff, int LWC, int context, char *ignore, char *function, char *old_fn, char *new_fn, char *out_fn);
+int lwc_diff2txt(char *lwc_diff_fn, char *out_fn);
 
 #endif /* DIFFLIB_H */

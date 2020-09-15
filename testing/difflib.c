@@ -870,4 +870,383 @@ oldnew2html(int mindiff, int LWC, int context, char *ignore, char *function, cha
 	return rtrn;
 }
 
-/* oldnew2u_diff */
+/* oldnew2html */
+
+int
+lwc_diff2txt(char *lwc_diff_fn, char *html_fn)
+{
+	FILE *html_fp, *lwc_diff_fp, *clmn_fp[5];
+	char line[BUFLEN], fn_clmn[CMDLEN], *clmn_fn[5], c[3], *ok;
+	char *old = NULL, *new = NULL, *old_time, *new_time, olns[24], nlns[24];
+	int oln, nln, orn, nrn, i, clr[5], newline, newline_, minor = 0, Minor = 0, Major = 0;
+
+	TRACE(fprintf(STDERR, "lwc_diff2txt(%s,%s,%s,%s)\n", lwc_diff_fn, html_fn));
+
+	lwc_diff_fp = Rfopen(lwc_diff_fn);
+
+	if (!(ok = fgets(line, BUFLEN, lwc_diff_fp)))
+	{
+		html_fp = Wfopen(html_fn);
+		fprintf(html_fp, "<!--NoDiffs-->\n");
+		fflush(html_fp);
+		fclose(html_fp);
+		fclose(lwc_diff_fp);
+		return 0;
+	}
+
+	snprintf(fn_clmn, sizeof(fn_clmn), "%s%c.difflib-%ld-lwc_diff2html-clmn-0-0", tmpdir(), DIR_SEP, (long) getpid());
+	for (i = 0; i < 5; i++) {
+		clmn_fn[i] = strdup(fn_clmn);
+		clmn_fn[i][strlen(clmn_fn[i]) - 3] += i;
+	}
+    // don't care about the output here, need Minor, Major
+	html_fp = Wfopen("/dev/null");
+
+	line[strlen(line) - 1] = '\0';
+	while (ok && strncmp(line, "@@ -", 4)) {
+		if (!strncmp(line, "--- ", 4)) {
+			if (old) {
+				fprintf(stderr, "syntax error\n");
+				exit(1);
+			}
+			old = strdup(line + 4);
+		} else if (!strncmp(line, "+++ ", 4)) {
+			if (new) {
+				fprintf(stderr, "syntax error\n");
+				exit(1);
+			}
+			new = strdup(line + 4);
+		} else
+			fprintf(html_fp, "<tbody><tr><td colspan='7'>%s</td></tr></tbody>\n", HTMLsave(line));
+		ok = fgets(line, BUFLEN, lwc_diff_fp);
+		line[strlen(line) - 1] = '\0';
+	}
+	if (old == NULL || new == NULL) {
+		fprintf(stderr, "syntax or malloc error\n");
+		exit(1);
+	}
+	if ((old_time = strchr(old, '\t')) != NULL)
+		*old_time++ = '\0';
+	else
+		old_time = "";
+	if ((new_time = strchr(new, '\t')) != NULL)
+		*new_time++ = '\0';
+	else
+		new_time = "";
+	free(old);
+	free(new);
+	while (ok) {
+
+		for (i = 0; i < 5; i++)
+			clmn_fp[i] = Wfopen(clmn_fn[i]);
+		sscanf(line, "@@ -%s +%s @@", olns, nlns);
+		oln = atoi(olns);
+		nln = atoi(nlns);
+		for (i = 0; i < 3 && ok; i++)
+			ok = strchr(ok+1, '@');
+		if (ok && ok[1] == ' ')
+			fprintf(html_fp, "<td colspan='7' align='center'>%s</td>\n", HTMLsave(ok + 2));
+		for (i = 0; i < 5; i++)
+			clr[i] = 0;
+		orn = nrn = 0;
+		newline_ = 1;
+		newline = 1;
+		snprintf(c, sizeof(c), "  ");
+		ok = line;
+		while (ok && (ok = fgets(line, BUFLEN, lwc_diff_fp)) && strchr(" -+", line[0])) {
+			if (line[1] != '\3') {
+				size_t sl = strlen(line) - 1;
+				char nl = line[sl], l0, l1;
+
+				if (newline_ || newline)
+					Minor |= (minor = (strchr("#=\n\2", line[1]) != NULL));
+				line[sl] = '\0';
+				if (line[1] == '\2')
+					snprintf(line + 1, sizeof(line) - 1, " ");
+				l0 = line[0];
+				l1 = line[1];
+				if (line[0] == ' ') {
+					if (newline && (nrn < orn)) {
+						while (nrn < orn) {
+							SETBLUE(1, minor);
+							fprintf(clmn_fp[1], "%i", oln++);
+							SETBLACK(1);
+							fprintf(clmn_fp[1], "\n");
+							SETBLUE(2, minor);
+							fprintf(clmn_fp[2], "-");
+							SETBLACK(2);
+							fprintf(clmn_fp[2], "\n");
+							fprintf(clmn_fp[3], "\n");
+							fprintf(clmn_fp[4], "\n");
+							nrn++;
+						}
+					}
+					SETBLACK(0);
+					SETBLACK(4);
+				}
+				if (line[0] == '-') {
+					c[0] = '-';
+					SETBLUE(0, minor);
+				}
+				if (line[0] == '+') {
+					c[1] = '+';
+					SETRED(4, minor);
+				}
+				if (line[1] != '\1') {
+					line[sl] = nl;
+					line[sl+1] = '\0';
+					i = 1;
+					do {
+						sl = strlen(line) - 1;
+						nl = line[sl];
+						if (nl == '\n') {
+							line[sl] = '\0';
+						}
+						if (strchr(" -", l0)) {
+							fprintf(clmn_fp[0], "%s", HTMLsave(line + i));
+						}
+						if (strchr(" +", l0)) {
+							fprintf(clmn_fp[4], "%s", HTMLsave(line + i));
+						}
+						i = 0;
+					} while (nl != '\n' && (ok = fgets(line, BUFLEN, lwc_diff_fp)));
+					if (strchr(" -", l0)) {
+						Major |= (clr[0] & 1);
+					}
+					if (strchr(" +", l0)) {
+						Major |= (clr[4] & 1);
+					}
+				} else {
+					if (line[0] == '-') {
+						SETBLACK(0);
+						fprintf(clmn_fp[0], "\n");
+						orn++;
+					}
+					if (line[0] == '+') {
+						if (orn > nrn) {
+							SETPINK(1, minor);
+							fprintf(clmn_fp[1], "%i", oln++);
+							SETBLACK(1);
+							fprintf(clmn_fp[1], "\n");
+							SETPINK(2, minor);
+							fprintf(clmn_fp[2], "!");
+							SETBLACK(2);
+							fprintf(clmn_fp[2], "\n");
+							SETPINK(3, minor);
+							fprintf(clmn_fp[3], "%i", nln++);
+							SETBLACK(3);
+							fprintf(clmn_fp[3], "\n");
+						} else {
+							SETBLACK(0);
+							fprintf(clmn_fp[0], "\n");
+							orn++;
+							SETBLACK(1);
+							fprintf(clmn_fp[1], "\n");
+							SETRED(2, minor);
+							fprintf(clmn_fp[2], "+");
+							SETBLACK(2);
+							fprintf(clmn_fp[2], "\n");
+							SETRED(3, minor);
+							fprintf(clmn_fp[3], "%i", nln++);
+							SETBLACK(3);
+							fprintf(clmn_fp[3], "\n");
+						}
+						SETBLACK(4);
+						fprintf(clmn_fp[4], "\n");
+						nrn++;
+					}
+					if (line[0] == ' ') {
+						if (!strncmp(c, "  ", 2)) {
+							SETBLACK(1);
+							SETBLACK(2);
+							SETBLACK(3);
+							fprintf(clmn_fp[2], "\n");
+						} else {
+							SETPINK(1, minor);
+							SETPINK(3, minor);
+						}
+						if (!strncmp(c, "-+", 2)) {
+							SETPINK(2, minor);
+							fprintf(clmn_fp[2], "!");
+							SETBLACK(2);
+							fprintf(clmn_fp[2], "\n");
+						}
+						if (!strncmp(c, "- ", 2)) {
+							SETBLUE(2, minor);
+							fprintf(clmn_fp[2], "-");
+							SETBLACK(2);
+							fprintf(clmn_fp[2], "\n");
+						}
+						if (!strncmp(c, " +", 2)) {
+							SETRED(2, minor);
+							fprintf(clmn_fp[2], "+");
+							SETBLACK(2);
+							fprintf(clmn_fp[2], "\n");
+						}
+						fprintf(clmn_fp[1], "%i", oln++);
+						SETBLACK(1);
+						fprintf(clmn_fp[1], "\n");
+						fprintf(clmn_fp[3], "%i", nln++);
+						SETBLACK(3);
+						fprintf(clmn_fp[3], "\n");
+						SETBLACK(0);
+						fprintf(clmn_fp[0], "\n");
+						SETBLACK(4);
+						fprintf(clmn_fp[4], "\n");
+					}
+					snprintf(c, sizeof(c), "  ");
+				}
+				newline_ = newline;
+				newline = (l1 == '\1');
+			}
+		}
+
+		if (nrn < orn) {
+			SETBLACK(3);
+			SETBLACK(4);
+			while (nrn < orn) {
+				SETBLUE(1, minor);
+				fprintf(clmn_fp[1], "%i", oln++);
+				SETBLACK(1);
+				fprintf(clmn_fp[1], "\n");
+				SETBLUE(2, minor);
+				fprintf(clmn_fp[2], "-");
+				SETBLACK(2);
+				fprintf(clmn_fp[2], "\n");
+				fprintf(clmn_fp[3], "\n");
+				fprintf(clmn_fp[4], "\n");
+				nrn++;
+			}
+		}
+		if (orn < nrn) {
+			SETBLACK(0);
+			SETBLACK(1);
+			while (orn < nrn) {
+				fprintf(clmn_fp[0], "\n");
+				orn++;
+				fprintf(clmn_fp[1], "\n");
+				SETRED(2, minor);
+				fprintf(clmn_fp[2], "+");
+				SETBLACK(2);
+				fprintf(clmn_fp[2], "\n");
+				SETRED(3, minor);
+				fprintf(clmn_fp[3], "%i", nln++);
+				SETBLACK(3);
+				fprintf(clmn_fp[3], "\n");
+			}
+		}
+
+		for (i = 0; i < 5; i++) {
+			fclose(clmn_fp[i]);
+			clmn_fp[i] = Rfopen(clmn_fn[i]);
+		}
+
+		fprintf(html_fp, "<tbody>\n");
+		for (;;) {
+			char ln[BUFLEN], buf1[128], buf2[128], buf3[128];
+
+			if (fgets(ln, sizeof(ln), clmn_fp[0]) == NULL)
+				break;
+			if (fgets(buf1, sizeof(buf1), clmn_fp[1]) == NULL)
+				break; /* shouldn't happen */
+			buf1[strlen(buf1) - 1] = 0;
+			if (fgets(buf2, sizeof(buf2), clmn_fp[2]) == NULL)
+				break; /* shouldn't happen */
+			buf2[strlen(buf2) - 1] = 0;
+			if (fgets(buf3, sizeof(buf3), clmn_fp[3]) == NULL)
+				break; /* shouldn't happen */
+			buf3[strlen(buf3) - 1] = 0;
+
+			fprintf(html_fp, "<tr>");
+			fprintf(html_fp, "<td align='center'>%s</td>\n", buf1);
+			fprintf(html_fp, "<td>");
+			while (ln[strlen(ln) - 1] != '\n') {
+				fprintf(html_fp, "%s", ln);
+				if (!fgets(ln, sizeof(ln), clmn_fp[0])) {
+					ln[0] = '\n';
+					ln[1] = 0;
+					break;
+				}
+			}
+			ln[strlen(ln) - 1] = 0;
+			fprintf(html_fp, "%s</td>\n", ln);
+			fprintf(html_fp, "<td align='center'>%s</td>\n", buf1);
+			fprintf(html_fp, "<td align='center'>%s</td>\n", buf2);
+			fprintf(html_fp, "<td align='center'>%s</td>\n", buf3);
+			if (fgets(ln, sizeof(ln), clmn_fp[4]) == NULL)
+				break; /* shouldn't happen */
+			fprintf(html_fp, "<td>");
+			while (ln[strlen(ln) - 1] != '\n') {
+				fprintf(html_fp, "%s", ln);
+				if (!fgets(ln, sizeof(ln), clmn_fp[4])) {
+					ln[0] = '\n';
+					ln[1] = 0;
+					break;
+				}
+			}
+			ln[strlen(ln) - 1] = 0;
+			fprintf(html_fp, "%s</td>\n", ln);
+			fprintf(html_fp, "<td align='center'>%s</td>\n", buf3);
+			fprintf(html_fp, "</tr>\n");
+		}
+		fprintf(html_fp, "</tbody>\n");
+		for (i = 0; i < 5; i++)
+			fclose(clmn_fp[i]);
+
+		TRACE(for (i = 0; i < 5; i++) clmn_fn[i][strlen(clmn_fn[i]) - 1]++) ;
+	}
+
+	fprintf(html_fp, "</table>\n");
+	fprintf(html_fp, "<hr/>\n");
+	fprintf(html_fp, "</body>\n</html>\n");
+	fprintf(html_fp, "<!--%sDiffs-->\n", Major ? "Major" : (Minor ? "Minor" : "No"));
+	fflush(html_fp);
+	fclose(html_fp);
+
+	for (i = 0; i < 5; i++) {
+		UNLINK(clmn_fn[i]);
+		free(clmn_fn[i]);
+	}
+
+	fclose(lwc_diff_fp);
+
+    // write txt content
+	lwc_diff_fp = Rfopen(lwc_diff_fn);
+	html_fp = Wfopen(html_fn);
+
+	while ((ok = fgets(line, BUFLEN, lwc_diff_fp)))
+	{
+		line[strlen(line) - 1] = '\0';
+	    fprintf(html_fp, "%s\n", line);
+	}
+	fprintf(html_fp, "<!--%sDiffs-->\n", Major ? "Major" : (Minor ? "Minor" : "No"));
+	fflush(html_fp);
+	fclose(html_fp);
+	fclose(lwc_diff_fp);
+    // end txt
+
+	return (Major ? 2 : (Minor != 0));
+}
+
+/* lwc_diff2txt */
+
+int
+oldnew2txt(int mindiff, int LWC, int context, char *ignore, char *function, char *old_fn, char *new_fn, char *out_fn)
+{
+	char lwc_diff_fn[CMDLEN];
+	int rtrn;
+
+	TRACE(fprintf(STDERR, "oldnew2txt(%i,%i,%i,%s,%s,%s,%s,%s)\n", mindiff, LWC, context, ignore, function, old_fn, new_fn, out_fn));
+
+	snprintf(lwc_diff_fn, sizeof(lwc_diff_fn), "%s%c.difflib-%ld-oldnew2html-lwc_diff", tmpdir(), DIR_SEP, (long) getpid());
+
+	if (!oldnew2lwc_diff(mindiff, LWC, context, ignore, function, old_fn, new_fn, lwc_diff_fn))
+		fclose(Wfopen(lwc_diff_fn));
+
+	rtrn = lwc_diff2txt(lwc_diff_fn, out_fn);
+
+	UNLINK(lwc_diff_fn);
+	return rtrn;
+}
+
+/* oldnew2txt */
