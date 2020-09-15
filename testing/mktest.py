@@ -77,7 +77,9 @@ while True:
     if '--' in line:
         line = line[:line.index('--')].rstrip()
     if line.endswith(';'):
-        query.append(line.rstrip(';'))
+        stripped = line.rstrip(';')
+        if stripped !='':
+            query.append(stripped)
         query = '\n'.join(query)
         try:
             crs.execute(query)

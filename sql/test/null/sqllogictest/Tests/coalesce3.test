@@ -50,7 +50,6 @@ FROM (
       SELECT * FROM my_table1
      ) x
 ORDER BY id
-
 ----
 20 values hashing to 90517be8b415ee2ec661c591e9f0c97f
 

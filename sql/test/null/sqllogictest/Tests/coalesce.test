@@ -51,7 +51,6 @@ FROM my_table2 y WHERE y.col1 = x.col1)
 FROM (
       SELECT * FROM my_table1
      ) x
-
 ----
 10 values hashing to e0145663d590ae02decc8cdc9071e0c2
 
