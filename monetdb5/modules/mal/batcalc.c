@@ -1538,21 +1538,23 @@ batcalc_init(void)
 	  }
 	}
 	{	/* multiplication between integers and floating-points, returning integers */
-		int *tp1, *tp2;
+		 int *tp1, *tp2, *tp3;
 		for(tp1 = integer; tp1 < floats && !err; tp1++) {
 			for(tp2 = floats; tp2 < extra && !err; tp2++) {
-				mel_func_arg ret = { .type = *tp1, .isbat =1 };
-				mel_func_arg arg1 = { .type = *tp1, .isbat =1 };
-				mel_func_arg arg2 = { .type = *tp2, .isbat =1 };
-				mel_func_arg varg1 = { .type = *tp1 };
-				mel_func_arg varg2 = { .type = *tp2 };
+				for(tp3 = integer; tp3 < floats && !err; tp3++) {
+					mel_func_arg ret = { .type = *tp1, .isbat =1 };
+					mel_func_arg arg1 = { .type = *tp3, .isbat =1 };
+					mel_func_arg arg2 = { .type = *tp2, .isbat =1 };
+					mel_func_arg varg1 = { .type = *tp3 };
+					mel_func_arg varg2 = { .type = *tp2 };
 
-				err += melFunction(false, "batcalc", funcs[2].op, funcs[2].fcn, funcs[2].fname, false, funcs[2].comment, 1, 5, ret, arg1, arg2, cand, cand);
-				err += melFunction(false, "batcalc", funcs[2].op_ne, funcs[2].fcn_ne, funcs[2].fname_ne, false, funcs[2].comment_ne, 1, 5, ret, arg1, arg2, cand, cand);
-				err += melFunction(false, "batcalc", funcs[2].op, funcs[2].fcn, funcs[2].fname, false, funcs[2].comment_v, 1, 4, ret, arg1, varg2, cand);
-				err += melFunction(false, "batcalc", funcs[2].op_ne, funcs[2].fcn_ne, funcs[2].fname_ne, false, funcs[2].comment_v_ne, 1, 4, ret, arg1, varg2, cand);
-				err += melFunction(false, "batcalc", funcs[2].op, funcs[2].fcn, funcs[2].fname, false, funcs[2].comment_v_, 1, 4, ret, varg1, arg2, cand);
-				err += melFunction(false, "batcalc", funcs[2].op_ne, funcs[2].fcn_ne, funcs[2].fname_ne, false, funcs[2].comment_v__ne, 1, 4, ret, varg1, arg2, cand);
+					err += melFunction(false, "batcalc", funcs[2].op, funcs[2].fcn, funcs[2].fname, false, funcs[2].comment, 1, 5, ret, arg1, arg2, cand, cand);
+					err += melFunction(false, "batcalc", funcs[2].op_ne, funcs[2].fcn_ne, funcs[2].fname_ne, false, funcs[2].comment_ne, 1, 5, ret, arg1, arg2, cand, cand);
+					err += melFunction(false, "batcalc", funcs[2].op, funcs[2].fcn, funcs[2].fname, false, funcs[2].comment_v, 1, 4, ret, arg1, varg2, cand);
+					err += melFunction(false, "batcalc", funcs[2].op_ne, funcs[2].fcn_ne, funcs[2].fname_ne, false, funcs[2].comment_v_ne, 1, 4, ret, arg1, varg2, cand);
+					err += melFunction(false, "batcalc", funcs[2].op, funcs[2].fcn, funcs[2].fname, false, funcs[2].comment_v_, 1, 4, ret, varg1, arg2, cand);
+					err += melFunction(false, "batcalc", funcs[2].op_ne, funcs[2].fcn_ne, funcs[2].fname_ne, false, funcs[2].comment_v__ne, 1, 4, ret, varg1, arg2, cand);
+				}
 			}
 		}
 	}
@@ -1606,25 +1608,6 @@ batcalc_init(void)
 		err += melFunction(false, "batcalc", div.op_ne, div.fcn_ne, div.fname_ne, false, div.comment_v__ne, 1, 4, ret, varg1, arg2, cand);
 	      }
 	    }
-	}
-	{	/* division between integers and floating-points, returning integers */
-		int *tp1, *tp2;
-		for(tp1 = integer; tp1 < floats && !err; tp1++) {
-			for(tp2 = floats; tp2 < extra && !err; tp2++) {
-				mel_func_arg ret = { .type = *tp1, .isbat =1 };
-				mel_func_arg arg1 = { .type = *tp1, .isbat =1 };
-				mel_func_arg arg2 = { .type = *tp2, .isbat =1 };
-				mel_func_arg varg1 = { .type = *tp1 };
-				mel_func_arg varg2 = { .type = *tp2 };
-
-				err += melFunction(false, "batcalc", div.op, div.fcn, div.fname, false, div.comment, 1, 5, ret, arg1, arg2, cand, cand);
-				err += melFunction(false, "batcalc", div.op_ne, div.fcn_ne, div.fname_ne, false, div.comment_ne, 1, 5, ret, arg1, arg2, cand, cand);
-				err += melFunction(false, "batcalc", div.op, div.fcn, div.fname, false, div.comment_v, 1, 4, ret, arg1, varg2, cand);
-				err += melFunction(false, "batcalc", div.op_ne, div.fcn_ne, div.fname_ne, false, div.comment_v_ne, 1, 4, ret, arg1, varg2, cand);
-				err += melFunction(false, "batcalc", div.op, div.fcn, div.fname, false, div.comment_v_, 1, 4, ret, varg1, arg2, cand);
-				err += melFunction(false, "batcalc", div.op_ne, div.fcn_ne, div.fname_ne, false, div.comment_v__ne, 1, 4, ret, varg1, arg2, cand);
-			}
-		}
 	}
 	struct {
 	   char *op;
