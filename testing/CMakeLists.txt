@@ -187,4 +187,19 @@ else()
     COMPONENT pytesting)
 endif()
 
+configure_file(mktest.py
+  ${CMAKE_CURRENT_BINARY_DIR}/mktest.py
+  COPYONLY)
+
+configure_file(sqllogictest.py
+  ${CMAKE_CURRENT_BINARY_DIR}/sqllogictest.py
+  COPYONLY)
+
+install(FILES
+  ${CMAKE_CURRENT_BINARY_DIR}/mktest.py
+  ${CMAKE_CURRENT_BINARY_DIR}/sqllogictest.py
+  PERMISSIONS ${PROGRAM_PERMISSIONS_DEFAULT}
+  DESTINATION ${CMAKE_INSTALL_BINDIR}
+  COMPONENT pytesting)
+
 # vim: set ts=2:sw=2:et
