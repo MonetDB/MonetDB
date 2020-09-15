@@ -942,12 +942,13 @@ ODBCTranslateSQL(ODBCDbc *dbc, const SQLCHAR *query, size_t length, SQLULEN nosc
 			}
 			n = (int) (q - nquery);
 			pr = (int) (p - q);
-			q = malloc(length - pr + strlen(buf) + 1);
+			length += strlen(buf) + 1 - pr;
+			q = malloc(length);
 			if (q == NULL) {
 				free(nquery);
 				return NULL;
 			}
-			length = (size_t) sprintf(q, "%.*s%s%s", n, nquery, buf, p);
+			length = (size_t) snprintf(q, length, "%.*s%s%s", n, nquery, buf, p);
 			free(nquery);
 			nquery = q;
 			q += n;
@@ -982,12 +983,13 @@ ODBCTranslateSQL(ODBCDbc *dbc, const SQLCHAR *query, size_t length, SQLULEN nosc
 			}
 			n = (int) (q - nquery);
 			pr = (int) (p - q);
-			q = malloc(length - pr + strlen(buf) + 1);
+			length += strlen(buf) + 1 - pr;
+			q = malloc(length);
 			if (q == NULL) {
 				free(nquery);
 				return NULL;
 			}
-			length = (size_t) sprintf(q, "%.*s%s%s", n, nquery, buf, p);
+			length = (size_t) snprintf(q, length, "%.*s%s%s", n, nquery, buf, p);
 			free(nquery);
 			nquery = q;
 			q += n;
@@ -1002,12 +1004,13 @@ ODBCTranslateSQL(ODBCDbc *dbc, const SQLCHAR *query, size_t length, SQLULEN nosc
 				 "DATE '%04u-%02u-%02u'", yr, mt, dy);
 			n = (int) (q - nquery);
 			pr = (int) (p - q);
-			q = malloc(length - pr + strlen(buf) + 1);
+			length += strlen(buf) + 1 - pr;
+			q = malloc(length);
 			if (q == NULL) {
 				free(nquery);
 				return NULL;
 			}
-			length = (size_t) sprintf(q, "%.*s%s%s", n, nquery, buf, p);
+			length = (size_t) snprintf(q, length, "%.*s%s%s", n, nquery, buf, p);
 			free(nquery);
 			nquery = q;
 			q += n;
@@ -1024,12 +1027,13 @@ ODBCTranslateSQL(ODBCDbc *dbc, const SQLCHAR *query, size_t length, SQLULEN nosc
 			p++;
 			n = (int) (q - nquery);
 			pr = (int) (p - q);
-			q = malloc(length - pr + intvl + 1);
+			length += intvl + 1 - pr;
+			q = malloc(length);
 			if (q == NULL) {
 				free(nquery);
 				return NULL;
 			}
-			length = (size_t) sprintf(q, "%.*s%.*s%s", n, nquery, (int) intvl, intv, p);
+			length = (size_t) snprintf(q, length, "%.*s%.*s%s", n, nquery, (int) intvl, intv, p);
 			free(nquery);
 			nquery = q;
 			q += n;
@@ -1053,12 +1057,13 @@ ODBCTranslateSQL(ODBCDbc *dbc, const SQLCHAR *query, size_t length, SQLULEN nosc
 				 u.d4[3], u.d4[4], u.d4[5], u.d4[6], u.d4[7]);
 			n = (int) (q - nquery);
 			pr = (int) (p - q);
-			q = malloc(length - pr + strlen(buf) + 1);
+			length += strlen(buf) + 1 - pr;
+			q = malloc(length);
 			if (q == NULL) {
 				free(nquery);
 				return NULL;
 			}
-			length = (size_t) sprintf(q, "%.*s%s%s", n, nquery, buf, p);
+			length = (size_t) snprintf(q, length, "%.*s%s%s", n, nquery, buf, p);
 			free(nquery);
 			nquery = q;
 			q += n;
@@ -1090,20 +1095,21 @@ ODBCTranslateSQL(ODBCDbc *dbc, const SQLCHAR *query, size_t length, SQLULEN nosc
 				continue;
 			n = (int) (q - nquery);
 			pr = (int) (p - q);
-			q = malloc(length - pr + 13 + 1);
+			length += 13 + 1 - pr;
+			q = malloc(length);
 			if (q == NULL) {
 				free(nquery);
 				return NULL;
 			}
 			switch (esc) {
 			case '\'':
-				length = (size_t) sprintf(q, "%.*s ESCAPE '''' %s", n, nquery, p);
+				length = (size_t) snprintf(q, length, "%.*s ESCAPE '''' %s", n, nquery, p);
 				break;
 			case '\\':
-				length = (size_t) sprintf(q, "%.*s ESCAPE r'\\' %s", n, nquery, p);
+				length = (size_t) snprintf(q, length, "%.*s ESCAPE r'\\' %s", n, nquery, p);
 				break;
 			default:
-				length = (size_t) sprintf(q, "%.*s ESCAPE '%c' %s", n, nquery, esc, p);
+				length = (size_t) snprintf(q, length, "%.*s ESCAPE '%c' %s", n, nquery, esc, p);
 				break;
 			}
 			free(nquery);
@@ -1149,12 +1155,13 @@ ODBCTranslateSQL(ODBCDbc *dbc, const SQLCHAR *query, size_t length, SQLULEN nosc
 			p++;
 			n = (int) (q - nquery);
 			pr = (int) (p - q);
-			q = malloc(length - pr + (procend - proc) + 6);
+			length += (procend - proc) + 6 - pr;
+			q = malloc(length);
 			if (q == NULL) {
 				free(nquery);
 				return NULL;
 			}
-			length = (size_t) sprintf(q, "%.*scall %.*s%s", n, nquery, (int) (procend - proc), proc, p);
+			length = (size_t) snprintf(q, length, "%.*scall %.*s%s", n, nquery, (int) (procend - proc), proc, p);
 			free(nquery);
 			nquery = q;
 			q += n;
@@ -1262,22 +1269,24 @@ ODBCTranslateSQL(ODBCDbc *dbc, const SQLCHAR *query, size_t length, SQLULEN nosc
 						nquery = q;
 						q += n;
 					} else if (strcmp(func->name, "user") == 0) {
-						q = malloc(length - pr + (dbc->Connected && dbc->uid ? strlen(dbc->uid) : 0) + 3);
+						length += (dbc->Connected && dbc->uid ? strlen(dbc->uid) : 0) + 3 - pr;
+						q = malloc(length);
 						if (q == NULL) {
 							free(nquery);
 							return NULL;
 						}
-						length = (size_t) sprintf(q, "%.*s'%s'%s", n, nquery, dbc->Connected && dbc->uid ? dbc->uid : "", p);
+						length = (size_t) snprintf(q, length, "%.*s'%s'%s", n, nquery, dbc->Connected && dbc->uid ? dbc->uid : "", p);
 						free(nquery);
 						nquery = q;
 						q += n;
 					} else if (strcmp(func->name, "database") == 0) {
-						q = malloc(length - pr + (dbc->Connected && dbc->dbname ? strlen(dbc->dbname) : 0) + 3);
+						length += (dbc->Connected && dbc->dbname ? strlen(dbc->dbname) : 0) + 3 - pr;
+						q = malloc(length);
 						if (q == NULL) {
 							free(nquery);
 							return NULL;
 						}
-						length = (size_t) sprintf(q, "%.*s'%s'%s", n, nquery, dbc->Connected && dbc->dbname ? dbc->dbname : "", p);
+						length = (size_t) snprintf(q, length, "%.*s'%s'%s", n, nquery, dbc->Connected && dbc->dbname ? dbc->dbname : "", p);
 						free(nquery);
 						nquery = q;
 						q += n;
@@ -1287,7 +1296,8 @@ ODBCTranslateSQL(ODBCDbc *dbc, const SQLCHAR *query, size_t length, SQLULEN nosc
 							if (strncasecmp(c->odbc, args[1].argstart, args[1].arglen) == 0 &&
 							    c->odbc[args[1].arglen] == 0) {
 								const char *raw;
-								q = malloc(length - pr + 11 + args[0].arglen + 1 + strlen(c->server));
+								length += 11 + args[0].arglen + 1 + strlen(c->server) - pr;
+								q = malloc(length);
 								if (q == NULL) {
 									free(nquery);
 									return NULL;
@@ -1296,7 +1306,7 @@ ODBCTranslateSQL(ODBCDbc *dbc, const SQLCHAR *query, size_t length, SQLULEN nosc
 									raw = "r";
 								else
 									raw = "";
-								length = (size_t) sprintf(q, "%.*scast(%s%.*s as %s)%s", n, nquery, raw, (int) args[0].arglen, args[0].argstart, c->server, p);
+								length = (size_t) snprintf(q, length, "%.*scast(%s%.*s as %s)%s", n, nquery, raw, (int) args[0].arglen, args[0].argstart, c->server, p);
 								free(nquery);
 								nquery = q;
 								break;

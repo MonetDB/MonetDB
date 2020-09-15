@@ -1764,7 +1764,7 @@ logger_new(int debug, const char *fn, const char *logdir, int version, preversio
 	logger *lg;
 	char filename[FILENAME_MAX];
 
-	if (!GDKinmemory() && MT_path_absolute(logdir)) {
+	if (!GDKinmemory(0) && MT_path_absolute(logdir)) {
 		TRC_CRITICAL(GDK, "logdir must be relative path\n");
 		return NULL;
 	}
@@ -1776,7 +1776,7 @@ logger_new(int debug, const char *fn, const char *logdir, int version, preversio
 	}
 
 	*lg = (logger) {
-		.inmemory = GDKinmemory(),
+		.inmemory = GDKinmemory(0),
 		.debug = debug,
 		.version = version,
 		.prefuncp = prefuncp,

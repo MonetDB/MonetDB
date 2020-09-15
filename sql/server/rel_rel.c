@@ -230,16 +230,6 @@ rel_select_copy(sql_allocator *sa, sql_rel *l, list *exps)
 	return rel;
 }
 
-static int
-rel_issubquery(sql_rel*r)
-{
-	if (!r->subquery) {
-		if (is_select(r->op))
-			return rel_issubquery(r->l);
-	}
-	return r->subquery;
-}
-
 static sql_rel *
 rel_bind_column_(mvc *sql, int *exp_has_nil, sql_rel *rel, const char *cname, int no_tname)
 {
@@ -254,17 +244,13 @@ rel_bind_column_(mvc *sql, int *exp_has_nil, sql_rel *rel, const char *cname, in
 	case op_left:
 	case op_right:
 	case op_full: {
-		sql_rel *right = rel->r;
-
 		r = rel_bind_column_(sql, exp_has_nil, rel->r, cname, no_tname);
-		if (!r || !rel_issubquery(right)) {
-			sql_exp *e = r?exps_bind_column(r->exps, cname, &ambiguous, &multi, 0):NULL;
+		sql_exp *e = r?exps_bind_column(r->exps, cname, &ambiguous, &multi, 0):NULL;
 
-			if (!r || !e || !is_freevar(e)) {
-				l = rel_bind_column_(sql, exp_has_nil, rel->l, cname, no_tname);
-				if (l && r && !rel_issubquery(r) && !is_dependent(rel))
-					return sql_error(sql, ERR_AMBIGUOUS, SQLSTATE(42000) "SELECT: identifier '%s' ambiguous", cname);
-			}
+		if (!r || !e || !is_freevar(e)) {
+			l = rel_bind_column_(sql, exp_has_nil, rel->l, cname, no_tname);
+			if (l && r && !is_dependent(rel))
+				return sql_error(sql, ERR_AMBIGUOUS, SQLSTATE(42000) "SELECT: identifier '%s' ambiguous", cname);
 		}
 		if (sql->session->status == -ERR_AMBIGUOUS)
 			return NULL;
@@ -352,7 +338,7 @@ rel_bind_column2( mvc *sql, sql_rel *rel, const char *tname, const char *cname, 
 		if (!list_empty(rel->exps)) {
 			e = exps_bind_column2(rel->exps, tname, cname, &multi);
 			if (multi)
-				return sql_error(sql, ERR_AMBIGUOUS, SQLSTATE(42000) "SELECT: identifier '%s.%s' ambiguous", 
+				return sql_error(sql, ERR_AMBIGUOUS, SQLSTATE(42000) "SELECT: identifier '%s.%s' ambiguous",
 								 tname, cname);
 			if (!e && is_groupby(rel->op) && rel->r) {
 				e = exps_bind_alias(rel->r, tname, cname);
@@ -363,7 +349,7 @@ rel_bind_column2( mvc *sql, sql_rel *rel, const char *tname, const char *cname, 
 					else
 						e = exps_bind_column(rel->exps, nname, &ambiguous, &multi, 0);
 					if (ambiguous || multi)
-						return sql_error(sql, ERR_AMBIGUOUS, SQLSTATE(42000) "SELECT: identifier '%s%s%s' ambiguous", 
+						return sql_error(sql, ERR_AMBIGUOUS, SQLSTATE(42000) "SELECT: identifier '%s%s%s' ambiguous",
 										 rname ? rname : "", rname ? "." : "", nname);
 					if (e)
 						return e;
@@ -373,7 +359,7 @@ rel_bind_column2( mvc *sql, sql_rel *rel, const char *tname, const char *cname, 
 		if (!e && (is_sql_sel(f) || is_sql_having(f) || !f) && is_groupby(rel->op) && rel->r) {
 			e = exps_bind_column2(rel->r, tname, cname, &multi);
 			if (multi)
-				return sql_error(sql, ERR_AMBIGUOUS, SQLSTATE(42000) "SELECT: identifier '%s.%s' ambiguous", 
+				return sql_error(sql, ERR_AMBIGUOUS, SQLSTATE(42000) "SELECT: identifier '%s.%s' ambiguous",
 								 tname, cname);
 			if (e) {
 				e = exp_ref(sql, e);
@@ -833,7 +819,7 @@ rel_basetable(mvc *sql, sql_table *t, const char *atname)
 			char *iname = NULL;
 
 			/* do not include empty indices in the plan */
-			if (hash_index(i->type) && list_length(i->columns) <= 1)
+			if ((hash_index(i->type) && list_length(i->columns) <= 1) || !idx_has_column(i->type))
 				continue;
 
 			if (i->type == join_idx)
@@ -1028,12 +1014,13 @@ _rel_projections(mvc *sql, sql_rel *rel, const char *tname, int settname, int in
 		return exps;
 	case op_groupby:
 		if (list_empty(rel->exps) && rel->r) {
-			node *en;
 			list *r = rel->r;
-			int label = ++sql->label;
+			int label = 0;
 
+			if (!settname)
+				label = ++sql->label;
 			exps = new_exp_list(sql->sa);
-			for (en = r->h; en; en = en->next) {
+			for (node *en = r->h; en; en = en->next) {
 				sql_exp *e = en->data;
 
 				if (basecol && !is_basecol(e))
@@ -1056,11 +1043,12 @@ _rel_projections(mvc *sql, sql_rel *rel, const char *tname, int settname, int in
 	case op_except:
 	case op_inter:
 		if (rel->exps) {
-			node *en;
-			int label = ++sql->label;
+			int label = 0;
 
+			if (!settname)
+				label = ++sql->label;
 			exps = new_exp_list(sql->sa);
-			for (en = rel->exps->h; en; en = en->next) {
+			for (node *en = rel->exps->h; en; en = en->next) {
 				sql_exp *e = en->data;
 
 				if (basecol && !is_basecol(e))
@@ -1078,9 +1066,11 @@ _rel_projections(mvc *sql, sql_rel *rel, const char *tname, int settname, int in
 		rexps = _rel_projections(sql, rel->r, tname, settname, intern, basecol);
 		exps = sa_list(sql->sa);
 		if (lexps && rexps && exps) {
-			node *en, *ren;
-			int label = ++sql->label;
-			for (en = lexps->h, ren = rexps->h; en && ren; en = en->next, ren = ren->next) {
+			int label = 0;
+
+			if (!settname)
+				label = ++sql->label;
+			for (node *en = lexps->h, *ren = rexps->h; en && ren; en = en->next, ren = ren->next) {
 				sql_exp *e = en->data;
 				e->card = rel->card;
 				if (!settname) /* noname use alias */
@@ -2332,4 +2322,26 @@ exps_have_analytics(mvc *sql, list *exps)
 	visitor v = { .sql = sql };
 	(void)exps_exp_visitor_topdown(&v, NULL, exps, 0, &exp_check_has_analytics, true);
 	return v.changes;
+}
+
+static sql_exp *
+_rel_rebind_exp(visitor *v, sql_rel *rel, sql_exp *e, int depth)
+{
+	(void)depth;
+	/* visitor will handle recursion, ie only need to check columns here */
+	if (e->type == e_column) {
+		sql_exp *ne = rel_find_exp(rel, e);
+		if (!ne)
+			v->changes++;
+	}
+	return e;
+}
+
+bool
+rel_rebind_exp(mvc *sql, sql_rel *rel, sql_exp *e)
+{
+	visitor v = { .sql = sql };
+	exp_visitor(&v, rel, e, 0, &_rel_rebind_exp, true, true);
+	/* problems are passed via changes */
+	return (v.changes==0);
 }

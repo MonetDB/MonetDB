@@ -1325,9 +1325,14 @@ push_up_set(mvc *sql, sql_rel *rel, list *ad)
 		/* left of rel should be a set */
 		if (d && is_distinct_set(sql, d, ad) && s && is_set(s->op)) {
 			list *sexps;
-			node *m;
 			sql_rel *sl = s->l, *sr = s->r, *n;
 
+			sl = rel_project(sql->sa, sl, rel_projections(sql, sl, NULL, 1, 1));
+			for (node *n = sl->exps->h, *m = s->exps->h; n; n = n->next, m = m->next)
+				exp_prop_alias(sql->sa, n->data, m->data);
+			sr = rel_project(sql->sa, sr, rel_projections(sql, sr, NULL, 1, 1));
+			for (node *n = sr->exps->h, *m = s->exps->h; n; n = n->next, m = m->next)
+				exp_prop_alias(sql->sa, n->data, m->data);
 			/* D djoin (sl setop sr) -> (D djoin sl) setop (D djoin sr) */
 			rel->r = sl;
 			n = rel_crossproduct(sql->sa, rel_dup(d), sr, rel->op);
@@ -1336,7 +1341,7 @@ push_up_set(mvc *sql, sql_rel *rel, list *ad)
 			s->r = n;
 			if (is_join(rel->op)) {
 				sexps = sa_list(sql->sa);
-				for (m = d->exps->h; m; m = m->next) {
+				for (node *m = d->exps->h; m; m = m->next) {
 					sql_exp *e = m->data, *pe;
 
 					pe = exp_ref(sql, e);
@@ -1514,14 +1519,6 @@ _rel_unnest(visitor *v, sql_rel *rel)
 	return rel;
 }
 
-static sql_rel *
-rel_reset_subquery(visitor *v, sql_rel *rel)
-{
-	(void)v;
-	rel->subquery = 0;
-	return rel;
-}
-
 static sql_exp *
 rewrite_inner(mvc *sql, sql_rel *rel, sql_rel *inner, operator_type op)
 {
@@ -1536,7 +1533,10 @@ rewrite_inner(mvc *sql, sql_rel *rel, sql_rel *inner, operator_type op)
 		inner = rel_project(sql->sa, inner, rel_projections(sql, inner, NULL, 1, 1));
 
 	if (is_join(rel->op)){ /* TODO handle set operators etc */
-		d = rel->r = rel_crossproduct(sql->sa, rel->r, inner, op);
+		if (rel->op == op_right)
+			d = rel->l = rel_crossproduct(sql->sa, rel->l, inner, op);
+		else
+			d = rel->r = rel_crossproduct(sql->sa, rel->r, inner, op);
 		if (single)
 			set_single(d);
 	} else if (is_project(rel->op)){ /* projection -> op_left */
@@ -2004,15 +2004,20 @@ rel_union_exps(mvc *sql, sql_exp **l, list *vals, int is_tuple)
 {
 	sql_rel *u = NULL;
 	list *exps = NULL;
+	int freevar = 0;
 
 	for (node *n=vals->h; n; n = n->next) {
 		sql_exp *ve = n->data, *r, *s;
 		sql_rel *sq = NULL;
 
-		if (exp_has_rel(ve))
+		if (exp_has_rel(ve)) {
 			sq = exp_rel_get_rel(sql->sa, ve); /* get subquery */
-		else {
+			if (sq)
+				freevar = rel_has_freevar(sql,sq);
+		} else {
 			sq = rel_project(sql->sa, NULL, append(sa_list(sql->sa), ve));
+			if (!exp_is_atom(ve))
+				freevar = 1;
 			set_processed(sq);
 		}
 		if (is_tuple) { /* cast each one */
@@ -2040,7 +2045,8 @@ rel_union_exps(mvc *sql, sql_exp **l, list *vals, int is_tuple)
 					sq = rel_project(sql->sa, sq, append(sa_list(sql->sa), ve));
 					set_processed(sq);
 				}
-				exp_set_freevar(sql, ve, sq);
+				if (freevar)
+					exp_set_freevar(sql, ve, sq);
 			}
 		}
 		if (!u) {
@@ -2201,7 +2207,7 @@ rewrite_anyequal(mvc *sql, sql_rel *rel, sql_exp *e, int depth)
 						join->r = rel_crossproduct(sql->sa, join->r, rsq, op_join);
 						set_dependent(join);
 					} else
-						(void)rewrite_inner(sql, rel, rsq, !is_tuple?op_join:is_anyequal(sf)?op_semi:op_anti);
+						(void)rewrite_inner(sql, rel, rsq, !is_tuple?((depth>0)?op_left:op_join):is_anyequal(sf)?op_semi:op_anti);
 				}
 
 				if (on_right) {
@@ -2278,22 +2284,6 @@ rewrite_anyequal(mvc *sql, sql_rel *rel, sql_exp *e, int depth)
 	return e;
 }
 
-static const char *
-compare_aggr_op( char *compare, int quantifier)
-{
-	if (quantifier == 0)
-		return "zero_or_one";
-	switch(compare[0]) {
-	case '<':
-		if (compare[1] == '>')
-			return "all";
-		return "min";
-	case '>':
-		return "max";
-	default:
-		return "all";
-	}
-}
 /* exp visitor */
 /* rewrite compare expressions including quantifiers any and all */
 static sql_exp *
@@ -2328,10 +2318,8 @@ rewrite_compare(visitor *v, sql_rel *rel, sql_exp *e, int depth)
 
 			if (exp_has_rel(re))
 				rsq = exp_rel_get_rel(v->sql->sa, re); /* get subquery */
-			if (rsq) {
-				re = rsq->exps->t->data;
-				re = exp_ref(v->sql, re);
-			}
+			if (rsq)
+				re = exp_rel_update_exp(v->sql, re);
 
 			if (is_values(le)) /* exp_values */
 				is_tuple = 1;
@@ -2390,7 +2378,7 @@ rewrite_compare(visitor *v, sql_rel *rel, sql_exp *e, int depth)
 				if (!lsq)
 					lsq = rel->l;
 				if (sq)
-					(void)rewrite_inner(v->sql, rel, sq, op_join);
+					(void)rewrite_inner(v->sql, rel, sq, (depth||quantifier)?op_left:op_join);
 
 				if (quantifier) {
 					sql_subfunc *a;
@@ -2411,14 +2399,6 @@ rewrite_compare(visitor *v, sql_rel *rel, sql_exp *e, int depth)
 						is_cnt = 1;
 					}
 					re = exp_aggr1(v->sql->sa, re, a, 0, 1, CARD_AGGR, has_nil(re));
-					re = rel_groupby_add_aggr(v->sql, rsq, re);
-					set_processed(rsq);
-				} else if (rsq && exp_card(re) > CARD_ATOM) {
-					sql_subfunc *zero_or_one = sql_bind_func(v->sql->sa, NULL, compare_aggr_op(op, quantifier), exp_subtype(re), NULL, F_AGGR);
-
-					rsq = rel_groupby(v->sql, rsq, NULL);
-
-					re = exp_aggr1(v->sql->sa, re, zero_or_one, 0, 0, CARD_AGGR, has_nil(re));
 					re = rel_groupby_add_aggr(v->sql, rsq, re);
 					set_processed(rsq);
 				}
@@ -2681,7 +2661,7 @@ rewrite_ifthenelse(visitor *v, sql_rel *rel, sql_exp *e, int depth)
 
 	sf = e->f;
 	/* TODO also handle ifthenelse with more than 3 arguments */
-	if (is_ifthenelse_func(sf) && !list_empty(e->l) && list_length(e->l) == 3) {
+	if (is_ifthenelse_func(sf) && !list_empty(e->l) && list_length(e->l) == 3 && rel_has_freevar(v->sql, rel)) {
 		list *l = e->l;
 
 		/* remove unecessary = true expressions under ifthenelse */
@@ -3022,7 +3002,7 @@ include_tid(sql_rel *r)
 static sql_rel *
 rewrite_outer2inner_union(visitor *v, sql_rel *rel)
 {
-	if (is_outerjoin(rel->op) && !list_empty(rel->exps) && (rel_has_freevar(v->sql,rel->l) || rel_has_freevar(v->sql,rel->r) || exps_have_rel_exp(rel->exps))) {
+	if (is_outerjoin(rel->op) && !list_empty(rel->exps) && (((rel->op == op_left || rel->op == op_full) && rel_has_freevar(v->sql,rel->l)) || ((rel->op == op_right || rel->op == op_full) && rel_has_freevar(v->sql,rel->r)) || exps_have_freevar(v->sql, rel->exps) /*exps_have_rel_exp(rel->exps)*/)) {
 		sql_exp *f = exp_atom_bool(v->sql->sa, 0);
 		int nrcols = rel->nrcols;
 
@@ -3162,8 +3142,6 @@ rel_unnest(mvc *sql, sql_rel *rel)
 {
 	visitor v = { .sql = sql };
 
-	rel = rel_visitor_topdown(&v, rel, &rel_reset_subquery);
-	v.changes = 0;
 	rel = rel_exp_visitor_bottomup(&v, rel, &rewrite_simplify_exp, false);
 	rel = rel_visitor_bottomup(&v, rel, &rewrite_simplify);
 	rel = rel_visitor_bottomup(&v, rel, &rewrite_or_exp);

@@ -193,6 +193,7 @@ extern void exps_reset_freevar(list *exps);
 
 extern sql_exp *exp_check_type(mvc *sql, sql_subtype *t, sql_rel *rel, sql_exp *exp, check_type tpe);
 extern int rel_set_type_param(mvc *sql, sql_subtype *type, sql_rel *rel, sql_exp *rel_exp, int upcast);
+extern sql_exp *exp_convert_inplace(mvc *sql, sql_subtype *t, sql_exp *exp);
 extern sql_exp *exp_numeric_supertype(mvc *sql, sql_exp *e);
 extern sql_exp *exp_values_set_supertype(mvc *sql, sql_exp *values, sql_subtype *opt_super);
 

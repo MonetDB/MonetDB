@@ -175,7 +175,7 @@ renderProfilerEvent(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int
 		logadd(",\"barrier\":\"%s\"", operatorName(pci->barrier));
 	if( pci->token < FCNcall || pci->token > PATcall)
 		logadd(",\"operator\":\"%s\"", operatorName(pci->token));
-	if (!GDKinmemory() && !GDKembedded()) {
+	if (!GDKinmemory(0) && !GDKembedded()) {
 		char *uuid = NULL, *err;
 		if ((err = msab_getUUID(&uuid)) == NULL) {
 			logadd(",\"session\":\"%s\"", uuid);
@@ -396,7 +396,7 @@ profilerHeartbeatEvent(char *alter)
 
 	lognew();
 	logadd("{"); // fill in later with the event counter
-	if (!GDKinmemory() && !GDKembedded()) {
+	if (!GDKinmemory(0) && !GDKembedded()) {
 		char *uuid = NULL, *err;
 		if ((err = msab_getUUID(&uuid)) == NULL) {
 			logadd("\"session\":\"%s\",", uuid);

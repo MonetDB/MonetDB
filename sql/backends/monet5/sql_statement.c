@@ -480,32 +480,24 @@ stmt_varnr(backend *be, int nr, sql_subtype *t)
 stmt *
 stmt_table(backend *be, stmt *cols, int temp)
 {
+	stmt *s = stmt_create(be->mvc->sa, st_table);
 	MalBlkPtr mb = be->mb;
-	InstrPtr q = newAssignment(mb);
 
-	if (cols->nr < 0)
+	if (s == NULL || cols->nr < 0)
 		return NULL;
 
 	if (cols->type != st_list) {
+	    InstrPtr q = newAssignment(mb);
 		q = newStmt(mb, sqlRef, printRef);
 		q = pushStr(mb, q, "not a valid output list\n");
 		if (q == NULL)
 			return NULL;
 	}
-	if (q) {
-		stmt *s = stmt_create(be->mvc->sa, st_table);
-		if (s == NULL) {
-			freeInstruction(q);
-			return NULL;
-		}
-
-		s->op1 = cols;
-		s->flag = temp;
-		s->nr = cols->nr;
-		s->nrcols = cols->nrcols;
-		return s;
-	}
-	return NULL;
+	s->op1 = cols;
+	s->flag = temp;
+	s->nr = cols->nr;
+	s->nrcols = cols->nrcols;
+	return s;
 }
 
 stmt *
@@ -1806,8 +1798,9 @@ select2_join2(backend *be, stmt *op1, stmt *op2, stmt *op3, int cmp, stmt **Sub,
 		if (type == st_uselect2) {
 			if (cmp & CMP_BETWEEN)
 				q = pushBit(mb, q, TRUE); /* all nil's are != */
-		} else
-			q = pushBit(mb, q, FALSE);
+		} else {
+			q = pushBit(mb, q, (cmp & CMP_SYMMETRIC)?TRUE:FALSE);
+		}
 		if (type == st_join2)
 			q = pushNil(mb, q, TYPE_lng); /* estimate */
 		if (q == NULL)
@@ -2860,9 +2853,24 @@ stmt_append_bulk(backend *be, stmt *c, list *l)
 {
 	MalBlkPtr mb = be->mb;
 	InstrPtr q = NULL;
+	bool needs_columns = false;
 
 	if (c->nr < 0)
 		return NULL;
+
+	/* currently appendBulk accepts its inputs all either scalar or vectors
+	   if there is one vector and any scala, then the scalars mut be upgraded to vectors */
+	for (node *n = l->h; n; n = n->next) {
+		stmt *t = n->data;
+		needs_columns |= t->nrcols > 0;
+	}
+	if (needs_columns) {
+		for (node *n = l->h; n; n = n->next) {
+			stmt *t = n->data;
+			if (t->nrcols == 0)
+				n->data = const_column(be, t);
+		}
+	}
 
 	q = newStmtArgs(mb, batRef, appendBulkRef, list_length(l) + 3);
 	q = pushArgument(mb, q, c->nr);
@@ -3067,6 +3075,9 @@ tail_set_type(stmt *st, sql_subtype *t)
 	}
 }
 
+#define trivial_string_conversion(x) ((x) == EC_BIT || (x) == EC_CHAR || (x) == EC_STRING || (x) == EC_NUM || (x) == EC_POS || (x) == EC_FLT \
+									  || (x) == EC_DATE || (x) == EC_BLOB || (x) == EC_MONTH)
+
 stmt *
 stmt_convert(backend *be, stmt *v, stmt *sel, sql_subtype *f, sql_subtype *t)
 {
@@ -3079,13 +3090,14 @@ stmt_convert(backend *be, stmt *v, stmt *sel, sql_subtype *f, sql_subtype *t)
 	if (v->nr < 0)
 		return NULL;
 
-	if (t->type->localtype == f->type->localtype &&
+	if ((t->type->localtype == f->type->localtype &&
 	    (t->type->eclass == f->type->eclass ||
 	     (EC_VARCHAR(f->type->eclass) && EC_VARCHAR(t->type->eclass))) &&
 	    !EC_INTERVAL(f->type->eclass) &&
 	    f->type->eclass != EC_DEC &&
 	    (t->digits == 0 || f->digits == t->digits) &&
-	    type_has_tz(t) == type_has_tz(f)) {
+	    type_has_tz(t) == type_has_tz(f)) ||
+		(EC_VARCHAR(f->type->eclass) && EC_VARCHAR(t->type->eclass) && f->digits > 0 && t->digits >= f->digits)) {
 		/* set output type. Despite the MAL code already being generated,
 		   the output type may still be checked */
 		tail_set_type(v, t);
@@ -3133,7 +3145,7 @@ stmt_convert(backend *be, stmt *v, stmt *sel, sql_subtype *f, sql_subtype *t)
 	}
 
 	/* convert to string is complex, we need full type info and mvc for the timezone */
-	if (EC_VARCHAR(t->type->eclass) && !(f->type->eclass == EC_STRING && t->digits == 0)) {
+	if (EC_VARCHAR(t->type->eclass) && !(trivial_string_conversion(f->type->eclass) && t->digits == 0)) {
 		q = pushInt(mb, q, f->type->eclass);
 		q = pushInt(mb, q, f->digits);
 		q = pushInt(mb, q, f->scale);
@@ -3156,7 +3168,7 @@ stmt_convert(backend *be, stmt *v, stmt *sel, sql_subtype *f, sql_subtype *t)
 			q = pushInt(mb, q, t->scale);
 	}
 	/* convert to string, give error on to large strings */
-	if (EC_VARCHAR(t->type->eclass) && !(f->type->eclass == EC_STRING && t->digits == 0))
+	if (EC_VARCHAR(t->type->eclass) && !(trivial_string_conversion(f->type->eclass) && t->digits == 0))
 		q = pushInt(mb, q, t->digits);
 	/* convert a string to a time(stamp) with time zone */
 	if (EC_VARCHAR(f->type->eclass) && EC_TEMP_TZ(t->type->eclass))

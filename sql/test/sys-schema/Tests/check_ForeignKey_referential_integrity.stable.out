@@ -88,8 +88,8 @@ stdout of test 'check_ForeignKey_referential_integrity` in directory 'sql/test/s
 % id,	name,	type,	type_digits,	type_scale,	table_id,	default,	null,	number,	storage # name
 % int,	varchar,	varchar,	int,	int,	int,	varchar,	boolean,	int,	varchar # type
 % 1,	0,	0,	1,	1,	1,	0,	5,	1,	0 # length
-#SELECT * FROM sys._columns WHERE type NOT IN (SELECT sqlname FROM sys.types);
-% sys._columns,	sys._columns,	sys._columns,	sys._columns,	sys._columns,	sys._columns,	sys._columns,	sys._columns,	sys._columns,	sys._columns # table_name
+#SELECT * FROM tmp._columns WHERE type NOT IN (SELECT sqlname FROM sys.types);
+% tmp._columns,	tmp._columns,	tmp._columns,	tmp._columns,	tmp._columns,	tmp._columns,	tmp._columns,	tmp._columns,	tmp._columns,	tmp._columns # table_name
 % id,	name,	type,	type_digits,	type_scale,	table_id,	default,	null,	number,	storage # name
 % int,	varchar,	varchar,	int,	int,	int,	varchar,	boolean,	int,	varchar # type
 % 1,	0,	0,	1,	1,	1,	0,	5,	1,	0 # length

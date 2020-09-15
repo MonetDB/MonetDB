@@ -515,7 +515,7 @@ _create_relational_remote(mvc *m, const char *mod, const char *name, sql_rel *re
 	pushInstruction(curBlk, p);
 
 	char *mal_session_uuid, *err = NULL;
-	if (!GDKinmemory() && !GDKembedded() && (err = msab_getUUID(&mal_session_uuid)) == NULL) {
+	if (!GDKinmemory(0) && !GDKembedded() && (err = msab_getUUID(&mal_session_uuid)) == NULL) {
 		str lsupervisor_session = GDKstrdup(mal_session_uuid);
 		str rsupervisor_session = GDKstrdup(mal_session_uuid);
 		free(mal_session_uuid);

@@ -58,7 +58,7 @@ gdk_export lng getBBPlogno(void); /* two lng of extra info in BBP.dir */
 gdk_export lng getBBPtransid(void);
 
 /* global calls */
-gdk_export gdk_return BBPaddfarm(const char *dirname, int rolemask, bool logerror);
+gdk_export gdk_return BBPaddfarm(const char *dirname, uint32_t rolemask, bool logerror);
 
 /* update interface */
 gdk_export void BBPclear(bat bid);

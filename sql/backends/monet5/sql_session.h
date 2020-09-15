@@ -7,20 +7,10 @@
  */
 
 /*  (co) M.L. Kersten */
-#ifndef _SQL_SESSION
-#define _SQL_SESSION
+#ifndef _SQL_SESSION_H
+#define _SQL_SESSION_H
 
 #include "sql.h"
-
-#ifdef WIN32
-#ifndef LIBSQL
-#define sql5_export extern __declspec(dllimport)
-#else
-#define sql5_export extern __declspec(dllexport)
-#endif
-#else
-#define sql5_export extern
-#endif
 
 sql5_export str SQLsetoptimizer(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 sql5_export str SQLsetworkerlimit(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
@@ -28,4 +18,4 @@ sql5_export str SQLsetmemorylimit(Client cntxt, MalBlkPtr mb, MalStkPtr stk, Ins
 sql5_export str SQLqueryTimeout(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 sql5_export str SQLsessionTimeout(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 
-#endif /* _SQL_SESSION */
+#endif /* _SQL_SESSION_H */

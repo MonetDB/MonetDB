@@ -29,7 +29,7 @@ str_2_blob(blob **res, const str *val)
 {
 	size_t rlen = 0;
 	str msg;
-	
+
 	*res = NULL;
 	if ((msg = str_2_blob_imp(res, &rlen, *val))) {
 		GDKfree(*res);
@@ -61,7 +61,7 @@ batstr_2_blob_cand(bat *res, const bat *bid, const bat *sid)
 	off = b->hseqbase;
 	q = canditer_init(&ci, b, s);
 	bi = bat_iterator(b);
-	if (!(dst = COLnew(b->hseqbase, TYPE_blob, q, TRANSIENT))) {
+	if (!(dst = COLnew(ci.hseq, TYPE_blob, q, TRANSIENT))) {
 		msg = createException(SQL, "batcalc.str_2_blob", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		goto bailout;
 	}
@@ -240,7 +240,7 @@ SQLbatstr_cast(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	off = b->hseqbase;
 	q = canditer_init(&ci, b, s);
 	bi = bat_iterator(b);
-	if (!(dst = COLnew(b->hseqbase, TYPE_str, q, TRANSIENT))) {
+	if (!(dst = COLnew(ci.hseq, TYPE_str, q, TRANSIENT))) {
 		msg = createException(SQL, "batcalc.str_cast", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		goto bailout;
 	}

@@ -473,6 +473,7 @@ VIEWdestroy(BAT *b)
 	HASHdestroy(b);
 	IMPSdestroy(b);
 	OIDXdestroy(b);
+	PROPdestroy(b);
 	VIEWunlink(b);
 
 	MT_lock_set(&b->theaplock);

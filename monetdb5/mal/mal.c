@@ -101,7 +101,7 @@ void mal_reset(void)
 	setHeartbeat(-1);
 	stopProfiler(0);
 	AUTHreset();
-	if (!GDKinmemory() && !GDKembedded()) {
+	if (!GDKinmemory(0) && !GDKembedded()) {
 		str err = 0;
 
 		if ((err = msab_wildRetreat()) != NULL) {

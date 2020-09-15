@@ -281,4 +281,6 @@ sql5_export str SQLsession_prepared_statements_args(Client cntxt, MalBlkPtr mb, 
 
 sql5_export str SQLunionfunc(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 
+sql5_export str getBackendContext(Client cntxt, backend **be);
+
 #endif /* _SQL_H */

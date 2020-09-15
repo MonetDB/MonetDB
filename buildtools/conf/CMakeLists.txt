@@ -16,4 +16,11 @@ if(WIN32)
     COMPONENT server)
 endif()
 
+if(DEVELOPMENT AND NOT WIN32)
+  install(FILES
+    Maddlog
+    PERMISSIONS ${PROGRAM_PERMISSIONS_DEFAULT}
+    DESTINATION ${CMAKE_INSTALL_BINDIR})
+endif()
+
 # vim: set ts=2:sw=2:et

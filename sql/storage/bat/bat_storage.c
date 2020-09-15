@@ -1178,7 +1178,7 @@ log_create_delta(sql_delta *bat, sqlid id)
 	assert(bat->cs.uibid && bat->cs.uvbid);
 	if (bat->cs.uibid == BID_NIL || bat->cs.uvbid == BID_NIL)
 		res = LOG_ERR;
-	if (GDKinmemory())
+	if (GDKinmemory(0))
 		return res;
 
 	bat_set_access(b, BAT_READ);
@@ -1398,7 +1398,7 @@ log_create_storage( storage *bat, sqlid id)
 	BAT *b;
 	gdk_return ok;
 
-	if (GDKinmemory())
+	if (GDKinmemory(0))
 		return LOG_OK;
 
 	b = temp_descriptor(bat->cs.bid);
@@ -1425,7 +1425,7 @@ log_destroy_delta(sql_trans *tr, sql_delta *b, sqlid id)
 	gdk_return ok = GDK_SUCCEED;
 
 	(void)tr;
-	if (!GDKinmemory() && b && b->cs.bid)
+	if (!GDKinmemory(0) && b && b->cs.bid)
 		ok = log_bat_transient(bat_logger, id);
 	return ok == GDK_SUCCEED ? LOG_OK : LOG_ERR;
 }
@@ -1611,7 +1611,7 @@ log_destroy_dbat(sql_trans *tr, storage *bat, sqlid id)
 	gdk_return ok = GDK_SUCCEED;
 
 	(void)tr;
-	if (!GDKinmemory() && bat && bat->cs.bid)
+	if (!GDKinmemory(0) && bat && bat->cs.bid)
 		ok = log_bat_transient(bat_logger, id);
 	return ok == GDK_SUCCEED ? LOG_OK : LOG_ERR;
 }
@@ -2199,7 +2199,7 @@ tr_log_cs( sql_trans *tr, column_storage *cs, segment *segs, int cleared, sqlid 
 {
 	int ok = GDK_SUCCEED;
 
-	if (GDKinmemory())
+	if (GDKinmemory(0))
 		return LOG_OK;
 
 	assert(cs->cleared == cleared);
@@ -2248,7 +2248,7 @@ log_get_nr_inserted(sql_column *fc, lng *offset)
 {
 	lng cnt = 0;
 
-	if (!fc || GDKinmemory())
+	if (!fc || GDKinmemory(0))
 		return 0;
 
 	if (fc->base.atime && fc->base.allocated) {
@@ -2268,7 +2268,7 @@ log_get_nr_deleted(sql_table *ft, lng *offset)
 {
 	lng cnt = 0;
 
-	if (!ft || GDKinmemory())
+	if (!ft || GDKinmemory(0))
 		return 0;
 
 	if (ft->base.atime && ft->base.allocated) {

@@ -152,7 +152,7 @@ SQLprelude(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		fprintf(stdout, "# MonetDB/SQL module loaded\n");
 		fflush(stdout);		/* make merovingian see this *now* */
 	}
-	if (GDKinmemory() || GDKembedded()) {
+	if (GDKinmemory(0) || GDKembedded()) {
 		s->name = "sql";
 		ms->name = "msql";
 		return MAL_SUCCEED;
@@ -198,7 +198,7 @@ SQLepilogue(void *ret)
 	(void) SQLexit(NULL);
 	/* this function is never called, but for the style of it, we clean
 	 * up our own mess */
-	if (!GDKinmemory() && !GDKembedded()) {
+	if (!GDKinmemory(0) && !GDKembedded()) {
 		res = msab_retreatScenario(m);
 		if (!res)
 			res = msab_retreatScenario(s);
@@ -361,7 +361,7 @@ SQLinit(Client c)
 		MT_lock_unset(&sql_contextLock);
 		throw(SQL,"sql.init",SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
-	if ((SQLnewcatalog = mvc_init(sa, SQLdebug, GDKinmemory() ? store_mem : store_bat, readonly, single_user)) < 0) {
+	if ((SQLnewcatalog = mvc_init(sa, SQLdebug, GDKinmemory(0) ? store_mem : store_bat, readonly, single_user)) < 0) {
 		MT_lock_unset(&sql_contextLock);
 		throw(SQL, "SQLinit", SQLSTATE(42000) "Catalogue initialization failed");
 	}
@@ -498,7 +498,7 @@ SQLinit(Client c)
 	if (msg != MAL_SUCCEED)
 		return msg;
 
-	if (GDKinmemory())
+	if (GDKinmemory(0))
 		return MAL_SUCCEED;
 
 	if ((sqllogthread = THRcreate((void (*)(void *)) mvc_logmanager, NULL, MT_THR_DETACHED, "logmanager")) == 0) {
