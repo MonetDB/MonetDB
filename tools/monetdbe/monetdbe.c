@@ -919,7 +919,7 @@ monetdbe_result_cb(void* context, char* tblname, columnar_result* results, size_
 }
 
 static char*
-monetdbe_query_remote(monetdbe_database_internal *mdbe, char* query, monetdbe_result** result, monetdbe_cnt* affected_rows)
+monetdbe_query_remote(monetdbe_database_internal *mdbe, char* query, monetdbe_result** result, monetdbe_cnt* affected_rows, int *prepare_id)
 {
 	// TODO: do something with affected_rows
 	(void) affected_rows;
@@ -944,6 +944,25 @@ monetdbe_query_remote(monetdbe_database_internal *mdbe, char* query, monetdbe_re
 	InstrPtr o = newStmt(mb, remoteRef, putRef);
 	o = pushStr(mb, o, mdbe->mid);
 	o = pushBit(mb, o, TRUE);
+
+
+	if (prepare_id) {
+		size_t query_len, input_query_len, prep_len = 0;
+		input_query_len = strlen(query);
+		query_len = input_query_len + 3;
+		const char PREPARE[] = "PREPARE ";
+		prep_len = sizeof(PREPARE)-1;
+		query_len += prep_len;
+		char *nq = NULL;
+		if (!(nq = GDKmalloc(query_len))) {
+			mdbe->msg = createException(MAL, "monetdbe.monetdbe_query_remote", "Could not setup query stream");
+			return mdbe->msg;
+		}
+		strcpy(nq, PREPARE);
+		strcpy(nq + prep_len, query);
+		strcpy(nq + prep_len + input_query_len, "\n;");
+		query = nq;
+	}
 
 	InstrPtr p = newStmt(mb, remoteRef, putRef);
 	p = pushStr(mb, p, mdbe->mid);
@@ -997,7 +1016,7 @@ monetdbe_query(monetdbe_database dbhdl, char* query, monetdbe_result** result, m
 	monetdbe_database_internal *mdbe = (monetdbe_database_internal*)dbhdl;
 
 	if (mdbe->mid) {
-		mdbe->msg = monetdbe_query_remote(mdbe, query, result, affected_rows);
+		mdbe->msg = monetdbe_query_remote(mdbe, query, result, affected_rows, NULL);
 	}
 	else {
 		mdbe->msg = monetdbe_query_internal(mdbe, query, result, affected_rows, NULL, 'S');
@@ -1040,6 +1059,9 @@ monetdbe_prepare(monetdbe_database dbhdl, char* query, monetdbe_statement **stmt
 	
 	if (!stmt)
 		mdbe->msg = createException(MAL, "monetdbe.monetdbe_prepare", "Parameter stmt is NULL");
+	else if (mdbe->mid) {
+		mdbe->msg = monetdbe_query_remote(mdbe, query, NULL, NULL, &prepare_id);
+	}
 	else {
 		mdbe->msg = monetdbe_query_internal(mdbe, query, NULL, NULL, &prepare_id, 'S');
 	}

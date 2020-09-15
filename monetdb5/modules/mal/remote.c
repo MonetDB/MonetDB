@@ -1102,7 +1102,7 @@ str RMTexec(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 
 	/* Temporary hack:
 	 * use a callback to immediately handle columnar results before hdl is destroyed. */
-	if(tmp == MAL_SUCCEED && rcb && mhdl) {
+	if(tmp == MAL_SUCCEED && rcb && mhdl && mapi_get_field_count(mhdl) == Q_TABLE) {
 
 		int fields = mapi_get_field_count(mhdl);
 

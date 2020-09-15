@@ -953,8 +953,6 @@ mvc_export_binary_bat(stream *s, BAT* bn) {
 			if (sendtheap)
 				mnstr_write(s, /* theap */ Tbase(bn), bn->tvheap->free, 1);
 		}
-
-		mnstr_flush(s);
 }
 
 static int
@@ -996,9 +994,9 @@ mvc_export_prepare_columnar(stream *out, cq *q, int nrows, sql_rel *r) {
 			if (	BUNappend(btype,	&t->type->localtype	, false) != GDK_SUCCEED ||
 					BUNappend(bdigits,	&t->digits			, false) != GDK_SUCCEED ||
 					BUNappend(bscale,	&t->scale			, false) != GDK_SUCCEED ||
-					BUNappend(bschema,	&schema				, false) != GDK_SUCCEED ||
-					BUNappend(btable,	&rname				, false) != GDK_SUCCEED ||
-					BUNappend(bcolumn,	&name				, false) != GDK_SUCCEED)
+					BUNappend(bschema,	schema				, false) != GDK_SUCCEED ||
+					BUNappend(btable,	rname				, false) != GDK_SUCCEED ||
+					BUNappend(bcolumn,	name				, false) != GDK_SUCCEED)
 				goto bailout;
 		}
 	}
@@ -1013,9 +1011,9 @@ mvc_export_prepare_columnar(stream *out, cq *q, int nrows, sql_rel *r) {
 			if (	BUNappend(btype,	&t->type->localtype	, false) != GDK_SUCCEED ||
 					BUNappend(bdigits,	&t->digits			, false) != GDK_SUCCEED ||
 					BUNappend(bscale,	&t->scale			, false) != GDK_SUCCEED ||
-					BUNappend(bschema,	&str_nil			, false) != GDK_SUCCEED ||
-					BUNappend(btable,	&str_nil			, false) != GDK_SUCCEED ||
-					BUNappend(bcolumn,	&str_nil			, false) != GDK_SUCCEED)
+					BUNappend(bschema,	str_nil				, false) != GDK_SUCCEED ||
+					BUNappend(btable,	str_nil				, false) != GDK_SUCCEED ||
+					BUNappend(bcolumn,	str_nil				, false) != GDK_SUCCEED)
 				goto bailout;
 		}
 	}
@@ -1124,6 +1122,7 @@ mvc_export_prepare(backend *b, stream *out, str w)
 	}
 
 	if (b->client->protocol == PROTOCOL_COLUMNAR) {
+		if (mnstr_flush(out) < 0) return -1;
 		mvc_export_prepare_columnar(out, q, nrows, r);
 	}
 	else {
