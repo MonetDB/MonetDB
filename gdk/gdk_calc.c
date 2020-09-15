@@ -5622,7 +5622,7 @@ mul_##TYPE1##_##TYPE2##_##TYPE3(					\
 				nils++;					\
 			} else if (lft[i] == 0 || rgt[j] == 0) {	\
 				dst[k] = 0;				\
-			} else if (max / rgt[i] < lft[j]) {		\
+			} else if (max / rgt[j] < lft[i]) {		\
 				if (abort_on_error)			\
 					ON_OVERFLOW(TYPE1, TYPE2, "*"); \
 				dst[k] = TYPE3##_nil;			\
@@ -5643,7 +5643,7 @@ mul_##TYPE1##_##TYPE2##_##TYPE3(					\
 				nils++;					\
 			} else if (lft[i] == 0 || rgt[j] == 0) {	\
 				dst[k] = 0;				\
-			} else if (max / rgt[i] < lft[j]) {		\
+			} else if (max / rgt[j] < lft[i]) {		\
 				if (abort_on_error)			\
 					ON_OVERFLOW(TYPE1, TYPE2, "*"); \
 				dst[k] = TYPE3##_nil;			\
