@@ -1537,6 +1537,27 @@ batcalc_init(void)
 	    }
 	  }
 	}
+	{	/* multiplication with floating points */
+		int *tp1, *tp2;
+		for(tp1 = integer; tp1 < floats && !err; tp1++) {
+			for(tp2 = floats; tp2 < extra && !err; tp2++) {
+				int *rt = tp1, *input1 = tp1, *input2 = tp2;
+
+				mel_func_arg ret = { .type = *rt, .isbat =1 };
+				mel_func_arg arg1 = { .type = *input1, .isbat =1 };
+				mel_func_arg arg2 = { .type = *input2, .isbat =1 };
+				mel_func_arg varg1 = { .type = *input1 };
+				mel_func_arg varg2 = { .type = *input2 };
+
+				err += melFunction(false, "batcalc", funcs[2].op, funcs[2].fcn, funcs[2].fname, false, funcs[2].comment, 1, 5, ret, arg1, arg2, cand, cand);
+				err += melFunction(false, "batcalc", funcs[2].op_ne, funcs[2].fcn_ne, funcs[2].fname_ne, false, funcs[2].comment_ne, 1, 5, ret, arg1, arg2, cand, cand);
+				err += melFunction(false, "batcalc", funcs[2].op, funcs[2].fcn, funcs[2].fname, false, funcs[2].comment_v, 1, 4, ret, arg1, varg2, cand);
+				err += melFunction(false, "batcalc", funcs[2].op_ne, funcs[2].fcn_ne, funcs[2].fname_ne, false, funcs[2].comment_v_ne, 1, 4, ret, arg1, varg2, cand);
+				err += melFunction(false, "batcalc", funcs[2].op, funcs[2].fcn, funcs[2].fname, false, funcs[2].comment_v_, 1, 4, ret, varg1, arg2, cand);
+				err += melFunction(false, "batcalc", funcs[2].op_ne, funcs[2].fcn_ne, funcs[2].fname_ne, false, funcs[2].comment_v__ne, 1, 4, ret, varg1, arg2, cand);
+			}
+		}
+	}
 	struct {
 	   char *op;
 	   char *op_ne;

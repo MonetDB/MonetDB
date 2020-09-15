@@ -29,6 +29,12 @@ stdout of test 'interval-math.Bug-6935` in directory 'sql/test/BugTracker-2020` 
 % sec_interval # type
 % 5 # length
 [ 2.000	]
+#SELECT INTERVAL '1' HOUR * CAST(1000 AS DOUBLE); -- 3600000.000
+% .%2 # table_name
+% %2 # name
+% sec_interval # type
+% 11 # length
+[ 3600000.000	]
 #SELECT INTERVAL '4' MONTH * 2.03; -- 8
 % .%2 # table_name
 % %2 # name
@@ -77,6 +83,42 @@ stdout of test 'interval-math.Bug-6935` in directory 'sql/test/BugTracker-2020` 
 % sec_interval # type
 % 5 # length
 [ 5.600	]
+#SELECT INTERVAL '5' MONTH * cast(2.44 as double); -- 12
+% .%2 # table_name
+% %2 # name
+% month_interval # type
+% 2 # length
+[ 12	]
+#SELECT INTERVAL '5' MONTH * cast(2.29 as real); -- 11
+% .%2 # table_name
+% %2 # name
+% month_interval # type
+% 2 # length
+[ 11	]
+#SELECT INTERVAL '1' MONTH * cast(1.0 as double); -- 1
+% .%2 # table_name
+% %2 # name
+% month_interval # type
+% 1 # length
+[ 1	]
+#SELECT INTERVAL '1' SECOND * cast(2.44 as double); -- 2.440
+% .%2 # table_name
+% %2 # name
+% sec_interval # type
+% 5 # length
+[ 2.440	]
+#SELECT INTERVAL '5' SECOND * cast(2.29 as real); -- 11.450
+% .%2 # table_name
+% %2 # name
+% sec_interval # type
+% 6 # length
+[ 11.450	]
+#SELECT INTERVAL '5' SECOND * cast(1.0 as double); -- 5.000
+% .%2 # table_name
+% %2 # name
+% sec_interval # type
+% 5 # length
+[ 5.000	]
 
 # 10:13:31 >  
 # 10:13:31 >  "Done."
