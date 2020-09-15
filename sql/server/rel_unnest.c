@@ -1337,6 +1337,7 @@ push_up_set(mvc *sql, sql_rel *rel, list *ad)
 			/* D djoin (sl setop sr) -> (D djoin sl) setop (D djoin sr) */
 			rel->r = sl;
 			n = rel_crossproduct(sql->sa, rel_dup(d), sr, rel->op);
+			n->exps = exps_copy(sql, rel->exps);
 			set_dependent(n);
 			s->l = rel;
 			s->r = n;

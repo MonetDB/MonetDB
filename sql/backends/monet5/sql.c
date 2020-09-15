@@ -763,14 +763,14 @@ mvc_next_value(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (!mvc_schema_privs(be->mvc, s))
 		throw(SQL, "sql.next_value", SQLSTATE(42000) "Access denied for %s to schema '%s'", sqlvar_get_string(find_global_var(be->mvc, mvc_bind_schema(be->mvc, "sys"), "current_user")), s->base.name);
 	if (!(seq = find_sql_sequence(s, seqname)))
-		throw(SQL, "sql.next_value", SQLSTATE(HY050) "Failed to fetch sequence %s.%s", sname, seqname);
+		throw(SQL, "sql.next_value", SQLSTATE(HY050) "Cannot find the sequence %s.%s", sname, seqname);
 
 	if (seq_next_value(seq, res)) {
 		be->last_id = *res;
 		sqlvar_set_number(find_global_var(be->mvc, mvc_bind_schema(be->mvc, "sys"), "last_id"), be->last_id);
 		return MAL_SUCCEED;
 	}
-	throw(SQL, "sql.next_value", SQLSTATE(42000) "Error in fetching next value for sequence %s.%s", sname, seqname);
+	throw(SQL, "sql.next_value", SQLSTATE(HY050) "Cannot generate next sequence value %s.%s", sname, seqname);
 }
 
 /* str mvc_get_value(lng *res, str *sname, str *seqname); */
@@ -792,11 +792,11 @@ mvc_get_value(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (!(s = mvc_bind_schema(m, sname)))
 		throw(SQL, "sql.get_value", SQLSTATE(3F000) "Cannot find the schema %s", sname);
 	if (!(seq = find_sql_sequence(s, seqname)))
-		throw(SQL, "sql.get_value", SQLSTATE(HY050) "Failed to fetch sequence %s.%s", sname, seqname);
+		throw(SQL, "sql.get_value", SQLSTATE(HY050) "Cannot find the sequence %s.%s", sname, seqname);
 
 	if (seq_get_value(seq, res))
 		return MAL_SUCCEED;
-	throw(SQL, "sql.get_value", SQLSTATE(42000) "Error in fetching current value for sequence %s.%s", sname, seqname);
+	throw(SQL, "sql.get_value", SQLSTATE(HY050) "Cannot get sequence value %s.%s", sname, seqname);
 }
 
 static str

@@ -397,7 +397,7 @@ function user.main():void;
     C_5:bat[:oid] := sql.tid(X_4:int, "sys":str, "another_t":str);
     X_11:bat[:int] := sql.bind(X_4:int, "sys":str, "another_t":str, "col1":str, 0:int);
     X_15:bat[:int] := algebra.projection(C_5:bat[:oid], X_11:bat[:int]);
-    X_17:bat[:oid] := algebra.thetajoin(X_15:bat[:int], X_15:bat[:int], nil:BAT, nil:BAT, 1:int, true:bit, nil:lng);
+    X_17:bat[:oid] := algebra.thetajoin(X_15:bat[:int], X_15:bat[:int], nil:BAT, nil:BAT, 1:int, false:bit, nil:lng);
     X_24:bat[:int] := algebra.projection(X_17:bat[:oid], X_15:bat[:int]);
     X_28:bat[:bte] := algebra.project(X_24:bat[:int], 1:bte);
     sql.resultSet(X_30:bat[:str], X_31:bat[:str], X_32:bat[:str], X_33:bat[:int], X_34:bat[:int], X_28:bat[:bte]);

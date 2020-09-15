@@ -109,6 +109,8 @@ INSERT INTO "t2" VALUES ('4'),('4'),('3eSU8,'),(''),('5E~쟱'),('~'),('138600622
 
 select t0.c1 from t0 where (5) in (case when t0.c1 = 'a' then 1 end, (select 3));
 	-- empty
+select t0.c1 from t0 where (5) in ((select 3), case when t0.c1 = 'a' then 1 end);
+	-- empty
 select t0.c1 from t0 where (5) in (case when t0.c1 = 'a' then 1 end, (select 3 from t0));
 	-- empty
 select t0.c1 from t0 where (-5) in (case when t0.c1 = 'a' then 1 else -2 end, (select -3 from t0, t2 where false));
