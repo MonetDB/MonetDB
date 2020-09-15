@@ -3971,7 +3971,7 @@ rel2bin_insert(backend *be, sql_rel *rel, list *refs)
 			stmt *is = m->data;
 			sql_idx *i = n->data;
 
-			if (non_updatable_index(i->type)) /* Some indexes don't hold delta structures */
+		    if (non_updatable_index(i->type)) /* Some indexes don't hold delta structures */
 				continue;
 			if (hash_index(i->type) && list_length(i->columns) <= 1)
 				is = NULL;

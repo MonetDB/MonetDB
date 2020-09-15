@@ -36,8 +36,8 @@ function user.main():void;
     X_1:void := querylog.define("explain select count(*) from v1;":str, "sequential_pipe":str, 13:int);
     X_4:int := sql.mvc();
     C_5:bat[:oid] := sql.tid(X_4:int, "sys":str, "fk":str);
-    X_23:lng := aggr.count(C_5:bat[:oid]);
-    sql.resultSet(".%1":str, "%1":str, "bigint":str, 64:int, 0:int, 7:int, X_23:lng);
+    X_20:lng := aggr.count(C_5:bat[:oid]);
+    sql.resultSet(".%1":str, "%1":str, "bigint":str, 64:int, 0:int, 7:int, X_20:lng);
 end user.main;
 #inline               actions= 0 time=0 usec 
 #remap                actions= 0 time=1 usec 
