@@ -3196,7 +3196,7 @@ def DoIt(env, SERVER, CALL, TST, EXT, TestOutFile, TestErrFile, STIMEOUT, CTIMEO
                         break
             elif CALL == "sqltest":
                 import MonetDBtesting.sqllogictest as sqllogictest
-                sql = sqllogictest.SQLLogic(ClntErr)
+                sql = sqllogictest.SQLLogic(out=ClntErr)
                 try:
                     sql.connect(hostname='localhost',
                                 port=int(env['MAPIPORT']),
