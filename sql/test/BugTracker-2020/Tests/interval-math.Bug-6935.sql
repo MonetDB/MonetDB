@@ -53,3 +53,9 @@ SELECT x, y, x / y from (values(interval '0' second),(interval '-56' day),(inter
 
 SELECT x, y, x * y from (values(interval '0' month),(interval '-3' month),(interval '6' month)) as x(x), (values(cast(1.1 as double)),(cast(3.4 as real)),(cast(-7 as double))) as y(y);
 SELECT x, y, x / y from (values(interval '0' second),(interval '-56' day),(interval '67' minute)) as x(x), (values(cast(1.1 as double)),(cast(3.4 as real)),(cast(-7 as double))) as y(y);
+
+SELECT INTERVAL '1' MONTH / cast(NULL as real);
+SELECT cast(NULL as INTERVAL YEAR) * cast(1.0 as double);
+
+SELECT cast(NULL as INTERVAL SECOND)/ cast(1.664 as real);
+SELECT cast(1.77 as double) * cast(NULL as INTERVAL MINUTE);

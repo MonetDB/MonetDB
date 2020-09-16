@@ -271,6 +271,30 @@ stdout of test 'interval-math.Bug-6935` in directory 'sql/test/BugTracker-2020` 
 [ 4020.000,	1.1,	3654.545	]
 [ 4020.000,	3.400000095,	1182.353	]
 [ 4020.000,	-7,	-574.286	]
+#SELECT INTERVAL '1' MONTH / cast(NULL as real);
+% .%2 # table_name
+% %2 # name
+% month_interval # type
+% 1 # length
+[ NULL	]
+#SELECT cast(NULL as INTERVAL MONTH) * cast(1.0 as double);
+% .%2 # table_name
+% %2 # name
+% month_interval # type
+% 1 # length
+[ NULL	]
+#SELECT cast(NULL as INTERVAL SECOND)/ cast(1.664 as real);
+% .%2 # table_name
+% %2 # name
+% sec_interval # type
+% 5 # length
+[ NULL	]
+#SELECT cast(1.77 as double) * cast(NULL as INTERVAL SECOND);
+% .%2 # table_name
+% %2 # name
+% sec_interval # type
+% 5 # length
+[ NULL	]
 
 # 10:13:31 >  
 # 10:13:31 >  "Done."
