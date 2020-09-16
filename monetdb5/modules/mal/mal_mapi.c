@@ -207,7 +207,7 @@ doChallenge(void *data)
 
 		comp = COMPRESSION_NONE;
 		if (strstr(buf, "COMPRESSION_SNAPPY")) {
-#ifdef HAVE_LIBSNAPPY
+#ifdef HAVE_SNAPPY
 			comp = COMPRESSION_SNAPPY;
 #else
 			errmsg = "!server does not support Snappy compression.\n";

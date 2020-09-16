@@ -40,7 +40,7 @@ if(TESTING)
   add_executable(streamcat
     streamcat.c)
 
-	target_link_libraries(streamcat
+  target_link_libraries(streamcat
     PRIVATE
     monetdb_config_header
     stream)

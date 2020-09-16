@@ -64,7 +64,7 @@ mcrypt_getHashAlgorithms(void)
 #ifdef HAVE_SHA1_UPDATE
 		",SHA1"
 #endif
-#ifdef HAVE_LIBSNAPPY
+#ifdef HAVE_SNAPPY
 		",COMPRESSION_SNAPPY"
 #endif
 #ifdef HAVE_LIBLZ4
