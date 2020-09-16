@@ -89,15 +89,15 @@ if (NOT WIN32)
   endif()
 
   if(CURL_FOUND)
-    set(PKG_CURL "${CMAKE_SHARED_LIBRARY_PREFIX}curl")
+    set(PKG_CURL "libcurl")
   endif()
 
   if(LZ4_FOUND)
-    set(PKG_LZ4 "${CMAKE_SHARED_LIBRARY_PREFIX}lz4")
+    set(PKG_LZ4 "liblz4")
   endif()
 
   if(LIBLZMA_FOUND)
-    set(PKG_LZMA "${CMAKE_SHARED_LIBRARY_PREFIX}lzma")
+    set(PKG_LZMA "liblzma")
   endif()
 
   if(SNAPPY_FOUND)
