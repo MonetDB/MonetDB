@@ -1806,7 +1806,7 @@ sqltypeinit( sql_allocator *sa)
 	for (t = strings; t < numerical; t++) {
 		sql_create_func(sa, "next_value_for", "sql", "next_value", TRUE, TRUE, SCALE_NONE, 0, LNG, 2, *t, *t);
 		sql_create_func(sa, "get_value_for", "sql", "get_value", TRUE, FALSE, SCALE_NONE, 0, LNG, 2, *t, *t);
-		sql_create_func(sa, "restart", "sql", "restart", TRUE, FALSE, SCALE_NONE, 0, LNG, 3, *t, *t, LNG);
+		sql_create_func(sa, "restart", "sql", "restart", TRUE, TRUE, SCALE_NONE, 0, LNG, 3, *t, *t, LNG);
 
 		sql_create_func(sa, "index", "calc", "index", TRUE, FALSE, SCALE_NONE, 0, BTE, 2, *t, BIT);
 		sql_create_func(sa, "index", "calc", "index", TRUE, FALSE, SCALE_NONE, 0, SHT, 2, *t, BIT);
