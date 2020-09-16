@@ -206,7 +206,7 @@ stdout of test 'sqlancer07` in directory 'sql/test/SQLancer` itself:
 % tinyint # type
 % 1 # length
 #SELECT t1.c0 FROM t2, t0 CROSS JOIN t1 WHERE ((((t0.c0)%((SELECT DISTINCT t0.c0 FROM t1, t0, t2 WHERE FALSE))))<=(t1.c0));
-% sys.t1 # table_name
+% .t1 # table_name
 % c0 # name
 % bigint # type
 % 1 # length
