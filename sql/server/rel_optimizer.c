@@ -3758,35 +3758,42 @@ rel_project_cse(visitor *v, sql_rel *rel)
 }
 
 static list *
-exps_merge_select_rse( mvc *sql, list *l, list *r )
+exps_merge_select_rse( mvc *sql, list *l, list *r, bool *merged)
 {
 	node *n, *m, *o;
 	list *nexps = NULL, *lexps, *rexps;
+	bool lmerged = true, rmerged = true;
 
  	lexps = new_exp_list(sql->sa);
 	for (n = l->h; n; n = n->next) {
 		sql_exp *e = n->data;
 
 		if (e->type == e_cmp && e->flag == cmp_or && !is_anti(e) && !is_semantics(e)) {
-			list *nexps = exps_merge_select_rse(sql, e->l, e->r);
+			lmerged = false;
+			list *nexps = exps_merge_select_rse(sql, e->l, e->r, &lmerged);
 			for (o = nexps->h; o; o = o->next)
 				append(lexps, o->data);
 		} else {
 			append(lexps, e);
 		}
 	}
+	if (lmerged)
+		lmerged = (list_length(lexps) == 1);
  	rexps = new_exp_list(sql->sa);
 	for (n = r->h; n; n = n->next) {
 		sql_exp *e = n->data;
 
 		if (e->type == e_cmp && e->flag == cmp_or && !is_anti(e) && !is_semantics(e)) {
-			list *nexps = exps_merge_select_rse(sql, e->l, e->r);
+			rmerged = false;
+			list *nexps = exps_merge_select_rse(sql, e->l, e->r, &rmerged);
 			for (o = nexps->h; o; o = o->next)
 				append(rexps, o->data);
 		} else {
 			append(rexps, e);
 		}
 	}
+	if (rmerged)
+		rmerged = (list_length(r) == 1);
 
  	nexps = new_exp_list(sql->sa);
 
@@ -3850,9 +3857,12 @@ exps_merge_select_rse( mvc *sql, list *l, list *r )
 				mine = exp_binop(sql->sa, le->r, re->r, min);
 				maxe = exp_binop(sql->sa, le->f, re->f, max);
 				fnd = exp_compare2(sql->sa, le->l, mine, maxe, CMP_BETWEEN|le->flag);
+				lmerged = false;
 			}
-			if (fnd)
+			if (fnd) {
 				append(nexps, fnd);
+				*merged = (fnd && lmerged && rmerged);
+			}
 		}
 	}
 	return nexps;
@@ -3911,6 +3921,11 @@ rel_merge_project_rse(visitor *v, sql_rel *rel, sql_exp *e, int depth)
  *      (x = e and y > 1 and y < 20)) and
  *     	 x in (a,c,e) and
  *     	 y > 1 and y < 20
+ *
+ * for single expression or's we can do better
+ *		x in (a, b, c) or x in (d, e, f)
+ *		->
+ *		x in (a, b, c, d, e, f)
  * */
 static sql_rel *
 rel_merge_select_rse(visitor *v, sql_rel *rel)
@@ -3925,14 +3940,18 @@ rel_merge_select_rse(visitor *v, sql_rel *rel)
 
 			if (e->type == e_cmp && e->flag == cmp_or && !is_anti(e) && !is_semantics(e)) {
 				/* possibly merge related expressions */
-				list *ps = exps_merge_select_rse(v->sql, e->l, e->r);
+				bool merged = false;
+
+				list *ps = exps_merge_select_rse(v->sql, e->l, e->r, &merged);
 				for (o = ps->h; o; o = o->next)
 					append(nexps, o->data);
+				if (!merged)
+					append(nexps, e);
+			} else {
+				append(nexps, e);
 			}
 		}
-		if (!list_empty(nexps))
-			for (o = nexps->h; o; o = o->next)
-				append(rel->exps, o->data);
+		rel->exps = nexps;
 		rel->used = 1;
 	}
 	return rel;

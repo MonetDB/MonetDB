@@ -1003,7 +1003,7 @@ exp_bin(backend *be, sql_exp *e, stmt *left, stmt *right, stmt *grp, stmt *ext, 
 			if (list_empty(exps) && (strcmp(f->func->base.name, "rand") == 0 || (f1 = sql_find_func(sql->sa, f->func->s, f->func->base.name, 1, f->func->type, NULL)))) {
 				if (f1)
 					f = f1;
-				list_append(l, stmt_const(be, bin_first_column(be, left), 
+				list_append(l, stmt_const(be, bin_first_column(be, left),
 										  stmt_atom(be, atom_general(sql->sa, f1 ? &(((sql_arg*)f1->func->ops->h->data)->type) : sql_bind_localtype("int"), NULL))));
 			} else if (exps_card(exps) < CARD_MULTI) {
 				rows = bin_first_column(be, left);
