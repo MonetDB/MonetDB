@@ -26,10 +26,30 @@ SELECT INTERVAL '5' SECOND * cast(1.0 as double); -- 5.000
 SELECT cast(2.56 as double) * INTERVAL '5' MONTH; -- 13
 SELECT cast(3.1 as real) * INTERVAL '3' SECOND; -- 9.300
 
-SELECT INTERVAL '1' MONTH / cast(2.0 as double); -- 0
-SELECT INTERVAL '1' MONTH / cast(1.5 as double); -- 0
+SELECT INTERVAL '1' MONTH / cast(2.0 as double); -- 1
+SELECT INTERVAL '1' MONTH / cast(1.5 as double); -- 1
 SELECT INTERVAL '1' MONTH / cast(1.0 as double); -- 1
+
+SELECT INTERVAL '-10' MONTH / cast(2.0 as real); -- -5
+SELECT INTERVAL '7' MONTH / cast(1.5 as real); -- 5
+SELECT INTERVAL '9' YEAR / cast(1.0 as real); -- 108
 
 SELECT INTERVAL '1' SECOND / cast(2.0 as double); -- 0.500
 SELECT INTERVAL '5' SECOND / cast(1.5 as double); -- 3.330
 SELECT INTERVAL '5' SECOND / cast(1.0 as double); -- 5.000
+
+SELECT INTERVAL '-100' DAY / cast(23.34 as real); -- -370179.936
+SELECT INTERVAL '32' MINUTE / cast(45.5677 as real); -- 42.135
+SELECT INTERVAL '67' MINUTE / cast(1.57 as real); -- 2560.510
+
+SELECT INTERVAL '-10.34' SECOND / cast(-1.8 as real); -- 5.744
+SELECT INTERVAL '-10.34' SECOND / -1.8; -- 5.740
+
+SELECT INTERVAL '42' DAY / cast(0 as real); -- division by zero
+SELECT INTERVAL '-6' YEAR / 0.0; -- division by zero
+
+SELECT x, y, x * y from (values(interval '0' month),(interval '-3' month),(interval '6' month)) as x(x), (values(1.1),(3.4),(-7)) as y(y);
+SELECT x, y, x / y from (values(interval '0' second),(interval '-56' day),(interval '67' minute)) as x(x), (values(1.1),(3.4),(-7)) as y(y);
+
+SELECT x, y, x * y from (values(interval '0' month),(interval '-3' month),(interval '6' month)) as x(x), (values(cast(1.1 as double)),(cast(3.4 as real)),(cast(-7 as double))) as y(y);
+SELECT x, y, x / y from (values(interval '0' second),(interval '-56' day),(interval '67' minute)) as x(x), (values(cast(1.1 as double)),(cast(3.4 as real)),(cast(-7 as double))) as y(y);

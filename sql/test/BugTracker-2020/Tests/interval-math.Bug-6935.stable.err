@@ -17,6 +17,14 @@ MAPI  = (monetdb) /var/tmp/mtest-37742/.s.monetdb.31621
 QUERY = SELECT 1 / INTERVAL '2' MONTH;  --error on typing branch, cannot divide an integer by an interval
 ERROR = !SELECT: no such binary operator 'sql_div(smallint,month_interval)'
 CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-42027/.s.monetdb.32199
+QUERY = SELECT INTERVAL '42' DAY / cast(0 as real); -- division by zero
+ERROR = !division by zero.
+CODE  = 22012
+MAPI  = (monetdb) /var/tmp/mtest-42027/.s.monetdb.32199
+QUERY = SELECT INTERVAL '-6' YEAR / 0.0; -- division by zero
+ERROR = !division by zero.
+CODE  = 22012
 
 # 12:56:20 >  
 # 12:56:20 >  "Done."
