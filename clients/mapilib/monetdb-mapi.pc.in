@@ -6,8 +6,9 @@
 
 Name: monetdb-mapi
 Description: MonetDB MAPI C-client libary
+URL: https://www.monetdb.org/
 Version: @MONETDB_VERSION@
-Requires: monetdb-stream openssl
+Requires.private: monetdb-stream = @MONETDB_VERSION@ openssl
 
 Libs: -L@CMAKE_INSTALL_FULL_LIBDIR@ -lmapi
 Cflags: -I@CMAKE_INSTALL_FULL_INCLUDEDIR@/monetdb

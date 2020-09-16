@@ -39,12 +39,12 @@ if (NOT WIN32)
     # In OpenSSL case, we link only to the crypto library, so it will be
     # always one library to link to
     get_filename_component(CRYPTO_LIBRARIES_PATH "${CRYPTO_LIBRARIES}" DIRECTORY)
-    set(PKG_CRYPTO "-L${CRYPTO_LIBRARIES_PATH} -lcrypto")
+    set(PKG_CRYPTO "libcrypto")
   endif()
 
   if(PCRE_FOUND)
     get_filename_component(PCRE_LIBRARIES_PATH "${PCRE_LIBRARIES}" DIRECTORY)
-    set(PKG_PCRE "-L${PCRE_LIBRARIES_PATH} -lpcre")
+    set(PKG_PCRE "libpcre")
   endif()
 
   configure_file(monetdb5.pc.in

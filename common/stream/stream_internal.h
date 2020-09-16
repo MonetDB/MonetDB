@@ -54,7 +54,7 @@
 #ifdef HAVE_LIBLZMA
 #include <lzma.h>
 #endif
-#ifdef HAVE_LIBSNAPPY
+#ifdef HAVE_SNAPPY
 #include <snappy-c.h>
 #endif
 #ifdef HAVE_LIBLZ4
