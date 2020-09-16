@@ -1854,7 +1854,7 @@ mvc_delete_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		tpe = TYPE_bat;
 	if (tpe == TYPE_bat && (b = BATdescriptor(*(bat *) ins)) == NULL)
 		throw(SQL, "sql.delete", SQLSTATE(HY005) "Cannot access column descriptor");
-	if (tpe != TYPE_bat || (b->ttype != TYPE_oid && b->ttype != TYPE_void)) {
+	if (tpe != TYPE_bat || (b->ttype != TYPE_oid && b->ttype != TYPE_void && b->ttype != TYPE_msk)) {
 		if (b)
 			BBPunfix(b->batCacheid);
 		throw(SQL, "sql.delete", SQLSTATE(HY005) "Cannot access column descriptor");

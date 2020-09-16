@@ -831,7 +831,11 @@ delta_delete_bat( storage *bat, BAT *i, int is_new)
 {
 	/* update ids */
 	msk T = TRUE;
-	BAT *t = BATconstant(i->hseqbase, TYPE_msk, &T, BATcount(i), TRANSIENT);
+	BAT *t, *oi = i;
+
+	if (i->ttype == TYPE_msk)
+			i = BATunmask(i);
+	t = BATconstant(i->hseqbase, TYPE_msk, &T, BATcount(i), TRANSIENT);
 	int ok = LOG_OK;
 
 	assert(i->ttype != TYPE_msk);
@@ -839,6 +843,8 @@ delta_delete_bat( storage *bat, BAT *i, int is_new)
 		ok = cs_update_bat( &bat->cs, i, t, is_new);
 	}
 	BBPunfix(t->batCacheid);
+	if (i != oi)
+		BBPunfix(i->batCacheid);
 	return ok;
 }
 
