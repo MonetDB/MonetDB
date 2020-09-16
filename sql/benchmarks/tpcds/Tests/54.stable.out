@@ -39,7 +39,7 @@ stdout of test '54` in directory 'sql/benchmarks/tpcds` itself:
 #        date_dim,
 #        customer
 #   WHERE sold_date_sk = d_date_sk
-% .segments,	.,	. # table_name
+% sys.segments,	sys.,	sys. # table_name
 % segment,	num_customers,	segment_base # name
 % int,	bigint,	bigint # type
 % 5,	1,	6 # length

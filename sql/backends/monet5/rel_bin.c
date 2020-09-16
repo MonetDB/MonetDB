@@ -1007,7 +1007,7 @@ exp_bin(backend *be, sql_exp *e, stmt *left, stmt *right, stmt *grp, stmt *ext, 
 		stmt *rows = NULL, *isel = sel;
 		int nrcands = 0, push_cands = 0;
 
-		if (f->func->side_effect && left) {
+		if (f->func->side_effect && left && left->nrcols > 0) {
 			if (!exps || list_empty(exps))
 				append(l,
 				stmt_const(be,

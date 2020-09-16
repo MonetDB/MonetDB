@@ -156,6 +156,11 @@ stdout of test 'sqlancer07` in directory 'sql/test/SQLancer` itself:
 % c1 # name
 % varchar # type
 % 0 # length
+#select t0.c1 from t0 where (5) in ((select 3), case when t0.c1 = 'a' then 1 end);
+% .t0 # table_name
+% c1 # name
+% varchar # type
+% 0 # length
 #select t0.c1 from t0 where (5) in (case when t0.c1 = 'a' then 1 end, (select 3 from t0));
 % .t0 # table_name
 % c1 # name

@@ -1380,7 +1380,7 @@ static str
 STRbatSubstitute(bat *ret, const bat *l, const bat *arg2, const bat *arg3, const bat *rep)
 {
 	BATiter lefti, arg2i, arg3i;
-	BAT *bn = NULL, *left, *arg2b = NULL, *arg3b = NULL, *repb;
+	BAT *bn = NULL, *left, *arg2b = NULL, *arg3b = NULL, *repb = NULL;
 	BUN p,q;
 	str y = NULL, err = MAL_SUCCEED;
 	bit *restrict repi;
@@ -1498,7 +1498,7 @@ static str
 STRbatsplitpart(bat *ret, const bat *l, const bat *r, const bat *t)
 {
 	BATiter lefti, arg2i;
-	BAT *bn = NULL, *left, *arg2b = NULL, *arg3b;
+	BAT *bn = NULL, *left, *arg2b = NULL, *arg3b = NULL;
 	BUN p,q;
 	str y = NULL, err = MAL_SUCCEED;
 	int *restrict fieldi;
@@ -1612,7 +1612,7 @@ static str
 STRbatReplace(bat *ret, const bat *l, const bat *s, const bat *s2)
 {
 	BATiter lefti, arg2i, arg3i;
-	BAT *bn = NULL, *left, *arg2b = NULL, *arg3b;
+	BAT *bn = NULL, *left, *arg2b = NULL, *arg3b = NULL;
 	BUN p,q;
 	str y = NULL, err = MAL_SUCCEED;
 
@@ -1675,7 +1675,7 @@ static str
 STRbatInsert(bat *ret, const bat *l, const bat *start, const bat *ll, const bat *s2)
 {
 	BATiter lefti, s2i;
-	BAT *bn = NULL, *left, *startb = NULL, *lb = NULL, *s2b;
+	BAT *bn = NULL, *left, *startb = NULL, *lb = NULL, *s2b = NULL;
 	BUN p,q;
 	str y = NULL, err = MAL_SUCCEED;
 	int *starti, *li;

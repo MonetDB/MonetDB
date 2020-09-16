@@ -1336,6 +1336,7 @@ push_up_set(mvc *sql, sql_rel *rel, list *ad)
 			/* D djoin (sl setop sr) -> (D djoin sl) setop (D djoin sr) */
 			rel->r = sl;
 			n = rel_crossproduct(sql->sa, rel_dup(d), sr, rel->op);
+			n->exps = exps_copy(sql, rel->exps);
 			set_dependent(n);
 			s->l = rel;
 			s->r = n;
@@ -1575,14 +1576,14 @@ rewrite_exp_rel(visitor *v, sql_rel *rel, sql_exp *e, int depth)
 			/* use a dummy projection for the single join */
 			sql_rel *nrel = rel_project(v->sql->sa, NULL, append(sa_list(v->sql->sa), exp_atom_bool(v->sql->sa, 1)));
 
-			if (!rewrite_inner(v->sql, nrel, inner, depth?op_left:op_join))
+			if (!rewrite_inner(v->sql, nrel, inner, (depth > 0 && is_exists_rewritter(v->properties))?op_left:op_join))
 				return NULL;
 			/* has to apply recursively */
 			if (!(e->l = rel_exp_visitor_bottomup(v, nrel, &rewrite_exp_rel, true)))
 				return NULL;
 		}
 	} else if (exp_has_rel(e) && !is_ddl(rel->op)) {
-		sql_exp *ne = rewrite_inner(v->sql, rel, exp_rel_get_rel(v->sql->sa, e), depth?op_left:op_join);
+		sql_exp *ne = rewrite_inner(v->sql, rel, exp_rel_get_rel(v->sql->sa, e), (depth > 0 && is_exists_rewritter(v->properties))?op_left:op_join);
 
 		if (!ne)
 			return ne;
@@ -2617,7 +2618,7 @@ rewrite_exists(visitor *v, sql_rel *rel, sql_exp *e, int depth)
 					ne = le;
 
 				if (exp_has_rel(ie)) {
-					visitor iv = { .sql = v->sql };
+					visitor iv = { .sql = v->sql, .properties = exists_rewritter };
 					if (!rewrite_exp_rel(&iv, rel, ie, depth))
 						return NULL;
 				}

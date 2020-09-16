@@ -49,7 +49,7 @@ function user.qry():void;               	#[0] (0)  0
     z:bat[:str] := X_11:bat[:str];	#[4] (0)  5 <- 14 
 end user.qry;	#[19] (0)  
 #inline               actions= 0 time=3 usec 
-#remap                actions= 1 time=153 usec 
+#remap                actions= 1 time=117 usec 
 
 # 20:02:17 >  
 # 20:02:17 >  Done.

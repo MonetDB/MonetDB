@@ -6,35 +6,23 @@ stdout of test 'mal-multiplex.Bug-6939` in directory 'sql/test/BugTracker-2020` 
 # 16:32:49 >  
 
 #select profiler.getlimit();
-% . # table_name
-% getlimit # name
+% .%2 # table_name
+% %2 # name
 % int # type
 % 1 # length
 [ 0	]
 #select wlc.clock();
-% . # table_name
-% clock # name
+% .%2 # table_name
+% %2 # name
 % clob # type
-% 11 # length
-[ "wlc.clock()"	]
+% 0 # length
+[ NULL	]
 #select wlc.tick();
-% . # table_name
-% tick # name
+% .%2 # table_name
+% %2 # name
 % bigint # type
-% 4 # length
-[ 1234	]
-#select wlr.clock();
-% . # table_name
-% clock # name
-% clob # type
-% 11 # length
-[ "wlr.clock()"	]
-#select wlr.tick();
-% . # table_name
-% tick # name
-% bigint # type
-% 4 # length
-[ 1234	]
+% 1 # length
+[ 0	]
 
 # 16:32:49 >  
 # 16:32:49 >  "Done."

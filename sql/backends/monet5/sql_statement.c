@@ -2041,7 +2041,7 @@ stmt_join_cand(backend *be, stmt *op1, stmt *op2, stmt *lcand, stmt *rcand, int 
 		else
 			q = pushArgument(mb, q, rcand->nr);
 		q = pushInt(mb, q, JOIN_NE);
-		q = pushBit(mb, q, FALSE);
+		q = pushBit(mb, q, is_semantics?TRUE:FALSE);
 		q = pushNil(mb, q, TYPE_lng);
 		if (q == NULL)
 			return NULL;
@@ -2063,14 +2063,14 @@ stmt_join_cand(backend *be, stmt *op1, stmt *op2, stmt *lcand, stmt *rcand, int 
 		else
 			q = pushArgument(mb, q, rcand->nr);
 		if (cmptype == cmp_lt)
-			q = pushInt(mb, q, -1);
+			q = pushInt(mb, q, JOIN_LT);
 		else if (cmptype == cmp_lte)
-			q = pushInt(mb, q, -2);
+			q = pushInt(mb, q, JOIN_LE);
 		else if (cmptype == cmp_gt)
-			q = pushInt(mb, q, 1);
+			q = pushInt(mb, q, JOIN_GT);
 		else if (cmptype == cmp_gte)
-			q = pushInt(mb, q, 2);
-		q = pushBit(mb, q, TRUE);
+			q = pushInt(mb, q, JOIN_GE);
+		q = pushBit(mb, q, is_semantics?TRUE:FALSE);
 		q = pushNil(mb, q, TYPE_lng);
 		if (q == NULL)
 			return NULL;

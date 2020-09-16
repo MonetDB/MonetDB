@@ -29,8 +29,7 @@
 #define sql_psm          (1 << 13) //ORed
 #define sql_values       (1 << 14) //ORed
 #define psm_call         (1 << 15) //ORed
-#define sql_merge        (1 << 16) //ORed
-#define sql_or           (1 << 17) //ORed
+#define sql_or           (1 << 16) //ORed
 
 #define is_sql_from(X)         ((X & sql_from) == sql_from)
 #define is_sql_where(X)        ((X & sql_where) == sql_where)
@@ -48,7 +47,6 @@
 #define is_sql_psm(X)          ((X & sql_psm) == sql_psm)
 #define is_sql_values(X)       ((X & sql_values) == sql_values)
 #define is_psm_call(X)         ((X & psm_call) == psm_call)
-#define is_sql_merge(X)        ((X & sql_merge) == sql_merge)
 #define is_sql_or(X)           ((X & sql_or) == sql_or)
 
 #define is_updateble(rel) \
@@ -124,7 +122,11 @@ extern sql_rel *rel_zero_or_one(mvc *sql, sql_rel *rel, exp_kind ek);
 
 extern list *rel_dependencies(mvc *sql, sql_rel *r);
 
+#define exists_rewritter          (1 << 0)  //ORed
+#define is_exists_rewritter(X)    ((X & exists_rewritter) == exists_rewritter)
+
 typedef struct visitor {
+	int properties; /* to be used by visitors */
 	int changes;
 	int depth;		/* depth of the current relation */
 	sql_rel *parent;
