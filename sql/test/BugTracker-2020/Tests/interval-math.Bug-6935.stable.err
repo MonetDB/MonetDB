@@ -13,6 +13,10 @@ MAPI  = (monetdb) /var/tmp/mtest-452588/.s.monetdb.30730
 QUERY = SELECT INTERVAL '3' MONTH * INTERVAL '3' MONTH; --error on typing branch, cannot multiply intervals
 ERROR = !SELECT: no such binary operator 'sql_mul(month_interval,month_interval)'
 CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-37742/.s.monetdb.31621
+QUERY = SELECT 1 / INTERVAL '2' MONTH;  --error on typing branch, cannot divide an integer by an interval
+ERROR = !SELECT: no such binary operator 'sql_div(smallint,month_interval)'
+CODE  = 42000
 
 # 12:56:20 >  
 # 12:56:20 >  "Done."

@@ -119,6 +119,18 @@ stdout of test 'interval-math.Bug-6935` in directory 'sql/test/BugTracker-2020` 
 % sec_interval # type
 % 5 # length
 [ 5.000	]
+#SELECT cast(2.56 as double) * INTERVAL '5' MONTH; -- 13
+% .%2 # table_name
+% %2 # name
+% month_interval # type
+% 2 # length
+[ 13	]
+#SELECT cast(3.1 as real) * INTERVAL '3' SECOND; -- 9.300
+% .%2 # table_name
+% %2 # name
+% sec_interval # type
+% 5 # length
+[ 9.300	]
 #SELECT INTERVAL '1' SECOND / cast(2.0 as double); -- 0.500
 % .%2 # table_name
 % %2 # name

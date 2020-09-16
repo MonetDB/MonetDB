@@ -14,12 +14,17 @@ SELECT INTERVAL '1' HOUR / INTERVAL '1800' SECOND; --error on typing branch, can
 SELECT INTERVAL '3' MONTH * INTERVAL '3' MONTH; --error on typing branch, cannot multiply intervals
 select mya + interval '2' second from (select interval '3' second * 1.2) as mya(mya); -- 5.600
 
+SELECT 1 / INTERVAL '2' MONTH;  --error on typing branch, cannot divide an integer by an interval
+
 SELECT INTERVAL '5' MONTH * cast(2.44 as double); -- 12
 SELECT INTERVAL '5' MONTH * cast(2.29 as real); -- 11
 SELECT INTERVAL '1' MONTH * cast(1.0 as double); -- 1
 SELECT INTERVAL '1' SECOND * cast(2.44 as double); -- 2.440
 SELECT INTERVAL '5' SECOND * cast(2.29 as real); -- 11.450
 SELECT INTERVAL '5' SECOND * cast(1.0 as double); -- 5.000
+
+SELECT cast(2.56 as double) * INTERVAL '5' MONTH; -- 13
+SELECT cast(3.1 as real) * INTERVAL '3' SECOND; -- 9.300
 
 SELECT INTERVAL '1' MONTH / cast(2.0 as double); -- 0
 SELECT INTERVAL '1' MONTH / cast(1.5 as double); -- 0
