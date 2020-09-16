@@ -1008,12 +1008,14 @@ exp_bin(backend *be, sql_exp *e, stmt *left, stmt *right, stmt *grp, stmt *ext, 
 		int nrcands = 0, push_cands = 0;
 
 		if (f->func->side_effect && left && left->nrcols > 0) {
-			if (!exps || list_empty(exps))
-				append(l,
-				stmt_const(be,
-					bin_first_column(be, left),
-					stmt_atom_int(be, 0)));
-			else if (exps_card(exps) < CARD_MULTI) {
+			sql_subfunc *f1 = NULL;
+			/* we cannot assume all SQL functions with no arguments have a correspondent with one argument, so attempt to find it. 'rand' function is the exception */
+			if (list_empty(exps) && (strcmp(f->func->base.name, "rand") == 0 || (f1 = sql_find_func(sql->sa, f->func->s, f->func->base.name, 1, f->func->type, NULL)))) {
+				if (f1)
+					f = f1;
+				list_append(l, stmt_const(be, bin_first_column(be, left), 
+										  stmt_atom(be, atom_general(sql->sa, f1 ? &(((sql_arg*)f1->func->ops->h->data)->type) : sql_bind_localtype("int"), NULL))));
+			} else if (exps_card(exps) < CARD_MULTI) {
 				rows = bin_first_column(be, left);
 			}
 		}
@@ -1070,7 +1072,7 @@ exp_bin(backend *be, sql_exp *e, stmt *left, stmt *right, stmt *grp, stmt *ext, 
 		if (f->func->rel)
 			s = stmt_func(be, stmt_list(be, l), sa_strdup(sql->sa, f->func->base.name), f->func->rel, (f->func->type == F_UNION));
 		else
-			s = stmt_Nop(be, stmt_list(be, l), e->f);
+			s = stmt_Nop(be, stmt_list(be, l), f);
 		if (!s)
 			return NULL;
 		if (s && isel && push_cands && s->nrcols)
