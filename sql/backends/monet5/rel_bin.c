@@ -362,7 +362,7 @@ subrel_project( backend *be, stmt *s, list *refs, sql_rel *rel)
 }
 
 static stmt *
-handle_in_exps(backend *be, sql_exp *ce, list *nl, stmt *left, stmt *right, stmt *grp, stmt *ext, stmt *cnt, stmt *sel, int in, int use_r, int depth, int reduce)
+handle_in_exps(backend *be, sql_exp *ce, list *nl, stmt *left, stmt *right, stmt *grp, stmt *ext, stmt *cnt, stmt *sel, bool in, int use_r, int depth, int reduce)
 {
 	mvc *sql = be->mvc;
 	node *n;
@@ -435,10 +435,9 @@ handle_in_exps(backend *be, sql_exp *ce, list *nl, stmt *left, stmt *right, stmt
 			s = stmt_project(be, stmt_selectnonil(be, s, NULL), s);
 		}
 
-		s = stmt_join(be, c, s, in, cmp_equal, 1, 0, false);
-		s = stmt_result(be, s, 0);
-
-		if (!in) {
+		if (in) {
+			s = stmt_semijoin(be, c, s, sel, NULL, 0, false);
+		} else {
 			if (last_null_value) {
 				/* CORNER CASE ALERT:
 				   In case of a not-in-expression with the associated in-value-list containing a null value,
@@ -450,23 +449,14 @@ handle_in_exps(backend *be, sql_exp *ce, list *nl, stmt *left, stmt *right, stmt
 				   list* singleton_bat = sa_list(sql->sa);
 				   list_append(singleton_bat, null_value); */
 				s = stmt_uselect(be, c, last_null_value, cmp_equal, NULL, 0, 0);
-				return s;
-			}
-			else {
+			} else {
 				/* BACK TO HAPPY FLOW:
 				   Make sure that null values are never returned. */
 				stmt* non_nulls;
-				non_nulls = stmt_selectnonil(be, c, NULL);
-				s = stmt_tdiff(be, non_nulls, s, NULL);
+				non_nulls = stmt_selectnonil(be, c, sel);
+				s = stmt_tdiff(be, stmt_project(be, non_nulls, c), s, NULL);
 				s = stmt_project(be, s, non_nulls);
 			}
-		}
-
-		if (sel) {
-			stmt* oid_intersection;
-			oid_intersection = stmt_tinter(be, s, sel, false);
-			s = stmt_project(be, oid_intersection, s);
-			s = stmt_result(be, s, 0);
 		}
 	}
 	return s;
