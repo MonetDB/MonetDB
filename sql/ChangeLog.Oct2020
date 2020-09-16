@@ -56,3 +56,8 @@
   Instead do SET current_timezone = interval '1' hour;
   Casting between interval and other numeric types is no longer possible
   as well, because they are not compatible.
+  
+* Mon Aug 31 2020 Pedro Ferreira <pedro.ferreira@monetdbsolutions.com>
+- Made general logarithm function log(x,base) compliant with the SQL 
+  standard, by swapping the input parameters.
+  Instead of log(x,base), now is log(base,x).
