@@ -83,14 +83,15 @@ target_sources(bat
 
 target_include_directories(bat
   PUBLIC
+  $<TARGET_PROPERTY:stream,INTERFACE_INCLUDE_DIRECTORIES>
+  $<TARGET_PROPERTY:matomic,INTERFACE_INCLUDE_DIRECTORIES>
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
   $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}/monetdb>)
 
 target_link_libraries(bat
-  PUBLIC
+  PRIVATE
   stream
   matomic
-  PRIVATE
   monetdb_config_header
   moptions
   mutils

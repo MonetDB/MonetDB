@@ -34,8 +34,11 @@ configure_file(monet_version.c.in
 
 target_include_directories(mserver5
   PRIVATE
-  $<TARGET_PROPERTY:mal,INCLUDE_DIRECTORIES>
-  $<TARGET_PROPERTY:sql,INCLUDE_DIRECTORIES>
+  $<$<BOOL:${LibXml2_FOUND}>:$<TARGET_PROPERTY:LibXml2::LibXml2,INTERFACE_INCLUDE_DIRECTORIES>>
+  $<$<BOOL:${COMMONCRYPTO_FOUND}>:${COMMONCRYPTO_INCLUDE_DIR}>
+  $<$<BOOL:${OPENSSL_FOUND}>:$<TARGET_PROPERTY:OpenSSL::Crypto,INTERFACE_INCLUDE_DIRECTORIES>>
+  $<TARGET_PROPERTY:mal,INTERFACE_INCLUDE_DIRECTORIES>
+  $<TARGET_PROPERTY:sql,INTERFACE_INCLUDE_DIRECTORIES>
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>)
 
 target_link_libraries(mserver5
@@ -46,12 +49,9 @@ target_link_libraries(mserver5
   mutils
   mcrypt
   bat
-  mapi
   monetdb5
-  $<$<NOT:$<PLATFORM_ID:Windows>>:m>
   $<$<PLATFORM_ID:Windows>:${GETOPT_LIB}>
   $<$<BOOL:${PCRE_FOUND}>:PCRE::PCRE>
-  $<$<NOT:$<PLATFORM_ID:Windows>>:$<$<BOOL:${LibXml2_FOUND}>:LibXml2::LibXml2>>
   Threads::Threads)
 
 add_executable(shutdowntest)
@@ -61,8 +61,14 @@ target_sources(shutdowntest
 
 target_include_directories(shutdowntest
   PRIVATE
-  $<TARGET_PROPERTY:mal,INCLUDE_DIRECTORIES>
-  $<TARGET_PROPERTY:sql,INCLUDE_DIRECTORIES>
+  $<TARGET_PROPERTY:mal,INTERFACE_INCLUDE_DIRECTORIES>
+  $<TARGET_PROPERTY:malmodules,INTERFACE_INCLUDE_DIRECTORIES>
+  $<TARGET_PROPERTY:atoms,INTERFACE_INCLUDE_DIRECTORIES>
+  $<TARGET_PROPERTY:sql,INTERFACE_INCLUDE_DIRECTORIES>
+  $<TARGET_PROPERTY:sqlinclude,INTERFACE_INCLUDE_DIRECTORIES>
+  $<TARGET_PROPERTY:sqlserver,INTERFACE_INCLUDE_DIRECTORIES>
+  $<TARGET_PROPERTY:sqlcommon,INTERFACE_INCLUDE_DIRECTORIES>
+  $<TARGET_PROPERTY:sqlstorage,INTERFACE_INCLUDE_DIRECTORIES>
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>)
 
 target_link_libraries(shutdowntest
@@ -74,12 +80,9 @@ target_link_libraries(shutdowntest
   mutils
   mcrypt
   bat
-  mapi
+  stream
   monetdb5
-  $<$<NOT:$<PLATFORM_ID:Windows>>:m>
   $<$<PLATFORM_ID:Windows>:${GETOPT_LIB}>
-  $<$<BOOL:${PCRE_FOUND}>:PCRE::PCRE>
-  $<$<NOT:$<PLATFORM_ID:Windows>>:$<$<BOOL:${LibXml2_FOUND}>:LibXml2::LibXml2>>
   Threads::Threads)
 
 install(TARGETS

@@ -55,9 +55,8 @@ target_include_directories(mcrypt
   $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}/monetdb>)
 
 target_link_libraries(mcrypt
-  PUBLIC
-  $<$<BOOL:${OPENSSL_FOUND}>:OpenSSL::Crypto>
   PRIVATE
+  $<$<BOOL:${OPENSSL_FOUND}>:OpenSSL::Crypto>
   monetdb_config_header)
 
 if(WIN32)
@@ -92,10 +91,9 @@ target_include_directories(msabaoth
   $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}/monetdb>)
 
 target_link_libraries(msabaoth
-  PUBLIC
+  PRIVATE
   $<$<BOOL:${UUID_FOUND}>:UUID::UUID>
   $<$<BOOL:${OPENSSL_FOUND}>:OpenSSL::Crypto>
-  PRIVATE
   mutils
   monetdb_config_header)
 

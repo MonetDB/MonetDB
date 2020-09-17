@@ -40,6 +40,10 @@ target_sources(mclient
   mhelp.c
   mhelp.h)
 
+target_include_directories(mclient
+  PRIVATE
+  $<$<PLATFORM_ID:Windows>:${HAVE_GETOPT_H}>)
+
 target_link_libraries(mclient
   PRIVATE
   monetdb_config_header
@@ -49,6 +53,7 @@ target_link_libraries(mclient
   mapi
   stream
   $<$<BOOL:${READLINE_FOUND}>:Readline::Readline>
+  $<$<BOOL:${Iconv_FOUND}>:Iconv::Iconv>
   $<$<PLATFORM_ID:Windows>:${GETOPT_LIB}>)
 
 add_executable(msqldump)
@@ -57,6 +62,10 @@ target_sources(msqldump
   PRIVATE
   msqldump.c
   msqldump.h)
+
+target_include_directories(msqldump
+  PRIVATE
+  $<$<PLATFORM_ID:Windows>:${HAVE_GETOPT_H}>)
 
 target_link_libraries(msqldump
   PRIVATE
@@ -73,6 +82,10 @@ add_executable(stethoscope)
 target_sources(stethoscope
   PRIVATE
   stethoscope.c)
+
+target_include_directories(stethoscope
+  PRIVATE
+  $<$<PLATFORM_ID:Windows>:${HAVE_GETOPT_H}>)
 
 target_link_libraries(stethoscope
   PRIVATE

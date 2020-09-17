@@ -6,7 +6,7 @@
 # Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
 #]]
 
-include_directories(${ODBC_INCLUDE_DIR})
+include_directories($<$<BOOL:${ODBC_FOUND}>:${ODBC_INCLUDE_DIR}>)
 
 if(TESTING)
   add_executable(odbcsample1
