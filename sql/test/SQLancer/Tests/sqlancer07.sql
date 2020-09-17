@@ -186,3 +186,19 @@ SELECT CAST(sum((((VALUES (NULLIF(0, 1.09949409E8))))*(t0.c0))) AS BIGINT) FROM 
 (VALUES ((t0.c1) NOT BETWEEN ASYMMETRIC (CAST(140698873 AS DECIMAL)) AND (((SELECT DISTINCT t0.c1 FROM t0, t1, t2) EXCEPT DISTINCT (SELECT t0.c1 FROM t0, t2 WHERE TRUE)))));
 	-- 0
 ROLLBACK;
+
+START TRANSACTION;
+CREATE TABLE "t1" ("c0" DOUBLE PRECISION NOT NULL);
+
+select 1 from (values (0.86), ((select 3 from t1))) as sub0(c0);
+	-- 1
+	-- 1
+select sub0.c0 from (values (0.86), ((select 3 from t1))) as sub0(c0); -- this one is right
+	-- 0.86
+	-- NULL
+select sub0.c0 from (values (0.86), ((select 3 from t1))) as sub0(c0) WHERE NOT TRUE;
+	-- empty
+select sub0.c0 from (values (0.86), ((select 3))) as sub0(c0);
+	-- 0.86
+	-- 3.00
+ROLLBACK;
