@@ -161,4 +161,4 @@ SELECT 1 WHERE (SELECT 1 WHERE FALSE) IS NULL;
 	-- 1
 
 PREPARE SELECT 1 WHERE greatest(true, ?);
-	-- ? should be set to true
+	-- ? should be set to boolean
