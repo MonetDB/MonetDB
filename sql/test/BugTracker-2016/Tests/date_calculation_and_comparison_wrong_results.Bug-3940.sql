@@ -3,6 +3,6 @@ INSERT INTO foo VALUES ('2016-01-01', '2016-01-02');
 INSERT INTO foo VALUES ('2016-01-01', '2016-01-01');
 INSERT INTO foo VALUES ('2016-01-01', '2016-01-31');
 
-SELECT (dat2-dat1), (dat2-dat1) < 10 FROM foo;
+SELECT (dat2-dat1), (dat2-dat1) < interval '10' day FROM foo;
 
 DROP TABLE foo;

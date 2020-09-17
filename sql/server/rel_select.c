@@ -11,6 +11,7 @@
 #include "sql_tokens.h"
 #include "sql_privileges.h"
 #include "sql_env.h"
+#include "sql_decimal.h"
 #include "sql_qc.h"
 #include "rel_rel.h"
 #include "rel_exp.h"
@@ -1217,27 +1218,6 @@ rel_column_ref(sql_query *query, sql_rel **rel, symbol *column_r, int f)
 		return sql_error(sql, 02, SQLSTATE(42000) "TODO: column names of level >= 3");
 	}
 	return exp;
-}
-
-#ifdef HAVE_HGE
-static hge
-#else
-static lng
-#endif
-scale2value(int scale)
-{
-#ifdef HAVE_HGE
-	hge val = 1;
-#else
-	lng val = 1;
-#endif
-
-	if (scale < 0)
-		scale = -scale;
-	for (; scale; scale--) {
-		val = val * 10;
-	}
-	return val;
 }
 
 static sql_exp *
