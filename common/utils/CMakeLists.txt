@@ -116,6 +116,13 @@ target_include_directories(matomic
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
   $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}/monetdb>)
 
+add_library(mstring INTERFACE)
+
+target_include_directories(mstring
+  INTERFACE
+  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
+  $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}/monetdb>)
+
 add_library(mprompt STATIC)
 
 target_sources(mprompt
@@ -147,6 +154,17 @@ install(TARGETS
 
 install(EXPORT matomicTargets
   FILE matomicTargets.cmake
+  NAMESPACE MonetDB::
+  DESTINATION ${EXPORT_TARGET_PATH}
+  COMPONENT monetdbdev)
+
+install(TARGETS
+  mstring
+  EXPORT mstringTargets
+  COMPONENT monetdbdev)
+
+install(EXPORT mstringTargets
+  FILE mstringTargets.cmake
   NAMESPACE MonetDB::
   DESTINATION ${EXPORT_TARGET_PATH}
   COMPONENT monetdbdev)

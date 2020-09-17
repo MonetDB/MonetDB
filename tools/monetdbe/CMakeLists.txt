@@ -52,7 +52,6 @@ target_link_libraries(monetdbe
   matomic
   moptions
   mutils
-  mcrypt
   stream
   bat
   monetdb5

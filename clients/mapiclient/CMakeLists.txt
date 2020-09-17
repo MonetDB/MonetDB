@@ -17,16 +17,12 @@ target_sources(mcutil
   PRIVATE
   dump.c
   dotmonetdb.c
-  dotmonetdb.h
-  eventparser.c
-  eventparser.h)
+  dotmonetdb.h)
 
 target_link_libraries(mcutil
   PRIVATE
   monetdb_config_header
-  mutils
-  mcrypt
-  moptions
+  mstring
   mapi
   stream)
 
@@ -50,6 +46,7 @@ target_link_libraries(mclient
   mcutil
   mprompt
   moptions
+  mutils
   mapi
   stream
   $<$<BOOL:${READLINE_FOUND}>:Readline::Readline>
@@ -72,6 +69,7 @@ target_link_libraries(msqldump
   monetdb_config_header
   mcutil
   moptions
+  mutils
   mapi
   stream
   mprompt
@@ -81,7 +79,9 @@ add_executable(stethoscope)
 
 target_sources(stethoscope
   PRIVATE
-  stethoscope.c)
+  stethoscope.c
+  eventparser.c
+  eventparser.h)
 
 target_include_directories(stethoscope
   PRIVATE

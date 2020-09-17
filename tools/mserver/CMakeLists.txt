@@ -78,7 +78,6 @@ target_link_libraries(shutdowntest
   moptions
   sql
   mutils
-  mcrypt
   bat
   stream
   monetdb5
