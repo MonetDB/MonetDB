@@ -554,6 +554,188 @@ str RMTreadbatheader(stream* sin, char* buf) {
 		return MAL_SUCCEED;
 }
 
+typedef struct _binbat_v1 {
+	int Ttype;
+	oid Hseqbase;
+	oid Tseqbase;
+	bool
+		Tsorted:1,
+		Trevsorted:1,
+		Tkey:1,
+		Tnonil:1,
+		Tdense:1;
+	BUN size;
+	size_t headsize;
+	size_t tailsize;
+	size_t theapsize;
+} binbat;
+
+static str
+RMTinternalcopyfrom(BAT **ret, char *hdr, stream *in, bool must_flush)
+{
+	binbat bb = { 0, 0, 0, false, false, false, false, false, 0, 0, 0, 0 };
+	char *nme = NULL;
+	char *val = NULL;
+	char tmp;
+	size_t len;
+	lng lv, *lvp;
+
+	BAT *b;
+
+	/* hdr is a JSON structure that looks like
+	 * {"version":1,"ttype":6,"tseqbase":0,"tailsize":4,"theapsize":0}
+	 * we take the binary data directly from the stream */
+
+	/* could skip whitespace, but we just don't allow that */
+	if (*hdr++ != '{')
+		throw(MAL, "remote.bincopyfrom", "illegal input, not a JSON header (got '%s')", hdr - 1);
+	while (*hdr != '\0') {
+		switch (*hdr) {
+			case '"':
+				/* we assume only numeric values, so all strings are
+				 * elems */
+				if (nme != NULL) {
+					*hdr = '\0';
+				} else {
+					nme = hdr + 1;
+				}
+				break;
+			case ':':
+				val = hdr + 1;
+				break;
+			case ',':
+			case '}':
+				if (val == NULL)
+					throw(MAL, "remote.bincopyfrom",
+							"illegal input, JSON value missing");
+				*hdr = '\0';
+
+				lvp = &lv;
+				len = sizeof(lv);
+				/* tseqbase can be 1<<31/1<<63 which causes overflow
+				 * in lngFromStr, so we check separately */
+				if (strcmp(val,
+#if SIZEOF_OID == 8
+						   "9223372036854775808"
+#else
+						   "2147483648"
+#endif
+						) == 0 &&
+					strcmp(nme, "tseqbase") == 0) {
+					bb.Tseqbase = oid_nil;
+				} else {
+					/* all values should be non-negative, so we check that
+					 * here as well */
+					if (lngFromStr(val, &len, &lvp, true) < 0 ||
+						lv < 0 /* includes lng_nil */)
+						throw(MAL, "remote.bincopyfrom",
+							  "bad %s value: %s", nme, val);
+
+					/* deal with nme and val */
+					if (strcmp(nme, "version") == 0) {
+						if (lv != 1)
+							throw(MAL, "remote.bincopyfrom",
+								  "unsupported version: %s", val);
+					} else if (strcmp(nme, "hseqbase") == 0) {
+#if SIZEOF_OID < SIZEOF_LNG
+						if (lv > GDK_oid_max)
+							throw(MAL, "remote.bincopyfrom",
+									  "bad %s value: %s", nme, val);
+#endif
+						bb.Hseqbase = (oid)lv;
+					} else if (strcmp(nme, "ttype") == 0) {
+						if (lv >= GDKatomcnt)
+							throw(MAL, "remote.bincopyfrom",
+								  "bad %s value: %s", nme, val);
+						bb.Ttype = (int) lv;
+					} else if (strcmp(nme, "tseqbase") == 0) {
+#if SIZEOF_OID < SIZEOF_LNG
+						if (lv > GDK_oid_max)
+							throw(MAL, "remote.bincopyfrom",
+								  "bad %s value: %s", nme, val);
+#endif
+						bb.Tseqbase = (oid) lv;
+					} else if (strcmp(nme, "tsorted") == 0) {
+						bb.Tsorted = lv != 0;
+					} else if (strcmp(nme, "trevsorted") == 0) {
+						bb.Trevsorted = lv != 0;
+					} else if (strcmp(nme, "tkey") == 0) {
+						bb.Tkey = lv != 0;
+					} else if (strcmp(nme, "tnonil") == 0) {
+						bb.Tnonil = lv != 0;
+					} else if (strcmp(nme, "tdense") == 0) {
+						bb.Tdense = lv != 0;
+					} else if (strcmp(nme, "size") == 0) {
+						if (lv > (lng) BUN_MAX)
+							throw(MAL, "remote.bincopyfrom",
+								  "bad %s value: %s", nme, val);
+						bb.size = (BUN) lv;
+					} else if (strcmp(nme, "tailsize") == 0) {
+						bb.tailsize = (size_t) lv;
+					} else if (strcmp(nme, "theapsize") == 0) {
+						bb.theapsize = (size_t) lv;
+					} else {
+						throw(MAL, "remote.bincopyfrom",
+							  "unknown element: %s", nme);
+					}
+				}
+				nme = val = NULL;
+				break;
+		}
+		hdr++;
+	}
+
+	b = COLnew(0, bb.Ttype, bb.size, TRANSIENT);
+	if (b == NULL)
+		throw(MAL, "remote.get", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+
+	/* for strings, the width may not match, fix it to match what we
+	 * retrieved */
+	if (bb.Ttype == TYPE_str && bb.size) {
+		b->twidth = (unsigned short) (bb.tailsize / bb.size);
+		b->tshift = ATOMelmshift(Tsize(b));
+	}
+
+	if (bb.tailsize > 0) {
+		if (HEAPextend(&b->theap, bb.tailsize, true) != GDK_SUCCEED ||
+			mnstr_read(in, b->theap.base, bb.tailsize, 1) < 0)
+			goto bailout;
+		b->theap.dirty = true;
+	}
+	if (bb.theapsize > 0) {
+		if (HEAPextend(b->tvheap, bb.theapsize, true) != GDK_SUCCEED ||
+			mnstr_read(in, b->tvheap->base, bb.theapsize, 1) < 0)
+			goto bailout;
+		b->tvheap->free = bb.theapsize;
+		b->tvheap->dirty = true;
+	}
+
+	/* set properties */
+	b->tseqbase = bb.Tdense ? bb.Tseqbase : oid_nil;
+	b->tsorted = bb.Tsorted;
+	b->trevsorted = bb.Trevsorted;
+	b->tkey = bb.Tkey;
+	b->tnonil = bb.Tnonil;
+	if (bb.Ttype == TYPE_str && bb.size)
+		BATsetcapacity(b, (BUN) (bb.tailsize >> b->tshift));
+	BATsetcount(b, bb.size);
+	b->batDirtydesc = true;
+
+	// read blockmode flush
+	while (must_flush && mnstr_read(in, &tmp, 1, 1) > 0) {
+		TRC_ERROR(MAL_REMOTE, "Expected flush, got: %c\n", tmp);
+	}
+
+	BATsettrivprop(b);
+
+	*ret = b;
+	return(MAL_SUCCEED);
+
+  bailout:
+	BBPreclaim(b);
+	throw(MAL, "remote.bincopyfrom", "reading failed");
+}
+
 /**
  * get fetches the object referenced by ident over connection conn.
  * We are only interested in retrieving void-headed BATs, i.e. single columns.
@@ -699,7 +881,7 @@ str RMTget(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 			return tmp;
 		}
 
-		if ((tmp = RMTinternalcopyfrom(&b, buf, sin)) != NULL) {
+		if ((tmp = RMTinternalcopyfrom(&b, buf, sin, true)) != NULL) {
 			MT_lock_unset(&c->lock);
 			return(tmp);
 		}
@@ -1102,7 +1284,7 @@ str RMTexec(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 
 	/* Temporary hack:
 	 * use a callback to immediately handle columnar results before hdl is destroyed. */
-	if(tmp == MAL_SUCCEED && rcb && mhdl && mapi_get_field_count(mhdl) == Q_TABLE) {
+	if(tmp == MAL_SUCCEED && rcb && mhdl && mapi_get_querytype(mhdl) == Q_TABLE) {
 
 		int fields = mapi_get_field_count(mhdl);
 
@@ -1126,7 +1308,7 @@ str RMTexec(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 			BAT *b = NULL;
 
 			RMTreadbatheader(sin, buf);
-			RMTinternalcopyfrom(&b, buf, sin);
+			RMTinternalcopyfrom(&b, buf, sin, i == fields - 1);
 
 			if ( b == NULL) {
 				tmp= createException(MAL,"sql.resultset",SQLSTATE(HY005) "Cannot access column descriptor ");
@@ -1289,188 +1471,6 @@ str RMTbincopyto(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	return(MAL_SUCCEED);
 }
 
-typedef struct _binbat_v1 {
-	int Ttype;
-	oid Hseqbase;
-	oid Tseqbase;
-	bool
-		Tsorted:1,
-		Trevsorted:1,
-		Tkey:1,
-		Tnonil:1,
-		Tdense:1;
-	BUN size;
-	size_t headsize;
-	size_t tailsize;
-	size_t theapsize;
-} binbat;
-
-str
-RMTinternalcopyfrom(BAT **ret, char *hdr, stream *in)
-{
-	binbat bb = { 0, 0, 0, false, false, false, false, false, 0, 0, 0, 0 };
-	char *nme = NULL;
-	char *val = NULL;
-	char tmp;
-	size_t len;
-	lng lv, *lvp;
-
-	BAT *b;
-
-	/* hdr is a JSON structure that looks like
-	 * {"version":1,"ttype":6,"tseqbase":0,"tailsize":4,"theapsize":0}
-	 * we take the binary data directly from the stream */
-
-	/* could skip whitespace, but we just don't allow that */
-	if (*hdr++ != '{')
-		throw(MAL, "remote.bincopyfrom", "illegal input, not a JSON header (got '%s')", hdr - 1);
-	while (*hdr != '\0') {
-		switch (*hdr) {
-			case '"':
-				/* we assume only numeric values, so all strings are
-				 * elems */
-				if (nme != NULL) {
-					*hdr = '\0';
-				} else {
-					nme = hdr + 1;
-				}
-				break;
-			case ':':
-				val = hdr + 1;
-				break;
-			case ',':
-			case '}':
-				if (val == NULL)
-					throw(MAL, "remote.bincopyfrom",
-							"illegal input, JSON value missing");
-				*hdr = '\0';
-
-				lvp = &lv;
-				len = sizeof(lv);
-				/* tseqbase can be 1<<31/1<<63 which causes overflow
-				 * in lngFromStr, so we check separately */
-				if (strcmp(val,
-#if SIZEOF_OID == 8
-						   "9223372036854775808"
-#else
-						   "2147483648"
-#endif
-						) == 0 &&
-					strcmp(nme, "tseqbase") == 0) {
-					bb.Tseqbase = oid_nil;
-				} else {
-					/* all values should be non-negative, so we check that
-					 * here as well */
-					if (lngFromStr(val, &len, &lvp, true) < 0 ||
-						lv < 0 /* includes lng_nil */)
-						throw(MAL, "remote.bincopyfrom",
-							  "bad %s value: %s", nme, val);
-
-					/* deal with nme and val */
-					if (strcmp(nme, "version") == 0) {
-						if (lv != 1)
-							throw(MAL, "remote.bincopyfrom",
-								  "unsupported version: %s", val);
-					} else if (strcmp(nme, "hseqbase") == 0) {
-#if SIZEOF_OID < SIZEOF_LNG
-						if (lv > GDK_oid_max)
-							throw(MAL, "remote.bincopyfrom",
-									  "bad %s value: %s", nme, val);
-#endif
-						bb.Hseqbase = (oid)lv;
-					} else if (strcmp(nme, "ttype") == 0) {
-						if (lv >= GDKatomcnt)
-							throw(MAL, "remote.bincopyfrom",
-								  "bad %s value: %s", nme, val);
-						bb.Ttype = (int) lv;
-					} else if (strcmp(nme, "tseqbase") == 0) {
-#if SIZEOF_OID < SIZEOF_LNG
-						if (lv > GDK_oid_max)
-							throw(MAL, "remote.bincopyfrom",
-								  "bad %s value: %s", nme, val);
-#endif
-						bb.Tseqbase = (oid) lv;
-					} else if (strcmp(nme, "tsorted") == 0) {
-						bb.Tsorted = lv != 0;
-					} else if (strcmp(nme, "trevsorted") == 0) {
-						bb.Trevsorted = lv != 0;
-					} else if (strcmp(nme, "tkey") == 0) {
-						bb.Tkey = lv != 0;
-					} else if (strcmp(nme, "tnonil") == 0) {
-						bb.Tnonil = lv != 0;
-					} else if (strcmp(nme, "tdense") == 0) {
-						bb.Tdense = lv != 0;
-					} else if (strcmp(nme, "size") == 0) {
-						if (lv > (lng) BUN_MAX)
-							throw(MAL, "remote.bincopyfrom",
-								  "bad %s value: %s", nme, val);
-						bb.size = (BUN) lv;
-					} else if (strcmp(nme, "tailsize") == 0) {
-						bb.tailsize = (size_t) lv;
-					} else if (strcmp(nme, "theapsize") == 0) {
-						bb.theapsize = (size_t) lv;
-					} else {
-						throw(MAL, "remote.bincopyfrom",
-							  "unknown element: %s", nme);
-					}
-				}
-				nme = val = NULL;
-				break;
-		}
-		hdr++;
-	}
-
-	b = COLnew(0, bb.Ttype, bb.size, TRANSIENT);
-	if (b == NULL)
-		throw(MAL, "remote.get", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-
-	/* for strings, the width may not match, fix it to match what we
-	 * retrieved */
-	if (bb.Ttype == TYPE_str && bb.size) {
-		b->twidth = (unsigned short) (bb.tailsize / bb.size);
-		b->tshift = ATOMelmshift(Tsize(b));
-	}
-
-	if (bb.tailsize > 0) {
-		if (HEAPextend(&b->theap, bb.tailsize, true) != GDK_SUCCEED ||
-			mnstr_read(in, b->theap.base, bb.tailsize, 1) < 0)
-			goto bailout;
-		b->theap.dirty = true;
-	}
-	if (bb.theapsize > 0) {
-		if (HEAPextend(b->tvheap, bb.theapsize, true) != GDK_SUCCEED ||
-			mnstr_read(in, b->tvheap->base, bb.theapsize, 1) < 0)
-			goto bailout;
-		b->tvheap->free = bb.theapsize;
-		b->tvheap->dirty = true;
-	}
-
-	/* set properties */
-	b->tseqbase = bb.Tdense ? bb.Tseqbase : oid_nil;
-	b->tsorted = bb.Tsorted;
-	b->trevsorted = bb.Trevsorted;
-	b->tkey = bb.Tkey;
-	b->tnonil = bb.Tnonil;
-	if (bb.Ttype == TYPE_str && bb.size)
-		BATsetcapacity(b, (BUN) (bb.tailsize >> b->tshift));
-	BATsetcount(b, bb.size);
-	b->batDirtydesc = true;
-
-	/* read blockmode flush */
-	while (mnstr_read(in, &tmp, 1, 1) > 0) {
-		TRC_ERROR(MAL_REMOTE, "Expected flush, got: %c\n", tmp);
-	}
-
-	BATsettrivprop(b);
-
-	*ret = b;
-	return(MAL_SUCCEED);
-
-  bailout:
-	BBPreclaim(b);
-	throw(MAL, "remote.bincopyfrom", "reading failed");
-}
-
 /**
  * read from the input stream and give the BAT handle back to the caller
  */
@@ -1491,7 +1491,7 @@ str RMTbincopyfrom(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 
 	cntxt->fdin->buf[cntxt->fdin->len] = '\0';
 	err = RMTinternalcopyfrom(&b,
-			&cntxt->fdin->buf[cntxt->fdin->pos], cntxt->fdin->s);
+			&cntxt->fdin->buf[cntxt->fdin->pos], cntxt->fdin->s, true);
 	/* skip the JSON line */
 	cntxt->fdin->pos = ++cntxt->fdin->len;
 	if (err != MAL_SUCCEED)
