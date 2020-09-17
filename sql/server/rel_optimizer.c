@@ -4670,14 +4670,18 @@ rel_push_select_down_join(visitor *v, sql_rel *rel)
 			sql_exp *e = n->data;
 			if (rel_rebind_exp(v->sql, rel->l, e)) {
 				sql_rel *l = rel->l;
-				if (!is_select(l->op))
+				if (!is_select(l->op)) {
+					set_processed(l);
 					rel->l = l = rel_select(v->sql->sa, rel->l, NULL);
+				}
 				rel_select_add_exp(v->sql->sa, rel->l, e);
 				v->changes++;
 			} else if (rel_rebind_exp(v->sql, rel->r, e)) {
 				sql_rel *r = rel->r;
-				if (!is_select(r->op))
+				if (!is_select(r->op)) {
+					set_processed(r);
 					rel->r = r = rel_select(v->sql->sa, rel->r, NULL);
+				}
 				rel_select_add_exp(v->sql->sa, rel->r, e);
 				v->changes++;
 			} else {
