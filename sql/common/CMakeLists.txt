@@ -43,11 +43,7 @@ target_link_libraries(sqlcommon
 
 target_compile_definitions(sqlcommon
   PRIVATE
-  LIBSQL
-  LIBSQLSERVER
-  LIBSQLCOMMON
-  LIBBATSTORE
-  LIBSTORE)
+  LIBSQL)
 
 set_target_properties(sqlcommon
   PROPERTIES

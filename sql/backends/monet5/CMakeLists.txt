@@ -124,11 +124,7 @@ set_target_properties(sql
 target_compile_definitions(sql
   PRIVATE
   LIBMCRYPT
-  LIBSQL
-  LIBSQLSERVER
-  LIBSQLCOMMON
-  LIBBATSTORE
-  LIBSTORE)
+  LIBSQL)
 
 install(TARGETS
   sql

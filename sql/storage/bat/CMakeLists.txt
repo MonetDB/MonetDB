@@ -45,8 +45,4 @@ set_target_properties(batstore
 
 target_compile_definitions(batstore
   PRIVATE
-  LIBSQL
-  LIBSQLSERVER
-  LIBSQLCOMMON
-  LIBBATSTORE
-  LIBSTORE)
+  LIBSQL)

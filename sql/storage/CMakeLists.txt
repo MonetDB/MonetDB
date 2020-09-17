@@ -41,10 +41,6 @@ set_target_properties(sqlstorage
 
 target_compile_definitions(sqlstorage
   PRIVATE
-  LIBSQL
-  LIBSQLSERVER
-  LIBSQLCOMMON
-  LIBBATSTORE
-  LIBSTORE)
+  LIBSQL)
 
 add_subdirectory(bat)

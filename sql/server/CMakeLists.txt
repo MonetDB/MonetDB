@@ -105,11 +105,7 @@ target_link_libraries(sqlserver
 
 target_compile_definitions(sqlserver
   PRIVATE
-  LIBSQL
-  LIBSQLSERVER
-  LIBSQLCOMMON
-  LIBBATSTORE
-  LIBSTORE)
+  LIBSQL)
 
 set_target_properties(sqlserver
   PROPERTIES
