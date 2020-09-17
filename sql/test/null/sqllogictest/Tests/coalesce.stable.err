@@ -1,0 +1,23 @@
+stderr of test 'coalesce` in directory 'sql/test/null/sqllogictest` itself:
+
+
+# 10:03:40 >  
+# 10:03:40 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_listenaddr=all" "--set" "mapi_port=36124" "--set" "mapi_usock=/var/tmp/mtest-466387/.s.monetdb.36124" "--forcemito" "--dbpath=/home/svetlin/MyProjects/monetdb/dist/var/MonetDB/mTests_sql_test_null_sqllogictest" "--set" "embedded_c=true"
+# 10:03:40 >  
+
+# builtin opt 	gdk_dbpath = /home/svetlin/MyProjects/monetdb/dist/var/monetdb5/dbfarm/demo
+# builtin opt 	mapi_port = 50000
+# builtin opt 	sql_optimizer = default_pipe
+# builtin opt 	sql_debug = 0
+# builtin opt 	raw_strings = false
+# cmdline opt 	gdk_nr_threads = 0
+# cmdline opt 	mapi_listenaddr = all
+# cmdline opt 	mapi_port = 36124
+# cmdline opt 	mapi_usock = /var/tmp/mtest-466387/.s.monetdb.36124
+# cmdline opt 	gdk_dbpath = /home/svetlin/MyProjects/monetdb/dist/var/MonetDB/mTests_sql_test_null_sqllogictest
+# cmdline opt 	embedded_c = true
+
+# 10:03:40 >  
+# 10:03:40 >  "Done."
+# 10:03:40 >  
+

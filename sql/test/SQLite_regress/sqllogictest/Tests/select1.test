@@ -96,7 +96,7 @@ SELECT CASE WHEN c>(SELECT avg(c) FROM t1) THEN a*2 ELSE b*10 END
   FROM t1
  ORDER BY 1
 ----
-30 values hashing to 3c13dee48d9356ae19af2515e05e6b5
+30 values hashing to 3c13dee48d9356ae19af2515e05e6b54
 
 query II nosort
 SELECT a+b*2+c*3+d*4+e*5,
