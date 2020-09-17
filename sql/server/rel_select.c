@@ -2539,10 +2539,13 @@ rel_logical_exp(sql_query *query, sql_rel *rel, symbol *sc, int f)
 	/* is (NOT) NULL */
 	{
 		sql_exp *le = rel_value_exp(query, &rel, sc->data.sym, f, ek);
+		sql_subtype *t;
 
 		if (!le)
 			return NULL;
-		le = exp_compare(sql->sa, le, exp_atom(sql->sa, atom_general(sql->sa, exp_subtype(le), NULL)), cmp_equal);
+		if (!(t = exp_subtype(le)))
+			return sql_error(sql, 01, SQLSTATE(42000) "Cannot have a parameter (?) for IS%s NULL operator", sc->token == SQL_IS_NOT_NULL ? " NOT" : "");
+		le = exp_compare(sql->sa, le, exp_atom(sql->sa, atom_general(sql->sa, t, NULL)), cmp_equal);
 		if (sc->token == SQL_IS_NOT_NULL)
 			set_anti(le);
 		set_has_no_nil(le);

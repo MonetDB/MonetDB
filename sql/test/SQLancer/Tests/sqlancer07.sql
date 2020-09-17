@@ -166,6 +166,12 @@ PREPARE SELECT 1 WHERE greatest(true, ?);
 PREPARE SELECT (SELECT ? FROM (select 1) as v1(c0));
 	-- cannot determine parameter type
 
+PREPARE SELECT ?, CASE 'weHtU' WHEN (values (?)) THEN 'G' END;
+	-- cannot determine parameter type
+
+PREPARE SELECT DISTINCT ?, CAST(CASE least(?, r'weHtU') WHEN ? THEN ? WHEN ? THEN ? WHEN (VALUES (?)) THEN r'G' ELSE ? END AS DATE) WHERE (?) IS NOT NULL LIMIT 519007555986016405;
+	-- cannot have a parameter for IS NOT NULL operator
+
 START TRANSACTION;
 CREATE TABLE "t0" ("c0" INTEGER,"c1" DECIMAL(18,3));
 INSERT INTO "t0" VALUES (72238796, 0.553);

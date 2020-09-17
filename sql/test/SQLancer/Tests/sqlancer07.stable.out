@@ -232,6 +232,17 @@ stdout of test 'sqlancer07` in directory 'sql/test/SQLancer` itself:
 % 7,	1,	1,	0,	2,	2 # length
 [ "tinyint",	1,	0,	"",	"%2",	"%2"	]
 [ "boolean",	1,	0,	NULL,	NULL,	NULL	]
+#START TRANSACTION;
+#CREATE TABLE "t0" ("c0" INTEGER,"c1" DECIMAL(18,3));
+#INSERT INTO "t0" VALUES (72238796, 0.553);
+[ 1	]
+#CREATE TABLE "t1" ("c0" INTEGER);
+#INSERT INTO "t1" VALUES (-1302854973), (-1302854973), (107900469), (-292023894);
+[ 4	]
+#CREATE TABLE "t2" ("c0" INTEGER);
+#INSERT INTO "t2" VALUES (1), (2), (3);
+[ 3	]
+#ROLLBACK;
 
 # 10:16:14 >  
 # 10:16:14 >  "Done."
