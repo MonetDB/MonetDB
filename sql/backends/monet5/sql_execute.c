@@ -311,7 +311,7 @@ SQLescapeString(str s)
 }
 
 str
-SQLstatementIntern(Client c, str *expr, str nme, bit execute, bit output, res_table **result)
+SQLstatementIntern(Client c, const char *expr, str nme, bit execute, bit output, res_table **result)
 {
 	int status = 0, err = 0, oldvtop, oldstop = 1, inited = 0, ac, sizeframes, topframes;
 	unsigned int label;
@@ -324,10 +324,10 @@ SQLstatementIntern(Client c, str *expr, str nme, bit execute, bit output, res_ta
 	stream *buf = NULL;
 	str msg = MAL_SUCCEED;
 	backend *be = NULL, *sql = (backend *) c->sqlcontext;
-	size_t len = strlen(*expr);
+	size_t len = strlen(expr);
 
 #ifdef _SQL_COMPILE
-	mnstr_printf(c->fdout, "#SQLstatement:%s\n", *expr);
+	mnstr_printf(c->fdout, "#SQLstatement:%s\n", expr);
 #endif
 	if (!sql) {
 		inited = 1;
@@ -389,7 +389,7 @@ SQLstatementIntern(Client c, str *expr, str nme, bit execute, bit output, res_ta
 		msg = createException(SQL,"sql.statement",SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		goto endofcompile;
 	}
-	strncpy(n, *expr, len);
+	strncpy(n, expr, len);
 	n[len] = '\n';
 	n[len + 1] = 0;
 	len++;

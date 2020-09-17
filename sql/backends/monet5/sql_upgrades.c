@@ -144,7 +144,7 @@ sql_fix_system_tables(Client c, mvc *sql, const char *prev_schema)
 
 	assert(pos < bufsize);
 	printf("Running database upgrade commands:\n%s\n", buf);
-	err = SQLstatementIntern(c, &buf, "update", true, false, NULL);
+	err = SQLstatementIntern(c, buf, "update", true, false, NULL);
 	GDKfree(buf);
 	return err;		/* usually MAL_SUCCEED */
 }
@@ -255,7 +255,7 @@ sql_update_hugeint(Client c, mvc *sql, const char *prev_schema, bool *systabfixe
 	assert(pos < bufsize);
 
 	printf("Running database upgrade commands:\n%s\n", buf);
-	err = SQLstatementIntern(c, &buf, "update", true, false, NULL);
+	err = SQLstatementIntern(c, buf, "update", true, false, NULL);
 	GDKfree(buf);
 	return err;		/* usually MAL_SUCCEED */
 }
@@ -303,7 +303,7 @@ sql_update_geom(Client c, mvc *sql, int olddb, const char *prev_schema)
 
 	assert(pos < bufsize);
 	printf("Running database upgrade commands:\n%s\n", buf);
-	err = SQLstatementIntern(c, &buf, "update", true, false, NULL);
+	err = SQLstatementIntern(c, buf, "update", true, false, NULL);
 	GDKfree(buf);
 	return err;		/* usually MAL_SUCCEED */
 }
@@ -332,7 +332,7 @@ sql_update_remote_tables(Client c, mvc *sql, const char *prev_schema)
 
 	assert(pos < bufsize);
 	printf("Running database upgrade commands:\n%s\n", buf);
-	err = SQLstatementIntern(c, &buf, "create function", true, false, NULL);
+	err = SQLstatementIntern(c, buf, "create function", true, false, NULL);
 	if (err)
 		goto bailout;
 
@@ -344,7 +344,7 @@ sql_update_remote_tables(Client c, mvc *sql, const char *prev_schema)
 
 	assert(pos < bufsize);
 
-	err = SQLstatementIntern(c, &buf, "get remote table names", true, false, &output);
+	err = SQLstatementIntern(c, buf, "get remote table names", true, false, &output);
 	if (err)
 		goto bailout;
 
@@ -417,7 +417,7 @@ sql_update_aug2018(Client c, mvc *sql, const char *prev_schema)
 
 	assert(pos < bufsize);
 	printf("Running database upgrade commands:\n%s\n", buf);
-	err = SQLstatementIntern(c, &buf, "update", true, false, NULL);
+	err = SQLstatementIntern(c, buf, "update", true, false, NULL);
 	if (err)
 		goto bailout;
 	err = sql_update_remote_tables(c, sql, prev_schema);
@@ -441,7 +441,7 @@ sql_update_aug2018_sp2(Client c, const char *prev_schema)
 	/* required update for changeset 23e1231ada99 */
 	pos += snprintf(buf + pos, bufsize - pos,
 			"select id from sys.functions where language <> 0 and not side_effect and type <> 4 and (type = 2 or (language <> 2 and id not in (select func_id from sys.args where inout = 1)));\n");
-	err = SQLstatementIntern(c, &buf, "update", true, false, &output);
+	err = SQLstatementIntern(c, buf, "update", true, false, &output);
 	if (err) {
 		GDKfree(buf);
 		return err;
@@ -458,7 +458,7 @@ sql_update_aug2018_sp2(Client c, const char *prev_schema)
 
 			assert(pos < bufsize);
 			printf("Running database upgrade commands:\n%s\n", buf);
-			err = SQLstatementIntern(c, &buf, "update", true, false, NULL);
+			err = SQLstatementIntern(c, buf, "update", true, false, NULL);
 		}
 		BBPunfix(b->batCacheid);
 	}
@@ -501,7 +501,7 @@ sql_drop_functions_dependencies_Xs_on_Ys(Client c, const char *prev_schema)
 	assert(pos < bufsize);
 
 	printf("Running database upgrade commands:\n%s\n", buf);
-	err = SQLstatementIntern(c, &buf, "update", true, false, NULL);
+	err = SQLstatementIntern(c, buf, "update", true, false, NULL);
 	GDKfree(buf);
 	return err;		/* usually MAL_SUCCEED */
 }
@@ -588,7 +588,7 @@ sql_update_apr2019(Client c, mvc *sql, const char *prev_schema)
 
 	assert(pos < bufsize);
 	printf("Running database upgrade commands:\n%s\n", buf);
-	err = SQLstatementIntern(c, &buf, "update", true, false, NULL);
+	err = SQLstatementIntern(c, buf, "update", true, false, NULL);
 	if (err == MAL_SUCCEED) {
 		pos = snprintf(buf, bufsize, "set schema \"sys\";\n"
 			       "ALTER TABLE sys.keywords SET READ ONLY;\n");
@@ -596,7 +596,7 @@ sql_update_apr2019(Client c, mvc *sql, const char *prev_schema)
 		pos += snprintf(buf + pos, bufsize - pos, "set schema \"%s\";\n", prev_schema);
 		assert(pos < bufsize);
 		printf("Running database upgrade commands:\n%s\n", buf);
-		err = SQLstatementIntern(c, &buf, "update", true, false, NULL);
+		err = SQLstatementIntern(c, buf, "update", true, false, NULL);
 	}
 
 	GDKfree(buf);
@@ -913,7 +913,7 @@ sql_update_storagemodel(Client c, mvc *sql, const char *prev_schema)
 	assert(pos < bufsize);
 
 	printf("Running database upgrade commands:\n%s\n", buf);
-	err = SQLstatementIntern(c, &buf, "update", true, false, NULL);
+	err = SQLstatementIntern(c, buf, "update", true, false, NULL);
 	GDKfree(buf);
 	return err;		/* usually MAL_SUCCEED */
 }
@@ -928,7 +928,7 @@ sql_update_apr2019_sp1(Client c)
 
 	/* Determine if missing dependency table entry for unique keys
 	 * is required */
-	err = SQLstatementIntern(c, &qry, "update", true, false, &output);
+	err = SQLstatementIntern(c, qry, "update", true, false, &output);
 	if (err == NULL) {
 		BAT *b = BATdescriptor(output->cols[0].b);
 		if (b) {
@@ -936,7 +936,7 @@ sql_update_apr2019_sp1(Client c)
 				/* required update for changeset 23e1231ada99 */
 				qry = "insert into sys.dependencies (select c.id as id, k.id as depend_id, dt.dependency_type_id as depend_type from sys.dependency_types dt, sys._columns c, sys.keys k, sys.objects o where k.id = o.id and o.name = c.name and c.table_id = k.table_id and dt.dependency_type_name = 'KEY' and k.type = 1 and not exists (select d.id from sys.dependencies d where d.id = c.id and d.depend_id = k.id and d.depend_type = dt.dependency_type_id));\n";
 				printf("Running database upgrade commands:\n%s\n", qry);
-				err = SQLstatementIntern(c, &qry, "update", true, false, NULL);
+				err = SQLstatementIntern(c, qry, "update", true, false, NULL);
 			}
 			BBPunfix(b->batCacheid);
 		}
@@ -971,7 +971,7 @@ sql_update_apr2019_sp2(Client c, mvc *sql, const char *prev_schema, bool *systab
 
 	assert(pos < bufsize);
 	printf("Running database upgrade commands:\n%s\n", buf);
-	err = SQLstatementIntern(c, &buf, "update", true, false, NULL);
+	err = SQLstatementIntern(c, buf, "update", true, false, NULL);
 	GDKfree(buf);
 	return err;		/* usually MAL_SUCCEED */
 }
@@ -982,7 +982,7 @@ sql_update_apr2019_sp2(Client c, mvc *sql, const char *prev_schema, bool *systab
 						") as t1(c1,c2,c3) where t1.c1 not in (select \"id\" from sys.dependencies where depend_id = t1.c2);\n"); \
 		assert(pos < bufsize); \
 		printf("Running database upgrade commands:\n%s\n", buf); \
-		err = SQLstatementIntern(c, &buf, "update", true, false, NULL); \
+		err = SQLstatementIntern(c, buf, "update", true, false, NULL); \
 		if (err) \
 			goto bailout; \
 		pos = 0; \
@@ -1114,7 +1114,7 @@ sql_update_nov2019_missing_dependencies(Client c, mvc *sql)
 
 		assert(pos < bufsize);
 		printf("Running database upgrade commands:\n%s\n", buf);
-		err = SQLstatementIntern(c, &buf, "update", true, false, NULL);
+		err = SQLstatementIntern(c, buf, "update", true, false, NULL);
 	}
 
 bailout:
@@ -1138,7 +1138,7 @@ sql_update_nov2019(Client c, mvc *sql, const char *prev_schema, bool *systabfixe
 
 	pos += snprintf(buf + pos, bufsize - pos,
 			"select id from sys.args where func_id in (select id from sys.functions where schema_id = (select id from sys.schemas where name = 'sys') and name = 'second' and func = 'sql_seconds') and number = 0 and type_scale = 3;\n");
-	err = SQLstatementIntern(c, &buf, "update", 1, 0, &output);
+	err = SQLstatementIntern(c, buf, "update", 1, 0, &output);
 	if (err) {
 		GDKfree(buf);
 		return err;
@@ -1368,7 +1368,7 @@ sql_update_nov2019(Client c, mvc *sql, const char *prev_schema, bool *systabfixe
 	assert(pos < bufsize);
 
 	printf("Running database upgrade commands:\n%s\n", buf);
-	err = SQLstatementIntern(c, &buf, "update", 1, 0, NULL);
+	err = SQLstatementIntern(c, buf, "update", 1, 0, NULL);
 	GDKfree(buf);
 	return err;		/* usually MAL_SUCCEED */
 }
@@ -1406,7 +1406,7 @@ sql_update_nov2019_sp1_hugeint(Client c, mvc *sql, const char *prev_schema, bool
 	assert(pos < bufsize);
 
 	printf("Running database upgrade commands:\n%s\n", buf);
-	err = SQLstatementIntern(c, &buf, "update", true, false, NULL);
+	err = SQLstatementIntern(c, buf, "update", true, false, NULL);
 	GDKfree(buf);
 	return err;		/* usually MAL_SUCCEED */
 }
@@ -1990,7 +1990,7 @@ sql_update_jun2020(Client c, mvc *sql, const char *prev_schema, bool *systabfixe
 	assert(pos < bufsize);
 
 	printf("Running database upgrade commands:\n%s\n", buf);
-	err = SQLstatementIntern(c, &buf, "update", true, false, NULL);
+	err = SQLstatementIntern(c, buf, "update", true, false, NULL);
 	if (err == MAL_SUCCEED) {
 		pos = snprintf(buf, bufsize, "set schema \"sys\";\n"
 			       "ALTER TABLE sys.keywords SET READ ONLY;\n"
@@ -1998,7 +1998,7 @@ sql_update_jun2020(Client c, mvc *sql, const char *prev_schema, bool *systabfixe
 		pos += snprintf(buf + pos, bufsize - pos, "set schema \"%s\";\n", prev_schema);
 		assert(pos < bufsize);
 		printf("Running database upgrade commands:\n%s\n", buf);
-		err = SQLstatementIntern(c, &buf, "update", true, false, NULL);
+		err = SQLstatementIntern(c, buf, "update", true, false, NULL);
 	}
 	GDKfree(buf);
 	return err;		/* usually MAL_SUCCEED */
@@ -2036,7 +2036,7 @@ sql_update_jun2020_bam(Client c, mvc *m, const char *prev_schema)
 	/* check if any of the tables in the bam schema have any content */
 	pos += snprintf(buf + pos, bufsize - pos,
 			"select sum(count) from sys.storage('bam');\n");
-	err = SQLstatementIntern(c, &buf, "update", 1, 0, &output);
+	err = SQLstatementIntern(c, buf, "update", 1, 0, &output);
 	if (err) {
 		GDKfree(buf);
 		return err;
@@ -2077,7 +2077,7 @@ sql_update_jun2020_bam(Client c, mvc *m, const char *prev_schema)
 	assert(pos < bufsize);
 
 	printf("Running database upgrade commands:\n%s\n", buf);
-	err = SQLstatementIntern(c, &buf, "update", true, false, NULL);
+	err = SQLstatementIntern(c, buf, "update", true, false, NULL);
 
 	GDKfree(buf);
 	return err;
@@ -2134,7 +2134,7 @@ sql_update_jun2020_sp1_hugeint(Client c, const char *prev_schema)
 	assert(pos < bufsize);
 
 	printf("Running database upgrade commands:\n%s\n", buf);
-	err = SQLstatementIntern(c, &buf, "update", true, false, NULL);
+	err = SQLstatementIntern(c, buf, "update", true, false, NULL);
 	GDKfree(buf);
 	return err;		/* usually MAL_SUCCEED */
 }
@@ -2150,7 +2150,7 @@ sql_update_jun2020_sp2(Client c, mvc *sql, const char *prev_schema, bool *systab
 
 	char *buf = "select id from sys.functions where name = 'nullif' and schema_id = (select id from sys.schemas where name = 'sys');\n";
 	res_table *output;
-	char *err = SQLstatementIntern(c, &buf, "update", 1, 0, &output);
+	char *err = SQLstatementIntern(c, buf, "update", 1, 0, &output);
 	if (err == NULL) {
 		BAT *b = BATdescriptor(output->cols[0].b);
 		if (b) {
@@ -2173,7 +2173,7 @@ sql_update_oscar_lidar(Client c)
 		"drop procedure sys.lidarload(string);\n"
 		"drop procedure sys.lidarexport(string, string, string);\n";
 	printf("Running database upgrade commands:\n%s\n", query);
-	return SQLstatementIntern(c, &query, "update", true, false, NULL);
+	return SQLstatementIntern(c, query, "update", true, false, NULL);
 }
 
 static str
@@ -2191,7 +2191,7 @@ sql_update_oscar(Client c, mvc *sql, const char *prev_schema, bool *systabfixed)
 	/* if column 6 of sys.queue is named "progress" we need to update */
 	pos += snprintf(buf + pos, bufsize - pos,
 			"select name from sys._columns where table_id = (select id from sys._tables where name = 'queue' and schema_id = (select id from sys.schemas where name = 'sys')) and number = 6;\n");
-	err = SQLstatementIntern(c, &buf, "update", true, false, &output);
+	err = SQLstatementIntern(c, buf, "update", true, false, &output);
 	if (err) {
 		GDKfree(buf);
 		return err;
@@ -2321,7 +2321,7 @@ sql_update_oscar(Client c, mvc *sql, const char *prev_schema, bool *systabfixed)
 			assert(pos < bufsize);
 
 			printf("Running database upgrade commands:\n%s\n", buf);
-			err = SQLstatementIntern(c, &buf, "update", true, false, NULL);
+			err = SQLstatementIntern(c, buf, "update", true, false, NULL);
 		}
 		BBPunfix(b->batCacheid);
 	}
@@ -2347,7 +2347,7 @@ sql_update_oct2020(Client c, mvc *sql, const char *prev_schema, bool *systabfixe
 	   to update */
 	pos += snprintf(buf + pos, bufsize - pos,
 					"select id from sys._tables where name = 'var_values' and query like '%%''cache''%%' and schema_id = (select id from sys.schemas where name = 'sys');\n");
-	err = SQLstatementIntern(c, &buf, "update", true, false, &output);
+	err = SQLstatementIntern(c, buf, "update", true, false, &output);
 	if (err) {
 		GDKfree(buf);
 		return err;
@@ -2441,7 +2441,7 @@ sql_update_oct2020(Client c, mvc *sql, const char *prev_schema, bool *systabfixe
 
 			assert(pos < bufsize);
 			printf("Running database upgrade commands:\n%s\n", buf);
-			err = SQLstatementIntern(c, &buf, "update", true, false, NULL);
+			err = SQLstatementIntern(c, buf, "update", true, false, NULL);
 		}
 		BBPunfix(b->batCacheid);
 	}
