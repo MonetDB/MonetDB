@@ -146,8 +146,8 @@ stdout of test 'simple_selects` in directory 'sql/test/miscellaneous` itself:
 #select -NULL;
 % .%2 # table_name
 % %2 # name
-% sec_interval # type
-% 5 # length
+% double # type
+% 24 # length
 [ NULL	]
 #create table x (x interval second, y interval month);
 #insert into x values (1, 1);

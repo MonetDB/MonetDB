@@ -9,6 +9,7 @@
 /*#define DEBUG*/
 
 #include "monetdb_config.h"
+#include "sql_decimal.h"
 #include "rel_unnest.h"
 #include "rel_optimizer.h"
 #include "rel_prop.h"
@@ -1576,14 +1577,14 @@ rewrite_exp_rel(visitor *v, sql_rel *rel, sql_exp *e, int depth)
 			/* use a dummy projection for the single join */
 			sql_rel *nrel = rel_project(v->sql->sa, NULL, append(sa_list(v->sql->sa), exp_atom_bool(v->sql->sa, 1)));
 
-			if (!rewrite_inner(v->sql, nrel, inner, (depth > 0 && is_exists_rewritter(v->properties))?op_left:op_join))
+			if (!rewrite_inner(v->sql, nrel, inner, depth?op_left:op_join))
 				return NULL;
 			/* has to apply recursively */
 			if (!(e->l = rel_exp_visitor_bottomup(v, nrel, &rewrite_exp_rel, true)))
 				return NULL;
 		}
 	} else if (exp_has_rel(e) && !is_ddl(rel->op)) {
-		sql_exp *ne = rewrite_inner(v->sql, rel, exp_rel_get_rel(v->sql->sa, e), (depth > 0 && is_exists_rewritter(v->properties))?op_left:op_join);
+		sql_exp *ne = rewrite_inner(v->sql, rel, exp_rel_get_rel(v->sql->sa, e), depth?op_left:op_join);
 
 		if (!ne)
 			return ne;
@@ -1700,6 +1701,111 @@ exp_reset_card_and_freevar(visitor *v, sql_rel *rel, sql_exp *e, int depth)
 	if (is_simple_project(rel->op) && need_distinct(rel)) /* Need distinct, all expressions should have CARD_AGGR at max */
 		e->card = MIN(e->card, CARD_AGGR);
 	return e;
+}
+
+/*
+ * For decimals and intervals we need to adjust the scale for some operations.
+ *
+ * TODO move the decimal scale handling to this function.
+ */
+#define is_division(sf) (strcmp(sf->func->base.name, "sql_div") == 0)
+#define is_multiplication(sf) (strcmp(sf->func->base.name, "sql_mul") == 0)
+
+static sql_exp *
+exp_physical_types(visitor *v, sql_rel *rel, sql_exp *e, int depth)
+{
+	(void)rel;
+	(void)depth;
+	sql_exp *ne = e;
+
+	if (!e || (e->type != e_func && e->type != e_convert) || !e->l)
+		return e;
+
+	if (e->type == e_convert) {
+		sql_subtype *ft = exp_fromtype(e);
+		sql_subtype *tt = exp_totype(e);
+
+		/* complex conversion matrix */
+		if (ft->type->eclass == EC_SEC && tt->type->eclass == EC_SEC && ft->type->digits > tt->type->digits) {
+			/* no conversion needed, just time adjustment */
+			ne = e->l;
+			ne->tpe = *tt; // ugh
+		}
+	} else {
+		list *args = e->l;
+		sql_subfunc *f = e->f;
+
+		/* multiplication and division on decimals */
+		if (is_multiplication(f) && list_length(args) == 2) {
+			sql_exp *le = args->h->data;
+			sql_subtype *lt = exp_subtype(le);
+
+			if (lt->type->eclass == EC_SEC || lt->type->eclass == EC_MONTH) {
+				sql_exp *re = args->h->next->data;
+				sql_subtype *rt = exp_subtype(re);
+
+				if (rt->type->eclass == EC_DEC && rt->scale) {
+					int scale = rt->scale; /* shift with scale */
+					sql_subtype *it = sql_bind_localtype(lt->type->base.name);
+					sql_subfunc *c = sql_bind_func(v->sql->sa, v->sql->session->schema, "scale_down", lt, it, F_FUNC);
+
+					if (!c) {
+						TRC_CRITICAL(SQL_PARSER, "scale_down missing (%s)\n", lt->type->base.name);
+						return NULL;
+					}
+#ifdef HAVE_HGE
+					hge val = scale2value(scale);
+#else
+					lng val = scale2value(scale);
+#endif
+					atom *a = atom_int(v->sql->sa, it, val);
+					ne = exp_binop(v->sql->sa, e, exp_atom(v->sql->sa, a), c);
+				}
+			}
+		} else if (is_division(f) && list_length(args) == 2) {
+			sql_exp *le = args->h->data;
+			sql_subtype *lt = exp_subtype(le);
+
+			if (lt->type->eclass == EC_SEC || lt->type->eclass == EC_MONTH) {
+				sql_exp *re = args->h->next->data;
+				sql_subtype *rt = exp_subtype(re);
+
+				if (rt->type->eclass == EC_DEC && rt->scale) {
+					int scale = rt->scale; /* shift with scale */
+#ifdef HAVE_HGE
+					hge val = scale2value(scale);
+#else
+					lng val = scale2value(scale);
+#endif
+
+					if (lt->type->eclass == EC_SEC) {
+						sql_subtype *it = sql_bind_localtype(lt->type->base.name);
+						sql_subfunc *c = sql_bind_func(v->sql->sa, v->sql->session->schema, "scale_up", lt, it, F_FUNC);
+
+						if (!c) {
+							TRC_CRITICAL(SQL_PARSER, "scale_up missing (%s)\n", lt->type->base.name);
+							return NULL;
+						}
+						atom *a = atom_int(v->sql->sa, it, val);
+						ne = exp_binop(v->sql->sa, e, exp_atom(v->sql->sa, a), c);
+					} else { /* EC_MONTH */
+						sql_subtype *it = sql_bind_localtype(rt->type->base.name);
+						sql_subfunc *c = sql_bind_func(v->sql->sa, v->sql->session->schema, "scale_down", rt, it, F_FUNC);
+
+						if (!c) {
+							TRC_CRITICAL(SQL_PARSER, "scale_down missing (%s)\n", lt->type->base.name);
+							return NULL;
+						}
+						atom *a = atom_int(v->sql->sa, it, val);
+						args->h->next->data = exp_binop(v->sql->sa, args->h->next->data, exp_atom(v->sql->sa, a), c);
+					}
+				}
+			}
+		}
+	}
+	if (ne != e && exp_name(e))
+		exp_prop_alias(v->sql->sa, ne, e);
+	return ne;
 }
 
 static list*
@@ -2618,7 +2724,7 @@ rewrite_exists(visitor *v, sql_rel *rel, sql_exp *e, int depth)
 					ne = le;
 
 				if (exp_has_rel(ie)) {
-					visitor iv = { .sql = v->sql, .properties = exists_rewritter };
+					visitor iv = { .sql = v->sql };
 					if (!rewrite_exp_rel(&iv, rel, ie, depth))
 						return NULL;
 				}
@@ -3178,7 +3284,8 @@ rel_unnest(mvc *sql, sql_rel *rel)
 	rel = rel_visitor_bottomup(&v, rel, &rewrite_remove_xp);	/* remove crossproducts with project [ atom ] */
 	rel = rel_visitor_bottomup(&v, rel, &rewrite_groupings);	/* transform group combinations into union of group relations */
 	rel = rel_visitor_bottomup(&v, rel, &rewrite_empty_project);
-	// needed again!
+	// needed again
 	rel = rel_exp_visitor_bottomup(&v, rel, &exp_reset_card_and_freevar, false);
+	rel = rel_exp_visitor_bottomup(&v, rel, &exp_physical_types, false);
 	return rel;
 }

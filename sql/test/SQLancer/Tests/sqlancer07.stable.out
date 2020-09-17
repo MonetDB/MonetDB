@@ -206,7 +206,7 @@ stdout of test 'sqlancer07` in directory 'sql/test/SQLancer` itself:
 % tinyint # type
 % 1 # length
 #SELECT t1.c0 FROM t2, t0 CROSS JOIN t1 WHERE ((((t0.c0)%((SELECT DISTINCT t0.c0 FROM t1, t0, t2 WHERE FALSE))))<=(t1.c0));
-% sys.t1 # table_name
+% .t1 # table_name
 % c0 # name
 % bigint # type
 % 1 # length
@@ -216,7 +216,22 @@ stdout of test 'sqlancer07` in directory 'sql/test/SQLancer` itself:
 % bigint # type
 % 1 # length
 [ NULL	]
-#ROLLBACK;
+#DROP TABLE t0;
+#DROP TABLE t1;
+#DROP TABLE t2;
+#SELECT 1 WHERE (SELECT 1 WHERE FALSE) IS NULL;
+% .%4 # table_name
+% %4 # name
+% tinyint # type
+% 1 # length
+[ 1	]
+#PREPARE SELECT 1 WHERE greatest(true, ?);
+% .prepare,	.prepare,	.prepare,	.prepare,	.prepare,	.prepare # table_name
+% type,	digits,	scale,	schema,	table,	column # name
+% varchar,	int,	int,	str,	str,	str # type
+% 7,	1,	1,	0,	2,	2 # length
+[ "tinyint",	1,	0,	"",	"%2",	"%2"	]
+[ "boolean",	1,	0,	NULL,	NULL,	NULL	]
 
 # 10:16:14 >  
 # 10:16:14 >  "Done."

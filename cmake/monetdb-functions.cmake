@@ -257,7 +257,7 @@ function(monetdb_debian_extra_files)
     ${CMAKE_SOURCE_DIR}/misc/packages/deb/changelog
     ${CMAKE_SOURCE_DIR}/misc/packages/deb/copyright
     DESTINATION
-    ${CMAKE_INSTALL_DATAROOTDIR}/doc/libmonetdb-client12
+    ${CMAKE_INSTALL_DATAROOTDIR}/doc/libmonetdb-client${MAPI_VERSION_MAJOR}
     COMPONENT client)
 
   install(FILES
@@ -285,14 +285,14 @@ function(monetdb_debian_extra_files)
     ${CMAKE_SOURCE_DIR}/misc/packages/deb/changelog
     ${CMAKE_SOURCE_DIR}/misc/packages/deb/copyright
     DESTINATION
-    ${CMAKE_INSTALL_DATAROOTDIR}/doc/libmonetdb-stream13
+    ${CMAKE_INSTALL_DATAROOTDIR}/doc/libmonetdb-stream${STREAM_VERSION_MAJOR}
     COMPONENT stream)
 
   install(FILES
     ${CMAKE_SOURCE_DIR}/misc/packages/deb/changelog
     ${CMAKE_SOURCE_DIR}/misc/packages/deb/copyright
     DESTINATION
-    ${CMAKE_INSTALL_DATAROOTDIR}/doc/libmonetdb19
+    ${CMAKE_INSTALL_DATAROOTDIR}/doc/libmonetdb${GDK_VERSION_MAJOR}
     COMPONENT monetdb)
 
   install(FILES
