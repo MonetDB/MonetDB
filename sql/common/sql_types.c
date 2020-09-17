@@ -579,11 +579,12 @@ sql_dup_subfunc(sql_allocator *sa, sql_func *f, list *ops, sql_subtype *member)
 
 			if (ops) for (tn = ops->h, m = f->ops->h; tn; tn = tn->next, m = m->next) {
 				sql_arg *s = m->data;
+				sql_subtype *opt = tn->data;
 
 				if (s->type.type->eclass == EC_ANY) {
 					if (!st || st->type->eclass == EC_ANY) /* if input parameter is ANY, skip validation */
 						st = tn->data;
-					else if (subtype_cmp(st, tn->data))
+					else if (opt && subtype_cmp(st, opt))
 						return NULL;
 				}
 			}
