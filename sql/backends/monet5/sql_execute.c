@@ -389,7 +389,7 @@ SQLstatementIntern(Client c, const char *expr, const char *nme, bit execute, bit
 		msg = createException(SQL,"sql.statement",SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		goto endofcompile;
 	}
-	strncpy(n, expr, len);
+	strcpy_len(n, expr, len + 1);
 	n[len] = '\n';
 	n[len + 1] = 0;
 	len++;
