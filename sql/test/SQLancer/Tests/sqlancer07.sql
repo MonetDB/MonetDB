@@ -162,3 +162,6 @@ SELECT 1 WHERE (SELECT 1 WHERE FALSE) IS NULL;
 
 PREPARE SELECT 1 WHERE greatest(true, ?);
 	-- ? should be set to boolean
+
+PREPARE SELECT (SELECT ? FROM (select 1) as v1(c0));
+	-- cannot determine parameter type
