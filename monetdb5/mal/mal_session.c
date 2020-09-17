@@ -119,7 +119,7 @@ MSresetClientPrg(Client cntxt, str mod, str fcn)
  */
 
 str
-MSinitClientPrg(Client cntxt, str mod, str nme)
+MSinitClientPrg(Client cntxt, const char *mod, const char *nme)
 {
 	int idx;
 

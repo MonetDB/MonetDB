@@ -311,7 +311,7 @@ SQLescapeString(str s)
 }
 
 str
-SQLstatementIntern(Client c, const char *expr, str nme, bit execute, bit output, res_table **result)
+SQLstatementIntern(Client c, const char *expr, const char *nme, bit execute, bit output, res_table **result)
 {
 	int status = 0, err = 0, oldvtop, oldstop = 1, inited = 0, ac, sizeframes, topframes;
 	unsigned int label;

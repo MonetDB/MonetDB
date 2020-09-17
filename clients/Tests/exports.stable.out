@@ -876,7 +876,7 @@ str MCsuspendClient(int id);
 int MCvalid(Client c);
 void MPresetProfiler(stream *fdout);
 char *MSP_locate_sqlscript(const char *mod_name, bit recurse);
-str MSinitClientPrg(Client cntxt, str mod, str nme);
+str MSinitClientPrg(Client cntxt, const char *mod, const char *nme);
 void MSresetInstructions(MalBlkPtr mb, int start);
 void MSresetVariables(Client cntxt, MalBlkPtr mb, MalStkPtr glb, int start);
 void MSscheduleClient(str command, str challenge, bstream *fin, stream *fout, protocol_version protocol, size_t blocksize);
