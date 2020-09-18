@@ -891,9 +891,9 @@ monetdbe_result_cb(void* context, char* tblname, columnar_result* results, size_
 		int scale		= results[i].scale;
 
 		if ( b == NULL)
-			mdbe->msg= createException(MAL,"sql.resultset",SQLSTATE(HY005) "Cannot access column descriptor ");
+			mdbe->msg= createException(MAL,"monetdbe.monetdbe_result_cb",SQLSTATE(HY005) "Cannot access column descriptor ");
 		else if (mvc_result_column(be, tblname, colname, tpename, digits, scale, b))
-			mdbe->msg = createException(SQL, "sql.resultset", SQLSTATE(42000) "Cannot access column descriptor %s.%s",tblname,colname);
+			mdbe->msg = createException(SQL, "monetdbe.monetdbe_result_cb", SQLSTATE(42000) "Cannot access column descriptor %s.%s",tblname,colname);
 		if( b)
 			BBPkeepref(b->batCacheid);
 	}
