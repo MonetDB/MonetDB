@@ -1638,6 +1638,8 @@ rel_read(mvc *sql, char *r, int *pos, list *refs)
 					e = r+*pos;
 					*e = 0;
 					(*pos)++;
+					if (r[*pos] == ',')
+						(*pos)++;
 
 					next = exp_column(sql->sa, nrname, ncname, &a->type, CARD_MULTI, 1, 0);
 					set_basecol(next);
