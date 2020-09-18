@@ -174,6 +174,10 @@ PREPARE SELECT DISTINCT ?, CAST(CASE least(?, r'weHtU') WHEN ? THEN ? WHEN ? THE
 
 values (1,(select 2));
 	-- 1 2
+values (1,(select 2 intersect select 3));
+	-- 1 NULL
+values (1,(select 2 except select 2));
+	-- 1 NULL
 
 START TRANSACTION;
 CREATE TABLE "t0" ("c0" INTEGER,"c1" DECIMAL(18,3));
