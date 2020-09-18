@@ -1183,6 +1183,11 @@ monetdbe_append(monetdbe_database dbhdl, const char* schema, const char* table, 
 			//-------------------------------------
 			BAT *bn = NULL;
 
+			if (mtype != c->type.type->localtype) {
+				mdbe->msg = createException(SQL, "monetdbe.monetdbe_append", "Cannot append %d into column '%s'", input[i]->type, c->base.name);
+				goto cleanup;
+			}
+
 			if ((bn = COLnew(0, mtype, 0, TRANSIENT)) == NULL) {
 				mdbe->msg = createException(SQL, "monetdbe.monetdbe_append", "Cannot create append column");
 				goto cleanup;
