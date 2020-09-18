@@ -524,30 +524,6 @@ def try_open(path, mode) :
 
 bugre = re.compile(r'\.(sf|bug)-(?P<bugno>[1-9]\d+)', re.I)
 
-def SkipTest(env, TST, EXT, REASON, length) :
-    TSTDIR = env['TSTDIR']
-    TEXT = "Skipping test %s%s %s" % (TST, EXT, REASON)
-    if quiet:
-        STDOUT.write("-")
-    elif verbose:
-        Warn(TEXT)
-    else:
-        if REASON.startswith('as '):
-            REASON = REASON[3:]
-        if REASON.endswith('.'):
-            REASON = REASON[:-1]
-        if length + 10 + len(REASON) + 11 > ttywidth:
-            # 10 - length of prompt()
-            # 11 - length of " skipped ()"
-            l = ttywidth - 10 - 11 - len(REASON)
-            if len(TST) <= l:
-                s = '%-*s' % (l, TST)
-            else:
-                s = '%s...%s' % (TST[:l//2 - 2], TST[-(l//2 - 1):])
-        else:
-            s = '%-*s' % (length, TST)
-        STDOUT.write('%s%s skipped (%s)\n' % (prompt(), s, REASON))
-### SkipTest(env, TST, EXT, REASON) #
 
 def find_test_dirs(thisdir) :
     testdirs = []
@@ -1443,94 +1419,72 @@ def RunTest(env, TST, BusyPorts, COND, oktests, length, all_tests, pSrvr) :
             if cond in relcond:
                 if not os.path.exists(os.path.join(env['GDK_DBFARM'], relcond[cond][0])):
                     reason = "as %s release database is not available" % relcond[cond][1]
-                    SkipTest(env, TST, EXT, reason, length)
                     break
             elif cond.startswith('THREADS='):
                 if negate:
                     reason = "impossible combination of THREADS= and negation"
-                    elem = SkipTest(env, TST, EXT, reason, length)
                     break
                 elif env['GDK_NR_THREADS'] == '0' or \
                    int(env['TST_THREADS']) >= int(cond[8:]):
                     threads = cond[8:]
                 elif env['TST_THREADS'] != cond[8:]:
                     reason = "as number of threads is wrong"
-                    elem = SkipTest(env, TST, EXT, reason, length)
                     break
             elif cond.startswith('THREADS<='):
                 if (int(env['TST_THREADS']) <= int(cond[9:])) == negate:
                     reason = "as number of threads is wrong"
-                    elem = SkipTest(env, TST, EXT, reason, length)
                     break
             elif cond.startswith('THREADS>='):
                 if (int(env['TST_THREADS']) >= int(cond[9:])) == negate:
                     reason = "as number of threads is wrong"
-                    elem = SkipTest(env, TST, EXT, reason, length)
                     break
             elif cond.startswith('USER='):
                 if negate:
                     reason = "impossible combination of USER= and negation"
-                    elem = SkipTest(env, TST, EXT, reason, length)
                     break
                 user = cond[5:]
             elif cond.startswith('PASSWD='):
                 if negate:
                     reason = "impossible combination of PASSWD= and negation"
-                    elem = SkipTest(env, TST, EXT, reason, length)
                     break
                 passwd = cond[7:]
             elif cond not in CONDITIONALS:
                 reason = "as conditional '%s' is unknown." % cond
-                elem = SkipTest(env, TST, EXT, reason, length)
                 break
             elif (not CONDITIONALS[cond]) != negate:
                 if negate:
                     reason = "as conditional '%s' holds." % cond
                 else:
                     reason = "as conditional '%s' does not hold." % cond
-                elem = SkipTest(env, TST, EXT, reason, length)
                 break
     if reason:
         pass
     elif MissingTests:
         reason = "as required test%s '%s' failed." % (len(MissingTests) != 1 and 's' or '', "', '".join(MissingTests))
-        elem = SkipTest(env, TST, EXT, reason, length)
     elif EXT == ".malC" and  not env['exe']['MAL_Client'][0]:
         reason = "as %s is not available." % env['MALCLIENT'].split(None, 1)[0]
-        elem = SkipTest(env, TST, EXT, reason, length)
     elif EXT == ".sql" and  not env['exe']['SQL_Client'][0]:
         reason = "as %s is not available." % env['SQLCLIENT'].split(None, 1)[0]
-        elem = SkipTest(env, TST, EXT, reason, length)
     elif EXT == ".sql" and  not env['exe']['SQL_Dump'][0]:
         reason = "as %s is not available." % env['SQLDUMP'].split(None, 1)[0]
-        elem = SkipTest(env, TST, EXT, reason, length)
     elif EXT == ".test" and not CONDITIONALS['HAVE_PYMONETDB']:
         reason = "as pymonetdb is not available."
-        elem = SkipTest(env, TST, EXT, reason, length)
     elif SERVER in ["MAL", "SQL"] and not env['exe']['mserver5'][0]:
         reason = "as %s is not available." % env['MSERVER'].split(None, 1)[0]
-        elem = SkipTest(env, TST, EXT, reason, length)
     elif EXT == ".malS" and not env['exe']['mserver5'][0]:
         reason = "as %s is not available." % env['MSERVER'].split(None, 1)[0]
-        elem = SkipTest(env, TST, EXT, reason, length)
     elif CALL == "python"  and  not env['exe']['python'][0]:
         reason = "as python is not available."
-        elem = SkipTest(env, TST, EXT, reason, length)
         #TODO:
         #elif [ "$EXT" = "java"  -a  ! "`type -path java`" ] ; then
-        #elem = SkipTest(env, TST, EXT, "as java is not in $PATH.", length)
     elif MissingMods:
         reason = "as modules '%s` are missing." % str(MissingMods)
-        elem = SkipTest(env, TST, EXT, reason, length)
     elif CALL == "malXp":
         reason = "as multiple MAL clients in parallel are currently not supported by %s." % THISFILE
-        elem = SkipTest(env, TST, EXT, reason, length)
     elif CALL == "sqlXp":
         reason = "as multiple SQL clients in parallel are currently not supported by %s." % THISFILE
-        elem = SkipTest(env, TST, EXT, reason, length)
     elif SERVER in ["MAL", "SQL"] and "MAPI" in BusyPorts:
         reason = "as MAPIPORT=%s is not available." % env['MAPIPORT']
-        elem = SkipTest(env, TST, EXT, reason, length)
     else:
         test = re.compile("^"+TST+"((_[sp][0-9][0-9])?\..*)?$", re.MULTILINE)
         for f in listdir(RELSRCDIR):
@@ -1551,7 +1505,6 @@ def RunTest(env, TST, BusyPorts, COND, oktests, length, all_tests, pSrvr) :
             MAPIsockets, reason = CheckSocket2(env, "MAPI")   #, SrvrErr)
             if MAPIsockets is None:
                 reason = 'as ' + reason
-                elem = SkipTest(env, TST, EXT, reason, length)
                 return TX,Failed,Failed,elem,reason,links
         else:
             MAPIsockets = None
@@ -1569,7 +1522,6 @@ def RunTest(env, TST, BusyPorts, COND, oktests, length, all_tests, pSrvr) :
                            % (TSTSRC, TST + EXT, os.getcwd(), err.errno, err.strerror))
             else:
                 reason = "as source file '%s` is missing." % TSTSRC
-                elem = SkipTest(env, TST, EXT+".src", reason, length)
                 if MAPIsockets is not None:
                     # Release reserved sockets before bailing out
                     MAPIsockets[0].close()
@@ -1623,7 +1575,6 @@ def RunTest(env, TST, BusyPorts, COND, oktests, length, all_tests, pSrvr) :
         if (outmissing or errmissing) and not CONDITIONALS['KNOWNFAIL']:
             # no stable output, so known to fail
             reason = "as conditional 'KNOWNFAIL' does not hold."
-            elem = SkipTest(env, TST, EXT, reason, length)
             return TX,Failed,Failed,elem,reason,links
 
         TIMEOUT = par['TIMEOUT']
