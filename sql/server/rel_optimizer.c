@@ -2149,7 +2149,7 @@ exp_push_down_prj(mvc *sql, sql_exp *e, sql_rel *f, sql_rel *t)
 			ne = exps_bind_column2(f->exps, e->l, e->r, NULL);
 		if (!ne && !e->l)
 			ne = exps_bind_column(f->exps, e->r, NULL, NULL, 1);
-		if (!ne || (ne->type != e_column && ne->type != e_atom))
+		if (!ne || (ne->type != e_column && (ne->type != e_atom || ne->f)))
 			return NULL;
 		while (ne && has_label(ne) && f->op == op_project && ne->type == e_column) {
 			sql_exp *oe = e, *one = ne;
@@ -2167,7 +2167,7 @@ exp_push_down_prj(mvc *sql, sql_exp *e, sql_rel *f, sql_rel *t)
 				e = oe;
 				break;
 			}
-			if (ne->type != e_column && ne->type != e_atom)
+			if (ne->type != e_column && (ne->type != e_atom || ne->f))
 				return NULL;
 		}
 		/* possibly a groupby/project column is renamed */
@@ -2178,7 +2178,7 @@ exp_push_down_prj(mvc *sql, sql_exp *e, sql_rel *f, sql_rel *t)
 			if (!gbe && !e->l)
 				gbe = exps_bind_column(f->r, ne->r, NULL, NULL, 1);
 			ne = gbe;
-			if (!ne || (ne->type != e_column && ne->type != e_atom))
+			if (!ne || (ne->type != e_column && (ne->type != e_atom || ne->f)))
 				return NULL;
 		}
 		if (ne->type == e_atom)
