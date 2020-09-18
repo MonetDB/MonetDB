@@ -3203,7 +3203,7 @@ rewrite_values(visitor *v, sql_rel *rel)
 		return rel;
 	sql_exp *e = rel->exps->h->data;
 
-	if (!is_values(e) || list_length(exp_get_values(e))<=1 || (!rel_has_freevar(v->sql, rel) && !exp_has_rel(e)))
+	if (!is_values(e) || list_length(exp_get_values(e))<=1 || !rel_has_freevar(v->sql, rel))
 		return rel;
 
 	list *exps = sa_list(v->sql->sa);
@@ -3230,8 +3230,7 @@ rewrite_values(visitor *v, sql_rel *rel)
 				rel_set_exps(nrel, exps);
 				set_processed(nrel);
 			}
-			if (!list_empty(nrel->exps))
-				cur = nrel;
+			cur = nrel;
 		}
 		rel = cur;
 		set_single(rel);

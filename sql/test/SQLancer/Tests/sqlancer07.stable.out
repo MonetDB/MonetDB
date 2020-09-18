@@ -327,6 +327,40 @@ stdout of test 'sqlancer07` in directory 'sql/test/SQLancer` itself:
 [ 2	]
 [ 3	]
 #ROLLBACK;
+#START TRANSACTION;
+#CREATE TABLE "t0" ("c0" TIMESTAMP NOT NULL,CONSTRAINT "t0_c0_pkey" PRIMARY KEY ("c0"),CONSTRAINT "t0_c0_unique" UNIQUE ("c0"));
+#COPY 5 RECORDS INTO "t0" FROM stdin USING DELIMITERS E'\t',E'\n','"';
+#"1970-01-06 01:52:11.000000"
+#"1970-01-14 10:55:10.000000"
+#"1970-01-04 18:13:57.000000"
+#"1970-01-03 16:27:13.000000"
+#"1970-01-07 23:49:20.000000"
+[ 5	]
+#CREATE TABLE "t1" ("c0" TIMESTAMP,CONSTRAINT "t1_c0_unique" UNIQUE ("c0"));
+#CREATE TABLE "t2" ("c0" TIMESTAMP NOT NULL,CONSTRAINT "t2_c0_pkey" PRIMARY KEY ("c0"));
+#COPY 5 RECORDS INTO "t2" FROM stdin USING DELIMITERS E'\t',E'\n','"';
+#"1970-01-18 20:11:31.000000"
+#"1970-01-17 19:38:53.000000"
+#"1970-01-04 22:47:27.000000"
+#"1970-01-19 03:36:31.000000"
+#"1970-01-06 00:11:21.000000"
+[ 5	]
+#create view v0(c0) as (values (((-839450346)||(0.2907855)))) with check option;
+#create view v1(c0) as (with cte0(c0) as (values (case when ((true)or(true)) then ((0.75)&(0.16181643)) else 0.5068248 end)) select all 0.48 from t1, v0, t2,t0,cte0);
+#create view v2(c0) as (select distinct interval '883554454' month from t1, t2) with check option;
+#VALUES ('b' LIKE (SELECT 'a' FROM t1)), (EXISTS (SELECT 1 WHERE TRUE));
+% .%1 # table_name
+% %1 # name
+% boolean # type
+% 5 # length
+[ NULL	]
+[ true	]
+#SELECT (VALUES ((('524519669')NOT ILIKE((SELECT 'X囊*T\f' FROM t1, v2 WHERE FALSE)))), (NOT EXISTS (SELECT DISTINCT sql_min(0.52, 0.90) WHERE TRUE))) FROM v1, t2 RIGHT OUTER JOIN v0 ON ((v0.c0)<>('Vx'));
+% .%7 # table_name
+% %7 # name
+% boolean # type
+% 5 # length
+#ROLLBACK;
 
 # 10:16:14 >  
 # 10:16:14 >  "Done."
