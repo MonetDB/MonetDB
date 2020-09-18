@@ -808,7 +808,7 @@ void *
 RAPIloopback(void *query) {
 	res_table* output = NULL;
 	char* querystr = (char*)CHAR(STRING_ELT(query, 0));
-	char* err = SQLstatementIntern(rapiClient, &querystr, "name", 1, 0, &output);
+	char* err = SQLstatementIntern(rapiClient, querystr, "name", 1, 0, &output);
 
 	if (err) { // there was an error
 		return ScalarString(RSTR(err));

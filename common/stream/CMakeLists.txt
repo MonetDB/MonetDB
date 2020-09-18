@@ -59,7 +59,7 @@ if(WIN32)
 endif()
 
 target_link_libraries(stream
-  PUBLIC
+  PRIVATE
   $<$<BOOL:${ZLIB_FOUND}>:ZLIB::ZLIB>
   $<$<BOOL:${BZIP2_FOUND}>:BZip2::BZip2>
   $<$<BOOL:${CURL_FOUND}>:CURL::libcurl>
@@ -67,7 +67,6 @@ target_link_libraries(stream
   $<$<BOOL:${LZ4_FOUND}>:LZ4::LZ4>
   $<$<BOOL:${SNAPPY_FOUND}>:SNAPPY::SNAPPY>
   $<$<BOOL:${Iconv_FOUND}>:Iconv::Iconv>
-  PRIVATE
   matomic
   monetdb_config_header
   $<$<PLATFORM_ID:Windows>:ws2_32>

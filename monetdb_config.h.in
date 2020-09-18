@@ -286,6 +286,7 @@
 #cmakedefine SIZEOF_LONG_INT @SIZEOF_LONG_INT@
 #cmakedefine SIZEOF_DOUBLE @SIZEOF_DOUBLE@
 #cmakedefine SIZEOF_WCHAR_T @SIZEOF_WCHAR_T@
+#define HAVE_LONG_LONG 1	/* for ODBC include files */
 
 #ifdef _MSC_VER
 #ifdef _WIN64

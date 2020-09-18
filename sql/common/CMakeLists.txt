@@ -27,7 +27,7 @@ target_sources(sqlcommon
 
 target_include_directories(sqlcommon
   PRIVATE
-  $<TARGET_PROPERTY:mal,INCLUDE_DIRECTORIES>
+  $<TARGET_PROPERTY:mal,INTERFACE_INCLUDE_DIRECTORIES>
   PUBLIC
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
   $<INSTALL_INTERFACE:${INCLUDEDIR}/monetdb>)
@@ -43,11 +43,7 @@ target_link_libraries(sqlcommon
 
 target_compile_definitions(sqlcommon
   PRIVATE
-  LIBSQL
-  LIBSQLSERVER
-  LIBSQLCOMMON
-  LIBBATSTORE
-  LIBSTORE)
+  LIBSQL)
 
 set_target_properties(sqlcommon
   PROPERTIES

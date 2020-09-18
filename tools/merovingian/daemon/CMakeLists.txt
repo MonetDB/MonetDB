@@ -37,7 +37,6 @@ target_link_libraries(monetdbd
   stream
   mapi
   msabaoth
-  ${CMAKE_DL_LIBS}
   Threads::Threads)
 
 install(TARGETS

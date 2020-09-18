@@ -35,7 +35,7 @@ target_include_directories(kernel
   $<INSTALL_INTERFACE:${INCLUDEDIR}/monetdb>)
 target_include_directories(microbenchmark
   PRIVATE
-  $<TARGET_PROPERTY:mal,INCLUDE_DIRECTORIES>
+  $<TARGET_PROPERTY:mal,INTERFACE_INCLUDE_DIRECTORIES>
   PUBLIC
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
   $<INSTALL_INTERFACE:${INCLUDEDIR}/monetdb>)

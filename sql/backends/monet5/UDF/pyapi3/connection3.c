@@ -116,10 +116,10 @@ void _connection_cleanup_result(void *output)
 	SQLdestroyResult((res_table *)output);
 }
 
-str _connection_query(Client cntxt, char *query, res_table **result)
+str _connection_query(Client cntxt, const char *query, res_table **result)
 {
 	str res = MAL_SUCCEED;
-	res = SQLstatementIntern(cntxt, &query, "name", 1, 0, result);
+	res = SQLstatementIntern(cntxt, query, "name", 1, 0, result);
 	return res;
 }
 
