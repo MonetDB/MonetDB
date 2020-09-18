@@ -28,7 +28,7 @@ stdout of test 'systemfunctions` in directory 'sql/test/sys-schema` itself:
 % sys.,	sys.,	sys.,	sys.,	. # table_name
 % schema,	function,	argno,	argtype,	definition # name
 % varchar,	varchar,	int,	varchar,	varchar # type
-% 8,	24,	2,	14,	679 # length
+% 8,	24,	2,	14,	695 # length
 [ "json",	"filter",	0,	"json",	"create function json.filter(js json, pathexpr string)\nreturns json external name json.filter;"	]
 [ "json",	"filter",	1,	"json",	""	]
 [ "json",	"filter",	2,	"clob",	""	]
@@ -412,7 +412,7 @@ stdout of test 'systemfunctions` in directory 'sql/test/sys-schema` itself:
 [ "sys",	"code",	1,	"int",	""	]
 [ "sys",	"code",	0,	"clob",	"unicode"	]
 [ "sys",	"code",	1,	"int",	""	]
-[ "sys",	"columnsize",	0,	"bigint",	"create function sys.columnsize(tpe varchar(1024), count bigint)\nreturns bigint\nbegin\nif tpe in ('tinyint', 'boolean')\nthen return count;\nend if;\nif tpe = 'smallint'\nthen return 2 * count;\nend if;\nif tpe in ('int', 'real', 'date', 'time', 'timetz', 'sec_interval', 'month_interval')\nthen return 4 * count;\nend if;\nif tpe in ('bigint', 'double', 'timestamp', 'timestamptz', 'inet', 'oid')\nthen return 8 * count;\nend if;\nif tpe in ('hugeint', 'decimal', 'uuid', 'mbr')\nthen return 16 * count;\nend if;\nif tpe in ('varchar', 'char', 'clob', 'json', 'url')\nthen return 4 * count;\nend if;\nif tpe in ('blob', 'geometry', 'geometrya')\nthen return 8 * count;\nend if;\nreturn 8 * count;\nend;"	]
+[ "sys",	"columnsize",	0,	"bigint",	"create function sys.columnsize(tpe varchar(1024), count bigint)\nreturns bigint\nbegin\nif tpe in ('tinyint', 'boolean')\nthen return count;\nend if;\nif tpe = 'smallint'\nthen return 2 * count;\nend if;\nif tpe in ('int', 'real', 'date', 'time', 'timetz', 'sec_interval', 'day_interval', 'month_interval')\nthen return 4 * count;\nend if;\nif tpe in ('bigint', 'double', 'timestamp', 'timestamptz', 'inet', 'oid')\nthen return 8 * count;\nend if;\nif tpe in ('hugeint', 'decimal', 'uuid', 'mbr')\nthen return 16 * count;\nend if;\nif tpe in ('varchar', 'char', 'clob', 'json', 'url')\nthen return 4 * count;\nend if;\nif tpe in ('blob', 'geometry', 'geometrya')\nthen return 8 * count;\nend if;\nreturn 8 * count;\nend;"	]
 [ "sys",	"columnsize",	1,	"varchar",	""	]
 [ "sys",	"columnsize",	2,	"bigint",	""	]
 [ "sys",	"concat",	0,	"char",	"+"	]
@@ -767,6 +767,10 @@ stdout of test 'systemfunctions` in directory 'sql/test/sys-schema` itself:
 [ "sys",	"generate_series",	1,	"timestamp",	""	]
 [ "sys",	"generate_series",	2,	"timestamp",	""	]
 [ "sys",	"generate_series",	3,	"sec_interval",	""	]
+[ "sys",	"generate_series",	0,	"timestamp",	"create function sys.generate_series(first timestamp, \"limit\" timestamp, stepsize interval day)\nreturns table (value timestamp)\nexternal name generator.series;"	]
+[ "sys",	"generate_series",	1,	"timestamp",	""	]
+[ "sys",	"generate_series",	2,	"timestamp",	""	]
+[ "sys",	"generate_series",	3,	"day_interval",	""	]
 [ "sys",	"geometrytype",	0,	"clob",	"create function geometrytype(geom geometry) returns string external name geom.\"GeometryType1\";"	]
 [ "sys",	"geometrytype",	1,	"geometry",	""	]
 [ "sys",	"get_type",	0,	"clob",	"create function get_type(info integer, format integer) returns string external name geom.\"getType\";"	]
@@ -886,7 +890,7 @@ stdout of test 'systemfunctions` in directory 'sql/test/sys-schema` itself:
 [ "sys",	"ilike",	1,	"clob",	""	]
 [ "sys",	"ilike",	2,	"clob",	""	]
 [ "sys",	"ilike",	3,	"clob",	""	]
-[ "sys",	"imprintsize",	0,	"bigint",	"create function sys.imprintsize(tpe varchar(1024), count bigint)\nreturns bigint\nbegin\nif tpe in ('tinyint', 'boolean')\nthen return cast(0.2 * count as bigint);\nend if;\nif tpe = 'smallint'\nthen return cast(0.4 * count as bigint);\nend if;\nif tpe in ('int', 'real', 'date', 'time', 'timetz', 'sec_interval', 'month_interval')\nthen return cast(0.8 * count as bigint);\nend if;\nif tpe in ('bigint', 'double', 'timestamp', 'timestamptz', 'inet', 'oid')\nthen return cast(1.6 * count as bigint);\nend if;\nif tpe in ('hugeint', 'decimal', 'uuid', 'mbr')\nthen return cast(3.2 * count as bigint);\nend if;\nreturn 0;\nend;"	]
+[ "sys",	"imprintsize",	0,	"bigint",	"create function sys.imprintsize(tpe varchar(1024), count bigint)\nreturns bigint\nbegin\nif tpe in ('tinyint', 'boolean')\nthen return cast(0.2 * count as bigint);\nend if;\nif tpe = 'smallint'\nthen return cast(0.4 * count as bigint);\nend if;\nif tpe in ('int', 'real', 'date', 'time', 'timetz', 'sec_interval', 'day_interval', 'month_interval')\nthen return cast(0.8 * count as bigint);\nend if;\nif tpe in ('bigint', 'double', 'timestamp', 'timestamptz', 'inet', 'oid')\nthen return cast(1.6 * count as bigint);\nend if;\nif tpe in ('hugeint', 'decimal', 'uuid', 'mbr')\nthen return cast(3.2 * count as bigint);\nend if;\nreturn 0;\nend;"	]
 [ "sys",	"imprintsize",	1,	"varchar",	""	]
 [ "sys",	"imprintsize",	2,	"bigint",	""	]
 [ "sys",	"index",	0,	"tinyint",	"index"	]

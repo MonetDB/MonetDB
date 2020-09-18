@@ -604,12 +604,13 @@ sql_update_apr2019(Client c, mvc *sql, const char *prev_schema)
 }
 
 static str
-sql_update_storagemodel(Client c, mvc *sql, const char *prev_schema)
+sql_update_storagemodel(Client c, mvc *sql, const char *prev_schema, bool oct2020_upgrade)
 {
 	size_t bufsize = 20000, pos = 0;
 	char *buf, *err;
 	sql_schema *s = mvc_bind_schema(sql, "sys");
 	sql_table *t;
+	char *day_interval_str = oct2020_upgrade ? " 'day_interval'," : "";
 
 	if ((buf = GDKmalloc(bufsize)) == NULL)
 		throw(SQL, __func__, SQLSTATE(HY013) MAL_MALLOC_FAIL);
@@ -630,17 +631,48 @@ sql_update_storagemodel(Client c, mvc *sql, const char *prev_schema)
 		/* drop objects in reverse order of original creation of old 75_storagemodel.sql */
 		"drop view if exists sys.tablestoragemodel;\n"
 		"drop view if exists sys.storagemodel cascade;\n"
-		"drop function if exists sys.storagemodel() cascade;\n"
-		"drop function if exists sys.imprintsize(bigint, clob) cascade;\n"
-		"drop function if exists sys.hashsize(boolean, bigint) cascade;\n"
-		"drop function if exists sys.heapsize(clob, bigint, int) cascade;\n"
-		"drop function if exists sys.columnsize(clob, bigint, bigint) cascade;\n"
+		"drop function if exists sys.storagemodel() cascade;\n");
+
+	if (oct2020_upgrade) {
+		pos += snprintf(buf + pos, bufsize - pos,
+			"drop function if exists sys.imprintsize(varchar(1024), bigint) cascade;\n");
+	} else {
+		pos += snprintf(buf + pos, bufsize - pos,
+			"drop function if exists sys.imprintsize(bigint, clob) cascade;\n");
+	}
+
+	pos += snprintf(buf + pos, bufsize - pos,
+		"drop function if exists sys.hashsize(boolean, bigint) cascade;\n");
+
+	if (oct2020_upgrade) {
+		pos += snprintf(buf + pos, bufsize - pos,
+			"drop function if exists sys.columnsize(varchar(1024), bigint) cascade;\n"
+			"drop function if exists sys.heapsize(varchar(1024), bigint, bigint, int) cascade;\n");
+	} else {
+		pos += snprintf(buf + pos, bufsize - pos,
+			"drop function if exists sys.columnsize(clob, bigint, bigint) cascade;\n"
+			"drop function if exists sys.heapsize(clob, bigint, int) cascade;\n");
+	}
+
+	pos += snprintf(buf + pos, bufsize - pos,
 		"drop procedure if exists sys.storagemodelinit();\n"
 		"drop table if exists sys.storagemodelinput cascade;\n"
-		"drop view if exists sys.\"storage\" cascade;\n"
-		"drop function if exists sys.\"storage\"(clob, clob, clob) cascade;\n"
-		"drop function if exists sys.\"storage\"(clob, clob) cascade;\n"
-		"drop function if exists sys.\"storage\"(clob) cascade;\n"
+		"drop view if exists sys.\"storage\" cascade;\n");
+
+	if (oct2020_upgrade) {
+		pos += snprintf(buf + pos, bufsize - pos,
+			"drop function if exists sys.\"storage\"(varchar(1024), varchar(1024), varchar(1024)) cascade;\n"
+			"drop function if exists sys.\"storage\"(varchar(1024), varchar(1024)) cascade;\n"
+			"drop function if exists sys.\"storage\"(varchar(1024)) cascade;\n");
+	} else {
+		pos += snprintf(buf + pos, bufsize - pos,
+			"drop function if exists sys.\"storage\"(clob, clob, clob) cascade;\n"
+			"drop function if exists sys.\"storage\"(clob, clob) cascade;\n"
+			"drop function if exists sys.\"storage\"(clob) cascade;\n");
+	}
+
+	/* new 75_storagemodel.sql */
+	pos += snprintf(buf + pos, bufsize - pos,
 		"drop function if exists sys.\"storage\"() cascade;\n"
 		"create function sys.\"storage\"()\n"
 		"returns table (\n"
@@ -815,7 +847,7 @@ sql_update_storagemodel(Client c, mvc *sql, const char *prev_schema)
 		"	if tpe = 'smallint'\n"
 		"		then return 2 * count;\n"
 		"	end if;\n"
-		"	if tpe in ('int', 'real', 'date', 'time', 'timetz', 'sec_interval', 'month_interval')\n"
+		"	if tpe in ('int', 'real', 'date', 'time', 'timetz', 'sec_interval',%s 'month_interval')\n"
 		"		then return 4 * count;\n"
 		"	end if;\n"
 		"	if tpe in ('bigint', 'double', 'timestamp', 'timestamptz', 'inet', 'oid')\n"
@@ -860,7 +892,7 @@ sql_update_storagemodel(Client c, mvc *sql, const char *prev_schema)
 		"	if tpe = 'smallint'\n"
 		"		then return cast(0.4 * count as bigint);\n"
 		"	end if;\n"
-		"	if tpe in ('int', 'real', 'date', 'time', 'timetz', 'sec_interval', 'month_interval')\n"
+		"	if tpe in ('int', 'real', 'date', 'time', 'timetz', 'sec_interval',%s 'month_interval')\n"
 		"		then return cast(0.8 * count as bigint);\n"
 		"	end if;\n"
 		"	if tpe in ('bigint', 'double', 'timestamp', 'timestamptz', 'inet', 'oid')\n"
@@ -892,8 +924,7 @@ sql_update_storagemodel(Client c, mvc *sql, const char *prev_schema)
 		"	sum(case when (isacolumn and not sorted) then cast(8 * \"count\" as bigint) else 0 end) as orderidxsize\n"
 		" from sys.storagemodelinput\n"
 		"group by \"schema\", \"table\"\n"
-		"order by \"schema\", \"table\";\n"
-	);
+		"order by \"schema\", \"table\";\n", day_interval_str, day_interval_str);
 	assert(pos < bufsize);
 
 	pos += snprintf(buf + pos, bufsize - pos,
@@ -2438,11 +2469,24 @@ sql_update_oct2020(Client c, mvc *sql, const char *prev_schema, bool *systabfixe
 					"GRANT EXECUTE ON AGGREGATE quantile(INTERVAL DAY, DOUBLE) TO PUBLIC;\n"
 					"update sys.functions set system = true where system <> true and name in ('median', 'quantile') and schema_id = (select id from sys.schemas where name = 'sys') and type = %d;\n", (int) F_AGGR);
 
+			/* 90_generator.sql */
+			pos += snprintf(buf + pos, bufsize - pos,
+					"create function sys.generate_series(first timestamp, \"limit\" timestamp, stepsize interval day) returns table (value timestamp)\n"
+					" external name \"generator\".\"series\";\n"
+					"update sys.functions set system = true where system <> true and name in ('generate_series') and schema_id = (select id from sys.schemas where name = 'sys') and type = %d;\n", (int) F_UNION);
+
 			pos += snprintf(buf + pos, bufsize - pos, "set schema \"%s\";\n", prev_schema);
 
 			assert(pos < bufsize);
 			printf("Running database upgrade commands:\n%s\n", buf);
 			err = SQLstatementIntern(c, buf, "update", true, false, NULL);
+			if (err) {
+				BBPunfix(b->batCacheid);
+				res_table_destroy(output);
+				GDKfree(buf);
+				return err;
+			}
+			err = sql_update_storagemodel(c, sql, prev_schema, true); /* because of day interval addition, we have to recreate the storagmodel views */
 		}
 		BBPunfix(b->batCacheid);
 	}
@@ -2580,7 +2624,7 @@ SQLupgrades(Client c, mvc *m)
 	if (sql_bind_func(m->sa, s, "storagemodel", NULL, NULL, F_UNION)
 	 && (t = mvc_bind_table(m, s, "tablestorage")) == NULL
 	 && (t = mvc_bind_table(m, s, "schemastorage")) == NULL ) {
-		if ((err = sql_update_storagemodel(c, m, prev_schema)) != NULL) {
+		if ((err = sql_update_storagemodel(c, m, prev_schema, false)) != NULL) {
 			TRC_CRITICAL(SQL_PARSER, "%s\n", err);
 			freeException(err);
 			GDKfree(prev_schema);
