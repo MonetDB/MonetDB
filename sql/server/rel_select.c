@@ -5051,12 +5051,12 @@ rel_value_exp(sql_query *query, sql_rel **rel, symbol *se, int f, exp_kind ek)
 				e = exp_values(query->sql->sa, r->exps);
 			} else {
 				e = r->exps->h->data;
-				if (*rel && !exp_has_rel(e)) {
+				if (rel && *rel && !exp_has_rel(e)) {
 					rel_bind_var(query->sql, *rel, e);
 					if (exp_has_freevar(query->sql, e) && is_sql_aggr(f)) {
 						sql_rel *outer = query_fetch_outer(query, exp_has_freevar(query->sql, e)-1);
 						query_outer_pop_last_used(query, exp_has_freevar(query->sql, e)-1);
-					        reset_outer(outer);
+						reset_outer(outer);
 					}
 				}
 			}
