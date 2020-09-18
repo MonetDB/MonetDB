@@ -1542,8 +1542,8 @@ rewrite_inner(mvc *sql, sql_rel *rel, sql_rel *inner, operator_type op)
 		if (single)
 			set_single(d);
 	} else if (is_project(rel->op)){ /* projection -> op_left */
-		if (rel->l || single) {
-			if (single && !rel->l)
+		if (rel->l || single || op == op_left) {
+			if ((single || op == op_left) && !rel->l)
 				rel->l = rel_project(sql->sa, rel->l, append(sa_list(sql->sa), exp_atom_bool(sql->sa, 1)));
 			d = rel->l = rel_crossproduct(sql->sa, rel->l, inner, op_left);
 			if (single)
