@@ -3209,27 +3209,33 @@ rewrite_values(visitor *v, sql_rel *rel)
 	list *exps = sa_list(v->sql->sa);
 	sql_rel *cur = NULL;
 	list *vals = exp_get_values(e);
-	for(int i = 0; i<list_length(vals); i++) {
-		sql_rel *nrel = rel_project(v->sql->sa, NULL, sa_list(v->sql->sa));
-		set_processed(nrel);
-		for(node *n = rel->exps->h; n; n = n->next) {
-			sql_exp *e = n->data;
-			if (i == 0)
-				append(exps, exp_ref(v->sql, e));
-			list *vals = exp_get_values(e);
-			sql_exp *v = list_fetch(vals, i);
-			append(nrel->exps, v);
-			rel_set_exps(nrel, nrel->exps);
-		}
-		if (cur) {
-			nrel = rel_setop(v->sql->sa, cur, nrel, op_union);
-			rel_set_exps(nrel, exps);
+	if (vals) {
+		for(int i = 0; i<list_length(vals); i++) {
+			sql_rel *nrel = rel_project(v->sql->sa, NULL, sa_list(v->sql->sa));
 			set_processed(nrel);
+			for(node *n = rel->exps->h; n; n = n->next) {
+				sql_exp *e = n->data;
+				list *vals = exp_get_values(e);
+
+				if (vals) {
+					if (i == 0)
+						append(exps, exp_ref(v->sql, e));
+					sql_exp *v = list_fetch(vals, i);
+					append(nrel->exps, v);
+					rel_set_exps(nrel, nrel->exps);
+				}
+			}
+			if (cur) {
+				nrel = rel_setop(v->sql->sa, cur, nrel, op_union);
+				rel_set_exps(nrel, exps);
+				set_processed(nrel);
+			}
+			if (!list_empty(nrel->exps))
+				cur = nrel;
 		}
-		cur = nrel;
+		rel = cur;
+		set_single(rel);
 	}
-	rel = cur;
-	set_single(rel);
 	return rel;
 }
 
