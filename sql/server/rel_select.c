@@ -524,7 +524,7 @@ find_table_function_type(mvc *sql, sql_schema *s, char *fname, list *exps, list 
 	return e;
 }
 
-static sql_exp*
+sql_exp *
 find_table_function(mvc *sql, sql_schema *s, char *fname, list *exps, list *tl)
 {
 	sql_subfunc* sf = NULL;
