@@ -276,6 +276,13 @@ stdout of test 'sqlancer07` in directory 'sql/test/SQLancer` itself:
 #ROLLBACK;
 #START TRANSACTION;
 #CREATE TABLE "t1" ("c0" DOUBLE PRECISION NOT NULL);
+#select 1 from (values (0.86), ((select 3 from t1))) as sub0(c0);
+% .%6 # table_name
+% %6 # name
+% tinyint # type
+% 1 # length
+[ 1	]
+[ 1	]
 #select sub0.c0 from (values (0.86), ((select 3 from t1))) as sub0(c0); -- this one is right
 % .sub0 # table_name
 % c0 # name
@@ -283,6 +290,11 @@ stdout of test 'sqlancer07` in directory 'sql/test/SQLancer` itself:
 % 5 # length
 [ 0.86	]
 [ NULL	]
+#select sub0.c0 from (values (0.86), ((select 3 from t1))) as sub0(c0) WHERE NOT TRUE;
+% .sub0 # table_name
+% c0 # name
+% decimal # type
+% 5 # length
 #select sub0.c0 from (values (0.86), ((select 3))) as sub0(c0);
 % .sub0 # table_name
 % c0 # name

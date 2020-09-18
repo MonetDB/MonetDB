@@ -3203,7 +3203,7 @@ rewrite_values(visitor *v, sql_rel *rel)
 		return rel;
 	sql_exp *e = rel->exps->h->data;
 
-	if (!is_values(e) || list_length(exp_get_values(e))<=1 || !rel_has_freevar(v->sql, rel))
+	if (!is_values(e) || list_length(exp_get_values(e))<=1 || (!rel_has_freevar(v->sql, rel) && !exp_has_rel(e)))
 		return rel;
 
 	list *exps = sa_list(v->sql->sa);
@@ -3267,7 +3267,7 @@ rel_unnest(mvc *sql, sql_rel *rel)
 	rel = rel_exp_visitor_bottomup(&v, rel, &rewrite_ifthenelse, false);	/* add isnull handling */
 	rel = rel_exp_visitor_bottomup(&v, rel, &reset_exp_used, false);	/* reset used flag from ifthenelse re-writer, so it can be used again by the rel_dce optimizer */
 
-	rel = rel_visitor_bottomup(&v, rel, &rewrite_values);
+	rel = rel_visitor_bottomup(&v, rel, &rewrite_values); /* must come before rewrite_exp_rel */
 	rel = rel_exp_visitor_bottomup(&v, rel, &rewrite_exp_rel, true);
 	rel = rel_visitor_bottomup(&v, rel, &rewrite_join2semi);	/* where possible convert anyequal functions into marks */
 	if (v.changes > 0)
