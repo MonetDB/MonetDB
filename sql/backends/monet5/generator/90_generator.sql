@@ -53,3 +53,7 @@ external name generator.series;
 create function sys.generate_series(first timestamp, "limit" timestamp, stepsize interval second)
 returns table (value timestamp)
 external name generator.series;
+
+create function sys.generate_series(first timestamp, "limit" timestamp, stepsize interval day)
+returns table (value timestamp)
+external name generator.series;
