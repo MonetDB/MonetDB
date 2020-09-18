@@ -3781,6 +3781,7 @@ GRANT EXECUTE ON AGGREGATE median(INTERVAL DAY) TO PUBLIC;
 create aggregate quantile(val INTERVAL DAY, q DOUBLE) returns INTERVAL DAY
  external name "aggr"."quantile";
 GRANT EXECUTE ON AGGREGATE quantile(INTERVAL DAY, DOUBLE) TO PUBLIC;
+update sys.functions set system = true where system <> true and name in ('median', 'quantile') and schema_id = (select id from sys.schemas where name = 'sys') and type = 3;
 set schema "sys";
 
 # MonetDB/SQL module loaded
