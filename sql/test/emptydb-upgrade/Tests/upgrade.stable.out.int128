@@ -4495,7 +4495,7 @@ create aggregate quantile(val INTERVAL DAY, q DOUBLE) returns INTERVAL DAY
 GRANT EXECUTE ON AGGREGATE quantile(INTERVAL DAY, DOUBLE) TO PUBLIC;
 update sys.functions set system = true where system <> true and name in ('median', 'quantile') and schema_id = (select id from sys.schemas where name = 'sys') and type = 3;
 create function sys.generate_series(first timestamp, "limit" timestamp, stepsize interval day) returns table (value timestamp)
- external name "generator"."series";
+ external name generator.series;
 update sys.functions set system = true where system <> true and name in ('generate_series') and schema_id = (select id from sys.schemas where name = 'sys') and type = 5;
 set schema "sys";
 
