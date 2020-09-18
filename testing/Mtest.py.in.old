@@ -419,6 +419,150 @@ CONDITIONALS = {
     'HAVE_IPV6'            : "",
 }
 
+# a bunch of classes to help with generating (X)HTML files
+class _Encode:
+    # mix-in class for encoding text and attribute values so that they
+    # don't get interpreted as something else by the browser
+    def encode(self, data, attr):
+        map = [('&', '&amp;'),          # MUST be first
+               ('<', '&lt;'),
+               ('>', '&gt;'),
+               (None, None),
+               # following chars only translated in attr values (attr is True)
+               ('"', '&quot;'),
+               ('\t', '&#9;'),
+               ('\n', '&#10;'),
+               ('\r', '&#13;'),
+               ]
+        for c, tr in map:
+            if c is None:
+                if not attr:
+                    break
+                continue
+            data = data.replace(c, tr)
+        return data
+
+class Element(_Encode):
+    # class to represent an (X)HTML element with its attributes and
+    # children
+
+    # inline elements, we do not add newlines to the contents of these
+    # elements
+    inline = ['tt','i','b','big','small','em','strong','dfn','code',
+              'samp','kbd','var','cite','abbr','acronym','a','img',
+              'object','br','script','map','q','sub','sup','span',
+              'bdo','input','select','textarea','label','button','font']
+    # empty elements
+    empty = ['link', 'basefont', 'br', 'area', 'img', 'param', 'hr',
+             'input', 'col', 'frame', 'isindex', 'base', 'meta', ]
+    xml = True                          # write XHTML instead of HTML
+
+    def __init__(self, tag, attrdict = None, *children):
+        self.tag = tag
+        if attrdict is None:
+            attrdict = {}
+        self.attrdict = attrdict
+        if children is None:
+            children = []
+        self.isempty = tag.lower() in self.empty
+        if self.isempty:
+            if children:
+                raise ValueError("empty element can't have children")
+            self.children = None
+        else:
+            self.children = list(children)
+
+    def __str__(self):
+        # string representation of the element with its children
+        s = ['<%s' % self.tag]
+        for name, value in sorted(self.attrdict.items()):
+            s.append(' %s="%s"' % (name, self.encode(value, True)))
+        if self.children or (not self.xml and not self.isempty):
+            s.append('>')
+            for c in self.children:
+                s.append(str(c))
+            s.append('</%s>' % self.tag)
+        elif self.xml:
+            s.append('/>')
+        else:
+            s.append('>')               # empty HTML element
+        return ''.join(s)
+
+    def write(self, f, newline = False):
+        # write the element with its children to a file
+        # if newline is set, add newlines at strategic points
+        if self.tag.lower() == 'html':
+            # before we write the DOCTYPE we should really check
+            # whether the document conforms...
+            if self.xml:
+                f.write('<!DOCTYPE html PUBLIC '
+                        '"-//W3C//DTD XHTML 1.0 Transitional//EN"\n'
+                        '                      '
+                        '"http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">\n')
+            else:
+                f.write('<!DOCTYPE html PUBLIC '
+                        '"-//W3C//DTD HTML 4.01 Transitional//EN"\n'
+                        '                      '
+                        '"http://www.w3.org/TR/html4/loose.dtd">\n')
+        inline = self.tag.lower() in self.inline
+        f.write('<%s' % self.tag)
+        for name, value in sorted(self.attrdict.items()):
+            f.write(' %s="%s"' % (name, self.encode(value, True)))
+        if self.children or (not self.xml and not self.isempty):
+            if not inline:
+                for c in self.children:
+                    if not isinstance(c, Element):
+                        inline = True
+                        break
+            f.write('>')
+            if newline and not inline:
+                f.write('\n')
+            for c in self.children:
+                c.write(f, newline and not inline)
+            f.write('</%s>' % self.tag)
+        elif self.xml:
+            f.write('/>')
+        else:
+            f.write('>')                # empty HTML element
+        if newline:
+            f.write('\n')
+
+    def addchild(self, child):
+        self.children.append(child)
+
+    def addchildren(self, children):
+        for child in children:
+            self.children.append(child)
+
+    def inschild(self, index, child):
+        self.children.insert(index, child)
+
+class Text(_Encode):
+    # class to represent text in (X)HTML
+    def __init__(self, text = '', raw = False):
+        self.text = text
+        self.raw = raw
+
+    def __str__(self):
+        if self.raw:
+            return self.text
+        return self.encode(self.text, False)
+
+    def write(self, f, newline = False):
+        f.write(str(self))
+        if newline and not self.raw:
+            f.write('\n')
+
+class Comment:
+    # class to represent an (X)HTML comment (not currently used)
+    def __init__(self, text):
+        self.text = text
+
+    def __str__(self):
+        return '<!--%s-->' % self.text
+
+    def write(self, f, newline = False):
+        f.write(str(self))
 
 class Timer:
     # interface to the threading.Timer function that interprets a
@@ -448,6 +592,18 @@ green = '#00aa00'
 darkgreen = '#005500'
 orange = '#ffaa00'
 purple = '#aa00aa'
+stylesheet = Element('style', None, Text('''
+.error     { font-weight: bold; font-style: italic; color: red; }
+.segfault  { font-weight: bold; font-style: italic; color: purple; }
+.abort     { font-weight: bold; font-style: italic; color: purple; }
+.recursion { font-weight: bold; font-style: italic; color: purple; }
+.timeout   { font-weight: bold; font-style: italic; color: purple; }
+.socket    { font-weight: bold; font-style: italic; color: purple; }
+.warning   { font-weight: bold; color: orange; }
+.good      {  }
+.header    { font-family: helvetica, arial; text-align: center; }
+.black     { color: black; }
+'''))
 
 TIMES = []
 
@@ -491,6 +647,12 @@ def startswithpath(str,pre) :
     return os.path.normcase(str[:len(pre)]) == os.path.normcase(pre)
 ### startswithpath(str,pre) #
 
+##def path(str) :
+##    return str.replace('/', os.sep)
+### path(str) #
+##def url(str) :
+##    return str.replace(os.sep, '/')
+### url(str) #
 if sys.version_info[0] == 2:
     import urllib
     path = urllib.url2pathname
@@ -522,7 +684,455 @@ def try_open(path, mode) :
     return f
 ###  try_open(path, mode) #
 
+def CreateHtmlIndex (env, *body) :
+    TSTDIR=env['TSTDIR']
+    TSTTRGDIR=env['TSTTRGDIR']
+
+    if TSTDIR:
+        INDEX=".index"
+    else:
+        INDEX="index"
+
+    if body:
+        BACK = os.getcwd()
+        os.chdir(TSTTRGDIR)
+
+        if TSTDIR:
+            header = Text(TSTDIR)
+            if URLPREFIX:
+                header = Element('a',
+                                 {'href': '%s%s/%s' % (URLPREFIX, url(TSTDIR), TSTSUFF),
+                                  'target': '%s_%s_body' % (DISTVER, TSTDIR),
+                                  'class': 'black'},
+                                 header)
+            tr = Element('tr', {'valign': 'top'},
+                         Element('th', {'class': 'header'},
+                                 header))
+            tr.addchildren(body)
+            hbody = Element('body',
+                            {'bgcolor': white,
+                             'text': black,
+                             'link': green,
+                             'vlink': darkgreen,
+                             'alink': lime},
+                            Element('center', {},
+                                    Element('table',
+                                            {'align': 'abscenter',
+                                             'border': '1',
+                                             'cellspacing': '0',
+                                             'cellpadding': '3'},
+                                            tr)))
+        else:
+            header = Element('h3', {},
+                             Text(DISTVER))
+            hbody = Element('body',
+                            {'bgcolor': white,
+                             'text': black,
+                             'link': green,
+                             'vlink': darkgreen,
+                             'alink': lime},
+                            header)
+            hbody.addchildren(body)
+        html = Element('html', {},
+                       Element('head', {},
+                               Element('meta', {'charset':'utf8'}),
+                               Element('title', {}, Text(HTMLTITLE)),
+                               stylesheet),
+                       hbody)
+        f = openutf8("%s.head.html" % INDEX,"w")
+        html.write(f, True)
+        f.close()
+
+        if TSTDIR:
+            layout = 'rows'
+            ROWS="8%"
+        else:
+            layout = 'cols'
+            ROWS="10%"
+        html = Element('html', {},
+                       Element('head', {},
+                               Element('meta', {'charset':'utf8'}),
+                               Element('title', {}, Text(HTMLTITLE))),
+                       Element('frameset',
+                               {layout: '%s,*' % ROWS,
+                                'frameborder': 'yes',
+                                'border': '1',
+                                'bordercolor': white,
+                                'marginwidth': '0',
+                                'marginheight': '0'},
+                               Element('frame',
+                                       {'src': '%s.head.html' % INDEX,
+                                        'scrolling': 'auto',
+                                        'name': '%s_%s_head' % (DISTVER, TSTDIR),
+                                        'frameborder': 'yes',
+                                        'bordercolor': white,
+                                        'marginwidth': '0',
+                                        'marginheight': '0'}),
+                               Element('frame',
+                                       {'src': url(env['_%s_BODY_' % TSTDIR][0]),
+                                        'scrolling': 'auto',
+                                        'name': '%s_%s_body' % (DISTVER, TSTDIR),
+                                        'frameborder': 'yes',
+                                        'bordercolor': white,
+                                        'marginwidth': '0',
+                                        'marginheight': '0'})))
+        f = openutf8("%s.html" % INDEX, "w")
+        html.write(f, True)
+        f.close()
+        env['_%s_BODY_' % TSTDIR] = ["", 0]
+        os.chdir(BACK)
+### CreateHtmlIndex (env, *body) #
+
 bugre = re.compile(r'\.(sf|bug)-(?P<bugno>[1-9]\d+)', re.I)
+
+def CreateTstWhatXhtml (env, TST, stableWHAT, EXT, result) :
+    WHAT = stableWHAT[7:11]
+    TSTDIR    = env['TSTDIR']
+    TSTSRCDIR = env['TSTSRCDIR']
+
+    if result == F_OK:
+        diffclass = 'good'
+        difftext = 'No differences'
+    elif result == F_WARN:
+        diffclass = 'warning'
+        difftext = 'Minor differences'
+    else:                       # result == F_ERROR:
+        difftext = 'Major differences'
+        if result == F_SOCK:
+            diffclass = 'socket'
+            difftext += ' (Socket)'
+        elif result == F_TIME:
+            diffclass = 'timeout'
+            difftext += ' (Timeout)'
+        elif result == F_RECU:
+            diffclass = 'recursion'
+            difftext += ' (Recursion)'
+        elif result == F_ABRT:
+            diffclass = 'abort'
+            difftext += ' (Aborted)'
+        elif result == F_SEGV:
+            diffclass = 'segfault'
+            difftext += ' (Crash)'
+        elif result == F_MISSING:
+            diffclass = 'error'
+            difftext += ' (Output missing)'
+        else:
+            diffclass = 'error'
+
+    SYSTEM = "%s:" % DISTVER
+
+    html = Element('html', {},
+                   Element('head', {},
+                           Element('title', {}, Text(HTMLTITLE)),
+                           stylesheet),
+                   Element('frameset', {'rows': '42,*',
+                                        'frameborder': 'yes',
+                                        'border': '1',
+                                        'bordercolor': white,
+                                        'marginwidth': '0',
+                                        'marginheight': '0'},
+                           Element('frame',
+                                   {'src': '.%s%s.head.html' % (TST, WHAT),
+                                    'scrolling': 'auto',
+                                    'name': '%s_%s_%s_%s_head' % (DISTVER, TSTDIR, TST, WHAT[1:]),
+                                    'frameborder': 'yes',
+                                    'bordercolor': white,
+                                    'marginwidth': '0',
+                                    'marginheight': '0'}),
+                           Element('frame',
+                                   {'src': '%s%s.diff.html' % (TST, WHAT),
+                                    'scrolling': 'auto',
+                                    'name': '%s_%s_%s_%s_body' % (DISTVER, TSTDIR, TST, WHAT[1:]),
+                                    'frameborder': 'yes',
+                                    'bordercolor': white,
+                                    'marginwidth': '0',
+                                    'marginheight': '0'})))
+    f = openutf8(".%s%s.html" % (TST, WHAT), "w")
+    html.write(f, True)
+    f.close()
+    f = openutf8(".%s%s.head.html" % (TST, WHAT),"w")
+    target = '%s_%s_%s_%s_body' % (DISTVER, TSTDIR, TST, WHAT[1:])
+    if REV:                     # implies URLPREFIX is not None
+        urlpref = '%s%s/%s' % (URLPREFIX, url(TSTDIR), TSTSUFF)
+        hg = Element('a', {'href': urlpref,
+                           'target': target},
+                     Text('hg'))
+    else:
+        hg = None
+    text = Element('div', {'class': 'header'},
+                   Text(SYSTEM),
+                   Text(' '),
+                   Element('a', {'href': '%s%s.diff.html' % (TST, WHAT),
+                                 'target': target,
+                                 'class': diffclass},
+                           Text(difftext)),
+                   Text(' between '),
+                   Element('a', {'href': '%s%s' % (TST, stableWHAT),
+                                 'target': target},
+                           Text(stableWHAT[1:])))
+    if REV:
+        d = urlpref
+        if os.path.isfile(TST + stableWHAT + '.src'):
+            # there's only one file like this...
+            fl = openutf8(TST + stableWHAT + '.src').readline().strip()
+            if fl.startswith('$RELSRCDIR/'):
+                fl = fl[11:]
+                while fl.startswith('../'):
+                    fl = fl[3:]
+                    d = d[:d.rindex('/')]
+            fl = '%s/%s' % (d, fl)
+        else:
+            fl = '%s/%s%s' % (d, TST, stableWHAT)
+        text.addchildren([
+                Text(' (id '),
+                Element('a', {'href': fl,
+                              'target': target}, Text(REV)),
+                Text(')')])
+    text.addchildren([
+            Text(' and '),
+            Element('a', {'href': '%s.test%s' % (TST, WHAT),
+                          'target': target},
+                    Text('test%s' % WHAT)),
+            Text(' of '),
+            Element('a', {'href': TST + EXT, 'target': target},
+                    Text(TST + EXT))])
+    if REV:
+        d = urlpref
+        if os.path.isfile(TST + EXT + '.src'):
+            fl = openutf8(TST + EXT + '.src').readline().strip()
+            if fl.startswith('$RELSRCDIR/'):
+                fl = fl[11:]
+                while fl.startswith('../'):
+                    fl = fl[3:]
+                    d = d[:d.rindex('/')]
+            fl = '%s/%s' % (d, fl)
+        elif os.path.isfile(TST + EXT + '.in'):
+            fl = '%s/%s%s.in' % (d, TST, EXT)
+        else:
+            fl = '%s/%s%s' % (d, TST, EXT)
+        text.addchildren([
+                Text(' (id '),
+                Element('a', {'href': fl,
+                              'target': target}, Text(REV)),
+                Text(')')])
+    text.addchildren([
+            Text(' in '),
+            Element('a', {'href': './', 'target': target},
+                    Text(TSTDIR)),
+            Text(' (')])
+    if hg:
+        text.addchild(hg)
+        text.addchild(Text(', '))
+    text.addchildren([
+            Element('a', {'href': url(env['RELSRCDIR']),
+                          'target': target},
+                    Text('src')),
+            Text(')')])
+    res = bugre.search(TST)
+    if res is not None:
+        bugno = res.group('bugno')
+        text.addchildren([
+                Text(' ('),
+                Element('a', {'href': 'http://bugs.monetdb.org/%s' % bugno,
+                              'target': '_blank'},
+                        Text('Bugzilla')),
+                Text(')')])
+    html = Element('html', {},
+                   Element('head', {},
+                           Element('title', {},
+                                   Text(HTMLTITLE)),
+                           stylesheet),
+                   Element('body',
+                           {'bgcolor': white,
+                            'text': black,
+                            'link': green,
+                            'vlink': darkgreen,
+                            'alink': lime},
+                           text))
+
+    html.write(f, True)
+    f.close()
+#TODO?
+# <A HREF='.Mtest.Slave.Log.OutErr' TARGET='"""+DISTVER+"_"+TSTDIR+"_"+TST+"_"+WHAT[1:]+"""_body'>LOG</A>).
+### CreateTstWhatXhtml (env, TST, stableWHAT, EXT, results) #
+
+def CreateSrcIndex (env, TST, EXT) :
+    TSTSRCDIR = env['TSTSRCDIR']
+    TSTDIR    = env['TSTDIR']
+
+    if URLPREFIX:
+        framesrc = '%s%s/%s/%s%s' % (URLPREFIX, url(TSTDIR), TSTSUFF, TST, EXT)
+    else:
+        f = openutf8(".%s.nosrc.index.html" % TST, "w")
+        html = Element('html', {},
+                       Element('head', {},
+                               Element('title', {},
+                                       Text(HTMLTITLE)),
+                               stylesheet),
+                       Element('body',
+                               {'bgcolor': white,
+                                'text': black,
+                                'link': green,
+                                'vlink': darkgreen,
+                                'alink': lime},
+                               Element('center', {},
+                                       Text('no source available'))))
+        framesrc = '.%s.nosrc.index.html' % TST
+    html = Element('html', {},
+                   Element('head', {},
+                           Element('title', {}, Text(HTMLTITLE))),
+                   Element('frameset',
+                           {'rows': '54,*',
+                            'frameborder': 'yes',
+                            'border': '1',
+                            'bordercolor': white,
+                            'marginwidth': '0',
+                            'marginheight': '0'},
+                           Element('frame',
+                                   {'src': '.%s.src.index.head.html' % TST,
+                                    'scrolling': 'auto',
+                                    'name': '%s_%s_%s_head' % (DISTVER, TSTDIR, TST),
+                                    'frameborder': 'yes',
+                                    'bordercolor': white,
+                                    'marginwidth': '0',
+                                    'marginheight': '0'}),
+                           Element('frame',
+                                   {'src': framesrc,
+                                    'scrolling': 'auto',
+                                    'name': '%s_%s_%s_body' % (DISTVER, TSTDIR, TST),
+                                    'frameborder': 'yes',
+                                    'bordercolor': white,
+                                    'marginwidth': '0',
+                                    'marginheight': '0'})))
+    f = openutf8(".%s.src.index.html" % TST,"w")
+    html.write(f, True)
+    f.close()
+
+    tr = Element('tr', {},
+                 Element('th', {'class': 'header'},
+                         Text(TST)))
+    for s in listdir(TSTSRCDIR):
+        if s.startswith(TST):
+            slink = Text(s)
+            if URLPREFIX:
+                slink = Element('a',
+                                {'href': '%s%s/%s/%s' % (URLPREFIX, url(TSTDIR), TSTSUFF, s),
+                                 'target': '%s_%s_%s_body' % (DISTVER, TSTDIR, TST)},
+                                slink)
+            tr.addchild(Element('td', {'class': 'header'},
+                                slink))
+    html = Element('html', {},
+                   Element('head', {},
+                           Element('title', {},
+                                   Text(HTMLTITLE)),
+                           stylesheet),
+                   Element('body',
+                           {'bgcolor': white,
+                            'text': black,
+                            'link': green,
+                            'vlink': darkgreen,
+                            'alink': lime},
+                           Element('center', {},
+                                   Element('table',
+                                           {'align': 'abscenter',
+                                            'border': '1',
+                                            'cellspacing': '0',
+                                            'cellpadding': '3'},
+                                           tr))))
+    f = openutf8(".%s.src.index.head.html" % TST, "w")
+    html.write(f, True)
+    f.close()
+### CreateSrcIndex (env, TST, EXT) #
+
+def AddHref (href, target, linktext, diff) :
+    if   diff == F_ERROR:
+        klass = 'error'
+    elif diff == F_RECU:
+        klass = 'recursion'
+    elif diff == F_TIME:
+        klass = 'timeout'
+    elif diff == F_SOCK:
+        klass = 'socket'
+    elif diff == F_ABRT:
+        klass = 'abort'
+    elif diff == F_SEGV:
+        klass = 'segfault'
+    elif diff == F_WARN:
+        klass = 'warning'
+    elif diff == F_MISSING:
+        klass = 'error'
+    else:
+        klass = 'good'
+    a = Element('a', {'href': href, 'target': target, 'class': klass},
+                Text(linktext))
+    if klass == 'good':
+        return [Text('('), a, Text(')')]
+    else:
+        return [a]
+### AddHref (TSTDIR, TST, WHAT, diff) #
+
+def AddTstToHtmlIndex (env, TST, STABLEout, STABLEerr, EXT, o, e) :
+    TSTDIR = env['TSTDIR']
+
+    CreateTstWhatXhtml(env, TST, STABLEout, EXT, o)
+    CreateTstWhatXhtml(env, TST, STABLEerr, EXT, e)
+
+    if e == F_RECU:
+        tstclass = 'recursion'
+    elif e == F_TIME:
+        tstclass = 'timeout'
+    elif e == F_SOCK:
+        tstclass = 'socket'
+    elif e == F_ABRT:
+        tstclass = 'abort'
+    elif e == F_SEGV:
+        tstclass = 'segfault'
+    elif o == F_MISSING or e == F_MISSING:
+        tstclass = 'error'
+    elif o == F_ERROR or e == F_ERROR:
+        tstclass = 'error'
+    elif o == F_WARN or e == F_WARN:
+        tstclass = 'warning'
+    else:
+        tstclass = 'good'
+
+    td = Element('td', {'class': 'header'},
+                 Element('a', {'href': '.%s.src.index.html' % TST,
+                               'target': '%s_%s_body' % (DISTVER, TSTDIR),
+                               'class': tstclass},
+                         Text(TST)),
+                 Element('br'))
+    td.addchildren(AddHref('.%s%s.html' % (TST, '.out'),
+                           '%s_%s_body' % (DISTVER, TSTDIR),
+                           'out', o))
+    td.addchild(Text("&nbsp;|&nbsp;", raw = True))
+    td.addchildren(AddHref('.%s%s.html' % (TST, '.err'),
+                           '%s_%s_body' % (DISTVER, TSTDIR),
+                           'err', e))
+    if '_%s_BODY_' % TSTDIR not in env  or  \
+       not env['_%s_BODY_' % TSTDIR][0]  or  \
+       ( (not env['_%s_BODY_' % TSTDIR][1])  and  (o or e) ):
+        if e and not o:
+            env['_%s_BODY_' % TSTDIR] = [".%s.err.html" % TST, e]
+        else:
+            env['_%s_BODY_' % TSTDIR] = [".%s.out.html" % TST, o]
+
+    CreateSrcIndex(env, TST, EXT)
+
+    return td
+### AddTstToHtmlIndex (env, TST, STABLEout, STABLEerr, EXT) #
+
+def AddSubToHtmlIndex (env, TSTDIR, diff) :
+    elem = Element('p', {})
+    elem.addchildren(AddHref('%s/.index.html' % url(TSTDIR),
+                             '%s__body' % DISTVER,
+                             TSTDIR, diff))
+    if '__BODY_' not in env  or  \
+       not env['__BODY_'][0]  or  \
+       ( (not env['__BODY_'][1])  and  diff ):
+        env['__BODY_'] = ["%s/.index.html" % TSTDIR, diff]
+    return elem
+### AddSubToHtmlIndex (env, TSTDIR, diff) #
 
 def SkipTest(env, TST, EXT, REASON, length) :
     TSTDIR = env['TSTDIR']
@@ -547,6 +1157,32 @@ def SkipTest(env, TST, EXT, REASON, length) :
         else:
             s = '%-*s' % (length, TST)
         STDOUT.write('%s%s skipped (%s)\n' % (prompt(), s, REASON))
+
+    if testweb:
+        return None
+
+    f = openutf8(".%s.SKIPPED.html" % TST, "w")
+    Element('html', {},
+            Element('body', {},
+                    Element('p', {},
+                            Text("%s Warning: %s" % (THISFILE, TEXT))))).write(f, newline=True)
+    f.close()
+    target = '%s_%s_body' % (DISTVER, TSTDIR)
+    td = Element('td', {'class': 'header'},
+                 Element('a', {'href': '.%s.src.index.html' % TST,
+                               'target': target,
+                               'class': 'black'},
+                         Text(TST)),
+                 Element('br'),
+                 Element('a', {'href': '.%s.SKIPPED.html' % TST,
+                               'target': target},
+                         Text('(skipped)')))
+    if '_%s_BODY_' % TSTDIR not in env  or  \
+       not env['_%s_BODY_' % TSTDIR][0]  or  \
+       not env['_%s_BODY_' % TSTDIR][1]:
+        env['_%s_BODY_' % TSTDIR] = [".%s.SKIPPED.html" % TST, F_SKIP]
+    CreateSrcIndex(env, TST, EXT)
+    return td
 ### SkipTest(env, TST, EXT, REASON) #
 
 def find_test_dirs(thisdir) :
@@ -768,6 +1404,11 @@ def PerformDir(env, testdir, testlist, BusyPorts, all_tests = False) :
             for f in alllinks:
                 remove(f)
 
+        if THISFILE == "Mtest.py":
+            if not testweb:
+                body = body_bad + body_good
+                CreateHtmlIndex(env, *body)
+                elem = AddSubToHtmlIndex(env, TSTDIR, max(FdOut,FdErr))
 
         # remove extra files created by tests
         for f in listdir(TSTTRGDIR):
@@ -1443,7 +2084,7 @@ def RunTest(env, TST, BusyPorts, COND, oktests, length, all_tests, pSrvr) :
             if cond in relcond:
                 if not os.path.exists(os.path.join(env['GDK_DBFARM'], relcond[cond][0])):
                     reason = "as %s release database is not available" % relcond[cond][1]
-                    SkipTest(env, TST, EXT, reason, length)
+                    elem = SkipTest(env, TST, EXT, reason, length)
                     break
             elif cond.startswith('THREADS='):
                 if negate:
@@ -1948,6 +2589,9 @@ def RunTest(env, TST, BusyPorts, COND, oktests, length, all_tests, pSrvr) :
                       '%s%s.FILTERED' % (TST, STABLEerr)]:
                 remove(f)
 
+        if not testweb:
+            elem = AddTstToHtmlIndex(env, TST, STABLEout, STABLEerr, EXT,
+                                     FailedOut, FailedErr)
         diff_format = env.get('diff_format', 'html') 
         if diff_format == 'txt':
             # we know the content is not html, so change the extension here
@@ -3511,6 +4155,11 @@ def main(argv) :
     RELSRCBASE = os.path.relpath(TSTSRCBASE, TSTTRGBASE)
     env['RELSRCBASE'] = RELSRCBASE
 
+    #STDERR.flush()
+    #for v in 'RELSRCBASE':
+    #       print(v+" = "+str(env[v]))
+    #STDOUT.flush()
+
     env['BINDIR'] = _configure('@QXbindir@')
     vars_.append('BINDIR')
     env['LIBDIR'] = _configure('@QXlibdir@')
@@ -3543,6 +4192,33 @@ def main(argv) :
 
     # add QUIET par to env
     env['QUIET'] = quiet
+
+    ## set/extend PATH & LD_LIBRARY_PATH
+    #bp = ""        #_configure(os.path.join('@QXprefix@',"bin"))
+    #if THISFILE == "Mtest.py":
+    #       lp = env['MONETDB_MOD_PATH']
+    #else: # THISFILE == "Mapprove.py"
+    #       lp = ""
+    #if os.name == "nt"  and  lp:
+    #       if bp:
+    #               bp = bp+os.pathsep+lp
+    #       else:
+    #               bp = lp
+    #if 'PATH' in os.environ:
+    #       if bp:
+    #               bp = bp+os.pathsep+os.environ['PATH']
+    #       else:
+    #               bp = os.environ['PATH']
+    #os.environ['PATH'] = bp
+    #print("PATH = "+bp)
+    #if os.name == "posix":
+    #       if 'LD_LIBRARY_PATH' in os.environ:
+    #               if lp:
+    #                       lp = lp+os.pathsep+os.environ['LD_LIBRARY_PATH']
+    #               else:
+    #                       lp = os.environ['LD_LIBRARY_PATH']
+    #       os.environ['LD_LIBRARY_PATH'] = lp
+    #       print("LD_LIBRARY_PATH = "+lp)
 
     if not startswithpath(os.getcwd() + os.sep, TSTSRCBASE + os.sep):
         Warn("Current directory %s is no descendant of TSTSRCBASE=%s;" % (os.getcwd(), TSTSRCBASE))
@@ -3853,6 +4529,7 @@ def main(argv) :
                         env['TSTDIR'] = ""
                         env['TSTTRGDIR'] = os.path.join(TSTTRGBASE, TSTPREF)
                         body = body_bad + body_good
+                        CreateHtmlIndex(env, *body)
         except KeyboardInterrupt:
             # if we get interrupted between directories, we still want output
             pass
@@ -3883,6 +4560,20 @@ def main(argv) :
             product = os.path.split(TSTSRCBASE)[-1]
 
             compiler = ''
+            # TODO:
+            # use @compilercall@ for this
+            # (and then also allow compiler-specific output)
+            #if os.name == 'nt':
+            #    compiler = 'Mic' # Microsoft Visual Studio C
+            #    #compiler = 'Int' # Intel icc
+            #else:
+            #    f = os.path.join(env['TSTBLDBASE'],'Makefile')
+            #    if os.path.isfile(f):
+            #        r = re.compile("^CC = (.*)$", re.MULTILINE)
+            #        for l in openutf8(f):
+            #            mt = r.match(l)
+            #            if mt:
+            #                compiler = mt.group(1)
 
             # start of times.sql output preparation
             try:
@@ -3943,6 +4634,8 @@ VALUES (%s, '%s', '%s', '%s',
         if THISFILE == "Mtest.py":
             env['TSTDIR'] = ""
             env['TSTTRGDIR'] = os.path.join(TSTTRGBASE, TSTPREF)
+            if not testweb:
+                CreateHtmlIndex(env, *body)
 
             Failed = 0
             for f in Failure[1:-1]:
@@ -4045,4 +4738,3 @@ if __name__ == "__main__":
 #       END
 #############################################################################
 # vim: set ts=4 sw=4 expandtab:
-
