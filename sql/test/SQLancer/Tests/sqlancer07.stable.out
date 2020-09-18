@@ -238,6 +238,18 @@ stdout of test 'sqlancer07` in directory 'sql/test/SQLancer` itself:
 % tinyint,	tinyint # type
 % 1,	1 # length
 [ 1,	2	]
+#values (1,(select 2 intersect select 3));
+% .%1,	.%2 # table_name
+% %1,	%2 # name
+% tinyint,	tinyint # type
+% 1,	1 # length
+[ 1,	NULL	]
+#values (1,(select 2 except select 2));
+% .%1,	.%2 # table_name
+% %1,	%2 # name
+% tinyint,	tinyint # type
+% 1,	1 # length
+[ 1,	NULL	]
 #START TRANSACTION;
 #CREATE TABLE "t0" ("c0" INTEGER,"c1" DECIMAL(18,3));
 #INSERT INTO "t0" VALUES (72238796, 0.553);
@@ -248,6 +260,48 @@ stdout of test 'sqlancer07` in directory 'sql/test/SQLancer` itself:
 #CREATE TABLE "t2" ("c0" INTEGER);
 #INSERT INTO "t2" VALUES (1), (2), (3);
 [ 3	]
+#SELECT t0.c1 FROM t0 WHERE (VALUES (t0.c1 = (SELECT t0.c1 FROM t0)));
+% sys.t0 # table_name
+% c1 # name
+% decimal # type
+% 20 # length
+[ 0.553	]
+#SELECT CAST(sum((((VALUES (NULLIF(0, 1.09949409E8))))*(t0.c0))) AS BIGINT) FROM t2 JOIN t0 ON 
+#(VALUES ((t0.c1) NOT BETWEEN ASYMMETRIC (CAST(140698873 AS DECIMAL)) AND (((SELECT DISTINCT t0.c1 FROM t0, t1, t2) EXCEPT DISTINCT (SELECT t0.c1 FROM t0, t2 WHERE TRUE)))));
+% .%15 # table_name
+% %15 # name
+% bigint # type
+% 1 # length
+[ 0	]
+#ROLLBACK;
+#START TRANSACTION;
+#CREATE TABLE "t1" ("c0" DOUBLE PRECISION NOT NULL);
+#select sub0.c0 from (values (0.86), ((select 3 from t1))) as sub0(c0); -- this one is right
+% .sub0 # table_name
+% c0 # name
+% decimal # type
+% 5 # length
+[ 0.86	]
+[ NULL	]
+#select sub0.c0 from (values (0.86), ((select 3))) as sub0(c0);
+% .sub0 # table_name
+% c0 # name
+% decimal # type
+% 5 # length
+[ 0.86	]
+[ 3.00	]
+#ROLLBACK;
+#START TRANSACTION;
+#CREATE TABLE "t0" ("c0" DOUBLE PRECISION,"c1" INT);
+#CREATE TABLE "t1"("c1" INT);
+#INSERT INTO "t1" VALUES (1);
+[ 1	]
+#SELECT CAST(SUM(count) AS BIGINT) FROM (SELECT CAST((EXISTS (SELECT ALL TRUE, 0.3, INTERVAL '5' MONTH, TIME '16:59:58' WHERE FALSE)) IN ((SELECT DISTINCT FALSE FROM t1), (('0.9')NOT ILIKE(''))) AS INT) as count FROM t0) as res;
+% .%10 # table_name
+% %10 # name
+% bigint # type
+% 1 # length
+[ NULL	]
 #ROLLBACK;
 
 # 10:16:14 >  
