@@ -1206,6 +1206,8 @@ monetdbe_append(monetdbe_database dbhdl, const char* schema, const char* table, 
 			BATsettrivprop(bn);
 
 			if (store_funcs.append_col(m->session->tr, c, bn, TYPE_bat) != 0) {
+				bn->theap.base = prev_base;
+				bn->theap.size = prev_size;
 				BBPreclaim(bn);
 				mdbe->msg = createException(SQL, "monetdbe.monetdbe_append", "Cannot append BAT");
 				goto cleanup;
