@@ -662,9 +662,6 @@ monetdbe_open_remote(monetdbe_database_internal *mdbe, char *url, monetdbe_optio
 	garbageCollector(c, mb, stk, TRUE);
 	freeStack(stk);
 
-	printf("yeah a connect string: %s!\n", mdbe->mid);
-
-
 	return 0;
 }
 
@@ -918,6 +915,115 @@ monetdbe_result_cb(void* context, char* tblname, columnar_result* results, size_
 	return MAL_SUCCEED;
 }
 
+struct prepare_callback_context {
+	monetdbe_result** result;
+	monetdbe_database_internal *mdbe;
+};
+
+static str
+monetdbe_prepare_cb(void* context, char* tblname, columnar_result* results, size_t nr_results) {
+	(void) tblname;
+	monetdbe_database_internal *mdbe	= ((struct callback_context*) context)->mdbe;
+
+	if (nr_results != 6) // 1) btype 2) bdigits 3) bscale 4) bschema 5) btable 6) bcolumn
+		return createException(SQL, "monetdbe.monetdbe_prepare_cb", SQLSTATE(42000) "result table for prepared statement is wrong.");
+
+	backend *be = NULL;
+	if ((mdbe->msg = getBackendContext(mdbe->c, &be)) != NULL)
+		return mdbe->msg;
+
+	BAT* btype = NULL;
+	BAT* bdigits = NULL;
+	BAT* bscale = NULL;
+	BAT* bschema = NULL;
+	BAT* btable = NULL;
+	BAT* bcolumn = NULL;
+
+	if (!(btype		= BATdescriptor(results[0].id))	||
+		!(bdigits	= BATdescriptor(results[1].id))	||
+		!(bscale	= BATdescriptor(results[2].id))	||
+		!(bschema	= BATdescriptor(results[3].id))	||
+		!(btable	= BATdescriptor(results[4].id))	||
+		!(bcolumn	= BATdescriptor(results[5].id)))
+		return createException(SQL, "monetdbe.monetdbe_prepare_cb", SQLSTATE(42000) "Cannot access prepare result");
+
+	size_t nparams = BATcount(btype);
+
+	if (nparams 	!= BATcount(bdigits) ||
+		nparams 	!= BATcount(bscale) ||
+		nparams 	!= BATcount(bschema) ||
+		nparams + 1 != BATcount(btable) ||
+		nparams 	!= BATcount(bcolumn))
+		return createException(SQL, "monetdbe.monetdbe_prepare_cb", SQLSTATE(42000) "prepare results are incorrect.");
+
+	BATiter bi = bat_iterator(btable);
+	char* function =  BUNtvar(bi, BATcount(btable)-1);
+
+	char nme[16];
+	const char *name = number2name(nme, sizeof(nme), ++be->remote);
+	Symbol prg = newFunction(putName(userRef), putName(name), FUNCTIONsymbol);
+	MalBlkPtr mb = prg->def;
+
+	InstrPtr OuterFunc = getInstrPtr(mb, 0);
+	OuterFunc->retc = OuterFunc->argc = 0;
+
+	InstrPtr e = newInstruction(mb, remoteRef, execRef);
+	e->retc = e->argc = 0;
+	e = pushStr(mb, e, mdbe->mid);
+	e = pushStr(mb, e, userRef);
+	e = pushStr(mb, e, function);
+
+	InstrPtr r = newInstruction(mb, NULL, NULL);
+	r->barrier= RETURNsymbol;
+	r->retc = r->argc = 0;
+
+	for (size_t i = 0; i < nparams; i++) {
+
+		char* table =  BUNtvar(bi, i);
+
+		if (strNil(table)) {
+			// input argument
+			int type = *(int*) Tloc(btype, i);
+			int idx = newVariable(mb, NULL, 0, type);
+			OuterFunc = pushArgument(mb, OuterFunc, idx);
+
+			InstrPtr p = newFcnCall(mb, remoteRef, putRef);
+			setArgType(mb, p, 0, TYPE_str);
+			p = pushStr(mb, p, mdbe->mid);
+			p = pushArgument(mb, p, idx);
+
+			e = pushArgument(mb, e, getArg(p, 0));
+		}
+		else {
+			// output argument
+			int type =  newBatType(*(int*) Tloc(btype, i));
+			int local2 = newTmpVariable(mb, TYPE_str);
+
+			InstrPtr g = newFcnCall(mb, remoteRef, getRef);
+			setArgType(mb, g, 0, type);
+			g = pushStr(mb, g, mdbe->mid);
+			g = pushArgument(mb, g, local2);
+
+			e = pushReturn(mb, e, local2);
+
+			r = pushArgument(mb, r, getArg(g, 0));
+			r = pushReturn(mb, r, getArg(g, 0));
+			OuterFunc = pushReturn(mb, OuterFunc, getArg(g, 0));
+
+		}
+	}
+
+	pushInstruction(mb, e);
+
+	pushInstruction(mb, r);
+
+	if ( (mdbe->msg = chkProgram(mdbe->c->usermodule, mb)) != MAL_SUCCEED ) {
+		return mdbe->msg;
+	}
+
+	return MAL_SUCCEED;
+}
+
 static char*
 monetdbe_query_remote(monetdbe_database_internal *mdbe, char* query, monetdbe_result** result, monetdbe_cnt* affected_rows, int *prepare_id)
 {
@@ -979,8 +1085,18 @@ monetdbe_query_remote(monetdbe_database_internal *mdbe, char* query, monetdbe_re
 	 * prepare the call back routine and its context
 	 * and pass it over as a pointer to remote.exec.
 	 */
-	struct callback_context context = {.result = result, .mdbe = mdbe};
-	columnar_result_callback rcb = {.context = &context, .call = monetdbe_result_cb};
+	columnar_result_callback rcb;
+	if (!prepare_id) {
+		struct callback_context context = {.result = result, .mdbe = mdbe};
+		rcb.context = &context;
+		rcb.call = monetdbe_result_cb;
+	}
+	else {
+		struct callback_context context = {.result = result, .mdbe = mdbe};
+		rcb.context = &context;
+		rcb.call = monetdbe_prepare_cb;
+	}
+
 	ValRecord v;
 	ptr vp = (ptr) &rcb;
 	

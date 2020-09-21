@@ -1018,6 +1018,10 @@ mvc_export_prepare_columnar(stream *out, cq *q, int nrows, sql_rel *r) {
 		}
 	}
 
+	// Little hack to get the name of the corresponding compiled MAL function known to the result receiver.
+	if (BUNappend(btable, q->f->imp, false) != GDK_SUCCEED)
+		goto bailout;
+
 	mvc_export_binary_bat(out, btype);
 	mvc_export_binary_bat(out, bdigits);
 	mvc_export_binary_bat(out, bscale);
@@ -1124,6 +1128,7 @@ mvc_export_prepare(backend *b, stream *out, str w)
 	if (b->client->protocol == PROTOCOL_COLUMNAR) {
 		if (mnstr_flush(out) < 0) return -1;
 		mvc_export_prepare_columnar(out, q, nrows, r);
+
 	}
 	else {
 		if (r && is_project(r->op) && r->exps) {

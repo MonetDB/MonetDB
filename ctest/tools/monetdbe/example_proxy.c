@@ -34,10 +34,8 @@ main(void)
 		error("Failed to open database")
 
 	// Assumes the existance of a table test (x INT, y STRING)  on the remote.
-	if ((err = monetdbe_query(mdbe, "INSERT INTO test VALUES (100, 'WHAAT'); ", NULL, NULL)) != NULL)
-		error(err)
-
-	if ((err = monetdbe_query(mdbe, "SELECT x, y, 1 AS z FROM test; ", &result, NULL)) != NULL)
+	monetdbe_statement *stmt = NULL;
+	if ((err = monetdbe_prepare(mdbe, "SELECT y, 1 FROM test WHERE x = ?", &stmt)) != NULL)
 		error(err)
 
 	fprintf(stdout, "Query result with %zu cols and %"PRId64" rows\n", result->ncols, result->nrows);

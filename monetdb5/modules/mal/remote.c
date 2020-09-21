@@ -1284,7 +1284,7 @@ str RMTexec(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 
 	/* Temporary hack:
 	 * use a callback to immediately handle columnar results before hdl is destroyed. */
-	if(tmp == MAL_SUCCEED && rcb && mhdl && mapi_get_querytype(mhdl) == Q_TABLE) {
+	if(tmp == MAL_SUCCEED && rcb && mhdl && (mapi_get_querytype(mhdl) == Q_TABLE || mapi_get_querytype(mhdl) == Q_PREPARE)) {
 
 		int fields = mapi_get_field_count(mhdl);
 
@@ -1294,7 +1294,7 @@ str RMTexec(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 			char* s = mapi_get_name(mhdl, i);
 			if (s == NULL)
 				s = "";
-			printf("%s%s", " ", s);
+			printf("%s%s\n", " ", s);
 		}
 
 		char buf[256] = {0};
