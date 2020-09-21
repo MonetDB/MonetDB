@@ -320,12 +320,44 @@ stdout of test 'sqlancer07` in directory 'sql/test/SQLancer` itself:
 #CREATE TABLE "t1"("c1" INT);
 #INSERT INTO "t1" VALUES (1);
 [ 1	]
+#SELECT 1 FROM t0 WHERE (EXISTS (SELECT 1 WHERE FALSE)) IN ((SELECT FALSE)); -- rel_push_semijoin_down_or_up is causing the issue
+% .%11 # table_name
+% %11 # name
+% tinyint # type
+% 1 # length
+#SELECT t0.c0 FROM t0 WHERE (EXISTS (SELECT TRUE, 0.3, INTERVAL '5' MONTH, TIME '16:59:58' WHERE FALSE)) IN ((SELECT DISTINCT FALSE FROM t1), (('0.9')NOT ILIKE('')));
+% .t0 # table_name
+% c0 # name
+% double # type
+% 24 # length
 #SELECT CAST(SUM(count) AS BIGINT) FROM (SELECT CAST((EXISTS (SELECT ALL TRUE, 0.3, INTERVAL '5' MONTH, TIME '16:59:58' WHERE FALSE)) IN ((SELECT DISTINCT FALSE FROM t1), (('0.9')NOT ILIKE(''))) AS INT) as count FROM t0) as res;
 % .%10 # table_name
 % %10 # name
 % bigint # type
 % 1 # length
 [ NULL	]
+#ROLLBACK;
+#START TRANSACTION;
+#CREATE TABLE "t0" ("tc0" TIMESTAMP);
+#INSERT INTO "t0" VALUES (TIMESTAMP '1970-01-07 07:00:31.000000');
+[ 1	]
+#create view v0(vc0) as (select 0.22400981);
+#SELECT t0.tc0 FROM v0 RIGHT OUTER JOIN t0 ON FALSE WHERE t0.tc0 = ANY(SELECT TIMESTAMP '1969-12-15 15:50:02'); -- rel_push_semijoin_down_or_up is causing the issue again
+% .t0 # table_name
+% tc0 # name
+% timestamp # type
+% 26 # length
+#SELECT ALL t0.tc0 FROM v0 RIGHT OUTER JOIN t0 ON FALSE WHERE t0.tc0 = ANY(VALUES (ifthenelse(((TRUE)<=(TRUE)), TIMESTAMP '1969-12-15 15:50:02', TIMESTAMP '1970-01-12 06:29:27')));
+% .t0 # table_name
+% tc0 # name
+% timestamp # type
+% 26 # length
+#SELECT CAST(SUM(count) AS BIGINT) FROM (SELECT ALL CAST(t0.tc0 = ANY(VALUES (ifthenelse(((TRUE)<=(TRUE)), TIMESTAMP '1969-12-15 15:50:02', TIMESTAMP '1970-01-12 06:29:27'))) AS INT) as count FROM v0 RIGHT OUTER JOIN t0 ON FALSE) as res;
+% .%7 # table_name
+% %7 # name
+% bigint # type
+% 1 # length
+[ 0	]
 #ROLLBACK;
 #START TRANSACTION;
 #CREATE TABLE "t1" ("c0" BIGINT NOT NULL,CONSTRAINT "t1_c0_pkey" PRIMARY KEY ("c0"));
@@ -383,6 +415,17 @@ stdout of test 'sqlancer07` in directory 'sql/test/SQLancer` itself:
 [ 1	]
 #DROP TABLE t0;
 #DROP TABLE t2;
+#START TRANSACTION;
+#CREATE TABLE "t0" ("c0" INTERVAL MONTH NOT NULL,"c1" TINYINT NOT NULL,CONSTRAINT "t0_c0_c1_pkey" PRIMARY KEY ("c0", "c1"),CONSTRAINT "t0_c1_c0_unique" UNIQUE ("c1", "c0"));
+#INSERT INTO "t0" VALUES (INTERVAL '2076515258' MONTH, 125), (INTERVAL '2043534562' MONTH, 55), (INTERVAL '202288310' MONTH, 100), (INTERVAL '1514712125' MONTH, 101), (INTERVAL '708314220' MONTH, 116);
+[ 5	]
+#CREATE TABLE "t1" ("c0" BIGINT NOT NULL);
+#INSERT INTO "t1" VALUES (29358), (29358), (29358), (39231208), (-697168639), (3232261), (-379432950);
+[ 7	]
+#CREATE TABLE "t2" ("c0" BIGINT NOT NULL,CONSTRAINT "t2_c0_pkey" PRIMARY KEY ("c0"),CONSTRAINT "t2_c0_unique" UNIQUE ("c0"));
+#INSERT INTO "t2" VALUES (446453788), (1973525566), (1604369323), (-907882617), (1067873323), (1615259391), (1286378024);
+[ 7	]
+#ROLLBACK;
 
 # 10:16:14 >  
 # 10:16:14 >  "Done."
