@@ -550,10 +550,7 @@ def PerformDir(env, testdir, testlist, BusyPorts, all_tests = False) :
     TSTSRCDIR = os.path.normpath(os.path.join(testdir, TSTSUFF))
     TSTTRGDIR = os.path.normpath(os.path.join(TSTTRGBASE, TSTPREF, TSTDIR))
 
-    if THISFILE == "Mtest.py":
-        TSTDB = TSTPREF + "_" + TSTDIR.replace(os.sep, '_')
-    else: # THISFILE == "Mapprove.py"
-        TSTDB = ""
+    TSTDB = TSTPREF + "_" + TSTDIR.replace(os.sep, '_')
 
     alltests = []
     try:
@@ -627,140 +624,131 @@ def PerformDir(env, testdir, testlist, BusyPorts, all_tests = False) :
         env['TSTDATAPATH'] = TSTDATAPATH
         os.environ['TSTDATAPATH'] = TSTDATAPATH
 
-    if THISFILE == "Mtest.py":
-        if 'GDK_DBFARM' in env:
-            LogDBdir = os.path.join(env['GDK_DBFARM'],TSTDB)
-            if not env.get('NOCLEAN') and LogDBdir and os.path.exists(LogDBdir):
-                try:
-                    shutil.rmtree(LogDBdir)
-                except:
-                    Warn("database '%s` exists, but destroying it failed; skipping tests in '%s`!" % (TSTDB, TSTSRCDIR))
-                    #TODO:
-                    # add "something" to HTML output
-                    return td, FdErr, interrupted
-            if os.path.isabs(LogDBdir) and not os.path.exists(LogDBdir):
-                try:
-                    os.makedirs(LogDBdir)
-                except:
-                    Warn("creating database '%s` failed; skipping tests in '%s`!" % (TSTDB, TSTSRCDIR))
-                    #TODO:
-                    # add "something" to HTML output
-                    return td, FdErr, interrupted
-            if initdb:
-                import zipfile
-                try:
-                    z = zipfile.ZipFile(initdb)
-                except IOError:
-                    Warn("initial database '%s` cannot be opened; skipping tests in '%s`!" % (initdb, TSTSRCDIR))
-                    #TODO:
-                    # add "something" to HTML output
-                    return td, FdErr, interrupted
-                try:
-                    z.extractall(LogDBdir)
-                except:
-                    Warn("initial database '%s` cannot be extracted; skipping tests in '%s`!" % (initdb, TSTSRCDIR))
-                    #TODO:
-                    # add "something" to HTML output
-                    return td, FdErr, interrupted
-                z.close()
-                if not oneserver:
-                    pSrvr = ServerClass(splitcommand(env['exe']['mserver5'][1]) + ['--dbpath=%s' % LogDBdir], open(os.devnull, 'w'), open(os.devnull, 'w'), par['TIMEOUT'], os.path.join(LogDBdir, '.started'), int(env['MAPIPORT']))
-                    pSrvr.LaunchIt()
-                    pSrvr.terminate()
-        if not os.path.exists(TSTTRGDIR):
-            #TODO: set mode to umask
-            os.makedirs(TSTTRGDIR)
-
-        body_good = []
-        body_bad = []
-        oktests = []
-        if not verbose and not quiet:
-            print('\nRunning in %s' % TSTDIR)
-        alllinks = []
-        pSrvr = None
-        try:
+    if 'GDK_DBFARM' in env:
+        LogDBdir = os.path.join(env['GDK_DBFARM'],TSTDB)
+        if not env.get('NOCLEAN') and LogDBdir and os.path.exists(LogDBdir):
             try:
-                for TST,COND in testlist:
-                    if oneserver and (pSrvr is None or pSrvr.poll() is not None):
-                        # restart server
-                        cmd = splitcommand(env['exe']['mserver5'][1]) + ['--dbpath=%s' % LogDBdir] + options
-                        if env.get('MULTIFARM'):
-                            cmd.append('--dbextra=%s' % os.path.join(env['GDK_DBFARM'], TSTPREF + '_transient'))
-                            shutil.rmtree(os.path.join(env['GDK_DBFARM'], TSTPREF + '_transient'),
-                                          ignore_errors = True)
-                            os.makedirs(os.path.join(env['GDK_DBFARM'], TSTPREF + '_transient'))
-                        elif env.get('TRANS_INMEM'):
-                            cmd.append('--dbextra=:inmemory')
-                        pSrvr = ServerClass(cmd,
-                                            open(os.path.join(TSTTRGDIR, 'SingleServer.out'), 'a'),
-                                            open(os.path.join(TSTTRGDIR, 'SingleServer.err'), 'a'),
-                                            0,
-                                            os.path.join(LogDBdir, '.started'),
-                                            int(env['MAPIPORT']))
-                        os.chdir(TSTTRGDIR)
-                        pSrvr.LaunchIt()
-                    if global_timeout and start_time + global_timeout < time.time():
-                        if not testweb:
-                            print('\nGlobal testing timeout reached\n')
-                            break
-                        tt, FtErr, reason = 0, F_SKIP,"as the global timeout has been reached"
-                    else:
-                        os.environ['TST'] = TST
-                        tt, FtErr, reason, links = RunTest(env, TST, BusyPorts, COND, oktests, length, all_tests, pSrvr)
-                        alllinks.extend(links)
-                    if tt:
-                        t = "%7.3f" % tt
-                    else:
-                        t = '-.---'
-                    TIMES.append((TSTDIR, TST, t, tt, FtErr, reason))
-                    td += tt
-                    FdErr = max(FdErr,FtErr)
-                    if FtErr is None:
-                        oktests.append(TST)
-            except KeyboardInterrupt:
-                print('\nInterrupted')
-                interrupted = True
-        finally:
-            if pSrvr is not None:
-                pSrvr.terminate()
-                pSrvr = None
-        TIMES.append((TSTDIR, '', "%7.3f" % td, td, FdErr, None))
-        if testweb:
-            os.chdir(TSTTRGDIR)
-            for f in alllinks:
-                remove(f)
-
-
-        # remove extra files created by tests
-        for f in listdir(TSTTRGDIR):
-            ff = os.path.join(TSTTRGDIR, f)
-            if os.path.islink(ff):
-                continue
-            for pat in [
-                        'times.lst', 'times.sql',
-                        '*.client.err', '*.client.out',
-                        '*.server.err', '*.server.out',
-                        '*.stable.err*', '*.stable.out*',
-                        '*.test.err', '*.test.out',
-                        'SingleServer.out', 'SingleServer.err']:
-                if fnmatch.fnmatch(f, pat):
-                    break
-            else:
-                remove(ff)
-
-        if testweb:
-            try:
-                os.removedirs(TSTTRGDIR)
+                shutil.rmtree(LogDBdir)
             except:
-                pass
+                Warn("database '%s` exists, but destroying it failed; skipping tests in '%s`!" % (TSTDB, TSTSRCDIR))
+                #TODO:
+                # add "something" to HTML output
+                return td, FdErr, interrupted
+        if os.path.isabs(LogDBdir) and not os.path.exists(LogDBdir):
+            try:
+                os.makedirs(LogDBdir)
+            except:
+                Warn("creating database '%s` failed; skipping tests in '%s`!" % (TSTDB, TSTSRCDIR))
+                #TODO:
+                # add "something" to HTML output
+                return td, FdErr, interrupted
+        if initdb:
+            import zipfile
+            try:
+                z = zipfile.ZipFile(initdb)
+            except IOError:
+                Warn("initial database '%s` cannot be opened; skipping tests in '%s`!" % (initdb, TSTSRCDIR))
+                #TODO:
+                # add "something" to HTML output
+                return td, FdErr, interrupted
+            try:
+                z.extractall(LogDBdir)
+            except:
+                Warn("initial database '%s` cannot be extracted; skipping tests in '%s`!" % (initdb, TSTSRCDIR))
+                #TODO:
+                # add "something" to HTML output
+                return td, FdErr, interrupted
+            z.close()
+            if not oneserver:
+                pSrvr = ServerClass(splitcommand(env['exe']['mserver5'][1]) + ['--dbpath=%s' % LogDBdir], open(os.devnull, 'w'), open(os.devnull, 'w'), par['TIMEOUT'], os.path.join(LogDBdir, '.started'), int(env['MAPIPORT']))
+                pSrvr.LaunchIt()
+                pSrvr.terminate()
+    if not os.path.exists(TSTTRGDIR):
+        #TODO: set mode to umask
+        os.makedirs(TSTTRGDIR)
 
-    else: # THISFILE == "Mapprove.py"
-        if not os.path.exists(TSTTRGDIR):
-            Warn("Output directory '%s` missing; skipping directory!" % TSTTRGDIR)
-            return td, max(FdOut, FdErr), interrupted
+    body_good = []
+    body_bad = []
+    oktests = []
+    if not verbose and not quiet:
+        print('\nRunning in %s' % TSTDIR)
+    alllinks = []
+    pSrvr = None
+    try:
+        try:
+            for TST,COND in testlist:
+                if oneserver and (pSrvr is None or pSrvr.poll() is not None):
+                    # restart server
+                    cmd = splitcommand(env['exe']['mserver5'][1]) + ['--dbpath=%s' % LogDBdir] + options
+                    if env.get('MULTIFARM'):
+                        cmd.append('--dbextra=%s' % os.path.join(env['GDK_DBFARM'], TSTPREF + '_transient'))
+                        shutil.rmtree(os.path.join(env['GDK_DBFARM'], TSTPREF + '_transient'),
+                                      ignore_errors = True)
+                        os.makedirs(os.path.join(env['GDK_DBFARM'], TSTPREF + '_transient'))
+                    elif env.get('TRANS_INMEM'):
+                        cmd.append('--dbextra=:inmemory')
+                    pSrvr = ServerClass(cmd,
+                                        open(os.path.join(TSTTRGDIR, 'SingleServer.out'), 'a'),
+                                        open(os.path.join(TSTTRGDIR, 'SingleServer.err'), 'a'),
+                                        0,
+                                        os.path.join(LogDBdir, '.started'),
+                                        int(env['MAPIPORT']))
+                    os.chdir(TSTTRGDIR)
+                    pSrvr.LaunchIt()
+                if global_timeout and start_time + global_timeout < time.time():
+                    if not testweb:
+                        print('\nGlobal testing timeout reached\n')
+                        break
+                    tt, FtErr, reason = 0, F_SKIP,"as the global timeout has been reached"
+                else:
+                    os.environ['TST'] = TST
+                    tt, FtErr, reason, links = RunTest(env, TST, BusyPorts, COND, oktests, length, all_tests, pSrvr)
+                    alllinks.extend(links)
+                if tt:
+                    t = "%7.3f" % tt
+                else:
+                    t = '-.---'
+                TIMES.append((TSTDIR, TST, t, tt, FtErr, reason))
+                td += tt
+                FdErr = max(FdErr,FtErr)
+                if FtErr is None:
+                    oktests.append(TST)
+        except KeyboardInterrupt:
+            print('\nInterrupted')
+            interrupted = True
+    finally:
+        if pSrvr is not None:
+            pSrvr.terminate()
+            pSrvr = None
+    TIMES.append((TSTDIR, '', "%7.3f" % td, td, FdErr, None))
+    if testweb:
+        os.chdir(TSTTRGDIR)
+        for f in alllinks:
+            remove(f)
 
-        for TST,COND in testlist:
-            td += ApproveOutput(env, TST)
+
+    # remove extra files created by tests
+    for f in listdir(TSTTRGDIR):
+        ff = os.path.join(TSTTRGDIR, f)
+        if os.path.islink(ff):
+            continue
+        for pat in [
+                    'times.lst', 'times.sql',
+                    '*.client.err', '*.client.out',
+                    '*.server.err', '*.server.out',
+                    '*.stable.err*', '*.stable.out*',
+                    '*.test.err', '*.test.out',
+                    'SingleServer.out', 'SingleServer.err']:
+            if fnmatch.fnmatch(f, pat):
+                break
+        else:
+            remove(ff)
+
+    if testweb:
+        try:
+            os.removedirs(TSTTRGDIR)
+        except:
+            pass
 
     return td, FdErr, interrupted
 ### PerformDir(env, testdir, testlist, BusyPorts) #
@@ -2439,24 +2427,6 @@ def SetExecEnv(exe,verbose) :
         STDOUT.flush()
 ### SetExecEnv(exe,procdebug) #
 
-def ReadMapproveRc(f) :
-    v = {}
-    v['SYST'] = SYST
-    v['RELEASE'] = RELEASE
-    v['DIST'] = DIST
-    v['VERSION'] = VERSION
-    v['BITS'] = ''
-    v['INT128'] = ''
-    v['SINGLE'] = ''
-    v['ARCH'] = ''
-    if os.path.isfile(f):
-        r = re.compile('^([A-Z][A-Z0-9_]*) = "(.*)".*$')
-        for l in openutf8(f):
-            m = r.match(l)
-            if m:
-                v[m.group(1)] = m.group(2)
-    return v
-### ReadMapproveRc(f) #
 
 #############################################################################
 #       MAIN
@@ -2736,17 +2706,6 @@ def main(argv) :
         parser.add_argument('--data_path', '-D', action='store', dest='data_path', metavar='<path>', help='Path to the root directory of the data files needed for testing')
         parser.add_argument('--alltests', action='store_true', dest='alltests', help='also run tests that are known to fail')
         parser.add_argument('--initdb', action='store', dest='initdb', metavar='<zipfile>', help='zip file with contents for initial database')
-        parser.add_argument('--diff-format', dest='diff_format', type=str, metavar='html|txt', default='html', help='output format for the difference between stable and current test (html or txt)')
-    elif THISFILE == 'Mapprove.py':
-        f = _configure(os.path.join('@QXprefix@',dftTSTPREF,'.Mapprove.rc'))
-        v = ReadMapproveRc(f)
-        for i in 'INT128', 'SINGLE':
-            if v[i]:
-                v[i] = '[.%s]' % v[i]
-        parser.add_argument('-x', action='store', dest='ext', choices=['out', 'err'], metavar='<ext>', help="approve only output files *.<ext><sys> (<ext> = 'out' or 'err')\n(default: <ext> = 'out' & 'err')")
-        parser.add_argument('-S', action='store', dest='sys', metavar='<sys>', help="approve specific output *.<ext><sys>\n(<sys> = '[.(<SYST>[<RELEASE>]|<DIST>[<VERSION>])][.((32|64)bit|<ARCH>)][.int128][.single]',\n(default: longest match for <sys> = '[.(%s[%s]|%s[%s])][.(%s|%s)%s%s')" % (v['SYST'], v['RELEASE'], v['DIST'], v['VERSION'], v['BITS'], v['ARCH'], v['INT128'], v['SINGLE']))
-        parser.add_argument('-f', action='store_true', dest='force', help="force approval of error messages (i.e., lines starting with '!')")
-        parser.add_argument('--nopatch', action='store_true', dest='nopatch', help="do not attempt to patch other outputs")
 
     parser.add_argument('tests', nargs='*', help='The positional arguments are either a list of one or more directories to be tested, or a single directory followed by a list of tests within that directory.')
     opts = parser.parse_args()
@@ -2823,24 +2782,6 @@ def main(argv) :
             env['TSTDATAPATH'] = a
         global initdb
         initdb = opts.initdb
-        env['diff_format'] = opts.diff_format
-    if THISFILE == 'Mapprove.py':
-        a = opts.ext
-        if a is None:
-            par['EXTENSION'] = ['out', 'err']
-        elif a in ('out', 'err'):
-            par['EXTENSION'] = [a]
-        else:
-            ErrXit("Extension (-x) must be one of: 'out', 'err' !")
-        par['FORCE'] = opts.force
-        par['NOPATCH'] = opts.nopatch
-        a = opts.sys
-        if a is None:
-            par['SYSTEM'] = ''
-        else:
-            par['SYSTEM'] = a
-            # -S option implies --nopatch
-            par['NOPATCH'] = True
     for v in VARS:
         a = vars(opts).get(v)
         if a is not None:
@@ -2958,10 +2899,7 @@ def main(argv) :
     CheckClassPath()
 
     # tidy-up and fall-back to defaults where necessary
-    if THISFILE == "Mtest.py":
-        vars_ = VARS + ['MAPIPORT', 'GDK_DEBUG', 'GDK_NR_THREADS', 'MONETDB_MOD_PATH']
-    else: # THISFILE == "Mapprove.py"
-        vars_ = VARS
+    vars_ = VARS + ['MAPIPORT', 'GDK_DEBUG', 'GDK_NR_THREADS', 'MONETDB_MOD_PATH']
     for v in vars_:
         if v not in env:
             env[v] = eval(dft[v])
@@ -3008,13 +2946,7 @@ def main(argv) :
     global TSTDATAPATH
     TSTDATAPATH = env.get('TSTDATAPATH')
 
-    if THISFILE == "Mapprove.py" \
-       and not os.path.exists(os.path.join(TSTTRGBASE, dftTSTPREF )) \
-       and     os.path.isfile(os.path.join(TSTTRGBASE, 'times.lst')):
-        env['TSTPREF'] = os.path.basename(TSTTRGBASE)
-        TSTTRGBASE = env['TSTTRGBASE'] = os.path.dirname(TSTTRGBASE)
-    else:
-        env['TSTPREF'] = dftTSTPREF
+    env['TSTPREF'] = dftTSTPREF
     global TSTPREF
     TSTPREF = env['TSTPREF']
 
@@ -3052,38 +2984,6 @@ def main(argv) :
             CONDITIONALS['HAVE_IPV6'] = '#' # True
         s.close()
 
-    # read '.Mapprove.rc'
-    if THISFILE == 'Mapprove.py':
-        f = os.path.join(TSTTRGBASE, TSTPREF, '.Mapprove.rc')
-        v = ReadMapproveRc(f)
-        SYST = v['SYST']
-        RELEASE = v['RELEASE']
-        SYSTVER = SYST+RELEASE
-        DIST = v['DIST']
-        VERSION = v['VERSION']
-        DISTVER = DIST+VERSION
-        os.environ['SYST'] = SYST
-        os.environ['SYSTVER'] = SYSTVER
-        os.environ['RELEASE'] = RELEASE
-        os.environ['DIST'] = DIST
-        os.environ['DISTVER'] = DISTVER
-        os.environ['VERSION'] = VERSION
-        w = {}
-        for i in 'SYST', 'RELEASE', 'DIST', 'VERSION', 'BITS', 'ARCH', 'INT128', 'SINGLE':
-            w[i] = re.escape(v[i])
-        for i in 'BITS', 'ARCH', 'INT128', 'SINGLE':
-            j = 'TST_'+i
-            env[j] = v[i]
-            os.environ[j] = v[i]
-        for i in 'INT128', 'SINGLE':
-            if v[i]:
-                v[i] = '(.%s)?' % v[i]
-                w[i] = '(\.%s)?' % w[i]
-        sv = '^(.(%s(%s)?|%s(%s)?))?(.(%s|%s))?%s%s$' % (v['SYST'], v['RELEASE'], v['DIST'], v['VERSION'], v['BITS'], v['ARCH'], v['INT128'], v['SINGLE'])
-        sw = '^(\.(%s(%s)?|%s(%s)?))?(\.(%s|%s))?%s%s$' % (w['SYST'], w['RELEASE'], w['DIST'], w['VERSION'], w['BITS'], w['ARCH'], w['INT128'], w['SINGLE'])
-        r = re.compile(sw)
-        if not r.match(par['SYSTEM']):
-            ErrXit("System (-S) must match '"+sv+"' !")
 
     # some relative path's for relocatable HTML output
     RELSRCBASE = os.path.relpath(TSTSRCBASE, TSTTRGBASE)
@@ -3100,8 +3000,6 @@ def main(argv) :
         vars_ = vars_ + ['GDK_DBFARM']
         vars_ = vars_ + ['setMONETDB_MOD_PATH']
         vars_ = vars_ + ['TSTDATAPATH']
-    else: # THISFILE == "Mapprove.py"
-        vars_ = vars_
     for v in vars_:
         if v in env:
             os.environ[v] = env[v]
@@ -3377,17 +3275,10 @@ def main(argv) :
                 Warn("Skipping MAPI tests as MAPIPORT=%s is not available on %s (Error #%d: '%s')!" % (env['MAPIPORT'],host,Serrno,Serrstr))
                 BusyPorts.append('MAPI')
 
-            # create '.Mapprove.rc'
             env['SYST'] = os.environ['SYST']
             env['RELEASE'] = os.environ['RELEASE']
             env['DIST'] = os.environ['DIST']
             env['VERSION'] = os.environ['VERSION']
-            n = os.path.join(TSTTRGBASE, TSTPREF, '.Mapprove.rc')
-            f = openutf8(n, 'w')
-            for v in 'SYST', 'RELEASE', 'DIST', 'VERSION', 'TST_BITS', 'TST_ARCH', 'TST_INT128', 'TST_SINGLE':
-                w = v.replace('TST_','')
-                f.write('%s = "%s"\n' % (w, env[v]))
-            f.close()
 
         STDERR.flush()
         t_ = 0
@@ -3427,11 +3318,6 @@ def main(argv) :
         body = body_bad + body_good
 
         if THISFILE == "Mtest.py":
-            if testweb:
-                # some more cleanup
-                # note that we create the file so that os.removedirs in PerformDir
-                # doesn't remove os.path.join(TSTTRGBASE, TSTPREF)
-                remove(os.path.join(TSTTRGBASE, TSTPREF, '.Mapprove.rc'))
             fn = os.path.join(TSTTRGBASE, TSTPREF, "times.")
             fl = openutf8(fn+"lst","w")
             Failure = [[] for i in FAILURES]
@@ -3521,53 +3407,16 @@ def main(argv) :
 
 %s
 """ % (how, Failed, num_tests, what))
-                if not testweb:
-                    print("""\
- First, check the testing results in  %s  !
-
- Then, fix the problems by:
-  - fixing sources and test scripts
-  - fixing stable output by hand
-  - approving test output by Mapprove.py (cf. Mapprove.py -?)
-
- After that, re-run Mtest.
-""" % os.path.join(TSTTRGBASE, TSTPREF, "index.html"))
                 if jenkins:
                     sys.exit(0)
                 sys.exit(1)
             else:
                 if quiet:
                     pass
-                elif verbose:
-                    print("""\
-
- No differences encountered during testing.
-
- If necessary, you can checkin your modifications, now.
-""")
                 else:
                     print("No differences encountered during testing.")
                 sys.exit(0)
 
-        if THISFILE == "Mapprove.py":
-            if not quiet:
-                print("""\
-
- First, run 'hg diff` to check what you have changed.
-
- Then, re-run Mtest.py.
-""")
-            if t_:
-                if par['FORCE']:
-                    print("""\
- In case (some of) the approved error messages are not correct/expected,
- re-run Mapprove.py without -f to skip their approval.
-""")
-                else:
-                    print("""\
- In case (some of) the skipped error messages are correct/expected,
- re-run Mapprove.py with -f to force their approval.
-""")
     finally:
         # cleanup the place where we put our UNIX sockets
         if THISFILE == "Mtest.py" and SOCK:
