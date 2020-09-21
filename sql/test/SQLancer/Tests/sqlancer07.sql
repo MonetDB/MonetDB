@@ -172,6 +172,16 @@ PREPARE SELECT ?, CASE 'weHtU' WHEN (values (?)) THEN 'G' END;
 PREPARE SELECT DISTINCT ?, CAST(CASE least(?, r'weHtU') WHEN ? THEN ? WHEN ? THEN ? WHEN (VALUES (?)) THEN r'G' ELSE ? END AS DATE) WHERE (?) IS NOT NULL LIMIT 519007555986016405;
 	-- cannot have a parameter for IS NOT NULL operator
 
+START TRANSACTION;
+CREATE TABLE "t0"("c0" INTEGER,"c1" DECIMAL(18,3));
+INSERT INTO "t0" VALUES (-533312265, 0.254);
+
+SELECT 1 FROM t0 WHERE EXISTS ((SELECT 0.59, TRUE) INTERSECT (SELECT t0.c0, TRUE));
+	-- empty
+UPDATE t0 SET c1 = 0.9, c0 = 53 WHERE EXISTS ((SELECT 0.5932837, (+ (46)) IS NULL FROM t0) INTERSECT (SELECT t0.c0, TRUE));
+	-- no rows updated
+ROLLBACK;
+
 values (1,(select 2));
 	-- 1 2
 values (1,(select 2 intersect select 3));
@@ -263,6 +273,6 @@ CREATE TABLE t2(LIKE t0);
 INSERT INTO t2(c0) VALUES(blob ''), (NULL), (blob 'A0');
 DELETE FROM t2 WHERE TRUE;
 INSERT INTO t2(c0) VALUES(blob 'dAe8C7');
-CALL sys.shrink('sys', 't2');
+--CALL sys.shrink('sys', 't2');
 DROP TABLE t0;
 DROP TABLE t2;

@@ -232,6 +232,18 @@ stdout of test 'sqlancer07` in directory 'sql/test/SQLancer` itself:
 % 7,	1,	1,	0,	2,	2 # length
 [ "tinyint",	1,	0,	"",	"%2",	"%2"	]
 [ "boolean",	1,	0,	NULL,	NULL,	NULL	]
+#START TRANSACTION;
+#CREATE TABLE "t0"("c0" INTEGER,"c1" DECIMAL(18,3));
+#INSERT INTO "t0" VALUES (-533312265, 0.254);
+[ 1	]
+#SELECT 1 FROM t0 WHERE EXISTS ((SELECT 0.59, TRUE) INTERSECT (SELECT t0.c0, TRUE));
+% .%13 # table_name
+% %13 # name
+% tinyint # type
+% 1 # length
+#UPDATE t0 SET c1 = 0.9, c0 = 53 WHERE EXISTS ((SELECT 0.5932837, (+ (46)) IS NULL FROM t0) INTERSECT (SELECT t0.c0, TRUE));
+[ 0	]
+#ROLLBACK;
 #values (1,(select 2));
 % .%1,	.%2 # table_name
 % %1,	%2 # name
@@ -361,6 +373,16 @@ stdout of test 'sqlancer07` in directory 'sql/test/SQLancer` itself:
 % boolean # type
 % 5 # length
 #ROLLBACK;
+#CREATE TABLE t0(c0 BLOB DEFAULT (blob 'E443Aefab0') UNIQUE PRIMARY KEY NULL, UNIQUE(c0));
+#CREATE TABLE t2(LIKE t0);
+#INSERT INTO t2(c0) VALUES(blob ''), (NULL), (blob 'A0');
+[ 3	]
+#DELETE FROM t2 WHERE TRUE;
+[ 3	]
+#INSERT INTO t2(c0) VALUES(blob 'dAe8C7');
+[ 1	]
+#DROP TABLE t0;
+#DROP TABLE t2;
 
 # 10:16:14 >  
 # 10:16:14 >  "Done."
