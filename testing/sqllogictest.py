@@ -120,19 +120,19 @@ class SQLLogic:
         print(query, file=self.out)
         print('', file=self.out)
 
-    def exec_query(self, query, columns, sorting, hashlabel, nresult, hash, expected):
+    def exec_query(self, query, columns, sorting, hashlabel, nresult, hash, expected) -> bool:
         err = False
         try:
             self.crs.execute(query)
         except pymonetdb.DatabaseError as e:
             self.query_error(query, 'query failed', e.args[0])
-            return
+            return False
         if len(self.crs.description) != len(columns):
             self.query_error(query, 'received {} columns, expected {} columns'.format(len(self.crs.description), len(columns)))
-            return
+            return False
         if self.crs.rowcount * len(columns) != nresult:
             self.query_error(query, 'received {} rows, expected {} rows'.format(self.crs.rowcount, nresult // len(columns)))
-            return
+            return False
         data = self.crs.fetchall()
         if self.res is not None:
             for row in data:
@@ -188,6 +188,7 @@ class SQLLogic:
                 self.hashes[hashlabel] = (hash, self.qline)
             elif not err:
                 self.hashes[hashlabel] = (h, self.qline)
+        return False if err else True
 
     def initfile(self, f):
         self.name = f

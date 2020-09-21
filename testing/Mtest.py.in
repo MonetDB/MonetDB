@@ -542,8 +542,6 @@ def find_test_dirs(thisdir) :
 def PerformDir(env, testdir, testlist, BusyPorts, all_tests = False) :
     interrupted = False
     td = 0
-    elem = None
-    FdOut = F_SKIP
     FdErr = F_SKIP
     if testdir == TSTSRCBASE:
         TSTDIR = os.curdir
@@ -603,7 +601,7 @@ def PerformDir(env, testdir, testlist, BusyPorts, all_tests = False) :
         testlist = alltests
     if not testlist:
         Warn("No tests found in '%s`; skipping directory!" % TSTSRCDIR)
-        return td, elem, max(FdOut, FdErr), interrupted
+        return td, max(FdOut, FdErr), interrupted
 
     # find length of longest test name
     length = 0
@@ -629,12 +627,6 @@ def PerformDir(env, testdir, testlist, BusyPorts, all_tests = False) :
         env['TSTDATAPATH'] = TSTDATAPATH
         os.environ['TSTDATAPATH'] = TSTDATAPATH
 
-
-    #STDERR.flush()
-    #for v in 'RELSRCDIR':
-    #       print(v+" = "+str(env[v]))
-    #STDOUT.flush()
-
     if THISFILE == "Mtest.py":
         if 'GDK_DBFARM' in env:
             LogDBdir = os.path.join(env['GDK_DBFARM'],TSTDB)
@@ -645,7 +637,7 @@ def PerformDir(env, testdir, testlist, BusyPorts, all_tests = False) :
                     Warn("database '%s` exists, but destroying it failed; skipping tests in '%s`!" % (TSTDB, TSTSRCDIR))
                     #TODO:
                     # add "something" to HTML output
-                    return td, elem, max(FdOut, FdErr), interrupted
+                    return td, FdErr, interrupted
             if os.path.isabs(LogDBdir) and not os.path.exists(LogDBdir):
                 try:
                     os.makedirs(LogDBdir)
@@ -653,7 +645,7 @@ def PerformDir(env, testdir, testlist, BusyPorts, all_tests = False) :
                     Warn("creating database '%s` failed; skipping tests in '%s`!" % (TSTDB, TSTSRCDIR))
                     #TODO:
                     # add "something" to HTML output
-                    return td, elem, max(FdOut, FdErr), interrupted
+                    return td, FdErr, interrupted
             if initdb:
                 import zipfile
                 try:
@@ -662,14 +654,14 @@ def PerformDir(env, testdir, testlist, BusyPorts, all_tests = False) :
                     Warn("initial database '%s` cannot be opened; skipping tests in '%s`!" % (initdb, TSTSRCDIR))
                     #TODO:
                     # add "something" to HTML output
-                    return td, elem, max(FdOut, FdErr), interrupted
+                    return td, FdErr, interrupted
                 try:
                     z.extractall(LogDBdir)
                 except:
                     Warn("initial database '%s` cannot be extracted; skipping tests in '%s`!" % (initdb, TSTSRCDIR))
                     #TODO:
                     # add "something" to HTML output
-                    return td, elem, max(FdOut, FdErr), interrupted
+                    return td, FdErr, interrupted
                 z.close()
                 if not oneserver:
                     pSrvr = ServerClass(splitcommand(env['exe']['mserver5'][1]) + ['--dbpath=%s' % LogDBdir], open(os.devnull, 'w'), open(os.devnull, 'w'), par['TIMEOUT'], os.path.join(LogDBdir, '.started'), int(env['MAPIPORT']))
@@ -711,25 +703,19 @@ def PerformDir(env, testdir, testlist, BusyPorts, all_tests = False) :
                         if not testweb:
                             print('\nGlobal testing timeout reached\n')
                             break
-                        tt, FtOut, FtErr, bodyline, reason = 0,F_SKIP,F_SKIP,None,"as the global timeout has been reached"
+                        tt, FtErr, reason = 0, F_SKIP,"as the global timeout has been reached"
                     else:
                         os.environ['TST'] = TST
-                        tt, FtOut, FtErr, bodyline, reason, links = RunTest(env, TST, BusyPorts, COND, oktests, length, all_tests, pSrvr)
+                        tt, FtErr, reason, links = RunTest(env, TST, BusyPorts, COND, oktests, length, all_tests, pSrvr)
                         alllinks.extend(links)
                     if tt:
                         t = "%7.3f" % tt
                     else:
                         t = '-.---'
-                    TIMES.append((TSTDIR, TST, t, tt, FtOut, FtErr, reason))
+                    TIMES.append((TSTDIR, TST, t, tt, FtErr, reason))
                     td += tt
-                    FdOut = max(FdOut,FtOut)
                     FdErr = max(FdErr,FtErr)
-                    if bodyline is not None:
-                        if FtOut <= F_OK and FtErr <= F_OK:
-                            body_good.append(bodyline)
-                        else:
-                            body_bad.append(bodyline)
-                    if FtOut in (F_OK, F_WARN) and FtErr in (F_OK, F_WARN):
+                    if FtErr is None:
                         oktests.append(TST)
             except KeyboardInterrupt:
                 print('\nInterrupted')
@@ -738,7 +724,7 @@ def PerformDir(env, testdir, testlist, BusyPorts, all_tests = False) :
             if pSrvr is not None:
                 pSrvr.terminate()
                 pSrvr = None
-        TIMES.append((TSTDIR, '', "%7.3f" % td, td, FdOut, FdErr, None))
+        TIMES.append((TSTDIR, '', "%7.3f" % td, td, FdErr, None))
         if testweb:
             os.chdir(TSTTRGDIR)
             for f in alllinks:
@@ -750,16 +736,9 @@ def PerformDir(env, testdir, testlist, BusyPorts, all_tests = False) :
             ff = os.path.join(TSTTRGDIR, f)
             if os.path.islink(ff):
                 continue
-            for pat in ['.Mapprove.rc', '.index.head.html', '.index.html',
-                        'index.head.html', 'index.html',
+            for pat in [
                         'times.lst', 'times.sql',
-                        '.*.nosrc.index.html',
-                        '.*.src.index.head.html', '.*.src.index.html',
-                        '*.FILTERED', '.*.SKIPPED.html',
                         '*.client.err', '*.client.out',
-                        '*.err.diff.html', '*.err.head.html', '*.err.html',
-                        '*.out.diff.html', '*.out.head.html', '*.out.html',
-                        '*.out.diff.txt', '*.err.diff.txt',
                         '*.server.err', '*.server.out',
                         '*.stable.err*', '*.stable.out*',
                         '*.test.err', '*.test.out',
@@ -778,12 +757,12 @@ def PerformDir(env, testdir, testlist, BusyPorts, all_tests = False) :
     else: # THISFILE == "Mapprove.py"
         if not os.path.exists(TSTTRGDIR):
             Warn("Output directory '%s` missing; skipping directory!" % TSTTRGDIR)
-            return td, elem, max(FdOut, FdErr), interrupted
+            return td, max(FdOut, FdErr), interrupted
 
         for TST,COND in testlist:
             td += ApproveOutput(env, TST)
 
-    return td, elem, max(FdOut, FdErr), interrupted
+    return td, FdErr, interrupted
 ### PerformDir(env, testdir, testlist, BusyPorts) #
 
 def ApproveOutput (env, TST) :
@@ -1251,47 +1230,6 @@ def StableOutErr(env,par,TST,SYST,RELEASE,DIST,VERSION) :
     return STABLEout, STABLEerr
 ### StableOutErr(env,par,TST,SYST,RELEASE,DIST,VERSION) #
 
-def CategorizeResult(TST, SockTime, outmissing, errmissing):
-    l = '<!--MajorDiffs-->'   # assign something in case file is empty
-    for l in openutf8("%s.out.diff.html" % TST):
-        pass
-    if   l.startswith('<!--NoDiffs-->'):
-        o = F_OK
-    elif l.startswith('<!--MinorDiffs-->'):
-        o = F_WARN
-    elif l.startswith('<!--MajorDiffs-->'):
-        if outmissing:
-            o = F_MISSING
-        else:
-            o = F_ERROR
-    else:
-        Warn("Unexpected last line in %s.out.diff.html:\n%s" % (TST, l))
-        ff = openutf8("%s.out.diff.html" % TST, "a")
-        ff.write("\n<!--MajorDiffs-->\n")
-        ff.close()
-        o = F_ERROR
-    l = '<!--MajorDiffs-->'   # assign something in case file is empty
-    for l in openutf8("%s.err.diff.html" % TST):
-        pass
-    if   l.startswith('<!--NoDiffs-->'):
-        e = F_OK
-    elif l.startswith('<!--MinorDiffs-->'):
-        e = F_WARN
-    elif l.startswith('<!--MajorDiffs-->'):
-        if errmissing:
-            e = F_MISSING
-        else:
-            e = F_ERROR
-    else:
-        Warn("Unexpected last line in %s.err.diff.html:\n%s" % (TST, l))
-        ff = openutf8("%s.err.diff.html" % TST, "a")
-        ff.write("\n<!--MajorDiffs-->\n")
-        ff.close()
-        e = F_ERROR
-    if e in (F_ERROR, F_MISSING) and SockTime in (F_SOCK, F_TIME, F_RECU, F_ABRT, F_SEGV):
-        e = SockTime
-    return o, e
-
 relcond = {
     # upgrade testing conditionals:
     # key is condition, value is tuple with file name and part of message
@@ -1306,18 +1244,23 @@ relcond = {
                              'previous hugeint chained empty'),
 }
 
+def print_err_code(err_code):
+    # TODO add all err codes
+    lookup = {
+            F_ERROR: lambda x: prred('ERROR'),
+            F_SKIP: lambda x: prpurple('SKIP'),
+            F_SOCK: lambda x: prpurple('SOCK')
+            }
+    lookup.get(err_code, lambda _: prgreen('OK'))(err_code)
+
 def RunTest(env, TST, BusyPorts, COND, oktests, length, all_tests, pSrvr) :
     global setpgrp
-    Failed = F_SKIP
-    FailedOut = F_SKIP
-    FailedErr = F_SKIP
     TSTDB = env['TSTDB']
     TSTDIR  = env['TSTDIR']
     TSTSRCDIR = env['TSTSRCDIR']
     RELSRCDIR = env['RELSRCDIR']
     TSTTRGDIR = env['TSTTRGDIR']
     os.chdir(TSTSRCDIR)
-    elem = None
     reason = None               # reason for skipping (if any)
     links = []                  # symlinks we make
     threads = None              # set if we override number of threads
@@ -1398,7 +1341,7 @@ def RunTest(env, TST, BusyPorts, COND, oktests, length, all_tests, pSrvr) :
                 prred('TEST MISSING')
                 STDOUT.write('\n')
 
-            return TX,Failed,Failed,elem,reason,links
+            return TX, F_SKIP, reason, links
 
     MissingMods = CheckMods(env, TST, SERVER, CALL)
     MissingTests = CheckTests(env, TST, oktests)
@@ -1505,7 +1448,7 @@ def RunTest(env, TST, BusyPorts, COND, oktests, length, all_tests, pSrvr) :
             MAPIsockets, reason = CheckSocket2(env, "MAPI")   #, SrvrErr)
             if MAPIsockets is None:
                 reason = 'as ' + reason
-                return TX,Failed,Failed,elem,reason,links
+                return TX,F_SKIP,reason,links
         else:
             MAPIsockets = None
 
@@ -1526,7 +1469,7 @@ def RunTest(env, TST, BusyPorts, COND, oktests, length, all_tests, pSrvr) :
                     # Release reserved sockets before bailing out
                     MAPIsockets[0].close()
                     MAPIsockets[1].close()
-                return TX,Failed,Failed,elem,reason,links
+                return TX,F_SKIP,reason,links
         test = re.compile("^"+TST+"((_[sp][0-9][0-9])?\..*)?\.src$", re.MULTILINE)
         for ff in listdir(TSTTRGDIR):
             if test.match(ff) and not os.path.isfile(ff[:-4]):
@@ -1560,22 +1503,6 @@ def RunTest(env, TST, BusyPorts, COND, oktests, length, all_tests, pSrvr) :
                     f.write(expandvars(l, env))
                 f.close()
 
-        ACCURACYout = par['ACCURACY']
-        ACCURACYerr = par['ACCURACY']
-        STABLEout,STABLEerr = StableOutErr(env,par,TST,SYST,RELEASE,DIST,VERSION)
-        outmissing = errmissing = False
-        if not os.path.isfile(TST+STABLEout):
-            openutf8(TST+STABLEout,"w").close()
-            ACCURACYout = 0
-            outmissing = True
-        if not os.path.isfile(TST+STABLEerr):
-            openutf8(TST+STABLEerr,"w").close()
-            ACCURACYerr = 0
-            errmissing = True
-        if (outmissing or errmissing) and not CONDITIONALS['KNOWNFAIL']:
-            # no stable output, so known to fail
-            reason = "as conditional 'KNOWNFAIL' does not hold."
-            return TX,Failed,Failed,elem,reason,links
 
         TIMEOUT = par['TIMEOUT']
         if os.path.isfile(TST+".timeout"):
@@ -1607,339 +1534,27 @@ def RunTest(env, TST, BusyPorts, COND, oktests, length, all_tests, pSrvr) :
 
         TestOutFile = TST+".test.out"
         TestErrFile = TST+".test.err"
-        TestOut = openutf8(TestOutFile,"w")
-        TestErr = openutf8(TestErrFile,"w")
-        TestOut.write("stdout of test '"+TST+"` in directory '"+url(TSTDIR)+"` itself:\n\n")
-        TestErr.write("stderr of test '"+TST+"` in directory '"+url(TSTDIR)+"` itself:\n\n")
-        TestOut.close()
-        TestErr.close()
 
         t0 = time.time()
-        tres = DoIt(env, SERVER, CALL, TST, EXT, TestOutFile, TestErrFile, STIMEOUT, CTIMEOUT, TIMEOUT, ME, MAPIsockets, length, nomito, threads, user, passwd, COND, all_tests, pSrvr)
+        print('WTF is TIMEOUT=', TIMEOUT)
+        print(pSrvr.__dict__)
+        if CALL == 'sqltest':
+            errcode = RunSQLLogicTest(env, TST, None, TestErrFile)
+        else:
+            errcode = F_SKIP
+            reason = 'Not a SQLLogic Test'
+        # tres = DoIt(env, SERVER, CALL, TST, EXT, TestOutFile, TestErrFile, STIMEOUT, CTIMEOUT, TIMEOUT, ME, MAPIsockets, length, nomito, threads, user, passwd, COND, all_tests, pSrvr)
 
         t1 = time.time()
         TX = t1 - t0
         if not quiet:
             STDOUT.write(" %7.3fs " % TX)
-
-        if tres == 'timeout':
-            errcode = F_TIME
-        elif tres == 'recursion':
-            errcode = F_RECU
-        elif tres == 'segfault':
-            errcode = F_SEGV
-        elif tres == 'abort':
-            errcode = F_ABRT
-        elif tres == 'socket':
-            errcode = F_SOCK
-        elif tres == 'error':
-            errcode = F_WARN
-        elif tres is not None:
-            errcode = F_ERROR
-        else:
-            errcode = F_OK
-
-        if pSrvr is None:
-            sockerr = CheckSocket3(env, "MAPI", TestErrFile)
-        elif pSrvr.poll() is None:
-            sockerr = F_OK
-        else:
-            sres = returnCode(pSrvr.proc, openutf8(TestErrFile, 'a'))
-            if sres == 'segfault':
-                sockerr = F_SEGV
-            elif sres == 'abort':
-                sockerr = F_ABRT
-            else:
-                sockerr = F_ERROR
-
-        #TODO:
-        ##if [ ! -f $TSTTRGBASE/Tests/.old.left-over.tmp.bats. ] ; then  touch $TSTTRGBASE/Tests/.old.left-over.tmp.bats. ; fi
-        ##LEFTOVERTMPBATS="`find $MONETDBFARM/dbfarm/*/bat/ -name tmp_\* -print 2> /dev/null`"
-        ##if [ "$LEFTOVERTMPBATS" ] ; then
-        ##      ls -alF $LEFTOVERTMPBATS 2> /dev/null > .all.left-over.tmp.bats.
-        ##      diff -u0 $TSTTRGBASE/Tests/.old.left-over.tmp.bats. .all.left-over.tmp.bats. | grep '^\+[^\+]' > .new.left-over.tmp.bats.
-        ##fi
-        ##if [ -s .new.left-over.tmp.bats. ] ; then
-        ##      echo -e "\n!ERROR: persistent temporary bats remained:" >> $LOGFILE.err
-        ##      sed 's|^\+|! |g' .new.left-over.tmp.bats.               >> $LOGFILE.err
-        ##      echo                                                    >> $LOGFILE.err
-        ##fi
-        ##rm -f .new.left-over.tmp.bats. $TSTTRGBASE/Tests/.old.left-over.tmp.bats.
-        ##if [ -f .all.left-over.tmp.bats. ] ; then  mv -f .all.left-over.tmp.bats. $TSTTRGBASE/Tests/.old.left-over.tmp.bats. ; fi
-
-        if tres == 'socket':
-            if quiet:
-                STDOUT.write("\n%s : Socket!\n" % TST)
-            elif verbose:
-                STDOUT.write("(Socket!) ")
-
-        if tres == 'timeout':
-            if quiet:
-                STDOUT.write("\n%s : Timeout!\n" % TST)
-            elif verbose:
-                STDOUT.write("(Timeout!) ")
-
-        if tres == 'recursion':
-            if quiet:
-                STDOUT.write("\n%s : Recursion!\n" % TST)
-            elif verbose:
-                STDOUT.write("(Recursion!) ")
-
-        if tres == 'segfault':
-            if quiet:
-                STDOUT.write("\n%s : Crashed!\n" % TST)
-            elif verbose:
-                STDOUT.write("(Crashed!) ")
-
-        if tres == 'signal':
-            if quiet:
-                STDOUT.write("\n%s : Signaled!\n" % TST)
-            elif verbose:
-                STDOUT.write("(Signaled!) ")
-
-        if verbose:
-            STDOUT.write("\n")
-
-        try:
-            STDOUT.flush()
-        except IOError as err:
-            Warn("Flushing STDOUT in RunTest failed with #%d: '%s'." % (err.errno, err.strerror))
-
-        Mfilter.mFilter(TST+STABLEout,par['IGNORE'])
-        Mfilter.mFilter(TST+STABLEerr,par['IGNORE'])
-        Mfilter.mFilter(TST+".test.out",par['IGNORE'])
-        Mfilter.mFilter(TST+".test.err",par['IGNORE'])
-
-        if REV:
-            d = '%s%s/%s' % (URLPREFIX, url(TSTDIR), TSTSUFF)
-            if os.path.isfile(TST + EXT + '.src'):
-                f = openutf8(TST + EXT + '.src').readline().strip()
-                if f.startswith('$RELSRCDIR/'):
-                    f = f[11:]
-                    while f.startswith('../'):
-                        f = f[3:]
-                        d = d[:d.rindex('/')]
-                f = '%s/%s' % (d, f)
-            elif os.path.isfile(TST + EXT + '.in'):
-                f = '%s/%s%s.in' % (d, TST, EXT)
-            else:
-                f = '%s/%s%s' % (d, TST, EXT)
-            if testweb:
-                # splice in a link to the bug report if we recognize a
-                # reference
-                res = bugre.search(TST)
-                if res is not None:
-                    bugno = res.group('bugno')
-                    tst = '%s<a target="_blank" href="http://bugs.monetdb.org/%s">%s</a>%s' % (TST[:res.start(0)+1], bugno, res.group(0)[1:], TST[res.end(0):])
-                else:
-                    tst = TST
-                titlefmt = '-tTest %s%s (id <a href="%s">%s</a>) (<a href="%s.%%s.diff.html">%%s</a>)' % (tst, EXT, f, REV, TST)
-            else:
-                # no need (and no space) to add link to bug report:
-                # it's done already elsewhere
-                titlefmt = '-tTest <a href="%s%s">%s%s</a> (id <a href="%s">%s</a>) (<a href="%s.%%s.diff.html">%%s</a>)' % (TST, EXT, TST, EXT, f, REV, TST)
-        elif testweb:
-            titlefmt = '-tTest %s%s (<a href="%s.%%s.diff.html">%%s</a>)' % (TST, EXT, TST)
-        else:
-            titlefmt = '-tTest <a href="%s%s">%s%s</a> (<a href="%s.%%s.diff.html">%%s</a>)' % (TST, EXT, TST, EXT, TST)
-        diff_html = openutf8('%s.out.diff.html' % TST,"w")
-        diff_html.write('<!--MajorDiffs-->\n')
-        diff_html.close()
-        timedout = True
-        if tres is not None:
-            # test program exited with error => expect major differences!
-            ACCURACYout = -1
-        else:
-            szs = os.stat("%s%s.FILTERED" % (TST, STABLEout)).st_size
-            szt = os.stat("%s.test.out.FILTERED" % TST).st_size
-            if szt < szs*0.5 or szt > szs*1.5:
-                # filesizes differ significantly => expect major differences!
-                ACCURACYout = -1
-        out = err = ''
-        while timedout:
-            cmd = ['Mdiff']
-            if ACCURACYout == -1:
-                ACCURACYout = 0
-            else:
-                cmd.append('-d')
-            if not verbose:
-                cmd.append('-q')
-            diff_format = env.get('diff_format', 'html') 
-            out_fn = ('%s.out.diff.html' % TST)
-            cmd.extend(['-F^#', '-I%s' % par['IGNORE'],
-                        '-C%s' % par['CONTEXT'], '-A%d' % ACCURACYout,
-                        titlefmt % ('err', 'err'),
-                        '-f{}'.format(diff_format),
-                        '%s%s.FILTERED' % (TST, STABLEout),
-                        '%s.test.out.FILTERED' % TST,
-                         out_fn])
-            if procdebug:
-                print('RunTest: starting process "%s"\n' % '" "'.join(cmd))
-            setpgrp = True
-            proc = process.Popen(cmd, stdout=process.PIPE,
-                                 stderr=process.PIPE,
-                                 text=True)
-            proc.killed = False
-            proc.onechild = False
-            t = Timer(float(par['TIMEOUT']), killProc, args = [proc])
-            try:
-                t.start()
-                out, err = proc.communicate()
-                t.cancel()
-                if verbose or quiet:
-                    if out:
-                        STDOUT.write(out)
-                    if err:
-                        sys.stderr.write(err)
-                if procdebug:
-                    print('RunTest: process exited "%s" (%s)\n' %
-                          ('" "'.join(cmd), proc.returncode))
-            except KeyboardInterrupt:
-                t.cancel()
-                killProc(proc)
-                if procdebug:
-                    print('RunTest: process killed "%s"\n' % '" "'.join(cmd))
-                raise
-            timedout = proc.killed
-            ACCURACYout = ACCURACYout - 1
-            if ACCURACYout < 0:
-                timedout = False # don't try again
-        if env.get('ECHO_DIFF'):
-            cmd = ['diff']
-            if ACCURACYout >= 0:
-                cmd.append('-d')
-            cmd.extend(['-Bb', '-F^#', '-I%s' % par['IGNORE'],
-                        '-U%s' % par['CONTEXT'],
-                        '%s%s.FILTERED' % (TST, STABLEout),
-                        '%s.test.out.FILTERED' % TST])
-            proc = process.Popen(cmd, text=True)
-            proc.wait()
-
-        diff_html = openutf8('%s.err.diff.html' % TST,"w")
-        diff_html.write('<!--MajorDiffs-->\n')
-        diff_html.close()
-        timedout = True
-        if tres is not None:
-            # test program exited with error => expect major differences!
-            ACCURACYerr = -1
-        else:
-            szs = os.stat("%s%s.FILTERED" % (TST, STABLEerr)).st_size
-            szt = os.stat("%s.test.err.FILTERED" % TST).st_size
-            if szt < szs*0.5 or szt > szs*1.5:
-                # filesizes differ significantly => expect major differences!
-                ACCURACYerr = -1
-        while timedout:
-            cmd = ['Mdiff']
-            if ACCURACYerr == -1:
-                ACCURACYerr = 0
-            else:
-                cmd.append('-d')
-            if not verbose:
-                cmd.append('-q')
-            diff_format = env.get('diff_format', 'html') 
-            out_fn = ('%s.err.diff.html' % TST)
-            cmd.extend(['-F^#', '-I%s' % par['IGNORE'],
-                        '-C%s' % par['CONTEXT'], '-A%d' % ACCURACYerr,
-                        titlefmt % ('out', 'out'),
-                        '-f{}'.format(diff_format),
-                        '%s%s.FILTERED' % (TST, STABLEerr),
-                        '%s.test.err.FILTERED' % TST,
-                        out_fn])
-            if procdebug:
-                print('RunTest: starting process "%s"\n' % '" "'.join(cmd))
-            setpgrp = True
-            proc = process.Popen(cmd, stdout=process.PIPE,
-                                 stderr=process.PIPE,
-                                 text=True)
-            proc.killed = False
-            proc.onechild = False
-            t = Timer(float(par['TIMEOUT']), killProc, args = [proc])
-            try:
-                t.start()
-                out, err = proc.communicate()
-                t.cancel()
-                if verbose or quiet:
-                    if out:
-                        STDOUT.write(out)
-                    if err:
-                        sys.stderr.write(err)
-                if procdebug:
-                    print('RunTest: process exited "%s" (%s)\n' %
-                          ('" "'.join(cmd), proc.returncode))
-            except KeyboardInterrupt:
-                t.cancel()
-                killProc(proc)
-                if procdebug:
-                    print('RunTest: process killed "%s"\n' % '" "'.join(cmd))
-                raise
-            timedout = proc.killed
-            ACCURACYerr = ACCURACYerr - 1
-            if ACCURACYerr < 0:
-                timedout = False # don't try again
-        if env.get('ECHO_DIFF'):
-            cmd = ['diff']
-            if ACCURACYerr >= 0:
-                cmd.append('-d')
-            cmd.extend(['-Bb', '-F^#', '-I%s' % par['IGNORE'],
-                        '-U%s' % par['CONTEXT'],
-                        '%s%s.FILTERED' % (TST, STABLEerr),
-                        '%s.test.err.FILTERED' % TST])
-            proc = process.Popen(cmd, text=True)
-            proc.wait()
-
-        FailedOut, FailedErr = CategorizeResult(TST, max(sockerr, errcode), outmissing, errmissing)
-        if FailedOut == F_OK and FailedErr == F_OK and testweb:
-            for f in ['%s.out.diff.html' % TST, '%s.test.out' % TST,
-                      '%s.server.out' % TST, '%s.client.out' % TST,
-                      '%s.test.out.FILTERED' % TST,
-                      '%s%s.FILTERED' % (TST, STABLEout),
-                      '%s.err.diff.html' % TST, '%s.test.err' % TST,
-                      '%s.server.err' % TST, '%s.client.err' % TST,
-                      '%s.test.err.FILTERED' % TST,
-                      '%s%s.FILTERED' % (TST, STABLEerr)]:
-                remove(f)
-
-        diff_format = env.get('diff_format', 'html') 
-        if diff_format == 'txt':
-            # we know the content is not html, so change the extension here
-            for f in [('%s.out.diff.html' % TST), ('%s.err.diff.html' % TST)]:
-                if os.path.exists(f):
-                    shutil.move(f, f[:-4] + 'txt')
-
+        
         if not verbose and not quiet:
-            if tres == 'socket':
-                prpurple('SOCKET')
-            elif tres == 'timeout':
-                prpurple('TIMEOUT')
-            elif tres == 'recursion':
-                prpurple('RECURSION')
-            elif tres == 'segfault':
-                prpurple('CRASHED')
-            elif tres == 'abort':
-                prpurple('ABORTED')
-            elif tres == 'signal':
-                prpurple('SIGNALED')
-            else:
-                if FailedOut == F_OK:
-                    prgreen('OK   ')
-                elif FailedOut == F_WARN:
-                    prgreen('minor')
-                elif FailedOut == F_MISSING:
-                    prred('MISS ')
-                else:
-                    prred('MAJOR')
-                STDOUT.write(' ')
-                if FailedErr == F_OK:
-                    prgreen('OK')
-                elif FailedErr == F_WARN:
-                    prgreen('minor')
-                elif FailedErr == F_MISSING:
-                    prred('MISS')
-                else:
-                    prred('MAJOR')
-            STDOUT.write('\n')
+            print_err_code(errcode)
+            print('\t{}'.format(TST))
 
-    return TX,FailedOut,FailedErr,elem,reason,links
+    return TX, errcode, reason, links
 ### RunTest(env, TST, BusyPorts, COND, oktests) #
 
 def CheckPort(port) :
@@ -2368,6 +1983,44 @@ def mapi_ping(port) :
     return False
 ### mapi_ping() #
 
+def RunSQLLogicTest(env, test, TestOut, TestErr) -> int:
+    """
+    Run SQLLogic test
+    returns:
+        error code eg F_ERROR, F_SKIP, F_SOCK etc or None
+    """
+    import MonetDBtesting.sqllogictest as sqllogictest
+    err_code = None
+    with open(TestErr, 'w') as f:
+        sql = sqllogictest.SQLLogic(out=f)
+        if TestOut:
+            sql.res = TestOut
+        try:
+            sql.connect(hostname='localhost',
+                        port=int(env['MAPIPORT']),
+                        database=env['TSTDB'])
+        except Exception as e:
+            err_code = F_SOCK
+            print(e, file=f) 
+        else:
+            sql.drop()
+            try:
+                sql.parse(Test)
+            except sqllogictest.SQLLogicSyntaxError as e:
+                print(e, file=f) 
+                err_code = F_SKIP
+            except BrokenPipeError as e:
+                # server timeout
+                print(e, file=f) 
+            sql.close()
+    is_dirty = os.path.getsize(TestErr) > 0
+    # clean up if all okay
+    if not is_dirty:
+        os.remove(TestErr)
+    if is_dirty and err_code is None:
+        err_code = F_ERROR
+    return err_code
+
 def DoIt(env, SERVER, CALL, TST, EXT, TestOutFile, TestErrFile, STIMEOUT, CTIMEOUT, TIMEOUT, ME, MAPIsockets, length, nomito, threads, user, passwd, COND, all_tests, PSRVR) :
     ATJOB2 = ""
     STDERR.flush()
@@ -2530,25 +2183,6 @@ def DoIt(env, SERVER, CALL, TST, EXT, TestOutFile, TestErrFile, STIMEOUT, CTIMEO
                     returncode = RunIt(Clnt, True, openutf8(f), ClntOut, ClntErr, TIMEOUT)
                     if returncode:
                         break
-            elif CALL == "sqltest":
-                import MonetDBtesting.sqllogictest as sqllogictest
-                sql = sqllogictest.SQLLogic(out=ClntErr)
-                try:
-                    sql.connect(hostname='localhost',
-                                port=int(env['MAPIPORT']),
-                                database=TSTDB)
-                except:
-                    returncode = 'error'
-                else:
-                    sql.drop()
-                    try:
-                        sql.parse(TST+EXT)
-                    except sqllogictest.SQLLogicSyntaxError:
-                        pass
-                    except BrokenPipeError:
-                        # server timeout
-                        pass
-                    sql.close()
             elif CALL in ["sql", "sqlXs"]:
                 TSTs = []
                 if CALL == "sql":
@@ -2625,13 +2259,6 @@ def DoIt(env, SERVER, CALL, TST, EXT, TestOutFile, TestErrFile, STIMEOUT, CTIMEO
         else:
             TestOut = try_open(TestOutFile, 'a')
             TestErr = try_open(TestErrFile, 'a')
-
-        if TestOut is not None:
-            TestOut.write(Prompt('Done.'))
-            TestOut.close()
-        if TestErr is not None:
-            TestErr.write(Prompt('Done.'))
-            TestErr.close()
 
     if returncode is None and pSrvr is not None:
         returncode = pSrvr.code # can still be None
@@ -3775,23 +3402,13 @@ def main(argv) :
                     all_tests = True
                 if verbose:
                     print("\nRunning %s in directory %s.\n" % (tsts , testdirs[0]))
-                t_, elem, diff, interrupted = PerformDir(env, testdirs[0], testlist, BusyPorts, all_tests)
-                if elem is not None:
-                    if diff <= F_OK:
-                        body_good.append(elem)
-                    else:
-                        body_bad.append(elem)
+                t_, diff, interrupted = PerformDir(env, testdirs[0], testlist, BusyPorts, all_tests)
             else:
                 if verbose:
                     print("\nRunning all tests in directories %s.\n" % str(testdirs))
                 for d in testdirs:
-                    t, elem, diff, interrupted = PerformDir(env, d, [], BusyPorts, True)
+                    t, diff, interrupted = PerformDir(env, d, [], BusyPorts, True)
                     t_ = t_ + t
-                    if elem is not None:
-                        if diff <= F_OK:
-                            body_good.append(elem)
-                        else:
-                            body_bad.append(elem)
                     if interrupted:
                         break
                     if not testweb:
@@ -3818,14 +3435,13 @@ def main(argv) :
             fn = os.path.join(TSTTRGBASE, TSTPREF, "times.")
             fl = openutf8(fn+"lst","w")
             Failure = [[] for i in FAILURES]
-            for TSTDIR, TST, tt, ms, FtOut, FtErr, reason in TIMES:
-                fl.write('%s:\t%s\t%s\t%s\t%s\n' % (url(os.path.join(TSTDIR, TST)),
+            for TSTDIR, TST, tt, ms, FtErr, reason in TIMES:
+                fl.write('%s:\t%s\t%s\t%s\n' % (url(os.path.join(TSTDIR, TST)),
                                                     tt,
-                                                    FAILURES[FtOut][0],
                                                     FAILURES[FtErr][0],
                                                     reason or ''))
                 if TST != '':
-                    Failure[max(FtOut,FtErr)].append(os.path.join(TSTDIR,TST))
+                    Failure[FtErr].append(os.path.join(TSTDIR,TST))
             fl.write(":\t%7.3f\t\n" % t_)
             fl.close()
 
@@ -3867,29 +3483,6 @@ def main(argv) :
             else:
                 ccname = os.path.split(compiler)[-1]
                 ccopts = ''
-
-            for TSTDIR, TST, tt, ms, FtOut, FtErr, reason in TIMES:
-                if FtOut == F_SKIP and FtErr == F_SKIP:
-                    tms = 'NULL'
-                else:
-                    tms = '%d' % ms
-
-                if TST != '':
-                    # target is a platform and compilation options etc
-                    fl.write("""
-INSERT INTO mtest (\"date\", \"machine\", \"os\", \"release\",
-    \"compiler\", \"compiler_opts\", \"bits\", \"oid\", \"int128\", \"single\", \"static\",
-    \"product\", \"dir\", \"test\",
-    \"time\", \"stdout\", \"stderr\")
-VALUES (%s, '%s', '%s', '%s',
-    '%s', '%s', %s, %s, %s, %s, %s,
-    '%s', '%s', '%s',
-    %s, '%s', '%s');
-""" % (now, host, env['SYST'], env['RELEASE'],
-           ccname, ccopts, bits, bits, isInt128, isSingle, 'false',
-           product, TSTDIR, TST,
-           tms, FAILURES[FtOut][1], FAILURES[FtErr][1]))
-            fl.close()
 
         if THISFILE == "Mtest.py":
             env['TSTDIR'] = ""
