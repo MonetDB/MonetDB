@@ -70,14 +70,6 @@ for f in $(ls ${src}/*.sql);do
     fi
 done;
 
-for f in $(ls ${src}/*.stable.out);do
-    bn=$(basename $f)
-    touch $dst/$bn;
-done;
-for f in $(ls ${src}/*.stable.err);do
-    bn=$(basename $f)
-    touch $dst/$bn;
-done;
 if [[ -e ${src}/All ]];then
     cp ${src}/All $dst;
 fi
