@@ -147,13 +147,14 @@ SQLstr_cast_str(str *r, int *rlen, str v, int len)
 
 	intput_strlen = (int) strlen(v) + 1;
 	if (intput_strlen > *rlen) {
-		str newr = GDKmalloc(intput_strlen);
+		int newlen = intput_strlen + 1024;
+		str newr = GDKmalloc(newlen);
 
 		if (!newr)
 			throw(SQL, "str_cast", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		GDKfree(*r);
 		*r = newr;
-		*rlen = intput_strlen;
+		*rlen = newlen;
 	}
 	strcpy(*r, v);
 	return MAL_SUCCEED;
