@@ -286,7 +286,7 @@ CREATE TABLE t2(LIKE t0);
 INSERT INTO t2(c0) VALUES(blob ''), (NULL), (blob 'A0');
 DELETE FROM t2 WHERE TRUE;
 INSERT INTO t2(c0) VALUES(blob 'dAe8C7');
---CALL sys.shrink('sys', 't2');
+CALL sys.shrink('sys', 't2');
 DROP TABLE t0;
 DROP TABLE t2;
 
