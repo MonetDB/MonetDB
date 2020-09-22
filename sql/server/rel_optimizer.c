@@ -4896,7 +4896,7 @@ rel_push_semijoin_down_or_up(visitor *v, sql_rel *rel)
 			if (!right && !left)
 				return rel;
 		}
-		if ((left && is_left(l->op)) || (right && is_right(l->op)))
+		if ((right && is_left(l->op)) || (left && is_right(l->op)))
 			return rel;
 		nsexps = exps_copy(v->sql, rel->exps);
 		njexps = exps_copy(v->sql, l->exps);
