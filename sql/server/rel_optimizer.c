@@ -4908,10 +4908,6 @@ rel_push_semijoin_down_or_up(visitor *v, sql_rel *rel)
 		else
 			l = rel_crossproduct(v->sql->sa, l, rel_dup(ll), lop);
 		l->exps = njexps;
-		if (is_left(l->op))
-			l->op = op_right;
-		else if (is_right(l->op))
-			l->op = op_left;
 		rel_destroy(rel);
 		rel = l;
 		v->changes++;
