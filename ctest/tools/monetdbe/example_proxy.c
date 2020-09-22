@@ -38,6 +38,14 @@ main(void)
 	if ((err = monetdbe_prepare(mdbe, "SELECT y, 1 FROM test WHERE x = ?", &stmt)) != NULL)
 		error(err)
 
+	int x = 10;
+
+	if ((err = monetdbe_bind(stmt, &x, 0)) != NULL)
+		error(err)
+
+	if ((err = monetdbe_execute(stmt, &result, NULL)) != NULL)
+		error(err)
+
 	fprintf(stdout, "Query result with %zu cols and %"PRId64" rows\n", result->ncols, result->nrows);
 	for (int64_t r = 0; r < result->nrows; r++) {
 		for (size_t c = 0; c < result->ncols; c++) {

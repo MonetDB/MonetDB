@@ -916,14 +916,15 @@ monetdbe_result_cb(void* context, char* tblname, columnar_result* results, size_
 }
 
 struct prepare_callback_context {
-	monetdbe_result** result;
+	int* prepare_id;
 	monetdbe_database_internal *mdbe;
 };
 
 static str
 monetdbe_prepare_cb(void* context, char* tblname, columnar_result* results, size_t nr_results) {
 	(void) tblname;
-	monetdbe_database_internal *mdbe	= ((struct callback_context*) context)->mdbe;
+	monetdbe_database_internal *mdbe	= ((struct prepare_callback_context*) context)->mdbe;
+	int *prepare_id	= ((struct prepare_callback_context*) context)->prepare_id;
 
 	if (nr_results != 6) // 1) btype 2) bdigits 3) bscale 4) bschema 5) btable 6) bcolumn
 		return createException(SQL, "monetdbe.monetdbe_prepare_cb", SQLSTATE(42000) "result table for prepared statement is wrong.");
@@ -956,16 +957,17 @@ monetdbe_prepare_cb(void* context, char* tblname, columnar_result* results, size
 		nparams 	!= BATcount(bcolumn))
 		return createException(SQL, "monetdbe.monetdbe_prepare_cb", SQLSTATE(42000) "prepare results are incorrect.");
 
-	BATiter bi = bat_iterator(btable);
-	char* function =  BUNtvar(bi, BATcount(btable)-1);
+	BATiter bcolumn_iter = bat_iterator(bcolumn);
+	BATiter btable_iter = bat_iterator(btable);
+	char* function =  BUNtvar(btable_iter, BATcount(btable)-1);
 
-	char nme[16];
-	const char *name = number2name(nme, sizeof(nme), ++be->remote);
-	Symbol prg = newFunction(putName(userRef), putName(name), FUNCTIONsymbol);
+	Symbol prg = newFunction(userRef, "temp", FUNCTIONsymbol);
+
+	resizeMalBlk(prg->def, nparams + 3 /*function declaration + remote.exec + return statement*/);
 	MalBlkPtr mb = prg->def;
 
-	InstrPtr OuterFunc = getInstrPtr(mb, 0);
-	OuterFunc->retc = OuterFunc->argc = 0;
+	InstrPtr o = getInstrPtr(mb, 0);
+	o->retc = o->argc = 0;
 
 	InstrPtr e = newInstruction(mb, remoteRef, execRef);
 	e->retc = e->argc = 0;
@@ -977,15 +979,28 @@ monetdbe_prepare_cb(void* context, char* tblname, columnar_result* results, size
 	r->barrier= RETURNsymbol;
 	r->retc = r->argc = 0;
 
+	sql_allocator* sa = be->mvc->sa;
+
+	list *args = new_exp_list(sa);
+
 	for (size_t i = 0; i < nparams; i++) {
 
-		char* table =  BUNtvar(bi, i);
+		char* table =  BUNtvar(btable_iter, i);
 
 		if (strNil(table)) {
 			// input argument
-			int type = *(int*) Tloc(btype, i);
-			int idx = newVariable(mb, NULL, 0, type);
-			OuterFunc = pushArgument(mb, OuterFunc, idx);
+			sql_type *t = SA_ZNEW(sa, sql_type);
+			t->localtype = *(int*) Tloc(btype, i);
+
+			sql_subtype *st = SA_ZNEW(sa, sql_subtype);
+			sql_init_subtype(st, t, (unsigned) *(int*) Tloc(bdigits, i), (unsigned) *(int*) Tloc(bscale, i));
+
+			sql_arg *a = SA_ZNEW(sa, sql_arg);
+			a->type = *st;
+			append(args, a);
+
+			int idx = newVariable(mb, NULL, 0, t->localtype);
+			o = pushArgument(mb, o, idx);
 
 			InstrPtr p = newFcnCall(mb, remoteRef, putRef);
 			setArgType(mb, p, 0, TYPE_str);
@@ -994,32 +1009,67 @@ monetdbe_prepare_cb(void* context, char* tblname, columnar_result* results, size
 
 			e = pushArgument(mb, e, getArg(p, 0));
 		}
-		else {
-			// output argument
-			int type =  newBatType(*(int*) Tloc(btype, i));
-			int local2 = newTmpVariable(mb, TYPE_str);
-
-			InstrPtr g = newFcnCall(mb, remoteRef, getRef);
-			setArgType(mb, g, 0, type);
-			g = pushStr(mb, g, mdbe->mid);
-			g = pushArgument(mb, g, local2);
-
-			e = pushReturn(mb, e, local2);
-
-			r = pushArgument(mb, r, getArg(g, 0));
-			r = pushReturn(mb, r, getArg(g, 0));
-			OuterFunc = pushReturn(mb, OuterFunc, getArg(g, 0));
-
-		}
 	}
 
 	pushInstruction(mb, e);
+
+	list *rets = new_exp_list(sa);
+
+	for (size_t i = 0; i < nparams; i++) {
+
+		char* table =  BUNtvar(btable_iter, i);
+
+		if (!strNil(table)) {
+			// output argument
+			sql_type *t = SA_ZNEW(sa, sql_type);
+			t->localtype = *(int*) Tloc(btype, i);
+
+			char* column = BUNtvar(bcolumn_iter, i);
+			sql_subtype *st = SA_ZNEW(sa, sql_subtype);
+			sql_init_subtype(st, t, (unsigned) *(int*) Tloc(bdigits, i), (unsigned) *(int*) Tloc(bscale, i));
+
+			sql_exp * c = exp_column(sa, table, column, st, CARD_MULTI, true, false);
+			append(rets, c);
+
+			int type =  newBatType(t->localtype);
+			int idx = newTmpVariable(mb, TYPE_str);
+
+			InstrPtr g = newFcnCall(mb, putName(remoteRef), putName(getRef));
+			setArgType(mb, g, 0, type);
+			g = pushStr(mb, g, mdbe->mid);
+			g = pushArgument(mb, g, idx);
+
+			e = pushReturn(mb, e, idx);
+
+			r = pushReturn(mb, r, getArg(g, 0));
+			o = pushReturn(mb, o, getArg(g, 0));
+		}
+	}
 
 	pushInstruction(mb, r);
 
 	if ( (mdbe->msg = chkProgram(mdbe->c->usermodule, mb)) != MAL_SUCCEED ) {
 		return mdbe->msg;
 	}
+
+	sql_rel* rel = rel_project(sa, NULL, rets);
+	be->q = qc_insert(be->mvc->qc, sa, rel, NULL, args, be->mvc->type, NULL, be->no_mitosis);
+	*prepare_id = be->q->id;
+
+	/*
+	 * HACK: we need to rename the Symbol aka MAL function to the query cache name.
+	 * Basically we keep the MALblock but we destroy the containing old Symbol
+	 * and create a new one with the correct name and set its MAL block pointer to 
+	 * point to the mal block we have created in this function.
+	 */
+	prg->def = NULL;
+	freeSymbol(prg);
+	prg = newFunction(userRef, be->q->name, FUNCTIONsymbol);
+	prg->def = mb;
+	setFunctionId(getSignature(prg), be->q->name);
+
+	// finally add this beautiful new function to the local user module.
+	insertSymbol(mdbe->c->usermodule, prg);
 
 	return MAL_SUCCEED;
 }
@@ -1092,7 +1142,7 @@ monetdbe_query_remote(monetdbe_database_internal *mdbe, char* query, monetdbe_re
 		rcb.call = monetdbe_result_cb;
 	}
 	else {
-		struct callback_context context = {.result = result, .mdbe = mdbe};
+		struct prepare_callback_context context = {.prepare_id = prepare_id, .mdbe = mdbe};
 		rcb.context = &context;
 		rcb.call = monetdbe_prepare_cb;
 	}
