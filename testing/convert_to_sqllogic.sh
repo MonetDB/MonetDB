@@ -29,7 +29,7 @@ do
             shift
             shift
             ;;
-        -t|--dest-dir)
+        -t|--dst-dir)
             dst=$2
             shift
             shift
@@ -71,9 +71,9 @@ for f in $(ls ${src}/*.sql);do
 done;
 
 if [[ -e ${src}/All ]];then
-    cp ${src}/All $dst;
+    [[ ${src} -ef ${dst} ]] || cp ${src}/All $dst;
 fi
 if [[ -e ${src}/SingleServer ]];then
-    cp ${src}/SingleServer $dst;
+    [[ ${src} -ef ${dst} ]] || cp ${src}/SingleServer $dst;
 fi
 echo "Done"
