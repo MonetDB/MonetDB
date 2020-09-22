@@ -726,7 +726,6 @@ def PerformDir(env, testdir, testlist, BusyPorts, all_tests = False) :
         for f in alllinks:
             remove(f)
 
-
     # remove extra files created by tests
     for f in listdir(TSTTRGDIR):
         ff = os.path.join(TSTTRGDIR, f)
@@ -753,142 +752,6 @@ def PerformDir(env, testdir, testlist, BusyPorts, all_tests = False) :
     return td, FdErr, interrupted
 ### PerformDir(env, testdir, testlist, BusyPorts) #
 
-def ApproveOutput (env, TST) :
-    sem = 0
-    TSTDB = env['TSTDB']
-    TSTDIR  = env['TSTDIR']
-    TSTSRCDIR = env['TSTSRCDIR']
-    TSTTRGDIR = env['TSTTRGDIR']
-    os.chdir(TSTSRCDIR)
-    EXTENSIONS = par['EXTENSION']
-    FORCE = par['FORCE']
-    NOPATCH = par['NOPATCH']
-
-#       filter = re.compile( "^!WARNING: TCPlisten\([0-9]*\): stopped.$"        "|"
-#                            "^!WARNING: TCPepilogue: terminate [01] listeners$", re.MULTILINE)
-
-    TO = re.compile("(^\+(|[^#]*[\t ])((Memory|Segmentation) [Ff]ault|Bus [Ee]rror|Aborted|Assertion (|.* )failed[:\.]|!FATAL: BATSIGabort:|ERROR = !Connection terminated|!Mtimeout: Timeout:)([ \t]|$)|aborted too deep recursion)", re.MULTILINE)
-
-    for WHAT in EXTENSIONS:
-        testOUTPUT = os.path.join(TSTTRGDIR, "%s.test.%s" % (TST, WHAT))
-        TSTSRCDIRTST = os.path.join(TSTSRCDIR, TST)
-        stableOUT  = "%s.stable.%s" % (TSTSRCDIRTST, WHAT)
-        if par['SYSTEM']:
-            SYSTEM = par['SYSTEM']
-            stableOUTPUT = stableOUT + SYSTEM
-        else:
-            if WHAT == 'out':
-                w = 0
-            else: # WHAT == 'err'
-                w = 1
-            stableOUTPUT = TSTSRCDIRTST + StableOutErr(env, par, TSTSRCDIRTST, SYST, RELEASE, DIST, VERSION)[w]
-            SYSTEM = stableOUTPUT.split(WHAT)[-1]
-
-        if os.path.isfile(testOUTPUT):
-            if os.path.isfile(stableOUTPUT):
-                oc = '   (overwriting old file)'
-            else:
-                oc = '   (creating new file)'
-                if os.path.isfile(stableOUT):
-                    shutil.copy(stableOUT,stableOUTPUT)
-                else:
-                    openutf8(stableOUTPUT,"w").close()
-
-            for d in ('TMPDIR', 'TMP', 'TEMP'):
-                if d in os.environ:
-                    patch = os.environ[d]
-                    break
-            else:
-                patch = os.path.join(os.sep, 'tmp')
-            patch = os.path.join(patch, "%s.patch-%s" % (os.path.basename(stableOUTPUT), str(os.getpid())))
-            f = openutf8(patch + '.0', 'w')
-            proc = process.Popen(['diff', '-Bb', '-I^[#=]', '-I^MAPI *=', '-U0',
-                                  stableOUTPUT, testOUTPUT],
-                                 stdout=f, text=True)
-            proc.wait()
-            f.close()
-            if os.path.getsize(patch + ".0"):
-                # if a file TST.stable.{out,err}-noapprove exists, we
-                # refuse to approve the output by (silently) skipping
-                if os.path.isfile(TSTSRCDIRTST + '.stable.' + WHAT + '-noapprove'):
-                    remove(patch + ".0")
-                    if verbose:
-                        print("NOT approving %s  ->  stable.%s%s" % (os.path.join(TSTDIR, "%s.test.%s" % (TST, WHAT)), WHAT, SYSTEM))
-                    continue
-                if not verbose:
-                    oc = ''
-                print("Approving  %s  ->  stable.%s%s%s" % (os.path.join(TSTDIR, "%s.test.%s" % (TST, WHAT)), WHAT, SYSTEM, oc))
-
-                f = openutf8(patch + ".1", "w")
-                for l in openutf8(patch + ".0"):
-                    if TO.search(l):
-                        f.write(l[:1] + '\n')
-                        Warn('Rejecting (error) message: "%s"' % l[1:].replace(os.linesep, ''))
-                    elif len(l) < 2  or  \
-                         (l[:2] not in ['+!','+='] and
-                          not l.startswith('+ERROR = !') and
-                          not l.startswith('+ERROR: ') and
-                          not l.startswith('+WARNING: ')): # or  filter.match(ln):
-                        f.write(l)
-                    else:
-                        if FORCE:
-                            f.write(l)
-                            sa = 'Approving'
-                        else:
-                            f.write(l[:1] + '\n')
-                            sa = 'Skipping'
-                        Warn('%s new (error) message: "%s"' % (sa,l[1:].replace(os.linesep, '')))
-                        sem = 1
-                f.flush()
-                f.close()
-                o = openutf8(stableOUTPUT).read()
-                openutf8(stableOUTPUT + ".ORG", 'w').write(o)
-                openutf8(stableOUTPUT, 'w').write(o)
-                patchcmd = ['patch']
-                if not verbose:
-                    patchcmd.append('--quiet')
-                proc = process.Popen(patchcmd + [stableOUTPUT, patch + '.1'],
-                                     text=True)
-                proc.wait()
-                f = openutf8(patch, 'w')
-                proc = process.Popen(['diff', '-u', stableOUTPUT + '.ORG',
-                                      stableOUTPUT],
-                                     stdout=f, text=True)
-                proc.wait()
-                f.close()
-                remove(stableOUTPUT + ".ORG")
-                remove(patch + ".1")
-                o = openutf8(stableOUTPUT).read()
-                openutf8(stableOUTPUT, 'w').write(o)
-                o = None
-
-                thefile = os.path.split(stableOUTPUT)[1]
-                dir,file = os.path.split(stableOUT)
-                test = re.compile('^%s.*$' % re.escape(file))
-                list = []
-                if not NOPATCH:
-                    for f in listdir(dir or os.curdir):
-                        if f.endswith('.rej') or f.endswith('.orig') or f.endswith('~'):
-                            pass
-                        elif f != thefile and test.match(f):
-                            remove(os.path.join(dir or os.curdir, f + '.rej'))
-                            remove(os.path.join(dir or os.curdir, f + '.orig'))
-                            proc = process.Popen(patchcmd + ['--forward', os.path.join(dir or os.curdir, f)], stdin=openutf8(patch), text=True)
-                            proc.wait()
-                            if os.path.exists(os.path.join(dir or os.curdir, f + '.rej')):
-                                list.append(f)
-                if len(list) > 0:
-                    Warn('There are other (specific) stable outputs for test\n%s for which patching failed:\n  %s\n\n  Look at the *.rej files in directory %s.' % (os.path.join(TSTDIR,'Tests',TST), str(list), os.path.join(TSTDIR,'Tests')))
-            elif verbose:
-                print("No differences detected between  %s and  stable.%s%s  that are not ignored by Mtest.py." % (os.path.join(TSTDIR, "%s.test.%s" % (TST, WHAT)), WHAT, SYSTEM))
-            remove(patch + ".0")
-        elif verbose:
-            i = TST.rfind('.')
-            if i > 0:
-                return ApproveOutput(env, TST[:i])
-            Warn("Output file missing: '%s`; skipping test!" % testOUTPUT)
-    return sem
-### ApproveOutput (env, TST) #
 
 # this function is a slightly modified copy of the posixpath version
 # the differences are the doubling of \'s in the replacement value
@@ -2599,12 +2462,6 @@ os.environ['DIST'] = DIST
 os.environ['DISTVER'] = DISTVER
 os.environ['VERSION'] = VERSION
 
-if 'HTMLTITLE' in os.environ:
-    HTMLTITLE = os.environ['HTMLTITLE']
-else:
-    HTMLTITLE = "{} results on {} ({})".format(THISFILE, HOST, DISTVER)       #"+ ("`date`")"
-
-URLPREFIX = 'http://dev.monetdb.org/hg/MonetDB/file/'
 
 par = {}
 dft = {}
@@ -2903,19 +2760,17 @@ def main(argv) :
     for v in vars_:
         if v not in env:
             env[v] = eval(dft[v])
-            #TODO:
-            # make sure, that PATHs are absolute
-    if THISFILE == "Mtest.py":
-        if env['MAPIPORT'] == 0:
-            ErrXit('Cannot find a workable MAPIPORT')
-        if env['MONETDB_MOD_PATH']:
-            env['setMONETDB_MOD_PATH'] = eval(dft['setMONETDB_MOD_PATH'])
-        else:
-            env['setMONETDB_MOD_PATH'] = ''
-        if 'DBG' in env:
-            env['setDBG'] = env['DBG']
-        else:
-            env['setDBG'] = ''
+
+    if env['MAPIPORT'] == 0:
+        ErrXit('Cannot find a workable MAPIPORT')
+    if env['MONETDB_MOD_PATH']:
+        env['setMONETDB_MOD_PATH'] = eval(dft['setMONETDB_MOD_PATH'])
+    else:
+        env['setMONETDB_MOD_PATH'] = ''
+    if 'DBG' in env:
+        env['setDBG'] = env['DBG']
+    else:
+        env['setDBG'] = ''
 
     #TODO:
     ## in case of inconsistencies, try to fallback to "save" settings
@@ -3026,7 +2881,6 @@ def main(argv) :
         os.chdir(TSTSRCBASE)
 
     global REV
-    global URLPREFIX
     REV = opts.revision
     if REV is None:             # no --revision option: try to find out
         try:
@@ -3039,13 +2893,8 @@ def main(argv) :
             proc = None
         except:
             pass
-    # fix up URLPREFIX
     if REV:
-        URLPREFIX += '%s/' % REV.split()[0].rstrip('+')
         os.environ['REVISION'] = REV
-    else:
-        # if no revision known, can't refer to repository
-        URLPREFIX = None
 
     global SOCK, HOST
     try:                        # try/finally to clean up sockdir
@@ -3282,8 +3131,6 @@ def main(argv) :
 
         STDERR.flush()
         t_ = 0
-        body_good = []
-        body_bad = []
         try:
             if len(testdirs) == 1:
                 if testlist:
@@ -3311,119 +3158,115 @@ def main(argv) :
                         # results while the tests are running
                         env['TSTDIR'] = ""
                         env['TSTTRGDIR'] = os.path.join(TSTTRGBASE, TSTPREF)
-                        body = body_bad + body_good
         except KeyboardInterrupt:
             # if we get interrupted between directories, we still want output
             pass
-        body = body_bad + body_good
 
-        if THISFILE == "Mtest.py":
-            fn = os.path.join(TSTTRGBASE, TSTPREF, "times.")
-            fl = openutf8(fn+"lst","w")
-            Failure = [[] for i in FAILURES]
-            for TSTDIR, TST, tt, ms, FtErr, reason in TIMES:
-                fl.write('%s:\t%s\t%s\t%s\n' % (url(os.path.join(TSTDIR, TST)),
-                                                    tt,
-                                                    FAILURES[FtErr][0],
-                                                    reason or ''))
-                if TST != '':
-                    Failure[FtErr].append(os.path.join(TSTDIR,TST))
-            fl.write(":\t%7.3f\t\n" % t_)
-            fl.close()
+        fn = os.path.join(TSTTRGBASE, TSTPREF, "times.")
+        fl = openutf8(fn+"lst","w")
+        Failure = [[] for i in FAILURES]
+        for TSTDIR, TST, tt, ms, FtErr, reason in TIMES:
+            fl.write('%s:\t%s\t%s\t%s\n' % (url(os.path.join(TSTDIR, TST)),
+                                                tt,
+                                                FAILURES[FtErr][0],
+                                                reason or ''))
+            if TST != '':
+                Failure[FtErr].append(os.path.join(TSTDIR,TST))
 
-            fl = openutf8(fn+"sql","w")
-            host = socket.gethostname()
-            product = os.path.split(TSTSRCBASE)[-1]
+        fl.write(":\t%7.3f\t\n" % t_)
+        fl.close()
 
-            compiler = ''
+        fl = openutf8(fn+"sql","w")
+        host = socket.gethostname()
+        product = os.path.split(TSTSRCBASE)[-1]
 
-            # start of times.sql output preparation
-            try:
-                from mx import DateTime
-                now = "timestamp '" + str(DateTime.now()) + "'"
-            except ImportError:
-                now = 'now()'
+        compiler = ''
 
-            if env['TST_INT128'] != '':
-                isInt128 = 'true'
-            else:
-                isInt128 = 'false'
+        # start of times.sql output preparation
+        try:
+            from mx import DateTime
+            now = "timestamp '" + str(DateTime.now()) + "'"
+        except ImportError:
+            now = 'now()'
 
-            if env['TST_SINGLE'] != '':
-                isSingle = 'true'
-            else:
-                isSingle = 'false'
+        if env['TST_INT128'] != '':
+            isInt128 = 'true'
+        else:
+            isInt128 = 'false'
 
-            # ok, we're not prepared for the 128 bits world yet
-            bits = env['TST_BITS'][:2]
+        if env['TST_SINGLE'] != '':
+            isSingle = 'true'
+        else:
+            isSingle = 'false'
 
-            # we write in SQL the same codes as testweb uses in the HTML
-            # pages, for readability
+        # ok, we're not prepared for the 128 bits world yet
+        bits = env['TST_BITS'][:2]
 
-            # we are not interested in the compiler, nor its path, nor its
-            # options.  We do store the options separately, though
-            hasSpace = compiler.find(' ')
-            if hasSpace != -1:
-                ccname = os.path.split(compiler[:hasSpace])[-1]
-                ccopts = compiler[hasSpace + 1:]
-            else:
-                ccname = os.path.split(compiler)[-1]
-                ccopts = ''
+        # we write in SQL the same codes as testweb uses in the HTML
+        # pages, for readability
 
-        if THISFILE == "Mtest.py":
-            env['TSTDIR'] = ""
-            env['TSTTRGDIR'] = os.path.join(TSTTRGBASE, TSTPREF)
+        # we are not interested in the compiler, nor its path, nor its
+        # options.  We do store the options separately, though
+        hasSpace = compiler.find(' ')
+        if hasSpace != -1:
+            ccname = os.path.split(compiler[:hasSpace])[-1]
+            ccopts = compiler[hasSpace + 1:]
+        else:
+            ccname = os.path.split(compiler)[-1]
+            ccopts = ''
 
-            Failed = 0
-            for f in Failure[1:-1]:
-                Failed += len(f)
-            num_tests = 0
-            for f in Failure:
-                num_tests += len(f)
-            how = ""
-            what = ""
-            for x, y, z in [(F_SKIP, "could not be executed", ""),
-                            (F_WARN, "produced slightly different output", "slightly"),
-                            (F_SOCK, "did not properly release socket(s)", "SIGNIFICANTLY"),
-                            (F_TIME, "ran into timeout", "SIGNIFICANTLY"),
-                            (F_ABRT, "caused an abort (assertion failure)", "SIGNIFICANTLY"),
-                            (F_SEGV, "resulted in a crash", "SIGNIFICANTLY"),
-                            (F_RECU, "ran into too deep recursion", "SIGNIFICANTLY"),
-                            (F_ERROR, "produced SIGNIFICANTLY different output", "SIGNIFICANTLY"),
-                            (F_MISSING, "produced SIGNIFICANTLY different output", "SIGNIFICANTLY")]:
-                if Failure[x]:
-                    how = z
-                    what += "  %3d out of %3d tests %s\n" % (len(Failure[x]),num_tests, y)
-                    # only report failed tests if there aren't too many
-                    if Failed < 30 and \
-                           (x != F_SKIP or len(Failure[F_SKIP]) + Failed < 30):
-                        for f in Failure[x]:
-                            what += "        %s\n" % f
-            STDERR.flush()
-            if Failed:
-                print("""\
+        env['TSTDIR'] = ""
+        env['TSTTRGDIR'] = os.path.join(TSTTRGBASE, TSTPREF)
 
- !ERROR:  Testing FAILED %s (%d out of %d tests failed)
+        Failed = 0
+        for f in Failure[1:-1]:
+            Failed += len(f)
+        num_tests = 0
+        for f in Failure:
+            num_tests += len(f)
+        how = ""
+        what = ""
+        for x, y, z in [(F_SKIP, "could not be executed", ""),
+                        (F_WARN, "produced slightly different output", "slightly"),
+                        (F_SOCK, "did not properly release socket(s)", "SIGNIFICANTLY"),
+                        (F_TIME, "ran into timeout", "SIGNIFICANTLY"),
+                        (F_ABRT, "caused an abort (assertion failure)", "SIGNIFICANTLY"),
+                        (F_SEGV, "resulted in a crash", "SIGNIFICANTLY"),
+                        (F_RECU, "ran into too deep recursion", "SIGNIFICANTLY"),
+                        (F_ERROR, "produced SIGNIFICANTLY different output", "SIGNIFICANTLY"),
+                        (F_MISSING, "produced SIGNIFICANTLY different output", "SIGNIFICANTLY")]:
+            if Failure[x]:
+                how = z
+                what += "  %3d out of %3d tests %s\n" % (len(Failure[x]),num_tests, y)
+                # only report failed tests if there aren't too many
+                if Failed < 30 and \
+                       (x != F_SKIP or len(Failure[F_SKIP]) + Failed < 30):
+                    for f in Failure[x]:
+                        what += "        %s\n" % f
+        STDERR.flush()
+        if Failed:
+            print("""\
+
+!ERROR:  Testing FAILED %s (%d out of %d tests failed)
 
 %s
 """ % (how, Failed, num_tests, what))
-                if jenkins:
-                    sys.exit(0)
-                sys.exit(1)
-            else:
-                if quiet:
-                    pass
-                else:
-                    print("No differences encountered during testing.")
+            if jenkins:
                 sys.exit(0)
+            sys.exit(1)
+        else:
+            if quiet:
+                pass
+            else:
+                print("No differences encountered during testing.")
+            sys.exit(0)
 
     finally:
         # cleanup the place where we put our UNIX sockets
-        if THISFILE == "Mtest.py" and SOCK:
-            try:
-                shutil.rmtree(sockdir);
-            except:
-                pass
+        try:
+            shutil.rmtree(sockdir);
+        except:
+            pass
 
 ### main(argv) #
 
