@@ -73,4 +73,7 @@ done;
 if [[ -e ${src}/All ]];then
     cp ${src}/All $dst;
 fi
+if [[ -e ${src}/SingleServer ]];then
+    cp ${src}/SingleServer $dst;
+fi
 echo "Done"
