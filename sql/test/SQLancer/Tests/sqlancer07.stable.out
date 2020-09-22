@@ -425,6 +425,25 @@ stdout of test 'sqlancer07` in directory 'sql/test/SQLancer` itself:
 #CREATE TABLE "t2" ("c0" BIGINT NOT NULL,CONSTRAINT "t2_c0_pkey" PRIMARY KEY ("c0"),CONSTRAINT "t2_c0_unique" UNIQUE ("c0"));
 #INSERT INTO "t2" VALUES (446453788), (1973525566), (1604369323), (-907882617), (1067873323), (1615259391), (1286378024);
 [ 7	]
+#SELECT 1 FROM t0 RIGHT OUTER JOIN t1 ON 3 IN ((SELECT 2), t1.c0);
+% .%10 # table_name
+% %10 # name
+% tinyint # type
+% 1 # length
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+#SELECT CAST(SUM(count) AS BIGINT) FROM (SELECT CAST(FALSE AS INT) as count FROM t2, t0 RIGHT OUTER JOIN t1 ON (CAST(1.2 AS DECIMAL)) IN 
+#	((SELECT DISTINCT 1832275178 FROM t0, t1), ((t1.c0)+(0.83835187465939664530623076643678359687328338623046875)))) as res;
+% .%10 # table_name
+% %10 # name
+% bigint # type
+% 1 # length
+[ 0	]
 #ROLLBACK;
 
 # 10:16:14 >  

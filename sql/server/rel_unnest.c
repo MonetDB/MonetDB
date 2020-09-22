@@ -627,6 +627,7 @@ exp_rewrite(mvc *sql, sql_rel *rel, sql_exp *e, list *ad)
 			pe = NULL;
 		else
 			is_wb = 0;
+		if (ad)
 		for(d=ad->h; d; d=d->next) {
 			sql_subfunc *df;
 			sql_exp *e = d->data;
@@ -1535,7 +1536,7 @@ rewrite_inner(mvc *sql, sql_rel *rel, sql_rel *inner, operator_type op)
 		inner = rel_project(sql->sa, inner, rel_projections(sql, inner, NULL, 1, 1));
 
 	if (is_join(rel->op)){ /* TODO handle set operators etc */
-		if (rel->op == op_right)
+		if (is_right(rel->op))
 			d = rel->l = rel_crossproduct(sql->sa, rel->l, inner, op);
 		else
 			d = rel->r = rel_crossproduct(sql->sa, rel->r, inner, op);
@@ -3107,9 +3108,24 @@ include_tid(sql_rel *r)
 }
 
 static sql_rel *
+rewrite_dependent_right2left(visitor *v, sql_rel *rel) 
+{
+	(void) v;
+	/* The unnest code assumes freevars belong to the tables on the left side, so at a right join, re-write it to a left join */
+	if (is_right(rel->op) && is_dependent(rel)) {
+		sql_rel *l = rel->l;
+		rel->l = rel->r;
+		rel->r = l;
+		rel->op = op_left;
+	}
+	return rel;
+}
+
+static sql_rel *
 rewrite_outer2inner_union(visitor *v, sql_rel *rel)
 {
-	if (is_outerjoin(rel->op) && !list_empty(rel->exps) && (((rel->op == op_left || rel->op == op_full) && rel_has_freevar(v->sql,rel->l)) || ((rel->op == op_right || rel->op == op_full) && rel_has_freevar(v->sql,rel->r)) || exps_have_freevar(v->sql, rel->exps) /*exps_have_rel_exp(rel->exps)*/)) {
+	if (is_outerjoin(rel->op) && !list_empty(rel->exps) && (((is_left(rel->op) || is_full(rel->op)) && rel_has_freevar(v->sql,rel->l)) || 
+		((is_right(rel->op) || is_full(rel->op)) && rel_has_freevar(v->sql,rel->r)) || exps_have_freevar(v->sql, rel->exps) /*exps_have_rel_exp(rel->exps)*/)) {
 		sql_exp *f = exp_atom_bool(v->sql->sa, 0);
 		int nrcols = rel->nrcols;
 
@@ -3283,6 +3299,7 @@ rel_unnest(mvc *sql, sql_rel *rel)
 	rel = rel_visitor_bottomup(&v, rel, &rewrite_simplify);		/* as expressions got merged before, lets try to simplify again */
 	if (v.changes > 0)
 		rel = rel_visitor_bottomup(&v, rel, &rel_remove_empty_select);
+	rel = rel_visitor_bottomup(&v, rel, &rewrite_dependent_right2left);
 	rel = rel_visitor_bottomup(&v, rel, &_rel_unnest);
 	rel = rel_visitor_bottomup(&v, rel, &rewrite_fix_count);	/* fix count inside a left join (adds a project (if (cnt IS null) then (0) else (cnt)) */
 	rel = rel_visitor_bottomup(&v, rel, &rewrite_reset_used);	/* rewrite_fix_count uses 'used' property from sql_rel, reset it after it's done */
