@@ -453,17 +453,6 @@ TIMES = []
 
 random.seed(time.time())
 
-#TODO:
-#class TimeoutError:
-#       def __init__(self, text):
-#               self.text = text
-#       def __str__(self):
-#               return self.text
-#
-#def AlarmHandler(signum, frame) :
-#       raise TimeoutError, "Timeout"
-#### AlarmHandler(signum, frame) #
-
 def ErrMsg(TEXT) :
     STDOUT.flush()
     STDERR.write("\n%s:  ERROR:  %s\n\n" % (THISFILE, TEXT))
@@ -660,7 +649,6 @@ def PerformDir(env, testdir, testlist, BusyPorts, all_tests = False) :
                 return td, FdErr, interrupted
             z.close()
             if not oneserver:
-                #ServerClass(cmd, TestOut, TestErr, TimeOut, pollfile, port)
                 pSrvr = ServerClass(splitcommand(env['exe']['mserver5'][1]) + ['--dbpath=%s' % LogDBdir], open(os.devnull, 'w'), open(os.devnull, 'w'), par['TIMEOUT'], os.path.join(LogDBdir, '.started'), int(env['MAPIPORT']))
                 pSrvr.LaunchIt()
                 pSrvr.terminate()
@@ -668,8 +656,6 @@ def PerformDir(env, testdir, testlist, BusyPorts, all_tests = False) :
         #TODO: set mode to umask
         os.makedirs(TSTTRGDIR)
 
-    body_good = []
-    body_bad = []
     oktests = []
     if not verbose and not quiet:
         print('\nRunning in %s' % TSTDIR)
@@ -680,20 +666,12 @@ def PerformDir(env, testdir, testlist, BusyPorts, all_tests = False) :
             for TST,COND in testlist:
                 if oneserver and (pSrvr is None or pSrvr.poll() is not None):
                     # restart server
-                    cmd = splitcommand(env['exe']['mserver5'][1]) + ['--dbpath=%s' % LogDBdir] + options
-                    if env.get('MULTIFARM'):
-                        cmd.append('--dbextra=%s' % os.path.join(env['GDK_DBFARM'], TSTPREF + '_transient'))
-                        shutil.rmtree(os.path.join(env['GDK_DBFARM'], TSTPREF + '_transient'),
-                                      ignore_errors = True)
-                        os.makedirs(os.path.join(env['GDK_DBFARM'], TSTPREF + '_transient'))
-                    elif env.get('TRANS_INMEM'):
-                        cmd.append('--dbextra=:inmemory')
-                    pSrvr = ServerClass(cmd,
-                                        open(os.path.join(TSTTRGDIR, 'SingleServer.out'), 'a'),
-                                        open(os.path.join(TSTTRGDIR, 'SingleServer.err'), 'a'),
-                                        0,
-                                        os.path.join(LogDBdir, '.started'),
-                                        int(env['MAPIPORT']))
+                    pSrvr = create_mserver5(
+                            LogDBdir,
+                            env=env,
+                            outfile=os.path.join(TSTTRGDIR, 'SingleServer.out'),
+                            errfile=os.path.join(TSTTRGDIR, 'SingleServer.err'),
+                            options=options)
                     os.chdir(TSTTRGDIR)
                     pSrvr.LaunchIt()
                 if global_timeout and start_time + global_timeout < time.time():
@@ -1357,7 +1335,8 @@ def RunTest(env, TST, BusyPorts, COND, oktests, length, all_tests, pSrvr) :
 
         t0 = time.time()
         print('WTF is TIMEOUT=', TIMEOUT)
-        print(pSrvr.__dict__)
+        if pSrvr:
+            print(pSrvr.__dict__)
         if CALL == 'sqltest':
             errcode = RunSQLLogicTest(env, TST, None, TestErrFile)
         else:
@@ -1738,6 +1717,30 @@ class ServerClass:
         self.started = True
 #ServerClass(cmd, outfile, errfile, timeout, pollfile, port)
 
+
+def create_mserver5(dbpath, timeout=0, env={}, outfile=None, errfile=None, options=[]):
+    port = int(env.get('MAPIPORT', randomPort(30000, 39999)))
+    pollfile = os.path.join(dbpath, '.started')
+    outfile = open(outfile, 'a') if outfile else sys.stdout
+    errfile = open(errfile, 'a') if errfile else sys.stderr
+    cmd = splitcommand(env['exe']['mserver5'][1]) + ['--dbpath=%s' % dbpath] + options
+    print('DEBUG: [create_mserver5] --options ', cmd)
+    TSTPREF = env.get('TSTPREF')
+    if env.get('MULTIFARM'):
+        cmd.append('--dbextra=%s' % os.path.join(env['GDK_DBFARM'], TSTPREF + '_transient'))
+        shutil.rmtree(os.path.join(env['GDK_DBFARM'], TSTPREF + '_transient'),
+                      ignore_errors = True)
+        os.makedirs(os.path.join(env['GDK_DBFARM'], TSTPREF + '_transient'))
+    elif env.get('TRANS_INMEM'):
+        cmd.append('--dbextra=:inmemory')
+    return ServerClass(cmd,
+                outfile,
+                errfile,
+                timeout,
+                pollfile,
+                port)
+
+
 def RunIt(cmd, onechild, TestIn, TestOut, TestErr, TimeOut) :
     global setpgrp
     if type(TestIn) is type(''):
@@ -1951,6 +1954,8 @@ def DoIt(env, SERVER, CALL, TST, EXT, TestOutFile, TestErrFile, STIMEOUT, CTIMEO
             Srvr.extend(['--set', 'embedded_c=true'])
 
             if PSRVR is None:
+                # TODO
+                #def create_mserver5(dbpath, timeout=0, env={}, outfile=None, errfile=None, options=[]):
                 if env.get('MULTIFARM'):
                     Srvr.append('--dbextra=%s' % os.path.join(env['GDK_DBFARM'], TSTPREF + '_transient'))
                     shutil.rmtree(os.path.join(env['GDK_DBFARM'], TSTPREF + '_transient'),
@@ -1958,7 +1963,6 @@ def DoIt(env, SERVER, CALL, TST, EXT, TestOutFile, TestErrFile, STIMEOUT, CTIMEO
                     os.makedirs(os.path.join(env['GDK_DBFARM'], TSTPREF + '_transient'))
                 elif env.get('TRANS_INMEM'):
                     Srvr.append('--dbextra=:inmemory')
-                #ServerClass(cmd, outfile, errfile, timeout, pollfile, port)
                 pSrvr = ServerClass(Srvr, SrvrOut, SrvrErr, TIMEOUT, os.path.join(dbpath, '.started'), int(env['MAPIPORT']))
                 pSrvr.LaunchIt()
             if savepath is not None:
@@ -2888,7 +2892,6 @@ def main(argv) :
             exe = {}
             exe['mserver5']       = CheckExec('mserver5')     , '%s mserver5 --debug=%s --set gdk_nr_threads=%s %s --set mapi_listenaddr=all --set mapi_port=%s %s %s %s' % \
                                                                    (env['setDBG'], env['GDK_DEBUG'], env['GDK_NR_THREADS'], env['setMONETDB_MOD_PATH'], env['MAPIPORT'], SOCK, not nomito and '--forcemito' or '', env['MSERVER_SET'])
-            exe['Mdiff']         = CheckExec('Mdiff')        , 'Mdiff'
             exe['python']        = CheckExec(sys.executable) , sys.executable
             exe['ruby_client']   = CheckExec(env['RUBYCLIENT'].split(None, 1)[0])   , '%s %s' % (env['RUBYCLIENT'], env['MAPIPORT'])
             exe['MAL_Client']    = CheckExec(env['MALCLIENT'].split(None, 1)[0])  , '%s --host=%s --port=%s' % (env['MALCLIENT'], HOST, env['MAPIPORT'])
