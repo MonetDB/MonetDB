@@ -14,7 +14,6 @@
 #include <ctype.h>
 
 mal_export str STRtostr(str *res, const str *src);
-mal_export str STRConcat(str *res, const str *val1, const str *val2);
 mal_export str STRLength(int *res, const str *arg1);
 mal_export str STRBytes(int *res, const str *arg1);
 mal_export str STRTail(str *res, const str *arg1, const int *offset);

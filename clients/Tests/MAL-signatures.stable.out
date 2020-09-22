@@ -9442,7 +9442,6 @@ stdout of test 'MAL-signatures` in directory 'clients` itself:
 [ "status",	"vm_cursize",	"command status.vm_cursize():lng ",	"SYSgetvm_cursize;",	""	]
 [ "status",	"vm_maxsize",	"command status.vm_maxsize():lng ",	"SYSgetvm_maxsize;",	""	]
 [ "status",	"vm_maxsize",	"command status.vm_maxsize(X_1:lng):void ",	"SYSsetvm_maxsize;",	""	]
-[ "str",	"+",	"command str.+(X_1:str, X_2:str):str ",	"STRConcat;",	""	]
 [ "str",	"STRepilogue",	"command str.STRepilogue():void ",	"strEpilogue;",	""	]
 [ "str",	"ascii",	"command str.ascii(X_1:str):int ",	"STRascii;",	""	]
 [ "str",	"endsWith",	"command str.endsWith(X_1:str, X_2:str):bit ",	"STRSuffix;",	""	]
