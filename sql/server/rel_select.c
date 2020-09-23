@@ -4224,7 +4224,7 @@ rel_order_by(sql_query *query, sql_rel **R, symbol *orderby, int f)
 		if (order->token == SQL_COLUMN || order->token == SQL_IDENT) {
 			symbol *col = order->data.lval->h->data.sym;
 			int direction = order->data.lval->h->next->data.i_val;
-			sql_exp *e = NULL, *oe = NULL;
+			sql_exp *e = NULL;
 
 			assert(order->data.lval->h->next->type == type_int);
 			if ((selection = simple_selection(col)) != NULL) {
@@ -4283,8 +4283,7 @@ rel_order_by(sql_query *query, sql_rel **R, symbol *orderby, int f)
 			if (!e)
 				return NULL;
 			set_direction(e, direction);
-			if (!(oe = exps_any_match_same_or_no_alias(exps, e)) || is_ascending(oe) != is_ascending(e) || nulls_last(oe) != nulls_last(e))
-				list_append(exps, e);
+			list_append(exps, e);
 		} else {
 			return sql_error(sql, 02, SQLSTATE(42000) "SELECT: order not of type SQL_COLUMN");
 		}
