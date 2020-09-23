@@ -1293,8 +1293,9 @@ exp_match_exp( sql_exp *e1, sql_exp *e2)
 {
 	if (exp_match(e1, e2))
 		return 1;
-	if (e1->ascending != e2->ascending || e1->nulls_last != e2->nulls_last || e1->zero_if_empty != e2->zero_if_empty || 
-		e1->anti != e2->anti || e1->semantics != e2->semantics || e1->distinct != e2->distinct)
+	if (is_ascending(e1) != is_ascending(e2) || nulls_last(e1) != nulls_last(e2) || zero_if_empty(e1) != zero_if_empty(e2) ||
+		need_no_nil(e1) != need_no_nil(e2) || is_anti(e1) != is_anti(e2) || is_semantics(e1) != is_semantics(e2) ||
+		need_distinct(e1) != need_distinct(e2))
 		return 0;
 	if (e1->type == e2->type) {
 		switch(e1->type) {
