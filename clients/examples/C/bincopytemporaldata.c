@@ -31,30 +31,11 @@ lfsr_bits(struct lfsr *lfsr, int n)
 }
 
 
-typedef struct {
-	uint8_t day;
-	uint8_t month;
-	int16_t year;
-} binary_date; // natural size: 32, natural alignment: 16
-
-typedef struct {
-	uint32_t ms;
-	uint8_t seconds;
-	uint8_t minutes;
-	uint8_t hours;
-	uint8_t padding; // implied in C, explicit elsewhere
-} binary_time;		 // natural size: 64, natural alignment: 32
-
-typedef struct {
-	binary_time time;
-	binary_date date;
-} binary_timestamp; // natural size: 96, natural alignment: 32
-
-static binary_timestamp
+static copy_binary_timestamp
 random_timestamp(struct lfsr *lfsr)
 {
 	// the % trick gives a little skew but we don't care
-	binary_timestamp ts = {
+	copy_binary_timestamp ts = {
 		.time = {
 			.ms = lfsr_bits(lfsr, 32) % 1000000,
 			.seconds = lfsr_bits(lfsr, 16) % 60, // 61 ??
@@ -88,7 +69,7 @@ random_timestamp(struct lfsr *lfsr)
 	return ts;
 }
 
-void fix_endian(binary_timestamp *p);
+void fix_endian(copy_binary_timestamp *p);
 void fix_endian2(int16_t *p);
 void fix_endian4(uint32_t *p);
 
@@ -126,7 +107,7 @@ void fix_endian4(uint32_t *p) {
 }
 #endif
 
-void fix_endian(binary_timestamp *ts)
+void fix_endian(copy_binary_timestamp *ts)
 {
 	fix_endian2(&ts->date.year);
 	fix_endian4(&ts->time.ms);
@@ -138,7 +119,7 @@ gen_timestamps(FILE *f, long nrecs)
 	struct lfsr lfsr = my_favorite_lfsr();
 
 	for (long i = 0; i < nrecs; i++) {
-		binary_timestamp ts = random_timestamp(&lfsr);
+		copy_binary_timestamp ts = random_timestamp(&lfsr);
 		fix_endian(&ts);
 		fwrite(&ts, sizeof(ts), 1, f);
 	}
@@ -151,7 +132,7 @@ gen_timestamps(FILE *f, long nrecs)
 		struct lfsr lfsr = my_favorite_lfsr(); \
 	\
 		for (long i = 0; i < nrecs; i++) { \
-			binary_timestamp ts = random_timestamp(&lfsr); \
+			copy_binary_timestamp ts = random_timestamp(&lfsr); \
 			fix_endian(&ts); \
 			fwrite(&ts.fld, sizeof(ts.fld), 1, f); \
 		} \

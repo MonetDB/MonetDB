@@ -54,6 +54,7 @@ if(TESTING)
   target_link_libraries(bincopydata
     PRIVATE
     monetdb_config_header
+    copybinary
   )
 
   install(TARGETS
