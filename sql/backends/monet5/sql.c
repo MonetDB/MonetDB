@@ -3285,7 +3285,7 @@ BATattach_as_bytes(int tt, stream *s, BAT *bn, bool *eof_seen)
 }
 
 static str
-BATattach_stream(BAT **result, int tt, stream *s, BUN size, bool *eof_seen)
+BATattach_stream(BAT **result, const char *colname, int tt, stream *s, BUN size, bool *eof_seen)
 {
 	str msg = MAL_SUCCEED;
 	BAT *bn = NULL;
@@ -3297,24 +3297,42 @@ BATattach_stream(BAT **result, int tt, stream *s, BUN size, bool *eof_seen)
 		goto end;
 	}
 
+	switch (tt) {
+		case TYPE_bit:
+		case TYPE_bte:
+		case TYPE_sht:
+		case TYPE_bat:
+		case TYPE_int:
+		case TYPE_oid:
+		case TYPE_flt:
+		case TYPE_dbl:
+		case TYPE_lng:
+#ifdef HAVE_HGE
+		case TYPE_hge:
+#endif
+			msg = BATattach_as_bytes(tt, s, bn, eof_seen);
+			break;
 
-	switch (ATOMstorage(tt)) {
-	case TYPE_str:
-		in = bstream_create(s, 1 << 20);
-		if (in == NULL) {
-			msg = createException(SQL, "sql", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		case TYPE_str:
+			in = bstream_create(s, 1 << 20);
+			if (in == NULL) {
+				msg = createException(SQL, "sql", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+				goto end;
+			}
+			msg = BATattach_str(in, bn);
+			if (eof_seen != NULL)
+				*eof_seen = in->eof;
+			break;
+
+		case TYPE_date:
+		case TYPE_daytime:
+		case TYPE_timestamp:
+		default:
+			msg = createException(SQL, "sql",
+				SQLSTATE(42000) "Type of column %s not supported for BINARY COPY",
+				colname);
 			goto end;
-		}
-		msg = BATattach_str(in, bn);
-		if (eof_seen != NULL)
-			*eof_seen = in->eof;
-		break;
-	default:
-		msg = BATattach_as_bytes(tt, s, bn, eof_seen);
-		break;
 	}
-	if (msg != MAL_SUCCEED)
-		goto end;
 
 end:
 	if (in != NULL){
@@ -3413,7 +3431,7 @@ mvc_bin_import_table_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 				assert(isa_block_stream(ws));
 				bool eof = false;
 				set_prompting(rs, PROMPT2, ws);
-				msg = BATattach_stream(&c, col->type.type->localtype, rs, cnt, &eof);
+				msg = BATattach_stream(&c, col->base.name, col->type.type->localtype, rs, cnt, &eof);
 				set_prompting(rs, NULL, NULL);
 				if (!eof) {
 					// Didn't read everything, probably due to an error.
@@ -3440,7 +3458,7 @@ mvc_bin_import_table_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 			} else {
 				stream *s = open_rstream(fname);
 				if (s != NULL)
-					msg = BATattach_stream(&c, tpe, s, 0, NULL);
+					msg = BATattach_stream(&c, col->base.name, tpe, s, 0, NULL);
 				else
 					msg = createException(
 						SQL, "mvc_bin_import_table_wrap",
