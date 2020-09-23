@@ -82,10 +82,12 @@ MTIMEcurrent_timestamp(timestamp *ret)
 #define INIT_ITER(VAR, VAR_BAT) VAR = bat_iterator(VAR_BAT)
 
 #define APPEND_STR(MALFUNC) \
-	if (BUNappend(bn, res, false) != GDK_SUCCEED) { \
+	if (tfastins_nocheckVAR(bn, i, res, Tsize(bn)) != GDK_SUCCEED) { \
+		GDKfree(res); \
 		msg = createException(SQL, "batmtime." MALFUNC, SQLSTATE(HY013) MAL_MALLOC_FAIL); \
 		break; \
-	}
+	} \
+	GDKfree(res); \
 
 #define GET_NEXT_ITER(VAR) BUNtvar(VAR, i)
 

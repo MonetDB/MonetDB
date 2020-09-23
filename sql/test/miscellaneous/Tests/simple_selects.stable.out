@@ -392,6 +392,14 @@ stdout of test 'simple_selects` in directory 'sql/test/miscellaneous` itself:
 % clob # type
 % 5 # length
 [ "3.000"	]
+#select date_to_str(a,'%y/%m/%d') from (values (date '2012-02-11'), (date '2012-02-12'),(date '2012-02-13')) as a(a);
+% .%5 # table_name
+% %5 # name
+% clob # type
+% 8 # length
+[ "12/02/11"	]
+[ "12/02/12"	]
+[ "12/02/13"	]
 
 # 17:31:38 >  
 # 17:31:38 >  "Done."
