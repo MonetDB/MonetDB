@@ -862,11 +862,9 @@ rel_groupby(mvc *sql, sql_rel *l, list *groupbyexps )
 		list *gexps = sa_list(sql->sa);
 
 		for (en = groupbyexps->h; en; en = en->next) {
-			sql_exp *e = en->data, *ne;
+			sql_exp *e = en->data;
 
-			if ((ne=exps_find_exp(gexps, e)) == NULL ||
-			    strcmp(exp_relname(e),exp_relname(ne)) != 0 ||
-			    strcmp(exp_name(e),exp_name(ne)) != 0  )
+			if (!exps_any_match_same_or_no_alias(gexps, e))
 				append(gexps, e);
 		}
 		groupbyexps = gexps;

@@ -1091,15 +1091,20 @@ exp_cmp( sql_exp *e1, sql_exp *e2)
 	return (e1 == e2)?0:-1;
 }
 
+#define alias_cmp(e1, e2) \
+	do { \
+		if (e1->alias.rname && e2->alias.rname && strcmp(e1->alias.rname, e2->alias.rname) == 0) \
+			return strcmp(e1->alias.name, e2->alias.name); \
+		if (!e1->alias.rname && !e2->alias.rname && e1->alias.label == e2->alias.label && e1->alias.name && e2->alias.name) \
+			return strcmp(e1->alias.name, e2->alias.name); \
+	} while (0);
+
 int
 exp_equal( sql_exp *e1, sql_exp *e2)
 {
 	if (e1 == e2)
 		return 0;
-	if (e1->alias.rname && e2->alias.rname && strcmp(e1->alias.rname, e2->alias.rname) == 0)
-		return strcmp(e1->alias.name, e2->alias.name);
-	if (!e1->alias.rname && !e2->alias.rname && e1->alias.label == e2->alias.label && e1->alias.name && e2->alias.name)
-		return strcmp(e1->alias.name, e2->alias.name);
+	alias_cmp(e1, e2);
 	return -1;
 }
 
@@ -1288,6 +1293,9 @@ exp_match_exp( sql_exp *e1, sql_exp *e2)
 {
 	if (exp_match(e1, e2))
 		return 1;
+	if (e1->ascending != e2->ascending || e1->nulls_last != e2->nulls_last || e1->zero_if_empty != e2->zero_if_empty || 
+		e1->anti != e2->anti || e1->semantics != e2->semantics || e1->distinct != e2->distinct)
+		return 0;
 	if (e1->type == e2->type) {
 		switch(e1->type) {
 		case e_cmp:
@@ -1300,7 +1308,7 @@ exp_match_exp( sql_exp *e1, sql_exp *e2)
 		            exp_match_list(e1->l, e2->l) &&
 			    exp_match_list(e1->r, e2->r))
 				return 1;
-			else if (e1->flag == e2->flag && is_anti(e1) == is_anti(e2) &&
+			else if (e1->flag == e2->flag &&
 				(e1->flag == cmp_in || e1->flag == cmp_notin) &&
 		            exp_match_exp(e1->l, e2->l) &&
 			    exp_match_list(e1->r, e2->r))
@@ -1351,6 +1359,27 @@ exps_any_match(list *l, sql_exp *e)
 	for (node *n = l->h; n ; n = n->next) {
 		sql_exp *ne = (sql_exp *) n->data;
 		if (exp_match_exp(ne, e))
+			return ne;
+	}
+	return NULL;
+}
+
+static int
+exp_no_alias(sql_exp *e1, sql_exp *e2)
+{
+	alias_cmp(e1, e2);
+	/* at least one of the expressions don't have an alias, so there's a match */
+	return 0;
+}
+
+sql_exp *
+exps_any_match_same_or_no_alias(list *l, sql_exp *e)
+{
+	if (!l)
+		return NULL;
+	for (node *n = l->h; n ; n = n->next) {
+		sql_exp *ne = (sql_exp *) n->data;
+		if ((exp_match(ne, e) || exp_refers(ne, e) || exp_match_exp(ne, e)) && exp_no_alias(e, ne) == 0)
 			return ne;
 	}
 	return NULL;
