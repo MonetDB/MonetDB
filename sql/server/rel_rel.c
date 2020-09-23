@@ -871,7 +871,7 @@ rel_groupby(mvc *sql, sql_rel *l, list *groupbyexps )
 			sql_exp *e = en->data, *ne;
 
 			if ((ne=exps_find_exp(gexps, e)) == NULL ||
-			    strcmp(exp_relname(e),exp_relname(ne)) != 0 ||
+			    (exp_relname(e) && exp_relname(ne) && strcmp(exp_relname(e),exp_relname(ne)) != 0) ||
 			    strcmp(exp_name(e),exp_name(ne)) != 0  )
 				append(gexps, e);
 		}
