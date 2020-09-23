@@ -207,3 +207,9 @@ select cast(interval '3' second as clob);
 select cast(13121 as varchar(2147483647)) || cast(231231 as varchar(2147483647)); --error, too big
 
 select date_to_str(a,'%y/%m/%d') from (values (date '2012-02-11'), (date '2012-02-12'),(date '2012-02-13')) as a(a);
+
+select x as z, y as z from (select 1, 2) as x(x,y) group by z;
+	-- error 'z' identifier is ambiguous
+
+select x as z, y as z from (select 1, 2) as x(x,y) order by z;
+	-- error 'z' identifier is ambiguous
