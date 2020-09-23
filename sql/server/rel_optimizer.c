@@ -6043,7 +6043,7 @@ rel_groupby_distinct(visitor *v, sql_rel *rel)
 	if (is_groupby(rel->op) && rel->r && !rel_is_ref(rel)) {
 		int nr = 0, anr = 0;
 		list *gbe, *ngbe, *arg, *exps, *nexps;
-		sql_exp *distinct = NULL, *darg;
+		sql_exp *distinct = NULL, *darg, *found;
 		sql_rel *l = NULL;
 
 		for (n=rel->exps->h; n && nr <= 2; n = n->next) {
@@ -6092,10 +6092,13 @@ rel_groupby_distinct(visitor *v, sql_rel *rel)
 		}
 
 		darg = arg->h->data;
-		list_append(gbe, darg = exp_copy(v->sql, darg));
-		exp_label(v->sql->sa, darg, ++v->sql->label);
-
-		darg = exp_ref(v->sql, darg);
+		if ((found = exps_find_exp(gbe, darg))) { /* first find if the aggregate argument already exists in the grouping list */
+			darg = exp_ref(v->sql, found);
+		} else {
+			list_append(gbe, darg = exp_copy(v->sql, darg));
+			exp_label(v->sql->sa, darg, ++v->sql->label);
+			darg = exp_ref(v->sql, darg);
+		}
 		list_append(exps, darg);
 		darg = exp_ref(v->sql, darg);
 		arg->h->data = darg;
