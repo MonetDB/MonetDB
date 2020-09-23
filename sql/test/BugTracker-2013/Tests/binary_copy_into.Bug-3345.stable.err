@@ -31,7 +31,7 @@ stderr of test 'binary_copy_into.Bug-3345` in directory 'sql/test/BugTracker-201
 MAPI  = (monetdb) /var/tmp/mtest-15437/.s.monetdb.35953
 QUERY = start transaction;create table bug (n_nationkey INTEGER,n_regionkey INTEGER);
         copy binary into bug from E'${TSTTRGBASE}/mTests/sql/test/BugTracker-2013/n_nationkey.sorted', E'${TSTTRGBASE}/mTests/sql/test/BugTracker-2013/n_regionkey.sorted';
-ERROR = !Binary files for table 'bug' have inconsistent counts
+ERROR = !Binary files for table 'bug' have inconsistent counts: n_nationkey has 10 rows, n_regionkey has 5
 CODE  = 42000
 
 # 11:33:26 >  

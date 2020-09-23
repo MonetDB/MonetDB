@@ -3344,6 +3344,7 @@ mvc_bin_import_table_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 	mvc *m = NULL;
 	str msg;
 	BUN cnt = 0;
+	sql_column *cnt_col = NULL;
 	bool init = false;
 	int i;
 	const char *sname = *getArgReference_str(stk, pci, 0 + pci->retc);
@@ -3461,11 +3462,17 @@ mvc_bin_import_table_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 			goto bailout;
 		}
 		if (init && cnt != BATcount(c)) {
+			BUN this_cnt = BATcount(c);
 			BBPunfix(c->batCacheid);
-			msg = createException(SQL, "sql", SQLSTATE(42000) "Binary files for table '%s' have inconsistent counts", tname);
+			msg = createException(SQL, "sql",
+				SQLSTATE(42000) "Binary files for table '%s' have inconsistent counts: "
+				"%s has %zu rows, %s has %zu", tname,
+				cnt_col->base.name, (size_t)cnt,
+				col->base.name, (size_t)this_cnt);
 			goto bailout;
 		}
 		cnt = BATcount(c);
+		cnt_col = col;
 		init = true;
 		*getArgReference_bat(stk, pci, i - (3 + pci->retc)) = c->batCacheid;
 		BBPkeepref(c->batCacheid);
