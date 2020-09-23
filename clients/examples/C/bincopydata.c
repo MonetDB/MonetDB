@@ -30,7 +30,7 @@ croak(int status, const char *ctx, ...)
 	if (errno) {
 		fprintf(stderr, "Possibly due to: %s\n", strerror(errno));
 	} else if (status == 1) {
-		fprintf(stderr, "USAGE: %s TYPE NRECS DEST", exe_name);
+		fprintf(stderr, "USAGE: %s TYPE NRECS DESTFILE\n", exe_name);
 		fprintf(stderr, "TYPE:\n");
 		for (struct gen *g = generators; g->name != NULL; g++) {
 			fprintf(stderr, "  - %s\n", g->name);
