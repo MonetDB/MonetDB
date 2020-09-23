@@ -47,6 +47,8 @@ if(TESTING)
 
   add_executable(bincopydata
     bincopydata.c
+    bincopydata.h
+    bincopytemporaldata.c
   )
 
   target_link_libraries(bincopydata

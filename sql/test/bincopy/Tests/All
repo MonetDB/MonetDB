@@ -15,3 +15,5 @@ bincopy_newlines_on_client
 bincopy_newlines_on_server
 bincopy_null_strings_on_client
 bincopy_null_strings_on_server
+bincopy_timestamps_on_client
+bincopy_timestamps_on_server

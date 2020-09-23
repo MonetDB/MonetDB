@@ -108,3 +108,39 @@ SELECT COUNT(id) FROM foo
 WHERE (id % 2 = 0 AND s IS NULL)
 OR    (id % 2 = 1 AND s = 'banana');
 """
+
+TIMESTAMPS = """
+CREATE TABLE foo(
+    id INT NOT NULL,
+    ts TIMESTAMP,
+    "year" SMALLINT,
+    "month" TINYINT,
+    "day" TINYINT,
+    "hour" TINYINT,
+    "minute" TINYINT,
+    "second" TINYINT,
+    ms INTEGER
+);
+COPY BINARY INTO foo(id, ts, "year", "month", "day", "hour", "minute", "second", ms)
+FROM @ints@,
+     @timestamps@,
+     @timestamp_years@,
+     @timestamp_months@,
+     @timestamp_days@,
+     @timestamp_hours@,
+     @timestamp_minutes@,
+     @timestamp_seconds@,
+     @timestamp_ms@
+     @ON@;
+"""
+
+# GEN_TIMESTAMP_FIELD(gen_timestamp_times, time)
+# GEN_TIMESTAMP_FIELD(gen_timestamp_dates, date)
+
+# GEN_TIMESTAMP_FIELD(gen_timestamp_years, date.year)
+# GEN_TIMESTAMP_FIELD(gen_timestamp_months, date.month)
+# GEN_TIMESTAMP_FIELD(gen_timestamp_days, date.day)
+# GEN_TIMESTAMP_FIELD(gen_timestamp_hours, time.hours)
+# GEN_TIMESTAMP_FIELD(gen_timestamp_minutes, time.minutes)
+# GEN_TIMESTAMP_FIELD(gen_timestamp_seconds, time.seconds)
+# GEN_TIMESTAMP_FIELD(gen_timestamp_ms, time.ms)

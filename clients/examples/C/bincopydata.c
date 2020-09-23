@@ -1,4 +1,4 @@
-#include "monetdb_config.h"
+#include "bincopydata.h"
 
 static char *exe_name = "<to_be_filled_in>";
 
@@ -141,6 +141,18 @@ static struct gen generators[] = {
 	{ "broken_strings", gen_broken_strings },
 	{ "newline_strings", gen_newline_strings },
 	{ "null_strings", gen_null_strings },
+	//
+	{ "timestamps", gen_timestamps },
+	{ "timestamp_times", gen_timestamp_times },
+	{ "timestamp_dates", gen_timestamp_dates },
+	{ "timestamp_ms", gen_timestamp_ms },
+	{ "timestamp_seconds", gen_timestamp_seconds },
+	{ "timestamp_minutes", gen_timestamp_minutes },
+	{ "timestamp_hours", gen_timestamp_hours },
+	{ "timestamp_days", gen_timestamp_days },
+	{ "timestamp_months", gen_timestamp_months },
+	{ "timestamp_years", gen_timestamp_years },
+
 	{ NULL, NULL },
 };
 
