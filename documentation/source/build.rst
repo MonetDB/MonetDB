@@ -123,7 +123,6 @@ To compile MonetDB (as normal user)::
   cd MonetDB
   mkdir build
   cd build
-  cmake -G "Visual Studio 15 2017" -DCMAKE_TOOLCHAIN_FILE=/vcpkg/scripts/buildsystems/vcpkg.cmake -DCMAKE_INSTALL_PREFIX=%HOME%\install -A x64 -DTESTING=OFF ..
   cmake -G "Visual Studio 15 2017" -DCMAKE_TOOLCHAIN_FILE=/vcpkg/scripts/buildsystems/vcpkg.cmake -DCMAKE_INSTALL_PREFIX=%HOME%\install -A x64 ..
   cmake --build . --target ALL_BUILD
   cmake --build . --target INSTALL
