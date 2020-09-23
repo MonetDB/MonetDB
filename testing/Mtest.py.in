@@ -1338,13 +1338,14 @@ def RunTest(env, TST, BusyPorts, COND, oktests, length, all_tests, pSrvr) :
             if exit_code == F_OK:
                 prgreen('.')
             else:
-                prblack('.')
+                STDOUT.write('.')
+            STDOUT.flush()
         else:
             STDOUT.write('\t{}'.format(TST))
             STDOUT.write("\t%7.3fs\t" % TX)
             print_err_code(exit_code)
             if reason:
-                print('\t{}'.format(reason))
+                pbrint('\t{}'.format(reason))
             else:
                 print()
 
