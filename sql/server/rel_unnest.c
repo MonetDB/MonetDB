@@ -1433,8 +1433,19 @@ rel_unnest_dependent(mvc *sql, sql_rel *rel)
 		l = rel->l;
 		r = rel->r;
 
-		if (rel_has_freevar(sql, l))
+		if (rel_has_freevar(sql, l)) {
 			rel->l = rel_unnest_dependent(sql, rel->l);
+			if (rel_has_freevar(sql, rel->l)) {
+				if (rel->op == op_right) {
+					sql_rel *l = rel->l;
+
+					rel->l = rel->r;
+					rel->r = l;
+					rel->op = op_left;
+					return rel_unnest_dependent(sql, rel);
+				}
+			}
+		}
 
 		if (!rel_has_freevar(sql, r)) {
 			reset_dependent(rel);
@@ -3108,7 +3119,7 @@ include_tid(sql_rel *r)
 }
 
 static sql_rel *
-rewrite_dependent_right2left(visitor *v, sql_rel *rel) 
+rewrite_dependent_right2left(visitor *v, sql_rel *rel)
 {
 	(void) v;
 	/* The unnest code assumes freevars belong to the tables on the left side, so at a right join, re-write it to a left join */
@@ -3124,7 +3135,7 @@ rewrite_dependent_right2left(visitor *v, sql_rel *rel)
 static sql_rel *
 rewrite_outer2inner_union(visitor *v, sql_rel *rel)
 {
-	if (is_outerjoin(rel->op) && !list_empty(rel->exps) && (((is_left(rel->op) || is_full(rel->op)) && rel_has_freevar(v->sql,rel->l)) || 
+	if (is_outerjoin(rel->op) && !list_empty(rel->exps) && (((is_left(rel->op) || is_full(rel->op)) && rel_has_freevar(v->sql,rel->l)) ||
 		((is_right(rel->op) || is_full(rel->op)) && rel_has_freevar(v->sql,rel->r)) || exps_have_freevar(v->sql, rel->exps) /*exps_have_rel_exp(rel->exps)*/)) {
 		sql_exp *f = exp_atom_bool(v->sql->sa, 0);
 		int nrcols = rel->nrcols;
