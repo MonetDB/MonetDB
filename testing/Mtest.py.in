@@ -2546,8 +2546,6 @@ def main(argv) :
     par['IGNORE'] = opts.ignore
     par['CONTEXT'] = str(opts.context)
     a = opts.accuracy
-    if testweb or int(MonetDB_VERSION[1])%2 == 0 or opts.alltests or CONDITIONALS['MERCURIAL']:
-        CONDITIONALS['KNOWNFAIL'] = 'execute'
     if a not in (-1,0,1,2):
         ErrExit('Accuracy for diff (-A) must be one of: 0=lines, 1=words, 2=chars !')
     par['ACCURACY'] = a
@@ -2604,12 +2602,7 @@ def main(argv) :
             #os.environ[v] = par[v]
             print("%s = %s" % (v, str(par[v])))
     STDOUT.flush()
-    #env['par'] = par
 
-    # unknown at compile time, as Mtest.py is compiled with MonetDB;
-    # hence, we set them at runtime.
-    # X == true   =>  @X_TRUE@='',  @X_FALSE@='#'
-    # X == false  =>  @X_TRUE@='#', @X_FALSE@=''
     python_version = ''
     if CheckExec('python'):
         proc = process.Popen(['python', '-c', 'import sys; print(sys.version[:1])'],
@@ -2891,7 +2884,6 @@ def main(argv) :
                     ErrXit("%s: not a valid test name" % args[0])
                 args = [head]
                 if tail != 'All':
-                    CONDITIONALS['KNOWNFAIL'] = 'execute'
                     for ext in ('_s00.malC', '_p00.malC', '_s00.sql',
                                 '_p00.sql', '.MAL.py', '.SQL.py', '.malC',
                                 '.sql', '.py', '.R', ''):
@@ -2908,7 +2900,6 @@ def main(argv) :
                     else:
                         ErrXit("%s: not a valid test name" % args[0])
             elif head and tail and os.path.isdir(head) and tail != 'Tests' and os.path.isdir(os.path.join(head, 'Tests')):
-                CONDITIONALS['KNOWNFAIL'] = 'execute'
                 args = [head, tail]
 
         if   len(args) == 1:
@@ -2924,7 +2915,6 @@ def main(argv) :
             elif args[0] != "All":
                 #TODO:
                 # check, whether args[0] in All
-                CONDITIONALS['KNOWNFAIL'] = 'execute'
                 testlist.append(args[0])
         elif len(args) > 1:
             i = 0
@@ -2937,7 +2927,6 @@ def main(argv) :
                     # WARNING/ERROR
                 i = i + 1
             if len(dirlist) == 1  and  i < len(args)  and  args[i] != "All":
-                CONDITIONALS['KNOWNFAIL'] = 'execute'
                 while i < len(args):
                     if os.sep not in args[i]:
                         #TODO:
