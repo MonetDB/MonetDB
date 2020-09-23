@@ -711,10 +711,8 @@ def PerformDir(env, testdir, testlist, BusyPorts, all_tests = False) :
         if os.path.islink(ff):
             continue
         for pat in [
-                    'times.lst', 'times.sql',
-                    '*.client.err', '*.client.out',
+                    'times.lst', 
                     '*.server.err', '*.server.out',
-                    '*.stable.err*', '*.stable.out*',
                     '*.test.err', '*.test.out',
                     'SingleServer.out', 'SingleServer.err']:
             if fnmatch.fnmatch(f, pat):
@@ -1053,6 +1051,7 @@ def print_err_code(err_code):
 
 def RunTest(env, TST, BusyPorts, COND, oktests, length, all_tests, pSrvr) :
     global setpgrp
+    errcode = F_SKIP
     TSTDB = env['TSTDB']
     TSTDIR  = env['TSTDIR']
     TSTSRCDIR = env['TSTSRCDIR']
@@ -1276,16 +1275,7 @@ def RunTest(env, TST, BusyPorts, COND, oktests, length, all_tests, pSrvr) :
                 f.close()
                 if os.path.isfile(TSTSRC):
                     try:
-                        if '.stable.' in ff:
-                            f1 = openutf8(TSTSRC, "r")
-                            f2 = openutf8(ff[:-4], "w")
-                            line = f1.readline()
-                            f2.write("%s of test '%s` in directory '%s` itself:\n" % (line[:6], TST, TSTDIR.replace('\\', '/')))
-                            f2.write(f1.read())
-                            f1.close()
-                            f2.close()
-                        else:
-                            SymlinkOrCopy(TSTSRC, ff[:-4])
+                        SymlinkOrCopy(TSTSRC, ff[:-4])
                         links.append(ff[:-4])
                     except IOError as err:
                         ErrMsg("SymlinkOrCopy('%s','%s') in '%s' failed with #%d: '%s'."
@@ -1334,11 +1324,8 @@ def RunTest(env, TST, BusyPorts, COND, oktests, length, all_tests, pSrvr) :
         TestErrFile = TST+".test.err"
 
         t0 = time.time()
-        print('WTF is TIMEOUT=', TIMEOUT)
-        if pSrvr:
-            print(pSrvr.__dict__)
         if CALL == 'sqltest':
-            errcode = RunSQLLogicTest(env, TST, None, TestErrFile)
+            errcode = RunSQLLogicTest(env, (TST + EXT), None, TestErrFile)
         else:
             errcode = F_SKIP
             reason = 'Not a SQLLogic Test'
@@ -1724,7 +1711,6 @@ def create_mserver5(dbpath, timeout=0, env={}, outfile=None, errfile=None, optio
     outfile = open(outfile, 'a') if outfile else sys.stdout
     errfile = open(errfile, 'a') if errfile else sys.stderr
     cmd = splitcommand(env['exe']['mserver5'][1]) + ['--dbpath=%s' % dbpath] + options
-    print('DEBUG: [create_mserver5] --options ', cmd)
     TSTPREF = env.get('TSTPREF')
     if env.get('MULTIFARM'):
         cmd.append('--dbextra=%s' % os.path.join(env['GDK_DBFARM'], TSTPREF + '_transient'))
@@ -1805,11 +1791,11 @@ def mapi_ping(port) :
     return False
 ### mapi_ping() #
 
-def RunSQLLogicTest(env, test, TestOut, TestErr) -> int:
+def RunSQLLogicTest(env, Test, TestOut, TestErr) -> int:
     """
     Run SQLLogic test
     returns:
-        error code eg F_ERROR, F_SKIP, F_SOCK etc or None
+        error code eg F_ERROR, F_SKIP, F_SOCK etc or F_OK
     """
     import MonetDBtesting.sqllogictest as sqllogictest
     err_code = None
@@ -1841,7 +1827,7 @@ def RunSQLLogicTest(env, test, TestOut, TestErr) -> int:
         os.remove(TestErr)
     if is_dirty and err_code is None:
         err_code = F_ERROR
-    return err_code
+    return err_code or F_OK
 
 def DoIt(env, SERVER, CALL, TST, EXT, TestOutFile, TestErrFile, STIMEOUT, CTIMEOUT, TIMEOUT, ME, MAPIsockets, length, nomito, threads, user, passwd, COND, all_tests, PSRVR) :
     ATJOB2 = ""
@@ -2453,38 +2439,37 @@ def main(argv) :
     # most intuitive (?) default settings
     dft['TSTSRCBASE']     = r"_configure('@QXSOURCE@')"
     dft['TSTTRGBASE']     = r"_configure('@QXprefix@')"   # or os.getcwd() ?
-    if THISFILE == "Mtest.py":
-        dft['GDK_DEBUG']      = "TSTDBG"
-        dft['GDK_NR_THREADS'] = "TSTTHREADS"
-        dft['MONETDB_MOD_PATH'] = "''"
-        dft['setMONETDB_MOD_PATH'] = "'--set \"monet_mod_path='+env['MONETDB_MOD_PATH']+'\"'"
-        dft['MAPIPORT']       = "str(randomPort(30000,39999)[0])"
-        dft['MALCLIENT']      = "'mclient -lmal -ftest -tnone -Eutf-8'"
-        dft['SQLCLIENT']      = "'mclient -lsql -ftest -tnone -Eutf-8'"
-        dft['SQLDUMP']        = "'msqldump -q'"
-        dft['RUBYCLIENT']     = "'ruby'"
+    dft['GDK_DEBUG']      = "TSTDBG"
+    dft['GDK_NR_THREADS'] = "TSTTHREADS"
+    dft['MONETDB_MOD_PATH'] = "''"
+    dft['setMONETDB_MOD_PATH'] = "'--set \"monet_mod_path='+env['MONETDB_MOD_PATH']+'\"'"
+    dft['MAPIPORT']       = "str(randomPort(30000,39999)[0])"
+    dft['MALCLIENT']      = "'mclient -lmal -ftest -tnone -Eutf-8'"
+    dft['SQLCLIENT']      = "'mclient -lsql -ftest -tnone -Eutf-8'"
+    dft['SQLDUMP']        = "'msqldump -q'"
+    dft['RUBYCLIENT']     = "'ruby'"
 
-        r_noecho = '--no-echo'
-        if CheckExec('R'):
-            proc = process.Popen(['R', '--version'],
+    r_noecho = '--no-echo'
+    if CheckExec('R'):
+        proc = process.Popen(['R', '--version'],
+                             stdout=process.PIPE, stderr=process.PIPE,
+                             text=True)
+        r_out, r_err = proc.communicate()
+        res = re.search(r'R version (?P<major>\d+)\.', r_out)
+        if res is not None and int(res.group('major')) < 4:
+            r_noecho = '--slave'
+        if CONDITIONALS['HAVE_LIBR']:
+            proc = process.Popen(['R', r_noecho, '--no-save', '--no-restore',
+                                  '-e', 'print(Sys.getenv("R_LIBS_USER"))'],
                                  stdout=process.PIPE, stderr=process.PIPE,
                                  text=True)
             r_out, r_err = proc.communicate()
-            res = re.search(r'R version (?P<major>\d+)\.', r_out)
-            if res is not None and int(res.group('major')) < 4:
-                r_noecho = '--slave'
-            if CONDITIONALS['HAVE_LIBR']:
-                proc = process.Popen(['R', r_noecho, '--no-save', '--no-restore',
-                                      '-e', 'print(Sys.getenv("R_LIBS_USER"))'],
-                                     stdout=process.PIPE, stderr=process.PIPE,
-                                     text=True)
-                r_out, r_err = proc.communicate()
-                res = re.search(r'\[\d+\] "(?P<dir>.*)"', r_out)
-                if res is not None:
-                    rdir = os.path.expanduser(res.group('dir'))
-                    if not os.path.exists(rdir):
-                        os.makedirs(rdir)
-        dft['RCLIENT'] = "'R --vanilla {}'".format(r_noecho)
+            res = re.search(r'\[\d+\] "(?P<dir>.*)"', r_out)
+            if res is not None:
+                rdir = os.path.expanduser(res.group('dir'))
+                if not os.path.exists(rdir):
+                    os.makedirs(rdir)
+    dft['RCLIENT'] = "'R --vanilla {}'".format(r_noecho)
 
     #par = {}
     # get current environment
@@ -2522,7 +2507,6 @@ def main(argv) :
         parser.add_argument('--RUBYCLIENT', action='store', dest='RUBYCLIENT', metavar='<ruby program>', help='default: %s' % dft['RUBYCLIENT'])
         parser.add_argument('--concurrent', action='store_true', dest='concurrent', help='There are concurrent Mtest runs using the same MonetDB installation')
         parser.add_argument('--dbg', action='store', dest='dbg', metavar='<debugger/valgrind>', help="debugger to start before each server")
-        parser.add_argument('--echo-diff', action='store_true', dest='echo_diff', help="echo differences between stable and current test output to console (stdout)")
         parser.add_argument('--mserver_set', action='store', dest='mserver_set', metavar='<mserver5_option>', help="This passes a single set to the server")
         parser.add_argument('--no-clean', action='store_true', dest='no_clean', help='Do not clean up before test')
         parser.add_argument('--testweb', action='store_true', dest='testweb', help='Optimize testing for testweb')
@@ -2556,62 +2540,58 @@ def main(argv) :
     jenkins = False
     addreqs = False
     all_tests = False
-    if THISFILE == "Mtest.py":
-        testweb = opts.testweb
-        CONDITIONALS['RELEASERUN'] = opts.releaserun
-        nomito = opts.nomito
-        par['IGNORE'] = opts.ignore
-        par['CONTEXT'] = str(opts.context)
-        a = opts.accuracy
-        if testweb or int(MonetDB_VERSION[1])%2 == 0 or opts.alltests or CONDITIONALS['MERCURIAL']:
-            CONDITIONALS['KNOWNFAIL'] = 'execute'
-        if a not in (-1,0,1,2):
-            ErrExit('Accuracy for diff (-A) must be one of: 0=lines, 1=words, 2=chars !')
-        par['ACCURACY'] = a
-        par['TIMEOUT'] = opts.timeout
-        env['GDK_DEBUG'] = str(opts.debug)
-        env['GDK_NR_THREADS'] = str(opts.nr_threads)
-        a = opts.monet_mod_path
-        if a is not None:
-            env['MONETDB_MOD_PATH'] = a
-        a = opts.gdk_dbfarm
-        if a is not None:
-            env['GDK_DBFARM'] = a
-        a = opts.concurrent
-        if a:
-            env['CONCURRENT'] = a
-        a = opts.dbg
-        if a is not None:
-            env['DBG'] = a
-        a = opts.echo_diff
-        if a:
-            env['ECHO_DIFF'] = a
-        a = opts.mserver_set
-        if a is not None:
-            env['MSERVER_SET'] = "--set " + a
-        else:
-            env['MSERVER_SET'] = ""
-        a = opts.no_clean
-        if a:
-            env['NOCLEAN'] = a
-        a = opts.multifarm
-        if a:
-            env['MULTIFARM'] = 'True'
-        a = opts.inmemory
-        if a:
-            env['TRANS_INMEM'] = 'True'
-        if opts.multifarm and opts.inmemory:
-            ErrXit("Cannot have both --multifarm and --transient-inmemory")
-        jenkins = opts.jenkins
-        addreqs = opts.addreqs
-        a = opts.global_timeout
-        if a:
-            global_timeout = a
-        a = opts.data_path
-        if a is not None:
-            env['TSTDATAPATH'] = a
-        global initdb
-        initdb = opts.initdb
+    testweb = opts.testweb
+    CONDITIONALS['RELEASERUN'] = opts.releaserun
+    nomito = opts.nomito
+    par['IGNORE'] = opts.ignore
+    par['CONTEXT'] = str(opts.context)
+    a = opts.accuracy
+    if testweb or int(MonetDB_VERSION[1])%2 == 0 or opts.alltests or CONDITIONALS['MERCURIAL']:
+        CONDITIONALS['KNOWNFAIL'] = 'execute'
+    if a not in (-1,0,1,2):
+        ErrExit('Accuracy for diff (-A) must be one of: 0=lines, 1=words, 2=chars !')
+    par['ACCURACY'] = a
+    par['TIMEOUT'] = opts.timeout
+    env['GDK_DEBUG'] = str(opts.debug)
+    env['GDK_NR_THREADS'] = str(opts.nr_threads)
+    a = opts.monet_mod_path
+    if a is not None:
+        env['MONETDB_MOD_PATH'] = a
+    a = opts.gdk_dbfarm
+    if a is not None:
+        env['GDK_DBFARM'] = a
+    a = opts.concurrent
+    if a:
+        env['CONCURRENT'] = a
+    a = opts.dbg
+    if a is not None:
+        env['DBG'] = a
+    a = opts.mserver_set
+    if a is not None:
+        env['MSERVER_SET'] = "--set " + a
+    else:
+        env['MSERVER_SET'] = ""
+    a = opts.no_clean
+    if a:
+        env['NOCLEAN'] = a
+    a = opts.multifarm
+    if a:
+        env['MULTIFARM'] = 'True'
+    a = opts.inmemory
+    if a:
+        env['TRANS_INMEM'] = 'True'
+    if opts.multifarm and opts.inmemory:
+        ErrXit("Cannot have both --multifarm and --transient-inmemory")
+    jenkins = opts.jenkins
+    addreqs = opts.addreqs
+    a = opts.global_timeout
+    if a:
+        global_timeout = a
+    a = opts.data_path
+    if a is not None:
+        env['TSTDATAPATH'] = a
+    global initdb
+    initdb = opts.initdb
     for v in VARS:
         a = vars(opts).get(v)
         if a is not None:
@@ -2677,12 +2657,6 @@ def main(argv) :
         pyout, pyerr = proc.communicate()
         if proc.returncode == 0:
             CONDITIONALS['HAVE_LIBSCIPY3'] = '#'
-        # proc = process.Popen([os.environ['PYTHON3'], '-c', 'import pandas'],
-        #                      stdout=process.PIPE, stderr=process.PIPE,
-        #                      text=True)
-        # pyout, pyerr = proc.communicate()
-        # if proc.returncode == 0:
-        #     CONDITIONALS['HAVE_LIBPANDAS3'] = '#'
     if env.get('TSTDATAPATH'):
         CONDITIONALS['HAVE_DATA_PATH'] = '#'
     if CheckExec('perl'):
@@ -3146,48 +3120,6 @@ def main(argv) :
 
         fl.write(":\t%7.3f\t\n" % t_)
         fl.close()
-
-        fl = openutf8(fn+"sql","w")
-        host = socket.gethostname()
-        product = os.path.split(TSTSRCBASE)[-1]
-
-        compiler = ''
-
-        # start of times.sql output preparation
-        try:
-            from mx import DateTime
-            now = "timestamp '" + str(DateTime.now()) + "'"
-        except ImportError:
-            now = 'now()'
-
-        if env['TST_INT128'] != '':
-            isInt128 = 'true'
-        else:
-            isInt128 = 'false'
-
-        if env['TST_SINGLE'] != '':
-            isSingle = 'true'
-        else:
-            isSingle = 'false'
-
-        # ok, we're not prepared for the 128 bits world yet
-        bits = env['TST_BITS'][:2]
-
-        # we write in SQL the same codes as testweb uses in the HTML
-        # pages, for readability
-
-        # we are not interested in the compiler, nor its path, nor its
-        # options.  We do store the options separately, though
-        hasSpace = compiler.find(' ')
-        if hasSpace != -1:
-            ccname = os.path.split(compiler[:hasSpace])[-1]
-            ccopts = compiler[hasSpace + 1:]
-        else:
-            ccname = os.path.split(compiler)[-1]
-            ccopts = ''
-
-        env['TSTDIR'] = ""
-        env['TSTTRGDIR'] = os.path.join(TSTTRGBASE, TSTPREF)
 
         Failed = 0
         for f in Failure[1:-1]:
