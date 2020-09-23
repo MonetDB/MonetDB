@@ -1332,12 +1332,21 @@ def RunTest(env, TST, BusyPorts, COND, oktests, length, all_tests, pSrvr) :
 
         t1 = time.time()
         TX = t1 - t0
-        if not quiet:
-            STDOUT.write(" %7.3fs " % TX)
-        
-        if not verbose and not quiet:
+
+        # print test result
+        if quiet:
+            if exit_code == F_OK:
+                prgreen('.')
+            else:
+                prblack('.')
+        else:
+            STDOUT.write('\t{}'.format(TST))
+            STDOUT.write("\t%7.3fs\t" % TX)
             print_err_code(exit_code)
-            print('\t{}'.format(TST))
+            if reason:
+                print('\t{}'.format(reason))
+            else:
+                print()
 
     return TX, exit_code, reason, links
 ### RunTest(env, TST, BusyPorts, COND, oktests) #
@@ -3151,9 +3160,11 @@ def main(argv) :
             sys.exit(1)
         else:
             if quiet:
-                pass
+                print()
             else:
-                print("No differences encountered during testing.")
+                prgreen('OK')
+                print()
+                print('Ran {} test in {:7.3f}'.format(num_tests, t_))
             sys.exit(0)
 
     finally:
