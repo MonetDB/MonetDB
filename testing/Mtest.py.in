@@ -1051,7 +1051,7 @@ def print_err_code(err_code):
 
 def RunTest(env, TST, BusyPorts, COND, oktests, length, all_tests, pSrvr) :
     global setpgrp
-    errcode = F_SKIP
+    exit_code = F_SKIP
     TSTDB = env['TSTDB']
     TSTDIR  = env['TSTDIR']
     TSTSRCDIR = env['TSTSRCDIR']
@@ -1145,7 +1145,6 @@ def RunTest(env, TST, BusyPorts, COND, oktests, length, all_tests, pSrvr) :
     nomito = os.path.isfile(TST + '.nomito')
     user = None
     passwd = None
-
 
     os.chdir(TSTTRGDIR)
 
@@ -1325,9 +1324,9 @@ def RunTest(env, TST, BusyPorts, COND, oktests, length, all_tests, pSrvr) :
 
         t0 = time.time()
         if CALL == 'sqltest':
-            errcode = RunSQLLogicTest(env, (TST + EXT), None, TestErrFile)
+            exit_code, reason = RunSQLLogicTest(env, (TST + EXT), None, TestErrFile)
         else:
-            errcode = F_SKIP
+            exit_code = F_SKIP
             reason = 'Not a SQLLogic Test'
         # tres = DoIt(env, SERVER, CALL, TST, EXT, TestOutFile, TestErrFile, STIMEOUT, CTIMEOUT, TIMEOUT, ME, MAPIsockets, length, nomito, threads, user, passwd, COND, all_tests, pSrvr)
 
@@ -1337,10 +1336,10 @@ def RunTest(env, TST, BusyPorts, COND, oktests, length, all_tests, pSrvr) :
             STDOUT.write(" %7.3fs " % TX)
         
         if not verbose and not quiet:
-            print_err_code(errcode)
+            print_err_code(exit_code)
             print('\t{}'.format(TST))
 
-    return TX, errcode, reason, links
+    return TX, exit_code, reason, links
 ### RunTest(env, TST, BusyPorts, COND, oktests) #
 
 def CheckPort(port) :
@@ -1791,14 +1790,15 @@ def mapi_ping(port) :
     return False
 ### mapi_ping() #
 
-def RunSQLLogicTest(env, Test, TestOut, TestErr) -> int:
+def RunSQLLogicTest(env, Test, TestOut, TestErr) -> (int, str):
     """
     Run SQLLogic test
     returns:
-        error code eg F_ERROR, F_SKIP, F_SOCK etc or F_OK
+       (exit_code, msg)
     """
     import MonetDBtesting.sqllogictest as sqllogictest
-    err_code = None
+    exit_code = None
+    msg = None
     with open(TestErr, 'w') as f:
         sql = sqllogictest.SQLLogic(out=f)
         if TestOut:
@@ -1808,7 +1808,8 @@ def RunSQLLogicTest(env, Test, TestOut, TestErr) -> int:
                         port=int(env['MAPIPORT']),
                         database=env['TSTDB'])
         except Exception as e:
-            err_code = F_SOCK
+            exit_code = F_SOCK
+            msg = "Connection failure"
             print(e, file=f) 
         else:
             sql.drop()
@@ -1816,18 +1817,20 @@ def RunSQLLogicTest(env, Test, TestOut, TestErr) -> int:
                 sql.parse(Test)
             except sqllogictest.SQLLogicSyntaxError as e:
                 print(e, file=f) 
-                err_code = F_SKIP
+                exit_code = F_SKIP
+                msg = 'sqllogic syntax error'
             except BrokenPipeError as e:
                 # server timeout
                 print(e, file=f) 
+                msg = 'timeout'
             sql.close()
     is_dirty = os.path.getsize(TestErr) > 0
     # clean up if all okay
     if not is_dirty:
         os.remove(TestErr)
-    if is_dirty and err_code is None:
-        err_code = F_ERROR
-    return err_code or F_OK
+    if is_dirty and exit_code is None:
+        exit_code = F_ERROR
+    return exit_code or F_OK, msg
 
 def DoIt(env, SERVER, CALL, TST, EXT, TestOutFile, TestErrFile, STIMEOUT, CTIMEOUT, TIMEOUT, ME, MAPIsockets, length, nomito, threads, user, passwd, COND, all_tests, PSRVR) :
     ATJOB2 = ""
