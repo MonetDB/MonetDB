@@ -113,6 +113,8 @@ TIMESTAMPS = """
 CREATE TABLE foo(
     id INT NOT NULL,
     ts TIMESTAMP,
+    dt DATE,
+    tm TIME,
     "year" SMALLINT,
     "month" TINYINT,
     "day" TINYINT,
@@ -121,9 +123,11 @@ CREATE TABLE foo(
     "second" TINYINT,
     ms INTEGER
 );
-COPY BINARY INTO foo(id, ts, "year", "month", "day", "hour", "minute", "second", ms)
+COPY BINARY INTO foo(id, ts, dt, tm, "year", "month", "day", "hour", "minute", "second", ms)
 FROM @ints@,
      @timestamps@,
+     @timestamp_dates@,
+     @timestamp_times@,
      @timestamp_years@,
      @timestamp_months@,
      @timestamp_days@,
@@ -132,15 +136,45 @@ FROM @ints@,
      @timestamp_seconds@,
      @timestamp_ms@
      @ON@;
+
+SELECT * FROM foo
+    WHERE EXTRACT(YEAR FROM ts) <> "year"
+    LIMIT 4;
+SELECT * FROM foo
+    WHERE EXTRACT(MONTH FROM ts) <> "month"
+    LIMIT 4;
+SELECT * FROM foo
+    WHERE EXTRACT(DAY FROM ts) <> "day"
+    LIMIT 4;
+SELECT * FROM foo
+    WHERE EXTRACT(HOUR FROM ts) <> "hour"
+    LIMIT 4;
+SELECT * FROM foo
+    WHERE EXTRACT(MINUTE FROM ts) <> "minute"
+    LIMIT 4;
+SELECT * FROM foo
+    WHERE 1000000 * EXTRACT(SECOND FROM ts) <> 1000000 * "second" + ms
+    LIMIT 4;
+
+SELECT * FROM foo
+    WHERE EXTRACT(YEAR FROM dt) <> "year"
+    LIMIT 4;
+SELECT * FROM foo
+    WHERE EXTRACT(MONTH FROM dt) <> "month"
+    LIMIT 4;
+SELECT * FROM foo
+    WHERE EXTRACT(DAY FROM dt) <> "day"
+    LIMIT 4;
+
+SELECT * FROM foo
+    WHERE EXTRACT(HOUR FROM tm) <> "hour"
+    LIMIT 4;
+SELECT * FROM foo
+    WHERE EXTRACT(MINUTE FROM tm) <> "minute"
+    LIMIT 4;
+SELECT * FROM foo
+    WHERE 1000000 * EXTRACT(SECOND FROM tm) <> 1000000 * "second" + ms
+    LIMIT 4;
+
 """
 
-# GEN_TIMESTAMP_FIELD(gen_timestamp_times, time)
-# GEN_TIMESTAMP_FIELD(gen_timestamp_dates, date)
-
-# GEN_TIMESTAMP_FIELD(gen_timestamp_years, date.year)
-# GEN_TIMESTAMP_FIELD(gen_timestamp_months, date.month)
-# GEN_TIMESTAMP_FIELD(gen_timestamp_days, date.day)
-# GEN_TIMESTAMP_FIELD(gen_timestamp_hours, time.hours)
-# GEN_TIMESTAMP_FIELD(gen_timestamp_minutes, time.minutes)
-# GEN_TIMESTAMP_FIELD(gen_timestamp_seconds, time.seconds)
-# GEN_TIMESTAMP_FIELD(gen_timestamp_ms, time.ms)

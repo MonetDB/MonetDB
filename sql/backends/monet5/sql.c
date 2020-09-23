@@ -41,6 +41,7 @@
 #include "mal_resource.h"
 #include "mal_authorize.h"
 #include "gdk_cand.h"
+#include "copybinary.h"
 
 static int
 rel_is_table(sql_rel *rel)
@@ -3227,6 +3228,61 @@ bad_utf8:
 	return createException(SQL, "BATattach_stream", SQLSTATE(42000) "malformed utf-8 byte sequence");
 }
 
+
+static str
+BATattach_fixed_width(bstream *in, BAT *bn, str (*converter)(void*, size_t, char*, char*), void *cookie, size_t size_external)
+{
+	int internal_type = BATttype(bn);
+	int storage_type = ATOMstorage(internal_type);
+	size_t internal_size = ATOMsize(storage_type);
+	while (1) {
+		ssize_t nread = bstream_next(in);
+		if (nread < 0) {
+			return createException(SQL, "BATattach_fixed_width", SQLSTATE(42000) "%s", mnstr_peek_error(in->s));
+		}
+		if (nread == 0)
+			break;
+
+		size_t n = (in->len - in->pos) / size_external;
+		BUN count = bn->batCount;
+		BUN newCount = count + n;
+		if (BATextend(bn, newCount) != GDK_SUCCEED)
+			return createException(SQL, "BATattach_fixed_width", GDK_EXCEPTION);
+
+		// future work: parallellize this..
+		for (size_t i = 0; i < n; i++) {
+			char *external = in->buf + in->pos + i * size_external;
+			char *internal = Tloc(bn, count + i);
+			str msg = converter(cookie, internal_size, external, internal);
+			if (msg != MAL_SUCCEED)
+				return msg;
+		}
+
+		// All conversions succeeded. Update the bookkeeping.
+		bn->batCount += n;
+		in->pos += n * size_external;
+	}
+
+	// It's an error to  have data left after falling out of the loop.
+	if (in->pos < in->len)
+		return createException(SQL, "BATattach_str", SQLSTATE(42000) "incomplete value at end");
+
+	BATsetcount(bn, bn->batCount);
+	bn->tseqbase = oid_nil;
+	bn->tnonil = bn->batCount == 0;
+	bn->tnil = false;
+	if (bn->batCount <= 1) {
+		bn->tsorted = true;
+		bn->trevsorted = true;
+		bn->tkey = true;
+	} else {
+		bn->tsorted = false;
+		bn->trevsorted = false;
+		bn->tkey = false;
+	}
+	return MAL_SUCCEED;
+}
+
 static str
 BATattach_as_bytes(int tt, stream *s, BAT *bn, bool *eof_seen)
 {
@@ -3285,6 +3341,53 @@ BATattach_as_bytes(int tt, stream *s, BAT *bn, bool *eof_seen)
 }
 
 static str
+convert_timestamp(void *cookie, size_t internal_size, char *external, char *internal)
+{
+	copy_binary_timestamp *src = (copy_binary_timestamp*) external;
+	timestamp *dst = (timestamp*) internal;
+	assert(internal_size == sizeof(*dst));
+
+	date dt = date_create(src->date.year, src->date.month, src->date.day);
+	daytime tm = daytime_create(src->time.hours, src->time.minutes, src->time.seconds, src->time.ms);
+	timestamp value = timestamp_create(dt, tm);
+
+	(void)cookie;
+	*dst = value;
+
+	return MAL_SUCCEED;
+}
+
+static str
+convert_date(void *cookie, size_t internal_size, char *external, char *internal)
+{
+	copy_binary_date *src = (copy_binary_date*) external;
+	date *dst = (date*) internal;
+	assert(internal_size == sizeof(*dst));
+
+	date value = date_create(src->year, src->month, src->day);
+
+	(void)cookie;
+	*dst = value;
+
+	return MAL_SUCCEED;
+}
+
+static str
+convert_time(void *cookie, size_t internal_size, char *external, char *internal)
+{
+	copy_binary_time *src = (copy_binary_time*) external;
+	timestamp *dst = (timestamp*) internal;
+	assert(internal_size == sizeof(*dst));
+
+	daytime value = daytime_create(src->hours, src->minutes, src->seconds, src->ms);
+
+	(void)cookie;
+	*dst = value;
+
+	return MAL_SUCCEED;
+}
+
+static str
 BATattach_stream(BAT **result, const char *colname, int tt, stream *s, BUN size, bool *eof_seen)
 {
 	str msg = MAL_SUCCEED;
@@ -3325,8 +3428,38 @@ BATattach_stream(BAT **result, const char *colname, int tt, stream *s, BUN size,
 			break;
 
 		case TYPE_date:
+			in = bstream_create(s, 1 << 20);
+			if (in == NULL) {
+				msg = createException(SQL, "sql", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+				goto end;
+			}
+			msg = BATattach_fixed_width(in, bn, convert_date, NULL, sizeof(copy_binary_date));
+			if (eof_seen != NULL)
+				*eof_seen = in->eof;
+			break;
+
 		case TYPE_daytime:
+			in = bstream_create(s, 1 << 20);
+			if (in == NULL) {
+				msg = createException(SQL, "sql", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+				goto end;
+			}
+			msg = BATattach_fixed_width(in, bn, convert_time, NULL, sizeof(copy_binary_time));
+			if (eof_seen != NULL)
+				*eof_seen = in->eof;
+			break;
+
 		case TYPE_timestamp:
+			in = bstream_create(s, 1 << 20);
+			if (in == NULL) {
+				msg = createException(SQL, "sql", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+				goto end;
+			}
+			msg = BATattach_fixed_width(in, bn, convert_timestamp, NULL, sizeof(copy_binary_timestamp));
+			if (eof_seen != NULL)
+				*eof_seen = in->eof;
+			break;
+
 		default:
 			msg = createException(SQL, "sql",
 				SQLSTATE(42000) "Type of column %s not supported for BINARY COPY",

@@ -109,7 +109,8 @@ target_link_libraries(sql
   sqlcommon
   batstore
   sqlserver
-  sqlinclude)
+  sqlinclude
+  copybinary)
 
 set_target_properties(sql
   PROPERTIES
