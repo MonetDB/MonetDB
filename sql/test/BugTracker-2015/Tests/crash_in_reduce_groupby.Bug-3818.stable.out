@@ -58,8 +58,8 @@ stdout of test 'crash_in_reduce_groupby.Bug-3818` in directory 'sql/test/BugTrac
 project (
 | group by (
 | | table(sys.t2a) [ "t2a"."tib0" ] COUNT 
-| ) [ tinyint "0" as "sora" ] [ tinyint "0" as "cods", tinyint "0" as "elrik", tinyint "0" as "ether", tinyint "0" as "jaelen", "sora", sys.sum no nil ("t2a"."tib0") as "%1"."%1" ]
-) [ "cods", "elrik", "ether", "jaelen", "sora", bigint["%1"."%1"] as "%2"."%2" ]
+| ) [ tinyint "0" as "sora" ] [ tinyint "0" as "cods", tinyint "0" as "elrik", tinyint "0" as "ether", tinyint "0" as "jaelen", "sora", sys.min no nil ("t2a"."tib0") as "%1"."%1" ]
+) [ "cods", "elrik", "ether", "jaelen", "sora", "%1"."%1" ]
 #drop table t2a;
 #drop table t1a;
 
