@@ -3646,22 +3646,24 @@ STRUpper(str *res, const str *arg1)
 	return msg;
 }
 
-/* find first occurrence of needle in haystack */
-str
-STRstrSearch(int *res, const str *haystack, const str *needle)
+int
+str_search(const char *s, const char *s2)
 {
 /* 64bit: should return lng */
-	const char *s = *haystack;
-	const char *s2 = *needle;
-
 	if (strNil(s) || strNil(s2)) {
-		*res = int_nil;
-		return MAL_SUCCEED;
+		return int_nil;
 	}
 	if ((s2 = strstr(s, s2)) != NULL)
-		*res = UTF8_strpos(s, s2);
+		return UTF8_strpos(s, s2);
 	else
-		*res = -1;
+		return -1;
+}
+
+/* find first occurrence of needle in haystack */
+static str
+STRstrSearch(int *res, const str *haystack, const str *needle)
+{
+	*res = str_search(*haystack, *needle);
 	return MAL_SUCCEED;
 }
 
@@ -4258,7 +4260,7 @@ str_sub_string(str *buf, int *buflen, const char *s, int start, int l)
 	return str_Sub_String(buf, buflen, s, start, l);
 }
 
-str
+static str
 STRsubstring(str *res, const str *s, const int *start, const int *l)
 {
 	int buflen = INITIAL_STR_BUFFER_LENGTH;
@@ -4323,29 +4325,34 @@ STRsuffix(str *res, const str *s, const int *l)
 	return msg;
 }
 
-str
-STRlocate2(int *ret, const str *needle, const str *haystack, const int *start)
+int
+str_locate2(const char *needle, const char *haystack, int start)
 {
 	int off, res;
 	char *s;
 
-	if (strNil(*needle) || strNil(*haystack) || is_int_nil(*start)) {
-		*ret = int_nil;
-		return MAL_SUCCEED;
+	if (strNil(needle) || strNil(haystack) || is_int_nil(start)) {
+		return int_nil;
 	}
 
-	off = *start <= 0 ? 1 : *start;
-	s = UTF8_strtail(*haystack, off - 1);
-	STRstrSearch(&res, &s, needle);
-	*ret = res >= 0 ? res + off : 0;
+	off = start <= 0 ? 1 : start;
+	s = UTF8_strtail(haystack, off - 1);
+	res = str_search(s, needle);
+	return res >= 0 ? res + off : 0;
+}
+
+static str
+STRlocate2(int *ret, const str *needle, const str *haystack, const int *start)
+{
+	*ret = str_locate2(*needle, *haystack, *start);
 	return MAL_SUCCEED;
 }
 
-str
+static str
 STRlocate(int *ret, const str *needle, const str *haystack)
 {
-	int p = 1;
-	return STRlocate2(ret, needle, haystack, &p);
+	*ret = str_locate2(*needle, *haystack, 1);
+	return MAL_SUCCEED;
 }
 
 str

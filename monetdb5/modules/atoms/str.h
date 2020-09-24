@@ -39,7 +39,9 @@ extern str str_strip(str *buf, int *buflen, const char *s);
 extern str str_ltrim(str *buf, int *buflen, const char *s);
 extern str str_rtrim(str *buf, int *buflen, const char *s);
 
-mal_export str STRstrSearch(int *res, const str *arg1, const str *arg2);
+extern int str_search(const char *s, const char *s2);
+extern int str_locate2(const char *needle, const char *haystack, int start);
+
 mal_export str STRReverseStrSearch(int *res, const str *arg1, const str *arg2);
 mal_export str STRsplitpart(str *res, str *haystack, str *needle, int *field);
 
@@ -52,9 +54,6 @@ mal_export str STRLpad2(str *res, const str *arg1, const int *len, const str *ar
 mal_export str STRRpad2(str *res, const str *arg1, const int *len, const str *arg2);
 mal_export str STRSubstitute(str *res, const str *arg1, const str *arg2, const str *arg3, const bit *g);
 
-mal_export str STRsubstring(str *ret, const str *s, const int *start, const int *l);
-mal_export str STRlocate(int *ret, const str *s1, const str *s2);
-mal_export str STRlocate2(int *ret, const str *s1, const str *s2, const int *start);
 mal_export str STRinsert(str *ret, const str *s, const int *start, const int *l, const str *s2);
 mal_export str STRreplace(str *ret, const str *s1, const str *s2, const str *s3);
 
