@@ -1,0 +1,45 @@
+query T rowsort
+select json.keyarray(json '{ "":0 }')
+----
+[""]
+
+query T rowsort
+select json.isvalid(json '{ "":0 }')
+----
+True
+
+query T rowsort
+select json.isobject(json '{ "":0 }')
+----
+True
+
+query T rowsort
+select json.keyarray(json '{ "":"" }')
+----
+[""]
+
+query T rowsort
+select json.isvalid(json '{ "":"" }')
+----
+True
+
+query T rowsort
+select json.isobject(json '{ "":"" }')
+----
+True
+
+query T rowsort
+select json.keyarray(json '{ "a":0 }')
+----
+["a"]
+
+query T rowsort
+select json.isvalid(json '{ "a":0 }')
+----
+True
+
+query T rowsort
+select json.isobject(json '{ "a":0 }')
+----
+True
+
