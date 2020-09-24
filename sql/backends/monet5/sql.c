@@ -3347,6 +3347,8 @@ convert_timestamp(void *cookie, size_t internal_size, char *external, char *inte
 	timestamp *dst = (timestamp*) internal;
 	assert(internal_size == sizeof(*dst));
 
+	COPY_BINARY_CONVERT_TIMESTAMP_ENDIAN(*src);
+
 	date dt = date_create(src->date.year, src->date.month, src->date.day);
 	daytime tm = daytime_create(src->time.hours, src->time.minutes, src->time.seconds, src->time.ms);
 	timestamp value = timestamp_create(dt, tm);
@@ -3364,6 +3366,8 @@ convert_date(void *cookie, size_t internal_size, char *external, char *internal)
 	date *dst = (date*) internal;
 	assert(internal_size == sizeof(*dst));
 
+	COPY_BINARY_CONVERT_DATE_ENDIAN(*src);
+
 	date value = date_create(src->year, src->month, src->day);
 
 	(void)cookie;
@@ -3378,6 +3382,8 @@ convert_time(void *cookie, size_t internal_size, char *external, char *internal)
 	copy_binary_time *src = (copy_binary_time*) external;
 	timestamp *dst = (timestamp*) internal;
 	assert(internal_size == sizeof(*dst));
+
+	COPY_BINARY_CONVERT_TIME_ENDIAN(*src);
 
 	daytime value = daytime_create(src->hours, src->minutes, src->seconds, src->ms);
 
