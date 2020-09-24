@@ -3355,11 +3355,10 @@ STRtostr(str *res, const str *src)
 	return MAL_SUCCEED;
 }
 
-static int
-str_length(const str *arg1)
+int
+str_length(const char *s)
 {
 	size_t l;
-	const char *s = *arg1;
 
 	if (strNil(s))
 		return int_nil;
@@ -3373,15 +3372,14 @@ str_length(const str *arg1)
 str
 STRLength(int *res, const str *arg1)
 {
-	*res = str_length(arg1);
+	*res = str_length(*arg1);
 	return MAL_SUCCEED;
 }
 
-static int
-str_bytes(const str *arg1)
+int
+str_bytes(const char *s)
 {
 	size_t l;
-	const char *s = *arg1;
 
 	if (strNil(s))
 		return int_nil;
@@ -3393,7 +3391,7 @@ str_bytes(const str *arg1)
 str
 STRBytes(int *res, const str *arg1)
 {
-	*res = str_bytes(arg1);
+	*res = str_bytes(*arg1);
 	return MAL_SUCCEED;
 }
 

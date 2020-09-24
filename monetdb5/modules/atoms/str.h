@@ -15,6 +15,9 @@
 
 #define INITIAL_STR_BUFFER_LENGTH MAX((int) strlen(str_nil) + 1, 1024)
 
+int str_length(const char *s);
+int str_bytes(const char *s);
+
 str str_tail(str *buf, int *buflen, const char *s, int off);
 str str_Sub_String(str *buf, int *buflen, const char *s, int off, int l);
 str str_substring_tail(str *buf, int *buflen, const char *s, int start);
