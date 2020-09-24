@@ -3355,75 +3355,108 @@ STRtostr(str *res, const str *src)
 	return MAL_SUCCEED;
 }
 
-str
-STRLength(int *res, const str *arg1)
+static int
+str_length(const str *arg1)
 {
 	size_t l;
 	const char *s = *arg1;
 
-	if (strNil(s)) {
-		*res = int_nil;
-		return MAL_SUCCEED;
-	}
-	l =  UTF8_strlen(s);
+	if (strNil(s))
+		return int_nil;
+	l = UTF8_strlen(s);
 	assert(l < INT_MAX);
 	if (l > INT_MAX)
 		l = INT_MAX;
-	*res = (int) l;
+	return (int) l;
+}
+
+str
+STRLength(int *res, const str *arg1)
+{
+	*res = str_length(arg1);
 	return MAL_SUCCEED;
+}
+
+static int
+str_bytes(const str *arg1)
+{
+	size_t l;
+	const char *s = *arg1;
+
+	if (strNil(s))
+		return int_nil;
+	l = strlen(s);
+	assert(l < INT_MAX);
+	return (int) l;
 }
 
 str
 STRBytes(int *res, const str *arg1)
 {
-	size_t l;
-	const char *s = *arg1;
+	*res = str_bytes(arg1);
+	return MAL_SUCCEED;
+}
 
-	if (strNil(s)) {
-		*res = int_nil;
+#define CHECK_BUFFER_LENGTH(buf, buflen, nextlen, op) \
+	do {  \
+		if (nextlen > *buflen) { \
+			int newlen = nextlen + 1024; \
+			str newbuf = GDKmalloc(newlen); \
+			if (!newbuf) \
+				throw(MAL, op, SQLSTATE(HY013) MAL_MALLOC_FAIL); \
+			GDKfree(*buf); \
+			*buf = newbuf; \
+			*buflen = newlen; \
+		} \
+	} while (0)
+
+str
+str_tail(str *buf, int *buflen, const char *s, int off)
+{
+	if (strNil(s) || is_int_nil(off)) {
+		strcpy(*buf, str_nil);
 		return MAL_SUCCEED;
 	}
-	l = strlen(s);
-	assert(l < INT_MAX);
-	*res = (int) l;
+	if (off < 0) {
+		size_t len = UTF8_strlen(s);
+
+		assert(len <= INT_MAX);
+		off += (int) len;
+		if (off < 0)
+			off = 0;
+	}
+	str tail = UTF8_strtail(s, off);
+	int nextlen = (int) strlen(tail) + 1;
+	CHECK_BUFFER_LENGTH(buf, buflen, nextlen, "str.tail");
+	strcpy(*buf, tail);
 	return MAL_SUCCEED;
 }
 
 str
 STRTail(str *res, const str *arg1, const int *offset)
 {
-	int off = *offset;
-	const char *s = *arg1;
+	int buflen = INITIAL_STR_BUFFER_LENGTH;
+	str buf = GDKmalloc(buflen), msg;
 
-	if (strNil(s) || is_int_nil(off)) {
-		*res = GDKstrdup(str_nil);
-	} else {
-		if (off < 0) {
-			size_t len = UTF8_strlen(s);
-
-			assert(len <= INT_MAX);
-			off += (int) len;
-			if (off < 0)
-				off = 0;
-		}
-		*res = GDKstrdup(UTF8_strtail(s, off));
+	*res = NULL;
+	if (!buf)
+		throw(SQL, "str.tail", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+	msg = str_tail(&buf, &buflen, *arg1, *offset);
+	if (!msg && !(*res = GDKstrdup(buf))) {
+		msg = createException(MAL, "str.tail", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
-	if (*res == NULL)
-		throw(MAL, "str.tail", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-	return MAL_SUCCEED;
+
+	GDKfree(buf);
+	return msg;
 }
 
 str
-STRSubString(str *res, const str *arg1, const int *offset, const int *length)
+str_Sub_String(str *buf, int *buflen, const char *s, int off, int l)
 {
-	size_t len;
-	int off = *offset, l = *length;
-	const char *s = *arg1;
+	int len;
 
 	if (strNil(s) || is_int_nil(off) || is_int_nil(l)) {
-		*res = GDKstrdup(str_nil);
-		if (*res == NULL)
-			throw(MAL, "str.substring", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		strcpy(*buf, str_nil);
 		return MAL_SUCCEED;
 	}
 	if (off < 0) {
@@ -3439,18 +3472,32 @@ STRSubString(str *res, const str *arg1, const int *offset, const int *length)
 	}
 	/* here, off >= 0 */
 	if (l < 0) {
-		*res = GDKstrdup("");
-		if (*res == NULL)
-			throw(MAL, "str.substring", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		strcpy(*buf, "");
 		return MAL_SUCCEED;
 	}
 	s = UTF8_strtail(s, off);
-	len = (size_t) (UTF8_strtail(s, l) - s);
-	*res = GDKmalloc(len + 1);
-	if (*res == NULL)
-		throw(MAL, "str.substring", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-	strcpy_len(*res, s, len + 1);
+	len = UTF8_strtail(s, l) - s;
+	CHECK_BUFFER_LENGTH(buf, buflen, len + 1, "str.substring");
+	strcpy_len(*buf, s, (size_t)(len + 1));
 	return MAL_SUCCEED;
+}
+
+str
+STRSubString(str *res, const str *arg1, const int *offset, const int *length)
+{
+	int buflen = INITIAL_STR_BUFFER_LENGTH;
+	str buf = GDKmalloc(buflen), msg;
+
+	*res = NULL;
+	if (!buf)
+		throw(SQL, "str.substring", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+	msg = str_Sub_String(&buf, &buflen, *arg1, *offset, *length);
+	if (!msg && !(*res = GDKstrdup(buf))) {
+		msg = createException(MAL, "str.substring", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+	}
+
+	GDKfree(buf);
+	return msg;
 }
 
 str
@@ -4075,59 +4122,110 @@ STRascii(int *ret, const str *s)
 }
 
 str
-STRsubstringTail(str *ret, const str *s, const int *start)
+str_substring_tail(str *buf, int *buflen, const char *s, int start)
 {
-	int offset;
-
-	if (strNil(*s) || is_int_nil(*start)) {
-		if ((*ret = GDKstrdup(str_nil)) == NULL)
-			throw(MAL, "str.substringTail", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+	if (is_int_nil(start)) {
+		strcpy(*buf, str_nil);
 		return MAL_SUCCEED;
 	}
-
-	offset= *start;
-	if( offset <1) offset =1;
-	offset--;
-	return STRTail(ret, s, &offset);
+	if( start <1) start =1;
+	start--;
+	return str_tail(buf, buflen, s, start);
 }
 
 str
-STRsubstring(str *ret, const str *s, const int *start, const int *l)
+STRsubstringTail(str *res, const str *s, const int *start)
 {
-	int offset;
+	int buflen = INITIAL_STR_BUFFER_LENGTH;
+	str buf = GDKmalloc(buflen), msg;
 
-	if (strNil(*s) || is_int_nil(*start) || is_int_nil(*l)) {
-		if ((*ret = GDKstrdup(str_nil)) == NULL)
-			throw(MAL, "str.substring", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-		return MAL_SUCCEED;
+	*res = NULL;
+	if (!buf)
+		throw(SQL, "str.substringTail", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+	msg = str_substring_tail(&buf, &buflen, *s, *start);
+	if (!msg && !(*res = GDKstrdup(buf))) {
+		msg = createException(MAL, "str.substringTail", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
 
-	offset= *start;
-	if( offset <1) offset =1;
-	offset--;
-	return STRSubString(ret, s, &offset, l);
+	GDKfree(buf);
+	return msg;
 }
 
 str
-STRprefix(str *ret, const str *s, const int *l)
+str_sub_string(str *buf, int *buflen, const char *s, int start, int l)
 {
-	int start =0;
-	return STRSubString(ret,s,&start,l);
+	if (is_int_nil(start)) {
+		strcpy(*buf, str_nil);
+		return MAL_SUCCEED;
+	}
+	if( start <1) start =1;
+	start--;
+	return str_Sub_String(buf, buflen, s, start, l);
 }
 
 str
-STRsuffix(str *ret, const str *s, const int *l)
+STRsubstring(str *res, const str *s, const int *start, const int *l)
 {
-	int start;
+	int buflen = INITIAL_STR_BUFFER_LENGTH;
+	str buf = GDKmalloc(buflen), msg;
 
-	if (strNil(*s) || is_int_nil(*l)) {
-		if ((*ret = GDKstrdup(str_nil)) == NULL)
-			throw(MAL, "str.suffix", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-		return MAL_SUCCEED;
+	*res = NULL;
+	if (!buf)
+		throw(SQL, "str.substring", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+	msg = str_sub_string(&buf, &buflen, *s, *start, *l);
+	if (!msg && !(*res = GDKstrdup(buf))) {
+		msg = createException(MAL, "str.substring", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
 
-	start = (int) (strlen(*s)- *l);
-	return STRSubString(ret,s,&start,l);
+	GDKfree(buf);
+	return msg;
+}
+
+str
+STRprefix(str *res, const str *s, const int *l)
+{
+	int buflen = INITIAL_STR_BUFFER_LENGTH;
+	str buf = GDKmalloc(buflen), msg;
+
+	*res = NULL;
+	if (!buf)
+		throw(SQL, "str.prefix", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+	msg = str_Sub_String(&buf, &buflen, *s, 0, *l);
+	if (!msg && !(*res = GDKstrdup(buf))) {
+		msg = createException(MAL, "str.prefix", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+	}
+
+	GDKfree(buf);
+	return msg;
+}
+
+str
+str_suffix(str *buf, int *buflen, const char *s, int l)
+{
+	if (strNil(s) || is_int_nil(l)) {
+		strcpy(*buf, str_nil);
+		return MAL_SUCCEED;
+	}
+	int start = (int) (strlen(s) - l);
+	return str_Sub_String(buf, buflen, s, start, l);
+}
+
+str
+STRsuffix(str *res, const str *s, const int *l)
+{
+	int buflen = INITIAL_STR_BUFFER_LENGTH;
+	str buf = GDKmalloc(buflen), msg;
+
+	*res = NULL;
+	if (!buf)
+		throw(SQL, "str.suffix", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+	msg = str_suffix(&buf, &buflen, *s, *l);
+	if (!msg && !(*res = GDKstrdup(buf))) {
+		msg = createException(MAL, "str.suffix", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+	}
+
+	GDKfree(buf);
+	return msg;
 }
 
 str
@@ -4197,35 +4295,60 @@ STRreplace(str *ret, const str *s1, const str *s2, const str *s3)
 }
 
 str
-STRrepeat(str *ret, const str *s, const int *c)
+str_repeat(str *buf, int *buflen, const char *s, int c)
 {
-	str t;
-	int i;
-	size_t l;
-
-	if (*c < 0 || strNil(*s)) {
-		if ((*ret = GDKstrdup(str_nil)) == NULL)
-			throw(MAL, "str.repeat", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-	} else {
-		l = strlen(*s);
-		if (l >= INT_MAX)
-			throw(MAL, "str.repeat", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-		t = *ret = GDKmalloc( *c * l + 1);
-
-		if (!t)
-			throw(MAL, "str.repeat", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-		*t = 0;
-		for(i = *c; i>0; i--, t += l)
-			strcpy(t, *s);
+	if (c < 0 || strNil(s)) {
+		strcpy(*buf, str_nil);
+		return MAL_SUCCEED;
 	}
+	size_t l = strlen(s);
+	if (l >= INT_MAX)
+		throw(MAL, "str.repeat", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+	int nextlen =  c * l + 1;
+
+	CHECK_BUFFER_LENGTH(buf, buflen, nextlen, "str.repeat");
+	str t = *buf;
+	*t = 0;
+	for (int i = c; i>0; i--, t += l)
+		strcpy(t, s);
 	return MAL_SUCCEED;
 }
 
 str
-STRspace(str *ret, const int *l)
+STRrepeat(str *res, const str *s, const int *c)
 {
-	char buf[]= " ", *s= buf;
-	return STRrepeat(ret,&s,l);
+	int buflen = INITIAL_STR_BUFFER_LENGTH;
+	str buf = GDKmalloc(buflen), msg;
+
+	*res = NULL;
+	if (!buf)
+		throw(SQL, "str.repeat", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+	msg = str_repeat(&buf, &buflen, *s, *c);
+	if (!msg && !(*res = GDKstrdup(buf))) {
+		msg = createException(MAL, "str.repeat", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+	}
+
+	GDKfree(buf);
+	return msg;
+}
+
+str
+STRspace(str *res, const int *l)
+{
+	int buflen = INITIAL_STR_BUFFER_LENGTH;
+	str buf = GDKmalloc(buflen), msg;
+	char space[]= " ", *s= space;
+
+	*res = NULL;
+	if (!buf)
+		throw(SQL, "str.space", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+	msg = str_repeat(&buf, &buflen, s, *l);
+	if (!msg && !(*res = GDKstrdup(buf))) {
+		msg = createException(MAL, "str.space", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+	}
+
+	GDKfree(buf);
+	return msg;
 }
 
 #include "mel.h"

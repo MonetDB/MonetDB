@@ -1178,76 +1178,93 @@ STRbatWChrAtcst(bat *ret, const bat *l, const int *cst)
 }
 
 static str
-do_batstr_str_int_cst(bat *ret, const bat *l, const int *cst, const char *name, str (*func)(str *, const str *, const int *))
+do_batstr_str_int_cst(bat *res, const bat *l, const int *cst, const char *name, str (*func)(str*, int*, const char*, int))
 {
 	BATiter bi;
-	BAT *bn, *b;
+	BAT *bn = NULL, *b = NULL;
 	BUN p, q;
-	str x, y, msg = MAL_SUCCEED;
+	int buflen = INITIAL_STR_BUFFER_LENGTH, c = *cst;
+	str x, buf = GDKmalloc(buflen), msg = MAL_SUCCEED;
+	bool nils = false;
 
-	prepareOperand(b, l, name);
-	prepareResult(bn, b, TYPE_str, name);
+	if (!buf) {
+		msg = createException(MAL, name, SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		goto bailout;
+	}
+	if ((b = BATdescriptor(*l)) == NULL) {
+		msg = createException(MAL, name, SQLSTATE(HY005) RUNTIME_OBJECT_MISSING);
+		goto bailout;
+	}
+	q = BATcount(b);
+	if (!(bn = COLnew(b->hseqbase, TYPE_str, q, TRANSIENT))) {
+		msg = createException(MAL, name, SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		goto bailout;
+	}
 
 	bi = bat_iterator(b);
+	for (p = 0; p < q ; p++) {
+		x = (str) BUNtail(bi, p);
 
-	BATloop(b, p, q) {
-		y = NULL;
-		x = (str) BUNtvar(bi, p);
-		if (!strNil(x) &&
-			(msg = (*func)(&y, &x, cst)) != MAL_SUCCEED)
+		if ((msg = (*func)(&buf, &buflen, x, c)) != MAL_SUCCEED)
 			goto bailout;
-		if (y == NULL)
-			y = (str) str_nil;
-		if (bunfastappVAR(bn, y) != GDK_SUCCEED) {
-			if (y != str_nil)
-				GDKfree(y);
+		if (tfastins_nocheckVAR(bn, p, buf, Tsize(bn)) != GDK_SUCCEED) {
+			msg = createException(MAL, name, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			goto bailout;
 		}
-		if (y == str_nil) {
-			bn->tnonil = false;
-			bn->tnil = true;
-		} else
-			GDKfree(y);
+		nils |= strNil(buf);
 	}
-	finalizeResult(ret, bn, b);
-	return MAL_SUCCEED;
 
 bailout:
-	BBPunfix(b->batCacheid);
-	BBPunfix(bn->batCacheid);
-	if (msg != MAL_SUCCEED)
-		return msg;
-	throw(MAL, name, OPERATION_FAILED " During bulk operation");
+	GDKfree(buf);
+	if (b)
+		BBPunfix(b->batCacheid);
+	if (bn && !msg) {
+		BATsetcount(bn, q);
+		bn->tnil = nils;
+		bn->tnonil = !nils;
+		bn->tkey = BATcount(bn) <= 1;
+		bn->tsorted = BATcount(bn) <= 1;
+		bn->trevsorted = BATcount(bn) <= 1;
+		BBPkeepref(*res = bn->batCacheid);
+	} else if (bn)
+		BBPreclaim(bn);
+	return msg;
+}
+
+static inline str
+str_prefix(str *buf, int *buflen, const char *s, int l)
+{
+	return str_Sub_String(buf, buflen, s, 0, l);
 }
 
 static str
 STRbatprefixcst(bat *ret, const bat *l, const int *cst)
 {
-	return do_batstr_str_int_cst(ret, l, cst, "batstr.prefix", STRprefix);
+	return do_batstr_str_int_cst(ret, l, cst, "batstr.prefix", str_prefix);
 }
 
 static str
 STRbatsuffixcst(bat *ret, const bat *l, const int *cst)
 {
-	return do_batstr_str_int_cst(ret, l, cst, "batstr.suffix", STRsuffix);
+	return do_batstr_str_int_cst(ret, l, cst, "batstr.suffix", str_suffix);
 }
 
 static str
 STRbatrepeatcst(bat *ret, const bat *l, const int *cst)
 {
-	return do_batstr_str_int_cst(ret, l, cst, "batstr.repeat", STRrepeat);
+	return do_batstr_str_int_cst(ret, l, cst, "batstr.repeat", str_repeat);
 }
 
 static str
 STRbatTailcst(bat *ret, const bat *l, const int *cst)
 {
-	return do_batstr_str_int_cst(ret, l, cst, "batstr.tail", STRTail);
+	return do_batstr_str_int_cst(ret, l, cst, "batstr.tail", str_tail);
 }
 
 static str
 STRbatsubstringTailcst(bat *ret, const bat *l, const int *cst)
 {
-	return do_batstr_str_int_cst(ret, l, cst, "batstr.substring", STRsubstringTail);
+	return do_batstr_str_int_cst(ret, l, cst, "batstr.substring", str_substring_tail);
 }
 
 static str
@@ -1792,44 +1809,56 @@ bailout:
  * The substring functions require slightly different arguments
  */
 static str
-STRbatsubstringcst(bat *ret, const bat *bid, const int *start, const int *length)
+STRbatsubstringcst(bat *res, const bat *bid, const int *start, const int *length)
 {
 	BATiter bi;
-	BAT *b,*bn;
+	BAT *bn = NULL, *b = NULL;
 	BUN p, q;
-	str res;
-	char *msg = MAL_SUCCEED;
+	int buflen = INITIAL_STR_BUFFER_LENGTH, s = *start, len = *length;
+	str x, buf = GDKmalloc(buflen), msg = MAL_SUCCEED;
+	bool nils = false;
 
-	if( (b= BATdescriptor(*bid)) == NULL)
-		throw(MAL, "batstr.substring", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
-	bn= COLnew(b->hseqbase, TYPE_str, BATcount(b), TRANSIENT);
-	if (bn == NULL) {
-		BBPunfix(b->batCacheid);
-		throw(MAL, "batstr.substring", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+	if (!buf) {
+		msg = createException(MAL, "batstr.substring", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		goto bailout;
 	}
-	bn->tsorted = b->tsorted;
-	bn->trevsorted = b->trevsorted;
+	if ((b = BATdescriptor(*bid)) == NULL) {
+		msg = createException(MAL, "batstr.substring", SQLSTATE(HY005) RUNTIME_OBJECT_MISSING);
+		goto bailout;
+	}
+	q = BATcount(b);
+	if (!(bn = COLnew(b->hseqbase, TYPE_str, q, TRANSIENT))) {
+		msg = createException(MAL, "batstr.substring", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		goto bailout;
+	}
 
 	bi = bat_iterator(b);
-	BATloop(b, p, q) {
-		str t =  (str) BUNtvar(bi, p);
+	for (p = 0; p < q ; p++) {
+		x = (str) BUNtail(bi, p);
 
-		if ((msg = STRsubstring(&res, &t, start, length)) != MAL_SUCCEED ||
-			BUNappend(bn, (ptr)res, false) != GDK_SUCCEED) {
-			BBPunfix(b->batCacheid);
-			BBPunfix(bn->batCacheid);
-			if (msg != MAL_SUCCEED)
-				return msg;
-			GDKfree(res);
-			throw(MAL, "batstr.substring", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		if ((msg = str_sub_string(&buf, &buflen, x, s, len)) != MAL_SUCCEED)
+			goto bailout;
+		if (tfastins_nocheckVAR(bn, p, buf, Tsize(bn)) != GDK_SUCCEED) {
+			msg = createException(MAL, "batstr.substring", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+			goto bailout;
 		}
-		GDKfree(res);
+		nils |= strNil(buf);
 	}
 
-	bn->tnonil = false;
-	*ret = bn->batCacheid;
-	BBPkeepref(bn->batCacheid);
-	BBPunfix(b->batCacheid);
+bailout:
+	GDKfree(buf);
+	if (b)
+		BBPunfix(b->batCacheid);
+	if (bn && !msg) {
+		BATsetcount(bn, q);
+		bn->tnil = nils;
+		bn->tnonil = !nils;
+		bn->tkey = BATcount(bn) <= 1;
+		bn->tsorted = b->tsorted;
+		bn->trevsorted = b->trevsorted;
+		BBPkeepref(*res = bn->batCacheid);
+	} else if (bn)
+		BBPreclaim(bn);
 	return msg;
 }
 

@@ -13,6 +13,15 @@
 #include "mal_exception.h"
 #include <ctype.h>
 
+#define INITIAL_STR_BUFFER_LENGTH MAX((int) strlen(str_nil) + 1, 1024)
+
+str str_tail(str *buf, int *buflen, const char *s, int off);
+str str_Sub_String(str *buf, int *buflen, const char *s, int off, int l);
+str str_substring_tail(str *buf, int *buflen, const char *s, int start);
+str str_sub_string(str *buf, int *buflen, const char *s, int start, int l);
+str str_suffix(str *buf, int *buflen, const char *s, int l);
+str str_repeat(str *buf, int *buflen, const char *s, int c);
+
 mal_export str STRtostr(str *res, const str *src);
 mal_export str STRLength(int *res, const str *arg1);
 mal_export str STRBytes(int *res, const str *arg1);
