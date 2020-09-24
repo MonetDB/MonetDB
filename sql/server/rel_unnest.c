@@ -2267,7 +2267,7 @@ rewrite_anyequal(mvc *sql, sql_rel *rel, sql_exp *e, int depth)
 					return exp_in_compare(sql, &le, vals, is_anyequal(sf));
 				} else {
 					le = exp_in_project(sql, &le, vals, is_anyequal(sf));
-					if (exp_name(e))
+					if (le && exp_name(e))
 						exp_prop_alias(sql->sa, le, e);
 					return le;
 				}
@@ -2465,7 +2465,7 @@ rewrite_compare(visitor *v, sql_rel *rel, sql_exp *e, int depth)
 					return exp_in_compare(v->sql, &le, vals, is_anyequal(sf));
 				} else {
 					le = exp_in_project(v->sql, &le, vals, is_anyequal(sf));
-					if (exp_name(e))
+					if (le && exp_name(e))
 						exp_prop_alias(v->sql->sa, le, e);
 					return le;
 				}
