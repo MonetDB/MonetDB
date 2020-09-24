@@ -187,6 +187,10 @@ STRbatFromWChr(bat *res, const bat *l)
 	str buf = GDKmalloc(buflen), msg = MAL_SUCCEED;
 	bool nils = false;
 
+	if (!buf) {
+		msg = createException(MAL, "batstr.unicode", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		goto bailout;
+	}
 	if ((b = BATdescriptor(*l)) == NULL) {
 		msg = createException(MAL, "batstr.unicode", SQLSTATE(HY005) RUNTIME_OBJECT_MISSING);
 		goto bailout;
@@ -234,6 +238,10 @@ STRbatSpace(bat *res, const bat *l)
 	str buf = GDKmalloc(buflen), msg = MAL_SUCCEED;
 	bool nils = false;
 
+	if (!buf) {
+		msg = createException(MAL, "batstr.space", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		goto bailout;
+	}
 	if ((b = BATdescriptor(*l)) == NULL) {
 		msg = createException(MAL, "batstr.space", SQLSTATE(HY005) RUNTIME_OBJECT_MISSING);
 		goto bailout;
@@ -275,47 +283,57 @@ bailout:
 }
 
 static str
-do_batstr_str(bat *ret, const bat *l, const char *name, str (*func)(str *, const str *))
+do_batstr_str(bat *res, const bat *l, const char *name, str (*func)(str *, int *, const char *))
 {
 	BATiter bi;
-	BAT *bn, *b;
+	BAT *bn = NULL, *b = NULL;
 	BUN p, q;
-	str x, y;
-	str msg = MAL_SUCCEED;
+	int buflen = INITIAL_STR_BUFFER_LENGTH;
+	str x, buf = GDKmalloc(buflen), msg = MAL_SUCCEED;
+	bool nils = false;
 
-	prepareOperand(b, l, name);
-	prepareResult(bn, b, TYPE_str, name);
+	if (!buf) {
+		msg = createException(MAL, name, SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		goto bailout;
+	}
+	if (!(b = BATdescriptor(*l))) {
+		msg = createException(MAL, name, SQLSTATE(HY005) RUNTIME_OBJECT_MISSING);
+		goto bailout;
+	}
+	q = BATcount(b);
+	if (!(bn = COLnew(b->hseqbase, TYPE_str, q, TRANSIENT))) {
+		msg = createException(MAL, name, SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		goto bailout;
+	}
 
 	bi = bat_iterator(b);
+	for (p = 0; p < q ; p++) {
+		x = (str) BUNtail(bi, p);
 
-	BATloop(b, p, q) {
-		y = NULL;
-		x = (str) BUNtvar(bi, p);
-		if (!strNil(x) &&
-			(msg = (*func)(&y, &x)) != MAL_SUCCEED)
+		if ((msg = func(&buf, &buflen, x)) != MAL_SUCCEED)
 			goto bailout;
-		if (y == NULL)
-			y = (str) str_nil;
-		if (bunfastappVAR(bn, y) != GDK_SUCCEED) {
-			if (y != str_nil)
-				GDKfree(y);
+		if (tfastins_nocheckVAR(bn, p, buf, Tsize(bn)) != GDK_SUCCEED) {
+			msg = createException(MAL, name, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			goto bailout;
 		}
-		if (y == str_nil) {
-			bn->tnonil = false;
-			bn->tnil = true;
-		} else
-			GDKfree(y);
+		nils |= strNil(buf);
 	}
-	finalizeResult(ret, bn, b);
-	return MAL_SUCCEED;
 
 bailout:
-	BBPunfix(b->batCacheid);
-	BBPunfix(bn->batCacheid);
-	if (msg != MAL_SUCCEED)
-		return msg;
-	throw(MAL, name, OPERATION_FAILED " During bulk operation");
+	GDKfree(buf);
+	if (b)
+		BBPunfix(b->batCacheid);
+	if (bn && !msg) {
+		BATsetcount(bn, q);
+		bn->tnil = nils;
+		bn->tnonil = !nils;
+		bn->tkey = BATcount(bn) <= 1;
+		bn->tsorted = BATcount(bn) <= 1;
+		bn->trevsorted = BATcount(bn) <= 1;
+		BBPkeepref(*res = bn->batCacheid);
+	} else if (bn)
+		BBPreclaim(bn);
+	return msg;
 }
 
 /* Input: a BAT of strings 'l' and a constant string 's2'
@@ -756,31 +774,31 @@ do_batstr_batint_batstr_str(bat *ret, const bat *l, const bat *n, const bat *l2,
 static str
 STRbatLower(bat *ret, const bat *l)
 {
-	return do_batstr_str(ret, l, "batstr.Lower", STRLower);
+	return do_batstr_str(ret, l, "batstr.lower", str_lower);
 }
 
 static str
 STRbatUpper(bat *ret, const bat *l)
 {
-	return do_batstr_str(ret, l, "batstr.Upper", STRUpper);
+	return do_batstr_str(ret, l, "batstr.upper", str_upper);
 }
 
 static str
 STRbatStrip(bat *ret, const bat *l)
 {
-	return do_batstr_str(ret, l, "batstr.Strip", STRStrip);
+	return do_batstr_str(ret, l, "batstr.strip", str_strip);
 }
 
 static str
 STRbatLtrim(bat *ret, const bat *l)
 {
-	return do_batstr_str(ret, l, "batstr.Ltrim", STRLtrim);
+	return do_batstr_str(ret, l, "batstr.ltrim", str_ltrim);
 }
 
 static str
 STRbatRtrim(bat *ret, const bat *l)
 {
-	return do_batstr_str(ret, l, "batstr.Rtrim", STRRtrim);
+	return do_batstr_str(ret, l, "batstr.rtrim", str_rtrim);
 }
 
 static str

@@ -3209,8 +3209,23 @@ UTF8_offset(char *restrict s, int n)
 	return s;
 }
 
+/* The batstr module functions use a single buffer to avoid malloc/free overhead.
+   Note the buffer should be always large enough to hold null strings, so less testing will be required */
+#define CHECK_STR_BUFFER_LENGTH(buf, buflen, nextlen, op) \
+	do {  \
+		if (nextlen > *buflen) { \
+			int newlen = nextlen + 1024; \
+			str newbuf = GDKmalloc(newlen); \
+			if (!newbuf) \
+				throw(MAL, op, SQLSTATE(HY013) MAL_MALLOC_FAIL); \
+			GDKfree(*buf); \
+			*buf = newbuf; \
+			*buflen = newlen; \
+		} \
+	} while (0)
+
 static str
-convertCase(BAT *from, BAT *to, str *res, const char *src, const char *malfunc)
+convertCase(BAT *from, BAT *to, str *buf, int *buflen, const char *src, const char *malfunc)
 {
 	size_t len = strlen(src);
 	char *dst;
@@ -3218,14 +3233,17 @@ convertCase(BAT *from, BAT *to, str *res, const char *src, const char *malfunc)
 	bool lower_to_upper = from == UTF8_toUpperFrom;
 
 	if (strNil(src)) {
-		*res = GDKstrdup(str_nil);
+		strcpy(*buf, str_nil);
+		return MAL_SUCCEED;
 	} else {
-		if (BAThash(from) != GDK_SUCCEED ||
-			(*res = GDKmalloc(len + 1)) == NULL) {
+		Hash *h;
+		int nextlen = len + 1;
+		if (BAThash(from) != GDK_SUCCEED)
 			throw(MAL, malfunc, SQLSTATE(HY013) MAL_MALLOC_FAIL);
-		}
-		Hash *h = from->thash;
-		dst = *res;
+		CHECK_STR_BUFFER_LENGTH(buf, buflen, nextlen, malfunc);
+
+		h = from->thash;
+		dst = *buf;
 		while (src < end) {
 			int c;
 
@@ -3251,29 +3269,22 @@ convertCase(BAT *from, BAT *to, str *res, const char *src, const char *malfunc)
 					}
 				}
 			}
-			if (dst + UTF8_CHARLEN(c) > *res + len) {
+			if (dst + UTF8_CHARLEN(c) > *buf + len) {
 				/* doesn't fit, so allocate more space;
 				 * also allocate enough for the rest of the
 				 * source */
-				size_t off = dst - *res;
+				size_t off = dst - *buf;
+				int nextlen = (len += 4 + (end - src)) + 1;
 
-				dst = GDKrealloc(*res, (len += 4 + (end - src)) + 1);
-				if (dst == NULL) {
-					/* if realloc fails, original buffer is still
-					 * allocated, so free it */
-					GDKfree(*res);
-					throw(MAL, malfunc, SQLSTATE(HY013) MAL_MALLOC_FAIL);
-				}
-				*res = dst;
-				dst = *res + off;
+				CHECK_STR_BUFFER_LENGTH(buf, buflen, nextlen, malfunc);
+				dst = *buf + off;
 			}
 			UTF8_PUTCHAR(c, dst);
 		}
 		*dst = 0;
-	}
-	if (*res != NULL)
 		return MAL_SUCCEED;
-  illegal:
+	}
+illegal:
 	throw(MAL, malfunc, SQLSTATE(42000) "Illegal Unicode code point");
 }
 
@@ -3323,7 +3334,7 @@ STRlike(const char *s, const char *pat, const char *esc)
 	return *t == 0 && *p == 0;
 }
 
-str
+static str
 STRlikewrap(bit *ret, const str *s, const str *pat, const str *esc)
 {
 	if (strNil(*s) || strNil(*pat) || strNil(*esc))
@@ -3333,7 +3344,7 @@ STRlikewrap(bit *ret, const str *s, const str *pat, const str *esc)
 	return MAL_SUCCEED;
 }
 
-str
+static str
 STRlikewrap2(bit *ret, const str *s, const str *pat)
 {
 	if (strNil(*s) || strNil(*pat))
@@ -3343,7 +3354,7 @@ STRlikewrap2(bit *ret, const str *s, const str *pat)
 	return MAL_SUCCEED;
 }
 
-str
+static str
 STRtostr(str *res, const str *src)
 {
 	if( *src == 0)
@@ -3369,7 +3380,7 @@ str_length(const char *s)
 	return (int) l;
 }
 
-str
+static str
 STRLength(int *res, const str *arg1)
 {
 	*res = str_length(*arg1);
@@ -3388,25 +3399,12 @@ str_bytes(const char *s)
 	return (int) l;
 }
 
-str
+static str
 STRBytes(int *res, const str *arg1)
 {
 	*res = str_bytes(*arg1);
 	return MAL_SUCCEED;
 }
-
-#define CHECK_BUFFER_LENGTH(buf, buflen, nextlen, op) \
-	do {  \
-		if (nextlen > *buflen) { \
-			int newlen = nextlen + 1024; \
-			str newbuf = GDKmalloc(newlen); \
-			if (!newbuf) \
-				throw(MAL, op, SQLSTATE(HY013) MAL_MALLOC_FAIL); \
-			GDKfree(*buf); \
-			*buf = newbuf; \
-			*buflen = newlen; \
-		} \
-	} while (0)
 
 str
 str_tail(str *buf, int *buflen, const char *s, int off)
@@ -3425,12 +3423,12 @@ str_tail(str *buf, int *buflen, const char *s, int off)
 	}
 	str tail = UTF8_strtail(s, off);
 	int nextlen = (int) strlen(tail) + 1;
-	CHECK_BUFFER_LENGTH(buf, buflen, nextlen, "str.tail");
+	CHECK_STR_BUFFER_LENGTH(buf, buflen, nextlen, "str.tail");
 	strcpy(*buf, tail);
 	return MAL_SUCCEED;
 }
 
-str
+static str
 STRTail(str *res, const str *arg1, const int *offset)
 {
 	int buflen = INITIAL_STR_BUFFER_LENGTH;
@@ -3475,7 +3473,7 @@ str_Sub_String(str *buf, int *buflen, const char *s, int off, int l)
 	}
 	s = UTF8_strtail(s, off);
 	len = UTF8_strtail(s, l) - s;
-	CHECK_BUFFER_LENGTH(buf, buflen, len + 1, "str.substring");
+	CHECK_STR_BUFFER_LENGTH(buf, buflen, len + 1, "str.substring");
 	strcpy_len(*buf, s, (size_t)(len + 1));
 	return MAL_SUCCEED;
 }
@@ -3505,7 +3503,7 @@ str_from_wchr(str *buf, int *buflen, int c)
 		strcpy(*buf, str_nil);
 		return MAL_SUCCEED;
 	}
-	CHECK_BUFFER_LENGTH(buf, buflen, 5, "str.unicode");
+	CHECK_STR_BUFFER_LENGTH(buf, buflen, 5, "str.unicode");
 	str s = *buf;
 	UTF8_PUTCHAR(c, s);
 	*s = 0;
@@ -3514,7 +3512,7 @@ illegal:
 	throw(MAL, "str.unicode", SQLSTATE(42000) "Illegal Unicode code point");
 }
 
-str
+static str
 STRFromWChr(str *res, const int *c)
 {
 	int buflen = INITIAL_STR_BUFFER_LENGTH;
@@ -3552,7 +3550,7 @@ illegal:
 	throw(MAL, "str.unicodeAt", SQLSTATE(42000) "Illegal Unicode code point");
 }
 
-str
+static str
 STRWChrAt(int *res, const str *arg1, const int *at)
 {
 	return str_wchr_at(res, *arg1, *at);
@@ -3568,7 +3566,7 @@ str_is_prefix(const char *s, const char *prefix)
 	return strncmp(s, prefix, strlen(prefix)) == 0;
 }
 
-str
+static str
 STRPrefix(bit *res, const str *arg1, const str *arg2)
 {
 	*res = str_is_prefix(*arg1, *arg2);
@@ -3593,7 +3591,7 @@ str_is_suffix(const char *s, const char *suffix)
 }
 
 /* returns whether arg1 ends with arg2 */
-str
+static str
 STRSuffix(bit *res, const str *arg1, const str *arg2)
 {
 	*res = str_is_suffix(*arg1, *arg2);
@@ -3601,15 +3599,51 @@ STRSuffix(bit *res, const str *arg1, const str *arg2)
 }
 
 str
+str_lower(str *buf, int *buflen, const char *s)
+{
+	return convertCase(UTF8_toLowerFrom, UTF8_toLowerTo, buf, buflen, s, "str.lower");
+}
+
+static str
 STRLower(str *res, const str *arg1)
 {
-	return convertCase(UTF8_toLowerFrom, UTF8_toLowerTo, res, *arg1, "str.lower");
+	int buflen = INITIAL_STR_BUFFER_LENGTH;
+	str buf = GDKmalloc(buflen), msg;
+
+	*res = NULL;
+	if (!buf)
+		throw(SQL, "str.lower", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+	msg = str_lower(&buf, &buflen, *arg1);
+	if (!msg && !(*res = GDKstrdup(buf))) {
+		msg = createException(MAL, "str.lower", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+	}
+
+	GDKfree(buf);
+	return msg;
 }
 
 str
+str_upper(str *buf, int *buflen, const char *s)
+{
+	return convertCase(UTF8_toUpperFrom, UTF8_toUpperTo, buf, buflen, s, "str.upper");
+}
+
+static str
 STRUpper(str *res, const str *arg1)
 {
-	return convertCase(UTF8_toUpperFrom, UTF8_toUpperTo, res, *arg1, "str.upper");
+	int buflen = INITIAL_STR_BUFFER_LENGTH;
+	str buf = GDKmalloc(buflen), msg;
+
+	*res = NULL;
+	if (!buf)
+		throw(SQL, "str.upper", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+	msg = str_upper(&buf, &buflen, *arg1);
+	if (!msg && !(*res = GDKstrdup(buf))) {
+		msg = createException(MAL, "str.upper", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+	}
+
+	GDKfree(buf);
+	return msg;
 }
 
 /* find first occurrence of needle in haystack */
@@ -3781,67 +3815,112 @@ const int whitespace[] = {
 };
 #define NSPACES		(sizeof(whitespace) / sizeof(whitespace[0]))
 
-/* remove all whitespace from either side of arg1 */
 str
-STRStrip(str *res, const str *arg1)
+str_strip(str *buf, int *buflen, const char *s)
 {
-	const char *s = *arg1;
-	size_t len;
-	size_t n;
-
 	if (strNil(s)) {
-		*res = GDKstrdup(str_nil);
+		strcpy(*buf, str_nil);
+		return MAL_SUCCEED;
 	} else {
-		len = strlen(s);
-		n = lstrip(s, len, whitespace, NSPACES);
+		size_t len = strlen(s);
+		size_t n = lstrip(s, len, whitespace, NSPACES);
 		s += n;
 		len -= n;
 		n = rstrip(s, len, whitespace, NSPACES);
-		*res = GDKstrndup(s, n);
+
+		CHECK_STR_BUFFER_LENGTH(buf, buflen, (int) (n + 1), "str.strip");
+		strcpy_len(*buf, s, n + 1);
+		return MAL_SUCCEED;
 	}
-	if (*res == NULL)
-		throw(MAL, "str.trim", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-	return MAL_SUCCEED;
+}
+
+/* remove all whitespace from either side of arg1 */
+static str
+STRStrip(str *res, const str *arg1)
+{
+	int buflen = INITIAL_STR_BUFFER_LENGTH;
+	str buf = GDKmalloc(buflen), msg;
+
+	*res = NULL;
+	if (!buf)
+		throw(SQL, "str.strip", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+	msg = str_strip(&buf, &buflen, *arg1);
+	if (!msg && !(*res = GDKstrdup(buf))) {
+		msg = createException(MAL, "str.strip", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+	}
+
+	GDKfree(buf);
+	return msg;
+}
+
+str
+str_ltrim(str *buf, int *buflen, const char *s)
+{
+	if (strNil(s)) {
+		strcpy(*buf, str_nil);
+		return MAL_SUCCEED;
+	} else {
+		size_t len = strlen(s);
+		size_t n = lstrip(s, len, whitespace, NSPACES);
+
+		CHECK_STR_BUFFER_LENGTH(buf, buflen, (int) (len - n + 1), "str.ltrim");
+		strcpy_len(*buf, s + n, len - n + 1);
+		return MAL_SUCCEED;
+	}
 }
 
 /* remove all whitespace from the start (left) of arg1 */
-str
+static str
 STRLtrim(str *res, const str *arg1)
 {
-	const char *s = *arg1;
-	size_t len;
-	size_t n;
+	int buflen = INITIAL_STR_BUFFER_LENGTH;
+	str buf = GDKmalloc(buflen), msg;
 
-	if (strNil(s)) {
-		*res = GDKstrdup(str_nil);
-	} else {
-		len = strlen(s);
-		n = lstrip(s, len, whitespace, NSPACES);
-		*res = GDKstrndup(s + n, len - n);
+	*res = NULL;
+	if (!buf)
+		throw(SQL, "str.ltrim", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+	msg = str_ltrim(&buf, &buflen, *arg1);
+	if (!msg && !(*res = GDKstrdup(buf))) {
+		msg = createException(MAL, "str.ltrim", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
-	if (*res == NULL)
-		throw(MAL, "str.ltrim", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-	return MAL_SUCCEED;
+
+	GDKfree(buf);
+	return msg;
+}
+
+str
+str_rtrim(str *buf, int *buflen, const char *s)
+{
+	if (strNil(s)) {
+		strcpy(*buf, str_nil);
+		return MAL_SUCCEED;
+	} else {
+		size_t len = strlen(s);
+		size_t n = rstrip(s, len, whitespace, NSPACES);
+
+		CHECK_STR_BUFFER_LENGTH(buf, buflen, (int) (n + 1), "str.strip");
+		strcpy_len(*buf, s, n + 1);
+		return MAL_SUCCEED;
+	}
 }
 
 /* remove all whitespace from the end (right) of arg1 */
-str
+static str
 STRRtrim(str *res, const str *arg1)
 {
-	const char *s = *arg1;
-	size_t len;
-	size_t n;
+	int buflen = INITIAL_STR_BUFFER_LENGTH;
+	str buf = GDKmalloc(buflen), msg;
 
-	if (strNil(s)) {
-		*res = GDKstrdup(str_nil);
-	} else {
-		len = strlen(s);
-		n = rstrip(s, len, whitespace, NSPACES);
-		*res = GDKstrndup(s, n);
+	*res = NULL;
+	if (!buf)
+		throw(SQL, "str.rtrim", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+	msg = str_rtrim(&buf, &buflen, *arg1);
+	if (!msg && !(*res = GDKstrdup(buf))) {
+		msg = createException(MAL, "str.rtrim", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
-	if (*res == NULL)
-		throw(MAL, "str.rtrim", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-	return MAL_SUCCEED;
+
+	GDKfree(buf);
+	return msg;
 }
 
 /* return a list of codepoints in s */
@@ -4131,7 +4210,7 @@ STRSubstitute(str *res, const str *arg1, const str *arg2, const str *arg3, const
 	return MAL_SUCCEED;
 }
 
-str
+static str
 STRascii(int *ret, const str *s)
 {
 	return str_wchr_at(ret, *s, 0);
@@ -4197,7 +4276,7 @@ STRsubstring(str *res, const str *s, const int *start, const int *l)
 	return msg;
 }
 
-str
+static str
 STRprefix(str *res, const str *s, const int *l)
 {
 	int buflen = INITIAL_STR_BUFFER_LENGTH;
@@ -4226,7 +4305,7 @@ str_suffix(str *buf, int *buflen, const char *s, int l)
 	return str_Sub_String(buf, buflen, s, start, l);
 }
 
-str
+static str
 STRsuffix(str *res, const str *s, const int *l)
 {
 	int buflen = INITIAL_STR_BUFFER_LENGTH;
@@ -4322,7 +4401,7 @@ str_repeat(str *buf, int *buflen, const char *s, int c)
 		throw(MAL, "str.repeat", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	int nextlen =  c * l + 1;
 
-	CHECK_BUFFER_LENGTH(buf, buflen, nextlen, "str.repeat");
+	CHECK_STR_BUFFER_LENGTH(buf, buflen, nextlen, "str.repeat");
 	str t = *buf;
 	*t = 0;
 	for (int i = c; i>0; i--, t += l)
@@ -4330,7 +4409,7 @@ str_repeat(str *buf, int *buflen, const char *s, int c)
 	return MAL_SUCCEED;
 }
 
-str
+static str
 STRrepeat(str *res, const str *s, const int *c)
 {
 	int buflen = INITIAL_STR_BUFFER_LENGTH;
@@ -4348,7 +4427,7 @@ STRrepeat(str *res, const str *s, const int *c)
 	return msg;
 }
 
-str
+static str
 STRspace(str *res, const int *l)
 {
 	int buflen = INITIAL_STR_BUFFER_LENGTH;

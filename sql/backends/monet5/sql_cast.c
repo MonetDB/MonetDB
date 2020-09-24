@@ -145,13 +145,8 @@ SQLstr_cast_str(str *r, int *rlen, str v, int len)
 {
 	int intput_strlen;
 
-	if (!strNil(v) && len > 0) {
-		int logical_size = 0;
-		STRLength(&logical_size, &v);
-
-		if (logical_size > len)
-			throw(SQL, "str_cast", SQLSTATE(22001) "value too long for type (var)char(%d)", len);
-	}
+	if (!strNil(v) && len > 0 && str_length(v) > len)
+		throw(SQL, "str_cast", SQLSTATE(22001) "value too long for type (var)char(%d)", len);
 
 	intput_strlen = (int) strlen(v) + 1;
 	if (intput_strlen > *rlen) {
