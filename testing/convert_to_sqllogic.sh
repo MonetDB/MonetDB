@@ -47,7 +47,7 @@ if [[ ! -d "${src}" ]];then
     exit 1;
 fi
 
-[[ ! -d "${dst}" ]] || mkdir -p ${dst}
+[[ -d "${dst}" ]] || mkdir -p ${dst}
 
 dryrun() {
     local f=$1;
@@ -73,6 +73,7 @@ done;
 if [[ -e ${src}/All ]];then
     [[ ${src} -ef ${dst} ]] || cp ${src}/All $dst;
 fi
+
 if [[ -e ${src}/SingleServer ]];then
     [[ ${src} -ef ${dst} ]] || cp ${src}/SingleServer $dst;
 fi
