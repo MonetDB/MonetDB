@@ -18,6 +18,9 @@
 int str_length(const char *s);
 int str_bytes(const char *s);
 
+str str_from_wchr(str *buf, int *buflen, int c);
+str str_wchr_at(int *res, const char *s, int at);
+
 str str_tail(str *buf, int *buflen, const char *s, int off);
 str str_Sub_String(str *buf, int *buflen, const char *s, int off, int l);
 str str_substring_tail(str *buf, int *buflen, const char *s, int start);

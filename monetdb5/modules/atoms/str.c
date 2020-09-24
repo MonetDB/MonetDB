@@ -3499,49 +3499,63 @@ STRSubString(str *res, const str *arg1, const int *offset, const int *length)
 }
 
 str
-STRFromWChr(str *res, const int *c)
+str_from_wchr(str *buf, int *buflen, int c)
 {
-	str s;
-
-	if (is_int_nil(*c)) {
-		*res = GDKstrdup(str_nil);
-		if (*res == NULL)
-			throw(MAL, "str.unicode", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+	if (is_int_nil(c)) {
+		strcpy(*buf, str_nil);
 		return MAL_SUCCEED;
 	}
-
-	s = *res = GDKmalloc(5);
-	if (*res == NULL)
-		throw(MAL, "str.unicode", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-	UTF8_PUTCHAR(*c, s);
+	CHECK_BUFFER_LENGTH(buf, buflen, 5, "str.unicode");
+	str s = *buf;
+	UTF8_PUTCHAR(c, s);
 	*s = 0;
 	return MAL_SUCCEED;
-  illegal:
-	GDKfree(*res);
-	*res = NULL;
+illegal:
 	throw(MAL, "str.unicode", SQLSTATE(42000) "Illegal Unicode code point");
+}
+
+str
+STRFromWChr(str *res, const int *c)
+{
+	int buflen = INITIAL_STR_BUFFER_LENGTH;
+	str buf = GDKmalloc(buflen), msg;
+
+	*res = NULL;
+	if (!buf)
+		throw(SQL, "str.unicode", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+	msg = str_from_wchr(&buf, &buflen, *c);
+	if (!msg && !(*res = GDKstrdup(buf))) {
+		msg = createException(MAL, "str.unicode", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+	}
+
+	GDKfree(buf);
+	return msg;
 }
 
 /* return the Unicode code point of arg1 at position at */
 str
-STRWChrAt(int *res, const str *arg1, const int *at)
+str_wchr_at(int *res, const char *s, int at)
 {
-/* 64bit: should have lng arg */
-	const char *s = *arg1;
-
-	if (strNil(s) || is_int_nil(*at) || *at < 0) {
+	/* 64bit: should have lng arg */
+	if (strNil(s) || is_int_nil(at) || at < 0) {
 		*res = int_nil;
 		return MAL_SUCCEED;
 	}
-	s = UTF8_strtail(s, *at);
+	s = UTF8_strtail(s, at);
 	if (s == NULL || *s == 0) {
 		*res = int_nil;
 		return MAL_SUCCEED;
 	}
 	UTF8_GETCHAR(*res, s);
 	return MAL_SUCCEED;
-  illegal:
+illegal:
 	throw(MAL, "str.unicodeAt", SQLSTATE(42000) "Illegal Unicode code point");
+}
+
+str
+STRWChrAt(int *res, const str *arg1, const int *at)
+{
+	return str_wchr_at(res, *arg1, *at);
 }
 
 /* returns whether arg1 starts with arg2 */
