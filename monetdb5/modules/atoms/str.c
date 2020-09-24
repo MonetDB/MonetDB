@@ -3478,7 +3478,7 @@ str_Sub_String(str *buf, int *buflen, const char *s, int off, int l)
 	return MAL_SUCCEED;
 }
 
-str
+static str
 STRSubString(str *res, const str *arg1, const int *offset, const int *length)
 {
 	int buflen = INITIAL_STR_BUFFER_LENGTH;
@@ -4228,7 +4228,7 @@ str_substring_tail(str *buf, int *buflen, const char *s, int start)
 	return str_tail(buf, buflen, s, start);
 }
 
-str
+static str
 STRsubstringTail(str *res, const str *s, const int *start)
 {
 	int buflen = INITIAL_STR_BUFFER_LENGTH;

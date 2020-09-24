@@ -39,9 +39,6 @@ extern str str_strip(str *buf, int *buflen, const char *s);
 extern str str_ltrim(str *buf, int *buflen, const char *s);
 extern str str_rtrim(str *buf, int *buflen, const char *s);
 
-mal_export str STRSubString(str *res, const str *arg1, const int *offset, const int *length);
-mal_export str STRsubstringTail(str *ret, const str *s, const int *start);
-
 mal_export str STRstrSearch(int *res, const str *arg1, const str *arg2);
 mal_export str STRReverseStrSearch(int *res, const str *arg1, const str *arg2);
 mal_export str STRsplitpart(str *res, str *haystack, str *needle, int *field);
