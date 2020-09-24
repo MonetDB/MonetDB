@@ -74,7 +74,6 @@ str_prefix(str *buf, int *buflen, const char *s, int l)
 	return str_Sub_String(buf, buflen, s, 0, l);
 }
 
-
 static str
 do_batstr_int(bat *res, const bat *l, const char *name, int (*func)(const char *))
 {
@@ -133,39 +132,50 @@ STRbatBytes(bat *ret, const bat *l)
 }
 
 static str
-STRbatAscii(bat *ret, const bat *l)
+STRbatAscii(bat *res, const bat *l)
 {
-	BATiter bi;
-	BAT *bn, *b;
+	BATiter lefti;
+	BAT *bn = NULL, *left = NULL;
 	BUN p, q;
-	str x;
-	int y;
-	str msg = MAL_SUCCEED;
+	int *restrict vals, next;
+	str x, msg = MAL_SUCCEED;
+	bool nils = false;
 
-	prepareOperand(b, l, "batstr.Ascii");
-	prepareResult(bn, b, TYPE_int, "batstr.Ascii");
-
-	bi = bat_iterator(b);
-
-	BATloop(b, p, q) {
-		x = (str) BUNtvar(bi, p);
-		if ((msg = STRascii(&y, &x)) != MAL_SUCCEED)
-			goto bunins_failed;
-		if (is_int_nil(y)) {
-			bn->tnonil = false;
-			bn->tnil = true;
-		}
-		if (bunfastappTYPE(int, bn, &y) != GDK_SUCCEED)
-			goto bunins_failed;
+	if (!(left = BATdescriptor(*l))) {
+		msg = createException(MAL, "batstr.unicodeAt", SQLSTATE(HY005) RUNTIME_OBJECT_MISSING);
+		goto bailout;
 	}
-	finalizeResult(ret, bn, b);
-	return MAL_SUCCEED;
-bunins_failed:
-	BBPunfix(b->batCacheid);
-	BBPunfix(bn->batCacheid);
-	if (msg != MAL_SUCCEED)
-		return msg;
-	throw(MAL, "batstr.Ascii", OPERATION_FAILED " During bulk operation");
+	q = BATcount(left);
+	if (!(bn = COLnew(left->hseqbase, TYPE_int, q, TRANSIENT))) {
+		msg = createException(MAL, "batstr.unicodeAt", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		goto bailout;
+	}
+
+	lefti = bat_iterator(left);
+	vals = Tloc(bn, 0);
+	for (p = 0; p < q ; p++) {
+		x = (str) BUNtail(lefti, p);
+
+		if ((msg = str_wchr_at(&next, x, 0)) != MAL_SUCCEED)
+			goto bailout;
+		vals[p] = next;
+		nils |= is_int_nil(next);
+	}
+
+bailout:
+	if (left)
+		BBPunfix(left->batCacheid);
+	if (bn && !msg) {
+		BATsetcount(bn, q);
+		bn->tnil = nils;
+		bn->tnonil = !nils;
+		bn->tkey = BATcount(bn) <= 1;
+		bn->tsorted = BATcount(bn) <= 1;
+		bn->trevsorted = BATcount(bn) <= 1;
+		BBPkeepref(*res = bn->batCacheid);
+	} else if (bn)
+		BBPreclaim(bn);
+	return msg;
 }
 
 static str
@@ -888,132 +898,127 @@ STRbatRpad2_bat_bat(bat *ret, const bat *l, const bat *n, const bat *l2)
  */
 
 static str
-STRbatPrefix(bat *ret, const bat *l, const bat *r)
+prefix_or_suffix(bat *res, const bat *l, const bat *r, const char *name, bit (*func)(const char *, const char *))
 {
 	BATiter lefti, righti;
-	BAT *bn, *left, *right;
-	BUN p,q;
-	bit v;
+	BAT *bn = NULL, *left = NULL, *right = NULL;
+	BUN p, q;
+	bit *restrict vals, next;
+	str x, y, msg = MAL_SUCCEED;
+	bool nils = false;
 
-	prepareOperand2(left,l,right,r,"batstr.startsWith");
-	if(BATcount(left) != BATcount(right)) {
-		BBPunfix(left->batCacheid);
-		BBPunfix(right->batCacheid);
-		throw(MAL, "batstr.startsWith", ILLEGAL_ARGUMENT " Requires bats of identical size");
+	if (!(left = BATdescriptor(*l)) || !(right = BATdescriptor(*r))) {
+		msg = createException(MAL, name, SQLSTATE(HY005) RUNTIME_OBJECT_MISSING);
+		goto bailout;
 	}
-	prepareResult2(bn,left,right,TYPE_bit,"batstr.startsWith");
+	if (BATcount(left) != BATcount(right)) {
+		msg = createException(MAL, name, ILLEGAL_ARGUMENT " Requires bats of identical size");
+		goto bailout;
+	}
+	q = BATcount(left);
+	if (!(bn = COLnew(left->hseqbase, TYPE_bit, q, TRANSIENT))) {
+		msg = createException(MAL, name, SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		goto bailout;
+	}
 
 	lefti = bat_iterator(left);
 	righti = bat_iterator(right);
+	vals = Tloc(bn, 0);
+	for (p = 0; p < q ; p++) {
+		x = (str) BUNtail(lefti, p);
+		y = (str) BUNtail(righti, p);
 
-	BATloop(left, p, q) {
-		str tl = (str) BUNtvar(lefti,p);
-		str tr = (str) BUNtvar(righti,p);
-		STRPrefix(&v, &tl, &tr);
-		if (bunfastappTYPE(bit, bn, &v) != GDK_SUCCEED)
-			goto bunins_failed;
+		next = func(x, y);
+		vals[p] = next;
+		nils |= is_bit_nil(next);
 	}
-	bn->tnonil = false;
-	BBPunfix(right->batCacheid);
-	finalizeResult(ret,bn,left);
-	return MAL_SUCCEED;
 
-bunins_failed:
-	BBPunfix(left->batCacheid);
-	BBPunfix(right->batCacheid);
-	BBPunfix(*ret);
-	throw(MAL, "batstr.startsWith", OPERATION_FAILED " During bulk operation");
-}
-
-static str
-STRbatPrefixcst(bat *ret, const bat *l, const str *cst)
-{
-	BATiter lefti;
-	BAT *bn, *left;
-	BUN p,q;
-	bit v;
-
-	prepareOperand(left,l,"batstr.startsWith");
-	prepareResult(bn,left,TYPE_bit,"batstr.startsWith");
-
-	lefti = bat_iterator(left);
-
-	BATloop(left, p, q) {
-		str tl = (str) BUNtvar(lefti,p);
-		STRPrefix(&v, &tl, cst);
-		if (bunfastappTYPE(bit, bn, &v) != GDK_SUCCEED) {
-			BBPunfix(left->batCacheid);
-			BBPunfix(*ret);
-			throw(MAL, "batstr.startsWith",
-				  OPERATION_FAILED " During bulk operation");
-		}
-	}
-	bn->tnonil = false;
-	finalizeResult(ret,bn,left);
-	return MAL_SUCCEED;
-}
-
-static str
-STRbatSuffix(bat *ret, const bat *l, const bat *r)
-{
-	BATiter lefti, righti;
-	BAT *bn, *left, *right;
-	BUN p,q;
-	bit v;
-
-	prepareOperand2(left,l,right,r,"batstr.endsWith");
-	if(BATcount(left) != BATcount(right)) {
+bailout:
+	if (left)
 		BBPunfix(left->batCacheid);
+	if (right)
 		BBPunfix(right->batCacheid);
-		throw(MAL, "batstr.endsWith", ILLEGAL_ARGUMENT " Requires bats of identical size");
-	}
-	prepareResult2(bn,left,right,TYPE_bit,"batstr.endsWith");
-
-	lefti = bat_iterator(left);
-	righti = bat_iterator(right);
-
-	BATloop(left, p, q) {
-		str tl = (str) BUNtvar(lefti,p);
-		str tr = (str) BUNtvar(righti,p);
-		STRSuffix(&v, &tl, &tr);
-		if (bunfastappTYPE(bit, bn, &v) != GDK_SUCCEED) {
-			BBPunfix(left->batCacheid);
-			BBPunfix(right->batCacheid);
-			BBPunfix(*ret);
-			throw(MAL, "batstr.endsWith", OPERATION_FAILED " During bulk operation");
-		}
-	}
-	bn->tnonil = false;
-	BBPunfix(right->batCacheid);
-	finalizeResult(ret,bn,left);
-	return MAL_SUCCEED;
+	if (bn && !msg) {
+		BATsetcount(bn, q);
+		bn->tnil = nils;
+		bn->tnonil = !nils;
+		bn->tkey = BATcount(bn) <= 1;
+		bn->tsorted = BATcount(bn) <= 1;
+		bn->trevsorted = BATcount(bn) <= 1;
+		BBPkeepref(*res = bn->batCacheid);
+	} else if (bn)
+		BBPreclaim(bn);
+	return msg;
 }
 
 static str
-STRbatSuffixcst(bat *ret, const bat *l, const str *cst)
+STRbatPrefix(bat *res, const bat *l, const bat *r) 
+{
+	return prefix_or_suffix(res, l, r, "batstr.startsWith", str_is_prefix);
+}
+
+static str
+STRbatSuffix(bat *res, const bat *l, const bat *r) 
+{
+	return prefix_or_suffix(res, l, r, "batstr.endsWith", str_is_suffix);
+}
+
+static str
+prefix_or_suffix_cst(bat *res, const bat *l, const char *y, const char *name, bit (*func)(const char *, const char *))
 {
 	BATiter lefti;
-	BAT *bn, *left;
-	BUN p,q;
-	bit v;
+	BAT *bn = NULL, *left = NULL;
+	BUN p, q;
+	bit *restrict vals, next;
+	str x, msg = MAL_SUCCEED;
+	bool nils = false;
 
-	prepareOperand(left,l,"batstr.endsWith");
-	prepareResult(bn,left,TYPE_bit,"batstr.endsWith");
+	if (!(left = BATdescriptor(*l))) {
+		msg = createException(MAL, name, SQLSTATE(HY005) RUNTIME_OBJECT_MISSING);
+		goto bailout;
+	}
+	q = BATcount(left);
+	if (!(bn = COLnew(left->hseqbase, TYPE_bit, q, TRANSIENT))) {
+		msg = createException(MAL, name, SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		goto bailout;
+	}
 
 	lefti = bat_iterator(left);
+	vals = Tloc(bn, 0);
+	for (p = 0; p < q ; p++) {
+		x = (str) BUNtail(lefti, p);
 
-	BATloop(left, p, q) {
-		str tl = (str) BUNtvar(lefti,p);
-		STRSuffix(&v, &tl, cst);
-		if (bunfastappTYPE(bit, bn, &v) != GDK_SUCCEED) {
-			BBPunfix(left->batCacheid);
-			BBPunfix(*ret);
-			throw(MAL, "batstr.endsWith", OPERATION_FAILED " During bulk operation");
-		}
+		next = func(x, y);
+		vals[p] = next;
+		nils |= is_bit_nil(next);
 	}
-	bn->tnonil = false;
-	finalizeResult(ret,bn,left);
-	return MAL_SUCCEED;
+
+bailout:
+	if (left)
+		BBPunfix(left->batCacheid);
+	if (bn && !msg) {
+		BATsetcount(bn, q);
+		bn->tnil = nils;
+		bn->tnonil = !nils;
+		bn->tkey = BATcount(bn) <= 1;
+		bn->tsorted = BATcount(bn) <= 1;
+		bn->trevsorted = BATcount(bn) <= 1;
+		BBPkeepref(*res = bn->batCacheid);
+	} else if (bn)
+		BBPreclaim(bn);
+	return msg;
+}
+
+static str
+STRbatPrefixcst(bat *res, const bat *l, const str *cst)
+{
+	return prefix_or_suffix_cst(res, l, *cst, "batstr.startsWith", str_is_prefix);
+}
+
+static str
+STRbatSuffixcst(bat *res, const bat *l, const str *cst)
+{
+	return prefix_or_suffix_cst(res, l, *cst, "batstr.endsWith", str_is_suffix);
 }
 
 static str

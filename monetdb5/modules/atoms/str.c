@@ -3559,39 +3559,44 @@ STRWChrAt(int *res, const str *arg1, const int *at)
 }
 
 /* returns whether arg1 starts with arg2 */
+bit
+str_is_prefix(const char *s, const char *prefix)
+{
+	if (strNil(s) || strNil(prefix)) {
+		return bit_nil;
+	}
+	return strncmp(s, prefix, strlen(prefix)) == 0;
+}
+
 str
 STRPrefix(bit *res, const str *arg1, const str *arg2)
 {
-	const char *s = *arg1;
-	const char *prefix = *arg2;
-
-	if (strNil(s) || strNil(prefix)) {
-		*res = bit_nil;
-		return MAL_SUCCEED;
-	}
-	*res = strncmp(s, prefix, strlen(prefix)) == 0;
+	*res = str_is_prefix(*arg1, *arg2);
 	return MAL_SUCCEED;
+}
+
+bit
+str_is_suffix(const char *s, const char *suffix)
+{
+	size_t sl, sul;
+
+	if (strNil(s) || strNil(suffix)) {
+		return bit_nil;
+	}
+	sl = strlen(s);
+	sul = strlen(suffix);
+
+	if (sl < sul)
+		return 0;
+	else
+		return strcmp(s + sl - sul, suffix) == 0;
 }
 
 /* returns whether arg1 ends with arg2 */
 str
 STRSuffix(bit *res, const str *arg1, const str *arg2)
 {
-	size_t sl, sul;
-	const char *s = *arg1;
-	const char *suffix = *arg2;
-
-	if (strNil(s) || strNil(suffix)) {
-		*res = bit_nil;
-		return MAL_SUCCEED;
-	}
-	sl = strlen(s);
-	sul = strlen(suffix);
-
-	if (sl < sul)
-		*res = 0;
-	else
-		*res = strcmp(s + sl - sul, suffix) == 0;
+	*res = str_is_suffix(*arg1, *arg2);
 	return MAL_SUCCEED;
 }
 
@@ -4129,8 +4134,7 @@ STRSubstitute(str *res, const str *arg1, const str *arg2, const str *arg3, const
 str
 STRascii(int *ret, const str *s)
 {
-	int offset=0;
-	return STRWChrAt(ret,s,&offset);
+	return str_wchr_at(ret, *s, 0);
 }
 
 str
