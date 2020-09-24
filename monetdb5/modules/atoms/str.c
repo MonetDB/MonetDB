@@ -3667,54 +3667,51 @@ STRstrSearch(int *res, const str *haystack, const str *needle)
 	return MAL_SUCCEED;
 }
 
-/* find last occurrence of arg2 in arg1 */
-str
-STRReverseStrSearch(int *res, const str *arg1, const str *arg2)
+int
+str_reverse_str_search(const char *s, const char *s2)
 {
 /* 64bit: should return lng */
 	size_t len, slen;
-	const char *s = *arg1;
-	const char *s2 = *arg2;
+	int res = -1; /* changed if found */
 
 	if (strNil(s) || strNil(s2)) {
-		*res = int_nil;
-		return MAL_SUCCEED;
+		return int_nil;
 	}
-	*res = -1;
 	len = strlen(s);
 	slen = strlen(s2);
-	*res = -1;					/* changed if found */
 	if (len >= slen) {
 		const char *p = s + len - slen;
 		do {
 			if (strncmp(p, s2, slen) == 0) {
-				*res = UTF8_strpos(s, p);
+				res = UTF8_strpos(s, p);
 				break;
 			}
 		} while (p-- > s);
 	}
+	return res;
+}
+
+/* find last occurrence of arg2 in arg1 */
+static str
+STRReverseStrSearch(int *res, const str *arg1, const str *arg2)
+{
+	*res = str_reverse_str_search(*arg1, *arg2);
 	return MAL_SUCCEED;
 }
 
 str
-STRsplitpart(str *res, str *haystack, str *needle, int *field)
+str_splitpart(str *buf, int *buflen, const char *s, const char *s2, int f)
 {
 	size_t len;
-	int f = *field;
 	char *p = NULL;
-	const char *s = *haystack;
-	const char *s2 = *needle;
 
-	if (strNil(s) || strNil(s2) || is_int_nil(*field)) {
-		*res = GDKstrdup(str_nil);
-		if (*res == NULL)
-			throw(MAL, "str.splitpart", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+	if (strNil(s) || strNil(s2) || is_int_nil(f)) {
+		strcpy(*buf, str_nil);
 		return MAL_SUCCEED;
 	}
 
-	if (*field <= 0) {
+	if (f <= 0)
 		throw(MAL, "str.splitpart", SQLSTATE(42000) "field position must be greater than zero");
-	}
 
 	len = strlen(s2);
 	if (len) {
@@ -3725,9 +3722,7 @@ STRsplitpart(str *res, str *haystack, str *needle, int *field)
 	}
 
 	if (f != 1) {
-		*res = GDKstrdup("");
-		if (*res == NULL)
-			throw(MAL, "str.splitpart", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		strcpy(*buf, "");
 		return MAL_SUCCEED;
 	}
 
@@ -3737,10 +3732,28 @@ STRsplitpart(str *res, str *haystack, str *needle, int *field)
 		len = (size_t) (p - s);
 	}
 
-	*res = GDKstrndup(s, len);
-	if (*res == NULL)
-		throw(MAL, "str.splitpart", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+	len++;
+	CHECK_STR_BUFFER_LENGTH(buf, buflen, (int) len, "str.splitpart");
+	strcpy_len(*buf, s, (int) len);
 	return MAL_SUCCEED;
+}
+
+static str
+STRsplitpart(str *res, str *haystack, str *needle, int *field)
+{
+	int buflen = INITIAL_STR_BUFFER_LENGTH;
+	str buf = GDKmalloc(buflen), msg;
+
+	*res = NULL;
+	if (!buf)
+		throw(SQL, "str.splitpart", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+	msg = str_splitpart(&buf, &buflen, *haystack, *needle, *field);
+	if (!msg && !(*res = GDKstrdup(buf))) {
+		msg = createException(MAL, "str.splitpart", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+	}
+
+	GDKfree(buf);
+	return msg;
 }
 
 /* returns number of bytes to remove from left to strip the codepoints in rm */

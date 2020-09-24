@@ -40,10 +40,10 @@ extern str str_ltrim(str *buf, int *buflen, const char *s);
 extern str str_rtrim(str *buf, int *buflen, const char *s);
 
 extern int str_search(const char *s, const char *s2);
+extern int str_reverse_str_search(const char *s, const char *s2);
 extern int str_locate2(const char *needle, const char *haystack, int start);
 
-mal_export str STRReverseStrSearch(int *res, const str *arg1, const str *arg2);
-mal_export str STRsplitpart(str *res, str *haystack, str *needle, int *field);
+extern str str_splitpart(str *buf, int *buflen, const char *s, const char *s2, int f);
 
 mal_export str STRStrip2(str *res, const str *arg1, const str *arg2);
 mal_export str STRLtrim2(str *res, const str *arg1, const str *arg2);
