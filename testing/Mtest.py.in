@@ -1064,6 +1064,7 @@ def RunTest(env, TST, BusyPorts, COND, oktests, length, all_tests, pSrvr) :
 
     TX = 0
     EXT = CALL = SERVER = ""
+    # (True, ext)
     x  = isexecutable(TST)
     if not x[0]:
         x  = isexecutable(TST,'')
@@ -2444,8 +2445,7 @@ def main(argv) :
     global global_timeout
 
     VARS = ['TSTSRCBASE', 'TSTTRGBASE']
-    if THISFILE == "Mtest.py":
-        VARS = VARS + [ 'MALCLIENT', 'SQLCLIENT', 'SQLDUMP', 'RCLIENT', 'RUBYCLIENT']    #, 'MONETDB_MOD_PATH' ]
+    VARS = VARS + [ 'MALCLIENT', 'SQLCLIENT', 'SQLDUMP', 'RCLIENT', 'RUBYCLIENT']    #, 'MONETDB_MOD_PATH' ]
 
     env = {}
 
@@ -2504,35 +2504,31 @@ def main(argv) :
     parser.add_argument('--verbose', '-v', action='store_true', dest='verbose', help="more verbose test output")
     parser.add_argument('--procdebug', action='store_true', dest='procdebug', help='process debugging (Mtest developers only)')
 
-    if THISFILE == "Mtest.py":
-        parser.add_argument('-I', action='store', dest='ignore', default=dftIGNORE, metavar='<exp>', help="ignore lines matching <exp> during diff (default: '%s')" % dftIGNORE)
-        parser.add_argument('-C', action='store', dest='context', metavar='<num>', type=int, default=1, help="use <num> lines of context during diff (default: -C1)")
-        parser.add_argument('-A', action='store', dest='accuracy', metavar='<num>', type=int, default=1, help="accuracy for diff: 0=lines, 1=words, 2=chars (default: -A1)")
-        parser.add_argument('-t', action='store', dest='timeout', metavar='<sec>', type=int, default=60, help="timeout: kill (hanging) tests after <sec> seconds;\n-t0 means no timeout (default: -t60)")
-        parser.add_argument('--debug', '-d', action='store', dest='debug', metavar='<sec>', type=int, default=int(TSTDBG), help="debug value to be used by mserver5 (default: -d%s)\n(see `mserver5 --help' for details)" % TSTDBG)
-        parser.add_argument('--nr_threads', '-n', action='store', dest='nr_threads', metavar='<num>', type=int, default=int(TSTTHREADS), help="number of threads for mserver5 (default: -n%s)\n-n0 => mserver5 automatically determines the number of CPU cores" % TSTTHREADS)
-        parser.add_argument('--monet_mod_path', action='store', dest='monet_mod_path', metavar='<pathlist>', help="override mserver5's default module search path")
-        parser.add_argument('--dbfarm', action='store', dest='gdk_dbfarm', default=_configure(os.path.join('@QXlocalstatedir@','MonetDB')), metavar='<directory>', help="override default location of database directory")
-        parser.add_argument('--MALCLIENT', action='store', dest='MALCLIENT', metavar='<mal-client program>', help='default: %s' % dft['MALCLIENT'])
-        parser.add_argument('--SQLCLIENT', action='store', dest='SQLCLIENT', metavar='<sql-client program>', help='default: %s' % dft['SQLCLIENT'])
-        parser.add_argument('--SQLDUMP', action='store', dest='SQLDUMP', metavar='<sql-dump program>', help='default: %s' % dft['SQLDUMP'])
-        parser.add_argument('--RCLIENT', action='store', dest='RCLIENT', metavar='<R program>', help='default: %s' % dft['RCLIENT'])
-        parser.add_argument('--RUBYCLIENT', action='store', dest='RUBYCLIENT', metavar='<ruby program>', help='default: %s' % dft['RUBYCLIENT'])
-        parser.add_argument('--concurrent', action='store_true', dest='concurrent', help='There are concurrent Mtest runs using the same MonetDB installation')
-        parser.add_argument('--dbg', action='store', dest='dbg', metavar='<debugger/valgrind>', help="debugger to start before each server")
-        parser.add_argument('--mserver_set', action='store', dest='mserver_set', metavar='<mserver5_option>', help="This passes a single set to the server")
-        parser.add_argument('--no-clean', action='store_true', dest='no_clean', help='Do not clean up before test')
-        parser.add_argument('--testweb', action='store_true', dest='testweb', help='Optimize testing for testweb')
-        parser.add_argument('--releaserun', action='store_true', dest='releaserun', help='run tests as if for a release test')
-        parser.add_argument('--multifarm', action='store_true', dest='multifarm', help='use multiple dbfarms (developers only)')
-        parser.add_argument('--transient-inmemory', action='store_true', dest='inmemory', help="don't write transient data to disk")
-        parser.add_argument('--nomito', action='store_true', dest='nomito', help='Do not pass --forcemito to server')
-        parser.add_argument('--jenkins', action='store_true', dest='jenkins', help='special handling for Jenkins')
-        parser.add_argument('--addreqs', action='store_true', dest='addreqs', help='automatically add required tests when testing individual tests')
-        parser.add_argument('--global_timeout', '-T', action='store', dest='global_timeout', type=int, default=global_timeout, metavar='<sec>', help='global timeout')
-        parser.add_argument('--data_path', '-D', action='store', dest='data_path', metavar='<path>', help='Path to the root directory of the data files needed for testing')
-        parser.add_argument('--alltests', action='store_true', dest='alltests', help='also run tests that are known to fail')
-        parser.add_argument('--initdb', action='store', dest='initdb', metavar='<zipfile>', help='zip file with contents for initial database')
+    parser.add_argument('-t', action='store', dest='timeout', metavar='<sec>', type=int, default=60, help="timeout: kill (hanging) tests after <sec> seconds;\n-t0 means no timeout (default: -t60)")
+    parser.add_argument('--debug', '-d', action='store', dest='debug', metavar='<sec>', type=int, default=int(TSTDBG), help="debug value to be used by mserver5 (default: -d%s)\n(see `mserver5 --help' for details)" % TSTDBG)
+    parser.add_argument('--nr_threads', '-n', action='store', dest='nr_threads', metavar='<num>', type=int, default=int(TSTTHREADS), help="number of threads for mserver5 (default: -n%s)\n-n0 => mserver5 automatically determines the number of CPU cores" % TSTTHREADS)
+    parser.add_argument('--monet_mod_path', action='store', dest='monet_mod_path', metavar='<pathlist>', help="override mserver5's default module search path")
+    parser.add_argument('--dbfarm', action='store', dest='gdk_dbfarm', default=_configure(os.path.join('@QXlocalstatedir@','MonetDB')), metavar='<directory>', help="override default location of database directory")
+    parser.add_argument('--MALCLIENT', action='store', dest='MALCLIENT', metavar='<mal-client program>', help='default: %s' % dft['MALCLIENT'])
+    parser.add_argument('--SQLCLIENT', action='store', dest='SQLCLIENT', metavar='<sql-client program>', help='default: %s' % dft['SQLCLIENT'])
+    parser.add_argument('--SQLDUMP', action='store', dest='SQLDUMP', metavar='<sql-dump program>', help='default: %s' % dft['SQLDUMP'])
+    parser.add_argument('--RCLIENT', action='store', dest='RCLIENT', metavar='<R program>', help='default: %s' % dft['RCLIENT'])
+    parser.add_argument('--RUBYCLIENT', action='store', dest='RUBYCLIENT', metavar='<ruby program>', help='default: %s' % dft['RUBYCLIENT'])
+    parser.add_argument('--concurrent', action='store_true', dest='concurrent', help='There are concurrent Mtest runs using the same MonetDB installation')
+    parser.add_argument('--dbg', action='store', dest='dbg', metavar='<debugger/valgrind>', help="debugger to start before each server")
+    parser.add_argument('--mserver_set', action='store', dest='mserver_set', metavar='<mserver5_option>', help="This passes a single set to the server")
+    parser.add_argument('--no-clean', action='store_true', dest='no_clean', help='Do not clean up before test')
+    parser.add_argument('--testweb', action='store_true', dest='testweb', help='Optimize testing for testweb')
+    parser.add_argument('--releaserun', action='store_true', dest='releaserun', help='run tests as if for a release test')
+    parser.add_argument('--multifarm', action='store_true', dest='multifarm', help='use multiple dbfarms (developers only)')
+    parser.add_argument('--transient-inmemory', action='store_true', dest='inmemory', help="don't write transient data to disk")
+    parser.add_argument('--nomito', action='store_true', dest='nomito', help='Do not pass --forcemito to server')
+    parser.add_argument('--jenkins', action='store_true', dest='jenkins', help='special handling for Jenkins')
+    parser.add_argument('--addreqs', action='store_true', dest='addreqs', help='automatically add required tests when testing individual tests')
+    parser.add_argument('--global_timeout', '-T', action='store', dest='global_timeout', type=int, default=global_timeout, metavar='<sec>', help='global timeout')
+    parser.add_argument('--data_path', '-D', action='store', dest='data_path', metavar='<path>', help='Path to the root directory of the data files needed for testing')
+    parser.add_argument('--alltests', action='store_true', dest='alltests', help='also run tests that are known to fail')
+    parser.add_argument('--initdb', action='store', dest='initdb', metavar='<zipfile>', help='zip file with contents for initial database')
 
     parser.add_argument('tests', nargs='*', help='The positional arguments are either a list of one or more directories to be tested, or a single directory followed by a list of tests within that directory.')
     opts = parser.parse_args()
@@ -2556,12 +2552,6 @@ def main(argv) :
     testweb = opts.testweb
     CONDITIONALS['RELEASERUN'] = opts.releaserun
     nomito = opts.nomito
-    par['IGNORE'] = opts.ignore
-    par['CONTEXT'] = str(opts.context)
-    a = opts.accuracy
-    if a not in (-1,0,1,2):
-        ErrExit('Accuracy for diff (-A) must be one of: 0=lines, 1=words, 2=chars !')
-    par['ACCURACY'] = a
     par['TIMEOUT'] = opts.timeout
     env['GDK_DEBUG'] = str(opts.debug)
     env['GDK_NR_THREADS'] = str(opts.nr_threads)
@@ -2782,15 +2772,14 @@ def main(argv) :
         except:
             CONDITIONALS['BAD_HOSTNAME'] = '#' # True
 
-    if THISFILE == "Mtest.py": # env['MAPIPORT'] not available on Mapprove.py
-        s = socket.socket(socket.AF_INET6, socket.SOCK_STREAM)
-        try:
-            s.bind(('::1', int(env['MAPIPORT'])))
-        except socket.error as err:
-            CONDITIONALS['HAVE_IPV6'] = '' # False
-        else:
-            CONDITIONALS['HAVE_IPV6'] = '#' # True
-        s.close()
+    s = socket.socket(socket.AF_INET6, socket.SOCK_STREAM)
+    try:
+        s.bind(('::1', int(env['MAPIPORT'])))
+    except socket.error as err:
+        CONDITIONALS['HAVE_IPV6'] = '' # False
+    else:
+        CONDITIONALS['HAVE_IPV6'] = '#' # True
+    s.close()
 
 
     # some relative path's for relocatable HTML output
@@ -2804,10 +2793,9 @@ def main(argv) :
 
     # export and display env
     STDERR.flush()
-    if THISFILE == "Mtest.py":
-        vars_ = vars_ + ['GDK_DBFARM']
-        vars_ = vars_ + ['setMONETDB_MOD_PATH']
-        vars_ = vars_ + ['TSTDATAPATH']
+    vars_ = vars_ + ['GDK_DBFARM']
+    vars_ = vars_ + ['setMONETDB_MOD_PATH']
+    vars_ = vars_ + ['TSTDATAPATH']
     for v in vars_:
         if v in env:
             os.environ[v] = env[v]
@@ -2852,38 +2840,37 @@ def main(argv) :
     global SOCK, HOST
     try:                        # try/finally to clean up sockdir
         # check for executables, set their standard options and export them
-        if THISFILE == "Mtest.py":
-            if SOCK:
-                # we cannot put the UNIX socket in the mtest root, because that
-                # makes the UNIX socket too long on most platforms, so use
-                # /var/tmp/mtest and try not to forget to clean that up
-                sockdir = "/var/tmp/mtest-%d" % os.getpid()
-                try:
-                    os.mkdir(sockdir);
-                    SOCK = "--set mapi_usock=%s/.s.monetdb.%s" % \
-                            (sockdir, env['MAPIPORT'])
-                    HOST = sockdir
-                    os.environ['MAPIHOST'] = HOST
-                except:
-                    SOCK = ""
-            else:
+        if SOCK:
+            # we cannot put the UNIX socket in the mtest root, because that
+            # makes the UNIX socket too long on most platforms, so use
+            # /var/tmp/mtest and try not to forget to clean that up
+            sockdir = "/var/tmp/mtest-%d" % os.getpid()
+            try:
+                os.mkdir(sockdir);
+                SOCK = "--set mapi_usock=%s/.s.monetdb.%s" % \
+                        (sockdir, env['MAPIPORT'])
+                HOST = sockdir
+                os.environ['MAPIHOST'] = HOST
+            except:
                 SOCK = ""
+        else:
+            SOCK = ""
 
-            exe = {}
-            exe['mserver5']       = CheckExec('mserver5')     , '%s mserver5 --debug=%s --set gdk_nr_threads=%s %s --set mapi_listenaddr=all --set mapi_port=%s %s %s %s' % \
-                                                                   (env['setDBG'], env['GDK_DEBUG'], env['GDK_NR_THREADS'], env['setMONETDB_MOD_PATH'], env['MAPIPORT'], SOCK, not nomito and '--forcemito' or '', env['MSERVER_SET'])
-            exe['python']        = CheckExec(sys.executable) , sys.executable
-            exe['ruby_client']   = CheckExec(env['RUBYCLIENT'].split(None, 1)[0])   , '%s %s' % (env['RUBYCLIENT'], env['MAPIPORT'])
-            exe['MAL_Client']    = CheckExec(env['MALCLIENT'].split(None, 1)[0])  , '%s --host=%s --port=%s' % (env['MALCLIENT'], HOST, env['MAPIPORT'])
-            exe['SQL_Client']    = CheckExec(env['SQLCLIENT'].split(None, 1)[0])   , '%s -i -e --host=%s --port=%s' % (env['SQLCLIENT'], HOST, env['MAPIPORT'])
-            exe['SQL_Dump']      = CheckExec(env['SQLDUMP'].split(None, 1)[0])     , '%s --host=%s --port=%s' % (env['SQLDUMP'], HOST, env['MAPIPORT'])
-            exe['R_Client']   = CheckExec(env['RCLIENT'].split(None, 1)[0])   , '%s --args %s' % (env['RCLIENT'], env['MAPIPORT'])
-            env['exe'] = exe
-            SetExecEnv(exe,verbose)
+        exe = {}
+        exe['mserver5']       = CheckExec('mserver5')     , '%s mserver5 --debug=%s --set gdk_nr_threads=%s %s --set mapi_listenaddr=all --set mapi_port=%s %s %s %s' % \
+                                                               (env['setDBG'], env['GDK_DEBUG'], env['GDK_NR_THREADS'], env['setMONETDB_MOD_PATH'], env['MAPIPORT'], SOCK, not nomito and '--forcemito' or '', env['MSERVER_SET'])
+        exe['python']        = CheckExec(sys.executable) , sys.executable
+        exe['ruby_client']   = CheckExec(env['RUBYCLIENT'].split(None, 1)[0])   , '%s %s' % (env['RUBYCLIENT'], env['MAPIPORT'])
+        exe['MAL_Client']    = CheckExec(env['MALCLIENT'].split(None, 1)[0])  , '%s --host=%s --port=%s' % (env['MALCLIENT'], HOST, env['MAPIPORT'])
+        exe['SQL_Client']    = CheckExec(env['SQLCLIENT'].split(None, 1)[0])   , '%s -i -e --host=%s --port=%s' % (env['SQLCLIENT'], HOST, env['MAPIPORT'])
+        exe['SQL_Dump']      = CheckExec(env['SQLDUMP'].split(None, 1)[0])     , '%s --host=%s --port=%s' % (env['SQLDUMP'], HOST, env['MAPIPORT'])
+        exe['R_Client']   = CheckExec(env['RCLIENT'].split(None, 1)[0])   , '%s --args %s' % (env['RCLIENT'], env['MAPIPORT'])
+        env['exe'] = exe
+        SetExecEnv(exe,verbose)
 
-            #TODO:
-            #exe['JAVA']       = 'java'
-            #exe['JAVAC']      = 'javac'
+        #TODO:
+        #exe['JAVA']       = 'java'
+        #exe['JAVAC']      = 'javac'
 
         # parse commandline arguments
         testdirs = []
