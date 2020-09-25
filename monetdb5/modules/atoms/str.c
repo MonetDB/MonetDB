@@ -3209,34 +3209,6 @@ UTF8_offset(char *restrict s, int n)
 	return s;
 }
 
-/* The batstr module functions use a single buffer to avoid malloc/free overhead.
-   Note the buffer should be always large enough to hold null strings, so less testing will be required */
-#define CHECK_STR_BUFFER_LENGTH(BUFFER, BUFFER_LEN, NEXT_LEN, OP) \
-	do {  \
-		if (NEXT_LEN > *BUFFER_LEN) { \
-			size_t newlen = NEXT_LEN + 1024; \
-			str newbuf = GDKmalloc(newlen); \
-			if (!newbuf) \
-				throw(MAL, OP, SQLSTATE(HY013) MAL_MALLOC_FAIL); \
-			GDKfree(*BUFFER); \
-			*BUFFER = newbuf; \
-			*BUFFER_LEN = newlen; \
-		} \
-	} while (0)
-
-#define CHECK_INT_BUFFER_LENGTH(BUFFER, BUFFER_LEN, NEXT_LEN, OP) \
-	do {  \
-		if (NEXT_LEN > *BUFFER_LEN) { \
-			size_t newlen = NEXT_LEN + (1024 * sizeof(int)); \
-			int *newbuf = GDKmalloc(newlen); \
-			if (!newbuf) \
-				throw(MAL, OP, SQLSTATE(HY013) MAL_MALLOC_FAIL); \
-			GDKfree(*BUFFER); \
-			*BUFFER = newbuf; \
-			*BUFFER_LEN = newlen; \
-		} \
-	} while (0)
-
 static str
 convertCase(BAT *from, BAT *to, str *buf, size_t *buflen, const char *src, const char *malfunc)
 {
@@ -3449,7 +3421,7 @@ STRTail(str *res, const str *arg1, const int *offset)
 
 	*res = NULL;
 	if (!buf)
-		throw(SQL, "str.tail", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		throw(MAL, "str.tail", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	msg = str_tail(&buf, &buflen, *arg1, *offset);
 	if (!msg && !(*res = GDKstrdup(buf))) {
 		msg = createException(MAL, "str.tail", SQLSTATE(HY013) MAL_MALLOC_FAIL);
@@ -3499,7 +3471,7 @@ STRSubString(str *res, const str *arg1, const int *offset, const int *length)
 
 	*res = NULL;
 	if (!buf)
-		throw(SQL, "str.substring", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		throw(MAL, "str.substring", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	msg = str_Sub_String(&buf, &buflen, *arg1, *offset, *length);
 	if (!msg && !(*res = GDKstrdup(buf))) {
 		msg = createException(MAL, "str.substring", SQLSTATE(HY013) MAL_MALLOC_FAIL);
@@ -3533,7 +3505,7 @@ STRFromWChr(str *res, const int *c)
 
 	*res = NULL;
 	if (!buf)
-		throw(SQL, "str.unicode", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		throw(MAL, "str.unicode", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	msg = str_from_wchr(&buf, &buflen, *c);
 	if (!msg && !(*res = GDKstrdup(buf))) {
 		msg = createException(MAL, "str.unicode", SQLSTATE(HY013) MAL_MALLOC_FAIL);
@@ -3625,7 +3597,7 @@ STRLower(str *res, const str *arg1)
 
 	*res = NULL;
 	if (!buf)
-		throw(SQL, "str.lower", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		throw(MAL, "str.lower", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	msg = str_lower(&buf, &buflen, *arg1);
 	if (!msg && !(*res = GDKstrdup(buf))) {
 		msg = createException(MAL, "str.lower", SQLSTATE(HY013) MAL_MALLOC_FAIL);
@@ -3649,7 +3621,7 @@ STRUpper(str *res, const str *arg1)
 
 	*res = NULL;
 	if (!buf)
-		throw(SQL, "str.upper", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		throw(MAL, "str.upper", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	msg = str_upper(&buf, &buflen, *arg1);
 	if (!msg && !(*res = GDKstrdup(buf))) {
 		msg = createException(MAL, "str.upper", SQLSTATE(HY013) MAL_MALLOC_FAIL);
@@ -3759,7 +3731,7 @@ STRsplitpart(str *res, str *haystack, str *needle, int *field)
 
 	*res = NULL;
 	if (!buf)
-		throw(SQL, "str.splitpart", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		throw(MAL, "str.splitpart", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	msg = str_splitpart(&buf, &buflen, *haystack, *needle, *field);
 	if (!msg && !(*res = GDKstrdup(buf))) {
 		msg = createException(MAL, "str.splitpart", SQLSTATE(HY013) MAL_MALLOC_FAIL);
@@ -3872,7 +3844,7 @@ STRStrip(str *res, const str *arg1)
 
 	*res = NULL;
 	if (!buf)
-		throw(SQL, "str.strip", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		throw(MAL, "str.strip", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	msg = str_strip(&buf, &buflen, *arg1);
 	if (!msg && !(*res = GDKstrdup(buf))) {
 		msg = createException(MAL, "str.strip", SQLSTATE(HY013) MAL_MALLOC_FAIL);
@@ -3908,7 +3880,7 @@ STRLtrim(str *res, const str *arg1)
 
 	*res = NULL;
 	if (!buf)
-		throw(SQL, "str.ltrim", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		throw(MAL, "str.ltrim", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	msg = str_ltrim(&buf, &buflen, *arg1);
 	if (!msg && !(*res = GDKstrdup(buf))) {
 		msg = createException(MAL, "str.ltrim", SQLSTATE(HY013) MAL_MALLOC_FAIL);
@@ -3944,7 +3916,7 @@ STRRtrim(str *res, const str *arg1)
 
 	*res = NULL;
 	if (!buf)
-		throw(SQL, "str.rtrim", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		throw(MAL, "str.rtrim", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	msg = str_rtrim(&buf, &buflen, *arg1);
 	if (!msg && !(*res = GDKstrdup(buf))) {
 		msg = createException(MAL, "str.rtrim", SQLSTATE(HY013) MAL_MALLOC_FAIL);
@@ -4018,7 +3990,7 @@ STRStrip2(str *res, const str *arg1, const str *arg2)
 	if (!buf || !chars) {
 		GDKfree(buf);
 		GDKfree(chars);
-		throw(SQL, "str.strip2", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		throw(MAL, "str.strip2", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
 	msg = str_strip2(&buf, &buflen, &chars, &nchars, *arg1, *arg2);
 	if (!msg && !(*res = GDKstrdup(buf))) {
@@ -4070,7 +4042,7 @@ STRLtrim2(str *res, const str *arg1, const str *arg2)
 	if (!buf || !chars) {
 		GDKfree(buf);
 		GDKfree(chars);
-		throw(SQL, "str.ltrim2", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		throw(MAL, "str.ltrim2", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
 	msg = str_ltrim2(&buf, &buflen, &chars, &nchars, *arg1, *arg2);
 	if (!msg && !(*res = GDKstrdup(buf))) {
@@ -4122,7 +4094,7 @@ STRRtrim2(str *res, const str *arg1, const str *arg2)
 	if (!buf || !chars) {
 		GDKfree(buf);
 		GDKfree(chars);
-		throw(SQL, "str.rtrim2", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		throw(MAL, "str.rtrim2", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
 	msg = str_rtrim2(&buf, &buflen, &chars, &nchars, *arg1, *arg2);
 	if (!msg && !(*res = GDKstrdup(buf))) {
@@ -4218,7 +4190,7 @@ STRLpad(str *res, const str *arg1, const int *len)
 
 	*res = NULL;
 	if (!buf)
-		throw(SQL, "str.lpad", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		throw(MAL, "str.lpad", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	msg = str_lpad(&buf, &buflen, *arg1, *len);
 	if (!msg && !(*res = GDKstrdup(buf))) {
 		msg = createException(MAL, "str.lpad", SQLSTATE(HY013) MAL_MALLOC_FAIL);
@@ -4249,7 +4221,7 @@ STRRpad(str *res, const str *arg1, const int *len)
 
 	*res = NULL;
 	if (!buf)
-		throw(SQL, "str.rpad", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		throw(MAL, "str.rpad", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	msg = str_rpad(&buf, &buflen, *arg1, *len);
 	if (!msg && !(*res = GDKstrdup(buf))) {
 		msg = createException(MAL, "str.rpad", SQLSTATE(HY013) MAL_MALLOC_FAIL);
@@ -4280,7 +4252,7 @@ STRLpad2(str *res, const str *arg1, const int *len, const str *arg2)
 
 	*res = NULL;
 	if (!buf)
-		throw(SQL, "str.lpad2", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		throw(MAL, "str.lpad2", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	msg = str_lpad2(&buf, &buflen, *arg1, *len, *arg2);
 	if (!msg && !(*res = GDKstrdup(buf))) {
 		msg = createException(MAL, "str.lpad2", SQLSTATE(HY013) MAL_MALLOC_FAIL);
@@ -4311,7 +4283,7 @@ STRRpad2(str *res, const str *arg1, const int *len, const str *arg2)
 
 	*res = NULL;
 	if (!buf)
-		throw(SQL, "str.rpad2", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		throw(MAL, "str.rpad2", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	msg = str_rpad2(&buf, &buflen, *arg1, *len, *arg2);
 	if (!msg && !(*res = GDKstrdup(buf))) {
 		msg = createException(MAL, "str.rpad2", SQLSTATE(HY013) MAL_MALLOC_FAIL);
@@ -4376,7 +4348,7 @@ STRSubstitute(str *res, const str *arg1, const str *arg2, const str *arg3, const
 
 	*res = NULL;
 	if (!buf)
-		throw(SQL, "str.substitute", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		throw(MAL, "str.substitute", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	msg = str_substitute(&buf, &buflen, *arg1, *arg2, *arg3, *g);
 	if (!msg && !(*res = GDKstrdup(buf))) {
 		msg = createException(MAL, "str.substitute", SQLSTATE(HY013) MAL_MALLOC_FAIL);
@@ -4412,7 +4384,7 @@ STRsubstringTail(str *res, const str *s, const int *start)
 
 	*res = NULL;
 	if (!buf)
-		throw(SQL, "str.substringTail", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		throw(MAL, "str.substringTail", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	msg = str_substring_tail(&buf, &buflen, *s, *start);
 	if (!msg && !(*res = GDKstrdup(buf))) {
 		msg = createException(MAL, "str.substringTail", SQLSTATE(HY013) MAL_MALLOC_FAIL);
@@ -4442,7 +4414,7 @@ STRsubstring(str *res, const str *s, const int *start, const int *l)
 
 	*res = NULL;
 	if (!buf)
-		throw(SQL, "str.substring", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		throw(MAL, "str.substring", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	msg = str_sub_string(&buf, &buflen, *s, *start, *l);
 	if (!msg && !(*res = GDKstrdup(buf))) {
 		msg = createException(MAL, "str.substring", SQLSTATE(HY013) MAL_MALLOC_FAIL);
@@ -4460,7 +4432,7 @@ STRprefix(str *res, const str *s, const int *l)
 
 	*res = NULL;
 	if (!buf)
-		throw(SQL, "str.prefix", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		throw(MAL, "str.prefix", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	msg = str_Sub_String(&buf, &buflen, *s, 0, *l);
 	if (!msg && !(*res = GDKstrdup(buf))) {
 		msg = createException(MAL, "str.prefix", SQLSTATE(HY013) MAL_MALLOC_FAIL);
@@ -4489,7 +4461,7 @@ STRsuffix(str *res, const str *s, const int *l)
 
 	*res = NULL;
 	if (!buf)
-		throw(SQL, "str.suffix", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		throw(MAL, "str.suffix", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	msg = str_suffix(&buf, &buflen, *s, *l);
 	if (!msg && !(*res = GDKstrdup(buf))) {
 		msg = createException(MAL, "str.suffix", SQLSTATE(HY013) MAL_MALLOC_FAIL);
@@ -4570,7 +4542,7 @@ STRinsert(str *res, const str *input, const int *start, const int *nchars, const
 
 	*res = NULL;
 	if (!buf)
-		throw(SQL, "str.insert", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		throw(MAL, "str.insert", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	msg = str_insert(&buf, &buflen, *input, *start, *nchars, *input2);
 	if (!msg && !(*res = GDKstrdup(buf))) {
 		msg = createException(MAL, "str.insert", SQLSTATE(HY013) MAL_MALLOC_FAIL);
@@ -4615,7 +4587,7 @@ STRrepeat(str *res, const str *s, const int *c)
 
 	*res = NULL;
 	if (!buf)
-		throw(SQL, "str.repeat", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		throw(MAL, "str.repeat", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	msg = str_repeat(&buf, &buflen, *s, *c);
 	if (!msg && !(*res = GDKstrdup(buf))) {
 		msg = createException(MAL, "str.repeat", SQLSTATE(HY013) MAL_MALLOC_FAIL);
@@ -4634,7 +4606,7 @@ STRspace(str *res, const int *l)
 
 	*res = NULL;
 	if (!buf)
-		throw(SQL, "str.space", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		throw(MAL, "str.space", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	msg = str_repeat(&buf, &buflen, s, *l);
 	if (!msg && !(*res = GDKstrdup(buf))) {
 		msg = createException(MAL, "str.space", SQLSTATE(HY013) MAL_MALLOC_FAIL);

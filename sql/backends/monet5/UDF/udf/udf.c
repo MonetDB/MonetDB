@@ -9,33 +9,31 @@
 /* monetdb_config.h must be the first include in each .c file */
 #include "monetdb_config.h"
 #include "udf.h"
+#include "str.h"
 
 /* Reverse a string */
 
 /* actual implementation */
 /* all non-exported functions must be declared static */
-static char *
-UDFreverse_(char **ret, const char *src)
+static str
+UDFreverse_(str *buf, size_t *buflen, const char *src)
 {
 	size_t len = 0;
 	char *dst = NULL;
 
 	/* assert calling sanity */
-	assert(ret != NULL);
+	assert(buf);
 
 	/* handle NULL pointer and NULL value */
 	if (strNil(src)) {
-		*ret = GDKstrdup(str_nil);
-		if (*ret == NULL)
-			throw(MAL, "udf.reverse", "failed to create copy of str_nil");
+		strcpy(*buf, str_nil);
 		return MAL_SUCCEED;
 	}
 
-	/* allocate result string */
+	/* test if input buffer is large enough for result string, otherwise re-allocate it */
 	len = strlen(src);
-	*ret = dst = GDKmalloc(len + 1);
-	if (dst == NULL)
-		throw(MAL, "udf.reverse", "failed to allocate string of length %zu", len + 1);
+	CHECK_STR_BUFFER_LENGTH(buf, buflen, (len + 1), "udf.reverse");
+	dst = *buf;
 
 	dst[len] = 0;
 	/* all strings in MonetDB are encoded using UTF-8; we must
@@ -82,15 +80,28 @@ UDFreverse_(char **ret, const char *src)
 }
 
 /* MAL wrapper */
-char *
-UDFreverse(char **ret, const char **arg)
+str
+UDFreverse(str *res, const str *arg)
 {
+	size_t buflen = INITIAL_STR_BUFFER_LENGTH;
+	str buf = GDKmalloc(buflen), msg;
+
 	/* assert calling sanity */
-	assert(ret != NULL && arg != NULL);
+	assert(res && arg);
 
-	return UDFreverse_ ( ret, *arg );
+	*res = NULL;
+	if (!buf)
+		throw(MAL, "udf.reverse", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+	msg = UDFreverse_(&buf, &buflen, *arg);
+	/* Because UDFreverse_ is shared with bulk version, we don't want to return the string buffer as result.
+	   The reason is the buffer may be longer than the output string. The scalar will get 2 allocations, 
+	   which seems worse, the the bulk version will get more inputs, therefore the gain will be larger. */
+	if (!msg && !(*res = GDKstrdup(buf)))
+		msg = createException(MAL, "udf.reverse", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+
+	GDKfree(buf);
+	return msg;
 }
-
 
 /* Reverse a BAT of strings */
 /*
@@ -105,59 +116,65 @@ UDFBATreverse_(BAT **ret, BAT *src)
 	BATiter li;
 	BAT *bn = NULL;
 	BUN p = 0, q = 0;
+	size_t buflen = INITIAL_STR_BUFFER_LENGTH;
+	str msg = MAL_SUCCEED, buf;
 
 	/* assert calling sanity */
-	assert(ret != NULL);
+	assert(ret);
 
 	/* handle NULL pointer */
 	if (src == NULL)
-		throw(MAL, "batudf.reverse",  SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
-
+		throw(MAL, "batudf.reverse", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 	/* check tail type */
-	if (src->ttype != TYPE_str) {
-		throw(MAL, "batudf.reverse",
-		      "tail-type of input BAT must be TYPE_str");
-	}
+	if (src->ttype != TYPE_str)
+		throw(MAL, "batudf.reverse", SQLSTATE(42000) "tail-type of input BAT must be TYPE_str");
 
+	/* to avoid many allocations, we allocate a single buffer, which will reallocate if a 
+	   larger string is found and freed at the end */
+	if (!(buf = GDKmalloc(buflen))) {
+		msg = createException(MAL, "batudf.reverse", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		goto bailout;
+	}
+	q = BATcount(src);
 	/* allocate void-headed result BAT */
-	bn = COLnew(src->hseqbase, TYPE_str, BATcount(src), TRANSIENT);
-	if (bn == NULL) {
-		throw(MAL, "batudf.reverse", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+	if (!(bn = COLnew(src->hseqbase, TYPE_str, q, TRANSIENT))) {
+		msg = createException(MAL, "batudf.reverse", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		goto bailout;
 	}
 
 	/* create BAT iterator */
 	li = bat_iterator(src);
-
-	/* the core of the algorithm, expensive due to malloc/frees */
-	BATloop(src, p, q) {
-		char *tr = NULL, *err = NULL;
-
-		const char *t = (const char *) BUNtvar(li, p);
+	/* the core of the algorithm */
+	for (p = 0; p < q ; p++) {
+		const char *t = BUNtail(li, p);
 
 		/* revert tail value */
-		err = UDFreverse_(&tr, t);
-		if (err != MAL_SUCCEED) {
-			/* error -> bail out */
-			BBPunfix(bn->batCacheid);
-			return err;
-		}
-
+		if ((msg = UDFreverse_(&buf, &buflen, t)) != MAL_SUCCEED)
+			goto bailout;
 		/* assert logical sanity */
-		assert(tr != NULL);
-
-		/* append reversed tail in result BAT */
-		if (BUNappend(bn, tr, false) != GDK_SUCCEED) {
-			BBPunfix(bn->batCacheid);
-			throw(MAL, "batudf.reverse", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		assert(buf && t);
+		/* append to the output BAT. We are using a faster route, because we know what we are doing */
+		if (tfastins_nocheckVAR(bn, p, buf, Tsize(bn)) != GDK_SUCCEED) {
+			msg = createException(MAL, "batudf.reverse", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+			goto bailout;
 		}
-
-		/* free memory allocated in UDFreverse_() */
-		GDKfree(tr);
 	}
 
+bailout:
+	GDKfree(buf);
+	if (bn && !msg) {
+		BATsetcount(bn, q);
+		bn->tnil = src->tnil;
+		bn->tnonil = src->tnonil;
+		bn->tkey = BATcount(bn) <= 1;
+		bn->tsorted = BATcount(bn) <= 1;
+		bn->trevsorted = BATcount(bn) <= 1;
+	} else if (bn) {
+		BBPreclaim(bn);
+		bn = NULL;
+	}
 	*ret = bn;
-
-	return MAL_SUCCEED;
+	return msg;
 }
 
 /* MAL wrapper */
@@ -187,8 +204,6 @@ UDFBATreverse(bat *ret, const bat *arg)
 
 	return msg;
 }
-
-
 
 /* fuse */
 
