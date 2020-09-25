@@ -20,32 +20,32 @@
 extern int str_length(const char *s);
 extern int str_bytes(const char *s);
 
-extern str str_from_wchr(str *buf, int *buflen, int c);
+extern str str_from_wchr(str *buf, size_t *buflen, int c);
 extern str str_wchr_at(int *res, const char *s, int at);
 
 extern bit str_is_prefix(const char *s, const char *prefix);
 extern bit str_is_suffix(const char *s, const char *suffix);
 
-extern str str_tail(str *buf, int *buflen, const char *s, int off);
-extern str str_Sub_String(str *buf, int *buflen, const char *s, int off, int l);
-extern str str_substring_tail(str *buf, int *buflen, const char *s, int start);
-extern str str_sub_string(str *buf, int *buflen, const char *s, int start, int l);
-extern str str_suffix(str *buf, int *buflen, const char *s, int l);
-extern str str_repeat(str *buf, int *buflen, const char *s, int c);
+extern str str_tail(str *buf, size_t *buflen, const char *s, int off);
+extern str str_Sub_String(str *buf, size_t *buflen, const char *s, int off, int l);
+extern str str_substring_tail(str *buf, size_t *buflen, const char *s, int start);
+extern str str_sub_string(str *buf, size_t *buflen, const char *s, int start, int l);
+extern str str_suffix(str *buf, size_t *buflen, const char *s, int l);
+extern str str_repeat(str *buf, size_t *buflen, const char *s, int c);
 
-extern str str_lower(str *buf, int *buflen, const char *s);
-extern str str_upper(str *buf, int *buflen, const char *s);
-extern str str_strip(str *buf, int *buflen, const char *s);
-extern str str_ltrim(str *buf, int *buflen, const char *s);
-extern str str_rtrim(str *buf, int *buflen, const char *s);
+extern str str_lower(str *buf, size_t *buflen, const char *s);
+extern str str_upper(str *buf, size_t *buflen, const char *s);
+extern str str_strip(str *buf, size_t *buflen, const char *s);
+extern str str_ltrim(str *buf, size_t *buflen, const char *s);
+extern str str_rtrim(str *buf, size_t *buflen, const char *s);
 
 extern int str_search(const char *s, const char *s2);
 extern int str_reverse_str_search(const char *s, const char *s2);
 extern int str_locate2(const char *needle, const char *haystack, int start);
 
-extern str str_splitpart(str *buf, int *buflen, const char *s, const char *s2, int f);
-extern str str_insert(str *buf, int *buflen, const char *s, int strt, int l, const char *s2);
-extern str str_substitute(str *buf, int *buflen, const char *s, const char *src, const char *dst, bit repeat);
+extern str str_splitpart(str *buf, size_t *buflen, const char *s, const char *s2, int f);
+extern str str_insert(str *buf, size_t *buflen, const char *s, int strt, int l, const char *s2);
+extern str str_substitute(str *buf, size_t *buflen, const char *s, const char *src, const char *dst, bit repeat);
 
 mal_export str STRStrip2(str *res, const str *arg1, const str *arg2);
 mal_export str STRLtrim2(str *res, const str *arg1, const str *arg2);

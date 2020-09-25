@@ -69,7 +69,7 @@
 	BBPunfix(Z->batCacheid);
 
 static inline str
-str_prefix(str *buf, int *buflen, const char *s, int l)
+str_prefix(str *buf, size_t *buflen, const char *s, int l)
 {
 	return str_Sub_String(buf, buflen, s, 0, l);
 }
@@ -183,7 +183,8 @@ STRbatFromWChr(bat *res, const bat *l)
 {
 	BAT *bn = NULL, *b = NULL;
 	BUN p, q;
-	int buflen = INITIAL_STR_BUFFER_LENGTH, *restrict vals;
+	size_t buflen = INITIAL_STR_BUFFER_LENGTH;
+	int *restrict vals;
 	str buf = GDKmalloc(buflen), msg = MAL_SUCCEED;
 	bool nils = false;
 
@@ -234,7 +235,8 @@ STRbatSpace(bat *res, const bat *l)
 {
 	BAT *bn = NULL, *b = NULL;
 	BUN p, q;
-	int buflen = INITIAL_STR_BUFFER_LENGTH, *restrict vals;
+	size_t buflen = INITIAL_STR_BUFFER_LENGTH;
+	int *restrict vals;
 	str buf = GDKmalloc(buflen), msg = MAL_SUCCEED;
 	bool nils = false;
 
@@ -283,12 +285,12 @@ bailout:
 }
 
 static str
-do_batstr_str(bat *res, const bat *l, const char *name, str (*func)(str *, int *, const char *))
+do_batstr_str(bat *res, const bat *l, const char *name, str (*func)(str *, size_t *, const char *))
 {
 	BATiter bi;
 	BAT *bn = NULL, *b = NULL;
 	BUN p, q;
-	int buflen = INITIAL_STR_BUFFER_LENGTH;
+	size_t buflen = INITIAL_STR_BUFFER_LENGTH;
 	str x, buf = GDKmalloc(buflen), msg = MAL_SUCCEED;
 	bool nils = false;
 
@@ -1245,7 +1247,8 @@ STRbatWChrAt(bat *res, const bat *l, const bat *r)
 	BATiter lefti;
 	BAT *bn = NULL, *left = NULL, *right = NULL;
 	BUN p, q;
-	int buflen = INITIAL_STR_BUFFER_LENGTH, *restrict righti, *restrict vals, next;
+	size_t buflen = INITIAL_STR_BUFFER_LENGTH;
+	int *restrict righti, *restrict vals, next;
 	str x, buf = GDKmalloc(buflen), msg = MAL_SUCCEED;
 	bool nils = false;
 
@@ -1304,7 +1307,8 @@ STRbatWChrAtcst(bat *res, const bat *l, const int *cst)
 	BATiter bi;
 	BAT *bn = NULL, *b = NULL;
 	BUN p, q;
-	int buflen = INITIAL_STR_BUFFER_LENGTH, c = *cst, *restrict vals, next;
+	size_t buflen = INITIAL_STR_BUFFER_LENGTH;
+	int c = *cst, *restrict vals, next;
 	str x, buf = GDKmalloc(buflen), msg = MAL_SUCCEED;
 	bool nils = false;
 
@@ -1351,12 +1355,13 @@ bailout:
 }
 
 static str
-do_batstr_str_int_cst(bat *res, const bat *l, const int *cst, const char *name, str (*func)(str*, int*, const char*, int))
+do_batstr_str_int_cst(bat *res, const bat *l, const int *cst, const char *name, str (*func)(str*, size_t*, const char*, int))
 {
 	BATiter bi;
 	BAT *bn = NULL, *b = NULL;
 	BUN p, q;
-	int buflen = INITIAL_STR_BUFFER_LENGTH, c = *cst;
+	size_t buflen = INITIAL_STR_BUFFER_LENGTH;
+	int c = *cst;
 	str x, buf = GDKmalloc(buflen), msg = MAL_SUCCEED;
 	bool nils = false;
 
@@ -1435,12 +1440,13 @@ STRbatsubstringTailcst(bat *ret, const bat *l, const int *cst)
 }
 
 static str
-do_batstr_str_int(bat *res, const bat *l, const bat *r, const char *name, str (*func)(str*, int*, const char*, int))
+do_batstr_str_int(bat *res, const bat *l, const bat *r, const char *name, str (*func)(str*, size_t*, const char*, int))
 {
 	BATiter lefti;
 	BAT *bn = NULL, *left = NULL, *right = NULL;
 	BUN p, q;
-	int buflen = INITIAL_STR_BUFFER_LENGTH, *restrict righti;
+	size_t buflen = INITIAL_STR_BUFFER_LENGTH;
+	int *restrict righti;
 	str x, buf = GDKmalloc(buflen), msg = MAL_SUCCEED;
 	bool nils = false;
 
@@ -1531,7 +1537,7 @@ STRbatSubstitutecst(bat *res, const bat *bid, const str *arg2, const str *arg3, 
 	BATiter bi;
 	BAT *bn = NULL, *b = NULL;
 	BUN p, q;
-	int buflen = INITIAL_STR_BUFFER_LENGTH;
+	size_t buflen = INITIAL_STR_BUFFER_LENGTH;
 	str x, y = *arg2, z = *arg3, buf = GDKmalloc(buflen), msg = MAL_SUCCEED;
 	bool nils = false;
 	bit r = *rep;
@@ -1586,7 +1592,7 @@ STRbatSubstitute(bat *res, const bat *l, const bat *r, const bat *s, const bat *
 	BATiter arg1i, arg2i, arg3i;
 	BAT *bn = NULL, *arg1 = NULL, *arg2 = NULL, *arg3 = NULL, *arg4 = NULL;
 	BUN p, q;
-	int buflen = INITIAL_STR_BUFFER_LENGTH;
+	size_t buflen = INITIAL_STR_BUFFER_LENGTH;
 	str x, y, z, buf = GDKmalloc(buflen), msg = MAL_SUCCEED;
 	bool nils = false;
 	bit *restrict arg4i;
@@ -1656,7 +1662,8 @@ STRbatsplitpartcst(bat *res, const bat *bid, const str *needle, const int *field
 	BATiter bi;
 	BAT *bn = NULL, *b = NULL;
 	BUN p, q;
-	int buflen = INITIAL_STR_BUFFER_LENGTH, f = *field;
+	size_t buflen = INITIAL_STR_BUFFER_LENGTH;
+	int f = *field;
 	str x, y = *needle, buf = GDKmalloc(buflen), msg = MAL_SUCCEED;
 	bool nils = false;
 
@@ -1710,7 +1717,8 @@ STRbatsplitpart(bat *res, const bat *l, const bat *r, const bat *t)
 	BATiter arg1i, arg2i;
 	BAT *bn = NULL, *arg1 = NULL, *arg2 = NULL, *arg3 = NULL;
 	BUN p, q;
-	int buflen = INITIAL_STR_BUFFER_LENGTH, *restrict arg3i;
+	size_t buflen = INITIAL_STR_BUFFER_LENGTH;
+	int *restrict arg3i;
 	str x, y, buf = GDKmalloc(buflen), msg = MAL_SUCCEED;
 	bool nils = false;
 
@@ -1889,7 +1897,8 @@ STRbatInsert(bat *res, const bat *l, const bat *s, const bat *chars, const bat *
 	BATiter lefti, righti;
 	BAT *bn = NULL, *left = NULL, *right = NULL, *start = NULL, *nchars = NULL;
 	BUN p, q;
-	int buflen = INITIAL_STR_BUFFER_LENGTH, *starti, *ncharsi;
+	size_t buflen = INITIAL_STR_BUFFER_LENGTH;
+	int *starti, *ncharsi;
 	str x, y, buf = GDKmalloc(buflen), msg = MAL_SUCCEED;
 	bool nils = false;
 
@@ -1957,7 +1966,8 @@ STRbatInsertcst(bat *res, const bat *bid, const int *start, const int *nchars, c
 	BATiter bi;
 	BAT *bn = NULL, *b = NULL;
 	BUN p, q;
-	int buflen = INITIAL_STR_BUFFER_LENGTH, strt = *start, l = *nchars;
+	size_t buflen = INITIAL_STR_BUFFER_LENGTH;
+	int strt = *start, l = *nchars;
 	str x, y = *input2, buf = GDKmalloc(buflen), msg = MAL_SUCCEED;
 	bool nils = false;
 
@@ -2014,7 +2024,8 @@ STRbatsubstringcst(bat *res, const bat *bid, const int *start, const int *length
 	BATiter bi;
 	BAT *bn = NULL, *b = NULL;
 	BUN p, q;
-	int buflen = INITIAL_STR_BUFFER_LENGTH, s = *start, len = *length;
+	size_t buflen = INITIAL_STR_BUFFER_LENGTH;
+	int s = *start, len = *length;
 	str x, buf = GDKmalloc(buflen), msg = MAL_SUCCEED;
 	bool nils = false;
 
@@ -2068,7 +2079,8 @@ STRbatsubstring(bat *res, const bat *l, const bat *r, const bat *t)
 	BATiter lefti;
 	BAT *bn = NULL, *left = NULL, *start = NULL, *length = NULL;
 	BUN p, q;
-	int buflen = INITIAL_STR_BUFFER_LENGTH, *starti, *lengthi;
+	size_t buflen = INITIAL_STR_BUFFER_LENGTH;
+	int *starti, *lengthi;
 	str x, buf = GDKmalloc(buflen), msg = MAL_SUCCEED;
 	bool nils = false;
 
