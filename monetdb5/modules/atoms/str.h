@@ -46,8 +46,8 @@
 		} \
 	} while (0)
 
-extern int str_length(const char *s);
-extern int str_bytes(const char *s);
+extern int str_utf8_length(const char *s);
+extern int str_nbytes(const char *s);
 
 extern str str_from_wchr(str *buf, size_t *buflen, int c);
 extern str str_wchr_at(int *res, const char *s, int at);

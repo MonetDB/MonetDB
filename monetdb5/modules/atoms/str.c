@@ -3352,7 +3352,7 @@ STRtostr(str *res, const str *src)
 }
 
 int
-str_length(const char *s)
+str_utf8_length(const char *s)
 {
 	size_t l;
 
@@ -3368,12 +3368,12 @@ str_length(const char *s)
 static str
 STRLength(int *res, const str *arg1)
 {
-	*res = str_length(*arg1);
+	*res = str_utf8_length(*arg1);
 	return MAL_SUCCEED;
 }
 
 int
-str_bytes(const char *s)
+str_nbytes(const char *s)
 {
 	size_t l;
 
@@ -3387,7 +3387,7 @@ str_bytes(const char *s)
 static str
 STRBytes(int *res, const str *arg1)
 {
-	*res = str_bytes(*arg1);
+	*res = str_nbytes(*arg1);
 	return MAL_SUCCEED;
 }
 
