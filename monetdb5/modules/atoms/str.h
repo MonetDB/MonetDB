@@ -55,6 +55,4 @@ mal_export str STRRpad(str *res, const str *arg1, const int *len);
 mal_export str STRLpad2(str *res, const str *arg1, const int *len, const str *arg2);
 mal_export str STRRpad2(str *res, const str *arg1, const int *len, const str *arg2);
 
-mal_export str STRreplace(str *ret, const str *s1, const str *s2, const str *s3);
-
 #endif /* __string_H__ */

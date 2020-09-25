@@ -3214,7 +3214,7 @@ UTF8_offset(char *restrict s, int n)
 #define CHECK_STR_BUFFER_LENGTH(buf, buflen, nextlen, op) \
 	do {  \
 		if (nextlen > *buflen) { \
-			int newlen = nextlen + 1024; \
+			size_t newlen = nextlen + 1024; \
 			str newbuf = GDKmalloc(newlen); \
 			if (!newbuf) \
 				throw(MAL, op, SQLSTATE(HY013) MAL_MALLOC_FAIL); \
@@ -3878,10 +3878,10 @@ str_ltrim(str *buf, size_t *buflen, const char *s)
 	} else {
 		size_t len = strlen(s);
 		size_t n = lstrip(s, len, whitespace, NSPACES);
-		size_t ncast = len - n + 1;
+		size_t nallocate = len - n + 1;
 
-		CHECK_STR_BUFFER_LENGTH(buf, buflen, ncast, "str.ltrim");
-		strcpy_len(*buf, s + n, ncast);
+		CHECK_STR_BUFFER_LENGTH(buf, buflen, nallocate, "str.ltrim");
+		strcpy_len(*buf, s + n, nallocate);
 		return MAL_SUCCEED;
 	}
 }
@@ -4184,7 +4184,9 @@ str_substitute(str *buf, size_t *buflen, const char *s, const char *src, const c
 		const char *pfnd;
 
 		if (!lsrc || !l) { /* s/src is an empty string, there's nothing to substitute */
-			strcpy(*buf, "");
+			if (l)
+				CHECK_STR_BUFFER_LENGTH(buf, buflen, l, "str.substitute");
+			strcpy(*buf, s);
 			return MAL_SUCCEED;
 		}
 
@@ -4429,7 +4431,7 @@ STRinsert(str *res, const str *input, const int *start, const int *nchars, const
 	return msg;
 }
 
-str
+static str
 STRreplace(str *ret, const str *s1, const str *s2, const str *s3)
 {
 	bit flag= TRUE;
