@@ -42,6 +42,10 @@ extern str str_rtrim(str *buf, size_t *buflen, const char *s);
 extern str str_strip2(str *buf, size_t *buflen, int **chars, size_t *nchars, const char *s, const char *s2);
 extern str str_ltrim2(str *buf, size_t *buflen, int **chars, size_t *nchars, const char *s, const char *s2);
 extern str str_rtrim2(str *buf, size_t *buflen, int **chars, size_t *nchars, const char *s, const char *s2);
+extern str str_lpad(str *buf, size_t *buflen, const char *s, int len);
+extern str str_rpad(str *buf, size_t *buflen, const char *s, int len);
+extern str str_lpad2(str *buf, size_t *buflen, const char *s, int len, const char *s2);
+extern str str_rpad2(str *buf, size_t *buflen, const char *s, int len, const char *s2);
 
 extern int str_search(const char *s, const char *s2);
 extern int str_reverse_str_search(const char *s, const char *s2);
@@ -50,10 +54,5 @@ extern int str_locate2(const char *needle, const char *haystack, int start);
 extern str str_splitpart(str *buf, size_t *buflen, const char *s, const char *s2, int f);
 extern str str_insert(str *buf, size_t *buflen, const char *s, int strt, int l, const char *s2);
 extern str str_substitute(str *buf, size_t *buflen, const char *s, const char *src, const char *dst, bit repeat);
-
-mal_export str STRLpad(str *res, const str *arg1, const int *len);
-mal_export str STRRpad(str *res, const str *arg1, const int *len);
-mal_export str STRLpad2(str *res, const str *arg1, const int *len, const str *arg2);
-mal_export str STRRpad2(str *res, const str *arg1, const int *len, const str *arg2);
 
 #endif /* __string_H__ */

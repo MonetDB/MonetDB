@@ -4134,30 +4134,38 @@ STRRtrim2(str *res, const str *arg1, const str *arg2)
 	return msg;
 }
 
-static char *
-pad(const char *s, const char *pad, int len, int left)
+static str
+pad(str *buf, size_t *buflen, const char *s, const char *pad, int len, int left, const char *malfunc)
 {
-	size_t slen, padlen, repeats, residual, i;
+	size_t slen, padlen, repeats, residual, i, nlen;
 	char *res;
 
-	if (strNil(s) || strNil(pad) || is_int_nil(len))
-		return GDKstrdup(str_nil);
+	if (strNil(s) || strNil(pad) || is_int_nil(len)) {
+		strcpy(*buf, str_nil);
+		return MAL_SUCCEED;
+	}
 
 	if (len < 0)
 		len = 0;
 
 	slen = UTF8_strlen(s);
-
 	if (slen > (size_t) len) {
 		/* truncate */
 		pad = UTF8_strtail(s, len);
-		return GDKstrndup(s, pad - s);
+		slen = pad - s + 1;
+
+		CHECK_STR_BUFFER_LENGTH(buf, buflen, slen, malfunc);
+		strcpy_len(*buf, s, slen);
+		return MAL_SUCCEED;
 	}
 
 	padlen = UTF8_strlen(pad);
 	if (slen == (size_t) len || padlen == 0) {
 		/* nothing to do (no padding if there is no pad string) */
-		return GDKstrdup(s);
+		slen = strlen(s) + 1;
+		CHECK_STR_BUFFER_LENGTH(buf, buflen, slen, malfunc);
+		strcpy(*buf, s);
+		return MAL_SUCCEED;
 	}
 
 	repeats = ((size_t) len - slen) / padlen;
@@ -4166,9 +4174,10 @@ pad(const char *s, const char *pad, int len, int left)
 		residual = (size_t) (UTF8_strtail(pad, (int) residual) - pad);
 	padlen = strlen(pad);
 	slen = strlen(s);
-	res = GDKmalloc(slen + repeats * padlen + residual + 1);
-	if (res == NULL)
-		return NULL;
+
+	nlen = slen + repeats * padlen + residual + 1;
+	CHECK_STR_BUFFER_LENGTH(buf, buflen, nlen, malfunc);
+	res = *buf;
 	if (left) {
 		for (i = 0; i < repeats; i++)
 			memcpy(res + i * padlen, pad, padlen);
@@ -4185,7 +4194,13 @@ pad(const char *s, const char *pad, int len, int left)
 			memcpy(res + slen + repeats * padlen, pad, residual);
 	}
 	res[repeats * padlen + residual + slen] = 0;
-	return res;
+	return MAL_SUCCEED;
+}
+
+str
+str_lpad(str *buf, size_t *buflen, const char *s, int len)
+{
+	return pad(buf, buflen, s, " ", len, 1, "str.lpad");
 }
 
 /* Fill up 'arg1' to length 'len' by prepending whitespaces.
@@ -4195,13 +4210,28 @@ pad(const char *s, const char *pad, int len, int left)
  * Example: lpad('hi', 5)
  * Result: '   hi'
  */
-str
+static str
 STRLpad(str *res, const str *arg1, const int *len)
 {
-	*res = pad(*arg1, " ", *len, 1);
-	if (*res == NULL)
-		throw(MAL, "str.lpad", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-	return MAL_SUCCEED;
+	size_t buflen = INITIAL_STR_BUFFER_LENGTH;
+	str buf = GDKmalloc(buflen), msg;
+
+	*res = NULL;
+	if (!buf)
+		throw(SQL, "str.lpad", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+	msg = str_lpad(&buf, &buflen, *arg1, *len);
+	if (!msg && !(*res = GDKstrdup(buf))) {
+		msg = createException(MAL, "str.lpad", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+	}
+
+	GDKfree(buf);
+	return msg;
+}
+
+str
+str_rpad(str *buf, size_t *buflen, const char *s, int len)
+{
+	return pad(buf, buflen, s, " ", len, 0, "str.lpad");
 }
 
 /* Fill up 'arg1' to length 'len' by appending whitespaces.
@@ -4211,13 +4241,28 @@ STRLpad(str *res, const str *arg1, const int *len)
  * Example: rpad('hi', 5)
  * Result: 'hi   '
  */
-str
+static str
 STRRpad(str *res, const str *arg1, const int *len)
 {
-	*res = pad(*arg1, " ", *len, 0);
-	if (*res == NULL)
-		throw(MAL, "str.rpad", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-	return MAL_SUCCEED;
+	size_t buflen = INITIAL_STR_BUFFER_LENGTH;
+	str buf = GDKmalloc(buflen), msg;
+
+	*res = NULL;
+	if (!buf)
+		throw(SQL, "str.rpad", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+	msg = str_rpad(&buf, &buflen, *arg1, *len);
+	if (!msg && !(*res = GDKstrdup(buf))) {
+		msg = createException(MAL, "str.rpad", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+	}
+
+	GDKfree(buf);
+	return msg;
+}
+
+str
+str_lpad2(str *buf, size_t *buflen, const char *s, int len, const char *s2)
+{
+	return pad(buf, buflen, s, s2, len, 1, "str.lpad2");
 }
 
 /* Fill up 'arg1' to length 'len' by prepending characters from 'arg2'
@@ -4227,16 +4272,28 @@ STRRpad(str *res, const str *arg1, const int *len)
  * Example: lpad('hi', 5, 'xy')
  * Result: xyxhi
  */
-str
+static str
 STRLpad2(str *res, const str *arg1, const int *len, const str *arg2)
 {
-	if (**arg2 == 0)
-		throw(MAL, "str.lpad", SQLSTATE(42000) ILLEGAL_ARGUMENT ": pad string is empty");
+	size_t buflen = INITIAL_STR_BUFFER_LENGTH;
+	str buf = GDKmalloc(buflen), msg;
 
-	*res = pad(*arg1, *arg2, *len, 1);
-	if (*res == NULL)
-		throw(MAL, "str.lpad", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-	return MAL_SUCCEED;
+	*res = NULL;
+	if (!buf)
+		throw(SQL, "str.lpad2", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+	msg = str_lpad2(&buf, &buflen, *arg1, *len, *arg2);
+	if (!msg && !(*res = GDKstrdup(buf))) {
+		msg = createException(MAL, "str.lpad2", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+	}
+
+	GDKfree(buf);
+	return msg;
+}
+
+str
+str_rpad2(str *buf, size_t *buflen, const char *s, int len, const char *s2)
+{
+	return pad(buf, buflen, s, s2, len, 0, "str.rpad2");
 }
 
 /* Fill up 'arg1' to length 'len' by appending characters from 'arg2'
@@ -4246,16 +4303,22 @@ STRLpad2(str *res, const str *arg1, const int *len, const str *arg2)
  * Example: rpad('hi', 5, 'xy')
  * Result: hixyx
  */
-str
+static str
 STRRpad2(str *res, const str *arg1, const int *len, const str *arg2)
 {
-	if (**arg2 == 0)
-		throw(MAL, "str.rpad", SQLSTATE(42000) ILLEGAL_ARGUMENT ": pad string is empty");
+	size_t buflen = INITIAL_STR_BUFFER_LENGTH;
+	str buf = GDKmalloc(buflen), msg;
 
-	*res = pad(*arg1, *arg2, *len, 0);
-	if (*res == NULL)
-		throw(MAL, "str.rpad", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-	return MAL_SUCCEED;
+	*res = NULL;
+	if (!buf)
+		throw(SQL, "str.rpad2", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+	msg = str_rpad2(&buf, &buflen, *arg1, *len, *arg2);
+	if (!msg && !(*res = GDKstrdup(buf))) {
+		msg = createException(MAL, "str.rpad2", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+	}
+
+	GDKfree(buf);
+	return msg;
 }
 
 str
