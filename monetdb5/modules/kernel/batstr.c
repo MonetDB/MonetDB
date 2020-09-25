@@ -39,7 +39,7 @@ do_batstr_int(bat *res, const bat *l, const char *name, int (*func)(const char *
 	str x, msg = MAL_SUCCEED;
 	bool nils = false;
 
-	if ((b = BATdescriptor(*l)) == NULL) {
+	if (!(b = BATdescriptor(*l))) {
 		msg = createException(MAL, name, SQLSTATE(HY005) RUNTIME_OBJECT_MISSING);
 		goto bailout;
 	}
@@ -147,7 +147,7 @@ STRbatFromWChr(bat *res, const bat *l)
 		msg = createException(MAL, "batstr.unicode", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		goto bailout;
 	}
-	if ((b = BATdescriptor(*l)) == NULL) {
+	if (!(b = BATdescriptor(*l))) {
 		msg = createException(MAL, "batstr.unicode", SQLSTATE(HY005) RUNTIME_OBJECT_MISSING);
 		goto bailout;
 	}
@@ -200,7 +200,7 @@ STRbatSpace(bat *res, const bat *l)
 		msg = createException(MAL, "batstr.space", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		goto bailout;
 	}
-	if ((b = BATdescriptor(*l)) == NULL) {
+	if (!(b = BATdescriptor(*l))) {
 		msg = createException(MAL, "batstr.space", SQLSTATE(HY005) RUNTIME_OBJECT_MISSING);
 		goto bailout;
 	}
@@ -1468,6 +1468,89 @@ STRbatsubstringTailcst(bat *ret, const bat *l, const int *cst)
 }
 
 static str
+do_batstr_strcst(bat *res, const str *cst, const bat *l, const char *name, str (*func)(str*, size_t*, const char*, int))
+{
+	BAT *bn = NULL, *b = NULL;
+	BUN p, q;
+	size_t buflen = INITIAL_STR_BUFFER_LENGTH;
+	const char *s = *cst;
+	int *restrict vals;
+	str buf = GDKmalloc(buflen), msg = MAL_SUCCEED;
+	bool nils = false;
+
+	if (!buf) {
+		msg = createException(MAL, name, SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		goto bailout;
+	}
+	if (!(b = BATdescriptor(*l))) {
+		msg = createException(MAL, name, SQLSTATE(HY005) RUNTIME_OBJECT_MISSING);
+		goto bailout;
+	}
+	q = BATcount(b);
+	if (!(bn = COLnew(b->hseqbase, TYPE_str, q, TRANSIENT))) {
+		msg = createException(MAL, name, SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		goto bailout;
+	}
+
+	vals = Tloc(b, 0);
+	for (p = 0; p < q ; p++) {
+		if ((msg = (*func)(&buf, &buflen, s, vals[p])) != MAL_SUCCEED)
+			goto bailout;
+		if (tfastins_nocheckVAR(bn, p, buf, Tsize(bn)) != GDK_SUCCEED) {
+			msg = createException(MAL, name, SQLSTATE(HY013) MAL_MALLOC_FAIL);
+			goto bailout;
+		}
+		nils |= strNil(buf);
+	}
+
+bailout:
+	GDKfree(buf);
+	if (b)
+		BBPunfix(b->batCacheid);
+	if (bn && !msg) {
+		BATsetcount(bn, q);
+		bn->tnil = nils;
+		bn->tnonil = !nils;
+		bn->tkey = BATcount(bn) <= 1;
+		bn->tsorted = BATcount(bn) <= 1;
+		bn->trevsorted = BATcount(bn) <= 1;
+		BBPkeepref(*res = bn->batCacheid);
+	} else if (bn)
+		BBPreclaim(bn);
+	return msg;
+}
+
+static str
+STRbatprefix_strcst(bat *ret, const str *cst, const bat *l)
+{
+	return do_batstr_strcst(ret, cst, l, "batstr.prefix", str_prefix);
+}
+
+static str
+STRbatsuffix_strcst(bat *ret, const str *cst, const bat *l)
+{
+	return do_batstr_strcst(ret, cst, l, "batstr.suffix", str_suffix);
+}
+
+static str
+STRbatrepeat_strcst(bat *ret, const str *cst, const bat *l)
+{
+	return do_batstr_strcst(ret, cst, l, "batstr.repeat", str_repeat);
+}
+
+static str
+STRbatTail_strcst(bat *ret, const str *cst, const bat *l)
+{
+	return do_batstr_strcst(ret, cst, l, "batstr.tail", str_tail);
+}
+
+static str
+STRbatsubstringTail_strcst(bat *ret, const str *cst, const bat *l)
+{
+	return do_batstr_strcst(ret, cst, l, "batstr.substring", str_substring_tail);
+}
+
+static str
 do_batstr_str_int(bat *res, const bat *l, const bat *r, const char *name, str (*func)(str*, size_t*, const char*, int))
 {
 	BATiter lefti;
@@ -1574,7 +1657,7 @@ STRbatSubstitutecst(bat *res, const bat *bid, const str *arg2, const str *arg3, 
 		msg = createException(MAL, "batstr.substritute", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		goto bailout;
 	}
-	if ((b = BATdescriptor(*bid)) == NULL) {
+	if (!(b = BATdescriptor(*bid))) {
 		msg = createException(MAL, "batstr.substritute", SQLSTATE(HY005) RUNTIME_OBJECT_MISSING);
 		goto bailout;
 	}
@@ -1699,7 +1782,7 @@ STRbatsplitpartcst(bat *res, const bat *bid, const str *needle, const int *field
 		msg = createException(MAL, "batstr.splitpart", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		goto bailout;
 	}
-	if ((b = BATdescriptor(*bid)) == NULL) {
+	if (!(b = BATdescriptor(*bid))) {
 		msg = createException(MAL, "batstr.splitpart", SQLSTATE(HY005) RUNTIME_OBJECT_MISSING);
 		goto bailout;
 	}
@@ -1962,7 +2045,7 @@ STRbatInsertcst(bat *res, const bat *bid, const int *start, const int *nchars, c
 		msg = createException(MAL, "batstr.insert", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		goto bailout;
 	}
-	if ((b = BATdescriptor(*bid)) == NULL) {
+	if (!(b = BATdescriptor(*bid))) {
 		msg = createException(MAL, "batstr.insert", SQLSTATE(HY005) RUNTIME_OBJECT_MISSING);
 		goto bailout;
 	}
@@ -2020,7 +2103,7 @@ STRbatsubstringcst(bat *res, const bat *bid, const int *start, const int *length
 		msg = createException(MAL, "batstr.substring", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		goto bailout;
 	}
-	if ((b = BATdescriptor(*bid)) == NULL) {
+	if (!(b = BATdescriptor(*bid))) {
 		msg = createException(MAL, "batstr.substring", SQLSTATE(HY005) RUNTIME_OBJECT_MISSING);
 		goto bailout;
 	}
@@ -2047,6 +2130,130 @@ bailout:
 	GDKfree(buf);
 	if (b)
 		BBPunfix(b->batCacheid);
+	if (bn && !msg) {
+		BATsetcount(bn, q);
+		bn->tnil = nils;
+		bn->tnonil = !nils;
+		bn->tkey = BATcount(bn) <= 1;
+		bn->tsorted = b->tsorted;
+		bn->trevsorted = b->trevsorted;
+		BBPkeepref(*res = bn->batCacheid);
+	} else if (bn)
+		BBPreclaim(bn);
+	return msg;
+}
+
+static str
+STRbatsubstringcst_startcst(bat *res, const bat *bid, const int *start, const bat *l)
+{
+	BATiter bi;
+	BAT *bn = NULL, *b = NULL, *lb = NULL;
+	BUN p, q;
+	size_t buflen = INITIAL_STR_BUFFER_LENGTH;
+	int s = *start, *len;
+	str x, buf = GDKmalloc(buflen), msg = MAL_SUCCEED;
+	bool nils = false;
+
+	if (!buf) {
+		msg = createException(MAL, "batstr.substring", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		goto bailout;
+	}
+	if (!(b = BATdescriptor(*bid)) || !(lb = BATdescriptor(*l))) {
+		msg = createException(MAL, "batstr.substring", SQLSTATE(HY005) RUNTIME_OBJECT_MISSING);
+		goto bailout;
+	}
+	if (BATcount(b) != BATcount(lb)) {
+		msg = createException(MAL, "batstr.substring", ILLEGAL_ARGUMENT " Requires bats of identical size");
+		goto bailout;
+	}
+	q = BATcount(b);
+	if (!(bn = COLnew(b->hseqbase, TYPE_str, q, TRANSIENT))) {
+		msg = createException(MAL, "batstr.substring", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		goto bailout;
+	}
+
+	bi = bat_iterator(b);
+	len = Tloc(lb, 0);
+	for (p = 0; p < q ; p++) {
+		x = (str) BUNtail(bi, p);
+
+		if ((msg = str_sub_string(&buf, &buflen, x, s, len[p])) != MAL_SUCCEED)
+			goto bailout;
+		if (tfastins_nocheckVAR(bn, p, buf, Tsize(bn)) != GDK_SUCCEED) {
+			msg = createException(MAL, "batstr.substring", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+			goto bailout;
+		}
+		nils |= strNil(buf);
+	}
+
+bailout:
+	GDKfree(buf);
+	if (b)
+		BBPunfix(b->batCacheid);
+	if (lb)
+		BBPunfix(lb->batCacheid);
+	if (bn && !msg) {
+		BATsetcount(bn, q);
+		bn->tnil = nils;
+		bn->tnonil = !nils;
+		bn->tkey = BATcount(bn) <= 1;
+		bn->tsorted = b->tsorted;
+		bn->trevsorted = b->trevsorted;
+		BBPkeepref(*res = bn->batCacheid);
+	} else if (bn)
+		BBPreclaim(bn);
+	return msg;
+}
+
+static str
+STRbatsubstringcst_indexcst(bat *res, const bat *bid, const bat *l, const int *index)
+{
+	BATiter bi;
+	BAT *bn = NULL, *b = NULL, *lb = NULL;
+	BUN p, q;
+	size_t buflen = INITIAL_STR_BUFFER_LENGTH;
+	int *start, in = *index;
+	str x, buf = GDKmalloc(buflen), msg = MAL_SUCCEED;
+	bool nils = false;
+
+	if (!buf) {
+		msg = createException(MAL, "batstr.substring", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		goto bailout;
+	}
+	if (!(b = BATdescriptor(*bid)) || !(lb = BATdescriptor(*l))) {
+		msg = createException(MAL, "batstr.substring", SQLSTATE(HY005) RUNTIME_OBJECT_MISSING);
+		goto bailout;
+	}
+	if (BATcount(b) != BATcount(lb)) {
+		msg = createException(MAL, "batstr.substring", ILLEGAL_ARGUMENT " Requires bats of identical size");
+		goto bailout;
+	}
+	q = BATcount(b);
+	if (!(bn = COLnew(b->hseqbase, TYPE_str, q, TRANSIENT))) {
+		msg = createException(MAL, "batstr.substring", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		goto bailout;
+	}
+
+	bi = bat_iterator(b);
+	start = Tloc(lb, 0);
+	for (p = 0; p < q ; p++) {
+		x = (str) BUNtail(bi, p);
+
+		if ((msg = str_sub_string(&buf, &buflen, x, start[p], in)) != MAL_SUCCEED)
+			goto bailout;
+		if (tfastins_nocheckVAR(bn, p, buf, Tsize(bn)) != GDK_SUCCEED) {
+			msg = createException(MAL, "batstr.substring", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+			goto bailout;
+		}
+		nils |= strNil(buf);
+	}
+
+bailout:
+	GDKfree(buf);
+	if (b)
+		BBPunfix(b->batCacheid);
+	if (lb)
+		BBPunfix(lb->batCacheid);
 	if (bn && !msg) {
 		BATsetcount(bn, q);
 		bn->tnil = nils;
@@ -2149,6 +2356,52 @@ STRbatstrLocatecst(bat *res, const bat *l, const str *s2)
 	vals = Tloc(bn, 0);
 	for (p = 0; p < q ; p++) {
 		x = (str) BUNtail(bi, p);
+
+		next = str_locate2(x, y, 1);
+		vals[p] = next;
+		nils |= is_int_nil(next);
+	}
+
+bailout:
+	if (b)
+		BBPunfix(b->batCacheid);
+	if (bn && !msg) {
+		BATsetcount(bn, q);
+		bn->tnil = nils;
+		bn->tnonil = !nils;
+		bn->tkey = BATcount(bn) <= 1;
+		bn->tsorted = BATcount(bn) <= 1;
+		bn->trevsorted = BATcount(bn) <= 1;
+		BBPkeepref(*res = bn->batCacheid);
+	} else if (bn)
+		BBPreclaim(bn);
+	return msg;
+}
+
+static str
+STRbatstrLocate_strcst(bat *res, const str *s, const bat *l)
+{
+	BATiter bi;
+	BAT *bn = NULL, *b = NULL;
+	BUN p, q;
+	int *restrict vals, next;
+	str x = *s, y, msg = MAL_SUCCEED;
+	bool nils = false;
+
+	if (!(b = BATdescriptor(*l))) {
+		msg = createException(MAL, "batstr.locate", SQLSTATE(HY005) RUNTIME_OBJECT_MISSING);
+		goto bailout;
+	}
+	q = BATcount(b);
+	if (!(bn = COLnew(b->hseqbase, TYPE_int, q, TRANSIENT))) {
+		msg = createException(MAL, "batstr.locate", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		goto bailout;
+	}
+
+	bi = bat_iterator(b);
+	vals = Tloc(bn, 0);
+	for (p = 0; p < q ; p++) {
+		y = (str) BUNtail(bi, p);
 
 		next = str_locate2(x, y, 1);
 		vals[p] = next;
@@ -2367,11 +2620,15 @@ mel_func batstr_init_funcs[] = {
  command("batstr", "r_search", STRbatRstrSearchcst, false, "Reverse search for a substring. Returns position, -1 if not found.", args(1,3, batarg("",int),batarg("s",str),arg("c",str))),
  command("batstr", "string", STRbatTail, false, "Return the tail s[offset..n] of a string s[0..n].", args(1,3, batarg("",str),batarg("b",str),batarg("offset",int))),
  command("batstr", "string", STRbatTailcst, false, "Return the tail s[offset..n] of a string s[0..n].", args(1,3, batarg("",str),batarg("b",str),arg("offset",int))),
+ command("batstr", "string", STRbatTail_strcst, false, "Return the tail s[offset..n] of a string s[0..n].", args(1,3, batarg("",str),arg("b",str),batarg("offset",int))),
  command("batstr", "ascii", STRbatAscii, false, "Return unicode of head of string", args(1,2, batarg("",int),batarg("s",str))),
  command("batstr", "substring", STRbatsubstringTail, false, "Extract the tail of a string", args(1,3, batarg("",str),batarg("s",str),batarg("start",int))),
  command("batstr", "substring", STRbatsubstringTailcst, false, "Extract the tail of a string", args(1,3, batarg("",str),batarg("s",str),arg("start",int))),
+ command("batstr", "substring", STRbatsubstringTail_strcst, false, "Extract the tail of a string", args(1,3, batarg("",str),arg("s",str),batarg("start",int))),
  command("batstr", "substring", STRbatsubstring, false, "Substring extraction using [start,start+length]", args(1,4, batarg("",str),batarg("s",str),batarg("start",int),batarg("index",int))),
  command("batstr", "substring", STRbatsubstringcst, false, "Substring extraction using [start,start+length]", args(1,4, batarg("",str),batarg("s",str),arg("start",int),arg("index",int))),
+ command("batstr", "substring", STRbatsubstringcst_startcst, false, "Substring extraction using [start,start+length]", args(1,4, batarg("",str),batarg("s",str),arg("start",int),batarg("index",int))),
+ command("batstr", "substring", STRbatsubstringcst_indexcst, false, "Substring extraction using [start,start+length]", args(1,4, batarg("",str),batarg("s",str),batarg("start",int),arg("index",int))),
  command("batstr", "unicode", STRbatFromWChr, false, "convert a unicode to a character.", args(1,2, batarg("",str),batarg("wchar",int))),
  command("batstr", "unicodeAt", STRbatWChrAt, false, "get a unicode character (as an int) from a string position.", args(1,3, batarg("",int),batarg("s",str),batarg("index",int))),
  command("batstr", "unicodeAt", STRbatWChrAtcst, false, "get a unicode character (as an int) from a string position.", args(1,3, batarg("",int),batarg("s",str),arg("index",int))),
@@ -2379,10 +2636,13 @@ mel_func batstr_init_funcs[] = {
  command("batstr", "substitute", STRbatSubstitutecst, false, "Substitute first occurrence of 'src' by\n'dst'. Iff repeated = true this is\nrepeated while 'src' can be found in the\nresult string. In order to prevent\nrecursion and result strings of unlimited\nsize, repeating is only done iff src is\nnot a substring of dst.", args(1,5, batarg("",str),batarg("s",str),arg("src",str),arg("dst",str),arg("rep",bit))),
  command("batstr", "stringleft", STRbatprefix, false, "", args(1,3, batarg("",str),batarg("s",str),batarg("l",int))),
  command("batstr", "stringleft", STRbatprefixcst, false, "", args(1,3, batarg("",str),batarg("s",str),arg("l",int))),
+ command("batstr", "stringleft", STRbatprefix_strcst, false, "", args(1,3, batarg("",str),arg("s",str),batarg("l",int))),
  command("batstr", "stringright", STRbatsuffix, false, "", args(1,3, batarg("",str),batarg("s",str),batarg("l",int))),
  command("batstr", "stringright", STRbatsuffixcst, false, "", args(1,3, batarg("",str),batarg("s",str),arg("l",int))),
+ command("batstr", "stringright", STRbatsuffix_strcst, false, "", args(1,3, batarg("",str),arg("s",str),batarg("l",int))),
  command("batstr", "locate", STRbatstrLocate, false, "Locate the start position of a string", args(1,3, batarg("",int),batarg("s1",str),batarg("s2",str))),
  command("batstr", "locate", STRbatstrLocatecst, false, "Locate the start position of a string", args(1,3, batarg("",int),batarg("s1",str),arg("s2",str))),
+ command("batstr", "locate", STRbatstrLocate_strcst, false, "Locate the start position of a string", args(1,3, batarg("",int),arg("s1",str),batarg("s2",str))),
  command("batstr", "locate", STRbatstrLocate2, false, "Locate the start position of a string", args(1,4, batarg("",int),batarg("s1",str),batarg("s2",str),batarg("start",int))),
  command("batstr", "locate", STRbatstrLocate2cst, false, "Locate the start position of a string", args(1,4, batarg("",int),batarg("s1",str),arg("s2",str),arg("start",int))),
  command("batstr", "insert", STRbatInsert, false, "Insert a string into another", args(1,5, batarg("",str),batarg("s",str),batarg("start",int),batarg("l",int),batarg("s2",str))),
@@ -2391,6 +2651,7 @@ mel_func batstr_init_funcs[] = {
  command("batstr", "replace", STRbatReplacecst, false, "Insert a string into another", args(1,4, batarg("",str),batarg("s",str),arg("pat",str),arg("s2",str))),
  command("batstr", "repeat", STRbatrepeat, false, "", args(1,3, batarg("",str),batarg("s",str),batarg("c",int))),
  command("batstr", "repeat", STRbatrepeatcst, false, "", args(1,3, batarg("",str),batarg("s",str),arg("c",int))),
+ command("batstr", "repeat", STRbatrepeat_strcst, false, "", args(1,3, batarg("",str),arg("s",str),batarg("c",int))),
  command("batstr", "space", STRbatSpace, false, "", args(1,2, batarg("",str),batarg("l",int))),
  { .imp=NULL }
 };
