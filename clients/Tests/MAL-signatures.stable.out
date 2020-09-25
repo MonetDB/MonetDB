@@ -6527,6 +6527,7 @@ stdout of test 'MAL-signatures` in directory 'clients` itself:
 [ "batudf",	"fuse",	"command batudf.fuse(X_1:bat[:int], X_2:bat[:int]):bat[:lng] ",	"UDFBATfuse;",	""	]
 [ "batudf",	"fuse",	"command batudf.fuse(X_1:bat[:sht], X_2:bat[:sht]):bat[:int] ",	"UDFBATfuse;",	""	]
 [ "batudf",	"reverse",	"command batudf.reverse(X_1:bat[:str]):bat[:str] ",	"UDFBATreverse;",	""	]
+[ "batuuid",	"isaUUID",	"command batuuid.isaUUID(X_1:bat[:str]):bat[:bit] ",	"UUIDisaUUID_bulk;",	""	]
 [ "batxml",	"attribute",	"command batxml.attribute(X_1:str, X_2:bat[:str]):bat[:xml] ",	"BATXMLattribute;",	""	]
 [ "batxml",	"comment",	"command batxml.comment(X_1:bat[:str]):bat[:xml] ",	"BATXMLcomment;",	""	]
 [ "batxml",	"concat",	"command batxml.concat(X_1:bat[:xml], X_2:bat[:xml]):bat[:xml] ",	"BATXMLconcat;",	""	]
