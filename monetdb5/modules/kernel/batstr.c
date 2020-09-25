@@ -23,51 +23,6 @@
 #include "mal_exception.h"
 #include "str.h"
 
-#define prepareOperand(X,Y,Z)									\
-	if( (X= BATdescriptor(*Y)) == NULL )						\
-		throw(MAL, Z, SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
-#define prepareOperand2(X,Y,A,B,Z)								\
-	if( (X= BATdescriptor(*Y)) == NULL )						\
-		throw(MAL, Z, SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);	\
-	if( (A= BATdescriptor(*B)) == NULL ){						\
-		BBPunfix(X->batCacheid);								\
-		throw(MAL, Z, SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);	\
-	}
-#define prepareOperand3(X,Y,A,B,I,J,Z)							\
-	if( (X= BATdescriptor(*Y)) == NULL )						\
-		throw(MAL, Z, SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);	\
-	if( (A= BATdescriptor(*B)) == NULL ){						\
-		BBPunfix(X->batCacheid);								\
-		throw(MAL, Z, SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);	\
-	}															\
-	if( (I= BATdescriptor(*J)) == NULL ){						\
-		BBPunfix(X->batCacheid);								\
-		BBPunfix(A->batCacheid);								\
-		throw(MAL, Z, SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);	\
-	}
-#define prepareResult(X,Y,T,Z)							\
-	X= COLnew((Y)->hseqbase,T,BATcount(Y), TRANSIENT);	\
-	if( X == NULL){										\
-		BBPunfix(Y->batCacheid);						\
-		throw(MAL, Z, SQLSTATE(HY013) MAL_MALLOC_FAIL);	\
-	}													\
-	X->tsorted=false;									\
-	X->trevsorted=false;
-#define prepareResult2(X,Y,A,T,Z)						\
-	X= COLnew((Y)->hseqbase,T,BATcount(Y), TRANSIENT);	\
-	if( X == NULL){										\
-		BBPunfix(Y->batCacheid);						\
-		BBPunfix(A->batCacheid);						\
-		throw(MAL, Z, SQLSTATE(HY013) MAL_MALLOC_FAIL);	\
-	}													\
-	X->tsorted=false;									\
-	X->trevsorted=false;
-#define finalizeResult(X,Y,Z)								\
-	(Y)->theap.dirty |= BATcount(Y) > 0;					\
-	*X = (Y)->batCacheid;									\
-	BBPkeepref(*(X));										\
-	BBPunfix(Z->batCacheid);
-
 static inline str
 str_prefix(str *buf, size_t *buflen, const char *s, int l)
 {
@@ -183,7 +138,7 @@ STRbatFromWChr(bat *res, const bat *l)
 {
 	BAT *bn = NULL, *b = NULL;
 	BUN p, q;
-	size_t buflen = INITIAL_STR_BUFFER_LENGTH;
+	size_t buflen = MAX(strlen(str_nil) + 1, 8);
 	int *restrict vals;
 	str buf = GDKmalloc(buflen), msg = MAL_SUCCEED;
 	bool nils = false;
@@ -346,7 +301,7 @@ do_batstr_conststr_str(bat *res, const bat *l, const str *s2, const char *name, 
 	BATiter bi;
 	BAT *bn = NULL, *b = NULL;
 	BUN p, q;
-	size_t buflen = INITIAL_STR_BUFFER_LENGTH, nchars = buflen * sizeof(int);
+	size_t buflen = INITIAL_STR_BUFFER_LENGTH, nchars = INITIAL_INT_BUFFER_LENGTH;
 	str x, y = *s2, buf = GDKmalloc(buflen), msg = MAL_SUCCEED;
 	int *chars = GDKmalloc(nchars);
 	bool nils = false;
@@ -405,7 +360,7 @@ do_batstr_batstr_str(bat *res, const bat *l, const bat *l2, const char *name, st
 	BATiter lefti, righti;
 	BAT *bn = NULL, *left = NULL, *right = NULL;
 	BUN p, q;
-	size_t buflen = INITIAL_STR_BUFFER_LENGTH, nchars = buflen * sizeof(int);
+	size_t buflen = INITIAL_STR_BUFFER_LENGTH, nchars = INITIAL_INT_BUFFER_LENGTH;
 	str x, y, buf = GDKmalloc(buflen), msg = MAL_SUCCEED;
 	int *chars = GDKmalloc(nchars);
 	bool nils = false;

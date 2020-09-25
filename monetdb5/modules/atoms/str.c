@@ -3528,7 +3528,7 @@ illegal:
 static str
 STRFromWChr(str *res, const int *c)
 {
-	size_t buflen = INITIAL_STR_BUFFER_LENGTH;
+	size_t buflen = MAX(strlen(str_nil) + 1, 8);
 	str buf = GDKmalloc(buflen), msg;
 
 	*res = NULL;
@@ -4010,7 +4010,7 @@ str_strip2(str *buf, size_t *buflen, int **chars, size_t *nchars, const char *s,
 static str
 STRStrip2(str *res, const str *arg1, const str *arg2)
 {
-	size_t buflen = INITIAL_STR_BUFFER_LENGTH, nchars = buflen * sizeof(int);
+	size_t buflen = INITIAL_STR_BUFFER_LENGTH, nchars = INITIAL_INT_BUFFER_LENGTH;
 	str buf = GDKmalloc(buflen), msg;
 	int *chars = GDKmalloc(nchars);
 
@@ -4062,7 +4062,7 @@ str_ltrim2(str *buf, size_t *buflen, int **chars, size_t *nchars, const char *s,
 static str
 STRLtrim2(str *res, const str *arg1, const str *arg2)
 {
-	size_t buflen = INITIAL_STR_BUFFER_LENGTH, nchars = buflen * sizeof(int);
+	size_t buflen = INITIAL_STR_BUFFER_LENGTH, nchars = INITIAL_INT_BUFFER_LENGTH;
 	str buf = GDKmalloc(buflen), msg;
 	int *chars = GDKmalloc(nchars);
 
@@ -4114,7 +4114,7 @@ str_rtrim2(str *buf, size_t *buflen, int **chars, size_t *nchars, const char *s,
 static str
 STRRtrim2(str *res, const str *arg1, const str *arg2)
 {
-	size_t buflen = INITIAL_STR_BUFFER_LENGTH, nchars = buflen * sizeof(int);
+	size_t buflen = INITIAL_STR_BUFFER_LENGTH, nchars = INITIAL_INT_BUFFER_LENGTH;
 	str buf = GDKmalloc(buflen), msg;
 	int *chars = GDKmalloc(nchars);
 

@@ -15,7 +15,8 @@
 
 /* The batstr module functions use a single buffer to avoid malloc/free overhead.
    Note the buffer should be always large enough to hold null strings, so less testing will be required */
-#define INITIAL_STR_BUFFER_LENGTH MAX(strlen(str_nil) + 1, 1024)
+#define INITIAL_STR_BUFFER_LENGTH  MAX(strlen(str_nil) + 1, 1024)
+#define INITIAL_INT_BUFFER_LENGTH  1024 * sizeof(int)
 
 extern int str_length(const char *s);
 extern int str_bytes(const char *s);
