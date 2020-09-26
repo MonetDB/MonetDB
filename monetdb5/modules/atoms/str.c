@@ -4305,8 +4305,8 @@ str_substitute(str *buf, size_t *buflen, const char *s, const char *src, const c
 		const char *pfnd;
 
 		if (!lsrc || !l) { /* s/src is an empty string, there's nothing to substitute */
-			if (l)
-				CHECK_STR_BUFFER_LENGTH(buf, buflen, l, "str.substitute");
+			l++;
+			CHECK_STR_BUFFER_LENGTH(buf, buflen, l, "str.substitute");
 			strcpy(*buf, s);
 			return MAL_SUCCEED;
 		}
