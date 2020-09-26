@@ -3928,13 +3928,13 @@ STRRtrim(str *res, const str *arg1)
 
 /* return a list of codepoints in s */
 static str
-trimchars(int **chars, size_t *nchars, size_t *n, const char *s, size_t len_s, const char *malfunc)
+trimchars(str *buf, size_t *buflen, size_t *n, const char *s, size_t len_s, const char *malfunc)
 {
 	size_t len = 0, nlen = len_s * sizeof(int);
 	int c, *cbuf;
 
-	CHECK_INT_BUFFER_LENGTH(chars, nchars, nlen, malfunc);
-	cbuf = *chars;
+	CHECK_STR_BUFFER_LENGTH(buf, buflen, nlen, malfunc);
+	cbuf = *((int**)buf);
 
 	while (*s) {
 		UTF8_GETCHAR(c, s);
@@ -3948,7 +3948,7 @@ illegal:
 }
 
 str
-str_strip2(str *buf, size_t *buflen, int **chars, size_t *nchars, const char *s, const char *s2)
+str_strip2(str *buf, size_t *buflen, const char *s, const char *s2)
 {
 	str msg = MAL_SUCCEED;
 	size_t len, n, n2, n3;
@@ -3962,13 +3962,13 @@ str_strip2(str *buf, size_t *buflen, int **chars, size_t *nchars, const char *s,
 		strcpy(*buf, s);
 		return MAL_SUCCEED;
 	} else {
-		if ((msg = trimchars(chars, nchars, &n3, s2, n2, "str.strip2")) != MAL_SUCCEED)
+		if ((msg = trimchars(buf, buflen, &n3, s2, n2, "str.strip2")) != MAL_SUCCEED)
 			return msg;
 		len = strlen(s);
-		n = lstrip(s, len, *chars, n3);
+		n = lstrip(s, len, *((int**)buf), n3);
 		s += n;
 		len -= n;
-		n = rstrip(s, len, *chars, n3);
+		n = rstrip(s, len, *((int**)buf), n3);
 
 		n++;
 		CHECK_STR_BUFFER_LENGTH(buf, buflen, n, "str.strip2");
@@ -3982,28 +3982,23 @@ str_strip2(str *buf, size_t *buflen, int **chars, size_t *nchars, const char *s,
 static str
 STRStrip2(str *res, const str *arg1, const str *arg2)
 {
-	size_t buflen = INITIAL_STR_BUFFER_LENGTH, nchars = INITIAL_INT_BUFFER_LENGTH;
+	size_t buflen = INITIAL_STR_BUFFER_LENGTH;
 	str buf = GDKmalloc(buflen), msg;
-	int *chars = GDKmalloc(nchars);
 
 	*res = NULL;
-	if (!buf || !chars) {
-		GDKfree(buf);
-		GDKfree(chars);
+	if (!buf)
 		throw(MAL, "str.strip2", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-	}
-	msg = str_strip2(&buf, &buflen, &chars, &nchars, *arg1, *arg2);
+	msg = str_strip2(&buf, &buflen, *arg1, *arg2);
 	if (!msg && !(*res = GDKstrdup(buf))) {
 		msg = createException(MAL, "str.strip2", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
 
-	GDKfree(chars);
 	GDKfree(buf);
 	return msg;
 }
 
 str
-str_ltrim2(str *buf, size_t *buflen, int **chars, size_t *nchars, const char *s, const char *s2)
+str_ltrim2(str *buf, size_t *buflen, const char *s, const char *s2)
 {
 	str msg = MAL_SUCCEED;
 	size_t len, n, n2, n3, nallocate;
@@ -4017,10 +4012,10 @@ str_ltrim2(str *buf, size_t *buflen, int **chars, size_t *nchars, const char *s,
 		strcpy(*buf, s);
 		return MAL_SUCCEED;
 	} else {
-		if ((msg = trimchars(chars, nchars, &n3, s2, n2, "str.ltrim2")) != MAL_SUCCEED)
+		if ((msg = trimchars(buf, buflen, &n3, s2, n2, "str.ltrim2")) != MAL_SUCCEED)
 			return msg;
 		len = strlen(s);
-		n = lstrip(s, len, *chars, n3);
+		n = lstrip(s, len, *((int**)buf), n3);
 		nallocate = len - n + 1;
 
 		CHECK_STR_BUFFER_LENGTH(buf, buflen, nallocate, "str.ltrim2");
@@ -4034,28 +4029,23 @@ str_ltrim2(str *buf, size_t *buflen, int **chars, size_t *nchars, const char *s,
 static str
 STRLtrim2(str *res, const str *arg1, const str *arg2)
 {
-	size_t buflen = INITIAL_STR_BUFFER_LENGTH, nchars = INITIAL_INT_BUFFER_LENGTH;
+	size_t buflen = INITIAL_STR_BUFFER_LENGTH;
 	str buf = GDKmalloc(buflen), msg;
-	int *chars = GDKmalloc(nchars);
 
 	*res = NULL;
-	if (!buf || !chars) {
-		GDKfree(buf);
-		GDKfree(chars);
+	if (!buf)
 		throw(MAL, "str.ltrim2", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-	}
-	msg = str_ltrim2(&buf, &buflen, &chars, &nchars, *arg1, *arg2);
+	msg = str_ltrim2(&buf, &buflen, *arg1, *arg2);
 	if (!msg && !(*res = GDKstrdup(buf))) {
 		msg = createException(MAL, "str.ltrim2", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
 
-	GDKfree(chars);
 	GDKfree(buf);
 	return msg;
 }
 
 str
-str_rtrim2(str *buf, size_t *buflen, int **chars, size_t *nchars, const char *s, const char *s2)
+str_rtrim2(str *buf, size_t *buflen, const char *s, const char *s2)
 {
 	str msg = MAL_SUCCEED;
 	size_t len, n, n2, n3;
@@ -4069,10 +4059,10 @@ str_rtrim2(str *buf, size_t *buflen, int **chars, size_t *nchars, const char *s,
 		strcpy(*buf, s);
 		return MAL_SUCCEED;
 	} else {
-		if ((msg = trimchars(chars, nchars, &n3, s2, n2, "str.rtrim2")) != MAL_SUCCEED)
+		if ((msg = trimchars(buf, buflen, &n3, s2, n2, "str.ltrim2")) != MAL_SUCCEED)
 			return msg;
 		len = strlen(s);
-		n = rstrip(s, len, *chars, n3);
+		n = rstrip(s, len, *((int**)buf), n3);
 		n++;
 
 		CHECK_STR_BUFFER_LENGTH(buf, buflen, n, "str.rtrim2");
@@ -4086,22 +4076,17 @@ str_rtrim2(str *buf, size_t *buflen, int **chars, size_t *nchars, const char *s,
 static str
 STRRtrim2(str *res, const str *arg1, const str *arg2)
 {
-	size_t buflen = INITIAL_STR_BUFFER_LENGTH, nchars = INITIAL_INT_BUFFER_LENGTH;
+	size_t buflen = INITIAL_STR_BUFFER_LENGTH;
 	str buf = GDKmalloc(buflen), msg;
-	int *chars = GDKmalloc(nchars);
 
 	*res = NULL;
-	if (!buf || !chars) {
-		GDKfree(buf);
-		GDKfree(chars);
+	if (!buf)
 		throw(MAL, "str.rtrim2", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-	}
-	msg = str_rtrim2(&buf, &buflen, &chars, &nchars, *arg1, *arg2);
+	msg = str_rtrim2(&buf, &buflen, *arg1, *arg2);
 	if (!msg && !(*res = GDKstrdup(buf))) {
 		msg = createException(MAL, "str.rtrim2", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
 
-	GDKfree(chars);
 	GDKfree(buf);
 	return msg;
 }

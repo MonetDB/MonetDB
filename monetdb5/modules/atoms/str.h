@@ -16,7 +16,6 @@
 /* The batstr module functions use a single buffer to avoid malloc/free overhead.
    Note the buffer should be always large enough to hold null strings, so less testing will be required */
 #define INITIAL_STR_BUFFER_LENGTH  MAX(strlen(str_nil) + 1, 1024)
-#define INITIAL_INT_BUFFER_LENGTH  1024 * sizeof(int)
 
 /* The batstr module functions use a single buffer to avoid malloc/free overhead.
    Note the buffer should be always large enough to hold null strings, so less testing will be required */
@@ -25,19 +24,6 @@
 		if (NEXT_LEN > *BUFFER_LEN) { \
 			size_t newlen = NEXT_LEN + 1024; \
 			str newbuf = GDKmalloc(newlen); \
-			if (!newbuf) \
-				throw(MAL, OP, SQLSTATE(HY013) MAL_MALLOC_FAIL); \
-			GDKfree(*BUFFER); \
-			*BUFFER = newbuf; \
-			*BUFFER_LEN = newlen; \
-		} \
-	} while (0)
-
-#define CHECK_INT_BUFFER_LENGTH(BUFFER, BUFFER_LEN, NEXT_LEN, OP) \
-	do {  \
-		if (NEXT_LEN > *BUFFER_LEN) { \
-			size_t newlen = NEXT_LEN + (1024 * sizeof(int)); \
-			int *newbuf = GDKmalloc(newlen); \
 			if (!newbuf) \
 				throw(MAL, OP, SQLSTATE(HY013) MAL_MALLOC_FAIL); \
 			GDKfree(*BUFFER); \
@@ -68,9 +54,9 @@ extern str str_upper(str *buf, size_t *buflen, const char *s);
 extern str str_strip(str *buf, size_t *buflen, const char *s);
 extern str str_ltrim(str *buf, size_t *buflen, const char *s);
 extern str str_rtrim(str *buf, size_t *buflen, const char *s);
-extern str str_strip2(str *buf, size_t *buflen, int **chars, size_t *nchars, const char *s, const char *s2);
-extern str str_ltrim2(str *buf, size_t *buflen, int **chars, size_t *nchars, const char *s, const char *s2);
-extern str str_rtrim2(str *buf, size_t *buflen, int **chars, size_t *nchars, const char *s, const char *s2);
+extern str str_strip2(str *buf, size_t *buflen, const char *s, const char *s2);
+extern str str_ltrim2(str *buf, size_t *buflen, const char *s, const char *s2);
+extern str str_rtrim2(str *buf, size_t *buflen, const char *s, const char *s2);
 extern str str_lpad(str *buf, size_t *buflen, const char *s, int len);
 extern str str_rpad(str *buf, size_t *buflen, const char *s, int len);
 extern str str_lpad2(str *buf, size_t *buflen, const char *s, int len, const char *s2);

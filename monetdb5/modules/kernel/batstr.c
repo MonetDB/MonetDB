@@ -296,17 +296,16 @@ bailout:
  * Output type: str (a BAT of strings)
  */
 static str
-do_batstr_conststr_str(bat *res, const bat *l, const str *s2, const char *name, str (*func)(str*, size_t*, int**, size_t*, const char*, const char*))
+do_batstr_conststr_str(bat *res, const bat *l, const str *s2, const char *name, str (*func)(str*, size_t*, const char*, const char*))
 {
 	BATiter bi;
 	BAT *bn = NULL, *b = NULL;
 	BUN p, q;
-	size_t buflen = INITIAL_STR_BUFFER_LENGTH, nchars = INITIAL_INT_BUFFER_LENGTH;
+	size_t buflen = INITIAL_STR_BUFFER_LENGTH;
 	str x, y = *s2, buf = GDKmalloc(buflen), msg = MAL_SUCCEED;
-	int *chars = GDKmalloc(nchars);
 	bool nils = false;
 
-	if (!buf || !chars) {
+	if (!buf) {
 		msg = createException(MAL, name, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		goto bailout;
 	}
@@ -324,7 +323,7 @@ do_batstr_conststr_str(bat *res, const bat *l, const str *s2, const char *name, 
 	for (p = 0; p < q ; p++) {
 		x = (str) BUNtail(bi, p);
 
-		if ((msg = func(&buf, &buflen, &chars, &nchars, x, y)) != MAL_SUCCEED)
+		if ((msg = func(&buf, &buflen, x, y)) != MAL_SUCCEED)
 			goto bailout;
 		if (tfastins_nocheckVAR(bn, p, buf, Tsize(bn)) != GDK_SUCCEED) {
 			msg = createException(MAL, name, SQLSTATE(HY013) MAL_MALLOC_FAIL);
@@ -335,7 +334,6 @@ do_batstr_conststr_str(bat *res, const bat *l, const str *s2, const char *name, 
 
 bailout:
 	GDKfree(buf);
-	GDKfree(chars);
 	if (b)
 		BBPunfix(b->batCacheid);
 	if (bn && !msg) {
@@ -355,17 +353,16 @@ bailout:
  * Output type: str (a BAT of strings)
  */
 static str
-do_batstr_batstr_str(bat *res, const bat *l, const bat *l2, const char *name, str (*func)(str*, size_t*, int**, size_t*, const char*, const char*))
+do_batstr_batstr_str(bat *res, const bat *l, const bat *l2, const char *name, str (*func)(str*, size_t*, const char*, const char*))
 {
 	BATiter lefti, righti;
 	BAT *bn = NULL, *left = NULL, *right = NULL;
 	BUN p, q;
-	size_t buflen = INITIAL_STR_BUFFER_LENGTH, nchars = INITIAL_INT_BUFFER_LENGTH;
+	size_t buflen = INITIAL_STR_BUFFER_LENGTH;
 	str x, y, buf = GDKmalloc(buflen), msg = MAL_SUCCEED;
-	int *chars = GDKmalloc(nchars);
 	bool nils = false;
 
-	if (!buf || !chars) {
+	if (!buf) {
 		msg = createException(MAL, name, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		goto bailout;
 	}
@@ -389,7 +386,7 @@ do_batstr_batstr_str(bat *res, const bat *l, const bat *l2, const char *name, st
 		x = (str) BUNtail(lefti, p);
 		y = (str) BUNtail(righti, p);
 
-		if ((msg = func(&buf, &buflen, &chars, &nchars, x, y)) != MAL_SUCCEED)
+		if ((msg = func(&buf, &buflen, x, y)) != MAL_SUCCEED)
 			goto bailout;
 		if (tfastins_nocheckVAR(bn, p, buf, Tsize(bn)) != GDK_SUCCEED) {
 			msg = createException(MAL, name, SQLSTATE(HY013) MAL_MALLOC_FAIL);
@@ -400,7 +397,6 @@ do_batstr_batstr_str(bat *res, const bat *l, const bat *l2, const char *name, st
 
 bailout:
 	GDKfree(buf);
-	GDKfree(chars);
 	if (left)
 		BBPunfix(left->batCacheid);
 	if (right)
