@@ -98,3 +98,16 @@ Plan
 Expand sqlStatementIntern to incorporate prepared statements.
 
 use remote to call sql.prepare on the remote side. Remote should return similar info as regular mapi.
+
+
+function user.%2():any;
+    X_0:any := remote.put("_monetdb_0":str, true:bit);
+    X_3:any := remote.put("_monetdb_0":str, "SELECT x, y, 1 AS some_int FROM test WHERE x > 10; ":str);
+    remote.exec("_monetdb_0":str, "sql":str, "eval":str, 0x7fffffffdba0:ptr, X_3:any, X_0:any);
+    return :void;
+
+function user.%2():any;
+    X_0:str := remote.put("_monetdb_0":str, true:bit);
+    X_3:str := remote.put("_monetdb_0":str, "SELECT x, y, 1 AS some_int FROM test WHERE x > 10; ":str);
+    remote.exec("_monetdb_0":str, "sql":str, "eval":str, 0x7fffffffdba0:ptr, X_3:str, X_0:str);
+    return :void;

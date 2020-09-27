@@ -324,6 +324,7 @@ SQLstatementIntern(Client c, str *expr, str nme, bit execute, bit output, res_ta
 	stream *buf = NULL;
 	str msg = MAL_SUCCEED;
 	backend *be = NULL, *sql = (backend *) c->sqlcontext;
+	Symbol backup = NULL;
 	size_t len = strlen(*expr);
 
 #ifdef _SQL_COMPILE
@@ -424,6 +425,11 @@ SQLstatementIntern(Client c, str *expr, str nme, bit execute, bit output, res_ta
 	 * Scan the complete string for SQL statements, stop at the first error.
 	 */
 	c->sqlcontext = sql;
+	if (c->curprg) {
+		backup = c->curprg;
+		c->curprg = NULL;
+	}
+
 	while (msg == MAL_SUCCEED && m->scanner.rs->pos < m->scanner.rs->len) {
 		sql_rel *r;
 
@@ -628,6 +634,9 @@ SQLstatementIntern(Client c, str *expr, str nme, bit execute, bit output, res_ta
 endofcompile:
 	if (execute)
 		MSresetInstructions(c->curprg->def, 1);
+
+	if (backup)
+		c->curprg = backup;
 
 	c->sqlcontext = be;
 	backend_destroy(sql);

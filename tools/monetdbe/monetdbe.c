@@ -652,7 +652,7 @@ monetdbe_open_remote(monetdbe_database_internal *mdbe, char *url, monetdbe_optio
 	if ( (mdbe->msg = chkProgram(c->usermodule, mb)) != MAL_SUCCEED ) {
 		return -2;
 	}
-	MalStkPtr stk = prepareMALstack(mb, mb->vsize);
+	MalStkPtr stk = prepareMALstack(mb, mb->vsize); // TODO: clean up after usage
 	stk->keepAlive = TRUE;
 	if ( (mdbe->msg = runMAL(c, mb, 0, stk)) != MAL_SUCCEED ) {
 		return -2;
@@ -853,15 +853,9 @@ monetdbe_in_transaction(monetdbe_database dbhdl)
 	return result;
 }
 
-struct callback_context {
-	monetdbe_result** result;
-	monetdbe_database_internal *mdbe;
-};
-
 static str
 monetdbe_result_cb(void* context, char* tblname, columnar_result* results, size_t nr_results) {
-	monetdbe_result** result			= ((struct callback_context*) context)->result;
-	monetdbe_database_internal *mdbe	= ((struct callback_context*) context)->mdbe;
+	monetdbe_database_internal *mdbe = context;
 
 	if (nr_results == 0)
 		return MAL_SUCCEED; // No work to do.
@@ -895,23 +889,6 @@ monetdbe_result_cb(void* context, char* tblname, columnar_result* results, size_
 			BBPkeepref(b->batCacheid);
 	}
 
-	if (result) {
-		if ((mdbe->msg = monetdbe_get_results(result, mdbe)) != MAL_SUCCEED) {
-			return mdbe->msg;
-		}
-
-		Client c = mdbe->c;
-		mvc* m;
-		backend * b;
-		if ((mdbe->msg = getSQLContext(c, NULL, &m, &b)) != MAL_SUCCEED)
-			return mdbe->msg;
-
-		if (m->emode & m_prepare)
-			((monetdbe_result_internal*) result)->type = Q_PREPARE;
-		else
-			((monetdbe_result_internal*) result)->type = (be->results) ? be->results->query_type : m->type;
-	}
-
 	return MAL_SUCCEED;
 }
 
@@ -933,6 +910,7 @@ monetdbe_prepare_cb(void* context, char* tblname, columnar_result* results, size
 	if ((mdbe->msg = getBackendContext(mdbe->c, &be)) != NULL)
 		return mdbe->msg;
 
+	// clean these up
 	BAT* btype = NULL;
 	BAT* bdigits = NULL;
 	BAT* bscale = NULL;
@@ -961,7 +939,7 @@ monetdbe_prepare_cb(void* context, char* tblname, columnar_result* results, size
 	BATiter btable_iter = bat_iterator(btable);
 	char* function =  BUNtvar(btable_iter, BATcount(btable)-1);
 
-	Symbol prg = newFunction(userRef, "temp", FUNCTIONsymbol);
+	Symbol prg = newFunction(userRef, putName("temp"), FUNCTIONsymbol);
 
 	resizeMalBlk(prg->def, nparams + 3 /*function declaration + remote.exec + return statement*/);
 	MalBlkPtr mb = prg->def;
@@ -969,19 +947,30 @@ monetdbe_prepare_cb(void* context, char* tblname, columnar_result* results, size
 	InstrPtr o = getInstrPtr(mb, 0);
 	o->retc = o->argc = 0;
 
-	InstrPtr e = newInstruction(mb, remoteRef, execRef);
-	e->retc = e->argc = 0;
+	InstrPtr e = newInstruction(mb, remoteRef, exec2Ref);
+	setDestVar(e, newTmpVariable(mb, TYPE_any));
 	e = pushStr(mb, e, mdbe->mid);
 	e = pushStr(mb, e, userRef);
 	e = pushStr(mb, e, function);
 
+	columnar_result_callback* rcb = GDKmalloc(sizeof(columnar_result_callback));
+	rcb->context = mdbe;
+	rcb->call = monetdbe_result_cb;
+
+	ValRecord v;
+	ptr vp = (ptr) rcb;
+
+	VALset(&v, TYPE_ptr, &vp);
+	e = pushValue(mb, e, &v);
+
 	InstrPtr r = newInstruction(mb, NULL, NULL);
 	r->barrier= RETURNsymbol;
-	r->retc = r->argc = 0;
+	r->argc= r->retc=0;
 
 	sql_allocator* sa = be->mvc->sa;
 
 	list *args = new_exp_list(sa);
+	list *rets = new_exp_list(sa);
 
 	for (size_t i = 0; i < nparams; i++) {
 
@@ -1009,20 +998,11 @@ monetdbe_prepare_cb(void* context, char* tblname, columnar_result* results, size
 
 			e = pushArgument(mb, e, getArg(p, 0));
 		}
-	}
-
-	pushInstruction(mb, e);
-
-	list *rets = new_exp_list(sa);
-
-	for (size_t i = 0; i < nparams; i++) {
-
-		char* table =  BUNtvar(btable_iter, i);
-
-		if (!strNil(table)) {
+		else {
 			// output argument
 			sql_type *t = SA_ZNEW(sa, sql_type);
-			t->localtype = *(int*) Tloc(btype, i);
+			int type = *(int*) Tloc(btype, i);
+			t->localtype = type;
 
 			char* column = BUNtvar(bcolumn_iter, i);
 			sql_subtype *st = SA_ZNEW(sa, sql_subtype);
@@ -1030,22 +1010,9 @@ monetdbe_prepare_cb(void* context, char* tblname, columnar_result* results, size
 
 			sql_exp * c = exp_column(sa, table, column, st, CARD_MULTI, true, false);
 			append(rets, c);
-
-			int type =  newBatType(t->localtype);
-			int idx = newTmpVariable(mb, TYPE_str);
-
-			InstrPtr g = newFcnCall(mb, putName(remoteRef), putName(getRef));
-			setArgType(mb, g, 0, type);
-			g = pushStr(mb, g, mdbe->mid);
-			g = pushArgument(mb, g, idx);
-
-			e = pushReturn(mb, e, idx);
-
-			r = pushReturn(mb, r, getArg(g, 0));
-			o = pushReturn(mb, o, getArg(g, 0));
 		}
 	}
-
+	pushInstruction(mb, e);
 	pushInstruction(mb, r);
 
 	if ( (mdbe->msg = chkProgram(mdbe->c->usermodule, mb)) != MAL_SUCCEED ) {
@@ -1064,7 +1031,7 @@ monetdbe_prepare_cb(void* context, char* tblname, columnar_result* results, size
 	 */
 	prg->def = NULL;
 	freeSymbol(prg);
-	prg = newFunction(userRef, be->q->name, FUNCTIONsymbol);
+	prg = newFunction(userRef, putName(be->q->name), FUNCTIONsymbol);
 	prg->def = mb;
 	setFunctionId(getSignature(prg), be->q->name);
 
@@ -1080,8 +1047,6 @@ monetdbe_query_remote(monetdbe_database_internal *mdbe, char* query, monetdbe_re
 	// TODO: do something with affected_rows
 	(void) affected_rows;
 
-	(void) result;
-
 	const char *mod = "user";
 	char nme[16];
 
@@ -1096,6 +1061,9 @@ monetdbe_query_remote(monetdbe_database_internal *mdbe, char* query, monetdbe_re
 	}
 
 	MalBlkPtr mb = prg->def;
+
+	InstrPtr f = getInstrPtr(mb, 0);
+	f->retc = f->argc = 0;
 
 	InstrPtr o = newStmt(mb, remoteRef, putRef);
 	o = pushStr(mb, o, mdbe->mid);
@@ -1125,51 +1093,70 @@ monetdbe_query_remote(monetdbe_database_internal *mdbe, char* query, monetdbe_re
 	p = pushStr(mb, p, query);
 
 
-	InstrPtr q = newInstruction(mb, remoteRef, execRef);
-	q->retc = q->argc = 0;
-	q = pushStr(mb, q, mdbe->mid);
-	q = pushStr(mb, q, sqlRef);
-	q = pushStr(mb, q, evalRef);
+	InstrPtr e = newInstruction(mb, remoteRef, exec2Ref);
+	setDestVar(e, newTmpVariable(mb, TYPE_any));
+	e = pushStr(mb, e, mdbe->mid);
+	e = pushStr(mb, e, sqlRef);
+	e = pushStr(mb, e, evalRef);
 
 	/*
 	 * prepare the call back routine and its context
 	 * and pass it over as a pointer to remote.exec.
 	 */
-	columnar_result_callback rcb;
+	columnar_result_callback* rcb = GDKmalloc(sizeof(columnar_result_callback));
 	if (!prepare_id) {
-		struct callback_context context = {.result = result, .mdbe = mdbe};
-		rcb.context = &context;
-		rcb.call = monetdbe_result_cb;
+		rcb->context = mdbe;
+		rcb->call = monetdbe_result_cb;
 	}
 	else {
-		struct prepare_callback_context context = {.prepare_id = prepare_id, .mdbe = mdbe};
-		rcb.context = &context;
-		rcb.call = monetdbe_prepare_cb;
+		struct prepare_callback_context ccontext = {.prepare_id = prepare_id, .mdbe = mdbe};
+		rcb->context = &ccontext;
+		rcb->call = monetdbe_prepare_cb;
 	}
 
 	ValRecord v;
-	ptr vp = (ptr) &rcb;
+	ptr vp = (ptr) rcb;
 	
 	VALset(&v, TYPE_ptr, &vp);	
-	q = pushValue(mb, q, &v);
+	e = pushValue(mb, e, &v);
 
-	q = pushArgument(mb, q, getArg(p, 0));
-	q = pushArgument(mb, q, getArg(o, 0));
+	e = pushArgument(mb, e, getArg(p, 0));
+	e = pushArgument(mb, e, getArg(o, 0));
 
-	pushInstruction(mb, q);
+	pushInstruction(mb, e);
 
-	p = newInstruction(mb, NULL, NULL);
-	p->barrier= RETURNsymbol;
-	pushInstruction(mb, p);
+	InstrPtr r = newInstruction(mb, NULL, NULL);
+	r->barrier= RETURNsymbol;
+	r->argc= r->retc=0;
+	pushInstruction(mb, r);
 
 	if ( (mdbe->msg = chkProgram(c->usermodule, mb)) != MAL_SUCCEED ) {
 		return mdbe->msg;
 	}
 
-	MalStkPtr stk = prepareMALstack(mb, mb->vsize);
+	MalStkPtr stk = prepareMALstack(mb, mb->vsize); // TODO: clean up after usage
 	stk->keepAlive = TRUE;
 	if ( (mdbe->msg = runMAL(c, mb, 0, stk)) != MAL_SUCCEED )
 		return mdbe->msg;
+
+	if (result) {
+		if ((mdbe->msg = monetdbe_get_results(result, mdbe)) != MAL_SUCCEED) {
+			return mdbe->msg;
+		}
+
+		backend *be = NULL;
+		if ((mdbe->msg = getBackendContext(mdbe->c, &be)) != NULL)
+			return mdbe->msg;
+		mvc* m;
+		backend * b;
+		if ((mdbe->msg = getSQLContext(c, NULL, &m, &b)) != MAL_SUCCEED)
+			return mdbe->msg;
+
+		if (m->emode & m_prepare)
+			((monetdbe_result_internal*) result)->type = Q_PREPARE;
+		else
+			((monetdbe_result_internal*) result)->type = (be->results) ? be->results->query_type : m->type;
+	}
 
 	return mdbe->msg;
 }

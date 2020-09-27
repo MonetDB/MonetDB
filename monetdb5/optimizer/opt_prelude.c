@@ -125,6 +125,7 @@ str emptybindRef;
 str eqRef;
 str evalRef;
 str execRef;
+str exec2Ref;
 str expandRef;
 str exportOperationRef;
 str export_tableRef;
@@ -432,6 +433,7 @@ void optimizerInit(void)
 	eqRef = putName("==");
 	evalRef = putName("eval");
 	execRef = putName("exec");
+	exec2Ref = putName("exec2");
 	expandRef = putName("expand");
 	exportOperationRef = putName("exportOperation");
 	export_tableRef = putName("export_table");

@@ -33,12 +33,76 @@ main(void)
 	if (monetdbe_open(&mdbe, "mapi:monetdb://127.0.0.1:50000?database=devdb", &opt))
 		error("Failed to open database")
 
-	// Assumes the existance of a table test (x INT, y STRING)  on the remote.
-	monetdbe_statement *stmt = NULL;
-	if ((err = monetdbe_prepare(mdbe, "SELECT y, 1 FROM test WHERE x = ?", &stmt)) != NULL)
+	if ((err = monetdbe_query(mdbe, "SELECT x, y, 1 AS some_int FROM test; ", &result, NULL)) != NULL)
 		error(err)
 
-	int x = 10;
+	fprintf(stdout, "Query result with %zu cols and %"PRId64" rows\n", result->ncols, result->nrows);
+	for (int64_t r = 0; r < result->nrows; r++) {
+		for (size_t c = 0; c < result->ncols; c++) {
+			monetdbe_column* rcol;
+			if ((err = monetdbe_result_fetch(result, &rcol, c)) != NULL)
+				error(err)
+			switch (rcol->type) {
+				case monetdbe_int8_t: {
+					monetdbe_column_int8_t * col = (monetdbe_column_int8_t *) rcol;
+					if (col->data[r] == col->null_value) {
+						printf("NULL");
+					} else {
+						printf("%d", col->data[r]);
+					}
+					break;
+				}
+				case monetdbe_int16_t: {
+					monetdbe_column_int16_t * col = (monetdbe_column_int16_t *) rcol;
+					if (col->data[r] == col->null_value) {
+						printf("NULL");
+					} else {
+						printf("%d", col->data[r]);
+					}
+					break;
+				}
+				case monetdbe_int32_t: {
+					monetdbe_column_int32_t * col = (monetdbe_column_int32_t *) rcol;
+					if (col->data[r] == col->null_value) {
+						printf("NULL");
+					} else {
+						printf("%d", col->data[r]);
+					}
+					break;
+				}
+				case monetdbe_str: {
+					monetdbe_column_str * col = (monetdbe_column_str *) rcol;
+					if (col->is_null(col->data[r])) {
+						printf("NULL");
+					} else {
+						printf("%s", (char*) col->data[r]);
+					}
+					break;
+				}
+				default: {
+					printf("UNKNOWN");
+				}
+			}
+
+			if (c + 1 < result->ncols) {
+				printf(", ");
+			}
+		}
+		printf("\n");
+	}
+
+	if ((err = monetdbe_cleanup_result(mdbe, result)) != NULL)
+		error(err)
+
+	if ((err = monetdbe_query(mdbe, "INSERT INTO test VALUES (100, 'temp');", NULL, NULL)) != NULL)
+		error(err)
+
+	// Assumes the existance of a table test (x INT, y STRING)  on the remote.
+	monetdbe_statement *stmt = NULL;
+	if ((err = monetdbe_prepare(mdbe, "SELECT y, x, 1 AS some_fixed_int FROM test WHERE x = ?", &stmt)) != NULL)
+		error(err)
+
+	int x = 100;
 
 	if ((err = monetdbe_bind(stmt, &x, 0)) != NULL)
 		error(err)
@@ -104,9 +168,6 @@ main(void)
 	if ((err = monetdbe_cleanup_result(mdbe, result)) != NULL)
 		error(err)
 
-	if ((err = monetdbe_query(mdbe, "DELETE FROM test where x = 100;", NULL, NULL)) != NULL)
-		error(err)
-
 	if ((err = monetdbe_query(mdbe, "SELECT x, y, 1 AS some_int FROM test WHERE x > 10; ", &result, NULL)) != NULL)
 		error(err)
 
@@ -164,6 +225,9 @@ main(void)
 		}
 		printf("\n");
 	}
+
+	if ((err = monetdbe_query(mdbe, "DELETE FROM test where x = 100;", NULL, NULL)) != NULL)
+		error(err)
 
 	if ((err = monetdbe_cleanup_result(mdbe, result)) != NULL)
 		error(err)
