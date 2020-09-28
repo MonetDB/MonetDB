@@ -296,12 +296,11 @@ bailout:
  * Output type: str (a BAT of strings)
  */
 static str
-do_batstr_conststr_str(bat *res, const bat *l, const str *s2, const char *name, str (*func)(str*, size_t*, str, str))
+do_batstr_conststr_str(bat *res, const bat *l, const str *s2, const char *name, size_t buflen, str (*func)(str*, size_t*, str, str))
 {
 	BATiter bi;
 	BAT *bn = NULL, *b = NULL;
 	BUN p, q;
-	size_t buflen = INITIAL_STR_BUFFER_LENGTH;
 	str x, y = *s2, buf = GDKmalloc(buflen), msg = MAL_SUCCEED;
 	bool nils = false;
 
@@ -353,12 +352,11 @@ bailout:
  * Output type: str (a BAT of strings)
  */
 static str
-do_batstr_batstr_str(bat *res, const bat *l, const bat *l2, const char *name, str (*func)(str*, size_t*, str, str))
+do_batstr_batstr_str(bat *res, const bat *l, const bat *l2, const char *name, size_t buflen, str (*func)(str*, size_t*, str, str))
 {
 	BATiter lefti, righti;
 	BAT *bn = NULL, *left = NULL, *right = NULL;
 	BUN p, q;
-	size_t buflen = INITIAL_STR_BUFFER_LENGTH;
 	str x, y, buf = GDKmalloc(buflen), msg = MAL_SUCCEED;
 	bool nils = false;
 
@@ -828,37 +826,37 @@ STRbatRtrim(bat *ret, const bat *l)
 static str
 STRbatStrip2_const(bat *ret, const bat *l, const str *s2)
 {
-	return do_batstr_conststr_str(ret, l, s2, "batstr.strip", str_strip2);
+	return do_batstr_conststr_str(ret, l, s2, "batstr.strip", INITIAL_STR_BUFFER_LENGTH * sizeof(int), str_strip2);
 }
 
 static str
 STRbatLtrim2_const(bat *ret, const bat *l, const str *s2)
 {
-	return do_batstr_conststr_str(ret, l, s2, "batstr.ltrim", str_ltrim2);
+	return do_batstr_conststr_str(ret, l, s2, "batstr.ltrim", INITIAL_STR_BUFFER_LENGTH * sizeof(int), str_ltrim2);
 }
 
 static str
 STRbatRtrim2_const(bat *ret, const bat *l, const str *s2)
 {
-	return do_batstr_conststr_str(ret, l, s2, "batstr.rtrim", str_rtrim2);
+	return do_batstr_conststr_str(ret, l, s2, "batstr.rtrim", INITIAL_STR_BUFFER_LENGTH * sizeof(int), str_rtrim2);
 }
 
 static str
 STRbatStrip2_bat(bat *ret, const bat *l, const bat *l2)
 {
-	return do_batstr_batstr_str(ret, l, l2, "batstr.strip", str_strip2);
+	return do_batstr_batstr_str(ret, l, l2, "batstr.strip", INITIAL_STR_BUFFER_LENGTH * sizeof(int), str_strip2);
 }
 
 static str
 STRbatLtrim2_bat(bat *ret, const bat *l, const bat *l2)
 {
-	return do_batstr_batstr_str(ret, l, l2, "batstr.ltrim", str_ltrim2);
+	return do_batstr_batstr_str(ret, l, l2, "batstr.ltrim", INITIAL_STR_BUFFER_LENGTH * sizeof(int), str_ltrim2);
 }
 
 static str
 STRbatRtrim2_bat(bat *ret, const bat *l, const bat *l2)
 {
-	return do_batstr_batstr_str(ret, l, l2, "batstr.rtrim", str_rtrim2);
+	return do_batstr_batstr_str(ret, l, l2, "batstr.rtrim", INITIAL_STR_BUFFER_LENGTH * sizeof(int), str_rtrim2);
 }
 
 static str

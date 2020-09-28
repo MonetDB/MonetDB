@@ -3934,7 +3934,7 @@ trimchars(str *buf, size_t *buflen, size_t *n, const char *s, size_t len_s, cons
 	int c, *cbuf;
 
 	CHECK_STR_BUFFER_LENGTH(buf, buflen, nlen, malfunc);
-	cbuf = *((int**)buf);
+	cbuf = *(int**)buf;
 
 	while (*s) {
 		UTF8_GETCHAR(c, s);
@@ -3965,10 +3965,10 @@ str_strip2(str *buf, size_t *buflen, str s, str s2)
 		if ((msg = trimchars(buf, buflen, &n3, s2, n2, "str.strip2")) != MAL_SUCCEED)
 			return msg;
 		len = strlen(s);
-		n = lstrip(s, len, *((int**)buf), n3);
+		n = lstrip(s, len, *(int**)buf, n3);
 		s += n;
 		len -= n;
-		n = rstrip(s, len, *((int**)buf), n3);
+		n = rstrip(s, len, *(int**)buf, n3);
 
 		n++;
 		CHECK_STR_BUFFER_LENGTH(buf, buflen, n, "str.strip2");
@@ -3982,7 +3982,7 @@ str_strip2(str *buf, size_t *buflen, str s, str s2)
 static str
 STRStrip2(str *res, const str *arg1, const str *arg2)
 {
-	size_t buflen = INITIAL_STR_BUFFER_LENGTH;
+	size_t buflen = INITIAL_STR_BUFFER_LENGTH * sizeof(int);
 	str buf = GDKmalloc(buflen), msg;
 
 	*res = NULL;
@@ -4015,7 +4015,7 @@ str_ltrim2(str *buf, size_t *buflen, str s, str s2)
 		if ((msg = trimchars(buf, buflen, &n3, s2, n2, "str.ltrim2")) != MAL_SUCCEED)
 			return msg;
 		len = strlen(s);
-		n = lstrip(s, len, *((int**)buf), n3);
+		n = lstrip(s, len, *(int**)buf, n3);
 		nallocate = len - n + 1;
 
 		CHECK_STR_BUFFER_LENGTH(buf, buflen, nallocate, "str.ltrim2");
@@ -4029,7 +4029,7 @@ str_ltrim2(str *buf, size_t *buflen, str s, str s2)
 static str
 STRLtrim2(str *res, const str *arg1, const str *arg2)
 {
-	size_t buflen = INITIAL_STR_BUFFER_LENGTH;
+	size_t buflen = INITIAL_STR_BUFFER_LENGTH * sizeof(int);
 	str buf = GDKmalloc(buflen), msg;
 
 	*res = NULL;
@@ -4062,7 +4062,7 @@ str_rtrim2(str *buf, size_t *buflen, str s, str s2)
 		if ((msg = trimchars(buf, buflen, &n3, s2, n2, "str.ltrim2")) != MAL_SUCCEED)
 			return msg;
 		len = strlen(s);
-		n = rstrip(s, len, *((int**)buf), n3);
+		n = rstrip(s, len, *(int**)buf, n3);
 		n++;
 
 		CHECK_STR_BUFFER_LENGTH(buf, buflen, n, "str.rtrim2");
@@ -4076,7 +4076,7 @@ str_rtrim2(str *buf, size_t *buflen, str s, str s2)
 static str
 STRRtrim2(str *res, const str *arg1, const str *arg2)
 {
-	size_t buflen = INITIAL_STR_BUFFER_LENGTH;
+	size_t buflen = INITIAL_STR_BUFFER_LENGTH * sizeof(int);
 	str buf = GDKmalloc(buflen), msg;
 
 	*res = NULL;

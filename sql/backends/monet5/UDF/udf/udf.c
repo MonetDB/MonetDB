@@ -118,6 +118,7 @@ UDFBATreverse_(BAT **ret, BAT *src)
 	BUN p = 0, q = 0;
 	size_t buflen = INITIAL_STR_BUFFER_LENGTH;
 	str msg = MAL_SUCCEED, buf;
+	bool nils = false;
 
 	/* assert calling sanity */
 	assert(ret);
@@ -158,14 +159,15 @@ UDFBATreverse_(BAT **ret, BAT *src)
 			msg = createException(MAL, "batudf.reverse", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			goto bailout;
 		}
+		nils |= strNil(buf);
 	}
 
 bailout:
 	GDKfree(buf);
 	if (bn && !msg) {
 		BATsetcount(bn, q);
-		bn->tnil = src->tnil;
-		bn->tnonil = src->tnonil;
+		bn->tnil = nils;
+		bn->tnonil = !nils;
 		bn->tkey = BATcount(bn) <= 1;
 		bn->tsorted = BATcount(bn) <= 1;
 		bn->trevsorted = BATcount(bn) <= 1;
@@ -189,10 +191,10 @@ UDFBATreverse(bat *ret, const bat *arg)
 
 	/* bat-id -> BAT-descriptor */
 	if ((src = BATdescriptor(*arg)) == NULL)
-		throw(MAL, "batudf.reverse",  SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
+		throw(MAL, "batudf.reverse", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 
 	/* do the work */
-	msg = UDFBATreverse_ ( &res, src );
+	msg = UDFBATreverse_( &res, src );
 
 	/* release input BAT-descriptor */
 	BBPunfix(src->batCacheid);
