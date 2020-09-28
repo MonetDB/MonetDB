@@ -78,7 +78,11 @@ def process_test_dir(dir_path:str, ctx={}, **kwargs):
                 else:
                     missing_reqtests.append(r)
             test['missing_reqtests'] = missing_reqtests
-        # TODO .timeout and .nomito
+        if os.path.isfile(test_path + '.nomito'):
+            test['nomito'] = True
+        if os.path.isfile(test_path + '.timeout'):
+            with open(test_path + '.timeout', 'r') as f:
+                test['timeout'] = int(f.read().strip())
         for ext, call, server in lookup:
             if os.path.isfile(test_path + ext):
                 test['ext'] = ext
