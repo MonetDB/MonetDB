@@ -111,3 +111,23 @@ function user.%2():any;
     X_3:str := remote.put("_monetdb_0":str, "SELECT x, y, 1 AS some_int FROM test WHERE x > 10; ":str);
     remote.exec("_monetdb_0":str, "sql":str, "eval":str, 0x7fffffffdba0:ptr, X_3:str, X_0:str);
     return :void;
+
+regression reference wih changeset d760325d2974
+!ERROR:  Testing FAILED SIGNIFICANTLY (12 out of 2923 tests failed)
+
+  387 out of 2923 tests could not be executed
+    1 out of 2923 tests caused an abort (assertion failure)
+        sql/test/subquery/subquery6
+   11 out of 2923 tests produced SIGNIFICANTLY different output
+        sql/test/BugTracker-2015/timestamp_convert.Bug-3815
+        sql/test/BugTracker-2017/insert_self_ref_FK.Bug-6131
+        sql/test/BugTracker-2020/interval-math.Bug-6935
+        sql/test/BugTracker-2020/copy-empty-blob.Bug-6948
+        sql/test/SQLancer/sqlancer02
+        sql/test/Triggers/trigger_action
+        sql/test/Triggers/trigger_projection
+        sql/test/Users/createUserRollback
+        sql/test/json/jsonparser.Bug-6943
+        sql/test/mergetables/singlekeyconstraint
+        sql/test/miscellaneous/groupby_error
+

@@ -652,10 +652,17 @@ SQLstatement(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	str *expr = getArgReference_str(stk, pci, 1);
 
 	(void) mb;
+
+	protocol_version backup = cntxt->protocol;
+
 	if (pci->argc == 3 && *getArgReference_bit(stk, pci, 2))
 		cntxt->protocol = PROTOCOL_COLUMNAR;
 
-	return SQLstatementIntern(cntxt, expr, "SQLstatement", TRUE, TRUE, NULL);
+	str msg = SQLstatementIntern(cntxt, expr, "SQLstatement", TRUE, TRUE, NULL);
+
+	cntxt->protocol = backup;
+
+	return msg;
 }
 
 str
