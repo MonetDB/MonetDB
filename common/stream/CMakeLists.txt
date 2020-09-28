@@ -59,7 +59,7 @@ if(WIN32)
 endif()
 
 target_link_libraries(stream
-  PUBLIC
+  PRIVATE
   $<$<BOOL:${ZLIB_FOUND}>:ZLIB::ZLIB>
   $<$<BOOL:${BZIP2_FOUND}>:BZip2::BZip2>
   $<$<BOOL:${CURL_FOUND}>:CURL::libcurl>
@@ -67,7 +67,6 @@ target_link_libraries(stream
   $<$<BOOL:${LZ4_FOUND}>:LZ4::LZ4>
   $<$<BOOL:${SNAPPY_FOUND}>:SNAPPY::SNAPPY>
   $<$<BOOL:${Iconv_FOUND}>:Iconv::Iconv>
-  PRIVATE
   matomic
   monetdb_config_header
   $<$<PLATFORM_ID:Windows>:ws2_32>
@@ -89,15 +88,15 @@ if (NOT WIN32)
   endif()
 
   if(CURL_FOUND)
-    set(PKG_CURL "${CMAKE_SHARED_LIBRARY_PREFIX}curl")
+    set(PKG_CURL "libcurl")
   endif()
 
   if(LZ4_FOUND)
-    set(PKG_LZ4 "${CMAKE_SHARED_LIBRARY_PREFIX}lz4")
+    set(PKG_LZ4 "liblz4")
   endif()
 
   if(LIBLZMA_FOUND)
-    set(PKG_LZMA "${CMAKE_SHARED_LIBRARY_PREFIX}lzma")
+    set(PKG_LZMA "liblzma")
   endif()
 
   if(SNAPPY_FOUND)

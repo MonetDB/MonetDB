@@ -236,8 +236,8 @@ macro(monetdb_macro_variables)
 endmacro()
 
 macro(monetdb_configure_crypto)
-  cmake_push_check_state()
   if(COMMONCRYPTO_FOUND)
+    cmake_push_check_state()
     #set(CMAKE_REQUIRED_INCLUDES "${COMMONCRYPTO_INCUDE_DIR}")
     set(CMAKE_REQUIRED_LIBRARIES "${COMMONCRYPTO_LIBRARIES}")
 
@@ -254,8 +254,10 @@ macro(monetdb_configure_crypto)
     set_target_properties(OpenSSL::Crypto PROPERTIES
       IMPORTED_LINK_INTERFACE_LANGUAGES "C"
       IMPORTED_LOCATION "${COMMONCRYPTO_LIBRARIES}")
+    cmake_pop_check_state()
   endif()
   if(OPENSSL_FOUND)
+    cmake_push_check_state()
     #set(CMAKE_REQUIRED_INCLUDES "${OPENSSL_INCUDE_DIR}")
     #set(CMAKE_REQUIRED_LIBRARIES "${OPENSSL_LIBRARIES}")
 
@@ -272,8 +274,8 @@ macro(monetdb_configure_crypto)
     check_symbol_exists("SHA256_Update" "openssl/sha.h" HAVE_SHA256_UPDATE)
     check_symbol_exists("SHA384_Update" "openssl/sha.h" HAVE_SHA384_UPDATE)
     check_symbol_exists("SHA512_Update" "openssl/sha.h" HAVE_SHA512_UPDATE)
+    cmake_pop_check_state()
   endif()
-  cmake_pop_check_state()
 endmacro()
 
 macro(monetdb_configure_sizes)

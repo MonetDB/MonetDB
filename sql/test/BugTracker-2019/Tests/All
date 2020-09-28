@@ -56,5 +56,5 @@ cast-interval.Bug-6793
 could-not-allocate-space.Bug-6795
 HAVE_LIBPY3?python3-udf-modules.Bug-6797
 json-text-empty-separator.Bug-6798
-KNOWNFAIL&FEATURE?orderby-alias-expr.Bug-6799
+orderby-alias-expr.Bug-6799
 drop-table-cascade.Bug-6805

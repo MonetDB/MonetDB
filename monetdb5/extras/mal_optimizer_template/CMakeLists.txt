@@ -14,8 +14,8 @@ target_sources(opt_sql_append
 
 target_include_directories(opt_sql_append
   PRIVATE
-  $<TARGET_PROPERTY:mal,INCLUDE_DIRECTORIES>
-  $<TARGET_PROPERTY:optimizer,INCLUDE_DIRECTORIES>
+  $<TARGET_PROPERTY:mal,INTERFACE_INCLUDE_DIRECTORIES>
+  $<TARGET_PROPERTY:optimizer,INTERFACE_INCLUDE_DIRECTORIES>
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
   $<INSTALL_INTERFACE:${INCLUDEDIR}/monetdb>)
 
@@ -23,7 +23,6 @@ target_link_libraries(opt_sql_append
   PRIVATE 
   monetdb_config_header
   mutils
-  stream
   bat
   monetdb5)
 

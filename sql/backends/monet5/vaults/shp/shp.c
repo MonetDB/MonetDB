@@ -235,7 +235,7 @@ SHPattach(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	col = mvc_bind_column(m, fls, "id");
 	fid = store_funcs.count_col(m->session->tr, col, 1) + 1;
 	snprintf(buf, BUFSIZ, INSFILE, (int)fid, fname);
-	if ( ( msg = SQLstatementIntern(cntxt, &s,"shp.attach",TRUE,FALSE,NULL)) != MAL_SUCCEED)
+	if ( ( msg = SQLstatementIntern(cntxt, s,"shp.attach",TRUE,FALSE,NULL)) != MAL_SUCCEED)
 		goto finish;
 
 
@@ -251,7 +251,7 @@ SHPattach(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	nameToLowerCase = toLower(shp_conn.layername);
 	snprintf(buf, BUFSIZ, INSSHP, shpid, (int)fid, spatial_info.epsg, nameToLowerCase);
 	GDKfree(nameToLowerCase);
-	if ( ( msg = SQLstatementIntern(cntxt, &s,"shp.attach",TRUE,FALSE,NULL)) != MAL_SUCCEED)
+	if ( ( msg = SQLstatementIntern(cntxt, s,"shp.attach",TRUE,FALSE,NULL)) != MAL_SUCCEED)
 			goto finish;
 
 	/* add information about the fields of the shape file
@@ -263,7 +263,7 @@ SHPattach(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	}
 	for (i=0 ; i<shp_conn.numFieldDefinitions ; i++) {
 		snprintf(buf, BUFSIZ, INSSHPDBF, shpid, field_definitions[i].fieldName, field_definitions[i].fieldType);
-		if ( ( msg = SQLstatementIntern(cntxt, &s,"shp.attach",TRUE,FALSE,NULL)) != MAL_SUCCEED)
+		if ( ( msg = SQLstatementIntern(cntxt, s,"shp.attach",TRUE,FALSE,NULL)) != MAL_SUCCEED)
 			goto fin;
 	}
 
@@ -287,7 +287,7 @@ SHPattach(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	sprintf(temp_buf + strlen(temp_buf), "geom GEOMETRY ");
 	snprintf(buf, BUFSIZ, CRTTBL, shp_conn.layername, temp_buf);
 
-	if ( ( msg = SQLstatementIntern(cntxt, &s,"shp.import",TRUE,FALSE,NULL)) != MAL_SUCCEED)
+	if ( ( msg = SQLstatementIntern(cntxt, s,"shp.import",TRUE,FALSE,NULL)) != MAL_SUCCEED)
 		goto fin;
 
 fin:
@@ -295,7 +295,7 @@ fin:
 finish:
 	/* if (msg != MAL_SUCCEED){
 	   snprintf(buf, BUFSIZ,"ROLLBACK;");
-	   SQLstatementIntern(cntxt,&s,"geotiff.attach",TRUE,FALSE));
+	   SQLstatementIntern(cntxt,s,"geotiff.attach",TRUE,FALSE));
 	   }*/
 	GDALWClose(&shp_conn);
 	return msg;

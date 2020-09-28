@@ -6,8 +6,9 @@
 
 Name: monetdbe
 Description: MonetDB as embedded library
+URL: https://www.monetdb.org/
 Version: @MONETDB_VERSION@
-#Requires: monetdb-gdk
+Requires.private: monetdb-gdk = @MONETDB_VERSION@
 
 Libs: -L@CMAKE_INSTALL_FULL_LIBDIR@ -lmonetdbe
 Cflags: -I@CMAKE_INSTALL_FULL_INCLUDEDIR@/monetdb

@@ -49,11 +49,11 @@
 
 #define MAX_SQL_MODULES 128
 static int sql_modules = 0;
-static str sql_module_name[MAX_SQL_MODULES] = {0};
-static unsigned char *sql_module_code[MAX_SQL_MODULES] = {0};
+static const char *sql_module_name[MAX_SQL_MODULES] = {0};
+static const unsigned char *sql_module_code[MAX_SQL_MODULES] = {0};
 
 void
-sql_register(str name, unsigned char *code)
+sql_register(const char *name, const unsigned char *code)
 {
 	assert (sql_modules < MAX_SQL_MODULES);
 	sql_module_name[sql_modules] = name;
@@ -422,9 +422,9 @@ SQLinit(Client c)
 		maybeupgrade = 0;
 
 		for (int i = 0; i < sql_modules && !msg; i++) {
-			char *createdb_inline = (char*)sql_module_code[i];
+			const char *createdb_inline = (const char*)sql_module_code[i];
 
-			msg = SQLstatementIntern(c, &createdb_inline, "sql.init", TRUE, FALSE, NULL);
+			msg = SQLstatementIntern(c, createdb_inline, "sql.init", TRUE, FALSE, NULL);
 			if (m->sa)
 				sa_destroy(m->sa);
 			m->sa = NULL;
@@ -432,7 +432,7 @@ SQLinit(Client c)
 		}
 		/* 99_system.sql */
 		if (!msg) {
-			char *createdb_inline = " \
+			const char *createdb_inline = " \
 				create trigger system_update_schemas after update on sys.schemas for each statement call sys_update_schemas(); \
 				create trigger system_update_tables after update on sys._tables for each statement call sys_update_tables(); \
 				update sys.functions set system = true; \
@@ -443,7 +443,7 @@ SQLinit(Client c)
 				UPDATE sys.types     SET schema_id = (SELECT id FROM sys.schemas WHERE name = 'sys') WHERE schema_id = 0 AND schema_id NOT IN (SELECT id from sys.schemas); \
 				UPDATE sys.functions SET schema_id = (SELECT id FROM sys.schemas WHERE name = 'sys') WHERE schema_id = 0 AND schema_id NOT IN (SELECT id from sys.schemas); \
 				";
-			msg = SQLstatementIntern(c, &createdb_inline, "sql.init", TRUE, FALSE, NULL);
+			msg = SQLstatementIntern(c, createdb_inline, "sql.init", TRUE, FALSE, NULL);
 			if (m->sa)
 				sa_destroy(m->sa);
 			m->sa = NULL;
@@ -659,7 +659,7 @@ SQLstatement(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (pci->argc == 3)
 		output = *getArgReference_bit(stk, pci, 2);
 
-	return SQLstatementIntern(cntxt, expr, "SQLstatement", TRUE, output, NULL);
+	return SQLstatementIntern(cntxt, *expr, "SQLstatement", TRUE, output, NULL);
 }
 
 str
@@ -671,7 +671,7 @@ SQLcompile(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	(void) mb;
 	*ret = NULL;
-	if ((msg = SQLstatementIntern(cntxt, expr, "SQLcompile", FALSE, FALSE, NULL)) != MAL_SUCCEED)
+	if ((msg = SQLstatementIntern(cntxt, *expr, "SQLcompile", FALSE, FALSE, NULL)) != MAL_SUCCEED)
 		return msg;
 	if ((*ret = _STRDUP("SQLcompile")) == NULL)
 		throw(SQL,"sql.compile",SQLSTATE(HY013) MAL_MALLOC_FAIL);
@@ -691,7 +691,6 @@ SQLinclude(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	bstream *bfd;
 	str *name = getArgReference_str(stk, pci, 1);
 	str msg = MAL_SUCCEED, fullname;
-	str *expr;
 	mvc *m;
 	size_t sz;
 
@@ -717,8 +716,7 @@ SQLinclude(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		throw(MAL, "sql.include", SQLSTATE(42000) "could not read %s\n", *name);
 	}
 
-	expr = &bfd->buf;
-	msg = SQLstatementIntern(cntxt, expr, "sql.include", TRUE, FALSE, NULL);
+	msg = SQLstatementIntern(cntxt, bfd->buf, "sql.include", TRUE, FALSE, NULL);
 	bstream_destroy(bfd);
 	m = ((backend *) cntxt->sqlcontext)->mvc;
 	if (m->sa)

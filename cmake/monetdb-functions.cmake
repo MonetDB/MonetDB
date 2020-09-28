@@ -9,7 +9,13 @@
 function(monetdb_hg_revision)
   # Get the current version control revision
   if(EXISTS "${CMAKE_SOURCE_DIR}/.hg")
-    execute_process(COMMAND "hg" "id" "-i" WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}" RESULT_VARIABLE HG_RETURN_CODE
+    find_package(Hg)
+    if(HG_FOUND)
+      message("hg found: ${HG_EXECUTABLE}")
+    else()
+      message(FATAL_ERROR "Failed to find mercurial")
+    endif()
+    execute_process(COMMAND "${HG_EXECUTABLE}" "id" "-i" WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}" RESULT_VARIABLE HG_RETURN_CODE
       OUTPUT_VARIABLE HG_OUPUT_RES OUTPUT_STRIP_TRAILING_WHITESPACE)
     if(HG_RETURN_CODE EQUAL 0 AND HG_OUPUT_RES)
       set(MERCURIAL_ID "${HG_OUPUT_RES}" PARENT_SCOPE)
@@ -17,7 +23,13 @@ function(monetdb_hg_revision)
       message(FATAL_ERROR "Failed to find mercurial ID")
     endif()
   elseif(EXISTS "${CMAKE_SOURCE_DIR}/.git")
-    execute_process(COMMAND "git" "rev-parse" "--short" "HEAD" WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}"
+    find_package(Git)
+    if(GIT_FOUND)
+      message("git found: ${GIT_EXECUTABLE}")
+    else()
+      message(FATAL_ERROR "Failed to find git")
+    endif()
+    execute_process(COMMAND "${GIT_EXECUTABLE}" "rev-parse" "--short" "HEAD" WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}"
       RESULT_VARIABLE GIT_RETURN_CODE OUTPUT_VARIABLE GIT_OUPUT_RES OUTPUT_STRIP_TRAILING_WHITESPACE)
     if(GIT_RETURN_CODE EQUAL 0 AND GIT_OUPUT_RES)
       set(MERCURIAL_ID "${GIT_OUPUT_RES}" PARENT_SCOPE)
@@ -257,7 +269,7 @@ function(monetdb_debian_extra_files)
     ${CMAKE_SOURCE_DIR}/misc/packages/deb/changelog
     ${CMAKE_SOURCE_DIR}/misc/packages/deb/copyright
     DESTINATION
-    ${CMAKE_INSTALL_DATAROOTDIR}/doc/libmonetdb-client12
+    ${CMAKE_INSTALL_DATAROOTDIR}/doc/libmonetdb-client${MAPI_VERSION_MAJOR}
     COMPONENT client)
 
   install(FILES
@@ -285,14 +297,14 @@ function(monetdb_debian_extra_files)
     ${CMAKE_SOURCE_DIR}/misc/packages/deb/changelog
     ${CMAKE_SOURCE_DIR}/misc/packages/deb/copyright
     DESTINATION
-    ${CMAKE_INSTALL_DATAROOTDIR}/doc/libmonetdb-stream13
+    ${CMAKE_INSTALL_DATAROOTDIR}/doc/libmonetdb-stream${STREAM_VERSION_MAJOR}
     COMPONENT stream)
 
   install(FILES
     ${CMAKE_SOURCE_DIR}/misc/packages/deb/changelog
     ${CMAKE_SOURCE_DIR}/misc/packages/deb/copyright
     DESTINATION
-    ${CMAKE_INSTALL_DATAROOTDIR}/doc/libmonetdb19
+    ${CMAKE_INSTALL_DATAROOTDIR}/doc/libmonetdb${GDK_VERSION_MAJOR}
     COMPONENT monetdb)
 
   install(FILES

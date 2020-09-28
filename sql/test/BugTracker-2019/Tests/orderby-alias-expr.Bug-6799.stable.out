@@ -53,25 +53,7 @@ stdout of test 'orderby-alias-expr.Bug-6799` in directory 'sql/test/BugTracker-2
 [ "b"	]
 [ "b"	]
 #SELECT nm as alias1 FROM obale ORDER BY alias1, nm;    -- no problemo
-% sys.L1 # table_name
-% alias1 # name
-% varchar # type
-% 1 # length
-[ NULL	]
-[ "a"	]
-[ "b"	]
-[ "b"	]
-#SELECT nm as alias1 FROM obale ORDER BY upper(alias1);
-% sys.L1 # table_name
-% alias1 # name
-% varchar # type
-% 1 # length
-[ NULL	]
-[ "a"	]
-[ "b"	]
-[ "b"	]
-#SELECT nm as alias1 FROM obale ORDER BY nm || alias1;
-% sys.L1 # table_name
+% sys. # table_name
 % alias1 # name
 % varchar # type
 % 1 # length
@@ -80,7 +62,7 @@ stdout of test 'orderby-alias-expr.Bug-6799` in directory 'sql/test/BugTracker-2
 [ "b"	]
 [ "b"	]
 #SELECT nm, upper(nm) as alias1 FROM obale ORDER BY alias1;    -- no problemo
-% sys.obale,	sys.L1 # table_name
+% sys.obale,	sys. # table_name
 % nm,	alias1 # name
 % varchar,	varchar # type
 % 1,	1 # length
@@ -89,7 +71,7 @@ stdout of test 'orderby-alias-expr.Bug-6799` in directory 'sql/test/BugTracker-2
 [ "b",	"B"	]
 [ "b",	"B"	]
 #SELECT nm, nm||nm as alias1 FROM obale ORDER BY alias1;    -- no problemo
-% sys.obale,	sys.L1 # table_name
+% sys.obale,	sys. # table_name
 % nm,	alias1 # name
 % varchar,	varchar # type
 % 1,	2 # length
@@ -98,15 +80,7 @@ stdout of test 'orderby-alias-expr.Bug-6799` in directory 'sql/test/BugTracker-2
 [ "b",	"bb"	]
 [ "b",	"bb"	]
 #SELECT nm, COUNT(nm) countnm, COUNT(DISTINCT nm) countdnm FROM obale GROUP BY nm ORDER BY countnm desc, countdnm;    -- no problemo
-% sys.obale,	sys.L2,	sys.L4 # table_name
-% nm,	countnm,	countdnm # name
-% varchar,	bigint,	bigint # type
-% 1,	1,	1 # length
-[ "b",	2,	1	]
-[ "a",	1,	1	]
-[ NULL,	0,	0	]
-#SELECT nm, COUNT(nm) countnm, COUNT(DISTINCT nm) countdnm FROM obale GROUP BY nm ORDER BY countdnm - countnm;
-% sys.obale,	sys.L2,	sys.L4 # table_name
+% sys.obale,	sys.,	sys. # table_name
 % nm,	countnm,	countdnm # name
 % varchar,	bigint,	bigint # type
 % 1,	1,	1 # length

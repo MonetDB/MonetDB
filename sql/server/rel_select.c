@@ -11,6 +11,7 @@
 #include "sql_tokens.h"
 #include "sql_privileges.h"
 #include "sql_env.h"
+#include "sql_decimal.h"
 #include "sql_qc.h"
 #include "rel_rel.h"
 #include "rel_exp.h"
@@ -1217,27 +1218,6 @@ rel_column_ref(sql_query *query, sql_rel **rel, symbol *column_r, int f)
 		return sql_error(sql, 02, SQLSTATE(42000) "TODO: column names of level >= 3");
 	}
 	return exp;
-}
-
-#ifdef HAVE_HGE
-static hge
-#else
-static lng
-#endif
-scale2value(int scale)
-{
-#ifdef HAVE_HGE
-	hge val = 1;
-#else
-	lng val = 1;
-#endif
-
-	if (scale < 0)
-		scale = -scale;
-	for (; scale; scale--) {
-		val = val * 10;
-	}
-	return val;
 }
 
 static sql_exp *
@@ -2810,10 +2790,18 @@ rel_binop_(mvc *sql, sql_rel *rel, sql_exp *l, sql_exp *r, sql_schema *s, char *
 	if (!t1 || !t2) {
 		f = sql_resolve_function_with_undefined_parameters(sql->sa, s, fname, list_append(list_append(sa_list(sql->sa), t1), t2), type);
 		if (f) { /* add types using f */
-			if (!t1)
-				rel_set_type_param(sql, arg_type(f->func->ops->h->data), rel, l, 1);
-			if (!t2)
-				rel_set_type_param(sql, arg_type(f->func->ops->h->next->data), rel, r, 1);
+			if (!t1) {
+				sql_subtype *t = arg_type(f->func->ops->h->data);
+				if (t->type->eclass == EC_ANY && t2)
+					t = t2;
+				rel_set_type_param(sql, t, rel, l, 1);
+			}
+			if (!t2) {
+				sql_subtype *t = arg_type(f->func->ops->h->next->data);
+				if (t->type->eclass == EC_ANY && t1)
+					t = t1;
+				rel_set_type_param(sql, t, rel, r, 1);
+			}
 			f = NULL;
 
 			if (!exp_subtype(l) || !exp_subtype(r))

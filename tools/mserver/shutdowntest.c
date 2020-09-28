@@ -49,7 +49,7 @@ static str monetdb_query(Client c, str query) {
 	res_table* res = NULL;
 	int i;
 	retval = SQLstatementIntern(c,
-		&query,
+		query,
 		"name",
 		1, 0, &res);
 	SQLautocommit(m);

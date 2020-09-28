@@ -4515,6 +4515,8 @@ interval_type:
 			int d = inttype2digits(sk, ek);
 			if (tpe == 0){
 				sql_find_subtype(&$$, "month_interval", d, 0);
+			} else if (d == 4) {
+				sql_find_subtype(&$$, "day_interval", d, 0);
 			} else {
 				sql_find_subtype(&$$, "sec_interval", d, 0);
 			}
@@ -4885,6 +4887,8 @@ interval_expression:
 			int d = inttype2digits(sk, ek);
 			if (tpe == 0){
 				r=sql_find_subtype(&t, "month_interval", d, 0);
+			} else if (d == 4) {
+				r=sql_find_subtype(&t, "day_interval", d, 0);
 			} else {
 				r=sql_find_subtype(&t, "sec_interval", d, 0);
 			}

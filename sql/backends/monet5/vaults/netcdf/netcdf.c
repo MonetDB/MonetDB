@@ -287,7 +287,7 @@ header: %s", nc_strerror(retval));
 	}
 	snprintf(buf, BUFSIZ, INSFILE, (int)fid, esc_str0);
 	GDKfree(esc_str0);
-	if ( ( msg = SQLstatementIntern(cntxt, &s, "netcdf.attach", TRUE, FALSE, NULL))
+	if ( ( msg = SQLstatementIntern(cntxt, s, "netcdf.attach", TRUE, FALSE, NULL))
 		 != MAL_SUCCEED )
 	    goto finish;
 
@@ -310,7 +310,7 @@ header: %s", nc_strerror(retval));
 
 		snprintf(buf, BUFSIZ, INSDIM, didx, (int)fid, esc_str0, (int)dlen);
 		GDKfree(esc_str0);
-	    if ( ( msg = SQLstatementIntern(cntxt, &s, "netcdf.attach", TRUE, FALSE, NULL))
+	    if ( ( msg = SQLstatementIntern(cntxt, s, "netcdf.attach", TRUE, FALSE, NULL))
 			 != MAL_SUCCEED )
 	        goto finish;
 
@@ -341,14 +341,14 @@ header: %s", nc_strerror(retval));
 
 		snprintf(buf, BUFSIZ, INSVAR, vidx, (int)fid, esc_str0, prim_type_name(vtype), vndims, coord_dim_id);
 		GDKfree(esc_str0);
-	    if ( ( msg = SQLstatementIntern(cntxt, &s, "netcdf.attach", TRUE, FALSE, NULL))
+	    if ( ( msg = SQLstatementIntern(cntxt, s, "netcdf.attach", TRUE, FALSE, NULL))
 			 != MAL_SUCCEED )
             goto finish;
 
 	    if ( coord_dim_id < 0 ){
 	        for (i = 0; i < vndims; i++){
                 snprintf(buf, BUFSIZ, INSVARDIM, vidx, vdims[i], (int)fid, i);
-                if ( ( msg = SQLstatementIntern(cntxt, &s, "netcdf.attach", TRUE, FALSE, NULL))
+                if ( ( msg = SQLstatementIntern(cntxt, s, "netcdf.attach", TRUE, FALSE, NULL))
 					 != MAL_SUCCEED )
                 	goto finish;
 	        }
@@ -430,7 +430,7 @@ header: %s", nc_strerror(retval));
 				GDKfree(esc_str0);
 
 				printf("statement: '%s'\n", s);
-				if ( ( msg = SQLstatementIntern(cntxt, &s, "netcdf.attach", TRUE, FALSE, NULL))
+				if ( ( msg = SQLstatementIntern(cntxt, s, "netcdf.attach", TRUE, FALSE, NULL))
 					 != MAL_SUCCEED )
 					goto finish;
 
@@ -542,7 +542,7 @@ header: %s", nc_strerror(retval));
 		GDKfree(esc_str0);
 
 		printf("global: '%s'\n", s);
-        if ( ( msg = SQLstatementIntern(cntxt, &s, "netcdf.attach", TRUE, FALSE, NULL))
+        if ( ( msg = SQLstatementIntern(cntxt, s, "netcdf.attach", TRUE, FALSE, NULL))
 			 != MAL_SUCCEED )
 	        goto finish;
 
@@ -818,7 +818,7 @@ NCDFimportVariable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	j += snprintf(buf + j, BUFSIZ - j, "value %s);", NCDF2SQL(vtype));
 
 /* execute 'create table ' */
-	msg = SQLstatementIntern(cntxt, &s, "netcdf.importvar", TRUE, FALSE, NULL);
+	msg = SQLstatementIntern(cntxt, s, "netcdf.importvar", TRUE, FALSE, NULL);
 	if (msg != MAL_SUCCEED){
 		GDKfree(dname);
 		return msg;

@@ -591,7 +591,7 @@ str FITSdir(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			if (status == 0) {
 				snprintf(stmt, BUFSIZ, ATTACHDIR, fname);
 				TRC_DEBUG(FITS, "Executing: %s\n", s);
-				msg = SQLstatementIntern(cntxt, &s, "fits.listofdir", TRUE, FALSE, NULL);
+				msg = SQLstatementIntern(cntxt, s, "fits.listofdir", TRUE, FALSE, NULL);
 				fits_close_file(fptr, &status);
 			}
 
@@ -644,7 +644,7 @@ str FITSdirpat(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			snprintf(stmt, BUFSIZ, ATTACHDIR, filename);
 			GDKfree(filename);
 			TRC_DEBUG(FITS, "Executing: %s\n", s);
-			msg = SQLstatementIntern(cntxt, &s, "fits.listofdirpat", TRUE, FALSE, NULL);
+			msg = SQLstatementIntern(cntxt, s, "fits.listofdirpat", TRUE, FALSE, NULL);
 			fits_close_file(fptr, &status);
 
 			break;
@@ -856,7 +856,7 @@ str FITSattach(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			GDKfree(esc_tunit);
 			GDKfree(esc_tform);
 			GDKfree(esc_cname);
-			msg = SQLstatementIntern(cntxt, &s, "fits.attach", TRUE, FALSE, NULL);
+			msg = SQLstatementIntern(cntxt, s, "fits.attach", TRUE, FALSE, NULL);
 			if (msg != MAL_SUCCEED) {
 				fits_close_file(fptr, &status);
 				return msg;

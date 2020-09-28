@@ -12,8 +12,8 @@ target_sources(run_adder
   run_adder.c)
 target_include_directories(run_adder
   PRIVATE
-  $<TARGET_PROPERTY:mal,INCLUDE_DIRECTORIES>
-  $<TARGET_PROPERTY:optimizer,INCLUDE_DIRECTORIES>
+  $<TARGET_PROPERTY:mal,INTERFACE_INCLUDE_DIRECTORIES>
+  $<TARGET_PROPERTY:optimizer,INTERFACE_INCLUDE_DIRECTORIES>
   PUBLIC
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
   $<INSTALL_INTERFACE:${INCLUDEDIR}/monetdb>)
@@ -38,15 +38,14 @@ target_sources(run_isolate
   run_isolate.c)
 target_include_directories(run_isolate
   PRIVATE
-  $<TARGET_PROPERTY:mal,INCLUDE_DIRECTORIES>
-  $<TARGET_PROPERTY:optimizer,INCLUDE_DIRECTORIES>
+  $<TARGET_PROPERTY:mal,INTERFACE_INCLUDE_DIRECTORIES>
+  $<TARGET_PROPERTY:optimizer,INTERFACE_INCLUDE_DIRECTORIES>
   PUBLIC
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
   $<INSTALL_INTERFACE:${INCLUDEDIR}/monetdb>)
 target_link_libraries(run_isolate
   PRIVATE
   monetdb_config_header
-  bat
   monetdb5)
 set_target_properties(run_isolate
   PROPERTIES
@@ -64,8 +63,8 @@ target_sources(run_memo
   run_memo.c)
 target_include_directories(run_memo
   PRIVATE
-  $<TARGET_PROPERTY:mal,INCLUDE_DIRECTORIES>
-  $<TARGET_PROPERTY:optimizer,INCLUDE_DIRECTORIES>
+  $<TARGET_PROPERTY:mal,INTERFACE_INCLUDE_DIRECTORIES>
+  $<TARGET_PROPERTY:optimizer,INTERFACE_INCLUDE_DIRECTORIES>
   PUBLIC
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
   $<INSTALL_INTERFACE:${INCLUDEDIR}/monetdb>)

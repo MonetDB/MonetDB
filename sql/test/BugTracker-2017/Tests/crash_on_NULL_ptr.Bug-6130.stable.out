@@ -232,7 +232,7 @@ stdout of test 'crash_on_NULL_ptr.Bug-6130` in directory 'sql/test/BugTracker-20
 #  SELECT t.id, t.name, p.creationDate
 #  FROM messages p, message_tags pt, tags t
 #  WHERE p.creator IN (SELECT * FROM friends1)
-% sys.resultset,	sys.resultset # table_name
+% .resultset,	.resultset # table_name
 % name,	count # name
 % varchar,	bigint # type
 % 0,	1 # length

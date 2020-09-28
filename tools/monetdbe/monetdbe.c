@@ -365,9 +365,9 @@ monetdbe_query_internal(monetdbe_database_internal *mdbe, char* query, monetdbe_
 		}
 
 		if (m->emode & m_prepare)
-			((monetdbe_result_internal*) result)->type = Q_PREPARE;
+			(*(monetdbe_result_internal**) result)->type = Q_PREPARE;
 		else
-			((monetdbe_result_internal*) result)->type = (b->results) ? b->results->query_type : m->type;
+			(*(monetdbe_result_internal**) result)->type = (b->results) ? b->results->query_type : m->type;
 	}
 
 cleanup:
@@ -380,7 +380,7 @@ cleanup:
 		c->fdin = old_bstream;
 	}
 
-	char* msg = commit_action(m, mdbe, result, (monetdbe_result_internal*) result);
+	char* msg = commit_action(m, mdbe, result, result?*(monetdbe_result_internal**) result:NULL);
 
 	return msg;
 }
@@ -1183,6 +1183,11 @@ monetdbe_append(monetdbe_database dbhdl, const char* schema, const char* table, 
 		) {
 			//-------------------------------------
 			BAT *bn = NULL;
+
+			if (mtype != c->type.type->localtype) {
+				mdbe->msg = createException(SQL, "monetdbe.monetdbe_append", "Cannot append %d into column '%s'", input[i]->type, c->base.name);
+				goto cleanup;
+			}
 
 			if ((bn = COLnew(0, mtype, 0, TRANSIENT)) == NULL) {
 				mdbe->msg = createException(SQL, "monetdbe.monetdbe_append", "Cannot create append column");
