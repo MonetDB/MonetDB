@@ -24,13 +24,13 @@
 #include "str.h"
 
 static inline str
-str_prefix(str *buf, size_t *buflen, const char *s, int l)
+str_prefix(str *buf, size_t *buflen, str s, int l)
 {
 	return str_Sub_String(buf, buflen, s, 0, l);
 }
 
 static str
-do_batstr_int(bat *res, const bat *l, const char *name, int (*func)(const char *))
+do_batstr_int(bat *res, const bat *l, const char *name, int (*func)(str))
 {
 	BATiter bi;
 	BAT *bn = NULL, *b = NULL;
@@ -239,7 +239,7 @@ bailout:
 }
 
 static str
-do_batstr_str(bat *res, const bat *l, const char *name, str (*func)(str *, size_t *, const char *))
+do_batstr_str(bat *res, const bat *l, const char *name, str (*func)(str *, size_t *, str))
 {
 	BATiter bi;
 	BAT *bn = NULL, *b = NULL;
@@ -296,7 +296,7 @@ bailout:
  * Output type: str (a BAT of strings)
  */
 static str
-do_batstr_conststr_str(bat *res, const bat *l, const str *s2, const char *name, str (*func)(str*, size_t*, const char*, const char*))
+do_batstr_conststr_str(bat *res, const bat *l, const str *s2, const char *name, str (*func)(str*, size_t*, str, str))
 {
 	BATiter bi;
 	BAT *bn = NULL, *b = NULL;
@@ -353,7 +353,7 @@ bailout:
  * Output type: str (a BAT of strings)
  */
 static str
-do_batstr_batstr_str(bat *res, const bat *l, const bat *l2, const char *name, str (*func)(str*, size_t*, const char*, const char*))
+do_batstr_batstr_str(bat *res, const bat *l, const bat *l2, const char *name, str (*func)(str*, size_t*, str, str))
 {
 	BATiter lefti, righti;
 	BAT *bn = NULL, *left = NULL, *right = NULL;
@@ -418,7 +418,7 @@ bailout:
  * Output type: str (a BAT of strings)
  */
 static str
-do_batstr_constint_str(bat *res, const bat *l, const int *n, const char *name, str (*func)(str*, size_t*, const char*, int))
+do_batstr_constint_str(bat *res, const bat *l, const int *n, const char *name, str (*func)(str*, size_t*, str, int))
 {
 	BATiter bi;
 	BAT *bn = NULL, *b = NULL;
@@ -476,7 +476,7 @@ bailout:
  * Output type: str (a BAT of strings)
  */
 static str
-do_batstr_batint_str(bat *res, const bat *l, const bat *n, const char *name, str (*func)(str*, size_t*, const char*, int))
+do_batstr_batint_str(bat *res, const bat *l, const bat *n, const char *name, str (*func)(str*, size_t*, str, int))
 {
 	BATiter lefti;
 	BAT *bn = NULL, *left = NULL, *right = NULL;
@@ -541,16 +541,15 @@ bailout:
  * Output type: str (a BAT of strings)
  */
 static str
-do_batstr_constint_conststr_str(bat *res, const bat *l, const int *n, const str *s2, const char *name, str (*func)(str*, size_t*, const char*, int, const char*))
+do_batstr_constint_conststr_str(bat *res, const bat *l, const int *n, const str *s2, const char *name, str (*func)(str*, size_t*, str, int, str))
 {
 	BATiter bi;
 	BAT *bn = NULL, *b = NULL;
 	BUN p, q;
 	size_t buflen = INITIAL_STR_BUFFER_LENGTH;
-	str x, buf = GDKmalloc(buflen), msg = MAL_SUCCEED;
+	str x, ss2 = *s2, buf = GDKmalloc(buflen), msg = MAL_SUCCEED;
 	int nn = *n;
 	bool nils = false;
-	const char *ss2 = *s2;
 
 	if (!buf) {
 		msg = createException(MAL, name, SQLSTATE(HY013) MAL_MALLOC_FAIL);
@@ -600,16 +599,15 @@ bailout:
  * Output type: str (a BAT of strings)
  */
 static str
-do_batstr_batint_conststr_str(bat *res, const bat *l, const bat *n, const str *s2, const char *name, str (*func)(str*, size_t*, const char*, int, const char*))
+do_batstr_batint_conststr_str(bat *res, const bat *l, const bat *n, const str *s2, const char *name, str (*func)(str*, size_t*, str, int, str))
 {
 	BATiter lefti;
 	BAT *bn = NULL, *left = NULL, *right = NULL;
 	BUN p, q;
 	size_t buflen = INITIAL_STR_BUFFER_LENGTH;
-	str x, buf = GDKmalloc(buflen), msg = MAL_SUCCEED;
+	str x, ss2 = *s2, buf = GDKmalloc(buflen), msg = MAL_SUCCEED;
 	bool nils = false;
 	int *restrict righti;
-	const char *ss2 = *s2;
 
 	if (!buf) {
 		msg = createException(MAL, name, SQLSTATE(HY013) MAL_MALLOC_FAIL);
@@ -666,7 +664,7 @@ bailout:
  * Output type: str (a BAT of strings)
  */
 static str
-do_batstr_constint_batstr_str(bat *res, const bat *l, const int *n, const bat *l2, const char *name, str (*func)(str*, size_t*, const char*, int, const char*))
+do_batstr_constint_batstr_str(bat *res, const bat *l, const int *n, const bat *l2, const char *name, str (*func)(str*, size_t*, str, int, str))
 {
 	BATiter lefti, righti;
 	BAT *bn = NULL, *left = NULL, *right = NULL;
@@ -732,7 +730,7 @@ bailout:
  * Output type: str (a BAT of strings)
  */
 static str
-do_batstr_batint_batstr_str(bat *res, const bat *l, const bat *n, const bat *l2, const char *name, str (*func)(str*, size_t*, const char*, int, const char*))
+do_batstr_batint_batstr_str(bat *res, const bat *l, const bat *n, const bat *l2, const char *name, str (*func)(str*, size_t*, str, int, str))
 {
 	BATiter arg1i, arg3i;
 	BAT *bn = NULL, *arg1 = NULL, *arg2 = NULL, *arg3 = NULL;
@@ -942,7 +940,7 @@ STRbatRpad2_bat_bat(bat *ret, const bat *l, const bat *n, const bat *l2)
  */
 
 static str
-prefix_or_suffix(bat *res, const bat *l, const bat *r, const char *name, bit (*func)(const char *, const char *))
+prefix_or_suffix(bat *res, const bat *l, const bat *r, const char *name, bit (*func)(str, str))
 {
 	BATiter lefti, righti;
 	BAT *bn = NULL, *left = NULL, *right = NULL;
@@ -1008,7 +1006,7 @@ STRbatSuffix(bat *res, const bat *l, const bat *r)
 }
 
 static str
-prefix_or_suffix_cst(bat *res, const bat *l, const char *y, const char *name, bit (*func)(const char *, const char *))
+prefix_or_suffix_cst(bat *res, const bat *l, str y, const char *name, bit (*func)(str, str))
 {
 	BATiter lefti;
 	BAT *bn = NULL, *left = NULL;
@@ -1379,7 +1377,7 @@ bailout:
 }
 
 static str
-do_batstr_str_int_cst(bat *res, const bat *l, const int *cst, const char *name, str (*func)(str*, size_t*, const char*, int))
+do_batstr_str_int_cst(bat *res, const bat *l, const int *cst, const char *name, str (*func)(str*, size_t*, str, int))
 {
 	BATiter bi;
 	BAT *bn = NULL, *b = NULL;
@@ -1464,14 +1462,13 @@ STRbatsubstringTailcst(bat *ret, const bat *l, const int *cst)
 }
 
 static str
-do_batstr_strcst(bat *res, const str *cst, const bat *l, const char *name, str (*func)(str*, size_t*, const char*, int))
+do_batstr_strcst(bat *res, const str *cst, const bat *l, const char *name, str (*func)(str*, size_t*, str, int))
 {
 	BAT *bn = NULL, *b = NULL;
 	BUN p, q;
 	size_t buflen = INITIAL_STR_BUFFER_LENGTH;
-	const char *s = *cst;
 	int *restrict vals;
-	str buf = GDKmalloc(buflen), msg = MAL_SUCCEED;
+	str s = *cst, buf = GDKmalloc(buflen), msg = MAL_SUCCEED;
 	bool nils = false;
 
 	if (!buf) {
@@ -1547,7 +1544,7 @@ STRbatsubstringTail_strcst(bat *ret, const str *cst, const bat *l)
 }
 
 static str
-do_batstr_str_int(bat *res, const bat *l, const bat *r, const char *name, str (*func)(str*, size_t*, const char*, int))
+do_batstr_str_int(bat *res, const bat *l, const bat *r, const char *name, str (*func)(str*, size_t*, str, int))
 {
 	BATiter lefti;
 	BAT *bn = NULL, *left = NULL, *right = NULL;

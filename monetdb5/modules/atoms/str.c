@@ -3352,7 +3352,7 @@ STRtostr(str *res, const str *src)
 }
 
 int
-str_utf8_length(const char *s)
+str_utf8_length(str s)
 {
 	size_t l;
 
@@ -3373,7 +3373,7 @@ STRLength(int *res, const str *arg1)
 }
 
 int
-str_nbytes(const char *s)
+str_nbytes(str s)
 {
 	size_t l;
 
@@ -3392,7 +3392,7 @@ STRBytes(int *res, const str *arg1)
 }
 
 str
-str_tail(str *buf, size_t *buflen, const char *s, int off)
+str_tail(str *buf, size_t *buflen, str s, int off)
 {
 	if (strNil(s) || is_int_nil(off)) {
 		strcpy(*buf, str_nil);
@@ -3432,7 +3432,7 @@ STRTail(str *res, const str *arg1, const int *offset)
 }
 
 str
-str_Sub_String(str *buf, size_t *buflen, const char *s, int off, int l)
+str_Sub_String(str *buf, size_t *buflen, str s, int off, int l)
 {
 	size_t len;
 
@@ -3517,7 +3517,7 @@ STRFromWChr(str *res, const int *c)
 
 /* return the Unicode code point of arg1 at position at */
 str
-str_wchr_at(int *res, const char *s, int at)
+str_wchr_at(int *res, str s, int at)
 {
 	/* 64bit: should have lng arg */
 	if (strNil(s) || is_int_nil(at) || at < 0) {
@@ -3543,7 +3543,7 @@ STRWChrAt(int *res, const str *arg1, const int *at)
 
 /* returns whether arg1 starts with arg2 */
 bit
-str_is_prefix(const char *s, const char *prefix)
+str_is_prefix(str s, str prefix)
 {
 	if (strNil(s) || strNil(prefix)) {
 		return bit_nil;
@@ -3559,7 +3559,7 @@ STRPrefix(bit *res, const str *arg1, const str *arg2)
 }
 
 bit
-str_is_suffix(const char *s, const char *suffix)
+str_is_suffix(str s, str suffix)
 {
 	size_t sl, sul;
 
@@ -3584,7 +3584,7 @@ STRSuffix(bit *res, const str *arg1, const str *arg2)
 }
 
 str
-str_lower(str *buf, size_t *buflen, const char *s)
+str_lower(str *buf, size_t *buflen, str s)
 {
 	return convertCase(UTF8_toLowerFrom, UTF8_toLowerTo, buf, buflen, s, "str.lower");
 }
@@ -3608,7 +3608,7 @@ STRLower(str *res, const str *arg1)
 }
 
 str
-str_upper(str *buf, size_t *buflen, const char *s)
+str_upper(str *buf, size_t *buflen, str s)
 {
 	return convertCase(UTF8_toUpperFrom, UTF8_toUpperTo, buf, buflen, s, "str.upper");
 }
@@ -3632,7 +3632,7 @@ STRUpper(str *res, const str *arg1)
 }
 
 int
-str_search(const char *s, const char *s2)
+str_search(str s, str s2)
 {
 /* 64bit: should return lng */
 	if (strNil(s) || strNil(s2)) {
@@ -3653,7 +3653,7 @@ STRstrSearch(int *res, const str *haystack, const str *needle)
 }
 
 int
-str_reverse_str_search(const char *s, const char *s2)
+str_reverse_str_search(str s, str s2)
 {
 /* 64bit: should return lng */
 	size_t len, slen;
@@ -3685,7 +3685,7 @@ STRReverseStrSearch(int *res, const str *arg1, const str *arg2)
 }
 
 str
-str_splitpart(str *buf, size_t *buflen, const char *s, const char *s2, int f)
+str_splitpart(str *buf, size_t *buflen, str s, str s2, int f)
 {
 	size_t len;
 	char *p = NULL;
@@ -3816,7 +3816,7 @@ const int whitespace[] = {
 #define NSPACES		(sizeof(whitespace) / sizeof(whitespace[0]))
 
 str
-str_strip(str *buf, size_t *buflen, const char *s)
+str_strip(str *buf, size_t *buflen, str s)
 {
 	if (strNil(s)) {
 		strcpy(*buf, str_nil);
@@ -3855,7 +3855,7 @@ STRStrip(str *res, const str *arg1)
 }
 
 str
-str_ltrim(str *buf, size_t *buflen, const char *s)
+str_ltrim(str *buf, size_t *buflen, str s)
 {
 	if (strNil(s)) {
 		strcpy(*buf, str_nil);
@@ -3891,7 +3891,7 @@ STRLtrim(str *res, const str *arg1)
 }
 
 str
-str_rtrim(str *buf, size_t *buflen, const char *s)
+str_rtrim(str *buf, size_t *buflen, str s)
 {
 	if (strNil(s)) {
 		strcpy(*buf, str_nil);
@@ -3948,7 +3948,7 @@ illegal:
 }
 
 str
-str_strip2(str *buf, size_t *buflen, const char *s, const char *s2)
+str_strip2(str *buf, size_t *buflen, str s, str s2)
 {
 	str msg = MAL_SUCCEED;
 	size_t len, n, n2, n3;
@@ -3998,7 +3998,7 @@ STRStrip2(str *res, const str *arg1, const str *arg2)
 }
 
 str
-str_ltrim2(str *buf, size_t *buflen, const char *s, const char *s2)
+str_ltrim2(str *buf, size_t *buflen, str s, str s2)
 {
 	str msg = MAL_SUCCEED;
 	size_t len, n, n2, n3, nallocate;
@@ -4045,7 +4045,7 @@ STRLtrim2(str *res, const str *arg1, const str *arg2)
 }
 
 str
-str_rtrim2(str *buf, size_t *buflen, const char *s, const char *s2)
+str_rtrim2(str *buf, size_t *buflen, str s, str s2)
 {
 	str msg = MAL_SUCCEED;
 	size_t len, n, n2, n3;
@@ -4155,7 +4155,7 @@ pad(str *buf, size_t *buflen, const char *s, const char *pad, int len, int left,
 }
 
 str
-str_lpad(str *buf, size_t *buflen, const char *s, int len)
+str_lpad(str *buf, size_t *buflen, str s, int len)
 {
 	return pad(buf, buflen, s, " ", len, 1, "str.lpad");
 }
@@ -4186,7 +4186,7 @@ STRLpad(str *res, const str *arg1, const int *len)
 }
 
 str
-str_rpad(str *buf, size_t *buflen, const char *s, int len)
+str_rpad(str *buf, size_t *buflen, str s, int len)
 {
 	return pad(buf, buflen, s, " ", len, 0, "str.lpad");
 }
@@ -4217,7 +4217,7 @@ STRRpad(str *res, const str *arg1, const int *len)
 }
 
 str
-str_lpad2(str *buf, size_t *buflen, const char *s, int len, const char *s2)
+str_lpad2(str *buf, size_t *buflen, str s, int len, str s2)
 {
 	return pad(buf, buflen, s, s2, len, 1, "str.lpad2");
 }
@@ -4248,7 +4248,7 @@ STRLpad2(str *res, const str *arg1, const int *len, const str *arg2)
 }
 
 str
-str_rpad2(str *buf, size_t *buflen, const char *s, int len, const char *s2)
+str_rpad2(str *buf, size_t *buflen, str s, int len, str s2)
 {
 	return pad(buf, buflen, s, s2, len, 0, "str.rpad2");
 }
@@ -4279,7 +4279,7 @@ STRRpad2(str *res, const str *arg1, const int *len, const str *arg2)
 }
 
 str
-str_substitute(str *buf, size_t *buflen, const char *s, const char *src, const char *dst, bit repeat)
+str_substitute(str *buf, size_t *buflen, str s, str src, str dst, bit repeat)
 {
 	if (strNil(s) || strNil(src) || strNil(dst)) {
 		strcpy(*buf, str_nil);
@@ -4350,7 +4350,7 @@ STRascii(int *ret, const str *s)
 }
 
 str
-str_substring_tail(str *buf, size_t *buflen, const char *s, int start)
+str_substring_tail(str *buf, size_t *buflen, str s, int start)
 {
 	if (is_int_nil(start)) {
 		strcpy(*buf, str_nil);
@@ -4380,7 +4380,7 @@ STRsubstringTail(str *res, const str *s, const int *start)
 }
 
 str
-str_sub_string(str *buf, size_t *buflen, const char *s, int start, int l)
+str_sub_string(str *buf, size_t *buflen, str s, int start, int l)
 {
 	if (is_int_nil(start)) {
 		strcpy(*buf, str_nil);
@@ -4428,7 +4428,7 @@ STRprefix(str *res, const str *s, const int *l)
 }
 
 str
-str_suffix(str *buf, size_t *buflen, const char *s, int l)
+str_suffix(str *buf, size_t *buflen, str s, int l)
 {
 	if (strNil(s) || is_int_nil(l)) {
 		strcpy(*buf, str_nil);
@@ -4457,7 +4457,7 @@ STRsuffix(str *res, const str *s, const int *l)
 }
 
 int
-str_locate2(const char *needle, const char *haystack, int start)
+str_locate2(str needle, str haystack, int start)
 {
 	int off, res;
 	char *s;
@@ -4487,7 +4487,7 @@ STRlocate(int *ret, const str *needle, const str *haystack)
 }
 
 str
-str_insert(str *buf, size_t *buflen, const char *s, int strt, int l, const char *s2)
+str_insert(str *buf, size_t *buflen, str s, int strt, int l, str s2)
 {
 	if (strNil(s) || strNil(s2) || is_int_nil(strt) || is_int_nil(l)) {
 		strcpy(*buf, str_nil);
@@ -4545,7 +4545,7 @@ STRreplace(str *ret, const str *s1, const str *s2, const str *s3)
 }
 
 str
-str_repeat(str *buf, size_t *buflen, const char *s, int c)
+str_repeat(str *buf, size_t *buflen, str s, int c)
 {
 	if (c < 0 || strNil(s)) {
 		strcpy(*buf, str_nil);
