@@ -105,7 +105,7 @@ batstr_2_blob(bat *res, const bat *bid)
 	return batstr_2_blob_cand(res, bid, NULL);
 }
 
-/* TODO get max size for all from type  */
+/* TODO get max size for all from type */
 static int
 str_buf_initial_capacity(sql_class eclass, int digits)
 {
@@ -118,7 +118,6 @@ str_buf_initial_capacity(sql_class eclass, int digits)
 		case EC_MONTH:
 		case EC_NUM:
 		case EC_DEC:
-		case EC_FLT:
 		case EC_POS:
 		case EC_TIME:
 		case EC_TIME_TZ:
@@ -126,8 +125,8 @@ str_buf_initial_capacity(sql_class eclass, int digits)
 		case EC_TIMESTAMP:
 		case EC_TIMESTAMP_TZ:
 			return 64;
-		default:
-			return -1;
+		default: /* includes EC_FLT */
+			return 128;
 	}
 }
 
@@ -150,7 +149,7 @@ SQLstr_cast_str(str *r, int *rlen, str v, int len)
 
 	intput_strlen = (int) strlen(v) + 1;
 	if (intput_strlen > *rlen) {
-		int newlen = intput_strlen + 1024;
+		int newlen = ((intput_strlen + 1023) & ~1023); /* align to a multiple of 1024 bytes */
 		str newr = GDKmalloc(newlen);
 
 		if (!newr)
@@ -166,14 +165,12 @@ SQLstr_cast_str(str *r, int *rlen, str v, int len)
 str
 SQLstr_cast(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	str *res = getArgReference_str(stk, pci, 0), msg;
+	str *res = getArgReference_str(stk, pci, 0), r = NULL, msg;
 	sql_class eclass = (sql_class)*getArgReference_int(stk, pci, 1);
 	int d = *getArgReference_int(stk, pci, 2), s = *getArgReference_int(stk, pci, 3);
-	int has_tz = *getArgReference_int(stk, pci, 4);
+	int has_tz = *getArgReference_int(stk, pci, 4), tpe = getArgType(mb, pci, 5), digits = *getArgReference_int(stk, pci, 6);
 	ptr p = getArgReference(stk, pci, 5);
-	int tpe = getArgType(mb, pci, 5), digits = *getArgReference_int(stk, pci, 6), rlen = 0;
 	mvc *m = NULL;
-	int initial_capacity = MAX(str_buf_initial_capacity(eclass, digits), (int) strlen(str_nil) + 1); /* don't reallocate on str_nil */
 
 	if ((msg = getSQLContext(cntxt, mb, &m, NULL)) != NULL)
 		return msg;
@@ -182,31 +179,26 @@ SQLstr_cast(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (ATOMextern(tpe))
 		p = *(ptr *) p;
 
-	assert(initial_capacity > 0);
-	if (!(EC_VARCHAR(eclass) || tpe == TYPE_str)) { /* for decimals and other fixed size types allocate once */
-		if (!(*res = GDKmalloc(initial_capacity)))
-			return createException(SQL, "calc.str_cast", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-		rlen = initial_capacity;
+	if (EC_VARCHAR(eclass) || tpe == TYPE_str) {
+		r = (str) p;
+		if (!strNil(r) && digits > 0 && str_utf8_length(r) > digits)
+			throw(SQL, "calc.str_cast", SQLSTATE(22001) "value too long for type (var)char(%d)", digits);
 	} else {
-		*res = NULL;
+		int rlen = MAX(str_buf_initial_capacity(eclass, digits), (int) strlen(str_nil) + 1); /* don't reallocate on str_nil */
+		if (!(r = GDKmalloc(rlen)))
+			throw(SQL, "calc.str_cast", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		if ((msg = SQLstr_cast_any_type(&r, rlen, m, eclass, d, s, has_tz, p, tpe, digits)) != MAL_SUCCEED) {
+			GDKfree(r);
+			return msg;
+		}
 	}
 
-	if (EC_VARCHAR(eclass) || tpe == TYPE_str)
-		msg = SQLstr_cast_str(res, &rlen, (str) p, digits);
-	else
-		msg = SQLstr_cast_any_type(res, rlen, m, eclass, d, s, has_tz, p, tpe, digits);
-
-	if (msg) {
-		GDKfree(*res);
-		*res = NULL;
-	} else if (!(EC_VARCHAR(eclass) || tpe == TYPE_str)) { /* if a too long string was allocated, return what is needed */
-		str newr = GDKstrdup(*res);
-		GDKfree(*res);
-		if (!newr)
-			return createException(SQL, "calc.str_cast", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-		*res = newr;
-	}
-	return msg;
+	*res = GDKstrdup(r);
+	if (!(EC_VARCHAR(eclass) || tpe == TYPE_str))
+		GDKfree(r);
+	if (!res)
+		throw(SQL, "calc.str_cast", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+	return MAL_SUCCEED;
 }
 
 /* str SQLbatstr_cast(int *res, int *eclass, int *d1, int *s1, int *has_tz, int *bid, int *digits); */
