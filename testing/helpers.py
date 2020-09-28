@@ -7,7 +7,6 @@
 import os, sys
 import re
 
-
 def get_tests_from_all_file(fpath:str):
     res = []
     with open(fpath, 'r') as f:
@@ -17,7 +16,7 @@ def get_tests_from_all_file(fpath:str):
             if r and r[0] != '#':
                 # break cond from file name
                 if '?' in r:
-                    cond, test = r.split('?') 
+                    cond, test = r.split('?')
                     cond = cond.strip()
                     test = test.strip()
                 else:
@@ -28,7 +27,7 @@ def get_tests_from_all_file(fpath:str):
 
 def process_test_dir(dir_path:str, ctx={}, **kwargs):
     """
-    Adds statistics and tests info to ctx 
+    Adds statistics and tests info to ctx
     """
     real_dir_path = os.path.realpath(dir_path)
     folder = {'realpath': real_dir_path}
@@ -40,7 +39,7 @@ def process_test_dir(dir_path:str, ctx={}, **kwargs):
         test_names_in_all = [x[1] for x in tests]
         for tn in test_names:
             if tn not in test_names_in_all:
-                raise ValueError('ERROR: {} does not appear to be valid test name. Check {}/All'.format(tn, dir_path)) 
+                raise ValueError('ERROR: {} does not appear to be valid test name. Check {}/All'.format(tn, dir_path))
         tests = [(None, test_name) for test_name in test_names]
     tests_out = []
     for cond, test_name in tests:
@@ -60,7 +59,7 @@ def process_test_dir(dir_path:str, ctx={}, **kwargs):
             ('.R',      'R',      'SQL'),
             ('.rb',     'ruby',   'SQL'),
         )
-        # does this test require other tests? 
+        # does this test require other tests?
         # if so they should exist in the same folder
         if os.path.isfile(test_path + '.reqtests'):
             reqtests = []
@@ -85,13 +84,13 @@ def process_test_dir(dir_path:str, ctx={}, **kwargs):
                 test['ext'] = ext
                 test['call'] = call
                 test['server'] = server
-                break 
+                break
             if os.path.isfile(test_path + ext + '.src'):
                 test['ext'] = ext + '.src'
                 test['call'] = call
                 test['server'] = server
                 test['is_link'] = True
-                break 
+                break
             if os.path.isfile(test_path + ext + '.in'):
                 test['ext'] = ext + '.in'
                 test['call'] = call
@@ -105,18 +104,18 @@ def process_test_dir(dir_path:str, ctx={}, **kwargs):
             pass
         else:
             tests_out.append(test)
-    folder['test_count'] = len(tests_out) 
+    folder['test_count'] = len(tests_out)
     folder['tests'] = tests_out
     ctx['test_folders'].append(folder)
     ctx['test_count'] += len(tests_out)
     return ctx
-            
+
 def process_dir(dir_path: str, ctx={}, **kwargs):
     print('-->', dir_path)
     if os.path.basename(os.path.realpath(dir_path)) == 'Tests':
         return process_test_dir(dir_path, ctx, **kwargs)
     onlydirs = [d for d in os.listdir(dir_path) if os.path.isdir(os.path.join(dir_path, d))]
-    # temporary rule here when sqllogictest and Tests folders are siblings, then assuming .sql 
+    # temporary rule here when sqllogictest and Tests folders are siblings, then assuming .sql
     # tests under Tests folder were converted to .test under sqllogictest/Tests
     rgx = re.compile('Tests|sqllogictest')
     filtered = list(filter(lambda x: rgx.search(x), onlydirs))
@@ -132,7 +131,7 @@ def build_work_ctx(*args):
     """
     builds testing context
     args:
-       single directory, or list of directories, or directory followed by list of tests within it 
+       single directory, or list of directories, or directory followed by list of tests within it
     return:
         ctx object
     """
