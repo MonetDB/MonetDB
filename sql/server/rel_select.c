@@ -3862,24 +3862,17 @@ rel_next_value_for( mvc *sql, symbol *se )
 
 /* some users like to use aliases already in the groupby */
 static sql_exp *
-rel_selection_ref(sql_query *query, sql_rel **rel, symbol *grp, dlist *selection)
+rel_selection_ref(sql_query *query, sql_rel **rel, char *name, dlist *selection)
 {
 	sql_allocator *sa = query->sql->sa;
-	dlist *nl, *gl;
-	char *name = NULL;
+	dlist *nl;
 	exp_kind ek = {type_value, card_column, FALSE};
 	sql_exp *res = NULL;
 	symbol *nsym;
 
-	if (grp->token != SQL_COLUMN && grp->token != SQL_IDENT)
-		return NULL;
-	gl = grp->data.lval;
-	if (dlist_length(gl) > 1)
-		return NULL;
 	if (!selection)
 		return NULL;
 
-	name = gl->h->data.sval;
 	for (dnode *n = selection->h; n; n = n->next) {
 		/* we only look for columns */
 		tokens to = n->data.sym->token;
@@ -3910,8 +3903,22 @@ rel_selection_ref(sql_query *query, sql_rel **rel, symbol *grp, dlist *selection
 	return res;
 }
 
+static char*
+symbol_get_identifier(symbol *sym)
+{
+	dlist *syml;
+
+	if (sym->token != SQL_COLUMN && sym->token != SQL_IDENT)
+		return NULL;
+	syml = sym->data.lval;
+	if (dlist_length(syml) > 1)
+		return NULL;
+
+	return syml->h->data.sval;
+}
+
 static sql_exp*
-rel_group_column(sql_query *query, sql_rel **rel, symbol *grp, dlist *selection, int f)
+rel_group_column(sql_query *query, sql_rel **rel, symbol *grp, dlist *selection, list *exps, int f)
 {
 	sql_query *lquery = query_create(query->sql);
 	mvc *sql = query->sql;
@@ -3919,14 +3926,25 @@ rel_group_column(sql_query *query, sql_rel **rel, symbol *grp, dlist *selection,
 	sql_exp *e = rel_value_exp2(lquery, rel, grp, f, ek);
 
 	if (!e) {
-		char buf[ERRSIZE];
+		char buf[ERRSIZE], *name;
 		int status = sql->session->status;
 		strcpy(buf, sql->errstr);
 		/* reset error */
 		sql->session->status = 0;
 		sql->errstr[0] = '\0';
 
-		e = rel_selection_ref(query, rel, grp, selection);
+		if ((name = symbol_get_identifier(grp))) {
+			e = rel_selection_ref(query, rel, name, selection);
+			if (!e) { /* attempt to find in the existing list of group by expressions */
+				for (node *n = exps->h ; n && !e ; n = n->next) {
+					sql_exp *ge = (sql_exp *) n->data;
+					const char *gen = exp_name(ge);
+
+					if (gen && strcmp(name, gen) == 0)
+						e = exp_ref(sql, ge);
+				}
+			}
+		}
 		if (!e && query_has_outer(query)) {
 			/* reset error */
 			sql->session->status = 0;
@@ -4046,7 +4064,7 @@ rel_groupings(sql_query *query, sql_rel **rel, symbol *groupby, dlist *selection
 						assert(is_sql_group_totals(f));
 						for (dnode *ooo = grp->data.lval->h; ooo; ooo = ooo->next) {
 							symbol *elm = ooo->data.sym;
-							sql_exp *e = rel_group_column(query, rel, elm, selection, f);
+							sql_exp *e = rel_group_column(query, rel, elm, selection, exps, f);
 							if (!e)
 								return NULL;
 							assert(e->type == e_column);
@@ -4054,7 +4072,7 @@ rel_groupings(sql_query *query, sql_rel **rel, symbol *groupby, dlist *selection
 							list_append(exps, e);
 						}
 					} else { /* single column or expression */
-						sql_exp *e = rel_group_column(query, rel, grp, selection, f);
+						sql_exp *e = rel_group_column(query, rel, grp, selection, exps, f);
 						if (!e)
 							return NULL;
 						if (e->type != e_column) { /* store group by expressions in the stack */
@@ -4104,14 +4122,27 @@ rel_partition_groupings(sql_query *query, sql_rel **rel, symbol *partitionby, dl
 
 		if (!e) {
 			int status = sql->session->status;
-			char buf[ERRSIZE];
+			char buf[ERRSIZE], *name;
 
 			/* reset error */
 			sql->session->status = 0;
 			strcpy(buf, sql->errstr);
 			sql->errstr[0] = '\0';
 
-			e = rel_selection_ref(query, rel, grp, selection);
+			if ((name = symbol_get_identifier(grp))) {
+				e = rel_selection_ref(query, rel, name, selection);
+				if (!e) { /* attempt to find in the existing list of partition by expressions */
+					for (node *n = exps->h ; n ; n = n->next) {
+						sql_exp *ge = (sql_exp *) n->data;
+						const char *gen = exp_name(ge);
+
+						if (gen && strcmp(name, gen) == 0) {
+							e = exp_ref(sql, ge);
+							break;
+						}
+					}
+				}
+			}
 			if (!e) {
 				if (sql->errstr[0] == 0) {
 					sql->session->status = status;
