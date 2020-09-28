@@ -269,18 +269,22 @@ rel_bind_column_(mvc *sql, int *exp_has_nil, sql_rel *rel, const char *cname, in
 	case op_groupby:
 	case op_project:
 	case op_table:
-	case op_basetable:
-		if (rel->exps && exps_bind_column(rel->exps, cname, &ambiguous, &multi, no_tname))
-			return rel;
-		if (rel->r && is_groupby(rel->op) && exps_bind_column(rel->r, cname, &ambiguous, &multi, no_tname))
-			return rel;
+	case op_basetable: {
+		sql_exp *found = NULL;
+
+		if (rel->exps)
+			found = exps_bind_column(rel->exps, cname, &ambiguous, &multi, no_tname);
+		if (!found && rel->r && is_groupby(rel->op))
+			found = exps_bind_column(rel->r, cname, &ambiguous, &multi, no_tname);
 		if (ambiguous || multi)
 			return sql_error(sql, ERR_AMBIGUOUS, SQLSTATE(42000) "SELECT: identifier '%s' ambiguous", cname);
+		if (found)
+			return rel;
 		if (is_processed(rel))
 			return NULL;
 		if (rel->l && !(is_base(rel->op)))
 			return rel_bind_column_(sql, exp_has_nil, rel->l, cname, no_tname);
-		break;
+		} break;
 	case op_semi:
 	case op_anti:
 

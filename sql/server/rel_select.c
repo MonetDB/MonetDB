@@ -3862,12 +3862,14 @@ rel_next_value_for( mvc *sql, symbol *se )
 
 /* some users like to use aliases already in the groupby */
 static sql_exp *
-rel_selection_ref(sql_query *query, sql_rel **rel, symbol *grp, dlist *selection )
+rel_selection_ref(sql_query *query, sql_rel **rel, symbol *grp, dlist *selection)
 {
 	sql_allocator *sa = query->sql->sa;
-	dlist *gl;
+	dlist *nl, *gl;
 	char *name = NULL;
 	exp_kind ek = {type_value, card_column, FALSE};
+	sql_exp *res = NULL;
+	symbol *nsym;
 
 	if (grp->token != SQL_COLUMN && grp->token != SQL_IDENT)
 		return NULL;
@@ -3884,32 +3886,28 @@ rel_selection_ref(sql_query *query, sql_rel **rel, symbol *grp, dlist *selection
 		if (to == SQL_COLUMN || to == SQL_IDENT) {
 			dlist *l = n->data.sym->data.lval;
 			/* AS name */
-			if (l->h->next->data.sval &&
-					strcmp(l->h->next->data.sval, name) == 0){
+			if (l->h->next->data.sval && strcmp(l->h->next->data.sval, name) == 0) {
 				sql_exp *ve = rel_value_exp(query, rel, l->h->data.sym, sql_sel|sql_groupby, ek);
 				if (ve) {
-					dlist *l = dlist_create(sa);
-					symbol *sym;
-					exp_setname(sa, ve, NULL, name);
-					/* now we should rewrite the selection
-					   such that it uses the new group
-					   by column
-					*/
-					dlist_append_string(sa, l,
-						sa_strdup(sa, name));
-					sym = symbol_create_list(sa, to, l);
-					l = dlist_create(sa);
-					dlist_append_symbol(sa, l, sym);
-					/* no alias */
-					dlist_append_symbol(sa, l, NULL);
-					n->data.sym = symbol_create_list(sa, to, l);
+					if (res)
+						return sql_error(query->sql, ERR_AMBIGUOUS, SQLSTATE(42000) "SELECT: identifier '%s' ambiguous", name);
+					res = ve;
 
+					nl = dlist_create(sa);
+					exp_setname(sa, ve, NULL, name);
+					/* now we should rewrite the selection such that it uses the new group by column */
+					dlist_append_string(sa, nl, sa_strdup(sa, name));
+					nsym = symbol_create_list(sa, to, nl);
+					nl = dlist_create(sa);
+					dlist_append_symbol(sa, nl, nsym);
+					/* no alias */
+					dlist_append_symbol(sa, nl, NULL);
+					n->data.sym = symbol_create_list(sa, to, nl);
 				}
-				return ve;
 			}
 		}
 	}
-	return NULL;
+	return res;
 }
 
 static sql_exp*
