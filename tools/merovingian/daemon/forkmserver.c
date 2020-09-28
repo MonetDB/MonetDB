@@ -31,12 +31,12 @@
  * shut down gracefully within a given time-out.  If that fails, it
  * sends the deadly SIGKILL signal to the mserver process and returns.
  */
-void
+bool
 terminateProcess(dpair dp, mtype type)
 {
 	sabdb *stats;
 	char *er;
-	int i;
+	int i, e, killed;
 	confkeyval *kv;
 
 	er = msab_getStatus(&stats, dp->dbname);
@@ -44,13 +44,13 @@ terminateProcess(dpair dp, mtype type)
 		Mfprintf(stderr, "cannot terminate process %lld: %s\n",
 				 (long long int)dp->pid, er);
 		free(er);
-		return;
+		return false;
 	}
 
 	if (stats == NULL) {
 		Mfprintf(stderr, "strange, process %lld serves database '%s' "
 				 "which does not exist\n", (long long int)dp->pid, dp->dbname);
-		return;
+		return false;
 	}
 
 	switch (stats->state) {
@@ -62,13 +62,13 @@ terminateProcess(dpair dp, mtype type)
 				 "(pid %lld) has crashed\n",
 				 dp->dbname, (long long int)dp->pid);
 		msab_freeStatus(&stats);
-		return;
+		return false;
 	case SABdbInactive:
 		Mfprintf(stdout, "database '%s' appears to have shut down already\n",
 				 dp->dbname);
 		fflush(stdout);
 		msab_freeStatus(&stats);
-		return;
+		return false;
 	case SABdbStarting:
 		Mfprintf(stderr, "database '%s' appears to be starting up\n",
 				 dp->dbname);
@@ -77,19 +77,19 @@ terminateProcess(dpair dp, mtype type)
 	default:
 		Mfprintf(stderr, "unknown state: %d\n", (int)stats->state);
 		msab_freeStatus(&stats);
-		return;
+		return false;
 	}
 
 	if (type == MEROFUN) {
 		multiplexDestroy(dp->dbname);
 		msab_freeStatus(&stats);
-		return;
+		return true;
 	} else if (type != MERODB) {
 		/* barf */
 		Mfprintf(stderr, "cannot stop merovingian process role: %s\n",
 				 dp->dbname);
 		msab_freeStatus(&stats);
-		return;
+		return false;
 	}
 
 	/* ok, once we get here, we'll be shutting down the server */
@@ -119,12 +119,12 @@ terminateProcess(dpair dp, mtype type)
 				Mfprintf (stderr, "database '%s' crashed after SIGTERM\n",
 						  dp->dbname);
 				msab_freeStatus(&stats);
-				return;
+				return true;
 			case SABdbInactive:
 				Mfprintf(stdout, "database '%s' has shut down\n", dp->dbname);
 				fflush(stdout);
 				msab_freeStatus(&stats);
-				return;
+				return true;
 			default:
 				Mfprintf(stderr, "unknown state: %d\n", (int)stats->state);
 				break;
@@ -134,8 +134,16 @@ terminateProcess(dpair dp, mtype type)
 	Mfprintf(stderr, "timeout of %s seconds expired, sending process %lld"
 			 " (database '%s') the KILL signal\n",
 			 kv->val, (long long int)dp->pid, dp->dbname);
-	kill(dp->pid, SIGKILL);
+	killed = kill(dp->pid, SIGKILL);
+	e = errno;
 	msab_freeStatus(&stats);
+	if (killed == -1) {
+		Mfprintf(stderr, "sending KILL signal to process %lld (database '%s')"
+				 " failed: %s\n", (long long int)dp->pid, dp->dbname, strerror(e));
+		return false;
+	} else {
+		return true;
+	}
 }
 
 /**
@@ -750,14 +758,16 @@ forkMserver(char *database, sabdb** stats, bool force)
 			if (scen == NULL) {
 				/* we don't know what it's doing, but we don't like it
 				 * any case, so kill it */
-				terminateProcess(dp, MERODB);
+				if (terminateProcess(dp, MERODB))
+					dp->pid = -1;
 				msab_freeStatus(stats);
 				pthread_mutex_unlock(&dp->fork_lock);
 				return(newErr("database '%s' did not initialise the sql "
 							  "scenario", database));
 			}
 		} else if (dp->pid != -1) {
-			terminateProcess(dp, MERODB);
+			if (terminateProcess(dp, MERODB))
+				dp->pid = -1;
 			msab_freeStatus(stats);
 			pthread_mutex_unlock(&dp->fork_lock);
 			return(newErr(

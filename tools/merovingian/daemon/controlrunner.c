@@ -374,7 +374,8 @@ static void ctl_handle_client(
 							} else if (stats != NULL)
 								msab_freeStatus(&stats);
 							pthread_mutex_lock(&dp->fork_lock);
-							terminateProcess(dp, type);
+							if (terminateProcess(dp, type))
+								dp->pid = -1;
 							pthread_mutex_unlock(&dp->fork_lock);
 							Mfprintf(_mero_ctlout, "%s: stopped "
 									"database '%s'\n", origin, q);

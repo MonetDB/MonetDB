@@ -318,7 +318,8 @@ doTerminateProcess(void *p)
 {
 	dpair dp = p;
 	pthread_mutex_lock(&dp->fork_lock);
-	terminateProcess(dp, dp->type);
+	if (dp->pid != -1 && terminateProcess(dp, dp->type))
+		dp->pid = -1;
 	pthread_mutex_unlock(&dp->fork_lock);
 	return NULL;
 }
