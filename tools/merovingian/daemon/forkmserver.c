@@ -61,7 +61,7 @@ terminateProcess(char *dbname, pid_t pid, mtype type)
 		Mfprintf(stderr,
 			"strange, trying to kill process %lld to stop database '%s' "
 			"which seems to be served by process %lld instead\n",
-			(long long int)pid,
+			(long long int)stats->pid,
 			dbname,
 			(long long int)pid
 		);
