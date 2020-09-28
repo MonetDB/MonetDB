@@ -1820,7 +1820,7 @@ def RunSQLLogicTest(env, Test, TestOut, TestErr) -> (int, str):
                         database=env['TSTDB'])
         except Exception as e:
             exit_code = F_SOCK
-            msg = "Connection failure"
+            msg = "Connection refused"
             print(e, file=f) 
         else:
             sql.drop()
@@ -1833,7 +1833,8 @@ def RunSQLLogicTest(env, Test, TestOut, TestErr) -> (int, str):
             except BrokenPipeError as e:
                 # server timeout
                 print(e, file=f) 
-                msg = 'timeout'
+                exit_code = F_SOCK
+                msg = "Broken pipe"
             sql.close()
     is_dirty = os.path.getsize(TestErr) > 0
     # clean up if all okay
@@ -2269,7 +2270,6 @@ def SetExecEnv(exe,verbose) :
 
 THISFILE = os.path.basename(sys.argv[0])
 THISPATH = os.path.realpath(os.path.dirname(sys.argv[0]))
-dftIGNORE = r'^\(| \|\)#'
 TSTDBG = str(2+8)
 TSTTHREADS = "0"
 dftTSTPREF = "mTests"
