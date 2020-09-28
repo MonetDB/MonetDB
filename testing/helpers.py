@@ -54,7 +54,7 @@ def process_test_dir(dir_path:str, ctx={}, **kwargs):
             ('.MAL.py', 'python', 'MAL'),
             ('.SQL.py', 'python', 'SQL'),
             ('.malC',   'mal',    'MAL'),
-            ('.sql',    'sql',    'SQL'),
+            #('.sql',    'sql',    'SQL'),
             ('.test',   'sqltest','SQL'),
             ('.R',      'R',      'SQL'),
             ('.rb',     'ruby',   'SQL'),

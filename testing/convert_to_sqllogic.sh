@@ -60,13 +60,19 @@ work() {
     cat $f | mktest.py --database "test" > $dst;
 }
 
-for f in $(ls ${src}/*.sql);do
-    echo ">>> converting $f ..."
+for f in $(ls ${src}/*{.sql,.sql.in});do
+    echo ">>> converting $f ...";
     if [[ "${dry_run}" = true ]];then
         dryrun $f;
     else
-        bn=$(basename $f .sql)
-        work $f $dst/$bn.test
+        ext=$(echo "${f##*.}");
+        if [[ $ext == "in" ]];then
+            bn=$(basename $f .sql.in);
+            work $f $dst/$bn.test.in;
+        else
+            bn=$(basename $f .sql);
+            work $f $dst/$bn.test;
+        fi
     fi
 done;
 

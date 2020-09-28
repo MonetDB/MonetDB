@@ -1090,10 +1090,10 @@ def RunTest(env, TST, BusyPorts, COND, oktests, length, all_tests, pSrvr) :
             ('.malC',         '.malC',   'mal',    'MAL'),
             ('_s00.malC',     '.malC',   'malXs',  'MAL'),
             ('_p00.malC',     '.malC',   'malXp',  'MAL'),
+            ('.test',         '.test',   'sqltest','SQL'),
             ('.sql',          '.sql',    'sql',    'SQL'),
             ('_s00.sql',      '.sql',    'sqlXs',  'SQL'),
             ('_p00.sql',      '.sql',    'sqlXp',  'SQL'),
-            ('.test',         '.test',   'sqltest','SQL'),
             ('.R',            '.R',      'R',      'SQL'),
             ('.rb',           '.rb',     'ruby',   'SQL'),
             #TODO:
