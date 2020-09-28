@@ -65,6 +65,7 @@ terminateProcess(char *dbname, pid_t pid, mtype type)
 			dbname,
 			(long long int)pid
 		);
+		return;
 	}
 	assert(stats->pid == pid);
 
