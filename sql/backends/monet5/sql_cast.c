@@ -106,7 +106,7 @@ batstr_2_blob(bat *res, const bat *bid)
 }
 
 /* TODO get max size for all from type */
-static int
+static size_t
 str_buf_initial_capacity(sql_class eclass, int digits)
 {
 	switch (eclass)
@@ -125,31 +125,38 @@ str_buf_initial_capacity(sql_class eclass, int digits)
 		case EC_TIMESTAMP:
 		case EC_TIMESTAMP_TZ:
 			return 64;
-		default: /* includes EC_FLT */
+		case EC_FLT:
+			return 128;
+		case EC_CHAR:
+		case EC_STRING:
+		case EC_BLOB:
+		case EC_GEOM:
+			return 1024;
+		default:
 			return 128;
 	}
 }
 
 static inline str
-SQLstr_cast_any_type(str *r, int rlen, mvc *m, sql_class eclass, int d, int s, int has_tz, ptr p, int tpe, int len)
+SQLstr_cast_any_type(str *r, size_t *rlen, mvc *m, sql_class eclass, int d, int s, int has_tz, ptr p, int tpe, int len)
 {
-	int sz = convert2str(m, eclass, d, s, has_tz, p, tpe, r, rlen);
-	if ((len > 0 && sz > len) || sz < 0)
+	ssize_t sz = convert2str(m, eclass, d, s, has_tz, p, tpe, r, rlen);
+	if ((len > 0 && sz > (ssize_t) len) || sz < 0)
 		throw(SQL, "str_cast", SQLSTATE(22001) "value too long for type (var)char(%d)", len);
 	return MAL_SUCCEED;
 }
 
 static inline str
-SQLstr_cast_str(str *r, int *rlen, str v, int len)
+SQLstr_cast_str(str *r, size_t *rlen, str v, int len)
 {
-	int intput_strlen;
+	size_t intput_strlen;
 
 	if (!strNil(v) && len > 0 && str_utf8_length(v) > len)
 		throw(SQL, "str_cast", SQLSTATE(22001) "value too long for type (var)char(%d)", len);
 
-	intput_strlen = (int) strlen(v) + 1;
+	intput_strlen = strlen(v) + 1;
 	if (intput_strlen > *rlen) {
-		int newlen = ((intput_strlen + 1023) & ~1023); /* align to a multiple of 1024 bytes */
+		size_t newlen = ((intput_strlen + 1023) & ~1023); /* align to a multiple of 1024 bytes */
 		str newr = GDKmalloc(newlen);
 
 		if (!newr)
@@ -171,6 +178,7 @@ SQLstr_cast(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	int has_tz = *getArgReference_int(stk, pci, 4), tpe = getArgType(mb, pci, 5), digits = *getArgReference_int(stk, pci, 6);
 	ptr p = getArgReference(stk, pci, 5);
 	mvc *m = NULL;
+	bool from_str = EC_VARCHAR(eclass) || tpe == TYPE_str;
 
 	if ((msg = getSQLContext(cntxt, mb, &m, NULL)) != NULL)
 		return msg;
@@ -179,22 +187,22 @@ SQLstr_cast(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (ATOMextern(tpe))
 		p = *(ptr *) p;
 
-	if (EC_VARCHAR(eclass) || tpe == TYPE_str) {
+	if (from_str) {
 		r = (str) p;
 		if (!strNil(r) && digits > 0 && str_utf8_length(r) > digits)
 			throw(SQL, "calc.str_cast", SQLSTATE(22001) "value too long for type (var)char(%d)", digits);
 	} else {
-		int rlen = MAX(str_buf_initial_capacity(eclass, digits), (int) strlen(str_nil) + 1); /* don't reallocate on str_nil */
+		size_t rlen = MAX(str_buf_initial_capacity(eclass, digits), strlen(str_nil) + 1); /* don't reallocate on str_nil */
 		if (!(r = GDKmalloc(rlen)))
 			throw(SQL, "calc.str_cast", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-		if ((msg = SQLstr_cast_any_type(&r, rlen, m, eclass, d, s, has_tz, p, tpe, digits)) != MAL_SUCCEED) {
+		if ((msg = SQLstr_cast_any_type(&r, &rlen, m, eclass, d, s, has_tz, p, tpe, digits)) != MAL_SUCCEED) {
 			GDKfree(r);
 			return msg;
 		}
 	}
 
 	*res = GDKstrdup(r);
-	if (!(EC_VARCHAR(eclass) || tpe == TYPE_str))
+	if (!from_str)
 		GDKfree(r);
 	if (!res)
 		throw(SQL, "calc.str_cast", SQLSTATE(HY013) MAL_MALLOC_FAIL);
@@ -211,16 +219,14 @@ SQLbatstr_cast(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	str msg, r = NULL;
 	bat *res = getArgReference_bat(stk, pci, 0);
 	sql_class eclass = (sql_class) *getArgReference_int(stk, pci, 1);
-	int d1 = *getArgReference_int(stk, pci, 2), s1 = *getArgReference_int(stk, pci, 3);
-	int has_tz = *getArgReference_int(stk, pci, 4);
+	int d1 = *getArgReference_int(stk, pci, 2), s1 = *getArgReference_int(stk, pci, 3), has_tz = *getArgReference_int(stk, pci, 4);
 	bat *bid = getArgReference_bat(stk, pci, 5), *sid = pci->argc == 7 ? NULL : getArgReference_bat(stk, pci, 6);
-	int digits = pci->argc == 7 ? *getArgReference_int(stk, pci, 6) : *getArgReference_int(stk, pci, 7);
-	int rlen = 0, tpe = getBatType(getArgType(mb, pci, 5));
+	int tpe = getBatType(getArgType(mb, pci, 5)), digits = pci->argc == 7 ? *getArgReference_int(stk, pci, 6) : *getArgReference_int(stk, pci, 7);
 	struct canditer ci;
 	BUN q;
-	int initial_capacity = MAX(str_buf_initial_capacity(eclass, digits), (int) strlen(str_nil) + 1); /* don't reallocate on str_nil */
 	oid off;
 	bool nils = false, from_str = EC_VARCHAR(eclass) || tpe == TYPE_str;
+	size_t rlen = MAX(str_buf_initial_capacity(eclass, digits), strlen(str_nil) + 1); /* don't reallocate on str_nil */
 
 	if ((msg = getSQLContext(cntxt, mb, &m, NULL)) != NULL)
 		return msg;
@@ -242,13 +248,10 @@ SQLbatstr_cast(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		goto bailout;
 	}
 
-	assert(initial_capacity > 0);
-	if (!from_str) { /* for decimals and other fixed size types allocate once */
-		if (!(r = GDKmalloc(initial_capacity))) {
-			msg = createException(SQL, "batcalc.str_cast", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-			goto bailout;
-		}
-		rlen = initial_capacity;
+	assert(rlen > 0);
+	if (!(r = GDKmalloc(rlen))) {
+		msg = createException(SQL, "batcalc.str_cast", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		goto bailout;
 	}
 
 	for (BUN i = 0; i < q; i++) {
@@ -258,7 +261,7 @@ SQLbatstr_cast(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		if (from_str)
 			msg = SQLstr_cast_str(&r, &rlen, (str) v, digits);
 		else
-			msg = SQLstr_cast_any_type(&r, rlen, m, eclass, d1, s1, has_tz, v, tpe, digits);
+			msg = SQLstr_cast_any_type(&r, &rlen, m, eclass, d1, s1, has_tz, v, tpe, digits);
 
 		if (msg)
 			goto bailout;
