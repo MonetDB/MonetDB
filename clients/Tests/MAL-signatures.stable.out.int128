@@ -9094,6 +9094,8 @@ stdout of test 'MAL-signatures` in directory 'clients` itself:
 [ "batstr",	"search",	"command batstr.search(X_1:bat[:str], X_2:str):bat[:int] ",	"STRbatstrSearchcst;",	""	]
 [ "batstr",	"space",	"command batstr.space(X_1:bat[:int]):bat[:str] ",	"STRbatSpace;",	""	]
 [ "batstr",	"splitpart",	"command batstr.splitpart(X_1:bat[:str], X_2:bat[:str], X_3:bat[:int]):bat[:str] ",	"STRbatsplitpart;",	""	]
+[ "batstr",	"splitpart",	"command batstr.splitpart(X_1:bat[:str], X_2:bat[:str], X_3:int):bat[:str] ",	"STRbatsplitpart_fieldcst;",	""	]
+[ "batstr",	"splitpart",	"command batstr.splitpart(X_1:bat[:str], X_2:str, X_3:bat[:int]):bat[:str] ",	"STRbatsplitpart_needlecst;",	""	]
 [ "batstr",	"splitpart",	"command batstr.splitpart(X_1:bat[:str], X_2:str, X_3:int):bat[:str] ",	"STRbatsplitpartcst;",	""	]
 [ "batstr",	"startsWith",	"command batstr.startsWith(X_1:bat[:str], X_2:bat[:str]):bat[:bit] ",	"STRbatPrefix;",	""	]
 [ "batstr",	"startsWith",	"command batstr.startsWith(X_1:bat[:str], X_2:str):bat[:bit] ",	"STRbatPrefixcst;",	""	]

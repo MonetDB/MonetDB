@@ -1814,6 +1814,131 @@ bailout:
 }
 
 static str
+STRbatsplitpart_needlecst(bat *res, const bat *bid, const str *needle, const bat *fid)
+{
+	BATiter bi;
+	BAT *bn = NULL, *b = NULL, *f = NULL;
+	BUN p, q;
+	size_t buflen = INITIAL_STR_BUFFER_LENGTH;
+	int *restrict field;
+	str x, y = *needle, buf = GDKmalloc(buflen), msg = MAL_SUCCEED;
+	bool nils = false;
+
+	if (!buf) {
+		msg = createException(MAL, "batstr.splitpart", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		goto bailout;
+	}
+	if (!(b = BATdescriptor(*bid)) || !(f = BATdescriptor(*fid))) {
+		msg = createException(MAL, "batstr.splitpart", SQLSTATE(HY005) RUNTIME_OBJECT_MISSING);
+		goto bailout;
+	}
+	if (BATcount(b) != BATcount(f)) {
+		msg = createException(MAL, "batstr.splitpart", ILLEGAL_ARGUMENT " Requires bats of identical size");
+		goto bailout;
+	}
+	q = BATcount(b);
+	if (!(bn = COLnew(b->hseqbase, TYPE_str, q, TRANSIENT))) {
+		msg = createException(MAL, "batstr.splitpart", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		goto bailout;
+	}
+
+	bi = bat_iterator(b);
+	field = Tloc(f, 0);
+	for (p = 0; p < q ; p++) {
+		x = (str) BUNtail(bi, p);
+
+		if ((msg = str_splitpart(&buf, &buflen, x, y, field[p])) != MAL_SUCCEED)
+			goto bailout;
+		if (tfastins_nocheckVAR(bn, p, buf, Tsize(bn)) != GDK_SUCCEED) {
+			msg = createException(MAL, "batstr.splitpart", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+			goto bailout;
+		}
+		nils |= strNil(buf);
+	}
+
+bailout:
+	GDKfree(buf);
+	if (b)
+		BBPunfix(b->batCacheid);
+	if (f)
+		BBPunfix(f->batCacheid);
+	if (bn && !msg) {
+		BATsetcount(bn, q);
+		bn->tnil = nils;
+		bn->tnonil = !nils;
+		bn->tkey = BATcount(bn) <= 1;
+		bn->tsorted = b->tsorted;
+		bn->trevsorted = b->trevsorted;
+		BBPkeepref(*res = bn->batCacheid);
+	} else if (bn)
+		BBPreclaim(bn);
+	return msg;
+}
+
+static str
+STRbatsplitpart_fieldcst(bat *res, const bat *bid, const bat *nid, const int *field)
+{
+	BATiter bi, ni;
+	BAT *bn = NULL, *b = NULL, *n = NULL;
+	BUN p, q;
+	size_t buflen = INITIAL_STR_BUFFER_LENGTH;
+	int f = *field;
+	str x, y, buf = GDKmalloc(buflen), msg = MAL_SUCCEED;
+	bool nils = false;
+
+	if (!buf) {
+		msg = createException(MAL, "batstr.splitpart", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		goto bailout;
+	}
+	if (!(b = BATdescriptor(*bid)) || !(n = BATdescriptor(*nid))) {
+		msg = createException(MAL, "batstr.splitpart", SQLSTATE(HY005) RUNTIME_OBJECT_MISSING);
+		goto bailout;
+	}
+	if (BATcount(b) != BATcount(n)) {
+		msg = createException(MAL, "batstr.splitpart", ILLEGAL_ARGUMENT " Requires bats of identical size");
+		goto bailout;
+	}
+	q = BATcount(b);
+	if (!(bn = COLnew(b->hseqbase, TYPE_str, q, TRANSIENT))) {
+		msg = createException(MAL, "batstr.splitpart", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		goto bailout;
+	}
+
+	bi = bat_iterator(b);
+	ni = bat_iterator(n);
+	for (p = 0; p < q ; p++) {
+		x = (str) BUNtail(bi, p);
+		y = (str) BUNtail(ni, p);
+
+		if ((msg = str_splitpart(&buf, &buflen, x, y, f)) != MAL_SUCCEED)
+			goto bailout;
+		if (tfastins_nocheckVAR(bn, p, buf, Tsize(bn)) != GDK_SUCCEED) {
+			msg = createException(MAL, "batstr.splitpart", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+			goto bailout;
+		}
+		nils |= strNil(buf);
+	}
+
+bailout:
+	GDKfree(buf);
+	if (b)
+		BBPunfix(b->batCacheid);
+	if (n)
+		BBPunfix(n->batCacheid);
+	if (bn && !msg) {
+		BATsetcount(bn, q);
+		bn->tnil = nils;
+		bn->tnonil = !nils;
+		bn->tkey = BATcount(bn) <= 1;
+		bn->tsorted = b->tsorted;
+		bn->trevsorted = b->trevsorted;
+		BBPkeepref(*res = bn->batCacheid);
+	} else if (bn)
+		BBPreclaim(bn);
+	return msg;
+}
+
+static str
 STRbatsplitpart(bat *res, const bat *l, const bat *r, const bat *t)
 {
 	BATiter arg1i, arg2i;
@@ -2605,6 +2730,8 @@ mel_func batstr_init_funcs[] = {
  command("batstr", "endsWith", STRbatSuffixcst, false, "Suffix check.", args(1,3, batarg("",bit),batarg("s",str),arg("suffix",str))),
  command("batstr", "splitpart", STRbatsplitpart, false, "Split string on delimiter. Returns\ngiven field (counting from one.)", args(1,4, batarg("",str),batarg("s",str),batarg("needle",str),batarg("field",int))),
  command("batstr", "splitpart", STRbatsplitpartcst, false, "Split string on delimiter. Returns\ngiven field (counting from one.)", args(1,4, batarg("",str),batarg("s",str),arg("needle",str),arg("field",int))),
+ command("batstr", "splitpart", STRbatsplitpart_needlecst, false, "Split string on delimiter. Returns\ngiven field (counting from one.)", args(1,4, batarg("",str),batarg("s",str),arg("needle",str),batarg("field",int))),
+ command("batstr", "splitpart", STRbatsplitpart_fieldcst, false, "Split string on delimiter. Returns\ngiven field (counting from one.)", args(1,4, batarg("",str),batarg("s",str),batarg("needle",str),arg("field",int))),
  command("batstr", "search", STRbatstrSearch, false, "Search for a substring. Returns position, -1 if not found.", args(1,3, batarg("",int),batarg("s",str),batarg("c",str))),
  command("batstr", "search", STRbatstrSearchcst, false, "Search for a substring. Returns position, -1 if not found.", args(1,3, batarg("",int),batarg("s",str),arg("c",str))),
  command("batstr", "r_search", STRbatRstrSearch, false, "Reverse search for a substring. Returns position, -1 if not found.", args(1,3, batarg("",int),batarg("s",str),batarg("c",str))),
