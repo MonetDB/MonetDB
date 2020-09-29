@@ -2210,7 +2210,7 @@ SQLtid(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	sql_schema *s;
 	sql_table *t;
 	sql_column *c;
-	BAT *tids;
+	BAT *tids = NULL;
 	size_t nr, dcnt;
 	oid sb = 0;
 
@@ -2247,11 +2247,14 @@ SQLtid(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	/* check if we have deletes, iff get bit msk */
 	if ((dcnt = store_funcs.count_del(tr, t, 0)) > 0 || store_funcs.count_del(tr, t, 2) > 0) {
-		setVarType(mb, getArg(pci, 0), setCandType(newBatType(TYPE_msk)));
-		BAT *d = store_funcs.bind_del(tr, t, RDONLY), *bn;
+		//setVarType(mb, getArg(pci, 0), setCandType(newBatType(TYPE_msk)));
+		BAT *d = store_funcs.bind_del(tr, t, RDONLY), *bn = NULL;
 
-		bn = BATslice(d, sb, sb+nr);
-		BBPunfix(d->batCacheid);
+		if (d) {
+			bn = BATslice(d, sb, sb+nr);
+			BBPunfix(d->batCacheid);
+			d = NULL;
+		}
 		if (bn && store_funcs.count_del(tr, t, 2) > 0) {
 			BAT *ui = store_funcs.bind_del(tr, t, RD_UPD_ID);
 			BAT *uv = store_funcs.bind_del(tr, t, RD_UPD_VAL);
@@ -2280,14 +2283,23 @@ SQLtid(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		}
 		d = NULL;
 		/* true == deleted, need not deleted  */
-		if (bn && BATcount(bn))
-			d = BATcalcnot(bn, NULL);
-		else if (bn)
-			d = bn;
+		if (bn) {
+			tids = BATdense(sb, sb, (BUN) nr);
+			if (bn && BATcount(bn))
+				d = BATcalcnot(bn, NULL);
+			if (bn)
+				BBPunfix(bn->batCacheid);
+			if (d && BATmaskedcands(tids, d, true) != GDK_SUCCEED) {
+				if (d) BBPunfix(d->batCacheid);
+				if (tids) BBPunfix(tids->batCacheid);
+				throw(MAL, "sql.tids", SQLSTATE(45003) "TIDdeletes failed");
+			}
+			if (d)
+				BBPunfix(d->batCacheid);
+			d = tids;
+		}
 		if(d == NULL)
 			throw(SQL, "sql.tid", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-		if (bn && bn != d)
-			BBPunfix(bn->batCacheid);
 		BAThseqbase(d, sb);
 		*res = d->batCacheid;
 	} else {

@@ -44,7 +44,7 @@ _delta_cands(sql_trans *tr, sql_table *t)
 				BBPunfix(uv->batCacheid);
 				d = nd;
 			}
-			BAT *del_ids = msk2oid(d, dcnt);
+			BAT *del_ids = BATunmask(d);
 			if (!del_ids) {
 				bat_destroy(d);
 				bat_destroy(tids);

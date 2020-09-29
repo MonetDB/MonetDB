@@ -55,86 +55,117 @@ stdout of test 'part-elim` in directory 'sql/test/mergetables` itself:
 % .plan # table_name
 % rel # name
 % clob # type
-% 64 # length
-project (
-| select (
-| |  [ boolean "true" ]
-| ) [ boolean "false" ]
-) [ bigint "NULL" as "test"."id", real "NULL" as "test"."posx" ]
+% 88 # length
+union (
+| project (
+| | select (
+| | | table(sys.mt1) [ "mt1"."id" as "test"."id", "mt1"."posx" as "test"."posx" ] COUNT 
+| | ) [ bigint "1" <= "test"."id" <= bigint "10000" BETWEEN  ]
+| ) [ "test"."id", "test"."posx" ],
+| project (
+| | select (
+| | | table(sys.mt2) [ "mt2"."id" as "test"."id", "mt2"."posx" as "test"."posx" ] COUNT 
+| | ) [ bigint "1" <= "test"."id" <= bigint "10000" BETWEEN  ]
+| ) [ "test"."id", "test"."posx" ]
+) [ "test"."id", "test"."posx" ]
 #plan select * from test where id between 1 and 1000;
 % .plan # table_name
 % rel # name
 % clob # type
-% 64 # length
+% 59 # length
 project (
 | select (
-| |  [ boolean "true" ]
-| ) [ boolean "false" ]
-) [ bigint "NULL" as "test"."id", real "NULL" as "test"."posx" ]
+| | table(sys.mt2) [ "test"."id", "test"."posx" ] COUNT 
+| ) [ bigint "1" <= "test"."id" <= bigint "1000" BETWEEN  ]
+) [ "test"."id", "test"."posx" ]
 #plan select * from test where id between 1 and 10000;
 % .plan # table_name
 % rel # name
 % clob # type
-% 64 # length
-project (
-| select (
-| |  [ boolean "true" ]
-| ) [ boolean "false" ]
-) [ bigint "NULL" as "test"."id", real "NULL" as "test"."posx" ]
+% 88 # length
+union (
+| project (
+| | select (
+| | | table(sys.mt1) [ "mt1"."id" as "test"."id", "mt1"."posx" as "test"."posx" ] COUNT 
+| | ) [ bigint "1" <= "test"."id" <= bigint "10000" BETWEEN  ]
+| ) [ "test"."id", "test"."posx" ],
+| project (
+| | select (
+| | | table(sys.mt2) [ "mt2"."id" as "test"."id", "mt2"."posx" as "test"."posx" ] COUNT 
+| | ) [ bigint "1" <= "test"."id" <= bigint "10000" BETWEEN  ]
+| ) [ "test"."id", "test"."posx" ]
+) [ "test"."id", "test"."posx" ]
 #plan select * from test where id between 1 and 1000;
 % .plan # table_name
 % rel # name
 % clob # type
-% 64 # length
+% 59 # length
 project (
 | select (
-| |  [ boolean "true" ]
-| ) [ boolean "false" ]
-) [ bigint "NULL" as "test"."id", real "NULL" as "test"."posx" ]
+| | table(sys.mt2) [ "test"."id", "test"."posx" ] COUNT 
+| ) [ bigint "1" <= "test"."id" <= bigint "1000" BETWEEN  ]
+) [ "test"."id", "test"."posx" ]
 #plan select * from test where id between 1 and 1000*10;
 % .plan # table_name
 % rel # name
 % clob # type
 % 98 # length
-project (
-| select (
+union (
+| project (
 | | select (
-| | |  [ boolean "true" ]
-| | ) [ boolean "false" ]
-| ) [ bigint "1" <= bigint "NULL" <= bigint[sys.sql_mul(smallint "1000", tinyint "10")] BETWEEN  ]
-) [ bigint "NULL" as "test"."id", real "NULL" as "test"."posx" ]
+| | | table(sys.mt1) [ "mt1"."id" as "test"."id", "mt1"."posx" as "test"."posx" ] COUNT 
+| | ) [ bigint "1" <= "test"."id" <= bigint[sys.sql_mul(smallint "1000", tinyint "10")] BETWEEN  ]
+| ) [ "test"."id", "test"."posx" ],
+| project (
+| | select (
+| | | table(sys.mt2) [ "mt2"."id" as "test"."id", "mt2"."posx" as "test"."posx" ] COUNT 
+| | ) [ bigint "1" <= "test"."id" <= bigint[sys.sql_mul(smallint "1000", tinyint "10")] BETWEEN  ]
+| ) [ "test"."id", "test"."posx" ]
+) [ "test"."id", "test"."posx" ]
 #plan select * from test where id between 1 and 100*10;
 % .plan # table_name
 % rel # name
 % clob # type
 % 96 # length
-project (
-| select (
+union (
+| project (
 | | select (
-| | |  [ boolean "true" ]
-| | ) [ boolean "false" ]
-| ) [ bigint "1" <= bigint "NULL" <= bigint[sys.sql_mul(tinyint "100", tinyint "10")] BETWEEN  ]
-) [ bigint "NULL" as "test"."id", real "NULL" as "test"."posx" ]
+| | | table(sys.mt1) [ "mt1"."id" as "test"."id", "mt1"."posx" as "test"."posx" ] COUNT 
+| | ) [ bigint "1" <= "test"."id" <= bigint[sys.sql_mul(tinyint "100", tinyint "10")] BETWEEN  ]
+| ) [ "test"."id", "test"."posx" ],
+| project (
+| | select (
+| | | table(sys.mt2) [ "mt2"."id" as "test"."id", "mt2"."posx" as "test"."posx" ] COUNT 
+| | ) [ bigint "1" <= "test"."id" <= bigint[sys.sql_mul(tinyint "100", tinyint "10")] BETWEEN  ]
+| ) [ "test"."id", "test"."posx" ]
+) [ "test"."id", "test"."posx" ]
 #plan select * from test where id in (1, 1022);
 % .plan # table_name
 % rel # name
 % clob # type
-% 64 # length
-project (
-| select (
-| |  [ boolean "true" ]
-| ) [ boolean "false" ]
-) [ bigint "NULL" as "test"."id", real "NULL" as "test"."posx" ]
+% 88 # length
+union (
+| project (
+| | select (
+| | | table(sys.mt1) [ "mt1"."id" as "test"."id", "mt1"."posx" as "test"."posx" ] COUNT 
+| | ) [ "test"."id" in (bigint "1" as "%2"."%2", bigint "1022" as "%3"."%3") ]
+| ) [ "test"."id", "test"."posx" ],
+| project (
+| | select (
+| | | table(sys.mt2) [ "mt2"."id" as "test"."id", "mt2"."posx" as "test"."posx" ] COUNT 
+| | ) [ "test"."id" in (bigint "1" as "%2"."%2", bigint "1022" as "%3"."%3") ]
+| ) [ "test"."id", "test"."posx" ]
+) [ "test"."id", "test"."posx" ]
 #plan select * from test where id in (1, 1000);
 % .plan # table_name
 % rel # name
 % clob # type
-% 64 # length
+% 76 # length
 project (
 | select (
-| |  [ boolean "true" ]
-| ) [ boolean "false" ]
-) [ bigint "NULL" as "test"."id", real "NULL" as "test"."posx" ]
+| | table(sys.mt2) [ "test"."id", "test"."posx" ] COUNT 
+| ) [ "test"."id" in (bigint "1" as "%2"."%2", bigint "1000" as "%3"."%3") ]
+) [ "test"."id", "test"."posx" ]
 #drop table test;
 #drop table mt1;
 #drop table mt2;

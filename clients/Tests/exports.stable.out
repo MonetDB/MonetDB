@@ -161,6 +161,7 @@ gdk_return BATjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr, bool 
 gdk_return BATkey(BAT *b, bool onoff);
 bool BATkeyed(BAT *b);
 gdk_return BATleftjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr, bool nil_matches, BUN estimate) __attribute__((__warn_unused_result__));
+gdk_return BATmaskedcands(BAT *dense_cands, BAT *masked, bool selected);
 void *BATmax(BAT *b, void *aggr);
 void *BATmax_skipnil(BAT *b, void *aggr, bit skipnil);
 BAT *BATmergecand(BAT *a, BAT *b);
@@ -168,7 +169,7 @@ void *BATmin(BAT *b, void *aggr);
 void *BATmin_skipnil(BAT *b, void *aggr, bit skipnil);
 gdk_return BATmode(BAT *b, bool transient);
 void BATmsync(BAT *b);
-gdk_return BATnegcands(BAT *cands, BAT *odels);
+gdk_return BATnegcands(BAT *dense_cands, BAT *odels);
 BAT *BATnil_grp(BAT *l, BAT *g, BAT *e, BAT *s);
 bool BATordered(BAT *b);
 bool BATordered_rev(BAT *b);

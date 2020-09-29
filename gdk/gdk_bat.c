@@ -134,6 +134,8 @@ BATcreatedesc(oid hseq, int tt, bool heapnames, role_t role)
 				      sizeof(bn->tvheap->filename),
 				      nme, ".theap", NULL);
 		}
+	} else {
+		assert(bn->theap == NULL);
 	}
 	char name[MT_NAME_LEN];
 	snprintf(name, sizeof(name), "heaplock%d", bn->batCacheid); /* fits */
@@ -1596,7 +1598,7 @@ BUNfnd(BAT *b, const void *v)
 	BATcheck(b, BUN_NONE);
 	if (!v)
 		return r;
-	if (b->ttype == TYPE_void && b->tvheap != NULL) {
+	if (complex_cand(b)) {
 		struct canditer ci;
 		canditer_init(&ci, NULL, b);
 		return canditer_search(&ci, * (const oid *) v, false);
@@ -2350,8 +2352,8 @@ BATassertProps(BAT *b)
 				/* candidate list with exceptions */
 				assert(b->batRole == TRANSIENT);
 				assert(b->tvheap->free <= b->tvheap->size);
-				assert(b->tvheap->free % SIZEOF_OID == 0);
-				if (b->tvheap->free > 0) {
+				assert((negoid_cand(b) && ccand_free(b) % SIZEOF_OID == 0) || mask_cand(b));
+				if (negoid_cand(b) && ccand_free(b) > 0) {
 					const oid *oids = (const oid *) b->tvheap->base;
 					q = b->tvheap->free / SIZEOF_OID;
 					assert(oids != NULL);

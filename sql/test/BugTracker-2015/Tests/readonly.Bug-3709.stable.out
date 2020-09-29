@@ -40,18 +40,18 @@ stdout of test 'readonly.Bug-3709` in directory 'sql/test/BugTracker-2015` itsel
 % usec,	statement # name
 % bigint,	clob # type
 % 3,	134 # length
-[ 5,	"X_1=0@0:void := querylog.define(\"trace select * from s10;\":str, \"default_pipe\":str, 13:int);"	]
-[ 4,	"X_4=0:int := sql.mvc();"	]
-[ 20,	"X_14=[1]:bat[:str] := bat.pack(\"sys.s10\":str);"	]
-[ 22,	"X_18=[1]:bat[:int] := bat.pack(0:int);"	]
-[ 20,	"X_15=[1]:bat[:str] := bat.pack(\"x\":str);"	]
-[ 18,	"X_17=[1]:bat[:int] := bat.pack(32:int);"	]
-[ 22,	"X_16=[1]:bat[:str] := bat.pack(\"int\":str);"	]
-[ 134,	"C_5=[1]:bat[:cnd] := sql.tid(X_4=0:int, \"sys\":str, \"s10\":str); # select: dense"	]
-[ 10,	"X_11=[1]:bat[:int] := sql.bind(X_4=0:int, \"sys\":str, \"s10\":str, \"x\":str, 0:int);"	]
-[ 11,	"X_12=[1]:bat[:int] := algebra.projection(C_5=[1]:bat[:cnd], X_11=[1]:bat[:int]); # project_int"	]
-[ 350,	"barrier X_70=false:bit := language.dataflow();"	]
-[ 24,	"sql.resultSet(X_14=[1]:bat[:str], X_15=[1]:bat[:str], X_16=[1]:bat[:str], X_17=[1]:bat[:int], X_18=[1]:bat[:int], X_12=[1]:bat[:int]);"	]
+[ 10,	"X_1=0@0:void := querylog.define(\"trace select * from s10;\":str, \"default_pipe\":str, 13:int);"	]
+[ 15,	"X_4=0:int := sql.mvc();"	]
+[ 70,	"X_14=[1]:bat[:str] := bat.pack(\"sys.s10\":str);"	]
+[ 61,	"X_18=[1]:bat[:int] := bat.pack(0:int);"	]
+[ 58,	"X_15=[1]:bat[:str] := bat.pack(\"x\":str);"	]
+[ 50,	"X_17=[1]:bat[:int] := bat.pack(32:int);"	]
+[ 59,	"X_16=[1]:bat[:str] := bat.pack(\"int\":str);"	]
+[ 293,	"C_5=[1]:bat[:oid] := sql.tid(X_4=0:int, \"sys\":str, \"s10\":str); # select: dense"	]
+[ 25,	"X_11=[1]:bat[:int] := sql.bind(X_4=0:int, \"sys\":str, \"s10\":str, \"x\":str, 0:int);"	]
+[ 22,	"X_12=[1]:bat[:int] := algebra.projection(C_5=[1]:bat[:oid], X_11=[1]:bat[:int]); # project_int"	]
+[ 946,	"barrier X_70=false:bit := language.dataflow();"	]
+[ 78,	"sql.resultSet(X_14=[1]:bat[:str], X_15=[1]:bat[:str], X_16=[1]:bat[:str], X_17=[1]:bat[:int], X_18=[1]:bat[:int], X_12=[1]:bat[:int]);"	]
 #rollback;
 #drop table s10; 
 

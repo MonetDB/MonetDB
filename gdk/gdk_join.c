@@ -496,7 +496,7 @@ mergejoin_void(BAT **r1p, BAT **r2p, BAT *l, BAT *r,
 			const oid *o1p = (const oid *) Tloc(r1, 0);
 			oid *o2p = (oid *) Tloc(r2, 0);
 			hi = BATcount(r1);
-			if (l->ttype == TYPE_void && l->tvheap != NULL) {
+			if (complex_cand(l)) {
 				/* this is actually generic code */
 				for (o = 0; o < hi; o++)
 					o2p[o] = BUNtoid(l, BUNtoid(r1, o) - l->hseqbase) - r->tseqbase + r->hseqbase;
@@ -684,7 +684,7 @@ mergejoin_void(BAT **r1p, BAT **r2p, BAT *l, BAT *r,
 	o2p = (oid *) Tloc(r2, 0);
 	r2->tnil = false;
 	r2->tnonil = true;
-	if (l->ttype == TYPE_void && l->tvheap != NULL) {
+	if (complex_cand(l)) {
 		for (i = 0; i < lci->ncand; i++) {
 			oid c = canditer_next(lci);
 
@@ -1381,7 +1381,7 @@ mergejoin_cand(BAT **r1p, BAT **r2p, BAT *l, BAT *r,
 		assert(lvals != NULL);
 	}
 
-	assert(r->ttype == TYPE_void && r->tvheap != NULL);
+	assert(complex_cand(r));
 	canditer_init(&rci, NULL, r);
 
 	/* basic properties will be adjusted if necessary later on,
@@ -1683,7 +1683,7 @@ mergejoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r,
 	    !nil_on_miss && !semi && !max_one && !only_misses && !not_in &&
 	    l->tsorted && r->tsorted) {
 		/* special cases with far fewer options */
-		if (r->ttype == TYPE_void && r->tvheap)
+		if (complex_cand(r))
 			return mergejoin_cand(r1p, r2p, l, r, nil_matches,
 					      estimate, t0, swapped, __func__);
 		switch (ATOMbasetype(l->ttype)) {
@@ -3180,13 +3180,13 @@ leftjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr,
 		}
 	}
 
-	if (l->ttype == TYPE_msk) {
+	if (l->ttype == TYPE_msk || mask_cand(l)) {
 		if ((l = BATunmask(l)) == NULL)
 			return GDK_FAIL;
 	} else {
 		BBPfix(l->batCacheid);
 	}
-	if (r->ttype == TYPE_msk) {
+	if (r->ttype == TYPE_msk || mask_cand(r)) {
 		if ((r = BATunmask(r)) == NULL) {
 			BBPunfix(l->batCacheid);
 			return GDK_FAIL;
@@ -3587,13 +3587,13 @@ BATjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr, bool nil_matches
 			r = b;
 	}
 
-	if (l->ttype == TYPE_msk) {
+	if (l->ttype == TYPE_msk || mask_cand(l)) {
 		if ((l = BATunmask(l)) == NULL)
 			return GDK_FAIL;
 	} else {
 		BBPfix(l->batCacheid);
 	}
-	if (r->ttype == TYPE_msk) {
+	if (r->ttype == TYPE_msk || mask_cand(r)) {
 		if ((r = BATunmask(r)) == NULL) {
 			BBPunfix(l->batCacheid);
 			return GDK_FAIL;

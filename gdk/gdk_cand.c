@@ -18,6 +18,8 @@ BATiscand(BAT *b)
 		return true;
 	if (ATOMtype(b->ttype) != TYPE_oid)
 		return false;
+	if (complex_cand(b))
+		return true;
 	if (b->ttype == TYPE_void && is_oid_nil(b->tseqbase))
 		return false;
 	return BATtordered(b) && BATtkey(b);
@@ -466,14 +468,14 @@ canditer_init(struct canditer *ci, BAT *b, BAT *s)
 		.s = s,
 	};
 
-	if (s->ttype == TYPE_void) {
+	if (s->ttype == TYPE_void && !mask_cand(s)) {
 		assert(!is_oid_nil(ci->seq));
 		if (s->tvheap) {
-			assert(s->tvheap->free % SIZEOF_OID == 0);
-			ci->nvals = s->tvheap->free / SIZEOF_OID;
+			assert(ccand_free(s) % SIZEOF_OID == 0);
+			ci->nvals = ccand_free(s) / SIZEOF_OID;
 			if (ci->nvals > 0) {
 				ci->tpe = cand_except;
-				ci->oids = (const oid *) s->tvheap->base;
+				ci->oids = (const oid *) ccand_first(s);
 			} else {
 				/* why the vheap? */
 				ci->tpe = cand_dense;
@@ -481,7 +483,13 @@ canditer_init(struct canditer *ci, BAT *b, BAT *s)
 		} else {
 			ci->tpe = cand_dense;
 		}
+	} else if (s->ttype == TYPE_void && mask_cand(s)) {
+		ci->tpe = cand_mask;
+		ci->mask = (const uint32_t *) ccand_first(s);
+		ci->seq = s->hseqbase;
+		ci->nvals = (cnt + 31U) / 32U;
 	} else if (s->ttype == TYPE_msk) {
+		assert(0);
 		ci->tpe = cand_mask;
 		ci->mask = (const uint32_t *) s->theap->base;
 		ci->seq = s->hseqbase;
@@ -680,7 +688,7 @@ canditer_init(struct canditer *ci, BAT *b, BAT *s)
 		assert(i >= 0);	/* there should be a set bit */
 		ci->firstbit += i;
 		cnt -= i;
-		ci->mskoff = s->hseqbase + (ci->mask - (const uint32_t *) s->theap->base) * 32U;
+		ci->mskoff = s->hseqbase + (ci->mask - (const uint32_t *) (mask_cand(s)?ccand_first(s):s->theap->base)) * 32U;
 		ci->seq = ci->mskoff + ci->firstbit;
 		ci->hseq = ci->seq;
 		ci->nextbit = ci->firstbit;
@@ -1254,6 +1262,7 @@ BATnegcands(BAT *dense_cands, BAT *odels)
 	const char *nme;
 	Heap *dels;
 	BUN lo, hi;
+	ccand_t *c;
 
 	assert(BATtdense(dense_cands));
 	assert(dense_cands->ttype == TYPE_void);
@@ -1276,17 +1285,21 @@ BATnegcands(BAT *dense_cands, BAT *odels)
 	strconcat_len(dels->filename, sizeof(dels->filename),
 		      nme, ".theap", NULL);
 
-    	if (HEAPalloc(dels, hi - lo, sizeof(oid), 0) != GDK_SUCCEED) {
+    	if (HEAPalloc(dels, hi - lo + (sizeof(ccand_t)/sizeof(oid)), sizeof(oid), 0) != GDK_SUCCEED) {
 		GDKfree(dels);
         	return GDK_FAIL;
 	}
+	c = (ccand_t*)dels->base;
+	c->type = CAND_NEGOID;
     	dels->parentid = dense_cands->batCacheid;
-	dels->free = sizeof(oid) * (hi - lo);
+	dels->free = sizeof(ccand_t) + sizeof(oid) * (hi - lo);
 	if (odels->ttype == TYPE_void) {
+		oid *r = (oid*)(dels->base + sizeof(ccand_t));
 		for (BUN x = lo; x < hi; x++)
-			((oid *) dels->base)[x - lo] = x + odels->tseqbase;
+			r[x - lo] = x + odels->tseqbase;
 	} else {
-		memcpy(dels->base, Tloc(odels, lo), dels->free);
+		oid *r = (oid*)(dels->base + sizeof(ccand_t));
+		memcpy(r, Tloc(odels, lo), dels->free);
 	}
 	dense_cands->batDirtydesc = true;
 	dense_cands->tvheap = dels;
@@ -1298,6 +1311,56 @@ BATnegcands(BAT *dense_cands, BAT *odels)
     	return GDK_SUCCEED;
 }
 
+gdk_return
+BATmaskedcands(BAT *dense_cands, BAT *masked, bool selected)
+{
+	const char *nme;
+	Heap *msks;
+	ccand_t *c;
+
+	assert(BATtdense(dense_cands));
+	assert(dense_cands->ttype == TYPE_void);
+	assert(dense_cands->batRole == TRANSIENT);
+	assert(masked->ttype == TYPE_msk);
+
+	if (BATcount(masked) == 0)
+		return GDK_SUCCEED;
+
+	nme = BBP_physical(dense_cands->batCacheid);
+	if ((msks = (Heap*)GDKzalloc(sizeof(Heap))) == NULL ||
+	    (msks->farmid = BBPselectfarm(dense_cands->batRole, dense_cands->ttype, varheap)) < 0){
+		GDKfree(msks);
+		return GDK_FAIL;
+	}
+	strconcat_len(msks->filename, sizeof(msks->filename),
+		      nme, ".theap", NULL);
+
+    	if (HEAPalloc(msks, (BATcount(masked)+31)/32 + (sizeof(ccand_t)/sizeof(int)), sizeof(int), 0) != GDK_SUCCEED) {
+		GDKfree(msks);
+        	return GDK_FAIL;
+	}
+	c = (ccand_t*)msks->base;
+	c->type = CAND_MSK;
+	c->mask = selected;
+    	msks->parentid = dense_cands->batCacheid;
+	msks->free = sizeof(ccand_t) + (BATcount(masked)+31)/32 * sizeof(int);
+	int *r = (int*)(msks->base + sizeof(ccand_t));
+	memcpy(r, Tloc(masked, 0), (BATcount(masked)+31)/32 * sizeof(int));
+	dense_cands->batDirtydesc = true;
+	dense_cands->tvheap = msks;
+	/*
+	lng cnt = 0;
+	if (BATsum(&cnt, TYPE_lng, masked, NULL, true, false, false) != GDK_SUCCEED)
+		return GDK_FAIL;
+	 */
+	BATsetcount(dense_cands, BATcount(masked));
+	TRC_DEBUG(ALGO, "BATmaskedcands(cands=" ALGOBATFMT ","
+		  "masked=" ALGOBATFMT ")\n",
+		  ALGOBATPAR(dense_cands),
+		  ALGOBATPAR(masked));
+    	return GDK_SUCCEED;
+}
+
 BAT *
 BATunmask(BAT *b)
 {
@@ -1305,10 +1368,11 @@ BATunmask(BAT *b)
 	if (bn == NULL)
 		return NULL;
 
+	assert(!mask_cand(b) || CCAND(b)->mask); /* todo handle negmask case */
 	BUN cnt = BATcount(b) / 32;
 	uint32_t rem = (uint32_t) (BATcount(b) % 32);
 	uint32_t val;
-	const uint32_t *src = (const uint32_t *) Tloc(b, 0);
+	const uint32_t *src = (const uint32_t *) (mask_cand(b)?ccand_first(b):Tloc(b, 0));
 	oid *dst = (oid *) Tloc(bn, 0);
 	BUN n = 0;
 
@@ -1346,6 +1410,7 @@ BATunmask(BAT *b)
 		}
 	}
 	BATsetcount(bn, n);
+	bn->hseqbase = b->hseqbase;
 	bn->tkey = true;
 	bn->tsorted = true;
 	bn->trevsorted = n <= 1;

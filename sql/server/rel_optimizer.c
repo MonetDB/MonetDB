@@ -8923,7 +8923,7 @@ rel_merge_table_rewrite(visitor *v, sql_rel *rel)
 						list *exps = NULL;
 
 						/* do not include empty partitions */
-						if (pt && isTable(pt) && pt->access == TABLE_READONLY && !store_funcs.count_col(v->sql->session->tr, pt->columns.set->h->data, 1))
+						if (pt && isTable(pt) && pt->access == TABLE_READONLY && !store_funcs.count_col(v->sql->session->tr, pt->columns.set->h->data, 0))
 							continue;
 
 						prel = rel_rename_part(v->sql, prel, tname, t);

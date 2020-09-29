@@ -991,6 +991,30 @@ typedef var_t stridx_t;
 
 #include "gdk_atoms.h"
 
+
+/* candidates by design are ordered oid lists, besides native oid bats
+ * there are
+ *	void bats for dense oid lists,
+ *	negative oid lists
+ *	masked oid lists
+ */
+
+#define CAND_NEGOID 0
+#define CAND_MSK 1
+
+typedef struct {
+	uint64_t
+		type:1,
+		mask:1;
+} ccand_t;
+
+#define CCAND(b)	((ccand_t*)b->tvheap->base)
+#define complex_cand(b)	(b->ttype == TYPE_void && b->tvheap != NULL)
+#define negoid_cand(b)	(b->ttype == TYPE_void && b->tvheap != NULL && CCAND(b)->type == CAND_NEGOID)
+#define mask_cand(b)	(b->ttype == TYPE_void && b->tvheap != NULL && CCAND(b)->type == CAND_MSK)
+#define ccand_first(b)	(b->tvheap->base+sizeof(ccand_t))
+#define ccand_free(b)	(b->tvheap->free-sizeof(ccand_t))
+
 /* return the oid value at BUN position p from the (v)oid bat b
  * works with any TYPE_void or TYPE_oid bat */
 static inline oid
@@ -1011,16 +1035,17 @@ BUNtoid(BAT *b, BUN p)
 	if (b->ttype == TYPE_oid || b->tvheap == NULL) {
 		return o;
 	}
+	assert(!mask_cand(b));
 	/* exceptions only allowed on transient BATs */
 	assert(b->batRole == TRANSIENT);
 	/* make sure exception area is a reasonable size */
-	assert(b->tvheap->free % SIZEOF_OID == 0);
-	BUN nexc = (BUN) (b->tvheap->free / SIZEOF_OID);
+	assert(ccand_free(b) % SIZEOF_OID == 0);
+	BUN nexc = (BUN) (ccand_free(b) / SIZEOF_OID);
 	if (nexc == 0) {
 		/* no exceptions (why the vheap?) */
 		return o;
 	}
-	const oid *exc = (oid *) b->tvheap->base;
+	const oid *exc = (oid *) ccand_first(b);
 	if (o < exc[0])
 		return o;
 	if (o + nexc > exc[nexc - 1])
