@@ -16,7 +16,6 @@
     #  MT_checkCompilerFlag("-Wdisabled-optimization")
     #  MT_checkCompilerFlag("-Wfloat-equal")
     #  MT_checkCompilerFlag("-Winline")
-    #  MT_checkCompilerFlag("-Wmissing-noreturn")
     #  MT_checkCompilerFlag("-Wpadded")
     #  MT_checkCompilerFlag("-Wredundant-decls")
     #  MT_checkCompilerFlag("-Wshadow")
