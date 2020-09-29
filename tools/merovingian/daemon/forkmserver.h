@@ -12,9 +12,9 @@
 #include "msabaoth.h" /* sabdb */
 #include "merovingian.h" /* err */
 
-err forkMserver(char* database, sabdb** stats, bool force);
-err fork_profiler(char *database, sabdb **stats, char **log_path);
-err shutdown_profiler(char *dbname, sabdb **stats);
+err forkMserver(const char* database, sabdb** stats, bool force);
+err fork_profiler(const char *database, sabdb **stats, char **log_path);
+err shutdown_profiler(const char *dbname, sabdb **stats);
 
 #endif
 

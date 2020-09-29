@@ -328,7 +328,7 @@ typedef char long_str[IDLENGTH];	/* standard GDK static string */
 #define MAXFARMS       32
 
 extern struct BBPfarm_t {
-	unsigned int roles;	/* bitmask of allowed roles */
+	uint32_t roles;		/* bitmask of allowed roles */
 	const char *dirname;	/* farm directory */
 	FILE *lock_file;
 } BBPfarms[MAXFARMS];

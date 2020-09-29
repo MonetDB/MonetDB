@@ -21,5 +21,12 @@ extern lng decimal_from_str(char *dec, char **end);
 extern char * decimal_to_str(sql_allocator *sa, lng v, sql_subtype *t);
 #endif
 
+#ifdef HAVE_HGE
+extern hge
+#else
+extern lng
+#endif
+scale2value(int scale);
+
 #endif /* _SQL_DECIMAL_H */
 

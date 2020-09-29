@@ -1407,7 +1407,7 @@ PCREilike3(bit *ret, const str *s, const str *pat, const str *esc)
 static str
 PCREilike2(bit *ret, const str *s, const str *pat)
 {
-	char *esc = "\\";
+	char *esc = "";
 
 	return PCREilike3(ret, s, pat, &esc);
 }
@@ -1522,6 +1522,7 @@ pcre_like_build(
 	int errcode;
 
 	*res = (regex_t) {0};
+	(void) count;
 #endif
 
 	if (caseignore) {
@@ -1608,18 +1609,18 @@ pcre_clean(
 		pcre_free(*re);
 	if (*ex)
 		pcre_free_study(*ex);
+	*re = NULL;
 	*ex = NULL;
 #else
 	regex_t *re, void *ex) {
-	if (*re)
-		regfree(*re);
+	regfree(re);
+	*re = (regex_t) {0};
 	(void) ex;
 #endif
-	*re = NULL;
 }
 
 static str
-BATPCRElike3(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, const str *esc, const bit *isens, const bit *not) 
+BATPCRElike3(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, const str *esc, const bit *isens, const bit *not)
 {
 	str msg = MAL_SUCCEED, input = NULL, pat = NULL;
 	BAT *b = NULL, *pbn = NULL, *bn = NULL;
@@ -1634,7 +1635,7 @@ BATPCRElike3(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, const str 
 	pcre_extra *ex = NULL;
 #else
 	regex_t re = (regex_t) {0};
-	int64_t ex = 0;
+	void *ex = NULL;
 #endif
 	struct RE *re_simple = NULL;
 	uint32_t *wpat = NULL;
@@ -1685,7 +1686,7 @@ BATPCRElike3(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, const str 
 			} else if (allnulls) {
 				ret[p] = bit_nil;
 			} else {
-				if ((msg = pcre_like_build(&re, &ex, ppat, isensitive, 0)) != MAL_SUCCEED)
+				if ((msg = pcre_like_build(&re, &ex, ppat, isensitive, 1)) != MAL_SUCCEED)
 					goto bailout;
 				if ((msg = pcre_like_apply(&(ret[p]), next_input, re, ex, ppat, anti)) != MAL_SUCCEED)
 					goto bailout;
@@ -1758,7 +1759,7 @@ BATPCRElike(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 static str
 BATPCRElike2(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	char *esc = "\\";
+	char *esc = "";
 	bit no = FALSE;
 
 	return BATPCRElike3(cntxt, mb, stk, pci, &esc, &no, &no);
@@ -1776,7 +1777,7 @@ BATPCREnotlike(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 static str
 BATPCREnotlike2(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	char *esc = "\\";
+	char *esc = "";
 	bit no = FALSE, yes = TRUE;
 
 	return BATPCRElike3(cntxt, mb, stk, pci, &esc, &no, &yes);
@@ -1794,7 +1795,7 @@ BATPCREilike(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 static str
 BATPCREilike2(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	char *esc = "\\";
+	char *esc = "";
 	bit yes = TRUE, no = FALSE;
 
 	return BATPCRElike3(cntxt, mb, stk, pci, &esc, &yes, &no);
@@ -1812,7 +1813,7 @@ BATPCREnotilike(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 static str
 BATPCREnotilike2(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	char *esc = "\\";
+	char *esc = "";
 	bit yes = TRUE;
 
 	return BATPCRElike3(cntxt, mb, stk, pci, &esc, &yes, &yes);
@@ -1872,8 +1873,8 @@ pcre_likeselect(BAT **bnp, BAT *b, BAT *s, const char *pat, bool caseignore, boo
 	pcre *re = NULL;
 	pcre_extra *ex = NULL;
 #else
-	regex_t re;
-	int64_t ex = 0;
+	regex_t re = (regex_t) {0};
+	void *ex = NULL;
 #endif
 	BATiter bi = bat_iterator(b);
 	BAT *bn;
@@ -2127,80 +2128,77 @@ PCRElikeselect5(bat *ret, const bat *bid, const bat *sid, const str *pat, const 
 		for (BUN ri = 0; ri < rci.ncand; ri++) { \
 			ro = canditer_next(&rci); \
 			vr = VALUE(r, ro - r->hseqbase); \
+			nl = 0; \
 			use_re = use_strcmp = empty = false; \
 			if ((msg = choose_like_path(&pcrepat, &use_re, &use_strcmp, &empty, (const str*)&vr, (const str*)&esc))) \
 				goto bailout; \
-			if (empty) { \
-				continue; \
-			} else if (use_re) { \
-				if ((msg = re_like_build(&re, &wpat, vr, caseignore, use_strcmp, (unsigned char) *esc)) != MAL_SUCCEED) \
-					goto bailout; \
-			} else if (pcrepat) { \
-				if ((msg = pcre_like_build(&pcrere, &pcreex, pcrepat, caseignore, lci.ncand)) != MAL_SUCCEED) \
-					goto bailout; \
-				GDKfree(pcrepat); \
-				pcrepat = NULL; \
-			} \
-			nl = 0; \
-			canditer_reset(&lci); \
-			for (BUN li = 0; li < lci.ncand; li++) { \
-				lo = canditer_next(&lci); \
-				vl = VALUE(l, lo - l->hseqbase); \
-				if (strNil(vl)) { \
-					continue; \
-				} else if (use_re) { \
-					if (use_strcmp) { \
-						if (STRCMP) \
-							continue; \
-					} else { \
-						assert(re); \
-						if (RE_MATCH) \
-							continue; \
-					} \
-				} else { \
-					int retval; \
-					assert(pcrere); \
-					PCRE_EXEC;  \
-					if (PCRE_COND) \
-						continue; \
-				} \
-				if (BUNlast(r1) == BATcapacity(r1)) { \
-					newcap = BATgrows(r1); \
-					BATsetcount(r1, BATcount(r1)); \
-					if (r2) \
-						BATsetcount(r2, BATcount(r2)); \
-					if (BATextend(r1, newcap) != GDK_SUCCEED || (r2 && BATextend(r2, newcap) != GDK_SUCCEED)) { \
-						msg = createException(MAL, "pcre.join", SQLSTATE(HY013) MAL_MALLOC_FAIL); \
+			if (!empty) { \
+				if (use_re) { \
+					if ((msg = re_like_build(&re, &wpat, vr, caseignore, use_strcmp, (unsigned char) *esc)) != MAL_SUCCEED) \
 						goto bailout; \
-					} \
-					assert(!r2 || BATcapacity(r1) == BATcapacity(r2)); \
+				} else if (pcrepat) { \
+					if ((msg = pcre_like_build(&pcrere, &pcreex, pcrepat, caseignore, lci.ncand)) != MAL_SUCCEED) \
+						goto bailout; \
+					GDKfree(pcrepat); \
+					pcrepat = NULL; \
 				} \
-				if (BATcount(r1) > 0) { \
-					if (lastl + 1 != lo) \
-						r1->tseqbase = oid_nil; \
-					if (nl == 0) { \
-						if (r2) \
-							r2->trevsorted = false; \
-						if (lastl > lo) { \
-							r1->tsorted = false; \
-							r1->tkey = false; \
-						} else if (lastl < lo) { \
-							r1->trevsorted = false; \
+				canditer_reset(&lci); \
+				for (BUN li = 0; li < lci.ncand; li++) { \
+					lo = canditer_next(&lci); \
+					vl = VALUE(l, lo - l->hseqbase); \
+					if (strNil(vl)) { \
+						continue; \
+					} else if (use_re) { \
+						if (use_strcmp) { \
+							if (STRCMP) \
+								continue; \
 						} else { \
-							r1->tkey = false; \
+							assert(re); \
+							if (RE_MATCH) \
+								continue; \
+						} \
+					} else { \
+						int retval; \
+						PCRE_EXEC;  \
+						if (PCRE_COND) \
+							continue; \
+					} \
+					if (BUNlast(r1) == BATcapacity(r1)) { \
+						newcap = BATgrows(r1); \
+						BATsetcount(r1, BATcount(r1)); \
+						if (r2) \
+							BATsetcount(r2, BATcount(r2)); \
+						if (BATextend(r1, newcap) != GDK_SUCCEED || (r2 && BATextend(r2, newcap) != GDK_SUCCEED)) { \
+							msg = createException(MAL, "pcre.join", SQLSTATE(HY013) MAL_MALLOC_FAIL); \
+							goto bailout; \
+						} \
+						assert(!r2 || BATcapacity(r1) == BATcapacity(r2)); \
+					} \
+					if (BATcount(r1) > 0) { \
+						if (lastl + 1 != lo) \
+							r1->tseqbase = oid_nil; \
+						if (nl == 0) { \
+							if (r2) \
+								r2->trevsorted = false; \
+							if (lastl > lo) { \
+								r1->tsorted = false; \
+								r1->tkey = false; \
+							} else if (lastl < lo) { \
+								r1->trevsorted = false; \
+							} else { \
+								r1->tkey = false; \
+							} \
 						} \
 					} \
+					APPEND(r1, lo); \
+					if (r2) \
+						APPEND(r2, ro); \
+					lastl = lo; \
+					nl++; \
 				} \
-				APPEND(r1, lo); \
-				if (r2) \
-					APPEND(r2, ro); \
-				lastl = lo; \
-				nl++; \
-			} \
-			if (re) \
 				re_like_clean(&re, &wpat); \
-			if (pcrere) \
 				pcre_clean(&pcrere, &pcreex); \
+			} \
 			if (r2) { \
 				if (nl > 1) { \
 					r2->tkey = false; \
@@ -2233,8 +2231,8 @@ pcrejoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr, const char *esc, bo
 	pcre *pcrere = NULL;
 	pcre_extra *pcreex = NULL;
 #else
-	regex_t pcrere;
-	int64_t pcreex = 0;
+	regex_t pcrere = (regex_t) {0};
+	void *pcreex = NULL;
 #endif
 
 	TRC_DEBUG(ALGO,
@@ -2328,13 +2326,9 @@ pcrejoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr, const char *esc, bo
 	return MAL_SUCCEED;
 
 bailout:
-	if (pcrepat)
-		GDKfree(pcrepat);
-	if (re)
-		re_like_clean(&re, &wpat);
-	if (pcrere)
-		pcre_clean(&pcrere, &pcreex);
-
+	GDKfree(pcrepat);
+	re_like_clean(&re, &wpat);
+	pcre_clean(&pcrere, &pcreex);
 	assert(msg != MAL_SUCCEED);
 	return msg;
 }

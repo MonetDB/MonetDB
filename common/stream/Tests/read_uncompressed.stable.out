@@ -1,0 +1,270 @@
+stdout of test 'read_uncompressed` in directory 'common/stream` itself:
+
+
+# 14:11:30 >  
+# 14:11:30 >  "/usr/bin/python3" "read_uncompressed.py" "read_uncompressed"
+# 14:11:30 >  
+
+
+Test: read rstream sherlock.txt
+	OK
+
+Test: read rastream sherlock.txt
+	OK
+
+Test: read rstream sherlock_bom.txt
+	OK
+
+Test: read rastream sherlock_bom.txt
+	OK
+
+Test: read rstream empty.txt
+	OK
+
+Test: read rastream empty.txt
+	OK
+
+Test: read rstream empty_bom.txt
+	OK
+
+Test: read rastream empty_bom.txt
+	OK
+
+Test: read rstream small.txt
+	OK
+
+Test: read rastream small.txt
+	OK
+
+Test: read rstream small_bom.txt
+	OK
+
+Test: read rastream small_bom.txt
+	OK
+
+Test: read rstream block1023.txt
+	OK
+
+Test: read rastream block1023.txt
+	OK
+
+Test: read rstream block1023_bom.txt
+	OK
+
+Test: read rastream block1023_bom.txt
+	OK
+
+Test: read rstream block1024.txt
+	OK
+
+Test: read rastream block1024.txt
+	OK
+
+Test: read rstream block1024_bom.txt
+	OK
+
+Test: read rastream block1024_bom.txt
+	OK
+
+Test: read rstream block1025.txt
+	OK
+
+Test: read rastream block1025.txt
+	OK
+
+Test: read rstream block1025_bom.txt
+	OK
+
+Test: read rastream block1025_bom.txt
+	OK
+
+Test: read rstream block2047.txt
+	OK
+
+Test: read rastream block2047.txt
+	OK
+
+Test: read rstream block2047_bom.txt
+	OK
+
+Test: read rastream block2047_bom.txt
+	OK
+
+Test: read rstream block2048.txt
+	OK
+
+Test: read rastream block2048.txt
+	OK
+
+Test: read rstream block2048_bom.txt
+	OK
+
+Test: read rastream block2048_bom.txt
+	OK
+
+Test: read rstream block2049.txt
+	OK
+
+Test: read rastream block2049.txt
+	OK
+
+Test: read rstream block2049_bom.txt
+	OK
+
+Test: read rastream block2049_bom.txt
+	OK
+
+Test: read rstream block4095.txt
+	OK
+
+Test: read rastream block4095.txt
+	OK
+
+Test: read rstream block4095_bom.txt
+	OK
+
+Test: read rastream block4095_bom.txt
+	OK
+
+Test: read rstream block4096.txt
+	OK
+
+Test: read rastream block4096.txt
+	OK
+
+Test: read rstream block4096_bom.txt
+	OK
+
+Test: read rastream block4096_bom.txt
+	OK
+
+Test: read rstream block4097.txt
+	OK
+
+Test: read rastream block4097.txt
+	OK
+
+Test: read rstream block4097_bom.txt
+	OK
+
+Test: read rastream block4097_bom.txt
+	OK
+
+Test: read rstream block8191.txt
+	OK
+
+Test: read rastream block8191.txt
+	OK
+
+Test: read rstream block8191_bom.txt
+	OK
+
+Test: read rastream block8191_bom.txt
+	OK
+
+Test: read rstream block8192.txt
+	OK
+
+Test: read rastream block8192.txt
+	OK
+
+Test: read rstream block8192_bom.txt
+	OK
+
+Test: read rastream block8192_bom.txt
+	OK
+
+Test: read rstream block8193.txt
+	OK
+
+Test: read rastream block8193.txt
+	OK
+
+Test: read rstream block8193_bom.txt
+	OK
+
+Test: read rastream block8193_bom.txt
+	OK
+
+Test: read rstream block16383.txt
+	OK
+
+Test: read rastream block16383.txt
+	OK
+
+Test: read rstream block16383_bom.txt
+	OK
+
+Test: read rastream block16383_bom.txt
+	OK
+
+Test: read rstream block16384.txt
+	OK
+
+Test: read rastream block16384.txt
+	OK
+
+Test: read rstream block16384_bom.txt
+	OK
+
+Test: read rastream block16384_bom.txt
+	OK
+
+Test: read rstream block16385.txt
+	OK
+
+Test: read rastream block16385.txt
+	OK
+
+Test: read rstream block16385_bom.txt
+	OK
+
+Test: read rastream block16385_bom.txt
+	OK
+
+Test: read rstream crlf1024.txt
+	OK
+
+Test: read rastream crlf1024.txt
+	OK
+
+Test: read rstream brokenbom1.txt
+	OK
+
+Test: read rastream brokenbom1.txt
+	OK
+
+Test: read rstream brokenbom2.txt
+	OK
+
+Test: read rastream brokenbom2.txt
+	OK
+
+Test: read ['rstream', 'blocksize:2'] sherlock.txt
+	OK
+
+Test: read ['rastream', 'blocksize:2'] sherlock.txt
+	OK
+
+Test: read ['rstream', 'blocksize:1000000'] sherlock.txt
+	OK
+
+Test: read ['rastream', 'blocksize:1000000'] sherlock.txt
+	OK
+
+Test: read ['rstream', 'blocksize:2'] sherlock_bom.txt
+	OK
+
+Test: read ['rastream', 'blocksize:2'] sherlock_bom.txt
+	OK
+
+Test: read ['rstream', 'blocksize:1000000'] sherlock_bom.txt
+	OK
+
+Test: read ['rastream', 'blocksize:1000000'] sherlock_bom.txt
+	OK
+
+# 14:27:57 >  
+# 14:27:57 >  "Done."
+# 14:27:57 >  
+

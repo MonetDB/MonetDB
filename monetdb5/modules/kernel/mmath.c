@@ -28,14 +28,22 @@
 #define degrees(x)			((x) * (180.0 / M_PI))
 
 double
-logbs(double x, double base)
+logbs(double base, double x)
 {
+	if (base == 1) {
+		feraiseexcept(FE_DIVBYZERO);
+		return INFINITY;
+	}
 	return log(x) / log(base);
 }
 
 float
-logbsf(float x, float base)
+logbsf(float base, float x)
 {
+	if (base == 1) {
+		feraiseexcept(FE_DIVBYZERO);
+		return INFINITY;
+	}
 	return logf(x) / logf(base);
 }
 

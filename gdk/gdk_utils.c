@@ -210,7 +210,7 @@ GDKlog(FILE *lockFile, const char *format, ...)
 		return;
 
 	va_start(ap, format);
-	vsprintf(buf, format, ap);
+	vsnprintf(buf, sizeof(buf), format, ap);
 	va_end(ap);
 
 	/* remove forbidden characters from message */
@@ -732,7 +732,7 @@ GDKgetdebug(void)
 	return debug;
 }
 
-static bool Mbedded = 1;
+static bool Mbedded = true;
 bool
 GDKembedded(void)
 {
@@ -740,7 +740,7 @@ GDKembedded(void)
 }
 
 gdk_return
-GDKinit(opt *set, int setlen, int embedded)
+GDKinit(opt *set, int setlen, bool embedded)
 {
 	static bool first = true;
 	char *dbpath = mo_find_option(set, setlen, "gdk_dbpath");
@@ -808,7 +808,7 @@ GDKinit(opt *set, int setlen, int embedded)
 		BBPunlock();
 	}
 	errno = 0;
-	if (!GDKinmemory() && !GDKenvironment(dbpath))
+	if (!GDKinmemory(0) && !GDKenvironment(dbpath))
 		return GDK_FAIL;
 
 	MT_init_posix();
@@ -940,7 +940,7 @@ GDKinit(opt *set, int setlen, int embedded)
 	if (GDKnr_threads == 0)
 		GDKnr_threads = MT_check_nr_cores();
 
-	if (!GDKinmemory()) {
+	if (!GDKinmemory(0)) {
 		if ((p = GDKgetenv("gdk_dbpath")) != NULL &&
 			(p = strrchr(p, DIR_SEP)) != NULL) {
 			if (GDKsetenv("gdk_dbname", p + 1) != GDK_SUCCEED) {
@@ -956,8 +956,8 @@ GDKinit(opt *set, int setlen, int embedded)
 			}
 #endif
 		}
-	} else {
-		if (GDKsetenv("gdk_dbname", ":inmemory") != GDK_SUCCEED) {
+	} else if (GDKgetenv("gdk_dbname") == NULL) {
+		if (GDKsetenv("gdk_dbname", ":memory:") != GDK_SUCCEED) {
 			TRC_CRITICAL(GDK, "GDKsetenv gdk_dbname failed");
 			return GDK_FAIL;
 		}
@@ -1135,7 +1135,7 @@ GDKreset(int status)
 void
 GDKexit(int status)
 {
-	if (!GDKinmemory() && GET_GDKLOCK(PERSISTENT) == NULL) {
+	if (!GDKinmemory(0) && GET_GDKLOCK(PERSISTENT) == NULL) {
 		/* stop GDKtracer */
 		GDKtracer_stop();
 
@@ -1360,7 +1360,7 @@ GDKusec(void)
 	return (lng) (f.QuadPart / 10);
 #elif defined(HAVE_CLOCK_GETTIME)
 	struct timespec ts;
-	clock_gettime(CLOCK_REALTIME, &ts);
+	(void) clock_gettime(CLOCK_REALTIME, &ts);
 	return (lng) (ts.tv_sec * LL_CONSTANT(1000000) + ts.tv_nsec / 1000);
 #elif defined(HAVE_GETTIMEOFDAY)
 	struct timeval tv;
@@ -1562,11 +1562,11 @@ THRinit(void)
 	Thread s;
 	static bool first = true;
 
-	if ((THRdata[0] = (void *) file_wastream(stdout, "stdout")) == NULL) {
+	if ((THRdata[0] = (void *) stdout_wastream()) == NULL) {
 		TRC_CRITICAL(GDK, "malloc for stdout failed\n");
 		return -1;
 	}
-	if ((THRdata[1] = (void *) file_rastream(stdin, "stdin")) == NULL) {
+	if ((THRdata[1] = (void *) stdin_rastream()) == NULL) {
 		TRC_CRITICAL(GDK, "malloc for stdin failed\n");
 		mnstr_destroy(THRdata[0]);
 		THRdata[0] = NULL;

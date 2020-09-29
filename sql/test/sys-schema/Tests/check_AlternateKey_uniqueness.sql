@@ -20,7 +20,7 @@ SELECT COUNT(*) AS duplicates, T.id FROM (SELECT id FROM sys.schemas UNION ALL S
 -- the next query returns duplicates for overloaded functions (same function but with different args), hence it has been disabled
 --SELECT COUNT(*) AS duplicates, schema_id, name, func, mod, language, type, side_effect, varres, vararg FROM sys.functions
 -- GROUP BY schema_id, name, func, mod, language, type, side_effect, varres, vararg HAVING COUNT(*) > 1;
-SELECT COUNT(*) AS duplicates, func_id, name FROM sys.args GROUP BY func_id, name HAVING COUNT(*) > 1;
+SELECT COUNT(*) AS duplicates, func_id, name, inout FROM sys.args GROUP BY func_id, name, inout HAVING COUNT(*) > 1;
 
 SELECT COUNT(*) AS duplicates, schema_id, systemname, sqlname FROM sys.types GROUP BY schema_id, systemname, sqlname HAVING COUNT(*) > 1;
 

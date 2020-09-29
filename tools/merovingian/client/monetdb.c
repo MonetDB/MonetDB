@@ -609,7 +609,6 @@ simple_argv_cmd(char *cmd, sabdb *dbs, char *merocmd,
 				printf("FAILED\n");
 			fprintf(stderr, "%s: %s\n",
 					cmd, ret);
-			free(out);
 			free(ret);
 			exit(2);
 		}
@@ -1680,7 +1679,8 @@ command_destroy(int argc, char *argv[])
 						stats->dbname, "stop", 0, mero_pass);
 				if (ret != NULL)
 					free(ret);
-				free(out);
+				else
+					free(out);
 			}
 		}
 	}
@@ -1963,6 +1963,7 @@ snapshot_destroy_file(char *path)
 
 	if (strcmp(out, "OK") != 0) {
 		fprintf(stderr, "snapshot destroy %s: %s\n", path, out);
+		free(out);
 		exit(2);
 	}
 
@@ -2302,7 +2303,7 @@ end:
 }
 
 static void
-command_snapshot_write_cb(char *buf, size_t count, void *private) {
+command_snapshot_write_cb(const void *buf, size_t count, void *private) {
 	FILE *f = (FILE*)private;
 	fwrite(buf, 1, count, f);
 }
@@ -2516,7 +2517,7 @@ main(int argc, char *argv[])
 			mero_host = "/tmp";
 		/* first try the port given (or else its default) */
 		snprintf(buf, sizeof(buf), "%s/.s.merovingian.%d",
-			 mero_host, mero_port == -1 ? 50000 : mero_port);
+			 mero_host, mero_port == -1 ? MAPI_PORT : mero_port);
 		if ((err = control_ping(buf, -1, NULL)) == NULL) {
 			mero_host = buf;
 		} else {
@@ -2563,7 +2564,7 @@ main(int argc, char *argv[])
 	}
 	/* for TCP connections */
 	if (mero_host != NULL && *mero_host != '/' && mero_port == -1)
-		mero_port = 50000;
+		mero_port = MAPI_PORT;
 
 	/* handle regular commands */
 	if (strcmp(argv[i], "create") == 0) {

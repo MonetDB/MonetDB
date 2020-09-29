@@ -738,7 +738,7 @@ mvc_logfile(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	if (!strNil(filename)) {
 		if((m->scanner.log = open_wastream(filename)) == NULL)
-			throw(SQL, "sql.logfile", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+			throw(SQL, "sql.logfile", SQLSTATE(HY013) "%s", mnstr_peek_error(NULL));
 	}
 	return MAL_SUCCEED;
 }
@@ -763,14 +763,14 @@ mvc_next_value(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (!mvc_schema_privs(be->mvc, s))
 		throw(SQL, "sql.next_value", SQLSTATE(42000) "Access denied for %s to schema '%s'", sqlvar_get_string(find_global_var(be->mvc, mvc_bind_schema(be->mvc, "sys"), "current_user")), s->base.name);
 	if (!(seq = find_sql_sequence(s, seqname)))
-		throw(SQL, "sql.next_value", SQLSTATE(HY050) "Failed to fetch sequence %s.%s", sname, seqname);
+		throw(SQL, "sql.next_value", SQLSTATE(HY050) "Cannot find the sequence %s.%s", sname, seqname);
 
 	if (seq_next_value(seq, res)) {
 		be->last_id = *res;
 		sqlvar_set_number(find_global_var(be->mvc, mvc_bind_schema(be->mvc, "sys"), "last_id"), be->last_id);
 		return MAL_SUCCEED;
 	}
-	throw(SQL, "sql.next_value", SQLSTATE(42000) "Error in fetching next value for sequence %s.%s", sname, seqname);
+	throw(SQL, "sql.next_value", SQLSTATE(HY050) "Cannot generate next sequence value %s.%s", sname, seqname);
 }
 
 /* str mvc_get_value(lng *res, str *sname, str *seqname); */
@@ -792,11 +792,11 @@ mvc_get_value(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (!(s = mvc_bind_schema(m, sname)))
 		throw(SQL, "sql.get_value", SQLSTATE(3F000) "Cannot find the schema %s", sname);
 	if (!(seq = find_sql_sequence(s, seqname)))
-		throw(SQL, "sql.get_value", SQLSTATE(HY050) "Failed to fetch sequence %s.%s", sname, seqname);
+		throw(SQL, "sql.get_value", SQLSTATE(HY050) "Cannot find the sequence %s.%s", sname, seqname);
 
 	if (seq_get_value(seq, res))
 		return MAL_SUCCEED;
-	throw(SQL, "sql.get_value", SQLSTATE(42000) "Error in fetching current value for sequence %s.%s", sname, seqname);
+	throw(SQL, "sql.get_value", SQLSTATE(HY050) "Cannot get sequence value %s.%s", sname, seqname);
 }
 
 static str
@@ -2559,8 +2559,7 @@ mvc_export_table_wrap( Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		s = cntxt->fdout;
 	} else if (!onclient) {
 		if ((s = open_wastream(filename)) == NULL || mnstr_errnr(s)) {
-			msg=  createException(IO, "streams.open", SQLSTATE(42000) "could not open file '%s': %s",
-					      filename?filename:"stdout", GDKstrerror(errno, (char[128]){0}, 128));
+			msg=  createException(IO, "streams.open", SQLSTATE(42000) "%s", mnstr_peek_error(NULL));
 			close_stream(s);
 			goto wrapup_result_set1;
 		}
@@ -2570,7 +2569,7 @@ mvc_export_table_wrap( Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		s = m->scanner.ws;
 		mnstr_write(s, PROMPT3, sizeof(PROMPT3) - 1, 1);
 		mnstr_printf(s, "w %s\n", filename);
-		mnstr_flush(s);
+		mnstr_flush(s, MNSTR_FLUSH_DATA);
 		if ((sz = mnstr_readline(m->scanner.rs->s, buf, sizeof(buf))) > 1) {
 			/* non-empty line indicates failure on client */
 			msg = createException(IO, "streams.open", "%s", buf);
@@ -2586,7 +2585,7 @@ mvc_export_table_wrap( Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	mb->starttime = 0;
 	mb->optimize = 0;
 	if (onclient) {
-		mnstr_flush(s);
+		mnstr_flush(s, MNSTR_FLUSH_DATA);
 		if ((sz = mnstr_readline(m->scanner.rs->s, buf, sizeof(buf))) > 1) {
 			msg = createException(IO, "streams.open", "%s", buf);
 		}
@@ -2756,8 +2755,7 @@ mvc_export_row_wrap( Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		s = cntxt->fdout;
 	} else if (!onclient) {
 		if ((s = open_wastream(filename)) == NULL || mnstr_errnr(s)) {
-			msg=  createException(IO, "streams.open", SQLSTATE(42000) "could not open file '%s': %s",
-					      filename?filename:"stdout", GDKstrerror(errno, (char[128]){0}, 128));
+			msg=  createException(IO, "streams.open", SQLSTATE(42000) "%s", mnstr_peek_error(NULL));
 			close_stream(s);
 			goto wrapup_result_set;
 		}
@@ -2767,7 +2765,7 @@ mvc_export_row_wrap( Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		s = m->scanner.ws;
 		mnstr_write(s, PROMPT3, sizeof(PROMPT3) - 1, 1);
 		mnstr_printf(s, "w %s\n", filename);
-		mnstr_flush(s);
+		mnstr_flush(s, MNSTR_FLUSH_DATA);
 		if ((sz = mnstr_readline(m->scanner.rs->s, buf, sizeof(buf))) > 1) {
 			/* non-empty line indicates failure on client */
 			msg = createException(IO, "streams.open", "%s", buf);
@@ -2785,7 +2783,7 @@ mvc_export_row_wrap( Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	mb->starttime = 0;
 	mb->optimize = 0;
 	if (onclient) {
-		mnstr_flush(s);
+		mnstr_flush(s, MNSTR_FLUSH_DATA);
 		if ((sz = mnstr_readline(m->scanner.rs->s, buf, sizeof(buf))) > 1) {
 			msg = createException(IO, "streams.open", "%s", buf);
 		}
@@ -3016,7 +3014,7 @@ fix_windows_newline(unsigned char *s)
 static char fwftsep[2] = {STREAM_FWF_FIELD_SEP, '\0'};
 static char fwfrsep[2] = {STREAM_FWF_RECORD_SEP, '\0'};
 
-/* str mvc_import_table_wrap(int *res, str *sname, str *tname, unsigned char* *T, unsigned char* *R, unsigned char* *S, unsigned char* *N, str *fname, lng *sz, lng *offset, int *locked, int *besteffort, str *fixed_width, int *onclient); */
+/* str mvc_import_table_wrap(int *res, str *sname, str *tname, unsigned char* *T, unsigned char* *R, unsigned char* *S, unsigned char* *N, str *fname, lng *sz, lng *offset, int *locked, int *besteffort, str *fixed_width, int *onclient, int *escape); */
 str
 mvc_import_table_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
@@ -3035,6 +3033,7 @@ mvc_import_table_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	int besteffort = *getArgReference_int(stk, pci, pci->retc + 9);
 	char *fixed_widths = *getArgReference_str(stk, pci, pci->retc + 10);
 	int onclient = *getArgReference_int(stk, pci, pci->retc + 11);
+	bool escape = *getArgReference_int(stk, pci, pci->retc + 12);
 	str msg = MAL_SUCCEED;
 	bstream *s = NULL;
 	stream *ss;
@@ -3056,7 +3055,7 @@ mvc_import_table_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (strNil(fname))
 		fname = NULL;
 	if (fname == NULL) {
-		msg = mvc_import_table(cntxt, &b, be->mvc, be->mvc->scanner.rs, t, tsep, rsep, ssep, ns, sz, offset, locked, besteffort, true);
+		msg = mvc_import_table(cntxt, &b, be->mvc, be->mvc->scanner.rs, t, tsep, rsep, ssep, ns, sz, offset, locked, besteffort, true, escape);
 	} else {
 		if (onclient) {
 			mnstr_write(be->mvc->scanner.ws, PROMPT3, sizeof(PROMPT3)-1, 1);
@@ -3069,7 +3068,7 @@ mvc_import_table_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				mnstr_printf(be->mvc->scanner.ws, "r 0 %s\n", fname);
 			}
 			msg = MAL_SUCCEED;
-			mnstr_flush(be->mvc->scanner.ws);
+			mnstr_flush(be->mvc->scanner.ws, MNSTR_FLUSH_DATA);
 			while (!be->mvc->scanner.rs->eof)
 				bstream_next(be->mvc->scanner.rs);
 			ss = be->mvc->scanner.rs->s;
@@ -3090,7 +3089,7 @@ mvc_import_table_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		} else {
 			ss = open_rastream(fname);
 			if (ss == NULL || mnstr_errnr(ss)) {
-				msg = createException(IO, "sql.copy_from", SQLSTATE(42000) "Cannot open file '%s': %s", fname, GDKstrerror(errno, (char[128]){0}, 128));
+				msg = createException(IO, "sql.copy_from", SQLSTATE(42000) "%s", mnstr_peek_error(NULL));
 				close_stream(ss);
 				return msg;
 			}
@@ -3130,10 +3129,10 @@ mvc_import_table_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		s = bstream_create(ss, 0x200000);
 #endif
 		if (s != NULL) {
-			msg = mvc_import_table(cntxt, &b, be->mvc, s, t, tsep, rsep, ssep, ns, sz, offset, locked, besteffort, false);
+			msg = mvc_import_table(cntxt, &b, be->mvc, s, t, tsep, rsep, ssep, ns, sz, offset, locked, besteffort, false, escape);
 			if (onclient) {
 				mnstr_write(be->mvc->scanner.ws, PROMPT3, sizeof(PROMPT3)-1, 1);
-				mnstr_flush(be->mvc->scanner.ws);
+				mnstr_flush(be->mvc->scanner.ws, MNSTR_FLUSH_DATA);
 				be->mvc->scanner.rs->eof = s->eof;
 				s->s = NULL;
 			}
@@ -3157,7 +3156,7 @@ read_more(bstream *in, stream *out)
 			return false;
 		if (in->eof) {
 			if (mnstr_write(out, PROMPT2, sizeof(PROMPT2) - 1, 1) != 1
-			    || mnstr_flush(out) < 0)
+			    || mnstr_flush(out, MNSTR_FLUSH_DATA) < 0)
 				return false;
 			in->eof = false;
 			if (bstream_next(in) <= 0)
@@ -3314,7 +3313,7 @@ mvc_bin_import_table_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 				mnstr_write(be->mvc->scanner.ws, PROMPT3, sizeof(PROMPT3)-1, 1);
 				mnstr_printf(be->mvc->scanner.ws, "rb %s\n", fname);
 				msg = MAL_SUCCEED;
-				mnstr_flush(be->mvc->scanner.ws);
+				mnstr_flush(be->mvc->scanner.ws, MNSTR_FLUSH_DATA);
 				while (!be->mvc->scanner.rs->eof)
 					bstream_next(be->mvc->scanner.rs);
 				stream *ss = be->mvc->scanner.rs->s;
@@ -3334,7 +3333,7 @@ mvc_bin_import_table_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 					goto bailout;
 				}
 				mnstr_write(be->mvc->scanner.ws, PROMPT3, sizeof(PROMPT3)-1, 1);
-				mnstr_flush(be->mvc->scanner.ws);
+				mnstr_flush(be->mvc->scanner.ws, MNSTR_FLUSH_DATA);
 				be->mvc->scanner.rs->eof = s->eof;
 				s->s = NULL;
 				bstream_destroy(s);
@@ -3872,7 +3871,7 @@ sql_rowid(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	/* HACK, get insert bat */
 	b = store_funcs.bind_col(m->session->tr, c, RD_INS);
 	if( b == NULL)
-		throw(SQL,"sql.rowid", SQLSTATE(HY005) "Canot access column descriptor");
+		throw(SQL,"sql.rowid", SQLSTATE(HY005) "Cannot access column descriptor");
 	/* UGH (move into storage backends!!) */
 	d = c->data;
 	*rid = d->ibase + BATcount(b);
@@ -4081,6 +4080,9 @@ vacuum(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, str (*func) (bat
 		throw(SQL, name, SQLSTATE(42000) "%s not allowed on tables with indices", name + 4);
 	if (t->system)
 		throw(SQL, name, SQLSTATE(42000) "%s not allowed on system tables", name + 4);
+	if (!isTable(t))
+		throw(SQL, name, SQLSTATE(42000) "%s: %s '%s' is not persistent", name + 4,
+			  TABLE_TYPE_DESCRIPTION(t->type, t->properties), t->base.name);
 
 	if (has_snapshots(m->session->tr))
 		throw(SQL, name, SQLSTATE(42000) "%s not allowed on snapshots", name + 4);
@@ -4190,6 +4192,9 @@ SQLvacuum(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		throw(SQL, "sql.vacuum", SQLSTATE(42000) "vacuum not allowed on tables with indices");
 	if (t->system)
 		throw(SQL, "sql.vacuum", SQLSTATE(42000) "vacuum not allowed on system tables");
+	if (!isTable(t))
+		throw(SQL, "sql.vacuum", SQLSTATE(42000) "vacuum: %s '%s' is not persistent",
+			  TABLE_TYPE_DESCRIPTION(t->type, t->properties), t->base.name);
 
 	if (has_snapshots(m->session->tr))
 		throw(SQL, "sql.vacuum", SQLSTATE(42000) "vacuum not allowed on snapshots");
@@ -4255,6 +4260,9 @@ SQLdrop_hash(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	t = mvc_bind_table(m, s, tbl);
 	if (t == NULL)
 		throw(SQL, "sql.drop_hash", SQLSTATE(42S02) "Table missing %s.%s",sch, tbl);
+	if (!isTable(t))
+		throw(SQL, "sql.drop_hash", SQLSTATE(42000) "%s '%s' is not persistent",
+			  TABLE_TYPE_DESCRIPTION(t->type, t->properties), t->base.name);
 
 	for (o = t->columns.set->h; o; o = o->next) {
 		c = o->data;
@@ -4993,7 +5001,7 @@ SQLhot_snapshot_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	// tell client to open file, copy pasted from mvc_export_table_wrap
 	mnstr_write(s, PROMPT3, sizeof(PROMPT3) - 1, 1);
 	mnstr_printf(s, "w %s\n", filename);
-	mnstr_flush(s);
+	mnstr_flush(s, MNSTR_FLUSH_DATA);
 	if ((sz = mnstr_readline(mvc->scanner.rs->s, buf, sizeof(buf))) > 1) {
 		/* non-empty line indicates failure on client */
 		msg = createException(IO, "streams.open", "%s", buf);
@@ -5013,7 +5021,7 @@ SQLhot_snapshot_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	mnstr_destroy(cb);
 
 	// tell client no more data, also copy pasted from mvc_export_table_wrap
-	mnstr_flush(s);
+	mnstr_flush(s, MNSTR_FLUSH_DATA);
 	if ((sz = mnstr_readline(mvc->scanner.rs->s, buf, sizeof(buf))) > 1) {
 		msg = createException(IO, "streams.open", "%s", buf);
 	}
@@ -5546,7 +5554,7 @@ static mel_func sql_init_funcs[] = {
  pattern("sql", "exportChunk", mvc_export_chunk_wrap, true, "Export a chunk of the result set (in order) to stream s", args(1,5, arg("",void),arg("s",streams),arg("res_id",int),arg("offset",int),arg("nr",int))),
  pattern("sql", "exportOperation", mvc_export_operation_wrap, true, "Export result of schema/transaction queries", args(1,1, arg("",void))),
  pattern("sql", "affectedRows", mvc_affected_rows_wrap, true, "export the number of affected rows by the current query", args(1,3, arg("",int),arg("mvc",int),arg("nr",lng))),
- pattern("sql", "copy_from", mvc_import_table_wrap, true, "Import a table from bstream s with the \ngiven tuple and seperators (sep/rsep)", args(1,13, batvarargany("",0),arg("t",ptr),arg("sep",str),arg("rsep",str),arg("ssep",str),arg("ns",str),arg("fname",str),arg("nr",lng),arg("offset",lng),arg("locked",int),arg("best",int),arg("fwf",str),arg("onclient",int))),
+ pattern("sql", "copy_from", mvc_import_table_wrap, true, "Import a table from bstream s with the \ngiven tuple and seperators (sep/rsep)", args(1,14, batvarargany("",0),arg("t",ptr),arg("sep",str),arg("rsep",str),arg("ssep",str),arg("ns",str),arg("fname",str),arg("nr",lng),arg("offset",lng),arg("locked",int),arg("best",int),arg("fwf",str),arg("onclient",int),arg("escape",int))),
  //we use bat.single now
  //pattern("sql", "single", CMDBATsingle, false, "", args(1,2, batargany("",2),argany("x",2))),
  pattern("sql", "importTable", mvc_bin_import_table_wrap, true, "Import a table from the files (fname)", args(1,5, batvarargany("",0),arg("sname",str),arg("tname",str),arg("onclient",int),vararg("fname",str))),
@@ -5587,26 +5595,6 @@ static mel_func sql_init_funcs[] = {
  pattern("sql", "prepared_statements_args", SQLsession_prepared_statements_args, false, "Available prepared statements' arguments in the current session", args(9,9, batarg("statementid",int),batarg("type",str),batarg("digits",int),batarg("scale",int),batarg("inout",bte),batarg("number",int),batarg("schema",str),batarg("table",str),batarg("column",str))),
  pattern("sql", "copy_rejects", COPYrejects, false, "", args(4,4, batarg("rowid",lng),batarg("fldid",int),batarg("msg",str),batarg("inp",str))),
  pattern("sql", "copy_rejects_clear", COPYrejects_clear, true, "", noargs),
- pattern("calc", "hash", MKEYhash, false, "", args(1,2, arg("",lng),arg("v",bte))),
- command("batcalc", "hash", MKEYbathash, false, "", args(1,2, batarg("",lng),batarg("b",bte))),
- pattern("calc", "hash", MKEYhash, false, "", args(1,2, arg("",lng),arg("v",sht))),
- command("batcalc", "hash", MKEYbathash, false, "", args(1,2, batarg("",lng),batarg("b",sht))),
- pattern("calc", "hash", MKEYhash, false, "", args(1,2, arg("",lng),arg("v",int))),
- command("batcalc", "hash", MKEYbathash, false, "", args(1,2, batarg("",lng),batarg("b",int))),
- pattern("calc", "hash", MKEYhash, false, "", args(1,2, arg("",lng),arg("v",lng))),
- command("batcalc", "hash", MKEYbathash, false, "", args(1,2, batarg("",lng),batarg("b",lng))),
- pattern("calc", "hash", MKEYhash, false, "", args(1,2, arg("",lng),arg("v",oid))),
- command("batcalc", "hash", MKEYbathash, false, "", args(1,2, batarg("",lng),batarg("b",oid))),
- pattern("calc", "hash", MKEYhash, false, "", args(1,2, arg("",lng),arg("v",lng))),
- command("batcalc", "hash", MKEYbathash, false, "", args(1,2, batarg("",lng),batarg("b",lng))),
- pattern("calc", "hash", MKEYhash, false, "", args(1,2, arg("",lng),arg("v",flt))),
- command("batcalc", "hash", MKEYbathash, false, "", args(1,2, batarg("",lng),batarg("b",flt))),
- pattern("calc", "hash", MKEYhash, false, "", args(1,2, arg("",lng),arg("v",dbl))),
- command("batcalc", "hash", MKEYbathash, false, "", args(1,2, batarg("",lng),batarg("b",dbl))),
- pattern("calc", "hash", MKEYhash, false, "", args(1,2, arg("",lng),argany("v",0))),
- command("batcalc", "hash", MKEYbathash, false, "", args(1,2, batarg("",lng),batargany("b",1))),
- pattern("calc", "rotate_xor_hash", MKEYrotate_xor_hash, false, "", args(1,4, arg("",lng),arg("h",lng),arg("nbits",int),argany("v",1))),
- command("batcalc", "rotate_xor_hash", MKEYbulk_rotate_xor_hash, false, "", args(1,4, batarg("",int),batarg("h",lng),arg("nbits",int),batargany("b",1))),
  command("sql", "dec_round", bte_dec_round_wrap, false, "round off the value v to nearests multiple of r", args(1,3, arg("",bte),arg("v",bte),arg("r",bte))),
  command("batsql", "dec_round", bte_bat_dec_round_wrap, false, "round off the value v to nearests multiple of r", args(1,3, batarg("",bte),batarg("v",bte),arg("r",bte))),
  command("sql", "round", bte_round_wrap, false, "round off the decimal v(d,s) to r digits behind the dot (if r < 0, before the dot)", args(1,5, arg("",bte),arg("v",bte),arg("d",int),arg("s",int),arg("r",bte))),
@@ -6309,8 +6297,10 @@ static mel_func sql_init_funcs[] = {
  pattern("batsql", "all", SQLall_cmp, false, "if !cmp then false, (nl or nr) then nil, else true", args(1,4, batarg("",bit),batarg("cmp",bit),arg("nl",bit),batarg("nr",bit))),
  pattern("batsql", "all", SQLall_cmp, false, "if !cmp then false, (nl or nr) then nil, else true", args(1,4, batarg("",bit),batarg("cmp",bit),batarg("nl",bit),arg("nr",bit))),
  pattern("batsql", "all", SQLall_cmp, false, "if !cmp then false, (nl or nr) then nil, else true", args(1,4, batarg("",bit),batarg("cmp",bit),batarg("nl",bit),batarg("nr",bit))),
- command("aggr", "anyequal", SQLanyequal, false, "if any value in r is equal to l return true, else if r has nil nil else false", args(1,3, arg("",bit),batargany("l",1),batargany("r",1))),
- command("aggr", "allnotequal", SQLallnotequal, false, "if all values in r are not equal to l return true, else if r has nil nil else false", args(1,3, arg("",bit),batargany("l",1),batargany("r",1))),
+ pattern("aggr", "anyequal", SQLanyequal, false, "if any value in r is equal to l return true, else if r has nil nil else false", args(1,3, arg("",bit),batargany("l",1),batargany("r",1))),
+ pattern("bataggr", "anyequal", SQLanyequal, false, "", args(1,3, batarg("",bit),batargany("l",1),batargany("r",1))),
+ pattern("aggr", "allnotequal", SQLallnotequal, false, "if all values in r are not equal to l return true, else if r has nil nil else false", args(1,3, arg("",bit),batargany("l",1),batargany("r",1))),
+ pattern("bataggr", "allnotequal", SQLallnotequal, false, "", args(1,3, arg("",bit),batargany("l",1),batargany("r",1))),
  pattern("aggr", "subanyequal", SQLanyequal_grp, false, "if any value in r is equal to l return true, else if r has nil nil else false", args(1,6, batarg("",bit),batargany("l",1),batargany("r",1),batarg("g",oid),batarg("e",oid),arg("no_nil",bit))),
  pattern("aggr", "subanyequal", SQLanyequal_grp, false, "if any value in r is equal to l return true, else if r has nil nil else false; with candidate list", args(1,7, batarg("",bit),batargany("l",1),batargany("r",1),batarg("g",oid),batarg("e",oid),batarg("s",oid),arg("no_nil",bit))),
  pattern("aggr", "subanyequal", SQLanyequal_grp2, false, "if any value in r is equal to l return true, else if r has nil nil else false, except if rid is nil (ie empty) then false", args(1,7, batarg("",bit),batargany("l",1),batargany("r",1),batarg("rid",oid),batarg("g",oid),batarg("e",oid),arg("no_nil",bit))),
@@ -6469,8 +6459,6 @@ static mel_func sql_init_funcs[] = {
  pattern("sql", "setmemorylimit", SQLsetmemorylimit, true, "Limit the memory claim in MB per query", args(1,3, arg("",void),arg("sid",sht),arg("n",int))),
 #ifdef HAVE_HGE
  /* sql_hge */
- pattern("calc", "hash", MKEYhash, false, "", args(1,2, arg("",lng),arg("v",hge))),
- command("batcalc", "hash", MKEYbathash, false, "", args(1,2, batarg("",lng),batarg("b",hge))),
  command("sql", "dec_round", hge_dec_round_wrap, false, "round off the value v to nearests multiple of r", args(1,3, arg("",hge),arg("v",hge),arg("r",hge))),
  command("batsql", "dec_round", hge_bat_dec_round_wrap, false, "round off the value v to nearests multiple of r", args(1,3, batarg("",hge),batarg("v",hge),arg("r",hge))),
  command("sql", "round", hge_round_wrap, false, "round off the decimal v(d,s) to r digits behind the dot (if r < 0, before the dot)", args(1,5, arg("",hge),arg("v",hge),arg("d",int),arg("s",int),arg("r",bte))),

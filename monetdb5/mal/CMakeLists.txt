@@ -51,33 +51,33 @@ target_sources(mal
   mal_type.c
   mal_utils.c mal_utils.h
   mal_embedded.c mal_embedded.h
-  mal_private.h
+  mal_private.h mal_internal.h
   mal_prelude.c
   mel.h
   PUBLIC
   ${mal_public_headers})
 
 target_include_directories(mal
+  PRIVATE
+  $<$<BOOL:${COMMONCRYPTO_FOUND}>:${COMMONCRYPTO_INCLUDE_DIR}>
+  $<$<BOOL:${OPENSSL_FOUND}>:$<TARGET_PROPERTY:OpenSSL::Crypto,INTERFACE_INCLUDE_DIRECTORIES>>
   PUBLIC
+  $<TARGET_PROPERTY:bat,INTERFACE_INCLUDE_DIRECTORIES>
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
   $<INSTALL_INTERFACE:${INCLUDEDIR}/monetdb>)
 
 target_compile_definitions(mal
   PRIVATE
   LIBMAL
-  LIBATOMS
-  LIBKERNEL
-  LIBOPTIMIZER
-  LIBSCHEDULER
   LIBMONETDB5)
 
 target_link_libraries(mal
-  PUBLIC
-  mcrypt
-  msabaoth
   PRIVATE
   monetdb_config_header
+  mcrypt
+  msabaoth
   mutils
+  stream
   mapi
   bat)
 

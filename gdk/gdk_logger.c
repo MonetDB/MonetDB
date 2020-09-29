@@ -770,10 +770,10 @@ la_bat_destroy(logger *lg, logaction *la)
 #ifndef NDEBUG
 			assert(BBP_desc(bid)->batRole == PERSISTENT);
 			assert(0 <= BBP_desc(bid)->theap.farmid && BBP_desc(bid)->theap.farmid < MAXFARMS);
-			assert(BBPfarms[BBP_desc(bid)->theap.farmid].roles & (1 << PERSISTENT));
+			assert(BBPfarms[BBP_desc(bid)->theap.farmid].roles & (1U << PERSISTENT));
 			if (BBP_desc(bid)->tvheap) {
 				assert(0 <= BBP_desc(bid)->tvheap->farmid && BBP_desc(bid)->tvheap->farmid < MAXFARMS);
-				assert(BBPfarms[BBP_desc(bid)->tvheap->farmid].roles & (1 << PERSISTENT));
+				assert(BBPfarms[BBP_desc(bid)->tvheap->farmid].roles & (1U << PERSISTENT));
 			}
 #endif
 			if (BUNappend(lg->dsnapshots, &pos, false) != GDK_SUCCEED)
@@ -888,10 +888,10 @@ la_bat_use(logger *lg, logaction *la)
 #ifndef NDEBUG
 	assert(b->batRole == PERSISTENT);
 	assert(0 <= b->theap.farmid && b->theap.farmid < MAXFARMS);
-	assert(BBPfarms[b->theap.farmid].roles & (1 << PERSISTENT));
+	assert(BBPfarms[b->theap.farmid].roles & (1U << PERSISTENT));
 	if (b->tvheap) {
 		assert(0 <= b->tvheap->farmid && b->tvheap->farmid < MAXFARMS);
-		assert(BBPfarms[b->tvheap->farmid].roles & (1 << PERSISTENT));
+		assert(BBPfarms[b->tvheap->farmid].roles & (1U << PERSISTENT));
 	}
 #endif
 	if ((p = log_find(lg->snapshots_bid, lg->dsnapshots, b->batCacheid)) != BUN_NONE &&
@@ -1093,7 +1093,7 @@ logger_open(logger *lg)
 	lg->end = 0;
 
 	if (lg->log == NULL || mnstr_errnr(lg->log)) {
-		TRC_CRITICAL(GDK, "creating %s failed\n", filename);
+		TRC_CRITICAL(GDK, "creating %s failed: %s\n", filename, mnstr_peek_error(NULL));
 		GDKfree(filename);
 		return GDK_FAIL;
 	}
@@ -2319,7 +2319,7 @@ logger_new(int debug, const char *fn, const char *logdir, int version, preversio
 	logger *lg;
 	char filename[FILENAME_MAX];
 
-	if (!GDKinmemory() && MT_path_absolute(logdir)) {
+	if (!GDKinmemory(0) && MT_path_absolute(logdir)) {
 		TRC_CRITICAL(GDK, "logdir must be relative path\n");
 		return NULL;
 	}
@@ -2330,7 +2330,7 @@ logger_new(int debug, const char *fn, const char *logdir, int version, preversio
 		return NULL;
 	}
 
-	lg->inmemory = GDKinmemory();
+	lg->inmemory = GDKinmemory(0);
 	lg->debug = debug;
 
 	lg->changes = 0;
@@ -2673,10 +2673,10 @@ log_bat_persists(logger *lg, BAT *b, const char *name, char tpe, oid id)
 #ifndef NDEBUG
 		assert(b->batRole == PERSISTENT);
 		assert(0 <= b->theap.farmid && b->theap.farmid < MAXFARMS);
-		assert(BBPfarms[b->theap.farmid].roles & (1 << PERSISTENT));
+		assert(BBPfarms[b->theap.farmid].roles & (1U << PERSISTENT));
 		if (b->tvheap) {
 			assert(0 <= b->tvheap->farmid && b->tvheap->farmid < MAXFARMS);
-			assert(BBPfarms[b->tvheap->farmid].roles & (1 << PERSISTENT));
+			assert(BBPfarms[b->tvheap->farmid].roles & (1U << PERSISTENT));
 		}
 #endif
 		l.nr = b->batCacheid;
@@ -2702,7 +2702,7 @@ log_bat_persists(logger *lg, BAT *b, const char *name, char tpe, oid id)
 		assert(b->batRole == PERSISTENT);
 		assert(b->theap.farmid == 0);
 		assert(b->tvheap == NULL ||
-		       BBPfarms[b->tvheap->farmid].roles & (1 << PERSISTENT));
+		       BBPfarms[b->tvheap->farmid].roles & (1U << PERSISTENT));
 		if ((p = log_find(lg->snapshots_bid, lg->dsnapshots, b->batCacheid)) != BUN_NONE &&
 		    p >= lg->snapshots_tid->batInserted) {
 			if (BUNinplace(lg->snapshots_tid, p, &lg->tid, false) != GDK_SUCCEED)
@@ -2756,10 +2756,10 @@ log_bat_transient(logger *lg, const char *name, char tpe, oid id)
 #ifndef NDEBUG
 		assert(BBP_desc(bid)->batRole == PERSISTENT);
 		assert(0 <= BBP_desc(bid)->theap.farmid && BBP_desc(bid)->theap.farmid < MAXFARMS);
-		assert(BBPfarms[BBP_desc(bid)->theap.farmid].roles & (1 << PERSISTENT));
+		assert(BBPfarms[BBP_desc(bid)->theap.farmid].roles & (1U << PERSISTENT));
 		if (BBP_desc(bid)->tvheap) {
 			assert(0 <= BBP_desc(bid)->tvheap->farmid && BBP_desc(bid)->tvheap->farmid < MAXFARMS);
-			assert(BBPfarms[BBP_desc(bid)->tvheap->farmid].roles & (1 << PERSISTENT));
+			assert(BBPfarms[BBP_desc(bid)->tvheap->farmid].roles & (1U << PERSISTENT));
 		}
 #endif
 		//	if (lg->tid == tid)
@@ -3030,7 +3030,7 @@ log_tend(logger *lg)
 
 	if (res != GDK_SUCCEED ||
 	    log_write_format(lg, &l) != GDK_SUCCEED ||
-	    mnstr_flush(lg->log) ||
+	    mnstr_flush(lg->log, MNSTR_FLUSH_DATA) ||
 	    (!(GDKdebug & NOSYNCMASK) && mnstr_fsync(lg->log)) ||
 	    pre_allocate(lg) != GDK_SUCCEED) {
 		TRC_CRITICAL(GDK, "write failed\n");
@@ -3075,7 +3075,7 @@ log_sequence_(logger *lg, int seq, lng val, int flush)
 
 	if (log_write_format(lg, &l) != GDK_SUCCEED ||
 	    !mnstr_writeLng(lg->log, val) ||
-	    (flush && mnstr_flush(lg->log)) ||
+	    (flush && mnstr_flush(lg->log, MNSTR_FLUSH_DATA)) ||
 	    (flush && !(GDKdebug & NOSYNCMASK) && mnstr_fsync(lg->log))) {
 		TRC_CRITICAL(GDK, "write failed\n");
 		return GDK_FAIL;

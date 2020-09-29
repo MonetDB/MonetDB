@@ -169,6 +169,8 @@ exp_compare(sql_allocator *sa, sql_exp *l, sql_exp *r, int cmptype)
 	e->l = l;
 	e->r = r;
 	e->flag = cmptype;
+	if (!has_nil(l) && !has_nil(r))
+		set_has_no_nil(e);
 	return e;
 }
 
@@ -184,6 +186,8 @@ exp_compare2(sql_allocator *sa, sql_exp *l, sql_exp *r, sql_exp *f, int cmptype)
 	e->r = r;
 	e->f = f;
 	e->flag = cmptype;
+	if (!has_nil(l) && !has_nil(r) && !has_nil(f))
+		set_has_no_nil(e);
 	return e;
 }
 
@@ -201,6 +205,8 @@ exp_filter(sql_allocator *sa, list *l, list *r, sql_subfunc *f, int anti)
 	e->flag = cmp_filter;
 	if (anti)
 		set_anti(e);
+	if (!have_nil(l) && !have_nil(r))
+		set_has_no_nil(e);
 	return e;
 }
 
@@ -217,6 +223,8 @@ exp_or(sql_allocator *sa, list *l, list *r, int anti)
 	e->flag = cmp_or;
 	if (anti)
 		set_anti(e);
+	if (!have_nil(l) && !have_nil(r))
+		set_has_no_nil(e);
 	return e;
 }
 
@@ -241,6 +249,8 @@ exp_in(sql_allocator *sa, sql_exp *l, list *r, int cmptype)
 	e->r = r;
 	assert( cmptype == cmp_in || cmptype == cmp_notin);
 	e->flag = cmptype;
+	if (!has_nil(l) && !have_nil(r))
+		set_has_no_nil(e);
 	return e;
 }
 
@@ -273,6 +283,8 @@ exp_in_func(mvc *sql, sql_exp *le, sql_exp *vals, int anyequal, int is_tuple)
 			exps_card = vals->card;
 
 		e->card = MAX(le->card, exps_card);
+		if (!has_nil(le) && !has_nil(vals))
+			set_has_no_nil(e);
 	}
 	return e;
 }
@@ -289,6 +301,8 @@ exp_compare_func(mvc *sql, sql_exp *le, sql_exp *re, const char *compareop, int 
 		e->flag = quantifier;
 		/* At ANY and ALL operators, the cardinality on the right side is ignored if it is a sub-relation */
 		e->card = quantifier && exp_is_rel(re) ? le->card : MAX(le->card, re->card);
+		if (!has_nil(le) && !has_nil(re))
+			set_has_no_nil(e);
 	}
 	return e;
 }
@@ -316,6 +330,8 @@ exp_convert(sql_allocator *sa, sql_exp *exp, sql_subtype *fromtype, sql_subtype 
 	e->r = append(append(sa_list(sa), dup_subtype(sa, fromtype)),totype);
 	e->tpe = *totype;
 	e->alias = exp->alias;
+	if (!has_nil(exp))
+		set_has_no_nil(e);
 	return e;
 }
 
@@ -329,6 +345,8 @@ exp_op( sql_allocator *sa, list *l, sql_subfunc *f )
 	e->l = l;
 	e->f = f;
 	e->semantics = f->func->semantics;
+	if (!e->semantics && l && !have_nil(l))
+		set_has_no_nil(e);
 	return e;
 }
 
@@ -588,10 +606,10 @@ list *
 exp_types(sql_allocator *sa, list *exps)
 {
 	list *l = sa_list(sa);
-	node *n;
 
-	for ( n = exps->h; n; n = n->next)
-		append(l, exp_subtype(n->data));
+	if (exps)
+		for (node *n = exps->h; n; n = n->next)
+			list_append(l, exp_subtype(n->data));
 	return l;
 }
 
@@ -599,12 +617,12 @@ int
 have_nil(list *exps)
 {
 	int has_nil = 0;
-	node *n;
 
-	for ( n = exps->h; n && !has_nil; n = n->next) {
-		sql_exp *e = n->data;
-		has_nil |= has_nil(e);
-	}
+	if (exps)
+		for (node *n = exps->h; n && !has_nil; n = n->next) {
+			sql_exp *e = n->data;
+			has_nil |= has_nil(e);
+		}
 	return has_nil;
 }
 
@@ -1341,14 +1359,13 @@ exps_any_match(list *l, sql_exp *e)
 static int
 exps_are_joins( list *l )
 {
-	node *n;
+	if (l)
+		for (node *n = l->h; n; n = n->next) {
+			sql_exp *e = n->data;
 
-	for (n = l->h; n; n = n->next) {
-		sql_exp *e = n->data;
-
-		if (exp_is_join_exp(e))
-			return -1;
-	}
+			if (exp_is_join_exp(e))
+				return -1;
+		}
 	return 0;
 }
 
@@ -1562,9 +1579,9 @@ rel_find_exp_and_corresponding_rel_( sql_rel *rel, sql_exp *e, sql_rel **res)
 	case e_column:
 		if (rel->exps && (is_project(rel->op) || is_base(rel->op))) {
 			if (e->l) {
-				ne = exps_bind_column2(rel->exps, e->l, e->r);
+				ne = exps_bind_column2(rel->exps, e->l, e->r, NULL);
 			} else {
-				ne = exps_bind_column(rel->exps, e->r, NULL, 1);
+				ne = exps_bind_column(rel->exps, e->r, NULL, NULL, 1);
 			}
 		}
 		if (ne && res)
@@ -1625,7 +1642,7 @@ rel_find_exp_and_corresponding_rel(sql_rel *rel, sql_exp *e, sql_rel **res, bool
 				*under_join = true;
 			break;
 		case op_table:
-			if (rel->exps && e->type == e_column && e->l && exps_bind_column2(rel->exps, e->l, e->r))
+			if (rel->exps && e->type == e_column && e->l && exps_bind_column2(rel->exps, e->l, e->r, NULL))
 				ne = e;
 			if (ne && res)
 				*res = rel;
@@ -1637,11 +1654,11 @@ rel_find_exp_and_corresponding_rel(sql_rel *rel, sql_exp *e, sql_rel **res, bool
 			if (rel->l)
 				ne = rel_find_exp_and_corresponding_rel(rel->l, e, res, under_join);
 			else if (rel->exps && e->l) {
-				ne = exps_bind_column2(rel->exps, e->l, e->r);
+				ne = exps_bind_column2(rel->exps, e->l, e->r, NULL);
 				if (ne && res)
 					*res = rel;
 			} else if (rel->exps) {
-				ne = exps_bind_column(rel->exps, e->r, NULL, 1);
+				ne = exps_bind_column(rel->exps, e->r, NULL, NULL, 1);
 				if (ne && res)
 					*res = rel;
 			}
@@ -1649,7 +1666,7 @@ rel_find_exp_and_corresponding_rel(sql_rel *rel, sql_exp *e, sql_rel **res, bool
 		break;
 		case op_basetable:
 			if (rel->exps && e->type == e_column && e->l)
-				ne = exps_bind_column2(rel->exps, e->l, e->r);
+				ne = exps_bind_column2(rel->exps, e->l, e->r, NULL);
 			if (ne && res)
 				*res = rel;
 			break;
@@ -1800,9 +1817,33 @@ exp_is_zero(sql_exp *e)
 int
 exp_is_not_null(sql_exp *e)
 {
-	if (e->type == e_atom && e->l)
-		return !(atom_null(e->l));
-	return 0;
+	switch (e->type) {
+	case e_atom:
+		if (e->f) /* values list */
+			return false;
+		if (e->l)
+			return !(atom_null(e->l));
+		return false;
+	case e_convert:
+		return exp_is_not_null(e->l);
+	case e_func:
+		if (!e->semantics && e->l) {
+			list *l = e->l;
+			for (node *n = l->h; n; n=n->next) {
+				sql_exp *p = n->data;
+				if (!exp_is_not_null(p))
+					return false;
+			}
+			return true;
+		}
+		return false;
+	case e_aggr:
+	case e_column:
+	case e_cmp:
+	case e_psm:
+		return false;
+	}
+	return false;
 }
 
 int
@@ -1999,6 +2040,8 @@ exp_rel_update_exps(mvc *sql, list *exps)
 
 		if (exp_has_rel(e))
 			n->data = exp_rel_update_exp(sql, e);
+		else if (!exp_is_atom(e))
+			set_freevar(e,1);
 	}
 	list_hash_clear(exps);
 	return exps;
@@ -2069,11 +2112,10 @@ exp_rel_label(mvc *sql, sql_exp *e)
 int
 exps_are_atoms( list *exps)
 {
-	node *n;
 	int atoms = 1;
-
-	for(n=exps->h; n && atoms; n=n->next)
-		atoms &= exp_is_atom(n->data);
+	if (exps)
+		for(node *n=exps->h; n && atoms; n=n->next)
+			atoms &= exp_is_atom(n->data);
 	return atoms;
 }
 
@@ -2197,9 +2239,9 @@ exp_key( sql_exp *e )
 }
 
 sql_exp *
-exps_bind_column( list *exps, const char *cname, int *ambiguous, int no_tname)
+exps_bind_column(list *exps, const char *cname, int *ambiguous, int *multiple, int no_tname)
 {
-	sql_exp *e = NULL;
+	sql_exp *res = NULL;
 
 	if (exps && cname) {
 		node *en;
@@ -2229,41 +2271,54 @@ exps_bind_column( list *exps, const char *cname, int *ambiguous, int no_tname)
 				sql_hash_e *he = exps->ht->buckets[key&(exps->ht->size-1)];
 
 				for (; he; he = he->chain) {
-					sql_exp *ce = he->value;
+					sql_exp *e = he->value;
 
-					if (ce->alias.name && strcmp(ce->alias.name, cname) == 0 && (!no_tname || !ce->alias.rname)) {
-						if (e && e != ce && ce->alias.rname && e->alias.rname && strcmp(ce->alias.rname, e->alias.rname) != 0 ) {
+					if (e->alias.name && strcmp(e->alias.name, cname) == 0 && (!no_tname || !e->alias.rname)) {
+						if (res && multiple)
+							*multiple = 1;
+						if (!res)
+							res = e;
+
+						if (res && res != e && e->alias.rname && res->alias.rname && strcmp(e->alias.rname, res->alias.rname) != 0 ) {
 							if (ambiguous)
 								*ambiguous = 1;
 							MT_lock_unset(&exps->ht_lock);
 							return NULL;
 						}
-						e = ce;
+						res = e;
 					}
 				}
 				MT_lock_unset(&exps->ht_lock);
-				return e;
+				return res;
 			}
 			MT_lock_unset(&exps->ht_lock);
 		}
 		for (en = exps->h; en; en = en->next ) {
-			sql_exp *ce = en->data;
-			if (ce->alias.name && strcmp(ce->alias.name, cname) == 0 && (!no_tname || !ce->alias.rname)) {
-				if (e && e != ce && ce->alias.rname && e->alias.rname && strcmp(ce->alias.rname, e->alias.rname) != 0 ) {
+			sql_exp *e = en->data;
+
+			if (e->alias.name && strcmp(e->alias.name, cname) == 0 && (!no_tname || !e->alias.rname)) {
+				if (res && multiple)
+					*multiple = 1;
+				if (!res)
+					res = e;
+
+				if (res && res != e && e->alias.rname && res->alias.rname && strcmp(e->alias.rname, res->alias.rname) != 0 ) {
 					if (ambiguous)
 						*ambiguous = 1;
 					return NULL;
 				}
-				e = ce;
+				res = e;
 			}
 		}
 	}
-	return e;
+	return res;
 }
 
 sql_exp *
-exps_bind_column2( list *exps, const char *rname, const char *cname )
+exps_bind_column2(list *exps, const char *rname, const char *cname, int *multiple)
 {
+	sql_exp *res = NULL;
+
 	if (exps) {
 		node *en;
 
@@ -2273,7 +2328,7 @@ exps_bind_column2( list *exps, const char *rname, const char *cname )
 				exps->ht = hash_new(exps->sa, list_length(exps), (fkeyvalue)&exp_key);
 				if (exps->ht == NULL) {
 					MT_lock_unset(&exps->ht_lock);
-					return NULL;
+					return res;
 				}
 
 				for (en = exps->h; en; en = en->next ) {
@@ -2283,7 +2338,7 @@ exps_bind_column2( list *exps, const char *rname, const char *cname )
 
 						if (hash_add(exps->ht, key, e) == NULL) {
 							MT_lock_unset(&exps->ht_lock);
-							return NULL;
+							return res;
 						}
 					}
 				}
@@ -2296,23 +2351,29 @@ exps_bind_column2( list *exps, const char *rname, const char *cname )
 					sql_exp *e = he->value;
 
 					if (e && e->alias.name && e->alias.rname && strcmp(e->alias.name, cname) == 0 && strcmp(e->alias.rname, rname) == 0) {
-						MT_lock_unset(&exps->ht_lock);
-						return e;
+						if (res && multiple)
+							*multiple = 1;
+						if (!res)
+							res = e;
 					}
 				}
 				MT_lock_unset(&exps->ht_lock);
-				return NULL;
+				return res;
 			}
 			MT_lock_unset(&exps->ht_lock);
 		}
 		for (en = exps->h; en; en = en->next ) {
 			sql_exp *e = en->data;
 
-			if (e && e->alias.name && e->alias.rname && strcmp(e->alias.name, cname) == 0 && strcmp(e->alias.rname, rname) == 0)
-				return e;
+			if (e && e->alias.name && e->alias.rname && strcmp(e->alias.name, cname) == 0 && strcmp(e->alias.rname, rname) == 0) {
+				if (res && multiple)
+					*multiple = 1;
+				if (!res)
+					res = e;
+			}
 		}
 	}
-	return NULL;
+	return res;
 }
 
 /* find an column based on the original name, not the alias it got */
@@ -2353,9 +2414,8 @@ exps_card( list *l )
 void
 exps_fix_card( list *exps, unsigned int card)
 {
-	node *n;
-
-	for (n = exps->h; n; n = n->next) {
+	if (exps)
+		for (node *n = exps->h; n; n = n->next) {
 		sql_exp *e = n->data;
 
 		if (e && e->card > card)
@@ -2366,27 +2426,25 @@ exps_fix_card( list *exps, unsigned int card)
 void
 exps_setcard( list *exps, unsigned int card)
 {
-	node *n;
+	if (exps)
+		for (node *n = exps->h; n; n = n->next) {
+			sql_exp *e = n->data;
 
-	for (n = exps->h; n; n = n->next) {
-		sql_exp *e = n->data;
-
-		if (e && e->card != CARD_ATOM)
-			e->card = card;
-	}
+			if (e && e->card != CARD_ATOM)
+				e->card = card;
+		}
 }
 
 int
 exps_intern(list *exps)
 {
-	node *n;
+	if (exps)
+		for (node *n=exps->h; n; n = n->next) {
+			sql_exp *e = n->data;
 
-	for (n=exps->h; n; n = n->next) {
-		sql_exp *e = n->data;
-
-		if (is_intern(e))
-			return 1;
-	}
+			if (is_intern(e))
+				return 1;
+		}
 	return 0;
 }
 
@@ -2421,9 +2479,9 @@ is_identity( sql_exp *e, sql_rel *r)
 		if (r && is_project(r->op)) {
 			sql_exp *re = NULL;
 			if (e->l)
-				re = exps_bind_column2(r->exps, e->l, e->r);
+				re = exps_bind_column2(r->exps, e->l, e->r, NULL);
 			if (!re && has_label(e))
-				re = exps_bind_column(r->exps, e->r, NULL, 1);
+				re = exps_bind_column(r->exps, e->r, NULL, NULL, 1);
 			if (re)
 				return is_identity(re, r->l);
 		}
@@ -2440,16 +2498,16 @@ is_identity( sql_exp *e, sql_rel *r)
 list *
 exps_alias(mvc *sql, list *exps)
 {
-	node *n;
 	list *nl = new_exp_list(sql->sa);
 
-	for (n = exps->h; n; n = n->next) {
-		sql_exp *e = n->data, *ne;
+	if (exps)
+		for (node *n = exps->h; n; n = n->next) {
+			sql_exp *e = n->data, *ne;
 
-		assert(exp_name(e));
-		ne = exp_ref(sql, e);
-		append(nl, ne);
-	}
+			assert(exp_name(e));
+			ne = exp_ref(sql, e);
+			append(nl, ne);
+		}
 	return nl;
 }
 
@@ -2662,14 +2720,13 @@ exp_aggr_is_count(sql_exp *e)
 void
 exps_reset_freevar(list *exps)
 {
-	node *n;
+	if (exps)
+		for(node *n=exps->h; n; n=n->next) {
+			sql_exp *e = n->data;
 
-	for(n=exps->h; n; n=n->next) {
-		sql_exp *e = n->data;
-
-		/*later use case per type */
-		reset_freevar(e);
-	}
+			/*later use case per type */
+			reset_freevar(e);
+		}
 }
 
 int
@@ -2728,7 +2785,7 @@ convert_atom(atom *a, sql_subtype *rt)
 	a->tpe = *rt;
 }
 
-static sql_exp *
+sql_exp *
 exp_convert_inplace(mvc *sql, sql_subtype *t, sql_exp *exp)
 {
 	atom *a;
@@ -2910,7 +2967,12 @@ exp_set_type_recurse(mvc *sql, sql_subtype *type, sql_exp *e, const char **relna
 
 	switch (e->type) {
 		case e_atom: {
-			return exp_set_list_recurse(sql, type, e, relname, expname);
+			const char *next_exp = exp_name(e);
+			if (e->f || !next_exp || !strcmp(next_exp, *expname)) {
+				if (!e->f && next_exp)
+					*expname = next_exp;
+				return exp_set_list_recurse(sql, type, e, relname, expname);
+			}
 		} break;
 		case e_convert:
 		case e_column: {

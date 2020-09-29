@@ -593,6 +593,7 @@ int yydebug=1;
 	opt_chain
 	opt_constraint
 	opt_distinct
+	opt_escape
 	opt_grant_for
 	opt_locked
 	opt_nulls_first_last
@@ -2744,7 +2745,7 @@ opt_on_location:
   ;
 
 copyfrom_stmt:
-    COPY opt_nr INTO qname opt_column_list FROM string_commalist opt_header_list opt_on_location opt_seps opt_null_string opt_locked opt_best_effort opt_constraint opt_fwf_widths
+    COPY opt_nr INTO qname opt_column_list FROM string_commalist opt_header_list opt_on_location opt_seps opt_escape opt_null_string opt_locked opt_best_effort opt_constraint opt_fwf_widths
 	{ dlist *l = L();
 	  append_list(l, $4);
 	  append_list(l, $5);
@@ -2752,14 +2753,15 @@ copyfrom_stmt:
 	  append_list(l, $8);
 	  append_list(l, $10);
 	  append_list(l, $2);
-	  append_string(l, $11);
-	  append_int(l, $12);
+	  append_string(l, $12);
 	  append_int(l, $13);
 	  append_int(l, $14);
-	  append_list(l, $15);
+	  append_int(l, $15);
+	  append_list(l, $16);
 	  append_int(l, $9);
+	  append_int(l, $11);
 	  $$ = _symbol_create_list( SQL_COPYFROM, l ); }
-  | COPY opt_nr INTO qname opt_column_list FROM STDIN  opt_header_list opt_seps opt_null_string opt_locked opt_best_effort opt_constraint
+  | COPY opt_nr INTO qname opt_column_list FROM STDIN  opt_header_list opt_seps opt_escape opt_null_string opt_locked opt_best_effort opt_constraint
 	{ dlist *l = L();
 	  append_list(l, $4);
 	  append_list(l, $5);
@@ -2767,12 +2769,13 @@ copyfrom_stmt:
 	  append_list(l, $8);
 	  append_list(l, $9);
 	  append_list(l, $2);
-	  append_string(l, $10);
-	  append_int(l, $11);
+	  append_string(l, $11);
 	  append_int(l, $12);
 	  append_int(l, $13);
+	  append_int(l, $14);
 	  append_list(l, NULL);
 	  append_int(l, 0);
+	  append_int(l, $10);
 	  $$ = _symbol_create_list( SQL_COPYFROM, l ); }
   | COPY sqlLOADER INTO qname FROM func_ref
 	{ dlist *l = L();
@@ -2881,6 +2884,12 @@ opt_nr:
 opt_null_string:
 	/* empty */		{ $$ = NULL; }
  |  	sqlNULL opt_as string	{ $$ = $3; }
+ ;
+
+opt_escape:
+	/* empty */	{ $$ = TRUE; }		/* ESCAPE is default */
+ |  	ESCAPE		{ $$ = TRUE; }
+ |  	NO ESCAPE	{ $$ = FALSE; }
  ;
 
 opt_locked:
@@ -4514,6 +4523,8 @@ interval_type:
 			int d = inttype2digits(sk, ek);
 			if (tpe == 0){
 				sql_find_subtype(&$$, "month_interval", d, 0);
+			} else if (d == 4) {
+				sql_find_subtype(&$$, "day_interval", d, 0);
 			} else {
 				sql_find_subtype(&$$, "sec_interval", d, 0);
 			}
@@ -4884,6 +4895,8 @@ interval_expression:
 			int d = inttype2digits(sk, ek);
 			if (tpe == 0){
 				r=sql_find_subtype(&t, "month_interval", d, 0);
+			} else if (d == 4) {
+				r=sql_find_subtype(&t, "day_interval", d, 0);
 			} else {
 				r=sql_find_subtype(&t, "sec_interval", d, 0);
 			}

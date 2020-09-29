@@ -61,5 +61,4 @@ void monetdbe_mapi_explain(monetdbe_Mapi mid, FILE *fd);
 void monetdbe_mapi_explain_query(monetdbe_MapiHdl hdl, FILE *fd);
 void monetdbe_mapi_explain_result(monetdbe_MapiHdl hdl, FILE *fd);
 
-
 #endif // MONETDBE_MAPI_H_

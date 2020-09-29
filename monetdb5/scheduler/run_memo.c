@@ -21,27 +21,27 @@
  * for cost evaluation.
  * @example
  *  ...
- *  scheduler.choice("getVolume");
+ *  run_memo.choice("getVolume");
  *  T1:= algebra.join(A,B);
  *  T2:= algebra.join(B,C);
  *  T3:= algebra.join(C,D);
- *  scheduler.choice("getVolume",T1,T2,T3);
+ *  run_memo.choice("getVolume",T1,T2,T3);
  *  T4:= algebra.join(T1,C);
  *  T5:= algebra.join(A,T2);
  *  T6:= algebra.join(T2,D);
  *  T7:= algebra.join(B,T3);
  *  T8:= algebra.join(C,D);
- *  scheduler.choice("getVolume",T4,T5,T6,T7,T8);
+ *  run_memo.choice("getVolume",T4,T5,T6,T7,T8);
  *  T9:= algebra.join(T4,D);
  *  T10:= algebra.join(T5,D);
  *  T11:= algebra.join(A,T6);
  *  T12:= algebra.join(A,T7);
  *  T13:= algebra.join(T1,T8);
- *  scheduler.choice("getVolume",T9,T10,T11,T12,T13);
- *  answer:= scheduler.pick(T9, T10, T11, T12, T13);
+ *  run_memo.choice("getVolume",T9,T10,T11,T12,T13);
+ *  answer:= run_memo.pick(T9, T10, T11, T12, T13);
  * @end example
  *
- * The @code{scheduler.choice()} operator calls a builtin @code{getVolume}
+ * The @code{run_memo.choice()} operator calls a builtin @code{getVolume}
  * for each target variable and expects an integer-valued cost.
  * In this case it returns the total number of bytes uses as arguments.
  *
@@ -67,7 +67,7 @@
  * to avoid any superfluous operation.
  *
  * The MAL block should be privately owned by the caller,
- * which can be assured with @code{scheduler.isolation()}.
+ * which can be assured with @code{run_isolate.isolation()}.
  *
  * A refinement of the scheme is to make cost analysis
  * part of the plan as well. Then you don't have to
@@ -79,7 +79,7 @@
  *  T1cost:= Acost+Bcost;
  *  T2cost:= Bcost+Ccost;
  *  T3cost:= Ccost+Dcost;
- *  scheduler.choice(T1cost,T1, T2cost,T2, T3cost,T3);
+ *  run_memo.choice(T1cost,T1, T2cost,T2, T3cost,T3);
  *  T1:= algebra.join(A,B);
  *  T2:= algebra.join(B,C);
  *  T3:= algebra.join(C,D);
@@ -94,15 +94,27 @@
  * sample implementations to run the tests.
  */
 #include "monetdb_config.h"
-#include "run_memo.h"
+#include "mal.h"
+#include "mal_interpreter.h"
+#include "mal_linker.h"
+#include "mal_client.h"
 #include "mal_runtime.h"
+
+#ifndef _MSC_VER
+#define __declspec(x)
+#endif
+
+extern __declspec(dllexport) str RUNchoice(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
+extern __declspec(dllexport) str RUNvolumeCost(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
+extern __declspec(dllexport) str RUNcostPrediction(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
+extern __declspec(dllexport) str RUNpickResult(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
 
 static void
 propagateNonTarget(MalBlkPtr mb, int pc)
 {
 	int i;
 	InstrPtr p;
-	str scheduler = putName("scheduler");
+	str scheduler = putName("run_memo");
 
 	for (; pc < mb->stop; pc++) {
 		p = getInstrPtr(mb, pc);
@@ -157,7 +169,7 @@ RUNchoice(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 		nme = *getArgReference_str(stk, p, 1);
 		/* should be generalized to allow an arbitrary user defined function */
 		if (strcmp(nme, "getVolume") != 0)
-			throw(MAL, "scheduler.choice", ILLEGAL_ARGUMENT "Illegal cost function");
+			throw(MAL, "run_memo.choice", ILLEGAL_ARGUMENT "Illegal cost function");
 
 		mincost = -1;
 		for (j = 2; j < p->argc; j++) {
@@ -207,13 +219,13 @@ RUNpickResult(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 			if ((rhs)->vtype < TYPE_str)
 				*lhs = *rhs;
 			else if (VALcopy(lhs, rhs) == NULL)
-				throw(MAL, "scheduler.pick", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+				throw(MAL, "run_memo.pick", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			if (lhs->vtype == TYPE_bat)
 				BBPretain(lhs->val.bval);
 			return MAL_SUCCEED;
 		}
 
-	throw(MAL, "scheduler.pick", OPERATION_FAILED "No result available");
+	throw(MAL, "run_memo.pick", OPERATION_FAILED "No result available");
 }
 /*
  * The routine below calculates a cost based on the BAT volume in bytes.
@@ -245,4 +257,3 @@ RUNcostPrediction(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	*cost = 0;
 	return MAL_SUCCEED;
 }
-

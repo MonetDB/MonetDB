@@ -11,13 +11,13 @@ add_library(monetdb5 SHARED
   $<TARGET_OBJECTS:atoms>
   $<TARGET_OBJECTS:malmodules>
   $<TARGET_OBJECTS:kernel>
-  $<TARGET_OBJECTS:optimizer>
-  $<TARGET_OBJECTS:scheduler>)
+  $<TARGET_OBJECTS:optimizer>)
 
 target_link_libraries(monetdb5
     PRIVATE
     mutils
     mcrypt
+    stream
     mapi
     msabaoth
     ${SOCKET_LIBRARIES}
@@ -39,13 +39,11 @@ if (NOT WIN32)
   if(OPENSSL_FOUND)
     # In OpenSSL case, we link only to the crypto library, so it will be
     # always one library to link to
-    get_filename_component(CRYPTO_LIBRARIES_PATH "${CRYPTO_LIBRARIES}" DIRECTORY)
-    set(PKG_CRYPTO "-L${CRYPTO_LIBRARIES_PATH} -lcrypto")
+    set(PKG_CRYPTO "libcrypto")
   endif()
 
   if(PCRE_FOUND)
-    get_filename_component(PCRE_LIBRARIES_PATH "${PCRE_LIBRARIES}" DIRECTORY)
-    set(PKG_PCRE "-L${PCRE_LIBRARIES_PATH} -lpcre")
+    set(PKG_PCRE "libpcre")
   endif()
 
   configure_file(monetdb5.pc.in

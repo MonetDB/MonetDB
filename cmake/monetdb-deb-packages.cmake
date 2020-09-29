@@ -61,7 +61,7 @@ set(CPACK_COMPONENT_STREAMDEV_DESCRIPTION "MonetDB stream library development fi
  accelerators.  It also has an SQL front end.
  .
  This package contains the files to develop with the
- libmonetdb-stream13 library.")
+ libmonetdb-stream${STREAM_VERSION_MAJOR} library.")
 
 set(CPACK_DEBIAN_CLIENT_PACKAGE_NAME "libmonetdb-client${MAPI_VERSION_MAJOR}")
 set(CPACK_DEBIAN_CLIENT_PACKAGE_DEPENDS "\\\${shlibs:Depends}, \\\${misc:Depends}")
@@ -82,7 +82,7 @@ set(CPACK_COMPONENT_CLIENTDEV_DESCRIPTION "MonetDB client/server interface libra
  automatic index management, extensibility of data types and search
  accelerators.  It also has an SQL front end.
  .
- This package contains the files to develop with the libmonetdb-client12
+ This package contains the files to develop with the libmonetdb-client${MAPI_VERSION_MAJOR}
  library.")
 
 set(CPACK_DEBIAN_MCLIENT_PACKAGE_NAME "monetdb-client")

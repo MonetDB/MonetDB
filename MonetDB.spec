@@ -1,5 +1,5 @@
 %global name MonetDB
-%global version 11.38.0
+%global version 11.40.0
 %{!?buildno: %global buildno %(date +%Y%m%d)}
 
 # Use bcond_with to add a --with option; i.e., "without" is default.
@@ -116,9 +116,14 @@ BuildRequires: gcc
 BuildRequires: bison
 BuildRequires: /usr/bin/python3
 %if %{?rhel:1}%{!?rhel:0}
+# RH 7 (and for readline also 8)
 BuildRequires: bzip2-devel
+BuildRequires: unixODBC-devel
+BuildRequires: readline-devel
 %else
 BuildRequires: pkgconfig(bzip2)
+BuildRequires: pkgconfig(odbc)
+BuildRequires: pkgconfig(readline)
 %endif
 %if %{with fits}
 BuildRequires: pkgconfig(cfitsio)
@@ -128,23 +133,19 @@ BuildRequires: geos-devel >= 3.4.0
 %endif
 BuildRequires: pkgconfig(libcurl)
 BuildRequires: pkgconfig(liblzma)
-# BuildRequires: libmicrohttpd-devel
-BuildRequires: libuuid-devel
+BuildRequires: pkgconfig(uuid)
 BuildRequires: pkgconfig(libxml-2.0)
 BuildRequires: pkgconfig(openssl)
 %if %{with pcre}
 BuildRequires: pkgconfig(libpcre) >= 4.5
 %endif
-BuildRequires: readline-devel
-BuildRequires: unixODBC-devel
-# BuildRequires: uriparser-devel
 BuildRequires: pkgconfig(zlib)
 %if %{with py3integration}
-BuildRequires: python3-devel >= 3.5
+BuildRequires: pkgconfig(python3) >= 3.5
 BuildRequires: python3-numpy
 %endif
 %if %{with rintegration}
-BuildRequires: R-core-devel
+BuildRequires: pkgconfig(libR)
 %endif
 
 %if (0%{?fedora} >= 22)
@@ -358,9 +359,10 @@ developer.
 %{_bindir}/sample0
 %{_bindir}/sample1
 %{_bindir}/sample4
+%{_bindir}/shutdowntest
 %{_bindir}/smack00
 %{_bindir}/smack01
-%{_bindir}/shutdowntest
+%{_bindir}/streamcat
 %{_bindir}/testgetinfo
 %{_bindir}/testStmtAttr
 %{_bindir}/malsample.pl
@@ -518,8 +520,6 @@ exit 0
 %exclude %{_bindir}/stethoscope
 %{_libdir}/libmonetdb5.so.*
 %dir %{_libdir}/monetdb5
-%{_libdir}/monetdb5/microbenchmark.mal
-%{_libdir}/monetdb5/run_*.mal
 %if %{with cintegration}
 %{_libdir}/monetdb5/lib_capi.so
 %endif
@@ -763,7 +763,13 @@ fi
 %setup -q
 
 %build
+%if (0%{?fedora} >= 33)
+# on Fedora 33 we get a crash of the compiler when using -flto, so disable it
+CFLAGS="${CFLAGS:-%optflags} -fno-lto"
+export CFLAGS
+%endif
 %cmake3 \
+	-DRELEASE_VERSION=ON \
 	-DASSERT=OFF \
 	-DCINTEGRATION=%{?with_cintegration:ON}%{!?with_cintegration:OFF} \
 	-DFITS=%{?with_fits:ON}%{!?with_fits:OFF} \
@@ -817,6 +823,10 @@ install -d -m 0775 %{buildroot}%{_rundir}/monetdb
 rm -f %{buildroot}%{_libdir}/*.la
 rm -f %{buildroot}%{_libdir}/monetdb5/*.la
 rm -f %{buildroot}%{_libdir}/monetdb5/lib_opt_sql_append.so
+rm -f %{buildroot}%{_libdir}/monetdb5/run_*.mal
+rm -f %{buildroot}%{_libdir}/monetdb5/lib_run_*.so
+rm -f %{buildroot}%{_libdir}/monetdb5/microbenchmark.mal
+rm -f %{buildroot}%{_libdir}/monetdb5/lib_microbenchmark*.so
 rm -f %{buildroot}%{_bindir}/monetdb_mtest.sh
 rm -rf %{buildroot}%{_datadir}/monetdb # /cmake
 

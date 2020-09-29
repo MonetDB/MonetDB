@@ -37,12 +37,21 @@ if(TESTING)
   target_link_libraries(smack01
     PRIVATE mapi)
 
+  add_executable(streamcat
+    streamcat.c)
+
+  target_link_libraries(streamcat
+    PRIVATE
+    monetdb_config_header
+    stream)
+
   install(TARGETS
     sample0
     sample1
     sample4
     smack00
     smack01
+    streamcat
     RUNTIME
     DESTINATION
     ${CMAKE_INSTALL_BINDIR}

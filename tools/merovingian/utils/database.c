@@ -21,7 +21,7 @@
 #include "database.h"
 
 /* check if dbname matches [A-Za-z0-9-_]+ */
-char* db_validname(char *dbname) {
+char* db_validname(const char *dbname) {
 	size_t c;
 	char buf[8096];
 
@@ -46,7 +46,7 @@ char* db_validname(char *dbname) {
 	return(NULL);
 }
 
-char* db_create(char* dbname) {
+char* db_create(const char* dbname) {
 	sabdb *stats;
 	size_t c;
 	char* e;
@@ -138,7 +138,7 @@ char* db_create(char* dbname) {
 	return(NULL);
 }
 
-char* db_destroy(char* dbname) {
+char* db_destroy(const char* dbname) {
 	sabdb* stats;
 	char* e;
 	char buf[8096];
@@ -180,7 +180,7 @@ char* db_destroy(char* dbname) {
 	return(NULL);
 }
 
-char* db_rename(char *olddb, char *newdb) {
+char* db_rename(const char *olddb, const char *newdb) {
 	char new[1024];
 	char buf[8096];
 	char *p;
@@ -247,7 +247,7 @@ char* db_rename(char *olddb, char *newdb) {
 	return(NULL);
 }
 
-char* db_lock(char *dbname) {
+char* db_lock(const char *dbname) {
 	char *e;
 	sabdb *stats;
 	char path[8096];
@@ -287,7 +287,7 @@ char* db_lock(char *dbname) {
 	return(NULL);
 }
 
-char *db_release(char *dbname) {
+char *db_release(const char *dbname) {
 	char *e;
 	sabdb *stats;
 	char path[8096];

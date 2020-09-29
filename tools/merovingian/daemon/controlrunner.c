@@ -34,9 +34,6 @@
 #include "utils/database.h"
 #include "utils/control.h"
 
-#include "gdk.h"  /* these three for creation of dbs with password */
-#include "mal_authorize.h"
-
 #include "merovingian.h"
 #include "discoveryrunner.h" /* broadcast, remotedb */
 #include "forkmserver.h"
@@ -168,7 +165,7 @@ control_authorise(
 	{
 		Mfprintf(_mero_ctlout, "%s: remote control disabled\n", host);
 		mnstr_printf(fout, "!access denied\n");
-		mnstr_flush(fout);
+		mnstr_flush(fout, MNSTR_FLUSH_DATA);
 		return 0;
 	}
 
@@ -177,7 +174,7 @@ control_authorise(
 	if (!pwd) {
 		Mfprintf(_mero_ctlout, "%s: Allocation failure during authentication\n", host);
 		mnstr_printf(fout, "!allocation failure\n");
-		mnstr_flush(fout);
+		mnstr_flush(fout, MNSTR_FLUSH_DATA);
 		return 0;
 	}
 	if (strcmp(pwd, passwd) != 0) {
@@ -185,13 +182,13 @@ control_authorise(
 		Mfprintf(_mero_ctlout, "%s: permission denied "
 				"(bad passphrase)\n", host);
 		mnstr_printf(fout, "!access denied\n");
-		mnstr_flush(fout);
+		mnstr_flush(fout, MNSTR_FLUSH_DATA);
 		return 0;
 	}
 	free(pwd);
 
 	mnstr_printf(fout, "=OK\n");
-	mnstr_flush(fout);
+	mnstr_flush(fout, MNSTR_FLUSH_DATA);
 
 	return 1;
 }
@@ -200,7 +197,7 @@ control_authorise(
 	do {											\
 		if (fout != NULL) {							\
 			mnstr_printf(fout, P "%s", buf2);		\
-			mnstr_flush(fout);						\
+			mnstr_flush(fout, MNSTR_FLUSH_DATA);						\
 		} else {									\
 			if (send(msgsock, buf2, len, 0) < 0)	\
 				senderror = errno;					\
@@ -224,7 +221,7 @@ control_authorise(
 			}												\
 			if (*q != '\0')									\
 				mnstr_printf(fout, "=%s\n", q);				\
-			mnstr_flush(fout);								\
+			mnstr_flush(fout, MNSTR_FLUSH_DATA);								\
 		}													\
 	} while (0)
 
@@ -442,78 +439,60 @@ static void ctl_handle_client(
 				} else {
 					if (*p != '\0') {
 						pid_t child;
-						if ((child = fork()) == 0) {
-							FILE *secretf;
-							size_t len;
+						int pipes[2];
+						if (pipe(pipes) == -1) {
+							Mfprintf(_mero_ctlerr, "%s: creating pipe failed\n",
+									 origin);
+						} else if ((child = fork()) == 0) {
+							/* this is the child process; exit non-zero
+							 * on failure */
 							char *err;
-							char *vaultkey;
-							opt *set = malloc(sizeof(opt) * 2);
-							int setlen = 0;
 							char *sadbfarm;
+							char buf3[8092];
+
+							close(pipes[1]);
+							dup2(pipes[0], 0);
+							close(pipes[0]);
 
 							if ((err = msab_getDBfarm(&sadbfarm)) != NULL) {
-								Mfprintf(_mero_ctlerr, "%s: internal error: %s\n",
+								Mfprintf(_mero_ctlerr,
+										 "%s: internal error: %s\n",
 										 origin, err);
-								exit(0);
+								exit(EXIT_FAILURE);
 							}
-							snprintf(buf2, sizeof(buf2), "%s/%s", sadbfarm, q);
+							snprintf(buf2, sizeof(buf2),
+									 "monet_vault_key=%s/%s/.vaultkey",
+									 sadbfarm, q);
+							snprintf(buf3, sizeof(buf3), "--dbpath=%s/%s",
+									 sadbfarm, q);
 							free(sadbfarm);
-							setlen = mo_add_option(&set, setlen, opt_cmdline, "gdk_dbpath", buf2);
-							setlen = mo_system_config(&set, setlen);
-							if (BBPaddfarm(buf2, (1 << PERSISTENT) | (1 << TRANSIENT), true) != GDK_SUCCEED) {
-								Mfprintf(_mero_ctlerr, "%s: could not add farm to "
-									"'%s': %d: %s\n", origin, q, errno, strerror(errno));
-								exit(0);
-							}
-							/* the child, pollute scope by loading BBP */
-							if (chdir(q) < 0) {
-								/* Fabian says "Ignore the output.
-								 * The idea is that the stuff below
-								 * will also fail, and therefore emit
-								 * some error, but if that happens,
-								 * the world already is in such a bad
-								 * shape that that most likely isn't
-								 * your biggest problem.
-								 * Hence a (void) probably does.
-								 * If not, a fake if.
-								 * (exit(0) should be fine)."
-								 * (https://www.monetdb.org/pipermail/developers-list/2014-February/004238.html)
-								 */
-								Mfprintf(_mero_ctlerr, "%s: could not chdir to "
-									"'%s': %d: %s\n", origin, q, errno, strerror(errno));
-								exit(0);
-							}
-
-							buf2[0] = '\0';
-							if ((secretf = fopen(".vaultkey", "r")) != NULL) {
-								len = fread(buf2, 1, sizeof(buf2), secretf);
-								buf2[len] = '\0';
-								len = strlen(buf2); /* secret can contain null-bytes */
-								fclose(secretf);
-							}
-							if (GDKinit(set, setlen, 0) != GDK_SUCCEED) {
-								Mfprintf(_mero_ctlerr, "%s: could not "
-										 "initialize database '%s'\n",
-										 origin, q);
-								exit(0);
-							}
-							vaultkey = buf2;
-							if ((err = AUTHunlockVault(vaultkey)) != NULL ||
-								(err = AUTHinitTables(p)) != NULL) {
-								Mfprintf(_mero_ctlerr, "%s: could not setup "
-										"database '%s': %s\n", origin, q, err);
-								freeException(err);
-							} else {
-								/* don't start locked */
-								remove(".maintenance");
-							}
-
-							exit(0); /* return to the parent */
+							execl(_mero_mserver,
+								  _mero_mserver,
+								  "--set",
+								  buf2,
+								  buf3,
+								  "--read-password-initialize-and-exit",
+								  NULL);
+							Mfprintf(_mero_ctlerr,
+									 "%s: cannot start mserver5\n", origin);
+							exit(EXIT_FAILURE);
 						} else if (child > 0) {
+							/* this is the parent process */
+							int status;
+							close(pipes[0]);
+							write(pipes[1], p, strlen(p));
+							write(pipes[1], "\n", 1);
+							close(pipes[1]);
 							/* wait for the child to finish */
-							waitpid(child, NULL, 0);
+							waitpid(child, &status, 0);
+							if (!WIFEXITED(status) || WEXITSTATUS(status) != 0)
+								Mfprintf(_mero_ctlerr,
+										 "%s: initialization of database '%s' failed\n",
+										 origin, q);
 						} else {
-							Mfprintf(_mero_ctlout, "%s: forking failed\n",
+							close(pipes[0]);
+							close(pipes[1]);
+							Mfprintf(_mero_ctlerr, "%s: forking failed\n",
 									 origin);
 						}
 					}
@@ -783,7 +762,7 @@ static void ctl_handle_client(
 						//
 					}
 					e = snapshot_database_stream(q, s);
-					mnstr_flush(s);
+					mnstr_flush(s, MNSTR_FLUSH_DATA);
 				} while (0);
 				if (bs)
 					mnstr_destroy(bs);
@@ -1114,7 +1093,7 @@ static void ctl_handle_client(
 				}
 
 				if (fout != NULL)
-					mnstr_flush(fout);
+					mnstr_flush(fout, MNSTR_FLUSH_DATA);
 
 				if (q == NULL) {
 					Mfprintf(_mero_ctlout, "%s: served status list\n",
@@ -1158,7 +1137,7 @@ static void ctl_handle_client(
 				}
 
 				if (fout != NULL)
-					mnstr_flush(fout);
+					mnstr_flush(fout, MNSTR_FLUSH_DATA);
 
 				pthread_mutex_unlock(&_mero_remotedb_lock);
 
@@ -1251,7 +1230,7 @@ controlRunner(void *d)
 		}
 #endif
 
-		if ((msgsock = accept4(usock, (SOCKPTR) 0, (socklen_t *) 0, SOCK_CLOEXEC)) == -1) {
+		if ((msgsock = accept4(usock, NULL, NULL, SOCK_CLOEXEC)) == -1) {
 			free(p);
 			if (_mero_keep_listening == 0)
 				break;

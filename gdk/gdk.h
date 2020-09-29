@@ -1040,7 +1040,7 @@ BUNtoid(BAT *b, BUN p)
  * to insert BUNs at the end of the BAT, but not to modify anything
  * that already was in there.
  */
-gdk_export BUN BATcount_no_nil(BAT *b);
+gdk_export BUN BATcount_no_nil(BAT *b, BAT *s);
 gdk_export void BATsetcapacity(BAT *b, BUN cnt);
 gdk_export void BATsetcount(BAT *b, BUN cnt);
 gdk_export BUN BATgrows(BAT *b);
@@ -1068,6 +1068,9 @@ gdk_export restrict_t BATgetaccess(BAT *b);
 
 #define BATdirty(b)	(!(b)->batCopiedtodisk ||			\
 			 (b)->batDirtydesc ||				\
+			 (b)->theap.dirty ||				\
+			 ((b)->tvheap != NULL && (b)->tvheap->dirty))
+#define BATdirtydata(b)	(!(b)->batCopiedtodisk ||			\
 			 (b)->theap.dirty ||				\
 			 ((b)->tvheap != NULL && (b)->tvheap->dirty))
 
@@ -1126,7 +1129,7 @@ gdk_export void BATmsync(BAT *b);
 #define NOFARM (-1) /* indicate to GDKfilepath to create relative path */
 
 gdk_export char *GDKfilepath(int farmid, const char *dir, const char *nme, const char *ext);
-gdk_export bool GDKinmemory(void);
+gdk_export bool GDKinmemory(int farmid);
 gdk_export bool GDKembedded(void);
 gdk_export gdk_return GDKcreatedir(const char *nme);
 
@@ -1191,8 +1194,9 @@ static inline void
 BATsettrivprop(BAT *b)
 {
 	assert(!is_oid_nil(b->hseqbase));
-	b->batDirtydesc = true; /* likely already set */
 	assert(is_oid_nil(b->tseqbase) || ATOMtype(b->ttype) == TYPE_oid);
+	if (!b->batDirtydesc)
+		return;
 	if (b->ttype == TYPE_void) {
 		if (is_oid_nil(b->tseqbase)) {
 			b->tnonil = b->batCount == 0;

@@ -56,7 +56,7 @@ malEmbeddedBoot(int workerlimit, int memorylimit, int querytimeout, int sessiont
 		FILE *secretf;
 		size_t len;
 
-		if (GDKinmemory() || GDKgetenv("monet_vault_key") == NULL) {
+		if (GDKinmemory(0) || GDKgetenv("monet_vault_key") == NULL) {
 			/* use a default (hard coded, non safe) key */
 			snprintf(secret, sizeof(secret), "%s", "Xas632jsi2whjds8");
 		} else {
@@ -160,7 +160,7 @@ malEmbeddedReset(void) //remove extra modules and set to non-initialized again
 	setHeartbeat(-1);
 	stopProfiler(0);
 	AUTHreset();
-	if (!GDKinmemory() && !GDKembedded()) {
+	if (!GDKinmemory(0) && !GDKembedded()) {
             	str err = 0;
 
 		if ((err = msab_wildRetreat()) != NULL) {

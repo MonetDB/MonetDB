@@ -21,7 +21,7 @@ void writePropsBuf(confkeyval *ckv, char **buf);
 int readProps(confkeyval *ckv, const char *path);
 int readAllProps(confkeyval *ckv, const char *path);
 void readPropsBuf(confkeyval *ckv, char *buf);
-char *setProp(char *path, char *key, char *val);
+char *setProp(const char *path, const char *key, const char *val);
 
 #endif
 

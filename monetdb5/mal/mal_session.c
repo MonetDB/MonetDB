@@ -119,7 +119,7 @@ MSresetClientPrg(Client cntxt, str mod, str fcn)
  */
 
 str
-MSinitClientPrg(Client cntxt, str mod, str nme)
+MSinitClientPrg(Client cntxt, const char *mod, const char *nme)
 {
 	int idx;
 
@@ -153,7 +153,7 @@ static void
 exit_streams( bstream *fin, stream *fout )
 {
 	if (fout && fout != GDKstdout) {
-		mnstr_flush(fout);
+		mnstr_flush(fout, MNSTR_FLUSH_DATA);
 		close_stream(fout);
 	}
 	if (fin)
@@ -273,7 +273,7 @@ MSscheduleClient(str command, str challenge, bstream *fin, stream *fout, protoco
 			return;
 		}
 
-		if (!GDKinmemory() && !GDKembedded()) {
+		if (!GDKinmemory(0) && !GDKembedded()) {
 			err = msab_getMyStatus(&stats);
 			if (err != NULL) {
 				/* this is kind of awful, but we need to get rid of this
@@ -326,7 +326,7 @@ MSscheduleClient(str command, str challenge, bstream *fin, stream *fout, protoco
 
 		if ((s = setScenario(c, lang)) != NULL) {
 			mnstr_printf(c->fdout, "!%s\n", s);
-			mnstr_flush(c->fdout);
+			mnstr_flush(c->fdout, MNSTR_FLUSH_DATA);
 			GDKfree(s);
 			c->mode = FINISHCLIENT;
 		}

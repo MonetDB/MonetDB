@@ -1336,7 +1336,7 @@ log_create_delta(sql_delta *bat, char tpe, oid id)
 		bat->uvbid = e_bat(b->ttype);
 	if (bat->uibid == BID_NIL || bat->uvbid == BID_NIL)
 		res = LOG_ERR;
-	if (GDKinmemory())
+	if (GDKinmemory(0))
 		return res;
 
 	ok = logger_add_bat(bat_logger, b, bat->name, tpe, id);
@@ -1729,7 +1729,7 @@ log_create_dbat( sql_dbat *bat, char tpe, oid id)
 	BAT *b;
 	gdk_return ok;
 
-	if (GDKinmemory())
+	if (GDKinmemory(0))
 		return LOG_OK;
 
 	b = temp_descriptor(bat->dbid);
@@ -1776,7 +1776,7 @@ log_destroy_delta(sql_trans *tr, sql_delta *b, char tpe, oid id)
 	gdk_return ok = GDK_SUCCEED;
 
 	(void)tr;
-	if (!GDKinmemory() &&
+	if (!GDKinmemory(0) &&
 	    b &&
 	    b->bid &&
 	    b->name &&
@@ -1936,7 +1936,7 @@ log_destroy_dbat(sql_trans *tr, sql_dbat *bat, char tpe, oid id)
 	gdk_return ok = GDK_SUCCEED;
 
 	(void)tr;
-	if (!GDKinmemory() &&
+	if (!GDKinmemory(0) &&
 	    bat &&
 	    bat->dbid &&
 	    bat->dname &&
@@ -2901,7 +2901,7 @@ tr_log_delta( sql_trans *tr, sql_delta *cbat, int cleared, char tpe, oid id)
 	BAT *ins;
 
 	(void)tr;
-	if (GDKinmemory())
+	if (GDKinmemory(0))
 		return LOG_OK;
 
 	assert(tr->parent == gtrans);
@@ -2949,7 +2949,7 @@ tr_log_dbat(sql_trans *tr, sql_dbat *fdb, int cleared, char tpe, oid id)
 	gdk_return ok = GDK_SUCCEED;
 	BAT *db = NULL;
 
-	if (!fdb || GDKinmemory())
+	if (!fdb || GDKinmemory(0))
 		return LOG_OK;
 
 	(void)tr;
@@ -3005,7 +3005,7 @@ snapshot_bat(sql_delta *cbat)
 	if (!cbat->ibase && cbat->cnt > SNAPSHOT_MINSIZE) {
 		BAT *ins = temp_descriptor(cbat->ibid);
 		if(ins) {
-			if (!GDKinmemory() && BATsave(ins) != GDK_SUCCEED) {
+			if (!GDKinmemory(0) && BATsave(ins) != GDK_SUCCEED) {
 				bat_destroy(ins);
 				return LOG_ERR;
 			}

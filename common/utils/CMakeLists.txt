@@ -55,15 +55,14 @@ target_include_directories(mcrypt
   $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}/monetdb>)
 
 target_link_libraries(mcrypt
-  PUBLIC
-  $<$<BOOL:${OPENSSL_FOUND}>:OpenSSL::Crypto>
   PRIVATE
+  $<$<BOOL:${OPENSSL_FOUND}>:OpenSSL::Crypto>
   monetdb_config_header)
 
 if(WIN32)
   target_compile_definitions(mcrypt 
     PRIVATE
-    LIBMAL
+    LIBMONETDB5
     LIBMAPI
     LIBMCRYPT)
 endif()
@@ -92,22 +91,16 @@ target_include_directories(msabaoth
   $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}/monetdb>)
 
 target_link_libraries(msabaoth
-  PUBLIC
+  PRIVATE
   $<$<BOOL:${UUID_FOUND}>:UUID::UUID>
   $<$<BOOL:${OPENSSL_FOUND}>:OpenSSL::Crypto>
-  PRIVATE
   mutils
   monetdb_config_header)
 
 if(WIN32)
   target_compile_definitions(msabaoth
     PRIVATE
-    LIBMAL
-    LIBATOMS
-    LIBKERNEL
     LIBMSABAOTH
-    LIBOPTIMIZER
-    LIBSCHEDULER
     LIBMONETDB5)
 endif()
 
@@ -119,6 +112,13 @@ set_target_properties(msabaoth
 add_library(matomic INTERFACE)
 
 target_include_directories(matomic
+  INTERFACE
+  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
+  $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}/monetdb>)
+
+add_library(mstring INTERFACE)
+
+target_include_directories(mstring
   INTERFACE
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
   $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}/monetdb>)
@@ -154,6 +154,17 @@ install(TARGETS
 
 install(EXPORT matomicTargets
   FILE matomicTargets.cmake
+  NAMESPACE MonetDB::
+  DESTINATION ${EXPORT_TARGET_PATH}
+  COMPONENT monetdbdev)
+
+install(TARGETS
+  mstring
+  EXPORT mstringTargets
+  COMPONENT monetdbdev)
+
+install(EXPORT mstringTargets
+  FILE mstringTargets.cmake
   NAMESPACE MonetDB::
   DESTINATION ${EXPORT_TARGET_PATH}
   COMPONENT monetdbdev)

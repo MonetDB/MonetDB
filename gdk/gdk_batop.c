@@ -2324,7 +2324,7 @@ BATrmprop(BAT *b, enum prop_t idx)
  * non-nil tail value.
  */
 BUN
-BATcount_no_nil(BAT *b)
+BATcount_no_nil(BAT *b, BAT *s)
 {
 	BUN cnt = 0;
 	BUN i, n;
@@ -2332,9 +2332,11 @@ BATcount_no_nil(BAT *b)
 	const char *restrict base;
 	int t;
 	int (*cmp)(const void *, const void *);
+	struct canditer ci;
+	oid hseq = b->hseqbase;
 
 	BATcheck(b, 0);
-	n = BATcount(b);
+	n = canditer_init(&ci, b, s);
 	if (b->tnonil)
 		return n;
 	p = Tloc(b, 0);
@@ -2345,54 +2347,54 @@ BATcount_no_nil(BAT *b)
 		break;
 	case TYPE_bte:
 		for (i = 0; i < n; i++)
-			cnt += !is_bte_nil(((const bte *) p)[i]);
+			cnt += !is_bte_nil(((const bte *) p)[canditer_next(&ci) - hseq]);
 		break;
 	case TYPE_sht:
 		for (i = 0; i < n; i++)
-			cnt += !is_sht_nil(((const sht *) p)[i]);
+			cnt += !is_sht_nil(((const sht *) p)[canditer_next(&ci) - hseq]);
 		break;
 	case TYPE_int:
 		for (i = 0; i < n; i++)
-			cnt += !is_int_nil(((const int *) p)[i]);
+			cnt += !is_int_nil(((const int *) p)[canditer_next(&ci) - hseq]);
 		break;
 	case TYPE_lng:
 		for (i = 0; i < n; i++)
-			cnt += !is_lng_nil(((const lng *) p)[i]);
+			cnt += !is_lng_nil(((const lng *) p)[canditer_next(&ci) - hseq]);
 		break;
 #ifdef HAVE_HGE
 	case TYPE_hge:
 		for (i = 0; i < n; i++)
-			cnt += !is_hge_nil(((const hge *) p)[i]);
+			cnt += !is_hge_nil(((const hge *) p)[canditer_next(&ci) - hseq]);
 		break;
 #endif
 	case TYPE_flt:
 		for (i = 0; i < n; i++)
-			cnt += !is_flt_nil(((const flt *) p)[i]);
+			cnt += !is_flt_nil(((const flt *) p)[canditer_next(&ci) - hseq]);
 		break;
 	case TYPE_dbl:
 		for (i = 0; i < n; i++)
-			cnt += !is_dbl_nil(((const dbl *) p)[i]);
+			cnt += !is_dbl_nil(((const dbl *) p)[canditer_next(&ci) - hseq]);
 		break;
 	case TYPE_str:
 		base = b->tvheap->base;
 		switch (b->twidth) {
 		case 1:
 			for (i = 0; i < n; i++)
-				cnt += base[(var_t) ((const unsigned char *) p)[i] + GDK_VAROFFSET] != '\200';
+				cnt += base[(var_t) ((const unsigned char *) p)[canditer_next(&ci) - hseq] + GDK_VAROFFSET] != '\200';
 			break;
 		case 2:
 			for (i = 0; i < n; i++)
-				cnt += base[(var_t) ((const unsigned short *) p)[i] + GDK_VAROFFSET] != '\200';
+				cnt += base[(var_t) ((const unsigned short *) p)[canditer_next(&ci) - hseq] + GDK_VAROFFSET] != '\200';
 			break;
 #if SIZEOF_VAR_T != SIZEOF_INT
 		case 4:
 			for (i = 0; i < n; i++)
-				cnt += base[(var_t) ((const unsigned int *) p)[i]] != '\200';
+				cnt += base[(var_t) ((const unsigned int *) p)[canditer_next(&ci) - hseq]] != '\200';
 			break;
 #endif
 		default:
 			for (i = 0; i < n; i++)
-				cnt += base[((const var_t *) p)[i]] != '\200';
+				cnt += base[((const var_t *) p)[canditer_next(&ci) - hseq]] != '\200';
 			break;
 		}
 		break;
@@ -2402,10 +2404,10 @@ BATcount_no_nil(BAT *b)
 		if (b->tvarsized) {
 			base = b->tvheap->base;
 			for (i = 0; i < n; i++)
-				cnt += (*cmp)(nil, base + ((const var_t *) p)[i]) != 0;
+				cnt += (*cmp)(nil, base + ((const var_t *) p)[canditer_next(&ci) - hseq]) != 0;
 		} else {
 			for (i = 0, n += i; i < n; i++)
-				cnt += (*cmp)(Tloc(b, i), nil) != 0;
+				cnt += (*cmp)(Tloc(b, canditer_next(&ci) - hseq), nil) != 0;
 		}
 		break;
 	}

@@ -21,7 +21,7 @@ UNION ALL SELECT ALL SUM(ALL 0.12830007105673624234754015560611151158) FROM t0 W
 HAVING (MIN(ALL ((r'946496923')LIKE(CAST(nullif(0.5, 0.03) AS STRING(538)))))) IS NULL;
 ROLLBACK;
 
-SELECT covar_samp(1, - (COALESCE(1, 2)||5)); --error on default, covar_samp between integer and string not possible
+SELECT covar_samp(1, - (COALESCE(1, 2)||5));
 
 START TRANSACTION;
 CREATE TABLE "sys"."t0"("c0" DATE, "c1" DATE, "c2" INTERVAL SECOND NOT NULL,"c3" TIME NOT NULL);
@@ -39,7 +39,7 @@ else coalesce (case coalesce (dayofmonth(timestamp '1970-01-15 10:08:18'), coale
 cast(t0.c3 as double)) then case least(t0.c1, t0.c1) when case t0.c2 when interval '5' month then r'*pf6/+}öq壚,j2\302\205K]sNKk,_%Tu' when 1016331084 then r'0.4'
 else r'*' end then 0.8 end when sql_min(t0.c3, t0.c3) then coalesce (cast(t0.c2 as decimal), "second"(t0.c3), cast(t0.c2 as decimal),
 0.9) when coalesce (cast(t0.c1 as double), 0.2) then 0.0 else 0.0 end, 0.2) end from t0 where (interval '6' month)
-is not null group by cast(dayofmonth(t0.c0) as string(679)), 0.2; --error, on Jun2020 t0.c0 is not aggregated, on default
+is not null group by cast(dayofmonth(t0.c0) as string(679)), 0.2; --error, types sec_interval(0,0) and tinyint(8,0) are not equal
 ROLLBACK;
 
 START TRANSACTION;
@@ -277,3 +277,56 @@ ROLLBACK;
 SELECT CASE WHEN 3 THEN cot(COALESCE(3, 4)) END FROM (values(1),(2)) as t0(c0);
 
 select coalesce(-1129107763, '1415606329') from (values(1),(2)) as t0(c0);
+
+START TRANSACTION;
+CREATE TABLE "sys"."t0" ("c0" TIME NOT NULL, CONSTRAINT "t0_c0_pkey" PRIMARY KEY ("c0"));
+COPY 15 RECORDS INTO "sys"."t0" FROM stdin USING DELIMITERS E'\t',E'\n','"';
+15:11:18
+01:20:22
+13:28:53
+11:33:19
+14:26:05
+10:53:59
+04:52:51
+18:01:33
+11:10:29
+10:53:34
+03:35:48
+03:19:11
+23:13:24
+04:53:25
+22:08:34
+
+CREATE TABLE "sys"."t2" ("c0" TIME);
+COPY 5 RECORDS INTO "sys"."t2" FROM stdin USING DELIMITERS E'\t',E'\n','"';
+07:23:20
+00:19:06
+12:50:37
+00:30:02
+21:01:23
+
+CREATE TABLE "sys"."t3" ("c0" TIME);
+COPY 8 RECORDS INTO "sys"."t3" FROM stdin USING DELIMITERS E'\t',E'\n','"';
+16:58:19
+NULL
+21:19:34
+20:14:42
+16:39:56
+04:19:48
+00:19:06
+16:45:41
+
+CREATE TABLE "sys"."t4" ("c0" INTERVAL SECOND, CONSTRAINT "t4_c0_unique" UNIQUE ("c0"));
+COPY 5 RECORDS INTO "sys"."t4" FROM stdin USING DELIMITERS E'\t',E'\n','"';
+29578044.000
+60548068.000
+57514024.000
+2030212684.000
+1699639666.000
+
+select interval '-1680612084' second from t3 natural join (select t4.c0, (cast(r'*' as boolean)) = false from t2, t0, t4) as sub0 group by t3.c0;
+	--empty
+ROLLBACK;
+
+select cast(interval '29578044' second as time);
+	-- 08:07:24

@@ -49,11 +49,11 @@
 
 #define MAX_SQL_MODULES 128
 static int sql_modules = 0;
-static str sql_module_name[MAX_SQL_MODULES] = {0};
-static unsigned char *sql_module_code[MAX_SQL_MODULES] = {0};
+static const char *sql_module_name[MAX_SQL_MODULES] = {0};
+static const unsigned char *sql_module_code[MAX_SQL_MODULES] = {0};
 
 void
-sql_register(str name, unsigned char *code)
+sql_register(const char *name, const unsigned char *code)
 {
 	assert (sql_modules < MAX_SQL_MODULES);
 	sql_module_name[sql_modules] = name;
@@ -152,7 +152,7 @@ SQLprelude(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		fprintf(stdout, "# MonetDB/SQL module loaded\n");
 		fflush(stdout);		/* make merovingian see this *now* */
 	}
-	if (GDKinmemory() || GDKembedded()) {
+	if (GDKinmemory(0) || GDKembedded()) {
 		s->name = "sql";
 		ms->name = "msql";
 		return MAL_SUCCEED;
@@ -198,7 +198,7 @@ SQLepilogue(void *ret)
 	(void) SQLexit(NULL);
 	/* this function is never called, but for the style of it, we clean
 	 * up our own mess */
-	if (!GDKinmemory() && !GDKembedded()) {
+	if (!GDKinmemory(0) && !GDKembedded()) {
 		res = msab_retreatScenario(m);
 		if (!res)
 			res = msab_retreatScenario(s);
@@ -360,7 +360,7 @@ SQLinit(Client c)
 		MT_lock_unset(&sql_contextLock);
 		throw(SQL,"sql.init",SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
-	if ((SQLnewcatalog = mvc_init(sa, SQLdebug, GDKinmemory() ? store_mem : store_bat, readonly, single_user)) < 0) {
+	if ((SQLnewcatalog = mvc_init(sa, SQLdebug, GDKinmemory(0) ? store_mem : store_bat, readonly, single_user)) < 0) {
 		MT_lock_unset(&sql_contextLock);
 		throw(SQL, "SQLinit", SQLSTATE(42000) "Catalogue initialization failed");
 	}
@@ -421,9 +421,9 @@ SQLinit(Client c)
 		maybeupgrade = 0;
 
 		for (int i = 0; i < sql_modules && !msg; i++) {
-			char *createdb_inline = (char*)sql_module_code[i];
+			const char *createdb_inline = (const char*)sql_module_code[i];
 
-			msg = SQLstatementIntern(c, &createdb_inline, "sql.init", TRUE, FALSE, NULL);
+			msg = SQLstatementIntern(c, createdb_inline, "sql.init", TRUE, FALSE, NULL);
 			if (m->sa)
 				sa_destroy(m->sa);
 			m->sa = NULL;
@@ -431,7 +431,7 @@ SQLinit(Client c)
 		}
 		/* 99_system.sql */
 		if (!msg) {
-			char *createdb_inline = " \
+			const char *createdb_inline = " \
 				create trigger system_update_schemas after update on sys.schemas for each statement call sys_update_schemas(); \
 				create trigger system_update_tables after update on sys._tables for each statement call sys_update_tables(); \
 				update sys.functions set system = true; \
@@ -442,7 +442,7 @@ SQLinit(Client c)
 				UPDATE sys.types     SET schema_id = (SELECT id FROM sys.schemas WHERE name = 'sys') WHERE schema_id = 0 AND schema_id NOT IN (SELECT id from sys.schemas); \
 				UPDATE sys.functions SET schema_id = (SELECT id FROM sys.schemas WHERE name = 'sys') WHERE schema_id = 0 AND schema_id NOT IN (SELECT id from sys.schemas); \
 				";
-			msg = SQLstatementIntern(c, &createdb_inline, "sql.init", TRUE, FALSE, NULL);
+			msg = SQLstatementIntern(c, createdb_inline, "sql.init", TRUE, FALSE, NULL);
 			if (m->sa)
 				sa_destroy(m->sa);
 			m->sa = NULL;
@@ -497,7 +497,7 @@ SQLinit(Client c)
 	if (msg != MAL_SUCCEED)
 		return msg;
 
-	if (GDKinmemory())
+	if (GDKinmemory(0))
 		return MAL_SUCCEED;
 
 	if ((sqllogthread = THRcreate((void (*)(void *)) mvc_logmanager, NULL, MT_THR_DETACHED, "logmanager")) == 0) {
@@ -649,7 +649,7 @@ SQLexitClient(Client c)
 str
 SQLstatement(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	str *expr = getArgReference_str(stk, pci, 1);
+	const char *expr = *getArgReference_str(stk, pci, 1);
 
 	(void) mb;
 
@@ -674,7 +674,7 @@ SQLcompile(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	(void) mb;
 	*ret = NULL;
-	if ((msg = SQLstatementIntern(cntxt, expr, "SQLcompile", FALSE, FALSE, NULL)) != MAL_SUCCEED)
+	if ((msg = SQLstatementIntern(cntxt, *expr, "SQLcompile", FALSE, FALSE, NULL)) != MAL_SUCCEED)
 		return msg;
 	if ((*ret = _STRDUP("SQLcompile")) == NULL)
 		throw(SQL,"sql.compile",SQLSTATE(HY013) MAL_MALLOC_FAIL);
@@ -694,7 +694,6 @@ SQLinclude(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	bstream *bfd;
 	str *name = getArgReference_str(stk, pci, 1);
 	str msg = MAL_SUCCEED, fullname;
-	str *expr;
 	mvc *m;
 	size_t sz;
 
@@ -704,7 +703,7 @@ SQLinclude(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	fd = open_rastream(fullname);
 	if (mnstr_errnr(fd) == MNSTR_OPEN_ERROR) {
 		close_stream(fd);
-		throw(MAL, "sql.include", SQLSTATE(42000) "could not open file: %s\n", *name);
+		throw(MAL, "sql.include", SQLSTATE(42000) "%s\n", mnstr_peek_error(NULL));
 	}
 	sz = getFileSize(fd);
 	if (sz > (size_t) 1 << 29) {
@@ -720,8 +719,7 @@ SQLinclude(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		throw(MAL, "sql.include", SQLSTATE(42000) "could not read %s\n", *name);
 	}
 
-	expr = &bfd->buf;
-	msg = SQLstatementIntern(cntxt, expr, "sql.include", TRUE, FALSE, NULL);
+	msg = SQLstatementIntern(cntxt, bfd->buf, "sql.include", TRUE, FALSE, NULL);
 	bstream_destroy(bfd);
 	m = ((backend *) cntxt->sqlcontext)->mvc;
 	if (m->sa)
@@ -817,7 +815,7 @@ SQLreader(Client c)
 					commit_done = true;
 				}
 
-				if (go && ((!blocked && mnstr_write(c->fdout, c->prompt, c->promptlength, 1) != 1) || mnstr_flush(c->fdout))) {
+				if (go && ((!blocked && mnstr_write(c->fdout, c->prompt, c->promptlength, 1) != 1) || mnstr_flush(c->fdout, MNSTR_FLUSH_DATA))) {
 					go = false;
 					break;
 				}
@@ -928,6 +926,7 @@ SQLparser(Client c)
 		throw(SQL, "SQLparser", SQLSTATE(HY001) MAL_MALLOC_FAIL " for SQL allocator");
 	}
 	opt = 0;
+	preparedid = -1;
 
 	m->emode = m_normal;
 	m->emod = mod_none;

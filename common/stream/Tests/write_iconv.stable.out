@@ -1,0 +1,18 @@
+stdout of test 'write_iconv` in directory 'common/stream` itself:
+
+
+# 15:02:03 >  
+# 15:02:03 >  "/usr/bin/python3" "write_iconv.py" "write_iconv"
+# 15:02:03 >  
+
+Input UTF-8 encoded is b'M\xc3\xb8N\xc3\xabTDB'
+Output is b'M\xc3\xb8N\xc3\xabTDB'
+
+Input UTF-8 encoded is b'M\xc3\xb8N\xc3\xabTDB'
+Output is b'M\xf8N\xebTDB'
+
+
+# 15:02:03 >  
+# 15:02:03 >  "Done."
+# 15:02:03 >  
+

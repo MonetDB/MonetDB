@@ -3356,29 +3356,6 @@ STRtostr(str *res, const str *src)
 }
 
 str
-STRConcat(str *res, const str *val1, const str *val2)
-{
-	size_t l1, l2;
-	const char *s1 = *val1;
-	const char *s2 = *val2;
-
-	if (strNil(s1) || strNil(s2)) {
-		*res = GDKstrdup(str_nil);
-	} else {
-		l1 = strlen(s1);
-		l2 = strlen(s2);
-		if ((*res = GDKmalloc(l1 + l2 + 1)) != NULL) {
-			memcpy(*res, s1, l1);
-			memcpy(*res + l1, s2, l2);
-			(*res)[l1 + l2] = '\0';
-		}
-	}
-	if (*res == NULL)
-		throw(MAL, "str.concat", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-	return MAL_SUCCEED;
-}
-
-str
 STRLength(int *res, const str *arg1)
 {
 	size_t l;
@@ -4256,7 +4233,6 @@ mel_func str_init_funcs[] = {
  command("str", "str", STRtostr, false, "Noop routine.", args(1,2, arg("",str),arg("s",str))),
  command("str", "string", STRTail, false, "Return the tail s[offset..n]\nof a string s[0..n].", args(1,3, arg("",str),arg("s",str),arg("offset",int))),
  command("str", "string", STRSubString, false, "Return substring s[offset..offset+count] of a string s[0..n]", args(1,4, arg("",str),arg("s",str),arg("offset",int),arg("count",int))),
- command("str", "+", STRConcat, false, "Concatenate two strings.", args(1,3, arg("",str),arg("l",str),arg("r",str))),
  command("str", "length", STRLength, false, "Return the length of a string.", args(1,2, arg("",int),arg("s",str))),
  command("str", "nbytes", STRBytes, false, "Return the string length in bytes.", args(1,2, arg("",int),arg("s",str))),
  command("str", "unicodeAt", STRWChrAt, false, "get a unicode character\n(as an int) from a string position.", args(1,3, arg("",int),arg("s",str),arg("index",int))),

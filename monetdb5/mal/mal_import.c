@@ -90,7 +90,7 @@ malLoadScript(str name, bstream **fdin)
 	fd = malOpenSource(name);
 	if (fd == NULL || mnstr_errnr(fd) == MNSTR_OPEN_ERROR) {
 		close_stream(fd);
-		throw(MAL, "malInclude", "could not open file: %s", name);
+		throw(MAL, "malInclude", "could not open file: %s: %s", name, mnstr_peek_error(NULL));
 	}
 	sz = getFileSize(fd);
 	if (sz > (size_t) 1 << 29) {

@@ -22,7 +22,8 @@ class MonetDBD:
     def __init__(self, farmdir, keep=False, set_snapdir=True):
         self.farmdir = farmdir
         self.keep = keep
-        # do not try this at home, but this test depends on it: (see .prepare_dir)
+        # It's generally a bad idea to put the snapshot dir inside the database
+        # farm but this test depends on it, see .prepare_dir
         self.snapdir = os.path.join(farmdir, 'MTESTSNAPS')
         self.qfarmdir = pipes.quote(farmdir)
         self.qsnapdir = pipes.quote(self.snapdir)

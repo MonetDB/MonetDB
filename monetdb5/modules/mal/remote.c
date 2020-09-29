@@ -56,8 +56,6 @@
 #include "monetdb_config.h"
 #include "remote.h"
 
-#include "mal_authorize.h"
-
 /*
  * Technically, these methods need to be serialised per connection,
  * hence a scheduler that interleaves e.g. multiple get calls, simply
@@ -71,7 +69,40 @@
  */
 #ifdef HAVE_MAPI
 
-connection conns = NULL;
+
+
+#include "mal_exception.h"
+#include "mal_interpreter.h"
+#include "mal_function.h" /* for printFunction */
+#include "mal_listing.h"
+#include "mal_instruction.h" /* for getmodule/func macros */
+#include "mal_authorize.h"
+#include "mapi.h"
+#include "mutils.h"
+
+#define RMTT_L_ENDIAN   (0<<1)
+#define RMTT_B_ENDIAN   (1<<1)
+#define RMTT_32_BITS    (0<<2)
+#define RMTT_64_BITS    (1<<2)
+#define RMTT_32_OIDS    (0<<3)
+#define RMTT_64_OIDS    (1<<3)
+
+typedef struct _connection {
+	MT_Lock            lock;      /* lock to avoid interference */
+	str                name;      /* the handle for this connection */
+	Mapi               mconn;     /* the Mapi handle for the connection */
+	unsigned char      type;      /* binary profile of the connection target */
+	size_t             nextid;    /* id counter */
+	struct _connection *next;     /* the next connection in the list */
+} *connection;
+
+#ifndef WIN32
+#include <sys/socket.h> /* socket */
+#include <sys/un.h> /* sockaddr_un */
+#endif
+#include <unistd.h> /* gethostname */
+
+static connection conns = NULL;
 static unsigned char localtype = 0177;
 
 static inline str RMTquery(MapiHdl *ret, const char *func, Mapi conn, const char *query);
@@ -80,7 +111,7 @@ static inline str RMTquery(MapiHdl *ret, const char *func, Mapi conn, const char
  * Returns a BAT with valid redirects for the given pattern.  If
  * merovingian is not running, this function throws an error.
  */
-str RMTresolve(bat *ret, str *pat) {
+static str RMTresolve(bat *ret, str *pat) {
 #ifdef NATIVE_WIN32
 	(void) ret;
 	(void) pat;
@@ -151,8 +182,7 @@ static size_t connection_id = 0;
  * Returns a connection to the given uri.  It always returns a newly
  * created connection.
  */
-static
-str RMTconnectScen(
+static str RMTconnectScen(
 		str *ret,
 		str *ouri,
 		str *user,
@@ -258,7 +288,8 @@ str RMTconnectScen(
 	return(MAL_SUCCEED);
 }
 
-str RMTconnect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
+static str
+RMTconnect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 	(void) cntxt;
 	(void) mb;
 		str* ret	= getArgReference_str(stk, pci, 0);
@@ -278,7 +309,7 @@ str RMTconnect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 		return RMTconnectScen(ret, uri, user, passwd, &scen, columnar);
 }
 
-str
+static str
 RMTconnectTable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	char *local_table;
@@ -337,7 +368,8 @@ RMTconnectTable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
  * system, it only needs to exist for the client (i.e. it was once
  * created).
  */
-str RMTdisconnect(void *ret, str *conn) {
+str
+RMTdisconnect(void *ret, str *conn) {
 	connection c, t;
 
 	if (conn == NULL || *conn == NULL || strcmp(*conn, (str)str_nil) == 0)
@@ -483,7 +515,7 @@ RMTquery(MapiHdl *ret, const char *func, Mapi conn, const char *query) {
 	return(MAL_SUCCEED);
 }
 
-str RMTprelude(void *ret) {
+static str RMTprelude(void *ret) {
 	unsigned int type = 0;
 
 	(void)ret;
@@ -507,7 +539,7 @@ str RMTprelude(void *ret) {
 	return(MAL_SUCCEED);
 }
 
-str RMTepilogue(void *ret) {
+static str RMTepilogue(void *ret) {
 	connection c, t;
 
 	(void)ret;
@@ -531,8 +563,8 @@ str RMTepilogue(void *ret) {
 
 	return(MAL_SUCCEED);
 }
-
-str RMTreadbatheader(stream* sin, char* buf) {
+static str
+RMTreadbatheader(stream* sin, char* buf) {
 		ssize_t sz = 0, rd;
 
 		/* read the JSON header */
@@ -740,7 +772,7 @@ RMTinternalcopyfrom(BAT **ret, char *hdr, stream *in, bool must_flush)
  * get fetches the object referenced by ident over connection conn.
  * We are only interested in retrieving void-headed BATs, i.e. single columns.
  */
-str RMTget(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
+static str RMTget(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 	str conn, ident, tmp, rt;
 	connection c;
 	char qbuf[BUFSIZ + 1];
@@ -874,7 +906,7 @@ str RMTget(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 
 		/* call our remote helper to do this more efficiently */
 		mnstr_printf(sout, "remote.batbincopy(%s);\n", ident);
-		mnstr_flush(sout);
+		mnstr_flush(sout, MNSTR_FLUSH_DATA);
 
 		if ( (tmp = RMTreadbatheader(sin, buf)) != MAL_SUCCEED) {
 			MT_lock_unset(&c->lock);
@@ -936,7 +968,7 @@ str RMTget(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
  * stores the given object on the remote host.  The identifier of the
  * object on the remote host is returned for later use.
  */
-str RMTput(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
+static str RMTput(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 	str conn, tmp;
 	char ident[BUFSIZ];
 	connection c;
@@ -1010,7 +1042,7 @@ str RMTput(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 		mnstr_printf(sout,
 				"%s := remote.batload(:%s, " BUNFMT ");\n",
 				ident, tail, (bid == 0 ? 0 : BATcount(b)));
-		mnstr_flush(sout);
+		mnstr_flush(sout, MNSTR_FLUSH_DATA);
 		GDKfree(tail);
 
 		/* b can be NULL if bid == 0 (only type given, ugh) */
@@ -1047,7 +1079,7 @@ str RMTput(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 		sout = mapi_get_to(c->mconn);
 		mnstr_printf(sout,
 				"%s := nil:%s;\n", ident, typename);
-		mnstr_flush(sout);
+		mnstr_flush(sout, MNSTR_FLUSH_DATA);
 		GDKfree(typename);
 	} else {
 		size_t l;
@@ -1166,7 +1198,7 @@ static str RMTregisterInternal(Client cntxt, const char *conn, const char *mod, 
 	return msg;
 }
 
-str RMTregister(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
+static str RMTregister(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 	const char *conn = *getArgReference_str(stk, pci, 1);
 	const char *mod = *getArgReference_str(stk, pci, 2);
 	const char *fcn = *getArgReference_str(stk, pci, 3);
@@ -1183,7 +1215,7 @@ str RMTregister(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
  * remotely executed function.  This return value can be retrieved using
  * a get call. It handles multiple return arguments.
  */
-str RMTexec(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
+static str RMTexec(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 	str conn, mod, func, tmp;
 	int i;
 	size_t len, buflen;
@@ -1224,7 +1256,6 @@ str RMTexec(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 	/* this call should be a single transaction over the channel*/
 	MT_lock_set(&c->lock);
 
-
 	if(!rcb && pci->argc - pci->retc < 3) /* conn, mod, func, ... */
 		throw(MAL, "remote.exec", ILLEGAL_ARGUMENT  " MAL instruction misses arguments");
 
@@ -1247,7 +1278,7 @@ str RMTexec(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 	len += 2;
 	buflen = len + 1;
 	if ((qbuf = GDKmalloc(buflen)) == NULL)
-		throw(MAL, "remote.exec", SQLSTATE(HY01arg_index) MAL_MALLOC_FAIL);
+		throw(MAL, "remote.exec", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 
 	len = 0;
 
@@ -1262,7 +1293,6 @@ str RMTexec(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 		qbuf[len++] = ')';
 
 	/* build the function invocation string in qbuf */
-
 	if (!rcb && pci->retc > 0) {
 		len += snprintf(&qbuf[len], buflen - len, " := %s.%s(", mod, func);
 	}
@@ -1334,9 +1364,7 @@ str RMTexec(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 
 	if (mhdl)
 		mapi_close_handle(mhdl);
-
 	MT_lock_unset(&c->lock);
-
 	return tmp;
 }
 
@@ -1347,7 +1375,7 @@ str RMTexec(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
  * line is read.  The given size argument is taken as a hint only, and
  * is not enforced to match the number of rows read.
  */
-str RMTbatload(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
+static str RMTbatload(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 	ValPtr v;
 	int t;
 	int size;
@@ -1412,10 +1440,10 @@ str RMTbatload(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 /**
  * dump given BAT to stream
  */
-str RMTbincopyto(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+static str RMTbincopyto(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	bat bid = *getArgReference_bat(stk, pci, 1);
-	BAT *b = BBPquickdesc(bid, false);
+	BAT *b = BBPquickdesc(bid, false), *v = b;
 	char sendtheap = 0;
 
 	(void)mb;
@@ -1429,6 +1457,8 @@ str RMTbincopyto(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		throw(MAL, "remote.bincopyto", MAL_MALLOC_FAIL);
 
 	sendtheap = b->ttype != TYPE_void && b->tvarsized;
+	if (isVIEW(b) && sendtheap && VIEWvtparent(b) && BATcount(b) < BATcount(BBPquickdesc(VIEWvtparent(b), false)))
+		v = COLcopy(b, b->ttype, true, TRANSIENT);
 
 	mnstr_printf(cntxt->fdout, /*JSON*/"{"
 			"\"version\":1,"
@@ -1444,25 +1474,28 @@ str RMTbincopyto(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			"\"tailsize\":%zu,"
 			"\"theapsize\":%zu"
 			"}\n",
-			b->ttype,
-			b->hseqbase, b->tseqbase,
-			b->tsorted, b->trevsorted,
-			b->tkey,
-			b->tnonil,
-			BATtdense(b),
-			b->batCount,
-			(size_t)b->batCount * Tsize(b),
-			sendtheap && b->batCount > 0 ? b->tvheap->free : 0
+			v->ttype,
+			v->hseqbase, v->tseqbase,
+			v->tsorted, v->trevsorted,
+			v->tkey,
+			v->tnonil,
+			BATtdense(v),
+			v->batCount,
+			(size_t)v->batCount * Tsize(v),
+			sendtheap && v->batCount > 0 ? v->tvheap->free : 0
 			);
 
-	if (b->batCount > 0) {
+	if (v->batCount > 0) {
 		mnstr_write(cntxt->fdout, /* tail */
-		Tloc(b, 0), b->batCount * Tsize(b), 1);
+		Tloc(v, 0), v->batCount * Tsize(v), 1);
 		if (sendtheap)
 			mnstr_write(cntxt->fdout, /* theap */
-					Tbase(b), b->tvheap->free, 1);
+					Tbase(v), v->tvheap->free, 1);
 	}
 	/* flush is done by the calling environment (MAL) */
+
+	if (b != v)
+		BBPreclaim(v);
 
 	BBPunfix(bid);
 
@@ -1472,7 +1505,7 @@ str RMTbincopyto(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 /**
  * read from the input stream and give the BAT handle back to the caller
  */
-str RMTbincopyfrom(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
+static str RMTbincopyfrom(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 	BAT *b = NULL;
 	ValPtr v;
 	str err;
@@ -1507,7 +1540,7 @@ str RMTbincopyfrom(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
  * bintype identifies the system on its binary profile.  This is mainly
  * used to determine if BATs can be sent binary across.
  */
-str RMTbintype(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
+static str RMTbintype(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 	int type = 0;
 	(void)mb;
 	(void)stk;
@@ -1538,7 +1571,7 @@ str RMTbintype(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
  * Returns whether the underlying connection is still connected or not.
  * Best effort implementation on top of mapi using a ping.
  */
-str
+static str
 RMTisalive(int *ret, str *conn)
 {
 	str tmp;
@@ -1558,7 +1591,7 @@ RMTisalive(int *ret, str *conn)
 }
 
 // This is basically a no op
-str
+static str
 RMTregisterSupervisor(int *ret, str *sup_uuid, str *query_uuid) {
 	(void)sup_uuid;
 	(void)query_uuid;
@@ -1572,8 +1605,8 @@ mel_func remote_init_funcs[] = {
  command("remote", "prelude", RMTprelude, false, "initialise the remote module", args(1,1, arg("",void))),
  command("remote", "epilogue", RMTepilogue, false, "release the resources held by the remote module", args(1,1, arg("",void))),
  command("remote", "resolve", RMTresolve, false, "resolve a pattern against Merovingian and return the URIs", args(1,2, batarg("",str),arg("pattern",str))),
- pattern("remote", "connect", RMTconnect, false, "returns a newly created connection for uri, using user name and password", args(1,4, arg("",str),arg("uri",str),arg("user",str),arg("passwd",str))),
- pattern("remote", "connect", RMTconnect, false, "returns a newly created connection for uri, using user name, password and scenario", args(1,5, arg("",str),arg("uri",str),arg("user",str),arg("passwd",str),arg("scen",str))),
+ command("remote", "connect", RMTconnect, false, "returns a newly created connection for uri, using user name and password", args(1,4, arg("",str),arg("uri",str),arg("user",str),arg("passwd",str))),
+ command("remote", "connect", RMTconnectScen, false, "returns a newly created connection for uri, using user name, password and scenario", args(1,5, arg("",str),arg("uri",str),arg("user",str),arg("passwd",str),arg("scen",str))),
  pattern("remote", "connect", RMTconnectTable, false, "return a newly created connection for a table. username and password should be in the vault", args(1,3, arg("",str),arg("table",str),arg("schen",str))),
  command("remote", "disconnect", RMTdisconnect, false, "disconnects the connection pointed to by handle (received from a call to connect()", args(1,2, arg("",void),arg("conn",str))),
  pattern("remote", "get", RMTget, false, "retrieves a copy of remote object ident", args(1,3, argany("",0),arg("conn",str),arg("ident",str))),
@@ -1584,7 +1617,7 @@ mel_func remote_init_funcs[] = {
  pattern("remote", "exec", RMTexec, false, "remotely executes <mod>.<func> using the argument list of remote objects and returns the handle to its result", args(1,5, arg("",str),arg("conn",str),arg("mod",str),arg("func",str),vararg("",str))),
  pattern("remote", "exec", RMTexec, false, "remotely executes <mod>.<func> using the argument list of remote objects and returns the handle to its result", args(1,5, vararg("",str),arg("conn",str),arg("mod",str),arg("func",str),vararg("",str))),
  pattern("remote", "exec", RMTexec, false, "remotely executes <mod>.<func> using the argument list of remote objects using and applying function pointer rcb as result handling callback.", args(1,6, vararg("",str),arg("conn",str),arg("mod",str),arg("func",str),arg("rcb",ptr), vararg("",str))),
- pattern("remote", "exec2", RMTexec, false, "remotely executes <mod>.<func> using the argument list of remote objects using and applying function pointer rcb as result handling callback.", args(0,5, arg("conn",str),arg("mod",str),arg("func",str),arg("rcb",ptr), vararg("",str))),
+ pattern("remote", "exec", RMTexec, false, "remotely executes <mod>.<func> using the argument list of remote objects using and applying function pointer rcb as result handling callback.", args(0,5, arg("conn",str),arg("mod",str),arg("func",str),arg("rcb",ptr), vararg("",str))),
  command("remote", "isalive", RMTisalive, false, "check if conn is still valid and connected", args(1,2, arg("",int),arg("conn",str))),
  pattern("remote", "batload", RMTbatload, false, "create a BAT of the given type and size, and load values from the input stream", args(1,3, batargany("",1),argany("tt",1),arg("size",int))),
  pattern("remote", "batbincopy", RMTbincopyto, false, "dump BAT b in binary form to the stream", args(1,2, arg("",void),batargany("b",0))),

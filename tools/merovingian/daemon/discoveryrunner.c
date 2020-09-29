@@ -145,7 +145,7 @@ addRemoteDB(const char *dbname, const char *conn, const int ttl) {
 }
 
 sabdb *
-getRemoteDB(char *database)
+getRemoteDB(const char *database)
 {
 	struct _remotedb dummy = { NULL, NULL, NULL, NULL, 0, NULL };
 	remotedb rdb = NULL;
@@ -282,12 +282,13 @@ unregisterMessageTap(int fd)
 void *
 discoveryRunner(void *d)
 {
-	int sock = *(int *)d;
+	int socks[2];
+	int sock;
 	int s = -1;
 	struct sockaddr_storage peer_addr;
 	socklen_t peer_addr_len;
 #ifdef HAVE_POLL
-	struct pollfd pfd;
+	struct pollfd pfd[2];
 #else
 	fd_set fds;
 	struct timeval tv;
@@ -311,6 +312,9 @@ discoveryRunner(void *d)
 	char buf[512]; /* our packages should be pretty small */
 	char host[128];
 	char service[8];
+
+	socks[0] = ((int *) d)[0];
+	socks[1] = ((int *) d)[1];
 
 	/* start shouting around that we're here ;) request others to tell
 	 * what databases they have */
@@ -336,7 +340,10 @@ discoveryRunner(void *d)
 						"discovery services disabled\n", e);
 				free(e);
 				free(ckv);
-				closesocket(sock);
+				if (socks[0] >= 0)
+					closesocket(socks[0]);
+				if (socks[1] >= 0)
+					closesocket(socks[1]);
 				return NULL;
 			}
 
@@ -401,15 +408,39 @@ discoveryRunner(void *d)
 
 		peer_addr_len = sizeof(struct sockaddr_storage);
 		/* Wait up to 5 seconds. */
+		sock = -1;
 		for (s = 0; s < 5; s++) {
 #ifdef HAVE_POLL
-			pfd = (struct pollfd) {.fd = sock, .events = POLLIN};
-			nread = poll(&pfd, 1, 1000);
+			int npoll = 0;
+			if (socks[0] >= 0)
+				pfd[npoll++] = (struct pollfd) {.fd = socks[0],
+												.events = POLLIN};
+			if (socks[1] >= 0)
+				pfd[npoll++] = (struct pollfd) {.fd = socks[1],
+												.events = POLLIN};
+			nread = poll(pfd, npoll, 1000);
+			if (nread > 0) {
+				for (int i = 0; i < npoll; i++) {
+					if (pfd[i].revents & POLLIN) {
+						sock = pfd[i].fd;
+						break;
+					}
+				}
+				break;
+			}
 #else
 			FD_ZERO(&fds);
-			FD_SET(sock, &fds);
+			if (socks[0] >= 0)
+				FD_SET(socks[0], &fds);
+			if (socks[1] >= 0)
+				FD_SET(socks[1], &fds);
 			tv = (struct timeval) {.tv_sec = 1};
-			nread = select(sock + 1, &fds, NULL, NULL, &tv);
+			nread = select((socks[0] > socks[1] ? socks[0] : socks[1]) + 1,
+						   &fds, NULL, NULL, &tv);
+			if (nread > 0) {
+				sock = socks[0] >= 0 && FD_ISSET(socks[0], &fds) ? socks[0] : socks[1];
+				break;
+			}
 #endif
 			if (nread != 0)
 				break;
@@ -513,8 +544,14 @@ discoveryRunner(void *d)
 	}
   breakout:
 
-	shutdown(sock, SHUT_WR);
-	closesocket(sock);
+	if (socks[0] >= 0) {
+		shutdown(socks[0], SHUT_WR);
+		closesocket(socks[0]);
+	}
+	if (socks[1] >= 0) {
+		shutdown(socks[1], SHUT_WR);
+		closesocket(socks[1]);
+	}
 
 	/* now notify of imminent absence ;) */
 

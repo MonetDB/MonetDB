@@ -48,7 +48,14 @@ def main():
         arch = 'x86'
         libcrypto = ''
         vcpkg = r'C:\vcpkg\installed\x86-windows\{}'
-    vs = '2019'
+    with open('CMakeCache.txt') as cache:
+        for line in cache:
+            if line.startswith('CMAKE_GENERATOR_INSTANCE:INTERNAL='):
+                comdir = line.split('=', 1)[1].strip().replace('/', '\\')
+                break
+        else:
+            comdir = r'C:\Program Files (x86)\Microsoft Visual Studio\2019\Community'
+    msvc = os.path.join(comdir, r'VC\Redist\MSVC')
     features = []
     extend = []
     debug = []
@@ -102,7 +109,6 @@ def main():
     print(r'    <Property Id="ARPPRODUCTICON" Value="share\monetdb.ico"/>')
     print(r'    <Media Id="1" Cabinet="monetdb.cab" EmbedCab="yes"/>')
     print(r'    <Directory Id="TARGETDIR" Name="SourceDir">')
-    msvc = r'C:\Program Files (x86)\Microsoft Visual Studio\{}\Community\VC\Redist\MSVC'.format(vs)
     d = sorted(os.listdir(msvc))[-1]
     msm = '_CRT_{}.msm'.format(arch)
     for f in sorted(os.listdir(os.path.join(msvc, d, 'MergeModules'))):
@@ -165,11 +171,9 @@ def main():
     print(r'            <Directory Id="lib" Name="lib">')
     print(r'              <Directory Id="monetdb5" Name="monetdb5">')
     id = comp(features, id, 16,
-              [r'lib\monetdb5\microbenchmark.mal'])
-    id = comp(features, id, 16,
-              [r'lib\monetdb5\{}'.format(x) for x in sorted(filter(lambda x: x.startswith('_') and x.endswith('.dll') and ('geom' not in x) and ('pyapi' not in x) and ('opt_sql_append' not in x), os.listdir(os.path.join(sys.argv[3], 'lib', 'monetdb5'))))])
+              [r'lib\monetdb5\{}'.format(x) for x in sorted(filter(lambda x: x.startswith('_') and x.endswith('.dll') and ('geom' not in x) and ('pyapi' not in x) and ('opt_sql_append' not in x) and ('run_' not in x) and ('microbenchmark' not in x), os.listdir(os.path.join(sys.argv[3], 'lib', 'monetdb5'))))])
     id = comp(debug, id, 16,
-              [r'lib\monetdb5\{}'.format(x) for x in sorted(filter(lambda x: x.startswith('_') and x.endswith('.pdb') and ('geom' not in x) and ('opt_sql_append' not in x), os.listdir(os.path.join(sys.argv[3], 'lib', 'monetdb5'))))])
+              [r'lib\monetdb5\{}'.format(x) for x in sorted(filter(lambda x: x.startswith('_') and x.endswith('.pdb') and ('geom' not in x) and ('opt_sql_append' not in x) and ('run_' not in x) and ('microbenchmark' not in x), os.listdir(os.path.join(sys.argv[3], 'lib', 'monetdb5'))))])
     id = comp(geom, id, 16,
               [r'lib\monetdb5\{}'.format(x) for x in sorted(filter(lambda x: x.startswith('_') and (x.endswith('.dll') or x.endswith('.pdb')) and ('geom' in x), os.listdir(os.path.join(sys.argv[3], 'lib', 'monetdb5'))))])
     id = comp(pyapi3, id, 16,

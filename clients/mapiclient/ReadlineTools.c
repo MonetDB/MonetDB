@@ -12,6 +12,8 @@
 #include "monetdb_config.h"
 
 #ifdef HAVE_LIBREADLINE
+#include <fcntl.h>
+#include <unistd.h>
 
 #include <readline/readline.h>
 #include <readline/history.h>
@@ -39,7 +41,7 @@ static const char *sql_commands[] = {
 
 static Mapi _mid;
 static char _history_file[FILENAME_MAX];
-static int _save_history = 0;
+static bool _save_history = false;
 static const char *language;
 
 static char *
@@ -289,8 +291,104 @@ continue_completion(rl_completion_func_t * func)
 	rl_attempted_completion_function = func;
 }
 
+static void
+readline_show_error(const char *msg) {
+	rl_save_prompt();
+	rl_message(msg);
+	rl_restore_prompt();
+	rl_clear_message();
+}
+
+#ifndef BUFFER_SIZE
+#define BUFFER_SIZE 1024
+#endif
+
+static int
+invoke_editor(int cnt, int key) {
+	char template[] = "/tmp/mclient_temp_XXXXXX";
+	char editor_command[BUFFER_SIZE];
+	char *read_buff = NULL;
+	char *editor = NULL;
+	FILE *fp;
+	size_t content_len;
+	size_t read_bytes, idx;
+
+	(void) cnt;
+	(void) key;
+
+	if ((fp = fdopen(mkstemp(template), "r+")) == NULL) {
+		// Notify the user that we cannot create temp file
+		readline_show_error("invoke_editor: Cannot create temp file\n");
+		goto bailout;
+	}
+
+	fwrite(rl_line_buffer, sizeof(char), rl_end, fp);
+	fflush(fp);
+
+	editor = getenv("VISUAL");
+	if (editor == NULL) {
+		editor = getenv("EDITOR");
+		if (editor == NULL) {
+			readline_show_error("invoke_editor: EDITOR/VISUAL env variable not set\n");
+			goto bailout;
+		}
+	}
+
+	snprintf(editor_command, BUFFER_SIZE, "%s %s", editor, template);
+	if (system(editor_command) != 0) {
+		readline_show_error("invoke_editor: Starting editor failed\n");
+		goto bailout;
+	}
+
+	fseek(fp, 0L, SEEK_END);
+	content_len = ftell(fp);
+	rewind(fp);
+
+	if (content_len > 0) {
+		read_buff = (char *)malloc(content_len*sizeof(char));
+		if (read_buff == NULL) {
+			readline_show_error("invoke_editor: Cannot allocate memory\n");
+			goto bailout;
+		}
+
+		read_bytes = fread(read_buff, sizeof(char), content_len, fp);
+		if (read_bytes != content_len) {
+			readline_show_error("invoke_editor: Did not read from file correctly\n");
+			goto bailout;
+		}
+
+		*(read_buff + read_bytes) = 0;
+
+		/* Remove trailing whitespace */
+		idx = read_bytes - 1;
+		while(isspace(*(read_buff + idx))) {
+			*(read_buff + idx) = 0;
+			idx--;
+		}
+
+		rl_replace_line(read_buff, 0);
+		rl_point = idx + 1;  // place the point one character after the end of the string
+
+		free(read_buff);
+	} else {
+		rl_replace_line("", 0);
+		rl_point = 0;
+	}
+
+	fclose(fp);
+	unlink(template);
+
+	return 0;
+
+bailout:
+	fclose(fp);
+	free(read_buff);
+	unlink(template);
+	return 1;
+}
+
 void
-init_readline(Mapi mid, const char *lang, int save_history)
+init_readline(Mapi mid, const char *lang, bool save_history)
 {
 	language = lang;
 	_mid = mid;
@@ -308,6 +406,9 @@ init_readline(Mapi mid, const char *lang, int save_history)
 		rl_attempted_completion_function = mal_completion;
 	}
 
+	rl_add_funmap_entry("invoke-editor", invoke_editor);
+	rl_bind_keyseq("\\M-e", invoke_editor);
+
 	if (save_history) {
 		int len;
 		if (getenv("HOME") != NULL) {
@@ -317,7 +418,7 @@ init_readline(Mapi mid, const char *lang, int save_history)
 			if (len == -1 || len >= FILENAME_MAX)
 				fprintf(stderr, "Warning: history filename path is too large\n");
 			else
-				_save_history = 1;
+				_save_history = true;
 		}
 		if (_save_history) {
 			FILE *f;

@@ -15,31 +15,31 @@ target_sources(malmodules
   profiler.c profiler.h
   batExtensions.c
   orderidx.c orderidx.h
-  inspect.c inspect.h
-  manual.c manual.h
+  inspect.c
+  manual.c
   mal_io.c mal_io.h
-  mkey.c mkey.h
+  mkey.c
   manifold.c manifold.h
-  iterator.c  iterator.h
+  iterator.c
   clients.c clients.h
-  factories.c factories.h
-  groupby.c groupby.h
+  factories.c
+  groupby.c
   mdb.c
   pcre.c
-  mat.c mat.h
+  mat.c
   transaction.c
   oltp.c oltp.h
   wlc.c
   mal_mapi.c mal_mapi.h
   remote.c remote.h
-  txtsim.c txtsim.h
+  txtsim.c
   tokenizer.c tokenizer.h
-  sample.c sample.h
+  sample.c
   json_util.c
   querylog.c querylog.h
-  sysmon.c sysmon.h
-  tracer.c tracer.h
-  projectionpath.c  projectionpath.h
+  sysmon.c
+  tracer.c
+  projectionpath.c
   tablet.c tablet.h
   batcalc.c calc.c 
   PUBLIC
@@ -47,28 +47,25 @@ target_sources(malmodules
 
 target_include_directories(malmodules
   PRIVATE
-  $<TARGET_PROPERTY:mal,INCLUDE_DIRECTORIES>
-  $<TARGET_PROPERTY:kernel,INCLUDE_DIRECTORIES>
-  $<TARGET_PROPERTY:mapi,INCLUDE_DIRECTORIES>
+  $<TARGET_PROPERTY:mal,INTERFACE_INCLUDE_DIRECTORIES>
+  $<TARGET_PROPERTY:kernel,INTERFACE_INCLUDE_DIRECTORIES>
+  $<TARGET_PROPERTY:mapi,INTERFACE_INCLUDE_DIRECTORIES>
+  $<TARGET_PROPERTY:atoms,INTERFACE_INCLUDE_DIRECTORIES>
+  $<$<BOOL:${COMMONCRYPTO_FOUND}>:${COMMONCRYPTO_INCLUDE_DIR}>
+  $<$<BOOL:${OPENSSL_FOUND}>:$<TARGET_PROPERTY:OpenSSL::Crypto,INTERFACE_INCLUDE_DIRECTORIES>>
   PUBLIC
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
   $<INSTALL_INTERFACE:${INCLUDEDIR}/monetdb>)
 
 target_compile_definitions(malmodules
   PRIVATE
-  LIBMAL
-  LIBATOMS
-  LIBKERNEL
-  LIBOPTIMIZER
-  LIBSCHEDULER
   LIBMONETDB5)
 
 target_link_libraries(malmodules
-  PUBLIC
+  PRIVATE
   mutils
   $<$<BOOL:${PCRE_FOUND}>:PCRE::PCRE>
   mapi
-  PRIVATE
   monetdb_config_header)
 
 set_target_properties(malmodules

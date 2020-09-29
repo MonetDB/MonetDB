@@ -112,22 +112,28 @@ function user.%2():any;
     remote.exec("_monetdb_0":str, "sql":str, "eval":str, 0x7fffffffdba0:ptr, X_3:str, X_0:str);
     return :void;
 
-regression reference wih changeset d760325d2974
-!ERROR:  Testing FAILED SIGNIFICANTLY (12 out of 2923 tests failed)
+regression reference wih changeset 8b47b465297b
+ !ERROR:  Testing FAILED SIGNIFICANTLY (4 out of 2949 tests failed)
 
-  387 out of 2923 tests could not be executed
-    1 out of 2923 tests caused an abort (assertion failure)
-        sql/test/subquery/subquery6
-   11 out of 2923 tests produced SIGNIFICANTLY different output
-        sql/test/BugTracker-2015/timestamp_convert.Bug-3815
+  394 out of 2949 tests could not be executed
+    4 out of 2949 tests produced SIGNIFICANTLY different output
         sql/test/BugTracker-2017/insert_self_ref_FK.Bug-6131
-        sql/test/BugTracker-2020/interval-math.Bug-6935
-        sql/test/BugTracker-2020/copy-empty-blob.Bug-6948
-        sql/test/SQLancer/sqlancer02
         sql/test/Triggers/trigger_action
         sql/test/Triggers/trigger_projection
-        sql/test/Users/createUserRollback
-        sql/test/json/jsonparser.Bug-6943
         sql/test/mergetables/singlekeyconstraint
-        sql/test/miscellaneous/groupby_error
 
+merge with 8b47b465297b
+ !ERROR:  Testing FAILED SIGNIFICANTLY (10 out of 2949 tests failed)
+
+  394 out of 2949 tests could not be executed
+   10 out of 2949 tests produced SIGNIFICANTLY different output
+        clients/exports
+        sql/test/BugTracker-2017/insert_self_ref_FK.Bug-6131
+        sql/test/BugTracker-2018/remote-table-where-is-null.Bug-6601 // revisions being wrong
+        sql/test/BugTracker-2018/remote-table-where-not-equal.Bug-6621 // revisions being wrong
+        sql/test/BugTracker-2020/remote-table-like.Bug-6841 // revisions being wrong
+        sql/test/Triggers/trigger_action
+        sql/test/Triggers/trigger_projection
+        sql/test/merge-partitions/mergepart29 // jason header
+        sql/test/mergetables/singlekeyconstraint
+        sql/test/remote/ssbm // jason header

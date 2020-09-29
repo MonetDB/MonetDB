@@ -149,7 +149,7 @@ BATall_grp(BAT *l, BAT *g, BAT *e, BAT *s)
 				} else {
 					next = BUNtail(li, noid);
 				}
-				if (BUNappend(res, next, false) != GDK_SUCCEED)
+				if (tfastins_nocheckVAR(res, i, next, Tsize(res)) != GDK_SUCCEED)
 					goto alloc_fail;
 			}
 		}

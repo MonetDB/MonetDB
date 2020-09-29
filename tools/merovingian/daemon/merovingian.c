@@ -119,8 +119,6 @@ FILE *_mero_ctlout = NULL;
 FILE *_mero_ctlerr = NULL;
 /* broadcast socket for announcements */
 int _mero_broadcastsock = -1;
-/* ipv6 global any bind address constant */
-const struct in6_addr ipv6_any_addr = IN6ADDR_ANY_INIT;
 /* broadcast address/port */
 struct sockaddr_in _mero_broadcastaddr;
 /* hostname of this machine */
@@ -195,10 +193,6 @@ logListener(void *x)
 	do {
 		/* wait max 1 second, tradeoff between performance and being
 		 * able to catch up new logger streams */
-#ifndef HAVE_POLL
-		tv = (struct timeval) {.tv_sec = 1};
-		FD_ZERO(&readfds);
-#endif
 		nfds = 0;
 
 		/* make sure noone is killing or adding entries here */
@@ -220,6 +214,8 @@ logListener(void *x)
 			w->flag |= 1;
 		}
 #else
+		tv = (struct timeval) {.tv_sec = 1};
+		FD_ZERO(&readfds);
 		for (w = d; w != NULL; w = w->next) {
 			if (w->pid <= 0)
 				continue;
@@ -344,17 +340,16 @@ main(int argc, char *argv[])
 	struct sigaction sa;
 	int ret;
 	int lockfd = -1;
-	int sock = -1;
-	int discsock = -1;
+	int socks[3] = {-1, -1, -1};
+	int discsocks[2] = {-1, -1};
 	int unsock = -1;
-	int socku = -1;
 	char* host = NULL;
 	unsigned short port = 0;
 	bool discovery = false;
 	struct stat sb;
 	FILE *oerr = NULL;
 	int thret;
-	char merodontfork = 0;
+	bool merodontfork = false;
 	bool use_ipv6 = false;
 	confkeyval ckv[] = {
 		{"logfile",       strdup("merovingian.log"), 0,                STR},
@@ -363,7 +358,6 @@ main(int argc, char *argv[])
 		{"sockdir",       strdup("/tmp"),          0,                  STR},
 		{"listenaddr",    strdup("localhost"),     0,                  LADDR},
 		{"port",          strdup(MERO_PORT),       atoi(MERO_PORT),    INT},
-		{"ipv6",          strdup("false"),         0,                  BOOLEAN},
 
 		{"exittimeout",   strdup("60"),            60,                 INT},
 		{"forward",       strdup("proxy"),         0,                  OTHER},
@@ -403,8 +397,7 @@ main(int argc, char *argv[])
 			/* Replace the 8 following characters with the characters mserver5.
 			 * This should work even if the executables have prefixes or
 			 * suffixes */
-			int i;
-			for (i = 0; i < 8; i++)
+			for (int i = 0; i < 8; i++)
 				s[i] = "mserver5"[i];
 			if (stat(_mero_mserver, &sb) == -1)
 				_mero_mserver = NULL;
@@ -424,8 +417,6 @@ main(int argc, char *argv[])
 	kv = findConfKey(_mero_db_props, "embedpy3");
 	kv->val = strdup("no");
 	kv = findConfKey(_mero_db_props, "embedc");
-	kv->val = strdup("no");
-	kv = findConfKey(_mero_db_props, "ipv6");
 	kv->val = strdup("no");
 	kv = findConfKey(_mero_db_props, "nclients");
 	kv->val = strdup("64");
@@ -483,7 +474,7 @@ main(int argc, char *argv[])
 			exit(command_set(ckv, argc - 1, &argv[1]));
 		} else if (strcmp(argv[1], "start") == 0) {
 			if (argc > 3 && strcmp(argv[2], "-n") == 0)
-					merodontfork = 1;
+				merodontfork = true;
 			if (argc == 3 + merodontfork) {
 				int len;
 				len = snprintf(dbfarm, sizeof(dbfarm), "%s",
@@ -537,15 +528,17 @@ main(int argc, char *argv[])
 					Mfprintf(stderr, "hmmm, can't detach from controlling tty, "
 							"continuing anyway\n");
 				if((retfd = open("/dev/null", O_RDONLY | O_CLOEXEC)) < 0) {
-					Mfprintf(stderr, "unable to dup stdin\n");
+					Mfprintf(stderr, "unable to dup stdin: %s\n", strerror(errno));
 					return(1);
 				}
 				dup_err = dup2(retfd, 0);
+				if(dup_err == -1) {
+					Mfprintf(stderr, "unable to dup stdin: %s\n", strerror(errno));
+				}
 				close(retfd);
 				close(pfd[0]); /* close unused read end */
 				retfd = pfd[1]; /* store the write end */
 				if(dup_err == -1) {
-					Mfprintf(stderr, "unable to dup stdin\n");
 					return(1);
 				}
 #if !defined(HAVE_PIPE2) || O_CLOEXEC == 0
@@ -642,7 +635,6 @@ main(int argc, char *argv[])
 	}
 	_mero_props = ckv;
 
-	use_ipv6 = getConfNum(_mero_props, "ipv6") == 1;
 	pidfilename = getConfVal(_mero_props, "pidfile");
 
 	p = getConfVal(_mero_props, "forward");
@@ -662,6 +654,17 @@ main(int argc, char *argv[])
 		writeProps(_mero_props, ".");
 	}
 	host = kv->val;
+
+	if (strncmp(host, "127.0.0.1", strlen("127.0.0.1")) == 0 ||
+		strncmp(host, "0.0.0.0", strlen("0.0.0.0")) == 0) {
+		use_ipv6 = false;
+	} else {
+		use_ipv6 = true;
+	}
+
+	if (strncmp(host, "all", strlen("all")) == 0) {
+		host = NULL;
+	}
 
 	kv = findConfKey(_mero_props, "port");
 	if (kv->ival <= 0 || kv->ival > 65535) {
@@ -721,16 +724,21 @@ main(int argc, char *argv[])
 	if ((remove(control_usock) != 0 && errno != ENOENT) ||
 		(remove(mapi_usock) != 0 && errno != ENOENT)) {
 		/* cannot remove socket files */
-		Mfprintf(stderr, "cannot remove socket files\n");
+		Mfprintf(stderr, "cannot remove socket files: %s\n", strerror(errno));
 		MERO_EXIT_CLEAN(1);
 	}
 
+	/* time to initialize the stream library */
+	if (mnstr_init(false) < 0) {
+		Mfprintf(stderr, "cannot initialize stream library\n");
+		MERO_EXIT_CLEAN(1);
+	}
+
+	dpcons = (struct _dpair) {
+		.type = MERO,
+		.fork_lock = PTHREAD_MUTEX_INITIALIZER,
+	};
 	_mero_topdp = &dpcons;
-	_mero_topdp->pid = 0;
-	_mero_topdp->type = MERO;
-	_mero_topdp->dbname = NULL;
-	_mero_topdp->flag = 0;
-	pthread_mutex_init(&_mero_topdp->fork_lock, NULL);
 
 	/* where should our msg output go to? */
 	p = getConfVal(_mero_props, "logfile");
@@ -753,8 +761,13 @@ main(int argc, char *argv[])
 		MERO_EXIT(1);
 	}
 
+	dpmero = (struct _dpair) {
+		.fork_lock = PTHREAD_MUTEX_INITIALIZER,
+		.pid = getpid(),
+		.type = MERO,
+		.dbname = "merovingian",
+	};
 	d = _mero_topdp->next = &dpmero;
-	pthread_mutex_init(&d->fork_lock, NULL);
 
 	/* redirect stdout */
 	if (pipe2(pfd, O_CLOEXEC) == -1) {
@@ -808,12 +821,13 @@ main(int argc, char *argv[])
 		MERO_EXIT(1);
 	}
 
-	d->pid = getpid();
-	d->type = MERO;
-	d->dbname = "merovingian";
-	d->flag = 0;
-
 	/* separate entry for the neighbour discovery service */
+	dpdisc = (struct _dpair) {
+		.fork_lock = PTHREAD_MUTEX_INITIALIZER,
+		.pid = getpid(),
+		.type = MERO,
+		.dbname = "discovery",
+	};
 	d = d->next = &dpdisc;
 	pthread_mutex_init(&d->fork_lock, NULL);
 	if (pipe2(pfd, O_CLOEXEC) == -1) {
@@ -846,13 +860,14 @@ main(int argc, char *argv[])
 				 strerror(errno));
 		MERO_EXIT(1);
 	}
-	d->pid = getpid();
-	d->type = MERO;
-	d->dbname = "discovery";
-	d->next = NULL;
-	d->flag = 0;
 
 	/* separate entry for the control runner */
+	dpcont = (struct _dpair) {
+		.fork_lock = PTHREAD_MUTEX_INITIALIZER,
+		.pid = getpid(),
+		.type = MERO,
+		.dbname = "control",
+	};
 	d = d->next = &dpcont;
 	pthread_mutex_init(&d->fork_lock, NULL);
 	if (pipe2(pfd, O_CLOEXEC) == -1) {
@@ -885,11 +900,6 @@ main(int argc, char *argv[])
 				 strerror(errno));
 		MERO_EXIT(1);
 	}
-	d->pid = getpid();
-	d->type = MERO;
-	d->dbname = "control";
-	d->next = NULL;
-	d->flag = 0;
 
 	if ((thret = pthread_create(&tid, NULL, logListener, NULL)) != 0) {
 		Mfprintf(oerr, "%s: FATAL: unable to create logthread: %s\n",
@@ -965,9 +975,9 @@ main(int argc, char *argv[])
 	Mfprintf(stdout, "monitoring dbfarm %s\n", dbfarm);
 
 	/* open up connections */
-	if ((e = openConnectionTCP(&sock, use_ipv6, host, port, stdout)) == NO_ERR &&
-		(e = openConnectionUNIX(&socku, mapi_usock, 0, stdout)) == NO_ERR &&
-		(!discovery || (e = openConnectionUDP(&discsock, false, host, port)) == NO_ERR) &&
+	if ((e = openConnectionIP(socks, false, use_ipv6, host, port, stdout)) == NO_ERR &&
+		(e = openConnectionUNIX(&socks[2], mapi_usock, 0, stdout)) == NO_ERR &&
+		(!discovery || (e = openConnectionIP(discsocks, true, use_ipv6, host, port, _mero_discout)) == NO_ERR) &&
 		(e = openConnectionUNIX(&unsock, control_usock, S_IRWXO, _mero_ctlout)) == NO_ERR) {
 		pthread_t ctid = 0;
 		pthread_t dtid = 0;
@@ -985,8 +995,11 @@ main(int argc, char *argv[])
 			{
 				Mfprintf(stderr, "cannot create broadcast package, "
 						"discovery services disabled\n");
-				closesocket(discsock);
-				discsock = -1;
+				if (discsocks[0] >= 0)
+					closesocket(discsocks[0]);
+				if (discsocks[1] >= 0)
+					closesocket(discsocks[1]);
+				discsocks[0] = discsocks[1] = -1;
 			}
 #ifndef SOCK_CLOEXEC
 			(void) fcntl(_mero_broadcastsock, F_SETFD, FD_CLOEXEC);
@@ -1012,19 +1025,25 @@ main(int argc, char *argv[])
 					strerror(thret));
 			ctid = 0;
 			closesocket(unsock);
-			if (discsock >= 0)
-				closesocket(discsock);
+			if (discsocks[0] >= 0)
+				closesocket(discsocks[0]);
+			if (discsocks[1] >= 0)
+				closesocket(discsocks[1]);
 			MERO_EXIT(1);
 		}
 
 		/* start neighbour discovery and notification thread */
-		if (discsock >= 0 && (thret = pthread_create(&dtid, NULL,
-					discoveryRunner, (void *)&discsock)) != 0)
+		if ((discsocks[0] >= 0 || discsocks[1] >= 0) &&
+			(thret = pthread_create(&dtid, NULL,
+					discoveryRunner, (void *) discsocks)) != 0)
 		{
 			Mfprintf(stderr, "unable to start neighbour discovery thread: %s\n",
 					strerror(thret));
 			dtid = 0;
-			closesocket(discsock);
+			if (discsocks[0] >= 0)
+				closesocket(discsocks[0]);
+			if (discsocks[1] >= 0)
+				closesocket(discsocks[1]);
 		}
 
 		/* From this point merovingian considers itself to be in position to
@@ -1032,7 +1051,7 @@ main(int argc, char *argv[])
 		MERO_EXIT(0);
 
 		/* handle external connections main loop */
-		e = acceptConnections(sock, socku);
+		e = acceptConnections(socks);
 
 		/* wait for the control runner and discovery thread to have
 		 * finished announcing they're going down */
@@ -1046,7 +1065,7 @@ main(int argc, char *argv[])
 	if (unsock != -1 && remove(control_usock) != 0)
 		Mfprintf(stderr, "unable to remove control socket '%s': %s\n",
 				control_usock, strerror(errno));
-	if (socku != -1 && remove(mapi_usock) != 0)
+	if (socks[2] != -1 && remove(mapi_usock) != 0)
 		Mfprintf(stderr, "unable to remove mapi socket '%s': %s\n",
 				mapi_usock, strerror(errno));
 

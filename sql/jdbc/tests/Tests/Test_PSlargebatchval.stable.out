@@ -16,28 +16,6 @@ stdout of test 'Test_PSlargebatchval` in directory 'sql/jdbc/tests` itself:
 # MonetDB/GIS module loaded
 # MonetDB/SQL module loaded
 
-# SQL catalog created, loading sql scripts once
-# loading sql script: 09_like.sql
-# loading sql script: 10_math.sql
-# loading sql script: 11_times.sql
-# loading sql script: 12_url.sql
-# loading sql script: 13_date.sql
-# loading sql script: 14_inet.sql
-# loading sql script: 15_history.sql
-# loading sql script: 16_tracelog.sql
-# loading sql script: 17_compress.sql
-# loading sql script: 18_dictionary.sql
-# loading sql script: 19_cluster.sql
-# loading sql script: 20_vacuum.sql
-# loading sql script: 21_dependency_functions.sql
-# loading sql script: 22_clients.sql
-# loading sql script: 23_skyserver.sql
-# loading sql script: 24_zorder.sql
-# loading sql script: 25_debug.sql
-# loading sql script: 40_geom.sql
-# loading sql script: 80_udf.sql
-# loading sql script: 99_system.sql
-
 # 12:20:02 >  
 # 12:20:02 >  "./Test_PSlargebatchval.SQL.sh" "Test_PSlargebatchval"
 # 12:20:02 >  
@@ -48,6 +26,10 @@ stdout of test 'Test_PSlargebatchval` in directory 'sql/jdbc/tests` itself:
 # 12:20:02 >  
 
 0. true	true
+1. inserted 1 large string
+2. inserted 1 large clob via StringReader() object
+3. inserted 1 large clob via createClob() object
+3 rows inserted.
 
 # 12:20:02 >  
 # 12:20:02 >  "Done."

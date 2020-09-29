@@ -28,42 +28,25 @@ target_sources(atoms
   ${CMAKE_CURRENT_SOURCE_DIR}/mtime.h)
 
 target_include_directories(atoms
+  PRIVATE
+  $<$<BOOL:${LibXml2_FOUND}>:$<TARGET_PROPERTY:LibXml2::LibXml2,INTERFACE_INCLUDE_DIRECTORIES>>
   PUBLIC
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
   $<INSTALL_INTERFACE:${INCLUDEDIR}/monetdb>)
 
 target_link_libraries(atoms
-  PUBLIC
-  $<$<BOOL:${UUID_FOUND}>:UUID::UUID>
-  stream
   PRIVATE
+  $<$<BOOL:${UUID_FOUND}>:UUID::UUID>
+  $<$<BOOL:${LibXml2_FOUND}>:LibXml2::LibXml2>
+  stream
   monetdb_config_header
   mutils
   bat
   mal)
 
-if(WIN32)
-  target_include_directories(atoms
-    PRIVATE
-    $<$<BOOL:${LibXml2_FOUND}>:${LIBXML2_INCLUDE_DIR}>)
-
-  target_compile_definitions(atoms
-    PRIVATE
-    LIBMAL
-    LIBATOMS
-    LIBKERNEL
-    LIBOPTIMIZER
-    LIBSCHEDULER
-    LIBMONETDB5)
-
-  target_link_libraries(atoms
-    PUBLIC
-    $<$<BOOL:${LibXml2_FOUND}>:${LIBXML2_LIBRARIES}>)
-else()
-  target_link_libraries(atoms
-    PUBLIC
-    $<$<BOOL:${LibXml2_FOUND}>:LibXml2::LibXml2>)
-endif()
+target_compile_definitions(atoms
+  PRIVATE
+  LIBMONETDB5)
 
 set_target_properties(atoms
   PROPERTIES

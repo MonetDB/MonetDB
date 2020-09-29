@@ -1,4 +1,7 @@
 sqlancer01
-sqlancer02
+HAVE_LIBPCRE?sqlancer02
 sqlancer03
 sqlancer04
+sqlancer05
+sqlancer06
+sqlancer07

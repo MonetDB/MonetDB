@@ -42,16 +42,18 @@ qc_delete(qc *cache, cq *q)
 {
 	cq *n, *p = NULL;
 
-	for (n = cache->q; n; p = n, n = n->next) {
-		if (n == q) {
-			if (p) {
-				p->next = q->next;
-			} else {
-				cache->q = q->next;
+	if (cache) {
+		for (n = cache->q; n; p = n, n = n->next) {
+			if (n == q) {
+				if (p) {
+					p->next = q->next;
+				} else {
+					cache->q = q->next;
+				}
+				cq_delete(cache->clientid, q);
+				cache->nr--;
+				break;
 			}
-			cq_delete(cache->clientid, q);
-			cache->nr--;
-			break;
 		}
 	}
 }
@@ -61,24 +63,29 @@ qc_clean(qc *cache)
 {
 	cq *n, *p = NULL;
 
-	for (n = cache->q; n; ) {
-		p = n->next;
-		cq_delete(cache->clientid, n);
-		cache->nr--;
-		n = p;
+	if (cache) {
+		for (n = cache->q; n; ) {
+			p = n->next;
+			cq_delete(cache->clientid, n);
+			cache->nr--;
+			n = p;
+		}
+		cache->q = NULL;
 	}
-	cache->q = NULL;
 }
 
 void
 qc_destroy(qc *cache)
 {
 	cq *q, *n;
-	for (q = cache->q; q; q = n) {
-		n = q->next;
 
-		cq_delete(cache->clientid, q);
-		cache->nr--;
+	if (cache) {
+		for (q = cache->q; q; q = n) {
+			n = q->next;
+
+			cq_delete(cache->clientid, q);
+			cache->nr--;
+		}
 	}
 }
 
@@ -87,10 +94,12 @@ qc_find(qc *cache, int id)
 {
 	cq *q;
 
-	for (q = cache->q; q; q = q->next) {
-		if (q->id == id) {
-			q->count++;
-			return q;
+	if (cache) {
+		for (q = cache->q; q; q = q->next) {
+			if (q->id == id) {
+				q->count++;
+				return q;
+			}
 		}
 	}
 	return NULL;
@@ -104,7 +113,7 @@ qc_insert(qc *cache, sql_allocator *sa, sql_rel *r, symbol *s, list *params, map
 	cq *n = SA_ZNEW(sa, cq);
 	list *res = NULL;
 
-	if (!n || !f)
+	if (!n || !f || !cache)
 		return NULL;
 	n->id = cache->id++;
 	cache->nr++;
@@ -158,5 +167,5 @@ qc_insert(qc *cache, sql_allocator *sa, sql_rel *r, symbol *s, list *params, map
 int
 qc_size(qc *cache)
 {
-	return cache->nr;
+	return cache ? cache->nr : 0;
 }

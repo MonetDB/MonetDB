@@ -208,7 +208,7 @@ BATcheckimprints(BAT *b)
 			Imprints *imprints;
 			const char *nme = BBP_physical(b->batCacheid);
 
-			assert(!GDKinmemory());
+			assert(!GDKinmemory(b->theap.farmid));
 			b->timprints = NULL;
 			if ((imprints = GDKzalloc(sizeof(Imprints))) != NULL &&
 			    (imprints->imprints.farmid = BBPselectfarm(b->batRole, b->ttype, imprintsheap)) >= 0) {
@@ -377,7 +377,7 @@ BATimprints(BAT *b)
 
 	if (b->timprints == NULL) {
 		BUN cnt;
-		const char *nme = GDKinmemory() ? ":inmemory" : BBP_physical(b->batCacheid);
+		const char *nme = GDKinmemory(b->theap.farmid) ? ":memory:" : BBP_physical(b->batCacheid);
 		size_t pages;
 
 		MT_lock_unset(&b->batIdxLock);
@@ -532,7 +532,7 @@ BATimprints(BAT *b)
 		b->timprints = imprints;
 		if (BBP_status(b->batCacheid) & BBPEXISTING &&
 		    !b->theap.dirty &&
-		    !GDKinmemory()) {
+		    !GDKinmemory(b->theap.farmid)) {
 			MT_Id tid;
 			BBPfix(b->batCacheid);
 			char name[MT_NAME_LEN];
@@ -685,7 +685,7 @@ IMPSfree(BAT *b)
 		MT_lock_set(&b->batIdxLock);
 		imprints = b->timprints;
 		if (imprints != NULL && imprints != (Imprints *) 1) {
-			if (GDKinmemory()) {
+			if (GDKinmemory(b->theap.farmid)) {
 				b->timprints = NULL;
 				if (!VIEWtparent(b)) {
 					HEAPfree(&imprints->imprints, true);

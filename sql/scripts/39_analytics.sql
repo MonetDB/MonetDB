@@ -23,13 +23,6 @@ create aggregate stddev_samp(val DOUBLE) returns DOUBLE
 	external name "aggr"."stdev";
 GRANT EXECUTE ON AGGREGATE stddev_samp(DOUBLE) TO PUBLIC;
 
-create aggregate stddev_samp(val INTERVAL SECOND) returns DOUBLE
-	external name "aggr"."stdev";
-GRANT EXECUTE ON AGGREGATE stddev_samp(INTERVAL SECOND) TO PUBLIC;
-create aggregate stddev_samp(val INTERVAL MONTH) returns DOUBLE
-	external name "aggr"."stdev";
-GRANT EXECUTE ON AGGREGATE stddev_samp(INTERVAL MONTH) TO PUBLIC;
-
 create window stddev_samp(val TINYINT) returns DOUBLE
 	external name "sql"."stdev";
 GRANT EXECUTE ON WINDOW stddev_samp(TINYINT) TO PUBLIC;
@@ -48,13 +41,6 @@ GRANT EXECUTE ON WINDOW stddev_samp(REAL) TO PUBLIC;
 create window stddev_samp(val DOUBLE) returns DOUBLE
 	external name "sql"."stdev";
 GRANT EXECUTE ON WINDOW stddev_samp(DOUBLE) TO PUBLIC;
-
-create window stddev_samp(val INTERVAL SECOND) returns DOUBLE
-	external name "sql"."stdev";
-GRANT EXECUTE ON WINDOW stddev_samp(INTERVAL SECOND) TO PUBLIC;
-create window stddev_samp(val INTERVAL MONTH) returns DOUBLE
-	external name "sql"."stdev";
-GRANT EXECUTE ON WINDOW stddev_samp(INTERVAL MONTH) TO PUBLIC;
 
 
 create aggregate stddev_pop(val TINYINT) returns DOUBLE
@@ -76,13 +62,6 @@ create aggregate stddev_pop(val DOUBLE) returns DOUBLE
 	external name "aggr"."stdevp";
 GRANT EXECUTE ON AGGREGATE stddev_pop(DOUBLE) TO PUBLIC;
 
-create aggregate stddev_pop(val INTERVAL SECOND) returns DOUBLE
-	external name "aggr"."stdevp";
-GRANT EXECUTE ON AGGREGATE stddev_pop(INTERVAL SECOND) TO PUBLIC;
-create aggregate stddev_pop(val INTERVAL MONTH) returns DOUBLE
-	external name "aggr"."stdevp";
-GRANT EXECUTE ON AGGREGATE stddev_pop(INTERVAL MONTH) TO PUBLIC;
-
 create window stddev_pop(val TINYINT) returns DOUBLE
 	external name "sql"."stdevp";
 GRANT EXECUTE ON WINDOW stddev_pop(TINYINT) TO PUBLIC;
@@ -101,13 +80,6 @@ GRANT EXECUTE ON WINDOW stddev_pop(REAL) TO PUBLIC;
 create window stddev_pop(val DOUBLE) returns DOUBLE
 	external name "sql"."stdevp";
 GRANT EXECUTE ON WINDOW stddev_pop(DOUBLE) TO PUBLIC;
-
-create window stddev_pop(val INTERVAL SECOND) returns DOUBLE
-	external name "sql"."stdevp";
-GRANT EXECUTE ON WINDOW stddev_pop(INTERVAL SECOND) TO PUBLIC;
-create window stddev_pop(val INTERVAL MONTH) returns DOUBLE
-	external name "sql"."stdevp";
-GRANT EXECUTE ON WINDOW stddev_pop(INTERVAL MONTH) TO PUBLIC;
 
 
 create aggregate var_samp(val TINYINT) returns DOUBLE
@@ -129,13 +101,6 @@ create aggregate var_samp(val DOUBLE) returns DOUBLE
 	external name "aggr"."variance";
 GRANT EXECUTE ON AGGREGATE var_samp(DOUBLE) TO PUBLIC;
 
-create aggregate var_samp(val INTERVAL SECOND) returns DOUBLE
-	external name "aggr"."variance";
-GRANT EXECUTE ON AGGREGATE var_samp(INTERVAL SECOND) TO PUBLIC;
-create aggregate var_samp(val INTERVAL MONTH) returns DOUBLE
-	external name "aggr"."variance";
-GRANT EXECUTE ON AGGREGATE var_samp(INTERVAL MONTH) TO PUBLIC;
-
 create window var_samp(val TINYINT) returns DOUBLE
 	external name "sql"."variance";
 GRANT EXECUTE ON WINDOW var_samp(TINYINT) TO PUBLIC;
@@ -154,13 +119,6 @@ GRANT EXECUTE ON WINDOW var_samp(REAL) TO PUBLIC;
 create window var_samp(val DOUBLE) returns DOUBLE
 	external name "sql"."variance";
 GRANT EXECUTE ON WINDOW var_samp(DOUBLE) TO PUBLIC;
-
-create window var_samp(val INTERVAL SECOND) returns DOUBLE
-	external name "sql"."variance";
-GRANT EXECUTE ON WINDOW var_samp(INTERVAL SECOND) TO PUBLIC;
-create window var_samp(val INTERVAL MONTH) returns DOUBLE
-	external name "sql"."variance";
-GRANT EXECUTE ON WINDOW var_samp(INTERVAL MONTH) TO PUBLIC;
 
 
 create aggregate var_pop(val TINYINT) returns DOUBLE
@@ -181,12 +139,6 @@ GRANT EXECUTE ON AGGREGATE var_pop(REAL) TO PUBLIC;
 create aggregate var_pop(val DOUBLE) returns DOUBLE
 	external name "aggr"."variancep";
 GRANT EXECUTE ON AGGREGATE var_pop(DOUBLE) TO PUBLIC;
-create aggregate var_pop(val INTERVAL SECOND) returns DOUBLE
-	external name "aggr"."variancep";
-GRANT EXECUTE ON AGGREGATE var_pop(INTERVAL SECOND) TO PUBLIC;
-create aggregate var_pop(val INTERVAL MONTH) returns DOUBLE
-	external name "aggr"."variancep";
-GRANT EXECUTE ON AGGREGATE var_pop(INTERVAL MONTH) TO PUBLIC;
 
 create window var_pop(val TINYINT) returns DOUBLE
 	external name "sql"."variancep";
@@ -206,13 +158,6 @@ GRANT EXECUTE ON WINDOW var_pop(REAL) TO PUBLIC;
 create window var_pop(val DOUBLE) returns DOUBLE
 	external name "sql"."variancep";
 GRANT EXECUTE ON WINDOW var_pop(DOUBLE) TO PUBLIC;
-
-create window var_pop(val INTERVAL SECOND) returns DOUBLE
-	external name "sql"."variancep";
-GRANT EXECUTE ON WINDOW var_pop(INTERVAL SECOND) TO PUBLIC;
-create window var_pop(val INTERVAL MONTH) returns DOUBLE
-	external name "sql"."variancep";
-GRANT EXECUTE ON WINDOW var_pop(INTERVAL MONTH) TO PUBLIC;
 
 
 create aggregate covar_samp(e1 TINYINT, e2 TINYINT) returns DOUBLE
@@ -234,13 +179,6 @@ create aggregate covar_samp(e1 DOUBLE, e2 DOUBLE) returns DOUBLE
 	external name "aggr"."covariance";
 GRANT EXECUTE ON AGGREGATE covar_samp(DOUBLE, DOUBLE) TO PUBLIC;
 
-create aggregate covar_samp(e1 INTERVAL SECOND, e2 INTERVAL SECOND) returns DOUBLE
-	external name "aggr"."covariance";
-GRANT EXECUTE ON AGGREGATE covar_samp(INTERVAL SECOND, INTERVAL SECOND) TO PUBLIC;
-create aggregate covar_samp(e1 INTERVAL MONTH, e2 INTERVAL MONTH) returns DOUBLE
-	external name "aggr"."covariance";
-GRANT EXECUTE ON AGGREGATE covar_samp(INTERVAL MONTH, INTERVAL MONTH) TO PUBLIC;
-
 create window covar_samp(e1 TINYINT, e2 TINYINT) returns DOUBLE
 	external name "sql"."covariance";
 GRANT EXECUTE ON WINDOW covar_samp(TINYINT, TINYINT) TO PUBLIC;
@@ -259,13 +197,6 @@ GRANT EXECUTE ON WINDOW covar_samp(REAL, REAL) TO PUBLIC;
 create window covar_samp(e1 DOUBLE, e2 DOUBLE) returns DOUBLE
 	external name "sql"."covariance";
 GRANT EXECUTE ON WINDOW covar_samp(DOUBLE, DOUBLE) TO PUBLIC;
-
-create window covar_samp(e1 INTERVAL SECOND, e2 INTERVAL SECOND) returns DOUBLE
-	external name "sql"."covariance";
-GRANT EXECUTE ON WINDOW covar_samp(INTERVAL SECOND, INTERVAL SECOND) TO PUBLIC;
-create window covar_samp(e1 INTERVAL MONTH, e2 INTERVAL MONTH) returns DOUBLE
-	external name "sql"."covariance";
-GRANT EXECUTE ON WINDOW covar_samp(INTERVAL MONTH, INTERVAL MONTH) TO PUBLIC;
 
 
 create aggregate covar_pop(e1 TINYINT, e2 TINYINT) returns DOUBLE
@@ -287,13 +218,6 @@ create aggregate covar_pop(e1 DOUBLE, e2 DOUBLE) returns DOUBLE
 	external name "aggr"."covariancep";
 GRANT EXECUTE ON AGGREGATE covar_pop(DOUBLE, DOUBLE) TO PUBLIC;
 
-create aggregate covar_pop(e1 INTERVAL SECOND, e2 INTERVAL SECOND) returns DOUBLE
-	external name "aggr"."covariancep";
-GRANT EXECUTE ON AGGREGATE covar_pop(INTERVAL SECOND, INTERVAL SECOND) TO PUBLIC;
-create aggregate covar_pop(e1 INTERVAL MONTH, e2 INTERVAL MONTH) returns DOUBLE
-	external name "aggr"."covariancep";
-GRANT EXECUTE ON AGGREGATE covar_pop(INTERVAL MONTH, INTERVAL MONTH) TO PUBLIC;
-
 create window covar_pop(e1 TINYINT, e2 TINYINT) returns DOUBLE
 	external name "sql"."covariancep";
 GRANT EXECUTE ON WINDOW covar_pop(TINYINT, TINYINT) TO PUBLIC;
@@ -312,13 +236,6 @@ GRANT EXECUTE ON WINDOW covar_pop(REAL, REAL) TO PUBLIC;
 create window covar_pop(e1 DOUBLE, e2 DOUBLE) returns DOUBLE
 	external name "sql"."covariancep";
 GRANT EXECUTE ON WINDOW covar_pop(DOUBLE, DOUBLE) TO PUBLIC;
-
-create window covar_pop(e1 INTERVAL SECOND, e2 INTERVAL SECOND) returns DOUBLE
-	external name "sql"."covariancep";
-GRANT EXECUTE ON WINDOW covar_pop(INTERVAL SECOND, INTERVAL SECOND) TO PUBLIC;
-create window covar_pop(e1 INTERVAL MONTH, e2 INTERVAL MONTH) returns DOUBLE
-	external name "sql"."covariancep";
-GRANT EXECUTE ON WINDOW covar_pop(INTERVAL MONTH, INTERVAL MONTH) TO PUBLIC;
 
 
 create aggregate median(val TINYINT) returns TINYINT
@@ -355,6 +272,9 @@ GRANT EXECUTE ON AGGREGATE median(TIMESTAMP) TO PUBLIC;
 create aggregate median(val INTERVAL SECOND) returns INTERVAL SECOND
 	external name "aggr"."median";
 GRANT EXECUTE ON AGGREGATE median(INTERVAL SECOND) TO PUBLIC;
+create aggregate median(val INTERVAL DAY) returns INTERVAL DAY
+	external name "aggr"."median";
+GRANT EXECUTE ON AGGREGATE median(INTERVAL DAY) TO PUBLIC;
 create aggregate median(val INTERVAL MONTH) returns INTERVAL MONTH
 	external name "aggr"."median";
 GRANT EXECUTE ON AGGREGATE median(INTERVAL MONTH) TO PUBLIC;
@@ -394,6 +314,9 @@ GRANT EXECUTE ON AGGREGATE quantile(TIMESTAMP, DOUBLE) TO PUBLIC;
 create aggregate quantile(val INTERVAL SECOND, q DOUBLE) returns INTERVAL SECOND
 	external name "aggr"."quantile";
 GRANT EXECUTE ON AGGREGATE quantile(INTERVAL SECOND, DOUBLE) TO PUBLIC;
+create aggregate quantile(val INTERVAL DAY, q DOUBLE) returns INTERVAL DAY
+	external name "aggr"."quantile";
+GRANT EXECUTE ON AGGREGATE quantile(INTERVAL DAY, DOUBLE) TO PUBLIC;
 create aggregate quantile(val INTERVAL MONTH, q DOUBLE) returns INTERVAL MONTH
 	external name "aggr"."quantile";
 GRANT EXECUTE ON AGGREGATE quantile(INTERVAL MONTH, DOUBLE) TO PUBLIC;
@@ -464,13 +387,6 @@ create aggregate corr(e1 DOUBLE, e2 DOUBLE) returns DOUBLE
 	external name "aggr"."corr";
 GRANT EXECUTE ON AGGREGATE corr(DOUBLE, DOUBLE) TO PUBLIC;
 
-create aggregate corr(e1 INTERVAL SECOND, e2 INTERVAL SECOND) returns DOUBLE
-	external name "aggr"."corr";
-GRANT EXECUTE ON AGGREGATE corr(INTERVAL SECOND, INTERVAL SECOND) TO PUBLIC;
-create aggregate corr(e1 INTERVAL MONTH, e2 INTERVAL MONTH) returns DOUBLE
-	external name "aggr"."corr";
-GRANT EXECUTE ON AGGREGATE corr(INTERVAL MONTH, INTERVAL MONTH) TO PUBLIC;
-
 create window corr(e1 TINYINT, e2 TINYINT) returns DOUBLE
 	external name "sql"."corr";
 GRANT EXECUTE ON WINDOW corr(TINYINT, TINYINT) TO PUBLIC;
@@ -489,10 +405,3 @@ GRANT EXECUTE ON WINDOW corr(REAL, REAL) TO PUBLIC;
 create window corr(e1 DOUBLE, e2 DOUBLE) returns DOUBLE
 	external name "sql"."corr";
 GRANT EXECUTE ON WINDOW corr(DOUBLE, DOUBLE) TO PUBLIC;
-
-create window corr(e1 INTERVAL SECOND, e2 INTERVAL SECOND) returns DOUBLE
-	external name "sql"."corr";
-GRANT EXECUTE ON WINDOW corr(INTERVAL SECOND, INTERVAL SECOND) TO PUBLIC;
-create window corr(e1 INTERVAL MONTH, e2 INTERVAL MONTH) returns DOUBLE
-	external name "sql"."corr";
-GRANT EXECUTE ON WINDOW corr(INTERVAL MONTH, INTERVAL MONTH) TO PUBLIC;

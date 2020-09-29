@@ -8,15 +8,12 @@
 
 #include "monetdb_config.h"
 #include "stream.h"
+#include "mapi.h"
 #include "monetdbe_mapi.h"
 #include "mal_exception.h"
 
 #define MAPIalloc(sz) malloc(sz)
 #define MAPIfree(p)   free(p)
-
-#define MAPI_SEEK_SET	0
-#define MOK		0
-#define MERROR	(-1)
 
 monetdbe_MapiMsg
 monetdbe_mapi_error(monetdbe_Mapi mid)
@@ -74,7 +71,7 @@ monetdbe_mapi_fetch_row(monetdbe_MapiHdl hdl)
 {
 	int n = 0;
 
-	if (hdl && hdl->result && hdl->current_row < hdl->result->nrows) {
+	if (hdl->result && hdl->current_row < hdl->result->nrows) {
 		n = (int) ++hdl->current_row;
 	}
 	return n;
@@ -85,7 +82,7 @@ monetdbe_mapi_fetch_row(monetdbe_MapiHdl hdl)
 char *
 monetdbe_mapi_fetch_field(monetdbe_MapiHdl hdl, int fnr)
 {
-	if (hdl && fnr < (int)hdl->result->ncols && hdl->current_row > 0 && hdl->current_row <= hdl->result->nrows) {
+	if (fnr < (int)hdl->result->ncols && hdl->current_row > 0 && hdl->current_row <= hdl->result->nrows) {
 		monetdbe_column *rcol = NULL;
 		if (monetdbe_result_fetch(hdl->result,  &rcol, fnr) == NULL) {
 			size_t r = (size_t) hdl->current_row - 1;
@@ -178,7 +175,7 @@ monetdbe_mapi_fetch_field(monetdbe_MapiHdl hdl, int fnr)
 char *
 monetdbe_mapi_get_type(monetdbe_MapiHdl hdl, int fnr)
 {
-	if (hdl && fnr < (int)hdl->result->ncols) {
+	if (fnr < (int)hdl->result->ncols) {
 		monetdbe_column *rcol = NULL;
 		if (monetdbe_result_fetch(hdl->result,  &rcol, fnr) == NULL) {
 			switch(rcol->type) {
@@ -213,7 +210,7 @@ monetdbe_mapi_get_type(monetdbe_MapiHdl hdl, int fnr)
 monetdbe_MapiMsg
 monetdbe_mapi_seek_row(monetdbe_MapiHdl hdl, int64_t rowne, int whence)
 {
-	if (hdl && rowne == 0 && whence == MAPI_SEEK_SET) {
+	if (rowne == 0 && whence == MAPI_SEEK_SET) {
 		hdl->current_row = 0;
 	}
 	return MOK;
@@ -222,30 +219,21 @@ monetdbe_mapi_seek_row(monetdbe_MapiHdl hdl, int64_t rowne, int whence)
 int64_t
 monetdbe_mapi_get_row_count(monetdbe_MapiHdl hdl)
 {
-	if (hdl) {
-		return hdl->result->nrows;
-	}
-	return 0;
+	return hdl->result->nrows;
 }
 
 int64_t
 monetdbe_mapi_rows_affected(monetdbe_MapiHdl hdl)
 {
-	if (hdl) {
-		if (hdl->result)
-			return hdl->result->nrows;
-		return hdl->affected_rows;
-	}
-	return 0;
+	if (hdl->result)
+		return hdl->result->nrows;
+	return hdl->affected_rows;
 }
 
 int
 monetdbe_mapi_get_field_count(monetdbe_MapiHdl hdl)
 {
-	if (hdl) {
-		return (int) hdl->result->ncols;
-	}
-	return 0;
+	return (int) hdl->result->ncols;
 }
 
 const char *
@@ -299,7 +287,7 @@ monetdbe_mapi_dump_database(monetdbe_database dbhdl, const char *filename)
 	/* open file stream */
 	stream *fd = open_wastream(filename);
 	if (fd) {
-		if (dump_database(&mid, fd, 0, 0)) {
+		if (dump_database(&mid, fd, 0, 0, false)) {
 			if (mid.msg)
 				msg = mid.msg;
 		}
@@ -320,7 +308,7 @@ monetdbe_mapi_dump_table(monetdbe_database dbhdl, const char *sname, const char 
 	/* open file stream */
 	stream *fd = open_wastream(filename);
 	if (fd) {
-		if (dump_table(&mid, sname, tname, fd, 0, 0, 0, 0)) {
+		if (dump_table(&mid, sname, tname, fd, 0, 0, 0, 0, false)) {
 			if (mid.msg)
 				msg = mid.msg;
 		}

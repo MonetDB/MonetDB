@@ -13,7 +13,7 @@
 
 mal_export str malBootstrap(char *modules[], int embedded);
 mal_export str MSserveClient(Client cntxt);
-mal_export str MSinitClientPrg(Client cntxt, str mod, str nme);
+mal_export str MSinitClientPrg(Client cntxt, const char *mod, const char *nme);
 mal_export void MSscheduleClient(str command, str challenge, bstream *fin, stream *fout, protocol_version protocol, size_t blocksize);
 
 mal_export str MALreader(Client c);
@@ -27,4 +27,3 @@ mal_export void MSresetVariables(Client cntxt, MalBlkPtr mb, MalStkPtr glb, int 
 mal_export int MALcommentsOnly(MalBlkPtr mb);
 
 #endif /*  _MAL_SESSION_H */
-

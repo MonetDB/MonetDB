@@ -40,6 +40,7 @@ static struct msql_types {
 	{"char", SQL_WCHAR},
 	{"clob", SQL_WLONGVARCHAR},
 	{"date", SQL_TYPE_DATE},
+	{"day_interval", SQL_INTERVAL_SECOND},
 	{"decimal", SQL_DECIMAL},
 	{"double", SQL_DOUBLE},
 	{"hugeint", SQL_HUGEINT},

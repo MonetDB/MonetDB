@@ -18,7 +18,7 @@ extern "C" {
 #include <stdint.h>
 
 #ifdef WIN32
-#if !defined(LIBMONETDBE)
+#ifndef LIBMONETDBE
 #define monetdbe_export extern __declspec(dllimport)
 #else
 #define monetdbe_export extern __declspec(dllexport)
@@ -32,7 +32,7 @@ typedef int64_t monetdbe_cnt;
 typedef struct {
 	unsigned char day;
 	unsigned char month;
-	int year;
+	short year;
 } monetdbe_data_date;
 
 typedef struct {

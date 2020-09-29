@@ -6,7 +6,9 @@ debian/tmp/usr/bin/sample4 usr/bin
 debian/tmp/usr/bin/shutdowntest usr/bin
 debian/tmp/usr/bin/smack00 usr/bin
 debian/tmp/usr/bin/smack01 usr/bin
+debian/tmp/usr/bin/streamcat usr/bin
 debian/tmp/usr/bin/testgetinfo usr/bin
+debian/tmp/usr/bin/testStmtAttr usr/bin
 debian/tmp/usr/bin/malsample.pl usr/bin
 debian/tmp/usr/bin/sqlsample.php usr/bin
 debian/tmp/usr/bin/sqlsample.pl usr/bin

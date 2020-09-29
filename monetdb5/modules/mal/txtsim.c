@@ -19,7 +19,10 @@
  *
  */
 #include "monetdb_config.h"
-#include "txtsim.h"
+#include "mal.h"
+#include <string.h>
+#include "gdk.h"
+#include <limits.h>
 #include "mal_exception.h"
 
 
@@ -87,7 +90,7 @@ levenshtein_PutAt(int *pOrigin, int col, int row, int nCols, int x)
 /******************************
  * Compute Levenshtein distance
  *****************************/
-str
+static str
 levenshtein_impl(int *result, str *S, str *T, int *insdel_cost, int *replace_cost, int *transpose_cost)
 {
 	char *s = *S;
@@ -182,7 +185,7 @@ levenshtein_impl(int *result, str *S, str *T, int *insdel_cost, int *replace_cos
 	return MAL_SUCCEED;
 }
 
-str
+static str
 levenshteinbasic_impl(int *result, str *s, str *t)
 {
 	int insdel = 1, replace = 1, transpose = 2;
@@ -190,7 +193,7 @@ levenshteinbasic_impl(int *result, str *s, str *t)
 	return levenshtein_impl(result, s, t, &insdel, &replace, &transpose);
 }
 
-str
+static str
 levenshteinbasic2_impl(int *result, str *s, str *t)
 {
 	int insdel = 1, replace = 1, transpose = 1;
@@ -261,7 +264,7 @@ soundex_code(char *Name, char *Key)
 }
 
 
-str
+static str
 soundex_impl(str *res, str *Name)
 {
 	RETURN_NIL_IF(strNil(*Name), TYPE_str);
@@ -276,7 +279,7 @@ soundex_impl(str *res, str *Name)
 	return MAL_SUCCEED;
 }
 
-str
+static str
 stringdiff_impl(int *res, str *s1, str *s2)
 {
 	str r = MAL_SUCCEED;
@@ -307,7 +310,7 @@ stringdiff_impl(int *res, str *s1, str *s2)
  * qgramnormalize(" '' t ' est").print(); --> [ "T EST" ]
  *
  *****************************/
-str
+static str
 CMDqgramnormalize(str *res, str *Input)
 {
 	char *input = *Input;
@@ -806,7 +809,7 @@ compareseq(int xoff, int xlim, int yoff, int ylim, int minimal)
 	strings are identical, and a number in between if they are
 	similar.  */
 
-str
+static str
 fstrcmp_impl(dbl *ret, str *S1, str *S2, dbl *minimum)
 {
 	char *string1 = *S1;
@@ -875,7 +878,7 @@ fstrcmp_impl(dbl *ret, str *S1, str *S2, dbl *minimum)
 	return MAL_SUCCEED;
 }
 
-str
+static str
 fstrcmp0_impl(dbl *ret, str *string1, str *string2)
 {
 	double min = 0.0;
@@ -886,7 +889,7 @@ fstrcmp0_impl(dbl *ret, str *string1, str *string2)
 
 /* ============ Q-GRAM SELF JOIN ============== */
 
-str
+static str
 CMDqgramselfjoin(bat *res1, bat *res2, bat *qid, bat *bid, bat *pid, bat *lid, flt *c, int *k)
 {
 	BAT *qgram, *id, *pos, *len;
@@ -1040,7 +1043,7 @@ utf8strncpy(char *buf, size_t bufsize, const char *src, size_t utf8len)
 	return cnt;
 }
 
-str
+static str
 CMDstr2qgrams(bat *ret, str *val)
 {
 	BAT *bn;

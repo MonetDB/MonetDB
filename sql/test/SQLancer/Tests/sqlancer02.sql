@@ -208,7 +208,7 @@ NULL	1970-01-23
 "1970-01-22 20:43:07.000000"	1970-01-16
 "1970-01-08 05:11:41.000000"	1970-01-14
 
-create view v0(c0) as (select t0.c2 from t0 where (t0.c2) not between asymmetric (date '1970-01-23') and (case when r'㏥' then t0.c2 when case true when (true) = true then substr(r' x+㶴9rr7긬X0陷?F5{W>gg0N*#Sꖿs', 1) end then nullif(t0.c2, t0.c2) end));
+create view v0(c0) as (select t0.c2 from t0 where (t0.c2) not between asymmetric (date '1970-01-23') and (case when r'true' then t0.c2 when case true when (true) = true then substr(r' x+㶴9rr7긬X0陷?F5{W>gg0N*#Sꖿs', 1) end then nullif(t0.c2, t0.c2) end));
 SELECT 1 FROM v0 JOIN t0 ON '4321901' LIKE CAST(COALESCE(TIME '21:08:38', TIME '14:42:56') AS STRING);
 	-- empty
 SELECT ALL t0.c0, v0.c0 FROM v0 JOIN t0 ON ((upper(COALESCE(r'', r'4321901')))ILIKE(CAST(COALESCE(sql_max(TIME '05:11:41', TIME '21:08:38'), COALESCE(TIME '05:10:13', TIME '14:42:56'), sql_min(TIME '16:14:39', TIME '03:01:13')) AS STRING(586))));

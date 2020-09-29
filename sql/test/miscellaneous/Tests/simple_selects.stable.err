@@ -262,6 +262,10 @@ MAPI  = (monetdb) /var/tmp/mtest-518219/.s.monetdb.30518
 QUERY = select cast(92233720368547750 as interval second); --error, overflow in conversion for interval second
 ERROR = !types bigint(57,0) and sec_interval(13,0) are not equal
 CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-493793/.s.monetdb.35088
+QUERY = select cast(13121 as varchar(2147483647)) || cast(231231 as varchar(2147483647)); --error, too big
+ERROR = !SELECT: output number of digits for concat is too large
+CODE  = 42000
 
 # 17:31:38 >  
 # 17:31:38 >  "Done."

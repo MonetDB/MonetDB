@@ -9,5 +9,5 @@ copy into blobtbl from stdin delimiters ',','\n','"';
 3,
 
 -- This should return 4 rows
-select * form blobtbl;
+select * from blobtbl;
 rollback;

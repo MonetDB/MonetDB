@@ -316,7 +316,7 @@ BBPselectfarm(role_t role, int type, enum heaptype hptype)
 	(void) type;		/* may use in future */
 	(void) hptype;		/* may use in future */
 
-	if (GDKinmemory())
+	if (GDKinmemory(0))
 		return 0;
 
 #ifndef PERSISTENTHASH
@@ -328,7 +328,7 @@ BBPselectfarm(role_t role, int type, enum heaptype hptype)
 		role = TRANSIENT;
 #endif
 	for (i = 0; i < MAXFARMS; i++)
-		if (BBPfarms[i].dirname && BBPfarms[i].roles & (1 << (int) role))
+		if (BBPfarms[i].roles & (1U << (int) role))
 			return i;
 	/* must be able to find farms for TRANSIENT and PERSISTENT */
 	assert(role != TRANSIENT && role != PERSISTENT);
@@ -502,7 +502,7 @@ fixdateheap(BAT *b, const char *anme)
 		bnme++;
 	else
 		bnme = nme;
-	sprintf(filename, "BACKUP%c%s", DIR_SEP, bnme);
+	snprintf(filename, sizeof(filename), "BACKUP%c%s", DIR_SEP, bnme);
 
 	/* we don't maintain index structures */
 	HASHdestroy(b);
@@ -1105,14 +1105,17 @@ BBPheader(FILE *fp, int *lineno)
 }
 
 bool
-GDKinmemory(void)
+GDKinmemory(int farmid)
 {
-	return BBPfarms[0].dirname == NULL;
+	if (farmid == NOFARM)
+		farmid = 0;
+	assert(farmid >= 0 && farmid < MAXFARMS);
+	return BBPfarms[farmid].dirname == NULL;
 }
 
 /* all errors are fatal */
 gdk_return
-BBPaddfarm(const char *dirname, int rolemask, bool logerror)
+BBPaddfarm(const char *dirname, uint32_t rolemask, bool logerror)
 {
 	struct stat st;
 	int i;
@@ -1134,7 +1137,9 @@ BBPaddfarm(const char *dirname, int rolemask, bool logerror)
 			GDKerror("bad rolemask\n");
 		return GDK_FAIL;
 	}
-	if (mkdir(dirname, MONETDB_DIRMODE) < 0) {
+	if (strcmp(dirname, ":memory:") == 0) {
+		dirname = NULL;
+	} else if (mkdir(dirname, MONETDB_DIRMODE) < 0) {
 		if (errno == EEXIST) {
 			if (stat(dirname, &st) == -1 || !S_ISDIR(st.st_mode)) {
 				if (logerror)
@@ -1148,17 +1153,20 @@ BBPaddfarm(const char *dirname, int rolemask, bool logerror)
 		}
 	}
 	for (i = 0; i < MAXFARMS; i++) {
-		if (BBPfarms[i].dirname == NULL) {
-			BBPfarms[i].dirname = GDKstrdup(dirname);
-			if (BBPfarms[i].dirname == NULL)
-				return GDK_FAIL;
+		if (BBPfarms[i].roles == 0) {
+			if (dirname) {
+				BBPfarms[i].dirname = GDKstrdup(dirname);
+				if (BBPfarms[i].dirname == NULL)
+					return GDK_FAIL;
+			}
 			BBPfarms[i].roles = rolemask;
-			if ((rolemask & 1) == 0) {
+			if ((rolemask & 1) == 0 && dirname != NULL) {
 				char *bbpdir;
 				int j;
 
 				for (j = 0; j < i; j++)
-					if (strcmp(BBPfarms[i].dirname,
+					if (BBPfarms[j].dirname != NULL &&
+					    strcmp(BBPfarms[i].dirname,
 						   BBPfarms[j].dirname) == 0)
 						return GDK_SUCCEED;
 				/* if an extra farm, make sure we
@@ -1214,7 +1222,7 @@ BBPinit(void)
 	 * array */
 	static_assert((uint64_t) N_BBPINIT * BBPINIT < (UINT64_C(1) << (3 * (sizeof(BBP[0][0].bak) - 5))), "\"bak\" array in BBPrec is too small");
 
-	if (!GDKinmemory()) {
+	if (!GDKinmemory(0)) {
 		str bbpdirstr, backupbbpdirstr;
 
 		if (!(bbpdirstr = GDKfilepath(0, BATDIR, "BBP", "dir"))) {
@@ -1295,7 +1303,7 @@ BBPinit(void)
 	memset(BBP, 0, sizeof(BBP));
 	ATOMIC_SET(&BBPsize, 1);
 
-	if (GDKinmemory()) {
+	if (GDKinmemory(0)) {
 		bbpversion = GDKLIBRARY;
 	} else {
 		bbpversion = BBPheader(fp, &lineno);
@@ -1305,7 +1313,7 @@ BBPinit(void)
 
 	BBPextend(0, false);		/* allocate BBP records */
 
-	if (!GDKinmemory()) {
+	if (!GDKinmemory(0)) {
 		ATOMIC_SET(&BBPsize, 1);
 		if (BBPreadEntries(fp, bbpversion, lineno) != GDK_SUCCEED)
 			return GDK_FAIL;
@@ -1318,7 +1326,7 @@ BBPinit(void)
 	}
 
 	/* will call BBPrecover if needed */
-	if (!GDKinmemory() && BBPprepare(false) != GDK_SUCCEED) {
+	if (!GDKinmemory(0) && BBPprepare(false) != GDK_SUCCEED) {
 		TRC_CRITICAL(GDK, "cannot properly prepare process %s. Please check whether your disk is full or write-protected", BAKDIR);
 		return GDK_FAIL;
 	}
@@ -1412,6 +1420,7 @@ BBPexit(void)
 						}
 						VIEWdestroy(b);
 					} else {
+						PROPdestroy(b);
 						BATfree(b);
 					}
 				}
@@ -1482,10 +1491,10 @@ new_bbpentry(FILE *fp, bat i)
 	assert(BBP_desc(i)->batCacheid == i);
 	assert(BBP_desc(i)->batRole == PERSISTENT);
 	assert(0 <= BBP_desc(i)->theap.farmid && BBP_desc(i)->theap.farmid < MAXFARMS);
-	assert(BBPfarms[BBP_desc(i)->theap.farmid].roles & (1 << PERSISTENT));
+	assert(BBPfarms[BBP_desc(i)->theap.farmid].roles & (1U << PERSISTENT));
 	if (BBP_desc(i)->tvheap) {
 		assert(0 <= BBP_desc(i)->tvheap->farmid && BBP_desc(i)->tvheap->farmid < MAXFARMS);
-		assert(BBPfarms[BBP_desc(i)->tvheap->farmid].roles & (1 << PERSISTENT));
+		assert(BBPfarms[BBP_desc(i)->tvheap->farmid].roles & (1U << PERSISTENT));
 	}
 #endif
 
@@ -1714,15 +1723,14 @@ BBPdump(void)
 		if (b == NULL)
 			continue;
 		fprintf(stderr,
-			"# %d[%s]: nme='%s' refs=%d lrefs=%d "
-			"status=%u count=" BUNFMT,
+			"# %d: " ALGOBATFMT " "
+			"refs=%d lrefs=%d "
+			"status=%u",
 			i,
-			ATOMname(b->ttype),
-			BBP_logical(i) ? BBP_logical(i) : "<NULL>",
+			ALGOBATPAR(b),
 			BBP_refs(i),
 			BBP_lrefs(i),
-			BBP_status(i),
-			b->batCount);
+			BBP_status(i));
 		if (b->batSharecnt > 0)
 			fprintf(stderr, " shares=%d", b->batSharecnt);
 		if (b->batDirtydesc)
@@ -1731,9 +1739,10 @@ BBPdump(void)
 			fprintf(stderr, " Theap -> %d", b->theap.parentid);
 		} else {
 			fprintf(stderr,
-				" Theap=[%zu,%zu]%s",
+				" Theap=[%zu,%zu,f=%d]%s",
 				HEAPmemsize(&b->theap),
 				HEAPvmsize(&b->theap),
+				b->theap.farmid,
 				b->theap.dirty ? "(Dirty)" : "");
 			if (BBP_logical(i) && BBP_logical(i)[0] == '.') {
 				cmem += HEAPmemsize(&b->theap);
@@ -1752,9 +1761,10 @@ BBPdump(void)
 					b->tvheap->parentid);
 			} else {
 				fprintf(stderr,
-					" Tvheap=[%zu,%zu]%s",
+					" Tvheap=[%zu,%zu,f=%d]%s",
 					HEAPmemsize(b->tvheap),
 					HEAPvmsize(b->tvheap),
+					b->tvheap->farmid,
 					b->tvheap->dirty ? "(Dirty)" : "");
 				if (BBP_logical(i) && BBP_logical(i)[0] == '.') {
 					cmem += HEAPmemsize(b->tvheap);
@@ -1768,7 +1778,9 @@ BBPdump(void)
 		if (b->thash && b->thash != (Hash *) 1) {
 			size_t m = HEAPmemsize(&b->thash->heaplink) + HEAPmemsize(&b->thash->heapbckt);
 			size_t v = HEAPvmsize(&b->thash->heaplink) + HEAPvmsize(&b->thash->heapbckt);
-			fprintf(stderr, " Thash=[%zu,%zu]", m, v);
+			fprintf(stderr, " Thash=[%zu,%zu,f=%d/%d]", m, v,
+				b->thash->heaplink.farmid,
+				b->thash->heapbckt.farmid);
 			if (BBP_logical(i) && BBP_logical(i)[0] == '.') {
 				cmem += m;
 				cvm += v;
@@ -1777,9 +1789,8 @@ BBPdump(void)
 				vm += v;
 			}
 		}
-		fprintf(stderr, " role: %s, persistence: %s\n",
-			b->batRole == PERSISTENT ? "persistent" : "transient",
-			b->batTransient ? "transient" : "persistent");
+		fprintf(stderr, " role: %s\n",
+			b->batRole == PERSISTENT ? "persistent" : "transient");
 	}
 	fprintf(stderr,
 		"# %d bats: mem=%zu, vm=%zu %d cached bats: mem=%zu, vm=%zu\n",
@@ -2017,7 +2028,7 @@ BBPinsert(BAT *bn)
 	BBP_logical(i) = BBP_bak(i);
 
 	/* Keep the physical location around forever */
-	if (!GDKinmemory() && *BBP_physical(i) == 0) {
+	if (!GDKinmemory(0) && *BBP_physical(i) == 0) {
 		BBPgetsubdir(dirname, i);
 
 		if (*dirname)	/* i.e., i >= 0100 */
@@ -2444,7 +2455,7 @@ decref(bat i, bool logical, bool releaseShare, bool lock, const char *func)
 	 * if they have been made cold or are not dirty */
 	if (BBP_refs(i) > 0 ||
 	    (BBP_lrefs(i) > 0 &&
-	     (b == NULL || BATdirty(b) || !(BBP_status(i) & BBPPERSISTENT) || GDKinmemory()))) {
+	     (b == NULL || BATdirtydata(b) || !(BBP_status(i) & BBPPERSISTENT) || GDKinmemory(b->theap.farmid)))) {
 		/* bat cannot be swapped out */
 	} else if (b ? b->batSharecnt == 0 : (BBP_status(i) & BBPTMP)) {
 		/* bat will be unloaded now. set the UNLOADING bit
@@ -2634,7 +2645,7 @@ BBPsave(BAT *b)
 	bat bid = b->batCacheid;
 	gdk_return ret = GDK_SUCCEED;
 
-	if (BBP_lrefs(bid) == 0 || isVIEW(b) || !BATdirty(b)) {
+	if (BBP_lrefs(bid) == 0 || isVIEW(b) || !BATdirtydata(b)) {
 		/* do nothing */
 		if (b->thash && b->thash != (Hash *) 1 &&
 		    (b->thash->heaplink.dirty || b->thash->heapbckt.dirty))

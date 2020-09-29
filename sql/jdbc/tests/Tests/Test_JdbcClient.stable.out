@@ -63,7 +63,7 @@ OPTIONS
 -Xoutput      The output mode when dumping.  Default is sql, xml may be used for
               an experimental XML output.
 -Xhash        Use the given hash algorithm during challenge response.  Supported
-              algorithm names: SHA1, MD5, plain.
+              algorithm names: SHA512, SHA384, SHA256 and SHA1.
 -Xdebug       Writes a transmission log to disk for debugging purposes.  If a
               file name is given, it is used, otherwise a file called
               monet<timestamp>.log is created.  A given file never be

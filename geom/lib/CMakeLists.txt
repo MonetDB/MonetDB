@@ -15,16 +15,19 @@ if(GEOS_FOUND)
     libgeom.h)
 
   target_include_directories(geomlib
+    PRIVATE
+    $<TARGET_PROPERTY:mal,INTERFACE_INCLUDE_DIRECTORIES>
     PUBLIC
-    $<TARGET_PROPERTY:mal,INCLUDE_DIRECTORIES>
+    $<TARGET_PROPERTY:Geos::Geos,INTERFACE_INCLUDE_DIRECTORIES>
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
-    $<INSTALL_INTERFACE:${INCLUDEDIR}/monetdb>)
+    $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}/monetdb>)
 
   target_link_libraries(geomlib
     PRIVATE
     mutils
     stream
     bat
+    monetdb_config_header
     Geos::Geos
     $<$<BOOL:${PROJ_FOUND}>:PROJ::PROJ>)
 

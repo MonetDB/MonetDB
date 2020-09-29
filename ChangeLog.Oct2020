@@ -1,0 +1,27 @@
+# ChangeLog file for devel
+# This file is updated with Maddlog
+
+* Mon Aug 10 2020 Ying Zhang <y.zhang@cwi.nl>
+- Finished a first version of the new monitoring function
+  user_statistics(), which is only intended for the DBAs.
+  For each database user who has logged in during the current mserver5
+  session, it returns
+  "username": login name of the database user,
+  "querycount": the number of queries this user has executed since his/her
+      first login,
+  "totalticks": the total execution time (in microsecond) of the queries ran
+      by this user,
+  "maxquery": the query with the longest execution time (if two queries have
+      the same execution time, the newer overwrites the older),
+  "maxticks": the execution time of the 'maxquery' (in microsecond),
+  "started": the start timestamp of the 'maxquery',
+  "finished": the finish timestamp of the 'maxquery'.
+
+* Wed Jun 10 2020 Sjoerd Mullender <sjoerd@acm.org>
+- Removed support for LiDAR data, that is the SQL procedures
+  sys.lidarattach, sys.lidarload, and sys.lidarexport.
+
+* Thu Apr  2 2020 Martin Kersten <mk@cwi.nl>
+- The sys.queue() has been turned into a circular buffer to allow for
+  inspection of both active, paused and recently executed queries.
+

@@ -99,7 +99,7 @@ main(void)
 
 	// Assumes the existance of a table test (x INT, y STRING)  on the remote.
 	monetdbe_statement *stmt = NULL;
-	if ((err = monetdbe_prepare(mdbe, "SELECT y, x, 1 AS some_fixed_int FROM test WHERE x = ?", &stmt)) != NULL)
+	if ((err = monetdbe_prepare(mdbe, "SELECT y, x, 1 AS some_fixed_int FROM test WHERE x = ?;", &stmt)) != NULL)
 		error(err)
 
 	int x = 100;

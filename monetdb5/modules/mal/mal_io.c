@@ -611,12 +611,12 @@ IOexport(void *ret, bat *bid, str *fnme)
 	s = open_wastream(*fnme);
 	if (s == NULL ){
 		BBPunfix(b->batCacheid);
-		throw(MAL, "io.export", RUNTIME_FILE_NOT_FOUND ":%s", *fnme);
+		throw(MAL, "io.export", "%s", mnstr_peek_error(NULL));
 	}
 	if (mnstr_errnr(s)) {
 		mnstr_close(s);
 		BBPunfix(b->batCacheid);
-		throw(MAL, "io.export", RUNTIME_FILE_NOT_FOUND ":%s", *fnme);
+		throw(MAL, "io.export", "%s", mnstr_peek_error(NULL));
 	}
     BATprintcolumns(s, 1, &b);
 	close_stream(s);
@@ -670,26 +670,26 @@ IOimport(void *ret, bat *bid, str *fnme)
 			BBPunfix(b->batCacheid);
 			fclose(fp);
 			GDKfree(buf);
-			throw(MAL, "io.import", OPERATION_FAILED " fileno()");
+			throw(MAL, "io.import", OPERATION_FAILED ": fileno()");
 		}
 		if (fstat(fn, &st) != 0) {
 			BBPunfix(b->batCacheid);
 			fclose(fp);
 			GDKfree(buf);
-			throw(MAL, "io.imports", OPERATION_FAILED "fstat()");
+			throw(MAL, "io.imports", OPERATION_FAILED ": fstat()");
 		}
 
 		(void) fclose(fp);
 		if (st.st_size <= 0) {
 			BBPunfix(b->batCacheid);
 			GDKfree(buf);
-			throw(MAL, "io.imports", OPERATION_FAILED "Empty file");
+			throw(MAL, "io.imports", OPERATION_FAILED ": empty file");
 		}
 #if SIZEOF_SIZE_T == SIZEOF_INT
-		if (st.st_size > (off_t) ~ (size_t) 0) {
+		if (st.st_size > 0x7FFFFFFF) {
 			BBPunfix(b->batCacheid);
 			GDKfree(buf);
-			throw(MAL, "io.imports", OPERATION_FAILED "File too large");
+			throw(MAL, "io.imports", OPERATION_FAILED ": file too large");
 		}
 #endif
 		base = cur = (char *) GDKmmap(*fnme, MMAP_SEQUENTIAL, (size_t) st.st_size);

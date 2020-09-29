@@ -320,7 +320,7 @@ rel_inserts(mvc *sql, sql_table *t, sql_rel *r, list *collist, size_t rowcount, 
 				sql_column *c = m->data;
 				sql_exp *e;
 
-				e = exps_bind_column2( r->exps, c->t->base.name, c->base.name);
+				e = exps_bind_column2(r->exps, c->t->base.name, c->base.name, NULL);
 				if (e) {
 					if (inserts[c->colnr])
 						return sql_error(sql, 02, SQLSTATE(42000) "%s: column '%s' specified more than once", action, c->base.name);
@@ -1291,7 +1291,7 @@ merge_into_table(sql_query *query, dlist *qname, str alias, symbol *tref, symbol
 					join_rel = rel_dup(join_rel);
 				} else {
 					join_rel = rel_crossproduct(sql->sa, joined, bt, op_left);
-					if (!(join_rel = rel_logical_exp(query, join_rel, search_cond, sql_where | sql_join | sql_merge)))
+					if (!(join_rel = rel_logical_exp(query, join_rel, search_cond, sql_where | sql_join)))
 						return NULL;
 					set_processed(join_rel);
 				}
@@ -1328,7 +1328,7 @@ merge_into_table(sql_query *query, dlist *qname, str alias, symbol *tref, symbol
 					join_rel = rel_dup(join_rel);
 				} else {
 					join_rel = rel_crossproduct(sql->sa, joined, bt, op_left);
-					if (!(join_rel = rel_logical_exp(query, join_rel, search_cond, sql_where | sql_join | sql_merge)))
+					if (!(join_rel = rel_logical_exp(query, join_rel, search_cond, sql_where | sql_join)))
 						return NULL;
 					set_processed(join_rel);
 				}
@@ -1369,7 +1369,7 @@ merge_into_table(sql_query *query, dlist *qname, str alias, symbol *tref, symbol
 				join_rel = rel_dup(join_rel);
 			} else {
 				join_rel = rel_crossproduct(sql->sa, joined, bt, op_left);
-				if (!(join_rel = rel_logical_exp(query, join_rel, search_cond, sql_where | sql_join | sql_merge)))
+				if (!(join_rel = rel_logical_exp(query, join_rel, search_cond, sql_where | sql_join)))
 					return NULL;
 				set_processed(join_rel);
 			}
@@ -1443,7 +1443,7 @@ table_column_names_and_defaults(sql_allocator *sa, sql_table *t)
 }
 
 static sql_rel *
-rel_import(mvc *sql, sql_table *t, const char *tsep, const char *rsep, const char *ssep, const char *ns, const char *filename, lng nr, lng offset, int locked, int best_effort, dlist *fwf_widths, int onclient)
+rel_import(mvc *sql, sql_table *t, const char *tsep, const char *rsep, const char *ssep, const char *ns, const char *filename, lng nr, lng offset, int locked, int best_effort, dlist *fwf_widths, int onclient, int escape)
 {
 	sql_rel *res;
 	list *exps, *args;
@@ -1451,7 +1451,7 @@ rel_import(mvc *sql, sql_table *t, const char *tsep, const char *rsep, const cha
 	sql_subtype tpe;
 	sql_exp *import;
 	sql_schema *sys = mvc_bind_schema(sql, "sys");
-	sql_subfunc *f = sql_find_func(sql->sa, sys, "copyfrom", 12, F_UNION, NULL);
+	sql_subfunc *f = sql_find_func(sql->sa, sys, "copyfrom", 13, F_UNION, NULL);
 	char *fwf_string = NULL;
 
 	if (!f) /* we do expect copyfrom to be there */
@@ -1483,18 +1483,20 @@ rel_import(mvc *sql, sql_table *t, const char *tsep, const char *rsep, const cha
 
 	append( args, exp_atom_str(sql->sa, filename, &tpe));
 	import = exp_op(sql->sa,
-	append(
-		append(
-			append(
-				append(
 					append(
-						append( args,
-							exp_atom_lng(sql->sa, nr)),
-							exp_atom_lng(sql->sa, offset)),
-							exp_atom_int(sql->sa, locked)),
-							exp_atom_int(sql->sa, best_effort)),
-							exp_atom_str(sql->sa, fwf_string, &tpe)),
-							exp_atom_int(sql->sa, onclient)), f);
+						append(
+							append(
+								append(
+									append(
+										append(
+											append(args,
+												   exp_atom_lng(sql->sa, nr)),
+											exp_atom_lng(sql->sa, offset)),
+										exp_atom_int(sql->sa, locked)),
+									exp_atom_int(sql->sa, best_effort)),
+								exp_atom_str(sql->sa, fwf_string, &tpe)),
+							exp_atom_int(sql->sa, onclient)),
+						exp_atom_int(sql->sa, escape)), f);
 
 	exps = new_exp_list(sql->sa);
 	for (n = t->columns.set->h; n; n = n->next) {
@@ -1507,7 +1509,7 @@ rel_import(mvc *sql, sql_table *t, const char *tsep, const char *rsep, const cha
 }
 
 static sql_rel *
-copyfrom(sql_query *query, dlist *qname, dlist *columns, dlist *files, dlist *headers, dlist *seps, dlist *nr_offset, str null_string, int locked, int best_effort, int constraint, dlist *fwf_widths, int onclient)
+copyfrom(sql_query *query, dlist *qname, dlist *columns, dlist *files, dlist *headers, dlist *seps, dlist *nr_offset, str null_string, int locked, int best_effort, int constraint, dlist *fwf_widths, int onclient, int escape)
 {
 	mvc *sql = query->sql;
 	sql_rel *rel = NULL;
@@ -1525,6 +1527,11 @@ copyfrom(sql_query *query, dlist *qname, dlist *columns, dlist *files, dlist *he
 	int reorder = 0;
 	assert(!nr_offset || nr_offset->h->type == type_lng);
 	assert(!nr_offset || nr_offset->h->next->type == type_lng);
+
+	if (strstr(rsep, "\r\n") != NULL)
+		return sql_error(sql, 02, SQLSTATE(42000)
+				"COPY INTO: record separator contains '\\r\\n' but "
+				"in the input stream, '\\r\\n' is being normalized into '\\n'");
 
 	if (sname && !(s = mvc_bind_schema(sql, sname)))
 		return sql_error(sql, 02, SQLSTATE(3F000) "COPY INTO: no such schema '%s'", sname);
@@ -1626,7 +1633,7 @@ copyfrom(sql_query *query, dlist *qname, dlist *columns, dlist *files, dlist *he
 				return NULL;
 			}
 
-			nrel = rel_import(sql, nt, tsep, rsep, ssep, ns, fname, nr, offset, locked, best_effort, fwf_widths, onclient);
+			nrel = rel_import(sql, nt, tsep, rsep, ssep, ns, fname, nr, offset, locked, best_effort, fwf_widths, onclient, escape);
 
 			if (!rel)
 				rel = nrel;
@@ -1639,7 +1646,7 @@ copyfrom(sql_query *query, dlist *qname, dlist *columns, dlist *files, dlist *he
 		}
 	} else {
 		assert(onclient == 0);
-		rel = rel_import(sql, nt, tsep, rsep, ssep, ns, NULL, nr, offset, locked, best_effort, NULL, onclient);
+		rel = rel_import(sql, nt, tsep, rsep, ssep, ns, NULL, nr, offset, locked, best_effort, NULL, onclient, escape);
 	}
 	if (headers) {
 		dnode *n;
@@ -1998,7 +2005,8 @@ rel_updates(sql_query *query, symbol *s)
 				l->h->next->next->next->next->next->next->next->next->data.i_val,
 				l->h->next->next->next->next->next->next->next->next->next->data.i_val,
 				l->h->next->next->next->next->next->next->next->next->next->next->data.lval,
-				l->h->next->next->next->next->next->next->next->next->next->next->next->data.i_val);
+				l->h->next->next->next->next->next->next->next->next->next->next->next->data.i_val,
+				l->h->next->next->next->next->next->next->next->next->next->next->next->next->data.i_val);
 		sql->type = Q_UPDATE;
 	}
 		break;

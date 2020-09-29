@@ -57,9 +57,9 @@ SQLhelp sqlhelp1[] = {
 	 "See also https://www.monetdb.org/Documentation/SQLreference/Alter"},
 	{"ALTER SEQUENCE",
 	 "",
-	 "ALTER SEQUENCE qname [ AS int_datatype] [ RESTART [WITH intval]] [INCREMENT BY intval]\n"
+	 "ALTER SEQUENCE qname [ AS seq_int_datatype] [ RESTART [WITH intval]] [INCREMENT BY intval]\n"
 	 "[MINVALUE intval | NO MINVALUE] [MAXVALUE intval | NO MAXVALUE] [CACHE intval] [[NO] CYCLE]",
-	 "int_datatype,intval",
+	 "seq_int_datatype,intval",
 	 "See also https://www.monetdb.org/Documentation/Manuals/SQLreference/SerialTypes"},
 	{"ALTER TABLE",
 	 "",
@@ -126,36 +126,36 @@ SQLhelp sqlhelp1[] = {
 	 "qname,scalar_expression",
 	 NULL},
 	{"CREATE AGGREGATE",
-	 "Create an user-defined aggregate function. The body of the aggregate function\n"
+	 "Create a user-defined aggregate function. The body of the aggregate function\n"
 	 "can also be defined in other programming languages such as Python, R, C or CPP.",
-	 "CREATE [ OR REPLACE ] AGGREGATE qname '(' { '*' | [ param [',' ...]] } ')'\n"
-	 "    RETURNS data_type\n"
+	 "CREATE [ OR REPLACE ] AGGREGATE [ FUNCTION ] qname '(' { '*' | [ param [',' ...]] } ')'\n"
+	 "    RETURNS function_return_data_type\n"
 	 "    EXTERNAL NAME ident ',' ident\n"
-	 "CREATE [ OR REPLACE ] AGGREGATE qname '(' { '*' | [ param [',' ...]] } ')'\n"
-	 "    RETURNS data_type\n"
+	 "CREATE [ OR REPLACE ] AGGREGATE [ FUNCTION ] qname '(' { '*' | [ param [',' ...]] } ')'\n"
+	 "    RETURNS function_return_data_type\n"
 	 "    LANGUAGE language_keyword external_code",
-	 "qname,param,data_type,ident,language_keyword,external_code",
+	 "qname,param,function_return_data_type,ident,language_keyword,external_code",
 	 "See also https://www.monetdb.org/Documentation/Manuals/SQLreference/Functions"},
 	{"CREATE FILTER FUNCTION",
-	 "",
-	 "CREATE [ OR REPLACE ] FILTER FUNCTION qname '(' { '*' | [ param [',' ...]] } ')'\n"
-	 "    RETURNS { data_type | TABLE '(' function_return [',' ...] ')' }\n"
+	 "Create a user-defined filter function. Currently only MAL definitions\n"
+	 "CREATE [ OR REPLACE ] FILTER [ FUNCTION ] qname '(' { '*' | [ param [',' ...]] } ')'\n"
+	 "    RETURNS function_return_data_type\n"
 	 "    EXTERNAL NAME ident ',' ident",
-	 "qname,param,data_type,function_return,ident",
+	 "qname,param,function_return_data_type,ident",
 	 "See also https://www.monetdb.org/Documentation/Manuals/SQLreference/Functions"},
 	{"CREATE FUNCTION",
-	 "Create an user-defined function. Besides standard SQL the body of the function\n"
-	 "can also be defined in other programming languages such as Python, R, C or CPP.",
+	 "Create a user-defined function (UDF). The body of the function can be defined in\n"
+	 " PL/SQL or programming languages such as Python, R, C or CPP when embedded on the server.",
 	 "CREATE [ OR REPLACE ] FUNCTION qname '(' { '*' | [ param [',' ...]] } ')'\n"
-	 "    RETURNS { data_type | TABLE '(' function_return [',' ...] ')' }\n"
+	 "    RETURNS function_return_data_type\n"
 	 "    BEGIN [ ATOMIC ] statement [ ';' ...] END\n"
 	 "CREATE [ OR REPLACE ] FUNCTION qname '(' { '*' | [ param [',' ...]] } ')'\n"
-	 "    RETURNS { data_type | TABLE '(' function_return [',' ...] ')' }\n"
+	 "    RETURNS function_return_data_type\n"
 	 "    EXTERNAL NAME ident ',' ident\n"
 	 "CREATE [ OR REPLACE ] FUNCTION qname '(' { '*' | [ param [',' ...]] } ')'\n"
-	 "    RETURNS { data_type | TABLE '(' function_return [',' ...] ')' }\n"
+	 "    RETURNS function_return_data_type\n"
 	 "    LANGUAGE language_keyword external_code",
-	 "qname,param,data_type,function_return,statement,ident,language_keyword,external_code",
+	 "qname,param,function_return_data_type,statement,ident,language_keyword,external_code",
 	 "See also https://www.monetdb.org/Documentation/Manuals/SQLreference/Functions"},
 	{"CREATE INDEX",
 	 "Create a hint for a secondary index on a column or set of columns of a table",
@@ -164,7 +164,7 @@ SQLhelp sqlhelp1[] = {
 	 "See also https://www.monetdb.org/Documentation/Manuals/SQLreference/Indices"},
 	{"CREATE LOADER",
 	 "Create a custom (external) data loader function. The body is defined in Python language",
-	 "CREATE [ OR REPLACE ] LOADER qname '(' [ param [',' ...]] ')'\n"
+	 "CREATE [ OR REPLACE ] LOADER [ FUNCTION ] qname '(' [ param [',' ...]] ')'\n"
 	 "    LANGUAGE PYTHON external_code",
 	 "qname,param,external_code",
 	 "See also https://www.monetdb.org/blog/monetdbpython-loader-functions"},
@@ -174,7 +174,7 @@ SQLhelp sqlhelp1[] = {
 	 "table_source,partition_by",
 	 "See also https://www.monetdb.org/Documentation/Cookbooks/SQLrecipes/DataPartitioning"},
 	{"CREATE PROCEDURE",
-	 "Create an user-defined procedure",
+	 "Create a user-defined procedure",
 	 "CREATE [ OR REPLACE ] PROCEDURE qname '(' { '*' | [ param [',' ...]] } ')'\n"
 	 "    BEGIN [ ATOMIC ] procedure_statement [ ';' ...] END\n"
 	 "CREATE [ OR REPLACE ] PROCEDURE qname '(' { '*' | [ param [',' ...]] } ')'\n"
@@ -204,9 +204,9 @@ SQLhelp sqlhelp1[] = {
 	 "See also https://www.monetdb.org/Documentation/SQLreference/Schema"},
 	{"CREATE SEQUENCE",
 	 "Define a new integer number sequence generator",
-	 "CREATE SEQUENCE qname [ AS int_datatype] [ START [WITH intval]] [INCREMENT BY intval]\n"
+	 "CREATE SEQUENCE qname [ AS seq_int_datatype] [ START [WITH intval]] [INCREMENT BY intval]\n"
 	 "[MINVALUE intval | NO MINVALUE] [MAXVALUE intval | NO MAXVALUE] [CACHE intval] [[NO] CYCLE]",
-	 "int_datatype,intval",
+	 "seq_int_datatype,intval",
 	 "See also https://www.monetdb.org/Documentation/Manuals/SQLreference/SerialTypes"},
 	{"CREATE STREAM TABLE",
 	 "Temporary table, locked during updates/ continues query processing",
@@ -244,12 +244,12 @@ SQLhelp sqlhelp1[] = {
 	 "qname,column_list,query_expression",
 	 "See also https://www.monetdb.org/Documentation/Manuals/SQLreference/Views"},
 	{"CREATE WINDOW",
-	 "Create an user-defined window function. Currently only MAL definitions\n"
+	 "Create a user-defined window function. Currently only MAL definitions\n"
 	 "are supported.",
-	 "CREATE [ OR REPLACE ] WINDOW qname '(' { '*' | [ param [',' ...]] } ')'\n"
-	 "    RETURNS data_type\n"
+	 "CREATE [ OR REPLACE ] WINDOW [ FUNCTION ] qname '(' { '*' | [ param [',' ...]] } ')'\n"
+	 "    RETURNS function_return_data_type\n"
 	 "    EXTERNAL NAME ident ',' ident",
-	 "qname,param,data_type,function_return,ident",
+	 "qname,param,function_return_data_type,ident",
 	 "See also https://www.monetdb.org/Documentation/Manuals/SQLreference/Functions"},
 	{"CURRENT_DATE",
 	 "Pseudo column or function to get the current date",
@@ -308,14 +308,20 @@ SQLhelp sqlhelp1[] = {
 	 NULL},
 	{"DROP AGGREGATE",
 	 "",
-	 "DROP ALL AGGREGATE qname [ RESTRICT | CASCADE ]\n"
-	 "DROP AGGREGATE [ IF EXISTS ] qname [ '(' [ param [',' ...]] ')' ] [ RESTRICT | CASCADE ]",
+	 "DROP ALL AGGREGATE [ FUNCTION ] qname [ RESTRICT | CASCADE ]\n"
+	 "DROP AGGREGATE [ FUNCTION ] [ IF EXISTS ] qname [ '(' [ param [',' ...]] ')' ] [ RESTRICT | CASCADE ]",
+	 "param",
+	 NULL},
+	{"DROP FILTER FUNCTION",
+	 "",
+	 "DROP ALL FILTER [ FUNCTION ] qname [ RESTRICT | CASCADE ]\n"
+	 "DROP FILTER [ FUNCTION ] [ IF EXISTS ] qname [ '(' [ param [',' ...]] ')' ] [ RESTRICT | CASCADE ]",
 	 "param",
 	 NULL},
 	{"DROP FUNCTION",
 	 "",
-	 "DROP ALL [FILTER] FUNCTION qname [ RESTRICT | CASCADE ]\n"
-	 "DROP [FILTER] FUNCTION [ IF EXISTS ] qname [ '(' [ param [',' ...]] ')' ] [ RESTRICT | CASCADE ]",
+	 "DROP ALL FUNCTION qname [ RESTRICT | CASCADE ]\n"
+	 "DROP FUNCTION [ IF EXISTS ] qname [ '(' [ param [',' ...]] ')' ] [ RESTRICT | CASCADE ]",
 	 "param",
 	 NULL},
 	{"DROP INDEX",
@@ -325,8 +331,8 @@ SQLhelp sqlhelp1[] = {
 	 NULL},
 	{"DROP LOADER",
 	 "",
-	 "DROP ALL LOADER qname [ RESTRICT | CASCADE ]\n"
-	 "DROP LOADER [ IF EXISTS ] qname [ '(' [ param [',' ...]] ')' ] [ RESTRICT | CASCADE ]",
+	 "DROP ALL LOADER [ FUNCTION ] qname [ RESTRICT | CASCADE ]\n"
+	 "DROP LOADER [ FUNCTION ] [ IF EXISTS ] qname [ '(' [ param [',' ...]] ')' ] [ RESTRICT | CASCADE ]",
 	 "param",
 	 NULL},
 	{"DROP PROCEDURE",
@@ -377,8 +383,8 @@ SQLhelp sqlhelp1[] = {
 	 NULL},
 	{"DROP WINDOW",
 	 "",
-	 "DROP ALL WINDOW qname [ RESTRICT | CASCADE ]\n"
-	 "DROP WINDOW [ IF EXISTS ] qname [ '(' [ param [',' ...]] ')' ] [ RESTRICT | CASCADE ]",
+	 "DROP ALL WINDOW [ FUNCTION ] qname [ RESTRICT | CASCADE ]\n"
+	 "DROP WINDOW [ FUNCTION ] [ IF EXISTS ] qname [ '(' [ param [',' ...]] ')' ] [ RESTRICT | CASCADE ]",
 	 "param",
 	 NULL},
 	{"EXECUTE",
@@ -478,9 +484,9 @@ SQLhelp sqlhelp1[] = {
 	 "See also https://www.monetdb.org/Documentation/Manuals/SQLreference/Variables"},
 	{"SET LOCAL TRANSACTION",
 	 "",
-	 "START LOCAL TRANSACTION transactionmode",
-	 "transactionmode,isolevel",
-	 "DIAGNOSTICS is not yet supported"},
+	 "SET LOCAL TRANSACTION [ transactionmode ]",
+	 "transactionmode",
+	 "See also https://www.monetdb.org/Documentation/SQLreference/SQLSyntaxOverview#SET_LOCAL_TRANSACTION"},
 	{"SET ROLE",
 	 "Change current role",
 	 "SET ROLE ident",
@@ -508,9 +514,9 @@ SQLhelp sqlhelp1[] = {
 	 NULL},
 	{"SET TRANSACTION",
 	 "",
-	 "SET TRANSACTION transactionmode",
-	 "transactionmode,isolevel",
-	 "DIAGNOSTICS is not yet supported"},
+	 "SET TRANSACTION [ transactionmode ]",
+	 "transactionmode",
+	 "See also https://www.monetdb.org/Documentation/SQLreference/SQLSyntaxOverview#SET_TRANSACTION"},
 	{"SET USER",
 	 "Change current user",
 	 "SET USER '=' ident",
@@ -518,9 +524,9 @@ SQLhelp sqlhelp1[] = {
 	 NULL},
 	{"START TRANSACTION",
 	 "Change transaction mode from auto-commit to user controlled commit/rollback",
-	 "{ START | BEGIN } TRANSACTION transactionmode",
-	 "transactionmode,isolevel",
-	 "See also https://www.monetdb.org/Documentation/Manuals/SQLreference/Transactions"},
+	 "{ START | BEGIN } TRANSACTION [ transactionmode ]",
+	 "transactionmode",
+	 "See also https://www.monetdb.org/Documentation/SQLreference/Transactions"},
 	{"TABLE JOINS",
 	 "",
 	 "'(' joined_table ') |\n"
@@ -644,14 +650,14 @@ SQLhelp sqlhelp2[] = {
 	 "SECOND timestamp_precision\n,timestamp_precision",
 	 NULL,
 	 NULL},
-	{"function_return",
+	{"function_return_data_type",
 	 NULL,
-	 "ident data_type",
+	 "data_type | TABLE '(' ident data_type [',' ...] ')'",
 	 NULL,
 	 NULL},
 	{"function_type",
 	 NULL,
-	 "{ FUNCTION | PROCEDURE | { AGGREGATE | FILTER | LOADER | WINDOW [ FUNCTION ] } }",
+	 "{ FUNCTION | PROCEDURE | { { AGGREGATE | FILTER | LOADER | WINDOW } [ FUNCTION ] } }",
 	 NULL,
 	 NULL},
 	{"generated_column",
@@ -699,7 +705,7 @@ SQLhelp sqlhelp2[] = {
 	 "[ ELSE procedure_statement ... ] END IF",
 	 "search_condition,procedure_statement",
 	 "See also https://www.monetdb.org/Documentation/SQLreference/Flowofcontrol"},
-	{"int_datatype",
+	{"seq_int_datatype",
 	 NULL,
 	 "BIGINT | INTEGER | INT | SMALLINT | TINYINT",
 	 NULL,
@@ -774,7 +780,7 @@ SQLhelp sqlhelp2[] = {
 	 NULL},
 	{"partition_list",
 	 NULL,
-	 "query_expression [ ',' ... ]",
+	 "query_expression [',' ...]",
 	 "query_expression",
 	 NULL},
 	{"partition_range_from",
@@ -925,7 +931,7 @@ SQLhelp sqlhelp2[] = {
 	 NULL,
 	 "{ READ ONLY | READ WRITE | ISOLATION LEVEL isolevel | DIAGNOSTICS intval } [ , ... ]",
 	 "isolevel",
-	 NULL},
+	 "Note: DIAGNOSTICS is not yet implemented"},
 	{"trigger_reference",
 	 NULL,
 	 "{ OLD | NEW } { [ROW] | TABLE } [AS] ident",
@@ -991,8 +997,8 @@ SQLhelp sqlhelp2[] = {
 	{"window_specification",
 	 NULL,
 	 "[ ident ]\n"
-	 "[ PARTITION BY expression [ ',' ... ] ]\n"
-	 "[ ORDER BY expression [ ASC | DESC ] [ NULLS { FIRST | LAST } ] [ ',' ... ] ]\n"
+	 "[ PARTITION BY expression [',' ...] ]\n"
+	 "[ ORDER BY expression [ ASC | DESC ] [ NULLS { FIRST | LAST } ] [',' ...] ]\n"
 	 "[ { ROWS | RANGE | GROUPS } { window_frame_start | BETWEEN window_bound AND window_bound }\n"
 	 "  [ EXCLUDING { CURRENT ROW | GROUP | TIES | NO OTHERS } ] ]",
 	 "window_bound,window_frame_start",

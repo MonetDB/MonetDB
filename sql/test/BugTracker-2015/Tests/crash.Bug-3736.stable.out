@@ -91,8 +91,8 @@ single project (
 | | | | | ) [ "b3a"."open_auction_id" NOT NULL = "o"."open_auction_id" NOT NULL ]
 | | | | ) [ "o"."open_auction_id" NOT NULL ] [ sys.min no nil ("b3a"."id" NOT NULL HASHCOL ) NOT NULL as "%1"."%1", "o"."open_auction_id" NOT NULL ]
 | | | ) [ "b3"."id" NOT NULL HASHCOL  = "%1"."%1" NOT NULL ]
-| | ) [ "b3"."id" NOT NULL HASHCOL , "b3"."open_auction_id" NOT NULL, "b3"."date" NOT NULL, "b3"."time" NOT NULL, "b3"."personref" NOT NULL, "b3"."increase" NOT NULL, "b3"."%TID%" NOT NULL, "%1"."%1" NOT NULL, "o"."open_auction_id" NOT NULL as "%32"."%32" ]
-| ) [ "o"."open_auction_id" NOT NULL * = "%32"."%32" NOT NULL ]
+| | ) [ "b3"."id" NOT NULL HASHCOL , "b3"."open_auction_id" NOT NULL, "b3"."date" NOT NULL, "b3"."time" NOT NULL, "b3"."personref" NOT NULL, "b3"."increase" NOT NULL, "b3"."%TID%" NOT NULL, "%1"."%1" NOT NULL, "o"."open_auction_id" NOT NULL as "%5"."%5" ]
+| ) [ "o"."open_auction_id" NOT NULL * = "%5"."%5" NOT NULL ]
 ) [ "o"."id" NOT NULL HASHCOL , "o"."open_auction_id" NOT NULL, "o"."initial" NOT NULL, "o"."reserve" NOT NULL, "o"."aktuell" NOT NULL, "o"."privacy" NOT NULL, "o"."itemref" NOT NULL, "o"."seller" NOT NULL, "o"."quantity" NOT NULL, "o"."type" NOT NULL, "o"."start" NOT NULL, "o"."ende" NOT NULL, "o"."%TID%" NOT NULL, "b"."id" NOT NULL HASHCOL , "b"."open_auction_id" NOT NULL, "b"."date" NOT NULL, "b"."time" NOT NULL, "b"."personref" NOT NULL, "b"."increase" NOT NULL, "b"."%TID%" NOT NULL, "b3"."increase" NOT NULL as "%2"."%2" ]
 project (
 | single select (
@@ -112,8 +112,8 @@ project (
 | | | | | | ) [ "b2a"."open_auction_id" NOT NULL = "o"."open_auction_id" NOT NULL ]
 | | | | | ) [ "o"."open_auction_id" NOT NULL ] [ sys.max no nil ("b2a"."id" NOT NULL HASHCOL ) NOT NULL as "%3"."%3", "o"."open_auction_id" NOT NULL ]
 | | | | ) [ "b2"."id" NOT NULL HASHCOL  = "%3"."%3" NOT NULL ]
-| | | ) [ "b2"."increase" NOT NULL, "o"."open_auction_id" NOT NULL as "%51"."%51" ]
-| | ) [ "o"."open_auction_id" NOT NULL * = "%51"."%51" NOT NULL ]
+| | | ) [ "b2"."increase" NOT NULL, "o"."open_auction_id" NOT NULL as "%6"."%6" ]
+| | ) [ "o"."open_auction_id" NOT NULL * = "%6"."%6" NOT NULL ]
 | ) [ sys.sql_mul("%2"."%2" NOT NULL, double "2") <= "b2"."increase" NOT NULL ]
 ) [ "b"."id" NOT NULL HASHCOL , "b"."open_auction_id" NOT NULL, "b"."date" NOT NULL, "b"."time" NOT NULL, "b"."personref" NOT NULL, "b"."increase" NOT NULL ]
 #Select b.* FROM open_auctions o, bidder b WHERE (select b3.INCREASE from bidder b3 where b3.id = (select min(b3a.id) from bidder b3a where b3a.open_auction_id = o.open_auction_id)) * 2 <= (Select b2.INCREASE from bidder b2 where b2.id = (SELECT MAX(b2a.id) from bidder b2a where b2a.open_auction_id = o.open_auction_id)) AND o.open_auction_id = b.open_auction_id order by date, time;

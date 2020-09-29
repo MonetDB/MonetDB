@@ -122,7 +122,6 @@ mal_export  str emptybindRef;
 mal_export  str eqRef;
 mal_export  str evalRef;
 mal_export  str execRef;
-mal_export  str exec2Ref;
 mal_export  str expandRef;
 mal_export  str exportOperationRef;
 mal_export  str export_tableRef;

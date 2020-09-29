@@ -311,7 +311,7 @@ SQLescapeString(str s)
 }
 
 str
-SQLstatementIntern(Client c, str *expr, str nme, bit execute, bit output, res_table **result)
+SQLstatementIntern(Client c, const char *expr, const char *nme, bit execute, bit output, res_table **result)
 {
 	int status = 0, err = 0, oldvtop, oldstop = 1, inited = 0, ac, sizeframes, topframes;
 	unsigned int label;
@@ -325,14 +325,14 @@ SQLstatementIntern(Client c, str *expr, str nme, bit execute, bit output, res_ta
 	str msg = MAL_SUCCEED;
 	backend *be = NULL, *sql = (backend *) c->sqlcontext;
 	Symbol backup = NULL;
-	size_t len = strlen(*expr);
+	size_t len = strlen(expr);
 
 #ifdef _SQL_COMPILE
-	mnstr_printf(c->fdout, "#SQLstatement:%s\n", *expr);
+	mnstr_printf(c->fdout, "#SQLstatement:%s\n", expr);
 #endif
 	if (!sql) {
 		inited = 1;
-		msg = SQLinitClient(c); // Since !sql, this call will create a.o. query cache.
+		msg = SQLinitClient(c);
 		sql = (backend *) c->sqlcontext;
 	}
 	if (msg){
@@ -349,6 +349,9 @@ SQLstatementIntern(Client c, str *expr, str nme, bit execute, bit output, res_ta
 		throw(SQL, "sql.statement", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
 	*o = *m;
+	struct qc* qc = m->qc;
+	/* hide query cache, this causes crashes in SQLtrans() due to uninitialized memory otherwise */
+	m->qc = NULL;
 
 	/* create private allocator */
 	m->sa = NULL;
@@ -357,14 +360,11 @@ SQLstatementIntern(Client c, str *expr, str nme, bit execute, bit output, res_ta
 		sql = NULL;
 		goto endofcompile;
 	}
-
-	// TODO: check if there is m->sa exists
-
 	status = m->session->status;
 
 	m->type = Q_PARSE;
 	be = sql;
-	sql = backend_create(m, c); // TODO: Why this change of reference?
+	sql = backend_create(m, c);
 	if (sql == NULL) {
 		msg = createException(SQL,"sql.statement",SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		goto endofcompile;
@@ -375,7 +375,8 @@ SQLstatementIntern(Client c, str *expr, str nme, bit execute, bit output, res_ta
 	}
 	sql->depth++;
 	// and do it again
-	m->user_id = m->role_id = USER_MONETDB; // TODO: is this safe?
+	m->qc = NULL;
+	m->user_id = m->role_id = USER_MONETDB;
 	if (result)
 		m->reply_size = -2; /* do not clean up result tables */
 
@@ -390,7 +391,7 @@ SQLstatementIntern(Client c, str *expr, str nme, bit execute, bit output, res_ta
 		msg = createException(SQL,"sql.statement",SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		goto endofcompile;
 	}
-	strncpy(n, *expr, len);
+	strcpy_len(n, expr, len + 1);
 	n[len] = '\n';
 	n[len + 1] = 0;
 	len++;
@@ -465,8 +466,6 @@ SQLstatementIntern(Client c, str *expr, str nme, bit execute, bit output, res_ta
 		}
 		oldvtop = c->curprg->def->vtop;
 		oldstop = c->curprg->def->stop;
-
-
 		r = sql_symbol2relation(sql, m->sym);
 #ifdef _SQL_COMPILE
 		mnstr_printf(c->fdout, "#SQLstatement:\n");
@@ -518,7 +517,7 @@ SQLstatementIntern(Client c, str *expr, str nme, bit execute, bit output, res_ta
 				err = 1;
 				msg = createException(PARSE, "SQLparser", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			} else {
-				be->q = qc_insert(m->qc, m->sa,	/* the allocator */
+				be->q = qc_insert(qc, m->sa,	/* the allocator */
 						  r,	/* keep relational query */
 						  m->sym,	/* the sql symbol tree */
 						  m->params,	/* the argument list */
@@ -602,32 +601,26 @@ SQLstatementIntern(Client c, str *expr, str nme, bit execute, bit output, res_ta
 			be->depth++;
 			msg = SQLrun(c,m);
 			be->depth--;
+			MSresetInstructions(c->curprg->def, oldstop);
+			freeVariables(c, c->curprg->def, NULL, oldvtop);
+			sqlcleanup(sql, 0);
+			if (!execute)
+				goto endofcompile;
 #ifdef _SQL_COMPILE
 			mnstr_printf(c->fdout, "#parse/execute result %d\n", err);
 #endif
 		}
-
-		MSresetInstructions(c->curprg->def, oldstop);
-		freeVariables(c, c->curprg->def, NULL, oldvtop);
-		sqlcleanup(sql, 0);
-
-		if (!execute)
-			goto endofcompile;
-	}
-
-	// TODO: export prepare stuff
-
-	if (sql->results) {
-		if (result) { /* return all results sets */
-			*result = sql->results;
-		} else {
-			if (sql->results == be->results)
-				be->results = NULL;
-			res_tables_destroy(sql->results);
+		if (sql->results) {
+			if (result) { /* return all results sets */
+				*result = sql->results;
+			} else {
+				if (sql->results == be->results)
+					be->results = NULL;
+				res_tables_destroy(sql->results);
+			}
+			sql->results = NULL;
 		}
-		sql->results = NULL;
 	}
-
 /*
  * We are done; a MAL procedure resides in the cache.
  */

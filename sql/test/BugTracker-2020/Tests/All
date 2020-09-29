@@ -16,5 +16,11 @@ copy-decimal-with-space.Bug-6917
 isauuid.Bug-6934
 interval-math.Bug-6935
 tpch-cube.Bug-6938
+mal-multiplex.Bug-6939
 HAVE_PYMONETDB?remote-table-like.Bug-6841
-KNOWNFAIL?copy-empty-blob.Bug-6948
+copy-empty-blob.Bug-6948
+values-like-join.Bug-6954
+round.Bug-6955
+log.Bug-6960
+table-udf-column-descriptor.Bug-6964
+table-udf-distinct.Bug-6965

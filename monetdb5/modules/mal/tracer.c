@@ -14,10 +14,11 @@
  */
 
 #include "monetdb_config.h"
-#include "tracer.h"
+#include "mal.h"
+#include "mal_interpreter.h"
 
 
-str
+static str
 TRACERflush_buffer(void *ret)
 {
     (void) ret;
@@ -26,7 +27,7 @@ TRACERflush_buffer(void *ret)
 }
 
 
-str
+static str
 TRACERset_component_level(void *ret, str *comp_id, str *lvl_id)
 {
     (void) ret;
@@ -37,7 +38,7 @@ TRACERset_component_level(void *ret, str *comp_id, str *lvl_id)
 }
 
 
-str
+static str
 TRACERreset_component_level(void *ret, str *comp_id)
 {
     (void) ret;
@@ -48,7 +49,7 @@ TRACERreset_component_level(void *ret, str *comp_id)
 }
 
 
-str
+static str
 TRACERset_layer_level(void *ret, str *layer_id, str *lvl_id)
 {
     (void) ret;
@@ -59,7 +60,7 @@ TRACERset_layer_level(void *ret, str *layer_id, str *lvl_id)
 }
 
 
-str
+static str
 TRACERreset_layer_level(void *ret, str *layer_id)
 {
     (void) ret;
@@ -70,7 +71,7 @@ TRACERreset_layer_level(void *ret, str *layer_id)
 }
 
 
-str
+static str
 TRACERset_flush_level(void *ret, str *lvl_id)
 {
     (void) ret;
@@ -81,7 +82,7 @@ TRACERset_flush_level(void *ret, str *lvl_id)
 }
 
 
-str
+static str
 TRACERreset_flush_level(void *ret)
 {
     (void) ret;
@@ -92,7 +93,7 @@ TRACERreset_flush_level(void *ret)
 }
 
 
-str
+static str
 TRACERset_adapter(void *ret, str *adapter_id)
 {
     (void) ret;
@@ -103,7 +104,7 @@ TRACERset_adapter(void *ret, str *adapter_id)
 }
 
 
-str
+static str
 TRACERreset_adapter(void *ret)
 {
     (void) ret;
@@ -114,7 +115,7 @@ TRACERreset_adapter(void *ret)
 }
 
 
-str
+static str
 TRACERcomp_info(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
     (void) cntxt;

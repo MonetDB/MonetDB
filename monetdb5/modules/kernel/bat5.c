@@ -937,31 +937,26 @@ BKCshrinkBATmap(bat *ret, const bat *bid, const bat *did)
 /*
  * Shrinking a void-headed BAT using a list of oids to ignore.
  */
-#define reuseloop(Type)								\
-	do {											\
-		Type *p = (Type*)Tloc(b, 0);				\
-		Type *q = (Type*)Tloc(b, BUNlast(b));		\
-		Type *r = (Type*)Tloc(bn, 0);				\
-		for (;p<q; oidx++, p++) {					\
-			if ( *o == oidx ){						\
-				while ( ol>o && ol[-1] == bidx) {	\
-					bidx--;							\
-					q--;							\
-					ol--;							\
-				}									\
-				*r++ = *(--q);						\
-				o += (o < ol);						\
-				bidx--;								\
-			} else									\
-				*r++ = *p;							\
-		}											\
+#define reuseloop(Type)										\
+	do {													\
+		Type *dst = (Type *) Tloc(bn, 0);					\
+		const Type *src = (const Type *) Tloc(b, 0);		\
+		for (BUN p = 0; p < b->batCount; p++, src++) {		\
+			if (o < ol && b->hseqbase + p == *o) {			\
+				do											\
+					o++;									\
+				while (o < ol && b->hseqbase + p == *o);	\
+			} else {										\
+				*dst++ = *src;								\
+				n++;										\
+			}												\
+		}													\
 	} while (0)
 
 str
 BKCreuseBAT(bat *ret, const bat *bid, const bat *did)
 {
 	BAT *b, *d, *bn, *bs;
-	oid oidx = 0, bidx, *o, *ol;
 	gdk_return res;
 
 	if ((b = BATdescriptor(*bid)) == NULL) {
@@ -985,74 +980,69 @@ BKCreuseBAT(bat *ret, const bat *bid, const bat *did)
 		throw(MAL, "bat.reuse", SQLSTATE(HY013) MAL_MALLOC_FAIL );
 	}
 
-	oidx = b->hseqbase;
-	bidx = oidx + BATcount(b)-1;
-	o = (oid*)Tloc(bs, 0);
-	ol= (oid*)Tloc(bs, BUNlast(bs));
-
-	switch(ATOMstorage(b->ttype) ){
-	case TYPE_bte: reuseloop(bte); break;
-	case TYPE_sht: reuseloop(sht); break;
-	case TYPE_int: reuseloop(int); break;
-	case TYPE_lng: reuseloop(lng); break;
-#ifdef HAVE_HGE
-	case TYPE_hge: reuseloop(hge); break;
-#endif
-	case TYPE_flt: reuseloop(flt); break;
-	case TYPE_dbl: reuseloop(dbl); break;
-	case TYPE_oid: reuseloop(oid); break;
-	case TYPE_str: /* to be done based on its index width */
-	default:
-		if (ATOMvarsized(bn->ttype)) {
-			BUN p = 0;
-			BUN q = BUNlast(b);
-			BATiter bi = bat_iterator(b);
-
-			for (;p<q; oidx++, p++) {
-				if ( *o == oidx ){
-					while ( ol > o && ol[-1] == bidx) {
-						bidx--;
-						q--;
-						ol--;
-					}
-					if (BUNappend(bn, BUNtail(bi, --q), false) != GDK_SUCCEED) {
-						BBPunfix(b->batCacheid);
-						BBPunfix(bn->batCacheid);
-						throw(MAL, "bat.shrink", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-					}
-					o += (o < ol);
-					bidx--;
-				} else {
-					if (BUNappend(bn, BUNtail(bi, p), false) != GDK_SUCCEED) {
-						BBPunfix(b->batCacheid);
-						BBPunfix(bn->batCacheid);
-						throw(MAL,  "bat.shrink", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-					}
-				}
-			}
-		} else {
-			switch( b->twidth){
-			case 1:reuseloop(bte); break;
-			case 2:reuseloop(sht); break;
-			case 4:reuseloop(int); break;
-			case 8:reuseloop(lng); break;
-#ifdef HAVE_HGE
-			case 16:reuseloop(hge); break;
-#endif
-			default:
-				BBPunfix(b->batCacheid);
+	const oid *o = (const oid *) Tloc(bs, 0);
+	const oid *ol = o + bs->batCount;
+	while (o < ol && *o < b->hseqbase)
+		o++;
+	if (b->tvarsized) {
+		BATiter bi = bat_iterator(b);
+		for (BUN p = 0; p < b->batCount; p++) {
+			if (o < ol && b->hseqbase + p == *o) {
+				do
+					o++;
+				while (o < ol && b->hseqbase + p == *o);
+			} else if (BUNappend(bn, BUNtail(bi, p), false) != GDK_SUCCEED) {
 				BBPunfix(bn->batCacheid);
-				throw(MAL, "bat.shrink", "Illegal argument type");
+				BBPunfix(b->batCacheid);
+				BBPunfix(bs->batCacheid);
+				throw(MAL, "bat.shrink", GDK_EXCEPTION);
 			}
 		}
+	} else {
+		BUN n = 0;
+		switch (b->twidth) {
+		case 1:
+			reuseloop(bte);
+			break;
+		case 2:
+			reuseloop(sht);
+			break;
+		case 4:
+			reuseloop(int);
+			break;
+		case 8:
+			reuseloop(lng);
+			break;
+#ifdef HAVE_HGE
+		case 16:
+			reuseloop(hge);
+			break;
+#endif
+		default: {
+			char *dst = (char *) Tloc(bn, 0);
+			const char *src = (const char *) Tloc(b, 0);
+			for (BUN p = 0; p < b->batCount; p++) {
+				if (o < ol && b->hseqbase + p == *o) {
+					do
+						o++;
+					while (o < ol && b->hseqbase + p == *o);
+				} else {
+					memcpy(dst, src, b->twidth);
+					dst += b->twidth;
+					n++;
+				}
+				src += b->twidth;
+			}
+			break;
+		}
+		}
+		BATsetcount(bn, n);
+		bn->tkey = b->tkey;
+		bn->tsorted = b->tsorted;
+		bn->trevsorted = b->trevsorted;
+		bn->tnonil = b->tnonil;
+		bn->tnil = false;		/* can't be sure if values deleted */
 	}
-
-    BATsetcount(bn, BATcount(b) - BATcount(bs));
-    bn->tsorted = false;
-    bn->trevsorted = false;
-	bn->tseqbase = oid_nil;
-	bn->tkey = b->tkey;
-
 
 	BBPunfix(b->batCacheid);
 	BBPunfix(bs->batCacheid);
@@ -1064,8 +1054,6 @@ str
 BKCreuseBATmap(bat *ret, const bat *bid, const bat *did)
 {
 	BAT *b, *d, *bn, *bs;
-	oid bidx, oidx = 0, *o, *ol;
-	oid *r;
 	gdk_return res;
 
 	if ((b = BATdescriptor(*bid)) == NULL) {
@@ -1089,31 +1077,29 @@ BKCreuseBATmap(bat *ret, const bat *bid, const bat *did)
 		throw(MAL, "bat.shrinkMap", SQLSTATE(HY013) MAL_MALLOC_FAIL );
 	}
 
-	oidx = b->hseqbase;
-	bidx = oidx + BATcount(b)-1;
-	o  = (oid*)Tloc(bs, 0);
-	ol = (oid*)Tloc(bs, BUNlast(bs));
-	r  = (oid*)Tloc(bn, 0);
-
-	for (; oidx <= bidx; oidx++) {
-		if ( *o == oidx ){
-			while ( ol > o && ol[-1] == bidx) {
-				bidx--;
-				ol--;
-			}
-			*r++ = bidx;
-			o += (o < ol);
-			bidx--;
+	const oid *o = (const oid *) Tloc(bs, 0);
+	const oid *ol = o + bs->batCount;
+	while (o < ol && *o < b->hseqbase)
+		o++;
+	oid *dst = (oid *) Tloc(bn, 0);
+	BUN n = 0;
+	for (BUN p = 0; p < b->batCount; p++) {
+		if (o < ol && b->hseqbase + p == *o) {
+			do
+				o++;
+			while (o < ol && b->hseqbase + p == *o);
 		} else {
-			*r++ = oidx;
+			*dst++ = b->hseqbase + p;
+			n++;
 		}
 	}
-
-    BATsetcount(bn, BATcount(b)-BATcount(bs));
-    bn->tsorted = false;
-    bn->trevsorted = false;
+	BATsetcount(bn, n);
+	bn->tkey = true;
+	bn->tsorted = true;
+	bn->trevsorted = n <= 1;
+	bn->tnil = false;
+	bn->tnonil = true;
 	bn->tseqbase = oid_nil;
-
 
 	BBPunfix(b->batCacheid);
 	BBPunfix(bs->batCacheid);

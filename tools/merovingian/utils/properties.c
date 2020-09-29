@@ -34,7 +34,6 @@ static const confkeyval _internal_prop_keys[PROPLENGTH] = {
 	{"embedpy",     NULL, 0, BOOLEAN},
 	{"embedpy3",    NULL, 0, BOOLEAN},
 	{"embedc",      NULL, 0, BOOLEAN},
-	{"ipv6",        NULL, 0, BOOLEAN},
 	{"listenaddr",  NULL, 0, LADDR},
 	{"nclients",    NULL, 0, INT},
 	{"mfunnel",     NULL, 0, STR},
@@ -235,7 +234,7 @@ readPropsBuf(confkeyval *ckv, char *buf)
  * the key and associated value.
  */
 char *
-setProp(char *path, char *key, char *val)
+setProp(const char *path, const char *key, const char *val)
 {
 	char *err;
 	char buf[8096];
@@ -262,7 +261,7 @@ setProp(char *path, char *key, char *val)
 				return(strdup(buf));
 			}
 		} else if (strcmp(key, "shared") == 0) {
-			char *value = val;
+			const char *value = val;
 			/* check if tag matches [A-Za-z0-9./]+ */
 			if (*value == '\0') {
 				freeConfFile(props);

@@ -82,10 +82,12 @@ MTIMEcurrent_timestamp(timestamp *ret)
 #define INIT_ITER(VAR, VAR_BAT) VAR = bat_iterator(VAR_BAT)
 
 #define APPEND_STR(MALFUNC) \
-	if (BUNappend(bn, res, false) != GDK_SUCCEED) { \
+	if (tfastins_nocheckVAR(bn, i, res, Tsize(bn)) != GDK_SUCCEED) { \
+		GDKfree(res); \
 		msg = createException(SQL, "batmtime." MALFUNC, SQLSTATE(HY013) MAL_MALLOC_FAIL); \
 		break; \
-	}
+	} \
+	GDKfree(res); \
 
 #define GET_NEXT_ITER(VAR) BUNtvar(VAR, i)
 
@@ -171,7 +173,7 @@ NAMEBULK##_cand(bat *ret, const bat *bid, const bat *sid)				\
 	}																	\
 	off = b1->hseqbase;													\
 	n = canditer_init(&ci, b1, s);										\
-	if ((bn = COLnew(b1->hseqbase, TYPE_##OUTTYPE, n, TRANSIENT)) == NULL) { \
+	if ((bn = COLnew(ci.hseq, TYPE_##OUTTYPE, n, TRANSIENT)) == NULL) { \
 		msg = createException(MAL, "batmtime." MALFUNC "_cand", 		\
 			  SQLSTATE(HY013) MAL_MALLOC_FAIL); 						\
 		goto bailout;													\
@@ -355,7 +357,14 @@ bailout: 																\
 #define func2_noexcept(FUNC, RET, PARAM1, PARAM2) RET = FUNC(PARAM1, PARAM2)
 #define func2_except(FUNC, RET, PARAM1, PARAM2) msg = FUNC(&RET, PARAM1, PARAM2); if (msg) break;
 
-func2(MTIMEdate_diff, MTIMEdate_diff_bulk, "diff", date, date, int, date_diff, func2_noexcept, \
+/* TODO change dayint again into an int instead of lng */
+static inline lng
+date_diff_imp(const date d1, const date d2)
+{
+	int diff = date_diff(d1, d2);
+	return is_int_nil(diff) ? lng_nil : (lng) diff * (lng) (24*60*60*1000);
+}
+func2(MTIMEdate_diff, MTIMEdate_diff_bulk, "diff", date, date, lng, date_diff_imp, func2_noexcept, \
 	  DEC_VAR_R, DEC_VAR_R, DEC_VAR_R, DEC_VAR_R, DEC_VAR_R, INIT_VAR, INIT_VAR, INIT_VAR, GET_NEXT_VAR, GET_NEXT_VAR, APPEND_VAR)
 func2(MTIMEdaytime_diff_msec, MTIMEdaytime_diff_msec_bulk, "diff", daytime, daytime, lng, daytime_diff, func2_noexcept, \
 	  DEC_VAR_R, DEC_VAR_R, DEC_VAR_R, DEC_VAR_R, DEC_VAR_R, INIT_VAR, INIT_VAR, INIT_VAR, GET_NEXT_VAR, GET_NEXT_VAR, APPEND_VAR)
@@ -591,7 +600,7 @@ func1(MTIMEsql_seconds, MTIMEsql_seconds_bulk, "sql_seconds", lng, int, sql_seco
 static inline str
 date_fromstr_func(date *ret, str s)
 {
-	if (date_fromstr(s, &(size_t){sizeof(date)}, &ret, true) < 0)
+	if (date_fromstr(s, &(size_t){sizeof(date)}, &ret, false) < 0)
 		throw(MAL, "mtime.date_fromstr", GDK_EXCEPTION);
 	return MAL_SUCCEED;
 }
@@ -614,7 +623,7 @@ func1_cand(MTIMEtimestamp_extract_date_bulk, "date", timestamp, date, timestamp_
 static inline str
 timestamp_fromstr_func(timestamp *ret, str s)
 {
-	if (timestamp_fromstr(s, &(size_t){sizeof(timestamp)}, &ret, true) < 0)
+	if (timestamp_fromstr(s, &(size_t){sizeof(timestamp)}, &ret, false) < 0)
 		throw(MAL, "mtime.timestamp_fromstr", GDK_EXCEPTION);
 	return MAL_SUCCEED;
 }
@@ -659,7 +668,7 @@ func1_cand(MTIMEtimestamp_frommsec_bulk, "timestamp_frommsec", lng, timestamp, m
 static inline str
 daytime_fromstr_func(daytime *ret, str s)
 {
-	if (daytime_fromstr(s, &(size_t){sizeof(daytime)}, &ret, true) < 0)
+	if (daytime_fromstr(s, &(size_t){sizeof(daytime)}, &ret, false) < 0)
 		throw(MAL, "mtime.daytime_fromstr", GDK_EXCEPTION);
 	return MAL_SUCCEED;
 }
@@ -984,10 +993,10 @@ static mel_func mtime_init_funcs[] = {
  command("batmtime", "addmonths", MTIMEdate_addmonths_bulk, false, "", args(1,3, batarg("",date),batarg("value",date),batarg("months",int))),
  command("batmtime", "addmonths", MTIMEdate_addmonths_bulk_p1, false, "", args(1,3, batarg("",date),arg("value",date),batarg("months",int))),
  command("batmtime", "addmonths", MTIMEdate_addmonths_bulk_p2, false, "", args(1,3, batarg("",date),batarg("value",date),arg("months",int))),
- command("mtime", "diff", MTIMEdate_diff, false, "returns the number of days\nbetween 'val1' and 'val2'.", args(1,3, arg("",int),arg("val1",date),arg("val2",date))),
- command("batmtime", "diff", MTIMEdate_diff_bulk, false, "", args(1,3, batarg("",int),batarg("val1",date),batarg("val2",date))),
- command("batmtime", "diff", MTIMEdate_diff_bulk_p1, false, "", args(1,3, batarg("",int),arg("val1",date),batarg("val2",date))),
- command("batmtime", "diff", MTIMEdate_diff_bulk_p2, false, "", args(1,3, batarg("",int),batarg("val1",date),arg("val2",date))),
+ command("mtime", "diff", MTIMEdate_diff, false, "returns the number of days\nbetween 'val1' and 'val2'.", args(1,3, arg("",lng),arg("val1",date),arg("val2",date))),
+ command("batmtime", "diff", MTIMEdate_diff_bulk, false, "", args(1,3, batarg("",lng),batarg("val1",date),batarg("val2",date))),
+ command("batmtime", "diff", MTIMEdate_diff_bulk_p1, false, "", args(1,3, batarg("",lng),arg("val1",date),batarg("val2",date))),
+ command("batmtime", "diff", MTIMEdate_diff_bulk_p2, false, "", args(1,3, batarg("",lng),batarg("val1",date),arg("val2",date))),
  command("mtime", "dayofyear", MTIMEdate_extract_dayofyear, false, "Returns N where d is the Nth day\nof the year (january 1 returns 1)", args(1,2, arg("",int),arg("d",date))),
  command("batmtime", "dayofyear", MTIMEdate_extract_dayofyear_bulk, false, "", args(1,2, batarg("",int),batarg("d",date))),
  command("mtime", "weekofyear", MTIMEdate_extract_weekofyear, false, "Returns the week number in the year.", args(1,2, arg("",int),arg("d",date))),

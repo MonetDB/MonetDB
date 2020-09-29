@@ -192,6 +192,15 @@ SELECT CAST(COUNT ( DISTINCT + CAST ( NULL AS INTEGER ) ) + 93 as BIGINT) AS col
 	-- 93
 	-- 93
 	-- 93
+select group_concat(distinct 'a') from tab0;
+	-- a
+INSERT INTO "tab0" VALUES (83, 0, 38), (26, 0, 79), (43, 81, 24);
+select group_concat(distinct col1, col2) from tab0 group by col0;
+	-- 0
+	-- 81
+	-- 0
+select group_concat(distinct col1, col2) from tab0;
+	-- 03881240
 ROLLBACK;
 
 START TRANSACTION;
@@ -212,4 +221,29 @@ CREATE TABLE t(x DECIMAL(4,1));
 INSERT INTO t VALUES (42);
 SELECT CAST(SUM(x) / COUNT(x) AS DECIMAL(13,1)) FROM t;
 	-- 42.0
+ROLLBACK;
+
+START TRANSACTION;
+create table tab1 ("myk" int, "part" int, "tet" int);
+create table tab2 ("myk" int, "ups" varchar(32));
+insert into tab1 values (1,1,1), (2,2,2);
+insert into tab2 values (1, 'a'), (1, 'b');
+
+select
+  myalias0."part" as "part",
+  myalias0."tet" as "tet",
+  count(*) as mycount,
+  myalias0."tet" as track
+from
+  tab1 myalias0
+  left join tab2 myalias1
+  on myalias0."part" = myalias1."myk"
+group by
+  myalias0."part",
+  track,
+  myalias0."tet",
+  myalias1."ups";
+	-- 1 1 1 1
+	-- 2 2 1 2
+	-- 1 1 1 1
 ROLLBACK;

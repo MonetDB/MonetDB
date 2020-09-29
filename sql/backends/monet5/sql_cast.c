@@ -29,7 +29,7 @@ str_2_blob(blob **res, const str *val)
 {
 	size_t rlen = 0;
 	str msg;
-	
+
 	*res = NULL;
 	if ((msg = str_2_blob_imp(res, &rlen, *val))) {
 		GDKfree(*res);
@@ -49,6 +49,7 @@ batstr_2_blob_cand(bat *res, const bat *bid, const bat *sid)
 	oid off;
 	blob *r = NULL;
 	size_t rlen = 0;
+	bool nils = false;
 
 	if ((b = BATdescriptor(*bid)) == NULL) {
 		msg = createException(SQL, "batcalc.str_2_blob", SQLSTATE(HY005) RUNTIME_OBJECT_MISSING);
@@ -61,7 +62,7 @@ batstr_2_blob_cand(bat *res, const bat *bid, const bat *sid)
 	off = b->hseqbase;
 	q = canditer_init(&ci, b, s);
 	bi = bat_iterator(b);
-	if (!(dst = COLnew(b->hseqbase, TYPE_blob, q, TRANSIENT))) {
+	if (!(dst = COLnew(ci.hseq, TYPE_blob, q, TRANSIENT))) {
 		msg = createException(SQL, "batcalc.str_2_blob", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		goto bailout;
 	}
@@ -72,10 +73,11 @@ batstr_2_blob_cand(bat *res, const bat *bid, const bat *sid)
 
 		if ((msg = str_2_blob_imp(&r, &rlen, v)))
 			goto bailout;
-		if (BUNappend(dst, r, false) != GDK_SUCCEED) {
+		if (tfastins_nocheckVAR(dst, i, r, Tsize(dst)) != GDK_SUCCEED) {
 			msg = createException(SQL, "batcalc.str_2_blob", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			goto bailout;
 		}
+		nils |= ATOMcmp(TYPE_blob, r, ATOMnilptr(TYPE_blob)) == 0;
 	}
 
 bailout:
@@ -84,9 +86,15 @@ bailout:
 		BBPunfix(b->batCacheid);
 	if (s)
 		BBPunfix(s->batCacheid);
-	if (dst && !msg)
+	if (dst && !msg) {
+		BATsetcount(dst, q);
+		dst->tnil = nils;
+		dst->tnonil = !nils;
+		dst->tkey = BATcount(dst) <= 1;
+		dst->tsorted = BATcount(dst) <= 1;
+		dst->trevsorted = BATcount(dst) <= 1;
 		BBPkeepref(*res = dst->batCacheid);
-	else if (dst)
+	} else if (dst)
 		BBPreclaim(dst);
 	return msg;
 }
@@ -147,13 +155,14 @@ SQLstr_cast_str(str *r, int *rlen, str v, int len)
 
 	intput_strlen = (int) strlen(v) + 1;
 	if (intput_strlen > *rlen) {
-		str newr = GDKmalloc(intput_strlen);
+		int newlen = intput_strlen + 1024;
+		str newr = GDKmalloc(newlen);
 
 		if (!newr)
 			throw(SQL, "str_cast", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		GDKfree(*r);
 		*r = newr;
-		*rlen = intput_strlen;
+		*rlen = newlen;
 	}
 	strcpy(*r, v);
 	return MAL_SUCCEED;
@@ -224,6 +233,7 @@ SQLbatstr_cast(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	BUN q;
 	int initial_capacity = MAX(str_buf_initial_capacity(eclass, digits), (int) strlen(str_nil) + 1); /* don't reallocate on str_nil */
 	oid off;
+	bool nils = false, from_str = EC_VARCHAR(eclass) || tpe == TYPE_str;
 
 	if ((msg = getSQLContext(cntxt, mb, &m, NULL)) != NULL)
 		return msg;
@@ -240,13 +250,13 @@ SQLbatstr_cast(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	off = b->hseqbase;
 	q = canditer_init(&ci, b, s);
 	bi = bat_iterator(b);
-	if (!(dst = COLnew(b->hseqbase, TYPE_str, q, TRANSIENT))) {
+	if (!(dst = COLnew(ci.hseq, TYPE_str, q, TRANSIENT))) {
 		msg = createException(SQL, "batcalc.str_cast", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		goto bailout;
 	}
 
 	assert(initial_capacity > 0);
-	if (!(EC_VARCHAR(eclass) || tpe == TYPE_str)) { /* for decimals and other fixed size types allocate once */
+	if (!from_str) { /* for decimals and other fixed size types allocate once */
 		if (!(r = GDKmalloc(initial_capacity))) {
 			msg = createException(SQL, "batcalc.str_cast", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			goto bailout;
@@ -258,17 +268,18 @@ SQLbatstr_cast(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		BUN p = (BUN) (canditer_next(&ci) - off);
 		ptr v = BUNtail(bi, p);
 
-		if (EC_VARCHAR(eclass) || tpe == TYPE_str)
+		if (from_str)
 			msg = SQLstr_cast_str(&r, &rlen, (str) v, digits);
 		else
 			msg = SQLstr_cast_any_type(&r, rlen, m, eclass, d1, s1, has_tz, v, tpe, digits);
 
 		if (msg)
 			goto bailout;
-		if (BUNappend(dst, r, false) != GDK_SUCCEED) {
+		if (tfastins_nocheckVAR(dst, i, r, Tsize(dst)) != GDK_SUCCEED) {
 			msg = createException(SQL, "batcalc.str_cast", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			goto bailout;
 		}
+		nils |= strNil(r);
 	}
 
 bailout:
@@ -277,9 +288,15 @@ bailout:
 		BBPunfix(b->batCacheid);
 	if (s)
 		BBPunfix(s->batCacheid);
-	if (dst && !msg)
+	if (dst && !msg) {
+		BATsetcount(dst, q);
+		dst->tnil = nils;
+		dst->tnonil = !nils;
+		dst->tkey = BATcount(dst) <= 1;
+		dst->tsorted = BATcount(dst) <= 1;
+		dst->trevsorted = BATcount(dst) <= 1;
 		BBPkeepref(*res = dst->batCacheid);
-	else if (dst)
+	} else if (dst)
 		BBPreclaim(dst);
 	return msg;
 }
