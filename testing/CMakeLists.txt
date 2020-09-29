@@ -134,6 +134,7 @@ if(PYTHON3_LIBDIR)
     exportutils.py
     malcheck.py
     sqllogictest.py
+    helpers.py
     DESTINATION ${PYTHON3_LIBDIR}/MonetDBtesting
     COMPONENT pytesting)
 endif()

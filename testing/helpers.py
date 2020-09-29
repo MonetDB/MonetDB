@@ -31,6 +31,11 @@ def process_test_dir(dir_path:str, ctx={}, **kwargs):
     """
     real_dir_path = os.path.realpath(dir_path)
     folder = {'realpath': real_dir_path}
+    # check for single server
+    if os.path.isfile(os.path.join(dir_path, 'SingleServer')):
+        folder['single_server'] = True
+        with open(os.path.join(dir_path, 'SingleServer'), 'r') as f:
+            folder['server_options'] = f.read().split()
     allf = os.path.join(real_dir_path, 'All')
     tests = get_tests_from_all_file(allf) if os.path.isfile(allf) else []
     test_names = kwargs.get('test_names')
@@ -49,18 +54,23 @@ def process_test_dir(dir_path:str, ctx={}, **kwargs):
             'test_path': test_path,
             'cond': cond}
         lookup  = (
-            # EXT        CALL      SERVER
-            ('.py',     'python', ''),
-            ('.MAL.py', 'python', 'MAL'),
-            ('.SQL.py', 'python', 'SQL'),
-            ('.malC',   'mal',    'MAL'),
-            #('.sql',    'sql',    'SQL'),
-            ('.test',   'sqltest','SQL'),
-            ('.R',      'R',      'SQL'),
-            ('.rb',     'ruby',   'SQL'),
+            # file extention  EXT        CALL      SERVER
+            ('.py',           '.py',     'python', ''),
+            ('.MAL.py',       '.MAL.py', 'python', 'MAL'),
+            ('.SQL.py',       '.SQL.py', 'python', 'SQL'),
+            ('.malC',         '.malC',   'mal',    'MAL'),
+            ('_s00.malC',     '.malC',   'malXs',  'MAL'),
+            ('_p00.malC',     '.malC',   'malXp',  'MAL'),
+            ('.test',         '.test',   'sqltest','SQL'),
+            ('.sql',          '.sql',    'sql',    'SQL'),
+            ('_s00.sql',      '.sql',    'sqlXs',  'SQL'),
+            ('_p00.sql',      '.sql',    'sqlXp',  'SQL'),
+            ('.R',            '.R',      'R',      'SQL'),
+            ('.rb',           '.rb',     'ruby',   'SQL'),
         )
         # does this test require other tests?
         # if so they should exist in the same folder
+        # TODO enforce order by reqtests aka myabe sort at the end
         if os.path.isfile(test_path + '.reqtests'):
             reqtests = []
             missing_reqtests = []
@@ -70,7 +80,7 @@ def process_test_dir(dir_path:str, ctx={}, **kwargs):
             test['reqtests'] = reqtests
             for r in reqtests:
                 rp = os.path.join(real_dir_path, test_name)
-                for ext, _, _ in lookup:
+                for ext, _, _, _ in lookup:
                     if os.path.isfile(rp + ext) \
                         or os.path.isfile(rp + ext + 'src') \
                         or os.path.isfile(rp + ext + 'in'):
@@ -83,7 +93,7 @@ def process_test_dir(dir_path:str, ctx={}, **kwargs):
         if os.path.isfile(test_path + '.timeout'):
             with open(test_path + '.timeout', 'r') as f:
                 test['timeout'] = int(f.read().strip())
-        for ext, call, server in lookup:
+        for ext, _, call, server in lookup:
             if os.path.isfile(test_path + ext):
                 test['ext'] = ext
                 test['call'] = call
@@ -103,11 +113,8 @@ def process_test_dir(dir_path:str, ctx={}, **kwargs):
                 break
         else:
             print("WARNING: test name {} declared but not found under {}".format(test_name, dir_path))
-        if (kwargs.get('sqllogic') is True) and (test.get('ext') == '.sql'):
-            # assuming those sql scripts have being converted to sqllogic, so skip
-            pass
-        else:
-            tests_out.append(test)
+            continue
+        tests_out.append(test)
     folder['test_count'] = len(tests_out)
     folder['tests'] = tests_out
     ctx['test_folders'].append(folder)
@@ -119,17 +126,9 @@ def process_dir(dir_path: str, ctx={}, **kwargs):
     if os.path.basename(os.path.realpath(dir_path)) == 'Tests':
         return process_test_dir(dir_path, ctx, **kwargs)
     onlydirs = [d for d in os.listdir(dir_path) if os.path.isdir(os.path.join(dir_path, d))]
-    # temporary rule here when sqllogictest and Tests folders are siblings, then assuming .sql
-    # tests under Tests folder were converted to .test under sqllogictest/Tests
-    rgx = re.compile('Tests|sqllogictest')
-    filtered = list(filter(lambda x: rgx.search(x), onlydirs))
-    found_siblings = len(filtered) == 2
     for d in onlydirs:
         dir_ = os.path.join(dir_path, d)
-        if d == 'Tests' and found_siblings:
-            process_dir(dir_, ctx, **kwargs, sqllogic=True)
-        else:
-            process_dir(dir_, ctx, **kwargs)
+        process_dir(dir_, ctx, **kwargs)
 
 def build_work_ctx(*args):
     """

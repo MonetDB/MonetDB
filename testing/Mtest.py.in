@@ -32,6 +32,8 @@ import struct
 import signal
 import fnmatch
 import glob
+from MonetDBtesting.helpers import build_work_ctx
+
 try:
     import winreg               # Python 3 on Windows
 except ImportError:
@@ -528,72 +530,19 @@ def find_test_dirs(thisdir) :
     return testdirs
 ### find_test_dirs(thisdir) #
 
-def PerformDir(env, testdir, testlist, BusyPorts, all_tests = False) :
-    interrupted = False
+def PerformDir(env, testdir) :
     td = 0
+    passed = 0
+    failed = 0
+    skipped = 0
     FdErr = F_SKIP
-    if testdir == TSTSRCBASE:
-        TSTDIR = os.curdir
-    else:
-        TSTDIR = testdir[len(TSTSRCBASE + os.sep):]
-    TSTSRCDIR = os.path.normpath(os.path.join(testdir, TSTSUFF))
+    pdb.set_trace()
+
+    TSTDIR = testdir.get('realpath')[len(TSTSRCBASE + os.sep):]
+    TSTSRCDIR = testdir.get('realpath')
     TSTTRGDIR = os.path.normpath(os.path.join(TSTTRGBASE, TSTPREF, TSTDIR))
 
     TSTDB = TSTPREF + "_" + TSTDIR.replace(os.sep, '_')
-
-    alltests = []
-    try:
-        allf = openutf8(os.path.join(TSTSRCDIR, "All"))
-    except IOError:
-        pass
-    else:
-        for tc in allf:
-            if '#' in tc:
-                # get rid of comment anywhere on line
-                tc = tc[:tc.index('#')]
-            tc = tc.strip()
-            if tc:
-                if '?' in tc:
-                    cond,tst = tc.split('?')
-                else:
-                    cond,tst = None,tc
-                alltests.append((tst,cond))
-        allf.close()
-    try:
-        f = openutf8(os.path.join(TSTSRCDIR, "SingleServer"))
-    except IOError:
-        oneserver = False
-        options = []            # not used
-    else:
-        oneserver = True
-        options = f.read().split()
-        f.close()
-
-    if testlist:
-        tl = []
-        missing = False
-        for tst in testlist:
-            for t, c in alltests:
-                if t == tst:
-                    tl.append((t, c))
-                    break
-            else:
-                tl.append((tst,None))
-                missing = True
-        testlist = tl
-        if not missing:
-            all_tests = True
-    else:
-        testlist = alltests
-    if not testlist:
-        Warn("No tests found in '%s`; skipping directory!" % TSTSRCDIR)
-        return td, max(FdOut, FdErr), interrupted
-
-    # find length of longest test name
-    length = 0
-    for tst in testlist:
-        if len(tst[0]) > length:
-            length = len(tst[0])
 
     env['TSTDB']     = TSTDB
     env['TSTDIR']    = TSTDIR
@@ -620,33 +569,25 @@ def PerformDir(env, testdir, testlist, BusyPorts, all_tests = False) :
                 shutil.rmtree(LogDBdir)
             except:
                 Warn("database '%s` exists, but destroying it failed; skipping tests in '%s`!" % (TSTDB, TSTSRCDIR))
-                #TODO:
-                # add "something" to HTML output
-                return td, FdErr, interrupted
+                return td, FdErr
         if os.path.isabs(LogDBdir) and not os.path.exists(LogDBdir):
             try:
                 os.makedirs(LogDBdir)
             except:
                 Warn("creating database '%s` failed; skipping tests in '%s`!" % (TSTDB, TSTSRCDIR))
-                #TODO:
-                # add "something" to HTML output
-                return td, FdErr, interrupted
+                return td, FdErr
         if initdb:
             import zipfile
             try:
                 z = zipfile.ZipFile(initdb)
             except IOError:
                 Warn("initial database '%s` cannot be opened; skipping tests in '%s`!" % (initdb, TSTSRCDIR))
-                #TODO:
-                # add "something" to HTML output
-                return td, FdErr, interrupted
+                return td, FdErr
             try:
                 z.extractall(LogDBdir)
             except:
                 Warn("initial database '%s` cannot be extracted; skipping tests in '%s`!" % (initdb, TSTSRCDIR))
-                #TODO:
-                # add "something" to HTML output
-                return td, FdErr, interrupted
+                return td, FdErr
             z.close()
             if not oneserver:
                 pSrvr = ServerClass(splitcommand(env['exe']['mserver5'][1]) + ['--dbpath=%s' % LogDBdir], open(os.devnull, 'w'), open(os.devnull, 'w'), par['TIMEOUT'], os.path.join(LogDBdir, '.started'), int(env['MAPIPORT']))
@@ -656,49 +597,49 @@ def PerformDir(env, testdir, testlist, BusyPorts, all_tests = False) :
         #TODO: set mode to umask
         os.makedirs(TSTTRGDIR)
 
+    oneserver = testdir.get('single_server', False)
+    options = testdir.get('server_options', [])
+    testlist = testdir.get('tests', [])
+
     oktests = []
-    if not verbose and not quiet:
-        print('\nRunning in %s' % TSTDIR)
     alllinks = []
     pSrvr = None
+
     try:
-        try:
-            for TST,COND in testlist:
-                if oneserver and (pSrvr is None or pSrvr.poll() is not None):
-                    # restart server
-                    pSrvr = create_mserver5(
-                            LogDBdir,
-                            env=env,
-                            outfile=os.path.join(TSTTRGDIR, 'SingleServer.out'),
-                            errfile=os.path.join(TSTTRGDIR, 'SingleServer.err'),
-                            options=options)
-                    os.chdir(TSTTRGDIR)
-                    pSrvr.LaunchIt()
-                if global_timeout and start_time + global_timeout < time.time():
-                    if not testweb:
-                        print('\nGlobal testing timeout reached\n')
-                        break
-                    tt, FtErr, reason = 0, F_SKIP,"as the global timeout has been reached"
-                else:
-                    os.environ['TST'] = TST
-                    tt, FtErr, reason, links = RunTest(env, TST, BusyPorts, COND, oktests, length, all_tests, pSrvr)
-                    alllinks.extend(links)
-                if tt:
-                    t = "%7.3f" % tt
-                else:
-                    t = '-.---'
-                TIMES.append((TSTDIR, TST, t, tt, FtErr, reason))
-                td += tt
-                FdErr = max(FdErr,FtErr)
-                if FtErr is None:
-                    oktests.append(TST)
-        except KeyboardInterrupt:
-            print('\nInterrupted')
-            interrupted = True
+        for TST,COND in testlist:
+            if oneserver and (pSrvr is None or pSrvr.poll() is not None):
+                # restart server
+                pSrvr = create_mserver5(
+                        LogDBdir,
+                        env=env,
+                        outfile=os.path.join(TSTTRGDIR, 'SingleServer.out'),
+                        errfile=os.path.join(TSTTRGDIR, 'SingleServer.err'),
+                        options=options)
+                os.chdir(TSTTRGDIR)
+                pSrvr.LaunchIt()
+            if global_timeout and start_time + global_timeout < time.time():
+                if not testweb:
+                    print('\nGlobal testing timeout reached\n')
+                    break
+                tt, FtErr, reason = 0, F_SKIP,"as the global timeout has been reached"
+            else:
+                os.environ['TST'] = TST
+                tt, FtErr, reason, links = RunTest(env, TST, BusyPorts, COND, oktests, length, all_tests, pSrvr)
+                alllinks.extend(links)
+            if tt:
+                t = "%7.3f" % tt
+            else:
+                t = '-.---'
+            TIMES.append((TSTDIR, TST, t, tt, FtErr, reason))
+            td += tt
+            FdErr = max(FdErr,FtErr)
+            if FtErr is None:
+                oktests.append(TST)
     finally:
         if pSrvr is not None:
             pSrvr.terminate()
             pSrvr = None
+
     TIMES.append((TSTDIR, '', "%7.3f" % td, td, FdErr, None))
     if testweb:
         os.chdir(TSTTRGDIR)
@@ -726,8 +667,8 @@ def PerformDir(env, testdir, testlist, BusyPorts, all_tests = False) :
         except:
             pass
 
-    return td, FdErr, interrupted
-### PerformDir(env, testdir, testlist, BusyPorts) #
+    return td, FdErr
+### PerformDir(env, testdir) #
 
 
 # this function is a slightly modified copy of the posixpath version
@@ -2816,10 +2757,10 @@ def main(argv) :
     # add QUIET par to env
     env['QUIET'] = quiet
 
-    if not startswithpath(os.getcwd() + os.sep, TSTSRCBASE + os.sep):
-        Warn("Current directory %s is no descendant of TSTSRCBASE=%s;" % (os.getcwd(), TSTSRCBASE))
-        Warn("changing to TSTSRCBASE=%s, now." % TSTSRCBASE)
-        os.chdir(TSTSRCBASE)
+    #if not startswithpath(os.getcwd() + os.sep, TSTSRCBASE + os.sep):
+    #    Warn("Current directory %s is no descendant of TSTSRCBASE=%s;" % (os.getcwd(), TSTSRCBASE))
+    #    Warn("changing to TSTSRCBASE=%s, now." % TSTSRCBASE)
+    #    os.chdir(TSTSRCBASE)
 
     global REV
     REV = opts.revision
@@ -2872,129 +2813,8 @@ def main(argv) :
         #exe['JAVA']       = 'java'
         #exe['JAVAC']      = 'javac'
 
+
         # parse commandline arguments
-        testdirs = []
-        testlist = []
-        dirlist = []
-        if len(args) == 1 and not os.path.isdir(args[0]):
-            head, tail = os.path.split(args[0])
-            if os.path.isfile(args[0]):
-                head, tst = os.path.split(head)
-                if tst != 'Tests':
-                    ErrXit("%s: not a valid test name" % args[0])
-                args = [head]
-                if tail != 'All':
-                    for ext in ('_s00.malC', '_p00.malC', '_s00.sql',
-                                '_p00.sql', '.MAL.py', '.SQL.py', '.malC',
-                                '.sql', '.py', '.R', ''):
-                        # extentions .in and .src are never combined
-                        if tail.endswith(ext + '.in'):
-                            args.append(tail[:-len(ext + '.in')])
-                            break
-                        if tail.endswith(ext + '.src'):
-                            args.append(tail[:-len(ext + '.src')])
-                            break
-                        if tail.endswith(ext):
-                            args.append(tail[:-len(ext)])
-                            break
-                    else:
-                        ErrXit("%s: not a valid test name" % args[0])
-            elif head and tail and os.path.isdir(head) and tail != 'Tests' and os.path.isdir(os.path.join(head, 'Tests')):
-                args = [head, tail]
-
-        if   len(args) == 1:
-            if   os.path.isdir(args[0]):
-                d = os.path.realpath(args[0])
-                if startswithpath(d + os.sep, TSTSRCBASE + os.sep):
-                    dirlist.append(d)
-                #TODO:
-                #else:
-                    # WARNING/ERROR
-            elif os.sep in args[0]:
-                ErrXit("'%s` is neither a valid directory in %s nor a valid test-name!" % (args[0], os.getcwd()))
-            elif args[0] != "All":
-                #TODO:
-                # check, whether args[0] in All
-                testlist.append(args[0])
-        elif len(args) > 1:
-            i = 0
-            while i < len(args)  and  os.path.isdir(args[i]):
-                d = os.path.realpath(args[i])
-                if startswithpath(d + os.sep, TSTSRCBASE + os.sep):
-                    dirlist.append(os.path.realpath(args[i]))
-                #TODO:
-                #else:
-                    # WARNING/ERROR
-                i = i + 1
-            if len(dirlist) == 1  and  i < len(args)  and  args[i] != "All":
-                while i < len(args):
-                    if os.sep not in args[i]:
-                        #TODO:
-                        # check, whether args[i] in All
-                        testlist.append(args[i])
-                    #TODO
-                    #else:
-                        # ERROR/WARNING
-                    i = i + 1
-            else:
-                if i < len(args)  and  args[i] == "All":
-                    i = i + 1
-                #TODO:
-                #if i < len(args):
-                    #if len(dirlist) > 1:
-                        # Warn: dirlist => ignore testlist, assume All
-                    #else:
-                        # Warn: All => ignore testlist
-        else:
-            # len(args) == 0: no explicit tests specified so do all
-            recursive = True
-
-        if not dirlist:
-            dirlist.append(os.getcwd())
-        if recursive:
-            #TODO
-            #if testlist:
-                # WARNING
-            testlist = []
-            for d in dirlist:
-                test_dirs = find_test_dirs(d)
-                test_dirs.sort()
-                for t in test_dirs:
-                    if t not in testdirs:
-                        testdirs.append(t)
-        else:
-            for d in dirlist:
-                if   os.path.basename(d) == TSTSUFF  and  os.path.isfile(os.path.join(d,"All")):
-                    testdirs.append(os.path.dirname(os.path.realpath(d)))
-                elif os.path.isdir(os.path.join(d,TSTSUFF))  and  os.path.isfile(os.path.join(d,TSTSUFF,"All")):
-                    testdirs.append(os.path.realpath(d))
-                else:
-                    Warn("No tests found in '%s`; skipping directory!" % d)
-
-        if len(testdirs) > 1  and  testlist:
-            testlist = []
-            #TODO
-            # WARNING
-        if not testdirs:
-            Warn("No tests found in %s!" % ', '.join(dirlist))
-            sys.exit(1)
-
-        if len(testdirs) == 1 and len(testlist) > 0 and addreqs:
-            added = True
-            while added:
-                added = False
-                i = 0
-                while i < len(testlist):
-                    if os.path.exists(os.path.join(testdirs[0], 'Tests', testlist[i] + '.reqtests')):
-                        for t in openutf8(os.path.join(testdirs[0], 'Tests', testlist[i] + '.reqtests')):
-                            t = t[:-1] # remove newline
-                            if t not in testlist[:i]:
-                                testlist.insert(i, t)
-                                i = i + 1
-                                added = True
-                            #elif t in testlist:
-                                # WARNING: tests in wrong order
-                    i = i + 1
 
         BusyPorts = []
 
@@ -3057,41 +2877,31 @@ def main(argv) :
         if busy:
             Warn("Skipping MAPI tests as MAPIPORT=%s is not available on %s (Error #%d: '%s')!" % (env['MAPIPORT'],host,Serrno,Serrstr))
             BusyPorts.append('MAPI')
-
+        
+        env['BUSY_PORTS'] = BusyPorts
         env['SYST'] = os.environ['SYST']
         env['RELEASE'] = os.environ['RELEASE']
         env['DIST'] = os.environ['DIST']
         env['VERSION'] = os.environ['VERSION']
 
         STDERR.flush()
+        
+        test_ctx = build_work_ctx(*args) if len(args) > 0 else build_work_ctx(TSTSRCBASE)
+        test_count = test_ctx.get('test_count', 0) 
+        env['test_count'] = test_count
+        print('Found {} tests!'.format(test_count))
+        
         t_ = 0
         try:
-            if len(testdirs) == 1:
-                if testlist:
-                    tsts = "tests "+str(testlist)
-                else:
-                    tsts = "all tests"
-                    all_tests = True
-                if verbose:
-                    print("\nRunning %s in directory %s.\n" % (tsts , testdirs[0]))
-                t_, diff, interrupted = PerformDir(env, testdirs[0], testlist, BusyPorts, all_tests)
-            else:
-                if verbose:
-                    print("\nRunning all tests in directories %s.\n" % str(testdirs))
-                for d in testdirs:
-                    t, diff, interrupted = PerformDir(env, d, [], BusyPorts, True)
-                    t_ = t_ + t
-                    if interrupted:
+            for d in test_ctx.get('test_folders', []):
+                t, diff = PerformDir(env, d)
+                t_ = t_ + t
+                if not testweb:
+                    if global_timeout and start_time + global_timeout < time.time():
+                        print('\nGlobal testing timeout reached\n')
                         break
-                    if not testweb:
-                        if global_timeout and start_time + global_timeout < time.time():
-                            print('\nGlobal testing timeout reached\n')
-                            break
-                        # after a directory has been tested, create
-                        # the index file so that we can look at test
-                        # results while the tests are running
-                        env['TSTDIR'] = ""
-                        env['TSTTRGDIR'] = os.path.join(TSTTRGBASE, TSTPREF)
+                    env['TSTDIR'] = ""
+                    env['TSTTRGDIR'] = os.path.join(TSTTRGBASE, TSTPREF)
         except KeyboardInterrupt:
             # if we get interrupted between directories, we still want output
             pass
