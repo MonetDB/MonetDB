@@ -68,8 +68,7 @@ def process_test_dir(dir_path:str, ctx={}, **kwargs):
             ('.R',            '.R',      'R',      'SQL'),
             ('.rb',           '.rb',     'ruby',   'SQL'),
         )
-        # does this test require other tests?
-        # if so they should exist in the same folder
+        # required tests that needs to run before this test
         # TODO enforce order by reqtests aka myabe sort at the end
         if os.path.isfile(test_path + '.reqtests'):
             reqtests = []
@@ -78,16 +77,25 @@ def process_test_dir(dir_path:str, ctx={}, **kwargs):
                 for l in f:
                     reqtests.append(l.strip())
             test['reqtests'] = reqtests
-            for r in reqtests:
-                rp = os.path.join(real_dir_path, test_name)
-                for ext, _, _, _ in lookup:
-                    if os.path.isfile(rp + ext) \
-                        or os.path.isfile(rp + ext + 'src') \
-                        or os.path.isfile(rp + ext + 'in'):
-                            break
-                else:
-                    missing_reqtests.append(r)
-            test['missing_reqtests'] = missing_reqtests
+            #for r in reqtests:
+            #    rp = os.path.join(real_dir_path, test_name)
+            #    for ext, _, _, _ in lookup:
+            #        if os.path.isfile(rp + ext) \
+            #            or os.path.isfile(rp + ext + 'src') \
+            #            or os.path.isfile(rp + ext + 'in'):
+            #                break
+            #    else:
+            #        missing_reqtests.append(r)
+            #test['missing_reqtests'] = missing_reqtests
+        # required modules
+        if os.path.isfile(test_path + '.modules'):
+            reqmodules = []
+            with open(test_path + '.modules', 'r') as f:
+                for l in f:
+                    line = l.strip()
+                    if line[0] != '#':
+                        reqmodules.append(line)
+            test['reqmodules'] = reqmodules
         if os.path.isfile(test_path + '.nomito'):
             test['nomito'] = True
         if os.path.isfile(test_path + '.timeout'):
