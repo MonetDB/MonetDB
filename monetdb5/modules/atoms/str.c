@@ -4300,6 +4300,7 @@ str_substitute(str *buf, size_t *buflen, str s, str src, str dst, bit repeat)
 		if (repeat && ldst > lsrc)
 			n = (ldst * l) / lsrc;	/* max length */
 
+		n++;
 		CHECK_STR_BUFFER_LENGTH(buf, buflen, n, "str.substitute");
 		b = *buf;
 		pfnd = s;
@@ -4309,11 +4310,11 @@ str_substitute(str *buf, size_t *buflen, str s, str src, str dst, bit repeat)
 				break;
 			n = fnd - pfnd;
 			if (n > 0) {
-				strncpy(b, pfnd, n);
+				strcpy_len(b, pfnd, n + 1);
 				b += n;
 			}
 			if (ldst > 0) {
-				strncpy(b, dst, ldst);
+				strcpy_len(b, dst, ldst + 1);
 				b += ldst;
 			}
 			if (*fnd == 0)
