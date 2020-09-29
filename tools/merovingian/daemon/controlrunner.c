@@ -400,7 +400,7 @@ static void ctl_handle_client(
 
 				// Kill it appropriately
 				if (strcmp(p, "stop") == 0) {
-					bool terminated;
+					bool terminated = false;
 					/* make an attempt to shut down the profiler first. */
 					if ((e = shutdown_profiler(q, &stats)) != NULL) {
 						free(e);
