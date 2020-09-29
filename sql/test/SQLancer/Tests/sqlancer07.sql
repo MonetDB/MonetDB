@@ -310,8 +310,10 @@ create view v0(vc0) as (values (interval '100' second));
 create view v3(vc0) as (select 1638520390);
 create view v4(vc0) as (values (-1548784118));
 
-SELECT 1 FROM (select 2) v4(vc0) WHERE (0.6) IN (CASE WHEN v4.vc0 THEN (SELECT 0.2 WHERE TRUE) END);
+SELECT 1 FROM (SELECT 2) v4(vc0) WHERE (0.6) IN (CASE WHEN v4.vc0 THEN (SELECT 0.2 WHERE TRUE) END);
 	-- empty
+SELECT 1 FROM (SELECT 1) as v3(c0) RIGHT JOIN (SELECT 2) as v4(c0) ON (0.6) NOT IN (0.5, (SELECT 0.2));
+	-- 1
 SELECT FALSE FROM v3, v0 FULL OUTER JOIN v4 ON sql_max(FALSE, (0.6902854) NOT IN (0.5854332103580835, CASE WHEN v4.vc0 THEN (SELECT 0.023816515 WHERE TRUE) END));
 	-- False
 ROLLBACK;

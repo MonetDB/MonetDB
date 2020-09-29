@@ -1929,18 +1929,16 @@ exp_is_atom( sql_exp *e )
 		return exp_is_atom(e->l);
 	case e_func:
 	case e_aggr:
-	{
-		int r = (e->card == CARD_ATOM);
-		node *n;
-		list *l = e->l;
-
-		if (r && l)
-			for (n = l->h; n && r; n = n->next)
-				r &= exp_is_atom(n->data);
-		return r;
-	}
-	case e_column:
+		return e->card == CARD_ATOM && exps_are_atoms(e->l);
 	case e_cmp:
+		if (e->card != CARD_ATOM)
+			return 0;
+		if (e->flag == cmp_or || e->flag == cmp_filter)
+			return exps_are_atoms(e->l) && exps_are_atoms(e->r);
+		if (e->flag == cmp_in || e->flag == cmp_notin)
+			return exp_is_atom(e->l) && exps_are_atoms(e->r);
+		return exp_is_atom(e->l) && exp_is_atom(e->r) && (!e->f || exp_is_atom(e->f));
+	case e_column:
 	case e_psm:
 		return 0;
 	}
@@ -2060,6 +2058,56 @@ exp_rel_get_rel(sql_allocator *sa, sql_exp *e)
 	return NULL;
 }
 
+static void exp_rel_update_set_freevar(sql_exp *e);
+
+static void
+exps_rel_update_set_freevar(list *exps)
+{
+	if (!list_empty(exps))
+		for (node *n=exps->h; n ; n=n->next)
+			exp_rel_update_set_freevar(n->data);
+}
+
+static void
+exp_rel_update_set_freevar(sql_exp *e)
+{
+	if (!e)
+		return ;
+
+	switch(e->type){
+	case e_func:
+	case e_aggr:
+		exps_rel_update_set_freevar(e->l);
+		break;
+	case e_cmp:
+		if (e->flag == cmp_or || e->flag == cmp_filter) {
+			exps_rel_update_set_freevar(e->l);
+			exps_rel_update_set_freevar(e->r);
+		} else if (e->flag == cmp_in || e->flag == cmp_notin) {
+			exp_rel_update_set_freevar(e->l);
+			exps_rel_update_set_freevar(e->r);
+		} else {
+			exp_rel_update_set_freevar(e->l);
+			exp_rel_update_set_freevar(e->r);
+			if (e->f)
+				exp_rel_update_set_freevar(e->f);
+		}
+		break;
+	case e_convert:
+		exp_rel_update_set_freevar(e->l);
+		break;
+	case e_atom:
+		if (e->f)
+			exps_rel_update_set_freevar(e->f);
+		break;
+	case e_column:
+		set_freevar(e, 1);
+		break;
+	case e_psm:
+		break;
+	}
+}
+
 static list *
 exp_rel_update_exps(mvc *sql, list *exps)
 {
@@ -2071,7 +2119,7 @@ exp_rel_update_exps(mvc *sql, list *exps)
 		if (exp_has_rel(e))
 			n->data = exp_rel_update_exp(sql, e);
 		else if (!exp_is_atom(e))
-			set_freevar(e,1);
+			exp_rel_update_set_freevar(e);
 	}
 	list_hash_clear(exps);
 	return exps;
@@ -2086,7 +2134,8 @@ exp_rel_update_exp(mvc *sql, sql_exp *e)
 	switch(e->type){
 	case e_func:
 	case e_aggr:
-		e->l = exp_rel_update_exps(sql, e->l);
+		if (exps_have_rel_exp(e->l))
+			e->l = exp_rel_update_exps(sql, e->l);
 		return e;
 	case e_cmp:
 		if (e->flag == cmp_or || e->flag == cmp_filter) {
@@ -2109,7 +2158,8 @@ exp_rel_update_exp(mvc *sql, sql_exp *e)
 		}
 		return e;
 	case e_convert:
-		e->l = exp_rel_update_exp(sql, e->l);
+		if (exp_has_rel(e->l))
+			e->l = exp_rel_update_exp(sql, e->l);
 		return e;
 	case e_psm:
 		if (exp_is_rel(e)) {
@@ -2143,7 +2193,7 @@ int
 exps_are_atoms( list *exps)
 {
 	int atoms = 1;
-	if (exps)
+	if (!list_empty(exps))
 		for(node *n=exps->h; n && atoms; n=n->next)
 			atoms &= exp_is_atom(n->data);
 	return atoms;

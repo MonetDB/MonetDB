@@ -445,6 +445,22 @@ stdout of test 'sqlancer07` in directory 'sql/test/SQLancer` itself:
 % 1 # length
 [ 0	]
 #ROLLBACK;
+#START TRANSACTION;
+#create view v0(vc0) as (values (interval '100' second));
+#create view v3(vc0) as (select 1638520390);
+#create view v4(vc0) as (values (-1548784118));
+#SELECT 1 FROM (select 2) v4(vc0) WHERE (0.6) IN (CASE WHEN v4.vc0 THEN (SELECT 0.2 WHERE TRUE) END);
+% .%10 # table_name
+% %10 # name
+% tinyint # type
+% 1 # length
+#SELECT FALSE FROM v3, v0 FULL OUTER JOIN v4 ON sql_max(FALSE, (0.6902854) NOT IN (0.5854332103580835, CASE WHEN v4.vc0 THEN (SELECT 0.023816515 WHERE TRUE) END));
+% .%16 # table_name
+% %16 # name
+% boolean # type
+% 5 # length
+[ false	]
+#ROLLBACK;
 
 # 10:16:14 >  
 # 10:16:14 >  "Done."
