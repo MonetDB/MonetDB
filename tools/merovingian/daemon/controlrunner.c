@@ -400,6 +400,7 @@ static void ctl_handle_client(
 
 				// Kill it appropriately
 				if (strcmp(p, "stop") == 0) {
+					bool terminated = false;
 					/* make an attempt to shut down the profiler first. */
 					if ((e = shutdown_profiler(q, &stats)) != NULL) {
 						free(e);
@@ -408,9 +409,13 @@ static void ctl_handle_client(
 					/* then kill it */
 					if (dp)
 						pthread_mutex_lock(&dp->fork_lock);
-					terminateProcess(q, pid, mtype);
-					if (dp)
+					if (pid != -1)
+						terminated = terminateProcess(q, pid, mtype);
+					if (dp) {
+						if (terminated)
+							dp->pid = -1;
 						pthread_mutex_unlock(&dp->fork_lock);
+					}
 					Mfprintf(_mero_ctlout, "%s: stopped "
 							"database '%s'\n", origin, q);
 				} else {

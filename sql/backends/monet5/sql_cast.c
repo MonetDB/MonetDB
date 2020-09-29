@@ -118,7 +118,6 @@ str_buf_initial_capacity(sql_class eclass, int digits)
 		case EC_MONTH:
 		case EC_NUM:
 		case EC_DEC:
-		case EC_FLT:
 		case EC_POS:
 		case EC_TIME:
 		case EC_TIME_TZ:
@@ -126,8 +125,10 @@ str_buf_initial_capacity(sql_class eclass, int digits)
 		case EC_TIMESTAMP:
 		case EC_TIMESTAMP_TZ:
 			return 64;
+		case EC_FLT:
+			return 128;
 		default:
-			return -1;
+			return 128;
 	}
 }
 
