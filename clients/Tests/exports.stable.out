@@ -1652,6 +1652,7 @@ str stoptraceRef;
 void strAfterCall(ValPtr v, ValPtr bak);
 void strBeforeCall(ValPtr v, ValPtr bak);
 str strRef;
+int str_utf8_length(str s);
 str streamsRef;
 str subavgRef;
 str subcountRef;

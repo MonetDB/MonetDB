@@ -32,7 +32,7 @@
 		} \
 	} while (0)
 
-extern int str_utf8_length(str s);
+mal_export int str_utf8_length(str s);
 extern int str_nbytes(str s);
 
 extern str str_from_wchr(str *buf, size_t *buflen, int c);
