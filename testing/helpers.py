@@ -104,17 +104,20 @@ def process_test_dir(dir_path:str, ctx={}, **kwargs):
         for ext, _, call, server in lookup:
             if os.path.isfile(test_path + ext):
                 test['ext'] = ext
+                test['tail'] = ext
                 test['call'] = call
                 test['server'] = server
                 break
             if os.path.isfile(test_path + ext + '.src'):
-                test['ext'] = ext + '.src'
+                test['ext'] = ext
+                test['tail'] = ext + '.src'
                 test['call'] = call
                 test['server'] = server
-                test['is_link'] = True
+                test['is_src_link'] = True
                 break
             if os.path.isfile(test_path + ext + '.in'):
-                test['ext'] = ext + '.in'
+                test['ext'] = ext
+                test['tail'] = ext + '.in'
                 test['call'] = call
                 test['server'] = server
                 test['is_input'] = True

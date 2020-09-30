@@ -931,13 +931,12 @@ def GetBitsAndModsAndThreads(env) :
     return rtrn
 ### GetBitsAndModsAndThreads(env) #
 
-def CheckMods(env, TST, SERVER, CALL) :
+def CheckMods(env, TST, SERVER) :
     missing = []
-    if os.path.isfile(TST + ".modules"):
-        for m in openutf8(TST + ".modules"):
-            m = m.strip()
-            if m  and  m[0] != "#"  and  m not in env['TST_MODS']:
-                missing.append(m)
+    reqmodules = TST.get('reqmodules', [])
+    for m in remodules:
+        if m not in env['TST_MODS']:
+            missing.append(m)
     if SERVER == "SQL":
         sql_mods = ["sql"]
         for m in sql_mods:
@@ -948,17 +947,11 @@ def CheckMods(env, TST, SERVER, CALL) :
 
 def CheckTests(env, TST, oktests):
     missing = []
-    if not os.path.isfile(TST + '.reqtests'):
-        # no required tests, so none missing
-        return missing
+    reqtests = TST.get('reqtests', [])
     if env.get('NOCLEAN'):
         # we didn't clean up from a previous run, assume tests were done
         return missing
-
-    for test in openutf8(TST + '.reqtests'):
-        test = test.strip()
-        if not test or test.startswith('#'):
-            continue
+    for test in reqtests:
         if test not in oktests:
             missing.append(test)
     return missing
@@ -987,7 +980,7 @@ def print_err_code(err_code):
             }
     lookup.get(err_code, lambda _: prgreen('OK'))(err_code)
 
-def RunTest(env, TST, oktests, pSrvr) :
+def RunTest(env, test, oktests, pSrvr) :
     global setpgrp
     exit_code = F_SKIP
     TX = 0
@@ -999,18 +992,24 @@ def RunTest(env, TST, oktests, pSrvr) :
     reason = None               # reason for skipping (if any)
     links = []                  # symlinks we make
     threads = None              # set if we override number of threads
-
     
-    EXT = CALL = SERVER = ""
+    EXT = test.get('ext')
+    CALL = test.get('call')
+    SERVER = test.get('server')
+    TST = test.get('test_name')
 
-    MissingMods = CheckMods(env, TST, SERVER, CALL)
-    MissingTests = CheckTests(env, TST, oktests)
-    nomito = os.path.isfile(TST + '.nomito')
+    # are there missing modules?
+    MissingMods = CheckMods(env, test, SERVER)
+    # are all reqtests run before this one?
+    MissingTests = CheckTests(env, test, oktests)
+    nomito = test.get('nomito', False)
     user = None
     passwd = None
 
+    # change to test target directory
     os.chdir(TSTTRGDIR)
 
+    COND = test.get('cond')
     if COND:
         for cond in COND.split('&'):
             if cond.startswith('!'):
@@ -1088,20 +1087,6 @@ def RunTest(env, TST, oktests, pSrvr) :
     elif SERVER in ["MAL", "SQL"] and "MAPI" in BusyPorts:
         reason = "as MAPIPORT=%s is not available." % env['MAPIPORT']
     else:
-        test = re.compile("^"+TST+"((_[sp][0-9][0-9])?\..*)?$", re.MULTILINE)
-        for f in listdir(RELSRCDIR):
-            if test.match(f):
-                try:
-                    SymlinkOrCopy(os.path.join(RELSRCDIR, f), f)
-                    links.append(os.path.join(TSTTRGDIR, f))
-                except IOError as err:
-                    if not env.get('NOCLEAN'):
-                        ErrMsg("SymlinkOrCopy('%s','%s') in '%s' failed with #%d: '%s'."
-                               % (os.path.join(RELSRCDIR, f), f, os.getcwd(), err.errno, err.strerror))
-                except OSError:
-                    if not env.get('NOCLEAN'):
-                        raise
-
         # Check for available sockets and block them until we're ready to run the actual test
         if pSrvr is None:
             MAPIsockets, reason = CheckSocket2(env, "MAPI")   #, SrvrErr)
@@ -1111,10 +1096,9 @@ def RunTest(env, TST, oktests, pSrvr) :
         else:
             MAPIsockets = None
 
-        if os.path.isfile(TST+EXT+".src")  and not os.path.isfile(TST+EXT):
-            f = openutf8(TST+EXT+".src","r")
-            TSTSRC = expandvars(path(f.readline().strip()), env)
-            f.close()
+        if test.get('is_src_link', False):
+            with open(test.get('test_path') + test.get('tail'), 'r') as f:
+                TSTSRC = expandvars(f.readline().strip(), env)
             if os.path.isfile(TSTSRC):
                 try:
                     SymlinkOrCopy(TSTSRC, TST + EXT)
@@ -1129,29 +1113,30 @@ def RunTest(env, TST, oktests, pSrvr) :
                     MAPIsockets[0].close()
                     MAPIsockets[1].close()
                 return TX,F_SKIP,reason,links
-        test = re.compile("^"+TST+"((_[sp][0-9][0-9])?\..*)?\.src$", re.MULTILINE)
-        for ff in listdir(TSTTRGDIR):
-            if test.match(ff) and not os.path.isfile(ff[:-4]):
-                f = openutf8(ff,"r")
-                TSTSRC = expandvars(path(f.readline().strip()), env)
-                f.close()
-                if os.path.isfile(TSTSRC):
-                    try:
-                        SymlinkOrCopy(TSTSRC, ff[:-4])
-                        links.append(ff[:-4])
-                    except IOError as err:
+        elif test.get('is_input', False):
+            with open(os.path.join(TSTTRGDIR, TST + EXT), 'w') as fout:
+                with open(test.get('test_path') + test.get('tail'), 'r') as f:
+                    for l in f:
+                        fout.write(expandvars(l, env))
+        else:
+            SymlinkOrCopy(os.path.join(TSTSRCDIR, TST + EXT), TST + EXT)
+            links.append(TST + EXT)
+            
+                    
+        ##############
+        test = re.compile("^"+TST+"((_[sp][0-9][0-9])?\..*)?$", re.MULTILINE)
+        for f in listdir(RELSRCDIR):
+            if test.match(f):
+                try:
+                    SymlinkOrCopy(os.path.join(RELSRCDIR, f), f)
+                    links.append(os.path.join(TSTTRGDIR, f))
+                except IOError as err:
+                    if not env.get('NOCLEAN'):
                         ErrMsg("SymlinkOrCopy('%s','%s') in '%s' failed with #%d: '%s'."
-                               % (TSTSRC, ff[:-4], os.getcwd(), err.errno, err.strerror))
-                else:
-                    Warn("source file '"+TSTSRC+"` is missing.")
-        test = re.compile("^"+TST+"(_[sp][0-9][0-9])?\..*\.in$", re.MULTILINE)
-        for ff in listdir(TSTTRGDIR):
-            fff = ff[:-3]
-            if test.match(ff) and not os.path.isfile(fff):
-                f = openutf8(fff,"w")
-                for l in openutf8(ff):
-                    f.write(expandvars(l, env))
-                f.close()
+                               % (os.path.join(RELSRCDIR, f), f, os.getcwd(), err.errno, err.strerror))
+                except OSError:
+                    if not env.get('NOCLEAN'):
+                        raise
 
 
         TIMEOUT = par['TIMEOUT']
