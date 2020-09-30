@@ -934,7 +934,7 @@ def GetBitsAndModsAndThreads(env) :
 def CheckMods(env, TST, SERVER) :
     missing = []
     reqmodules = TST.get('reqmodules', [])
-    for m in remodules:
+    for m in reqmodules:
         if m not in env['TST_MODS']:
             missing.append(m)
     if SERVER == "SQL":
@@ -1005,11 +1005,13 @@ def RunTest(env, test, oktests, pSrvr) :
     nomito = test.get('nomito', False)
     user = None
     passwd = None
+    BUSY_PORTS = env.get('BUSY_PORTS', [])
 
     # change to test target directory
     os.chdir(TSTTRGDIR)
 
     COND = test.get('cond')
+    print('{} COND -- {}'.format(TST,COND))
     if COND:
         for cond in COND.split('&'):
             if cond.startswith('!'):
@@ -1084,7 +1086,7 @@ def RunTest(env, test, oktests, pSrvr) :
         reason = "as multiple MAL clients in parallel are currently not supported by %s." % THISFILE
     elif CALL == "sqlXp":
         reason = "as multiple SQL clients in parallel are currently not supported by %s." % THISFILE
-    elif SERVER in ["MAL", "SQL"] and "MAPI" in BusyPorts:
+    elif SERVER in ["MAL", "SQL"] and "MAPI" in BUSY_PORTS:
         reason = "as MAPIPORT=%s is not available." % env['MAPIPORT']
     else:
         # Check for available sockets and block them until we're ready to run the actual test
@@ -1119,34 +1121,10 @@ def RunTest(env, test, oktests, pSrvr) :
                     for l in f:
                         fout.write(expandvars(l, env))
         else:
-            SymlinkOrCopy(os.path.join(TSTSRCDIR, TST + EXT), TST + EXT)
-            links.append(TST + EXT)
+            SymlinkOrCopy(test.get('test_path') + EXT, TST + EXT)
+            links.append(os.path.join(TSTTRGDIR, TST + EXT))
             
-                    
-        ##############
-        test = re.compile("^"+TST+"((_[sp][0-9][0-9])?\..*)?$", re.MULTILINE)
-        for f in listdir(RELSRCDIR):
-            if test.match(f):
-                try:
-                    SymlinkOrCopy(os.path.join(RELSRCDIR, f), f)
-                    links.append(os.path.join(TSTTRGDIR, f))
-                except IOError as err:
-                    if not env.get('NOCLEAN'):
-                        ErrMsg("SymlinkOrCopy('%s','%s') in '%s' failed with #%d: '%s'."
-                               % (os.path.join(RELSRCDIR, f), f, os.getcwd(), err.errno, err.strerror))
-                except OSError:
-                    if not env.get('NOCLEAN'):
-                        raise
-
-
-        TIMEOUT = par['TIMEOUT']
-        if os.path.isfile(TST+".timeout"):
-            for f in openutf8(TST+".timeout"):
-                TOf = float(f.strip())
-                if TOf > 0:
-                    TIMEOUT = int(TIMEOUT * TOf)
-                if TIMEOUT < 1 and par['TIMEOUT'] > 0:
-                    TIMEOUT = 1
+        TIMEOUT = int(par['TIMEOUT'] * test.get('timeout', 1))
         CTIMEOUT = 0
         if   CALL in ["other", "python", "ruby"]:
             if TIMEOUT > 0:
@@ -1198,7 +1176,7 @@ def RunTest(env, test, oktests, pSrvr) :
                 print()
 
     return TX, exit_code, reason, links
-### RunTest(env, TST, BusyPorts, COND, oktests) #
+### RunTest(env, TST, BUSY_PORTS, COND, oktests) #
 
 def CheckPort(port) :
     # Since 'localhost' and $HOST (i.e., `hostname`) are usually
@@ -2722,7 +2700,7 @@ def main(argv) :
 
         # parse commandline arguments
 
-        BusyPorts = []
+        BUSY_PORTS = []
 
         if not env.get('NOCLEAN') and os.path.exists(os.path.join(TSTTRGBASE, TSTPREF)):
             try:
@@ -2782,9 +2760,9 @@ def main(argv) :
         S[1].close()
         if busy:
             Warn("Skipping MAPI tests as MAPIPORT=%s is not available on %s (Error #%d: '%s')!" % (env['MAPIPORT'],host,Serrno,Serrstr))
-            BusyPorts.append('MAPI')
+            BUSY_PORTS.append('MAPI')
         
-        env['BUSY_PORTS'] = BusyPorts
+        env['BUSY_PORTS'] = BUSY_PORTS
         env['SYST'] = os.environ['SYST']
         env['RELEASE'] = os.environ['RELEASE']
         env['DIST'] = os.environ['DIST']

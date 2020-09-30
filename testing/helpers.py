@@ -41,11 +41,16 @@ def process_test_dir(dir_path:str, ctx={}, **kwargs):
     test_names = kwargs.get('test_names')
     if test_names:
         # ensure all test name exist in All file
-        test_names_in_all = [x[1] for x in tests]
+        lookup = {}
+        filtered = []
+        for cond, tn in tests:
+            lookup[tn] = cond, tn
         for tn in test_names:
-            if tn not in test_names_in_all:
+            if tn in lookup:
+                filtered.append(lookup[tn])
+            else:
                 raise ValueError('ERROR: {} does not appear to be valid test name. Check {}/All'.format(tn, dir_path))
-        tests = [(None, test_name) for test_name in test_names]
+        tests = filtered
     tests_out = []
     for cond, test_name in tests:
         test_path = os.path.join(real_dir_path, test_name)
