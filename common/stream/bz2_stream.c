@@ -21,7 +21,7 @@ struct inner_state {
 	int (*work)(bz_stream *strm, int flush);
 	int (*end)(bz_stream *strm);
 	bool eof_reached;
-	Bytef buf[64*1024];
+	char buf[64*1024];
 };
 
 

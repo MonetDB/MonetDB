@@ -18,7 +18,6 @@ Welcome to MonetDB's documentation!
    monetdbe/monetdbe_api
    source/intro
    source/build
-   source/windowsbuild
    source/build-fedora
    source/build-debian
    source/clients
@@ -36,3 +35,4 @@ Indices and tables
 * :ref:`genindex`
 * :ref:`modindex`
 * :ref:`search`
+

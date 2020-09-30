@@ -20,19 +20,7 @@ if (${LINUX_DISTRO} STREQUAL "debian")
       variablename Python3_NumPy_FOUND)
   endif()
 elseif (${LINUX_DISTRO} STREQUAL "ubuntu")
-  if(${LINUX_DISTRO_VERSION} STREQUAL "18")
-    assert_package_detected(
-      detect FALSE
-      legacyvariable HAVE_LIBPY3
-      variablename Python3_NumPy_FOUND)
-  endif()
-  if(${LINUX_DISTRO_VERSION} STREQUAL "19")
-    assert_package_detected(
-      detect FALSE
-      legacyvariable HAVE_LIBPY3
-      variablename Python3_NumPy_FOUND)
-  endif()
-  if(${LINUX_DISTRO_VERSION} STREQUAL "20")
+  if(${LINUX_DISTRO_VERSION} VERSION_GREATER_EQUAL "18")
     assert_package_detected(
       detect FALSE
       legacyvariable HAVE_LIBPY3
