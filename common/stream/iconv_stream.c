@@ -341,7 +341,7 @@ iconv_rstream(stream *restrict ss, const char *restrict charset, const char *res
 	    strcmp(charset, "UTF8") == 0)
 		return ss;
 
-	mnstr_set_open_error(url, 0, "ICONV support has been left out of this MonetDB");
+	mnstr_set_open_error(name, 0, "ICONV support has been left out of this MonetDB");
 	return NULL;
 }
 
@@ -356,7 +356,7 @@ iconv_wstream(stream *restrict ss, const char *restrict charset, const char *res
 	    strcmp(charset, "UTF8") == 0)
 		return ss;
 
-	mnstr_set_open_error(url, 0, "ICONV support has been left out of this MonetDB");
+	mnstr_set_open_error(name, 0, "ICONV support has been left out of this MonetDB");
 	return NULL;
 }
 #endif /* HAVE_ICONV */
