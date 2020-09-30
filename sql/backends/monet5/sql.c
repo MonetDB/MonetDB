@@ -281,6 +281,28 @@ SQLshutdown_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	return msg;
 }
 
+static str
+SQLset_protocol(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	const int protocol = *getArgReference_int(stk, pci, 1);
+
+	(void) mb;
+	(void) stk;
+
+	if (!(
+		protocol == PROTOCOL_AUTO ||
+		protocol == PROTOCOL_9 ||
+		protocol == PROTOCOL_10 ||
+		protocol == PROTOCOL_COLUMNAR))
+	{
+		return createException(SQL, "sql.set_protocol", "unknown protocol: %d", protocol);
+	}
+
+	*getArgReference_int(stk, pci, 0) = (cntxt->protocol = protocol);
+
+	return MAL_SUCCEED;
+}
+
 str
 create_table_or_view(mvc *sql, char* sname, char *tname, sql_table *t, int temp)
 {
@@ -5472,6 +5494,7 @@ static mel_func sql_init_funcs[] = {
  pattern("sql", "shutdown", SQLshutdown_wrap, false, "", args(1,2, arg("",str),arg("delay",bte))),
  pattern("sql", "shutdown", SQLshutdown_wrap, false, "", args(1,2, arg("",str),arg("delay",sht))),
  pattern("sql", "shutdown", SQLshutdown_wrap, false, "", args(1,2, arg("",str),arg("delay",int))),
+ pattern("sql", "set_protocol", SQLset_protocol, true, "Configures the result set protocol", args(1,2, arg("",int), arg("protocol",int))),
  pattern("sql", "mvc", SQLmvc, false, "Get the multiversion catalog context. \nNeeded for correct statement dependencies\n(ie sql.update, should be after sql.bind in concurrent execution)", args(1,1, arg("",int))),
  pattern("sql", "transaction", SQLtransaction2, true, "Start an autocommit transaction", noargs),
  pattern("sql", "commit", SQLcommit, true, "Trigger the commit operation for a MAL block", noargs),

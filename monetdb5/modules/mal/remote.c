@@ -246,9 +246,11 @@ static str RMTconnectScen(
 		return msg;
 	}
 
-	if (columnar && (mapi_set_columnar_protocol(m, true) != MOK || mapi_error(m))) {
-		msg = createException(MAL, "monetdbe.connect", "%s", mapi_error_str(m));
-		return msg;
+	if (columnar) {
+		char set_protocol_query_buf[50];
+		snprintf(set_protocol_query_buf, 50, "sql.set_protocol(%d:int);", PROTOCOL_COLUMNAR);
+		if ((msg = RMTquery(&hdl, "remote.connect", m, set_protocol_query_buf)))
+			return msg;
 	}
 
 	/* connection established, add to list */

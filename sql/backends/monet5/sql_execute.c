@@ -349,8 +349,8 @@ SQLstatementIntern(Client c, const char *expr, const char *nme, bit execute, bit
 		throw(SQL, "sql.statement", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
 	*o = *m;
-	struct qc* qc = m->qc;
 	/* hide query cache, this causes crashes in SQLtrans() due to uninitialized memory otherwise */
+	struct qc* qc = m->qc;
 	m->qc = NULL;
 
 	/* create private allocator */
