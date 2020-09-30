@@ -349,9 +349,6 @@ SQLstatementIntern(Client c, const char *expr, const char *nme, bit execute, bit
 		throw(SQL, "sql.statement", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
 	*o = *m;
-	/* hide query cache, this causes crashes in SQLtrans() due to uninitialized memory otherwise */
-	struct qc* qc = m->qc;
-	m->qc = NULL;
 
 	/* create private allocator */
 	m->sa = NULL;
@@ -374,8 +371,7 @@ SQLstatementIntern(Client c, const char *expr, const char *nme, bit execute, bit
 		sql->output_format = OFMT_NONE;
 	}
 	sql->depth++;
-	// and do it again
-	m->qc = NULL;
+
 	m->user_id = m->role_id = USER_MONETDB;
 	if (result)
 		m->reply_size = -2; /* do not clean up result tables */
@@ -517,7 +513,7 @@ SQLstatementIntern(Client c, const char *expr, const char *nme, bit execute, bit
 				err = 1;
 				msg = createException(PARSE, "SQLparser", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			} else {
-				be->q = qc_insert(qc, m->sa,	/* the allocator */
+				be->q = qc_insert(m->qc, m->sa,	/* the allocator */
 						  r,	/* keep relational query */
 						  m->sym,	/* the sql symbol tree */
 						  m->params,	/* the argument list */
