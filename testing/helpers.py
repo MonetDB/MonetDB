@@ -138,7 +138,6 @@ def process_test_dir(dir_path:str, ctx={}, **kwargs):
     return ctx
 
 def process_dir(dir_path: str, ctx={}, **kwargs):
-    print('-->', dir_path)
     if os.path.basename(os.path.realpath(dir_path)) == 'Tests':
         return process_test_dir(dir_path, ctx, **kwargs)
     onlydirs = [d for d in os.listdir(dir_path) if os.path.isdir(os.path.join(dir_path, d))]

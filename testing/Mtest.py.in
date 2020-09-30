@@ -532,7 +532,6 @@ def find_test_dirs(thisdir) :
 
 def PerformDir(env, testdir) :
     td = 0
-    passed = 0
     failed = 0
     skipped = 0
     FdErr = F_SKIP
@@ -630,8 +629,12 @@ def PerformDir(env, testdir) :
             TIMES.append((TSTDIR, test_name, t, tt, FtErr, reason))
             td += tt
             FdErr = max(FdErr,FtErr)
-            if FtErr is None:
+            if FtErr ==  F_OK:
                 oktests.append(test_name)
+            if FtErr == F_SKIP:
+                skipped += 1
+            if FtErr > F_OK:
+                failed += 1
     finally:
         if pSrvr is not None:
             pSrvr.terminate()
@@ -657,13 +660,14 @@ def PerformDir(env, testdir) :
                 break
         else:
             remove(ff)
-
     if testweb:
         try:
             os.removedirs(TSTTRGDIR)
         except:
             pass
-
+    env['passed'] = int(env.get('passed', 0)) + len(oktests)
+    env['skipped'] = int(env.get('skipped', 0)) + skipped
+    env['failed'] = int(env.get('failed', 0)) + failed 
     return td, FdErr
 ### PerformDir(env, testdir) #
 
@@ -980,7 +984,7 @@ def print_err_code(err_code):
             }
     lookup.get(err_code, lambda _: prgreen('OK'))(err_code)
 
-def RunTest(env, test, oktests, pSrvr) :
+def RunTest(env, test, oktests, pSrvr):
     global setpgrp
     exit_code = F_SKIP
     TX = 0
@@ -1006,6 +1010,10 @@ def RunTest(env, test, oktests, pSrvr) :
     user = None
     passwd = None
     BUSY_PORTS = env.get('BUSY_PORTS', [])
+    test_counter = env.get('test_counter', 1)
+    
+    # print progress
+    progress(test_counter, env.get('test_count'), os.path.join(TSTDIR, TST + EXT))
 
     # change to test target directory
     os.chdir(TSTTRGDIR)
@@ -1157,23 +1165,18 @@ def RunTest(env, test, oktests, pSrvr) :
 
         t1 = time.time()
         TX = t1 - t0
-
-    # print test result
-    if quiet:
-        if exit_code == F_OK:
-            prgreen('.')
-        else:
-            STDOUT.write('.')
-        STDOUT.flush()
-    else:
-        STDOUT.write('\t{}'.format(TST))
-        STDOUT.write("\t%7.3fs\t" % TX)
-        print_err_code(exit_code)
-        if reason:
-            print('\t{}'.format(reason))
-        else:
+    
+        if exit_code > F_OK:
             print()
-
+            print('========================================')
+            prred('ERROR: ')
+            print(os.path.join(TSTDIR, TST + EXT))
+            print('========================================')
+            with open(TestErrFile, 'r') as f:
+                print(f.read())
+            print()
+            
+    env['test_counter'] = test_counter + 1
     return TX, exit_code, reason, links
 ### RunTest(env, TST, BUSY_PORTS, COND, oktests) #
 
@@ -1303,6 +1306,11 @@ def Prompt(cmd) :
     prmpt = time.strftime('\n# %H:%M:%S >  ',time.localtime(time.time()))
     return '%s%s"%s"%s\n\n' % (prmpt, prmpt, cmd, prmpt)
 ### Prompt(cmd) #
+
+def progress(count, total, test):
+    perc = round((count/total) * 100) if total and count else 0
+    print('\r', ' '*(ttywidth or 100), end='', sep='')
+    print('\r','[{}/{}] ({}%)    {}'.format(count, total, perc, test), end='', sep='', flush=True)
 
 def getkids():
     # return a dictionary with process IDs as key and a list of child
@@ -2772,9 +2780,9 @@ def main(argv) :
         test_ctx = build_work_ctx(*args) if len(args) > 0 else build_work_ctx(TSTSRCBASE)
         test_count = test_ctx.get('test_count', 0) 
         env['test_count'] = test_count
-        print('Found {} tests!'.format(test_count))
         
         t_ = 0
+        interupted = False
         try:
             for d in test_ctx.get('test_folders', []):
                 t, diff = PerformDir(env, d)
@@ -2783,10 +2791,9 @@ def main(argv) :
                     if global_timeout and start_time + global_timeout < time.time():
                         print('\nGlobal testing timeout reached\n')
                         break
-                    env['TSTDIR'] = ""
-                    env['TSTTRGDIR'] = os.path.join(TSTTRGBASE, TSTPREF)
         except KeyboardInterrupt:
             # if we get interrupted between directories, we still want output
+            interupted = True
             pass
 
         fn = os.path.join(TSTTRGBASE, TSTPREF, "times.")
@@ -2806,52 +2813,19 @@ def main(argv) :
         Failed = 0
         for f in Failure[1:-1]:
             Failed += len(f)
-        num_tests = 0
-        for f in Failure:
-            num_tests += len(f)
-        how = ""
-        what = ""
-        for x, y, z in [(F_SKIP, "could not be executed", ""),
-                        (F_WARN, "produced slightly different output", "slightly"),
-                        (F_SOCK, "did not properly release socket(s)", "SIGNIFICANTLY"),
-                        (F_TIME, "ran into timeout", "SIGNIFICANTLY"),
-                        (F_ABRT, "caused an abort (assertion failure)", "SIGNIFICANTLY"),
-                        (F_SEGV, "resulted in a crash", "SIGNIFICANTLY"),
-                        (F_RECU, "ran into too deep recursion", "SIGNIFICANTLY"),
-                        (F_ERROR, "produced SIGNIFICANTLY different output", "SIGNIFICANTLY"),
-                        (F_MISSING, "produced SIGNIFICANTLY different output", "SIGNIFICANTLY")]:
-            if Failure[x]:
-                how = z
-                what += "  %3d out of %3d tests %s\n" % (len(Failure[x]),num_tests, y)
-                # only report failed tests if there aren't too many
-                if Failed < 30 and \
-                       (x != F_SKIP or len(Failure[F_SKIP]) + Failed < 30):
-                    for f in Failure[x]:
-                        what += "        %s\n" % f
-        STDERR.flush()
-        if Failed:
-            print("""\
 
-!ERROR:  Testing FAILED %s (%d out of %d tests failed)
-
-%s
-""" % (how, Failed, num_tests, what))
-            if jenkins:
-                sys.exit(0)
-            sys.exit(1)
-        else:
-            if quiet:
-                print()
-            else:
-                prgreen('OK')
-                print()
-                print('Ran {} test in {:7.3f}'.format(num_tests, t_))
-            sys.exit(0)
-
+        # print summary
+        failed = env.get('failed', 0)
+        skipped = env.get('skipped', 0)
+        if not interupted:
+            print()
+            print('failed={}, skipped={}'.format(failed, skipped))
+            print('Ran {} test in {:7.3f}'.format(test_count - skipped, t_))
+    
     finally:
         # cleanup the place where we put our UNIX sockets
         try:
-            shutil.rmtree(sockdir);
+            shutil.rmtree(sockdir)
         except:
             pass
 
