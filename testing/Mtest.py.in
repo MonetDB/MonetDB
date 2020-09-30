@@ -1011,7 +1011,6 @@ def RunTest(env, test, oktests, pSrvr) :
     os.chdir(TSTTRGDIR)
 
     COND = test.get('cond')
-    print('{} COND -- {}'.format(TST,COND))
     if COND:
         for cond in COND.split('&'):
             if cond.startswith('!'):
@@ -1159,21 +1158,21 @@ def RunTest(env, test, oktests, pSrvr) :
         t1 = time.time()
         TX = t1 - t0
 
-        # print test result
-        if quiet:
-            if exit_code == F_OK:
-                prgreen('.')
-            else:
-                STDOUT.write('.')
-            STDOUT.flush()
+    # print test result
+    if quiet:
+        if exit_code == F_OK:
+            prgreen('.')
         else:
-            STDOUT.write('\t{}'.format(TST))
-            STDOUT.write("\t%7.3fs\t" % TX)
-            print_err_code(exit_code)
-            if reason:
-                print('\t{}'.format(reason))
-            else:
-                print()
+            STDOUT.write('.')
+        STDOUT.flush()
+    else:
+        STDOUT.write('\t{}'.format(TST))
+        STDOUT.write("\t%7.3fs\t" % TX)
+        print_err_code(exit_code)
+        if reason:
+            print('\t{}'.format(reason))
+        else:
+            print()
 
     return TX, exit_code, reason, links
 ### RunTest(env, TST, BUSY_PORTS, COND, oktests) #
