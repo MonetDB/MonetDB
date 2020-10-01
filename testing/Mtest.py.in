@@ -740,6 +740,16 @@ def coredumpctl(pid):
     os.unlink(name2)
     return out, err
 
+def transform_str_return_code(code):
+    lookup = {
+            'abort': F_ABRT,
+            'error': F_ERROR,
+            'segfault': F_SEGV,
+            'timeout': F_TIME,
+            'socket': F_SOCK,
+            'recursion': F_RECU}
+    return lookup.get(code, F_ERROR) if code is not None else F_OK
+
 def returnCode(proc, f = None):
     '''Interpret the return code of a process.
     If second arg sepcified, write a message to it.'''
@@ -1150,7 +1160,6 @@ def RunTest(env, test, oktests, pSrvr):
         if  SERVER in ["MAL", "SQL"] and TIMEOUT > 0:
             STIMEOUT = STIMEOUT + TIMEOUT + min(TIMEOUT, par['TIMEOUT'])
 
-        ME = ""
 
         TestOutFile = TST+".test.out"
         TestErrFile = TST+".test.err"
@@ -1159,9 +1168,8 @@ def RunTest(env, test, oktests, pSrvr):
         if CALL == 'sqltest':
             exit_code, reason = RunSQLLogicTest(env, (TST + EXT), None, TestErrFile)
         else:
-            exit_code = F_SKIP
-            reason = 'Not a SQLLogic Test'
-        # tres = DoIt(env, SERVER, CALL, TST, EXT, TestOutFile, TestErrFile, STIMEOUT, CTIMEOUT, TIMEOUT, ME, MAPIsockets, length, nomito, threads, user, passwd, COND, all_tests, pSrvr)
+         tres = DoIt(env, SERVER, CALL, TST, EXT, TestOutFile, TestErrFile, STIMEOUT, CTIMEOUT, TIMEOUT, MAPIsockets, nomito, threads, user, passwd, COND, pSrvr)
+         exit_code = transform_str_return_code(tres)
 
         t1 = time.time()
         TX = t1 - t0
@@ -1676,35 +1684,8 @@ def RunSQLLogicTest(env, Test, TestOut, TestErr) -> (int, str):
         exit_code = F_ERROR
     return exit_code or F_OK, msg
 
-def DoIt(env, SERVER, CALL, TST, EXT, TestOutFile, TestErrFile, STIMEOUT, CTIMEOUT, TIMEOUT, ME, MAPIsockets, length, nomito, threads, user, passwd, COND, all_tests, PSRVR) :
-    ATJOB2 = ""
-    STDERR.flush()
-    if quiet:
-        STDOUT.write(".")
-    elif verbose:
-        STDOUT.write('%s%s  (<=%d,%d,%d) ...' %
-                     (prompt(), os.path.join(env['TSTDIR'], TST + EXT),
-                      TIMEOUT, CTIMEOUT, STIMEOUT))
-    else:
-        if ttywidth > 0 and length + 10 + 21 >= ttywidth:
-            # 10 - length of prompt()
-            # 21 - length of time plus result
-            l = ttywidth - 10 - 21 - 1
-            if len(TST) <= l:
-                s = '%-*s ' % (l, TST)
-            else:
-                s = '%s...%s ' % (TST[:l//2 - 2], TST[l//2+1-l:])
-        else:
-            s = '%-*s ' % (length, TST)
-        STDOUT.write('%s%s' % (prompt(), s))
-        if isatty and TIMEOUT > 0:
-            s = '(<=%d,%d,%d)' % (TIMEOUT, CTIMEOUT, STIMEOUT)
-            STDOUT.write(s + '\b' * len(s))
-
-    try:
-        STDOUT.flush()
-    except IOError as err:
-        Warn("Flushing STDOUT in DoIt failed with #%d: '%s'." % (err.errno, err.strerror))
+def DoIt(env, SERVER, CALL, TST, EXT, TestOutFile, TestErrFile, STIMEOUT, CTIMEOUT, TIMEOUT, MAPIsockets, nomito, threads, user, passwd, COND, PSRVR) :
+    
     TSTDB = env['TSTDB']
     exe = env['exe']
 
@@ -1756,7 +1737,7 @@ def DoIt(env, SERVER, CALL, TST, EXT, TestOutFile, TestErrFile, STIMEOUT, CTIMEO
                 lang="sql"
 
             # enable r integration in server
-            if (not all_tests or (COND != None and "HAVE_LIBR" in COND)) and CONDITIONALS['HAVE_LIBR'] and CONDITIONALS['NOT_WIN32']:
+            if ((COND != None and "HAVE_LIBR" in COND)) and CONDITIONALS['HAVE_LIBR'] and CONDITIONALS['NOT_WIN32']:
                 Srvr.extend(['--set', 'embedded_r=yes'])
 
             savepath = None
@@ -1950,7 +1931,7 @@ def DoIt(env, SERVER, CALL, TST, EXT, TestOutFile, TestErrFile, STIMEOUT, CTIMEO
 
     return None
 
-### DoIt(env, SERVER, CALL, TST, EXT, TestOutFile, TestErrFile, STIMEOUT, CTIMEOUT, TIMEOUT, ME, MAPIsockets, length, nomito) #
+### DoIt(env, SERVER, CALL, TST, EXT, TestOutFile, TestErrFile, STIMEOUT, CTIMEOUT, TIMEOUT, MAPIsockets, length, nomito) #
 
 def Check(command, input) :
     global setpgrp
@@ -2380,7 +2361,6 @@ def main(argv) :
     nomito = False
     jenkins = False
     addreqs = False
-    all_tests = False
     testweb = opts.testweb
     CONDITIONALS['RELEASERUN'] = opts.releaserun
     nomito = opts.nomito
