@@ -2797,7 +2797,14 @@ def main(argv) :
         # print summary
         failed = env.get('failed', 0)
         skipped = env.get('skipped', 0)
-        if not interupted:
+        if interupted:
+            prred('Interupt')
+        else:
+            print()
+            if failed > 0:
+                prred('ERROR')
+            else:
+                prgreen('OK')
             print()
             print('failed={}, skipped={}'.format(failed, skipped))
             print('Ran {} test in {:7.3f}'.format(test_count - skipped, t_))

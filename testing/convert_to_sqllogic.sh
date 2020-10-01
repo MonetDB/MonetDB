@@ -7,18 +7,20 @@
 set -e 
 
 usage() {
-echo "Usage $0 --src-dir <source dir> --dst-dir <destination directory>"
-echo "Converts old test sql scripts to sqllogic scripts."
-echo "Options:"
+echo "USAGE $(basename $0) [OPTION ...] [FILE...]"
+echo "DESCRIPTION: Converts old sql scripts to sqllogic scripts."
+echo "OPTIONS:"
 echo " -s|--src-dir <source dir>          directory with old sql tests."
 echo " -t|--dst-dir <destination dir>     destination dotrectory for *.test sqllogic tests."
-echo " -d|--dry-run                    dry run"
+echo " -o|--overwrite <bool>              overwrites existing .test" 
+echo " -d|--dry-run                       dry run"
 echo
 }
 
 src=
 dst=
 dry_run=
+overwrite=
 
 for arg in "$@"
 do
@@ -38,16 +40,35 @@ do
             dry_run="true"
             shift
             ;;
+        -o|--overwrite)
+            overwrite="true"
+            shift
+            ;;
     esac
 done
 
-if [[ ! -d "${src}" ]];then
-    echo "ERROR: source directory required!";
+files=()
+if [[ -d "${src}" ]];then
+    files=$(ls $src)
+fi
+
+for f in $@;do
+    if [[ -f $f ]];then
+        files+=" $f";
+    fi
+done
+
+if [[ -z $files ]];then 
     usage;
     exit 1;
 fi
 
-[[ -d "${dst}" ]] || mkdir -p ${dst}
+if [[ -z "${dst}" ]];then
+    echo "ERROR: need --dest-dir";
+    usage;
+    exit 1;
+fi
+[[ -d "${dst}" ]] || mkdir -p ${dst};
 
 dryrun() {
     local f=$1;
@@ -57,22 +78,33 @@ dryrun() {
 work() {
     local f=$1;
     local dst=$2;
-    cat $f | mktest.py --database "test" > $dst;
-}
-
-for f in $(ls ${src}/*{.sql,.sql.in});do
-    echo ">>> converting $f ...";
     if [[ "${dry_run}" = true ]];then
         dryrun $f;
     else
-        ext=$(echo "${f##*.}");
-        if [[ $ext == "in" ]];then
-            bn=$(basename $f .sql.in);
-            work $f $dst/$bn.test.in;
+        if [[ -e $dst ]];then
+            if [[ "$overwrite" = "true" ]];then
+                echo ">>> overwriting $dst ...";
+                cat $f | mktest.py --database "test" > $dst;
+            else
+                echo "$dst already exists!"
+            fi    
         else
-            bn=$(basename $f .sql);
-            work $f $dst/$bn.test;
+            echo ">>> converting $f ...";
+            cat $f | mktest.py --database "test" > $dst;
         fi
+    fi
+}
+
+for f in $files;do
+    ext=$(echo "${f#*.}");
+    if [[ $ext == "sql.in" ]];then
+        bn=$(basename $f .sql.in);
+        work $f $dst/$bn.test.in;
+        continue
+    fi
+    if [[ $ext == "sql" ]];then
+        bn=$(basename $f .sql);
+        work $f $dst/$bn.test;
     fi
 done;
 
