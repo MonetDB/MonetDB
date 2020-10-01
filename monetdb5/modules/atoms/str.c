@@ -2936,7 +2936,7 @@ UTF8_assert(const char *s)
 #endif
 
 static str
-strPrelude(void *ret)
+STRprelude(void *ret)
 {
 	(void) ret;
 	if (UTF8_toUpperFrom == NULL) {
@@ -2985,7 +2985,7 @@ strPrelude(void *ret)
 }
 
 static str
-strEpilogue(void *ret)
+STRepilogue(void *ret)
 {
 	(void) ret;
 	if (UTF8_toUpperFrom)
@@ -4270,8 +4270,8 @@ mel_func str_init_funcs[] = {
  command("str", "replace", STRreplace, false, "Insert a string into another", args(1,4, arg("",str),arg("s",str),arg("pat",str),arg("s2",str))),
  command("str", "repeat", STRrepeat, false, "", args(1,3, arg("",str),arg("s2",str),arg("c",int))),
  command("str", "space", STRspace, false, "", args(1,2, arg("",str),arg("l",int))),
- command("str", "prelude", strPrelude, false, "", args(1,1, arg("",void))),
- command("str", "STRepilogue", strEpilogue, false, "", args(1,1, arg("",void))),
+ command("str", "prelude", STRprelude, false, "", args(1,1, arg("",void))),
+ command("str", "epilogue", STRepilogue, false, "", args(1,1, arg("",void))),
  { .imp=NULL }
 };
 #include "mal_import.h"

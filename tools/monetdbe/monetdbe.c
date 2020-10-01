@@ -536,7 +536,7 @@ monetdbe_startup(monetdbe_database_internal *mdbe, char* dbdir, monetdbe_options
 		workers = GDKnr_threads = opts->nr_threads;
 	}
 	if (opts && opts->memorylimit) {
-		if( opts->nr_threads < 0){
+		if( opts->memorylimit < 0){
 			mdbe->msg = createException(MAL, "monetdbe.monetdbe_startup", "Memorylimit should be positive");
 			goto cleanup;
 		}
