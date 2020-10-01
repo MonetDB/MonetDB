@@ -83,23 +83,19 @@ UDFreverse_(str *buf, size_t *buflen, const char *src)
 str
 UDFreverse(str *res, const str *arg)
 {
-	size_t buflen = INITIAL_STR_BUFFER_LENGTH;
-	str buf = GDKmalloc(buflen), msg;
+	str msg = MAL_SUCCEED;
+	size_t buflen;
 
 	/* assert calling sanity */
 	assert(res && arg);
 
-	*res = NULL;
-	if (!buf)
+	buflen = strlen(*arg) + 1;
+	if (!(*res = GDKmalloc(buflen)))
 		throw(MAL, "udf.reverse", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-	msg = UDFreverse_(&buf, &buflen, *arg);
-	/* Because UDFreverse_ is shared with bulk version, we don't want to return the string buffer as result.
-	   The reason is the buffer may be longer than the output string. The scalar will get 2 allocations, 
-	   which seems worse, the the bulk version will get more inputs, therefore the gain will be larger. */
-	if (!msg && !(*res = GDKstrdup(buf)))
-		msg = createException(MAL, "udf.reverse", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-
-	GDKfree(buf);
+	if ((msg = UDFreverse_(res, &buflen, *arg)) != MAL_SUCCEED) {
+		GDKfree(*res);
+		*res = NULL;
+	}
 	return msg;
 }
 
@@ -171,6 +167,7 @@ bailout:
 		bn->tkey = BATcount(bn) <= 1;
 		bn->tsorted = BATcount(bn) <= 1;
 		bn->trevsorted = BATcount(bn) <= 1;
+		bn->theap.dirty = true;
 	} else if (bn) {
 		BBPreclaim(bn);
 		bn = NULL;
