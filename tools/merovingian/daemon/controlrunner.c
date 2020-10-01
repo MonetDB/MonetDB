@@ -483,17 +483,32 @@ static void ctl_handle_client(
 							exit(EXIT_FAILURE);
 						} else if (child > 0) {
 							/* this is the parent process */
-							int status;
 							close(pipes[0]);
-							write(pipes[1], p, strlen(p));
-							write(pipes[1], "\n", 1);
-							close(pipes[1]);
-							/* wait for the child to finish */
-							waitpid(child, &status, 0);
-							if (!WIFEXITED(status) || WEXITSTATUS(status) != 0)
+							if (write(pipes[1], p, strlen(p)) < 0 || write(pipes[1], "\n", 1) < 0) {
+								close(pipes[1]);
 								Mfprintf(_mero_ctlerr,
-										 "%s: initialization of database '%s' failed\n",
-										 origin, q);
+										 "%s: initial communication with database '%s' failed: %s\n",
+										 origin, q, strerror(errno));
+								len = snprintf(buf2, sizeof(buf2),
+										"initial communication with database '%s' failed: %s\n",
+										q, strerror(errno));
+								send_client("!");
+								continue;
+							} else {
+								close(pipes[1]);
+								/* wait for the child to finish */
+								int status;
+								waitpid(child, &status, 0);
+								if (!WIFEXITED(status) || WEXITSTATUS(status) != 0) {
+									Mfprintf(_mero_ctlerr,
+											"%s: initialization of database '%s' failed\n",
+											origin, q);
+									len = snprintf(buf2, sizeof(buf2),
+											"initialization of database '%s' failed\n", q);
+									send_client("!");
+									continue;
+								}
+							}
 						} else {
 							close(pipes[0]);
 							close(pipes[1]);
