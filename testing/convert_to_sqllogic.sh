@@ -49,7 +49,9 @@ done
 
 files=()
 if [[ -d "${src}" ]];then
-    files=$(ls $src)
+    for f in $(ls $src);do
+        files+=" $src/$f";
+    done
 fi
 
 for f in $@;do

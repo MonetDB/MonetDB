@@ -2756,8 +2756,11 @@ def main(argv) :
         env['VERSION'] = os.environ['VERSION']
 
         STDERR.flush()
-        
-        test_ctx = build_work_ctx(*args) if len(args) > 0 else build_work_ctx(TSTSRCBASE)
+        try:
+            test_ctx = build_work_ctx(*args) if len(args) > 0 else build_work_ctx(TSTSRCBASE)
+        except ValueError as e:
+            raise SystemExit(e)
+
         test_count = test_ctx.get('test_count', 0) 
         env['test_count'] = test_count
         
