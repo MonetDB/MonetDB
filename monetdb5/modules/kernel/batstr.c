@@ -1422,14 +1422,10 @@ STRbatWChrAt(bat *res, const bat *l, const bat *r)
 		x = (str) BUNtail(lefti, p);
 		y = righti[p];
 
-		if (strNil(x) || is_int_nil(y) || y < 0) {
-			vals[p] = int_nil;
-			nils = true;
-		} else {
-			if ((msg = str_wchr_at(&next, x, y)) != MAL_SUCCEED)
-				goto bailout;
-			vals[p] = next;
-		}
+		if ((msg = str_wchr_at(&next, x, y)) != MAL_SUCCEED)
+			goto bailout;
+		vals[p] = next;
+		nils |= is_int_nil(next);
 	}
 
 bailout:
@@ -1482,14 +1478,10 @@ STRbatWChrAtcst(bat *res, const bat *l, const int *cst)
 	for (p = 0; p < q ; p++) {
 		x = (str) BUNtail(bi, p);
 
-		if (strNil(x) || is_int_nil(y) || y < 0) {
-			vals[p] = int_nil;
-			nils = true;
-		} else {
-			if ((msg = str_wchr_at(&next, x, y)) != MAL_SUCCEED)
-				goto bailout;
-			vals[p] = next;
-		}
+		if ((msg = str_wchr_at(&next, x, y)) != MAL_SUCCEED)
+			goto bailout;
+		vals[p] = next;
+		nils |= is_int_nil(next);
 	}
 
 bailout:

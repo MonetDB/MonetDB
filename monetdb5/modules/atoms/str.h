@@ -36,6 +36,8 @@
    if the function succeeded (ie malloc failure or invalid unicode character). str_wchr_at function also
    follows this pattern. */
 
+/* Warning, the following functions don't test for NULL values, that's resposibility from the caller */
+
 mal_export int str_utf8_length(str s);
 extern int str_nbytes(str s);
 
