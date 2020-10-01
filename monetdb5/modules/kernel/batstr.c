@@ -35,7 +35,7 @@ do_batstr_int(bat *res, const bat *l, const char *name, int (*func)(str))
 	BATiter bi;
 	BAT *bn = NULL, *b = NULL;
 	BUN p, q;
-	int *restrict vals, next;
+	int *restrict vals;
 	str x, msg = MAL_SUCCEED;
 	bool nils = false;
 
@@ -53,9 +53,13 @@ do_batstr_int(bat *res, const bat *l, const char *name, int (*func)(str))
 	vals = Tloc(bn, 0);
 	for (p = 0; p < q ; p++) {
 		x = (str) BUNtail(bi, p);
-		next = func(x);
-		vals[p] = next;
-		nils |= is_int_nil(next);
+
+		if (strNil(x)) {
+			vals[p] = int_nil;
+			nils = true;
+		} else {
+			vals[p] = func(x);
+		}
 	}
 
 bailout:
@@ -141,7 +145,7 @@ STRbatFromWChr(bat *res, const bat *l)
 	BAT *bn = NULL, *b = NULL;
 	BUN p, q;
 	size_t buflen = MAX(strlen(str_nil) + 1, 8);
-	int *restrict vals;
+	int *restrict vals, x;
 	str buf = GDKmalloc(buflen), msg = MAL_SUCCEED;
 	bool nils = false;
 
@@ -161,13 +165,22 @@ STRbatFromWChr(bat *res, const bat *l)
 
 	vals = Tloc(b, 0);
 	for (p = 0; p < q ; p++) {
-		if ((msg = str_from_wchr(&buf, &buflen, vals[p])) != MAL_SUCCEED)
-			goto bailout;
-		if (tfastins_nocheckVAR(bn, p, buf, Tsize(bn)) != GDK_SUCCEED) {
-			msg = createException(MAL, "batstr.unicode", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-			goto bailout;
+		x = vals[p];
+
+		if (is_int_nil(x)) {
+			if (tfastins_nocheckVAR(bn, p, str_nil, Tsize(bn)) != GDK_SUCCEED) {
+				msg = createException(MAL, "batstr.unicode", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+				goto bailout;
+			}
+			nils = true;
+		} else {
+			if ((msg = str_from_wchr(&buf, &buflen, vals[p])) != MAL_SUCCEED)
+				goto bailout;
+			if (tfastins_nocheckVAR(bn, p, buf, Tsize(bn)) != GDK_SUCCEED) {
+				msg = createException(MAL, "batstr.unicode", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+				goto bailout;
+			}
 		}
-		nils |= strNil(buf);
 	}
 
 bailout:
@@ -194,7 +207,7 @@ STRbatSpace(bat *res, const bat *l)
 	BAT *bn = NULL, *b = NULL;
 	BUN p, q;
 	size_t buflen = INITIAL_STR_BUFFER_LENGTH;
-	int *restrict vals;
+	int *restrict vals, x;
 	str buf = GDKmalloc(buflen), msg = MAL_SUCCEED;
 	bool nils = false;
 	char space[]= " ", *s = space;
@@ -215,13 +228,22 @@ STRbatSpace(bat *res, const bat *l)
 
 	vals = Tloc(b, 0);
 	for (p = 0; p < q ; p++) {
-		if ((msg = str_repeat(&buf, &buflen, s, vals[p])) != MAL_SUCCEED)
-			goto bailout;
-		if (tfastins_nocheckVAR(bn, p, buf, Tsize(bn)) != GDK_SUCCEED) {
-			msg = createException(MAL, "batstr.space", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-			goto bailout;
+		x = vals[p];
+
+		if (is_int_nil(x) || x < 0) {
+			if (tfastins_nocheckVAR(bn, p, str_nil, Tsize(bn)) != GDK_SUCCEED) {
+				msg = createException(MAL, "batstr.space", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+				goto bailout;
+			}
+			nils = true;
+		} else {
+			if ((msg = str_repeat(&buf, &buflen, s, x)) != MAL_SUCCEED)
+				goto bailout;
+			if (tfastins_nocheckVAR(bn, p, buf, Tsize(bn)) != GDK_SUCCEED) {
+				msg = createException(MAL, "batstr.space", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+				goto bailout;
+			}
 		}
-		nils |= strNil(buf);
 	}
 
 bailout:
@@ -270,13 +292,20 @@ do_batstr_str(bat *res, const bat *l, const char *name, str (*func)(str *, size_
 	for (p = 0; p < q ; p++) {
 		x = (str) BUNtail(bi, p);
 
-		if ((msg = func(&buf, &buflen, x)) != MAL_SUCCEED)
-			goto bailout;
-		if (tfastins_nocheckVAR(bn, p, buf, Tsize(bn)) != GDK_SUCCEED) {
-			msg = createException(MAL, name, SQLSTATE(HY013) MAL_MALLOC_FAIL);
-			goto bailout;
+		if (strNil(x)) {
+			if (tfastins_nocheckVAR(bn, p, str_nil, Tsize(bn)) != GDK_SUCCEED) {
+				msg = createException(MAL, name, SQLSTATE(HY013) MAL_MALLOC_FAIL);
+				goto bailout;
+			}
+			nils = true;
+		} else {
+			if ((msg = (*func)(&buf, &buflen, x)) != MAL_SUCCEED)
+				goto bailout;
+			if (tfastins_nocheckVAR(bn, p, buf, Tsize(bn)) != GDK_SUCCEED) {
+				msg = createException(MAL, name, SQLSTATE(HY013) MAL_MALLOC_FAIL);
+				goto bailout;
+			}
 		}
-		nils |= strNil(buf);
 	}
 
 bailout:
@@ -327,13 +356,20 @@ do_batstr_conststr_str(bat *res, const bat *l, const str *s2, const char *name, 
 	for (p = 0; p < q ; p++) {
 		x = (str) BUNtail(bi, p);
 
-		if ((msg = func(&buf, &buflen, x, y)) != MAL_SUCCEED)
-			goto bailout;
-		if (tfastins_nocheckVAR(bn, p, buf, Tsize(bn)) != GDK_SUCCEED) {
-			msg = createException(MAL, name, SQLSTATE(HY013) MAL_MALLOC_FAIL);
-			goto bailout;
+		if (strNil(x) || strNil(y)) {
+			if (tfastins_nocheckVAR(bn, p, str_nil, Tsize(bn)) != GDK_SUCCEED) {
+				msg = createException(MAL, name, SQLSTATE(HY013) MAL_MALLOC_FAIL);
+				goto bailout;
+			}
+			nils = true;
+		} else {
+			if ((msg = (*func)(&buf, &buflen, x, y)) != MAL_SUCCEED)
+				goto bailout;
+			if (tfastins_nocheckVAR(bn, p, buf, Tsize(bn)) != GDK_SUCCEED) {
+				msg = createException(MAL, name, SQLSTATE(HY013) MAL_MALLOC_FAIL);
+				goto bailout;
+			}
 		}
-		nils |= strNil(buf);
 	}
 
 bailout:
@@ -390,13 +426,20 @@ do_batstr_batstr_str(bat *res, const bat *l, const bat *l2, const char *name, si
 		x = (str) BUNtail(lefti, p);
 		y = (str) BUNtail(righti, p);
 
-		if ((msg = func(&buf, &buflen, x, y)) != MAL_SUCCEED)
-			goto bailout;
-		if (tfastins_nocheckVAR(bn, p, buf, Tsize(bn)) != GDK_SUCCEED) {
-			msg = createException(MAL, name, SQLSTATE(HY013) MAL_MALLOC_FAIL);
-			goto bailout;
+		if (strNil(x) || strNil(y)) {
+			if (tfastins_nocheckVAR(bn, p, str_nil, Tsize(bn)) != GDK_SUCCEED) {
+				msg = createException(MAL, name, SQLSTATE(HY013) MAL_MALLOC_FAIL);
+				goto bailout;
+			}
+			nils = true;
+		} else {
+			if ((msg = (*func)(&buf, &buflen, x, y)) != MAL_SUCCEED)
+				goto bailout;
+			if (tfastins_nocheckVAR(bn, p, buf, Tsize(bn)) != GDK_SUCCEED) {
+				msg = createException(MAL, name, SQLSTATE(HY013) MAL_MALLOC_FAIL);
+				goto bailout;
+			}
 		}
-		nils |= strNil(buf);
 	}
 
 bailout:
@@ -430,7 +473,7 @@ do_batstr_constint_str(bat *res, const bat *l, const int *n, const char *name, s
 	BUN p, q;
 	size_t buflen = INITIAL_STR_BUFFER_LENGTH;
 	str x, buf = GDKmalloc(buflen), msg = MAL_SUCCEED;
-	int nn = *n;
+	int y = *n;
 	bool nils = false;
 
 	if (!buf) {
@@ -451,13 +494,20 @@ do_batstr_constint_str(bat *res, const bat *l, const int *n, const char *name, s
 	for (p = 0; p < q ; p++) {
 		x = (str) BUNtail(bi, p);
 
-		if ((msg = func(&buf, &buflen, x, nn)) != MAL_SUCCEED)
-			goto bailout;
-		if (tfastins_nocheckVAR(bn, p, buf, Tsize(bn)) != GDK_SUCCEED) {
-			msg = createException(MAL, name, SQLSTATE(HY013) MAL_MALLOC_FAIL);
-			goto bailout;
+		if (strNil(x) || is_int_nil(y)) {
+			if (tfastins_nocheckVAR(bn, p, str_nil, Tsize(bn)) != GDK_SUCCEED) {
+				msg = createException(MAL, name, SQLSTATE(HY013) MAL_MALLOC_FAIL);
+				goto bailout;
+			}
+			nils = true;
+		} else {
+			if ((msg = (*func)(&buf, &buflen, x, y)) != MAL_SUCCEED)
+				goto bailout;
+			if (tfastins_nocheckVAR(bn, p, buf, Tsize(bn)) != GDK_SUCCEED) {
+				msg = createException(MAL, name, SQLSTATE(HY013) MAL_MALLOC_FAIL);
+				goto bailout;
+			}
 		}
-		nils |= strNil(buf);
 	}
 
 bailout:
@@ -490,7 +540,7 @@ do_batstr_batint_str(bat *res, const bat *l, const bat *n, const char *name, str
 	size_t buflen = INITIAL_STR_BUFFER_LENGTH;
 	str x, buf = GDKmalloc(buflen), msg = MAL_SUCCEED;
 	bool nils = false;
-	int *restrict righti;
+	int *restrict righti, y;
 
 	if (!buf) {
 		msg = createException(MAL, name, SQLSTATE(HY013) MAL_MALLOC_FAIL);
@@ -514,14 +564,22 @@ do_batstr_batint_str(bat *res, const bat *l, const bat *n, const char *name, str
 	righti = Tloc(right, 0);
 	for (p = 0; p < q ; p++) {
 		x = (str) BUNtail(lefti, p);
+		y = righti[p];
 
-		if ((msg = func(&buf, &buflen, x, righti[p])) != MAL_SUCCEED)
-			goto bailout;
-		if (tfastins_nocheckVAR(bn, p, buf, Tsize(bn)) != GDK_SUCCEED) {
-			msg = createException(MAL, name, SQLSTATE(HY013) MAL_MALLOC_FAIL);
-			goto bailout;
+		if (strNil(x) || is_int_nil(y)) {
+			if (tfastins_nocheckVAR(bn, p, str_nil, Tsize(bn)) != GDK_SUCCEED) {
+				msg = createException(MAL, name, SQLSTATE(HY013) MAL_MALLOC_FAIL);
+				goto bailout;
+			}
+			nils = true;
+		} else {
+			if ((msg = (*func)(&buf, &buflen, x, y)) != MAL_SUCCEED)
+				goto bailout;
+			if (tfastins_nocheckVAR(bn, p, buf, Tsize(bn)) != GDK_SUCCEED) {
+				msg = createException(MAL, name, SQLSTATE(HY013) MAL_MALLOC_FAIL);
+				goto bailout;
+			}
 		}
-		nils |= strNil(buf);
 	}
 
 bailout:
@@ -554,8 +612,8 @@ do_batstr_constint_conststr_str(bat *res, const bat *l, const int *n, const str 
 	BAT *bn = NULL, *b = NULL;
 	BUN p, q;
 	size_t buflen = INITIAL_STR_BUFFER_LENGTH;
-	str x, ss2 = *s2, buf = GDKmalloc(buflen), msg = MAL_SUCCEED;
-	int nn = *n;
+	str x, z = *s2, buf = GDKmalloc(buflen), msg = MAL_SUCCEED;
+	int y = *n;
 	bool nils = false;
 
 	if (!buf) {
@@ -576,13 +634,20 @@ do_batstr_constint_conststr_str(bat *res, const bat *l, const int *n, const str 
 	for (p = 0; p < q ; p++) {
 		x = (str) BUNtail(bi, p);
 
-		if ((msg = func(&buf, &buflen, x, nn, ss2)) != MAL_SUCCEED)
-			goto bailout;
-		if (tfastins_nocheckVAR(bn, p, buf, Tsize(bn)) != GDK_SUCCEED) {
-			msg = createException(MAL, name, SQLSTATE(HY013) MAL_MALLOC_FAIL);
-			goto bailout;
+		if (strNil(x) || is_int_nil(y) || strNil(z)) {
+			if (tfastins_nocheckVAR(bn, p, str_nil, Tsize(bn)) != GDK_SUCCEED) {
+				msg = createException(MAL, name, SQLSTATE(HY013) MAL_MALLOC_FAIL);
+				goto bailout;
+			}
+			nils = true;
+		} else {
+			if ((msg = (*func)(&buf, &buflen, x, y, z)) != MAL_SUCCEED)
+				goto bailout;
+			if (tfastins_nocheckVAR(bn, p, buf, Tsize(bn)) != GDK_SUCCEED) {
+				msg = createException(MAL, name, SQLSTATE(HY013) MAL_MALLOC_FAIL);
+				goto bailout;
+			}
 		}
-		nils |= strNil(buf);
 	}
 
 bailout:
@@ -613,9 +678,9 @@ do_batstr_batint_conststr_str(bat *res, const bat *l, const bat *n, const str *s
 	BAT *bn = NULL, *left = NULL, *right = NULL;
 	BUN p, q;
 	size_t buflen = INITIAL_STR_BUFFER_LENGTH;
-	str x, ss2 = *s2, buf = GDKmalloc(buflen), msg = MAL_SUCCEED;
+	str x, z = *s2, buf = GDKmalloc(buflen), msg = MAL_SUCCEED;
 	bool nils = false;
-	int *restrict righti;
+	int *restrict righti, y;
 
 	if (!buf) {
 		msg = createException(MAL, name, SQLSTATE(HY013) MAL_MALLOC_FAIL);
@@ -639,14 +704,22 @@ do_batstr_batint_conststr_str(bat *res, const bat *l, const bat *n, const str *s
 	righti = Tloc(right, 0);
 	for (p = 0; p < q ; p++) {
 		x = (str) BUNtail(lefti, p);
+		y = righti[p];
 
-		if ((msg = func(&buf, &buflen, x, righti[p], ss2)) != MAL_SUCCEED)
-			goto bailout;
-		if (tfastins_nocheckVAR(bn, p, buf, Tsize(bn)) != GDK_SUCCEED) {
-			msg = createException(MAL, name, SQLSTATE(HY013) MAL_MALLOC_FAIL);
-			goto bailout;
+		if (strNil(x) || is_int_nil(y) || strNil(z)) {
+			if (tfastins_nocheckVAR(bn, p, str_nil, Tsize(bn)) != GDK_SUCCEED) {
+				msg = createException(MAL, name, SQLSTATE(HY013) MAL_MALLOC_FAIL);
+				goto bailout;
+			}
+			nils = true;
+		} else {
+			if ((msg = (*func)(&buf, &buflen, x, y, z)) != MAL_SUCCEED)
+				goto bailout;
+			if (tfastins_nocheckVAR(bn, p, buf, Tsize(bn)) != GDK_SUCCEED) {
+				msg = createException(MAL, name, SQLSTATE(HY013) MAL_MALLOC_FAIL);
+				goto bailout;
+			}
 		}
-		nils |= strNil(buf);
 	}
 
 bailout:
@@ -679,9 +752,9 @@ do_batstr_constint_batstr_str(bat *res, const bat *l, const int *n, const bat *l
 	BAT *bn = NULL, *left = NULL, *right = NULL;
 	BUN p, q;
 	size_t buflen = INITIAL_STR_BUFFER_LENGTH;
-	str x, y, buf = GDKmalloc(buflen), msg = MAL_SUCCEED;
+	str x, z, buf = GDKmalloc(buflen), msg = MAL_SUCCEED;
 	bool nils = false;
-	int nn = *n;
+	int y = *n;
 
 	if (!buf) {
 		msg = createException(MAL, name, SQLSTATE(HY013) MAL_MALLOC_FAIL);
@@ -705,15 +778,22 @@ do_batstr_constint_batstr_str(bat *res, const bat *l, const int *n, const bat *l
 	righti = bat_iterator(right);
 	for (p = 0; p < q ; p++) {
 		x = (str) BUNtail(lefti, p);
-		y = (str) BUNtail(righti, p);
+		z = (str) BUNtail(righti, p);
 
-		if ((msg = func(&buf, &buflen, x, nn, y)) != MAL_SUCCEED)
-			goto bailout;
-		if (tfastins_nocheckVAR(bn, p, buf, Tsize(bn)) != GDK_SUCCEED) {
-			msg = createException(MAL, name, SQLSTATE(HY013) MAL_MALLOC_FAIL);
-			goto bailout;
+		if (strNil(x) || is_int_nil(y) || strNil(z)) {
+			if (tfastins_nocheckVAR(bn, p, str_nil, Tsize(bn)) != GDK_SUCCEED) {
+				msg = createException(MAL, name, SQLSTATE(HY013) MAL_MALLOC_FAIL);
+				goto bailout;
+			}
+			nils = true;
+		} else {
+			if ((msg = (*func)(&buf, &buflen, x, y, z)) != MAL_SUCCEED)
+				goto bailout;
+			if (tfastins_nocheckVAR(bn, p, buf, Tsize(bn)) != GDK_SUCCEED) {
+				msg = createException(MAL, name, SQLSTATE(HY013) MAL_MALLOC_FAIL);
+				goto bailout;
+			}
 		}
-		nils |= strNil(buf);
 	}
 
 bailout:
@@ -746,9 +826,9 @@ do_batstr_batint_batstr_str(bat *res, const bat *l, const bat *n, const bat *l2,
 	BAT *bn = NULL, *arg1 = NULL, *arg2 = NULL, *arg3 = NULL;
 	BUN p, q;
 	size_t buflen = INITIAL_STR_BUFFER_LENGTH;
-	str x, y, buf = GDKmalloc(buflen), msg = MAL_SUCCEED;
+	str x, z, buf = GDKmalloc(buflen), msg = MAL_SUCCEED;
 	bool nils = false;
-	int *restrict arg2i;
+	int *restrict arg2i, y;
 
 	if (!buf) {
 		msg = createException(MAL, name, SQLSTATE(HY013) MAL_MALLOC_FAIL);
@@ -773,15 +853,23 @@ do_batstr_batint_batstr_str(bat *res, const bat *l, const bat *n, const bat *l2,
 	arg3i = bat_iterator(arg3);
 	for (p = 0; p < q ; p++) {
 		x = (str) BUNtail(arg1i, p);
-		y = (str) BUNtail(arg3i, p);
+		y = arg2i[p];
+		z = (str) BUNtail(arg3i, p);
 
-		if ((msg = func(&buf, &buflen, x, arg2i[p], y)) != MAL_SUCCEED)
-			goto bailout;
-		if (tfastins_nocheckVAR(bn, p, buf, Tsize(bn)) != GDK_SUCCEED) {
-			msg = createException(MAL, name, SQLSTATE(HY013) MAL_MALLOC_FAIL);
-			goto bailout;
+		if (strNil(x) || is_int_nil(y) || strNil(z)) {
+			if (tfastins_nocheckVAR(bn, p, str_nil, Tsize(bn)) != GDK_SUCCEED) {
+				msg = createException(MAL, name, SQLSTATE(HY013) MAL_MALLOC_FAIL);
+				goto bailout;
+			}
+			nils = true;
+		} else {
+			if ((msg = (*func)(&buf, &buflen, x, y, z)) != MAL_SUCCEED)
+				goto bailout;
+			if (tfastins_nocheckVAR(bn, p, buf, Tsize(bn)) != GDK_SUCCEED) {
+				msg = createException(MAL, name, SQLSTATE(HY013) MAL_MALLOC_FAIL);
+				goto bailout;
+			}
 		}
-		nils |= strNil(buf);
 	}
 
 bailout:
@@ -956,7 +1044,7 @@ prefix_or_suffix(bat *res, const bat *l, const bat *r, const char *name, bit (*f
 	BATiter lefti, righti;
 	BAT *bn = NULL, *left = NULL, *right = NULL;
 	BUN p, q;
-	bit *restrict vals, next;
+	bit *restrict vals;
 	str x, y, msg = MAL_SUCCEED;
 	bool nils = false;
 
@@ -981,9 +1069,12 @@ prefix_or_suffix(bat *res, const bat *l, const bat *r, const char *name, bit (*f
 		x = (str) BUNtail(lefti, p);
 		y = (str) BUNtail(righti, p);
 
-		next = func(x, y);
-		vals[p] = next;
-		nils |= is_bit_nil(next);
+		if (strNil(x) || strNil(y)) {
+			vals[p] = bit_nil;
+			nils = true;
+		} else {
+			vals[p] = func(x, y);
+		}
 	}
 
 bailout:
@@ -1023,7 +1114,7 @@ prefix_or_suffix_cst(bat *res, const bat *l, str y, const char *name, bit (*func
 	BATiter lefti;
 	BAT *bn = NULL, *left = NULL;
 	BUN p, q;
-	bit *restrict vals, next;
+	bit *restrict vals;
 	str x, msg = MAL_SUCCEED;
 	bool nils = false;
 
@@ -1042,9 +1133,12 @@ prefix_or_suffix_cst(bat *res, const bat *l, str y, const char *name, bit (*func
 	for (p = 0; p < q ; p++) {
 		x = (str) BUNtail(lefti, p);
 
-		next = func(x, y);
-		vals[p] = next;
-		nils |= is_bit_nil(next);
+		if (strNil(x) || strNil(y)) {
+			vals[p] = bit_nil;
+			nils = true;
+		} else {
+			vals[p] = func(x, y);
+		}
 	}
 
 bailout:
@@ -1082,7 +1176,7 @@ STRbatstrSearch(bat *res, const bat *l, const bat *r)
 	BATiter lefti, righti;
 	BAT *bn = NULL, *left = NULL, *right = NULL;
 	BUN p, q;
-	int *restrict vals, next;
+	int *restrict vals;
 	str x, y, msg = MAL_SUCCEED;
 	bool nils = false;
 
@@ -1107,9 +1201,12 @@ STRbatstrSearch(bat *res, const bat *l, const bat *r)
 		x = (str) BUNtail(lefti, p);
 		y = (str) BUNtail(righti, p);
 
-		next = str_search(x, y);
-		vals[p] = next;
-		nils |= is_int_nil(next);
+		if (strNil(x) || strNil(y)) {
+			vals[p] = int_nil;
+			nils = true;
+		} else {
+			vals[p] = str_search(x, y);
+		}
 	}
 
 bailout:
@@ -1137,7 +1234,7 @@ STRbatstrSearchcst(bat *res, const bat *l, const str *cst)
 	BATiter lefti;
 	BAT *bn = NULL, *left = NULL;
 	BUN p, q;
-	int *restrict vals, next;
+	int *restrict vals;
 	str x, y = *cst, msg = MAL_SUCCEED;
 	bool nils = false;
 
@@ -1156,9 +1253,12 @@ STRbatstrSearchcst(bat *res, const bat *l, const str *cst)
 	for (p = 0; p < q ; p++) {
 		x = (str) BUNtail(lefti, p);
 
-		next = str_search(x, y);
-		vals[p] = next;
-		nils |= is_int_nil(next);
+		if (strNil(x) || strNil(y)) {
+			vals[p] = int_nil;
+			nils = true;
+		} else {
+			vals[p] = str_search(x, y);
+		}
 	}
 
 bailout:
@@ -1184,7 +1284,7 @@ STRbatRstrSearch(bat *res, const bat *l, const bat *r)
 	BATiter lefti, righti;
 	BAT *bn = NULL, *left = NULL, *right = NULL;
 	BUN p, q;
-	int *restrict vals, next;
+	int *restrict vals;
 	str x, y, msg = MAL_SUCCEED;
 	bool nils = false;
 
@@ -1209,9 +1309,12 @@ STRbatRstrSearch(bat *res, const bat *l, const bat *r)
 		x = (str) BUNtail(lefti, p);
 		y = (str) BUNtail(righti, p);
 
-		next = str_reverse_str_search(x, y);
-		vals[p] = next;
-		nils |= is_int_nil(next);
+		if (strNil(x) || strNil(y)) {
+			vals[p] = int_nil;
+			nils = true;
+		} else {
+			vals[p] = str_reverse_str_search(x, y);
+		}
 	}
 
 bailout:
@@ -1239,7 +1342,7 @@ STRbatRstrSearchcst(bat *res, const bat *l, const str *cst)
 	BATiter bi;
 	BAT *bn = NULL, *b = NULL;
 	BUN p, q;
-	int *restrict vals, next;
+	int *restrict vals;
 	str x, y = *cst, msg = MAL_SUCCEED;
 	bool nils = false;
 
@@ -1258,9 +1361,12 @@ STRbatRstrSearchcst(bat *res, const bat *l, const str *cst)
 	for (p = 0; p < q ; p++) {
 		x = (str) BUNtail(bi, p);
 
-		next = str_reverse_str_search(x, y);
-		vals[p] = next;
-		nils |= is_int_nil(next);
+		if (strNil(x) || strNil(y)) {
+			vals[p] = int_nil;
+			nils = true;
+		} else {
+			vals[p] = str_reverse_str_search(x, y);
+		}
 	}
 
 bailout:
@@ -1287,7 +1393,7 @@ STRbatWChrAt(bat *res, const bat *l, const bat *r)
 	BAT *bn = NULL, *left = NULL, *right = NULL;
 	BUN p, q;
 	size_t buflen = INITIAL_STR_BUFFER_LENGTH;
-	int *restrict righti, *restrict vals, next;
+	int *restrict righti, *restrict vals, next, y;
 	str x, buf = GDKmalloc(buflen), msg = MAL_SUCCEED;
 	bool nils = false;
 
@@ -1314,11 +1420,16 @@ STRbatWChrAt(bat *res, const bat *l, const bat *r)
 	vals = Tloc(bn, 0);
 	for (p = 0; p < q ; p++) {
 		x = (str) BUNtail(lefti, p);
+		y = righti[p];
 
-		if ((msg = str_wchr_at(&next, x, righti[p])) != MAL_SUCCEED)
-			goto bailout;
-		vals[p] = next;
-		nils |= is_int_nil(next);
+		if (strNil(x) || is_int_nil(y) || y < 0) {
+			vals[p] = int_nil;
+			nils = true;
+		} else {
+			if ((msg = str_wchr_at(&next, x, y)) != MAL_SUCCEED)
+				goto bailout;
+			vals[p] = next;
+		}
 	}
 
 bailout:
@@ -1348,7 +1459,7 @@ STRbatWChrAtcst(bat *res, const bat *l, const int *cst)
 	BAT *bn = NULL, *b = NULL;
 	BUN p, q;
 	size_t buflen = INITIAL_STR_BUFFER_LENGTH;
-	int c = *cst, *restrict vals, next;
+	int y = *cst, *restrict vals, next;
 	str x, buf = GDKmalloc(buflen), msg = MAL_SUCCEED;
 	bool nils = false;
 
@@ -1371,10 +1482,14 @@ STRbatWChrAtcst(bat *res, const bat *l, const int *cst)
 	for (p = 0; p < q ; p++) {
 		x = (str) BUNtail(bi, p);
 
-		if ((msg = str_wchr_at(&next, x, c)) != MAL_SUCCEED)
-			goto bailout;
-		vals[p] = next;
-		nils |= is_int_nil(next);
+		if (strNil(x) || is_int_nil(y) || y < 0) {
+			vals[p] = int_nil;
+			nils = true;
+		} else {
+			if ((msg = str_wchr_at(&next, x, y)) != MAL_SUCCEED)
+				goto bailout;
+			vals[p] = next;
+		}
 	}
 
 bailout:
@@ -1402,7 +1517,7 @@ do_batstr_str_int_cst(bat *res, const bat *l, const int *cst, const char *name, 
 	BAT *bn = NULL, *b = NULL;
 	BUN p, q;
 	size_t buflen = INITIAL_STR_BUFFER_LENGTH;
-	int c = *cst;
+	int y = *cst;
 	str x, buf = GDKmalloc(buflen), msg = MAL_SUCCEED;
 	bool nils = false;
 
@@ -1424,13 +1539,20 @@ do_batstr_str_int_cst(bat *res, const bat *l, const int *cst, const char *name, 
 	for (p = 0; p < q ; p++) {
 		x = (str) BUNtail(bi, p);
 
-		if ((msg = (*func)(&buf, &buflen, x, c)) != MAL_SUCCEED)
-			goto bailout;
-		if (tfastins_nocheckVAR(bn, p, buf, Tsize(bn)) != GDK_SUCCEED) {
-			msg = createException(MAL, name, SQLSTATE(HY013) MAL_MALLOC_FAIL);
-			goto bailout;
+		if (strNil(x) || is_int_nil(y)) {
+			if (tfastins_nocheckVAR(bn, p, str_nil, Tsize(bn)) != GDK_SUCCEED) {
+				msg = createException(MAL, name, SQLSTATE(HY013) MAL_MALLOC_FAIL);
+				goto bailout;
+			}
+			nils = true;
+		} else {
+			if ((msg = (*func)(&buf, &buflen, x, y)) != MAL_SUCCEED)
+				goto bailout;
+			if (tfastins_nocheckVAR(bn, p, buf, Tsize(bn)) != GDK_SUCCEED) {
+				msg = createException(MAL, name, SQLSTATE(HY013) MAL_MALLOC_FAIL);
+				goto bailout;
+			}
 		}
-		nils |= strNil(buf);
 	}
 
 bailout:
@@ -1464,12 +1586,6 @@ STRbatsuffixcst(bat *ret, const bat *l, const int *cst)
 }
 
 static str
-STRbatrepeatcst(bat *ret, const bat *l, const int *cst)
-{
-	return do_batstr_str_int_cst(ret, l, cst, "batstr.repeat", str_repeat);
-}
-
-static str
 STRbatTailcst(bat *ret, const bat *l, const int *cst)
 {
 	return do_batstr_str_int_cst(ret, l, cst, "batstr.tail", str_tail);
@@ -1482,13 +1598,76 @@ STRbatsubstringTailcst(bat *ret, const bat *l, const int *cst)
 }
 
 static str
+STRbatrepeatcst(bat *res, const bat *l, const int *cst)
+{
+	BATiter bi;
+	BAT *bn = NULL, *b = NULL;
+	BUN p, q;
+	size_t buflen = INITIAL_STR_BUFFER_LENGTH;
+	int y = *cst;
+	str x, buf = GDKmalloc(buflen), msg = MAL_SUCCEED;
+	bool nils = false;
+
+	if (!buf) {
+		msg = createException(MAL, "batstr.repeat", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		goto bailout;
+	}
+	if (!(b = BATdescriptor(*l))) {
+		msg = createException(MAL, "batstr.repeat", SQLSTATE(HY005) RUNTIME_OBJECT_MISSING);
+		goto bailout;
+	}
+	q = BATcount(b);
+	if (!(bn = COLnew(b->hseqbase, TYPE_str, q, TRANSIENT))) {
+		msg = createException(MAL, "batstr.repeat", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		goto bailout;
+	}
+
+	bi = bat_iterator(b);
+	for (p = 0; p < q ; p++) {
+		x = (str) BUNtail(bi, p);
+
+		if (strNil(x) || is_int_nil(y) || y < 0) {
+			if (tfastins_nocheckVAR(bn, p, str_nil, Tsize(bn)) != GDK_SUCCEED) {
+				msg = createException(MAL, "batstr.repeat", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+				goto bailout;
+			}
+			nils = true;
+		} else {
+			if ((msg = str_repeat(&buf, &buflen, x, y)) != MAL_SUCCEED)
+				goto bailout;
+			if (tfastins_nocheckVAR(bn, p, buf, Tsize(bn)) != GDK_SUCCEED) {
+				msg = createException(MAL, "batstr.repeat", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+				goto bailout;
+			}
+		}
+	}
+
+bailout:
+	GDKfree(buf);
+	if (b)
+		BBPunfix(b->batCacheid);
+	if (bn && !msg) {
+		BATsetcount(bn, q);
+		bn->tnil = nils;
+		bn->tnonil = !nils;
+		bn->tkey = BATcount(bn) <= 1;
+		bn->tsorted = BATcount(bn) <= 1;
+		bn->trevsorted = BATcount(bn) <= 1;
+		bn->theap.dirty = true;
+		BBPkeepref(*res = bn->batCacheid);
+	} else if (bn)
+		BBPreclaim(bn);
+	return msg;
+}
+
+static str
 do_batstr_strcst(bat *res, const str *cst, const bat *l, const char *name, str (*func)(str*, size_t*, str, int))
 {
 	BAT *bn = NULL, *b = NULL;
 	BUN p, q;
 	size_t buflen = INITIAL_STR_BUFFER_LENGTH;
-	int *restrict vals;
-	str s = *cst, buf = GDKmalloc(buflen), msg = MAL_SUCCEED;
+	int *restrict vals, y;
+	str x = *cst, buf = GDKmalloc(buflen), msg = MAL_SUCCEED;
 	bool nils = false;
 
 	if (!buf) {
@@ -1507,13 +1686,22 @@ do_batstr_strcst(bat *res, const str *cst, const bat *l, const char *name, str (
 
 	vals = Tloc(b, 0);
 	for (p = 0; p < q ; p++) {
-		if ((msg = (*func)(&buf, &buflen, s, vals[p])) != MAL_SUCCEED)
-			goto bailout;
-		if (tfastins_nocheckVAR(bn, p, buf, Tsize(bn)) != GDK_SUCCEED) {
-			msg = createException(MAL, name, SQLSTATE(HY013) MAL_MALLOC_FAIL);
-			goto bailout;
+		y = vals[p];
+
+		if (strNil(x) || is_int_nil(y)) {
+			if (tfastins_nocheckVAR(bn, p, str_nil, Tsize(bn)) != GDK_SUCCEED) {
+				msg = createException(MAL, name, SQLSTATE(HY013) MAL_MALLOC_FAIL);
+				goto bailout;
+			}
+			nils = true;
+		} else {
+			if ((msg = (*func)(&buf, &buflen, x, y)) != MAL_SUCCEED)
+				goto bailout;
+			if (tfastins_nocheckVAR(bn, p, buf, Tsize(bn)) != GDK_SUCCEED) {
+				msg = createException(MAL, name, SQLSTATE(HY013) MAL_MALLOC_FAIL);
+				goto bailout;
+			}
 		}
-		nils |= strNil(buf);
 	}
 
 bailout:
@@ -1547,12 +1735,6 @@ STRbatsuffix_strcst(bat *ret, const str *cst, const bat *l)
 }
 
 static str
-STRbatrepeat_strcst(bat *ret, const str *cst, const bat *l)
-{
-	return do_batstr_strcst(ret, cst, l, "batstr.repeat", str_repeat);
-}
-
-static str
 STRbatTail_strcst(bat *ret, const str *cst, const bat *l)
 {
 	return do_batstr_strcst(ret, cst, l, "batstr.tail", str_tail);
@@ -1565,13 +1747,75 @@ STRbatsubstringTail_strcst(bat *ret, const str *cst, const bat *l)
 }
 
 static str
+STRbatrepeat_strcst(bat *res, const str *cst, const bat *l)
+{
+	BAT *bn = NULL, *b = NULL;
+	BUN p, q;
+	size_t buflen = INITIAL_STR_BUFFER_LENGTH;
+	int *restrict vals, y;
+	str x = *cst, buf = GDKmalloc(buflen), msg = MAL_SUCCEED;
+	bool nils = false;
+
+	if (!buf) {
+		msg = createException(MAL, "batstr.repeat", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		goto bailout;
+	}
+	if (!(b = BATdescriptor(*l))) {
+		msg = createException(MAL, "batstr.repeat", SQLSTATE(HY005) RUNTIME_OBJECT_MISSING);
+		goto bailout;
+	}
+	q = BATcount(b);
+	if (!(bn = COLnew(b->hseqbase, TYPE_str, q, TRANSIENT))) {
+		msg = createException(MAL, "batstr.repeat", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		goto bailout;
+	}
+
+	vals = Tloc(b, 0);
+	for (p = 0; p < q ; p++) {
+		y = vals[p];
+
+		if (strNil(x) || is_int_nil(y) || y < 0) {
+			if (tfastins_nocheckVAR(bn, p, str_nil, Tsize(bn)) != GDK_SUCCEED) {
+				msg = createException(MAL, "batstr.repeat", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+				goto bailout;
+			}
+			nils = true;
+		} else {
+			if ((msg = str_repeat(&buf, &buflen, x, y)) != MAL_SUCCEED)
+				goto bailout;
+			if (tfastins_nocheckVAR(bn, p, buf, Tsize(bn)) != GDK_SUCCEED) {
+				msg = createException(MAL, "batstr.repeat", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+				goto bailout;
+			}
+		}
+	}
+
+bailout:
+	GDKfree(buf);
+	if (b)
+		BBPunfix(b->batCacheid);
+	if (bn && !msg) {
+		BATsetcount(bn, q);
+		bn->tnil = nils;
+		bn->tnonil = !nils;
+		bn->tkey = BATcount(bn) <= 1;
+		bn->tsorted = BATcount(bn) <= 1;
+		bn->trevsorted = BATcount(bn) <= 1;
+		bn->theap.dirty = true;
+		BBPkeepref(*res = bn->batCacheid);
+	} else if (bn)
+		BBPreclaim(bn);
+	return msg;
+}
+
+static str
 do_batstr_str_int(bat *res, const bat *l, const bat *r, const char *name, str (*func)(str*, size_t*, str, int))
 {
 	BATiter lefti;
 	BAT *bn = NULL, *left = NULL, *right = NULL;
 	BUN p, q;
 	size_t buflen = INITIAL_STR_BUFFER_LENGTH;
-	int *restrict righti;
+	int *restrict righti, y;
 	str x, buf = GDKmalloc(buflen), msg = MAL_SUCCEED;
 	bool nils = false;
 
@@ -1597,14 +1841,22 @@ do_batstr_str_int(bat *res, const bat *l, const bat *r, const char *name, str (*
 	righti = Tloc(right, 0);
 	for (p = 0; p < q ; p++) {
 		x = (str) BUNtail(lefti, p);
+		y = righti[p];
 
-		if ((msg = (*func)(&buf, &buflen, x, righti[p])) != MAL_SUCCEED)
-			goto bailout;
-		if (tfastins_nocheckVAR(bn, p, buf, Tsize(bn)) != GDK_SUCCEED) {
-			msg = createException(MAL, name, SQLSTATE(HY013) MAL_MALLOC_FAIL);
-			goto bailout;
+		if (strNil(x) || is_int_nil(y)) {
+			if (tfastins_nocheckVAR(bn, p, str_nil, Tsize(bn)) != GDK_SUCCEED) {
+				msg = createException(MAL, name, SQLSTATE(HY013) MAL_MALLOC_FAIL);
+				goto bailout;
+			}
+			nils = true;
+		} else {
+			if ((msg = (*func)(&buf, &buflen, x, y)) != MAL_SUCCEED)
+				goto bailout;
+			if (tfastins_nocheckVAR(bn, p, buf, Tsize(bn)) != GDK_SUCCEED) {
+				msg = createException(MAL, name, SQLSTATE(HY013) MAL_MALLOC_FAIL);
+				goto bailout;
+			}
 		}
-		nils |= strNil(buf);
 	}
 
 bailout:
@@ -1640,12 +1892,6 @@ STRbatsuffix(bat *ret, const bat *l, const bat *r)
 }
 
 static str
-STRbatrepeat(bat *ret, const bat *l, const bat *r)
-{
-	return do_batstr_str_int(ret, l, r, "batstr.repeat", str_repeat);
-}
-
-static str
 STRbatTail(bat *ret, const bat *l, const bat *r)
 {
 	return do_batstr_str_int(ret, l, r, "batstr.tail", str_tail);
@@ -1658,6 +1904,77 @@ STRbatsubstringTail(bat *ret, const bat *l, const bat *r)
 }
 
 static str
+STRbatrepeat(bat *res, const bat *l, const bat *r)
+{
+	BATiter lefti;
+	BAT *bn = NULL, *left = NULL, *right = NULL;
+	BUN p, q;
+	size_t buflen = INITIAL_STR_BUFFER_LENGTH;
+	int *restrict righti, y;
+	str x, buf = GDKmalloc(buflen), msg = MAL_SUCCEED;
+	bool nils = false;
+
+	if (!buf) {
+		msg = createException(MAL, "batstr.repeat", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		goto bailout;
+	}
+	if (!(left = BATdescriptor(*l)) || !(right = BATdescriptor(*r))) {
+		msg = createException(MAL, "batstr.repeat", SQLSTATE(HY005) RUNTIME_OBJECT_MISSING);
+		goto bailout;
+	}
+	if (BATcount(left) != BATcount(right)) {
+		msg = createException(MAL, "batstr.repeat", ILLEGAL_ARGUMENT " Requires bats of identical size");
+		goto bailout;
+	}
+	q = BATcount(left);
+	if (!(bn = COLnew(left->hseqbase, TYPE_str, q, TRANSIENT))) {
+		msg = createException(MAL, "batstr.repeat", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		goto bailout;
+	}
+
+	lefti = bat_iterator(left);
+	righti = Tloc(right, 0);
+	for (p = 0; p < q ; p++) {
+		x = (str) BUNtail(lefti, p);
+		y = righti[p];
+
+		if (strNil(x) || is_int_nil(y) || y < 0) {
+			if (tfastins_nocheckVAR(bn, p, str_nil, Tsize(bn)) != GDK_SUCCEED) {
+				msg = createException(MAL, "batstr.repeat", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+				goto bailout;
+			}
+			nils = true;
+		} else {
+			if ((msg = str_repeat(&buf, &buflen, x, y)) != MAL_SUCCEED)
+				goto bailout;
+			if (tfastins_nocheckVAR(bn, p, buf, Tsize(bn)) != GDK_SUCCEED) {
+				msg = createException(MAL, "batstr.repeat", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+				goto bailout;
+			}
+		}
+	}
+
+bailout:
+	GDKfree(buf);
+	if (left)
+		BBPunfix(left->batCacheid);
+	if (right)
+		BBPunfix(right->batCacheid);
+	if (bn && !msg) {
+		BATsetcount(bn, q);
+		bn->tnil = nils;
+		bn->tnonil = !nils;
+		bn->tkey = BATcount(bn) <= 1;
+		bn->tsorted = BATcount(bn) <= 1;
+		bn->trevsorted = BATcount(bn) <= 1;
+		bn->theap.dirty = true;
+		BBPkeepref(*res = bn->batCacheid);
+	} else if (bn)
+		BBPreclaim(bn);
+	return msg;
+}
+
+static str
 STRbatSubstitutecst(bat *res, const bat *bid, const str *arg2, const str *arg3, const bit *rep)
 {
 	BATiter bi;
@@ -1666,7 +1983,7 @@ STRbatSubstitutecst(bat *res, const bat *bid, const str *arg2, const str *arg3, 
 	size_t buflen = INITIAL_STR_BUFFER_LENGTH;
 	str x, y = *arg2, z = *arg3, buf = GDKmalloc(buflen), msg = MAL_SUCCEED;
 	bool nils = false;
-	bit r = *rep;
+	bit w = *rep;
 
 	if (!buf) {
 		msg = createException(MAL, "batstr.substritute", SQLSTATE(HY013) MAL_MALLOC_FAIL);
@@ -1686,13 +2003,20 @@ STRbatSubstitutecst(bat *res, const bat *bid, const str *arg2, const str *arg3, 
 	for (p = 0; p < q ; p++) {
 		x = (str) BUNtail(bi, p);
 
-		if ((msg = str_substitute(&buf, &buflen, x, y, z, r)) != MAL_SUCCEED)
-			goto bailout;
-		if (tfastins_nocheckVAR(bn, p, buf, Tsize(bn)) != GDK_SUCCEED) {
-			msg = createException(MAL, "batstr.substritute", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-			goto bailout;
+		if (strNil(x) || strNil(y) || strNil(z) || is_bit_nil(w)) {
+			if (tfastins_nocheckVAR(bn, p, str_nil, Tsize(bn)) != GDK_SUCCEED) {
+				msg = createException(MAL, "batstr.substritute", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+				goto bailout;
+			}
+			nils = true;
+		} else {
+			if ((msg = str_substitute(&buf, &buflen, x, y, z, w)) != MAL_SUCCEED)
+				goto bailout;
+			if (tfastins_nocheckVAR(bn, p, buf, Tsize(bn)) != GDK_SUCCEED) {
+				msg = createException(MAL, "batstr.substritute", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+				goto bailout;
+			}
 		}
-		nils |= strNil(buf);
 	}
 
 bailout:
@@ -1722,7 +2046,7 @@ STRbatSubstitute(bat *res, const bat *l, const bat *r, const bat *s, const bat *
 	size_t buflen = INITIAL_STR_BUFFER_LENGTH;
 	str x, y, z, buf = GDKmalloc(buflen), msg = MAL_SUCCEED;
 	bool nils = false;
-	bit *restrict arg4i;
+	bit *restrict arg4i, w;
 
 	if (!buf) {
 		msg = createException(MAL, "batstr.substritute", SQLSTATE(HY013) MAL_MALLOC_FAIL);
@@ -1750,14 +2074,22 @@ STRbatSubstitute(bat *res, const bat *l, const bat *r, const bat *s, const bat *
 		x = (str) BUNtail(arg1i, p);
 		y = (str) BUNtail(arg2i, p);
 		z = (str) BUNtail(arg3i, p);
+		w = arg4i[p];
 
-		if ((msg = str_substitute(&buf, &buflen, x, y, z, arg4i[p])) != MAL_SUCCEED)
-			goto bailout;
-		if (tfastins_nocheckVAR(bn, p, buf, Tsize(bn)) != GDK_SUCCEED) {
-			msg = createException(MAL, "batstr.substritute", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-			goto bailout;
+		if (strNil(x) || strNil(y) || strNil(z) || is_bit_nil(w)) {
+			if (tfastins_nocheckVAR(bn, p, str_nil, Tsize(bn)) != GDK_SUCCEED) {
+				msg = createException(MAL, "batstr.substritute", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+				goto bailout;
+			}
+			nils = true;
+		} else {
+			if ((msg = str_substitute(&buf, &buflen, x, y, z, w)) != MAL_SUCCEED)
+				goto bailout;
+			if (tfastins_nocheckVAR(bn, p, buf, Tsize(bn)) != GDK_SUCCEED) {
+				msg = createException(MAL, "batstr.substritute", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+				goto bailout;
+			}
 		}
-		nils |= strNil(buf);
 	}
 
 bailout:
@@ -1791,7 +2123,7 @@ STRbatsplitpartcst(bat *res, const bat *bid, const str *needle, const int *field
 	BAT *bn = NULL, *b = NULL;
 	BUN p, q;
 	size_t buflen = INITIAL_STR_BUFFER_LENGTH;
-	int f = *field;
+	int z = *field;
 	str x, y = *needle, buf = GDKmalloc(buflen), msg = MAL_SUCCEED;
 	bool nils = false;
 
@@ -1813,13 +2145,20 @@ STRbatsplitpartcst(bat *res, const bat *bid, const str *needle, const int *field
 	for (p = 0; p < q ; p++) {
 		x = (str) BUNtail(bi, p);
 
-		if ((msg = str_splitpart(&buf, &buflen, x, y, f)) != MAL_SUCCEED)
-			goto bailout;
-		if (tfastins_nocheckVAR(bn, p, buf, Tsize(bn)) != GDK_SUCCEED) {
-			msg = createException(MAL, "batstr.splitpart", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-			goto bailout;
+		if (strNil(x) || strNil(y) || is_int_nil(z)) {
+			if (tfastins_nocheckVAR(bn, p, str_nil, Tsize(bn)) != GDK_SUCCEED) {
+				msg = createException(MAL, "batstr.splitpart", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+				goto bailout;
+			}
+			nils = true;
+		} else {
+			if ((msg = str_splitpart(&buf, &buflen, x, y, z)) != MAL_SUCCEED)
+				goto bailout;
+			if (tfastins_nocheckVAR(bn, p, buf, Tsize(bn)) != GDK_SUCCEED) {
+				msg = createException(MAL, "batstr.splitpart", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+				goto bailout;
+			}
 		}
-		nils |= strNil(buf);
 	}
 
 bailout:
@@ -1847,7 +2186,7 @@ STRbatsplitpart_needlecst(bat *res, const bat *bid, const str *needle, const bat
 	BAT *bn = NULL, *b = NULL, *f = NULL;
 	BUN p, q;
 	size_t buflen = INITIAL_STR_BUFFER_LENGTH;
-	int *restrict field;
+	int *restrict field, z;
 	str x, y = *needle, buf = GDKmalloc(buflen), msg = MAL_SUCCEED;
 	bool nils = false;
 
@@ -1873,14 +2212,22 @@ STRbatsplitpart_needlecst(bat *res, const bat *bid, const str *needle, const bat
 	field = Tloc(f, 0);
 	for (p = 0; p < q ; p++) {
 		x = (str) BUNtail(bi, p);
+		z = field[p];
 
-		if ((msg = str_splitpart(&buf, &buflen, x, y, field[p])) != MAL_SUCCEED)
-			goto bailout;
-		if (tfastins_nocheckVAR(bn, p, buf, Tsize(bn)) != GDK_SUCCEED) {
-			msg = createException(MAL, "batstr.splitpart", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-			goto bailout;
+		if (strNil(x) || strNil(y) || is_int_nil(z)) {
+			if (tfastins_nocheckVAR(bn, p, str_nil, Tsize(bn)) != GDK_SUCCEED) {
+				msg = createException(MAL, "batstr.splitpart", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+				goto bailout;
+			}
+			nils = true;
+		} else {
+			if ((msg = str_splitpart(&buf, &buflen, x, y, z)) != MAL_SUCCEED)
+				goto bailout;
+			if (tfastins_nocheckVAR(bn, p, buf, Tsize(bn)) != GDK_SUCCEED) {
+				msg = createException(MAL, "batstr.splitpart", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+				goto bailout;
+			}
 		}
-		nils |= strNil(buf);
 	}
 
 bailout:
@@ -1910,7 +2257,7 @@ STRbatsplitpart_fieldcst(bat *res, const bat *bid, const bat *nid, const int *fi
 	BAT *bn = NULL, *b = NULL, *n = NULL;
 	BUN p, q;
 	size_t buflen = INITIAL_STR_BUFFER_LENGTH;
-	int f = *field;
+	int z = *field;
 	str x, y, buf = GDKmalloc(buflen), msg = MAL_SUCCEED;
 	bool nils = false;
 
@@ -1938,13 +2285,20 @@ STRbatsplitpart_fieldcst(bat *res, const bat *bid, const bat *nid, const int *fi
 		x = (str) BUNtail(bi, p);
 		y = (str) BUNtail(ni, p);
 
-		if ((msg = str_splitpart(&buf, &buflen, x, y, f)) != MAL_SUCCEED)
-			goto bailout;
-		if (tfastins_nocheckVAR(bn, p, buf, Tsize(bn)) != GDK_SUCCEED) {
-			msg = createException(MAL, "batstr.splitpart", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-			goto bailout;
+		if (strNil(x) || strNil(y) || is_int_nil(z)) {
+			if (tfastins_nocheckVAR(bn, p, str_nil, Tsize(bn)) != GDK_SUCCEED) {
+				msg = createException(MAL, "batstr.splitpart", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+				goto bailout;
+			}
+			nils = true;
+		} else {
+			if ((msg = str_splitpart(&buf, &buflen, x, y, z)) != MAL_SUCCEED)
+				goto bailout;
+			if (tfastins_nocheckVAR(bn, p, buf, Tsize(bn)) != GDK_SUCCEED) {
+				msg = createException(MAL, "batstr.splitpart", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+				goto bailout;
+			}
 		}
-		nils |= strNil(buf);
 	}
 
 bailout:
@@ -1974,7 +2328,7 @@ STRbatsplitpart(bat *res, const bat *l, const bat *r, const bat *t)
 	BAT *bn = NULL, *arg1 = NULL, *arg2 = NULL, *arg3 = NULL;
 	BUN p, q;
 	size_t buflen = INITIAL_STR_BUFFER_LENGTH;
-	int *restrict arg3i;
+	int *restrict arg3i, z;
 	str x, y, buf = GDKmalloc(buflen), msg = MAL_SUCCEED;
 	bool nils = false;
 
@@ -2002,14 +2356,22 @@ STRbatsplitpart(bat *res, const bat *l, const bat *r, const bat *t)
 	for (p = 0; p < q ; p++) {
 		x = (str) BUNtail(arg1i, p);
 		y = (str) BUNtail(arg2i, p);
+		z = arg3i[p];
 
-		if ((msg = str_splitpart(&buf, &buflen, x, y, arg3i[p])) != MAL_SUCCEED)
-			goto bailout;
-		if (tfastins_nocheckVAR(bn, p, buf, Tsize(bn)) != GDK_SUCCEED) {
-			msg = createException(MAL, "batstr.splitpart", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-			goto bailout;
+		if (strNil(x) || strNil(y) || is_int_nil(z)) {
+			if (tfastins_nocheckVAR(bn, p, str_nil, Tsize(bn)) != GDK_SUCCEED) {
+				msg = createException(MAL, "batstr.splitpart", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+				goto bailout;
+			}
+			nils = true;
+		} else {
+			if ((msg = str_splitpart(&buf, &buflen, x, y, z)) != MAL_SUCCEED)
+				goto bailout;
+			if (tfastins_nocheckVAR(bn, p, buf, Tsize(bn)) != GDK_SUCCEED) {
+				msg = createException(MAL, "batstr.splitpart", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+				goto bailout;
+			}
 		}
-		nils |= strNil(buf);
 	}
 
 bailout:
@@ -2077,13 +2439,20 @@ STRbatReplace(bat *res, const bat *l, const bat *s, const bat *s2)
 		y = (str) BUNtail(arg2i, p);
 		z = (str) BUNtail(arg3i, p);
 
-		if ((msg = str_substitute(&buf, &buflen, x, y, z, TRUE)) != MAL_SUCCEED)
-			goto bailout;
-		if (tfastins_nocheckVAR(bn, p, buf, Tsize(bn)) != GDK_SUCCEED) {
-			msg = createException(MAL, "batstr.replace", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-			goto bailout;
+		if (strNil(x) || strNil(y) || strNil(z)) {
+			if (tfastins_nocheckVAR(bn, p, str_nil, Tsize(bn)) != GDK_SUCCEED) {
+				msg = createException(MAL, "batstr.replace", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+				goto bailout;
+			}
+			nils = true;
+		} else {
+			if ((msg = str_substitute(&buf, &buflen, x, y, z, TRUE)) != MAL_SUCCEED)
+				goto bailout;
+			if (tfastins_nocheckVAR(bn, p, buf, Tsize(bn)) != GDK_SUCCEED) {
+				msg = createException(MAL, "batstr.replace", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+				goto bailout;
+			}
 		}
-		nils |= strNil(buf);
 	}
 
 bailout:
@@ -2115,8 +2484,8 @@ STRbatInsert(bat *res, const bat *l, const bat *s, const bat *chars, const bat *
 	BAT *bn = NULL, *left = NULL, *right = NULL, *start = NULL, *nchars = NULL;
 	BUN p, q;
 	size_t buflen = INITIAL_STR_BUFFER_LENGTH;
-	int *starti, *ncharsi;
-	str x, y, buf = GDKmalloc(buflen), msg = MAL_SUCCEED;
+	int *starti, *ncharsi, y, z;
+	str x, w, buf = GDKmalloc(buflen), msg = MAL_SUCCEED;
 	bool nils = false;
 
 	if (!buf) {
@@ -2143,15 +2512,24 @@ STRbatInsert(bat *res, const bat *l, const bat *s, const bat *chars, const bat *
 	ncharsi = Tloc(nchars, 0);
 	for (p = 0; p < q ; p++) {
 		x = (str) BUNtail(lefti, p);
-		y = (str) BUNtail(righti, p);
+		y = starti[p];
+		z = ncharsi[p];
+		w = (str) BUNtail(righti, p);
 
-		if ((msg = str_insert(&buf, &buflen, x, starti[p], ncharsi[p], y)) != MAL_SUCCEED)
-			goto bailout;
-		if (tfastins_nocheckVAR(bn, p, buf, Tsize(bn)) != GDK_SUCCEED) {
-			msg = createException(MAL, "batstr.insert", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-			goto bailout;
+		if (strNil(x) || is_int_nil(y) || is_int_nil(z) || strNil(w)) {
+			if (tfastins_nocheckVAR(bn, p, str_nil, Tsize(bn)) != GDK_SUCCEED) {
+				msg = createException(MAL, "batstr.insert", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+				goto bailout;
+			}
+			nils = true;
+		} else {
+			if ((msg = str_insert(&buf, &buflen, x, y, z, w)) != MAL_SUCCEED)
+				goto bailout;
+			if (tfastins_nocheckVAR(bn, p, buf, Tsize(bn)) != GDK_SUCCEED) {
+				msg = createException(MAL, "batstr.insert", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+				goto bailout;
+			}
 		}
-		nils |= strNil(buf);
 	}
 
 bailout:
@@ -2185,8 +2563,8 @@ STRbatInsertcst(bat *res, const bat *bid, const int *start, const int *nchars, c
 	BAT *bn = NULL, *b = NULL;
 	BUN p, q;
 	size_t buflen = INITIAL_STR_BUFFER_LENGTH;
-	int strt = *start, l = *nchars;
-	str x, y = *input2, buf = GDKmalloc(buflen), msg = MAL_SUCCEED;
+	int y = *start, z = *nchars;
+	str x, w = *input2, buf = GDKmalloc(buflen), msg = MAL_SUCCEED;
 	bool nils = false;
 
 	if (!buf) {
@@ -2207,13 +2585,20 @@ STRbatInsertcst(bat *res, const bat *bid, const int *start, const int *nchars, c
 	for (p = 0; p < q ; p++) {
 		x = (str) BUNtail(bi, p);
 
-		if ((msg = str_insert(&buf, &buflen, x, strt, l, y)) != MAL_SUCCEED)
-			goto bailout;
-		if (tfastins_nocheckVAR(bn, p, buf, Tsize(bn)) != GDK_SUCCEED) {
-			msg = createException(MAL, "batstr.insert", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-			goto bailout;
+		if (strNil(x) || is_int_nil(y) || is_int_nil(z) || strNil(w)) {
+			if (tfastins_nocheckVAR(bn, p, str_nil, Tsize(bn)) != GDK_SUCCEED) {
+				msg = createException(MAL, "batstr.insert", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+				goto bailout;
+			}
+			nils = true;
+		} else {
+			if ((msg = str_insert(&buf, &buflen, x, y, z, w)) != MAL_SUCCEED)
+				goto bailout;
+			if (tfastins_nocheckVAR(bn, p, buf, Tsize(bn)) != GDK_SUCCEED) {
+				msg = createException(MAL, "batstr.insert", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+				goto bailout;
+			}
 		}
-		nils |= strNil(buf);
 	}
 
 bailout:
@@ -2244,7 +2629,7 @@ STRbatsubstringcst(bat *res, const bat *bid, const int *start, const int *length
 	BAT *bn = NULL, *b = NULL;
 	BUN p, q;
 	size_t buflen = INITIAL_STR_BUFFER_LENGTH;
-	int s = *start, len = *length;
+	int y = *start, z = *length;
 	str x, buf = GDKmalloc(buflen), msg = MAL_SUCCEED;
 	bool nils = false;
 
@@ -2266,13 +2651,20 @@ STRbatsubstringcst(bat *res, const bat *bid, const int *start, const int *length
 	for (p = 0; p < q ; p++) {
 		x = (str) BUNtail(bi, p);
 
-		if ((msg = str_sub_string(&buf, &buflen, x, s, len)) != MAL_SUCCEED)
-			goto bailout;
-		if (tfastins_nocheckVAR(bn, p, buf, Tsize(bn)) != GDK_SUCCEED) {
-			msg = createException(MAL, "batstr.substring", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-			goto bailout;
+		if (strNil(x) || is_int_nil(y) || is_int_nil(z)) {
+			if (tfastins_nocheckVAR(bn, p, str_nil, Tsize(bn)) != GDK_SUCCEED) {
+				msg = createException(MAL, "batstr.substring", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+				goto bailout;
+			}
+			nils = true;
+		} else {
+			if ((msg = str_sub_string(&buf, &buflen, x, y, z)) != MAL_SUCCEED)
+				goto bailout;
+			if (tfastins_nocheckVAR(bn, p, buf, Tsize(bn)) != GDK_SUCCEED) {
+				msg = createException(MAL, "batstr.substring", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+				goto bailout;
+			}
 		}
-		nils |= strNil(buf);
 	}
 
 bailout:
@@ -2300,7 +2692,7 @@ STRbatsubstringcst_startcst(bat *res, const bat *bid, const int *start, const ba
 	BAT *bn = NULL, *b = NULL, *lb = NULL;
 	BUN p, q;
 	size_t buflen = INITIAL_STR_BUFFER_LENGTH;
-	int s = *start, *len;
+	int y = *start, *len, z;
 	str x, buf = GDKmalloc(buflen), msg = MAL_SUCCEED;
 	bool nils = false;
 
@@ -2326,14 +2718,22 @@ STRbatsubstringcst_startcst(bat *res, const bat *bid, const int *start, const ba
 	len = Tloc(lb, 0);
 	for (p = 0; p < q ; p++) {
 		x = (str) BUNtail(bi, p);
+		z = len[p];
 
-		if ((msg = str_sub_string(&buf, &buflen, x, s, len[p])) != MAL_SUCCEED)
-			goto bailout;
-		if (tfastins_nocheckVAR(bn, p, buf, Tsize(bn)) != GDK_SUCCEED) {
-			msg = createException(MAL, "batstr.substring", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-			goto bailout;
+		if (strNil(x) || is_int_nil(y) || is_int_nil(z)) {
+			if (tfastins_nocheckVAR(bn, p, str_nil, Tsize(bn)) != GDK_SUCCEED) {
+				msg = createException(MAL, "batstr.substring", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+				goto bailout;
+			}
+			nils = true;
+		} else {
+			if ((msg = str_sub_string(&buf, &buflen, x, y, z)) != MAL_SUCCEED)
+				goto bailout;
+			if (tfastins_nocheckVAR(bn, p, buf, Tsize(bn)) != GDK_SUCCEED) {
+				msg = createException(MAL, "batstr.substring", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+				goto bailout;
+			}
 		}
-		nils |= strNil(buf);
 	}
 
 bailout:
@@ -2363,7 +2763,7 @@ STRbatsubstringcst_indexcst(bat *res, const bat *bid, const bat *l, const int *i
 	BAT *bn = NULL, *b = NULL, *lb = NULL;
 	BUN p, q;
 	size_t buflen = INITIAL_STR_BUFFER_LENGTH;
-	int *start, in = *index;
+	int *start, y, z = *index;
 	str x, buf = GDKmalloc(buflen), msg = MAL_SUCCEED;
 	bool nils = false;
 
@@ -2389,14 +2789,22 @@ STRbatsubstringcst_indexcst(bat *res, const bat *bid, const bat *l, const int *i
 	start = Tloc(lb, 0);
 	for (p = 0; p < q ; p++) {
 		x = (str) BUNtail(bi, p);
+		y = start[p];
 
-		if ((msg = str_sub_string(&buf, &buflen, x, start[p], in)) != MAL_SUCCEED)
-			goto bailout;
-		if (tfastins_nocheckVAR(bn, p, buf, Tsize(bn)) != GDK_SUCCEED) {
-			msg = createException(MAL, "batstr.substring", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-			goto bailout;
+		if (strNil(x) || is_int_nil(y) || is_int_nil(z)) {
+			if (tfastins_nocheckVAR(bn, p, str_nil, Tsize(bn)) != GDK_SUCCEED) {
+				msg = createException(MAL, "batstr.substring", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+				goto bailout;
+			}
+			nils = true;
+		} else {
+			if ((msg = str_sub_string(&buf, &buflen, x, y, z)) != MAL_SUCCEED)
+				goto bailout;
+			if (tfastins_nocheckVAR(bn, p, buf, Tsize(bn)) != GDK_SUCCEED) {
+				msg = createException(MAL, "batstr.substring", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+				goto bailout;
+			}
 		}
-		nils |= strNil(buf);
 	}
 
 bailout:
@@ -2426,7 +2834,7 @@ STRbatsubstring(bat *res, const bat *l, const bat *r, const bat *t)
 	BAT *bn = NULL, *left = NULL, *start = NULL, *length = NULL;
 	BUN p, q;
 	size_t buflen = INITIAL_STR_BUFFER_LENGTH;
-	int *starti, *lengthi;
+	int *starti, *lengthi, y, z;
 	str x, buf = GDKmalloc(buflen), msg = MAL_SUCCEED;
 	bool nils = false;
 
@@ -2453,14 +2861,23 @@ STRbatsubstring(bat *res, const bat *l, const bat *r, const bat *t)
 	lengthi = Tloc(length, 0);
 	for (p = 0; p < q ; p++) {
 		x = (str) BUNtail(lefti, p);
+		y = starti[p];
+		z = lengthi[p];
 
-		if ((msg = str_sub_string(&buf, &buflen, x, starti[p], lengthi[p])) != MAL_SUCCEED)
-			goto bailout;
-		if (tfastins_nocheckVAR(bn, p, buf, Tsize(bn)) != GDK_SUCCEED) {
-			msg = createException(MAL, "batstr.substring", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-			goto bailout;
+		if (strNil(x) || is_int_nil(y) || is_int_nil(z)) {
+			if (tfastins_nocheckVAR(bn, p, str_nil, Tsize(bn)) != GDK_SUCCEED) {
+				msg = createException(MAL, "batstr.substring", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+				goto bailout;
+			}
+			nils = true;
+		} else {
+			if ((msg = str_sub_string(&buf, &buflen, x, y, z)) != MAL_SUCCEED)
+				goto bailout;
+			if (tfastins_nocheckVAR(bn, p, buf, Tsize(bn)) != GDK_SUCCEED) {
+				msg = createException(MAL, "batstr.substring", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+				goto bailout;
+			}
 		}
-		nils |= strNil(buf);
 	}
 
 bailout:
@@ -2491,7 +2908,7 @@ STRbatstrLocatecst(bat *res, const bat *l, const str *s2)
 	BATiter bi;
 	BAT *bn = NULL, *b = NULL;
 	BUN p, q;
-	int *restrict vals, next;
+	int *restrict vals;
 	str x, y = *s2, msg = MAL_SUCCEED;
 	bool nils = false;
 
@@ -2510,9 +2927,12 @@ STRbatstrLocatecst(bat *res, const bat *l, const str *s2)
 	for (p = 0; p < q ; p++) {
 		x = (str) BUNtail(bi, p);
 
-		next = str_locate2(x, y, 1);
-		vals[p] = next;
-		nils |= is_int_nil(next);
+		if (strNil(x) || strNil(y)) {
+			vals[p] = int_nil;
+			nils = true;
+		} else {
+			vals[p] = str_locate2(x, y, 1);
+		}
 	}
 
 bailout:
@@ -2538,7 +2958,7 @@ STRbatstrLocate_strcst(bat *res, const str *s, const bat *l)
 	BATiter bi;
 	BAT *bn = NULL, *b = NULL;
 	BUN p, q;
-	int *restrict vals, next;
+	int *restrict vals;
 	str x = *s, y, msg = MAL_SUCCEED;
 	bool nils = false;
 
@@ -2557,9 +2977,12 @@ STRbatstrLocate_strcst(bat *res, const str *s, const bat *l)
 	for (p = 0; p < q ; p++) {
 		y = (str) BUNtail(bi, p);
 
-		next = str_locate2(x, y, 1);
-		vals[p] = next;
-		nils |= is_int_nil(next);
+		if (strNil(x) || strNil(y)) {
+			vals[p] = int_nil;
+			nils = true;
+		} else {
+			vals[p] = str_locate2(x, y, 1);
+		}
 	}
 
 bailout:
@@ -2585,7 +3008,7 @@ STRbatstrLocate(bat *res, const bat *l, const bat *r)
 	BATiter lefti, righti;
 	BAT *bn = NULL, *left = NULL, *right = NULL;
 	BUN p, q;
-	int *restrict vals, next;
+	int *restrict vals;
 	str x, y, msg = MAL_SUCCEED;
 	bool nils = false;
 
@@ -2610,9 +3033,12 @@ STRbatstrLocate(bat *res, const bat *l, const bat *r)
 		x = (str) BUNtail(lefti, p);
 		y = (str) BUNtail(righti, p);
 
-		next = str_locate2(x, y, 1);
-		vals[p] = next;
-		nils |= is_int_nil(next);
+		if (strNil(x) || strNil(y)) {
+			vals[p] = int_nil;
+			nils = true;
+		} else {
+			vals[p] = str_locate2(x, y, 1);
+		}
 	}
 
 bailout:
@@ -2640,7 +3066,7 @@ STRbatstrLocate2cst(bat *res, const bat *l, const str *s2, const int *start)
 	BATiter bi;
 	BAT *bn = NULL, *b = NULL;
 	BUN p, q;
-	int *restrict vals, next, s = *start;
+	int *restrict vals, z = *start;
 	str x, y = *s2, msg = MAL_SUCCEED;
 	bool nils = false;
 
@@ -2659,9 +3085,12 @@ STRbatstrLocate2cst(bat *res, const bat *l, const str *s2, const int *start)
 	for (p = 0; p < q ; p++) {
 		x = (str) BUNtail(bi, p);
 
-		next = str_locate2(x, y, s);
-		vals[p] = next;
-		nils |= is_int_nil(next);
+		if (strNil(x) || strNil(y) || is_int_nil(z)) {
+			vals[p] = int_nil;
+			nils = true;
+		} else {
+			vals[p] = str_locate2(x, y, z);
+		}
 	}
 
 bailout:
@@ -2687,7 +3116,7 @@ STRbatstrLocate2(bat *res, const bat *l, const bat *r, const bat *s)
 	BATiter lefti, righti;
 	BAT *bn = NULL, *left = NULL, *right = NULL, *start = NULL;
 	BUN p, q;
-	int *restrict vals, next, *restrict starti;
+	int *restrict vals, *restrict starti, z;
 	str x, y, msg = MAL_SUCCEED;
 	bool nils = false;
 
@@ -2712,10 +3141,14 @@ STRbatstrLocate2(bat *res, const bat *l, const bat *r, const bat *s)
 	for (p = 0; p < q ; p++) {
 		x = (str) BUNtail(lefti, p);
 		y = (str) BUNtail(righti, p);
+		z = starti[p];
 
-		next = str_locate2(x, y, starti[p]);
-		vals[p] = next;
-		nils |= is_int_nil(next);
+		if (strNil(x) || strNil(y) || is_int_nil(z)) {
+			vals[p] = int_nil;
+			nils = true;
+		} else {
+			vals[p] = str_locate2(x, y, z);
+		}
 	}
 
 bailout:
