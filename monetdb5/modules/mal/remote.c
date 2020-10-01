@@ -188,7 +188,7 @@ static str RMTconnectScen(
 		str *user,
 		str *passwd,
 		str *scen,
-		bit columnar)
+		bit *columnar)
 {
 	connection c;
 	char conn[BUFSIZ];
@@ -246,7 +246,7 @@ static str RMTconnectScen(
 		return msg;
 	}
 
-	if (columnar) {
+	if (*columnar) {
 		char set_protocol_query_buf[50];
 		snprintf(set_protocol_query_buf, 50, "sql.set_protocol(%d:int);", PROTOCOL_COLUMNAR);
 		if ((msg = RMTquery(&hdl, "remote.connect", m, set_protocol_query_buf)))
@@ -300,15 +300,11 @@ RMTconnect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 		str* passwd	= getArgReference_str(stk, pci, 3);
 
 		str scen = "msql";
-		bit columnar = 0;
 
 		if (pci->argc >= 5)
 			scen = *getArgReference_str(stk, pci, 4);
-		
-		if (pci->argc == 6)
-			columnar = *getArgReference_bit(stk, pci, 5);
 
-		return RMTconnectScen(ret, uri, user, passwd, &scen, columnar);
+		return RMTconnectScen(ret, uri, user, passwd, &scen, NULL);
 }
 
 static str
@@ -346,7 +342,7 @@ RMTconnectTable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	}
 	snprintf(pwhash, pwlen + 2, "\1%s", passwd);
 
-	msg = RMTconnectScen(&ret, &uri, &remoteuser, &pwhash, &scen, 0);
+	msg = RMTconnectScen(&ret, &uri, &remoteuser, &pwhash, &scen, NULL);
 
 	GDKfree(passwd);
 	GDKfree(pwhash);
@@ -1358,10 +1354,16 @@ static str RMTexec(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 			}
 		}
 		else {
+			assert(rcb->context);
 			tmp = rcb->call(rcb->context, tblname, results, fields);
-			GDKfree(rcb);
 		}
 		GDKfree(results);
+	}
+
+	if (rcb) {
+		GDKfree(rcb->context);
+		rcb->context = NULL;
+		GDKfree(rcb);
 	}
 
 	if (mhdl)
@@ -1608,7 +1610,7 @@ mel_func remote_init_funcs[] = {
  command("remote", "epilogue", RMTepilogue, false, "release the resources held by the remote module", args(1,1, arg("",void))),
  command("remote", "resolve", RMTresolve, false, "resolve a pattern against Merovingian and return the URIs", args(1,2, batarg("",str),arg("pattern",str))),
  command("remote", "connect", RMTconnect, false, "returns a newly created connection for uri, using user name and password", args(1,4, arg("",str),arg("uri",str),arg("user",str),arg("passwd",str))),
- command("remote", "connect", RMTconnectScen, false, "returns a newly created connection for uri, using user name, password and scenario", args(1,5, arg("",str),arg("uri",str),arg("user",str),arg("passwd",str),arg("scen",str))),
+ command("remote", "connect", RMTconnectScen, false, "returns a newly created connection for uri, using user name, password and scenario", args(1,6, arg("",str),arg("uri",str),arg("user",str),arg("passwd",str),arg("scen",str),arg("columnar",bit))),
  pattern("remote", "connect", RMTconnectTable, false, "return a newly created connection for a table. username and password should be in the vault", args(1,3, arg("",str),arg("table",str),arg("schen",str))),
  command("remote", "disconnect", RMTdisconnect, false, "disconnects the connection pointed to by handle (received from a call to connect()", args(1,2, arg("",void),arg("conn",str))),
  pattern("remote", "get", RMTget, false, "retrieves a copy of remote object ident", args(1,3, argany("",0),arg("conn",str),arg("ident",str))),
