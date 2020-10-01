@@ -82,7 +82,7 @@ bailout:
 static str
 STRbatLength(bat *ret, const bat *l)
 {
-	return do_batstr_int(ret, l, "batstr.length", str_utf8_length);
+	return do_batstr_int(ret, l, "batstr.length", str_length);
 }
 
 static str

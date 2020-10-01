@@ -3345,7 +3345,7 @@ STRtostr(str *res, const str *src)
 }
 
 int
-str_utf8_length(str s)
+str_length(str s)
 {
 	size_t l = UTF8_strlen(s);
 	assert(l < INT_MAX);
@@ -3359,8 +3359,14 @@ STRLength(int *res, const str *arg1)
 {
 	str s = *arg1;
 
-	*res = strNil(s) ? int_nil : str_utf8_length(s);
+	*res = strNil(s) ? int_nil : str_length(s);
 	return MAL_SUCCEED;
+}
+
+int
+str_utf8_length(str s)
+{
+	return strNil(s) ? int_nil : str_length(s);
 }
 
 int
