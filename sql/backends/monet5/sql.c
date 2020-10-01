@@ -3345,7 +3345,7 @@ convert_timestamp(void *cookie, size_t internal_size, char *external, char *inte
 {
 	copy_binary_timestamp *src = (copy_binary_timestamp*) external;
 	timestamp *dst = (timestamp*) internal;
-	assert(internal_size == sizeof(*dst));
+	(void)internal_size; assert(internal_size == sizeof(*dst));
 
 	COPY_BINARY_CONVERT_TIMESTAMP_ENDIAN(*src);
 
@@ -3364,7 +3364,7 @@ convert_date(void *cookie, size_t internal_size, char *external, char *internal)
 {
 	copy_binary_date *src = (copy_binary_date*) external;
 	date *dst = (date*) internal;
-	assert(internal_size == sizeof(*dst));
+	(void)internal_size; assert(internal_size == sizeof(*dst));
 
 	COPY_BINARY_CONVERT_DATE_ENDIAN(*src);
 
@@ -3381,7 +3381,7 @@ convert_time(void *cookie, size_t internal_size, char *external, char *internal)
 {
 	copy_binary_time *src = (copy_binary_time*) external;
 	timestamp *dst = (timestamp*) internal;
-	assert(internal_size == sizeof(*dst));
+	(void)internal_size; assert(internal_size == sizeof(*dst));
 
 	COPY_BINARY_CONVERT_TIME_ENDIAN(*src);
 
@@ -3596,8 +3596,10 @@ mvc_bin_import_table_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 					goto bailout;
 			} else {
 				stream *s = open_rstream(fname);
-				if (s != NULL)
+				if (s != NULL) {
 					msg = BATattach_stream(&c, col->base.name, tpe, s, 0, NULL);
+					close_stream(s);
+				}
 				else
 					msg = createException(
 						SQL, "mvc_bin_import_table_wrap",
