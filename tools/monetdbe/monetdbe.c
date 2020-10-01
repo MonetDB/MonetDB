@@ -372,9 +372,9 @@ monetdbe_query_internal(monetdbe_database_internal *mdbe, char* query, monetdbe_
 		}
 
 		if (m->emode & m_prepare)
-			((monetdbe_result_internal*) result)->type = Q_PREPARE;
+			((monetdbe_result_internal*) *result)->type = Q_PREPARE;
 		else
-			((monetdbe_result_internal*) result)->type = (b->results) ? b->results->query_type : m->type;
+			((monetdbe_result_internal*) *result)->type = (b->results) ? b->results->query_type : m->type;
 	}
 
 cleanup:
@@ -1336,7 +1336,7 @@ monetdbe_execute(monetdbe_statement *stmt, monetdbe_result **result, monetdbe_cn
 			goto cleanup;
 		}
 
-		((monetdbe_result_internal*) result)->type = (b->results) ? Q_TABLE : Q_UPDATE;
+		((monetdbe_result_internal*) *result)->type = (b->results) ? Q_TABLE : Q_UPDATE;
 	}
 cleanup:
 	return commit_action(m, stmt_internal->mdbe, result, res_internal);
