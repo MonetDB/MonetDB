@@ -151,7 +151,7 @@ SQLstr_cast_str(str *r, size_t *rlen, str v, int len)
 {
 	size_t intput_strlen;
 
-	if (!strNil(v) && len > 0 && str_utf8_length(v) > len)
+	if (len > 0 && str_utf8_length(v) > len)
 		throw(SQL, "str_cast", SQLSTATE(22001) "value too long for type (var)char(%d)", len);
 
 	intput_strlen = strlen(v) + 1;
@@ -254,22 +254,39 @@ SQLbatstr_cast(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		goto bailout;
 	}
 
-	for (BUN i = 0; i < q; i++) {
-		BUN p = (BUN) (canditer_next(&ci) - off);
-		ptr v = BUNtail(bi, p);
+	if (from_str) { /* string to string */
+		for (BUN i = 0; i < q; i++) {
+			BUN p = (BUN) (canditer_next(&ci) - off);
+			str v = (str) BUNtail(bi, p);
 
-		if (from_str)
-			msg = SQLstr_cast_str(&r, &rlen, (str) v, digits);
-		else
-			msg = SQLstr_cast_any_type(&r, &rlen, m, eclass, d1, s1, has_tz, v, tpe, digits);
-
-		if (msg)
-			goto bailout;
-		if (tfastins_nocheckVAR(dst, i, r, Tsize(dst)) != GDK_SUCCEED) {
-			msg = createException(SQL, "batcalc.str_cast", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-			goto bailout;
+			if (strNil(v)) {
+				if (tfastins_nocheckVAR(dst, i, str_nil, Tsize(dst)) != GDK_SUCCEED) {
+					msg = createException(MAL, "batcalc.str_cast", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+					goto bailout;
+				}
+				nils = true;
+			} else {
+				if ((msg = SQLstr_cast_str(&r, &rlen, v, digits)) != MAL_SUCCEED)
+					goto bailout;
+				if (tfastins_nocheckVAR(dst, i, r, Tsize(dst)) != GDK_SUCCEED) {
+					msg = createException(SQL, "batcalc.str_cast", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+					goto bailout;
+				}
+			}
 		}
-		nils |= strNil(r);
+	} else { /* any other type to string */
+		for (BUN i = 0; i < q; i++) {
+			BUN p = (BUN) (canditer_next(&ci) - off);
+			ptr v = BUNtail(bi, p);
+
+			if ((msg = SQLstr_cast_any_type(&r, &rlen, m, eclass, d1, s1, has_tz, v, tpe, digits)) != MAL_SUCCEED)
+				goto bailout;
+			if (tfastins_nocheckVAR(dst, i, r, Tsize(dst)) != GDK_SUCCEED) {
+				msg = createException(SQL, "batcalc.str_cast", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+				goto bailout;
+			}
+			nils |= strNil(r);
+		}
 	}
 
 bailout:
