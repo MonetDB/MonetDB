@@ -115,12 +115,22 @@ configure_file(Mtest.py.in
   ${CMAKE_CURRENT_BINARY_DIR}/Mtest.py
   @ONLY)
 
+configure_file(Mz.py.in
+  ${CMAKE_CURRENT_BINARY_DIR}/Mz.py
+  @ONLY)
+
 configure_file(listexports.py.in
   ${CMAKE_CURRENT_BINARY_DIR}/listexports.py
   @ONLY)
 
 install(FILES
   ${CMAKE_CURRENT_BINARY_DIR}/Mtest.py
+  PERMISSIONS ${PROGRAM_PERMISSIONS_DEFAULT}
+  DESTINATION ${CMAKE_INSTALL_BINDIR}
+  COMPONENT pytesting)
+
+install(FILES
+  ${CMAKE_CURRENT_BINARY_DIR}/Mz.py
   PERMISSIONS ${PROGRAM_PERMISSIONS_DEFAULT}
   DESTINATION ${CMAKE_INSTALL_BINDIR}
   COMPONENT pytesting)
