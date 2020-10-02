@@ -1042,11 +1042,11 @@ cleanup:
 }
 
 #define GENERATE_BASE_HEADERS(type, tpename) \
-	static int tpename##_is_null(type value)
+	static int tpename##_is_null(type *value)
 
 #define GENERATE_BASE_FUNCTIONS(tpe, tpename, mname) \
 	GENERATE_BASE_HEADERS(tpe, tpename); \
-	static int tpename##_is_null(tpe value) { return value == mname##_nil; }
+	static int tpename##_is_null(tpe *value) { return *value == mname##_nil; }
 
 #ifdef bool
 #undef bool
@@ -1103,7 +1103,7 @@ GENERATE_BASE_HEADERS(monetdbe_data_timestamp, timestamp);
 	}
 
 char*
-monetdbe_append(monetdbe_database dbhdl, const char* schema, const char* table, monetdbe_column **input /*bat *batids*/, size_t column_count)
+monetdbe_append(monetdbe_database dbhdl, const char* schema, const char* table, monetdbe_column **input, size_t column_count)
 {
 
 	monetdbe_database_internal *mdbe = (monetdbe_database_internal*)dbhdl;
@@ -1155,7 +1155,6 @@ monetdbe_append(monetdbe_database dbhdl, const char* schema, const char* table, 
 	}
 
 	/* for now no default values, ie user should supply all columns */
-
 	if (column_count != (size_t)list_length(t->columns.set)) {
 		mdbe->msg = createException(SQL, "monetdbe.monetdbe_append", "Incorrect number of columns");
 		goto cleanup;
@@ -1239,7 +1238,7 @@ monetdbe_append(monetdbe_database dbhdl, const char* schema, const char* table, 
 
 			for (size_t j=0; j<cnt; j++){
 				timestamp t = *(timestamp*) nil;
-				if(!timestamp_is_null(ts[j]))
+				if(!timestamp_is_null(ts+j))
 					t = timestamp_from_data(&ts[j]);
 
 				if (store_funcs.append_col(m->session->tr, c, &t, mtype) != 0) {
@@ -1252,7 +1251,7 @@ monetdbe_append(monetdbe_database dbhdl, const char* schema, const char* table, 
 
 			for (size_t j=0; j<cnt; j++){
 				date d = *(date*) nil;
-				if(!date_is_null(de[j]))
+				if(!date_is_null(de+j))
 					d = date_from_data(&de[j]);
 
 				if (store_funcs.append_col(m->session->tr, c, &d, mtype) != 0) {
@@ -1265,7 +1264,7 @@ monetdbe_append(monetdbe_database dbhdl, const char* schema, const char* table, 
 
 			for (size_t j=0; j<cnt; j++){
 				daytime dt = *(daytime*) nil;
-				if(!time_is_null(t[j]))
+				if(!time_is_null(t+j))
 					dt = time_from_data(&t[j]);
 
 				if (store_funcs.append_col(m->session->tr, c, &dt, mtype) != 0) {
@@ -1279,7 +1278,7 @@ monetdbe_append(monetdbe_database dbhdl, const char* schema, const char* table, 
 			for (size_t j=0; j<cnt; j++){
 				blob* b = (blob*) nil;
 				int res;
-				if (!blob_is_null(be[j])) {
+				if (!blob_is_null(be+j)) {
 					size_t len = be[j].size;
 					b = (blob*) GDKmalloc(blobsize(len));
 					if (b == NULL)
@@ -1615,38 +1614,38 @@ timestamp_from_data(monetdbe_data_timestamp *ptr)
 }
 
 static int
-date_is_null(monetdbe_data_date value)
+date_is_null(monetdbe_data_date *value)
 {
 	monetdbe_data_date null_value;
 	data_from_date(date_nil, &null_value);
-	return value.year == null_value.year && value.month == null_value.month &&
-		   value.day == null_value.day;
+	return value->year == null_value.year && value->month == null_value.month &&
+		   value->day == null_value.day;
 }
 
 static int
-time_is_null(monetdbe_data_time value)
+time_is_null(monetdbe_data_time *value)
 {
 	monetdbe_data_time null_value;
 	data_from_time(daytime_nil, &null_value);
-	return value.hours == null_value.hours &&
-		   value.minutes == null_value.minutes &&
-		   value.seconds == null_value.seconds && value.ms == null_value.ms;
+	return value->hours == null_value.hours &&
+		   value->minutes == null_value.minutes &&
+		   value->seconds == null_value.seconds && value->ms == null_value.ms;
 }
 
 static int
-timestamp_is_null(monetdbe_data_timestamp value)
+timestamp_is_null(monetdbe_data_timestamp *value)
 {
-	return is_timestamp_nil(timestamp_from_data(&value));
+	return is_timestamp_nil(timestamp_from_data(value));
 }
 
 static int
-str_is_null(char *value)
+str_is_null(char **value)
 {
-	return value == NULL;
+	return !value || *value == NULL;
 }
 
 static int
-blob_is_null(monetdbe_data_blob value)
+blob_is_null(monetdbe_data_blob *value)
 {
-	return value.data == NULL;
+	return !value || value->data == NULL;
 }

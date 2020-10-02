@@ -105,7 +105,7 @@ typedef struct {
 		char *name;				   \
 		ctype null_value;                          \
 		double scale;                              \
-		int (*is_null)(ctype value);               \
+		int (*is_null)(ctype *value);               \
 	} monetdbe_column_##typename
 
 DEFAULT_STRUCT_DEFINITION(int8_t, bool);
