@@ -31,6 +31,6 @@ extern int mvc_result_table(backend *be, oid query_id, int nr_cols, mapi_query_t
 extern int mvc_result_column(backend *be, char *tn, char *name, char *typename, int digits, int scale, BAT *b);
 extern int mvc_result_value(backend *be, const char *tn, const char *name, const char *typename, int digits, int scale, ptr *p, int mtype);
 
-extern int convert2str(mvc *m, sql_class eclass, int d, int sc, int has_tz, ptr p, int mtype, char **buf, int len);
+extern ssize_t convert2str(mvc *m, sql_class eclass, int d, int sc, int has_tz, ptr p, int mtype, char **buf, size_t *len);
 
 #endif /* sql_result_H */

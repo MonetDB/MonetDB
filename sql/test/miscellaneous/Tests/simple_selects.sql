@@ -206,4 +206,6 @@ select cast(interval '3' second as clob);
 
 select cast(13121 as varchar(2147483647)) || cast(231231 as varchar(2147483647)); --error, too big
 
+select date_to_str(date '2010-01-10','%y/%m/%d');
+
 select date_to_str(a,'%y/%m/%d') from (values (date '2012-02-11'), (date '2012-02-12'),(date '2012-02-13')) as a(a);
