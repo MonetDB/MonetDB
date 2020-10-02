@@ -44,6 +44,7 @@ verbose = False
 quiet = False
 
 initdb = None
+single_in_memory = False
 
 global_timeout = 0
 start_time = time.time()
@@ -1351,19 +1352,29 @@ def PerformDir(env, testdir, testlist, BusyPorts, all_tests = False) :
                 for TST,COND in testlist:
                     if oneserver and (pSrvr is None or pSrvr.poll() is not None):
                         # restart server
-                        cmd = splitcommand(env['exe']['mserver5'][1]) + ['--dbpath=%s' % LogDBdir] + options
+                        inmem = single_in_memory
+                        for o in options:
+                            if o.startswith('embedded'):
+                                inmem = False
+                                break
+                        if inmem:
+                            cmd = splitcommand(env['exe']['mserver5'][1]) + ['--set', 'gdk_dbname=%s' % TSTDB, '--in-memory'] + options
+                            pollfile = None
+                        else:
+                            cmd = splitcommand(env['exe']['mserver5'][1]) + ['--dbpath=%s' % LogDBdir] + options
+                            pollfile = os.path.join(LogDBdir, '.started')
                         if env.get('MULTIFARM'):
                             cmd.append('--dbextra=%s' % os.path.join(env['GDK_DBFARM'], TSTPREF + '_transient'))
                             shutil.rmtree(os.path.join(env['GDK_DBFARM'], TSTPREF + '_transient'),
                                           ignore_errors = True)
                             os.makedirs(os.path.join(env['GDK_DBFARM'], TSTPREF + '_transient'))
                         elif env.get('TRANS_INMEM'):
-                            cmd.append('--dbextra=:inmemory')
+                            cmd.append('--dbextra=:memory:')
                         pSrvr = ServerClass(cmd,
                                             open(os.path.join(TSTTRGDIR, 'SingleServer.out'), 'a'),
                                             open(os.path.join(TSTTRGDIR, 'SingleServer.err'), 'a'),
                                             0,
-                                            os.path.join(LogDBdir, '.started'),
+                                            pollfile,
                                             int(env['MAPIPORT']))
                         os.chdir(TSTTRGDIR)
                         pSrvr.LaunchIt()
@@ -1424,7 +1435,6 @@ def PerformDir(env, testdir, testlist, BusyPorts, all_tests = False) :
                         '*.client.err', '*.client.out',
                         '*.err.diff.html', '*.err.head.html', '*.err.html',
                         '*.out.diff.html', '*.out.head.html', '*.out.html',
-                        '*.out.diff.txt', '*.err.diff.txt',
                         '*.server.err', '*.server.out',
                         '*.stable.err*', '*.stable.out*',
                         '*.test.err', '*.test.out',
@@ -1739,7 +1749,7 @@ def GetBitsAndModsAndThreads(env) :
                       ignore_errors = True)
         os.makedirs(os.path.join(env['GDK_DBFARM'], TSTPREF + '_transient'))
     elif env.get('TRANS_INMEM'):
-        cmd.append('--dbextra=:inmemory')
+        cmd.append('--dbextra=:memory:')
     if procdebug:
         print('GetBitsAndModsAndThreads: starting process "%s" (inpipe, outpipe, errpipe)\n' % '" "'.join(cmd))
     setpgrp = True
@@ -2454,15 +2464,12 @@ def RunTest(env, TST, BusyPorts, COND, oktests, length, all_tests, pSrvr) :
                 cmd.append('-d')
             if not verbose:
                 cmd.append('-q')
-            diff_format = env.get('diff_format', 'html') 
-            out_fn = ('%s.out.diff.html' % TST)
             cmd.extend(['-F^#', '-I%s' % par['IGNORE'],
                         '-C%s' % par['CONTEXT'], '-A%d' % ACCURACYout,
                         titlefmt % ('err', 'err'),
-                        '-f{}'.format(diff_format),
                         '%s%s.FILTERED' % (TST, STABLEout),
                         '%s.test.out.FILTERED' % TST,
-                         out_fn])
+                        '%s.out.diff.html' % TST])
             if procdebug:
                 print('RunTest: starting process "%s"\n' % '" "'.join(cmd))
             setpgrp = True
@@ -2526,15 +2533,12 @@ def RunTest(env, TST, BusyPorts, COND, oktests, length, all_tests, pSrvr) :
                 cmd.append('-d')
             if not verbose:
                 cmd.append('-q')
-            diff_format = env.get('diff_format', 'html') 
-            out_fn = ('%s.err.diff.html' % TST)
             cmd.extend(['-F^#', '-I%s' % par['IGNORE'],
                         '-C%s' % par['CONTEXT'], '-A%d' % ACCURACYerr,
                         titlefmt % ('out', 'out'),
-                        '-f{}'.format(diff_format),
                         '%s%s.FILTERED' % (TST, STABLEerr),
                         '%s.test.err.FILTERED' % TST,
-                        out_fn])
+                        '%s.err.diff.html' % TST])
             if procdebug:
                 print('RunTest: starting process "%s"\n' % '" "'.join(cmd))
             setpgrp = True
@@ -2592,12 +2596,6 @@ def RunTest(env, TST, BusyPorts, COND, oktests, length, all_tests, pSrvr) :
         if not testweb:
             elem = AddTstToHtmlIndex(env, TST, STABLEout, STABLEerr, EXT,
                                      FailedOut, FailedErr)
-        diff_format = env.get('diff_format', 'html') 
-        if diff_format == 'txt':
-            # we know the content is not html, so change the extension here
-            for f in [('%s.out.diff.html' % TST), ('%s.err.diff.html' % TST)]:
-                if os.path.exists(f):
-                    shutil.move(f, f[:-4] + 'txt')
 
         if not verbose and not quiet:
             if tres == 'socket':
@@ -3130,7 +3128,7 @@ def DoIt(env, SERVER, CALL, TST, EXT, TestOutFile, TestErrFile, STIMEOUT, CTIMEO
                               ignore_errors = True)
                 os.makedirs(os.path.join(env['GDK_DBFARM'], TSTDB + '_transient'))
             elif env.get('TRANS_INMEM'):
-                Srvr.append('--dbextra=:inmemory')
+                Srvr.append('--dbextra=:memory:')
             if os.path.isfile(TST + '.options5'):
                 Srvr.extend(openutf8(TST + '.options5').read().split())
             lang=""
@@ -3178,7 +3176,7 @@ def DoIt(env, SERVER, CALL, TST, EXT, TestOutFile, TestErrFile, STIMEOUT, CTIMEO
                                   ignore_errors = True)
                     os.makedirs(os.path.join(env['GDK_DBFARM'], TSTPREF + '_transient'))
                 elif env.get('TRANS_INMEM'):
-                    Srvr.append('--dbextra=:inmemory')
+                    Srvr.append('--dbextra=:memory:')
                 pSrvr = ServerClass(Srvr, SrvrOut, SrvrErr, TIMEOUT, os.path.join(dbpath, '.started'), int(env['MAPIPORT']))
                 pSrvr.LaunchIt()
             if savepath is not None:
@@ -3802,7 +3800,7 @@ def main(argv) :
         parser.add_argument('--data_path', '-D', action='store', dest='data_path', metavar='<path>', help='Path to the root directory of the data files needed for testing')
         parser.add_argument('--alltests', action='store_true', dest='alltests', help='also run tests that are known to fail')
         parser.add_argument('--initdb', action='store', dest='initdb', metavar='<zipfile>', help='zip file with contents for initial database')
-        parser.add_argument('--diff-format', dest='diff_format', type=str, metavar='html|txt', default='html', help='output format for the difference between stable and current test (html or txt)')
+        parser.add_argument('--single-in-memory', action='store_true', dest='single_in_memory', help='use --in-memory for SingleServer directories')
     elif THISFILE == 'Mapprove.py':
         f = _configure(os.path.join('@QXprefix@',dftTSTPREF,'.Mapprove.rc'))
         v = ReadMapproveRc(f)
@@ -3889,7 +3887,8 @@ def main(argv) :
             env['TSTDATAPATH'] = a
         global initdb
         initdb = opts.initdb
-        env['diff_format'] = opts.diff_format
+        global single_in_memory
+        single_in_memory = opts.single_in_memory
     if THISFILE == 'Mapprove.py':
         a = opts.ext
         if a is None:
