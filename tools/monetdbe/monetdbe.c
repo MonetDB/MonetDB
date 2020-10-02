@@ -1034,7 +1034,7 @@ monetdbe_get_columns(monetdbe_database dbhdl, const char* schema_name, const cha
 	for (n = t->columns.set->h; n; n = n->next) {
 		sql_column *col = n->data;
 		(*column_names)[col->colnr] = col->base.name;
-		(*column_types)[col->colnr] = col->type.type->localtype;
+		(*column_types)[col->colnr] = embedded_type(col->type.type->localtype);
 	}
 
 cleanup:
