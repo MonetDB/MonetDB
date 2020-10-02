@@ -49,6 +49,7 @@ batstr_2_blob_cand(bat *res, const bat *bid, const bat *sid)
 	oid off;
 	blob *r = NULL;
 	size_t rlen = 0;
+	bool nils = false;
 
 	if ((b = BATdescriptor(*bid)) == NULL) {
 		msg = createException(SQL, "batcalc.str_2_blob", SQLSTATE(HY005) RUNTIME_OBJECT_MISSING);
@@ -72,10 +73,11 @@ batstr_2_blob_cand(bat *res, const bat *bid, const bat *sid)
 
 		if ((msg = str_2_blob_imp(&r, &rlen, v)))
 			goto bailout;
-		if (BUNappend(dst, r, false) != GDK_SUCCEED) {
+		if (tfastins_nocheckVAR(dst, i, r, Tsize(dst)) != GDK_SUCCEED) {
 			msg = createException(SQL, "batcalc.str_2_blob", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			goto bailout;
 		}
+		nils |= ATOMcmp(TYPE_blob, r, ATOMnilptr(TYPE_blob)) == 0;
 	}
 
 bailout:
@@ -84,9 +86,15 @@ bailout:
 		BBPunfix(b->batCacheid);
 	if (s)
 		BBPunfix(s->batCacheid);
-	if (dst && !msg)
+	if (dst && !msg) {
+		BATsetcount(dst, q);
+		dst->tnil = nils;
+		dst->tnonil = !nils;
+		dst->tkey = BATcount(dst) <= 1;
+		dst->tsorted = BATcount(dst) <= 1;
+		dst->trevsorted = BATcount(dst) <= 1;
 		BBPkeepref(*res = dst->batCacheid);
-	else if (dst)
+	} else if (dst)
 		BBPreclaim(dst);
 	return msg;
 }
@@ -97,8 +105,8 @@ batstr_2_blob(bat *res, const bat *bid)
 	return batstr_2_blob_cand(res, bid, NULL);
 }
 
-/* TODO get max size for all from type  */
-static int
+/* TODO get max size for all from type */
+static size_t
 str_buf_initial_capacity(sql_class eclass, int digits)
 {
 	switch (eclass)
@@ -110,7 +118,6 @@ str_buf_initial_capacity(sql_class eclass, int digits)
 		case EC_MONTH:
 		case EC_NUM:
 		case EC_DEC:
-		case EC_FLT:
 		case EC_POS:
 		case EC_TIME:
 		case EC_TIME_TZ:
@@ -118,42 +125,45 @@ str_buf_initial_capacity(sql_class eclass, int digits)
 		case EC_TIMESTAMP:
 		case EC_TIMESTAMP_TZ:
 			return 64;
+		case EC_FLT:
+			return 128;
+		case EC_CHAR:
+		case EC_STRING:
+		case EC_BLOB:
+		case EC_GEOM:
+			return 1024;
 		default:
-			return -1;
+			return 128;
 	}
 }
 
 static inline str
-SQLstr_cast_any_type(str *r, int rlen, mvc *m, sql_class eclass, int d, int s, int has_tz, ptr p, int tpe, int len)
+SQLstr_cast_any_type(str *r, size_t *rlen, mvc *m, sql_class eclass, int d, int s, int has_tz, ptr p, int tpe, int len)
 {
-	int sz = convert2str(m, eclass, d, s, has_tz, p, tpe, r, rlen);
-	if ((len > 0 && sz > len) || sz < 0)
+	ssize_t sz = convert2str(m, eclass, d, s, has_tz, p, tpe, r, rlen);
+	if ((len > 0 && sz > (ssize_t) len) || sz < 0)
 		throw(SQL, "str_cast", SQLSTATE(22001) "value too long for type (var)char(%d)", len);
 	return MAL_SUCCEED;
 }
 
 static inline str
-SQLstr_cast_str(str *r, int *rlen, str v, int len)
+SQLstr_cast_str(str *r, size_t *rlen, str v, int len)
 {
-	int intput_strlen;
+	size_t intput_strlen;
 
-	if (!strNil(v) && len > 0) {
-		int logical_size = 0;
-		STRLength(&logical_size, &v);
+	if (len > 0 && str_utf8_length(v) > len)
+		throw(SQL, "str_cast", SQLSTATE(22001) "value too long for type (var)char(%d)", len);
 
-		if (logical_size > len)
-			throw(SQL, "str_cast", SQLSTATE(22001) "value too long for type (var)char(%d)", len);
-	}
-
-	intput_strlen = (int) strlen(v) + 1;
+	intput_strlen = strlen(v) + 1;
 	if (intput_strlen > *rlen) {
-		str newr = GDKmalloc(intput_strlen);
+		size_t newlen = ((intput_strlen + 1023) & ~1023); /* align to a multiple of 1024 bytes */
+		str newr = GDKmalloc(newlen);
 
 		if (!newr)
 			throw(SQL, "str_cast", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		GDKfree(*r);
 		*r = newr;
-		*rlen = intput_strlen;
+		*rlen = newlen;
 	}
 	strcpy(*r, v);
 	return MAL_SUCCEED;
@@ -162,14 +172,13 @@ SQLstr_cast_str(str *r, int *rlen, str v, int len)
 str
 SQLstr_cast(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	str *res = getArgReference_str(stk, pci, 0), msg;
+	str *res = getArgReference_str(stk, pci, 0), r = NULL, msg;
 	sql_class eclass = (sql_class)*getArgReference_int(stk, pci, 1);
 	int d = *getArgReference_int(stk, pci, 2), s = *getArgReference_int(stk, pci, 3);
-	int has_tz = *getArgReference_int(stk, pci, 4);
+	int has_tz = *getArgReference_int(stk, pci, 4), tpe = getArgType(mb, pci, 5), digits = *getArgReference_int(stk, pci, 6);
 	ptr p = getArgReference(stk, pci, 5);
-	int tpe = getArgType(mb, pci, 5), digits = *getArgReference_int(stk, pci, 6), rlen = 0;
 	mvc *m = NULL;
-	int initial_capacity = MAX(str_buf_initial_capacity(eclass, digits), (int) strlen(str_nil) + 1); /* don't reallocate on str_nil */
+	bool from_str = EC_VARCHAR(eclass) || tpe == TYPE_str;
 
 	if ((msg = getSQLContext(cntxt, mb, &m, NULL)) != NULL)
 		return msg;
@@ -178,31 +187,26 @@ SQLstr_cast(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (ATOMextern(tpe))
 		p = *(ptr *) p;
 
-	assert(initial_capacity > 0);
-	if (!(EC_VARCHAR(eclass) || tpe == TYPE_str)) { /* for decimals and other fixed size types allocate once */
-		if (!(*res = GDKmalloc(initial_capacity)))
-			return createException(SQL, "calc.str_cast", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-		rlen = initial_capacity;
+	if (from_str) {
+		r = (str) p;
+		if (!strNil(r) && digits > 0 && str_utf8_length(r) > digits)
+			throw(SQL, "calc.str_cast", SQLSTATE(22001) "value too long for type (var)char(%d)", digits);
 	} else {
-		*res = NULL;
+		size_t rlen = MAX(str_buf_initial_capacity(eclass, digits), strlen(str_nil) + 1); /* don't reallocate on str_nil */
+		if (!(r = GDKmalloc(rlen)))
+			throw(SQL, "calc.str_cast", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		if ((msg = SQLstr_cast_any_type(&r, &rlen, m, eclass, d, s, has_tz, p, tpe, digits)) != MAL_SUCCEED) {
+			GDKfree(r);
+			return msg;
+		}
 	}
 
-	if (EC_VARCHAR(eclass) || tpe == TYPE_str)
-		msg = SQLstr_cast_str(res, &rlen, (str) p, digits);
-	else
-		msg = SQLstr_cast_any_type(res, rlen, m, eclass, d, s, has_tz, p, tpe, digits);
-
-	if (msg) {
-		GDKfree(*res);
-		*res = NULL;
-	} else if (!(EC_VARCHAR(eclass) || tpe == TYPE_str)) { /* if a too long string was allocated, return what is needed */
-		str newr = GDKstrdup(*res);
-		GDKfree(*res);
-		if (!newr)
-			return createException(SQL, "calc.str_cast", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-		*res = newr;
-	}
-	return msg;
+	*res = GDKstrdup(r);
+	if (!from_str)
+		GDKfree(r);
+	if (!res)
+		throw(SQL, "calc.str_cast", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+	return MAL_SUCCEED;
 }
 
 /* str SQLbatstr_cast(int *res, int *eclass, int *d1, int *s1, int *has_tz, int *bid, int *digits); */
@@ -215,15 +219,14 @@ SQLbatstr_cast(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	str msg, r = NULL;
 	bat *res = getArgReference_bat(stk, pci, 0);
 	sql_class eclass = (sql_class) *getArgReference_int(stk, pci, 1);
-	int d1 = *getArgReference_int(stk, pci, 2), s1 = *getArgReference_int(stk, pci, 3);
-	int has_tz = *getArgReference_int(stk, pci, 4);
+	int d1 = *getArgReference_int(stk, pci, 2), s1 = *getArgReference_int(stk, pci, 3), has_tz = *getArgReference_int(stk, pci, 4);
 	bat *bid = getArgReference_bat(stk, pci, 5), *sid = pci->argc == 7 ? NULL : getArgReference_bat(stk, pci, 6);
-	int digits = pci->argc == 7 ? *getArgReference_int(stk, pci, 6) : *getArgReference_int(stk, pci, 7);
-	int rlen = 0, tpe = getBatType(getArgType(mb, pci, 5));
+	int tpe = getBatType(getArgType(mb, pci, 5)), digits = pci->argc == 7 ? *getArgReference_int(stk, pci, 6) : *getArgReference_int(stk, pci, 7);
 	struct canditer ci;
 	BUN q;
-	int initial_capacity = MAX(str_buf_initial_capacity(eclass, digits), (int) strlen(str_nil) + 1); /* don't reallocate on str_nil */
 	oid off;
+	bool nils = false, from_str = EC_VARCHAR(eclass) || tpe == TYPE_str;
+	size_t rlen = MAX(str_buf_initial_capacity(eclass, digits), strlen(str_nil) + 1); /* don't reallocate on str_nil */
 
 	if ((msg = getSQLContext(cntxt, mb, &m, NULL)) != NULL)
 		return msg;
@@ -245,29 +248,44 @@ SQLbatstr_cast(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		goto bailout;
 	}
 
-	assert(initial_capacity > 0);
-	if (!(EC_VARCHAR(eclass) || tpe == TYPE_str)) { /* for decimals and other fixed size types allocate once */
-		if (!(r = GDKmalloc(initial_capacity))) {
-			msg = createException(SQL, "batcalc.str_cast", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-			goto bailout;
-		}
-		rlen = initial_capacity;
+	assert(rlen > 0);
+	if (!(r = GDKmalloc(rlen))) {
+		msg = createException(SQL, "batcalc.str_cast", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		goto bailout;
 	}
 
-	for (BUN i = 0; i < q; i++) {
-		BUN p = (BUN) (canditer_next(&ci) - off);
-		ptr v = BUNtail(bi, p);
+	if (from_str) { /* string to string */
+		for (BUN i = 0; i < q; i++) {
+			BUN p = (BUN) (canditer_next(&ci) - off);
+			str v = (str) BUNtail(bi, p);
 
-		if (EC_VARCHAR(eclass) || tpe == TYPE_str)
-			msg = SQLstr_cast_str(&r, &rlen, (str) v, digits);
-		else
-			msg = SQLstr_cast_any_type(&r, rlen, m, eclass, d1, s1, has_tz, v, tpe, digits);
+			if (strNil(v)) {
+				if (tfastins_nocheckVAR(dst, i, str_nil, Tsize(dst)) != GDK_SUCCEED) {
+					msg = createException(MAL, "batcalc.str_cast", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+					goto bailout;
+				}
+				nils = true;
+			} else {
+				if ((msg = SQLstr_cast_str(&r, &rlen, v, digits)) != MAL_SUCCEED)
+					goto bailout;
+				if (tfastins_nocheckVAR(dst, i, r, Tsize(dst)) != GDK_SUCCEED) {
+					msg = createException(SQL, "batcalc.str_cast", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+					goto bailout;
+				}
+			}
+		}
+	} else { /* any other type to string */
+		for (BUN i = 0; i < q; i++) {
+			BUN p = (BUN) (canditer_next(&ci) - off);
+			ptr v = BUNtail(bi, p);
 
-		if (msg)
-			goto bailout;
-		if (BUNappend(dst, r, false) != GDK_SUCCEED) {
-			msg = createException(SQL, "batcalc.str_cast", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-			goto bailout;
+			if ((msg = SQLstr_cast_any_type(&r, &rlen, m, eclass, d1, s1, has_tz, v, tpe, digits)) != MAL_SUCCEED)
+				goto bailout;
+			if (tfastins_nocheckVAR(dst, i, r, Tsize(dst)) != GDK_SUCCEED) {
+				msg = createException(SQL, "batcalc.str_cast", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+				goto bailout;
+			}
+			nils |= strNil(r);
 		}
 	}
 
@@ -277,9 +295,15 @@ bailout:
 		BBPunfix(b->batCacheid);
 	if (s)
 		BBPunfix(s->batCacheid);
-	if (dst && !msg)
+	if (dst && !msg) {
+		BATsetcount(dst, q);
+		dst->tnil = nils;
+		dst->tnonil = !nils;
+		dst->tkey = BATcount(dst) <= 1;
+		dst->tsorted = BATcount(dst) <= 1;
+		dst->trevsorted = BATcount(dst) <= 1;
 		BBPkeepref(*res = dst->batCacheid);
-	else if (dst)
+	} else if (dst)
 		BBPreclaim(dst);
 	return msg;
 }

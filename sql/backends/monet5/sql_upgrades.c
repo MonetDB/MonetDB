@@ -144,7 +144,7 @@ sql_fix_system_tables(Client c, mvc *sql, const char *prev_schema)
 
 	assert(pos < bufsize);
 	printf("Running database upgrade commands:\n%s\n", buf);
-	err = SQLstatementIntern(c, &buf, "update", true, false, NULL);
+	err = SQLstatementIntern(c, buf, "update", true, false, NULL);
 	GDKfree(buf);
 	return err;		/* usually MAL_SUCCEED */
 }
@@ -255,7 +255,7 @@ sql_update_hugeint(Client c, mvc *sql, const char *prev_schema, bool *systabfixe
 	assert(pos < bufsize);
 
 	printf("Running database upgrade commands:\n%s\n", buf);
-	err = SQLstatementIntern(c, &buf, "update", true, false, NULL);
+	err = SQLstatementIntern(c, buf, "update", true, false, NULL);
 	GDKfree(buf);
 	return err;		/* usually MAL_SUCCEED */
 }
@@ -303,7 +303,7 @@ sql_update_geom(Client c, mvc *sql, int olddb, const char *prev_schema)
 
 	assert(pos < bufsize);
 	printf("Running database upgrade commands:\n%s\n", buf);
-	err = SQLstatementIntern(c, &buf, "update", true, false, NULL);
+	err = SQLstatementIntern(c, buf, "update", true, false, NULL);
 	GDKfree(buf);
 	return err;		/* usually MAL_SUCCEED */
 }
@@ -332,7 +332,7 @@ sql_update_remote_tables(Client c, mvc *sql, const char *prev_schema)
 
 	assert(pos < bufsize);
 	printf("Running database upgrade commands:\n%s\n", buf);
-	err = SQLstatementIntern(c, &buf, "create function", true, false, NULL);
+	err = SQLstatementIntern(c, buf, "create function", true, false, NULL);
 	if (err)
 		goto bailout;
 
@@ -344,7 +344,7 @@ sql_update_remote_tables(Client c, mvc *sql, const char *prev_schema)
 
 	assert(pos < bufsize);
 
-	err = SQLstatementIntern(c, &buf, "get remote table names", true, false, &output);
+	err = SQLstatementIntern(c, buf, "get remote table names", true, false, &output);
 	if (err)
 		goto bailout;
 
@@ -417,7 +417,7 @@ sql_update_aug2018(Client c, mvc *sql, const char *prev_schema)
 
 	assert(pos < bufsize);
 	printf("Running database upgrade commands:\n%s\n", buf);
-	err = SQLstatementIntern(c, &buf, "update", true, false, NULL);
+	err = SQLstatementIntern(c, buf, "update", true, false, NULL);
 	if (err)
 		goto bailout;
 	err = sql_update_remote_tables(c, sql, prev_schema);
@@ -441,7 +441,7 @@ sql_update_aug2018_sp2(Client c, const char *prev_schema)
 	/* required update for changeset 23e1231ada99 */
 	pos += snprintf(buf + pos, bufsize - pos,
 			"select id from sys.functions where language <> 0 and not side_effect and type <> 4 and (type = 2 or (language <> 2 and id not in (select func_id from sys.args where inout = 1)));\n");
-	err = SQLstatementIntern(c, &buf, "update", true, false, &output);
+	err = SQLstatementIntern(c, buf, "update", true, false, &output);
 	if (err) {
 		GDKfree(buf);
 		return err;
@@ -458,7 +458,7 @@ sql_update_aug2018_sp2(Client c, const char *prev_schema)
 
 			assert(pos < bufsize);
 			printf("Running database upgrade commands:\n%s\n", buf);
-			err = SQLstatementIntern(c, &buf, "update", true, false, NULL);
+			err = SQLstatementIntern(c, buf, "update", true, false, NULL);
 		}
 		BBPunfix(b->batCacheid);
 	}
@@ -501,7 +501,7 @@ sql_drop_functions_dependencies_Xs_on_Ys(Client c, const char *prev_schema)
 	assert(pos < bufsize);
 
 	printf("Running database upgrade commands:\n%s\n", buf);
-	err = SQLstatementIntern(c, &buf, "update", true, false, NULL);
+	err = SQLstatementIntern(c, buf, "update", true, false, NULL);
 	GDKfree(buf);
 	return err;		/* usually MAL_SUCCEED */
 }
@@ -588,7 +588,7 @@ sql_update_apr2019(Client c, mvc *sql, const char *prev_schema)
 
 	assert(pos < bufsize);
 	printf("Running database upgrade commands:\n%s\n", buf);
-	err = SQLstatementIntern(c, &buf, "update", true, false, NULL);
+	err = SQLstatementIntern(c, buf, "update", true, false, NULL);
 	if (err == MAL_SUCCEED) {
 		pos = snprintf(buf, bufsize, "set schema \"sys\";\n"
 			       "ALTER TABLE sys.keywords SET READ ONLY;\n");
@@ -596,7 +596,7 @@ sql_update_apr2019(Client c, mvc *sql, const char *prev_schema)
 		pos += snprintf(buf + pos, bufsize - pos, "set schema \"%s\";\n", prev_schema);
 		assert(pos < bufsize);
 		printf("Running database upgrade commands:\n%s\n", buf);
-		err = SQLstatementIntern(c, &buf, "update", true, false, NULL);
+		err = SQLstatementIntern(c, buf, "update", true, false, NULL);
 	}
 
 	GDKfree(buf);
@@ -604,12 +604,13 @@ sql_update_apr2019(Client c, mvc *sql, const char *prev_schema)
 }
 
 static str
-sql_update_storagemodel(Client c, mvc *sql, const char *prev_schema)
+sql_update_storagemodel(Client c, mvc *sql, const char *prev_schema, bool oct2020_upgrade)
 {
 	size_t bufsize = 20000, pos = 0;
 	char *buf, *err;
 	sql_schema *s = mvc_bind_schema(sql, "sys");
 	sql_table *t;
+	char *day_interval_str = oct2020_upgrade ? " 'day_interval'," : "";
 
 	if ((buf = GDKmalloc(bufsize)) == NULL)
 		throw(SQL, __func__, SQLSTATE(HY013) MAL_MALLOC_FAIL);
@@ -630,17 +631,48 @@ sql_update_storagemodel(Client c, mvc *sql, const char *prev_schema)
 		/* drop objects in reverse order of original creation of old 75_storagemodel.sql */
 		"drop view if exists sys.tablestoragemodel;\n"
 		"drop view if exists sys.storagemodel cascade;\n"
-		"drop function if exists sys.storagemodel() cascade;\n"
-		"drop function if exists sys.imprintsize(bigint, clob) cascade;\n"
-		"drop function if exists sys.hashsize(boolean, bigint) cascade;\n"
-		"drop function if exists sys.heapsize(clob, bigint, int) cascade;\n"
-		"drop function if exists sys.columnsize(clob, bigint, bigint) cascade;\n"
+		"drop function if exists sys.storagemodel() cascade;\n");
+
+	if (oct2020_upgrade) {
+		pos += snprintf(buf + pos, bufsize - pos,
+			"drop function if exists sys.imprintsize(varchar(1024), bigint) cascade;\n");
+	} else {
+		pos += snprintf(buf + pos, bufsize - pos,
+			"drop function if exists sys.imprintsize(bigint, clob) cascade;\n");
+	}
+
+	pos += snprintf(buf + pos, bufsize - pos,
+		"drop function if exists sys.hashsize(boolean, bigint) cascade;\n");
+
+	if (oct2020_upgrade) {
+		pos += snprintf(buf + pos, bufsize - pos,
+			"drop function if exists sys.columnsize(varchar(1024), bigint) cascade;\n"
+			"drop function if exists sys.heapsize(varchar(1024), bigint, bigint, int) cascade;\n");
+	} else {
+		pos += snprintf(buf + pos, bufsize - pos,
+			"drop function if exists sys.columnsize(clob, bigint, bigint) cascade;\n"
+			"drop function if exists sys.heapsize(clob, bigint, int) cascade;\n");
+	}
+
+	pos += snprintf(buf + pos, bufsize - pos,
 		"drop procedure if exists sys.storagemodelinit();\n"
 		"drop table if exists sys.storagemodelinput cascade;\n"
-		"drop view if exists sys.\"storage\" cascade;\n"
-		"drop function if exists sys.\"storage\"(clob, clob, clob) cascade;\n"
-		"drop function if exists sys.\"storage\"(clob, clob) cascade;\n"
-		"drop function if exists sys.\"storage\"(clob) cascade;\n"
+		"drop view if exists sys.\"storage\" cascade;\n");
+
+	if (oct2020_upgrade) {
+		pos += snprintf(buf + pos, bufsize - pos,
+			"drop function if exists sys.\"storage\"(varchar(1024), varchar(1024), varchar(1024)) cascade;\n"
+			"drop function if exists sys.\"storage\"(varchar(1024), varchar(1024)) cascade;\n"
+			"drop function if exists sys.\"storage\"(varchar(1024)) cascade;\n");
+	} else {
+		pos += snprintf(buf + pos, bufsize - pos,
+			"drop function if exists sys.\"storage\"(clob, clob, clob) cascade;\n"
+			"drop function if exists sys.\"storage\"(clob, clob) cascade;\n"
+			"drop function if exists sys.\"storage\"(clob) cascade;\n");
+	}
+
+	/* new 75_storagemodel.sql */
+	pos += snprintf(buf + pos, bufsize - pos,
 		"drop function if exists sys.\"storage\"() cascade;\n"
 		"create function sys.\"storage\"()\n"
 		"returns table (\n"
@@ -815,7 +847,7 @@ sql_update_storagemodel(Client c, mvc *sql, const char *prev_schema)
 		"	if tpe = 'smallint'\n"
 		"		then return 2 * count;\n"
 		"	end if;\n"
-		"	if tpe in ('int', 'real', 'date', 'time', 'timetz', 'sec_interval', 'month_interval')\n"
+		"	if tpe in ('int', 'real', 'date', 'time', 'timetz', 'sec_interval',%s 'month_interval')\n"
 		"		then return 4 * count;\n"
 		"	end if;\n"
 		"	if tpe in ('bigint', 'double', 'timestamp', 'timestamptz', 'inet', 'oid')\n"
@@ -860,7 +892,7 @@ sql_update_storagemodel(Client c, mvc *sql, const char *prev_schema)
 		"	if tpe = 'smallint'\n"
 		"		then return cast(0.4 * count as bigint);\n"
 		"	end if;\n"
-		"	if tpe in ('int', 'real', 'date', 'time', 'timetz', 'sec_interval', 'month_interval')\n"
+		"	if tpe in ('int', 'real', 'date', 'time', 'timetz', 'sec_interval',%s 'month_interval')\n"
 		"		then return cast(0.8 * count as bigint);\n"
 		"	end if;\n"
 		"	if tpe in ('bigint', 'double', 'timestamp', 'timestamptz', 'inet', 'oid')\n"
@@ -892,8 +924,7 @@ sql_update_storagemodel(Client c, mvc *sql, const char *prev_schema)
 		"	sum(case when (isacolumn and not sorted) then cast(8 * \"count\" as bigint) else 0 end) as orderidxsize\n"
 		" from sys.storagemodelinput\n"
 		"group by \"schema\", \"table\"\n"
-		"order by \"schema\", \"table\";\n"
-	);
+		"order by \"schema\", \"table\";\n", day_interval_str, day_interval_str);
 	assert(pos < bufsize);
 
 	pos += snprintf(buf + pos, bufsize - pos,
@@ -913,7 +944,7 @@ sql_update_storagemodel(Client c, mvc *sql, const char *prev_schema)
 	assert(pos < bufsize);
 
 	printf("Running database upgrade commands:\n%s\n", buf);
-	err = SQLstatementIntern(c, &buf, "update", true, false, NULL);
+	err = SQLstatementIntern(c, buf, "update", true, false, NULL);
 	GDKfree(buf);
 	return err;		/* usually MAL_SUCCEED */
 }
@@ -928,7 +959,7 @@ sql_update_apr2019_sp1(Client c)
 
 	/* Determine if missing dependency table entry for unique keys
 	 * is required */
-	err = SQLstatementIntern(c, &qry, "update", true, false, &output);
+	err = SQLstatementIntern(c, qry, "update", true, false, &output);
 	if (err == NULL) {
 		BAT *b = BATdescriptor(output->cols[0].b);
 		if (b) {
@@ -936,7 +967,7 @@ sql_update_apr2019_sp1(Client c)
 				/* required update for changeset 23e1231ada99 */
 				qry = "insert into sys.dependencies (select c.id as id, k.id as depend_id, dt.dependency_type_id as depend_type from sys.dependency_types dt, sys._columns c, sys.keys k, sys.objects o where k.id = o.id and o.name = c.name and c.table_id = k.table_id and dt.dependency_type_name = 'KEY' and k.type = 1 and not exists (select d.id from sys.dependencies d where d.id = c.id and d.depend_id = k.id and d.depend_type = dt.dependency_type_id));\n";
 				printf("Running database upgrade commands:\n%s\n", qry);
-				err = SQLstatementIntern(c, &qry, "update", true, false, NULL);
+				err = SQLstatementIntern(c, qry, "update", true, false, NULL);
 			}
 			BBPunfix(b->batCacheid);
 		}
@@ -971,7 +1002,7 @@ sql_update_apr2019_sp2(Client c, mvc *sql, const char *prev_schema, bool *systab
 
 	assert(pos < bufsize);
 	printf("Running database upgrade commands:\n%s\n", buf);
-	err = SQLstatementIntern(c, &buf, "update", true, false, NULL);
+	err = SQLstatementIntern(c, buf, "update", true, false, NULL);
 	GDKfree(buf);
 	return err;		/* usually MAL_SUCCEED */
 }
@@ -982,7 +1013,7 @@ sql_update_apr2019_sp2(Client c, mvc *sql, const char *prev_schema, bool *systab
 						") as t1(c1,c2,c3) where t1.c1 not in (select \"id\" from sys.dependencies where depend_id = t1.c2);\n"); \
 		assert(pos < bufsize); \
 		printf("Running database upgrade commands:\n%s\n", buf); \
-		err = SQLstatementIntern(c, &buf, "update", true, false, NULL); \
+		err = SQLstatementIntern(c, buf, "update", true, false, NULL); \
 		if (err) \
 			goto bailout; \
 		pos = 0; \
@@ -1114,7 +1145,7 @@ sql_update_nov2019_missing_dependencies(Client c, mvc *sql)
 
 		assert(pos < bufsize);
 		printf("Running database upgrade commands:\n%s\n", buf);
-		err = SQLstatementIntern(c, &buf, "update", true, false, NULL);
+		err = SQLstatementIntern(c, buf, "update", true, false, NULL);
 	}
 
 bailout:
@@ -1138,7 +1169,7 @@ sql_update_nov2019(Client c, mvc *sql, const char *prev_schema, bool *systabfixe
 
 	pos += snprintf(buf + pos, bufsize - pos,
 			"select id from sys.args where func_id in (select id from sys.functions where schema_id = (select id from sys.schemas where name = 'sys') and name = 'second' and func = 'sql_seconds') and number = 0 and type_scale = 3;\n");
-	err = SQLstatementIntern(c, &buf, "update", 1, 0, &output);
+	err = SQLstatementIntern(c, buf, "update", 1, 0, &output);
 	if (err) {
 		GDKfree(buf);
 		return err;
@@ -1368,7 +1399,7 @@ sql_update_nov2019(Client c, mvc *sql, const char *prev_schema, bool *systabfixe
 	assert(pos < bufsize);
 
 	printf("Running database upgrade commands:\n%s\n", buf);
-	err = SQLstatementIntern(c, &buf, "update", 1, 0, NULL);
+	err = SQLstatementIntern(c, buf, "update", 1, 0, NULL);
 	GDKfree(buf);
 	return err;		/* usually MAL_SUCCEED */
 }
@@ -1406,7 +1437,7 @@ sql_update_nov2019_sp1_hugeint(Client c, mvc *sql, const char *prev_schema, bool
 	assert(pos < bufsize);
 
 	printf("Running database upgrade commands:\n%s\n", buf);
-	err = SQLstatementIntern(c, &buf, "update", true, false, NULL);
+	err = SQLstatementIntern(c, buf, "update", true, false, NULL);
 	GDKfree(buf);
 	return err;		/* usually MAL_SUCCEED */
 }
@@ -1990,7 +2021,7 @@ sql_update_jun2020(Client c, mvc *sql, const char *prev_schema, bool *systabfixe
 	assert(pos < bufsize);
 
 	printf("Running database upgrade commands:\n%s\n", buf);
-	err = SQLstatementIntern(c, &buf, "update", true, false, NULL);
+	err = SQLstatementIntern(c, buf, "update", true, false, NULL);
 	if (err == MAL_SUCCEED) {
 		pos = snprintf(buf, bufsize, "set schema \"sys\";\n"
 			       "ALTER TABLE sys.keywords SET READ ONLY;\n"
@@ -1998,7 +2029,7 @@ sql_update_jun2020(Client c, mvc *sql, const char *prev_schema, bool *systabfixe
 		pos += snprintf(buf + pos, bufsize - pos, "set schema \"%s\";\n", prev_schema);
 		assert(pos < bufsize);
 		printf("Running database upgrade commands:\n%s\n", buf);
-		err = SQLstatementIntern(c, &buf, "update", true, false, NULL);
+		err = SQLstatementIntern(c, buf, "update", true, false, NULL);
 	}
 	GDKfree(buf);
 	return err;		/* usually MAL_SUCCEED */
@@ -2036,7 +2067,7 @@ sql_update_jun2020_bam(Client c, mvc *m, const char *prev_schema)
 	/* check if any of the tables in the bam schema have any content */
 	pos += snprintf(buf + pos, bufsize - pos,
 			"select sum(count) from sys.storage('bam');\n");
-	err = SQLstatementIntern(c, &buf, "update", 1, 0, &output);
+	err = SQLstatementIntern(c, buf, "update", 1, 0, &output);
 	if (err) {
 		GDKfree(buf);
 		return err;
@@ -2077,7 +2108,7 @@ sql_update_jun2020_bam(Client c, mvc *m, const char *prev_schema)
 	assert(pos < bufsize);
 
 	printf("Running database upgrade commands:\n%s\n", buf);
-	err = SQLstatementIntern(c, &buf, "update", true, false, NULL);
+	err = SQLstatementIntern(c, buf, "update", true, false, NULL);
 
 	GDKfree(buf);
 	return err;
@@ -2134,7 +2165,7 @@ sql_update_jun2020_sp1_hugeint(Client c, const char *prev_schema)
 	assert(pos < bufsize);
 
 	printf("Running database upgrade commands:\n%s\n", buf);
-	err = SQLstatementIntern(c, &buf, "update", true, false, NULL);
+	err = SQLstatementIntern(c, buf, "update", true, false, NULL);
 	GDKfree(buf);
 	return err;		/* usually MAL_SUCCEED */
 }
@@ -2150,7 +2181,7 @@ sql_update_jun2020_sp2(Client c, mvc *sql, const char *prev_schema, bool *systab
 
 	char *buf = "select id from sys.functions where name = 'nullif' and schema_id = (select id from sys.schemas where name = 'sys');\n";
 	res_table *output;
-	char *err = SQLstatementIntern(c, &buf, "update", 1, 0, &output);
+	char *err = SQLstatementIntern(c, buf, "update", 1, 0, &output);
 	if (err == NULL) {
 		BAT *b = BATdescriptor(output->cols[0].b);
 		if (b) {
@@ -2173,7 +2204,7 @@ sql_update_oscar_lidar(Client c)
 		"drop procedure sys.lidarload(string);\n"
 		"drop procedure sys.lidarexport(string, string, string);\n";
 	printf("Running database upgrade commands:\n%s\n", query);
-	return SQLstatementIntern(c, &query, "update", true, false, NULL);
+	return SQLstatementIntern(c, query, "update", true, false, NULL);
 }
 
 static str
@@ -2191,7 +2222,7 @@ sql_update_oscar(Client c, mvc *sql, const char *prev_schema, bool *systabfixed)
 	/* if column 6 of sys.queue is named "progress" we need to update */
 	pos += snprintf(buf + pos, bufsize - pos,
 			"select name from sys._columns where table_id = (select id from sys._tables where name = 'queue' and schema_id = (select id from sys.schemas where name = 'sys')) and number = 6;\n");
-	err = SQLstatementIntern(c, &buf, "update", true, false, &output);
+	err = SQLstatementIntern(c, buf, "update", true, false, &output);
 	if (err) {
 		GDKfree(buf);
 		return err;
@@ -2321,7 +2352,7 @@ sql_update_oscar(Client c, mvc *sql, const char *prev_schema, bool *systabfixed)
 			assert(pos < bufsize);
 
 			printf("Running database upgrade commands:\n%s\n", buf);
-			err = SQLstatementIntern(c, &buf, "update", true, false, NULL);
+			err = SQLstatementIntern(c, buf, "update", true, false, NULL);
 		}
 		BBPunfix(b->batCacheid);
 	}
@@ -2333,7 +2364,7 @@ sql_update_oscar(Client c, mvc *sql, const char *prev_schema, bool *systabfixed)
 static str
 sql_update_oct2020(Client c, mvc *sql, const char *prev_schema, bool *systabfixed)
 {
-	size_t bufsize = 3000, pos = 0;
+	size_t bufsize = 4096, pos = 0;
 	char *buf, *err;
 	sql_schema *s = mvc_bind_schema(sql, "sys");
 	sql_table *t;
@@ -2347,7 +2378,7 @@ sql_update_oct2020(Client c, mvc *sql, const char *prev_schema, bool *systabfixe
 	   to update */
 	pos += snprintf(buf + pos, bufsize - pos,
 					"select id from sys._tables where name = 'var_values' and query like '%%''cache''%%' and schema_id = (select id from sys.schemas where name = 'sys');\n");
-	err = SQLstatementIntern(c, &buf, "update", true, false, &output);
+	err = SQLstatementIntern(c, buf, "update", true, false, &output);
 	if (err) {
 		GDKfree(buf);
 		return err;
@@ -2398,11 +2429,64 @@ sql_update_oct2020(Client c, mvc *sql, const char *prev_schema, bool *systabfixe
 			/* Remove entries on sys.args table without correspondents on sys.functions table */
 			pos += snprintf(buf + pos, bufsize - pos,
 					"delete from sys.args where id in (select args.id from sys.args left join sys.functions on args.func_id = functions.id where functions.id is null);\n");
+
+			/* 39_analytics.sql */
+			pos += snprintf(buf + pos, bufsize - pos,
+					"DROP AGGREGATE stddev_samp(INTERVAL SECOND);\n"
+					"DROP AGGREGATE stddev_samp(INTERVAL MONTH);\n"
+					"DROP WINDOW stddev_samp(INTERVAL SECOND);\n"
+					"DROP WINDOW stddev_samp(INTERVAL MONTH);\n"
+					"DROP AGGREGATE stddev_pop(INTERVAL SECOND);\n"
+					"DROP AGGREGATE stddev_pop(INTERVAL MONTH);\n"
+					"DROP WINDOW stddev_pop(INTERVAL SECOND);\n"
+					"DROP WINDOW stddev_pop(INTERVAL MONTH);\n"
+					"DROP AGGREGATE var_samp(INTERVAL SECOND);\n"
+					"DROP AGGREGATE var_samp(INTERVAL MONTH);\n"
+					"DROP WINDOW var_samp(INTERVAL SECOND);\n"
+					"DROP WINDOW var_samp(INTERVAL MONTH);\n"
+					"DROP AGGREGATE var_pop(INTERVAL SECOND);\n"
+					"DROP AGGREGATE var_pop(INTERVAL MONTH);\n"
+					"DROP WINDOW var_pop(INTERVAL SECOND);\n"
+					"DROP WINDOW var_pop(INTERVAL MONTH);\n"
+					"DROP AGGREGATE covar_samp(INTERVAL SECOND,INTERVAL SECOND);\n"
+					"DROP AGGREGATE covar_samp(INTERVAL MONTH,INTERVAL MONTH);\n"
+					"DROP WINDOW covar_samp(INTERVAL SECOND,INTERVAL SECOND);\n"
+					"DROP WINDOW covar_samp(INTERVAL MONTH,INTERVAL MONTH);\n"
+					"DROP AGGREGATE covar_pop(INTERVAL SECOND,INTERVAL SECOND);\n"
+					"DROP AGGREGATE covar_pop(INTERVAL MONTH,INTERVAL MONTH);\n"
+					"DROP WINDOW covar_pop(INTERVAL SECOND,INTERVAL SECOND);\n"
+					"DROP WINDOW covar_pop(INTERVAL MONTH,INTERVAL MONTH);\n"
+					"DROP AGGREGATE corr(INTERVAL SECOND,INTERVAL SECOND);\n"
+					"DROP AGGREGATE corr(INTERVAL MONTH,INTERVAL MONTH);\n"
+					"DROP WINDOW corr(INTERVAL SECOND,INTERVAL SECOND);\n"
+					"DROP WINDOW corr(INTERVAL MONTH,INTERVAL MONTH);\n"
+					"\n"
+					"create aggregate median(val INTERVAL DAY) returns INTERVAL DAY\n"
+					" external name \"aggr\".\"median\";\n"
+					"GRANT EXECUTE ON AGGREGATE median(INTERVAL DAY) TO PUBLIC;\n"
+					"create aggregate quantile(val INTERVAL DAY, q DOUBLE) returns INTERVAL DAY\n"
+					" external name \"aggr\".\"quantile\";\n"
+					"GRANT EXECUTE ON AGGREGATE quantile(INTERVAL DAY, DOUBLE) TO PUBLIC;\n"
+					"update sys.functions set system = true where system <> true and name in ('median', 'quantile') and schema_id = (select id from sys.schemas where name = 'sys') and type = %d;\n", (int) F_AGGR);
+
+			/* 90_generator.sql */
+			pos += snprintf(buf + pos, bufsize - pos,
+					"create function sys.generate_series(first timestamp, \"limit\" timestamp, stepsize interval day) returns table (value timestamp)\n"
+					" external name generator.series;\n"
+					"update sys.functions set system = true where system <> true and name in ('generate_series') and schema_id = (select id from sys.schemas where name = 'sys') and type = %d;\n", (int) F_UNION);
+
 			pos += snprintf(buf + pos, bufsize - pos, "set schema \"%s\";\n", prev_schema);
 
 			assert(pos < bufsize);
 			printf("Running database upgrade commands:\n%s\n", buf);
-			err = SQLstatementIntern(c, &buf, "update", true, false, NULL);
+			err = SQLstatementIntern(c, buf, "update", true, false, NULL);
+			if (err) {
+				BBPunfix(b->batCacheid);
+				res_table_destroy(output);
+				GDKfree(buf);
+				return err;
+			}
+			err = sql_update_storagemodel(c, sql, prev_schema, true); /* because of day interval addition, we have to recreate the storagmodel views */
 		}
 		BBPunfix(b->batCacheid);
 	}
@@ -2540,7 +2624,7 @@ SQLupgrades(Client c, mvc *m)
 	if (sql_bind_func(m->sa, s, "storagemodel", NULL, NULL, F_UNION)
 	 && (t = mvc_bind_table(m, s, "tablestorage")) == NULL
 	 && (t = mvc_bind_table(m, s, "schemastorage")) == NULL ) {
-		if ((err = sql_update_storagemodel(c, m, prev_schema)) != NULL) {
+		if ((err = sql_update_storagemodel(c, m, prev_schema, false)) != NULL) {
 			TRC_CRITICAL(SQL_PARSER, "%s\n", err);
 			freeException(err);
 			GDKfree(prev_schema);

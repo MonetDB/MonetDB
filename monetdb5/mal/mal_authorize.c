@@ -521,7 +521,7 @@ AUTHaddUser(oid *uid, Client cntxt, const char *username, const char *passwd)
 		throw(MAL, "addUser", "user '%s' already exists", username);
 
 	/* we assume the BATs are still aligned */
-	if (!GDKinmemory(0)) {
+	if (!GDKembedded()) {
 		rethrow("addUser", tmp, AUTHcypherValue(&hash, passwd));
 	} else {
 		hash = GDKstrdup("hash");
@@ -537,7 +537,7 @@ AUTHaddUser(oid *uid, Client cntxt, const char *username, const char *passwd)
 	p = AUTHfindUser(username);
 
 	/* make the stuff persistent */
-	if (!GDKinmemory(0))
+	if (!GDKembedded())
 		AUTHcommit();
 
 	*uid = p;

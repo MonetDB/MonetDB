@@ -480,32 +480,24 @@ stmt_varnr(backend *be, int nr, sql_subtype *t)
 stmt *
 stmt_table(backend *be, stmt *cols, int temp)
 {
+	stmt *s = stmt_create(be->mvc->sa, st_table);
 	MalBlkPtr mb = be->mb;
-	InstrPtr q = newAssignment(mb);
 
-	if (cols->nr < 0)
+	if (s == NULL || cols->nr < 0)
 		return NULL;
 
 	if (cols->type != st_list) {
+	    InstrPtr q = newAssignment(mb);
 		q = newStmt(mb, sqlRef, printRef);
 		q = pushStr(mb, q, "not a valid output list\n");
 		if (q == NULL)
 			return NULL;
 	}
-	if (q) {
-		stmt *s = stmt_create(be->mvc->sa, st_table);
-		if (s == NULL) {
-			freeInstruction(q);
-			return NULL;
-		}
-
-		s->op1 = cols;
-		s->flag = temp;
-		s->nr = cols->nr;
-		s->nrcols = cols->nrcols;
-		return s;
-	}
-	return NULL;
+	s->op1 = cols;
+	s->flag = temp;
+	s->nr = cols->nr;
+	s->nrcols = cols->nrcols;
+	return s;
 }
 
 stmt *
@@ -2043,7 +2035,7 @@ stmt_join_cand(backend *be, stmt *op1, stmt *op2, stmt *lcand, stmt *rcand, int 
 		else
 			q = pushArgument(mb, q, rcand->nr);
 		q = pushInt(mb, q, JOIN_NE);
-		q = pushBit(mb, q, FALSE);
+		q = pushBit(mb, q, is_semantics?TRUE:FALSE);
 		q = pushNil(mb, q, TYPE_lng);
 		if (q == NULL)
 			return NULL;
@@ -2065,14 +2057,14 @@ stmt_join_cand(backend *be, stmt *op1, stmt *op2, stmt *lcand, stmt *rcand, int 
 		else
 			q = pushArgument(mb, q, rcand->nr);
 		if (cmptype == cmp_lt)
-			q = pushInt(mb, q, -1);
+			q = pushInt(mb, q, JOIN_LT);
 		else if (cmptype == cmp_lte)
-			q = pushInt(mb, q, -2);
+			q = pushInt(mb, q, JOIN_LE);
 		else if (cmptype == cmp_gt)
-			q = pushInt(mb, q, 1);
+			q = pushInt(mb, q, JOIN_GT);
 		else if (cmptype == cmp_gte)
-			q = pushInt(mb, q, 2);
-		q = pushBit(mb, q, TRUE);
+			q = pushInt(mb, q, JOIN_GE);
+		q = pushBit(mb, q, is_semantics?TRUE:FALSE);
 		q = pushNil(mb, q, TYPE_lng);
 		if (q == NULL)
 			return NULL;
@@ -3072,7 +3064,7 @@ stmt_convert(backend *be, stmt *v, stmt *sel, sql_subtype *f, sql_subtype *t)
 	    !EC_INTERVAL(f->type->eclass) &&
 	    f->type->eclass != EC_DEC &&
 	    (t->digits == 0 || f->digits == t->digits) &&
-	    type_has_tz(t) == type_has_tz(f)) || 
+	    type_has_tz(t) == type_has_tz(f)) ||
 		(EC_VARCHAR(f->type->eclass) && EC_VARCHAR(t->type->eclass) && f->digits > 0 && t->digits >= f->digits)) {
 		/* set output type. Despite the MAL code already being generated,
 		   the output type may still be checked */

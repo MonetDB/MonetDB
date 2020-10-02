@@ -524,9 +524,9 @@ SQLhelp sqlhelp1[] = {
 	 NULL},
 	{"START TRANSACTION",
 	 "Change transaction mode from auto-commit to user controlled commit/rollback",
-	 "{ START | BEGIN } TRANSACTION transactionmode",
+	 "{ START | BEGIN } TRANSACTION [ transactionmode ]",
 	 "transactionmode",
-	 "See also https://www.monetdb.org/Documentation/Manuals/SQLreference/Transactions"},
+	 "See also https://www.monetdb.org/Documentation/SQLreference/Transactions"},
 	{"TABLE JOINS",
 	 "",
 	 "'(' joined_table ') |\n"

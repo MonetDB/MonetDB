@@ -445,7 +445,7 @@ address MTIMEdate_addmonths_bulk_p2;
 # address MTIMEdate_adddays
 # comment "returns the date after a number
 # 	of days (possibly negative).";
-command diff(val1:date, val2:date) :int
+command diff(val1:date, val2:date) :lng
 address MTIMEdate_diff
 comment "returns the number of days
 	between 'val1' and 'val2'.";

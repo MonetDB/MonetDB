@@ -49,7 +49,7 @@ static str monetdb_query(Client c, str query) {
 	res_table* res = NULL;
 	int i;
 	retval = SQLstatementIntern(c,
-		&query,
+		query,
 		"name",
 		1, 0, &res);
 	SQLautocommit(m);
@@ -115,7 +115,7 @@ static str monetdb_initialize(void) {
 		retval = GDKstrdup("BBPaddfarm failed");
 		goto cleanup;
 	}
-	if (GDKinit(set, setlen, 1) != GDK_SUCCEED) {
+	if (GDKinit(set, setlen, true) != GDK_SUCCEED) {
 		retval = GDKstrdup("GDKinit() failed");
 		goto cleanup;
 	}

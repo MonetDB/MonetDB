@@ -20,5 +20,6 @@ add_library(sqlinclude INTERFACE)
 
 target_include_directories(sqlinclude
   INTERFACE
+  $<TARGET_PROPERTY:mapi,INTERFACE_INCLUDE_DIRECTORIES>
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
   $<INSTALL_INTERFACE:${INCLUDEDIR}/monetdb>)

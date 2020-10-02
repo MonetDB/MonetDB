@@ -20,6 +20,7 @@ mdb.setDebug(dbgmsk_restore);
 
 io.printf("#imprint tuples 1000000\n");
 sz := 1000000* 8.0;
+szf:= calc.flt(sz);
 t0:= alarm.usec();
 bat.imprints(b);
 t1:= alarm.usec();
@@ -29,7 +30,7 @@ io.printf("#imprint create %d\n",d0);
 l:= bat.imprintsize(b);
 lf:= calc.flt(l);
 io.printf("#imprint size %d\n",l);
-f:= sz/100.0;
+f:= szf/100.0;
 f := lf/f;
 io.printf("#imprint percentage overhead %4.2f\n",f);
 

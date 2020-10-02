@@ -140,7 +140,7 @@ createOIDXheap(BAT *b, bool stable)
 	oid *restrict mv;
 	const char *nme;
 
-	nme = GDKinmemory(b->theap.farmid) ? ":inmemory" : BBP_physical(b->batCacheid);
+	nme = GDKinmemory(b->theap.farmid) ? ":memory:" : BBP_physical(b->batCacheid);
 	if ((m = GDKzalloc(sizeof(Heap))) == NULL ||
 	    (m->farmid = BBPselectfarm(b->batRole, b->ttype, orderidxheap)) < 0 ||
 	    strconcat_len(m->filename, sizeof(m->filename),

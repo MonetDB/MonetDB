@@ -1287,7 +1287,7 @@ GDKanalytical_str_group_concat(BAT *r, BAT *b, BAT *sep, BAT *s, BAT *e, const c
 
 			single_str[offset] = '\0';
 		}
-		if (BUNappend(r, single_str, false) != GDK_SUCCEED)
+		if (tfastins_nocheckVAR(r, i, single_str, Tsize(r)) != GDK_SUCCEED)
 			goto allocation_error;
 	}
 
@@ -1295,6 +1295,9 @@ GDKanalytical_str_group_concat(BAT *r, BAT *b, BAT *sep, BAT *s, BAT *e, const c
 	BATsetcount(r, cnt);
 	r->tnonil = !hasnil;
 	r->tnil = hasnil;
+	r->tkey = BATcount(r) <= 1;
+	r->tsorted = BATcount(r) <= 1;
+	r->trevsorted = BATcount(r) <= 1;
 	return GDK_SUCCEED;
   allocation_error:
 	GDKfree(single_str);

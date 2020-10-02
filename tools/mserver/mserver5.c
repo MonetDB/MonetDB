@@ -219,7 +219,7 @@ absolute_path(str s)
 #define BSIZE 8192
 
 static int
-monet_init(opt *set, int setlen, int embedded)
+monet_init(opt *set, int setlen, bool embedded)
 {
 	/* determine Monet's kernel settings */
 	if (GDKinit(set, setlen, embedded) != GDK_SUCCEED)
@@ -270,6 +270,7 @@ main(int argc, char **av)
 	char *dbextra = NULL;
 	char *dbtrace = NULL;
 	bool inmemory = false;
+	bool readpwdxit = false;
 	static struct option long_options[] = {
 		{ "config", required_argument, NULL, 'c' },
 		{ "dbextra", required_argument, NULL, 0 },
@@ -293,6 +294,8 @@ main(int argc, char **av)
 		{ "properties", no_argument, NULL, 0 },
 		{ "threads", no_argument, NULL, 0 },
 		{ "transactions", no_argument, NULL, 0 },
+
+		{ "read-password-initialize-and-exit", no_argument, NULL, 0 },
 
 		{ NULL, 0, NULL, 0 }
 	};
@@ -428,6 +431,10 @@ main(int argc, char **av)
 				grpdebug |= GRPtransactions;
 				break;
 			}
+			if (strcmp(long_options[option_index].name, "read-password-initialize-and-exit") == 0) {
+				readpwdxit = true;
+				break;
+			}
 			usage(prog, -1);
 			/* not reached */
 		case 'c':
@@ -489,6 +496,11 @@ main(int argc, char **av)
 		exit(1);
 	}
 
+	if (inmemory && readpwdxit) {
+		fprintf(stderr, "!ERROR: cannot have both in-memory and read-password-initialize-and-exit\n");
+		exit(1);
+	}
+
 	if (!dbpath) {
 		dbpath = absolute_path(mo_find_option(set, setlen, "gdk_dbpath"));
 		if (!dbpath) {
@@ -523,7 +535,7 @@ main(int argc, char **av)
 		GDKfree(dbtrace);
 	}
 
-	if (monet_init(set, setlen, 0) == 0) {
+	if (monet_init(set, setlen, false) == 0) {
 		mo_free_options(set, setlen);
 		if (GDKerrbuf && *GDKerrbuf)
 			fprintf(stderr, "%s\n", GDKerrbuf);
@@ -689,13 +701,30 @@ main(int argc, char **av)
 			}
 			fclose(secretf);
 		}
-		if ((err = AUTHunlockVault(secretp)) != MAL_SUCCEED) {
+		if ((err = AUTHunlockVault(secret)) != MAL_SUCCEED) {
 			/* don't show this as a crash */
 			if (!GDKinmemory(0))
 				msab_registerStop();
 			fprintf(stderr, "%s\n", err);
 			freeException(err);
 			exit(1);
+		}
+		if (readpwdxit) {
+			if (fgets(secret, (int) sizeof(secret), stdin) == NULL) {
+				fprintf(stderr, "!ERROR: no password read\n");
+				exit(1);
+			}
+			if ((secretp = strchr(secret, '\n')) == NULL) {
+				fprintf(stderr, "!ERROR: password too long\n");
+				exit(1);
+			}
+			*secretp = '\0';
+			if ((err = AUTHinitTables(secret)) != MAL_SUCCEED) {
+				fprintf(stderr, "%s\n", err);
+				freeException(err);
+				exit(1);
+			}
+			exit(0);
 		}
 	}
 

@@ -54,7 +54,7 @@
 #ifdef HAVE_LIBLZMA
 #include <lzma.h>
 #endif
-#ifdef HAVE_LIBSNAPPY
+#ifdef HAVE_SNAPPY
 #include <snappy-c.h>
 #endif
 #ifdef HAVE_LIBLZ4
@@ -173,56 +173,84 @@ struct stream {
 	char errmsg[1024]; // avoid allocation on error. We don't have THAT many streams..
 };
 
-void mnstr_va_set_error(stream *s, mnstr_error_kind kind, const char *fmt, va_list ap);
+void mnstr_va_set_error(stream *s, mnstr_error_kind kind, const char *fmt, va_list ap)
+	__attribute__((__visibility__("hidden")));
 
 void mnstr_set_error(stream *s, mnstr_error_kind kind, const char *fmt, ...)
-	__attribute__((__format__(__printf__, 3, 4)));
+	__attribute__((__format__(__printf__, 3, 4)))
+	__attribute__((__visibility__("hidden")));
 
 void mnstr_set_error_errno(stream *s, mnstr_error_kind kind, const char *fmt, ...)
-	__attribute__((__format__(__printf__, 3, 4)));
+	__attribute__((__format__(__printf__, 3, 4)))
+	__attribute__((__visibility__("hidden")));
 
-void mnstr_copy_error(stream *dst, stream *src);
+void mnstr_copy_error(stream *dst, stream *src)
+	__attribute__((__visibility__("hidden")));
 
 void mnstr_set_open_error(const char *name, int errnr, const char *fmt, ...)
-	__attribute__((__format__(__printf__, 3, 4)));
+	__attribute__((__format__(__printf__, 3, 4)))
+	__attribute__((__visibility__("hidden")));
 
 
 /* used to be static: */
 
-stream *create_stream(const char *name);
-stream *create_wrapper_stream(const char *name, stream *inner);
-void destroy_stream(stream *s);
-stream *open_stream(const char *restrict filename, const char *restrict flags);
+stream *create_stream(const char *name)
+	__attribute__((__visibility__("hidden")));
 
-stream *file_stream(const char *name);
+stream *create_wrapper_stream(const char *name, stream *inner)
+	__attribute__((__visibility__("hidden")));
+void destroy_stream(stream *s)
+	__attribute__((__visibility__("hidden")));
+stream *open_stream(const char *restrict filename, const char *restrict flags)
+	__attribute__((__visibility__("hidden")));
+
+stream *file_stream(const char *name)
+	__attribute__((__visibility__("hidden")));
 
 /* implementation detail of stdio_stream.c which must be public because
  * for example bstream() special cases on it to provide a fast path for file
  * i/o.
  */
-ssize_t file_read(stream *restrict s, void *restrict buf, size_t elmsize, size_t cnt);
+ssize_t file_read(stream *restrict s, void *restrict buf, size_t elmsize, size_t cnt)
+	__attribute__((__visibility__("hidden")));
 
 
-stream *open_gzrstream(const char *filename);
-stream *open_gzwstream(const char *restrict filename, const char *restrict mode);
-stream *open_gzrastream(const char *filename);
-stream *open_gzwastream(const char *restrict filename, const char *restrict mode);
+stream *open_gzrstream(const char *filename)
+	__attribute__((__visibility__("hidden")));
+stream *open_gzwstream(const char *restrict filename, const char *restrict mode)
+	__attribute__((__visibility__("hidden")));
+stream *open_gzrastream(const char *filename)
+	__attribute__((__visibility__("hidden")));
+stream *open_gzwastream(const char *restrict filename, const char *restrict mode)
+	__attribute__((__visibility__("hidden")));
 
 
-stream *open_bzrstream(const char *filename);
-stream *open_bzwstream(const char *restrict filename, const char *restrict mode);
-stream *open_bzrastream(const char *filename);
-stream *open_bzwastream(const char *restrict filename, const char *restrict mode);
+stream *open_bzrstream(const char *filename)
+	__attribute__((__visibility__("hidden")));
+stream *open_bzwstream(const char *restrict filename, const char *restrict mode)
+	__attribute__((__visibility__("hidden")));
+stream *open_bzrastream(const char *filename)
+	__attribute__((__visibility__("hidden")));
+stream *open_bzwastream(const char *restrict filename, const char *restrict mode)
+	__attribute__((__visibility__("hidden")));
 
-stream *open_xzrstream(const char *filename);
-stream *open_xzwstream(const char *restrict filename, const char *restrict mode);
-stream *open_xzrastream(const char *filename);
-stream *open_xzwastream(const char *restrict filename, const char *restrict mode);
+stream *open_xzrstream(const char *filename)
+	__attribute__((__visibility__("hidden")));
+stream *open_xzwstream(const char *restrict filename, const char *restrict mode)
+	__attribute__((__visibility__("hidden")));
+stream *open_xzrastream(const char *filename)
+	__attribute__((__visibility__("hidden")));
+stream *open_xzwastream(const char *restrict filename, const char *restrict mode)
+	__attribute__((__visibility__("hidden")));
 
-stream *open_lz4rstream(const char *filename);
-stream *open_lz4wstream(const char *restrict filename, const char *restrict mode);
-stream *open_lz4rastream(const char *filename);
-stream *open_lz4wastream(const char *restrict filename, const char *restrict mode);
+stream *open_lz4rstream(const char *filename)
+	__attribute__((__visibility__("hidden")));
+stream *open_lz4wstream(const char *restrict filename, const char *restrict mode)
+	__attribute__((__visibility__("hidden")));
+stream *open_lz4rastream(const char *filename)
+	__attribute__((__visibility__("hidden")));
+stream *open_lz4wastream(const char *restrict filename, const char *restrict mode)
+	__attribute__((__visibility__("hidden")));
 
 
 /* Shared between bs2.c, bs.c and stream.c.
@@ -237,13 +265,19 @@ struct bs {
 	char buf[BLOCK];	/* the buffered data (minus the size of
 				 * size-short */
 };
-ssize_t bs_read(stream *restrict ss, void *restrict buf, size_t elmsize, size_t cnt);
-ssize_t bs_write(stream *restrict ss, const void *restrict buf, size_t elmsize, size_t cnt);
-void bs_clrerr(stream *s);
-void bs_destroy(stream *ss);
+ssize_t bs_read(stream *restrict ss, void *restrict buf, size_t elmsize, size_t cnt)
+	__attribute__((__visibility__("hidden")));
+ssize_t bs_write(stream *restrict ss, const void *restrict buf, size_t elmsize, size_t cnt)
+	__attribute__((__visibility__("hidden")));
+void bs_clrerr(stream *s)
+	__attribute__((__visibility__("hidden")));
+void bs_destroy(stream *ss)
+	__attribute__((__visibility__("hidden")));
 
-ssize_t bs2_read(stream *restrict ss, void *restrict buf, size_t elmsize, size_t cnt);
-ssize_t bs2_write(stream *restrict ss, const void *restrict buf, size_t elmsize, size_t cnt);
+ssize_t bs2_read(stream *restrict ss, void *restrict buf, size_t elmsize, size_t cnt)
+	__attribute__((__visibility__("hidden")));
+ssize_t bs2_write(stream *restrict ss, const void *restrict buf, size_t elmsize, size_t cnt)
+	__attribute__((__visibility__("hidden")));
 
 
 #ifdef _MSC_VER

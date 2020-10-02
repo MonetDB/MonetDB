@@ -36,10 +36,7 @@ target_link_libraries(monetdbd
   mcrypt
   stream
   mapi
-  bat
   msabaoth
-  mal
-  ${CMAKE_DL_LIBS}
   Threads::Threads)
 
 install(TARGETS

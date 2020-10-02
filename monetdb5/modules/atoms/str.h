@@ -13,45 +13,99 @@
 #include "mal_exception.h"
 #include <ctype.h>
 
-mal_export str STRtostr(str *res, const str *src);
-mal_export str STRConcat(str *res, const str *val1, const str *val2);
-mal_export str STRLength(int *res, const str *arg1);
-mal_export str STRBytes(int *res, const str *arg1);
-mal_export str STRTail(str *res, const str *arg1, const int *offset);
-mal_export str STRSubString(str *res, const str *arg1, const int *offset, const int *length);
-mal_export str STRFromWChr(str *res, const int *at);
-mal_export str STRWChrAt(int *res, const str *arg1, const int *at);
-mal_export str STRPrefix(bit *res, const str *arg1, const str *arg2);
-mal_export str STRSuffix(bit *res, const str *arg1, const str *arg2);
-mal_export str STRLower(str *res, const str *arg1);
-mal_export str STRUpper(str *res, const str *arg1);
-mal_export str STRstrSearch(int *res, const str *arg1, const str *arg2);
-mal_export str STRReverseStrSearch(int *res, const str *arg1, const str *arg2);
-mal_export str STRsplitpart(str *res, str *haystack, str *needle, int *field);
-mal_export str STRStrip(str *res, const str *arg1);
-mal_export str STRLtrim(str *res, const str *arg1);
-mal_export str STRRtrim(str *res, const str *arg1);
-mal_export str STRStrip2(str *res, const str *arg1, const str *arg2);
-mal_export str STRLtrim2(str *res, const str *arg1, const str *arg2);
-mal_export str STRRtrim2(str *res, const str *arg1, const str *arg2);
-mal_export str STRLpad(str *res, const str *arg1, const int *len);
-mal_export str STRRpad(str *res, const str *arg1, const int *len);
-mal_export str STRLpad2(str *res, const str *arg1, const int *len, const str *arg2);
-mal_export str STRRpad2(str *res, const str *arg1, const int *len, const str *arg2);
-mal_export str STRSubstitute(str *res, const str *arg1, const str *arg2, const str *arg3, const bit *g);
+/* The batstr module functions use a single buffer to avoid malloc/free overhead.
+   Note the buffer should be always large enough to hold null strings, so less testing will be required */
+#define INITIAL_STR_BUFFER_LENGTH (MAX(strlen(str_nil) + 1, 1024))
 
-mal_export str STRsubstringTail(str *ret, const str *s, const int *start);
-mal_export str STRsubstring(str *ret, const str *s, const int *start, const int *l);
-mal_export str STRlikewrap2(bit *ret, const str *s, const str *pat);
-mal_export str STRlikewrap(bit *ret, const str *s, const str *pat, const str *esc);
-mal_export str STRascii(int *ret, const str *s);
-mal_export str STRprefix(str *ret, const str *s, const int *l);
-mal_export str STRsuffix(str *ret, const str *s, const int *l);
-mal_export str STRlocate(int *ret, const str *s1, const str *s2);
-mal_export str STRlocate2(int *ret, const str *s1, const str *s2, const int *start);
-mal_export str STRinsert(str *ret, const str *s, const int *start, const int *l, const str *s2);
-mal_export str STRreplace(str *ret, const str *s1, const str *s2, const str *s3);
-mal_export str STRrepeat(str *ret, const str *s, const int *c);
-mal_export str STRspace(str *ret, const int *l);
+/* The batstr module functions use a single buffer to avoid malloc/free overhead.
+   Note the buffer should be always large enough to hold null strings, so less testing will be required */
+#define CHECK_STR_BUFFER_LENGTH(BUFFER, BUFFER_LEN, NEXT_LEN, OP) \
+	do { \
+		if ((NEXT_LEN) > *BUFFER_LEN) { \
+			size_t newlen = (((NEXT_LEN) + 1023) & ~1023); /* align to a multiple of 1024 bytes */ \
+			str newbuf = GDKmalloc(newlen); \
+			if (!newbuf) \
+				throw(MAL, OP, SQLSTATE(HY013) MAL_MALLOC_FAIL); \
+			GDKfree(*BUFFER); \
+			*BUFFER = newbuf; \
+			*BUFFER_LEN = newlen; \
+		} \
+	} while (0)
+
+mal_export int str_utf8_length(str s); /* this function looks for NULL values of s, returning int_nil on those */
+
+/* For str returning functions, the result is passed as the input parameter buf. The returned str indicates
+   if the function succeeded (ie malloc failure or invalid unicode character). str_wchr_at function also
+   follows this pattern. */
+
+/* Warning, the following functions don't test for NULL values, that's resposibility from the caller */
+
+extern int str_length(str s)
+__attribute__((__visibility__("hidden")));
+extern int str_nbytes(str s)
+__attribute__((__visibility__("hidden")));
+
+extern str str_from_wchr(str *buf, size_t *buflen, int c)
+__attribute__((__visibility__("hidden")));
+extern str str_wchr_at(int *res, str s, int at)
+__attribute__((__visibility__("hidden")));
+
+extern bit str_is_prefix(str s, str prefix)
+__attribute__((__visibility__("hidden")));
+extern bit str_is_suffix(str s, str suffix)
+__attribute__((__visibility__("hidden")));
+
+extern str str_tail(str *buf, size_t *buflen, str s, int off)
+__attribute__((__visibility__("hidden")));
+extern str str_Sub_String(str *buf, size_t *buflen, str s, int off, int l)
+__attribute__((__visibility__("hidden")));
+extern str str_substring_tail(str *buf, size_t *buflen, str s, int start)
+__attribute__((__visibility__("hidden")));
+extern str str_sub_string(str *buf, size_t *buflen, str s, int start, int l)
+__attribute__((__visibility__("hidden")));
+extern str str_suffix(str *buf, size_t *buflen, str s, int l)
+__attribute__((__visibility__("hidden")));
+extern str str_repeat(str *buf, size_t *buflen, str s, int c)
+__attribute__((__visibility__("hidden")));
+
+extern str str_lower(str *buf, size_t *buflen, str s)
+__attribute__((__visibility__("hidden")));
+extern str str_upper(str *buf, size_t *buflen, str s)
+__attribute__((__visibility__("hidden")));
+
+extern str str_strip(str *buf, size_t *buflen, str s)
+__attribute__((__visibility__("hidden")));
+extern str str_ltrim(str *buf, size_t *buflen, str s)
+__attribute__((__visibility__("hidden")));
+extern str str_rtrim(str *buf, size_t *buflen, str s)
+__attribute__((__visibility__("hidden")));
+extern str str_strip2(str *buf, size_t *buflen, str s, str s2)
+__attribute__((__visibility__("hidden")));
+extern str str_ltrim2(str *buf, size_t *buflen, str s, str s2)
+__attribute__((__visibility__("hidden")));
+extern str str_rtrim2(str *buf, size_t *buflen, str s, str s2)
+__attribute__((__visibility__("hidden")));
+extern str str_lpad(str *buf, size_t *buflen, str s, int len)
+__attribute__((__visibility__("hidden")));
+extern str str_rpad(str *buf, size_t *buflen, str s, int len)
+__attribute__((__visibility__("hidden")));
+extern str str_lpad2(str *buf, size_t *buflen, str s, int len, str s2)
+__attribute__((__visibility__("hidden")));
+extern str str_rpad2(str *buf, size_t *buflen, str s, int len, str s2)
+__attribute__((__visibility__("hidden")));
+
+extern int str_search(str s, str s2)
+__attribute__((__visibility__("hidden")));
+extern int str_reverse_str_search(str s, str s2)
+__attribute__((__visibility__("hidden")));
+extern int str_locate2(str needle, str haystack, int start)
+__attribute__((__visibility__("hidden")));
+
+extern str str_splitpart(str *buf, size_t *buflen, str s, str s2, int f)
+__attribute__((__visibility__("hidden")));
+extern str str_insert(str *buf, size_t *buflen, str s, int strt, int l, str s2)
+__attribute__((__visibility__("hidden")));
+extern str str_substitute(str *buf, size_t *buflen, str s, str src, str dst, bit repeat)
+__attribute__((__visibility__("hidden")));
 
 #endif /* __string_H__ */

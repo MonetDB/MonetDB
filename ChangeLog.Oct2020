@@ -5,7 +5,7 @@
 - Finished a first version of the new monitoring function
   user_statistics(), which is only intended for the DBAs.
   For each database user who has logged in during the current mserver5
-  session, it returns 
+  session, it returns
   "username": login name of the database user,
   "querycount": the number of queries this user has executed since his/her
       first login,

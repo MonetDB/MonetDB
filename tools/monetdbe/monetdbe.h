@@ -32,7 +32,7 @@ typedef int64_t monetdbe_cnt;
 typedef struct {
 	unsigned char day;
 	unsigned char month;
-	int year;
+	short year;
 } monetdbe_data_date;
 
 typedef struct {
@@ -93,7 +93,7 @@ typedef struct {
 	int memorylimit;  // top off the amount of RAM to be used, in MB
 	int querytimeout;  // graceful terminate query after a few seconds
 	int sessiontimeout;  // graceful terminate the session after a few seconds
-	int nr_threads;				// maximum number of worker treads, limits level of parallalism
+	int nr_threads;  // maximum number of worker treads, limits level of parallelism
 } monetdbe_options;
 
 #define DEFAULT_STRUCT_DEFINITION(ctype, typename)         \
@@ -105,7 +105,7 @@ typedef struct {
 		char *name;				   \
 		ctype null_value;                          \
 		double scale;                              \
-		int (*is_null)(ctype value);               \
+		int (*is_null)(ctype *value);               \
 	} monetdbe_column_##typename
 
 DEFAULT_STRUCT_DEFINITION(int8_t, bool);

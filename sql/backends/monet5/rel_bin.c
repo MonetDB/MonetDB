@@ -362,7 +362,7 @@ subrel_project( backend *be, stmt *s, list *refs, sql_rel *rel)
 }
 
 static stmt *
-handle_in_exps(backend *be, sql_exp *ce, list *nl, stmt *left, stmt *right, stmt *grp, stmt *ext, stmt *cnt, stmt *sel, int in, int use_r, int depth, int reduce)
+handle_in_exps(backend *be, sql_exp *ce, list *nl, stmt *left, stmt *right, stmt *grp, stmt *ext, stmt *cnt, stmt *sel, bool in, int use_r, int depth, int reduce)
 {
 	mvc *sql = be->mvc;
 	node *n;
@@ -435,10 +435,9 @@ handle_in_exps(backend *be, sql_exp *ce, list *nl, stmt *left, stmt *right, stmt
 			s = stmt_project(be, stmt_selectnonil(be, s, NULL), s);
 		}
 
-		s = stmt_join(be, c, s, in, cmp_equal, 1, 0, false);
-		s = stmt_result(be, s, 0);
-
-		if (!in) {
+		if (in) {
+			s = stmt_semijoin(be, c, s, sel, NULL, 0, false);
+		} else {
 			if (last_null_value) {
 				/* CORNER CASE ALERT:
 				   In case of a not-in-expression with the associated in-value-list containing a null value,
@@ -450,23 +449,14 @@ handle_in_exps(backend *be, sql_exp *ce, list *nl, stmt *left, stmt *right, stmt
 				   list* singleton_bat = sa_list(sql->sa);
 				   list_append(singleton_bat, null_value); */
 				s = stmt_uselect(be, c, last_null_value, cmp_equal, NULL, 0, 0);
-				return s;
-			}
-			else {
+			} else {
 				/* BACK TO HAPPY FLOW:
 				   Make sure that null values are never returned. */
 				stmt* non_nulls;
-				non_nulls = stmt_selectnonil(be, c, NULL);
-				s = stmt_tdiff(be, non_nulls, s, NULL);
+				non_nulls = stmt_selectnonil(be, c, sel);
+				s = stmt_tdiff(be, stmt_project(be, non_nulls, c), s, NULL);
 				s = stmt_project(be, s, non_nulls);
 			}
-		}
-
-		if (sel) {
-			stmt* oid_intersection;
-			oid_intersection = stmt_tinter(be, s, sel, false);
-			s = stmt_project(be, oid_intersection, s);
-			s = stmt_result(be, s, 0);
 		}
 	}
 	return s;
@@ -1007,13 +997,15 @@ exp_bin(backend *be, sql_exp *e, stmt *left, stmt *right, stmt *grp, stmt *ext, 
 		stmt *rows = NULL, *isel = sel;
 		int nrcands = 0, push_cands = 0;
 
-		if (f->func->side_effect && left) {
-			if (!exps || list_empty(exps))
-				append(l,
-				stmt_const(be,
-					bin_first_column(be, left),
-					stmt_atom_int(be, 0)));
-			else if (exps_card(exps) < CARD_MULTI) {
+		if (f->func->side_effect && left && left->nrcols > 0) {
+			sql_subfunc *f1 = NULL;
+			/* we cannot assume all SQL functions with no arguments have a correspondent with one argument, so attempt to find it. 'rand' function is the exception */
+			if (list_empty(exps) && (strcmp(f->func->base.name, "rand") == 0 || (f1 = sql_find_func(sql->sa, f->func->s, f->func->base.name, 1, f->func->type, NULL)))) {
+				if (f1)
+					f = f1;
+				list_append(l, stmt_const(be, bin_first_column(be, left),
+										  stmt_atom(be, atom_general(sql->sa, f1 ? &(((sql_arg*)f1->func->ops->h->data)->type) : sql_bind_localtype("int"), NULL))));
+			} else if (exps_card(exps) < CARD_MULTI) {
 				rows = bin_first_column(be, left);
 			}
 		}
@@ -1070,7 +1062,7 @@ exp_bin(backend *be, sql_exp *e, stmt *left, stmt *right, stmt *grp, stmt *ext, 
 		if (f->func->rel)
 			s = stmt_func(be, stmt_list(be, l), sa_strdup(sql->sa, f->func->base.name), f->func->rel, (f->func->type == F_UNION));
 		else
-			s = stmt_Nop(be, stmt_list(be, l), e->f);
+			s = stmt_Nop(be, stmt_list(be, l), f);
 		if (!s)
 			return NULL;
 		if (s && isel && push_cands && s->nrcols)

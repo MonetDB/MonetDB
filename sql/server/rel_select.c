@@ -11,6 +11,7 @@
 #include "sql_tokens.h"
 #include "sql_privileges.h"
 #include "sql_env.h"
+#include "sql_decimal.h"
 #include "sql_qc.h"
 #include "rel_rel.h"
 #include "rel_exp.h"
@@ -1219,27 +1220,6 @@ rel_column_ref(sql_query *query, sql_rel **rel, symbol *column_r, int f)
 	return exp;
 }
 
-#ifdef HAVE_HGE
-static hge
-#else
-static lng
-#endif
-scale2value(int scale)
-{
-#ifdef HAVE_HGE
-	hge val = 1;
-#else
-	lng val = 1;
-#endif
-
-	if (scale < 0)
-		scale = -scale;
-	for (; scale; scale--) {
-		val = val * 10;
-	}
-	return val;
-}
-
 static sql_exp *
 exp_fix_scale(mvc *sql, sql_subtype *ct, sql_exp *e, int both, int always)
 {
@@ -1327,7 +1307,7 @@ exp_scale_algebra(mvc *sql, sql_subfunc *f, sql_rel *rel, sql_exp *l, sql_exp *r
 	if (lt->type->scale == SCALE_FIX && rt->scale &&
 		strcmp(f->func->imp, "/") == 0) {
 		sql_subtype *res = f->res->h->data;
-		int scale, digits, digL, scaleL;
+		unsigned int scale, digits, digL, scaleL;
 		sql_subtype nlt;
 
 		/* scale fixing may require a larger type ! */
@@ -1335,7 +1315,7 @@ exp_scale_algebra(mvc *sql, sql_subfunc *f, sql_rel *rel, sql_exp *l, sql_exp *r
 		scale = scaleL;
 		scaleL += rt->scale;
 		digL = lt->digits + (scaleL - lt->scale);
-		digits = (digL > (int)rt->digits) ? digL : (int)rt->digits;
+		digits = (digL > rt->digits) ? digL : rt->digits;
 
 		/* HACK alert: digits should be less than max */
 #ifdef HAVE_HGE
@@ -1351,6 +1331,10 @@ exp_scale_algebra(mvc *sql, sql_subfunc *f, sql_rel *rel, sql_exp *l, sql_exp *r
 #endif
 
 		sql_find_subtype(&nlt, lt->type->sqlname, digL, scaleL);
+		if (nlt.digits < scaleL) {
+		    sql_error(sql, 01, SQLSTATE(42000) "Scale (%d) overflows type", scaleL);
+			return NULL;
+		}
 		l = exp_check_type( sql, &nlt, rel, l, type_equal);
 
 		sql_find_subtype(res, lt->type->sqlname, digits, scale);
@@ -1548,7 +1532,7 @@ rel_select_push_exp_down(mvc *sql, sql_rel *rel, sql_exp *e, sql_exp *ls, sql_ex
 		return rel_select(sql->sa, rel, e);
 	if (rs->card <= CARD_ATOM && (exp_is_atom(rs) || exp_has_freevar(sql, rs) || exp_has_freevar(sql, ls)) &&
 	   (!rs2 || (rs2->card <= CARD_ATOM && (exp_is_atom(rs2) || exp_has_freevar(sql, rs2))))) {
-		if ((ls->card == rs->card && !rs2) || rel->processed)  /* bin compare op */
+		if ((ls->card == rs->card && (!rs2 || ls->card == rs2->card)) || rel->processed)  /* bin compare op */
 			return rel_select(sql->sa, rel, e);
 
 		return push_select_exp(sql, rel, e, ls, L, f);
@@ -2285,7 +2269,7 @@ rel_logical_value_exp(sql_query *query, sql_rel **rel, symbol *sc, int f, exp_ki
 		if (!(re2 = rel_value_exp(query, rel, ro2, f, ek)))
 			return NULL;
 
-		if (exp_between_check_types(&super, exp_subtype(le), exp_subtype(re1), exp_subtype(re2)) < 0) 
+		if (exp_between_check_types(&super, exp_subtype(le), exp_subtype(re1), exp_subtype(re2)) < 0)
 			return sql_error(sql, 01, SQLSTATE(42000) "Cannot have a parameter (?) on both sides of an expression");
 
 		if ((le = exp_check_type(sql, &super, rel ? *rel:NULL, le, type_equal)) == NULL ||
@@ -2349,7 +2333,7 @@ rel_logical_value_exp(sql_query *query, sql_rel **rel, symbol *sc, int f, exp_ki
 			return NULL;
 		if (ek.card <= card_set && is_project(sq->op) && list_length(sq->exps) > 1)
 			return sql_error(sql, 02, SQLSTATE(42000) "SELECT: subquery must return only one column");
-		if (ek.card < card_set && sq->card >= CARD_MULTI && (is_sql_sel(f) | is_sql_having(f) | ( is_sql_where(f) && rel && (!*rel || is_basetable((*rel)->op) || is_simple_project((*rel)->op) || is_sql_merge(f)))))
+		if (ek.card < card_set && sq->card >= CARD_MULTI && (is_sql_sel(f) | is_sql_having(f) | ( is_sql_where(f) && rel && (!*rel || is_basetable((*rel)->op) || is_simple_project((*rel)->op) || is_joinop((*rel)->op)))))
 			sq = rel_zero_or_one(sql, sq, ek);
 		return exp_rel(sql, sq);
 	}
@@ -2540,7 +2524,7 @@ rel_logical_exp(sql_query *query, sql_rel *rel, symbol *sc, int f)
 		if (!(re2 = rel_value_exp(query, &rel, ro2, f, ek)))
 			return NULL;
 
-		if (exp_between_check_types(&super, exp_subtype(le), exp_subtype(re1), exp_subtype(re2)) < 0) 
+		if (exp_between_check_types(&super, exp_subtype(le), exp_subtype(re1), exp_subtype(re2)) < 0)
 			return sql_error(sql, 01, SQLSTATE(42000) "Cannot have a parameter (?) on both sides of an expression");
 
 		if ((le = exp_check_type(sql, &super, rel, le, type_equal)) == NULL ||
@@ -2806,10 +2790,18 @@ rel_binop_(mvc *sql, sql_rel *rel, sql_exp *l, sql_exp *r, sql_schema *s, char *
 	if (!t1 || !t2) {
 		f = sql_resolve_function_with_undefined_parameters(sql->sa, s, fname, list_append(list_append(sa_list(sql->sa), t1), t2), type);
 		if (f) { /* add types using f */
-			if (!t1)
-				rel_set_type_param(sql, arg_type(f->func->ops->h->data), rel, l, 1);
-			if (!t2)
-				rel_set_type_param(sql, arg_type(f->func->ops->h->next->data), rel, r, 1);
+			if (!t1) {
+				sql_subtype *t = arg_type(f->func->ops->h->data);
+				if (t->type->eclass == EC_ANY && t2)
+					t = t2;
+				rel_set_type_param(sql, t, rel, l, 1);
+			}
+			if (!t2) {
+				sql_subtype *t = arg_type(f->func->ops->h->next->data);
+				if (t->type->eclass == EC_ANY && t1)
+					t = t1;
+				rel_set_type_param(sql, t, rel, r, 1);
+			}
 			f = NULL;
 
 			if (!exp_subtype(l) || !exp_subtype(r))
@@ -2886,11 +2878,15 @@ rel_binop_(mvc *sql, sql_rel *rel, sql_exp *l, sql_exp *r, sql_schema *s, char *
 			r = exp_fix_scale(sql, t2, r, 0, 0);
 		} else if (f->func->fix_scale == SCALE_DIV) {
 			l = exp_scale_algebra(sql, f, rel, l, r);
+			if (!l)
+				return NULL;
 		} else if (f->func->fix_scale == SCALE_MUL) {
 			exp_sum_scales(f, l, r);
 		} else if (f->func->fix_scale == DIGITS_ADD) {
 			sql_subtype *res = f->res->h->data;
 			res->digits = (t1->digits && t2->digits)?t1->digits + t2->digits:0;
+			if (res->digits >= (unsigned int) INT_MAX)
+				return sql_error(sql, 02, SQLSTATE(42000) "SELECT: output number of digits for %s is too large", fname);
 		}
 		if (card == card_relation && l->card > CARD_ATOM) {
 			sql_subfunc *zero_or_one = sql_bind_func(sql->sa, sql->session->schema, "zero_or_one", exp_subtype(l), NULL, F_AGGR);
@@ -2987,11 +2983,15 @@ rel_binop_(mvc *sql, sql_rel *rel, sql_exp *l, sql_exp *r, sql_schema *s, char *
 					r = exp_fix_scale(sql, t2, r, 0, 0);
 				} else if (f->func->fix_scale == SCALE_DIV) {
 					l = exp_scale_algebra(sql, f, rel, l, r);
+					if (!l)
+						return NULL;
 				} else if (f->func->fix_scale == SCALE_MUL) {
 					exp_sum_scales(f, l, r);
 				} else if (f->func->fix_scale == DIGITS_ADD) {
 					sql_subtype *res = f->res->h->data;
 					res->digits = (t1->digits && t2->digits)?t1->digits + t2->digits:0;
+					if (res->digits >= (unsigned int) INT32_MAX)
+						return sql_error(sql, 02, SQLSTATE(42000) "SELECT: output number of digits for %s is too large", fname);
 				}
 				return exp_binop(sql->sa, l, r, f);
 			}

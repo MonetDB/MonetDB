@@ -234,6 +234,43 @@ cleanup:
 }
 
 static char*
+monetdbe_get_results(monetdbe_result** result, monetdbe_database_internal *mdbe) {
+
+	backend *be = NULL;
+	if ((mdbe->msg = getBackendContext(mdbe->c, &be)) != NULL)
+		return mdbe->msg;
+
+    mvc *m = be->mvc;
+
+	monetdbe_result_internal* res_internal;
+
+    if (!(res_internal = GDKzalloc(sizeof(monetdbe_result_internal)))) {
+        mdbe->msg = createException(MAL, "monetdbe.monetdbe_get_results", MAL_MALLOC_FAIL);
+        return mdbe->msg;
+    }
+    // TODO: set type of result outside.
+    res_internal->res.last_id = be->last_id;
+    res_internal->mdbe = mdbe;
+    *result = (monetdbe_result*) res_internal;
+    m->reply_size = -2; /* do not clean up result tables */
+
+    if (be->results) {
+        res_internal->res.ncols = (size_t) be->results->nr_cols;
+        res_internal->monetdbe_resultset = be->results;
+        if (be->results->nr_cols > 0)
+            res_internal->res.nrows = be->results->nr_rows;
+        be->results = NULL;
+        res_internal->converted_columns = GDKzalloc(sizeof(monetdbe_column*) * res_internal->res.ncols);
+        if (!res_internal->converted_columns) {
+            mdbe->msg = createException(MAL, "monetdbe.monetdbe_get_results", MAL_MALLOC_FAIL);
+            return mdbe->msg;
+        }
+    }
+
+	return MAL_SUCCEED;
+}
+
+static char*
 monetdbe_query_internal(monetdbe_database_internal *mdbe, char* query, monetdbe_result** result, monetdbe_cnt* affected_rows, int *prepare_id, char language)
 {
 	char *nq = NULL;
@@ -243,7 +280,6 @@ monetdbe_query_internal(monetdbe_database_internal *mdbe, char* query, monetdbe_
 	size_t query_len, input_query_len, prep_len = 0;
 	buffer query_buf;
 	stream *query_stream;
-	monetdbe_result_internal *res_internal = NULL;
 	bstream *old_bstream = NULL;
 	stream *fdout = c->fdout;
 
@@ -324,31 +360,14 @@ monetdbe_query_internal(monetdbe_database_internal *mdbe, char* query, monetdbe_
 		*affected_rows = b->rowcnt;
 
 	if (result) {
-		if (!(res_internal = GDKzalloc(sizeof(monetdbe_result_internal)))) {
-			mdbe->msg = createException(MAL, "monetdbe.monetdbe_query_internal", MAL_MALLOC_FAIL);
+		if ((mdbe->msg = monetdbe_get_results(result, mdbe)) != MAL_SUCCEED) {
 			goto cleanup;
 		}
-		if (m->emode & m_prepare)
-			res_internal->type = Q_PREPARE;
-		else
-			res_internal->type = (b->results) ? b->results->query_type : m->type;
-		res_internal->res.last_id = b->last_id;
-		res_internal->mdbe = mdbe;
-		*result = (monetdbe_result*) res_internal;
-		m->reply_size = -2; /* do not clean up result tables */
 
-		if (b->results) {
-			res_internal->res.ncols = (size_t) b->results->nr_cols;
-			res_internal->monetdbe_resultset = b->results;
-			if (b->results->nr_cols > 0)
-				res_internal->res.nrows = b->results->nr_rows;
-			b->results = NULL;
-			res_internal->converted_columns = GDKzalloc(sizeof(monetdbe_column*) * res_internal->res.ncols);
-			if (!res_internal->converted_columns) {
-				mdbe->msg = createException(MAL, "monetdbe.monetdbe_query_internal", MAL_MALLOC_FAIL);
-				goto cleanup;
-			}
-		}
+		if (m->emode & m_prepare)
+			(*(monetdbe_result_internal**) result)->type = Q_PREPARE;
+		else
+			(*(monetdbe_result_internal**) result)->type = (b->results) ? b->results->query_type : m->type;
 	}
 
 cleanup:
@@ -361,7 +380,7 @@ cleanup:
 		c->fdin = old_bstream;
 	}
 
-	char* msg = commit_action(m, mdbe, result, res_internal);
+	char* msg = commit_action(m, mdbe, result, result?*(monetdbe_result_internal**) result:NULL);
 
 	return msg;
 }
@@ -498,7 +517,7 @@ monetdbe_startup(monetdbe_database_internal *mdbe, char* dbdir, monetdbe_options
 		workers = GDKnr_threads = opts->nr_threads;
 	}
 	if (opts && opts->memorylimit) {
-		if( opts->nr_threads < 0){
+		if( opts->memorylimit < 0){
 			mdbe->msg = createException(MAL, "monetdbe.monetdbe_startup", "Memorylimit should be positive");
 			goto cleanup;
 		}
@@ -542,7 +561,7 @@ monetdbe_startup(monetdbe_database_internal *mdbe, char* dbdir, monetdbe_options
 			goto cleanup;
 		}
 	}
-	gdk_res = GDKinit(set, setlen, 1);
+	gdk_res = GDKinit(set, setlen, true);
 	mo_free_options(set, setlen);
 	if (gdk_res == GDK_FAIL) {
 		mdbe->msg = createException(MAL, "monetdbe.monetdbe_startup", "GDKinit() failed");
@@ -566,6 +585,8 @@ monetdbe_open(monetdbe_database *dbhdl, char *url, monetdbe_options *opts)
 
 	if (!dbhdl)
 		return -1;
+	if (url && strcmp(url, ":memory:") == 0)
+		url = NULL;
 	MT_lock_set(&embedded_lock);
 	monetdbe_database_internal *mdbe = (monetdbe_database_internal*)GDKzalloc(sizeof(monetdbe_database_internal));
 	if (!mdbe) {
@@ -837,7 +858,6 @@ monetdbe_execute(monetdbe_statement *stmt, monetdbe_result **result, monetdbe_cn
 	backend *b = (backend *) stmt_internal->mdbe->c->sqlcontext;
 	mvc *m = b->mvc;
 	monetdbe_database_internal *mdbe = stmt_internal->mdbe;
-	//cq *q = stmt_internal->q;
 
 	if ((mdbe->msg = SQLtrans(m)) != MAL_SUCCEED)
 		return mdbe->msg;
@@ -847,36 +867,23 @@ monetdbe_execute(monetdbe_statement *stmt, monetdbe_result **result, monetdbe_cn
 		if (!stmt_internal->data[i].vtype)
 			return createException(MAL, "monetdbe.monetdbe_execute", "Parameter %d not bound to a value", i);
 	}
-	//MalStkPtr glb = (MalStkPtr) (q->stk);
-	//Symbol s = (Symbol)q->code;
-	//mdbe->msg = callMAL(mdbe->c, s->def, &glb, stmt_internal->args, 0);
+	cq* q = stmt_internal->q;
+
+	MalStkPtr glb = (MalStkPtr) (NULL);
+	Symbol s = findSymbolInModule(mdbe->c->usermodule, q->f->imp);
+
+	mdbe->msg = callMAL(mdbe->c, s->def, &glb, stmt_internal->args, 0);
 
 	if (!b->results && b->rowcnt >= 0 && affected_rows)
 		*affected_rows = b->rowcnt;
 
+
 	if (result) {
-		if (!(res_internal = GDKzalloc(sizeof(monetdbe_result_internal)))) {
-			mdbe->msg = createException(MAL, "monetdbe.monetdbe_query_internal", MAL_MALLOC_FAIL);
+		if ((mdbe->msg = monetdbe_get_results(result, mdbe)) != MAL_SUCCEED) {
 			goto cleanup;
 		}
-		res_internal->type = (b->results) ? Q_TABLE : Q_UPDATE;
-		res_internal->res.last_id = b->last_id;
-		res_internal->mdbe = stmt_internal->mdbe;
-		*result = (monetdbe_result*) res_internal;
-		m->reply_size = -2; /* do not clean up result tables */
 
-		if (b->results) {
-			res_internal->res.ncols = (size_t) b->results->nr_cols;
-			res_internal->monetdbe_resultset = b->results;
-			if (b->results->nr_cols > 0)
-				res_internal->res.nrows = b->results->nr_rows;
-			b->results = NULL;
-			res_internal->converted_columns = GDKzalloc(sizeof(monetdbe_column*) * res_internal->res.ncols);
-			if (!res_internal->converted_columns) {
-				mdbe->msg = createException(MAL, "monetdbe.monetdbe_query_internal", MAL_MALLOC_FAIL);
-				goto cleanup;
-			}
-		}
+		((monetdbe_result_internal*) result)->type = (b->results) ? Q_TABLE : Q_UPDATE;
 	}
 cleanup:
 	return commit_action(m, stmt_internal->mdbe, result, res_internal);
@@ -1027,7 +1034,7 @@ monetdbe_get_columns(monetdbe_database dbhdl, const char* schema_name, const cha
 	for (n = t->columns.set->h; n; n = n->next) {
 		sql_column *col = n->data;
 		(*column_names)[col->colnr] = col->base.name;
-		(*column_types)[col->colnr] = col->type.type->localtype;
+		(*column_types)[col->colnr] = embedded_type(col->type.type->localtype);
 	}
 
 cleanup:
@@ -1037,11 +1044,11 @@ cleanup:
 }
 
 #define GENERATE_BASE_HEADERS(type, tpename) \
-	static int tpename##_is_null(type value)
+	static int tpename##_is_null(type *value)
 
 #define GENERATE_BASE_FUNCTIONS(tpe, tpename, mname) \
 	GENERATE_BASE_HEADERS(tpe, tpename); \
-	static int tpename##_is_null(tpe value) { return value == mname##_nil; }
+	static int tpename##_is_null(tpe *value) { return *value == mname##_nil; }
 
 #ifdef bool
 #undef bool
@@ -1098,7 +1105,7 @@ GENERATE_BASE_HEADERS(monetdbe_data_timestamp, timestamp);
 	}
 
 char*
-monetdbe_append(monetdbe_database dbhdl, const char* schema, const char* table, monetdbe_column **input /*bat *batids*/, size_t column_count)
+monetdbe_append(monetdbe_database dbhdl, const char* schema, const char* table, monetdbe_column **input, size_t column_count)
 {
 
 	monetdbe_database_internal *mdbe = (monetdbe_database_internal*)dbhdl;
@@ -1110,13 +1117,12 @@ monetdbe_append(monetdbe_database dbhdl, const char* schema, const char* table, 
 
 
 	if ((mdbe->msg = validate_database_handle(mdbe, "monetdbe.monetdbe_append")) != MAL_SUCCEED) {
-
 		return mdbe->msg;
 	}
 
 	if ((mdbe->msg = getSQLContext(mdbe->c, NULL, &m, NULL)) != MAL_SUCCEED)
 		goto cleanup;
-        if ((mdbe->msg = SQLtrans(m)) != MAL_SUCCEED)
+	if ((mdbe->msg = SQLtrans(m)) != MAL_SUCCEED)
 		goto cleanup;
 
 	if (schema == NULL) {
@@ -1151,7 +1157,6 @@ monetdbe_append(monetdbe_database dbhdl, const char* schema, const char* table, 
 	}
 
 	/* for now no default values, ie user should supply all columns */
-
 	if (column_count != (size_t)list_length(t->columns.set)) {
 		mdbe->msg = createException(SQL, "monetdbe.monetdbe_append", "Incorrect number of columns");
 		goto cleanup;
@@ -1179,8 +1184,12 @@ monetdbe_append(monetdbe_database dbhdl, const char* schema, const char* table, 
 			//-------------------------------------
 			BAT *bn = NULL;
 
+			if (mtype != c->type.type->localtype) {
+				mdbe->msg = createException(SQL, "monetdbe.monetdbe_append", "Cannot append %d into column '%s'", input[i]->type, c->base.name);
+				goto cleanup;
+			}
+
 			if ((bn = COLnew(0, mtype, 0, TRANSIENT)) == NULL) {
-				BBPreclaim(bn);
 				mdbe->msg = createException(SQL, "monetdbe.monetdbe_append", "Cannot create append column");
 				goto cleanup;
 			}
@@ -1203,16 +1212,16 @@ monetdbe_append(monetdbe_database dbhdl, const char* schema, const char* table, 
 			BATsettrivprop(bn);
 
 			if (store_funcs.append_col(m->session->tr, c, bn, TYPE_bat) != 0) {
+				bn->theap.base = prev_base;
+				bn->theap.size = prev_size;
+				BBPreclaim(bn);
 				mdbe->msg = createException(SQL, "monetdbe.monetdbe_append", "Cannot append BAT");
 				goto cleanup;
-
 			}
 
 			bn->theap.base = prev_base;
 			bn->theap.size = prev_size;
 			BBPreclaim(bn);
-
-
 		} else if (mtype == TYPE_str) {
 			char **d = (char**)v;
 
@@ -1231,7 +1240,7 @@ monetdbe_append(monetdbe_database dbhdl, const char* schema, const char* table, 
 
 			for (size_t j=0; j<cnt; j++){
 				timestamp t = *(timestamp*) nil;
-				if(!timestamp_is_null(ts[j]))
+				if(!timestamp_is_null(ts+j))
 					t = timestamp_from_data(&ts[j]);
 
 				if (store_funcs.append_col(m->session->tr, c, &t, mtype) != 0) {
@@ -1244,7 +1253,7 @@ monetdbe_append(monetdbe_database dbhdl, const char* schema, const char* table, 
 
 			for (size_t j=0; j<cnt; j++){
 				date d = *(date*) nil;
-				if(!date_is_null(de[j]))
+				if(!date_is_null(de+j))
 					d = date_from_data(&de[j]);
 
 				if (store_funcs.append_col(m->session->tr, c, &d, mtype) != 0) {
@@ -1257,7 +1266,7 @@ monetdbe_append(monetdbe_database dbhdl, const char* schema, const char* table, 
 
 			for (size_t j=0; j<cnt; j++){
 				daytime dt = *(daytime*) nil;
-				if(!time_is_null(t[j]))
+				if(!time_is_null(t+j))
 					dt = time_from_data(&t[j]);
 
 				if (store_funcs.append_col(m->session->tr, c, &dt, mtype) != 0) {
@@ -1270,7 +1279,8 @@ monetdbe_append(monetdbe_database dbhdl, const char* schema, const char* table, 
 
 			for (size_t j=0; j<cnt; j++){
 				blob* b = (blob*) nil;
-				if (!blob_is_null(be[j])) {
+				int res;
+				if (!blob_is_null(be+j)) {
 					size_t len = be[j].size;
 					b = (blob*) GDKmalloc(blobsize(len));
 					if (b == NULL)
@@ -1280,12 +1290,13 @@ monetdbe_append(monetdbe_database dbhdl, const char* schema, const char* table, 
 					memcpy(b->data, be[j].data, len);
 				}
 
-				if (store_funcs.append_col(m->session->tr, c, b, mtype) != 0) {
+				res = store_funcs.append_col(m->session->tr, c, b, mtype);
+				if (b && b != (blob*)nil)
+					GDKfree(b);
+				if (res != 0) {
 					mdbe->msg = createException(SQL, "monetdbe.monetdbe_append", "Cannot append values");
 					goto cleanup;
 				}
-				if (b && b != (blob*)nil)
-					GDKfree(b);
 			}
 		}
 	}
@@ -1605,38 +1616,38 @@ timestamp_from_data(monetdbe_data_timestamp *ptr)
 }
 
 static int
-date_is_null(monetdbe_data_date value)
+date_is_null(monetdbe_data_date *value)
 {
 	monetdbe_data_date null_value;
 	data_from_date(date_nil, &null_value);
-	return value.year == null_value.year && value.month == null_value.month &&
-		   value.day == null_value.day;
+	return value->year == null_value.year && value->month == null_value.month &&
+		   value->day == null_value.day;
 }
 
 static int
-time_is_null(monetdbe_data_time value)
+time_is_null(monetdbe_data_time *value)
 {
 	monetdbe_data_time null_value;
 	data_from_time(daytime_nil, &null_value);
-	return value.hours == null_value.hours &&
-		   value.minutes == null_value.minutes &&
-		   value.seconds == null_value.seconds && value.ms == null_value.ms;
+	return value->hours == null_value.hours &&
+		   value->minutes == null_value.minutes &&
+		   value->seconds == null_value.seconds && value->ms == null_value.ms;
 }
 
 static int
-timestamp_is_null(monetdbe_data_timestamp value)
+timestamp_is_null(monetdbe_data_timestamp *value)
 {
-	return is_timestamp_nil(timestamp_from_data(&value));
+	return is_timestamp_nil(timestamp_from_data(value));
 }
 
 static int
-str_is_null(char *value)
+str_is_null(char **value)
 {
-	return value == NULL;
+	return !value || *value == NULL;
 }
 
 static int
-blob_is_null(monetdbe_data_blob value)
+blob_is_null(monetdbe_data_blob *value)
 {
-	return value.data == NULL;
+	return !value || value->data == NULL;
 }

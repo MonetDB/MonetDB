@@ -767,7 +767,7 @@ WLRquery(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		*x++ = *y;
 	}
 	*x = 0;
-	msg =  SQLstatementIntern(cntxt, &qtxt, "SQLstatement", TRUE, TRUE, NULL);
+	msg =  SQLstatementIntern(cntxt, qtxt, "SQLstatement", TRUE, TRUE, NULL);
 	GDKfree(qtxt);
 	return msg;
 }

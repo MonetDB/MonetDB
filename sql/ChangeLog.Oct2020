@@ -44,7 +44,7 @@
 - Removed obsolete json.output(json) function.
 
 * Tue Jun 30 2020 Pedro Ferreira <pedro.ferreira@monetdbsolutions.com>
-- Removed compability between interval types and other numeric types in
+- Removed compatibility between interval types and other numeric types in
   favor for a more strict SQL standard compliance. This means operations
   between temporal types and other numeric types such as INT and 
   DECIMAL are no longer possible, instead use interval types.
@@ -56,3 +56,9 @@
   Instead do SET current_timezone = interval '1' hour;
   Casting between interval and other numeric types is no longer possible
   as well, because they are not compatible.
+  
+* Mon Aug 31 2020 Pedro Ferreira <pedro.ferreira@monetdbsolutions.com>
+- Made general logarithm function log(x,base) compliant with the SQL 
+  standard, by swapping the input parameters.
+  Instead of log(x,base), now is log(base,x).
+  

@@ -20,19 +20,7 @@ if (${LINUX_DISTRO} STREQUAL "debian")
       variablename HAVE_UUID_GENERATE)
   endif()
 elseif (${LINUX_DISTRO} STREQUAL "ubuntu")
-  if(${LINUX_DISTRO_VERSION} STREQUAL "18")
-    assert_package_detected(
-      detect FALSE
-      legacyvariable HAVE_UUID
-      variablename HAVE_UUID_GENERATE)
-  endif()
-  if(${LINUX_DISTRO_VERSION} STREQUAL "19")
-    assert_package_detected(
-      detect FALSE
-      legacyvariable HAVE_UUID
-      variablename HAVE_UUID_GENERATE)
-  endif()
-  if(${LINUX_DISTRO_VERSION} STREQUAL "20")
+  if(${LINUX_DISTRO_VERSION} VERSION_GREATER_EQUAL "18")
     assert_package_detected(
       detect FALSE
       legacyvariable HAVE_UUID

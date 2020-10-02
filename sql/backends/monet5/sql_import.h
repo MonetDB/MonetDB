@@ -9,8 +9,16 @@
 #ifndef _SQL_IMPORT_H
 #define _SQL_IMPORT_H
 
-#include "sql.h"
+#ifdef WIN32
+#ifdef LIBSQL
+#define sql_export extern __declspec(dllexport)
+#else
+#define sql_export extern __declspec(dllimport)
+#endif
+#else
+#define sql_export extern
+#endif
 
-sql_export void sql_register(str name, unsigned char *code);
+sql_export void sql_register(const char *name, const unsigned char *code);
 
 #endif /* _SQL_IMPORT_H */

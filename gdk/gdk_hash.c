@@ -715,7 +715,7 @@ BAThash_impl(BAT *restrict b, struct canditer *restrict ci, const char *restrict
 	oid o;
 	BUN hnil, hget, hb;
 	Hash *h = NULL;
-	const char *nme = GDKinmemory(b->theap.farmid) ? ":inmemory" : BBP_physical(b->batCacheid);
+	const char *nme = GDKinmemory(b->theap.farmid) ? ":memory:" : BBP_physical(b->batCacheid);
 	BATiter bi = bat_iterator(b);
 	PROPrec *prop;
 	bool hascand = ci->tpe != cand_dense || ci->ncand != BATcount(b);

@@ -189,7 +189,7 @@ checkSQLContext(Client cntxt)
 	return MAL_SUCCEED;
 }
 
-static str
+str
 getBackendContext(Client cntxt, backend **be)
 {
 	str msg;
@@ -763,14 +763,14 @@ mvc_next_value(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (!mvc_schema_privs(be->mvc, s))
 		throw(SQL, "sql.next_value", SQLSTATE(42000) "Access denied for %s to schema '%s'", sqlvar_get_string(find_global_var(be->mvc, mvc_bind_schema(be->mvc, "sys"), "current_user")), s->base.name);
 	if (!(seq = find_sql_sequence(s, seqname)))
-		throw(SQL, "sql.next_value", SQLSTATE(HY050) "Failed to fetch sequence %s.%s", sname, seqname);
+		throw(SQL, "sql.next_value", SQLSTATE(HY050) "Cannot find the sequence %s.%s", sname, seqname);
 
 	if (seq_next_value(seq, res)) {
 		be->last_id = *res;
 		sqlvar_set_number(find_global_var(be->mvc, mvc_bind_schema(be->mvc, "sys"), "last_id"), be->last_id);
 		return MAL_SUCCEED;
 	}
-	throw(SQL, "sql.next_value", SQLSTATE(42000) "Error in fetching next value for sequence %s.%s", sname, seqname);
+	throw(SQL, "sql.next_value", SQLSTATE(HY050) "Cannot generate next sequence value %s.%s", sname, seqname);
 }
 
 /* str mvc_get_value(lng *res, str *sname, str *seqname); */
@@ -792,11 +792,11 @@ mvc_get_value(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (!(s = mvc_bind_schema(m, sname)))
 		throw(SQL, "sql.get_value", SQLSTATE(3F000) "Cannot find the schema %s", sname);
 	if (!(seq = find_sql_sequence(s, seqname)))
-		throw(SQL, "sql.get_value", SQLSTATE(HY050) "Failed to fetch sequence %s.%s", sname, seqname);
+		throw(SQL, "sql.get_value", SQLSTATE(HY050) "Cannot find the sequence %s.%s", sname, seqname);
 
 	if (seq_get_value(seq, res))
 		return MAL_SUCCEED;
-	throw(SQL, "sql.get_value", SQLSTATE(42000) "Error in fetching current value for sequence %s.%s", sname, seqname);
+	throw(SQL, "sql.get_value", SQLSTATE(HY050) "Cannot get sequence value %s.%s", sname, seqname);
 }
 
 static str
@@ -4081,7 +4081,7 @@ vacuum(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, str (*func) (bat
 	if (t->system)
 		throw(SQL, name, SQLSTATE(42000) "%s not allowed on system tables", name + 4);
 	if (!isTable(t))
-		throw(SQL, name, SQLSTATE(42000) "%s: %s '%s' is not persistent", name + 4, 
+		throw(SQL, name, SQLSTATE(42000) "%s: %s '%s' is not persistent", name + 4,
 			  TABLE_TYPE_DESCRIPTION(t->type, t->properties), t->base.name);
 
 	if (has_snapshots(m->session->tr))
@@ -5694,8 +5694,6 @@ static mel_func sql_init_funcs[] = {
  pattern("calc", "str", SQLstr_cast, false, "cast to string and check for overflow", args(1,7, arg("",str),arg("eclass",int),arg("d1",int),arg("s1",int),arg("has_tz",int),argany("v",1),arg("digits",int))),
  pattern("batcalc", "str", SQLbatstr_cast, false, "cast to string and check for overflow", args(1,7, batarg("",str),arg("eclass",int),arg("d1",int),arg("s1",int),arg("has_tz",int),batargany("v",1),arg("digits",int))),
  pattern("batcalc", "str", SQLbatstr_cast, false, "cast to string and check for overflow", args(1,8, batarg("",str),arg("eclass",int),arg("d1",int),arg("s1",int),arg("has_tz",int),batargany("v",1),batarg("s",oid),arg("digits",int))),
- command("calc", "substring", STRsubstringTail, false, "", args(1,3, arg("",str),arg("s",str),arg("offset",int))),
- command("calc", "substring", STRsubstring, false, "", args(1,4, arg("",str),arg("s",str),arg("offset",int),arg("count",int))),
  pattern("calc", "month_interval", month_interval_str, false, "cast str to a month_interval and check for overflow", args(1,4, arg("",int),arg("v",str),arg("ek",int),arg("sk",int))),
  pattern("batcalc", "month_interval", month_interval_str, false, "cast str to a month_interval and check for overflow", args(1,4, batarg("",int),batarg("v",str),arg("ek",int),arg("sk",int))),
  pattern("batcalc", "month_interval", month_interval_str, false, "cast str to a month_interval and check for overflow", args(1,5, batarg("",int),batarg("v",str),batarg("s",oid),arg("ek",int),arg("sk",int))),

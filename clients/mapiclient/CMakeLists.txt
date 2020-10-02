@@ -17,16 +17,12 @@ target_sources(mcutil
   PRIVATE
   dump.c
   dotmonetdb.c
-  dotmonetdb.h
-  eventparser.c
-  eventparser.h)
+  dotmonetdb.h)
 
 target_link_libraries(mcutil
   PRIVATE
   monetdb_config_header
-  mutils
-  mcrypt
-  moptions
+  mstring
   mapi
   stream)
 
@@ -40,15 +36,21 @@ target_sources(mclient
   mhelp.c
   mhelp.h)
 
+target_include_directories(mclient
+  PRIVATE
+  $<$<PLATFORM_ID:Windows>:${HAVE_GETOPT_H}>)
+
 target_link_libraries(mclient
   PRIVATE
   monetdb_config_header
   mcutil
   mprompt
   moptions
+  mutils
   mapi
   stream
   $<$<BOOL:${READLINE_FOUND}>:Readline::Readline>
+  $<$<BOOL:${Iconv_FOUND}>:Iconv::Iconv>
   $<$<PLATFORM_ID:Windows>:${GETOPT_LIB}>)
 
 add_executable(msqldump)
@@ -58,11 +60,16 @@ target_sources(msqldump
   msqldump.c
   msqldump.h)
 
+target_include_directories(msqldump
+  PRIVATE
+  $<$<PLATFORM_ID:Windows>:${HAVE_GETOPT_H}>)
+
 target_link_libraries(msqldump
   PRIVATE
   monetdb_config_header
   mcutil
   moptions
+  mutils
   mapi
   stream
   mprompt
@@ -72,7 +79,13 @@ add_executable(stethoscope)
 
 target_sources(stethoscope
   PRIVATE
-  stethoscope.c)
+  stethoscope.c
+  eventparser.c
+  eventparser.h)
+
+target_include_directories(stethoscope
+  PRIVATE
+  $<$<PLATFORM_ID:Windows>:${HAVE_GETOPT_H}>)
 
 target_link_libraries(stethoscope
   PRIVATE

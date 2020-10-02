@@ -145,6 +145,93 @@ stdout of test 'sqlancer07` in directory 'sql/test/SQLancer` itself:
 [ NULL	]
 [ NULL	]
 #ROLLBACK;
+#CREATE TABLE "t0" ("c1" VARCHAR(388) NOT NULL,CONSTRAINT "t0_c1_pkey" PRIMARY KEY ("c1"),CONSTRAINT "t0_c1_unique" UNIQUE ("c1"));
+#INSERT INTO "t0" VALUES (''), ('Ral%}?U*A'), ('Dz '), ('P');
+[ 4	]
+#CREATE TABLE "t2" ("c1" VARCHAR(388) NOT NULL);
+#INSERT INTO "t2" VALUES ('4'),('4'),('3eSU8,'),(''),('5E~쟱'),('~'),('1386006226'),('0.19005213960704492'),('''{Mdd뒆VB'''),('\015␱%L%]'),('+'),(''),('㕚o+k');
+[ 13	]
+#select t0.c1 from t0 where (5) in (case when t0.c1 = 'a' then 1 end, (select 3));
+% .t0 # table_name
+% c1 # name
+% varchar # type
+% 0 # length
+#select t0.c1 from t0 where (5) in ((select 3), case when t0.c1 = 'a' then 1 end);
+% .t0 # table_name
+% c1 # name
+% varchar # type
+% 0 # length
+#select t0.c1 from t0 where (5) in (case when t0.c1 = 'a' then 1 end, (select 3 from t0));
+% .t0 # table_name
+% c1 # name
+% varchar # type
+% 0 # length
+#select t0.c1 from t0 where (-5) in (case when t0.c1 = 'a' then 1 else -2 end, (select -3 from t0, t2 where false));
+% .t0 # table_name
+% c1 # name
+% varchar # type
+% 0 # length
+#DROP TABLE t0;
+#DROP TABLE t2;
+#CREATE TABLE t1 (c0 DOUBLE PRECISION NOT NULL);
+#SELECT t1.c0 FROM t1;
+% sys.t1 # table_name
+% c0 # name
+% double # type
+% 24 # length
+#DROP TABLE t1;
+#START TRANSACTION;
+#CREATE TABLE "t0" ("c0" DECIMAL(18,3) NOT NULL,"c1" DOUBLE PRECISION NOT NULL);
+#CREATE TABLE "t1" ("c1" DOUBLE PRECISION);
+#CREATE TABLE "t2" ("c0" DECIMAL(18,3),"c1" DOUBLE PRECISION);
+#SELECT (SELECT 1 FROM t1, t2, t0 JOIN (SELECT 1) AS sub0 ON (t1.c1) BETWEEN (t2.c1) AND (t1.c1)) FROM t2, t0 CROSS JOIN t1;
+% .%2 # table_name
+% %2 # name
+% tinyint # type
+% 1 # length
+#ROLLBACK;
+#START TRANSACTION;
+#CREATE TABLE "t0" ("c0" BIGINT NOT NULL,CONSTRAINT "t0_c0_pkey" PRIMARY KEY ("c0"),CONSTRAINT "t0_c0_unique" UNIQUE ("c0"));
+#INSERT INTO "t0" VALUES (0),(-1557127883),(-488477810);
+[ 3	]
+#CREATE TABLE "t1" ("c0" BIGINT NOT NULL);
+#INSERT INTO "t1" VALUES (1457011207),(98933083),(1259938486);
+[ 3	]
+#CREATE TABLE "t2" ("c0" BIGINT NOT NULL,CONSTRAINT "t2_c0_pkey" PRIMARY KEY ("c0"));
+#INSERT INTO "t2" VALUES (596983192), (-601428889), (1688368391);
+[ 3	]
+#SELECT 1 FROM t2, t0 CROSS JOIN t1 WHERE t0.c0 % (SELECT 1 WHERE FALSE) <= t1.c0;
+% .%4 # table_name
+% %4 # name
+% tinyint # type
+% 1 # length
+#SELECT t1.c0 FROM t2, t0 CROSS JOIN t1 WHERE ((((t0.c0)%((SELECT DISTINCT t0.c0 FROM t1, t0, t2 WHERE FALSE))))<=(t1.c0));
+% .t1 # table_name
+% c0 # name
+% bigint # type
+% 1 # length
+#SELECT CAST(SUM(count) AS BIGINT) FROM (SELECT ALL CAST(((((t0.c0)%((SELECT DISTINCT t0.c0 FROM t1, t0, t2 WHERE FALSE))))<=(t1.c0)) AS INT) as count FROM t2, t0 CROSS JOIN t1) as res;
+% .%4 # table_name
+% %4 # name
+% bigint # type
+% 1 # length
+[ NULL	]
+#DROP TABLE t0;
+#DROP TABLE t1;
+#DROP TABLE t2;
+#SELECT 1 WHERE (SELECT 1 WHERE FALSE) IS NULL;
+% .%4 # table_name
+% %4 # name
+% tinyint # type
+% 1 # length
+[ 1	]
+#PREPARE SELECT 1 WHERE greatest(true, ?);
+% .prepare,	.prepare,	.prepare,	.prepare,	.prepare,	.prepare # table_name
+% type,	digits,	scale,	schema,	table,	column # name
+% varchar,	int,	int,	str,	str,	str # type
+% 7,	1,	1,	0,	2,	2 # length
+[ "tinyint",	1,	0,	"",	"%2",	"%2"	]
+[ "boolean",	1,	0,	NULL,	NULL,	NULL	]
 
 # 10:16:14 >  
 # 10:16:14 >  "Done."

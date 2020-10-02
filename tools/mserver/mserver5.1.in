@@ -72,7 +72,7 @@ option.
 If the value of
 .I path
 is
-.BR :inmemory ,
+.BR :memory: ,
 transient data is not stored on disk at all but kept in memory at all
 times.
 .TP
@@ -208,6 +208,18 @@ Equivalent to \fB\-\-debug=\fP\fI(THRDMASK | PARMASK)\fP.
 .TP
 .B \-\-transactions
 Equivalent to \fB\-\-debug=\fP\fI(TMMASK | DELTAMASK | TEMMASK)\fP.
+.TP
+.B \-\-read\-password\-initialize\-and\-exit
+Read an unencrypted password from standard input and use it to set the
+password for the
+.B monetdb
+administrator user, initialize the database, and exit.
+If the database was already initialized, the administrator password is
+not changed.
+This option is used by
+.IR monetdbd (1)
+when creating a new database with an administrator password and should
+not be used otherwise.
 .SH MSERVER5 PARAMETERS
 .I Mserver5
 instructs the GDK kernel through the MAL (MonetDB Assembler Language)
