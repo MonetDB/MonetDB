@@ -75,7 +75,7 @@ def process_test_dir(dir_path:str, ctx={}, **kwargs):
             ('.rb',           '.rb',     'ruby',   'SQL'),
         )
         # required tests that needs to run before this test
-        # TODO enforce order by reqtests aka myabe sort at the end
+        # TODO enforce order at the end
         if os.path.isfile(test_path + '.reqtests'):
             reqtests = []
             missing_reqtests = []

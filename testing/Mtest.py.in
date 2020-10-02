@@ -1011,6 +1011,8 @@ def RunTest(env, test, oktests, pSrvr):
     CALL = test.get('call')
     SERVER = test.get('server')
     TST = test.get('test_name')
+    is_reqtest = test.get('is_reqtest', False)
+    has_reqtests = len(test.get('reqtests', [])) > 0
 
     # are there missing modules?
     MissingMods = CheckMods(env, test, SERVER)
@@ -1166,7 +1168,7 @@ def RunTest(env, test, oktests, pSrvr):
 
         t0 = time.time()
         if CALL == 'sqltest':
-            exit_code, reason = RunSQLLogicTest(env, (TST + EXT), None, TestErrFile)
+            exit_code, reason = RunSQLLogicTest(env, (TST + EXT), None, TestErrFile, is_reqtest=is_reqtest, has_reqtests=has_reqtests)
         else:
          tres = DoIt(env, SERVER, CALL, TST, EXT, TestOutFile, TestErrFile, STIMEOUT, CTIMEOUT, TIMEOUT, MAPIsockets, nomito, threads, user, passwd, COND, pSrvr)
          exit_code = transform_str_return_code(tres)
@@ -1641,7 +1643,7 @@ def mapi_ping(port) :
     return False
 ### mapi_ping() #
 
-def RunSQLLogicTest(env, Test, TestOut, TestErr) -> (int, str):
+def RunSQLLogicTest(env, Test, TestOut, TestErr, is_reqtest=False, has_reqtests=False) -> (int, str):
     """
     Run SQLLogic test
     returns:
@@ -1663,8 +1665,8 @@ def RunSQLLogicTest(env, Test, TestOut, TestErr) -> (int, str):
             msg = "Connection refused"
             print(e, file=f) 
         else:
-            # TODO handle exception 
-            sql.drop()
+            #if not (has_reqtests or is_reqtest):
+            #    sql.drop()
             try:
                 sql.parse(Test)
             except sqllogictest.SQLLogicSyntaxError as e:
