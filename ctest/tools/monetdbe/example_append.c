@@ -56,7 +56,7 @@ main(void)
 				}
 				case monetdbe_str: {
 					monetdbe_column_str * col = (monetdbe_column_str *) rcol[c];
-					if (col->is_null(col->data[r])) {
+					if (col->is_null(col->data+r)) {
 						printf("NULL");
 					} else {
 						printf("%s", (char*) col->data[r]);
@@ -141,7 +141,7 @@ main(void)
 				}
 				case monetdbe_str: {
 					monetdbe_column_str * col = (monetdbe_column_str *) rcol[c];
-					if (col->is_null(col->data[r])) {
+					if (col->is_null(col->data+r)) {
 						printf("NULL");
 					} else {
 						printf("%s", (char*) col->data[r]);

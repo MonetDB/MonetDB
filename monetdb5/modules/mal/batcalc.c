@@ -1049,9 +1049,10 @@ CMDconvertbat(MalStkPtr stk, InstrPtr pci, int tp, bool abort_on_error)
 			BBPunfix(b->batCacheid);
 			throw(MAL, "batcalc.convert", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 		}
-		if (ATOMtype(s->ttype) != TYPE_oid) {
+		if (s && ATOMtype(s->ttype) != TYPE_oid) {
 			BBPunfix(b->batCacheid);
-			BBPunfix(s->batCacheid);
+			if (s)
+				BBPunfix(s->batCacheid);
 			throw(MAL, "batcalc.convert", SQLSTATE(42000) ILLEGAL_ARGUMENT);
 		}
 	}
