@@ -39,7 +39,7 @@ str_2_blob(blob **res, const str *val)
 }
 
 str
-batstr_2_blob_cand(bat *res, const bat *bid, const bat *sid)
+batstr_2_blob(bat *res, const bat *bid, const bat *sid)
 {
 	BAT *b = NULL, *s = NULL, *dst = NULL;
 	BATiter bi;
@@ -97,12 +97,6 @@ bailout:
 	} else if (dst)
 		BBPreclaim(dst);
 	return msg;
-}
-
-str
-batstr_2_blob(bat *res, const bat *bid)
-{
-	return batstr_2_blob_cand(res, bid, NULL);
 }
 
 /* TODO get max size for all from type */

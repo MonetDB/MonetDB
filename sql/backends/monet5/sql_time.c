@@ -354,13 +354,7 @@ str_2time_daytimetz(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 }
 
 str
-batstr_2time_daytime(bat *res, const bat *bid, const int *digits)
-{
-	return str_2time_daytimetz_internal((ptr) res, (ptr) bid, NULL, newBatType(TYPE_str), *digits, 0);
-}
-
-str
-batstr_2time_daytime_cand(bat *res, const bat *bid, const bat *s, const int *digits)
+batstr_2time_daytime(bat *res, const bat *bid, const bat *s, const int *digits)
 {
 	return str_2time_daytimetz_internal((ptr) res, (ptr) bid, s, newBatType(TYPE_str), *digits, 0);
 }
@@ -781,13 +775,7 @@ str_2time_timestamptz(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 }
 
 str
-batstr_2time_timestamptz(bat *res, const bat *bid, const int *digits, int *tz)
-{
-	return str_2time_timestamptz_internal((ptr) res, (ptr) bid, NULL, newBatType(TYPE_str), *digits, *tz);
-}
-
-str
-batstr_2time_timestamptz_cand(bat *res, const bat *bid, const bat *sid, const int *digits, int *tz)
+batstr_2time_timestamptz(bat *res, const bat *bid, const bat *sid, const int *digits, int *tz)
 {
 	return str_2time_timestamptz_internal((ptr) res, (ptr) bid, sid, newBatType(TYPE_str), *digits, *tz);
 }
@@ -801,13 +789,7 @@ str_2time_timestamp(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 }
 
 str
-batstr_2time_timestamp(bat *res, const bat *bid, const int *digits)
-{
-	return str_2time_timestamptz_internal((ptr) res, (ptr) bid, NULL, newBatType(TYPE_str), *digits, 0);
-}
-
-str
-batstr_2time_timestamp_cand(bat *res, const bat *bid, const bat *sid, const int *digits)
+batstr_2time_timestamp(bat *res, const bat *bid, const bat *sid, const int *digits)
 {
 	return str_2time_timestamptz_internal((ptr) res, (ptr) bid, sid, newBatType(TYPE_str), *digits, 0);
 }
@@ -1467,13 +1449,7 @@ bailout:
 }
 
 str
-batstr_2_date(bat *res, const bat *bid)
-{
-	return str_2_date_internal((ptr) res, (ptr) bid, NULL, newBatType(TYPE_str));
-}
-
-str
-batstr_2_date_cand(bat *res, const bat *bid, const bat *s)
+batstr_2_date(bat *res, const bat *bid, const bat *s)
 {
 	return str_2_date_internal((ptr) res, (ptr) bid, s, newBatType(TYPE_str));
 }

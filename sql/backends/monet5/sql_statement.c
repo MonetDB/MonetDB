@@ -3128,6 +3128,8 @@ stmt_convert(backend *be, stmt *v, stmt *sel, sql_subtype *f, sql_subtype *t)
 	q = pushArgument(mb, q, v->nr);
 	if (sel && !pushed && !v->cand)
 		q = pushArgument(mb, q, sel->nr);
+	else if (v->nrcols > 0 && t->type->eclass != EC_EXTERNAL)
+		q = pushNil(mb, q, TYPE_bat);
 
 	if (t->type->eclass == EC_DEC || EC_TEMP_FRAC(t->type->eclass) || EC_INTERVAL(t->type->eclass)) {
 		/* digits, scale of the result decimal */

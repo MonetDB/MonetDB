@@ -367,7 +367,7 @@ function user.main():void;
     X_939:bat[:str] := bat.pack("yearref":str);
     X_940:bat[:str] := bat.pack("clob":str);
     X_941:bat[:int] := bat.pack(0:int);
-    X_930:bat[:timestamp] := batcalc.timestamp(X_929:bat[:timestamp], 7:int);
+    X_930:bat[:timestamp] := batcalc.timestamp(X_929:bat[:timestamp], nil:BAT, 7:int);
     X_934:bat[:str] := batmtime.timestamp_to_str(X_930:bat[:timestamp], "%Y":str);
     sql.resultSet(X_938:bat[:str], X_939:bat[:str], X_940:bat[:str], X_941:bat[:int], X_941:bat[:int], X_934:bat[:str]);
 end user.main;
