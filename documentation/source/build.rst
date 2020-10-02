@@ -136,5 +136,27 @@ To compile MonetDB (as normal user)::
 MacOS
 =====
 
+Using homebrew install at least current ::
+
+  bison
+  openssl
+  
+optional::
+ 
+  readline
+
+To compile MonetDB (as normal user)::
+
+  hg clone http://dev.monetdb.org/hg/MonetDB/
+
+  cd MonetDB
+  mkdir build
+  cd build
+  PKG_CONFIG_PATH=/usr/local/opt/readline/lib/pkgconfig/ cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=$home\install -DOPENSSL_ROOT_DIR=/usr/local/opt/openssl ..
+  cmake --build . 
+  cmake --build . --target install
+  cmake --build . --target test
+  cmake --build . --target mtest
+
 How to start
 ============
