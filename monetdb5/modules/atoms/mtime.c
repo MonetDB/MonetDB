@@ -212,10 +212,18 @@ NAME##_bulk(bat *ret, const bat *bid, const bat *sid)					\
 	}																	\
 	INIT_SRC(src1, b1);													\
 	INIT_OUTPUT(dst, bn);												\
-	for (BUN i = 0; i < n; i++) { 										\
-		BUN p = (BUN) (canditer_next(&ci) - off);						\
-		FUNC_CALL(FUNC, (dst[i]), (GET_NEXT_SRC(src1)));				\
-		nils |= is_##OUTTYPE##_nil(dst[i]);								\
+	if (ci.tpe == cand_dense) {											\
+		for (BUN i = 0; i < n; i++) { 									\
+			BUN p = (BUN) (canditer_next_dense(&ci) - off);				\
+			FUNC_CALL(FUNC, (dst[i]), (GET_NEXT_SRC(src1)));			\
+			nils |= is_##OUTTYPE##_nil(dst[i]);							\
+		}																\
+	} else {															\
+		for (BUN i = 0; i < n; i++) { 									\
+			BUN p = (BUN) (canditer_next(&ci) - off);					\
+			FUNC_CALL(FUNC, (dst[i]), (GET_NEXT_SRC(src1)));			\
+			nils |= is_##OUTTYPE##_nil(dst[i]);							\
+		}																\
 	}																	\
 	bn->tnonil = !nils;													\
 	bn->tnil = nils;													\
