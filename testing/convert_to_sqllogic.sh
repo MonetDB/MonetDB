@@ -60,6 +60,14 @@ for f in $@;do
     fi
 done
 
+if [[ -p /dev/stdin ]];then
+    while read line;do
+        if [[ -f $line ]];then
+            files+=" $line";
+        fi
+    done
+fi
+
 if [[ -z $files ]];then 
     usage;
     exit 1;
