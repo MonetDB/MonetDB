@@ -1663,6 +1663,7 @@ def RunSQLLogicTest(env, Test, TestOut, TestErr) -> (int, str):
             msg = "Connection refused"
             print(e, file=f) 
         else:
+            # TODO handle exception 
             sql.drop()
             try:
                 sql.parse(Test)

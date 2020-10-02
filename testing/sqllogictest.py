@@ -71,7 +71,7 @@ class SQLLogic:
         else:
             if expectok:
                 return
-        self.query_error(statement, "statement didn't give expected result", expectok and "statement was expected to succeed but didn't" or "statement was expected to fail bat didn't")
+        self.query_error(statement, "statement didn't give expected result", expectok and "statement was expected to succeed but didn't" or "statement was expected to fail but didn't")
 
     def convertresult(self, query, columns, data):
         ndata = []

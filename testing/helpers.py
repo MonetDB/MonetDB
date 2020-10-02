@@ -51,7 +51,8 @@ def process_test_dir(dir_path:str, ctx={}, **kwargs):
             else:
                 raise ValueError('ERROR: {} does not appear to be valid test name. Check {}/All'.format(tn, dir_path))
         tests = filtered
-    tests_out = []
+    test_index = []
+    test_lookup = {}
     for cond, test_name in tests:
         test_path = os.path.join(real_dir_path, test_name)
         test = {
@@ -82,6 +83,11 @@ def process_test_dir(dir_path:str, ctx={}, **kwargs):
                 for l in f:
                     reqtests.append(l.strip())
             test['reqtests'] = reqtests
+            for r in reqtests:
+                try:
+                    test_lookup[r]['is_reqtest'] = True
+                except KeyError:
+                    print("WARNING: test name {} required to be declared before {}".format(r, test_name))
             #for r in reqtests:
             #    rp = os.path.join(real_dir_path, test_name)
             #    for ext, _, _, _ in lookup:
@@ -130,7 +136,9 @@ def process_test_dir(dir_path:str, ctx={}, **kwargs):
         else:
             print("WARNING: test name {} declared but not found under {}".format(test_name, dir_path))
             continue
-        tests_out.append(test)
+        test_index.append(test_name)
+        test_lookup[test_name] = test
+    tests_out = list(map(lambda x: test_lookup[x], test_index))
     folder['test_count'] = len(tests_out)
     folder['tests'] = tests_out
     ctx['test_folders'].append(folder)
