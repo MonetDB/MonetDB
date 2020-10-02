@@ -579,7 +579,7 @@ HEAPfree(Heap *h, bool rmheap)
 		}
 	} else
 #endif
-	if (rmheap) {
+	if (rmheap && !GDKinmemory()) { /* TODO better fix in gdk_hash.c*/
 		char *path = GDKfilepath(h->farmid, BATDIR, h->filename, NULL);
 		if (path && remove(path) != 0 && errno != ENOENT)
 			perror(path);
