@@ -61,12 +61,15 @@ Evidently there are several options to control as illustrated in
 ``$SOURCE/cmake/monetdb-options.cmake``
 
 The important once to choose from are ``-DCMAKE_BUILD_TYPE``, which
-takes the value Release or Debug.  The former creates the binary ready
-for shipping, including all compiler optimizations that come with it.
-The Debug mode is necessary if you plan to debug the binary and needs
-access to the symbol tables.  This build type also typically leads to a
-slower execution time, because also all kinds of assertions are being
-checked.
+takes the value Release, Debug, RelWithDebInfo and MinSizeRel. The
+first creates the binary ready for shipping, including all compiler
+optimizations that come with it. The Debug mode is necessary if you
+plan to debug the binary and needs access to the symbol tables. This
+build type also typically leads to a slower execution time, because
+also all kinds of assertions are being checked. The RelWithDebInfo
+combines Release and Debug with both compiler optimizations and symbol
+tables for debugging. Finally MinSizeRel is a Release build optimized
+for binary size instead of speed.
 
 Other relevant properties are also ``-DASSERT=ON`` and ``-DSTRICT=ON``,
 used in combination with a Debug build, e.g.::
