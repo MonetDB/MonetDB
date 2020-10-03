@@ -116,7 +116,7 @@ function(monetdb_configure_defines)
   # Some libc versions on Linux distributions don't have it
   check_symbol_exists("semtimedop" "sys/types.h;sys/ipc.h;sys/sem.h" HAVE_SEMTIMEDOP)
   cmake_push_check_state()
-		set(CMAKE_REQUIRED_LIBRARIES "${CMAKE_THREAD_LIBS_INIT}")
+    set(CMAKE_REQUIRED_LIBRARIES "${CMAKE_THREAD_LIBS_INIT}")
     check_function_exists("pthread_kill" HAVE_PTHREAD_KILL)
     check_function_exists("pthread_sigmask" HAVE_PTHREAD_SIGMASK)
   cmake_pop_check_state()
