@@ -115,8 +115,11 @@ function(monetdb_configure_defines)
   check_function_exists("uname" HAVE_UNAME)
   # Some libc versions on Linux distributions don't have it
   check_symbol_exists("semtimedop" "sys/types.h;sys/ipc.h;sys/sem.h" HAVE_SEMTIMEDOP)
-  check_function_exists("pthread_kill" HAVE_PTHREAD_KILL)
-  check_function_exists("pthread_sigmask" HAVE_PTHREAD_SIGMASK)
+  cmake_push_check_state()
+	  set(CMAKE_REQUIRED_LINK_OPTIONS "-lpthread")
+    check_function_exists("pthread_kill" HAVE_PTHREAD_KILL)
+    check_function_exists("pthread_sigmask" HAVE_PTHREAD_SIGMASK)
+  cmake_pop_check_state()
   check_symbol_exists("regcomp" "regex.h" HAVE_POSIX_REGEX)
 endfunction()
 
