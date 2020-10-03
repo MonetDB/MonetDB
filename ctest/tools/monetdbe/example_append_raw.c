@@ -39,7 +39,7 @@ main(void)
 	int32_t i2 = *(int32_t*)monetdbe_null(mdbe, monetdbe_int32_t);
 	int32_t ints[2] = { i1, i2 };
 	monetdbe_column col0 = { .type = monetdbe_int32_t, .data = &ints, .count = 2 };
-	
+
 	// str
 	char* dstr[2] = { "Hello", "World" };
 	monetdbe_column col1 = { .type = monetdbe_str, .data = &dstr, .count = 2 };
@@ -52,7 +52,7 @@ main(void)
 	monetdbe_data_timestamp tss[2] = { t1, t2 };
 	monetdbe_column col2 = { .type = monetdbe_timestamp, .data = &tss, .count = 2 };
 
-	// date 
+	// date
 	monetdbe_data_date d1 = dt;
 	monetdbe_data_date d2 = *(monetdbe_data_date*)monetdbe_null(mdbe, monetdbe_date);
 	monetdbe_data_date dts[2] = { d1, d2 };
@@ -94,7 +94,7 @@ main(void)
 				}
 				case monetdbe_str: {
 					monetdbe_column_str * col = (monetdbe_column_str *) rcol[c];
-					if (col->is_null(col->data[r])) {
+					if (col->is_null(col->data+r)) {
 						printf("NULL");
 					} else {
 						printf("%s", (char*) col->data[r]);

@@ -61,12 +61,15 @@ Evidently there are several options to control as illustrated in
 ``$SOURCE/cmake/monetdb-options.cmake``
 
 The important once to choose from are ``-DCMAKE_BUILD_TYPE``, which
-takes the value Release or Debug.  The former creates the binary ready
-for shipping, including all compiler optimizations that come with it.
-The Debug mode is necessary if you plan to debug the binary and needs
-access to the symbol tables.  This build type also typically leads to a
-slower execution time, because also all kinds of assertions are being
-checked.
+takes the value Release, Debug, RelWithDebInfo and MinSizeRel. The
+first creates the binary ready for shipping, including all compiler
+optimizations that come with it. The Debug mode is necessary if you
+plan to debug the binary and needs access to the symbol tables. This
+build type also typically leads to a slower execution time, because
+also all kinds of assertions are being checked. The RelWithDebInfo
+combines Release and Debug with both compiler optimizations and symbol
+tables for debugging. Finally MinSizeRel is a Release build optimized
+for binary size instead of speed.
 
 Other relevant properties are also ``-DASSERT=ON`` and ``-DSTRICT=ON``,
 used in combination with a Debug build, e.g.::
@@ -124,14 +127,36 @@ To compile MonetDB (as normal user)::
   mkdir build
   cd build
   cmake -G "Visual Studio 15 2017" -DCMAKE_TOOLCHAIN_FILE=/vcpkg/scripts/buildsystems/vcpkg.cmake -DCMAKE_INSTALL_PREFIX=%HOME%\install -A x64 ..
-  cmake --build . --target ALL_BUILD
-  cmake --build . --target INSTALL
+  cmake --build . --target ALL_BUILD --config Release
+  cmake --build . --target INSTALL --config Release
   set PATH=%HOME%\install\bin;%HOME%\install\lib;%HOME%\install\lib\monetdb5;\vcpkg\installed\x64-windows\bin;\vcpkg\installed\x64-windows\debug\bin;%PATH%
   cmake --build . --target RUN_TESTS
   cmake --build . --target mtest
 
 MacOS
 =====
+
+Using homebrew install at least current ::
+
+  bison
+  openssl
+  
+optional::
+ 
+  readline
+
+To compile MonetDB (as normal user)::
+
+  hg clone http://dev.monetdb.org/hg/MonetDB/
+
+  cd MonetDB
+  mkdir build
+  cd build
+  PKG_CONFIG_PATH=/usr/local/opt/readline/lib/pkgconfig/ cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=$home\install -DOPENSSL_ROOT_DIR=/usr/local/opt/openssl ..
+  cmake --build . 
+  cmake --build . --target install
+  cmake --build . --target test
+  cmake --build . --target mtest
 
 How to start
 ============
