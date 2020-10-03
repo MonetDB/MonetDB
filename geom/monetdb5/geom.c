@@ -46,6 +46,11 @@ wkbNULLcopy(void)
 
 #ifdef HAVE_PROJ
 
+/* math.h files do not have M_PI defined */
+#ifndef M_PI
+#define M_PI	((double) 3.14159265358979323846)	/* pi */
+#endif
+
 /** convert degrees to radians */
 static inline void
 degrees2radians(double *x, double *y, double *z)

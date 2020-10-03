@@ -17,7 +17,6 @@
 #ifdef WIN32
 
 #undef HAVE_IO_H
-#undef HAVE_SYS_UTIME_H
 #undef PREFIX
 #undef EXEC_PREFIX
 #undef SIZEOF_VOID_P
