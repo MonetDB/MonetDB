@@ -25,7 +25,7 @@ if(SPHINX_FOUND)
   set(SPHINX_HTML_DIR "${CMAKE_CURRENT_BINARY_DIR}/html")
  
   configure_file(
-    "${CMAKE_CURRENT_SOURCE_DIR}/conf.py.in"
+    "${CMAKE_CURRENT_SOURCE_DIR}/conf.py"
     "${BINARY_BUILD_DIR}/conf.py"
     @ONLY)
  

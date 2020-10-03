@@ -120,7 +120,8 @@ target_link_libraries(MonetODBC
   PRIVATE
   monetdb_config_header
   mutils
-  mapi)
+  mapi
+	ODBC::ODBC)
 
 install(TARGETS
   MonetODBC

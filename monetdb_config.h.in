@@ -94,7 +94,6 @@
 #cmakedefine HAVE_SYS_TIMES_H 1
 #cmakedefine HAVE_SYS_UIO_H 1
 #cmakedefine HAVE_SYS_UN_H 1
-#cmakedefine HAVE_SYS_UTIME_H 1
 #cmakedefine HAVE_SYS_WAIT_H 1
 #cmakedefine HAVE_TERMIOS_H 1
 #cmakedefine HAVE_UNISTD_H 1
