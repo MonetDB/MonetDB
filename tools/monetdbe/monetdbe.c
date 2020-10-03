@@ -79,10 +79,6 @@ embedded_type(int t) {
 	}
 }
 
-typedef struct monetdbe_table_t {
-	sql_table t;
-} monetdbe_table_t;
-
 typedef struct {
 	Client c;
 	char *msg;
@@ -920,46 +916,6 @@ monetdbe_cleanup_result(monetdbe_database dbhdl, monetdbe_result* result)
 	} else {
 		mdbe->msg = monetdbe_cleanup_result_internal(mdbe, res);
 	}
-
-	return mdbe->msg;
-}
-
-char*
-monetdbe_get_table(monetdbe_database dbhdl, monetdbe_table** table, const char* schema_name, const char* table_name)
-{
-	monetdbe_database_internal *mdbe = (monetdbe_database_internal*)dbhdl;
-	mvc *m;
-	sql_schema *s;
-
-
-	if ((mdbe->msg = validate_database_handle(mdbe, "monetdbe.monetdbe_get_table")) != MAL_SUCCEED) {
-
-		return mdbe->msg;
-	}
-
-	if ((mdbe->msg = getSQLContext(mdbe->c, NULL, &m, NULL)) != NULL)
-		goto cleanup;
-	if ((mdbe->msg = SQLtrans(m)) != MAL_SUCCEED)
-		goto cleanup;
-	if (!table) {
-		mdbe->msg = createException(MAL, "monetdbe.monetdbe_get_table", "Parameter table is NULL");
-		goto cleanup;
-	}
-	if (schema_name) {
-		if (!(s = mvc_bind_schema(m, schema_name))) {
-			mdbe->msg = createException(MAL, "monetdbe.monetdbe_get_table", "Could not find schema %s", schema_name);
-			goto cleanup;
-		}
-	} else {
-		s = cur_schema(m);
-	}
-	if (!(*(sql_table**)table = mvc_bind_table(m, s, table_name))) {
-		mdbe->msg = createException(MAL, "monetdbe.monetdbe_get_table", "Could not find table %s", table_name);
-		goto cleanup;
-	}
-
-cleanup:
-	mdbe->msg = commit_action(m, mdbe, NULL, NULL);
 
 	return mdbe->msg;
 }
