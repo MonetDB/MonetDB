@@ -22,7 +22,7 @@ if (${LINUX_DISTRO} STREQUAL "debian")
 elseif (${LINUX_DISTRO} STREQUAL "ubuntu")
   if(${LINUX_DISTRO_VERSION} VERSION_GREATER_EQUAL "18")
     assert_package_detected(
-      detect FALSE
+      detect TRUE
       legacyvariable HAVE_UUID
       variablename HAVE_UUID_GENERATE)
   endif()
