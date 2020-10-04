@@ -37,7 +37,7 @@ extern sql_subtype *sql_find_numeric(sql_subtype *r, int localtype, unsigned int
 extern sql_subtype *sql_bind_subtype(sql_allocator *sa, const char *name, unsigned int digits, unsigned int scale);
 extern sql_subtype *sql_bind_localtype(const char *name);
 extern sql_subtype *sql_create_subtype(sql_allocator *sa, sql_type *t, unsigned int s, unsigned int d);
-extern void sql_init_subtype(sql_subtype *res, sql_type *t, unsigned int digits, unsigned int scale);
+sql_export void sql_init_subtype(sql_subtype *res, sql_type *t, unsigned int digits, unsigned int scale);
 
 extern int type_cmp(sql_type *t1, sql_type *t2);
 extern int subtype_cmp(sql_subtype *t1, sql_subtype *t2);
