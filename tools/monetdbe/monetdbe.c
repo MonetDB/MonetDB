@@ -867,7 +867,7 @@ monetdbe_result_cb(void* context, char* tblname, columnar_result* results, size_
 
 	BAT* order = BATdescriptor(results[0].id);
 
-	mvc_result_table(be, 0, nr_results, Q_TABLE, order);
+	mvc_result_table(be, 0, (int) nr_results, Q_TABLE, order);
 
 	for (unsigned  i = 0; i < nr_results; i++) {
 		BAT *b = NULL;
@@ -963,7 +963,7 @@ monetdbe_prepare_cb(void* context, char* tblname, columnar_result* results, size
 
 	prg				= newFunction(userRef, putName("temp"), FUNCTIONsymbol);
 
-	resizeMalBlk(prg->def, nparams + 3 /*function declaration + remote.exec + return statement*/);
+	resizeMalBlk(prg->def, (int) nparams + 3 /*function declaration + remote.exec + return statement*/);
 	mb = prg->def;
 
 	o = getInstrPtr(mb, 0);
