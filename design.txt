@@ -112,12 +112,14 @@ function user.%2():any;
     remote.exec("_monetdb_0":str, "sql":str, "eval":str, 0x7fffffffdba0:ptr, X_3:str, X_0:str);
     return :void;
 
-regression reference wih changeset 9bd9f8a868a0
-!ERROR:  Testing FAILED SIGNIFICANTLY (4 out of 2949 tests failed)
-
-  394 out of 2949 tests could not be executed
-    4 out of 2949 tests produced SIGNIFICANTLY different output
+hg identify 607e64e5685b
+!ERROR:  Testing FAILED SIGNIFICANTLY (7 out of 2949 tests failed)
+  225 out of 2949 tests could not be executed
+    7 out of 2949 tests produced SIGNIFICANTLY different output
+        geom/sql/functions/ST_IsSimple
         sql/test/BugTracker-2017/insert_self_ref_FK.Bug-6131
         sql/test/Triggers/trigger_action
         sql/test/Triggers/trigger_projection
         sql/test/mergetables/singlekeyconstraint
+        sql/test/wlcr/wlr70
+        sql/test/wlcr/wlr100

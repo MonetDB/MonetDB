@@ -626,7 +626,7 @@ _ASCIIadt_frStr(Column *c, int type, const char *s)
 		int slen;
 
 		s = c->data;
-		STRLength(&slen, (const str *) &s);
+		slen = str_utf8_length((str) s);
 		if (col->type.digits > 0 && len > 0 && slen > (int) col->type.digits) {
 			len = STRwidth(c->data);
 			if (len > (ssize_t) col->type.digits)
@@ -1245,46 +1245,49 @@ mvc_send_hge(stream *s, hge cnt){
 }
 #endif
 
-int
-convert2str(mvc *m, sql_class eclass, int d, int sc, int has_tz, ptr p, int mtype, char **buf, int len)
+ssize_t
+convert2str(mvc *m, sql_class eclass, int d, int sc, int has_tz, ptr p, int mtype, char **buf, size_t *len)
 {
-	size_t len2 = (size_t) len;
 	ssize_t l = 0;
 
 	if (!p || ATOMcmp(mtype, ATOMnilptr(mtype), p) == 0) {
 		(*buf)[0] = '\200';
 		(*buf)[1] = 0;
 	} else if (eclass == EC_DEC) {
-		l = dec_tostr((void *) (ptrdiff_t) sc, buf, &len2, mtype, p);
+		l = dec_tostr((void *) (ptrdiff_t) sc, buf, len, mtype, p);
 	} else if (eclass == EC_TIME || eclass == EC_TIME_TZ) {
 		struct time_res ts_res;
 		ts_res.has_tz = has_tz;
 		ts_res.fraction = d ? d - 1 : 0;
 		ts_res.timezone = m->timezone;
-		l = sql_time_tostr((void *) &ts_res, buf, &len2, mtype, p);
+		l = sql_time_tostr((void *) &ts_res, buf, len, mtype, p);
 	} else if (eclass == EC_TIMESTAMP || eclass == EC_TIMESTAMP_TZ) {
 		struct time_res ts_res;
 		ts_res.has_tz = has_tz;
 		ts_res.fraction = d ? d - 1 : 0;
 		ts_res.timezone = m->timezone;
-		l = sql_timestamp_tostr((void *) &ts_res, buf, &len2, mtype, p);
+		l = sql_timestamp_tostr((void *) &ts_res, buf, len, mtype, p);
 	} else if (eclass == EC_SEC) {
-		l = dec_tostr((void *) (ptrdiff_t) 3, buf, &len2, mtype, p);
+		l = dec_tostr((void *) (ptrdiff_t) 3, buf, len, mtype, p);
 	} else if (eclass == EC_BIT) {
 		bit b = *(bit *) p;
-		if (len <= 0 || len > 5) {
-			if (b)
+		if (*len == 0 || *len > 5) {
+			if (b) {
 				strcpy(*buf, "true");
-			else
+				l = 4;
+			} else {
 				strcpy(*buf, "false");
+				l = 5;
+			}
 		} else {
 			(*buf)[0] = b?'t':'f';
 			(*buf)[1] = 0;
+			l = 1;
 		}
 	} else {
-		l = (*BATatoms[mtype].atomToStr) (buf, &len2, p, false);
+		l = (*BATatoms[mtype].atomToStr) (buf, len, p, false);
 	}
-	return (int) l;
+	return l;
 }
 
 static int

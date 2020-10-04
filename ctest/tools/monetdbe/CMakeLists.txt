@@ -61,12 +61,14 @@ target_link_libraries(example_append_raw
     monetdbe)
 add_test(run_example_append_raw example_append_raw)
 
+if(NOT WIN32)
 add_executable(example_backup example_backup.c)
 target_link_libraries(example_backup
   PRIVATE
     monetdb_config_header
     monetdbe)
 add_test(run_example_backup example_backup)
+endif()
 
 add_executable(example_connections example_connections.c)
 target_link_libraries(example_connections
