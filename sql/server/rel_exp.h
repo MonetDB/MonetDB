@@ -43,7 +43,7 @@ extern sql_exp *exp_compare_func(mvc *sql, sql_exp *le, sql_exp *re, const char 
 #define exp_fromtype(e)	((list*)e->r)->h->data
 #define exp_totype(e)	((list*)e->r)->h->next->data
 extern sql_exp *exp_convert(sql_allocator *sa, sql_exp *exp, sql_subtype *fromtype, sql_subtype *totype );
-extern str number2name(str s, int len, int i);
+sql_export str number2name(str s, int len, int i);
 sql_export sql_exp *exp_op(sql_allocator *sa, list *l, sql_subfunc *f );
 extern sql_exp *exp_rank_op(sql_allocator *sa, list *largs, list *gbe, list *obe, sql_subfunc *f );
 
