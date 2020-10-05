@@ -95,7 +95,13 @@ terminateProcess(dpair dp, mtype type)
 	/* ok, once we get here, we'll be shutting down the server */
 	Mfprintf(stdout, "sending process %lld (database '%s') the "
 			 "TERM signal\n", (long long int)dp->pid, dp->dbname);
-	kill(dp->pid, SIGTERM);
+	if (kill(dp->pid, SIGTERM) < 0) {
+		/* barf */
+		Mfprintf(stderr, "cannot send TERM signal to process (database '%s')\n",
+				 dp->dbname);
+		msab_freeStatus(&stats);
+		return false;
+	}
 	kv = findConfKey(_mero_props, "exittimeout");
 	for (i = 0; i < atoi(kv->val) * 2; i++) {
 		if (stats != NULL)
