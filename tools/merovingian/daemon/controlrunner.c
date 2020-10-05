@@ -351,6 +351,7 @@ static void ctl_handle_client(
 			{
 				mtype mtype = 0;
 				pid_t pid = 0;
+				bool terminated = false;
 
 				// First look for something started by ourself.
 				pthread_mutex_lock(&_mero_topdp_lock);
@@ -408,18 +409,27 @@ static void ctl_handle_client(
 					/* then kill it */
 					if (dp)
 						pthread_mutex_lock(&dp->fork_lock);
-					terminateProcess(q, pid, mtype);
+					terminated = terminateProcess(q, pid, mtype);
 					if (dp)
 						pthread_mutex_unlock(&dp->fork_lock);
 					Mfprintf(_mero_ctlout, "%s: stopped "
 							"database '%s'\n", origin, q);
 				} else {
-					kill(pid, SIGKILL);
+					terminated = kill(pid, SIGKILL) == 0;
 					Mfprintf(_mero_ctlout, "%s: killed "
 							"database '%s'\n", origin, q);
 				}
-				len = snprintf(buf2, sizeof(buf2), "OK\n");
-				send_client("=");
+				if (terminated) {
+					len = snprintf(buf2, sizeof(buf2), "OK\n");
+					send_client("=");
+				} else {
+					Mfprintf(_mero_ctlerr, "%s: received stop signal for "
+							"non running database: %s\n", origin, q);
+					len = snprintf(buf2, sizeof(buf2),
+							"database is not running: %s\n", q);
+					send_client("!");
+					break;
+				}
 			} else if (strcmp(p, "create") == 0 ||
 					strncmp(p, "create password=", strlen("create password=")) == 0) {
 				err e;

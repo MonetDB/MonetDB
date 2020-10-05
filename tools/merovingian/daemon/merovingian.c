@@ -314,7 +314,7 @@ doTerminateProcess(void *p)
 {
 	dpair dp = p;
 	pthread_mutex_lock(&dp->fork_lock);
-	terminateProcess(dp->dbname, dp->pid, dp->type);
+	(void) terminateProcess(dp->dbname, dp->pid, dp->type);
 	pthread_mutex_unlock(&dp->fork_lock);
 	return NULL;
 }
