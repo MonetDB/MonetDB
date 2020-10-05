@@ -561,20 +561,20 @@ ALGleftjoin1(bat *r1, const bat *lid, const bat *rid, const bat *slid, const bat
 
 static str
 ALGouterjoin(bat *r1, bat *r2, const bat *lid, const bat *rid, const bat *slid, const bat *srid,
-				const bit *nil_matches, const lng *estimate)
+			 const bit *nil_matches, const bit *match_one, const lng *estimate)
 {
 	return do_join(r1, r2, lid, rid, NULL, slid, srid, 0, NULL, NULL,
-				   false, false, false, false, nil_matches, NULL, NULL, estimate,
-				   BATouterjoin, NULL, NULL, NULL, NULL, NULL, NULL, "algebra.outerjoin");
+				   false, false, false, false, nil_matches, NULL, match_one, estimate,
+				   NULL, BATouterjoin, NULL, NULL, NULL, NULL, NULL, "algebra.outerjoin");
 }
 
 static str
 ALGouterjoin1(bat *r1, const bat *lid, const bat *rid, const bat *slid, const bat *srid,
-				const bit *nil_matches, const lng *estimate)
+			  const bit *nil_matches, const bit *match_one, const lng *estimate)
 {
 	return do_join(r1, NULL, lid, rid, NULL, slid, srid, 0, NULL, NULL,
-				   false, false, false, false, nil_matches, NULL, NULL, estimate,
-				   BATouterjoin, NULL, NULL, NULL, NULL, NULL, NULL, "algebra.outerjoin");
+				   false, false, false, false, nil_matches, NULL, match_one, estimate,
+				   NULL, BATouterjoin, NULL, NULL, NULL, NULL, NULL, "algebra.outerjoin");
 }
 
 static str
@@ -1494,12 +1494,12 @@ mel_func algebra_init_funcs[] = {
  command("algebra", "leftjoin", ALGleftjoin1, false, "Left join with candidate lists; only produce left output", args(1,7, batarg("",oid),batargany("l",1),batargany("r",1),batarg("sl",cnd),batarg("sr",cnd),arg("nil_matches",bit),arg("estimate",lng))),
  command("algebra", "leftjoin", ALGleftjoin1, false, "Left join with candidate lists; only produce left output", args(1,7, batarg("",oid),batarg("l",msk),batargany("r",1),batarg("sl",cnd),batarg("sr",cnd),arg("nil_matches",bit),arg("estimate",lng))),
  command("algebra", "leftjoin", ALGleftjoin1, false, "Left join with candidate lists; only produce left output", args(1,7, batarg("",oid),batargany("l",1),batarg("r",msk),batarg("sl",cnd),batarg("sr",cnd),arg("nil_matches",bit),arg("estimate",lng))),
- command("algebra", "outerjoin", ALGouterjoin, false, "Left outer join with candidate lists", args(2,8, batarg("",oid),batarg("",oid),batargany("l",1),batargany("r",1),batarg("sl",cnd),batarg("sr",cnd),arg("nil_matches",bit),arg("estimate",lng))),
- command("algebra", "outerjoin", ALGouterjoin, false, "Left outer join with candidate lists", args(2,8, batarg("",oid),batarg("",oid),batarg("l",msk),batargany("r",1),batarg("sl",cnd),batarg("sr",cnd),arg("nil_matches",bit),arg("estimate",lng))),
- command("algebra", "outerjoin", ALGouterjoin, false, "Left outer join with candidate lists", args(2,8, batarg("",oid),batarg("",oid),batargany("l",1),batarg("r",msk),batarg("sl",cnd),batarg("sr",cnd),arg("nil_matches",bit),arg("estimate",lng))),
- command("algebra", "outerjoin", ALGouterjoin1, false, "Left outer join with candidate lists; only produce left output", args(1,7,batarg("",oid),batargany("l",1),batargany("r",1),batarg("sl",cnd),batarg("sr",cnd),arg("nil_matches",bit),arg("estimate",lng))),
- command("algebra", "outerjoin", ALGouterjoin1, false, "Left outer join with candidate lists; only produce left output", args(1,7,batarg("",oid),batarg("l",msk),batargany("r",1),batarg("sl",cnd),batarg("sr",cnd),arg("nil_matches",bit),arg("estimate",lng))),
- command("algebra", "outerjoin", ALGouterjoin1, false, "Left outer join with candidate lists; only produce left output", args(1,7,batarg("",oid),batargany("l",1),batarg("r",msk),batarg("sl",cnd),batarg("sr",cnd),arg("nil_matches",bit),arg("estimate",lng))),
+ command("algebra", "outerjoin", ALGouterjoin, false, "Left outer join with candidate lists", args(2,9, batarg("",oid),batarg("",oid),batargany("l",1),batargany("r",1),batarg("sl",cnd),batarg("sr",cnd),arg("nil_matches",bit),arg("match_one",bit),arg("estimate",lng))),
+ command("algebra", "outerjoin", ALGouterjoin, false, "Left outer join with candidate lists", args(2,9, batarg("",oid),batarg("",oid),batarg("l",msk),batargany("r",1),batarg("sl",cnd),batarg("sr",cnd),arg("nil_matches",bit),arg("match_one",bit),arg("estimate",lng))),
+ command("algebra", "outerjoin", ALGouterjoin, false, "Left outer join with candidate lists", args(2,9, batarg("",oid),batarg("",oid),batargany("l",1),batarg("r",msk),batarg("sl",cnd),batarg("sr",cnd),arg("nil_matches",bit),arg("match_one",bit),arg("estimate",lng))),
+ command("algebra", "outerjoin", ALGouterjoin1, false, "Left outer join with candidate lists; only produce left output", args(1,8,batarg("",oid),batargany("l",1),batargany("r",1),batarg("sl",cnd),batarg("sr",cnd),arg("nil_matches",bit),arg("match_one",bit),arg("estimate",lng))),
+ command("algebra", "outerjoin", ALGouterjoin1, false, "Left outer join with candidate lists; only produce left output", args(1,8,batarg("",oid),batarg("l",msk),batargany("r",1),batarg("sl",cnd),batarg("sr",cnd),arg("nil_matches",bit),arg("match_one",bit),arg("estimate",lng))),
+ command("algebra", "outerjoin", ALGouterjoin1, false, "Left outer join with candidate lists; only produce left output", args(1,8,batarg("",oid),batargany("l",1),batarg("r",msk),batarg("sl",cnd),batarg("sr",cnd),arg("nil_matches",bit),arg("match_one",bit),arg("estimate",lng))),
  command("algebra", "semijoin", ALGsemijoin, false, "Semi join with candidate lists", args(2,9, batarg("",oid),batarg("",oid),batargany("l",1),batargany("r",1),batarg("sl",cnd),batarg("sr",cnd),arg("nil_matches",bit),arg("max_one",bit),arg("estimate",lng))),
  command("algebra", "semijoin", ALGsemijoin, false, "Semi join with candidate lists", args(2,9, batarg("",oid),batarg("",oid),batarg("l",msk),batargany("r",1),batarg("sl",cnd),batarg("sr",cnd),arg("nil_matches",bit),arg("max_one",bit),arg("estimate",lng))),
  command("algebra", "semijoin", ALGsemijoin, false, "Semi join with candidate lists", args(2,9, batarg("",oid),batarg("",oid),batargany("l",1),batarg("r",msk),batarg("sl",cnd),batarg("sr",cnd),arg("nil_matches",bit),arg("max_one",bit),arg("estimate",lng))),
