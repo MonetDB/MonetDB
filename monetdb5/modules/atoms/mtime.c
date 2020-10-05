@@ -496,6 +496,8 @@ func2(MTIMEdate_submonths, MTIMEdate_submonths_bulk, "date_submonths", date, int
 func2(MTIMEdate_addmonths, MTIMEdate_addmonths_bulk, "date_addmonths", date, int, date, date_addmonths, func2_except, \
 	  DEC_VAR_R, DEC_VAR_R, DEC_VAR_R, DEC_VAR_R, DEC_VAR_R, INIT_VAR, INIT_VAR, INIT_VAR, GET_NEXT_VAR, GET_NEXT_VAR, APPEND_VAR)
 
+#define date_to_msec_since_epoch(t) is_date_nil(t) ? lng_nil : (timestamp_diff(timestamp_create(t, daytime_create(0, 0, 0, 0)), unixepoch) / 1000)
+#define daytime_to_msec_since_epoch(t) daytime_diff(t, daytime_create(0, 0, 0, 0))
 func1(MTIMEdate_extract_century, MTIMEdate_extract_century_bulk, "date_century", date, int, date_century, COPYFLAGS, func1_noexcept, \
 	  DEC_VAR_R, DEC_VAR_R, INIT_VAR, INIT_VAR, GET_NEXT_VAR)
 func1(MTIMEdate_extract_decade, MTIMEdate_extract_decade_bulk, "date_decade", date, int, date_decade, COPYFLAGS, func1_noexcept, \
@@ -514,11 +516,15 @@ func1(MTIMEdate_extract_weekofyear, MTIMEdate_extract_weekofyear_bulk, "date_wee
 	  DEC_VAR_R, DEC_VAR_R, INIT_VAR, INIT_VAR, GET_NEXT_VAR)
 func1(MTIMEdate_extract_dayofweek, MTIMEdate_extract_dayofweek_bulk, "date_dayofweek", date, int, date_dayofweek, SETFLAGS, func1_noexcept, \
 	  DEC_VAR_R, DEC_VAR_R, INIT_VAR, INIT_VAR, GET_NEXT_VAR)
+func1(MTIMEdate_extract_epoch_ms, MTIMEdate_extract_epoch_ms_bulk, "epoch_ms", date, lng, date_to_msec_since_epoch, COPYFLAGS, func1_noexcept, \
+	  DEC_VAR_R, DEC_VAR_R, INIT_VAR, INIT_VAR, GET_NEXT_VAR)
 func1(MTIMEdaytime_extract_hours, MTIMEdaytime_extract_hours_bulk, "daytime_hour", daytime, int, daytime_hour, COPYFLAGS, func1_noexcept, \
 	  DEC_VAR_R, DEC_VAR_R, INIT_VAR, INIT_VAR, GET_NEXT_VAR)
 func1(MTIMEdaytime_extract_minutes, MTIMEdaytime_extract_minutes_bulk, "daytime_minutes", daytime, int, daytime_min, SETFLAGS, func1_noexcept, \
 	  DEC_VAR_R, DEC_VAR_R, INIT_VAR, INIT_VAR, GET_NEXT_VAR)
 func1(MTIMEdaytime_extract_sql_seconds, MTIMEdaytime_extract_sql_seconds_bulk, "daytime_seconds", daytime, int, daytime_sec_usec, SETFLAGS, func1_noexcept, \
+	  DEC_VAR_R, DEC_VAR_R, INIT_VAR, INIT_VAR, GET_NEXT_VAR)
+func1(MTIMEdaytime_extract_epoch_ms, MTIMEdaytime_extract_epoch_ms_bulk, "epoch_ms", daytime, lng, daytime_to_msec_since_epoch, COPYFLAGS, func1_noexcept, \
 	  DEC_VAR_R, DEC_VAR_R, INIT_VAR, INIT_VAR, GET_NEXT_VAR)
 
 static inline lng
@@ -559,6 +565,7 @@ timestamp_century(const timestamp t)
 #define timestamp_hours(t) daytime_hour(timestamp_daytime(t))
 #define timestamp_minutes(t) daytime_min(timestamp_daytime(t))
 #define timestamp_extract_usecond(ts)	daytime_sec_usec(timestamp_daytime(ts))
+#define timestamp_to_msec_since_epoch(t) is_timestamp_nil(t) ? lng_nil : (timestamp_diff(t, unixepoch) / 1000)
 func1(MTIMEtimestamp_century, MTIMEtimestamp_century_bulk, "timestamp_century", timestamp, int, timestamp_century, COPYFLAGS, func1_noexcept, \
 	  DEC_VAR_R, DEC_VAR_R, INIT_VAR, INIT_VAR, GET_NEXT_VAR)
 func1(MTIMEtimestamp_decade, MTIMEtimestamp_decade_bulk, "timestamp_decade", timestamp, int, timestamp_decade, COPYFLAGS, func1_noexcept, \
@@ -577,6 +584,8 @@ func1(MTIMEtimestamp_minutes, MTIMEtimestamp_minutes_bulk, "timestamp_minutes", 
 	  DEC_VAR_R, DEC_VAR_R, INIT_VAR, INIT_VAR, GET_NEXT_VAR)
 func1(MTIMEtimestamp_sql_seconds, MTIMEtimestamp_sql_seconds_bulk, "sql_seconds", timestamp, int, timestamp_extract_usecond, SETFLAGS, func1_noexcept, \
 	  DEC_VAR_R, DEC_VAR_R, INIT_VAR, INIT_VAR, GET_NEXT_VAR)
+func1(MTIMEtimestamp_extract_epoch_ms, MTIMEtimestamp_extract_epoch_ms_bulk, "epoch_ms", timestamp, lng, timestamp_to_msec_since_epoch, COPYFLAGS, func1_noexcept, \
+	  DEC_VAR_R, DEC_VAR_R, INIT_VAR, INIT_VAR, GET_NEXT_VAR)
 
 #define sql_year(m) is_int_nil(m) ? int_nil : m / 12
 #define sql_month(m) is_int_nil(m) ? int_nil : m % 12
@@ -584,6 +593,7 @@ func1(MTIMEtimestamp_sql_seconds, MTIMEtimestamp_sql_seconds_bulk, "sql_seconds"
 #define sql_hours(m) is_lng_nil(m) ? int_nil : (int) ((m % (24*60*60*1000)) / (60*60*1000))
 #define sql_minutes(m) is_lng_nil(m) ? int_nil : (int) ((m % (60*60*1000)) / (60*1000))
 #define sql_seconds(m) is_lng_nil(m) ? int_nil : (int) ((m % (60*1000)) / 1000)
+#define msec_since_epoch(ts)	ts
 func1(MTIMEsql_year, MTIMEsql_year_bulk, "sql_year", int, int, sql_year, COPYFLAGS, func1_noexcept, \
 	  DEC_VAR_R, DEC_VAR_R, INIT_VAR, INIT_VAR, GET_NEXT_VAR)
 func1(MTIMEsql_month, MTIMEsql_month_bulk, "sql_month", int, int, sql_month, SETFLAGS, func1_noexcept, \
@@ -595,6 +605,8 @@ func1(MTIMEsql_hours, MTIMEsql_hours_bulk, "sql_hours", lng, int, sql_hours, SET
 func1(MTIMEsql_minutes, MTIMEsql_minutes_bulk, "sql_minutes", lng, int, sql_minutes, SETFLAGS, func1_noexcept, \
 	  DEC_VAR_R, DEC_VAR_R, INIT_VAR, INIT_VAR, GET_NEXT_VAR)
 func1(MTIMEsql_seconds, MTIMEsql_seconds_bulk, "sql_seconds", lng, int, sql_seconds, SETFLAGS, func1_noexcept, \
+	  DEC_VAR_R, DEC_VAR_R, INIT_VAR, INIT_VAR, GET_NEXT_VAR)
+func1(MTIMEmsec_extract_epoch_ms, MTIMEmsec_extract_epoch_ms_bulk, "msepoch", lng, lng, msec_since_epoch, COPYFLAGS, func1_noexcept, \
 	  DEC_VAR_R, DEC_VAR_R, INIT_VAR, INIT_VAR, GET_NEXT_VAR)
 
 static inline str
@@ -983,12 +995,16 @@ static mel_func mtime_init_funcs[] = {
  command("batmtime", "month", MTIMEdate_extract_month_bulk, false, "", args(1,2, batarg("",int),batarg("d",date))),
  command("mtime", "day", MTIMEdate_extract_day, false, "extracts day from date ", args(1,2, arg("",int),arg("d",date))),
  command("batmtime", "day", MTIMEdate_extract_day_bulk, false, "", args(1,2, batarg("",int),batarg("d",date))),
+ command("mtime", "epoch_ms", MTIMEdate_extract_epoch_ms, false, "", args(1,2, arg("",lng),arg("d",date))),
+ command("batmtime", "epoch_ms", MTIMEdate_extract_epoch_ms_bulk, false, "", args(1,2, batarg("",lng),batarg("d",date))),
  command("mtime", "hours", MTIMEdaytime_extract_hours, false, "extracts hour from daytime", args(1,2, arg("",int),arg("h",daytime))),
  command("batmtime", "hours", MTIMEdaytime_extract_hours_bulk, false, "", args(1,2, batarg("",int),batarg("d",daytime))),
  command("mtime", "minutes", MTIMEdaytime_extract_minutes, false, "extracts minutes from daytime", args(1,2, arg("",int),arg("d",daytime))),
  command("batmtime", "minutes", MTIMEdaytime_extract_minutes_bulk, false, "", args(1,2, batarg("",int),batarg("d",daytime))),
  command("mtime", "sql_seconds", MTIMEdaytime_extract_sql_seconds, false, "extracts seconds (with fractional milliseconds) from daytime", args(1,2, arg("",int),arg("d",daytime))),
  command("batmtime", "sql_seconds", MTIMEdaytime_extract_sql_seconds_bulk, false, "", args(1,2, batarg("",int),batarg("d",daytime))),
+ command("mtime", "epoch_ms", MTIMEdaytime_extract_epoch_ms, false, "", args(1,2, arg("",lng),arg("d",daytime))),
+ command("batmtime", "epoch_ms", MTIMEdaytime_extract_epoch_ms_bulk, false, "", args(1,2, batarg("",lng),batarg("d",daytime))),
  command("mtime", "addmonths", MTIMEdate_addmonths, false, "returns the date after a number of\nmonths (possibly negative).", args(1,3, arg("",date),arg("value",date),arg("months",int))),
  command("batmtime", "addmonths", MTIMEdate_addmonths_bulk, false, "", args(1,3, batarg("",date),batarg("value",date),batarg("months",int))),
  command("batmtime", "addmonths", MTIMEdate_addmonths_bulk_p1, false, "", args(1,3, batarg("",date),arg("value",date),batarg("months",int))),
@@ -1052,6 +1068,8 @@ static mel_func mtime_init_funcs[] = {
  command("batmtime", "minutes", MTIMEtimestamp_minutes_bulk, false, "", args(1,2, batarg("",int),batarg("t",timestamp))),
  command("mtime", "sql_seconds", MTIMEtimestamp_sql_seconds, false, "", args(1,2, arg("",int),arg("t",timestamp))),
  command("batmtime", "sql_seconds", MTIMEtimestamp_sql_seconds_bulk, false, "", args(1,2, batarg("",int),batarg("d",timestamp))),
+ command("mtime", "epoch_ms", MTIMEtimestamp_extract_epoch_ms, false, "", args(1,2, arg("",lng),arg("t",timestamp))),
+ command("batmtime", "epoch_ms", MTIMEtimestamp_extract_epoch_ms_bulk, false, "", args(1,2, batarg("",lng),batarg("t",timestamp))),
  command("mtime", "year", MTIMEsql_year, false, "", args(1,2, arg("",int),arg("months",int))),
  command("batmtime", "year", MTIMEsql_year_bulk, false, "", args(1,2, batarg("",int),batarg("months",int))),
  command("mtime", "month", MTIMEsql_month, false, "", args(1,2, arg("",int),arg("months",int))),
@@ -1064,6 +1082,8 @@ static mel_func mtime_init_funcs[] = {
  command("batmtime", "minutes", MTIMEsql_minutes_bulk, false, "", args(1,2, batarg("",int),batarg("msecs",lng))),
  command("mtime", "seconds", MTIMEsql_seconds, false, "", args(1,2, arg("",int),arg("msecs",lng))),
  command("batmtime", "seconds", MTIMEsql_seconds_bulk, false, "", args(1,2, batarg("",int),batarg("msecs",lng))),
+ command("mtime", "epoch_ms", MTIMEmsec_extract_epoch_ms, false, "", args(1,2, arg("",lng),arg("msecs",lng))),
+ command("batmtime", "epoch_ms", MTIMEmsec_extract_epoch_ms_bulk, false, "", args(1,2, batarg("",lng),batarg("msecs",lng))),
  command("calc", "date", MTIMEdate_fromstr, false, "", args(1,2, arg("",date),arg("s",str))),
  command("calc", "date", MTIMEdate_date, false, "", args(1,2, arg("",date),arg("d",date))),
  command("calc", "date", MTIMEtimestamp_extract_date, false, "", args(1,2, arg("",date),arg("t",timestamp))),
