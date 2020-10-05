@@ -24,3 +24,4 @@ round.Bug-6955
 log.Bug-6960
 table-udf-column-descriptor.Bug-6964
 table-udf-distinct.Bug-6965
+integers-intervals.Bug-6979
