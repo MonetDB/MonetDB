@@ -93,6 +93,7 @@ INSERT INTO sys.keywords (keyword) VALUES
   ('ELSEIF'),
   ('ENCRYPTED'),
   ('END'),
+  ('EPOCH'),
   ('ESCAPE'),
   ('EVERY'),
   ('EXCEPT'),
