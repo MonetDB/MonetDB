@@ -17,10 +17,16 @@ echo " -d|--dry-run                       dry run"
 echo
 }
 
+
 src=
 dst=
 dry_run=
 overwrite=
+srvpid=
+
+mapi_port=$((30000 + RANDOM%10))
+db=sqllogictest
+dbpath="/tmp/sqllogictest"
 
 for arg in "$@"
 do
@@ -46,6 +52,30 @@ do
             ;;
     esac
 done
+
+start_mserver5() {
+    mserver5 --debug=10 --set gdk_nr_threads=0 --set mapi_listenaddr=all \
+        --set mapi_port=$mapi_port --forcemito --dbpath=$dbpath > /dev/null 2>&1 &
+    srvpid=$!
+    local i
+    for ((i = 0; i < 100; i++)); do
+    if [[ -f ${dbpath}/.started ]]; then
+        echo "mserver5 started port=$mapi_port pid=$srvpid"
+        break
+    fi
+    sleep 1
+    done
+    if ((i == 100)); then
+        kill -KILL ${srvpid}
+        exit 1
+    fi
+}
+
+stop_mserver5() {
+    echo "killing mserver5 ...";
+    kill -TERM  $srvpid;
+    wait $srvpid
+}
 
 files=()
 if [[ -d "${src}" ]];then
@@ -94,17 +124,23 @@ work() {
         if [[ -e $dst ]];then
             if [[ "$overwrite" = "true" ]];then
                 echo ">>> overwriting $dst ...";
-                cat $f | mktest.py --database "test" > $dst;
+                cat $f | mktest.py --database $db --port $mapi_port > $dst;
             else
                 echo "$dst already exists!"
             fi    
         else
             echo ">>> converting $f ...";
-            cat $f | mktest.py --database "test" > $dst;
+            cat $f | mktest.py --database $db --port $mapi_port > $dst;
         fi
     fi
 }
 
+if [[ -d $dbpath ]];then
+    rm -rf $dbpath;
+    mkdir -p $dbpath;
+fi
+
+start_mserver5
 for f in $files;do
     ext=$(echo "${f#*.}");
     if [[ $ext == "sql.in" ]];then
@@ -117,6 +153,8 @@ for f in $files;do
         work $f $dst/$bn.test;
     fi
 done;
+stop_mserver5
+rm -rf $dbpath
 
 if [[ -e ${src}/All ]];then
     [[ ${src} -ef ${dst} ]] || cp ${src}/All $dst;
