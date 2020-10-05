@@ -298,7 +298,7 @@ SQLset_protocol(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		return createException(SQL, "sql.set_protocol", "unknown protocol: %d", protocol);
 	}
 
-	*getArgReference_int(stk, pci, 0) = (cntxt->protocol = protocol);
+	*getArgReference_int(stk, pci, 0) = (cntxt->protocol = (protocol_version) protocol);
 
 	return MAL_SUCCEED;
 }
