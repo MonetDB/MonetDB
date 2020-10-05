@@ -2480,6 +2480,7 @@ sql_update_oct2020(Client c, mvc *sql, const char *prev_schema, bool *systabfixe
 					"ALTER TABLE sys.keywords SET READ WRITE;\n"
 					"insert into sys.keywords values ('EPOCH');\n");
 
+			pos += snprintf(buf + pos, bufsize - pos, "commit;\n");
 			pos += snprintf(buf + pos, bufsize - pos, "set schema \"%s\";\n", prev_schema);
 
 			assert(pos < bufsize);
