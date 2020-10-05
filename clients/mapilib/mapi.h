@@ -105,9 +105,13 @@ mapi_export bool mapi_get_trace(Mapi mid)
 	__attribute__((__nonnull__(1)));
 mapi_export bool mapi_get_autocommit(Mapi mid)
 	__attribute__((__nonnull__(1)));
+mapi_export bool mapi_get_columnar_protocol(Mapi mid)
+	__attribute__((__nonnull__(1)));
 mapi_export MapiMsg mapi_log(Mapi mid, const char *nme)
 	__attribute__((__nonnull__(1)));
 mapi_export MapiMsg mapi_setAutocommit(Mapi mid, bool autocommit)
+	__attribute__((__nonnull__(1)));
+mapi_export MapiMsg mapi_set_columnar_protocol(Mapi mid, bool columnar_protocol)
 	__attribute__((__nonnull__(1)));
 mapi_export MapiMsg mapi_set_size_header(Mapi mid, bool value)
 	__attribute__((__nonnull__(1)));
