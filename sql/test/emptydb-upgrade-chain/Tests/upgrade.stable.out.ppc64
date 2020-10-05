@@ -3785,6 +3785,14 @@ update sys.functions set system = true where system <> true and name in ('median
 create function sys.generate_series(first timestamp, "limit" timestamp, stepsize interval day) returns table (value timestamp)
  external name generator.series;
 update sys.functions set system = true where system <> true and name in ('generate_series') and schema_id = (select id from sys.schemas where name = 'sys') and type = 5;
+ALTER TABLE sys.keywords SET READ WRITE;
+insert into sys.keywords values ('EPOCH');
+commit;
+set schema "sys";
+
+Running database upgrade commands:
+set schema "sys";
+ALTER TABLE sys.keywords SET READ ONLY;
 set schema "sys";
 
 Running database upgrade commands:
