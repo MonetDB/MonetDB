@@ -317,6 +317,8 @@ datetime_field(itype f)
 		return "dayofweek";
 	case idoy:
 		return "dayofyear";
+	case iepoch:
+		return "epoch_ms";
 	}
 }
 
