@@ -355,6 +355,7 @@ static void ctl_handle_client(
 				dp = _mero_topdp->next; /* don't need the console/log */
 				while (dp != NULL) {
 					if (dp->type == MERODB && strcmp(dp->dbname, q) == 0) {
+						bool terminated = false;
 						if (dp->pid <= 0) {
 							dp = NULL;
 							/* unlock happens below */
@@ -374,24 +375,28 @@ static void ctl_handle_client(
 							} else if (stats != NULL)
 								msab_freeStatus(&stats);
 							pthread_mutex_lock(&dp->fork_lock);
-							terminateProcess(dp, type);
+							terminated = terminateProcess(dp, type);
 							pthread_mutex_unlock(&dp->fork_lock);
 							Mfprintf(_mero_ctlout, "%s: stopped "
 									"database '%s'\n", origin, q);
 						} else {
-							kill(dp->pid, SIGKILL);
-							pthread_mutex_unlock(&_mero_topdp_lock);
+							terminated = kill(dp->pid, SIGKILL) == 0;
 							Mfprintf(_mero_ctlout, "%s: killed "
 									"database '%s'\n", origin, q);
 						}
-						len = snprintf(buf2, sizeof(buf2), "OK\n");
-						send_client("=");
+						if (terminated) {
+							len = snprintf(buf2, sizeof(buf2), "OK\n");
+							send_client("=");
+						} else {
+							dp = NULL; /* message generated below */
+						}
 						break;
 					} else if (dp->type == MEROFUN && strcmp(dp->dbname, q) == 0) {
 						/* multiplexDestroy needs topdp lock to remove itself */
 						char *dbname = strdup(dp->dbname);
 						pthread_mutex_unlock(&_mero_topdp_lock);
 						multiplexDestroy(dbname);
+						pthread_mutex_lock(&_mero_topdp_lock);
 						free(dbname);
 						len = snprintf(buf2, sizeof(buf2), "OK\n");
 						send_client("=");
@@ -400,8 +405,8 @@ static void ctl_handle_client(
 
 					dp = dp->next;
 				}
+				pthread_mutex_unlock(&_mero_topdp_lock);
 				if (dp == NULL) {
-					pthread_mutex_unlock(&_mero_topdp_lock);
 					Mfprintf(_mero_ctlerr, "%s: received stop signal for "
 							"non running database: %s\n", origin, q);
 					len = snprintf(buf2, sizeof(buf2),
