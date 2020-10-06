@@ -1,0 +1,164 @@
+statement error
+create function my_abs(v int) returns int
+begin
+	if v < 0 then
+		return -v
+
+statement error
+	else
+		return v
+
+statement error
+	end if
+
+statement error
+end
+
+statement error
+create function my_abs1(v int) returns int
+begin
+	if v < 0 then
+		return -v
+
+statement error
+	end if
+
+statement error
+	return v
+
+statement error
+end
+
+statement error
+select my_abs(-1)
+
+statement error
+select my_abs(1)
+
+statement error
+select my_abs1(1)
+
+statement error
+create function my_while(v int) returns int
+begin
+	while v > 0 do
+		set v = v - 10
+
+statement error
+	end while
+
+statement error
+	return v
+
+statement error
+end
+
+statement error
+select my_while(105)
+
+statement error
+create function my_declare(v int) returns int
+begin
+	declare x int
+
+statement error
+	set x = v
+
+statement error
+	return x
+
+statement error
+end
+
+statement error
+select my_declare(105)
+
+statement error
+create function my_complex_declare(v int) returns int
+begin
+	declare x, y, z int
+
+statement error
+	declare a int, b, c varchar(10)
+
+statement error
+	set x = v
+
+statement error
+	return x
+
+statement error
+end
+
+statement error
+select my_complex_declare(1)
+
+statement error
+create function my_case(v int) returns int
+begin
+	case v
+	when 1 then return 100
+
+statement error
+	when 2 then return 200
+
+statement error
+	else return -1
+
+statement error
+	end case
+
+statement error
+end
+
+statement error
+select my_case(1)
+
+statement error
+select my_case(2)
+
+statement error
+select my_case(3)
+
+statement error
+create function my_searchcase(v int) returns int
+begin
+	case
+	when v=1 then return 100
+
+statement error
+	when v=2 then return 200
+
+statement error
+	else return -1
+
+statement error
+	end case
+
+statement error
+end
+
+statement error
+select my_searchcase(1)
+
+statement error
+select my_searchcase(2)
+
+statement error
+select my_searchcase(3)
+
+statement ok
+CREATE FUNCTION fWedgeV3(x1 float,y1 float, z1 float, x2 float, y2 float, z2 float)
+RETURNS TABLE (x float, y float, z float)
+     RETURN TABLE(SELECT
+        (y1*z2 - y2*z1) as x,
+        (x2*z1 - x1*z2) as y,
+        (x1*y2 - x2*y1) as z)
+
+query RRR rowsort
+select * from fWedgeV3(cast (1.0 as float), cast (1.0 as float), cast (1.0 as float), cast (1.0 as float), cast (1.0 as float), cast (1.0 as float)) fla
+----
+0.000
+0.000
+0.000
+

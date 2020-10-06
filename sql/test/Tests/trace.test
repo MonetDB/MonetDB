@@ -1,0 +1,34 @@
+statement ok
+set optimizer='sequential_pipe'
+
+statement ok
+CREATE TABLE mytypes (id integer, systemname varchar(256))
+
+statement ok
+INSERT INTO mytypes VALUES (0, 'void'),(1,'bat'),(2,'ptr'),(3,'bit'),(4,'str'),(5,'str'),(6,'str'),(7,'oid'),(8,'bte'),(9,'sht'),
+(10,'int'),(11,'lng'),(13,'bte'),(14,'sht'),(15,'int'),(16,'lng'),(18,'flt'),(19,'dbl'),
+(20,'int'),(21,'lng'),(22,'daytime'),(23,'daytime'),(24,'date'),(25,'timestamp'),(26,'timestamp'),(27,'blob')
+
+query T rowsort
+select '~BeginVariableOutput~'
+----
+~BeginVariableOutput~
+
+query IT rowsort
+TRACE SELECT count(*) FROM mytypes
+----
+10 values hashing to 9b2ce248fc9e174620cc02833a05368e
+
+query T rowsort
+select '~EndVariableOutput~'
+----
+~EndVariableOutput~
+
+query I rowsort
+SELECT COUNT(*) FROM tracelog()
+----
+5
+
+statement ok
+DROP TABLE mytypes
+

@@ -1,0 +1,61 @@
+statement ok
+CREATE TABLE testing (ab INT)
+
+statement ok
+INSERT INTO testing VALUES (1)
+
+statement ok
+TRUNCATE testing
+
+statement ok
+CREATE TABLE testing2 (abc INT)
+
+statement ok
+CREATE TRIGGER nanani2 AFTER TRUNCATE ON testing FOR EACH STATEMENT BEGIN ATOMIC INSERT INTO testing2 VALUES (1); END
+
+statement ok
+INSERT INTO testing VALUES (2), (3)
+
+statement ok
+TRUNCATE testing
+
+query I rowsort
+SELECT COUNT(*) FROM testing2
+----
+1
+
+statement ok
+DROP TRIGGER nanani2
+
+statement ok
+TRUNCATE testing2
+
+statement ok
+CREATE TRIGGER nanani2 AFTER DELETE ON testing FOR EACH STATEMENT BEGIN ATOMIC INSERT INTO testing2 VALUES (2); END
+
+statement ok
+INSERT INTO testing VALUES (4)
+
+statement ok
+TRUNCATE testing
+
+statement ok
+INSERT INTO testing VALUES (5)
+
+statement ok
+DELETE FROM testing
+
+query I rowsort
+SELECT COUNT(*) FROM testing2
+----
+1
+
+statement ok
+DROP TRIGGER nanani2
+
+statement ok
+DROP TABLE testing
+
+statement ok
+DROP TABLE testing2
+

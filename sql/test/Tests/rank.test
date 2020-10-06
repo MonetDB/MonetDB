@@ -1,0 +1,103 @@
+statement ok
+create table ranktest ( id int, k string)
+
+statement ok
+COPY 27 RECORDS INTO ranktest FROM stdin USING DELIMITERS '|',E'\n'
+
+statement error
+1061|varchar
+1061|int
+1061|varchar
+1061|varchar
+1061|int
+1061|int
+1061|varchar
+1061|varchar
+1061|boolean
+1061|boolean
+1061|int
+1061|varchar
+1061|char
+1062|int
+1062|char
+1062|char
+1062|int
+1062|smallint
+1062|boolean
+1062|smallint
+1061|int
+1061|varchar
+1061|int
+1061|varchar
+1061|int
+1061|int
+1061|smallint
+select count(*) from ranktest
+
+query I rowsort
+select ROW_NUMBER() over () as foo from ranktest order by foo
+----
+
+query II rowsort
+select ROW_NUMBER() over (PARTITION BY id) as foo, id from ranktest order by foo, id
+----
+
+query II rowsort
+select ROW_NUMBER() over (PARTITION BY id ORDER BY id) as foo, id from ranktest order by foo, id
+----
+
+query II rowsort
+select ROW_NUMBER() over (ORDER BY id) as foo, id from ranktest order by foo, id
+----
+
+query I rowsort
+select RANK() over () as foo from ranktest order by foo
+----
+
+query II rowsort
+select RANK() over (PARTITION BY id) as foo, id from ranktest order by foo, id
+----
+
+query II rowsort
+select RANK() over (PARTITION BY id ORDER BY id) as foo, id from ranktest order by foo, id
+----
+
+query II rowsort
+select RANK() over (ORDER BY id) as foo, id from ranktest order by foo, id
+----
+
+query IIT rowsort
+select RANK() over () as foo, id, k from ranktest order by foo, id, k
+----
+
+query IIT rowsort
+select RANK() over (PARTITION BY id) as foo, id, k from ranktest order by foo, id, k
+----
+
+query IIT rowsort
+select RANK() over (PARTITION BY id ORDER BY id, k) as foo, id, k from ranktest order by foo, id, k
+----
+
+query IIT rowsort
+select RANK() over (ORDER BY id, k) as foo, id, k from ranktest order by foo, id, k
+----
+
+query IIT rowsort
+select DENSE_RANK() over () as foo, id, k from ranktest order by k, foo, id
+----
+
+query IIT rowsort
+select DENSE_RANK() over (PARTITION BY id) as foo, id, k from ranktest order by k, foo, id
+----
+
+query IIT rowsort
+select DENSE_RANK() over (PARTITION BY id ORDER BY id, k) as foo, id, k from ranktest order by k, foo, id
+----
+
+query IIT rowsort
+select DENSE_RANK() over (ORDER BY id, k) as foo, id, k from ranktest order by k, foo, id
+----
+
+statement ok
+drop table ranktest
+

@@ -1,0 +1,6 @@
+statement ok
+drop view example_view
+
+statement ok
+drop table example
+

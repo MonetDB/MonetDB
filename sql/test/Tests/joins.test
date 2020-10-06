@@ -1,0 +1,44 @@
+statement ok
+START TRANSACTION
+
+statement ok
+create table T_1 ( c_1 int )
+
+statement ok
+create table T_2 ( c_2 int )
+
+statement ok
+insert into T_1 values ( 1 )
+
+statement ok
+insert into T_1 values ( 2 )
+
+statement ok
+insert into T_2 values ( 1 )
+
+statement ok
+insert into T_2 values ( 2 )
+
+query II rowsort
+select * from T_1, T_2 where c_1 = c_2
+----
+1
+1
+2
+2
+
+query II rowsort
+select * from T_1, T_2 where c_1 = 1 and c_2 = 2
+----
+1
+2
+
+statement ok
+drop table T_1
+
+statement ok
+drop table T_2
+
+statement ok
+commit
+

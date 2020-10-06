@@ -1,0 +1,13 @@
+query ITR rowsort
+select * from example order by val1, val2
+----
+15 values hashing to f34c301e90e99b940877b2196f9a011d
+
+statement ok
+update example set val3=-1.0 where val1 >= 5
+
+query ITR rowsort
+select * from example order by val1, val2
+----
+15 values hashing to e7c24938520caa2c244f3f461d33039c
+

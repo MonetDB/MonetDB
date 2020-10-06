@@ -1,0 +1,48 @@
+statement ok
+start transaction
+
+statement ok
+create table copyouttest ( str VARCHAR(20), str2 VARCHAR(20))
+
+statement ok
+insert into copyouttest values ('', 'test')
+
+statement ok
+insert into copyouttest values ('test', '')
+
+statement ok
+insert into copyouttest values ('','')
+
+statement ok
+insert into copyouttest values (' Test ','')
+
+query TT rowsort
+select * from copyouttest
+----
+ Test 
+(empty)
+(empty)
+(empty)
+(empty)
+test
+test
+(empty)
+
+statement error
+copy select * from copyouttest into E'$QTSTTRGDIR/x.dat' delimiters '[]', E'\n'
+
+statement error
+drop table copyouttest
+
+statement error
+create table copyintest ( str VARCHAR(20), str2 VARCHAR(20))
+
+statement error
+copy into copyintest from E'$QTSTTRGDIR/x.dat' delimiters '[]', E'\n', '"'
+
+statement error
+select * from copyintest
+
+statement ok
+rollback
+

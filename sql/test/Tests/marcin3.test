@@ -1,0 +1,41 @@
+statement ok
+start transaction
+
+statement ok
+create table nutki(id int,val int)
+
+statement ok
+insert into nutki values(1,1)
+
+statement ok
+insert into nutki values(1,2)
+
+statement ok
+insert into nutki values(3,4)
+
+statement ok
+insert into nutki values(3,3)
+
+statement ok
+commit
+
+query II rowsort
+select id, cast(sum(val) as bigint) AS valsum from nutki group by id having sum(val)>1
+----
+1
+3
+3
+7
+
+statement error
+select id, cast(sum(val) as bigint) AS valsum from nutki group by id having val>1
+
+statement error
+select id, cast(sum(val) as bigint) AS valsum from nutki group by id having val>2
+
+statement error
+select id, cast(sum(val) as bigint) AS valsum from nutki group by id having valsum>3
+
+statement ok
+drop table nutki
+

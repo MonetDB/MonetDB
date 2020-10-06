@@ -1,0 +1,7 @@
+statement error
+\dn
+COMMENT ON SCHEMA schema_b IS 'set by user_a'
+
+statement ok
+COMMENT ON SCHEMA schema_a IS 'set by user_a'
+

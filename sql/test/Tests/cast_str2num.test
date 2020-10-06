@@ -1,0 +1,157 @@
+statement ok
+start transaction
+
+statement ok
+create table T ( I int, F float ) 
+
+statement ok
+insert into T values ( 1, 0.1 )
+
+statement ok
+insert into T values ( 2, 0.2 )
+
+statement ok
+insert into T values ( 3, 0.3 )
+
+query IR rowsort
+select * from T where I <  2
+----
+1
+0.100
+
+query IR rowsort
+select * from T where I <  '2'
+----
+1
+0.100
+
+query IR rowsort
+select * from T where F <  0.2
+----
+1
+0.100
+
+query IR rowsort
+select * from T where F <  '0.2'
+----
+1
+0.100
+
+query IR rowsort
+select * from T where I <= 2
+----
+1
+0.100
+2
+0.200
+
+query IR rowsort
+select * from T where I <= '2'
+----
+1
+0.100
+2
+0.200
+
+query IR rowsort
+select * from T where F <= 0.2
+----
+1
+0.100
+2
+0.200
+
+query IR rowsort
+select * from T where F <= '0.2'
+----
+1
+0.100
+2
+0.200
+
+query IR rowsort
+select * from T where I  = 2
+----
+2
+0.200
+
+query IR rowsort
+select * from T where I  = '2'
+----
+2
+0.200
+
+query IR rowsort
+select * from T where F  = 0.2
+----
+2
+0.200
+
+query IR rowsort
+select * from T where F  = '0.2'
+----
+2
+0.200
+
+query IR rowsort
+select * from T where I >= 2
+----
+2
+0.200
+3
+0.300
+
+query IR rowsort
+select * from T where I >= '2'
+----
+2
+0.200
+3
+0.300
+
+query IR rowsort
+select * from T where F >= 0.2
+----
+2
+0.200
+3
+0.300
+
+query IR rowsort
+select * from T where F >= '0.2'
+----
+2
+0.200
+3
+0.300
+
+query IR rowsort
+select * from T where I >  2
+----
+3
+0.300
+
+query IR rowsort
+select * from T where I >  '2'
+----
+3
+0.300
+
+query IR rowsort
+select * from T where F >  0.2
+----
+3
+0.300
+
+query IR rowsort
+select * from T where F >  '0.2'
+----
+3
+0.300
+
+statement ok
+drop table T
+
+statement ok
+commit
+

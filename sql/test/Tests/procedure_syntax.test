@@ -1,0 +1,144 @@
+statement ok
+create table t1 (id int)
+
+statement error
+create PROCEDURE p1()
+BEGIN
+	declare id int
+
+statement error
+	set id = 0
+
+statement error
+END
+
+statement error
+create PROCEDURE p1(id int)
+BEGIN
+	insert into t1 values(id)
+
+statement error
+END
+
+statement error
+create PROCEDURE p2(id int)
+BEGIN
+	set id = 0
+
+statement error
+END
+
+statement error
+create PROCEDURE p3(id int, name varchar(1024))
+BEGIN
+	declare id2 int
+
+statement error
+	set id2 = 0
+
+statement error
+END
+
+query T rowsort
+select name from functions where name = 'p1' or name = 'p2' or name = 'p3'
+----
+
+statement error
+DROP PROCEDURE p1
+
+query T rowsort
+select name from functions where name = 'p1' or name = 'p2' or name = 'p3'
+----
+
+statement error
+DROP PROCEDURE p1()
+
+query T rowsort
+select name from functions where name = 'p1' or name = 'p2' or name = 'p3'
+----
+
+statement error
+DROP PROCEDURE p2 (int, varchar(1024))
+
+query T rowsort
+select name from functions where name = 'p1' or name = 'p2' or name = 'p3'
+----
+
+statement error
+DROP PROCEDURE p2 (int)
+
+query T rowsort
+select name from functions where name = 'p1' or name = 'p2' or name = 'p3'
+----
+
+statement error
+DROP PROCEDURE p3 (int, varchar(1024))
+
+query T rowsort
+select name from functions where name = 'p1' or name = 'p2' or name = 'p3'
+----
+
+statement error
+create PROCEDURE p1()
+BEGIN
+	declare id int
+
+statement error
+	set id = 1
+
+statement error
+	call p1(1)
+
+statement error
+END
+
+statement error
+call p1()
+
+query I rowsort
+select * from t1
+----
+
+statement ok
+DROP table t1
+
+statement error
+DROP ALL PROCEDURE p1
+
+statement error
+DROP ALL PROCEDURE p1 CASCADE
+
+statement error
+DROP table t1
+
+query T rowsort
+select name from functions where name = 'p1' or name = 'f1'
+----
+
+statement error
+create PROCEDURE p1()
+BEGIN
+	declare id int
+
+statement error
+	set id = 0
+
+statement error
+END
+
+statement error
+DROP FUNCTION p1
+
+statement error
+DROP FUNCTION p1 ()
+
+statement error
+DROP ALL FUNCTION p1
+
+query T rowsort
+select name from functions where name = 'p1' or name = 'p2' or name = 'p3'
+----
+
+statement error
+DROP PROCEDURE p1
+

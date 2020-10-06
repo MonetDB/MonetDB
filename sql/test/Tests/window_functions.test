@@ -1,0 +1,335 @@
+statement ok
+START TRANSACTION
+
+statement ok
+CREATE TABLE employee (
+  id             DECIMAL                           PRIMARY KEY,
+  emp_name       VARCHAR(20)                       NOT NULL,
+  dep_name       VARCHAR(20)                       NOT NULL,
+  salary         DECIMAL(7,2)                      NOT NULL,
+  age            DECIMAL(3,0)                      NOT NULL,
+  CONSTRAINT empoyee_uk UNIQUE (emp_name, dep_name)
+)
+
+statement ok
+INSERT INTO employee VALUES ( 1,  'Matthew', 'Management',  4500, 55)
+
+statement ok
+INSERT INTO employee VALUES ( 2,  'Olivia',  'Management',  4400, 61)
+
+statement ok
+INSERT INTO employee VALUES ( 3,  'Grace',   'Management',  4000, 42)
+
+statement ok
+INSERT INTO employee VALUES ( 4,  'Jim',     'Production',  3700, 35)
+
+statement ok
+INSERT INTO employee VALUES ( 5,  'Alice',   'Production',  3500, 24)
+
+statement ok
+INSERT INTO employee VALUES ( 6,  'Michael', 'Production',  3600, 28)
+
+statement ok
+INSERT INTO employee VALUES ( 7,  'Tom',     'Production',  3800, 35)
+
+statement ok
+INSERT INTO employee VALUES ( 8,  'Kevin',   'Production',  4000, 52)
+
+statement ok
+INSERT INTO employee VALUES ( 9,  'Elvis',   'Service',     4100, 40)
+
+statement ok
+INSERT INTO employee VALUES (10,  'Sophia',  'Sales',       4300, 36)
+
+statement ok
+INSERT INTO employee VALUES (11,  'Samantha','Sales',       4100, 38)
+
+statement ok
+COMMIT WORK
+
+query RTTRR rowsort
+SELECT * FROM employee order by 1
+----
+55 values hashing to 644fc47c5750f1d6f2169e6262ff5467
+
+query RTTRRIRR rowsort
+SELECT id,
+       emp_name,
+       dep_name,
+       FIRST_VALUE(id) OVER (PARTITION BY dep_name ORDER BY id) AS frame_first_row,
+       LAST_VALUE(id)  OVER (PARTITION BY dep_name ORDER BY id) AS frame_last_row,
+       COUNT(*)        OVER (PARTITION BY dep_name ORDER BY id) AS frame_count,
+       LAG(id)         OVER (PARTITION BY dep_name ORDER BY id) AS prev_row,
+       LEAD(id)        OVER (PARTITION BY dep_name ORDER BY id) AS next_row
+FROM   employee
+----
+88 values hashing to aa682c462d5ed9fd78fc959b18d7e4a4
+
+query RTTITT rowsort
+SELECT id,
+       emp_name,
+       dep_name,
+       ROW_NUMBER()           OVER (PARTITION BY dep_name ORDER BY id) AS row_number_in_frame,
+       NTH_VALUE(emp_name, 2) OVER (PARTITION BY dep_name ORDER BY id) AS second_row_in_frame,
+       LEAD(emp_name, 2)      OVER (PARTITION BY dep_name ORDER BY id) AS two_rows_ahead
+FROM   employee
+----
+66 values hashing to 9f79b0c62dbc4700d24113a7edac55a5
+
+query RTRRR rowsort
+SELECT id, dep_name, salary,
+       cast(SUM(salary)  OVER  (PARTITION BY dep_name ORDER BY salary
+                           ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW) as DECIMAL(7,2)) as growing_sum,
+       cast(SUM(salary)  OVER  (PARTITION BY dep_name ORDER BY salary
+                           ROWS BETWEEN 2 PRECEDING AND CURRENT ROW) as DECIMAL(7,2)) AS sum_over_1or2or3_rows
+FROM   employee
+----
+55 values hashing to 110da0cfc0ae1af2d8fa7ae712a1e5f4
+
+query RTRR rowsort
+SELECT id, dep_name, salary,
+       cast(SUM(salary)  OVER  (PARTITION BY dep_name ORDER BY salary
+                           GROUPS BETWEEN 1 PRECEDING AND 1 FOLLOWING) as DECIMAL(7,2)) AS sum_over_groups
+FROM   employee
+----
+44 values hashing to 89bd1cd2a9ca668cfca11292503bf45e
+
+query RTRR rowsort
+SELECT id, dep_name, salary,
+       cast(SUM(salary)  OVER  (PARTITION BY dep_name ORDER BY salary
+                           RANGE BETWEEN 100.0 PRECEDING AND 50.0 FOLLOWING) as DECIMAL(7,2)) AS sum_over_range
+FROM   employee
+----
+44 values hashing to 1f9dacabf6f6f64c766fba0bc857ad66
+
+statement ok
+DROP TABLE employee
+
+statement ok
+/*
+    Duration – Duration of trip
+    Start Date – Includes start date and time
+    End Date – Includes end date and time
+    Start Station – Includes starting station name and number
+    End Station – Includes ending station name and number
+    Bike Number – Includes ID number of bike used for the trip
+    Member Type – Indicates whether user was a "registered" member (Annual Member, 30-Day Member or Day Key Member) or a "casual" rider (Single Trip, 24-Hour Pass, 3-Day Pass or 5-Day Pass)
+*/
+CREATE SCHEMA tutorial
+
+statement ok
+CREATE TABLE tutorial.dc_bikeshare_q1_2012 (duration_seconds int, start_time timestamp, end_time timestamp, start_terminal varchar(100), end_terminal varchar(100), bike_id_nr int, member_type varchar(16))
+
+statement ok
+INSERT INTO tutorial.dc_bikeshare_q1_2012 VALUES (155, '2012-01-05 12:30:10', '2012-01-05 12:21:05', 'DIEMEN', 'AMS', 1025, 'registered')
+
+statement ok
+INSERT INTO tutorial.dc_bikeshare_q1_2012 VALUES (165, '2012-01-05 12:30:10', '2012-01-05 12:21:15', 'DIEMEN', 'AMS', 2025, 'casual')
+
+statement ok
+INSERT INTO tutorial.dc_bikeshare_q1_2012 VALUES (155, '2012-01-06 16:30:10', '2012-01-06 18:21:05', 'DIEMEN', 'AMS', 1025, 'registered')
+
+statement ok
+INSERT INTO tutorial.dc_bikeshare_q1_2012 VALUES (165, '2012-01-06 16:30:10', '2012-01-06 18:21:15', 'DIEMEN', 'AMS', 2025, 'casual')
+
+statement ok
+INSERT INTO tutorial.dc_bikeshare_q1_2012 VALUES (55, '2012-01-07 10:30:10', '2012-01-07 10:31:05', 'AMS', 'AMS', 1025, 'registered')
+
+statement ok
+INSERT INTO tutorial.dc_bikeshare_q1_2012 VALUES (65, '2012-01-07 10:30:10', '2012-01-07 10:31:15', 'AMS', 'AMS', 2025, 'casual')
+
+query ITTTTIT rowsort
+SELECT * FROM tutorial.dc_bikeshare_q1_2012
+----
+42 values hashing to 0eb8024a1a44d1baaa1d4cf6d9a4f1eb
+
+query II rowsort
+SELECT duration_seconds,
+       cast(SUM(duration_seconds) OVER (ORDER BY start_time) as int) AS running_total
+  FROM tutorial.dc_bikeshare_q1_2012
+----
+12 values hashing to 2ffa1d3b56e8fd9292d0e305c27626e3
+
+query TII rowsort
+SELECT start_terminal,
+       duration_seconds,
+       cast(SUM(duration_seconds) OVER
+         (PARTITION BY start_terminal ORDER BY start_time) as int)
+         AS running_total
+  FROM tutorial.dc_bikeshare_q1_2012
+ WHERE start_time < '2012-01-08'
+----
+18 values hashing to a26fe6d06f2eddb5131c74cd0a0b35a1
+
+query TII rowsort
+SELECT start_terminal,
+       duration_seconds,
+       cast(SUM(duration_seconds) OVER
+         (PARTITION BY start_terminal) as int) AS start_terminal_total
+  FROM tutorial.dc_bikeshare_q1_2012
+ WHERE start_time < '2012-01-08'
+----
+18 values hashing to 5d0e05b87c892638a21d46aec6022c74
+
+query TIIIR rowsort
+SELECT start_terminal,
+       duration_seconds,
+       cast(SUM(duration_seconds) OVER
+         (PARTITION BY start_terminal) as int) AS running_total,
+       COUNT(duration_seconds) OVER
+         (PARTITION BY start_terminal) AS running_count,
+       AVG(duration_seconds) OVER
+         (PARTITION BY start_terminal) AS running_avg
+  FROM tutorial.dc_bikeshare_q1_2012
+ WHERE start_time < '2012-01-08'
+----
+30 values hashing to b49ef2ca3731b75f29263433d006c19a
+
+query TIIIR rowsort
+SELECT start_terminal,
+       duration_seconds,
+       cast(SUM(duration_seconds) OVER
+         (PARTITION BY start_terminal ORDER BY start_time) as int)
+         AS running_total,
+       COUNT(duration_seconds) OVER
+         (PARTITION BY start_terminal ORDER BY start_time)
+         AS running_count,
+       AVG(duration_seconds) OVER
+         (PARTITION BY start_terminal ORDER BY start_time)
+         AS running_avg
+  FROM tutorial.dc_bikeshare_q1_2012
+ WHERE start_time < '2012-01-08'
+----
+30 values hashing to 9119f7c163b6ab7b5ea95155ed980ab7
+
+query TTII rowsort
+SELECT start_terminal,
+       start_time,
+       duration_seconds,
+       ROW_NUMBER() OVER (ORDER BY start_time)
+                    AS row_number
+  FROM tutorial.dc_bikeshare_q1_2012
+ WHERE start_time < '2012-01-08'
+----
+24 values hashing to 8e26f0492a7ce9f09d42b998fcb8676b
+
+query TTII rowsort
+SELECT start_terminal,
+       start_time,
+       duration_seconds,
+       ROW_NUMBER() OVER (PARTITION BY start_terminal
+                          ORDER BY start_time)
+                    AS row_number
+  FROM tutorial.dc_bikeshare_q1_2012
+ WHERE start_time < '2012-01-08'
+----
+24 values hashing to 9c0ab68d80f16a57dbc1783faf56e1e2
+
+query TII rowsort
+SELECT start_terminal,
+       duration_seconds,
+       RANK() OVER (PARTITION BY start_terminal
+                    ORDER BY start_time)
+              AS rank
+  FROM tutorial.dc_bikeshare_q1_2012
+ WHERE start_time < '2012-01-08'
+----
+18 values hashing to d16e40bd01fcb0388a0ecf91b371d273
+
+query TIIII rowsort
+SELECT start_terminal,
+       duration_seconds,
+       NTILE(4) OVER
+         (PARTITION BY start_terminal ORDER BY duration_seconds)
+          AS quartile,
+       NTILE(5) OVER
+         (PARTITION BY start_terminal ORDER BY duration_seconds)
+         AS quintile,
+       NTILE(100) OVER
+         (PARTITION BY start_terminal ORDER BY duration_seconds)
+         AS percentile
+  FROM tutorial.dc_bikeshare_q1_2012
+ WHERE start_time < '2012-01-08'
+ ORDER BY start_terminal, duration_seconds
+----
+30 values hashing to 1ec969252074a69a13f4fce281403aba
+
+query TIII rowsort
+SELECT start_terminal,
+       duration_seconds,
+       LAG(duration_seconds, 1) OVER
+         (PARTITION BY start_terminal ORDER BY duration_seconds) AS lag,
+       LEAD(duration_seconds, 1) OVER
+         (PARTITION BY start_terminal ORDER BY duration_seconds) AS lead
+  FROM tutorial.dc_bikeshare_q1_2012
+ WHERE start_time < '2012-01-08'
+ ORDER BY start_terminal, duration_seconds
+----
+24 values hashing to 4d0c4754cf9166fe90ce833758f64d68
+
+query TII rowsort
+SELECT start_terminal,
+       duration_seconds,
+       duration_seconds -LAG(duration_seconds, 1) OVER
+         (PARTITION BY start_terminal ORDER BY duration_seconds)
+         AS difference
+  FROM tutorial.dc_bikeshare_q1_2012
+ WHERE start_time < '2012-01-08'
+ ORDER BY start_terminal, duration_seconds
+----
+18 values hashing to ca3342488606cb3998a583b104ea422e
+
+query TII rowsort
+SELECT *
+  FROM (
+    SELECT start_terminal,
+           duration_seconds,
+           duration_seconds -LAG(duration_seconds, 1) OVER
+             (PARTITION BY start_terminal ORDER BY duration_seconds)
+             AS difference
+      FROM tutorial.dc_bikeshare_q1_2012
+     WHERE start_time < '2012-01-08'
+     ORDER BY start_terminal, duration_seconds
+       ) sub
+ WHERE sub.difference IS NOT NULL
+----
+12 values hashing to b96c67ebe3d9238c7df3d69eb3608a5d
+
+query TIIII rowsort
+SELECT start_terminal,
+       duration_seconds,
+       NTILE(4) OVER
+         (PARTITION BY start_terminal ORDER BY duration_seconds)
+         AS quartile,
+       NTILE(5) OVER
+         (PARTITION BY start_terminal ORDER BY duration_seconds)
+         AS quintile,
+       NTILE(100) OVER
+         (PARTITION BY start_terminal ORDER BY duration_seconds)
+         AS percentile
+  FROM tutorial.dc_bikeshare_q1_2012
+ WHERE start_time < '2012-01-08'
+ ORDER BY start_terminal, duration_seconds
+----
+30 values hashing to 1ec969252074a69a13f4fce281403aba
+
+query TIIII rowsort
+SELECT start_terminal,
+       duration_seconds,
+       NTILE(4) OVER ntile_window AS quartile,
+       NTILE(5) OVER ntile_window AS quintile,
+       NTILE(100) OVER ntile_window AS percentile
+  FROM tutorial.dc_bikeshare_q1_2012
+WINDOW ntile_window AS
+         (PARTITION BY start_terminal ORDER BY duration_seconds)
+ WHERE start_time < '2012-01-08'
+ ORDER BY start_terminal, duration_seconds
+----
+30 values hashing to 1ec969252074a69a13f4fce281403aba
+
+statement ok
+DROP TABLE tutorial.dc_bikeshare_q1_2012
+
+statement ok
+DROP SCHEMA tutorial
+

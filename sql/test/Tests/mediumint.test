@@ -1,0 +1,24 @@
+statement ok
+create table meditbl(medi MEDIUMINT)
+
+statement error
+\d meditbl
+select name, type, type_digits, type_scale, number from sys.columns where name = 'medi' and table_id in (select id from sys.tables where name = 'meditbl')
+
+statement ok
+INsert into meditbl values (0), (1), (-1), (32767), (-32767), (8388607), (-8388607), (2147483647), (-2147483647), (NULL)
+
+statement error
+INsert into meditbl values (2147483648)
+
+statement error
+INsert into meditbl values (-2147483648)
+
+query I rowsort
+select * from meditbl order by 1
+----
+10 values hashing to 2279c6a550c0e990d3c3668d8fc9bcfb
+
+statement ok
+drop table meditbl
+

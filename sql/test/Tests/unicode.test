@@ -1,0 +1,39 @@
+statement ok
+start transaction
+
+statement ok
+create table unicodetest (
+  U&"&015D" UESCAPE '&' varchar(4)
+)
+
+statement ok
+insert into unicodetest (U&"\015D") values (U&'&+01F525&+01F692&+01F6F1&+01F9EF' UESCAPE '&')
+
+statement ok
+insert into unicodetest (U&"&015D" UESCAPE '&') values (U&'&+01F525' '&+01F692' '&+01F6F1' '&+01F9EF' UESCAPE '&')
+
+statement ok
+insert into unicodetest (U&"\015D" UESCAPE R'\') values (U&'\+01F525\+01F692\+01F6F1\+01F9EF')
+
+statement ok
+insert into unicodetest (U&"\015D" UESCAPE E'\\') values (U&'\23ba\23bb\23bc\23bd')
+
+statement ok
+insert into unicodetest values (U&'\23ba' '\23bb' '\23bc' '\23bd' UESCAPE r'\')
+
+statement ok
+insert into unicodetest values (U&'%23ba%23bb%23bc%23bd' UESCAPE '%')
+
+query T rowsort
+select * from unicodetest
+----
+@@@@
+@@@@
+@@@@
+@@@@
+@@@@
+@@@@
+
+statement ok
+rollback
+

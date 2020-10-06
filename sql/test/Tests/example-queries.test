@@ -1,0 +1,21 @@
+statement error
+insert into example values( 1, 'test', 0.1 )
+
+statement error
+insert into example values( 5, 'xtest', 0.9 )
+
+statement error
+insert into example values( 9, 'testx', 9.1 )
+
+statement error
+insert into example values( 0, 'texst', 99999.1 )
+
+statement error
+insert into example values( 8, 'texxst', 0.0001 )
+
+statement error
+select * from example order by val1, val2
+
+statement error
+select * from example_view order by val1, val2
+
