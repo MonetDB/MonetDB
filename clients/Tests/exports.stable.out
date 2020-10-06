@@ -952,6 +952,7 @@ int QLOGisset(void);
 str QLOGissetFcn(int *ret);
 str QOToptimize(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 QueryQueue QRYqueue;
+str RMTdisconnect(void *ret, str *conn);
 str SERVERbindBAT(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 str SERVERclient(void *res, const Stream *In, const Stream *Out);
 str SERVERconnect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc);
