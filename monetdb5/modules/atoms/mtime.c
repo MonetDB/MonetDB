@@ -167,13 +167,13 @@ NAME##_bulk(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)	\
 	INIT_OUTPUT(dst, bn);												\
 	if (ci.tpe == cand_dense) {											\
 		for (BUN i = 0; i < n; i++) { 									\
-			oid p = (BUN) (canditer_next_dense(&ci) - off);				\
+			oid p = (canditer_next_dense(&ci) - off);					\
 			FUNC_CALL(FUNC, dst[i], GET_NEXT_SRC(src1, p))				\
 			nils |= is_##OUTTYPE##_nil(dst[i]);							\
 		}																\
 	} else {															\
 		for (BUN i = 0; i < n; i++) { 									\
-			oid p = (BUN) (canditer_next(&ci) - off);					\
+			oid p = (canditer_next(&ci) - off);							\
 			FUNC_CALL(FUNC, dst[i], GET_NEXT_SRC(src1, p))				\
 			nils |= is_##OUTTYPE##_nil(dst[i]);							\
 		}																\
@@ -274,16 +274,16 @@ NAME##_bulk(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)	\
 	INIT_OUTPUT(dst, bn);												\
 	if (ci1.tpe == cand_dense && ci2.tpe == cand_dense) {				\
 		for (BUN i = 0; i < n; i++) { 									\
-			oid p1 = (BUN) (canditer_next_dense(&ci1) - off1);			\
-			oid p2 = (BUN) (canditer_next_dense(&ci2) - off2);			\
+			oid p1 = (canditer_next_dense(&ci1) - off1);				\
+			oid p2 = (canditer_next_dense(&ci2) - off2);				\
 			FUNC_CALL(FUNC, res, GET_NEXT_SRC1(src1, p1), GET_NEXT_SRC2(src2, p2))	\
 			APPEND_NEXT(MALFUNC); 										\
 			nils |= is_##OUTTYPE##_nil(res);							\
 		}																\
 	} else {															\
 		for (BUN i = 0; i < n; i++) { 									\
-			oid p1 = (BUN) (canditer_next(&ci1) - off1);				\
-			oid p2 = (BUN) (canditer_next(&ci2) - off2);				\
+			oid p1 = (canditer_next(&ci1) - off1);						\
+			oid p2 = (canditer_next(&ci2) - off2);						\
 			FUNC_CALL(FUNC, res, GET_NEXT_SRC1(src1, p1), GET_NEXT_SRC2(src2, p2))	\
 			APPEND_NEXT(MALFUNC); 										\
 			nils |= is_##OUTTYPE##_nil(res);							\
@@ -351,14 +351,14 @@ NAME##_bulk_p1(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)	\
 	INIT_OUTPUT(dst, bn);												\
 	if (ci2.tpe == cand_dense) {										\
 		for (BUN i = 0; i < n; i++) { 									\
-			oid p2 = (BUN) (canditer_next_dense(&ci2) - off2);			\
+			oid p2 = (canditer_next_dense(&ci2) - off2);				\
 			FUNC_CALL(FUNC, res, *src1, GET_NEXT_SRC2(src2, p2))		\
 			APPEND_NEXT(MALFUNC); 										\
 			nils |= is_##OUTTYPE##_nil(res);							\
 		}																\
 	} else {															\
 		for (BUN i = 0; i < n; i++) { 									\
-			oid p2 = (BUN) (canditer_next(&ci2) - off2);				\
+			oid p2 = (canditer_next(&ci2) - off2);						\
 			FUNC_CALL(FUNC, res, *src1, GET_NEXT_SRC2(src2, p2))		\
 			APPEND_NEXT(MALFUNC); 										\
 			nils |= is_##OUTTYPE##_nil(res);							\
@@ -422,14 +422,14 @@ NAME##_bulk_p2(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)	\
 	INIT_OUTPUT(dst, bn);												\
 	if (ci1.tpe == cand_dense) {										\
 		for (BUN i = 0; i < n; i++) { 									\
-			oid p1 = (BUN) (canditer_next_dense(&ci1) - off1);			\
+			oid p1 = (canditer_next_dense(&ci1) - off1);				\
 			FUNC_CALL(FUNC, res, GET_NEXT_SRC1(src1, p1), *src2)		\
 			APPEND_NEXT(MALFUNC); 										\
 			nils |= is_##OUTTYPE##_nil(res);							\
 		}																\
 	} else {															\
 		for (BUN i = 0; i < n; i++) { 									\
-			oid p1 = (BUN) (canditer_next(&ci1) - off1);				\
+			oid p1 = (canditer_next(&ci1) - off1);						\
 			FUNC_CALL(FUNC, res, GET_NEXT_SRC1(src1, p1), *src2)		\
 			APPEND_NEXT(MALFUNC); 										\
 			nils |= is_##OUTTYPE##_nil(res);							\

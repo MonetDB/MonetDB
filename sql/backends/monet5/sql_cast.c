@@ -69,7 +69,7 @@ batstr_2_blob(bat *res, const bat *bid, const bat *sid)
 
 	if (ci.tpe == cand_dense) {
 		for (BUN i = 0; i < q; i++) {
-			BUN p = (BUN) (canditer_next_dense(&ci) - off);
+			oid p = (canditer_next_dense(&ci) - off);
 			str v = (str) BUNtvar(bi, p);
 
 			if ((msg = str_2_blob_imp(&r, &rlen, v)))
@@ -82,7 +82,7 @@ batstr_2_blob(bat *res, const bat *bid, const bat *sid)
 		}
 	} else {
 		for (BUN i = 0; i < q; i++) {
-			BUN p = (BUN) (canditer_next(&ci) - off);
+			oid p = (canditer_next(&ci) - off);
 			str v = (str) BUNtvar(bi, p);
 
 			if ((msg = str_2_blob_imp(&r, &rlen, v)))
@@ -266,7 +266,7 @@ SQLbatstr_cast(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (ci.tpe == cand_dense) {
 		if (from_str) { /* string to string */
 			for (BUN i = 0; i < q; i++) {
-				BUN p = (BUN) (canditer_next_dense(&ci) - off);
+				oid p = (canditer_next_dense(&ci) - off);
 				str v = (str) BUNtail(bi, p);
 
 				if (strNil(v)) {
@@ -286,7 +286,7 @@ SQLbatstr_cast(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			}
 		} else { /* any other type to string */
 			for (BUN i = 0; i < q; i++) {
-				BUN p = (BUN) (canditer_next_dense(&ci) - off);
+				oid p = (canditer_next_dense(&ci) - off);
 				ptr v = BUNtail(bi, p);
 
 				if ((msg = SQLstr_cast_any_type(&r, &rlen, m, eclass, d1, s1, has_tz, v, tpe, digits)) != MAL_SUCCEED)
@@ -301,7 +301,7 @@ SQLbatstr_cast(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	} else {
 		if (from_str) { /* string to string */
 			for (BUN i = 0; i < q; i++) {
-				BUN p = (BUN) (canditer_next(&ci) - off);
+				oid p = (canditer_next(&ci) - off);
 				str v = (str) BUNtail(bi, p);
 
 				if (strNil(v)) {
@@ -321,7 +321,7 @@ SQLbatstr_cast(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			}
 		} else { /* any other type to string */
 			for (BUN i = 0; i < q; i++) {
-				BUN p = (BUN) (canditer_next(&ci) - off);
+				oid p = (canditer_next(&ci) - off);
 				ptr v = BUNtail(bi, p);
 
 				if ((msg = SQLstr_cast_any_type(&r, &rlen, m, eclass, d1, s1, has_tz, v, tpe, digits)) != MAL_SUCCEED)

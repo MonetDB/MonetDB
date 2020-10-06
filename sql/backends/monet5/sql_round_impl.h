@@ -398,15 +398,28 @@ batstr_2dec(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	}
 	ret = (TYPE*) Tloc(res, 0);
 
-	for (BUN i = 0 ; i < q ; i++) {
-		BUN p = (BUN) (canditer_next(&ci) - off);
-		const str next = BUNtail(bi, p);
+	if (ci.tpe == cand_dense) {
+		for (BUN i = 0; i < q; i++) {
+			oid p = (canditer_next_dense(&ci) - off);
+			const str next = BUNtail(bi, p);
 
-		if (strNil(next)) {
-			ret[i] = NIL(TYPE);
-			nils = true;
-		} else if ((msg = str_2dec_body(&(ret[i]), next, d, sk)))
-			goto bailout;
+			if (strNil(next)) {
+				ret[i] = NIL(TYPE);
+				nils = true;
+			} else if ((msg = str_2dec_body(&(ret[i]), next, d, sk)))
+				goto bailout;
+		}
+	} else {
+		for (BUN i = 0; i < q; i++) {
+			oid p = (canditer_next(&ci) - off);
+			const str next = BUNtail(bi, p);
+
+			if (strNil(next)) {
+				ret[i] = NIL(TYPE);
+				nils = true;
+			} else if ((msg = str_2dec_body(&(ret[i]), next, d, sk)))
+				goto bailout;
+		}
 	}
 
 bailout:
@@ -494,9 +507,10 @@ batdec2second_interval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		divider = scales[d];
 	}
 
+	/* the cast from decimal to interval is now deactivated. So adding the canditer_next_dense case is not worth */
 	if (sc < 3) {
 		for (BUN i = 0 ; i < q ; i++) {
-			BUN p = (BUN) (canditer_next(&ci) - off);
+			oid p = (canditer_next(&ci) - off);
 			if (ISNIL(TYPE)(src[p])) {
 				ret[i] = lng_nil;
 				nils = true;
@@ -508,7 +522,7 @@ batdec2second_interval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		}
 	} else if (sc > 3) {
 		for (BUN i = 0 ; i < q ; i++) {
-			BUN p = (BUN) (canditer_next(&ci) - off);
+			oid p = (canditer_next(&ci) - off);
 			if (ISNIL(TYPE)(src[p])) {
 				ret[i] = lng_nil;
 				nils = true;
@@ -521,7 +535,7 @@ batdec2second_interval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		}
 	} else {
 		for (BUN i = 0 ; i < q ; i++) {
-			BUN p = (BUN) (canditer_next(&ci) - off);
+			oid p = (canditer_next(&ci) - off);
 			if (ISNIL(TYPE)(src[p])) {
 				ret[i] = lng_nil;
 				nils = true;

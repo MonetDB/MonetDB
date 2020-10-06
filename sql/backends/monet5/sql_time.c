@@ -77,7 +77,7 @@ daytime_2time_daytime(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		daytime *restrict vals = (daytime*) Tloc(b, 0);
 		if (ci.tpe == cand_dense) {
 			for (BUN i = 0; i < q; i++) {
-				BUN p = (BUN) (canditer_next_dense(&ci) - off);
+				oid p = (canditer_next_dense(&ci) - off);
 				daytime next = vals[p];
 
 				if (is_daytime_nil(next)) {
@@ -89,7 +89,7 @@ daytime_2time_daytime(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			}
 		} else {
 			for (BUN i = 0 ; i < q ; i++) {
-				BUN p = (BUN) (canditer_next(&ci) - off);
+				oid p = (canditer_next(&ci) - off);
 				daytime next = vals[p];
 
 				if (is_daytime_nil(next)) {
@@ -192,7 +192,7 @@ second_interval_2_daytime(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 		lng *restrict vals = (lng*) Tloc(b, 0);
 		if (ci.tpe == cand_dense) {
 			for (BUN i = 0 ; i < q ; i++) {
-				BUN p = (BUN) (canditer_next_dense(&ci) - off);
+				oid p = (canditer_next_dense(&ci) - off);
 				lng next = vals[p];
 
 				if (is_lng_nil(next)) {
@@ -204,7 +204,7 @@ second_interval_2_daytime(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 			}
 		} else {
 			for (BUN i = 0 ; i < q ; i++) {
-				BUN p = (BUN) (canditer_next(&ci) - off);
+				oid p = (canditer_next(&ci) - off);
 				lng next = vals[p];
 
 				if (is_lng_nil(next)) {
@@ -335,7 +335,7 @@ str_2time_daytimetz_internal(ptr out, ptr in, const bat *sid, int tpe, int digit
 		BATiter it = bat_iterator(b);
 		if (ci.tpe == cand_dense) {
 			for (BUN i = 0 ; i < q && !msg; i++) {
-				BUN p = (BUN) (canditer_next_dense(&ci) - off);
+				oid p = (canditer_next_dense(&ci) - off);
 				str next = BUNtail(it, p);
 
 				if (strNil(next)) {
@@ -347,7 +347,7 @@ str_2time_daytimetz_internal(ptr out, ptr in, const bat *sid, int tpe, int digit
 			}
 		} else {
 			for (BUN i = 0 ; i < q && !msg; i++) {
-				BUN p = (BUN) (canditer_next(&ci) - off);
+				oid p = (canditer_next(&ci) - off);
 				str next = BUNtail(it, p);
 
 				if (strNil(next)) {
@@ -476,7 +476,7 @@ timestamp_2_daytime(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		timestamp *restrict vals = (timestamp*) Tloc(b, 0);
 		if (ci.tpe == cand_dense) {
 			for (BUN i = 0 ; i < q; i++) {
-				BUN p = (BUN) (canditer_next_dense(&ci) - off);
+				oid p = (canditer_next_dense(&ci) - off);
 				timestamp next = vals[p];
 
 				if (is_timestamp_nil(next)) {
@@ -488,7 +488,7 @@ timestamp_2_daytime(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			}
 		} else {
 			for (BUN i = 0 ; i < q; i++) {
-				BUN p = (BUN) (canditer_next(&ci) - off);
+				oid p = (canditer_next(&ci) - off);
 				timestamp next = vals[p];
 
 				if (is_timestamp_nil(next)) {
@@ -562,13 +562,13 @@ date_2_timestamp(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		date *restrict vals = (date*) Tloc(b, 0);
 		if (ci.tpe == cand_dense) {
 			for (BUN i = 0 ; i < q; i++) {
-				BUN p = (BUN) (canditer_next_dense(&ci) - off);
+				oid p = (canditer_next_dense(&ci) - off);
 				ret[i] = timestamp_fromdate(vals[p]);
 				nils |= is_timestamp_nil(ret[i]);
 			}
 		} else {
 			for (BUN i = 0 ; i < q; i++) {
-				BUN p = (BUN) (canditer_next(&ci) - off);
+				oid p = (canditer_next(&ci) - off);
 				ret[i] = timestamp_fromdate(vals[p]);
 				nils |= is_timestamp_nil(ret[i]);
 			}
@@ -664,7 +664,7 @@ timestamp_2time_timestamp(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 		timestamp *restrict vals = (timestamp*) Tloc(b, 0);
 		if (ci.tpe == cand_dense) {
 			for (BUN i = 0 ; i < q; i++) {
-				BUN p = (BUN) (canditer_next_dense(&ci) - off);
+				oid p = (canditer_next_dense(&ci) - off);
 				timestamp next = vals[p];
 
 				if (is_timestamp_nil(next)) {
@@ -676,7 +676,7 @@ timestamp_2time_timestamp(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 			}
 		} else {
 			for (BUN i = 0 ; i < q; i++) {
-				BUN p = (BUN) (canditer_next(&ci) - off);
+				oid p = (canditer_next(&ci) - off);
 				timestamp next = vals[p];
 
 				if (is_timestamp_nil(next)) {
@@ -807,7 +807,7 @@ str_2time_timestamptz_internal(ptr out, ptr in, const bat *sid, int tpe, int dig
 		BATiter bi = bat_iterator(b);
 		if (ci.tpe == cand_dense) {
 			for (BUN i = 0 ; i < q && !msg; i++) {
-				BUN p = (BUN) (canditer_next_dense(&ci) - off);
+				oid p = (canditer_next_dense(&ci) - off);
 				str next = BUNtail(bi, p);
 
 				if (strNil(next)) {
@@ -819,7 +819,7 @@ str_2time_timestamptz_internal(ptr out, ptr in, const bat *sid, int tpe, int dig
 			}
 		} else {
 			for (BUN i = 0 ; i < q && !msg; i++) {
-				BUN p = (BUN) (canditer_next(&ci) - off);
+				oid p = (canditer_next(&ci) - off);
 				str next = BUNtail(bi, p);
 
 				if (strNil(next)) {
@@ -938,7 +938,7 @@ month_interval_str(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		BATiter bi = bat_iterator(b);
 		if (ci.tpe == cand_dense) {
 			for (BUN i = 0 ; i < q && !msg; i++) {
-				BUN p = (BUN) (canditer_next_dense(&ci) - off);
+				oid p = (canditer_next_dense(&ci) - off);
 				str next = BUNtail(bi, p);
 
 				if (strNil(next)) {
@@ -950,7 +950,7 @@ month_interval_str(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			}
 		} else {
 			for (BUN i = 0 ; i < q && !msg; i++) {
-				BUN p = (BUN) (canditer_next(&ci) - off);
+				oid p = (canditer_next(&ci) - off);
 				str next = BUNtail(bi, p);
 
 				if (strNil(next)) {
@@ -1037,7 +1037,7 @@ second_interval_str(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		BATiter bi = bat_iterator(b);
 		if (ci.tpe == cand_dense) {
 			for (BUN i = 0 ; i < q && !msg; i++) {
-				BUN p = (BUN) (canditer_next_dense(&ci) - off);
+				oid p = (canditer_next_dense(&ci) - off);
 				str next = BUNtail(bi, p);
 
 				if (strNil(next)) {
@@ -1049,7 +1049,7 @@ second_interval_str(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			}
 		} else {
 			for (BUN i = 0 ; i < q && !msg; i++) {
-				BUN p = (BUN) (canditer_next(&ci) - off);
+				oid p = (canditer_next(&ci) - off);
 				str next = BUNtail(bi, p);
 
 				if (strNil(next)) {
@@ -1094,7 +1094,7 @@ bailout:
 			TPE_IN *restrict vals = Tloc(b, 0); \
 			if (ci.tpe == cand_dense) { \
 				for (BUN i = 0 ; i < q && !msg ; i++) { \
-					BUN p = (BUN) (canditer_next_dense(&ci) - off); \
+					oid p = (canditer_next_dense(&ci) - off); \
 					TPE_IN next = vals[p]; \
 					if (is_##TPE_IN##_nil(next)) { \
 						ret[i] = TPE_OUT##_nil; \
@@ -1105,7 +1105,7 @@ bailout:
 				} \
 			} else { \
 				for (BUN i = 0 ; i < q && !msg ; i++) { \
-					BUN p = (BUN) (canditer_next(&ci) - off); \
+					oid p = (canditer_next(&ci) - off); \
 					TPE_IN next = vals[p]; \
 					if (is_##TPE_IN##_nil(next)) { \
 						ret[i] = TPE_OUT##_nil; \
@@ -1435,7 +1435,7 @@ second_interval_daytime(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		daytime *restrict vals = (daytime*) Tloc(b, 0);
 		if (ci.tpe == cand_dense) {
 			for (BUN i = 0 ; i < q; i++) {
-				BUN p = (BUN) (canditer_next_dense(&ci) - off);
+				oid p = (canditer_next_dense(&ci) - off);
 				daytime next = vals[p];
 
 				if (is_daytime_nil(next)) {
@@ -1447,7 +1447,7 @@ second_interval_daytime(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			}
 		} else {
 			for (BUN i = 0 ; i < q; i++) {
-				BUN p = (BUN) (canditer_next(&ci) - off);
+				oid p = (canditer_next(&ci) - off);
 				daytime next = vals[p];
 
 				if (is_daytime_nil(next)) {
@@ -1556,7 +1556,7 @@ str_2_date_internal(ptr out, ptr in, const bat *sid, int tpe)
 		BATiter it = bat_iterator(b);
 		if (ci.tpe == cand_dense) {
 			for (BUN i = 0 ; i < q && !msg; i++) {
-				BUN p = (BUN) (canditer_next_dense(&ci) - off);
+				oid p = (canditer_next_dense(&ci) - off);
 				str next = BUNtail(it, p);
 
 				if (strNil(next)) {
@@ -1568,7 +1568,7 @@ str_2_date_internal(ptr out, ptr in, const bat *sid, int tpe)
 			}
 		} else {
 			for (BUN i = 0 ; i < q && !msg; i++) {
-				BUN p = (BUN) (canditer_next(&ci) - off);
+				oid p = (canditer_next(&ci) - off);
 				str next = BUNtail(it, p);
 
 				if (strNil(next)) {
