@@ -31,6 +31,7 @@ target_sources(optimizer
   opt_matpack.c opt_matpack.h
   opt_json.c opt_json.h
   opt_mergetable.c opt_mergetable.h
+  opt_bincopyfrom.c opt_bincopyfrom.h
   opt_mitosis.c opt_mitosis.h
   opt_multiplex.c opt_multiplex.h
   opt_oltp.c opt_oltp.h

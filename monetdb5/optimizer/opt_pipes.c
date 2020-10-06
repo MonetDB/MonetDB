@@ -72,6 +72,7 @@ static struct PIPELINES {
 	 "optimizer.aliases();"
 	 "optimizer.mitosis();"
 	 "optimizer.mergetable();"
+	 "optimizer.bincopyfrom();"
 	 "optimizer.deadcode();"
 	 "optimizer.aliases();"
 	 "optimizer.constants();"
