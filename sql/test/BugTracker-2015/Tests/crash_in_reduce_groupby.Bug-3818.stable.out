@@ -37,17 +37,29 @@ stdout of test 'crash_in_reduce_groupby.Bug-3818` in directory 'sql/test/BugTrac
 #  SELECT 0 AS cods, 0 AS elrik, 0 AS ether, 0 AS jaelen, 0 AS sora, cast( SUM(tib0) as bigint)
 #  FROM t2a
 #  GROUP BY cods, elrik, ether, jaelen, sora;
-% .%7,	.%7,	.%7,	.%7,	.%7,	.%7 # table_name
-% cods,	elrik,	ether,	jaelen,	sora,	%1 # name
+% .%11,	.%11,	.%11,	.%11,	.%11,	.%11 # table_name
+% cods,	elrik,	ether,	jaelen,	sora,	%2 # name
 % int,  int,    int,    int,    int,    bigint # type
 % 1,    1,      1,      1,      1,      1 # length
 #SELECT 0 AS cods, 0 AS elrik, 0 AS ether, 0 AS jaelen, 0 AS sora, cast( SUM(tib0) as bigint)
 # FROM t2a
 #GROUP BY cods, elrik, ether, jaelen, sora;
-% .,	.,	.,	.,	.,	sys.%1 # table_name
-% cods,	elrik,	ether,	jaelen,	sora,	%1 # name
+% .,	.,	.,	.,	.,	sys.%2 # table_name
+% cods,	elrik,	ether,	jaelen,	sora,	%2 # name
 % tinyint,      tinyint,        tinyint,        tinyint,        tinyint,        bigint # type
 % 1,    1,      1,      1,      1,      1 # length
+#PLAN SELECT 0 AS cods, 0 AS elrik, 0 AS ether, 0 AS jaelen, 0 AS sora, cast( SUM(tib0) as bigint)
+# FROM t2a
+#GROUP BY cods, elrik, ether, jaelen, sora;
+% .plan # table_name
+% rel # name
+% clob # type
+% 180 # length
+project (
+| group by (
+| | table(sys.t2a) [ "t2a"."tib0" ] COUNT 
+| ) [ tinyint "0" as "sora" ] [ tinyint "0" as "cods", tinyint "0" as "elrik", tinyint "0" as "ether", tinyint "0" as "jaelen", "sora", sys.min no nil ("t2a"."tib0") as "%1"."%1" ]
+) [ "cods", "elrik", "ether", "jaelen", "sora", "%1"."%1" ]
 #drop table t2a;
 #drop table t1a;
 

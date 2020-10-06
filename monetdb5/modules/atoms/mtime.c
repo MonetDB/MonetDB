@@ -465,9 +465,9 @@ date_diff_imp(const date d1, const date d2)
 	return is_int_nil(diff) ? lng_nil : (lng) diff * (lng) (24*60*60*1000);
 }
 func2(MTIMEdate_diff, "diff", date, date, lng, date_diff_imp, func2_noexcept, \
-	  DEC_VAR_R, DEC_VAR_R, DEC_VAR_R, DEC_INT, INIT_VAR, INIT_VAR, INIT_VAR, GET_NEXT_VAR, GET_NEXT_VAR, APPEND_VAR, FINISH_INT_SINGLE, CLEAR_NOTHING)
+	  DEC_VAR, DEC_VAR, DEC_VAR_R, DEC_INT, INIT_VAR, INIT_VAR, INIT_VAR, GET_NEXT_VAR, GET_NEXT_VAR, APPEND_VAR, FINISH_INT_SINGLE, CLEAR_NOTHING)
 func2(MTIMEdaytime_diff_msec, "diff", daytime, daytime, lng, daytime_diff, func2_noexcept, \
-	  DEC_VAR_R, DEC_VAR_R, DEC_VAR_R, DEC_INT, INIT_VAR, INIT_VAR, INIT_VAR, GET_NEXT_VAR, GET_NEXT_VAR, APPEND_VAR, FINISH_INT_SINGLE, CLEAR_NOTHING)
+	  DEC_VAR, DEC_VAR, DEC_VAR_R, DEC_INT, INIT_VAR, INIT_VAR, INIT_VAR, GET_NEXT_VAR, GET_NEXT_VAR, APPEND_VAR, FINISH_INT_SINGLE, CLEAR_NOTHING)
 
 static inline str
 date_sub_msec_interval(date *ret, date d, lng ms)
@@ -644,7 +644,7 @@ TSDIFF(timestamp t1, timestamp t2)
 	return diff;
 }
 func2(MTIMEtimestamp_diff_msec, "diff", timestamp, timestamp, lng, TSDIFF, func2_noexcept, \
-	  DEC_VAR_R, DEC_VAR_R, DEC_VAR_R, DEC_INT, INIT_VAR, INIT_VAR, INIT_VAR, GET_NEXT_VAR, GET_NEXT_VAR, APPEND_VAR, FINISH_INT_SINGLE, CLEAR_NOTHING)
+	  DEC_VAR, DEC_VAR, DEC_VAR_R, DEC_INT, INIT_VAR, INIT_VAR, INIT_VAR, GET_NEXT_VAR, GET_NEXT_VAR, APPEND_VAR, FINISH_INT_SINGLE, CLEAR_NOTHING)
 
 static inline int
 timestamp_century(const timestamp t)

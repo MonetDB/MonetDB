@@ -269,18 +269,22 @@ rel_bind_column_(mvc *sql, int *exp_has_nil, sql_rel *rel, const char *cname, in
 	case op_groupby:
 	case op_project:
 	case op_table:
-	case op_basetable:
-		if (rel->exps && exps_bind_column(rel->exps, cname, &ambiguous, &multi, no_tname))
-			return rel;
-		if (rel->r && is_groupby(rel->op) && exps_bind_column(rel->r, cname, &ambiguous, &multi, no_tname))
-			return rel;
+	case op_basetable: {
+		sql_exp *found = NULL;
+
+		if (rel->exps)
+			found = exps_bind_column(rel->exps, cname, &ambiguous, &multi, no_tname);
+		if (!found && rel->r && is_groupby(rel->op))
+			found = exps_bind_column(rel->r, cname, &ambiguous, &multi, no_tname);
 		if (ambiguous || multi)
 			return sql_error(sql, ERR_AMBIGUOUS, SQLSTATE(42000) "SELECT: identifier '%s' ambiguous", cname);
+		if (found)
+			return rel;
 		if (is_processed(rel))
 			return NULL;
 		if (rel->l && !(is_base(rel->op)))
 			return rel_bind_column_(sql, exp_has_nil, rel->l, cname, no_tname);
-		break;
+		} break;
 	case op_semi:
 	case op_anti:
 
@@ -862,11 +866,9 @@ rel_groupby(mvc *sql, sql_rel *l, list *groupbyexps )
 		list *gexps = sa_list(sql->sa);
 
 		for (en = groupbyexps->h; en; en = en->next) {
-			sql_exp *e = en->data, *ne;
+			sql_exp *e = en->data;
 
-			if ((ne=exps_find_exp(gexps, e)) == NULL ||
-			    (exp_relname(e) && exp_relname(ne) && strcmp(exp_relname(e),exp_relname(ne)) != 0) ||
-			    strcmp(exp_name(e),exp_name(ne)) != 0  )
+			if (!exps_any_match_same_or_no_alias(gexps, e))
 				append(gexps, e);
 		}
 		groupbyexps = gexps;

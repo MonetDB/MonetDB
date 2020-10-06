@@ -485,7 +485,7 @@ MSP_locate_sqlscript(const char *filename, bit recurse)
 int
 malLibraryEnabled(str name)
 {
-	if (strcmp(name, "pyapi3") == 0) {
+	if (strcmp(name, "pyapi3") == 0 || strcmp(name, "pyapi3map") == 0) {
 		const char *val = GDKgetenv("embedded_py");
 		return val && (strcmp(val, "3") == 0 ||
 					   strcasecmp(val, "true") == 0 ||
@@ -510,7 +510,7 @@ malLibraryEnabled(str name)
 char *
 malLibraryHowToEnable(str name)
 {
-	if (strcmp(name, "pyapi3") == 0) {
+	if (strcmp(name, "pyapi3") == 0 || strcmp(name, "pyapi3map") == 0) {
 		HOW_TO_ENABLE_ERROR("Python 3", "embedded_py=3")
 	} else if (strcmp(name, "rapi") == 0) {
 		HOW_TO_ENABLE_ERROR("R", "embedded_r=true")
