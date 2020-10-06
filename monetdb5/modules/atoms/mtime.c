@@ -198,7 +198,7 @@ bailout: 																\
 #define func1_noexcept(FUNC, RET, PARAM) RET = FUNC(PARAM);
 #define func1_except(FUNC, RET, PARAM) msg = FUNC(&RET, PARAM); if (msg) break;
 
-#define func2(NAME, MALFUNC, INTYPE1, INTYPE2, OUTTYPE, FUNC, FUNC_CALL, DEC_INPUT1, DEC_INPUT2, DEC_SRC1, DEC_SRC2, DEC_OUTPUT, DEC_EXTRA, \
+#define func2(NAME, MALFUNC, INTYPE1, INTYPE2, OUTTYPE, FUNC, FUNC_CALL, DEC_SRC1, DEC_SRC2, DEC_OUTPUT, DEC_EXTRA, \
 			 INIT_SRC1, INIT_SRC2, INIT_OUTPUT, GET_NEXT_SRC1, GET_NEXT_SRC2, APPEND_NEXT, CLEAR_EXTRA_SINGLE, CLEAR_EXTRA_MULTI)	\
 static str																\
 NAME(OUTTYPE *ret, const INTYPE1 *v1, const INTYPE2 *v2)				\
@@ -323,7 +323,7 @@ NAME##_bulk_p1(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)	\
 	bat *ret = getArgReference_bat(stk, pci, 0),						\
 		*bid2 = getArgReference_bat(stk, pci, 2),						\
 		*sid2 = pci->argc == 4 ? getArgReference_bat(stk, pci, 3) : NULL; \
-	const DEC_INPUT1(INTYPE1, src1) = (INTYPE1*)getArgReference(stk, pci, 1);	\
+	const INTYPE1 src1 = *(INTYPE1*)getArgReference(stk, pci, 1);		\
 	DEC_SRC2(INTYPE2, src2); 											\
 	DEC_OUTPUT(OUTTYPE, dst);											\
 	DEC_EXTRA(OUTTYPE, res, MALFUNC);									\
@@ -352,14 +352,14 @@ NAME##_bulk_p1(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)	\
 	if (ci2.tpe == cand_dense) {										\
 		for (BUN i = 0; i < n; i++) { 									\
 			oid p2 = (canditer_next_dense(&ci2) - off2);				\
-			FUNC_CALL(FUNC, res, *src1, GET_NEXT_SRC2(src2, p2))		\
+			FUNC_CALL(FUNC, res, src1, GET_NEXT_SRC2(src2, p2))			\
 			APPEND_NEXT(MALFUNC); 										\
 			nils |= is_##OUTTYPE##_nil(res);							\
 		}																\
 	} else {															\
 		for (BUN i = 0; i < n; i++) { 									\
 			oid p2 = (canditer_next(&ci2) - off2);						\
-			FUNC_CALL(FUNC, res, *src1, GET_NEXT_SRC2(src2, p2))		\
+			FUNC_CALL(FUNC, res, src1, GET_NEXT_SRC2(src2, p2))			\
 			APPEND_NEXT(MALFUNC); 										\
 			nils |= is_##OUTTYPE##_nil(res);							\
 		}																\
@@ -395,7 +395,7 @@ NAME##_bulk_p2(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)	\
 		*bid1 = getArgReference_bat(stk, pci, 1),						\
 		*sid1 = pci->argc == 4 ? getArgReference_bat(stk, pci, 3) : NULL; \
 	DEC_SRC1(INTYPE1, src1);											\
-	const DEC_INPUT2(INTYPE2, src2) = (INTYPE2*)getArgReference(stk, pci, 2);	\
+	const INTYPE2 src2 = *(INTYPE2*)getArgReference(stk, pci, 2);		\
 	DEC_OUTPUT(OUTTYPE, dst);											\
 	DEC_EXTRA(OUTTYPE, res, MALFUNC);									\
 																		\
@@ -423,14 +423,14 @@ NAME##_bulk_p2(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)	\
 	if (ci1.tpe == cand_dense) {										\
 		for (BUN i = 0; i < n; i++) { 									\
 			oid p1 = (canditer_next_dense(&ci1) - off1);				\
-			FUNC_CALL(FUNC, res, GET_NEXT_SRC1(src1, p1), *src2)		\
+			FUNC_CALL(FUNC, res, GET_NEXT_SRC1(src1, p1), src2)			\
 			APPEND_NEXT(MALFUNC); 										\
 			nils |= is_##OUTTYPE##_nil(res);							\
 		}																\
 	} else {															\
 		for (BUN i = 0; i < n; i++) { 									\
 			oid p1 = (canditer_next(&ci1) - off1);						\
-			FUNC_CALL(FUNC, res, GET_NEXT_SRC1(src1, p1), *src2)		\
+			FUNC_CALL(FUNC, res, GET_NEXT_SRC1(src1, p1), src2)			\
 			APPEND_NEXT(MALFUNC); 										\
 			nils |= is_##OUTTYPE##_nil(res);							\
 		}																\
@@ -465,9 +465,9 @@ date_diff_imp(const date d1, const date d2)
 	return is_int_nil(diff) ? lng_nil : (lng) diff * (lng) (24*60*60*1000);
 }
 func2(MTIMEdate_diff, "diff", date, date, lng, date_diff_imp, func2_noexcept, \
-	  DEC_VAR_R, DEC_VAR_R, DEC_VAR_R, DEC_VAR_R, DEC_VAR_R, DEC_INT, INIT_VAR, INIT_VAR, INIT_VAR, GET_NEXT_VAR, GET_NEXT_VAR, APPEND_VAR, FINISH_INT_SINGLE, CLEAR_NOTHING)
+	  DEC_VAR_R, DEC_VAR_R, DEC_VAR_R, DEC_INT, INIT_VAR, INIT_VAR, INIT_VAR, GET_NEXT_VAR, GET_NEXT_VAR, APPEND_VAR, FINISH_INT_SINGLE, CLEAR_NOTHING)
 func2(MTIMEdaytime_diff_msec, "diff", daytime, daytime, lng, daytime_diff, func2_noexcept, \
-	  DEC_VAR_R, DEC_VAR_R, DEC_VAR_R, DEC_VAR_R, DEC_VAR_R, DEC_INT, INIT_VAR, INIT_VAR, INIT_VAR, GET_NEXT_VAR, GET_NEXT_VAR, APPEND_VAR, FINISH_INT_SINGLE, CLEAR_NOTHING)
+	  DEC_VAR_R, DEC_VAR_R, DEC_VAR_R, DEC_INT, INIT_VAR, INIT_VAR, INIT_VAR, GET_NEXT_VAR, GET_NEXT_VAR, APPEND_VAR, FINISH_INT_SINGLE, CLEAR_NOTHING)
 
 static inline str
 date_sub_msec_interval(date *ret, date d, lng ms)
@@ -492,9 +492,9 @@ date_add_msec_interval(date *ret, date d, lng ms)
 	return MAL_SUCCEED;
 }
 func2(MTIMEdate_sub_msec_interval, "date_sub_msec_interval", date, lng, date, date_sub_msec_interval, func2_except, \
-	  DEC_VAR_R, DEC_VAR_R, DEC_VAR_R, DEC_VAR_R, DEC_VAR_R, DEC_INT, INIT_VAR, INIT_VAR, INIT_VAR, GET_NEXT_VAR, GET_NEXT_VAR, APPEND_VAR, FINISH_INT_SINGLE, CLEAR_NOTHING)
+	  DEC_VAR_R, DEC_VAR_R, DEC_VAR_R, DEC_INT, INIT_VAR, INIT_VAR, INIT_VAR, GET_NEXT_VAR, GET_NEXT_VAR, APPEND_VAR, FINISH_INT_SINGLE, CLEAR_NOTHING)
 func2(MTIMEdate_add_msec_interval, "date_add_msec_interval", date, lng, date, date_add_msec_interval, func2_except, \
-	  DEC_VAR_R, DEC_VAR_R, DEC_VAR_R, DEC_VAR_R, DEC_VAR_R, DEC_INT, INIT_VAR, INIT_VAR, INIT_VAR, GET_NEXT_VAR, GET_NEXT_VAR, APPEND_VAR, FINISH_INT_SINGLE, CLEAR_NOTHING)
+	  DEC_VAR_R, DEC_VAR_R, DEC_VAR_R, DEC_INT, INIT_VAR, INIT_VAR, INIT_VAR, GET_NEXT_VAR, GET_NEXT_VAR, APPEND_VAR, FINISH_INT_SINGLE, CLEAR_NOTHING)
 
 static inline str
 timestamp_sub_msec_interval(timestamp *ret, timestamp ts, lng ms)
@@ -519,9 +519,9 @@ timestamp_add_msec_interval(timestamp *ret, timestamp ts, lng ms)
 	return MAL_SUCCEED;
 }
 func2(MTIMEtimestamp_sub_msec_interval, "timestamp_sub_msec_interval", timestamp, lng, timestamp, timestamp_sub_msec_interval, func2_except, \
-	  DEC_VAR_R, DEC_VAR_R, DEC_VAR_R, DEC_VAR_R, DEC_VAR_R, DEC_INT, INIT_VAR, INIT_VAR, INIT_VAR, GET_NEXT_VAR, GET_NEXT_VAR, APPEND_VAR, FINISH_INT_SINGLE, CLEAR_NOTHING)
+	  DEC_VAR_R, DEC_VAR_R, DEC_VAR_R, DEC_INT, INIT_VAR, INIT_VAR, INIT_VAR, GET_NEXT_VAR, GET_NEXT_VAR, APPEND_VAR, FINISH_INT_SINGLE, CLEAR_NOTHING)
 func2(MTIMEtimestamp_add_msec_interval, "timestamp_add_msec_interval", timestamp, lng, timestamp, timestamp_add_msec_interval, func2_except, \
-	  DEC_VAR_R, DEC_VAR_R, DEC_VAR_R, DEC_VAR_R, DEC_VAR_R, DEC_INT, INIT_VAR, INIT_VAR, INIT_VAR, GET_NEXT_VAR, GET_NEXT_VAR, APPEND_VAR, FINISH_INT_SINGLE, CLEAR_NOTHING)
+	  DEC_VAR_R, DEC_VAR_R, DEC_VAR_R, DEC_INT, INIT_VAR, INIT_VAR, INIT_VAR, GET_NEXT_VAR, GET_NEXT_VAR, APPEND_VAR, FINISH_INT_SINGLE, CLEAR_NOTHING)
 
 static inline str
 timestamp_sub_month_interval(timestamp *ret, timestamp ts, int m)
@@ -546,9 +546,9 @@ timestamp_add_month_interval(timestamp *ret, timestamp ts, int m)
 	return MAL_SUCCEED;
 }
 func2(MTIMEtimestamp_sub_month_interval, "timestamp_sub_month_interval", timestamp, int, timestamp, timestamp_sub_month_interval, func2_except, \
-	  DEC_VAR_R, DEC_VAR_R, DEC_VAR_R, DEC_VAR_R, DEC_VAR_R, DEC_INT, INIT_VAR, INIT_VAR, INIT_VAR, GET_NEXT_VAR, GET_NEXT_VAR, APPEND_VAR, FINISH_INT_SINGLE, CLEAR_NOTHING)
+	  DEC_VAR_R, DEC_VAR_R, DEC_VAR_R, DEC_INT, INIT_VAR, INIT_VAR, INIT_VAR, GET_NEXT_VAR, GET_NEXT_VAR, APPEND_VAR, FINISH_INT_SINGLE, CLEAR_NOTHING)
 func2(MTIMEtimestamp_add_month_interval, "timestamp_add_month_interval", timestamp, int, timestamp, timestamp_add_month_interval, func2_except, \
-	  DEC_VAR_R, DEC_VAR_R, DEC_VAR_R, DEC_VAR_R, DEC_VAR_R, DEC_INT, INIT_VAR, INIT_VAR, INIT_VAR, GET_NEXT_VAR, GET_NEXT_VAR, APPEND_VAR, FINISH_INT_SINGLE, CLEAR_NOTHING)
+	  DEC_VAR_R, DEC_VAR_R, DEC_VAR_R, DEC_INT, INIT_VAR, INIT_VAR, INIT_VAR, GET_NEXT_VAR, GET_NEXT_VAR, APPEND_VAR, FINISH_INT_SINGLE, CLEAR_NOTHING)
 
 static inline daytime
 time_sub_msec_interval(const daytime t, const lng ms)
@@ -565,9 +565,9 @@ time_add_msec_interval(const daytime t, const lng ms)
 	return daytime_add_usec_modulo(t, ms * 1000);
 }
 func2(MTIMEtime_sub_msec_interval, "time_sub_msec_interval", daytime, lng, daytime, time_sub_msec_interval, func2_noexcept, \
-	  DEC_VAR_R, DEC_VAR_R, DEC_VAR_R, DEC_VAR_R, DEC_VAR_R, DEC_INT, INIT_VAR, INIT_VAR, INIT_VAR, GET_NEXT_VAR, GET_NEXT_VAR, APPEND_VAR, FINISH_INT_SINGLE, CLEAR_NOTHING)
+	  DEC_VAR_R, DEC_VAR_R, DEC_VAR_R, DEC_INT, INIT_VAR, INIT_VAR, INIT_VAR, GET_NEXT_VAR, GET_NEXT_VAR, APPEND_VAR, FINISH_INT_SINGLE, CLEAR_NOTHING)
 func2(MTIMEtime_add_msec_interval, "time_add_msec_interval", daytime, lng, daytime, time_add_msec_interval, func2_noexcept, \
-	  DEC_VAR_R, DEC_VAR_R, DEC_VAR_R, DEC_VAR_R, DEC_VAR_R, DEC_INT, INIT_VAR, INIT_VAR, INIT_VAR, GET_NEXT_VAR, GET_NEXT_VAR, APPEND_VAR, FINISH_INT_SINGLE, CLEAR_NOTHING)
+	  DEC_VAR_R, DEC_VAR_R, DEC_VAR_R, DEC_INT, INIT_VAR, INIT_VAR, INIT_VAR, GET_NEXT_VAR, GET_NEXT_VAR, APPEND_VAR, FINISH_INT_SINGLE, CLEAR_NOTHING)
 
 static inline str
 date_submonths(date *ret, date d, int m)
@@ -592,9 +592,9 @@ date_addmonths(date *ret, date d, int m)
 	return MAL_SUCCEED;
 }
 func2(MTIMEdate_submonths, "date_submonths", date, int, date, date_submonths, func2_except, \
-	  DEC_VAR_R, DEC_VAR_R, DEC_VAR_R, DEC_VAR_R, DEC_VAR_R, DEC_INT, INIT_VAR, INIT_VAR, INIT_VAR, GET_NEXT_VAR, GET_NEXT_VAR, APPEND_VAR, FINISH_INT_SINGLE, CLEAR_NOTHING)
+	  DEC_VAR_R, DEC_VAR_R, DEC_VAR_R, DEC_INT, INIT_VAR, INIT_VAR, INIT_VAR, GET_NEXT_VAR, GET_NEXT_VAR, APPEND_VAR, FINISH_INT_SINGLE, CLEAR_NOTHING)
 func2(MTIMEdate_addmonths, "date_addmonths", date, int, date, date_addmonths, func2_except, \
-	  DEC_VAR_R, DEC_VAR_R, DEC_VAR_R, DEC_VAR_R, DEC_VAR_R, DEC_INT, INIT_VAR, INIT_VAR, INIT_VAR, GET_NEXT_VAR, GET_NEXT_VAR, APPEND_VAR, FINISH_INT_SINGLE, CLEAR_NOTHING)
+	  DEC_VAR_R, DEC_VAR_R, DEC_VAR_R, DEC_INT, INIT_VAR, INIT_VAR, INIT_VAR, GET_NEXT_VAR, GET_NEXT_VAR, APPEND_VAR, FINISH_INT_SINGLE, CLEAR_NOTHING)
 
 #define date_to_msec_since_epoch(t) is_date_nil(t) ? lng_nil : (timestamp_diff(timestamp_create(t, daytime_create(0, 0, 0, 0)), unixepoch) / 1000)
 #define daytime_to_msec_since_epoch(t) daytime_diff(t, daytime_create(0, 0, 0, 0))
@@ -644,7 +644,7 @@ TSDIFF(timestamp t1, timestamp t2)
 	return diff;
 }
 func2(MTIMEtimestamp_diff_msec, "diff", timestamp, timestamp, lng, TSDIFF, func2_noexcept, \
-	  DEC_VAR_R, DEC_VAR_R, DEC_VAR_R, DEC_VAR_R, DEC_VAR_R, DEC_INT, INIT_VAR, INIT_VAR, INIT_VAR, GET_NEXT_VAR, GET_NEXT_VAR, APPEND_VAR, FINISH_INT_SINGLE, CLEAR_NOTHING)
+	  DEC_VAR_R, DEC_VAR_R, DEC_VAR_R, DEC_INT, INIT_VAR, INIT_VAR, INIT_VAR, GET_NEXT_VAR, GET_NEXT_VAR, APPEND_VAR, FINISH_INT_SINGLE, CLEAR_NOTHING)
 
 static inline int
 timestamp_century(const timestamp t)
@@ -960,7 +960,7 @@ str_to_date(date *ret, str s, str format)
 	return MAL_SUCCEED;
 }
 func2(MTIMEstr_to_date, "str_to_date", str, str, date, str_to_date, func2_except, \
-	  DEC_VAR, DEC_VAR, DEC_ITER, DEC_ITER, DEC_VAR_R, DEC_INT, INIT_ITER, INIT_ITER, INIT_VAR, GET_NEXT_ITER, GET_NEXT_ITER, APPEND_VAR, FINISH_INT_SINGLE, CLEAR_NOTHING)
+	  DEC_ITER, DEC_ITER, DEC_VAR_R, DEC_INT, INIT_ITER, INIT_ITER, INIT_VAR, GET_NEXT_ITER, GET_NEXT_ITER, APPEND_VAR, FINISH_INT_SINGLE, CLEAR_NOTHING)
 
 static inline str
 str_to_time(daytime *ret, str s, str format)
@@ -973,7 +973,7 @@ str_to_time(daytime *ret, str s, str format)
 	return MAL_SUCCEED;
 }
 func2(MTIMEstr_to_time, "str_to_time", str, str, daytime, str_to_time, func2_except, \
-	  DEC_VAR, DEC_VAR, DEC_ITER, DEC_ITER, DEC_VAR_R, DEC_INT, INIT_ITER, INIT_ITER, INIT_VAR, GET_NEXT_ITER, GET_NEXT_ITER, APPEND_VAR, FINISH_INT_SINGLE, CLEAR_NOTHING)
+	  DEC_ITER, DEC_ITER, DEC_VAR_R, DEC_INT, INIT_ITER, INIT_ITER, INIT_VAR, GET_NEXT_ITER, GET_NEXT_ITER, APPEND_VAR, FINISH_INT_SINGLE, CLEAR_NOTHING)
 
 static inline str
 str_to_timestamp_func(timestamp *ret, str s, str format)
@@ -981,7 +981,7 @@ str_to_timestamp_func(timestamp *ret, str s, str format)
 	return str_to_timestamp(ret, &s, &format, "timestamp", "mtime.str_to_timestamp");
 }
 func2(MTIMEstr_to_timestamp, "str_to_timestamp", str, str, timestamp, str_to_timestamp_func, func2_except, \
-	  DEC_VAR, DEC_VAR, DEC_ITER, DEC_ITER, DEC_VAR_R, DEC_INT, INIT_ITER, INIT_ITER, INIT_VAR, GET_NEXT_ITER, GET_NEXT_ITER, APPEND_VAR, FINISH_INT_SINGLE, CLEAR_NOTHING)
+	  DEC_ITER, DEC_ITER, DEC_VAR_R, DEC_INT, INIT_ITER, INIT_ITER, INIT_VAR, GET_NEXT_ITER, GET_NEXT_ITER, APPEND_VAR, FINISH_INT_SINGLE, CLEAR_NOTHING)
 
 static inline str
 date_to_str(str *ret, date d, str format)
@@ -990,7 +990,7 @@ date_to_str(str *ret, date d, str format)
 	return timestamp_to_str(ret, &ts, &format, "date", "mtime.date_to_str");
 }
 func2(MTIMEdate_to_str, "date_to_str", date, str, str, date_to_str, func2_except, \
-	  DEC_VAR_R, DEC_VAR, DEC_VAR, DEC_ITER, DEC_NOTHING, DEC_BUFFER, INIT_VAR, INIT_ITER, DEC_NOTHING, GET_NEXT_VAR, GET_NEXT_ITER, APPEND_STR, FINISH_BUFFER_SINGLE, FINISH_BUFFER_MULTI)
+	  DEC_VAR, DEC_ITER, DEC_NOTHING, DEC_BUFFER, INIT_VAR, INIT_ITER, DEC_NOTHING, GET_NEXT_VAR, GET_NEXT_ITER, APPEND_STR, FINISH_BUFFER_SINGLE, FINISH_BUFFER_MULTI)
 
 static inline str
 time_to_str(str *ret, daytime d, str format)
@@ -999,7 +999,7 @@ time_to_str(str *ret, daytime d, str format)
 	return timestamp_to_str(ret, &ts, &format, "time", "mtime.time_to_str");
 }
 func2(MTIMEtime_to_str, "time_to_str", daytime, str, str, time_to_str, func2_except, \
-	  DEC_VAR_R, DEC_VAR, DEC_VAR, DEC_ITER, DEC_NOTHING, DEC_BUFFER, INIT_VAR, INIT_ITER, DEC_NOTHING, GET_NEXT_VAR, GET_NEXT_ITER, APPEND_STR, FINISH_BUFFER_SINGLE, FINISH_BUFFER_MULTI)
+	  DEC_VAR, DEC_ITER, DEC_NOTHING, DEC_BUFFER, INIT_VAR, INIT_ITER, DEC_NOTHING, GET_NEXT_VAR, GET_NEXT_ITER, APPEND_STR, FINISH_BUFFER_SINGLE, FINISH_BUFFER_MULTI)
 
 static inline str
 timestamp_to_str_func(str *ret, timestamp d, str format)
@@ -1007,7 +1007,7 @@ timestamp_to_str_func(str *ret, timestamp d, str format)
 	return timestamp_to_str(ret, &d, &format, "timestamp", "mtime.timestamp_to_str");
 }
 func2(MTIMEtimestamp_to_str, "timestamp_to_str", timestamp, str, str, timestamp_to_str_func, func2_except, \
-	  DEC_VAR_R, DEC_VAR, DEC_VAR, DEC_ITER, DEC_NOTHING, DEC_BUFFER, INIT_VAR, INIT_ITER, DEC_NOTHING, GET_NEXT_VAR, GET_NEXT_ITER, APPEND_STR, FINISH_BUFFER_SINGLE, FINISH_BUFFER_MULTI)
+	  DEC_VAR, DEC_ITER, DEC_NOTHING, DEC_BUFFER, INIT_VAR, INIT_ITER, DEC_NOTHING, GET_NEXT_VAR, GET_NEXT_ITER, APPEND_STR, FINISH_BUFFER_SINGLE, FINISH_BUFFER_MULTI)
 
 #include "mel.h"
 static mel_func mtime_init_funcs[] = {
