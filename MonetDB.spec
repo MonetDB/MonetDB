@@ -147,6 +147,18 @@ BuildRequires: python3-numpy
 %if %{with rintegration}
 BuildRequires: pkgconfig(libR)
 %endif
+# if we were to compile with cmocka support (-DWITH_CMOCKA=ON):
+# BuildRequires: pkgconfig(cmocka)
+# if we were to compile with lz4 support (-DWITH_LZ4=ON):
+# BuildRequires: pkgconfig(liblz4)
+# if we were to compile with NetCDF support (-DNETCDF=ON):
+# BuildRequires: pkgconfig(netcdf)
+# if we were to compile with proj support (-DWITH_PROJ=ON):
+# BuildRequires: pkgconfig(proj)
+# if we were to compile with snappy support (-DWITH_SNAPPY=ON):
+# BuildRequires: pkgconfig(snappy)
+# if we were to compile with valgrind support (-DWITH_VALGRIND=ON):
+# BuildRequires: pkgconfig(valgrind)
 
 %if (0%{?fedora} >= 22)
 Recommends: %{name}-SQL-server5%{?_isa} = %{version}-%{release}
