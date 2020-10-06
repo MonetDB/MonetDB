@@ -536,7 +536,7 @@ def PerformDir(env, testdir) :
     skipped = 0
     FdErr = F_SKIP
 
-    TSTDIR = testdir.get('realpath')[len(TSTSRCBASE + os.sep):]
+    TSTDIR = testdir.get('realpath')[len(TSTSRCBASE + os.sep):-len(TSTSUFF)]
     TSTSRCDIR = testdir.get('realpath')
     TSTTRGDIR = os.path.normpath(os.path.join(TSTTRGBASE, TSTPREF, TSTDIR))
 
@@ -548,7 +548,10 @@ def PerformDir(env, testdir) :
     env['UTSTSRCDIR'] = 'file://' + url(TSTSRCDIR)
     env['TSTTRGDIR'] = TSTTRGDIR
     # TODO see if this will work
-    env['RELSRCDIR'] = TSTSRCDIR
+    if TSTDIR == os.curdir:
+        env['RELSRCDIR'] = os.path.join(os.pardir, env['RELSRCBASE'], TSTSUFF)
+    else:
+        env['RELSRCDIR'] = os.path.join(* [os.pardir] * (len(TSTDIR.split(os.sep)) + 1) + [env['RELSRCBASE'], TSTDIR, TSTSUFF])
     os.environ['TSTDB']     = TSTDB
     os.environ['TSTDIR']    = TSTDIR
     os.environ['TSTSRCDIR'] = TSTSRCDIR
@@ -1108,6 +1111,19 @@ def RunTest(env, test, oktests, pSrvr):
     elif SERVER in ["MAL", "SQL"] and "MAPI" in BUSY_PORTS:
         reason = "as MAPIPORT=%s is not available." % env['MAPIPORT']
     else:
+        test_rgx = re.compile("^"+TST+"((_[sp][0-9][0-9])?\..*)?$", re.MULTILINE)
+        for f in listdir(TSTSRCDIR):
+            if test_rgx.match(f):
+                try:
+                    SymlinkOrCopy(os.path.join(TSTSRCDIR, f), f)
+                    links.append(os.path.join(TSTTRGDIR, f))
+                except IOError as err:
+                    if not env.get('NOCLEAN'):
+                        ErrMsg("SymlinkOrCopy('%s','%s') in '%s' failed with #%d: '%s'."
+                               % (os.path.join(dir_, f), f, os.getcwd(), err.errno, err.strerror))
+                except OSError:
+                    if not env.get('NOCLEAN'):
+                        raise
         # Check for available sockets and block them until we're ready to run the actual test
         if pSrvr is None:
             MAPIsockets, reason = CheckSocket2(env, "MAPI")   #, SrvrErr)
@@ -1117,7 +1133,7 @@ def RunTest(env, test, oktests, pSrvr):
         else:
             MAPIsockets = None
 
-        if test.get('is_src_link', False):
+        if test.get('is_src_link', False) and not os.path.isfile(TST + EXT):
             with open(test.get('test_path') + test.get('tail'), 'r') as f:
                 TSTSRC = expandvars(f.readline().strip(), env)
             if os.path.isfile(TSTSRC):
@@ -1134,15 +1150,16 @@ def RunTest(env, test, oktests, pSrvr):
                     MAPIsockets[0].close()
                     MAPIsockets[1].close()
                 return TX,F_SKIP,reason,links
-        elif test.get('is_input', False):
+        elif test.get('is_input', False) and not os.path.isfile(TST+EXT):
             with open(os.path.join(TSTTRGDIR, TST + EXT), 'w') as fout:
                 with open(test.get('test_path') + test.get('tail'), 'r') as f:
                     for l in f:
                         fout.write(expandvars(l, env))
         else:
-            SymlinkOrCopy(test.get('test_path') + EXT, TST + EXT)
-            links.append(os.path.join(TSTTRGDIR, TST + EXT))
-            
+            if not os.path.isfile(TST+EXT):
+                SymlinkOrCopy(test.get('test_path') + EXT, TST + EXT)
+                links.append(os.path.join(TSTTRGDIR, TST + EXT))
+
         TIMEOUT = int(par['TIMEOUT'] * test.get('timeout', 1))
         CTIMEOUT = 0
         if   CALL in ["other", "python", "ruby"]:
