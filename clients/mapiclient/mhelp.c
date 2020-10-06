@@ -399,7 +399,7 @@ SQLhelp sqlhelp1[] = {
 	 "See also https://www.monetdb.org/Documentation/Manuals/SQLreference/Explain"},
 	{"EXTRACT",
 	 "Built-in function",
-	 "EXTRACT '(' { YEAR | MONTH | DAY | HOUR | MINUTE | SECOND | CENTURY | DECADE | QUARTER | WEEK | DOW | DOY } FROM scalar_expression ')'",
+	 "EXTRACT '(' { YEAR | MONTH | DAY | HOUR | MINUTE | SECOND | CENTURY | DECADE | QUARTER | WEEK | DOW | DOY | EPOCH } FROM scalar_expression ')'",
 	 NULL,
 	 NULL},
 	{"INSERT",

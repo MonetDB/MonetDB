@@ -240,21 +240,65 @@ UUIDgenerateUuidInt(uuid **retval, int *d)
 	return UUIDgenerateUuid(retval);
 }
 
+static inline bit
+isaUUID(str s)
+{
+	uuid u, *pu = &u;
+	size_t l = UUID_SIZE;
+	ssize_t res = UUIDfromString(s, &l, (void **) &pu, false);
+
+	if (res > 1)
+		return true;
+	else if (res == 1)
+		return bit_nil;
+	else
+		return false;
+}
+
 static str
 UUIDisaUUID(bit *retval, str *s)
 {
-	uuid u;
-	uuid *pu = &u;
-	size_t l = UUID_SIZE;
-	ssize_t res = UUIDfromString(*s, &l, (void **) &pu, false);
-
-	if (res > 1)
-		*retval = true;
-	else if (res == 1)
-		*retval = bit_nil;
-	else
-		*retval = false;
+	*retval = isaUUID(*s);
 	return MAL_SUCCEED;
+}
+
+static str
+UUIDisaUUID_bulk(bat *ret, const bat *bid)
+{
+	BAT *b = NULL, *bn = NULL;
+	BUN q;
+	bit *restrict dst;
+	str msg = MAL_SUCCEED;
+	BATiter bi;
+
+	if ((b = BATdescriptor(*bid)) == NULL)	{
+		msg = createException(MAL, "uuid.isaUUID_bulk", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
+		goto bailout;
+	}
+	q = BATcount(b);
+	if ((bn = COLnew(b->hseqbase, TYPE_bit, q, TRANSIENT)) == NULL) {
+		msg = createException(MAL, "uuid.isaUUID_bulk", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		goto bailout;
+	}
+	dst = Tloc(bn, 0);
+	bi = bat_iterator(b);
+	for (BUN p = 0 ; p < q ; p++) {
+		str next = BUNtail(bi, p);
+		dst[p] = isaUUID(next);
+	}
+	bn->tnonil = b->tnonil;
+	bn->tnil = b->tnil;
+	BATsetcount(bn, q);
+	bn->tsorted = bn->trevsorted = q < 2;
+	bn->tkey = false;
+bailout:
+	if (b)
+		BBPunfix(b->batCacheid);
+	if (msg && bn)
+		BBPreclaim(bn);
+	else if (bn)
+		BBPkeepref(*ret = bn->batCacheid);
+	return msg;
 }
 
 static str
@@ -364,6 +408,7 @@ mel_func uuid_init_funcs[] = {
  command("uuid", "uuid", UUIDstr2uuid, false, "Coerce a string to a uuid, validating its format", args(1,2, arg("",uuid),arg("s",str))),
  command("uuid", "str", UUIDuuid2str, false, "Coerce a uuid to its string type", args(1,2, arg("",str),arg("u",uuid))),
  command("uuid", "isaUUID", UUIDisaUUID, false, "Test a string for a UUID format", args(1,2, arg("",bit),arg("u",str))),
+ command("batuuid", "isaUUID", UUIDisaUUID_bulk, false, "Test a string for a UUID format", args(1,2, batarg("",bit),batarg("u",str))),
  command("calc", "uuid", UUIDstr2uuid, false, "Coerce a string to a uuid, validating its format", args(1,2, arg("",uuid),arg("s",str))),
  command("calc", "uuid", UUIDuuid2uuid, false, "", args(1,2, arg("",uuid),arg("u",uuid))),
  command("calc", "str", UUIDuuid2str, false, "Coerce a uuid to a string type", args(1,2, arg("",str),arg("s",uuid))),

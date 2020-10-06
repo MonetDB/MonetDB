@@ -54,6 +54,7 @@
  *
  */
 #include "monetdb_config.h"
+#include "remote.h"
 
 /*
  * Technically, these methods need to be serialised per connection,
@@ -68,7 +69,8 @@
  */
 #ifdef HAVE_MAPI
 
-#include "mal.h"
+
+
 #include "mal_exception.h"
 #include "mal_interpreter.h"
 #include "mal_function.h" /* for printFunction */
@@ -104,7 +106,6 @@ static connection conns = NULL;
 static unsigned char localtype = 0177;
 
 static inline str RMTquery(MapiHdl *ret, const char *func, Mapi conn, const char *query);
-static inline str RMTinternalcopyfrom(BAT **ret, char *hdr, stream *in);
 
 /**
  * Returns a BAT with valid redirects for the given pattern.  If
@@ -186,7 +187,8 @@ static str RMTconnectScen(
 		str *ouri,
 		str *user,
 		str *passwd,
-		str *scen)
+		str *scen,
+		bit *columnar)
 {
 	connection c;
 	char conn[BUFSIZ];
@@ -244,6 +246,13 @@ static str RMTconnectScen(
 		return msg;
 	}
 
+	if (columnar && *columnar) {
+		char set_protocol_query_buf[50];
+		snprintf(set_protocol_query_buf, 50, "sql.set_protocol(%d:int);", PROTOCOL_COLUMNAR);
+		if ((msg = RMTquery(&hdl, "remote.connect", m, set_protocol_query_buf)))
+			return msg;
+	}
+
 	/* connection established, add to list */
 	c = GDKzalloc(sizeof(struct _connection));
 	if ( c == NULL || (c->name = GDKstrdup(conn)) == NULL) {
@@ -281,14 +290,21 @@ static str RMTconnectScen(
 	return(MAL_SUCCEED);
 }
 
-static str RMTconnect(
-		str *ret,
-		str *uri,
-		str *user,
-		str *passwd)
-{
-	str scen = "mal";
-	return RMTconnectScen(ret, uri, user, passwd, &scen);
+static str
+RMTconnect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
+	(void) cntxt;
+	(void) mb;
+		str* ret	= getArgReference_str(stk, pci, 0);
+		str* uri	= getArgReference_str(stk, pci, 1);
+		str* user	= getArgReference_str(stk, pci, 2);
+		str* passwd	= getArgReference_str(stk, pci, 3);
+
+		str scen = "msql";
+
+		if (pci->argc >= 5)
+			scen = *getArgReference_str(stk, pci, 4);
+
+		return RMTconnectScen(ret, uri, user, passwd, &scen, NULL);
 }
 
 static str
@@ -326,7 +342,7 @@ RMTconnectTable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	}
 	snprintf(pwhash, pwlen + 2, "\1%s", passwd);
 
-	msg = RMTconnectScen(&ret, &uri, &remoteuser, &pwhash, &scen);
+	msg = RMTconnectScen(&ret, &uri, &remoteuser, &pwhash, &scen, NULL);
 
 	GDKfree(passwd);
 	GDKfree(pwhash);
@@ -350,7 +366,8 @@ RMTconnectTable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
  * system, it only needs to exist for the client (i.e. it was once
  * created).
  */
-static str RMTdisconnect(void *ret, str *conn) {
+str
+RMTdisconnect(void *ret, str *conn) {
 	connection c, t;
 
 	if (conn == NULL || *conn == NULL || strcmp(*conn, (str)str_nil) == 0)
@@ -544,6 +561,210 @@ static str RMTepilogue(void *ret) {
 
 	return(MAL_SUCCEED);
 }
+static str
+RMTreadbatheader(stream* sin, char* buf) {
+		ssize_t sz = 0, rd;
+
+		/* read the JSON header */
+		while ((rd = mnstr_read(sin, &buf[sz], 1, 1)) == 1 && buf[sz] != '\n') {
+			sz += rd;
+		}
+		if (rd < 0) {
+			throw(MAL, "remote.get", "could not read BAT JSON header");
+		}
+		if (buf[0] == '!') {
+			char *result;
+			if((result = GDKstrdup(buf)) == NULL)
+				throw(MAL, "remote.get", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+			return result;
+		}
+
+		buf[sz] = '\0';
+
+		return MAL_SUCCEED;
+}
+
+typedef struct _binbat_v1 {
+	int Ttype;
+	oid Hseqbase;
+	oid Tseqbase;
+	bool
+		Tsorted:1,
+		Trevsorted:1,
+		Tkey:1,
+		Tnonil:1,
+		Tdense:1;
+	BUN size;
+	size_t headsize;
+	size_t tailsize;
+	size_t theapsize;
+} binbat;
+
+static str
+RMTinternalcopyfrom(BAT **ret, char *hdr, stream *in, bool must_flush)
+{
+	binbat bb = { 0, 0, 0, false, false, false, false, false, 0, 0, 0, 0 };
+	char *nme = NULL;
+	char *val = NULL;
+	char tmp;
+	size_t len;
+	lng lv, *lvp;
+
+	BAT *b;
+
+	/* hdr is a JSON structure that looks like
+	 * {"version":1,"ttype":6,"tseqbase":0,"tailsize":4,"theapsize":0}
+	 * we take the binary data directly from the stream */
+
+	/* could skip whitespace, but we just don't allow that */
+	if (*hdr++ != '{')
+		throw(MAL, "remote.bincopyfrom", "illegal input, not a JSON header (got '%s')", hdr - 1);
+	while (*hdr != '\0') {
+		switch (*hdr) {
+			case '"':
+				/* we assume only numeric values, so all strings are
+				 * elems */
+				if (nme != NULL) {
+					*hdr = '\0';
+				} else {
+					nme = hdr + 1;
+				}
+				break;
+			case ':':
+				val = hdr + 1;
+				break;
+			case ',':
+			case '}':
+				if (val == NULL)
+					throw(MAL, "remote.bincopyfrom",
+							"illegal input, JSON value missing");
+				*hdr = '\0';
+
+				lvp = &lv;
+				len = sizeof(lv);
+				/* tseqbase can be 1<<31/1<<63 which causes overflow
+				 * in lngFromStr, so we check separately */
+				if (strcmp(val,
+#if SIZEOF_OID == 8
+						   "9223372036854775808"
+#else
+						   "2147483648"
+#endif
+						) == 0 &&
+					strcmp(nme, "tseqbase") == 0) {
+					bb.Tseqbase = oid_nil;
+				} else {
+					/* all values should be non-negative, so we check that
+					 * here as well */
+					if (lngFromStr(val, &len, &lvp, true) < 0 ||
+						lv < 0 /* includes lng_nil */)
+						throw(MAL, "remote.bincopyfrom",
+							  "bad %s value: %s", nme, val);
+
+					/* deal with nme and val */
+					if (strcmp(nme, "version") == 0) {
+						if (lv != 1)
+							throw(MAL, "remote.bincopyfrom",
+								  "unsupported version: %s", val);
+					} else if (strcmp(nme, "hseqbase") == 0) {
+#if SIZEOF_OID < SIZEOF_LNG
+						if (lv > GDK_oid_max)
+							throw(MAL, "remote.bincopyfrom",
+									  "bad %s value: %s", nme, val);
+#endif
+						bb.Hseqbase = (oid)lv;
+					} else if (strcmp(nme, "ttype") == 0) {
+						if (lv >= GDKatomcnt)
+							throw(MAL, "remote.bincopyfrom",
+								  "bad %s value: %s", nme, val);
+						bb.Ttype = (int) lv;
+					} else if (strcmp(nme, "tseqbase") == 0) {
+#if SIZEOF_OID < SIZEOF_LNG
+						if (lv > GDK_oid_max)
+							throw(MAL, "remote.bincopyfrom",
+								  "bad %s value: %s", nme, val);
+#endif
+						bb.Tseqbase = (oid) lv;
+					} else if (strcmp(nme, "tsorted") == 0) {
+						bb.Tsorted = lv != 0;
+					} else if (strcmp(nme, "trevsorted") == 0) {
+						bb.Trevsorted = lv != 0;
+					} else if (strcmp(nme, "tkey") == 0) {
+						bb.Tkey = lv != 0;
+					} else if (strcmp(nme, "tnonil") == 0) {
+						bb.Tnonil = lv != 0;
+					} else if (strcmp(nme, "tdense") == 0) {
+						bb.Tdense = lv != 0;
+					} else if (strcmp(nme, "size") == 0) {
+						if (lv > (lng) BUN_MAX)
+							throw(MAL, "remote.bincopyfrom",
+								  "bad %s value: %s", nme, val);
+						bb.size = (BUN) lv;
+					} else if (strcmp(nme, "tailsize") == 0) {
+						bb.tailsize = (size_t) lv;
+					} else if (strcmp(nme, "theapsize") == 0) {
+						bb.theapsize = (size_t) lv;
+					} else {
+						throw(MAL, "remote.bincopyfrom",
+							  "unknown element: %s", nme);
+					}
+				}
+				nme = val = NULL;
+				break;
+		}
+		hdr++;
+	}
+
+	b = COLnew(0, bb.Ttype, bb.size, TRANSIENT);
+	if (b == NULL)
+		throw(MAL, "remote.get", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+
+	/* for strings, the width may not match, fix it to match what we
+	 * retrieved */
+	if (bb.Ttype == TYPE_str && bb.size) {
+		b->twidth = (unsigned short) (bb.tailsize / bb.size);
+		b->tshift = ATOMelmshift(Tsize(b));
+	}
+
+	if (bb.tailsize > 0) {
+		if (HEAPextend(b->theap, bb.tailsize, true) != GDK_SUCCEED ||
+			mnstr_read(in, b->theap->base, bb.tailsize, 1) < 0)
+			goto bailout;
+		b->theap->dirty = true;
+	}
+	if (bb.theapsize > 0) {
+		if (HEAPextend(b->tvheap, bb.theapsize, true) != GDK_SUCCEED ||
+			mnstr_read(in, b->tvheap->base, bb.theapsize, 1) < 0)
+			goto bailout;
+		b->tvheap->free = bb.theapsize;
+		b->tvheap->dirty = true;
+	}
+
+	/* set properties */
+	b->tseqbase = bb.Tdense ? bb.Tseqbase : oid_nil;
+	b->tsorted = bb.Tsorted;
+	b->trevsorted = bb.Trevsorted;
+	b->tkey = bb.Tkey;
+	b->tnonil = bb.Tnonil;
+	if (bb.Ttype == TYPE_str && bb.size)
+		BATsetcapacity(b, (BUN) (bb.tailsize >> b->tshift));
+	BATsetcount(b, bb.size);
+	b->batDirtydesc = true;
+
+	// read blockmode flush
+	while (must_flush && mnstr_read(in, &tmp, 1, 1) > 0) {
+		TRC_ERROR(MAL_REMOTE, "Expected flush, got: %c\n", tmp);
+	}
+
+	BATsettrivprop(b);
+
+	*ret = b;
+	return(MAL_SUCCEED);
+
+  bailout:
+	BBPreclaim(b);
+	throw(MAL, "remote.bincopyfrom", "reading failed");
+}
 
 /**
  * get fetches the object referenced by ident over connection conn.
@@ -667,7 +888,6 @@ static str RMTget(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 		stream *sout;
 		stream *sin;
 		char buf[256];
-		ssize_t sz = 0, rd;
 		BAT *b = NULL;
 
 		/* this call should be a single transaction over the channel*/
@@ -686,24 +906,12 @@ static str RMTget(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 		mnstr_printf(sout, "remote.batbincopy(%s);\n", ident);
 		mnstr_flush(sout, MNSTR_FLUSH_DATA);
 
-		/* read the JSON header */
-		while ((rd = mnstr_read(sin, &buf[sz], 1, 1)) == 1 && buf[sz] != '\n') {
-			sz += rd;
-		}
-		if (rd < 0) {
+		if ( (tmp = RMTreadbatheader(sin, buf)) != MAL_SUCCEED) {
 			MT_lock_unset(&c->lock);
-			throw(MAL, "remote.get", "could not read BAT JSON header");
-		}
-		if (buf[0] == '!') {
-			char *result;
-			MT_lock_unset(&c->lock);
-			if((result = GDKstrdup(buf)) == NULL)
-				throw(MAL, "remote.get", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-			return result;
+			return tmp;
 		}
 
-		buf[sz] = '\0';
-		if ((tmp = RMTinternalcopyfrom(&b, buf, sin)) != NULL) {
+		if ((tmp = RMTinternalcopyfrom(&b, buf, sin, true)) != NULL) {
 			MT_lock_unset(&c->lock);
 			return(tmp);
 		}
@@ -1016,11 +1224,19 @@ static str RMTexec(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 	(void)cntxt;
 	(void)mb;
 
-	for (i = 0; i < pci->retc; i++) {
-		tmp = *getArgReference_str(stk, pci, i);
-		if (tmp == NULL || strcmp(tmp, (str)str_nil) == 0)
-			throw(ILLARG, "remote.exec", ILLEGAL_ARGUMENT
-					": return value %d is NULL or nil", i);
+	columnar_result_callback* rcb = NULL;
+	ValRecord *v = &(stk)->stk[(pci)->argv[4]];
+	if (pci->retc == 1 && (pci->argc >= 4) && (v->vtype == TYPE_ptr) ) {
+		rcb = (columnar_result_callback*) v->val.pval;
+		i = 1; //There is only one (void) return argument.
+	}
+	else {
+		for (i = 0; i < pci->retc; i++) {
+			tmp = *getArgReference_str(stk, pci, i);
+			if (tmp == NULL || strcmp(tmp, (str)str_nil) == 0)
+				throw(ILLARG, "remote.exec", ILLEGAL_ARGUMENT
+						": return value %d is NULL or nil", i);
+		}
 	}
 	conn = *getArgReference_str(stk, pci, i++);
 	if (conn == NULL || strcmp(conn, (str)str_nil) == 0)
@@ -1038,19 +1254,23 @@ static str RMTexec(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 	/* this call should be a single transaction over the channel*/
 	MT_lock_set(&c->lock);
 
-	if(pci->argc - pci->retc < 3) /* conn, mod, func, ... */
+	if(!rcb && pci->argc - pci->retc < 3) /* conn, mod, func, ... */
 		throw(MAL, "remote.exec", ILLEGAL_ARGUMENT  " MAL instruction misses arguments");
 
 	len = 0;
 	/* count how big a buffer we need */
 	len += 2 * (pci->retc > 1);
-	for (i = 0; i < pci->retc; i++) {
-		len += 2 * (i > 0);
-		len += strlen(*getArgReference_str(stk, pci, i));
-	}
+	if (!rcb)
+		for (i = 0; i < pci->retc; i++) {
+			len += 2 * (i > 0);
+			len += strlen(*getArgReference_str(stk, pci, i));
+		}
+
+	const int arg_index = rcb?4:3;
+
 	len += strlen(mod) + strlen(func) + 6;
-	for (i = 3; i < pci->argc - pci->retc; i++) {
-		len += 2 * (i > 3);
+	for (i = arg_index; i < pci->argc - pci->retc; i++) {
+		len += 2 * (i > arg_index);
 		len += strlen(*getArgReference_str(stk, pci, pci->retc + i));
 	}
 	len += 2;
@@ -1062,23 +1282,29 @@ static str RMTexec(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 
 	if (pci->retc > 1)
 		qbuf[len++] = '(';
-	for (i = 0; i < pci->retc; i++)
-		len += snprintf(&qbuf[len], buflen - len, "%s%s",
-				(i > 0 ? ", " : ""), *getArgReference_str(stk, pci, i));
+	if (!rcb)
+		for (i = 0; i < pci->retc; i++)
+			len += snprintf(&qbuf[len], buflen - len, "%s%s",
+					(i > 0 ? ", " : ""), *getArgReference_str(stk, pci, i));
 
 	if (pci->retc > 1)
 		qbuf[len++] = ')';
 
 	/* build the function invocation string in qbuf */
-	len += snprintf(&qbuf[len], buflen - len, " := %s.%s(", mod, func);
+	if (!rcb && pci->retc > 0) {
+		len += snprintf(&qbuf[len], buflen - len, " := %s.%s(", mod, func);
+	}
+	else {
+		len += snprintf(&qbuf[len], buflen - len, " %s.%s(", mod, func);
+	}
 
 	/* handle the arguments to the function */
 
 	/* put the arguments one by one, and dynamically build the
 	 * invocation string */
-	for (i = 3; i < pci->argc - pci->retc; i++) {
+	for (i = arg_index; i < pci->argc - pci->retc; i++) {
 		len += snprintf(&qbuf[len], buflen - len, "%s%s",
-				(i > 3 ? ", " : ""),
+				(i > arg_index ? ", " : ""),
 				*(getArgReference_str(stk, pci, pci->retc + i)));
 	}
 
@@ -1087,6 +1313,59 @@ static str RMTexec(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 	TRC_DEBUG(MAL_REMOTE, "Remote exec: %s - %s\n", c->name, qbuf);
 	tmp = RMTquery(&mhdl, "remote.exec", c->mconn, qbuf);
 	GDKfree(qbuf);
+
+	/* Temporary hack:
+	 * use a callback to immediately handle columnar results before hdl is destroyed. */
+	if(tmp == MAL_SUCCEED && rcb && mhdl && (mapi_get_querytype(mhdl) == Q_TABLE || mapi_get_querytype(mhdl) == Q_PREPARE)) {
+
+		int fields = mapi_get_field_count(mhdl);
+
+		columnar_result* results = GDKzalloc(sizeof(columnar_result) * fields);
+
+		char buf[256] = {0};
+
+		stream* sin = mapi_get_from(c->mconn);
+
+		char* tblname = mapi_get_table(mhdl, 0);
+
+		int i;
+		for (i = 0; i < fields; i++) {
+			BAT *b = NULL;
+
+			RMTreadbatheader(sin, buf);
+			RMTinternalcopyfrom(&b, buf, sin, i == fields - 1);
+
+			if ( b == NULL) {
+				tmp= createException(MAL,"sql.resultset",SQLSTATE(HY005) "Cannot access column descriptor ");
+				break;
+			}
+
+			results[i].id = b->batCacheid;
+			results[i].colname = mapi_get_name(mhdl, i);
+			results[i].tpename = mapi_get_type(mhdl, i);
+			results[i].digits = mapi_get_digits(mhdl, i);
+			results[i].scale = mapi_get_scale(mhdl, i);
+			BBPkeepref(results[i].id);
+		}
+
+		if (tmp != MAL_SUCCEED) {
+			for (int j = 0; j < i; j++) {
+				BBPrelease(results[j].id);
+			}
+		}
+		else {
+			assert(rcb->context);
+			tmp = rcb->call(rcb->context, tblname, results, fields);
+		}
+		GDKfree(results);
+	}
+
+	if (rcb) {
+		GDKfree(rcb->context);
+		rcb->context = NULL;
+		GDKfree(rcb);
+	}
+
 	if (mhdl)
 		mapi_close_handle(mhdl);
 	MT_lock_unset(&c->lock);
@@ -1227,188 +1506,6 @@ static str RMTbincopyto(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	return(MAL_SUCCEED);
 }
 
-typedef struct _binbat_v1 {
-	int Ttype;
-	oid Hseqbase;
-	oid Tseqbase;
-	bool
-		Tsorted:1,
-		Trevsorted:1,
-		Tkey:1,
-		Tnonil:1,
-		Tdense:1;
-	BUN size;
-	size_t headsize;
-	size_t tailsize;
-	size_t theapsize;
-} binbat;
-
-static inline str
-RMTinternalcopyfrom(BAT **ret, char *hdr, stream *in)
-{
-	binbat bb = { 0, 0, 0, false, false, false, false, false, 0, 0, 0, 0 };
-	char *nme = NULL;
-	char *val = NULL;
-	char tmp;
-	size_t len;
-	lng lv, *lvp;
-
-	BAT *b;
-
-	/* hdr is a JSON structure that looks like
-	 * {"version":1,"ttype":6,"tseqbase":0,"tailsize":4,"theapsize":0}
-	 * we take the binary data directly from the stream */
-
-	/* could skip whitespace, but we just don't allow that */
-	if (*hdr++ != '{')
-		throw(MAL, "remote.bincopyfrom", "illegal input, not a JSON header (got '%s')", hdr - 1);
-	while (*hdr != '\0') {
-		switch (*hdr) {
-			case '"':
-				/* we assume only numeric values, so all strings are
-				 * elems */
-				if (nme != NULL) {
-					*hdr = '\0';
-				} else {
-					nme = hdr + 1;
-				}
-				break;
-			case ':':
-				val = hdr + 1;
-				break;
-			case ',':
-			case '}':
-				if (val == NULL)
-					throw(MAL, "remote.bincopyfrom",
-							"illegal input, JSON value missing");
-				*hdr = '\0';
-
-				lvp = &lv;
-				len = sizeof(lv);
-				/* tseqbase can be 1<<31/1<<63 which causes overflow
-				 * in lngFromStr, so we check separately */
-				if (strcmp(val,
-#if SIZEOF_OID == 8
-						   "9223372036854775808"
-#else
-						   "2147483648"
-#endif
-						) == 0 &&
-					strcmp(nme, "tseqbase") == 0) {
-					bb.Tseqbase = oid_nil;
-				} else {
-					/* all values should be non-negative, so we check that
-					 * here as well */
-					if (lngFromStr(val, &len, &lvp, true) < 0 ||
-						lv < 0 /* includes lng_nil */)
-						throw(MAL, "remote.bincopyfrom",
-							  "bad %s value: %s", nme, val);
-
-					/* deal with nme and val */
-					if (strcmp(nme, "version") == 0) {
-						if (lv != 1)
-							throw(MAL, "remote.bincopyfrom",
-								  "unsupported version: %s", val);
-					} else if (strcmp(nme, "hseqbase") == 0) {
-#if SIZEOF_OID < SIZEOF_LNG
-						if (lv > GDK_oid_max)
-							throw(MAL, "remote.bincopyfrom",
-									  "bad %s value: %s", nme, val);
-#endif
-						bb.Hseqbase = (oid)lv;
-					} else if (strcmp(nme, "ttype") == 0) {
-						if (lv >= GDKatomcnt)
-							throw(MAL, "remote.bincopyfrom",
-								  "bad %s value: %s", nme, val);
-						bb.Ttype = (int) lv;
-					} else if (strcmp(nme, "tseqbase") == 0) {
-#if SIZEOF_OID < SIZEOF_LNG
-						if (lv > GDK_oid_max)
-							throw(MAL, "remote.bincopyfrom",
-								  "bad %s value: %s", nme, val);
-#endif
-						bb.Tseqbase = (oid) lv;
-					} else if (strcmp(nme, "tsorted") == 0) {
-						bb.Tsorted = lv != 0;
-					} else if (strcmp(nme, "trevsorted") == 0) {
-						bb.Trevsorted = lv != 0;
-					} else if (strcmp(nme, "tkey") == 0) {
-						bb.Tkey = lv != 0;
-					} else if (strcmp(nme, "tnonil") == 0) {
-						bb.Tnonil = lv != 0;
-					} else if (strcmp(nme, "tdense") == 0) {
-						bb.Tdense = lv != 0;
-					} else if (strcmp(nme, "size") == 0) {
-						if (lv > (lng) BUN_MAX)
-							throw(MAL, "remote.bincopyfrom",
-								  "bad %s value: %s", nme, val);
-						bb.size = (BUN) lv;
-					} else if (strcmp(nme, "tailsize") == 0) {
-						bb.tailsize = (size_t) lv;
-					} else if (strcmp(nme, "theapsize") == 0) {
-						bb.theapsize = (size_t) lv;
-					} else {
-						throw(MAL, "remote.bincopyfrom",
-							  "unknown element: %s", nme);
-					}
-				}
-				nme = val = NULL;
-				break;
-		}
-		hdr++;
-	}
-
-	b = COLnew(0, bb.Ttype, bb.size, TRANSIENT);
-	if (b == NULL)
-		throw(MAL, "remote.get", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-
-	/* for strings, the width may not match, fix it to match what we
-	 * retrieved */
-	if (bb.Ttype == TYPE_str && bb.size) {
-		b->twidth = (unsigned short) (bb.tailsize / bb.size);
-		b->tshift = ATOMelmshift(Tsize(b));
-	}
-
-	if (bb.tailsize > 0) {
-		if (HEAPextend(b->theap, bb.tailsize, true) != GDK_SUCCEED ||
-			mnstr_read(in, b->theap->base, bb.tailsize, 1) < 0)
-			goto bailout;
-		b->theap->dirty = true;
-	}
-	if (bb.theapsize > 0) {
-		if (HEAPextend(b->tvheap, bb.theapsize, true) != GDK_SUCCEED ||
-			mnstr_read(in, b->tvheap->base, bb.theapsize, 1) < 0)
-			goto bailout;
-		b->tvheap->free = bb.theapsize;
-		b->tvheap->dirty = true;
-	}
-
-	/* set properties */
-	b->tseqbase = bb.Tdense ? bb.Tseqbase : oid_nil;
-	b->tsorted = bb.Tsorted;
-	b->trevsorted = bb.Trevsorted;
-	b->tkey = bb.Tkey;
-	b->tnonil = bb.Tnonil;
-	if (bb.Ttype == TYPE_str && bb.size)
-		BATsetcapacity(b, (BUN) (bb.tailsize >> b->tshift));
-	BATsetcount(b, bb.size);
-	b->batDirtydesc = true;
-
-	/* read blockmode flush */
-	while (mnstr_read(in, &tmp, 1, 1) > 0) {
-		TRC_ERROR(MAL_REMOTE, "Expected flush, got: %c\n", tmp);
-	}
-
-	BATsettrivprop(b);
-
-	*ret = b;
-	return(MAL_SUCCEED);
-
-  bailout:
-	BBPreclaim(b);
-	throw(MAL, "remote.bincopyfrom", "reading failed");
-}
-
 /**
  * read from the input stream and give the BAT handle back to the caller
  */
@@ -1429,7 +1526,7 @@ static str RMTbincopyfrom(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 
 	cntxt->fdin->buf[cntxt->fdin->len] = '\0';
 	err = RMTinternalcopyfrom(&b,
-			&cntxt->fdin->buf[cntxt->fdin->pos], cntxt->fdin->s);
+			&cntxt->fdin->buf[cntxt->fdin->pos], cntxt->fdin->s, true);
 	/* skip the JSON line */
 	cntxt->fdin->pos = ++cntxt->fdin->len;
 	if (err != MAL_SUCCEED)
@@ -1512,8 +1609,8 @@ mel_func remote_init_funcs[] = {
  command("remote", "prelude", RMTprelude, false, "initialise the remote module", args(1,1, arg("",void))),
  command("remote", "epilogue", RMTepilogue, false, "release the resources held by the remote module", args(1,1, arg("",void))),
  command("remote", "resolve", RMTresolve, false, "resolve a pattern against Merovingian and return the URIs", args(1,2, batarg("",str),arg("pattern",str))),
- command("remote", "connect", RMTconnect, false, "returns a newly created connection for uri, using user name and password", args(1,4, arg("",str),arg("uri",str),arg("user",str),arg("passwd",str))),
- command("remote", "connect", RMTconnectScen, false, "returns a newly created connection for uri, using user name, password and scenario", args(1,5, arg("",str),arg("uri",str),arg("user",str),arg("passwd",str),arg("scen",str))),
+ command("remote", "connect", RMTconnect, false, "returns a newly created connection for uri, using user name and password", args(1,5, arg("",str),arg("uri",str),arg("user",str),arg("passwd",str),arg("scen",str))),
+ command("remote", "connect", RMTconnectScen, false, "returns a newly created connection for uri, using user name, password and scenario", args(1,6, arg("",str),arg("uri",str),arg("user",str),arg("passwd",str),arg("scen",str),arg("columnar",bit))),
  pattern("remote", "connect", RMTconnectTable, false, "return a newly created connection for a table. username and password should be in the vault", args(1,3, arg("",str),arg("table",str),arg("schen",str))),
  command("remote", "disconnect", RMTdisconnect, false, "disconnects the connection pointed to by handle (received from a call to connect()", args(1,2, arg("",void),arg("conn",str))),
  pattern("remote", "get", RMTget, false, "retrieves a copy of remote object ident", args(1,3, argany("",0),arg("conn",str),arg("ident",str))),
@@ -1523,6 +1620,7 @@ mel_func remote_init_funcs[] = {
  pattern("remote", "exec", RMTexec, false, "remotely executes <mod>.<func> and returns the handle to its result", args(1,4, vararg("",str),arg("conn",str),arg("mod",str),arg("func",str))),
  pattern("remote", "exec", RMTexec, false, "remotely executes <mod>.<func> using the argument list of remote objects and returns the handle to its result", args(1,5, arg("",str),arg("conn",str),arg("mod",str),arg("func",str),vararg("",str))),
  pattern("remote", "exec", RMTexec, false, "remotely executes <mod>.<func> using the argument list of remote objects and returns the handle to its result", args(1,5, vararg("",str),arg("conn",str),arg("mod",str),arg("func",str),vararg("",str))),
+ pattern("remote", "exec", RMTexec, false, "remotely executes <mod>.<func> using the argument list of remote objects and applying function pointer rcb as callback to handle any results.", args(0,5, arg("conn",str),arg("mod",str),arg("func",str),arg("rcb",ptr), vararg("",str))),
  command("remote", "isalive", RMTisalive, false, "check if conn is still valid and connected", args(1,2, arg("",int),arg("conn",str))),
  pattern("remote", "batload", RMTbatload, false, "create a BAT of the given type and size, and load values from the input stream", args(1,3, batargany("",1),argany("tt",1),arg("size",int))),
  pattern("remote", "batbincopy", RMTbincopyto, false, "dump BAT b in binary form to the stream", args(1,2, arg("",void),batargany("b",0))),

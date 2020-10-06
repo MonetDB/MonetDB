@@ -559,6 +559,32 @@ project (
 [ 2	]
 #insert into tab2 values (1, 'a'), (1, 'b');
 [ 2	]
+#PLAN select
+#  myalias0."part" as "part",
+#  myalias0."tet" as "tet",
+#  count(*) as mycount,
+#  myalias0."tet" as track
+#from
+#  tab1 myalias0
+#  left join tab2 myalias1
+#  on myalias0."part" = myalias1."myk"
+#group by
+#  myalias0."part",
+#  track,
+#  myalias0."tet",
+#  myalias1."ups";
+% .plan # table_name
+% rel # name
+% clob # type
+% 138 # length
+project (
+| group by (
+| | left outer join (
+| | | table(sys.tab1) [ "tab1"."part" as "myalias0"."part", "tab1"."tet" as "myalias0"."tet" ] COUNT ,
+| | | table(sys.tab2) [ "tab2"."myk" as "myalias1"."myk", "tab2"."ups" as "myalias1"."ups" ] COUNT 
+| | ) [ "myalias0"."part" = "myalias1"."myk" ]
+| ) [ "myalias0"."part", "myalias0"."tet" as "track", "myalias1"."ups" ] [ "myalias0"."part", "track", sys.count() NOT NULL as "%1"."%1" ]
+) [ "myalias0"."part", "track" as "tet", "%1"."%1" NOT NULL as "mycount", "track" ]
 #select
 #  myalias0."part" as "part",
 #  myalias0."tet" as "tet",

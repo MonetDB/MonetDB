@@ -24,7 +24,8 @@ typedef enum inttype {
 	idow,
 	idoy,
 	icentury,
-	idecade
+	idecade,
+	iepoch
 } itype;
 
 int parse_interval_qualifier(mvc *sql, struct dlist *pers, int *sk, int *ek, int *sp, int *ep);

@@ -32,7 +32,7 @@ target_sources(malmodules
   oltp.c oltp.h
   wlc.c
   mal_mapi.c mal_mapi.h
-  remote.c
+  remote.c remote.h
   txtsim.c
   tokenizer.c tokenizer.h
   sample.c

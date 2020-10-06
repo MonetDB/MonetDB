@@ -867,8 +867,7 @@ BKCshrinkBAT(bat *ret, const bat *bid, const bat *did)
 	bn->tseqbase = oid_nil;
 	bn->tkey = b->tkey;
 	bn->tnonil = b->tnonil;
-	bn->tnil = b->tnil;
-
+	bn->tnil = false;		/* can't be sure if values deleted */
 
 	BBPunfix(b->batCacheid);
 	BBPunfix(bs->batCacheid);
