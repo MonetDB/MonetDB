@@ -1,0 +1,38 @@
+testing/convert_to_sqllogic.sh
+------------------------------
+Bash script to convert <testname>.sql scripts to <testname>.test sqllogic tests.
+
+$ ./testing/convert_to_sqllogic.sh 
+USAGE convert_to_sqllogic.sh [OPTION ...] [FILE...]
+DESCRIPTION: Converts old sql scripts to sqllogic scripts.
+OPTIONS:
+ -s|--src-dir <source dir>          directory with old sql tests.
+ -t|--dst-dir <destination dir>     destination dotrectory for *.test sqllogic tests.
+ -o|--overwrite                     overwrites existing .test
+ -d|--dry-run                       dry run
+
+when no --dst-dir specified assumes --src-dir. The curent process is to place converted tests in the same folder as the original tests. 
+
+Usage scenarios:
+
+1. Convert all tests under given `Tests` folder at once:
+$ ./testing/convert_to_sqllogic.sh -s slq/test/null/Tests
+
+2. Convert individual tests
+$ ./testing/convert_to_sqllogic.sh --dst-dir sql/test/null/Tests/ sql/test/null/Tests/coalesce.sql sql/test/null/Tests/coalesce2.sql
+
+3. tests passed from stdin
+$ ls sql/test/Tests/comment*.sql | ./testing/convert_to_sqllogic.sh --dst-dir sql/test/Tests/
+
+Mz.py
+------
+This is a refactored version of Mtest.py in progress. It removes html generation and diff logic. The CLI options have not
+changed. To run tests under one of the converted folders use it as follows:
+
+$ Mz.py sql/test/Tests
+
+Converted folders progress:
+---------------------------
+- sql/test/null/Tests       pass
+- sql/test/json/Tests       pass
+- sql/test/Tests            5 fail
