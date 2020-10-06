@@ -59,6 +59,7 @@ SELECT f1, extract(day from f1) FROM TIME_TBL;
 SELECT f1, extract(hour from f1) FROM TIME_TBL;
 SELECT f1, extract(minute from f1) FROM TIME_TBL;
 SELECT f1, extract(second from f1) FROM TIME_TBL;
+SELECT f1, extract(epoch from f1) FROM TIME_TBL;
 
 SELECT f1, sql_add(f1, 12*60*60.0 + 66) FROM TIME_TBL;
 SELECT f1, sql_add(f1, cast(2*60*60 as interval second)) FROM TIME_TBL;

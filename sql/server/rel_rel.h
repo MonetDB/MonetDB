@@ -93,7 +93,7 @@ extern sql_exp *rel_groupby_add_aggr(mvc *sql, sql_rel *rel, sql_exp *e);
 extern sql_rel *rel_select(sql_allocator *sa, sql_rel *l, sql_exp *e);
 sql_export sql_rel *rel_basetable(mvc *sql, sql_table *t, const char *tname);
 extern sql_rel *rel_groupby(mvc *sql, sql_rel *l, list *groupbyexps );
-extern sql_rel *rel_project(sql_allocator *sa, sql_rel *l, list *e);
+sql_export sql_rel *rel_project(sql_allocator *sa, sql_rel *l, list *e);
 extern sql_rel *rel_project_exp(sql_allocator *sa, sql_exp *e);
 extern sql_rel *rel_exception(sql_allocator *sa, sql_rel *l, sql_rel *r, list *exps);
 

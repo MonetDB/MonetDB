@@ -652,14 +652,20 @@ SQLexitClient(Client c)
 str
 SQLstatement(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	str *expr = getArgReference_str(stk, pci, 1);
-	bit output = TRUE;
+	const char *expr = *getArgReference_str(stk, pci, 1);
 
 	(void) mb;
-	if (pci->argc == 3)
-		output = *getArgReference_bit(stk, pci, 2);
 
-	return SQLstatementIntern(cntxt, *expr, "SQLstatement", TRUE, output, NULL);
+	protocol_version backup = cntxt->protocol;
+
+	if (pci->argc == 3 && *getArgReference_bit(stk, pci, 2))
+		cntxt->protocol = PROTOCOL_COLUMNAR;
+
+	str msg = SQLstatementIntern(cntxt, expr, "SQLstatement", TRUE, TRUE, NULL);
+
+	cntxt->protocol = backup;
+
+	return msg;
 }
 
 str
@@ -981,6 +987,15 @@ SQLparser(Client c)
 				goto finalize;
 			return MAL_SUCCEED;
 		}
+		static const char* columnar_protocol = "columnar_protocol ";
+		if (strncmp(in->buf + in->pos, columnar_protocol, strlen(columnar_protocol)) == 0) {
+			v = (int) strtol(in->buf + in->pos + strlen(columnar_protocol), NULL, 10);
+
+			c->protocol = v?PROTOCOL_COLUMNAR:PROTOCOL_9;
+
+			in->pos = in->len;	/* HACK: should use parsed length */
+			return MAL_SUCCEED;
+		}
 		if (strncmp(in->buf + in->pos, "reply_size ", 11) == 0) {
 			v = (int) strtol(in->buf + in->pos + 11, NULL, 10);
 			if (v < -1) {
@@ -1144,7 +1159,7 @@ SQLparser(Client c)
 			assert(m->emode == m_prepare);
 			/* For prepared queries, return a table with result set structure*/
 			/* optimize the code block and rename it */
-			err = mvc_export_prepare(m, c->fdout, be->q, "");
+			err = mvc_export_prepare(be, c->fdout, "");
 		}
 
 		if (!err) {

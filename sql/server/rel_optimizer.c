@@ -2149,7 +2149,7 @@ exp_push_down_prj(mvc *sql, sql_exp *e, sql_rel *f, sql_rel *t)
 			ne = exps_bind_column2(f->exps, e->l, e->r, NULL);
 		if (!ne && !e->l)
 			ne = exps_bind_column(f->exps, e->r, NULL, NULL, 1);
-		if (!ne || (ne->type != e_column && ne->type != e_atom))
+		if (!ne || (ne->type != e_column && (ne->type != e_atom || ne->f)))
 			return NULL;
 		while (ne && has_label(ne) && f->op == op_project && ne->type == e_column) {
 			sql_exp *oe = e, *one = ne;
@@ -2167,7 +2167,7 @@ exp_push_down_prj(mvc *sql, sql_exp *e, sql_rel *f, sql_rel *t)
 				e = oe;
 				break;
 			}
-			if (ne->type != e_column && ne->type != e_atom)
+			if (ne->type != e_column && (ne->type != e_atom || ne->f))
 				return NULL;
 		}
 		/* possibly a groupby/project column is renamed */
@@ -2178,7 +2178,7 @@ exp_push_down_prj(mvc *sql, sql_exp *e, sql_rel *f, sql_rel *t)
 			if (!gbe && !e->l)
 				gbe = exps_bind_column(f->r, ne->r, NULL, NULL, 1);
 			ne = gbe;
-			if (!ne || (ne->type != e_column && ne->type != e_atom))
+			if (!ne || (ne->type != e_column && (ne->type != e_atom || ne->f)))
 				return NULL;
 		}
 		if (ne->type == e_atom)
@@ -6043,7 +6043,7 @@ rel_groupby_distinct(visitor *v, sql_rel *rel)
 	if (is_groupby(rel->op) && rel->r && !rel_is_ref(rel)) {
 		int nr = 0, anr = 0;
 		list *gbe, *ngbe, *arg, *exps, *nexps;
-		sql_exp *distinct = NULL, *darg;
+		sql_exp *distinct = NULL, *darg, *found;
 		sql_rel *l = NULL;
 
 		for (n=rel->exps->h; n && nr <= 2; n = n->next) {
@@ -6092,17 +6092,22 @@ rel_groupby_distinct(visitor *v, sql_rel *rel)
 		}
 
 		darg = arg->h->data;
-		list_append(gbe, darg = exp_copy(v->sql, darg));
-		exp_label(v->sql->sa, darg, ++v->sql->label);
-
-		darg = exp_ref(v->sql, darg);
+		if ((found = exps_find_exp(gbe, darg))) { /* first find if the aggregate argument already exists in the grouping list */
+			darg = exp_ref(v->sql, found);
+		} else {
+			list_append(gbe, darg = exp_copy(v->sql, darg));
+			exp_label(v->sql->sa, darg, ++v->sql->label);
+			darg = exp_ref(v->sql, darg);
+		}
 		list_append(exps, darg);
 		darg = exp_ref(v->sql, darg);
 		arg->h->data = darg;
-		l = rel->l = rel_groupby(v->sql, rel->l, gbe);
-		l->exps = exps;
-		set_processed(l);
-		rel->r = ngbe;
+		if (!exp_match_list(ngbe, gbe)) { /* if the grouping columns match don't create an extra grouping */
+			l = rel->l = rel_groupby(v->sql, rel->l, gbe);
+			l->exps = exps;
+			set_processed(l);
+			rel->r = ngbe;
+		}
 		rel->exps = nexps;
 		set_nodistinct(distinct);
 		append(nexps, distinct);

@@ -94,6 +94,12 @@ stdout of test 'timetz` in directory 'sql/test/pg_regress` itself:
 % timetz,	decimal # type
 % 17,	11 # length
 [ NULL,	NULL	]
+#SELECT f1, extract(epoch from f1) FROM TIMETZ_TBL;
+% sys.timetz_tbl,	sys.%1 # table_name
+% f1,	%1 # name
+% timetz,	bigint # type
+% 17,	1 # length
+[ NULL,	NULL	]
 #SELECT f1, sql_sub(f1, cast('23:22:21' as timetz)) FROM TIMETZ_TBL;
 % sys.timetz_tbl,	sys.%2 # table_name
 % f1,	%2 # name

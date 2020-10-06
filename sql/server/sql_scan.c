@@ -308,6 +308,7 @@ scanner_init_keywords(void)
 	failed += keywords_insert("HOUR", HOUR);
 	failed += keywords_insert("MINUTE", MINUTE);
 	failed += keywords_insert("SECOND", SECOND);
+	failed += keywords_insert("EPOCH", EPOCH);
 
 	failed += keywords_insert("POSITION", POSITION);
 	failed += keywords_insert("SUBSTRING", SUBSTRING);
