@@ -336,7 +336,7 @@ str_2time_daytimetz_internal(ptr out, ptr in, const bat *sid, int tpe, int digit
 		if (ci.tpe == cand_dense) {
 			for (BUN i = 0 ; i < q && !msg; i++) {
 				oid p = (canditer_next_dense(&ci) - off);
-				str next = BUNtail(it, p);
+				str next = BUNtvar(it, p);
 
 				if (strNil(next)) {
 					ret[i] = daytime_nil;
@@ -348,7 +348,7 @@ str_2time_daytimetz_internal(ptr out, ptr in, const bat *sid, int tpe, int digit
 		} else {
 			for (BUN i = 0 ; i < q && !msg; i++) {
 				oid p = (canditer_next(&ci) - off);
-				str next = BUNtail(it, p);
+				str next = BUNtvar(it, p);
 
 				if (strNil(next)) {
 					ret[i] = daytime_nil;
@@ -808,7 +808,7 @@ str_2time_timestamptz_internal(ptr out, ptr in, const bat *sid, int tpe, int dig
 		if (ci.tpe == cand_dense) {
 			for (BUN i = 0 ; i < q && !msg; i++) {
 				oid p = (canditer_next_dense(&ci) - off);
-				str next = BUNtail(bi, p);
+				str next = BUNtvar(bi, p);
 
 				if (strNil(next)) {
 					ret[i] = timestamp_nil;
@@ -820,7 +820,7 @@ str_2time_timestamptz_internal(ptr out, ptr in, const bat *sid, int tpe, int dig
 		} else {
 			for (BUN i = 0 ; i < q && !msg; i++) {
 				oid p = (canditer_next(&ci) - off);
-				str next = BUNtail(bi, p);
+				str next = BUNtvar(bi, p);
 
 				if (strNil(next)) {
 					ret[i] = timestamp_nil;
@@ -939,7 +939,7 @@ month_interval_str(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		if (ci.tpe == cand_dense) {
 			for (BUN i = 0 ; i < q && !msg; i++) {
 				oid p = (canditer_next_dense(&ci) - off);
-				str next = BUNtail(bi, p);
+				str next = BUNtvar(bi, p);
 
 				if (strNil(next)) {
 					ret[i] = int_nil;
@@ -951,7 +951,7 @@ month_interval_str(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		} else {
 			for (BUN i = 0 ; i < q && !msg; i++) {
 				oid p = (canditer_next(&ci) - off);
-				str next = BUNtail(bi, p);
+				str next = BUNtvar(bi, p);
 
 				if (strNil(next)) {
 					ret[i] = int_nil;
@@ -1038,7 +1038,7 @@ second_interval_str(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		if (ci.tpe == cand_dense) {
 			for (BUN i = 0 ; i < q && !msg; i++) {
 				oid p = (canditer_next_dense(&ci) - off);
-				str next = BUNtail(bi, p);
+				str next = BUNtvar(bi, p);
 
 				if (strNil(next)) {
 					ret[i] = lng_nil;
@@ -1050,7 +1050,7 @@ second_interval_str(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		} else {
 			for (BUN i = 0 ; i < q && !msg; i++) {
 				oid p = (canditer_next(&ci) - off);
-				str next = BUNtail(bi, p);
+				str next = BUNtvar(bi, p);
 
 				if (strNil(next)) {
 					ret[i] = lng_nil;
@@ -1557,7 +1557,7 @@ str_2_date_internal(ptr out, ptr in, const bat *sid, int tpe)
 		if (ci.tpe == cand_dense) {
 			for (BUN i = 0 ; i < q && !msg; i++) {
 				oid p = (canditer_next_dense(&ci) - off);
-				str next = BUNtail(it, p);
+				str next = BUNtvar(it, p);
 
 				if (strNil(next)) {
 					ret[i] = date_nil;
@@ -1569,7 +1569,7 @@ str_2_date_internal(ptr out, ptr in, const bat *sid, int tpe)
 		} else {
 			for (BUN i = 0 ; i < q && !msg; i++) {
 				oid p = (canditer_next(&ci) - off);
-				str next = BUNtail(it, p);
+				str next = BUNtvar(it, p);
 
 				if (strNil(next)) {
 					ret[i] = date_nil;

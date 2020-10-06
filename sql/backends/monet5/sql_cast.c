@@ -267,7 +267,7 @@ SQLbatstr_cast(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		if (from_str) { /* string to string */
 			for (BUN i = 0; i < q; i++) {
 				oid p = (canditer_next_dense(&ci) - off);
-				str v = (str) BUNtail(bi, p);
+				str v = (str) BUNtvar(bi, p);
 
 				if (strNil(v)) {
 					if (tfastins_nocheckVAR(dst, i, str_nil, Tsize(dst)) != GDK_SUCCEED) {
@@ -302,7 +302,7 @@ SQLbatstr_cast(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		if (from_str) { /* string to string */
 			for (BUN i = 0; i < q; i++) {
 				oid p = (canditer_next(&ci) - off);
-				str v = (str) BUNtail(bi, p);
+				str v = (str) BUNtvar(bi, p);
 
 				if (strNil(v)) {
 					if (tfastins_nocheckVAR(dst, i, str_nil, Tsize(dst)) != GDK_SUCCEED) {
