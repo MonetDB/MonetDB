@@ -1564,32 +1564,126 @@ rel_read(mvc *sql, char *r, int *pos, list *refs)
 			skipIdent(r, pos);
 			e = r+*pos;
 			skipWS(r, pos);
-			if (r[*pos] != ')')
-				sql_error(sql, -1, SQLSTATE(42000) "Table: missing ')'\n");
-			*e = 0;
-			(*pos)++;
-			skipWS(r, pos);
-			if (!(s = mvc_bind_schema(sql, sname)))
-				return sql_error(sql, -1, SQLSTATE(3F000) "No such schema '%s'\n", sname);
-			if (!(t = mvc_bind_table(sql, s, tname)))
-				return sql_error(sql, -1, SQLSTATE(42S02) "Table missing '%s.%s'\n", sname, tname);
-			if (isMergeTable(t))
-				return sql_error(sql, -1, SQLSTATE(42000) "Merge tables not supported under remote connections\n");
-			if (isRemote(t))
-				return sql_error(sql, -1, SQLSTATE(42000) "Remote tables not supported under remote connections\n");
-			if (isReplicaTable(t))
-				return sql_error(sql, -1, SQLSTATE(42000) "Replica tables not supported under remote connections\n");
-			rel = rel_basetable(sql, t, tname);
-			if (!table_privs(sql, t, PRIV_SELECT) && !(rel = rel_reduce_on_column_privileges(sql, rel, t)))
-				return sql_error(sql, -1, SQLSTATE(42000) "Access denied for %s to table '%s.%s'\n", sqlvar_get_string(find_global_var(sql, mvc_bind_schema(sql, "sys"), "current_user")), s->base.name, tname);
+			if (r[*pos] == '(') { /* table returning function */
+				node *m;
+				sql_exp *tudf, *next;
+				list *inputs, *outputs;
+				sql_subfunc *sf;
+				int x = *pos, y; /* save current position, after parsing the input relation we have to parse the input parameters */
+				bool inside_identifier = false;
 
-			if (!r[*pos])
-				return rel;
+				while (r[*pos] && (inside_identifier || r[*pos] != '\n')) { /* the input parameters must be parsed after the input relation, skip them for now  */
+					(*pos)++;
+					if (r[*pos] == '"')
+						inside_identifier = !inside_identifier;
+				}
+				if (r[*pos] != '\n')
+					return sql_error(sql, -1, SQLSTATE(42000) "Table returning function: missing ']' for output parameters\n");
 
-			/* scan aliases */
-			if (!(exps = read_exps(sql, rel, NULL, NULL, r, pos, '[', 0)))
-				return NULL;
-			rel->exps = exps;
+				skipWS(r, pos); /* now parse the input relation */
+				if (!(lrel = rel_read(sql, r, pos, refs)))
+					return NULL;
+				y = *pos; /* later we have to return here to parse the output identifiers */
+				*pos = x;
+				if (!(inputs = read_exps(sql, lrel, NULL, NULL, r, pos, '(', 0)))
+					return NULL;
+
+				if (!(s = mvc_bind_schema(sql, sname)))
+					return sql_error(sql, -1, SQLSTATE(3F000) "No such schema '%s'\n", sname);
+				*e = 0; /* closing table udf name string */
+				if (!(tudf = find_table_function(sql, s, tname, list_empty(inputs) ? NULL : inputs, list_empty(inputs) ? NULL : exp_types(sql->sa, inputs))))
+					return sql_error(sql, 02, SQLSTATE(42S02) "No such table returning function '%s.%s'\n", sname, tname);
+				sf = tudf->f;
+				if (tudf->type != e_func || sf->func->type != F_UNION)
+					return sql_error(sql, 02, SQLSTATE(42000) "'%s' does not return a table\n", exp_func_name(tudf));
+
+				*pos = y; /* now at the end of the input relation */
+				skipWS(r, pos);
+				if (r[*pos] != ')')
+					return sql_error(sql, -1, SQLSTATE(42000) "Table returning function: missing ')' at the end of the input relation\n");
+				(*pos)++;
+				skipWS(r, pos);
+
+				/* Parse identifiers manually, we cannot use read_exps because the labels may not match */
+				if (r[*pos] != '[')
+					return sql_error(sql, -1, SQLSTATE(42000) "Table returning function: missing '[' for output parameters\n");
+				(*pos)++;
+				skipWS(r, pos);
+				m = sf->func->res->h;
+				outputs = new_exp_list(sql->sa);
+				while (r[*pos] && r[*pos] != ']' && m) {
+					sql_arg *a = m->data;
+					char *nrname, *ncname;
+
+					if (r[*pos] != '"')
+						return sql_error(sql, -1, SQLSTATE(42000) "Table returning function: missing identifier for output parameters\n");
+					(*pos)++;
+					nrname = r+*pos;
+					skipIdent(r, pos);
+					if (r[*pos] != '"')
+						return sql_error(sql, -1, SQLSTATE(42000) "Table returning function: missing identifier for output parameters\n");
+					e = r+*pos;
+					*e = 0;
+					(*pos)++;
+					if (r[*pos] != '.')
+						return sql_error(sql, -1, SQLSTATE(42000) "Table returning function: missing '.' for output parameters\n");
+					(*pos)++; /* skip '.' */
+					if (r[*pos] != '"')
+						return sql_error(sql, -1, SQLSTATE(42000) "Table returning function: missing identifier for output parameters\n");
+					(*pos)++;
+					ncname = r+*pos;
+					skipIdent(r, pos);
+					if (r[*pos] != '"')
+						return sql_error(sql, -1, SQLSTATE(42000) "Table returning function: missing identifier for output parameters\n");
+					e = r+*pos;
+					*e = 0;
+					(*pos)++;
+					if (r[*pos] == ',')
+						(*pos)++;
+
+					next = exp_column(sql->sa, nrname, ncname, &a->type, CARD_MULTI, 1, 0);
+					set_basecol(next);
+					append(outputs, next);
+					m = m->next;
+					skipWS(r, pos);
+				}
+				if (r[*pos] != ']')
+					return sql_error(sql, -1, SQLSTATE(42000) "Table returning function: missing ']' for output parameters\n");
+				(*pos)++;
+				skipWS(r, pos);
+				if (list_length(outputs) != list_length(sf->func->res))
+					return sql_error(sql, -1, SQLSTATE(42000) "Table returning function: the number of output parameters don't match the table ones relation outputs: %d != function outputs: %d\n",
+									 list_length(outputs), list_length(sf->func->res));
+				rel = rel_table_func(sql->sa, lrel, tudf, outputs, TABLE_FROM_RELATION);
+			} else {
+				if (r[*pos] != ')')
+					sql_error(sql, -1, SQLSTATE(42000) "Table: missing ')'\n");
+				*e = 0;
+				(*pos)++;
+				skipWS(r, pos);
+				if (!(s = mvc_bind_schema(sql, sname)))
+					return sql_error(sql, -1, SQLSTATE(3F000) "No such schema '%s'\n", sname);
+				if (!(t = mvc_bind_table(sql, s, tname)))
+					return sql_error(sql, -1, SQLSTATE(42S02) "Table missing '%s.%s'\n", sname, tname);
+				if (isMergeTable(t))
+					return sql_error(sql, -1, SQLSTATE(42000) "Merge tables not supported under remote connections\n");
+				if (isRemote(t))
+					return sql_error(sql, -1, SQLSTATE(42000) "Remote tables not supported under remote connections\n");
+				if (isReplicaTable(t))
+					return sql_error(sql, -1, SQLSTATE(42000) "Replica tables not supported under remote connections\n");
+				rel = rel_basetable(sql, t, tname);
+				if (!table_privs(sql, t, PRIV_SELECT) && !(rel = rel_reduce_on_column_privileges(sql, rel, t)))
+					return sql_error(sql, -1, SQLSTATE(42000) "Access denied for %s to table '%s.%s'\n",
+									 sqlvar_get_string(find_global_var(sql, mvc_bind_schema(sql, "sys"), "current_user")), s->base.name, tname);
+
+				if (!r[*pos])
+					return rel;
+
+				/* scan aliases */
+				if (!(exps = read_exps(sql, rel, NULL, NULL, r, pos, '[', 0)))
+					return NULL;
+				rel->exps = exps;
+			}
 			if (strncmp(r+*pos, "COUNT",  strlen("COUNT")) == 0) {
 				(*pos)+= (int) strlen("COUNT");
 				skipWS( r, pos);

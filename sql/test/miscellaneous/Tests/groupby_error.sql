@@ -229,6 +229,21 @@ create table tab2 ("myk" int, "ups" varchar(32));
 insert into tab1 values (1,1,1), (2,2,2);
 insert into tab2 values (1, 'a'), (1, 'b');
 
+PLAN select
+  myalias0."part" as "part",
+  myalias0."tet" as "tet",
+  count(*) as mycount,
+  myalias0."tet" as track
+from
+  tab1 myalias0
+  left join tab2 myalias1
+  on myalias0."part" = myalias1."myk"
+group by
+  myalias0."part",
+  track,
+  myalias0."tet",
+  myalias1."ups";
+
 select
   myalias0."part" as "part",
   myalias0."tet" as "tet",

@@ -530,7 +530,7 @@ find_table_function_type(mvc *sql, sql_schema *s, char *fname, list *exps, list 
 	return e;
 }
 
-static sql_exp*
+sql_exp *
 find_table_function(mvc *sql, sql_schema *s, char *fname, list *exps, list *tl)
 {
 	sql_subfunc* sf = NULL;
@@ -2555,10 +2555,13 @@ rel_logical_exp(sql_query *query, sql_rel *rel, symbol *sc, int f)
 	/* is (NOT) NULL */
 	{
 		sql_exp *le = rel_value_exp(query, &rel, sc->data.sym, f, ek);
+		sql_subtype *t;
 
 		if (!le)
 			return NULL;
-		le = exp_compare(sql->sa, le, exp_atom(sql->sa, atom_general(sql->sa, exp_subtype(le), NULL)), cmp_equal);
+		if (!(t = exp_subtype(le)))
+			return sql_error(sql, 01, SQLSTATE(42000) "Cannot have a parameter (?) for IS%s NULL operator", sc->token == SQL_IS_NOT_NULL ? " NOT" : "");
+		le = exp_compare(sql->sa, le, exp_atom(sql->sa, atom_general(sql->sa, t, NULL)), cmp_equal);
 		if (sc->token == SQL_IS_NOT_NULL)
 			set_anti(le);
 		set_has_no_nil(le);
@@ -3875,58 +3878,63 @@ rel_next_value_for( mvc *sql, symbol *se )
 
 /* some users like to use aliases already in the groupby */
 static sql_exp *
-rel_selection_ref(sql_query *query, sql_rel **rel, symbol *grp, dlist *selection )
+rel_selection_ref(sql_query *query, sql_rel **rel, char *name, dlist *selection)
 {
 	sql_allocator *sa = query->sql->sa;
-	dlist *gl;
-	char *name = NULL;
+	dlist *nl;
 	exp_kind ek = {type_value, card_column, FALSE};
+	sql_exp *res = NULL;
+	symbol *nsym;
 
-	if (grp->token != SQL_COLUMN && grp->token != SQL_IDENT)
-		return NULL;
-	gl = grp->data.lval;
-	if (dlist_length(gl) > 1)
-		return NULL;
 	if (!selection)
 		return NULL;
 
-	name = gl->h->data.sval;
 	for (dnode *n = selection->h; n; n = n->next) {
 		/* we only look for columns */
 		tokens to = n->data.sym->token;
 		if (to == SQL_COLUMN || to == SQL_IDENT) {
 			dlist *l = n->data.sym->data.lval;
 			/* AS name */
-			if (l->h->next->data.sval &&
-					strcmp(l->h->next->data.sval, name) == 0){
+			if (l->h->next->data.sval && strcmp(l->h->next->data.sval, name) == 0) {
 				sql_exp *ve = rel_value_exp(query, rel, l->h->data.sym, sql_sel|sql_groupby, ek);
 				if (ve) {
-					dlist *l = dlist_create(sa);
-					symbol *sym;
-					exp_setname(sa, ve, NULL, name);
-					/* now we should rewrite the selection
-					   such that it uses the new group
-					   by column
-					*/
-					dlist_append_string(sa, l,
-						sa_strdup(sa, name));
-					sym = symbol_create_list(sa, to, l);
-					l = dlist_create(sa);
-					dlist_append_symbol(sa, l, sym);
-					/* no alias */
-					dlist_append_symbol(sa, l, NULL);
-					n->data.sym = symbol_create_list(sa, to, l);
+					if (res)
+						return sql_error(query->sql, ERR_AMBIGUOUS, SQLSTATE(42000) "SELECT: identifier '%s' ambiguous", name);
+					res = ve;
 
+					nl = dlist_create(sa);
+					exp_setname(sa, ve, NULL, name);
+					/* now we should rewrite the selection such that it uses the new group by column */
+					dlist_append_string(sa, nl, sa_strdup(sa, name));
+					nsym = symbol_create_list(sa, to, nl);
+					nl = dlist_create(sa);
+					dlist_append_symbol(sa, nl, nsym);
+					/* no alias */
+					dlist_append_symbol(sa, nl, NULL);
+					n->data.sym = symbol_create_list(sa, to, nl);
 				}
-				return ve;
 			}
 		}
 	}
-	return NULL;
+	return res;
+}
+
+static char*
+symbol_get_identifier(symbol *sym)
+{
+	dlist *syml;
+
+	if (sym->token != SQL_COLUMN && sym->token != SQL_IDENT)
+		return NULL;
+	syml = sym->data.lval;
+	if (dlist_length(syml) > 1)
+		return NULL;
+
+	return syml->h->data.sval;
 }
 
 static sql_exp*
-rel_group_column(sql_query *query, sql_rel **rel, symbol *grp, dlist *selection, int f)
+rel_group_column(sql_query *query, sql_rel **rel, symbol *grp, dlist *selection, list *exps, int f)
 {
 	sql_query *lquery = query_create(query->sql);
 	mvc *sql = query->sql;
@@ -3934,14 +3942,25 @@ rel_group_column(sql_query *query, sql_rel **rel, symbol *grp, dlist *selection,
 	sql_exp *e = rel_value_exp2(lquery, rel, grp, f, ek);
 
 	if (!e) {
-		char buf[ERRSIZE];
+		char buf[ERRSIZE], *name;
 		int status = sql->session->status;
 		strcpy(buf, sql->errstr);
 		/* reset error */
 		sql->session->status = 0;
 		sql->errstr[0] = '\0';
 
-		e = rel_selection_ref(query, rel, grp, selection);
+		if ((name = symbol_get_identifier(grp))) {
+			e = rel_selection_ref(query, rel, name, selection);
+			if (!e) { /* attempt to find in the existing list of group by expressions */
+				for (node *n = exps->h ; n && !e ; n = n->next) {
+					sql_exp *ge = (sql_exp *) n->data;
+					const char *gen = exp_name(ge);
+
+					if (gen && strcmp(name, gen) == 0)
+						e = exp_ref(sql, ge);
+				}
+			}
+		}
 		if (!e && query_has_outer(query)) {
 			/* reset error */
 			sql->session->status = 0;
@@ -4061,7 +4080,7 @@ rel_groupings(sql_query *query, sql_rel **rel, symbol *groupby, dlist *selection
 						assert(is_sql_group_totals(f));
 						for (dnode *ooo = grp->data.lval->h; ooo; ooo = ooo->next) {
 							symbol *elm = ooo->data.sym;
-							sql_exp *e = rel_group_column(query, rel, elm, selection, f);
+							sql_exp *e = rel_group_column(query, rel, elm, selection, exps, f);
 							if (!e)
 								return NULL;
 							assert(e->type == e_column);
@@ -4069,7 +4088,7 @@ rel_groupings(sql_query *query, sql_rel **rel, symbol *groupby, dlist *selection
 							list_append(exps, e);
 						}
 					} else { /* single column or expression */
-						sql_exp *e = rel_group_column(query, rel, grp, selection, f);
+						sql_exp *e = rel_group_column(query, rel, grp, selection, exps, f);
 						if (!e)
 							return NULL;
 						if (e->type != e_column) { /* store group by expressions in the stack */
@@ -4119,14 +4138,27 @@ rel_partition_groupings(sql_query *query, sql_rel **rel, symbol *partitionby, dl
 
 		if (!e) {
 			int status = sql->session->status;
-			char buf[ERRSIZE];
+			char buf[ERRSIZE], *name;
 
 			/* reset error */
 			sql->session->status = 0;
 			strcpy(buf, sql->errstr);
 			sql->errstr[0] = '\0';
 
-			e = rel_selection_ref(query, rel, grp, selection);
+			if ((name = symbol_get_identifier(grp))) {
+				e = rel_selection_ref(query, rel, name, selection);
+				if (!e) { /* attempt to find in the existing list of partition by expressions */
+					for (node *n = exps->h ; n ; n = n->next) {
+						sql_exp *ge = (sql_exp *) n->data;
+						const char *gen = exp_name(ge);
+
+						if (gen && strcmp(name, gen) == 0) {
+							e = exp_ref(sql, ge);
+							break;
+						}
+					}
+				}
+			}
 			if (!e) {
 				if (sql->errstr[0] == 0) {
 					sql->session->status = status;
@@ -4292,13 +4324,11 @@ rel_order_by(sql_query *query, sql_rel **R, symbol *orderby, int f)
 
 				if (!e)
 					e = rel_order_by_column_exp(query, &rel, col, sql_sel | sql_orderby | (f & sql_group_totals));
-				if (e && e->card > rel->card && e->card != CARD_ATOM)
-					e = NULL;
 			}
 			if (!e)
 				return NULL;
 			set_direction(e, direction);
-			append(exps, e);
+			list_append(exps, e);
 		} else {
 			return sql_error(sql, 02, SQLSTATE(42000) "SELECT: order not of type SQL_COLUMN");
 		}
@@ -5064,12 +5094,12 @@ rel_value_exp(sql_query *query, sql_rel **rel, symbol *se, int f, exp_kind ek)
 				e = exp_values(query->sql->sa, r->exps);
 			} else {
 				e = r->exps->h->data;
-				if (*rel && !exp_has_rel(e)) {
+				if (rel && *rel && !exp_has_rel(e)) {
 					rel_bind_var(query->sql, *rel, e);
 					if (exp_has_freevar(query->sql, e) && is_sql_aggr(f)) {
 						sql_rel *outer = query_fetch_outer(query, exp_has_freevar(query->sql, e)-1);
 						query_outer_pop_last_used(query, exp_has_freevar(query->sql, e)-1);
-					        reset_outer(outer);
+						reset_outer(outer);
 					}
 				}
 			}
@@ -5413,7 +5443,7 @@ rel_select_exp(sql_query *query, sql_rel *rel, SelectNode *sn, exp_kind ek)
 		list *te = NULL;
 		sql_exp *ce = rel_column_exp(query, &inner, n->data.sym, sql_sel | group_totals);
 
-		if (ce && (exp_subtype(ce) || (ce->type == e_atom && !ce->l && !ce->f))) { /* Allow parameters to be propagated */
+		if (ce && (exp_subtype(ce) || exp_is_rel(ce) || (ce->type == e_atom && !ce->l && !ce->f))) { /* Allow parameters and subqueries to be propagated */
 			pexps = append(pexps, ce);
 			rel = inner;
 			continue;
