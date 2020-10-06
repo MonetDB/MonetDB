@@ -31,7 +31,7 @@ Prerequisites
 =============
 
 PATH settings: None
-ROle of clients?? How to install
+Role of clients?? How to install
 
 ## Testing
 
@@ -47,9 +47,9 @@ Configuration options
 
 The way options interact with building of the MonetDB source has
 fundamentally changed from the way this was done using the autotools
-buildsystem. Now almost all options are on by default. And these options
+build system. Now almost all options are on by default. And these options
 mostly control library detection. In the old system, it was possible to
-build a subset of the codebase. For example, you could choose not to
+build a subset of the code base. For example, you could choose not to
 build the sql part. Now the every part of the code is build, as long as
 the dependent libraries are detected. And by default, the system would
 try to detect all dependent libraries. If your system does not have a
