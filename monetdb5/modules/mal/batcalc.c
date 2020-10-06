@@ -1051,8 +1051,7 @@ CMDconvertbat(MalStkPtr stk, InstrPtr pci, int tp, bool abort_on_error)
 		}
 		if (s && ATOMtype(s->ttype) != TYPE_oid) {
 			BBPunfix(b->batCacheid);
-			if (s)
-				BBPunfix(s->batCacheid);
+			BBPunfix(s->batCacheid);
 			throw(MAL, "batcalc.convert", SQLSTATE(42000) ILLEGAL_ARGUMENT);
 		}
 	}
