@@ -1071,364 +1071,462 @@ STRbatRpad2_bat_bat(bat *ret, const bat *l, const bat *n, const bat *l2)
  */
 
 static str
-prefix_or_suffix(bat *res, const bat *l, const bat *r, const char *name, bit (*func)(str, str))
+prefix_or_suffix(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, const char *name, bit (*func)(str, str))
 {
 	BATiter lefti, righti;
-	BAT *bn = NULL, *left = NULL, *right = NULL;
-	BUN p, q = 0;
+	BAT *bn = NULL, *left = NULL, *lefts = NULL, *right = NULL, *rights = NULL;
+	BUN q = 0;
 	bit *restrict vals;
 	str x, y, msg = MAL_SUCCEED;
 	bool nils = false;
+	struct canditer ci1 = {0}, ci2 = {0};
+	oid off1, off2;
+	bat *res = getArgReference_bat(stk, pci, 0), *l = getArgReference_bat(stk, pci, 1),
+		*r = getArgReference_bat(stk, pci, 3),
+		*sid1 = pci->argc == 6 ? getArgReference_bat(stk, pci, 4) : NULL,
+		*sid2 = pci->argc == 6 ? getArgReference_bat(stk, pci, 5) : NULL;
 
+	(void) cntxt;
+	(void) mb;
 	if (!(left = BATdescriptor(*l)) || !(right = BATdescriptor(*r))) {
 		msg = createException(MAL, name, SQLSTATE(HY005) RUNTIME_OBJECT_MISSING);
 		goto bailout;
 	}
-	if (BATcount(left) != BATcount(right)) {
+	if ((sid1 && !is_bat_nil(*sid1) && !(lefts = BATdescriptor(*sid1))) || (sid2 && !is_bat_nil(*sid2) && !(rights = BATdescriptor(*sid2)))) {
+		msg = createException(MAL, name, SQLSTATE(HY005) RUNTIME_OBJECT_MISSING);
+		goto bailout;
+	}
+	q = canditer_init(&ci1, left, lefts);
+	if (canditer_init(&ci2, right, rights) != q || ci1.hseq != ci2.hseq) {
 		msg = createException(MAL, name, ILLEGAL_ARGUMENT " Requires bats of identical size");
 		goto bailout;
 	}
-	q = BATcount(left);
-	if (!(bn = COLnew(left->hseqbase, TYPE_bit, q, TRANSIENT))) {
+	if (!(bn = COLnew(ci1.hseq, TYPE_bit, q, TRANSIENT))) {
 		msg = createException(MAL, name, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		goto bailout;
 	}
 
+	off1 = left->hseqbase;
+	off2 = right->hseqbase;
 	lefti = bat_iterator(left);
 	righti = bat_iterator(right);
 	vals = Tloc(bn, 0);
-	for (p = 0; p < q ; p++) {
-		x = (str) BUNtvar(lefti, p);
-		y = (str) BUNtvar(righti, p);
+	if (ci1.tpe == cand_dense && ci2.tpe == cand_dense) {
+		for (BUN i = 0; i < q; i++) {
+			oid p1 = (canditer_next_dense(&ci1) - off1), p2 = (canditer_next_dense(&ci2) - off2);
+			x = (str) BUNtvar(lefti, p1);
+			y = (str) BUNtvar(righti, p2);
 
-		if (strNil(x) || strNil(y)) {
-			vals[p] = bit_nil;
-			nils = true;
-		} else {
-			vals[p] = func(x, y);
+			if (strNil(x) || strNil(y)) {
+				vals[i] = int_nil;
+				nils = true;
+			} else {
+				vals[i] = func(x, y);
+			}
+		}
+	} else {
+		for (BUN i = 0; i < q; i++) {
+			oid p1 = (canditer_next(&ci1) - off1), p2 = (canditer_next(&ci2) - off2);
+			x = (str) BUNtvar(lefti, p1);
+			y = (str) BUNtvar(righti, p2);
+
+			if (strNil(x) || strNil(y)) {
+				vals[i] = int_nil;
+				nils = true;
+			} else {
+				vals[i] = func(x, y);
+			}
 		}
 	}
-
 bailout:
-	if (left)
-		BBPunfix(left->batCacheid);
-	if (right)
-		BBPunfix(right->batCacheid);
-	if (bn && !msg) {
-		BATsetcount(bn, q);
-		bn->tnil = nils;
-		bn->tnonil = !nils;
-		bn->tkey = BATcount(bn) <= 1;
-		bn->tsorted = BATcount(bn) <= 1;
-		bn->trevsorted = BATcount(bn) <= 1;
-		bn->theap.dirty = true;
-		BBPkeepref(*res = bn->batCacheid);
-	} else if (bn)
-		BBPreclaim(bn);
+	finalize_ouput(res, bn, msg, nils, q);
+	unfix_inputs(4, left, lefts, right, rights);
 	return msg;
 }
 
 static str
-STRbatPrefix(bat *res, const bat *l, const bat *r) 
+STRbatPrefix(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) 
 {
-	return prefix_or_suffix(res, l, r, "batstr.startsWith", str_is_prefix);
+	return prefix_or_suffix(cntxt, mb, stk, pci, "batstr.startsWith", str_is_prefix);
 }
 
 static str
-STRbatSuffix(bat *res, const bat *l, const bat *r) 
+STRbatSuffix(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) 
 {
-	return prefix_or_suffix(res, l, r, "batstr.endsWith", str_is_suffix);
+	return prefix_or_suffix(cntxt, mb, stk, pci, "batstr.endsWith", str_is_suffix);
 }
 
 static str
-prefix_or_suffix_cst(bat *res, const bat *l, str y, const char *name, bit (*func)(str, str))
+prefix_or_suffix_cst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, const char *name, bit (*func)(str, str))
 {
-	BATiter lefti;
-	BAT *bn = NULL, *left = NULL;
-	BUN p, q = 0;
+	BATiter bi;
+	BAT *bn = NULL, *b = NULL, *bs = NULL;
+	BUN q = 0;
 	bit *restrict vals;
-	str x, msg = MAL_SUCCEED;
+	str x, y = *getArgReference_str(stk, pci, 2), msg = MAL_SUCCEED;
 	bool nils = false;
+	struct canditer ci1 = {0};
+	oid off1;
+	bat *res = getArgReference_bat(stk, pci, 0), *bid = getArgReference_bat(stk, pci, 1),
+		*sid1 = pci->argc == 4 ? getArgReference_bat(stk, pci, 3) : NULL;
 
-	if (!(left = BATdescriptor(*l))) {
+	(void) cntxt;
+	(void) mb;
+	if (!(b = BATdescriptor(*bid))) {
 		msg = createException(MAL, name, SQLSTATE(HY005) RUNTIME_OBJECT_MISSING);
 		goto bailout;
 	}
-	q = BATcount(left);
-	if (!(bn = COLnew(left->hseqbase, TYPE_bit, q, TRANSIENT))) {
+	if (sid1 && !is_bat_nil(*sid1) && !(bs = BATdescriptor(*sid1))) {
+		msg = createException(MAL, name, SQLSTATE(HY005) RUNTIME_OBJECT_MISSING);
+		goto bailout;
+	}
+	q = canditer_init(&ci1, b, bs);
+	if (!(bn = COLnew(ci1.hseq, TYPE_bit, q, TRANSIENT))) {
 		msg = createException(MAL, name, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		goto bailout;
 	}
 
-	lefti = bat_iterator(left);
+	off1 = b->hseqbase;
+	bi = bat_iterator(b);
 	vals = Tloc(bn, 0);
-	for (p = 0; p < q ; p++) {
-		x = (str) BUNtvar(lefti, p);
+	if (ci1.tpe == cand_dense) {
+		for (BUN i = 0; i < q; i++) {
+			oid p1 = (canditer_next_dense(&ci1) - off1);
+			x = (str) BUNtvar(bi, p1);
 
-		if (strNil(x) || strNil(y)) {
-			vals[p] = bit_nil;
-			nils = true;
-		} else {
-			vals[p] = func(x, y);
+			if (strNil(x) || strNil(y)) {
+				vals[i] = bit_nil;
+				nils = true;
+			} else {
+				vals[i] = func(x, y);
+			}
+		}
+	} else {
+		for (BUN i = 0; i < q; i++) {
+			oid p1 = (canditer_next(&ci1) - off1);
+			x = (str) BUNtvar(bi, p1);
+
+			if (strNil(x) || strNil(y)) {
+				vals[i] = int_nil;
+				nils = true;
+			} else {
+				vals[i] = func(x, y);
+			}
 		}
 	}
-
 bailout:
-	if (left)
-		BBPunfix(left->batCacheid);
-	if (bn && !msg) {
-		BATsetcount(bn, q);
-		bn->tnil = nils;
-		bn->tnonil = !nils;
-		bn->tkey = BATcount(bn) <= 1;
-		bn->tsorted = BATcount(bn) <= 1;
-		bn->trevsorted = BATcount(bn) <= 1;
-		bn->theap.dirty = true;
-		BBPkeepref(*res = bn->batCacheid);
-	} else if (bn)
-		BBPreclaim(bn);
+	finalize_ouput(res, bn, msg, nils, q);
+	unfix_inputs(2, b, bs);
 	return msg;
 }
 
 static str
-STRbatPrefixcst(bat *res, const bat *l, const str *cst)
+STRbatPrefixcst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	return prefix_or_suffix_cst(res, l, *cst, "batstr.startsWith", str_is_prefix);
+	return prefix_or_suffix_cst(cntxt, mb, stk, pci, "batstr.startsWith", str_is_prefix);
 }
 
 static str
-STRbatSuffixcst(bat *res, const bat *l, const str *cst)
+STRbatSuffixcst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	return prefix_or_suffix_cst(res, l, *cst, "batstr.endsWith", str_is_suffix);
+	return prefix_or_suffix_cst(cntxt, mb, stk, pci, "batstr.endsWith", str_is_suffix);
 }
 
 static str
-STRbatstrSearch(bat *res, const bat *l, const bat *r)
+STRbatstrSearch(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	BATiter lefti, righti;
-	BAT *bn = NULL, *left = NULL, *right = NULL;
-	BUN p, q = 0;
+	BAT *bn = NULL, *left = NULL, *lefts = NULL, *right = NULL, *rights = NULL;
+	BUN q = 0;
 	int *restrict vals;
 	str x, y, msg = MAL_SUCCEED;
 	bool nils = false;
+	struct canditer ci1 = {0}, ci2 = {0};
+	oid off1, off2;
+	bat *res = getArgReference_bat(stk, pci, 0), *l = getArgReference_bat(stk, pci, 1),
+		*r = getArgReference_bat(stk, pci, 3),
+		*sid1 = pci->argc == 6 ? getArgReference_bat(stk, pci, 4) : NULL,
+		*sid2 = pci->argc == 6 ? getArgReference_bat(stk, pci, 5) : NULL;
 
+	(void) cntxt;
+	(void) mb;
 	if (!(left = BATdescriptor(*l)) || !(right = BATdescriptor(*r))) {
 		msg = createException(MAL, "batstr.search", SQLSTATE(HY005) RUNTIME_OBJECT_MISSING);
 		goto bailout;
 	}
-	if (BATcount(left) != BATcount(right)) {
+	if ((sid1 && !is_bat_nil(*sid1) && !(lefts = BATdescriptor(*sid1))) || (sid2 && !is_bat_nil(*sid2) && !(rights = BATdescriptor(*sid2)))) {
+		msg = createException(MAL, "batstr.search", SQLSTATE(HY005) RUNTIME_OBJECT_MISSING);
+		goto bailout;
+	}
+	q = canditer_init(&ci1, left, lefts);
+	if (canditer_init(&ci2, right, rights) != q || ci1.hseq != ci2.hseq) {
 		msg = createException(MAL, "batstr.search", ILLEGAL_ARGUMENT " Requires bats of identical size");
 		goto bailout;
 	}
-	q = BATcount(left);
-	if (!(bn = COLnew(left->hseqbase, TYPE_int, q, TRANSIENT))) {
+	if (!(bn = COLnew(ci1.hseq, TYPE_int, q, TRANSIENT))) {
 		msg = createException(MAL, "batstr.search", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		goto bailout;
 	}
 
+	off1 = left->hseqbase;
+	off2 = right->hseqbase;
 	lefti = bat_iterator(left);
 	righti = bat_iterator(right);
 	vals = Tloc(bn, 0);
-	for (p = 0; p < q ; p++) {
-		x = (str) BUNtvar(lefti, p);
-		y = (str) BUNtvar(righti, p);
+	if (ci1.tpe == cand_dense && ci2.tpe == cand_dense) {
+		for (BUN i = 0; i < q; i++) {
+			oid p1 = (canditer_next_dense(&ci1) - off1), p2 = (canditer_next_dense(&ci2) - off2);
+			x = (str) BUNtvar(lefti, p1);
+			y = (str) BUNtvar(righti, p2);
 
-		if (strNil(x) || strNil(y)) {
-			vals[p] = int_nil;
-			nils = true;
-		} else {
-			vals[p] = str_search(x, y);
+			if (strNil(x) || strNil(y)) {
+				vals[i] = int_nil;
+				nils = true;
+			} else {
+				vals[i] = str_search(x, y);
+			}
+		}
+	} else {
+		for (BUN i = 0; i < q; i++) {
+			oid p1 = (canditer_next(&ci1) - off1), p2 = (canditer_next(&ci2) - off2);
+			x = (str) BUNtvar(lefti, p1);
+			y = (str) BUNtvar(righti, p2);
+
+			if (strNil(x) || strNil(y)) {
+				vals[i] = int_nil;
+				nils = true;
+			} else {
+				vals[i] = str_search(x, y);
+			}
 		}
 	}
-
 bailout:
-	if (left)
-		BBPunfix(left->batCacheid);
-	if (right)
-		BBPunfix(right->batCacheid);
-	if (bn && !msg) {
-		BATsetcount(bn, q);
-		bn->tnil = nils;
-		bn->tnonil = !nils;
-		bn->tkey = BATcount(bn) <= 1;
-		bn->tsorted = BATcount(bn) <= 1;
-		bn->trevsorted = BATcount(bn) <= 1;
-		bn->theap.dirty = true;
-		BBPkeepref(*res = bn->batCacheid);
-	} else if (bn)
-		BBPreclaim(bn);
+	finalize_ouput(res, bn, msg, nils, q);
+	unfix_inputs(4, left, lefts, right, rights);
 	return msg;
 }
 
 static str
-STRbatstrSearchcst(bat *res, const bat *l, const str *cst)
+STRbatstrSearchcst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	BATiter lefti;
-	BAT *bn = NULL, *left = NULL;
-	BUN p, q = 0;
+	BATiter bi;
+	BAT *bn = NULL, *b = NULL, *bs = NULL;
+	BUN q = 0;
 	int *restrict vals;
-	str x, y = *cst, msg = MAL_SUCCEED;
+	str x, y = *getArgReference_str(stk, pci, 2), msg = MAL_SUCCEED;
 	bool nils = false;
+	struct canditer ci1 = {0};
+	oid off1;
+	bat *res = getArgReference_bat(stk, pci, 0), *bid = getArgReference_bat(stk, pci, 1),
+		*sid1 = pci->argc == 4 ? getArgReference_bat(stk, pci, 3) : NULL;
 
-	if (!(left = BATdescriptor(*l))) {
+	(void) cntxt;
+	(void) mb;
+	if (!(b = BATdescriptor(*bid))) {
 		msg = createException(MAL, "batstr.search", SQLSTATE(HY005) RUNTIME_OBJECT_MISSING);
 		goto bailout;
 	}
-	q = BATcount(left);
-	if (!(bn = COLnew(left->hseqbase, TYPE_int, q, TRANSIENT))) {
+	if (sid1 && !is_bat_nil(*sid1) && !(bs = BATdescriptor(*sid1))) {
+		msg = createException(MAL, "batstr.search", SQLSTATE(HY005) RUNTIME_OBJECT_MISSING);
+		goto bailout;
+	}
+	q = canditer_init(&ci1, b, bs);
+	if (!(bn = COLnew(ci1.hseq, TYPE_int, q, TRANSIENT))) {
 		msg = createException(MAL, "batstr.search", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		goto bailout;
 	}
 
-	lefti = bat_iterator(left);
+	off1 = b->hseqbase;
+	bi = bat_iterator(b);
 	vals = Tloc(bn, 0);
-	for (p = 0; p < q ; p++) {
-		x = (str) BUNtvar(lefti, p);
+	if (ci1.tpe == cand_dense) {
+		for (BUN i = 0; i < q; i++) {
+			oid p1 = (canditer_next_dense(&ci1) - off1);
+			x = (str) BUNtvar(bi, p1);
 
-		if (strNil(x) || strNil(y)) {
-			vals[p] = int_nil;
-			nils = true;
-		} else {
-			vals[p] = str_search(x, y);
+			if (strNil(x) || strNil(y)) {
+				vals[i] = int_nil;
+				nils = true;
+			} else {
+				vals[i] = str_search(x, y);
+			}
+		}
+	} else {
+		for (BUN i = 0; i < q; i++) {
+			oid p1 = (canditer_next(&ci1) - off1);
+			x = (str) BUNtvar(bi, p1);
+
+			if (strNil(x) || strNil(y)) {
+				vals[i] = int_nil;
+				nils = true;
+			} else {
+				vals[i] = str_search(x, y);
+			}
 		}
 	}
-
 bailout:
-	if (left)
-		BBPunfix(left->batCacheid);
-	if (bn && !msg) {
-		BATsetcount(bn, q);
-		bn->tnil = nils;
-		bn->tnonil = !nils;
-		bn->tkey = BATcount(bn) <= 1;
-		bn->tsorted = BATcount(bn) <= 1;
-		bn->trevsorted = BATcount(bn) <= 1;
-		bn->theap.dirty = true;
-		BBPkeepref(*res = bn->batCacheid);
-	} else if (bn)
-		BBPreclaim(bn);
+	finalize_ouput(res, bn, msg, nils, q);
+	unfix_inputs(2, b, bs);
 	return msg;
 }
 
 static str
-STRbatRstrSearch(bat *res, const bat *l, const bat *r)
+STRbatRstrSearch(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	BATiter lefti, righti;
-	BAT *bn = NULL, *left = NULL, *right = NULL;
-	BUN p, q = 0;
+	BAT *bn = NULL, *left = NULL, *lefts = NULL, *right = NULL, *rights = NULL;
+	BUN q = 0;
 	int *restrict vals;
 	str x, y, msg = MAL_SUCCEED;
 	bool nils = false;
+	struct canditer ci1 = {0}, ci2 = {0};
+	oid off1, off2;
+	bat *res = getArgReference_bat(stk, pci, 0), *l = getArgReference_bat(stk, pci, 1),
+		*r = getArgReference_bat(stk, pci, 3),
+		*sid1 = pci->argc == 6 ? getArgReference_bat(stk, pci, 4) : NULL,
+		*sid2 = pci->argc == 6 ? getArgReference_bat(stk, pci, 5) : NULL;
 
+	(void) cntxt;
+	(void) mb;
 	if (!(left = BATdescriptor(*l)) || !(right = BATdescriptor(*r))) {
 		msg = createException(MAL, "batstr.r_search", SQLSTATE(HY005) RUNTIME_OBJECT_MISSING);
 		goto bailout;
 	}
-	if (BATcount(left) != BATcount(right)) {
-		msg = createException(MAL, "batstr.r_search", ILLEGAL_ARGUMENT " Requires bats of identical size");
-		goto bailout;
-	}
-	q = BATcount(left);
-	if (!(bn = COLnew(left->hseqbase, TYPE_int, q, TRANSIENT))) {
-		msg = createException(MAL, "batstr.r_search", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-		goto bailout;
-	}
-
-	lefti = bat_iterator(left);
-	righti = bat_iterator(right);
-	vals = Tloc(bn, 0);
-	for (p = 0; p < q ; p++) {
-		x = (str) BUNtvar(lefti, p);
-		y = (str) BUNtvar(righti, p);
-
-		if (strNil(x) || strNil(y)) {
-			vals[p] = int_nil;
-			nils = true;
-		} else {
-			vals[p] = str_reverse_str_search(x, y);
-		}
-	}
-
-bailout:
-	if (left)
-		BBPunfix(left->batCacheid);
-	if (right)
-		BBPunfix(right->batCacheid);
-	if (bn && !msg) {
-		BATsetcount(bn, q);
-		bn->tnil = nils;
-		bn->tnonil = !nils;
-		bn->tkey = BATcount(bn) <= 1;
-		bn->tsorted = BATcount(bn) <= 1;
-		bn->trevsorted = BATcount(bn) <= 1;
-		bn->theap.dirty = true;
-		BBPkeepref(*res = bn->batCacheid);
-	} else if (bn)
-		BBPreclaim(bn);
-	return msg;
-}
-
-static str
-STRbatRstrSearchcst(bat *res, const bat *l, const str *cst)
-{
-	BATiter bi;
-	BAT *bn = NULL, *b = NULL;
-	BUN p, q = 0;
-	int *restrict vals;
-	str x, y = *cst, msg = MAL_SUCCEED;
-	bool nils = false;
-
-	if (!(b = BATdescriptor(*l))) {
+	if ((sid1 && !is_bat_nil(*sid1) && !(lefts = BATdescriptor(*sid1))) || (sid2 && !is_bat_nil(*sid2) && !(rights = BATdescriptor(*sid2)))) {
 		msg = createException(MAL, "batstr.r_search", SQLSTATE(HY005) RUNTIME_OBJECT_MISSING);
 		goto bailout;
 	}
-	q = BATcount(b);
-	if (!(bn = COLnew(b->hseqbase, TYPE_int, q, TRANSIENT))) {
+	q = canditer_init(&ci1, left, lefts);
+	if (canditer_init(&ci2, right, rights) != q || ci1.hseq != ci2.hseq) {
+		msg = createException(MAL, "batstr.r_search", ILLEGAL_ARGUMENT " Requires bats of identical size");
+		goto bailout;
+	}
+	if (!(bn = COLnew(ci1.hseq, TYPE_int, q, TRANSIENT))) {
 		msg = createException(MAL, "batstr.r_search", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		goto bailout;
 	}
 
-	bi = bat_iterator(b);
+	off1 = left->hseqbase;
+	off2 = right->hseqbase;
+	lefti = bat_iterator(left);
+	righti = bat_iterator(right);
 	vals = Tloc(bn, 0);
-	for (p = 0; p < q ; p++) {
-		x = (str) BUNtvar(bi, p);
+	if (ci1.tpe == cand_dense && ci2.tpe == cand_dense) {
+		for (BUN i = 0; i < q; i++) {
+			oid p1 = (canditer_next_dense(&ci1) - off1), p2 = (canditer_next_dense(&ci2) - off2);
+			x = (str) BUNtvar(lefti, p1);
+			y = (str) BUNtvar(righti, p2);
 
-		if (strNil(x) || strNil(y)) {
-			vals[p] = int_nil;
-			nils = true;
-		} else {
-			vals[p] = str_reverse_str_search(x, y);
+			if (strNil(x) || strNil(y)) {
+				vals[i] = int_nil;
+				nils = true;
+			} else {
+				vals[i] = str_reverse_str_search(x, y);
+			}
+		}
+	} else {
+		for (BUN i = 0; i < q; i++) {
+			oid p1 = (canditer_next(&ci1) - off1), p2 = (canditer_next(&ci2) - off2);
+			x = (str) BUNtvar(lefti, p1);
+			y = (str) BUNtvar(righti, p2);
+
+			if (strNil(x) || strNil(y)) {
+				vals[i] = int_nil;
+				nils = true;
+			} else {
+				vals[i] = str_reverse_str_search(x, y);
+			}
 		}
 	}
-
 bailout:
-	if (b)
-		BBPunfix(b->batCacheid);
-	if (bn && !msg) {
-		BATsetcount(bn, q);
-		bn->tnil = nils;
-		bn->tnonil = !nils;
-		bn->tkey = BATcount(bn) <= 1;
-		bn->tsorted = BATcount(bn) <= 1;
-		bn->trevsorted = BATcount(bn) <= 1;
-		bn->theap.dirty = true;
-		BBPkeepref(*res = bn->batCacheid);
-	} else if (bn)
-		BBPreclaim(bn);
+	finalize_ouput(res, bn, msg, nils, q);
+	unfix_inputs(4, left, lefts, right, rights);
 	return msg;
 }
 
 static str
-STRbatWChrAt(bat *res, const bat *l, const bat *r)
+STRbatRstrSearchcst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	BATiter bi;
+	BAT *bn = NULL, *b = NULL, *bs = NULL;
+	BUN q = 0;
+	int *restrict vals;
+	str x, y = *getArgReference_str(stk, pci, 2), msg = MAL_SUCCEED;
+	bool nils = false;
+	struct canditer ci1 = {0};
+	oid off1;
+	bat *res = getArgReference_bat(stk, pci, 0), *bid = getArgReference_bat(stk, pci, 1),
+		*sid1 = pci->argc == 4 ? getArgReference_bat(stk, pci, 3) : NULL;
+
+	(void) cntxt;
+	(void) mb;
+	if (!(b = BATdescriptor(*bid))) {
+		msg = createException(MAL, "batstr.r_search", SQLSTATE(HY005) RUNTIME_OBJECT_MISSING);
+		goto bailout;
+	}
+	if (sid1 && !is_bat_nil(*sid1) && !(bs = BATdescriptor(*sid1))) {
+		msg = createException(MAL, "batstr.r_search", SQLSTATE(HY005) RUNTIME_OBJECT_MISSING);
+		goto bailout;
+	}
+	q = canditer_init(&ci1, b, bs);
+	if (!(bn = COLnew(ci1.hseq, TYPE_int, q, TRANSIENT))) {
+		msg = createException(MAL, "batstr.r_search", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		goto bailout;
+	}
+
+	off1 = b->hseqbase;
+	bi = bat_iterator(b);
+	vals = Tloc(bn, 0);
+	if (ci1.tpe == cand_dense) {
+		for (BUN i = 0; i < q; i++) {
+			oid p1 = (canditer_next_dense(&ci1) - off1);
+			x = (str) BUNtvar(bi, p1);
+
+			if (strNil(x) || strNil(y)) {
+				vals[i] = int_nil;
+				nils = true;
+			} else {
+				vals[i] = str_reverse_str_search(x, y);
+			}
+		}
+	} else {
+		for (BUN i = 0; i < q; i++) {
+			oid p1 = (canditer_next(&ci1) - off1);
+			x = (str) BUNtvar(bi, p1);
+
+			if (strNil(x) || strNil(y)) {
+				vals[i] = int_nil;
+				nils = true;
+			} else {
+				vals[i] = str_reverse_str_search(x, y);
+			}
+		}
+	}
+bailout:
+	finalize_ouput(res, bn, msg, nils, q);
+	unfix_inputs(2, b, bs);
+	return msg;
+}
+
+static str
+STRbatWChrAt(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	BATiter lefti;
-	BAT *bn = NULL, *left = NULL, *right = NULL;
-	BUN p, q = 0;
+	BAT *bn = NULL, *left = NULL, *lefts = NULL, *right = NULL, *rights = NULL;
+	BUN q = 0;
 	size_t buflen = INITIAL_STR_BUFFER_LENGTH;
 	int *restrict righti, *restrict vals, next, y;
 	str x, buf = GDKmalloc(buflen), msg = MAL_SUCCEED;
 	bool nils = false;
+	struct canditer ci1 = {0}, ci2 = {0};
+	oid off1, off2;
+	bat *res = getArgReference_bat(stk, pci, 0), *l = getArgReference_bat(stk, pci, 1),
+		*r = getArgReference_bat(stk, pci, 3),
+		*sid1 = pci->argc == 6 ? getArgReference_bat(stk, pci, 4) : NULL,
+		*sid2 = pci->argc == 6 ? getArgReference_bat(stk, pci, 5) : NULL;
 
+	(void) cntxt;
+	(void) mb;
 	if (!buf) {
 		msg = createException(MAL, "batstr.unicodeAt", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		goto bailout;
@@ -1437,60 +1535,72 @@ STRbatWChrAt(bat *res, const bat *l, const bat *r)
 		msg = createException(MAL, "batstr.unicodeAt", SQLSTATE(HY005) RUNTIME_OBJECT_MISSING);
 		goto bailout;
 	}
-	if (BATcount(left) != BATcount(right)) {
+	if ((sid1 && !is_bat_nil(*sid1) && !(lefts = BATdescriptor(*sid1))) || (sid2 && !is_bat_nil(*sid2) && !(rights = BATdescriptor(*sid2)))) {
+		msg = createException(MAL, "batstr.unicodeAt", SQLSTATE(HY005) RUNTIME_OBJECT_MISSING);
+		goto bailout;
+	}
+	q = canditer_init(&ci1, left, lefts);
+	if (canditer_init(&ci2, right, rights) != q || ci1.hseq != ci2.hseq) {
 		msg = createException(MAL, "batstr.unicodeAt", ILLEGAL_ARGUMENT " Requires bats of identical size");
 		goto bailout;
 	}
-	q = BATcount(left);
-	if (!(bn = COLnew(left->hseqbase, TYPE_int, q, TRANSIENT))) {
+	if (!(bn = COLnew(ci1.hseq, TYPE_int, q, TRANSIENT))) {
 		msg = createException(MAL, "batstr.unicodeAt", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		goto bailout;
 	}
 
+	off1 = left->hseqbase;
+	off2 = right->hseqbase;
 	lefti = bat_iterator(left);
 	righti = Tloc(right, 0);
 	vals = Tloc(bn, 0);
-	for (p = 0; p < q ; p++) {
-		x = (str) BUNtvar(lefti, p);
-		y = righti[p];
+	if (ci1.tpe == cand_dense && ci2.tpe == cand_dense) {
+		for (BUN i = 0; i < q; i++) {
+			oid p1 = (canditer_next_dense(&ci1) - off1), p2 = (canditer_next_dense(&ci2) - off2);
+			x = (str) BUNtvar(lefti, p1);
+			y = righti[p2];
 
-		if ((msg = str_wchr_at(&next, x, y)) != MAL_SUCCEED)
-			goto bailout;
-		vals[p] = next;
-		nils |= is_int_nil(next);
+			if ((msg = str_wchr_at(&next, x, y)) != MAL_SUCCEED)
+				goto bailout;
+			vals[i] = next;
+			nils |= is_int_nil(next);
+		}
+	} else {
+		for (BUN i = 0; i < q; i++) {
+			oid p1 = (canditer_next(&ci1) - off1), p2 = (canditer_next(&ci2) - off2);
+			x = (str) BUNtvar(lefti, p1);
+			y = righti[p2];
+
+			if ((msg = str_wchr_at(&next, x, y)) != MAL_SUCCEED)
+				goto bailout;
+			vals[i] = next;
+			nils |= is_int_nil(next);
+		}
 	}
-
 bailout:
 	GDKfree(buf);
-	if (left)
-		BBPunfix(left->batCacheid);
-	if (right)
-		BBPunfix(right->batCacheid);
-	if (bn && !msg) {
-		BATsetcount(bn, q);
-		bn->tnil = nils;
-		bn->tnonil = !nils;
-		bn->tkey = BATcount(bn) <= 1;
-		bn->tsorted = BATcount(bn) <= 1;
-		bn->trevsorted = BATcount(bn) <= 1;
-		bn->theap.dirty = true;
-		BBPkeepref(*res = bn->batCacheid);
-	} else if (bn)
-		BBPreclaim(bn);
+	finalize_ouput(res, bn, msg, nils, q);
+	unfix_inputs(4, left, lefts, right, rights);
 	return msg;
 }
 
 static str
-STRbatWChrAtcst(bat *res, const bat *l, const int *cst)
+STRbatWChrAtcst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	BATiter bi;
-	BAT *bn = NULL, *b = NULL;
-	BUN p, q = 0;
+	BAT *bn = NULL, *b = NULL, *bs = NULL;
+	BUN q = 0;
 	size_t buflen = INITIAL_STR_BUFFER_LENGTH;
-	int y = *cst, *restrict vals, next;
+	int y = *getArgReference_int(stk, pci, 2), *restrict vals, next;
 	str x, buf = GDKmalloc(buflen), msg = MAL_SUCCEED;
 	bool nils = false;
+	struct canditer ci1 = {0};
+	oid off1;
+	bat *res = getArgReference_bat(stk, pci, 0), *l = getArgReference_bat(stk, pci, 1),
+		*sid1 = pci->argc == 4 ? getArgReference_bat(stk, pci, 3) : NULL;
 
+	(void) cntxt;
+	(void) mb;
 	if (!buf) {
 		msg = createException(MAL, "batstr.unicodeAt", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		goto bailout;
@@ -1499,38 +1609,44 @@ STRbatWChrAtcst(bat *res, const bat *l, const int *cst)
 		msg = createException(MAL, "batstr.unicodeAt", SQLSTATE(HY005) RUNTIME_OBJECT_MISSING);
 		goto bailout;
 	}
-	q = BATcount(b);
-	if (!(bn = COLnew(b->hseqbase, TYPE_int, q, TRANSIENT))) {
+	if (sid1 && !is_bat_nil(*sid1) && !(bs = BATdescriptor(*sid1))) {
+		msg = createException(MAL, "batstr.unicodeAt", SQLSTATE(HY005) RUNTIME_OBJECT_MISSING);
+		goto bailout;
+	}
+	q = canditer_init(&ci1, b, bs);
+	if (!(bn = COLnew(ci1.hseq, TYPE_int, q, TRANSIENT))) {
 		msg = createException(MAL, "batstr.unicodeAt", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		goto bailout;
 	}
 
+	off1 = b->hseqbase;
 	bi = bat_iterator(b);
 	vals = Tloc(bn, 0);
-	for (p = 0; p < q ; p++) {
-		x = (str) BUNtvar(bi, p);
+	if (ci1.tpe == cand_dense) {
+		for (BUN i = 0; i < q; i++) {
+			oid p1 = (canditer_next_dense(&ci1) - off1);
+			x = (str) BUNtvar(bi, p1);
 
-		if ((msg = str_wchr_at(&next, x, y)) != MAL_SUCCEED)
-			goto bailout;
-		vals[p] = next;
-		nils |= is_int_nil(next);
+			if ((msg = str_wchr_at(&next, x, y)) != MAL_SUCCEED)
+				goto bailout;
+			vals[i] = next;
+			nils |= is_int_nil(next);
+		}
+	} else {
+		for (BUN i = 0; i < q; i++) {
+			oid p1 = (canditer_next(&ci1) - off1);
+			x = (str) BUNtvar(bi, p1);
+
+			if ((msg = str_wchr_at(&next, x, y)) != MAL_SUCCEED)
+				goto bailout;
+			vals[i] = next;
+			nils |= is_int_nil(next);
+		}
 	}
-
 bailout:
 	GDKfree(buf);
-	if (b)
-		BBPunfix(b->batCacheid);
-	if (bn && !msg) {
-		BATsetcount(bn, q);
-		bn->tnil = nils;
-		bn->tnonil = !nils;
-		bn->tkey = BATcount(bn) <= 1;
-		bn->tsorted = BATcount(bn) <= 1;
-		bn->trevsorted = BATcount(bn) <= 1;
-		bn->theap.dirty = true;
-		BBPkeepref(*res = bn->batCacheid);
-	} else if (bn)
-		BBPreclaim(bn);
+	finalize_ouput(res, bn, msg, nils, q);
+	unfix_inputs(2, b, bs);
 	return msg;
 }
 
@@ -1595,6 +1711,7 @@ do_batstr_str_int_cst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, c
 		for (BUN i = 0; i < q; i++) {
 			oid p1 = (canditer_next(&ci1) - off1);
 			x = (str) BUNtvar(bi, p1);
+
 			if (strNil(x) || is_int_nil(y)) {
 				if (tfastins_nocheckVAR(bn, i, str_nil, Tsize(bn)) != GDK_SUCCEED) {
 					msg = createException(MAL, name, SQLSTATE(HY013) MAL_MALLOC_FAIL);
@@ -2354,6 +2471,8 @@ STRbatsplitpartcst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	bat *res = getArgReference_bat(stk, pci, 0), *bid = getArgReference_bat(stk, pci, 1),
 		*sid1 = pci->argc == 5 ? getArgReference_bat(stk, pci, 4) : NULL;
 
+	(void) cntxt;
+	(void) mb;
 	if (!buf) {
 		msg = createException(MAL, "batstr.splitpart", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		goto bailout;
@@ -2372,8 +2491,6 @@ STRbatsplitpartcst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		goto bailout;
 	}
 
-	(void) cntxt;
-	(void) mb;
 	off1 = b->hseqbase;
 	bi = bat_iterator(b);
 	if (ci1.tpe == cand_dense) {
@@ -3799,18 +3916,18 @@ mel_func batstr_init_funcs[] = {
  command("batstr", "rpad", STRbatRpad2_const_bat, false, "Append the second strings to the first strings to reach the given length. Truncate the first strings on the right if their lengths is larger than the given length.", args(1,4, batarg("",str),batarg("s",str),arg("n",int),batarg("s2",str))),
  command("batstr", "lpad", STRbatLpad2_bat_bat, false, "Prepend the second strings to the first strings to reach the given lengths. Truncate the first strings on the right if their lengths is larger than the given lengths.", args(1,4, batarg("",str),batarg("s",str),batarg("n",int),batarg("s2",str))),
  command("batstr", "rpad", STRbatRpad2_bat_bat, false, "Append the second strings to the first strings to reach the given lengths. Truncate the first strings on the right if their lengths is larger than the given lengths.", args(1,4, batarg("",str),batarg("s",str),batarg("n",int),batarg("s2",str))),
- command("batstr", "startsWith", STRbatPrefix, false, "Prefix check.", args(1,3, batarg("",bit),batarg("s",str),batarg("prefix",str))),
- command("batstr", "startsWith", STRbatPrefixcst, false, "Prefix check.", args(1,3, batarg("",bit),batarg("s",str),arg("prefix",str))),
- command("batstr", "endsWith", STRbatSuffix, false, "Suffix check.", args(1,3, batarg("",bit),batarg("s",str),batarg("suffix",str))),
- command("batstr", "endsWith", STRbatSuffixcst, false, "Suffix check.", args(1,3, batarg("",bit),batarg("s",str),arg("suffix",str))),
+ pattern("batstr", "startsWith", STRbatPrefix, false, "Prefix check.", args(1,3, batarg("",bit),batarg("s",str),batarg("prefix",str))),
+ pattern("batstr", "startsWith", STRbatPrefixcst, false, "Prefix check.", args(1,3, batarg("",bit),batarg("s",str),arg("prefix",str))),
+ pattern("batstr", "endsWith", STRbatSuffix, false, "Suffix check.", args(1,3, batarg("",bit),batarg("s",str),batarg("suffix",str))),
+ pattern("batstr", "endsWith", STRbatSuffixcst, false, "Suffix check.", args(1,3, batarg("",bit),batarg("s",str),arg("suffix",str))),
  pattern("batstr", "splitpart", STRbatsplitpart, false, "Split string on delimiter. Returns\ngiven field (counting from one.)", args(1,4, batarg("",str),batarg("s",str),batarg("needle",str),batarg("field",int))),
  pattern("batstr", "splitpart", STRbatsplitpartcst, false, "Split string on delimiter. Returns\ngiven field (counting from one.)", args(1,4, batarg("",str),batarg("s",str),arg("needle",str),arg("field",int))),
- command("batstr", "splitpart", STRbatsplitpart_needlecst, false, "Split string on delimiter. Returns\ngiven field (counting from one.)", args(1,4, batarg("",str),batarg("s",str),arg("needle",str),batarg("field",int))),
- command("batstr", "splitpart", STRbatsplitpart_fieldcst, false, "Split string on delimiter. Returns\ngiven field (counting from one.)", args(1,4, batarg("",str),batarg("s",str),batarg("needle",str),arg("field",int))),
- command("batstr", "search", STRbatstrSearch, false, "Search for a substring. Returns position, -1 if not found.", args(1,3, batarg("",int),batarg("s",str),batarg("c",str))),
- command("batstr", "search", STRbatstrSearchcst, false, "Search for a substring. Returns position, -1 if not found.", args(1,3, batarg("",int),batarg("s",str),arg("c",str))),
- command("batstr", "r_search", STRbatRstrSearch, false, "Reverse search for a substring. Returns position, -1 if not found.", args(1,3, batarg("",int),batarg("s",str),batarg("c",str))),
- command("batstr", "r_search", STRbatRstrSearchcst, false, "Reverse search for a substring. Returns position, -1 if not found.", args(1,3, batarg("",int),batarg("s",str),arg("c",str))),
+ pattern("batstr", "splitpart", STRbatsplitpart_needlecst, false, "Split string on delimiter. Returns\ngiven field (counting from one.)", args(1,4, batarg("",str),batarg("s",str),arg("needle",str),batarg("field",int))),
+ pattern("batstr", "splitpart", STRbatsplitpart_fieldcst, false, "Split string on delimiter. Returns\ngiven field (counting from one.)", args(1,4, batarg("",str),batarg("s",str),batarg("needle",str),arg("field",int))),
+ pattern("batstr", "search", STRbatstrSearch, false, "Search for a substring. Returns position, -1 if not found.", args(1,3, batarg("",int),batarg("s",str),batarg("c",str))),
+ pattern("batstr", "search", STRbatstrSearchcst, false, "Search for a substring. Returns position, -1 if not found.", args(1,3, batarg("",int),batarg("s",str),arg("c",str))),
+ pattern("batstr", "r_search", STRbatRstrSearch, false, "Reverse search for a substring. Returns position, -1 if not found.", args(1,3, batarg("",int),batarg("s",str),batarg("c",str))),
+ pattern("batstr", "r_search", STRbatRstrSearchcst, false, "Reverse search for a substring. Returns position, -1 if not found.", args(1,3, batarg("",int),batarg("s",str),arg("c",str))),
  pattern("batstr", "string", STRbatTail, false, "Return the tail s[offset..n] of a string s[0..n].", args(1,3, batarg("",str),batarg("b",str),batarg("offset",int))),
  pattern("batstr", "string", STRbatTailcst, false, "Return the tail s[offset..n] of a string s[0..n].", args(1,3, batarg("",str),batarg("b",str),arg("offset",int))),
  pattern("batstr", "string", STRbatTail_strcst, false, "Return the tail s[offset..n] of a string s[0..n].", args(1,3, batarg("",str),arg("b",str),batarg("offset",int))),
@@ -3823,8 +3940,8 @@ mel_func batstr_init_funcs[] = {
  pattern("batstr", "substring", STRbatsubstringcst_startcst, false, "Substring extraction using [start,start+length]", args(1,4, batarg("",str),batarg("s",str),arg("start",int),batarg("index",int))),
  pattern("batstr", "substring", STRbatsubstringcst_indexcst, false, "Substring extraction using [start,start+length]", args(1,4, batarg("",str),batarg("s",str),batarg("start",int),arg("index",int))),
  command("batstr", "unicode", STRbatFromWChr, false, "convert a unicode to a character.", args(1,2, batarg("",str),batarg("wchar",int))),
- command("batstr", "unicodeAt", STRbatWChrAt, false, "get a unicode character (as an int) from a string position.", args(1,3, batarg("",int),batarg("s",str),batarg("index",int))),
- command("batstr", "unicodeAt", STRbatWChrAtcst, false, "get a unicode character (as an int) from a string position.", args(1,3, batarg("",int),batarg("s",str),arg("index",int))),
+ pattern("batstr", "unicodeAt", STRbatWChrAt, false, "get a unicode character (as an int) from a string position.", args(1,3, batarg("",int),batarg("s",str),batarg("index",int))),
+ pattern("batstr", "unicodeAt", STRbatWChrAtcst, false, "get a unicode character (as an int) from a string position.", args(1,3, batarg("",int),batarg("s",str),arg("index",int))),
  pattern("batstr", "substitute", STRbatSubstitute, false, "Substitute first occurrence of 'src' by\n'dst'. Iff repeated = true this is\nrepeated while 'src' can be found in the\nresult string. In order to prevent\nrecursion and result strings of unlimited\nsize, repeating is only done iff src is\nnot a substring of dst.", args(1,5, batarg("",str),batarg("s",str),batarg("src",str),batarg("dst",str),batarg("rep",bit))),
  pattern("batstr", "substitute", STRbatSubstitutecst, false, "Substitute first occurrence of 'src' by\n'dst'. Iff repeated = true this is\nrepeated while 'src' can be found in the\nresult string. In order to prevent\nrecursion and result strings of unlimited\nsize, repeating is only done iff src is\nnot a substring of dst.", args(1,5, batarg("",str),batarg("s",str),arg("src",str),arg("dst",str),arg("rep",bit))),
  pattern("batstr", "stringleft", STRbatprefix, false, "", args(1,3, batarg("",str),batarg("s",str),batarg("l",int))),
