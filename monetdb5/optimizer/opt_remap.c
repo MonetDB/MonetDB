@@ -52,7 +52,7 @@ OPTremapDirect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int idx,
 		p= addArgument(mb,p,getArg(pci,i));
 	if (p->retc == 1 &&
 		((bufName == batcalcRef &&
-		(fcnName == mulRef || fcnName == divRef || fcnName == plusRef || fcnName == minusRef || fcnName == modRef)) || bufName == batmtimeRef)) {
+		(fcnName == mulRef || fcnName == divRef || fcnName == plusRef || fcnName == minusRef || fcnName == modRef)) || bufName == batmtimeRef || bufName == batstrRef)) {
 		if (p->argc == 3 &&
 			/* these two filter out unary batcalc.- with a candidate list */
 			getBatType(getArgType(mb, p, 1)) != TYPE_oid &&
@@ -235,7 +235,7 @@ OPTmultiplexInline(Client cntxt, MalBlkPtr mb, InstrPtr p, int pc )
 					q->typechk = TYPE_UNKNOWN;
 					if (q->retc == 1 &&
 						((getModuleId(q) == batcalcRef &&
-						(getFunctionId(q) == mulRef || getFunctionId(q) == divRef || getFunctionId(q) == plusRef || getFunctionId(q) == minusRef || getFunctionId(q) == modRef)) || getModuleId(q) == batmtimeRef)) {
+						(getFunctionId(q) == mulRef || getFunctionId(q) == divRef || getFunctionId(q) == plusRef || getFunctionId(q) == minusRef || getFunctionId(q) == modRef)) || getModuleId(q) == batmtimeRef || getModuleId(q) == batstrRef)) {
 						if (q->argc == 3 &&
 							/* these two filter out unary batcalc.- with a candidate list */
 							getBatType(getArgType(mq, q, 1)) != TYPE_oid &&
