@@ -3489,6 +3489,22 @@ end:
 	}
 }
 
+str
+importColumn(bat *ret, lng *retcnt, const str *tpe, const str *path, const int *onclient, const lng *nrows)
+{
+	(void)ret;
+	(void)retcnt;
+	(void)tpe;
+	(void)path;
+	(void)onclient;
+	(void)nrows;
+
+	return createException(MAL, "sql.importColumn", SQLSTATE(42000) "COPY BINARY FROM not implemented for type '%s': path=%s onclient=%d nrows=%ld",
+		*tpe, *path, *onclient, *nrows);
+}
+
+
+
 /* str mvc_bin_import_table_wrap(.., str *sname, str *tname, str *fname..);
  * binary attachment only works for simple binary types.
  * Non-simple types require each line to contain a valid ascii representation
@@ -5793,6 +5809,7 @@ static mel_func sql_init_funcs[] = {
  //we use bat.single now
  //pattern("sql", "single", CMDBATsingle, false, "", args(1,2, batargany("",2),argany("x",2))),
  pattern("sql", "importTable", mvc_bin_import_table_wrap, true, "Import a table from the files (fname)", args(1,5, batvarargany("",0),arg("sname",str),arg("tname",str),arg("onclient",int),vararg("fname",str))),
+ command("sql", "importColumn", importColumn, true, "Import a column from the given file", args(2, 6, batargany("", 0),arg("", lng), arg("type",str),arg("path",str),arg("onclient",int),arg("nrows",lng))),
  command("aggr", "not_unique", not_unique, false, "check if the tail sorted bat b doesn't have unique tail values", args(1,2, arg("",bit),batarg("b",oid))),
  command("sql", "optimizers", getPipeCatalog, false, "", args(3,3, batarg("",str),batarg("",str),batarg("",str))),
  pattern("sql", "optimizer_updates", SQLoptimizersUpdate, false, "", noargs),
