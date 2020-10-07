@@ -143,6 +143,13 @@ set_level_for_layer(int layer, int lvl)
 	const char *tok = NULL;
 	log_level_t level = (log_level_t) lvl;
 
+	// make sure we initialize before changing the component level
+	MT_lock_set(&lock);
+	if (file_name[0] == 0) {
+		_GDKtracer_init_basic_adptr();
+	}
+	MT_lock_unset(&lock);
+
 	for (int i = 0; i < COMPONENTS_COUNT; i++) {
 		if (layer == MDB_ALL) {
 			lvl_per_component[i] = level;
@@ -285,6 +292,13 @@ GDKtracer_set_component_level(const char *comp, const char *lvl)
 		GDKerror("unknown component\n");
 		return GDK_FAIL;
 	}
+
+	// make sure we initialize before changing the component level
+	MT_lock_set(&lock);
+	if (file_name[0] == 0) {
+		_GDKtracer_init_basic_adptr();
+	}
+	MT_lock_unset(&lock);
 
 	lvl_per_component[component] = level;
 
@@ -481,7 +495,8 @@ GDKtracer_log(const char *file, const char *func, int lineno,
 	}
 	MT_lock_set(&lock);
 	if (file_name[0] == 0) {
-		_GDKtracer_init_basic_adptr();
+		MT_lock_unset(&lock);
+		return;
 	}
 	MT_lock_unset(&lock);
 	if (syserr)
