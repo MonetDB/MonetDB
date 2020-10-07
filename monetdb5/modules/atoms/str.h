@@ -34,7 +34,7 @@
 
 mal_export int str_utf8_length(str s); /* this function looks for NULL values of s, returning int_nil on those */
 
-mal_export bool batstr_func_has_candidates(char *func, int args);
+mal_export bool batstr_func_has_candidates(const char *func);
 
 /* For str returning functions, the result is passed as the input parameter buf. The returned str indicates
    if the function succeeded (ie malloc failure or invalid unicode character). str_wchr_at function also
@@ -91,9 +91,9 @@ extern str str_lpad(str *buf, size_t *buflen, str s, int len)
 __attribute__((__visibility__("hidden")));
 extern str str_rpad(str *buf, size_t *buflen, str s, int len)
 __attribute__((__visibility__("hidden")));
-extern str str_lpad2(str *buf, size_t *buflen, str s, int len, str s2)
+extern str str_lpad3(str *buf, size_t *buflen, str s, int len, str s2)
 __attribute__((__visibility__("hidden")));
-extern str str_rpad2(str *buf, size_t *buflen, str s, int len, str s2)
+extern str str_rpad3(str *buf, size_t *buflen, str s, int len, str s2)
 __attribute__((__visibility__("hidden")));
 
 extern int str_search(str s, str s2)

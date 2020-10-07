@@ -25,29 +25,16 @@
 #include "mal_exception.h"
 #include "str.h"
 
-/* In order to make avaialble a bulk version of a string function with candidates, all possible combinations of scalar/vector 
+/* In order to make avaialble a bulk version of a string function with candidates, all possible combinations of scalar/vector
 	version of each argument must be avaiable for the function. Obviously this won't scale for functions with a large number of
-	arguments, so we keep a blacklist for functions without candidate versions.  */
-static struct functions_with_no_cands {
-	char *name;
-	int nargs; /*here nargs represent the total number of arguments */
-} functions_list[8] = {
-	{ "lpad", 4 },
-	{ "rpad", 4 },
-	{ "splitpart", 4 },
-	{ "substitute", 5 },
-	{ "locate", 4 },
-	{ "insert", 5 },
-	{ "replace", 4 },
-	{ NULL, 0 }
-};
+	arguments, so we keep a blacklist for functions without candidate versions. */
+static const char* batstr_funcs_with_no_cands[8] = {"lpad3","rpad3","splitpart","substitute","locate3","insert","replace",NULL};
 
-bool batstr_func_has_candidates(char *func, int args)
+bool
+batstr_func_has_candidates(const char *func)
 {
-	size_t number_valid_types = sizeof(functions_list) / sizeof(functions_list[0]);
-
-	for (size_t i = 0 ; i < number_valid_types ; i++)
-		if (functions_list[i].name && strcmp(functions_list[i].name, func) == 0 && functions_list[i].nargs == args)
+	for (size_t i = 0; batstr_funcs_with_no_cands[i]; i++)
+		if (strcmp(batstr_funcs_with_no_cands[i], func) == 0)
 			return false;
 	return true;
 }
@@ -1533,51 +1520,51 @@ STRbatRpad_bat(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 }
 
 static str
-STRbatLpad2_const_const(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+STRbatLpad3_const_const(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	return do_batstr_constint_conststr_str(cntxt, mb, stk, pci, "batstr.lpad", str_lpad2);
+	return do_batstr_constint_conststr_str(cntxt, mb, stk, pci, "batstr.lpad", str_lpad3);
 }
 
 static str
-STRbatRpad2_const_const(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+STRbatRpad3_const_const(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	return do_batstr_constint_conststr_str(cntxt, mb, stk, pci, "batstr.rpad", str_rpad2);
+	return do_batstr_constint_conststr_str(cntxt, mb, stk, pci, "batstr.rpad", str_rpad3);
 }
 
 static str
-STRbatLpad2_bat_const(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+STRbatLpad3_bat_const(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	return do_batstr_batint_conststr_str(cntxt, mb, stk, pci, "batstr.lpad", str_lpad2);
+	return do_batstr_batint_conststr_str(cntxt, mb, stk, pci, "batstr.lpad", str_lpad3);
 }
 
 static str
-STRbatRpad2_bat_const(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+STRbatRpad3_bat_const(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	return do_batstr_batint_conststr_str(cntxt, mb, stk, pci, "batstr.rpad", str_rpad2);
+	return do_batstr_batint_conststr_str(cntxt, mb, stk, pci, "batstr.rpad", str_rpad3);
 }
 
 static str
-STRbatLpad2_const_bat(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+STRbatLpad3_const_bat(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	return do_batstr_constint_batstr_str(cntxt, mb, stk, pci, "batstr.lpad", str_lpad2);
+	return do_batstr_constint_batstr_str(cntxt, mb, stk, pci, "batstr.lpad", str_lpad3);
 }
 
 static str
-STRbatRpad2_const_bat(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+STRbatRpad3_const_bat(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	return do_batstr_constint_batstr_str(cntxt, mb, stk, pci, "batstr.rpad", str_rpad2);
+	return do_batstr_constint_batstr_str(cntxt, mb, stk, pci, "batstr.rpad", str_rpad3);
 }
 
 static str
-STRbatLpad2_bat_bat(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+STRbatLpad3_bat_bat(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	return do_batstr_batint_batstr_str(cntxt, mb, stk, pci, "batstr.lpad", str_lpad2);
+	return do_batstr_batint_batstr_str(cntxt, mb, stk, pci, "batstr.lpad", str_lpad3);
 }
 
 static str
-STRbatRpad2_bat_bat(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+STRbatRpad3_bat_bat(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	return do_batstr_batint_batstr_str(cntxt, mb, stk, pci, "batstr.rpad", str_rpad2);
+	return do_batstr_batint_batstr_str(cntxt, mb, stk, pci, "batstr.rpad", str_rpad3);
 }
 
 /*
@@ -4639,7 +4626,7 @@ bailout:
 }
 
 static str
-STRbatstrLocate2cst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+STRbatstrLocate3cst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	BATiter bi;
 	BAT *bn = NULL, *b = NULL, *bs = NULL;
@@ -4703,7 +4690,7 @@ bailout:
 }
 
 static str
-STRbatstrLocate2(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+STRbatstrLocate3(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	BATiter lefti, righti;
 	BAT *bn = NULL, *left = NULL, *ls = NULL, *right = NULL, *rs = NULL, *start = NULL, *ss = NULL;
@@ -4798,24 +4785,24 @@ mel_func batstr_init_funcs[] = {
  pattern("batstr", "ltrim", STRbatLtrim, false, "Strip whitespaces from start of a string.", args(1,3, batarg("",str),batarg("s",str),batarg("s",oid))),
  pattern("batstr", "rtrim", STRbatRtrim, false, "Strip whitespaces from end of a string.", args(1,2, batarg("",str),batarg("s",str))),
  pattern("batstr", "rtrim", STRbatRtrim, false, "Strip whitespaces from end of a string.", args(1,3, batarg("",str),batarg("s",str),batarg("s",oid))),
- pattern("batstr", "trim", STRbatStrip2_const, false, "Strip characters in the second string around the first strings.", args(1,3, batarg("",str),batarg("s",str),arg("s2",str))),
- pattern("batstr", "trim", STRbatStrip2_const, false, "Strip characters in the second string around the first strings.", args(1,4, batarg("",str),batarg("s",str),arg("s2",str),batarg("s",oid))),
- pattern("batstr", "trim", STRbatStrip2_1st_const, false, "Strip characters in the second string around the first strings.", args(1,3, batarg("",str),arg("s",str),batarg("s2",str))),
- pattern("batstr", "trim", STRbatStrip2_1st_const, false, "Strip characters in the second string around the first strings.", args(1,4, batarg("",str),arg("s",str),batarg("s2",str),batarg("s",oid))),
- pattern("batstr", "ltrim", STRbatLtrim2_const, false, "Strip characters in the second string from start of the first strings.", args(1,3, batarg("",str),batarg("s",str),arg("s2",str))),
- pattern("batstr", "ltrim", STRbatLtrim2_const, false, "Strip characters in the second string from start of the first strings.", args(1,4, batarg("",str),batarg("s",str),arg("s2",str),batarg("s",oid))),
- pattern("batstr", "ltrim", STRbatLtrim2_1st_const, false, "Strip characters in the second string from start of the first strings.", args(1,3, batarg("",str),arg("s",str),batarg("s2",str))),
- pattern("batstr", "ltrim", STRbatLtrim2_1st_const, false, "Strip characters in the second string from start of the first strings.", args(1,4, batarg("",str),arg("s",str),batarg("s2",str),batarg("s",oid))),
- pattern("batstr", "rtrim", STRbatRtrim2_const, false, "Strip characters in the second string from end of the first strings.", args(1,3, batarg("",str),batarg("s",str),arg("s2",str))),
- pattern("batstr", "rtrim", STRbatRtrim2_const, false, "Strip characters in the second string from end of the first strings.", args(1,4, batarg("",str),batarg("s",str),arg("s2",str),batarg("s",oid))),
- pattern("batstr", "rtrim", STRbatRtrim2_1st_const, false, "Strip characters in the second string from end of the first strings.", args(1,3, batarg("",str),arg("s",str),batarg("s2",str))),
- pattern("batstr", "rtrim", STRbatRtrim2_1st_const, false, "Strip characters in the second string from end of the first strings.", args(1,4, batarg("",str),arg("s",str),batarg("s2",str),batarg("s",oid))),
- pattern("batstr", "trim", STRbatStrip2_bat, false, "Strip characters in the second strings around the first strings.", args(1,3, batarg("",str),batarg("s",str),batarg("s2",str))),
- pattern("batstr", "trim", STRbatStrip2_bat, false, "Strip characters in the second strings around the first strings.", args(1,5, batarg("",str),batarg("s",str),batarg("s2",str),batarg("s1",oid),batarg("s2",oid))),
- pattern("batstr", "ltrim", STRbatLtrim2_bat, false, "Strip characters in the second strings from start of the first strings.", args(1,3, batarg("",str),batarg("s",str),batarg("s2",str))),
- pattern("batstr", "ltrim", STRbatLtrim2_bat, false, "Strip characters in the second strings from start of the first strings.", args(1,5, batarg("",str),batarg("s",str),batarg("s2",str),batarg("s1",oid),batarg("s2",oid))),
- pattern("batstr", "rtrim", STRbatRtrim2_bat, false, "Strip characters in the second strings from end of the first strings.", args(1,3, batarg("",str),batarg("s",str),batarg("s2",str))),
- pattern("batstr", "rtrim", STRbatRtrim2_bat, false, "Strip characters in the second strings from end of the first strings.", args(1,5, batarg("",str),batarg("s",str),batarg("s2",str),batarg("s1",oid),batarg("s2",oid))),
+ pattern("batstr", "trim2", STRbatStrip2_const, false, "Strip characters in the second string around the first strings.", args(1,3, batarg("",str),batarg("s",str),arg("s2",str))),
+ pattern("batstr", "trim2", STRbatStrip2_const, false, "Strip characters in the second string around the first strings.", args(1,4, batarg("",str),batarg("s",str),arg("s2",str),batarg("s",oid))),
+ pattern("batstr", "trim2", STRbatStrip2_1st_const, false, "Strip characters in the second string around the first strings.", args(1,3, batarg("",str),arg("s",str),batarg("s2",str))),
+ pattern("batstr", "trim2", STRbatStrip2_1st_const, false, "Strip characters in the second string around the first strings.", args(1,4, batarg("",str),arg("s",str),batarg("s2",str),batarg("s",oid))),
+ pattern("batstr", "ltrim2", STRbatLtrim2_const, false, "Strip characters in the second string from start of the first strings.", args(1,3, batarg("",str),batarg("s",str),arg("s2",str))),
+ pattern("batstr", "ltrim2", STRbatLtrim2_const, false, "Strip characters in the second string from start of the first strings.", args(1,4, batarg("",str),batarg("s",str),arg("s2",str),batarg("s",oid))),
+ pattern("batstr", "ltrim2", STRbatLtrim2_1st_const, false, "Strip characters in the second string from start of the first strings.", args(1,3, batarg("",str),arg("s",str),batarg("s2",str))),
+ pattern("batstr", "ltrim2", STRbatLtrim2_1st_const, false, "Strip characters in the second string from start of the first strings.", args(1,4, batarg("",str),arg("s",str),batarg("s2",str),batarg("s",oid))),
+ pattern("batstr", "rtrim2", STRbatRtrim2_const, false, "Strip characters in the second string from end of the first strings.", args(1,3, batarg("",str),batarg("s",str),arg("s2",str))),
+ pattern("batstr", "rtrim2", STRbatRtrim2_const, false, "Strip characters in the second string from end of the first strings.", args(1,4, batarg("",str),batarg("s",str),arg("s2",str),batarg("s",oid))),
+ pattern("batstr", "rtrim2", STRbatRtrim2_1st_const, false, "Strip characters in the second string from end of the first strings.", args(1,3, batarg("",str),arg("s",str),batarg("s2",str))),
+ pattern("batstr", "rtrim2", STRbatRtrim2_1st_const, false, "Strip characters in the second string from end of the first strings.", args(1,4, batarg("",str),arg("s",str),batarg("s2",str),batarg("s",oid))),
+ pattern("batstr", "trim2", STRbatStrip2_bat, false, "Strip characters in the second strings around the first strings.", args(1,3, batarg("",str),batarg("s",str),batarg("s2",str))),
+ pattern("batstr", "trim2", STRbatStrip2_bat, false, "Strip characters in the second strings around the first strings.", args(1,5, batarg("",str),batarg("s",str),batarg("s2",str),batarg("s1",oid),batarg("s2",oid))),
+ pattern("batstr", "ltrim2", STRbatLtrim2_bat, false, "Strip characters in the second strings from start of the first strings.", args(1,3, batarg("",str),batarg("s",str),batarg("s2",str))),
+ pattern("batstr", "ltrim2", STRbatLtrim2_bat, false, "Strip characters in the second strings from start of the first strings.", args(1,5, batarg("",str),batarg("s",str),batarg("s2",str),batarg("s1",oid),batarg("s2",oid))),
+ pattern("batstr", "rtrim2", STRbatRtrim2_bat, false, "Strip characters in the second strings from end of the first strings.", args(1,3, batarg("",str),batarg("s",str),batarg("s2",str))),
+ pattern("batstr", "rtrim2", STRbatRtrim2_bat, false, "Strip characters in the second strings from end of the first strings.", args(1,5, batarg("",str),batarg("s",str),batarg("s2",str),batarg("s1",oid),batarg("s2",oid))),
  pattern("batstr", "lpad", STRbatLpad_const, false, "Prepend whitespaces to the strings to reach the given length. Truncate the strings on the right if their lengths is larger than the given length.", args(1,3, batarg("",str),batarg("s",str),arg("n",int))),
  pattern("batstr", "lpad", STRbatLpad_const, false, "Prepend whitespaces to the strings to reach the given length. Truncate the strings on the right if their lengths is larger than the given length.", args(1,4, batarg("",str),batarg("s",str),arg("n",int),batarg("s",oid))),
  pattern("batstr", "rpad", STRbatRpad_const, false, "Append whitespaces to the strings to reach the given length. Truncate the strings on the right if their lengths is larger than the given length.", args(1,3, batarg("",str),batarg("s",str),arg("n",int))),
@@ -4828,14 +4815,14 @@ mel_func batstr_init_funcs[] = {
  pattern("batstr", "lpad", STRbatLpad_bat, false, "Prepend whitespaces to the strings to reach the given lengths. Truncate the strings on the right if their lengths is larger than the given lengths.", args(1,5, batarg("",str),batarg("s",str),batarg("n",int),batarg("s1",oid),batarg("s2",oid))),
  pattern("batstr", "rpad", STRbatRpad_bat, false, "Append whitespaces to the strings to reach the given lengths. Truncate the strings on the right if their lengths is larger than the given lengths.", args(1,3, batarg("",str),batarg("s",str),batarg("n",int))),
  pattern("batstr", "rpad", STRbatRpad_bat, false, "Append whitespaces to the strings to reach the given lengths. Truncate the strings on the right if their lengths is larger than the given lengths.", args(1,5, batarg("",str),batarg("s",str),batarg("n",int),batarg("s1",oid),batarg("s2",oid))),
- pattern("batstr", "lpad", STRbatLpad2_const_const, false, "Prepend the second string to the first strings to reach the given length. Truncate the first strings on the right if their lengths is larger than the given length.", args(1,4, batarg("",str),batarg("s",str),arg("n",int),arg("s2",str))),
- pattern("batstr", "rpad", STRbatRpad2_const_const, false, "Append the second string to the first strings to reach the given length. Truncate the first strings on the right if their lengths is larger than the given length.", args(1,4, batarg("",str),batarg("s",str),arg("n",int),arg("s2",str))),
- pattern("batstr", "lpad", STRbatLpad2_bat_const, false, "Prepend the second string to the first strings to reach the given lengths. Truncate the first strings on the right if their lengths is larger than the given lengths.", args(1,4, batarg("",str),batarg("s",str),batarg("n",int),arg("s2",str))),
- pattern("batstr", "rpad", STRbatRpad2_bat_const, false, "Append the second string to the first strings to reach the given lengths. Truncate the first strings on the right if their lengths is larger than the given lengths.", args(1,4, batarg("",str),batarg("s",str),batarg("n",int),arg("s2",str))),
- pattern("batstr", "lpad", STRbatLpad2_const_bat, false, "Prepend the second strings to the first strings to reach the given length. Truncate the first strings on the right if their lengths is larger than the given length.", args(1,4, batarg("",str),batarg("s",str),arg("n",int),batarg("s2",str))),
- pattern("batstr", "rpad", STRbatRpad2_const_bat, false, "Append the second strings to the first strings to reach the given length. Truncate the first strings on the right if their lengths is larger than the given length.", args(1,4, batarg("",str),batarg("s",str),arg("n",int),batarg("s2",str))),
- pattern("batstr", "lpad", STRbatLpad2_bat_bat, false, "Prepend the second strings to the first strings to reach the given lengths. Truncate the first strings on the right if their lengths is larger than the given lengths.", args(1,4, batarg("",str),batarg("s",str),batarg("n",int),batarg("s2",str))),
- pattern("batstr", "rpad", STRbatRpad2_bat_bat, false, "Append the second strings to the first strings to reach the given lengths. Truncate the first strings on the right if their lengths is larger than the given lengths.", args(1,4, batarg("",str),batarg("s",str),batarg("n",int),batarg("s2",str))),
+ pattern("batstr", "lpad3", STRbatLpad3_const_const, false, "Prepend the second string to the first strings to reach the given length. Truncate the first strings on the right if their lengths is larger than the given length.", args(1,4, batarg("",str),batarg("s",str),arg("n",int),arg("s2",str))),
+ pattern("batstr", "rpad3", STRbatRpad3_const_const, false, "Append the second string to the first strings to reach the given length. Truncate the first strings on the right if their lengths is larger than the given length.", args(1,4, batarg("",str),batarg("s",str),arg("n",int),arg("s2",str))),
+ pattern("batstr", "lpad3", STRbatLpad3_bat_const, false, "Prepend the second string to the first strings to reach the given lengths. Truncate the first strings on the right if their lengths is larger than the given lengths.", args(1,4, batarg("",str),batarg("s",str),batarg("n",int),arg("s2",str))),
+ pattern("batstr", "rpad3", STRbatRpad3_bat_const, false, "Append the second string to the first strings to reach the given lengths. Truncate the first strings on the right if their lengths is larger than the given lengths.", args(1,4, batarg("",str),batarg("s",str),batarg("n",int),arg("s2",str))),
+ pattern("batstr", "lpad3", STRbatLpad3_const_bat, false, "Prepend the second strings to the first strings to reach the given length. Truncate the first strings on the right if their lengths is larger than the given length.", args(1,4, batarg("",str),batarg("s",str),arg("n",int),batarg("s2",str))),
+ pattern("batstr", "rpad3", STRbatRpad3_const_bat, false, "Append the second strings to the first strings to reach the given length. Truncate the first strings on the right if their lengths is larger than the given length.", args(1,4, batarg("",str),batarg("s",str),arg("n",int),batarg("s2",str))),
+ pattern("batstr", "lpad3", STRbatLpad3_bat_bat, false, "Prepend the second strings to the first strings to reach the given lengths. Truncate the first strings on the right if their lengths is larger than the given lengths.", args(1,4, batarg("",str),batarg("s",str),batarg("n",int),batarg("s2",str))),
+ pattern("batstr", "rpad3", STRbatRpad3_bat_bat, false, "Append the second strings to the first strings to reach the given lengths. Truncate the first strings on the right if their lengths is larger than the given lengths.", args(1,4, batarg("",str),batarg("s",str),batarg("n",int),batarg("s2",str))),
  pattern("batstr", "startsWith", STRbatPrefix, false, "Prefix check.", args(1,3, batarg("",bit),batarg("s",str),batarg("prefix",str))),
  pattern("batstr", "startsWith", STRbatPrefix, false, "Prefix check.", args(1,5, batarg("",bit),batarg("s",str),batarg("prefix",str),batarg("s1",oid),batarg("s2",oid))),
  pattern("batstr", "startsWith", STRbatPrefixcst, false, "Prefix check.", args(1,3, batarg("",bit),batarg("s",str),arg("prefix",str))),
@@ -4878,20 +4865,20 @@ mel_func batstr_init_funcs[] = {
  pattern("batstr", "substring", STRbatsubstringTailcst, false, "Extract the tail of a string", args(1,4, batarg("",str),batarg("s",str),arg("start",int),batarg("s",oid))),
  pattern("batstr", "substring", STRbatsubstringTail_strcst, false, "Extract the tail of a string", args(1,3, batarg("",str),arg("s",str),batarg("start",int))),
  pattern("batstr", "substring", STRbatsubstringTail_strcst, false, "Extract the tail of a string", args(1,4, batarg("",str),arg("s",str),batarg("start",int),batarg("s",oid))),
- pattern("batstr", "substring", STRbatsubstring, false, "Substring extraction using [start,start+length]", args(1,4, batarg("",str),batarg("s",str),batarg("start",int),batarg("index",int))),
- pattern("batstr", "substring", STRbatsubstring, false, "Substring extraction using [start,start+length]", args(1,7, batarg("",str),batarg("s",str),batarg("start",int),batarg("index",int),batarg("s1",oid),batarg("s2",oid),batarg("s3",oid))),
- pattern("batstr", "substring", STRbatsubstring_2nd_3rd_cst, false, "Substring extraction using [start,start+length]", args(1,4, batarg("",str),batarg("s",str),arg("start",int),arg("index",int))),
- pattern("batstr", "substring", STRbatsubstring_2nd_3rd_cst, false, "Substring extraction using [start,start+length]", args(1,5, batarg("",str),batarg("s",str),arg("start",int),arg("index",int),batarg("s",oid))),
- pattern("batstr", "substring", STRbatsubstring_2nd_cst, false, "Substring extraction using [start,start+length]", args(1,4, batarg("",str),batarg("s",str),arg("start",int),batarg("index",int))),
- pattern("batstr", "substring", STRbatsubstring_2nd_cst, false, "Substring extraction using [start,start+length]", args(1,6, batarg("",str),batarg("s",str),arg("start",int),batarg("index",int),batarg("s1",oid),batarg("s2",oid))),
- pattern("batstr", "substring", STRbatsubstring_3rd_cst, false, "Substring extraction using [start,start+length]", args(1,4, batarg("",str),batarg("s",str),batarg("start",int),arg("index",int))),
- pattern("batstr", "substring", STRbatsubstring_3rd_cst, false, "Substring extraction using [start,start+length]", args(1,6, batarg("",str),batarg("s",str),batarg("start",int),arg("index",int),batarg("s1",oid),batarg("s2",oid))),
- pattern("batstr", "substring", STRbatsubstring_1st_2nd_cst, false, "Substring extraction using [start,start+length]", args(1,4, batarg("",str),arg("s",str),arg("start",int),batarg("index",int))),
- pattern("batstr", "substring", STRbatsubstring_1st_2nd_cst, false, "Substring extraction using [start,start+length]", args(1,5, batarg("",str),arg("s",str),arg("start",int),batarg("index",int),batarg("s",oid))),
- pattern("batstr", "substring", STRbatsubstring_1st_3rd_cst, false, "Substring extraction using [start,start+length]", args(1,4, batarg("",str),arg("s",str),batarg("start",int),arg("index",int))),
- pattern("batstr", "substring", STRbatsubstring_1st_3rd_cst, false, "Substring extraction using [start,start+length]", args(1,5, batarg("",str),arg("s",str),batarg("start",int),arg("index",int),batarg("s",oid))),
- pattern("batstr", "substring", STRbatsubstring_1st_cst, false, "Substring extraction using [start,start+length]", args(1,4, batarg("",str),arg("s",str),batarg("start",int),batarg("index",int))),
- pattern("batstr", "substring", STRbatsubstring_1st_cst, false, "Substring extraction using [start,start+length]", args(1,6, batarg("",str),arg("s",str),batarg("start",int),batarg("index",int),batarg("s1",oid),batarg("s2",oid))),
+ pattern("batstr", "substring3", STRbatsubstring, false, "Substring extraction using [start,start+length]", args(1,4, batarg("",str),batarg("s",str),batarg("start",int),batarg("index",int))),
+ pattern("batstr", "substring3", STRbatsubstring, false, "Substring extraction using [start,start+length]", args(1,7, batarg("",str),batarg("s",str),batarg("start",int),batarg("index",int),batarg("s1",oid),batarg("s2",oid),batarg("s3",oid))),
+ pattern("batstr", "substring3", STRbatsubstring_2nd_3rd_cst, false, "Substring extraction using [start,start+length]", args(1,4, batarg("",str),batarg("s",str),arg("start",int),arg("index",int))),
+ pattern("batstr", "substring3", STRbatsubstring_2nd_3rd_cst, false, "Substring extraction using [start,start+length]", args(1,5, batarg("",str),batarg("s",str),arg("start",int),arg("index",int),batarg("s",oid))),
+ pattern("batstr", "substring3", STRbatsubstring_2nd_cst, false, "Substring extraction using [start,start+length]", args(1,4, batarg("",str),batarg("s",str),arg("start",int),batarg("index",int))),
+ pattern("batstr", "substring3", STRbatsubstring_2nd_cst, false, "Substring extraction using [start,start+length]", args(1,6, batarg("",str),batarg("s",str),arg("start",int),batarg("index",int),batarg("s1",oid),batarg("s2",oid))),
+ pattern("batstr", "substring3", STRbatsubstring_3rd_cst, false, "Substring extraction using [start,start+length]", args(1,4, batarg("",str),batarg("s",str),batarg("start",int),arg("index",int))),
+ pattern("batstr", "substring3", STRbatsubstring_3rd_cst, false, "Substring extraction using [start,start+length]", args(1,6, batarg("",str),batarg("s",str),batarg("start",int),arg("index",int),batarg("s1",oid),batarg("s2",oid))),
+ pattern("batstr", "substring3", STRbatsubstring_1st_2nd_cst, false, "Substring extraction using [start,start+length]", args(1,4, batarg("",str),arg("s",str),arg("start",int),batarg("index",int))),
+ pattern("batstr", "substring3", STRbatsubstring_1st_2nd_cst, false, "Substring extraction using [start,start+length]", args(1,5, batarg("",str),arg("s",str),arg("start",int),batarg("index",int),batarg("s",oid))),
+ pattern("batstr", "substring3", STRbatsubstring_1st_3rd_cst, false, "Substring extraction using [start,start+length]", args(1,4, batarg("",str),arg("s",str),batarg("start",int),arg("index",int))),
+ pattern("batstr", "substring3", STRbatsubstring_1st_3rd_cst, false, "Substring extraction using [start,start+length]", args(1,5, batarg("",str),arg("s",str),batarg("start",int),arg("index",int),batarg("s",oid))),
+ pattern("batstr", "substring3", STRbatsubstring_1st_cst, false, "Substring extraction using [start,start+length]", args(1,4, batarg("",str),arg("s",str),batarg("start",int),batarg("index",int))),
+ pattern("batstr", "substring3", STRbatsubstring_1st_cst, false, "Substring extraction using [start,start+length]", args(1,6, batarg("",str),arg("s",str),batarg("start",int),batarg("index",int),batarg("s1",oid),batarg("s2",oid))),
  pattern("batstr", "unicode", STRbatFromWChr, false, "convert a unicode to a character.", args(1,2, batarg("",str),batarg("wchar",int))),
  pattern("batstr", "unicode", STRbatFromWChr, false, "convert a unicode to a character.", args(1,3, batarg("",str),batarg("wchar",int),batarg("s",oid))),
  pattern("batstr", "unicodeAt", STRbatWChrAt, false, "get a unicode character (as an int) from a string position.", args(1,3, batarg("",int),batarg("s",str),batarg("index",int))),
@@ -4920,8 +4907,8 @@ mel_func batstr_init_funcs[] = {
  pattern("batstr", "locate", STRbatstrLocatecst, false, "Locate the start position of a string", args(1,4, batarg("",int),batarg("s1",str),arg("s2",str),batarg("s",oid))),
  pattern("batstr", "locate", STRbatstrLocate_strcst, false, "Locate the start position of a string", args(1,3, batarg("",int),arg("s1",str),batarg("s2",str))),
  pattern("batstr", "locate", STRbatstrLocate_strcst, false, "Locate the start position of a string", args(1,4, batarg("",int),arg("s1",str),batarg("s2",str),batarg("s",oid))),
- pattern("batstr", "locate", STRbatstrLocate2, false, "Locate the start position of a string", args(1,4, batarg("",int),batarg("s1",str),batarg("s2",str),batarg("start",int))),
- pattern("batstr", "locate", STRbatstrLocate2cst, false, "Locate the start position of a string", args(1,4, batarg("",int),batarg("s1",str),arg("s2",str),arg("start",int))),
+ pattern("batstr", "locate3", STRbatstrLocate3, false, "Locate the start position of a string", args(1,4, batarg("",int),batarg("s1",str),batarg("s2",str),batarg("start",int))),
+ pattern("batstr", "locate3", STRbatstrLocate3cst, false, "Locate the start position of a string", args(1,4, batarg("",int),batarg("s1",str),arg("s2",str),arg("start",int))),
  pattern("batstr", "insert", STRbatInsert, false, "Insert a string into another", args(1,5, batarg("",str),batarg("s",str),batarg("start",int),batarg("l",int),batarg("s2",str))),
  pattern("batstr", "insert", STRbatInsertcst, false, "Insert a string into another", args(1,5, batarg("",str),batarg("s",str),arg("start",int),arg("l",int),arg("s2",str))),
  pattern("batstr", "replace", STRbatReplace, false, "Insert a string into another", args(1,4, batarg("",str),batarg("s",str),batarg("pat",str),batarg("s2",str))),
