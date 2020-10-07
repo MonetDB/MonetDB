@@ -394,7 +394,7 @@ melFunction(bool command, char *mod, char *fcn, fptr imp, char *fname, bool unsa
 }
 
 static str
-malPrelude(Client c, int listing, int embedded)
+malPrelude(Client c, int listing, int no_mapi_server)
 {
 	int i;
 	str msg = MAL_SUCCEED;
@@ -420,8 +420,8 @@ malPrelude(Client c, int listing, int embedded)
 			if (msg)
 				return msg;
 
-			/* skip sql should be last to startup and mapi in the embedded version */
-			if (strcmp(mel_module_name[i], "sql") == 0 || (embedded && strcmp(mel_module_name[i], "mapi") == 0))
+			/* skip sql should be last to startup and mapi if configured without mapi server */
+			if (strcmp(mel_module_name[i], "sql") == 0 || (no_mapi_server && strcmp(mel_module_name[i], "mapi") == 0))
 				continue;
 			if (!mel_module_inits[i]) {
 				msg = initModule(c, mel_module_name[i]);
@@ -433,8 +433,8 @@ malPrelude(Client c, int listing, int embedded)
 			msg = mel_module_inits[i]();
 			if (msg)
 				return msg;
-			/* skip sql should be last to startup and mapi in the embedded version */
-			if (strcmp(mel_module_name[i], "sql") == 0 || (embedded && strcmp(mel_module_name[i], "mapi") == 0))
+			/* skip sql should be last to startup and mapi if configured without mapi server */
+			if (strcmp(mel_module_name[i], "sql") == 0 || (no_mapi_server && strcmp(mel_module_name[i], "mapi") == 0))
 				continue;
 			msg = initModule(c, mel_module_name[i]);
 			if (msg)
@@ -445,7 +445,7 @@ malPrelude(Client c, int listing, int embedded)
 }
 
 str
-malIncludeModules(Client c, char *modules[], int listing, int embedded)
+malIncludeModules(Client c, char *modules[], int listing, int no_mapi_server)
 {
 	int i;
 	str msg;
@@ -458,7 +458,7 @@ malIncludeModules(Client c, char *modules[], int listing, int embedded)
 			return msg;
 	}
 	/* load the mal code for these modules and execute preludes */
-	if ((msg = malPrelude(c, listing, embedded)) != NULL)
+	if ((msg = malPrelude(c, listing, no_mapi_server)) != NULL)
 		return msg;
 	for(int i = 0; modules[i]; i++) {
 		if (strcmp(modules[i], "sql") == 0) { /* start now */

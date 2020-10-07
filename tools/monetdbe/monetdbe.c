@@ -483,6 +483,9 @@ monetdbe_startup(monetdbe_database_internal *mdbe, char* dbdir, monetdbe_options
 	gdk_return gdk_res;
 
 	GDKfataljumpenable = 1;
+
+	bool with_mapi_server = false;
+
 	if(setjmp(GDKfataljump) != 0) {
 		assert(0);
 		mdbe->msg = GDKfatalmsg;
@@ -515,6 +518,29 @@ monetdbe_startup(monetdbe_database_internal *mdbe, char* dbdir, monetdbe_options
 		mo_free_options(set, setlen);
 		mdbe->msg = createException(MAL, "monetdbe.monetdbe_startup", MAL_MALLOC_FAIL);
 		goto cleanup;
+	}
+
+	if (opts && opts->mapi_server) {
+		/*This monetdbe instance wants to listen to external mapi client connections.*/
+		with_mapi_server = true;
+		if (opts->mapi_server->port) {
+			int psetlen = setlen;
+			setlen = mo_add_option(&set, setlen, opt_cmdline, "mapi_port", opts->mapi_server->port);
+			if (setlen == psetlen) {
+				mo_free_options(set, setlen);
+				mdbe->msg = createException(MAL, "monetdbe.monetdbe_startup", MAL_MALLOC_FAIL);
+				goto cleanup;
+			}
+		}
+		if (opts->mapi_server->usock) {
+			int psetlen = setlen;
+			setlen = mo_add_option(&set, setlen, opt_cmdline, "mapi_usock", opts->mapi_server->usock);
+			if (setlen == psetlen) {
+				mo_free_options(set, setlen);
+				mdbe->msg = createException(MAL, "monetdbe.monetdbe_startup", MAL_MALLOC_FAIL);
+				goto cleanup;
+			}
+		}
 	}
 
 	GDKtracer_set_adapter(mbedded); /* set the output of GDKtracer logs */
@@ -582,7 +608,8 @@ monetdbe_startup(monetdbe_database_internal *mdbe, char* dbdir, monetdbe_options
 		mdbe->msg = createException(MAL, "monetdbe.monetdbe_startup", "GDKinit() failed");
 		goto cleanup;
 	}
-	if ((mdbe->msg = malEmbeddedBoot(workers, memory, querytimeout, sessiontimeout)) != MAL_SUCCEED)
+
+	if ((mdbe->msg = malEmbeddedBoot(workers, memory, querytimeout, sessiontimeout, with_mapi_server)) != MAL_SUCCEED)
 		goto cleanup;
 
 	monetdbe_embedded_initialized = true;
