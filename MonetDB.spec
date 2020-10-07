@@ -257,6 +257,7 @@ Summary: MonetDB - Monet Database Management System Client Programs
 Group: Applications/Databases
 %if (0%{?fedora} >= 22)
 Recommends: %{name}-SQL-server5%{?_isa} = %{version}-%{release}
+Recommends: MonetDB5-server%{?_isa} = %{version}-%{release}
 %endif
 
 %description client
@@ -351,7 +352,7 @@ Requires: %{name}-client-odbc%{?_isa} = %{version}-%{release}
 Recommends: perl-DBD-monetdb >= 1.0
 Recommends: php-monetdb >= 1.0
 %endif
-Requires: %{name}-SQL-server5%{?_isa} = %{version}-%{release}
+Requires: MonetDB5-server%{?_isa} = %{version}-%{release}
 Requires: python3-pymonetdb >= 1.0.6
 
 %description client-tests
@@ -394,7 +395,7 @@ automatic index management, extensibility of data types and search
 accelerators.  It also has an SQL front end.
 
 This package contains the GIS (Geographic Information System)
-extensions for %{name}-SQL-server5.
+extensions for MonetDB5-server.
 
 %files geom-MonetDB5
 %defattr(-,root,root)
@@ -405,7 +406,7 @@ extensions for %{name}-SQL-server5.
 %package R
 Summary: Integration of MonetDB and R, allowing use of R from within SQL
 Group: Applications/Databases
-Requires: MonetDB-SQL-server5%{?_isa} = %{version}-%{release}
+Requires: MonetDB5-server%{?_isa} = %{version}-%{release}
 
 %description R
 MonetDB is a database management system that is developed from a
@@ -430,7 +431,7 @@ install it.
 %package python3
 Summary: Integration of MonetDB and Python, allowing use of Python from within SQL
 Group: Applications/Databases
-Requires: MonetDB-SQL-server5%{?_isa} = %{version}-%{release}
+Requires: MonetDB5-server%{?_isa} = %{version}-%{release}
 
 %description python3
 MonetDB is a database management system that is developed from a
@@ -454,7 +455,7 @@ install it.
 %package cfitsio
 Summary: MonetDB: Add on module that provides support for FITS files
 Group: Applications/Databases
-Requires: MonetDB-SQL-server5%{?_isa} = %{version}-%{release}
+Requires: MonetDB5-server%{?_isa} = %{version}-%{release}
 
 %description cfitsio
 MonetDB is a database management system that is developed from a
@@ -496,8 +497,9 @@ automatic index management, extensibility of data types and search
 accelerators.  It also has an SQL front end.
 
 This package contains the MonetDB server component.  You need this
-package if you want to use the MonetDB database system.  If you want
-to use the SQL front end, you also need %{name}-SQL-server5.
+package if you want to use the MonetDB database system.  If you want to
+use the monetdb and monetdbd programs to manage your databases
+(recommended), you also need %{name}-SQL-server5.
 
 %pre -n MonetDB5-server
 %{?sysusers_create_package:echo 'u monetdb - "MonetDB Server" /var/lib/monetdb' | systemd-sysusers --replace=%_sysusersdir/monetdb.conf -}
@@ -531,6 +533,7 @@ exit 0
 %{_bindir}/mserver5
 %exclude %{_bindir}/stethoscope
 %{_libdir}/libmonetdb5.so.*
+%{_libdir}/libmonetdbsql.so*
 %dir %{_libdir}/monetdb5
 %if %{with cintegration}
 %{_libdir}/monetdb5/lib_capi.so
@@ -584,8 +587,8 @@ main-memory perspective with use of a fully decomposed storage model,
 automatic index management, extensibility of data types and search
 accelerators.  It also has an SQL front end.
 
-This package contains the SQL front end for MonetDB.  If you want to
-use SQL with MonetDB, you will need to install this package.
+This package contains the monetdb and monetdbd programs and the systemd
+configuration.
 
 %if %{?rhel:0}%{!?rhel:1} || 0%{?rhel} >= 7
 %post SQL-server5
@@ -617,7 +620,6 @@ use SQL with MonetDB, you will need to install this package.
 %config(noreplace) %attr(664,monetdb,monetdb) %{_localstatedir}/monetdb5/dbfarm/.merovingian_properties
 %verify(not mtime) %attr(664,monetdb,monetdb) %{_localstatedir}/monetdb5/dbfarm/.merovingian_lock
 %config(noreplace) %attr(644,root,root) %{_sysconfdir}/logrotate.d/monetdbd
-%{_libdir}/libmonetdbsql.so*
 %doc %{_mandir}/man1/monetdb.1.gz
 %doc %{_mandir}/man1/monetdbd.1.gz
 %dir %{_datadir}/doc/MonetDB-SQL
