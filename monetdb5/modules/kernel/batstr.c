@@ -2937,10 +2937,6 @@ STRbatSubstitutecst_imp(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 bailout:
 	GDKfree(buf);
 	finalize_ouput(res, bn, msg, nils, q);
-	if (bn && b && !msg) {
-		bn->tsorted = b->tsorted;
-		bn->trevsorted = b->trevsorted;
-	}
 	unfix_inputs(2, b, bs);
 	return msg;
 }
@@ -3143,10 +3139,6 @@ STRbatsplitpartcst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 bailout:
 	GDKfree(buf);
 	finalize_ouput(res, bn, msg, nils, q);
-	if (bn && b && !msg) {
-		bn->tsorted = b->tsorted;
-		bn->trevsorted = b->trevsorted;
-	}
 	unfix_inputs(2, b, bs);
 	return msg;
 }
@@ -3242,10 +3234,6 @@ STRbatsplitpart_needlecst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 bailout:
 	GDKfree(buf);
 	finalize_ouput(res, bn, msg, nils, q);
-	if (bn && b && !msg) {
-		bn->tsorted = b->tsorted;
-		bn->trevsorted = b->trevsorted;
-	}
 	unfix_inputs(4, b, bs, f, fs);
 	return msg;
 }
@@ -3341,10 +3329,6 @@ STRbatsplitpart_fieldcst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci
 bailout:
 	GDKfree(buf);
 	finalize_ouput(res, bn, msg, nils, q);
-	if (bn && b && !msg) {
-		bn->tsorted = b->tsorted;
-		bn->trevsorted = b->trevsorted;
-	}
 	unfix_inputs(4, b, bs, n, ns);
 	return msg;
 }
@@ -3749,10 +3733,6 @@ STRbatInsertcst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 bailout:
 	GDKfree(buf);
 	finalize_ouput(res, bn, msg, nils, q);
-	if (bn && b && !msg) {
-		bn->tsorted = b->tsorted;
-		bn->trevsorted = b->trevsorted;
-	}
 	unfix_inputs(2, b, bs);
 	return msg;
 }
@@ -3929,10 +3909,6 @@ STRbatsubstring_1st_2nd_cst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 bailout:
 	GDKfree(buf);
 	finalize_ouput(res, bn, msg, nils, q);
-	if (bn && b && !msg) {
-		bn->tsorted = b->tsorted;
-		bn->trevsorted = b->trevsorted;
-	}
 	unfix_inputs(2, b, bs);
 	return msg;
 }
@@ -4017,10 +3993,6 @@ STRbatsubstring_1st_3rd_cst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 bailout:
 	GDKfree(buf);
 	finalize_ouput(res, bn, msg, nils, q);
-	if (bn && b && !msg) {
-		bn->tsorted = b->tsorted;
-		bn->trevsorted = b->trevsorted;
-	}
 	unfix_inputs(2, b, bs);
 	return msg;
 }
@@ -4115,10 +4087,6 @@ STRbatsubstring_1st_cst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 bailout:
 	GDKfree(buf);
 	finalize_ouput(res, bn, msg, nils, q);
-	if (bn && b && !msg) {
-		bn->tsorted = b->tsorted;
-		bn->trevsorted = b->trevsorted;
-	}
 	unfix_inputs(4, b, bs, lb, lbs);
 	return msg;
 }
@@ -4214,10 +4182,6 @@ STRbatsubstring_2nd_cst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 bailout:
 	GDKfree(buf);
 	finalize_ouput(res, bn, msg, nils, q);
-	if (bn && b && !msg) {
-		bn->tsorted = b->tsorted;
-		bn->trevsorted = b->trevsorted;
-	}
 	unfix_inputs(4, b, bs, lb, lbs);
 	return msg;
 }
@@ -4313,10 +4277,6 @@ STRbatsubstring_3rd_cst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 bailout:
 	GDKfree(buf);
 	finalize_ouput(res, bn, msg, nils, q);
-	if (bn && b && !msg) {
-		bn->tsorted = b->tsorted;
-		bn->trevsorted = b->trevsorted;
-	}
 	unfix_inputs(4, b, bs, lb, lbs);
 	return msg;
 }

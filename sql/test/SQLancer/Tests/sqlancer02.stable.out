@@ -343,6 +343,33 @@ stdout of test 'sqlancer02` in directory 'sql/test/SQLancer` itself:
 % 2 # length
 [ "rr"	]
 [ "rr"	]
+#START TRANSACTION;
+#CREATE TABLE "sys"."t0" ("tc0" TIMESTAMP NOT NULL,CONSTRAINT "t0_tc0_pkey" PRIMARY KEY ("tc0"),CONSTRAINT "t0_tc0_unique" UNIQUE ("tc0"));
+#COPY 4 RECORDS INTO "sys"."t0" FROM stdin USING DELIMITERS E'\t',E'\n','"';
+#"1970-01-07 15:47:59.000000"
+#"1970-01-01 01:00:00.000000"
+#"1970-01-15 16:36:07.000000"
+#"1970-01-01 13:45:44.000000"
+[ 4	]
+#CREATE TABLE "sys"."t2" ("tc2" BOOLEAN NOT NULL,CONSTRAINT "t2_tc2_pkey" PRIMARY KEY ("tc2"),CONSTRAINT "t2_tc2_unique" UNIQUE ("tc2"));
+#COPY 2 RECORDS INTO "sys"."t2" FROM stdin USING DELIMITERS E'\t',E'\n','"';
+#false
+#true
+[ 2	]
+#SELECT substr(ltrim('1Yc',''), CAST(t2.tc2 AS INT), "second"(CAST(t0.tc0 AS TIMESTAMP))) FROM t2, t0;
+% .%2 # table_name
+% %2 # name
+% clob # type
+% 3 # length
+[ "1Yc"	]
+[ ""	]
+[ "1Yc"	]
+[ "1Yc"	]
+[ "1Yc"	]
+[ ""	]
+[ "1Yc"	]
+[ "1Yc"	]
+#ROLLBACK;
 
 # 17:04:12 >  
 # 17:04:12 >  "Done."
