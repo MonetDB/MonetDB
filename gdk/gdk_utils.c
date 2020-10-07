@@ -799,6 +799,7 @@ GDKinit(opt *set, int setlen)
 		/* BBP was locked by BBPexit() */
 		BBPunlock();
 	}
+	GDKtracer_init();
 	errno = 0;
 	if (!GDKinmemory() && !GDKenvironment(dbpath))
 		return GDK_FAIL;
