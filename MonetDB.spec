@@ -147,6 +147,18 @@ BuildRequires: python3-numpy
 %if %{with rintegration}
 BuildRequires: pkgconfig(libR)
 %endif
+# if we were to compile with cmocka support (-DWITH_CMOCKA=ON):
+# BuildRequires: pkgconfig(cmocka)
+# if we were to compile with lz4 support (-DWITH_LZ4=ON):
+# BuildRequires: pkgconfig(liblz4)
+# if we were to compile with NetCDF support (-DNETCDF=ON):
+# BuildRequires: pkgconfig(netcdf)
+# if we were to compile with proj support (-DWITH_PROJ=ON):
+# BuildRequires: pkgconfig(proj)
+# if we were to compile with snappy support (-DWITH_SNAPPY=ON):
+# BuildRequires: pkgconfig(snappy)
+# if we were to compile with valgrind support (-DWITH_VALGRIND=ON):
+# BuildRequires: pkgconfig(valgrind)
 
 %if (0%{?fedora} >= 22)
 Recommends: %{name}-SQL-server5%{?_isa} = %{version}-%{release}
@@ -770,6 +782,8 @@ export CFLAGS
 %endif
 %cmake3 \
 	-DRELEASE_VERSION=ON \
+	-DRUNDIR=%{_rundir}/monetdb \
+	-DLOGDIR=%{_localstatedir}/log/monetdb \
 	-DASSERT=OFF \
 	-DCINTEGRATION=%{?with_cintegration:ON}%{!?with_cintegration:OFF} \
 	-DFITS=%{?with_fits:ON}%{!?with_fits:OFF} \
@@ -936,7 +950,7 @@ fi
   Instead do SET current_timezone = interval '1' hour;
   Casting between interval and other numeric types is no longer possible
   as well, because they are not compatible.
-- sql: Because of incompatibilities this change may create, if an user intents
+- sql: Because of incompatibilities this change may create, if a user intends
   to convert a numeric value to an interval, the multiplication function
   can be used in the form: <numeric value> * interval '1' <interval length>
   e.g. 10 * interval '1' second = interval '10' second.
@@ -944,7 +958,7 @@ fi
   syntax. This option returns the number of milliseconds since the UNIX
   epoch 1970-01-01 00:00:00 UTC for date, timestamp and time values (it
   can be negative). Meanwhile, for day and second intervals, it returns the
-  total number of milliseconds on the interval. As a side note, the 'EPOCH'
+  total number of milliseconds in the interval. As a side note, the 'EPOCH'
   option is not available for month intervals, because this conversion is
   not transparent for this type.
 

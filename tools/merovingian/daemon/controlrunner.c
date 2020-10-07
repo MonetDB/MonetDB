@@ -489,12 +489,12 @@ static void ctl_handle_client(
 						} else if (child > 0) {
 							/* this is the parent process */
 							close(pipes[0]);
-							bool err = write(pipes[1], p, strlen(p)) < 0 || write(pipes[1], "\n", 1) < 0;
+							bool error = write(pipes[1], p, strlen(p)) < 0 || write(pipes[1], "\n", 1) < 0;
 							close(pipes[1]);
 							/* wait for the child to finish */
 							int status;
 							waitpid(child, &status, 0);
-							if (err || !WIFEXITED(status) || WEXITSTATUS(status) != 0) {
+							if (error || !WIFEXITED(status) || WEXITSTATUS(status) != 0) {
 								Mfprintf(_mero_ctlerr,
 										 "%s: initialization of database '%s' failed\n",
 										 origin, q);
@@ -502,6 +502,13 @@ static void ctl_handle_client(
 											   "initialization of database '%s' failed\n", q);
 								send_client("!");
 								continue;
+							}
+							e = db_release(q);
+							if (e != NO_ERR) {
+								Mfprintf(_mero_ctlerr,
+										 "%s: could not release database '%s': %sd\n",
+										 origin, q, e);
+								free(e);
 							}
 						} else {
 							close(pipes[0]);
