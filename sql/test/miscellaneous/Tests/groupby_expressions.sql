@@ -4,6 +4,8 @@ start transaction;
 insert into "groupings" values (1, 1), (2, 2), (1, 3);
 select cast("aa"+1 as bigint) from "groupings" group by "aa"+1;
 select cast("aa"+1 as bigint) from "groupings" group by "aa"+1, "aa"+1;
+plan select cast("aa"+1 as bigint) from "groupings" group by "aa"+1, "aa"+1;
+
 select cast(("aa"+1) + ("bb"+1) as bigint) from "groupings" group by "aa"+1, "bb"+1;
 select cast(("aa"+1) + ("bb"+1) as bigint) from "groupings" group by ("aa"+1) + ("bb"+1);
 

@@ -1067,21 +1067,14 @@ update_table(sql_query *query, dlist *qname, str alias, dlist *assignmentlist, s
 
 		if (opt_from) {
 			dlist *fl = opt_from->data.lval;
-			list *names = list_append(new_exp_list(sql->sa), (char*) rel_name(bt));
+			list *refs = list_append(new_exp_list(sql->sa), (char*) rel_name(bt));
 
 			for (dnode *n = fl->h; n && res; n = n->next) {
-				char *nrame = NULL;
-				sql_rel *fnd = table_ref(query, NULL, n->data.sym, 0);
+				sql_rel *fnd = table_ref(query, NULL, n->data.sym, 0, refs);
 
-				if (fnd) {
-					if ((nrame = (char*) rel_name(fnd))) {
-						if (list_find(names, nrame, (fcmp) &strcmp))
-							return sql_error(sql, 02, SQLSTATE(42000) "UPDATE: multiple references into table '%s'", nrame);
-						else
-							list_append(names, nrame);
-					}
+				if (fnd)
 					res = rel_crossproduct(sql->sa, res, fnd, op_join);
-				} else
+				else
 					res = fnd;
 			}
 			if (!res)
@@ -1257,7 +1250,7 @@ merge_into_table(sql_query *query, dlist *qname, str alias, symbol *tref, symbol
 		return sql_error(sql, 02, SQLSTATE(42000) "MERGE: merge statements not available for merge tables yet");
 
 	bt = rel_basetable(sql, t, alias ? alias : tname);
-	joined = table_ref(query, NULL, tref, 0);
+	joined = table_ref(query, NULL, tref, 0, NULL);
 	if (!bt || !joined)
 		return NULL;
 
