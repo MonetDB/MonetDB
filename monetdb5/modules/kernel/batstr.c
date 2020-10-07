@@ -1585,9 +1585,9 @@ prefix_or_suffix(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, const 
 	struct canditer ci1 = {0}, ci2 = {0};
 	oid off1, off2;
 	bat *res = getArgReference_bat(stk, pci, 0), *l = getArgReference_bat(stk, pci, 1),
-		*r = getArgReference_bat(stk, pci, 3),
-		*sid1 = pci->argc == 6 ? getArgReference_bat(stk, pci, 4) : NULL,
-		*sid2 = pci->argc == 6 ? getArgReference_bat(stk, pci, 5) : NULL;
+		*r = getArgReference_bat(stk, pci, 2),
+		*sid1 = pci->argc == 5 ? getArgReference_bat(stk, pci, 3) : NULL,
+		*sid2 = pci->argc == 5 ? getArgReference_bat(stk, pci, 4) : NULL;
 
 	(void) cntxt;
 	(void) mb;
@@ -1823,9 +1823,9 @@ search_string_bat(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, const
 	struct canditer ci1 = {0}, ci2 = {0};
 	oid off1, off2;
 	bat *res = getArgReference_bat(stk, pci, 0), *l = getArgReference_bat(stk, pci, 1),
-		*r = getArgReference_bat(stk, pci, 3),
-		*sid1 = pci->argc == 6 ? getArgReference_bat(stk, pci, 4) : NULL,
-		*sid2 = pci->argc == 6 ? getArgReference_bat(stk, pci, 5) : NULL;
+		*r = getArgReference_bat(stk, pci, 2),
+		*sid1 = pci->argc == 5 ? getArgReference_bat(stk, pci, 3) : NULL,
+		*sid2 = pci->argc == 5 ? getArgReference_bat(stk, pci, 4) : NULL;
 
 	(void) cntxt;
 	(void) mb;
@@ -2062,9 +2062,9 @@ STRbatWChrAt(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	struct canditer ci1 = {0}, ci2 = {0};
 	oid off1, off2;
 	bat *res = getArgReference_bat(stk, pci, 0), *l = getArgReference_bat(stk, pci, 1),
-		*r = getArgReference_bat(stk, pci, 3),
-		*sid1 = pci->argc == 6 ? getArgReference_bat(stk, pci, 4) : NULL,
-		*sid2 = pci->argc == 6 ? getArgReference_bat(stk, pci, 5) : NULL;
+		*r = getArgReference_bat(stk, pci, 2),
+		*sid1 = pci->argc == 5 ? getArgReference_bat(stk, pci, 3) : NULL,
+		*sid2 = pci->argc == 5 ? getArgReference_bat(stk, pci, 4) : NULL;
 
 	(void) cntxt;
 	(void) mb;
@@ -2655,9 +2655,9 @@ do_batstr_str_int(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, const
 	struct canditer ci1 = {0}, ci2 = {0};
 	oid off1, off2;
 	bat *res = getArgReference_bat(stk, pci, 0), *l = getArgReference_bat(stk, pci, 1),
-		*r = getArgReference_bat(stk, pci, 3),
-		*sid1 = pci->argc == 6 ? getArgReference_bat(stk, pci, 4) : NULL,
-		*sid2 = pci->argc == 6 ? getArgReference_bat(stk, pci, 5) : NULL;
+		*r = getArgReference_bat(stk, pci, 2),
+		*sid1 = pci->argc == 5 ? getArgReference_bat(stk, pci, 3) : NULL,
+		*sid2 = pci->argc == 5 ? getArgReference_bat(stk, pci, 4) : NULL;
 
 	(void) cntxt;
 	(void) mb;
@@ -2774,9 +2774,9 @@ STRbatrepeat(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	struct canditer ci1 = {0}, ci2 = {0};
 	oid off1, off2;
 	bat *res = getArgReference_bat(stk, pci, 0), *l = getArgReference_bat(stk, pci, 1),
-		*r = getArgReference_bat(stk, pci, 3),
-		*sid1 = pci->argc == 6 ? getArgReference_bat(stk, pci, 4) : NULL,
-		*sid2 = pci->argc == 6 ? getArgReference_bat(stk, pci, 5) : NULL;
+		*r = getArgReference_bat(stk, pci, 2),
+		*sid1 = pci->argc == 5 ? getArgReference_bat(stk, pci, 3) : NULL,
+		*sid2 = pci->argc == 5 ? getArgReference_bat(stk, pci, 4) : NULL;
 
 	(void) cntxt;
 	(void) mb;
