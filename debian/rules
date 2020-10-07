@@ -14,6 +14,8 @@ DH_VERBOSE=1
 override_dh_auto_configure:
 	dh_auto_configure -- \
 	-DRELEASE_VERSION=ON \
+	-DRUNDIR=/run/monetdb \
+	-DLOGDIR=/var/log/monetdb \
 	-DASSERT=OFF \
 	-DCINTEGRATION=ON \
 	-DFITS=ON \

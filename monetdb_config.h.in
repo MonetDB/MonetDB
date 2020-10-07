@@ -238,6 +238,7 @@
 #define PACKAGE_VERSION "@MONETDB_VERSION@"
 #define PACKAGE_NAME "MonetDB"
 #define PACKAGE_STRING PACKAGE_NAME " " PACKAGE_VERSION
+#cmakedefine MONETDB_RELEASE "@MONETDB_RELEASE@"
 
 /* Host identifier */
 #cmakedefine HOST "@HOST@"

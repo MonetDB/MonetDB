@@ -90,7 +90,7 @@
   Instead do SET current_timezone = interval '1' hour;
   Casting between interval and other numeric types is no longer possible
   as well, because they are not compatible.
-- sql: Because of incompatibilities this change may create, if an user intents
+- sql: Because of incompatibilities this change may create, if a user intends
   to convert a numeric value to an interval, the multiplication function
   can be used in the form: <numeric value> * interval '1' <interval length>
   e.g. 10 * interval '1' second = interval '10' second.
@@ -98,7 +98,7 @@
   syntax. This option returns the number of milliseconds since the UNIX
   epoch 1970-01-01 00:00:00 UTC for date, timestamp and time values (it
   can be negative). Meanwhile, for day and second intervals, it returns the
-  total number of milliseconds on the interval. As a side note, the 'EPOCH'
+  total number of milliseconds in the interval. As a side note, the 'EPOCH'
   option is not available for month intervals, because this conversion is
   not transparent for this type.
 

@@ -7,7 +7,7 @@ if [ $1 -eq 0 ] ; then
   do
     /usr/sbin/semodule -s ${selinuxvariant} -r monetdb &> /dev/null || :
   done
-  /sbin/restorecon -R @CMAKE_INSTALL_FULL_LOCALSTATEDIR@/monetdb5 @CMAKE_INSTALL_FULL_LOCALSTATEDIR@/log/monetdb /var/run/monetdb @CMAKE_INSTALL_FULL_BINDIR@/monetdbd @CMAKE_INSTALL_FULL_BINDIR@/mserver5 %{_unitdir}/monetdbd.service &> /dev/null || :
+  /sbin/restorecon -R @CMAKE_INSTALL_FULL_LOCALSTATEDIR@/monetdb5 @LOGDIR@ $RUNDIR@ @CMAKE_INSTALL_FULL_BINDIR@/monetdbd @CMAKE_INSTALL_FULL_BINDIR@/mserver5 %{_unitdir}/monetdbd.service &> /dev/null || :
   if [ $active = active ]; then
     /usr/bin/systemctl start monetdbd.service
   fi
