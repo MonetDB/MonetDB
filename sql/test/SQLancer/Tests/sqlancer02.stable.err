@@ -26,6 +26,9 @@ MAPI  = (monetdb) /var/tmp/mtest-817278/.s.monetdb.31783
 QUERY = SELECT 1 WHERE scale_up(CAST(0.89767724 AS REAL), 1); --error function scale_up not available for real,tinyint
 ERROR = !types real(24,0) and boolean(1,0) are not equal
 CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-713199/.s.monetdb.36377
+QUERY = SELECT CASE 1 WHEN 3 THEN 'rr' WHEN ln(-2) THEN 'a' END FROM (values (1),(2)) as t0(c0);
+ERROR = !Math exception: Numerical argument out of domain
 
 # 17:04:12 >  
 # 17:04:12 >  "Done."
