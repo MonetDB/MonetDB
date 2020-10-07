@@ -242,4 +242,4 @@ SELECT CASE 1 WHEN 1 THEN 'rr' WHEN ln(-2) THEN 'a' END FROM (values (1),(2)) as
 	-- rr
 	-- rr
 SELECT CASE 1 WHEN 3 THEN 'rr' WHEN ln(-2) THEN 'a' END FROM (values (1),(2)) as t0(c0);
-	-- error, ln 2 cannot be computed
+	-- error, ln -2 cannot be computed
