@@ -536,6 +536,92 @@ bailout:
 	return msg;
 }
 
+/* Input: a const string 'x' and a BAT of strings 'y'
+ * Output type: str (a BAT of strings)
+ */
+static str
+do_batstr_str_conststr(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, const char *name, size_t buflen, str (*func)(str*, size_t*, str, str))
+{
+	BATiter bi;
+	BAT *bn = NULL, *b = NULL, *bs = NULL;
+	BUN q = 0;
+	str x = *getArgReference_str(stk, pci, 1), y, buf = GDKmalloc(buflen), msg = MAL_SUCCEED;
+	bool nils = false;
+	struct canditer ci1 = {0};
+	oid off1;
+	bat *res = getArgReference_bat(stk, pci, 0), *bid = getArgReference_bat(stk, pci, 2),
+		*sid1 = pci->argc == 4 ? getArgReference_bat(stk, pci, 3) : NULL;
+
+	(void) cntxt;
+	(void) mb;
+	if (!buf) {
+		msg = createException(MAL, name, SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		goto bailout;
+	}
+	if (!(b = BATdescriptor(*bid))) {
+		msg = createException(MAL, name, SQLSTATE(HY005) RUNTIME_OBJECT_MISSING);
+		goto bailout;
+	}
+	if (sid1 && !is_bat_nil(*sid1) && !(bs = BATdescriptor(*sid1))) {
+		msg = createException(MAL, name, SQLSTATE(HY005) RUNTIME_OBJECT_MISSING);
+		goto bailout;
+	}
+	q = canditer_init(&ci1, b, bs);
+	if (!(bn = COLnew(ci1.hseq, TYPE_str, q, TRANSIENT))) {
+		msg = createException(MAL, name, SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		goto bailout;
+	}
+
+	off1 = b->hseqbase;
+	bi = bat_iterator(b);
+	if (ci1.tpe == cand_dense) {
+		for (BUN i = 0; i < q; i++) {
+			oid p1 = (canditer_next_dense(&ci1) - off1);
+			y = (str) BUNtvar(bi, p1);
+
+			if (strNil(x) || strNil(y)) {
+				if (tfastins_nocheckVAR(bn, i, str_nil, Tsize(bn)) != GDK_SUCCEED) {
+					msg = createException(MAL, name, SQLSTATE(HY013) MAL_MALLOC_FAIL);
+					goto bailout;
+				}
+				nils = true;
+			} else {
+				if ((msg = (*func)(&buf, &buflen, x, y)) != MAL_SUCCEED)
+					goto bailout;
+				if (tfastins_nocheckVAR(bn, i, buf, Tsize(bn)) != GDK_SUCCEED) {
+					msg = createException(MAL, name, SQLSTATE(HY013) MAL_MALLOC_FAIL);
+					goto bailout;
+				}
+			}
+		}
+	} else {
+		for (BUN i = 0; i < q; i++) {
+			oid p1 = (canditer_next(&ci1) - off1);
+			y = (str) BUNtvar(bi, p1);
+
+			if (strNil(x) || strNil(y)) {
+				if (tfastins_nocheckVAR(bn, i, str_nil, Tsize(bn)) != GDK_SUCCEED) {
+					msg = createException(MAL, name, SQLSTATE(HY013) MAL_MALLOC_FAIL);
+					goto bailout;
+				}
+				nils = true;
+			} else {
+				if ((msg = (*func)(&buf, &buflen, x, y)) != MAL_SUCCEED)
+					goto bailout;
+				if (tfastins_nocheckVAR(bn, i, buf, Tsize(bn)) != GDK_SUCCEED) {
+					msg = createException(MAL, name, SQLSTATE(HY013) MAL_MALLOC_FAIL);
+					goto bailout;
+				}
+			}
+		}
+	}
+bailout:
+	GDKfree(buf);
+	finalize_ouput(res, bn, msg, nils, q);
+	unfix_inputs(2, b, bs);
+	return msg;
+}
+
 /* Input: two BATs of strings 'l' and 'l2'
  * Output type: str (a BAT of strings)
  */
@@ -696,6 +782,93 @@ do_batstr_constint_str(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, 
 		for (BUN i = 0; i < q; i++) {
 			oid p1 = (canditer_next(&ci1) - off1);
 			x = (str) BUNtvar(bi, p1);
+
+			if (strNil(x) || is_int_nil(y)) {
+				if (tfastins_nocheckVAR(bn, i, str_nil, Tsize(bn)) != GDK_SUCCEED) {
+					msg = createException(MAL, name, SQLSTATE(HY013) MAL_MALLOC_FAIL);
+					goto bailout;
+				}
+				nils = true;
+			} else {
+				if ((msg = (*func)(&buf, &buflen, x, y)) != MAL_SUCCEED)
+					goto bailout;
+				if (tfastins_nocheckVAR(bn, i, buf, Tsize(bn)) != GDK_SUCCEED) {
+					msg = createException(MAL, name, SQLSTATE(HY013) MAL_MALLOC_FAIL);
+					goto bailout;
+				}
+			}
+		}
+	}
+bailout:
+	GDKfree(buf);
+	finalize_ouput(res, bn, msg, nils, q);
+	unfix_inputs(2, b, bs);
+	return msg;
+}
+
+/* Input: a constant string 'x' and a BAT of integers 'y'
+ * Output type: str (a BAT of strings)
+ */
+static str
+do_batstr_int_conststr(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, const char *name, str (*func)(str*, size_t*, str, int))
+{
+	BAT *bn = NULL, *b = NULL, *bs = NULL;
+	BUN q = 0;
+	size_t buflen = INITIAL_STR_BUFFER_LENGTH;
+	str x = *getArgReference_str(stk, pci, 1), buf = GDKmalloc(buflen), msg = MAL_SUCCEED;
+	int y, *restrict inputs;
+	bool nils = false;
+	struct canditer ci1 = {0};
+	oid off1;
+	bat *res = getArgReference_bat(stk, pci, 0), *bid = getArgReference_bat(stk, pci, 2),
+		*sid1 = pci->argc == 4 ? getArgReference_bat(stk, pci, 3) : NULL;
+
+	(void) cntxt;
+	(void) mb;
+	if (!buf) {
+		msg = createException(MAL, name, SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		goto bailout;
+	}
+	if (!(b = BATdescriptor(*bid))) {
+		msg = createException(MAL, name, SQLSTATE(HY005) RUNTIME_OBJECT_MISSING);
+		goto bailout;
+	}
+	if (sid1 && !is_bat_nil(*sid1) && !(bs = BATdescriptor(*sid1))) {
+		msg = createException(MAL, name, SQLSTATE(HY005) RUNTIME_OBJECT_MISSING);
+		goto bailout;
+	}
+	q = canditer_init(&ci1, b, bs);
+	if (!(bn = COLnew(ci1.hseq, TYPE_str, q, TRANSIENT))) {
+		msg = createException(MAL, name, SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		goto bailout;
+	}
+
+	off1 = b->hseqbase;
+	inputs = Tloc(b, 0);
+	if (ci1.tpe == cand_dense) {
+		for (BUN i = 0; i < q; i++) {
+			oid p1 = (canditer_next_dense(&ci1) - off1);
+			y = inputs[p1];
+
+			if (strNil(x) || is_int_nil(y)) {
+				if (tfastins_nocheckVAR(bn, i, str_nil, Tsize(bn)) != GDK_SUCCEED) {
+					msg = createException(MAL, name, SQLSTATE(HY013) MAL_MALLOC_FAIL);
+					goto bailout;
+				}
+				nils = true;
+			} else {
+				if ((msg = (*func)(&buf, &buflen, x, y)) != MAL_SUCCEED)
+					goto bailout;
+				if (tfastins_nocheckVAR(bn, i, buf, Tsize(bn)) != GDK_SUCCEED) {
+					msg = createException(MAL, name, SQLSTATE(HY013) MAL_MALLOC_FAIL);
+					goto bailout;
+				}
+			}
+		}
+	} else {
+		for (BUN i = 0; i < q; i++) {
+			oid p1 = (canditer_next(&ci1) - off1);
+			y = inputs[p1];
 
 			if (strNil(x) || is_int_nil(y)) {
 				if (tfastins_nocheckVAR(bn, i, str_nil, Tsize(bn)) != GDK_SUCCEED) {
@@ -1261,6 +1434,24 @@ STRbatRtrim2_const(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 }
 
 static str
+STRbatStrip2_1st_const(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	return do_batstr_str_conststr(cntxt, mb, stk, pci, "batstr.strip", INITIAL_STR_BUFFER_LENGTH * sizeof(int), str_strip2);
+}
+
+static str
+STRbatLtrim2_1st_const(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	return do_batstr_str_conststr(cntxt, mb, stk, pci, "batstr.ltrim", INITIAL_STR_BUFFER_LENGTH * sizeof(int), str_ltrim2);
+}
+
+static str
+STRbatRtrim2_1st_const(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	return do_batstr_str_conststr(cntxt, mb, stk, pci, "batstr.rtrim", INITIAL_STR_BUFFER_LENGTH * sizeof(int), str_rtrim2);
+}
+
+static str
 STRbatStrip2_bat(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	return do_batstr_batstr_str(cntxt, mb, stk, pci, "batstr.strip", INITIAL_STR_BUFFER_LENGTH * sizeof(int), str_strip2);
@@ -1288,6 +1479,18 @@ static str
 STRbatRpad_const(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	return do_batstr_constint_str(cntxt, mb, stk, pci, "batstr.rpad", str_rpad);
+}
+
+static str
+STRbatLpad_1st_const(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	return do_batstr_int_conststr(cntxt, mb, stk, pci, "batstr.lpad", str_lpad);
+}
+
+static str
+STRbatRpad_1st_const(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	return do_batstr_int_conststr(cntxt, mb, stk, pci, "batstr.rpad", str_rpad);
 }
 
 static str
@@ -1519,7 +1722,83 @@ STRbatSuffixcst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 }
 
 static str
-STRbatstrSearch(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+prefix_or_suffix_strcst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, const char *name, bit (*func)(str, str))
+{
+	BATiter bi;
+	BAT *bn = NULL, *b = NULL, *bs = NULL;
+	BUN q = 0;
+	bit *restrict vals;
+	str x = *getArgReference_str(stk, pci, 1), y, msg = MAL_SUCCEED;
+	bool nils = false;
+	struct canditer ci1 = {0};
+	oid off1;
+	bat *res = getArgReference_bat(stk, pci, 0), *bid = getArgReference_bat(stk, pci, 2),
+		*sid1 = pci->argc == 4 ? getArgReference_bat(stk, pci, 3) : NULL;
+
+	(void) cntxt;
+	(void) mb;
+	if (!(b = BATdescriptor(*bid))) {
+		msg = createException(MAL, name, SQLSTATE(HY005) RUNTIME_OBJECT_MISSING);
+		goto bailout;
+	}
+	if (sid1 && !is_bat_nil(*sid1) && !(bs = BATdescriptor(*sid1))) {
+		msg = createException(MAL, name, SQLSTATE(HY005) RUNTIME_OBJECT_MISSING);
+		goto bailout;
+	}
+	q = canditer_init(&ci1, b, bs);
+	if (!(bn = COLnew(ci1.hseq, TYPE_bit, q, TRANSIENT))) {
+		msg = createException(MAL, name, SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		goto bailout;
+	}
+
+	off1 = b->hseqbase;
+	bi = bat_iterator(b);
+	vals = Tloc(bn, 0);
+	if (ci1.tpe == cand_dense) {
+		for (BUN i = 0; i < q; i++) {
+			oid p1 = (canditer_next_dense(&ci1) - off1);
+			y = (str) BUNtvar(bi, p1);
+
+			if (strNil(x) || strNil(y)) {
+				vals[i] = bit_nil;
+				nils = true;
+			} else {
+				vals[i] = func(x, y);
+			}
+		}
+	} else {
+		for (BUN i = 0; i < q; i++) {
+			oid p1 = (canditer_next(&ci1) - off1);
+			y = (str) BUNtvar(bi, p1);
+
+			if (strNil(x) || strNil(y)) {
+				vals[i] = int_nil;
+				nils = true;
+			} else {
+				vals[i] = func(x, y);
+			}
+		}
+	}
+bailout:
+	finalize_ouput(res, bn, msg, nils, q);
+	unfix_inputs(2, b, bs);
+	return msg;
+}
+
+static str
+STRbatPrefix_strcst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	return prefix_or_suffix_strcst(cntxt, mb, stk, pci, "batstr.startsWith", str_is_prefix);
+}
+
+static str
+STRbatSuffix_strcst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	return prefix_or_suffix_strcst(cntxt, mb, stk, pci, "batstr.endsWith", str_is_suffix);
+}
+
+static str
+search_string_bat(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, const char *name, int (*func)(str, str))
 {
 	BATiter lefti, righti;
 	BAT *bn = NULL, *left = NULL, *lefts = NULL, *right = NULL, *rights = NULL;
@@ -1537,20 +1816,20 @@ STRbatstrSearch(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	(void) cntxt;
 	(void) mb;
 	if (!(left = BATdescriptor(*l)) || !(right = BATdescriptor(*r))) {
-		msg = createException(MAL, "batstr.search", SQLSTATE(HY005) RUNTIME_OBJECT_MISSING);
+		msg = createException(MAL, name, SQLSTATE(HY005) RUNTIME_OBJECT_MISSING);
 		goto bailout;
 	}
 	if ((sid1 && !is_bat_nil(*sid1) && !(lefts = BATdescriptor(*sid1))) || (sid2 && !is_bat_nil(*sid2) && !(rights = BATdescriptor(*sid2)))) {
-		msg = createException(MAL, "batstr.search", SQLSTATE(HY005) RUNTIME_OBJECT_MISSING);
+		msg = createException(MAL, name, SQLSTATE(HY005) RUNTIME_OBJECT_MISSING);
 		goto bailout;
 	}
 	q = canditer_init(&ci1, left, lefts);
 	if (canditer_init(&ci2, right, rights) != q || ci1.hseq != ci2.hseq) {
-		msg = createException(MAL, "batstr.search", ILLEGAL_ARGUMENT " Requires bats of identical size");
+		msg = createException(MAL, name, ILLEGAL_ARGUMENT " Requires bats of identical size");
 		goto bailout;
 	}
 	if (!(bn = COLnew(ci1.hseq, TYPE_int, q, TRANSIENT))) {
-		msg = createException(MAL, "batstr.search", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		msg = createException(MAL, name, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		goto bailout;
 	}
 
@@ -1569,7 +1848,7 @@ STRbatstrSearch(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				vals[i] = int_nil;
 				nils = true;
 			} else {
-				vals[i] = str_search(x, y);
+				vals[i] = func(x, y);
 			}
 		}
 	} else {
@@ -1582,181 +1861,131 @@ STRbatstrSearch(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				vals[i] = int_nil;
 				nils = true;
 			} else {
-				vals[i] = str_search(x, y);
+				vals[i] = func(x, y);
 			}
 		}
 	}
 bailout:
 	finalize_ouput(res, bn, msg, nils, q);
 	unfix_inputs(4, left, lefts, right, rights);
+	return msg;
+}
+
+static str
+STRbatstrSearch(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	return search_string_bat(cntxt, mb, stk, pci, "batstr.search", str_search);
+}
+
+static str
+STRbatRstrSearch(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	return search_string_bat(cntxt, mb, stk, pci, "batstr.r_search", str_reverse_str_search);
+}
+
+static str
+search_string_bat_cst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, const char *name, int (*func)(str, str))
+{
+	BATiter bi;
+	BAT *bn = NULL, *b = NULL, *bs = NULL;
+	BUN q = 0;
+	int *restrict vals;
+	str x, y = *getArgReference_str(stk, pci, 2), msg = MAL_SUCCEED;
+	bool nils = false;
+	struct canditer ci1 = {0};
+	oid off1;
+	bat *res = getArgReference_bat(stk, pci, 0), *bid = getArgReference_bat(stk, pci, 1),
+		*sid1 = pci->argc == 4 ? getArgReference_bat(stk, pci, 3) : NULL;
+
+	(void) cntxt;
+	(void) mb;
+	if (!(b = BATdescriptor(*bid))) {
+		msg = createException(MAL, name, SQLSTATE(HY005) RUNTIME_OBJECT_MISSING);
+		goto bailout;
+	}
+	if (sid1 && !is_bat_nil(*sid1) && !(bs = BATdescriptor(*sid1))) {
+		msg = createException(MAL, name, SQLSTATE(HY005) RUNTIME_OBJECT_MISSING);
+		goto bailout;
+	}
+	q = canditer_init(&ci1, b, bs);
+	if (!(bn = COLnew(ci1.hseq, TYPE_int, q, TRANSIENT))) {
+		msg = createException(MAL, name, SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		goto bailout;
+	}
+
+	off1 = b->hseqbase;
+	bi = bat_iterator(b);
+	vals = Tloc(bn, 0);
+	if (ci1.tpe == cand_dense) {
+		for (BUN i = 0; i < q; i++) {
+			oid p1 = (canditer_next_dense(&ci1) - off1);
+			x = (str) BUNtvar(bi, p1);
+
+			if (strNil(x) || strNil(y)) {
+				vals[i] = int_nil;
+				nils = true;
+			} else {
+				vals[i] = func(x, y);
+			}
+		}
+	} else {
+		for (BUN i = 0; i < q; i++) {
+			oid p1 = (canditer_next(&ci1) - off1);
+			x = (str) BUNtvar(bi, p1);
+
+			if (strNil(x) || strNil(y)) {
+				vals[i] = int_nil;
+				nils = true;
+			} else {
+				vals[i] = func(x, y);
+			}
+		}
+	}
+bailout:
+	finalize_ouput(res, bn, msg, nils, q);
+	unfix_inputs(2, b, bs);
 	return msg;
 }
 
 static str
 STRbatstrSearchcst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	BATiter bi;
-	BAT *bn = NULL, *b = NULL, *bs = NULL;
-	BUN q = 0;
-	int *restrict vals;
-	str x, y = *getArgReference_str(stk, pci, 2), msg = MAL_SUCCEED;
-	bool nils = false;
-	struct canditer ci1 = {0};
-	oid off1;
-	bat *res = getArgReference_bat(stk, pci, 0), *bid = getArgReference_bat(stk, pci, 1),
-		*sid1 = pci->argc == 4 ? getArgReference_bat(stk, pci, 3) : NULL;
-
-	(void) cntxt;
-	(void) mb;
-	if (!(b = BATdescriptor(*bid))) {
-		msg = createException(MAL, "batstr.search", SQLSTATE(HY005) RUNTIME_OBJECT_MISSING);
-		goto bailout;
-	}
-	if (sid1 && !is_bat_nil(*sid1) && !(bs = BATdescriptor(*sid1))) {
-		msg = createException(MAL, "batstr.search", SQLSTATE(HY005) RUNTIME_OBJECT_MISSING);
-		goto bailout;
-	}
-	q = canditer_init(&ci1, b, bs);
-	if (!(bn = COLnew(ci1.hseq, TYPE_int, q, TRANSIENT))) {
-		msg = createException(MAL, "batstr.search", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-		goto bailout;
-	}
-
-	off1 = b->hseqbase;
-	bi = bat_iterator(b);
-	vals = Tloc(bn, 0);
-	if (ci1.tpe == cand_dense) {
-		for (BUN i = 0; i < q; i++) {
-			oid p1 = (canditer_next_dense(&ci1) - off1);
-			x = (str) BUNtvar(bi, p1);
-
-			if (strNil(x) || strNil(y)) {
-				vals[i] = int_nil;
-				nils = true;
-			} else {
-				vals[i] = str_search(x, y);
-			}
-		}
-	} else {
-		for (BUN i = 0; i < q; i++) {
-			oid p1 = (canditer_next(&ci1) - off1);
-			x = (str) BUNtvar(bi, p1);
-
-			if (strNil(x) || strNil(y)) {
-				vals[i] = int_nil;
-				nils = true;
-			} else {
-				vals[i] = str_search(x, y);
-			}
-		}
-	}
-bailout:
-	finalize_ouput(res, bn, msg, nils, q);
-	unfix_inputs(2, b, bs);
-	return msg;
-}
-
-static str
-STRbatRstrSearch(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
-{
-	BATiter lefti, righti;
-	BAT *bn = NULL, *left = NULL, *lefts = NULL, *right = NULL, *rights = NULL;
-	BUN q = 0;
-	int *restrict vals;
-	str x, y, msg = MAL_SUCCEED;
-	bool nils = false;
-	struct canditer ci1 = {0}, ci2 = {0};
-	oid off1, off2;
-	bat *res = getArgReference_bat(stk, pci, 0), *l = getArgReference_bat(stk, pci, 1),
-		*r = getArgReference_bat(stk, pci, 3),
-		*sid1 = pci->argc == 6 ? getArgReference_bat(stk, pci, 4) : NULL,
-		*sid2 = pci->argc == 6 ? getArgReference_bat(stk, pci, 5) : NULL;
-
-	(void) cntxt;
-	(void) mb;
-	if (!(left = BATdescriptor(*l)) || !(right = BATdescriptor(*r))) {
-		msg = createException(MAL, "batstr.r_search", SQLSTATE(HY005) RUNTIME_OBJECT_MISSING);
-		goto bailout;
-	}
-	if ((sid1 && !is_bat_nil(*sid1) && !(lefts = BATdescriptor(*sid1))) || (sid2 && !is_bat_nil(*sid2) && !(rights = BATdescriptor(*sid2)))) {
-		msg = createException(MAL, "batstr.r_search", SQLSTATE(HY005) RUNTIME_OBJECT_MISSING);
-		goto bailout;
-	}
-	q = canditer_init(&ci1, left, lefts);
-	if (canditer_init(&ci2, right, rights) != q || ci1.hseq != ci2.hseq) {
-		msg = createException(MAL, "batstr.r_search", ILLEGAL_ARGUMENT " Requires bats of identical size");
-		goto bailout;
-	}
-	if (!(bn = COLnew(ci1.hseq, TYPE_int, q, TRANSIENT))) {
-		msg = createException(MAL, "batstr.r_search", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-		goto bailout;
-	}
-
-	off1 = left->hseqbase;
-	off2 = right->hseqbase;
-	lefti = bat_iterator(left);
-	righti = bat_iterator(right);
-	vals = Tloc(bn, 0);
-	if (ci1.tpe == cand_dense && ci2.tpe == cand_dense) {
-		for (BUN i = 0; i < q; i++) {
-			oid p1 = (canditer_next_dense(&ci1) - off1), p2 = (canditer_next_dense(&ci2) - off2);
-			x = (str) BUNtvar(lefti, p1);
-			y = (str) BUNtvar(righti, p2);
-
-			if (strNil(x) || strNil(y)) {
-				vals[i] = int_nil;
-				nils = true;
-			} else {
-				vals[i] = str_reverse_str_search(x, y);
-			}
-		}
-	} else {
-		for (BUN i = 0; i < q; i++) {
-			oid p1 = (canditer_next(&ci1) - off1), p2 = (canditer_next(&ci2) - off2);
-			x = (str) BUNtvar(lefti, p1);
-			y = (str) BUNtvar(righti, p2);
-
-			if (strNil(x) || strNil(y)) {
-				vals[i] = int_nil;
-				nils = true;
-			} else {
-				vals[i] = str_reverse_str_search(x, y);
-			}
-		}
-	}
-bailout:
-	finalize_ouput(res, bn, msg, nils, q);
-	unfix_inputs(4, left, lefts, right, rights);
-	return msg;
+	return search_string_bat_cst(cntxt, mb, stk, pci, "batstr.search", str_search);
 }
 
 static str
 STRbatRstrSearchcst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
+	return search_string_bat_cst(cntxt, mb, stk, pci, "batstr.r_search", str_reverse_str_search);
+}
+
+static str
+search_string_bat_strcst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, const char *name, int (*func)(str, str))
+{
 	BATiter bi;
 	BAT *bn = NULL, *b = NULL, *bs = NULL;
 	BUN q = 0;
 	int *restrict vals;
-	str x, y = *getArgReference_str(stk, pci, 2), msg = MAL_SUCCEED;
+	str x = *getArgReference_str(stk, pci, 1), y, msg = MAL_SUCCEED;
 	bool nils = false;
 	struct canditer ci1 = {0};
 	oid off1;
-	bat *res = getArgReference_bat(stk, pci, 0), *bid = getArgReference_bat(stk, pci, 1),
+	bat *res = getArgReference_bat(stk, pci, 0), *bid = getArgReference_bat(stk, pci, 2),
 		*sid1 = pci->argc == 4 ? getArgReference_bat(stk, pci, 3) : NULL;
 
 	(void) cntxt;
 	(void) mb;
 	if (!(b = BATdescriptor(*bid))) {
-		msg = createException(MAL, "batstr.r_search", SQLSTATE(HY005) RUNTIME_OBJECT_MISSING);
+		msg = createException(MAL, name, SQLSTATE(HY005) RUNTIME_OBJECT_MISSING);
 		goto bailout;
 	}
 	if (sid1 && !is_bat_nil(*sid1) && !(bs = BATdescriptor(*sid1))) {
-		msg = createException(MAL, "batstr.r_search", SQLSTATE(HY005) RUNTIME_OBJECT_MISSING);
+		msg = createException(MAL, name, SQLSTATE(HY005) RUNTIME_OBJECT_MISSING);
 		goto bailout;
 	}
 	q = canditer_init(&ci1, b, bs);
 	if (!(bn = COLnew(ci1.hseq, TYPE_int, q, TRANSIENT))) {
-		msg = createException(MAL, "batstr.r_search", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		msg = createException(MAL, name, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		goto bailout;
 	}
 
@@ -1766,25 +1995,25 @@ STRbatRstrSearchcst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (ci1.tpe == cand_dense) {
 		for (BUN i = 0; i < q; i++) {
 			oid p1 = (canditer_next_dense(&ci1) - off1);
-			x = (str) BUNtvar(bi, p1);
+			y = (str) BUNtvar(bi, p1);
 
 			if (strNil(x) || strNil(y)) {
 				vals[i] = int_nil;
 				nils = true;
 			} else {
-				vals[i] = str_reverse_str_search(x, y);
+				vals[i] = func(x, y);
 			}
 		}
 	} else {
 		for (BUN i = 0; i < q; i++) {
 			oid p1 = (canditer_next(&ci1) - off1);
-			x = (str) BUNtvar(bi, p1);
+			y = (str) BUNtvar(bi, p1);
 
 			if (strNil(x) || strNil(y)) {
 				vals[i] = int_nil;
 				nils = true;
 			} else {
-				vals[i] = str_reverse_str_search(x, y);
+				vals[i] = func(x, y);
 			}
 		}
 	}
@@ -1792,6 +2021,18 @@ bailout:
 	finalize_ouput(res, bn, msg, nils, q);
 	unfix_inputs(2, b, bs);
 	return msg;
+}
+
+static str
+STRbatstrSearch_strcst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	return search_string_bat_strcst(cntxt, mb, stk, pci, "batstr.search", str_search);
+}
+
+static str
+STRbatRstrSearch_strcst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	return search_string_bat_strcst(cntxt, mb, stk, pci, "batstr.r_search", str_reverse_str_search);
 }
 
 static str
@@ -1922,6 +2163,71 @@ STRbatWChrAtcst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		for (BUN i = 0; i < q; i++) {
 			oid p1 = (canditer_next(&ci1) - off1);
 			x = (str) BUNtvar(bi, p1);
+
+			if ((msg = str_wchr_at(&next, x, y)) != MAL_SUCCEED)
+				goto bailout;
+			vals[i] = next;
+			nils |= is_int_nil(next);
+		}
+	}
+bailout:
+	GDKfree(buf);
+	finalize_ouput(res, bn, msg, nils, q);
+	unfix_inputs(2, b, bs);
+	return msg;
+}
+
+static str
+STRbatWChrAt_strcst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	BAT *bn = NULL, *b = NULL, *bs = NULL;
+	BUN q = 0;
+	size_t buflen = INITIAL_STR_BUFFER_LENGTH;
+	int y, *restrict vals, *restrict input, next;
+	str x = *getArgReference_str(stk, pci, 1), buf = GDKmalloc(buflen), msg = MAL_SUCCEED;
+	bool nils = false;
+	struct canditer ci1 = {0};
+	oid off1;
+	bat *res = getArgReference_bat(stk, pci, 0), *l = getArgReference_bat(stk, pci, 2),
+		*sid1 = pci->argc == 4 ? getArgReference_bat(stk, pci, 3) : NULL;
+
+	(void) cntxt;
+	(void) mb;
+	if (!buf) {
+		msg = createException(MAL, "batstr.unicodeAt", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		goto bailout;
+	}
+	if (!(b = BATdescriptor(*l))) {
+		msg = createException(MAL, "batstr.unicodeAt", SQLSTATE(HY005) RUNTIME_OBJECT_MISSING);
+		goto bailout;
+	}
+	if (sid1 && !is_bat_nil(*sid1) && !(bs = BATdescriptor(*sid1))) {
+		msg = createException(MAL, "batstr.unicodeAt", SQLSTATE(HY005) RUNTIME_OBJECT_MISSING);
+		goto bailout;
+	}
+	q = canditer_init(&ci1, b, bs);
+	if (!(bn = COLnew(ci1.hseq, TYPE_int, q, TRANSIENT))) {
+		msg = createException(MAL, "batstr.unicodeAt", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		goto bailout;
+	}
+
+	off1 = b->hseqbase;
+	input = Tloc(b, 0);
+	vals = Tloc(bn, 0);
+	if (ci1.tpe == cand_dense) {
+		for (BUN i = 0; i < q; i++) {
+			oid p1 = (canditer_next_dense(&ci1) - off1);
+			y = input[p1];
+
+			if ((msg = str_wchr_at(&next, x, y)) != MAL_SUCCEED)
+				goto bailout;
+			vals[i] = next;
+			nils |= is_int_nil(next);
+		}
+	} else {
+		for (BUN i = 0; i < q; i++) {
+			oid p1 = (canditer_next(&ci1) - off1);
+			y = input[p1];
 
 			if ((msg = str_wchr_at(&next, x, y)) != MAL_SUCCEED)
 				goto bailout;
@@ -3441,7 +3747,7 @@ bailout:
  * The substring functions require slightly different arguments
  */
 static str
-STRbatsubstringcst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+STRbatsubstring_2nd_3rd_cst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	BATiter bi;
 	BAT *bn = NULL, *b = NULL, *bs = NULL;
@@ -3530,7 +3836,281 @@ bailout:
 }
 
 static str
-STRbatsubstringcst_startcst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+STRbatsubstring_1st_2nd_cst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	BAT *bn = NULL, *b = NULL, *bs = NULL;
+	BUN q = 0;
+	size_t buflen = INITIAL_STR_BUFFER_LENGTH;
+	int y = *getArgReference_int(stk, pci, 2), z, *restrict input;
+	str x = *getArgReference_str(stk, pci, 1), buf = GDKmalloc(buflen), msg = MAL_SUCCEED;
+	bool nils = false;
+	struct canditer ci1 = {0};
+	oid off1;
+	bat *res = getArgReference_bat(stk, pci, 0), *bid = getArgReference_bat(stk, pci, 3),
+		*sid1 = pci->argc == 5 ? getArgReference_bat(stk, pci, 4) : NULL;
+
+	(void) cntxt;
+	(void) mb;
+	if (!buf) {
+		msg = createException(MAL, "batstr.substring", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		goto bailout;
+	}
+	if (!(b = BATdescriptor(*bid))) {
+		msg = createException(MAL, "batstr.substring", SQLSTATE(HY005) RUNTIME_OBJECT_MISSING);
+		goto bailout;
+	}
+	if (sid1 && !is_bat_nil(*sid1) && !(bs = BATdescriptor(*sid1))) {
+		msg = createException(MAL, "batstr.substring", SQLSTATE(HY005) RUNTIME_OBJECT_MISSING);
+		goto bailout;
+	}
+	q = canditer_init(&ci1, b, bs);
+	if (!(bn = COLnew(ci1.hseq, TYPE_str, q, TRANSIENT))) {
+		msg = createException(MAL, "batstr.substring", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		goto bailout;
+	}
+
+	off1 = b->hseqbase;
+	input = Tloc(b, 0);
+	if (ci1.tpe == cand_dense) {
+		for (BUN i = 0; i < q; i++) {
+			oid p1 = (canditer_next_dense(&ci1) - off1);
+			z = input[p1];
+
+			if (strNil(x) || is_int_nil(y) || is_int_nil(z)) {
+				if (tfastins_nocheckVAR(bn, i, str_nil, Tsize(bn)) != GDK_SUCCEED) {
+					msg = createException(MAL, "batstr.substring", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+					goto bailout;
+				}
+				nils = true;
+			} else {
+				if ((msg = str_sub_string(&buf, &buflen, x, y, z)) != MAL_SUCCEED)
+					goto bailout;
+				if (tfastins_nocheckVAR(bn, i, buf, Tsize(bn)) != GDK_SUCCEED) {
+					msg = createException(MAL, "batstr.substring", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+					goto bailout;
+				}
+			}
+		}
+	} else {
+		for (BUN i = 0; i < q; i++) {
+			oid p1 = (canditer_next(&ci1) - off1);
+			z = input[p1];
+
+			if (strNil(x) || is_int_nil(y) || is_int_nil(z)) {
+				if (tfastins_nocheckVAR(bn, i, str_nil, Tsize(bn)) != GDK_SUCCEED) {
+					msg = createException(MAL, "batstr.substring", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+					goto bailout;
+				}
+				nils = true;
+			} else {
+				if ((msg = str_sub_string(&buf, &buflen, x, y, z)) != MAL_SUCCEED)
+					goto bailout;
+				if (tfastins_nocheckVAR(bn, i, buf, Tsize(bn)) != GDK_SUCCEED) {
+					msg = createException(MAL, "batstr.substring", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+					goto bailout;
+				}
+			}
+		}
+	}
+bailout:
+	GDKfree(buf);
+	finalize_ouput(res, bn, msg, nils, q);
+	if (bn && b && !msg) {
+		bn->tsorted = b->tsorted;
+		bn->trevsorted = b->trevsorted;
+	}
+	unfix_inputs(2, b, bs);
+	return msg;
+}
+
+static str
+STRbatsubstring_1st_3rd_cst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	BAT *bn = NULL, *b = NULL, *bs = NULL;
+	BUN q = 0;
+	size_t buflen = INITIAL_STR_BUFFER_LENGTH;
+	int y, z = *getArgReference_int(stk, pci, 3), *restrict input;
+	str x = *getArgReference_str(stk, pci, 1), buf = GDKmalloc(buflen), msg = MAL_SUCCEED;
+	bool nils = false;
+	struct canditer ci1 = {0};
+	oid off1;
+	bat *res = getArgReference_bat(stk, pci, 0), *bid = getArgReference_bat(stk, pci, 2),
+		*sid1 = pci->argc == 5 ? getArgReference_bat(stk, pci, 4) : NULL;
+
+	(void) cntxt;
+	(void) mb;
+	if (!buf) {
+		msg = createException(MAL, "batstr.substring", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		goto bailout;
+	}
+	if (!(b = BATdescriptor(*bid))) {
+		msg = createException(MAL, "batstr.substring", SQLSTATE(HY005) RUNTIME_OBJECT_MISSING);
+		goto bailout;
+	}
+	if (sid1 && !is_bat_nil(*sid1) && !(bs = BATdescriptor(*sid1))) {
+		msg = createException(MAL, "batstr.substring", SQLSTATE(HY005) RUNTIME_OBJECT_MISSING);
+		goto bailout;
+	}
+	q = canditer_init(&ci1, b, bs);
+	if (!(bn = COLnew(ci1.hseq, TYPE_str, q, TRANSIENT))) {
+		msg = createException(MAL, "batstr.substring", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		goto bailout;
+	}
+
+	off1 = b->hseqbase;
+	input = Tloc(b, 0);
+	if (ci1.tpe == cand_dense) {
+		for (BUN i = 0; i < q; i++) {
+			oid p1 = (canditer_next_dense(&ci1) - off1);
+			y = input[p1];
+
+			if (strNil(x) || is_int_nil(y) || is_int_nil(z)) {
+				if (tfastins_nocheckVAR(bn, i, str_nil, Tsize(bn)) != GDK_SUCCEED) {
+					msg = createException(MAL, "batstr.substring", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+					goto bailout;
+				}
+				nils = true;
+			} else {
+				if ((msg = str_sub_string(&buf, &buflen, x, y, z)) != MAL_SUCCEED)
+					goto bailout;
+				if (tfastins_nocheckVAR(bn, i, buf, Tsize(bn)) != GDK_SUCCEED) {
+					msg = createException(MAL, "batstr.substring", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+					goto bailout;
+				}
+			}
+		}
+	} else {
+		for (BUN i = 0; i < q; i++) {
+			oid p1 = (canditer_next(&ci1) - off1);
+			y = input[p1];
+
+			if (strNil(x) || is_int_nil(y) || is_int_nil(z)) {
+				if (tfastins_nocheckVAR(bn, i, str_nil, Tsize(bn)) != GDK_SUCCEED) {
+					msg = createException(MAL, "batstr.substring", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+					goto bailout;
+				}
+				nils = true;
+			} else {
+				if ((msg = str_sub_string(&buf, &buflen, x, y, z)) != MAL_SUCCEED)
+					goto bailout;
+				if (tfastins_nocheckVAR(bn, i, buf, Tsize(bn)) != GDK_SUCCEED) {
+					msg = createException(MAL, "batstr.substring", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+					goto bailout;
+				}
+			}
+		}
+	}
+bailout:
+	GDKfree(buf);
+	finalize_ouput(res, bn, msg, nils, q);
+	if (bn && b && !msg) {
+		bn->tsorted = b->tsorted;
+		bn->trevsorted = b->trevsorted;
+	}
+	unfix_inputs(2, b, bs);
+	return msg;
+}
+
+static str
+STRbatsubstring_1st_cst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	BAT *bn = NULL, *b = NULL, *bs = NULL, *lb = NULL, *lbs = NULL;
+	BUN q = 0;
+	size_t buflen = INITIAL_STR_BUFFER_LENGTH;
+	int y, z, *vals1, *vals2;
+	str x = *getArgReference_str(stk, pci, 1), buf = GDKmalloc(buflen), msg = MAL_SUCCEED;
+	bool nils = false;
+	struct canditer ci1 = {0}, ci2 = {0};
+	oid off1, off2;
+	bat *res = getArgReference_bat(stk, pci, 0), *bid = getArgReference_bat(stk, pci, 2),
+		*l = getArgReference_bat(stk, pci, 3),
+		*sid1 = pci->argc == 6 ? getArgReference_bat(stk, pci, 4) : NULL,
+		*sid2 = pci->argc == 6 ? getArgReference_bat(stk, pci, 5) : NULL;
+
+	(void) cntxt;
+	(void) mb;
+	if (!buf) {
+		msg = createException(MAL, "batstr.substring", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		goto bailout;
+	}
+	if (!(b = BATdescriptor(*bid)) || !(lb = BATdescriptor(*l))) {
+		msg = createException(MAL, "batstr.substring", SQLSTATE(HY005) RUNTIME_OBJECT_MISSING);
+		goto bailout;
+	}
+	if ((sid1 && !is_bat_nil(*sid1) && !(bs = BATdescriptor(*sid1))) || (sid2 && !is_bat_nil(*sid2) && !(lbs = BATdescriptor(*sid2)))) {
+		msg = createException(MAL, "batstr.substring", SQLSTATE(HY005) RUNTIME_OBJECT_MISSING);
+		goto bailout;
+	}
+	q = canditer_init(&ci1, b, bs);
+	if (canditer_init(&ci2, lb, lbs) != q || ci1.hseq != ci2.hseq) {
+		msg = createException(MAL, "batstr.substring", ILLEGAL_ARGUMENT " Requires bats of identical size");
+		goto bailout;
+	}
+	if (!(bn = COLnew(ci1.hseq, TYPE_str, q, TRANSIENT))) {
+		msg = createException(MAL, "batstr.substring", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		goto bailout;
+	}
+
+	off1 = b->hseqbase;
+	off2 = lb->hseqbase;
+	vals1 = Tloc(b, 0);
+	vals2 = Tloc(lb, 0);
+	if (ci1.tpe == cand_dense && ci2.tpe == cand_dense) {
+		for (BUN i = 0; i < q; i++) {
+			oid p1 = (canditer_next_dense(&ci1) - off1), p2 = (canditer_next_dense(&ci2) - off2);
+			y = vals1[p1];
+			z = vals2[p2];
+
+			if (strNil(x) || is_int_nil(y) || is_int_nil(z)) {
+				if (tfastins_nocheckVAR(bn, i, str_nil, Tsize(bn)) != GDK_SUCCEED) {
+					msg = createException(MAL, "batstr.substring", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+					goto bailout;
+				}
+				nils = true;
+			} else {
+				if ((msg = str_sub_string(&buf, &buflen, x, y, z)) != MAL_SUCCEED)
+					goto bailout;
+				if (tfastins_nocheckVAR(bn, i, buf, Tsize(bn)) != GDK_SUCCEED) {
+					msg = createException(MAL, "batstr.substring", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+					goto bailout;
+				}
+			}
+		}
+	} else {
+		for (BUN i = 0; i < q; i++) {
+			oid p1 = (canditer_next(&ci1) - off1), p2 = (canditer_next(&ci2) - off2);
+			y = vals1[p1];
+			z = vals2[p2];
+
+			if (strNil(x) || is_int_nil(y) || is_int_nil(z)) {
+				if (tfastins_nocheckVAR(bn, i, str_nil, Tsize(bn)) != GDK_SUCCEED) {
+					msg = createException(MAL, "batstr.substring", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+					goto bailout;
+				}
+				nils = true;
+			} else {
+				if ((msg = str_sub_string(&buf, &buflen, x, y, z)) != MAL_SUCCEED)
+					goto bailout;
+				if (tfastins_nocheckVAR(bn, i, buf, Tsize(bn)) != GDK_SUCCEED) {
+					msg = createException(MAL, "batstr.substring", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+					goto bailout;
+				}
+			}
+		}
+	}
+bailout:
+	GDKfree(buf);
+	finalize_ouput(res, bn, msg, nils, q);
+	if (bn && b && !msg) {
+		bn->tsorted = b->tsorted;
+		bn->trevsorted = b->trevsorted;
+	}
+	unfix_inputs(4, b, bs, lb, lbs);
+	return msg;
+}
+
+static str
+STRbatsubstring_2nd_cst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	BATiter bi;
 	BAT *bn = NULL, *b = NULL, *bs = NULL, *lb = NULL, *lbs = NULL;
@@ -3629,7 +4209,7 @@ bailout:
 }
 
 static str
-STRbatsubstringcst_indexcst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+STRbatsubstring_3rd_cst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	BATiter bi;
 	BAT *bn = NULL, *b = NULL, *bs = NULL, *lb = NULL, *lbs = NULL;
@@ -4185,13 +4765,18 @@ mel_func batstr_init_funcs[] = {
  pattern("batstr", "ltrim", STRbatLtrim, false, "Strip whitespaces from start of a string.", args(1,2, batarg("",str),batarg("s",str))),
  pattern("batstr", "rtrim", STRbatRtrim, false, "Strip whitespaces from end of a string.", args(1,2, batarg("",str),batarg("s",str))),
  pattern("batstr", "trim", STRbatStrip2_const, false, "Strip characters in the second string around the first strings.", args(1,3, batarg("",str),batarg("s",str),arg("s2",str))),
+ pattern("batstr", "trim", STRbatStrip2_1st_const, false, "Strip characters in the second string around the first strings.", args(1,3, batarg("",str),arg("s",str),batarg("s2",str))),
  pattern("batstr", "ltrim", STRbatLtrim2_const, false, "Strip characters in the second string from start of the first strings.", args(1,3, batarg("",str),batarg("s",str),arg("s2",str))),
+ pattern("batstr", "ltrim", STRbatLtrim2_1st_const, false, "Strip characters in the second string from start of the first strings.", args(1,3, batarg("",str),arg("s",str),batarg("s2",str))),
  pattern("batstr", "rtrim", STRbatRtrim2_const, false, "Strip characters in the second string from end of the first strings.", args(1,3, batarg("",str),batarg("s",str),arg("s2",str))),
+ pattern("batstr", "rtrim", STRbatRtrim2_1st_const, false, "Strip characters in the second string from end of the first strings.", args(1,3, batarg("",str),arg("s",str),batarg("s2",str))),
  pattern("batstr", "trim", STRbatStrip2_bat, false, "Strip characters in the second strings around the first strings.", args(1,3, batarg("",str),batarg("s",str),batarg("s2",str))),
  pattern("batstr", "ltrim", STRbatLtrim2_bat, false, "Strip characters in the second strings from start of the first strings.", args(1,3, batarg("",str),batarg("s",str),batarg("s2",str))),
  pattern("batstr", "rtrim", STRbatRtrim2_bat, false, "Strip characters in the second strings from end of the first strings.", args(1,3, batarg("",str),batarg("s",str),batarg("s2",str))),
  pattern("batstr", "lpad", STRbatLpad_const, false, "Prepend whitespaces to the strings to reach the given length. Truncate the strings on the right if their lengths is larger than the given length.", args(1,3, batarg("",str),batarg("s",str),arg("n",int))),
  pattern("batstr", "rpad", STRbatRpad_const, false, "Append whitespaces to the strings to reach the given length. Truncate the strings on the right if their lengths is larger than the given length.", args(1,3, batarg("",str),batarg("s",str),arg("n",int))),
+ pattern("batstr", "lpad", STRbatLpad_1st_const, false, "Prepend whitespaces to the strings to reach the given lengths. Truncate the strings on the right if their lengths is larger than the given lengths.", args(1,3, batarg("",str),arg("s",str),batarg("n",int))),
+ pattern("batstr", "rpad", STRbatRpad_1st_const, false, "Append whitespaces to the strings to reach the given lengths. Truncate the strings on the right if their lengths is larger than the given lengths.", args(1,3, batarg("",str),arg("s",str),batarg("n",int))),
  pattern("batstr", "lpad", STRbatLpad_bat, false, "Prepend whitespaces to the strings to reach the given lengths. Truncate the strings on the right if their lengths is larger than the given lengths.", args(1,3, batarg("",str),batarg("s",str),batarg("n",int))),
  pattern("batstr", "rpad", STRbatRpad_bat, false, "Append whitespaces to the strings to reach the given lengths. Truncate the strings on the right if their lengths is larger than the given lengths.", args(1,3, batarg("",str),batarg("s",str),batarg("n",int))),
  pattern("batstr", "lpad", STRbatLpad2_const_const, false, "Prepend the second string to the first strings to reach the given length. Truncate the first strings on the right if their lengths is larger than the given length.", args(1,4, batarg("",str),batarg("s",str),arg("n",int),arg("s2",str))),
@@ -4204,16 +4789,20 @@ mel_func batstr_init_funcs[] = {
  pattern("batstr", "rpad", STRbatRpad2_bat_bat, false, "Append the second strings to the first strings to reach the given lengths. Truncate the first strings on the right if their lengths is larger than the given lengths.", args(1,4, batarg("",str),batarg("s",str),batarg("n",int),batarg("s2",str))),
  pattern("batstr", "startsWith", STRbatPrefix, false, "Prefix check.", args(1,3, batarg("",bit),batarg("s",str),batarg("prefix",str))),
  pattern("batstr", "startsWith", STRbatPrefixcst, false, "Prefix check.", args(1,3, batarg("",bit),batarg("s",str),arg("prefix",str))),
+ pattern("batstr", "startsWith", STRbatPrefix_strcst, false, "Prefix check.", args(1,3, batarg("",bit),arg("s",str),batarg("prefix",str))),
  pattern("batstr", "endsWith", STRbatSuffix, false, "Suffix check.", args(1,3, batarg("",bit),batarg("s",str),batarg("suffix",str))),
  pattern("batstr", "endsWith", STRbatSuffixcst, false, "Suffix check.", args(1,3, batarg("",bit),batarg("s",str),arg("suffix",str))),
+ pattern("batstr", "endsWith", STRbatSuffix_strcst, false, "Suffix check.", args(1,3, batarg("",bit),arg("s",str),batarg("suffix",str))),
  pattern("batstr", "splitpart", STRbatsplitpart, false, "Split string on delimiter. Returns\ngiven field (counting from one.)", args(1,4, batarg("",str),batarg("s",str),batarg("needle",str),batarg("field",int))),
  pattern("batstr", "splitpart", STRbatsplitpartcst, false, "Split string on delimiter. Returns\ngiven field (counting from one.)", args(1,4, batarg("",str),batarg("s",str),arg("needle",str),arg("field",int))),
  pattern("batstr", "splitpart", STRbatsplitpart_needlecst, false, "Split string on delimiter. Returns\ngiven field (counting from one.)", args(1,4, batarg("",str),batarg("s",str),arg("needle",str),batarg("field",int))),
  pattern("batstr", "splitpart", STRbatsplitpart_fieldcst, false, "Split string on delimiter. Returns\ngiven field (counting from one.)", args(1,4, batarg("",str),batarg("s",str),batarg("needle",str),arg("field",int))),
  pattern("batstr", "search", STRbatstrSearch, false, "Search for a substring. Returns position, -1 if not found.", args(1,3, batarg("",int),batarg("s",str),batarg("c",str))),
  pattern("batstr", "search", STRbatstrSearchcst, false, "Search for a substring. Returns position, -1 if not found.", args(1,3, batarg("",int),batarg("s",str),arg("c",str))),
+ pattern("batstr", "search", STRbatstrSearch_strcst, false, "Search for a substring. Returns position, -1 if not found.", args(1,3, batarg("",int),arg("s",str),batarg("c",str))),
  pattern("batstr", "r_search", STRbatRstrSearch, false, "Reverse search for a substring. Returns position, -1 if not found.", args(1,3, batarg("",int),batarg("s",str),batarg("c",str))),
  pattern("batstr", "r_search", STRbatRstrSearchcst, false, "Reverse search for a substring. Returns position, -1 if not found.", args(1,3, batarg("",int),batarg("s",str),arg("c",str))),
+ pattern("batstr", "r_search", STRbatRstrSearch_strcst, false, "Reverse search for a substring. Returns position, -1 if not found.", args(1,3, batarg("",int),arg("s",str),batarg("c",str))),
  pattern("batstr", "string", STRbatTail, false, "Return the tail s[offset..n] of a string s[0..n].", args(1,3, batarg("",str),batarg("b",str),batarg("offset",int))),
  pattern("batstr", "string", STRbatTailcst, false, "Return the tail s[offset..n] of a string s[0..n].", args(1,3, batarg("",str),batarg("b",str),arg("offset",int))),
  pattern("batstr", "string", STRbatTail_strcst, false, "Return the tail s[offset..n] of a string s[0..n].", args(1,3, batarg("",str),arg("b",str),batarg("offset",int))),
@@ -4222,12 +4811,16 @@ mel_func batstr_init_funcs[] = {
  pattern("batstr", "substring", STRbatsubstringTailcst, false, "Extract the tail of a string", args(1,3, batarg("",str),batarg("s",str),arg("start",int))),
  pattern("batstr", "substring", STRbatsubstringTail_strcst, false, "Extract the tail of a string", args(1,3, batarg("",str),arg("s",str),batarg("start",int))),
  pattern("batstr", "substring", STRbatsubstring, false, "Substring extraction using [start,start+length]", args(1,4, batarg("",str),batarg("s",str),batarg("start",int),batarg("index",int))),
- pattern("batstr", "substring", STRbatsubstringcst, false, "Substring extraction using [start,start+length]", args(1,4, batarg("",str),batarg("s",str),arg("start",int),arg("index",int))),
- pattern("batstr", "substring", STRbatsubstringcst_startcst, false, "Substring extraction using [start,start+length]", args(1,4, batarg("",str),batarg("s",str),arg("start",int),batarg("index",int))),
- pattern("batstr", "substring", STRbatsubstringcst_indexcst, false, "Substring extraction using [start,start+length]", args(1,4, batarg("",str),batarg("s",str),batarg("start",int),arg("index",int))),
+ pattern("batstr", "substring", STRbatsubstring_2nd_3rd_cst, false, "Substring extraction using [start,start+length]", args(1,4, batarg("",str),batarg("s",str),arg("start",int),arg("index",int))),
+ pattern("batstr", "substring", STRbatsubstring_2nd_cst, false, "Substring extraction using [start,start+length]", args(1,4, batarg("",str),batarg("s",str),arg("start",int),batarg("index",int))),
+ pattern("batstr", "substring", STRbatsubstring_3rd_cst, false, "Substring extraction using [start,start+length]", args(1,4, batarg("",str),batarg("s",str),batarg("start",int),arg("index",int))),
+ pattern("batstr", "substring", STRbatsubstring_1st_2nd_cst, false, "Substring extraction using [start,start+length]", args(1,4, batarg("",str),arg("s",str),arg("start",int),batarg("index",int))),
+ pattern("batstr", "substring", STRbatsubstring_1st_3rd_cst, false, "Substring extraction using [start,start+length]", args(1,4, batarg("",str),arg("s",str),batarg("start",int),arg("index",int))),
+ pattern("batstr", "substring", STRbatsubstring_1st_cst, false, "Substring extraction using [start,start+length]", args(1,4, batarg("",str),arg("s",str),batarg("start",int),batarg("index",int))),
  pattern("batstr", "unicode", STRbatFromWChr, false, "convert a unicode to a character.", args(1,2, batarg("",str),batarg("wchar",int))),
  pattern("batstr", "unicodeAt", STRbatWChrAt, false, "get a unicode character (as an int) from a string position.", args(1,3, batarg("",int),batarg("s",str),batarg("index",int))),
  pattern("batstr", "unicodeAt", STRbatWChrAtcst, false, "get a unicode character (as an int) from a string position.", args(1,3, batarg("",int),batarg("s",str),arg("index",int))),
+ pattern("batstr", "unicodeAt", STRbatWChrAt_strcst, false, "get a unicode character (as an int) from a string position.", args(1,3, batarg("",int),arg("s",str),batarg("index",int))),
  pattern("batstr", "substitute", STRbatSubstitute, false, "Substitute first occurrence of 'src' by\n'dst'. Iff repeated = true this is\nrepeated while 'src' can be found in the\nresult string. In order to prevent\nrecursion and result strings of unlimited\nsize, repeating is only done iff src is\nnot a substring of dst.", args(1,5, batarg("",str),batarg("s",str),batarg("src",str),batarg("dst",str),batarg("rep",bit))),
  pattern("batstr", "substitute", STRbatSubstitutecst, false, "Substitute first occurrence of 'src' by\n'dst'. Iff repeated = true this is\nrepeated while 'src' can be found in the\nresult string. In order to prevent\nrecursion and result strings of unlimited\nsize, repeating is only done iff src is\nnot a substring of dst.", args(1,5, batarg("",str),batarg("s",str),arg("src",str),arg("dst",str),arg("rep",bit))),
  pattern("batstr", "stringleft", STRbatprefix, false, "", args(1,3, batarg("",str),batarg("s",str),batarg("l",int))),
