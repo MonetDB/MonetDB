@@ -828,16 +828,15 @@ XMLrenderer(MapiHdl hdl)
 
 	/* we must use toConsole since the XML file is encoded in UTF-8 */
 	mnstr_flush(toConsole, MNSTR_FLUSH_DATA);
-	mnstr_printf(toConsole, "<?xml version='1.0' encoding='UTF-8'?>\n");
-	mnstr_printf(toConsole,
-		     "<!DOCTYPE table [\n"
-		     " <!ELEMENT table (row)*>\n" /* a table consists of zero or more rows */
-		     " <!ELEMENT row (column)+>\n"	/* a row consists of one or more columns */
-		     " <!ELEMENT column (#PCDATA)>\n"
-		     " <!ATTLIST table name CDATA #IMPLIED>\n"	/* a table may have a name */
-		     " <!ATTLIST column name CDATA #IMPLIED\n"	/* a column may have a name */
-		     "                  isnull (true|false) 'false'>]>\n");
-	mnstr_printf(toConsole, "<table");
+	mnstr_printf(toConsole, "<?xml version='1.0' encoding='UTF-8'?>\n"
+				"<!DOCTYPE table [\n"
+				" <!ELEMENT table (row)*>\n" /* a table consists of zero or more rows */
+				" <!ELEMENT row (column)+>\n"	/* a row consists of one or more columns */
+				" <!ELEMENT column (#PCDATA)>\n"
+				" <!ATTLIST table name CDATA #IMPLIED>\n"	/* a table may have a name */
+				" <!ATTLIST column name CDATA #IMPLIED\n"	/* a column may have a name */
+				"                  isnull (true|false) 'false'>]>\n"
+				"<table");
 	name = mapi_get_table(hdl, 0);
 	if (name != NULL && *name != 0)
 		XMLprattr("name", name);
@@ -2109,8 +2108,8 @@ showCommands(void)
 	mnstr_printf(toConsole, "\\?       - show this message\n");
 	if (mode == MAL)
 		mnstr_printf(toConsole, "?pat     - MAL function help. pat=[modnme[.fcnnme][(][)]] wildcard *\n");
-	mnstr_printf(toConsole, "\\<file   - read input from file\n");
-	mnstr_printf(toConsole, "\\>file   - save response in file, or stdout if no file is given\n");
+	mnstr_printf(toConsole, "\\<file   - read input from file\n"
+				"\\>file   - save response in file, or stdout if no file is given\n");
 #ifdef HAVE_POPEN
 	mnstr_printf(toConsole, "\\|cmd    - pipe result to process, or stop when no command is given\n");
 #endif
@@ -2118,20 +2117,20 @@ showCommands(void)
 	mnstr_printf(toConsole, "\\history - show the readline history\n");
 #endif
 	if (mode == SQL) {
-		mnstr_printf(toConsole, "\\help    - synopsis of the SQL syntax\n");
-		mnstr_printf(toConsole, "\\D table - dumps the table, or the complete database if none given.\n");
-		mnstr_printf(toConsole, "\\d[Stvsfn]+ [obj] - list database objects, or describe if obj given\n");
-		mnstr_printf(toConsole, "\\A       - enable auto commit\n");
-		mnstr_printf(toConsole, "\\a       - disable auto commit\n");
+		mnstr_printf(toConsole, "\\help    - synopsis of the SQL syntax\n"
+					"\\D table - dumps the table, or the complete database if none given.\n"
+					"\\d[Stvsfn]+ [obj] - list database objects, or describe if obj given\n"
+					"\\A       - enable auto commit\n"
+					"\\a       - disable auto commit\n");
 	}
-	mnstr_printf(toConsole, "\\e       - echo the query in sql formatting mode\n");
-	mnstr_printf(toConsole, "\\t       - set the timer {none,clock,performance} (none is default)\n");
-	mnstr_printf(toConsole, "\\f       - format using renderer {csv,tab,raw,sql,xml,trash,rowcount,expanded}\n");
-	mnstr_printf(toConsole, "\\w#      - set maximal page width (-1=unlimited, 0=terminal width, >0=limit to num)\n");
-	mnstr_printf(toConsole, "\\r#      - set maximum rows per page (-1=raw)\n");
-	mnstr_printf(toConsole, "\\L file  - save client-server interaction\n");
-	mnstr_printf(toConsole, "\\X       - trace mclient code\n");
-	mnstr_printf(toConsole, "\\q       - terminate session and quit mclient\n");
+	mnstr_printf(toConsole, "\\e       - echo the query in sql formatting mode\n"
+				"\\t       - set the timer {none,clock,performance} (none is default)\n"
+				"\\f       - format using renderer {csv,tab,raw,sql,xml,trash,rowcount,expanded}\n"
+				"\\w#      - set maximal page width (-1=unlimited, 0=terminal width, >0=limit to num)\n"
+				"\\r#      - set maximum rows per page (-1=raw)\n"
+				"\\L file  - save client-server interaction\n"
+				"\\X       - trace mclient code\n"
+				"\\q       - terminate session and quit mclient\n");
 }
 
 #define MD_TABLE    1
@@ -3591,10 +3590,9 @@ main(int argc, char **argv)
 		if (mode == SQL)
 			dump_version(mid, toConsole, "Database:");
 
-		mnstr_printf(toConsole, "FOLLOW US on https://twitter.com/MonetDB ");
-		mnstr_printf(toConsole, "or https://github.com/MonetDB/MonetDB\n");
-
-		mnstr_printf(toConsole, "Type \\q to quit, \\? for a list of available commands\n");
+		mnstr_printf(toConsole, "FOLLOW US on https://twitter.com/MonetDB "
+					"or https://github.com/MonetDB/MonetDB\n"
+					"Type \\q to quit, \\? for a list of available commands\n");
 		if (mode == SQL)
 			mnstr_printf(toConsole, "auto commit mode: %s\n",
 				     mapi_get_autocommit(mid) ? "on" : "off");
