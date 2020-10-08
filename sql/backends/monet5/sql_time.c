@@ -1093,50 +1093,49 @@ bailout:
 			oid off = b->hseqbase; \
 			TPE_IN *restrict vals = Tloc(b, 0); \
 			if (ci.tpe == cand_dense) { \
-				for (BUN i = 0 ; i < q && !msg ; i++) { \
+				for (BUN i = 0; i < q; i++) { \
 					oid p = (canditer_next_dense(&ci) - off); \
 					TPE_IN next = vals[p]; \
 					if (is_##TPE_IN##_nil(next)) { \
 						ret[i] = TPE_OUT##_nil; \
 						nils = true; \
 					} else { \
-						FUNC(ret[i], next, TPE_IN, FUNC_NAME, MAX_VALUE, CAST_VALIDATION, MUL_VALIDATION); \
+						FUNC(ret[i], TPE_IN, FUNC_NAME, MAX_VALUE, CAST_VALIDATION, MUL_VALIDATION); \
 					} \
 				} \
 			} else { \
-				for (BUN i = 0 ; i < q && !msg ; i++) { \
+				for (BUN i = 0; i < q; i++) { \
 					oid p = (canditer_next(&ci) - off); \
 					TPE_IN next = vals[p]; \
 					if (is_##TPE_IN##_nil(next)) { \
 						ret[i] = TPE_OUT##_nil; \
 						nils = true; \
 					} else { \
-						FUNC(ret[i], next, TPE_IN, FUNC_NAME, MAX_VALUE, CAST_VALIDATION, MUL_VALIDATION); \
+						FUNC(ret[i], TPE_IN, FUNC_NAME, MAX_VALUE, CAST_VALIDATION, MUL_VALIDATION); \
 					} \
 				} \
 			} \
 		} else { \
-			TPE_IN val = *(TPE_IN*)getArgReference(stk, pci, 1); \
-			FUNC(*ret, val, TPE_IN, FUNC_NAME, MAX_VALUE, CAST_VALIDATION, MUL_VALIDATION); \
+			TPE_IN next = *(TPE_IN*)getArgReference(stk, pci, 1); \
+			FUNC(*ret, TPE_IN, FUNC_NAME, MAX_VALUE, CAST_VALIDATION, MUL_VALIDATION); \
 		} \
 	} while(0)
 
-#define month_interval_convert(OUT, IN, TPE, FUNC_NAME, MAX_VALUE, CAST_VALIDATION, MUL_VALIDATION) \
+#define month_interval_convert(OUT, TPE_IN, FUNC_NAME, MAX_VALUE, CAST_VALIDATION, MUL_VALIDATION) \
 	do { \
-		TPE next = IN; \
 		int cast, r; \
-		CAST_VALIDATION(TPE, FUNC_NAME, MAX_VALUE); \
+		CAST_VALIDATION(TPE_IN, FUNC_NAME, MAX_VALUE); \
 		cast = (int) next; \
 		r = cast * multiplier; \
-		MUL_VALIDATION(TPE, FUNC_NAME, MAX_VALUE); \
+		MUL_VALIDATION(TPE_IN, FUNC_NAME, MAX_VALUE); \
 		OUT = r; \
 	} while (0)
 
-#define DO_NOTHING(TPE, FUNC_NAME, MAX_VALUE) ;
+#define DO_NOTHING(TPE_IN, FUNC_NAME, MAX_VALUE) ;
 
-#define CAST_VALIDATION(TPE, FUNC_NAME, MAX_VALUE) \
+#define CAST_VALIDATION(TPE_IN, FUNC_NAME, MAX_VALUE) \
 	do { \
-		if (next > (TPE) MAX_VALUE) { \
+		if (next > (TPE_IN) MAX_VALUE) { \
 			size_t len = 0; \
 			char *str_val = NULL; \
 			if (BATatoms[tpe].atomToStr(&str_val, &len, &next, false) < 0) { \
@@ -1149,7 +1148,7 @@ bailout:
 		} \
 	} while (0)
 
-#define MUL_OVERFLOW(TPE, FUNC_NAME, MAX_VALUE) /* MAX_VALUE is ignored on this macro */ \
+#define MUL_OVERFLOW(TPE_IN, FUNC_NAME, MAX_VALUE) /* TPE_IN and MAX_VALUE are ignored on this macro */ \
 	do { \
 		if (r < cast) { \
 			size_t len = 0; \
@@ -1252,18 +1251,17 @@ bailout:
 	return msg;
 }
 
-#define second_interval_convert(OUT, IN, TPE, FUNC_NAME, MAX_VALUE, CAST_VALIDATION, MUL_VALIDATION) \
+#define second_interval_convert(OUT, TPE_IN, FUNC_NAME, MAX_VALUE, CAST_VALIDATION, MUL_VALIDATION) \
 	do { \
-		TPE next = IN; \
 		lng cast, r; \
-		CAST_VALIDATION(TPE, FUNC_NAME, MAX_VALUE); \
+		CAST_VALIDATION(TPE_IN, FUNC_NAME, MAX_VALUE); \
 		cast = (lng) next; \
 		r = cast * multiplier; \
 		if (scale) { \
 			r += shift; \
 			r /= divider; \
 		} \
-		MUL_VALIDATION(TPE, FUNC_NAME, MAX_VALUE); \
+		MUL_VALIDATION(TPE_IN, FUNC_NAME, MAX_VALUE); \
 		OUT = r; \
 	} while (0)
 
