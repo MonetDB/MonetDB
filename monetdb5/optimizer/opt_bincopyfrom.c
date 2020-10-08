@@ -69,7 +69,6 @@ transform(MalBlkPtr mb, InstrPtr old)
 {
 	// prototype: (bat1, .., batN) := sql.importTable(schema, table, onclient, path1 , .. ,pathN);
 	int onclient = *(int*)getVarValue(mb, getArg(old, old->retc + 2));
-	fprintf(stderr, "onclient=%d\n", onclient);
 
 	// find the narrowest result column whose file is not nil, it is probably quickest to load
 	int best_idx = -1;
