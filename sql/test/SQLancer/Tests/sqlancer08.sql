@@ -7,3 +7,11 @@ select 1 from t0 join t1 on sql_min(true, t1.tc0 between rtrim(t0.tc0) and 'a');
 select cast("isauuid"(t1.tc0) as int) from t0 full outer join t1 on
 not (sql_min(not ((interval '505207731' day) in (interval '1621733891' day)), (nullif(t0.tc0, t1.tc0)) between asymmetric (rtrim(t0.tc0)) and (cast((r'_7') in (r'', t0.tc0) as string(891)))));
 ROLLBACK;
+
+CREATE TABLE t0(tc0 INTERVAL MONTH DEFAULT (INTERVAL '1997904243' MONTH), tc1 TIME UNIQUE);
+INSERT INTO t0(tc0) VALUES(INTERVAL '444375026' MONTH);
+DELETE FROM t0 WHERE TRUE;
+ALTER TABLE t0 ALTER tc0 SET NOT NULL;
+INSERT INTO t0(tc0) VALUES(INTERVAL '-625288924' MONTH);
+UPDATE t0 SET tc0 = (t0.tc0) WHERE TRUE;
+DROP TABLE t0;
