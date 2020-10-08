@@ -129,7 +129,7 @@ finish_mapi_file_upload(backend *be, bool eof_reached)
 /* Import a single file into a new BAT.
  */
 static str
-importColumn(backend *be, bat *ret, lng *retcnt, const str *method, const str *path, const int *onclient, const lng *nrows)
+importColumn(backend *be, bat *ret, lng *retcnt, str method, str path, int onclient,  lng nrows)
 {
 	// In this function we create the BAT and open the file, and tidy
 	// up when things go wrong. The actual work happens in load_column().
@@ -148,31 +148,31 @@ importColumn(backend *be, bat *ret, lng *retcnt, const str *method, const str *p
 	*retcnt = 0;
 
 	// Figure out how to load it
-	struct type_rec *rec = find_type_rec(*method);
+	struct type_rec *rec = find_type_rec(method);
 	if (rec == NULL)
-		bailout("COPY BINARY FROM not implemented for '%s'", *method);
+		bailout("COPY BINARY FROM not implemented for '%s'", method);
 
 	// Create the BAT
-	bat = COLnew(0, rec->gdk_type, *nrows, TRANSIENT);
+	bat = COLnew(0, rec->gdk_type, nrows, TRANSIENT);
 	if (bat == NULL)
 		bailout("%s", GDK_EXCEPTION);
 
 	// Open the input stream
 	if (onclient) {
 		s = NULL;
-		msg = start_mapi_file_upload(be, *path, &s);
+		msg = start_mapi_file_upload(be, path, &s);
 		if (msg != MAL_SUCCEED)
 			goto end;
 	} else {
-		s = stream_to_close = open_rstream(*path);
+		s = stream_to_close = open_rstream(path);
 		if (s == NULL)
-			bailout("Couldn't open '%s' on server: %s", *path, mnstr_peek_error(NULL));
+			bailout("Couldn't open '%s' on server: %s", path, mnstr_peek_error(NULL));
 	}
 
 	// Do the work
 	msg = load_column(rec, bat, s, &eof_reached);
 	if (eof_reached != 0 && eof_reached != 1)
-		bailout("internal error in sql.importColumn: eof_reached not set (%s)", *method);
+		bailout("internal error in sql.importColumn: eof_reached not set (%s)", method);
 
 	// Fall through into the end block which will clean things up
 end:
@@ -213,13 +213,14 @@ mvc_bin_import_column_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
 	(void)pci;
 
 	assert(pci->retc == 2);
+	bat *ret = getArgReference_bat(stk, pci, 0);
+	lng *retcnt = getArgReference_lng(stk, pci, 1);
+
 	assert(pci->argc == 6);
-	bat* ret = getArgReference_bat(stk, pci, 0);
-	lng* retcnt = getArgReference_lng(stk, pci, 1);
-	str *method = getArgReference_str(stk, pci, 2);
-	str *path = getArgReference_str(stk, pci, 3);
-	int *onclient = getArgReference_int(stk, pci, 4);
-	lng *nrows = getArgReference_lng(stk, pci, 5);
+	str method = *getArgReference_str(stk, pci, 2);
+	str path = *getArgReference_str(stk, pci, 3);
+	int onclient = *getArgReference_int(stk, pci, 4);
+	lng nrows = *getArgReference_lng(stk, pci, 5);
 
 	backend *be = cntxt->sqlcontext;
 
