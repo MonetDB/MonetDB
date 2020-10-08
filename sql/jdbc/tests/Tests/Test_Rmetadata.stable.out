@@ -31,7 +31,7 @@ Colnr 1.
 	name          myint
 	type          4
 	typename      int
-	precision     32
+	precision     10
 	scale         0
 	catalogname   null
 	schemaname    sys
@@ -52,7 +52,7 @@ Colnr 2.
 	name          mydouble
 	type          8
 	typename      double
-	precision     53
+	precision     15
 	scale         0
 	catalogname   null
 	schemaname    sys
