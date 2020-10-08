@@ -56,6 +56,10 @@ configure_file(monetdbd.1.in
   ${CMAKE_CURRENT_BINARY_DIR}/monetdbd.1
   @ONLY)
 
+configure_file(${CMAKE_SOURCE_DIR}/buildtools/conf/monetdbd.conf.in
+  ${CMAKE_CURRENT_BINARY_DIR}/monetdbd.conf
+  @ONLY)
+
 install(FILES
   ${CMAKE_CURRENT_BINARY_DIR}/monetdbd.1
   DESTINATION ${CMAKE_INSTALL_MANDIR}/man1
@@ -67,7 +71,7 @@ install(DIRECTORY
   COMPONENT sql)
 
 install(FILES
-  ${CMAKE_SOURCE_DIR}/buildtools/conf/monetdbd.conf
+  ${CMAKE_CURRENT_BINARY_DIR}/monetdbd.conf
   DESTINATION ${CMAKE_INSTALL_FULL_SYSCONFDIR}/tmpfiles.d
   COMPONENT sql)
 
