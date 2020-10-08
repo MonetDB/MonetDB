@@ -4,17 +4,19 @@ START TRANSACTION
 statement ok
 CREATE TABLE intvals (x INTEGER, y INTEGER, z INTEGER)
 
-statement error
+statement ok
 COPY BINARY INTO intvals (x, y, z) FROM (E'$QTSTTRGDIR/bincopyint.bin', E'$QTSTTRGDIR/bincopyint.bin', E'$QTSTTRGDIR/bincopyint.bin')
 
-statement error
+statement ok
 COPY BINARY INTO intvals (z) FROM (E'$QTSTTRGDIR/bincopyint.bin')
 
-statement error
+statement ok
 COPY BINARY INTO intvals (z, y) FROM (E'$QTSTTRGDIR/bincopyint.bin', E'$QTSTTRGDIR/bincopyint.bin')
 
-statement error
-SELECT * FROM intvals
+query I
+SELECT count(*) FROM intvals
+----
+30
 
 statement ok
 ROLLBACK
@@ -25,11 +27,13 @@ START TRANSACTION
 statement ok
 CREATE TABLE intvals (x INTEGER, y INTEGER, z INTEGER)
 
-statement error
+statement ok
 COPY BINARY INTO intvals (x, x) FROM (E'$QTSTTRGDIR/bincopyint.bin', E'$QTSTTRGDIR/bincopyint.bin')
 
-statement error
-SELECT * FROM intvals
+query I
+SELECT count(*) FROM intvals
+----
+10
 
 statement ok
 ROLLBACK
