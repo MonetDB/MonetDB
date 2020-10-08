@@ -343,6 +343,13 @@ stdout of test 'sqlancer02` in directory 'sql/test/SQLancer` itself:
 % 2 # length
 [ "rr"	]
 [ "rr"	]
+#SELECT CASE 1 WHEN 3 THEN 'rr' WHEN ln(c0) THEN 'a' END FROM (values (1.2),(2.3)) as t0(c0);
+% .%4 # table_name
+% %4 # name
+% char # type
+% 2 # length
+[ NULL	]
+[ NULL	]
 #START TRANSACTION;
 #CREATE TABLE "sys"."t0" ("tc0" TIMESTAMP NOT NULL,CONSTRAINT "t0_tc0_pkey" PRIMARY KEY ("tc0"),CONSTRAINT "t0_tc0_unique" UNIQUE ("tc0"));
 #COPY 4 RECORDS INTO "sys"."t0" FROM stdin USING DELIMITERS E'\t',E'\n','"';
