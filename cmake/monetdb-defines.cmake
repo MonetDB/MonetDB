@@ -324,7 +324,7 @@ macro(monetdb_configure_sizes)
 
   if(ODBC_FOUND)
     cmake_push_check_state()
-    set(CMAKE_REQUIRED_INCLUDES "${CMAKE_REQUIRED_INCLUDES};${ODBC_INCLUDE_DIR}")
+    set(CMAKE_REQUIRED_INCLUDES "${CMAKE_REQUIRED_INCLUDES};${ODBC_INCLUDE_DIRS}")
     if(WIN32)
       set(CMAKE_EXTRA_INCLUDE_FILES "${CMAKE_EXTRA_INCLUDE_FILES};Windows.h;sqlext.h;sqltypes.h")
       check_include_file("afxres.h" HAVE_AFXRES_H)
