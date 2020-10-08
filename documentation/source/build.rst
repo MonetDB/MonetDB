@@ -136,14 +136,24 @@ To compile MonetDB (as normal user)::
 MacOS
 =====
 
+Install homebrew (this will also install the xcode tools)
+
 Using homebrew install at least current ::
 
-  bison
-  openssl
+  mercurial
+  cmake 
+  pkg-config 
+  pcre 
+  openssl 
+  bison 
   
 optional::
  
   readline
+  ant
+  geos
+  gsl
+  cfitscio
 
 To compile MonetDB (as normal user)::
 
@@ -152,7 +162,7 @@ To compile MonetDB (as normal user)::
   cd MonetDB
   mkdir build
   cd build
-  PKG_CONFIG_PATH=/usr/local/opt/readline/lib/pkgconfig/ cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=$home\install -DOPENSSL_ROOT_DIR=/usr/local/opt/openssl ..
+  PKG_CONFIG_PATH=/usr/local/opt/readline/lib/pkgconfig/ cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=$HOME/install -DOPENSSL_ROOT_DIR=/usr/local/opt/openssl ..
   cmake --build . 
   cmake --build . --target install
   cmake --build . --target test
