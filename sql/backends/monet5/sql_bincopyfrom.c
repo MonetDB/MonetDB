@@ -358,20 +358,40 @@ end:
 }
 
 
-str
-importColumn(bat *ret, lng *retcnt, const str *tpe, const str *path, const int *onclient, const lng *nrows)
+static str
+importColumn(bat *ret, lng *retcnt, const str *method, const str *path, const int *onclient, const lng *nrows)
 {
 	(void)ret;
 	(void)retcnt;
-	(void)tpe;
+	(void)method;
 	(void)path;
 	(void)onclient;
 	(void)nrows;
 
 	return createException(MAL, "sql.importColumn", SQLSTATE(42000) "COPY BINARY FROM not implemented for type '%s': path=%s onclient=%d nrows=%ld",
-		*tpe, *path, *onclient, *nrows);
+		*method, *path, *onclient, *nrows);
 }
 
+str
+mvc_bin_import_column_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	(void)importColumn;
+	(void)cntxt;
+	(void)mb;
+	(void)stk;
+	(void)pci;
+
+	assert(pci->retc == 2);
+	assert(pci->argc == 6);
+	bat* ret = getArgReference_bat(stk, pci, 0);
+	lng* retcnt = getArgReference_lng(stk, pci, 1);
+	str *method = getArgReference_str(stk, pci, 2);
+	str *path = getArgReference_str(stk, pci, 3);
+	int *onclient = getArgReference_int(stk, pci, 4);
+	lng *nrows = getArgReference_lng(stk, pci, 5);
+
+	return importColumn(ret, retcnt, method, path, onclient, nrows);
+}
 
 
 /* str mvc_bin_import_table_wrap(.., str *sname, str *tname, str *fname..);
