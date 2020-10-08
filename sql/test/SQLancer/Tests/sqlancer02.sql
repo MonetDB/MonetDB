@@ -241,5 +241,6 @@ ROLLBACK;
 SELECT CASE 1 WHEN 1 THEN 'rr' WHEN ln(-2) THEN 'a' END FROM (values (1),(2)) as t0(c0);
 	-- rr
 	-- rr
-SELECT CASE 1 WHEN 3 THEN 'rr' WHEN ln(-2) THEN 'a' END FROM (values (1),(2)) as t0(c0);
-	-- error, ln -2 cannot be computed
+SELECT CASE 1 WHEN 3 THEN 'rr' WHEN ln(c0) THEN 'a' END FROM (values (1.2),(2.3)) as t0(c0);
+	-- NULL
+	-- NULL
