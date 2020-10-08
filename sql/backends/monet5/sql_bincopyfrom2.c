@@ -56,11 +56,11 @@ BATattach_as_bytes(BAT *bat, stream *s, int tt, lng rows_estimate, void (*fixup)
 			if (nread < 0)
 				bailout("BATattach_as_bytes: %s", mnstr_peek_error(s));
 			if (nread == 0) {
+				eof = true;
 				size_t tail = (cur - start) % asz;
 				if (tail != 0) {
 					bailout("BATattach_as_bytes: final item incomplete: %d bytes instead of %d", (int) tail, (int) asz);
 				}
-				eof = true;
 				end = cur;
 			}
 			cur += (size_t) nread;
@@ -248,6 +248,7 @@ importColumn(backend *be, bat *ret, lng *retcnt, str method, str path, int oncli
 	str msg = MAL_SUCCEED;
 	BAT *bat = NULL;
 	stream *stream_to_close = NULL;
+	bool do_finish_mapi = false;
 	int eof_reached = -1; // 1 = read to the end; 0 = stopped reading early; -1 = unset, a bug.
 
 	// This one is not managed by the end: block
@@ -273,6 +274,7 @@ importColumn(backend *be, bat *ret, lng *retcnt, str method, str path, int oncli
 		msg = start_mapi_file_upload(be, path, &s);
 		if (msg != MAL_SUCCEED)
 			goto end;
+		do_finish_mapi = true;
 	} else {
 		s = stream_to_close = open_rstream(path);
 		if (s == NULL)
@@ -286,7 +288,7 @@ importColumn(backend *be, bat *ret, lng *retcnt, str method, str path, int oncli
 
 	// Fall through into the end block which will clean things up
 end:
-	if (onclient) {
+	if (do_finish_mapi) {
 		str msg1 = finish_mapi_file_upload(be, eof_reached == 1);
 		if (msg == MAL_SUCCEED)
 			msg = msg1;
