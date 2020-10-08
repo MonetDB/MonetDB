@@ -217,20 +217,20 @@ stdout of test 'sqlancer02` in directory 'sql/test/SQLancer` itself:
 #true
 [ 15	]
 #SELECT count(*) FROM t0 FULL OUTER JOIN (SELECT 1 FROM t0) AS sub0 ON t0.c0;
-% .%4 # table_name
-% %4 # name
+% .%2 # table_name
+% %2 # name
 % bigint # type
 % 3 # length
 [ 127	]
 #SELECT count(*) FROM t0 FULL OUTER JOIN (SELECT 1 FROM t0) AS sub0 ON t0.c0 WHERE t0.c0;
-% .%4 # table_name
-% %4 # name
+% .%2 # table_name
+% %2 # name
 % bigint # type
 % 3 # length
 [ 120	]
 #SELECT CAST(sum(- (((((abs(2))*("quarter"(DATE '1970-01-25'))))<<("minute"(INTERVAL '1279040638' SECOND))))) as BIGINT) FROM t0 FULL OUTER JOIN (SELECT greatest(least(INTERVAL '-33334168' SECOND, INTERVAL '41947202' SECOND), greatest(INTERVAL '1134741726' SECOND, INTERVAL '1713690410' SECOND)), t0.c0 FROM t0 WHERE t0.c0) AS sub0 ON t0.c0;
-% .%4 # table_name
-% %4 # name
+% .%2 # table_name
+% %2 # name
 % bigint # type
 % 5 # length
 [ -1136	]
@@ -238,8 +238,8 @@ stdout of test 'sqlancer02` in directory 'sql/test/SQLancer` itself:
 #SELECT sum(- (((((abs(2))*("quarter"(DATE '1970-01-25'))))<<("minute"(INTERVAL '1279040638' SECOND))))) as agg0 FROM t0 FULL OUTER JOIN (SELECT greatest(least(INTERVAL '-33334168' SECOND, INTERVAL '41947202' SECOND), greatest(INTERVAL '1134741726' SECOND, INTERVAL '1713690410' SECOND)), t0.c0 FROM t0 WHERE t0.c0) AS sub0 ON t0.c0 WHERE t0.c0
 #UNION ALL
 #SELECT sum(- (((((abs(2))*("quarter"(DATE '1970-01-25'))))<<("minute"(INTERVAL '1279040638' SECOND)))))  as agg0 FROM t0 FULL OUTER JOIN (SELECT greatest(least(INTERVAL '-33334168' SECOND, INTERVAL '41947202' SECOND), greatest(INTERVAL '1134741726' SECOND, INTERVAL '1713690410' SECOND)), t0.c0 FROM t0 WHERE t0.c0) AS sub0 ON t0.c0 WHERE NOT (t0.c0)
-% .%27 # table_name
-% %27 # name
+% .%21 # table_name
+% %21 # name
 % bigint # type
 % 5 # length
 [ -1136	]
@@ -296,8 +296,8 @@ stdout of test 'sqlancer02` in directory 'sql/test/SQLancer` itself:
 [ 5	]
 #create view v0(c0) as (select t0.c2 from t0 where (t0.c2) not between asymmetric (date '1970-01-23') and (case when r'true' then t0.c2 when case true when (true) = true then substr(r' x+㶴9rr7긬X0陷?F5{W>gg0N*#Sꖿs', 1) end then nullif(t0.c2, t0.c2) end));
 #SELECT 1 FROM v0 JOIN t0 ON '4321901' LIKE CAST(COALESCE(TIME '21:08:38', TIME '14:42:56') AS STRING);
-% .%20 # table_name
-% %20 # name
+% .%3 # table_name
+% %3 # name
 % tinyint # type
 % 1 # length
 #SELECT ALL t0.c0, v0.c0 FROM v0 JOIN t0 ON ((upper(COALESCE(r'', r'4321901')))ILIKE(CAST(COALESCE(sql_max(TIME '05:11:41', TIME '21:08:38'), COALESCE(TIME '05:10:13', TIME '14:42:56'), sql_min(TIME '16:14:39', TIME '03:01:13')) AS STRING(586))));
@@ -324,18 +324,32 @@ stdout of test 'sqlancer02` in directory 'sql/test/SQLancer` itself:
 #select distinct cast(case time '03:52:21' when time '05:04:36' then r'0.2' end as date),
 #coalesce (t0.c0, length(coalesce (r't%QB', replace(r' ,yO_5G刵i稶bDßᶏ''', r'0.8', r'-1e500')))), 1, timestamp '1970-01-16 13:47:20' from t0) with check option;
 #SELECT COUNT(*) FROM v0 LEFT OUTER JOIN t0 ON COALESCE(v0.c1, v0.c2) BETWEEN v0.c2 AND t0.c0;
-% .%4 # table_name
-% %4 # name
+% .%2 # table_name
+% %2 # name
 % bigint # type
 % 2 # length
 [ 16	]
 #SELECT ALL max(ALL v0.c3) FROM v0 LEFT OUTER JOIN t0 ON (- (((v0.c2)-(COALESCE(v0.c2, v0.c1))))) NOT  BETWEEN SYMMETRIC (v0.c2) AND (t0.c0);
-% .%4 # table_name
-% %4 # name
+% .%2 # table_name
+% %2 # name
 % timestamp # type
 % 26 # length
 [ 1970-01-16 13:47:20.000000	]
 #ROLLBACK;
+#SELECT CASE 1 WHEN 1 THEN 'rr' WHEN ln(-2) THEN 'a' END FROM (values (1),(2)) as t0(c0);
+% .%4 # table_name
+% %4 # name
+% char # type
+% 2 # length
+[ "rr"	]
+[ "rr"	]
+#SELECT CASE 1 WHEN 3 THEN 'rr' WHEN ln(c0) THEN 'a' END FROM (values (1.2),(2.3)) as t0(c0);
+% .%4 # table_name
+% %4 # name
+% char # type
+% 2 # length
+[ NULL	]
+[ NULL	]
 
 # 17:04:12 >  
 # 17:04:12 >  "Done."

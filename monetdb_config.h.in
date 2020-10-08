@@ -94,7 +94,6 @@
 #cmakedefine HAVE_SYS_TIMES_H 1
 #cmakedefine HAVE_SYS_UIO_H 1
 #cmakedefine HAVE_SYS_UN_H 1
-#cmakedefine HAVE_SYS_UTIME_H 1
 #cmakedefine HAVE_SYS_WAIT_H 1
 #cmakedefine HAVE_TERMIOS_H 1
 #cmakedefine HAVE_UNISTD_H 1
@@ -239,6 +238,7 @@
 #define PACKAGE_VERSION "@MONETDB_VERSION@"
 #define PACKAGE_NAME "MonetDB"
 #define PACKAGE_STRING PACKAGE_NAME " " PACKAGE_VERSION
+#cmakedefine MONETDB_RELEASE "@MONETDB_RELEASE@"
 
 /* Host identifier */
 #cmakedefine HOST "@HOST@"

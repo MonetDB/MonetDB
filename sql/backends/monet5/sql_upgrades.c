@@ -2365,11 +2365,11 @@ static str
 sql_update_oct2020(Client c, mvc *sql, const char *prev_schema, bool *systabfixed)
 {
 	size_t bufsize = 4096, pos = 0;
-	char *buf, *err;
+	char *buf = NULL, *err = NULL;
 	sql_schema *s = mvc_bind_schema(sql, "sys");
 	sql_table *t;
-	res_table *output;
-	BAT *b;
+	res_table *output = NULL;
+	BAT *b = NULL;
 
 	if ((buf = GDKmalloc(bufsize)) == NULL)
 		throw(SQL, __func__, SQLSTATE(HY013) MAL_MALLOC_FAIL);
@@ -2475,22 +2475,70 @@ sql_update_oct2020(Client c, mvc *sql, const char *prev_schema, bool *systabfixe
 					" external name generator.series;\n"
 					"update sys.functions set system = true where system <> true and name in ('generate_series') and schema_id = (select id from sys.schemas where name = 'sys') and type = %d;\n", (int) F_UNION);
 
+			/* 51_sys_schema_extensions.sql */
+			pos += snprintf(buf + pos, bufsize - pos,
+					"ALTER TABLE sys.keywords SET READ WRITE;\n"
+					"insert into sys.keywords values ('EPOCH');\n");
+
+			pos += snprintf(buf + pos, bufsize - pos, "commit;\n");
 			pos += snprintf(buf + pos, bufsize - pos, "set schema \"%s\";\n", prev_schema);
 
 			assert(pos < bufsize);
 			printf("Running database upgrade commands:\n%s\n", buf);
 			err = SQLstatementIntern(c, buf, "update", true, false, NULL);
-			if (err) {
-				BBPunfix(b->batCacheid);
-				res_table_destroy(output);
-				GDKfree(buf);
-				return err;
-			}
+			if (err != MAL_SUCCEED)
+				goto bailout;
+
+			pos = snprintf(buf, bufsize, "set schema \"sys\";\n"
+					"ALTER TABLE sys.keywords SET READ ONLY;\n");
+			pos += snprintf(buf + pos, bufsize - pos, "set schema \"%s\";\n", prev_schema);
+			assert(pos < bufsize);
+			printf("Running database upgrade commands:\n%s\n", buf);
+			err = SQLstatementIntern(c, buf, "update", true, false, NULL);
+			if (err != MAL_SUCCEED)
+				goto bailout;
 			err = sql_update_storagemodel(c, sql, prev_schema, true); /* because of day interval addition, we have to recreate the storagmodel views */
 		}
-		BBPunfix(b->batCacheid);
 	}
-	res_table_destroy(output);
+
+bailout:
+	if (b)
+		BBPunfix(b->batCacheid);
+	if (output)
+		res_table_destroy(output);
+	GDKfree(buf);
+	return err;		/* usually MAL_SUCCEED */
+}
+
+static str
+sql_update_oct2020_sp1(Client c, mvc *sql, const char *prev_schema, bool *systabfixed)
+{
+	size_t bufsize = 1024, pos = 0;
+	char *buf = NULL, *err = NULL;
+	res_table *output = NULL;
+	BAT *b = NULL;
+
+	if ((buf = GDKmalloc(bufsize)) == NULL)
+		throw(SQL, __func__, SQLSTATE(HY013) MAL_MALLOC_FAIL);
+
+	/* if there are 4 'log' functions of the same name in the catalog: ((base 'e' or any base) * (flt or dbl)), then upgrade */
+	pos += snprintf(buf + pos, bufsize - pos,
+					"select id from sys.functions where name = 'log' and mod = 'mmath' and func = 'log' and system = true;\n");
+	assert(pos < bufsize);
+	if ((err = SQLstatementIntern(c, buf, "update", true, false, &output)))
+		goto bailout;
+	if ((b = BATdescriptor(output->cols[0].b))) {
+		if (BATcount(b) == 4) {
+			if (!*systabfixed && (err = sql_fix_system_tables(c, sql, prev_schema)) != NULL)
+				goto bailout;
+			*systabfixed = true;
+		}
+	}
+bailout:
+	if (b)
+		BBPunfix(b->batCacheid);
+	if (output)
+		res_table_destroy(output);
 	GDKfree(buf);
 	return err;		/* usually MAL_SUCCEED */
 }
@@ -2735,6 +2783,13 @@ SQLupgrades(Client c, mvc *m)
 	}
 
 	if ((err = sql_update_oct2020(c, m, prev_schema, &systabfixed)) != NULL) {
+		TRC_CRITICAL(SQL_PARSER, "%s\n", err);
+		freeException(err);
+		GDKfree(prev_schema);
+		return -1;
+	}
+
+	if ((err = sql_update_oct2020_sp1(c, m, prev_schema, &systabfixed)) != NULL) {
 		TRC_CRITICAL(SQL_PARSER, "%s\n", err);
 		freeException(err);
 		GDKfree(prev_schema);

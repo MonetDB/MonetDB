@@ -5,12 +5,15 @@
 #
 # Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
 #]]
+set(CMAKE_VERBOSE_MAKEFILE ON)
 
 set(monetdbe_public_headers
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/monetdbe.h>
   $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}/monetdb/monetdbe.h>)
 
 add_library(monetdbe SHARED)
+
+add_compile_definitions(COMPILING_MONETDBE)
 
 target_sources(monetdbe
   PRIVATE
@@ -31,6 +34,8 @@ target_include_directories(monetdbe
   $<TARGET_PROPERTY:sqlserver,INTERFACE_INCLUDE_DIRECTORIES>
   $<TARGET_PROPERTY:sqlcommon,INTERFACE_INCLUDE_DIRECTORIES>
   $<TARGET_PROPERTY:sqlstorage,INTERFACE_INCLUDE_DIRECTORIES>
+  $<TARGET_PROPERTY:optimizer,INTERFACE_INCLUDE_DIRECTORIES>  
+  ${CMAKE_SOURCE_DIR}/clients/mapiclient
   PUBLIC
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
   $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}/monetdb>)
@@ -52,6 +57,7 @@ target_link_libraries(monetdbe
   matomic
   moptions
   mutils
+  mapi
   stream
   bat
   monetdb5

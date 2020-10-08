@@ -72,9 +72,6 @@ typedef struct {
 	char* name;
 } monetdbe_column;
 
-struct monetdbe_table_t;
-typedef struct monetdbe_table_t monetdbe_table;
-
 typedef struct {
 	size_t nparam;
 	monetdbe_types  *type;
@@ -90,10 +87,19 @@ typedef struct {
 typedef void* monetdbe_database;
 
 typedef struct {
+	const char *host;
+	int port;
+	const char *username;
+	const char *password;
+	const char *lang;
+} monetdbe_remote;
+
+typedef struct {
 	int memorylimit;  // top off the amount of RAM to be used, in MB
 	int querytimeout;  // graceful terminate query after a few seconds
 	int sessiontimeout;  // graceful terminate the session after a few seconds
 	int nr_threads;  // maximum number of worker treads, limits level of parallelism
+	monetdbe_remote* remote;
 } monetdbe_options;
 
 #define DEFAULT_STRUCT_DEFINITION(ctype, typename)         \
@@ -151,7 +157,6 @@ monetdbe_export char* monetdbe_cleanup_statement(monetdbe_database dbhdl, monetd
 monetdbe_export char* monetdbe_append(monetdbe_database dbhdl, const char* schema, const char* table, monetdbe_column **input, size_t column_count);
 monetdbe_export const void* monetdbe_null(monetdbe_database dbhdl, monetdbe_types t);
 
-monetdbe_export char* monetdbe_get_table(monetdbe_database dbhdl, monetdbe_table** table, const char* schema_name, const char* table_name);
 monetdbe_export char* monetdbe_get_columns(monetdbe_database dbhdl, const char* schema_name, const char *table_name, size_t *column_count, char ***column_names, int **column_types);
 
 monetdbe_export char* monetdbe_dump_database(monetdbe_database dbhdl, const char *backupfile);

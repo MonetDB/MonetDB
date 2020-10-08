@@ -145,9 +145,20 @@ stdout of test 'time` in directory 'sql/test/pg_regress` itself:
 [ 12:01:00.00,	0.000000	]
 [ 23:59:00.00,	0.000000	]
 [ NULL,	NULL	]
+#SELECT f1, extract(epoch from f1) FROM TIME_TBL;
+% sys.time_tbl,	sys.%1 # table_name
+% f1,	%1 # name
+% time,	bigint # type
+% 11,	8 # length
+[ 00:00:00.00,	0	]
+[ 01:00:00.00,	3600000	]
+[ 12:00:00.00,	43200000	]
+[ 12:01:00.00,	43260000	]
+[ 23:59:00.00,	86340000	]
+[ NULL,	NULL	]
 #SELECT f1, sql_sub(f1, cast('23:22:21' as time)) FROM TIME_TBL;
-% sys.time_tbl,	sys.%2 # table_name
-% f1,	%2 # name
+% sys.time_tbl,	sys.%1 # table_name
+% f1,	%1 # name
 % time,	sec_interval # type
 % 11,	10 # length
 [ 00:00:00.00,	-84141.000	]
@@ -157,8 +168,8 @@ stdout of test 'time` in directory 'sql/test/pg_regress` itself:
 [ 23:59:00.00,	2199.000	]
 [ NULL,	NULL	]
 #SELECT f1, sql_sub(cast('23:22:21' as time), f1) FROM TIME_TBL;
-% sys.time_tbl,	.%2 # table_name
-% f1,	%2 # name
+% sys.time_tbl,	.%1 # table_name
+% f1,	%1 # name
 % time,	sec_interval # type
 % 11,	9 # length
 [ 00:00:00.00,	84141.000	]

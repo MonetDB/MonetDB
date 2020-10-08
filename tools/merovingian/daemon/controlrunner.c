@@ -351,6 +351,7 @@ static void ctl_handle_client(
 			{
 				mtype mtype = 0;
 				pid_t pid = 0;
+				bool terminated = false;
 
 				// First look for something started by ourself.
 				pthread_mutex_lock(&_mero_topdp_lock);
@@ -400,7 +401,6 @@ static void ctl_handle_client(
 
 				// Kill it appropriately
 				if (strcmp(p, "stop") == 0) {
-					bool terminated = false;
 					/* make an attempt to shut down the profiler first. */
 					if ((e = shutdown_profiler(q, &stats)) != NULL) {
 						free(e);
@@ -409,22 +409,27 @@ static void ctl_handle_client(
 					/* then kill it */
 					if (dp)
 						pthread_mutex_lock(&dp->fork_lock);
-					if (pid != -1)
-						terminated = terminateProcess(q, pid, mtype);
-					if (dp) {
-						if (terminated)
-							dp->pid = -1;
+					terminated = terminateProcess(q, pid, mtype);
+					if (dp)
 						pthread_mutex_unlock(&dp->fork_lock);
-					}
 					Mfprintf(_mero_ctlout, "%s: stopped "
 							"database '%s'\n", origin, q);
 				} else {
-					kill(pid, SIGKILL);
+					terminated = kill(pid, SIGKILL) == 0;
 					Mfprintf(_mero_ctlout, "%s: killed "
 							"database '%s'\n", origin, q);
 				}
-				len = snprintf(buf2, sizeof(buf2), "OK\n");
-				send_client("=");
+				if (terminated) {
+					len = snprintf(buf2, sizeof(buf2), "OK\n");
+					send_client("=");
+				} else {
+					Mfprintf(_mero_ctlerr, "%s: received stop signal for "
+							"non running database: %s\n", origin, q);
+					len = snprintf(buf2, sizeof(buf2),
+							"database is not running: %s\n", q);
+					send_client("!");
+					break;
+				}
 			} else if (strcmp(p, "create") == 0 ||
 					strncmp(p, "create password=", strlen("create password=")) == 0) {
 				err e;
@@ -484,30 +489,26 @@ static void ctl_handle_client(
 						} else if (child > 0) {
 							/* this is the parent process */
 							close(pipes[0]);
-							if (write(pipes[1], p, strlen(p)) < 0 || write(pipes[1], "\n", 1) < 0) {
-								close(pipes[1]);
+							bool error = write(pipes[1], p, strlen(p)) < 0 || write(pipes[1], "\n", 1) < 0;
+							close(pipes[1]);
+							/* wait for the child to finish */
+							int status;
+							waitpid(child, &status, 0);
+							if (error || !WIFEXITED(status) || WEXITSTATUS(status) != 0) {
 								Mfprintf(_mero_ctlerr,
-										 "%s: initial communication with database '%s' failed: %s\n",
-										 origin, q, strerror(errno));
+										 "%s: initialization of database '%s' failed\n",
+										 origin, q);
 								len = snprintf(buf2, sizeof(buf2),
-										"initial communication with database '%s' failed: %s\n",
-										q, strerror(errno));
+											   "initialization of database '%s' failed\n", q);
 								send_client("!");
 								continue;
-							} else {
-								close(pipes[1]);
-								/* wait for the child to finish */
-								int status;
-								waitpid(child, &status, 0);
-								if (!WIFEXITED(status) || WEXITSTATUS(status) != 0) {
-									Mfprintf(_mero_ctlerr,
-											"%s: initialization of database '%s' failed\n",
-											origin, q);
-									len = snprintf(buf2, sizeof(buf2),
-											"initialization of database '%s' failed\n", q);
-									send_client("!");
-									continue;
-								}
+							}
+							e = db_release(q);
+							if (e != NO_ERR) {
+								Mfprintf(_mero_ctlerr,
+										 "%s: could not release database '%s': %sd\n",
+										 origin, q, e);
+								free(e);
 							}
 						} else {
 							close(pipes[0]);

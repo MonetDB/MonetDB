@@ -237,3 +237,10 @@ SELECT COUNT(*) FROM v0 LEFT OUTER JOIN t0 ON COALESCE(v0.c1, v0.c2) BETWEEN v0.
 SELECT ALL max(ALL v0.c3) FROM v0 LEFT OUTER JOIN t0 ON (- (((v0.c2)-(COALESCE(v0.c2, v0.c1))))) NOT  BETWEEN SYMMETRIC (v0.c2) AND (t0.c0);
 	-- 1970-01-16 13:47:20
 ROLLBACK;
+
+SELECT CASE 1 WHEN 1 THEN 'rr' WHEN ln(-2) THEN 'a' END FROM (values (1),(2)) as t0(c0);
+	-- rr
+	-- rr
+SELECT CASE 1 WHEN 3 THEN 'rr' WHEN ln(c0) THEN 'a' END FROM (values (1.2),(2.3)) as t0(c0);
+	-- NULL
+	-- NULL

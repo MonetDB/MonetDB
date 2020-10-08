@@ -356,6 +356,19 @@ stdout of test 'timestamptz` in directory 'sql/test/pg_regress` itself:
 [ 2001-09-22 19:19:20.00+01:00,	21	]
 [ 1997-02-11 02:32:01.00+01:00,	20	]
 [ NULL,	NULL	]
+#SELECT d1, extract(epoch from d1) FROM TIMESTAMPTZ_TBL;
+% sys.timestamptz_tbl,	sys.%1 # table_name
+% d1,	%1 # name
+% timestamptz,	bigint # type
+% 28,	13 # length
+[ 1997-01-02 01:00:00.00+01:00,	852163200000	]
+[ 1997-01-02 04:04:05.00+01:00,	852174245000	]
+[ 1997-02-11 02:32:01.00+01:00,	855624721000	]
+[ 1997-02-11 02:32:01.00+01:00,	855624721000	]
+[ 1997-06-11 01:32:01.00+01:00,	865989121000	]
+[ 2001-09-22 19:19:20.00+01:00,	1001182760000	]
+[ 1997-02-11 02:32:01.00+01:00,	855624721000	]
+[ NULL,	NULL	]
 #SELECT d1, week(d1) FROM TIMESTAMPTZ_TBL;
 % sys.timestamptz_tbl,	sys.%1 # table_name
 % d1,	%1 # name

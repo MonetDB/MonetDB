@@ -9,6 +9,7 @@
 #include "monetdb_config.h"
 #include "gdk.h"
 #include "gdk_tracer.h"
+#include "gdk_private.h"
 
 #define DEFAULT_ADAPTER BASIC
 #define DEFAULT_LOG_LEVEL M_ERROR
@@ -142,6 +143,13 @@ set_level_for_layer(int layer, int lvl)
 {
 	const char *tok = NULL;
 	log_level_t level = (log_level_t) lvl;
+
+	// make sure we initialize before changing the component level
+	MT_lock_set(&lock);
+	if (file_name[0] == 0) {
+		_GDKtracer_init_basic_adptr();
+	}
+	MT_lock_unset(&lock);
 
 	for (int i = 0; i < COMPONENTS_COUNT; i++) {
 		if (layer == MDB_ALL) {
@@ -286,6 +294,13 @@ GDKtracer_set_component_level(const char *comp, const char *lvl)
 		return GDK_FAIL;
 	}
 
+	// make sure we initialize before changing the component level
+	MT_lock_set(&lock);
+	if (file_name[0] == 0) {
+		_GDKtracer_init_basic_adptr();
+	}
+	MT_lock_unset(&lock);
+
 	lvl_per_component[component] = level;
 
 	return GDK_SUCCEED;
@@ -400,6 +415,17 @@ GDKtracer_reset_adapter(void)
 	return GDK_SUCCEED;
 }
 
+static bool add_ts;		/* add timestamp to error message to stderr */
+
+void
+GDKtracer_init(void)
+{
+#ifdef _MSC_VER
+	add_ts = GetFileType(GetStdHandle(STD_ERROR_HANDLE)) != FILE_TYPE_PIPE;
+#else
+	add_ts = isatty(2) || lseek(2, 0, SEEK_CUR) != (off_t) -1 || errno != ESPIPE;
+#endif
+}
 
 void
 GDKtracer_log(const char *file, const char *func, int lineno,
@@ -475,7 +501,9 @@ GDKtracer_log(const char *file, const char *func, int lineno,
 	}
 
 	if (level == M_CRITICAL || level == M_ERROR || level == M_WARNING) {
-		fprintf(stderr, "#%s: %s: %s%s%s%s\n",
+		fprintf(stderr, "#%s%s%s: %s: %s%s%s%s\n",
+			add_ts ? ts : "",
+			add_ts ? ": " : "",
 			MT_thread_getname(), func, GDKERROR,
 			msg, syserr ? ": " : "",
 			syserr ? syserr : "");
@@ -484,7 +512,8 @@ GDKtracer_log(const char *file, const char *func, int lineno,
 	}
 	MT_lock_set(&lock);
 	if (file_name[0] == 0) {
-		_GDKtracer_init_basic_adptr();
+		MT_lock_unset(&lock);
+		return;
 	}
 	MT_lock_unset(&lock);
 	if (syserr)
