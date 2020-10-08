@@ -23,15 +23,120 @@
 	} while (0)
 
 
+static str
+BATattach_as_bytes(BAT *bat, stream *s, int tt, lng rows_estimate, void (*fixup)(void*,void*), int *eof_seen)
+{
+	str msg = MAL_SUCCEED;
+	size_t asz = (size_t) ATOMsize(tt);
+	size_t chunk_size = 1<<20;
+
+	bool eof = false;
+	while (!eof) {
+		assert(chunk_size % asz == 0);
+		size_t n;
+		if (rows_estimate > 0) {
+			n = rows_estimate;
+			rows_estimate = 0;
+		} else {
+			n = chunk_size / asz;
+		}
+
+		// First make some room
+		BUN validCount = bat->batCount;
+		BUN newCount = validCount + n;
+		if (BATextend(bat, newCount) != GDK_SUCCEED)
+			bailout("BATattach_as_bytes: %s", GDK_EXCEPTION);
+
+		// Read into the newly allocated space
+		char *start = Tloc(bat, validCount);
+		char *cur = start;
+		char *end = Tloc(bat, newCount);
+		while (cur < end) {
+			ssize_t nread = mnstr_read(s, cur, 1, end - cur);
+			if (nread < 0)
+				bailout("BATattach_as_bytes: %s", mnstr_peek_error(s));
+			if (nread == 0) {
+				size_t tail = (cur - start) % asz;
+				if (tail != 0) {
+					bailout("BATattach_as_bytes: final item incomplete: %d bytes instead of %d", (int) tail, (int) asz);
+				}
+				eof = true;
+				end = cur;
+			}
+			cur += (size_t) nread;
+		}
+		fixup(start, end);
+		bat->batCount += (end - start) / asz;
+	}
+
+	BATsetcount(bat, bat->batCount);
+	bat->tseqbase = oid_nil;
+	bat->tnonil = bat->batCount == 0;
+	bat->tnil = false;
+	if (bat->batCount <= 1) {
+		bat->tsorted = true;
+		bat->trevsorted = true;
+		bat->tkey = true;
+	} else {
+		bat->tsorted = false;
+		bat->trevsorted = false;
+		bat->tkey = false;
+	}
+
+end:
+	*eof_seen = (int)eof;
+	return msg;
+}
+
+static
+void fixup_bte(void *start, void *end)
+{
+	(void)start;
+	(void)end;
+}
+
+static
+void fixup_sht(void *start, void *end)
+{
+	for (sht *p = start; p < (sht*)end; p++)
+		COPY_BINARY_CONVERT16(*p);
+}
+
+static
+void fixup_int(void *start, void *end)
+{
+	for (int *p = start; p < (int*)end; p++)
+		COPY_BINARY_CONVERT32(*p);
+}
+
+static
+void fixup_lng(void *start, void *end)
+{
+	for (lng *p = start; p < (lng*)end; p++)
+		COPY_BINARY_CONVERT64(*p);
+}
+
+#ifdef HAVE_HGE
+static
+void fixup_hge(void *start, void *end)
+{
+	for (hge *p = start; p < (hge*)end; p++)
+		COPY_BINARY_CONVERT128(*p);
+}
+#endif
+
 static struct type_rec {
 	char *method;
 	int gdk_type;
-	str (*loader)(BAT *bat, stream *s);
+	void (*fixup_in_place)(void *start, void *end);
 } type_recs[] = {
-	{
-		.method = "sht",
-		.gdk_type = TYPE_sht,
-	},
+	{ "bte", TYPE_bte, .fixup_in_place=fixup_bte, },
+	{ "sht", TYPE_sht, .fixup_in_place=fixup_sht, },
+	{ "int", TYPE_int, .fixup_in_place=fixup_int, },
+	{ "lng", TYPE_lng, .fixup_in_place=fixup_lng, },
+#ifdef HAVE_HGE
+	{ "hge", TYPE_hge, .fixup_in_place=fixup_hge, },
+#endif
 };
 
 
@@ -55,8 +160,13 @@ load_column(struct type_rec *rec, BAT *bat, stream *s, int *eof_reached)
 	(void)s;
 	(void)eof_reached;
 
-	*eof_reached = 0;
-	bailout("load_column not implemented yet");
+	if (rec->fixup_in_place != NULL) {
+		// These types can be read directly into the BAT
+		msg = BATattach_as_bytes(bat, s, rec->gdk_type, 0, rec->fixup_in_place, eof_reached);
+	} else {
+		*eof_reached = 0;
+		bailout("load_column not implemented yet");
+	}
 
 	end:
 		return msg;
