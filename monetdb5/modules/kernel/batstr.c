@@ -1193,7 +1193,7 @@ do_batstr_str_int_cst(bat *ret, const bat *l, const int *cst, const char *name, 
 	BATloop(b, p, q) {
 		y = NULL;
 		x = (str) BUNtvar(bi, p);
-		if (!strNil(x) &&
+		if (!strNil(x) && !is_int_nil(*cst) &&
 			(msg = (*func)(&y, &x, cst)) != MAL_SUCCEED)
 			goto bailout;
 		if (y == NULL)
