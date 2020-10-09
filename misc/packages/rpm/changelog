@@ -1,3 +1,6 @@
+* Fri Oct 09 2020 Sjoerd Mullender <sjoerd@acm.org> - 11.39.3-20201009
+- Rebuilt.
+
 * Tue Oct 06 2020 Sjoerd Mullender <sjoerd@acm.org> - 11.39.1-20201006
 - Rebuilt.
 - BZ#3553: All schema access to ubiquitous functions
