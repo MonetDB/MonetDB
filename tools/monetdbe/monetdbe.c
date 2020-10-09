@@ -73,7 +73,7 @@ embedded_type(int t) {
 	case TYPE_daytime: return monetdbe_time;
 	case TYPE_timestamp: return monetdbe_timestamp;
 	default:
-	  	if (t==TYPE_blob)
+		if (t==TYPE_blob)
 			return monetdbe_blob;
 		return monetdbe_type_unknown;
 	}
@@ -143,7 +143,7 @@ static char*
 commit_action(mvc* m, monetdbe_database_internal *mdbe, monetdbe_result **result, monetdbe_result_internal *res_internal)
 {
 	/* handle autocommit */
-    char *commit_msg = SQLautocommit(m);
+	char *commit_msg = SQLautocommit(m);
 
 	if ((mdbe->msg != MAL_SUCCEED || commit_msg != MAL_SUCCEED)) {
 		if (res_internal) {
@@ -421,7 +421,7 @@ monetdbe_open_internal(monetdbe_database_internal *mdbe)
 		goto cleanup;
 	}
 	if ((mdbe->msg = SQLinitClient(mdbe->c)) != MAL_SUCCEED ||
-	    (mdbe->msg = getSQLContext(mdbe->c, NULL, &m, NULL)) != MAL_SUCCEED)
+		(mdbe->msg = getSQLContext(mdbe->c, NULL, &m, NULL)) != MAL_SUCCEED)
 		goto cleanup;
 	m->session->auto_commit = 1;
 	if (!m->pa)
@@ -449,7 +449,7 @@ static void
 monetdbe_shutdown_internal(void) // Call this function always inside the embedded_lock
 {
 	if (monetdbe_embedded_initialized && (open_dbs == 0)) {
-            malEmbeddedReset();
+		malEmbeddedReset();
 		monetdbe_embedded_initialized = false;
 		if (monetdbe_embedded_url)
 			GDKfree(monetdbe_embedded_url);
