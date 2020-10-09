@@ -54,8 +54,13 @@ do
 done
 
 start_mserver5() {
-    mserver5 --debug=10 --set gdk_nr_threads=0 --set mapi_listenaddr=all \
-        --set mapi_port=$mapi_port --forcemito --dbpath=$dbpath > /dev/null 2>&1 &
+    local extra=$1
+    local opt="--debug=10 --set gdk_nr_threads=0 --set mapi_listenaddr=all --set mapi_port=$mapi_port --forcemito --dbpath=$dbpath"
+    if [[ -n $extra ]];then
+        opt+=" $extra";
+    fi
+    echo $opt
+    mserver5 $opt > /dev/null 2>&1 &
     srvpid=$!
     local i
     for ((i = 0; i < 100; i++)); do
@@ -112,7 +117,7 @@ fi
 
 dryrun() {
     local f=$1;
-    cat $f | mktest.py --database "test";
+    cat $f | mktest.py --database $db --port $mapi_port;
 }
 
 work() {
@@ -140,7 +145,16 @@ if [[ -d $dbpath ]];then
     mkdir -p $dbpath;
 fi
 
-start_mserver5
+srv_opt=
+if [[ -s ${src}/SingleServer ]];then
+    while IFS= read -r line;do
+        srv_opt+=" $line"
+    done < ${src}/SingleServer
+    echo "found extra mserver5 options $srv_opt"
+fi
+
+start_mserver5 "$srv_opt"
+sleep 3
 for f in $files;do
     ext=$(echo "${f#*.}");
     if [[ $ext == "sql.in" ]];then
@@ -154,6 +168,7 @@ for f in $files;do
     fi
 done;
 stop_mserver5
+
 rm -rf $dbpath
 
 if [[ -e ${src}/All ]];then
