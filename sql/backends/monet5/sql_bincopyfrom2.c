@@ -89,28 +89,28 @@ end:
 }
 
 static
-void fixup_bte(void *start, void *end)
+void convert_bte(void *start, void *end)
 {
 	(void)start;
 	(void)end;
 }
 
 static
-void fixup_sht(void *start, void *end)
+void convert_sht(void *start, void *end)
 {
 	for (sht *p = start; p < (sht*)end; p++)
 		COPY_BINARY_CONVERT16(*p);
 }
 
 static
-void fixup_int(void *start, void *end)
+void convert_int(void *start, void *end)
 {
 	for (int *p = start; p < (int*)end; p++)
 		COPY_BINARY_CONVERT32(*p);
 }
 
 static
-void fixup_lng(void *start, void *end)
+void convert_lng(void *start, void *end)
 {
 	for (lng *p = start; p < (lng*)end; p++)
 		COPY_BINARY_CONVERT64(*p);
@@ -118,7 +118,7 @@ void fixup_lng(void *start, void *end)
 
 #ifdef HAVE_HGE
 static
-void fixup_hge(void *start, void *end)
+void convert_hge(void *start, void *end)
 {
 	for (hge *p = start; p < (hge*)end; p++)
 		COPY_BINARY_CONVERT128(*p);
@@ -208,15 +208,15 @@ end:
 static struct type_rec {
 	char *method;
 	int gdk_type;
-	void (*fixup_in_place)(void *start, void *end);
 	str (*loader)(BAT *bat, stream *s, int *eof_reached);
+	void (*convert_in_place)(void *start, void *end);
 } type_recs[] = {
-	{ "bte", TYPE_bte, .fixup_in_place=fixup_bte, },
-	{ "sht", TYPE_sht, .fixup_in_place=fixup_sht, },
-	{ "int", TYPE_int, .fixup_in_place=fixup_int, },
-	{ "lng", TYPE_lng, .fixup_in_place=fixup_lng, },
+	{ "bte", TYPE_bte, .convert_in_place=convert_bte, },
+	{ "sht", TYPE_sht, .convert_in_place=convert_sht, },
+	{ "int", TYPE_int, .convert_in_place=convert_int, },
+	{ "lng", TYPE_lng, .convert_in_place=convert_lng, },
 #ifdef HAVE_HGE
-	{ "hge", TYPE_hge, .fixup_in_place=fixup_hge, },
+	{ "hge", TYPE_hge, .convert_in_place=convert_hge, },
 #endif
 	{ "str", TYPE_str, .loader=load_zero_terminated_text },
 };
@@ -244,9 +244,9 @@ load_column(struct type_rec *rec, BAT *bat, stream *s, int *eof_reached)
 
 	if (rec->loader != NULL) {
 		msg = rec->loader(bat, s, eof_reached);
-	} else if (rec->fixup_in_place != NULL) {
+	} else if (rec->convert_in_place != NULL) {
 		// These types can be read directly into the BAT
-		msg = BATattach_as_bytes(bat, s, rec->gdk_type, 0, rec->fixup_in_place, eof_reached);
+		msg = BATattach_as_bytes(bat, s, rec->gdk_type, 0, rec->convert_in_place, eof_reached);
 	} else {
 		*eof_reached = 0;
 		bailout("invalid loader configuration for '%s'", rec->method);
