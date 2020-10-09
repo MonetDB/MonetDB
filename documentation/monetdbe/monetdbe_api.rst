@@ -1,16 +1,20 @@
 MonetDBe API
 ============
 
+MonetDBe is embedded version of the MonetDB server code.
 The application is built around the libmonetdbe.so library. In line with the conventions of the MonetDB code base,
-all instructions return a string which contains possible
-error messages encountered during the interpretation. If all went well they return a NULL. Otherwise it the
-exception message thrown by the MonetDB kernel.
+all instructions return a string which contains possible error messages encountered during the interpretation.
+If all went well they return a NULL. Otherwise it the exception message thrown by the MonetDB kernel.
 
 General considerations
 ----------------------
 
-There can be a single :memory: database or local persistent database open at a time. As soon as you open another database its
-content is gone. It is possible to have multiple connections open with full-fledge MonetDB servers.
+There can be a single :memory: database or local persistent database open at a time. 
+The daabase location should be passed as a full path. Relative paths are currently not supported.
+
+As soon as you create a connection with another database, the content of the :memory: data store is lost.
+MonetDB/e can also be used as a proxy to a remote database.
+It is possible to have multiple such connections open.
 
 Data Types
 ----------
@@ -39,11 +43,11 @@ Connection and server options
 
 .. c:function:: int monetdbe_open(monetdbe_database *db, char *url, monetdbe_options *options)
 
-    Initialize a monetdbe_database structure. The database of interest is denoted by an url and denote either ':memory:', /path/directory,
+    Initialize a monetdbe_database structure. The database of interest is denoted by an url and denote either ':memory:', /fullpath/directory,
     mapi:monetdb://company.nl:50000/database. The latter refers to a MonetDB server location.
-    The :memory: and local path options lead to an exclusive lock. 
-    Opening the same database is allowed, but opening another one concurrently will throw an error for now.
-    There may be multiple connections to the MonetDB servers.
+    The :memory: and local path options lead to an exclusive lock on the database storage.. 
+    Opening the same database multiple times concurrently is allowed, but opening another one concurrently will throw an error for now.
+    There may be multiple connections to multiple MonetDB servers.
 
 .. c:function:: int monetdbe_close(monetdbe_database db)
 
