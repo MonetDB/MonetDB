@@ -39,3 +39,14 @@ select t0.tc0 from t0 cross join t1 where "isauuid"(cast(trim(t1.tc0) between t0
 select t0.tc0 from t0 cross join t1 where "isauuid"(cast((substr(rtrim(t1.tc0, t1.tc0), abs(-32767), 0.27)) between asymmetric (t0.tc0) and (cast(time '01:09:03' as string)) as string(19)));
 	-- empty
 ROLLBACK;
+
+START TRANSACTION;
+CREATE TABLE "sys"."t2" ("tc0" BIGINT NOT NULL,CONSTRAINT "t2_tc0_pkey" PRIMARY KEY ("tc0"),CONSTRAINT "t2_tc0_unique" UNIQUE ("tc0"));
+COPY 4 RECORDS INTO "sys"."t2" FROM stdin USING DELIMITERS E'\t',E'\n','"';
+1611702516
+0
+-803413833
+921740890
+
+select t2.tc0, scale_down(0.87735366430185102171179778451914899051189422607421875, t2.tc0) from t2;
+ROLLBACK;
