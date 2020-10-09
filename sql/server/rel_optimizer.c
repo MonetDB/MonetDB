@@ -1337,19 +1337,16 @@ can_push_func(sql_exp *e, sql_rel *rel, int *must)
 {
 	switch(e->type) {
 	case e_cmp: {
-		int mustl = 0, mustr = 0, mustf = 0;
 		sql_exp *l = e->l, *r = e->r, *f = e->f;
+		int res = 1, lmust = 0;
 
 		if (e->flag == cmp_or || e->flag == cmp_in || e->flag == cmp_notin || e->flag == cmp_filter)
 			return 0;
-		if (!f) {
-			return ((l->type == e_column || can_push_func(l, rel, &mustl)) && (*must = mustl)) ||
-				   ((r->type == e_column || can_push_func(r, rel, &mustr)) && (*must = mustr));
-		} else {
-			return (l->type == e_column || can_push_func(l, rel, &mustl)) &&
-				   (r->type == e_column || can_push_func(r, rel, &mustr)) &&
-				   (f->type == e_column || can_push_func(f, rel, &mustf)) && (*must = (mustl || mustr || mustf));
-		}
+		res = can_push_func(l, rel, &lmust) && can_push_func(r, rel, &lmust) && (!f || can_push_func(f, rel, &lmust));
+		if (res && !lmust)
+			return 1;
+		(*must) |= lmust;
+		return res;
 	}
 	case e_convert:
 		return can_push_func(e->l, rel, must);

@@ -2282,30 +2282,45 @@ exp_has_sideeffect( sql_exp *e )
 	return 0;
 }
 
-int
-exp_unsafe( sql_exp *e, int allow_identity)
+static int
+exps_have_unsafe(list *exps, int allow_identity)
 {
-	if (!e)
-		return 0;
+	int unsafe = 0;
 
-	if (e->type != e_func && e->type != e_convert)
+	if (list_empty(exps))
 		return 0;
+	for (node *n = exps->h; n && !unsafe; n = n->next)
+		unsafe |= exp_unsafe(n->data, allow_identity);
+	return unsafe;
+}
 
-	if (e->type == e_convert && e->l)
+int
+exp_unsafe(sql_exp *e, int allow_identity)
+{
+	switch (e->type) {
+	case e_convert:
 		return exp_unsafe(e->l, allow_identity);
-	if ((e->type == e_func || e->type == e_aggr) && e->l) {
+	case e_aggr:
+	case e_func: {
 		sql_subfunc *f = e->f;
-		list *args = e->l;
-		node *n;
 
 		if (IS_ANALYTIC(f->func) || (!allow_identity && is_identity(e, NULL)))
 			return 1;
-		for(n = args->h; n; n = n->next) {
-			sql_exp *e = n->data;
-
-			if (exp_unsafe(e, allow_identity))
-				return 1;
+		return exps_have_unsafe(e->l, allow_identity);
+	} break;
+	case e_cmp: {
+		if (e->flag == cmp_in || e->flag == cmp_notin) {
+			return exp_unsafe(e->l, allow_identity) || exps_have_unsafe(e->r, allow_identity);
+		} else if (e->flag == cmp_or || e->flag == cmp_filter) {
+			return exps_have_unsafe(e->l, allow_identity) || exps_have_unsafe(e->r, allow_identity);
+		} else {
+			return exp_unsafe(e->l, allow_identity) || exp_unsafe(e->r, allow_identity) || (e->f && exp_unsafe(e->f, allow_identity));
 		}
+	} break;
+	case e_column:
+	case e_atom:
+	case e_psm:
+		return 0;
 	}
 	return 0;
 }
