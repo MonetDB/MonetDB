@@ -276,7 +276,7 @@ start_mapi_file_upload(backend *be, str path, stream **s)
 		bstream_next(bs);
 	char buf[80];
 	if (mnstr_readline(rs, buf, sizeof(buf)) > 1) {
-		msg = createException(IO, "sql.attach", "%s", buf);
+		msg = createException(IO, "sql.importColumn", "Error %s", buf);
 		goto end;
 	}
 	set_prompting(rs, PROMPT2, ws);
@@ -307,8 +307,8 @@ finish_mapi_file_upload(backend *be, bool eof_reached)
 				continue;
 			if (nread < 0)
 				msg = createException(
-					SQL, "mvc_bin_import_table_wrap",
-					SQLSTATE(42000) "while syncing read stream: %s", mnstr_peek_error(rs));
+					IO, "sql.importColumn",
+					"while syncing read stream: %s", mnstr_peek_error(rs));
 			break;
 		}
 	}
@@ -355,10 +355,10 @@ importColumn(backend *be, bat *ret, lng *retcnt, str method, str path, int oncli
 	// Open the input stream
 	if (onclient) {
 		s = NULL;
+		do_finish_mapi = true;
 		msg = start_mapi_file_upload(be, path, &s);
 		if (msg != MAL_SUCCEED)
 			goto end;
-		do_finish_mapi = true;
 	} else {
 		s = stream_to_close = open_rstream(path);
 		if (s == NULL)
@@ -382,6 +382,7 @@ end:
 	}
 
 	if (stream_to_close)
+
 		close_stream(stream_to_close);
 
 	// Manage the return values and `bat`.
