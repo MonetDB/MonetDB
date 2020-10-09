@@ -27,6 +27,8 @@ mapi_query(Mapi mid, const char *query)
 {
 	MapiHdl mh = (MapiHdl)MAPIalloc(sizeof(struct MapiStatement));
 
+	if (!mh)
+		return NULL;
 	mh->mid = mid;
 	mh->query = (char*)query;
 	mh->msg = monetdbe_query(mh->mid->mdbe, mh->query, &mh->result, &mh->affected_rows);
