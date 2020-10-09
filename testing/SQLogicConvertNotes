@@ -35,4 +35,4 @@ Converted folders progress:
 ---------------------------
 - sql/test/null/Tests       pass
 - sql/test/json/Tests       pass
-- sql/test/Tests            5 fail
+- sql/test/Tests            1 fail

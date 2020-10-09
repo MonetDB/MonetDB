@@ -28,20 +28,22 @@ test
 test
 (empty)
 
-statement error
+statement ok
 copy select * from copyouttest into E'$QTSTTRGDIR/x.dat' delimiters '[]', E'\n'
 
-statement error
+statement ok
 drop table copyouttest
 
-statement error
+statement ok
 create table copyintest ( str VARCHAR(20), str2 VARCHAR(20))
 
-statement error
+statement ok
 copy into copyintest from E'$QTSTTRGDIR/x.dat' delimiters '[]', E'\n', '"'
 
-statement error
-select * from copyintest
+query I
+select count(*) from copyintest
+----
+4
 
 statement ok
 rollback

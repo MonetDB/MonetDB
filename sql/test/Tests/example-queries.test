@@ -1,21 +1,25 @@
-statement error
+statement ok
 insert into example values( 1, 'test', 0.1 )
 
-statement error
+statement ok
 insert into example values( 5, 'xtest', 0.9 )
 
-statement error
+statement ok
 insert into example values( 9, 'testx', 9.1 )
 
-statement error
+statement ok
 insert into example values( 0, 'texst', 99999.1 )
 
-statement error
+statement ok
 insert into example values( 8, 'texxst', 0.0001 )
 
-statement error
+query ITR nosort 
 select * from example order by val1, val2
+----
+30 values hashing to 05f5d6949adcca21040db31dfa9c333a
 
-statement error
+query ITR nosort
 select * from example_view order by val1, val2
+----
+30 values hashing to 05f5d6949adcca21040db31dfa9c333a
 

@@ -1111,7 +1111,8 @@ def RunTest(env, test, oktests, pSrvr):
     elif SERVER in ["MAL", "SQL"] and "MAPI" in BUSY_PORTS:
         reason = "as MAPIPORT=%s is not available." % env['MAPIPORT']
     else:
-        test_rgx = re.compile("^"+TST+"((_[sp][0-9][0-9])?\..*)?$", re.MULTILINE)
+        #test_rgx = re.compile("^"+TST+"((_[sp][0-9][0-9])?\..*)?$", re.MULTILINE)
+        test_rgx = re.compile("^"+TST+"((_[sp][0-9][0-9])?\.(?!stable).*)?$", re.MULTILINE)
         for f in listdir(TSTSRCDIR):
             if test_rgx.match(f):
                 try:
@@ -1185,7 +1186,8 @@ def RunTest(env, test, oktests, pSrvr):
 
         t0 = time.time()
         if CALL == 'sqltest':
-            exit_code, reason = RunSQLLogicTest(env, (TST + EXT), None, TestErrFile, is_reqtest=is_reqtest, has_reqtests=has_reqtests)
+            # TODO make TestOutFile optional
+            exit_code, reason = RunSQLLogicTest(env, (TST + EXT), TestOutFile, TestErrFile, is_reqtest=is_reqtest, has_reqtests=has_reqtests)
         else:
          tres = DoIt(env, SERVER, CALL, TST, EXT, TestOutFile, TestErrFile, STIMEOUT, CTIMEOUT, TIMEOUT, MAPIsockets, nomito, threads, user, passwd, COND, pSrvr)
          exit_code = transform_str_return_code(tres)
@@ -1672,7 +1674,7 @@ def RunSQLLogicTest(env, Test, TestOut, TestErr, is_reqtest=False, has_reqtests=
     with open(TestErr, 'w') as f:
         sql = sqllogictest.SQLLogic(out=f)
         if TestOut:
-            sql.res = TestOut
+            sql.res = openutf8(TestOut, 'w')
         try:
             sql.connect(hostname='localhost',
                         port=int(env['MAPIPORT']),
@@ -1682,7 +1684,7 @@ def RunSQLLogicTest(env, Test, TestOut, TestErr, is_reqtest=False, has_reqtests=
             msg = "Connection refused"
             print(e, file=f) 
         else:
-            #if not (has_reqtests or is_reqtest):
+            #if not has_reqtests:
             #    sql.drop()
             try:
                 sql.parse(Test)
@@ -1696,6 +1698,8 @@ def RunSQLLogicTest(env, Test, TestOut, TestErr, is_reqtest=False, has_reqtests=
                 exit_code = F_SOCK
                 msg = "Broken pipe"
             sql.close()
+            if sql.res:
+                sql.res.close()
     is_dirty = os.path.getsize(TestErr) > 0
     # clean up if all okay
     if not is_dirty:
