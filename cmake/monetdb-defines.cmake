@@ -14,7 +14,7 @@ function(monetdb_configure_defines)
   check_include_file("dispatch/dispatch.h" HAVE_DISPATCH_DISPATCH_H)
   check_include_file("dlfcn.h" HAVE_DLFCN_H)
   check_include_file("fcntl.h" HAVE_FCNTL_H)
-# use find_path for getop.h since we need the path on Windows
+# use find_path for getopt.h since we need the path on Windows
   find_path(HAVE_GETOPT_H "getopt.h")
   check_include_file("io.h" HAVE_IO_H)
   check_include_file("kvm.h" HAVE_KVM_H)
@@ -324,7 +324,7 @@ macro(monetdb_configure_sizes)
 
   if(ODBC_FOUND)
     cmake_push_check_state()
-    set(CMAKE_REQUIRED_INCLUDES "${CMAKE_REQUIRED_INCLUDES};${ODBC_INCLUDE_DIR}")
+    set(CMAKE_REQUIRED_INCLUDES "${CMAKE_REQUIRED_INCLUDES};${ODBC_INCLUDE_DIRS}")
     if(WIN32)
       set(CMAKE_EXTRA_INCLUDE_FILES "${CMAKE_EXTRA_INCLUDE_FILES};Windows.h;sqlext.h;sqltypes.h")
       check_include_file("afxres.h" HAVE_AFXRES_H)

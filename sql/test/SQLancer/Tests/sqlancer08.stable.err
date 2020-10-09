@@ -1,0 +1,12 @@
+stderr of test 'sqlancer08` in directory 'sql/test/SQLancer` itself:
+
+
+# 11:38:36 >  
+# 11:38:36 >  "mclient" "-lsql" "-ftest" "-tnone" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-68619" "--port=38834"
+# 11:38:36 >  
+
+
+# 11:38:36 >  
+# 11:38:36 >  "Done."
+# 11:38:36 >  
+
