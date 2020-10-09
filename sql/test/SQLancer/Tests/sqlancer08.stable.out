@@ -27,6 +27,81 @@ stdout of test 'sqlancer08` in directory 'sql/test/SQLancer` itself:
 [ NULL	]
 [ NULL	]
 #ROLLBACK;
+#CREATE TABLE t0(tc0 INTERVAL MONTH DEFAULT (INTERVAL '1997904243' MONTH), tc1 TIME UNIQUE);
+#INSERT INTO t0(tc0) VALUES(INTERVAL '444375026' MONTH);
+[ 1	]
+#DELETE FROM t0 WHERE TRUE;
+[ 1	]
+#ALTER TABLE t0 ALTER tc0 SET NOT NULL;
+#INSERT INTO t0(tc0) VALUES(INTERVAL '-625288924' MONTH);
+[ 1	]
+#DROP TABLE t0;
+#START TRANSACTION;
+#CREATE TABLE "t1" ("tc0" DOUBLE NOT NULL,"tc1" CHARACTER LARGE OBJECT);
+#COPY 7 RECORDS INTO "sys"."t1" FROM stdin USING DELIMITERS E'\t',E'\n','"';
+#-1823648899	""
+#929994438	"0.0"
+#1388143804	""
+#-1060683114	NULL
+#0.6102056577219861	NULL
+#0.5788611308131733	NULL
+#0.36061345372160747	NULL
+[ 7	]
+#SELECT t1.tc0 FROM t1 WHERE "isauuid"(lower(lower("truncate"(t1.tc1, NULL))));
+% sys.t1 # table_name
+% tc0 # name
+% double # type
+% 24 # length
+#ROLLBACK;
+#START TRANSACTION;
+#CREATE TABLE "sys"."t0" ("tc0" CHARACTER LARGE OBJECT NOT NULL);
+#CREATE TABLE "sys"."t1" ("tc0" CHARACTER LARGE OBJECT NOT NULL);
+#select t0.tc0 from t0 cross join t1 where "isauuid"(cast(trim(t1.tc0) between t0.tc0 and 'a' as clob));
+% sys.t0 # table_name
+% tc0 # name
+% clob # type
+% 0 # length
+#select t0.tc0 from t0 cross join t1 where "isauuid"(cast((substr(rtrim(t1.tc0, t1.tc0), abs(-32767), 0.27)) between asymmetric (t0.tc0) and (cast(time '01:09:03' as string)) as string(19)));
+% sys.t0 # table_name
+% tc0 # name
+% clob # type
+% 0 # length
+#ROLLBACK;
+#START TRANSACTION;
+#CREATE TABLE "sys"."t2" ("tc0" BIGINT NOT NULL,CONSTRAINT "t2_tc0_pkey" PRIMARY KEY ("tc0"),CONSTRAINT "t2_tc0_unique" UNIQUE ("tc0"));
+#COPY 4 RECORDS INTO "sys"."t2" FROM stdin USING DELIMITERS E'\t',E'\n','"';
+#1611702516
+#0
+#-803413833
+#921740890
+[ 4	]
+#ROLLBACK;
+#START TRANSACTION;
+#CREATE TABLE "sys"."t0" ("tc0" BIGINT NOT NULL,CONSTRAINT "t0_tc0_pkey" PRIMARY KEY ("tc0"),CONSTRAINT "t0_tc0_unique" UNIQUE ("tc0"));
+#COPY 3 RECORDS INTO "sys"."t0" FROM stdin USING DELIMITERS E'\t',E'\n','"';
+#34818777
+#-2089543687
+#0
+[ 3	]
+#CREATE TABLE "sys"."t1" ("tc0" TIMESTAMP NOT NULL,CONSTRAINT "t1_tc0_pkey" PRIMARY KEY ("tc0"),CONSTRAINT "t1_tc0_unique" UNIQUE ("tc0"));
+#CREATE TABLE "sys"."t2" ("tc1" INTERVAL DAY  NOT NULL,CONSTRAINT "t2_tc1_pkey" PRIMARY KEY ("tc1"),CONSTRAINT "t2_tc1_unique" UNIQUE ("tc1"),CONSTRAINT "t2_tc1_unique" UNIQUE ("tc1"));
+#COPY 3 RECORDS INTO "sys"."t2" FROM stdin USING DELIMITERS E'\t',E'\n','"';
+#133611486249600.000
+#48909174537600.000
+#55100204380800.000
+[ 3	]
+#SELECT ALL t1.tc0 FROM t2, t1 FULL OUTER JOIN t0 ON TRUE WHERE (ascii(ltrim(replace(r'', r'l/', r'(')))) IS NOT NULL;
+% .t1 # table_name
+% tc0 # name
+% timestamp # type
+% 26 # length
+#SELECT CAST(SUM(count) AS BIGINT) FROM (SELECT CAST((ascii(ltrim(replace(r'', r'l/', r'(')))) IS NOT NULL AS INT) as count FROM t2, t1 FULL OUTER JOIN t0 ON TRUE) as res;
+% .%3 # table_name
+% %3 # name
+% bigint # type
+% 1 # length
+[ 0	]
+#ROLLBACK;
 
 # 11:38:36 >  
 # 11:38:36 >  "Done."

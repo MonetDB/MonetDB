@@ -1880,7 +1880,7 @@ sqltypeinit( sql_allocator *sa)
 		sql_create_func(sa, "patindex", "pcre", "patindex", FALSE, FALSE, SCALE_NONE, 0, INT, 2, *t, *t);
 		sql_create_func(sa, "truncate", "str", "stringleft", FALSE, FALSE, SCALE_NONE, 0, *t, 2, *t, INT);
 		sql_create_func(sa, "concat", "calc", "+", FALSE, FALSE, DIGITS_ADD, 0, *t, 2, *t, *t);
-		sql_create_func(sa, "ascii", "str", "ascii", FALSE, FALSE, SCALE_NONE, 0, INT, 1, *t);
+		sql_create_func(sa, "ascii", "str", "ascii", TRUE, FALSE, SCALE_NONE, 0, INT, 1, *t); /* ascii of empty string is null */
 		sql_create_func(sa, "code", "str", "unicode", FALSE, FALSE, SCALE_NONE, 0, *t, 1, INT);
 		sql_create_func(sa, "length", "str", "length", FALSE, FALSE, SCALE_NONE, 0, INT, 1, *t);
 		sql_create_func(sa, "right", "str", "stringright", FALSE, FALSE, SCALE_NONE, 0, *t, 2, *t, INT);
@@ -1903,8 +1903,8 @@ sqltypeinit( sql_allocator *sa)
 
 		sql_create_func(sa, "insert", "str", "insert", FALSE, FALSE, SCALE_NONE, 0, *t, 4, *t, INT, INT, *t);
 		sql_create_func(sa, "replace", "str", "replace", FALSE, FALSE, SCALE_NONE, 0, *t, 3, *t, *t, *t);
-		sql_create_func(sa, "repeat", "str", "repeat", FALSE, FALSE, SCALE_NONE, 0, *t, 2, *t, INT);
-		sql_create_func(sa, "space", "str", "space", FALSE, FALSE, SCALE_NONE, 0, *t, 1, INT);
+		sql_create_func(sa, "repeat", "str", "repeat", TRUE, FALSE, SCALE_NONE, 0, *t, 2, *t, INT); /* repeat -1 times is null */
+		sql_create_func(sa, "space", "str", "space", TRUE, FALSE, SCALE_NONE, 0, *t, 1, INT); /* space -1 times is null */
 		sql_create_func(sa, "char_length", "str", "length", FALSE, FALSE, SCALE_NONE, 0, INT, 1, *t);
 		sql_create_func(sa, "character_length", "str", "length", FALSE, FALSE, SCALE_NONE, 0, INT, 1, *t);
 		sql_create_func(sa, "octet_length", "str", "nbytes", FALSE, FALSE, SCALE_NONE, 0, INT, 1, *t);

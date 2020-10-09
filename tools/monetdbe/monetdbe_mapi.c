@@ -28,6 +28,8 @@ monetdbe_mapi_query(monetdbe_Mapi mid, const char *query)
 {
 	monetdbe_MapiHdl mh = (monetdbe_MapiHdl)MAPIalloc(sizeof(struct monetdbe_MapiStatement));
 
+	if (!mh)
+		return NULL;
 	mh->mid = mid;
 	mh->query = (char*)query;
 	mh->msg = monetdbe_query(mh->mid->mdbe, mh->query, &mh->result, &mh->affected_rows);
