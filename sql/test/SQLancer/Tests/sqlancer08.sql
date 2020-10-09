@@ -70,3 +70,6 @@ SELECT ALL t1.tc0 FROM t2, t1 FULL OUTER JOIN t0 ON TRUE WHERE (ascii(ltrim(repl
 SELECT CAST(SUM(count) AS BIGINT) FROM (SELECT CAST((ascii(ltrim(replace(r'', r'l/', r'(')))) IS NOT NULL AS INT) as count FROM t2, t1 FULL OUTER JOIN t0 ON TRUE) as res;
 	-- 0
 ROLLBACK;
+
+select cast('0.2.3' as decimal(23,2)); -- error, invalid decimal
+select cast('+0..2' as decimal(23,2)); -- error, invalid decimal
