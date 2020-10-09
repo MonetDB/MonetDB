@@ -719,7 +719,9 @@ main(int argc, char **av)
 				exit(1);
 			}
 			*secretp = '\0';
-			if ((err = AUTHinitTables(secret)) != MAL_SUCCEED) {
+			err = AUTHinitTables(secret);
+			msab_registerStop();
+			if (err != MAL_SUCCEED) {
 				fprintf(stderr, "%s\n", err);
 				freeException(err);
 				exit(1);
