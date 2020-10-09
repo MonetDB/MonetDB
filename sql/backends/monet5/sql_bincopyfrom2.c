@@ -125,10 +125,91 @@ void fixup_hge(void *start, void *end)
 }
 #endif
 
+static void
+convert_line_endings(char *text)
+{
+	// read- and write pointers
+	const char *r = text;
+	char *w = text;
+	while (*r) {
+		if (r[0] == '\r' && r[1] == '\n')
+			r++;
+		*w++ = *r++;
+	}
+	*w = '\0';
+}
+
+static str
+append_text(BAT *bat, char *start, char *end)
+{
+	(void)bat;
+
+	char *cr = memchr(start, '\r', end - start);
+	if (cr)
+		convert_line_endings(cr);
+
+	if (BUNappend(bat, start, false) != GDK_SUCCEED)
+		return createException(SQL, "sql.importColumn", GDK_EXCEPTION);
+
+	return MAL_SUCCEED;
+}
+
+// Load items from the stream and put them in the BAT.
+// Because it's text read from a binary stream, we replace \r\n with \n.
+// We don't have to validate the utf-8 structure because BUNappend does that for us.
+static str
+load_zero_terminated_text(BAT *bat, stream *s, int *eof_reached)
+{
+	str msg = MAL_SUCCEED;
+	bstream *bs = NULL;
+
+	bs = bstream_create(s, 1 << 20);
+	if (bs == NULL) {
+		msg = createException(SQL, "sql", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		goto end;
+	}
+
+	// In the outer loop we refill the buffer until the stream ends.
+	// In the inner loop we look for complete \0-terminated strings.
+	while (1) {
+		ssize_t nread = bstream_next(bs);
+		if (nread < 0)
+			bailout("%s", mnstr_peek_error(s));
+		if (nread == 0)
+			break;
+
+		char *buf_start = &bs->buf[bs->pos];
+		char *buf_end = &bs->buf[bs->len];
+		char *start, *end;
+		for (start = buf_start; (end = memchr(start, '\0', buf_end - start)) != NULL; start = end + 1) {
+			msg = append_text(bat, start, end);
+			if (msg != NULL)
+				goto end;
+		}
+		bs->pos = start - buf_start;
+	}
+
+	// It's an error to have date left after falling out of the outer loop
+	if (bs->pos < bs->len)
+		bailout("unterminated string at end");
+
+end:
+	*eof_reached = 0;
+	if (bs != NULL) {
+		*eof_reached = (int)bs->eof;
+		bs->s = NULL;
+		bstream_destroy(bs);
+	}
+	return msg;
+}
+
+
+
 static struct type_rec {
 	char *method;
 	int gdk_type;
 	void (*fixup_in_place)(void *start, void *end);
+	str (*loader)(BAT *bat, stream *s, int *eof_reached);
 } type_recs[] = {
 	{ "bte", TYPE_bte, .fixup_in_place=fixup_bte, },
 	{ "sht", TYPE_sht, .fixup_in_place=fixup_sht, },
@@ -137,6 +218,7 @@ static struct type_rec {
 #ifdef HAVE_HGE
 	{ "hge", TYPE_hge, .fixup_in_place=fixup_hge, },
 #endif
+	{ "str", TYPE_str, .loader=load_zero_terminated_text },
 };
 
 
@@ -160,12 +242,14 @@ load_column(struct type_rec *rec, BAT *bat, stream *s, int *eof_reached)
 	(void)s;
 	(void)eof_reached;
 
-	if (rec->fixup_in_place != NULL) {
+	if (rec->loader != NULL) {
+		msg = rec->loader(bat, s, eof_reached);
+	} else if (rec->fixup_in_place != NULL) {
 		// These types can be read directly into the BAT
 		msg = BATattach_as_bytes(bat, s, rec->gdk_type, 0, rec->fixup_in_place, eof_reached);
 	} else {
 		*eof_reached = 0;
-		bailout("load_column not implemented yet");
+		bailout("invalid loader configuration for '%s'", rec->method);
 	}
 
 	end:
@@ -258,7 +342,7 @@ importColumn(backend *be, bat *ret, lng *retcnt, str method, str path, int oncli
 	*ret = 0;
 	*retcnt = 0;
 
-	// Figure out how to load it
+	// Figure out what kind of data we have
 	struct type_rec *rec = find_type_rec(method);
 	if (rec == NULL)
 		bailout("COPY BINARY FROM not implemented for '%s'", method);
@@ -283,9 +367,12 @@ importColumn(backend *be, bat *ret, lng *retcnt, str method, str path, int oncli
 
 	// Do the work
 	msg = load_column(rec, bat, s, &eof_reached);
-	if (eof_reached != 0 && eof_reached != 1)
-		bailout("internal error in sql.importColumn: eof_reached not set (%s)", method);
-
+	if (eof_reached != 0 && eof_reached != 1) {
+		if (msg)
+			bailout("internal error in sql.importColumn: eof_reached not set (%s). Earlier error: %s", method, msg);
+		else
+			bailout("internal error in sql.importColumn: eof_reached not set (%s)", method);
+	}
 	// Fall through into the end block which will clean things up
 end:
 	if (do_finish_mapi) {
@@ -318,11 +405,7 @@ end:
 str
 mvc_bin_import_column_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	(void)importColumn;
-	(void)cntxt;
 	(void)mb;
-	(void)stk;
-	(void)pci;
 
 	assert(pci->retc == 2);
 	bat *ret = getArgReference_bat(stk, pci, 0);

@@ -30,8 +30,9 @@ stderr of test 'bincopy_broken_strings_on_server` in directory 'sql/test/bincopy
 
 MAPI  = (monetdb) /var/tmp/mtest-6318/.s.monetdb.30483
 QUERY = COPY BINARY INTO foo(id, s) FROM R'${TSTTRGBASE}/mTests/sql/test/bincopy/bincopy_ints.bin', R'${TSTTRGBASE}/mTests/sql/test/bincopy/bincopy_broken_strings.bin' ON SERVER;
-ERROR = !malformed utf-8 byte sequence
-CODE  = 42000
+ERROR = !GDK reported error: strPut: incorrectly encoded UTF-8
+
+
 
 # 16:40:12 >  
 # 16:40:12 >  "Done."
