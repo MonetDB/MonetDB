@@ -24,9 +24,10 @@
 
 
 static str
-BATattach_as_bytes(BAT *bat, stream *s, int tt, lng rows_estimate, void (*fixup)(void*,void*), int *eof_seen)
+BATattach_as_bytes(BAT *bat, stream *s, lng rows_estimate, void (*fixup)(void*,void*), int *eof_seen)
 {
 	str msg = MAL_SUCCEED;
+	int tt = BATttype(bat);
 	size_t asz = (size_t) ATOMsize(tt);
 	size_t chunk_size = 1<<20;
 
@@ -125,6 +126,126 @@ void convert_hge(void *start, void *end)
 }
 #endif
 
+static str
+BATattach_fixed_width(BAT *bat, stream *s, str (*convert)(void*,void*,void*,void*), size_t record_size, int *eof_reached)
+{
+	str msg = MAL_SUCCEED;
+	bstream *bs = NULL;
+
+	size_t chunk_size = 1<<20;
+	assert(record_size > 0);
+	chunk_size -= chunk_size % record_size;
+
+	bs = bstream_create(s, chunk_size);
+	if (bs == NULL) {
+		msg = createException(SQL, "sql", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		goto end;
+	}
+
+	while (1) {
+		ssize_t nread = bstream_next(bs);
+		if (nread < 0)
+			bailout("%s", mnstr_peek_error(s));
+		if (nread == 0)
+			break;
+
+		size_t n = (bs->len - bs->pos) / record_size;
+		size_t extent = n * record_size;
+		BUN count = BATcount(bat);
+		BUN newCount = count + n;
+		if (BATextend(bat, newCount) != GDK_SUCCEED)
+			bailout("%s", GDK_EXCEPTION);
+
+		msg = convert(
+			Tloc(bat, count), Tloc(bat, newCount),
+			&bs->buf[bs->pos], &bs->buf[bs->pos + extent]);
+		if (msg != MAL_SUCCEED)
+			goto end;
+		BATsetcount(bat, newCount);
+		bs->pos += extent;
+	}
+
+	bat->tseqbase = oid_nil;
+	bat->tnonil = bat->batCount == 0;
+	bat->tnil = false;
+	if (bat->batCount <= 1) {
+		bat->tsorted = true;
+		bat->trevsorted = true;
+		bat->tkey = true;
+	} else {
+		bat->tsorted = false;
+		bat->trevsorted = false;
+		bat->tkey = false;
+	}
+
+end:
+	*eof_reached = 0;
+	if (bs != NULL) {
+		*eof_reached = (int)bs->eof;
+		bs->s = NULL;
+		bstream_destroy(bs);
+	}
+	return msg;
+}
+
+
+static str
+convert_date(void *dst_start, void *dst_end, void *src_start, void *src_end)
+{
+	date *dst = (date*)dst_start;
+	date *dst_e = (date*)dst_end;
+	copy_binary_date *src = (copy_binary_date*)src_start;
+	copy_binary_date *src_e = (copy_binary_date*)src_end;
+	(void)dst_e; assert(dst_e - dst == src_e - src);
+
+	for (; src < src_e; src++) {
+		COPY_BINARY_CONVERT_DATE_ENDIAN(*src);
+		date value = date_create(src->year, src->month, src->day);
+		*dst++ = value;
+	}
+
+	return MAL_SUCCEED;
+}
+
+static str
+convert_time(void *dst_start, void *dst_end, void *src_start, void *src_end)
+{
+	daytime *dst = (daytime*)dst_start;
+	daytime *dst_e = (daytime*)dst_end;
+	copy_binary_time *src = (copy_binary_time*)src_start;
+	copy_binary_time *src_e = (copy_binary_time*)src_end;
+	(void)dst_e; assert(dst_e - dst == src_e - src);
+
+	for (; src < src_e; src++) {
+		COPY_BINARY_CONVERT_TIME_ENDIAN(*src);
+		daytime value = daytime_create(src->hours, src->minutes, src->seconds, src->ms);
+		*dst++ = value;
+	}
+
+	return MAL_SUCCEED;
+}
+
+static str
+convert_timestamp(void *dst_start, void *dst_end, void *src_start, void *src_end)
+{
+	timestamp *dst = (timestamp*)dst_start;
+	timestamp *dst_e = (timestamp*)dst_end;
+	copy_binary_timestamp *src = (copy_binary_timestamp*)src_start;
+	copy_binary_timestamp *src_e = (copy_binary_timestamp*)src_end;
+	(void)dst_e; assert(dst_e - dst == src_e - src);
+
+	for (; src < src_e; src++) {
+		COPY_BINARY_CONVERT_TIMESTAMP_ENDIAN(*src);
+		date dt = date_create(src->date.year, src->date.month, src->date.day);
+		daytime tm = daytime_create(src->time.hours, src->time.minutes, src->time.seconds, src->time.ms);
+		timestamp value = timestamp_create(dt, tm);
+		*dst++ = value;
+	}
+
+	return MAL_SUCCEED;
+}
+
+
 static void
 convert_line_endings(char *text)
 {
@@ -209,16 +330,25 @@ static struct type_rec {
 	char *method;
 	int gdk_type;
 	str (*loader)(BAT *bat, stream *s, int *eof_reached);
+	str (*convert_fixed_width)(void *dst_start, void *dst_end, void *src_start, void *src_end);
+	size_t record_size;
 	void (*convert_in_place)(void *start, void *end);
 } type_recs[] = {
 	{ "bte", TYPE_bte, .convert_in_place=convert_bte, },
 	{ "sht", TYPE_sht, .convert_in_place=convert_sht, },
 	{ "int", TYPE_int, .convert_in_place=convert_int, },
 	{ "lng", TYPE_lng, .convert_in_place=convert_lng, },
+	//
 #ifdef HAVE_HGE
 	{ "hge", TYPE_hge, .convert_in_place=convert_hge, },
 #endif
+	//
 	{ "str", TYPE_str, .loader=load_zero_terminated_text },
+	//
+	{ "date", TYPE_date, .convert_fixed_width=convert_date, .record_size=sizeof(copy_binary_date), },
+	{ "daytime", TYPE_daytime, .convert_fixed_width=convert_time, .record_size=sizeof(copy_binary_time), },
+	{ "timestamp", TYPE_timestamp, .convert_fixed_width=convert_timestamp, .record_size=sizeof(copy_binary_timestamp), },
+
 };
 
 
@@ -246,7 +376,10 @@ load_column(struct type_rec *rec, BAT *bat, stream *s, int *eof_reached)
 		msg = rec->loader(bat, s, eof_reached);
 	} else if (rec->convert_in_place != NULL) {
 		// These types can be read directly into the BAT
-		msg = BATattach_as_bytes(bat, s, rec->gdk_type, 0, rec->convert_in_place, eof_reached);
+		msg = BATattach_as_bytes(bat, s, 0, rec->convert_in_place, eof_reached);
+	} else if (rec->convert_fixed_width != NULL) {
+		// These types can be read directly into the BAT
+		msg = BATattach_fixed_width(bat, s, rec->convert_fixed_width, rec->record_size, eof_reached);
 	} else {
 		*eof_reached = 0;
 		bailout("invalid loader configuration for '%s'", rec->method);
