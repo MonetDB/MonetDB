@@ -391,10 +391,7 @@ AUTHinitTables(const char *passwd) {
 			passwd = "monetdb";	/* default password */
 		pw = mcrypt_BackendSum(passwd, strlen(passwd));
 		if(!pw) {
-			if (!GDKembedded())
-				throw(MAL, "initTables", SQLSTATE(42000) "Crypt backend hash not found");
-			else
-				pw = strdup(passwd);
+			throw(MAL, "initTables", SQLSTATE(42000) "Crypt backend hash not found");
 		}
 		msg = AUTHaddUser(&uid, NULL, "monetdb", pw);
 		free(pw);
@@ -521,11 +518,8 @@ AUTHaddUser(oid *uid, Client cntxt, const char *username, const char *passwd)
 		throw(MAL, "addUser", "user '%s' already exists", username);
 
 	/* we assume the BATs are still aligned */
-	if (!GDKembedded()) {
-		rethrow("addUser", tmp, AUTHcypherValue(&hash, passwd));
-	} else {
-		hash = GDKstrdup("hash");
-	}
+	rethrow("addUser", tmp, AUTHcypherValue(&hash, passwd));
+
 	/* needs force, as SQL makes a view over user */
 	if (BUNappend(user, username, true) != GDK_SUCCEED ||
 		BUNappend(pass, hash, true) != GDK_SUCCEED) {
@@ -537,8 +531,7 @@ AUTHaddUser(oid *uid, Client cntxt, const char *username, const char *passwd)
 	p = AUTHfindUser(username);
 
 	/* make the stuff persistent */
-	if (!GDKembedded())
-		AUTHcommit();
+	AUTHcommit();
 
 	*uid = p;
 	return(MAL_SUCCEED);
@@ -993,8 +986,6 @@ AUTHverifyPassword(const char *passwd)
 
 	return(MAL_SUCCEED);
 #else
-	if (GDKembedded())
-		return(MAL_SUCCEED);
 	(void) passwd;
 	throw(MAL, "verifyPassword", "Unknown backend hash algorithm: %s",
 		  MONETDB5_PASSWDHASH);
