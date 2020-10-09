@@ -20,7 +20,7 @@ TYPE_DEFTEST_TPE(int8_t, int8_t);
 TYPE_DEFTEST_TPE(int16_t, int16_t);
 TYPE_DEFTEST_TPE(int32_t, int32_t);
 TYPE_DEFTEST_TPE(int64_t, int64_t);
-#if HAVE_HGE
+#ifdef HAVE_HGE
 TYPE_DEFTEST_TPE(int128_t, __int128);
 #endif
 TYPE_DEFTEST_TPE(size_t, size_t);
@@ -41,7 +41,7 @@ extern bool check_column_int8_t    (monetdbe_result* result, size_t column_index
 extern bool check_column_int16_t   (monetdbe_result* result, size_t column_index, size_t expected_nr_column_entries, TEST_TPE_ID(int16_t)* expected_column);
 extern bool check_column_int32_t   (monetdbe_result* result, size_t column_index, size_t expected_nr_column_entries, TEST_TPE_ID(int32_t)* expected_column);
 extern bool check_column_int64_t   (monetdbe_result* result, size_t column_index, size_t expected_nr_column_entries, TEST_TPE_ID(int64_t)* expected_column);
-#if HAVE_HGE
+#ifdef HAVE_HGE
 extern bool check_column_int128_t  (monetdbe_result* result, size_t column_index, size_t expected_nr_column_entries, TEST_TPE_ID(int128_t)* expected_column);
 #endif
 extern bool check_column_size_t    (monetdbe_result* result, size_t column_index, size_t expected_nr_column_entries, TEST_TPE_ID(size_t)* expected_column);
@@ -53,7 +53,7 @@ extern bool check_column_date      (monetdbe_result* result, size_t column_index
 extern bool check_column_time      (monetdbe_result* result, size_t column_index, size_t expected_nr_column_entries, TEST_TPE_ID(time)* expected_column);
 extern bool check_column_timestamp (monetdbe_result* result, size_t column_index, size_t expected_nr_column_entries, TEST_TPE_ID(timestamp)* expected_column);
 
-#if HAVE_HGE
+#ifdef HAVE_HGE
 #define BIGGEST_INTEGER_TPE int128_t
 #define check_column_BIGGEST_INTEGER_TPE check_column_int128_t
 #else

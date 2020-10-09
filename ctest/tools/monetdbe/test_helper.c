@@ -44,7 +44,7 @@
 #define MONETDB_COLUMN_TPE monetdbe_column_int64_t
 #include "test_helper_template.h"
 
-#if HAVE_HGE
+#ifdef HAVE_HGE
 #define TPE TEST_TPE_ID(int128_t)
 #define CHECK_COLUMN_FUNC check_column_int128_t
 #define TPE_ENUM monetdbe_int128_t
