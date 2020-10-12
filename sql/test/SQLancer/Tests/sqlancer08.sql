@@ -35,7 +35,7 @@ INSERT INTO t0(tc0) VALUES(INTERVAL '444375026' MONTH);
 DELETE FROM t0 WHERE TRUE;
 ALTER TABLE t0 ALTER tc0 SET NOT NULL;
 INSERT INTO t0(tc0) VALUES(INTERVAL '-625288924' MONTH);
-UPDATE t0 SET tc0 = (t0.tc0) WHERE TRUE;
+--UPDATE t0 SET tc0 = (t0.tc0) WHERE TRUE;
 DROP TABLE t0;
 
 START TRANSACTION;
@@ -156,3 +156,18 @@ ROLLBACK;
 PREPARE SELECT round(-'b', ?);
 PREPARE SELECT sql_max(+ (0.29353363282850464), round(- (sql_min('-Infinity', ?)), ?)) LIMIT 8535194086169274474;
 PREPARE VALUES (CAST(? >> 1.2 AS INTERVAL SECOND)), (interval '1' second); -- error, types decimal(2,1) and sec_interval(13,0) are not equal
+
+START TRANSACTION;
+CREATE TABLE "sys"."t2" ("tc2" INTERVAL DAY);
+COPY 7 RECORDS INTO "sys"."t2" FROM stdin USING DELIMITERS E'\t',E'\n','"';
+NULL
+76708782777600.000
+96368184086400.000
+105887629728000.000
+4009709779200.000
+-52062825081600.000
+1301584464000.000
+
+create view v0(vc0) as (select distinct sql_neg(abs(nullif(interval '2' month, interval '3' month))) where greatest(nullif(4 in (0.42, 0.43), 'v' ilike '|pRd(Wɮ&'), ((interval '3' second) is null) = false));
+MERGE INTO t2 USING (SELECT * FROM v0) AS v0 ON "isauuid"('4') WHEN MATCHED THEN UPDATE SET tc2 = INTERVAL '3' DAY;
+ROLLBACK;
