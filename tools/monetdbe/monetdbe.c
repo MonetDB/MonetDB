@@ -959,7 +959,7 @@ monetdbe_prepare_cb(void* context, char* tblname, columnar_result* results, size
 	sql_rel* rel = NULL;
 	list *args = NULL, *rets = NULL;
 	sql_allocator* sa = NULL;
-	ValRecord v = {0};
+	ValRecord v = { .len=0 };
 	ptr vp = NULL;
 	struct callback_context* ccontext= NULL;
 	columnar_result_callback* rcb = NULL;
@@ -1092,7 +1092,7 @@ monetdbe_prepare_cb(void* context, char* tblname, columnar_result* results, size
 	/*
 	 * HACK: we need to rename the Symbol aka MAL function to the query cache name.
 	 * Basically we keep the MALblock but we destroy the containing old Symbol
-	 * and create a new one with the correct name and set its MAL block pointer to 
+	 * and create a new one with the correct name and set its MAL block pointer to
 	 * point to the mal block we have created in this function.
 	 */
 	prg->def = NULL;
@@ -1203,8 +1203,8 @@ monetdbe_query_remote(monetdbe_database_internal *mdbe, char* query, monetdbe_re
 
 	ValRecord v;
 	ptr vp = (ptr) rcb;
-	
-	VALset(&v, TYPE_ptr, &vp);	
+
+	VALset(&v, TYPE_ptr, &vp);
 	e = pushValue(mb, e, &v);
 
 	e = pushArgument(mb, e, getArg(p, 0));
