@@ -111,3 +111,13 @@ ROLLBACK;
 
 select cast('0.2.3' as decimal(10,2)); -- error, invalid decimal
 select cast('+0..2' as decimal(10,2)); -- error, invalid decimal
+
+START TRANSACTION;
+create view v0(vc0) as (values (0.6686823));
+create view v5(vc0) as (values ("concat"(r'-730017219', r'0.232551533113189')));
+
+SELECT 1 FROM v0 RIGHT OUTER JOIN v5 ON 'pBU' <= ifthenelse(NOT TRUE, v5.vc0, v5.vc0);
+	-- 1
+SELECT CAST(SUM(count) AS BIGINT) FROM (SELECT CAST("isauuid"(splitpart(CAST(((-1206869754)|(-1610043466)) AS STRING(528)), r'0.7805510128618084', 985907011)) AS INT) as count 
+FROM v0 RIGHT OUTER JOIN v5 ON ((r'pBU')<=(ifthenelse(NOT (sql_min(TRUE, TRUE)), lower(v5.vc0), "concat"(v5.vc0, v5.vc0))))) as res;
+ROLLBACK;
