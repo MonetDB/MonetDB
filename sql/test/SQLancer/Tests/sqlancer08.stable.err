@@ -5,17 +5,21 @@ stderr of test 'sqlancer08` in directory 'sql/test/SQLancer` itself:
 # 11:38:36 >  "mclient" "-lsql" "-ftest" "-tnone" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-68619" "--port=38834"
 # 11:38:36 >  
 
-MAPI  = (monetdb) /var/tmp/mtest-456083/.s.monetdb.34034
+MAPI  = (monetdb) /var/tmp/mtest-22236/.s.monetdb.35110
+QUERY = SELECT CAST(SUM(count) AS BIGINT) FROM (SELECT ALL CAST((CAST(((24829)+(((0.9767751031140547)*(0.7479400824095245)))) AS DOUBLE)) IS NULL AS INT) as count FROM v2, t0 CROSS JOIN v0) as res;
+ERROR = !overflow in calculation 9767751031140547*7479400824095245.
+CODE  = 22003
+MAPI  = (monetdb) /var/tmp/mtest-22236/.s.monetdb.35110
 QUERY = select t2.tc0, scale_down(0.87735366430185102171179778451914899051189422607421875, t2.tc0) from t2;
 ERROR = !Argument 2 to round function must be positive
 CODE  = 42000
-MAPI  = (monetdb) /var/tmp/mtest-1171502/.s.monetdb.33746
-QUERY = select cast('0.2.3' as decimal(23,2)); -- error, invalid decimal
-ERROR = !Decimal (0.2.3) doesn't have format (23.2)
+MAPI  = (monetdb) /var/tmp/mtest-22236/.s.monetdb.35110
+QUERY = select cast('0.2.3' as decimal(10,2)); -- error, invalid decimal
+ERROR = !Decimal (0.2.3) doesn't have format (10.2)
 CODE  = 42000
-MAPI  = (monetdb) /var/tmp/mtest-1171502/.s.monetdb.33746
-QUERY = select cast('+0..2' as decimal(23,2)); -- error, invalid decimal
-ERROR = !Decimal (+0..2) doesn't have format (23.2)
+MAPI  = (monetdb) /var/tmp/mtest-22236/.s.monetdb.35110
+QUERY = select cast('+0..2' as decimal(10,2)); -- error, invalid decimal
+ERROR = !Decimal (+0..2) doesn't have format (10.2)
 CODE  = 42000
 
 # 11:38:36 >  

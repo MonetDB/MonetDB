@@ -109,5 +109,5 @@ SELECT CAST(SUM(count) AS BIGINT) FROM (SELECT CAST((ascii(ltrim(replace(r'', r'
 	-- 0
 ROLLBACK;
 
-select cast('0.2.3' as decimal(23,2)); -- error, invalid decimal
-select cast('+0..2' as decimal(23,2)); -- error, invalid decimal
+select cast('0.2.3' as decimal(10,2)); -- error, invalid decimal
+select cast('+0..2' as decimal(10,2)); -- error, invalid decimal
