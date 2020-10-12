@@ -2775,15 +2775,23 @@ exp_sum_scales(sql_subfunc *f, sql_exp *l, sql_exp *r)
 
 		/* HACK alert: digits should be less than max */
 #ifdef HAVE_HGE
-		if (ares->type.type->radix == 10 && res->digits > 39)
+		if (ares->type.type->radix == 10 && res->digits > 39) {
 			res->digits = 39;
-		if (ares->type.type->radix == 2 && res->digits > 128)
+			res->scale = MIN(res->scale, res->digits - 1);
+		}
+		if (ares->type.type->radix == 2 && res->digits > 128) {
 			res->digits = 128;
+			res->scale = MIN(res->scale, res->digits - 1);
+		}
 #else
-		if (ares->type.type->radix == 10 && res->digits > 19)
+		if (ares->type.type->radix == 10 && res->digits > 19) {
 			res->digits = 19;
-		if (ares->type.type->radix == 2 && res->digits > 64)
+			res->scale = MIN(res->scale, res->digits - 1);
+		}
+		if (ares->type.type->radix == 2 && res->digits > 64) {
 			res->digits = 64;
+			res->scale = MIN(res->scale, res->digits - 1);
+		}
 #endif
 
 		/* numeric types are fixed length */

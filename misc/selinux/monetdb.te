@@ -1,4 +1,4 @@
-policy_module(monetdb, 1.0)
+policy_module(monetdb, 1.1)
 # The above line declares that this file is a SELinux policy file. Its
 # name is monetdb, so the file should be saved as monetdb.te
 
@@ -130,7 +130,7 @@ manage_dirs_pattern(mserver5_t, tmp_t, tmp_t)
 manage_sock_files_pattern(mserver5_t, tmp_t, tmp_t)
 allow mserver5_t tmp_t:file create;
 manage_sock_files_pattern(mserver5_t, mserver5_db_t, mserver5_db_t)
-allow mserver5_t monetdbd_t:fifo_file { read write getattr };
+allow mserver5_t monetdbd_t:fifo_file { read write getattr ioctl };
 allow mserver5_t monetdbd_t:unix_stream_socket { read write getopt shutdown };
 allow mserver5_t var_t:dir { read };
 allow mserver5_t var_lib_t:dir { read };

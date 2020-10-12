@@ -33,7 +33,7 @@ The windows packages are located at https://www.monetdb.org/downloads/Windows/Ap
 Mac OS X
 ========
 
-The Mac OS X packages are downloaded from https://www.monetdb.org/downloads/MacOSX/ This repository contains a binary tarball and a pkg package. This last one is generated using the "MonetDB.pkgproj" file in the "MacOSX" directory in the source repository. The repository itself is only a download folder, there is no scripting needed to generate the repository itself. The third option to install monetdb on MacOS is to use homebrew. The relevant file is "https://github.com/MonetDB/homebrew-core/blob/master/Formula/monetdb.rb", the repository is in the MonetDB github organization and is a clone of the homebrew repository. This file will need to be changes after swithing to cmake. The difficult part will likely be to keep this backwards compatible.
+The Mac OS X packages are downloaded from https://www.monetdb.org/downloads/MacOSX/ This repository contains a binary tarball and a pkg package. This last one is generated using the "MonetDB.pkgproj" file in the "MacOSX" directory in the source repository. The repository itself is only a download folder, there is no scripting needed to generate the repository itself. The third option to install monetdb on MacOS is to use homebrew. The relevant file is "https://github.com/MonetDB/homebrew-core/blob/master/Formula/monetdb.rb", the repository is in the MonetDB github organization and is a clone of the homebrew repository. This file will need to be changes after switching to cmake. The difficult part will likely be to keep this backwards compatible.
 
 ``Releasing``
 =============
@@ -155,7 +155,7 @@ Unspecified
 Numpy detection
 ===============
 
-Since the Python3::Numpy target is not available before version 3.14, we need an alternative. We use a NumPy detection function from a github project: https://raw.githubusercontent.com/fperazzi/davis-2017/master/cmake/FindNumPy.cmake This is MIT licensened, so we can include this in MonetDB. We change the python detection to detect python3, instead of python2.
+Since the Python3::Numpy target is not available before version 3.14, we need an alternative. We use a NumPy detection function from a github project: https://raw.githubusercontent.com/fperazzi/davis-2017/master/cmake/FindNumPy.cmake This is MIT licensed, so we can include this in MonetDB. We change the python detection to detect python3, instead of python2.
 
 shp.h define conflicts
 ======================
