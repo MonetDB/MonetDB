@@ -2825,7 +2825,7 @@ rel_binop_(mvc *sql, sql_rel *rel, sql_exp *l, sql_exp *r, sql_schema *s, char *
 
 			if (!exp_subtype(l) || !exp_subtype(r))
 				return sql_error(sql, 01, SQLSTATE(42000) "Cannot have a parameter (?) on both sides of an expression");
-		} else if (rel_binop_check_types(sql, rel, l, r, f->func->fix_scale != INOUT) < 0)
+		} else if (rel_binop_check_types(sql, rel, l, r, 1) < 0)
 			return NULL;
 
 		t1 = exp_subtype(l);
