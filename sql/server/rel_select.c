@@ -2694,7 +2694,7 @@ rel_unop_(mvc *sql, sql_rel *rel, sql_exp *e, sql_schema *s, char *fname, int ca
 			sql_arg *a = f->func->ops->h->data;
 
 			t = &a->type;
-			if (rel_set_type_param(sql, t, rel, e, 1) < 0)
+			if (rel_set_type_param(sql, t, rel, e, f->func->fix_scale != INOUT) < 0)
 				return NULL;
 		}
 	 } else {
@@ -2813,19 +2813,19 @@ rel_binop_(mvc *sql, sql_rel *rel, sql_exp *l, sql_exp *r, sql_schema *s, char *
 				sql_subtype *t = arg_type(f->func->ops->h->data);
 				if (t->type->eclass == EC_ANY && t2)
 					t = t2;
-				rel_set_type_param(sql, t, rel, l, 1);
+				rel_set_type_param(sql, t, rel, l, f->func->fix_scale != INOUT);
 			}
 			if (!t2) {
 				sql_subtype *t = arg_type(f->func->ops->h->next->data);
 				if (t->type->eclass == EC_ANY && t1)
 					t = t1;
-				rel_set_type_param(sql, t, rel, r, 1);
+				rel_set_type_param(sql, t, rel, r, f->func->fix_scale != INOUT);
 			}
 			f = NULL;
 
 			if (!exp_subtype(l) || !exp_subtype(r))
 				return sql_error(sql, 01, SQLSTATE(42000) "Cannot have a parameter (?) on both sides of an expression");
-		} else if (rel_binop_check_types(sql, rel, l, r, 1) < 0)
+		} else if (rel_binop_check_types(sql, rel, l, r, f->func->fix_scale != INOUT) < 0)
 			return NULL;
 
 		t1 = exp_subtype(l);
