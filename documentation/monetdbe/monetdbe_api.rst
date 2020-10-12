@@ -9,8 +9,8 @@ If all went well they return a NULL. Otherwise it the exception message thrown b
 General considerations
 ----------------------
 
-There can be a single :memory: database or local persistent database open at a time. 
-The daabase location should be passed as a full path. Relative paths are currently not supported.
+There can be a single :memory: database or local persistent database open at a time.
+The database location should be passed as a full path. Relative paths are currently not supported.
 
 As soon as you create a connection with another database, the content of the :memory: data store is lost.
 MonetDB/e can also be used as a proxy to a remote database.
@@ -45,7 +45,7 @@ Connection and server options
 
     Initialize a monetdbe_database structure. The database of interest is denoted by an url and denote either ':memory:', /fullpath/directory,
     mapi:monetdb://company.nl:50000/database. The latter refers to a MonetDB server location.
-    The :memory: and local path options lead to an exclusive lock on the database storage.. 
+    The :memory: and local path options lead to an exclusive lock on the database storage..
     Opening the same database multiple times concurrently is allowed, but opening another one concurrently will throw an error for now.
     There may be multiple connections to multiple MonetDB servers.
 
@@ -60,11 +60,11 @@ Transaction management
 
 .. c:function:: char* monetdbe_get_autocommit(monetdbe_database db, int* result)
 
-    Retrieve the current transaction mode, i.e. 'autocommit' or 'no-autocommit' 
+    Retrieve the current transaction mode, i.e. 'autocommit' or 'no-autocommit'
 
 .. c:function:: char *monetdbe_set_autocommit(monetdbe_database db, int value)
 
-    Set the auto-commit mode to either true or false. 
+    Set the auto-commit mode to either true or false.
 
 .. c:function:: int monetdbe_in_transaction(monetdbe_database db);
 
@@ -76,12 +76,12 @@ _______________
 
 .. c:function:: char* monetdbe_query(monetdbe_database db, char* query, monetdbe_result** result, monetdbe_cnt* affected_rows)
 
-    The main query interface to the database kernel. The query should obey the MonetDB SQL syntax. It returns a 
+    The main query interface to the database kernel. The query should obey the MonetDB SQL syntax. It returns a
     result set, i.e. a collection of columns in binary form and the number of rows affected by an update.
 
 .. c:function:: char* monetdbe_result_fetch(monetdbe_result *mres, monetdbe_column** res, size_t column_index);
 
-    Given a result set from a query obtain an individual column description. 
+    Given a result set from a query obtain an individual column description.
     It contains the type and a C-array of values. The number of rows is part of the monetdbe_result structure.
 
 .. c:function:: char* monetdbe_cleanup(monetdbe_database db, monetdbe_result *result);
@@ -103,7 +103,7 @@ Query prepare, bind, execute
 .. c:function:: char* monetdbe_execute(monetdbe_statement *stmt, monetdbe_result **result, monetdbe_cnt* affected_rows);
 
     When all parameters are bound, the statement is executed by the database server. An error is thrown if the
-    number of parameters does not match. 
+    number of parameters does not match.
 
 .. c:function:: char* monetdbe_cleanup_statement(monetdbe_database db, monetdbe_statement *stmt);
 
@@ -114,7 +114,7 @@ Database append
 
 .. c:function:: char* monetdbe_append(monetdbe_database db, const char* schema, const char* table, monetdbe_result *result, size_t column_count);
 
-    The result set obtained from any query can be assigned to a new database table. 
+    The result set obtained from any query can be assigned to a new database table.
 
 Backup and restore
 ------------------
@@ -123,12 +123,12 @@ Backup and restore
     Dump a :memory: database as a collection of SQL statements on a local file
 
 .. c:function:: char* monetdbe_dump_table(monetdbe_database db, const char *schema_name, const char *table_name, const char *backupfile);
-    
+
     Dump a specific tables
 
 .. c:function:: char* monetdbe_restore(monetdbe_database db, char *localfile);
 
-    [TODO] Restore a SQL dump to initialize the ':memory:' case. This is simular  to loading a SQL script.
+    [TODO] Restore a SQL dump to initialize the ':memory:' case. This is similar  to loading a SQL script.
 
 Miscellaneous
 -------------
