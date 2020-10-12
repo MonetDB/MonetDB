@@ -1,0 +1,6 @@
+statement ok
+drop table "fluxz"
+
+statement ok
+drop table "cm_flux"
+
