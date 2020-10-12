@@ -137,3 +137,18 @@ create view v2(vc0, vc1) as (select all sign(((820356984)*(scale_down(0.53676551
 select cast(sum(count) as bigint) from (select all cast(true as int) as count from v2 join salesmart on not ((salesmart.city) between asymmetric (trim(salesmart.city, v2.vc1)) and (r'0.43353835334391844'))) as res;
 	-- 5
 ROLLBACK;
+
+START TRANSACTION;
+CREATE TABLE "sys"."salesmart"("city" VARCHAR(100));
+COPY 5 RECORDS INTO "sys"."salesmart" FROM stdin USING DELIMITERS E'\t',E'\n','"';
+"b~dEQ~"
+"77378079"
+"0.8200084709639743"
+""
+"\015"
+
+SELECT 1 FROM salesmart WHERE CAST(1 AS BOOLEAN) OR "index"(salesmart.city, true);
+	-- 5 1s
+DELETE FROM salesmart WHERE (((CAST(CAST(-1073480726 AS BOOLEAN) AS BOOLEAN)) = TRUE)OR(CAST("index"(substr(salesmart.city, 1058445329, 887361238), (-528898388) IS NOT NULL) AS BOOLEAN)));
+	-- Delete all rows
+ROLLBACK;

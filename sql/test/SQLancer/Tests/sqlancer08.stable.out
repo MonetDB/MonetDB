@@ -183,6 +183,28 @@ stdout of test 'sqlancer08` in directory 'sql/test/SQLancer` itself:
 % 1 # length
 [ 5	]
 #ROLLBACK;
+#START TRANSACTION;
+#CREATE TABLE "sys"."salesmart"("city" VARCHAR(100));
+#COPY 5 RECORDS INTO "sys"."salesmart" FROM stdin USING DELIMITERS E'\t',E'\n','"';
+#"b~dEQ~"
+#"77378079"
+#"0.8200084709639743"
+#""
+#"\015"
+[ 5	]
+#SELECT 1 FROM salesmart WHERE CAST(1 AS BOOLEAN) OR "index"(salesmart.city, true);
+% .%2 # table_name
+% %2 # name
+% tinyint # type
+% 1 # length
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+#DELETE FROM salesmart WHERE (((CAST(CAST(-1073480726 AS BOOLEAN) AS BOOLEAN)) = TRUE)OR(CAST("index"(substr(salesmart.city, 1058445329, 887361238), (-528898388) IS NOT NULL) AS BOOLEAN)));
+[ 5	]
+#ROLLBACK;
 
 # 11:38:36 >  
 # 11:38:36 >  "Done."
