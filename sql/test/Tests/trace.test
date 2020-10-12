@@ -14,10 +14,8 @@ select '~BeginVariableOutput~'
 ----
 ~BeginVariableOutput~
 
-query IT rowsort
+statement ok
 TRACE SELECT count(*) FROM mytypes
-----
-10 values hashing to 9b2ce248fc9e174620cc02833a05368e
 
 query T rowsort
 select '~EndVariableOutput~'
