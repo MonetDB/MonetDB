@@ -7,27 +7,27 @@ create table compression_schemes (
 	extension varchar(5)
 )
 
-statement error
+statement ok
 copy into compression_schemes
 from E'$QTSTSRCDIR/copy-from-compressed.csv.raw'
 using delimiters ',', E'\n'
 
-statement error
+statement ok
 copy into compression_schemes
 from E'$QTSTSRCDIR/copy-from-compressed.csv.gz'
 using delimiters ',', E'\n'
 
-statement error
+statement ok
 copy into compression_schemes
 from E'$QTSTSRCDIR/copy-from-compressed.csv.bz2'
 using delimiters ',', E'\n'
 
-statement error
+statement ok
 copy into compression_schemes
 from E'$QTSTSRCDIR/copy-from-compressed.csv.xz'
 using delimiters ',', E'\n'
 
-statement error
+statement ok
 select * from compression_schemes order by extension
 
 statement ok
