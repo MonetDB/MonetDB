@@ -106,3 +106,26 @@ SELECT CAST(SUM(count) AS BIGINT) FROM (SELECT CAST("isauuid"(splitpart(CAST(((-
 FROM v0 RIGHT OUTER JOIN v5 ON ((r'pBU')<=(ifthenelse(NOT (sql_min(TRUE, TRUE)), lower(v5.vc0), "concat"(v5.vc0, v5.vc0))))) as res;
 	-- 0
 ROLLBACK;
+
+START TRANSACTION;
+CREATE TABLE "sys"."t2" ("tc0" TIME NOT NULL,CONSTRAINT "t2_tc0_pkey" PRIMARY KEY ("tc0"),CONSTRAINT "t2_tc0_unique" UNIQUE ("tc0"));
+COPY 5 RECORDS INTO "sys"."t2" FROM stdin USING DELIMITERS E'\t',E'\n','"';
+08:19:27
+09:37:10
+01:17:46
+12:29:13
+17:35:51
+
+CREATE TABLE "sys"."t0" ("tc0" TIME NOT NULL,CONSTRAINT "t0_tc0_pkey" PRIMARY KEY ("tc0"),CONSTRAINT "t0_tc0_unique" UNIQUE ("tc0"),CONSTRAINT "t0_tc0_fkey" FOREIGN KEY ("tc0") REFERENCES "sys"."t2" ("tc0"));
+
+create or replace view v3(vc0) as (select 'g' like '0.320466856902225');
+create or replace view v4(vc0) as ((select 102) union (select cot(12.3)));
+select 1 from v4, v3 where false and true > v3.vc0;
+
+create or replace view v3(vc0) as ((select all ((r'g')not like("right"(case -1977591239 when -1665424052 then r'0.320466856902225' else r'' end, + (-526084344)))) where false) except 
+all (select true where ((((greatest(r'', r'967262854'))ilike(upper(r'57284321'))))and(case - (-1814800471) when ((0.15968560343908733134554722710163332521915435791015625)*(87))
+then "isauuid"(r'HS''HᏮCb') when least(0.2907223, 0.5006662) then ((false)or(false)) when - (0.13854998927956396759242352345609106123447418212890625) then cast(false as boolean) end))));
+create or replace view v4(vc0) as ((select distinct 102 where (((("isauuid"(least(r'DT*', r'')))and(not (coalesce(false, false)))))and(not (case when 18602 then true end)))) union distinct (select cot(cast(nullif(20639, 31260) as real))));
+
+select all t2.tc0 from v4, v3 full outer join t2 on "isauuid"(r'1870603931') cross join t0 where ((not (not ((r'\tR') is null)))and(((true)>(sql_min("isauuid"(r''), v3.vc0)))));
+ROLLBACK;
