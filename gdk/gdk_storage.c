@@ -103,7 +103,10 @@ GDKcreatedir(const char *dir)
 
 	TRC_DEBUG(IO_, "GDKcreatedir(%s)\n", dir);
 	assert(!GDKinmemory(0));
-	assert(MT_path_absolute(dir));
+	if (!MT_path_absolute(dir)) {
+		GDKerror("directory '%s' is not absolute\n", dir);
+		return GDK_FAIL;
+	}
 	if (strlen(dir) >= FILENAME_MAX) {
 		GDKerror("directory name too long\n");
 		return GDK_FAIL;
