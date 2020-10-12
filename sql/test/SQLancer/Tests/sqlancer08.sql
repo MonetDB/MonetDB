@@ -121,11 +121,19 @@ CREATE TABLE "sys"."t0" ("tc0" TIME NOT NULL,CONSTRAINT "t0_tc0_pkey" PRIMARY KE
 create or replace view v3(vc0) as (select 'g' like '0.320466856902225');
 create or replace view v4(vc0) as ((select 102) union (select cot(12.3)));
 select 1 from v4, v3 where false and true > v3.vc0;
-
+	-- empty
 create or replace view v3(vc0) as ((select all ((r'g')not like("right"(case -1977591239 when -1665424052 then r'0.320466856902225' else r'' end, + (-526084344)))) where false) except 
 all (select true where ((((greatest(r'', r'967262854'))ilike(upper(r'57284321'))))and(case - (-1814800471) when ((0.15968560343908733134554722710163332521915435791015625)*(87))
 then "isauuid"(r'HS''HᏮCb') when least(0.2907223, 0.5006662) then ((false)or(false)) when - (0.13854998927956396759242352345609106123447418212890625) then cast(false as boolean) end))));
 create or replace view v4(vc0) as ((select distinct 102 where (((("isauuid"(least(r'DT*', r'')))and(not (coalesce(false, false)))))and(not (case when 18602 then true end)))) union distinct (select cot(cast(nullif(20639, 31260) as real))));
-
 select all t2.tc0 from v4, v3 full outer join t2 on "isauuid"(r'1870603931') cross join t0 where ((not (not ((r'\tR') is null)))and(((true)>(sql_min("isauuid"(r''), v3.vc0)))));
+	-- empty
+ROLLBACK;
+
+START TRANSACTION;
+CREATE TABLE "salesmart" ("city" VARCHAR(100));
+INSERT INTO "salesmart" VALUES ('pT펈*1.{'),('1870507234'),('27825'),('/aF⯗u'),('10545346022400.000'),(''),('-1533465369'),(''),('29781');
+create view v2(vc0, vc1) as (select all sign(((820356984)*(scale_down(0.53676551856816223651236441583023406565189361572265625, 0.5695062)))), null);
+select cast(sum(count) as bigint) from (select all cast(true as int) as count from v2 join salesmart on not ((salesmart.city) between asymmetric (trim(salesmart.city, v2.vc1)) and (r'0.43353835334391844'))) as res;
+	-- 5
 ROLLBACK;

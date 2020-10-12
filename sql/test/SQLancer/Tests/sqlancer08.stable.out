@@ -46,8 +46,8 @@ stdout of test 'sqlancer08` in directory 'sql/test/SQLancer` itself:
 #"{t鏷>9縣+B"
 [ 3	]
 #SELECT CAST(SUM(count) AS BIGINT) FROM (SELECT ALL CAST(t0.tc0 <> ANY(VALUES (UUID 'EaFBB6AC-6Eb9-00d3-7cb0-8EC8b5ad59D8'), (UUID 'bA3ca114-Cb42-7CA8-dCdF-1fB6F2dFF704'), (UUID 'dbcea1AC-60dB-8DdA-ae8C-4FC400321eD6')) AS INT) as count FROM t0, t1) as res;
-% .%6 # table_name
-% %6 # name
+% .%7 # table_name
+% %7 # name
 % bigint # type
 % 2 # length
 [ 24	]
@@ -121,8 +121,8 @@ stdout of test 'sqlancer08` in directory 'sql/test/SQLancer` itself:
 % timestamp # type
 % 26 # length
 #SELECT CAST(SUM(count) AS BIGINT) FROM (SELECT CAST((ascii(ltrim(replace(r'', r'l/', r'(')))) IS NOT NULL AS INT) as count FROM t2, t1 FULL OUTER JOIN t0 ON TRUE) as res;
-% .%2 # table_name
-% %2 # name
+% .%3 # table_name
+% %3 # name
 % bigint # type
 % 1 # length
 [ 0	]
@@ -138,8 +138,8 @@ stdout of test 'sqlancer08` in directory 'sql/test/SQLancer` itself:
 [ 1	]
 #SELECT CAST(SUM(count) AS BIGINT) FROM (SELECT CAST("isauuid"(splitpart(CAST(((-1206869754)|(-1610043466)) AS STRING(528)), r'0.7805510128618084', 985907011)) AS INT) as count 
 #FROM v0 RIGHT OUTER JOIN v5 ON ((r'pBU')<=(ifthenelse(NOT (sql_min(TRUE, TRUE)), lower(v5.vc0), "concat"(v5.vc0, v5.vc0))))) as res;
-% .%7 # table_name
-% %7 # name
+% .%10 # table_name
+% %10 # name
 % bigint # type
 % 1 # length
 [ 0	]
@@ -170,6 +170,18 @@ stdout of test 'sqlancer08` in directory 'sql/test/SQLancer` itself:
 % tc0 # name
 % time # type
 % 8 # length
+#ROLLBACK;
+#START TRANSACTION;
+#CREATE TABLE "salesmart" ("city" VARCHAR(100));
+#INSERT INTO "salesmart" VALUES ('pT펈*1.{'),('1870507234'),('27825'),('/aF⯗u'),('10545346022400.000'),(''),('-1533465369'),(''),('29781');
+[ 9	]
+#create view v2(vc0, vc1) as (select all sign(((820356984)*(scale_down(0.53676551856816223651236441583023406565189361572265625, 0.5695062)))), null);
+#select cast(sum(count) as bigint) from (select all cast(true as int) as count from v2 join salesmart on not ((salesmart.city) between asymmetric (trim(salesmart.city, v2.vc1)) and (r'0.43353835334391844'))) as res;
+% .%3 # table_name
+% %3 # name
+% bigint # type
+% 1 # length
+[ 5	]
 #ROLLBACK;
 
 # 11:38:36 >  
