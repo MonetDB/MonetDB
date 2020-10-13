@@ -221,3 +221,6 @@ select x as z, y as z from (select 1, 2) as x(x,y) group by z;
 
 select x as z, y as z from (select 1, 2) as x(x,y) order by z;
 	-- error 'z' identifier is ambiguous
+
+select 1, null except select 1, null;
+	-- empty
