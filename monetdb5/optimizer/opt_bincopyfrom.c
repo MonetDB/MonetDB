@@ -68,34 +68,45 @@ static str
 transform(MalBlkPtr mb, InstrPtr old)
 {
 	// prototype: (bat1, .., batN) := sql.importTable(schema, table, onclient, path1 , .. ,pathN);
-	int onclient = *(int*)getVarValue(mb, getArg(old, old->retc + 2));
+	int onclient_parm = *(int*)getVarValue(mb, getArg(old, old->retc + 2));
+	bool onserver = !onclient_parm;
+	bool onclient = !onserver;
 
-	// find the narrowest result column whose file is not nil, it is probably quickest to load
-	int best_idx = -1;
-	int best_type = TYPE_any;
+	// In the following loop, we (a) verify there is at least one non-nil column,
+	// and (b) look for the column with the smallest type.
+	int narrowest_idx = -1;
+	int narrowest_type = TYPE_any;
 	for (int i = 0; i < old->retc; i++) {
 		int var = getArg(old, i);
 		int var_type = ATOMstorage(getVarType(mb, var) & 0xFFFF);  // <=== what's the proper way to do this?
-		if (var_type >= best_type)
+		if (var_type >= narrowest_type)
 			continue;
 		int path_idx = old->retc + 3 + i;
 		int path_var = getArg(old, path_idx);
 		if (VALisnil(&getVarConstant(mb, path_var)))
 			continue;
-		// must be better
-		best_idx = i;
-		best_type = var_type;
+		// this is the best so far
+		narrowest_idx = i;
+		narrowest_type = var_type;
 	}
-	if (best_idx < 0)
+	if (narrowest_idx < 0)
 		return createException(MAL, "optimizer.bincopyfrom", SQLSTATE(42000) "all paths are nil");
 
-	// First emit this "best" column so we can use its row count in later columns.
-	int row_count_var = extract_column(mb, old, best_idx, -1);
-	(void) row_count_var;
+	int row_count_var;
+	if (onserver) {
+		// First import the narrowest column, which we assume will load quickest.
+		// Pas its row count to the other imports.
+		row_count_var = extract_column(mb, old, narrowest_idx, -1);
+	} else {
+		// with ON CLIENT, parallellism is harmful because there is only a single
+		// connection to the client anyway. Every import will use the row count
+		// of the previous import, which will serialize them.
+		row_count_var = -1;
+	}
 
 	// Then emit the rest of the columns
 	for (int i = 0; i < old->retc; i++) {
-		if (i != best_idx) {
+		if (i != narrowest_idx) {
 			int new_row_count_var = extract_column(mb, old, i, row_count_var);
 			if (onclient)
 				row_count_var = new_row_count_var;
