@@ -871,7 +871,7 @@ open_wstream(const char *filename)
 
 	stream *c = compressed_stream(s, 0);
 	if (c == NULL) {
-		mnstr_destroy(s);
+		close_stream(s);
 		file_remove(filename);
 	}
 
