@@ -267,6 +267,14 @@ stdout of test 'sqlancer08` in directory 'sql/test/SQLancer` itself:
 % 1 # length
 [ NULL	]
 #ROLLBACK;
+#START TRANSACTION;
+#create view v7(vc0, vc1) as (select all 56, replace(r'0.0074401190660642325', "insert"(r'0.9471086251830542', null, 1872651914, r'(Ga_'), r'2]vK') where not (not (false))) with check option;
+#select 1 from v7 where not (((cast(scale_up(4751, -1823537248) as string(86)))not like(v7.vc1)));
+% .%3 # table_name
+% %3 # name
+% tinyint # type
+% 1 # length
+#ROLLBACK;
 
 # 11:38:36 >  
 # 11:38:36 >  "Done."
