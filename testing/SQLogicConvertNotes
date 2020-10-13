@@ -40,3 +40,4 @@ Converted folders progress:
 - sql/test/broken_delete        pass
 - sql/test/astro                pass
 - sql/benchmarks/tpch/Tests     pass
+- sql/benchmarks/tpcds          pass
