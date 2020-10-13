@@ -277,6 +277,7 @@ lz4_stream(stream *inner, int level)
 	if (inner_state == NULL || state == NULL) {
 		free(inner_state);
 		free(state);
+		mnstr_set_open_error(inner->name, errno, "couldn't initialize lz4 stream");
 		return NULL;
 	}
 
