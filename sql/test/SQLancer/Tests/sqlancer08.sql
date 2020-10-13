@@ -137,3 +137,37 @@ create view v2(vc0, vc1) as (select all sign(((820356984)*(scale_down(0.53676551
 select cast(sum(count) as bigint) from (select all cast(true as int) as count from v2 join salesmart on not ((salesmart.city) between asymmetric (trim(salesmart.city, v2.vc1)) and (r'0.43353835334391844'))) as res;
 	-- 5
 ROLLBACK;
+
+START TRANSACTION;
+CREATE TABLE "sys"."salesmart"("city" VARCHAR(100));
+COPY 5 RECORDS INTO "sys"."salesmart" FROM stdin USING DELIMITERS E'\t',E'\n','"';
+"b~dEQ~"
+"77378079"
+"0.8200084709639743"
+""
+"\015"
+
+SELECT 1 FROM salesmart WHERE CAST(1 AS BOOLEAN) OR "index"(salesmart.city, true);
+	-- 5 1s
+DELETE FROM salesmart WHERE (((CAST(CAST(-1073480726 AS BOOLEAN) AS BOOLEAN)) = TRUE)OR(CAST("index"(substr(salesmart.city, 1058445329, 887361238), (-528898388) IS NOT NULL) AS BOOLEAN)));
+	-- Delete all rows
+ROLLBACK;
+
+PREPARE SELECT round(-'b', ?);
+PREPARE SELECT sql_max(+ (0.29353363282850464), round(- (sql_min('-Infinity', ?)), ?)) LIMIT 8535194086169274474;
+PREPARE VALUES (CAST(? >> 1.2 AS INTERVAL SECOND)), (interval '1' second); -- error, types decimal(2,1) and sec_interval(13,0) are not equal
+
+START TRANSACTION;
+CREATE TABLE "sys"."t2" ("tc2" INTERVAL DAY);
+COPY 7 RECORDS INTO "sys"."t2" FROM stdin USING DELIMITERS E'\t',E'\n','"';
+NULL
+76708782777600.000
+96368184086400.000
+105887629728000.000
+4009709779200.000
+-52062825081600.000
+1301584464000.000
+
+create view v0(vc0) as (select distinct sql_neg(abs(nullif(interval '2' month, interval '3' month))) where greatest(nullif(4 in (0.42, 0.43), 'v' ilike '|pRd(Wɮ&'), ((interval '3' second) is null) = false));
+MERGE INTO t2 USING (SELECT * FROM v0) AS v0 ON "isauuid"('4') WHEN MATCHED THEN UPDATE SET tc2 = INTERVAL '3' DAY;
+ROLLBACK;
