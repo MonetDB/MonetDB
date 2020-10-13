@@ -101,16 +101,17 @@ transform(MalBlkPtr mb, InstrPtr old)
 		// with ON CLIENT, parallellism is harmful because there is only a single
 		// connection to the client anyway. Every import will use the row count
 		// of the previous import, which will serialize them.
+		narrowest_idx = -1;
 		row_count_var = -1;
 	}
 
 	// Then emit the rest of the columns
 	for (int i = 0; i < old->retc; i++) {
-		if (i != narrowest_idx) {
-			int new_row_count_var = extract_column(mb, old, i, row_count_var);
-			if (onclient)
-				row_count_var = new_row_count_var;
-		}
+		if (i == narrowest_idx)
+			continue;
+		int new_row_count_var = extract_column(mb, old, i, row_count_var);
+		if (onclient)
+			row_count_var = new_row_count_var;
 	}
 
 	return MAL_SUCCEED;
