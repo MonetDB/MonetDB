@@ -35,4 +35,7 @@ Converted folders progress:
 ---------------------------
 - sql/test/null/Tests       pass
 - sql/test/json/Tests       pass
-- sql/test/Tests            1 fail
+- sql/test/Tests            pass
+- sql/test/ADT2006          pass
+- sql/test/broken_delete    pass
+- sql/test/astro            pass
