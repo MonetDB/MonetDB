@@ -222,6 +222,21 @@ stdout of test 'sqlancer08` in directory 'sql/test/SQLancer` itself:
 [ "double",	53,	17,	"",	"%2",	"%2"	]
 [ "char",	9,	0,	NULL,	NULL,	NULL	]
 [ "tinyint",	8,	0,	NULL,	NULL,	NULL	]
+#START TRANSACTION;
+#CREATE TABLE "sys"."t2" ("tc2" INTERVAL DAY);
+#COPY 7 RECORDS INTO "sys"."t2" FROM stdin USING DELIMITERS E'\t',E'\n','"';
+#NULL
+#76708782777600.000
+#96368184086400.000
+#105887629728000.000
+#4009709779200.000
+#-52062825081600.000
+#1301584464000.000
+[ 7	]
+#create view v0(vc0) as (select distinct sql_neg(abs(nullif(interval '2' month, interval '3' month))) where greatest(nullif(4 in (0.42, 0.43), 'v' ilike '|pRd(Wɮ&'), ((interval '3' second) is null) = false));
+#MERGE INTO t2 USING (SELECT * FROM v0) AS v0 ON "isauuid"('4') WHEN MATCHED THEN UPDATE SET tc2 = INTERVAL '3' DAY;
+[ 0	]
+#ROLLBACK;
 
 # 11:38:36 >  
 # 11:38:36 >  "Done."
