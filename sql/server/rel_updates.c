@@ -1261,7 +1261,6 @@ merge_into_table(sql_query *query, dlist *qname, str alias, symbol *tref, symbol
 		symbol *sym = m->data.sym, *opt_search, *action;
 		tokens token = sym->token;
 		dlist* dl = sym->data.lval, *sts;
-		list *nexps;
 		opt_search = dl->h->data.sym;
 		action = dl->h->next->data.sym;
 		sts = action->data.lval;
@@ -1288,11 +1287,8 @@ merge_into_table(sql_query *query, dlist *qname, str alias, symbol *tref, symbol
 					set_processed(join_rel);
 				}
 
-				//project columns of both bt and joined + oid
-				nexps = rel_projections(sql, bt, NULL, 1, 0);
-				for (node *n = nexps->h ; n ; n = n->next) /* after going through the left outer join, a NOT NULL column may have NULL values */
-					set_has_nil((sql_exp*)n->data);
-				extra_project = rel_project(sql->sa, join_rel, nexps);
+				//project columns of both bt and joined + oid to be used on update
+				extra_project = rel_project(sql->sa, join_rel, rel_projections(sql, bt, NULL, 1, 0));
 				extra_project->exps = list_merge(extra_project->exps, rel_projections(sql, joined, NULL, 1, 0), (fdup)NULL);
 				list_prepend(extra_project->exps, exp_column(sql->sa, bt_name, TID, sql_bind_localtype("oid"), CARD_MULTI, 0, 1));
 
@@ -1309,11 +1305,8 @@ merge_into_table(sql_query *query, dlist *qname, str alias, symbol *tref, symbol
 					set_processed(join_rel);
 				}
 
-				//project columns of bt + oid
-				nexps = rel_projections(sql, bt, NULL, 1, 0);
-				for (node *n = nexps->h ; n ; n = n->next) /* after going through the left outer join, a NOT NULL column may have NULL values */
-					set_has_nil((sql_exp*)n->data);
-				extra_project = rel_project(sql->sa, join_rel, nexps);
+				//project columns of bt + oid to be used on delete
+				extra_project = rel_project(sql->sa, join_rel, rel_projections(sql, bt, NULL, 1, 0));
 				list_prepend(extra_project->exps, exp_column(sql->sa, bt_name, TID, sql_bind_localtype("oid"), CARD_MULTI, 0, 1));
 
 				upd_del = rel_delete(sql->sa, rel_dup(bt), extra_project);
@@ -1339,8 +1332,8 @@ merge_into_table(sql_query *query, dlist *qname, str alias, symbol *tref, symbol
 				set_processed(join_rel);
 			}
 
+			//project joined values which didn't match on the join and insert them
 			extra_project = rel_project(sql->sa, join_rel, rel_projections(sql, joined, NULL, 1, 0));
-			//select bt values which are null (they didn't have match in the join) and project them
 			extra_project = rel_setop(sql->sa, rel_dup(joined), extra_project, op_except);
 
 			if (!(insert = merge_generate_inserts(query, t, extra_project, sts->h->data.lval, sts->h->next->data.sym)))
