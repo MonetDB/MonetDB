@@ -141,6 +141,8 @@ gz_stream(stream *inner, int level)
 		gz->indeflateEnd = deflateEnd;
 		gz->strm.next_out = gz->buf;
 		gz->strm.avail_out = sizeof(gz->buf);
+		if (level == 0)
+			level = 6;
 		ret = deflateInit2(&gz->strm, level, Z_DEFLATED, 15 | 16, 8, Z_DEFAULT_STRATEGY);
 	}
 
@@ -167,13 +169,12 @@ static stream *
 open_gzstream(const char *restrict filename, const char *restrict flags)
 {
 	stream *inner;
-	int preset = 6;
 
 	inner = open_stream(filename, flags);
 	if (inner == NULL)
 		return NULL;
 
-	return gz_stream(inner, preset);
+	return gz_stream(inner, 0);
 }
 
 stream *
