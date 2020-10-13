@@ -183,6 +183,45 @@ stdout of test 'sqlancer08` in directory 'sql/test/SQLancer` itself:
 % 1 # length
 [ 5	]
 #ROLLBACK;
+#START TRANSACTION;
+#CREATE TABLE "sys"."salesmart"("city" VARCHAR(100));
+#COPY 5 RECORDS INTO "sys"."salesmart" FROM stdin USING DELIMITERS E'\t',E'\n','"';
+#"b~dEQ~"
+#"77378079"
+#"0.8200084709639743"
+#""
+#"\015"
+[ 5	]
+#SELECT 1 FROM salesmart WHERE CAST(1 AS BOOLEAN) OR "index"(salesmart.city, true);
+% .%2 # table_name
+% %2 # name
+% tinyint # type
+% 1 # length
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+#DELETE FROM salesmart WHERE (((CAST(CAST(-1073480726 AS BOOLEAN) AS BOOLEAN)) = TRUE)OR(CAST("index"(substr(salesmart.city, 1058445329, 887361238), (-528898388) IS NOT NULL) AS BOOLEAN)));
+[ 5	]
+#ROLLBACK;
+#PREPARE SELECT round(-'b', ?);
+#PREPARE SELECT round(-'b', ?);
+% .prepare,	.prepare,	.prepare,	.prepare,	.prepare,	.prepare # table_name
+% type,	digits,	scale,	schema,	table,	column # name
+% varchar,	int,	int,	str,	str,	str # type
+% 7,	1,	1,	0,	2,	2 # length
+[ "double",	1,	0,	"",	"%2",	"%2"	]
+[ "tinyint",	8,	0,	NULL,	NULL,	NULL	]
+#PREPARE SELECT sql_max(+ (0.29353363282850464), round(- (sql_min('-Infinity', ?)), ?)) LIMIT 8535194086169274474;
+#PREPARE SELECT sql_max(+ (0.29353363282850464), round(- (sql_min('-Infinity', ?)), ?)) LIMIT 8535194086169274474;
+% .prepare,	.prepare,	.prepare,	.prepare,	.prepare,	.prepare # table_name
+% type,	digits,	scale,	schema,	table,	column # name
+% varchar,	int,	int,	str,	str,	str # type
+% 7,	2,	2,	0,	2,	2 # length
+[ "double",	53,	17,	"",	"%2",	"%2"	]
+[ "char",	9,	0,	NULL,	NULL,	NULL	]
+[ "tinyint",	8,	0,	NULL,	NULL,	NULL	]
 
 # 11:38:36 >  
 # 11:38:36 >  "Done."

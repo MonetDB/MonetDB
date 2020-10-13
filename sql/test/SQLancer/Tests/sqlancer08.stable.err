@@ -17,6 +17,10 @@ MAPI  = (monetdb) /var/tmp/mtest-22236/.s.monetdb.35110
 QUERY = select cast('+0..2' as decimal(10,2)); -- error, invalid decimal
 ERROR = !Decimal (+0..2) doesn't have format (10.2)
 CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-715299/.s.monetdb.34104
+QUERY = PREPARE VALUES (CAST(? >> 1.2 AS INTERVAL SECOND)), (interval '1' second); -- error, types decimal(2,1) and sec_interval(13,0) are not equal
+ERROR = !types decimal(2,1) and sec_interval(13,0) are not equal
+CODE  = 42000
 
 # 11:38:36 >  
 # 11:38:36 >  "Done."
