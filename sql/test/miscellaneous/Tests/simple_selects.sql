@@ -224,3 +224,6 @@ select x as z, y as z from (select 1, 2) as x(x,y) order by z;
 
 select 1, null except select 1, null;
 	-- empty
+
+select 1, null intersect select 1, null;
+	-- 1 NULL
