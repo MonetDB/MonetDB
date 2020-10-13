@@ -151,6 +151,7 @@ mal_export  str ilikeRef;
 mal_export  str ilikeselectRef;
 mal_export  str ilikethetaselectRef;
 mal_export  str ilikeuselectRef;
+mal_export  str importColumnRef;
 mal_export  str intersectcandRef;
 mal_export  str intersectRef;
 mal_export  str intRef;

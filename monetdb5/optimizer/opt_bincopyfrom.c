@@ -119,8 +119,6 @@ transform(MalBlkPtr mb, InstrPtr old)
 static int
 extract_column(MalBlkPtr mb, InstrPtr old, int idx, int count_var)
 {
-	str importColumnRef = putName("importColumn");
-
 	int var = getArg(old, idx);
 	int var_type = getVarType(mb, var) & 0xFFFF;  // <=== what's the proper way to do this?
 	str var_type_name = ATOMname(var_type);

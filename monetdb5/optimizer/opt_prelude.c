@@ -153,6 +153,7 @@ str ilikejoinRef;
 str ilikeRef;
 str ilikeselectRef;
 str ilikethetaselectRef;
+str importColumnRef;
 str intersectcandRef;
 str intersectRef;
 str intRef;
@@ -460,6 +461,7 @@ void optimizerInit(void)
 	ilikeRef = putName("ilike");
 	ilikeselectRef = putName("ilikeselect");
 	ilikethetaselectRef = putName("ilikethetaselect");
+	importColumnRef = putName("importColumn");
 	intersectcandRef= putName("intersectcand");
 	intersectRef = putName("intersect");
 	intRef = putName("int");
