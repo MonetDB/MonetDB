@@ -536,7 +536,7 @@ def PerformDir(env, testdir) :
     skipped = 0
     FdErr = F_SKIP
 
-    TSTDIR = testdir.get('realpath')[len(TSTSRCBASE + os.sep):-len(TSTSUFF)]
+    TSTDIR = testdir.get('realpath')[len(TSTSRCBASE + os.sep):-len(os.sep + TSTSUFF)]
     TSTSRCDIR = testdir.get('realpath')
     TSTTRGDIR = os.path.normpath(os.path.join(TSTTRGBASE, TSTPREF, TSTDIR))
 
