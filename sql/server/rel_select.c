@@ -2213,12 +2213,19 @@ rel_logical_value_exp(sql_query *query, sql_rel **rel, symbol *sc, int f, exp_ki
 		if (!rs)
 			return NULL;
 
+		if (!exp_is_rel(ls) && !exp_is_rel(rs) && ls->card < rs->card) {
+			sql_exp *swap = ls; /* has to swap parameters like in the rel_logical_exp case */
+			ls = rs;
+			rs = swap;
+			cmp_type = swap_compare(cmp_type);
+		}
+
 		if (rel_binop_check_types(sql, rel ? *rel : NULL, ls, rs, 0) < 0)
 			return NULL;
 		if (exp_is_null(ls) && exp_is_null(rs))
 			return exp_atom(sql->sa, atom_general(sql->sa, sql_bind_localtype("bit"), NULL));
 
-		ls = exp_compare_func(sql, ls, rs, compare_func(compare_str2type(compare_op), quantifier?0:need_not), quantifier);
+		ls = exp_compare_func(sql, ls, rs, compare_func(cmp_type, quantifier?0:need_not), quantifier);
 		if (need_not && quantifier)
 			ls = rel_unop_(sql, NULL, ls, NULL, "not", card_value);
 		return ls;

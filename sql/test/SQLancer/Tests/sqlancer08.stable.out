@@ -275,6 +275,28 @@ stdout of test 'sqlancer08` in directory 'sql/test/SQLancer` itself:
 % tinyint # type
 % 1 # length
 #ROLLBACK;
+#START TRANSACTION;
+#CREATE TABLE "sys"."t1" ("tc0" BIGINT);
+#COPY 4 RECORDS INTO "sys"."t1" FROM stdin USING DELIMITERS E'\t',E'\n','"';
+#284462307
+#1404201729
+#1549521937
+#452608969
+[ 4	]
+#SELECT 1 FROM t1 WHERE ('1255780658' > (least(1287317023, ((0.8056138 + t1.tc0) ))));
+% .%1 # table_name
+% %1 # name
+% tinyint # type
+% 1 # length
+[ 1	]
+[ 1	]
+#SELECT CAST(SUM(count) AS BIGINT) FROM (SELECT CAST(('1255780658' > (least(1287317023, ((0.8056138 + t1.tc0))))) AS INT) as count FROM t1) as res;
+% .%3 # table_name
+% %3 # name
+% bigint # type
+% 1 # length
+[ 2	]
+#ROLLBACK;
 
 # 11:38:36 >  
 # 11:38:36 >  "Done."

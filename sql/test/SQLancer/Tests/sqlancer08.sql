@@ -202,3 +202,15 @@ START TRANSACTION;
 create view v7(vc0, vc1) as (select all 56, replace(r'0.0074401190660642325', "insert"(r'0.9471086251830542', null, 1872651914, r'(Ga_'), r'2]vK') where not (not (false))) with check option;
 select 1 from v7 where not (((cast(scale_up(4751, -1823537248) as string(86)))not like(v7.vc1)));
 ROLLBACK;
+
+START TRANSACTION;
+CREATE TABLE "sys"."t1" ("tc0" BIGINT);
+COPY 4 RECORDS INTO "sys"."t1" FROM stdin USING DELIMITERS E'\t',E'\n','"';
+284462307
+1404201729
+1549521937
+452608969
+
+SELECT 1 FROM t1 WHERE ('1255780658' > (least(1287317023, ((0.8056138 + t1.tc0) ))));
+SELECT CAST(SUM(count) AS BIGINT) FROM (SELECT CAST(('1255780658' > (least(1287317023, ((0.8056138 + t1.tc0))))) AS INT) as count FROM t1) as res;
+ROLLBACK;
