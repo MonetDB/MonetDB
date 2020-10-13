@@ -860,6 +860,16 @@ fi
 %postun -p /sbin/ldconfig
 
 %changelog
+* Tue Oct 13 2020 Sjoerd Mullender <sjoerd@acm.org> - 11.39.5-20201013
+- Rebuilt.
+
+* Mon Oct 12 2020 Sjoerd Mullender <sjoerd@acm.org> - 11.39.5-20201013
+- clients: mclient and msqldump now also look in $XDG_CONFIG_HOME for the monetdb
+  configuration file.
+
+* Fri Oct 09 2020 Sjoerd Mullender <sjoerd@acm.org> - 11.39.3-20201009
+- Rebuilt.
+
 * Tue Oct 06 2020 Sjoerd Mullender <sjoerd@acm.org> - 11.39.1-20201006
 - Rebuilt.
 - BZ#3553: All schema access to ubiquitous functions

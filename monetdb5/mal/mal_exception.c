@@ -61,22 +61,39 @@ dupError(const char *err)
 static str __attribute__((__format__(__printf__, 3, 0), __returns_nonnull__))
 createExceptionInternal(enum malexception type, const char *fcn, const char *format, va_list ap)
 {
-	char local[GDKMAXERRLEN];
+	size_t msglen;
 	int len;
+	char *msg;
+	va_list ap2;
 #ifndef NDEBUG
 	// if there is an error we allow memory allocation once again
 	GDKsetmallocsuccesscount(-1);
 #endif
-	len = snprintf(local, GDKMAXERRLEN, "%s:%s:", exceptionNames[type], fcn);
-	len = vsnprintf(local + len, GDKMAXERRLEN - len, format, ap);
-	if (len < 0)
+	va_copy(ap2, ap);			/* we need to use it twice */
+	msglen = strlen(exceptionNames[type]) + strlen(fcn) + 2;
+	len = vsnprintf(NULL, 0, format, ap); /* count necessary length */
+	if (len < 0) {
 		TRC_CRITICAL(MAL_SERVER, "called with bad arguments");
-	char *q = local;
-	for (char *p = strchr(q, '\n'); p; q = p + 1, p = strchr(q, '\n'))
-		TRC_ERROR(MAL_SERVER, "%.*s\n", (int) (p - q), q);
-	if (*q)
-		TRC_ERROR(MAL_SERVER, "%s\n", q);
-	return dupError(local);
+		len = 0;
+	}
+	msg = GDKmalloc(msglen + len + 1);
+	if (msg != NULL) {
+		/* the calls below succeed: the arguments have already been checked */
+		(void) strconcat_len(msg, msglen + 1,
+							 exceptionNames[type], ":", fcn, ":", NULL);
+		if (len > 0)
+			(void) vsnprintf(msg + msglen, len + 1, format, ap2);
+		va_end(ap2);
+		char *q = msg;
+		for (char *p = strchr(msg, '\n'); p; q = p + 1, p = strchr(q, '\n'))
+			TRC_ERROR(MAL_SERVER, "%.*s\n", (int) (p - q), q);
+		if (*q)
+			TRC_ERROR(MAL_SERVER, "%s\n", q);
+	} else {
+		msg = M5OutOfMemory;
+	}
+	va_end(ap2);
+	return msg;
 }
 
 /**
@@ -145,38 +162,52 @@ freeException(str msg)
 static str __attribute__((__format__(__printf__, 5, 0), __returns_nonnull__))
 createMalExceptionInternal(MalBlkPtr mb, int pc, enum malexception type, char *prev, const char *format, va_list ap)
 {
-	char buf[GDKMAXERRLEN];
-	size_t i;
-	str s, fcn;
+	bool addnl = false;
+	const char *s = mb ? getModName(mb) : "unknown";
+	const char *fcn = mb ? getFcnName(mb) : "unknown";
+	size_t msglen;
 
-	s = mb ? getModName(mb) : "unknown";
-	fcn = mb ? getFcnName(mb) : "unknown";
-	i = 0;
-
-	if (prev){
-		if( *prev){
-			i += snprintf(buf + i, GDKMAXERRLEN - 1 - i, "%s", prev);
-			if( buf[i-1] != '\n')
-				buf[i++]= '\n';
+	if (prev) {
+		msglen = strlen(prev);
+		if (msglen > 0 && prev[msglen - 1] != '\n') {
+			addnl = true;
+			msglen++;
 		}
-		i += snprintf(buf + i, GDKMAXERRLEN - 1 - i, "!%s:%s.%s[%d]:",
-				exceptionNames[type], s, fcn, pc);
-		freeException(prev);
-	} else if( type == SYNTAX)
-		i += snprintf(buf + i, GDKMAXERRLEN - 1 - i, "%s:",
-				exceptionNames[type]);
-	else
-		i += snprintf(buf + i, GDKMAXERRLEN - 1 - i, "%s:%s.%s[%d]:",
-				exceptionNames[type], s, fcn, pc);
-	i += vsnprintf(buf + i, GDKMAXERRLEN - 1 - i, format, ap);
-	if( buf[i-1] != '\n')
-		buf[i++]= '\n';
-	buf[i] = '\0';
-
-	s = GDKstrdup(buf);
-	if (s == NULL)				/* make sure we always return something */
-		s = M5OutOfMemory;
-	return s;
+		msglen += snprintf(NULL, 0, "!%s:%s.%s[%d]:",
+						   exceptionNames[type], s, fcn, pc);
+	} else if (type == SYNTAX) {
+		msglen = strlen(exceptionNames[type]) + 1;
+	} else {
+		msglen = snprintf(NULL, 0, "%s:%s.%s[%d]:",
+						  exceptionNames[type], s, fcn, pc);
+	}
+	va_list ap2;
+	va_copy(ap2, ap);
+	int len = vsnprintf(NULL, 0, format, ap);
+	if (len < 0)
+		len = 0;
+	char *msg = GDKmalloc(msglen + len + 1);
+	if (msg != NULL) {
+		/* the calls below succeed: the arguments have already been checked */
+		if (prev) {
+			(void) snprintf(msg, msglen + 1, "%s%s!%s:%s.%s[%d]:",
+							prev, addnl ? "\n" : "",
+							exceptionNames[type], s, fcn, pc);
+		} else if (type == SYNTAX) {
+			(void) strconcat_len(msg, msglen + 1,
+								 exceptionNames[type], ":", NULL);
+		} else {
+			(void) snprintf(msg, msglen + 1, "%s:%s.%s[%d]:",
+							exceptionNames[type], s, fcn, pc);
+		}
+		if (len > 0)
+			(void) vsnprintf(msg + msglen, len + 1, format, ap2);
+	} else {
+		msg = M5OutOfMemory;
+	}
+	va_end(ap2);
+	freeException(prev);
+	return msg;
 }
 
 /**

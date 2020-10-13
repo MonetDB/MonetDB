@@ -147,8 +147,12 @@ def main():
                r'bin\stream.dll',
                vcpkg.format(r'bin\libiconv.dll'),
                vcpkg.format(r'bin\bz2.dll'),
+               vcpkg.format(r'bin\getopt.dll'),
+               vcpkg.format(r'bin\libcharset.dll'), # for libiconv.dll
                vcpkg.format(r'bin\libcrypto-1_1{}.dll'.format(libcrypto)),
                vcpkg.format(r'bin\libxml2.dll'),
+               vcpkg.format(r'bin\lz4.dll'),
+               vcpkg.format(r'bin\lzma.dll'),
                vcpkg.format(r'bin\pcre.dll'),
                vcpkg.format(r'bin\zlib1.dll')])
     # id = comp(debug, id, 14,
@@ -197,8 +201,12 @@ def main():
                r'lib\stream.lib',
                vcpkg.format(r'lib\libiconv.lib'),
                vcpkg.format(r'lib\bz2.lib'),
+               vcpkg.format(r'lib\getopt.lib'),
+               vcpkg.format(r'lib\libcharset.lib'),
                vcpkg.format(r'lib\libcrypto.lib'),
                vcpkg.format(r'lib\libxml2.lib'),
+               vcpkg.format(r'lib\lz4.lib'),
+               vcpkg.format(r'lib\lzma.lib'),
                vcpkg.format(r'lib\pcre.lib'),
                vcpkg.format(r'lib\zlib.lib')])
     print(r'            </Directory>')
